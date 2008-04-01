@@ -1,45 +1,56 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Checksums and self-healing roadmap
-Date: Tue, 1 Apr 2008 13:41:15 -0400
-Message-ID: <200804011341.15923.chris.mason@oracle.com>
-References: <1205846009.8520.14.camel@s1.crocom.com.pl>
+Subject: Btrfs hosting moving to kernel.org
+Date: Tue, 1 Apr 2008 14:16:43 -0400
+Message-ID: <200804011416.43563.chris.mason@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-To: btrfs-devel@oss.oracle.com, linux-btrfs@vger.kernel.org
-Return-path: <btrfs-devel-bounces@oss.oracle.com>
-In-Reply-To: <1205846009.8520.14.camel@s1.crocom.com.pl>
-List-Unsubscribe: <http://oss.oracle.com/mailman/listinfo/btrfs-devel>,
-	<mailto:btrfs-devel-request@oss.oracle.com?subject=unsubscribe>
-List-Archive: <http://oss.oracle.com/pipermail/btrfs-devel>
-List-Post: <mailto:btrfs-devel@oss.oracle.com>
-List-Help: <mailto:btrfs-devel-request@oss.oracle.com?subject=help>
-List-Subscribe: <http://oss.oracle.com/mailman/listinfo/btrfs-devel>,
-	<mailto:btrfs-devel-request@oss.oracle.com?subject=subscribe>
-Errors-To: btrfs-devel-bounces@oss.oracle.com
+Content-Type: text/plain;
+  charset="utf-8"
+To: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, btrfs-devel@oss.oracle.com
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tuesday 18 March 2008, Tomasz Torcz wrote:
-> Hi,
->
->   I've read btrfs roadmap and skimmed through the code trying to learn
-> about self-healing in btrfs. Sadly I found none. If I understand
-> correctly, upon detecting checksum error btrfs will only report it via
-> printk() (in csum_tree_block()). Self-healing is most important feature
-> of ZFS for me.
+Hello everyone,
 
-Correct, we currently only report errors without taking corrective actions.
+I have setup new locations for the Btrfs sources, mailing lists and web pages 
+on kernel.org.  The old pages on oss.oracle.com are still live but I'll 
+change things soon to point to the new location.
 
->
-> As far as I understand, to have self healing in btrfs, first multiple
-> devices spanning and configuration like raid1 must be implemented. Also
-> multiples copies per subvolume (via btrfsctl I suppose) would be nice to
-> have. Device spanning is in Roadmap. But what with other features? When
-> they're planned?
+Btrfs resources from Oracle haven't changed, and we still have an aggressive 
+development plan to get things production ready.  The move to kernel.org will 
+hopefully increase the project's profile a bit, and make it easier for us to 
+collaborate with others interested in filesystem development.
 
-Support for multiple devices exists today in the unstable trees, and it 
-currently includes simple device concatenation and raid0.  Raid1 is in 
-progress, and should be done shortly.  The plan is to stabilize all of this 
-code over the month of April and release v0.14 with it at the end of the 
-month.
+(thanks to the kernel.org admins for all of their help!)
+
+Main Btrfs project page:
+
+http://btrfs.wiki.kernel.org/
+
+Sources:
+
+http://www.kernel.org/hg/btrfs/
+http://www.kernel.org/pub/linux/kernel/people/mason/btrfs/
+
+Mailing list
+
+linux-btrfs@vger.kernel.org
+
+People on the current btrfs mailing lists will have to subscribe to the new 
+list on vger.  You can find more details on subscribing to the vger lists 
+here:
+
+http://vger.kernel.org/majordomo-info.html
+
+And the Btrfs list here:
+
+http://vger.kernel.org/vger-lists.html#linux-btrfs
+
+The short version is to send a message to majordomo@vger.kernel.org with:
+
+subscribe linux-btrfs
+
+In the body.
 
 -chris
+

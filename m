@@ -1,56 +1,70 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Btrfs hosting moving to kernel.org
-Date: Tue, 1 Apr 2008 14:16:43 -0400
-Message-ID: <200804011416.43563.chris.mason@oracle.com>
+Subject: Multi-device updates pushed to unstable trees
+Date: Thu, 3 Apr 2008 16:50:26 -0400
+Message-ID: <200804031650.27193.chris.mason@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="utf-8"
-To: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, btrfs-devel@oss.oracle.com
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+To: linux-btrfs@vger.kernel.org, btrfs-devel@oss.oracle.com
+Return-path: <btrfs-devel-bounces@oss.oracle.com>
+List-Unsubscribe: <http://oss.oracle.com/mailman/listinfo/btrfs-devel>,
+	<mailto:btrfs-devel-request@oss.oracle.com?subject=unsubscribe>
+List-Archive: <http://oss.oracle.com/pipermail/btrfs-devel>
+List-Post: <mailto:btrfs-devel@oss.oracle.com>
+List-Help: <mailto:btrfs-devel-request@oss.oracle.com?subject=help>
+List-Subscribe: <http://oss.oracle.com/mailman/listinfo/btrfs-devel>,
+	<mailto:btrfs-devel-request@oss.oracle.com?subject=subscribe>
+Errors-To: btrfs-devel-bounces@oss.oracle.com
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello everyone,
 
-I have setup new locations for the Btrfs sources, mailing lists and web pages 
-on kernel.org.  The old pages on oss.oracle.com are still live but I'll 
-change things soon to point to the new location.
+I'm cc'ing both the old and new devel lists for now, but please move over to 
+linux-btrfs@vger.kernel.org if you haven't already.
 
-Btrfs resources from Oracle haven't changed, and we still have an aggressive 
-development plan to get things production ready.  The move to kernel.org will 
-hopefully increase the project's profile a bit, and make it easier for us to 
-collaborate with others interested in filesystem development.
+I've just pushed out my latest set of multi-device code to the unstable trees.  
+Make sure to update both progs and kernel, there are probably disk format 
+changes since the last push.
 
-(thanks to the kernel.org admins for all of their help!)
+This includes basic support for raid0, raid1 and duplicate metadata copies on 
+a single spindle.  The mirroring code does not cover every type of block yet 
+(super blocks and the chunk mapping tree are missing), and while it does read 
+from both disks in a mirror set, it does not yet use the alternate copy to 
+recover from IO or checksumming errors.
 
-Main Btrfs project page:
+In other words, the mirroring is mostly about writing things twice, so please 
+don't go pulling drives out and expect the FS to recover yet.
 
-http://btrfs.wiki.kernel.org/
+To create a filesystem with multiple devices:
 
-Sources:
+mkfs.btrfs /dev/sdb /dev/sdc ....
 
-http://www.kernel.org/hg/btrfs/
-http://www.kernel.org/pub/linux/kernel/people/mason/btrfs/
+It will default to raid0 for data and raid1 for metadata if you give 
+mkfs.btrfs multiple devices.  If you only use one device, it will default to 
+duplicating metadata on the single spindle.
 
-Mailing list
+mkfs.btrfs has two new options to control allocation policy, --data 
+and --metadata can be passed with one of raid0,raid1,single
 
-linux-btrfs@vger.kernel.org
+For example:
 
-People on the current btrfs mailing lists will have to subscribe to the new 
-list on vger.  You can find more details on subscribing to the vger lists 
-here:
+mkfs.btrfs /dev/sdb /dev/sdc /dev/sdd /dev/sde
+(metadata will be mirrored, data will be striped)
 
-http://vger.kernel.org/majordomo-info.html
+mkfs.btrfs --data raid1 /dev/sd[bcde]
+(both metadata and data blocks will be mirrored)
 
-And the Btrfs list here:
+mkfs.btrfs --metadata raid0 /dev/sd[bcde]
+(both metadata and data blocks will be striped)
 
-http://vger.kernel.org/vger-lists.html#linux-btrfs
+mkfs.btrfs --metadata single /dev/sdb
+(only one copy of data metadata will be created)
 
-The short version is to send a message to majordomo@vger.kernel.org with:
+mkfs.btrfs /dev/sdb
+(one copy of data, two copies of metadata on the same drive)
 
-subscribe linux-btrfs
-
-In the body.
+There is still a long todo list, but the code is definitely progressing.  
+Performance on the duplicate copies of the metadata is pretty good.  Writing 
+things twice isn't faster, but so far it is doing a fairly good job of 
+batching the writes out to avoid major regressions.
 
 -chris
-

@@ -1,11 +1,10 @@
 From: "Miguel Sousa Filipe" <miguel.filipe@gmail.com>
-Subject: [PATCH] 3 btrfs-progs minor patches
-Date: Sat, 5 Apr 2008 19:48:35 +0100
-Message-ID: <f058a9c30804051148n5b66a1e5kd2083307b78b87a@mail.gmail.com>
+Subject: BTRFS and old kernels.
+Date: Sat, 5 Apr 2008 20:13:47 +0100
+Message-ID: <f058a9c30804051213j4276cc88j92a8222dd4115e39@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
-	boundary="----=_Part_9484_13922529.1207421315244"
-To: linux-btrfs@vger.kernel.org, btrfs-devel@oss.oracle.com
+Content-Type: text/plain; charset="us-ascii"
+To: btrfs-devel@oss.oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <btrfs-devel-bounces@oss.oracle.com>
 List-Unsubscribe: <http://oss.oracle.com/mailman/listinfo/btrfs-devel>,
 	<mailto:btrfs-devel-request@oss.oracle.com?subject=unsubscribe>
@@ -17,115 +16,34 @@ List-Subscribe: <http://oss.oracle.com/mailman/listinfo/btrfs-devel>,
 Errors-To: btrfs-devel-bounces@oss.oracle.com
 List-ID: <linux-btrfs.vger.kernel.org>
 
-------=_Part_9484_13922529.1207421315244
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+Hello,
+I've been testing btrfs on a linux/ppc with a 2.6.20 kernel.
+For that I needed to apply a minor patch for <v0.13 (related to the
+definition of ,write_cache_pages()).
+For v0.13 it required the patch for the endianess bug in crc32 due to
+the change in the crc32c() implementation on linux-2.6.23, that I've
+posted here before.
 
-Hi there,
+I've just pulled the unstable tree, and tried to build, but it doesn't
+even compile, I've found yet one more changed function declaration :
+linux-2.6.20: include/linux/bio.h:extern void bio_endio(struct bio *,
+unsigned int, int);
+linux-2.6.24: include/linux/bio.h:extern void bio_endio(struct bio *, int);
 
-I have a few patches for some minor things:
-- in btrfsctl.c , when no commands are given, call print_usage().
-- some cast error fixes (since we're compiling with -Werror) in some printfs.
-- in Makefile, use $(CC) to link, since its probably better to link
-the files with the same compiler that produced that .o files.
+and also some missing functions: (bdi_ini()t, bdi_destroy()). (not
+found in 2.6.23 and older)
+linux-2.6.24: include/linux/backing-dev.h:int bdi_init(struct
+backing_dev_info *bdi);
+linux-2.6.24: include/linux/backing-dev.h:void bdi_destroy(struct
+backing_dev_info *bdi);
+Should I include the code from 2.6.24 for bdi_init and bdi_destroy in
+btrfs, and wrap it around ifdefs ?
+
+My question is, is there sill interestest in having btrfs compatible
+with older kernels (like, 2.6.20 or 2.6.18)?
+I'll post (or repost) patches that I need for btrfs-unstable to
+build/work on this ppc system of mine.
 
 Kind regards,
-
 -- 
 Miguel Sousa Filipe
-
-------=_Part_9484_13922529.1207421315244
-Content-Type: text/x-patch; name=btrfsctl_print_usage.patch
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_feojdh2c0
-Content-Disposition: attachment; filename=btrfsctl_print_usage.patch
-
-IyBIRyBjaGFuZ2VzZXQgcGF0Y2gKIyBVc2VyIE1pZ3VlbCBTb3VzYSBGaWxpcGUgPG1pZ3VlbC5m
-aWxpcGVAZ21haWwuY29tPgojIERhdGUgMTIwNzQyMDg1MCAtMzYwMAojIE5vZGUgSUQgNDQ4M2Nl
-NWU3YzM5MGRiNGE3YWNjZDA0ZjBmZDdlMDkxZGQ3YWU5YQojIFBhcmVudCAgMTY2NDY1NWQyYzdj
-ZDQxYjFlYzA2ZmI1ZDU3YWFjY2FmMzY2YjZhMQpidHJmc2N0bDogcHJpbnQgdXNhZ2Ugd2hlbiBu
-byBjb21tYW5kcyBhcmUgZ2l2ZW4KCmRpZmYgLXIgMTY2NDY1NWQyYzdjIC1yIDQ0ODNjZTVlN2Mz
-OSBidHJmc2N0bC5jCi0tLSBhL2J0cmZzY3RsLmMJU2F0IEFwciAwNSAxOTozNDo0MyAyMDA4ICsw
-MTAwCisrKyBiL2J0cmZzY3RsLmMJU2F0IEFwciAwNSAxOTo0MDo1MCAyMDA4ICswMTAwCkBAIC0x
-MTksNyArMTE5LDcgQEAgaW50IG1haW4oaW50IGFjLCBjaGFyICoqYXYpCiAJCX0KIAl9CiAJaWYg
-KGNvbW1hbmQgPT0gMCkgewotCQlmcHJpbnRmKHN0ZGVyciwgIm5vIHZhbGlkIGNvbW1hbmRzIGdp
-dmVuXG4iKTsKKwkJcHJpbnRfdXNhZ2UoKTsKIAkJZXhpdCgxKTsKIAl9CiAJZm5hbWUgPSBhdlth
-YyAtIDFdOwo=
-------=_Part_9484_13922529.1207421315244
-Content-Type: text/x-patch; name=cast_errors.patch
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_feojds471
-Content-Disposition: attachment; filename=cast_errors.patch
-
-IyBIRyBjaGFuZ2VzZXQgcGF0Y2gKIyBVc2VyIE1pZ3VlbCBTb3VzYSBGaWxpcGUgPG1pZ3VlbC5m
-aWxpcGVAZ21haWwuY29tPgojIERhdGUgMTIwNzQyMDM2NCAtMzYwMAojIE5vZGUgSUQgZGJlZTNi
-MDcwZjg2OTdlNmY3NzA1ZWU1NzE0ZjgzNzQ1NjY4MGQ4ZAojIFBhcmVudCAgZmYzM2EyZjExOGJm
-NDdiMmU2YTEwM2RmOWMyYmYxMWYyMTA5NTVmYQpGaXggcHJpbnRmIGZvcm1hdCBjYXN0aW5nIGVy
-cm9ycwoKZGlmZiAtciBmZjMzYTJmMTE4YmYgLXIgZGJlZTNiMDcwZjg2IGJ0cmZzY2suYwotLS0g
-YS9idHJmc2NrLmMJRnJpIEFwciAwNCAxNTo0MjoxNyAyMDA4IC0wNDAwCisrKyBiL2J0cmZzY2su
-YwlTYXQgQXByIDA1IDE5OjMyOjQ0IDIwMDggKzAxMDAKQEAgLTEzNCw3ICsxMzQsNyBAQCBzdGF0
-aWMgaW50IGNoZWNrX2xlYWYoc3RydWN0IGJ0cmZzX3Jvb3QgCiAJCSAgICBCVFJGU19MRUFGX0RB
-VEFfU0laRShyb290KSkgewogCQkJZnByaW50ZihzdGRlcnIsICJiYWQgaXRlbSBlbmQgJXUgd2Fu
-dGVkICVsdVxuIiwKIAkJCQlidHJmc19pdGVtX2VuZF9ucihidWYsIGkpLAotCQkJCUJUUkZTX0xF
-QUZfREFUQV9TSVpFKHJvb3QpKTsKKwkJCQkodW5zaWduZWQgbG9uZykgQlRSRlNfTEVBRl9EQVRB
-X1NJWkUocm9vdCkpOwogCQkJcmV0dXJuIDE7CiAJCX0KIAl9CmRpZmYgLXIgZmYzM2EyZjExOGJm
-IC1yIGRiZWUzYjA3MGY4NiBidHJmc2N0bC5jCi0tLSBhL2J0cmZzY3RsLmMJRnJpIEFwciAwNCAx
-NTo0MjoxNyAyMDA4IC0wNDAwCisrKyBiL2J0cmZzY3RsLmMJU2F0IEFwciAwNSAxOTozMjo0NCAy
-MDA4ICswMTAwCkBAIC0xMzcsNyArMTM3LDcgQEAgaW50IG1haW4oaW50IGFjLCBjaGFyICoqYXYp
-CiAJCWZkID0gZGlyZmQoZGlyc3RyZWFtKTsKIAl9IGVsc2UgaWYgKGNvbW1hbmQgPT0gQlRSRlNf
-SU9DX1NDQU5fREVWKSB7CiAJCWZkID0gb3BlbigiL2Rldi9idHJmcy1jb250cm9sIiwgT19SRFdS
-KTsKLQkJcHJpbnRmKCJzY2FubmluZyAlcyBjb21tYW5kICVsdVxuIiwgZm5hbWUsIEJUUkZTX0lP
-Q19TQ0FOX0RFVik7CisJCXByaW50Zigic2Nhbm5pbmcgJXMgY29tbWFuZCAlbHVcbiIsIGZuYW1l
-LCAodW5zaWduZWQgbG9uZykgQlRSRlNfSU9DX1NDQU5fREVWKTsKIAkJbmFtZSA9IGZuYW1lOwog
-CX0gZWxzZSB7CiAJCWZkID0gb3BlbihmbmFtZSwgT19SRFdSKTsK
-------=_Part_9484_13922529.1207421315244
-Content-Type: text/x-patch; name=use_CC_to_link.patch
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_feoje1a52
-Content-Disposition: attachment; filename=use_CC_to_link.patch
-
-IyBIRyBjaGFuZ2VzZXQgcGF0Y2gKIyBVc2VyIE1pZ3VlbCBTb3VzYSBGaWxpcGUgPG1pZ3VlbC5m
-aWxpcGVAZ21haWwuY29tPgojIERhdGUgMTIwNzQyMDQ4MyAtMzYwMAojIE5vZGUgSUQgMTY2NDY1
-NWQyYzdjZDQxYjFlYzA2ZmI1ZDU3YWFjY2FmMzY2YjZhMQojIFBhcmVudCAgZGJlZTNiMDcwZjg2
-OTdlNmY3NzA1ZWU1NzE0ZjgzNzQ1NjY4MGQ4ZApVc2UgJChDQykgdG8gbGluayBiaW5hcmllcy4K
-CmRpZmYgLXIgZGJlZTNiMDcwZjg2IC1yIDE2NjQ2NTVkMmM3YyBNYWtlZmlsZQotLS0gYS9NYWtl
-ZmlsZQlTYXQgQXByIDA1IDE5OjMyOjQ0IDIwMDggKzAxMDAKKysrIGIvTWFrZWZpbGUJU2F0IEFw
-ciAwNSAxOTozNDo0MyAyMDA4ICswMTAwCkBAIC0zMiwyNSArMzIsMjUgQEAgYWxsOiAkKHByb2dz
-KQogYWxsOiAkKHByb2dzKQogCiBidHJmc2N0bDogJChvYmplY3RzKSBidHJmc2N0bC5vCi0JZ2Nj
-ICQoQ0ZMQUdTKSAtbyBidHJmc2N0bCBidHJmc2N0bC5vICQob2JqZWN0cykgJChMREZMQUdTKSAk
-KExJQlMpCisJJChDQykgJChDRkxBR1MpIC1vIGJ0cmZzY3RsIGJ0cmZzY3RsLm8gJChvYmplY3Rz
-KSAkKExERkxBR1MpICQoTElCUykKIAogYnRyZnNjazogJChvYmplY3RzKSBidHJmc2NrLm8gYml0
-LXJhZGl4Lm8KLQlnY2MgJChDRkxBR1MpIC1vIGJ0cmZzY2sgYnRyZnNjay5vICQob2JqZWN0cykg
-Yml0LXJhZGl4Lm8gJChMREZMQUdTKSAkKExJQlMpCisJJChDQykgJChDRkxBR1MpIC1vIGJ0cmZz
-Y2sgYnRyZnNjay5vICQob2JqZWN0cykgYml0LXJhZGl4Lm8gJChMREZMQUdTKSAkKExJQlMpCiAK
-IG1rZnMuYnRyZnM6ICQob2JqZWN0cykgbWtmcy5vCi0JZ2NjICQoQ0ZMQUdTKSAtbyBta2ZzLmJ0
-cmZzICQob2JqZWN0cykgbWtmcy5vICQoTERGTEFHUykgJChMSUJTKQorCSQoQ0MpICQoQ0ZMQUdT
-KSAtbyBta2ZzLmJ0cmZzICQob2JqZWN0cykgbWtmcy5vICQoTERGTEFHUykgJChMSUJTKQogCiBk
-ZWJ1Zy10cmVlOiAkKG9iamVjdHMpIGRlYnVnLXRyZWUubwotCWdjYyAkKENGTEFHUykgLW8gZGVi
-dWctdHJlZSAkKG9iamVjdHMpIGRlYnVnLXRyZWUubyAkKExERkxBR1MpICQoTElCUykKKwkkKEND
-KSAkKENGTEFHUykgLW8gZGVidWctdHJlZSAkKG9iamVjdHMpIGRlYnVnLXRyZWUubyAkKExERkxB
-R1MpICQoTElCUykKIAogZGlyLXRlc3Q6ICQob2JqZWN0cykgZGlyLXRlc3QubwotCWdjYyAkKENG
-TEFHUykgLW8gZGlyLXRlc3QgJChvYmplY3RzKSBkaXItdGVzdC5vICQoTERGTEFHUykgJChMSUJT
-KQorCSQoQ0MpICQoQ0ZMQUdTKSAtbyBkaXItdGVzdCAkKG9iamVjdHMpIGRpci10ZXN0Lm8gJChM
-REZMQUdTKSAkKExJQlMpCiAKIHF1aWNrLXRlc3Q6ICQob2JqZWN0cykgcXVpY2stdGVzdC5vCi0J
-Z2NjICQoQ0ZMQUdTKSAtbyBxdWljay10ZXN0ICQob2JqZWN0cykgcXVpY2stdGVzdC5vICQoTERG
-TEFHUykgJChMSUJTKQorCSQoQ0MpICQoQ0ZMQUdTKSAtbyBxdWljay10ZXN0ICQob2JqZWN0cykg
-cXVpY2stdGVzdC5vICQoTERGTEFHUykgJChMSUJTKQogCiBjb252ZXJ0OiAkKG9iamVjdHMpIGNv
-bnZlcnQubwotCWdjYyAkKENGTEFHUykgLW8gYnRyZnMtY29udmVydCAkKG9iamVjdHMpIGNvbnZl
-cnQubyAtbGV4dDJmcyAkKExERkxBR1MpICQoTElCUykKKwkkKENDKSAkKENGTEFHUykgLW8gYnRy
-ZnMtY29udmVydCAkKG9iamVjdHMpIGNvbnZlcnQubyAtbGV4dDJmcyAkKExERkxBR1MpICQoTElC
-UykKIAogY2xlYW4gOgogCXJtIC1mICQocHJvZ3MpIGNzY29wZS5vdXQgKi5vIC4qLmQgYnRyZnMt
-Y29udmVydAo=
-------=_Part_9484_13922529.1207421315244
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Btrfs-devel mailing list
-Btrfs-devel@oss.oracle.com
-http://oss.oracle.com/mailman/listinfo/btrfs-devel
-
-------=_Part_9484_13922529.1207421315244--

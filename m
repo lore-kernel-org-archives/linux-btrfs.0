@@ -1,9 +1,10 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Multi-device updates pushed to unstable trees
-Date: Thu, 3 Apr 2008 16:50:26 -0400
-Message-ID: <200804031650.27193.chris.mason@oracle.com>
+From: "Miguel Sousa Filipe" <miguel.filipe@gmail.com>
+Subject: [PATCH] 3 btrfs-progs minor patches
+Date: Sat, 5 Apr 2008 19:48:35 +0100
+Message-ID: <f058a9c30804051148n5b66a1e5kd2083307b78b87a@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: multipart/mixed;
+	boundary="----=_Part_9484_13922529.1207421315244"
 To: linux-btrfs@vger.kernel.org, btrfs-devel@oss.oracle.com
 Return-path: <btrfs-devel-bounces@oss.oracle.com>
 List-Unsubscribe: <http://oss.oracle.com/mailman/listinfo/btrfs-devel>,
@@ -16,55 +17,115 @@ List-Subscribe: <http://oss.oracle.com/mailman/listinfo/btrfs-devel>,
 Errors-To: btrfs-devel-bounces@oss.oracle.com
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello everyone,
+------=_Part_9484_13922529.1207421315244
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-I'm cc'ing both the old and new devel lists for now, but please move over to 
-linux-btrfs@vger.kernel.org if you haven't already.
+Hi there,
 
-I've just pushed out my latest set of multi-device code to the unstable trees.  
-Make sure to update both progs and kernel, there are probably disk format 
-changes since the last push.
+I have a few patches for some minor things:
+- in btrfsctl.c , when no commands are given, call print_usage().
+- some cast error fixes (since we're compiling with -Werror) in some printfs.
+- in Makefile, use $(CC) to link, since its probably better to link
+the files with the same compiler that produced that .o files.
 
-This includes basic support for raid0, raid1 and duplicate metadata copies on 
-a single spindle.  The mirroring code does not cover every type of block yet 
-(super blocks and the chunk mapping tree are missing), and while it does read 
-from both disks in a mirror set, it does not yet use the alternate copy to 
-recover from IO or checksumming errors.
+Kind regards,
 
-In other words, the mirroring is mostly about writing things twice, so please 
-don't go pulling drives out and expect the FS to recover yet.
+-- 
+Miguel Sousa Filipe
 
-To create a filesystem with multiple devices:
+------=_Part_9484_13922529.1207421315244
+Content-Type: text/x-patch; name=btrfsctl_print_usage.patch
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_feojdh2c0
+Content-Disposition: attachment; filename=btrfsctl_print_usage.patch
 
-mkfs.btrfs /dev/sdb /dev/sdc ....
+IyBIRyBjaGFuZ2VzZXQgcGF0Y2gKIyBVc2VyIE1pZ3VlbCBTb3VzYSBGaWxpcGUgPG1pZ3VlbC5m
+aWxpcGVAZ21haWwuY29tPgojIERhdGUgMTIwNzQyMDg1MCAtMzYwMAojIE5vZGUgSUQgNDQ4M2Nl
+NWU3YzM5MGRiNGE3YWNjZDA0ZjBmZDdlMDkxZGQ3YWU5YQojIFBhcmVudCAgMTY2NDY1NWQyYzdj
+ZDQxYjFlYzA2ZmI1ZDU3YWFjY2FmMzY2YjZhMQpidHJmc2N0bDogcHJpbnQgdXNhZ2Ugd2hlbiBu
+byBjb21tYW5kcyBhcmUgZ2l2ZW4KCmRpZmYgLXIgMTY2NDY1NWQyYzdjIC1yIDQ0ODNjZTVlN2Mz
+OSBidHJmc2N0bC5jCi0tLSBhL2J0cmZzY3RsLmMJU2F0IEFwciAwNSAxOTozNDo0MyAyMDA4ICsw
+MTAwCisrKyBiL2J0cmZzY3RsLmMJU2F0IEFwciAwNSAxOTo0MDo1MCAyMDA4ICswMTAwCkBAIC0x
+MTksNyArMTE5LDcgQEAgaW50IG1haW4oaW50IGFjLCBjaGFyICoqYXYpCiAJCX0KIAl9CiAJaWYg
+KGNvbW1hbmQgPT0gMCkgewotCQlmcHJpbnRmKHN0ZGVyciwgIm5vIHZhbGlkIGNvbW1hbmRzIGdp
+dmVuXG4iKTsKKwkJcHJpbnRfdXNhZ2UoKTsKIAkJZXhpdCgxKTsKIAl9CiAJZm5hbWUgPSBhdlth
+YyAtIDFdOwo=
+------=_Part_9484_13922529.1207421315244
+Content-Type: text/x-patch; name=cast_errors.patch
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_feojds471
+Content-Disposition: attachment; filename=cast_errors.patch
 
-It will default to raid0 for data and raid1 for metadata if you give 
-mkfs.btrfs multiple devices.  If you only use one device, it will default to 
-duplicating metadata on the single spindle.
+IyBIRyBjaGFuZ2VzZXQgcGF0Y2gKIyBVc2VyIE1pZ3VlbCBTb3VzYSBGaWxpcGUgPG1pZ3VlbC5m
+aWxpcGVAZ21haWwuY29tPgojIERhdGUgMTIwNzQyMDM2NCAtMzYwMAojIE5vZGUgSUQgZGJlZTNi
+MDcwZjg2OTdlNmY3NzA1ZWU1NzE0ZjgzNzQ1NjY4MGQ4ZAojIFBhcmVudCAgZmYzM2EyZjExOGJm
+NDdiMmU2YTEwM2RmOWMyYmYxMWYyMTA5NTVmYQpGaXggcHJpbnRmIGZvcm1hdCBjYXN0aW5nIGVy
+cm9ycwoKZGlmZiAtciBmZjMzYTJmMTE4YmYgLXIgZGJlZTNiMDcwZjg2IGJ0cmZzY2suYwotLS0g
+YS9idHJmc2NrLmMJRnJpIEFwciAwNCAxNTo0MjoxNyAyMDA4IC0wNDAwCisrKyBiL2J0cmZzY2su
+YwlTYXQgQXByIDA1IDE5OjMyOjQ0IDIwMDggKzAxMDAKQEAgLTEzNCw3ICsxMzQsNyBAQCBzdGF0
+aWMgaW50IGNoZWNrX2xlYWYoc3RydWN0IGJ0cmZzX3Jvb3QgCiAJCSAgICBCVFJGU19MRUFGX0RB
+VEFfU0laRShyb290KSkgewogCQkJZnByaW50ZihzdGRlcnIsICJiYWQgaXRlbSBlbmQgJXUgd2Fu
+dGVkICVsdVxuIiwKIAkJCQlidHJmc19pdGVtX2VuZF9ucihidWYsIGkpLAotCQkJCUJUUkZTX0xF
+QUZfREFUQV9TSVpFKHJvb3QpKTsKKwkJCQkodW5zaWduZWQgbG9uZykgQlRSRlNfTEVBRl9EQVRB
+X1NJWkUocm9vdCkpOwogCQkJcmV0dXJuIDE7CiAJCX0KIAl9CmRpZmYgLXIgZmYzM2EyZjExOGJm
+IC1yIGRiZWUzYjA3MGY4NiBidHJmc2N0bC5jCi0tLSBhL2J0cmZzY3RsLmMJRnJpIEFwciAwNCAx
+NTo0MjoxNyAyMDA4IC0wNDAwCisrKyBiL2J0cmZzY3RsLmMJU2F0IEFwciAwNSAxOTozMjo0NCAy
+MDA4ICswMTAwCkBAIC0xMzcsNyArMTM3LDcgQEAgaW50IG1haW4oaW50IGFjLCBjaGFyICoqYXYp
+CiAJCWZkID0gZGlyZmQoZGlyc3RyZWFtKTsKIAl9IGVsc2UgaWYgKGNvbW1hbmQgPT0gQlRSRlNf
+SU9DX1NDQU5fREVWKSB7CiAJCWZkID0gb3BlbigiL2Rldi9idHJmcy1jb250cm9sIiwgT19SRFdS
+KTsKLQkJcHJpbnRmKCJzY2FubmluZyAlcyBjb21tYW5kICVsdVxuIiwgZm5hbWUsIEJUUkZTX0lP
+Q19TQ0FOX0RFVik7CisJCXByaW50Zigic2Nhbm5pbmcgJXMgY29tbWFuZCAlbHVcbiIsIGZuYW1l
+LCAodW5zaWduZWQgbG9uZykgQlRSRlNfSU9DX1NDQU5fREVWKTsKIAkJbmFtZSA9IGZuYW1lOwog
+CX0gZWxzZSB7CiAJCWZkID0gb3BlbihmbmFtZSwgT19SRFdSKTsK
+------=_Part_9484_13922529.1207421315244
+Content-Type: text/x-patch; name=use_CC_to_link.patch
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_feoje1a52
+Content-Disposition: attachment; filename=use_CC_to_link.patch
 
-mkfs.btrfs has two new options to control allocation policy, --data 
-and --metadata can be passed with one of raid0,raid1,single
+IyBIRyBjaGFuZ2VzZXQgcGF0Y2gKIyBVc2VyIE1pZ3VlbCBTb3VzYSBGaWxpcGUgPG1pZ3VlbC5m
+aWxpcGVAZ21haWwuY29tPgojIERhdGUgMTIwNzQyMDQ4MyAtMzYwMAojIE5vZGUgSUQgMTY2NDY1
+NWQyYzdjZDQxYjFlYzA2ZmI1ZDU3YWFjY2FmMzY2YjZhMQojIFBhcmVudCAgZGJlZTNiMDcwZjg2
+OTdlNmY3NzA1ZWU1NzE0ZjgzNzQ1NjY4MGQ4ZApVc2UgJChDQykgdG8gbGluayBiaW5hcmllcy4K
+CmRpZmYgLXIgZGJlZTNiMDcwZjg2IC1yIDE2NjQ2NTVkMmM3YyBNYWtlZmlsZQotLS0gYS9NYWtl
+ZmlsZQlTYXQgQXByIDA1IDE5OjMyOjQ0IDIwMDggKzAxMDAKKysrIGIvTWFrZWZpbGUJU2F0IEFw
+ciAwNSAxOTozNDo0MyAyMDA4ICswMTAwCkBAIC0zMiwyNSArMzIsMjUgQEAgYWxsOiAkKHByb2dz
+KQogYWxsOiAkKHByb2dzKQogCiBidHJmc2N0bDogJChvYmplY3RzKSBidHJmc2N0bC5vCi0JZ2Nj
+ICQoQ0ZMQUdTKSAtbyBidHJmc2N0bCBidHJmc2N0bC5vICQob2JqZWN0cykgJChMREZMQUdTKSAk
+KExJQlMpCisJJChDQykgJChDRkxBR1MpIC1vIGJ0cmZzY3RsIGJ0cmZzY3RsLm8gJChvYmplY3Rz
+KSAkKExERkxBR1MpICQoTElCUykKIAogYnRyZnNjazogJChvYmplY3RzKSBidHJmc2NrLm8gYml0
+LXJhZGl4Lm8KLQlnY2MgJChDRkxBR1MpIC1vIGJ0cmZzY2sgYnRyZnNjay5vICQob2JqZWN0cykg
+Yml0LXJhZGl4Lm8gJChMREZMQUdTKSAkKExJQlMpCisJJChDQykgJChDRkxBR1MpIC1vIGJ0cmZz
+Y2sgYnRyZnNjay5vICQob2JqZWN0cykgYml0LXJhZGl4Lm8gJChMREZMQUdTKSAkKExJQlMpCiAK
+IG1rZnMuYnRyZnM6ICQob2JqZWN0cykgbWtmcy5vCi0JZ2NjICQoQ0ZMQUdTKSAtbyBta2ZzLmJ0
+cmZzICQob2JqZWN0cykgbWtmcy5vICQoTERGTEFHUykgJChMSUJTKQorCSQoQ0MpICQoQ0ZMQUdT
+KSAtbyBta2ZzLmJ0cmZzICQob2JqZWN0cykgbWtmcy5vICQoTERGTEFHUykgJChMSUJTKQogCiBk
+ZWJ1Zy10cmVlOiAkKG9iamVjdHMpIGRlYnVnLXRyZWUubwotCWdjYyAkKENGTEFHUykgLW8gZGVi
+dWctdHJlZSAkKG9iamVjdHMpIGRlYnVnLXRyZWUubyAkKExERkxBR1MpICQoTElCUykKKwkkKEND
+KSAkKENGTEFHUykgLW8gZGVidWctdHJlZSAkKG9iamVjdHMpIGRlYnVnLXRyZWUubyAkKExERkxB
+R1MpICQoTElCUykKIAogZGlyLXRlc3Q6ICQob2JqZWN0cykgZGlyLXRlc3QubwotCWdjYyAkKENG
+TEFHUykgLW8gZGlyLXRlc3QgJChvYmplY3RzKSBkaXItdGVzdC5vICQoTERGTEFHUykgJChMSUJT
+KQorCSQoQ0MpICQoQ0ZMQUdTKSAtbyBkaXItdGVzdCAkKG9iamVjdHMpIGRpci10ZXN0Lm8gJChM
+REZMQUdTKSAkKExJQlMpCiAKIHF1aWNrLXRlc3Q6ICQob2JqZWN0cykgcXVpY2stdGVzdC5vCi0J
+Z2NjICQoQ0ZMQUdTKSAtbyBxdWljay10ZXN0ICQob2JqZWN0cykgcXVpY2stdGVzdC5vICQoTERG
+TEFHUykgJChMSUJTKQorCSQoQ0MpICQoQ0ZMQUdTKSAtbyBxdWljay10ZXN0ICQob2JqZWN0cykg
+cXVpY2stdGVzdC5vICQoTERGTEFHUykgJChMSUJTKQogCiBjb252ZXJ0OiAkKG9iamVjdHMpIGNv
+bnZlcnQubwotCWdjYyAkKENGTEFHUykgLW8gYnRyZnMtY29udmVydCAkKG9iamVjdHMpIGNvbnZl
+cnQubyAtbGV4dDJmcyAkKExERkxBR1MpICQoTElCUykKKwkkKENDKSAkKENGTEFHUykgLW8gYnRy
+ZnMtY29udmVydCAkKG9iamVjdHMpIGNvbnZlcnQubyAtbGV4dDJmcyAkKExERkxBR1MpICQoTElC
+UykKIAogY2xlYW4gOgogCXJtIC1mICQocHJvZ3MpIGNzY29wZS5vdXQgKi5vIC4qLmQgYnRyZnMt
+Y29udmVydAo=
+------=_Part_9484_13922529.1207421315244
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-For example:
+_______________________________________________
+Btrfs-devel mailing list
+Btrfs-devel@oss.oracle.com
+http://oss.oracle.com/mailman/listinfo/btrfs-devel
 
-mkfs.btrfs /dev/sdb /dev/sdc /dev/sdd /dev/sde
-(metadata will be mirrored, data will be striped)
-
-mkfs.btrfs --data raid1 /dev/sd[bcde]
-(both metadata and data blocks will be mirrored)
-
-mkfs.btrfs --metadata raid0 /dev/sd[bcde]
-(both metadata and data blocks will be striped)
-
-mkfs.btrfs --metadata single /dev/sdb
-(only one copy of data metadata will be created)
-
-mkfs.btrfs /dev/sdb
-(one copy of data, two copies of metadata on the same drive)
-
-There is still a long todo list, but the code is definitely progressing.  
-Performance on the duplicate copies of the metadata is pretty good.  Writing 
-things twice isn't faster, but so far it is doing a fairly good job of 
-batching the writes out to avoid major regressions.
-
--chris
+------=_Part_9484_13922529.1207421315244--

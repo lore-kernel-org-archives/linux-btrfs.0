@@ -1,27 +1,28 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [Btrfs-devel][PATCH] Updates for ext3 converter.
-Date: Tue, 22 Apr 2008 14:30:16 -0400
-Message-ID: <200804221430.17152.chris.mason@oracle.com>
-References: <480D87EA.8080800@21cn.com>
+From: Zach Brown <zach.brown@oracle.com>
+Subject: Re: [Btrfs-devel] transaction ioctls
+Date: Tue, 22 Apr 2008 13:29:25 -0700
+Message-ID: <480E4AA5.1070700@oracle.com>
+References: <Pine.LNX.4.64.0804221210130.23551@cobra.newdream.net>
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="utf-8"
-Cc: linux-btrfs@vger.kernel.org, btrfs-devel@oss.oracle.com
-To: Yan Zheng <yanzheng@21cn.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: btrfs-devel@oss.oracle.com, linux-btrfs@vger.kernel.org
+To: Sage Weil <sage@newdream.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <480D87EA.8080800@21cn.com>
+In-Reply-To: <Pine.LNX.4.64.0804221210130.23551@cobra.newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tuesday 22 April 2008, Yan Zheng wrote:
-> Hello,
->
-> This patch updates the ext3 converter. The main changes in this patch
-> are adding chunk handing and data relocation ability. In the last step
-> of conversion, the converter relocates data in system chunk and move
-> chunk tree into system chunk. In the rollback process, the converter
-> remove chunk tree from system chunk and copy data back.
 
-Great, I've pushed this out to the unstable trees, along with a btrfs-show 
-command to give a summary of all the btrfs filesystems on the box.
+> A misbehaving application could also deliberately hold a transaction open, 
+> effectively locking up the FS, so it may make sense to restrict something 
+> like this to root or something.
 
--chris
+I suspect it doesn't have to be deliberate.
+
+Have you tried this under memory pressure?  I wonder if the application
+can get stuck waiting for memory which will only be freed once the
+transaction closes.
+
+I'm reasonably sure that we've discussed this persistent theoretical
+problem with these kinds of interfaces ;).
+
+- z

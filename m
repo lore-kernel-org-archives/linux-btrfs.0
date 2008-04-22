@@ -1,42 +1,31 @@
 From: Sage Weil <sage@newdream.net>
 Subject: Re: [Btrfs-devel] transaction ioctls
-Date: Tue, 22 Apr 2008 13:48:53 -0700 (PDT)
-Message-ID: <Pine.LNX.4.64.0804221338250.23551@cobra.newdream.net>
+Date: Tue, 22 Apr 2008 13:52:53 -0700 (PDT)
+Message-ID: <Pine.LNX.4.64.0804221349200.23551@cobra.newdream.net>
 References: <Pine.LNX.4.64.0804221210130.23551@cobra.newdream.net>
- <200804221632.34654.chris.mason@oracle.com>
+ <480E4AA5.1070700@oracle.com> <200804221641.34817.chris.mason@oracle.com>
 Mime-Version: 1.0
 Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: btrfs-devel@oss.oracle.com, linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Cc: btrfs-devel@oss.oracle.com, Zach Brown <zach.brown@ORACLE.COM>,
+	linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@ORACLE.COM>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200804221632.34654.chris.mason@oracle.com>
+In-Reply-To: <200804221641.34817.chris.mason@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 On Tue, 22 Apr 2008, Chris Mason wrote:
-> I'm definitely willing to include it for you to experiment with.  Holding a 
-> transaction from userland can indeed lead to deadlock, but in this case your 
-> userland basically owns the server anyway.  I'm worried about some nasty 
-> corner cases still, but btrfs is blissfully ignoring those right now anyway.
-> 
-> One problem will be operations that are basically boundless (truncating a 
-> file, large writes).  Eventually the ENOSPC support will hook into the 
-> transaction system to make sure a given operation reserves enough free space.
-> 
-> With your ioctls, the "do a bunch of stuff" will need to honor the same 
-> accounting rules as the kernel code (which don't exist yet).
+> Ok, really though, I seem to remember that ceph needed to do file + xattr 
+> operations in one atomic shot, were there others?
 
-So, if the transaction start ioctl made a space reservation, and if _all_ 
-fs ops were wrapped by such reservations, that should avoid ENOSPC, yeah?
+The transactions generally look like
 
-That's doesn't really help with the memory pressure issue, though.  :(
+ write(a)
+ setxattr(a)
+ write(b)
+ setxattr(b)
 
-> I thought your original plan was to do all of this from userland (without a 
-> kernel filesystem at all)?  The btrfs progs share most of the same code with 
-> the kernel, so with a little love to the transaction and IO subsystems, you'd 
-> be able to use it as a library style DB.
-
-Yeah...  The issue is just that "a little love" is significantly more love 
-than this handful of ioctls, and I'm a little wary of getting into it.  
-That does seem like a better long term solution, though.
+It _could_ be broken down into write intent, do X, log X, such that the 
+atomicity isn't strictly necessary, but itd be so much nicer to just wrap 
+things up into tidy transactions.
 
 sage

@@ -1,298 +1,72 @@
-From: Sage Weil <sage@newdream.net>
-Subject: Re: [Btrfs-devel] cloning file data
-Date: Fri, 25 Apr 2008 21:38:40 -0700 (PDT)
-Message-ID: <Pine.LNX.4.64.0804251531510.20107@cobra.newdream.net>
-References: <Pine.LNX.4.64.0804241352130.23551@cobra.newdream.net>
- <200804250941.35343.chris.mason@oracle.com> <Pine.LNX.4.64.0804251119260.23551@cobra.newdream.net>
+From: "Bron Gondwana" <brong@fastmail.fm>
+Subject: Re: [Btrfs-devel] transaction ioctls
+Date: Sun, 27 Apr 2008 20:55:08 +1000
+Message-ID: <1209293708.20552.1250088137@webmail.messagingengine.com>
+References: <Pine.LNX.4.64.0804221210130.23551@cobra.newdream.net>
+   <200804230923.03752.chris.mason@oracle.com>
+   <20080423235208.GA6120@brong.net>
+   <200804240906.54788.chris.mason@oracle.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: btrfs-devel@oss.oracle.com, linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset="ISO-8859-1"
+Cc: "Evgeniy Polyakov" <johnpol@2ka.mipt.ru>,
+	btrfs-devel@oss.oracle.com, "Zach Brown" <zach.brown@oracle.com>,
+	linux-btrfs@vger.kernel.org
+To: "Chris Mason" <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <Pine.LNX.4.64.0804251119260.23551@cobra.newdream.net>
+In-Reply-To: <200804240906.54788.chris.mason@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi-
 
-Couple small fixes.  Cloning a linux kernel tree (cp -ac) takes 5-6 
-seconds (cp -al is 3-4 seconds, cp -a is 15-20 seconds).
+On Thu, 24 Apr 2008 09:06:54 -0400, "Chris Mason" <chris.mason@oracle.com> said:
+> On Wednesday 23 April 2008, Bron Gondwana wrote:
+> > On Wed, Apr 23, 2008 at 09:23:03AM -0400, Chris Mason wrote:
+> > > proc A: mkdir dir1
+> > > proc A: create dir1/file1
+> > > proc B: add data to dir1/file1
+> > > proc B: fsync dir1/file1
+> > > proc A: rollback
+> > >
+> > > Filesystems can be databases, but not with the current APIs.  Userland
+> > > simply isn't built around these semantics today.
+> >
+> > proc A: mkdir dir1
+> > proc A: create dir1/file1
+> > proc B: add data to dir1/file1
+> > proc B: fsync dir1/file1
+> > proc A: unlink dir1/file1
+> > proc A: rmdir dir1
+> >
+> > I don't see the difference.
+> 
+> The main difference is that in the unlink case, the unlink goes through a 
+> series of code in the VFS to make sure that open file handles stay viable
+> and that all of the other posix rules are followed.  In the rollback case,
+> the filesystem has to do all of that on its own.
+> 
+> Here's another:
+> 
+> proc A: mkdir dir1
+> proc B: open dir1/file1 O_CREATE
+> proc A: rollback
+> proc B: close
+>
+> [... I've trimmed the following a bit, it's only partially quoted...]
+> 
+> Doing the same thing with rmdir would fail because the directory wasn't
+> empty.  In order to provide the rollback, the FS would have to wander
+> through all of  the dentries and do something sane with them....
+>
+> The main point is this kind of thing is littered with corner cases. 
+> You'd  have to find each file or directory affected by the rollback
+> and make sure appropriate actions are taken for each one, and get
+> it done in a VFS friendly deadlock free way.
 
-sage
+Yeah, that's a good point.  I suspect my first pass idea for this would
+look remarkably like a soft-mounted NFS drive that had been disconnected.
+Ooops, your little bit of filesystem went away - EIO, byebye.
 
+Bron.
+-- 
+  Bron Gondwana
+  brong@fastmail.fm
 
-
-diff -r 1791a620d509 ctree.h
---- a/ctree.h	Thu Apr 24 13:43:27 2008 -0700
-+++ b/ctree.h	Fri Apr 25 21:14:25 2008 -0700
-@@ -1135,9 +1135,9 @@ int btrfs_lookup_inode(struct btrfs_tran
- /* file-item.c */
- int btrfs_insert_file_extent(struct btrfs_trans_handle *trans,
- 			       struct btrfs_root *root,
--			       u64 objectid, u64 pos, u64 offset,
-+			       u64 objectid, u64 pos, u64 disk_offset,
- 			       u64 disk_num_bytes,
--			       u64 num_bytes);
-+			     u64 num_bytes, u64 offset);
- int btrfs_lookup_file_extent(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *root,
- 			     struct btrfs_path *path, u64 objectid,
-diff -r 1791a620d509 file-item.c
---- a/file-item.c	Thu Apr 24 13:43:27 2008 -0700
-+++ b/file-item.c	Fri Apr 25 21:14:25 2008 -0700
-@@ -28,10 +28,10 @@
- 			       sizeof(struct btrfs_item) * 2) / \
- 			       BTRFS_CRC32_SIZE) - 1))
- int btrfs_insert_file_extent(struct btrfs_trans_handle *trans,
--			       struct btrfs_root *root,
--			       u64 objectid, u64 pos,
--			       u64 offset, u64 disk_num_bytes,
--			       u64 num_bytes)
-+			     struct btrfs_root *root,
-+			     u64 objectid, u64 pos,
-+			     u64 disk_offset, u64 disk_num_bytes,
-+			     u64 num_bytes, u64 offset)
- {
- 	int ret = 0;
- 	struct btrfs_file_extent_item *item;
-@@ -53,9 +53,9 @@ int btrfs_insert_file_extent(struct btrf
- 	leaf = path->nodes[0];
- 	item = btrfs_item_ptr(leaf, path->slots[0],
- 			      struct btrfs_file_extent_item);
--	btrfs_set_file_extent_disk_bytenr(leaf, item, offset);
-+	btrfs_set_file_extent_disk_bytenr(leaf, item, disk_offset);
- 	btrfs_set_file_extent_disk_num_bytes(leaf, item, disk_num_bytes);
--	btrfs_set_file_extent_offset(leaf, item, 0);
-+	btrfs_set_file_extent_offset(leaf, item, offset);
- 	btrfs_set_file_extent_num_bytes(leaf, item, num_bytes);
- 	btrfs_set_file_extent_generation(leaf, item, trans->transid);
- 	btrfs_set_file_extent_type(leaf, item, BTRFS_FILE_EXTENT_REG);
-diff -r 1791a620d509 file.c
---- a/file.c	Thu Apr 24 13:43:27 2008 -0700
-+++ b/file.c	Fri Apr 25 21:14:25 2008 -0700
-@@ -285,7 +285,7 @@ static int noinline dirty_and_release_pa
- 			err = btrfs_insert_file_extent(trans, root,
- 						       inode->i_ino,
- 						       last_pos_in_file,
--						       0, 0, hole_size);
-+						       0, 0, hole_size, 0);
- 			btrfs_drop_extent_cache(inode, last_pos_in_file,
- 					last_pos_in_file + hole_size -1);
- 			btrfs_check_file(root, inode);
-diff -r 1791a620d509 inode.c
---- a/inode.c	Thu Apr 24 13:43:27 2008 -0700
-+++ b/inode.c	Fri Apr 25 21:14:25 2008 -0700
-@@ -18,6 +18,7 @@
- 
- #include <linux/bio.h>
- #include <linux/buffer_head.h>
-+#include <linux/file.h>
- #include <linux/fs.h>
- #include <linux/pagemap.h>
- #include <linux/highmem.h>
-@@ -134,7 +135,7 @@ static int cow_file_range(struct inode *
- 		}
- 		ret = btrfs_insert_file_extent(trans, root, inode->i_ino,
- 					       start, ins.objectid, ins.offset,
--					       ins.offset);
-+					       ins.offset, 0);
- 		inode->i_blocks += ins.offset >> 9;
- 		btrfs_check_file(root, inode);
- 		num_bytes -= cur_alloc_size;
-@@ -1046,7 +1047,7 @@ static int btrfs_setattr(struct dentry *
- 			err = btrfs_insert_file_extent(trans, root,
- 						       inode->i_ino,
- 						       hole_start, 0, 0,
--						       hole_size);
-+						       hole_size, 0);
- 			btrfs_drop_extent_cache(inode, hole_start,
- 						hole_size - 1);
- 			btrfs_check_file(root, inode);
-@@ -2726,6 +2727,168 @@ long btrfs_ioctl_trans_end(struct file *
- 	return 0;
- }
- 
-+void dup_item_to_inode(struct btrfs_trans_handle *trans,
-+		       struct btrfs_root *root,
-+		       struct btrfs_path *path,
-+		       struct extent_buffer *leaf,
-+		       int slot,
-+		       struct btrfs_key *key,
-+		       u64 destino)
-+{
-+	struct btrfs_path *cpath = btrfs_alloc_path();
-+	int len = btrfs_item_size_nr(leaf, slot);
-+	int dstoff;
-+	struct btrfs_key ckey = *key;
-+	int ret;
-+
-+	ckey.objectid = destino;
-+	ret = btrfs_insert_empty_item(trans, root, cpath, &ckey, len);
-+	dstoff = btrfs_item_ptr_offset(cpath->nodes[0], cpath->slots[0]);
-+	copy_extent_buffer(cpath->nodes[0], leaf, dstoff,
-+			   btrfs_item_ptr_offset(leaf, slot),
-+			   len);
-+	btrfs_release_path(root, cpath);
-+}
-+
-+long btrfs_ioctl_clone(struct file *file, unsigned long src_fd)
-+{
-+	struct inode *inode = fdentry(file)->d_inode;
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct file *src_file;
-+	struct inode *src;
-+	struct btrfs_trans_handle *trans;
-+	int ret;
-+	u64 pos;
-+	struct btrfs_path *path;
-+	struct btrfs_key key;
-+	struct extent_buffer *leaf;
-+	u32 nritems;
-+	int nextret;
-+	int slot;
-+
-+	src_file = fget(src_fd);
-+	if (!src_file)
-+		return -EBADF;
-+	src = src_file->f_dentry->d_inode;
-+
-+	ret = -EXDEV;
-+	if (src->i_sb != inode->i_sb)
-+		goto out_fput;
-+
-+	if (inode < src) {
-+		mutex_lock(&inode->i_mutex);
-+		mutex_lock(&src->i_mutex);
-+	} else {
-+		mutex_lock(&src->i_mutex);
-+		mutex_lock(&inode->i_mutex);	
-+	}
-+	
-+	ret = -ENOTEMPTY;
-+	if (inode->i_size)
-+		goto out_unlock;
-+
-+	/* do any pending delalloc/csum calc on src, one way or
-+	   another, and lock file content */
-+	while (1) {
-+		filemap_write_and_wait(src->i_mapping);
-+		lock_extent(&BTRFS_I(src)->io_tree, 0, (u64)-1, GFP_NOFS);
-+		if (BTRFS_I(src)->delalloc_bytes == 0)
-+			break;
-+		unlock_extent(&BTRFS_I(src)->io_tree, 0, (u64)-1, GFP_NOFS);
-+	}
-+
-+	mutex_lock(&root->fs_info->fs_mutex);
-+	trans = btrfs_start_transaction(root, 0);
-+	path = btrfs_alloc_path();
-+	pos = 0;
-+	while (1) {
-+		ret = btrfs_lookup_file_extent(trans, root, path, src->i_ino,
-+					       pos, 0);
-+		if (ret < 0)
-+			goto out;
-+		if (ret > 0) {
-+			if (path->slots[0] == 0) {
-+				ret = 0;
-+				goto out;
-+			}
-+			path->slots[0]--;
-+		}
-+	next_slot:
-+		leaf = path->nodes[0];
-+		slot = path->slots[0];
-+		btrfs_item_key_to_cpu(leaf, &key, slot);
-+		nritems = btrfs_header_nritems(leaf);
-+
-+		if (btrfs_key_type(&key) > BTRFS_CSUM_ITEM_KEY ||
-+		    key.objectid != src->i_ino)
-+			goto out;
-+		if (btrfs_key_type(&key) == BTRFS_EXTENT_DATA_KEY) {
-+			struct btrfs_file_extent_item *extent;
-+			int found_type;
-+			pos = key.offset;
-+			extent = btrfs_item_ptr(leaf, slot,
-+						struct btrfs_file_extent_item);
-+			found_type = btrfs_file_extent_type(leaf, extent);
-+			if (found_type == BTRFS_FILE_EXTENT_REG) {
-+				u64 len = btrfs_file_extent_num_bytes(leaf, 
-+								      extent);
-+				u64 ds = btrfs_file_extent_disk_bytenr(leaf, 
-+								       extent);
-+				u64 dl = btrfs_file_extent_disk_num_bytes(leaf, 
-+								 extent);
-+				u64 off = btrfs_file_extent_offset(leaf, 
-+								   extent);
-+				btrfs_insert_file_extent(trans, root, 
-+							 inode->i_ino, pos,
-+							 ds, dl, len, off);
-+				btrfs_inc_extent_ref(trans, root, ds, dl,
-+						     root->root_key.objectid,
-+						     trans->transid,
-+						     inode->i_ino, pos);
-+				pos = key.offset + len;
-+			} else if (found_type == BTRFS_FILE_EXTENT_INLINE) {
-+				dup_item_to_inode(trans, root, path, leaf, slot,
-+						  &key, inode->i_ino);
-+				pos = key.offset + btrfs_item_size_nr(leaf, 
-+								      slot);
-+			}
-+		} else if (btrfs_key_type(&key) == BTRFS_CSUM_ITEM_KEY)
-+			dup_item_to_inode(trans, root, path, leaf, slot, &key, 
-+					  inode->i_ino);
-+		
-+		if (slot >= nritems - 1) {
-+			nextret = btrfs_next_leaf(root, path);
-+			if (nextret)
-+				goto out;
-+		} else {
-+			path->slots[0]++;
-+		}
-+		goto next_slot;
-+	}
-+
-+out:
-+	btrfs_free_path(path);
-+	ret = 0;
-+	mutex_unlock(&root->fs_info->fs_mutex);	
-+
-+	i_size_write(inode, src->i_size);
-+	inode->i_blocks = src->i_blocks;
-+	mark_inode_dirty(inode);
-+
-+	unlock_extent(&BTRFS_I(src)->io_tree, 0, (u64)-1, GFP_NOFS);
-+
-+	mutex_lock(&root->fs_info->fs_mutex);	
-+	btrfs_end_transaction(trans, root);
-+	mutex_unlock(&root->fs_info->fs_mutex);	
-+
-+out_unlock:
-+	mutex_unlock(&src->i_mutex);
-+	mutex_unlock(&inode->i_mutex);
-+out_fput:
-+	fput(src_file);
-+	return ret;
-+}
-+
- long btrfs_ioctl(struct file *file, unsigned int
- 		cmd, unsigned long arg)
- {
-@@ -2744,6 +2907,9 @@ long btrfs_ioctl(struct file *file, unsi
- 		return btrfs_ioctl_trans_end(file);
- 	case BTRFS_IOC_SYNC:
- 		btrfs_sync_fs(file->f_dentry->d_sb, 1);
-+		return 0;
-+	case BTRFS_IOC_CLONE:
-+		btrfs_ioctl_clone(file, arg);
- 		return 0;
- 	}
- 
-diff -r 1791a620d509 ioctl.h
---- a/ioctl.h	Thu Apr 24 13:43:27 2008 -0700
-+++ b/ioctl.h	Fri Apr 25 21:14:25 2008 -0700
-@@ -36,5 +36,6 @@ struct btrfs_ioctl_vol_args {
- #define BTRFS_IOC_TRANS_START  _IO(BTRFS_IOCTL_MAGIC, 6)
- #define BTRFS_IOC_TRANS_END    _IO(BTRFS_IOCTL_MAGIC, 7)
- #define BTRFS_IOC_SYNC         _IO(BTRFS_IOCTL_MAGIC, 8)
-+#define BTRFS_IOC_CLONE        _IOW(BTRFS_IOCTL_MAGIC, 9, int)
- #endif
- 

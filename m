@@ -1,25 +1,37 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [Btrfs-devel] cloning file data
-Date: Tue, 29 Apr 2008 16:52:54 -0400
-Message-ID: <200804291652.55198.chris.mason@oracle.com>
-References: <Pine.LNX.4.64.0804241352130.23551@cobra.newdream.net>
+Subject: Re: Btrfs v0.14 Released
+Date: Thu, 1 May 2008 12:04:20 -0400
+Message-ID: <200805011204.20847.chris.mason@oracle.com>
+References: <200804291601.32945.chris.mason@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain;
-  charset="iso-8859-1"
-Cc: Sage Weil <sage@newdream.net>, linux-btrfs@vger.kernel.org
-To: btrfs-devel@oss.oracle.com
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <Pine.LNX.4.64.0804241352130.23551@cobra.newdream.net>
+  charset="utf-8"
+Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <200804291601.32945.chris.mason@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thursday 24 April 2008, Sage Weil wrote:
-> Hi-
+On Tuesday 29 April 2008, Chris Mason wrote:
+> Hello everyone,
 >
-> I'm working on a clone ioctl that will quickly and efficiently duplicate
-> the contents of a file, e.g.
+> Btrfs v0.14 is now available for download.  Please note the disk format has
+> changed, and it is not compatible with older versions of Btrfs.
+>
+> For downloads and documention, please see the Btrfs project page:
+>
+> http://btrfs.wiki.kernel.org
 >
 
-Just FYI, I didn't sneak this into v0.14 because I didn't quite have the 
-cycles to test it.  It'll go in this week.
+Hello everyone,
+
+I've rolled up some fixes for older kernels and fixed an uninitialized 
+variables in btrfs-progs that could cause an oops on mount.  I'll wait a few 
+days to see if other bug reports come in and cut a 0.15 with any other 
+critical fixes.
+
+Until then, you can find download information on the important fixes so far:
+
+http://btrfs.wiki.kernel.org/index.php/Hot_Fixes
 
 -chris

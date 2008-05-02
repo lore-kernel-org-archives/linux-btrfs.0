@@ -1,34 +1,48 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [Btrfs-devel] cloning file data
-Date: Fri, 2 May 2008 16:50:25 -0400
-Message-ID: <200805021650.25497.chris.mason@oracle.com>
-References: <Pine.LNX.4.64.0804241352130.23551@cobra.newdream.net>
+Subject: Re: Btrfs v0.14 Released
+Date: Fri, 2 May 2008 16:58:00 -0400
+Message-ID: <200805021658.01459.chris.mason@oracle.com>
+References: <200804291601.32945.chris.mason@oracle.com> <200805021034.08358.chris.mason@oracle.com> <481B3C0E.502@tpi.com>
 Mime-Version: 1.0
 Content-Type: text/plain;
   charset="iso-8859-1"
-Cc: linux-btrfs@vger.kernel.org
-To: Sage Weil <sage@newdream.net>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <Pine.LNX.4.64.0804241352130.23551@cobra.newdream.net>
+Cc: jeffschroeder@computer.org, Jan Engelhardt <jengelh@medozas.de>,
+	Jeff Mahoney <jeffm@suse.com>,
+	Tim Gardner <tim.gardner@canonical.com>,
+	linux-fsdevel@vger.kernel.org, kernel-team@lists.ubuntu.com,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	John Johansen <jjohansen@suse.de>
+To: Tim Gardner <timg@tpi.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <481B3C0E.502@tpi.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thursday 24 April 2008, Sage Weil wrote:
-> Hi-
->
-> I'm working on a clone ioctl that will quickly and efficiently duplicate
-> the contents of a file, e.g.
+On Friday 02 May 2008, Tim Gardner wrote:
+> Chris Mason wrote:
+> > On Friday 02 May 2008, Jeff Schroeder wrote:
+> >
+> > [ Btrfs oops with apparmor patched in ]
+> >
+> >> Make is not my forte, but here is a working test to see if apparmor
+> >> exists in Ubuntu 8.04.
+> >> Maybe have make apply a patch to the btrfs source if this test
+> >> succeeds? Does this work in SUSE?
+> >>
+> >> http://www.digitalprognosis.com/opensource/patches/btrfs/lame_apparmor_t
+> >>est _for_btrfs.patch
+> >
+> > Thanks, but this uses CONFIG_SECURITY_APPARMOR which isn't enough to tell
+> > if the kernel has the patch.  Lets go back to Jeff's suse patch:
+> >
 
-Sage's work has been pushed into the stable and unstable trees, along with a 
-small command called bcp to trigger the clone ioctls.  bcp is used like this:
+I ended up using the CONFIG_SECURITY_APPARMOR test because the other test 
+suggested here sounded like something that might eventually not be very 
+ubuntu specific (instead of the nice a plain CONFIG_SUSE_KERNEL).
 
-bcp src dst
+Thanks to everyone for the hints, if someone could please test:
 
-If src is a directory, it is copied recursively.  If the clone ioctl fails, a 
-fallback to buffer copies is done instead.
+http://btrfs.wiki.kernel.org/index.php/Hot_Fixes
 
-Sage, I had to make a few small changes to your ioctl code.  One was to skip 
-reference count updates if the extent is a hole, and the other was to change 
-around mark_inode_dirty a bit to avoid transaction deadlock.  We aren't 
-actually making any pages dirty so it is safe to just update the inode.
+I'd be grateful.
 
 -chris

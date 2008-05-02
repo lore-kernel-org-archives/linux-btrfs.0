@@ -1,35 +1,32 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: Jan Engelhardt <jengelh@medozas.de>
 Subject: Re: Btrfs v0.14 Released
-Date: Fri, 2 May 2008 10:52:43 -0400
-Message-ID: <200805021052.44076.chris.mason@oracle.com>
-References: <200804291601.32945.chris.mason@oracle.com> <200805021034.08358.chris.mason@oracle.com> <20080502143811.GC14976@parisc-linux.org>
+Date: Fri, 2 May 2008 17:07:45 +0200 (CEST)
+Message-ID: <alpine.LNX.1.10.0805021706580.6463@fbirervta.pbzchgretzou.qr>
+References: <200804291601.32945.chris.mason@oracle.com> <200805020852.51125.chris.mason@oracle.com> <c24352ca0805020715y46741317ve9897afd689d058f@mail.gmail.com> <200805021034.08358.chris.mason@oracle.com> <20080502143811.GC14976@parisc-linux.org>
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="iso-8859-1"
-Cc: jeffschroeder@computer.org, Jan Engelhardt <jengelh@medozas.de>,
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: Chris Mason <chris.mason@oracle.com>, jeffschroeder@computer.org,
 	Jeff Mahoney <jeffm@suse.com>,
 	Tim Gardner <tim.gardner@canonical.com>,
 	linux-fsdevel@vger.kernel.org, kernel-team@lists.ubuntu.com,
 	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
 	John Johansen <jjohansen@suse.de>
 To: Matthew Wilcox <matthew@wil.cx>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <20080502143811.GC14976@parisc-linux.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Friday 02 May 2008, Matthew Wilcox wrote:
-> On Fri, May 02, 2008 at 10:34:07AM -0400, Chris Mason wrote:
-> > Thanks, but this uses CONFIG_SECURITY_APPARMOR which isn't enough to tell
-> > if the kernel has the patch.  Lets go back to Jeff's suse patch:
+
+On Friday 2008-05-02 16:38, Matthew Wilcox wrote:
+>On Fri, May 02, 2008 at 10:34:07AM -0400, Chris Mason wrote:
+>> Thanks, but this uses CONFIG_SECURITY_APPARMOR which isn't enough to tell if 
+>> the kernel has the patch.  Lets go back to Jeff's suse patch:
 >
-> Do we really need to support kernels compiled with the apparmour patch
-> applied but not enabled?  That would be a custom kernel build, and I get
-> the impression that people Just Don't Do That -- if they want a newer
-> kernel, they fetch one from kernel.org.  Maybe I'm wrong though.
+>Do we really need to support kernels compiled with the apparmour patch
+>applied but not enabled?  That would be a custom kernel build, and I get
+>the impression that people Just Don't Do That -- if they want a newer
+>kernel, they fetch one from kernel.org.  Maybe I'm wrong though.
 
-Yeah, if there's no better test I'll just use the one for the apparmor config 
-(and stop spamming l-k with this btrfs specific stuff).
-
--chris
-
-
+I think so too. Corollary: if there is a distro that has apparmor
+patched into its kernel, then there is [hopefully] a suitable rpm
+nearby.

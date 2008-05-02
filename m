@@ -1,72 +1,34 @@
-From: "Jeff Schroeder" <jeffschroed@gmail.com>
-Subject: Re: Btrfs v0.14 Released
-Date: Fri, 2 May 2008 11:14:56 -0700
-Message-ID: <c24352ca0805021114u4c4cdf56leced2d6c23ae2bd4@mail.gmail.com>
-References: <200804291601.32945.chris.mason@oracle.com>
-	 <200805020852.51125.chris.mason@oracle.com>
-	 <c24352ca0805020715y46741317ve9897afd689d058f@mail.gmail.com>
-	 <200805021034.08358.chris.mason@oracle.com> <481B3C0E.502@tpi.com>
-	 <481B409A.2070607@suse.com>
-	 <alpine.LNX.1.10.0805021959150.6463@fbirervta.pbzchgretzou.qr>
-	 <481B56FD.9020807@suse.com>
-Reply-To: jeffschroeder@computer.org
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [Btrfs-devel] cloning file data
+Date: Fri, 2 May 2008 16:50:25 -0400
+Message-ID: <200805021650.25497.chris.mason@oracle.com>
+References: <Pine.LNX.4.64.0804241352130.23551@cobra.newdream.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: "Jan Engelhardt" <jengelh@medozas.de>,
-	"Tim Gardner" <timg@tpi.com>,
-	"Chris Mason" <chris.mason@oracle.com>,
-	"Tim Gardner" <tim.gardner@canonical.com>,
-	linux-fsdevel@vger.kernel.org, kernel-team@lists.ubuntu.com,
-	linux-btrfs@vger.kernel.org, "John Johansen" <jjohansen@suse.de>
-To: "Jeff Mahoney" <jeffm@suse.com>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <481B56FD.9020807@suse.com>
+Content-Type: text/plain;
+  charset="iso-8859-1"
+Cc: linux-btrfs@vger.kernel.org
+To: Sage Weil <sage@newdream.net>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <Pine.LNX.4.64.0804241352130.23551@cobra.newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 2, 2008 at 11:01 AM, Jeff Mahoney <jeffm@suse.com> wrote:
-> -----BEGIN PGP SIGNED MESSAGE-----
->  Hash: SHA1
+On Thursday 24 April 2008, Sage Weil wrote:
+> Hi-
 >
->
->
-> Jan Engelhardt wrote:
->  > On Friday 2008-05-02 18:26, Jeff Mahoney wrote:
->  >>> To the best of my knowledge, the AppArmor patches are arch and flavour
->  >>> independent. If CONFIG_SECURITY_APPARMOR exists, then the AA code is
->  >>> compiled. This is certainly the case for Hardy. Neither Kees or myself
->  >>> are aware of any reason why it won't also hold true for Intrepid.
->  >> Grumble. The issue isn't whether AA is enabled, it's whether it's
->  >> present in the source. Patching the source with AA modifies a bunch of
->  >> core VFS function prototypes. CONFIG_SECURITY_APPARMOR won't exist if AA
->  >> isn't enabled, but the prototypes will have changed anyway.
->  >
->  > So... add an invisible CONFIG_HAVE_APPARMOR, much like
->  > CONFIG_X86_HAVE_CMPXCHG (or whatever it's called), and test for that.
->  > As long as you are not in the mainline kernel, every hack is
->  > forgiven.
->
->  That'll work moving forward, but btrfs also supports older releases.
->
->
->  - -Jeff
+> I'm working on a clone ioctl that will quickly and efficiently duplicate
+> the contents of a file, e.g.
 
-So how about this for older releases? It should work on Ubuntu 7.10 or
-8.10 installs with apparmor enabled by default:
+Sage's work has been pushed into the stable and unstable trees, along with a 
+small command called bcp to trigger the clone ioctls.  bcp is used like this:
 
-#if defined(CONFIG_VERSION_SIGNATURE)
-# if (LINUX_VERSION_CODE = KERNEL_VERSION(2,6,24)) ||
-(LINUX_VERSION_CODE = KERNEL_VERSION(2,6,20))
-# define REMOVE_SUID_PATH 1
-# endif
-#endif
+bcp src dst
 
-Maybe add a blurb in the install doc about this for users trying to
-build ubuntu kernels with no apparmor (probably a rarity).
+If src is a directory, it is copied recursively.  If the clone ioctl fails, a 
+fallback to buffer copies is done instead.
 
-CONFIG_VERSION_SIGNATURE can be likened to CONFIG_SUSE
+Sage, I had to make a few small changes to your ioctl code.  One was to skip 
+reference count updates if the extent is a hole, and the other was to change 
+around mark_inode_dirty a bit to avoid transaction deadlock.  We aren't 
+actually making any pages dirty so it is safe to just update the inode.
 
--- 
-Jeff Schroeder
-
-Don't drink and derive, alcohol and analysis don't mix.
-http://www.digitalprognosis.com
+-chris

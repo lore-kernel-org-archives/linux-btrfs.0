@@ -1,7 +1,7 @@
 From: "Yan Zheng" <yanzheng@21cn.com>
 Subject: Re: [Btrfs-devel] cloning file data
-Date: Sat, 3 May 2008 14:48:02 +0800
-Message-ID: <3d0408630805022348u78410d6fvb4ce1128417b5c0c@mail.gmail.com>
+Date: Sat, 3 May 2008 15:25:00 +0800
+Message-ID: <3d0408630805030025s2c9006c1qad3c29011caf3013@mail.gmail.com>
 References: <Pine.LNX.4.64.0804241352130.23551@cobra.newdream.net>
 	 <200804250941.35343.chris.mason@oracle.com>
 	 <Pine.LNX.4.64.0804251119260.23551@cobra.newdream.net>
@@ -146,19 +146,41 @@ List-ID: <linux-btrfs.vger.kernel.org>
 > +               ret = btrfs_search_slot(trans, root, &key, path, 0, 0);
 >                goto next_slot;
 >        }
+>
+>
 
-key.offset isn't updated properly. you should differentiate extent
-item, inline extent item and csum item.
+In my previous mail, I said items of different types should be
+differentiated. Actually, there is no need to do that. Please consider
+changing the big loop in btrfs_ioctl_clone to something like:
+---
+key.objectid = src->i_ino;
+key.offset = 0;
+key.type = BTRFS_EXTENT_DATA_KEY;
+while (1) {
+	ret = btrfs_search_slot(trans, root, &key, &path, 0, 0);
+	if (ret < 0)
+		goto fail;
 
-For extent item:
-key.offset += btrfs_file_extent_num_bytes(...);
+	leaf = path.nodes[0];
+	if (path.slots[0] >= btrfs_header_nritems(leaf)) {
+		ret = btrfs_next_leaf(extent_root, &path);
+		if (ret < 0)
+			goto fail;
+		if (ret > 0)
+			break;
+		leaf = path.nodes[0];
+	}
 
-For inline extent item:
-u32 len = btrfs_file_extent_inline_len(...);
-key.offset += ALIGN(len, root->sectorsize);
+	btrfs_item_key_to_cpu(leaf, &key, path.slots[0]);
 
-For csum item
-key.offset += btrfs_item_size_nr(...) / BTRFS_CRC32_SIZE * root->sectorsize;
+	...
+	do some works
+	...
 
+	btrfs_release_path(root, path);
+	key.offset++;
+}
+
+---
 Regards
 YZ

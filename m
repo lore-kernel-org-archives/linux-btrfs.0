@@ -1,45 +1,61 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Suitability for "playing with"?
-Date: Tue, 13 May 2008 11:03:11 -0400
-Message-ID: <200805131103.11512.chris.mason@oracle.com>
-References: <49232.66.155.201.114.1210687249.squirrel@webmail.jots.org>
+Subject: Online device removal pushed to the unstable tree
+Date: Tue, 13 May 2008 16:08:36 -0400
+Message-ID: <200805131608.36386.chris.mason@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain;
-  charset="iso-8859-1"
-Cc: linux-btrfs@vger.kernel.org
-To: "Ken D'Ambrosio" <ken@jots.org>
+  charset="utf-8"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <49232.66.155.201.114.1210687249.squirrel@webmail.jots.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tuesday 13 May 2008, Ken D'Ambrosio wrote:
-> Hi, all.  While I'm anxious to try out btrfs on my
-> (personal/non-production) systems, I'm not anxious to have to
-> restore/reformat them on a regular basis.  Has btrfs reached a point where
-> it doesn't, say, crash on disk full?
+Hello everyone,
 
-Unfortunately, disk full is still on the TODO list.  There is some very basic 
-accounting to survive some disk full conditions, but it is still easy to 
-crash if you hammer on a full drive.  My focus this month is on tree 
-concurrency, so disk full won't be in the list for a little while.
+The unstable tree is still format compatible with v0.14, and it now includes 
+the ability to remove devices online.  In mirror configurations, IO errors to 
+one of the mirrors are also handled, although it doesn't currently kick off a 
+rebuild or other magic.
 
-> The development timeline in the wiki 
-> has lots of neat milestones, but no mention about "suitability for
-> end-user use in testing."  I understand all of this is wildly nebulous,
-> but some idea of when it might go from "probably will break" to "might not
-> break" would be appreciated by us lowly fans of what looks to be the
-> neatest Linux-based FS on the block.
+To try things out:
 
-Everyone has their own ideas of when they are willing to try things out, so I 
-didn't fill in an entry in the milestones page for it.
+mkfs.btrfs -d raid1 -m raid1 /dev/sdb /dev/sdc
+mount /dev/sdb /mnt
+# put data on /mnt
+# then add /dev/sdd to the FS
+btrfs-vol -a /dev/sdd /mnt
 
-I started using stable btrfs releases for my own home directory a while ago, 
-and have had very few problems.  But I also backup everything on a very 
-regular basis, just in case.
+At this point we've got a raid1 filesystem with data spread across sdb and 
+sdc.  If we remove /dev/sdc, all the existing data will be remirrored onto 
+sdd:
 
-So, I expect each of the stable releases to be in the 'probably won't break' 
-category, but mistakes are always possible.  We're building up a larger QA 
-setup that will help find problems before they hit our friendly alpha 
-testers, but we aren't there yet.
+btrfs-vol -r /dev/sdc /mnt
+
+There is also a mount -o degraded to handle situations where a device in the 
+FS has been lost or removed:
+
+mkfs.btrfs -d raid1 -m raid1 /dev/sd[bc]
+mount /dev/sdb /mnt
+# put data on /mnt
+umount /mnt
+# corrupt the drive
+dd if=/dev/zero of=/dev/sdc bs=1M count=1000
+
+# this mount will fail, dmesg will show that not enough devices were found
+mount /dev/sdb /mnt
+
+# this mount will succeed, but only one device will be used
+mount -o degraded /dev/sdb /mnt
+
+# add a spare
+btrfs-vol -a /dev/sdd /mnt
+
+# remove the corrupted drive
+btrfs-vol -r missing /mnt
+
+btrfs-vol -r missing is a special command that tells btrfs to reconstruct 
+things without the first device it can find that is mentioned in the metadata 
+but not present in the mounted FS.
+
+I plan on hammering on this for a bit and then cutting v0.15
 
 -chris

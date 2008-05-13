@@ -1,33 +1,24 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Online device removal pushed to the unstable trees
-Date: Wed, 7 May 2008 11:49:01 -0400
-Message-ID: <200805071149.01264.chris.mason@oracle.com>
+From: "Ken D'Ambrosio" <ken@jots.org>
+Subject: Suitability for "playing with"?
+Date: Tue, 13 May 2008 10:00:49 -0400 (EDT)
+Message-ID: <49232.66.155.201.114.1210687249.squirrel@webmail.jots.org>
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="utf-8"
+Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello everyone,
+Hi, all.  While I'm anxious to try out btrfs on my
+(personal/non-production) systems, I'm not anxious to have to
+restore/reformat them on a regular basis.  Has btrfs reached a point where
+it doesn't, say, crash on disk full?  The development timeline in the wiki
+has lots of neat milestones, but no mention about "suitability for
+end-user use in testing."  I understand all of this is wildly nebulous,
+but some idea of when it might go from "probably will break" to "might not
+break" would be appreciated by us lowly fans of what looks to be the
+neatest Linux-based FS on the block.
 
-I've pushed out some code to remove devices online.  There are no disk format 
-changes included.  The basic usage is to:
+Thanks,
 
-mkfs.btrfs /dev/sdb /dev/sdc /dev/sdd /dev/sde
-# mount, do things
-
-btrfs-vol -r /dev/sdc /mnt
-
-Any blocks on /dev/sdc will be relocated to other chunks.  The algorithm is 
-very simple but it works for all the raid levels.  A future project will be 
-to optimize this code for drive replacement.
-
-There are also fixes in there for the code that does mount -o subvol=<name>
-
-Next on my list is the ability to mount a degraded filesystem.
-
--chris
-
-
+-Ken
 

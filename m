@@ -1,48 +1,30 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Online device removal pushed to the unstable tree
-Date: Wed, 14 May 2008 13:15:20 -0400
-Message-ID: <200805141315.21117.chris.mason@oracle.com>
-References: <200805131608.36386.chris.mason@oracle.com> <f058a9c30805140741o7d4c4e67l243f981d1b750cca@mail.gmail.com>
+From: Mingming <cmm@us.ibm.com>
+Subject: btrfs_put_inode
+Date: Wed, 21 May 2008 10:19:00 -0700
+Message-ID: <1211390340.5571.19.camel@BVR-FS.beaverton.ibm.com>
+References: <Pine.LNX.4.64.0804241352130.23551@cobra.newdream.net>
+	 <Pine.LNX.4.64.0805022255370.15314@cobra.newdream.net>
+	 <3d0408630805030025s2c9006c1qad3c29011caf3013@mail.gmail.com>
+	 <200805050627.46919.chris.mason@oracle.com>
+	 <Pine.LNX.4.64.0805050855250.15314@cobra.newdream.net>
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="utf-8"
-Cc: linux-btrfs@vger.kernel.org
-To: "Miguel Sousa Filipe" <miguel.filipe@gmail.com>
+Content-Type: text/plain
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <f058a9c30805140741o7d4c4e67l243f981d1b750cca@mail.gmail.com>
+In-Reply-To: <Pine.LNX.4.64.0805050855250.15314@cobra.newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wednesday 14 May 2008, Miguel Sousa Filipe wrote:
-> Hi all,
->
-> On Tue, May 13, 2008 at 9:08 PM, Chris Mason <chris.mason@oracle.com> wrote:
-> > Hello everyone,
-> >
-> >  The unstable tree is still format compatible with v0.14, and it now
-> > includes the ability to remove devices online.  In mirror configurations,
-> > IO errors to one of the mirrors are also handled, although it doesn't
-> > currently kick off a rebuild or other magic.
-> >
-> >  To try things out:
-> >
-> >  mkfs.btrfs -d raid1 -m raid1 /dev/sdb /dev/sdc
-> >  mount /dev/sdb /mnt
-> >  # put data on /mnt
-> >  # then add /dev/sdd to the FS
-> >  btrfs-vol -a /dev/sdd /mnt
-> >
-> >  At this point we've got a raid1 filesystem with data spread across sdb
-> > and sdc.  If we remove /dev/sdc, all the existing data will be remirrored
-> > onto sdd:
->
-> Is there a way to check the progress of the remirror/rebuild ?
-> (somewhat similar to what /proc/mdstat provides when a mirror is being
-> synced)
+Hi Chris,
 
-Sorry, not yet.  Some information is printed to the console, but it is 
-currently difficult to tell how far along the remirroring is.
+btrfs failed to compile on 2.6.26-rc2 since the put_inode callback
+function is removed from super_operations. 
 
-The current code is definitely slower than it should be, I went for the most 
-generic setup in hopes of stabilizing it quickly.
+I noticed btrfs_put_inode() seems being actively used, to drop the inode
+from the tree for ordered mode transaction. Any idea where to relocate
+this function? Do we need to call btrfs_del_ordered_inode() for every
+iput()?
 
--chris
+Thanks,
+Mingming
+

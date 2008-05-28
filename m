@@ -1,78 +1,29 @@
-From: Sven Wegener <sven.wegener@stealer.net>
-Subject: Drop dcache entry after creating snapshot and subvolume
-Date: Wed, 28 May 2008 00:41:24 +0200 (CEST)
-Message-ID: <alpine.LNX.1.10.0805280011160.5461@titan.stealer.net>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: Drop dcache entry after creating snapshot and subvolume
+Date: Wed, 28 May 2008 01:08:53 -0400
+Message-ID: <20080528050853.GA23213@infradead.org>
+References: <alpine.LNX.1.10.0805280011160.5461@titan.stealer.net>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; format=flowed; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Sven Wegener <sven.wegener@stealer.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <alpine.LNX.1.10.0805280011160.5461@titan.stealer.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+On Wed, May 28, 2008 at 12:41:24AM +0200, Sven Wegener wrote:
+> I have a patch (see below) that does an explicit d_drop() on the dentry 
+> after looking it up via d_find_alias() and d_lookup(), starting at the root 
+> inode. Currently it's for snapshot creation only, subvolume creation needs 
+> the same. There doesn't seem to be a kernel function for this case and 
+> using the normal d_revalidate method is inefficient as snapshot and 
+> subvolume creation is the only place where we need this and the creation is 
+> a rare case. Is this the right way to go?
 
-when creating a new snapshot or subvolume we need to drop an existing 
-negative dentry for the new name, else this happens:
+I don't like this manual dropping very much.  Rather the snapshot should
+be created using vfs_mkdir or equivalent opencoded bits that actually
+turn the negative dentry into the real instanciated one.
 
-host ~ # ls -l /mnt/btrfs
-total 1
-dr-xr-xr-x 1 root root 0 Jan  1  1970 default
-host ~ # stat /mnt/btrfs/snapshot
-stat: cannot stat `/mnt/btrfs/snapshot': No such file or directory
-host ~ # btrfsctl -s snapshot /mnt/btrfs/default
-ioctl returns 0
-host ~ # stat /mnt/btrfs/snapshot
-stat: cannot stat `/mnt/btrfs/snapshot': No such file or directory
-host ~ # ls -l /mnt/btrfs
-ls: cannot access /mnt/btrfs/snapshot: No such file or directory
-total 1
-dr-xr-xr-x 1 root root 0 Jan  1  1970 default
-d????????? ? ?    ?    ?            ? snapshot
-
-I have a patch (see below) that does an explicit d_drop() on the dentry 
-after looking it up via d_find_alias() and d_lookup(), starting at the 
-root inode. Currently it's for snapshot creation only, subvolume creation 
-needs the same. There doesn't seem to be a kernel function for this case 
-and using the normal d_revalidate method is inefficient as snapshot and 
-subvolume creation is the only place where we need this and the creation 
-is a rare case. Is this the right way to go?
-
-Sven
-
----
-  transaction.c |   18 ++++++++++++++++++
-  1 file changed, 18 insertions(+)
-
---- a/transaction.c
-+++ b/transaction.c
-@@ -557,6 +557,8 @@
-  	struct btrfs_root *tree_root = fs_info->tree_root;
-  	struct btrfs_root *root = pending->root;
-  	struct extent_buffer *tmp;
-+	struct dentry *alias, *snap;
-+	struct qstr qstr;
-  	int ret;
-  	u64 objectid;
-
-@@ -604,6 +606,22 @@
-  	ret = btrfs_insert_inode_ref(trans, root->fs_info->tree_root,
-  			     pending->name, strlen(pending->name), objectid,
-  			     root->fs_info->sb->s_root->d_inode->i_ino);
-+
-+	/*
-+	 * We need to drop the dcache entry for the new snapshot.
-+	 */
-+	alias = d_find_alias(root->fs_info->sb->s_root->d_inode);
-+	if (alias) {
-+		qstr.name = pending->name;
-+		qstr.len = strlen(qstr.name);
-+		qstr.hash = full_name_hash(qstr.name, qstr.len);
-+		snap = d_lookup(alias, &qstr);
-+		dput(alias);
-+		if (snap) {
-+			d_drop(snap);
-+			dput(snap);
-+		}
-+	}
-  fail:
-  	kfree(new_root_item);
-  	return ret;
+Then again it might actually be better to have a separate superblock
+for the snapshot to not get a too messy dentry tree, but before
+commenting on that I need to actually dig into that area of btrfs again.

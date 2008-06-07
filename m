@@ -1,42 +1,40 @@
-From: Bron Gondwana <brong@fastmail.fm>
-Subject: Re: Bug Report - crash copying in large file
-Date: Fri, 6 Jun 2008 21:22:51 +1000
-Message-ID: <20080606112251.GA20143@brong.net>
-References: <20080605041516.GA11964@brong.net> <20080605122509.GA11136@think.oraclecorp.com>
+From: btrfs-devel@arbitraryconstant.com
+Subject: btrfs device management
+Date: Sat, 7 Jun 2008 17:53:37 -0600 (MDT)
+Message-ID: <62325.68.145.107.21.1212882817.squirrel@avalon.arbitraryconstant.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Bron Gondwana <brong@fastmail.fm>, linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20080605122509.GA11136@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 05, 2008 at 08:25:09AM -0400, Chris Mason wrote:
-> On Thu, Jun 05, 2008 at 02:15:16PM +1000, Bron Gondwana wrote:
-> > Hi, random crash dump if you're interested:
-> > 
-> > Latest stable btrfs (557:4b7e2b315a32)
-> > Latest stable progs (234:e6d157c83cfe)
-> > Latest Ubuntu Hardy kernel (2.6.24-28-generic).
-> > Ubuntu Hardy toolchain (gcc: 4.2.3-2ubuntu7)
-> > 
-> > Filesystem was freshly rebuilt about an hour ago.  I rsynced 
-> > over my Maildir and associated offlineimap and mutt
-> > configurations, had offlineimap syncing mail, mutt reading it
-> > and an ~700Mb file being copied in from an NFS mount.
-> > 
-> > Space - there was about 1.5Gb free when I started the copy.
-> > Still, I'm guessing from the dump it may be a disk space issue.
-> > 
-> 
-> Yes, this was definitely an ENOSPC oops.  Sorry, I do plan on starting
-> on enospc, it will come right after the tree concurrency.
+Hello,
 
-Hey, I really don't care that much - I have a duplicate sitting on
-reiserfs on the next partition over, and rsync frequently enough
-that re-fetching from IMAP won't hurt much.
+I've noticed one mounts btrfs filesystems by device name (eg /dev/sda1),
+even in a multi-device filesystem. I see there's a uuid for the filesystem
+in btrfs_super_block, so this is safe to do even if the devices change
+names in the future, but it's somewhat sub-optimal in that one's fstab
+won't necessarily continue to work. Even if the devices themselves have
+uuid's that get used in fstab, a given device could just as easily go away
+in the future.
 
-Anything I can do (with my limited FS experience) to help 
-with ENOSPC?
+I also see the standard Linux mount command is used here, and it's clearly
+designed around the assumption of a 1:1 relationship between block devices
+and filesystems, with multi-device stuff happening at another layer. One
+assumes the btrfs code in the kernel just grabs the uuid from that device
+and uses it to assemble the filesystem from whatever devices are also
+members.
 
-Bron.
+My question is: are there plans to support mounting by uuid of the
+filesystem directly, or by providing something like /dev/btrfs/XXXXX to
+make the mount command happy? Wherever this has been done in Linux to date
+(eg filesystems, software RAID, LVMs, etc) it's almost always been a good
+thing, it would be a step down to eg worry about what order drives were
+plugged in.
+
+Thanks for any responses. :)
+
+Cheers,
+
+-Anthony
+

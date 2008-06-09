@@ -1,71 +1,46 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: btrfs panic - BUG: soft lockup - CPU#0 stuck for 61s!
- [fs_mark:4573]
-Date: Sun, 8 Jun 2008 22:37:12 -0400
-Message-ID: <20080608223712.73692933@think.oraclecorp.com>
-References: <4844336F.1010807@redhat.com>
-	<20080605143428.GA16999@think.oraclecorp.com>
-	<484825D4.2010402@redhat.com>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: btrfs device management
+Date: Mon, 9 Jun 2008 02:43:58 -0400
+Message-ID: <20080609064358.GA27849@infradead.org>
+References: <62325.68.145.107.21.1212882817.squirrel@avalon.arbitraryconstant.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: rwheeler@redhat.com
+To: btrfs-devel@arbitraryconstant.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <484825D4.2010402@redhat.com>
+In-Reply-To: <62325.68.145.107.21.1212882817.squirrel@avalon.arbitraryconstant.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 05 Jun 2008 13:43:48 -0400
-Ric Wheeler <rwheeler@redhat.com> wrote:
-
-> Chris Mason wrote:
-> > On Mon, Jun 02, 2008 at 01:52:47PM -0400, Ric Wheeler wrote:
-> >   
-> >> I can reliably get btrfs to panic by running my fs_mark code on a
-> >> newly created file system with lots of threads on an 8-way box. If
-> >> this is too aggressive, let me know ;-)
-> >>
-> >> Here is a summary of the panic:
-> >>     
-> >
-> > BTW, exactly how are you running fs_mark?  Mingming reminded me that
-> > strictly speaking this patch shouldn't be required, so there might
-> > be other related problems.
-> >
-> > -chris
-> >
-> >   
-> It still crashes, Mingming is clearly correct ;-)
+On Sat, Jun 07, 2008 at 05:53:37PM -0600, btrfs-devel@arbitraryconstant.com wrote:
+> Hello,
 > 
+> I've noticed one mounts btrfs filesystems by device name (eg /dev/sda1),
+> even in a multi-device filesystem. I see there's a uuid for the filesystem
+> in btrfs_super_block, so this is safe to do even if the devices change
+> names in the future, but it's somewhat sub-optimal in that one's fstab
+> won't necessarily continue to work. Even if the devices themselves have
+> uuid's that get used in fstab, a given device could just as easily go away
+> in the future.
 
-Grin, I never should have doubted her.
+You can mount by uuid, altough not yet a multi-device btrfs setup.
 
-So, the actual fix should be below.  It looks like the problem is that I've got
-a race in setting the pointer to a new transaction, which makes the
-data=ordered code take a spin lock that hasn't yet been setup.
+> I also see the standard Linux mount command is used here, and it's clearly
+> designed around the assumption of a 1:1 relationship between block devices
+> and filesystems, with multi-device stuff happening at another layer. One
+> assumes the btrfs code in the kernel just grabs the uuid from that device
+> and uses it to assemble the filesystem from whatever devices are also
+> members.
 
-Before this patch my test box got into an infinite loop with fs_mark.  Now it
-seems to run to completion.
+It doesn't even automatically assemble all other devices.
 
--chris
+> My question is: are there plans to support mounting by uuid of the
+> filesystem directly, or by providing something like /dev/btrfs/XXXXX to
+> make the mount command happy? Wherever this has been done in Linux to date
+> (eg filesystems, software RAID, LVMs, etc) it's almost always been a good
+> thing, it would be a step down to eg worry about what order drives were
+> plugged in.
 
-diff -r 0b4ab489ffe1 transaction.c
---- a/transaction.c	Tue May 27 10:55:43 2008 -0400
-+++ b/transaction.c	Sun Jun 08 22:23:50 2008 -0400
-@@ -56,7 +56,6 @@ static noinline int join_transaction(str
- 		total_trans++;
- 		BUG_ON(!cur_trans);
- 		root->fs_info->generation++;
--		root->fs_info->running_transaction = cur_trans;
- 		root->fs_info->last_alloc = 0;
- 		root->fs_info->last_data_alloc = 0;
- 		cur_trans->num_writers = 1;
-@@ -74,6 +73,9 @@ static noinline int join_transaction(str
- 		extent_io_tree_init(&cur_trans->dirty_pages,
- 				     root->fs_info->btree_inode->i_mapping,
- 				     GFP_NOFS);
-+		spin_lock(&root->fs_info->new_trans_lock);
-+		root->fs_info->running_transaction = cur_trans;
-+		spin_unlock(&root->fs_info->new_trans_lock);
- 	} else {
- 		cur_trans->num_writers++;
- 		cur_trans->num_joined++;
+Yes, I plan to work on adding properly designed multiple device support
+for btrfs and my upcoming similar xfs work.  I'll live in good old mount
+and libvolume_id.
+

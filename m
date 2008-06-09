@@ -1,38 +1,71 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: BUG ON linux/ppc 2.6.24.
-Date: Sun, 8 Jun 2008 21:51:28 -0400
-Message-ID: <200806082151.28534.chris.mason@oracle.com>
-References: <f058a9c30806051416g11216654m34b6c8e2b72b3395@mail.gmail.com>
+Subject: Re: btrfs panic - BUG: soft lockup - CPU#0 stuck for 61s!
+ [fs_mark:4573]
+Date: Sun, 8 Jun 2008 22:37:12 -0400
+Message-ID: <20080608223712.73692933@think.oraclecorp.com>
+References: <4844336F.1010807@redhat.com>
+	<20080605143428.GA16999@think.oraclecorp.com>
+	<484825D4.2010402@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="utf-8"
+Content-Type: text/plain; charset=US-ASCII
 Cc: linux-btrfs@vger.kernel.org
-To: "Miguel Sousa Filipe" <miguel.filipe@gmail.com>
+To: rwheeler@redhat.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <f058a9c30806051416g11216654m34b6c8e2b72b3395@mail.gmail.com>
+In-Reply-To: <484825D4.2010402@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thursday 05 June 2008, Miguel Sousa Filipe wrote:
-> Hi there,
->
-> Running ubuntu 8.04 on ibook.
-> Linux newton 2.6.24-17-powerpc #1 Thu May 1 13:56:51 UTC 2008 ppc GNU/Linux
->
-> a fresh hg pull of btrfs0.15, with btrfs on a lvm.
->
-> btrfsck is clean.
->
-> creation of files and dirs work, but a simple echo "a" > a, or a cp, tar
-> ..etc.. result in segfault/core dump of application and this is what I get
-> from dmesg:
+On Thu, 05 Jun 2008 13:43:48 -0400
+Ric Wheeler <rwheeler@redhat.com> wrote:
 
-This oops looks like the apparmor oops, which we try to get around by testing 
-for CONFIG_SECURITY_APPARMOR
+> Chris Mason wrote:
+> > On Mon, Jun 02, 2008 at 01:52:47PM -0400, Ric Wheeler wrote:
+> >   
+> >> I can reliably get btrfs to panic by running my fs_mark code on a
+> >> newly created file system with lots of threads on an 8-way box. If
+> >> this is too aggressive, let me know ;-)
+> >>
+> >> Here is a summary of the panic:
+> >>     
+> >
+> > BTW, exactly how are you running fs_mark?  Mingming reminded me that
+> > strictly speaking this patch shouldn't be required, so there might
+> > be other related problems.
+> >
+> > -chris
+> >
+> >   
+> It still crashes, Mingming is clearly correct ;-)
+> 
 
-Any chance you've self compiled the ubuntu kernel with this turned off?
+Grin, I never should have doubted her.
 
-At any rate, if you change compat.h to enable REMOVE_SUID_PATH things should 
-work.  If REMOVE_SUID_PATH is already enabled, I'll tell you to turn it 
-off ;)
+So, the actual fix should be below.  It looks like the problem is that I've got
+a race in setting the pointer to a new transaction, which makes the
+data=ordered code take a spin lock that hasn't yet been setup.
+
+Before this patch my test box got into an infinite loop with fs_mark.  Now it
+seems to run to completion.
 
 -chris
+
+diff -r 0b4ab489ffe1 transaction.c
+--- a/transaction.c	Tue May 27 10:55:43 2008 -0400
++++ b/transaction.c	Sun Jun 08 22:23:50 2008 -0400
+@@ -56,7 +56,6 @@ static noinline int join_transaction(str
+ 		total_trans++;
+ 		BUG_ON(!cur_trans);
+ 		root->fs_info->generation++;
+-		root->fs_info->running_transaction = cur_trans;
+ 		root->fs_info->last_alloc = 0;
+ 		root->fs_info->last_data_alloc = 0;
+ 		cur_trans->num_writers = 1;
+@@ -74,6 +73,9 @@ static noinline int join_transaction(str
+ 		extent_io_tree_init(&cur_trans->dirty_pages,
+ 				     root->fs_info->btree_inode->i_mapping,
+ 				     GFP_NOFS);
++		spin_lock(&root->fs_info->new_trans_lock);
++		root->fs_info->running_transaction = cur_trans;
++		spin_unlock(&root->fs_info->new_trans_lock);
+ 	} else {
+ 		cur_trans->num_writers++;
+ 		cur_trans->num_joined++;

@@ -1,34 +1,30 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Bug Report - crash copying in large file
-Date: Mon, 9 Jun 2008 06:08:22 -0400
-Message-ID: <20080609060822.6a301f59@think.oraclecorp.com>
-References: <20080605041516.GA11964@brong.net>
-	<20080605122509.GA11136@think.oraclecorp.com>
-	<20080606112251.GA20143@brong.net>
+Subject: Re: Bug report, OOPs on weird conditions.. device under mdadm
+	raid1 failed...
+Date: Mon, 09 Jun 2008 09:41:24 -0400
+Message-ID: <1213018884.10187.3.camel@think.oraclecorp.com>
+References: <f058a9c30806031701w633a199dq5cc56b07df1b19f2@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain
 Cc: linux-btrfs@vger.kernel.org
-To: Bron Gondwana <brong@fastmail.fm>
+To: Miguel Sousa Filipe <miguel.filipe@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20080606112251.GA20143@brong.net>
+In-Reply-To: <f058a9c30806031701w633a199dq5cc56b07df1b19f2@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 6 Jun 2008 21:22:51 +1000
-Bron Gondwana <brong@fastmail.fm> wrote:
-
-> > Yes, this was definitely an ENOSPC oops.  Sorry, I do plan on
-> > starting on enospc, it will come right after the tree concurrency.
+On Wed, 2008-06-04 at 01:01 +0100, Miguel Sousa Filipe wrote:
+> Hello,
 > 
-> Hey, I really don't care that much - I have a duplicate sitting on
-> reiserfs on the next partition over, and rsync frequently enough
-> that re-fetching from IMAP won't hurt much.
+> I have a Kernel Bug report.
+> I must warn that this happened on bad hardware.. one disc of a md
+> raid1 started to fault..
+> my dmesg if full of these:
 > 
-> Anything I can do (with my limited FS experience) to help 
-> with ENOSPC?
 
-I'm afraid there isn't a simple solution for enospc, it is going to be
-a long process to nail down all the corners.  If you're interested in
-projects, http://btrfs.wiki.kernel.org/index.php/Project_ideas is a
-better place to start.
+Something rather strange is happening here, but once Btrfs oopses it is
+hard to blame MD for anything that happens.  Have you reproduced this at
+all?
 
 -chris
+
+

@@ -1,82 +1,60 @@
-From: Ric Wheeler <rwheeler@redhat.com>
-Subject: Re: btrfs panic - BUG: soft lockup - CPU#0 stuck for 61s! [fs_mark:4573]
-Date: Mon, 09 Jun 2008 09:51:50 -0400
-Message-ID: <484D3576.3070304@redhat.com>
-References: <4844336F.1010807@redhat.com>	<20080605143428.GA16999@think.oraclecorp.com>	<484825D4.2010402@redhat.com> <20080608223712.73692933@think.oraclecorp.com>
-Reply-To: rwheeler@redhat.com
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: btrfs device management
+Date: Mon, 09 Jun 2008 09:52:51 -0400
+Message-ID: <1213019571.10187.12.camel@think.oraclecorp.com>
+References: <62325.68.145.107.21.1212882817.squirrel@avalon.arbitraryconstant.com>
+	 <20080609064358.GA27849@infradead.org>
+	 <20080609060609.01e5c1d6@think.oraclecorp.com>
+	 <f058a9c30806090645t12ad82f6pcb52c12a038897ed@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain
+Cc: Christoph Hellwig <hch@infradead.org>,
+	btrfs-devel@arbitraryconstant.com, linux-btrfs@vger.kernel.org
+To: Miguel Sousa Filipe <miguel.filipe@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20080608223712.73692933@think.oraclecorp.com>
+In-Reply-To: <f058a9c30806090645t12ad82f6pcb52c12a038897ed@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote:
-> On Thu, 05 Jun 2008 13:43:48 -0400
-> Ric Wheeler <rwheeler@redhat.com> wrote:
->
->   
->> Chris Mason wrote:
->>     
->>> On Mon, Jun 02, 2008 at 01:52:47PM -0400, Ric Wheeler wrote:
->>>   
->>>       
->>>> I can reliably get btrfs to panic by running my fs_mark code on a
->>>> newly created file system with lots of threads on an 8-way box. If
->>>> this is too aggressive, let me know ;-)
->>>>
->>>> Here is a summary of the panic:
->>>>     
->>>>         
->>> BTW, exactly how are you running fs_mark?  Mingming reminded me that
->>> strictly speaking this patch shouldn't be required, so there might
->>> be other related problems.
->>>
->>> -chris
->>>
->>>   
->>>       
->> It still crashes, Mingming is clearly correct ;-)
->>
->>     
->
-> Grin, I never should have doubted her.
->
-> So, the actual fix should be below.  It looks like the problem is that I've got
-> a race in setting the pointer to a new transaction, which makes the
-> data=ordered code take a spin lock that hasn't yet been setup.
->
-> Before this patch my test box got into an infinite loop with fs_mark.  Now it
-> seems to run to completion.
->
-> -chris
->   
+On Mon, 2008-06-09 at 14:45 +0100, Miguel Sousa Filipe wrote:
+> Hi all,
+> 
+> On Mon, Jun 9, 2008 at 11:06 AM, Chris Mason <chris.mason@oracle.com> wrote:
+> > On Mon, 9 Jun 2008 02:43:58 -0400
+> > Christoph Hellwig <hch@infradead.org> wrote:
+> >
+> >> On Sat, Jun 07, 2008 at 05:53:37PM -0600,
+> >
+> >> Yes, I plan to work on adding properly designed multiple device
+> >> support for btrfs and my upcoming similar xfs work.  I'll live in
+> >> good old mount and libvolume_id.
+> >>
+> >
+> > I won't say no to a mount patch either.  The only downside is that
+> > we'll need to update it (in mount) as the format goes through changes
+> > over the summer.  But that is a temporary problem.
+> 
+> 
+> I believe that a multi-volume filesystem should have some kind of
+> human understandable handle/name.
+> Just like a name of a logical volume. For single disks filesystems,
+> the disk name suffices (and reduced the need for such a name/label),
+> but in multi-disk FS there should still be a humane name for that
+> mountpoint or filesystem.
+> So, while any unique identifier would technically be okay, I think
+> that there should be a human undertanble name/label for it. Not just
+> some uid.
+> 
+> Does Hellwig work, or any planned feature provide this ?
 
-Thanks Chris - this patch works for me as well,
+mkfs.btrfs already has a way to set the label of the filesystem.
+mkfs.btrfs -L label /dev/xxxx
 
-ric
+btrfs-show will show you the labels of any existing filesystems.
 
-> diff -r 0b4ab489ffe1 transaction.c
-> --- a/transaction.c	Tue May 27 10:55:43 2008 -0400
-> +++ b/transaction.c	Sun Jun 08 22:23:50 2008 -0400
-> @@ -56,7 +56,6 @@ static noinline int join_transaction(str
->  		total_trans++;
->  		BUG_ON(!cur_trans);
->  		root->fs_info->generation++;
-> -		root->fs_info->running_transaction = cur_trans;
->  		root->fs_info->last_alloc = 0;
->  		root->fs_info->last_data_alloc = 0;
->  		cur_trans->num_writers = 1;
-> @@ -74,6 +73,9 @@ static noinline int join_transaction(str
->  		extent_io_tree_init(&cur_trans->dirty_pages,
->  				     root->fs_info->btree_inode->i_mapping,
->  				     GFP_NOFS);
-> +		spin_lock(&root->fs_info->new_trans_lock);
-> +		root->fs_info->running_transaction = cur_trans;
-> +		spin_unlock(&root->fs_info->new_trans_lock);
->  	} else {
->  		cur_trans->num_writers++;
->  		cur_trans->num_joined++;
->   
+In practice, anyone on a san really wants to use uuids.  Labels are nice
+until two people on the same san create a filesystem named system, and
+then it all gets ugly ;)
+
+-chris
+
 

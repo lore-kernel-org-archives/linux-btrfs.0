@@ -1,33 +1,92 @@
-From: Christian Hesse <mail@earthworm.de>
-Subject: Re: btrfs device management
-Date: Mon, 9 Jun 2008 18:19:16 +0200
-Message-ID: <200806091819.18985.mail@earthworm.de>
-References: <62325.68.145.107.21.1212882817.squirrel@avalon.arbitraryconstant.com> <1213019571.10187.12.camel@think.oraclecorp.com> <f058a9c30806090837k3a6d18afm942acd9c257c677@mail.gmail.com>
+From: Mingming Cao <cmm@us.ibm.com>
+Subject: Re: btrfs panic - BUG: soft lockup - CPU#0 stuck for 61s!
+	[fs_mark:4573]
+Date: Mon, 09 Jun 2008 17:10:40 -0700
+Message-ID: <1213056641.3670.54.camel@localhost.localdomain>
+References: <4844336F.1010807@redhat.com>
+	 <20080605143428.GA16999@think.oraclecorp.com> <484825D4.2010402@redhat.com>
+	 <20080608223712.73692933@think.oraclecorp.com>
+Reply-To: cmm@us.ibm.com
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="iso-8859-1"
-Cc: "Miguel Sousa Filipe" <miguel.filipe@gmail.com>,
-	"Chris Mason" <chris.mason@oracle.com>,
-	"Christoph Hellwig" <hch@infradead.org>,
-	btrfs-devel@arbitraryconstant.com, linux-btrfs@vger.kernel.org
-To: btrfs-devel@oss.oracle.com
+Content-Type: text/plain
+Cc: rwheeler@redhat.com, linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <f058a9c30806090837k3a6d18afm942acd9c257c677@mail.gmail.com>
+In-Reply-To: <20080608223712.73692933@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday 09 June 2008, Miguel Sousa Filipe wrote:
-> On Mon, Jun 9, 2008 at 2:52 PM, Chris Mason <chris.mason@oracle.com> wrote:
-> > mkfs.btrfs already has a way to set the label of the filesystem.
-> > mkfs.btrfs -L label /dev/xxxx
-> >
-> > btrfs-show will show you the labels of any existing filesystems.
->
-> Can I mount by label ?
-> something like:
-> # mount /dev/btrfs/label /mountpoint
+On Sun, 2008-06-08 at 22:37 -0400, Chris Mason wrote:
+> On Thu, 05 Jun 2008 13:43:48 -0400
+> Ric Wheeler <rwheeler@redhat.com> wrote:
+> 
+> > Chris Mason wrote:
+> > > On Mon, Jun 02, 2008 at 01:52:47PM -0400, Ric Wheeler wrote:
+> > >   
+> > >> I can reliably get btrfs to panic by running my fs_mark code on a
+> > >> newly created file system with lots of threads on an 8-way box. If
+> > >> this is too aggressive, let me know ;-)
+> > >>
+> > >> Here is a summary of the panic:
+> > >>     
+> > >
+> > > BTW, exactly how are you running fs_mark?  Mingming reminded me that
+> > > strictly speaking this patch shouldn't be required, so there might
+> > > be other related problems.
+> > >
+> > > -chris
+> > >
+> > >   
+> > It still crashes, Mingming is clearly correct ;-)
+> > 
+> 
+> Grin, I never should have doubted her.
+> 
+:) 
 
-Yes, by mounting /dev/disk/by-label/label. That should work with every block 
-device.
--- 
-Regards,
-Chris
+> So, the actual fix should be below.  It looks like the problem is that I've got
+> a race in setting the pointer to a new transaction, which makes the
+> data=ordered code take a spin lock that hasn't yet been setup.
+> 
+
+Just to be clear, so the data=ordered code(btrfs_del_ordered_inode())
+takes a spin lock (new_trans_lock) and assume the new transaction has
+been setup, that races with join_transaction resetting the current
+running transaction()? 
+
+I also see the btrfs_commit_transaction() could reset the
+root->fs_info->running_transaction to be NULL, but we did not check NULL
+pointer in the data=ordered mode code, is this a potential Bug? Or it is
+covered somewhere else?
+
+Mingming
+> Before this patch my test box got into an infinite loop with fs_mark.  Now it
+> seems to run to completion.
+> 
+> -chris
+> 
+> diff -r 0b4ab489ffe1 transaction.c
+> --- a/transaction.c	Tue May 27 10:55:43 2008 -0400
+> +++ b/transaction.c	Sun Jun 08 22:23:50 2008 -0400
+> @@ -56,7 +56,6 @@ static noinline int join_transaction(str
+>  		total_trans++;
+>  		BUG_ON(!cur_trans);
+>  		root->fs_info->generation++;
+> -		root->fs_info->running_transaction = cur_trans;
+>  		root->fs_info->last_alloc = 0;
+>  		root->fs_info->last_data_alloc = 0;
+>  		cur_trans->num_writers = 1;
+> @@ -74,6 +73,9 @@ static noinline int join_transaction(str
+>  		extent_io_tree_init(&cur_trans->dirty_pages,
+>  				     root->fs_info->btree_inode->i_mapping,
+>  				     GFP_NOFS);
+> +		spin_lock(&root->fs_info->new_trans_lock);
+> +		root->fs_info->running_transaction = cur_trans;
+> +		spin_unlock(&root->fs_info->new_trans_lock);
+>  	} else {
+>  		cur_trans->num_writers++;
+>  		cur_trans->num_joined++;
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+

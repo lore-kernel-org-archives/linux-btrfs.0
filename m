@@ -1,35 +1,31 @@
 From: Christoph Hellwig <hch@lst.de>
-Subject: [PATCH] btrfs: tiny makefile cleanup
-Date: Tue, 10 Jun 2008 14:36:33 +0200
-Message-ID: <20080610123633.GB31103@lst.de>
+Subject: [PATCH] btrfs: fix strange indentation in lookup_extent_mapping
+Date: Tue, 10 Jun 2008 14:39:00 +0200
+Message-ID: <20080610123900.GA31525@lst.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-use normal kbuild syntax to build acl.o conditinally and remove comment
-out lines.
-
-
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 
-Index: btrfs-unstable/Makefile
+Index: btrfs-unstable/extent_map.c
 ===================================================================
---- btrfs-unstable.orig/Makefile	2008-06-10 14:29:20.000000000 +0200
-+++ btrfs-unstable/Makefile	2008-06-10 14:29:41.000000000 +0200
-@@ -8,13 +8,7 @@ btrfs-y := super.o ctree.o extent-tree.o
- 	   extent_map.o sysfs.o struct-funcs.o xattr.o ordered-data.o \
- 	   extent_io.o volumes.o
+--- btrfs-unstable.orig/extent_map.c	2008-06-10 14:37:48.000000000 +0200
++++ btrfs-unstable/extent_map.c	2008-06-10 14:38:12.000000000 +0200
+@@ -231,7 +231,13 @@ struct extent_map *lookup_extent_mapping
+ {
+ 	struct extent_map *em;
+ 	struct rb_node *rb_node;
+-	struct rb_node *prev = NULL; struct rb_node *next = NULL; u64 end = range_end(start, len); em = tree->last; if (em && end > em->start && start < extent_map_end(em)) goto found;
++	struct rb_node *prev = NULL;
++	struct rb_node *next = NULL;
++	u64 end = range_end(start, len);
++
++	em = tree->last;
++	if (em && end > em->start && start < extent_map_end(em))
++		goto found;
  
--ifeq ($(CONFIG_FS_POSIX_ACL),y)
--btrfs-y += acl.o
--endif
--#btrfs-y := ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
--#	  root-tree.o dir-item.o hash.o file-item.o inode-item.o \
--#	  inode-map.o \
--
-+btrfs-$(CONFIG_FS_POSIX_ACL)	+= acl.o
- else
- 
- # Normal Makefile
+ 	rb_node = __tree_search(&tree->map, start, &prev, &next);
+ 	if (!rb_node && prev) {

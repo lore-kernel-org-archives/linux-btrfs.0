@@ -1,23 +1,35 @@
-From: Tomasz Chmielewski <mangoo@wpkg.org>
-Subject: Re: Future Linux filesystems
-Date: Wed, 11 Jun 2008 11:38:10 +0200
-Message-ID: <484F9D02.1090305@wpkg.org>
+From: "Miguel Sousa Filipe" <miguel.filipe@gmail.com>
+Subject: FileSystem level compression support.
+Date: Wed, 11 Jun 2008 12:13:41 +0100
+Message-ID: <f058a9c30806110413y39102d33t98cd685f289beb2d@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=UTF-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> I also would like to comment that btrfs is ready for the future storage
-> - the solid state drive. Btrfs performs well on both HDD and SSD.
+Hi there,
 
-SSD is still very expensive when compared to traditional hard disks.
+Providing compression and/or encryption at the file system layer has
+proven to be contentious and polemic, at least in the linux kernel
+world.
 
-*If* btrfs supported compression, I would second your opinion that btrfs 
-is (will be, when it's stable) ready for the future storage.
+However, I would like to probe you guys (specially Chis Mason) about
+your thoughts on the issue.
+I have seen quite a few benchs were compression provides better
+performance, since it reduces the amount of IO.
+It seems to be a cpu/io trade-off. And given that cpu power is more
+easily accessible than fast IO.. it is starting to look a good idea
+that should be more deeply explored.
 
+Is compression for data on BTRFS a feature that is:
+- completely out of the table - it will not happen at the BTRFS layer
+- considered, but no efforts on developing this feature are planed.
+- considered, and design decisions are contemplating it.. but no code
+yet.. not this soon. (not for 1.0)
+
+
+Kind regards!
 
 -- 
-Tomasz Chmielewski
-http://wpkg.org
-
+Miguel Sousa Filipe

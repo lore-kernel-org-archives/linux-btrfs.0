@@ -1,57 +1,51 @@
 From: Jeff Mahoney <jeffm@jeffreymahoney.com>
-Subject: [patch 2/5] btrfs-progs: Test for sparse support in configure
-Date: Fri, 13 Jun 2008 16:09:08 -0400
-Message-ID: <20080613201007.765555685@suse.com>
-References: <20080613200906.180149089@suse.com>
+Subject: [patch 0/5] btrfs-progs: Create libbtrfs and package it up
+Date: Fri, 13 Jun 2008 16:09:06 -0400
+Message-ID: <20080613200906.180149089@suse.com>
 Cc: Btrfs Development List <linux-btrfs@vger.kernel.org>
 To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- This patch moves the sparse defines from Makefile.am to configure.ac
+Hi Chris -
 
- This allows us to enable sparse checking in other directories just
- by adding the following to the Makefile.am:
+Here's the patch set I mentioned earlier.
 
-  TESTS = $(SOURCES)
-  TESTS_ENVIRONMENT = @SPARSE@
+It consists of 4 patches and a script. Otherwise it'd be a lot more patches
+that only move files around. The end result after running the script
+is a directory tree that looks like this:
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- Makefile.am  |    9 +++------
- configure.ac |    8 ++++++++
- 2 files changed, 11 insertions(+), 6 deletions(-)
+ btrfs-progs/lib
+ btrfs-progs/src/debug
+ btrfs-progs/src/fsck
+ btrfs-progs/src/test
+ btrfs-progs/src/util
+ btrfs-progs/src/convert
+ btrfs-progs/src/mkfs
 
---- a/Makefile.am
-+++ b/Makefile.am
-@@ -26,10 +26,7 @@ PROGS_SRCS = $(COMMON_SOURCES) btrfsctl.
- 		btrfsck.c bit-radix.c mkfs.c debug-tree.c dir-test.c \
- 		quick-test.c convert.c
- 
--CHECKFLAGS=-Wbitwise -Wuninitialized -Wshadow -Wundef
--SPARSE = sparse
--
-+if HAVE_SPARSE
- TESTS = $(PROGS_SRCS)
--TESTS_ENVIRONMENT = \
--	$(SPARSE) $(CHECKFLAGS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
--		  $(AM_CPPFLAGS) $(CPPFLAGS) -include $(top_builddir)/predef.h
-+TESTS_ENVIRONMENT = @SPARSE@
-+endif
---- a/configure.ac
-+++ b/configure.ac
-@@ -38,4 +38,12 @@ fi
- PREDEFINED_MACROS=$(echo | gcc -dM -E - )
- AC_SUBST(PREDEFINED_MACROS)
- 
-+AC_CHECK_PROG(sparse, sparse, yes)
-+
-+AM_CONDITIONAL(HAVE_SPARSE, test "$sparse" = "yes")
-+CHECKFLAGS="-Wbitwise -Wuninitialized -Wshadow -Wundef"
-+SPARSE='sparse $(CHECKFLAGS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
-+		  $(AM_CPPFLAGS) $(CPPFLAGS) \
-+		  -include $(top_builddir)/predef.h'
-+AC_SUBST(SPARSE)
- AC_OUTPUT(Makefile predef.h)
+lib contains the objects that used to be $(COMMON_OBJS), but are now
+a full-fledged shared library with supporting includes to be installed
+in /usr/include/btrfs. Headers are also placed in lib so that patches
+indended for the kernel can also apply to the library without a lot of
+effort.
 
+* Patch 1: Converts to autotools
+* Patch 2: Adds check for sparse support
+* Patch 3: Creates libbtrfs and reshuffle programs to use it
+* Patch 4: Creates a spec file
+
+I know there are a lot of people out there who hate autotools. I'm not
+a fan myself, but it does make the checking for optional libraries and
+the generation of new ones really easy.
+
+The spec file expects the library to exist and will create three packages:
+btrfs-progs, libbtrfs, and libbtrfs-devel.
+
+This all works for me.
+
+-Jeff
+
+-- 
+Jeff Mahoney
+SUSE Labs
 

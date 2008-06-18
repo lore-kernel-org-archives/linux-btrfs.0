@@ -1,7 +1,7 @@
 From: Josef Bacik <jbacik@redhat.com>
-Subject: [PATCH] add proper ACL support to btrfs
-Date: Wed, 18 Jun 2008 10:34:23 -0400
-Message-ID: <20080618143423.GD20021@unused.rdu.redhat.com>
+Subject: [PATCH] add proper ACL support to btrfs.  Now with acl caching!
+Date: Wed, 18 Jun 2008 13:52:05 -0400
+Message-ID: <20080618175205.GF20021@unused.rdu.redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
@@ -10,18 +10,28 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello,
 
-This patch adds proper full ACL support to btrfs.  I've tested this with the ACL
-tests in LTP and in the XFS stuff and everything is on par with ext*.  Alot of
-this will probably have to be re-arranged when fs_mutex goes bye-bye, but it
-shouldnt be too bad.  Thanks much,
+This is an updated version of the patch I sent earlier today.  This adds acl
+cacheing to make things a little bit faster.  I did all my acl tests with this
+and dbench -x 10 and here are my numbers
+
+with acl
+Throughput 69.8675 MB/sec 10 procs
+
+with noacl
+Throughput 70.172 MB/sec 10 procs
+
+without patch
+Throughput 69.347 MB/sec 10 procs
+
+Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@redhat.com>
 
 
 diff -r 79b81fd6dd78 acl.c
 --- a/acl.c	Thu Jun 12 14:46:17 2008 -0400
-+++ b/acl.c	Wed Jun 18 17:34:41 2008 -0400
-@@ -20,76 +20,281 @@
++++ b/acl.c	Wed Jun 18 20:52:24 2008 -0400
+@@ -20,76 +20,321 @@
  #include <linux/string.h>
  #include <linux/xattr.h>
  #include <linux/posix_acl_xattr.h>
@@ -36,16 +46,43 @@ diff -r 79b81fd6dd78 acl.c
 -	((current->fsuid == (inode)->i_uid) || capable(CAP_FOWNER))
 -#endif
 +
++static void btrfs_update_cached_acl(struct inode *inode,
++				    struct posix_acl **p_acl,
++				    struct posix_acl *acl)
++{
++	spin_lock(&inode->i_lock);
++	if (*p_acl && *p_acl != BTRFS_ACL_NOT_CACHED)
++		posix_acl_release(*p_acl);
++	*p_acl = posix_acl_dup(acl);
++	spin_unlock(&inode->i_lock);
++}
++
 +static struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
 +{
 +	int size, name_index;
 +	char *value = NULL;
-+	struct posix_acl *acl = NULL;
++	struct posix_acl *acl = NULL, **p_acl;
 +
-+	if (type == ACL_TYPE_ACCESS)
++	switch (type) {
++	case ACL_TYPE_ACCESS:
 +		name_index = BTRFS_XATTR_INDEX_POSIX_ACL_ACCESS;
-+	else
++		p_acl = &BTRFS_I(inode)->i_acl;
++		break;
++	case ACL_TYPE_DEFAULT:
 +		name_index = BTRFS_XATTR_INDEX_POSIX_ACL_DEFAULT;
++		p_acl = &BTRFS_I(inode)->i_default_acl;
++		break;
++	default:
++		return ERR_PTR(-EINVAL);
++	}
++
++	spin_lock(&inode->i_lock);
++	if (*p_acl != BTRFS_ACL_NOT_CACHED)
++		acl = posix_acl_dup(*p_acl);
++	spin_unlock(&inode->i_lock);
++
++	if (acl)
++		return acl;
 +
 +
 +	size = btrfs_xattr_get_locked(inode, name_index, "", NULL, 0);
@@ -55,9 +92,14 @@ diff -r 79b81fd6dd78 acl.c
 +			return ERR_PTR(-ENOMEM);
 +		size = btrfs_xattr_get_locked(inode, name_index, "", value,
 +					      size);
-+		if (size > 0)
++		if (size > 0) {
 +			acl = posix_acl_from_xattr(value, size);
++			btrfs_update_cached_acl(inode, p_acl, acl);
++		}
 +		kfree(value);
++	} else if (size == -ENOENT) {
++		acl = NULL;
++		btrfs_update_cached_acl(inode, p_acl, acl);
 +	}
 +
 +	return acl;
@@ -90,34 +132,39 @@ diff -r 79b81fd6dd78 acl.c
 +static int btrfs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
 +{
 +	int ret, name_index = 0, size = 0;
++	struct posix_acl **p_acl;
 +	char *value = NULL;
++	mode_t mode;
 +
 +	if (acl) {
-+		mode_t mode;
-+
 +		ret = posix_acl_valid(acl);
 +		if (ret < 0)
-+			goto out;
++			return ret;
++		ret = 0;
++	}
 +
-+		switch (type) {
-+		case ACL_TYPE_ACCESS:
-+			mode = inode->i_mode;
-+			ret = posix_acl_equiv_mode(acl, &mode);
-+			if (ret < 0)
-+				goto out;
-+			ret = 0;
-+			inode->i_mode = mode;
-+			name_index = BTRFS_XATTR_INDEX_POSIX_ACL_ACCESS;
-+			break;
-+		case ACL_TYPE_DEFAULT:
-+			if (!S_ISDIR(inode->i_mode)) {
-+				ret = -EINVAL;
-+				goto out;
-+			}
-+			name_index = BTRFS_XATTR_INDEX_POSIX_ACL_DEFAULT;
-+			break;
-+		}
++	switch (type) {
++	case ACL_TYPE_ACCESS:
++		mode = inode->i_mode;
++		ret = posix_acl_equiv_mode(acl, &mode);
++		if (ret < 0)
++			return ret;
++		ret = 0;
++		inode->i_mode = mode;
++		name_index = BTRFS_XATTR_INDEX_POSIX_ACL_ACCESS;
++		p_acl = &BTRFS_I(inode)->i_acl;
++		break;
++	case ACL_TYPE_DEFAULT:
++		if (!S_ISDIR(inode->i_mode))
++			return acl ? -EINVAL : 0;
++		name_index = BTRFS_XATTR_INDEX_POSIX_ACL_DEFAULT;
++		p_acl = &BTRFS_I(inode)->i_default_acl;
++		break;
++	default:
++		return -EINVAL;
++	}
 +
++	if (acl) {
 +		size = posix_acl_xattr_size(acl->a_count);
 +		value = kmalloc(size, GFP_NOFS);
 +		if (!value) {
@@ -130,11 +177,14 @@ diff -r 79b81fd6dd78 acl.c
 +			goto out;
 +	}
 +
-+	ret =  btrfs_xattr_set_locked(inode, name_index, "", value, size, 0);
++	ret = btrfs_xattr_set_locked(inode, name_index, "", value, size, 0);
 +
 +out:
 +	if (value)
 +		kfree(value);
++
++	if (!ret)
++		btrfs_update_cached_acl(inode, p_acl, acl);
 +
 +	return ret;
 +}
@@ -338,10 +388,32 @@ diff -r 79b81fd6dd78 acl.c
  struct xattr_handler btrfs_xattr_acl_default_handler = {
  	.prefix = POSIX_ACL_XATTR_DEFAULT,
  	.list	= btrfs_xattr_generic_list,
+diff -r 79b81fd6dd78 btrfs_inode.h
+--- a/btrfs_inode.h	Thu Jun 12 14:46:17 2008 -0400
++++ b/btrfs_inode.h	Wed Jun 18 20:52:24 2008 -0400
+@@ -33,6 +33,9 @@ struct btrfs_inode {
+ 	struct inode vfs_inode;
+ 	atomic_t ordered_writeback;
+ 
++	struct posix_acl *i_acl;
++	struct posix_acl *i_default_acl;
++
+ 	u64 ordered_trans;
+ 	/*
+ 	 * transid of the trans_handle that last modified this inode
 diff -r 79b81fd6dd78 ctree.h
 --- a/ctree.h	Thu Jun 12 14:46:17 2008 -0400
-+++ b/ctree.h	Wed Jun 18 17:34:41 2008 -0400
-@@ -1638,4 +1638,9 @@ u64 btrfs_parse_size(char *str);
++++ b/ctree.h	Wed Jun 18 20:52:24 2008 -0400
+@@ -40,6 +40,8 @@ extern struct kmem_cache *btrfs_path_cac
+ extern struct kmem_cache *btrfs_path_cachep;
+ 
+ #define BTRFS_MAGIC "_B5RfS_M"
++
++#define BTRFS_ACL_NOT_CACHED    ((void *)-1)
+ 
+ #define BTRFS_MAX_LEVEL 8
+ 
+@@ -1638,4 +1640,9 @@ u64 btrfs_parse_size(char *str);
  u64 btrfs_parse_size(char *str);
  int btrfs_parse_options(struct btrfs_root *root, char *options);
  int btrfs_sync_fs(struct super_block *sb, int wait);
@@ -353,8 +425,16 @@ diff -r 79b81fd6dd78 ctree.h
  #endif
 diff -r 79b81fd6dd78 inode.c
 --- a/inode.c	Thu Jun 12 14:46:17 2008 -0400
-+++ b/inode.c	Wed Jun 18 17:34:41 2008 -0400
-@@ -1263,6 +1263,9 @@ static int btrfs_setattr(struct dentry *
++++ b/inode.c	Wed Jun 18 20:52:24 2008 -0400
+@@ -36,6 +36,7 @@
+ #include <linux/bit_spinlock.h>
+ #include <linux/version.h>
+ #include <linux/xattr.h>
++#include <linux/posix_acl.h>
+ #include "ctree.h"
+ #include "disk-io.h"
+ #include "transaction.h"
+@@ -1263,6 +1264,9 @@ static int btrfs_setattr(struct dentry *
  	}
  out:
  	err = inode_setattr(inode, attr);
@@ -364,7 +444,7 @@ diff -r 79b81fd6dd78 inode.c
  fail:
  	return err;
  }
-@@ -1890,6 +1893,12 @@ static int btrfs_mknod(struct inode *dir
+@@ -1890,6 +1894,12 @@ static int btrfs_mknod(struct inode *dir
  	if (IS_ERR(inode))
  		goto out_unlock;
  
@@ -377,7 +457,7 @@ diff -r 79b81fd6dd78 inode.c
  	btrfs_set_trans_block_group(trans, inode);
  	err = btrfs_add_nondir(trans, dentry, inode, 0);
  	if (err)
-@@ -1948,6 +1957,12 @@ static int btrfs_create(struct inode *di
+@@ -1948,6 +1958,12 @@ static int btrfs_create(struct inode *di
  	err = PTR_ERR(inode);
  	if (IS_ERR(inode))
  		goto out_unlock;
@@ -390,7 +470,7 @@ diff -r 79b81fd6dd78 inode.c
  
  	btrfs_set_trans_block_group(trans, inode);
  	err = btrfs_add_nondir(trans, dentry, inode, 0);
-@@ -2076,6 +2091,11 @@ static int btrfs_mkdir(struct inode *dir
+@@ -2076,6 +2092,11 @@ static int btrfs_mkdir(struct inode *dir
  	}
  
  	drop_on_err = 1;
@@ -402,7 +482,31 @@ diff -r 79b81fd6dd78 inode.c
  	inode->i_op = &btrfs_dir_inode_operations;
  	inode->i_fop = &btrfs_dir_file_operations;
  	btrfs_set_trans_block_group(trans, inode);
-@@ -2914,6 +2934,12 @@ static int btrfs_symlink(struct inode *d
+@@ -2714,6 +2735,9 @@ struct inode *btrfs_alloc_inode(struct s
+ 		return NULL;
+ 	ei->last_trans = 0;
+ 	ei->ordered_trans = 0;
++	ei->i_acl = BTRFS_ACL_NOT_CACHED;
++	ei->i_default_acl = BTRFS_ACL_NOT_CACHED;
++
+ 	return &ei->vfs_inode;
+ }
+ 
+@@ -2721,6 +2745,13 @@ void btrfs_destroy_inode(struct inode *i
+ {
+ 	WARN_ON(!list_empty(&inode->i_dentry));
+ 	WARN_ON(inode->i_data.nrpages);
++
++	if (BTRFS_I(inode)->i_acl &&
++	    BTRFS_I(inode)->i_acl != BTRFS_ACL_NOT_CACHED)
++		posix_acl_release(BTRFS_I(inode)->i_acl);
++	if (BTRFS_I(inode)->i_default_acl &&
++	    BTRFS_I(inode)->i_default_acl != BTRFS_ACL_NOT_CACHED)
++		posix_acl_release(BTRFS_I(inode)->i_default_acl);
+ 
+ 	btrfs_drop_extent_cache(inode, 0, (u64)-1);
+ 	kmem_cache_free(btrfs_inode_cachep, BTRFS_I(inode));
+@@ -2914,6 +2945,12 @@ static int btrfs_symlink(struct inode *d
  	if (IS_ERR(inode))
  		goto out_unlock;
  
@@ -415,7 +519,7 @@ diff -r 79b81fd6dd78 inode.c
  	btrfs_set_trans_block_group(trans, inode);
  	err = btrfs_add_nondir(trans, dentry, inode, 0);
  	if (err)
-@@ -2988,7 +3014,7 @@ static int btrfs_permission(struct inode
+@@ -2988,7 +3025,7 @@ static int btrfs_permission(struct inode
  {
  	if (btrfs_test_flag(inode, READONLY) && (mask & MAY_WRITE))
  		return -EACCES;
@@ -424,7 +528,7 @@ diff -r 79b81fd6dd78 inode.c
  }
  
  static struct inode_operations btrfs_dir_inode_operations = {
-@@ -3068,6 +3094,10 @@ static struct inode_operations btrfs_spe
+@@ -3068,6 +3105,10 @@ static struct inode_operations btrfs_spe
  	.getattr	= btrfs_getattr,
  	.setattr	= btrfs_setattr,
  	.permission	= btrfs_permission,
@@ -437,7 +541,7 @@ diff -r 79b81fd6dd78 inode.c
  	.readlink	= generic_readlink,
 diff -r 79b81fd6dd78 super.c
 --- a/super.c	Thu Jun 12 14:46:17 2008 -0400
-+++ b/super.c	Wed Jun 18 17:34:41 2008 -0400
++++ b/super.c	Wed Jun 18 20:52:24 2008 -0400
 @@ -67,7 +67,7 @@ enum {
  enum {
  	Opt_degraded, Opt_subvol, Opt_device, Opt_nodatasum, Opt_nodatacow,
@@ -477,7 +581,7 @@ diff -r 79b81fd6dd78 super.c
  
 diff -r 79b81fd6dd78 xattr.c
 --- a/xattr.c	Thu Jun 12 14:46:17 2008 -0400
-+++ b/xattr.c	Wed Jun 18 17:34:41 2008 -0400
++++ b/xattr.c	Wed Jun 18 20:52:24 2008 -0400
 @@ -26,25 +26,27 @@
  #include "transaction.h"
  #include "xattr.h"
@@ -623,7 +727,7 @@ diff -r 79b81fd6dd78 xattr.c
  }
 diff -r 79b81fd6dd78 xattr.h
 --- a/xattr.h	Thu Jun 12 14:46:17 2008 -0400
-+++ b/xattr.h	Wed Jun 18 17:34:41 2008 -0400
++++ b/xattr.h	Wed Jun 18 20:52:24 2008 -0400
 @@ -42,11 +42,15 @@ extern struct xattr_handler btrfs_xattr_
  
  extern struct xattr_handler *btrfs_xattr_handlers[];

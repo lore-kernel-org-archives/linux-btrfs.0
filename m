@@ -1,59 +1,58 @@
-From: Josef Bacik <jbacik@redhat.com>
+From: Joe Peterson <lavajoe@gentoo.org>
 Subject: Re: [PATCH] COW and checksumming ioctls
-Date: Fri, 20 Jun 2008 09:58:12 -0400
-Message-ID: <20080620135812.GB3224@unused.rdu.redhat.com>
-References: <1213921608.27507.152.camel@BVR-FS.beaverton.ibm.com> <485B3EC5.8090006@oracle.com> <485BB852.4060202@gentoo.org>
+Date: Fri, 20 Jun 2008 09:07:27 -0600
+Message-ID: <485BC7AF.6020708@gentoo.org>
+References: <1213921608.27507.152.camel@BVR-FS.beaverton.ibm.com> <485B3EC5.8090006@oracle.com> <485BB852.4060202@gentoo.org> <20080620135812.GB3224@unused.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
 Cc: Zach Brown <zach.brown@oracle.com>, Mingming <cmm@us.ibm.com>,
 	linux-btrfs@vger.kernel.org
-To: Joe Peterson <lavajoe@gentoo.org>
+To: Josef Bacik <jbacik@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <485BB852.4060202@gentoo.org>
+In-Reply-To: <20080620135812.GB3224@unused.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 20, 2008 at 08:01:54AM -0600, Joe Peterson wrote:
-> Zach Brown wrote:
-> > Hmm.  Do we really want 4 different ioctl commands to turn 2 features on
-> > and off?  Surely we could have 1 ioctl which updates a bitfield?  Or a
-> > ioctl that takes an explicit feature enum argument and a boolean which
-> > indicates that it should be enabled or not?
-> > 
-> > (And is ioctl the right interface for this?  maybe it should be xattr
-> > ops in some defined btrfs string namespace?  I'm just making this up.  I
-> > feel the the lack of a single comment in the patch, while in keeping
-> > with the existing precedent in btrfs, leaves a lot of room for wild
-> > speculation :))
-> 
-> Beyond that, is it really desirable to be able to turn off
-> checksumming/COW per file?  Or even to be able to do it so easily?
->
+Josef Bacik wrote:
+> Database apps that do their own complicated stuff to make sure everything makes
+> it to the disk properly who dont want the extra overhead of checksumming.
 
-Database apps that do their own complicated stuff to make sure everything makes
-it to the disk properly who dont want the extra overhead of checksumming.
- 
-> I feel that checksumming is an extremely important feature, and it
-> scares me even to be able to disable it at all (what if someone
-> mistakenly does it, and then all of the data is unintentionally
-> vulnerable?).  But at least if it is only a mount option, the mistake
-> would have to be at as system level and would be harder to do by accident.
-> 
+I do see the benefit of that, if indeed the DB does end-to-end checking.
+ Then again, I could almost see that perhaps making the setting based on
+something at the subvolume level (not per-file level) might be even
+better for that case.
 
-What if somebody logs in as root and does an rm -rf?  I'm not thinking that
-running the command to disable checksumming on a file will be something that
-gets run often by accident, but even if it does the mantra of linux in general
-has never been "dont let users do something because some idiot could screw it
-all up."
+> What if somebody logs in as root and does an rm -rf?  I'm not thinking that
+> running the command to disable checksumming on a file will be something that
+> gets run often by accident, but even if it does the mantra of linux in general
+> has never been "dont let users do something because some idiot could screw it
+> all up."
 
-> If someone were to turn off checksumming and then turn it back on, I
-> assume they would lose any continuity of protection that exists if it
-> stays on, so it would have to be a major and important decision in an
-> existing filesystem.
->
+Sure, that's true.  I am not saying that we need to protect users from
+themselves, as long as there is a way to clearly see what the settings
+are (so a user/admin can verify the state, e.g.).  I guess my main
+concern would be if it is relatively easy for this to go completely
+unnoticed.  Also, would it be only root who could change such a setting?
 
-I don't really understand the above objection.  Checksumming doesn't make
-everything magically protected, just makes it easier to catch when problems are
-happening.  I don't see how having it off then turning it on would cause any
-sorts of issues.
+> I don't really understand the above objection.  Checksumming doesn't make
+> everything magically protected, just makes it easier to catch when problems are
+> happening.  I don't see how having it off then turning it on would cause any
+> sorts of issues.
 
-Josef
+Well, with checksumming on, there is continuous protection.  And what I
+mean by "protection" is peace-of-mind that the data integrity has been
+checked (I don't necessarily mean protected from loss).  For me,
+*knowing* that the data is bad is the most important thing, so it does
+not silently propagate to backups, etc.
+
+So, if a file, say, is "protected" by checksumming as it gets read,
+changed, etc., there is a continuity of protection, and the user can
+have confidence that the data read is the same as the data written.
+
+On the other hand, if one turns off checksumming, there is then a break
+in that continuity, so any further reads or writes will not be be
+checked.  Even if the file is not written while not having checksumming
+enabled, but then it is re-enabled, now there is no way to know that the
+file's contents are the same as what they were before checksumming was
+turned off - that confidence is lost.
+
+						-Joe

@@ -1,29 +1,41 @@
-From: Joe Peterson <lavajoe@gentoo.org>
+From: Christoph Hellwig <hch@infradead.org>
 Subject: Re: [PATCH] COW and checksumming ioctls
-Date: Sat, 21 Jun 2008 00:07:55 -0600
-Message-ID: <485C9ABB.3070709@gentoo.org>
-References: <1213921608.27507.152.camel@BVR-FS.beaverton.ibm.com>	 <485B3EC5.8090006@oracle.com> <485BB852.4060202@gentoo.org>	 <20080620135812.GB3224@unused.rdu.redhat.com> <485BC7AF.6020708@gentoo.org> <1213979877.10187.515.camel@think.oraclecorp.com>
+Date: Sat, 21 Jun 2008 03:27:30 -0400
+Message-ID: <20080621072730.GA20871@infradead.org>
+References: <1213921608.27507.152.camel@BVR-FS.beaverton.ibm.com> <485B3EC5.8090006@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Josef Bacik <jbacik@redhat.com>,
-	Zach Brown <zach.brown@oracle.com>, Mingming <cmm@us.ibm.com>,
-	linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Mingming <cmm@us.ibm.com>, linux-btrfs@vger.kernel.org
+To: Zach Brown <zach.brown@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1213979877.10187.515.camel@think.oraclecorp.com>
+In-Reply-To: <485B3EC5.8090006@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote:
-> But, it'll be common to mix database files with files that you do want
-> checksummed in the same volume.  This is an admin level decision, and we
-> can easily provide knobs to turn it on/off.  So, I think the ioctl is
-> really important and we'll just document it as best we can.
+On Thu, Jun 19, 2008 at 10:23:17PM -0700, Zach Brown wrote:
+> 
+> > +#define BTRFS_IOC_NODATACOW _IO(BTRFS_IOCTL_MAGIC, 13)
+> > +#define BTRFS_IOC_DATACOW _IO(BTRFS_IOCTL_MAGIC, 14)
+> > +#define BTRFS_IOC_NODATASUM _IO(BTRFS_IOCTL_MAGIC, 15)
+> > +#define BTRFS_IOC_DATASUM _IO(BTRFS_IOCTL_MAGIC, 16)
+> 
+> Hmm.  Do we really want 4 different ioctl commands to turn 2 features on
+> and off?  Surely we could have 1 ioctl which updates a bitfield?  Or a
+> ioctl that takes an explicit feature enum argument and a boolean which
+> indicates that it should be enabled or not?
 
-I do see now why this ability is desirable, especially if there is a way
-to see a file's checksum/COW settings (or better still, to query the
-filesystem for which files have certain settings).  My initial concern
-was that an admin or user may not realize (or forget) a file was left in
-an "unprotected" state, but yes, I'm sure there are ways to mitigate
-that possibility.
+The best interface for per-file boolean flags
+FS_IOC_SETFLAGS/FS_IOC_GETFLAGS ioctls which would fir this really
+nicely.
 
-						-Joe
+> (And is ioctl the right interface for this?  maybe it should be xattr
+> ops in some defined btrfs string namespace?  I'm just making this up.  I
+> feel the the lack of a single comment in the patch, while in keeping
+> with the existing precedent in btrfs, leaves a lot of room for wild
+> speculation :))
+
+Synthetic xattrs are a really utterly horrible interface.  Xattrs on
+disk are nice and simple, but the Linux invention of making some up
+on the fly, starting with the Posix ACL interface makes the
+implementation not just utterly complicated but also confuses backup
+programs.
+

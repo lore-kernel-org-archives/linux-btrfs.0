@@ -1,43 +1,35 @@
-From: jim owens <jowens@hp.com>
+From: Joe Peterson <lavajoe@gentoo.org>
 Subject: Re: [PATCH] COW and checksumming ioctls
-Date: Fri, 20 Jun 2008 15:44:25 -0400
-Message-ID: <485C0899.1080203@hp.com>
-References: <1213921608.27507.152.camel@BVR-FS.beaverton.ibm.com> <485B3EC5.8090006@oracle.com> <485BB852.4060202@gentoo.org> <20080620135812.GB3224@unused.rdu.redhat.com> <485BC7AF.6020708@gentoo.org>
+Date: Fri, 20 Jun 2008 23:59:03 -0600
+Message-ID: <485C98A7.6090608@gentoo.org>
+References: <1213921608.27507.152.camel@BVR-FS.beaverton.ibm.com> <485B3EC5.8090006@oracle.com> <485BB852.4060202@gentoo.org> <20080620135812.GB3224@unused.rdu.redhat.com> <485BC7AF.6020708@gentoo.org> <485C0899.1080203@hp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: Joe Peterson <lavajoe@gentoo.org>
+To: jim owens <jowens@hp.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <485BC7AF.6020708@gentoo.org>
+In-Reply-To: <485C0899.1080203@hp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Joe Peterson wrote:
+jim owens wrote:
+> As I think someone already said (or hinted), a feature-lockout
+> can be designed so the admnin can do that on some "set" for
+> those who are paranoid.
 
->  Then again, I could almost see that perhaps making the setting based on
-> something at the subvolume level (not per-file level) might be even
-> better for that case. 
-...
-> Sure, that's true.  I am not saying that we need to protect users from
-> themselves, as long as there is a way to clearly see what the settings
-> are (so a user/admin can verify the state, e.g.).  I guess my main
-> concern would be if it is relatively easy for this to go completely
-> unnoticed.  Also, would it be only root who could change such a setting?
+That would be a nice feature.  Maybe even a mount option could be
+available to "disable the disabling" of checksumming/COW for cases in
+which the admin decides users should not be changing these attributes
+for a particular filesystem.
 
-It is important to have the per-file granularity.  I agree with
-you that being able to apply this to "all members of this set",
-where the "set" is whatever is practical for btrfs is a nice
-ease-of-use feature.
+> Again for those who are paranoid, making these auditable events
+> (I'm probably not using the right linux term) solves the need
+> to know something like checksum-off has occured.
 
-The ability to do the change is probably based on "right to
-change file attributes", which depends on security policy,
-but it should not be designed as a root-only restriction.
+Yes, that reminds me of ZFS's logging facility, in which case an admin
+can check to see all operations ever done to the filesystem.  When
+someone is managing a bunch of computers and/or filesystems (making it
+easy to get forgetful), it is always nice to be able to go back and ask
+the system what admin options were used as a sanity check.  I think
+that's a cool idea.
 
-As I think someone already said (or hinted), a feature-lockout
-can be designed so the admnin can do that on some "set" for
-those who are paranoid.
-
-Again for those who are paranoid, making these auditable events
-(I'm probably not using the right linux term) solves the need
-to know something like checksum-off has occured.
-
-jim
+						-Joe

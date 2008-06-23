@@ -1,24 +1,48 @@
-From: Joe Peterson <lavajoe@gentoo.org>
-Subject: Re: kernel BUG at volumes.c:1705
-Date: Mon, 23 Jun 2008 08:49:58 -0600
-Message-ID: <485FB816.1020801@gentoo.org>
-References: <3d08dbff0806120907r3bfc9701g24710b56da3e10b7@mail.gmail.com>	 <1213320815.10187.336.camel@think.oraclecorp.com>	 <3d08dbff0806140222w677896e3s4835524e3d796794@mail.gmail.com>	 <1213618813.10187.387.camel@think.oraclecorp.com>	 <3d08dbff0806180158o6718d3acy34ae5c48a23ad9f8@mail.gmail.com>	 <1213792851.10187.420.camel@think.oraclecorp.com>	 <485CCB69.8050500@gmail.com> <1214231921.10187.553.camel@think.oraclecorp.com>
+From: Evgeniy Polyakov <johnpol@2ka.mipt.ru>
+Subject: Re: HP opensourced advfs from tru64 and what it means for btrfs
+Date: Mon, 23 Jun 2008 18:50:26 +0400
+Message-ID: <20080623145026.GA13310@2ka.mipt.ru>
+References: <c24352ca0806230737g287de15bv5916d1c7501f06be@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
-To: Thomas Lindroth <thomas.lindroth@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: jeffschroeder@computer.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1214231921.10187.553.camel@think.oraclecorp.com>
+In-Reply-To: <c24352ca0806230737g287de15bv5916d1c7501f06be@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote:
-> Something in your config is much less stable than my test boxes here.
-> Focusing on the dd test, it looks like random corruption in the FS
-> metadata.  I see you've got gentoo i386 and a 2.6.24 kernel, are there
-> any other patches in that kernel?
+Hi.
 
-I have used Gentoo's 2.4.26 with btrfs (0.15) for a while now - no
-issues.  Are you using the official ebuilds?  Note that the latest
-contains the 0.15 hotfix.
+On Mon, Jun 23, 2008 at 07:37:32AM -0700, Jeff Schroeder (jeffschroed@gmail.com) wrote:
+> http://advfs.sourceforge.net/ HP open sourced the advfs filesystem
+> from tru64 Unix today under the gplv2.
 
-					-Joe
+...
+ 
+> Would it make sense to look at using any of the code from this in
+> btrfs, or would it be easier to
+> re-implement it all over again? Even though filesystems ported from
+> other Posix operating systems to Linux (Ever looked at XFS code)
+> can be ugly, this might be a way to accelerate btrfs development.
+> If nothing else, it might be interesting to see how HP solved problems
+> btrfs will soon be solving.
+
+Sure it is interesting as studing anything new, but there is nothing in
+advfs which can prevent btrfs from success. Virtually nothing.
+Advfs is quite old technology built on top of almost 20 years old ideas
+and hardware, while the former can still be (and likely is) valid,
+hardware made significant progress. Also transaction log approach can
+be very slow in lots of cases. I'm not sure using advfs code is ever
+possible in btrfs: they are completely different filesystems, which
+share mostly only ideas on what end user may or may not want to have.
+Also having own new code is better from lots of viewpoints: from time
+spent to write vs time to understand, from understandability of some
+internal features and so on.
+
+> Don't drink and derive, alcohol and analysis don't mix.
+> http://www.digitalprognosis.com
+
+Depending on analysis type :)
+
+-- 
+	Evgeniy Polyakov

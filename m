@@ -1,40 +1,75 @@
-From: Christoph Hellwig <hch@infradead.org>
-Subject: Re: [RFC] NFS Support
-Date: Mon, 30 Jun 2008 14:46:00 -0400
-Message-ID: <20080630184600.GA28679@infradead.org>
-References: <200806290505.31641.balajirrao@gmail.com>
+From: Mark Fasheh <mfasheh@suse.com>
+Subject: [PATCH] Null terminate strings passed in from userspace
+Date: Mon, 30 Jun 2008 15:44:38 -0700
+Message-ID: <20080630224438.GD28100@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Balaji Rao <balajirrao@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200806290505.31641.balajirrao@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jun 29, 2008 at 05:05:31AM +0530, Balaji Rao wrote:
-> 	len  = 5;
-> 	fh[0] = cpu_to_le32((u32)(objectid >> 32));
-> 	fh[1] = cpu_to_le32((u32)(objectid & 0xffffffff));
-> 	fh[2] = cpu_to_le32((u32)(root_objectid >> 32));
-> 	fh[3] = cpu_to_le32((u32)(root_objectid & 0xffffffff));
-> 	fh[4] = cpu_to_le32(generation);
+The 'char name[BTRFS_PATH_NAME_MAX]' member of struct btrfs_ioctl_vol_args
+is passed directly to strlen() after being copied from user. I haven't
+verified this, but in theory a userspace program could pass in an
+unterminated string and cause a kernel crash as strlen walks off the end of
+the array.
 
-Please use C struct types for the file handles.  Take a look at
-fs/xfs/linux-2.6/xfs_export.[ch] for an example.
+This patch terminates the ->name string in all btrfs ioctl functions which
+currently use a 'struct btrfs_ioctl_vol_args'. Since the string is now
+properly terminated, it's length will never be longer than
+BTRFS_PATH_NAME_MAX so that error check has been removed.
 
-> static struct dentry * btrfs_get_dentry(struct super_block *sb,
-> 			u64 objectid, u64 root_objectid, u32 generation)
-> {
-> 	struct inode *inode;
-> 	struct dentry *result;
-> 
-> 	inode = btrfs_ilookup(sb, objectid, root_objectid);
-> 	if (IS_ERR(inode))
-> 		return (void *)inode;
+By the way, it might be better overall to just have the ioctl pass an
+unterminated string + length structure but I didn't bother with that since
+it'd change the kernel/user interface.
 
-This one will only find inodes when they already are in memory.  You
-need to something similar to btrfs_lookup minus the btrfs_inode_by_name
-call here.  In fact it would make a lot of sense to factor that part
-of btrfs_lookup out into a btrfs_iget helper that takes a struct
-btrfs_key pointer and returns the inode for you.
+Signed-off-by: Mark Fasheh <mfasheh@suse.com>
+
+diff -r 3f0eee804974 -r be405df89141 ioctl.c
+--- a/ioctl.c	Thu Jun 26 10:34:20 2008 -0400
++++ b/ioctl.c	Mon Jun 30 15:37:34 2008 -0700
+@@ -301,11 +301,9 @@
+ 		ret = -EFAULT;
+ 		goto out;
+ 	}
++
++	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
+ 	namelen = strlen(vol_args->name);
+-	if (namelen > BTRFS_VOL_NAME_MAX) {
+-		ret = -EINVAL;
+-		goto out;
+-	}
+ 
+ 	mutex_lock(&root->fs_info->alloc_mutex);
+ 	mutex_lock(&root->fs_info->chunk_mutex);
+@@ -405,11 +403,8 @@
+ 		goto out;
+ 	}
+ 
++	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
+ 	namelen = strlen(vol_args->name);
+-	if (namelen > BTRFS_VOL_NAME_MAX) {
+-		ret = -EINVAL;
+-		goto out;
+-	}
+ 	if (strchr(vol_args->name, '/')) {
+ 		ret = -EINVAL;
+ 		goto out;
+@@ -480,6 +475,7 @@
+ 		ret = -EFAULT;
+ 		goto out;
+ 	}
++	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
+ 	ret = btrfs_init_new_device(root, vol_args->name);
+ 
+ out:
+@@ -501,6 +497,7 @@
+ 		ret = -EFAULT;
+ 		goto out;
+ 	}
++	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
+ 	ret = btrfs_rm_device(root, vol_args->name);
+ 
+ out:
 

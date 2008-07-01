@@ -1,75 +1,31 @@
-From: Mark Fasheh <mfasheh@suse.com>
-Subject: [PATCH] Null terminate strings passed in from userspace
-Date: Mon, 30 Jun 2008 15:44:38 -0700
-Message-ID: <20080630224438.GD28100@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.com>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: [RFC] NFS Support
+Date: Tue, 1 Jul 2008 03:01:56 -0400
+Message-ID: <20080701070156.GA26299@infradead.org>
+References: <200806290505.31641.balajirrao@gmail.com> <20080630145002.GA18866@unused.rdu.redhat.com> <569c97d20806300820p1e6f3b9eha359f93ea41c6705@mail.gmail.com> <20080630150811.GB18866@unused.rdu.redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Cc: Balaji Rao R <balajirrao@gmail.com>, linux-btrfs@vger.kernel.org
+To: Josef Bacik <jbacik@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20080630150811.GB18866@unused.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The 'char name[BTRFS_PATH_NAME_MAX]' member of struct btrfs_ioctl_vol_args
-is passed directly to strlen() after being copied from user. I haven't
-verified this, but in theory a userspace program could pass in an
-unterminated string and cause a kernel crash as strlen walks off the end of
-the array.
+On Mon, Jun 30, 2008 at 11:08:11AM -0400, Josef Bacik wrote:
+> > >>
+> > >>               spin_unlock(&dentry->d_lock);
+> > >>
+> > >>               len += 3;
+> > >
+> > > there is no need to take the d_lock here.
+> > OK. Will remove it. It was done at fs/ocfs2/export.c. So probably i
+> > thought it was necessary.
+> > 
+> > <snip>
+> >
+> 
+> Ahh see this is where me not being familiar with NFS gets me in trouble, you do
+> need the d_lock in that case.  Sorry about that.
 
-This patch terminates the ->name string in all btrfs ioctl functions which
-currently use a 'struct btrfs_ioctl_vol_args'. Since the string is now
-properly terminated, it's length will never be longer than
-BTRFS_PATH_NAME_MAX so that error check has been removed.
-
-By the way, it might be better overall to just have the ioctl pass an
-unterminated string + length structure but I didn't bother with that since
-it'd change the kernel/user interface.
-
-Signed-off-by: Mark Fasheh <mfasheh@suse.com>
-
-diff -r 3f0eee804974 -r be405df89141 ioctl.c
---- a/ioctl.c	Thu Jun 26 10:34:20 2008 -0400
-+++ b/ioctl.c	Mon Jun 30 15:37:34 2008 -0700
-@@ -301,11 +301,9 @@
- 		ret = -EFAULT;
- 		goto out;
- 	}
-+
-+	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
- 	namelen = strlen(vol_args->name);
--	if (namelen > BTRFS_VOL_NAME_MAX) {
--		ret = -EINVAL;
--		goto out;
--	}
- 
- 	mutex_lock(&root->fs_info->alloc_mutex);
- 	mutex_lock(&root->fs_info->chunk_mutex);
-@@ -405,11 +403,8 @@
- 		goto out;
- 	}
- 
-+	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
- 	namelen = strlen(vol_args->name);
--	if (namelen > BTRFS_VOL_NAME_MAX) {
--		ret = -EINVAL;
--		goto out;
--	}
- 	if (strchr(vol_args->name, '/')) {
- 		ret = -EINVAL;
- 		goto out;
-@@ -480,6 +475,7 @@
- 		ret = -EFAULT;
- 		goto out;
- 	}
-+	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
- 	ret = btrfs_init_new_device(root, vol_args->name);
- 
- out:
-@@ -501,6 +497,7 @@
- 		ret = -EFAULT;
- 		goto out;
- 	}
-+	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
- 	ret = btrfs_rm_device(root, vol_args->name);
- 
- out:
+It's not really about nfs, dereferencing ->d_parent needs d_lock.
 

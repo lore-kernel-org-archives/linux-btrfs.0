@@ -1,32 +1,54 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Algorithm for nodatacow is broken
-Date: Wed, 16 Jul 2008 13:15:54 +0000
-Message-ID: <1216214154.24425.326.camel@think.oraclecorp.com>
-References: <3d0408630807160041h20d2157agfc221b34a836df87@mail.gmail.com>
+From: "Ahmed Kamal" <email.ahmedkamal@googlemail.com>
+Subject: Re: QA suite plans
+Date: Wed, 16 Jul 2008 16:22:16 +0300
+Message-ID: <3da3b5b40807160622l1f7fe447q3c40219cdae3b18@mail.gmail.com>
+References: <3da3b5b40807160139w4b8e3474te113980d0086ba9c@mail.gmail.com>
+	 <3da3b5b40807160206h1e07033fu3fba59fd5edd7aa1@mail.gmail.com>
+	 <20080716120540.GH30311@unused.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: Yan Zheng <yanzheng@21cn.com>
+To: "Josef Bacik" <jbacik@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <3d0408630807160041h20d2157agfc221b34a836df87@mail.gmail.com>
+In-Reply-To: <20080716120540.GH30311@unused.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2008-07-16 at 15:41 +0800, Yan Zheng wrote:
-> Hello,
-> 
-> Yesterday, I realized the algorithm for nodatacow is broken, it can't
-> reliably detect whether a given extent is referenced by only one
-> snapshot.
+Ok, cool. If the torture suite is a bunch of scripts, that is probably
+something I can help with. I don't know what's the contribute policy
+for this project, but if contributors are welcome I would like to
+start a wiki page to gather test suite ideas, and I'd start writing
+scripts to execute the tests and report back results
 
-I had to change around nodatacow back in May because it was definitely
-broken in the way you describe.  I agree the special case I added to
-allow nodatacow when one of the references comes from the running
-transaction is broken.
+A bit intro about myself: I come from a "system engineering"
+background. I've been introduced to Linux around 10 years ago. I'm an
+RHCE, and currently work as a system engineer, integrating solutions
+and consulting on them. I have been involved with the Fedora
+community.
 
-But, we should be able to fix it by extending the reference count checks
-up the tree.  Any reference > 1 not held by the running transaction on
-any block should force a cow.
+Action Items:
+- How do I get access to create a wiki page
+- Any instructions on checking out the code and building it ?
+- I'm planning on using a VM for testing, any specific VMs recommended
+(VirtualBox?)
 
--chris
+Thanks
 
-
+On Wed, Jul 16, 2008 at 3:05 PM, Josef Bacik <jbacik@redhat.com> wrote:
+> On Wed, Jul 16, 2008 at 12:06:00PM +0300, Ahmed Kamal wrote:
+>> Hi Team,
+>> I have been following the btrfs project since Chris announced it last
+>> year. I am happy to see v1.0 is planned in Q4. This is awesome, we can
+>> finally get something like ZFS on Linux. The project pace is nothing
+>> short of amazing. Thank you :)
+>>
+>> I notice the plans contain "QA suite".
+>> I would like to ask if there are any written plans for this QA suite yet ?
+>> Is the suite going to be kernel code, or is it basically going to be a
+>> set of scripts using btrfs userspace commands for regression testing ?
+>
+> AFAIK its going to be alot like the xfs stuff, where its just a bunch of scripts
+> to test for regressions.  So stuff to test the subvol/snapshotting stuff, and
+> then other scripts to test the normal filesystem aspects of btrfs.  Thanks,
+>
+> Josef
+>

@@ -1,24 +1,39 @@
-From: Ric Wheeler <rwheeler@redhat.com>
-Subject: btrfs & SSD testing
-Date: Wed, 16 Jul 2008 15:19:09 -0400
-Message-ID: <487E49AD.8090208@redhat.com>
-References: <1216155223.24425.319.camel@think.oraclecorp.com>
-Reply-To: rwheeler@redhat.com
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Algorithm for nodatacow is broken
+Date: Thu, 17 Jul 2008 12:45:35 +0000
+Message-ID: <1216298735.24425.338.camel@think.oraclecorp.com>
+References: <3d0408630807160041h20d2157agfc221b34a836df87@mail.gmail.com>
+	 <1216214154.24425.326.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain
+Cc: linux-btrfs@vger.kernel.org
+To: Yan Zheng <yanzheng@21cn.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1216155223.24425.319.camel@think.oraclecorp.com>
+In-Reply-To: <1216214154.24425.326.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, 2008-07-16 at 13:15 +0000, Chris Mason wrote:
+> On Wed, 2008-07-16 at 15:41 +0800, Yan Zheng wrote:
+> > Hello,
+> > 
+> > Yesterday, I realized the algorithm for nodatacow is broken, it can't
+> > reliably detect whether a given extent is referenced by only one
+> > snapshot.
+> 
+> I had to change around nodatacow back in May because it was definitely
+> broken in the way you describe.  I agree the special case I added to
+> allow nodatacow when one of the references comes from the running
+> transaction is broken.
+> 
+> But, we should be able to fix it by extending the reference count checks
+> up the tree.  Any reference > 1 not held by the running transaction on
+> any block should force a cow.
 
-On the call, we talked briefly about trying to get some access to high 
-speed SSD's for btrfs testing. I did not see online prices for STEC 
-which is one high end part we mentioned, but I did see that Rocketdisk 
-has 2.5 & 3.5 inch S-ATA drives that claim 19,000 IOPS.
+Actually the existing code assumes any reference held by a different
+generation of the current root is safe.  As Yan's picture shows that
+isn't quite true.  So, we can make it safe by walking down that root and
+checking for snapshots as well.
 
-The affordable ones (say $500) are quite small, but it would be fun to 
-qualify with...
+-chris
 
-ric
 

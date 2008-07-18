@@ -1,7 +1,7 @@
 From: Josef Bacik <jbacik@redhat.com>
-Subject: [PATCH 1/5] updated acl support patch
-Date: Fri, 18 Jul 2008 12:39:41 -0400
-Message-ID: <20080718163941.GE15844@unused.rdu.redhat.com>
+Subject: [PATCH 2/5] updated orphan patch
+Date: Fri, 18 Jul 2008 12:40:27 -0400
+Message-ID: <20080718164027.GF15844@unused.rdu.redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
@@ -10,596 +10,538 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello,
 
-This is an updated ACL patch that applies cleanly to the new stuff in the
-unstable tree.  Thanks,
+Here is an updated orphan inode patch for the unstable tree.  Thanks,
 
 Josef
 
 
-diff -r e7b93e86f40b acl.c
---- a/acl.c	Fri Jul 18 12:01:11 2008 -0400
-+++ b/acl.c	Fri Jul 18 19:34:01 2008 -0400
-@@ -20,76 +20,302 @@
- #include <linux/string.h>
- #include <linux/xattr.h>
- #include <linux/posix_acl_xattr.h>
-+#include <linux/posix_acl.h>
- #include <linux/sched.h>
-+
- #include "ctree.h"
-+#include "btrfs_inode.h"
- #include "xattr.h"
--#ifndef is_owner_or_cap
--#define is_owner_or_cap(inode)	\
--	((current->fsuid == (inode)->i_uid) || capable(CAP_FOWNER))
--#endif
-+
-+static void btrfs_update_cached_acl(struct inode *inode,
-+				    struct posix_acl **p_acl,
-+				    struct posix_acl *acl)
-+{
-+	spin_lock(&inode->i_lock);
-+	if (*p_acl && *p_acl != BTRFS_ACL_NOT_CACHED)
-+		posix_acl_release(*p_acl);
-+	*p_acl = posix_acl_dup(acl);
-+	spin_unlock(&inode->i_lock);
-+}
-+
-+static struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
-+{
-+	int size, name_index;
-+	char *value = NULL;
-+	struct posix_acl *acl = NULL, **p_acl;
-+
-+	switch (type) {
-+	case ACL_TYPE_ACCESS:
-+		name_index = BTRFS_XATTR_INDEX_POSIX_ACL_ACCESS;
-+		p_acl = &BTRFS_I(inode)->i_acl;
-+		break;
-+	case ACL_TYPE_DEFAULT:
-+		name_index = BTRFS_XATTR_INDEX_POSIX_ACL_DEFAULT;
-+		p_acl = &BTRFS_I(inode)->i_default_acl;
-+		break;
-+	default:
-+		return ERR_PTR(-EINVAL);
-+	}
-+
-+	spin_lock(&inode->i_lock);
-+	if (*p_acl != BTRFS_ACL_NOT_CACHED)
-+		acl = posix_acl_dup(*p_acl);
-+	spin_unlock(&inode->i_lock);
-+
-+	if (acl)
-+		return acl;
-+
-+
-+	size = btrfs_xattr_get(inode, name_index, "", NULL, 0);
-+	if (size > 0) {
-+		value = kzalloc(size, GFP_NOFS);
-+		if (!value)
-+			return ERR_PTR(-ENOMEM);
-+		size = btrfs_xattr_get(inode, name_index, "", value, size);
-+		if (size > 0) {
-+			acl = posix_acl_from_xattr(value, size);
-+			btrfs_update_cached_acl(inode, p_acl, acl);
-+		}
-+		kfree(value);
-+	} else if (size == -ENOENT) {
-+		acl = NULL;
-+		btrfs_update_cached_acl(inode, p_acl, acl);
-+	}
-+
-+	return acl;
-+}
-+
-+static int btrfs_xattr_get_acl(struct inode *inode, int type,
-+			       void *value, size_t size)
-+{
-+	struct posix_acl *acl;
-+	int ret = 0;
-+
-+	acl = btrfs_get_acl(inode, type);
-+
-+	if (IS_ERR(acl))
-+		return PTR_ERR(acl);
-+	if (acl == NULL)
-+		return -ENODATA;
-+	ret = posix_acl_to_xattr(acl, value, size);
-+	posix_acl_release(acl);
-+
-+	return ret;
-+}
-+
-+/*
-+ * Needs to be called with fs_mutex held
-+ */
-+static int btrfs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
-+{
-+	int ret, name_index = 0, size = 0;
-+	struct posix_acl **p_acl;
-+	char *value = NULL;
-+	mode_t mode;
-+
-+	if (acl) {
-+		ret = posix_acl_valid(acl);
-+		if (ret < 0)
-+			return ret;
-+		ret = 0;
-+	}
-+
-+	switch (type) {
-+	case ACL_TYPE_ACCESS:
-+		mode = inode->i_mode;
-+		ret = posix_acl_equiv_mode(acl, &mode);
-+		if (ret < 0)
-+			return ret;
-+		ret = 0;
-+		inode->i_mode = mode;
-+		name_index = BTRFS_XATTR_INDEX_POSIX_ACL_ACCESS;
-+		p_acl = &BTRFS_I(inode)->i_acl;
-+		break;
-+	case ACL_TYPE_DEFAULT:
-+		if (!S_ISDIR(inode->i_mode))
-+			return acl ? -EINVAL : 0;
-+		name_index = BTRFS_XATTR_INDEX_POSIX_ACL_DEFAULT;
-+		p_acl = &BTRFS_I(inode)->i_default_acl;
-+		break;
-+	default:
-+		return -EINVAL;
-+	}
-+
-+	if (acl) {
-+		size = posix_acl_xattr_size(acl->a_count);
-+		value = kmalloc(size, GFP_NOFS);
-+		if (!value) {
-+			ret = -ENOMEM;
-+			goto out;
-+		}
-+
-+		ret = posix_acl_to_xattr(acl, value, size);
-+		if (ret < 0)
-+			goto out;
-+	}
-+
-+	ret = btrfs_xattr_set(inode, name_index, "", value, size, 0);
-+
-+out:
-+	if (value)
-+		kfree(value);
-+
-+	if (!ret)
-+		btrfs_update_cached_acl(inode, p_acl, acl);
-+
-+	return ret;
-+}
+diff -r 704bbd0d8f9b Makefile
+--- a/Makefile	Fri Jul 18 19:34:01 2008 -0400
++++ b/Makefile	Fri Jul 18 19:42:53 2008 -0400
+@@ -6,7 +6,7 @@ btrfs-y := super.o ctree.o extent-tree.o
+ 	   hash.o file-item.o inode-item.o inode-map.o disk-io.o \
+ 	   transaction.o bit-radix.o inode.o file.o tree-defrag.o \
+ 	   extent_map.o sysfs.o struct-funcs.o xattr.o ordered-data.o \
+-	   extent_io.o volumes.o async-thread.o ioctl.o locking.o
++	   extent_io.o volumes.o async-thread.o ioctl.o locking.o orphan.o
  
- static int btrfs_xattr_set_acl(struct inode *inode, int type,
- 			       const void *value, size_t size)
- {
- 	int ret = 0;
--	struct posix_acl *acl;
-+	struct posix_acl *acl = NULL;
+ btrfs-$(CONFIG_FS_POSIX_ACL)	+= acl.o
+ else
+diff -r 704bbd0d8f9b btrfs_inode.h
+--- a/btrfs_inode.h	Fri Jul 18 19:34:01 2008 -0400
++++ b/btrfs_inode.h	Fri Jul 18 19:42:53 2008 -0400
+@@ -39,6 +39,9 @@ struct btrfs_inode {
+ 	struct posix_acl *i_acl;
+ 	struct posix_acl *i_default_acl;
  
--	if (!is_owner_or_cap(inode))
--		return -EPERM;
- 	if (value) {
- 		acl = posix_acl_from_xattr(value, size);
- 		if (acl == NULL) {
- 			value = NULL;
- 			size = 0;
- 		} else if (IS_ERR(acl)) {
--			ret = PTR_ERR(acl);
--		} else {
--			ret = posix_acl_valid(acl);
--			posix_acl_release(acl);
-+			return PTR_ERR(acl);
- 		}
--		if (ret)
--			return ret;
- 	}
--	return btrfs_xattr_set(inode, type, "", value, size, 0);
-+
-+	ret = btrfs_set_acl(inode, acl, type);
-+
-+	posix_acl_release(acl);
-+
-+	return ret;
- }
- 
--static int btrfs_xattr_get_acl(struct inode *inode, int type,
--			       void *value, size_t size)
--{
--	return btrfs_xattr_get(inode, type, "", value, size);
--}
-+
- static int btrfs_xattr_acl_access_get(struct inode *inode, const char *name,
- 				      void *value, size_t size)
- {
--	if (*name != '\0')
--	       return -EINVAL;
--	return btrfs_xattr_get_acl(inode, BTRFS_XATTR_INDEX_POSIX_ACL_ACCESS,
--				   value, size);
-+	return btrfs_xattr_get_acl(inode, ACL_TYPE_ACCESS, value, size);
- }
-+
- static int btrfs_xattr_acl_access_set(struct inode *inode, const char *name,
- 				      const void *value, size_t size, int flags)
- {
--	if (*name != '\0')
--	       return -EINVAL;
--	return btrfs_xattr_set_acl(inode, BTRFS_XATTR_INDEX_POSIX_ACL_ACCESS,
--				   value, size);
-+	return btrfs_xattr_set_acl(inode, ACL_TYPE_ACCESS, value, size);
- }
-+
- static int btrfs_xattr_acl_default_get(struct inode *inode, const char *name,
- 				       void *value, size_t size)
- {
--	if (*name != '\0')
--	       return -EINVAL;
--	return btrfs_xattr_get_acl(inode, BTRFS_XATTR_INDEX_POSIX_ACL_DEFAULT,
--				   value, size);
-+	return btrfs_xattr_get_acl(inode, ACL_TYPE_DEFAULT, value, size);
- }
-+
- static int btrfs_xattr_acl_default_set(struct inode *inode, const char *name,
- 				       const void *value, size_t size, int flags)
- {
--	if (*name != '\0')
--	       return -EINVAL;
--	return btrfs_xattr_set_acl(inode, BTRFS_XATTR_INDEX_POSIX_ACL_DEFAULT,
--				   value, size);
-+	return btrfs_xattr_set_acl(inode, ACL_TYPE_DEFAULT, value, size);
- }
-+
-+int btrfs_check_acl(struct inode *inode, int mask)
-+{
-+	struct posix_acl *acl;
-+	int error = -EAGAIN;
-+
-+	acl = btrfs_get_acl(inode, ACL_TYPE_ACCESS);
-+
-+	if (IS_ERR(acl))
-+		return PTR_ERR(acl);
-+	if (acl) {
-+		error = posix_acl_permission(inode, acl, mask);
-+		posix_acl_release(acl);
-+	}
-+
-+	return error;
-+}
-+
-+/*
-+ * btrfs_init_acl is already generally called under fs_mutex, so the locking
-+ * stuff has been fixed to work with that.  If the locking stuff changes, we
-+ * need to re-evaluate the acl locking stuff.
-+ */
-+int btrfs_init_acl(struct inode *inode, struct inode *dir)
-+{
-+	struct posix_acl *acl = NULL;
-+	int ret = 0;
-+
-+	/* this happens with subvols */
-+	if (!dir)
-+		return 0;
-+
-+	if (!S_ISLNK(inode->i_mode)) {
-+		if (IS_POSIXACL(dir)) {
-+			acl = btrfs_get_acl(dir, ACL_TYPE_DEFAULT);
-+			if (IS_ERR(acl))
-+				return PTR_ERR(acl);
-+		}
-+
-+		if (!acl)
-+			inode->i_mode &= ~current->fs->umask;
-+	}
-+
-+	if (IS_POSIXACL(dir) && acl) {
-+		struct posix_acl *clone;
-+		mode_t mode;
-+
-+		if (S_ISDIR(inode->i_mode)) {
-+			ret = btrfs_set_acl(inode, acl, ACL_TYPE_DEFAULT);
-+			if (ret)
-+				goto failed;
-+		}
-+		clone = posix_acl_clone(acl, GFP_NOFS);
-+		ret = -ENOMEM;
-+		if (!clone)
-+			goto failed;
-+
-+		mode = inode->i_mode;
-+		ret = posix_acl_create_masq(clone, &mode);
-+		if (ret >= 0) {
-+			inode->i_mode = mode;
-+			if (ret > 0) {
-+				/* we need an acl */
-+				ret = btrfs_set_acl(inode, clone,
-+						    ACL_TYPE_ACCESS);
-+			}
-+		}
-+	}
-+failed:
-+	posix_acl_release(acl);
-+
-+	return ret;
-+}
-+
-+int btrfs_acl_chmod(struct inode *inode)
-+{
-+	struct posix_acl *acl, *clone;
-+	int ret = 0;
-+
-+	if (S_ISLNK(inode->i_mode))
-+		return -EOPNOTSUPP;
-+
-+	if (!IS_POSIXACL(inode))
-+		return 0;
-+
-+	acl = btrfs_get_acl(inode, ACL_TYPE_ACCESS);
-+	if (IS_ERR(acl) || !acl)
-+		return PTR_ERR(acl);
-+
-+	clone = posix_acl_clone(acl, GFP_KERNEL);
-+	posix_acl_release(acl);
-+	if (!clone)
-+		return -ENOMEM;
-+
-+	ret = posix_acl_chmod_masq(clone, inode->i_mode);
-+	if (!ret)
-+		ret = btrfs_set_acl(inode, clone, ACL_TYPE_ACCESS);
-+
-+	posix_acl_release(clone);
-+
-+	return ret;
-+}
-+
- struct xattr_handler btrfs_xattr_acl_default_handler = {
- 	.prefix = POSIX_ACL_XATTR_DEFAULT,
- 	.list	= btrfs_xattr_generic_list,
-diff -r e7b93e86f40b btrfs_inode.h
---- a/btrfs_inode.h	Fri Jul 18 12:01:11 2008 -0400
-+++ b/btrfs_inode.h	Fri Jul 18 19:34:01 2008 -0400
-@@ -36,6 +36,9 @@ struct btrfs_inode {
- 	struct inode vfs_inode;
- 	struct btrfs_ordered_inode_tree ordered_tree;
- 
-+	struct posix_acl *i_acl;
-+	struct posix_acl *i_default_acl;
++	/* for keeping track of orphaned inodes */
++	struct list_head i_orphan;
 +
  	/*
  	 * transid of the trans_handle that last modified this inode
  	 */
-diff -r e7b93e86f40b ctree.h
---- a/ctree.h	Fri Jul 18 12:01:11 2008 -0400
-+++ b/ctree.h	Fri Jul 18 19:34:01 2008 -0400
-@@ -41,6 +41,8 @@ struct btrfs_ordered_sum;
- struct btrfs_ordered_sum;
- 
- #define BTRFS_MAGIC "_B5RfS_M"
-+
-+#define BTRFS_ACL_NOT_CACHED    ((void *)-1)
- 
- #define BTRFS_MAX_LEVEL 8
- 
-@@ -1671,4 +1673,9 @@ u64 btrfs_parse_size(char *str);
- u64 btrfs_parse_size(char *str);
- int btrfs_parse_options(struct btrfs_root *root, char *options);
- int btrfs_sync_fs(struct super_block *sb, int wait);
-+
-+/* acl.c */
-+int btrfs_check_acl(struct inode *inode, int mask);
-+int btrfs_init_acl(struct inode *inode, struct inode *dir);
-+int btrfs_acl_chmod(struct inode *inode);
- #endif
-diff -r e7b93e86f40b inode.c
---- a/inode.c	Fri Jul 18 12:01:11 2008 -0400
-+++ b/inode.c	Fri Jul 18 19:34:01 2008 -0400
-@@ -36,6 +36,7 @@
- #include <linux/bit_spinlock.h>
- #include <linux/version.h>
- #include <linux/xattr.h>
-+#include <linux/posix_acl.h>
- #include "ctree.h"
- #include "disk-io.h"
- #include "transaction.h"
-@@ -1440,6 +1441,9 @@ static int btrfs_setattr(struct dentry *
+diff -r 704bbd0d8f9b ctree.c
+--- a/ctree.c	Fri Jul 18 19:34:01 2008 -0400
++++ b/ctree.c	Fri Jul 18 19:42:53 2008 -0400
+@@ -2622,7 +2622,7 @@ int btrfs_insert_empty_items(struct btrf
+ 		total_data += data_size[i];
  	}
- out:
- 	err = inode_setattr(inode, attr);
+ 
+-	total_size = total_data + (nr - 1) * sizeof(struct btrfs_item);
++	total_size = total_data + (nr * sizeof(struct btrfs_item));
+ 	ret = btrfs_search_slot(trans, root, cpu_key, path, total_size, 1);
+ 	if (ret == 0) {
+ 		return -EEXIST;
+diff -r 704bbd0d8f9b ctree.h
+--- a/ctree.h	Fri Jul 18 19:34:01 2008 -0400
++++ b/ctree.h	Fri Jul 18 19:42:53 2008 -0400
+@@ -69,6 +69,9 @@ struct btrfs_ordered_sum;
+ 
+ /* directory objectid inside the root tree */
+ #define BTRFS_ROOT_TREE_DIR_OBJECTID 6ULL
 +
-+	if (!err && ((attr->ia_valid & ATTR_MODE)))
-+		err = btrfs_acl_chmod(inode);
- fail:
- 	return err;
++/* orhpan objectid for tracking unlinked/truncated files */
++#define BTRFS_ORPHAN_OBJECTID -5ULL
+ 
+ /*
+  * All files have objectids higher than this.
+@@ -633,6 +636,9 @@ struct btrfs_root {
+ 
+ 	/* the dirty list is only used by non-reference counted roots */
+ 	struct list_head dirty_list;
++
++	spinlock_t orphan_lock;
++	struct list_head orphan_list;
+ };
+ 
+ /*
+@@ -644,6 +650,7 @@ struct btrfs_root {
+ #define BTRFS_INODE_ITEM_KEY		1
+ #define BTRFS_INODE_REF_KEY		2
+ #define BTRFS_XATTR_ITEM_KEY		8
++#define BTRFS_ORPHAN_ITEM_KEY		9
+ /* reserve 2-15 close to the inode for later flexibility */
+ 
+ /*
+@@ -1546,6 +1553,13 @@ struct btrfs_dir_item *btrfs_lookup_xatt
+ 					  struct btrfs_path *path, u64 dir,
+ 					  const char *name, u16 name_len,
+ 					  int mod);
++
++/* orphan.c */
++int btrfs_insert_orphan_item(struct btrfs_trans_handle *trans,
++			     struct btrfs_root *root, u64 offset);
++int btrfs_del_orphan_item(struct btrfs_trans_handle *trans,
++			  struct btrfs_root *root, u64 offset);
++
+ /* inode-map.c */
+ int btrfs_find_free_objectid(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *fs_root,
+diff -r 704bbd0d8f9b disk-io.c
+--- a/disk-io.c	Fri Jul 18 19:34:01 2008 -0400
++++ b/disk-io.c	Fri Jul 18 19:42:53 2008 -0400
+@@ -732,7 +732,9 @@ static int __setup_root(u32 nodesize, u3
+ 	root->in_sysfs = 0;
+ 
+ 	INIT_LIST_HEAD(&root->dirty_list);
++	INIT_LIST_HEAD(&root->orphan_list);
+ 	spin_lock_init(&root->node_lock);
++	spin_lock_init(&root->orphan_lock);
+ 	mutex_init(&root->objectid_mutex);
+ 	memset(&root->root_key, 0, sizeof(root->root_key));
+ 	memset(&root->root_item, 0, sizeof(root->root_item));
+diff -r 704bbd0d8f9b inode.c
+--- a/inode.c	Fri Jul 18 19:34:01 2008 -0400
++++ b/inode.c	Fri Jul 18 19:42:53 2008 -0400
+@@ -77,6 +77,8 @@ static unsigned char btrfs_type_by_mode[
+ 	[S_IFSOCK >> S_SHIFT]	= BTRFS_FT_SOCK,
+ 	[S_IFLNK >> S_SHIFT]	= BTRFS_FT_SYMLINK,
+ };
++
++static void btrfs_truncate(struct inode *inode);
+ 
+ int btrfs_check_free_space(struct btrfs_root *root, u64 num_required,
+ 			   int for_del)
+@@ -794,6 +796,190 @@ zeroit:
+ 	return -EIO;
  }
-@@ -2058,6 +2062,12 @@ static int btrfs_mknod(struct inode *dir
- 	if (IS_ERR(inode))
- 		goto out_unlock;
  
-+	err = btrfs_init_acl(inode, dir);
-+	if (err) {
-+		drop_inode = 1;
-+		goto out_unlock;
++/*
++ * This creates an orphan entry for the given inode in case something goes
++ * wrong in the middle of an unlink/truncate.
++ */
++int btrfs_orphan_add(struct btrfs_trans_handle *trans, struct inode *inode)
++{
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	int ret = 0;
++
++	spin_lock(&root->orphan_lock);
++
++	/* already on the orphan list, we're good */
++	if (!list_empty(&BTRFS_I(inode)->i_orphan)) {
++		spin_unlock(&root->orphan_lock);
++		return 0;
 +	}
 +
- 	btrfs_set_trans_block_group(trans, inode);
- 	err = btrfs_add_nondir(trans, dentry, inode, 0);
- 	if (err)
-@@ -2112,6 +2122,12 @@ static int btrfs_create(struct inode *di
- 	err = PTR_ERR(inode);
- 	if (IS_ERR(inode))
- 		goto out_unlock;
++	list_add(&BTRFS_I(inode)->i_orphan, &root->orphan_list);
 +
-+	err = btrfs_init_acl(inode, dir);
-+	if (err) {
-+		drop_inode = 1;
-+		goto out_unlock;
++	spin_unlock(&root->orphan_lock);
++
++	/*
++	 * insert an orphan item to track this unlinked/truncated file
++	 */
++	ret = btrfs_insert_orphan_item(trans, root, inode->i_ino);
++
++	return ret;
++}
++
++/*
++ * We have done the truncate/delete so we can go ahead and remove the orphan
++ * item for this particular inode.
++ */
++int btrfs_orphan_del(struct btrfs_trans_handle *trans, struct inode *inode)
++{
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	int ret = 0;
++
++	spin_lock(&root->orphan_lock);
++
++	if (list_empty(&BTRFS_I(inode)->i_orphan)) {
++		spin_unlock(&root->orphan_lock);
++		return 0;
 +	}
++
++	list_del_init(&BTRFS_I(inode)->i_orphan);
++	if (!trans) {
++		spin_unlock(&root->orphan_lock);
++		return 0;
++	}
++
++	spin_unlock(&root->orphan_lock);
++
++	ret = btrfs_del_orphan_item(trans, root, inode->i_ino);
++
++	return ret;
++}
++
++/*
++ * this cleans up any orphans that may be left on the list from the last use
++ * of this root.
++ */
++void btrfs_orphan_cleanup(struct btrfs_root *root)
++{
++	struct btrfs_path *path;
++	struct extent_buffer *leaf;
++	struct btrfs_item *item;
++	struct btrfs_key key, found_key;
++	struct btrfs_trans_handle *trans;
++	struct inode *inode;
++	int ret = 0, nr_unlink = 0, nr_truncate = 0;
++
++	/* don't do orphan cleanup if the fs is readonly. */
++	if (root->inode->i_sb->s_flags & MS_RDONLY)
++		return;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return;
++	path->reada = -1;
++
++	key.objectid = BTRFS_ORPHAN_OBJECTID;
++	btrfs_set_key_type(&key, BTRFS_ORPHAN_ITEM_KEY);
++	key.offset = (u64)-1;
++
++	trans = btrfs_start_transaction(root, 1);
++	btrfs_set_trans_block_group(trans, root->inode);
++
++	while (1) {
++		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
++		if (ret < 0) {
++			printk(KERN_ERR "Error searching slot for orphan: %d"
++			       "\n", ret);
++			break;
++		}
++
++		/*
++		 * if ret == 0 means we found what we were searching for, which
++		 * is weird, but possible, so only screw with path if we didnt
++		 * find the key and see if we have stuff that matches
++		 */
++		if (ret > 0) {
++			if (path->slots[0] == 0)
++				break;
++			path->slots[0]--;
++		}
++
++		/* pull out the item */
++		leaf = path->nodes[0];
++		item = btrfs_item_nr(leaf, path->slots[0]);
++		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
++
++		/* make sure the item matches what we want */
++		if (found_key.objectid != BTRFS_ORPHAN_OBJECTID)
++			break;
++		if (btrfs_key_type(&found_key) != BTRFS_ORPHAN_ITEM_KEY)
++			break;
++
++		/* release the path since we're done with it */
++		btrfs_release_path(root, path);
++
++		/*
++		 * this is where we are basically btrfs_lookup, without the
++		 * crossing root thing.  we store the inode number in the
++		 * offset of the orphan item.
++		 */
++		inode = btrfs_iget_locked(root->inode->i_sb,
++					  found_key.offset, root);
++		if (!inode)
++			break;
++
++		if (inode->i_state & I_NEW) {
++			BTRFS_I(inode)->root = root;
++
++			/* have to set the location manually */
++			BTRFS_I(inode)->location.objectid = inode->i_ino;
++			BTRFS_I(inode)->location.type = BTRFS_INODE_ITEM_KEY;
++			BTRFS_I(inode)->location.offset = 0;
++
++			btrfs_read_locked_inode(inode);
++			unlock_new_inode(inode);
++		}
++
++		/*
++		 * add this inode to the orphan list so btrfs_orphan_del does
++		 * the proper thing when we hit it
++		 */
++		spin_lock(&root->orphan_lock);
++		list_add(&BTRFS_I(inode)->i_orphan, &root->orphan_list);
++		spin_unlock(&root->orphan_lock);
++
++		/*
++		 * if this is a bad inode, means we actually succeeded in
++		 * removing the inode, but not the orphan record, which means
++		 * we need to manually delete the orphan since iput will just
++		 * do a destroy_inode
++		 */
++		if (is_bad_inode(inode)) {
++			btrfs_orphan_del(trans, inode);
++			iput(inode);
++			continue;
++		}
++
++		/* if we have links, this was a truncate, lets do that */
++		if (inode->i_nlink) {
++			nr_truncate++;
++			btrfs_truncate(inode);
++		} else {
++			nr_unlink++;
++		}
++
++		/* this will do delete_inode and everything for us */
++		iput(inode);
++	}
++
++	if (nr_unlink)
++		printk(KERN_INFO "btrfs: unlinked %d orphans\n", nr_unlink);
++	if (nr_truncate)
++		printk(KERN_INFO "btrfs: truncated %d orphans\n", nr_truncate);
++
++	btrfs_free_path(path);
++	btrfs_end_transaction(trans, root);
++}
++
+ void btrfs_read_locked_inode(struct inode *inode)
+ {
+ 	struct btrfs_path *path;
+@@ -1030,6 +1216,7 @@ static int btrfs_unlink(struct inode *di
+ {
+ 	struct btrfs_root *root;
+ 	struct btrfs_trans_handle *trans;
++	struct inode *inode = dentry->d_inode;
+ 	int ret;
+ 	unsigned long nr = 0;
  
- 	btrfs_set_trans_block_group(trans, inode);
- 	err = btrfs_add_nondir(trans, dentry, inode, 0);
-@@ -2235,6 +2251,11 @@ static int btrfs_mkdir(struct inode *dir
+@@ -1043,6 +1230,10 @@ static int btrfs_unlink(struct inode *di
+ 
+ 	btrfs_set_trans_block_group(trans, dir);
+ 	ret = btrfs_unlink_trans(trans, root, dir, dentry);
++
++	if (inode->i_nlink == 0)
++		ret = btrfs_orphan_add(trans, inode);
++
+ 	nr = trans->blocks_used;
+ 
+ 	btrfs_end_transaction_throttle(trans, root);
+@@ -1071,12 +1262,17 @@ static int btrfs_rmdir(struct inode *dir
+ 	trans = btrfs_start_transaction(root, 1);
+ 	btrfs_set_trans_block_group(trans, dir);
+ 
++	err = btrfs_orphan_add(trans, inode);
++	if (err)
++		goto fail_trans;
++
+ 	/* now the directory is empty */
+ 	err = btrfs_unlink_trans(trans, root, dir, dentry);
+ 	if (!err) {
+ 		btrfs_i_size_write(inode, 0);
  	}
  
- 	drop_on_err = 1;
-+
-+	err = btrfs_init_acl(inode, dir);
-+	if (err)
-+		goto out_fail;
-+
- 	inode->i_op = &btrfs_dir_inode_operations;
- 	inode->i_fop = &btrfs_dir_file_operations;
++fail_trans:
+ 	nr = trans->blocks_used;
+ 	ret = btrfs_end_transaction_throttle(trans, root);
+ fail:
+@@ -1094,6 +1290,9 @@ fail:
+  *
+  * csum items that cross the new i_size are truncated to the new size
+  * as well.
++ *
++ * min_type is the minimum key type to truncate down to.  If set to 0, this
++ * will kill all the items on this inode, including the INODE_ITEM_KEY.
+  */
+ static int btrfs_truncate_in_trans(struct btrfs_trans_handle *trans,
+ 				   struct btrfs_root *root,
+@@ -1458,6 +1657,7 @@ void btrfs_delete_inode(struct inode *in
+ 	btrfs_wait_ordered_range(inode, 0, (u64)-1);
+ 	truncate_inode_pages(&inode->i_data, 0);
+ 	if (is_bad_inode(inode)) {
++		btrfs_orphan_del(NULL, inode);
+ 		goto no_delete;
+ 	}
+ 
+@@ -1466,8 +1666,12 @@ void btrfs_delete_inode(struct inode *in
+ 
  	btrfs_set_trans_block_group(trans, inode);
-@@ -2893,6 +2914,8 @@ struct inode *btrfs_alloc_inode(struct s
- 		return NULL;
- 	ei->last_trans = 0;
+ 	ret = btrfs_truncate_in_trans(trans, root, inode, 0);
+-	if (ret)
++	if (ret) {
++		btrfs_orphan_del(NULL, inode);
+ 		goto no_delete_lock;
++	}
++
++	btrfs_orphan_del(trans, inode);
+ 
+ 	nr = trans->blocks_used;
+ 	clear_inode(inode);
+@@ -1649,7 +1853,7 @@ static struct dentry *btrfs_lookup(struc
+ 	struct btrfs_root *root = bi->root;
+ 	struct btrfs_root *sub_root = root;
+ 	struct btrfs_key location;
+-	int ret;
++	int ret, do_orphan = 0;
+ 
+ 	if (dentry->d_name.len > BTRFS_NAME_LEN)
+ 		return ERR_PTR(-ENAMETOOLONG);
+@@ -1667,6 +1871,7 @@ static struct dentry *btrfs_lookup(struc
+ 			return ERR_PTR(ret);
+ 		if (ret > 0)
+ 			return ERR_PTR(-ENOENT);
++
+ 		inode = btrfs_iget_locked(dir->i_sb, location.objectid,
+ 					  sub_root);
+ 		if (!inode)
+@@ -1676,6 +1881,7 @@ static struct dentry *btrfs_lookup(struc
+ 			if (sub_root != root) {
+ 				igrab(inode);
+ 				sub_root->inode = inode;
++				do_orphan = 1;
+ 			}
+ 			BTRFS_I(inode)->root = sub_root;
+ 			memcpy(&BTRFS_I(inode)->location, &location,
+@@ -1684,6 +1890,10 @@ static struct dentry *btrfs_lookup(struc
+ 			unlock_new_inode(inode);
+ 		}
+ 	}
++
++	if (unlikely(do_orphan))
++		btrfs_orphan_cleanup(sub_root);
++
+ 	return d_splice_alias(inode, dentry);
+ }
+ 
+@@ -2831,12 +3041,19 @@ static void btrfs_truncate(struct inode 
+ 	btrfs_wait_ordered_range(inode, inode->i_size & (~mask), (u64)-1);
+ 	btrfs_i_size_write(inode, inode->i_size);
+ 
++	ret = btrfs_orphan_add(trans, inode);
++	if (ret)
++		goto out;
+ 	/* FIXME, add redo link to tree so we don't leak on crash */
+ 	ret = btrfs_truncate_in_trans(trans, root, inode,
+ 				      BTRFS_EXTENT_DATA_KEY);
+ 	btrfs_update_inode(trans, root, inode);
++
++	ret = btrfs_orphan_del(trans, inode);
++	BUG_ON(ret);
++
++out:
+ 	nr = trans->blocks_used;
+-
+ 	ret = btrfs_end_transaction_throttle(trans, root);
+ 	BUG_ON(ret);
+ 	btrfs_btree_balance_dirty(root, nr);
+@@ -2916,6 +3133,7 @@ struct inode *btrfs_alloc_inode(struct s
  	btrfs_ordered_inode_tree_init(&ei->ordered_tree);
-+	ei->i_acl = BTRFS_ACL_NOT_CACHED;
-+	ei->i_default_acl = BTRFS_ACL_NOT_CACHED;
+ 	ei->i_acl = BTRFS_ACL_NOT_CACHED;
+ 	ei->i_default_acl = BTRFS_ACL_NOT_CACHED;
++	INIT_LIST_HEAD(&ei->i_orphan);
  	return &ei->vfs_inode;
  }
  
-@@ -2901,6 +2924,13 @@ void btrfs_destroy_inode(struct inode *i
- 	struct btrfs_ordered_extent *ordered;
- 	WARN_ON(!list_empty(&inode->i_dentry));
- 	WARN_ON(inode->i_data.nrpages);
+@@ -2931,6 +3149,14 @@ void btrfs_destroy_inode(struct inode *i
+ 	if (BTRFS_I(inode)->i_default_acl &&
+ 	    BTRFS_I(inode)->i_default_acl != BTRFS_ACL_NOT_CACHED)
+ 		posix_acl_release(BTRFS_I(inode)->i_default_acl);
 +
-+	if (BTRFS_I(inode)->i_acl &&
-+	    BTRFS_I(inode)->i_acl != BTRFS_ACL_NOT_CACHED)
-+		posix_acl_release(BTRFS_I(inode)->i_acl);
-+	if (BTRFS_I(inode)->i_default_acl &&
-+	    BTRFS_I(inode)->i_default_acl != BTRFS_ACL_NOT_CACHED)
-+		posix_acl_release(BTRFS_I(inode)->i_default_acl);
++	spin_lock(&BTRFS_I(inode)->root->orphan_lock);
++	if (!list_empty(&BTRFS_I(inode)->i_orphan)) {
++		printk(KERN_ERR "BTRFS: inode %lu: inode still on the orphan"
++		       " list\n", inode->i_ino);
++		dump_stack();
++	}
++	spin_unlock(&BTRFS_I(inode)->root->orphan_lock);
  
  	while(1) {
  		ordered = btrfs_lookup_first_ordered_extent(inode, (u64)-1);
-@@ -3096,6 +3126,12 @@ static int btrfs_symlink(struct inode *d
- 	if (IS_ERR(inode))
- 		goto out_unlock;
- 
-+	err = btrfs_init_acl(inode, dir);
-+	if (err) {
-+		drop_inode = 1;
-+		goto out_unlock;
-+	}
-+
- 	btrfs_set_trans_block_group(trans, inode);
- 	err = btrfs_add_nondir(trans, dentry, inode, 0);
- 	if (err)
-@@ -3176,7 +3212,7 @@ static int btrfs_permission(struct inode
- {
- 	if (btrfs_test_flag(inode, READONLY) && (mask & MAY_WRITE))
- 		return -EACCES;
--	return generic_permission(inode, mask, NULL);
-+	return generic_permission(inode, mask, btrfs_check_acl);
- }
- 
- static struct inode_operations btrfs_dir_inode_operations = {
-@@ -3258,6 +3294,10 @@ static struct inode_operations btrfs_spe
- 	.getattr	= btrfs_getattr,
- 	.setattr	= btrfs_setattr,
- 	.permission	= btrfs_permission,
-+	.setxattr	= generic_setxattr,
-+	.getxattr	= generic_getxattr,
-+	.listxattr	= btrfs_listxattr,
-+	.removexattr	= generic_removexattr,
- };
- static struct inode_operations btrfs_symlink_inode_operations = {
- 	.readlink	= generic_readlink,
-diff -r e7b93e86f40b super.c
---- a/super.c	Fri Jul 18 12:01:11 2008 -0400
-+++ b/super.c	Fri Jul 18 19:34:01 2008 -0400
-@@ -67,7 +67,7 @@ enum {
- enum {
- 	Opt_degraded, Opt_subvol, Opt_device, Opt_nodatasum, Opt_nodatacow,
- 	Opt_max_extent, Opt_max_inline, Opt_alloc_start, Opt_nobarrier,
--	Opt_ssd, Opt_thread_pool, Opt_err,
-+	Opt_ssd, Opt_thread_pool, Opt_noacl,  Opt_err,
- };
- 
- static match_table_t tokens = {
-@@ -82,7 +82,8 @@ static match_table_t tokens = {
- 	{Opt_alloc_start, "alloc_start=%s"},
- 	{Opt_thread_pool, "thread_pool=%d"},
- 	{Opt_ssd, "ssd"},
--	{Opt_err, NULL}
-+	{Opt_noacl, "noacl"},
-+	{Opt_err, NULL},
- };
- 
- u64 btrfs_parse_size(char *str)
-@@ -213,6 +214,9 @@ int btrfs_parse_options(struct btrfs_roo
- 					"btrfs: allocations start at %llu\n",
- 					info->alloc_start);
- 			}
-+			break;
-+		case Opt_noacl:
-+			root->fs_info->sb->s_flags &= ~MS_POSIXACL;
- 			break;
- 		default:
- 			break;
-@@ -300,6 +304,7 @@ static int btrfs_fill_super(struct super
- 	sb->s_op = &btrfs_super_ops;
- 	sb->s_xattr = btrfs_xattr_handlers;
- 	sb->s_time_gran = 1;
-+	sb->s_flags |= MS_POSIXACL;
- 
- 	tree_root = open_ctree(sb, fs_devices, (char *)data);
- 
-diff -r e7b93e86f40b xattr.c
---- a/xattr.c	Fri Jul 18 12:01:11 2008 -0400
-+++ b/xattr.c	Fri Jul 18 19:34:01 2008 -0400
-@@ -26,25 +26,27 @@
- #include "transaction.h"
- #include "xattr.h"
- #include "disk-io.h"
-+
- static struct xattr_handler *btrfs_xattr_handler_map[] = {
- 	[BTRFS_XATTR_INDEX_USER]		= &btrfs_xattr_user_handler,
- #ifdef CONFIG_FS_POSIX_ACL
--//	[BTRFS_XATTR_INDEX_POSIX_ACL_ACCESS]	= &btrfs_xattr_acl_access_handler,
--//	[BTRFS_XATTR_INDEX_POSIX_ACL_DEFAULT]	= &btrfs_xattr_acl_default_handler,
-+	[BTRFS_XATTR_INDEX_POSIX_ACL_ACCESS]	= &btrfs_xattr_acl_access_handler,
-+	[BTRFS_XATTR_INDEX_POSIX_ACL_DEFAULT]	= &btrfs_xattr_acl_default_handler,
- #endif
- 	[BTRFS_XATTR_INDEX_TRUSTED]		= &btrfs_xattr_trusted_handler,
- 	[BTRFS_XATTR_INDEX_SECURITY]		= &btrfs_xattr_security_handler,
--//	[BTRFS_XATTR_INDEX_SYSTEM]		= &btrfs_xattr_system_handler,
-+	[BTRFS_XATTR_INDEX_SYSTEM]		= &btrfs_xattr_system_handler,
- };
-+
- struct xattr_handler *btrfs_xattr_handlers[] = {
- 	&btrfs_xattr_user_handler,
- #ifdef CONFIG_FS_POSIX_ACL
--//	&btrfs_xattr_acl_access_handler,
--//	&btrfs_xattr_acl_default_handler,
-+	&btrfs_xattr_acl_access_handler,
-+	&btrfs_xattr_acl_default_handler,
- #endif
- 	&btrfs_xattr_trusted_handler,
- 	&btrfs_xattr_security_handler,
--//	&btrfs_xattr_system_handler,
-+	&btrfs_xattr_system_handler,
- 	NULL,
- };
- 
-@@ -237,10 +239,14 @@ int btrfs_xattr_set(struct inode *inode,
- 			mod = 1;
- 			goto out;
- 		}
--	} else if (flags & XATTR_REPLACE) {
--		/* we couldn't find the attr to replace, so error out */
--		ret = -ENODATA;
--		goto out;
-+	} else {
-+		btrfs_release_path(root, path);
-+
-+		if (flags & XATTR_REPLACE) {
-+			/* we couldn't find the attr to replace */
-+			ret = -ENODATA;
-+			goto out;
+@@ -3072,6 +3298,11 @@ static int btrfs_rename(struct inode * o
+ 		ret = btrfs_unlink_trans(trans, root, new_dir, new_dentry);
+ 		if (ret)
+ 			goto out_fail;
++		if (new_inode->i_nlink == 0) {
++			ret = btrfs_orphan_add(trans, new_inode);
++			if (ret)
++				goto out_fail;
 +		}
  	}
- 
- 	/* ok we have to create a completely new xattr */
+ 	ret = btrfs_add_link(trans, new_dentry, old_inode, 1);
+ 	if (ret)
+diff -r 704bbd0d8f9b orphan.c
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/orphan.c	Fri Jul 18 19:42:53 2008 -0400
+@@ -0,0 +1,67 @@
++/*
++ * Copyright (C) 2008 Red Hat.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#include "ctree.h"
++#include "disk-io.h"
++
++int btrfs_insert_orphan_item(struct btrfs_trans_handle *trans,
++			     struct btrfs_root *root, u64 offset)
++{
++	struct btrfs_path *path;
++	struct btrfs_key key;
++	int ret = 0;
++
++	key.objectid = BTRFS_ORPHAN_OBJECTID;
++	btrfs_set_key_type(&key, BTRFS_ORPHAN_ITEM_KEY);
++	key.offset = offset;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	ret = btrfs_insert_empty_item(trans, root, path, &key, 0);
++
++	btrfs_free_path(path);
++	return ret;
++}
++
++int btrfs_del_orphan_item(struct btrfs_trans_handle *trans,
++			  struct btrfs_root *root, u64 offset)
++{
++	struct btrfs_path *path;
++	struct btrfs_key key;
++	int ret = 0;
++
++	key.objectid = BTRFS_ORPHAN_OBJECTID;
++	btrfs_set_key_type(&key, BTRFS_ORPHAN_ITEM_KEY);
++	key.offset = offset;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
++	if (ret)
++		goto out;
++
++	ret = btrfs_del_item(trans, root, path);
++
++out:
++	btrfs_free_path(path);
++	return ret;
++}

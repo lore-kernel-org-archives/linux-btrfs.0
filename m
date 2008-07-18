@@ -1,7 +1,7 @@
 From: Josef Bacik <jbacik@redhat.com>
-Subject: [PATCH 3/5] updated transaction fixes patch
-Date: Fri, 18 Jul 2008 12:42:02 -0400
-Message-ID: <20080718164202.GG15844@unused.rdu.redhat.com>
+Subject: [PATCH 4/5] updated remove useless xattr code
+Date: Fri, 18 Jul 2008 12:42:50 -0400
+Message-ID: <20080718164250.GH15844@unused.rdu.redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
@@ -10,40 +10,83 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello,
 
-Here's an updated patch that fixes the exiting a function without stopping the
-transaction problems.  Applies cleanly to the unstable tree.  Thanks,
+I don't think this patch changed, but I already said patch blah/5, so I have to
+include this or it will screw up my numbering :).  Thanks,
 
 Josef
 
 
-diff -r f661d8fc8b9f extent-tree.c
---- a/extent-tree.c	Fri Jul 18 19:42:53 2008 -0400
-+++ b/extent-tree.c	Fri Jul 18 19:44:06 2008 -0400
-@@ -3191,8 +3191,10 @@ next:
- 	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
- 	if (ret > 0)
- 		ret = -EIO;
--	if (ret < 0)
-+	if (ret < 0) {
-+		btrfs_end_transaction(trans, root);
- 		goto out;
-+	}
+diff -r 870370c6975e ctree.h
+--- a/ctree.h	Wed Jul 09 22:38:43 2008 -0400
++++ b/ctree.h	Thu Jul 10 17:35:44 2008 -0400
+@@ -1663,8 +1663,7 @@ void btrfs_sysfs_del_super(struct btrfs_
  
- 	clear_extent_bits(&info->block_group_cache, key.objectid,
- 			  key.objectid + key.offset - 1,
-diff -r f661d8fc8b9f ioctl.c
---- a/ioctl.c	Fri Jul 18 19:42:53 2008 -0400
-+++ b/ioctl.c	Fri Jul 18 19:44:06 2008 -0400
-@@ -78,8 +78,10 @@ static noinline int create_subvol(struct
- 	leaf = btrfs_alloc_free_block(trans, root, root->leafsize,
- 				      objectid, trans->transid, 0, 0,
- 				      0, 0);
--	if (IS_ERR(leaf))
--		return PTR_ERR(leaf);
-+	if (IS_ERR(leaf)) {
-+		ret = PTR_ERR(leaf);
-+		goto fail;
-+	}
+ /* xattr.c */
+ ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size);
+-int btrfs_delete_xattrs(struct btrfs_trans_handle *trans,
+-			struct btrfs_root *root, struct inode *inode);
++
+ /* super.c */
+ u64 btrfs_parse_size(char *str);
+ int btrfs_parse_options(struct btrfs_root *root, char *options);
+diff -r 870370c6975e xattr.c
+--- a/xattr.c	Wed Jul 09 22:38:43 2008 -0400
++++ b/xattr.c	Thu Jul 10 17:35:44 2008 -0400
+@@ -385,57 +385,6 @@ err:
+ }
  
- 	btrfs_set_header_nritems(leaf, 0);
- 	btrfs_set_header_level(leaf, 0);
+ /*
+- * delete all the xattrs associated with the inode.
+- */
+-int btrfs_delete_xattrs(struct btrfs_trans_handle *trans,
+-			struct btrfs_root *root, struct inode *inode)
+-{
+-	struct btrfs_path *path;
+-	struct btrfs_key key, found_key;
+-	struct btrfs_item *item;
+-	struct extent_buffer *leaf;
+-	int ret;
+-
+-	path = btrfs_alloc_path();
+-	if (!path)
+-		return -ENOMEM;
+-	path->reada = -1;
+-	key.objectid = inode->i_ino;
+-	btrfs_set_key_type(&key, BTRFS_XATTR_ITEM_KEY);
+-	key.offset = (u64)-1;
+-
+-	while(1) {
+-		/* look for our next xattr */
+-		ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
+-		if (ret < 0)
+-			goto out;
+-		BUG_ON(ret == 0);
+-
+-		if (path->slots[0] == 0)
+-			break;
+-
+-		path->slots[0]--;
+-		leaf = path->nodes[0];
+-		item = btrfs_item_nr(leaf, path->slots[0]);
+-		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
+-
+-		if (found_key.objectid != key.objectid)
+-			break;
+-		if (btrfs_key_type(&found_key) != BTRFS_XATTR_ITEM_KEY)
+-			break;
+-
+-		ret = btrfs_del_item(trans, root, path);
+-		BUG_ON(ret);
+-		btrfs_release_path(root, path);
+-	}
+-	ret = 0;
+-out:
+-	btrfs_free_path(path);
+-
+-	return ret;
+-}
+-
+-/*
+  * Handler functions
+  */
+ #define BTRFS_XATTR_SETGET_FUNCS(name, index)				\

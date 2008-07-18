@@ -1,449 +1,97 @@
-From: Josef Bacik <jbacik@redhat.com>
-Subject: [PATCH 5/5] updated patch for new dir format
-Date: Fri, 18 Jul 2008 12:43:50 -0400
-Message-ID: <20080718164350.GI15844@unused.rdu.redhat.com>
+From: Tim Gelter <tgelter@gurulabs.com>
+Subject: Re: QA suite plans
+Date: Fri, 18 Jul 2008 10:36:43 -0600
+Message-ID: <4880C69B.7050301@gurulabs.com>
+References: <3da3b5b40807160139w4b8e3474te113980d0086ba9c@mail.gmail.com>	 <3da3b5b40807160206h1e07033fu3fba59fd5edd7aa1@mail.gmail.com>	 <20080716120540.GH30311@unused.rdu.redhat.com>	 <3da3b5b40807160622l1f7fe447q3c40219cdae3b18@mail.gmail.com>	 <f058a9c30807170725v10f08ccft85e7427637791077@mail.gmail.com> <3da3b5b40807180930i7808cfc4w3432442ea7e4587f@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="------------enigBAA8C48A051829D68C71067B"
+Cc: linux-btrfs@vger.kernel.org
+To: Ahmed Kamal <email.ahmedkamal@googlemail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <3da3b5b40807180930i7808cfc4w3432442ea7e4587f@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--------------enigBAA8C48A051829D68C71067B
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
 
-Last one, applies cleanly.  You'll want to apply these in order otherwise they
-won't apply properly.  Thanks,
+Ahmed Kamal wrote:
+> Thanks man, I got myself a wiki account, and get btrfs up and running
+> in a VM. Will start planning for the test suite
+>=20
+> On Thu, Jul 17, 2008 at 5:25 PM, Miguel Sousa Filipe
+> <miguel.filipe@gmail.com> wrote:
+>> Hi there,
+>>
+>> On Wed, Jul 16, 2008 at 2:22 PM, Ahmed Kamal
+>> <email.ahmedkamal@googlemail.com> wrote:
+>>> Ok, cool. If the torture suite is a bunch of scripts, that is probabl=
+y
+>>> something I can help with. I don't know what's the contribute policy
+>>> for this project, but if contributors are welcome I would like to
+>>> start a wiki page to gather test suite ideas, and I'd start writing
+>>> scripts to execute the tests and report back results
+>>>
+>>> A bit intro about myself: I come from a "system engineering"
+>>> background. I've been introduced to Linux around 10 years ago. I'm an=
 
-Josef
+>>> RHCE, and currently work as a system engineer, integrating solutions
+>>> and consulting on them. I have been involved with the Fedora
+>>> community.
+>>>
+>>> Action Items:
+>>> - How do I get access to create a wiki page
+>> point your browser to: http://btrfs.wiki.kernel.org
+>> create one account there
+>>
+>>> - Any instructions on checking out the code and building it ?
+>> see:
+>> http://btrfs.wiki.kernel.org/index.php/Btrfs_source_repositories
+>>
+>> To build the code, use make, read the INSTALL file
+>>
+>>> - I'm planning on using a VM for testing, any specific VMs recommende=
+d
+>>> (VirtualBox?)
+>> not that I know of.
+>>
+>> Kind regards
+>>
+>>
+>>
+>> --
+>> Miguel Sousa Filipe
+>>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Hello all,
+I've been silently following the development of btrfs for a while now.
+After checking out and building the kernel module, I am unable to insmod
+it. It complains that it's not of a valid type. Any ideas?
+-Tim
 
 
-diff -r 662839675896 btrfs_inode.h
---- a/btrfs_inode.h	Fri Jul 18 19:44:09 2008 -0400
-+++ b/btrfs_inode.h	Fri Jul 18 19:44:44 2008 -0400
-@@ -49,6 +49,21 @@ struct btrfs_inode {
- 	u64 delalloc_bytes;
- 	u64 disk_i_size;
- 	u32 flags;
-+
-+	/*
-+	 * if this is a directory then index_cnt is the counter for the index
-+	 * number for new files that are created
-+	 */
-+	u64 index_cnt;
-+
-+	/*
-+	 * index holds the directory index for this inode on creation, so
-+	 * add_link can do what its supposed to.  This isn't populated when the
-+	 * inode is read because there isn't really a reason to know this unless
-+	 * we are creating the directory index or deleting it, and deletion
-+	 * reads the index off of the inode reference at unlink time.
-+	 */
-+	u64 index;
- };
- 
- static inline struct btrfs_inode *BTRFS_I(struct inode *inode)
-diff -r 662839675896 ctree.h
---- a/ctree.h	Fri Jul 18 19:44:09 2008 -0400
-+++ b/ctree.h	Fri Jul 18 19:44:44 2008 -0400
-@@ -373,6 +373,7 @@ struct btrfs_dev_extent {
- } __attribute__ ((__packed__));
- 
- struct btrfs_inode_ref {
-+	__le64 index;
- 	__le16 name_len;
- 	/* name goes here */
- } __attribute__ ((__packed__));
-@@ -899,6 +900,7 @@ BTRFS_SETGET_STACK_FUNCS(block_group_fla
- 
- /* struct btrfs_inode_ref */
- BTRFS_SETGET_FUNCS(inode_ref_name_len, struct btrfs_inode_ref, name_len, 16);
-+BTRFS_SETGET_FUNCS(inode_ref_index, struct btrfs_inode_ref, index, 64);
- 
- /* struct btrfs_inode_item */
- BTRFS_SETGET_FUNCS(inode_generation, struct btrfs_inode_item, generation, 64);
-@@ -1525,7 +1527,7 @@ int btrfs_find_dead_roots(struct btrfs_r
- /* dir-item.c */
- int btrfs_insert_dir_item(struct btrfs_trans_handle *trans, struct btrfs_root
- 			  *root, const char *name, int name_len, u64 dir,
--			  struct btrfs_key *location, u8 type);
-+			  struct btrfs_key *location, u8 type, u64 index);
- struct btrfs_dir_item *btrfs_lookup_dir_item(struct btrfs_trans_handle *trans,
- 					     struct btrfs_root *root,
- 					     struct btrfs_path *path, u64 dir,
-@@ -1570,11 +1572,11 @@ int btrfs_insert_inode_ref(struct btrfs_
- int btrfs_insert_inode_ref(struct btrfs_trans_handle *trans,
- 			   struct btrfs_root *root,
- 			   const char *name, int name_len,
--			   u64 inode_objectid, u64 ref_objectid);
-+			   u64 inode_objectid, u64 ref_objectid, u64 index);
- int btrfs_del_inode_ref(struct btrfs_trans_handle *trans,
- 			   struct btrfs_root *root,
- 			   const char *name, int name_len,
--			   u64 inode_objectid, u64 ref_objectid);
-+			   u64 inode_objectid, u64 ref_objectid, u64 *index);
- int btrfs_insert_empty_inode(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *root,
- 			     struct btrfs_path *path, u64 objectid);
-diff -r 662839675896 dir-item.c
---- a/dir-item.c	Fri Jul 18 19:44:09 2008 -0400
-+++ b/dir-item.c	Fri Jul 18 19:44:44 2008 -0400
-@@ -110,7 +110,7 @@ int btrfs_insert_xattr_item(struct btrfs
- 
- int btrfs_insert_dir_item(struct btrfs_trans_handle *trans, struct btrfs_root
- 			  *root, const char *name, int name_len, u64 dir,
--			  struct btrfs_key *location, u8 type)
-+			  struct btrfs_key *location, u8 type, u64 index)
- {
- 	int ret = 0;
- 	int ret2 = 0;
-@@ -156,7 +156,7 @@ second_insert:
- 	btrfs_release_path(root, path);
- 
- 	btrfs_set_key_type(&key, BTRFS_DIR_INDEX_KEY);
--	key.offset = location->objectid;
-+	key.offset = index;
- 	dir_item = insert_with_overflow(trans, root, path, &key, data_size,
- 					name, name_len);
- 	if (IS_ERR(dir_item)) {
-diff -r 662839675896 inode-item.c
---- a/inode-item.c	Fri Jul 18 19:44:09 2008 -0400
-+++ b/inode-item.c	Fri Jul 18 19:44:44 2008 -0400
-@@ -52,7 +52,7 @@ int btrfs_del_inode_ref(struct btrfs_tra
- int btrfs_del_inode_ref(struct btrfs_trans_handle *trans,
- 			   struct btrfs_root *root,
- 			   const char *name, int name_len,
--			   u64 inode_objectid, u64 ref_objectid)
-+			   u64 inode_objectid, u64 ref_objectid, u64 *index)
- {
- 	struct btrfs_path *path;
- 	struct btrfs_key key;
-@@ -86,6 +86,10 @@ int btrfs_del_inode_ref(struct btrfs_tra
- 	}
- 	leaf = path->nodes[0];
- 	item_size = btrfs_item_size_nr(leaf, path->slots[0]);
-+
-+	if (index)
-+		*index = btrfs_inode_ref_index(leaf, ref);
-+
- 	if (del_len == item_size) {
- 		ret = btrfs_del_item(trans, root, path);
- 		goto out;
-@@ -106,7 +110,7 @@ int btrfs_insert_inode_ref(struct btrfs_
- int btrfs_insert_inode_ref(struct btrfs_trans_handle *trans,
- 			   struct btrfs_root *root,
- 			   const char *name, int name_len,
--			   u64 inode_objectid, u64 ref_objectid)
-+			   u64 inode_objectid, u64 ref_objectid, u64 index)
- {
- 	struct btrfs_path *path;
- 	struct btrfs_key key;
-@@ -138,6 +142,7 @@ int btrfs_insert_inode_ref(struct btrfs_
- 				     struct btrfs_inode_ref);
- 		ref = (struct btrfs_inode_ref *)((unsigned long)ref + old_size);
- 		btrfs_set_inode_ref_name_len(path->nodes[0], ref, name_len);
-+		btrfs_set_inode_ref_index(path->nodes[0], ref, index);
- 		ptr = (unsigned long)(ref + 1);
- 		ret = 0;
- 	} else if (ret < 0) {
-@@ -146,6 +151,7 @@ int btrfs_insert_inode_ref(struct btrfs_
- 		ref = btrfs_item_ptr(path->nodes[0], path->slots[0],
- 				     struct btrfs_inode_ref);
- 		btrfs_set_inode_ref_name_len(path->nodes[0], ref, name_len);
-+		btrfs_set_inode_ref_index(path->nodes[0], ref, index);
- 		ptr = (unsigned long)(ref + 1);
- 	}
- 	write_extent_buffer(path->nodes[0], name, ptr, name_len);
-diff -r 662839675896 inode.c
---- a/inode.c	Fri Jul 18 19:44:09 2008 -0400
-+++ b/inode.c	Fri Jul 18 19:44:44 2008 -0400
-@@ -1027,6 +1027,8 @@ void btrfs_read_locked_inode(struct inod
- 	inode->i_rdev = 0;
- 	rdev = btrfs_inode_rdev(leaf, inode_item);
- 
-+	BTRFS_I(inode)->index_cnt = (u64)-1;
-+
- 	alloc_group_block = btrfs_inode_block_group(leaf, inode_item);
- 	BTRFS_I(inode)->block_group = btrfs_lookup_block_group(root->fs_info,
- 						       alloc_group_block);
-@@ -1148,6 +1150,7 @@ static int btrfs_unlink_trans(struct btr
- 	struct extent_buffer *leaf;
- 	struct btrfs_dir_item *di;
- 	struct btrfs_key key;
-+	u64 index;
- 
- 	path = btrfs_alloc_path();
- 	if (!path) {
-@@ -1172,8 +1175,19 @@ static int btrfs_unlink_trans(struct btr
- 		goto err;
- 	btrfs_release_path(root, path);
- 
-+	ret = btrfs_del_inode_ref(trans, root, name, name_len,
-+				  dentry->d_inode->i_ino,
-+				  dentry->d_parent->d_inode->i_ino, &index);
-+	if (ret) {
-+		printk("failed to delete reference to %.*s, "
-+		       "inode %lu parent %lu\n", name_len, name,
-+		       dentry->d_inode->i_ino,
-+		       dentry->d_parent->d_inode->i_ino);
-+		goto err;
-+	}
-+
- 	di = btrfs_lookup_dir_index_item(trans, root, path, dir->i_ino,
--					 key.objectid, name, name_len, -1);
-+					 index, name, name_len, -1);
- 	if (IS_ERR(di)) {
- 		ret = PTR_ERR(di);
- 		goto err;
-@@ -1186,15 +1200,6 @@ static int btrfs_unlink_trans(struct btr
- 	btrfs_release_path(root, path);
- 
- 	dentry->d_inode->i_ctime = dir->i_ctime;
--	ret = btrfs_del_inode_ref(trans, root, name, name_len,
--				  dentry->d_inode->i_ino,
--				  dentry->d_parent->d_inode->i_ino);
--	if (ret) {
--		printk("failed to delete reference to %.*s, "
--		       "inode %lu parent %lu\n", name_len, name,
--		       dentry->d_inode->i_ino,
--		       dentry->d_parent->d_inode->i_ino);
--	}
- err:
- 	btrfs_free_path(path);
- 	if (!ret) {
-@@ -1800,6 +1805,7 @@ static int btrfs_init_locked_inode(struc
- 	BTRFS_I(inode)->root = args->root;
- 	BTRFS_I(inode)->delalloc_bytes = 0;
- 	BTRFS_I(inode)->disk_i_size = 0;
-+	BTRFS_I(inode)->index_cnt = (u64)-1;
- 	extent_map_tree_init(&BTRFS_I(inode)->extent_tree, GFP_NOFS);
- 	extent_io_tree_init(&BTRFS_I(inode)->io_tree,
- 			     inode->i_mapping, GFP_NOFS);
-@@ -2082,8 +2088,61 @@ void btrfs_dirty_inode(struct inode *ino
- 	btrfs_end_transaction(trans, root);
- }
- 
-+static void btrfs_get_index_count(struct inode *inode)
-+{
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_key key, found_key;
-+	struct btrfs_path *path;
-+	struct extent_buffer *leaf;
-+
-+	int ret;
-+
-+	key.objectid = inode->i_ino;
-+	btrfs_set_key_type(&key, BTRFS_DIR_INDEX_KEY);
-+	key.offset = (u64)-1;
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return;
-+
-+	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+	if (ret  < 0)
-+		goto out;
-+
-+	/* FIXME: we should be able to handle this */
-+	if (ret == 0)
-+		goto out;
-+
-+	/*
-+	 * MAGIC NUMBER EXPLANATION:
-+	 * since we search a directory based on f_pos we have to start at 2
-+	 * since '.' and '..' have f_pos of 0 and 1 respectively, so everybody
-+	 * else has to start at 2
-+	 */
-+	if (path->slots[0] == 0) {
-+		BTRFS_I(inode)->index_cnt = 2;
-+		goto out;
-+	}
-+
-+	path->slots[0]--;
-+
-+	leaf = path->nodes[0];
-+	btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
-+
-+	if (found_key.objectid != inode->i_ino ||
-+	    btrfs_key_type(&found_key) != BTRFS_DIR_INDEX_KEY) {
-+		BTRFS_I(inode)->index_cnt = 2;
-+		goto out;
-+	}
-+
-+	BTRFS_I(inode)->index_cnt = found_key.offset + 1;
-+out:
-+	btrfs_free_path(path);
-+}
-+
- static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
- 				     struct btrfs_root *root,
-+				     struct inode *dir,
- 				     const char *name, int name_len,
- 				     u64 ref_objectid,
- 				     u64 objectid,
-@@ -2098,6 +2157,7 @@ static struct inode *btrfs_new_inode(str
- 	struct btrfs_inode_ref *ref;
- 	struct btrfs_key key[2];
- 	u32 sizes[2];
-+	u64 index = 0;
- 	unsigned long ptr;
- 	int ret;
- 	int owner;
-@@ -2108,6 +2168,13 @@ static struct inode *btrfs_new_inode(str
- 	inode = new_inode(root->fs_info->sb);
- 	if (!inode)
- 		return ERR_PTR(-ENOMEM);
-+
-+	if (dir) {
-+		if (BTRFS_I(dir)->index_cnt == (u64)-1)
-+			btrfs_get_index_count(dir);
-+		index = BTRFS_I(dir)->index_cnt;
-+		BTRFS_I(dir)->index_cnt++;
-+	}
- 
- 	extent_map_tree_init(&BTRFS_I(inode)->extent_tree, GFP_NOFS);
- 	extent_io_tree_init(&BTRFS_I(inode)->io_tree,
-@@ -2165,8 +2232,11 @@ static struct inode *btrfs_new_inode(str
- 	ref = btrfs_item_ptr(path->nodes[0], path->slots[0] + 1,
- 			     struct btrfs_inode_ref);
- 	btrfs_set_inode_ref_name_len(path->nodes[0], ref, name_len);
-+	btrfs_set_inode_ref_index(path->nodes[0], ref, index);
- 	ptr = (unsigned long)(ref + 1);
- 	write_extent_buffer(path->nodes[0], name, ptr, name_len);
-+
-+	BTRFS_I(inode)->index = index;
- 
- 	btrfs_mark_buffer_dirty(path->nodes[0]);
- 	btrfs_free_path(path);
-@@ -2179,6 +2249,8 @@ static struct inode *btrfs_new_inode(str
- 	insert_inode_hash(inode);
- 	return inode;
- fail:
-+	if (dir)
-+		BTRFS_I(dir)->index_cnt--;
- 	btrfs_free_path(path);
- 	return ERR_PTR(ret);
- }
-@@ -2195,7 +2267,7 @@ static int btrfs_add_link(struct btrfs_t
- 	int ret;
- 	struct btrfs_key key;
- 	struct btrfs_root *root = BTRFS_I(dentry->d_parent->d_inode)->root;
--	struct inode *parent_inode;
-+	struct inode *parent_inode = dentry->d_parent->d_inode;
- 
- 	key.objectid = inode->i_ino;
- 	btrfs_set_key_type(&key, BTRFS_INODE_ITEM_KEY);
-@@ -2204,16 +2276,17 @@ static int btrfs_add_link(struct btrfs_t
- 	ret = btrfs_insert_dir_item(trans, root,
- 				    dentry->d_name.name, dentry->d_name.len,
- 				    dentry->d_parent->d_inode->i_ino,
--				    &key, btrfs_inode_type(inode));
-+				    &key, btrfs_inode_type(inode),
-+				    BTRFS_I(inode)->index);
- 	if (ret == 0) {
- 		if (add_backref) {
- 			ret = btrfs_insert_inode_ref(trans, root,
- 					     dentry->d_name.name,
- 					     dentry->d_name.len,
- 					     inode->i_ino,
--					     dentry->d_parent->d_inode->i_ino);
-+					     parent_inode->i_ino,
-+					     BTRFS_I(inode)->index);
- 		}
--		parent_inode = dentry->d_parent->d_inode;
- 		btrfs_i_size_write(parent_inode, parent_inode->i_size +
- 				   dentry->d_name.len * 2);
- 		parent_inode->i_mtime = parent_inode->i_ctime = CURRENT_TIME;
-@@ -2264,7 +2337,7 @@ static int btrfs_mknod(struct inode *dir
- 		goto out_unlock;
- 	}
- 
--	inode = btrfs_new_inode(trans, root, dentry->d_name.name,
-+	inode = btrfs_new_inode(trans, root, dir, dentry->d_name.name,
- 				dentry->d_name.len,
- 				dentry->d_parent->d_inode->i_ino, objectid,
- 				BTRFS_I(dir)->block_group, mode);
-@@ -2325,7 +2398,7 @@ static int btrfs_create(struct inode *di
- 		goto out_unlock;
- 	}
- 
--	inode = btrfs_new_inode(trans, root, dentry->d_name.name,
-+	inode = btrfs_new_inode(trans, root, dir, dentry->d_name.name,
- 				dentry->d_name.len,
- 				dentry->d_parent->d_inode->i_ino,
- 				objectid, BTRFS_I(dir)->block_group, mode);
-@@ -2451,7 +2524,7 @@ static int btrfs_mkdir(struct inode *dir
- 		goto out_unlock;
- 	}
- 
--	inode = btrfs_new_inode(trans, root, dentry->d_name.name,
-+	inode = btrfs_new_inode(trans, root, dir, dentry->d_name.name,
- 				dentry->d_name.len,
- 				dentry->d_parent->d_inode->i_ino, objectid,
- 				BTRFS_I(dir)->block_group, S_IFDIR | mode);
-@@ -3089,9 +3162,8 @@ int btrfs_create_subvol_root(struct btrf
- 		struct btrfs_block_group_cache *block_group)
- {
- 	struct inode *inode;
--	int ret;
- 
--	inode = btrfs_new_inode(trans, new_root, "..", 2, new_dirid,
-+	inode = btrfs_new_inode(trans, new_root, NULL, "..", 2, new_dirid,
- 				new_dirid, block_group, S_IFDIR | 0700);
- 	if (IS_ERR(inode))
- 		return PTR_ERR(inode);
-@@ -3099,8 +3171,6 @@ int btrfs_create_subvol_root(struct btrf
- 	inode->i_fop = &btrfs_dir_file_operations;
- 	new_root->inode = inode;
- 
--	ret = btrfs_insert_inode_ref(trans, new_root, "..", 2, new_dirid,
--				     new_dirid);
- 	inode->i_nlink = 1;
- 	btrfs_i_size_write(inode, 0);
- 
-@@ -3349,7 +3419,7 @@ static int btrfs_symlink(struct inode *d
- 		goto out_unlock;
- 	}
- 
--	inode = btrfs_new_inode(trans, root, dentry->d_name.name,
-+	inode = btrfs_new_inode(trans, root, dir, dentry->d_name.name,
- 				dentry->d_name.len,
- 				dentry->d_parent->d_inode->i_ino, objectid,
- 				BTRFS_I(dir)->block_group, S_IFLNK|S_IRWXUGO);
-diff -r 662839675896 ioctl.c
---- a/ioctl.c	Fri Jul 18 19:44:09 2008 -0400
-+++ b/ioctl.c	Fri Jul 18 19:44:44 2008 -0400
-@@ -131,13 +131,13 @@ static noinline int create_subvol(struct
- 	dir = root->fs_info->sb->s_root->d_inode;
- 	ret = btrfs_insert_dir_item(trans, root->fs_info->tree_root,
- 				    name, namelen, dir->i_ino, &key,
--				    BTRFS_FT_DIR);
-+				    BTRFS_FT_DIR, 0);
- 	if (ret)
- 		goto fail;
- 
- 	ret = btrfs_insert_inode_ref(trans, root->fs_info->tree_root,
- 			     name, namelen, objectid,
--			     root->fs_info->sb->s_root->d_inode->i_ino);
-+			     root->fs_info->sb->s_root->d_inode->i_ino, 0);
- 	if (ret)
- 		goto fail;
- 
-diff -r 662839675896 transaction.c
---- a/transaction.c	Fri Jul 18 19:44:09 2008 -0400
-+++ b/transaction.c	Fri Jul 18 19:44:44 2008 -0400
-@@ -574,14 +574,14 @@ static noinline int create_pending_snaps
- 	ret = btrfs_insert_dir_item(trans, root->fs_info->tree_root,
- 				    pending->name, namelen,
- 				    root->fs_info->sb->s_root->d_inode->i_ino,
--				    &key, BTRFS_FT_DIR);
-+				    &key, BTRFS_FT_DIR, 0);
- 
- 	if (ret)
- 		goto fail;
- 
- 	ret = btrfs_insert_inode_ref(trans, root->fs_info->tree_root,
- 			     pending->name, strlen(pending->name), objectid,
--			     root->fs_info->sb->s_root->d_inode->i_ino);
-+			     root->fs_info->sb->s_root->d_inode->i_ino, 0);
- 
- 	/* Invalidate existing dcache entry for new snapshot. */
- 	btrfs_invalidate_dcache_root(root, pending->name, namelen);
+--------------enigBAA8C48A051829D68C71067B
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iQEVAwUBSIDGoj8ZuWv5QrjKAQKYjAgAmgUlPqDX9OpUhhsHsAMpI56qe0meLzZY
+MltHPyiTKKry1vuRCamvYa6WXQpKTmvYfELZJ+f+bMqLEtg+pCUQXn9A1GHPo+Cu
+ZK+AiaGiHZ85uA3FQPneUIq4R5RhrdYaHaBsHuLfpAnn/o9k6Rbsu7X1O+UxWtrk
+HGJvXxgoneC8LyOHZmnqYFwUHdSEDJZeYczAkVdir77Gs/C6MZERRrEsYsPsy7nn
+LGPHvMoVAymrUeRM/y7fpxWA+kDs36KZo4QRQDyAtwKj9chchyjyl1W/nsbBqCGV
+GedFR5bn4NBS7oL7EScGtaTSX59vA4XdcFseTdQ3cvpx+KkgGttHNw==
+=hFEL
+-----END PGP SIGNATURE-----
+
+--------------enigBAA8C48A051829D68C71067B--

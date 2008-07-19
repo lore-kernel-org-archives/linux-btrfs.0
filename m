@@ -1,30 +1,50 @@
-From: Balaji Rao <balajirrao@gmail.com>
-Subject: Re: [RFC][PATCH] introduce a btrfs_iget helper
-Date: Sat, 19 Jul 2008 13:55:21 +0530
-Message-ID: <200807191355.22058.balajirrao@gmail.com>
-References: <200807141152.16772.balajirrao@gmail.com> <1216406826.6932.65.camel@think.oraclecorp.com>
+From: "Ahmed Kamal" <email.ahmedkamal@googlemail.com>
+Subject: patch improving btrfsctl usage message
+Date: Sat, 19 Jul 2008 14:28:20 +0300
+Message-ID: <3da3b5b40807190428q6181260dn85ac25436f76a177@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="utf-8"
-Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1216406826.6932.65.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Saturday 19 July 2008 12:17:06 am Chris Mason wrote:
-> On Mon, 2008-07-14 at 11:52 +0530, Balaji Rao wrote:
-> > Hello,
-> >
-> > As suggest by Cristoph, this patch factors out a btrfs_iget helper from
-> > btrfs_lookup. This is useful in situations such as in NFS export ops.
-> >
-> > Comments ?
->
-> No objections, but I'll wait for the full NFS patch before pulling this
-> one in
-Cool. Its almost done. I'll send it once I hunt down a bug I'm chasing now.
+Many options were not mentioned in the usage message, fixing that and
+cleaning up the brackets
 
--- 
-Warm Regards,
-Balaji Rao
+# HG changeset patch
+# User email.ahmedkamal@googlemail.com
+# Date 1216477620 -10800
+# Node ID efd06f1a7f0634b04ff06cfeac76503439a54b7e
+# Parent  f35e2b3b25a97d42452ec90b6c524721d9c9941f
+Cleaning up usage message
+Signed-Off-By: Ahmed Kamal <email.ahmedkamal@googlemail.com>
+user: email.ahmedkamal@googlemail.com
+
+diff -r f35e2b3b25a9 -r efd06f1a7f06 btrfsctl.c
+--- a/btrfsctl.c        Fri Jul 18 22:43:09 2008 +0300
++++ b/btrfsctl.c        Sat Jul 19 17:27:00 2008 +0300
+@@ -43,15 +43,15 @@
+
+ void print_usage(void)
+ {
+-       printf("usage: btrfsctl [ -s name ] [-d] [-r size] file_or_dir\n");
+-       printf("\t-d filename defragments one file\n");
+-       printf("\t-d directory defragments the entire Btree\n");
+-       printf("\t-s snap_name existing_subvol creates a new snapshot\n");
+-       printf("\t-s snap_name tree_root creates a new subvolume\n");
+-       printf("\t-r [+-]size[gkm] resize the FS\n");
+-       printf("\t-A device scans the device for a Btrfs filesystem\n");
+-       printf("\t-a scans all devices for Btrfs filesystems\n");
+-       printf("\t-c forces a single FS sync\n");
++       printf("usage: btrfsctl [ -d file|dir] [ -s snap_name
+subvol|tree ] [-r size] [-A device] [-a] [-c]\n");
++       printf("\t-d filename: defragments one file\n");
++       printf("\t-d directory: defragments the entire Btree\n");
++       printf("\t-s snap_name: existing_subvol creates a new snapshot\n");
++       printf("\t-s snap_name: tree_root creates a new subvolume\n");
++       printf("\t-r [+-]size[gkm]: resize the FS by that much\n");
++       printf("\t-A device: scans the device file for a Btrfs filesystem\n");
++       printf("\t-a: scans all devices for Btrfs filesystems\n");
++       printf("\t-c: forces a single FS sync\n");
+        exit(1);
+ }

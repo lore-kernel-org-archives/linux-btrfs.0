@@ -1,34 +1,30 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: New data=ordered code pushed out to btrfs-unstable
-Date: Fri, 18 Jul 2008 20:45:31 -0400
-Message-ID: <1216428331.6932.82.camel@think.oraclecorp.com>
-References: <1216398992.6932.36.camel@think.oraclecorp.com>
-	 <4880F87B.7020908@gmail.com>
-	 <1216411969.6932.70.camel@think.oraclecorp.com>
-	 <48811ABF.5010606@gmail.com>
+From: Balaji Rao <balajirrao@gmail.com>
+Subject: Re: [RFC][PATCH] introduce a btrfs_iget helper
+Date: Sat, 19 Jul 2008 13:55:21 +0530
+Message-ID: <200807191355.22058.balajirrao@gmail.com>
+References: <200807141152.16772.balajirrao@gmail.com> <1216406826.6932.65.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Ric Wheeler <ricwheeler@gmail.com>
+Content-Type: text/plain;
+  charset="utf-8"
+Cc: linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <48811ABF.5010606@gmail.com>
+In-Reply-To: <1216406826.6932.65.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2008-07-18 at 18:35 -0400, Ric Wheeler wrote:
-> Chris Mason wrote:
-> > On Fri, 2008-07-18 at 16:09 -0400, Ric Wheeler wrote:
-> > 
-> >> Just to kick the tires, I tried the same test that I ran last week on 
-> >> ext4. Everything was going great, I decided to kill it after 6 million 
-> >> files or so and restart.
+On Saturday 19 July 2008 12:17:06 am Chris Mason wrote:
+> On Mon, 2008-07-14 at 11:52 +0530, Balaji Rao wrote:
+> > Hello,
+> >
+> > As suggest by Cristoph, this patch factors out a btrfs_iget helper from
+> > btrfs_lookup. This is useful in situations such as in NFS export ops.
+> >
+> > Comments ?
+>
+> No objections, but I'll wait for the full NFS patch before pulling this
+> one in
+Cool. Its almost done. I'll send it once I hunt down a bug I'm chasing now.
 
-Well, it looks like I neglected to push all the changesets, especially
-the last one that made it less racey.  So, I've just done another push,
-sorry.  For the fs_mark workload, it shouldn't change anything.
-
-This code still hasn't really survived an overnight run, hopefully this
-commit will.
-
--chris
-
-
+-- 
+Warm Regards,
+Balaji Rao

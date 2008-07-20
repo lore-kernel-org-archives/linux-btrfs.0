@@ -1,38 +1,44 @@
-From: Balaji Rao <balajirrao@gmail.com>
+From: David Woodhouse <dwmw2@infradead.org>
 Subject: Re: Problem during implementing NFS support
-Date: Mon, 21 Jul 2008 01:06:55 +0530
-Message-ID: <200807210106.56056.balajirrao@gmail.com>
-References: <200807210041.10609.balajirrao@gmail.com> <1216572230.2475.106.camel@shinybook.infradead.org>
+Date: Sun, 20 Jul 2008 13:08:16 -0700
+Message-ID: <1216584496.2475.198.camel@shinybook.infradead.org>
+References: <200807210041.10609.balajirrao@gmail.com>
+	 <1216572230.2475.106.camel@shinybook.infradead.org>
+	 <200807210106.56056.balajirrao@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="utf-8"
+Content-Type: text/plain
 Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
-To: David Woodhouse <dwmw2@infradead.org>
+To: Balaji Rao <balajirrao@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1216572230.2475.106.camel@shinybook.infradead.org>
+In-Reply-To: <200807210106.56056.balajirrao@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sunday 20 July 2008 10:13:50 pm David Woodhouse wrote:
-> On Mon, 2008-07-21 at 00:41 +0530, Balaji Rao wrote:
-> > Hi,
-> >
-> > There's a problem in btrfs_readdir that tries to lock a root node with
-> > one being held. This happens when NFS calls vfs_readdir function with a
-> > nfs specific filldir function pointer. This filldir function, called with
-> > the lock held calls btrfs_lookup, which tries to take the same lock. So,
-> > it keeps waiting on lock_page indefinitely - a deadlock. This is not seen
-> > if the inode is RAM in which case, lookup is not called.
->
-> We've seen precisely this problem (nfs3 readdirplus calling ->lookup
-> from within ->readdir and deadlocking) in a number of other file
-> systems.
->
-oh, ok!
+On Mon, 2008-07-21 at 01:06 +0530, Balaji Rao wrote:
+> The idea of the patch seems correct to me, that once we "own" the
+> lock, an attempt to take it again should be a nop.
 
-> I have an evil workaround hack for JFFS2 at
-> http://lists.infradead.org/pipermail/linux-mtd/2007-March/017663.html
->
-The idea of the patch seems correct to me, that once we "own" the lock, an 
-attempt to take it again should be a nop.
+Well, kind of correct. There are potentially race conditions with the
+handling of f->readdir_process, but given that we only ever really
+compare it to 'current', it's actually going to turn out OK in practice.
+You won't ever actually get a false negative (and deadlock) or a false
+positive (and go through lookup() without locking), as far as I can
+tell.
 
-Balaji
+But still, it's ugly as sin and I'd much rather come up with a _proper_
+fix in the VFS. I was looking at it at one point, and didn't actually
+apply that patch to the JFFS2 tree.
+
+Since general btrfs work is now more of a priority for me than getting
+JFFS2 to be NFS-exportable was, I think I'll pick up where I left off
+with that.
+
+In the meantime, we have an evil hack which at least ought to work for
+now.
+
+-- 
+David Woodhouse                            Open Source Technology Centre
+David.Woodhouse@intel.com                              Intel Corporation
+
+-- 
+dwmw2
+

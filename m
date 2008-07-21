@@ -1,33 +1,47 @@
-From: "Dongjun Shin" <djshin90@gmail.com>
-Subject: Re: single disk reed solomon codes
-Date: Tue, 22 Jul 2008 00:03:15 +0900
-Message-ID: <7fe698080807210803h3a634eddw49be677e235c1c88@mail.gmail.com>
-References: <3da3b5b40807190521x35477489sc06195bb182a4561@mail.gmail.com>
-	 <0cb201c8e9b2$a4272b20$0a00a8c0@ALDI2>
-	 <1216622923.6970.19.camel@s1.crocom.com.pl>
-	 <3da3b5b40807210040s72fdf458g44a1fe968088586e@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: New data=ordered code pushed out to btrfs-unstable
+Date: Mon, 21 Jul 2008 11:08:35 -0400
+Message-ID: <1216652915.6932.113.camel@think.oraclecorp.com>
+References: <1216398992.6932.36.camel@think.oraclecorp.com>
+	 <4880F87B.7020908@gmail.com>
+	 <1216411969.6932.70.camel@think.oraclecorp.com>
+	 <48811ABF.5010606@gmail.com>
+	 <1216428331.6932.82.camel@think.oraclecorp.com>
+	 <48832D42.6030204@redhat.com>
+	 <1216560741.6932.83.camel@think.oraclecorp.com>
+	 <488341CB.1010007@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: "Tomasz Torcz" <tomek@crocom.com.pl>, linux-btrfs@vger.kernel.org
-To: "Ahmed Kamal" <email.ahmedkamal@googlemail.com>
+Content-Type: text/plain
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: rwheeler@redhat.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <3da3b5b40807210040s72fdf458g44a1fe968088586e@mail.gmail.com>
+In-Reply-To: <488341CB.1010007@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 21, 2008 at 4:40 PM, Ahmed Kamal
-<email.ahmedkamal@googlemail.com> wrote:
-> I definitely hope btrfs has this per-object "copies" property too.
-> However, simply replicating the whole contents of a directory, wastes
-> too much disk space, as opposed to RS codes
->
+On Sun, 2008-07-20 at 09:46 -0400, Ric Wheeler wrote:
+>            
+> >>>>>> Just to kick the tires, I tried the same test that I ran last week on 
+> >>>>>> ext4. Everything was going great, I decided to kill it after 6 million 
+> >>>>>> files or so and restart.
+> >>>>>>         
+> >>>>>>             
+> >>> Well, it looks like I neglected to push all the changesets, especially
+> >>> the last one that made it less racey.  So, I've just done another push,
+> >>> sorry.  For the fs_mark workload, it shouldn't change anything.
+> >>>
+> >>> This code still hasn't really survived an overnight run, hopefully this
+> >>> commit will.
+> >>>
+> >> The test is still running, but slowly, with a (slow) stream of messages 
+> >> about:
 
-Although adding redundancy mechanism will help increasing the integrity of data,
-I'm not sure whether repeating the same kind of mechanism twice will help.
-(AFAIK, RS is common in HDD and BCH is common in flash due to their own
-physical characteristics)
+[ lock timeouts and stalls ]
 
-I think it is better to have another redundancy mechanism (like RAID1)
-which is independent of the algorithm used by the underlying storage.
 
--- 
-Dongjun
+Ok, I've made a few changes that should lower overall contenion on the
+allocation mutex.  I'm getting better performance on a 3 million file
+run, please give it a shot.
+
+-chris
+
+

@@ -1,49 +1,38 @@
 From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: single disk reed solomon codes
-Date: Mon, 21 Jul 2008 09:05:43 -0400
-Message-ID: <1216645543.6932.101.camel@think.oraclecorp.com>
+Date: Mon, 21 Jul 2008 09:03:36 -0400
+Message-ID: <1216645416.6932.98.camel@think.oraclecorp.com>
 References: <3da3b5b40807190521x35477489sc06195bb182a4561@mail.gmail.com>
-	 <1216486204.2475.11.camel@shinybook.infradead.org>
+	 <0cb201c8e9b2$a4272b20$0a00a8c0@ALDI2>
+	 <1216622923.6970.19.camel@s1.crocom.com.pl>
+	 <3da3b5b40807210040s72fdf458g44a1fe968088586e@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain
-Cc: Ahmed Kamal <email.ahmedkamal@googlemail.com>,
-	linux-btrfs@vger.kernel.org
-To: David Woodhouse <dwmw2@infradead.org>
+Cc: Tomasz Torcz <tomek@crocom.com.pl>, linux-btrfs@vger.kernel.org
+To: Ahmed Kamal <email.ahmedkamal@googlemail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1216486204.2475.11.camel@shinybook.infradead.org>
+In-Reply-To: <3da3b5b40807210040s72fdf458g44a1fe968088586e@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, 2008-07-19 at 09:50 -0700, David Woodhouse wrote:
-> On Sat, 2008-07-19 at 15:21 +0300, Ahmed Kamal wrote:
-> > Hi,
-> > Since btrfs is someday going to be the default FS for Linux, and will
-> > be on so many single disk PCs and laptops, I was thinking it should be
-> > a good idea to insert some redundancy in single disk deployments. Of
-> > course it can help with disk failures, since it's obviously a "single"
-> > disk, but it can help with bit-rot, and with hardware sector read
-> > errors. To get that we'd need to implement some kind of forward error
-> > correction, possibly reed solomon code. I am not sure why no
-> > filesystem seems to implement such scheme, although I believe at the
-> > hardware level, such schemes are being used (so the idea is
-> > applicable) ?
-> 
-> We have implementations of such schemes in lib/reed_solomon/ in the
-> kernel already.
-> 
-> I'm quite interested in using btrfs on flash (I mean  _real_ flash not
-> SSDs where they have their own internal pseudo-fs pretending to be a
-> disk). For that, we'd probably want to use precisely this kind of error
-> correction. Although it's normal to do it at the block level rather than
-> the filesystem object level;
+On Mon, 2008-07-21 at 10:40 +0300, Ahmed Kamal wrote:
+> I definitely hope btrfs has this per-object "copies" property too.
+> However, simply replicating the whole contents of a directory, wastes
+> too much disk space, as opposed to RS codes
 > 
 
-The long term goal is to have the checksum algorithm selectable between
-a number of choices.  For metadata, you have 256 bits to use and for
-data you can use anything that will fit in a btree block.
+Btrfs already has a raid level where things are duplicated on the single
+spindles and it is on by default for metadata.  mkfs isn't currently
+setup to use this on data blocks, but it is certainly possible (look for
+BTRFS_BLOCK_GROUP_DUP).  This is definitely less reliable than two
+physical devices, and I worry that such a feature would give people the
+impression that single drive raid is a good idea.
 
-So, the way to do this for real flash would be to implement the
-selectable checksum, and then store the sum + whatever error recovery
-code you want in the checksum item.
+As others have already said, the drives to have considerable error
+detection and correction already.  One of the main benefits of the
+checksums is being able to tell which copy of the data from a group of
+drives is correct.
+
+In terms of detecting errors, the data checksums will do that.
 
 -chris
 

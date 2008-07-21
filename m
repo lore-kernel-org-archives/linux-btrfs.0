@@ -1,37 +1,49 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Problem during implementing NFS support
-Date: Mon, 21 Jul 2008 08:58:23 -0400
-Message-ID: <1216645103.6932.92.camel@think.oraclecorp.com>
-References: <200807210041.10609.balajirrao@gmail.com>
-	 <1216572230.2475.106.camel@shinybook.infradead.org>
-	 <20080721081037.GA24230@infradead.org>
+Subject: Re: single disk reed solomon codes
+Date: Mon, 21 Jul 2008 09:05:43 -0400
+Message-ID: <1216645543.6932.101.camel@think.oraclecorp.com>
+References: <3da3b5b40807190521x35477489sc06195bb182a4561@mail.gmail.com>
+	 <1216486204.2475.11.camel@shinybook.infradead.org>
 Mime-Version: 1.0
 Content-Type: text/plain
-Cc: David Woodhouse <dwmw2@infradead.org>,
-	Balaji Rao <balajirrao@gmail.com>, linux-btrfs@vger.kernel.org
-To: Christoph Hellwig <hch@infradead.org>
+Cc: Ahmed Kamal <email.ahmedkamal@googlemail.com>,
+	linux-btrfs@vger.kernel.org
+To: David Woodhouse <dwmw2@infradead.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20080721081037.GA24230@infradead.org>
+In-Reply-To: <1216486204.2475.11.camel@shinybook.infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2008-07-21 at 04:10 -0400, Christoph Hellwig wrote:
-> On Sun, Jul 20, 2008 at 09:43:50AM -0700, David Woodhouse wrote:
-> > The way GFS1 (and also XFS iirc) handles it is to build up a complete
-> > list of responses to readdir() in a buffer, drop the lock, and then
-> > iterate over that buffer calling filldir(). I don't much like that
-> > version either.
+On Sat, 2008-07-19 at 09:50 -0700, David Woodhouse wrote:
+> On Sat, 2008-07-19 at 15:21 +0300, Ahmed Kamal wrote:
+> > Hi,
+> > Since btrfs is someday going to be the default FS for Linux, and will
+> > be on so many single disk PCs and laptops, I was thinking it should be
+> > a good idea to insert some redundancy in single disk deployments. Of
+> > course it can help with disk failures, since it's obviously a "single"
+> > disk, but it can help with bit-rot, and with hardware sector read
+> > errors. To get that we'd need to implement some kind of forward error
+> > correction, possibly reed solomon code. I am not sure why no
+> > filesystem seems to implement such scheme, although I believe at the
+> > hardware level, such schemes are being used (so the idea is
+> > applicable) ?
 > 
-> Yes.  My prefered mid-term solution would to simply lift that code from
-> XFS (where it's nicely isolated and all code is prefixed with hack_) to
-> nfsd so that local users don't aren't penalized for this.
+> We have implementations of such schemes in lib/reed_solomon/ in the
+> kernel already.
+> 
+> I'm quite interested in using btrfs on flash (I mean  _real_ flash not
+> SSDs where they have their own internal pseudo-fs pretending to be a
+> disk). For that, we'd probably want to use precisely this kind of error
+> correction. Although it's normal to do it at the block level rather than
+> the filesystem object level;
 > 
 
-Reiserfs also uses the local buffer and lock dropping trick, and that's
-what I would do for now in btrfs.
+The long term goal is to have the checksum algorithm selectable between
+a number of choices.  For metadata, you have 256 bits to use and for
+data you can use anything that will fit in a btree block.
 
-But, the extent allocation tree also needs recursive locking, so I'm
-going to take a stab at that as soon as I get the pending patch list
-merged.
+So, the way to do this for real flash would be to implement the
+selectable checksum, and then store the sum + whatever error recovery
+code you want in the checksum item.
 
 -chris
 

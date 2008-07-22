@@ -1,83 +1,56 @@
-From: Ric Wheeler <ricwheeler@gmail.com>
-Subject: Re: New data=ordered code pushed out to btrfs-unstable
-Date: Mon, 21 Jul 2008 15:23:33 -0400
-Message-ID: <4884E235.1010206@gmail.com>
-References: <1216398992.6932.36.camel@think.oraclecorp.com>	 <4880F87B.7020908@gmail.com>	 <1216411969.6932.70.camel@think.oraclecorp.com>	 <48811ABF.5010606@gmail.com>	 <1216428331.6932.82.camel@think.oraclecorp.com>	 <48832D42.6030204@redhat.com>	 <1216560741.6932.83.camel@think.oraclecorp.com>	 <488341CB.1010007@redhat.com>	 <1216652915.6932.113.camel@think.oraclecorp.com>	 <4884D578.7040901@redhat.com> <1216665311.6932.116.camel@think.oraclecorp.com>
+From: David Woodhouse <dwmw2@infradead.org>
+Subject: [PATCH] Use do_div() instead of native 64-bit division in
+	btrfs_ordered_sum_size()
+Date: Mon, 21 Jul 2008 23:32:08 -0400
+Message-ID: <1216697528.18980.34.camel@shinybook.infradead.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: rwheeler@redhat.com, linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1216665311.6932.116.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote:
-> On Mon, 2008-07-21 at 14:29 -0400, Ric Wheeler wrote:
->   
->> Chris Mason wrote:
->>     
->>> On Sun, 2008-07-20 at 09:46 -0400, Ric Wheeler wrote:
->>>   
->>>       
->>>>            
->>>>     
->>>>         
->>>>>>>>>> Just to kick the tires, I tried the same test that I ran last week on 
->>>>>>>>>> ext4. Everything was going great, I decided to kill it after 6 million 
->>>>>>>>>> files or so and restart.
->>>>>>>>>>         
->>>>>>>>>>             
->>>>>>>>>>                 
->>>>>>>>>>                     
->>>>>>> Well, it looks like I neglected to push all the changesets, especially
->>>>>>> the last one that made it less racey.  So, I've just done another push,
->>>>>>> sorry.  For the fs_mark workload, it shouldn't change anything.
->>>>>>>
->>>>>>> This code still hasn't really survived an overnight run, hopefully this
->>>>>>> commit will.
->>>>>>>
->>>>>>>           
->>>>>>>               
->>>>>> The test is still running, but slowly, with a (slow) stream of messages 
->>>>>> about:
->>>>>>         
->>>>>>             
->>> [ lock timeouts and stalls ]
->>>
->>>
->>> Ok, I've made a few changes that should lower overall contenion on the
->>> allocation mutex.  I'm getting better performance on a 3 million file
->>> run, please give it a shot.
->>>
->>> -chris
->>>
->>>   
->>>       
->> Hi Chris,
->>
->> After an update, clean rebuild & reboot, the test is running along and 
->> has hit about 10 million files. I still see some messages like:
->>
->> INFO: task pdflush:4051 blocked for more than 120 seconds.
->> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
->> pdflush       D ffffffff8129c5b0     0  4051      2
->>  ffff81002ae77870 0000000000000046 0000000000000000 ffff81002ae77834
->>  0000000000000001 ffffffff814b2280 ffffffff814b2280 0000000100000001
->>  0000000000000000 ffff81003f188000 ffff81003fac5980 ffff81003f188350
->>
->> but not as many as before.
->>
->> I will attach the messages file,
->>     
->
-> I'll try running with soft-lockup detection here, see if I can hunt down
-> the cause of these stalls.  Good to know I've made progress though ;)
->
-> -chris
->
->   
-This is an 8 core box, so it is might be more prone to hitting these 
-things ;-)
+Prevents the compiler emitting calls to __udivdi3() from libgcc on some
+platforms:
+WARNING: "__udivdi3" [/shiny/git/btrfs-kernel-unstable/btrfs.ko] undefi=
+ned!
 
-ric
+Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+---
+Untested but ObviouslyCorrect=E2=84=A2. Now that I can load the module,=
+ I hit a
+BUG() immediately -- but I don't think it's caused by this patch. qv.
 
+diff --git a/ordered-data.h b/ordered-data.h
+index 1794efd..1abe5f5 100644
+--- a/ordered-data.h
++++ b/ordered-data.h
+@@ -97,9 +97,12 @@ struct btrfs_ordered_extent {
+  */
+ static inline int btrfs_ordered_sum_size(struct btrfs_root *root, u64 =
+bytes)
+ {
+-	unsigned long num_sectors =3D (bytes + root->sectorsize - 1) /
+-		root->sectorsize;
+-	num_sectors++;
++	unsigned long num_sectors;
++
++	bytes +=3D root->sectorsize - 1;
++	do_div(bytes, root->sectorsize);
++	num_sectors =3D bytes + 1;
++
+ 	return sizeof(struct btrfs_ordered_sum) +
+ 		num_sectors * sizeof(struct btrfs_sector_sum);
+ }
+
+--=20
+David Woodhouse                            Open Source Technology Centr=
+e
+David.Woodhouse@intel.com                              Intel Corporatio=
+n
+
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

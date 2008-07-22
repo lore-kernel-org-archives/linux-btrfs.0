@@ -1,7 +1,7 @@
 From: Josef Bacik <jbacik@redhat.com>
-Subject: [PATCH] updated new dir format patch
-Date: Tue, 22 Jul 2008 13:55:16 -0400
-Message-ID: <20080722175516.GA8960@unused.rdu.redhat.com>
+Subject: [PATCH] new dir format take 3
+Date: Tue, 22 Jul 2008 14:44:04 -0400
+Message-ID: <20080722184404.GB8960@unused.rdu.redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
@@ -10,18 +10,17 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello,
 
-Updated new dir format which should help performance a little bit.  Everytime we
-create a new inode go ahead and set index_cnt to 2 in case its a dir, so if we
-make a dir and then touch a file in that dir we don't have to search for a dir
-index that doesn't exist yet in order to get the index_cnt set properly.
-Thanks,
+This version fixes a problem with the previous versions where if you link or
+rename then the index number ends up not right for the directory you are in, so
+when you go to remove stuff you end up leaving dir indexes behind.  This version
+fixes this problem.  Thanks,
 
 Josef
 
 
 diff -r 82fa3b59a9fa btrfs_inode.h
 --- a/btrfs_inode.h	Tue Jul 22 20:13:52 2008 -0400
-+++ b/btrfs_inode.h	Tue Jul 22 20:59:34 2008 -0400
++++ b/btrfs_inode.h	Tue Jul 22 21:51:45 2008 -0400
 @@ -49,6 +49,21 @@ struct btrfs_inode {
  	u64 delalloc_bytes;
  	u64 disk_i_size;
@@ -46,7 +45,7 @@ diff -r 82fa3b59a9fa btrfs_inode.h
  static inline struct btrfs_inode *BTRFS_I(struct inode *inode)
 diff -r 82fa3b59a9fa ctree.h
 --- a/ctree.h	Tue Jul 22 20:13:52 2008 -0400
-+++ b/ctree.h	Tue Jul 22 20:59:34 2008 -0400
++++ b/ctree.h	Tue Jul 22 21:51:45 2008 -0400
 @@ -373,6 +373,7 @@ struct btrfs_dev_extent {
  } __attribute__ ((__packed__));
  
@@ -88,7 +87,7 @@ diff -r 82fa3b59a9fa ctree.h
  			     struct btrfs_path *path, u64 objectid);
 diff -r 82fa3b59a9fa dir-item.c
 --- a/dir-item.c	Tue Jul 22 20:13:52 2008 -0400
-+++ b/dir-item.c	Tue Jul 22 20:59:34 2008 -0400
++++ b/dir-item.c	Tue Jul 22 21:51:45 2008 -0400
 @@ -110,7 +110,7 @@ int btrfs_insert_xattr_item(struct btrfs
  
  int btrfs_insert_dir_item(struct btrfs_trans_handle *trans, struct btrfs_root
@@ -109,7 +108,7 @@ diff -r 82fa3b59a9fa dir-item.c
  	if (IS_ERR(dir_item)) {
 diff -r 82fa3b59a9fa inode-item.c
 --- a/inode-item.c	Tue Jul 22 20:13:52 2008 -0400
-+++ b/inode-item.c	Tue Jul 22 20:59:34 2008 -0400
++++ b/inode-item.c	Tue Jul 22 21:51:45 2008 -0400
 @@ -52,7 +52,7 @@ int btrfs_del_inode_ref(struct btrfs_tra
  int btrfs_del_inode_ref(struct btrfs_trans_handle *trans,
  			   struct btrfs_root *root,
@@ -157,7 +156,7 @@ diff -r 82fa3b59a9fa inode-item.c
  	write_extent_buffer(path->nodes[0], name, ptr, name_len);
 diff -r 82fa3b59a9fa inode.c
 --- a/inode.c	Tue Jul 22 20:13:52 2008 -0400
-+++ b/inode.c	Tue Jul 22 20:59:34 2008 -0400
++++ b/inode.c	Tue Jul 22 21:51:45 2008 -0400
 @@ -1041,6 +1041,8 @@ void btrfs_read_locked_inode(struct inod
  	inode->i_rdev = 0;
  	rdev = btrfs_inode_rdev(leaf, inode_item);
@@ -379,7 +378,20 @@ diff -r 82fa3b59a9fa inode.c
  				dentry->d_name.len,
  				dentry->d_parent->d_inode->i_ino,
  				objectid, BTRFS_I(dir)->block_group, mode);
-@@ -2465,7 +2544,7 @@ static int btrfs_mkdir(struct inode *dir
+@@ -2414,6 +2493,12 @@ static int btrfs_link(struct dentry *old
+ 
+ 	btrfs_set_trans_block_group(trans, dir);
+ 	atomic_inc(&inode->i_count);
++
++	if (BTRFS_I(dir)->index_cnt == (u64)-1)
++		btrfs_get_index_count(dir);
++	BTRFS_I(inode)->index = BTRFS_I(dir)->index_cnt;
++	BTRFS_I(dir)->index_cnt++;
++
+ 	err = btrfs_add_nondir(trans, dentry, inode, 1);
+ 
+ 	if (err)
+@@ -2465,7 +2550,7 @@ static int btrfs_mkdir(struct inode *dir
  		goto out_unlock;
  	}
  
@@ -388,7 +400,7 @@ diff -r 82fa3b59a9fa inode.c
  				dentry->d_name.len,
  				dentry->d_parent->d_inode->i_ino, objectid,
  				BTRFS_I(dir)->block_group, S_IFDIR | mode);
-@@ -3103,9 +3182,8 @@ int btrfs_create_subvol_root(struct btrf
+@@ -3103,9 +3188,8 @@ int btrfs_create_subvol_root(struct btrf
  		struct btrfs_block_group_cache *block_group)
  {
  	struct inode *inode;
@@ -399,7 +411,7 @@ diff -r 82fa3b59a9fa inode.c
  				new_dirid, block_group, S_IFDIR | 0700);
  	if (IS_ERR(inode))
  		return PTR_ERR(inode);
-@@ -3113,8 +3191,6 @@ int btrfs_create_subvol_root(struct btrf
+@@ -3113,8 +3197,6 @@ int btrfs_create_subvol_root(struct btrf
  	inode->i_fop = &btrfs_dir_file_operations;
  	new_root->inode = inode;
  
@@ -408,7 +420,19 @@ diff -r 82fa3b59a9fa inode.c
  	inode->i_nlink = 1;
  	btrfs_i_size_write(inode, 0);
  
-@@ -3363,7 +3439,7 @@ static int btrfs_symlink(struct inode *d
+@@ -3318,6 +3400,11 @@ static int btrfs_rename(struct inode * o
+ 				goto out_fail;
+ 		}
+ 	}
++	if (BTRFS_I(new_dir)->index_cnt == (u64)-1)
++		btrfs_get_index_count(new_dir);
++	BTRFS_I(old_inode)->index = BTRFS_I(new_dir)->index_cnt;
++	BTRFS_I(new_dir)->index_cnt++;
++
+ 	ret = btrfs_add_link(trans, new_dentry, old_inode, 1);
+ 	if (ret)
+ 		goto out_fail;
+@@ -3363,7 +3450,7 @@ static int btrfs_symlink(struct inode *d
  		goto out_unlock;
  	}
  
@@ -419,7 +443,7 @@ diff -r 82fa3b59a9fa inode.c
  				BTRFS_I(dir)->block_group, S_IFLNK|S_IRWXUGO);
 diff -r 82fa3b59a9fa ioctl.c
 --- a/ioctl.c	Tue Jul 22 20:13:52 2008 -0400
-+++ b/ioctl.c	Tue Jul 22 20:59:34 2008 -0400
++++ b/ioctl.c	Tue Jul 22 21:51:45 2008 -0400
 @@ -131,13 +131,13 @@ static noinline int create_subvol(struct
  	dir = root->fs_info->sb->s_root->d_inode;
  	ret = btrfs_insert_dir_item(trans, root->fs_info->tree_root,
@@ -438,7 +462,7 @@ diff -r 82fa3b59a9fa ioctl.c
  
 diff -r 82fa3b59a9fa transaction.c
 --- a/transaction.c	Tue Jul 22 20:13:52 2008 -0400
-+++ b/transaction.c	Tue Jul 22 20:59:34 2008 -0400
++++ b/transaction.c	Tue Jul 22 21:51:45 2008 -0400
 @@ -574,14 +574,14 @@ static noinline int create_pending_snaps
  	ret = btrfs_insert_dir_item(trans, root->fs_info->tree_root,
  				    pending->name, namelen,

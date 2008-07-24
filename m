@@ -1,7 +1,7 @@
 From: Josef Bacik <jbacik@redhat.com>
-Subject: [TESTCASE] orphan link/unlink race test
-Date: Thu, 24 Jul 2008 15:40:42 -0400
-Message-ID: <20080724194041.GB28414@unused.rdu.redhat.com>
+Subject: [TESTCASE] test orphan recovery code
+Date: Thu, 24 Jul 2008 15:42:19 -0400
+Message-ID: <20080724194219.GC28414@unused.rdu.redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
@@ -10,113 +10,41 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello,
 
-This is for whoever is doing the QA suite (not it!), it tests the orphan code to
-make sure two threads unlinking/linking a file doesn't blow up.  A successfull
-run of this should result in no output at all.  Thanks,
+Another one for the qa suite.  This will create 1001 files, unlink them, and
+then do a sysrq+b which is like hitting the reset button on your box to make
+sure that on mount when the box comes back up all the files are cleaned up.
+Don't run this unless you expect the box to be reset.  Successfull running of
+this testcase should result in no file_# files being left over and no orphan
+records left.  Thanks,
 
 Josef
 
-#include <unistd.h>
 #include <stdio.h>
+#include <string.h>
 #include <fcntl.h>
 #include <errno.h>
 
-static int link_thread()
+int main(void)
 {
-	int i, ret;
+	int fd, i, proc_fd;
+	char buf[80];
 
-	for (i = 0; i < 1000; i++) {
-		int fd;
-
-		ret = link("foo", "bar");
-		if (ret) {
-			if (errno == ENOENT)
-				continue;
-			fprintf(stderr, "FAILED: could not link foo to bar: "
-				"%d\n", errno);
-			break;
-		}
-		fd = open("bar", O_RDWR);
-		if (fd < 0) {
-			fprintf(stderr, "FAILED: could not open bar: %d\n",
-				errno);
-			break;
-		}
-		ret = unlink("bar");
-		if (ret) {
-			fprintf(stderr, "FAILED: could not unlink bar: %d\n",
-				errno);
-			break;
-		}
-		ret = fsync(fd);
-		if (ret) {
-			fprintf(stderr, "FAILED: could not fsync bar: %d\n",
-				errno);
-			break;
-		}
-		ret = close(fd);
-		if (ret) {
-			fprintf(stderr, "FAILED: could not close bar: %d\n",
-				errno);
-			break;
-		}
+	for (i = 0; i <= 1000; i++) {
+		snprintf(buf, 80, "file_%d", i);
+		fd = open(buf, O_RDONLY | O_CREAT, 0666);
+		unlink(buf);
 	}
-}
 
-static void unlink_thread()
-{
-	int fd, i, ret;
+	fsync(fd);
+	printf("rebooting...\n");
 
-	for (i = 0; i < 1000; i++) {
-		fd = open("foo", O_CREAT | O_RDWR, 0666);
-		if (fd < 0) {
-			fprintf(stderr, "FAILED: could not create foo: %d\n",
-				errno);
-			break;
-		}
-		ret = fsync(fd);
-		if (ret) {
-			fprintf(stderr, "FAILED: could not fsync foo after "
-				"create: %d\n", errno);
-			break;
-		}
-		ret = unlink("foo");
-		if (ret) {
-			fprintf(stderr, "FAILED: could not unlink foo: %d\n",
-				errno);
-			break;
-		}
-		ret = fsync(fd);
-		if (ret) {
-			fprintf(stderr, "FAILED: could not fsync foo after "
-				"unlink: %d\n", errno);
-			break;
-		}
-		ret = close(fd);
-		if (ret) {
-			fprintf(stderr, "FAILED: could not close foo: %d\n",
-			       errno);
-			break;
-		}
+	proc_fd = open("/proc/sysrq-trigger", O_WRONLY);
+	if (proc_fd < 0) {
+		fprintf(stderr, "Error opening sysrq: %d\n", errno);
 	}
-}
+	write(proc_fd, "b", 1);
 
-int main(int argc, char **argv)
-{
-	pid_t child;
-	int ret;
-
-	child = fork();
-	if (!child) {
-		link_thread();
-	} else if (child > 0) {
-		int status;
-
-		unlink_thread();
-		ret = waitpid(child, &status, 0);
-	} else {
-		fprintf(stderr, "Error forking child: %d\n", errno);
-	}
+	/* should be dead by now so no need to clean anything up */
 
 	return 0;
 }

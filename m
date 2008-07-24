@@ -1,41 +1,39 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] Use do_div() instead of native 64-bit division in
-	btrfs_ordered_sum_size()
-Date: Wed, 23 Jul 2008 20:19:15 -0400
-Message-ID: <1216858755.6932.154.camel@think.oraclecorp.com>
+Subject: Re: kernel BUG at extent_map.c:275!
+Date: Thu, 24 Jul 2008 10:34:40 -0400
+Message-ID: <1216910080.6932.174.camel@think.oraclecorp.com>
 References: <1216697528.18980.34.camel@shinybook.infradead.org>
-	 <20080723111309.GA19988@infradead.org>
-	 <1216819706.6932.146.camel@think.oraclecorp.com>
-	 <1216847224.3019.137.camel@shinybook.infradead.org>
+	 <1216697801.18980.40.camel@shinybook.infradead.org>
+	 <1216722065.6932.125.camel@think.oraclecorp.com>
+	 <1216737343.18980.98.camel@shinybook.infradead.org>
+	 <1216746235.6932.129.camel@think.oraclecorp.com>
+	 <1216748498.3019.9.camel@shinybook.infradead.org>
+	 <48861C07.3040103@oracle.com>
+	 <1216749897.3019.18.camel@shinybook.infradead.org>
 Mime-Version: 1.0
 Content-Type: text/plain
-Cc: Christoph Hellwig <hch@infradead.org>, linux-btrfs@vger.kernel.org
+Cc: Zach Brown <zach.brown@oracle.com>, linux-btrfs@vger.kernel.org
 To: David Woodhouse <dwmw2@infradead.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1216847224.3019.137.camel@shinybook.infradead.org>
+In-Reply-To: <1216749897.3019.18.camel@shinybook.infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2008-07-23 at 17:07 -0400, David Woodhouse wrote:
-> On Wed, 2008-07-23 at 09:28 -0400, Chris Mason wrote:
-> > On Wed, 2008-07-23 at 07:13 -0400, Christoph Hellwig wrote:
-> > > Chris, can you please put this patch in?  Without it btrfs can't be
-> > > loaded on 32bit platforms.
+On Tue, 2008-07-22 at 14:04 -0400, David Woodhouse wrote:
+> On Tue, 2008-07-22 at 10:42 -0700, Zach Brown wrote:
+> > David Woodhouse wrote:
+> > > On Tue, 2008-07-22 at 13:03 -0400, Chris Mason wrote:
+> > >> Well, the test is there to make sure the caller is doing the right
+> > >> thing.  Before we remove it, I'd like to understand why it is failing.
 > > > 
+> > > Because this is a uniprocessor kernel. So spin_lock() and spin_unlock()
+> > > both do absolutely nothing, and spin_trylock() _always_ returns 1.
 > > 
-> > I've pushed out a slightly different fix.  The ordered extents are
-> > based on ram writeback, and so an unsigned long is enough.
+> > How about using assert_spin_locked()?
 > 
-> Does the job for me, although we still need the
-> s/BUG_ON(spin_trylock(&tree->lock))/assert_spin_locked(&tree->lock)/
-> patch I sent a few days ago.
+> Yeah, that should work if we still need these checks.
 > 
-> Now I can actually build the module, load it and avoid it hitting a
-> BUG_ON() when it first tries to mount, I can perhaps move on to doing
-> something more useful with it... :)
 
-;) My goal tonight is to figure out why I'm leaving locked data pages
-everywhere.  Once that is done I'll be able to finally integrate the
-pending patches.
+This one is applied now and pushed out.
 
 -chris
 

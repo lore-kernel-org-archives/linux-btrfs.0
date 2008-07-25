@@ -1,54 +1,52 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: New data=ordered code pushed out to btrfs-unstable
-Date: Fri, 25 Jul 2008 13:15:09 +0000
-Message-ID: <1216991709.7572.31.camel@think.oraclecorp.com>
-References: <1216398992.6932.36.camel@think.oraclecorp.com>
-	 <4880F87B.7020908@gmail.com>
-	 <1216411969.6932.70.camel@think.oraclecorp.com>
-	 <48811ABF.5010606@gmail.com>
-	 <1216428331.6932.82.camel@think.oraclecorp.com>
-	 <48832D42.6030204@redhat.com>
-	 <1216560741.6932.83.camel@think.oraclecorp.com>
-	 <488341CB.1010007@redhat.com>
-	 <1216652915.6932.113.camel@think.oraclecorp.com>
-	 <4884D578.7040901@redhat.com>
-	 <1216665311.6932.116.camel@think.oraclecorp.com>
-	 <4884E235.1010206@gmail.com>
+From: Josef Bacik <jbacik@redhat.com>
+Subject: [PATCH] btrfs-progs: add orphan support to print-tree
+Date: Fri, 25 Jul 2008 09:10:14 -0400
+Message-ID: <20080725131014.GG28414@unused.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: rwheeler@redhat.com, linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Ric Wheeler <ricwheeler@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4884E235.1010206@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2008-07-21 at 15:23 -0400, Ric Wheeler wrote:
+Hello,
 
-> >>> [ lock timeouts and stalls ]
-> >>>
-> >>>
-> >>> Ok, I've made a few changes that should lower overall contenion on the
-> >>> allocation mutex.  I'm getting better performance on a 3 million file
-> >>> run, please give it a shot.
-> >>
-> >> After an update, clean rebuild & reboot, the test is running along and 
-> >> has hit about 10 million files. I still see some messages like:
-> >>
-> >> INFO: task pdflush:4051 blocked for more than 120 seconds.
+This adds orphan support to print-tree so when debug_tree hits an orphan item it
+will print out "orphan item" under it so you know what it is.  Thanks,
 
-The latest code in btrfs-unstable has everything I can safely do right
-now :)  
-
-Basically the stalls come from someone doing IO with the allocation
-mutex held.  It is surprising that we should be stalling for such a long
-time, it is probably a  mixture of elevator starvation and btrfs fun.
-
-But, btrfs-unstable also has code to replace the page lock with a
-per-tree block mutex, which will allow me to get rid of the big
-allocation mutex over the long term.  I was able to break up most of the
-long operations and have them drop/reacquire the allocation mutex to
-prevent this starvation most of the time.
-
--chris
+Josef
 
 
+diff -r e08f2f90e4f8 ctree.h
+--- a/ctree.h	Thu Jul 24 13:52:04 2008 -0400
++++ b/ctree.h	Fri Jul 25 16:18:38 2008 -0400
+@@ -54,6 +54,9 @@ struct btrfs_trans_handle;
+ 
+ /* directory objectid inside the root tree */
+ #define BTRFS_ROOT_TREE_DIR_OBJECTID 6ULL
++
++/* oprhan objectid for tracking unlinked/truncated files */
++#define BTRFS_ORPHAN_OBJECTID -5ULL
+ 
+ /*
+  * All files have objectids higher than this.
+@@ -564,6 +567,7 @@ struct btrfs_root {
+ #define BTRFS_INODE_ITEM_KEY		1
+ #define BTRFS_INODE_REF_KEY		2
+ #define BTRFS_XATTR_ITEM_KEY		8
++#define BTRFS_ORPHAN_ITEM_KEY		9
+ 
+ /* reserve 3-15 close to the inode for later flexibility */
+ 
+diff -r e08f2f90e4f8 print-tree.c
+--- a/print-tree.c	Thu Jul 24 13:52:04 2008 -0400
++++ b/print-tree.c	Fri Jul 25 16:18:38 2008 -0400
+@@ -183,6 +183,9 @@ void btrfs_print_leaf(struct btrfs_root 
+ 			di = btrfs_item_ptr(l, i, struct btrfs_dir_item);
+ 			print_dir_item(l, item, di);
+ 			break;
++		case BTRFS_ORPHAN_ITEM_KEY:
++			printf("\t\torphan item\n");
++			break;
+ 		case BTRFS_ROOT_ITEM_KEY:
+ 			ri = btrfs_item_ptr(l, i, struct btrfs_root_item);
+ 			read_extent_buffer(l, &root_item, (unsigned long)ri, sizeof(root_item));

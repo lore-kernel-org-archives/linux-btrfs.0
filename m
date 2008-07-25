@@ -1,26 +1,19 @@
 From: Yan Zheng <zheng.yan@oracle.com>
-Subject: [PATCH] initial version of reference cache
-Date: Fri, 25 Jul 2008 14:29:15 -0500 (CDT)
-Message-ID: <21782573.1217014155193.JavaMail.oracle@acsmt304.oracle.com>
+Subject: Re: [PATCH] initial version of reference cache
+Date: Fri, 25 Jul 2008 15:57:53 -0500 (CDT)
+Message-ID: <5173538.1217019473986.JavaMail.oracle@acsmt302.oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="ISO-8859-1"
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
-
-This is the initial version of leaf reference cache. The cache stores leaf node's extent references in memory, this can improve the performance of snapshot dropping. Outlines of this patch are (1) allocate struct dirty_root when starting transaction (2) put reference cache in struct dirty_root (3) cache extent references when tree leaves are cow'ed (4) when dropping snapshot, use cached references directly to avoid reading tree leaf. 
-
-I only can access a notebook currenly, so benchmarking isn't enough. I appreciate any help and comment.
-
-Regards
-YZ
+I miss two new created files in previous patch, please use this one. Thanks
 
 ---
 diff -r eb4767aa190e Makefile
 --- a/Makefile	Thu Jul 24 12:25:50 2008 -0400
-+++ b/Makefile	Sat Jul 26 01:07:24 2008 +0800
++++ b/Makefile	Sat Jul 26 03:47:26 2008 +0800
 @@ -6,7 +6,8 @@ btrfs-y := super.o ctree.o extent-tree.o
  	   hash.o file-item.o inode-item.o inode-map.o disk-io.o \
  	   transaction.o bit-radix.o inode.o file.o tree-defrag.o \
@@ -28,20 +21,20 @@ diff -r eb4767aa190e Makefile
 -	   extent_io.o volumes.o async-thread.o ioctl.o locking.o orphan.o
 +	   extent_io.o volumes.o async-thread.o ioctl.o locking.o orphan.o \
 +	   ref-cache.o
- 
+
  btrfs-$(CONFIG_FS_POSIX_ACL)	+= acl.o
  else
 diff -r eb4767aa190e ctree.c
 --- a/ctree.c	Thu Jul 24 12:25:50 2008 -0400
-+++ b/ctree.c	Sat Jul 26 00:46:09 2008 +0800
++++ b/ctree.c	Sat Jul 26 03:47:26 2008 +0800
 @@ -165,7 +165,7 @@ int btrfs_copy_root(struct btrfs_trans_h
  	btrfs_clear_header_flag(cow, BTRFS_HEADER_FLAG_WRITTEN);
- 
+
  	WARN_ON(btrfs_header_generation(buf) > trans->transid);
 -	ret = btrfs_inc_ref(trans, new_root, buf);
 +	ret = btrfs_inc_ref(trans, new_root, buf, 0);
  	kfree(new_root);
- 
+
  	if (ret)
 @@ -232,7 +232,7 @@ int __btrfs_cow_block(struct btrfs_trans
  	WARN_ON(btrfs_header_generation(buf) > trans->transid);
@@ -54,11 +47,11 @@ diff -r eb4767aa190e ctree.c
  	} else {
 diff -r eb4767aa190e ctree.h
 --- a/ctree.h	Thu Jul 24 12:25:50 2008 -0400
-+++ b/ctree.h	Sat Jul 26 00:46:09 2008 +0800
++++ b/ctree.h	Sat Jul 26 03:47:26 2008 +0800
 @@ -592,6 +592,10 @@ struct btrfs_fs_info {
  	u64 last_alloc;
  	u64 last_data_alloc;
- 
+
 +	spinlock_t ref_cache_lock;
 +	u64 total_ref_cache_size;
 +	u64 running_ref_cache_size;
@@ -68,7 +61,7 @@ diff -r eb4767aa190e ctree.h
  	u64 avail_system_alloc_bits;
 @@ -613,6 +617,8 @@ struct btrfs_root {
  	spinlock_t node_lock;
- 
+
  	struct extent_buffer *commit_root;
 +	struct btrfs_leaf_ref_tree *ref_tree;
 +
@@ -86,7 +79,7 @@ diff -r eb4767aa190e ctree.h
  		      u64 root_objectid, u64 ref_generation,
 diff -r eb4767aa190e disk-io.c
 --- a/disk-io.c	Thu Jul 24 12:25:50 2008 -0400
-+++ b/disk-io.c	Sat Jul 26 00:46:09 2008 +0800
++++ b/disk-io.c	Sat Jul 26 03:47:26 2008 +0800
 @@ -716,6 +716,7 @@ static int __setup_root(u32 nodesize, u3
  	root->node = NULL;
  	root->inode = NULL;
@@ -98,7 +91,7 @@ diff -r eb4767aa190e disk-io.c
 @@ -1165,12 +1166,19 @@ static int transaction_kthread(void *arg
  		vfs_check_frozen(root->fs_info->sb, SB_FREEZE_WRITE);
  		mutex_lock(&root->fs_info->transaction_kthread_mutex);
- 
+
 +		printk("btrfs: total reference cache size %Lu\n",
 +			root->fs_info->total_ref_cache_size);
 +
@@ -120,7 +113,7 @@ diff -r eb4767aa190e disk-io.c
  	spin_lock_init(&fs_info->delalloc_lock);
  	spin_lock_init(&fs_info->new_trans_lock);
 +	spin_lock_init(&fs_info->ref_cache_lock);
- 
+
  	init_completion(&fs_info->kobj_unregister);
  	fs_info->tree_root = tree_root;
 @@ -1699,6 +1708,11 @@ int close_ctree(struct btrfs_root *root)
@@ -134,21 +127,21 @@ diff -r eb4767aa190e disk-io.c
 +	
  	if (fs_info->extent_root->node)
  		free_extent_buffer(fs_info->extent_root->node);
- 
+
 diff -r eb4767aa190e extent-tree.c
 --- a/extent-tree.c	Thu Jul 24 12:25:50 2008 -0400
-+++ b/extent-tree.c	Sat Jul 26 02:01:27 2008 +0800
++++ b/extent-tree.c	Sat Jul 26 03:47:26 2008 +0800
 @@ -26,6 +26,7 @@
  #include "transaction.h"
  #include "volumes.h"
  #include "locking.h"
 +#include "ref-cache.h"
- 
+
  #define BLOCK_GROUP_DATA     EXTENT_WRITEBACK
  #define BLOCK_GROUP_METADATA EXTENT_UPTODATE
 @@ -927,7 +928,7 @@ out:
  }
- 
+
  int btrfs_inc_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
 -		  struct extent_buffer *buf)
 +		  struct extent_buffer *buf, int cache_ref)
@@ -160,13 +153,13 @@ diff -r eb4767aa190e extent-tree.c
  	int ret;
  	int faili;
 +	int nr_file_extents = 0;
- 
+
  	if (!root->ref_cows)
  		return 0;
 @@ -959,6 +961,9 @@ int btrfs_inc_ref(struct btrfs_trans_han
  			if (disk_bytenr == 0)
  				continue;
- 
+
 +			if (buf != root->commit_root)
 +				nr_file_extents++;
 +
@@ -230,7 +223,7 @@ diff -r eb4767aa190e extent-tree.c
 @@ -2215,9 +2267,9 @@ struct extent_buffer *btrfs_alloc_free_b
  	return buf;
  }
- 
+
 -static int noinline drop_leaf_ref(struct btrfs_trans_handle *trans,
 -				  struct btrfs_root *root,
 -				  struct extent_buffer *leaf)
@@ -243,7 +236,7 @@ diff -r eb4767aa190e extent-tree.c
 @@ -2266,6 +2318,30 @@ static int noinline drop_leaf_ref(struct
  	return 0;
  }
- 
+
 +static int noinline drop_leaf_ref(struct btrfs_trans_handle *trans,
 +				  	 struct btrfs_root *root,
 +					 struct btrfs_leaf_ref *ref)
@@ -312,7 +305,7 @@ diff -r eb4767aa190e extent-tree.c
  			free_extent_buffer(next);
 @@ -2435,17 +2527,19 @@ out:
  	WARN_ON(*level >= BTRFS_MAX_LEVEL);
- 
+
  	if (path->nodes[*level] == root->node) {
 -		root_owner = root->root_key.objectid;
  		parent = path->nodes[*level];
@@ -337,19 +330,293 @@ diff -r eb4767aa190e extent-tree.c
  	free_extent_buffer(path->nodes[*level]);
  	path->nodes[*level] = NULL;
  	*level += 1;
+diff -r eb4767aa190e ref-cache.c
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/ref-cache.c	Fri Jul 25 21:56:56 2008 +0800
+@@ -0,0 +1,195 @@
++/*
++ * Copyright (C) 2008 Oracle.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#include "ctree.h"
++#include "ref-cache.h"
++#include "transaction.h"
++
++struct btrfs_leaf_ref *btrfs_alloc_leaf_ref(int nr_extents)
++{
++	struct btrfs_leaf_ref *ref;
++
++	ref = kmalloc(btrfs_leaf_ref_size(nr_extents), GFP_NOFS);
++	if (ref) {
++		memset(ref, 0, sizeof(*ref));
++		atomic_set(&ref->usage, 1);
++	}
++	return ref;
++}
++
++void btrfs_free_leaf_ref(struct btrfs_leaf_ref *ref)
++{
++	if (!ref)
++		return;
++	WARN_ON(atomic_read(&ref->usage) == 0);
++	if (atomic_dec_and_test(&ref->usage)) {
++		BUG_ON(ref->in_tree);
++		kfree(ref);
++	}
++}
++
++static int comp_keys(struct btrfs_key *k1, struct btrfs_key *k2)
++{
++	if (k1->objectid > k2->objectid)
++		return 1;
++	if (k1->objectid < k2->objectid)
++		return -1;
++	if (k1->type > k2->type)
++		return 1;
++	if (k1->type < k2->type)
++		return -1;
++	if (k1->offset > k2->offset)
++		return 1;
++	if (k1->offset < k2->offset)
++		return -1;
++	return 0;
++}
++
++static struct rb_node *tree_insert(struct rb_root *root, struct btrfs_key *key,
++				   struct rb_node *node)
++{
++	struct rb_node ** p = &root->rb_node;
++	struct rb_node * parent = NULL;
++	struct btrfs_leaf_ref *entry;
++	int ret;
++
++	while(*p) {
++		parent = *p;
++		entry = rb_entry(parent, struct btrfs_leaf_ref, rb_node);
++		WARN_ON(!entry->in_tree);
++
++		ret = comp_keys(key, &entry->key);
++		if (ret < 0)
++			p = &(*p)->rb_left;
++		else if (ret > 0)
++			p = &(*p)->rb_right;
++		else
++			return parent;
++	}
++	
++	entry = rb_entry(node, struct btrfs_leaf_ref, rb_node);
++	entry->in_tree = 1;
++	rb_link_node(node, parent, p);
++	rb_insert_color(node, root);
++	return NULL;
++}
++
++static struct rb_node *tree_search(struct rb_root *root, struct btrfs_key *key)
++{
++	struct rb_node * n = root->rb_node;
++	struct btrfs_leaf_ref *entry;
++	int ret;
++
++	while(n) {
++		entry = rb_entry(n, struct btrfs_leaf_ref, rb_node);
++		WARN_ON(!entry->in_tree);
++
++		ret = comp_keys(key, &entry->key);
++		if (ret < 0)
++			n = n->rb_left;
++		else if (ret > 0)
++			n = n->rb_right;
++		else
++			return n;
++	}
++	return NULL;
++}
++
++struct btrfs_leaf_ref *btrfs_lookup_leaf_ref(struct btrfs_root *root,
++					     struct btrfs_key *key)
++{
++	struct rb_node *rb;
++	struct btrfs_leaf_ref *ref = NULL;
++	struct btrfs_leaf_ref_tree *tree = root->ref_tree;
++
++	if (!tree)
++		return NULL;
++
++	spin_lock(&tree->lock);
++	if (tree->last && comp_keys(key, &tree->last->key) == 0) {
++		ref = tree->last;
++	} else {
++		rb = tree_search(&tree->root, key);
++		if (rb) {
++			ref = rb_entry(rb, struct btrfs_leaf_ref, rb_node);
++			tree->last = ref;
++		}
++	}
++	if (ref)
++		atomic_inc(&ref->usage);
++	spin_unlock(&tree->lock);
++	return ref;
++}
++
++int btrfs_add_leaf_ref(struct btrfs_root *root, struct btrfs_leaf_ref *ref)
++{
++	int ret = 0;
++	struct rb_node *rb;
++	size_t size = btrfs_leaf_ref_size(ref->nritems);
++	struct btrfs_leaf_ref_tree *tree = root->ref_tree;
++	struct btrfs_transaction *trans = root->fs_info->running_transaction;
++
++	spin_lock(&tree->lock);
++	rb = tree_insert(&tree->root, &ref->key, &ref->rb_node);
++	if (rb) {
++		ret = -EEXIST;
++	} else {
++		spin_lock(&root->fs_info->ref_cache_lock);
++		root->fs_info->total_ref_cache_size += size;
++		if (trans && tree->generation == trans->transid)
++			root->fs_info->running_ref_cache_size += size;
++		spin_unlock(&root->fs_info->ref_cache_lock);
++
++		tree->last = ref;
++		atomic_inc(&ref->usage);
++	}
++	spin_unlock(&tree->lock);
++	return ret;
++}
++
++int btrfs_remove_leaf_ref(struct btrfs_root *root, struct btrfs_leaf_ref *ref)
++{
++	size_t size = btrfs_leaf_ref_size(ref->nritems);
++	struct btrfs_leaf_ref_tree *tree = root->ref_tree;
++	struct btrfs_transaction *trans = root->fs_info->running_transaction;
++
++	BUG_ON(!ref->in_tree);
++	spin_lock(&tree->lock);
++	rb_erase(&ref->rb_node, &tree->root);
++	ref->in_tree = 0;
++	
++	spin_lock(&root->fs_info->ref_cache_lock);
++	root->fs_info->total_ref_cache_size -= size;
++	if (trans && tree->generation == trans->transid)
++		root->fs_info->running_ref_cache_size -= size;
++	spin_unlock(&root->fs_info->ref_cache_lock);
++
++	if (tree->last == ref) {
++		struct rb_node *next = rb_next(&ref->rb_node);
++		if (next) {
++			tree->last = rb_entry(next, struct btrfs_leaf_ref,
++					      rb_node);
++		} else
++			tree->last = NULL;
++	}
++	spin_unlock(&tree->lock);
++
++	btrfs_free_leaf_ref(ref);
++	return 0;
++}
++
+diff -r eb4767aa190e ref-cache.h
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/ref-cache.h	Fri Jul 25 21:58:24 2008 +0800
+@@ -0,0 +1,71 @@
++/*
++ * Copyright (C) 2008 Oracle.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++struct btrfs_extent_info {
++	u64 bytenr;
++	u64 num_bytes;
++	u64 objectid;
++	u64 offset;
++};
++
++struct btrfs_leaf_ref {
++	struct rb_node rb_node;
++	struct btrfs_key key;
++	int in_tree;
++	atomic_t usage;
++
++	u64 bytenr;
++	u64 owner;
++	u64 generation;
++	int nritems;
++	struct btrfs_extent_info extents[];
++};
++
++struct btrfs_leaf_ref_tree {
++	struct rb_root root;
++	struct btrfs_leaf_ref *last;
++	u64 generation;
++	spinlock_t lock;
++};
++
++static inline size_t btrfs_leaf_ref_size(int nr_extents)
++{
++	return sizeof(struct btrfs_leaf_ref) +
++	       sizeof(struct btrfs_extent_info) * nr_extents;
++}
++
++static inline void btrfs_leaf_ref_tree_init(struct btrfs_leaf_ref_tree *tree)
++{
++	tree->root.rb_node = NULL;
++	tree->last = NULL;
++	tree->generation = 0;
++	spin_lock_init(&tree->lock);
++}
++
++static inline int btrfs_leaf_ref_tree_empty(struct btrfs_leaf_ref_tree *tree)
++{
++	return RB_EMPTY_ROOT(&tree->root);
++}
++
++void btrfs_leaf_ref_tree_init(struct btrfs_leaf_ref_tree *tree);
++struct btrfs_leaf_ref *btrfs_alloc_leaf_ref(int nr_extents);
++void btrfs_free_leaf_ref(struct btrfs_leaf_ref *ref);
++struct btrfs_leaf_ref *btrfs_lookup_leaf_ref(struct btrfs_root *root,
++					     struct btrfs_key *key);
++int btrfs_add_leaf_ref(struct btrfs_root *root, struct btrfs_leaf_ref *ref);
++int btrfs_remove_leaf_ref(struct btrfs_root *root, struct btrfs_leaf_ref *ref);
 diff -r eb4767aa190e transaction.c
 --- a/transaction.c	Thu Jul 24 12:25:50 2008 -0400
-+++ b/transaction.c	Sat Jul 26 00:46:10 2008 +0800
++++ b/transaction.c	Sat Jul 26 03:47:26 2008 +0800
 @@ -24,12 +24,20 @@
  #include "disk-io.h"
  #include "transaction.h"
  #include "locking.h"
 +#include "ref-cache.h"
- 
+
  static int total_trans = 0;
  extern struct kmem_cache *btrfs_trans_handle_cachep;
  extern struct kmem_cache *btrfs_transaction_cachep;
- 
+
  #define BTRFS_ROOT_TRANS_TAG 0
 +
 +struct dirty_root {
@@ -358,11 +625,11 @@ diff -r eb4767aa190e transaction.c
 +	struct btrfs_root *latest_root;
 +	struct btrfs_leaf_ref_tree ref_tree;
 +};
- 
+
  static noinline void put_transaction(struct btrfs_transaction *transaction)
  {
 @@ -84,6 +92,7 @@ static noinline int join_transaction(str
- 
+
  static noinline int record_root_in_trans(struct btrfs_root *root)
  {
 +	struct dirty_root *dirty;
@@ -398,7 +665,7 @@ diff -r eb4767aa190e transaction.c
 @@ -310,12 +337,6 @@ int btrfs_commit_tree_roots(struct btrfs
  	return 0;
  }
- 
+
 -struct dirty_root {
 -	struct list_head list;
 -	struct btrfs_root *root;
@@ -440,7 +707,7 @@ diff -r eb4767aa190e transaction.c
 +				
 +				kfree(dirty->root);
 +				kfree(dirty);
- 
+
  				/* make sure to update the root on disk
  				 * so we get any updates to the block used
 @@ -370,23 +405,12 @@ static noinline int add_dirty_roots(stru
@@ -451,7 +718,7 @@ diff -r eb4767aa190e transaction.c
 -			BUG_ON(!dirty);
 -			dirty->root = kmalloc(sizeof(*dirty->root), GFP_NOFS);
 -			BUG_ON(!dirty->root);
- 
+
  			memset(&root->root_item.drop_progress, 0,
  			       sizeof(struct btrfs_disk_key));
  			root->root_item.drop_level = 0;
@@ -479,7 +746,7 @@ diff -r eb4767aa190e transaction.c
 @@ -514,6 +539,9 @@ static noinline int drop_dirty_roots(str
  		ret = btrfs_end_transaction(trans, tree_root);
  		BUG_ON(ret);
- 
+
 +		if (dirty->root->ref_tree)
 +			WARN_ON(!btrfs_leaf_ref_tree_empty(dirty->root->ref_tree));
 +	
@@ -494,7 +761,7 @@ diff -r eb4767aa190e transaction.c
 +	spin_lock(&root->fs_info->ref_cache_lock);
 +	root->fs_info->running_ref_cache_size = 0;
 +	spin_unlock(&root->fs_info->ref_cache_lock);
- 
+
  	ret = btrfs_commit_tree_roots(trans, root);
  	BUG_ON(ret);
 

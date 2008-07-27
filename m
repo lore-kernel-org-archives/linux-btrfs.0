@@ -1,35 +1,29 @@
 From: "Yan Zheng" <zheng.yan@oracle.com>
-Subject: Re: [PATCH] initial version of reference cache
-Date: Sat, 26 Jul 2008 22:26:09 +0800
-Message-ID: <3d0408630807260726h4303fff3k38ecf67c27efcce8@mail.gmail.com>
-References: <21782573.1217014155193.JavaMail.oracle@acsmt304.oracle.com>
-	 <1217029117.7572.84.camel@think.oraclecorp.com>
+Subject: Re: [PATCH] btrfs-convert: Iterate correctly using libext2fs functions
+Date: Sun, 27 Jul 2008 19:02:03 +0800
+Message-ID: <3d0408630807270402k26488650w414c0c9e4289344@mail.gmail.com>
+References: <20080722184848.0504a0f1@gen2.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=ISO-8859-2
 Cc: linux-btrfs@vger.kernel.org
-To: "Chris Mason" <chris.mason@oracle.com>
+To: "Radoslaw Szkodzinski" <astralstorm@gen2.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1217029117.7572.84.camel@think.oraclecorp.com>
+In-Reply-To: <20080722184848.0504a0f1@gen2.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2008/7/26 Chris Mason <chris.mason@oracle.com>:
-> I have modified this locally to always cache leaves, even when they
-> don't have file extents in them.  That way, walk_down_tree will find the
-> cache and won't have to read the leaf (that doesn't have any extents).
->
-> So far, it is working very well.  I did a run with fs_mark to create 58
-> million files and had very steady numbers.  The unmount took 4 seconds.
-> It used to take over an hour.
->
-> One question, why not use the block number (byte number) as the key to
-> the rbtree instead of the key?
->
-
-When dropping old snapshots, tree leaves are processed in ascending
-order of btrfs_key. After a given tree leaf is processed, we remove
-the corresponding cache entry and update tree->last to point to next
-entry in the tree. Therefore btrfs_lookup_leaf_ref can find the wanted
-entry in tree->last in most cases.
-
-Regards
-YZ
+MjAwOC83LzIzIFJhZG9zbGF3IFN6a29kemluc2tpIDxhc3RyYWxzdG9ybUBnZW4yLm9yZz46Cj4g
+UGxlYXNlIENDIG1lIHdpdGggY29tbWVudHMsIGFzIEknbSBub3QgeWV0IHN1YnNjcmliZWQgdG8g
+dGhlIGxpc3QuCj4KPiBUaGlzIGZhaXJseSB0cml2aWFsIHBhdGNoIGZpeGVzIGEgY29tcGlsZSBl
+cnJvciBJIHN0dW1ibGVkIHVwb24uIFRoZQo+IGVycm9yIG9ubHkgaGFwcGVucyB3aXRoIG5ldyBl
+MmZzcHJvZ3MsIGFzIGlub2RlX21hcCBoYXMgYmVjb21lIHByaXZhdGUuCj4gSWdub3JpbmcgdGhl
+IHdhcm5pbmcgd291bGQgbW9zdCBsaWtlbHkgY2F1c2UgYSBzZWdmYXVsdC4KPgo+ICMgSEcgY2hh
+bmdlc2V0IHBhdGNoCj4gIyBVc2VyIFJhZG9zs2F3IFN6a29kemnxc2tpIDxhc3RyYWxzdG9ybUBn
+ZW4yLm9yZz4KPiAjIERhdGUgMTIxNjc0NDYzMCAtNzIwMAo+ICMgTm9kZSBJRCA5NzI1YTgyYWM5
+OGY0NjBmMmE3ZDRlMjExY2ZlNGVjODhhZWQ0YjhhCj4gIyBQYXJlbnQgIDFhYTRiMzJlM2VmZDQ1
+MjUzMWNiMGI4ODNlZGZjYzM3NjE0ODdmY2EKPiBidHJmcy1jb252ZXJ0OiBJdGVyYXRlIGNvcnJl
+Y3RseSB1c2luZyBsaWJleHQyZnMgZnVuY3Rpb25zCj4KPiBUaGlzIHBhdGNoIGNvcnJlY3RzIG9w
+ZW4tY29kZWQgaW5vZGVfbWFwIGl0ZXJhdGlvbiwgd2hpY2ggaGFwcGVucyB0byBiZQo+IGlsbGVn
+YWwgaW4gbmV3IGxpYmV4dDJmcyBkdWUgdG8gaW5vZGVfbWFwIGJlaW5nIHByaXZhdGUsIGNhdXNp
+bmcgd2FybmluZywKPiB3aGljaCBiZWNvbWVzIGEgY29tcGlsZSBlcnJvci4KPgoKU29ycnkgZm9y
+IHRoZSBkZWxheS4gSSB0cmllZCB0aGlzIHBhdGNoIHRvZGF5LCBpdCB3b3JrcyB2ZXJ5IHdlbGwu
+IFRoYW5rcy4KCllaCg==

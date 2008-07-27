@@ -1,29 +1,67 @@
-From: "Yan Zheng" <zheng.yan@oracle.com>
-Subject: Re: [PATCH] btrfs-convert: Iterate correctly using libext2fs functions
-Date: Sun, 27 Jul 2008 19:02:03 +0800
-Message-ID: <3d0408630807270402k26488650w414c0c9e4289344@mail.gmail.com>
-References: <20080722184848.0504a0f1@gen2.org>
+From: "Ahmed Kamal" <email.ahmedkamal@googlemail.com>
+Subject: Re: Fix: btrfsctl arguments handling
+Date: Sun, 27 Jul 2008 22:02:45 +0300
+Message-ID: <3da3b5b40807271202r43b887e9gfadad07ab2c3233e@mail.gmail.com>
+References: <3da3b5b40807180937md87cb4aj965b1b3a52ae7358@mail.gmail.com>
+	 <3da3b5b40807180944p21b476f7sd00c97afb1cb9dfc@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-2
-Cc: linux-btrfs@vger.kernel.org
-To: "Radoslaw Szkodzinski" <astralstorm@gen2.org>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20080722184848.0504a0f1@gen2.org>
+In-Reply-To: <3da3b5b40807180944p21b476f7sd00c97afb1cb9dfc@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-MjAwOC83LzIzIFJhZG9zbGF3IFN6a29kemluc2tpIDxhc3RyYWxzdG9ybUBnZW4yLm9yZz46Cj4g
-UGxlYXNlIENDIG1lIHdpdGggY29tbWVudHMsIGFzIEknbSBub3QgeWV0IHN1YnNjcmliZWQgdG8g
-dGhlIGxpc3QuCj4KPiBUaGlzIGZhaXJseSB0cml2aWFsIHBhdGNoIGZpeGVzIGEgY29tcGlsZSBl
-cnJvciBJIHN0dW1ibGVkIHVwb24uIFRoZQo+IGVycm9yIG9ubHkgaGFwcGVucyB3aXRoIG5ldyBl
-MmZzcHJvZ3MsIGFzIGlub2RlX21hcCBoYXMgYmVjb21lIHByaXZhdGUuCj4gSWdub3JpbmcgdGhl
-IHdhcm5pbmcgd291bGQgbW9zdCBsaWtlbHkgY2F1c2UgYSBzZWdmYXVsdC4KPgo+ICMgSEcgY2hh
-bmdlc2V0IHBhdGNoCj4gIyBVc2VyIFJhZG9zs2F3IFN6a29kemnxc2tpIDxhc3RyYWxzdG9ybUBn
-ZW4yLm9yZz4KPiAjIERhdGUgMTIxNjc0NDYzMCAtNzIwMAo+ICMgTm9kZSBJRCA5NzI1YTgyYWM5
-OGY0NjBmMmE3ZDRlMjExY2ZlNGVjODhhZWQ0YjhhCj4gIyBQYXJlbnQgIDFhYTRiMzJlM2VmZDQ1
-MjUzMWNiMGI4ODNlZGZjYzM3NjE0ODdmY2EKPiBidHJmcy1jb252ZXJ0OiBJdGVyYXRlIGNvcnJl
-Y3RseSB1c2luZyBsaWJleHQyZnMgZnVuY3Rpb25zCj4KPiBUaGlzIHBhdGNoIGNvcnJlY3RzIG9w
-ZW4tY29kZWQgaW5vZGVfbWFwIGl0ZXJhdGlvbiwgd2hpY2ggaGFwcGVucyB0byBiZQo+IGlsbGVn
-YWwgaW4gbmV3IGxpYmV4dDJmcyBkdWUgdG8gaW5vZGVfbWFwIGJlaW5nIHByaXZhdGUsIGNhdXNp
-bmcgd2FybmluZywKPiB3aGljaCBiZWNvbWVzIGEgY29tcGlsZSBlcnJvci4KPgoKU29ycnkgZm9y
-IHRoZSBkZWxheS4gSSB0cmllZCB0aGlzIHBhdGNoIHRvZGF5LCBpdCB3b3JrcyB2ZXJ5IHdlbGwu
-IFRoYW5rcy4KCllaCg==
+Is this not a valid patch/fix ? Who do I have to bug to get this merged :)
+
+On Fri, Jul 18, 2008 at 7:44 PM, Ahmed Kamal
+<email.ahmedkamal@googlemail.com> wrote:
+>
+> That's probably a more proper patch
+>
+> # HG changeset patch
+> # Signed-Off-By: Ahmed Kamal <email.ahmedkamal@googlemail.com>
+> # Date 1216410189 -10800
+> # Node ID f35e2b3b25a97d42452ec90b6c524721d9c9941f
+> # Parent  1aa4b32e3efd452531cb0b883edfcc3761487fca
+> Fixing btrfsctl argument handling
+>
+> diff -r 1aa4b32e3efd -r f35e2b3b25a9 btrfsctl.c
+> --- a/btrfsctl.c        Tue Jun 10 10:09:18 2008 -0400
+> +++ b/btrfsctl.c        Fri Jul 18 22:43:09 2008 +0300
+> @@ -73,7 +73,7 @@
+>                btrfs_scan_one_dir("/dev", 1);
+>                exit(0);
+>        }
+> -       for (i = 1; i < ac - 1; i++) {
+> +       for (i = 1; i <= ac - 1; i++) {
+>                if (strcmp(av[i], "-s") == 0) {
+>                        if (i + 1 >= ac - 1) {
+>                                fprintf(stderr, "-s requires an arg");
+>
+>
+> On Fri, Jul 18, 2008 at 7:37 PM, Ahmed Kamal
+> <email.ahmedkamal@googlemail.com> wrote:
+> > Hi,
+> >
+> > btrfsctl -A
+> > in the current -unstable branch, does not result in the error message
+> > designated for it, namely "-A requires an arg\n". Turns out the whole
+> > loop was being skipped!
+> > Please find a patch attached that fixed it for me.
+> >
+> > diff -r 1aa4b32e3efd btrfsctl.c
+> > --- a/btrfsctl.c        Tue Jun 10 10:09:18 2008 -0400
+> > +++ b/btrfsctl.c        Fri Jul 18 22:34:46 2008 +0300
+> > @@ -73,7 +73,7 @@
+> >                btrfs_scan_one_dir("/dev", 1);
+> >                exit(0);
+> >        }
+> > -       for (i = 1; i < ac - 1; i++) {
+> > +       for (i = 1; i <= ac - 1; i++) {
+> >                if (strcmp(av[i], "-s") == 0) {
+> >                        if (i + 1 >= ac - 1) {
+> >                                fprintf(stderr, "-s requires an arg");
+> >
+> >
+> > PS: Is this the correct way to submit patches ?
+> >

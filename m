@@ -1,39 +1,33 @@
-From: "Miguel Sousa Filipe" <miguel.filipe@gmail.com>
-Subject: [PATCH] initial version of reference cache
-Date: Mon, 28 Jul 2008 17:53:50 +0100
-Message-ID: <f058a9c30807280953k6cac85a1i9bc10bf41cdb23d7@mail.gmail.com>
-References: <21782573.1217014155193.JavaMail.oracle@acsmt304.oracle.com>
-	 <1217257799.7572.103.camel@think.oraclecorp.com>
-	 <f058a9c30807280952m2386aad4pa8a08ffaf930c370@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: New data=ordered code pushed out to btrfs-unstable
+Date: Mon, 28 Jul 2008 19:52:40 +0000
+Message-ID: <1217274760.7572.107.camel@think.oraclecorp.com>
+References: <1216398992.6932.36.camel@think.oraclecorp.com>
+	 <4880F87B.7020908@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Ric Wheeler <ricwheeler@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <f058a9c30807280952m2386aad4pa8a08ffaf930c370@mail.gmail.com>
+In-Reply-To: <4880F87B.7020908@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+On Fri, 2008-07-18 at 16:09 -0400, Ric Wheeler wrote:
 
-On Mon, Jul 28, 2008 at 4:09 PM, Chris Mason <chris.mason@oracle.com> wrote:
-> Yan and I are hammering this out a little, I've attached my current
-> patches.
->
-> I was seeing cache misses after long stress runs, which I think is
-> coming from references on the higher levels of the tree making us skip
-> some leaves while dropping the transaction that added them.
->
-> My new version using a single cache per root, and should avoid these
-> misses.
+> Just to kick the tires, I tried the same test that I ran last week on 
+> ext4. Everything was going great, I decided to kill it after 6 million 
+> files or so and restart.
+> 
+> The unmount has taken a very, very long time - seems like we are 
+> cleaning up the pending transactions at a very slow rate:
 
-Just curious, what is the cache size and or eviction policy?
-Is it LFU or LRU, fifo, something custom? Would ARC be a good policy
-for this purpose?
+For many workloads, the long unmount time is now fixed in btrfs-unstable
+as well (thanks to a cache from Yan Zheng).
 
-Sorry if this is totally off-topic or clueless, just curious.. hell,
-I'm not even shure what data/info/object is the cache for...
+For fs_mark, I created 10 million files (20k each) and was able to
+unmount in 2s.
 
-Kind regards,
+-chris
 
 
---
-Miguel Sousa Filipe
+

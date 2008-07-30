@@ -1,46 +1,124 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] implement memory reclaim for leaf reference cache
-Date: Wed, 30 Jul 2008 14:14:34 -0400
-Message-ID: <1217441674.20239.16.camel@think.oraclecorp.com>
-References: <3d0408630807300852q28b12252g3230cc136c075ce3@mail.gmail.com>
+From: Sven Wegener <sven.wegener@stealer.net>
+Subject: [PATCH] Add compability for kernels >=2.6.27-rc1
+Date: Wed, 30 Jul 2008 21:11:34 +0200 (CEST)
+Message-ID: <alpine.LNX.1.10.0807302100500.2294@titan.stealer.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Cc: linux-btrfs@vger.kernel.org
-To: Yan Zheng <zheng.yan@oracle.com>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <3d0408630807300852q28b12252g3230cc136c075ce3@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2008-07-30 at 23:52 +0800, Yan Zheng wrote:
-> Hello,
->=20
-> The memory reclaiming issue happens when snapshot exists. In that
-> case, some cache entries may not be used during old snapshot dropping=
-,
-> so they will remain in the cache until umount. The patch adds a field
-> to struct btrfs_leaf_ref to record create time. Besides, the patch
-> makes all dead roots of a given snapshot linked together in order of
-> create time. After a old snapshot was completely dropped, we check th=
-e
-> dead root list and remove all cache entries created before the oldest
-> dead root in the list.
->=20
+Add a couple of #if's to follow API changes.
 
-Hi Yan,
+Signed-off-by: Sven Wegener <sven.wegener@stealer.net>
+---
+ extent_io.c |   16 ++++++++++++++++
+ file.c      |    4 ++++
+ inode.c     |   12 ++++++++++--
+ 3 files changed, 30 insertions(+), 2 deletions(-)
 
-I think this is missing some hunks, it isn't compiling quite right:
+Having passed the rc1 mark the API changes should be finished.
 
-/local/btree/extent-tree.c:1051: warning: passing argument 1 of
-=E2=80=98btrfs_alloc_leaf_ref=E2=80=99 makes pointer from integer witho=
-ut a cast
-/local/btree/extent-tree.c:1051: error: too few arguments to function
-=E2=80=98btrfs_alloc_leaf_ref=E2=80=99
+Other #if in the source use >version instead of >=version+1, so I use them 
+too.
 
--chris
+Patch is against the current unstable repository, but can applied with a 
+slight modification (extent_io.c) to the stable repository too.
 
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff -r 59ec68fb1540 extent_io.c
+--- a/extent_io.c	Wed Jul 30 10:29:12 2008 -0400
++++ b/extent_io.c	Wed Jul 30 19:00:28 2008 +0000
+@@ -2649,9 +2649,17 @@
+ 	mapping = eb->first_page->mapping;
+ 	if (!mapping)
+ 		return NULL;
++#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,26)
++	spin_lock_irq(&mapping->tree_lock);
++#else
+ 	read_lock_irq(&mapping->tree_lock);
++#endif
+ 	p = radix_tree_lookup(&mapping->page_tree, i);
++#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,26)
++	spin_unlock_irq(&mapping->tree_lock);
++#else
+ 	read_unlock_irq(&mapping->tree_lock);
++#endif
+ 	return p;
+ }
+ 
+@@ -2843,13 +2851,21 @@
+ 			}
+ 		}
+ 		clear_page_dirty_for_io(page);
++#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,26)
++		spin_lock_irq(&page->mapping->tree_lock);
++#else
+ 		read_lock_irq(&page->mapping->tree_lock);
++#endif
+ 		if (!PageDirty(page)) {
+ 			radix_tree_tag_clear(&page->mapping->page_tree,
+ 						page_index(page),
+ 						PAGECACHE_TAG_DIRTY);
+ 		}
++#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,26)
++		spin_unlock_irq(&page->mapping->tree_lock);
++#else
+ 		read_unlock_irq(&page->mapping->tree_lock);
++#endif
+ 		unlock_page(page);
+ 	}
+ 	return 0;
+diff -r 59ec68fb1540 file.c
+--- a/file.c	Wed Jul 30 10:29:12 2008 -0400
++++ b/file.c	Wed Jul 30 19:00:28 2008 +0000
+@@ -886,7 +886,11 @@
+ #ifdef REMOVE_SUID_PATH
+ 	err = remove_suid(&file->f_path);
+ #else
++#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,26)
++	err = file_remove_suid(file);
++#else
+ 	err = remove_suid(fdentry(file));
++#endif
+ #endif
+ 	if (err)
+ 		goto out_nolock;
+diff -r 59ec68fb1540 inode.c
+--- a/inode.c	Wed Jul 30 10:29:12 2008 -0400
++++ b/inode.c	Wed Jul 30 19:00:28 2008 +0000
+@@ -3293,7 +3293,9 @@
+ 	kmem_cache_free(btrfs_inode_cachep, BTRFS_I(inode));
+ }
+ 
+-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,23)
++#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,26)
++static void init_once(void *foo)
++#elif LINUX_VERSION_CODE > KERNEL_VERSION(2,6,23)
+ static void init_once(struct kmem_cache * cachep, void *foo)
+ #else
+ static void init_once(void * foo, struct kmem_cache * cachep,
+@@ -3321,7 +3323,9 @@
+ 
+ struct kmem_cache *btrfs_cache_create(const char *name, size_t size,
+ 				       unsigned long extra_flags,
+-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,23)
++#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,26)
++				       void (*ctor)(void *)
++#elif LINUX_VERSION_CODE > KERNEL_VERSION(2,6,23)
+ 				       void (*ctor)(struct kmem_cache *, void *)
+ #else
+ 				       void (*ctor)(void *, struct kmem_cache *,
+@@ -3561,8 +3565,12 @@
+ 	return __set_page_dirty_nobuffers(page);
+ }
+ 
++#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,26)
++static int btrfs_permission(struct inode *inode, int mask)
++#else
+ static int btrfs_permission(struct inode *inode, int mask,
+ 			    struct nameidata *nd)
++#endif
+ {
+ 	if (btrfs_test_flag(inode, READONLY) && (mask & MAY_WRITE))
+ 		return -EACCES;

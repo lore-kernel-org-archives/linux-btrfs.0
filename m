@@ -1,29 +1,24 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: still see locking issues...
-Date: Thu, 31 Jul 2008 10:37:59 -0400
-Message-ID: <1217515079.20239.49.camel@think.oraclecorp.com>
-References: <21782573.1217014155193.JavaMail.oracle@acsmt304.oracle.com>
-	 <1217257799.7572.103.camel@think.oraclecorp.com>
-	 <4891C236.3000604@redhat.com>
+From: Marcel Runte <marcel.runte@web.de>
+Subject: Re: Re: Kernel oops after compile error
+Date: Thu, 31 Jul 2008 20:31:47 +0200
+Message-ID: <1905875186@web.de>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=iso-8859-15
 Cc: linux-btrfs@vger.kernel.org
-To: rwheeler@redhat.com
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4891C236.3000604@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2008-07-31 at 09:46 -0400, Ric Wheeler wrote:
-> Not sure if this is just an 8-way, multithreaded test, but my run of the 
-> latest unstable tree ground to a halt with lock messages (see the 
-> attached, compressed log for details ;-))  On the good news side, it did 
-> run for around 8 hours before the first message was logged.
+Chris Mason asked Marcel Runte:
+> 
+> But, recent versions of Btrfs should be doing the right thing.  Which
+> version are you running?
+>
 
-It also looks like writeback is getting stuck waiting for locked pages
-that are waiting for the transaction lock.  I've changed around the
-start_transaction code a bit to help with this, and I'll test a bit and
-send out.
+Hi Chris,
 
--chris
+I pulled it from here: http://www.kernel.org/hg/index.cgi/btrfs/kernel/ with latest changeset: http://www.kernel.org/hg/index.cgi/btrfs/kernel/archive/9da425337329.tar.bz2
 
+So it must be v0.15 with your last patches included...
 
+- Marcel

@@ -1,151 +1,142 @@
-From: Sage Weil <sage@newdream.net>
-Subject: [PATCH] fix ioctl-initiated transactions vs wait_current_trans()
- deadlock
-Date: Sat, 2 Aug 2008 12:39:56 -0700 (PDT)
-Message-ID: <Pine.LNX.4.64.0808021135050.23304@cobra.newdream.net>
+From: "Ahmed Kamal" <email.ahmedkamal@googlemail.com>
+Subject: crash when mounting
+Date: Sun, 3 Aug 2008 02:12:53 +0300
+Message-ID: <3da3b5b40808021612q1ec112c2jae0769b0abdcceb5@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+Hi guys,
+I was playing on vmware with btrfs on complete disks /dev/sd{b,c,d,e}.
+Next I decided to use partitions, so I created /dev/sd{b,c,d,e}1 and
+used those, worked fine! Afterward, I mistakenly re-ran an old command
+on the full disk ( mount -t btrfs -o subvol=. /dev/sdb /mnt/ ) notice
+this is sdb not sdb1, and I got this spectacular kernel freeze. Let me
+know if that's some bug.
+Thanks
 
-Commit 597:466b27332893 (btrfs_start_transaction: wait for commits in 
-progress) breaks the transaction start/stop ioctls by making 
-btrfs_start_transaction conditionally wait for the next transaction to 
-start.  If an application artificially is holding a transaction open, 
-things deadlock.
+[root@btrfs tests]# mount -t btrfs -o subvol=. /dev/sdb /mnt/
 
-This workaround maintains a count of open ioctl-initiated transactions in 
-fs_info, and avoids wait_current_trans() if any are currently open (in 
-start_transaction() and btrfs_throttle()).  The start transaction ioctl 
-uses a new btrfs_start_ioctl_transaction() that _does_ call 
-wait_current_trans(), effectively pushing the join/wait decision to the 
-outer ioctl-initiated transaction.
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel: ------------[ cut here ]------------
 
-This more or less neuters btrfs_throttle() when ioctl-initiated 
-transactions are in use, but that seems like a pretty fundamental 
-consequence of wrapping lots of write()'s in a transaction.  Btrfs has no 
-way to tell if the application considers a given operation as part of it's 
-transaction.
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel: invalid opcode: 0000 [#1] SMP
+Segmentation fault
+[root@btrfs tests]#
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel: Process mount (pid: 18986, ti=dc539000 task=ded4ae70 task.ti=dc539000)
 
-I'm not sure if throttle_on_drops() should also be avoided in that case?
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel: Stack: e0dc9e73 01c7b000 00000000 00001000 00000000 c1407134
+c140a6bc 00000000
 
-Obviously, if the transaction start/stop ioctls aren't being used, there 
-is no effect on current behavior.
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:        00000282 00011220 df436880 00011270 00000000 c846e118
+c846e120 c0463c6b
 
-Signed-off-by: Sage Weil <sage@newdream.net>
----
- ctree.h       |    1 +
- ioctl.c       |   12 +++++++++++-
- transaction.c |   18 +++++++++++++-----
- transaction.h |    2 ++
- 4 files changed, 27 insertions(+), 6 deletions(-)
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:        dc539c40 c0463ed0 00000000 00011270 dc539c68 dc539c78
+e0dc23a6 01c7b000
 
-diff -r 76a2ce720c36 ctree.h
---- a/ctree.h	Fri Aug 01 15:11:20 2008 -0400
-+++ b/ctree.h	Sat Aug 02 12:06:17 2008 -0700
-@@ -518,6 +518,7 @@ struct btrfs_fs_info {
- 
- 	u64 generation;
- 	u64 last_trans_committed;
-+	u64 open_ioctl_trans;
- 	unsigned long mount_opt;
- 	u64 max_extent;
- 	u64 max_inline;
-diff -r 76a2ce720c36 ioctl.c
---- a/ioctl.c	Fri Aug 01 15:11:20 2008 -0400
-+++ b/ioctl.c	Sat Aug 02 12:06:17 2008 -0700
-@@ -715,7 +715,12 @@ long btrfs_ioctl_trans_start(struct file
- 		ret = -EINPROGRESS;
- 		goto out;
- 	}
--	trans = btrfs_start_transaction(root, 0);
-+
-+	mutex_lock(&root->fs_info->trans_mutex);
-+	root->fs_info->open_ioctl_trans++;
-+	mutex_unlock(&root->fs_info->trans_mutex);
-+
-+	trans = btrfs_start_ioctl_transaction(root, 0);
- 	if (trans)
- 		file->private_data = trans;
- 	else
-@@ -745,6 +750,11 @@ long btrfs_ioctl_trans_end(struct file *
- 	}
- 	btrfs_end_transaction(trans, root);
- 	file->private_data = 0;
-+
-+	mutex_lock(&root->fs_info->trans_mutex);
-+	root->fs_info->open_ioctl_trans--;
-+	mutex_unlock(&root->fs_info->trans_mutex);
-+
- out:
- 	return ret;
- }
-diff -r 76a2ce720c36 transaction.c
---- a/transaction.c	Fri Aug 01 15:11:20 2008 -0400
-+++ b/transaction.c	Sat Aug 02 12:06:17 2008 -0700
-@@ -152,14 +152,14 @@ static void wait_current_trans(struct bt
- }
- 
- struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
--					     int num_blocks, int join)
-+					     int num_blocks, int wait)
- {
- 	struct btrfs_trans_handle *h =
- 		kmem_cache_alloc(btrfs_trans_handle_cachep, GFP_NOFS);
- 	int ret;
- 
- 	mutex_lock(&root->fs_info->trans_mutex);
--	if (!join)
-+	if ((wait == 1 && !root->fs_info->open_ioctl_trans) || wait == 2)
- 		wait_current_trans(root);
- 	ret = join_transaction(root);
- 	BUG_ON(ret);
-@@ -180,13 +180,20 @@ struct btrfs_trans_handle *btrfs_start_t
- struct btrfs_trans_handle *btrfs_start_transaction(struct btrfs_root *root,
- 						   int num_blocks)
- {
--	return start_transaction(root, num_blocks, 0);
-+	return start_transaction(root, num_blocks, 1);
- }
- struct btrfs_trans_handle *btrfs_join_transaction(struct btrfs_root *root,
- 						   int num_blocks)
- {
--	return start_transaction(root, num_blocks, 1);
-+	return start_transaction(root, num_blocks, 0);
- }
-+
-+struct btrfs_trans_handle *btrfs_start_ioctl_transaction(struct btrfs_root *r,
-+							 int num_blocks)
-+{
-+	return start_transaction(r, num_blocks, 2);
-+}
-+
- 
- static noinline int wait_for_commit(struct btrfs_root *root,
- 				    struct btrfs_transaction *commit)
-@@ -232,7 +239,8 @@ void btrfs_throttle(struct btrfs_root *r
- void btrfs_throttle(struct btrfs_root *root)
- {
- 	mutex_lock(&root->fs_info->trans_mutex);
--	wait_current_trans(root);
-+	if (!root->fs_info->open_ioctl_trans)
-+		wait_current_trans(root);
- 	mutex_unlock(&root->fs_info->trans_mutex);
- 
- 	throttle_on_drops(root);
-diff -r 76a2ce720c36 transaction.h
---- a/transaction.h	Fri Aug 01 15:11:20 2008 -0400
-+++ b/transaction.h	Sat Aug 02 12:06:17 2008 -0700
-@@ -83,6 +83,8 @@ struct btrfs_trans_handle *btrfs_start_t
- 						   int num_blocks);
- struct btrfs_trans_handle *btrfs_join_transaction(struct btrfs_root *root,
- 						   int num_blocks);
-+struct btrfs_trans_handle *btrfs_start_ioctl_transaction(struct btrfs_root *r,
-+						   int num_blocks);
- int btrfs_write_and_wait_transaction(struct btrfs_trans_handle *trans,
- 				     struct btrfs_root *root);
- int btrfs_commit_tree_roots(struct btrfs_trans_handle *trans,
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel: Call Trace:
 
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [mempool_alloc_slab+14/16] ? mempool_alloc_slab+0xe/0x10
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [mempool_alloc+66/224] ? mempool_alloc+0x42/0xe0
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [<e0dc23a6>] ? set_extent_bit+0xa3/0x337 [btrfs]
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [bio_add_page+39/46] ? bio_add_page+0x27/0x2e
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [<e0dc5ded>] ? btrfs_map_block+0x19/0x1b [btrfs]
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [<e0dc5e4c>] ? btrfs_map_bio+0x5d/0x1b7 [btrfs]
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [<e0dc3ab3>] ? end_bio_extent_readpage+0x0/0x339 [btrfs]
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [<e0dad33a>] ? __btree_submit_bio_hook+0x42/0x4b [btrfs]
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [<e0dae650>] ? btree_submit_bio_hook+0x15/0x3b [btrfs]
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [<e0dae63b>] ? btree_submit_bio_hook+0x0/0x3b [btrfs]
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [<e0dc0fc2>] ? submit_one_bio+0xdf/0x10c [btrfs]
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [<e0dc3854>] ? read_extent_buffer_pages+0x276/0x3c6 [btrfs]
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [<e0dc16cd>] ? add_lru+0x22/0x69 [btrfs]
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [<e0dacbf7>] ? btree_read_extent_buffer_pages+0x3a/0x8e [btrfs]
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [<e0daf19b>] ? btree_get_extent+0x0/0x1cd [btrfs]
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [<e0dad922>] ? read_tree_block+0x3e/0x52 [btrfs]
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [<e0dae0a9>] ? open_ctree+0x6d4/0x825 [btrfs]
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [<e0da027e>] ? btrfs_get_sb_bdev+0x103/0x284 [btrfs]
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [<e0da07bb>] ? btrfs_parse_options+0x261/0x26e [btrfs]
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [<e0da080c>] ? btrfs_get_sb+0x44/0x60 [btrfs]
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [vfs_kern_mount+130/245] ? vfs_kern_mount+0x82/0xf5
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [do_kern_mount+50/186] ? do_kern_mount+0x32/0xba
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [do_new_mount+66/108] ? do_new_mount+0x42/0x6c
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [do_mount+420/450] ? do_mount+0x1a4/0x1c2
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [__get_free_pages+72/79] ? __get_free_pages+0x48/0x4f
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [copy_mount_options+42/249] ? copy_mount_options+0x2a/0xf9
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [sys_mount+102/158] ? sys_mount+0x66/0x9e
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  [syscall_call+7/11] ? syscall_call+0x7/0xb
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel:  =======================
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel: Code: 7d 1c 00 0f 95 45 93 84 c0 74 27 31 c0 80 7d 93 00 0f
+85 0c 04 00 00 8b 55 10 ff 72 04 ff 32 57 56 68 73 9e dc e0 e8 38 91
+86 df <0f> 0b 83 c4 14 eb fe 8b 4d ac 8b 51 10 8b 41 0c 39 fa 77 23 72
+
+Message from syslogd@btrfs at Aug  3 05:09:33 ...
+ kernel: EIP: [<e0dc59a6>] __btrfs_map_block+0xe1/0x4e1 [btrfs] SS:ESP
+0068:dc539bd0
+ls /
+bin  boot  dev  etc  home  lib  lost+found  media  mnt  opt  proc
+root  sbin  selinux  srv  sys  tmp  usr

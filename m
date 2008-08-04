@@ -1,29 +1,29 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] fix ioctl-initiated transactions vs
-	wait_current_trans() deadlock
-Date: Mon, 04 Aug 2008 09:01:59 -0400
-Message-ID: <1217854920.29139.57.camel@think.oraclecorp.com>
-References: <Pine.LNX.4.64.0808021135050.23304@cobra.newdream.net>
+Subject: Re: crash when mounting
+Date: Mon, 04 Aug 2008 09:08:15 -0400
+Message-ID: <1217855295.29139.66.camel@think.oraclecorp.com>
+References: <3da3b5b40808021612q1ec112c2jae0769b0abdcceb5@mail.gmail.com>
+	 <1217854042.29139.41.camel@think.oraclecorp.com>
+	 <3da3b5b40808040559h75d03539mbd408bd81a058844@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain
 Cc: linux-btrfs@vger.kernel.org
-To: Sage Weil <sage@newdream.net>
+To: Ahmed Kamal <email.ahmedkamal@googlemail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <Pine.LNX.4.64.0808021135050.23304@cobra.newdream.net>
+In-Reply-To: <3da3b5b40808040559h75d03539mbd408bd81a058844@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, 2008-08-02 at 12:39 -0700, Sage Weil wrote:
-> Hi Chris,
-> 
-> Commit 597:466b27332893 (btrfs_start_transaction: wait for commits in 
-> progress) breaks the transaction start/stop ioctls by making 
-> btrfs_start_transaction conditionally wait for the next transaction to 
-> start.  If an application artificially is holding a transaction open, 
-> things deadlock.
+On Mon, 2008-08-04 at 15:59 +0300, Ahmed Kamal wrote:
+> Well, yeah sure. But I was kind of hoping my playing/testing is going
+> to help you guys fix it. So, does that traceback help you pin point
+> the problem ? If not, is there anything I can do, to help with that ?
+> I believe this crash should be re-producible .. haven't tested that
+> though
 > 
 
-Right, once I was done tuning the throttle code I was going to email you
-on this.  Your patch looks pretty good, I'll take it in today.
+Yes, it shows which part is broken ;)  This one won't be hard to trigger
+or fix, it is just part of a larger effort to fixup handling bad data on
+disk.
 
 -chris
 

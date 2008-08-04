@@ -1,39 +1,30 @@
-From: "Ahmed Kamal" <email.ahmedkamal@googlemail.com>
-Subject: Re: crash when mounting
-Date: Mon, 4 Aug 2008 15:59:20 +0300
-Message-ID: <3da3b5b40808040559h75d03539mbd408bd81a058844@mail.gmail.com>
-References: <3da3b5b40808021612q1ec112c2jae0769b0abdcceb5@mail.gmail.com>
-	 <1217854042.29139.41.camel@think.oraclecorp.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH] fix ioctl-initiated transactions vs
+	wait_current_trans() deadlock
+Date: Mon, 04 Aug 2008 09:01:59 -0400
+Message-ID: <1217854920.29139.57.camel@think.oraclecorp.com>
+References: <Pine.LNX.4.64.0808021135050.23304@cobra.newdream.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain
 Cc: linux-btrfs@vger.kernel.org
-To: "Chris Mason" <chris.mason@oracle.com>
+To: Sage Weil <sage@newdream.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1217854042.29139.41.camel@think.oraclecorp.com>
+In-Reply-To: <Pine.LNX.4.64.0808021135050.23304@cobra.newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Well, yeah sure. But I was kind of hoping my playing/testing is going
-to help you guys fix it. So, does that traceback help you pin point
-the problem ? If not, is there anything I can do, to help with that ?
-I believe this crash should be re-producible .. haven't tested that
-though
+On Sat, 2008-08-02 at 12:39 -0700, Sage Weil wrote:
+> Hi Chris,
+> 
+> Commit 597:466b27332893 (btrfs_start_transaction: wait for commits in 
+> progress) breaks the transaction start/stop ioctls by making 
+> btrfs_start_transaction conditionally wait for the next transaction to 
+> start.  If an application artificially is holding a transaction open, 
+> things deadlock.
+> 
 
-Regards
+Right, once I was done tuning the throttle code I was going to email you
+on this.  Your patch looks pretty good, I'll take it in today.
 
-On Mon, Aug 4, 2008 at 3:47 PM, Chris Mason <chris.mason@oracle.com> wrote:
-> On Sun, 2008-08-03 at 02:12 +0300, Ahmed Kamal wrote:
->> Hi guys,
->> I was playing on vmware with btrfs on complete disks /dev/sd{b,c,d,e}.
->> Next I decided to use partitions, so I created /dev/sd{b,c,d,e}1 and
->> used those, worked fine! Afterward, I mistakenly re-ran an old command
->> on the full disk ( mount -t btrfs -o subvol=. /dev/sdb /mnt/ ) notice
->> this is sdb not sdb1, and I got this spectacular kernel freeze. Let me
->> know if that's some bug.
->
-> It would be nice if we didn't oops, there is clearly some hardening to
-> do in the failure paths for corrupt filesystems.
->
-> -chris
->
->
->
+-chris
+
+

@@ -1,77 +1,50 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Btrfs v0.16 released
-Date: Tue, 05 Aug 2008 15:01:16 -0400
-Message-ID: <1217962876.15342.33.camel@think.oraclecorp.com>
+From: Marcel Runte <marcel.runte@web.de>
+Subject: Re: Re: Kernel oops after compile error
+Date: Wed, 06 Aug 2008 00:21:27 +0200
+Message-ID: <1908993894@web.de>
 Mime-Version: 1.0
-Content-Type: text/plain
-To: linux-btrfs <linux-btrfs@vger.kernel.org>,
-	linux-kernel <linux-kernel@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>
+Content-Type: text/plain; charset=iso-8859-15
+Cc: linux-btrfs@vger.kernel.org
+To: chris.mason@oracle.com, Yan Zheng <zheng.yan@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello everyone,
+Hi YZ, hi Chris,
 
-Btrfs v0.16 is available for download, please see
-http://btrfs.wiki.kernel.org/ for download links and project
-information.
+I tried the whole build process on Kubuntu Hardy Heron (kernel 2.6.24-1=
+9-generic) and there ist was OK, so I think it has something to do with=
+ the difference in include of kernel-headers-2.6.22-15 on Gutsy...
 
-v0.16 has a shiny new disk format, and is not compatible with
-filesystems created by older Btrfs releases.  But, it should be the
-fastest Btrfs yet, with a wide variety of scalability fixes and new
-features.  
+Unfortunately new release leads to same error... But for testing purpos=
+e for me its enough that this working on a higher kernel version...
 
-There were quite a few contributors this time around, but big thanks to
-Josef Bacik and Yan Zheng for their help on this release.  Toei Rei also
-helped track down an important corruption problem.
+Best regards, Marcel
 
-Scalability and performance:
-
-* Fine grained btree locking.  The large fs_mutex is finally gone.
-There is still some work to do on the locking during extent allocation,
-but the code is much more scalable than it was.
-
-* Helper threads for checksumming and other background tasks.  Most CPU
-intensive operations have been pushed off to helper threads to take
-advantage of SMP machines.  Streaming read and write throughput now
-scale to disk speed even with checksumming on.
-
-* Improved data=ordered mode.  Metadata is now updated only after all
-the blocks in a data extent are on disk.  This allows btrfs to provide
-data=ordered semantics without waiting for all the dirty data in the FS
-to flush at commit time.  fsync and O_SYNC writes do not force down all
-the dirty data in the FS.
-
-* Faster cleanup of old transactions (Yan Zheng).  A new cache now
-dramatically reduces the amount of IO required to clean up and delete
-old snapshots.
-
-Major features (all from Josef Bacik):
-
-* ACL support.  ACLs are enabled by default, no special mount options
-required.
-
-* Orphan inode prevention, no more lost files after a crash
-
-* New directory index format, fixing some suboptimal corner cases in the
-original.
-
-There are still more disk format changes planned, but we're making every
-effort to get them out of the way as quickly as we can.  You can see the
-major features we have planned on the development timeline:
-
-http://btrfs.wiki.kernel.org/index.php/Development_timeline
-
-A few interesting statistics:
-
-Between v0.14 and v0.15:
-
-42 files changed, 6995 insertions(+), 3011 deletions(-)
-
-The btrfs kernel module now weighs in at 30,000 LOC, which means we're
-getting very close to the size of ext[34].
-
--chris
+> -----Urspr=FCngliche Nachricht-----
+> Von: "Yan Zheng" <zheng.yan@oracle.com>
+> Gesendet: 01.08.08 05:01:13
+> An: "Marcel Runte" <marcel.runte@web.de>
+> CC: linux-btrfs@vger.kernel.org
+> Betreff: Re: Kernel oops after compile error
 
 
+> 2008/8/1 Marcel Runte <marcel.runte@web.de>:
+> > patch described in your link is included in http://www.kernel.org/h=
+g/index.cgi/btrfs/kernel/rev/9da425337329, which I used for compilation=
+=2E Even putting an alias like "alias gcc =3D 'gcc -DREMOVE_SUID_PATH'"=
+ or doing a "CC=3D'gcc -DREMOVE_SUID_PATH'; make"leads to same error me=
+ssage when compiling file.c
+> >
+>=20
+> Linux kernel uses its own building system, putting alias has no
+> effect. Please try modify the code directly.
+>=20
+> YZ
+>=20
 
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

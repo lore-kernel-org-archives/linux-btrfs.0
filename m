@@ -1,301 +1,195 @@
-From: "Morey Roof" <moreyroof@gmail.com>
-Subject: Another Try
-Date: Wed, 6 Aug 2008 11:55:24 -0600
-Message-ID: <91a37e890808061055u1ca6baa6ie638787cee7139ee@mail.gmail.com>
+From: David Woodhouse <dwmw2@infradead.org>
+Subject: Re: Hot topics for the next release
+Date: Wed, 06 Aug 2008 19:45:12 +0100
+Message-ID: <1218048312.5111.128.camel@pmac.infradead.org>
+References: <1218032511.15342.73.camel@think.oraclecorp.com>
+	 <1218034728.5111.77.camel@pmac.infradead.org>
+	 <1218035592.15342.78.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1218035592.15342.78.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Here is change you requested Yan.  When I was looking at the sources I
-missed that the transaction_commit would get the superblock.
+On Wed, 2008-08-06 at 11:13 -0400, Chris Mason wrote:
+> We do need the readdir hack, being able to test on older kernels (say
+> 2.6.26) is a big part of attracting and keeping btrfs testers.
 
-Thanks,
+Well, those testers don't seem to have been put off so far by the fact
+that you can't export it by NFS. But it's easy enough to copy it over.
 
-Morey
+Added to git.infradead.org/users/dwmw2/btrfs-kernel-unstable.git
 
-diff -r bbb347e93aa3 Makefile
---- a/Makefile  Mon Aug 04 15:46:36 2008 -0400
-+++ b/Makefile  Wed Aug 06 11:54:50 2008 -0600
-@@ -15,7 +15,7 @@
- bindir = $(prefix)/bin
- LIBS=-luuid
+From: David Woodhouse <David.Woodhouse@intel.com>
+Date: Wed, 6 Aug 2008 19:42:33 +0100
+Subject: [PATCH] Implement our own copy of the nfsd readdir hack, for older kernels
 
--progs = btrfsctl btrfsck mkfs.btrfs debug-tree btrfs-show btrfs-vol
-+progs = btrfsctl btrfsck mkfs.btrfs debug-tree btrfs-show btrfs-vol btrfslabel
+Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+---
+ ctree.h  |    4 ++
+ export.c |   94 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ inode.c  |    8 ++++-
+ 3 files changed, 104 insertions(+), 2 deletions(-)
 
- # make C=1 to enable sparse
- ifdef C
-@@ -45,6 +45,9 @@
-
- btrfsck: $(objects) btrfsck.o bit-radix.o
-        gcc $(CFLAGS) -o btrfsck btrfsck.o $(objects) bit-radix.o
-$(LDFLAGS) $(LIBS)
+diff --git a/ctree.h b/ctree.h
+index 3694f03..7200178 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -1694,6 +1694,7 @@ void btrfs_destroy_inode(struct inode *inode);
+ int btrfs_init_cachep(void);
+ void btrfs_destroy_cachep(void);
+ long btrfs_ioctl_trans_end(struct file *file);
++int btrfs_real_readdir(struct file *filp, void *dirent, filldir_t filldir);
+ struct inode *btrfs_iget_locked(struct super_block *s, u64 objectid,
+ 				struct btrfs_root *root);
+ struct inode *btrfs_ilookup(struct super_block *s, u64 objectid,
+@@ -1709,6 +1710,9 @@ int btrfs_update_inode(struct btrfs_trans_handle *trans,
+ 			      struct btrfs_root *root,
+ 			      struct inode *inode);
+ 
++/* export.c */
++int btrfs_nfshack_readdir(struct file *filp, void *dirent, filldir_t filldir);
 +
-+btrfslabel: $(objects) btrfslabel.o
-+       gcc $(CFLAGS) -o btrfslabel btrfslabel.o $(objects) $(LDFLAGS) $(LIBS)
-
- mkfs.btrfs: $(objects) mkfs.o
-        gcc $(CFLAGS) -o mkfs.btrfs $(objects) mkfs.o $(LDFLAGS) $(LIBS)
-diff -r bbb347e93aa3 btrfslabel.c
---- /dev/null   Thu Jan 01 00:00:00 1970 +0000
-+++ b/btrfslabel.c      Wed Aug 06 11:54:50 2008 -0600
-@@ -0,0 +1,169 @@
-+/*
-+ * Copyright (C) 2008 Morey Roof.   All rights reserved.
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public
-+ * License v2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+ * General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public
-+ * License along with this program; if not, write to the
-+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-+ * Boston, MA 021110-1307, USA.
-+ */
+ /* ioctl.c */
+ long btrfs_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
+ 
+diff --git a/export.c b/export.c
+index 9070674..d152fbc 100644
+--- a/export.c
++++ b/export.c
+@@ -181,3 +181,97 @@ const struct export_operations btrfs_export_ops = {
+ 	.fh_to_parent	= btrfs_fh_to_parent,
+ 	.get_parent	= btrfs_get_parent,
+ };
 +
-+#define _GNU_SOURCE
++/* Kernels without FS_LOOKUP_IN_READDIR still have the NFS deadlock where
++   nfsd will call the file system's ->lookup() method from within its
++   filldir callback, which in turn was called from the file system's 
++   ->readdir() method. And will deadlock for many file systems. */
++#ifndef FS_LOOKUP_IN_READDIR
 +
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <sys/types.h>
-+#include <sys/stat.h>
-+#include <fcntl.h>
-+#include <unistd.h>
-+#include <linux/fs.h>
-+#include <ctype.h>
-+#include "kerncompat.h"
-+#include "ctree.h"
-+#include "utils.h"
-+#include "version.h"
-+#include "disk-io.h"
-+#include "transaction.h"
++struct nfshack_dirent {
++	u64		ino;
++	loff_t		offset;
++	int		namlen;
++	unsigned int	d_type;
++	char		name[];
++};
 +
-+#define	MOUNTED				1
-+#define	UNMOUNTED			2
++struct nfshack_readdir {
++	char		*dirent;
++	size_t		used;
++};
 +
-+static void print_usage(void)
++
++
++static int btrfs_nfshack_filldir(void *__buf, const char *name, int namlen,
++			      loff_t offset, u64 ino, unsigned int d_type)
 +{
-+	fprintf(stderr, "usage: btrfslabel dev [newlabel]\n");
-+	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
-+	exit(1);
-+}
++	struct nfshack_readdir *buf = __buf;
++	struct nfshack_dirent *de = (void *)(buf->dirent + buf->used);
++	unsigned int reclen;
 +
-+static void change_label_unmounted(char *dev, char *nLabel)
-+{
-+	struct btrfs_root *root;
-+	struct btrfs_trans_handle *trans;
++	reclen = ALIGN(sizeof(struct nfshack_dirent) + namlen, sizeof(u64));
++	if (buf->used + reclen > PAGE_SIZE)
++		return -EINVAL;
 +
-+	/* Open the super_block at the default location
-+	 * and as read-write.
-+	 */
-+	root = open_ctree(dev, 0, 1);
-+
-+	trans = btrfs_start_transaction(root, 1);
-+	strncpy(root->fs_info->super_copy.label, nLabel, BTRFS_LABEL_SIZE);
-+	btrfs_commit_transaction(trans, root);
-+
-+	/* Now we close it since we are done. */
-+	close_ctree(root);
-+}
-+
-+static void change_label_mounted(char *dev, char *nLabel)
-+{
-+}
-+
-+static void get_label_unmounted(char *dev)
-+{
-+	struct btrfs_root *root;
-+
-+	/* Open the super_block at the default location
-+	 * and as read-only.
-+	 */
-+	root = open_ctree(dev, 0, 0);
-+
-+	fprintf(stdout, "%s\n", root->fs_info->super_copy.label);
-+
-+	/* Now we close it since we are done. */
-+	close_ctree(root);
-+}
-+
-+static void get_label_mounted(char *dev)
-+{
-+}
-+
-+int main(int argc, char **argv)
-+{
-+	char *btrfs_dev;
-+	char *nLabel;
-+	int ret = 0;
-+	int workas = 0;
-+	int check_val = 0;
-+
-+	if (argc <= 1)
-+	{
-+		print_usage();
-+	}
-+
-+	btrfs_dev = argv[1];
-+	ret = check_mounted(btrfs_dev);
-+	if (ret < 0)
-+	{
-+		fprintf(stderr, "FATAL: error checking %s mount status\n", btrfs_dev);
-+		exit(1);
-+	}
-+
-+	switch(ret)
-+	{
-+		case 0:
-+			workas = UNMOUNTED;
-+			break;
-+		case 1:
-+			workas = MOUNTED;
-+			break;
-+		default:
-+			fprintf(stderr, "BUG: unknown return code from check_mounted()\n");
-+			exit(1);
-+			break;
-+	}
-+
-+	if (argc == 2)
-+	{
-+		/* They just want to know what the current label is */
-+		if (workas == MOUNTED)
-+		{
-+			get_label_mounted(btrfs_dev);
-+		} else
-+		{
-+			get_label_unmounted(btrfs_dev);
-+		}
-+	} else if (argc == 3)
-+	{
-+		/* They have requested we change the label */
-+		nLabel = argv[2];
-+		check_val = check_label(nLabel);
-+
-+		if (check_val == -1)
-+		{
-+			fprintf(stderr, "Label %s is too long (max %d)\n", nLabel,
-+				BTRFS_LABEL_SIZE);
-+			exit(1);
-+		}
-+
-+		if (check_val == -2)
-+		{
-+			fprintf(stderr, "invalid label %s\n", nLabel);
-+			exit(1);
-+		}
-+
-+		if (workas == MOUNTED)
-+		{
-+			/* TODO: Handle changing the label on a mounted filesystem. */
-+			change_label_mounted(btrfs_dev, nLabel);
-+			fprintf(stderr, "FATAL: cannot change a label on a mounted filesystem\n");
-+			exit(1);
-+		} else
-+		{
-+			/* We are going to change the label on an unmounted filesystem */
-+			change_label_unmounted(btrfs_dev, nLabel);
-+		}
-+	} else
-+	{
-+		fprintf(stderr, "FATAL: too many arguements\n\n");
-+		print_usage();
-+	}
-+
-+	return ret;
-+}
-diff -r bbb347e93aa3 mkfs.c
---- a/mkfs.c	Mon Aug 04 15:46:36 2008 -0400
-+++ b/mkfs.c	Wed Aug 06 11:54:50 2008 -0600
-@@ -246,6 +246,7 @@
- 	fprintf(stderr, "options:\n");
- 	fprintf(stderr, "\t -b --byte-count total number of bytes in the FS\n");
- 	fprintf(stderr, "\t -l --leafsize size of btree leaves\n");
-+	fprintf(stderr, "\t -L --label of the filesystem\n");
- 	fprintf(stderr, "\t -n --nodesize size of btree leaves\n");
- 	fprintf(stderr, "\t -s --sectorsize min block allocation\n");
- 	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
-@@ -271,20 +272,19 @@
-
- static char *parse_label(char *input)
- {
--	int i;
--	int len = strlen(input);
-+	int check_val = check_label(input);
-
--	if (len > BTRFS_LABEL_SIZE) {
-+	if (check_val == -1) {
- 		fprintf(stderr, "Label %s is too long (max %d)\n", input,
- 			BTRFS_LABEL_SIZE);
- 		exit(1);
- 	}
--	for (i = 0; i < len; i++) {
--		if (input[i] == '/' || input[i] == '\\') {
--			fprintf(stderr, "invalid label %s\n", input);
--			exit(1);
--		}
-+
-+	if (check_val == -2) {
-+		fprintf(stderr, "invalid label %s\n", input);
-+		exit(1);
- 	}
-+
- 	return strdup(input);
- }
-
-diff -r bbb347e93aa3 utils.c
---- a/utils.c	Mon Aug 04 15:46:36 2008 -0400
-+++ b/utils.c	Wed Aug 06 11:54:50 2008 -0600
-@@ -572,7 +572,7 @@
- }
-
- /*
-- * returns 1 if the device was mounted, < 0 on error or 0 if everything
-+ * returns 1 if the device is mounted, < 0 on error or 0 if everything
-  * is safe to continue.  TODO, this should also scan multi-device filesystems
-  */
- int check_mounted(char *file)
-@@ -803,3 +803,27 @@
- 	return pretty;
- }
-
-+/*
-+ * Checks to make sure that the label matches our requirements.
-+ * Returns:
-+       0    if everything is safe and usable
-+      -1    if the label is too long
-+      -2    if the label contains an invalid character
-+ */
-+int check_label(char *input)
-+{
-+	int i;
-+	int len = strlen(input);
-+
-+	if (len > BTRFS_LABEL_SIZE) {
-+		return -1;
-+	}
-+
-+	for (i = 0; i < len; i++) {
-+		if (input[i] == '/' || input[i] == '\\') {
-+			return -2;
-+		}
-+	}
++	de->namlen = namlen;
++	de->offset = offset;
++	de->ino = ino;
++	de->d_type = d_type;
++	memcpy(de->name, name, namlen);
++	buf->used += reclen;
 +
 +	return 0;
 +}
-diff -r bbb347e93aa3 utils.h
---- a/utils.h	Mon Aug 04 15:46:36 2008 -0400
-+++ b/utils.h	Wed Aug 06 11:54:50 2008 -0600
-@@ -40,4 +40,5 @@
- int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
- 				 int super_offset);
- char *pretty_sizes(u64 size);
-+int check_label(char *input);
- #endif
++
++int btrfs_nfshack_readdir(struct file *file, void *dirent, filldir_t filldir)
++{
++	struct nfshack_readdir buf;
++	struct nfshack_dirent *de;
++	int err;
++	int size;
++	loff_t offset;
++
++	buf.dirent = (void *)__get_free_page(GFP_KERNEL);
++	if (!buf.dirent)
++		return -ENOMEM;
++
++	offset = file->f_pos;
++
++	while (1) {
++		unsigned int reclen;
++
++		buf.used = 0;
++
++		err = btrfs_real_readdir(file, &buf, btrfs_nfshack_filldir);
++		if (err)
++			break;
++
++		size = buf.used;
++
++		if (!size)
++			break;
++
++		de = (struct nfshack_dirent *)buf.dirent;
++		while (size > 0) {
++			offset = de->offset;
++
++			if (filldir(dirent, de->name, de->namlen, de->offset,
++				    de->ino, de->d_type))
++				goto done;
++			offset = file->f_pos;
++
++			reclen = ALIGN(sizeof(*de) + de->namlen,
++				       sizeof(u64));
++			size -= reclen;
++			de = (struct nfshack_dirent *)((char *)de + reclen);
++		}
++	}
++
++ done:
++	free_page((unsigned long)buf.dirent);
++	file->f_pos = offset;
++
++	return err;
++}
++#endif
+diff --git a/inode.c b/inode.c
+index 393b7aa..f8b3fde 100644
+--- a/inode.c
++++ b/inode.c
+@@ -1956,7 +1956,7 @@ static unsigned char btrfs_filetype_table[] = {
+ 	DT_UNKNOWN, DT_REG, DT_DIR, DT_CHR, DT_BLK, DT_FIFO, DT_SOCK, DT_LNK
+ };
+ 
+-static int btrfs_readdir(struct file *filp, void *dirent, filldir_t filldir)
++int btrfs_real_readdir(struct file *filp, void *dirent, filldir_t filldir)
+ {
+ 	struct inode *inode = filp->f_dentry->d_inode;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+@@ -3661,7 +3661,11 @@ static struct inode_operations btrfs_dir_ro_inode_operations = {
+ static struct file_operations btrfs_dir_file_operations = {
+ 	.llseek		= generic_file_llseek,
+ 	.read		= generic_read_dir,
+-	.readdir	= btrfs_readdir,
++#ifdef FS_LOOKUP_IN_READDIR /* NFSd readdir/lookup deadlock is fixed */
++	.readdir	= btrfs_real_readdir,
++#else /* otherwise, we need to work around it ourselves */
++	.readdir	= btrfs_nfshack_readdir,
++#endif
+ 	.unlocked_ioctl	= btrfs_ioctl,
+ #ifdef CONFIG_COMPAT
+ 	.compat_ioctl	= btrfs_ioctl,
+-- 
+1.5.5.1
+
+
+-- 
+David Woodhouse                            Open Source Technology Centre
+David.Woodhouse@intel.com                              Intel Corporation
+
+
+

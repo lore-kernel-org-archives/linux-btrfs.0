@@ -1,32 +1,28 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Hot topics for the next release
-Date: Wed, 06 Aug 2008 16:53:24 -0400
-Message-ID: <1218056004.15342.164.camel@think.oraclecorp.com>
-References: <1218032511.15342.73.camel@think.oraclecorp.com>
-	 <4899C64C.2040107@hp.com> <1218040611.15342.92.camel@think.oraclecorp.com>
-	 <489A0B4E.6010809@hp.com> <1218055384.15342.160.camel@think.oraclecorp.com>
-	 <489A0E73.8050101@gentoo.org>
+From: Peter Zijlstra <peterz@infradead.org>
+Subject: Re: Btrfs v0.16 released
+Date: Thu, 07 Aug 2008 11:14:24 +0200
+Message-ID: <1218100464.8625.9.camel@twins>
+References: <1217962876.15342.33.camel@think.oraclecorp.com>
 Mime-Version: 1.0
 Content-Type: text/plain
-Cc: jim owens <jowens@hp.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Joe Peterson <lavajoe@gentoo.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+	linux-kernel <linux-kernel@vger.kernel.org>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <489A0E73.8050101@gentoo.org>
+In-Reply-To: <1217962876.15342.33.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2008-08-06 at 14:49 -0600, Joe Peterson wrote:
-> >> Chris Mason wrote:
-> >>
-> >>> Josef's allocator fix is on the list because we currently fall over in
-> >>> some workloads at 100% cpu time when the FS is 60% full.
+On Tue, 2008-08-05 at 15:01 -0400, Chris Mason wrote:
+
+> There are still more disk format changes planned, but we're making every
+> effort to get them out of the way as quickly as we can.  You can see the
+> major features we have planned on the development timeline:
 > 
-> Chris, does it oops, or just get very slow?  Does 0.15 do the same?
-> 
+> http://btrfs.wiki.kernel.org/index.php/Development_timeline
 
-Very very slow and v0.15 has the same feature.  This doesn't happen
-every time you hit 60% full, it varies with the workload.
+Just took a peek, seems to be slightly out of date as it still lists the
+single mutex thingy.
 
--chris
-
+Also, how true is the IO-error and disk-full claim?
 

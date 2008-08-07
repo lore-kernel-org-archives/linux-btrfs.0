@@ -1,26 +1,50 @@
-From: "Chris Friesen" <cfriesen@nortel.com>
+From: tvrtko.ursulin@sophos.com
 Subject: Re: Btrfs v0.16 released
-Date: Thu, 07 Aug 2008 08:58:57 -0600
-Message-ID: <489B0DB1.30407@nortel.com>
-References: <1217962876.15342.33.camel@think.oraclecorp.com> <1218100139.8625.7.camel@twins> <1218105242.15342.184.camel@think.oraclecorp.com>
+Date: Thu, 7 Aug 2008 16:07:15 +0100
+Message-ID: <20080807150809.577D82FE8BE@pmx1.sophos.com>
+References: <1218105242.15342.184.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Peter Zijlstra <peterz@infradead.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
+Content-Type: text/plain; charset="US-ASCII"
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
 	linux-kernel <linux-kernel@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>
+	Peter Zijlstra <peterz@infradead.org>
 To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754082AbYHGO72@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1218105242.15342.184.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote:
+Chris Mason wrote on 07/08/2008 11:34:02:
 
+> > > * Helper threads for checksumming and other background tasks.  Most 
+CPU
+> > > intensive operations have been pushed off to helper threads to take
+> > > advantage of SMP machines.  Streaming read and write throughput now
+> > > scale to disk speed even with checksumming on.
+> > 
+> > Can this lead to the same Priority Inversion issues as seen with
+> > kjournald?
+> 
+> Yes, although in general only the helper threads end up actually doing
+> the IO for writes.  Unfortunately, they are almost but not quite an
+> elevator.  It is tempting to try sorting the bios on the helper queues
+> etc.  But I haven't done that because it gets into starvation and other
+> fun.
+> 
 > I haven't done any real single cpu testing, it may make sense in those
 > workloads to checksum and submit directly in the calling context.  But
 > real single cpu boxes are harder to come by these days.
 
-They're still pretty common in the embedded/low power space.  I could 
-see something like a settop box wanting to use btrfs with massive disks.
+[just jumping in as a casual bystander with one remark]
 
-Chris
+For this purpose it seems booting up with limiting to one CPU should be 
+sufficient.
+
+Tvrtko
+
+
+Sophos Plc, The Pentagon, Abingdon Science Park, Abingdon,
+OX14 3YP, United Kingdom.
+
+Company Reg No 2096520. VAT Reg No GB 348 3873 20.
+

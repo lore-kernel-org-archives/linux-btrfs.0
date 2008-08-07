@@ -1,7 +1,7 @@
 From: "Morey Roof" <moreyroof@gmail.com>
-Subject: Btrfslabel
-Date: Thu, 7 Aug 2008 17:05:23 -0600
-Message-ID: <91a37e890808071605s25b71aa9xb8f3ec44b571192d@mail.gmail.com>
+Subject: btrfslabel - patch v2
+Date: Thu, 7 Aug 2008 17:13:00 -0600
+Message-ID: <91a37e890808071613s2a43b0f6x32f825545632a078@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
@@ -10,18 +10,15 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Chris,
 
-This patch contains all the parts for the brtfslabel program.  It
-needs the two ioctl that are added in the other patch I posted earlier
-today. Let me know if anything needs to be changes.
+  Use this patch as I missed a chunk in the last one I posted.
+Hopefully, I will have this down better soon.
 
-Thanks,
-
-Morey
+-Morey
 
 
 diff -r da35ab2b0b54 Makefile
---- a/Makefile	Wed Aug 06 12:17:01 2008 -0400
-+++ b/Makefile	Thu Aug 07 17:02:41 2008 -0600
+--- a/Makefile  Wed Aug 06 12:17:01 2008 -0400
++++ b/Makefile  Thu Aug 07 17:11:44 2008 -0600
 @@ -15,7 +15,7 @@
  bindir = $(prefix)/bin
  LIBS=-luuid
@@ -41,9 +38,257 @@ diff -r da35ab2b0b54 Makefile
 
  mkfs.btrfs: $(objects) mkfs.o
  	gcc $(CFLAGS) -o mkfs.btrfs $(objects) mkfs.o $(LDFLAGS) $(LIBS)
+diff -r da35ab2b0b54 btrfslabel.c
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/btrfslabel.c	Thu Aug 07 17:11:44 2008 -0600
+@@ -0,0 +1,244 @@
++/*
++ * Copyright (C) 2008 Morey Roof.   All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#define _GNU_SOURCE
++
++#ifndef __CHECKER__
++#include <sys/ioctl.h>
++#include <sys/mount.h>
++#include "ioctl.h"
++#endif /* __CHECKER__ */
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <dirent.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <linux/fs.h>
++#include <linux/limits.h>
++#include <ctype.h>
++#include "kerncompat.h"
++#include "ctree.h"
++#include "utils.h"
++#include "version.h"
++#include "disk-io.h"
++#include "transaction.h"
++
++#define	MOUNTED						1
++#define	UNMOUNTED					2
++#define  GET_LABEL					3
++#define  SET_LABEL					4
++
++#ifdef __CHECKER__
++#define BTRFS_IOC_SET_LABEL		0
++#define BTRFS_IOC_GET_LABEL		0
++struct btrfs_ioctl_label_args { char name[BTRFS_LABEL_SIZE]; };
++static inline int ioctl(int fd, int define, void *arg) { return 0; }
++#endif /*__CHECKER__*/
++
++static void print_usage(void)
++{
++	fprintf(stderr, "usage: btrfslabel dev [newlabel]\n");
++	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
++	exit(1);
++}
++
++static void change_label_unmounted(char *dev, char *nLabel)
++{
++	struct btrfs_root *root;
++	struct btrfs_trans_handle *trans;
++
++	/* Open the super_block at the default location
++	 * and as read-write.
++	 */
++	root = open_ctree(dev, 0, 1);
++
++	trans = btrfs_start_transaction(root, 1);
++	strncpy(root->fs_info->super_copy.label, nLabel, BTRFS_LABEL_SIZE);
++	btrfs_commit_transaction(trans, root);
++
++	/* Now we close it since we are done. */
++	close_ctree(root);
++}
++
++static void get_label_unmounted(char *dev)
++{
++	struct btrfs_root *root;
++
++	/* Open the super_block at the default location
++	 * and as read-only.
++	 */
++	root = open_ctree(dev, 0, 0);
++
++	fprintf(stdout, "%s\n", root->fs_info->super_copy.label);
++
++	/* Now we close it since we are done. */
++	close_ctree(root);
++}
++
++static void mount_label_op(char *dev, char *nLabel, int cmd)
++{
++	struct btrfs_ioctl_label_args label_args;	
++	int ret = 0;
++	DIR *dirstream;
++	int fd;
++	char *mount_point;
++
++	mount_point = malloc(PATH_MAX);
++	if (mount_point == NULL)
++	{
++		fprintf(stderr, "FATAL: Unable to allocate memory\n");
++		exit(1);
++	}
++
++	if (get_mountpt(dev, mount_point, PATH_MAX) != 0)
++	{
++		fprintf(stderr, "FATAL: Unable to determine mount point\n");
++		exit(1);
++	}
++
++	dirstream = opendir(mount_point);
++	if (!dirstream)
++	{
++		fprintf(stderr, "FATAL: Unable to access mount point %s\n", mount_point);
++		exit(1);
++	}
++
++	fd = dirfd(dirstream);
++	if (!fd)
++	{
++		fprintf(stderr, "FATAL: Unable to access btrfs on %s\n", dev);
++		exit(1);
++	}
++	
++	switch(cmd)
++	{
++		case GET_LABEL:
++			ret = ioctl(fd, BTRFS_IOC_GET_LABEL, &label_args);
++			if (ret == 0)
++			{
++				fprintf(stdout, "%s\n", label_args.name);
++			} else
++			{
++				fprintf(stderr, "FATAL: Unable to get label for %s\n", dev);
++				exit(1);
++			}
++			break;
++		case SET_LABEL:
++			strncpy(label_args.name, nLabel, BTRFS_LABEL_SIZE);
++
++			ret = ioctl(fd, BTRFS_IOC_SET_LABEL, &label_args);
++			if (ret != 0)
++			{
++				fprintf(stderr, "FATAL: Unable to set label for %s\n", dev);
++				exit(1);
++			}
++			break;
++		default:
++			fprintf(stderr, "FATAL: Unknown mounted label operation\n");
++			exit(1);
++			break;
++	}
++
++	/* Release the memory we used */
++	free(mount_point);
++}
++
++int main(int argc, char **argv)
++{
++	char *btrfs_dev;
++	char *nLabel;
++	int ret = 0;
++	int workas = 0;
++	int check_val = 0;
++
++	if (argc <= 1)
++	{
++		print_usage();
++	}
++
++	btrfs_dev = argv[1];
++	ret = check_mounted(btrfs_dev);
++	if (ret < 0)
++	{
++		fprintf(stderr, "FATAL: error checking %s mount status\n", btrfs_dev);
++		exit(1);
++	}
++
++	switch(ret)
++	{
++		case 0:
++			workas = UNMOUNTED;
++			break;
++		case 1:
++			workas = MOUNTED;
++			break;
++		default:
++			fprintf(stderr, "BUG: unknown return code from check_mounted()\n");
++			exit(1);
++			break;
++	}
++
++	if (argc == 2)
++	{
++		/* They just want to know what the current label is */
++		if (workas == MOUNTED)
++		{
++			mount_label_op(btrfs_dev, NULL, GET_LABEL);
++		} else
++		{
++			/* Get the label from an unmouted filesystem */
++			get_label_unmounted(btrfs_dev);
++		}
++	} else if (argc == 3)
++	{
++		/* They have requested we change the label */
++		nLabel = argv[2];
++		check_val = check_label(nLabel);
++
++		if (check_val == -1)
++		{
++			fprintf(stderr, "Label %s is too long (max %d)\n", nLabel,
++				BTRFS_LABEL_SIZE);
++			exit(1);
++		}
++
++		if (check_val == -2)
++		{
++			fprintf(stderr, "invalid label %s\n", nLabel);
++			exit(1);
++		}
++
++		if (workas == MOUNTED)
++		{
++			mount_label_op(btrfs_dev, nLabel, SET_LABEL);
++		} else
++		{
++			/* We are going to change the label on an unmounted filesystem */
++			change_label_unmounted(btrfs_dev, nLabel);
++		}
++	} else
++	{
++		fprintf(stderr, "FATAL: too many arguements\n\n");
++		print_usage();
++	}
++
++	return ret;
++}
 diff -r da35ab2b0b54 ioctl.h
 --- a/ioctl.h	Wed Aug 06 12:17:01 2008 -0400
-+++ b/ioctl.h	Thu Aug 07 17:02:41 2008 -0600
++++ b/ioctl.h	Thu Aug 07 17:11:44 2008 -0600
 @@ -19,6 +19,7 @@
  #ifndef __IOCTL_
  #define __IOCTL_
@@ -76,7 +321,7 @@ diff -r da35ab2b0b54 ioctl.h
  #endif
 diff -r da35ab2b0b54 mkfs.c
 --- a/mkfs.c	Wed Aug 06 12:17:01 2008 -0400
-+++ b/mkfs.c	Thu Aug 07 17:02:41 2008 -0600
++++ b/mkfs.c	Thu Aug 07 17:11:44 2008 -0600
 @@ -246,6 +246,7 @@
  	fprintf(stderr, "options:\n");
  	fprintf(stderr, "\t -b --byte-count total number of bytes in the FS\n");
@@ -115,7 +360,7 @@ diff -r da35ab2b0b54 mkfs.c
 
 diff -r da35ab2b0b54 utils.c
 --- a/utils.c	Wed Aug 06 12:17:01 2008 -0400
-+++ b/utils.c	Thu Aug 07 17:02:41 2008 -0600
++++ b/utils.c	Thu Aug 07 17:11:44 2008 -0600
 @@ -572,7 +572,7 @@
  }
 
@@ -195,7 +440,7 @@ diff -r da35ab2b0b54 utils.c
 +}
 diff -r da35ab2b0b54 utils.h
 --- a/utils.h	Wed Aug 06 12:17:01 2008 -0400
-+++ b/utils.h	Thu Aug 07 17:02:41 2008 -0600
++++ b/utils.h	Thu Aug 07 17:11:45 2008 -0600
 @@ -40,4 +40,6 @@
  int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
  				 int super_offset);

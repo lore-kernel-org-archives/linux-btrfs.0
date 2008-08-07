@@ -1,36 +1,26 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: "Chris Friesen" <cfriesen@nortel.com>
 Subject: Re: Btrfs v0.16 released
-Date: Thu, 07 Aug 2008 10:06:20 -0400
-Message-ID: <1218117980.15342.200.camel@think.oraclecorp.com>
-References: <1217962876.15342.33.camel@think.oraclecorp.com>
-	 <1218100464.8625.9.camel@twins>
-	 <1218105597.15342.189.camel@think.oraclecorp.com>
-	 <3da3b5b40808070703x4cf49471q6acc00351ba019d7@mail.gmail.com>
+Date: Thu, 07 Aug 2008 08:58:57 -0600
+Message-ID: <489B0DB1.30407@nortel.com>
+References: <1217962876.15342.33.camel@think.oraclecorp.com> <1218100139.8625.7.camel@twins> <1218105242.15342.184.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Cc: Peter Zijlstra <peterz@infradead.org>,
 	linux-btrfs <linux-btrfs@vger.kernel.org>,
 	linux-kernel <linux-kernel@vger.kernel.org>,
 	linux-fsdevel <linux-fsdevel@vger.kernel.org>
-To: Ahmed Kamal <email.ahmedkamal@googlemail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <3da3b5b40808070703x4cf49471q6acc00351ba019d7@mail.gmail.com>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754082AbYHGO72@vger.kernel.org>
+In-Reply-To: <1218105242.15342.184.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2008-08-07 at 17:03 +0300, Ahmed Kamal wrote:
-> With csum errors, do we get warnings in logs ?
+Chris Mason wrote:
 
-Yes
+> I haven't done any real single cpu testing, it may make sense in those
+> workloads to checksum and submit directly in the calling context.  But
+> real single cpu boxes are harder to come by these days.
 
->  Does too many faults cause a device to be flagged as faulty ?
+They're still pretty common in the embedded/low power space.  I could 
+see something like a settop box wanting to use btrfs with massive disks.
 
-Not yet
-
->  is there any user-space application to monitor/scrub/re-silver btrfs
-> volumes ?
-> 
-Not yet, but there definitely will be.
-
--chris
-
-
+Chris

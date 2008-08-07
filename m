@@ -1,7 +1,7 @@
 From: "Morey Roof" <moreyroof@gmail.com>
-Subject: Patch for two new IOCTLs
-Date: Thu, 7 Aug 2008 09:52:52 -0600
-Message-ID: <91a37e890808070852v2b4b838eifd3d771f38591b7@mail.gmail.com>
+Subject: Second Try
+Date: Thu, 7 Aug 2008 09:59:20 -0600
+Message-ID: <91a37e890808070859r68a059f2pfc236ee3385ee6d4@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
@@ -9,8 +9,7 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Chris,
-
-  This patches add two IOCTLs to set and get labels for a mounted filesystem.
+  Here is the patch again but without the whitespace problem.
 
 Thanks,
 
@@ -18,7 +17,7 @@ Morey
 
 diff -r b68faa369602 ioctl.c
 --- a/ioctl.c	Wed Aug 06 14:41:23 2008 -0600
-+++ b/ioctl.c	Thu Aug 07 09:49:52 2008 -0600
++++ b/ioctl.c	Thu Aug 07 09:57:27 2008 -0600
 @@ -749,6 +749,53 @@
  	return ret;
  }
@@ -42,9 +41,8 @@ diff -r b68faa369602 ioctl.c
 +		/* Everything looks good, so lets do a label change */
 +		label_args->name[BTRFS_LABEL_SIZE] = 0x00;
 +		trans = btrfs_start_transaction(root, 1);
-+   	strncpy(root->fs_info->super_copy.label, label_args->name,
-BTRFS_LABEL_SIZE);
-+   	btrfs_commit_transaction(trans, root);
++		strncpy(root->fs_info->super_copy.label, label_args->name, BTRFS_LABEL_SIZE);
++		btrfs_commit_transaction(trans, root);
 +	}
 +
 +	kfree(label_args);
@@ -87,7 +85,7 @@ BTRFS_LABEL_SIZE);
  		btrfs_sync_fs(file->f_dentry->d_sb, 1);
 diff -r b68faa369602 ioctl.h
 --- a/ioctl.h	Wed Aug 06 14:41:23 2008 -0600
-+++ b/ioctl.h	Thu Aug 07 09:49:52 2008 -0600
++++ b/ioctl.h	Thu Aug 07 09:57:27 2008 -0600
 @@ -28,6 +28,10 @@
  	char name[BTRFS_PATH_NAME_MAX + 1];
  };

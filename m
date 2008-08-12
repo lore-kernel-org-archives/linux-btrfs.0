@@ -1,7 +1,8 @@
 From: David Woodhouse <dwmw2@infradead.org>
-Subject: [PATCH 1/3] Introduce btrfs_iget helper
-Date: Tue, 12 Aug 2008 14:46:40 +0100
-Message-ID: <1218548800.2977.178.camel@pmac.infradead.org>
+Subject: [PATCH 3/3]  Implement our own copy of the nfsd readdir hack, for
+	older kernels
+Date: Tue, 12 Aug 2008 14:46:51 +0100
+Message-ID: <1218548811.2977.180.camel@pmac.infradead.org>
 References: <200806290505.31641.balajirrao@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain
@@ -11,110 +12,140 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <200806290505.31641.balajirrao@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Balaji Rao <balajirrao@gmail.com>
-
-This patch introduces a btrfs_iget helper to be used in NFS support.
-
-Signed-off-by: Balaji Rao <balajirrao@gmail.com>
 Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
 ---
- ctree.h |    2 ++
- inode.c |   55 +++++++++++++++++++++++++++++++++++++------------------
- 2 files changed, 39 insertions(+), 18 deletions(-)
+ inode.c |  104 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 files changed, 102 insertions(+), 2 deletions(-)
 
-diff --git a/ctree.h b/ctree.h
-index c88f1e1..411d576 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -1698,6 +1698,8 @@ struct inode *btrfs_iget_locked(struct super_block *s, u64 objectid,
- 				struct btrfs_root *root);
- struct inode *btrfs_ilookup(struct super_block *s, u64 objectid,
- 			    u64 root_objectid);
-+struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
-+			 struct btrfs_root *root, int *is_new);
- int btrfs_commit_write(struct file *file, struct page *page,
- 		       unsigned from, unsigned to);
- struct extent_map *btrfs_get_extent(struct inode *inode, struct page *page,
 diff --git a/inode.c b/inode.c
-index a26d365..5344526 100644
+index 5344526..faa5543 100644
 --- a/inode.c
 +++ b/inode.c
-@@ -1881,6 +1881,33 @@ struct inode *btrfs_iget_locked(struct super_block *s, u64 objectid,
- 	return inode;
+@@ -1956,7 +1956,8 @@ static unsigned char btrfs_filetype_table[] = {
+ 	DT_UNKNOWN, DT_REG, DT_DIR, DT_CHR, DT_BLK, DT_FIFO, DT_SOCK, DT_LNK
+ };
+ 
+-static int btrfs_readdir(struct file *filp, void *dirent, filldir_t filldir)
++static int btrfs_real_readdir(struct file *filp, void *dirent,
++			      filldir_t filldir)
+ {
+ 	struct inode *inode = filp->f_dentry->d_inode;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+@@ -2105,6 +2106,101 @@ err:
+ 	return ret;
  }
  
-+/* Get an inode object given its location and corresponding root.
-+ * Returns in *is_new if the inode was read from disk
-+ */
-+struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
-+			 struct btrfs_root *root, int *is_new)
++/* Kernels earlier than 2.6.28 still have the NFS deadlock where nfsd
++   will call the file system's ->lookup() method from within its
++   filldir callback, which in turn was called from the file system's
++   ->readdir() method. And will deadlock for many file systems. */
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,28)
++
++struct nfshack_dirent {
++	u64		ino;
++	loff_t		offset;
++	int		namlen;
++	unsigned int	d_type;
++	char		name[];
++};
++
++struct nfshack_readdir {
++	char		*dirent;
++	size_t		used;
++};
++
++
++
++static int btrfs_nfshack_filldir(void *__buf, const char *name, int namlen,
++			      loff_t offset, u64 ino, unsigned int d_type)
 +{
-+	struct inode *inode;
++	struct nfshack_readdir *buf = __buf;
++	struct nfshack_dirent *de = (void *)(buf->dirent + buf->used);
++	unsigned int reclen;
 +
-+	inode = btrfs_iget_locked(s, location->objectid, root);
-+	if (!inode)
-+		return ERR_PTR(-EACCES);
++	reclen = ALIGN(sizeof(struct nfshack_dirent) + namlen, sizeof(u64));
++	if (buf->used + reclen > PAGE_SIZE)
++		return -EINVAL;
 +
-+	if (inode->i_state & I_NEW) {
-+		BTRFS_I(inode)->root = root;
-+		memcpy(&BTRFS_I(inode)->location, location, sizeof(*location));
-+		btrfs_read_locked_inode(inode);
-+		unlock_new_inode(inode);
-+		if (is_new)
-+			*is_new = 1;
-+	} else {
-+		if (is_new)
-+			*is_new = 0;
-+	}
++	de->namlen = namlen;
++	de->offset = offset;
++	de->ino = ino;
++	de->d_type = d_type;
++	memcpy(de->name, name, namlen);
++	buf->used += reclen;
 +
-+	return inode;
++	return 0;
 +}
 +
- static struct dentry *btrfs_lookup(struct inode *dir, struct dentry *dentry,
- 				   struct nameidata *nd)
- {
-@@ -1889,7 +1916,7 @@ static struct dentry *btrfs_lookup(struct inode *dir, struct dentry *dentry,
- 	struct btrfs_root *root = bi->root;
- 	struct btrfs_root *sub_root = root;
- 	struct btrfs_key location;
--	int ret, do_orphan = 0;
-+	int ret, new, do_orphan = 0;
- 
- 	if (dentry->d_name.len > BTRFS_NAME_LEN)
- 		return ERR_PTR(-ENAMETOOLONG);
-@@ -1907,23 +1934,15 @@ static struct dentry *btrfs_lookup(struct inode *dir, struct dentry *dentry,
- 			return ERR_PTR(ret);
- 		if (ret > 0)
- 			return ERR_PTR(-ENOENT);
--
--		inode = btrfs_iget_locked(dir->i_sb, location.objectid,
--					  sub_root);
--		if (!inode)
--			return ERR_PTR(-EACCES);
--		if (inode->i_state & I_NEW) {
--			/* the inode and parent dir are two different roots */
--			if (sub_root != root) {
--				igrab(inode);
--				sub_root->inode = inode;
--				do_orphan = 1;
--			}
--			BTRFS_I(inode)->root = sub_root;
--			memcpy(&BTRFS_I(inode)->location, &location,
--			       sizeof(location));
--			btrfs_read_locked_inode(inode);
--			unlock_new_inode(inode);
-+		inode = btrfs_iget(dir->i_sb, &location, sub_root, &new);
-+		if (IS_ERR(inode))
-+			return ERR_CAST(inode);
++static int btrfs_nfshack_readdir(struct file *file, void *dirent,
++				 filldir_t filldir)
++{
++	struct nfshack_readdir buf;
++	struct nfshack_dirent *de;
++	int err;
++	int size;
++	loff_t offset;
 +
-+		/* the inode and parent dir are two different roots */
-+		if (new && root != sub_root) {
-+			igrab(inode);
-+			sub_root->inode = inode;
-+			do_orphan = 1;
- 		}
- 	}
- 
++	buf.dirent = (void *)__get_free_page(GFP_KERNEL);
++	if (!buf.dirent)
++		return -ENOMEM;
++
++	offset = file->f_pos;
++
++	while (1) {
++		unsigned int reclen;
++
++		buf.used = 0;
++
++		err = btrfs_real_readdir(file, &buf, btrfs_nfshack_filldir);
++		if (err)
++			break;
++
++		size = buf.used;
++
++		if (!size)
++			break;
++
++		de = (struct nfshack_dirent *)buf.dirent;
++		while (size > 0) {
++			offset = de->offset;
++
++			if (filldir(dirent, de->name, de->namlen, de->offset,
++				    de->ino, de->d_type))
++				goto done;
++			offset = file->f_pos;
++
++			reclen = ALIGN(sizeof(*de) + de->namlen,
++				       sizeof(u64));
++			size -= reclen;
++			de = (struct nfshack_dirent *)((char *)de + reclen);
++		}
++	}
++
++ done:
++	free_page((unsigned long)buf.dirent);
++	file->f_pos = offset;
++
++	return err;
++}
++#endif
++
+ int btrfs_write_inode(struct inode *inode, int wait)
+ {
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+@@ -3661,7 +3757,11 @@ static struct inode_operations btrfs_dir_ro_inode_operations = {
+ static struct file_operations btrfs_dir_file_operations = {
+ 	.llseek		= generic_file_llseek,
+ 	.read		= generic_read_dir,
+-	.readdir	= btrfs_readdir,
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,28)
++	.readdir	= btrfs_nfshack_readdir,
++#else /* NFSd readdir/lookup deadlock is fixed */
++	.readdir	= btrfs_real_readdir,
++#endif
+ 	.unlocked_ioctl	= btrfs_ioctl,
+ #ifdef CONFIG_COMPAT
+ 	.compat_ioctl	= btrfs_ioctl,
 -- 
 1.5.5.1
 
@@ -122,6 +153,5 @@ index a26d365..5344526 100644
 -- 
 David Woodhouse                            Open Source Technology Centre
 David.Woodhouse@intel.com                              Intel Corporation
-
 
 

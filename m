@@ -1,37 +1,29 @@
 From: Jeff Fisher <guppy@techmonkeys.org>
 Subject: Re: New feature Idea
-Date: Wed, 13 Aug 2008 12:45:14 -0600
-Message-ID: <48A32BBA.3000208@techmonkeys.org>
-References: <48A320A0.80609@gmail.com>
+Date: Wed, 13 Aug 2008 13:00:56 -0600
+Message-ID: <48A32F68.90102@techmonkeys.org>
+References: <48A320A0.80609@gmail.com> <48A32DDE.8070203@hp.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Morey Roof <moreyroof@gmail.com>
+Cc: Morey Roof <moreyroof@gmail.com>, linux-btrfs@vger.kernel.org
+To: jim owens <jowens@hp.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <48A320A0.80609@gmail.com>
+In-Reply-To: <48A32DDE.8070203@hp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Morey Roof wrote:
-> I have been thinking about a new feature to start work on that I am 
-> interested in and I was hoping people could give me some feedback and 
-> ideas of how to tackle it.  Anyways, I want to create a data 
-> deduplication system that can work in two different modes.  One mode is 
-> that when the system is idle or not beyond a set load point a background 
-> process would scan the volume for duplicate blocks.  The other mode 
-> would be used for systems that are nearline or backup systems that don't 
-> really care about the performance and it would do the deduplication 
-> during block allocation.
+> Don't do it!!!
 > 
-> One of the ways I was thinking of to find the duplicate blocks would be 
-> to use the checksums as a quick compare.  If the checksums match then do 
-> a complete compare before adjusting the nodes on the files.  However, I 
-> believe that I will need to create a tree based on the checksum values.
+> OK, I know Chris has described some block sharing.  But I hate it.
 > 
-> So any other ideas and thoughts about this?
+> If I copy "resume" to "resume.save", it is because I want 2 copies
+> for safety.  I don't want the fs to reduce it to 1 copy.  And
+> reducing the duplicates is exactly opposite to Chris's paranoid
+> make-multiple-copies-by-default.
+> 
+> Now feel free to tell me I'm an idiot (other people do) :)
 
-This is something that I'm very interested in myself.
-
-Mainly for backup purposes but the background deduplication scheme is 
-also interesting and something I had not thought of.
+I would imagine that it would be optional and at worst, a specialized 
+fork of btrfs that follows the mainline but adds the deduplication bits.
 
 Jeff
+

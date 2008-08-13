@@ -1,7 +1,7 @@
-From: jim owens <jowens@hp.com>
+From: Jeff Fisher <guppy@techmonkeys.org>
 Subject: Re: New feature Idea
-Date: Wed, 13 Aug 2008 14:54:22 -0400
-Message-ID: <48A32DDE.8070203@hp.com>
+Date: Wed, 13 Aug 2008 12:45:14 -0600
+Message-ID: <48A32BBA.3000208@techmonkeys.org>
 References: <48A320A0.80609@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
@@ -29,15 +29,9 @@ Morey Roof wrote:
 > 
 > So any other ideas and thoughts about this?
 
-Don't do it!!!
+This is something that I'm very interested in myself.
 
-OK, I know Chris has described some block sharing.  But I hate it.
+Mainly for backup purposes but the background deduplication scheme is 
+also interesting and something I had not thought of.
 
-If I copy "resume" to "resume.save", it is because I want 2 copies
-for safety.  I don't want the fs to reduce it to 1 copy.  And
-reducing the duplicates is exactly opposite to Chris's paranoid
-make-multiple-copies-by-default.
-
-Now feel free to tell me I'm an idiot (other people do) :)
-
-jim
+Jeff

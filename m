@@ -1,51 +1,44 @@
-From: Morey Roof <moreyroof@gmail.com>
+From: Andi Kleen <andi@firstfloor.org>
 Subject: Re: New feature Idea
-Date: Wed, 13 Aug 2008 13:45:56 -0600
-Message-ID: <1218656756.5907.7.camel@sdevel.nmt.edu>
-References: <48A320A0.80609@gmail.com> <48A32DDE.8070203@hp.com>
-	 <55868.206.174.215.6.1218655701.squirrel@avalon.arbitraryconstant.com>
-	 <a5e060610808131235n8d57cabye8607c4fd0a7d984@mail.gmail.com>
+Date: Wed, 13 Aug 2008 22:00:13 +0200
+Message-ID: <87y730znw2.fsf@basil.nowhere.org>
+References: <48A320A0.80609@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-To: btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Morey Roof <moreyroof@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <a5e060610808131235n8d57cabye8607c4fd0a7d984@mail.gmail.com>
+In-Reply-To: <48A320A0.80609@gmail.com> (Morey Roof's message of "Wed, 13 Aug 2008 11:57:53 -0600")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It is the same idea for the way space efficient snapshots work currently
-in btrfs.  I'm just planning out a way to make a process got find them
-and link them together and increase the reference counts and another
-method for having the allocator do it while writing.
+Morey Roof <moreyroof@gmail.com> writes:
 
--Morey
+> I have been thinking about a new feature to start work on that I am
+> interested in and I was hoping people could give me some feedback and
+> ideas of how to tackle it.  Anyways, I want to create a data
+> deduplication system that can work in two different modes.  One mode
+> is that when the system is idle or not beyond a set load point a
+> background process would scan the volume for duplicate blocks.  The
+> other mode would be used for systems that are nearline or backup
+> systems that don't really care about the performance and it would do
+> the deduplication during block allocation.
 
+Seems like a special case of compression? Perhaps compression would help
+more?
 
-On Wed, 2008-08-13 at 12:35 -0700, Kevin Cantu wrote:
-> This would be a kind of filesystem block level compression, right?
-> 
-> On Wed, Aug 13, 2008 at 12:28 PM,  <btrfs-devel@arbitraryconstant.com> wrote:
-> >> Don't do it!!!
-> >>
-> >> OK, I know Chris has described some block sharing.  But I hate it.
-> >>
-> >> If I copy "resume" to "resume.save", it is because I want 2 copies
-> >> for safety.  I don't want the fs to reduce it to 1 copy.  And
-> >> reducing the duplicates is exactly opposite to Chris's paranoid
-> >> make-multiple-copies-by-default.
-> >>
-> >> Now feel free to tell me I'm an idiot (other people do) :)
-> >
-> > In situations where there's non-trivial benefits to some workloads, but
-> > also non-trivial drawbacks, it strikes me as something that could be
-> > enabled and disabled as a mount option, like data=ordered.
-> >
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> One of the ways I was thinking of to find the duplicate blocks would
+> be to use the checksums as a quick compare.  If the checksums match
+> then do a complete compare before adjusting the nodes on the files.
+> However, I believe that I will need to create a tree based on the
+> checksum values.
 
+If you really want to do deduplication: It might be advantageous to do 
+this on larger units.
+
+If you assume that data is usually shared between similar files (which
+is a reasonable assumption) and do the deduplication on whole files
+you can also use the size as an index and avoid checksumming all files
+with a unique size.  I wrote a user level duplicated file checker some
+time ago that used this trick successfully.
+
+-Andi

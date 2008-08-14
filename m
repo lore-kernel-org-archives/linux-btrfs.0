@@ -1,22 +1,21 @@
-From: jim owens <jowens@hp.com>
-Subject: Re: Btrfs conf call
-Date: Wed, 13 Aug 2008 17:30:33 -0400
-Message-ID: <48A35279.8080505@hp.com>
-References: <1218645196.15342.363.camel@think.oraclecorp.com>	 <48A31DEA.5090903@gmail.com>  <48A3429C.5040000@hp.com> <1218661350.5907.13.camel@sdevel.nmt.edu>
+From: Stephen Hemminger <stephen.hemminger@vyatta.com>
+Subject: btrfs day 1
+Date: Thu, 14 Aug 2008 00:11:20 -0700
+Message-ID: <20080814001120.4f1fea7a@speedy>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: btrfs <linux-btrfs@vger.kernel.org>
-To: Morey Roof <moreyroof@gmail.com>
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1218661350.5907.13.camel@sdevel.nmt.edu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Morey Roof wrote:
-> Thank you.  Also, did they get around to talking about when they are
-> going to merge in some of the queued up patches?
+Setup new 60G home partition on laptop as a real life test of 0.16.
+Using Ubuntu standard kernel 2.6.24-19-generic on i386
 
-We have never discussed code merges on any calls.
+I notice that during normal (busy time) everything seems fine, but after going away
+for a while and coming back, it seems sluggish. Lots of errors in log:
 
-Probably because Chris does all that merge work.
+ btrfs csum failed ino 139988 off 4583424 csum 3821684403 private 0
+ btrfs csum failed ino 139988 off 4579328 csum 3233603900 private 0
+ btrfs csum failed ino 139988 off 4575232 csum 306171610 private 0
 
-I would not expect anything until he finishes the flush thread.
+Maybe it isn't handleing spindown properly? or something like that?

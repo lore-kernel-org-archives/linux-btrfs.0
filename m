@@ -1,40 +1,32 @@
-From: Stephen Hemminger <shemminger@vyatta.com>
-Subject: Re: btrfs day 1
-Date: Thu, 14 Aug 2008 11:27:13 -0700
-Message-ID: <20080814112713.7380ee98@extreme>
-References: <20080814001120.4f1fea7a@speedy>
-	<1218709514.15342.370.camel@think.oraclecorp.com>
-	<20080814091937.470f42ed@speedy>
-	<1218734760.15342.381.camel@think.oraclecorp.com>
-	<20080814110612.1f411564@extreme>
-	<1218738082.15342.388.camel@think.oraclecorp.com>
+From: Zach Brown <zach.brown@oracle.com>
+Subject: Re: New feature Idea
+Date: Thu, 14 Aug 2008 11:49:14 -0700
+Message-ID: <48A47E2A.6010007@oracle.com>
+References: <48A320A0.80609@gmail.com>  <48A32DDE.8070203@hp.com> <1218733937.15342.378.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: Stephen Hemminger <stephen.hemminger@vyatta.com>,
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: jim owens <jowens@hp.com>, Morey Roof <moreyroof@gmail.com>,
 	linux-btrfs@vger.kernel.org
 To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1218738082.15342.388.camel@think.oraclecorp.com>
+In-Reply-To: <1218733937.15342.378.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 14 Aug 2008 14:21:22 -0400
-Chris Mason <chris.mason@oracle.com> wrote:
 
-> On Thu, 2008-08-14 at 11:06 -0700, Stephen Hemminger wrote:
-> 
-> > > So, the question is why the kernel compile workload works for me.  What
-> > > kind of hardware are you running (ram, cpu, disks?)
-> > 
-> > Intel(R) Core(TM)2 Duo CPU     T7700  @ 2.40GHz
-> > Memory 2G
-> > Disk 80G (partition was 20G)
-> > 
-> 
-> It seems you have the secret to corrupting things.  I'll try to
-> reproduce with smaller partitions and less ram here.
-> 
-> -chris
-> 
-> 
+> File granularity is not well suited to dedup when files differ by only a
+> few blocks, but I'd want to see some numbers on how often that happens
+> before carrying around the disk format needed to do block level dedup.
 
-Actually, the partition that got corrupted was 60G
+I was imagining that one could easily make a flag to debug-tree which
+caused it to just dump the file block checksums from the extent items,
+maybe restricted to a given subvol.  Pipe that through sort and uniq -c
+and you have a pretty easy path to a rough histogram of checksum values.
+
+But I sort of wonder if the point isn't to dedup systems that were
+deployed on previous-generation file systems.  If people knew that dedup
+worked, they might be able to more easily deploy simpler systems that
+didn't have to be so careful at, say, maintaining hard link farms.
+
+I dunno, just a thought.
+
+- z

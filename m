@@ -1,40 +1,32 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: btrfs day 1
-Date: Sat, 16 Aug 2008 14:18:13 -0400
-Message-ID: <1218910693.19495.26.camel@think.oraclecorp.com>
-References: <20080814001120.4f1fea7a@speedy>
-	 <1218709514.15342.370.camel@think.oraclecorp.com>
-	 <20080814091937.470f42ed@speedy>
+From: Theodore Tso <tytso@mit.edu>
+Subject: Re: Btrfs v0.16 released
+Date: Sat, 16 Aug 2008 15:27:50 -0400
+Message-ID: <20080816192749.GA8774@mit.edu>
+References: <1218221293.15342.263.camel@think.oraclecorp.com> <1218747656.15342.439.camel@think.oraclecorp.com> <20080814234458.GD13048@mit.edu> <1218762627.15342.447.camel@think.oraclecorp.com> <1218804361.15342.470.camel@think.oraclecorp.com> <20080815134545.GM13048@mit.edu> <1218822772.15342.503.camel@think.oraclecorp.com> <20080815195941.GB22395@mit.edu> <1218832622.19495.14.camel@think.oraclecorp.com> <1218910210.19495.25.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org
-To: Stephen Hemminger <stephen.hemminger@vyatta.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20080814091937.470f42ed@speedy>
+Content-Type: text/plain; charset=us-ascii
+Cc: Andi Kleen <andi@firstfloor.org>,
+	Peter Zijlstra <peterz@infradead.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	linux-kernel <linux-kernel@vger.kernel.org>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <1218910210.19495.25.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2008-08-14 at 09:19 -0700, Stephen Hemminger wrote:
-> On Thu, 14 Aug 2008 06:25:14 -0400
-> Chris Mason <chris.mason@oracle.com> wrote:
+On Sat, Aug 16, 2008 at 02:10:10PM -0400, Chris Mason wrote:
 > 
-> > On Thu, 2008-08-14 at 00:11 -0700, Stephen Hemminger wrote:
-> > > Setup new 60G home partition on laptop as a real life test of 0.16.
-> > > Using Ubuntu standard kernel 2.6.24-19-generic on i386
-> > > 
-> > 
-> > Thanks for giving things a try
-> > 
-> > > I notice that during normal (busy time) everything seems fine, but after going away
-> > > for a while and coming back, it seems sluggish. Lots of errors in log:
-> > > 
-> > >  btrfs csum failed ino 139988 off 4583424 csum 3821684403 private 0
-> > >  btrfs csum failed ino 139988 off 4579328 csum 3233603900 private 0
-> > >  btrfs csum failed ino 139988 off 4575232 csum 306171610 private 0
-> > > 
+> I tried just the writeback_index patch and got only 4 fragmented files
+> on ext4 after a compilebench run.  Then I tried again and got 1200.
+> Seems there is something timing dependent in here ;)
+> 
 
-Could you please send me your kernel .config?  Haven't been able to nail
-this down yet.
+Yeah, the patch Aneesh sent to change where we added the inode to the
+dirty list was false lead.  The right fix is in the ext4 patch queue
+now.  I think we have the problem licked and a quick test showed it
+increased the compilebench MB/s by a very tiny amount (enough so that
+I wasnt sure whether or not it was measurement error), but it does
+avoid the needly fragmentation.
 
--chris
-
-
+						- Ted

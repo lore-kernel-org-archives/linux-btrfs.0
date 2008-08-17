@@ -1,43 +1,54 @@
-From: Szabolcs Szakacsits <szaka@ntfs-3g.org>
-Subject: Re: Btrfs v0.16 released
-Date: Sat, 16 Aug 2008 22:26:04 +0300 (MET DST)
-Message-ID: <Pine.LNX.4.61.0808162215320.4532@dhcppc2>
-References: <1217962876.15342.33.camel@think.oraclecorp.com>
- <1218100464.8625.9.camel@twins>  <1218105597.15342.189.camel@think.oraclecorp.com>
-  <877ias66v4.fsf@basil.nowhere.org>  <1218221293.15342.263.camel@think.oraclecorp.com>
-  <1218747656.15342.439.camel@think.oraclecorp.com>  <20080814211756.GC13814@one.firstfloor.org>
-  <1218763554.15342.460.camel@think.oraclecorp.com>  <20080815013934.GE19125@one.firstfloor.org>
- <1218805256.15342.484.camel@think.oraclecorp.com>
+From: David Woodhouse <dwmw2@infradead.org>
+Subject: Re: [PATCH] NFS support for btrfs - v2
+Date: Sun, 17 Aug 2008 12:53:22 +0100
+Message-ID: <1218974002.3184.278.camel@pmac.infradead.org>
+References: <200807210201.56690.balajirrao@gmail.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-	linux-kernel <linux-kernel@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+To: Balaji Rao <balajirrao@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1218805256.15342.484.camel@think.oraclecorp.com>
+In-Reply-To: <200807210201.56690.balajirrao@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, 2008-07-21 at 02:01 +0530, Balaji Rao wrote:
+> Here's an implementation of NFS support for btrfs. It does not work in
+> one particular case as described in 
+> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg00298.html.
 
-On Fri, 15 Aug 2008, Chris Mason wrote:
+I can't get it to work properly. The simple case of exporting and using
+a file system works -- but that doesn't exercise the get_parent() or
+dentry_to_fh() code paths. To test those, you need to clear the server's
+dcache completely -- I prefer just rebooting the server.
 
-> Ext3 and XFS score somewhere between 10-15MB/s on the same test...
+Note that the first problem you'll hit is the lack of stable fsid --
+because btrfs uses an anonymous superblock, it might cause stale file
+handles after a reboot, unless your test setup mounts exactly the same
+anonymous file systems each time. That bit me when I context switched
+from something else and had debugfs mounted before btrfs, then rebooted
+and didn't mount debugfs first. I'll deal with the fsid problem
+separately; just be aware of it and avoid it for now.
 
-Interesting (and cool animations). 
+The second problem is that btrfs_fh_to_dentry() fails -- it seems we
+need to set the key type BTRFS_INODE_ITEM_KEY in btrfs_get_dentry(),
+rather than BTRFS_INODE_REF_KEY. I still haven't learned enough to know
+precisely what the implications of that are -- but unless I make that
+change, btrfs_lookup_inode() fails and btrfs_read_locked_inode() marks
+the resulting inode as bad.
 
-We tried compilebench (-i 30 -r 0) just for fun using kernel 2.6.26, 
-freshly formatted partition, with defaults. Results:
+You can test that by mounting the exported file system, then rebooting
+the server, then running 'ls' in the NFS-mounted file system.
 
-              MB/s    Runtime (s)
-             -----    -----------
-  ext3       13.24        877
-  btrfs      12.33        793
-  ntfs-3g     8.55        865
-  reiserfs    8.38        966
-  xfs         1.88       3901
-
-Regards,
-	    Szaka
+My next test was to make a deep directory path: mkdir -p a/b/c/d/e/f/g
+and then change directory into it. Again reboot the server and run 'ls'.
+This time, I see 'ls: cannot open directory .'. In this csse, it seems
+to be because btrfs_get_parent() is failing. In my case, it seems to be
+because the 'if (slot >= nritems)' check is triggering -- both are set
+to 14. I'm now trying to work out precisely what that means...
 
 -- 
-NTFS-3G:  http://ntfs-3g.org
+David Woodhouse                            Open Source Technology Centre
+David.Woodhouse@intel.com                              Intel Corporation
+
+
+

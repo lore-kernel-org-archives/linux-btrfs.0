@@ -1,50 +1,38 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] NFS support for btrfs - v2
-Date: Mon, 18 Aug 2008 15:23:32 -0400
-Message-ID: <1219087412.14063.22.camel@think.oraclecorp.com>
+Subject: Re: [PATCH] rewrite btrfs_readdir()
+Date: Mon, 18 Aug 2008 15:24:49 -0400
+Message-ID: <1219087489.14063.24.camel@think.oraclecorp.com>
 References: <200807210201.56690.balajirrao@gmail.com>
 	 <200808171821.43874.balajirrao@gmail.com>
 	 <1218977763.3184.288.camel@pmac.infradead.org>
 	 <200808171854.14275.balajirrao@gmail.com>
-	 <1218980439.3184.304.camel@pmac.infradead.org>
+	 <1218979817.3184.296.camel@pmac.infradead.org>
+	 <1218982640.3184.307.camel@pmac.infradead.org>
+	 <1218989400.3184.315.camel@pmac.infradead.org>
+	 <1219085216.14063.9.camel@think.oraclecorp.com>
+	 <1219086483.3184.403.camel@pmac.infradead.org>
 Mime-Version: 1.0
 Content-Type: text/plain
 Cc: Balaji Rao <balajirrao@gmail.com>, linux-btrfs@vger.kernel.org
 To: David Woodhouse <dwmw2@infradead.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1218980439.3184.304.camel@pmac.infradead.org>
+In-Reply-To: <1219086483.3184.403.camel@pmac.infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 2008-08-17 at 14:40 +0100, David Woodhouse wrote:
-> On Sun, 2008-08-17 at 18:54 +0530, Balaji Rao wrote:
-> > 
-> > OK. I had copied over this code snippet from
-> > inode.c:btrfs_inode_by_name, 
-> > which has the condition 'if (slot >= nritems)' removed now by this.
-> > 
-> > changeset:   631:87490dc3bb59
-> > user:        "Yan Zheng" <yanzheng@21cn.com>
-> > date:        Thu Jul 24 12:19:32 2008 -0400
-> > summary:     Fix .. lookup corner case
+On Mon, 2008-08-18 at 20:08 +0100, David Woodhouse wrote:
+> On Mon, 2008-08-18 at 14:46 -0400, Chris Mason wrote:
+> > It can happen today for the tree of tree roots (directory of
+> > subvolumes and named snapshots).  It happens when the name hashes
+> > collide.  For real directories we use the sequence number index
+> > instead of the name hash index, so it normally won't happen.
 > 
-> Er, isn't that just moving the error case around?
-> 
-> That's commit 3dcd1334c286fa4467219302ff2f9a4a190fbb9c in the git tree:
-> http://git.kernel.org/?p=linux/kernel/git/dwmw2/btrfs-kernel-unstable.git;a=commitdiff;h=3dcd1334
-> 
-> Your version fails if the item we want is in slot 0, because we don't
-> jump forward to the next leaf.
-> 
-> The new version fails if it's in the _last_ slot -- the return from
-> btrfs_search_slot() now points to the first slot in the next leaf, and
-> we treat that as an error instead of rewinding to the one we want. It's
-> just the same error, but in reverse.
-> 
-> Or am I missing something?
+> Ok, that's fine then. I've removed the WARN_ON() from the patch in my
+> git tree. This is what I have outstanding for you at
+> git://git.infradead.org/users/dwmw2/btrfs-kernel-unstable:
 > 
 
-The search key in Yan's patch changes to (u64)-1.  We know that if we're
-in slot 0, there's nothing after us in the tree.
+Ok, just to double check after rereading the thread, are there known
+bugs in this stuff?  They look sane to me.
 
 -chris
 

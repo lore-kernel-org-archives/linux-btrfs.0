@@ -1,149 +1,76 @@
 From: David Woodhouse <dwmw2@infradead.org>
-Subject: [PATCH] rewrite btrfs_readdir()
-Date: Sun, 17 Aug 2008 17:10:00 +0100
-Message-ID: <1218989400.3184.315.camel@pmac.infradead.org>
+Subject: Re: [PATCH] NFS support for btrfs - v2
+Date: Mon, 18 Aug 2008 12:51:04 +0100
+Message-ID: <1219060264.3184.366.camel@pmac.infradead.org>
 References: <200807210201.56690.balajirrao@gmail.com>
+	 <1218974002.3184.278.camel@pmac.infradead.org>
 	 <200808171821.43874.balajirrao@gmail.com>
-	 <1218977763.3184.288.camel@pmac.infradead.org>
-	 <200808171854.14275.balajirrao@gmail.com>
-	 <1218979817.3184.296.camel@pmac.infradead.org>
-	 <1218982640.3184.307.camel@pmac.infradead.org>
 Mime-Version: 1.0
 Content-Type: text/plain
 Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
 To: Balaji Rao <balajirrao@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1218982640.3184.307.camel@pmac.infradead.org>
+In-Reply-To: <200808171821.43874.balajirrao@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 2008-08-17 at 15:17 +0100, David Woodhouse wrote:
-> Subject: [PATCH] Remove special cases for "." and ".."
-> 
-> We never get asked by the VFS to lookup either of them, and we can
-> handle the readdir() case a lot more simply, too.
+On Sun, 2008-08-17 at 18:21 +0530, Balaji Rao wrote:
+> > Note that the first problem you'll hit is the lack of stable fsid --
+> > because btrfs uses an anonymous superblock, it might cause stale file
+> > handles after a reboot, unless your test setup mounts exactly the same
+> > anonymous file systems each time. That bit me when I context switched
+> > from something else and had debugfs mounted before btrfs, then rebooted
+> > and didn't mount debugfs first. I'll deal with the fsid problem
+> > separately; just be aware of it and avoid it for now.
+> >
+> Hmmm.. how do we deal with that ?
 
-And a few other minor cleanups... some cosmetic, but note the WARN_ON().
+First we teach nfs-utils to derive a UUID from the 'f_fsid' field it's
+already being given by the kernel when it calls statfs():
+git.infradead.org/users/dwmw2/nfs-utils.git
+
+Then we make btrfs put something suitable into the f_fsid field in
+btrfs_statfs(). The patch below works OK, but doesn't yet handle
+subvolumes -- it gives the same fsid for all subvolumes.
+
+But then, since we're also returning the same {dev,ino#} for all
+subvolumes, nfs exporting isn't the _only_ thing that's going to get
+confused...
 
 From: David Woodhouse <David.Woodhouse@intel.com>
-Date: Sun, 17 Aug 2008 17:08:36 +0100
-Subject: [PATCH] Minor cleanup of btrfs_real_readdir()
+Date: Mon, 18 Aug 2008 12:01:52 +0100
+Subject: [PATCH] Fill f_fsid field in btrfs_statfs()
 
 Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
 ---
- inode.c |   42 +++++++++++++++++++++++++++---------------
- 1 files changed, 27 insertions(+), 15 deletions(-)
+ super.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
 
-diff --git a/inode.c b/inode.c
-index 411dfc4..187e1f8 100644
---- a/inode.c
-+++ b/inode.c
-@@ -1960,34 +1960,34 @@ static int btrfs_real_readdir(struct file *filp, void *dirent,
- 			return 0;
- 		filp->f_pos = 1;
- 	}
--
--	key.objectid = inode->i_ino;
--	path = btrfs_alloc_path();
--	path->reada = 2;
--
- 	/* special case for .., just use the back ref */
- 	if (filp->f_pos == 1) {
- 		u64 pino = parent_ino(filp->f_path.dentry);
- 		over = filldir(dirent, "..", 2,
- 			       2, pino, DT_DIR);
- 		if (over)
--			goto nopos;
-+			return 0;
- 		filp->f_pos = 2;
- 	}
+diff --git a/super.c b/super.c
+index e830e0e..6446ab7 100644
+--- a/super.c
++++ b/super.c
+@@ -489,6 +489,7 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+ 	struct btrfs_root *root = btrfs_sb(dentry->d_sb);
+ 	struct btrfs_super_block *disk_super = &root->fs_info->super_copy;
+ 	int bits = dentry->d_sb->s_blocksize_bits;
++	__be32 *fsid = (__be32 *)root->fs_info->fsid;
  
-+	path = btrfs_alloc_path();
-+	path->reada = 2;
-+
- 	btrfs_set_key_type(&key, key_type);
- 	key.offset = filp->f_pos;
-+	key.objectid = inode->i_ino;
+ 	buf->f_namelen = BTRFS_NAME_LEN;
+ 	buf->f_blocks = btrfs_super_total_bytes(disk_super) >> bits;
+@@ -497,6 +498,11 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+ 	buf->f_bavail = buf->f_bfree;
+ 	buf->f_bsize = dentry->d_sb->s_blocksize;
+ 	buf->f_type = BTRFS_SUPER_MAGIC;
++	/* We treat it as constant endianness (it doesn't matter _which_)
++	   because we want the fsid to come out the same whether mounted 
++	   on a big-endian or little-endian host */
++	buf->f_fsid.val[0] = be32_to_cpu(fsid[0]) ^ be32_to_cpu(fsid[2]);
++	buf->f_fsid.val[1] = be32_to_cpu(fsid[1]) ^ be32_to_cpu(fsid[3]);
+ 	return 0;
+ }
  
- 	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
- 	if (ret < 0)
- 		goto err;
- 	advance = 0;
--	while(1) {
-+
-+	while (1) {
- 		leaf = path->nodes[0];
- 		nritems = btrfs_header_nritems(leaf);
- 		slot = path->slots[0];
- 		if (advance || slot >= nritems) {
--			if (slot >= nritems -1) {
-+			if (slot >= nritems - 1) {
- 				ret = btrfs_next_leaf(root, path);
- 				if (ret)
- 					break;
-@@ -2011,19 +2011,23 @@ static int btrfs_real_readdir(struct file *filp, void *dirent,
- 			continue;
- 
- 		filp->f_pos = found_key.offset;
--		advance = 1;
-+
- 		di = btrfs_item_ptr(leaf, slot, struct btrfs_dir_item);
- 		di_cur = 0;
- 		di_total = btrfs_item_size(leaf, item);
--		while(di_cur < di_total) {
-+
-+		while (di_cur < di_total) {
- 			struct btrfs_key location;
- 
- 			name_len = btrfs_dir_name_len(leaf, di);
--			if (name_len < 32) {
-+			if (name_len <= sizeof(tmp_name)) {
- 				name_ptr = tmp_name;
- 			} else {
- 				name_ptr = kmalloc(name_len, GFP_NOFS);
--				BUG_ON(!name_ptr);
-+				if (!name_ptr) {
-+					ret = -ENOMEM;
-+					goto err;
-+				}
- 			}
- 			read_extent_buffer(leaf, name_ptr,
- 					   (unsigned long)(di + 1), name_len);
-@@ -2031,8 +2035,7 @@ static int btrfs_real_readdir(struct file *filp, void *dirent,
- 			d_type = btrfs_filetype_table[btrfs_dir_type(leaf, di)];
- 			btrfs_dir_item_key_to_cpu(leaf, di, &location);
- 			over = filldir(dirent, name_ptr, name_len,
--				       found_key.offset,
--				       location.objectid,
-+				       found_key.offset, location.objectid,
- 				       d_type);
- 
- 			if (name_ptr != tmp_name)
-@@ -2040,12 +2043,21 @@ static int btrfs_real_readdir(struct file *filp, void *dirent,
- 
- 			if (over)
- 				goto nopos;
-+
- 			di_len = btrfs_dir_name_len(leaf, di) +
--				btrfs_dir_data_len(leaf, di) +sizeof(*di);
-+				 btrfs_dir_data_len(leaf, di) + sizeof(*di);
- 			di_cur += di_len;
- 			di = (struct btrfs_dir_item *)((char *)di + di_len);
-+
-+			/* If there's more than one directory entry in each
-+			   item, then the offset isn't unique. Seeking in 
-+			   directories will be broken. Can this ever actually
-+			   happen? */
-+			WARN_ON(di_cur != di_total);
- 		}
- 	}
-+
-+	/* Reached end of directory/root. Bump pos past the last item. */
- 	if (key_type == BTRFS_DIR_INDEX_KEY)
- 		filp->f_pos = INT_LIMIT(typeof(filp->f_pos));
- 	else
 -- 
 1.5.5.1
-
 
 
 -- 

@@ -1,44 +1,51 @@
-From: David Woodhouse <dwmw2@infradead.org>
-Subject: Re: [PATCH] NFS support for btrfs - v2
-Date: Mon, 18 Aug 2008 13:10:14 +0100
-Message-ID: <1219061414.3184.368.camel@pmac.infradead.org>
-References: <200807210201.56690.balajirrao@gmail.com>
-	 <1218974002.3184.278.camel@pmac.infradead.org>
-	 <200808171821.43874.balajirrao@gmail.com>
-	 <1219060264.3184.366.camel@pmac.infradead.org>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Btrfs v0.16 released
+Date: Mon, 18 Aug 2008 09:52:09 -0400
+Message-ID: <1219067529.2137.1.camel@think.oraclecorp.com>
+References: <1217962876.15342.33.camel@think.oraclecorp.com>
+	 <1218100464.8625.9.camel@twins>
+	 <1218105597.15342.189.camel@think.oraclecorp.com>
+	 <877ias66v4.fsf@basil.nowhere.org>
+	 <1218221293.15342.263.camel@think.oraclecorp.com>
+	 <1218747656.15342.439.camel@think.oraclecorp.com>
+	 <20080814211756.GC13814@one.firstfloor.org>
+	 <1218763554.15342.460.camel@think.oraclecorp.com>
+	 <20080815013934.GE19125@one.firstfloor.org>
+	 <1218805256.15342.484.camel@think.oraclecorp.com>
+	 <Pine.LNX.4.61.0808162215320.4532@dhcppc2>
 Mime-Version: 1.0
 Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
-To: Balaji Rao <balajirrao@gmail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1219060264.3184.366.camel@pmac.infradead.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+	linux-kernel <linux-kernel@vger.kernel.org>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>
+To: Szabolcs Szakacsits <szaka@ntfs-3g.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <Pine.LNX.4.61.0808162215320.4532@dhcppc2>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2008-08-18 at 12:51 +0100, David Woodhouse wrote:
-> The patch below works OK, but doesn't yet handle
-> subvolumes -- it gives the same fsid for all subvolumes.
+On Sat, 2008-08-16 at 22:26 +0300, Szabolcs Szakacsits wrote:
+> On Fri, 15 Aug 2008, Chris Mason wrote:
+> 
+> > Ext3 and XFS score somewhere between 10-15MB/s on the same test...
+> 
+> Interesting (and cool animations). 
+> 
+> We tried compilebench (-i 30 -r 0) just for fun using kernel 2.6.26, 
+> freshly formatted partition, with defaults. Results:
+> 
+>               MB/s    Runtime (s)
+>              -----    -----------
+>   ext3       13.24        877
+>   btrfs      12.33        793
 
-Is this the correct fix?
 
-diff --git a/super.c b/super.c
-index 6446ab7..55f4d00 100644
---- a/super.c
-+++ b/super.c
-@@ -503,6 +503,10 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 	   on a big-endian or little-endian host */
- 	buf->f_fsid.val[0] = be32_to_cpu(fsid[0]) ^ be32_to_cpu(fsid[2]);
- 	buf->f_fsid.val[1] = be32_to_cpu(fsid[1]) ^ be32_to_cpu(fsid[3]);
-+	/* Mask in the root object ID too, to disambiguate subvols */
-+	buf->f_fsid.val[0] ^= BTRFS_I(dentry->d_inode)->root->objectid >> 32;
-+	buf->f_fsid.val[1] ^= BTRFS_I(dentry->d_inode)->root->objectid;
-+
- 	return 0;
- }
- 
+Thanks for running things.
 
--- 
-David Woodhouse                            Open Source Technology Centre
-David.Woodhouse@intel.com                              Intel Corporation
+The code in the btrfs-unstable tree has all my performance fixes.
+You'll need it to get good results.  Also, the MB/s number doesn't
+include the time to run sync at the end, which is probably why the
+runtime for btrfs is shorter but MB/s is lower.
 
+-chris
 
 

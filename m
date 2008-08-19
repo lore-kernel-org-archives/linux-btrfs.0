@@ -1,49 +1,66 @@
 From: David Woodhouse <dwmw2@infradead.org>
-Subject: [PATCH] Generate btrfs-progs version.h from git too
-Date: Tue, 19 Aug 2008 19:00:08 +0100
-Message-ID: <1219168808.2988.5.camel@pmac.infradead.org>
+Subject: [PATCH] Fix NFS exporting of subvol roots.
+Date: Tue, 19 Aug 2008 22:32:55 +0100
+Message-ID: <1219181575.2988.15.camel@pmac.infradead.org>
 Mime-Version: 1.0
 Content-Type: text/plain
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This allows version.h to be generated from either git or hg.
+btrfs_lookup_fs_root() only finds subvol roots which have already been
+seen and put into the cache. For btrfs_get_dentry() we actually have to
+go to the medium -- so use btrfs_read_fs_root_no_name() instead.
+
+In btrfs_get_parent(), notice when we've hit the root of the
+subvolume and return the real root instead.
 
 Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
 ---
- version.sh |   18 +++++++++++++++++-
- 1 files changed, 17 insertions(+), 1 deletions(-)
 
-diff --git a/version.sh b/version.sh
-index d7988bf..209b7d1 100644
---- a/version.sh
-+++ b/version.sh
-@@ -8,7 +8,23 @@
-  
- v="Btrfs v0.16"
+Is the offset of (u64)-1 in btrfs_read_fs_root_no_name() correct?
+
+And can we have subroots (with ino == parent ino) elsewhere, or only as
+direct children of sb->s_root? 
+
+ export.c |   13 ++++++++++++-
+ 1 files changed, 12 insertions(+), 1 deletions(-)
+
+diff --git a/export.c b/export.c
+index a913b9b..36cbc68 100644
+--- a/export.c
++++ b/export.c
+@@ -71,11 +71,18 @@ static struct dentry *btrfs_get_dentry(struct super_block *sb, u64 objectid,
+ 	struct dentry *result;
+ 	struct btrfs_key key;
  
--which hg > /dev/null
-+which git &> /dev/null
-+if [ $? == 0 -a -d .git ]; then
-+    if head=`git rev-parse --verify HEAD 2>/dev/null`; then
-+        if tag=`git describe --tags 2>/dev/null`; then
-+            v="$tag"
-+        fi
++	key.objectid = root_objectid;
++	btrfs_set_key_type(&key, BTRFS_ROOT_ITEM_KEY);
++	key.offset = (u64)-1;
 +
-+        # Are there uncommitted changes?
-+        git update-index --refresh --unmerged > /dev/null
-+        if git diff-index --name-only HEAD | grep -v "^scripts/package" \
-+            | read dummy; then
-+            v="$v"-dirty
-+        fi
-+    fi
-+fi
++	root = btrfs_read_fs_root_no_name(btrfs_sb(sb)->fs_info, &key);
++	if (IS_ERR(root))
++		return ERR_CAST(root);
 +
-+which hg &> /dev/null
- if [ $? == 0 -a -d .hg ]; then
- 	last=$(hg tags | grep -m1 -o '^v[0-9.]\+')
- 	 
+ 	key.objectid = objectid;
+ 	btrfs_set_key_type(&key, BTRFS_INODE_ITEM_KEY);
+ 	key.offset = 0;
+ 
+-	root = btrfs_lookup_fs_root(btrfs_sb(sb)->fs_info, root_objectid);
+ 	inode = btrfs_iget(sb, &key, root, NULL);
+ 	if (IS_ERR(inode))
+ 		return (void *)inode;
+@@ -178,6 +185,10 @@ static struct dentry *btrfs_get_parent(struct dentry *child)
+ 
+ 	objectid = key.offset;
+ 
++	/* If we are already at the root of a subvol, return the real root */
++	if (objectid == dir->i_ino)
++		return dget(dir->i_sb->s_root);
++
+ 	/* Build a new key for the inode item */
+ 	key.objectid = objectid;
+ 	btrfs_set_key_type(&key, BTRFS_INODE_ITEM_KEY);
 -- 
 1.5.5.1
 

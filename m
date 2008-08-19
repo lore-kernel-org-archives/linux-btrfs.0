@@ -1,89 +1,326 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] NFS support for btrfs - v2
-Date: Tue, 19 Aug 2008 07:54:44 -0400
-Message-ID: <1219146885.14063.54.camel@think.oraclecorp.com>
-References: <200807210201.56690.balajirrao@gmail.com>
-	 <200808171821.43874.balajirrao@gmail.com>
-	 <1218977763.3184.288.camel@pmac.infradead.org>
-	 <200808171854.14275.balajirrao@gmail.com>
-	 <1218980439.3184.304.camel@pmac.infradead.org>
-	 <1219087412.14063.22.camel@think.oraclecorp.com>
-	 <1219088029.3184.413.camel@pmac.infradead.org>
-	 <1219088859.14063.35.camel@think.oraclecorp.com>
-	 <1219090839.3184.436.camel@pmac.infradead.org>
-	 <1219091550.14063.44.camel@think.oraclecorp.com>
-	 <1219096342.3184.453.camel@pmac.infradead.org>
+From: David Woodhouse <dwmw2@infradead.org>
+Subject: Re: [PATCH] Add compability for kernels >=2.6.27-rc1
+Date: Tue, 19 Aug 2008 15:51:40 +0100
+Message-ID: <1219157500.3184.484.camel@pmac.infradead.org>
+References: <alpine.LNX.1.10.0807302100500.2294@titan.stealer.net>
+	 <20080730195628.GP20055@kernel.dk>
+	 <1217448700.20239.30.camel@think.oraclecorp.com>
+	 <20080730201333.GR20055@kernel.dk>
+	 <1217450622.20239.32.camel@think.oraclecorp.com>
+	 <1217532421.3454.291.camel@pmac.infradead.org>
+	 <1217533058.20239.62.camel@think.oraclecorp.com>
 Mime-Version: 1.0
 Content-Type: text/plain
-Cc: Balaji Rao <balajirrao@gmail.com>, linux-btrfs@vger.kernel.org
-To: David Woodhouse <dwmw2@infradead.org>
+Cc: Jens Axboe <jens.axboe@oracle.com>,
+	Sven Wegener <sven.wegener@stealer.net>,
+	linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1219096342.3184.453.camel@pmac.infradead.org>
+In-Reply-To: <1217533058.20239.62.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2008-08-18 at 22:52 +0100, David Woodhouse wrote:
-> On Mon, 2008-08-18 at 16:32 -0400, Chris Mason wrote:
-> > On Mon, 2008-08-18 at 21:20 +0100, David Woodhouse wrote:
-> > > On Mon, 2008-08-18 at 15:47 -0400, Chris Mason wrote:
-> > > > Lets pretend I had put in commments something like the code below.
-> > > > The important part is that directories have only one link, so they
-> > > > have only one backref.
-> > > 
-> > > OK. Now can I rip that code out anyway? The VFS will never call
-> > > btrfs_lookup() for ".." -- not since the 2.2 kernel :)
-> > > 
-> > > I'm still a little confused about precisely what btrfs_search_slot()
-> > > returns when it doesn't find a match -- that's probably where the
-> > > documentation would be more useful.
-> > > 
-> > 
-> > if btrfs_search_slot returns < 0, there was an error
-> > if btrfs_search_slot returns > 1, path->slots[0] is the spot in the tree
-> > where you'd want to insert the item.
+On Thu, 2008-07-31 at 15:37 -0400, Chris Mason wrote:
+> > BUG: unable to handle kernel paging request at ffff880107c2aa00
+> > IP: [<ffffffffa03e73bc>] end_bio_extent_writepage+0x1f4/0x29c
+> [btrfs]
 > 
-> What if the parent inode actually _is_ inode #0xffffffffffffffff? Can
-> that happen? In that case it would return zero, and I shouldn't subtract
-> 1 from the slot number -- I've actually found what I'm looking for?
-> 
+> If you can reliably reproduce this, please try with the spin locks
+> instead of rcu read locks.  What were you doing at the time?
 
-The max inode will be 2^64 - 1
+Just using CONFIG_DEBUG_PAGEALLOC and dirtying a bunch of pages from
+different inodes seems enough. Another patch to add to my collection at
+git.infradead.org/users/dwmw2/btrfs-kernel-unstable.git ...
 
-> > In this case, if path->slots[0] == 0, there are no keys in the tree
-> > smaller than your search key.                                  ^^^^
-> 
-> OK... what if the place I'd want to insert the item is the first slot in
-> some node? There are keys in the _tree_ which are smaller, but just not
-> in this node? I think that's where the root of my confusion lies.
+From: David Woodhouse <David.Woodhouse@intel.com>
+Date: Tue, 19 Aug 2008 15:45:16 +0100
+Subject: [PATCH] Remove broken optimisations in end_bio functions.
 
-In this case, you'll always end up in the last slot of the previous node
-(which is what you were seeing when you put in the fix).
+These ended up freeing objects while they were still using them. Under
+guidance from Chris, just rip out the 'clever' bits and do things the
+simple way.
 
-> 
-> > If path->slots[0] == btrfs_header_nritems(path->nodes[0]), there are
-> > no items in this node that have a key > than your search key.
->                    ^^^^
-> Not in this node, but maybe in the next one? That's why my own fix for
-> the bug involved using btrfs_next_leaf() and using the first item from
-> that one?
+Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+---
+ extent_io.c |  159 ++++++++---------------------------------------------------
+ 1 files changed, 21 insertions(+), 138 deletions(-)
 
-Correct.
+diff --git a/extent_io.c b/extent_io.c
+index f46f886..83ba0c3 100644
+--- a/extent_io.c
++++ b/extent_io.c
+@@ -15,6 +15,8 @@
+ #include "extent_io.h"
+ #include "extent_map.h"
+ #include "compat.h"
++#include "ctree.h"
++#include "btrfs_inode.h"
+ 
+ /* temporary define until extent_map moves out of btrfs */
+ struct kmem_cache *btrfs_cache_create(const char *name, size_t size,
+@@ -1394,15 +1396,11 @@ static int end_bio_extent_writepage(struct bio *bio,
+ {
+ 	int uptodate = err == 0;
+ 	struct bio_vec *bvec = bio->bi_io_vec + bio->bi_vcnt - 1;
+-	struct extent_state *state = bio->bi_private;
+-	struct extent_io_tree *tree = state->tree;
+-	struct rb_node *node;
++	struct extent_io_tree *tree;
+ 	u64 start;
+ 	u64 end;
+-	u64 cur;
+ 	int whole_page;
+ 	int ret;
+-	unsigned long flags;
+ 
+ #if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,23)
+ 	if (bio->bi_size)
+@@ -1410,6 +1408,8 @@ static int end_bio_extent_writepage(struct bio *bio,
+ #endif
+ 	do {
+ 		struct page *page = bvec->bv_page;
++		tree = &BTRFS_I(page->mapping->host)->io_tree;
++
+ 		start = ((u64)page->index << PAGE_CACHE_SHIFT) +
+ 			 bvec->bv_offset;
+ 		end = start + bvec->bv_len - 1;
+@@ -1423,7 +1423,7 @@ static int end_bio_extent_writepage(struct bio *bio,
+ 			prefetchw(&bvec->bv_page->flags);
+ 		if (tree->ops && tree->ops->writepage_end_io_hook) {
+ 			ret = tree->ops->writepage_end_io_hook(page, start,
+-						       end, state, uptodate);
++						       end, NULL, uptodate);
+ 			if (ret)
+ 				uptodate = 0;
+ 		}
+@@ -1431,9 +1431,8 @@ static int end_bio_extent_writepage(struct bio *bio,
+ 		if (!uptodate && tree->ops &&
+ 		    tree->ops->writepage_io_failed_hook) {
+ 			ret = tree->ops->writepage_io_failed_hook(bio, page,
+-							 start, end, state);
++							 start, end, NULL);
+ 			if (ret == 0) {
+-				state = NULL;
+ 				uptodate = (err == 0);
+ 				continue;
+ 			}
+@@ -1445,68 +1444,7 @@ static int end_bio_extent_writepage(struct bio *bio,
+ 			SetPageError(page);
+ 		}
+ 
+-		/*
+-		 * bios can get merged in funny ways, and so we need to
+-		 * be careful with the state variable.  We know the
+-		 * state won't be merged with others because it has
+-		 * WRITEBACK set, but we can't be sure each biovec is
+-		 * sequential in the file.  So, if our cached state
+-		 * doesn't match the expected end, search the tree
+-		 * for the correct one.
+-		 */
+-
+-		spin_lock_irqsave(&tree->lock, flags);
+-		if (!state || state->end != end) {
+-			state = NULL;
+-			node = __etree_search(tree, start, NULL, NULL);
+-			if (node) {
+-				state = rb_entry(node, struct extent_state,
+-						 rb_node);
+-				if (state->end != end ||
+-				    !(state->state & EXTENT_WRITEBACK))
+-					state = NULL;
+-			}
+-			if (!state) {
+-				spin_unlock_irqrestore(&tree->lock, flags);
+-				clear_extent_writeback(tree, start,
+-						       end, GFP_ATOMIC);
+-				goto next_io;
+-			}
+-		}
+-		cur = end;
+-		while(1) {
+-			struct extent_state *clear = state;
+-			cur = state->start;
+-			node = rb_prev(&state->rb_node);
+-			if (node) {
+-				state = rb_entry(node,
+-						 struct extent_state,
+-						 rb_node);
+-			} else {
+-				state = NULL;
+-			}
+-
+-			clear_state_bit(tree, clear, EXTENT_WRITEBACK,
+-					1, 0);
+-			if (cur == start)
+-				break;
+-			if (cur < start) {
+-				WARN_ON(1);
+-				break;
+-			}
+-			if (!node)
+-				break;
+-		}
+-		/* before releasing the lock, make sure the next state
+-		 * variable has the expected bits set and corresponds
+-		 * to the correct offsets in the file
+-		 */
+-		if (state && (state->end + 1 != start ||
+-		    !(state->state & EXTENT_WRITEBACK))) {
+-			state = NULL;
+-		}
+-		spin_unlock_irqrestore(&tree->lock, flags);
+-next_io:
++		clear_extent_writeback(tree, start, end, GFP_ATOMIC);
+ 
+ 		if (whole_page)
+ 			end_page_writeback(page);
+@@ -1539,13 +1477,9 @@ static int end_bio_extent_readpage(struct bio *bio,
+ {
+ 	int uptodate = test_bit(BIO_UPTODATE, &bio->bi_flags);
+ 	struct bio_vec *bvec = bio->bi_io_vec + bio->bi_vcnt - 1;
+-	struct extent_state *state = bio->bi_private;
+-	struct extent_io_tree *tree = state->tree;
+-	struct rb_node *node;
++	struct extent_io_tree *tree;
+ 	u64 start;
+ 	u64 end;
+-	u64 cur;
+-	unsigned long flags;
+ 	int whole_page;
+ 	int ret;
+ 
+@@ -1556,6 +1490,8 @@ static int end_bio_extent_readpage(struct bio *bio,
+ 
+ 	do {
+ 		struct page *page = bvec->bv_page;
++		tree = &BTRFS_I(page->mapping->host)->io_tree;
++
+ 		start = ((u64)page->index << PAGE_CACHE_SHIFT) +
+ 			bvec->bv_offset;
+ 		end = start + bvec->bv_len - 1;
+@@ -1570,80 +1506,26 @@ static int end_bio_extent_readpage(struct bio *bio,
+ 
+ 		if (uptodate && tree->ops && tree->ops->readpage_end_io_hook) {
+ 			ret = tree->ops->readpage_end_io_hook(page, start, end,
+-							      state);
++							      NULL);
+ 			if (ret)
+ 				uptodate = 0;
+ 		}
+ 		if (!uptodate && tree->ops &&
+ 		    tree->ops->readpage_io_failed_hook) {
+ 			ret = tree->ops->readpage_io_failed_hook(bio, page,
+-							 start, end, state);
++							 start, end, NULL);
+ 			if (ret == 0) {
+-				state = NULL;
+ 				uptodate =
+ 					test_bit(BIO_UPTODATE, &bio->bi_flags);
+ 				continue;
+ 			}
+ 		}
+ 
+-		spin_lock_irqsave(&tree->lock, flags);
+-		if (!state || state->end != end) {
+-			state = NULL;
+-			node = __etree_search(tree, start, NULL, NULL);
+-			if (node) {
+-				state = rb_entry(node, struct extent_state,
+-						 rb_node);
+-				if (state->end != end ||
+-				    !(state->state & EXTENT_LOCKED))
+-					state = NULL;
+-			}
+-			if (!state) {
+-				spin_unlock_irqrestore(&tree->lock, flags);
+-				if (uptodate)
+-					set_extent_uptodate(tree, start, end,
+-							    GFP_ATOMIC);
+-				unlock_extent(tree, start, end, GFP_ATOMIC);
+-				goto next_io;
+-			}
+-		}
++		if (uptodate)
++			set_extent_uptodate(tree, start, end,
++					    GFP_ATOMIC);
++		unlock_extent(tree, start, end, GFP_ATOMIC);
+ 
+-		cur = end;
+-		while(1) {
+-			struct extent_state *clear = state;
+-			cur = state->start;
+-			node = rb_prev(&state->rb_node);
+-			if (node) {
+-				state = rb_entry(node,
+-					 struct extent_state,
+-					 rb_node);
+-			} else {
+-				state = NULL;
+-			}
+-			if (uptodate) {
+-				set_state_cb(tree, clear, EXTENT_UPTODATE);
+-				clear->state |= EXTENT_UPTODATE;
+-			}
+-			clear_state_bit(tree, clear, EXTENT_LOCKED,
+-					1, 0);
+-			if (cur == start)
+-				break;
+-			if (cur < start) {
+-				WARN_ON(1);
+-				break;
+-			}
+-			if (!node)
+-				break;
+-		}
+-		/* before releasing the lock, make sure the next state
+-		 * variable has the expected bits set and corresponds
+-		 * to the correct offsets in the file
+-		 */
+-		if (state && (state->end + 1 != start ||
+-		    !(state->state & EXTENT_LOCKED))) {
+-			state = NULL;
+-		}
+-		spin_unlock_irqrestore(&tree->lock, flags);
+-next_io:
+ 		if (whole_page) {
+ 			if (uptodate) {
+ 				SetPageUptodate(page);
+@@ -1683,8 +1565,7 @@ static int end_bio_extent_preparewrite(struct bio *bio,
+ {
+ 	const int uptodate = test_bit(BIO_UPTODATE, &bio->bi_flags);
+ 	struct bio_vec *bvec = bio->bi_io_vec + bio->bi_vcnt - 1;
+-	struct extent_state *state = bio->bi_private;
+-	struct extent_io_tree *tree = state->tree;
++	struct extent_io_tree *tree;
+ 	u64 start;
+ 	u64 end;
+ 
+@@ -1695,6 +1576,8 @@ static int end_bio_extent_preparewrite(struct bio *bio,
+ 
+ 	do {
+ 		struct page *page = bvec->bv_page;
++		tree = &BTRFS_I(page->mapping->host)->io_tree;
++
+ 		start = ((u64)page->index << PAGE_CACHE_SHIFT) +
+ 			bvec->bv_offset;
+ 		end = start + bvec->bv_len - 1;
+@@ -1765,7 +1648,7 @@ static int submit_one_bio(int rw, struct bio *bio, int mirror_num)
+ 	BUG_ON(state->end != end);
+ 	spin_unlock_irq(&tree->lock);
+ 
+-	bio->bi_private = state;
++	bio->bi_private = NULL;
+ 
+ 	bio_get(bio);
+ 
+-- 
+1.5.5.1
 
-> 
-> > > +	if (ret < 0 && slot == 0) {
-> > 
-> >               ^^^^^^^^^^^^^ should be ||, and should set ret to
-> > something bad if slot == 0
-> 
-> Er, yes. Moment of stupidity there :)
-> 
-> We were ignoring 'ret' anyway -- none of this stuff should ever happen,
-> and it's all just 'return ERR_PTR(-EINVAL)' at the out: label.
-> 
-> I've tested this, and added it to my tree:
-> 
 
-Looks good, thanks.
 
--chris
+
+-- 
+David Woodhouse                            Open Source Technology Centre
+David.Woodhouse@intel.com                              Intel Corporation
+
 
 

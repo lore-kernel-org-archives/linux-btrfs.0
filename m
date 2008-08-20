@@ -1,46 +1,34 @@
-From: Eric Anopolsky <erpo41@gmail.com>
-Subject: Hi!
-Date: Wed, 20 Aug 2008 02:43:25 -0600
-Message-ID: <1219221805.15514.13.camel@telesto>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: btrfs day 1
+Date: Wed, 20 Aug 2008 09:47:48 -0400
+Message-ID: <1219240068.24481.26.camel@think.oraclecorp.com>
+References: <20080814001120.4f1fea7a@speedy>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=-77uYnbqhcvsOo/hZR7ym"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain
+Cc: linux-btrfs@vger.kernel.org
+To: Stephen Hemminger <stephen.hemminger@vyatta.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20080814001120.4f1fea7a@speedy>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---=-77uYnbqhcvsOo/hZR7ym
-Content-Type: text/plain
-Content-Transfer-Encoding: quoted-printable
+On Thu, 2008-08-14 at 00:11 -0700, Stephen Hemminger wrote:
+> Setup new 60G home partition on laptop as a real life test of 0.16.
+> Using Ubuntu standard kernel 2.6.24-19-generic on i386
+> 
+> I notice that during normal (busy time) everything seems fine, but after going away
+> for a while and coming back, it seems sluggish. Lots of errors in log:
+> 
+>  btrfs csum failed ino 139988 off 4583424 csum 3821684403 private 0
+>  btrfs csum failed ino 139988 off 4579328 csum 3233603900 private 0
+>  btrfs csum failed ino 139988 off 4575232 csum 306171610 private 0
+> 
+> Maybe it isn't handleing spindown properly? or something like that?
 
 Hi,
 
-I'm new here. For the past few months I've been contributing some code
-and discussion to the ZFS-fuse project, but Sun's silence on the
-licensing issue has left a bad taste in my mouth. I'm ready to switch
-over to the light side of the force, but I have a couple of questions.
+I think the btrfs-unstable tree should have fixes for all of this.  I
+know you had moved back to ext3 for now, but just wanted to follow up.
 
-1. I've seen and modified the ZFS source code. Even if I never look at
-it again, could that poison potential contributions to btrfs?
+-chris
 
-2. What needs doing? Easy stuff first, please. I've never done kernel
-coding.
-
-Cheers,
-Eric
-
-
---=-77uYnbqhcvsOo/hZR7ym
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Description: This is a digitally signed message part
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQBIq9kte2L37HVup3ARAntiAKDdJonx9lGce54ZXCMYdvAYV3Wo4QCg3nsh
-kCMqhKWfNb3Ovf9BI56j60w=
-=CkBF
------END PGP SIGNATURE-----
-
---=-77uYnbqhcvsOo/hZR7ym--
 

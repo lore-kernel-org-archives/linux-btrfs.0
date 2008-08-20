@@ -1,33 +1,35 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: btrfs day 1
-Date: Wed, 20 Aug 2008 09:47:48 -0400
-Message-ID: <1219240068.24481.26.camel@think.oraclecorp.com>
-References: <20080814001120.4f1fea7a@speedy>
+Subject: Re: Hi!
+Date: Wed, 20 Aug 2008 14:25:50 -0400
+Message-ID: <1219256750.7854.7.camel@think.oraclecorp.com>
+References: <1219221805.15514.13.camel@telesto>
 Mime-Version: 1.0
 Content-Type: text/plain
 Cc: linux-btrfs@vger.kernel.org
-To: Stephen Hemminger <stephen.hemminger@vyatta.com>
+To: Eric Anopolsky <erpo41@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20080814001120.4f1fea7a@speedy>
+In-Reply-To: <1219221805.15514.13.camel@telesto>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2008-08-14 at 00:11 -0700, Stephen Hemminger wrote:
-> Setup new 60G home partition on laptop as a real life test of 0.16.
-> Using Ubuntu standard kernel 2.6.24-19-generic on i386
+On Wed, 2008-08-20 at 02:43 -0600, Eric Anopolsky wrote:
+> Hi,
 > 
-> I notice that during normal (busy time) everything seems fine, but after going away
-> for a while and coming back, it seems sluggish. Lots of errors in log:
+> I'm new here. For the past few months I've been contributing some code
+> and discussion to the ZFS-fuse project, but Sun's silence on the
+> licensing issue has left a bad taste in my mouth. I'm ready to switch
+> over to the light side of the force, but I have a couple of questions.
 > 
->  btrfs csum failed ino 139988 off 4583424 csum 3821684403 private 0
->  btrfs csum failed ino 139988 off 4579328 csum 3233603900 private 0
->  btrfs csum failed ino 139988 off 4575232 csum 306171610 private 0
+> 1. I've seen and modified the ZFS source code. Even if I never look at
+> it again, could that poison potential contributions to btrfs?
 > 
-> Maybe it isn't handleing spindown properly? or something like that?
 
-Hi,
+For now, yes, reading and changing the ZFS source code is not a good
+idea for people that want to contribute to btrfs.
 
-I think the btrfs-unstable tree should have fixes for all of this.  I
-know you had moved back to ext3 for now, but just wanted to follow up.
+> 2. What needs doing? Easy stuff first, please. I've never done kernel
+> coding.
+
+Testing, discussing and reporting bugs are a great first step.
 
 -chris
 

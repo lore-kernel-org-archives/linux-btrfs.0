@@ -1,117 +1,46 @@
-From: David Woodhouse <dwmw2@infradead.org>
-Subject: Re: [PATCH] NFS support for btrfs - v2
-Date: Tue, 19 Aug 2008 22:34:43 +0100
-Message-ID: <1219181683.2988.16.camel@pmac.infradead.org>
-References: <200807210201.56690.balajirrao@gmail.com>
-	 <200808171821.43874.balajirrao@gmail.com>
-	 <1218977763.3184.288.camel@pmac.infradead.org>
-	 <200808171854.14275.balajirrao@gmail.com>
-	 <1218980439.3184.304.camel@pmac.infradead.org>
-	 <1219087412.14063.22.camel@think.oraclecorp.com>
-	 <1219088029.3184.413.camel@pmac.infradead.org>
-	 <1219088859.14063.35.camel@think.oraclecorp.com>
-	 <1219090839.3184.436.camel@pmac.infradead.org>
-	 <1219091550.14063.44.camel@think.oraclecorp.com>
-	 <1219096342.3184.453.camel@pmac.infradead.org>
-	 <1219146885.14063.54.camel@think.oraclecorp.com>
-	 <1219157352.3184.481.camel@pmac.infradead.org>
+From: Eric Anopolsky <erpo41@gmail.com>
+Subject: Hi!
+Date: Wed, 20 Aug 2008 02:43:25 -0600
+Message-ID: <1219221805.15514.13.camel@telesto>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Balaji Rao <balajirrao@gmail.com>, linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=-77uYnbqhcvsOo/hZR7ym"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1219157352.3184.481.camel@pmac.infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2008-08-19 at 15:49 +0100, David Woodhouse wrote:
-> On Tue, 2008-08-19 at 07:54 -0400, Chris Mason wrote:
-> > 
-> > > What if the parent inode actually _is_ inode #0xffffffffffffffff? Can
-> > > that happen? In that case it would return zero, and I shouldn't subtract
-> > > 1 from the slot number -- I've actually found what I'm looking for?
-> > > 
-> > 
-> > The max inode will be 2^64 - 1
-> 
-> Which is what we're searching for -- so it's _possible_, albeit
-> vanishingly unlikely, that btrfs_search_slot() will actually return
-> zero, having found precisely what we wanted?
-> 
-> And in that case, path->slots[0] being zero is fine. And we shouldn't be
-> subtracting one from it to find the slot we want?
 
-Subject: [PATCH] Clean up btrfs_get_parent() a little more, fix a free-after-free bug
+--=-77uYnbqhcvsOo/hZR7ym
+Content-Type: text/plain
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
----
- export.c |   33 +++++++++++++++++++--------------
- 1 files changed, 19 insertions(+), 14 deletions(-)
+Hi,
 
-diff --git a/export.c b/export.c
-index 36cbc68..5c75cbd 100644
---- a/export.c
-+++ b/export.c
-@@ -165,23 +165,32 @@ static struct dentry *btrfs_get_parent(struct dentry *child)
- 	key.offset = (u64)-1;
- 
- 	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
--	leaf = path->nodes[0];
--	slot = path->slots[0];
--	if (ret < 0 || slot == 0) {
-+	if (ret < 0) {
-+		/* Error */
- 		btrfs_free_path(path);
--		goto out;
-+		return ERR_PTR(ret);
-+	}
-+	if (ret) {
-+		leaf = path->nodes[0];
-+		slot = path->slots[0];
-+		/* btrfs_search_slot() returns the slot where we'd want to
-+		   insert a backref for parent inode #0xFFFFFFFFFFFFFFFF.
-+		   The _real_ backref, telling us what the parent inode
-+		   _actually_ is, will be in the slot _before_ the one
-+		   that btrfs_search_slot() returns. */
-+		if (!slot) {
-+			/* Unless there is _no_ key in the tree before... */
-+			btrfs_free_path(path);
-+			return ERR_PTR(-EIO);
-+		}
-+		slot--;
- 	}
--	/* btrfs_search_slot() returns the slot where we'd want to insert
--	   an INODE_REF_KEY for parent inode #0xFFFFFFFFFFFFFFFF. The _real_
--	   one, telling us what the parent inode _actually_ is, will be in
--	   the slot _before_ the one that btrfs_search_slot() returns. */
--	slot--;
- 
- 	btrfs_item_key_to_cpu(leaf, &key, slot);
- 	btrfs_free_path(path);
- 
- 	if (key.objectid != dir->i_ino || key.type != BTRFS_INODE_REF_KEY)
--		goto out;
-+		return ERR_PTR(-EINVAL);
- 
- 	objectid = key.offset;
- 
-@@ -201,10 +210,6 @@ static struct dentry *btrfs_get_parent(struct dentry *child)
- 		parent = ERR_PTR(-ENOMEM);
- 
- 	return parent;
--
--out:
--	btrfs_free_path(path);
--	return ERR_PTR(-EINVAL);
- }
- 
- const struct export_operations btrfs_export_ops = {
--- 
-1.5.5.1
+I'm new here. For the past few months I've been contributing some code
+and discussion to the ZFS-fuse project, but Sun's silence on the
+licensing issue has left a bad taste in my mouth. I'm ready to switch
+over to the light side of the force, but I have a couple of questions.
+
+1. I've seen and modified the ZFS source code. Even if I never look at
+it again, could that poison potential contributions to btrfs?
+
+2. What needs doing? Easy stuff first, please. I've never done kernel
+coding.
+
+Cheers,
+Eric
 
 
--- 
-David Woodhouse                            Open Source Technology Centre
-David.Woodhouse@intel.com                              Intel Corporation
+--=-77uYnbqhcvsOo/hZR7ym
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Description: This is a digitally signed message part
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
 
+iD8DBQBIq9kte2L37HVup3ARAntiAKDdJonx9lGce54ZXCMYdvAYV3Wo4QCg3nsh
+kCMqhKWfNb3Ovf9BI56j60w=
+=CkBF
+-----END PGP SIGNATURE-----
+
+--=-77uYnbqhcvsOo/hZR7ym--
 

@@ -1,41 +1,39 @@
-From: "Miguel Sousa Filipe" <miguel.filipe@gmail.com>
+From: jim owens <jowens@hp.com>
 Subject: Re: Btrfs conf call
-Date: Thu, 28 Aug 2008 14:14:33 +0100
-Message-ID: <f058a9c30808280614p74763300g21a1102676b81dd6@mail.gmail.com>
-References: <1219843318.4477.89.camel@think.oraclecorp.com>
+Date: Thu, 28 Aug 2008 13:44:38 -0400
+Message-ID: <48B6E406.6010906@hp.com>
+References: <1219843318.4477.89.camel@think.oraclecorp.com> <f058a9c30808280614p74763300g21a1102676b81dd6@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: "Chris Mason" <chris.mason@oracle.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1219843318.4477.89.camel@think.oraclecorp.com>
+In-Reply-To: <f058a9c30808280614p74763300g21a1102676b81dd6@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Call summary:
 
-On Wed, Aug 27, 2008 at 2:21 PM, Chris Mason <chris.mason@oracle.com> wrote:
-> Hello everyone,
->
-> Our regular bi-weekly btrfs conf call will be today (Wednesday):
->
-> Time: 1:30pm US Eastern (10:30am Pacific)
->
-> * Dial-in Number(s):
-> * Toll: 1-314-655-1416
-> * Toll Free: 1-877-422-0049
-> *
-> * Participant Pin access code: 209652
->
-> The agenda will cover status updates on the pending work in the
-> btrfs-unstable tree.
->
+Chris has been rewriting fsync to improve performance
+    - 10X better multi-threaded scaling for regular files
+    - directory fsync performance has not been addressed
 
-So.. how did it went?
-=)
+Ric noted that Josef's fine-granularity timer work
+in the main line could boost btrfs fsync performance.
 
-Anyone comes forward with a sumary of the conf call?
+Eric has seen single stream write performance drop
+after v.15, his runs indicate allocator-induced stalls.
 
-Thanks!
+Josef is working on allocator fix round 3... round 2 had
+regressions in some benchmarks.  Chris proposed he try a
+design midway between the round 1 and round 2 code.
 
--- 
-Miguel Sousa Filipe
+Eric noted build problems with older kernels (2.16.18 ?)
+because of the btrfs NFS patch... needs volunteer to fix.
+
+Eric and Chris discussed testing using some of the xfs
+tests without using the complete harness suite.
+
+More plumber's conference discussion, Chris's btrfs talk
+will be fairly high level (as expected given where we are).
+Attendance is expected to be good on all days including
+the last day (so if I go, I won't leave early).  How to
+set up the filesystem BOF is pending plumber's site update.

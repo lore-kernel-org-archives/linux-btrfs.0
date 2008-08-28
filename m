@@ -1,39 +1,66 @@
-From: jim owens <jowens@hp.com>
-Subject: Re: Btrfs conf call
-Date: Thu, 28 Aug 2008 13:44:38 -0400
-Message-ID: <48B6E406.6010906@hp.com>
-References: <1219843318.4477.89.camel@think.oraclecorp.com> <f058a9c30808280614p74763300g21a1102676b81dd6@mail.gmail.com>
+From: Christoph Hellwig <hch@lst.de>
+Subject: [PATCH] btrfs: cleanup d_obtain_alias useage
+Date: Fri, 29 Aug 2008 01:00:06 +0200
+Message-ID: <20080828230006.GA19138@lst.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <f058a9c30808280614p74763300g21a1102676b81dd6@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Call summary:
+d_obtain_alias is intended as a tailcall that can pass in errors encoded
+in the inode pointer if needed, so use it that way instead of
+duplicating the error handling.
 
-Chris has been rewriting fsync to improve performance
-    - 10X better multi-threaded scaling for regular files
-    - directory fsync performance has not been addressed
 
-Ric noted that Josef's fine-granularity timer work
-in the main line could boost btrfs fsync performance.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 
-Eric has seen single stream write performance drop
-after v.15, his runs indicate allocator-induced stalls.
-
-Josef is working on allocator fix round 3... round 2 had
-regressions in some benchmarks.  Chris proposed he try a
-design midway between the round 1 and round 2 code.
-
-Eric noted build problems with older kernels (2.16.18 ?)
-because of the btrfs NFS patch... needs volunteer to fix.
-
-Eric and Chris discussed testing using some of the xfs
-tests without using the complete harness suite.
-
-More plumber's conference discussion, Chris's btrfs talk
-will be fairly high level (as expected given where we are).
-Attendance is expected to be good on all days including
-the last day (so if I go, I won't leave early).  How to
-set up the filesystem BOF is pending plumber's site update.
+Index: btrfs-unstable/export.c
+===================================================================
+--- btrfs-unstable.orig/export.c	2008-08-28 19:56:13.000000000 -0300
++++ btrfs-unstable/export.c	2008-08-28 19:57:04.000000000 -0300
+@@ -68,7 +68,6 @@ static struct dentry *btrfs_get_dentry(s
+ {
+ 	struct btrfs_root *root;
+ 	struct inode *inode;
+-	struct dentry *result;
+ 	struct btrfs_key key;
+ 
+ 	key.objectid = root_objectid;
+@@ -92,11 +91,7 @@ static struct dentry *btrfs_get_dentry(s
+ 		return ERR_PTR(-ESTALE);
+ 	}
+ 
+-	result = d_obtain_alias(inode);
+-	if (!result)
+-		return ERR_PTR(-ENOMEM);
+-
+-	return result;
++	return d_obtain_alias(inode);
+ }
+ 
+ static struct dentry *btrfs_fh_to_parent(struct super_block *sb, struct fid *fh,
+@@ -148,8 +143,6 @@ static struct dentry *btrfs_fh_to_dentry
+ static struct dentry *btrfs_get_parent(struct dentry *child)
+ {
+ 	struct inode *dir = child->d_inode;
+-	struct inode *inode;
+-	struct dentry *parent;
+ 	struct btrfs_root *root = BTRFS_I(dir)->root;
+ 	struct btrfs_key key;
+ 	struct btrfs_path *path;
+@@ -203,13 +196,7 @@ static struct dentry *btrfs_get_parent(s
+ 	btrfs_set_key_type(&key, BTRFS_INODE_ITEM_KEY);
+ 	key.offset = 0;
+ 
+-	inode = btrfs_iget(root->fs_info->sb, &key, root, NULL);
+-
+-	parent = d_obtain_alias(inode);
+-	if (!parent)
+-		parent = ERR_PTR(-ENOMEM);
+-
+-	return parent;
++	return d_obtain_alias(btrfs_iget(root->fs_info->sb, &key, root, NULL));
+ }
+ 
+ const struct export_operations btrfs_export_ops = {

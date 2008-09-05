@@ -1,85 +1,47 @@
-From: Steve Long <slong@rathaus.eclipse.co.uk>
-Subject: Testsuite
-Date: Thu, 4 Sep 2008 20:07:32 +0100
-Message-ID: <200809042007.32312.slong@rathaus.eclipse.co.uk>
-References: <1219221805.15514.13.camel@telesto> <200808240802.36586.slong@rathaus.eclipse.co.uk> <f058a9c30808251456h4b9df491o787f7305716008b1@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: New disk format and fsync optimizations pushed out
+Date: Fri, 05 Sep 2008 16:35:41 -0400
+Message-ID: <1220646941.8075.98.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="utf-8"
-Cc: linux-btrfs@vger.kernel.org
-To: "Miguel Sousa Filipe" <miguel.filipe@gmail.com>
+Content-Type: text/plain
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <f058a9c30808251456h4b9df491o787f7305716008b1@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sorry for delay in replying, was on holiday.		
-Firstly: thanks for your patience; I was a bit brusque, and for that I must 
-apologise.
+Hello everyone,
 
-On Monday 25 August 2008 22:56:50 Miguel Sousa Filipe wrote:
-> On Sun, Aug 24, 2008 at 8:02 AM, Steve Long <slong@rathaus.eclipse.co.uk> 
-wrote:
-> > On Thursday 21 August 2008 11:47:03 Miguel Sousa Filipe wrote:
-> >> One thing that I would like to see, is how btrfs behaves with eavy
-> >> uses of version control systems like:
-> >> - git
-> >> - hg
-> >>
-> >> big repos, greps, finds, and stuff like that.
-> >
-> > How about kernel compiles (cf contest)? Perhaps with pull of the tree
-> > from cold cache or indeed several trees.
->
-> I believe Chris allready cover that workload in his tests.. but can't hurt.
-> :D
->
-More the merrier :-)
+I've pushed out my work to optimize file and directory fsyncs (as well
+as O_SYNC writes).  It includes a new disk format.
 
-> > Not that it's anything to do with the FS, so why should we worry about it?
-> >
-> even if I like the gentoo or openbsd way, that doesn't help having
-> good btrfs support on
-> all the other distros that use HAL or its descendants.
->
-Sure and I do have HAL running here, I simply don't include anything optional 
-for it. I am still unclear as to what the FS living under the VFS has to do 
-with the hal layer (and I freely admit this is from ignorance; dbus looked 
-quite nice as a protocol when I looked at it fwtw.) Is there anything 
-specific that a FS has to do which is not already covered by interfacing 
-correctly with the kernel (and providing a useful range of ioctls)?
+I'll post some benchmarks next week, but in general this should be much
+more usable in mail server workloads.  Details on how it all works can
+be found in tree-log.c comments.
 
-> > I agree with all the other stuff you posted, so please don't take my
-> > antipathy toward HAL and *Kit as criticism of you.
->
-> I share much of your opinions about hal and these new (leaky)
-> abstraction layers, but having a current/decent linux install without
-> all that hal stuff (with gnome or kde) is next to impossible.
->
-Agreed.
+The short version is that instead of an fsync doing a full FS commit,
+items for a given file or directory that have been changed by the
+current transaction are copied into a log tree.
 
-> My concearn is more of btrfs having equal support on those dandy
-> apps/layers, that will be used by fedora, ubuntu, opensuse, etc...
-> I want in a years time, have a "format with BTRFS" option on a regular
-> fedora/ubuntu install.
->
-++ again. I don't see that being an issue if the coders are happy with what 
-it's doing under the hood, although of course it needs to be tested more 
-widely, and that QA process would shake out what needs work to interface 
-nicely with userland (especially wrt recovery/snapshotting and so on, which 
-afaict is all planned for some point.)
+This log tree uses the same copy on write code as all the other trees in
+the FS, but the super block has pointers to a tree of log tree roots,
+and synchronous FS ops are changed to write an updated super block with
+just the pointer to the log trees modified.
 
-We can use some of the infra we use for the unofficial hardened Gentoo [1] 
-(GCC 4.x) to trac and bugfix a testsuite if that would be of any use. (We'll 
-be mirroring it soon.) I have fairly good bash and sh/awk skills fwtw, and 
-I'm sure some other users have lots of stuff to contribute. Is that helpful 
-(I'm thinking in terms of managing the workload and keeping it off core devs' 
-backs since this would pretty much all be scripts) or would it simply be 
-unwanted duplication?
+After a crash, items and extent pointers are copied out of the log tree
+back into the main FS.
 
-If anyone already has a git repo with test stuff, please let us know and we'll 
-gladly contribute patches etc. to that.
+The end result is that fsyncs don't commit the extent tree or force a
+recow of any subvolume tree blocks, which is what made them so expensive
+in the old code.
 
-Regards,
-SteveL.
+fsyncs in one subvolume don't force other subvolumes to flush all of
+their blocks to disk.  fsyncs in one file don't force any other files or
+directories down to disk.  In other words, it makes the impact of an
+fsync much smaller in every workload.
 
-[1] https://hardened.gentooexperimental.org/secure/
+Blocks for the log tree come out of the metadata block groups.  So they
+have the same raid levels and duplication rules as the rest of the
+metadata.
+
+-chris
+
+

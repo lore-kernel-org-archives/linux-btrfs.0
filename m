@@ -1,47 +1,45 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: New disk format and fsync optimizations pushed out
-Date: Fri, 05 Sep 2008 16:35:41 -0400
-Message-ID: <1220646941.8075.98.camel@think.oraclecorp.com>
+From: Eric Anopolsky <erpo41@gmail.com>
+Subject: parity data
+Date: Sat, 06 Sep 2008 23:43:05 -0600
+Message-ID: <1220766185.20018.7.camel@telesto>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=-jyZK/nL/1Hv46+NcZzvL"
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello everyone,
 
-I've pushed out my work to optimize file and directory fsyncs (as well
-as O_SYNC writes).  It includes a new disk format.
+--=-jyZK/nL/1Hv46+NcZzvL
+Content-Type: text/plain
+Content-Transfer-Encoding: quoted-printable
 
-I'll post some benchmarks next week, but in general this should be much
-more usable in mail server workloads.  Details on how it all works can
-be found in tree-log.c comments.
+Hi,
 
-The short version is that instead of an fsync doing a full FS commit,
-items for a given file or directory that have been changed by the
-current transaction are copied into a log tree.
+A couple of questions.
 
-This log tree uses the same copy on write code as all the other trees in
-the FS, but the super block has pointers to a tree of log tree roots,
-and synchronous FS ops are changed to write an updated super block with
-just the pointer to the log trees modified.
+1. Does btrfs currently have anything like raid 5 or 6?
 
-After a crash, items and extent pointers are copied out of the log tree
-back into the main FS.
+2. One guy on my LUG's mailing list is really excited about the
+potential for setting redundancy on a per-file basis.
+I.e. /home/eric/criticalfile gets mirrored across all of the drives in
+the filesystem but /home/eric/temporaryfile gets striped. I'm skeptical.
+Is it a good idea to allow people/programs to do this?
 
-The end result is that fsyncs don't commit the extent tree or force a
-recow of any subvolume tree blocks, which is what made them so expensive
-in the old code.
+Cheers,
+Eric
 
-fsyncs in one subvolume don't force other subvolumes to flush all of
-their blocks to disk.  fsyncs in one file don't force any other files or
-directories down to disk.  In other words, it makes the impact of an
-fsync much smaller in every workload.
 
-Blocks for the log tree come out of the metadata block groups.  So they
-have the same raid levels and duplication rules as the rest of the
-metadata.
+--=-jyZK/nL/1Hv46+NcZzvL
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Description: This is a digitally signed message part
 
--chris
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
 
+iD8DBQBIw2npe2L37HVup3ARAi/hAJ9rHSo+9+ZNWTi1QyDeTdbmOZAM0gCeOiJ4
+Q1FIpbmhkZhW2lfa0sPOqwI=
+=X2Va
+-----END PGP SIGNATURE-----
+
+--=-jyZK/nL/1Hv46+NcZzvL--
 

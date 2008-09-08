@@ -1,40 +1,49 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: parity data
-Date: Mon, 08 Sep 2008 10:47:51 -0400
-Message-ID: <1220885271.8537.31.camel@think.oraclecorp.com>
-References: <1220766185.20018.7.camel@telesto>
+From: Stephen Hemminger <shemminger@vyatta.com>
+Subject: Re: btrfs_tree_lock & trylock
+Date: Mon, 8 Sep 2008 08:07:51 -0700
+Message-ID: <20080908080751.3d29fd61@extreme>
+References: <20080908111059.GA8902@basil.nowhere.org>
+	<1220881666.8537.3.camel@think.oraclecorp.com>
+	<20080908135414.GG26079@one.firstfloor.org>
+	<1220882551.8537.5.camel@think.oraclecorp.com>
+	<20080908142052.GK26079@one.firstfloor.org>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Eric Anopolsky <erpo41@gmail.com>
+Content-Type: text/plain; charset=US-ASCII
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Andi Kleen <andi@firstfloor.org>, linux-btrfs@vger.kernel.org
+To: Andi Kleen <andi@firstfloor.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1220766185.20018.7.camel@telesto>
+In-Reply-To: <20080908142052.GK26079@one.firstfloor.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, 2008-09-06 at 23:43 -0600, Eric Anopolsky wrote:
-> Hi,
+On Mon, 8 Sep 2008 16:20:52 +0200
+Andi Kleen <andi@firstfloor.org> wrote:
+
+> On Mon, Sep 08, 2008 at 10:02:30AM -0400, Chris Mason wrote:
+> > On Mon, 2008-09-08 at 15:54 +0200, Andi Kleen wrote:
+> > > > The idea is to try to spin for a bit to avoid scheduling away, which is
+> > > > especially important for the high levels.  Most holders of the mutex
+> > > > let it go very quickly.
+> > > 
+> > > Ok but that surely should be implemented in the general mutex code then
+> > > or at least in a standard adaptive mutex wrapper? 
+> > 
+> > That depends, am I the only one crazy enough to think its a good idea?
 > 
-> A couple of questions.
-> 
-> 1. Does btrfs currently have anything like raid 5 or 6?
-> 
+> Adaptive mutexes are classic, a lot of other OS have it.
 
-Not yet, it might one day.
+The problem is that they are a nuisance. It is impossible to choose
+the right trade off between spin an no-spin, also they optimize for
+a case that doesn't occur often enough to be justified.
 
-> 2. One guy on my LUG's mailing list is really excited about the
-> potential for setting redundancy on a per-file basis.
-> I.e. /home/eric/criticalfile gets mirrored across all of the drives in
-> the filesystem but /home/eric/temporaryfile gets striped. I'm skeptical.
-> Is it a good idea to allow people/programs to do this?
+People seem to repeatedly come up with adaptive mutex based on intuitive
+hunch, and never do much analysis before or afterwards.
 
-In general, yes.  Some files or directories are crucial, and some (swap
-for example) don't need to survive a crash.
+You need some facts to come up with a useful model:
+  % of time lock is contended
+  average lock hold time
+  overhead of entry-exit for lock primitive (spin time)
+  overhead of the adaptive version either pure spin or pure mutex
 
-But, I think the flexibility should go a little further.  The goal is to
-be able to define drive groups and tie files or directory trees to the
-drive groups.  That way you can say these files go to the fastest drives
-and these files go to some other drive type, etc etc.
-
--chris
-
-
+Also, adaptive locks have even worse unfairness than spin locks under
+contention.

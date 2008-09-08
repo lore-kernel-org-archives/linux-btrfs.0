@@ -1,22 +1,19 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: Andi Kleen <andi@firstfloor.org>
 Subject: Re: btrfs_tree_lock & trylock
-Date: Mon, 08 Sep 2008 11:28:34 -0400
-Message-ID: <1220887714.8537.45.camel@think.oraclecorp.com>
-References: <20080908111059.GA8902@basil.nowhere.org>
-	 <1220881666.8537.3.camel@think.oraclecorp.com>
-	 <20080908135414.GG26079@one.firstfloor.org>
-	 <1220882551.8537.5.camel@think.oraclecorp.com>
-	 <20080908142052.GK26079@one.firstfloor.org>
-	 <20080908080751.3d29fd61@extreme>
+Date: Mon, 8 Sep 2008 17:47:14 +0200
+Message-ID: <20080908154714.GM26079@one.firstfloor.org>
+References: <20080908111059.GA8902@basil.nowhere.org> <1220881666.8537.3.camel@think.oraclecorp.com> <20080908135414.GG26079@one.firstfloor.org> <1220882551.8537.5.camel@think.oraclecorp.com> <20080908142052.GK26079@one.firstfloor.org> <20080908080751.3d29fd61@extreme>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Andi Kleen <andi@firstfloor.org>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: Andi Kleen <andi@firstfloor.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs@vger.kernel.org
 To: Stephen Hemminger <shemminger@vyatta.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <20080908080751.3d29fd61@extreme>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2008-09-08 at 08:07 -0700, Stephen Hemminger wrote:
+On Mon, Sep 08, 2008 at 08:07:51AM -0700, Stephen Hemminger wrote:
 > On Mon, 8 Sep 2008 16:20:52 +0200
 > Andi Kleen <andi@firstfloor.org> wrote:
 > 
@@ -36,15 +33,10 @@ On Mon, 2008-09-08 at 08:07 -0700, Stephen Hemminger wrote:
 > The problem is that they are a nuisance. It is impossible to choose
 > the right trade off between spin an no-spin, also they optimize for
 > a case that doesn't occur often enough to be justified.
-> 
-> People seem to repeatedly come up with adaptive mutex based on intuitive
-> hunch, and never do much analysis before or afterwards.
-> 
 
-In my case, it very easy to measure.  Just watch the context switch rate
-on any metadata intensive workload.  The current code scores higher on
-benchmarks and uses less system time overall.
+At least the numbers done by Gregory et.al. were dramatic improvements.
+Given that was an extreme case in that the rt kernel does everything
+with mutexes, but it was still a very clear win on a wide range
+of workloads.
 
--chris
-
-
+-Andi

@@ -1,7 +1,7 @@
 From: Josef Bacik <jbacik@redhat.com>
-Subject: [PATCH] redo how we track free space + other fixes
-Date: Mon, 22 Sep 2008 16:08:42 -0400
-Message-ID: <20080922200837.GA16231@unused.rdu.redhat.com>
+Subject: [PATCH V2] free space accounting redo
+Date: Tue, 23 Sep 2008 09:38:03 -0400
+Message-ID: <20080923133755.GB16621@unused.rdu.redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
@@ -10,53 +10,14 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello,
 
-Ok this patch has 4 things.
-
-1) replace the per fs_info extent_io_tree that tracked free space with two
-rb-trees per block group to track free space areas via offset and size.  The
-reason to do this is because most allocations come with a hint byte where to
-start, so we can usually find a chunk of free space at that hint byte to satisfy
-the allocation and get good space packing.  If we cannot find free space at or
-after the given offset we fall back on looking for a chunk of the given size as
-close to that given offset as possible.  When we fall back on the size search we
-also try to find a slot as close to the size we want as possible, to avoid
-breaking small chunks off of huge areas if possible.
-
-2) remove the extent_io_tree that tracked the block group cache from fs_info and
-replaced it with an rb-tree thats tracks block group cache via offset.  also
-added a per space_info list that tracks the block group cache for the particular
-space so we can lookup related block groups easily.
-
-3) cleaned up the allocation code to make it a little easier to read and a
-little less complicated.  Basically there are 3 steps, first look from our
-provided hint.  If we couldn't find from that given hint, start back at our
-original search start and look for space from there.  If that fails try to
-allocate space if we can and start looking again.  If not we're screwed and need
-to start over again.
-
-4) small fixes.  there were some issues in volumes.c where we wouldn't allocate
-the rest of the disk.  fixed cow_file_range to actually pass the alloc_hint,
-which has helped a good bit in making the fs_mark test I run have semi-normal
-results as we run out of space.  Generally with data allocations we don't track
-where we last allocated from, so everytime we did a data allocation we'd search
-through every block group that we have looking for free space.  Now searching a
-block group with no free space isn't terribly time consuming, it was causing a
-slight degradation as we got more data block groups.  The alloc_hint has fixed
-this slight degredation and made things semi-normal.
-
-There is still one nagging problem I'm working on where we will get ENOSPC when
-there is definitely plenty of space.  This only happens with metadata
-allocations, and only when we are almost full.  So you generally hit the 85%
-mark first, but sometimes you'll hit the BUG before you hit the 85% wall.  I'm
-still tracking it down, but until then this seems to be pretty stable and make a
-significant performance gain.  Thanks,
+This is basically the same patch as I sent before, just takes a kzalloc outside
+of a spin_lock to get rid of a possible hang situation.  Thanks,
 
 Josef
 
-
 diff -r 639a8457eb97 Makefile
 --- a/Makefile	Wed Sep 17 20:50:33 2008 -0400
-+++ b/Makefile	Mon Sep 22 22:49:52 2008 -0400
++++ b/Makefile	Tue Sep 23 16:33:48 2008 -0400
 @@ -7,7 +7,7 @@ btrfs-y := super.o ctree.o extent-tree.o
  	   transaction.o bit-radix.o inode.o file.o tree-defrag.o \
  	   extent_map.o sysfs.o struct-funcs.o xattr.o ordered-data.o \
@@ -68,7 +29,7 @@ diff -r 639a8457eb97 Makefile
  # Normal Makefile
 diff -r 639a8457eb97 ctree.c
 --- a/ctree.c	Wed Sep 17 20:50:33 2008 -0400
-+++ b/ctree.c	Mon Sep 22 22:49:52 2008 -0400
++++ b/ctree.c	Tue Sep 23 16:33:48 2008 -0400
 @@ -2725,9 +2725,8 @@ int btrfs_insert_empty_items(struct btrf
  
  	total_size = total_data + (nr * sizeof(struct btrfs_item));
@@ -82,7 +43,7 @@ diff -r 639a8457eb97 ctree.c
  
 diff -r 639a8457eb97 ctree.h
 --- a/ctree.h	Wed Sep 17 20:50:33 2008 -0400
-+++ b/ctree.h	Mon Sep 22 22:49:52 2008 -0400
++++ b/ctree.h	Tue Sep 23 16:33:48 2008 -0400
 @@ -483,7 +483,6 @@ struct btrfs_csum_item {
  #define BTRFS_BLOCK_GROUP_DUP	   (1 << 5)
  #define BTRFS_BLOCK_GROUP_RAID10   (1 << 6)
@@ -167,7 +128,7 @@ diff -r 639a8457eb97 ctree.h
  #endif
 diff -r 639a8457eb97 disk-io.c
 --- a/disk-io.c	Wed Sep 17 20:50:33 2008 -0400
-+++ b/disk-io.c	Mon Sep 22 22:49:52 2008 -0400
++++ b/disk-io.c	Tue Sep 23 16:33:49 2008 -0400
 @@ -1410,10 +1410,9 @@ struct btrfs_root *open_ctree(struct sup
  
  	BTRFS_I(fs_info->btree_inode)->io_tree.ops = &btree_extent_io_ops;
@@ -184,7 +145,7 @@ diff -r 639a8457eb97 disk-io.c
  	extent_io_tree_init(&fs_info->pending_del,
 diff -r 639a8457eb97 extent-tree.c
 --- a/extent-tree.c	Wed Sep 17 20:50:33 2008 -0400
-+++ b/extent-tree.c	Mon Sep 22 22:49:52 2008 -0400
++++ b/extent-tree.c	Tue Sep 23 16:33:49 2008 -0400
 @@ -29,12 +29,6 @@
  #include "locking.h"
  #include "ref-cache.h"
@@ -1535,7 +1496,7 @@ diff -r 639a8457eb97 extent-tree.c
  				sizeof(cache->item));
 diff -r 639a8457eb97 extent_io.c
 --- a/extent_io.c	Wed Sep 17 20:50:33 2008 -0400
-+++ b/extent_io.c	Mon Sep 22 22:49:52 2008 -0400
++++ b/extent_io.c	Tue Sep 23 16:33:49 2008 -0400
 @@ -2634,6 +2634,7 @@ struct extent_buffer *alloc_extent_buffe
  	if (eb) {
  		atomic_inc(&eb->refs);
@@ -1556,8 +1517,8 @@ diff -r 639a8457eb97 extent_io.c
  }
 diff -r 639a8457eb97 free-space-cache.c
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/free-space-cache.c	Mon Sep 22 22:49:52 2008 -0400
-@@ -0,0 +1,406 @@
++++ b/free-space-cache.c	Tue Sep 23 16:33:49 2008 -0400
+@@ -0,0 +1,410 @@
 +/*
 + * Copyright (C) 2008 Red Hat.  All rights reserved.
 + *
@@ -1750,6 +1711,10 @@ diff -r 639a8457eb97 free-space-cache.c
 +	struct btrfs_free_space *right_info, *left_info, *info = NULL;
 +	int ret = 0;
 +
++	info = kzalloc(sizeof(struct btrfs_free_space), GFP_NOFS);
++	if (!info)
++		return -ENOMEM;
++
 +	/*
 +	 * first we want to see if there is free space adjacent to the range we
 +	 * are adding, if there is remove that struct and add a new one to
@@ -1800,21 +1765,17 @@ diff -r 639a8457eb97 free-space-cache.c
 +
 +	if (info) {
 +		ret = link_free_space(block_group, info);
++		if (!ret)
++			info = NULL;
 +		goto out;
 +	}
 +
-+	info = kzalloc(sizeof(struct btrfs_free_space), GFP_NOFS);
-+	if (info) {
-+		info->offset = offset;
-+		info->bytes = bytes;
++	info->offset = offset;
++	info->bytes = bytes;
 +
-+		ret = link_free_space(block_group, info);
-+		if (ret)
-+			kfree(info);
-+	} else {
-+		ret = -ENOMEM;
-+	}
-+
++	ret = link_free_space(block_group, info);
++	if (!ret)
++		info = NULL;
 +out:
 +	spin_unlock(&block_group->lock);
 +	if (ret) {
@@ -1822,6 +1783,10 @@ diff -r 639a8457eb97 free-space-cache.c
 +		if (ret == -EEXIST)
 +			BUG();
 +	}
++
++	if (info)
++		kfree(info);
++
 +	return ret;
 +}
 +
@@ -1966,7 +1931,7 @@ diff -r 639a8457eb97 free-space-cache.c
 +}
 diff -r 639a8457eb97 inode.c
 --- a/inode.c	Wed Sep 17 20:50:33 2008 -0400
-+++ b/inode.c	Mon Sep 22 22:49:52 2008 -0400
++++ b/inode.c	Tue Sep 23 16:33:49 2008 -0400
 @@ -141,7 +141,7 @@ static int cow_file_range(struct inode *
  	while(num_bytes > 0) {
  		cur_alloc_size = min(num_bytes, root->fs_info->max_extent);
@@ -1986,7 +1951,7 @@ diff -r 639a8457eb97 inode.c
  	ret = btrfs_drop_extents(trans, root, inode,
 diff -r 639a8457eb97 volumes.c
 --- a/volumes.c	Wed Sep 17 20:50:33 2008 -0400
-+++ b/volumes.c	Mon Sep 22 22:49:52 2008 -0400
++++ b/volumes.c	Tue Sep 23 16:33:49 2008 -0400
 @@ -64,8 +64,8 @@ static void lock_chunks(struct btrfs_roo
  
  static void unlock_chunks(struct btrfs_root *root)
@@ -2013,3 +1978,4 @@ diff -r 639a8457eb97 volumes.c
  
  	/* build a private list of devices we will allocate from */
  	while(index < num_stripes) {
+

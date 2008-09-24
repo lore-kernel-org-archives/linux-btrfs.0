@@ -1,43 +1,33 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: snapshot merging?
-Date: Wed, 24 Sep 2008 08:57:40 -0400
-Message-ID: <1222261060.7160.168.camel@think.oraclecorp.com>
-References: <48D63C8E.2060802@wpkg.org> <48D657DB.7050601@oracle.com>
-	 <48D65ACD.7030907@wpkg.org>  <200809232034.21750.phillips@phunq.net>
+Subject: Btrfs conf call (resend)
+Date: Wed, 24 Sep 2008 12:43:18 -0400
+Message-ID: <1222274598.7160.197.camel@think.oraclecorp.com>
 Mime-Version: 1.0
 Content-Type: text/plain
-Cc: Tomasz Chmielewski <mangoo@wpkg.org>,
-	Zheng Yan <zheng.yan@oracle.com>, linux-btrfs@vger.kernel.org
-To: Daniel Phillips <phillips@phunq.net>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200809232034.21750.phillips@phunq.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2008-09-23 at 20:34 -0700, Daniel Phillips wrote:
-> On Sunday 21 September 2008 07:31, Tomasz Chmielewski wrote:
-> > > Writeable snapshot has been available in btrfs for a long time.
-> > 
-> > Writeable snapshots and snapshot merging are two different things.
-> 
-> I think what Mikulas really means by "snapshot merging" is what we call
-> "revert to snapshot" in ddsnap (google Zumastor ddsnap).  The latter is
-> more appropriate terminology IMHO.  For a snapshotted volume, this just
-> requires copying any blocks that belong to the snapshot and not the
-> origin back to the origin.  Similarly, one could revert any snapshot
-> "back" (quotes because there is not necessarily any relationship in
-> time) to any other.  For a filesystem it will not be nearly so simple,
-> because at best only part of the job can be done at the physical block
-> level.
+[Sorry if anyone gets this twice, my email from yesterday doesn't
+seem to be on any mailing list archives ]
 
-In btrfs there's no need to merge.  The original is still there and you
-just use it instead of the snapshot.  Both the original and the snapshot
-are writable, you can pick whichever one you want to continue forward
-with.
+Hello everyone,
 
-Said a different way, the underlying metadata structures and
-capabilities of the snapshot and the original are the same.  The only
-difference between the two is their starting state.
+Our regular bi-weekly btrfs conf call will be Wednesday Sept 24.  There
+is a new dial in number below (Mingming is on vacation)
+
+Time: 1:30pm US Eastern (10:30am Pacific)
+
+* Dial-in Number(s):
+* Toll Free: +1-888-967-2253
+* Toll  +1-650-607-2253 
+* Meeting id: 665734
+* Passcode: 428737 (which hopefully spells 4Btrfs)
+
+This week we'll cover plans for trying to finish off the disk format
+changes and getting things into a mergable state.
 
 -chris
+
 
 

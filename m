@@ -1,33 +1,41 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Btrfs conf call (resend)
-Date: Wed, 24 Sep 2008 12:43:18 -0400
-Message-ID: <1222274598.7160.197.camel@think.oraclecorp.com>
+Subject: Btrfs git repos available
+Date: Wed, 24 Sep 2008 15:02:43 -0400
+Message-ID: <1222282963.7160.210.camel@think.oraclecorp.com>
 Mime-Version: 1.0
 Content-Type: text/plain
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[Sorry if anyone gets this twice, my email from yesterday doesn't
-seem to be on any mailing list archives ]
-
 Hello everyone,
 
-Our regular bi-weekly btrfs conf call will be Wednesday Sept 24.  There
-is a new dial in number below (Mingming is on vacation)
+As part of moving toward mainline, I've changed the Btrfs repositories
+over to git.  So far I've only converted the unstable repositories
+(thanks to some help from David Woodhouse, who already had -git forms of
+things).
 
-Time: 1:30pm US Eastern (10:30am Pacific)
+The progs-unstable repo is a direct clone of David's git repo.  The
+kernel one has btrfs grafted into fs/btrfs.  All compatibility code for
+older kernels has been removed.
 
-* Dial-in Number(s):
-* Toll Free: +1-888-967-2253
-* Toll  +1-650-607-2253 
-* Meeting id: 665734
-* Passcode: 428737 (which hopefully spells 4Btrfs)
+I'll construct repos in git of btrfs as a stand alone module, and that
+will include the compatibility code.
 
-This week we'll cover plans for trying to finish off the disk format
-changes and getting things into a mergable state.
+These git repos are not yet final, I may rebase them or redo them.  But,
+all new patches are going into them instead of the mercurial repos.
+
+Please give them a look and let me know if I've messed up the
+conversion:
+
+Kernel:
+
+http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=summary
+
+Progs:
+
+http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-progs-unstable.git;a=summary
 
 -chris
-
 
 

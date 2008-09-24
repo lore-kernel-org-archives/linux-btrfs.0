@@ -1,60 +1,37 @@
-From: Eric Anopolsky <erpo41@gmail.com>
+From: Tomasz Torcz <tomek@crocom.com.pl>
 Subject: Re: snapshot merging?
-Date: Wed, 24 Sep 2008 02:54:16 -0600
-Message-ID: <1222246456.26395.16.camel@telesto>
+Date: Wed, 24 Sep 2008 12:27:02 +0200
+Message-ID: <1222252022.3186.43.camel@s1.crocom.com.pl>
 References: <48D63C8E.2060802@wpkg.org> <48D657DB.7050601@oracle.com>
 	 <48D65ACD.7030907@wpkg.org>  <200809232034.21750.phillips@phunq.net>
+	 <1222246456.26395.16.camel@telesto>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=-rBoVL2SZcrViBSP+2Qxk"
-Cc: Tomasz Chmielewski <mangoo@wpkg.org>,
+Content-Type: text/plain; charset=UTF-8
+Cc: Daniel Phillips <phillips@phunq.net>,
+	Tomasz Chmielewski <mangoo@wpkg.org>,
 	Zheng Yan <zheng.yan@oracle.com>, linux-btrfs@vger.kernel.org
-To: Daniel Phillips <phillips@phunq.net>
+To: Eric Anopolsky <erpo41@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200809232034.21750.phillips@phunq.net>
+In-Reply-To: <1222246456.26395.16.camel@telesto>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Dnia 2008-09-24, =C5=9Bro o godzinie 02:54 -0600, Eric Anopolsky pisze:
+> What do people use snapshots for?
+ =20
+I use snapshots as "quick backup", as addition to full backups done by
+Bacula. It much faster and easier to recover previous version of file
+from snapshot than from backup software. Revert is not necessary.
 
---=-rBoVL2SZcrViBSP+2Qxk
-Content-Type: text/plain
-Content-Transfer-Encoding: quoted-printable
+ OpenSolaris guys use snapshots for safe system upgrade. With ability t=
+o
+select rootfs from before upgrade at GRUB screen and boot into older
+installation. Revert is crucial in case of wedged upgrade.
 
-On Tue, 2008-09-23 at 20:34 -0700, Daniel Phillips wrote:
-> On Sunday 21 September 2008 07:31, Tomasz Chmielewski wrote:
-> > > Writeable snapshot has been available in btrfs for a long time.
-> >=20
-> > Writeable snapshots and snapshot merging are two different things.
->=20
-> I think what Mikulas really means by "snapshot merging" is what we call
-> "revert to snapshot" in ddsnap (google Zumastor ddsnap).  The latter is
-> more appropriate terminology IMHO.  For a snapshotted volume, this just
-> requires copying any blocks that belong to the snapshot and not the
-> origin back to the origin.  Similarly, one could revert any snapshot
-> "back" (quotes because there is not necessarily any relationship in
-> time) to any other.  For a filesystem it will not be nearly so simple,
-> because at best only part of the job can be done at the physical block
-> level.
+--=20
+Tomasz Torcz
 
-It took me a while to get what was meant by snapshot merging. Consider
-this a vote for the "revert" terminology. :) Although, it calls into
-question some of my assumptions about what people use snapshots for.
-
-What do people use snapshots for?
-
-Cheers,
-Eric
-
-
---=-rBoVL2SZcrViBSP+2Qxk
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Description: This is a digitally signed message part
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQBI2gA4e2L37HVup3ARAqMJAJ9OZqKkq5Cb/3T49Rr7g0rznvuBuQCfYEEA
-aX/c/9I3Cuvvp2LDKwxCayw=
-=ctcb
------END PGP SIGNATURE-----
-
---=-rBoVL2SZcrViBSP+2Qxk--
-
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

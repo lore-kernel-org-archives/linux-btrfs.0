@@ -1,56 +1,65 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Hang running fs_mark
-Date: Fri, 26 Sep 2008 10:15:52 -0400
-Message-ID: <1222438552.7028.111.camel@think.oraclecorp.com>
-References: <20080925175643.GA14205@unused.rdu.redhat.com>
-	 <1222367822.7028.55.camel@think.oraclecorp.com>
-	 <20080925183435.GB14205@unused.rdu.redhat.com>
-	 <1222369531.7028.58.camel@think.oraclecorp.com> <48DBF693.20501@redhat.com>
-	 <1222376682.7028.80.camel@think.oraclecorp.com>
-	 <48DBFE4D.6080100@redhat.com>
-	 <1222381686.7028.86.camel@think.oraclecorp.com>
-	 <48DC178E.7070302@redhat.com>
-	 <1222390093.7028.88.camel@think.oraclecorp.com>
-	 <48DC3455.9010907@redhat.com>
+From: Josef Bacik <jbacik@redhat.com>
+Subject: [PATCH] fix deadlock between alloc_mutex/chunk_mutex
+Date: Fri, 26 Sep 2008 11:21:24 -0400
+Message-ID: <20080926152123.GA23335@unused.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Josef Bacik <jbacik@redhat.com>, linux-btrfs@vger.kernel.org
-To: Ric Wheeler <rwheeler@redhat.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <48DC3455.9010907@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2008-09-25 at 21:01 -0400, Ric Wheeler wrote:
-> Chris Mason wrote:
-> > On Thu, 2008-09-25 at 18:58 -0400, Ric Wheeler wrote:
-> >   
-> >>> I'm at 6.9 million files so far on a 500GB disk, and not surprisingly, I
-> >>> get  155 files/sec ;)  My hope is that we're spinning around due to bad
-> >>> accounting on the reserved extents, and that Yan's latest patch set will
-> >>> fix it.
-> >>>
-> >>> -chris
-> >>>       
-> >> I can update & restart my test as well. It is an odd box (8 CPUs, only 
-> >> 1GB of DRAM and a single large 1TB s-ata drive). Hopefully useful in 
-> >> testing out edge conditions ;-)
-> >>     
-> >
-> > I'll push out Yan's patches tomorrow.  My box here is at 17.5 million
-> > files and still going at 148 files/sec
-> >
-> > -chris
-> >
-> >
-> >   
-> Sounds like a plan, thanks!
+Hello,
 
-I declined a bit down to 60 files/sec, but overnight made it up to 58 or
-so million files without stalling.  It is possible that my metadata
-threshold changes caused problems for you, which might explain why my
-4GB of ram lasted longer than your 1GB.
+This fixes a deadlock that happens between the alloc_mutex and chunk_mutex.
+Process A comes in, decides to do a do_chunk_alloc, which takes the chunk_mutex,
+and is holding the alloc_mutex because the only way you get to do_chunk_alloc is
+by holding the alloc_mutex.  btrfs_alloc_chunk does its thing and goes to insert
+a new item, which results in a cow of the block.  We get into
+del_pending_extents from there, where if we need to be rescheduled we drop the
+alloc_mutex and schedule.  At this point process B comes in to do an allocation
+and gets the alloc_mutex, and because process A did not do the chunk allocation
+completely it thinks its a good time to do a chunk allocation as well, and hangs
+on the chunk_mutex.  Process A wakes up and tries to take the alloc_mutex and
+cannot.  The way to fix this is do a mutex_trylock() on chunk_mutex.  If we
+return 0 we didn't get the lock, and if this is just a "hey it may be a good
+time to allocate a chunk" type of thing then we just exit.  If we are trying to
+force an allocation then we reschedule and keep trying to acquire the
+chunk_mutex.  If once we acquire it the space is already full then we can just
+exit, otherwise we can continue with the cunk allocation.  Thank you,
 
-I'll try to rework the thresholds.
+Signed-off-by: Josef Bacik <jbacik@redhat.com>
 
--chris
 
+Index: root/btrfs-unstable/fs/btrfs/extent-tree.c
+===================================================================
+--- root.orig/btrfs-unstable/fs/btrfs/extent-tree.c
++++ root/btrfs-unstable/fs/btrfs/extent-tree.c
+@@ -1518,7 +1518,7 @@ static int do_chunk_alloc(struct btrfs_t
+ 	u64 thresh;
+ 	u64 start;
+ 	u64 num_bytes;
+-	int ret = 0;
++	int ret = 0, waited = 0;
+ 
+ 	flags = reduce_alloc_profile(extent_root, flags);
+ 
+@@ -1543,7 +1543,18 @@ static int do_chunk_alloc(struct btrfs_t
+ 	    thresh)
+ 		goto out;
+ 
+-	mutex_lock(&extent_root->fs_info->chunk_mutex);
++	while (!mutex_trylock(&extent_root->fs_info->chunk_mutex)) {
++		if (!force)
++			goto out;
++		mutex_unlock(&extent_root->fs_info->alloc_mutex);
++		cond_resched();
++		mutex_lock(&extent_root->fs_info->alloc_mutex);
++		waited = 1;
++	}
++
++	if (waited && space_info->full)
++		goto out_unlock;
++
+ 	ret = btrfs_alloc_chunk(trans, extent_root, &start, &num_bytes, flags);
+ 	if (ret == -ENOSPC) {
+ printk("space info full %Lu\n", flags);

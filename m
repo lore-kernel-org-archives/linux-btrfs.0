@@ -1,54 +1,35 @@
-From: Avi Kivity <avi@redhat.com>
-Subject: Re: packing structures and numbers
-Date: Fri, 03 Oct 2008 16:40:26 +0300
-Message-ID: <48E620CA.1030008@redhat.com>
-References: <48E6053A.8010100@redhat.com> <1223036573.6836.19.camel@think.oraclecorp.com>
+From: Martin =?utf-8?q?B=C3=BCrger?= <mbuerger@edu.uni-klu.ac.at>
+Subject: different oops
+Date: Fri, 3 Oct 2008 18:14:06 +0200
+Message-ID: <200810031814.06897.mbuerger@edu.uni-klu.ac.at>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=utf-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1223036573.6836.19.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote:
-> On Fri, 2008-10-03 at 14:42 +0300, Avi Kivity wrote:
->   
->> I've been reading btrfs's on-disk format, and two things caught my eye
->>
->> - attribute((packed)) structures everywhere, often with misaligned 
->> fields.  This conserves space, but can be harmful to in-memory 
->> performance on some archs.
->>     
->
-> packed is important to make sure that a given field takes exactly the
-> same amount of space everywhere, regardless of compiler optimization or
-> arch.
->   
+Hi,
+I'm using the sources from [1] which I checked out today. When=20
+testing the file system with compilebench [2] I traced oops [3]=20
+(with 2 cores, SMP), [4] (single core), [5] (no smp) and [6]=20
+(no-preemt).
 
-Yes, of course.
 
->> - le64's everywhere.   This scales nicely, but wastes space.  My home 
->> directory is unlikely to have more than 4G objects or 4GB extents (let 
->> alone >2 devices).
->>
->> I think the two issues can be improved by separating the on-disk format 
->> and the in-memory structure, and by using uleb128 as the on-disk format 
->> for numbers.  uleb128 is a variable-length format that encodes 7 bits of 
->> a number in each byte, using the eighth bit as a stop bit.
->>
->>     
->
-> This couldn't be used everywhere, as the array of items headers and keys
-> need to be a fixed sized the current bin_search code.  The items can be
-> variable sized but in general they don't have as many le64s.
->
->   
+[1]=20
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git
+[2] http://oss.oracle.com/~mason/compilebench/
+[3] http://rafb.net/p/1hUnky34.html
+[4] http://rafb.net/p/kEGqY199.html
+[5] http://rafb.net/p/pAHJrV88.html
+[6] http://rafb.net/p/tkz92m77.html
 
-You'd decode the keys and headers before searching.  This of couse 
-negates the idea behind a binary search, unless you cache the decoded nodes.
-
--- 
-I have a truly marvellous patch that fixes the bug which this
-signature is too narrow to contain.
-
+Best regards,
+--=20
+Martin B=C3=BCrger
+1024D/27C9019B@www.edu.uni-klu.ac.at/~mbuerger/key.asc
+Key fingerprint =3D D10D 97EF 0C32 B337 5A12  0B6C 2D47 7575 27C9 019B
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

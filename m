@@ -1,41 +1,24 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: "Andrea Gelmini" <andrea.gelmini@gmail.com>
 Subject: Re: different oops
-Date: Fri, 03 Oct 2008 16:26:30 -0400
-Message-ID: <1223065590.13375.68.camel@think.oraclecorp.com>
+Date: Sat, 4 Oct 2008 00:09:08 +0200
+Message-ID: <9cdbb57f0810031509m35c71919s965778dc6cb0ec5f@mail.gmail.com>
 References: <200810031814.06897.mbuerger@edu.uni-klu.ac.at>
 	 <200810032222.42054.mbuerger@edu.uni-klu.ac.at>
+	 <1223065590.13375.68.camel@think.oraclecorp.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Martin =?ISO-8859-1?Q?B=FCrger?= <mbuerger@edu.uni-klu.ac.at>,
-	Andrea Gelmini <andrea.gelmini@gmail.com>,
-	Toei Rei <toei.rei@stargazer.at>
+Cc: "=?UTF-8?Q?Martin_B=C3=BCrger?=" <mbuerger@edu.uni-klu.ac.at>,
+	"Toei Rei" <toei.rei@stargazer.at>, linux-btrfs@vger.kernel.org
+To: "Chris Mason" <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200810032222.42054.mbuerger@edu.uni-klu.ac.at>
+In-Reply-To: <1223065590.13375.68.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2008-10-03 at 22:22 +0200, Martin B=C3=BCrger wrote:
-
-[ Btrfs corruptions on i386 ]
-
-> CONFIG_LBD was not set during my tests. After enabling it no errors=20
-> whatsoever occured executing the same tests.
-
-Thank you, this is great news.  I had asked Andrea to try the same
-thing.  Toei Rei we might have finally tracked down the metadata
-corruptions you've been seeing.
-
-CONFIG_LBD turns the sector_t data type from an unsigned long into a
-u64.  Btrfs was using it like it was always a u64, and sometimes it was
-overflowing.
-
--chris
-
-
-
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+MjAwOC8xMC8zIENocmlzIE1hc29uIDxjaHJpcy5tYXNvbkBvcmFjbGUuY29tPjoKPiBPbiBGcmks
+IDIwMDgtMTAtMDMgYXQgMjI6MjIgKzAyMDAsIE1hcnRpbiBCw7xyZ2VyIHdyb3RlOgo+IFRoYW5r
+IHlvdSwgdGhpcyBpcyBncmVhdCBuZXdzLiAgSSBoYWQgYXNrZWQgQW5kcmVhIHRvIHRyeSB0aGUg
+c2FtZQo+IHRoaW5nLiAgVG9laSBSZWkgd2UgbWlnaHQgaGF2ZSBmaW5hbGx5IHRyYWNrZWQgZG93
+biB0aGUgbWV0YWRhdGEKPiBjb3JydXB0aW9ucyB5b3UndmUgYmVlbiBzZWVpbmcuCgpKdXN0IGVu
+YWJsaW5nIExCRCBzZWVtcyB0byBmaXggdGhlIHByb2JsZW0gaGVyZSwgdG9vLgoKSSdtIGdvaW5n
+IHRvIHRyeSB0byB1c2UgdGhlIGNsb25lZCBwYXJ0aXRpb24gYXMgbXkgbmV3IC8uCklzIHRoZXJl
+IHNvbWV0aGluZyBkYW5nZXJvdXMgb3RoZXIgdGhlIEVOT1NQQz8KCkNpYW8sCkdlbG1hCg==

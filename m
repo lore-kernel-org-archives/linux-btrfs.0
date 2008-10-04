@@ -1,52 +1,47 @@
-From: Yan Zheng <ukernel@gmail.com>
-Subject: Re: space info full
-Date: Sat, 04 Oct 2008 20:17:23 +0800
-Message-ID: <48E75ED3.1000404@gmail.com>
-References: <200810040945.56118.mbuerger@edu.uni-klu.ac.at>
+From: Andi Kleen <andi@firstfloor.org>
+Subject: Re: packing structures and numbers
+Date: Sat, 04 Oct 2008 18:34:56 +0200
+Message-ID: <87prmgnwsv.fsf@basil.nowhere.org>
+References: <48E6053A.8010100@redhat.com> <48E66659.1030202@oracle.com>
+	<48E729D7.4030509@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Cc: linux-btrfs@vger.kernel.org
-To: =?UTF-8?B?TWFydGluIELDvHJnZXI=?= <mbuerger@edu.uni-klu.ac.at>
+Content-Type: text/plain; charset=us-ascii
+Cc: Zach Brown <zach.brown@oracle.com>, linux-btrfs@vger.kernel.org
+To: Avi Kivity <avi@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200810040945.56118.mbuerger@edu.uni-klu.ac.at>
+In-Reply-To: <48E729D7.4030509@redhat.com> (Avi Kivity's message of "Sat, 04 Oct 2008 11:31:19 +0300")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Martin B=C3=BCrger wrote:
-> Hello,
-> 'space info full' was the only message I got from dmesg. df reports:
->=20
-> /dev/sdb1             33551720  28504548   5047172 =20
-> 85% /mnt/btrfstest
+Avi Kivity <avi@redhat.com> writes:
 
-The output of df can be inaccurate. Although df shows the FS is 85% ful=
-l,
-It's possible the FS is completely full.
+> Zach Brown wrote:
+>> Avi Kivity wrote:
+>>
+>>> I've been reading btrfs's on-disk format, and two things caught my eye
+>>>
+>>> - attribute((packed)) structures everywhere, often with misaligned
+>>> fields.  This conserves space, but can be harmful to in-memory
+>>> performance on some archs.
+>>>
+>>
+>> How harmful?  Do you have any profiles that can even pick this out of
+>> the noise?
+>>
+>
+> On those archs that take faults on unaligned accesses it's unlikely to
+> be in the noise.  But we could (and should) stick a get_unaligned() in
+> the accessor functions.
 
->=20
-> df -i reports:
-> /dev/sdb1                  0       0       0    -  /mnt/btrfstest
->=20
-> Any (e.g., touch, rm) operation on that mounted filesystem lets the=20
-> CPU rise and the system hang...
+Normally the compiler on such architectures generates special load/store code
+for known unaligned types that does not actually fault, but just uses multiple
+instructions. That is slower than a normal memory access, but still much
+faster than a exception.
 
-btrfs can't properly handle disk full condition currently. ENOSPC can
-result in BUG()
+You only really get the full exception fault penalty when the compiler
+cannot figure out at compile time that a given variable is unaligned.
+But with packed it normally assumes that (I think).
 
->=20
-> I was filling up the partition with compilebench to the ration=20
-> mentioned above. During this process I tried to create a subvolume=20
-> with
-> 	btrfsctl -s sub_vol /mnt/btrfstest
-> which did not, as opposed to the advices from the INSTALL file,=20
-> create anything within /mnt/btrfstest.
+-Andi
 
-Please try mount the FS with -o subvol=3D. option, you will see the new
-subvol.
-
-Regards
-Yan Zheng
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-- 
+ak@linux.intel.com

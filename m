@@ -1,41 +1,37 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: packing structures and numbers
-Date: Fri, 3 Oct 2008 20:28:56 -0400
-Message-ID: <20081004002856.GA8449@think.oraclecorp.com>
-References: <48E6053A.8010100@redhat.com> <1223036573.6836.19.camel@think.oraclecorp.com> <200810031722.52063.phillips@phunq.net>
+Subject: Re: different oops
+Date: Fri, 3 Oct 2008 20:30:41 -0400
+Message-ID: <20081004003041.GB8449@think.oraclecorp.com>
+References: <200810031814.06897.mbuerger@edu.uni-klu.ac.at> <200810032222.42054.mbuerger@edu.uni-klu.ac.at> <1223065590.13375.68.camel@think.oraclecorp.com> <9cdbb57f0810031509m35c71919s965778dc6cb0ec5f@mail.gmail.com> <9cdbb57f0810031715p54bb98a6j9884e65dac0f6efb@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Avi Kivity <avi@redhat.com>, linux-btrfs@vger.kernel.org
-To: Daniel Phillips <phillips@phunq.net>
+Content-Type: text/plain; charset=iso-8859-1
+Cc: Martin =?iso-8859-1?Q?B=FCrger?= <mbuerger@edu.uni-klu.ac.at>,
+	Toei Rei <toei.rei@stargazer.at>, linux-btrfs@vger.kernel.org
+To: Andrea Gelmini <andrea.gelmini@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200810031722.52063.phillips@phunq.net>
+In-Reply-To: <9cdbb57f0810031715p54bb98a6j9884e65dac0f6efb@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 03, 2008 at 05:22:51PM -0700, Daniel Phillips wrote:
-> On Friday 03 October 2008 05:22, Chris Mason wrote:
-> > On Fri, 2008-10-03 at 14:42 +0300, Avi Kivity wrote:
-> > > I've been reading btrfs's on-disk format, and two things caught my eye
-> > > 
-> > > - attribute((packed)) structures everywhere, often with misaligned 
-> > > fields.  This conserves space, but can be harmful to in-memory 
-> > > performance on some archs.
-> > 
-> > packed is important to make sure that a given field takes exactly the
-> > same amount of space everywhere, regardless of compiler optimization or
-> > arch.
-> 
-> Amen.  Are we sure that attribute ((packed)) works the same on all
-> arches?
+On Sat, Oct 04, 2008 at 02:15:53AM +0200, Andrea Gelmini wrote:
+> 2008/10/4 Andrea Gelmini <andrea.gelmini@gmail.com>:
+> > 2008/10/3 Chris Mason <chris.mason@oracle.com>:
+> >> On Fri, 2008-10-03 at 22:22 +0200, Martin B=FCrger wrote:
+> >> Thank you, this is great news.  I had asked Andrea to try the same
+> >> thing.  Toei Rei we might have finally tracked down the metadata
+> >> corruptions you've been seeing.
+> >
+> > Just enabling LBD seems to fix the problem here, too.
+>=20
+> During a cp of ~40GB of data, some delete, a mirrordir, umount/mount,
+> I've got these:
+> [10214.972922] leaf ref miss for bytenr 632594432
 
-As long as you use types with strictly defined size, yes.
-
-> 
-> And what about bitfields, does GCC pack them to the same size on all
-> arches in this case or take the easy way out as permitted by the
-> standard?
-
-I'm not sure, I believe a bit field on a strictly defined size will be
-packed the same everywhere. But bitfields + endian conversion are messy,
-so I avoid them.
+These are safe, I'm removing them.
 
 -chris
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

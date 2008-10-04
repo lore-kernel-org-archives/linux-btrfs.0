@@ -1,33 +1,36 @@
 From: Avi Kivity <avi@redhat.com>
 Subject: Re: packing structures and numbers
-Date: Sat, 04 Oct 2008 11:27:15 +0300
-Message-ID: <48E728E3.3090602@redhat.com>
-References: <48E6053A.8010100@redhat.com> <200810031722.52063.phillips@phunq.net> <20081004002856.GA8449@think.oraclecorp.com> <200810031743.46998.phillips@phunq.net>
+Date: Sat, 04 Oct 2008 11:31:19 +0300
+Message-ID: <48E729D7.4030509@redhat.com>
+References: <48E6053A.8010100@redhat.com> <48E66659.1030202@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
-To: Daniel Phillips <phillips@phunq.net>
+Cc: linux-btrfs@vger.kernel.org
+To: Zach Brown <zach.brown@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200810031743.46998.phillips@phunq.net>
+In-Reply-To: <48E66659.1030202@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Daniel Phillips wrote:
-> On Friday 03 October 2008 17:28, Chris Mason wrote:
+Zach Brown wrote:
+> Avi Kivity wrote:
 >   
->> On Fri, Oct 03, 2008 at 05:22:51PM -0700, Daniel Phillips wrote:
->>     
->>> ...Are we sure that attribute ((packed)) works the same on all
->>> arches?
->>>       
->> As long as you use types with strictly defined size, yes.
+>> I've been reading btrfs's on-disk format, and two things caught my eye
+>>
+>> - attribute((packed)) structures everywhere, often with misaligned
+>> fields.  This conserves space, but can be harmful to in-memory
+>> performance on some archs.
 >>     
 >
-> Just to be a language lawyer about that... int does not have a
-> strictly defined size, yet we define uint32_t as a typedef of int
-> on 32 bit arches do we not?
+> How harmful?  Do you have any profiles that can even pick this out of
+> the noise?
 >   
 
-What else would you define it to?
+On those archs that take faults on unaligned accesses it's unlikely to 
+be in the noise.  But we could (and should) stick a get_unaligned() in 
+the accessor functions.
+
+uleb128 encoding is orthogonal to this issue, however.  It's only about 
+getting better density.
 
 -- 
 I have a truly marvellous patch that fixes the bug which this

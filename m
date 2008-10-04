@@ -1,39 +1,35 @@
-From: Martin =?utf-8?q?B=C3=BCrger?= <mbuerger@edu.uni-klu.ac.at>
-Subject: space info full
-Date: Sat, 4 Oct 2008 09:45:55 +0200
-Message-ID: <200810040945.56118.mbuerger@edu.uni-klu.ac.at>
+From: Avi Kivity <avi@redhat.com>
+Subject: Re: packing structures and numbers
+Date: Sat, 04 Oct 2008 11:27:15 +0300
+Message-ID: <48E728E3.3090602@redhat.com>
+References: <48E6053A.8010100@redhat.com> <200810031722.52063.phillips@phunq.net> <20081004002856.GA8449@think.oraclecorp.com> <200810031743.46998.phillips@phunq.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+To: Daniel Phillips <phillips@phunq.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <200810031743.46998.phillips@phunq.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
-'space info full' was the only message I got from dmesg. df reports:
+Daniel Phillips wrote:
+> On Friday 03 October 2008 17:28, Chris Mason wrote:
+>   
+>> On Fri, Oct 03, 2008 at 05:22:51PM -0700, Daniel Phillips wrote:
+>>     
+>>> ...Are we sure that attribute ((packed)) works the same on all
+>>> arches?
+>>>       
+>> As long as you use types with strictly defined size, yes.
+>>     
+>
+> Just to be a language lawyer about that... int does not have a
+> strictly defined size, yet we define uint32_t as a typedef of int
+> on 32 bit arches do we not?
+>   
 
-/dev/sdb1             33551720  28504548   5047172 =20
-85% /mnt/btrfstest
+What else would you define it to?
 
-df -i reports:
-/dev/sdb1                  0       0       0    -  /mnt/btrfstest
+-- 
+I have a truly marvellous patch that fixes the bug which this
+signature is too narrow to contain.
 
-Any (e.g., touch, rm) operation on that mounted filesystem lets the=20
-CPU rise and the system hang...
-
-I was filling up the partition with compilebench to the ration=20
-mentioned above. During this process I tried to create a subvolume=20
-with
-	btrfsctl -s sub_vol /mnt/btrfstest
-which did not, as opposed to the advices from the INSTALL file,=20
-create anything within /mnt/btrfstest.
-
-Regards,
---=20
-Martin B=C3=BCrger
-1024D/27C9019B@www.edu.uni-klu.ac.at/~mbuerger/key.asc
-Key fingerprint =3D D10D 97EF 0C32 B337 5A12  0B6C 2D47 7575 27C9 019B
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

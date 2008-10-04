@@ -1,35 +1,31 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: different oops
-Date: Fri, 3 Oct 2008 20:31:29 -0400
-Message-ID: <20081004003129.GC8449@think.oraclecorp.com>
-References: <200810031814.06897.mbuerger@edu.uni-klu.ac.at> <200810032222.42054.mbuerger@edu.uni-klu.ac.at> <1223065590.13375.68.camel@think.oraclecorp.com> <9cdbb57f0810031509m35c71919s965778dc6cb0ec5f@mail.gmail.com>
+From: Daniel Phillips <phillips@phunq.net>
+Subject: Re: packing structures and numbers
+Date: Fri, 3 Oct 2008 17:35:41 -0700
+Message-ID: <200810031735.41588.phillips@phunq.net>
+References: <48E6053A.8010100@redhat.com> <200810031722.52063.phillips@phunq.net> <20081004002856.GA8449@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: Martin =?iso-8859-1?Q?B=FCrger?= <mbuerger@edu.uni-klu.ac.at>,
-	Toei Rei <toei.rei@stargazer.at>, linux-btrfs@vger.kernel.org
-To: Andrea Gelmini <andrea.gelmini@gmail.com>
+Content-Type: text/plain;
+  charset="iso-8859-1"
+Cc: Avi Kivity <avi@redhat.com>, linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <9cdbb57f0810031509m35c71919s965778dc6cb0ec5f@mail.gmail.com>
+In-Reply-To: <20081004002856.GA8449@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Oct 04, 2008 at 12:09:08AM +0200, Andrea Gelmini wrote:
-> 2008/10/3 Chris Mason <chris.mason@oracle.com>:
-> > On Fri, 2008-10-03 at 22:22 +0200, Martin B=FCrger wrote:
-> > Thank you, this is great news.  I had asked Andrea to try the same
-> > thing.  Toei Rei we might have finally tracked down the metadata
-> > corruptions you've been seeing.
->=20
-> Just enabling LBD seems to fix the problem here, too.
->=20
-> I'm going to try to use the cloned partition as my new /.
-> Is there something dangerous other the ENOSPC?
+On Friday 03 October 2008 17:28, Chris Mason wrote:
+> On Fri, Oct 03, 2008 at 05:22:51PM -0700, Daniel Phillips wrote:
+> > And what about bitfields, does GCC pack them to the same size on all
+> > arches in this case or take the easy way out as permitted by the
+> > standard?
+> 
+> I'm not sure, I believe a bit field on a strictly defined size will be
+> packed the same everywhere. But bitfields + endian conversion are messy,
+> so I avoid them.
 
-We don't have known big bugs right now, but you'll need to use another
-=46S on /boot.
+Likewise, sigh.  On the other hand, packed + endian can't really be
+avoided.
 
--chris
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Regards,
+
+Daniel
+

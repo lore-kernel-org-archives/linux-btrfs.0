@@ -1,28 +1,33 @@
-From: Daniel Phillips <phillips@phunq.net>
-Subject: Re: packing structures and numbers
-Date: Fri, 3 Oct 2008 17:43:46 -0700
-Message-ID: <200810031743.46998.phillips@phunq.net>
-References: <48E6053A.8010100@redhat.com> <200810031722.52063.phillips@phunq.net> <20081004002856.GA8449@think.oraclecorp.com>
+From: "Jeff Schroeder" <jeffschroed@gmail.com>
+Subject: Re: different oops
+Date: Fri, 3 Oct 2008 20:41:18 -0700
+Message-ID: <c24352ca0810032041y3b0f08ceq88d80e7a0e77308@mail.gmail.com>
+References: <200810031814.06897.mbuerger@edu.uni-klu.ac.at>
+	 <200810032222.42054.mbuerger@edu.uni-klu.ac.at>
+	 <1223065590.13375.68.camel@think.oraclecorp.com>
+	 <9cdbb57f0810031509m35c71919s965778dc6cb0ec5f@mail.gmail.com>
+	 <20081004003129.GC8449@think.oraclecorp.com>
+Reply-To: jeffschroeder@computer.org
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="iso-8859-1"
-Cc: Avi Kivity <avi@redhat.com>, linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: "Andrea Gelmini" <andrea.gelmini@gmail.com>,
+	"=?ISO-8859-1?Q?Martin_B=FCrger?=" <mbuerger@edu.uni-klu.ac.at>,
+	"Toei Rei" <toei.rei@stargazer.at>, linux-btrfs@vger.kernel.org
+To: "Chris Mason" <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20081004002856.GA8449@think.oraclecorp.com>
+In-Reply-To: <20081004003129.GC8449@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Friday 03 October 2008 17:28, Chris Mason wrote:
-> On Fri, Oct 03, 2008 at 05:22:51PM -0700, Daniel Phillips wrote:
-> > ...Are we sure that attribute ((packed)) works the same on all
-> > arches?
-> 
-> As long as you use types with strictly defined size, yes.
+On Fri, Oct 3, 2008 at 5:31 PM, Chris Mason <chris.mason@oracle.com> wrote:
+>
+> We don't have known big bugs right now, but you'll need to use another
+> FS on /boot.
 
-Just to be a language lawyer about that... int does not have a
-strictly defined size, yet we define uint32_t as a typedef of int
-on 32 bit arches do we not?
+Is a patch to grub and/or grub2 on the roadmap for r/o btrfs support once the
+disk format stabilizes?
 
-Regards,
+-- 
+Jeff Schroeder
 
-Daniel
+Don't drink and derive, alcohol and analysis don't mix.
+http://www.digitalprognosis.com

@@ -1,47 +1,33 @@
-From: Josef Bacik <jbacik@redhat.com>
+From: Martin =?iso-8859-1?q?B=FCrger?= <mbuerger@edu.uni-klu.ac.at>
 Subject: Re: space info full
-Date: Mon, 6 Oct 2008 14:27:24 -0400
-Message-ID: <20081006182723.GB2840@unused.rdu.redhat.com>
-References: <200810040945.56118.mbuerger@edu.uni-klu.ac.at>
+Date: Mon, 6 Oct 2008 22:28:24 +0200
+Message-ID: <200810062228.24310.mbuerger@edu.uni-klu.ac.at>
+References: <200810040945.56118.mbuerger@edu.uni-klu.ac.at> <20081006182723.GB2840@unused.rdu.redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=iso-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Martin =?iso-8859-1?Q?B=FCrger?= <mbuerger@edu.uni-klu.ac.at>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200810040945.56118.mbuerger@edu.uni-klu.ac.at>
+In-Reply-To: <20081006182723.GB2840@unused.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Oct 04, 2008 at 09:45:55AM +0200, Martin B=FCrger wrote:
-> Hello,
-> 'space info full' was the only message I got from dmesg. df reports:
->
+On Monday 06 October 2008, Josef Bacik wrote:
+> are you running the latest git trees of both btrfs-unstable and
+> btrfs-progs-unstable? =A0I'd expect BUG()'s or something like that,
+> shouldn't be getting hangs. =A0Thanks,
 
-space info full doesn't mean the disk is full, just means we've allocat=
-ed all of
-the block group chunks that the filesystem can hold, so you will get th=
-at
-message well before you actually run out of disk space.  As it stands n=
-ow btrfs
-has a short circuit when you hit ~15% free to go ahead an ENOSPC to avo=
-id
-hitting the many BUG()'s that are sitting around to handle ENOSPC.
-=20
-> /dev/sdb1             33551720  28504548   5047172 =20
-> 85% /mnt/btrfstest
->=20
-> df -i reports:
-> /dev/sdb1                  0       0       0    -  /mnt/btrfstest
->=20
-> Any (e.g., touch, rm) operation on that mounted filesystem lets the=20
-> CPU rise and the system hang...
->
+Yes, I used both unstable versions from the git tree for the tests.=20
+No further messages than the one I mentioned occurred. Furthermore=20
+the system did hang at any operation on that particular file system=20
+after (can not exactly tell when) the 'space info full' message had=20
+turned up. Unfortunately I've not been able to reproduce this (yet),=20
+hence this might have been an issue with the virtual machine=20
+(VMWare) I using for the tests.
 
-are you running the latest git trees of both btrfs-unstable and
-btrfs-progs-unstable?  I'd expect BUG()'s or something like that, shoul=
-dn't be
-getting hangs.  Thanks,
-
-Josef=20
+Regards,
+--=20
+Martin B=FCrger
+1024D/27C9019B@www.edu.uni-klu.ac.at/~mbuerger/key.asc
+Key fingerprint =3D D10D 97EF 0C32 B337 5A12  0B6C 2D47 7575 27C9 019B
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

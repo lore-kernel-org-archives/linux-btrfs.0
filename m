@@ -1,37 +1,49 @@
-From: Avi Kivity <avi@redhat.com>
-Subject: Re: packing structures and numbers
-Date: Sun, 05 Oct 2008 07:31:57 +0200
-Message-ID: <48E8514D.9060909@redhat.com>
-References: <48E6053A.8010100@redhat.com> <48E66659.1030202@oracle.com>	<48E729D7.4030509@redhat.com> <87prmgnwsv.fsf@basil.nowhere.org>
+From: Josef Bacik <jbacik@redhat.com>
+Subject: Re: space info full
+Date: Mon, 6 Oct 2008 14:27:24 -0400
+Message-ID: <20081006182723.GB2840@unused.rdu.redhat.com>
+References: <200810040945.56118.mbuerger@edu.uni-klu.ac.at>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Zach Brown <zach.brown@oracle.com>, linux-btrfs@vger.kernel.org
-To: Andi Kleen <andi@firstfloor.org>
+Content-Type: text/plain; charset=iso-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Martin =?iso-8859-1?Q?B=FCrger?= <mbuerger@edu.uni-klu.ac.at>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <87prmgnwsv.fsf@basil.nowhere.org>
+In-Reply-To: <200810040945.56118.mbuerger@edu.uni-klu.ac.at>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Andi Kleen wrote:
->> On those archs that take faults on unaligned accesses it's unlikely to
->> be in the noise.  But we could (and should) stick a get_unaligned() in
->> the accessor functions.
->>     
+On Sat, Oct 04, 2008 at 09:45:55AM +0200, Martin B=FCrger wrote:
+> Hello,
+> 'space info full' was the only message I got from dmesg. df reports:
 >
-> Normally the compiler on such architectures generates special load/store code
-> for known unaligned types that does not actually fault, but just uses multiple
-> instructions. That is slower than a normal memory access, but still much
-> faster than a exception.
+
+space info full doesn't mean the disk is full, just means we've allocat=
+ed all of
+the block group chunks that the filesystem can hold, so you will get th=
+at
+message well before you actually run out of disk space.  As it stands n=
+ow btrfs
+has a short circuit when you hit ~15% free to go ahead an ENOSPC to avo=
+id
+hitting the many BUG()'s that are sitting around to handle ENOSPC.
+=20
+> /dev/sdb1             33551720  28504548   5047172 =20
+> 85% /mnt/btrfstest
+>=20
+> df -i reports:
+> /dev/sdb1                  0       0       0    -  /mnt/btrfstest
+>=20
+> Any (e.g., touch, rm) operation on that mounted filesystem lets the=20
+> CPU rise and the system hang...
 >
-> You only really get the full exception fault penalty when the compiler
-> cannot figure out at compile time that a given variable is unaligned.
-> But with packed it normally assumes that (I think)
 
-Sounds reasonable.  In which case the unaligned access issue I raised is 
-a red herring.  So using uleb128 or not is down to whether the improved 
-packing efficiency is worth the increased complexity; it seems unlikely 
-that it is.
+are you running the latest git trees of both btrfs-unstable and
+btrfs-progs-unstable?  I'd expect BUG()'s or something like that, shoul=
+dn't be
+getting hangs.  Thanks,
 
--- 
-I have a truly marvellous patch that fixes the bug which this
-signature is too narrow to contain.
-
+Josef=20
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,31 +1,47 @@
-From: Arun Bhanu <btrfs@arunbhanu.com>
-Subject: Problem with building btrfs into the kernel instead of module
-Date: Wed, 8 Oct 2008 02:22:30 +0800
-Message-ID: <20081007182230.GA19219@deepthought>
-Reply-To: Arun Bhanu <btrfs@arunbhanu.com>
+From: Sage Weil <sage@newdream.net>
+Subject: Re: Problem with building btrfs into the kernel instead of module
+Date: Tue, 7 Oct 2008 12:44:35 -0700 (PDT)
+Message-ID: <Pine.LNX.4.64.0810071243090.31477@cobra.newdream.net>
+References: <20081007182230.GA19219@deepthought>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: linux-btrfs@vger.kernel.org
+To: Arun Bhanu <btrfs@arunbhanu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20081007182230.GA19219@deepthought>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi
+On Wed, 8 Oct 2008, Arun Bhanu wrote:
+> Hi
+> 
+> I have compiled btrfs into the kernel instead of building as module.
+> Then I create a btrfs filesystem on a partition and try to mount it and
+> I get the following error.
 
-I have compiled btrfs into the kernel instead of building as module.
-Then I create a btrfs filesystem on a partition and try to mount it and
-I get the following error.
+fs/btrfs/Makefile is a bit wonky.  This at least makes it work both ways:
 
-# mkfs.btrfs /dev/sda1
-fs created label (null) on /dev/sda1
-        nodesize 4096 leafsize 4096 sectorsize 4096 size 4.88GB
-Btrfs v0.16-8-g09ab036
 
-# mount -t btrfs /dev/sda1 /mnt/sda1/
-mount: unknown filesystem type 'btrfs'
+diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
+index 48b7909..7125716 100644
+--- a/fs/btrfs/Makefile
++++ b/fs/btrfs/Makefile
+@@ -1,7 +1,7 @@
+ ifneq ($(KERNELRELEASE),)
+ # kbuild part of makefile
+ 
+-obj-m  := btrfs.o
++obj-$(CONFIG_BTRFS_FS) := btrfs.o
+ btrfs-y := super.o ctree.o extent-tree.o print-tree.o root-tree.o 
+dir-item.o \
+           file-item.o inode-item.o inode-map.o disk-io.o \
+           transaction.o inode.o file.o tree-defrag.o \
+@@ -14,7 +14,7 @@ else
+ 
+ KERNELDIR := /lib/modules/`uname -r`/build
+ all:
+-       $(MAKE) -C $(KERNELDIR) M=`pwd` modules
++       $(MAKE) -C $(KERNELDIR) M=`pwd` CONFIG_BTRFS_FS=m modules
+ 
+ modules_install:
+        $(MAKE) -C $(KERNELDIR) M=`pwd` modules_install
 
-If I perform the above steps with btrfs built as a module I don't get
-any error.
-
-Is this a known issue or am I doing something wrong?
-
--Arun

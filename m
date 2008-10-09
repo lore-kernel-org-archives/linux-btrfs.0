@@ -1,23 +1,24 @@
-From: Christian Parpart <trapni@gentoo.org>
-Subject: [PATCH] btrfs-progs: autotoolized and splitup into {libbtrfs,tools,tests}
-Date: Thu, 9 Oct 2008 04:20:49 +0200
-Message-ID: <200810090420.49767.trapni@gentoo.org>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: [PATCH] deny sys_{rename,link} across subvolumes of same disk
+Date: Thu, 9 Oct 2008 01:55:10 -0400
+Message-ID: <20081009055510.GA24531@infradead.org>
+References: <200810090340.50462.trapni@gentoo.org>
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="us-ascii"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Christian Parpart <trapni@gentoo.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <200810090340.50462.trapni@gentoo.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Thu, Oct 09, 2008 at 03:40:50AM +0200, Christian Parpart wrote:
+> This patch denies renames and linking of inodes across subvolumes, as it 
+> causes disk format corruption.
+> 
+> I guess a long-term goal *might* be to just handle these special cases with 
+> care, to allow them by properly handling this case in the implementation, 
+> however, I wasn't unable to do that with my limited knowledge.
 
-this now makes use of autoconf/automake/libtool suite,
-thus, enabling a wider range of platforms etc.
-Although, I've split up the build into tools, lib, and tests,
-making it possible for 3rd-parties to link against libbtrfs now.
+I'll post patches in a few days that make sure every subvolume is under
+a different vfsmount which also solves this problem.
 
-Patch URL:
-http://ninchens.net/~trapni/btrfs/btrfs-progs-autotooled-splitup.diff
-
-Best regards,
-Christian Parpart.

@@ -1,38 +1,65 @@
-From: "Yan Zheng" <yanzheng@21cn.com>
-Subject: Re: Question about e8569813849b5da394a195c7e76b4faa452b12d1
-Date: Thu, 9 Oct 2008 09:47:41 +0800
-Message-ID: <3d0408630810081847q205c1fe2q227e9e3c7b92fc2@mail.gmail.com>
-References: <20081008205947.GA18375@unused.rdu.redhat.com>
+From: Christian Parpart <trapni@gentoo.org>
+Subject: [PATCH] deny sys_{rename,link} across subvolumes of same disk
+Date: Thu, 9 Oct 2008 03:40:50 +0200
+Message-ID: <200810090340.50462.trapni@gentoo.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: "Josef Bacik" <jbacik@redhat.com>
+Content-Type: Multipart/Mixed;
+  boundary="Boundary-00=_iEW7IjMJD6kmME5"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20081008205947.GA18375@unused.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2008/10/9 Josef Bacik <jbacik@redhat.com>:
-> Hello,
->
-> Is there a reason
->
-> -       if (search_end == (u64)-1)
-> -               search_end = btrfs_super_total_bytes(&info->super_copy);
->
-> happened in the commit from $SUBJECT?  If its just a mistake thats fine I'll add
-> it back with my current patch, but if there is a reason it needed to go then I
-> need to know that too so I can figure out a different way to do what I want to
-> do.  Thanks,
->
+--Boundary-00=_iEW7IjMJD6kmME5
+Content-Type: text/plain;
+  charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-btrfs_super_total_bytes is total size of all devices. we can't rely on it as
-search_end for two reasons:
+This patch denies renames and linking of inodes across subvolumes, as it 
+causes disk format corruption.
 
-1) If metadata mirror is enable, the value can be larger than the last byte of
-    last chunk.
+I guess a long-term goal *might* be to just handle these special cases with 
+care, to allow them by properly handling this case in the implementation, 
+however, I wasn't unable to do that with my limited knowledge.
 
-2) For a FS has been balanced, there are some 'holes' in the chunk address
-    space, so the value can be smaller than the last byte of last chunk.
+Best regards,
+Christian Parpart.
 
-Regards
-Yan Zheng
+
+
+--Boundary-00=_iEW7IjMJD6kmME5
+Content-Type: text/x-patch;
+  charset="us-ascii";
+  name="cross-subvol-change-fix.diff"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline;
+	filename="cross-subvol-change-fix.diff"
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index ff0c359..20a3772 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2748,6 +2748,10 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
+ 	if (inode->i_nlink == 0)
+ 		return -ENOENT;
+ 
++	/* do not allow sys_link's with other subvols of the same device */
++	if (root->objectid != BTRFS_I(inode)->root->objectid)
++		return -EPERM;
++
+ 	btrfs_inc_nlink(inode);
+ 	err = btrfs_check_free_space(root, 1, 0);
+ 	if (err)
+@@ -3577,6 +3581,10 @@ static int btrfs_rename(struct inode * old_dir, struct dentry *old_dentry,
+ 		return -ENOTEMPTY;
+ 	}
+ 
++	/* do not allow sys_rename's with other subvols of the same device */
++	if (root->objectid != BTRFS_I(new_dir)->root->objectid)
++		return -EPERM;
++
+ 	ret = btrfs_check_free_space(root, 1, 0);
+ 	if (ret)
+ 		goto out_unlock;
+
+--Boundary-00=_iEW7IjMJD6kmME5--

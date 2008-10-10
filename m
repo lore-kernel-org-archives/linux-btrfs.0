@@ -1,34 +1,44 @@
-From: David Woodhouse <dwmw2@infradead.org>
-Subject: Re: [PATCH] btrfs-progs: autotoolized and splitup into
-	{libbtrfs,tools,tests}
-Date: Fri, 10 Oct 2008 07:38:30 +0100
-Message-ID: <1223620710.28324.95.camel@macbook.infradead.org>
-References: <200810090420.49767.trapni@gentoo.org>
-	 <1223589129.7861.61.camel@telesto>
-	 <1223590043.28324.83.camel@macbook.infradead.org>
-	 <200810100301.52995.trapni@gentoo.org>
+From: "Andrea Gelmini" <andrea.gelmini@gmail.com>
+Subject: Re: different oops
+Date: Fri, 10 Oct 2008 10:43:34 +0200
+Message-ID: <9cdbb57f0810100143w44f8d7b5n3bd3aa0a329356ec@mail.gmail.com>
+References: <200810031814.06897.mbuerger@edu.uni-klu.ac.at>
+	 <9cdbb57f0810070431w523f90eek63fd74e44add35cd@mail.gmail.com>
+	 <1223384193.16546.111.camel@think.oraclecorp.com>
+	 <9cdbb57f0810070804i1dfdedarc59d3d9189d621d5@mail.gmail.com>
+	 <1223395385.16546.124.camel@think.oraclecorp.com>
+	 <9cdbb57f0810070936s707f2aeek8f057e2c19efcd95@mail.gmail.com>
+	 <9cdbb57f0810081451y66c0d780kccb6164fdfab287a@mail.gmail.com>
+	 <1223511108.7014.39.camel@think.oraclecorp.com>
+	 <9cdbb57f0810090120v6381ab0eg5377039b0065e68@mail.gmail.com>
+	 <1223575532.14090.39.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Eric Anopolsky <erpo41@gmail.com>, linux-btrfs@vger.kernel.org
-To: Christian Parpart <trapni@gentoo.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: "Chris Mason" <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200810100301.52995.trapni@gentoo.org>
+In-Reply-To: <1223575532.14090.39.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2008-10-10 at 03:01 +0200, Christian Parpart wrote:
-> whether  btrfs to be using autotools or not, the other kind this patch 
-> addressed seems to be more important to me: project modularization.
+2008/10/9 Chris Mason <chris.mason@oracle.com>:
+> Yan,
+>
+> Can these leaf ref miss warnings trigger corruptions?  I thought not but
+> its clear there is some metadata corruption here:
+>
+> Andrea, how exactly did you trigger this?
 
-That makes a certain amount of sense, but should definitely be submitted
-as a separate patch. And it would probably be best to generate it with
-'git-diff -M' so that renamed files are shown as such. rather than
-deletion and addition. That'll make your patch far more reviewable.
+Nothing in particular, usual work session on my laptop.
+It seems to be it was a problem with a newly created torrent file.
+Well, no deep debug, simply some minutes after
+Azureus started it crashed (kernel), always.
+So I take new last file, copyed to tmpfs (without errors reading), and
+re-copyed to btrfs.
+The problem disappeared. Part of file was corrupted, but there was the
+crash, azureus caching, and so on.
+Anyway, comparing my /home with the external backup, I found no problem.
 
-I'm still not convinced that third party code should be linking against
-a libbtrfs just yet, but that doesn't mean it shouldn't be set up to
-allow that to happen in future.
+'Til now I have no evidence of data/metadata corruption.
 
--- 
-David Woodhouse                            Open Source Technology Centre
-David.Woodhouse@intel.com                              Intel Corporation
-
+Thanks a lot,
+Andrea

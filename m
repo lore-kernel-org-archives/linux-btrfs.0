@@ -1,35 +1,38 @@
-From: Josef Bacik <jbacik@redhat.com>
-Subject: Re: Question about the extent root
-Date: Tue, 14 Oct 2008 09:14:07 -0400
-Message-ID: <20081014131406.GC2864@unused.rdu.redhat.com>
-References: <20081014125017.GB2864@unused.rdu.redhat.com>
+From: Avi Kivity <avi@redhat.com>
+Subject: Re: Data-deduplication?
+Date: Wed, 15 Oct 2008 15:39:16 +0200
+Message-ID: <48F5F284.1020309@redhat.com>
+References: <20081012020629.GA14615@bludgeon.org> <878wssswqa.fsf@basil.nowhere.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <jbacik@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Ray Van Dolson <rayvd@bludgeon.org>, linux-btrfs@vger.kernel.org
+To: Andi Kleen <andi@firstfloor.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20081014125017.GB2864@unused.rdu.redhat.com>
+In-Reply-To: <878wssswqa.fsf@basil.nowhere.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 14, 2008 at 08:50:18AM -0400, Josef Bacik wrote:
-> Hello,
-> 
-> I'm having problems wrapping my head around the purpose of the extent root.  It
-> seems we can allocate space from the main root, and the extent objects are
-> inserted into that tree, but we can also make allocations out of the extent
-> root, and the extent objects are inserted into that tree.  What is the purpose
-> of the extent tree?  The inserts/deletions from the extent tree only happen via
-> del_pending_extents and finish_current_insert, but it seems I end up with
-> extents that are being deleted from the extent_tree and inserted onto the normal
-> root (I'm killing alloc_mutex so I'm getting weird problems).  I figure instead
-> of screwing around with the locking until it works its probably best I
-> understand what exactly we're doing with allocations on both trees, and
-> hopefully then I can fix this weirdness.  Thank you,
+Andi Kleen wrote:
+> Ray Van Dolson <rayvd@bludgeon.org> writes:
 >
+>   
+>> I recall their being a thread here a number of months back regarding
+>> data-deduplication support for bttfs.
+>>
+>> Did anyone end up picking that up and giving a go at it?  Block level
+>> data dedup would be *awesome* in a Linux filesystem.  It does wonders
+>> for storing virtual machines w/ NetApp and WAFL, and even ZFS doesn't
+>> have this feature yet (although I've read discussions on them looking
+>> to add it).
+>>     
+>
+> There are some patches to do in QEMU's cow format for KVM. That's
+> user level only.
+>   
 
-nm, now that i've thought about it i get it.  all extent keys go into the extent
-root, but extent tree allocations only happen when we COW a block in the extent
-tree or allocate a new block, which is the root == extent_root case, and all
-normal allocations will just be from the normal root.  Thanks,
+And thus, doesn't work for sharing between different images, especially 
+at runtime. I'd really, really [any number of reallies], really like to 
+see btrfs deduplication.
 
-Josef 
+-- 
+error compiling committee.c: too many arguments to function
+

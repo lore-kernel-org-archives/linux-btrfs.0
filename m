@@ -1,43 +1,34 @@
-From: "Miguel Sousa Filipe" <miguel.filipe@gmail.com>
-Subject: Re: raid 1 / raid 10
-Date: Thu, 16 Oct 2008 14:48:22 +0100
-Message-ID: <f058a9c30810160648w7e1ff718o582a1c2af2a16b77@mail.gmail.com>
-References: <1df9a2bf0810160112wff9e874x1f949dd704fa1480@mail.gmail.com>
-	 <1224163942.7300.0.camel@telesto>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: crc32c implementation on x86 with SSE4.2... CONFIG_BTRFS_HW_SUM
+Date: Thu, 16 Oct 2008 09:49:04 -0400
+Message-ID: <1224164944.6938.61.camel@think.oraclecorp.com>
+References: <f058a9c30810160640r3a8c8427hc8b35d6881583fb5@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: rektide <rektide@gmail.com>, linux-btrfs@vger.kernel.org
-To: "Eric Anopolsky" <erpo41@gmail.com>
+Content-Type: text/plain
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Miguel Sousa Filipe <miguel.filipe@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1224163942.7300.0.camel@telesto>
+In-Reply-To: <f058a9c30810160640r3a8c8427hc8b35d6881583fb5@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 16, 2008 at 2:32 PM, Eric Anopolsky <erpo41@gmail.com> wrote:
-> On Thu, 2008-10-16 at 04:12 -0400, rektide wrote:
->> Is there any case where the third and fourth disks would be
->> used with -m raid1 -d raid1?
->
-> Perhaps when the first pair of disks fill up? I don't know. I'm new
-> here.
+On Thu, 2008-10-16 at 14:40 +0100, Miguel Sousa Filipe wrote:
+> Hi there,
+> 
+> I noticed that btrfs, in the git tree, has its own implementation of
+> crc32c for x86 with SSE4.2 that implement a crc32 instruction.. it
+> appears.
+> Its protected by a ifdef CONFIG_BTRFS_HW_SUM, and if we're executing
+> on the right cpu, that will bypass the kernel implementation of
+> crc32c.
+> 
 
-I didn't check the code, that would be kind of a "linear append"..
-which is dump....
-I was expecting a raid1 with 4 discs, to have exactly 3 copies of the
-original data, with each disk being a complete mirror.
+The Btrfs support for intel's faster crc32c came from a patch intel
+posted to linux-kernel.  I just hacked it up a bit at the time because I
+didn't want to wait for mainline to include the work.
 
-If we only have 1 copy (plus original), and therefore use only 2 disks
-for any individual write, probably, if we generate enough write load
-to make a couple of disks busy, it will use the second couple of disks
-also.
-Basically, the allocator should be able to balance the write load, and
-spread allocations to all devices.. however.. if the write load is
-insuficient to saturate a single pair of devices, there's no point in
-using the second pair.. it would just make the machine burn more watts
-This is pure speculation...
+I don't see intel's patches in mainline yet, but I know there was a plan
+to get them there.
 
-Best thing is to look at the code. :)
+-chris
 
-Kind regards,
 
--- 
-Miguel Sousa Filipe

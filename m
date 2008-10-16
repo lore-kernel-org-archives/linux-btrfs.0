@@ -1,74 +1,43 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: Eric Anopolsky <erpo41@gmail.com>
 Subject: Re: raid 1 / raid 10
-Date: Thu, 16 Oct 2008 09:27:04 -0400
-Message-ID: <1224163624.6938.55.camel@think.oraclecorp.com>
+Date: Thu, 16 Oct 2008 07:32:22 -0600
+Message-ID: <1224163942.7300.0.camel@telesto>
 References: <1df9a2bf0810160112wff9e874x1f949dd704fa1480@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=-yMNwFDG6k9P9rs1T+zPh"
 Cc: linux-btrfs@vger.kernel.org
 To: rektide <rektide@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1df9a2bf0810160112wff9e874x1f949dd704fa1480@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+
+--=-yMNwFDG6k9P9rs1T+zPh
+Content-Type: text/plain
+Content-Transfer-Encoding: quoted-printable
+
 On Thu, 2008-10-16 at 04:12 -0400, rektide wrote:
-> Hello all,
-> 
-> I recently checked out btrfs and have started putting it through its
-> paces.  I tried a raid10 and then a raid1, as so:
-> 
-> mkfs.btrfs -m raid10 -d raid10 /dev/sda5 /dev/sdb5 /dev/sdc5 /dev/sdd5
-> 
-> and
-> 
-> mkfs.btrfs -m raid1 -d raid1 /dev/sda5 /dev/sdb5 /dev/sdc5 /dev/sdd5
-> 
-> 
-> In both cases after mounting /dev/sda5 /mnt, df -h reported 4 *
-> partition size.  Is df lying, or is replication not happening right
-> now?  
-
-df is lying.  The total bytes in the FS include all 4 drives.  I need to
-fix up the math for the total available space.
-
-> I also noticed that when I copied a file on to /mnt, I had to
-> sync before the available file size was affected.
-
-You mean in df?  The delayed allocation accounting should be taking care
-of that, I'll take a look.
-
->   Also, I did not
-> read or write much, but only the first two disks /dev/sda5 and
-> /dev/sdb5 had their access lights going while I was using -m raid1 and
-> -d raid1.  Is there any case where the third and fourth disks would be
+> Is there any case where the third and fourth disks would be
 > used with -m raid1 -d raid1?
-> 
 
-Yes, it allocates in chunks of about 1GB.  So if you wrote more than
-1GB, the next two drives would have been used.
+Perhaps when the first pair of disks fill up? I don't know. I'm new
+here.
 
-> 
-> I've been writing Copy-On-Write software for a while now and believe
-> strongly that it is "the right way" to do almost all data operations.
-> There are manifest benefits in the filesystem domain for users, and am
-> glad to see such an amazingly slick & easy to use competitor appear on
-> the scene.  I look forward to btrfs becoming disk format stable so I
-> can more wholeheartedly embrace it.
-> 
-> 
-> I spent quite a few hours late last night playing with Linux raid10
-> and ext4; setting stride and stripe sizes.  Tonight I briefly toyed
-> with btrfs and found it to be a far more pleasurable experience, and I
-> got considerably higher performance metrics (using simple bonnie++
-> pleasurements).  My CPU usage is considerably higher, but I find that
-> I dont mind that knowing there is real consistency checking ongoing.
-> 
-> 
-> Thank you all for this great effort.
+Cheers,
+Eric
 
-Thanks for giving things a try and sending along these notes, I'm glad
-it worked well for you.
 
--chris
+--=-yMNwFDG6k9P9rs1T+zPh
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Description: This is a digitally signed message part
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQBI90Jme2L37HVup3ARAinhAJ91hAZgIhFy2H6p/nf2h7z1UfxXsACgrVLn
+lP3bUSrOLesPqmf6pNPr8SE=
+=xUWI
+-----END PGP SIGNATURE-----
+
+--=-yMNwFDG6k9P9rs1T+zPh--
 

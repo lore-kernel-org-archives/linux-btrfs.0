@@ -1,43 +1,37 @@
-From: Eric Anopolsky <erpo41@gmail.com>
-Subject: Re: raid 1 / raid 10
-Date: Thu, 16 Oct 2008 07:32:22 -0600
-Message-ID: <1224163942.7300.0.camel@telesto>
-References: <1df9a2bf0810160112wff9e874x1f949dd704fa1480@mail.gmail.com>
+From: "Miguel Sousa Filipe" <miguel.filipe@gmail.com>
+Subject: crc32c implementation on x86 with SSE4.2... CONFIG_BTRFS_HW_SUM
+Date: Thu, 16 Oct 2008 14:40:27 +0100
+Message-ID: <f058a9c30810160640r3a8c8427hc8b35d6881583fb5@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=-yMNwFDG6k9P9rs1T+zPh"
-Cc: linux-btrfs@vger.kernel.org
-To: rektide <rektide@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1df9a2bf0810160112wff9e874x1f949dd704fa1480@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi there,
 
---=-yMNwFDG6k9P9rs1T+zPh
-Content-Type: text/plain
-Content-Transfer-Encoding: quoted-printable
+I noticed that btrfs, in the git tree, has its own implementation of
+crc32c for x86 with SSE4.2 that implement a crc32 instruction.. it
+appears.
+Its protected by a ifdef CONFIG_BTRFS_HW_SUM, and if we're executing
+on the right cpu, that will bypass the kernel implementation of
+crc32c.
 
-On Thu, 2008-10-16 at 04:12 -0400, rektide wrote:
-> Is there any case where the third and fourth disks would be
-> used with -m raid1 -d raid1?
+please see: http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=blob_plain;f=fs/btrfs/crc32c.h;hb=HEAD
 
-Perhaps when the first pair of disks fill up? I don't know. I'm new
-here.
+Based on this understanding, should this be a implementation detail of
+crc32c, and be correctly implemented (and therefore patched) in the
+mainline kernel implementation of crc32c ?
 
-Cheers,
-Eric
+I know that checksumming is cpu expensive, and btrfs wants the best
+impl. possible. but that shouldn't be a btrfs issue, that should be
+crc32c issue, and its the crc32c implementation that should be fixed,
+instead of having our own special crc32c in case we're executing in
+the right cpu.
 
+Should I post a patch with this for the vanilla crc32c implementation?
 
---=-yMNwFDG6k9P9rs1T+zPh
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Description: This is a digitally signed message part
+kind regards,
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQBI90Jme2L37HVup3ARAinhAJ91hAZgIhFy2H6p/nf2h7z1UfxXsACgrVLn
-lP3bUSrOLesPqmf6pNPr8SE=
-=xUWI
------END PGP SIGNATURE-----
-
---=-yMNwFDG6k9P9rs1T+zPh--
-
+-- 
+Miguel Sousa Filipe

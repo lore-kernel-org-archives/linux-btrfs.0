@@ -1,34 +1,35 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: crc32c implementation on x86 with SSE4.2... CONFIG_BTRFS_HW_SUM
-Date: Thu, 16 Oct 2008 09:49:04 -0400
-Message-ID: <1224164944.6938.61.camel@think.oraclecorp.com>
-References: <f058a9c30810160640r3a8c8427hc8b35d6881583fb5@mail.gmail.com>
+From: Valerie Aurora Henson <vaurora@redhat.com>
+Subject: Re: Data-deduplication?
+Date: Thu, 16 Oct 2008 15:25:01 -0400
+Message-ID: <20081016192501.GE16946@shell>
+References: <20081012020629.GA14615@bludgeon.org> <1223895734.7032.1.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Miguel Sousa Filipe <miguel.filipe@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Ray Van Dolson <rayvd@bludgeon.org>, linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <f058a9c30810160640r3a8c8427hc8b35d6881583fb5@mail.gmail.com>
+In-Reply-To: <1223895734.7032.1.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2008-10-16 at 14:40 +0100, Miguel Sousa Filipe wrote:
-> Hi there,
+On Mon, Oct 13, 2008 at 07:02:14AM -0400, Chris Mason wrote:
+> On Sat, 2008-10-11 at 19:06 -0700, Ray Van Dolson wrote:
+> > I recall their being a thread here a number of months back regarding
+> > data-deduplication support for bttfs.
+> > 
+> > Did anyone end up picking that up and giving a go at it?  Block level
+> > data dedup would be *awesome* in a Linux filesystem.  It does wonders
+> > for storing virtual machines w/ NetApp and WAFL, and even ZFS doesn't
+> > have this feature yet (although I've read discussions on them looking
+> > to add it).
+> > 
 > 
-> I noticed that btrfs, in the git tree, has its own implementation of
-> crc32c for x86 with SSE4.2 that implement a crc32 instruction.. it
-> appears.
-> Its protected by a ifdef CONFIG_BTRFS_HW_SUM, and if we're executing
-> on the right cpu, that will bypass the kernel implementation of
-> crc32c.
-> 
+> So far nobody has grabbed this one, but I've had more requests (no
+> shocker there, the kvm people are interested in it too).  It probably
+> won't make 1.0 but the disk format will be able to support it.
 
-The Btrfs support for intel's faster crc32c came from a patch intel
-posted to linux-kernel.  I just hacked it up a bit at the time because I
-didn't want to wait for mainline to include the work.
+Both deduplication and compression have an interesting side effect in
+which a write to a previously "allocated" block can return ENOSPC.
+This is even more exciting when you factor in mmap.  Any thoughts on
+how to handle this?
 
-I don't see intel's patches in mainline yet, but I know there was a plan
-to get them there.
-
--chris
-
-
+-VAL

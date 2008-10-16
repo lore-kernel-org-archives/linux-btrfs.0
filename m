@@ -1,37 +1,43 @@
 From: "Miguel Sousa Filipe" <miguel.filipe@gmail.com>
-Subject: crc32c implementation on x86 with SSE4.2... CONFIG_BTRFS_HW_SUM
-Date: Thu, 16 Oct 2008 14:40:27 +0100
-Message-ID: <f058a9c30810160640r3a8c8427hc8b35d6881583fb5@mail.gmail.com>
+Subject: Re: raid 1 / raid 10
+Date: Thu, 16 Oct 2008 14:48:22 +0100
+Message-ID: <f058a9c30810160648w7e1ff718o582a1c2af2a16b77@mail.gmail.com>
+References: <1df9a2bf0810160112wff9e874x1f949dd704fa1480@mail.gmail.com>
+	 <1224163942.7300.0.camel@telesto>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: rektide <rektide@gmail.com>, linux-btrfs@vger.kernel.org
+To: "Eric Anopolsky" <erpo41@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1224163942.7300.0.camel@telesto>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi there,
+On Thu, Oct 16, 2008 at 2:32 PM, Eric Anopolsky <erpo41@gmail.com> wrote:
+> On Thu, 2008-10-16 at 04:12 -0400, rektide wrote:
+>> Is there any case where the third and fourth disks would be
+>> used with -m raid1 -d raid1?
+>
+> Perhaps when the first pair of disks fill up? I don't know. I'm new
+> here.
 
-I noticed that btrfs, in the git tree, has its own implementation of
-crc32c for x86 with SSE4.2 that implement a crc32 instruction.. it
-appears.
-Its protected by a ifdef CONFIG_BTRFS_HW_SUM, and if we're executing
-on the right cpu, that will bypass the kernel implementation of
-crc32c.
+I didn't check the code, that would be kind of a "linear append"..
+which is dump....
+I was expecting a raid1 with 4 discs, to have exactly 3 copies of the
+original data, with each disk being a complete mirror.
 
-please see: http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=blob_plain;f=fs/btrfs/crc32c.h;hb=HEAD
+If we only have 1 copy (plus original), and therefore use only 2 disks
+for any individual write, probably, if we generate enough write load
+to make a couple of disks busy, it will use the second couple of disks
+also.
+Basically, the allocator should be able to balance the write load, and
+spread allocations to all devices.. however.. if the write load is
+insuficient to saturate a single pair of devices, there's no point in
+using the second pair.. it would just make the machine burn more watts
+This is pure speculation...
 
-Based on this understanding, should this be a implementation detail of
-crc32c, and be correctly implemented (and therefore patched) in the
-mainline kernel implementation of crc32c ?
+Best thing is to look at the code. :)
 
-I know that checksumming is cpu expensive, and btrfs wants the best
-impl. possible. but that shouldn't be a btrfs issue, that should be
-crc32c issue, and its the crc32c implementation that should be fixed,
-instead of having our own special crc32c in case we're executing in
-the right cpu.
-
-Should I post a patch with this for the vanilla crc32c implementation?
-
-kind regards,
+Kind regards,
 
 -- 
 Miguel Sousa Filipe

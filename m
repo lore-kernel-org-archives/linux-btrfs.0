@@ -1,38 +1,38 @@
-From: Ric Wheeler <rwheeler@redhat.com>
-Subject: Re: Some very basic questions
-Date: Tue, 21 Oct 2008 18:18:37 -0400
-Message-ID: <48FE553D.80501@redhat.com>
-References: <20081021132322.271ad728.skraw@ithnet.com>	 <1224597580.27474.93.camel@think.oraclecorp.com> <1224622451.7412.1.camel@telesto>
+From: Steven Pratt <slpratt@austin.ibm.com>
+Subject: BTRFS Performance page
+Date: Tue, 21 Oct 2008 17:20:03 -0500
+Message-ID: <48FE5593.2080209@austin.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Stephan von Krawczynski <skraw@ithnet.com>,
-	linux-btrfs@vger.kernel.org
-To: Eric Anopolsky <erpo41@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1224622451.7412.1.camel@telesto>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Eric Anopolsky wrote:
-> On Tue, 2008-10-21 at 09:59 -0400, Chris Mason wrote:
->   
->>>     - power loss at any time must not corrupt the fs (atomic fs modification)
->>>       (new-data loss is acceptable)
->>>       
->> Done.  Btrfs already uses barriers as required for sata drives.
->>     
->
-> Aren't there situations in which write barriers don't do what they're
-> supposed to do?
->
-> Cheers,
-> Eric
->
->   
-If the drive effectively "lies" to you about flushing the write cache, 
-you might have an issue. I have not seen that first hand with recent 
-disk drives (and I have seen a lot :-))
+As discussed on the BTRFS conference call, myself and Kevin Corry have 
+set up some test machines for the purpose of doing performance testing 
+on BTRFS.  The intent is to have a semi permanent setup that we can use 
+to test new features and code drops in BTRFS as well as to do 
+comparisons to other file systems.  The systems are pretty much fully 
+automated for execution, so we should be able to crank out large numbers 
+of different benchmarks as well as keep up with GIT changes.
 
-Ric
+The data is hosted at http://btrfs.boxacle.net/. So far we have the data 
+for the single disk tests uploaded. We should be able to upload results 
+from the larger RAID config tomorrow.
+
+Initial tests were done with the FFSB benchmark and we picked 5 common 
+workloads; create, random and sequential read, random write, and a mail 
+server emulation.  We plan to expand this based on feedback to include 
+more FFSB tests and/or other workloads.
+
+All runs have complete analysis data with them (iostat, mpstat, 
+oprofile, sar), as well as the FFSB profiles that can be used to 
+recreate any test we ran. We also have collected blktrace data but not 
+uploaded due to size.
+
+Please follow the results link on the bottom of the main page to get to 
+the current results.  Let me know what you like or don't like.   I will 
+post again when we get the RAID data uploaded.
 
 
+Steve

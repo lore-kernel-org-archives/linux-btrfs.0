@@ -1,36 +1,42 @@
-From: Andi Kleen <andi@firstfloor.org>
+From: jim owens <jowens@hp.com>
 Subject: Re: Some very basic questions
-Date: Tue, 21 Oct 2008 14:13:33 +0200
-Message-ID: <87vdvmdu36.fsf@basil.nowhere.org>
+Date: Tue, 21 Oct 2008 09:20:16 -0400
+Message-ID: <48FDD710.5050702@hp.com>
 References: <20081021132322.271ad728.skraw@ithnet.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Cc: linux-btrfs@vger.kernel.org
 To: Stephan von Krawczynski <skraw@ithnet.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20081021132322.271ad728.skraw@ithnet.com> (Stephan von Krawczynski's message of "Tue, 21 Oct 2008 13:23:22 +0200")
+In-Reply-To: <20081021132322.271ad728.skraw@ithnet.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Stephan von Krawczynski <skraw@ithnet.com> writes:
+btrfs has many of the same goals... but they are goals not code
+so when you might see them is indeterminate.
 
-> reading the list for a while it looks like all kinds of implementational
-> topics are covered but no basic user requests or talks are going on. Since I
-> have found no other list on vger covering these issues I choose this one,
-> forgive my ignorance if it is the wrong place.
-> Like many people on the planet we try to handle quite some amounts of data
-> (TBs) and try to solve this with several linux-based fileservers.
-> Years of (mostly bad) experience led us to the following minimum requirements
-> for a new fs on our servers:
+I believe these should not be in btrfs:
 
-If that are the minimum requirements, what are the maximum ones?
+Stephan von Krawczynski wrote:
 
-Also you realize that some of the requirements (like parallel read/write
-aka a full cluster file system) are extremly hard?
+>     - parallel mounts (very important!)
 
-Perhaps it would make more sense if you extracted the top 10 items
-and ranked them by importance and posted again.
+as Andi said, you want a cluster or distributed fs.  There
+are layered designs (CRFS or network filesystems) that can do
+the job and trying to do it in btrfs causes too many problems.
 
--Andi
+>     - journaling
 
--- 
-ak@linux.intel.com
+I assume you *do not* mean metadata journaling, you mean
+sending all file updates to a single output stream (as in one
+disk, tape, or network link).  I've done that, but would not
+recommend it in btrfs because it limits the total fs bandwidth
+to what the single stream can support.  This is normally done
+today by applications like databases, not in the filesystem.
+
+>     - map out dead blocks
+
+Useless... a waste of time, code, and metadata structures.
+With current device technology, any device reporting bad blocks
+the device can not map out is about to die and needs replaced!
+
+jim

@@ -1,136 +1,76 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: Stephan von Krawczynski <skraw@ithnet.com>
 Subject: Re: Some very basic questions
-Date: Tue, 21 Oct 2008 09:59:40 -0400
-Message-ID: <1224597580.27474.93.camel@think.oraclecorp.com>
+Date: Tue, 21 Oct 2008 16:22:49 +0200
+Message-ID: <20081021162249.30a25bcb.skraw@ithnet.com>
 References: <20081021132322.271ad728.skraw@ithnet.com>
+	<87vdvmdu36.fsf@basil.nowhere.org>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=US-ASCII
 Cc: linux-btrfs@vger.kernel.org
-To: Stephan von Krawczynski <skraw@ithnet.com>
+To: Andi Kleen <andi@firstfloor.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20081021132322.271ad728.skraw@ithnet.com>
+In-Reply-To: <87vdvmdu36.fsf@basil.nowhere.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2008-10-21 at 13:23 +0200, Stephan von Krawczynski wrote:
-> Hello all,
+On Tue, 21 Oct 2008 14:13:33 +0200
+Andi Kleen <andi@firstfloor.org> wrote:
+
+> Stephan von Krawczynski <skraw@ithnet.com> writes:
 > 
-> reading the list for a while it looks like all kinds of implementational
-> topics are covered but no basic user requests or talks are going on. Since I
-> have found no other list on vger covering these issues I choose this one,
-> forgive my ignorance if it is the wrong place.
-> Like many people on the planet we try to handle quite some amounts of data
-> (TBs) and try to solve this with several linux-based fileservers.
-> Years of (mostly bad) experience led us to the following minimum requirements
-> for a new fs on our servers:
+> > reading the list for a while it looks like all kinds of implementational
+> > topics are covered but no basic user requests or talks are going on. Since I
+> > have found no other list on vger covering these issues I choose this one,
+> > forgive my ignorance if it is the wrong place.
+> > Like many people on the planet we try to handle quite some amounts of data
+> > (TBs) and try to solve this with several linux-based fileservers.
+> > Years of (mostly bad) experience led us to the following minimum requirements
+> > for a new fs on our servers:
 > 
-
-Thanks for this input and for taking the time to post it.
-
-> 1. filesystem-check
-> 1.1 it should not
->     - delay boot process (we have to wait for hours currently)
->     - prevent mount in case of errors
->     - be a part of the mount process at all
->     - always check the whole fs
-
-For this, you have to define filesystem-check very carefully.  In
-reality, corruptions can prevent mounting.  We can try very very hard to
-limit the class of corruptions that prevent mounting, and use
-duplication and replication to create configurations that address the
-remaining cases.
-
-In general, we'll be able to make things much better than they are
-today.
-
-> 1.2 it should be able 
->     - to always be started interactively by user
->     - to check parts/subtrees of the fs
->     - to run purely informational (reporting, non-modifying)
->     - to run on a mounted fs
-
-Started interactively?  I'm not entirely sure what that means, but in
-general when you ask the user a question about if/how to fix a
-corruption, they will have no idea what the correct answer is.
-
-> 2. general requirements
->     - fs errors without file/dir names are useless
->     - errors in parts of the fs are no reason for a fs to go offline as a whole
-
-These two are in progress.  Btrfs won't always be able to give a file
-and directory name, but it will be able to give something that can be
-turned into a file or directory name.  You don't want important
-diagnostic messages delayed by name lookup.
-
->     - mounting must not delay the system startup significantly
-
-Mounts are fast
-
->     - resizing during runtime (up and down)
-
-Resize is done
-
->     - parallel mounts (very important!)
->       (two or more hosts mount the same fs concurrently for reading and
->       writing)
-
-As Jim and Andi have said, parallel mounts are not in the feature list
-for Btrfs.  Network filesystems will provide these features.
-
->     - journaling
-
-Btrfs doesn't journal.  The tree logging code is close, it provides
-optimized fsync and O_SYNC operations.  The same basic structures could
-be used for remote replication.
-
->     - versioning (file and dir)
-
->From a data structure point of view, version control is fairly easy.
->From a user interface and policy point of view, it gets difficult very
-quickly.  Aside from snapshotting, version control is outside the scope
-of btrfs.
-
-There are lots of good version control systems available, I'd suggest
-you use them instead.
-
->     - undelete (file and dir)
-
-Undelete is easy but I think best done at a layer above the FS.
-
->     - snapshots
-
-Done
-
->     - run into hd errors more than once for the same file (as an option)
-
-Sorry, I'm not sure what you mean here.
-
->     - map out dead blocks
->       (and of course display of the currently mapped out list)
-
-I agree with Jim on this one.  Drives remap dead sectors, and when they
-stop remapping them, the drive should be replaced.
-
->     - no size limitations (more or less)
->     - performant handling of large numbers of files inside single dirs
->       (to check that use > 100.000 files in a dir, understand that it is
->       no good idea to spread inode-blocks over the whole hd because of seek
->       times)
-
-Everyone has different ideas on "large" numbers of files inside a single
-dir.  The directory indexing done by btrfs can easily handle 100,000
-
->     - power loss at any time must not corrupt the fs (atomic fs modification)
->       (new-data loss is acceptable)
-
-Done.  Btrfs already uses barriers as required for sata drives.
-
+> If that are the minimum requirements, what are the maximum ones?
 > 
-> Remember, this is not meant to be a request for features, it is a list that
-> built up over 10 years of handling data and the failures we experienced. To
-> our knowledge no fs meets this list, but hey, is that a reason for not talking
-> about it? Our goal is pretty simple: maximize fs uptime.
-> How does btrfs match?
+> Also you realize that some of the requirements (like parallel read/write
+> aka a full cluster file system) are extremly hard?
+> 
+> Perhaps it would make more sense if you extracted the top 10 items
+> and ranked them by importance and posted again.
 
--chris
+Hello Andi,
 
+thanks for your feedback. Understand "minimum requirement" as "minimum
+requirement to drop the current installation and migrate the data to a
+new fs platform".
+Of course you are right, dealing with multiple/parallel mounts can be quite a
+nasty job if the fs was not originally planned with this feature in mind.
+On the other hand I cannot really imagine how to deal with TBs of data in the
+future without such a feature.
+If you look at the big picture the things I mentioned allow you to have
+redundant front-ends for the fileservice doing the same or completely
+different applications. You can use one mount (host) for tape backup purposes
+only without heavy loss in standard file service. You can even mount for
+filesystem check purposes, a box that does nothing else but check the
+structure and keep you informed what is really going on with your data - and
+your data is still in production in the meantime.
+Whatever happens you have a real chance of keeping your file service up, even
+if parts of your fs go nuts because some underlying hd got partially damaged.
+Keeping it up and running is the most important part, performance is only
+second on the list.
+If you take a close look there are not really 10 different items on my list,
+depending on the level of abstraction you prefer, nevertheless:
+
+1) parallel mounts
+2) mounting must not delay the system startup significantly
+3) errors in parts of the fs are no reason for a fs to go offline as a whole
+4) power loss at any time must not corrupt the fs
+5) fsck on a mounted fs, interactively, not part of the mount (all fsck
+features)
+6) journaling
+7) undelete (file and dir)
+8) resizing during runtime (up and down)
+9) snapshots
+10) performant handling of large numbers of files inside single dirs
+
+
+-- 
+Regards,
+Stephan
 

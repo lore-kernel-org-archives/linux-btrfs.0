@@ -1,7 +1,7 @@
 From: Ric Wheeler <rwheeler@redhat.com>
 Subject: Re: Some very basic questions
-Date: Wed, 22 Oct 2008 08:57:29 -0400
-Message-ID: <48FF2339.9080106@redhat.com>
+Date: Wed, 22 Oct 2008 08:57:39 -0400
+Message-ID: <48FF2343.3070107@redhat.com>
 References: <20081021132322.271ad728.skraw@ithnet.com>	 <1224597580.27474.93.camel@think.oraclecorp.com>	 <1224622451.7412.1.camel@telesto>  <48FE553D.80501@redhat.com> <1224642544.7189.17.camel@telesto> <48FF038A.4010105@redhat.com> <48FF0625.6040400@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed

@@ -1,52 +1,67 @@
-From: Stephan von Krawczynski <skraw@ithnet.com>
-Subject: Re: Some very basic questions
-Date: Wed, 22 Oct 2008 15:52:21 +0200
-Message-ID: <20081022155221.e147a36b.skraw@ithnet.com>
-References: <20081021132322.271ad728.skraw@ithnet.com>
-	<48FDD710.5050702@hp.com>
-	<20081021190136.89b2c6af.skraw@ithnet.com>
-	<20081021171513.GA8799@infradead.org>
-	<48FE11F9.7040700@gmail.com>
-	<20081022142759.ac33a16c.skraw@ithnet.com>
-	<1224681345.6448.4.camel@think.oraclecorp.com>
+From: Steven Pratt <slpratt@austin.ibm.com>
+Subject: Re: BTRFS Performance page
+Date: Wed, 22 Oct 2008 08:53:54 -0500
+Message-ID: <48FF3072.7050404@austin.ibm.com>
+References: <48FE5593.2080209@austin.ibm.com> <20081022001437.GA23949@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: Ric Wheeler <ricwheeler@gmail.com>,
-	Christoph Hellwig <hch@infradead.org>,
-	jim owens <jowens@hp.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-btrfs@vger.kernel.org
 To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1224681345.6448.4.camel@think.oraclecorp.com>
+In-Reply-To: <20081022001437.GA23949@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 22 Oct 2008 09:15:45 -0400
-Chris Mason <chris.mason@oracle.com> wrote:
+Chris Mason wrote:
+> On Tue, Oct 21, 2008 at 05:20:03PM -0500, Steven Pratt wrote:
+>   
+>> As discussed on the BTRFS conference call, myself and Kevin Corry have  
+>> set up some test machines for the purpose of doing performance testing  
+>> on BTRFS.  The intent is to have a semi permanent setup that we can use  
+>> to test new features and code drops in BTRFS as well as to do  
+>> comparisons to other file systems.  The systems are pretty much fully  
+>> automated for execution, so we should be able to crank out large numbers  
+>> of different benchmarks as well as keep up with GIT changes.
+>>
+>> The data is hosted at http://btrfs.boxacle.net/. So far we have the data  
+>> for the single disk tests uploaded. We should be able to upload results  
+>> from the larger RAID config tomorrow.
+>>
+>> Initial tests were done with the FFSB benchmark and we picked 5 common  
+>> workloads; create, random and sequential read, random write, and a mail  
+>> server emulation.  We plan to expand this based on feedback to include  
+>> more FFSB tests and/or other workloads.
+>>
+>> All runs have complete analysis data with them (iostat, mpstat,  
+>> oprofile, sar), as well as the FFSB profiles that can be used to  
+>> recreate any test we ran. We also have collected blktrace data but not  
+>> uploaded due to size.
+>>
+>> Please follow the results link on the bottom of the main page to get to  
+>> the current results.  Let me know what you like or don't like.   I will  
+>> post again when we get the RAID data uploaded.
+>>     
+>
+> Very interesting data, thank you for posting this.  The first comment
+> I'll make is that -o nodatacow requires -o nodatasum.  The sums aren't
+> valid without the cow.
+>   
+Thought that might be the case.  Ok, we will drop this variation.
 
-> On Wed, 2008-10-22 at 14:27 +0200, Stephan von Krawczynski wrote:
-> > On Tue, 21 Oct 2008 13:31:37 -0400
-> > Ric Wheeler <ricwheeler@gmail.com> wrote:
-> > 
-> > > [...]
-> > > If you have remapped a big chunk of the sectors (say more than 10%), you 
-> > > should grab the data off the disk asap and replace it. Worry less about 
-> > > errors during read, writes indicate more serious errors.
-> > 
-> > Ok, now for the bad news: money is invented.
-> > If you replace a disk before real failure you won't get replacement from the
-> > manufacturer. That may sound irrelevant to someone handling 5 disks, but is
-> > significant if handling 500 or more. The replacement rate is indeed much
-> > higher than people think from their home pcs.
-> 
-> Hardware vendors already do replace disks based on policies defined by
-> their own array hardware.  These are already predictive.
+> The FFSB mail server workload, does it do fsync writes?
+>   
+No, but we have the ability to add that if we choose.
 
-Lets agree that the market for drives, arrays and related stuff is big and
-contains just about any example one needs for arguing :-)
-Nevertheless we probably agree that if john doe meets big-player and tries to
-warranty-replace a non-dead drive he will have troubles.
+> For the sequential read workload, I'm guessing (hoping) the files are
+> created in parallel?
+>   
+Sorry, setup is still single threaded.
+
+Steve
 
 > -chris
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>   
 
--- 
-Regards,
-Stephan

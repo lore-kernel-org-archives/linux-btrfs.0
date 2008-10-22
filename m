@@ -1,87 +1,203 @@
-From: Ric Wheeler <rwheeler@redhat.com>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: Some very basic questions
-Date: Wed, 22 Oct 2008 09:38:56 -0400
-Message-ID: <48FF2CF0.60708@redhat.com>
-References: <20081021132322.271ad728.skraw@ithnet.com>	 <1224597580.27474.93.camel@think.oraclecorp.com>	 <1224622451.7412.1.camel@telesto> <48FE553D.80501@redhat.com>	 <1224642544.7189.17.camel@telesto> <48FF038A.4010105@redhat.com>	 <48FF0625.6040400@kernel.org> <48FF2343.3070107@redhat.com>	 <48FF276B.6090602@kernel.org> <1224681593.6448.7.camel@think.oraclecorp.com>
+Date: Wed, 22 Oct 2008 09:50:33 -0400
+Message-ID: <1224683433.6448.36.camel@think.oraclecorp.com>
+References: <20081021132322.271ad728.skraw@ithnet.com>
+	 <1224597580.27474.93.camel@think.oraclecorp.com>
+	 <20081021182710.a12f4914.skraw@ithnet.com>
+	 <1224611383.27474.140.camel@think.oraclecorp.com>
+	 <20081022141906.f6529c6d.skraw@ithnet.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Tejun Heo <tj@kernel.org>, Eric Anopolsky <erpo41@gmail.com>,
-	Stephan von Krawczynski <skraw@ithnet.com>,
-	linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain
+Cc: linux-btrfs@vger.kernel.org
+To: Stephan von Krawczynski <skraw@ithnet.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1224681593.6448.7.camel@think.oraclecorp.com>
+In-Reply-To: <20081022141906.f6529c6d.skraw@ithnet.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote:
-> On Wed, 2008-10-22 at 22:15 +0900, Tejun Heo wrote:
->   
->> Ric Wheeler wrote:
->>     
->>> I think that we do handle a failure in the case that you outline above
->>> since the FS will be able to notice the error before it sends a commit
->>> down (and that commit is wrapped in the barrier flush calls). This is
->>> the easy case since we still have the context for the IO.
->>>       
->> I'm no FS guy but for that to be true FS should be waiting for all the
->> outstanding IOs to finish before issuing a barrier and actually
->> doesn't need barriers at all - it can do the same with flush_cache.
->>
->>     
->
-> We wait and then barrier.  If the barrier returned status that a
-> previously ack'd IO had actually failed, we could do something to make
-> sure the FS was consistent.
->
-> -chris
->
->
->   
-As I mentioned in a reply to Tejun, I am not sure that we can count on 
-the barrier op giving us status for IO's that failed to destage cleanly.
+On Wed, 2008-10-22 at 14:19 +0200, Stephan von Krawczynski wrote:
+> On Tue, 21 Oct 2008 13:49:43 -0400
+> Chris Mason <chris.mason@oracle.com> wrote:
+> 
+> > On Tue, 2008-10-21 at 18:27 +0200, Stephan von Krawczynski wrote:
+> > 
+> > > > > 2. general requirements
+> > > > >     - fs errors without file/dir names are useless
+> > > > >     - errors in parts of the fs are no reason for a fs to go offline as a whole
+> > > > 
+> > > > These two are in progress.  Btrfs won't always be able to give a file
+> > > > and directory name, but it will be able to give something that can be
+> > > > turned into a file or directory name.  You don't want important
+> > > > diagnostic messages delayed by name lookup.
+> > > 
+> > > That's a point I really never understood. Why is it non-trivial for a fs to
+> > > know what file or dir (name) it is currently working on?
+> > 
+> > The name lives in block A, but you might find a corruption while
+> > processing block B.  Block A might not be in ram anymore, or it might be
+> > in ram but locked by another process.
+> > 
+> > On top of all of that, when we print errors it's because things haven't
+> > gone well.  They are deep inside of various parts of the filesystem, and
+> > we might not be able to take the required locks or read from the disk in
+> > order to find the name of the thing we're operating on.
+> 
+> Ok, this is interesting. In another thread I was told parallel mounts are
+> really complex and you cannot do good things in such an environment that you
+> can do with single mount. Well, then, why don't we do it? All boxes I know
+> have tons of RAM, but fs finds no place in RAM to put large parts (if not all)
+> of the structural fs data including filenames?
 
-Waiting and then doing the FLUSH seems to give us the best coverage for 
-normal failures (and your own testing shows that it is hugely effective 
-in reducing some types of corruption at least :-)).
+I'm afraid it just isn't practical to keep all of the metadata in ram
+all of the time.
 
-If you look at the types of common drive failures, I would break them 
-into two big groups. 
+>  Besides the simple fact that
+> RAM is always faster than any known disk be it rotating or not, and that RAM
+> is just there, whats the word for not doing it?
+> 
 
-The first group would be transient errors - i.e., this IO fails (usually 
-a read), but a subsequent IO will succeed with or without a sector 
-remapping happening.  Causes might be:
+People expect the OS to use the expensive ram for the data they use most
+often.
 
-    (1) just a bad read due to dirt on the surface of the drive - the 
-read will always fail, a write might clean the surface and restore it to 
-useful life.
-    (2) vibrations (dropping your laptop, rolling a big machine down the 
-data center, passing trains :-))
-    (3) adjacent sector writes - hot spotting on drives can degrade the 
-data on adjacent tracks. This causes IO errors on reads for data that 
-was successfully written before, but the track itself is still perfectly 
-fine.
+> > > > >     - parallel mounts (very important!)
+> > > > >       (two or more hosts mount the same fs concurrently for reading and
+> > > > >       writing)
+> > > > 
+> > > > As Jim and Andi have said, parallel mounts are not in the feature list
+> > > > for Btrfs.  Network filesystems will provide these features.
+> > > 
+> > > Can you explain what "network filesystems" stands for in this statement,
+> > > please name two or three examples.
+> > > 
+> > NFS (done) CRFS (under development), maybe ceph as well which is also
+> > under development.
+> 
+> NFS is a good example for a fs that never got redesigned for modern world. I
+> hope it will, but currently it's like Model T on a highway.
+> You have a NFS server with clients. Your NFS server dies, your backup server
+> cannot take over the clients without them resetting their NFS-link (which
+> means reboot to many applications) - no way.
+> Besides that you still need another fs below NFS to bring your data onto some
+> medium, which means you still have the problem how to create redundancy in
+> your server architecture.
+> 
 
-All of these first types of errors need robust error handling on IO 
-errors (i.e., quickly fail, check for IO errors and isolate the impact 
-of the error as best as we can) but do not indicate a bad drive.
+As someone else replied, NFS is stateless, and they have made a large
+number of design tradeoffs to stay that way.  So, your example above
+isn't quite fair, it is one of the things the NFS protocol can handle
+well.
 
-The second group would be persistent failures - no matter what you do to 
-the drive, it is going to kick the bucket! Common causes might be:
+With that said, CRFS is a network filesystem designed explicitly for
+btrfs, and I have high hopes for it.
 
-    (1) a few bad sectors (1-5% of the drive's remapped sector table for 
-example).
-    (2) a bad disk head - this is a very common failure, you will see a 
-large amount of bad sectors.
-    (3) bad components (say bad memory chips in the write cache) can 
-produce consistent errors
-    (4) failure to spin up (total drive failure).
+> > > > >     - versioning (file and dir)
+> > > > 
+> > > > >From a data structure point of view, version control is fairly easy.
+> > > > >From a user interface and policy point of view, it gets difficult very
+> > > > quickly.  Aside from snapshotting, version control is outside the scope
+> > > > of btrfs.
+> > > > 
+> > > > There are lots of good version control systems available, I'd suggest
+> > > > you use them instead.
+> > > 
+> > > To me versioning sounds like a not-so-easy-to-implement feature. Nevertheless
+> > > I trust your experience. If a basic implementation is possible and not too
+> > > complex, why deny a feature? 
+> > > 
+> > 
+> > In general I think snapshotting solves enough of the problem for most of
+> > the people most of the time.  I'd love for Btrfs to be the perfect FS,
+> > but I'm afraid everyone has a different definition of perfect.
+> > 
+> > Storing multiple versions of something is pretty easy.  Making a usable
+> > interface around those versions is the hard part, especially because you
+> > need groups of files to be versioned together in atomic groups
+> > (something that looks a lot like a snapshot).
+> > 
+> > Versioning is solved in userspace.  We would never be able to implement
+> > everything that git or mercurial can do inside the filesystem.
+> 
+> Well, quite often the question is not about whole trees of data to be
+> versioned. Even single (few) files or dirs can be of interest. And you want
+> people to set up a complete user space monster to version three openoffice
+> documents (only a rather flawed example of course)? 
+> Lots of people need a basic solution, not the groundbreaking answer to all
+> questions.
+> 
+One of the things that makes FS design so difficult is that people try
+to solve lots of problems with filesystems.  Every feature we include is
+a mixture of disk format, policy and userland interface that must be
+tested in combination with all of the other features, and maintained
+pretty much forever.
 
-The challenging part is to figure out as best as we can how to 
-differentiate the causes of IO failures or checksum failures and to 
-respond correctly.  Array vendors spend a lot of time pulling out hair 
-trying to do predictive drive failure, but it is really, really hard to 
-get correct...
+A big part of my job is to find the features that are sufficient to
+justify the expense of starting from scratch, and to get things finished
+within a reasonable amount of time.
 
-ric
+Btrfs already has an ioctl to create a COW copy of a file (see the bcp
+command in btrfs-progs).  This is enough for applications to do their
+own single file versioning.
+
+I understand this isn't the automatic system you would like for the use
+case above, but I have to draw the line somewhere in terms of providing
+the tools needed to implement features vs including all the features in
+the FS.
+
+A big part of why Btrfs is gaining ground today is that we're focusing
+on finishing the features we have instead of adding the kitchen sink.
+It is very hard to say no to interested users, but it's a reality of
+actually bringing the software to market.
+
+> > > If your hd is going dead you often find out that touching broken files takes
+> > > ages. If the fs finds out a file is corrupt because the device has errors it
+> > > could just flag the file as broken and not re-read the same error a thousand
+> > > times more. Obviously you want that as an option, because there can be good
+> > > reasons for re-reading dead files...
+> > 
+> > I really agree that we want to avoid beating on a dead drive.
+> > 
+> > Btrfs will record some error information about the drive so it can
+> > decide what to do with failures.  But, remembering that sector #12345768
+> > is bad doesn't help much.  When the drive returned the IO error it
+> > remapped the sector and the next write will probably succeed.
+> 
+> Problem with probability is that software is pretty bad in judging. That's why
+> my proposal was, lets do it and make it configurable for an admin that has a
+> better idea of the current probability.
+> 
+
+Let me reword my answer ;).  The next write will always succeed unless
+the drive is out of remapping sectors.  If the drive is out, it is only
+good for reads and holding down paper on your desk.
+
+This means we'll want to do a raid rebuild, which won't use that drive
+unless something horrible has gone wrong.
+
+> > > > >     - map out dead blocks
+> > > > >       (and of course display of the currently mapped out list)
+> > > > 
+> > > > I agree with Jim on this one.  Drives remap dead sectors, and when they
+> > > > stop remapping them, the drive should be replaced.
+> > > 
+> > > If your life depends on it, would you use one rope or two to secure yourself?
+> > > 
+> > 
+> > Btrfs will keep the dead drive around as a fallback for sectors that
+> > fail on the other mirrors when data is being rebuilt.  Beyond that,
+> > we'll expect you to toss the bad drive once the rebuild has finished.
+> > 
+> > There's an interesting paper about how netapp puts the drive into rehab
+> > and is able to avoid service calls by rewriting the bad sectors and
+> > checking them over.  That's a little ways off for Btrfs.
+> 
+> It will become more interesting what remapping means in a world full of
+> flash-disks. Does it mean a disk must be replaced when some or even lots of
+> sectors are dead? 
+
+Yes the disk must be replaced.  Our job here is not to provide people
+with hope they can get to some of the data some of the time.  Our job is
+to tell them a given component is bad and to have it replaced.
+
+-chris
 
 

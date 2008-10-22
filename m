@@ -1,41 +1,45 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: Tejun Heo <tj@kernel.org>
 Subject: Re: Some very basic questions
-Date: Wed, 22 Oct 2008 09:15:45 -0400
-Message-ID: <1224681345.6448.4.camel@think.oraclecorp.com>
-References: <20081021132322.271ad728.skraw@ithnet.com>
-	 <48FDD710.5050702@hp.com> <20081021190136.89b2c6af.skraw@ithnet.com>
-	 <20081021171513.GA8799@infradead.org> <48FE11F9.7040700@gmail.com>
-	 <20081022142759.ac33a16c.skraw@ithnet.com>
+Date: Wed, 22 Oct 2008 22:15:23 +0900
+Message-ID: <48FF276B.6090602@kernel.org>
+References: <20081021132322.271ad728.skraw@ithnet.com>	 <1224597580.27474.93.camel@think.oraclecorp.com>	 <1224622451.7412.1.camel@telesto>  <48FE553D.80501@redhat.com> <1224642544.7189.17.camel@telesto> <48FF038A.4010105@redhat.com> <48FF0625.6040400@kernel.org> <48FF2343.3070107@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Ric Wheeler <ricwheeler@gmail.com>,
-	Christoph Hellwig <hch@infradead.org>,
-	jim owens <jowens@hp.com>, linux-btrfs@vger.kernel.org
-To: Stephan von Krawczynski <skraw@ithnet.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Eric Anopolsky <erpo41@gmail.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Stephan von Krawczynski <skraw@ithnet.com>,
+	linux-btrfs@vger.kernel.org
+To: Ric Wheeler <rwheeler@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20081022142759.ac33a16c.skraw@ithnet.com>
+In-Reply-To: <48FF2343.3070107@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2008-10-22 at 14:27 +0200, Stephan von Krawczynski wrote:
-> On Tue, 21 Oct 2008 13:31:37 -0400
-> Ric Wheeler <ricwheeler@gmail.com> wrote:
-> 
-> > [...]
-> > If you have remapped a big chunk of the sectors (say more than 10%), you 
-> > should grab the data off the disk asap and replace it. Worry less about 
-> > errors during read, writes indicate more serious errors.
-> 
-> Ok, now for the bad news: money is invented.
-> If you replace a disk before real failure you won't get replacement from the
-> manufacturer. That may sound irrelevant to someone handling 5 disks, but is
-> significant if handling 500 or more. The replacement rate is indeed much
-> higher than people think from their home pcs.
+Ric Wheeler wrote:
+> I think that we do handle a failure in the case that you outline above
+> since the FS will be able to notice the error before it sends a commit
+> down (and that commit is wrapped in the barrier flush calls). This is
+> the easy case since we still have the context for the IO.
 
-Hardware vendors already do replace disks based on policies defined by
-their own array hardware.  These are already predictive.
+I'm no FS guy but for that to be true FS should be waiting for all the
+outstanding IOs to finish before issuing a barrier and actually
+doesn't need barriers at all - it can do the same with flush_cache.
 
--chris
+> It is more challenging  (and kind of related) if the IO done in (4) has
+> been ack'ed by drive, the drive later destages (not as part of the
+> flush) its write cache and then an error happens. In this case, there is
+> nothing waiting on the initiator side to receive the IO error. We have
+> effectively lost the context for that IO.
 
+IIUC, that should be detectable from FLUSH whether the destaging
+occurred as part of flush or not, no?
 
+> The only way to detect this is on replay (if the journal has checksums
+> enabled or the error will be flagged as a media error).
 
+If it's not reported on FLUSH, it basically amounts to silent data
+corruption and only checksums can help.
 
+Thanks.
+
+-- 
+tejun

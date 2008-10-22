@@ -1,75 +1,54 @@
 From: Ric Wheeler <rwheeler@redhat.com>
 Subject: Re: Some very basic questions
-Date: Wed, 22 Oct 2008 09:23:59 -0400
-Message-ID: <48FF296F.9060009@redhat.com>
-References: <20081021132322.271ad728.skraw@ithnet.com>	 <1224597580.27474.93.camel@think.oraclecorp.com>	 <1224622451.7412.1.camel@telesto>  <48FE553D.80501@redhat.com> <1224642544.7189.17.camel@telesto> <48FF038A.4010105@redhat.com> <48FF0625.6040400@kernel.org> <48FF2343.3070107@redhat.com> <48FF276B.6090602@kernel.org>
+Date: Wed, 22 Oct 2008 09:27:55 -0400
+Message-ID: <48FF2A5B.80108@redhat.com>
+References: <20081021132322.271ad728.skraw@ithnet.com>	 <48FDD710.5050702@hp.com> <20081021190136.89b2c6af.skraw@ithnet.com>	 <20081021171513.GA8799@infradead.org> <48FE11F9.7040700@gmail.com>	 <20081022142759.ac33a16c.skraw@ithnet.com> <1224681345.6448.4.camel@think.oraclecorp.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Ric Wheeler <rwheeler@redhat.com>,
-	Eric Anopolsky <erpo41@gmail.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Stephan von Krawczynski <skraw@ithnet.com>,
-	linux-btrfs@vger.kernel.org
-To: Tejun Heo <tj@kernel.org>
+Cc: Stephan von Krawczynski <skraw@ithnet.com>,
+	Christoph Hellwig <hch@infradead.org>,
+	jim owens <jowens@hp.com>, linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <48FF276B.6090602@kernel.org>
+In-Reply-To: <1224681345.6448.4.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Tejun Heo wrote:
-> Ric Wheeler wrote:
+Chris Mason wrote:
+> On Wed, 2008-10-22 at 14:27 +0200, Stephan von Krawczynski wrote:
 >   
->> I think that we do handle a failure in the case that you outline above
->> since the FS will be able to notice the error before it sends a commit
->> down (and that commit is wrapped in the barrier flush calls). This is
->> the easy case since we still have the context for the IO.
+>> On Tue, 21 Oct 2008 13:31:37 -0400
+>> Ric Wheeler <ricwheeler@gmail.com> wrote:
+>>
+>>     
+>>> [...]
+>>> If you have remapped a big chunk of the sectors (say more than 10%), you 
+>>> should grab the data off the disk asap and replace it. Worry less about 
+>>> errors during read, writes indicate more serious errors.
+>>>       
+>> Ok, now for the bad news: money is invented.
+>> If you replace a disk before real failure you won't get replacement from the
+>> manufacturer. That may sound irrelevant to someone handling 5 disks, but is
+>> significant if handling 500 or more. The replacement rate is indeed much
+>> higher than people think from their home pcs.
 >>     
 >
-> I'm no FS guy but for that to be true FS should be waiting for all the
-> outstanding IOs to finish before issuing a barrier and actually
-> doesn't need barriers at all - it can do the same with flush_cache.
->   
-
-Waiting for the target to ack an IO is not sufficient, since the target 
-ack does not (with write cache enabled) mean that it is on persistent 
-storage.
-
-The key is to make your transaction commit insure that the commit block 
-itself is not written out of sequence without flushing the dependent IO 
-from the transaction.
-
-If we disable the write cache, then file systems effectively do exactly 
-the right thing today as you describe :-)
->   
->> It is more challenging  (and kind of related) if the IO done in (4) has
->> been ack'ed by drive, the drive later destages (not as part of the
->> flush) its write cache and then an error happens. In this case, there is
->> nothing waiting on the initiator side to receive the IO error. We have
->> effectively lost the context for that IO.
->>     
+> Hardware vendors already do replace disks based on policies defined by
+> their own array hardware.  These are already predictive.
 >
-> IIUC, that should be detectable from FLUSH whether the destaging
-> occurred as part of flush or not, no?
->   
-
-I am not sure what happens to a write that fails to get destaged from 
-cache. It probably depends on the target firmware, but I imagine that 
-the target cannot hold onto it forever (or all subsequent flushes would 
-always fail).
->   
->> The only way to detect this is on replay (if the journal has checksums
->> enabled or the error will be flagged as a media error).
->>     
+> -chris
 >
-> If it's not reported on FLUSH, it basically amounts to silent data
-> corruption and only checksums can help.
 >
-> Thanks.
 >
 >   
+One key is not to replace the drives too early - you often can recover 
+significant amounts of data from a drive that is on its last legs. This 
+can be useful even in RAID rebuilds since with today's enormous drive 
+capacities, you might hit a latent error during the rebuild on one of 
+the presumed healthy drives.
 
-Agreed - checksums (or proper handling of media errors) are the only way 
-to detect this.
+Of course, if you don't have a spare drive in your configuration, this 
+is not practical...
 
-Ric
+ric
 
 

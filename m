@@ -1,75 +1,59 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: Tejun Heo <tj@kernel.org>
 Subject: Re: Some very basic questions
-Date: Wed, 22 Oct 2008 11:33:59 -0400
-Message-ID: <1224689639.6448.72.camel@think.oraclecorp.com>
-References: <20081021132322.271ad728.skraw@ithnet.com>
-	 <48FDD710.5050702@hp.com> <20081021190136.89b2c6af.skraw@ithnet.com>
-	 <20081021171513.GA8799@infradead.org> <48FE11F9.7040700@gmail.com>
-	 <20081022142759.ac33a16c.skraw@ithnet.com>
-	 <1224681345.6448.4.camel@think.oraclecorp.com> <48FF2A5B.80108@redhat.com>
-	 <48FF396B.1020700@redhat.com> <48FF3CB9.6070404@redhat.com>
-	 <48FF3EB8.6050306@redhat.com> <48FF4082.407@redhat.com>
-	 <48FF4302.5030204@redhat.com>  <48FF45EE.7010001@redhat.com>
+Date: Thu, 23 Oct 2008 01:14:19 +0900
+Message-ID: <48FF515B.2030209@kernel.org>
+References: <20081021132322.271ad728.skraw@ithnet.com>	 <1224597580.27474.93.camel@think.oraclecorp.com>	 <1224622451.7412.1.camel@telesto>  <48FE553D.80501@redhat.com> <1224642544.7189.17.camel@telesto> <48FF038A.4010105@redhat.com> <48FF0625.6040400@kernel.org> <48FF2343.3070107@redhat.com> <48FF276B.6090602@kernel.org> <48FF296F.9060009@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Avi Kivity <avi@redhat.com>,
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Eric Anopolsky <erpo41@gmail.com>,
+	Chris Mason <chris.mason@oracle.com>,
 	Stephan von Krawczynski <skraw@ithnet.com>,
-	Christoph Hellwig <hch@infradead.org>,
-	jim owens <jowens@hp.com>, linux-btrfs@vger.kernel.org
+	linux-btrfs@vger.kernel.org
 To: Ric Wheeler <rwheeler@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <48FF45EE.7010001@redhat.com>
+In-Reply-To: <48FF296F.9060009@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2008-10-22 at 11:25 -0400, Ric Wheeler wrote:
-> Avi Kivity wrote:
-> > Ric Wheeler wrote:
-> >>>
-> >>> Well, btrfs is not about duplicating how most storage works today.  
-> >>> Spare capacity has significant advantages over spare disks, such as 
-> >>> being able to mix disk sizes, RAID levels, and better performance.
-> >>
-> >> Sure, there are advantages that go in favour of one or the other 
-> >> approaches. But btrfs is also about being able to use common hardware 
-> >> configurations without having to reinvent where we can avoid it (if 
-> >> we have a working RAID or enough drives to do RAID5 with spares or 
-> >> RAID6, we want to be able to delegate that off to something else if 
-> >> we can).
-> >
-> > Well, if you have an existing RAID (or have lots of $$$ to buy a new 
-> > one), you needn't tell Btrfs about it.  Just be sure not to enable 
-> > Btrfs data redundancy, or you'll have redundant redundancy, which is 
-> > expensive.
-> >
-> > What Btrfs enables with its multiple device capabilities is to 
-> > assemble a JBOD into a filesystem-level data redundancy system, which 
-> > is cheaper, more flexible (per-file data redundancy levels), and 
-> > faster (no need for RMW, since you're always COWing).
->
-> I think that the btrfs plan is still to push more complicated RAID 
-> schemes off to MD (RAID6, etc) so this is an issue even with a JBOD.
+Ric Wheeler wrote:
+> Waiting for the target to ack an IO is not sufficient, since the target
+> ack does not (with write cache enabled) mean that it is on persistent
+> storage.
 
-At least v1.0 won't have raid6.  Over the longer term I hope to include
-it because managing the storage once in btrfs and once in md is going to
-be a bit clumsy.  It also limits the mixed mode functionality like
-different stripe sizes for data vs metadata or metadata mirroring and
-data raid6 that will allow us to perform well.
+FS waiting for completion of all the dependent writes isn't too good
+latency and throughput-wise tho.  It would be best if FS can indicate
+dependencies between write commands and barrier so that barrier
+doesn't have to empty the whole queue.  Hmm... Can someone tell me how
+much such scheme would help?
 
-The goal will be to make a library of raid routines based on md that
-other storage will be able to use.  I know Christoph has been interested
-in this as well.
+> The key is to make your transaction commit insure that the commit block
+> itself is not written out of sequence without flushing the dependent IO
+> from the transaction.
+> 
+> If we disable the write cache, then file systems effectively do exactly
+> the right thing today as you describe :-)
 
-But in general, the btrfs raid code can do either spare disks or spare
-capacity modes safely.  It enforces the correct number of devices in
-each raid mode (as long as the admin doesn't lie to us and feed
-partitions off the same device).
+For most SATA drives, disabling write back cache seems to take high
+toll on write throughput.  :-(
 
-I'll leave the rest up to the admin.  One problem with the spare
-capacity model is the general trend where drives from the same batch
-that get hammered on in the same way tend to die at the same time.  Some
-shops will sleep better knowing there's a hot spare and that's fine by
-me.
+>> IIUC, that should be detectable from FLUSH whether the destaging
+>> occurred as part of flush or not, no?
+>>   
+> 
+> I am not sure what happens to a write that fails to get destaged from
+> cache. It probably depends on the target firmware, but I imagine that
+> the target cannot hold onto it forever (or all subsequent flushes would
+> always fail).
 
--chris
+As long as the error status is sticky, it doesn't have to hold on to
+the data, it's not gonna be able to write it anyway.  The drive has to
+hold onto the failure information only.  Yeah, but fully agreed on
+that it's most likely dependent on the specific firmware.  There isn't
+any requirement on how to handle write back failure in the ATA spec.
+It wouldn't be too surprising if there are some drives which happily
+report the old data after silent write failure followed by flush and
+power loss at the right timing.
 
+Thanks.
 
+-- 
+tejun

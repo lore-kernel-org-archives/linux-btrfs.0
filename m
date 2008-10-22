@@ -1,76 +1,57 @@
 From: Ric Wheeler <rwheeler@redhat.com>
 Subject: Re: Some very basic questions
-Date: Wed, 22 Oct 2008 08:57:39 -0400
-Message-ID: <48FF2343.3070107@redhat.com>
-References: <20081021132322.271ad728.skraw@ithnet.com>	 <1224597580.27474.93.camel@think.oraclecorp.com>	 <1224622451.7412.1.camel@telesto>  <48FE553D.80501@redhat.com> <1224642544.7189.17.camel@telesto> <48FF038A.4010105@redhat.com> <48FF0625.6040400@kernel.org>
+Date: Wed, 22 Oct 2008 09:03:32 -0400
+Message-ID: <48FF24A4.4040108@redhat.com>
+References: <20081021132322.271ad728.skraw@ithnet.com>	<87vdvmdu36.fsf@basil.nowhere.org>	<20081021162249.30a25bcb.skraw@ithnet.com>	<48FDF67C.6080205@hp.com> <20081022133615.68b66b0e.skraw@ithnet.com> <48FF1976.1050202@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Ric Wheeler <rwheeler@redhat.com>,
-	Eric Anopolsky <erpo41@gmail.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Stephan von Krawczynski <skraw@ithnet.com>,
-	linux-btrfs@vger.kernel.org
-To: Tejun Heo <tj@kernel.org>
+Cc: Stephan von Krawczynski <skraw@ithnet.com>,
+	jim owens <jowens@hp.com>, linux-btrfs@vger.kernel.org
+To: Avi Kivity <avi@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <48FF0625.6040400@kernel.org>
+In-Reply-To: <48FF1976.1050202@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Tejun Heo wrote:
-> Ric Wheeler wrote:
->   
->> The cache flush command for ATA devices will block and wait until all of
->> the device's write cache has been written back.
+Avi Kivity wrote:
+> Stephan von Krawczynski wrote:
 >>
->> What I assume Tejun was referring to here is that some IO might have
->> been written out to the device and an error happened when the device
->> tried to write the cache back (say due to normal drive microcode cache
->> destaging). The problem with this is that there is no outstanding IO
->> context between the host and the storage to report the error to (i.e.,
->> the drive has already ack'ed the write).
+>>>    - filesystem autodetects, isolates, and (possibly) repairs errors
+>>>    - online "scan, check, repair filesystem" tool initiated by admin
+>>>    - Reliability so high that they never run that check-and-fix tool
+>>>     
 >>
->> If this is what is being described, there is a non-zero chance that this
->> might happen, but it is extremely infrequent.  The checksumming that we
->> have in btrfs will catch these bad writes when you replay the journal
->> after a crash (or even when you read data blocks) so I would contend
->> that this is about as good as we can do.
->>     
+>> That is _wrong_ (to a certain extent). You _want to run_ diagnostic 
+>> tools to
+>> make sure that there is no problem. And you don't want some software 
+>> (not even
+>> HAL) to repair errors without prior admin knowledge/permission
 >
-> Please consider the following scenario.
+> I think there's a place for a scrubber to continuously verify 
+> filesystem data and metadata, at low io priority, and correct any 
+> correctable errors.  The admin can read the error correction report at 
+> their leisure, and then take any action that's outside the 
+> filesystem's capabilities (like ordering and installing new disks).
 >
-> 1. FS issues lots of writes which are queued in the block elevator.
-> 2. FS issues barrier.
-> 3. Elevator pushes out all the writes.
-> 4. One of the writes fails for some reason.  Media failure or what
->    not.  Failure is propagated to upper layer.
-> 5. Whether there was preceding failure or not, block queue processing
->    continues and writes out all the pending requests.
-> 6. Elevator issues FLUSH and it gets executed by the device.
-> 7. Elevator issues barrier write and it gets executed by the device.
-> 8. *POWER LOSS*
->
-> The thing is that currently there is no defined way for FS to take
-> action after #4 once happens unless it waits for all outstanding
-> writes to complete before issuing the barrier.  One way to solve this
-> would be to make the failure status sticky such that any barrier
-> following any number of uncleared errors will fail too, so that the
-> filesystem can think about what it should do with the write failure.
->
-> Thanks.
->   
-I think that we do handle a failure in the case that you outline above 
-since the FS will be able to notice the error before it sends a commit 
-down (and that commit is wrapped in the barrier flush calls). This is 
-the easy case since we still have the context for the IO.
+Scrubbing is key for many scenarios since errors can "grow" even in 
+places where previous IO has been completed without flagging an error.
 
-It is more challenging  (and kind of related) if the IO done in (4) has 
-been ack'ed by drive, the drive later destages (not as part of the 
-flush) its write cache and then an error happens. In this case, there is 
-nothing waiting on the initiator side to receive the IO error. We have 
-effectively lost the context for that IO.
+Some neat tricks are:
 
-The only way to detect this is on replay (if the journal has checksums 
-enabled or the error will be flagged as a media error).
+    (1) use block level scrubbing to detect any media errors. If you can 
+map that sector level error into a file system object (meta data, file 
+data or unallocated space), tools can recover (fsck, get another copy of 
+the file or just ignore it!). There is a special command called 
+"READ_VERIFY" that can be used to validate the sectors without actually 
+moving data from the target to the host, so you can scrub without 
+consuming page cache, etc.
 
-Ric
+    (2) sign and validate the object at the file level, say by 
+validating a digital signature. This can catch high level errors (say 
+the app messed up).
 
+Note that this scrubbing needs to be carefully tuned to not interfere 
+with the foreground workload, using something like IO nice or the other 
+IO controllers being kicked about might help :-)
+
+ric
 

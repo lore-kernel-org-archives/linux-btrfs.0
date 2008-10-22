@@ -1,45 +1,50 @@
-From: Tejun Heo <tj@kernel.org>
+From: Avi Kivity <avi@redhat.com>
 Subject: Re: Some very basic questions
-Date: Wed, 22 Oct 2008 22:15:23 +0900
-Message-ID: <48FF276B.6090602@kernel.org>
-References: <20081021132322.271ad728.skraw@ithnet.com>	 <1224597580.27474.93.camel@think.oraclecorp.com>	 <1224622451.7412.1.camel@telesto>  <48FE553D.80501@redhat.com> <1224642544.7189.17.camel@telesto> <48FF038A.4010105@redhat.com> <48FF0625.6040400@kernel.org> <48FF2343.3070107@redhat.com>
+Date: Wed, 22 Oct 2008 15:16:32 +0200
+Message-ID: <48FF27B0.4020000@redhat.com>
+References: <20081021132322.271ad728.skraw@ithnet.com>	<87vdvmdu36.fsf@basil.nowhere.org>	<20081021162249.30a25bcb.skraw@ithnet.com>	<48FDF67C.6080205@hp.com> <20081022133615.68b66b0e.skraw@ithnet.com> <48FF1976.1050202@redhat.com> <48FF24A4.4040108@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Eric Anopolsky <erpo41@gmail.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Stephan von Krawczynski <skraw@ithnet.com>,
-	linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Stephan von Krawczynski <skraw@ithnet.com>,
+	jim owens <jowens@hp.com>, linux-btrfs@vger.kernel.org
 To: Ric Wheeler <rwheeler@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <48FF2343.3070107@redhat.com>
+In-Reply-To: <48FF24A4.4040108@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Ric Wheeler wrote:
-> I think that we do handle a failure in the case that you outline above
-> since the FS will be able to notice the error before it sends a commit
-> down (and that commit is wrapped in the barrier flush calls). This is
-> the easy case since we still have the context for the IO.
+> Scrubbing is key for many scenarios since errors can "grow" even in 
+> places where previous IO has been completed without flagging an error.
+>
+> Some neat tricks are:
+>
+>    (1) use block level scrubbing to detect any media errors. If you 
+> can map that sector level error into a file system object (meta data, 
+> file data or unallocated space), tools can recover (fsck, get another 
+> copy of the file or just ignore it!). There is a special command 
+> called "READ_VERIFY" that can be used to validate the sectors without 
+> actually moving data from the target to the host, so you can scrub 
+> without consuming page cache, etc.
+>
 
-I'm no FS guy but for that to be true FS should be waiting for all the
-outstanding IOs to finish before issuing a barrier and actually
-doesn't need barriers at all - it can do the same with flush_cache.
+This has the disadvantage of not catching errors that were introduced 
+while writing; the very errors that btrfs checksums can catch.
 
-> It is more challenging  (and kind of related) if the IO done in (4) has
-> been ack'ed by drive, the drive later destages (not as part of the
-> flush) its write cache and then an error happens. In this case, there is
-> nothing waiting on the initiator side to receive the IO error. We have
-> effectively lost the context for that IO.
+>    (2) sign and validate the object at the file level, say by 
+> validating a digital signature. This can catch high level errors (say 
+> the app messed up).
 
-IIUC, that should be detectable from FLUSH whether the destaging
-occurred as part of flush or not, no?
+Btrfs extent-level checksums can be used for this.  This is just below 
+the application level, but good enough IMO.
 
-> The only way to detect this is on replay (if the journal has checksums
-> enabled or the error will be flagged as a media error).
+> Note that this scrubbing needs to be carefully tuned to not interfere 
+> with the foreground workload, using something like IO nice or the 
+> other IO controllers being kicked about might help :-)
 
-If it's not reported on FLUSH, it basically amounts to silent data
-corruption and only checksums can help.
-
-Thanks.
+Right.  Further, reading the disk by logical block order will help 
+reduce seeks.  Btrfs's back references, if cached properly, will help 
+with this as well.
 
 -- 
-tejun
+error compiling committee.c: too many arguments to function
+

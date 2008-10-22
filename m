@@ -1,86 +1,41 @@
 From: Stephan von Krawczynski <skraw@ithnet.com>
 Subject: Re: Some very basic questions
-Date: Wed, 22 Oct 2008 13:36:15 +0200
-Message-ID: <20081022133615.68b66b0e.skraw@ithnet.com>
+Date: Wed, 22 Oct 2008 13:40:39 +0200
+Message-ID: <20081022134039.4bf3b0d1.skraw@ithnet.com>
 References: <20081021132322.271ad728.skraw@ithnet.com>
-	<87vdvmdu36.fsf@basil.nowhere.org>
-	<20081021162249.30a25bcb.skraw@ithnet.com>
-	<48FDF67C.6080205@hp.com>
+	<48FDD710.5050702@hp.com>
+	<20081021190136.89b2c6af.skraw@ithnet.com>
+	<20081021171513.GA8799@infradead.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
-Cc: linux-btrfs@vger.kernel.org
-To: jim owens <jowens@hp.com>
+Cc: jim owens <jowens@hp.com>, linux-btrfs@vger.kernel.org
+To: Christoph Hellwig <hch@infradead.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <48FDF67C.6080205@hp.com>
+In-Reply-To: <20081021171513.GA8799@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 21 Oct 2008 11:34:20 -0400
-jim owens <jowens@hp.com> wrote:
+On Tue, 21 Oct 2008 13:15:13 -0400
+Christoph Hellwig <hch@infradead.org> wrote:
 
-> Hearing what user's think they want is always good, but...
+> On Tue, Oct 21, 2008 at 07:01:36PM +0200, Stephan von Krawczynski wrote:
+> > Sure, but what you say only reflects the ideal world. On a file service, you
+> > never have that. In fact you do not even have good control about what is going
+> > on. Lets say you have a setup that creates, reads and deletes files 24h a day
+> > from numerous clients. At two o'clock in the morning some hd decides to
+> > partially die. Files get created on it, fill data up to errors, get
+> > deleted and another bunch of data arrives and yet again fs tries to allocate
+> > the same dead areas. You loose a lot more data only because the fs did not map
+> > out the already known dead blocks. Of course you would replace the dead drive
+> > later on, but in the meantime you have a lot of fun.
+> > In other words: give me a tool to freeze the world right at the time the
+> > errors show up, or map out dead blocks (only because it is a lot easier).
 > 
-> Stephan von Krawczynski wrote:
-> > 
-> > thanks for your feedback. Understand "minimum requirement" as "minimum
-> > requirement to drop the current installation and migrate the data to a
-> > new fs platform".
-> 
-> I would sure like to know what existing platform and filesystem
-> you have that you think has all 10 of your features.
+> When modern disks can't solve the problems with their internal driver
+> remapping anymore you better replace it ASAP as it is a very strong
+> disk failure indication.  Last years FAST has some very interesting
+> statitics showing this in the field.
 
-Obviously none, else I would not speak up and try to find one. :-)
-
-> > [...]
-> > 1) parallel mounts
-> 
-> What I see from that explanation is you have a "system design" idea
-> using parallel machines to fix problems you have had in the past.
-> To implement your design, you need a filesystem to fit it.
-
-Well, I can't hardly deny that. Lets just name the (simple) problem, different
-names for the very same thing: uptime, availability, redundancy
-
->  I think
-> it is better to just design a filesystem without the problems and
-> configure the hardware to handle the necessary load.
-
-Ok, now you see me astonished. You really think that there is one piece of
-software around that is "without problems" ?
-My idea of the world is really very different from that:
-The world is far from perfect. That is why I try to deploy solutions that have
-redundancy for all kinds of problems I can think of and hopefully for a few
-that I haven't thought of.
- 
-> > 2) mounting must not delay the system startup significantly
-> > 3) errors in parts of the fs are no reason for a fs to go offline as a whole
-> > 4) power loss at any time must not corrupt the fs
-> > 5) fsck on a mounted fs, interactively, not part of the mount (all fsck
-> > features)
-> 
-> I think all of these are part of the "reliability" goal for btrfs
-> and when you say "fsck" it is probably misleading if I understand
-> your real requirement to be the same as my customers:
-> 
->    - *NO* fsck
->    - filesystem design "prevents problems we have had before"
->    - filesystem autodetects, isolates, and (possibly) repairs errors
->    - online "scan, check, repair filesystem" tool initiated by admin
->    - Reliability so high that they never run that check-and-fix tool
-
-That is _wrong_ (to a certain extent). You _want to run_ diagnostic tools to
-make sure that there is no problem. And you don't want some software (not even
-HAL) to repair errors without prior admin knowledge/permission.
- 
-> Note that I personally have never seen a first release meet
-> the "no problems, no need to fix" criteria that would obviate
-> any need for a check/fix tool.
-
-That really does not depend on the release number of _your_ special software.
-Your software always depends on other components (hw or sw) that (can) have
-bugs and weird behaviour. And this is the fact: no perfect world, so don't
-count on your or others' perfectness. If you do you will fail.
- 
-> jim
+And of course a "disk" is always a "disk", right? 
 
 -- 
 Regards,

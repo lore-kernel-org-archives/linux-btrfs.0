@@ -1,50 +1,41 @@
 From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: Some very basic questions
-Date: Wed, 22 Oct 2008 09:13:15 -0400
-Message-ID: <1224681195.6448.1.camel@think.oraclecorp.com>
+Date: Wed, 22 Oct 2008 09:15:45 -0400
+Message-ID: <1224681345.6448.4.camel@think.oraclecorp.com>
 References: <20081021132322.271ad728.skraw@ithnet.com>
-	 <87vdvmdu36.fsf@basil.nowhere.org>
-	 <20081021162249.30a25bcb.skraw@ithnet.com>	<48FDF67C.6080205@hp.com>
-	 <20081022133615.68b66b0e.skraw@ithnet.com> <48FF1976.1050202@redhat.com>
-	 <48FF24A4.4040108@redhat.com>
+	 <48FDD710.5050702@hp.com> <20081021190136.89b2c6af.skraw@ithnet.com>
+	 <20081021171513.GA8799@infradead.org> <48FE11F9.7040700@gmail.com>
+	 <20081022142759.ac33a16c.skraw@ithnet.com>
 Mime-Version: 1.0
 Content-Type: text/plain
-Cc: Avi Kivity <avi@redhat.com>,
-	Stephan von Krawczynski <skraw@ithnet.com>,
+Cc: Ric Wheeler <ricwheeler@gmail.com>,
+	Christoph Hellwig <hch@infradead.org>,
 	jim owens <jowens@hp.com>, linux-btrfs@vger.kernel.org
-To: Ric Wheeler <rwheeler@redhat.com>
+To: Stephan von Krawczynski <skraw@ithnet.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <48FF24A4.4040108@redhat.com>
+In-Reply-To: <20081022142759.ac33a16c.skraw@ithnet.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2008-10-22 at 09:03 -0400, Ric Wheeler wrote:
-> Avi Kivity wrote:
-> > Stephan von Krawczynski wrote:
-> >>
-> >>>    - filesystem autodetects, isolates, and (possibly) repairs errors
-> >>>    - online "scan, check, repair filesystem" tool initiated by admin
-> >>>    - Reliability so high that they never run that check-and-fix tool
-> >>>     
-> >>
-> >> That is _wrong_ (to a certain extent). You _want to run_ diagnostic 
-> >> tools to
-> >> make sure that there is no problem. And you don't want some software 
-> >> (not even
-> >> HAL) to repair errors without prior admin knowledge/permission
-> >
-> > I think there's a place for a scrubber to continuously verify 
-> > filesystem data and metadata, at low io priority, and correct any 
-> > correctable errors.  The admin can read the error correction report at 
-> > their leisure, and then take any action that's outside the 
-> > filesystem's capabilities (like ordering and installing new disks).
-> >
-> Scrubbing is key for many scenarios since errors can "grow" even in 
-> places where previous IO has been completed without flagging an error.
+On Wed, 2008-10-22 at 14:27 +0200, Stephan von Krawczynski wrote:
+> On Tue, 21 Oct 2008 13:31:37 -0400
+> Ric Wheeler <ricwheeler@gmail.com> wrote:
 > 
+> > [...]
+> > If you have remapped a big chunk of the sectors (say more than 10%), you 
+> > should grab the data off the disk asap and replace it. Worry less about 
+> > errors during read, writes indicate more serious errors.
+> 
+> Ok, now for the bad news: money is invented.
+> If you replace a disk before real failure you won't get replacement from the
+> manufacturer. That may sound irrelevant to someone handling 5 disks, but is
+> significant if handling 500 or more. The replacement rate is indeed much
+> higher than people think from their home pcs.
 
-We'll definitely have background scrubbing.  It is a key part of the
-health of the FS I think.
+Hardware vendors already do replace disks based on policies defined by
+their own array hardware.  These are already predictive.
 
 -chris
+
+
 
 

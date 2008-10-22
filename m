@@ -1,57 +1,88 @@
-From: Tejun Heo <tj@kernel.org>
+From: Stephan von Krawczynski <skraw@ithnet.com>
 Subject: Re: Some very basic questions
-Date: Wed, 22 Oct 2008 19:53:25 +0900
-Message-ID: <48FF0625.6040400@kernel.org>
-References: <20081021132322.271ad728.skraw@ithnet.com>	 <1224597580.27474.93.camel@think.oraclecorp.com>	 <1224622451.7412.1.camel@telesto>  <48FE553D.80501@redhat.com> <1224642544.7189.17.camel@telesto> <48FF038A.4010105@redhat.com>
+Date: Wed, 22 Oct 2008 13:36:15 +0200
+Message-ID: <20081022133615.68b66b0e.skraw@ithnet.com>
+References: <20081021132322.271ad728.skraw@ithnet.com>
+	<87vdvmdu36.fsf@basil.nowhere.org>
+	<20081021162249.30a25bcb.skraw@ithnet.com>
+	<48FDF67C.6080205@hp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Eric Anopolsky <erpo41@gmail.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Stephan von Krawczynski <skraw@ithnet.com>,
-	linux-btrfs@vger.kernel.org
-To: Ric Wheeler <rwheeler@redhat.com>
+Content-Type: text/plain; charset=US-ASCII
+Cc: linux-btrfs@vger.kernel.org
+To: jim owens <jowens@hp.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <48FF038A.4010105@redhat.com>
+In-Reply-To: <48FDF67C.6080205@hp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ric Wheeler wrote:
-> The cache flush command for ATA devices will block and wait until all of
-> the device's write cache has been written back.
+On Tue, 21 Oct 2008 11:34:20 -0400
+jim owens <jowens@hp.com> wrote:
+
+> Hearing what user's think they want is always good, but...
 > 
-> What I assume Tejun was referring to here is that some IO might have
-> been written out to the device and an error happened when the device
-> tried to write the cache back (say due to normal drive microcode cache
-> destaging). The problem with this is that there is no outstanding IO
-> context between the host and the storage to report the error to (i.e.,
-> the drive has already ack'ed the write).
+> Stephan von Krawczynski wrote:
+> > 
+> > thanks for your feedback. Understand "minimum requirement" as "minimum
+> > requirement to drop the current installation and migrate the data to a
+> > new fs platform".
 > 
-> If this is what is being described, there is a non-zero chance that this
-> might happen, but it is extremely infrequent.  The checksumming that we
-> have in btrfs will catch these bad writes when you replay the journal
-> after a crash (or even when you read data blocks) so I would contend
-> that this is about as good as we can do.
+> I would sure like to know what existing platform and filesystem
+> you have that you think has all 10 of your features.
 
-Please consider the following scenario.
+Obviously none, else I would not speak up and try to find one. :-)
 
-1. FS issues lots of writes which are queued in the block elevator.
-2. FS issues barrier.
-3. Elevator pushes out all the writes.
-4. One of the writes fails for some reason.  Media failure or what
-   not.  Failure is propagated to upper layer.
-5. Whether there was preceding failure or not, block queue processing
-   continues and writes out all the pending requests.
-6. Elevator issues FLUSH and it gets executed by the device.
-7. Elevator issues barrier write and it gets executed by the device.
-8. *POWER LOSS*
+> > [...]
+> > 1) parallel mounts
+> 
+> What I see from that explanation is you have a "system design" idea
+> using parallel machines to fix problems you have had in the past.
+> To implement your design, you need a filesystem to fit it.
 
-The thing is that currently there is no defined way for FS to take
-action after #4 once happens unless it waits for all outstanding
-writes to complete before issuing the barrier.  One way to solve this
-would be to make the failure status sticky such that any barrier
-following any number of uncleared errors will fail too, so that the
-filesystem can think about what it should do with the write failure.
+Well, I can't hardly deny that. Lets just name the (simple) problem, different
+names for the very same thing: uptime, availability, redundancy
 
-Thanks.
+>  I think
+> it is better to just design a filesystem without the problems and
+> configure the hardware to handle the necessary load.
+
+Ok, now you see me astonished. You really think that there is one piece of
+software around that is "without problems" ?
+My idea of the world is really very different from that:
+The world is far from perfect. That is why I try to deploy solutions that have
+redundancy for all kinds of problems I can think of and hopefully for a few
+that I haven't thought of.
+ 
+> > 2) mounting must not delay the system startup significantly
+> > 3) errors in parts of the fs are no reason for a fs to go offline as a whole
+> > 4) power loss at any time must not corrupt the fs
+> > 5) fsck on a mounted fs, interactively, not part of the mount (all fsck
+> > features)
+> 
+> I think all of these are part of the "reliability" goal for btrfs
+> and when you say "fsck" it is probably misleading if I understand
+> your real requirement to be the same as my customers:
+> 
+>    - *NO* fsck
+>    - filesystem design "prevents problems we have had before"
+>    - filesystem autodetects, isolates, and (possibly) repairs errors
+>    - online "scan, check, repair filesystem" tool initiated by admin
+>    - Reliability so high that they never run that check-and-fix tool
+
+That is _wrong_ (to a certain extent). You _want to run_ diagnostic tools to
+make sure that there is no problem. And you don't want some software (not even
+HAL) to repair errors without prior admin knowledge/permission.
+ 
+> Note that I personally have never seen a first release meet
+> the "no problems, no need to fix" criteria that would obviate
+> any need for a check/fix tool.
+
+That really does not depend on the release number of _your_ special software.
+Your software always depends on other components (hw or sw) that (can) have
+bugs and weird behaviour. And this is the fact: no perfect world, so don't
+count on your or others' perfectness. If you do you will fail.
+ 
+> jim
 
 -- 
-tejun
+Regards,
+Stephan
+

@@ -1,85 +1,65 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: Stephan von Krawczynski <skraw@ithnet.com>
 Subject: Re: Some very basic questions
-Date: Wed, 22 Oct 2008 09:59:05 -0400
-Message-ID: <1224683945.6448.44.camel@think.oraclecorp.com>
+Date: Wed, 22 Oct 2008 16:02:11 +0200
+Message-ID: <20081022160211.e7295fcf.skraw@ithnet.com>
 References: <20081021132322.271ad728.skraw@ithnet.com>
-	 <1224597580.27474.93.camel@think.oraclecorp.com>
-	 <1224622451.7412.1.camel@telesto> <48FE553D.80501@redhat.com>
-	 <1224642544.7189.17.camel@telesto> <48FF038A.4010105@redhat.com>
-	 <48FF0625.6040400@kernel.org> <48FF2343.3070107@redhat.com>
-	 <48FF276B.6090602@kernel.org>
-	 <1224681593.6448.7.camel@think.oraclecorp.com>  <48FF2CF0.60708@redhat.com>
+	<1224597580.27474.93.camel@think.oraclecorp.com>
+	<20081021182710.a12f4914.skraw@ithnet.com>
+	<1224611383.27474.140.camel@think.oraclecorp.com>
+	<20081022141906.f6529c6d.skraw@ithnet.com>
+	<c24352ca0810220548h4f383b32u18efa44251797b3d@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Tejun Heo <tj@kernel.org>, Eric Anopolsky <erpo41@gmail.com>,
-	Stephan von Krawczynski <skraw@ithnet.com>,
-	linux-btrfs@vger.kernel.org
-To: Ric Wheeler <rwheeler@redhat.com>
+Content-Type: text/plain; charset=US-ASCII
+Cc: "Jeff Schroeder" <jeffschroed@gmail.com>,
+	"Chris Mason" <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+To: jeffschroeder@computer.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <48FF2CF0.60708@redhat.com>
+In-Reply-To: <c24352ca0810220548h4f383b32u18efa44251797b3d@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2008-10-22 at 09:38 -0400, Ric Wheeler wrote:
-> Chris Mason wrote:
-> > On Wed, 2008-10-22 at 22:15 +0900, Tejun Heo wrote:
-> >   
-> >> Ric Wheeler wrote:
-> >>     
-> >>> I think that we do handle a failure in the case that you outline above
-> >>> since the FS will be able to notice the error before it sends a commit
-> >>> down (and that commit is wrapped in the barrier flush calls). This is
-> >>> the easy case since we still have the context for the IO.
-> >>>       
-> >> I'm no FS guy but for that to be true FS should be waiting for all the
-> >> outstanding IOs to finish before issuing a barrier and actually
-> >> doesn't need barriers at all - it can do the same with flush_cache.
-> >>
-> >>     
-> >
-> > We wait and then barrier.  If the barrier returned status that a
-> > previously ack'd IO had actually failed, we could do something to make
-> > sure the FS was consistent.
-> >   
-> As I mentioned in a reply to Tejun, I am not sure that we can count on 
-> the barrier op giving us status for IO's that failed to destage cleanly.
+On Wed, 22 Oct 2008 05:48:30 -0700
+"Jeff Schroeder" <jeffschroed@gmail.com> wrote:
+
+> > NFS is a good example for a fs that never got redesigned for modern world. I
+> > hope it will, but currently it's like Model T on a highway.
+> > You have a NFS server with clients. Your NFS server dies, your backup server
+> > cannot take over the clients without them resetting their NFS-link (which
+> > means reboot to many applications) - no way.
+> > Besides that you still need another fs below NFS to bring your data onto some
+> > medium, which means you still have the problem how to create redundancy in
+> > your server architecture.
 > 
-> Waiting and then doing the FLUSH seems to give us the best coverage for 
-> normal failures (and your own testing shows that it is hugely effective 
-> in reducing some types of corruption at least :-)).
-> 
-> If you look at the types of common drive failures, I would break them 
-> into two big groups. 
-> 
-> The first group would be transient errors - i.e., this IO fails (usually 
-> a read), but a subsequent IO will succeed with or without a sector 
-> remapping happening.  Causes might be:
-> 
->     (1) just a bad read due to dirt on the surface of the drive - the 
-> read will always fail, a write might clean the surface and restore it to 
-> useful life.
->     (2) vibrations (dropping your laptop, rolling a big machine down the 
-> data center, passing trains :-))
->     (3) adjacent sector writes - hot spotting on drives can degrade the 
-> data on adjacent tracks. This causes IO errors on reads for data that 
-> was successfully written before, but the track itself is still perfectly 
-> fine.
-> 
+> You are somewhat misinformed on this. Perhaps the Linux nfs server can't cope,
+> but I doubt it. NFS was designed to be stateless. I've got a fair
+> amount of experience
+> with a dual head netapp architecture. When 1 head dies, the other
+> transparently fails
+> over. During the brief downtime, the clients will go into I/O wait if
+> at all instead of being
+> disconnected. You might be able to do something similar using nfsd and
+> keepalived if
+> both servers were connected to the same storage. Setting that up would
+> be trivial. You
+> just need the clients mounting the vip and a reliable mechanism to
+> provide the data from
+> that vip. You could use heartbeat, but it is overly complex. Also look
+> at clustered nfs or
+> pnfs, both of which are nfs redesigns like you speak of.
 
-4) Transient conditions such as heat or other problems made the drive
-give errors.
+we tried that with pure linux nfs, and it does not work. The clients do not
+recover. After trying ourselves and failing we found several docs on the net
+that described just the same problem and its reasons. Very likely netapp found
+that out too and did something against it. 
 
-Combine your matrix with the single drive install vs the mirrored
-configuration and we get a lot of variables.  What I'd love to have is a
-rehab tool for drives that works it over and decides if it should stay
-or go.
+Ah yes, and btw, your description contains another discussed problem: "both
+servers were connected to the same storage". If you mean that both servers
+really access the same storage at the same time your software options are
+pretty few in numbers.
 
-It is somewhat difficult to run the rehab on a mounted single disk
-install, but we can start with the multi-device config and work out way
-out from there.
+> -- 
+> Jeff Schroeder
 
-For barrier flush, io errors reported back by the barrier flush would
-allow us to know when corrective action was required.
-
--chris
-
+-- 
+Regards,
+Stephan
 

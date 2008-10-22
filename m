@@ -1,102 +1,56 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: BTRFS Performance page
-Date: Wed, 22 Oct 2008 11:55:50 -0400
-Message-ID: <1224690950.6448.84.camel@think.oraclecorp.com>
-References: <48FE5593.2080209@austin.ibm.com>
-	 <48FF4028.5080109@austin.ibm.com>
-	 <1224688768.6448.63.camel@think.oraclecorp.com>
-	 <48FF4A93.6060007@austin.ibm.com>
+From: "Michel Salim" <michel.sylvan@gmail.com>
+Subject: Re: Some very basic questions
+Date: Wed, 22 Oct 2008 11:56:58 -0400
+Message-ID: <f224c6140810220856k5ff653ccv194db074dc482523@mail.gmail.com>
+References: <20081021132322.271ad728.skraw@ithnet.com>
+	 <48FDD710.5050702@hp.com> <20081021190136.89b2c6af.skraw@ithnet.com>
+	 <20081021171513.GA8799@infradead.org> <48FE11F9.7040700@gmail.com>
+	 <20081022142759.ac33a16c.skraw@ithnet.com>
+	 <1224681345.6448.4.camel@think.oraclecorp.com>
+	 <20081022155221.e147a36b.skraw@ithnet.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org
-To: Steven Pratt <slpratt@austin.ibm.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: "Chris Mason" <chris.mason@oracle.com>,
+	"Ric Wheeler" <ricwheeler@gmail.com>,
+	"Christoph Hellwig" <hch@infradead.org>,
+	"jim owens" <jowens@hp.com>, linux-btrfs@vger.kernel.org
+To: "Stephan von Krawczynski" <skraw@ithnet.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <48FF4A93.6060007@austin.ibm.com>
+In-Reply-To: <20081022155221.e147a36b.skraw@ithnet.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2008-10-22 at 10:45 -0500, Steven Pratt wrote:
-> Chris Mason wrote:
-> > On Wed, 2008-10-22 at 10:00 -0500, Steven Pratt wrote:
-> >   
-> >> Steven Pratt wrote:
-> >>     
-> >>> As discussed on the BTRFS conference call, myself and Kevin Corry have 
-> >>> set up some test machines for the purpose of doing performance testing 
-> >>> on BTRFS.  The intent is to have a semi permanent setup that we can 
-> >>> use to test new features and code drops in BTRFS as well as to do 
-> >>> comparisons to other file systems.  The systems are pretty much fully 
-> >>> automated for execution, so we should be able to crank out large 
-> >>> numbers of different benchmarks as well as keep up with GIT changes.
-> >>>
-> >>> The data is hosted at http://btrfs.boxacle.net/. So far we have the 
-> >>> data for the single disk tests uploaded. We should be able to upload 
-> >>> results from the larger RAID config tomorrow.
-> >>>
-> >>> Initial tests were done with the FFSB benchmark and we picked 5 common 
-> >>> workloads; create, random and sequential read, random write, and a 
-> >>> mail server emulation.  We plan to expand this based on feedback to 
-> >>> include more FFSB tests and/or other workloads.
-> >>>
-> >>> All runs have complete analysis data with them (iostat, mpstat, 
-> >>> oprofile, sar), as well as the FFSB profiles that can be used to 
-> >>> recreate any test we ran. We also have collected blktrace data but not 
-> >>> uploaded due to size.
-> >>>
-> >>>       
-> >
-> > I'll try to reproduce things here, but I might end up asking for some of
-> > the blktrace data.
-> >
-> >   
-> Sure, not a problem for select workloads, but it was just too much data 
-> to upload for every run.  Just let me know which ones you need.
-> 
-
-Hopefully I'll get similar results to yours, I'll give it a shot later this week.
-
-> > If I'm reading the config correctly, the random write workload does
-> > this:
-> >
-> > 1) create a file sequentially
-> > 2) do buffered random writes to the file
-> >   
-> Correct.  Although there are multiple files(but created serially) and 
-> multiple threads writing to different files at the same time.  We also 
-> only write 5% of a file before moving on to a new file.  So while there 
-> can be some ordering, the merging should be minimal.  If fact we see 
-> that from iostat (this is from 16 thread ext3)
-> 
-> sdf               0.00   177.05   14.17 3665.07    56.69 15374.05     8.39    67.88   18.48   0.24  86.53
-> 
-> 177 merges out of 3665 ios, with average request size on 4.2k.
-
-> 
-> 
-> > Since buffered writeback happens via pdflush, the IO isn't actually as
-> > random as you would expect.  Pages are written in file offset order,
-> > which actually corresponds to disk order.
-> >
-> >   
-> Right, there will be a fair amount of locality to the random writes.
-> 
-> > When btrfs is doing COW, file offset order maps to random order on disk,
-> > leading to much lower tput.  The nocow results should be better than
-> > they are, and I'll see what I can do about the cow results too.
-> >
-> >   
-> Not sure I understand this point, doesn't the COW code allocate new 
-> space sequentially?
-
-Yes, COW allocates new space sequentially and via delayed allocation,
-and based on the config the extents should be about 5MB in size.  But
-based on the numbers, we're getting something much more random.  pdflush
-is really tricky here, and when it does the wrong thing the COW mode
-will show it most.
-
-I'd be curious to see the difference in performance between this run and
-this run with 5MB O_SYNC (or O_DIRECT) writes.  Btrfs can do both, the
-O_DIRECT write just does the normal page cache write plus an invalidate.
-
--chris
-
-
+T24gV2VkLCBPY3QgMjIsIDIwMDggYXQgOTo1MiBBTSwgU3RlcGhhbiB2b24gS3Jhd2N6eW5za2kK
+PHNrcmF3QGl0aG5ldC5jb20+IHdyb3RlOgo+IE9uIFdlZCwgMjIgT2N0IDIwMDggMDk6MTU6NDUg
+LTA0MDAKPiBDaHJpcyBNYXNvbiA8Y2hyaXMubWFzb25Ab3JhY2xlLmNvbT4gd3JvdGU6Cj4KPj4g
+T24gV2VkLCAyMDA4LTEwLTIyIGF0IDE0OjI3ICswMjAwLCBTdGVwaGFuIHZvbiBLcmF3Y3p5bnNr
+aSB3cm90ZToKPj4gPiBPbiBUdWUsIDIxIE9jdCAyMDA4IDEzOjMxOjM3IC0wNDAwCj4+ID4gUmlj
+IFdoZWVsZXIgPHJpY3doZWVsZXJAZ21haWwuY29tPiB3cm90ZToKPj4gPgo+PiA+ID4gWy4uLl0K
+Pj4gPiA+IElmIHlvdSBoYXZlIHJlbWFwcGVkIGEgYmlnIGNodW5rIG9mIHRoZSBzZWN0b3JzIChz
+YXkgbW9yZSB0aGFuIDEwJSksIHlvdQo+PiA+ID4gc2hvdWxkIGdyYWIgdGhlIGRhdGEgb2ZmIHRo
+ZSBkaXNrIGFzYXAgYW5kIHJlcGxhY2UgaXQuIFdvcnJ5IGxlc3MgYWJvdXQKPj4gPiA+IGVycm9y
+cyBkdXJpbmcgcmVhZCwgd3JpdGVzIGluZGljYXRlIG1vcmUgc2VyaW91cyBlcnJvcnMuCj4+ID4K
+Pj4gPiBPaywgbm93IGZvciB0aGUgYmFkIG5ld3M6IG1vbmV5IGlzIGludmVudGVkLgo+PiA+IElm
+IHlvdSByZXBsYWNlIGEgZGlzayBiZWZvcmUgcmVhbCBmYWlsdXJlIHlvdSB3b24ndCBnZXQgcmVw
+bGFjZW1lbnQgZnJvbSB0aGUKPj4gPiBtYW51ZmFjdHVyZXIuIFRoYXQgbWF5IHNvdW5kIGlycmVs
+ZXZhbnQgdG8gc29tZW9uZSBoYW5kbGluZyA1IGRpc2tzLCBidXQgaXMKPj4gPiBzaWduaWZpY2Fu
+dCBpZiBoYW5kbGluZyA1MDAgb3IgbW9yZS4gVGhlIHJlcGxhY2VtZW50IHJhdGUgaXMgaW5kZWVk
+IG11Y2gKPj4gPiBoaWdoZXIgdGhhbiBwZW9wbGUgdGhpbmsgZnJvbSB0aGVpciBob21lIHBjcy4K
+Pj4KPj4gSGFyZHdhcmUgdmVuZG9ycyBhbHJlYWR5IGRvIHJlcGxhY2UgZGlza3MgYmFzZWQgb24g
+cG9saWNpZXMgZGVmaW5lZCBieQo+PiB0aGVpciBvd24gYXJyYXkgaGFyZHdhcmUuICBUaGVzZSBh
+cmUgYWxyZWFkeSBwcmVkaWN0aXZlLgo+Cj4gTGV0cyBhZ3JlZSB0aGF0IHRoZSBtYXJrZXQgZm9y
+IGRyaXZlcywgYXJyYXlzIGFuZCByZWxhdGVkIHN0dWZmIGlzIGJpZyBhbmQKPiBjb250YWlucyBq
+dXN0IGFib3V0IGFueSBleGFtcGxlIG9uZSBuZWVkcyBmb3IgYXJndWluZyA6LSkKPiBOZXZlcnRo
+ZWxlc3Mgd2UgcHJvYmFibHkgYWdyZWUgdGhhdCBpZiBqb2huIGRvZSBtZWV0cyBiaWctcGxheWVy
+IGFuZCB0cmllcyB0bwo+IHdhcnJhbnR5LXJlcGxhY2UgYSBub24tZGVhZCBkcml2ZSBoZSB3aWxs
+IGhhdmUgdHJvdWJsZXMuCj4KSWYgSm9obiBEb2UgaXMgdXNpbmcgcmVkdW5kYW50IHN0b3JhZ2Ug
+aW4gdGhlIGZpcnN0IHBsYWNlLCBoZSBqdXN0Cm5lZWRzIGFuIGVtZXJnZW5jeSBkaXNrIHRoYXQg
+Y2FuIGJlIHN3YXBwZWQtaW4gZm9yIGEgZmFpbGluZyBkaXNrLCBhbmQKdGhlbiBzdHJlc3MtdGVz
+dCB0aGUgZmFpbGluZyBkaXNrIHRvIGRlYXRoLCBnZXQgaXQgcmVwbGFjZWQgYnkKbWFudWZhY3R1
+cmVyLCBhbmQgdGhlIHJlcGxhY2VtZW50IGJlY29tZXMgdGhlIG5leHQgc3RhbmRieS9lbWVyZ2Vu
+Y3kKZGlzay4KClRob3VnaCBpdCB3b3VsZCBiZSBuaWNlIHRvIGhhdmUgYSB0b29sIHRoYXQgd291
+bGQgcHJvdmlkZSBlbm91Z2gKaW5mb3JtYXRpb24gdG8gbWFrZSBhIHdhcnJhbnR5IGNsYWltIC0t
+IGRvZXMgYnRyZnMga2VlcCBlbm91Z2gKaW5mb3JtYXRpb24gZm9yIHN1Y2ggYSB0b29sIHRvIGJl
+IHdyaXR0ZW4/CgpUaGFua3MsCgotLSAKbWnKg2VsIHNhbGltICDigKIgIGh0dHA6Ly9oaXJjdXMu
+amFpa3UuY29tLwpJVUNTICAgICAgICAg4oCiICBtc2FsaW1AY3MuaW5kaWFuYS5lZHUKRmVkb3Jh
+ICAgICAgIOKAoiAgc2FsaW1tYUBmZWRvcmFwcm9qZWN0Lm9yZwpNYWNQb3J0cyAgICAg4oCiICBo
+aXJjdXNAbWFjcG9ydHMub3JnCg==

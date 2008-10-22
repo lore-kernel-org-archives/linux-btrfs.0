@@ -1,104 +1,75 @@
-From: Ric Wheeler <rwheeler@redhat.com>
+From: Avi Kivity <avi@redhat.com>
 Subject: Re: Some very basic questions
-Date: Wed, 22 Oct 2008 10:23:04 -0400
-Message-ID: <48FF3748.3030008@redhat.com>
-References: <20081021132322.271ad728.skraw@ithnet.com>	 <1224597580.27474.93.camel@think.oraclecorp.com>	 <1224622451.7412.1.camel@telesto> <48FE553D.80501@redhat.com>	 <1224642544.7189.17.camel@telesto> <48FF038A.4010105@redhat.com>	 <48FF0625.6040400@kernel.org> <48FF2343.3070107@redhat.com>	 <48FF276B.6090602@kernel.org>	 <1224681593.6448.7.camel@think.oraclecorp.com>  <48FF2CF0.60708@redhat.com> <1224683945.6448.44.camel@think.oraclecorp.com>
+Date: Wed, 22 Oct 2008 16:25:05 +0200
+Message-ID: <48FF37C1.1010001@redhat.com>
+References: <20081021173714.29505.qmail@splitreflection.com> <48FE36BD.6020701@hp.com> <48FED2F9.1060103@redhat.com> <48FF3520.2000308@hp.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Tejun Heo <tj@kernel.org>, Eric Anopolsky <erpo41@gmail.com>,
-	Stephan von Krawczynski <skraw@ithnet.com>,
-	linux-btrfs@vger.kernel.org, Mark Lord <mlord@pobox.com>
-To: Chris Mason <chris.mason@oracle.com>
+Cc: Stephan von Krawczynski <skraw@ithnet.com>,
+	linux-btrfs@vger.kernel.org
+To: jim owens <jowens@hp.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1224683945.6448.44.camel@think.oraclecorp.com>
+In-Reply-To: <48FF3520.2000308@hp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote:
-> On Wed, 2008-10-22 at 09:38 -0400, Ric Wheeler wrote:
->   
->> Chris Mason wrote:
->>     
->>> On Wed, 2008-10-22 at 22:15 +0900, Tejun Heo wrote:
->>>   
->>>       
->>>> Ric Wheeler wrote:
->>>>     
->>>>         
->>>>> I think that we do handle a failure in the case that you outline above
->>>>> since the FS will be able to notice the error before it sends a commit
->>>>> down (and that commit is wrapped in the barrier flush calls). This is
->>>>> the easy case since we still have the context for the IO.
->>>>>       
->>>>>           
->>>> I'm no FS guy but for that to be true FS should be waiting for all the
->>>> outstanding IOs to finish before issuing a barrier and actually
->>>> doesn't need barriers at all - it can do the same with flush_cache.
->>>>
->>>>     
->>>>         
->>> We wait and then barrier.  If the barrier returned status that a
->>> previously ack'd IO had actually failed, we could do something to make
->>> sure the FS was consistent.
->>>   
->>>       
->> As I mentioned in a reply to Tejun, I am not sure that we can count on 
->> the barrier op giving us status for IO's that failed to destage cleanly.
+jim owens wrote:
+> Avi Kivity wrote:
+>> jim owens wrote:
+>>>
+>>> Remember that the device bandwidth is the limiter so even
+>>> when each host has a dedicated path to the device (as in
+>>> dual port SAS or FC), that 2nd host cuts the throughput by
+>>> more than 1/2 with uncoordinated seeks and transfers.
 >>
->> Waiting and then doing the FLUSH seems to give us the best coverage for 
->> normal failures (and your own testing shows that it is hugely effective 
->> in reducing some types of corruption at least :-)).
->>
->> If you look at the types of common drive failures, I would break them 
->> into two big groups. 
->>
->> The first group would be transient errors - i.e., this IO fails (usually 
->> a read), but a subsequent IO will succeed with or without a sector 
->> remapping happening.  Causes might be:
->>
->>     (1) just a bad read due to dirt on the surface of the drive - the 
->> read will always fail, a write might clean the surface and restore it to 
->> useful life.
->>     (2) vibrations (dropping your laptop, rolling a big machine down the 
->> data center, passing trains :-))
->>     (3) adjacent sector writes - hot spotting on drives can degrade the 
->> data on adjacent tracks. This causes IO errors on reads for data that 
->> was successfully written before, but the track itself is still perfectly 
->> fine.
->>
->>     
+>> That's only a problem if there is a single shared device.  Since 
+>> btrfs supports multiple devices, each host could own a device set and 
+>> access from other hosts would be through the owner.  You would need 
+>> RDMA to get reasonable performance and some kind of dual-porting to 
+>> get high availability.  Each host could control the allocation tree 
+>> for its devices.
 >
-> 4) Transient conditions such as heat or other problems made the drive
-> give errors.
->   
-
-Yes, heat is an issue (as well as severe cold) since drives have part 
-that expand and contract :-)).
-> Combine your matrix with the single drive install vs the mirrored
-> configuration and we get a lot of variables.  What I'd love to have is a
-> rehab tool for drives that works it over and decides if it should stay
-> or go.
->   
-
-That would be a really nice thing to have and not really that difficult 
-to sketch out. MD has some of that built in, but this is also something 
-that we could do pretty easily up in user space.
-> It is somewhat difficult to run the rehab on a mounted single disk
-> install, but we can start with the multi-device config and work out way
-> out from there.
->   
-
-Scanning a mounted drive with read-verify or object level signature 
-checking can be done on mounted file systems...
-> For barrier flush, io errors reported back by the barrier flush would
-> allow us to know when corrective action was required.
+> No.  Every device including a monster $$$ array has the problem.
 >
-> -chris
->
->
->   
+> As I said before, unless the application is partitioned
+> there is always data host2 needs from host1's disk and that
+> slows down host1.
 
-As I mentioned before, this would be great, but I am not sure that it 
-would work that way (certainly not consistently across devices).
+The CPU load should not be significant if you have RDMA.  Or are you 
+talking about the seek load?  Since host1's load should be distributed 
+over all devices in the system, overall seek capacity increases as you 
+add more nodes.
 
-ric
+>
+> If host2 seldom needs any host1 data, then you are describing
+> a configuration that can be done easily by each host having a
+> separate filesystem for the device it owns by default.  Each
+> host nfs mounts the other host's data and if host1 fails, host2
+> can direct mount host1-fs from the shared array.
+>
+
+Separate namespaces are uninteresting to me.  That's just pushing back 
+the problem to the user.
+
+> Even with multiple disks under the same filesystem as separate
+> allocated storage there is still the problem of shared namespace
+> metadata that slows down both hosts.  If you don't need shared
+> namespaces then you absolutely don't want a cluster fs.
+>
+
+If you separate the allocation metadata to the storage owning node, and 
+the file metadata to the actively using node, the slowdown should be low 
+in most cases.  Problems begin when all nodes access the same file, but 
+that's relatively rare.  Even then, when the file size does not change 
+and when the data is preallocated, it's possible to achieve acceptable 
+overhead.
+
+> A cluster fs is useful, but the cost can be high so using
+> it for a single-host fs is not a good idea.
+
+Development costs, yes.  But I don't see why the runtime overhead can't 
+disappear when running on a single host.  Sort of like running an smp 
+kernel on uniprocessor (I agree the fs problem is much bigger).
+
+-- 
+error compiling committee.c: too many arguments to function
 

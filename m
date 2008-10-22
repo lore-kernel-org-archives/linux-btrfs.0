@@ -1,56 +1,75 @@
-From: "Michel Salim" <michel.sylvan@gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: Some very basic questions
-Date: Wed, 22 Oct 2008 11:56:58 -0400
-Message-ID: <f224c6140810220856k5ff653ccv194db074dc482523@mail.gmail.com>
+Date: Wed, 22 Oct 2008 11:33:59 -0400
+Message-ID: <1224689639.6448.72.camel@think.oraclecorp.com>
 References: <20081021132322.271ad728.skraw@ithnet.com>
 	 <48FDD710.5050702@hp.com> <20081021190136.89b2c6af.skraw@ithnet.com>
 	 <20081021171513.GA8799@infradead.org> <48FE11F9.7040700@gmail.com>
 	 <20081022142759.ac33a16c.skraw@ithnet.com>
-	 <1224681345.6448.4.camel@think.oraclecorp.com>
-	 <20081022155221.e147a36b.skraw@ithnet.com>
+	 <1224681345.6448.4.camel@think.oraclecorp.com> <48FF2A5B.80108@redhat.com>
+	 <48FF396B.1020700@redhat.com> <48FF3CB9.6070404@redhat.com>
+	 <48FF3EB8.6050306@redhat.com> <48FF4082.407@redhat.com>
+	 <48FF4302.5030204@redhat.com>  <48FF45EE.7010001@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: "Chris Mason" <chris.mason@oracle.com>,
-	"Ric Wheeler" <ricwheeler@gmail.com>,
-	"Christoph Hellwig" <hch@infradead.org>,
-	"jim owens" <jowens@hp.com>, linux-btrfs@vger.kernel.org
-To: "Stephan von Krawczynski" <skraw@ithnet.com>
+Content-Type: text/plain
+Cc: Avi Kivity <avi@redhat.com>,
+	Stephan von Krawczynski <skraw@ithnet.com>,
+	Christoph Hellwig <hch@infradead.org>,
+	jim owens <jowens@hp.com>, linux-btrfs@vger.kernel.org
+To: Ric Wheeler <rwheeler@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20081022155221.e147a36b.skraw@ithnet.com>
+In-Reply-To: <48FF45EE.7010001@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-T24gV2VkLCBPY3QgMjIsIDIwMDggYXQgOTo1MiBBTSwgU3RlcGhhbiB2b24gS3Jhd2N6eW5za2kK
-PHNrcmF3QGl0aG5ldC5jb20+IHdyb3RlOgo+IE9uIFdlZCwgMjIgT2N0IDIwMDggMDk6MTU6NDUg
-LTA0MDAKPiBDaHJpcyBNYXNvbiA8Y2hyaXMubWFzb25Ab3JhY2xlLmNvbT4gd3JvdGU6Cj4KPj4g
-T24gV2VkLCAyMDA4LTEwLTIyIGF0IDE0OjI3ICswMjAwLCBTdGVwaGFuIHZvbiBLcmF3Y3p5bnNr
-aSB3cm90ZToKPj4gPiBPbiBUdWUsIDIxIE9jdCAyMDA4IDEzOjMxOjM3IC0wNDAwCj4+ID4gUmlj
-IFdoZWVsZXIgPHJpY3doZWVsZXJAZ21haWwuY29tPiB3cm90ZToKPj4gPgo+PiA+ID4gWy4uLl0K
-Pj4gPiA+IElmIHlvdSBoYXZlIHJlbWFwcGVkIGEgYmlnIGNodW5rIG9mIHRoZSBzZWN0b3JzIChz
-YXkgbW9yZSB0aGFuIDEwJSksIHlvdQo+PiA+ID4gc2hvdWxkIGdyYWIgdGhlIGRhdGEgb2ZmIHRo
-ZSBkaXNrIGFzYXAgYW5kIHJlcGxhY2UgaXQuIFdvcnJ5IGxlc3MgYWJvdXQKPj4gPiA+IGVycm9y
-cyBkdXJpbmcgcmVhZCwgd3JpdGVzIGluZGljYXRlIG1vcmUgc2VyaW91cyBlcnJvcnMuCj4+ID4K
-Pj4gPiBPaywgbm93IGZvciB0aGUgYmFkIG5ld3M6IG1vbmV5IGlzIGludmVudGVkLgo+PiA+IElm
-IHlvdSByZXBsYWNlIGEgZGlzayBiZWZvcmUgcmVhbCBmYWlsdXJlIHlvdSB3b24ndCBnZXQgcmVw
-bGFjZW1lbnQgZnJvbSB0aGUKPj4gPiBtYW51ZmFjdHVyZXIuIFRoYXQgbWF5IHNvdW5kIGlycmVs
-ZXZhbnQgdG8gc29tZW9uZSBoYW5kbGluZyA1IGRpc2tzLCBidXQgaXMKPj4gPiBzaWduaWZpY2Fu
-dCBpZiBoYW5kbGluZyA1MDAgb3IgbW9yZS4gVGhlIHJlcGxhY2VtZW50IHJhdGUgaXMgaW5kZWVk
-IG11Y2gKPj4gPiBoaWdoZXIgdGhhbiBwZW9wbGUgdGhpbmsgZnJvbSB0aGVpciBob21lIHBjcy4K
-Pj4KPj4gSGFyZHdhcmUgdmVuZG9ycyBhbHJlYWR5IGRvIHJlcGxhY2UgZGlza3MgYmFzZWQgb24g
-cG9saWNpZXMgZGVmaW5lZCBieQo+PiB0aGVpciBvd24gYXJyYXkgaGFyZHdhcmUuICBUaGVzZSBh
-cmUgYWxyZWFkeSBwcmVkaWN0aXZlLgo+Cj4gTGV0cyBhZ3JlZSB0aGF0IHRoZSBtYXJrZXQgZm9y
-IGRyaXZlcywgYXJyYXlzIGFuZCByZWxhdGVkIHN0dWZmIGlzIGJpZyBhbmQKPiBjb250YWlucyBq
-dXN0IGFib3V0IGFueSBleGFtcGxlIG9uZSBuZWVkcyBmb3IgYXJndWluZyA6LSkKPiBOZXZlcnRo
-ZWxlc3Mgd2UgcHJvYmFibHkgYWdyZWUgdGhhdCBpZiBqb2huIGRvZSBtZWV0cyBiaWctcGxheWVy
-IGFuZCB0cmllcyB0bwo+IHdhcnJhbnR5LXJlcGxhY2UgYSBub24tZGVhZCBkcml2ZSBoZSB3aWxs
-IGhhdmUgdHJvdWJsZXMuCj4KSWYgSm9obiBEb2UgaXMgdXNpbmcgcmVkdW5kYW50IHN0b3JhZ2Ug
-aW4gdGhlIGZpcnN0IHBsYWNlLCBoZSBqdXN0Cm5lZWRzIGFuIGVtZXJnZW5jeSBkaXNrIHRoYXQg
-Y2FuIGJlIHN3YXBwZWQtaW4gZm9yIGEgZmFpbGluZyBkaXNrLCBhbmQKdGhlbiBzdHJlc3MtdGVz
-dCB0aGUgZmFpbGluZyBkaXNrIHRvIGRlYXRoLCBnZXQgaXQgcmVwbGFjZWQgYnkKbWFudWZhY3R1
-cmVyLCBhbmQgdGhlIHJlcGxhY2VtZW50IGJlY29tZXMgdGhlIG5leHQgc3RhbmRieS9lbWVyZ2Vu
-Y3kKZGlzay4KClRob3VnaCBpdCB3b3VsZCBiZSBuaWNlIHRvIGhhdmUgYSB0b29sIHRoYXQgd291
-bGQgcHJvdmlkZSBlbm91Z2gKaW5mb3JtYXRpb24gdG8gbWFrZSBhIHdhcnJhbnR5IGNsYWltIC0t
-IGRvZXMgYnRyZnMga2VlcCBlbm91Z2gKaW5mb3JtYXRpb24gZm9yIHN1Y2ggYSB0b29sIHRvIGJl
-IHdyaXR0ZW4/CgpUaGFua3MsCgotLSAKbWnKg2VsIHNhbGltICDigKIgIGh0dHA6Ly9oaXJjdXMu
-amFpa3UuY29tLwpJVUNTICAgICAgICAg4oCiICBtc2FsaW1AY3MuaW5kaWFuYS5lZHUKRmVkb3Jh
-ICAgICAgIOKAoiAgc2FsaW1tYUBmZWRvcmFwcm9qZWN0Lm9yZwpNYWNQb3J0cyAgICAg4oCiICBo
-aXJjdXNAbWFjcG9ydHMub3JnCg==
+On Wed, 2008-10-22 at 11:25 -0400, Ric Wheeler wrote:
+> Avi Kivity wrote:
+> > Ric Wheeler wrote:
+> >>>
+> >>> Well, btrfs is not about duplicating how most storage works today.  
+> >>> Spare capacity has significant advantages over spare disks, such as 
+> >>> being able to mix disk sizes, RAID levels, and better performance.
+> >>
+> >> Sure, there are advantages that go in favour of one or the other 
+> >> approaches. But btrfs is also about being able to use common hardware 
+> >> configurations without having to reinvent where we can avoid it (if 
+> >> we have a working RAID or enough drives to do RAID5 with spares or 
+> >> RAID6, we want to be able to delegate that off to something else if 
+> >> we can).
+> >
+> > Well, if you have an existing RAID (or have lots of $$$ to buy a new 
+> > one), you needn't tell Btrfs about it.  Just be sure not to enable 
+> > Btrfs data redundancy, or you'll have redundant redundancy, which is 
+> > expensive.
+> >
+> > What Btrfs enables with its multiple device capabilities is to 
+> > assemble a JBOD into a filesystem-level data redundancy system, which 
+> > is cheaper, more flexible (per-file data redundancy levels), and 
+> > faster (no need for RMW, since you're always COWing).
+>
+> I think that the btrfs plan is still to push more complicated RAID 
+> schemes off to MD (RAID6, etc) so this is an issue even with a JBOD.
+
+At least v1.0 won't have raid6.  Over the longer term I hope to include
+it because managing the storage once in btrfs and once in md is going to
+be a bit clumsy.  It also limits the mixed mode functionality like
+different stripe sizes for data vs metadata or metadata mirroring and
+data raid6 that will allow us to perform well.
+
+The goal will be to make a library of raid routines based on md that
+other storage will be able to use.  I know Christoph has been interested
+in this as well.
+
+But in general, the btrfs raid code can do either spare disks or spare
+capacity modes safely.  It enforces the correct number of devices in
+each raid mode (as long as the admin doesn't lie to us and feed
+partitions off the same device).
+
+I'll leave the rest up to the admin.  One problem with the spare
+capacity model is the general trend where drives from the same batch
+that get hammered on in the same way tend to die at the same time.  Some
+shops will sleep better knowing there's a hot spare and that's fine by
+me.
+
+-chris
+
+

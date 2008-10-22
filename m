@@ -1,67 +1,85 @@
-From: Steven Pratt <slpratt@austin.ibm.com>
-Subject: Re: BTRFS Performance page
-Date: Wed, 22 Oct 2008 08:53:54 -0500
-Message-ID: <48FF3072.7050404@austin.ibm.com>
-References: <48FE5593.2080209@austin.ibm.com> <20081022001437.GA23949@think.oraclecorp.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Some very basic questions
+Date: Wed, 22 Oct 2008 09:59:05 -0400
+Message-ID: <1224683945.6448.44.camel@think.oraclecorp.com>
+References: <20081021132322.271ad728.skraw@ithnet.com>
+	 <1224597580.27474.93.camel@think.oraclecorp.com>
+	 <1224622451.7412.1.camel@telesto> <48FE553D.80501@redhat.com>
+	 <1224642544.7189.17.camel@telesto> <48FF038A.4010105@redhat.com>
+	 <48FF0625.6040400@kernel.org> <48FF2343.3070107@redhat.com>
+	 <48FF276B.6090602@kernel.org>
+	 <1224681593.6448.7.camel@think.oraclecorp.com>  <48FF2CF0.60708@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain
+Cc: Tejun Heo <tj@kernel.org>, Eric Anopolsky <erpo41@gmail.com>,
+	Stephan von Krawczynski <skraw@ithnet.com>,
+	linux-btrfs@vger.kernel.org
+To: Ric Wheeler <rwheeler@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20081022001437.GA23949@think.oraclecorp.com>
+In-Reply-To: <48FF2CF0.60708@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote:
-> On Tue, Oct 21, 2008 at 05:20:03PM -0500, Steven Pratt wrote:
->   
->> As discussed on the BTRFS conference call, myself and Kevin Corry have  
->> set up some test machines for the purpose of doing performance testing  
->> on BTRFS.  The intent is to have a semi permanent setup that we can use  
->> to test new features and code drops in BTRFS as well as to do  
->> comparisons to other file systems.  The systems are pretty much fully  
->> automated for execution, so we should be able to crank out large numbers  
->> of different benchmarks as well as keep up with GIT changes.
->>
->> The data is hosted at http://btrfs.boxacle.net/. So far we have the data  
->> for the single disk tests uploaded. We should be able to upload results  
->> from the larger RAID config tomorrow.
->>
->> Initial tests were done with the FFSB benchmark and we picked 5 common  
->> workloads; create, random and sequential read, random write, and a mail  
->> server emulation.  We plan to expand this based on feedback to include  
->> more FFSB tests and/or other workloads.
->>
->> All runs have complete analysis data with them (iostat, mpstat,  
->> oprofile, sar), as well as the FFSB profiles that can be used to  
->> recreate any test we ran. We also have collected blktrace data but not  
->> uploaded due to size.
->>
->> Please follow the results link on the bottom of the main page to get to  
->> the current results.  Let me know what you like or don't like.   I will  
->> post again when we get the RAID data uploaded.
->>     
->
-> Very interesting data, thank you for posting this.  The first comment
-> I'll make is that -o nodatacow requires -o nodatasum.  The sums aren't
-> valid without the cow.
->   
-Thought that might be the case.  Ok, we will drop this variation.
+On Wed, 2008-10-22 at 09:38 -0400, Ric Wheeler wrote:
+> Chris Mason wrote:
+> > On Wed, 2008-10-22 at 22:15 +0900, Tejun Heo wrote:
+> >   
+> >> Ric Wheeler wrote:
+> >>     
+> >>> I think that we do handle a failure in the case that you outline above
+> >>> since the FS will be able to notice the error before it sends a commit
+> >>> down (and that commit is wrapped in the barrier flush calls). This is
+> >>> the easy case since we still have the context for the IO.
+> >>>       
+> >> I'm no FS guy but for that to be true FS should be waiting for all the
+> >> outstanding IOs to finish before issuing a barrier and actually
+> >> doesn't need barriers at all - it can do the same with flush_cache.
+> >>
+> >>     
+> >
+> > We wait and then barrier.  If the barrier returned status that a
+> > previously ack'd IO had actually failed, we could do something to make
+> > sure the FS was consistent.
+> >   
+> As I mentioned in a reply to Tejun, I am not sure that we can count on 
+> the barrier op giving us status for IO's that failed to destage cleanly.
+> 
+> Waiting and then doing the FLUSH seems to give us the best coverage for 
+> normal failures (and your own testing shows that it is hugely effective 
+> in reducing some types of corruption at least :-)).
+> 
+> If you look at the types of common drive failures, I would break them 
+> into two big groups. 
+> 
+> The first group would be transient errors - i.e., this IO fails (usually 
+> a read), but a subsequent IO will succeed with or without a sector 
+> remapping happening.  Causes might be:
+> 
+>     (1) just a bad read due to dirt on the surface of the drive - the 
+> read will always fail, a write might clean the surface and restore it to 
+> useful life.
+>     (2) vibrations (dropping your laptop, rolling a big machine down the 
+> data center, passing trains :-))
+>     (3) adjacent sector writes - hot spotting on drives can degrade the 
+> data on adjacent tracks. This causes IO errors on reads for data that 
+> was successfully written before, but the track itself is still perfectly 
+> fine.
+> 
 
-> The FFSB mail server workload, does it do fsync writes?
->   
-No, but we have the ability to add that if we choose.
+4) Transient conditions such as heat or other problems made the drive
+give errors.
 
-> For the sequential read workload, I'm guessing (hoping) the files are
-> created in parallel?
->   
-Sorry, setup is still single threaded.
+Combine your matrix with the single drive install vs the mirrored
+configuration and we get a lot of variables.  What I'd love to have is a
+rehab tool for drives that works it over and decides if it should stay
+or go.
 
-Steve
+It is somewhat difficult to run the rehab on a mounted single disk
+install, but we can start with the multi-device config and work out way
+out from there.
 
-> -chris
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->   
+For barrier flush, io errors reported back by the barrier flush would
+allow us to know when corrective action was required.
+
+-chris
+
 

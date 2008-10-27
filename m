@@ -1,19 +1,19 @@
 From: Yan Zheng <zheng.yan@oracle.com>
-Subject: [PATCH] Add root tree pointer transaction ids
-Date: Mon, 27 Oct 2008 14:30:41 +0800
-Message-ID: <49056011.7090405@oracle.com>
+Subject: [PATCH 1/4] update hole handling
+Date: Mon, 27 Oct 2008 21:35:10 +0800
+Message-ID: <4905C38E.1090805@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
+Cc: yanzheng@21cn.com
 To: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello,
 
-This patch adds transaction IDs to root tree pointers.
-Transaction IDs in tree pointers are compared with the
-generation numbers in block headers when reading root
-blocks of trees. This can detect some types of IO errors.
+This patch splits the hole insertion code out of btrfs_setattr
+into btrfs_cont_expand and updates btrfs_get_extent to properly
+handle the case that file extent items are not continuous.
 
 Regards
 
@@ -21,237 +21,335 @@ Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
 
 ---
 diff -urp 1/fs/btrfs/ctree.h 2/fs/btrfs/ctree.h
---- 1/fs/btrfs/ctree.h	2008-10-27 10:37:40.000000000 +0800
-+++ 2/fs/btrfs/ctree.h	2008-10-27 10:41:45.000000000 +0800
-@@ -297,6 +297,7 @@ struct btrfs_super_block {
- 	__le32 leafsize;
- 	__le32 stripesize;
- 	__le32 sys_chunk_array_size;
-+	__le64 chunk_root_generation;
- 	u8 root_level;
- 	u8 chunk_root_level;
- 	u8 log_root_level;
-@@ -439,6 +440,7 @@ struct btrfs_dir_item {
+--- 1/fs/btrfs/ctree.h	2008-10-27 15:32:39.000000000 +0800
++++ 2/fs/btrfs/ctree.h	2008-10-27 16:29:20.000000000 +0800
+@@ -1845,6 +1845,7 @@ int btrfs_update_inode(struct btrfs_tran
+ int btrfs_orphan_add(struct btrfs_trans_handle *trans, struct inode *inode);
+ int btrfs_orphan_del(struct btrfs_trans_handle *trans, struct inode *inode);
+ void btrfs_orphan_cleanup(struct btrfs_root *root);
++int btrfs_cont_expand(struct inode *inode, loff_t size);
  
- struct btrfs_root_item {
- 	struct btrfs_inode_item inode;
-+	__le64 generation;
- 	__le64 root_dirid;
- 	__le64 bytenr;
- 	__le64 byte_limit;
-@@ -1358,10 +1360,14 @@ static inline int btrfs_is_leaf(struct e
- }
+ /* ioctl.c */
+ long btrfs_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
+diff -urp 1/fs/btrfs/extent_map.h 2/fs/btrfs/extent_map.h
+--- 1/fs/btrfs/extent_map.h	2008-10-24 09:18:54.000000000 +0800
++++ 2/fs/btrfs/extent_map.h	2008-10-27 16:29:32.000000000 +0800
+@@ -10,6 +10,7 @@
  
- /* struct btrfs_root_item */
-+BTRFS_SETGET_FUNCS(disk_root_generation, struct btrfs_root_item,
-+		   generation, 64);
- BTRFS_SETGET_FUNCS(disk_root_refs, struct btrfs_root_item, refs, 32);
- BTRFS_SETGET_FUNCS(disk_root_bytenr, struct btrfs_root_item, bytenr, 64);
- BTRFS_SETGET_FUNCS(disk_root_level, struct btrfs_root_item, level, 8);
+ /* bits for the flags field */
+ #define EXTENT_FLAG_PINNED 0 /* this entry not yet on disk, don't free it */
++#define EXTENT_FLAG_VACANCY 1 /* no file extent item found */
  
-+BTRFS_SETGET_STACK_FUNCS(root_generation, struct btrfs_root_item,
-+			 generation, 64);
- BTRFS_SETGET_STACK_FUNCS(root_bytenr, struct btrfs_root_item, bytenr, 64);
- BTRFS_SETGET_STACK_FUNCS(root_level, struct btrfs_root_item, level, 8);
- BTRFS_SETGET_STACK_FUNCS(root_dirid, struct btrfs_root_item, root_dirid, 64);
-@@ -1378,6 +1384,8 @@ BTRFS_SETGET_STACK_FUNCS(super_generatio
- BTRFS_SETGET_STACK_FUNCS(super_root, struct btrfs_super_block, root, 64);
- BTRFS_SETGET_STACK_FUNCS(super_sys_array_size,
- 			 struct btrfs_super_block, sys_chunk_array_size, 32);
-+BTRFS_SETGET_STACK_FUNCS(super_chunk_root_generation,
-+			 struct btrfs_super_block, chunk_root_generation, 64);
- BTRFS_SETGET_STACK_FUNCS(super_root_level, struct btrfs_super_block,
- 			 root_level, 8);
- BTRFS_SETGET_STACK_FUNCS(super_chunk_root, struct btrfs_super_block,
-diff -urp 1/fs/btrfs/disk-io.c 2/fs/btrfs/disk-io.c
---- 1/fs/btrfs/disk-io.c	2008-10-27 10:37:40.000000000 +0800
-+++ 2/fs/btrfs/disk-io.c	2008-10-27 13:29:06.000000000 +0800
-@@ -828,6 +828,7 @@ static int find_and_setup_root(struct bt
- {
- 	int ret;
- 	u32 blocksize;
-+	u64 generation;
- 
- 	__setup_root(tree_root->nodesize, tree_root->leafsize,
- 		     tree_root->sectorsize, tree_root->stripesize,
-@@ -836,9 +837,10 @@ static int find_and_setup_root(struct bt
- 				   &root->root_item, &root->root_key);
- 	BUG_ON(ret);
- 
-+	generation = btrfs_root_generation(&root->root_item);
- 	blocksize = btrfs_level_size(root, btrfs_root_level(&root->root_item));
- 	root->node = read_tree_block(root, btrfs_root_bytenr(&root->root_item),
--				     blocksize, 0);
-+				     blocksize, generation);
- 	BUG_ON(!root->node);
- 	return 0;
- }
-@@ -925,6 +927,7 @@ struct btrfs_root *btrfs_read_fs_root_no
- 	struct btrfs_path *path;
- 	struct extent_buffer *l;
- 	u64 highest_inode;
-+	u64 generation;
- 	u32 blocksize;
- 	int ret = 0;
- 
-@@ -966,9 +969,10 @@ out:
- 		kfree(root);
- 		return ERR_PTR(ret);
+ struct extent_map {
+ 	struct rb_node rb_node;
+diff -urp 1/fs/btrfs/file.c 2/fs/btrfs/file.c
+--- 1/fs/btrfs/file.c	2008-10-24 09:18:54.000000000 +0800
++++ 2/fs/btrfs/file.c	2008-10-27 15:37:19.000000000 +0800
+@@ -291,39 +291,6 @@ static int noinline dirty_and_release_pa
  	}
-+	generation = btrfs_root_generation(&root->root_item);
- 	blocksize = btrfs_level_size(root, btrfs_root_level(&root->root_item));
- 	root->node = read_tree_block(root, btrfs_root_bytenr(&root->root_item),
--				     blocksize, 0);
-+				     blocksize, generation);
- 	BUG_ON(!root->node);
- insert:
- 	if (location->objectid != BTRFS_TREE_LOG_OBJECTID) {
-@@ -1353,6 +1357,7 @@ struct btrfs_root *open_ctree(struct sup
- 	u32 leafsize;
- 	u32 blocksize;
- 	u32 stripesize;
-+	u64 generation;
- 	struct buffer_head *bh;
- 	struct btrfs_root *extent_root = kzalloc(sizeof(struct btrfs_root),
- 						 GFP_NOFS);
-@@ -1588,13 +1593,14 @@ struct btrfs_root *open_ctree(struct sup
+ 	set_extent_uptodate(io_tree, start_pos, end_of_last_block, GFP_NOFS);
  
- 	blocksize = btrfs_level_size(tree_root,
- 				     btrfs_super_chunk_root_level(disk_super));
-+	generation = btrfs_super_chunk_root_generation(disk_super);
- 
- 	__setup_root(nodesize, leafsize, sectorsize, stripesize,
- 		     chunk_root, fs_info, BTRFS_CHUNK_TREE_OBJECTID);
- 
- 	chunk_root->node = read_tree_block(chunk_root,
- 					   btrfs_super_chunk_root(disk_super),
--					   blocksize, 0);
-+					   blocksize, generation);
- 	BUG_ON(!chunk_root->node);
- 
- 	read_extent_buffer(chunk_root->node, fs_info->chunk_tree_uuid,
-@@ -1610,11 +1616,11 @@ struct btrfs_root *open_ctree(struct sup
- 
- 	blocksize = btrfs_level_size(tree_root,
- 				     btrfs_super_root_level(disk_super));
+-	/* FIXME...EIEIO, ENOSPC and more */
+-	/* insert any holes we need to create */
+-	if (isize < start_pos) {
+-		u64 last_pos_in_file;
+-		u64 hole_size;
+-		u64 mask = root->sectorsize - 1;
+-		last_pos_in_file = (isize + mask) & ~mask;
+-		hole_size = (start_pos - last_pos_in_file + mask) & ~mask;
+-		if (hole_size > 0) {
+-			btrfs_wait_ordered_range(inode, last_pos_in_file,
+-						 last_pos_in_file + hole_size);
+-			mutex_lock(&BTRFS_I(inode)->extent_mutex);
+-			err = btrfs_drop_extents(trans, root, inode,
+-						 last_pos_in_file,
+-						 last_pos_in_file + hole_size,
+-						 last_pos_in_file,
+-						 &hint_byte);
+-			if (err)
+-				goto failed;
 -
-+	generation = btrfs_super_generation(disk_super);
+-			err = btrfs_insert_file_extent(trans, root,
+-						       inode->i_ino,
+-						       last_pos_in_file,
+-						       0, 0, hole_size, 0);
+-			btrfs_drop_extent_cache(inode, last_pos_in_file,
+-					last_pos_in_file + hole_size - 1, 0);
+-			mutex_unlock(&BTRFS_I(inode)->extent_mutex);
+-			btrfs_check_file(root, inode);
+-		}
+-		if (err)
+-			goto failed;
+-	}
+-
+ 	/*
+ 	 * either allocate an extent for the new bytes or setup the key
+ 	 * to show we are doing inline data in the extent
+@@ -844,6 +811,12 @@ static int noinline prepare_pages(struct
+ 	start_pos = pos & ~((u64)root->sectorsize - 1);
+ 	last_pos = ((u64)index + num_pages) << PAGE_CACHE_SHIFT;
  
- 	tree_root->node = read_tree_block(tree_root,
- 					  btrfs_super_root(disk_super),
--					  blocksize, 0);
-+					  blocksize, generation);
- 	if (!tree_root->node)
- 		goto fail_sb_buffer;
++	if (start_pos > inode->i_size) {
++		err = btrfs_cont_expand(inode, start_pos);
++		if (err)
++			return err;
++	}
++
+ 	memset(pages, 0, num_pages * sizeof(struct page *));
+ again:
+ 	for (i = 0; i < num_pages; i++) {
+diff -urp 1/fs/btrfs/inode.c 2/fs/btrfs/inode.c
+--- 1/fs/btrfs/inode.c	2008-10-24 09:18:54.000000000 +0800
++++ 2/fs/btrfs/inode.c	2008-10-27 21:22:39.000000000 +0800
+@@ -1869,80 +1869,88 @@ out:
+ 	return ret;
+ }
  
-@@ -1664,15 +1670,16 @@ struct btrfs_root *open_ctree(struct sup
- 			     log_tree_root, fs_info, BTRFS_TREE_LOG_OBJECTID);
- 
- 		log_tree_root->node = read_tree_block(tree_root, bytenr,
--						      blocksize, 0);
-+						      blocksize,
-+						      generation + 1);
- 		ret = btrfs_recover_log_trees(log_tree_root);
- 		BUG_ON(ret);
- 	}
-+	fs_info->last_trans_committed = btrfs_super_generation(disk_super);
- 
- 	ret = btrfs_cleanup_reloc_trees(tree_root);
- 	BUG_ON(ret);
- 
--	fs_info->last_trans_committed = btrfs_super_generation(disk_super);
- 	return tree_root;
- 
- fail_cleaner:
-diff -urp 1/fs/btrfs/extent-tree.c 2/fs/btrfs/extent-tree.c
---- 1/fs/btrfs/extent-tree.c	2008-10-27 10:47:00.000000000 +0800
-+++ 2/fs/btrfs/extent-tree.c	2008-10-27 10:47:51.000000000 +0800
-@@ -4404,6 +4404,7 @@ static int noinline init_reloc_tree(stru
- 	btrfs_set_root_refs(root_item, 0);
- 	btrfs_set_root_bytenr(root_item, eb->start);
- 	btrfs_set_root_level(root_item, btrfs_header_level(eb));
-+	btrfs_set_root_generation(root_item, trans->transid);
- 
- 	btrfs_tree_unlock(eb);
- 	free_extent_buffer(eb);
-diff -urp 1/fs/btrfs/ioctl.c 2/fs/btrfs/ioctl.c
---- 1/fs/btrfs/ioctl.c	2008-10-24 09:18:54.000000000 +0800
-+++ 2/fs/btrfs/ioctl.c	2008-10-27 10:41:57.000000000 +0800
-@@ -108,6 +108,7 @@ static noinline int create_subvol(struct
- 	inode_item->mode = cpu_to_le32(S_IFDIR | 0755);
- 
- 	btrfs_set_root_bytenr(&root_item, leaf->start);
-+	btrfs_set_root_generation(&root_item, trans->transid);
- 	btrfs_set_root_level(&root_item, 0);
- 	btrfs_set_root_refs(&root_item, 1);
- 	btrfs_set_root_used(&root_item, 0);
-diff -urp 1/fs/btrfs/transaction.c 2/fs/btrfs/transaction.c
---- 1/fs/btrfs/transaction.c	2008-10-27 10:37:40.000000000 +0800
-+++ 2/fs/btrfs/transaction.c	2008-10-27 10:41:57.000000000 +0800
-@@ -439,6 +439,7 @@ static int update_cowonly_root(struct bt
- 				       root->node->start);
- 		btrfs_set_root_level(&root->root_item,
- 				     btrfs_header_level(root->node));
-+		btrfs_set_root_generation(&root->root_item, trans->transid);
- 		ret = btrfs_update_root(trans, tree_root,
- 					&root->root_key,
- 					&root->root_item);
-@@ -456,6 +457,12 @@ int btrfs_commit_tree_roots(struct btrfs
+-static int btrfs_setattr(struct dentry *dentry, struct iattr *attr)
++int btrfs_cont_expand(struct inode *inode, loff_t size)
  {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct list_head *next;
-+	struct extent_buffer *eb;
+-	struct inode *inode = dentry->d_inode;
++	struct btrfs_trans_handle *trans;
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
++	struct extent_map *em;
++	u64 mask = root->sectorsize - 1;
++	u64 hole_start = (inode->i_size + mask) & ~mask;
++	u64 block_end = (size + mask) & ~mask;
++	u64 last_byte;
++	u64 cur_offset;
+ 	int err;
+ 
+-	err = inode_change_ok(inode, attr);
++	if (size <= hole_start)
++		return 0;
 +
-+	eb = btrfs_lock_root_node(fs_info->tree_root);
-+	btrfs_cow_block(trans, fs_info->tree_root, eb, NULL, 0, &eb, 0);
-+	btrfs_tree_unlock(eb);
-+	free_extent_buffer(eb);
++	err = btrfs_check_free_space(root, 1, 0);
+ 	if (err)
+ 		return err;
  
- 	while(!list_empty(&fs_info->dirty_cowonly_roots)) {
- 		next = fs_info->dirty_cowonly_roots.next;
-@@ -559,6 +566,9 @@ static noinline int add_dirty_roots(stru
- 					      root->node->start);
- 			btrfs_set_root_level(&root->root_item,
- 					     btrfs_header_level(root->node));
-+			btrfs_set_root_generation(&root->root_item,
-+						  root->root_key.offset);
+-	if (S_ISREG(inode->i_mode) &&
+-	    attr->ia_valid & ATTR_SIZE && attr->ia_size > inode->i_size) {
+-		struct btrfs_trans_handle *trans;
+-		struct btrfs_root *root = BTRFS_I(inode)->root;
+-		struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
+-
+-		u64 mask = root->sectorsize - 1;
+-		u64 hole_start = (inode->i_size + mask) & ~mask;
+-		u64 block_end = (attr->ia_size + mask) & ~mask;
+-		u64 hole_size;
+-		u64 alloc_hint = 0;
+-
+-		if (attr->ia_size <= hole_start)
+-			goto out;
+-
+-		err = btrfs_check_free_space(root, 1, 0);
+-		if (err)
+-			goto fail;
+-
+-		btrfs_truncate_page(inode->i_mapping, inode->i_size);
++	btrfs_truncate_page(inode->i_mapping, inode->i_size);
+ 
+-		hole_size = block_end - hole_start;
+-		while(1) {
+-			struct btrfs_ordered_extent *ordered;
+-			btrfs_wait_ordered_range(inode, hole_start, hole_size);
+-
+-			lock_extent(io_tree, hole_start, block_end - 1, GFP_NOFS);
+-			ordered = btrfs_lookup_ordered_extent(inode, hole_start);
+-			if (ordered) {
+-				unlock_extent(io_tree, hole_start,
+-					      block_end - 1, GFP_NOFS);
+-				btrfs_put_ordered_extent(ordered);
+-			} else {
+-				break;
+-			}
+-		}
++	while (1) {
++		struct btrfs_ordered_extent *ordered;
++		btrfs_wait_ordered_range(inode, hole_start,
++					 block_end - hole_start);
++		lock_extent(io_tree, hole_start, block_end - 1, GFP_NOFS);
++		ordered = btrfs_lookup_ordered_extent(inode, hole_start);
++		if (!ordered)
++			break;
++		unlock_extent(io_tree, hole_start, block_end - 1, GFP_NOFS);
++		btrfs_put_ordered_extent(ordered);
++	}
+ 
+-		trans = btrfs_start_transaction(root, 1);
+-		btrfs_set_trans_block_group(trans, inode);
+-		mutex_lock(&BTRFS_I(inode)->extent_mutex);
+-		err = btrfs_drop_extents(trans, root, inode,
+-					 hole_start, block_end, hole_start,
+-					 &alloc_hint);
++	trans = btrfs_start_transaction(root, 1);
++	btrfs_set_trans_block_group(trans, inode);
+ 
+-		if (alloc_hint != EXTENT_MAP_INLINE) {
++	cur_offset = hole_start;
++	while (1) {
++		em = btrfs_get_extent(inode, NULL, 0, cur_offset,
++				block_end - cur_offset, 0);
++		BUG_ON(IS_ERR(em) || !em);
++		last_byte = min(extent_map_end(em), block_end);
++		last_byte = (last_byte + mask) & ~mask;
++		if (test_bit(EXTENT_FLAG_VACANCY, &em->flags)) {
+ 			err = btrfs_insert_file_extent(trans, root,
+-						       inode->i_ino,
+-						       hole_start, 0, 0,
+-						       hole_size, 0);
++					inode->i_ino, cur_offset, 0,
++					0, last_byte - cur_offset, 0);
+ 			btrfs_drop_extent_cache(inode, hole_start,
+-						(u64)-1, 0);
+-			btrfs_check_file(root, inode);
++					last_byte - 1, 0);
+ 		}
+-		mutex_unlock(&BTRFS_I(inode)->extent_mutex);
+-		btrfs_end_transaction(trans, root);
+-		unlock_extent(io_tree, hole_start, block_end - 1, GFP_NOFS);
++		free_extent_map(em);
++		cur_offset = last_byte;
++		if (err || cur_offset >= block_end)
++			break;
++	}
 +
- 			err = btrfs_insert_root(trans, root->fs_info->tree_root,
- 						&root->root_key,
- 						&root->root_item);
-@@ -756,6 +766,7 @@ static noinline int create_pending_snaps
++	btrfs_end_transaction(trans, root);
++	unlock_extent(io_tree, hole_start, block_end - 1, GFP_NOFS);
++	return err;
++}
++
++static int btrfs_setattr(struct dentry *dentry, struct iattr *attr)
++{
++	struct inode *inode = dentry->d_inode;
++	int err;
++
++	err = inode_change_ok(inode, attr);
++	if (err)
++		return err;
++
++	if (S_ISREG(inode->i_mode) &&
++	    attr->ia_valid & ATTR_SIZE && attr->ia_size > inode->i_size) {
++		err = btrfs_cont_expand(inode, attr->ia_size);
+ 		if (err)
+ 			return err;
+ 	}
+-out:
++
+ 	err = inode_setattr(inode, attr);
  
- 	btrfs_set_root_bytenr(new_root_item, tmp->start);
- 	btrfs_set_root_level(new_root_item, btrfs_header_level(tmp));
-+	btrfs_set_root_generation(new_root_item, trans->transid);
- 	ret = btrfs_insert_root(trans, root->fs_info->tree_root, &key,
- 				new_root_item);
- 	btrfs_tree_unlock(tmp);
-@@ -946,6 +957,8 @@ int btrfs_commit_transaction(struct btrf
- 				   chunk_root->node->start);
- 	btrfs_set_super_chunk_root_level(&root->fs_info->super_copy,
- 					 btrfs_header_level(chunk_root->node));
-+	btrfs_set_super_chunk_root_generation(&root->fs_info->super_copy,
-+				btrfs_header_generation(chunk_root->node));
+ 	if (!err && ((attr->ia_valid & ATTR_MODE)))
+ 		err = btrfs_acl_chmod(inode);
+-fail:
+ 	return err;
+ }
  
- 	if (!root->fs_info->log_root_recovering) {
- 		btrfs_set_super_log_root(&root->fs_info->super_copy, 0);
-diff -urp 1/fs/btrfs/tree-log.c 2/fs/btrfs/tree-log.c
---- 1/fs/btrfs/tree-log.c	2008-10-27 10:37:40.000000000 +0800
-+++ 2/fs/btrfs/tree-log.c	2008-10-27 10:41:57.000000000 +0800
-@@ -117,6 +117,7 @@ int btrfs_add_log_tree(struct btrfs_tran
- 	inode_item->mode = cpu_to_le32(S_IFDIR | 0755);
+@@ -2986,63 +2994,65 @@ again:
+ 	if (found_type == BTRFS_FILE_EXTENT_REG) {
+ 		extent_end = extent_start +
+ 		       btrfs_file_extent_num_bytes(leaf, item);
+-		err = 0;
+-		if (start < extent_start || start >= extent_end) {
+-			em->start = start;
+-			if (start < extent_start) {
+-				if (start + len <= extent_start)
+-					goto not_found;
+-				em->len = extent_end - extent_start;
+-			} else {
+-				em->len = len;
++	} else if (found_type == BTRFS_FILE_EXTENT_INLINE) {
++		size_t size;
++		size = btrfs_file_extent_inline_len(leaf, btrfs_item_nr(leaf,
++						    path->slots[0]));
++		extent_end = (extent_start + size + root->sectorsize - 1) &
++			~((u64)root->sectorsize - 1);
++	}
++
++	if (start >= extent_end) {
++		path->slots[0]++;
++		if (path->slots[0] >= btrfs_header_nritems(leaf)) {
++			ret = btrfs_next_leaf(root, path);
++			if (ret < 0) {
++				err = ret;
++				goto out;
+ 			}
+-			goto not_found_em;
++			if (ret > 0)
++				goto not_found;
++			leaf = path->nodes[0];
+ 		}
++		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
++		if (found_key.objectid != objectid ||
++		    found_key.type != BTRFS_EXTENT_DATA_KEY)
++			goto not_found;
++		if (start + len <= found_key.offset)
++			goto not_found;
++		em->start = start;
++		em->len = found_key.offset - start;
++		goto not_found_em;
++	}
++
++	if (found_type == BTRFS_FILE_EXTENT_REG) {
++		em->start = extent_start;
++		em->len = extent_end - extent_start;
+ 		bytenr = btrfs_file_extent_disk_bytenr(leaf, item);
+ 		if (bytenr == 0) {
+-			em->start = extent_start;
+-			em->len = extent_end - extent_start;
+ 			em->block_start = EXTENT_MAP_HOLE;
+ 			goto insert;
+ 		}
+ 		bytenr += btrfs_file_extent_offset(leaf, item);
+ 		em->block_start = bytenr;
+-		em->start = extent_start;
+-		em->len = extent_end - extent_start;
+ 		goto insert;
+ 	} else if (found_type == BTRFS_FILE_EXTENT_INLINE) {
+-		u64 page_start;
+ 		unsigned long ptr;
+ 		char *map;
+ 		size_t size;
+ 		size_t extent_offset;
+ 		size_t copy_size;
  
- 	btrfs_set_root_bytenr(&root_item, leaf->start);
-+	btrfs_set_root_generation(&root_item, trans->transid);
- 	btrfs_set_root_level(&root_item, 0);
- 	btrfs_set_root_refs(&root_item, 0);
- 	btrfs_set_root_used(&root_item, 0);
-@@ -2066,6 +2067,7 @@ static int update_log_root(struct btrfs_
- 		return 0;
+-		size = btrfs_file_extent_inline_len(leaf, btrfs_item_nr(leaf,
+-						    path->slots[0]));
+-		extent_end = (extent_start + size + root->sectorsize - 1) &
+-			~((u64)root->sectorsize - 1);
+-		if (start < extent_start || start >= extent_end) {
+-			em->start = start;
+-			if (start < extent_start) {
+-				if (start + len <= extent_start)
+-					goto not_found;
+-				em->len = extent_end - extent_start;
+-			} else {
+-				em->len = len;
+-			}
+-			goto not_found_em;
+-		}
+ 		em->block_start = EXTENT_MAP_INLINE;
+-
+ 		if (!page) {
+ 			em->start = extent_start;
+-			em->len = size;
++			em->len = extent_end - extent_start;
+ 			goto out;
+ 		}
  
- 	btrfs_set_root_bytenr(&log->root_item, log->node->start);
-+	btrfs_set_root_generation(&log->root_item, trans->transid);
- 	btrfs_set_root_level(&log->root_item, btrfs_header_level(log->node));
- 	ret = btrfs_update_root(trans, log->fs_info->log_root_tree,
- 				&log->root_key, &log->root_item);
+-		page_start = page_offset(page) + pg_offset;
+-		extent_offset = page_start - extent_start;
++		size = btrfs_file_extent_inline_len(leaf, btrfs_item_nr(leaf,
++						    path->slots[0]));
++		extent_offset = page_offset(page) + pg_offset - extent_start;
+ 		copy_size = min_t(u64, PAGE_CACHE_SIZE - pg_offset,
+ 				size - extent_offset);
+ 		em->start = extent_start + extent_offset;
+@@ -3080,6 +3090,7 @@ not_found:
+ 	em->len = len;
+ not_found_em:
+ 	em->block_start = EXTENT_MAP_HOLE;
++	set_bit(EXTENT_FLAG_VACANCY, &em->flags);
+ insert:
+ 	btrfs_release_path(root, path);
+ 	if (em->start > start || extent_map_end(em) <= start) {

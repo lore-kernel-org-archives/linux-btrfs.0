@@ -1,10 +1,9 @@
 From: Yan Zheng <zheng.yan@oracle.com>
-Subject: [PATCH] Progs: Add root tree pointer transaction ids
-Date: Mon, 27 Oct 2008 14:37:16 +0800
-Message-ID: <4905619C.8060906@oracle.com>
+Subject: [PATCH] Add root tree pointer transaction ids
+Date: Mon, 27 Oct 2008 14:30:41 +0800
+Message-ID: <49056011.7090405@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: yanzheng@21cn.com
 To: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -21,10 +20,10 @@ Regards
 Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
 
 ---
-diff -urp btrfs-progs-base/ctree.h btrfs-progs-1/ctree.h
---- btrfs-progs-base/ctree.h	2008-10-21 09:46:14.000000000 +0800
-+++ btrfs-progs-1/ctree.h	2008-10-27 13:15:47.000000000 +0800
-@@ -279,6 +279,7 @@ struct btrfs_super_block {
+diff -urp 1/fs/btrfs/ctree.h 2/fs/btrfs/ctree.h
+--- 1/fs/btrfs/ctree.h	2008-10-27 10:37:40.000000000 +0800
++++ 2/fs/btrfs/ctree.h	2008-10-27 10:41:45.000000000 +0800
+@@ -297,6 +297,7 @@ struct btrfs_super_block {
  	__le32 leafsize;
  	__le32 stripesize;
  	__le32 sys_chunk_array_size;
@@ -32,7 +31,7 @@ diff -urp btrfs-progs-base/ctree.h btrfs-progs-1/ctree.h
  	u8 root_level;
  	u8 chunk_root_level;
  	u8 log_root_level;
-@@ -412,6 +413,7 @@ struct btrfs_dir_item {
+@@ -439,6 +440,7 @@ struct btrfs_dir_item {
  
  struct btrfs_root_item {
  	struct btrfs_inode_item inode;
@@ -40,7 +39,7 @@ diff -urp btrfs-progs-base/ctree.h btrfs-progs-1/ctree.h
  	__le64 root_dirid;
  	__le64 bytenr;
  	__le64 byte_limit;
-@@ -1199,10 +1201,14 @@ static inline int btrfs_is_leaf(struct e
+@@ -1358,10 +1360,14 @@ static inline int btrfs_is_leaf(struct e
  }
  
  /* struct btrfs_root_item */
@@ -55,7 +54,7 @@ diff -urp btrfs-progs-base/ctree.h btrfs-progs-1/ctree.h
  BTRFS_SETGET_STACK_FUNCS(root_bytenr, struct btrfs_root_item, bytenr, 64);
  BTRFS_SETGET_STACK_FUNCS(root_level, struct btrfs_root_item, level, 8);
  BTRFS_SETGET_STACK_FUNCS(root_dirid, struct btrfs_root_item, root_dirid, 64);
-@@ -1218,6 +1224,8 @@ BTRFS_SETGET_STACK_FUNCS(super_generatio
+@@ -1378,6 +1384,8 @@ BTRFS_SETGET_STACK_FUNCS(super_generatio
  BTRFS_SETGET_STACK_FUNCS(super_root, struct btrfs_super_block, root, 64);
  BTRFS_SETGET_STACK_FUNCS(super_sys_array_size,
  			 struct btrfs_super_block, sys_chunk_array_size, 32);
@@ -64,40 +63,10 @@ diff -urp btrfs-progs-base/ctree.h btrfs-progs-1/ctree.h
  BTRFS_SETGET_STACK_FUNCS(super_root_level, struct btrfs_super_block,
  			 root_level, 8);
  BTRFS_SETGET_STACK_FUNCS(super_chunk_root, struct btrfs_super_block,
-diff -urp btrfs-progs-base/disk-io.c btrfs-progs-1/disk-io.c
---- btrfs-progs-base/disk-io.c	2008-09-30 16:50:58.000000000 +0800
-+++ btrfs-progs-1/disk-io.c	2008-10-27 13:15:47.000000000 +0800
-@@ -274,6 +274,8 @@ static int update_cowonly_root(struct bt
- 			break;
- 		btrfs_set_root_bytenr(&root->root_item,
- 				       root->node->start);
-+		btrfs_set_root_generation(&root->root_item,
-+					  trans->transid);
- 		root->root_item.level = btrfs_header_level(root->node);
- 		ret = btrfs_update_root(trans, tree_root,
- 					&root->root_key,
-@@ -289,6 +291,12 @@ static int commit_tree_roots(struct btrf
- {
- 	struct btrfs_root *root;
- 	struct list_head *next;
-+	struct extent_buffer *eb;
-+
-+	eb = fs_info->tree_root->node;
-+	extent_buffer_get(eb);
-+	btrfs_cow_block(trans, fs_info->tree_root, eb, NULL, 0, &eb);
-+	free_extent_buffer(eb);
- 
- 	while(!list_empty(&fs_info->dirty_cowonly_roots)) {
- 		next = fs_info->dirty_cowonly_roots.next;
-@@ -345,6 +353,7 @@ int btrfs_commit_transaction(struct btrf
- 
- 	root->root_key.offset = trans->transid;
- 	btrfs_set_root_bytenr(&root->root_item, root->node->start);
-+	btrfs_set_root_generation(&root->root_item, root->root_key.offset);
- 	root->root_item.level = btrfs_header_level(root->node);
- 	ret = btrfs_insert_root(trans, fs_info->tree_root,
- 				&root->root_key, &root->root_item);
-@@ -395,6 +404,7 @@ static int find_and_setup_root(struct bt
+diff -urp 1/fs/btrfs/disk-io.c 2/fs/btrfs/disk-io.c
+--- 1/fs/btrfs/disk-io.c	2008-10-27 10:37:40.000000000 +0800
++++ 2/fs/btrfs/disk-io.c	2008-10-27 13:29:06.000000000 +0800
+@@ -828,6 +828,7 @@ static int find_and_setup_root(struct bt
  {
  	int ret;
  	u32 blocksize;
@@ -105,27 +74,28 @@ diff -urp btrfs-progs-base/disk-io.c btrfs-progs-1/disk-io.c
  
  	__setup_root(tree_root->nodesize, tree_root->leafsize,
  		     tree_root->sectorsize, tree_root->stripesize,
-@@ -404,8 +414,9 @@ static int find_and_setup_root(struct bt
+@@ -836,9 +837,10 @@ static int find_and_setup_root(struct bt
+ 				   &root->root_item, &root->root_key);
  	BUG_ON(ret);
  
- 	blocksize = btrfs_level_size(root, btrfs_root_level(&root->root_item));
 +	generation = btrfs_root_generation(&root->root_item);
+ 	blocksize = btrfs_level_size(root, btrfs_root_level(&root->root_item));
  	root->node = read_tree_block(root, btrfs_root_bytenr(&root->root_item),
 -				     blocksize, 0);
 +				     blocksize, generation);
  	BUG_ON(!root->node);
  	return 0;
  }
-@@ -428,6 +439,7 @@ struct btrfs_root *btrfs_read_fs_root(st
- 	struct btrfs_root *tree_root = fs_info->tree_root;
+@@ -925,6 +927,7 @@ struct btrfs_root *btrfs_read_fs_root_no
  	struct btrfs_path *path;
  	struct extent_buffer *l;
+ 	u64 highest_inode;
 +	u64 generation;
  	u32 blocksize;
  	int ret = 0;
  
-@@ -470,9 +482,10 @@ out:
- 		free(root);
+@@ -966,9 +969,10 @@ out:
+ 		kfree(root);
  		return ERR_PTR(ret);
  	}
 +	generation = btrfs_root_generation(&root->root_item);
@@ -135,17 +105,17 @@ diff -urp btrfs-progs-base/disk-io.c btrfs-progs-1/disk-io.c
 +				     blocksize, generation);
  	BUG_ON(!root->node);
  insert:
- 	root->ref_cows = 1;
-@@ -506,6 +519,7 @@ struct btrfs_root *open_ctree_fd(int fp,
+ 	if (location->objectid != BTRFS_TREE_LOG_OBJECTID) {
+@@ -1353,6 +1357,7 @@ struct btrfs_root *open_ctree(struct sup
  	u32 leafsize;
  	u32 blocksize;
  	u32 stripesize;
 +	u64 generation;
- 	struct btrfs_root *root = malloc(sizeof(struct btrfs_root));
- 	struct btrfs_root *tree_root = malloc(sizeof(struct btrfs_root));
- 	struct btrfs_root *extent_root = malloc(sizeof(struct btrfs_root));
-@@ -604,13 +618,14 @@ struct btrfs_root *open_ctree_fd(int fp,
- 	BUG_ON(ret);
+ 	struct buffer_head *bh;
+ 	struct btrfs_root *extent_root = kzalloc(sizeof(struct btrfs_root),
+ 						 GFP_NOFS);
+@@ -1588,13 +1593,14 @@ struct btrfs_root *open_ctree(struct sup
+ 
  	blocksize = btrfs_level_size(tree_root,
  				     btrfs_super_chunk_root_level(disk_super));
 +	generation = btrfs_super_chunk_root_generation(disk_super);
@@ -157,58 +127,131 @@ diff -urp btrfs-progs-base/disk-io.c btrfs-progs-1/disk-io.c
  					   btrfs_super_chunk_root(disk_super),
 -					   blocksize, 0);
 +					   blocksize, generation);
- 
  	BUG_ON(!chunk_root->node);
  
-@@ -623,10 +638,11 @@ struct btrfs_root *open_ctree_fd(int fp,
+ 	read_extent_buffer(chunk_root->node, fs_info->chunk_tree_uuid,
+@@ -1610,11 +1616,11 @@ struct btrfs_root *open_ctree(struct sup
  
  	blocksize = btrfs_level_size(tree_root,
  				     btrfs_super_root_level(disk_super));
+-
 +	generation = btrfs_super_generation(disk_super);
  
  	tree_root->node = read_tree_block(tree_root,
  					  btrfs_super_root(disk_super),
 -					  blocksize, 0);
 +					  blocksize, generation);
- 	BUG_ON(!tree_root->node);
- 	ret = find_and_setup_root(tree_root, fs_info,
- 				  BTRFS_EXTENT_TREE_OBJECTID, extent_root);
-@@ -706,6 +722,8 @@ int write_ctree_super(struct btrfs_trans
+ 	if (!tree_root->node)
+ 		goto fail_sb_buffer;
+ 
+@@ -1664,15 +1670,16 @@ struct btrfs_root *open_ctree(struct sup
+ 			     log_tree_root, fs_info, BTRFS_TREE_LOG_OBJECTID);
+ 
+ 		log_tree_root->node = read_tree_block(tree_root, bytenr,
+-						      blocksize, 0);
++						      blocksize,
++						      generation + 1);
+ 		ret = btrfs_recover_log_trees(log_tree_root);
+ 		BUG_ON(ret);
+ 	}
++	fs_info->last_trans_committed = btrfs_super_generation(disk_super);
+ 
+ 	ret = btrfs_cleanup_reloc_trees(tree_root);
+ 	BUG_ON(ret);
+ 
+-	fs_info->last_trans_committed = btrfs_super_generation(disk_super);
+ 	return tree_root;
+ 
+ fail_cleaner:
+diff -urp 1/fs/btrfs/extent-tree.c 2/fs/btrfs/extent-tree.c
+--- 1/fs/btrfs/extent-tree.c	2008-10-27 10:47:00.000000000 +0800
++++ 2/fs/btrfs/extent-tree.c	2008-10-27 10:47:51.000000000 +0800
+@@ -4404,6 +4404,7 @@ static int noinline init_reloc_tree(stru
+ 	btrfs_set_root_refs(root_item, 0);
+ 	btrfs_set_root_bytenr(root_item, eb->start);
+ 	btrfs_set_root_level(root_item, btrfs_header_level(eb));
++	btrfs_set_root_generation(root_item, trans->transid);
+ 
+ 	btrfs_tree_unlock(eb);
+ 	free_extent_buffer(eb);
+diff -urp 1/fs/btrfs/ioctl.c 2/fs/btrfs/ioctl.c
+--- 1/fs/btrfs/ioctl.c	2008-10-24 09:18:54.000000000 +0800
++++ 2/fs/btrfs/ioctl.c	2008-10-27 10:41:57.000000000 +0800
+@@ -108,6 +108,7 @@ static noinline int create_subvol(struct
+ 	inode_item->mode = cpu_to_le32(S_IFDIR | 0755);
+ 
+ 	btrfs_set_root_bytenr(&root_item, leaf->start);
++	btrfs_set_root_generation(&root_item, trans->transid);
+ 	btrfs_set_root_level(&root_item, 0);
+ 	btrfs_set_root_refs(&root_item, 1);
+ 	btrfs_set_root_used(&root_item, 0);
+diff -urp 1/fs/btrfs/transaction.c 2/fs/btrfs/transaction.c
+--- 1/fs/btrfs/transaction.c	2008-10-27 10:37:40.000000000 +0800
++++ 2/fs/btrfs/transaction.c	2008-10-27 10:41:57.000000000 +0800
+@@ -439,6 +439,7 @@ static int update_cowonly_root(struct bt
+ 				       root->node->start);
+ 		btrfs_set_root_level(&root->root_item,
+ 				     btrfs_header_level(root->node));
++		btrfs_set_root_generation(&root->root_item, trans->transid);
+ 		ret = btrfs_update_root(trans, tree_root,
+ 					&root->root_key,
+ 					&root->root_item);
+@@ -456,6 +457,12 @@ int btrfs_commit_tree_roots(struct btrfs
+ {
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct list_head *next;
++	struct extent_buffer *eb;
++
++	eb = btrfs_lock_root_node(fs_info->tree_root);
++	btrfs_cow_block(trans, fs_info->tree_root, eb, NULL, 0, &eb, 0);
++	btrfs_tree_unlock(eb);
++	free_extent_buffer(eb);
+ 
+ 	while(!list_empty(&fs_info->dirty_cowonly_roots)) {
+ 		next = fs_info->dirty_cowonly_roots.next;
+@@ -559,6 +566,9 @@ static noinline int add_dirty_roots(stru
+ 					      root->node->start);
+ 			btrfs_set_root_level(&root->root_item,
+ 					     btrfs_header_level(root->node));
++			btrfs_set_root_generation(&root->root_item,
++						  root->root_key.offset);
++
+ 			err = btrfs_insert_root(trans, root->fs_info->tree_root,
+ 						&root->root_key,
+ 						&root->root_item);
+@@ -756,6 +766,7 @@ static noinline int create_pending_snaps
+ 
+ 	btrfs_set_root_bytenr(new_root_item, tmp->start);
+ 	btrfs_set_root_level(new_root_item, btrfs_header_level(tmp));
++	btrfs_set_root_generation(new_root_item, trans->transid);
+ 	ret = btrfs_insert_root(trans, root->fs_info->tree_root, &key,
+ 				new_root_item);
+ 	btrfs_tree_unlock(tmp);
+@@ -946,6 +957,8 @@ int btrfs_commit_transaction(struct btrf
  				   chunk_root->node->start);
  	btrfs_set_super_chunk_root_level(&root->fs_info->super_copy,
  					 btrfs_header_level(chunk_root->node));
 +	btrfs_set_super_chunk_root_generation(&root->fs_info->super_copy,
 +				btrfs_header_generation(chunk_root->node));
- 	write_extent_buffer(root->fs_info->sb_buffer,
- 			    &root->fs_info->super_copy, 0,
- 			    sizeof(root->fs_info->super_copy));
-diff -urp btrfs-progs-base/mkfs.c btrfs-progs-1/mkfs.c
---- btrfs-progs-base/mkfs.c	2008-10-21 09:46:14.000000000 +0800
-+++ btrfs-progs-1/mkfs.c	2008-10-27 13:15:47.000000000 +0800
-@@ -247,6 +247,7 @@ static int create_data_reloc_tree(struct
- 	memcpy(&root_item, &root->root_item, sizeof(root_item));
- 	btrfs_set_root_bytenr(&root_item, tmp->start);
- 	btrfs_set_root_level(&root_item, btrfs_header_level(tmp));
+ 
+ 	if (!root->fs_info->log_root_recovering) {
+ 		btrfs_set_super_log_root(&root->fs_info->super_copy, 0);
+diff -urp 1/fs/btrfs/tree-log.c 2/fs/btrfs/tree-log.c
+--- 1/fs/btrfs/tree-log.c	2008-10-27 10:37:40.000000000 +0800
++++ 2/fs/btrfs/tree-log.c	2008-10-27 10:41:57.000000000 +0800
+@@ -117,6 +117,7 @@ int btrfs_add_log_tree(struct btrfs_tran
+ 	inode_item->mode = cpu_to_le32(S_IFDIR | 0755);
+ 
+ 	btrfs_set_root_bytenr(&root_item, leaf->start);
 +	btrfs_set_root_generation(&root_item, trans->transid);
- 	free_extent_buffer(tmp);
+ 	btrfs_set_root_level(&root_item, 0);
+ 	btrfs_set_root_refs(&root_item, 0);
+ 	btrfs_set_root_used(&root_item, 0);
+@@ -2066,6 +2067,7 @@ static int update_log_root(struct btrfs_
+ 		return 0;
  
- 	location.objectid = objectid;
-diff -urp btrfs-progs-base/utils.c btrfs-progs-1/utils.c
---- btrfs-progs-base/utils.c	2008-10-10 04:21:07.000000000 +0800
-+++ btrfs-progs-1/utils.c	2008-10-27 13:15:47.000000000 +0800
-@@ -101,6 +101,7 @@ int make_btrfs(int fd, const char *devic
- 	btrfs_set_super_leafsize(&super, leafsize);
- 	btrfs_set_super_nodesize(&super, nodesize);
- 	btrfs_set_super_stripesize(&super, stripesize);
-+	btrfs_set_super_chunk_root_generation(&super, 1);
- 	if (label)
- 		strcpy(super.label, label);
- 
-@@ -130,6 +131,7 @@ int make_btrfs(int fd, const char *devic
- 	btrfs_set_stack_inode_mode(inode_item, S_IFDIR | 0755);
- 	btrfs_set_root_refs(&root_item, 1);
- 	btrfs_set_root_used(&root_item, leafsize);
-+	btrfs_set_root_generation(&root_item, 1);
- 
- 	memset(&disk_key, 0, sizeof(disk_key));
- 	btrfs_set_disk_key_type(&disk_key, BTRFS_ROOT_ITEM_KEY);
+ 	btrfs_set_root_bytenr(&log->root_item, log->node->start);
++	btrfs_set_root_generation(&log->root_item, trans->transid);
+ 	btrfs_set_root_level(&log->root_item, btrfs_header_level(log->node));
+ 	ret = btrfs_update_root(trans, log->fs_info->log_root_tree,
+ 				&log->root_key, &log->root_item);

@@ -1,49 +1,66 @@
-From: Stephen Hemminger <shemminger@vyatta.com>
-Subject: Re: Raid1 with failing drive
-Date: Wed, 29 Oct 2008 13:06:02 -0700
-Message-ID: <20081029130602.01840b96@extreme>
-References: <20081028164851.70f9d92e@extreme>
-	<1225307907.6448.284.camel@think.oraclecorp.com>
-	<4908C13C.7070607@gentoo.org>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Compressed Filesystem
+Date: Wed, 29 Oct 2008 16:08:42 -0400
+Message-ID: <1225310922.6448.300.camel@think.oraclecorp.com>
+References: <20081027145401.GB10896@tux64-03>
+	 <1225208847.6448.172.camel@think.oraclecorp.com>
+	 <20081028163337.GA8488@tux64-02>
+	 <1225215517.6448.176.camel@think.oraclecorp.com>
+	 <53696.2001:470:e828:1::2:2.1225304096.squirrel@avalon.arbitraryconstant.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
-To: Joe Peterson <lavajoe@gentoo.org>
+Content-Type: text/plain
+Cc: linux-btrfs@vger.kernel.org
+To: btrfs-devel@arbitraryconstant.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4908C13C.7070607@gentoo.org>
+In-Reply-To: <53696.2001:470:e828:1::2:2.1225304096.squirrel@avalon.arbitraryconstant.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 29 Oct 2008 14:02:04 -0600
-Joe Peterson <lavajoe@gentoo.org> wrote:
+On Wed, 2008-10-29 at 12:14 -0600, Anthony Roberts wrote:
+> Hi, I have a few questions about this:
+> 
+> > Compression is optional and off by default (mount -o compress to enable
+> > it).  When enabled, every file is compressed.
+> 
+> Do you know what the CPU load is like with this enabled?
 
-> Chris Mason wrote:
-> > On Tue, 2008-10-28 at 16:48 -0700, Stephen Hemminger wrote:
-> >> I have a system with a pair of small/fast but unreliable scsi drives.
-> >> I tried setting up a raid1 configuration and using it for builds.
-> >> Using 2.6.26.7 and btrfs 0.16.   When using ext3 (no raid) on same partition,
-> >> the driver would recalibrate and log something an keep going. But with
-> >> btrfs it doesn't recover and takes drive offline. 
-> >>
-> > 
-> > Btrfs doesn't really take drives offline.  In the future we'll notice
-> > that a drive is returning all errors, but for now we'll probably just
-> > keep beating on it.
-> 
-> It can also detect when a bad checksum is returned or the drive returns an i/o
-> error, right?  Would the "all-zero" test be a heuristic in case neither of those
-> happened (but I cannot imagine why the zeros would get by the checksum check)?
-> 
-> > The IO error handling code in btrfs currently expects it'll be able to
-> > find at least one good mirror.  You're probably hitting some bad
-> > conditions as it fails to clean up.
-> 
-> What happens (or rather, will happen) on a regular/non-mirrored btrfs?  Would it
-> then return an i/o error to the user and/or mark a block as bad?  In ZFS, the
-> state of the volume changes, noting an issue (also happens on a scrub), and the
-> user can check this.  What I don't like about ZFS is that the user can clear the
-> condition, and then it appears OK again until another scrub.
-> 
-> 					-Joe
+Now that I've finally pushed the code out, you can try it ;)  One part
+of the implementation I need to revisit is the place in the code where I
+do compression means that most of the time the single threaded pdflush
+is the one compressing.
 
-I think my problem was that the meta data was mirrored but not the actual data.
-This lead to total meltdown when data got an error.
+This doesn't spread the load very well across the cpus.  It can be
+fixed, but I wanted to get the code out there.
+
+The decompression does spread across cpus, and I've gotten about 800MB/s
+doing decompress and checksumming on a zero filled compressed file.  At
+the time, the disk was reading 14MB/s.
+
+> 
+> Do you know whether data can be compressed at a sufficient rate to still
+> saturate the disk on recent-ish AMD/Intel CPUs?
+
+My recentish intel cpu can compress and checksum at about 120MB/s.  
+> 
+> If no, is the effective pre-compression I/O rate still comparable to the
+> disk without compression?
+> 
+
+It depends on your disks...
+
+> I'm pretty sure that won't even matter in many cases (eg you're seeking
+> too much to care, or you're on a VM with lots of cores but congested
+> disks, or you're dealing with media files that it doesn't bother
+> compressing, etc), but I'm curious what sort of overhead this adds. :)
+> 
+> Mostly it seems like a good tradeoff, it trades plentiful cores for scarce
+> disk resources.
+
+This varies quite a bit from workload to workload, in some places it'll
+make a big difference, but many workloads are seek bound and not
+bandwidth bound.
+
+-chris
+
+
+
+

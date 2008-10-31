@@ -1,414 +1,126 @@
-From: Sage Weil <sage@newdream.net>
-Subject: [PATCH] btrfs: allow clone of an arbitrary file range
-Date: Thu, 30 Oct 2008 12:32:54 -0700 (PDT)
-Message-ID: <Pine.LNX.4.64.0810301221050.32010@cobra.newdream.net>
+From: "Niraj kumar" <niraj17@gmail.com>
+Subject: Re: [PATCH] fix lockdep warnings
+Date: Fri, 31 Oct 2008 09:22:17 +0530
+Message-ID: <b82a89170810302052k4c310318l1c86988ca18722d9@mail.gmail.com>
+References: <20081030143243.GA31107@unused.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: "Josef Bacik" <jbacik@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20081030143243.GA31107@unused.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Josef,
 
-This patch adds an additional CLONE_RANGE ioctl to clone an arbitrary 
-(block-aligned) file range to another file.  The original CLONE ioctl 
-becomes a special case of cloning the entire file range.  The logic is a 
-bit more complex now since ranges may be cloned to different offsets, and 
-because we may only be cloning the beginning or end of a particular extent 
-or checksum item.
+I saw this yesterday, but not sure how to reproduce it.
+Is this the same warning that this patch fixes ?
 
-An additional sanity check ensures the source and destination files aren't 
-the same (which would previously deadlock), although eventually this could 
-be extended to allow the duplication of file data at a different offset 
-within the same file.
+---------------------------------
 
-Any extents within the destination range in the target file are dropped.
+Btrfs loaded
+device fsid 51464cf7df326b76-8d5a548c72c2aaa9 devid 1 transid 13 /dev/sdb1
+SELinux: initialized (dev sdb1, type btrfs), not configured for labeling
 
-We currently do not cope with the case where a compressed inline extent 
-needs to be split.  This will probably require decompressing the extent 
-into a temporary address_space, and inserting just the cloned portion as a 
-new compressed inline extent.  For now, just return -EINVAL in this case.  
-Note that this never comes up in the more common case of cloning an entire 
-file.
-    
-If you think there will be other users for CLONE_RANGE (userland 
-deduplication could probably use it, if combined with some additional 
-locking or sanity checks), then that case should be dealt with... but for 
-now at least, Ceph doesn't need it.
+=======================================================
+[ INFO: possible circular locking dependency detected ]
+2.6.27 #2
+-------------------------------------------------------
+btrfs-transacti/2651 is trying to acquire lock:
+ (&cache->alloc_mutex){--..}, at: [<e0b92387>]
+btrfs_add_free_space+0x1c/0x65 [btrfs]
 
-Thanks- 
-sage
+but task is already holding lock:
+ (&fs_info->pinned_mutex){--..}, at: [<e0b662fe>]
+btrfs_finish_extent_commit+0x20/0xf9 [btrfs]
 
----
- fs/btrfs/ioctl.c |  252 +++++++++++++++++++++++++++++++++++++++++++++---------
- fs/btrfs/ioctl.h |    9 ++
- 2 files changed, 221 insertions(+), 40 deletions(-)
+which lock already depends on the new lock.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index fd3c8b5..befcffe 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -591,7 +591,8 @@ out:
- 	return ret;
- }
- 
--long btrfs_ioctl_clone(struct file *file, unsigned long src_fd)
-+long btrfs_ioctl_clone(struct file *file, unsigned long srcfd, u64 off,
-+		       u64 olen, u64 destoff)
- {
- 	struct inode *inode = fdentry(file)->d_inode;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
-@@ -605,12 +606,29 @@ long btrfs_ioctl_clone(struct file *file, unsigned long src_fd)
- 	u32 nritems;
- 	int slot;
- 	int ret;
-+	u64 len = olen;
-+	u64 bs = root->fs_info->sb->s_blocksize;
-+	u64 hint_byte;
- 
--	src_file = fget(src_fd);
-+	/*
-+	 * TODO:
-+	 * - split compressed inline extents.  annoying: we need to 
-+	 *   decompress into destination's address_space (the file offset
-+	 *   may change, so source mapping won't do), then recompress (or
-+	 *   otherwise reinsert) a subrange.
-+	 * - allow ranges within the same file to be cloned (provided
-+	 *   they don't overlap)?
-+	 */
-+
-+	src_file = fget(srcfd);
- 	if (!src_file)
- 		return -EBADF;
- 	src = src_file->f_dentry->d_inode;
- 
-+	ret = -EINVAL;
-+	if (src == inode)
-+		goto out_fput;
-+
- 	ret = -EISDIR;
- 	if (S_ISDIR(src->i_mode) || S_ISDIR(inode->i_mode))
- 		goto out_fput;
-@@ -639,27 +657,46 @@ long btrfs_ioctl_clone(struct file *file, unsigned long src_fd)
- 		mutex_lock(&inode->i_mutex);
- 	}
- 
--	ret = -ENOTEMPTY;
--	if (inode->i_size)
-+	/* determine range to clone */
-+	ret = -EINVAL;
-+	if (off >= src->i_size || off + len > src->i_size)
- 		goto out_unlock;
-+	if (len == 0)
-+		olen = len = src->i_size - off;
-+	/* if we extend to eof, continue to block boundary */
-+	if (off + len == src->i_size)
-+		len = ((src->i_size + bs-1) & ~(bs-1))
-+			- off;
-+
-+	/* verify the end result is block aligned */
-+	if ((off & (bs-1)) ||
-+	    ((off + len) & (bs-1)))
-+		goto out_unlock;
-+
-+	printk("final src extent is %llu~%llu\n", off, len);
-+	printk("final dst extent is %llu~%llu\n", destoff, len);
- 
- 	/* do any pending delalloc/csum calc on src, one way or
- 	   another, and lock file content */
- 	while (1) {
- 		struct btrfs_ordered_extent *ordered;
--		lock_extent(&BTRFS_I(src)->io_tree, 0, (u64)-1, GFP_NOFS);
--		ordered = btrfs_lookup_first_ordered_extent(inode, (u64)-1);
-+		lock_extent(&BTRFS_I(src)->io_tree, off, off+len, GFP_NOFS);
-+		ordered = btrfs_lookup_first_ordered_extent(inode, off+len);
- 		if (BTRFS_I(src)->delalloc_bytes == 0 && !ordered)
- 			break;
--		unlock_extent(&BTRFS_I(src)->io_tree, 0, (u64)-1, GFP_NOFS);
-+		unlock_extent(&BTRFS_I(src)->io_tree, off, off+len, GFP_NOFS);
- 		if (ordered)
- 			btrfs_put_ordered_extent(ordered);
--		btrfs_wait_ordered_range(src, 0, (u64)-1);
-+		btrfs_wait_ordered_range(src, off, off+len);
- 	}
- 
- 	trans = btrfs_start_transaction(root, 1);
- 	BUG_ON(!trans);
- 
-+	/* punch hole in destination first */
-+	btrfs_drop_extents(trans, root, inode, off, off+len, 0, &hint_byte);
-+
-+	/* clone data */
- 	key.objectid = src->i_ino;
- 	key.type = BTRFS_EXTENT_DATA_KEY;
- 	key.offset = 0;
-@@ -690,55 +727,178 @@ long btrfs_ioctl_clone(struct file *file, unsigned long src_fd)
- 		    key.objectid != src->i_ino)
- 			break;
- 
--		if (btrfs_key_type(&key) == BTRFS_EXTENT_DATA_KEY ||
--		    btrfs_key_type(&key) == BTRFS_CSUM_ITEM_KEY) {
-+		if (btrfs_key_type(&key) == BTRFS_EXTENT_DATA_KEY) {
-+			struct btrfs_file_extent_item *extent;
-+			int type;
- 			u32 size;
- 			struct btrfs_key new_key;
-+			u64 disko = 0, diskl = 0;
-+			u64 datao = 0, datal = 0;
-+			u8 comp;
- 
- 			size = btrfs_item_size_nr(leaf, slot);
- 			read_extent_buffer(leaf, buf,
- 					   btrfs_item_ptr_offset(leaf, slot),
- 					   size);
-+
-+			extent = btrfs_item_ptr(leaf, slot,
-+						struct btrfs_file_extent_item);
-+			comp = btrfs_file_extent_compression(leaf, extent);
-+			type = btrfs_file_extent_type(leaf, extent);
-+			if (type == BTRFS_FILE_EXTENT_REG) {
-+				disko = btrfs_file_extent_disk_bytenr(leaf, extent);
-+				diskl = btrfs_file_extent_disk_num_bytes(leaf, extent);
-+				datao = btrfs_file_extent_offset(leaf, extent);
-+				datal = btrfs_file_extent_num_bytes(leaf, extent);
-+			} else if (type == BTRFS_FILE_EXTENT_INLINE) {
-+				/* take upper bound, may be compressed */
-+				datal = btrfs_file_extent_ram_bytes(leaf,
-+								    extent);
-+			}
- 			btrfs_release_path(root, path);
- 
-+			if (key.offset + datal < off ||
-+			    key.offset >= off+len)
-+				goto next;
-+
- 			memcpy(&new_key, &key, sizeof(new_key));
- 			new_key.objectid = inode->i_ino;
--			ret = btrfs_insert_empty_item(trans, root, path,
--						      &new_key, size);
--			if (ret)
--				goto out;
-+			new_key.offset = key.offset + destoff - off;
- 
--			leaf = path->nodes[0];
--			slot = path->slots[0];
--			write_extent_buffer(leaf, buf,
-+			if (type == BTRFS_FILE_EXTENT_REG) {
-+				ret = btrfs_insert_empty_item(trans, root, path,
-+							      &new_key, size);
-+				if (ret)
-+					goto out;
-+
-+				leaf = path->nodes[0];
-+				slot = path->slots[0];
-+				write_extent_buffer(leaf, buf,
- 					    btrfs_item_ptr_offset(leaf, slot),
- 					    size);
--			btrfs_mark_buffer_dirty(leaf);
--		}
--
--		if (btrfs_key_type(&key) == BTRFS_EXTENT_DATA_KEY) {
--			struct btrfs_file_extent_item *extent;
--			int found_type;
- 
--			extent = btrfs_item_ptr(leaf, slot,
-+				extent = btrfs_item_ptr(leaf, slot,
- 						struct btrfs_file_extent_item);
--			found_type = btrfs_file_extent_type(leaf, extent);
--			if (found_type == BTRFS_FILE_EXTENT_REG) {
--				u64 ds = btrfs_file_extent_disk_bytenr(leaf,
--								       extent);
--				u64 dl = btrfs_file_extent_disk_num_bytes(leaf,
--								 extent);
--				/* ds == 0 means there's a hole */
--				if (ds != 0) {
-+				printk("  orig disk %llu~%llu data %llu~%llu\n",
-+				       disko, diskl, datao, datal);
-+
-+				if (off > key.offset) {
-+					datao += off - key.offset;
-+					datal -= off - key.offset;
-+				}
-+				if (key.offset + datao + datal + key.offset >
-+				    off + len)
-+					datal = off + len - key.offset - datao;
-+				/* disko == 0 means it's a hole */
-+				if (!disko)
-+					datao = 0;
-+				printk(" final disk %llu~%llu data %llu~%llu\n",
-+				       disko, diskl, datao, datal);
-+
-+				btrfs_set_file_extent_offset(leaf, extent,
-+							     datao);
-+				btrfs_set_file_extent_num_bytes(leaf, extent,
-+								datal);
-+				if (disko) {
-+					inode_add_bytes(inode, datal);
- 					ret = btrfs_inc_extent_ref(trans, root,
--						     ds, dl, leaf->start,
--						     root->root_key.objectid,
--						     trans->transid,
--						     inode->i_ino);
-+						   disko, diskl, leaf->start,
-+						   root->root_key.objectid,
-+						   trans->transid,
-+						   inode->i_ino);
- 					BUG_ON(ret);
- 				}
-+			} else if (type == BTRFS_FILE_EXTENT_INLINE) {
-+				u64 skip = 0;
-+				u64 trim = 0;
-+				if (off > key.offset) {
-+					skip = off - key.offset;
-+					new_key.offset += skip;
-+				}
-+				if (key.offset + datal > off+len)
-+					trim = key.offset + datal - (off+len);
-+				printk("len %lld skip %lld trim %lld\n",
-+				       datal, skip, trim);
-+				if (comp && (skip || trim)) {
-+					printk("btrfs clone_range can't split compressed inline extents yet\n");
-+					ret = -EINVAL;
-+					goto out;
-+				}
-+				size -= skip + trim;
-+				datal -= skip + trim;
-+ 				ret = btrfs_insert_empty_item(trans, root, path,
-+							      &new_key, size);
-+				if (ret)
-+					goto out;
-+
-+				if (skip) {
-+					u32 start = btrfs_file_extent_calc_inline_size(0);
-+					memmove(buf+start, buf+start+skip,
-+						datal);
-+				}
-+
-+				leaf = path->nodes[0];
-+				slot = path->slots[0];
-+				write_extent_buffer(leaf, buf,
-+					    btrfs_item_ptr_offset(leaf, slot),
-+					    size);
-+				inode_add_bytes(inode, datal);
- 			}
-+
-+			btrfs_mark_buffer_dirty(leaf);
- 		}
-+
-+		if (btrfs_key_type(&key) == BTRFS_CSUM_ITEM_KEY) {
-+			u32 size;
-+			struct btrfs_key new_key;
-+			u64 coverslen;
-+			int coff, clen;
-+
-+			size = btrfs_item_size_nr(leaf, slot);
-+			coverslen = (size / BTRFS_CRC32_SIZE) <<
-+				root->fs_info->sb->s_blocksize_bits;
-+			printk("csums for %llu~%llu\n",
-+			       key.offset, coverslen);
-+			if (key.offset + coverslen < off ||
-+			    key.offset >= off+len)
-+				goto next;
-+
-+			read_extent_buffer(leaf, buf,
-+					   btrfs_item_ptr_offset(leaf, slot),
-+					   size);
-+			btrfs_release_path(root, path);
-+
-+			coff = 0;
-+			if (off > key.offset)
-+				coff = ((off - key.offset) >>
-+					root->fs_info->sb->s_blocksize_bits) *
-+					BTRFS_CRC32_SIZE;
-+			clen = size - coff;
-+			if (key.offset + coverslen > off+len)
-+				clen -= ((key.offset+coverslen-off-len) >>
-+					 root->fs_info->sb->s_blocksize_bits) *
-+					BTRFS_CRC32_SIZE;
-+			printk(" will dup %d~%d of %d\n",
-+			       coff, clen, size);
-+
-+			memcpy(&new_key, &key, sizeof(new_key));
-+			new_key.objectid = inode->i_ino;
-+			new_key.offset = key.offset + destoff - off;
-+
-+			ret = btrfs_insert_empty_item(trans, root, path,
-+						      &new_key, clen);
-+			if (ret)
-+				goto out;
-+
-+			leaf = path->nodes[0];
-+			slot = path->slots[0];
-+			write_extent_buffer(leaf, buf + coff,
-+					    btrfs_item_ptr_offset(leaf, slot),
-+					    clen);
-+			btrfs_mark_buffer_dirty(leaf);
-+		}
-+
-+	next:
- 		btrfs_release_path(root, path);
- 		key.offset++;
- 	}
-@@ -747,13 +907,13 @@ out:
- 	btrfs_release_path(root, path);
- 	if (ret == 0) {
- 		inode->i_mtime = inode->i_ctime = CURRENT_TIME;
--		inode_set_bytes(inode, inode_get_bytes(src));
--		btrfs_i_size_write(inode, src->i_size);
-+		if (destoff + olen > inode->i_size)
-+			btrfs_i_size_write(inode, destoff + olen);
- 		BTRFS_I(inode)->flags = BTRFS_I(src)->flags;
- 		ret = btrfs_update_inode(trans, root, inode);
- 	}
- 	btrfs_end_transaction(trans, root);
--	unlock_extent(&BTRFS_I(src)->io_tree, 0, (u64)-1, GFP_NOFS);
-+	unlock_extent(&BTRFS_I(src)->io_tree, off, off+len, GFP_NOFS);
- 	if (ret)
- 		vmtruncate(inode, 0);
- out_unlock:
-@@ -766,6 +926,16 @@ out_fput:
- 	return ret;
- }
- 
-+long btrfs_ioctl_clone_range(struct file *file, unsigned long argptr)
-+{
-+	struct btrfs_ioctl_clone_range_args args;
-+
-+	if (copy_from_user(&args, (void *)argptr, sizeof(args)))
-+		return -EFAULT;
-+	return btrfs_ioctl_clone(file, args.src_fd, args.src_offset,
-+				 args.src_length, args.dest_offset);
-+}
-+
- /*
-  * there are many ways the trans_start and trans_end ioctls can lead
-  * to deadlocks.  They should only be used by applications that
-@@ -849,7 +1019,9 @@ long btrfs_ioctl(struct file *file, unsigned int
- 	case BTRFS_IOC_BALANCE:
- 		return btrfs_balance(root->fs_info->dev_root);
- 	case BTRFS_IOC_CLONE:
--		return btrfs_ioctl_clone(file, arg);
-+		return btrfs_ioctl_clone(file, arg, 0, 0, 0);
-+	case BTRFS_IOC_CLONE_RANGE:
-+		return btrfs_ioctl_clone_range(file, arg);
- 	case BTRFS_IOC_TRANS_START:
- 		return btrfs_ioctl_trans_start(file);
- 	case BTRFS_IOC_TRANS_END:
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 85ed35a..989ba8a 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -52,4 +52,13 @@ struct btrfs_ioctl_vol_args {
- #define BTRFS_IOC_BALANCE _IOW(BTRFS_IOCTL_MAGIC, 12, \
- 				   struct btrfs_ioctl_vol_args)
- 
-+struct btrfs_ioctl_clone_range_args {
-+  __s64 src_fd;
-+  __u64 src_offset, src_length;
-+  __u64 dest_offset;
-+};
-+
-+#define BTRFS_IOC_CLONE_RANGE _IOW(BTRFS_IOCTL_MAGIC, 13, \
-+				  struct btrfs_ioctl_clone_range_args)
-+
- #endif
+
+the existing dependency chain (in reverse order) is:
+
+-> #1 (&fs_info->pinned_mutex){--..}:
+       [<c0447cbb>] validate_chain+0x7fe/0xa43
+       [<c0448574>] __lock_acquire+0x674/0x6da
+       [<c0448635>] lock_acquire+0x5b/0x81
+       [<c064c039>] mutex_lock_nested+0xd1/0x259
+       [<e0b62aa6>] add_new_free_space+0x27/0xd3 [btrfs]
+       [<e0b62d71>] cache_block_group+0x21f/0x29d [btrfs]
+       [<e0b64d25>] find_free_extent+0x239/0x519 [btrfs]
+       [<e0b651a1>] __btrfs_reserve_extent+0x19c/0x33b [btrfs]
+       [<e0b656c6>] btrfs_alloc_extent+0x40/0xa5 [btrfs]
+       [<e0b6577b>] btrfs_alloc_free_block+0x50/0x7a [btrfs]
+       [<e0b5d925>] __btrfs_cow_block+0x1bb/0x65d [btrfs]
+       [<e0b5e330>] btrfs_cow_block+0x19d/0x1a8 [btrfs]
+       [<e0b6099f>] btrfs_search_slot+0x281/0x627 [btrfs]
+       [<e0b6c8dd>] btrfs_lookup_inode+0x28/0x86 [btrfs]
+       [<e0b7408f>] btrfs_update_inode+0x3d/0xa4 [btrfs]
+       [<e0b7488b>] btrfs_dirty_inode+0x3c/0x4b [btrfs]
+       [<c04a844f>] __mark_inode_dirty+0x26/0x13f
+       [<c04a007a>] touch_atime+0xb6/0xbc
+       [<c04992c6>] vfs_readdir+0x7b/0x94
+       [<c049933d>] sys_getdents64+0x5e/0xa0
+       [<c0403973>] sysenter_do_call+0x12/0x3f
+       [<ffffffff>] 0xffffffff
+
+-> #0 (&cache->alloc_mutex){--..}:
+       [<c0447a44>] validate_chain+0x587/0xa43
+       [<c0448574>] __lock_acquire+0x674/0x6da
+       [<c0448635>] lock_acquire+0x5b/0x81
+       [<c064c039>] mutex_lock_nested+0xd1/0x259
+       [<e0b92387>] btrfs_add_free_space+0x1c/0x65 [btrfs]
+       [<e0b66390>] btrfs_finish_extent_commit+0xb2/0xf9 [btrfs]
+       [<e0b71d01>] btrfs_commit_transaction+0x512/0x65d [btrfs]
+       [<e0b6e8d2>] transaction_kthread+0x164/0x1dc [btrfs]
+       [<c043a8f8>] kthread+0x3b/0x63
+       [<c0404717>] kernel_thread_helper+0x7/0x10
+       [<ffffffff>] 0xffffffff
+
+other info that might help us debug this:
+
+3 locks held by btrfs-transacti/2651:
+ #0:  (&fs_info->transaction_kthread_mutex){--..}, at: [<e0b6e81e>]
+transaction_kthread+0xb0/0x1dc [btrfs]
+ #1:  (&fs_info->tree_reloc_mutex){--..}, at: [<e0b71a94>]
+btrfs_commit_transaction+0x2a5/0x65d [btrfs]
+ #2:  (&fs_info->pinned_mutex){--..}, at: [<e0b662fe>]
+btrfs_finish_extent_commit+0x20/0xf9 [btrfs]
+
+stack backtrace:
+Pid: 2651, comm: btrfs-transacti Not tainted 2.6.27 #2
+ [<c04474b2>] print_circular_bug_tail+0x9b/0xa6
+ [<c0447a44>] validate_chain+0x587/0xa43
+ [<c0444caa>] ? trace_hardirqs_off+0xb/0xd
+ [<c0448574>] __lock_acquire+0x674/0x6da
+ [<c0448635>] lock_acquire+0x5b/0x81
+ [<e0b92387>] ? btrfs_add_free_space+0x1c/0x65 [btrfs]
+ [<c064c039>] mutex_lock_nested+0xd1/0x259
+ [<e0b92387>] ? btrfs_add_free_space+0x1c/0x65 [btrfs]
+ [<e0b92387>] ? btrfs_add_free_space+0x1c/0x65 [btrfs]
+ [<e0b92387>] btrfs_add_free_space+0x1c/0x65 [btrfs]
+ [<e0b66390>] btrfs_finish_extent_commit+0xb2/0xf9 [btrfs]
+ [<e0b71d01>] btrfs_commit_transaction+0x512/0x65d [btrfs]
+ [<c043a9b9>] ? autoremove_wake_function+0x0/0x30
+ [<e0b6e8d2>] transaction_kthread+0x164/0x1dc [btrfs]
+ [<c041f6be>] ? complete+0x34/0x3e
+ [<e0b6e76e>] ? transaction_kthread+0x0/0x1dc [btrfs]
+ [<c043a8f8>] kthread+0x3b/0x63
+ [<c043a8bd>] ? kthread+0x0/0x63
+ [<c0404717>] kernel_thread_helper+0x7/0x10
+ =======================
+device fsid 51464cf7df326b76-8d5a548c72c2aaa9 devid 1 transid 20 /dev/sdb1
+
+
+On Thu, Oct 30, 2008 at 8:02 PM, Josef Bacik <jbacik@redhat.com> wrote:
+> Hello,
+>
+> There is a lockdep warning that pops up complaining about grabbing the
+> block_group->alloc_mutex while holding the fs_info->pinned_mutex.  This is
+> because in cache_block_group we grabe the pinned_mutex while holding the
+> alloc_mutex.  This patch fixes this particular complaint by adding a cache_mutex
+> that will be held when caching the block group and no other time.  This will
+> keep the lockdep warning from happening, and is a little cleaner.  I also added
+> a test to see if the block group is cached before calling cache_block_group in
+> find_free_extent to keep us from checking the block group needlessly, since
+> really you are only going to need to call cache_block_group once, and every time
+> after that you will be fine.  Thank you,

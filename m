@@ -1,55 +1,48 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: File System Performance results
-Date: Mon, 03 Nov 2008 14:34:08 -0500
-Message-ID: <1225740848.18271.1.camel@think.oraclecorp.com>
-References: <48FF87CE.2090502@austin.ibm.com>
-	 <1225308408.6448.287.camel@think.oraclecorp.com>
-	 <490F4D98.2050608@austin.ibm.com>
+From: Avi Kivity <avi@redhat.com>
+Subject: Re: Compile error of latest hotfix release of btrfs
+Date: Mon, 03 Nov 2008 22:22:51 +0200
+Message-ID: <490F5D9B.5040400@redhat.com>
+References: <490EB395.2020803@turknet.net.tr>	 <977a2be20811030549l6b9a04edxafe7aec9729c3471@mail.gmail.com>	 <490F0C87.20300@turknet.net.tr> <977a2be20811030719q674bc5bo1f6ce200806e583@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org
-To: Steven Pratt <slpratt@austin.ibm.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Tarkan Erimer <tarkan.erimer@turknet.net.tr>,
+	linux-btrfs@vger.kernel.org
+To: yanhai zhu <zhu.yanhai@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <490F4D98.2050608@austin.ibm.com>
+In-Reply-To: <977a2be20811030719q674bc5bo1f6ce200806e583@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2008-11-03 at 13:14 -0600, Steven Pratt wrote:
-> Chris Mason wrote:
-> > On Wed, 2008-10-22 at 15:06 -0500, Steven Pratt wrote:
-> >   
-> >> We have set up a new page which is intended mainly for tracking the 
-> >> performance of BTRFS, but in doing so we are testing other filesystems 
-> >> as well (ext3, ext4, xfs and jfs).  Thought some people here might find 
-> >> the results useful.
-> >>     
-> >
-> > I think I understand the bad read performance in btrfs.  I was forcing a
-> > tiny max readahead size.
-> >
-> > The current git tree has fixes for it, along with a ton of new code.
-> >   
-> Results for the the new (Git pull on 10/29) on the raid system are 
-> complete.  Sequential read with a small number of threads has increased 
-> dramatically, however on large number of threads (128) we see a large 
-> dropoff in performance from before, as well as a huge spike in CPU 
-> utilization. A quick look at the oprofile reveals some new functions at 
-> the top which seem really out of place on a read only workload.
-> 
+yanhai zhu wrote:
+> sorry,
+>
+> --
+>
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 9b37ce6..04a0e58 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -2539,7 +2539,11 @@ int extent_readpages(struct extent_io_tree *tree,
+>                         /* open coding of lru_cache_add, also not exported */
+>                         page_cache_get(page);
+>                         if (!pagevec_add(&pvec, page))
+> +                       #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
+> +                               __pagevec_lru_add_file(&pvec);
+> +                       #else
+>                                 __pagevec_lru_add(&pvec);
+> +                       #endif
+>   
 
-Thanks, we've got a ton of new code in there, and I'm working through
-some performance testing as well.
+Suggest sticking in some compat header:
 
-> samples  %        image name               app name                 symbol name
-> 13752215 23.8658  btrfs.ko                 btrfs                    alloc_extent_state
-> 12840571 22.2837  btrfs.ko                 btrfs                    free_extent_state
-> 9658945  16.7623  vmlinux-2.6.27           vmlinux-2.6.27           crc32c_le
-> 
-> Both of the extent_state function have overtaken the crc function at the 
-> top of the profile.  Why would we be messing with extent states on read 
-> only workload?
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,28)
++#     define  __pagevec_lru_add_file __pagevec_lru_add
++#endif
 
-It depends ;)  We'll have to get a call graph of who is calling that.
 
--chris
+To reduce impact on code that is intended to go to mainline.
 
+
+-- 
+I have a truly marvellous patch that fixes the bug which this
+signature is too narrow to contain.
 

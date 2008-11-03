@@ -1,44 +1,55 @@
-From: Diego Calleja <diegocg@gmail.com>
-Subject: [PATCH] Fix call to blkdev_issue_discard
-Date: Mon, 3 Nov 2008 16:29:09 +0100
-Message-ID: <20081103162909.1330a013@diego-desktop>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: File System Performance results
+Date: Mon, 03 Nov 2008 14:34:08 -0500
+Message-ID: <1225740848.18271.1.camel@think.oraclecorp.com>
+References: <48FF87CE.2090502@austin.ibm.com>
+	 <1225308408.6448.287.camel@think.oraclecorp.com>
+	 <490F4D98.2050608@austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain
+Cc: linux-btrfs@vger.kernel.org
+To: Steven Pratt <slpratt@austin.ibm.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <490F4D98.2050608@austin.ibm.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 3e6053d76dcbd92b2f9f4ad5ece9bce83149523e adds a gfp_mask parameter
-to blkdev_issue_discard, which breaks compilation in btrfs if BIO_RW_DISCARD
-is config'ed in:
+On Mon, 2008-11-03 at 13:14 -0600, Steven Pratt wrote:
+> Chris Mason wrote:
+> > On Wed, 2008-10-22 at 15:06 -0500, Steven Pratt wrote:
+> >   
+> >> We have set up a new page which is intended mainly for tracking the 
+> >> performance of BTRFS, but in doing so we are testing other filesystems 
+> >> as well (ext3, ext4, xfs and jfs).  Thought some people here might find 
+> >> the results useful.
+> >>     
+> >
+> > I think I understand the bad read performance in btrfs.  I was forcing a
+> > tiny max readahead size.
+> >
+> > The current git tree has fixes for it, along with a ton of new code.
+> >   
+> Results for the the new (Git pull on 10/29) on the raid system are 
+> complete.  Sequential read with a small number of threads has increased 
+> dramatically, however on large number of threads (128) we see a large 
+> dropoff in performance from before, as well as a huge spike in CPU 
+> utilization. A quick look at the oprofile reveals some new functions at 
+> the top which seem really out of place on a read only workload.
+> 
 
-/home/diego/kernel/btrfs-unstable-standalone/extent-tree.c:1896: error:
-too few arguments to function 'blkdev_issue_discard'
+Thanks, we've got a ton of new code in there, and I'm working through
+some performance testing as well.
 
-I added the parameter - GFP_KERNEL, which is what was the gfp_mask used
-before this change.
+> samples  %        image name               app name                 symbol name
+> 13752215 23.8658  btrfs.ko                 btrfs                    alloc_extent_state
+> 12840571 22.2837  btrfs.ko                 btrfs                    free_extent_state
+> 9658945  16.7623  vmlinux-2.6.27           vmlinux-2.6.27           crc32c_le
+> 
+> Both of the extent_state function have overtaken the crc function at the 
+> top of the profile.  Why would we be messing with extent states on read 
+> only workload?
+
+It depends ;)  We'll have to get a call graph of who is calling that.
+
+-chris
 
 
-Signed-off-by: Diego Calleja <diegocg@gmail.com>
-
-Index: btrfs-unstable-standalone/extent-tree.c
-===================================================================
---- btrfs-unstable-standalone.orig/extent-tree.c	2008-11-03 16:13:29.000000000 +0100
-+++ btrfs-unstable-standalone/extent-tree.c	2008-11-03 16:18:23.000000000 +0100
-@@ -1891,9 +1891,16 @@
- 				map_length = num_bytes;
- 
- 			for (i = 0; i < multi->num_stripes; i++, stripe++) {
-+			#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
-+				blkdev_issue_discard(stripe->dev->bdev,
-+						     stripe->physical >> 9,
-+						     map_length >> 9,
-+						     GFP_KERNEL);
-+			#else
- 				blkdev_issue_discard(stripe->dev->bdev,
- 						     stripe->physical >> 9,
- 						     map_length >> 9);
-+			#endif
- 			}
- 			kfree(multi);
- 		}

@@ -1,87 +1,57 @@
 From: "yanhai zhu" <zhu.yanhai@gmail.com>
-Subject: Re: Compile error of latest hotfix release of btrfs
-Date: Mon, 3 Nov 2008 21:49:36 +0800
-Message-ID: <977a2be20811030549l6b9a04edxafe7aec9729c3471@mail.gmail.com>
-References: <490EB395.2020803@turknet.net.tr>
+Subject: [PATCH]several insignificant cleanups
+Date: Mon, 3 Nov 2008 22:20:01 +0800
+Message-ID: <977a2be20811030620j51485a6fi502551c55d31abfc@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: "Tarkan Erimer" <tarkan.erimer@turknet.net.tr>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <490EB395.2020803@turknet.net.tr>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-hello,
-   try this.
+Hello,
+   below is some nontrivial cleanups.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 9b37ce6..eb01341 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2539,7 +2539,11 @@ int extent_readpages(struct extent_io_tree *tree,
-                        /* open coding of lru_cache_add, also not exported */
-                        page_cache_get(page);
-                        if (!pagevec_add(&pvec, page))
-+                       #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
-+                               ____pagevec_lru_add(&pvec);
-+                       #else
-                                __pagevec_lru_add(&pvec);
-+                       #endif
-                        __extent_read_full_page(tree, page, get_extent,
-                                                &bio, 0, &bio_flags);
-                }
-
-2008/11/3 Tarkan Erimer <tarkan.erimer@turknet.net.tr>:
-> Hi,
->
-> I use Kubuntu-8.10 with custom kernel 2.6.28-rc2 and my gcc version is "gcc
-> (Ubuntu 4.3.2-1ubuntu11) 4.3.2". When I tried to compile latest btrfs
-> source, I got these error messages :
->
-> tarkane@tarkane:/media/disk/kernel-417d87e57364$ make
-> bash version.sh
-> make -C /lib/modules/`uname -r`/build M=`pwd` modules
-> make[1]: Entering directory `/usr/src/linux-2.6.28-rc2'
-> CC [M] /media/disk/kernel-417d87e57364/super.o
-> CC [M] /media/disk/kernel-417d87e57364/ctree.o
-> CC [M] /media/disk/kernel-417d87e57364/extent-tree.o
-> CC [M] /media/disk/kernel-417d87e57364/print-tree.o
-> CC [M] /media/disk/kernel-417d87e57364/root-tree.o
-> CC [M] /media/disk/kernel-417d87e57364/dir-item.o
-> CC [M] /media/disk/kernel-417d87e57364/hash.o
-> CC [M] /media/disk/kernel-417d87e57364/file-item.o
-> CC [M] /media/disk/kernel-417d87e57364/inode-item.o
-> CC [M] /media/disk/kernel-417d87e57364/inode-map.o
-> CC [M] /media/disk/kernel-417d87e57364/disk-io.o
-> CC [M] /media/disk/kernel-417d87e57364/transaction.o
-> CC [M] /media/disk/kernel-417d87e57364/bit-radix.o
-> CC [M] /media/disk/kernel-417d87e57364/inode.o
-> CC [M] /media/disk/kernel-417d87e57364/file.o
-> CC [M] /media/disk/kernel-417d87e57364/tree-defrag.o
-> CC [M] /media/disk/kernel-417d87e57364/extent_map.o
-> CC [M] /media/disk/kernel-417d87e57364/sysfs.o
-> CC [M] /media/disk/kernel-417d87e57364/struct-funcs.o
-> CC [M] /media/disk/kernel-417d87e57364/xattr.o
-> CC [M] /media/disk/kernel-417d87e57364/ordered-data.o
-> CC [M] /media/disk/kernel-417d87e57364/extent_io.o
-> /media/disk/kernel-417d87e57364/extent_io.c: In function 'extent_readpages':
-> /media/disk/kernel-417d87e57364/extent_io.c:2270: error: implicit
-> declaration of function '__pagevec_lru_add'
-> make[2]: *** [/media/disk/kernel-417d87e57364/extent_io.o] Error 1
-> make[1]: *** [_module_/media/disk/kernel-417d87e57364] Error 2
-> make[1]: Leaving directory `/usr/src/linux-2.6.28-rc2'
-> make: *** [all] Error 2
-> tarkane@tarkane:/media/disk/kernel-417d87e57364$
->
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
-
-
-
--- 
+Thanks,
 Zhu Yanhai
+--
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index cbb9bb3..0974637 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -834,7 +834,7 @@ static int btrfs_rm_dev_item(struct btrfs_root *root,
+ 	struct block_device *bdev = device->bdev;
+ 	struct btrfs_device *next_dev;
+ 	struct btrfs_key key;
+-	u64 total_bytes;
++	u64 num_devices;
+ 	struct btrfs_fs_devices *fs_devices;
+ 	struct btrfs_trans_handle *trans;
+
+@@ -878,9 +878,9 @@ static int btrfs_rm_dev_item(struct btrfs_root *root,
+ 	if (bdev == fs_devices->latest_bdev)
+ 		fs_devices->latest_bdev = next_dev->bdev;
+
+-	total_bytes = btrfs_super_num_devices(&root->fs_info->super_copy);
++	num_devices = btrfs_super_num_devices(&root->fs_info->super_copy);
+ 	btrfs_set_super_num_devices(&root->fs_info->super_copy,
+-				    total_bytes - 1);
++				    num_devices - 1);
+ out:
+ 	btrfs_free_path(path);
+ 	unlock_chunks(root);
+@@ -1579,7 +1579,6 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 	struct map_lookup *map;
+ 	struct extent_map *em;
+ 	int min_stripe_size = 1 * 1024 * 1024;
+-	u64 physical;
+ 	u64 calc_size = 1024 * 1024 * 1024;
+ 	u64 max_chunk_size = calc_size;
+ 	u64 min_free;
+@@ -1779,7 +1778,6 @@ again:
+ 		btrfs_set_stack_stripe_devid(stripe, device->devid);
+ 		btrfs_set_stack_stripe_offset(stripe, dev_offset);
+ 		memcpy(stripe->dev_uuid, device->uuid, BTRFS_UUID_SIZE);
+-		physical = dev_offset;
+ 		index++;
+ 	}
+ 	BUG_ON(!list_empty(&private_devs));

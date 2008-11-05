@@ -1,26 +1,36 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Btrfs Conf call
-Date: Tue, 04 Nov 2008 20:20:45 -0500
-Message-ID: <1225848045.28783.0.camel@think.oraclecorp.com>
+From: "yanhai zhu" <zhu.yanhai@gmail.com>
+Subject: [PATCH] Add a missing return pointer check
+Date: Wed, 5 Nov 2008 12:53:50 +0800
+Message-ID: <977a2be20811042053r563ed791hfea4f3500eb1e714@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello everyone,
+Hello,
+  This patch adds a missing kzalloc()'s return pointer check in
+add_missing_dev().
 
-Our regular bi-weekly btrfs conf call will be Wednesday November 5th
+Thanks,
+Zhu Yanhai
+---
+ fs/btrfs/volumes.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-There is a new dial in number below.
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index cbb9bb3..1b7ee1f 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2259,6 +2259,8 @@ static struct btrfs_device
+*add_missing_dev(struct btrfs_root *root,
+       struct btrfs_fs_devices *fs_devices = root->fs_info->fs_devices;
 
-Time: 1:30pm US Eastern (10:30am Pacific)
-
-* Dial-in Number(s):
-* Toll Free: +1-888-967-2253
-* Toll  +1-650-607-2253 
-* Meeting id: 665734
-* Passcode: 428737 (which hopefully spells 4Btrfs)
-
--chris
-
+       device = kzalloc(sizeof(*device), GFP_NOFS);
++       if (!device)
++               return NULL;
+       list_add(&device->dev_list,
+                &fs_devices->devices);
+       list_add(&device->dev_alloc_list,
+--
+1.5.2.5

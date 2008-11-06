@@ -1,40 +1,37 @@
-From: Claudio Martins <ctpm@ist.utl.pt>
-Subject: Re: Checksum and transform layering
-Date: Thu, 6 Nov 2008 12:15:12 +0000
-Message-ID: <200811061215.12486.ctpm@ist.utl.pt>
-References: <e692861c0811052234h704c938es20b562123aa4fe9b@mail.gmail.com>
+From: "yanhai zhu" <zhu.yanhai@gmail.com>
+Subject: [PATCH] Check kthread_should_stop() before schedule() in worker_loop
+Date: Thu, 6 Nov 2008 20:50:14 +0800
+Message-ID: <977a2be20811060450s3eee9bb5n2f71b01d03b95987@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <e692861c0811052234h704c938es20b562123aa4fe9b@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thursday 06 November 2008, Gregory Maxwell wrote:
->
-> While this has the advantages that the checksum does not have to be
-> changed as transformations are changed and the system might catch
-> errors in the compression layer, this design decision will be
-> problematic if/when encryption is supported:  Plaintext checksums
-> would leak substantial amounts of information about the content of
-> files.  The system could be switched to a keyed cryptographic hash,
+Hello,
+  In worker_loop(), the func should check whether it has been requested to stop
+before it decides to schedule out. Otherwise if the stop request(also
+the last wake_up())
+sent by btrfs_stop_workers() happens when worker_loop() running after
+the "while" judgement
+and before schedule(), woker_loop() will schedule away and never be woken up,
+which will also cause btrfs_stop_workers() wait forever.
 
- Indeed. The most obvious (and quite trivial) attack one can do is buil=
-d a=20
-huge database of checksums for known files or chunks of files.
-
- AFAIK this has already been done by law enforcement/security agencies =
-to=20
-detect "illegal" files, so it's definitely an issue that would affect a=
-ny=20
-future encryption code implemented in btrfs.
-
-Regards
-
-Cl=C3=A1udio
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Thanks,
+Zhu Yanhai
+---
+diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
+index d82efd7..423ef27 100644
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+@@ -119,7 +119,8 @@ static int worker_loop(void *arg)
+                } else {
+                        set_current_state(TASK_INTERRUPTIBLE);
+                        spin_unlock_irq(&worker->lock);
+-                       schedule();
++                       if (!kthread_should_stop())
++                               schedule();
+                        __set_current_state(TASK_RUNNING);
+                }
+        } while (!kthread_should_stop());
+---

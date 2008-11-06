@@ -1,38 +1,48 @@
-From: Florian Weimer <fweimer@bfk.de>
+From: Tracy Reed <treed@ultraviolet.org>
 Subject: Re: Checksum and transform layering
-Date: Thu, 06 Nov 2008 17:31:53 +0100
-Message-ID: <82ej1oiznq.fsf@mid.bfk.de>
-References: <e692861c0811052234h704c938es20b562123aa4fe9b@mail.gmail.com>
+Date: Thu, 6 Nov 2008 09:49:00 -0800
+Message-ID: <20081106174900.GP5473@tracyreed.org>
+References: <e692861c0811052234h704c938es20b562123aa4fe9b@mail.gmail.com> <200811061215.12486.ctpm@ist.utl.pt>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="6bKodGeYF53agbop"
 Cc: linux-btrfs@vger.kernel.org
-To: "Gregory Maxwell" <gmaxwell@gmail.com>
+To: Claudio Martins <ctpm@ist.utl.pt>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <e692861c0811052234h704c938es20b562123aa4fe9b@mail.gmail.com> (Gregory Maxwell's message of "Thu, 6 Nov 2008 01:34:55 -0500")
+In-Reply-To: <200811061215.12486.ctpm@ist.utl.pt>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-* Gregory Maxwell:
 
-> I noticed in the compression support that the checksum is over the
-> uncompressed data.
->
-> While this has the advantages that the checksum does not have to be
-> changed as transformations are changed and the system might catch
-> errors in the compression layer, this design decision will be
-> problematic if/when encryption is supported:  Plaintext checksums
-> would leak substantial amounts of information about the content of
-> files.
+--6bKodGeYF53agbop
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Would this be an issue if metadata (including file names) were
-encrypted as well?
+On Thu, Nov 06, 2008 at 12:15:12PM +0000, Claudio Martins spake thusly:
+>  AFAIK this has already been done by law enforcement/security agencies to=
+=20
+> detect "illegal" files, so it's definitely an issue that would affect any=
+=20
+> future encryption code implemented in btrfs.
+
+Indeed, it has:=20
+
+http://www.schneier.com/blog/archives/2008/11/us_court_rules.html
 
 --=20
-=46lorian Weimer                <fweimer@bfk.de>
-BFK edv-consulting GmbH       http://www.bfk.de/
-Kriegsstra=DFe 100              tel: +49-721-96201-1
-D-76133 Karlsruhe             fax: +49-721-96201-99
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Tracy Reed
+http://tracyreed.org
+
+--6bKodGeYF53agbop
+Content-Type: application/pgp-signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.5 (GNU/Linux)
+
+iD8DBQFJEy4L9PIYKZYVAq0RAsbpAKCJ0ukJojSxNeFgjlEiVpSUXn35ngCeLj39
+kD8p/tw8y5LKQLPlVlDkOyA=
+=b49t
+-----END PGP SIGNATURE-----
+
+--6bKodGeYF53agbop--

@@ -1,37 +1,38 @@
-From: "yanhai zhu" <zhu.yanhai@gmail.com>
-Subject: [PATCH] Check kthread_should_stop() before schedule() in worker_loop
-Date: Thu, 6 Nov 2008 20:50:14 +0800
-Message-ID: <977a2be20811060450s3eee9bb5n2f71b01d03b95987@mail.gmail.com>
+From: "Gregory Maxwell" <gmaxwell@gmail.com>
+Subject: Re: Checksum and transform layering
+Date: Thu, 6 Nov 2008 09:58:53 -0500
+Message-ID: <e692861c0811060658n27427188k4cb6c63443bf2221@mail.gmail.com>
+References: <e692861c0811052234h704c938es20b562123aa4fe9b@mail.gmail.com>
+	 <1225982445.15281.15.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: "Chris Mason" <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1225982445.15281.15.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
-  In worker_loop(), the func should check whether it has been requested to stop
-before it decides to schedule out. Otherwise if the stop request(also
-the last wake_up())
-sent by btrfs_stop_workers() happens when worker_loop() running after
-the "while" judgement
-and before schedule(), woker_loop() will schedule away and never be woken up,
-which will also cause btrfs_stop_workers() wait forever.
+Thanks for entertaining my comments.
 
-Thanks,
-Zhu Yanhai
----
-diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
-index d82efd7..423ef27 100644
---- a/fs/btrfs/async-thread.c
-+++ b/fs/btrfs/async-thread.c
-@@ -119,7 +119,8 @@ static int worker_loop(void *arg)
-                } else {
-                        set_current_state(TASK_INTERRUPTIBLE);
-                        spin_unlock_irq(&worker->lock);
--                       schedule();
-+                       if (!kthread_should_stop())
-+                               schedule();
-                        __set_current_state(TASK_RUNNING);
-                }
-        } while (!kthread_should_stop());
----
+On Thu, Nov 6, 2008 at 9:40 AM, Chris Mason <chris.mason@oracle.com> wrote:
+> For encryption we have a few choices.  We can checksum the encrypted
+> blocks and disallow compression, or we can use a stronger checksum.
+[snip]
+
+The first sounds viable, although mutually exclusive features aren't
+very user-friendly.
+
+The latter would need to be a probably need to be a secret-keyed HMAC
+to prevent watermarking attacks and information leakage, I don't think
+simply salting with the sector number or other public information
+would be sufficient: I could still take your encrypted disk and answer
+the question "Does Chris have block X?" by checking the checksums.
+
+But if the checksum is a keyed transform we can't sweep the
+file-system for bit-rot without having all the keys available.  I
+expect the common use case for encrypted btrfs is similar to eCryptfs
+where each user may have their own keys which are only available when
+they are logged in (single key whole disk encryption can still be
+easily done with a dmcrypt).  So having all the keys at once may not
+be especially realistic.  But being able to scan for failing blocks is
+important in catching errors before there is too much damage.

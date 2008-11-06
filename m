@@ -1,29 +1,40 @@
-From: Xavier Nicollet <nicollet@jeru.org>
+From: "Gregory Maxwell" <gmaxwell@gmail.com>
 Subject: Re: Checksum and transform layering
-Date: Thu, 6 Nov 2008 16:27:29 +0100
-Message-ID: <20081106152729.GN29514@jeru.org>
-References: <e692861c0811052234h704c938es20b562123aa4fe9b@mail.gmail.com> <1225982445.15281.15.camel@think.oraclecorp.com> <e692861c0811060658n27427188k4cb6c63443bf2221@mail.gmail.com>
-Reply-To: nicollet@jeru.org
+Date: Thu, 6 Nov 2008 10:43:15 -0500
+Message-ID: <e692861c0811060743l13748a38k35ba1853bdd522ea@mail.gmail.com>
+References: <e692861c0811052234h704c938es20b562123aa4fe9b@mail.gmail.com>
+	 <1225982445.15281.15.camel@think.oraclecorp.com>
+	 <e692861c0811060658n27427188k4cb6c63443bf2221@mail.gmail.com>
+	 <20081106152729.GN29514@jeru.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-15
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: nicollet@jeru.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <e692861c0811060658n27427188k4cb6c63443bf2221@mail.gmail.com>
+In-Reply-To: <20081106152729.GN29514@jeru.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 06 novembre 2008 =E0 09:58, Gregory Maxwell a =E9crit:
-> The latter would need to be a probably need to be a secret-keyed HMAC
-> to prevent watermarking attacks and information leakage, [...]
-
-Dm-crypt on every disks seems a good alternative, doesn't it ?
-You would use dm-crypt for your swap anyway.
-
-Did I miss something ?
-
---=20
-Xavier Nicollet
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+T24gVGh1LCBOb3YgNiwgMjAwOCBhdCAxMDoyNyBBTSwgWGF2aWVyIE5pY29sbGV0IDxuaWNvbGxl
+dEBqZXJ1Lm9yZz4gd3JvdGU6Cj4gTGUgMDYgbm92ZW1icmUgMjAwOCDDoCAwOTo1OCwgR3JlZ29y
+eSBNYXh3ZWxsIGEgw6ljcml0Ogo+PiBUaGUgbGF0dGVyIHdvdWxkIG5lZWQgdG8gYmUgYSBwcm9i
+YWJseSBuZWVkIHRvIGJlIGEgc2VjcmV0LWtleWVkIEhNQUMKPj4gdG8gcHJldmVudCB3YXRlcm1h
+cmtpbmcgYXR0YWNrcyBhbmQgaW5mb3JtYXRpb24gbGVha2FnZSwgWy4uLl0KPgo+IERtLWNyeXB0
+IG9uIGV2ZXJ5IGRpc2tzIHNlZW1zIGEgZ29vZCBhbHRlcm5hdGl2ZSwgZG9lc24ndCBpdCA/Cj4g
+WW91IHdvdWxkIHVzZSBkbS1jcnlwdCBmb3IgeW91ciBzd2FwIGFueXdheS4KPgo+IERpZCBJIG1p
+c3Mgc29tZXRoaW5nID8KCkRtY3J5cHQgaXMgZmluZSBidXQgYSByYXRoZXIgYmx1bnQgdG9vbDog
+SXQncyBhbGwgb3Igbm90aGluZywgYW5kIG9ubHkKYSBzaW5nbGUga2V5LiAgSXQgYWxzbyBjYW4g
+bm90IHN0b3JlIGEgdW5pcXVlIG5vbmNlIHBlciBibG9jayB1cGRhdGUsCndoaWNoIG1heSBjcmVh
+dGUgc29tZSAodGhlb3JldGljYWwpIHNlY3VyaXR5IHdlYWtuZXNzZXMuICBUaGUgd2hvbGUKdGhp
+bmcgd2lsbCBuZWVkIHRvIGJlIG1vdW50ZWQgd2l0aCBrZXlzIGluIG1lbW9yeSBldmVuIHdoZW4g
+eW91IG9ubHkKY2FyZSBhYm91dCBhIGZldyBmaWxlcy4gKHNvIHNvbWVvbmUgd2hvIGdhaW5zIGFj
+Y2VzcyB0byB0aGUgc3lzdGVtCmNvdWxkIGFjY2VzcyBoaWdoIHNlY3VyaXR5IGZpbGVzIGV2ZW4g
+aWYgdGhlIHN5c3RlbSB3YXMganVzdCBiZWluZwp1c2VkIGZvciB3ZWItYnJvd3NpbmcgYXQgdGhl
+IHRpbWUpCgpXaXRoIGEgbW9yZSBpbnRlbGxpZ2VudCB5b3UgY291bGQgaGF2ZSBwZXItc3Vidm9s
+dW1lIGtleWluZywgb3IgZXZlbgpiZXR0ZXIgcGVyLWZpbGUgYWxsb3dpbmcgdGhlIGVuY3J5cHRl
+ZCBmaWxlc3lzdGVtIHRvIGNvbnRhaW4gYSBtaXggb2YKZmlsZXMgd2l0aCBkaWZmZXJpbmcgc2Vj
+dXJpdHkgY2xhc3Nlcy4KClRha2UgYSBsb29rIGF0IGh0dHA6Ly9lY3J5cHRmcy5zb3VyY2Vmb3Jn
+ZS5uZXQvIGZvciBhbiBleGFtcGxlIG9mIGEKbW9yZS1zb3BoaXN0aWNhdGVkIGZpbGVzeXN0ZW0g
+ZW5jcnlwdGlvbiBmZWF0dXJlIHNldC4KCkF0IHRoZSBsZWFzdCBJIHRoaW5rIGl0IHdvdWxkIGJl
+IHVzZWZ1bCBpZiBidHJmcyBwcm92aWRlZCBkbWNyeXB0CmZ1bmN0aW9uYWxpdHkgcGVyIHN1YnZv
+bHVtZSwgdGhvdWdoIGZ1bGwgZWNyeXB0ZnMgbGV2ZWwgZnVuY3Rpb25hbGl0eQp3b3VsZCBiZSBx
+dWl0ZSBpbnRlcmVzdGluZy4K

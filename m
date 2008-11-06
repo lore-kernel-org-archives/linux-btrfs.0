@@ -1,40 +1,42 @@
 From: "Gregory Maxwell" <gmaxwell@gmail.com>
 Subject: Re: Checksum and transform layering
-Date: Thu, 6 Nov 2008 10:43:15 -0500
-Message-ID: <e692861c0811060743l13748a38k35ba1853bdd522ea@mail.gmail.com>
+Date: Thu, 6 Nov 2008 11:42:36 -0500
+Message-ID: <e692861c0811060842h5ca74e21t799f8321f4fe36c3@mail.gmail.com>
 References: <e692861c0811052234h704c938es20b562123aa4fe9b@mail.gmail.com>
-	 <1225982445.15281.15.camel@think.oraclecorp.com>
-	 <e692861c0811060658n27427188k4cb6c63443bf2221@mail.gmail.com>
-	 <20081106152729.GN29514@jeru.org>
+	 <82ej1oiznq.fsf@mid.bfk.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Cc: linux-btrfs@vger.kernel.org
-To: nicollet@jeru.org
+To: "Florian Weimer" <fweimer@bfk.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20081106152729.GN29514@jeru.org>
+In-Reply-To: <82ej1oiznq.fsf@mid.bfk.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-T24gVGh1LCBOb3YgNiwgMjAwOCBhdCAxMDoyNyBBTSwgWGF2aWVyIE5pY29sbGV0IDxuaWNvbGxl
-dEBqZXJ1Lm9yZz4gd3JvdGU6Cj4gTGUgMDYgbm92ZW1icmUgMjAwOCDDoCAwOTo1OCwgR3JlZ29y
-eSBNYXh3ZWxsIGEgw6ljcml0Ogo+PiBUaGUgbGF0dGVyIHdvdWxkIG5lZWQgdG8gYmUgYSBwcm9i
-YWJseSBuZWVkIHRvIGJlIGEgc2VjcmV0LWtleWVkIEhNQUMKPj4gdG8gcHJldmVudCB3YXRlcm1h
-cmtpbmcgYXR0YWNrcyBhbmQgaW5mb3JtYXRpb24gbGVha2FnZSwgWy4uLl0KPgo+IERtLWNyeXB0
-IG9uIGV2ZXJ5IGRpc2tzIHNlZW1zIGEgZ29vZCBhbHRlcm5hdGl2ZSwgZG9lc24ndCBpdCA/Cj4g
-WW91IHdvdWxkIHVzZSBkbS1jcnlwdCBmb3IgeW91ciBzd2FwIGFueXdheS4KPgo+IERpZCBJIG1p
-c3Mgc29tZXRoaW5nID8KCkRtY3J5cHQgaXMgZmluZSBidXQgYSByYXRoZXIgYmx1bnQgdG9vbDog
-SXQncyBhbGwgb3Igbm90aGluZywgYW5kIG9ubHkKYSBzaW5nbGUga2V5LiAgSXQgYWxzbyBjYW4g
-bm90IHN0b3JlIGEgdW5pcXVlIG5vbmNlIHBlciBibG9jayB1cGRhdGUsCndoaWNoIG1heSBjcmVh
-dGUgc29tZSAodGhlb3JldGljYWwpIHNlY3VyaXR5IHdlYWtuZXNzZXMuICBUaGUgd2hvbGUKdGhp
-bmcgd2lsbCBuZWVkIHRvIGJlIG1vdW50ZWQgd2l0aCBrZXlzIGluIG1lbW9yeSBldmVuIHdoZW4g
-eW91IG9ubHkKY2FyZSBhYm91dCBhIGZldyBmaWxlcy4gKHNvIHNvbWVvbmUgd2hvIGdhaW5zIGFj
-Y2VzcyB0byB0aGUgc3lzdGVtCmNvdWxkIGFjY2VzcyBoaWdoIHNlY3VyaXR5IGZpbGVzIGV2ZW4g
-aWYgdGhlIHN5c3RlbSB3YXMganVzdCBiZWluZwp1c2VkIGZvciB3ZWItYnJvd3NpbmcgYXQgdGhl
-IHRpbWUpCgpXaXRoIGEgbW9yZSBpbnRlbGxpZ2VudCB5b3UgY291bGQgaGF2ZSBwZXItc3Vidm9s
-dW1lIGtleWluZywgb3IgZXZlbgpiZXR0ZXIgcGVyLWZpbGUgYWxsb3dpbmcgdGhlIGVuY3J5cHRl
-ZCBmaWxlc3lzdGVtIHRvIGNvbnRhaW4gYSBtaXggb2YKZmlsZXMgd2l0aCBkaWZmZXJpbmcgc2Vj
-dXJpdHkgY2xhc3Nlcy4KClRha2UgYSBsb29rIGF0IGh0dHA6Ly9lY3J5cHRmcy5zb3VyY2Vmb3Jn
-ZS5uZXQvIGZvciBhbiBleGFtcGxlIG9mIGEKbW9yZS1zb3BoaXN0aWNhdGVkIGZpbGVzeXN0ZW0g
-ZW5jcnlwdGlvbiBmZWF0dXJlIHNldC4KCkF0IHRoZSBsZWFzdCBJIHRoaW5rIGl0IHdvdWxkIGJl
-IHVzZWZ1bCBpZiBidHJmcyBwcm92aWRlZCBkbWNyeXB0CmZ1bmN0aW9uYWxpdHkgcGVyIHN1YnZv
-bHVtZSwgdGhvdWdoIGZ1bGwgZWNyeXB0ZnMgbGV2ZWwgZnVuY3Rpb25hbGl0eQp3b3VsZCBiZSBx
-dWl0ZSBpbnRlcmVzdGluZy4K
+On Thu, Nov 6, 2008 at 11:31 AM, Florian Weimer <fweimer@bfk.de> wrote:
+> * Gregory Maxwell:
+>
+>> I noticed in the compression support that the checksum is over the
+>> uncompressed data.
+>>
+>> While this has the advantages that the checksum does not have to be
+>> changed as transformations are changed and the system might catch
+>> errors in the compression layer, this design decision will be
+>> problematic if/when encryption is supported:  Plaintext checksums
+>> would leak substantial amounts of information about the content of
+>> files.
+>
+> Would this be an issue if metadata (including file names) were
+> encrypted as well?
+
+If the checksum is encrypted, no, at least not obviously. But as I've
+mentioned if the checksum is encrypted then you can't scrub the FS for
+checksum errors without the keys.
+
+A lack of metadata encryption would be another possible information
+leak, but at least it's one which can probably be understood by users.
+It would be nice if subvolume level encryption provided metadata
+encryption.   If metadata is encrypted but block checksums are
+unencrypted and on plaintext then information will leak about the
+files, even if the checksum is replaced with an unkeyed or
+non-secret-keyed cryptographic hash, a secret-keyed hash is equivalent
+to an encrypted checksum.

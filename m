@@ -1,29 +1,26 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: New compression fixes pushed out
-Date: Thu, 06 Nov 2008 22:16:03 -0500
-Message-ID: <1226027763.15281.32.camel@think.oraclecorp.com>
+From: Martin =?utf-8?q?B=C3=BCrger?= <mbuerger@edu.uni-klu.ac.at>
+Subject: oops: csum failed ino
+Date: Fri, 7 Nov 2008 18:46:20 +0100
+Message-ID: <200811071846.21043.mbuerger@edu.uni-klu.ac.at>
 Mime-Version: 1.0
-Content-Type: text/plain
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=utf-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello,
+teasing the fs (compression enabled) with compilebench crashed like=20
+that [1].
 
-I've pushed out my current batch of fixes for the compression code.  It
-introduces async compression for writes and does a better job of filling
-in pages for compressed extents while reading it.
+[1] http://rafb.net/p/lSU5XU71.html
 
-The latest git trees should fix the bad page mapping errors and improve
-performance even for uncompressed writes.
-
-Checksumming is now done via an ordered work queue, which makes sure IO
-is sent down to the device in the same order the writes were started.
-On my 4 drive array, it pushes performance from 280MB/s 340MB/s for
-sequential writes.
-
-The same ordered work queues are used to keep ordering sane for the
-async compression code.
-
--chris
-
+Best wishes,
+--=20
+Martin B=C3=BCrger
+1024D/27C9019B@www.edu.uni-klu.ac.at/~mbuerger/key.asc
+Key fingerprint =3D D10D 97EF 0C32 B337 5A12  0B6C 2D47 7575 27C9 019B
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

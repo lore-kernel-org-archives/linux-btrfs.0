@@ -1,48 +1,29 @@
-From: Tracy Reed <treed@ultraviolet.org>
-Subject: Re: Checksum and transform layering
-Date: Thu, 6 Nov 2008 09:49:00 -0800
-Message-ID: <20081106174900.GP5473@tracyreed.org>
-References: <e692861c0811052234h704c938es20b562123aa4fe9b@mail.gmail.com> <200811061215.12486.ctpm@ist.utl.pt>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: New compression fixes pushed out
+Date: Thu, 06 Nov 2008 22:16:03 -0500
+Message-ID: <1226027763.15281.32.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="6bKodGeYF53agbop"
-Cc: linux-btrfs@vger.kernel.org
-To: Claudio Martins <ctpm@ist.utl.pt>
+Content-Type: text/plain
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200811061215.12486.ctpm@ist.utl.pt>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello,
 
---6bKodGeYF53agbop
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+I've pushed out my current batch of fixes for the compression code.  It
+introduces async compression for writes and does a better job of filling
+in pages for compressed extents while reading it.
 
-On Thu, Nov 06, 2008 at 12:15:12PM +0000, Claudio Martins spake thusly:
->  AFAIK this has already been done by law enforcement/security agencies to=
-=20
-> detect "illegal" files, so it's definitely an issue that would affect any=
-=20
-> future encryption code implemented in btrfs.
+The latest git trees should fix the bad page mapping errors and improve
+performance even for uncompressed writes.
 
-Indeed, it has:=20
+Checksumming is now done via an ordered work queue, which makes sure IO
+is sent down to the device in the same order the writes were started.
+On my 4 drive array, it pushes performance from 280MB/s 340MB/s for
+sequential writes.
 
-http://www.schneier.com/blog/archives/2008/11/us_court_rules.html
+The same ordered work queues are used to keep ordering sane for the
+async compression code.
 
---=20
-Tracy Reed
-http://tracyreed.org
+-chris
 
---6bKodGeYF53agbop
-Content-Type: application/pgp-signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.5 (GNU/Linux)
-
-iD8DBQFJEy4L9PIYKZYVAq0RAsbpAKCJ0ukJojSxNeFgjlEiVpSUXn35ngCeLj39
-kD8p/tw8y5LKQLPlVlDkOyA=
-=b49t
------END PGP SIGNATURE-----
-
---6bKodGeYF53agbop--

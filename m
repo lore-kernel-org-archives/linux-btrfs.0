@@ -1,54 +1,38 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: File System Performance results
-Date: Mon, 10 Nov 2008 13:11:57 -0500
-Message-ID: <1226340717.23781.18.camel@think.oraclecorp.com>
-References: <48FF87CE.2090502@austin.ibm.com>
-	 <1225308408.6448.287.camel@think.oraclecorp.com>
-	 <490F4D98.2050608@austin.ibm.com>
+From: Martin =?utf-8?q?B=C3=BCrger?= <mbuerger@edu.uni-klu.ac.at>
+Subject: Re: [PATCH] Fix csum error for compressed data
+Date: Mon, 10 Nov 2008 22:00:43 +0100
+Message-ID: <200811102200.44107.mbuerger@edu.uni-klu.ac.at>
+References: <4917FFB0.2000100@oracle.com> <1226319151.12914.1.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org
-To: Steven Pratt <slpratt@austin.ibm.com>
+Content-Type: text/plain; charset=utf-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <490F4D98.2050608@austin.ibm.com>
+In-Reply-To: <1226319151.12914.1.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2008-11-03 at 13:14 -0600, Steven Pratt wrote:
-> Chris Mason wrote:
-> > On Wed, 2008-10-22 at 15:06 -0500, Steven Pratt wrote:
-> >   
-> >> We have set up a new page which is intended mainly for tracking the 
-> >> performance of BTRFS, but in doing so we are testing other filesystems 
-> >> as well (ext3, ext4, xfs and jfs).  Thought some people here might find 
-> >> the results useful.
-> >>     
+On Monday 10 November 2008, Chris Mason wrote:
+> On Mon, 2008-11-10 at 17:32 +0800, Yan Zheng wrote:
+> > Hello,
 > >
-> > I think I understand the bad read performance in btrfs.  I was forcing a
-> > tiny max readahead size.
-> >
-> > The current git tree has fixes for it, along with a ton of new code.
-> >   
-> Results for the the new (Git pull on 10/29) on the raid system are 
-> complete.  Sequential read with a small number of threads has increased 
-> dramatically, however on large number of threads (128) we see a large 
-> dropoff in performance from before, as well as a huge spike in CPU 
-> utilization. A quick look at the oprofile reveals some new functions at 
-> the top which seem really out of place on a read only workload.
-> 
-> samples  %        image name               app name                 symbol name
-> 13752215 23.8658  btrfs.ko                 btrfs                    alloc_extent_state
-> 12840571 22.2837  btrfs.ko                 btrfs                    free_extent_state
+> > The decompress code doesn't take the logical offset in extent
+> > pointer into account. If the logical offset isn't zero, data
+> > will be decompressed into wrong pages. Thank you,
+>
+> Ah, thanks Yan.
+>
+>
+> I'll push this out along with a few other fixes from the weekend
+> shortly.
+Well, if this should fix the issue I've reported last Friday I have=20
+to tell you that this error still occurs during my test drives.
 
-It took a while, but I think I've tracked this down.  Btrfs has some
-debugging code to detect and cleanup leaks of the extent_state structs,
-and this adds a lot of contention to the alloc_extent_state and
-free_extent_state code.
-
-I've pushed out fixes for this, along with some other important
-optimizations that should improve btrfs scores in your benchmarks.
-
-Could you please give things a try?
-
--chris
-
-
+Best wishes,
+--=20
+Martin B=C3=BCrger
+1024D/27C9019B@www.edu.uni-klu.ac.at/~mbuerger/key.asc
+Key fingerprint =3D D10D 97EF 0C32 B337 5A12  0B6C 2D47 7575 27C9 019B
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

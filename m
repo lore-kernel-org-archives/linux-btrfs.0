@@ -1,43 +1,46 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: Martin =?utf-8?q?B=C3=BCrger?= <mbuerger@edu.uni-klu.ac.at>
 Subject: Re: [PATCH] Fix csum error for compressed data
-Date: Mon, 10 Nov 2008 16:09:25 -0500
-Message-ID: <1226351365.10966.2.camel@think.oraclecorp.com>
-References: <4917FFB0.2000100@oracle.com>
-	 <1226319151.12914.1.camel@think.oraclecorp.com>
-	 <200811102200.44107.mbuerger@edu.uni-klu.ac.at>
+Date: Tue, 11 Nov 2008 07:08:36 +0100
+Message-ID: <200811110708.36712.mbuerger@edu.uni-klu.ac.at>
+References: <4917FFB0.2000100@oracle.com> <200811102200.44107.mbuerger@edu.uni-klu.ac.at> <1226351365.10966.2.camel@think.oraclecorp.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=utf-8
-Cc: linux-btrfs@vger.kernel.org
-To: Martin =?ISO-8859-1?Q?B=FCrger?= <mbuerger@edu.uni-klu.ac.at>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200811102200.44107.mbuerger@edu.uni-klu.ac.at>
+In-Reply-To: <1226351365.10966.2.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2008-11-10 at 22:00 +0100, Martin B=C3=BCrger wrote:
-> On Monday 10 November 2008, Chris Mason wrote:
-> > On Mon, 2008-11-10 at 17:32 +0800, Yan Zheng wrote:
-> > > Hello,
+On Monday 10 November 2008, Chris Mason wrote:
+> On Mon, 2008-11-10 at 22:00 +0100, Martin B=C3=BCrger wrote:
+> > On Monday 10 November 2008, Chris Mason wrote:
+> > > On Mon, 2008-11-10 at 17:32 +0800, Yan Zheng wrote:
+> > > > Hello,
+> > > >
+> > > > The decompress code doesn't take the logical offset in
+> > > > extent pointer into account. If the logical offset isn't
+> > > > zero, data will be decompressed into wrong pages. Thank
+> > > > you,
 > > >
-> > > The decompress code doesn't take the logical offset in extent
-> > > pointer into account. If the logical offset isn't zero, data
-> > > will be decompressed into wrong pages. Thank you,
+> > > Ah, thanks Yan.
+> > >
+> > >
+> > > I'll push this out along with a few other fixes from the
+> > > weekend shortly.
 > >
-> > Ah, thanks Yan.
-> >
-> >
-> > I'll push this out along with a few other fixes from the weekend
-> > shortly.
-> Well, if this should fix the issue I've reported last Friday I have=20
-> to tell you that this error still occurs during my test drives.
+> > Well, if this should fix the issue I've reported last Friday I
+> > have to tell you that this error still occurs during my test
+> > drives.
+>
+> Do you also have this changeset:
+>
+> http://git.kernel.org/?p=3Dlinux/kernel/git/mason/btrfs-unstable.gi
+>t;a=3Dcommit;h=3De04ca626baee684bea9d6239e4e1119b696101b2
+Yes, I do.
 
-Do you also have this changeset:
-
-http://git.kernel.org/?p=3Dlinux/kernel/git/mason/btrfs-unstable.git;a=3D=
-commit;h=3De04ca626baee684bea9d6239e4e1119b696101b2
-
--chris
-
-
+--=20
+Martin B=C3=BCrger
+1024D/27C9019B@www.edu.uni-klu.ac.at/~mbuerger/key.asc
+Key fingerprint =3D D10D 97EF 0C32 B337 5A12  0B6C 2D47 7575 27C9 019B
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

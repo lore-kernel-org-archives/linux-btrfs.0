@@ -1,189 +1,173 @@
-From: Lee Trager <lt73@cs.drexel.edu>
+From: "Mitch Harder (aka DontPanic)" <mmharder@gmail.com>
 Subject: Re: [DEBUG PATCH] for anybody who gets a panic due to ENOSPC
-Date: Mon, 17 Nov 2008 20:58:34 -0500
-Message-ID: <4922214A.5090904@cs.drexel.edu>
+Date: Mon, 17 Nov 2008 22:08:56 -0600
+Message-ID: <89ed0c690811172008g555de35fnaf7270dcb7e5afcc@mail.gmail.com>
+References: <4922214A.5090904@cs.drexel.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: jbacik@redhat.com
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4922214A.5090904@cs.drexel.edu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I still get a kernel panic with both of your patches installed. When I
-checked with df the file system is about 65% full. But even if it was
-full it shouldn't cause a kernel panic.
+I've generated another allocation error with the debugging patch installed.
 
-Lee
+In order to get a better idea of disk usage around the period of the
+allocation errors, I made up a bash script to dump 'df -T
+/var/tmp/portage' every 3 seconds to the terminal (where my btrfs
+drive is mounted at /var/tmp/portage) until 20 polls after dmesg goes
+over 20 lines in length.
 
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234036] we were searching
-for 24576 bytes, num_bytes 24576, loop 2, allowed alloc 1
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234040] we were searching
-for 12288 bytes, num_bytes 12288, loop 2, allowed alloc 1
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234045] we were searching
-for 4096 bytes, num_bytes 4096, loop 2, allowed alloc 1
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234080] allocation failed
-flags 1, wanted 4096
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234098] space_info has
-1580007424 free, is full
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234134] block group
-12582912 has 8388608 bytes, 8380416 used 0 pinned 8192 reserved
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234172] 0 blocks of free
-space at or bigger than bytes is
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234201] block group
-424542208 has 790429696 bytes, 790429696 used 0 pinned 0 reserved
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234204] 0 blocks of free
-space at or bigger than bytes is
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234206] block group
-1214971904 has 790429696 bytes, 790421504 used 0 pinned 8192 reserved
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234227] 1 blocks of free
-space at or bigger than bytes is
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234230] block group
-2005401600 has 790429696 bytes, 0 used 0 pinned 0 reserved
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234233] 0 blocks of free
-space at or bigger than bytes is
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234235] block group
-2795831296 has 790429696 bytes, 851968 used 0 pinned 0 reserved
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234238] 0 blocks of free
-space at or bigger than bytes is
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234240] block group
-3586260992 has 790429696 bytes, 789479424 used 0 pinned 950272 reserved
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234243] 0 blocks of free
-space at or bigger than bytes is
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234284] block group
-4376690688 has 790429696 bytes, 786604032 used 0 pinned 3825664 reserved
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234287] 0 blocks of free
-space at or bigger than bytes is
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234290] block group
-5167120384 has 790429696 bytes, 788373504 used 0 pinned 2056192 reserved
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234292] 0 blocks of free
-space at or bigger than bytes is
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234295] block group
-5957550080 has 790429696 bytes, 789020672 used 0 pinned 1409024 reserved
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234297] 0 blocks of free
-space at or bigger than bytes is
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234302] block group
-6747979776 has 752943104 bytes, 721526784 used 0 pinned 31416320 reserved
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234305] 0 blocks of free
-space at or bigger than bytes is
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234737] ------------[ cut
-here ]------------
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234760] kernel BUG at
-/home/ltrager/btrfs/btrfs-unstable-standalone/extent-tree.c:3088!
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234796] invalid opcode:
-0000 [#1] SMP  
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.234861] Modules linked in:
-btrfs zlib_deflate libcrc32c ipv6 af_packet bridge stp bnep rfcomm sco
-l2cap bluetooth ppdev cpufreq_userspace cpufreq_stats cpufreq_powersave
-cpufreq_ondemand freq_table cpufreq_conservative wmi video output sbs
-sbshc pci_slot battery iptable_filter ip_tables x_tables lp evdev
-psmouse serio_raw pcspkr snd_ens1371 gameport snd_ac97_codec ac97_bus
-snd_pcm_oss snd_mixer_oss snd_pcm snd_seq_dummy snd_seq_oss snd_seq_midi
-snd_rawmidi parport_pc snd_seq_midi_event parport snd_seq snd_timer
-snd_seq_device snd soundcore i2c_piix4 snd_page_alloc container ac
-button i2c_core shpchp pci_hotplug intel_agp agpgart btrfs mbcache
-sr_mod cdrom sd_mod crc_t10dif pata_acpi sg ata_piix ehci_hcd uhci_hcd
-pcnet32 mii ata_generic usbcore mptspi mptscsih mptbase
-scsi_transport_spi libata scsi_mod dock thermal processor fan fbcon
-tileblit font bitblit softcursor fuse
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.235013]  
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.235084] Pid: 6150, comm:
-bonnie++ Not tainted (2.6.27-7-generic #1)
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.235097] EIP:
-0060:[<e0d427b2>] EFLAGS: 00010257 CPU: 0
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.235365] EIP is at
-__btrfs_reserve_extent+0x3c2/0x480 [btrfs]
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.235383] EAX: de255464 EBX:
-dd4b0300 ECX: ffffffff EDX: 00000001
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.235393] ESI: dd4b032c EDI:
-de255458 EBP: ddb03a78 ESP: ddb03a04
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.235403]  DS: 007b ES: 007b
-FS: 00d8 GS: 0033 SS: 0068
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.235427] Process bonnie++
-(pid: 6150, ti=ddb02000 task=de479920 task.ti=ddb02000)
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.235445] Stack: e0d7fc80
-92360000 00000001 2ce10000 00000000 2b01a000 00000000 00000000  
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.235505]        00000000
-01df6000 00000000 00000000 00000000 00000000 00000000 00000001  
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.235515]        00000000
-00000000 00000000 00000000 00001000 00000000 c8155000 dd076000  
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.235527] Call Trace:
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.235679]  [<e0d42af7>] ?
-btrfs_reserve_extent+0x77/0xb0 [btrfs]
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.235986]  [<e0d4fed7>] ?
-cow_file_range+0x227/0x4d0 [btrfs]
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.235988]  [<e0d6984c>] ?
-lock_extent+0x5c/0xd0 [btrfs]
-Nov 17 21:16:50 Intrepid-btrfs kernel: [ 1201.236022]  [<e0d54a30>] ?
-run_delalloc_range+0x390/0x400 [btrfs]
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236037]  [<e0d6ca05>] ?
-__extent_writepage+0x4a5/0xb30 [btrfs]
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236051]  [<e0d6817d>] ?
-map_private_extent_buffer+0x8d/0x120 [btrfs]
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<c019339e>] ?
-page_address+0xe/0xe0
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<c019339e>] ?
-page_address+0xe/0xe0
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<c011fd28>] ?
-kmap_atomic_prot+0x48/0x100
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<c0250d2d>] ?
-radix_tree_gang_lookup_tag_slot+0x9d/0xc0
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<c018409d>] ?
-find_get_pages_tag+0x3d/0x130
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<c019d0ce>] ?
-page_mkclean+0xe/0xb0
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<c01917f6>] ?
-__dec_zone_state+0x16/0x90
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<e0d693ad>] ?
-extent_write_cache_pages+0x1ad/0x2f0 [btrfs]
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<e0d4f370>] ?
-btrfs_writepages+0x0/0x30 [btrfs]
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<e0d69526>] ?
-extent_writepages+0x36/0x60 [btrfs]
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<e0d6c560>] ?
-__extent_writepage+0x0/0xb30 [btrfs]
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<e0d55230>] ?
-btrfs_get_extent+0x0/0xad0 [btrfs]
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<e0d4f394>] ?
-btrfs_writepages+0x24/0x30 [btrfs]
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<c018c4a3>] ?
-do_writepages+0x33/0x60
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<c01d25dc>] ?
-__sync_single_inode+0x5c/0x250
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<c01d281a>] ?
-__writeback_single_inode+0x4a/0x160
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<c024febc>] ?
-prop_fraction_single+0x3c/0x70
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<c01d2ccc>] ?
-generic_sync_sb_inodes+0x27c/0x3b0
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<c01d306d>] ?
-writeback_inodes+0x4d/0xe0
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<c018bd18>] ?
-balance_dirty_pages+0x238/0x340
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<c018be84>] ?
-balance_dirty_pages_ratelimited_nr+0x64/0x70
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<e0d5a51d>] ?
-btrfs_file_write+0x3dd/0x6a0 [btrfs]
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<c02353be>] ?
-apparmor_file_permission+0x1e/0x40
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<c01b1fad>] ?
-rw_verify_area+0x4d/0xc0
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<c01b1764>] ?
-generic_file_llseek_unlocked+0x14/0xb0
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<c01b24c0>] ?
-vfs_write+0xa0/0x110
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<e0d5a140>] ?
-btrfs_file_write+0x0/0x6a0 [btrfs]
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<c01b2602>] ?
-sys_write+0x42/0x70
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069]  [<c0103f7b>] ?
-sysenter_do_call+0x12/0x2f
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069] 
-=======================
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069] Code: 9c 63 df 8d
-4b 44 89 c8 89 4d f0 e8 99 b1 63 df 8b 7b 38 8b 07 0f 18 00 90 83 c3 38
-39 fb 89 5d ec 75 33 8b 45 f0 e8 5e 92 40 df <0f> 0b eb fe 66 90 8b 90
-90 18 00 00 8b 88 78 18 00 00 8b b0 8c  
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236069] EIP: [<e0d427b2>]
-__btrfs_reserve_extent+0x3c2/0x480 [btrfs] SS:ESP 0068:ddb03a04
-Nov 17 21:16:51 Intrepid-btrfs kernel: [ 1201.236886] ---[ end trace
-db9e9518b4387879 ]---
+For this error, max usage was shown as:
+Filesystem    Type   1K-blocks      Used Available Use% Mounted on
+/dev/sdc2    btrfs     3510200    890424   2619776  26% /var/tmp/portage
+
+The dmesg output did show '[ 4171.126131] space_info has 0 free, is
+full', but this did not agree with the 'df -T' output.  Let me know if
+you can think of something else I should be looking at here.
+
+My test partition is ~3.3-3.4 GB (3,510,200 1K blocks).  I am mounting
+btrfs with compression turned on.
+
+The drive is 10 GB total, so I can increase size, but I'm trying to
+select a size to highlight problems.  Let me know if you'd like to
+test some other sizes.
+
+Here's a summary of usage for this drive:
+(1)  Create drive 'mkfs.btrfs'
+(2)  Fill Drive to ~66% by uncompressing the FlightGear source package
+multiple times.
+(3)  Delete all files using 'rm -rf' (I was wondering if there was a
+repeatable problem with this kind of operation, but it worked fine.
+No errors to this point, and the drive indicated near-empty after this
+(~300k still allocated)).
+(4)  Beginning compiling Open Office with Gentoo Portage build manager
+(portage uses /var/tmp/portage as a build directory).
+
+During the OpenOffice build process, the build crashed in conjunction
+with the following dmesg output:
+
+[ 4171.126120] we were searching for 4096 bytes, num_bytes 4096, loop
+2, allowed_alloc 1
+[ 4171.126129] allocation failed flags 36, wanted 4096
+[ 4171.126131] space_info has 0 free, is full
+[ 4171.126523] block group 29360128 has 179699712 bytes, 167817216
+used 11882496 pinned 0 reserved
+[ 4171.126528] 0 blocks of free space at or bigger than bytes is
+[ 4171.126582] ------------[ cut here ]------------
+[ 4171.126585] kernel BUG at
+/var/tmp/portage/sys-fs/btrfs-9998/work/btrfs-9998/extent-tree.c:3088!
+[ 4171.126587] invalid opcode: 0000 [#1]
+[ 4171.126589] Modules linked in: btrfs snd_pcm_oss snd_mixer_oss
+snd_seq_dummy snd_seq_oss snd_seq_midi_event snd_seq snd_seq_device
+ipv6 ppdev pcspkr nvidia(P) snd_intel8x0 snd_ac97_codec ac97_bus
+snd_pcm snd_timer snd snd_page_alloc forcedeth ohci_hcd i2c_nforce2
+ssb pcmcia i2c_core parport_pc parport nvidia_agp sr_mod
+scsi_wait_scan sl811_hcd uhci_hcd ehci_hcd
+[ 4171.126606]
+[ 4171.126610] Pid: 1227, comm: find Tainted: P          (2.6.27-sabayon-r10 #1)
+[ 4171.126613] EIP: 0060:[<f8e2f23e>] EFLAGS: 00210257 CPU: 0
+[ 4171.126650] EIP is at __btrfs_reserve_extent+0x2be/0x430 [btrfs]
+[ 4171.126653] EAX: ed75c940 EBX: f1e1b180 ECX: f4ea28a0 EDX: 00000001
+[ 4171.126656] ESI: ed75c938 EDI: ed75c938 EBP: ed75c940 ESP: e4447c48
+[ 4171.126658]  DS: 007b ES: 007b FS: 0000 GS: 0033 SS: 0068
+[ 4171.126661] Process find (pid: 1227, ti=e4446000 task=f4ea28a0
+task.ti=e4446000)
+[ 4171.126663] Stack: f8e6d944 01c00000 00000000 0ab60000 00000000
+0a00b000 00000000 00b55000
+[ 4171.126668]        00000000 00000000 00000000 00000000 00000000
+00000000 00000000 00000024
+[ 4171.126672]        0c75dfff 00000000 ed684e00 f20f9078 ed618000
+00000005 00000000 ed684e00
+[ 4171.126677] Call Trace:
+[ 4171.126680]  [<f8e2f89f>] btrfs_alloc_extent+0x9f/0x140 [btrfs]
+[ 4171.126700]  [<f8e2fa0e>] btrfs_alloc_free_block+0xce/0x110 [btrfs]
+[ 4171.126718]  [<f8e242e9>] __btrfs_cow_block+0x219/0x870 [btrfs]
+[ 4171.126737]  [<f8e392c2>] verify_parent_transid+0x62/0x1a0 [btrfs]
+[ 4171.126755]  [<f8e24fec>] btrfs_cow_block+0x13c/0x1e0 [btrfs]
+[ 4171.126773]  [<f8e28190>] btrfs_search_slot+0x1c0/0x7f0 [btrfs]
+[ 4171.126791]  [<f8e5690c>] map_private_extent_buffer+0x8c/0x140 [btrfs]
+[ 4171.126814]  [<c0195aa0>] path_walk+0x50/0x90
+[ 4171.126822]  [<f8e38aac>] btrfs_lookup_inode+0x3c/0xc0 [btrfs]
+[ 4171.126841]  [<f8e42906>] btrfs_update_inode+0x46/0xc0 [btrfs]
+[ 4171.126861]  [<f8e43a7f>] btrfs_dirty_inode+0x3f/0x60 [btrfs]
+[ 4171.126881]  [<c01a8c90>] __mark_inode_dirty+0x30/0x160
+[ 4171.126887]  [<c0197f90>] filldir64+0x0/0xe0
+[ 4171.126890]  [<c019f837>] touch_atime+0xc7/0xf0
+[ 4171.126896]  [<c01981f6>] vfs_readdir+0xa6/0xb0
+[ 4171.126898]  [<c019826f>] sys_getdents64+0x6f/0xc0
+[ 4171.126901]  [<c010303d>] sysenter_do_call+0x12/0x21
+[ 4171.126906]  =======================
+[ 4171.126908] Code: 89 44 24 04 e8 f4 e8 2e c7 89 d8 8b 54 24 68 8b
+4c 24 6c e8 c5 bf 03 00 8b 36 8b 06 0f 18 00 90 39 fe 75 90 89 e8 e8
+82 29 30 c7 <0f> 0b eb fe 8b 5c 24 48 8b 74 24 50 8b 83 f4 00 00 00 8b
+50 20
+[ 4171.126927] EIP: [<f8e2f23e>] __btrfs_reserve_extent+0x2be/0x430
+[btrfs] SS:ESP 0068:e4447c48
+[ 4171.126947] ---[ end trace 91e641b298e7b0de ]---
+[ 4171.129768] we were searching for 4096 bytes, num_bytes 4096, loop
+2, allowed_alloc 1
+[ 4171.129774] allocation failed flags 36, wanted 4096
+[ 4171.129777] space_info has 0 free, is full
+[ 4171.129779] block group 29360128 has 179699712 bytes, 167817216
+used 11882496 pinned 0 reserved
+[ 4171.129782] 0 blocks of free space at or bigger than bytes is
+[ 4171.129817] ------------[ cut here ]------------
+[ 4171.129819] kernel BUG at
+/var/tmp/portage/sys-fs/btrfs-9998/work/btrfs-9998/extent-tree.c:3088!
+[ 4171.129822] invalid opcode: 0000 [#2]
+[ 4171.129824] Modules linked in: btrfs snd_pcm_oss snd_mixer_oss
+snd_seq_dummy snd_seq_oss snd_seq_midi_event snd_seq snd_seq_device
+ipv6 ppdev pcspkr nvidia(P) snd_intel8x0 snd_ac97_codec ac97_bus
+snd_pcm snd_timer snd snd_page_alloc forcedeth ohci_hcd i2c_nforce2
+ssb pcmcia i2c_core parport_pc parport nvidia_agp sr_mod
+scsi_wait_scan sl811_hcd uhci_hcd ehci_hcd
+[ 4171.129840]
+[ 4171.129843] Pid: 30919, comm: localize-ooo Tainted: P      D
+(2.6.27-sabayon-r10 #1)
+[ 4171.129846] EIP: 0060:[<f8e2f23e>] EFLAGS: 00210257 CPU: 0
+[ 4171.129874] EIP is at __btrfs_reserve_extent+0x2be/0x430 [btrfs]
+[ 4171.129876] EAX: ed75c940 EBX: f1e1b180 ECX: f4ea2080 EDX: 00000001
+[ 4171.129879] ESI: ed75c938 EDI: ed75c938 EBP: ed75c940 ESP: e93c7b2c
+[ 4171.129881]  DS: 007b ES: 007b FS: 0000 GS: 0033 SS: 0068
+[ 4171.129884] Process localize-ooo (pid: 30919, ti=e93c6000
+task=f4ea2080 task.ti=e93c6000)
+[ 4171.129886] Stack: f8e6d944 01c00000 00000000 0ab60000 00000000
+0a00b000 00000000 00b55000
+[ 4171.129891]        00000000 00000000 00000000 00000000 00000000
+00000000 00000000 00000024
+[ 4171.129895]        c0133b7e 00000000 ed684e00 f20f9028 ed618000
+00000005 00000000 ed684e00
+[ 4171.129900] Call Trace:
+[ 4171.129902]  [<c0133b7e>] update_wall_time+0x25e/0x7f0
+[ 4171.129911]  [<f8e2f89f>] btrfs_alloc_extent+0x9f/0x140 [btrfs]
+[ 4171.129930]  [<f8e2fa0e>] btrfs_alloc_free_block+0xce/0x110 [btrfs]
+[ 4171.129949]  [<f8e242e9>] __btrfs_cow_block+0x219/0x870 [btrfs]
+[ 4171.129967]  [<f8e392c2>] verify_parent_transid+0x62/0x1a0 [btrfs]
+[ 4171.129985]  [<f8e24fec>] btrfs_cow_block+0x13c/0x1e0 [btrfs]
+[ 4171.130003]  [<f8e28190>] btrfs_search_slot+0x1c0/0x7f0 [btrfs]
+[ 4171.130010]  [<c0172735>] do_wp_page+0x315/0x4e0
+[ 4171.130010]  [<f8e38aac>] btrfs_lookup_inode+0x3c/0xc0 [btrfs]
+[ 4171.130010]  [<c011a819>] check_preempt_wakeup+0xe9/0x140
+[ 4171.130010]  [<f8e42906>] btrfs_update_inode+0x46/0xc0 [btrfs]
+[ 4171.130010]  [<f8e43a7f>] btrfs_dirty_inode+0x3f/0x60 [btrfs]
+[ 4171.130010]  [<c01a8c90>] __mark_inode_dirty+0x30/0x160
+[ 4171.130010]  [<c019f837>] touch_atime+0xc7/0xf0
+[ 4171.130010]  [<c0165e9f>] generic_file_aio_read+0x56f/0x5f0
+[ 4171.130010]  [<c018c275>] do_sync_read+0xd5/0x120
+[ 4171.130010]  [<c010264a>] do_notify_resume+0x37a/0x750
+[ 4171.130010]  [<c012e610>] autoremove_wake_function+0x0/0x40
+[ 4171.130010]  [<c041c64c>] security_file_permission+0xc/0x10
+[ 4171.130010]  [<c018c31e>] rw_verify_area+0x5e/0xd0
+[ 4171.130010]  [<c018c1a0>] do_sync_read+0x0/0x120
+[ 4171.130010]  [<c018cbad>] vfs_read+0x9d/0x160
+[ 4171.130010]  [<c018cf01>] sys_read+0x41/0x70
+[ 4171.130010]  [<c010303d>] sysenter_do_call+0x12/0x21
+[ 4171.130010]  =======================
+[ 4171.130010] Code: 89 44 24 04 e8 f4 e8 2e c7 89 d8 8b 54 24 68 8b
+4c 24 6c e8 c5 bf 03 00 8b 36 8b 06 0f 18 00 90 39 fe 75 90 89 e8 e8
+82 29 30 c7 <0f> 0b eb fe 8b 5c 24 48 8b 74 24 50 8b 83 f4 00 00 00 8b
+50 20
+[ 4171.130010] EIP: [<f8e2f23e>] __btrfs_reserve_extent+0x2be/0x430
+[btrfs] SS:ESP 0068:e93c7b2c
+[ 4171.130201] ---[ end trace 91e641b298e7b0de ]---

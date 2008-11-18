@@ -1,66 +1,77 @@
-From: Josef Bacik <jbacik@redhat.com>
-Subject: Re: [DEBUG PATCH] for anybody who gets a panic due to ENOSPC
-Date: Tue, 18 Nov 2008 11:30:09 -0500
-Message-ID: <20081118163007.GA1425@unused.rdu.redhat.com>
-References: <4922214A.5090904@cs.drexel.edu>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: New disk format pushed out to btrfs-unstable
+Date: Tue, 18 Nov 2008 12:27:46 -0500
+Message-ID: <1227029266.787.13.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: jbacik@redhat.com, linux-btrfs@vger.kernel.org
-To: Lee Trager <lt73@cs.drexel.edu>
+Content-Type: text/plain
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4922214A.5090904@cs.drexel.edu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 17, 2008 at 08:58:34PM -0500, Lee Trager wrote:
-> I still get a kernel panic with both of your patches installed. When I
-> checked with df the file system is about 65% full. But even if it was
-> full it shouldn't cause a kernel panic.
-> 
-> Lee
->
+Hello everyone,
 
-Hrm this is frustrating, I can't figure out whats going wrong and I can't
-reproduce this here, I just keep hitting a reall ENOSPC.  Please run with this
-patch and send me the output.  Thanks much,
+The btrfs unstable git trees now have a new disk format.  The changes
+include:
 
-Josef
+* Yan Zheng's seed filesystem support.  This allows you to create a
+readonly image and have all writes directed to other devices
 
- 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 6eb56a0..a24e368 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2898,6 +2898,18 @@ static int noinline find_free_extent(struct btrfs_trans_handle *trans,
- 			break;
- 		}
- new_group:
-+		if (loop == 2) {
-+			spin_lock(&block_group->lock);
-+			printk(KERN_ERR "block_group %Lu didn't have what we "
-+			       "needed.  %Lu total, %Lu used, %Lu pinned, %Lu "
-+			       "reserved.  Dumping free space\n",
-+			       block_group->key.objectid,
-+			       block_group->key.offset,
-+			       btrfs_block_group_used(&block_group->item),
-+			       block_group->pinned, block_group->reserved);
-+			spin_unlock(&block_group->lock);
-+			btrfs_dump_free_space(block_group, 0);
-+		}
- 		mutex_unlock(&block_group->alloc_mutex);
- new_group_no_lock:
- 		/* don't try to compare new allocations against the
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index f4926c0..3699656 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -402,8 +402,8 @@ void btrfs_dump_free_space(struct btrfs_block_group_cache *block_group,
- 		info = rb_entry(n, struct btrfs_free_space, offset_index);
- 		if (info->bytes >= bytes)
- 			count++;
--		//printk(KERN_INFO "offset=%Lu, bytes=%Lu\n", info->offset,
--		//       info->bytes);
-+		printk(KERN_INFO "offset=%Lu, bytes=%Lu\n", info->offset,
-+		       info->bytes);
- 	}
- 	printk(KERN_INFO "%d blocks of free space at or bigger than bytes is"
- 	       "\n", count);
+* Subvolumes and snapshots can now live anywhere in the directory tree.
+
+The awkward 'default' subvolume is gone, and the tree of tree roots is
+no longer visible when you mount -o subvol=., which is now the same as
+mounting without any options.
+
+New subvolumes can be linked anywhere in the tree, btrfsctl -S creates
+subvols now, and btrfsctl -s creates snapshots.
+
+btrfsctl -S subvol_name subvol_location
+
+btrfsctl -s snapshot_location subvol_to_snapshot
+
+Snapshot creation is not recursive, so for example:
+
+mkfs.btrfs /dev/sdb
+mount /dev/sdb /mnt
+btrfsctl -S vol1 /mnt
+btrfsctl -S vol2 /mnt/vol1
+touch /mnt/vol1/vol2/some_file
+
+Now we have two subvolumes, and some_file exists inside of vol2.
+
+btrfsctl -s /mnt/snap /mnt/vol1
+
+Now we have a snapshot of vol1 named /mnt/snap.  If we do a find
+under /mnt/snap:
+
+# find /mnt/snap
+/mnt/snap
+/mnt/snap/vol2
+/mnt/snap/vol2/some_file
+
+We see some_file under vol2.  Since vol2 is a different subvolume, and
+vol1 just has a pointer to that subvolume, both snap and vol1 point to
+the latest vol2.
+
+# rm /mnt/snap/vol2/some_file
+
+# find /mnt/vol1
+/mnt/vol1
+/mnt/vol1/vol2
+
+some_file disappears.  The disk format has extra indexing so that
+snapshots can be done recursively in an efficient manner, but the
+current code does not implement that.
+
+Those indexes are used by the current code to try and prevent directory
+loops when snapshots are created.  For example it would refuse to create
+a snapshot of /mnt under /mnt/vol1.
+
+I'll talk with Christoph about auto bind mounting subvols and snapshots
+into the directory tree instead of the current code.  But, this is a
+good start and it should have enough disk format indexing to be flexible
+over the long term.
+
+-chris
+
+

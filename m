@@ -1,33 +1,66 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATH]Some fix for batching extent insert.
-Date: Tue, 18 Nov 2008 09:48:58 -0500
-Message-ID: <1227019738.15917.5.camel@think.oraclecorp.com>
-References: <2c3b11250811170748s508ec4ddlfce9ad80bb296d95@mail.gmail.com>
-	 <1227010670.15917.2.camel@think.oraclecorp.com>
-	 <1227011417.15917.3.camel@think.oraclecorp.com>
-	 <977a2be20811180635u21f4dbbakd9dbc3a6665960d2@mail.gmail.com>
+From: Josef Bacik <jbacik@redhat.com>
+Subject: Re: [DEBUG PATCH] for anybody who gets a panic due to ENOSPC
+Date: Tue, 18 Nov 2008 11:30:09 -0500
+Message-ID: <20081118163007.GA1425@unused.rdu.redhat.com>
+References: <4922214A.5090904@cs.drexel.edu>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Liu Hui <onlyflyer@gmail.com>, linux-btrfs@vger.kernel.org
-To: yanhai zhu <zhu.yanhai@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: jbacik@redhat.com, linux-btrfs@vger.kernel.org
+To: Lee Trager <lt73@cs.drexel.edu>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <977a2be20811180635u21f4dbbakd9dbc3a6665960d2@mail.gmail.com>
+In-Reply-To: <4922214A.5090904@cs.drexel.edu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2008-11-18 at 22:35 +0800, yanhai zhu wrote:
-> hello,
->    In fact, Before Liu's change, this function maybe don't wait and
-> insert ALL extents when all=1 in some cases,
-> please think about the following conditions:
+On Mon, Nov 17, 2008 at 08:58:34PM -0500, Lee Trager wrote:
+> I still get a kernel panic with both of your patches installed. When I
+> checked with df the file system is about 65% full. But even if it was
+> full it shouldn't cause a kernel panic.
 > 
+> Lee
+>
 
-Ok, I see what you mean.  It turned out it was actually the other hunk
-that was breaking things.  I think Liu is right about that bug as well,
-but I changed it slightly to preserve the counter updating but avoid
-touching the list if we're really done.
+Hrm this is frustrating, I can't figure out whats going wrong and I can't
+reproduce this here, I just keep hitting a reall ENOSPC.  Please run with this
+patch and send me the output.  Thanks much,
 
-Thanks!
+Josef
 
--chris
-
-
+ 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 6eb56a0..a24e368 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2898,6 +2898,18 @@ static int noinline find_free_extent(struct btrfs_trans_handle *trans,
+ 			break;
+ 		}
+ new_group:
++		if (loop == 2) {
++			spin_lock(&block_group->lock);
++			printk(KERN_ERR "block_group %Lu didn't have what we "
++			       "needed.  %Lu total, %Lu used, %Lu pinned, %Lu "
++			       "reserved.  Dumping free space\n",
++			       block_group->key.objectid,
++			       block_group->key.offset,
++			       btrfs_block_group_used(&block_group->item),
++			       block_group->pinned, block_group->reserved);
++			spin_unlock(&block_group->lock);
++			btrfs_dump_free_space(block_group, 0);
++		}
+ 		mutex_unlock(&block_group->alloc_mutex);
+ new_group_no_lock:
+ 		/* don't try to compare new allocations against the
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index f4926c0..3699656 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -402,8 +402,8 @@ void btrfs_dump_free_space(struct btrfs_block_group_cache *block_group,
+ 		info = rb_entry(n, struct btrfs_free_space, offset_index);
+ 		if (info->bytes >= bytes)
+ 			count++;
+-		//printk(KERN_INFO "offset=%Lu, bytes=%Lu\n", info->offset,
+-		//       info->bytes);
++		printk(KERN_INFO "offset=%Lu, bytes=%Lu\n", info->offset,
++		       info->bytes);
+ 	}
+ 	printk(KERN_INFO "%d blocks of free space at or bigger than bytes is"
+ 	       "\n", count);

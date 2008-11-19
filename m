@@ -1,26 +1,23 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] fix free space accounting when unpinning extents
-Date: Wed, 19 Nov 2008 15:49:34 -0500
-Message-ID: <1227127774.21259.1.camel@think.oraclecorp.com>
-References: <20081119195652.GD16041@unused.rdu.redhat.com>
+From: "Lee Trager" <lt73@cs.drexel.edu>
+Subject: btrfs thinks its full
+Date: Wed, 19 Nov 2008 17:24:34 -0500
+Message-ID: <20081119222434.GA29942@tux64-01>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org, lt73@cs.drexel.edu
-To: Josef Bacik <jbacik@redhat.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20081119195652.GD16041@unused.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2008-11-19 at 14:56 -0500, Josef Bacik wrote:
-> Hello,
-> 
-> This patch fixes what I hope is the last early ENOSPC bug left.  I did not know
-> that pinned extents would merge into one big extent when inserted on to the
-> pinned extent tree, so I was adding free space to a block group that could
-> possibly span multiple block groups. 
+Because the last bug I dealt with had so much to do with the disk being
+full I decided to test and see what happens when I fill up the disk.
+Unfortunatly the disk thinks its full before it actually is. I have a
+7539M btrfs partition and tried to fill it by doing
 
-Ok, I've pushed this out, along with my fixes for mount -o ro.
+dd if=/dev/zero of=/mnt/btrfs/fill
 
--chris
+btrfs reports its full after 6408M have been used. dd, ls, and df all
+confirm this. This uses only 85% of the disk but I can not put one more
+bit onto the partition. The only thing that shows up in my system logs
+is "space info full 1." I am using the latest git sources.
 
-
+Lee

@@ -1,1016 +1,119 @@
-From: Yan Zheng <zheng.yan@oracle.com>
-Subject: [PATCH] Btrfs image tool
-Date: Wed, 19 Nov 2008 22:57:21 +0800
-Message-ID: <49242951.2060302@oracle.com>
+From: "Lee Trager" <lt73@cs.drexel.edu>
+Subject: Re: [DEBUG PATCH] for anybody who gets a panic due to ENOSPC
+Date: Wed, 19 Nov 2008 11:45:35 -0500
+Message-ID: <20081119164535.GA22904@tux64-01>
+References: <4922214A.5090904@cs.drexel.edu> <20081118163007.GA1425@unused.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <jbacik@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20081118163007.GA1425@unused.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Sorry it took so long to reply it took awhile to run this test. It
+didn't cause a kernel panic for about 8 hours. df says only 623M of the
+available 7539M are used. Anyway this is with the latest checkin by Chris Mason with the patch you sent me.
 
-This patch adds btrfs image tool. The image tool is
-a debugging tool that creates/restores btrfs metadump
-image. Thank you,
+Also since you said you cann't reproduce this I thought it might be
+helpful to know the environment I'm doing testing on. I have been
+running bonnie++ on xubuntu 8.10 fully updated on vmware 6.5. No vmware
+tools are instead except for the mouse and video xorg drivers which come by
+default with ubuntu. I have two 8G prealloced virtual drives. The first
+one is where the xubuntu install is using ext2 for /boot and / and has a
+512M swap partition. The second one is where I do all of the btrfs testing. 
+I have it partitioned because I was experimenting with booting with btrfs 
+as root so the partition btrfs is on has 7539M. The VM has 512M of RAM
+dedicated to it and is using one core of my Intel Core 2 Duo T7500
+running at 2.2GHz.
 
-Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
+Lee
 
----
-diff -urpN btrfs-progs-orig/btrfs-image.c btrfs-progs/btrfs-image.c
---- btrfs-progs-orig/btrfs-image.c	1970-01-01 07:00:00.000000000 +0700
-+++ btrfs-progs/btrfs-image.c	2008-11-19 22:52:31.000000000 +0800
-@@ -0,0 +1,853 @@
-+/*
-+ * Copyright (C) 2008 Oracle.  All rights reserved.
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public
-+ * License v2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+ * General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public
-+ * License along with this program; if not, write to the
-+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-+ * Boston, MA 021110-1307, USA.
-+ */
-+
-+#define _XOPEN_SOURCE 500
-+#define _GNU_SOURCE 1
-+#include <pthread.h>
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <sys/types.h>
-+#include <sys/stat.h>
-+#include <fcntl.h>
-+#include <unistd.h>
-+#include <dirent.h>
-+#include <zlib.h>
-+#include "kerncompat.h"
-+#include "crc32c.h"
-+#include "ctree.h"
-+#include "disk-io.h"
-+#include "transaction.h"
-+#include "utils.h"
-+#include "version.h"
-+
-+
-+#define HEADER_MAGIC		0xbd5c25e27295668bULL
-+#define MAX_PENDING_SIZE	(256 * 1024)
-+#define BLOCK_SIZE		1024
-+#define BLOCK_MASK		(BLOCK_SIZE - 1)
-+
-+#define COMPRESS_NONE		0
-+#define COMPRESS_ZLIB		1
-+
-+struct meta_cluster_item {
-+	__le64 bytenr;
-+	__le32 size;
-+} __attribute__ ((__packed__));
-+
-+struct meta_cluster_header {
-+	__le64 magic;
-+	__le64 bytenr;
-+	__le32 nritems;
-+	u8 compress;
-+} __attribute__ ((__packed__));
-+
-+/* cluster header + index items + buffers */
-+struct meta_cluster {
-+	struct meta_cluster_header header;
-+	struct meta_cluster_item items[];
-+} __attribute__ ((__packed__));
-+
-+#define ITEMS_PER_CLUSTER ((BLOCK_SIZE - sizeof(struct meta_cluster)) / \
-+			   sizeof(struct meta_cluster_item))
-+
-+struct async_work {
-+	struct list_head list;
-+	struct list_head ordered;
-+	u64 start;
-+	u64 size;
-+	u8 *buffer;
-+	size_t bufsize;
-+};
-+
-+struct metadump_struct {
-+	struct btrfs_root *root;
-+	FILE *out;
-+
-+	struct meta_cluster *cluster;
-+
-+	pthread_t *threads;
-+	size_t num_threads;
-+	pthread_mutex_t mutex;
-+	pthread_cond_t cond;
-+
-+	struct list_head list;
-+	struct list_head ordered;
-+	size_t num_items;
-+	size_t num_ready;
-+
-+	u64 pending_start;
-+	u64 pending_size;
-+
-+	int compress_level;
-+	int done;
-+};
-+
-+struct mdrestore_struct {
-+	FILE *in;
-+	FILE *out;
-+
-+	pthread_t *threads;
-+	size_t num_threads;
-+	pthread_mutex_t mutex;
-+	pthread_cond_t cond;
-+
-+	struct list_head list;
-+	size_t num_items;
-+
-+	int compress_method;
-+	int done;
-+};
-+
-+static void csum_block(u8 *buf, size_t len)
-+{
-+	char result[BTRFS_CRC32_SIZE];
-+	u32 crc = ~(u32)0;
-+	crc = crc32c(crc, buf + BTRFS_CSUM_SIZE, len - BTRFS_CSUM_SIZE);
-+	btrfs_csum_final(crc, result);
-+	memcpy(buf, result, BTRFS_CRC32_SIZE);
-+}
-+
-+/*
-+ * zero inline extents and csum items
-+ */
-+static void zero_items(u8 *dst, struct extent_buffer *src)
-+{
-+	struct btrfs_file_extent_item *fi;
-+	struct btrfs_item *item;
-+	struct btrfs_key key;
-+	u32 nritems = btrfs_header_nritems(src);
-+	size_t size;
-+	unsigned long ptr;
-+	int i, extent_type;
-+
-+	for (i = 0; i < nritems; i++) {
-+		item = btrfs_item_nr(src, i);
-+		btrfs_item_key_to_cpu(src, &key, i);
-+		if (key.type == BTRFS_CSUM_ITEM_KEY) {
-+			size = btrfs_item_size_nr(src, i);
-+			memset(dst + btrfs_leaf_data(src) +
-+			       btrfs_item_offset_nr(src, i), 0, size);
-+			continue;
-+		}
-+		if (key.type != BTRFS_EXTENT_DATA_KEY)
-+			continue;
-+
-+		fi = btrfs_item_ptr(src, i, struct btrfs_file_extent_item);
-+		extent_type = btrfs_file_extent_type(src, fi);
-+		if (extent_type != BTRFS_FILE_EXTENT_INLINE)
-+			continue;
-+
-+		ptr = btrfs_file_extent_inline_start(fi);
-+		size = btrfs_file_extent_inline_item_len(src, item);
-+		memset(dst + ptr, 0, size);
-+	}
-+}
-+
-+/*
-+ * copy buffer and zero useless data in the buffer
-+ */
-+static void copy_buffer(u8 *dst, struct extent_buffer *src)
-+{
-+	int level;
-+	size_t size;
-+	u32 nritems;
-+
-+	memcpy(dst, src->data, src->len);
-+	if (src->start == BTRFS_SUPER_INFO_OFFSET)
-+		return;
-+
-+	level = btrfs_header_level(src);
-+	nritems = btrfs_header_nritems(src);
-+
-+	if (nritems == 0) {
-+		size = sizeof(struct btrfs_header);
-+		memset(dst + size, 0, src->len - size);
-+	} else if (level == 0) {
-+		size = btrfs_leaf_data(src) +
-+			btrfs_item_offset_nr(src, nritems - 1) -
-+			btrfs_item_nr_offset(nritems);
-+		memset(dst + btrfs_item_nr_offset(nritems), 0, size);
-+		zero_items(dst, src);
-+	} else {
-+		size = offsetof(struct btrfs_node, ptrs) +
-+			sizeof(struct btrfs_key_ptr) * nritems;
-+		memset(dst + size, 0, src->len - size);
-+	}
-+	csum_block(dst, src->len);
-+}
-+
-+static void *dump_worker(void *data)
-+{
-+	struct metadump_struct *md = (struct metadump_struct *)data;
-+	struct async_work *async;
-+	int ret;
-+
-+	while (1) {
-+		pthread_mutex_lock(&md->mutex);
-+		while (list_empty(&md->list)) {
-+			if (md->done) {
-+				pthread_mutex_unlock(&md->mutex);
-+				goto out;
-+			}
-+			pthread_cond_wait(&md->cond, &md->mutex);
-+		}
-+		async = list_entry(md->list.next, struct async_work, list);
-+		list_del_init(&async->list);
-+		pthread_mutex_unlock(&md->mutex);
-+
-+		if (md->compress_level > 0) {
-+			u8 *orig = async->buffer;
-+
-+			async->bufsize = compressBound(async->size);
-+			async->buffer = malloc(async->bufsize);
-+
-+			ret = compress2(async->buffer, &async->bufsize, orig,
-+					async->size, md->compress_level);
-+			BUG_ON(ret != Z_OK);
-+
-+			free(orig);
-+		}
-+
-+		pthread_mutex_lock(&md->mutex);
-+		md->num_ready++;
-+		pthread_mutex_unlock(&md->mutex);
-+	}
-+out:
-+	pthread_exit(NULL);
-+}
-+
-+static void meta_cluster_init(struct metadump_struct *md, u64 start)
-+{
-+	struct meta_cluster_header *header;
-+
-+	md->num_items = 0;
-+	md->num_ready = 0;
-+	header = &md->cluster->header;
-+	header->magic = cpu_to_le64(HEADER_MAGIC);
-+	header->bytenr = cpu_to_le64(start);
-+	header->nritems = cpu_to_le32(0);
-+	header->compress = md->compress_level > 0 ?
-+			   COMPRESS_ZLIB : COMPRESS_NONE;
-+}
-+
-+static int metadump_init(struct metadump_struct *md, struct btrfs_root *root,
-+			 FILE *out, int num_threads, int compress_level)
-+{
-+	int i, ret;
-+
-+	memset(md, 0, sizeof(*md));
-+	pthread_cond_init(&md->cond, NULL);
-+	pthread_mutex_init(&md->mutex, NULL);
-+	INIT_LIST_HEAD(&md->list);
-+	INIT_LIST_HEAD(&md->ordered);
-+	md->root = root;
-+	md->out = out;
-+	md->pending_start = (u64)-1;
-+	md->compress_level = compress_level;
-+	md->cluster = calloc(1, BLOCK_SIZE);
-+	if (!md->cluster)
-+		return -ENOMEM;
-+
-+	meta_cluster_init(md, 0);
-+	if (!num_threads)
-+		return 0;
-+
-+	md->num_threads = num_threads;
-+	md->threads = calloc(num_threads, sizeof(pthread_t));
-+	if (!md->threads)
-+		return -ENOMEM;
-+	for (i = 0; i < num_threads; i++) {
-+		ret = pthread_create(md->threads + i, NULL, dump_worker, md);
-+		if (ret)
-+			break;
-+	}
-+	return ret;
-+}
-+
-+static void metadump_destroy(struct metadump_struct *md)
-+{
-+	int i;
-+	pthread_mutex_lock(&md->mutex);
-+	md->done = 1;
-+	pthread_cond_broadcast(&md->cond);
-+	pthread_mutex_unlock(&md->mutex);
-+
-+	for (i = 0; i < md->num_threads; i++)
-+		pthread_join(md->threads[i], NULL);
-+
-+	pthread_cond_destroy(&md->cond);
-+	pthread_mutex_destroy(&md->mutex);
-+	free(md->threads);
-+	free(md->cluster);
-+}
-+
-+static int write_zero(FILE *out, size_t size)
-+{
-+	static char zero[BLOCK_SIZE];
-+	return fwrite(zero, size, 1, out);
-+}
-+
-+static int write_buffers(struct metadump_struct *md, u64 *next)
-+{
-+	struct meta_cluster_header *header = &md->cluster->header;
-+	struct meta_cluster_item *item;
-+	struct async_work *async;
-+	u64 bytenr = 0;
-+	u32 nritems = 0;
-+	int ret;
-+
-+	if (list_empty(&md->ordered))
-+		goto out;
-+
-+	/* wait until all buffers are compressed */
-+	while (md->num_items > md->num_ready) {
-+		struct timespec ts = {
-+			.tv_sec = 0,
-+			.tv_nsec = 10000000,
-+		};
-+		pthread_mutex_unlock(&md->mutex);
-+		nanosleep(&ts, NULL);
-+		pthread_mutex_lock(&md->mutex);
-+	}
-+
-+	/* setup and write index block */
-+	list_for_each_entry(async, &md->ordered, ordered) {
-+		item = md->cluster->items + nritems;
-+		item->bytenr = cpu_to_le64(async->start);
-+		item->size = cpu_to_le32(async->bufsize);
-+		nritems++;
-+	}
-+	header->nritems = cpu_to_le32(nritems);
-+
-+	ret = fwrite(md->cluster, BLOCK_SIZE, 1, md->out);
-+	BUG_ON(ret != 1);
-+
-+	/* write buffers */
-+	bytenr += le64_to_cpu(header->bytenr) + BLOCK_SIZE;
-+	while (!list_empty(&md->ordered)) {
-+		async = list_entry(md->ordered.next, struct async_work,
-+				   ordered);
-+		list_del_init(&async->ordered);
-+
-+		bytenr += async->bufsize;
-+		ret = fwrite(async->buffer, async->bufsize, 1, md->out);
-+		BUG_ON(ret != 1);
-+
-+		free(async->buffer);
-+		free(async);
-+	}
-+
-+	/* zero unused space in the last block */
-+	if (bytenr & BLOCK_MASK) {
-+		size_t size = BLOCK_SIZE - (bytenr & BLOCK_MASK);
-+
-+		bytenr += size;
-+		ret = write_zero(md->out, size);
-+		BUG_ON(ret != 1);
-+	}
-+out:
-+	*next = bytenr;
-+	return 0;
-+}
-+
-+static int flush_pending(struct metadump_struct *md, int done)
-+{
-+	struct async_work *async = NULL;
-+	struct extent_buffer *eb;
-+	u64 blocksize = md->root->nodesize;
-+	u64 start;
-+	u64 size;
-+	size_t offset;
-+	int ret;
-+
-+	if (md->pending_size) {
-+		async = calloc(1, sizeof(*async));
-+		if (!async)
-+			return -ENOMEM;
-+
-+		async->start = md->pending_start;
-+		async->size = md->pending_size;
-+		async->bufsize = async->size;
-+		async->buffer = malloc(async->bufsize);
-+
-+		offset = 0;
-+		start = async->start;
-+		size = async->size;
-+		while (size > 0) {
-+			eb = read_tree_block(md->root, start, blocksize, 0);
-+			BUG_ON(!eb);
-+			copy_buffer(async->buffer + offset, eb);
-+			free_extent_buffer(eb);
-+			start += blocksize;
-+			offset += blocksize;
-+			size -= blocksize;
-+		}
-+
-+		md->pending_start = (u64)-1;
-+		md->pending_size = 0;
-+	} else if (!done) {
-+		return 0;
-+	}
-+
-+	pthread_mutex_lock(&md->mutex);
-+	if (async) {
-+		list_add_tail(&async->ordered, &md->ordered);
-+		md->num_items++;
-+		if (md->compress_level > 0) {
-+			list_add_tail(&async->list, &md->list);
-+			pthread_cond_signal(&md->cond);
-+		} else {
-+			md->num_ready++;
-+		}
-+	}
-+	if (md->num_items >= ITEMS_PER_CLUSTER || done) {
-+		ret = write_buffers(md, &start);
-+		BUG_ON(ret);
-+		meta_cluster_init(md, start);
-+	}
-+	pthread_mutex_unlock(&md->mutex);
-+	return 0;
-+}
-+
-+static int add_metadata(u64 start, u64 size, struct metadump_struct *md)
-+{
-+	int ret;
-+	if (md->pending_size + size > MAX_PENDING_SIZE ||
-+	    md->pending_start + md->pending_size != start) {
-+		ret = flush_pending(md, 0);
-+		if (ret)
-+			return ret;
-+		md->pending_start = start;
-+	}
-+	readahead_tree_block(md->root, start, size, 0);
-+	md->pending_size += size;
-+	return 0;
-+}
-+
-+static int create_metadump(const char *input, FILE *out, int num_threads,
-+			   int compress_level)
-+{
-+	struct btrfs_root *root;
-+	struct btrfs_root *extent_root;
-+	struct btrfs_path *path;
-+	struct extent_buffer *leaf;
-+	struct btrfs_extent_ref *ref_item;
-+	struct btrfs_key key;
-+	struct metadump_struct metadump;
-+	u64 bytenr;
-+	u64 num_bytes;
-+	u64 ref_objectid;
-+	int ret;
-+
-+	root = open_ctree(input, 0, 0);
-+	BUG_ON(root->nodesize != root->leafsize);
-+
-+	ret = metadump_init(&metadump, root, out, num_threads,
-+			    compress_level);
-+	BUG_ON(ret);
-+
-+	ret = add_metadata(BTRFS_SUPER_INFO_OFFSET, 4096, &metadump);
-+	BUG_ON(ret);
-+
-+	extent_root = root->fs_info->extent_root;
-+	path = btrfs_alloc_path();
-+
-+	bytenr = BTRFS_SUPER_INFO_OFFSET + 4096;
-+	key.objectid = bytenr;
-+	key.type = BTRFS_EXTENT_ITEM_KEY;
-+	key.offset = 0;
-+
-+	ret = btrfs_search_slot(NULL, extent_root, &key, path, 0, 0);
-+	BUG_ON(ret < 0);
-+
-+	while (1) {
-+		leaf = path->nodes[0];
-+		if (path->slots[0] >= btrfs_header_nritems(leaf)) {
-+			ret = btrfs_next_leaf(extent_root, path);
-+			BUG_ON(ret < 0);
-+			if (ret > 0)
-+				break;
-+			leaf = path->nodes[0];
-+		}
-+
-+		btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
-+		if (key.objectid < bytenr ||
-+		    key.type != BTRFS_EXTENT_ITEM_KEY) {
-+			path->slots[0]++;
-+			continue;
-+		}
-+
-+		bytenr = key.objectid;
-+		num_bytes = key.offset;
-+		while (1) {
-+			path->slots[0]++;
-+			if (path->slots[0] >= btrfs_header_nritems(leaf)) {
-+				ret = btrfs_next_leaf(extent_root, path);
-+				BUG_ON(ret < 0);
-+				if (ret > 0)
-+					break;
-+				leaf = path->nodes[0];
-+			}
-+			btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
-+			if (key.objectid != bytenr)
-+				break;
-+			if (key.type != BTRFS_EXTENT_REF_KEY)
-+				continue;
-+			ref_item = btrfs_item_ptr(leaf, path->slots[0],
-+						  struct btrfs_extent_ref);
-+			ref_objectid = btrfs_ref_objectid(leaf, ref_item);
-+			if (ref_objectid < BTRFS_FIRST_FREE_OBJECTID) {
-+				ret = add_metadata(bytenr, num_bytes,
-+						   &metadump);
-+				BUG_ON(ret);
-+				break;
-+			}
-+		}
-+		bytenr += num_bytes;
-+	}
-+
-+	ret = flush_pending(&metadump, 1);
-+	BUG_ON(ret);
-+
-+	metadump_destroy(&metadump);
-+
-+	btrfs_free_path(path);
-+	ret = close_ctree(root);
-+	return 0;
-+}
-+
-+static void update_super(u8 *buffer)
-+{
-+	struct btrfs_super_block *super = (struct btrfs_super_block *)buffer;
-+	struct btrfs_chunk *chunk;
-+	struct btrfs_disk_key *key;
-+	u32 sectorsize = btrfs_super_sectorsize(super);
-+	u64 flags = btrfs_super_flags(super);
-+
-+	flags |= BTRFS_SUPER_FLAG_METADUMP;
-+	btrfs_set_super_flags(super, flags);
-+
-+	key = (struct btrfs_disk_key *)(super->sys_chunk_array);
-+	chunk = (struct btrfs_chunk *)(super->sys_chunk_array +
-+				       sizeof(struct btrfs_disk_key));
-+
-+	btrfs_set_disk_key_objectid(key, BTRFS_FIRST_CHUNK_TREE_OBJECTID);
-+	btrfs_set_disk_key_type(key, BTRFS_CHUNK_ITEM_KEY);
-+	btrfs_set_disk_key_offset(key, 0);
-+
-+	btrfs_set_stack_chunk_length(chunk, (u64)-1);
-+	btrfs_set_stack_chunk_owner(chunk, BTRFS_EXTENT_TREE_OBJECTID);
-+	btrfs_set_stack_chunk_stripe_len(chunk, 64 * 1024);
-+	btrfs_set_stack_chunk_type(chunk, BTRFS_BLOCK_GROUP_SYSTEM);
-+	btrfs_set_stack_chunk_io_align(chunk, sectorsize);
-+	btrfs_set_stack_chunk_io_width(chunk, sectorsize);
-+	btrfs_set_stack_chunk_sector_size(chunk, sectorsize);
-+	btrfs_set_stack_chunk_num_stripes(chunk, 1);
-+	btrfs_set_stack_chunk_sub_stripes(chunk, 0);
-+	chunk->stripe.devid = super->dev_item.devid;
-+	chunk->stripe.offset = cpu_to_le64(0);
-+	memcpy(chunk->stripe.dev_uuid, super->dev_item.uuid, BTRFS_UUID_SIZE);
-+	btrfs_set_super_sys_array_size(super, sizeof(*key) + sizeof(*chunk));
-+	csum_block(buffer, 4096);
-+}
-+
-+static void *restore_worker(void *data)
-+{
-+	struct mdrestore_struct *mdres = (struct mdrestore_struct *)data;
-+	struct async_work *async;
-+	size_t size;
-+	u8 *buffer;
-+	u8 *outbuf;
-+	int outfd;
-+	int ret;
-+
-+	outfd = fileno(mdres->out);
-+	buffer = malloc(MAX_PENDING_SIZE * 2);
-+	BUG_ON(!buffer);
-+
-+	while (1) {
-+		pthread_mutex_lock(&mdres->mutex);
-+		while (list_empty(&mdres->list)) {
-+			if (mdres->done) {
-+				pthread_mutex_unlock(&mdres->mutex);
-+				goto out;
-+			}
-+			pthread_cond_wait(&mdres->cond, &mdres->mutex);
-+		}
-+		async = list_entry(mdres->list.next, struct async_work, list);
-+		list_del_init(&async->list);
-+		pthread_mutex_unlock(&mdres->mutex);
-+
-+		if (mdres->compress_method == COMPRESS_ZLIB) {
-+			size = MAX_PENDING_SIZE * 2;
-+			ret = uncompress(buffer, &size, async->buffer,
-+					 async->bufsize);
-+			BUG_ON(ret != Z_OK);
-+			outbuf = buffer;
-+		} else {
-+			outbuf = async->buffer;
-+			size = async->bufsize;
-+		}
-+
-+		if (async->start == BTRFS_SUPER_INFO_OFFSET)
-+			update_super(outbuf);
-+
-+		ret = pwrite64(outfd, outbuf, size, async->start);
-+		BUG_ON(ret != size);
-+
-+		pthread_mutex_lock(&mdres->mutex);
-+		mdres->num_items--;
-+		pthread_mutex_unlock(&mdres->mutex);
-+
-+		free(async->buffer);
-+		free(async);
-+	}
-+out:
-+	free(buffer);
-+	pthread_exit(NULL);
-+}
-+
-+static int mdresotre_init(struct mdrestore_struct *mdres,
-+			  FILE *in, FILE *out, int num_threads)
-+{
-+	int i, ret = 0;
-+
-+	memset(mdres, 0, sizeof(*mdres));
-+	pthread_cond_init(&mdres->cond, NULL);
-+	pthread_mutex_init(&mdres->mutex, NULL);
-+	INIT_LIST_HEAD(&mdres->list);
-+	mdres->in = in;
-+	mdres->out = out;
-+
-+	if (!num_threads)
-+		return 0;
-+
-+	mdres->num_threads = num_threads;
-+	mdres->threads = calloc(num_threads, sizeof(pthread_t));
-+	if (!mdres->threads)
-+		return -ENOMEM;
-+	for (i = 0; i < num_threads; i++) {
-+		ret = pthread_create(mdres->threads + i, NULL, restore_worker,
-+				     mdres);
-+		if (ret)
-+			break;
-+	}
-+	return ret;
-+}
-+
-+static void mdresotre_destroy(struct mdrestore_struct *mdres)
-+{
-+	int i;
-+	pthread_mutex_lock(&mdres->mutex);
-+	mdres->done = 1;
-+	pthread_cond_broadcast(&mdres->cond);
-+	pthread_mutex_unlock(&mdres->mutex);
-+
-+	for (i = 0; i < mdres->num_threads; i++)
-+		pthread_join(mdres->threads[i], NULL);
-+
-+	pthread_cond_destroy(&mdres->cond);
-+	pthread_mutex_destroy(&mdres->mutex);
-+	free(mdres->threads);
-+}
-+
-+static int add_cluster(struct meta_cluster *cluster,
-+		       struct mdrestore_struct *mdres, u64 *next)
-+{
-+	struct meta_cluster_item *item;
-+	struct meta_cluster_header *header = &cluster->header;
-+	struct async_work *async;
-+	u64 bytenr;
-+	u32 i, nritems;
-+	int ret;
-+
-+	BUG_ON(mdres->num_items);
-+	mdres->compress_method = header->compress;
-+
-+	bytenr = le64_to_cpu(header->bytenr) + BLOCK_SIZE;
-+	nritems = le32_to_cpu(header->nritems);
-+	for (i = 0; i < nritems; i++) {
-+		item = &cluster->items[i];
-+		async = calloc(1, sizeof(*async));
-+		async->start = le64_to_cpu(item->bytenr);
-+		async->bufsize = le32_to_cpu(item->size);
-+		async->buffer = malloc(async->bufsize);
-+		ret = fread(async->buffer, async->bufsize, 1, mdres->in);
-+		BUG_ON(ret != 1);
-+		bytenr += async->bufsize;
-+
-+		pthread_mutex_lock(&mdres->mutex);
-+		list_add_tail(&async->list, &mdres->list);
-+		mdres->num_items++;
-+		pthread_cond_signal(&mdres->cond);
-+		pthread_mutex_unlock(&mdres->mutex);
-+	}
-+	if (bytenr & BLOCK_MASK) {
-+		char buffer[BLOCK_MASK];
-+		size_t size = BLOCK_SIZE - (bytenr & BLOCK_MASK);
-+
-+		bytenr += size;
-+		ret = fread(buffer, size, 1, mdres->in);
-+		BUG_ON(ret != 1);
-+	}
-+	*next = bytenr;
-+	return 0;
-+}
-+
-+static int wait_for_worker(struct mdrestore_struct *mdres)
-+{
-+	pthread_mutex_lock(&mdres->mutex);
-+	while (mdres->num_items > 0) {
-+		struct timespec ts = {
-+			.tv_sec = 0,
-+			.tv_nsec = 10000000,
-+		};
-+		pthread_mutex_unlock(&mdres->mutex);
-+		nanosleep(&ts, NULL);
-+		pthread_mutex_lock(&mdres->mutex);
-+	}
-+	pthread_mutex_unlock(&mdres->mutex);
-+	return 0;
-+}
-+
-+static int restore_metadump(const char *input, FILE *out, int num_threads)
-+{
-+	struct meta_cluster *cluster;
-+	struct meta_cluster_header *header;
-+	struct mdrestore_struct mdrestore;
-+	u64 bytenr = 0;
-+	FILE *in;
-+	int ret;
-+
-+	if (!strcmp(input, "-")) {
-+		in = stdin;
-+	} else {
-+		in = fopen(input, "r");
-+		if (!in) {
-+			perror("unable to open metadump image");
-+			exit(1);
-+		}
-+	}
-+
-+	cluster = malloc(BLOCK_SIZE);
-+	BUG_ON(!cluster);
-+
-+	ret = mdresotre_init(&mdrestore, in, out, num_threads);
-+	BUG_ON(ret);
-+
-+	while (1) {
-+		ret = fread(cluster, BLOCK_SIZE, 1, in);
-+		if (!ret)
-+			break;
-+
-+		header = &cluster->header;
-+		if (le64_to_cpu(header->magic) != HEADER_MAGIC ||
-+		    le64_to_cpu(header->bytenr) != bytenr) {
-+			fprintf(stderr, "bad header in metadump image\n");
-+			exit(1);
-+		}
-+		ret = add_cluster(cluster, &mdrestore, &bytenr);
-+		BUG_ON(ret);
-+
-+		wait_for_worker(&mdrestore);
-+	}
-+
-+	mdresotre_destroy(&mdrestore);
-+	free(cluster);
-+	if (in != stdin)
-+		fclose(in);
-+	return ret;
-+}
-+
-+static void print_usage(void)
-+{
-+	fprintf(stderr, "usage: btrfs-image [options] source target\n");
-+	fprintf(stderr, "\t-r      \trestore metadump image\n");
-+	fprintf(stderr, "\t-c value\tcompression level (0 ~ 9)\n");
-+	fprintf(stderr, "\t-t value\tnumber of threads (1 ~ 32)\n");
-+	exit(1);
-+}
-+
-+int main(int argc, char *argv[])
-+{
-+	char *source;
-+	char *target;
-+	int num_threads = 0;
-+	int compress_level = 0;
-+	int create = 1;
-+	int ret;
-+	FILE *out;
-+
-+	while (1) {
-+		int c = getopt(argc, argv, "rc:t:");
-+		if (c < 0)
-+			break;
-+		switch (c) {
-+		case 'r':
-+			create = 0;
-+			break;
-+		case 't':
-+			num_threads = atoi(optarg);
-+			if (num_threads <= 0 || num_threads > 32)
-+				print_usage();
-+			break;
-+		case 'c':
-+			compress_level = atoi(optarg);
-+			if (compress_level < 0 || compress_level > 9)
-+				print_usage();
-+			break;
-+		default:
-+			print_usage();
-+		}
-+	}
-+
-+	argc = argc - optind;
-+	if (argc != 2)
-+		print_usage();
-+	source = argv[optind];
-+	target = argv[optind + 1];
-+
-+	if (create && !strcmp(target, "-")) {
-+		out = stdout;
-+	} else {
-+		out = fopen(target, "w+");
-+		if (!out) {
-+			perror("unable to create target file");
-+			exit(1);
-+		}
-+	}
-+
-+	if (num_threads == 0 && compress_level > 0) {
-+		num_threads = sysconf(_SC_NPROCESSORS_ONLN);
-+		if (num_threads <= 0)
-+			num_threads = 1;
-+	}
-+
-+	if (create)
-+		ret = create_metadump(source, out, num_threads,
-+				      compress_level);
-+	else
-+		ret = restore_metadump(source, out, 1);
-+
-+	if (out == stdout)
-+		fflush(out);
-+	else
-+		fclose(out);
-+
-+	exit(0);
-+}
-diff -urpN btrfs-progs-orig/ctree.h btrfs-progs/ctree.h
---- btrfs-progs-orig/ctree.h	2008-11-19 07:30:00.000000000 +0800
-+++ btrfs-progs/ctree.h	2008-11-19 14:03:24.000000000 +0800
-@@ -252,7 +252,8 @@ struct btrfs_header {
- 					sizeof(struct btrfs_item) - \
- 					sizeof(struct btrfs_file_extent_item))
- 
--#define BTRFS_SUPER_FLAG_SEEDING (1ULL << 32)
-+#define BTRFS_SUPER_FLAG_SEEDING	(1ULL << 32)
-+#define BTRFS_SUPER_FLAG_METADUMP	(1ULL << 33)
- 
- /*
-  * this is a very generous portion of the super block, giving us
-@@ -1362,14 +1363,6 @@ static inline u32 btrfs_file_extent_calc
- 	return offsetof(struct btrfs_file_extent_item, disk_bytenr) + datasize;
- }
- 
--static inline u32 btrfs_file_extent_inline_len(struct extent_buffer *eb,
--					       struct btrfs_item *e)
--{
--	unsigned long offset;
--	offset = offsetof(struct btrfs_file_extent_item, disk_bytenr);
--	return btrfs_item_size(eb, e) - offset;
--}
--
- BTRFS_SETGET_FUNCS(file_extent_disk_bytenr, struct btrfs_file_extent_item,
- 		   disk_bytenr, 64);
- BTRFS_SETGET_FUNCS(file_extent_generation, struct btrfs_file_extent_item,
-@@ -1389,6 +1382,28 @@ BTRFS_SETGET_FUNCS(file_extent_encryptio
- BTRFS_SETGET_FUNCS(file_extent_other_encoding, struct btrfs_file_extent_item,
- 		   other_encoding, 16);
- 
-+/* this returns the number of file bytes represented by the inline item.
-+ * If an item is compressed, this is the uncompressed size
-+ */
-+static inline u32 btrfs_file_extent_inline_len(struct extent_buffer *eb,
-+					struct btrfs_file_extent_item *e)
-+{
-+       return btrfs_file_extent_ram_bytes(eb, e);
-+}
-+
-+/*
-+ * this returns the number of bytes used by the item on disk, minus the
-+ * size of any extent headers.  If a file is compressed on disk, this is
-+ * the compressed size
-+ */
-+static inline u32 btrfs_file_extent_inline_item_len(struct extent_buffer *eb,
-+						    struct btrfs_item *e)
-+{
-+       unsigned long offset;
-+       offset = offsetof(struct btrfs_file_extent_item, disk_bytenr);
-+       return btrfs_item_size(eb, e) - offset;
-+}
-+
- static inline u32 btrfs_level_size(struct btrfs_root *root, int level) {
- 	if (level == 0)
- 		return root->leafsize;
-diff -urpN btrfs-progs-orig/disk-io.c btrfs-progs/disk-io.c
---- btrfs-progs-orig/disk-io.c	2008-11-19 07:30:00.000000000 +0800
-+++ btrfs-progs/disk-io.c	2008-11-19 13:42:47.000000000 +0800
-@@ -646,8 +646,10 @@ struct btrfs_root *open_ctree_fd(int fp,
- 	         (unsigned long)btrfs_header_chunk_tree_uuid(chunk_root->node),
- 		 BTRFS_UUID_SIZE);
- 
--	ret = btrfs_read_chunk_tree(chunk_root);
--	BUG_ON(ret);
-+	if (!(btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_METADUMP)) {
-+		ret = btrfs_read_chunk_tree(chunk_root);
-+		BUG_ON(ret);
-+	}
- 
- 	blocksize = btrfs_level_size(tree_root,
- 				     btrfs_super_root_level(disk_super));
-diff -urpN btrfs-progs-orig/file-item.c btrfs-progs/file-item.c
---- btrfs-progs-orig/file-item.c	2008-10-21 09:46:14.000000000 +0800
-+++ btrfs-progs/file-item.c	2008-11-19 10:01:55.000000000 +0800
-@@ -140,8 +140,7 @@ int btrfs_insert_inline_extent(struct bt
- 			       (unsigned long long)objectid);
- 			goto fail;
- 		}
--		found_size = btrfs_file_extent_inline_len(leaf,
--					  btrfs_item_nr(leaf, path->slots[0]));
-+		found_size = btrfs_file_extent_inline_len(leaf, ei);
- 		found_end = key.offset + found_size;
- 
- 		if (found_end < offset + size) {
-diff -urpN btrfs-progs-orig/Makefile btrfs-progs/Makefile
---- btrfs-progs-orig/Makefile	2008-11-19 07:30:00.000000000 +0800
-+++ btrfs-progs/Makefile	2008-11-19 22:29:02.000000000 +0800
-@@ -15,7 +15,8 @@ prefix ?= /usr/local
- bindir = $(prefix)/bin
- LIBS=-luuid
- 
--progs = btrfsctl btrfsck mkfs.btrfs debug-tree btrfs-show btrfs-vol btrfstune
-+progs = btrfsctl btrfsck mkfs.btrfs debug-tree btrfs-show btrfs-vol \
-+	btrfstune btrfs-image
- 
- # make C=1 to enable sparse
- ifdef C
-@@ -55,6 +56,9 @@ debug-tree: $(objects) debug-tree.o
- btrfstune: $(objects) btrfstune.o
- 	gcc $(CFLAGS) -o btrfstune $(objects) btrfstune.o $(LDFLAGS) $(LIBS)
- 
-+btrfs-image: $(objects) btrfs-image.o
-+	gcc $(CFLAGS) -o btrfs-image $(objects) btrfs-image.o -lpthread -lz $(LDFLAGS) $(LIBS)
-+
- dir-test: $(objects) dir-test.o
- 	gcc $(CFLAGS) -o dir-test $(objects) dir-test.o $(LDFLAGS) $(LIBS)
- 
-diff -urpN btrfs-progs-orig/print-tree.c btrfs-progs/print-tree.c
---- btrfs-progs-orig/print-tree.c	2008-11-19 07:30:00.000000000 +0800
-+++ btrfs-progs/print-tree.c	2008-11-19 14:05:59.000000000 +0800
-@@ -132,9 +132,9 @@ static void print_file_extent_item(struc
- 
- 	if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
- 		printf("\t\tinline extent data size %u "
--		       "ram %llu compress %d\n",
--	          btrfs_file_extent_inline_len(eb, item),
--		  (unsigned long long) btrfs_file_extent_ram_bytes(eb, fi),
-+		       "ram %u compress %d\n",
-+		  btrfs_file_extent_inline_item_len(eb, item),
-+		  btrfs_file_extent_inline_len(eb, fi),
- 		  btrfs_file_extent_compression(eb, fi));
- 		return;
- 	}
-diff -urpN btrfs-progs-orig/volumes.c btrfs-progs/volumes.c
---- btrfs-progs-orig/volumes.c	2008-11-19 07:30:00.000000000 +0800
-+++ btrfs-progs/volumes.c	2008-11-19 13:41:37.000000000 +0800
-@@ -222,7 +222,10 @@ int btrfs_scan_one_device(int fd, const 
- 		goto error_brelse;
- 	}
- 	devid = le64_to_cpu(disk_super->dev_item.devid);
--	*total_devs = btrfs_super_num_devices(disk_super);
-+	if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_METADUMP)
-+		*total_devs = 1;
-+	else
-+		*total_devs = btrfs_super_num_devices(disk_super);
- 	uuid_unparse(disk_super->fsid, uuidbuf);
- 
- 	ret = device_list_add(path, disk_super, devid, fs_devices_ret);
+...
+[ 7133.346381] block_group 5167120384 didn't have what we needed. 790429696 total, 383414272 used, 407011328 pinned, 4096 reserved. Dumping free space
+[ 7133.346385] 0 blocks of free space at or bigger than bytes is
+[ 7133.346388] block_group 5957550080 didn't have what we needed. 790429696 total, 1011712 used, 789413888 pinned, 4096 reserved. Dumping free space
+[ 7133.346391] 0 blocks of free space at or bigger than bytes is
+[ 7133.346394] block_group 6747979776 didn't have what we needed. 752943104 total, 125444096 used, 627499008 pinned, 0 reserved. Dumping free space
+[ 7133.346397] 0 blocks of free space at or bigger than bytes is
+[ 7133.346400] we were searching for 4096 bytes, num_bytes 4096, loop 2, allowed_alloc 1
+[ 7133.346403] allocation failed flags 1, wanted 4096
+[ 7133.346405] space_info has 1064009728 free, is full
+[ 7133.346408] block group 12582912 has 8388608 bytes, 516096 used 7872512 pinned 0 reserved
+[ 7133.346410] 0 blocks of free space at or bigger than bytes is
+[ 7133.346413] block group 424542208 has 790429696 bytes, 2105344 used 788324352 pinned 0 reserved
+[ 7133.346416] offset=1214971904, bytes=274759680
+[ 7133.346417] 1 blocks of free space at or bigger than bytes is
+[ 7133.346420] block group 1214971904 has 790429696 bytes, 3964928 used 511705088 pinned 0 reserved
+[ 7133.346423] 0 blocks of free space at or bigger than bytes is
+[ 7133.346425] block group 2005401600 has 790429696 bytes, 1490944 used 788938752 pinned 0 reserved
+[ 7133.346428] offset=2795831296, bytes=789250048
+[ 7133.346430] 1 blocks of free space at or bigger than bytes is
+[ 7133.346432] block group 2795831296 has 790429696 bytes, 1179648 used 0 pinned 0 reserved
+[ 7133.346435] 0 blocks of free space at or bigger than bytes is
+[ 7133.346438] block group 3586260992 has 790429696 bytes, 1392640 used 789037056 pinned 0 reserved
+[ 7133.346440] 0 blocks of free space at or bigger than bytes is
+[ 7133.346443] block group 4376690688 has 790429696 bytes, 128237568 used 662192128 pinned 0 reserved
+[ 7133.346445] 0 blocks of free space at or bigger than bytes is
+[ 7133.346448] block group 5167120384 has 790429696 bytes, 383414272 used 407011328 pinned 4096 reserved
+[ 7133.346451] 0 blocks of free space at or bigger than bytes is
+[ 7133.346453] block group 5957550080 has 790429696 bytes, 1011712 used 789413888 pinned 4096 reserved
+[ 7133.346456] 0 blocks of free space at or bigger than bytes is
+[ 7133.346458] block group 6747979776 has 752943104 bytes, 125444096 used 627499008 pinned 0 reserved
+[ 7133.346461] 0 blocks of free space at or bigger than bytes is
+[ 7133.346490] ------------[ cut here ]------------
+[ 7133.346493] kernel BUG at /home/ltrager/btrfs/btrfs-unstable-standalone/extent-tree.c:3101!
+[ 7133.346499] invalid opcode: 0000 [#309] SMP 
+[ 7133.346502] Modules linked in: btrfs zlib_deflate libcrc32c ipv6 af_packet bridge stp rfcomm bnep sco l2cap bluetooth ppdev cpufreq_userspace cpufreq_stats cpufreq_powersave cpufreq_ondemand freq_table cpufreq_conservative wmi video output sbs sbshc pci_slot battery iptable_filter ip_tables x_tables lp evdev psmouse serio_raw pcspkr snd_ens1371 gameport snd_ac97_codec ac97_bus snd_pcm_oss snd_mixer_oss snd_pcm snd_seq_dummy snd_seq_oss snd_seq_midi snd_rawmidi snd_seq_midi_event snd_seq snd_timer snd_seq_device snd soundcore snd_page_alloc parport_pc parport i2c_piix4 i2c_core container ac intel_agp button shpchp pci_hotplug agpgart ext2 mbcache sr_mod cdrom sd_mod crc_t10dif pata_acpi sg ata_piix uhci_hcd ehci_hcd usbcore ata_generic pcnet32 mii mptspi mptscsih mptbase scsi_transport_s
+ pi libata scsi_mod dock thermal processor fan fbcon tileblit font bitblit softcursor fuse
+[ 7133.346570] 
+[ 7133.346573] Pid: 6575, comm: bonnie++ Tainted: G      D   (2.6.27-7-generic #1)
+[ 7133.346576] EIP: 0060:[<e0d3944a>] EFLAGS: 00210257 CPU: 0
+[ 7133.346591] EIP is at __btrfs_reserve_extent+0x36a/0x420 [btrfs]
+[ 7133.346594] EAX: ddce128c EBX: ddce3cc0 ECX: ffffffff EDX: 00000001
+[ 7133.346597] ESI: ddce3cec EDI: ddce1280 EBP: d779da78 ESP: d779da04
+[ 7133.346599]  DS: 007b ES: 007b FS: 00d8 GS: 0033 SS: 0068
+[ 7133.346602] Process bonnie++ (pid: 6575, ti=d779c000 task=de6e57f0 task.ti=d779c000)
+[ 7133.346605] Stack: e0d78f44 92360000 00000001 2ce10000 00000000 077a2000 00000000 2566e000 
+[ 7133.346612]        00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000001 
+[ 7133.346618]        00000000 00000000 00000000 00000000 00001000 00000000 ded19050 dd046000 
+[ 7133.346625] Call Trace:
+[ 7133.346629]  [<e0d39577>] ? btrfs_reserve_extent+0x77/0xb0 [btrfs]
+[ 7133.346645]  [<e0d473a7>] ? cow_file_range+0x227/0x4d0 [btrfs]
+[ 7133.346661]  [<e0d60df9>] ? lock_delalloc_pages+0xd9/0x180 [btrfs]
+[ 7133.346676]  [<e0d614ec>] ? lock_extent+0x5c/0xd0 [btrfs]
+[ 7133.346690]  [<e0d4c100>] ? run_delalloc_range+0x390/0x400 [btrfs]
+[ 7133.346706]  [<e0d646a5>] ? __extent_writepage+0x4a5/0xb30 [btrfs]
+[ 7133.346747]  [<c019339e>] ? page_address+0xe/0xe0
+[ 7133.346754]  [<c019339e>] ? page_address+0xe/0xe0
+[ 7133.346758]  [<c011fd28>] ? kmap_atomic_prot+0x48/0x100
+[ 7133.346764]  [<c0250d2d>] ? radix_tree_gang_lookup_tag_slot+0x9d/0xc0
+[ 7133.346770]  [<c018409d>] ? find_get_pages_tag+0x3d/0x130
+[ 7133.346775]  [<c019d0ce>] ? page_mkclean+0xe/0xb0
+[ 7133.346780]  [<c01917f6>] ? __dec_zone_state+0x16/0x90
+[ 7133.346786]  [<e0d6104d>] ? extent_write_cache_pages+0x1ad/0x2f0 [btrfs]
+[ 7133.346802]  [<e0d46840>] ? btrfs_writepages+0x0/0x30 [btrfs]
+[ 7133.346819]  [<e0d611c6>] ? extent_writepages+0x36/0x60 [btrfs]
+[ 7133.346834]  [<e0d64200>] ? __extent_writepage+0x0/0xb30 [btrfs]
+[ 7133.346849]  [<e0d4c900>] ? btrfs_get_extent+0x0/0xad0 [btrfs]
+[ 7133.346866]  [<e0d46864>] ? btrfs_writepages+0x24/0x30 [btrfs]
+[ 7133.346881]  [<c018c4a3>] ? do_writepages+0x33/0x60
+[ 7133.346886]  [<c01d25dc>] ? __sync_single_inode+0x5c/0x250
+[ 7133.346891]  [<c01d281a>] ? __writeback_single_inode+0x4a/0x160
+[ 7133.346895]  [<c024febc>] ? prop_fraction_single+0x3c/0x70
+[ 7133.346900]  [<c01d2ccc>] ? generic_sync_sb_inodes+0x27c/0x3b0
+[ 7133.346905]  [<c01d306d>] ? writeback_inodes+0x4d/0xe0
+[ 7133.346909]  [<c018bd18>] ? balance_dirty_pages+0x238/0x340
+[ 7133.346914]  [<c018be84>] ? balance_dirty_pages_ratelimited_nr+0x64/0x70
+[ 7133.346919]  [<e0d51a8d>] ? btrfs_file_write+0x3dd/0x6a0 [btrfs]
+[ 7133.346936]  [<c02353be>] ? apparmor_file_permission+0x1e/0x40
+[ 7133.346942]  [<c01b1fad>] ? rw_verify_area+0x4d/0xc0
+[ 7133.346947]  [<c01b1ac2>] ? fsnotify_modify+0x72/0x80
+[ 7133.346951]  [<c01b24c0>] ? vfs_write+0xa0/0x110
+[ 7133.346955]  [<e0d516b0>] ? btrfs_file_write+0x0/0x6a0 [btrfs]
+[ 7133.346972]  [<c01b2602>] ? sys_write+0x42/0x70
+[ 7133.346976]  [<c0103f7b>] ? sysenter_do_call+0x12/0x2f
+[ 7133.346981]  =======================
+[ 7133.346983] Code: 2f 64 df 8d 4b 4c 89 c8 89 4d f0 e8 01 45 64 df 8b 7b 40 8b 07 0f 18 00 90 83 c3 40 39 fb 89 5d ec 75 33 8b 45 f0 e8 c6 25 41 df <0f> 0b eb fe 66 90 8b 90 c4 18 00 00 8b 88 ac 18 00 00 8b b0 c0 
+[ 7133.347025] EIP: [<e0d3944a>] __btrfs_reserve_extent+0x36a/0x420 [btrfs] SS:ESP 0068:d779da04
+[ 7133.347042] ---[ end trace 97493f65cf117b85 ]---

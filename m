@@ -1,40 +1,58 @@
 From: Josef Bacik <jbacik@redhat.com>
-Subject: Re: [DEBUG PATCH] for anybody who gets a panic due to ENOSPC
-Date: Wed, 19 Nov 2008 12:12:43 -0500
-Message-ID: <20081119171243.GB16041@unused.rdu.redhat.com>
-References: <4922214A.5090904@cs.drexel.edu> <20081118163007.GA1425@unused.rdu.redhat.com> <20081119164535.GA22904@tux64-01>
+Subject: [PATCH] fix free space accounting when unpinning extents
+Date: Wed, 19 Nov 2008 14:56:55 -0500
+Message-ID: <20081119195652.GD16041@unused.rdu.redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <jbacik@redhat.com>, linux-btrfs@vger.kernel.org
-To: Lee Trager <lt73@cs.drexel.edu>
+Cc: lt73@cs.drexel.edu
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20081119164535.GA22904@tux64-01>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 19, 2008 at 11:45:35AM -0500, Lee Trager wrote:
-> Sorry it took so long to reply it took awhile to run this test. It
-> didn't cause a kernel panic for about 8 hours. df says only 623M of the
-> available 7539M are used. Anyway this is with the latest checkin by Chris Mason with the patch you sent me.
-> 
-> Also since you said you cann't reproduce this I thought it might be
-> helpful to know the environment I'm doing testing on. I have been
-> running bonnie++ on xubuntu 8.10 fully updated on vmware 6.5. No vmware
-> tools are instead except for the mouse and video xorg drivers which come by
-> default with ubuntu. I have two 8G prealloced virtual drives. The first
-> one is where the xubuntu install is using ext2 for /boot and / and has a
-> 512M swap partition. The second one is where I do all of the btrfs testing. 
-> I have it partitioned because I was experimenting with booting with btrfs 
-> as root so the partition btrfs is on has 7539M. The VM has 512M of RAM
-> dedicated to it and is using one core of my Intel Core 2 Duo T7500
-> running at 2.2GHz.
-> 
-> Lee
+Hello,
 
-Ok this is almost everything I need, I just need a few more lines of the debug
-output, so all of this plus lets say the last 100 lines, that should be
-everything I need.  Or if you have full logs that you can post somewhere that
-would be great and I can filter through them myself.  Thanks much for testing
-this stuff for me,
+This patch fixes what I hope is the last early ENOSPC bug left.  I did not know
+that pinned extents would merge into one big extent when inserted on to the
+pinned extent tree, so I was adding free space to a block group that could
+possibly span multiple block groups.  This is a big issue because first that
+space doesn't exist in that block group, and second we won't actually use that
+space because there are a bunch of other checks to make sure we're allocating
+within the constraints of the block group.  This patch fixes the problem by
+adding the btrfs_add_free_space to btrfs_update_pinned_extents which makes sure
+we are adding the appropriate amount of free space to the appropriate block
+group.  Thanks much to Lee Trager for running my myriad of debug patches to help
+me track this problem down.  Thank you,
 
-Josef
+Signed-off-by: Josef Bacik <jbacik@redhat.com>
 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index b017e87..e388a37 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2034,6 +2034,8 @@ int btrfs_update_pinned_extents(struct btrfs_root *root,
+ 			spin_unlock(&cache->lock);
+ 			spin_unlock(&cache->space_info->lock);
+ 			fs_info->total_pinned -= len;
++			if (cache->cached)
++				btrfs_add_free_space(cache, bytenr, len);
+ 		}
+ 		bytenr += len;
+ 		num -= len;
+@@ -2099,7 +2101,6 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
+ 	u64 start;
+ 	u64 end;
+ 	int ret;
+-	struct btrfs_block_group_cache *cache;
+ 
+ 	mutex_lock(&root->fs_info->pinned_mutex);
+ 	while(1) {
+@@ -2109,9 +2110,6 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
+ 			break;
+ 		btrfs_update_pinned_extents(root, start, end + 1 - start, 0);
+ 		clear_extent_dirty(unpin, start, end, GFP_NOFS);
+-		cache = btrfs_lookup_block_group(root->fs_info, start);
+-		if (cache->cached)
+-			btrfs_add_free_space(cache, start, end - start + 1);
+ 		if (need_resched()) {
+ 			mutex_unlock(&root->fs_info->pinned_mutex);
+ 			cond_resched();

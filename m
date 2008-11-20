@@ -1,30 +1,33 @@
 From: "Alexander Beregalov" <a.beregalov@gmail.com>
-Subject: Re: WARNING: at fs/btrfs/extent_io.c:3546 write_extent_buffer()
-Date: Fri, 21 Nov 2008 01:02:25 +0300
-Message-ID: <a4423d670811201402y4e9582dfr88816ecb65120dd7@mail.gmail.com>
-References: <a4423d670811201350le43f908m6fd59b72efa9ecf4@mail.gmail.com>
-	 <1227218291.9895.0.camel@think.oraclecorp.com>
+Subject: Re: [PATCH] Btrfs image tool
+Date: Fri, 21 Nov 2008 01:10:03 +0300
+Message-ID: <a4423d670811201410y639b38ffmeef02adbf666a970@mail.gmail.com>
+References: <49242951.2060302@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: "Chris Mason" <chris.mason@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, "Chris Mason" <chris.mason@oracle.com>
+To: "Yan Zheng" <zheng.yan@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1227218291.9895.0.camel@think.oraclecorp.com>
+In-Reply-To: <49242951.2060302@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2008/11/21 Chris Mason <chris.mason@oracle.com>:
-> On Fri, 2008-11-21 at 00:50 +0300, Alexander Beregalov wrote:
->> Hi
->>
->> I try to run btrfs (Linus's-git + btrfs-unstable) on sparc64:
->>
+2008/11/19 Yan Zheng <zheng.yan@oracle.com>:
+> Hello,
 >
-> On sparc64, you'll have to set the sectorsize to your page size.  What
-> is the output from mkfs.btrfs?
+> This patch adds btrfs image tool. The image tool is
+> a debugging tool that creates/restores btrfs metadump
+> image. Thank you,
+>
+> Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
 
-fs created label (null) on /dev/sdb1
-        nodesize 8192 leafsize 8192 sectorsize 8192 size 19.00GB
-Btrfs v0.16-20-g49bc666
-
-
-Page size is 8kb
+gcc -Wp,-MMD,./.btrfs-image.o.d,-MT,btrfs-image.o -Wall
+-fno-strict-aliasing -D_FILE_OFFSET_BITS=64 -D_FORTIFY_SOURCE=2 -g
+-Werror -Os -c btrfs-image.c
+cc1: warnings being treated as errors
+btrfs-image.c: In function 'dump_worker':
+btrfs-image.c:220: error: passing argument 2 of 'compress2' from
+incompatible pointer type
+btrfs-image.c: In function 'restore_worker':
+btrfs-image.c:599: error: passing argument 2 of 'uncompress' from
+incompatible pointer type
+make: *** [btrfs-image.o] Error 1

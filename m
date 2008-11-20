@@ -1,35 +1,49 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Btrfs trees for linux-next
-Date: Thu, 20 Nov 2008 07:18:04 -0500
-Message-ID: <1227183484.6161.17.camel@think.oraclecorp.com>
+From: "Yan Zheng" <yanzheng@21cn.com>
+Subject: Re: [PATH]Fix cow semantic in run_delalloc_nocow()
+Date: Thu, 20 Nov 2008 21:30:57 +0800
+Message-ID: <3d0408630811200530h254ad68ej75df9f6b73745a40@mail.gmail.com>
+References: <2c3b11250811200102v4491b00cq1eacb633e9b46848@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-To: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	Andrew Morton <akpm@linux-foundation.org>, sfr@canb.auug.org.au
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: "Liu Hui" <onlyflyer@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <2c3b11250811200102v4491b00cq1eacb633e9b46848@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello everyone,
+2008/11/20 Liu Hui <onlyflyer@gmail.com>:
+> Hi,
+> I found cow doesn't behave as expected in run_delalloc_nocow(). Now in
+> run_delalloc_now(), if it found a regular extent and the NODATACOW is
+> set, run_dealloc_now will cow the file range which is not as expected.
+> Also, if it find a regular extent and NODATACOW is not set(with
+> PREALLOC set), it will not take cow operation. So, the cow semantic is
+> opposite to the btrfs design.
+>
+> I found the problem was introduced by fallocate(), so could Yan please
+> verify the fix? Much appreciated!
+>
+> --
+> Thanks & Best Regards
+> Liu Hui
+> --
+>
+> diff --git a/inode.c b/inode.c
+> index 2c77e09..5525594 100644
+> --- a/inode.c
+> +++ b/inode.c
+> @@ -1003,7 +1003,7 @@ next_slot:
+>                                goto out_check;
+>                        if (disk_bytenr == 0)
+>                                goto out_check;
+> -                       if (extent_type == BTRFS_FILE_EXTENT_REG && !force)
+> +                       if (extent_type == BTRFS_FILE_EXTENT_REG && force)
+>                                goto out_check;
+>                        if (btrfs_cross_ref_exist(trans, root, disk_bytenr))
+>                                goto out_check;
+> --
 
-I've updated the btrfs git trees to 2.6.28-rc5 and tested against
-linux-next.
+You are right, thanks. I suggest modifying run_delalloc_range instead of here,
+could you please send a new patch.
 
-We've knocked a bunch of things off the todo list since I last posted,
-including compression (mount -o compress) and the ability to create
-subvols and snapshots anywhere in the FS.
-
-There are a small number of disk format changes pending, which I put off
-in favor of making compression stable/fast.  We'll hammer these out
-shortly.
-
-The btrfs kernel code is here:
-http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=summary
-
-And the utilities are here:
-
-http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-progs-unstable.git;a=summary
-
--chris
-
-
+Yan Zheng

@@ -1,51 +1,47 @@
 From: Christoph Hellwig <hch@lst.de>
-Subject: [PATCH] btrfs: fix shadowed variable declarations
-Date: Thu, 20 Nov 2008 19:42:20 +0100
-Message-ID: <20081120184220.GA20917@lst.de>
+Subject: [PATCH] btrfs: clean up btrfs_ioctl a little bit
+Date: Thu, 20 Nov 2008 19:47:36 +0100
+Message-ID: <20081120184736.GA21069@lst.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Provide a void __user *argp pointer so that we can avoid duplicating
+the cast for various sub-command calls.
+
+
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 
-Index: btrfs-unstable/fs/btrfs/disk-io.c
+Index: btrfs-unstable/fs/btrfs/ioctl.c
 ===================================================================
---- btrfs-unstable.orig/fs/btrfs/disk-io.c	2008-11-09 21:25:35.000000000 +0100
-+++ btrfs-unstable/fs/btrfs/disk-io.c	2008-11-09 21:25:47.000000000 +0100
-@@ -1706,7 +1706,6 @@ struct btrfs_root *open_ctree(struct sup
- 		goto fail_cleaner;
+--- btrfs-unstable.orig/fs/btrfs/ioctl.c	2008-11-20 19:43:00.000000000 +0100
++++ btrfs-unstable/fs/btrfs/ioctl.c	2008-11-20 19:46:51.000000000 +0100
+@@ -1116,20 +1116,21 @@ long btrfs_ioctl(struct file *file, unsi
+ 		cmd, unsigned long arg)
+ {
+ 	struct btrfs_root *root = BTRFS_I(fdentry(file)->d_inode)->root;
++	void __user *argp = (void __user *)arg;
  
- 	if (btrfs_super_log_root(disk_super) != 0) {
--		u32 blocksize;
- 		u64 bytenr = btrfs_super_log_root(disk_super);
- 
- 		blocksize =
-Index: btrfs-unstable/fs/btrfs/file.c
-===================================================================
---- btrfs-unstable.orig/fs/btrfs/file.c	2008-11-09 21:25:59.000000000 +0100
-+++ btrfs-unstable/fs/btrfs/file.c	2008-11-09 21:26:57.000000000 +0100
-@@ -659,18 +659,18 @@ next_slot:
- 		}
- 
- 		if (found_extent && !keep) {
--			u64 disk_bytenr = le64_to_cpu(old.disk_bytenr);
-+			u64 old_disk_bytenr = le64_to_cpu(old.disk_bytenr);
- 
--			if (disk_bytenr != 0) {
-+			if (old_disk_bytenr != 0) {
- 				inode_sub_bytes(inode,
- 						le64_to_cpu(old.num_bytes));
- 				ret = btrfs_free_extent(trans, root,
--						disk_bytenr,
-+						old_disk_bytenr,
- 						le64_to_cpu(old.disk_num_bytes),
- 						leaf_start, root_owner,
- 						root_gen, key.objectid, 0);
- 				BUG_ON(ret);
--				*hint_byte = disk_bytenr;
-+				*hint_byte = old_disk_bytenr;
- 			}
- 		}
- 
+ 	switch (cmd) {
+ 	case BTRFS_IOC_SNAP_CREATE:
+-		return btrfs_ioctl_snap_create(file, (void __user *)arg, 0);
++		return btrfs_ioctl_snap_create(file, argp, 0);
+ 	case BTRFS_IOC_SUBVOL_CREATE:
+-		return btrfs_ioctl_snap_create(file, (void __user *)arg, 1);
++		return btrfs_ioctl_snap_create(file, argp, 1);
+ 	case BTRFS_IOC_DEFRAG:
+ 		return btrfs_ioctl_defrag(file);
+ 	case BTRFS_IOC_RESIZE:
+-		return btrfs_ioctl_resize(root, (void __user *)arg);
++		return btrfs_ioctl_resize(root, argp);
+ 	case BTRFS_IOC_ADD_DEV:
+-		return btrfs_ioctl_add_dev(root, (void __user *)arg);
++		return btrfs_ioctl_add_dev(root, argp);
+ 	case BTRFS_IOC_RM_DEV:
+-		return btrfs_ioctl_rm_dev(root, (void __user *)arg);
++		return btrfs_ioctl_rm_dev(root, argp);
+ 	case BTRFS_IOC_BALANCE:
+ 		return btrfs_balance(root->fs_info->dev_root);
+ 	case BTRFS_IOC_CLONE:

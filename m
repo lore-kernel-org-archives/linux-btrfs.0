@@ -1,57 +1,36 @@
-From: Josef Bacik <jbacik@redhat.com>
-Subject: [PATCH] fix panic on error during mount
-Date: Thu, 20 Nov 2008 14:23:10 -0500
-Message-ID: <20081120192309.GE3013@unused.rdu.redhat.com>
+From: "Alexander Beregalov" <a.beregalov@gmail.com>
+Subject: WARNING: at fs/btrfs/extent_io.c:3546 write_extent_buffer()
+Date: Fri, 21 Nov 2008 00:50:23 +0300
+Message-ID: <a4423d670811201350le43f908m6fd59b72efa9ecf4@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=UTF-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hi
 
-This needs to be applied on top of my previous patches, but is needed for more
-than just my new stuff.  We're going to the wrong label when we have an error,
-we try to stop the workers, but they are started below all of this code.  This
-fixes it so we go to the right error label and not panic when we fail one of
-these cases.  Thank you,
+I try to run btrfs (Linus's-git + btrfs-unstable) on sparc64:
 
-Signed-off-by: Josef Bacik <jbacik@redhat.com>
+device fsid 1f5369b18fa4bb4-8268533a4c733861 devid 1 transid 9 /dev/sdb1
+------------[ cut here ]------------
+WARNING: at fs/btrfs/extent_io.c:3546 write_extent_buffer+0x134/0x144()
+Modules linked in:
+Call Trace:
+ [000000000045067c] warn_on_slowpath+0x4c/0x6c
+ [00000000005e39d0] write_extent_buffer+0x134/0x144
+ [00000000005e7ff4] btrfs_read_sys_array+0x4c/0x330
+ [00000000005b76a0] open_ctree+0xb3c/0x1250
+ [000000000058ce1c] btrfs_get_sb+0x254/0x498
+ [00000000004b3a64] vfs_kern_mount+0x44/0xa4
+ [00000000004b3b20] do_kern_mount+0x30/0xcc
+ [00000000004c8cd8] do_mount+0x78c/0x7d8
+ [00000000004e56ec] compat_sys_mount+0x21c/0x26c
+ [0000000000406154] linux_sparc_syscall32+0x34/0x40
+---[ end trace 5e8d2fdd33a1d24e ]---
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 58ce2a0..6047858 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1578,12 +1578,12 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 
- 	disk_super = &fs_info->super_copy;
- 	if (!btrfs_super_root(disk_super))
--		goto fail_sb_buffer;
-+		goto fail_iput;
- 
- 	ret = btrfs_parse_options(tree_root, options);
- 	if (ret) {
- 		err = ret;
--		goto fail_sb_buffer;
-+		goto fail_iput;
- 	}
- 
- 	features = btrfs_super_incompat_flags(disk_super) &
-@@ -1593,7 +1593,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 		       "unsupported optional features (%Lx).\n",
- 		       features);
- 		err = -EINVAL;
--		goto fail_sb_buffer;
-+		goto fail_iput;
- 	}
- 
- 	features = btrfs_super_compat_ro_flags(disk_super) &
-@@ -1603,7 +1603,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 		       "unsupported option features (%Lx).\n",
- 		       features);
- 		err = -EINVAL;
--		goto fail_sb_buffer;
-+		goto fail_iput;
- 	}
- 
- 	/*
+
+Then
+I see many indentical messages while running dbench:
+
+Kernel unaligned access at TPC[5b2a98] btrfs_csum_final+0x44/0x50

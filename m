@@ -1,26 +1,24 @@
-From: Josef Bacik <jbacik@redhat.com>
-Subject: Re: "possible circular locking dependency detected"
-Date: Thu, 20 Nov 2008 11:12:08 -0500
-Message-ID: <20081120161208.GA3013@unused.rdu.redhat.com>
-References: <20081120170015.1a5177a0@diego-desktop>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATH]Fix cow semantic in run_delalloc_nocow()
+Date: Thu, 20 Nov 2008 11:19:31 -0500
+Message-ID: <1227197971.20462.2.camel@think.oraclecorp.com>
+References: <2c3b11250811200102v4491b00cq1eacb633e9b46848@mail.gmail.com>
+	 <3d0408630811200530h254ad68ej75df9f6b73745a40@mail.gmail.com>
+	 <2c3b11250811200547x4902686cicf1d7604d101275d@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Diego Calleja <diegocg@gmail.com>
+Content-Type: text/plain
+Cc: Yan Zheng <yanzheng@21cn.com>, linux-btrfs@vger.kernel.org
+To: Liu Hui <onlyflyer@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20081120170015.1a5177a0@diego-desktop>
+In-Reply-To: <2c3b11250811200547x4902686cicf1d7604d101275d@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 20, 2008 at 05:00:15PM +0100, Diego Calleja wrote:
-> I got this lockdep warning while running tiobench on a clean btrfs filesystem
-> with the latest code available (commit 2c41b36dd2f9fb5dee150f20c84895496e0642f2)
-> But it was a purely read-only workload: only root could write to the
-> filesystem and I was running tiobench as an user, which was spitting
-> "denied permission" errors.
+On Thu, 2008-11-20 at 21:47 +0800, Liu Hui wrote:
+> Ok, this is the new patch.
 > 
->
 
-Yeah I sent a patch to the list a few weeks ago to fix this, it should get
-picked up at some point.
+Thank you both, I've pushed this out.
 
-Josef
+-chris
+
+

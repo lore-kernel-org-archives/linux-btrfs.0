@@ -1,50 +1,74 @@
-From: Sage Weil <sage@newdream.net>
-Subject: [PATCH] btrfs: remove unneeded total_trans
-Date: Fri, 21 Nov 2008 21:44:06 -0800
-Message-ID: <1227332647-1501-1-git-send-email-sage@newdream.net>
-Cc: Sage Weil <sage@newdream.net>
-To: linux-btrfs@vger.kernel.org
+From: "yanhai zhu" <zhu.yanhai@gmail.com>
+Subject: Re: [PATCH] Btrfs image tool
+Date: Sat, 22 Nov 2008 21:06:51 +0800
+Message-ID: <977a2be20811220506i1bd3ddc6q707c58e7649359b1@mail.gmail.com>
+References: <49242951.2060302@oracle.com>
+	 <a4423d670811201410y639b38ffmeef02adbf666a970@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: "Yan Zheng" <zheng.yan@oracle.com>, linux-btrfs@vger.kernel.org,
+	"Chris Mason" <chris.mason@oracle.com>
+To: "Alexander Beregalov" <a.beregalov@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <a4423d670811201410y639b38ffmeef02adbf666a970@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Remove unneeded debugging sanity check.  It gets corrupted anyway when
-multiple btrfs file systems are mounted, throwing bad warnings along the
-way.
+diff --git a/btrfs-image.c b/btrfs-image.c
+index 7499a5e..9925bdb 100644
+--- a/btrfs-image.c
++++ b/btrfs-image.c
+@@ -216,8 +216,9 @@ static void *dump_worker(void *data)
+ 			async->bufsize = compressBound(async->size);
+ 			async->buffer = malloc(async->bufsize);
 
-Signed-off-by: Sage Weil <sage@newdream.net>
----
- fs/btrfs/transaction.c |    4 ----
- 1 files changed, 0 insertions(+), 4 deletions(-)
+-			ret = compress2(async->buffer, &async->bufsize, orig,
+-					async->size, md->compress_level);
++			ret = compress2(async->buffer,
++					 (unsigned long *)&async->bufsize,
++					 orig, async->size, md->compress_level);
+ 			BUG_ON(ret != Z_OK);
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index c2c3b42..c38f6a0 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -28,7 +28,6 @@
- #include "ref-cache.h"
- #include "tree-log.h"
- 
--static int total_trans = 0;
- extern struct kmem_cache *btrfs_trans_handle_cachep;
- extern struct kmem_cache *btrfs_transaction_cachep;
- 
-@@ -39,8 +38,6 @@ static noinline void put_transaction(struct btrfs_transaction *transaction)
- 	WARN_ON(transaction->use_count == 0);
- 	transaction->use_count--;
- 	if (transaction->use_count == 0) {
--		WARN_ON(total_trans == 0);
--		total_trans--;
- 		list_del_init(&transaction->list);
- 		memset(transaction, 0, sizeof(*transaction));
- 		kmem_cache_free(btrfs_transaction_cachep, transaction);
-@@ -57,7 +54,6 @@ static noinline int join_transaction(struct btrfs_root *root)
- 	if (!cur_trans) {
- 		cur_trans = kmem_cache_alloc(btrfs_transaction_cachep,
- 					     GFP_NOFS);
--		total_trans++;
- 		BUG_ON(!cur_trans);
- 		root->fs_info->generation++;
- 		root->fs_info->last_alloc = 0;
+ 			free(orig);
+@@ -595,8 +596,8 @@ static void *restore_worker(void *data)
+
+ 		if (mdres->compress_method == COMPRESS_ZLIB) {
+ 			size = MAX_PENDING_SIZE * 2;
+-			ret = uncompress(buffer, &size, async->buffer,
+-					 async->bufsize);
++			ret = uncompress(buffer, (unsigned long *)&size,
++					 async->buffer, async->bufsize);
+ 			BUG_ON(ret != Z_OK);
+ 			outbuf = buffer;
+ 		} else {
+
+2008/11/21 Alexander Beregalov <a.beregalov@gmail.com>:
+> 2008/11/19 Yan Zheng <zheng.yan@oracle.com>:
+>> Hello,
+>>
+>> This patch adds btrfs image tool. The image tool is
+>> a debugging tool that creates/restores btrfs metadump
+>> image. Thank you,
+>>
+>> Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
+>
+> gcc -Wp,-MMD,./.btrfs-image.o.d,-MT,btrfs-image.o -Wall
+> -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 -D_FORTIFY_SOURCE=2 -g
+> -Werror -Os -c btrfs-image.c
+> cc1: warnings being treated as errors
+> btrfs-image.c: In function 'dump_worker':
+> btrfs-image.c:220: error: passing argument 2 of 'compress2' from
+> incompatible pointer type
+> btrfs-image.c: In function 'restore_worker':
+> btrfs-image.c:599: error: passing argument 2 of 'uncompress' from
+> incompatible pointer type
+> make: *** [btrfs-image.o] Error 1
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+
+
+
 -- 
-1.5.6.5
-
+Zhu Yanhai

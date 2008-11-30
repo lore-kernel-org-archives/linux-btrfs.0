@@ -1,75 +1,63 @@
-From: Yan Zheng <ukernel@gmail.com>
-Subject: Re: Seed device questions
-Date: Fri, 28 Nov 2008 21:19:01 +0800
-Message-ID: <492FEFC5.2050009@gmail.com>
-References: <492FC847.1090605@southpole.se>
+From: Chris Samuel <chris@csamuel.org>
+Subject: Re: compile error on Ubuntu 8.10
+Date: Sun, 30 Nov 2008 22:38:31 +1100
+Message-ID: <200811302238.35625.chris@csamuel.org>
+References: <1227684613.19460.99.camel@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Jonas Bonn <jonas@southpole.se>
+Content-Type: multipart/signed;
+  boundary="nextPart2048770.irzKz9uu2I";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <492FC847.1090605@southpole.se>
+In-Reply-To: <1227684613.19460.99.camel@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jonas Bonn wrote:
-> Hi,
-> I am trying the 'seed device' functionality, trying to get a read-only
-> block-device to act as a seed for multiple other filesystems.
-> 
-> The following sequence works for setting up the first filesystem.
-> 
-> #-------------
-> 
-> #First initialize 'seed device'
-> mkfs.btrfs /dev/vdb
-> mount /dev/vdb /mnt
-> btrfs -S subvol /mnt
-> echo hello > /mnt/subvol/xxx
-> umount /mnt
-> 
-> #Make block device a "seed device" (read-only)
-> btrfstune -S 1 /dev/vdb
-> 
-> #Mount the seed device... it will be mounted read-only.
-> mount /dev/vdb /mnt
-> 
-> #Add the writeable block device
-> btrfs-vol -a /dev/vdc /mnt
-> 
-> #Now remount the filesystem read-write.
-> mount -oremount,rw /mnt
-> 
-> #Now all changes to /mnt should go to /dev/vdc.
-> 
-> #--------------
-> 
-> After this, however, it's not possible to mount /dev/vdb again in order
-> to set up a second filesystem as seed.  I want to do:
-> 
-> mount /dev/vdb /othermnt
-> btrfs-vol -a /dev/vdd /othermnt
-> mount -oremount,rw /othermnt
-> 
-> So my questions (comments):
-> 
-> i)  Is the seed-device _really_ read-only... no metadata updates or
-> anything? (i.e. I can have my seed device on read-only media)
-yes
+--nextPart2048770.irzKz9uu2I
+Content-Type: text/plain;
+  charset="iso-8859-15"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: inline
 
-> ii)  Should it be possible to have a device as a 'seed' for multiple
-> other filesystems.
-it's possible, but only one filesystem can be mounted at a time.
-I will add 'mounting multiple filesystems at the same time' support
-later.
+On Wed, 26 Nov 2008 6:30:13 pm Gabor MICSKO wrote:
 
-> iii)  When the seeded filesystem is created, the size of the filesystem
-> is the aggregate of all devices, whereas it should be the aggregate size
-> of only the 'writable' devices.
->
-Since btrfs mirrors metadata and creates chunk dynamically, how to
-compute the size of filesystem isn't clear. I'm afraid I can't answer
-this question.
+> on the recently released Ubuntu 8.10 "Interpid Ibex", i get the
+> following error messages:
 
-Regards
-Yan Zheng
+If you're compiling against the 2.6.27 kernel in Ubuntu I think you'll need=
+ to=20
+use the standalone git tree instead:
 
+http://git.kernel.org/?p=3Dlinux/kernel/git/mason/btrfs-unstable-
+standalone.git;a=3Dsummary
+
+See Chris's email of the 20th:
+
+http://kerneltrap.org/mailarchive/linux-btrfs/2008/11/20/4179304
+
+cheers,
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+
+This email may come with a PGP signature as a file. Do not panic.
+=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
+
+
+--nextPart2048770.irzKz9uu2I
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iQEVAwUASTJ7O41yjaOTJg85AQKQQwgAvTtdNjCPld+CbnK1RFHzBMtDHE3E1F6c
+65rP6x38i6CjxqgzOKQKvHITvDVh60nVmSy6+S7FCTZf9jxedQEnt21DqBsEcV51
+RvIn6frBvJV6+AJR0KcM5Xe13HtHWPK2UvelGRudRf9MOFrrdzsB3lqqBtFL9siK
+AH0PTi57hzIR+c5wjxTQKvDq2d0G4/Q01n6p+IHMooPO7mAw40cF0JfNhmIJaytn
+Y9Ot++I0jVC8gZkMuEa4Nd/SygPJQSNcuB3IlZI3GkDT5PJOzqBMfqDj6bG+l9Y6
+zvgfO97hQpZNrdMGMXmn8agNcxJC5RqERtC0jZS6CTIsnv8atOfnPQ==
+=K0rA
+-----END PGP SIGNATURE-----
+
+--nextPart2048770.irzKz9uu2I--

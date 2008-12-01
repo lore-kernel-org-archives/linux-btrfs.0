@@ -1,36 +1,21 @@
-From: Gabor MICSKO <gabor.micsko@gmail.com>
-Subject: Re: compile error on Ubuntu 8.10
-Date: Sun, 30 Nov 2008 14:23:25 +0100
-Message-ID: <1228051405.5973.12.camel@localhost.localdomain>
-References: <1227684613.19460.99.camel@localhost.localdomain>
-	 <200811302238.35625.chris@csamuel.org>
+From: "Lee Trager" <lt73@cs.drexel.edu>
+Subject: Supported Kernels
+Date: Mon, 1 Dec 2008 16:02:48 -0500
+Message-ID: <20081201210248.GA10540@tux64-03>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org
-To: Chris Samuel <chris@csamuel.org>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200811302238.35625.chris@csamuel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 2008-11-30 at 22:38 +1100, Chris Samuel wrote:
+According to the FAQ at http://btrfs.wiki.kernel.org/index.php/FAQ all
+kernels downto 2.6.18 should be supported. I have tried to compile
+against 2.6.18(Debian Kernel), 2.6.24(Debian Kernel), 2.6.26(Debian
+Kernel), and 2.6.27(Ubuntu Kernel) and I have only been able to compile
+successfully against 2.6.27. Is btrfs still trying to maintain backwards
+compatibility with older version or is the focus on finilizing the on
+disk format?
 
-> If you're compiling against the 2.6.27 kernel in Ubuntu I think you'll need to 
-> use the standalone git tree instead:
-> 
-> http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable-
-> standalone.git;a=summary
+Thanks,
 
-Ah, on btrfs wiki I've found only this:
-
-git clone
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git
-
-which was too big.
-
-
-I've updated the wiki page:
-
-http://btrfs.wiki.kernel.org/index.php/Btrfs_source_repositories
-
-Thank you!
-
+Lee

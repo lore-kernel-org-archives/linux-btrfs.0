@@ -1,13 +1,11 @@
 From: Oliver Mattos <oliver.mattos08@imperial.ac.uk>
-Subject: Re: Partial allocation
-Date: Mon, 1 Dec 2008 23:49:16 +0000
-Message-ID: <1228175356.10273.1.camel@mattos-laptop>
-References: <1228162019.5274.36.camel@mattos-laptop>
+Subject: Weak Allocation
+Date: Tue, 2 Dec 2008 08:47:07 +0000
+Message-ID: <1228207627.11085.2.camel@mattos-laptop>
 Mime-Version: 1.0
 Content-Type: text/plain
-To: <linux-btrfs@vger.kernel.org>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1228162019.5274.36.camel@mattos-laptop>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
@@ -20,8 +18,9 @@ garbage left over, but the contents are irrelivant).
 Does BTRFS have any system that could allow adding at a later point in
 time a feature which would allow "weak" allocation of blocks, by which I
 mean the block is allocated (ie. storing useful data), but if another
-file needs to be written which has a higher priority and there are no
-free blocks left, then the data will be replaced.
+file needs to be written which has a higher priority and there are 
+no/not many alternate blocks readily available for use then the data
+will be replaced.
 
 I could forsee uses for features like that as a cache - for example my
 web browsing cache is not vital data, and as such doesn't need to use up

@@ -1,78 +1,83 @@
-From: Josef Bacik <jbacik@redhat.com>
-Subject: Re: Partial Allocation
-Date: Thu, 4 Dec 2008 07:15:50 -0500
-Message-ID: <20081204121550.GH4068@unused.rdu.redhat.com>
-References: <1228264376.17414.4.camel@mattos-laptop>
+From: "Liu Hui" <onlyflyer@gmail.com>
+Subject: [PATCH]Fix for map_private_extent_buffer to handle extent which is not page alignment
+Date: Thu, 4 Dec 2008 22:08:36 +0800
+Message-ID: <2c3b11250812040608r6eb4eb59xcdb6f53a72b5feb6@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Oliver Mattos <oliver.mattos08@imperial.ac.uk>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1228264376.17414.4.camel@mattos-laptop>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 03, 2008 at 12:32:56AM +0000, Oliver Mattos wrote:
-> Hi,
-> 
-> I presume that in the design of BTRFS, like most other filesystems, a
-> block on the underlying storage is either allocated (ie. to store
-> metadata or file data), or deallocated (possibly blank or containing
-> garbage left over, but the contents are irrelivant).
-> 
-> Does BTRFS have any system that could allow adding at a later point in
-> time a feature which would allow "weak" allocation of blocks, by which I
-> mean the block is allocated (ie. storing useful data), but if another
-> file needs to be written which has a higher priority and there are not
-> many free blocks left, then the data could be replaced.
-> 
-> I could forsee uses for features like that as a cache - for example my
-> web browsing cache is not vital data, and as such doesn't need to use up
-> disk space, but it might as well use up any disk space that would
-> otherwise go unused.  The cache data can always be regenerated, so
-> loosing the data isn't a problem.
-> 
-> Other uses of the feature could be for persistant network caches (ie. to
-> store copies of remote files on the network can they can be accessed
-> faster locally), but again the cache data isn't critical to the
-> operation of the system, so could be stored in "weakly allocated"
-> blocks.  Further uses could be caches of compressed files (decompressed
-> versions of the same files are also saved in other blocks, and depending
-> on IO and CPU load either the compressed or decompressed version is
-> used).
-> 
-> >From a user-land perspective, these files could be created with a
-> special flag which specifies they are only "weakly allocated", which
-> means any time the file has no open file descriptors it could "vanish"
-> if the underlying filesystem wants to use the space it occupies for
-> something else.  A file could have a "priority" value which specifies
-> how important it is, and therefore how likely it is to be erased if a
-> new block needs to be allocated.  The block allocator would use this
-> information, together with the physical layout of the data to decide
-> where to place new data to avoid fragmentation while retaining possibly
-> useful data for future use.
-> 
-> Let me know your ideas on this - at the moment it's only an idea, but
-> I'm interested to know if a) it would be possible to implement it into a
-> complex filesystem like btrfs, and b) if it would prove useful if
-> implemented.
-> 
-> Thanks
-> Oliver.
-> 
-> PS.  I realise this could be implemented with a user space daemon which
-> polls available disk space and deletes caches when disk space gets low
-> (as windows does with shadow copies), but that hardly seems ideal, since
-> it can't intelligently choose which caches to delete to reduce
-> fragmentation, and large sudden disk allocations will fail.
->
+Hi,
+Now, BTRFS only supports page alignment extent. But in
+map_private_extent(), there are already some codes to handle the
+extent which is not page alignment. For example,
+map_private_extent_buffer also wants to handle a extent which is 7K
+length properly. The problem is the codes are not enough, e.g. in the
+following figure, map_private_extent_buffer can handle extent1, but it
+can't take the right behavior to handle extent2. This patch fixs it.
 
-So one thing you could do was wire this in with the reserve allocation stuff.
-You can do a btrfs_reserve_extent which will just make the allocation and hold
-it until you decide to allocate it.  Then you can just keep this in a list and
-if things get tough you can go through and start reaping them in order to make
-space for things that are actually going to allocate the space and use it.  The
-reservations wouldn't be persistent across unmounts, but I think thats for the
-best for something like this.  All of the hard work is done, all that would need
-to be done is to have an interface wired up for it.  Thanks,
+PS:Please use the mono font to view the ASCII figures, thanks.
 
-Josef
+   |-extent1-|
++-----++-----+
+|page1||page2|
++-----++-----+
+
+|-extent2-|
++-----++-----+
+|page1||page2|
++-----++-----+
+
+-- 
+Thanks & Best Regards
+Liu Hui
+--
+
+diff --git a/extent_io.c b/extent_io.c
+index c3dfe2a..cac47d1 100644
+--- a/extent_io.c
++++ b/extent_io.c
+@@ -3426,9 +3426,11 @@ int map_private_extent_buffer(struct
+extent_buffer *eb, unsigned long start,
+ 	char *kaddr;
+ 	struct page *p;
+ 	size_t start_offset = eb->start & ((u64)PAGE_CACHE_SIZE - 1);
++	size_t last_offset;
+ 	unsigned long i = (start_offset + start) >> PAGE_CACHE_SHIFT;
+ 	unsigned long end_i = (start_offset + start + min_len - 1) >>
+ 		PAGE_CACHE_SHIFT;
++	unsigned long last_i = (start_offset + eb->len - 1) >> PAGE_CACHE_SHIFT;
+
+ 	if (i != end_i)
+ 		return -EINVAL;
+@@ -3440,8 +3442,16 @@ int map_private_extent_buffer(struct
+extent_buffer *eb, unsigned long start,
+ 		offset = 0;
+ 		*map_start = ((u64)i << PAGE_CACHE_SHIFT) - start_offset;
+ 	}
++
++	if (i == last_i)
++		last_offset = ((u64)(i + 1) << PAGE_CACHE_SHIFT) - start_offset
++			      - eb->len;
++	else
++		last_offset = 0;
++
+ 	if (start + min_len > eb->len) {
+-printk("bad mapping eb start %Lu len %lu, wanted %lu %lu\n",
+eb->start, eb->len, start, min_len);
++		printk("bad mapping eb start %Lu len %lu, wanted %lu %lu\n",
++		       eb->start, eb->len, start, min_len);
+ 		WARN_ON(1);
+ 	}
+
+@@ -3449,7 +3459,7 @@ printk("bad mapping eb start %Lu len %lu, wanted
+%lu %lu\n", eb->start, eb->len,
+ 	kaddr = kmap_atomic(p, km);
+ 	*token = kaddr;
+ 	*map = kaddr + offset;
+-	*map_len = PAGE_CACHE_SIZE - offset;
++	*map_len = PAGE_CACHE_SIZE - offset - last_offset;
+ 	return 0;
+ }
+ EXPORT_SYMBOL(map_private_extent_buffer);

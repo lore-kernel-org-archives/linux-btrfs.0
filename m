@@ -1,7 +1,7 @@
 From: Eric Whitney <eric.whitney@hp.com>
-Subject: PROBLEM:  oops when running fsstress against compressed btrfs filesystem
-Date: Thu, 04 Dec 2008 17:59:04 -0500
-Message-ID: <493860B8.4040309@hp.com>
+Subject: PROBLEM:  oops on attempt to mount badly formed filesystem
+Date: Fri, 05 Dec 2008 11:51:11 -0500
+Message-ID: <49395BFF.8070800@hp.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 To: linux-btrfs@vger.kernel.org
@@ -10,18 +10,23 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Chris:
 
-I'm consistently getting oopses when running fsstress against both 
-single and multiple device compressed btrfs filesystems using kernels 
-built from the current btrfs-unstable.
+I can consistently generate oopses (null pointer dereferenced) when 
+attempting to mount a badly formed multi-device filesystem using kernels 
+built from the current btrfs-unstable.  "Badly formed" means that mkfs 
+was given six legitimate device names and one non-existent device name 
+as arguments.  mkfs reported an error for the non-existent device, but 
+apparently left a damaged btrfs filesystem behind.  This bug is easily 
+reproduced - simply attempt to mkfs with a non-existent device name, and 
+then attempt to mount (example below with the oops).
 
-In this report, I'm describing an incident with a single device 
-filesystem.  Once the oops occurs, all I/O appears to stop though iowait 
-is still reported, and fsstress does not make apparent forward progress. 
-  The system otherwise remains responsive.
+Once the oops occurs, the system remains responsive, but must be reset 
+to reboot.  I've also noted that btrfs-show reports four devices for the 
+badly formed filesystem in this example and then proceeds to list 
+details for six devices.
 
 The system is a dual socket, quad core Intel machine with an attached 
-hardware RAID controller.  The latter supplies a six disk RAID0 volume 
-used for the filesystem.
+hardware RAID controller.  The latter supplies six single disk volumes 
+used for the filesystem in this test.
 
 Particulars follow - please let me know if you'd like more information, etc.
 
@@ -32,94 +37,110 @@ Eric
 Commit:
 c99e905c945c462085c6d64646dc5af0c0a16815
 
-
 uname -a:
-Linux bl460ca 2.6.28-rc5-btrfs #1 SMP Wed Dec 3 10:58:25 EST 2008 x86_64 
-GNU/Linux
+Linux bl460cb 2.6.28-rc5-btrfs-unstable #1 SMP Wed Dec 3 11:08:13 EST 
+2008 x86_64 GNU/Linux
+
+oops as taken from the console, including mkfs and mount commands preceding:
+
+root@bl460cb:~# mkfs.btrfs /dev/cciss/c1d0 /dev/cciss/c1d1 
+/dev/cciss/c1d2 /dev/cciss/c1d3 /dev/cciss/c1d4 /dev/cciss/c1d5 
+/dev/cciss/c1d6
+adding device /dev/cciss/c1d1 id 2
+adding device /dev/cciss/c1d2 id 3
+adding device /dev/cciss/c1d3 id 4
+adding device /dev/cciss/c1d4 id 5
+adding device /dev/cciss/c1d5 id 6
+error checking /dev/cciss/c1d6 mount status
+root@bl460cb:~# mount /dev/cciss/c1d5 /mnt
+[  158.264455] BUG: unable to handle kernel NULL pointer dereference at 
+0000000000000300
+[  158.268996] IP: [<ffffffff802e34a7>] bio_get_nr_vecs+0x7/0x40
+[  158.274050] PGD 8215de067 PUD 827dfb067 PMD 0
+[  158.274206] Oops: 0000 [#1] SMP
+[  158.274206] last sysfs file: /sys/block/loop7/removable
+[  158.274206] CPU 4
+[  158.274206] Modules linked in: iptable_filter ip_tables x_tables 
+parport_pc lp parport loop ipmi_devintf ipmi_si iTCO_wdt 
+iTCO_vendor_support ipv6 ipmi_msghandler pcspkr serio_raw i5000_edac 
+edac_core psmouse container shpchp button pci_hotplug evdev ext3 jbd 
+mbcache usbhid hid ehci_hcd uhci_hcd bnx2 usbcore cciss scsi_mod thermal 
+processor fan thermal_sys fuse
+[  158.274206] Pid: 5188, comm: mount Not tainted 
+2.6.28-rc5-btrfs-unstable #1
+[  158.274206] RIP: 0010:[<ffffffff802e34a7>]  [<ffffffff802e34a7>] 
+bio_get_nr_vecs+0x7/0x40
+[  158.274206] RSP: 0018:ffff880823d5ba10  EFLAGS: 00010246
+[  158.274206] RAX: 0000000000000000 RBX: 0000000000000000 RCX: 
+0000000000002028
+[  158.274206] RDX: ffffffff80354620 RSI: ffff88082a448038 RDI: 
+ffff88082c797000
+[  158.274206] RBP: 0000000000000000 R08: 0000000000001000 R09: 
+0000000000000000
+[  158.274206] R10: 0000000000000000 R11: 0000000000000000 R12: 
+ffff880823d5bbd8
+[  158.274206] R13: 0000000000000100 R14: 0000000000000000 R15: 
+0000000000002028
+[  158.274206] FS:  00007f701db2a780(0000) GS:ffff88082c862900(0000) 
+knlGS:0000000000000000
+[  158.274206] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[  158.274206] CR2: 0000000000000300 CR3: 0000000827ddf000 CR4: 
+00000000000006e0
+[  158.274206] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 
+0000000000000000
+[  158.274206] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 
+0000000000000400
+[  158.274206] Process mount (pid: 5188, threadinfo ffff880823d5a000, 
+task ffff88081f95be80)
+[  158.274206] Stack:
+[  158.274206]  ffffffff80350cf2 0000000000405000 0000000000405fff 
+ffffffff80354620
+[  158.274206]  ffff88082c797000 0000000000000000 ffffe2001c88eac0 
+ffff88082a448038
+[  158.274206]  0000000000000000 0000000000001000 ffff88082a417058 
+0000000000405000
+[  158.274206] Call Trace:
+[  158.274206]  [<ffffffff80350cf2>] submit_extent_page+0x222/0x2c0
+[  158.274206]  [<ffffffff80354620>] end_bio_extent_readpage+0x0/0x1d0
+[  158.274206]  [<ffffffff80351e37>] __extent_read_full_page+0x2e7/0x6a0
+[  158.274206]  [<ffffffff80354620>] end_bio_extent_readpage+0x0/0x1d0
+[  158.274206]  [<ffffffff803356f0>] btree_get_extent+0x0/0x1f0
+[  158.274206]  [<ffffffff8035384e>] read_extent_buffer_pages+0x1be/0x3e0
+[  158.274206]  [<ffffffff803356f0>] btree_get_extent+0x0/0x1f0
+[  158.274206]  [<ffffffff803337e0>] 
+btree_read_extent_buffer_pages+0x50/0xc0
+[  158.274206]  [<ffffffff80333b15>] read_tree_block+0x35/0x70
+[  158.274206]  [<ffffffff8033711b>] open_ctree+0xb9b/0xed0
+[  158.274206]  [<ffffffff802bf306>] sget+0x396/0x3f0
+[  158.274206]  [<ffffffff802bfdf0>] set_anon_super+0x0/0xc0
+[  158.274206]  [<ffffffff8031aedc>] btrfs_get_sb+0x35c/0x4a0
+[  158.274206]  [<ffffffff80295794>] kstrdup+0x54/0x120
+[  158.274206]  [<ffffffff802bf8c8>] vfs_kern_mount+0x78/0x160
+[  158.274206]  [<ffffffff802bfa13>] do_kern_mount+0x53/0x110
+[  158.274206]  [<ffffffff802d53b2>] do_mount+0x542/0x810
+[  158.274206]  [<ffffffff802d571b>] sys_mount+0x9b/0x100
+[  158.274206]  [<ffffffff8020c1eb>] system_call_fastpath+0x16/0x1b
+[  158.274206] Code: 83 c4 18 4c 89 f7 5b 5d 41 5c 41 5d 41 5e 41 5f e9 
+af e9 ff ff 66 66 66 66 66 66 2e 0f 1f 84 00 00 00 00 00 48 8b 87 98 00 
+00 00 <48> 8b 88 00 03 00 00 8b 81 cc 02 00 00 0f b7 91 d6 02 00 00 0f
+[  158.274206] RIP  [<ffffffff802e34a7>] bio_get_nr_vecs+0x7/0x40
+[  158.274206]  RSP <ffff880823d5ba10>
+[  158.274206] CR2: 0000000000000300
+[  158.430189] ---[ end trace dcfa48815a956024 ]---
+Killed
+root@bl460cb:~#
 
 
-mounted as:
-/dev/cciss/c1d0p1 on /mnt type btrfs (rw,compress)
+btrfs-show taken after the oops:
 
-
-btrfs-show:
-Label: none  uuid: f5131dbb-77a0-4a73-b94e-7b80406f9409
-	Total devices 1 FS bytes used 1.01GB
-	devid    1 size 410.01GB used 4.04GB path /dev/cciss/c1d0p1
+Label: none  uuid: 3a0bde17-9d1f-46f8-9657-34f37016e707
+	Total devices 4 FS bytes used 20.00KB
+	devid    4 size 68.33GB used 0.00 path /dev/cciss/c1d3
+	devid    2 size 68.33GB used 0.00 path /dev/cciss/c1d1
+	devid    5 size 68.33GB used 0.00 path /dev/cciss/c1d4
+	devid    1 size 68.33GB used 20.00MB path /dev/cciss/c1d0
+	devid    6 size 68.33GB used 0.00 path /dev/cciss/c1d5
+	devid    3 size 68.33GB used 0.00 path /dev/cciss/c1d2
 
 Btrfs v0.16-25-gd45ee76
-
-
-oops as taken from the console:
-
-[12812.257559] stack segment: 0000 [#1] SMP
-[12812.264366] last sysfs file: 
-/sys/devices/pci0000:00/0000:00:1e.0/0000:01:04.6/class
-[12812.265344] CPU 6
-[12812.265344] Modules linked in: iptable_filter ip_tables x_tables 
-parport_pc lp parport loop ipmi_devintf ipmi_si psmouse serio_raw ipv6 
-iTCO_wdt i5000_edac ipmi_msghandler iTCO_vendor_support shpchp pcspkr 
-button edac_core container pci_hotplug evdev ext3 jbd mbcache usbhid hid 
-ehci_hcd uhci_hcd bnx2 usbcore cciss scsi_mod dm_mirror dm_region_hash 
-dm_log dm_snapshot dm_mod thermal processor fan thermal_sys fuse
-[12812.265344] Pid: 8175, comm: btrfs-delalloc- Not tainted 
-2.6.28-rc5-btrfs #1
-[12812.265344] RIP: 0010:[<ffffffff803ba943>]  [<ffffffff803ba943>] 
-fill_window+0x143/0x480
-[12812.265344] RSP: 0018:ffff8807b44dfc80  EFLAGS: 00010212
-[12812.265344] RAX: 0000000000001000 RBX: 0000000000001000 RCX: 
-b6e3880000000000
-[12812.265344] RDX: 0000000000000001 RSI: 0000000000001000 RDI: 
-0000000000000000
-[12812.265344] RBP: b6e3880000000000 R08: 0000000000000000 R09: 
-0000000000000000
-[12812.265344] R10: 0000000000000010 R11: ffffc200145954bc R12: 
-0000000000000003
-[12812.265344] R13: 0000000000000001 R14: 0000000000000003 R15: 
-000000000000fe12
-[12812.265344] FS:  0000000000000000(0000) GS:ffff88082c863000(0000) 
-knlGS:0000000000000000
-[12812.265344] CS:  0010 DS: 0018 ES: 0018 CR0: 000000008005003b
-[12812.265344] CR2: 00007f75e001e068 CR3: 000000028309e000 CR4: 
-00000000000006e0
-[12812.265344] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 
-0000000000000000
-[12812.265344] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 
-0000000000000400
-[12812.265344] Process btrfs-delalloc- (pid: 8175, threadinfo 
-ffff8807b44de000, task ffff88081f44b840)
-[12812.265344] Stack:
-[12812.265344]  0000000200000000 0000000000008000 b6e3880000000000 
-0000000000000017
-[12812.265344]  ffffc20014595b04 ffffc20014595000 ffff8808290c7e60 
-00008000803bc25c
-[12812.333446]  00000000000065d1 ffffffff8052ba60 0000000000000011 
-ffffc200145959b0
-[12812.333446] Call Trace:
-[12812.333446]  [<ffffffff803bb36e>] ? deflate_fast+0x24e/0x2e0
-[12812.333446]  [<ffffffff803bb6a2>] ? zlib_deflate+0x112/0x330
-[12812.333446]  [<ffffffff80365078>] ? btrfs_zlib_compress_pages+0x158/0x3b0
-[12812.333446]  [<ffffffff802b6d42>] ? __slab_free+0x212/0x360
-[12812.333446]  [<ffffffff80341445>] ? compress_file_range+0x405/0x500
-[12812.333446]  [<ffffffff80252a79>] ? autoremove_wake_function+0x9/0x30
-[12812.333446]  [<ffffffff8034156e>] ? async_cow_start+0x2e/0x50
-[12812.333446]  [<ffffffff8035b9f1>] ? worker_loop+0x61/0x160
-[12812.333446]  [<ffffffff8035b990>] ? worker_loop+0x0/0x160
-[12812.333446]  [<ffffffff8025263b>] ? kthread+0x4b/0x80
-[12812.333446]  [<ffffffff8020d149>] ? child_rip+0xa/0x11
-[12812.333446]  [<ffffffff80375770>] ? cap_inode_permission+0x0/0x10
-[12812.333446]  [<ffffffff802525f0>] ? kthread+0x0/0x80
-[12812.333446]  [<ffffffff8020d13f>] ? child_rip+0x0/0x11
-[12812.333446] Code: 8b 5c 24 78 89 5c 24 7c 81 7c 24 7c b0 15 00 00 b8 
-b0 15 00 00 0f 46 44 24 7c 29 44 24 7c 83 f8 0f 89 44 24 74 0f 8e ec 00 
-00 00 <0f> b6 45 00 0f b6 55 01 49 8d 04 07 48 8d 14 10 48 03 44 24 40
-[12812.333446] RIP  [<ffffffff803ba943>] fill_window+0x143/0x480
-[12812.333446]  RSP <ffff8807b44dfc80>
-[12812.390091] ---[ end trace bd4a99fac175a076 ]---
-[12812.394041] note: btrfs-delalloc-[8175] exited with preempt_count 1
-
-
-
-
-
 

@@ -1,49 +1,35 @@
-From: Gabor MICSKO <gabor.micsko@gmail.com>
-Subject: No space left on device
-Date: Mon, 08 Dec 2008 10:46:25 +0100
-Message-ID: <1228729585.6954.26.camel@localhost.localdomain>
+From: dcg <diegocalleja@gmail.com>
+Subject: Re: No space left on device
+Date: Mon, 8 Dec 2008 15:02:30 +0100
+Message-ID: <20081208150230.699aa8b7@diego-desktop>
+References: <1228729585.6954.26.camel@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: Gabor MICSKO <gabor.micsko@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1228729585.6954.26.camel@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-hi,
+El Mon, 08 Dec 2008 10:46:25 +0100, Gabor MICSKO <gabor.micsko@gmail.co=
+m> escribi=C3=B3:
 
-I have an 80GB external HDD with one btrfs partition. Latest kernel
-module and btrfs-progs from "unstable" git repos.
+> # df -h
+> [...]
+> /dev/sdb1              75G   61G   15G  81% /media/coolermaster
+>=20
+> It seems like i have 15GB free space on the btrfs formatted partition=
+,
+> but when i try to create a file of 4GB on the btrfs filesystem i get =
+the
+> following error:
 
-# mount
-[...]
-/dev/sdb1 on /media/coolermaster type btrfs (rw)
 
-# df -h
-[...]
-/dev/sdb1              75G   61G   15G  81% /media/coolermaster
-
-It seems like i have 15GB free space on the btrfs formatted partition,
-but when i try to create a file of 4GB on the btrfs filesystem i get the
-following error:
-
-root@alderaan:/media/coolermaster/tmp# dd if=/dev/zero of=foobar.img
-bs=1024 count=4000K
-dd: writing `foobar.img': No space left on device
-3372894+0 records in
-3372893+0 records out
-3453842432 bytes (3.5 GB) copied, 321.087 s, 10.8 MB/s
-
-syslog:
-
-Dec  8 10:35:46 alderaan kernel: [30716.434747] device fsid
-46489b7e62f254e0-e306291dd7724d8f devid 1 transid 283 /dev/sdb1
-Dec  8 10:35:50 alderaan kernel: [30720.457774] space info full 36
-
-Am i missing something (e.g. reserved space for root, etc.) obvious
-here?
-
-Thanks,
-
+btrfs has an (artificial) limit of 85% of the space which won't be lift=
+ed until
+the allocation code is mature. So you can't use the 100% for now...that
 --
-mg
-
-
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

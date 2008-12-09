@@ -1,26 +1,26 @@
 From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: New disk format pushed out
-Date: Tue, 09 Dec 2008 06:43:46 -0500
-Message-ID: <1228823026.27601.5.camel@think.oraclecorp.com>
+Date: Tue, 09 Dec 2008 07:23:34 -0500
+Message-ID: <1228825414.27601.6.camel@think.oraclecorp.com>
 References: <1228781596.3962.22.camel@think.oraclecorp.com>
-	 <1228809133.6954.42.camel@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org
-To: Gabor MICSKO <gabor.micsko@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1228809133.6954.42.camel@localhost.localdomain>
+In-Reply-To: <1228781596.3962.22.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2008-12-09 at 08:52 +0100, Gabor MICSKO wrote:
-> As i see the standalone kernel module git repo not updated. Will it be
-> updated too?
+On Mon, 2008-12-08 at 19:13 -0500, Chris Mason wrote:
+> Hello everyone,
 > 
-> http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable-standalone.git;a=summary
-> 
+> I've pushed out most of the pending patches, including a few big disk
+> format changes.  It includes Yan Zheng's super block duplication code
+> (with a few small mods for performance) and all new data checksumming
+> code.
 > 
 
-Thanks, I've updated the standalone tree as well.
+Yan Zheng noticed that I've broken the space balancing code, so people
+using raid should not use this yet.
 
 -chris
 

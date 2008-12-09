@@ -1,97 +1,83 @@
-From: "Kay Sievers" <kay.sievers@vrfy.org>
-Subject: btrfs and hotplug, auto-assembly, auto-setup, ...
-Date: Tue, 9 Dec 2008 19:02:30 +0100
-Message-ID: <ac3eb2510812091002g7d7c163am55f44b188dea0ef6@mail.gmail.com>
+From: "Lee Trager" <lt73@cs.drexel.edu>
+Subject: Re: Selective Compression/Encryption
+Date: Tue, 9 Dec 2008 13:09:51 -0500
+Message-ID: <20081209180951.GA6551@tux64-03>
+References: <20081209145952.GA30494@tux64-03> <f058a9c30812090745v15b5f983u468b560ae791dc37@mail.gmail.com> <200812091722.21567.mail@earthworm.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Greg <greg@kroah.com>
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Christian Hesse <mail@earthworm.de>, miguel.filipe@gmail.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <200812091722.21567.mail@earthworm.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hey,
-I thought it would be a good time good to play around a bit with btrfs
-in the usual hotplug setup, so we can - if needed - adapt things
-before it is going to be finalized.
+On Tue, Dec 09, 2008 at 05:22:18PM +0100, Christian Hesse wrote:
+> On Tuesday 09 December 2008, Miguel Figueiredo Mascarenhas Sousa Filipe wrote:
+> > Hi there,
+> >
+> > On Tue, Dec 9, 2008 at 2:59 PM, Lee Trager <lt73@cs.drexel.edu> wrote:
+> > > Currently compression and I assume if encryption is implemented it is
+> > > turned on or off during mount. There are however many times when a user
+> > > may want to select which files/directories they want to compress or
+> > > encrypt. This will also be helpful when implementing btrfs support in
+> > > grub for example. We can say the disk can be compressed/encrypted except
+> > > for /boot so compression/encryption doesn't have to be implemented in
+> > > grub.
+> 
+> You could just use an additional partition for /boot that has compression an 
+> encryption disabled...
+>
+Yes you could but many distributions are moving away from that such as
+ubuntu. Also while this works well on desktop and server environments
+where space is not an issue on embedded systems where free space is
+measured in kb or mb it starts becomming a huge issue.
+ 
+> > > I was thinking of adding this functionality to the userspace application
+> > > btrfstune. The way I was thinking of doing this is when btrfstune +c is
+> > > applied to a directory or file the directory(and all its contents) or
+> > > file will always be compressed reguardless of how the filesystem is
+> > > mounted. The opposite would happen when btrfstune -c is used.
+> > >
+> > > Would this be a reasonable thing to implement? Any suggestions before I
+> > > start doing this?
+> >
+> > Things like compression or encription should be used at the "volume" level.
+> 
+> That was what I said some time ago when I asked why encryption support for 
+> btrfs is planned. On a volume level you can use dm-crypt and the fs can 
+> ignore that part completely.
+> 
+> The answer was that different users on a home partition could use their own 
+> encryption key. That sounds like volume level is out of bet. ;)
+> 
+It does seem that doing it with volumes would limit user control and add
+lots of complexity to such a simple task.
 
-At a first look, it looks very promising, and I really like the idea
-that the state of the (possibly incomplete) device tree is kept in the
-kernel, and not somewhere in a file in userspace, like we usually see
-for all sorts of multi-volume/multi-device setups. It should make
-things much easier as usual.
+Miguel, what is your reason for suggesting this be done at the volume level?
 
-Like with every other subsystem, people will expect btrfs to just work
-with hotpluggable devices, without much configuration and explicit
-setup after device connect. To assemble a mountable volume, we will
-need to find the (possibly several independent) devices containing the
-btrfs data.
-This is currently done by scanning all block devices in /dev, and
-investigating the content. It works fine for simple and usual setups,
-where all block devices behave normally. This strategy is also
-required in some situations, like in recovery and rescue situations.
-But it will just not work in several "advanced" setups. We may open
-devices which do not return the requested data to us, but hang in the
-kernel in a timeout, waiting to return with an error to us. There are
-boxes out there with tens of thousands of devices, and some, or many
-of them, may not work as expected.
-In such setups, we can not access all the devices with a single
-thread, and open them all sequentially. It just asks for real trouble.
-We already ran into such problems on big boxes with
-mount-by-label/uuid.
+> > So.. if a user wants a specific set of files or dirs ..they should
+> > create a mount-point/volume like:
+> >
+> > private_vol
+> > bigarchives_vol
+> >
+> > and set those volumes as compressed or encripted volumes
+> >
+> > Regarding usability, the best would be for the sub-volume creation
+> > tool to optionally allow passing encription/compression arguments.
+> >
+> >
+> > and then:
+> >  should mount those volumes somewhere like: ~/Confidential or ~/Archives.
+> >
+> > Basically, do it at the directory level (which in btrfs is at the
+> > sub-volume level).
+> > File-level granularity is totally unmanageable in the long term.
+> >
+> > Kind regards,
+> 
+> -- 
+> Regards,
+> Chris
 
-To emulate such behavior, one just needs to do:
-  $ modprobe scsi_debug max_luns=8 num_parts=2
-  $ echo 1 > /sys/module/scsi_debug/parameters/every_nth
-  $ echo 4 > /sys/module/scsi_debug/parameters/opts
-
-  $ ls -l /sys/class/block/ | wc -l
-  45
-
-Any call to single-threaded /dev device-node scanner logic will take
-~2 hours now, to return to the caller.
-
-To work around these problems, udev probes all devices in a separate
-process and puts the probing results asynchronously in the udev
-database, and possibly into symlinks somewhere in /dev. The probing
-happens fully parallelized. We currently support huge boxes with many
-disks, that need to probe ~4000 block devices in parallel, to get a
-reasonable bootup/setup time.
-
-That way, all found volume-metadata is immediately available, and
-hanging probing-processes will not block the probing of other devices.
-They will time out, or return the data at a later point, when it
-becomes avialable.
-
-For a first naive try to integrate with udev's async probing, I did:
-  $ cat /etc/udev/rules.d/80-btrfs.rules
-  SUBSYSTEM=="block", ENV{ID_FS_TYPE}=="btrfs", \
-    SYMLINK+="btrfs/$env{ID_FS_UUID_ENC}/$env{ID_FS_UUID_SUB_ENC}"
-
-Connecting devices with btrfs volumes will now create:
-  $ tree /dev/btrfs/
-  /dev/btrfs/
-  |-- 0cdedd75-2d03-41e6-a1eb-156c0920a021
-  |   |-- 897fac06-569c-4f45-a0b9-a1f91a9564d4 -> ../../sda10
-  |   `-- aac20975-b642-4650-b65b-b92ce22616f2 -> ../../sda9
-  `-- a1ec970a-2463-414e-864c-2eb8ac4e1cf2
-      |-- 4d1f1fff-4c6b-4b87-8486-36f58abc0610 -> ../../sdb2
-      `-- e7fe3065-c39f-4295-a099-a89e839ae350 -> ../../sdb1
-
-Tools could lookup that way all currently active volumes, and it would
-also be easy to make the volume known to the kernel at the same time
-we recognize it.
-
-To update these links after mkfs.btrfs, the formatting tool would need
-to send a change event to the kernel, like:
-  echo change > /sys/dev/block/<maj>:<min>/uevent
-
-We should make sure, that at least such problems are known, and we
-have thought about the needed infrastructure, to be able to solve
-these problems anytime later. If it requires changes to make
-supporting such setups easier, even when it's not implemented now, it
-would be nice to try to make them before it is finalized.
-
-Let me know, what you think.
-
-Thanks,
-Kay
+Lee

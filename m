@@ -1,27 +1,27 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: New disk format pushed out
-Date: Tue, 09 Dec 2008 07:23:34 -0500
-Message-ID: <1228825414.27601.6.camel@think.oraclecorp.com>
-References: <1228781596.3962.22.camel@think.oraclecorp.com>
+From: "Lee Trager" <lt73@cs.drexel.edu>
+Subject: Selective Compression/Encryption
+Date: Tue, 9 Dec 2008 09:59:52 -0500
+Message-ID: <20081209145952.GA30494@tux64-03>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1228781596.3962.22.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2008-12-08 at 19:13 -0500, Chris Mason wrote:
-> Hello everyone,
-> 
-> I've pushed out most of the pending patches, including a few big disk
-> format changes.  It includes Yan Zheng's super block duplication code
-> (with a few small mods for performance) and all new data checksumming
-> code.
-> 
+Currently compression and I assume if encryption is implemented it is
+turned on or off during mount. There are however many times when a user may
+want to select which files/directories they want to compress or encrypt.
+This will also be helpful when implementing btrfs support in grub for
+example. We can say the disk can be compressed/encrypted except for /boot so 
+compression/encryption doesn't have to be implemented in grub.
 
-Yan Zheng noticed that I've broken the space balancing code, so people
-using raid should not use this yet.
+I was thinking of adding this functionality to the userspace application
+btrfstune. The way I was thinking of doing this is when btrfstune +c is
+applied to a directory or file the directory(and all its contents) or
+file will always be compressed reguardless of how the filesystem is
+mounted. The opposite would happen when btrfstune -c is used.
 
--chris
+Would this be a reasonable thing to implement? Any suggestions before I
+start doing this?
 
-
+Lee

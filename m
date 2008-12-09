@@ -1,46 +1,42 @@
-From: Oliver Mattos <oliver.mattos08@imperial.ac.uk>
-Subject: Data De-duplication
-Date: Tue, 9 Dec 2008 22:48:19 +0000
-Message-ID: <1228862899.8130.1.camel@mattos-laptop>
+From: Diego Calleja <diegocg@gmail.com>
+Subject: Re: Selective Compression/Encryption
+Date: Wed, 10 Dec 2008 00:05:12 +0100
+Message-ID: <20081210000512.7be20413@diego-desktop>
+References: <20081209145952.GA30494@tux64-03>
+	<f058a9c30812090745v15b5f983u468b560ae791dc37@mail.gmail.com>
+	<200812091722.21567.mail@earthworm.de>
+	<20081209180951.GA6551@tux64-03>
 Mime-Version: 1.0
-Content-Type: text/plain
-To: <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: Christian Hesse <mail@earthworm.de>, miguel.filipe@gmail.com,
+	linux-btrfs@vger.kernel.org
+To: "Lee Trager" <lt73@cs.drexel.edu>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20081209180951.GA6551@tux64-03>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+El Tue, 9 Dec 2008 13:09:51 -0500, "Lee Trager" <lt73@cs.drexel.edu> es=
+cribi=C3=B3:
 
-Say I download a large file from the net to /mnt/a.iso.  I then download
-the same file again to /mnt/b.iso.  These files now have the same
-content, but are stored twice since the copies weren't made with the bcp
-utility.
+> It does seem that doing it with volumes would limit user control and =
+add
+> lots of complexity to such a simple task.
 
-The same occurs if a directory tree with duplicate files (created with
-bcp) is put through a non-aware program - for example tarred and then
-untarred again.
+IMHO, WRT compression it's the contrary. Compression on a per-file basi=
+s has
+never been very succesful (just look at how many windows users use it)
+because it implies taking a decision for every file on the system. OTOH=
+,
+volume-level is just a single option to be enabled.
 
-This could be improved in two ways:
-
-1)  Make a utility which checks the checksums for all the data extents,
-and if the checksums of data match for two files then check the file
-data, and if the file data matches then keep only one copy.  It could be
-run as a cron job to free up disk space on systems where duplicate data
-is common (eg. virtual machine images)
-
-2)  Keep a tree of checksums for data blocks, so that a bit of data can
-be located by it's checksum.  Whenever a data block is about to be
-written check if the block matches any known block, and if it does then
-don't bother duplicating the data on disk.  I suspect this option may
-not be realistic for performance reasons.
-
-If either is possible then thought needs to be put into if it's worth
-doing on a file level, or a partial-file level (ie. if I have two
-similar files, can the space used by the identical parts of the files be
-saved)
-
-Has any thought been put into either 1) or 2) - are either possible or
-desired?
-
-Thanks
-Oliver
-
+I'm of course not arguing that file-level compression shouldn't be poss=
+ible,
+im just saying that is way more difficult to administer and that most p=
+eople
+(including sysadmins) is most likely to use compression in a per-volume=
+ basis.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

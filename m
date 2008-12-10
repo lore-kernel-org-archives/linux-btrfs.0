@@ -1,56 +1,70 @@
-From: "seth huang" <seth.hg@gmail.com>
-Subject: Re: Data De-duplication
-Date: Wed, 10 Dec 2008 21:30:32 +0800
-Message-ID: <200812102130274537790@gmail.com>
-References: <1228862899.8130.1.camel@mattos-laptop>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Selective Compression/Encryption
+Date: Wed, 10 Dec 2008 08:44:47 -0500
+Message-ID: <1228916687.11900.10.camel@think.oraclecorp.com>
+References: <20081209145952.GA30494@tux64-03>
+	 <f058a9c30812090745v15b5f983u468b560ae791dc37@mail.gmail.com>
+	 <200812091722.21567.mail@earthworm.de>	<20081209180951.GA6551@tux64-03>
+	 <20081210000512.7be20413@diego-desktop>  <493F043B.50804@hp.com>
 Mime-Version: 1.0
-Content-Type: text/plain;
-	charset="gb2312"
-To: "Oliver Mattos" <oliver.mattos08@imperial.ac.uk>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: Diego Calleja <diegocg@gmail.com>, Lee Trager <lt73@cs.drexel.edu>,
+	Christian Hesse <mail@earthworm.de>, miguel.filipe@gmail.com,
+	linux-btrfs@vger.kernel.org
+To: jim owens <jowens@hp.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <493F043B.50804@hp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-De-duplication is useful in data backup systems because of the high level of data redundancy, but I'm not sure whether it is necessary for a general-purposed fs. If you really want to do so, I will suggest the latter one. File-level de-dup can be implemented in a user-level application.
+On Tue, 2008-12-09 at 18:50 -0500, jim owens wrote:
+> Diego Calleja wrote:
+> > El Tue, 9 Dec 2008 13:09:51 -0500, "Lee Trager" <lt73@cs.drexel.edu=
+> escribi=C3=B3:
+> >=20
+> >> It does seem that doing it with volumes would limit user control a=
+nd add
+> >> lots of complexity to such a simple task.
+> >=20
+> > IMHO, WRT compression it's the contrary. Compression on a per-file =
+basis has
+> > never been very succesful (just look at how many windows users use =
+it)
+> > because it implies taking a decision for every file on the system. =
+OTOH,
+> > volume-level is just a single option to be enabled.
+> >=20
+> > I'm of course not arguing that file-level compression shouldn't be =
+possible,
+> > im just saying that is way more difficult to administer and that mo=
+st people
+> > (including sysadmins) is most likely to use compression in a per-vo=
+lume basis.
+>=20
+> While I have not gotten far enough to prove it is feasible...
+>=20
+> My idea on controlling features like compression is that
+> the default mode is inherited from the parent in the
+> directory tree.  Thus you can turn it on/off at whatever
+> granularity you want.
+>=20
 
-As I googled the internet, I found a previous discussion on this topic in the mail archive. I hope this will help.
-http://markmail.org/message/sdxos4s2bnckven5#query:+page:1+mid:sdxos4s2bnckven5+state:results 
+I had planned to make the bits inheritable from the directory inode
+flags.  There are two different discussions around xattrs for this.  On=
+e
+is using xattrs to store the flag, which I'd would rather avoid because
+it is checked in some performance critical places.
 
-On Tue, Dec 9, 2008 at 10:48 PM, Oliver Mattos
-<oliver.mattos08@imperial.ac.uk> wrote:
-> Hi,
->
-> Say I download a large file from the net to /mnt/a.iso.  I then download
-> the same file again to /mnt/b.iso.  These files now have the same
-> content, but are stored twice since the copies weren't made with the bcp
-> utility.
->
-> The same occurs if a directory tree with duplicate files (created with
-> bcp) is put through a non-aware program - for example tarred and then
-> untarred again.
->
-> This could be improved in two ways:
->
-> 1)  Make a utility which checks the checksums for all the data extents,
-> and if the checksums of data match for two files then check the file
-> data, and if the file data matches then keep only one copy.  It could be
-> run as a cron job to free up disk space on systems where duplicate data
-> is common (eg. virtual machine images)
->
-> 2)  Keep a tree of checksums for data blocks, so that a bit of data can
-> be located by it's checksum.  Whenever a data block is about to be
-> written check if the block matches any known block, and if it does then
-> don't bother duplicating the data on disk.  I suspect this option may
-> not be realistic for performance reasons.
->
-> If either is possible then thought needs to be put into if it's worth
-> doing on a file level, or a partial-file level (ie. if I have two
-> similar files, can the space used by the identical parts of the files be
-> saved)
->
-> Has any thought been put into either 1) or 2) - are either possible or
-> desired?
->
-> Thanks
-> Oliver
+The second is using xattr programs to set the flag, which I don't reall=
+y
+have an opinion on.  The idea of having the flags backed up by backup
+programs or rsync is really nice, but do any of the backup programs
+actually copy out all the xattrs?
 
+-chris
+
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

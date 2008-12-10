@@ -1,45 +1,33 @@
-From: Oliver Mattos <oliver.mattos08@imperial.ac.uk>
-Subject: Re: Data De-duplication
-Date: Wed, 10 Dec 2008 17:53:12 +0000
-Message-ID: <1228931592.6076.12.camel@mattos-laptop>
-References: <1228862899.8130.1.camel@mattos-laptop>
-	 <1228915802.11900.8.camel@think.oraclecorp.com>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: Selective Compression/Encryption
+Date: Wed, 10 Dec 2008 12:55:38 -0500
+Message-ID: <20081210175538.GA23225@infradead.org>
+References: <20081209145952.GA30494@tux64-03> <f058a9c30812090745v15b5f983u468b560ae791dc37@mail.gmail.com> <200812091722.21567.mail@earthworm.de> <20081209180951.GA6551@tux64-03> <20081210000512.7be20413@diego-desktop> <493F043B.50804@hp.com> <1228916687.11900.10.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: jim owens <jowens@hp.com>, Diego Calleja <diegocg@gmail.com>,
+	Lee Trager <lt73@cs.drexel.edu>,
+	Christian Hesse <mail@earthworm.de>, miguel.filipe@gmail.com,
+	linux-btrfs@vger.kernel.org
 To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1228915802.11900.8.camel@think.oraclecorp.com>
+In-Reply-To: <1228916687.11900.10.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> > 2)  Keep a tree of checksums for data blocks, so that a bit of data can
-> > be located by it's checksum.  Whenever a data block is about to be
-> > written check if the block matches any known block, and if it does then
-> > don't bother duplicating the data on disk.  I suspect this option may
-> > not be realistic for performance reasons.
-> > 
+On Wed, Dec 10, 2008 at 08:44:47AM -0500, Chris Mason wrote:
+> I had planned to make the bits inheritable from the directory inode
+> flags.  There are two different discussions around xattrs for this.  One
+> is using xattrs to store the flag, which I'd would rather avoid because
+> it is checked in some performance critical places.
 > 
-> When compression was added, the writeback path was changed to make
-> option #2 viable, at least in the case where the admin is willing to
-> risk hash collisions on strong hashes.  When the a direct read
-> comparison is required before sharing blocks, it is probably best done
-> by a stand alone utility, since we don't want wait for a read of a full
-> extent every time we want to write on.
-> 
+> The second is using xattr programs to set the flag, which I don't really
+> have an opinion on.  The idea of having the flags backed up by backup
+> programs or rsync is really nice, but do any of the backup programs
+> actually copy out all the xattrs?
 
-Can we assume hash collisions won't occur?  I mean if it's a 256 bit
-hash then even with 256TB of data, and one hash per block, the chances
-of collision are still too small to calculate on gnome calculator.
-
-The only issue is if the hash algorithm is later found to be flawed, a
-malicious bit of data could be stored on the disk who's hash would
-collide with some more important data, potentially allowing the contents
-of one file to be replaced with another.
-
-Even if we don't assume hash collisions won't occur (eg. for crc's), the
-write performance when writing duplicate files is equal to the read
-performance of the disk, since for every block written by a program, one
-block will need to be read, and no blocks written.  This is still better
-than the write case (as most devices read faster than write), and has
-the added advantage of saving lots of space.
+xfsdump does :)  But I think especially the compressed bit is much
+better off in the bit for the set/get flags ioctls used by chattr /
+lsattr.  These are implemented by all Linux filesystems, and even have
+a compressed bit allocated already.  (and xfsdump of course backs them
+up, too ;-))  *run*
 

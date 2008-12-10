@@ -1,32 +1,29 @@
-From: "Mattos, Oliver" <oliver.mattos08@imperial.ac.uk>
-Subject: RE: Selective Compression/Encryption
-Date: Wed, 10 Dec 2008 09:06:21 -0000
-Message-ID: <508139F9DA1D274D8271A5D6FCE3826A138F81@icex7.ic.ac.uk>
-References: <20081209145952.GA30494@tux64-03><f058a9c30812090745v15b5f983u468b560ae791dc37@mail.gmail.com><200812091722.21567.mail@earthworm.de><20081209180951.GA6551@tux64-03> <20081210000512.7be20413@diego-desktop>
+From: Jeremy Sanders <jeremy@jeremysanders.net>
+Subject: Re: Selective Compression/Encryption
+Date: Wed, 10 Dec 2008 09:32:08 +0000
+Message-ID: <gho2ao$d0q$1@ger.gmane.org>
+References: <20081209145952.GA30494@tux64-03> <f058a9c30812090745v15b5f983u468b560ae791dc37@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain;
-	charset="UTF-8"
-To: <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20081210000512.7be20413@diego-desktop>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-SGF2aW5nIGEgMyBwb3NzaWJsZSBzdGF0ZXMgZm9yIGVhY2ggZmlsZSB3b3VsZCBzZWVtIHNlbnNp
-YmxlOg0KDQoxLiAgQ29tcHJlc3Npb24gRW5hYmxlZCAtIHRoaXMgZmlsZSBvciBmb2xkZXIgd2ls
-bCBiZSBjb21wcmVzc2VkLg0KMi4gIENvbXByZXNzaW9uIERpc2FibGVkIC0gdGhpcyBmaWxlIG9y
-IGZvbGRlciB3aWxsIG5ldmVyIGJlIGNvbXByZXNzZWQuDQozLiAgTm90IFNwZWNpZmllZCAtIFRo
-aXMgd2lsbCBpbmhlcml0IHRoZSBjb21wcmVzc2lvbiBzdGF0ZSBmcm9tIGl0J3MgcGFyZW50Lg0K
-DQpUbyBrZWVwIHRoaXMgc3lzdGVtIGluIGEgY29uc2lzdGVudCBzdGF0ZSwgaWYgYSBmb2xkZXIg
-aXMgY2hhbmdlZCBmcm9tIHNheSBzdGF0ZSAyIHRvIHN0YXRlIDEsIHRoZW4gYWxsIHRoZSBjaGls
-ZHJlbiBvZiB0aGF0IGZvbGRlciB3aG8gYXJlIGluIHN0YXRlIDMgbmVlZCB0byBiZSBjb21wcmVz
-c2VkIC0gcG90ZW50aWFsbHkgYSB2ZXJ5IHRpbWUgY29uc3VtaW5nIG9wZXJhdGlvbi4NCg0KSWYg
-dGhpcyBvcGVyYXRpb24gaXMgY2FuY2VsbGVkLCBvciBmYWlscywgdGhlbiB0aGUgY29tcHJlc3Np
-b24gc3RhdGVzIGluIHRoZSBmaWxlc3lzdGVtIHdpbGwgYmUgaW5jb25zaXN0ZW50LiAgTm8gaWRl
-YSBob3cgaXQncyBiZXN0IHRvIHNvbHZlIHRoYXQgLSBlaXRoZXIganVzdCBjb3BlIHdpdGggdGhl
-IGluY29uc2lzdGVuY3kgYW5kIGxldCBhIGZpbGVzeXN0ZW0gY2hlY2sgdGlkeSBpdCB1cCAocmVt
-ZW1iZXIgdGhpcyBpc3N1ZSB3b3VsZCBuZXZlciBlbmRhbmdlciBkYXRhLCBhbmQgb25seSBvY2N1
-cnMgaW4gdGhlIGNhc2Ugb2YgYSBzeXN0ZW0gZmFpbHVyZSB3aGlsZSBjaGFuZ2luZyB0aGUgY29t
-cHJlc3Npb24gZmxhZ3Mgb24gYSBkaXJlY3RvcnkpLiAgQW4gYWx0ZXJuYXRpdmUgc29sdXRpb24g
-Y291bGQgYmUgdG8gbWFrZSB0aGUgYXR0cmlidXRlIGNoYW5nZSBhc2NocnluY2hyb25vdXMgYW5k
-IGhhdmUgYW4gIm9wZXJhdGlvbiBxdWV1ZSIsIHNvIGluIHRoZSBjYXNlIG9mIGEgc3lzdGVtIGZh
-aWx1cmUgdGhlIG9wZXJhdGlvbiBjYW4gY29udGludWUgd2hlcmUgaXQgbGVmdCBvZmYuDQo=
+Miguel Figueiredo Mascarenhas Sousa Filipe wrote:
+
+> Things like compression or encription should be used at the "volume"
+> level. So.. if a user wants a specific set of files or dirs ..they should
+> create a mount-point/volume like:
+> 
+> private_vol
+> bigarchives_vol
+
+Does a normal user have permissions to do this?
+
+I could easily see the case where a normal user has a set of very
+compressible files in a directory. They shouldn't have to get a sysadmin go
+to the trouble of setting this up.
+
+Jeremy
+
+

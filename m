@@ -1,89 +1,55 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Btrfs trees for linux-next
-Date: Thu, 11 Dec 2008 09:43:16 -0500
-Message-ID: <1229006596.22236.46.camel@think.oraclecorp.com>
-References: <1227183484.6161.17.camel@think.oraclecorp.com>
-	 <1228962896.21376.11.camel@think.oraclecorp.com>
-	 <20081211141436.030c2d65.sfr@canb.auug.org.au>
-	 <20081210200604.8e190b0d.akpm@linux-foundation.org>
+Subject: Re: Auto-sparseifying
+Date: Thu, 11 Dec 2008 09:57:35 -0500
+Message-ID: <1229007455.22236.60.camel@think.oraclecorp.com>
+References: <1228989948.17969.24.camel@mattos-laptop>
 Mime-Version: 1.0
 Content-Type: text/plain
-Cc: Stephen Rothwell <sfr@canb.auug.org.au>,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>
-To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Oliver Mattos <oliver.mattos08@imperial.ac.uk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20081210200604.8e190b0d.akpm@linux-foundation.org>
+In-Reply-To: <1228989948.17969.24.camel@mattos-laptop>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2008-12-10 at 20:06 -0800, Andrew Morton wrote:
-> On Thu, 11 Dec 2008 14:14:36 +1100 Stephen Rothwell <sfr@canb.auug.org.au> wrote:
+On Thu, 2008-12-11 at 10:05 +0000, Oliver Mattos wrote:
+> Hi,
 > 
-> > Hi Andrew,
-> > 
-> > On Wed, 10 Dec 2008 21:34:56 -0500 Chris Mason <chris.mason@oracle.com> wrote:
-> > >
-> > > Just an update, while I still have a long todo list and plenty of things
-> > > to fix in the code, these src trees have been updated with a disk format
-> > > I hope to maintain compatibility with from here on.  There are still
-> > > format changes planned, but should go in through the compat mechanisms
-> > > in the sources now.
-> > > 
-> > > The btrfs trees are still at 2.6.28-rc5, but I just tested against
-> > > linux-next without problems.
-> > 
-> > Do you think this is ready to be added to the end of linux-next, yet?  Or
-> > is this more -mm material?
+> I've noticed many files have blocks of plain nulls up to a few kb long,
+> even files you wouldn't normally expect to, like ELF executables.  I
+> know that with compression enabled these will compress very small, but
+> that will have a reasonable hit on performance.  How much of an overhead
+> would it be to check all checksummed file extents to see if they match
+> the checksum for a blank (null filled) extent, and if it does then don't
+> save that data?   You may not even want to do it with checksums - just
+> by reading the first few bytes of data and checking for "nullness" would
+> let you know if the block is null or not.  (if the first 4 bytes are
+> null, then the whole block is likely to be nulls, so it's worth the
+> overhead of checking the whole block)
 > 
-> I'd prefer that it go into linux-next in the usual fashion.  But the
-> first step is review..
+> This would seem like a particularly low overhead space and performance
+> tweak.  (performance since read/write speed will be increased for
+> "average" files that contain a few null blocks)
+> 
+> Any thoughts?
 
-I'm updating the various docs on the btrfs wiki.  From a kernel impact
-point of view, btrfs only changes fs/Kconfig and fs/Makefile.
+The first comment is that it won't be as fast as you expect ;)  Most
+disks read 64k of data about as fast as they read 4k of data, and so if
+you have a file with zeros sprinkled around the disk will end up reading
+the zeros and just not sending them back to you.
 
-Some of the most visible problems in the code are:
+Jim is definitely right about the cost of metadata for smaller extents.
+Putting pointers to the zero extent into the file will greatly increase
+the number of extents needed to describe a single file.
 
-No support for fs blocksizes other than the page size.  This includes
-data blocks and btree leaves/nodes.  In both cases, the infrastructure
-to do it is about 1/2 there, but some ugly problems remain.
+Traditional filesystems usually don't detect zeros and skip them because
+userland will often write zeros to preallocate the file.  Unless btrfs
+is in nodatacow mode, that preallocation step doesn't really impact
+layout and we could map zeros to a virtual extent that was never written
+or read.
 
-btrfs_file_write should just be removed in favor of write_begin/end.
-Right now, the main thing btrfs_file_write does is the dance to setup
-delalloc, so this should be fairly easy.
-
-The multi-device code uses a very simple brute force scan from userland
-to populate the list of devices that belong to a given FS.  Kay Sievers
-has some ideas on hotplug magic to make this less dumb.  (The scan isn't
-required for single device filesystems).
-
-extent_io.c should be split up into two files, one for the extent_buffer
-code and one for the state bit code.
-
-struct-funcs.c needs a big flashing neon sign about what it does and
-why.  The extent_buffer interface needs much clearer documentation
-around why it is there and how it works.
-
-There are too many worker threads.  At least some of them should be
-shared between filesystems instead of started for each FS.  Each pool of
-worker thread represents some operation that would end up deadlocking if
-it shared threads with another pool.
-
-There are too many memory allocations on the IO submission path.  It
-needs mempools and other steps to limit the amount of ram used to write
-a single block.
-
-The IO submission path is generally twisty, with helper threads and
-lookup functions.  There is quite a bit going on here in terms of
-asynchronous checksumming and compression and it needs better
-documentation.
-
-ENOSPC == BUG()
-
-The extent allocation tree is what records which extents are allocated
-on disk, and tree blocks for the extent allocation tree allocated from
-the extent allocation tree.  This recursion is controlled by deferring
-some operations for later processing, and the resulting complexity needs
-better documentation.
+But at the end of the day, the main place that zeros come from is
+benchmarking programs.  I would prefer to use compression or dedup and
+get larger benefits than to optimize away 4k at a time here and there.
 
 -chris
 

@@ -1,70 +1,49 @@
-From: "Kay Sievers" <kay.sievers@vrfy.org>
-Subject: Re: btrfs and hotplug, auto-assembly, auto-setup, ...
-Date: Thu, 11 Dec 2008 03:08:14 +0100
-Message-ID: <ac3eb2510812101808p4a2d3c12n70eddee64dc87106@mail.gmail.com>
-References: <ac3eb2510812091002g7d7c163am55f44b188dea0ef6@mail.gmail.com>
-	 <1228959014.21376.6.camel@think.oraclecorp.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Btrfs trees for linux-next
+Date: Wed, 10 Dec 2008 21:34:56 -0500
+Message-ID: <1228962896.21376.11.camel@think.oraclecorp.com>
+References: <1227183484.6161.17.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org, Greg <greg@kroah.com>
-To: "Chris Mason" <chris.mason@oracle.com>
+Content-Type: text/plain
+Cc: linux-btrfs@vger.kernel.org,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+	Andrew Morton <akpm@linux-foundation.org>, sfr@canb.auug.org.au
+To: linux-kernel@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1228959014.21376.6.camel@think.oraclecorp.com>
+In-Reply-To: <1227183484.6161.17.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 11, 2008 at 02:30, Chris Mason <chris.mason@oracle.com> wrote:
-> On Tue, 2008-12-09 at 19:02 +0100, Kay Sievers wrote:
+On Thu, 2008-11-20 at 07:18 -0500, Chris Mason wrote:
+> Hello everyone,
+> 
+> I've updated the btrfs git trees to 2.6.28-rc5 and tested against
+> linux-next.
+> 
+> We've knocked a bunch of things off the todo list since I last posted,
+> including compression (mount -o compress) and the ability to create
+> subvols and snapshots anywhere in the FS.
+> 
+> There are a small number of disk format changes pending, which I put off
+> in favor of making compression stable/fast.  We'll hammer these out
+> shortly.
+> 
 
->> At a first look, it looks very promising, and I really like the idea
->> that the state of the (possibly incomplete) device tree is kept in the
->> kernel, and not somewhere in a file in userspace, like we usually see
->> for all sorts of multi-volume/multi-device setups. It should make
->> things much easier as usual.
->>
->
-> I hope so, at least its the only way I can keep my brain wrapped around
-> it.
+Just an update, while I still have a long todo list and plenty of things
+to fix in the code, these src trees have been updated with a disk format
+I hope to maintain compatibility with from here on.  There are still
+format changes planned, but should go in through the compat mechanisms
+in the sources now.
 
-Yeah, it makes a lot of sense.
+The btrfs trees are still at 2.6.28-rc5, but I just tested against
+linux-next without problems.
 
->> Like with every other subsystem, people will expect btrfs to just work
->> with hotpluggable devices, without much configuration and explicit
->> setup after device connect. To assemble a mountable volume, we will
->> need to find the (possibly several independent) devices containing the
->> btrfs data.
->
-> I did somewhat have hotplug in mind, there is btrfsctl -a to scan all
-> of /dev and btrfsctl -A to scan a single device.
+> The btrfs kernel code is here:
+> http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=summary
+> 
+> And the utilities are here:
+> 
+> http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-progs-unstable.git;a=summary
 
-That works fine here. We just need to offer some non-sequential
-scanning for some setups, to be reliable. But that should be fine, if
-we find a way to plug the information together.
+-chris
 
-> Now that I have something close to a stable super block location and
-> magic, I think the plan below is pretty good.  The majority of my plan
-> here was to make a simple ioctl that hotplug could trigger, and let
-> someone who knew hotplug better make suggetions on the best way to
-> present the information.
 
-I have the btrfs detection code in udev since while, to be able to
-test it, and I'm tracking the changes.
-
-After the metadata is finalized, I will come up with a few working
-examples how we could make this information easily available, and
-possible integrate it into the tools, and we can decide what we think
-is the best.
-
-One thing I like to check now, if I got it correctly - the volume that
-gets mounted has:
-  btrfs_super_block.fsid (the volume, may be used for mount-by-label)
-  btrfs_super_block.label (the volume, may be used for mount-by-label)
-
-The devices the volume is assembled from, which can be several, have:
-  btrfs_super_block.dev_item.uuid (the device uuid, not used in userspace)
-  btrfs_super_block.dev_item.fsid (the volume uuid, matches
-btrfs_super_block.fsid)
-
-Is this correct?
-
-Thanks,
-Kay

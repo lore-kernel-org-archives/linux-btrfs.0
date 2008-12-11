@@ -1,50 +1,33 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: btrfs and hotplug, auto-assembly, auto-setup, ...
-Date: Thu, 11 Dec 2008 08:14:51 -0500
-Message-ID: <1229001291.22236.23.camel@think.oraclecorp.com>
-References: <ac3eb2510812091002g7d7c163am55f44b188dea0ef6@mail.gmail.com>
-	 <1228959014.21376.6.camel@think.oraclecorp.com>
-	 <ac3eb2510812101808p4a2d3c12n70eddee64dc87106@mail.gmail.com>
+From: jim owens <jowens@hp.com>
+Subject: Re: Auto-sparseifying
+Date: Thu, 11 Dec 2008 08:54:47 -0500
+Message-ID: <49411BA7.8030708@hp.com>
+References: <1228989948.17969.24.camel@mattos-laptop>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org, Greg <greg@kroah.com>
-To: Kay Sievers <kay.sievers@vrfy.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Oliver Mattos <oliver.mattos08@imperial.ac.uk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <ac3eb2510812101808p4a2d3c12n70eddee64dc87106@mail.gmail.com>
+In-Reply-To: <1228989948.17969.24.camel@mattos-laptop>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2008-12-11 at 03:08 +0100, Kay Sievers wrote:
-[ ... ]
+... and also Data De-duplication...
 
-> I have the btrfs detection code in udev since while, to be able to
-> test it, and I'm tracking the changes.
-> 
-> After the metadata is finalized, I will come up with a few working
-> examples how we could make this information easily available, and
-> possible integrate it into the tools, and we can decide what we think
-> is the best.
-> 
-> One thing I like to check now, if I got it correctly - the volume that
-> gets mounted has:
->   btrfs_super_block.fsid (the volume, may be used for mount-by-label)
->   btrfs_super_block.label (the volume, may be used for mount-by-label)
+A reality check before people go off the deep end here
+on these two space saving methods.  It is interesting to
+know the "duplicate 512 byte blocks" and "null sequences"
+from a statistical point of view.  But it is not practical
+to sparse/de-dup at such a small granularity in the FS.
 
-Yes
+The trade off everyone is missing is that each sparse/dup
+is an *extent* that must be tracked in the FS and to do
+a read you must send a new *I/O for each disk extent*.
 
-> 
-> The devices the volume is assembled from, which can be several, have:
->   btrfs_super_block.dev_item.uuid (the device uuid, not used in userspace)
->   btrfs_super_block.dev_item.fsid (the volume uuid, matches
-> btrfs_super_block.fsid)
+So we blow the metadata structures into unwieldy sizes
+and we beat the crap out of the disk.  Even with an SSD
+we add tremendous traffic in the I/O pipeline.
 
-Yes, that's right.  Just to confuse things a little more there's some
-called a seed filesystem, so FS B can point to FS A and include all of
-its devices.
+Sparse/de-dup on VM page sizes may work OK for small files
+but is still not efficient for large files.
 
-But, this pointing happens inside the FS device tree and not at the
-super block level.  It just points to the fs uuid, so I think your
-existing setup will be sufficient.
-
--chris
-
-
+jim

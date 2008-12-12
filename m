@@ -1,35 +1,34 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: PROBLEM: oops when running fsstress against compressed btrfs
- filesystem
-Date: Fri, 12 Dec 2008 12:09:12 -0500
-Message-ID: <1229101752.11620.6.camel@think.oraclecorp.com>
-References: <493860B8.4040309@hp.com>
-	 <1229091958.11620.3.camel@think.oraclecorp.com>
+From: "Yehuda Sadeh Weinraub" <yehudasa@gmail.com>
+Subject: [PATCH] fix wrong value returned from btrfs_listxattr when buffer is too small
+Date: Fri, 12 Dec 2008 14:36:21 -0800
+Message-ID: <a37615150812121436w57f43184g71b297369f3923e1@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org
-To: Eric Whitney <eric.whitney@hp.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1229091958.11620.3.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2008-12-12 at 09:25 -0500, Chris Mason wrote:
-> On Thu, 2008-12-04 at 17:59 -0500, Eric Whitney wrote:
-> > Chris:
-> > 
-> > I'm consistently getting oopses when running fsstress against both 
-> > single and multiple device compressed btrfs filesystems using kernels 
-> > built from the current btrfs-unstable.
-> > 
-> 
-> Sorry it took so long to reply to this one, I wanted to get the new csum
-> code nailed down before I asked you to retest.  I've changed big parts
-> of the compressed IO submission path, and I'd like to see if this bug is
-> still a problem.
-> 
+Fix bug, btrfs_listxattr doesn't return an error when the buffer size
+is too small (ret was overridden).
 
-Ouch, looks like it reproduces right away.  Looking now, thanks Eric.
+Signed-off-by: Yehuda Sadeh <yehuda@hq.newdream.net>
+---
+ fs/btrfs/xattr.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
--chris
+diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
+index adb4b32..4146f07 100644
+--- a/fs/btrfs/xattr.c
++++ b/fs/btrfs/xattr.c
+@@ -226,7 +226,7 @@ ssize_t btrfs_listxattr(struct dentry *dentry,
+char *buffer, size_t size)
 
+ 		if (!buffer || (name_len + 1) > size_left) {
+ 			ret = -ERANGE;
+-			break;
++			goto err;
+ 		}
 
+ 		name_ptr = (unsigned long)(di + 1);
+-- 
+1.5.6.5

@@ -1,31 +1,37 @@
-From: devzero@web.de
-Subject: daily snapshots ?
-Date: Sun, 14 Dec 2008 00:16:07 +0100
-Message-ID: <541783609@web.de>
+From: Chris Samuel <chris@csamuel.org>
+Subject: Re: Data De-duplication
+Date: Sun, 14 Dec 2008 23:25:21 +1100
+Message-ID: <200812142325.24073.chris@csamuel.org>
+References: <1228862899.8130.1.camel@mattos-laptop> <1228943437.7571.1.camel@mattos-laptop> <20081210211903.GA29002@bludgeon.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-15
+Content-Type: text/plain;
+  charset="iso-8859-1"
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20081210211903.GA29002@bludgeon.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello !
+On Thu, 11 Dec 2008 8:19:03 am Ray Van Dolson wrote:
 
-is there a way to get btrfs-unstable source without using git ?
+> I'm not sure why this hasn't caught on, but as soon as a solid and fast
+> implementation of it exists in the Linux world I really think it can
+> catch on for VM datastores.... I know we've hollered at Sun as to why
+> they haven't rolled it out for ZFS yet!
 
-i`m trying for a while now, but it seems git doesn`t work as desired on=
- my system or the problem is that i`m behind http proxy.
+Might NetApp have patented the technique ?
 
-what about some unstable snapshots in http://www.kernel.org/pub/linux/k=
-ernel/people/mason/btrfs/ ?
+Would be a similar situation to the issues [1] that the KSM work [2] fell into 
+with trying to prevent duplication of pages.
 
-regards
-roland
-____________________________________________________________________
-Psssst! Schon vom neuen WEB.DE MultiMessenger geh=F6rt?=20
-Der kann`s mit allen: http://www.produkte.web.de/messenger/?did=3D3123
+cheers,
+Chris
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+[1] - http://lwn.net/Articles/309155/
+[2] - http://lwn.net/Articles/306704/
+
+-- 
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+
+This email may come with a PGP signature as a file. Do not panic.
+For more info see: http://en.wikipedia.org/wiki/OpenPGP
+

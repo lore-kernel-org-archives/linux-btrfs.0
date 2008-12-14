@@ -1,37 +1,71 @@
-From: Chris Samuel <chris@csamuel.org>
-Subject: Re: Data De-duplication
-Date: Sun, 14 Dec 2008 23:25:21 +1100
-Message-ID: <200812142325.24073.chris@csamuel.org>
-References: <1228862899.8130.1.camel@mattos-laptop> <1228943437.7571.1.camel@mattos-laptop> <20081210211903.GA29002@bludgeon.org>
+From: devzero@web.de
+Subject: Re: daily snapshots ?
+Date: Sun, 14 Dec 2008 14:20:52 +0100
+Message-ID: <542216230@web.de>
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="iso-8859-1"
+Content-Type: text/plain; charset=iso-8859-15
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20081210211903.GA29002@bludgeon.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 11 Dec 2008 8:19:03 am Ray Van Dolson wrote:
+> is there a way to get btrfs-unstable source without using git ?
 
-> I'm not sure why this hasn't caught on, but as soon as a solid and fast
-> implementation of it exists in the Linux world I really think it can
-> catch on for VM datastores.... I know we've hollered at Sun as to why
-> they haven't rolled it out for ZFS yet!
+ok, there is gitweb. i didn`t know it has that snapshot-download option=
+=2E..
 
-Might NetApp have patented the technique ?
+unfortunately, i cannot download btrfs snapshot via kernel.org gitweb..=
+=2E.
 
-Would be a similar situation to the issues [1] that the KSM work [2] fell into 
-with trying to prevent duplication of pages.
+trying to fetch=20
 
-cheers,
-Chris
+http://git.kernel.org/?p=3Dlinux/kernel/git/mason/btrfs-unstable-standa=
+lone.git;a=3Dsnapshot;h=3Dde86116b1b1a7765712fb7ea695d931ab3588c42
 
-[1] - http://lwn.net/Articles/309155/
-[2] - http://lwn.net/Articles/306704/
+or=20
 
--- 
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+http://git.kernel.org/?p=3Dlinux/kernel/git/mason/btrfs-unstable-standa=
+lone.git;a=3Dsnapshot;h=3DHEAD
 
-This email may come with a PGP signature as a file. Do not panic.
-For more info see: http://en.wikipedia.org/wiki/OpenPGP
+i`m just getting "Generating....", but nothing happens.=20
 
+i woul expect that i get a tar.gz like here:
+http://gitweb.opencompositing.org/?p=3Dfusion/decorators/emerald;a=3Dsn=
+apshot;h=3DHEAD
+
+i kernel.org gitweb broken ?
+
+regards
+roland
+
+
+> -----Urspr=FCngliche Nachricht-----
+> Von: <devzero@web.de>
+> Gesendet: 14.12.08 00:16:07
+> An: linux-btrfs@vger.kernel.org
+> Betreff: daily snapshots ?
+
+
+> Hello !
+>=20
+> is there a way to get btrfs-unstable source without using git ?
+>=20
+> i`m trying for a while now, but it seems git doesn`t work as desired =
+on my system or the problem is that i`m behind http proxy.
+>=20
+> what about some unstable snapshots in http://www.kernel.org/pub/linux=
+/kernel/people/mason/btrfs/ ?
+>=20
+> regards
+> roland
+
+
+_______________________________________________________________________
+Sensationsangebot verl=E4ngert: WEB.DE FreeDSL - Telefonanschluss + DSL
+f=FCr nur 16,37 Euro/mtl.!* http://dsl.web.de/?ac=3DOM.AD.AD008K15039B7=
+069a
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

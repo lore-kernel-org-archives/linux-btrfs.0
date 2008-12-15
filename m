@@ -1,37 +1,38 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: sync-related lockdep warnings
-Date: Mon, 15 Dec 2008 16:01:23 -0500
-Message-ID: <1229374883.16295.27.camel@think.oraclecorp.com>
-References: <Pine.LNX.4.64.0812151045270.3815@cobra.newdream.net>
+From: Andreas Dilger <adilger@sun.com>
+Subject: Re: Btrfs trees for linux-next
+Date: Mon, 15 Dec 2008 14:03:23 -0700
+Message-ID: <20081215210323.GB5000@webber.adilger.int>
+References: <1227183484.6161.17.camel@think.oraclecorp.com>
+ <1228962896.21376.11.camel@think.oraclecorp.com>
+ <20081211141436.030c2d65.sfr@canb.auug.org.au>
+ <20081210200604.8e190b0d.akpm@linux-foundation.org>
+ <1229006596.22236.46.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org
-To: Sage Weil <sage@newdream.net>
+Content-Type: text/plain; charset=us-ascii
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+	Stephen Rothwell <sfr@canb.auug.org.au>,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <Pine.LNX.4.64.0812151045270.3815@cobra.newdream.net>
+In-reply-to: <1229006596.22236.46.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2008-12-15 at 11:01 -0800, Sage Weil wrote:
-> Hi-
-> 
-> I've been regularly getting a lockdep warning on inode_lock vs tree->lock.  
-> It is quickly triggered by my code, which calls ioctl(fd, BTRFS_IOC_SYNC) 
-> (which just does a btrfs_sync_fs) at regular intervals.
-> 
-> 	http://ceph.newdream.net/dump/btrfs-lockdep-sync-ioctl.txt
-> 
-> The second warning is similar, but looks to be a bit more revealing.  It 
-> is easily triggered by 'while [ 1 ] ; do sync ; done' and then something 
-> like 'echo a > a' a few times.
-> 
-> 	http://ceph.newdream.net/dump/btrfs-lockdep-sync.txt
-> 
-> Let me know if there's any other info on my end that would help sort this 
-> out...
+On Dec 11, 2008  09:43 -0500, Chris Mason wrote:
+> The multi-device code uses a very simple brute force scan from userland
+> to populate the list of devices that belong to a given FS.  Kay Sievers
+> has some ideas on hotplug magic to make this less dumb.  (The scan isn't
+> required for single device filesystems).
 
-If you pull from btrfs-unstable, this should be fixed.
+This should use libblkid to do the scanning of the devices, and it can
+cache the results for efficiency.  Best would be to have the same LABEL+UUID
+for all devices in the same filesystem, and then once any of these devices
+are found the mount.btrfs code can query the rest of the devices to find
+the remaining parts of the filesystem.
 
-Thanks,
-Chris
-
+Cheers, Andreas
+--
+Andreas Dilger
+Sr. Staff Engineer, Lustre Group
+Sun Microsystems of Canada, Inc.
 

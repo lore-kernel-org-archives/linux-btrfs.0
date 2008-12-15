@@ -1,40 +1,29 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: PROBLEM: oops when running fsstress against compressed btrfs
- filesystem
-Date: Mon, 15 Dec 2008 13:43:06 -0500
-Message-ID: <1229366586.16295.2.camel@think.oraclecorp.com>
-References: <493860B8.4040309@hp.com>
+From: Sage Weil <sage@newdream.net>
+Subject: sync-related lockdep warnings
+Date: Mon, 15 Dec 2008 11:01:29 -0800 (PST)
+Message-ID: <Pine.LNX.4.64.0812151045270.3815@cobra.newdream.net>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org
-To: Eric Whitney <eric.whitney@hp.com>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <493860B8.4040309@hp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2008-12-04 at 17:59 -0500, Eric Whitney wrote:
-> Chris:
-> 
-> I'm consistently getting oopses when running fsstress against both 
-> single and multiple device compressed btrfs filesystems using kernels 
-> built from the current btrfs-unstable.
-> 
-> In this report, I'm describing an incident with a single device 
-> filesystem.  Once the oops occurs, all I/O appears to stop though iowait 
-> is still reported, and fsstress does not make apparent forward progress. 
->   The system otherwise remains responsive.
-> 
-> The system is a dual socket, quad core Intel machine with an attached 
-> hardware RAID controller.  The latter supplies a six disk RAID0 volume 
-> used for the filesystem.
-> 
-> Particulars follow - please let me know if you'd like more information, etc.
+Hi-
 
-Ok, this was a bug dealing with writing files that had been truncated
-with dirty pages in them.
+I've been regularly getting a lockdep warning on inode_lock vs tree->lock.  
+It is quickly triggered by my code, which calls ioctl(fd, BTRFS_IOC_SYNC) 
+(which just does a btrfs_sync_fs) at regular intervals.
 
-It should be fixed in the latest git trees.
+	http://ceph.newdream.net/dump/btrfs-lockdep-sync-ioctl.txt
 
--chris
+The second warning is similar, but looks to be a bit more revealing.  It 
+is easily triggered by 'while [ 1 ] ; do sync ; done' and then something 
+like 'echo a > a' a few times.
 
+	http://ceph.newdream.net/dump/btrfs-lockdep-sync.txt
+
+Let me know if there's any other info on my end that would help sort this 
+out...
+
+sage
 

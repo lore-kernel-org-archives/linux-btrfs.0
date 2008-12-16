@@ -1,43 +1,88 @@
 From: "Roland" <devzero@web.de>
-Subject: weird bash autocomplete issue
-Date: Tue, 16 Dec 2008 20:37:30 +0100
-Message-ID: <098b01c95fb5$bc2d1440$0301a8c0@bui.materna.com>
+Subject: Re: Compressed Filesystem
+Date: Tue, 16 Dec 2008 20:45:13 +0100
+Message-ID: <099201c95fb6$d0633920$0301a8c0@bui.materna.com>
+References: <543762723@web.de> <20081216152004.GA7002@tux64-01> <1229441170.27573.19.camel@think.oraclecorp.com> <20081216162500.GA9685@tux64-01>
 Mime-Version: 1.0
 Content-Type: text/plain;
 	format=flowed;
 	charset="iso-8859-1";
 	reply-type=original
-To: <linux-btrfs@vger.kernel.org>
+Cc: <linux-btrfs@vger.kernel.org>
+To: "Lee Trager" <lt73@cs.drexel.edu>,
+	"Chris Mason" <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-hi,
+>I agree that adding more options will add more complexity but it seems
+> the same amount of work in kernel space will have to be done
 
-i have come across a weird autocomplete issue i assume it is related to 
-btrfs.
-
-let`s have some dirs:
-
-/non-btrfs-mount
-    ./linux
-    ./testdir
-
-/brtfs-mount
-    ./linux
-    ./testdir
-
-now, if i do "cd t<tab>" in /non-btrfs-mount, "t" autocompletes to "testdir"
-same for l<tab>inux - bash autocompletes as expected.
-
-now, the weird thing is, that on /btrfs-mount this behaves different.
-
-autocompletion for testdir works, but not for linux dir. weird.
-
-can someone reproduce this ?
-
-i`m on opensuse 11.1 with 2.6.27.8-1-default and latest btrfs-unstable from 
-git.
+regarding lzo compression itself - it`s already there(since july 2007).
+the in-kernel lzo is equivalent to minilzo. 
+(http://www.oberhumer.com/opensource/lzo/)
 
 regards
-roland 
+roland
+
+
+----- Original Message ----- 
+From: "Lee Trager" <lt73@cs.drexel.edu>
+To: "Chris Mason" <chris.mason@oracle.com>
+Cc: "Lee Trager" <lt73@cs.drexel.edu>; <devzero@web.de>; 
+<linux-btrfs@vger.kernel.org>
+Sent: Tuesday, December 16, 2008 5:25 PM
+Subject: Re: Compressed Filesystem
+
+
+>I agree that adding more options will add more complexity but it seems
+> the same amount of work in kernel space will have to be done. If we
+> support mutiple compression schemes somewhere the compression scheme
+> used will have to be stored so we know what to use in the future. If we
+> store it on the super block the user will have to choose when they
+> format at which point they may not see the need to use compression. Or
+> they may choose one compression scheme and later want to change to
+> something else. It doesn't make sence to have to reformat your drive
+> just to change compression scheme. This leaves us with storing what the
+> compression scheme is on each inode.  We currently store if compression
+> is used on a per inode basis so storing the type wouldn't be a huge
+> leap.
+>
+> Lee
+> On Tue, Dec 16, 2008 at 10:26:10AM -0500, Chris Mason wrote:
+>> On Tue, 2008-12-16 at 10:20 -0500, Lee Trager wrote:
+>> > While I agree that the command you send should be possible it wasn't
+>> > exactly what I was thinking. Currently I am working on a way for the
+>> > user to individually set which files/directories they want compressed 
+>> > or
+>> > not. What I was saying is that assuming you are in a mounted btrfs
+>> > directory you could do something like
+>> >
+>> > chattr -R +c zlib dir1 Compress dir1 and all its contents with zlib
+>> > chattr -R +c bzip dir2 Compress dir2 and all its contents with bzip
+>> > chattr +c lzo file1 Compress fil1 with lzo
+>> > chattr -c file2 Uncompress file2
+>> > chattr +c none dir3 Uncompress dir3 but leave contents as is
+>> >
+>> > If the user did something like
+>> > mount -o compress,cscheme=zlib /dev/xyz /mntpoint
+>> > and then
+>> > chattr +c /mntpoint/dir
+>> > /mntpoint/dir would default to zlib as would anything else written to
+>> > the disk.
+>> >
+>>
+>> This is one of those places where more options isn't always better.
+>> Every option adds complexity to the filesystem and the testing matrix.
+>>
+>> I'd much rather have just one compression scheme per FS.  If people need
+>> a specific compression scheme for a specific file, they can just
+>> compress it in userland.
+>>
+>> -chris
+>>
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html 
 

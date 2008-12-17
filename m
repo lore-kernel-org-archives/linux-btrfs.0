@@ -1,41 +1,61 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: sync-related lockdep warnings
-Date: Wed, 17 Dec 2008 11:03:27 -0500
-Message-ID: <1229529807.27170.34.camel@think.oraclecorp.com>
-References: <Pine.LNX.4.64.0812151045270.3815@cobra.newdream.net>
-	 <1229374883.16295.27.camel@think.oraclecorp.com>
+From: Michele Petrazzo <michele.petrazzo@unipex.it>
+Subject: compilation problem on last unstable
+Date: Wed, 17 Dec 2008 17:43:50 +0000 (UTC)
+Message-ID: <loom.20081217T174132-393@post.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org
-To: Sage Weil <sage@newdream.net>
+Content-Type: text/plain; charset=utf-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1229374883.16295.27.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2008-12-15 at 16:01 -0500, Chris Mason wrote:
-> On Mon, 2008-12-15 at 11:01 -0800, Sage Weil wrote:
-> > Hi-
-> > 
-> > I've been regularly getting a lockdep warning on inode_lock vs tree->lock.  
-> > It is quickly triggered by my code, which calls ioctl(fd, BTRFS_IOC_SYNC) 
-> > (which just does a btrfs_sync_fs) at regular intervals.
-> > 
-> > 	http://ceph.newdream.net/dump/btrfs-lockdep-sync-ioctl.txt
-> > 
-> > The second warning is similar, but looks to be a bit more revealing.  It 
-> > is easily triggered by 'while [ 1 ] ; do sync ; done' and then something 
-> > like 'echo a > a' a few times.
-> > 
-> > 	http://ceph.newdream.net/dump/btrfs-lockdep-sync.txt
-> > 
-> > Let me know if there's any other info on my end that would help sort this 
-> > out...
-> 
-> If you pull from btrfs-unstable, this should be fixed.
+Hi,
+I just tried to compile the last unstable version, but:
 
-Well, not so much fixed as traded for a different lockdep warning of the
-same time.  I've got a new patch in testing here ;)
+  CC [M]  /home/michele/btrfs-unstable-standalone/inode.o
+/home/michele/btrfs-unstable-standalone/inode.c: In function =E2=80=98b=
+trfs_new_inode=E2=80=99:
+/home/michele/btrfs-unstable-standalone/inode.c:3470: error: implicit
+declaration of function =E2=80=98current_fsuid=E2=80=99
+/home/michele/btrfs-unstable-standalone/inode.c:3471: error: implicit
+declaration of function =E2=80=98current_fsgid=E2=80=99
+/home/michele/btrfs-unstable-standalone/inode.c: In function=20
+=E2=80=98btrfs_cache_create=E2=80=99:
+/home/michele/btrfs-unstable-standalone/inode.c:4527: warning: passing =
+argument
+5 of =E2=80=98kmem_cache_create=E2=80=99 from incompatible pointer type
+/home/michele/btrfs-unstable-standalone/inode.c: At top level:
+/home/michele/btrfs-unstable-standalone/inode.c:4966: warning: initiali=
+zation
+from incompatible pointer type
+/home/michele/btrfs-unstable-standalone/inode.c:4970: warning: initiali=
+zation
+from incompatible pointer type
+/home/michele/btrfs-unstable-standalone/inode.c:5024: warning: initiali=
+zation
+from incompatible pointer type
+/home/michele/btrfs-unstable-standalone/inode.c:5030: warning: initiali=
+zation
+from incompatible pointer type
+/home/michele/btrfs-unstable-standalone/inode.c:5040: warning: initiali=
+zation
+from incompatible pointer type
+make[2]: *** [/home/michele/btrfs-unstable-standalone/inode.o] Error 1
+make[1]: *** [_module_/home/michele/btrfs-unstable-standalone] Error 2
+make[1]: Leaving directory `/usr/src/linux-headers-2.6.26-1-686'
+make: *** [all] Error 2
+michele:~/btrfs-unstable-standalone$=20
 
--chris
 
+michele:~/btrfs-unstable-standalone$ uname -r
+2.6.26-1-686
 
+from debian=20
+
+Thanks,
+Michele
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

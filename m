@@ -1,157 +1,107 @@
-From: Andreas Dilger <adilger@sun.com>
-Subject: Re: Notes on support for multiple devices for a single filesystem
-Date: Wed, 17 Dec 2008 15:04:49 -0700
-Message-ID: <20081217220449.GC5000@webber.adilger.int>
-References: <1227183484.6161.17.camel@think.oraclecorp.com>
- <1228962896.21376.11.camel@think.oraclecorp.com>
- <20081211141436.030c2d65.sfr@canb.auug.org.au>
- <20081210200604.8e190b0d.akpm@linux-foundation.org>
- <1229006596.22236.46.camel@think.oraclecorp.com>
- <20081215210323.GB5000@webber.adilger.int>
- <20081217132343.GA14695@infradead.org>
+From: "Kay Sievers" <kay.sievers@vrfy.org>
+Subject: Re: weird bash autocomplete issue
+Date: Wed, 17 Dec 2008 23:15:29 +0100
+Message-ID: <ac3eb2510812171415u1b2fc166r2ba10999542808fe@mail.gmail.com>
+References: <545246795@web.de>
+	 <ac3eb2510812161341x6af4b26erc4254850f11a6fcc@mail.gmail.com>
+	 <1229482522.7574.6.camel@nga>
+	 <120501c96025$3bfca7c0$0301a8c0@bui.materna.com>
+	 <ac3eb2510812170559o32e1942mbaac558dfc380f19@mail.gmail.com>
+	 <1229523456.27170.4.camel@think.oraclecorp.com>
+	 <ac3eb2510812170646t5f02a9dfp6b01382c84db939d@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Stephen Rothwell <sfr@canb.auug.org.au>,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>
-To: Christoph Hellwig <hch@infradead.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: Roland <devzero@web.de>, linux-btrfs@vger.kernel.org
+To: "Chris Mason" <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <20081217132343.GA14695@infradead.org>
+In-Reply-To: <ac3eb2510812170646t5f02a9dfp6b01382c84db939d@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Dec 17, 2008  08:23 -0500, Christoph Hellwig wrote:
-> == Prior art ==
-> 
-> * External log and realtime volume
-> 
-> The most common way to specify the external log device and the XFS real time
-> device is to have a mount option that contains the path to the block special
-> device for it.  This variant means a mount option is always required, and
-> requires the device name doesn't change, which is enough with udev-generated
-> unique device names (/dev/disk/by-{label,uuid}).
-> 
-> An alternative way, supported by optionally by ext3 and reiserfs and
-> exclusively supported by jfs is to open the journal device by the device
-> number (dev_t) of the block special device.  While this doesn't require
-> an additional mount option when the device number is stored in the filesystem
-> superblock it relies on the device number being stable which is getting
-> increasingly unlikely in complex storage topologies.
+On Wed, Dec 17, 2008 at 15:46, Kay Sievers <kay.sievers@vrfy.org> wrote:
+> On Wed, Dec 17, 2008 at 15:17, Chris Mason <chris.mason@oracle.com> wrote:
+>> On Wed, 2008-12-17 at 14:59 +0100, Kay Sievers wrote:
+>>> On Wed, Dec 17, 2008 at 09:45, Roland <devzero@web.de> wrote:
+>>> >> On Tue, 2008-12-16 at 22:41 +0100, Kay Sievers wrote:
+>>> >>>
+>>> >>> > open(".", O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_DIRECTORY|O_CLOEXEC) = 3
+>>> >>> > fstat64(3, {st_dev=makedev(0, 19), st_ino=256, st_mode=S_IFDIR|0555, >
+>>> >>> > st_nlink=1, st_uid=0, st_gid=0, st_blksize=4096, st_blocks=8, > st_size=18,
+>>> >>> > st_atime=2008/12/16-21:32:38, st_mtime=2008/12/16-21:32:37, >
+>>> >>> > st_ctime=2008/12/16-21:32:37}) = 0
+>>> >>> > getdents64(3, {{d_ino=256, d_off=2, d_type=DT_DIR, d_reclen=24, >
+>>> >>> > d_name="."} {d_ino=256, d_off=2, d_type=DT_DIR, d_reclen=24, > d_name=".."}
+>>> >>> > {d_ino=257, d_off=3, d_type=DT_DIR, d_reclen=24, > d_name="test"}
+>>> >>> > {d_ino=258, d_off=9223372036854775807, d_type=DT_DIR, > d_reclen=32,
+>>> >>> > d_name="linux"}}, 4096) = 104
+>>> >>> > _llseek(3, 3, [3], SEEK_SET)            = 0
+>>> >>> > getdents64(3, {{d_ino=258, d_off=9223372036854775807, d_type=DT_DIR, >
+>>> >>> > d_reclen=32, d_name="linux"}}, 4096) = 32
+>>> >>>
+>>> >>> On Tue, Dec 16, 2008 at 22:26,  <devzero@web.de> wrote:
+>>> >>> > i assume it has something to do with the large value for d_off of the >
+>>> >>> > last dirent ?
+>>> >>>
+>>> >>> Looks like, 9223372036854775807 is just LLONG_MAX.
+>>> >>
+>>> >> I can not reproduce that (on openSUSE 11.1). I also don't see
+>>> >> the _llseek() calls.
+>>> >
+>>> > weird. no btrfs issue then !?
+>>> >
+>>> >>
+>>> >> open(".", O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC) = 3
+>>> >> fstat(3, {st_dev=makedev(0, 18), ...
+>>> >> getdents64(3, {
+>>> >>  {d_ino=260, d_off=2, d_type=DT_DIR, d_reclen=24, d_name="."}
+>>> >>  {d_ino=256, d_off=2, d_type=DT_DIR, d_reclen=24, d_name=".."}
+>>> >>  {d_ino=261, d_off=3, d_type=DT_REG, d_reclen=24, d_name="a"}
+>>> >>  {d_ino=262, d_off=4, d_type=DT_REG, d_reclen=24, d_name="b"}
+>>> >>  {d_ino=263, d_off=5, d_type=DT_REG, d_reclen=24, d_name="c"}
+>>> >>  {d_ino=264, d_off=6, d_type=DT_DIR, d_reclen=24, d_name="test"}
+>>> >>  {d_ino=265, d_off=9223372036854775807, d_type=DT_DIR, d_reclen=32,
+>>> >> d_name="linux"}
+>>> >> }, 4096) = 176
+>>> >> getdents64(3, {}, 4096)                 = 0
+>>> >> close(3)
+>>> >>
+>>> >> This is with today's git kernel and today's standalone btrfs unstable.
+>>> >>
+>>> >> You are using the distro kernel and compile the standalone btrfs module?
+>>> >
+>>> > yes.
+>>> > to be honest, i`m slightly newer than 11.1 (did zypper dup to latest factory
+>>> > some days ago)
+>>> >
+>>> > linux:~ # bash -version
+>>> > GNU bash, version 3.2.39(1)-release (i586-suse-linux-gnu)
+>>> > Copyright (C) 2007 Free Software Foundation, Inc.
+>>>
+>>> That is still the same bash, the one you use is a 32bit version. Do
+>>> you run a 32 bit kernel too? I could try that on a 32 bit box then.
+>>
+>> At least on my 32 bit box, tab completion works fine.
+>
+> It works fine here too on 64 bit. I'll try with openSUSE 11.1 on a
+> 32bit box later tonight.
+>
+>> But, the d_off of
+>> LLONG_MAX comes from btrfs_readdir().  Git had a feature where it would
+>> loop infinitely over a directory in some cases and this was my
+>> workaround.
+>
+> There are other filesystems doing the same, usually with 32bit int max
+> instead of 64 bit int max, I guess that should work fine.
+>
+>> This should be fixed in git by now, so I can drop it if that really is
+>> causing problems in bash.
+>
+> I'll come back if I can reproduce it with the same environment Roland is using.
 
-Just as an FYI here - the dev_t stored in the ext3/4 superblock for the
-journal device is only a "cached" device.  The journal is properly
-identified by its UUID, and should the device mapping change there is a
-"journal_dev=" option that can be used to specify the new device.  The
-one shortcoming is that there is no mount.ext3 helper which does this 
-journal UUID->dev mapping and automatically passes "journal_dev=" if
-needed.
+I see the same issue on x86 32 bit, with the additional __llseek()
+between the getdents64(), and the last entry returned by readdir
+ignored.
 
-> * RAID (MD) and LVM
-> 
-> Recent MD setups and LVM2 thus move the scanning to user space, typically
-> using a command iterating over all block device nodes and performing the
-> format-specific scanning.  While this is more flexible
-> than the in-kernel scanning, it scales very badly to a large number of
-> block devices, and requires additional user space commands to run early
-> in the boot process.  A variant of this schemes runs a scanning callout
-> from udev once disk device are detected, which avoids the scanning overhead.
+If I change the returned LLONG_MAX to LONG_MAX in inode.c, it all
+works fine, and the __llseek() disappears.
 
-My (admittedly somewhat vague) impression is that with large numbers of
-devices the udev callout can itself be a huge overhead because this involves
-a userspace fork/exec for each new device being added.  For the same
-number of devices, a single scan from userspace only requires a single
-process, and an equal number of device probes.
-
-Added to this is that the blkid cache can be used to eliminate the need
-to do any scanning if the devices have not changed from the previous boot
-makes it unclear which mechanism is more efficient.  The drawback is that
-the initrd device cache is never going to be up-to-date so it wouldn't
-be useful until the root partition is mounted.
-
-We've used blkid for our testing of Lustre-on-DMU with up to 48 (local)
-disks w/o any kind of performance issues.  We'll eventually be able to
-test on systems with around 400 disks in a JBOD configuration, but until
-then we only run on systems with hundreds of disks behind a RAID controller.
-
-> == High-level design considerations ==
-> 
-> Due to requirement b) we need a layer that finds devices for a single
-> fstab entry.  We can either do this in user space, or in kernel space.
-> As we've traditionally always done UUID/LABEL to device mapping in
-> userspace, and we already have libvolume_id and libblkid dealing with
-> the specialized case of UUID/LABEL to single device mapping I would
-> recommend to keep doing this in user space and reuse libvolume_id/libblkid.
-> 
-> There are to options to perform the assembly of the device list for
-> a filesystem:
-> 
->  1) whenever libvolume_id / libblkid find a device detected as a multi-device
->     capable filesystem it gets added to a list of all devices of this
->     particular filesystem type.
->     On mount type mount(8) or a mount.fstype helpers calls out to the
->     libraries to get a list of devices belonging to this filesystem
->     type and translates them to device names, which can be passed to
->     the kernel on the mount command line.
-
-I would actually suggest that instead of keeping devices in groups by
-the filesystem type, rather keep a list of devices with the same UUID
-and/or LABEL, and if the mount is looking for this UUID/LABEL it gets
-the whole list of matching devices back.
-
-This could also be done in the kernel by having the filesystems register
-a "probe" function that examines the device/partitions as they are added,
-similar to the way that MD used to do it.  There would likely be very few
-probe functions needed, only ext3/4 (for journal devices), btrfs, and
-maybe MD, LVM2 and a handful more.
-
-If we wanted to avoid code duplication, this could share code between
-libblkid and the kernel (just the enhanced probe-only functions in the
-util-linux-ng implementation) since these functions are little more than
-"take a pointer, cast it to struct X, check some magic fields and return
-match + {LABEL, UUID}, or no-match".
-
-That MD used to check only the partition type doesn't mean that we can't
-have simple functions that read the superblock (or equivalent) to make
-an internal list of suitable devices attached to a filesystem-type global
-structure (possibly split into per-fsUUID sublists if it wants).  When
-filesystem X is mounted (using any one device from the filesystem passed
-to mount) it can quickly scan this list to find all devices that for that
-filesystem's UUID to assemble all of the required devices.
-
-Since the filesystem would internally have to verify the list of devices
-that would (somehow) be passed to the kernel during mount this doesn't
-really gain much to keep the list in userspace.
-
->     Advantage:    Requires a mount.fstype helper or fs-specific knowledge
->     		    in mount(8).
->     Disadvantages:  Required libvolume_id / libblkid to keep state.
-> 
->  2) whenever libvolume_id / libblkid find a device detected as a multi-device
->     capable filesystem they call into the kernel through and ioctl / sysfs /
->     etc to add it to a list in kernel space.  The kernel code then manages
->     to select the right filesystem instances, and either adds it to an already
->     running instance, or prepares a list for a future mount.
-
-While not performance critical, this seems that calling into userspace
-just to call back down into the kernel is more complex than it needs to
-be (i.e. prone to failure).
-
-I'm not stuck on doing this in the kernel, just thinking that the more
-components involved the more likely it is that something goes wrong.  I
-have enough grief with just initrd not having the right kernel module,
-I'd hate to depend on tools to do the device assembly for the root fs.
-
->     Advantages:    keeps state in the kernel instead of in libraries
->     Disadvantages: requires and additional user interface to mount
-> 
-> c) will be deal with an option that allows adding named block devices
-> on the mount command line, which is already required for design 1) but
-> would have to be implemented additionally for design 2).
-
-Cheers, Andreas
---
-Andreas Dilger
-Sr. Staff Engineer, Lustre Group
-Sun Microsystems of Canada, Inc.
-
+Kay

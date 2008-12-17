@@ -1,60 +1,78 @@
-From: "Lee Trager" <lt73@cs.drexel.edu>
-Subject: Re: compilation problem on last unstable
-Date: Wed, 17 Dec 2008 13:14:47 -0500
-Message-ID: <20081217181447.GA2986@tux64-01>
-References: <loom.20081217T174132-393@post.gmane.org>
+From: Andrew Morton <akpm@linux-foundation.org>
+Subject: Re: Notes on support for multiple devices for a single filesystem
+Date: Wed, 17 Dec 2008 11:53:25 -0800
+Message-ID: <20081217115325.3312858a.akpm@linux-foundation.org>
+References: <1227183484.6161.17.camel@think.oraclecorp.com>
+	<1228962896.21376.11.camel@think.oraclecorp.com>
+	<20081211141436.030c2d65.sfr@canb.auug.org.au>
+	<20081210200604.8e190b0d.akpm@linux-foundation.org>
+	<1229006596.22236.46.camel@think.oraclecorp.com>
+	<20081215210323.GB5000@webber.adilger.int>
+	<20081217132343.GA14695@infradead.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Michele Petrazzo <michele.petrazzo@unipex.it>
+Content-Type: text/plain; charset=US-ASCII
+Cc: adilger@sun.com, chris.mason@oracle.com, sfr@canb.auug.org.au,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org
+To: Christoph Hellwig <hch@infradead.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <loom.20081217T174132-393@post.gmane.org>
+In-Reply-To: <20081217132343.GA14695@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 17, 2008 at 05:43:50PM +0000, Michele Petrazzo wrote:
-> Hi,
-> I just tried to compile the last unstable version, but:
-> 
->   CC [M]  /home/michele/btrfs-unstable-standalone/inode.o
-> /home/michele/btrfs-unstable-standalone/inode.c: In function ???btrfs_new_inode???:
-> /home/michele/btrfs-unstable-standalone/inode.c:3470: error: implicit
-> declaration of function ???current_fsuid???
-> /home/michele/btrfs-unstable-standalone/inode.c:3471: error: implicit
-> declaration of function ???current_fsgid???
-> /home/michele/btrfs-unstable-standalone/inode.c: In function 
-> ???btrfs_cache_create???:
-> /home/michele/btrfs-unstable-standalone/inode.c:4527: warning: passing argument
-> 5 of ???kmem_cache_create??? from incompatible pointer type
-> /home/michele/btrfs-unstable-standalone/inode.c: At top level:
-> /home/michele/btrfs-unstable-standalone/inode.c:4966: warning: initialization
-> from incompatible pointer type
-> /home/michele/btrfs-unstable-standalone/inode.c:4970: warning: initialization
-> from incompatible pointer type
-> /home/michele/btrfs-unstable-standalone/inode.c:5024: warning: initialization
-> from incompatible pointer type
-> /home/michele/btrfs-unstable-standalone/inode.c:5030: warning: initialization
-> from incompatible pointer type
-> /home/michele/btrfs-unstable-standalone/inode.c:5040: warning: initialization
-> from incompatible pointer type
-> make[2]: *** [/home/michele/btrfs-unstable-standalone/inode.o] Error 1
-> make[1]: *** [_module_/home/michele/btrfs-unstable-standalone] Error 2
-> make[1]: Leaving directory `/usr/src/linux-headers-2.6.26-1-686'
-> make: *** [all] Error 2
-> michele:~/btrfs-unstable-standalone$ 
+On Wed, 17 Dec 2008 08:23:44 -0500
+Christoph Hellwig <hch@infradead.org> wrote:
+
+> FYI: here's a little writeup I did this summer on support for
+> filesystems spanning multiple block devices:
 > 
 > 
-> michele:~/btrfs-unstable-standalone$ uname -r
-> 2.6.26-1-686
+> -- 
 > 
-> from debian 
-Currently btrfs only compiles on 2.6.27 and above although support all
-the way back to 2.6.18 is planned. I'm currently using Ubuntu 8.10 for
-all btrfs testing.
+> === Notes on support for multiple devices for a single filesystem ===
 > 
-> Thanks,
-> Michele
+> == Intro ==
 > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Btrfs (and an experimental XFS version) can support multiple underlying block
+> devices for a single filesystem instances in a generalized and flexible way.
+> 
+> Unlike the support for external log devices in ext3, jfs, reiserfs, XFS, and
+> the special real-time device in XFS all data and metadata may be spread over a
+> potentially large number of block devices, and not just one (or two)
+> 
+> 
+> == Requirements ==
+> 
+> We want a scheme to support these complex filesystem topologies in way
+> that is
+> 
+>  a) easy to setup and non-fragile for the users
+>  b) scalable to a large number of disks in the system
+>  c) recoverable without requiring user space running first
+>  d) generic enough to work for multiple filesystems or other consumers
+> 
+> Requirement a) means that a multiple-device filesystem should be mountable
+> by a simple fstab entry (UUID/LABEL or some other cookie) which continues
+> to work when the filesystem topology changes.
+
+"device topology"?
+
+> Requirement b) implies we must not do a scan over all available block devices
+> in large systems, but use an event-based callout on detection of new block
+> devices.
+> 
+> Requirement c) means there must be some version to add devices to a filesystem
+> by kernel command lines, even if this is not the default way, and might require
+> additional knowledge from the user / system administrator.
+> 
+> Requirement d) means that we should not implement this mechanism inside a
+> single filesystem.
+> 
+
+One thing I've never seen comprehensively addressed is: why do this in
+the filesystem at all?  Why not let MD take care of all this and
+present a single block device to the fs layer?
+
+Lots of filesystems are violating this, and I'm sure the reasons for
+this are good, but this document seems like a suitable place in which to
+briefly decribe those reasons.
+

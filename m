@@ -1,27 +1,33 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Btrfs conference call
-Date: Wed, 17 Dec 2008 09:31:11 -0500
-Message-ID: <1229524271.27170.7.camel@think.oraclecorp.com>
+From: devzero@web.de
+Subject: Re: weird bash autocomplete issue
+Date: Wed, 17 Dec 2008 15:40:39 +0100
+Message-ID: <546232100@web.de>
 Mime-Version: 1.0
-Content-Type: text/plain
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=iso-8859-15
+Cc: linux-btrfs@vger.kernel.org
+To: Kay Sievers <kay.sievers@vrfy.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello everyone,
+> > linux:~ # bash -version
+> > GNU bash, version 3.2.39(1)-release (i586-suse-linux-gnu)
+> > Copyright (C) 2007 Free Software Foundation, Inc.
+>=20
+> That is still the same bash, the one you use is a 32bit version. Do
+> you run a 32 bit kernel too? I could try that on a 32 bit box then.
+>=20
+> Thanks,
+> Kay
+>=20
 
-There will be a btrfs conference call today Dec 17th.  Topics will
-include mainline merging, and making a new stable release.
+yes, all 32bit.=20
+_______________________________________________________________________
+T=E4glich 1.000.000 Euro gewinnen! Jetzt kostenlos WEB.DE MillionenKlic=
+k=20
+spielen! https://millionenklick.web.de/?mc=3Dmail@footer.mklick@home
 
-Time: 1:30pm US Eastern (10:30am Pacific)
-
-* Dial-in Number(s):
-* Toll Free: +1-888-967-2253
-* Toll  +1-650-607-2253 
-* Meeting id: 665734
-* Passcode: 428737 (which hopefully spells 4Btrfs)
-
--chris
-
-
-
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

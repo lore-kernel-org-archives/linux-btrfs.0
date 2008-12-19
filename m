@@ -1,170 +1,166 @@
 From: "Yehuda Sadeh Weinraub" <yehudasa@gmail.com>
-Subject: [PATCH 1/1] btrfs fiemap support
-Date: Fri, 19 Dec 2008 12:57:12 -0800
-Message-ID: <a37615150812191257r716db8dl10553f7556a0964@mail.gmail.com>
-References: <a37615150812191240h45bbf0fbwf091ae644ae1b162@mail.gmail.com>
+Subject: [PATCH 1/1] ioctl to fetch csums of file extents
+Date: Fri, 19 Dec 2008 13:14:40 -0800
+Message-ID: <a37615150812191314q30f7405agf40f4e6b352b123b@mail.gmail.com>
+References: <a37615150812191310y682c746bt4bd669c0fe5eb4ea@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <a37615150812191240h45bbf0fbwf091ae644ae1b162@mail.gmail.com>
+In-Reply-To: <a37615150812191310y682c746bt4bd669c0fe5eb4ea@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Following is our take on fiemap support for btrfs.
-
+This adds a new ioctl that requests for the csums of file's extent.
+The csums of contiguous extents can also be requested. The call will
+not return anything for extents that don't have csum information for
+their data, or that the csum list is not available.
+Presumably, the user calls fiemap first in order to get the list of
+extents. The max number of requested csum items is specified in the
+request and is updated according to the actual number of returned
+items.
 
 Signed-off-by: Yehuda Sadeh <yehuda@hq.newdream.net>
 ---
- fs/btrfs/extent_io.c |   84 ++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/extent_io.h |    2 +
- fs/btrfs/inode.c     |    7 ++++
- 3 files changed, 93 insertions(+), 0 deletions(-)
+ fs/btrfs/ioctl.c |  101 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/ioctl.h |    9 +++++
+ 2 files changed, 110 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 25ce2d1..a27bb39 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2900,6 +2900,89 @@ out:
- 	return sector;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index ab429fe..18a57c1 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -990,6 +990,105 @@ out_drop_write:
+       return ret;
  }
 
-+int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
-+		__u64 start, __u64 len, get_extent_t *get_extent)
++static long btrfs_ioctl_getcsum(struct file *file,
++               void __user *arg)
 +{
-+	int ret;
-+	u64 off = start;
-+	u64 max = start + len;
-+	u32 flags = 0;
-+	u64 disko = 0;
-+	struct extent_map *em = NULL;
-+	int end = 0;
-+	u64 em_start = 0, em_len = 0;
-+	ret = 0;
++       struct inode *inode = fdentry(file)->d_inode;
++       struct btrfs_root *root = BTRFS_I(inode)->root;
++       struct btrfs_ioctl_get_csum_args *req;
++       struct btrfs_ioctl_get_csum_args __user *ureq = arg;
++       int ret;
++       u64 off, max;
++       struct extent_map *em = NULL;
++       u32 count = 0;
++       size_t end;
++       unsigned long flags;
 +
-+	lock_extent(&BTRFS_I(inode)->io_tree, start, start + len,
-+		GFP_NOFS);
-+	em = get_extent(inode, NULL, 0, off, max - off, 0);
-+	if (!em)
-+		goto out;
-+	if (IS_ERR(em)) {
-+		ret = PTR_ERR(em);
-+		goto out;
-+	}
-+	while (!end) {
-+		off = em->start + em->len;
++       req = kmalloc(sizeof(*req), GFP_NOFS);
++       if (!req)
++               return -ENOMEM;
++       if (copy_from_user(req, arg, sizeof(*req))) {
++               kfree(req);
++               return -EFAULT;
++       }
 +
-+		em_start = em->start;
-+		em_len = em->len;
++       off = req->off;
++       max = off + req->len;
++       end = (off + req->len + root->sectorsize - 1) & ~(root->sectorsize - 1);
 +
-+		disko = 0;
-+		flags = 0;
++       ret = 0;
++       lock_extent(&BTRFS_I(inode)->io_tree, req->off, max,
++               GFP_NOFS);
++       while (off < max) {
++               struct list_head list;
++               size_t len = 0;
++               size_t offset;
++               struct btrfs_ordered_sum *sums;
++               struct btrfs_sector_sum *sector_sum;
 +
-+		switch (em->block_start) {
-+		case EXTENT_MAP_LAST_BYTE:
-+			end = 1;
-+			flags |= FIEMAP_EXTENT_LAST;
-+			break;
-+		case EXTENT_MAP_HOLE:
-+			flags |= FIEMAP_EXTENT_UNWRITTEN;
-+			break;
-+		case EXTENT_MAP_INLINE:
-+			flags |= (FIEMAP_EXTENT_DATA_INLINE |
-+				  FIEMAP_EXTENT_NOT_ALIGNED);
-+			break;
-+		case EXTENT_MAP_DELALLOC:
-+			flags |= (FIEMAP_EXTENT_DELALLOC |
-+				  FIEMAP_EXTENT_UNKNOWN);
-+			break;
-+		default:
-+			disko = em->block_start;
-+			break;
-+		}
-+		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags))
-+			flags |= FIEMAP_EXTENT_ENCODED;
++               em = btrfs_get_extent(inode, NULL, 0, off, max - off, 0);
 +
-+		free_extent_map(em);
++               if (!em)
++                       goto out;
++               if (IS_ERR(em)) {
++                       ret = PTR_ERR(em);
++                       goto out;
++               }
 +
-+		if (!end) {
-+			em = get_extent(inode, NULL, 0, off, max - off, 0);
-+			if (!em)
-+				goto out;
-+			if (IS_ERR(em)) {
-+				ret = PTR_ERR(em);
-+				goto out;
-+			}
-+		}
-+		if (test_bit(EXTENT_FLAG_VACANCY, &em->flags)) {
-+			flags |= FIEMAP_EXTENT_LAST;
-+			end = 1;
-+		}
++               if (em->block_start > EXTENT_MAP_LAST_BYTE)
++                       goto out_free;
 +
-+		ret = fiemap_fill_next_extent(fieinfo, em_start, disko,
-+					em_len, flags);
-+		if (ret)
-+			goto out_free;
-+	}
-+out_free:
-+	free_extent_map(em);
++               INIT_LIST_HEAD(&list);
++               len = 0;
++
++               offset = (off - em->start) & ~(root->sectorsize - 1);
++
++               ret = btrfs_lookup_csums_range(root, em->block_start + offset,
++                               em->block_start + em->block_len - 1, &list);
++               if (ret < 0)
++                       goto out_free;
++
++               len = 0;
++               while (!list_empty(&list)) {
++                       sums = list_entry(list.next,
++                                         struct btrfs_ordered_sum, list);
++                       list_del_init(&sums->list);
++
++                       sector_sum = sums->sums;
++
++                       while ((len < sums->len) &&
++                               (offset + len < end) &&
++                               (count < req->size)) {
++                               put_user((u32)sector_sum->sum,
++                                        &ureq->csum[count++]);
++                               sector_sum++;
++                               len += root->sectorsize;
++                       }
++                       kfree(sums);
++               }
++
++               flags = em->flags;
++               off = em->start + em->len;
++
++               free_extent_map(em);
++
++               if (test_bit(EXTENT_FLAG_VACANCY, &flags))
++                       break;
++
++               if (count == req->size)
++                       break;
++       }
 +out:
-+	unlock_extent(&BTRFS_I(inode)->io_tree, start, start + len,
-+			GFP_NOFS);
-+	return ret;
++       unlock_extent(&BTRFS_I(inode)->io_tree, req->off, max,
++                       GFP_NOFS);
++
++       put_user((u32)count, &ureq->size);
++       return ret;
++out_free:
++       free_extent_map(em);
++       goto out;
 +}
 +
- static inline struct page *extent_buffer_page(struct extent_buffer *eb,
- 					      unsigned long i)
+ static long btrfs_ioctl_clone_range(struct file *file, void __user *argp)
  {
-@@ -3786,3 +3869,4 @@ out:
- 	return ret;
- }
- EXPORT_SYMBOL(try_release_extent_buffer);
-+
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index c5b483a..e80c6d9 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -193,6 +193,8 @@ int extent_commit_write(struct extent_io_tree *tree,
- 			unsigned from, unsigned to);
- sector_t extent_bmap(struct address_space *mapping, sector_t iblock,
- 		get_extent_t *get_extent);
-+int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
-+		__u64 start, __u64 len, get_extent_t *get_extent);
- int set_range_dirty(struct extent_io_tree *tree, u64 start, u64 end);
- int set_state_private(struct extent_io_tree *tree, u64 start, u64 private);
- int get_state_private(struct extent_io_tree *tree, u64 start, u64 *private);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 068bad4..ff182be 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4171,6 +4171,12 @@ static sector_t btrfs_bmap(struct address_space
-*mapping, sector_t iblock)
- 	return extent_bmap(mapping, iblock, btrfs_get_extent);
- }
+       struct btrfs_ioctl_clone_range_args args;
+@@ -1102,6 +1201,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+       case BTRFS_IOC_SYNC:
+               btrfs_sync_fs(file->f_dentry->d_sb, 1);
+               return 0;
++       case BTRFS_IOC_GETCSUM:
++               return btrfs_ioctl_getcsum(file, argp);
+       }
 
-+static int btrfs_fiemap(struct inode *inode, struct
-fiemap_extent_info *fieinfo,
-+		__u64 start, __u64 len)
-+{
-+	return extent_fiemap(inode, fieinfo, start, len, btrfs_get_extent);
-+}
+       return -ENOTTY;
+diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+index 78049ea..9962579 100644
+--- a/fs/btrfs/ioctl.h
++++ b/fs/btrfs/ioctl.h
+@@ -64,4 +64,13 @@ struct btrfs_ioctl_clone_range_args {
+ #define BTRFS_IOC_SUBVOL_CREATE _IOW(BTRFS_IOCTL_MAGIC, 14, \
+                                  struct btrfs_ioctl_vol_args)
+
++struct btrfs_ioctl_get_csum_args {
++       __u64 off;
++       __u64 len;
++       __u32 size; /* in/out */
++       __u32 csum[0];
++};
 +
- int btrfs_readpage(struct file *file, struct page *page)
- {
- 	struct extent_io_tree *tree;
-@@ -5023,6 +5029,7 @@ static struct inode_operations
-btrfs_file_inode_operations = {
- 	.removexattr	= btrfs_removexattr,
- 	.permission	= btrfs_permission,
- 	.fallocate	= btrfs_fallocate,
-+	.fiemap		= btrfs_fiemap,
- };
- static struct inode_operations btrfs_special_inode_operations = {
- 	.getattr	= btrfs_getattr,
--- 
++#define BTRFS_IOC_GETCSUM      _IO(BTRFS_IOCTL_MAGIC, 15)
++
+ #endif
+--
 1.5.6.5
-
-
-Thanks,
-Yehuda
-
-PS, please let me know is there's any patch formatting issue.

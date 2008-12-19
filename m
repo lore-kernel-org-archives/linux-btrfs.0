@@ -1,78 +1,47 @@
-From: "Yan Zheng" <yanzheng@21cn.com>
-Subject: Re: inode data not getting included in commits?
-Date: Fri, 19 Dec 2008 09:26:49 +0800
-Message-ID: <3d0408630812181726g7b1be6ey787ff0e6105cfa80@mail.gmail.com>
-References: <Pine.LNX.4.64.0812181536060.10446@cobra.newdream.net>
+From: "Kay Sievers" <kay.sievers@vrfy.org>
+Subject: Re: weird bash autocomplete issue
+Date: Fri, 19 Dec 2008 02:27:32 +0100
+Message-ID: <ac3eb2510812181727y29d44961q45eef3d34426aafa@mail.gmail.com>
+References: <548462911@web.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: "Sage Weil" <sage@newdream.net>
+Content-Type: text/plain; charset=UTF-8
+Cc: "Chris Mason" <chris.mason@oracle.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: devzero@web.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <Pine.LNX.4.64.0812181536060.10446@cobra.newdream.net>
+In-Reply-To: <548462911@web.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2008/12/19 Sage Weil <sage@newdream.net>:
-> Hi Chris-
+On Fri, Dec 19, 2008 at 01:59,  <devzero@web.de> wrote:
+>> I see the same issue on x86 32 bit, with the additional __llseek()
+>> between the getdents64(), and the last entry returned by readdir
+>> ignored.
 >
-> I noticed some data and metadata getting out of sync on disk, despite
-> wrapping my writes with btrfs transactions.  After digging into it a bit,
-> it appears to be a larger problem with inode size/data getting written
-> during a regular commit.
+> confirmed - it`s readdir which assumes 32bit.
 >
-> I have a test program append a few bytes at a time to a few different
-> files, in a loop.  I let it run until I see a btrfs transaction commit
-> (via a printk at the bottom of btrfs_commit_transaction).  Then 'reboot -f
-> -n'.  After remounting, all files exist but are 0 bytes, and debug-tree
-> shows a bunch of empty files.  I would expect to see either the sizes when
-> the commit happend (a few hundred KB in my case), or no files at all;
-> there was actually no point in time when any of the files were 0 bytes.
+> attached is a sample program which shows the issue on my system.
 >
-> Similarly, if I do the same but wait for a few commits to happen, after
-> remount the file sizes reflect the size from around the next-to-last
-> commit, not the last commit.
+> if compiled with -D_FILE_OFFSET_BITS=64", the problem goes away.
 >
-> This is probably more information than you need, but my original test was
-> a bit more complicated, with weirder results.  Append to each file, then
-> write it's size to an xattr on another file.  Wrap both operations in a
-> transaction.  Start it up, run 'sync', then reboot -f -n.  When I remount
-> the size and xattr are out of sync by exactly one iteration: the xattr
-> reflects the size that resulted from _two_ writes back, not the
-> immediately preceeding write.  If anything I would expect to see a larger
-> actual size than xattr value (for example if the start/end transaction
-> ioctls weren't working)...
+> old posting from around 2001:
 >
-> sage
+>>http://sourceware.org/ml/libc-alpha/2001-01/msg00216.html
+>>
+>>This is why everybody will have to compile programs with
+>>_FILE_OFFSET_BITS=64.  Did you ever notice that all GNU programs
+>>already do this?
 >
+> as 32bit systems can use 64bit filesystems, i think btrfs is correct and bash is wrong,
+> as it isn`t LFS aware. i think all 32bit stuff should be LFS aware, nowadays.
 >
+> to be exact, it`s not bash but readline library which comes with bash.
+> bash configure script correctly checks for _FILE_OFFSET_BITS value, but readline configure script doesn`t.
+> this explains why i could not reproduce the issue when i build bash without readline support.
 >
-> #include <stdio.h>
-> #include <stdlib.h>
-> #include <unistd.h>
-> #include <stdlib.h>
-> #include <sys/types.h>
-> #include <sys/stat.h>
-> #include <fcntl.h>
->
-> int main(int argc, char **argv)
-> {
->        while (1) {
->                int r, fd, pos, i = rand() % 10;
->                char a[20];
->
->                sprintf(a, "%d.log", i);
->                fd = open(a, O_CREAT|O_APPEND|O_WRONLY, 0600);
->                r = write(fd, "foobarfoo\n", 10);
->                pos = lseek(fd, 0, SEEK_CUR);
->                printf("write %s = %d, size = %d\n", a, r, pos);
->                close(fd);
->        }
-> }
->
+> does it make sense to file a ticket at novell bugzilla ?
 
-This is the desired behaviour of data=ordered. Btrfs transaction commit
-don't flush data, and metadata wont get updated until data IO complete.
+Sure, would be good to have that fixed. Cc: kasievers@novell.com in
+the bug, and I will move it directly to the right guy. :)
 
-http://article.gmane.org/gmane.comp.file-systems.btrfs/869/match=new+data+ordered+code
-
-Regards
-Yan Zheng
+Thanks,
+Kay

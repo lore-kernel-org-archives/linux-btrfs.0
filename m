@@ -1,47 +1,27 @@
-From: "Kay Sievers" <kay.sievers@vrfy.org>
-Subject: Re: weird bash autocomplete issue
-Date: Fri, 19 Dec 2008 02:27:32 +0100
-Message-ID: <ac3eb2510812181727y29d44961q45eef3d34426aafa@mail.gmail.com>
-References: <548462911@web.de>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH] fix wrong value returned from btrfs_listxattr when
+ buffer is too small
+Date: Thu, 18 Dec 2008 20:42:22 -0500
+Message-ID: <1229650942.27170.220.camel@think.oraclecorp.com>
+References: <a37615150812121436w57f43184g71b297369f3923e1@mail.gmail.com>
+	 <Pine.LNX.4.64.0812181623440.10436@cobra.newdream.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: "Chris Mason" <chris.mason@oracle.com>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: devzero@web.de
+Content-Type: text/plain
+Cc: linux-btrfs@vger.kernel.org,
+	Yehuda Sadeh Weinraub <yehudasa@gmail.com>
+To: Sage Weil <sage@newdream.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <548462911@web.de>
+In-Reply-To: <Pine.LNX.4.64.0812181623440.10436@cobra.newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 19, 2008 at 01:59,  <devzero@web.de> wrote:
->> I see the same issue on x86 32 bit, with the additional __llseek()
->> between the getdents64(), and the last entry returned by readdir
->> ignored.
->
-> confirmed - it`s readdir which assumes 32bit.
->
-> attached is a sample program which shows the issue on my system.
->
-> if compiled with -D_FILE_OFFSET_BITS=64", the problem goes away.
->
-> old posting from around 2001:
->
->>http://sourceware.org/ml/libc-alpha/2001-01/msg00216.html
->>
->>This is why everybody will have to compile programs with
->>_FILE_OFFSET_BITS=64.  Did you ever notice that all GNU programs
->>already do this?
->
-> as 32bit systems can use 64bit filesystems, i think btrfs is correct and bash is wrong,
-> as it isn`t LFS aware. i think all 32bit stuff should be LFS aware, nowadays.
->
-> to be exact, it`s not bash but readline library which comes with bash.
-> bash configure script correctly checks for _FILE_OFFSET_BITS value, but readline configure script doesn`t.
-> this explains why i could not reproduce the issue when i build bash without readline support.
->
-> does it make sense to file a ticket at novell bugzilla ?
+On Thu, 2008-12-18 at 16:25 -0800, Sage Weil wrote:
+> BTW it looks like the commit log made it into git, but not the patch 
+> itself... :)
+> 
 
-Sure, would be good to have that fixed. Cc: kasievers@novell.com in
-the bug, and I will move it directly to the right guy. :)
+Ugh.  The patch was malformed and I thought I fixed it.  I think guilt
+is making it easy for me to mess this up ;)  Thanks, will fix.
 
-Thanks,
-Kay
+-chris
+
+

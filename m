@@ -1,40 +1,45 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Way to contribute?
-Date: Fri, 19 Dec 2008 11:08:13 -0500
-Message-ID: <1229702893.6695.14.camel@think.oraclecorp.com>
-References: <loom.20081219T130706-90@post.gmane.org>
+Subject: Re: kernel BUG: kernel bug caught at 55% mark of portage cache
+ update
+Date: Fri, 19 Dec 2008 11:16:19 -0500
+Message-ID: <1229703379.6695.18.camel@think.oraclecorp.com>
+References: <FD060D90-0C58-4222-8A56-CDE0B47AD6DC@trustbearer.com>
 Mime-Version: 1.0
 Content-Type: text/plain
 Cc: linux-btrfs@vger.kernel.org
-To: Spyros Lyberis <lyberis@csd.uoc.gr>
+To: Thomas Harning <thomas.harning@trustbearer.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <loom.20081219T130706-90@post.gmane.org>
+In-Reply-To: <FD060D90-0C58-4222-8A56-CDE0B47AD6DC@trustbearer.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2008-12-19 at 13:20 +0000, Spyros Lyberis wrote:
-> Hi,
+On Tue, 2008-12-16 at 14:57 -0500, Thomas Harning wrote:
+> A kernel 'BUG' was caught while I had compression enabled and was  
+> performing a 'portage' update on my gentoo installation (which had  
+> btrfs mounted for portage for some basic perf testing).  It has  
+> finished the rsync and was at the 55% mark of the portage cache  
+> update... if that helps at all.
 > 
-> I heard of the btrfs development and I'd like to know how can I contribute to
-> the project. My apologies if this is the wrong place to post, but I couldn't
-> find any contribution-related information in the wiki or elsewhere.
+> Inlined is the kernel bug output... + some extra debug info that had  
+> been spit out beforehand that i thought might be useful...
 > 
-> I am a 30-yr old experienced hardware design engineer, who currently works as a
-> software development lead for an Electronic Design Automation software startup.
-> I'm experienced in straight C development (over 12 years), algorithmic
-> development as well as lower level programming (e.g. I have programmed device
-> registers, implemented an I2C controller for linux parallel port, built a simple
-> MIDI sound card device driver for x86 Solaris back in 98, etc).
+> didn't appear to be at that 85% freespace mark...
 > 
-> I heavily use the linux raid for almost all my workstations and servers for
-> years now, and having had some bad experiences I'm very interested in the
-> integrated approach that btrfs is taking.
+> should I attach a btrfs-image dump?
+> 
+> /dev/mapper/vg-btrfsTest
+>                        1.0G  309M  716M  31% /mnt/btrfsTest
+> 
 
-Btrfs is a fairly complex project, and so it is best to start small.
-The first thing to do is give btrfs a try and look for bugs ;)  Feel
-free to ask questions here or on irc about how the code works.
+Looking at the logs, your disk really was full.  Btrfs breaks the disk
+up into metadata and data chunks.  The allocator is much more efficient
+when the chunks are fairly large (the default is 1GB), and for smaller
+devices it tries to make them smaller.
 
-Reading it is a great start, as it trying your workloads and seeing how
-well it works.
+There is some tuning that needs to happen on the smaller devices to
+better balance space between data and metadata.  In your case, the
+metadata block groups were all full even though the data block groups
+still had some empty space.
+
 
 -chris
 

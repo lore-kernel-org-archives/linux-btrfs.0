@@ -1,76 +1,44 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: inode data not getting included in commits?
-Date: Fri, 19 Dec 2008 14:07:24 -0500
-Message-ID: <1229713644.6695.48.camel@think.oraclecorp.com>
-References: <Pine.LNX.4.64.0812181536060.10446@cobra.newdream.net>
-	 <3d0408630812181726g7b1be6ey787ff0e6105cfa80@mail.gmail.com>
-	 <Pine.LNX.4.64.0812182104580.25096@cobra.newdream.net>
-	 <1229695975.6270.12.camel@think.oraclecorp.com>
-	 <Pine.LNX.4.64.0812191028020.29416@cobra.newdream.net>
+Subject: Re: Notes on support for multiple devices for a single filesystem
+Date: Fri, 19 Dec 2008 14:30:15 -0500
+Message-ID: <1229715015.6695.71.camel@think.oraclecorp.com>
+References: <OF3415C20F.793A0D3C-ON88257524.0067548F-88257524.0068BCEC@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain
-Cc: Yan Zheng <yanzheng@21cn.com>, linux-btrfs@vger.kernel.org
-To: Sage Weil <sage@newdream.net>
+Cc: Brad Voth <brad@voth.name>, adilger@sun.com,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Christoph Hellwig <hch@infradead.org>,
+	Jeff Garzik <jeff@garzik.org>,
+	Kay Sievers <kay.sievers@vrfy.org>,
+	linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	linux-kernel@vger.kernel.org, sfr@canb.auug.org.au
+To: Bryan Henderson <hbryan@us.ibm.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <Pine.LNX.4.64.0812191028020.29416@cobra.newdream.net>
+In-Reply-To: <OF3415C20F.793A0D3C-ON88257524.0067548F-88257524.0068BCEC@us.ibm.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2008-12-19 at 10:48 -0800, Sage Weil wrote:
-> On Fri, 19 Dec 2008, Chris Mason wrote:
-> > On Thu, 2008-12-18 at 21:21 -0800, Sage Weil wrote:
-> > > On Fri, 19 Dec 2008, Yan Zheng wrote:
-> > > > > I noticed some data and metadata getting out of sync on disk, despite
-> > > > > wrapping my writes with btrfs transactions.  After digging into it a bit,
-> > > > > it appears to be a larger problem with inode size/data getting written
-> > > > > during a regular commit.
-> > > > > [...]
-> > > > 
-> > > > This is the desired behaviour of data=ordered. Btrfs transaction commit
-> > > > don't flush data, and metadata wont get updated until data IO complete.
-> > > > 
-> > > > http://article.gmane.org/gmane.comp.file-systems.btrfs/869/match=new+data+ordered+code
-> > > 
-> > > Ah, right, so it is.
-> > > 
-> > > I think what I'm looking for then is a mount mode to get the old behavior, 
-> > > such that each commit flushes previously written data.  Probably a call to 
-> > > btrfs_wait_ordered_extents() in btrfs_commit_transaction(), or something 
-> > > along those lines...
-> > 
-> > Could you describe the end goal a bit?  I'm happy to make modes where
-> > it'll do what you need.
+On Fri, 2008-12-19 at 11:03 -0800, Bryan Henderson wrote:
+> "Brad Voth" <brad@voth.name> wrote on 12/18/2008 01:36:12 PM:
 > 
-> The end goal is for data to flush and commit with the transaction that was 
-> running when the write() occured.
-> 
-> So, after a sequence like
->  write A
->  setxattr B
->  <crash>
-> you should always see A if you see B.
-> 
-> And after a sequence like
->  ioctl(fd, BTRFS_IOC_TRANS_START)
->  write A
->  setxattr B
->  close(fd)
->  <crash>
-> you should see either both A and B or neither A nor B.
-> 
-> fsync() isn't really appropriate since it forces a commit (or a tree log 
-> entry?), and it would still be better to roll lots of operations up 
-> together.  Either a mount mode that includes dirty data in each 
-> transaction commit (and probably disables the tree log?), or a per-file 
-> fsync-like operation that commits an individual file's dirty data to the 
-> running transaction would do the trick.
+> > I can see the desire to have the snapshot at the filesystem level to
+> > ensure that the filesystem knows it is consistent.  However, this 
+> > can be a duplication of effort because of the need to have snapshots
+> > at the block device level for non-fs devices.  Such as raw logical 
+> > devices for say a database.  I would think that a viable consistent 
+> > solution would be to have the block device snapshot mechanism have a
+> > hook into the filesystem api to say, "I'm preparing to take a 
+> > snapshot, please quiesce and return" <take block snapshot> "You may 
+> > now resume, Mr. Filesystem"
 
-A third option is a different type of xattr operation that doesn't go to
-disk until the metadata updates done at IO end time.
+This is what lvm does now with the write_super_lockfs calls.  They work
+well for a specific purpose.
 
->From a performance point of view, it'll be much faster than slowing down
-commit with data writes.
+At the end of the day snapshots mean different things to different
+people and different workloads.  In lots of ways the lvm snapshots work
+very well.
 
-Can that work for you?
+But, doing snapshots at the FS level gives you better performance and
+more control.
 
 -chris
 

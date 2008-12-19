@@ -1,70 +1,65 @@
-From: "Julian Andres Klode" <jak@jak-linux.org>
-Subject: Re: kernel BUG: kernel bug caught at 55% mark of portage cache update
-Date: Fri, 19 Dec 2008 17:24:38 +0100
-Message-ID: <f0d609a70812190824o24b04d90j272476e149d6cff3@mail.gmail.com>
-References: <FD060D90-0C58-4222-8A56-CDE0B47AD6DC@trustbearer.com>
-	 <1229703379.6695.18.camel@think.oraclecorp.com>
+From: Sage Weil <sage@newdream.net>
+Subject: Re: inode data not getting included in commits?
+Date: Fri, 19 Dec 2008 10:48:45 -0800 (PST)
+Message-ID: <Pine.LNX.4.64.0812191028020.29416@cobra.newdream.net>
+References: <Pine.LNX.4.64.0812181536060.10446@cobra.newdream.net>
+ <3d0408630812181726g7b1be6ey787ff0e6105cfa80@mail.gmail.com>
+ <Pine.LNX.4.64.0812182104580.25096@cobra.newdream.net>
+ <1229695975.6270.12.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: "Thomas Harning" <thomas.harning@trustbearer.com>,
-	linux-btrfs@vger.kernel.org
-To: "Chris Mason" <chris.mason@oracle.com>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: Yan Zheng <yanzheng@21cn.com>, linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1229703379.6695.18.camel@think.oraclecorp.com>
+In-Reply-To: <1229695975.6270.12.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2008/12/19 Chris Mason <chris.mason@oracle.com>:
-> On Tue, 2008-12-16 at 14:57 -0500, Thomas Harning wrote:
->> A kernel 'BUG' was caught while I had compression enabled and was
->> performing a 'portage' update on my gentoo installation (which had
->> btrfs mounted for portage for some basic perf testing).  It has
->> finished the rsync and was at the 55% mark of the portage cache
->> update... if that helps at all.
->>
->> Inlined is the kernel bug output... + some extra debug info that had
->> been spit out beforehand that i thought might be useful...
->>
->> didn't appear to be at that 85% freespace mark...
->>
->> should I attach a btrfs-image dump?
->>
->> /dev/mapper/vg-btrfsTest
->>                        1.0G  309M  716M  31% /mnt/btrfsTest
->>
->
-> Looking at the logs, your disk really was full.  Btrfs breaks the disk
-> up into metadata and data chunks.  The allocator is much more efficient
-> when the chunks are fairly large (the default is 1GB), and for smaller
-> devices it tries to make them smaller.
->
-> There is some tuning that needs to happen on the smaller devices to
-> better balance space between data and metadata.  In your case, the
-> metadata block groups were all full even though the data block groups
-> still had some empty space.
-I can reproduce this bug at the same location, simply by running
-bonnie++ on a 4GB btrfs partition. I
-already wrote this one week ago to this list (4 times), but it did not
-show up on the list.
+On Fri, 19 Dec 2008, Chris Mason wrote:
+> On Thu, 2008-12-18 at 21:21 -0800, Sage Weil wrote:
+> > On Fri, 19 Dec 2008, Yan Zheng wrote:
+> > > > I noticed some data and metadata getting out of sync on disk, despite
+> > > > wrapping my writes with btrfs transactions.  After digging into it a bit,
+> > > > it appears to be a larger problem with inode size/data getting written
+> > > > during a regular commit.
+> > > > [...]
+> > > 
+> > > This is the desired behaviour of data=ordered. Btrfs transaction commit
+> > > don't flush data, and metadata wont get updated until data IO complete.
+> > > 
+> > > http://article.gmane.org/gmane.comp.file-systems.btrfs/869/match=new+data+ordered+code
+> > 
+> > Ah, right, so it is.
+> > 
+> > I think what I'm looking for then is a mount mode to get the old behavior, 
+> > such that each commit flushes previously written data.  Probably a call to 
+> > btrfs_wait_ordered_extents() in btrfs_commit_transaction(), or something 
+> > along those lines...
+> 
+> Could you describe the end goal a bit?  I'm happy to make modes where
+> it'll do what you need.
 
+The end goal is for data to flush and commit with the transaction that was 
+running when the write() occured.
 
->
->
-> -chris
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+So, after a sequence like
+ write A
+ setxattr B
+ <crash>
+you should always see A if you see B.
 
+And after a sequence like
+ ioctl(fd, BTRFS_IOC_TRANS_START)
+ write A
+ setxattr B
+ close(fd)
+ <crash>
+you should see either both A and B or neither A nor B.
 
+fsync() isn't really appropriate since it forces a commit (or a tree log 
+entry?), and it would still be better to roll lots of operations up 
+together.  Either a mount mode that includes dirty data in each 
+transaction commit (and probably disables the tree log?), or a per-file 
+fsync-like operation that commits an individual file's dirty data to the 
+running transaction would do the trick.
 
--- 
-Julian Andres Klode  - Free Software Developer
-   Debian Developer  - Contributing Member of SPI
-   Ubuntu Member     - Fellow of FSFE
-
-Website: http://jak-linux.org/   XMPP: juliank@jabber.org
-Debian:  http://www.debian.org/  SPI:  http://www.spi-inc.org/
-Ubuntu:  http://www.ubuntu.com/  FSFE: http://www.fsfe.org/
+sage

@@ -1,66 +1,52 @@
 From: Sage Weil <sage@newdream.net>
-Subject: inode data not getting included in commits?
-Date: Thu, 18 Dec 2008 16:22:45 -0800 (PST)
-Message-ID: <Pine.LNX.4.64.0812181536060.10446@cobra.newdream.net>
+Subject: Re: [PATCH] fix wrong value returned from btrfs_listxattr when buffer
+ is too small
+Date: Thu, 18 Dec 2008 16:25:22 -0800 (PST)
+Message-ID: <Pine.LNX.4.64.0812181623440.10436@cobra.newdream.net>
+References: <a37615150812121436w57f43184g71b297369f3923e1@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: Yehuda Sadeh Weinraub <yehudasa@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <a37615150812121436w57f43184g71b297369f3923e1@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris-
-
-I noticed some data and metadata getting out of sync on disk, despite 
-wrapping my writes with btrfs transactions.  After digging into it a bit, 
-it appears to be a larger problem with inode size/data getting written 
-during a regular commit.
-
-I have a test program append a few bytes at a time to a few different 
-files, in a loop.  I let it run until I see a btrfs transaction commit 
-(via a printk at the bottom of btrfs_commit_transaction).  Then 'reboot -f 
--n'.  After remounting, all files exist but are 0 bytes, and debug-tree 
-shows a bunch of empty files.  I would expect to see either the sizes when 
-the commit happend (a few hundred KB in my case), or no files at all; 
-there was actually no point in time when any of the files were 0 bytes.
-
-Similarly, if I do the same but wait for a few commits to happen, after 
-remount the file sizes reflect the size from around the next-to-last 
-commit, not the last commit.
-
-This is probably more information than you need, but my original test was 
-a bit more complicated, with weirder results.  Append to each file, then 
-write it's size to an xattr on another file.  Wrap both operations in a 
-transaction.  Start it up, run 'sync', then reboot -f -n.  When I remount 
-the size and xattr are out of sync by exactly one iteration: the xattr 
-reflects the size that resulted from _two_ writes back, not the 
-immediately preceeding write.  If anything I would expect to see a larger 
-actual size than xattr value (for example if the start/end transaction 
-ioctls weren't working)...
+BTW it looks like the commit log made it into git, but not the patch 
+itself... :)
 
 sage
 
 
+On Fri, 12 Dec 2008, Yehuda Sadeh Weinraub wrote:
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
-int main(int argc, char **argv)
-{
-	while (1) {
-		int r, fd, pos, i = rand() % 10;
-		char a[20];
-		
-		sprintf(a, "%d.log", i);
-		fd = open(a, O_CREAT|O_APPEND|O_WRONLY, 0600);
-		r = write(fd, "foobarfoo\n", 10);
-		pos = lseek(fd, 0, SEEK_CUR);
-		printf("write %s = %d, size = %d\n", a, r, pos);
-		close(fd);
-	}
-}
-
+> Fix bug, btrfs_listxattr doesn't return an error when the buffer size
+> is too small (ret was overridden).
+> 
+> Signed-off-by: Yehuda Sadeh <yehuda@hq.newdream.net>
+> ---
+>  fs/btrfs/xattr.c |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
+> index adb4b32..4146f07 100644
+> --- a/fs/btrfs/xattr.c
+> +++ b/fs/btrfs/xattr.c
+> @@ -226,7 +226,7 @@ ssize_t btrfs_listxattr(struct dentry *dentry,
+> char *buffer, size_t size)
+> 
+>  		if (!buffer || (name_len + 1) > size_left) {
+>  			ret = -ERANGE;
+> -			break;
+> +			goto err;
+>  		}
+> 
+>  		name_ptr = (unsigned long)(di + 1);
+> -- 
+> 1.5.6.5
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 

@@ -1,58 +1,45 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: inode data not getting included in commits?
-Date: Fri, 19 Dec 2008 19:11:40 -0500
-Message-ID: <1229731900.5033.1.camel@think.oraclecorp.com>
-References: <Pine.LNX.4.64.0812181536060.10446@cobra.newdream.net>
-	 <3d0408630812181726g7b1be6ey787ff0e6105cfa80@mail.gmail.com>
-	 <Pine.LNX.4.64.0812182104580.25096@cobra.newdream.net>
-	 <1229695975.6270.12.camel@think.oraclecorp.com>
-	 <Pine.LNX.4.64.0812191028020.29416@cobra.newdream.net>
-	 <1229713644.6695.48.camel@think.oraclecorp.com>
-	 <Pine.LNX.4.64.0812191119110.29416@cobra.newdream.net>
+From: devzero@web.de
+Subject: btrfs filesystem freeze
+Date: Sun, 21 Dec 2008 00:26:21 +0100
+Message-ID: <550569572@web.de>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Yan Zheng <yanzheng@21cn.com>, linux-btrfs@vger.kernel.org
-To: Sage Weil <sage@newdream.net>
+Content-Type: text/plain; charset=iso-8859-15
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <Pine.LNX.4.64.0812191119110.29416@cobra.newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2008-12-19 at 12:08 -0800, Sage Weil wrote:
+Hello,=20
 
-[ trigger data=ordered flush at commit time ]
+i was testing btrfs a little bit for stability and i think i have found=
+ an issue.
 
->  
-> > A third option is a different type of xattr operation that doesn't go to
-> > disk until the metadata updates done at IO end time.
-> > 
-> > >From a performance point of view, it'll be much faster than slowing down
-> > commit with data writes.
-> > 
-> > Can that work for you?
-> 
-> I suspect not, since multiple files are involved.  It's usually something 
-> like
-> 
->  write A
->  setxattr A
->  write B
->  setxattr C
-> 
-> and all need to be committed atomically.  The model really is a bundle of 
-> arbitrary operations that commit atomically.
-> 
-> Slower commit times aren't as much of a concern because this is on the 
-> storage backend, behind client caches and so forth.  I think it's 
-> a reasonable price to pay for the stronger consistency.  
-> 
-> Hopefully it's not throwing too big a wrench into the data=ordered 
-> machinery?  It sort of looks like this is already what you get when taking 
-> a snapshot (I see the call to wait_ordered_extnets in commit_transaction 
-> when snaps_pending).
+during some heavy activity (multiple processes writing/reading to compr=
+essed /btrfs at the same time), i did some snapshots in a loop (every 1=
+0 seconds).
 
-If we make it optional, its fine by me to added a data=ordered flush at
-commit time.
+very soon, all filesystem activity stopped, i.e. i cannot read/write an=
+yting from/to /btrfs anymore.
+this happens with latest git-unstable with kernel 2.6.27
+nothing in dmesg.=20
 
--chris
+besides that, the system seems ok.
 
+as the system is a vmware virtual machine, i did a snapshot of the syst=
+em state, so we can always go back to this state.
 
+if somebody want`s to analyse this, please tell me what to do.
+
+regards
+roland
+
+ps:
+btw,  is there some bugzilla/bugtracker for btrfs ?
+____________________________________________________________________
+Psssst! Schon vom neuen WEB.DE MultiMessenger geh=F6rt?=20
+Der kann`s mit allen: http://www.produkte.web.de/messenger/?did=3D3123
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

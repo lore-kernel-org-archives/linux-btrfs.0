@@ -1,166 +1,58 @@
-From: "Yehuda Sadeh Weinraub" <yehudasa@gmail.com>
-Subject: [PATCH 1/1] ioctl to fetch csums of file extents
-Date: Fri, 19 Dec 2008 13:14:40 -0800
-Message-ID: <a37615150812191314q30f7405agf40f4e6b352b123b@mail.gmail.com>
-References: <a37615150812191310y682c746bt4bd669c0fe5eb4ea@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: inode data not getting included in commits?
+Date: Fri, 19 Dec 2008 19:11:40 -0500
+Message-ID: <1229731900.5033.1.camel@think.oraclecorp.com>
+References: <Pine.LNX.4.64.0812181536060.10446@cobra.newdream.net>
+	 <3d0408630812181726g7b1be6ey787ff0e6105cfa80@mail.gmail.com>
+	 <Pine.LNX.4.64.0812182104580.25096@cobra.newdream.net>
+	 <1229695975.6270.12.camel@think.oraclecorp.com>
+	 <Pine.LNX.4.64.0812191028020.29416@cobra.newdream.net>
+	 <1229713644.6695.48.camel@think.oraclecorp.com>
+	 <Pine.LNX.4.64.0812191119110.29416@cobra.newdream.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain
+Cc: Yan Zheng <yanzheng@21cn.com>, linux-btrfs@vger.kernel.org
+To: Sage Weil <sage@newdream.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <a37615150812191310y682c746bt4bd669c0fe5eb4ea@mail.gmail.com>
+In-Reply-To: <Pine.LNX.4.64.0812191119110.29416@cobra.newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This adds a new ioctl that requests for the csums of file's extent.
-The csums of contiguous extents can also be requested. The call will
-not return anything for extents that don't have csum information for
-their data, or that the csum list is not available.
-Presumably, the user calls fiemap first in order to get the list of
-extents. The max number of requested csum items is specified in the
-request and is updated according to the actual number of returned
-items.
+On Fri, 2008-12-19 at 12:08 -0800, Sage Weil wrote:
 
-Signed-off-by: Yehuda Sadeh <yehuda@hq.newdream.net>
----
- fs/btrfs/ioctl.c |  101 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/ioctl.h |    9 +++++
- 2 files changed, 110 insertions(+), 0 deletions(-)
+[ trigger data=ordered flush at commit time ]
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index ab429fe..18a57c1 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -990,6 +990,105 @@ out_drop_write:
-       return ret;
- }
+>  
+> > A third option is a different type of xattr operation that doesn't go to
+> > disk until the metadata updates done at IO end time.
+> > 
+> > >From a performance point of view, it'll be much faster than slowing down
+> > commit with data writes.
+> > 
+> > Can that work for you?
+> 
+> I suspect not, since multiple files are involved.  It's usually something 
+> like
+> 
+>  write A
+>  setxattr A
+>  write B
+>  setxattr C
+> 
+> and all need to be committed atomically.  The model really is a bundle of 
+> arbitrary operations that commit atomically.
+> 
+> Slower commit times aren't as much of a concern because this is on the 
+> storage backend, behind client caches and so forth.  I think it's 
+> a reasonable price to pay for the stronger consistency.  
+> 
+> Hopefully it's not throwing too big a wrench into the data=ordered 
+> machinery?  It sort of looks like this is already what you get when taking 
+> a snapshot (I see the call to wait_ordered_extnets in commit_transaction 
+> when snaps_pending).
 
-+static long btrfs_ioctl_getcsum(struct file *file,
-+               void __user *arg)
-+{
-+       struct inode *inode = fdentry(file)->d_inode;
-+       struct btrfs_root *root = BTRFS_I(inode)->root;
-+       struct btrfs_ioctl_get_csum_args *req;
-+       struct btrfs_ioctl_get_csum_args __user *ureq = arg;
-+       int ret;
-+       u64 off, max;
-+       struct extent_map *em = NULL;
-+       u32 count = 0;
-+       size_t end;
-+       unsigned long flags;
-+
-+       req = kmalloc(sizeof(*req), GFP_NOFS);
-+       if (!req)
-+               return -ENOMEM;
-+       if (copy_from_user(req, arg, sizeof(*req))) {
-+               kfree(req);
-+               return -EFAULT;
-+       }
-+
-+       off = req->off;
-+       max = off + req->len;
-+       end = (off + req->len + root->sectorsize - 1) & ~(root->sectorsize - 1);
-+
-+       ret = 0;
-+       lock_extent(&BTRFS_I(inode)->io_tree, req->off, max,
-+               GFP_NOFS);
-+       while (off < max) {
-+               struct list_head list;
-+               size_t len = 0;
-+               size_t offset;
-+               struct btrfs_ordered_sum *sums;
-+               struct btrfs_sector_sum *sector_sum;
-+
-+               em = btrfs_get_extent(inode, NULL, 0, off, max - off, 0);
-+
-+               if (!em)
-+                       goto out;
-+               if (IS_ERR(em)) {
-+                       ret = PTR_ERR(em);
-+                       goto out;
-+               }
-+
-+               if (em->block_start > EXTENT_MAP_LAST_BYTE)
-+                       goto out_free;
-+
-+               INIT_LIST_HEAD(&list);
-+               len = 0;
-+
-+               offset = (off - em->start) & ~(root->sectorsize - 1);
-+
-+               ret = btrfs_lookup_csums_range(root, em->block_start + offset,
-+                               em->block_start + em->block_len - 1, &list);
-+               if (ret < 0)
-+                       goto out_free;
-+
-+               len = 0;
-+               while (!list_empty(&list)) {
-+                       sums = list_entry(list.next,
-+                                         struct btrfs_ordered_sum, list);
-+                       list_del_init(&sums->list);
-+
-+                       sector_sum = sums->sums;
-+
-+                       while ((len < sums->len) &&
-+                               (offset + len < end) &&
-+                               (count < req->size)) {
-+                               put_user((u32)sector_sum->sum,
-+                                        &ureq->csum[count++]);
-+                               sector_sum++;
-+                               len += root->sectorsize;
-+                       }
-+                       kfree(sums);
-+               }
-+
-+               flags = em->flags;
-+               off = em->start + em->len;
-+
-+               free_extent_map(em);
-+
-+               if (test_bit(EXTENT_FLAG_VACANCY, &flags))
-+                       break;
-+
-+               if (count == req->size)
-+                       break;
-+       }
-+out:
-+       unlock_extent(&BTRFS_I(inode)->io_tree, req->off, max,
-+                       GFP_NOFS);
-+
-+       put_user((u32)count, &ureq->size);
-+       return ret;
-+out_free:
-+       free_extent_map(em);
-+       goto out;
-+}
-+
- static long btrfs_ioctl_clone_range(struct file *file, void __user *argp)
- {
-       struct btrfs_ioctl_clone_range_args args;
-@@ -1102,6 +1201,8 @@ long btrfs_ioctl(struct file *file, unsigned int
-       case BTRFS_IOC_SYNC:
-               btrfs_sync_fs(file->f_dentry->d_sb, 1);
-               return 0;
-+       case BTRFS_IOC_GETCSUM:
-+               return btrfs_ioctl_getcsum(file, argp);
-       }
+If we make it optional, its fine by me to added a data=ordered flush at
+commit time.
 
-       return -ENOTTY;
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 78049ea..9962579 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -64,4 +64,13 @@ struct btrfs_ioctl_clone_range_args {
- #define BTRFS_IOC_SUBVOL_CREATE _IOW(BTRFS_IOCTL_MAGIC, 14, \
-                                  struct btrfs_ioctl_vol_args)
+-chris
 
-+struct btrfs_ioctl_get_csum_args {
-+       __u64 off;
-+       __u64 len;
-+       __u32 size; /* in/out */
-+       __u32 csum[0];
-+};
-+
-+#define BTRFS_IOC_GETCSUM      _IO(BTRFS_IOCTL_MAGIC, 15)
-+
- #endif
---
-1.5.6.5
+

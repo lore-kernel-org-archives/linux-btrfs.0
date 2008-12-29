@@ -1,40 +1,68 @@
 From: Shen Feng <shen@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: do not call kfree if kmalloc failed in btrfs_sysfs_add_super
-Date: Mon, 29 Dec 2008 11:44:23 +0800
-Message-ID: <49584797.6010402@cn.fujitsu.com>
+Subject: [PATCH] Btrfs: fix a memory leak in btrfs_get_sb
+Date: Mon, 29 Dec 2008 11:45:05 +0800
+Message-ID: <495847C1.1010509@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-kfree should not be called if kmalloc is not success.
+
+subvol_name should be freed if error occurs.
 
 Signed-off-by: Shen Feng <shen@cn.fujitsu.com>
 ---
- fs/btrfs/sysfs.c |    3 +--
- 1 files changed, 1 insertions(+), 2 deletions(-)
+ fs/btrfs/super.c |    9 ++++-----
+ 1 files changed, 4 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 300076e..04087c0 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -212,14 +212,13 @@ int btrfs_sysfs_add_super(struct btrfs_fs_info *fs)
- 	fs->super_kobj.kset = btrfs_kset;
- 	error = kobject_init_and_add(&fs->super_kobj, &btrfs_super_ktype,
- 				     NULL, "%s", name);
-+	kfree(name);
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index d0e8dce..a53f690 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -429,7 +429,7 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
+ 	error = btrfs_parse_early_options(data, mode, fs_type,
+ 					  &subvol_name, &fs_devices);
  	if (error)
- 		goto fail;
+-		goto error;
++		return error;
  
--	kfree(name);
- 	return 0;
+ 	error = btrfs_scan_one_device(dev_name, mode, fs_type, &fs_devices);
+ 	if (error)
+@@ -468,7 +468,7 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
+ 		if (error) {
+ 			up_write(&s->s_umount);
+ 			deactivate_super(s);
+-			goto error;
++			goto error_free_subvol_name;
+ 		}
  
- fail:
--	kfree(name);
- 	printk(KERN_ERR "btrfs: sysfs creation for super failed\n");
+ 		btrfs_sb(s)->fs_info->bdev_holder = fs_type;
+@@ -485,14 +485,14 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
+ 			up_write(&s->s_umount);
+ 			deactivate_super(s);
+ 			error = PTR_ERR(root);
+-			goto error;
++			goto error_free_subvol_name;
+ 		}
+ 		if (!root->d_inode) {
+ 			dput(root);
+ 			up_write(&s->s_umount);
+ 			deactivate_super(s);
+ 			error = -ENXIO;
+-			goto error;
++			goto error_free_subvol_name;
+ 		}
+ 	}
+ 
+@@ -508,7 +508,6 @@ error_close_devices:
+ 	btrfs_close_devices(fs_devices);
+ error_free_subvol_name:
+ 	kfree(subvol_name);
+-error:
  	return error;
  }
+ 
 -- 
 1.6.0.6
 

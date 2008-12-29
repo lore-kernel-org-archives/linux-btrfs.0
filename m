@@ -1,98 +1,78 @@
-From: Stephan von Krawczynski <skraw@ithnet.com>
+From: Chris Samuel <chris@csamuel.org>
 Subject: Re: multiple device usage
-Date: Mon, 29 Dec 2008 11:49:19 +0100
-Message-ID: <20081229114919.59f7114d.skraw@ithnet.com>
-References: <556243856@web.de>
-	<49559672.7060204@gmail.com>
-	<000c01c9682d$16b30da0$6602a8c0@bui.materna.com>
-	<977a2be20812280526y10eb4646i18cdc17c3af072f3@mail.gmail.com>
+Date: Mon, 29 Dec 2008 22:32:05 +1100
+Message-ID: <200812292232.08037.chris@csamuel.org>
+References: <556243856@web.de> <200812271745.45860.chris@csamuel.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: Roland <devzero@web.de>, "Yan Zheng" <ukernel@gmail.com>,
-	linux-btrfs@vger.kernel.org
-To: "yanhai zhu" <zhu.yanhai@gmail.com>
+Content-Type: multipart/signed;
+  boundary="nextPart3619674.p0qQbBbAGG";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <977a2be20812280526y10eb4646i18cdc17c3af072f3@mail.gmail.com>
+In-Reply-To: <200812271745.45860.chris@csamuel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 28 Dec 2008 21:26:11 +0800
-"yanhai zhu" <zhu.yanhai@gmail.com> wrote:
+--nextPart3619674.p0qQbBbAGG
+Content-Type: text/plain;
+  charset="iso-8859-15"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: inline
 
-> > so i can do btrfs-vol -r /dev/sdb while it`s being mounted, pull the disk ,
-> > replace it with a bigger one, rescan-scsi-bus, mkfs.btrfs the new disk and
->                                                  ~~~~~~~~~~~~~~~~~~~~~~~
->                                                 This step will fail, you will
-> get a "/dev/sdb is mounted" by mkfs.btrfs, but for other slots it's ok.
+On Sat, 27 Dec 2008 5:45:42 pm Chris Samuel wrote:
 
-Really, what average-joe-user needs btrfs for his not-always-mounted
-data-partition? Why shouldn't he just use any other fs for that?
-All users needing _uptime_ of their fs cannot simply unmount and wait hours
-for some cool feature to (hopefully) complete (without failures).
-Why does nobody talk about the real world? What's the use of features that
-cannot complete their job in users' lifetime due to everybody filling up TBs
-of data on their harddisks. How long does it really take to replace a full 300
-GB hd with a 800 GB in a multi volume btrfs ?
-Please play with real amounts of data and judge for yourself the use of
-offline-fs-features.
-The times of classical PC use are gone, today people have just about
-everything on their hds, music collection, dvd collection, mails, documents of
-all kinds, sourcecode trees, name-one. 500 GB hds are very cheap. A _new_ fs
-not able to cope with these new usage-patterns is in fact _useless_.
+> I'll add two questions that're not answered by the Wiki too.. :-)
 
-Regards,
-Stephan
+Looking at the source implies to me:
+
+> 1) If you add a second disk to an existing btrfs filesystem, can you get =
+it
+> to set it up as a RAID-1 arrangement rather than just rebalancing the
+> metadata and then striping ?
+
+No, you can't, the data stripe numbers seem to be set at mkfs time.
+
+The rebalancing code does appear (from a naive read of the code) to be able=
+ to=20
+rebalance over stripes, but I have no idea if the disk format currently=20
+supports changing that on the fly.
+
+> 2) With the concerns that people have about SSD reliability (hi Val :-) !)
+> would it make sense to set up two equal sized partitions on the SSD and u=
+se
+> RAID-1 across them, or can you tell btrfs to keep multiple copies of the
+> data, a la ZFS ?
+
+Again it would appear that you need to have two partitions and that btrfs=20
+cannot (at present) keep multiple data stripes on the same partition.
+
+Could someone who actually knows the code to comment on whether my inferenc=
+es=20
+are accurate or not please ?  :-)
+
+cheers,
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+
+This email may come with a PGP signature as a file. Do not panic.
+=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
 
 
- 
-> > then re-add - all while mount telling me, that /dev/sdb is still in use !?
-> 
-> 2008/12/27 Roland <devzero@web.de>:
-> >>> i have some difficulty in understanding multi-device handling in depth.
-> >>>
-> >>> as
-> >>> http://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices
-> >>> tells,
-> >>>
-> >>> btrfs can span over multiple devices at the same time. (great feature,
-> >>> btw !)
-> >>>
-> >>> ok then:
-> >>>
-> >>> mkfs.btrfs -m single -d single  /dev/sdb /dev/sdc - creates a btrfs
-> >>> spanning
-> >>> over /dev/sdb and sdc
-> >>>
-> >>> mount /dev/sdb /btrfs - mounts it
-> >>>
-> >>> btrfs-vol -b /btrfs - does a rebalancing of all data and metadata
-> >>>
-> >>> btrfs-vol -r /dev/sdc - removes one of the volumes and redistributes any
-> >>> extends in use on sdc to sdb (killer feature!!!)
-> >>>
-> >>> but what if i want to remove /dev/sdb ? (as that one is in use for the
-> >>> mount)
-> >>>
-> >>
-> >> Devices in btrfs are equal, so you can do this. The only glitch is
-> >> /proc/mounts and mount(8) get confused.
-> >
-> > so i can do btrfs-vol -r /dev/sdb while it`s being mounted, pull the disk ,
-> > replace it with a bigger one, rescan-scsi-bus, mkfs.btrfs the new disk and
-> > then re-add - all while mount telling me, that /dev/sdb is still in use !?
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >
-> 
-> 
-> 
-> -- 
-> Regards,
-> Zhu Yanhai
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+--nextPart3619674.p0qQbBbAGG
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iQEVAwUASVi1OI1yjaOTJg85AQL8WQf/WazkAo5RHlU/+LC04XCL7bcL0Bfw2VBN
+N5ECqmMzZ7iqRQn+J1XUVqEzKM9IHLf6xav0i1JWdGFKb6SA456UYnNJGf1b2ruy
+tiT+KH0w7BnJS1WiocLPTwvVUOXBRsM6LbQ19w5U+PxhoJKJLA+4eCesao5aA6DR
+N38T0M9tjRSKXOGFYrx9aIlgvunmNfvr+Cw7hRWxRCQRGtz3c7QyI4F5PY2ueUgS
+Mly3uG3gtxfeZoVc37RvEbGGf5X+3Lynzfk/nGrIFZG7kOkMGB5m7LSeIh6tnTso
+WxV7uTydRQuDa2y+J1mJOm33LYhS/ciy854qr9akH6bbU8eyWC7e0g==
+=ADSb
+-----END PGP SIGNATURE-----
+
+--nextPart3619674.p0qQbBbAGG--

@@ -1,61 +1,45 @@
-From: Chris Samuel <chris@csamuel.org>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: A bug with multiple devices?
-Date: Tue, 30 Dec 2008 23:19:35 +1100
-Message-ID: <200812302319.38703.chris@csamuel.org>
-References: <49597D06.1050806@cn.fujitsu.com> <200812302145.25796.chris@csamuel.org> <3d0408630812300335s4e7c6cf1x9a45ff187b80f83@mail.gmail.com>
+Date: Tue, 30 Dec 2008 16:19:27 -0500
+Message-ID: <1230671967.4229.3.camel@think.oraclecorp.com>
+References: <49597D06.1050806@cn.fujitsu.com>
+	 <200812302145.25796.chris@csamuel.org>
+	 <200812302214.32650.chris@csamuel.org>
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart2281575.XRr5xXY6u1";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain
+Cc: linux-btrfs@vger.kernel.org
+To: Chris Samuel <chris@csamuel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <3d0408630812300335s4e7c6cf1x9a45ff187b80f83@mail.gmail.com>
+In-Reply-To: <200812302214.32650.chris@csamuel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart2281575.XRr5xXY6u1
-Content-Type: text/plain;
-  charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: inline
+On Tue, 2008-12-30 at 22:14 +1100, Chris Samuel wrote:
+> On Tue, 30 Dec 2008 9:45:22 pm Chris Samuel wrote:
+> 
+> > mkfs.btrfs -m raid1 /dev/sda10 /dev/sda11
+> 
+> Even doing what appears to be the correct method of:
+> 
+> mkfs.btrfs -d raid1 -m raid1 /dev/sda10 /dev/sda11
+> 
+> doesn't give any love, mkfs.btrfs still tells me the filesystem will be 60GB 
+> (and the kernel agrees when it is mounted).
+> 
+> But mkfs.btrfs does correctly set data_profile to include 
+> BTRFS_BLOCK_GROUP_RAID1 and does indeed call create_one_raid_group() with 
+> BTRFS_BLOCK_GROUP_DATA in create_raid_groups() in mkfs.c.
 
-On Tue, 30 Dec 2008 10:35:17 pm Yan Zheng wrote:
+This is one of those things I've left for later.
 
-> So it's difficult to compute the space in advance.
+Basically df tells you the total storage in the FS.  This storage might
+be raid0, raid1 or single spindle duplication, so the usable space may
+be different from the total storage.
 
-One thought would be to choose the most conservative RAID configuration for=
- the=20
-number of devices in the system.   But then you have the opposite issue of=
-=20
-potentially showing too little space in some situations.
+In the future we'll have the data sent to df give better estimates of
+usable space.
 
-But my guess is that for most (>50%) people once they set a default RAID le=
-vel=20
-then most will have everything in that state.
+Changing btrfs-show to show the chunks too is a good idea.
 
-cheers,
-Chris
-=2D-=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
-
-This email may come with a PGP signature as a file. Do not panic.
-=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
+-chris
 
 
---nextPart2281575.XRr5xXY6u1
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iQEVAwUASVoR2o1yjaOTJg85AQImNAf+LDNVj+TDhsq9IMmymC4yYZmQGKIa7g7U
-+Vq++mLN7EWMnhB8QZUEM7vhqmD+L7vr+fktG/c91bzWgjTZUS19Ctbe0kHDN4PP
-6y3gRY3TYd5IUvw2iZisKpn+jOXVmUoMEUSW6UIh0TcZutsgPAq+N/SFIkN4+w+Z
-NomfLezBPqgrpj9NG/Ezx34yUL+o+1vruT1iOnkMBSDh5DR2FdiH2UV5fK+JjNal
-mCJ8/6RJTSyLiUkAFwsC7GHy28PZYAKqEjKmZXD/iZsq7fq7SAoadGya3KL+LSXE
-VjnO/gaRDz6ztEaFDuDSAxqGB/ma9qQHnn+W3lU49NSL5UxWfPQZkw==
-=QU3U
------END PGP SIGNATURE-----
-
---nextPart2281575.XRr5xXY6u1--

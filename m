@@ -1,51 +1,71 @@
-From: Shen Feng <shen@cn.fujitsu.com>
-Subject: A bug with multiple devices?
-Date: Tue, 30 Dec 2008 09:44:38 +0800
-Message-ID: <49597D06.1050806@cn.fujitsu.com>
+From: Chris Samuel <chris@csamuel.org>
+Subject: Re: A bug with multiple devices?
+Date: Tue, 30 Dec 2008 21:45:22 +1100
+Message-ID: <200812302145.25796.chris@csamuel.org>
+References: <49597D06.1050806@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: multipart/signed;
+  boundary="nextPart4672515.6hFZuPpCnm";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <49597D06.1050806@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+--nextPart4672515.6hFZuPpCnm
+Content-Type: text/plain;
+  charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: inline
 
-I create a raid-1 btrfs with the following command.
+On Tue, 30 Dec 2008 12:44:38 pm Shen Feng wrote:
 
-[root@localhost ~]# fdisk -l /dev/sdb
+> I think the partition size is no correct since this is a raid-1 partition.
+> The size should be half.
 
-Disk /dev/sdb: 320.0 GB, 320072933376 bytes
-255 heads, 63 sectors/track, 38913 cylinders
-Units = cylinders of 16065 * 512 = 8225280 bytes
-Disk identifier: 0xb44829ea
+I've just run into this myself and so can confirm this issue on a btrfs=20
+filesystem with 2 devices, where it is created by doing:
 
-   Device Boot      Start         End      Blocks   Id  System
-/dev/sdb1               1        4863    39062016   83  Linux
-/dev/sdb2            4864        9726    39062047+  83  Linux
-/dev/sdb3            9727       38905   234375905+   f  W95 Ext'd (LBA)
-/dev/sdb5            9727       14590    39063374   83  Linux
-/dev/sdb6           14590       19453    39068690+   7  HPFS/NTFS
-/dev/sdb7           19454       29178    78116031   83  Linux
-/dev/sdb8           29179       31610    19535008+  83  Linux
-/dev/sdb9           31611       34041    19526976   83  Linux
-/dev/sdb10          34042       36473    19535008+  83  Linux
-/dev/sdb11          36474       38904    19526976   83  Linux
+mkfs.btrfs -m raid1 /dev/sda10 /dev/sda11
 
-[root@localhost ~]# mkfs.btrfs -m raid1 /dev/sdb8 /dev/sdb9 /dev/sdb10 /dev/sdb11
-adding device /dev/sdb9 id 2
-adding device /dev/sdb10 id 3
-adding device /dev/sdb11 id 4
-fs created label (null) on /dev/sdb8
-	nodesize 4096 leafsize 4096 sectorsize 4096 size 74.50GB
-Btrfs v0.16-29-g0d53b21
+modprobe btrfs
 
-[root@localhost ~]# mount -t btrfs /dev/sdb8 /mnt/btrfs[root@localhost ~]# df
-Filesystem           1K-blocks      Used Available Use% Mounted on
-...
-/dev/sdb8             78123968        28  78123940   1% /mnt/btrfs
+btrfsctl -a
 
-I think the partition size is no correct since this is a raid-1 partition.
-The size should be half.
-Is this a bug?
+mount /dev/sda10 /home
 
--Shen
+The df command shows it has twice the space I was expecting (61GB rather th=
+an=20
+30GB).  The btrfs-show command shows that it has two devices but doesn't=20
+appear to contain any way to show the RAID level implemented.    I get the=
+=20
+same outcome if I mount /dev/sda11 instead of sda10.
+
+Any ideas ?
+
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+
+This email may come with a PGP signature as a file. Do not panic.
+=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
+
+
+--nextPart4672515.6hFZuPpCnm
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iQEVAwUASVn7xY1yjaOTJg85AQJ0Twf7B6vku1tsdw6UR/BDHjY7tLEtK+vL3CRt
+HruWUVvabt4K/wQMgGqsP2Av4sD+oLcJqJAP6Fn2P2yEpcxcyVESDH9MTIbi7qwe
+6uczTGi3W4KCqbPaY+glz2HyI8xUG4i2NHff7tdeFFyuA0ljs/b7BfcW1uKE6W00
++Bb6Luo3u/ZRX7qobYkbqtJPGFofxe3OeFFcNPohDCqSqFHHJXubi0HqRCrQyhkS
+uQV1X4AJ1cV9m7AkMZYPfv1sFdgkToZ1CJTiPMjJGvJf1gXHke39/jQuNRTOUlSN
+pKb6ChbL4XuRp1/4RaKrL0JuZhixjNgf+0877CeVzJPO/KTiLOWlag==
+=E0JQ
+-----END PGP SIGNATURE-----
+
+--nextPart4672515.6hFZuPpCnm--

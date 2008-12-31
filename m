@@ -1,7 +1,7 @@
 From: Shen Feng <shen@cn.fujitsu.com>
 Subject: Re: A bug with multiple devices?
-Date: Wed, 31 Dec 2008 09:43:13 +0800
-Message-ID: <495ACE31.3050209@cn.fujitsu.com>
+Date: Wed, 31 Dec 2008 11:30:50 +0800
+Message-ID: <495AE76A.2080207@cn.fujitsu.com>
 References: <49597D06.1050806@cn.fujitsu.com> <495AC6AC.4000302@cn.fujitsu.com> <2c3b11250812301717q7d54a8cdt6417d32468ea2eee@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
@@ -24,31 +24,38 @@ on 12/31/2008 09:17 AM, Liu Hui wrote:
 > raid0|raid1|raid10|single] <device>
 
 Thanks.
+I update the usage message of mkfs.btrfs with the following patch.
 
-The problem still exists with -d option.
+From: Shen Feng <shen@cn.fujitsu.com>
 
-[root@localhost ~]# mkfs.btrfs -m raid1 -d raid1 /dev/sdb8 /dev/sdb9 /dev/sdb10 /dev/sdb11
-adding device /dev/sdb9 id 2
-adding device /dev/sdb10 id 3
-adding device /dev/sdb11 id 4
-fs created label (null) on /dev/sdb8
-	nodesize 4096 leafsize 4096 sectorsize 4096 size 74.50GB
-Btrfs v0.16-29-g0d53b21
-[root@localhost ~]# btrfsctl -a
-Scanning for Btrfs filesystems
-[root@localhost ~]#  mount -t btrfs /dev/sdb8 /mnt/btrfs
-[root@localhost ~]# df -h /dev/sdb8
-Filesystem            Size  Used Avail Use% Mounted on
-/dev/sdb8              75G   28K   75G   1% /mnt/btrfs
-[root@localhost ~]# dd if=/dev/zero of=/mnt/btrfs/file bs=1024 count=1024
-1024+0 records in
-1024+0 records out
-1048576 bytes (1.0 MB) copied, 0.0199063 s, 52.7 MB/s
-[root@localhost ~]# sync
-[root@localhost ~]# df -h /dev/sdb8
-Filesystem            Size  Used Avail Use% Mounted on
-/dev/sdb8              75G  1.1M   75G   1% /mnt/btrfs
+Improve the the mkfs.btrfs usage message according to
+http://btrfs.wiki.kernel.org/index.php/Mkfs.btrfs
 
+Signed-off-by: Shen Feng <shen@cn.fujitsu.com>
+---
+ mkfs.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+diff --git a/mkfs.c b/mkfs.c
+index 89de8ac..be93aaa 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -263,9 +263,13 @@ static void print_usage(void)
+ {
+ 	fprintf(stderr, "usage: mkfs.btrfs [options] dev [ dev ... ]\n");
+ 	fprintf(stderr, "options:\n");
++	fprintf(stderr, "\t -A --alloc-start the offset to start the FS\n");
+ 	fprintf(stderr, "\t -b --byte-count total number of bytes in the FS\n");
++	fprintf(stderr, "\t -d --data data profile, raid0, raid1, raid10 or single\n");
+ 	fprintf(stderr, "\t -l --leafsize size of btree leaves\n");
+-	fprintf(stderr, "\t -n --nodesize size of btree leaves\n");
++	fprintf(stderr, "\t -L --label set a label\n");
++	fprintf(stderr, "\t -m --metadata metadata profile, values like data profile\n");
++	fprintf(stderr, "\t -n --nodesize size of btree nodes\n");
+ 	fprintf(stderr, "\t -s --sectorsize min block allocation\n");
+ 	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
+ 	exit(1);
+-- 1.6.0.6 
 
 
 > 

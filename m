@@ -1,78 +1,227 @@
-From: Chris Samuel <chris@csamuel.org>
-Subject: Re: multiple device usage
-Date: Thu, 1 Jan 2009 12:02:17 +1100
-Message-ID: <200901011202.18060.chris@csamuel.org>
-References: <556243856@web.de> <3d0408630812290716i5ac68b27i17fe35891706e449@mail.gmail.com> <1230672308.4229.6.camel@think.oraclecorp.com>
+From: "Yan Zheng" <yanzheng@21cn.com>
+Subject: Re: [PATCH]Btrfs:Fix discard semantic
+Date: Thu, 1 Jan 2009 20:57:31 +0800
+Message-ID: <3d0408630901010457p5440f053tbf4fe86b2697c9cc@mail.gmail.com>
+References: <2c3b11250812290723t74c1f505jb0ffc8c66ebe1ead@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart5270731.i3Lk3FMhFU";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org, David.Woodhouse@intel.com,
+	dwmw2@infradead.org
+To: "Liu Hui" <onlyflyer@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1230672308.4229.6.camel@think.oraclecorp.com>
+In-Reply-To: <2c3b11250812290723t74c1f505jb0ffc8c66ebe1ead@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart5270731.i3Lk3FMhFU
-Content-Type: text/plain;
-  charset="iso-8859-15"
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: inline
+2008/12/29 Liu Hui <onlyflyer@gmail.com>:
+> Hi,
+> This is a patch to fix discard semantic to make Btrfs work with FTL(or
+> SSD?). As we know, we can improve FTL's performance by telling it
+> which sectors are freed by file system. But if we don't tell FTL the
+> information of free sectors in proper time, the transaction mechanism
+> of Btrfs will be destroyed and Btrfs could not roll back the previous
+> transaction under the power loss condition.
+>
+> There are some problems in the old implementation:
+> 1, In __free_extent(), the pinned down extents should not be discarded.
+> 2, In free_extents(), the free extents are all pinned, so they need to
+> be discarded in transaction committing time instead of free_extents().
+> 3, The reserved extent used by log tree should be discard too.
+>
+> This patch change discard behavior as follows:
+> 1, In __free_extent, we only discard the unpinned extent.
+> 2, Delay discarding the pinned extent in btrfs_finish_extent_commit()
+> when committing transaction.
+> 3, Remove discarding from free_extents()
+> 4, Add discard interface into btrfs_free_reserved_extent()
+> 5, Discard sectors before updating the free space cache, otherwise,
+> FTL will destroy file system data.
+>
+> --
+> Thanks & Best Regards
+> Liu Hui
+> --
 
-On Wed, 31 Dec 2008 8:25:08 am Chris Mason wrote:
+Hi Liu Hui, your patch is malformed, please re-send it.
 
-> This gets confusing in a hurry, but the idea is to duplicate metadata by
-> default. =A0So, if you're using the default mount options on a single
-> drive and add a second drive, it should switch metadata to raid1.
+>
+> diff --git a/extent-tree.c b/extent-tree.c
+> index fe0e59a..7247b16 100644
+> --- a/extent-tree.c
+> +++ b/extent-tree.c
+> @@ -874,6 +874,34 @@ static void btrfs_issue_discard(struct block_device *bdev,
+>        blkdev_issue_discard(bdev, start >> 9, len >> 9);
+>  #endif
+>  }
+> +
+> +static int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
+> +                               u64 num_bytes)
+> +{
+> +       int ret;
+> +       u64 map_length = num_bytes;
+> +       struct btrfs_multi_bio *multi = NULL;
+> +
+> +       /* Tell the block device(s) that the sectors can be discarded */
+> +       ret = btrfs_map_block(&root->fs_info->mapping_tree, READ,
+> +                             bytenr, &map_length, &multi, 0);
+> +       if (!ret) {
+> +               struct btrfs_bio_stripe *stripe = multi->stripes;
+> +               int i;
+> +
+> +               if (map_length > num_bytes)
+> +                       map_length = num_bytes;
+> +
+> +               for (i = 0; i < multi->num_stripes; i++, stripe++) {
+> +                       btrfs_issue_discard(stripe->dev->bdev,
+> +                                           stripe->physical,
+> +                                           map_length);
+> +               }
+> +               kfree(multi);
+> +       }
+> +
+> +       return ret;
+> +}
+>  #endif
+>
+>  static int noinline free_extents(struct btrfs_trans_handle *trans,
+> @@ -1069,10 +1097,6 @@ search:
+>                for (pos = cur, n = pos->next; pos != end;
+>                     pos = n, n = pos->next) {
+>                        struct pending_extent_op *tmp;
+> -#ifdef BIO_RW_DISCARD
+> -                       u64 map_length;
+> -                       struct btrfs_multi_bio *multi = NULL;
+> -#endif
+>                        tmp = list_entry(pos, struct pending_extent_op, list);
+>
+>                        /*
+> @@ -1084,28 +1108,6 @@ search:
+>                                                 tmp->del);
+>                        BUG_ON(ret);
+>
+> -#ifdef BIO_RW_DISCARD
+> -                       map_length = tmp->num_bytes;
+> -                       ret = btrfs_map_block(&info->mapping_tree, READ,
+> -                                             tmp->bytenr, &map_length, &multi,
+> -                                             0);
+> -                       if (!ret) {
+> -                               struct btrfs_bio_stripe *stripe;
+> -                               int i;
+> -
+> -                               stripe = multi->stripes;
+> -
+> -                               if (map_length > tmp->num_bytes)
+> -                                       map_length = tmp->num_bytes;
+> -
+> -                               for (i = 0; i < multi->num_stripes;
+> -                                    i++, stripe++)
+> -                                       btrfs_issue_discard(stripe->dev->bdev,
+> -                                                           stripe->physical,
+> -                                                           map_length);
+> -                               kfree(multi);
+> -                       }
+> -#endif
+>                        list_del_init(&tmp->list);
+>                        unlock_extent(&info->extent_ins, tmp->bytenr,
+>                                      tmp->bytenr + tmp->num_bytes - 1,
+> @@ -2104,8 +2106,14 @@ int btrfs_finish_extent_commit(struct
+> btrfs_trans_handle *trans,
+>                                            EXTENT_DIRTY);
+>                if (ret)
+>                        break;
+> +
+> +#ifdef BIO_RW_DISCARD
+> +               ret = btrfs_discard_extent(root, start, end + 1 - start);
+> +#endif
+> +
+>                btrfs_update_pinned_extents(root, start, end + 1 - start, 0);
+>                clear_extent_dirty(unpin, start, end, GFP_NOFS);
+> +
+>                if (need_resched()) {
+>                        mutex_unlock(&root->fs_info->pinned_mutex);
+>                        cond_resched();
+> @@ -2113,7 +2121,7 @@ int btrfs_finish_extent_commit(struct
+> btrfs_trans_handle *trans,
+>                }
+>        }
+>        mutex_unlock(&root->fs_info->pinned_mutex);
+> -       return 0;
+> +       return ret;
+>  }
+>
+>  static int finish_current_insert(struct btrfs_trans_handle *trans,
+> @@ -2458,10 +2466,6 @@ static int __free_extent(struct
+> btrfs_trans_handle *trans,
+>        if (refs == 0) {
+>                u64 super_used;
+>                u64 root_used;
+> -#ifdef BIO_RW_DISCARD
+> -               u64 map_length = num_bytes;
+> -               struct btrfs_multi_bio *multi = NULL;
+> -#endif
+>
+>                if (pin) {
+>                        mutex_lock(&root->fs_info->pinned_mutex);
+> @@ -2493,28 +2497,15 @@ static int __free_extent(struct
+> btrfs_trans_handle *trans,
+>                        BUG_ON(ret);
+>                }
+>
+> -               ret = update_block_group(trans, root, bytenr, num_bytes, 0,
+> -                                        mark_free);
+> -               BUG_ON(ret);
+>  #ifdef BIO_RW_DISCARD
+> -               /* Tell the block device(s) that the sectors can be discarded */
+> -               ret = btrfs_map_block(&root->fs_info->mapping_tree, READ,
+> -                                     bytenr, &map_length, &multi, 0);
+> -               if (!ret) {
+> -                       struct btrfs_bio_stripe *stripe = multi->stripes;
+> -                       int i;
+> -
+> -                       if (map_length > num_bytes)
+> -                               map_length = num_bytes;
+> -
+> -                       for (i = 0; i < multi->num_stripes; i++, stripe++) {
+> -                               btrfs_issue_discard(stripe->dev->bdev,
+> -                                                   stripe->physical,
+> -                                                    map_length);
+> -                       }
+> -                       kfree(multi);
+> +               if (!pin) {
+> +                       ret = btrfs_discard_extent(root, bytenr, num_bytes);
+>                }
 
-Yup, that's what I inferred from your earlier posts and the code. :-)
+We should check 'mark_free' instead of 'pin' here
 
-> I've always planned on adding an option to btrfs-vol -b to have it
-> change the data or metadata allocation policies (raidX to raidY,
-> restripe etc). =A0The kernel side code is all there, we just need
-> something to wire it up to userland.
-
-Understood.  If I get some Copious Spare Time (tm) I might take a look at t=
-hat=20
-(though don't let that stop anyone else trying first!).
-
-> data duplication on a single spindle could work, I just haven't hooked
-> it up because I couldn't think of a really strong reason to do it ;)
-
-I think for SSD's it could be really handy, especially for people who have =
-a=20
-standard distro install and decide they want to convert their ext3 partitio=
-n=20
-to btrfs using the tools.   It's just a bit easier than getting them to=20
-backup, repartition, make the filesystem and restore.
-
-Downside of course is that those original blocks never get mirrored (unless=
-=20
-something like btrfsck was extended to fix those things up).
-
-cheers,
-Chris
-=2D-=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
-
-This email may come with a PGP signature as a file. Do not panic.
-=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
-
-
---nextPart5270731.i3Lk3FMhFU
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iQEVAwUASVwWGo1yjaOTJg85AQIEngf/R8E9FJmp+fsnCHyGY5HR+jF3D/F1X//m
-6RvVnaFU5czOfSPmm8TQtfxsBMF1Go7tn7xAvD3OAyZnvwGBP1XiHjqYnP1Fh3TN
-eQPWROXkVTPZpW5njp88em7HvJPTIO6+hNEHht7EUmWIHqom1dJuoC3eYdpfr6OQ
-bPQ1QdnbdvZJFS/Mlu+czkqmlgfC697uuvQm9tvMOwh6WlgNJ9yQ+Fyb4a4cdnZK
-jdshrQnLE3JeV3MGOY3/he8iarWfvO0pZtU9D38AdQVunWVNeaYBI2MU+U4QHGfH
-tbMkK8p4AYrZGAQzKNTXIfh7hQrP7bWqRCyhMdwer19zb3AIbeWBuA==
-=JIq7
------END PGP SIGNATURE-----
-
---nextPart5270731.i3Lk3FMhFU--
+>  #endif
+> +
+> +               ret = update_block_group(trans, root, bytenr, num_bytes, 0,
+> +                                        mark_free);
+> +               BUG_ON(ret);
+>        }
+>        btrfs_free_path(path);
+>        finish_current_insert(trans, extent_root, 0);
+> @@ -3112,16 +3103,23 @@ again:
+>  int btrfs_free_reserved_extent(struct btrfs_root *root, u64 start, u64 len)
+>  {
+>        struct btrfs_block_group_cache *cache;
+> +       int ret = 0;
+>
+>        cache = btrfs_lookup_block_group(root->fs_info, start);
+>        if (!cache) {
+>                printk(KERN_ERR "Unable to find block group for %Lu\n", start);
+>                return -ENOSPC;
+>        }
+> +
+> +#ifdef BIO_RW_DISCARD
+> +       ret = btrfs_discard_extent(root, start, len);
+> +#endif
+> +
+>        btrfs_add_free_space(cache, start, len);
+>        put_block_group(cache);
+>        update_reserved_extents(root, start, len, 0);
+> -       return 0;
+> +
+> +       return ret;
+>  }
+>
+>  int btrfs_reserve_extent(struct btrfs_trans_handle *trans,

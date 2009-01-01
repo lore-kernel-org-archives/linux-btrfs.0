@@ -1,43 +1,54 @@
 From: Chris Samuel <chris@csamuel.org>
-Subject: Re: A bug with multiple devices?
-Date: Thu, 1 Jan 2009 11:52:37 +1100
-Message-ID: <200901011152.43405.chris@csamuel.org>
-References: <49597D06.1050806@cn.fujitsu.com> <2c3b11250812301717q7d54a8cdt6417d32468ea2eee@mail.gmail.com> <495ACE31.3050209@cn.fujitsu.com>
+Subject: Re: multiple device usage
+Date: Thu, 1 Jan 2009 12:02:17 +1100
+Message-ID: <200901011202.18060.chris@csamuel.org>
+References: <556243856@web.de> <3d0408630812290716i5ac68b27i17fe35891706e449@mail.gmail.com> <1230672308.4229.6.camel@think.oraclecorp.com>
 Mime-Version: 1.0
 Content-Type: multipart/signed;
-  boundary="nextPart1563067.qgIHiRCJgj";
+  boundary="nextPart5270731.i3Lk3FMhFU";
   protocol="application/pgp-signature";
   micalg=pgp-sha1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <495ACE31.3050209@cn.fujitsu.com>
+In-Reply-To: <1230672308.4229.6.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart1563067.qgIHiRCJgj
+--nextPart5270731.i3Lk3FMhFU
 Content-Type: text/plain;
-  charset="iso-8859-1"
+  charset="iso-8859-15"
 Content-Transfer-Encoding: quoted-printable
 Content-Disposition: inline
 
-On Wed, 31 Dec 2008 12:43:13 pm Shen Feng wrote:
+On Wed, 31 Dec 2008 8:25:08 am Chris Mason wrote:
 
-> The problem still exists with -d option.
+> This gets confusing in a hurry, but the idea is to duplicate metadata by
+> default. =A0So, if you're using the default mount options on a single
+> drive and add a second drive, it should switch metadata to raid1.
 
-As Chris Mason wrote in response to my query on this it's a known issue tha=
-t's=20
-a consequence of different chunks potentially having different RAID levels.
+Yup, that's what I inferred from your earlier posts and the code. :-)
 
-The RAID level itself does appear to work - I tested it by copying a kernel=
+> I've always planned on adding an option to btrfs-vol -b to have it
+> change the data or metadata allocation policies (raidX to raidY,
+> restripe etc). =A0The kernel side code is all there, we just need
+> something to wire it up to userland.
+
+Understood.  If I get some Copious Spare Time (tm) I might take a look at t=
+hat=20
+(though don't let that stop anyone else trying first!).
+
+> data duplication on a single spindle could work, I just haven't hooked
+> it up because I couldn't think of a really strong reason to do it ;)
+
+I think for SSD's it could be really handy, especially for people who have =
+a=20
+standard distro install and decide they want to convert their ext3 partitio=
+n=20
+to btrfs using the tools.   It's just a bit easier than getting them to=20
+backup, repartition, make the filesystem and restore.
+
+Downside of course is that those original blocks never get mirrored (unless=
 =20
-image onto it, unmounted it, used debug-tree to work out the offset for it =
-on=20
-one device of the RAID and blew a section away with dd.  I remounted it and=
-=20
-verified that the MD5 checksums still agreed with the original and there we=
-re=20
-kernel messages complaining about checksum mismatches showing that the dama=
-ge=20
-had been detected and worked around.
+something like btrfsck was extended to fix those things up).
 
 cheers,
 Chris
@@ -48,20 +59,20 @@ This email may come with a PGP signature as a file. Do not panic.
 =46or more info see: http://en.wikipedia.org/wiki/OpenPGP
 
 
---nextPart1563067.qgIHiRCJgj
+--nextPart5270731.i3Lk3FMhFU
 Content-Type: application/pgp-signature; name=signature.asc 
 Content-Description: This is a digitally signed message part.
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iQEVAwUASVwT241yjaOTJg85AQKRsQgAkUxXsw3m+AqTUMyUWnPuI2PZfmOSm9sL
-duZxgrbXYne3P+bMtu1R7A9dM9meERqauGuW5uK5I1rRHdfeyETlIFOKwHbMtbg+
-7470HYpDFsLVVwbJ+/WqlUd6l74Dcd2TNWtr7nh9QkLQxUJag7fj08EjTgEKWODA
-bQIPo1Ni9ejRNYmiIxHl8lGUWZpNuHgcREBfdMU/qkv9yuRqOr/70oZA3XEpr7uE
-SoAX2I4pXvqlNKuhvVxmLUZFpxJlrmdE5H/s2UFp0nSd9ny6g3fqGBUqE4XmYhuV
-s2S8J4Nzn8ql69dNNjNE+DSdN1NN3uZI+NatR6qLfl2GUMIQML6VIA==
-=FKDg
+iQEVAwUASVwWGo1yjaOTJg85AQIEngf/R8E9FJmp+fsnCHyGY5HR+jF3D/F1X//m
+6RvVnaFU5czOfSPmm8TQtfxsBMF1Go7tn7xAvD3OAyZnvwGBP1XiHjqYnP1Fh3TN
+eQPWROXkVTPZpW5njp88em7HvJPTIO6+hNEHht7EUmWIHqom1dJuoC3eYdpfr6OQ
+bPQ1QdnbdvZJFS/Mlu+czkqmlgfC697uuvQm9tvMOwh6WlgNJ9yQ+Fyb4a4cdnZK
+jdshrQnLE3JeV3MGOY3/he8iarWfvO0pZtU9D38AdQVunWVNeaYBI2MU+U4QHGfH
+tbMkK8p4AYrZGAQzKNTXIfh7hQrP7bWqRCyhMdwer19zb3AIbeWBuA==
+=JIq7
 -----END PGP SIGNATURE-----
 
---nextPart1563067.qgIHiRCJgj--
+--nextPart5270731.i3Lk3FMhFU--

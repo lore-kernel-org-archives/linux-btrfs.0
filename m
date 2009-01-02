@@ -1,42 +1,86 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: Andi Kleen <andi@firstfloor.org>
 Subject: Re: Btrfs for mainline
-Date: Fri, 02 Jan 2009 14:38:07 -0500
-Message-ID: <1230925087.7538.41.camel@think.oraclecorp.com>
-References: <1230722935.4680.5.camel@think.oraclecorp.com>
-	 <20081231104533.abfb1cf9.akpm@linux-foundation.org>
-	 <1230765549.7538.8.camel@think.oraclecorp.com>
-	 <20090103.013755.42849152.ryusuke@osrg.net>
+Date: Fri, 2 Jan 2009 22:01:04 +0100
+Message-ID: <20090102210104.GC496@one.firstfloor.org>
+References: <1230722935.4680.5.camel@think.oraclecorp.com> <20081231104533.abfb1cf9.akpm@linux-foundation.org> <1230765549.7538.8.camel@think.oraclecorp.com> <87r63ljzox.fsf@basil.nowhere.org> <1230924749.7538.35.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: akpm@linux-foundation.org, linux-kernel@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090103.013755.42849152.ryusuke@osrg.net>
+Content-Type: text/plain; charset=us-ascii
+Cc: Andi Kleen <andi@firstfloor.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	linux-kernel@vger.kernel.org,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <1230924749.7538.35.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, 2009-01-03 at 01:37 +0900, Ryusuke Konishi wrote:
-> Hi,
-> On Wed, 31 Dec 2008 18:19:09 -0500, Chris Mason <chris.mason@oracle.com> wrote:
+On Fri, Jan 02, 2009 at 02:32:29PM -0500, Chris Mason wrote:
+> > If combination spinlocks/mutexes are really a win they should be 
+> > in the generic mutex framework. And I'm still dubious on the hardcoded 
+> > numbers.
+> 
+> Sure, I'm happy to use a generic framework there (or help create one).
+> They are definitely a win for btrfs, and show up in most benchmarks.
+
+If they are such a big win then likely they will help other users
+too and should be generic in some form.
+
+> 
+> > - compat.h needs to go
+> 
+> Projects that are out of mainline have a difficult task of making sure
+> development can continue until they are in mainline and being clean
+> enough to merge.  I'd rather get rid of the small amount of compat code
+> that I have left after btrfs is in (compat.h is 32 lines).  
+
+It's fine for an out of tree variant, but the in tree version
+shouldn't have compat.h. For out of tree you just apply a patch
+that adds the includes. e.g.compat-wireless and lots of other
+projects do it this way. 
+
+> 
+> Yes, I tried to mark those as I did them (a very small number of
+> functions).  In general they were copied to avoid adding exports, and
+> that is easily fixed.
+> 
+> > - there should be manpages for all the ioctls and other interfaces.
+> > - ioctl.c was not explicitely root protected. security issues?
+> 
+> Christoph added a CAP_SYS_ADMIN check to the trans start ioctl, but I do
+> need to add one to the device add/remove/balance code as well.
+
+Ok. Didn't see that.
+
+It still needs to be carefully audited for security holes 
+even with root checks.
+
+Another thing is that once auto mounting is enabled each usb stick
+with btrfs on it could be a root hole if you have buffer overflows
+somewhere triggerable by disk data. I guess that would need some
+checking too.
+
+> The subvol/snapshot creation is meant to be user callable (controlled by
+> something similar to quotas later on).
+
+But right now that's not there so it should be root only.
+
+> 
+> >  Also there used to be a lot of BUG_ON()s on
+> > memory allocation failure even.
+> > - In general BUG_ONs need review I think. Lots of externally triggerable
+> > ones.
+> > - various checkpath.pl level problems I think (e.g. printk levels) 
+> > - the printks should all include which file system they refer to
 > > 
-> > This has only btrfs as a module and would be the fastest way to see
-> > the .c files.  btrfs doesn't have any changes outside of fs/Makefile and
-> > fs/Kconfig
+> > In general I think the whole thing needs more review.
+> 
+> I don't disagree, please do keep in mind that I'm not suggesting anyone
+> use this in production yet.
 
-[ ... ]
+When it's in mainline I suspect people will start using it for that.
 
-> In addition, there seem to be well-separated reusable routines such as
-> async-thread (enhanced workqueue) and extent_map.  Do you intend to
-> move these into lib/ or so?
+-Andi
 
-Sorry, looks like I hit send too soon that time.  The async-thread code
-is very self contained, and was intended for generic use.  Pushing that
-into lib is probably a good idea.
-
-The extent_map and extent_buffer code was also intended for generic use.
-It needs some love and care (making it work for blocksize != pagesize)
-before I'd suggest moving it out of fs/btrfs.
-
--chris
-
-
+-- 
+ak@linux.intel.com

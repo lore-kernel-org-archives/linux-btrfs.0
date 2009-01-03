@@ -1,227 +1,84 @@
-From: "Liu Hui" <onlyflyer@gmail.com>
-Subject: Re: [PATCH]Btrfs:Fix discard semantic
-Date: Sat, 3 Jan 2009 23:33:46 +0800
-Message-ID: <2c3b11250901030733y9cf8994w984a4c110f42f4d0@mail.gmail.com>
-References: <2c3b11250812290723t74c1f505jb0ffc8c66ebe1ead@mail.gmail.com>
-	 <3d0408630901010457p5440f053tbf4fe86b2697c9cc@mail.gmail.com>
+From: Matthew Wilcox <matthew@wil.cx>
+Subject: Re: Btrfs for mainline
+Date: Sat, 3 Jan 2009 12:17:06 -0700
+Message-ID: <20090103191706.GA2002@parisc-linux.org>
+References: <1230722935.4680.5.camel@think.oraclecorp.com> <20081231104533.abfb1cf9.akpm@linux-foundation.org> <1230765549.7538.8.camel@think.oraclecorp.com> <87r63ljzox.fsf@basil.nowhere.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org, David.Woodhouse@intel.com,
-	dwmw2@infradead.org
-To: "Yan Zheng" <yanzheng@21cn.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <3d0408630901010457p5440f053tbf4fe86b2697c9cc@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	linux-kernel@vger.kernel.org,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Andi Kleen <andi@firstfloor.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <87r63ljzox.fsf@basil.nowhere.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Yan Zheng,
+On Fri, Jan 02, 2009 at 08:05:50PM +0100, Andi Kleen wrote:
+> Some items I remember from my last look at the code that should
+> be cleaned up before mainline merge (that wasn't a full in depth review):
+> 
+> - locking.c needs a lot of cleanup.
+> If combination spinlocks/mutexes are really a win they should be 
+> in the generic mutex framework. And I'm still dubious on the hardcoded 
+> numbers.
 
-Thanks in advance!
+I don't think this needs to be cleaned up before merge.  I've spent
+an hour or two looking at it, and while we can do a somewhat better
+job as part of the generic mutex framework, it's quite tricky (due to
+the different <asm/mutex.h> implementations).  It has the potential to
+introduce some hard-to-hit bugs in the generic mutexes, and there's some
+API discussions to have.
 
-Here are the new description and the new patch(based on standalone git tree):
+It's no worse than XFS (which still has its own implementation of
+'synchronisation variables', a (very thin) wrapper around mutexes, a
+(thin) wrapper around rwsems, and wrappers around kmalloc and kmem_cache.
 
+> - compat.h needs to go
 
-This is a patch to fix discard semantic to make Btrfs work with FTL(or
-SSD?). As we know, we can improve FTL's performance by telling it
-which sectors are freed by file system. But if we don't tell FTL the
-information of free sectors in proper time, the transaction mechanism
-of Btrfs will be destroyed and Btrfs could not roll back the previous
-transaction under the power loss condition.
+Later.  It's still there for XFS.
 
-There are some problems in the old implementation:
-1, In __free_extent(), the pinned down extents should not be discarded.
-2, In free_extents(), the free extents are all pinned, so they need to
-be discarded in transaction committing time instead of free_extents().
-3, The reserved extent used by log tree should be discard too.
+> - there's various copy'n'pasted code from the VFS (like may_create) 
+> that needs to be cleaned up.
 
-This patch change discard behavior as follows:
-1, For the extents which need to be free at once,
-   we discard them in update_block_group().
-2, Delay discarding the pinned extent in btrfs_finish_extent_commit()
-   when committing transaction.
-3, Remove discarding from free_extents() and __free_extent()
-4, Add discard interface into btrfs_free_reserved_extent()
-5, Discard sectors before updating the free space cache, otherwise,
-   FTL will destroy file system data.
+No urgency here.
 
---
-Thanks & Best Regards
-Liu Hui
---
+> - there should be manpages for all the ioctls and other interfaces.
 
---- extent-tree-old.c	2009-01-03 23:01:30.000000000 +0800
-+++ extent-tree.c	2009-01-03 22:58:55.000000000 +0800
-@@ -874,6 +874,34 @@
- 	blkdev_issue_discard(bdev, start >> 9, len >> 9);
- #endif
- }
-+
-+static int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
-+				u64 num_bytes)
-+{
-+	int ret;
-+	u64 map_length = num_bytes;
-+	struct btrfs_multi_bio *multi = NULL;
-+
-+	/* Tell the block device(s) that the sectors can be discarded */
-+	ret = btrfs_map_block(&root->fs_info->mapping_tree, READ,
-+			      bytenr, &map_length, &multi, 0);
-+	if (!ret) {
-+		struct btrfs_bio_stripe *stripe = multi->stripes;
-+		int i;
-+
-+		if (map_length > num_bytes)
-+			map_length = num_bytes;
-+
-+		for (i = 0; i < multi->num_stripes; i++, stripe++) {
-+			btrfs_issue_discard(stripe->dev->bdev,
-+					    stripe->physical,
-+					    map_length);
-+		}
-+		kfree(multi);
-+	}
-+
-+	return ret;
-+}
- #endif
+I wonder if Michael Kerrisk has time to help with that.  Cc'd.
 
- static int noinline free_extents(struct btrfs_trans_handle *trans,
-@@ -1069,10 +1097,6 @@
- 		for (pos = cur, n = pos->next; pos != end;
- 		     pos = n, n = pos->next) {
- 			struct pending_extent_op *tmp;
--#ifdef BIO_RW_DISCARD
--			u64 map_length;
--			struct btrfs_multi_bio *multi = NULL;
--#endif
- 			tmp = list_entry(pos, struct pending_extent_op, list);
+> - ioctl.c was not explicitely root protected. security issues?
 
- 			/*
-@@ -1084,28 +1108,6 @@
- 						 tmp->del);
- 			BUG_ON(ret);
+This does need auditing.
 
--#ifdef BIO_RW_DISCARD
--			map_length = tmp->num_bytes;
--			ret = btrfs_map_block(&info->mapping_tree, READ,
--					      tmp->bytenr, &map_length, &multi,
--					      0);
--			if (!ret) {
--				struct btrfs_bio_stripe *stripe;
--				int i;
--
--				stripe = multi->stripes;
--
--				if (map_length > tmp->num_bytes)
--					map_length = tmp->num_bytes;
--
--				for (i = 0; i < multi->num_stripes;
--				     i++, stripe++)
--					btrfs_issue_discard(stripe->dev->bdev,
--							    stripe->physical,
--							    map_length);
--				kfree(multi);
--			}
--#endif
- 			list_del_init(&tmp->list);
- 			unlock_extent(&info->extent_ins, tmp->bytenr,
- 				      tmp->bytenr + tmp->num_bytes - 1,
-@@ -1965,6 +1967,13 @@
- 			spin_unlock(&cache->space_info->lock);
- 			if (mark_free) {
- 				int ret;
-+
-+#ifdef BIO_RW_DISCARD
-+				ret = btrfs_discard_extent(root, bytenr,
-+							   num_bytes);
-+				WARN_ON(ret);
-+#endif
-+
- 				ret = btrfs_add_free_space(cache, bytenr,
- 							   num_bytes);
- 				WARN_ON(ret);
-@@ -2104,8 +2113,14 @@
- 					    EXTENT_DIRTY);
- 		if (ret)
- 			break;
-+
-+#ifdef BIO_RW_DISCARD
-+		ret = btrfs_discard_extent(root, start, end + 1 - start);
-+#endif
-+
- 		btrfs_update_pinned_extents(root, start, end + 1 - start, 0);
- 		clear_extent_dirty(unpin, start, end, GFP_NOFS);
-+
- 		if (need_resched()) {
- 			mutex_unlock(&root->fs_info->pinned_mutex);
- 			cond_resched();
-@@ -2113,7 +2128,7 @@
- 		}
- 	}
- 	mutex_unlock(&root->fs_info->pinned_mutex);
--	return 0;
-+	return ret;
- }
+> - some code was severly undercommented.
+> e.g. each file should at least have a one liner
+> describing what it does (ideally at least a paragraph). Bad examples
+> are export.c or free-space-cache.c, but also others.
 
- static int finish_current_insert(struct btrfs_trans_handle *trans,
-@@ -2458,10 +2473,6 @@
- 	if (refs == 0) {
- 		u64 super_used;
- 		u64 root_used;
--#ifdef BIO_RW_DISCARD
--		u64 map_length = num_bytes;
--		struct btrfs_multi_bio *multi = NULL;
--#endif
+Nice to have, but generally not required.
 
- 		if (pin) {
- 			mutex_lock(&root->fs_info->pinned_mutex);
-@@ -2496,25 +2507,6 @@
- 		ret = update_block_group(trans, root, bytenr, num_bytes, 0,
- 					 mark_free);
- 		BUG_ON(ret);
--#ifdef BIO_RW_DISCARD
--		/* Tell the block device(s) that the sectors can be discarded */
--		ret = btrfs_map_block(&root->fs_info->mapping_tree, READ,
--				      bytenr, &map_length, &multi, 0);
--		if (!ret) {
--			struct btrfs_bio_stripe *stripe = multi->stripes;
--			int i;
--
--			if (map_length > num_bytes)
--				map_length = num_bytes;
--
--			for (i = 0; i < multi->num_stripes; i++, stripe++) {
--				btrfs_issue_discard(stripe->dev->bdev,
--						    stripe->physical,
--						     map_length);
--			}
--			kfree(multi);
--		}
--#endif
- 	}
- 	btrfs_free_path(path);
- 	finish_current_insert(trans, extent_root, 0);
-@@ -3112,16 +3104,23 @@
- int btrfs_free_reserved_extent(struct btrfs_root *root, u64 start, u64 len)
- {
- 	struct btrfs_block_group_cache *cache;
-+	int ret = 0;
+> - ENOMEM checks are still missing all over (e.g. with most of the 
+> btrfs_alloc_path callers). If you keep it that way you would need
+> at least XFS style "loop for ever" alloc wrappers, but better just
+> fix all the callers. Also there used to be a lot of BUG_ON()s on
+> memory allocation failure even.
+> - In general BUG_ONs need review I think. Lots of externally triggerable
+> ones.
 
- 	cache = btrfs_lookup_block_group(root->fs_info, start);
- 	if (!cache) {
- 		printk(KERN_ERR "Unable to find block group for %Lu\n", start);
- 		return -ENOSPC;
- 	}
-+
-+#ifdef BIO_RW_DISCARD
-+	ret = btrfs_discard_extent(root, start, len);
-+#endif
-+
- 	btrfs_add_free_space(cache, start, len);
- 	put_block_group(cache);
- 	update_reserved_extents(root, start, len, 0);
--	return 0;
-+
-+	return ret;
- }
+Agreed on these two.
 
- int btrfs_reserve_extent(struct btrfs_trans_handle *trans,
+> - various checkpath.pl level problems I think (e.g. printk levels) 
+
+Can be fixed up later.
+
+> - the printks should all include which file system they refer to
+
+Ditto.
+
+-- 
+Matthew Wilcox				Intel Open Source Technology Centre
+"Bill, look, we understand that you're interested in selling us this
+operating system, but compare it to ours.  We can't possibly take such
+a retrograde step."

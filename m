@@ -1,41 +1,53 @@
-From: Roland Dreier <rdreier@cisco.com>
+From: Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
 Subject: Re: Btrfs for mainline
-Date: Fri, 02 Jan 2009 14:26:34 -0800
-Message-ID: <adaocyppco5.fsf@cisco.com>
-References: <1230722935.4680.5.camel@think.oraclecorp.com>
-	<20081231104533.abfb1cf9.akpm@linux-foundation.org>
-	<1230765549.7538.8.camel@think.oraclecorp.com>
-	<87r63ljzox.fsf@basil.nowhere.org>
-	<1230924749.7538.35.camel@think.oraclecorp.com>
-	<20090102210104.GC496@one.firstfloor.org>
-	<1230932112.7538.82.camel@think.oraclecorp.com>
+Date: Sat, 03 Jan 2009 18:44:06 +0900 (JST)
+Message-ID: <20090103.184406.54858118.ryusuke@osrg.net>
+References: <1230765549.7538.8.camel@think.oraclecorp.com>
+	<20090103.013755.42849152.ryusuke@osrg.net>
+	<1230925087.7538.41.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Andi Kleen <andi@firstfloor.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	linux-kernel@vger.kernel.org,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: Text/Plain; charset=us-ascii
+Cc: akpm@linux-foundation.org, linux-kernel@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
 To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <1230932112.7538.82.camel@think.oraclecorp.com> (Chris Mason's
-	message of "Fri, 02 Jan 2009 16:35:12 -0500")
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1230925087.7538.41.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- > > > I don't disagree, please do keep in mind that I'm not suggesting anyone
- > > > use this in production yet.
+On Fri, 02 Jan 2009 14:38:07 -0500, Chris Mason <chris.mason@oracle.com> wrote:
+> On Sat, 2009-01-03 at 01:37 +0900, Ryusuke Konishi wrote:
+> > In addition, there seem to be well-separated reusable routines such as
+> > async-thread (enhanced workqueue) and extent_map.  Do you intend to
+> > move these into lib/ or so?
+> 
+> Sorry, looks like I hit send too soon that time.  The async-thread code
+> is very self contained, and was intended for generic use.  Pushing that
+> into lib is probably a good idea.
 
- > > When it's in mainline I suspect people will start using it for that.
+As for async-thread, kernel/ seems to be better place (sorry, I also hit
+send too soon ;)
 
- > I think the larger question here is where we want development to happen.
- > I'm definitely not pretending that btrfs is perfect, but I strongly
- > believe that it will be a better filesystem if the development moves to
- > mainline where it will attract more eyeballs and more testers.
+Anyway, I think it should be reviewed deeply by scheduler people and
+wider range of people.  So, it's a good idea to put it out in order to
+arouse interest.
+ 
+> The extent_map and extent_buffer code was also intended for generic use.
+> It needs some love and care (making it work for blocksize != pagesize)
+> before I'd suggest moving it out of fs/btrfs.
+> 
+> -chris
 
-One possibility would be to mimic ext4 and register the fs as "btrfsdev"
-until it's considered stable enough for production.  I agree with the
-consensus that we want to use the upstream kernel as a nexus for
-coordinating btrfs development, so I don't think it's worth waiting a
-release or two to merge something.
+The extent_map itself seemed independent of the problem to me, but I
+understand your plan.
 
- - R.
+Btrfs seems to have other helpful code including pages/bio compression
+which may become separable, too.  And, this may be the same for
+pages/bio encryption/decryption code which would come next.  (I don't
+mention about the volume management/raid feature here to avoid getting
+off the subject, but it's likewise).
+
+I think it's wonderful if they can be well-integrated into sublayers
+or libraries.
+
+Regards,
+Ryusuke

@@ -1,55 +1,38 @@
-From: Matthew Wilcox <matthew@wil.cx>
+From: Arnd Bergmann <arnd@arndb.de>
 Subject: Re: Btrfs for mainline
-Date: Sun, 4 Jan 2009 11:41:03 -0700
-Message-ID: <20090104184103.GE2002@parisc-linux.org>
-References: <1230722935.4680.5.camel@think.oraclecorp.com> <20081231104533.abfb1cf9.akpm@linux-foundation.org> <1230765549.7538.8.camel@think.oraclecorp.com> <87r63ljzox.fsf@basil.nowhere.org> <20090103191706.GA2002@parisc-linux.org> <1231093310.27690.5.camel@twins>
+Date: Sun, 4 Jan 2009 22:52:44 +0100
+Message-ID: <200901042252.45054.arnd@arndb.de>
+References: <1230722935.4680.5.camel@think.oraclecorp.com> <20090103195034.GA27541@infradead.org> <1231013856.7538.89.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Andi Kleen <andi@firstfloor.org>,
-	Chris Mason <chris.mason@oracle.com>,
+Content-Type: text/plain; charset=iso-8859-15
+Cc: Christoph Hellwig <hch@infradead.org>,
+	Matthew Wilcox <matthew@wil.cx>,
+	Andi Kleen <andi@firstfloor.org>,
 	Andrew Morton <akpm@linux-foundation.org>,
 	linux-kernel@vger.kernel.org,
 	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Ingo Molnar <mingo@elte.hu>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Steven Rostedt <rostedt@goodmis.org>,
-	Gregory Haskins <ghaskins@novell.com>
-To: Peter Zijlstra <peterz@infradead.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1231093310.27690.5.camel@twins>
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757408AbZADVxe@vger.kernel.org>
+In-Reply-To: <1231013856.7538.89.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jan 04, 2009 at 07:21:50PM +0100, Peter Zijlstra wrote:
-> The -rt tree has adaptive spin patches for the rtmutex code, its really
-> not all that hard to do -- the rtmutex code is way more tricky than the
-> regular mutexes due to all the PI fluff.
-> 
-> For kernel only locking the simple rule: spin iff the lock holder is
-> running proved to be simple enough. Any added heuristics like max spin
-> count etc. only made things worse. The whole idea though did make sense
-> and certainly improved performance.
+On Saturday 03 January 2009, Chris Mason wrote:
+>=20
+> > Actually a lot of the ioctl API don't just need documentation but
+> > a complete redo. =A0That's true at least for the physical device
+> > management and subvolume / snaphot ones.
+> >=20
+>=20
+> The ioctl interface is definitely not finalized. =A0Adding more vs
+> replacing the existing ones is an open question.
 
-That implies moving
+As long as that's an open question, the ioctl interface shouldn't get
+merged into the kernel, or should get in as btrfsdev, otherwise you
+get stuck with the current ABI forever.
 
-        struct thread_info      *owner;
+Is it possible to separate out the nonstandard ioctls into a patch
+that can get merged when the interface is final, or will that make
+btrfs unusable?
 
-out from under the CONFIG_DEBUG_MUTEXES code.  One of the original
-justifications for mutexes was:
-
- - 'struct mutex' is smaller on most architectures: .e.g on x86,
-   'struct semaphore' is 20 bytes, 'struct mutex' is 16 bytes.
-    A smaller structure size means less RAM footprint, and better
-    CPU-cache utilization.
-
-I'd be reluctant to reverse that decision just for btrfs.
-
-Benchmarking required!  Maybe I can put a patch together that implements
-the simple 'spin if it's running' heuristic and throw it at our
-testing guys on Monday ...
-
--- 
-Matthew Wilcox				Intel Open Source Technology Centre
-"Bill, look, we understand that you're interested in selling us this
-operating system, but compare it to ours.  We can't possibly take such
-a retrograde step."
+	Arnd <><

@@ -1,39 +1,47 @@
 From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: Btrfs for mainline
-Date: Mon, 05 Jan 2009 08:21:43 -0500
-Message-ID: <1231161703.4290.14.camel@think.oraclecorp.com>
+Date: Mon, 05 Jan 2009 09:01:58 -0500
+Message-ID: <1231164118.4290.17.camel@think.oraclecorp.com>
 References: <1230722935.4680.5.camel@think.oraclecorp.com>
-	 <20090103.013755.42849152.ryusuke@osrg.net>
-	 <1230925087.7538.41.camel@think.oraclecorp.com>
-	 <200901052132.22620.nickpiggin@yahoo.com.au>
+	 <20090103195034.GA27541@infradead.org>
+	 <1231013856.7538.89.camel@think.oraclecorp.com>
+	 <200901042252.45054.arnd@arndb.de>
 Mime-Version: 1.0
 Content-Type: text/plain
-Cc: Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>,
-	akpm@linux-foundation.org, linux-kernel@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: Nick Piggin <nickpiggin@yahoo.com.au>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200901052132.22620.nickpiggin@yahoo.com.au>
+Cc: Christoph Hellwig <hch@infradead.org>,
+	Matthew Wilcox <matthew@wil.cx>,
+	Andi Kleen <andi@firstfloor.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	linux-kernel@vger.kernel.org,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Arnd Bergmann <arnd@arndb.de>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754499AbZAEOCk@vger.kernel.org>
+In-Reply-To: <200901042252.45054.arnd@arndb.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2009-01-05 at 21:32 +1100, Nick Piggin wrote:
-> On Saturday 03 January 2009 06:38:07 Chris Mason wrote:
-
-> > The extent_map and extent_buffer code was also intended for generic use.
-> > It needs some love and care (making it work for blocksize != pagesize)
-> > before I'd suggest moving it out of fs/btrfs.
+On Sun, 2009-01-04 at 22:52 +0100, Arnd Bergmann wrote:
+> On Saturday 03 January 2009, Chris Mason wrote:
+> > 
+> > > Actually a lot of the ioctl API don't just need documentation but
+> > > a complete redo.  That's true at least for the physical device
+> > > management and subvolume / snaphot ones.
+> > > 
+> > 
+> > The ioctl interface is definitely not finalized.  Adding more vs
+> > replacing the existing ones is an open question.
 > 
-> I'm yet to be convinced it is a good idea to use extents for this. Been a
-> long time since we visited the issue, but when you converted ext2 to use
-> the extent mapping stuff, it actually went slower, and complexity went up
-> a lot (IIRC possibly required allocations in the writeback path).
+> As long as that's an open question, the ioctl interface shouldn't get
+> merged into the kernel, or should get in as btrfsdev, otherwise you
+> get stuck with the current ABI forever.
 > 
->
-> So I think it is a fine idea to live in btrfs until it is more proven and
-> found useful elsewhere.
 
-It has gotten faster since then, but it makes sense to wait on moving
-extent_* code.
+Maintaining the current ioctls isn't a problem.  There aren't very many
+and they do very discrete things.  The big part that may change is the
+device scanning, which may get more integrated into udev and mount (see
+other threads about this).
+
+But, that is one very simple ioctl, and most of the code it uses is
+going to stay regardless of how the device scanning is done.
 
 -chris
-

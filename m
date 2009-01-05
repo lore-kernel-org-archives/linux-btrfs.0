@@ -1,24 +1,29 @@
-From: Tomasz Chmielewski <mangoo@wpkg.org>
-Subject: Re: [PATCH] Btrfs-progs: btrfs file system size should be bigger
- then 256m
-Date: Mon, 05 Jan 2009 15:44:10 +0100
-Message-ID: <49621CBA.2080802@wpkg.org>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH]Btrfs:Fix discard semantic
+Date: Mon, 05 Jan 2009 10:08:36 -0500
+Message-ID: <1231168116.4290.46.camel@think.oraclecorp.com>
+References: <2c3b11250812290723t74c1f505jb0ffc8c66ebe1ead@mail.gmail.com>
+	 <3d0408630901010457p5440f053tbf4fe86b2697c9cc@mail.gmail.com>
+	 <2c3b11250901030733y9cf8994w984a4c110f42f4d0@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain
+Cc: Yan Zheng <yanzheng@21cn.com>, linux-btrfs@vger.kernel.org,
+	David.Woodhouse@intel.com, dwmw2@infradead.org
+To: Liu Hui <onlyflyer@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <2c3b11250901030733y9cf8994w984a4c110f42f4d0@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> This has been bothering me for some time. Why does btrfs need to have a 
-> disk greater then 256M? I could see a much smaller limit, say 16M but 
-> why so much? The file system itself does not need that much space for 
-> its own use.
+On Sat, 2009-01-03 at 23:33 +0800, Liu Hui wrote:
+> Hi Yan Zheng,
+> 
+> Thanks in advance!
+> 
+> Here are the new description and the new patch(based on standalone git tree):
+> 
 
-In other words, 256M limit rather disqualifies btrfs as a filesystem 
-i.e. for /boot, doesn't it?
+Thanks for fixing this up, I'll give it a try here.
 
+-chris
 
--- 
-Tomasz Chmielewski
-http://wpkg.org
 

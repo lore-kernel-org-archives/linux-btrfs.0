@@ -1,52 +1,55 @@
-From: "Ryusuke Konishi" <konishi.ryusuke@lab.ntt.co.jp>
-Subject: Re: [PATCH] Btrfs: fix build errors of extent_io.c
-Date: Tue, 6 Jan 2009 02:48:56 +0900
-Message-ID: <c4a7c9420901050948l2e4f782eja83d8d6bc4b78814@mail.gmail.com>
-References: <20081224.175640.119553873.ryusuke@osrg.net>
-	 <1231170459.4290.90.camel@think.oraclecorp.com>
-	 <c4a7c9420901050929q37f4b640wdebad72fe227e456@mail.gmail.com>
-	 <20090105173734.GA32436@infradead.org>
-	 <1231177160.4290.139.camel@think.oraclecorp.com>
+From: "Yan Zheng" <yanzheng@21cn.com>
+Subject: Re: btrfs filesystem freeze
+Date: Tue, 6 Jan 2009 05:14:38 +0800
+Message-ID: <3d0408630901051314i12ead163ye6936424a40047b5@mail.gmail.com>
+References: <551034715@web.de> <494EE585.5090209@oracle.com>
+	 <1231170278.4290.85.camel@think.oraclecorp.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: "Christoph Hellwig" <hch@infradead.org>,
-	linux-btrfs@vger.kernel.org
+Cc: devzero@web.de, linux-btrfs@vger.kernel.org
 To: "Chris Mason" <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1231177160.4290.139.camel@think.oraclecorp.com>
+In-Reply-To: <1231170278.4290.85.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2009/1/6 Chris Mason <chris.mason@oracle.com>:
-> On Mon, 2009-01-05 at 12:37 -0500, Christoph Hellwig wrote:
->> On Tue, Jan 06, 2009 at 02:29:17AM +0900, Ryusuke Konishi wrote:
->> > 2009/1/6 Chris Mason <chris.mason@oracle.com>:
->> > > On Wed, 2008-12-24 at 17:56 +0900, Ryusuke Konishi wrote:
->> > >> Hi Chris,
->> > >>
->> > >> I've started to read and try btrfs, and soon met the following build
->> > >> errors.  The attached patch fixes the problem.
->> > >>
->> > >> Could you check this?
->> > >>
->> > >
->> > > Strange, I wonder why your gcc complains and mine doesn't ;)  I'll fix
->> > > these up thouhg.
+2009/1/5 Chris Mason <chris.mason@oracle.com>:
+> On Mon, 2008-12-22 at 08:55 +0800, Yan Zheng wrote:
+>> devzero@web.de wrote:
+>> > thank you.
 >> >
->> > Because I tried it on a powerpc ;)
->> > The check of EXPORT_SYMBOL macros seems to be more strict
->> > than that of x86.
+>> > i tried your patch and did another test run.
+>> >
+>> > first, it looked better as i could do much more snapshots than before, but then it froze again.
+>> >
+>> > i don`t really have a clue if your patch enhanced anything, as my test setup isn`t exactly  reproducable for now and i did not check for exact "testing lab conditions".
+>> >
+>> > after /btrfs froze again, i tried to unmount by forcibly unloading btrfs module.
+>> >
+>> > after reloading the module and trying to mount again, it failed with the following  kernel message:
+>> >
+>> I hope the new patch can solve the problem.
 >>
->> It doesn't really matter how strict the checks are, because the exports
->> simply need to go away.  As long as the extent_map/buffer code resides
->> inside btrfs no one should be using it without either copying it or
->> moving it out of the btrfs module and into a common one first.
+>> Yan Zheng
+>>
+>> ---
+>> diff -urp 1/fs/btrfs/inode.c 2/fs/btrfs/inode.c
+>> --- 1/fs/btrfs/inode.c        2008-12-18 08:09:16.062111805 +0800
+>> +++ 2/fs/btrfs/inode.c        2008-12-22 08:47:06.000000000 +0800
+>> @@ -2891,7 +2891,7 @@ void btrfs_delete_inode(struct inode *in
+>>       btrfs_wait_ordered_range(inode, 0, (u64)-1);
+>>
+>>       btrfs_i_size_write(inode, 0);
+>> -     trans = btrfs_start_transaction(root, 1);
+>> +     trans = btrfs_join_transaction(root, 1);
 >
-> Yes, my plan was to drop the exports.
+> Which call to iput is causing problems?  We're going to run into
+> starvation problems if file deletes use join.
 >
-> -chris
 
-I agree with it, too.
-The patch was just to let you know the problem at the time of
-Chrismas.
+btrfs_commit_transaction->create_pending_snapshots->
+create_pending_snapshot->btrfs_lookup_dentry->
+fixup_tree_root_location->btrfs_read_fs_root->
+btrfs_read_fs_root_no_name->btrfs_orphan_cleanup->iput
 
-Ryusuke
+Regards
+Yan Zheng

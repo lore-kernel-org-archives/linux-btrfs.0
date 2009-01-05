@@ -1,46 +1,49 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: generic pagecache to block mapping layer (was Re: Btrfs for
- mainline)
-Date: Mon, 05 Jan 2009 11:37:33 -0500
-Message-ID: <1231173453.4290.137.camel@think.oraclecorp.com>
-References: <1230722935.4680.5.camel@think.oraclecorp.com>
-	 <200901052132.22620.nickpiggin@yahoo.com.au>
-	 <1231161703.4290.14.camel@think.oraclecorp.com>
-	 <200901060139.37404.nickpiggin@yahoo.com.au>
+Subject: Re: [PATCH] Btrfs-progs: btrfs file system size should be bigger
+ then 256m
+Date: Mon, 05 Jan 2009 11:39:36 -0500
+Message-ID: <1231173576.4290.138.camel@think.oraclecorp.com>
+References: <49621CBA.2080802@wpkg.org> <49622525.80001@schleiser.de>
+	 <49622BFC.7040105@wpkg.org>
 Mime-Version: 1.0
 Content-Type: text/plain
-Cc: Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>,
-	linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: Nick Piggin <nickpiggin@yahoo.com.au>
+Cc: Kaspar Schleiser <kaspar@schleiser.de>, linux-btrfs@vger.kernel.org
+To: Tomasz Chmielewski <mangoo@wpkg.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200901060139.37404.nickpiggin@yahoo.com.au>
+In-Reply-To: <49622BFC.7040105@wpkg.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2009-01-06 at 01:39 +1100, Nick Piggin wrote:
-> [trim ccs]
+On Mon, 2009-01-05 at 16:49 +0100, Tomasz Chmielewski wrote:
+> Kaspar Schleiser schrieb:
+> > Hey,
+> > 
+> > Tomasz Chmielewski wrote:
+> >>> This has been bothering me for some time. Why does btrfs need to have 
+> >>> a disk greater then 256M? I could see a much smaller limit, say 16M 
+> >>> but why so much? The file system itself does not need that much space 
+> >>> for its own use.
+> >>
+> >> In other words, 256M limit rather disqualifies btrfs as a filesystem 
+> >> i.e. for /boot, doesn't it?
+> > When 1G is just 10c?
 > 
-> Feel free to ignore this diversion ;) I'd like to see btrfs go upstream
-> sooner rather than later. But eventually we'll have to resurrect fsblock
-> vs extent map discussion.
+> Maybe when talking about traditional HDDs.
+> Anything flash-based is still $2-$5 per 1G.
 > 
+> I have some SAN devices booting off 512MB or 1G builtin flash. Having 
+> 256M for /boot there would not leave much more space for the operating 
+> system.
+> 
+> Why separate /boot? It's still needed for encrypted rootfs or more fancy 
+> partitioning (like / on LVM, at least until GRUB2 is stable and is 
+> shipped by major distros).
+> 
+> 
+> Seriously, what are the technical reasons that btrfs needs so much space 
+> for a minimal filesystem?
 
-There's extent_map, extent_state and extent_buffer.  I'd expect the
-mapping code to beat fsblock, since it more closely models the
-conditions of the disk format.  This is a very thin layer of code to
-figure out which file offset goes to which block on disk.
-
-extent_state is a different beast, since it is trying to track state
-across extents.  It is entirely possible that we're better off keeping
-the state in the pages, aside from the part where we're running out of
-bits.
-
-extent_buffers are an api to access/modify the contents of ranges of
-bytes, supporting larger and smaller blocksizes than the page.  I'd be
-really interested in comparing this to fsblock, but I need to first fix
-it to actually support larger and smaller blocksizes than the page ;)
-
-So, long term we can have a benchmarking contest, but I've got a little
-ways to go before that is a good idea.
+This is mostly to help prevent crashes on enospc.  As we fixup the
+kernel code, the 256MB limit will go away.
 
 -chris
 

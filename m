@@ -1,48 +1,40 @@
-From: Nick Piggin <nickpiggin@yahoo.com.au>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: Btrfs for mainline
-Date: Mon, 5 Jan 2009 21:32:22 +1100
-Message-ID: <200901052132.22620.nickpiggin@yahoo.com.au>
-References: <1230722935.4680.5.camel@think.oraclecorp.com> <20090103.013755.42849152.ryusuke@osrg.net> <1230925087.7538.41.camel@think.oraclecorp.com>
+Date: Mon, 05 Jan 2009 08:18:58 -0500
+Message-ID: <1231161538.4290.12.camel@think.oraclecorp.com>
+References: <1230722935.4680.5.camel@think.oraclecorp.com>
+	 <1230924749.7538.35.camel@think.oraclecorp.com>
+	 <20090102210104.GC496@one.firstfloor.org>
+	 <200901052107.43341.chris@csamuel.org>
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="utf-8"
-Cc: Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>,
-	akpm@linux-foundation.org, linux-kernel@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <1230925087.7538.41.camel@think.oraclecorp.com>
+Content-Type: text/plain
+Cc: linux-btrfs@vger.kernel.org, Andi Kleen <andi@firstfloor.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	linux-kernel@vger.kernel.org,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>
+To: Chris Samuel <chris@csamuel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <200901052107.43341.chris@csamuel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Saturday 03 January 2009 06:38:07 Chris Mason wrote:
-> On Sat, 2009-01-03 at 01:37 +0900, Ryusuke Konishi wrote:
-> > Hi,
-> >
-> > On Wed, 31 Dec 2008 18:19:09 -0500, Chris Mason <chris.mason@oracle.com> 
-wrote:
-> > > This has only btrfs as a module and would be the fastest way to see
-> > > the .c files.  btrfs doesn't have any changes outside of fs/Makefile
-> > > and fs/Kconfig
->
-> [ ... ]
->
-> > In addition, there seem to be well-separated reusable routines such as
-> > async-thread (enhanced workqueue) and extent_map.  Do you intend to
-> > move these into lib/ or so?
->
-> Sorry, looks like I hit send too soon that time.  The async-thread code
-> is very self contained, and was intended for generic use.  Pushing that
-> into lib is probably a good idea.
->
-> The extent_map and extent_buffer code was also intended for generic use.
-> It needs some love and care (making it work for blocksize != pagesize)
-> before I'd suggest moving it out of fs/btrfs.
+On Mon, 2009-01-05 at 21:07 +1100, Chris Samuel wrote:
+> On Sat, 3 Jan 2009 8:01:04 am Andi Kleen wrote:
+> 
+> > When it's in mainline I suspect people will start using it for that.
+> 
+> Some people don't even wait for that. ;-)
+> 
+> Seriously though, if that is a concern can I suggest taking the btrfsdev route 
+> and, if you want a real belt and braces approach, perhaps require it to have a 
+> mandatory mount option specified to successfully mount, maybe "eat_my_data" ?
 
-I'm yet to be convinced it is a good idea to use extents for this. Been a
-long time since we visited the issue, but when you converted ext2 to use
-the extent mapping stuff, it actually went slower, and complexity went up
-a lot (IIRC possibly required allocations in the writeback path).
+I think ext4dev made more sense for ext4 because people generally expect
+ext* to be stable.  Btrfs doesn't quite have the reputation for
+stability yet, so I don't feel we need a special -dev name for it.
 
-So I think it is a fine idea to live in btrfs until it is more proven and
-found useful elsewhere.
+But, if Andrew/Linus prefer that unstable filesystems are tagged with
+-dev, I'm happy to do it.
+
+-chris
+
 

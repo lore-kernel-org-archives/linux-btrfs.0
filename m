@@ -1,50 +1,33 @@
-From: Shen Feng <shen@cn.fujitsu.com>
-Subject: Re: [PATCH] Btrfs-progs: btrfs file system size should be bigger
- then 256m
-Date: Mon, 05 Jan 2009 09:23:48 +0800
-Message-ID: <49616124.2050604@cn.fujitsu.com>
-References: <495B0D54.7060806@cn.fujitsu.com> <495BB0AC.5070607@oracle.com>
+From: "yanhai zhu" <zhu.yanhai@gmail.com>
+Subject: [PATCH] The length of memset in btrfs_file_write is wrong
+Date: Mon, 5 Jan 2009 11:21:20 +0800
+Message-ID: <977a2be20901041921l311e7333p68525623fcec496@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Zach Brown <zach.brown@oracle.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <495BB0AC.5070607@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello,
+  The length of memset in btrfs_file_write is wrong.
 
-on 01/01/2009 01:49 AM, Zach Brown wrote:
->> +				if (block_count < 256*1024*1024) {
->> +					fprintf(stderr, "File system size is too small\n");
->> +					exit(1);
->> +				}
-> 
-> And please, if you could, include both the size that is too small and
-> the size that is required in the message.
-> 
+--
 
-Thanks. I updated the patch.
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 5070810..e67f8d4 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1094,7 +1094,7 @@ static ssize_t btrfs_file_write(struct file
+*file, const char __user *buf,
+ 					PAGE_CACHE_SHIFT;
 
-Signed-off-by: Shen Feng <shen@cn.fujitsu.com>
----
- mkfs.c |    7 +++++++
- 1 files changed, 7 insertions(+), 0 deletions(-)
+ 		WARN_ON(num_pages > nrptrs);
+-		memset(pages, 0, sizeof(pages));
++		memset(pages, 0, sizeof(struct page *)*nrptrs);
 
-diff --git a/mkfs.c b/mkfs.c
-index be93aaa..cb21db6 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -377,6 +377,13 @@ int main(int ac, char **av)
- 				break;
- 			case 'b':
- 				block_count = parse_size(optarg);
-+				if (block_count < 256*1024*1024) {
-+					fprintf(stderr, "File system size "
-+						"%llu bytes is too small, "
-+						"256M is required at least\n",
-+						block_count);
-+					exit(1);
-+				}
- 				zero_end = 0;
- 				break;
- 			default:
+ 		ret = btrfs_check_free_space(root, write_bytes, 0);
+ 		if (ret)
+
+-- 
+Regards,
+Zhu Yanhai

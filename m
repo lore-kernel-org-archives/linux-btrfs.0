@@ -1,28 +1,51 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] Btrfs: fix build errors of extent_io.c
-Date: Mon, 05 Jan 2009 10:47:39 -0500
-Message-ID: <1231170459.4290.90.camel@think.oraclecorp.com>
-References: <20081224.175640.119553873.ryusuke@osrg.net>
+From: Tomasz Chmielewski <mangoo@wpkg.org>
+Subject: Re: [PATCH] Btrfs-progs: btrfs file system size should be bigger
+  then 256m
+Date: Mon, 05 Jan 2009 16:49:16 +0100
+Message-ID: <49622BFC.7040105@wpkg.org>
+References: <49621CBA.2080802@wpkg.org> <49622525.80001@schleiser.de>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org
-To: Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+To: Kaspar Schleiser <kaspar@schleiser.de>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20081224.175640.119553873.ryusuke@osrg.net>
+In-Reply-To: <49622525.80001@schleiser.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2008-12-24 at 17:56 +0900, Ryusuke Konishi wrote:
-> Hi Chris,
+Kaspar Schleiser schrieb:
+> Hey,
 > 
-> I've started to read and try btrfs, and soon met the following build
-> errors.  The attached patch fixes the problem.
-> 
-> Could you check this?
-> 
+> Tomasz Chmielewski wrote:
+>>> This has been bothering me for some time. Why does btrfs need to have 
+>>> a disk greater then 256M? I could see a much smaller limit, say 16M 
+>>> but why so much? The file system itself does not need that much space 
+>>> for its own use.
+>>
+>> In other words, 256M limit rather disqualifies btrfs as a filesystem 
+>> i.e. for /boot, doesn't it?
+> When 1G is just 10c?
 
-Strange, I wonder why your gcc complains and mine doesn't ;)  I'll fix
-these up thouhg.
+Maybe when talking about traditional HDDs.
+Anything flash-based is still $2-$5 per 1G.
 
--chris
+I have some SAN devices booting off 512MB or 1G builtin flash. Having 
+256M for /boot there would not leave much more space for the operating 
+system.
+
+Why separate /boot? It's still needed for encrypted rootfs or more fancy 
+partitioning (like / on LVM, at least until GRUB2 is stable and is 
+shipped by major distros).
 
 
+Seriously, what are the technical reasons that btrfs needs so much space 
+for a minimal filesystem?
+
+Just 2 MB is enough for mkfs.ext4 to create a valid filesystem.
+
+
+Also, the patch seems to be incomplete - i.e. what will happen if we try 
+to btrfs-convert a 50MB ext3 filesystem into btrfs?
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org

@@ -1,38 +1,50 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Subject: Re: Btrfs for mainline
-Date: Sun, 4 Jan 2009 22:52:44 +0100
-Message-ID: <200901042252.45054.arnd@arndb.de>
-References: <1230722935.4680.5.camel@think.oraclecorp.com> <20090103195034.GA27541@infradead.org> <1231013856.7538.89.camel@think.oraclecorp.com>
+From: Shen Feng <shen@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs-progs: btrfs file system size should be bigger
+ then 256m
+Date: Mon, 05 Jan 2009 09:23:48 +0800
+Message-ID: <49616124.2050604@cn.fujitsu.com>
+References: <495B0D54.7060806@cn.fujitsu.com> <495BB0AC.5070607@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-15
-Cc: Christoph Hellwig <hch@infradead.org>,
-	Matthew Wilcox <matthew@wil.cx>,
-	Andi Kleen <andi@firstfloor.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	linux-kernel@vger.kernel.org,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757408AbZADVxe@vger.kernel.org>
-In-Reply-To: <1231013856.7538.89.camel@think.oraclecorp.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Zach Brown <zach.brown@oracle.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <495BB0AC.5070607@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Saturday 03 January 2009, Chris Mason wrote:
->=20
-> > Actually a lot of the ioctl API don't just need documentation but
-> > a complete redo. =A0That's true at least for the physical device
-> > management and subvolume / snaphot ones.
-> >=20
->=20
-> The ioctl interface is definitely not finalized. =A0Adding more vs
-> replacing the existing ones is an open question.
 
-As long as that's an open question, the ioctl interface shouldn't get
-merged into the kernel, or should get in as btrfsdev, otherwise you
-get stuck with the current ABI forever.
+on 01/01/2009 01:49 AM, Zach Brown wrote:
+>> +				if (block_count < 256*1024*1024) {
+>> +					fprintf(stderr, "File system size is too small\n");
+>> +					exit(1);
+>> +				}
+> 
+> And please, if you could, include both the size that is too small and
+> the size that is required in the message.
+> 
 
-Is it possible to separate out the nonstandard ioctls into a patch
-that can get merged when the interface is final, or will that make
-btrfs unusable?
+Thanks. I updated the patch.
 
-	Arnd <><
+Signed-off-by: Shen Feng <shen@cn.fujitsu.com>
+---
+ mkfs.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/mkfs.c b/mkfs.c
+index be93aaa..cb21db6 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -377,6 +377,13 @@ int main(int ac, char **av)
+ 				break;
+ 			case 'b':
+ 				block_count = parse_size(optarg);
++				if (block_count < 256*1024*1024) {
++					fprintf(stderr, "File system size "
++						"%llu bytes is too small, "
++						"256M is required at least\n",
++						block_count);
++					exit(1);
++				}
+ 				zero_end = 0;
+ 				break;
+ 			default:

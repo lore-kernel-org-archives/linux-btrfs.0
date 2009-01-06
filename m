@@ -1,11 +1,10 @@
-From: Linus Torvalds <torvalds@linux-foundation.org>
+From: Ingo Molnar <mingo@elte.hu>
 Subject: Re: [PATCH][RFC]: mutex: adaptive spin
-Date: Tue, 6 Jan 2009 08:59:52 -0800 (PST)
-Message-ID: <alpine.LFD.2.00.0901060857360.3057@localhost.localdomain>
-References: <1230765549.7538.8.camel@think.oraclecorp.com> <87r63ljzox.fsf@basil.nowhere.org> <20090103191706.GA2002@parisc-linux.org> <1231093310.27690.5.camel@twins> <20090104184103.GE2002@parisc-linux.org> <1231242031.11687.97.camel@twins>
- <20090106121052.GA27232@elte.hu> <alpine.LFD.2.00.0901060750410.3057@localhost.localdomain> <alpine.LFD.2.00.0901060808260.3057@localhost.localdomain> <alpine.LFD.2.00.0901060833060.3057@localhost.localdomain> <20090106165409.GA32608@elte.hu>
+Date: Tue, 6 Jan 2009 18:02:04 +0100
+Message-ID: <20090106170204.GB32608@elte.hu>
+References: <87r63ljzox.fsf@basil.nowhere.org> <20090103191706.GA2002@parisc-linux.org> <1231093310.27690.5.camel@twins> <20090104184103.GE2002@parisc-linux.org> <1231242031.11687.97.camel@twins> <20090106121052.GA27232@elte.hu> <alpine.LFD.2.00.0901060750410.3057@localhost.localdomain> <alpine.LFD.2.00.0901060808260.3057@localhost.localdomain> <alpine.LFD.2.00.0901060833060.3057@localhost.localdomain> <alpine.LFD.2.00.0901060841000.3057@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Content-Type: text/plain; charset=us-ascii
 Cc: Peter Zijlstra <peterz@infradead.org>,
 	Matthew Wilcox <matthew@wil.cx>,
 	Andi Kleen <andi@firstfloor.org>,
@@ -18,25 +17,34 @@ Cc: Peter Zijlstra <peterz@infradead.org>,
 	Steven Rostedt <rostedt@goodmis.org>,
 	Gregory Haskins <ghaskins@novell.com>,
 	Nick Piggin <npiggin@suse.de>
-To: Ingo Molnar <mingo@elte.hu>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090106165409.GA32608@elte.hu>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <alpine.LFD.2.00.0901060841000.3057@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+* Linus Torvalds <torvalds@linux-foundation.org> wrote:
 
-On Tue, 6 Jan 2009, Ingo Molnar wrote:
+> On Tue, 6 Jan 2009, Linus Torvalds wrote:
+> > 
+> > Right now, if some process deadlocks on a mutex, we get hung process, 
+> > but with a nice backtrace and hopefully other things (that don't need 
+> > that lock) still continue to work.
 > 
-> So instead of the BUG_ON() we could emit a WARN_ONCE() perhaps, plus not 
-> do any spinning and just block - resulting in an uninterruptible task 
-> (that the user will probably notice) and a scary message in the syslog? 
-> [all in the slowpath]
+> Clarification: the "nice backtrace" we only get with something like 
+> sysrq-W, of course. We don't get a backtrace _automatically_, but with 
+> an otherwise live machine, there's a better chance that people do get 
+> wchan or other info. IOW, it's at least a fairly debuggable situation.
 
-Sure. You could put it in the adaptive function thing, with something like
+btw., the softlockup watchdog detects non-progressing uninterruptible 
+tasks (regardless of whether they locked up due to mutexes or any other 
+reason).
 
-	if (WARN_ONCE(waiter == owner))
-		return 1;
+This does occasionally help in debugging deadlocks:
 
-which should fall back on the old behavior and do the one-time warning.
+  http://marc.info/?l=linux-mm&m=122889587725061&w=2
 
-			Linus
+but it would indeed be also good to have the most common self-deadlock 
+case checked unconditionally in the mutex slowpath.
+
+	Ingo

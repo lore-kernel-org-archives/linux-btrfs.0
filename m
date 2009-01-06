@@ -1,58 +1,91 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Btrfs for mainline
-Date: Tue, 06 Jan 2009 14:41:33 -0500
-Message-ID: <1231270893.4888.19.camel@think.oraclecorp.com>
-References: <1230722935.4680.5.camel@think.oraclecorp.com>
+From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
+Subject: Re: [PATCH][RFC]: mutex: adaptive spin
+Date: Tue, 6 Jan 2009 13:42:29 -0800
+Message-ID: <20090106214229.GD6741@linux.vnet.ibm.com>
+References: <87r63ljzox.fsf@basil.nowhere.org> <20090103191706.GA2002@parisc-linux.org> <1231093310.27690.5.camel@twins> <20090104184103.GE2002@parisc-linux.org> <1231242031.11687.97.camel@twins> <20090106121052.GA27232@elte.hu> <4963584A.4090805@novell.com> <20090106131643.GA15228@elte.hu> <1231248041.11687.107.camel@twins> <49636799.1010109@novell.com>
+Reply-To: paulmck@linux.vnet.ibm.com
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
+Content-Type: text/plain; charset=us-ascii
+Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@elte.hu>,
+	Matthew Wilcox <matthew@wil.cx>,
 	Andi Kleen <andi@firstfloor.org>,
-	Ryusuke Konishi <ryusuke@osrg.net>
-To: linux-kernel@vger.kernel.org
+	Chris Mason <chris.mason@oracle.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	linux-kernel@vger.kernel.org,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Steven Rostedt <rostedt@goodmis.org>,
+	Nick Piggin <npiggin@suse.de>,
+	Linus Torvalds <torvalds@linux-foundation.org>,
+	Peter Morreale <pmorreale@novell.com>,
+	Sven Dietrich <SDietrich@novell.com>
+To: Gregory Haskins <ghaskins@novell.com>
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <1230722935.4680.5.camel@think.oraclecorp.com>
+In-Reply-To: <49636799.1010109@novell.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello everyone,
+On Tue, Jan 06, 2009 at 09:15:53AM -0500, Gregory Haskins wrote:
+> Peter Zijlstra wrote:
+> > On Tue, 2009-01-06 at 14:16 +0100, Ingo Molnar wrote:
+> >   
+> >> * Gregory Haskins <ghaskins@novell.com> wrote:
+> >>
+> >>     
+> >>> Ingo Molnar wrote:
+> >>>       
+> >>>> There's no time or spin-rate based heuristics in this at all (i.e. these 
+> >>>> mutexes are not 'adaptive' at all!),
+> >>>>         
+> >>> FYI: The original "adaptive" name was chosen in the -rt implementation 
+> >>> to reflect that the locks can adaptively spin or sleep, depending on 
+> >>> conditions.  I realize this is in contrast to the typical usage of the 
+> >>> term when it is in reference to the spin-time being based on some 
+> >>> empirical heuristics, etc as you mentioned.  Sorry for the confusion.
+> >>>       
+> >> the current version of the -rt spinny-mutexes bits were mostly written by 
+> >> Steve, right? Historically it all started out with a more classic 
+> >> "adaptive mutexes" patchset so the name stuck i guess.
+> >>     
+> >
+> > Yeah, Gregory and co. started with the whole thing and showed there was
+> > significant performance to be gained, after that Steve rewrote it from
+> > scratch reducing it to this minimalist heuristic, with help from Greg.
+> >
+> > (At least, that is how I remember it, please speak up if I got things
+> > wrong)
+> >   
+> Thats pretty accurate IIUC.  The concept and original patches were
+> written by myself, Peter Morreale and Sven Dietrich (cc'd).  However,
+> Steve cleaned up our patch before accepting it into -rt (we had extra
+> provisions for things like handling conditional compilation and run-time
+> disablement which he did not care for), but its otherwise the precise
+> core concept we introduced.  I think Steven gave a nice attribution to
+> that fact in the prologue, however.  And I also ACKed his cleanup, so I
+> think all is well from my perspective.
+> 
+> As a historical note: It should be mentioned that Steven also introduced
+> a really brilliant optimization to use RCU for the owner tracking that
+> the original patch as submitted by my team did not have.  However, it
+> turned out to inadvertently regress performance due to the way
+> preempt-rcu's rcu_read_lock() works so it had to be reverted a few weeks
+> later to the original logic that we submitted (even though on paper his
+> ideas in that area were superior to ours).  So whats in -rt now really
+> is more or less our patch sans the conditional crap, etc. 
 
-Thanks for all of the comments so far.  I've pushed out a number of
-fixes for btrfs mainline, covering most of the comments from this
-thread.
+Preemptable RCU needs to be faster.  Got it -- and might have a way
+to do it by eliminating the irq disabling and cutting way back on the
+number of operations that must be performed.  It would probably still
+be necessary to access the task structure.
 
-* All LINUX_KERNEL_VERSION checks are gone.
-* checkpatch.pl fixes
-* Extra permission checks on the ioctls
-* Some important bug fixes from the btrfs list
-* Andi found a buggy use of kmap_atomic during checksum verification
-* Drop EXPORT_SYMBOLs from extent_io.c
+Or is something other than the raw performance of rcu_read_lock() and
+rcu_read_unlock() at issue here?
 
-Unresolved from this reviewing thread:
+							Thanx, Paul
 
-* Should it be named btrfsdev?  My vote is no, it is extra work for the
-distros when we finally do rename it, and I don't think btrfs really has
-the reputation for stability right now.  But if Linus or Andrew would
-prefer the dev on there, I'll do it.
-
-* My ugly mutex_trylock spin.  It's a hefty performance gain so I'm
-hoping to keep it until there is a generic adaptive lock.
-
-The full kernel tree is here:
-
-http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=summary
-
-
-The standalone tree just has the btrfs files and commits, reviewers may
-find it easier:
-
-http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable-standalone.git;a=summary
-
-The utilities can be found here:
-
-http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-progs-unstable.git;a=summary
-
--chris
+> Hope that helps!
+> 
+> -Greg
+> 
 
 

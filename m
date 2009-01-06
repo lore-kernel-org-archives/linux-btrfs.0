@@ -1,9 +1,9 @@
-From: Linus Torvalds <torvalds@linux-foundation.org>
+From: Steven Rostedt <rostedt@goodmis.org>
 Subject: Re: [PATCH][RFC]: mutex: adaptive spin
-Date: Tue, 6 Jan 2009 10:28:38 -0800 (PST)
-Message-ID: <alpine.LFD.2.00.0901061026240.3057@localhost.localdomain>
+Date: Tue, 6 Jan 2009 14:03:02 -0500 (EST)
+Message-ID: <alpine.DEB.1.10.0901061401270.10871@gandalf.stny.rr.com>
 References: <1230722935.4680.5.camel@think.oraclecorp.com>  <20081231104533.abfb1cf9.akpm@linux-foundation.org>  <1230765549.7538.8.camel@think.oraclecorp.com>  <87r63ljzox.fsf@basil.nowhere.org> <20090103191706.GA2002@parisc-linux.org>  <1231093310.27690.5.camel@twins>
-  <20090104184103.GE2002@parisc-linux.org> <1231242031.11687.97.camel@twins> <alpine.LFD.2.00.0901060948220.3057@localhost.localdomain> <alpine.DEB.1.10.0901061314310.10871@gandalf.stny.rr.com>
+  <20090104184103.GE2002@parisc-linux.org> <1231242031.11687.97.camel@twins> <alpine.LFD.2.00.0901060948220.3057@localhost.localdomain> <alpine.LFD.2.00.0901061013250.3057@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: TEXT/PLAIN; charset=US-ASCII
 Cc: Peter Zijlstra <peterz@infradead.org>,
@@ -18,25 +18,32 @@ Cc: Peter Zijlstra <peterz@infradead.org>,
 	Thomas Gleixner <tglx@linutronix.de>,
 	Gregory Haskins <ghaskins@novell.com>,
 	Nick Piggin <npiggin@suse.de>
-To: Steven Rostedt <rostedt@goodmis.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <alpine.DEB.1.10.0901061314310.10871@gandalf.stny.rr.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <alpine.LFD.2.00.0901061013250.3057@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-
-On Tue, 6 Jan 2009, Steven Rostedt wrote:
 > 
-> Caching the rq is an interesting idea. But since the rq struct is local to 
-> sched.c, what would be a good API to do this?
+> Btw, this also fixes a bug: your patch did
+> 
+> 	+                     __set_task_state(task, state);
+> 	+                     /* didnt get the lock, go to sleep: */
+> 	+                     schedule();
+> 
+> for the schedule case without holding the mutex spinlock.
+> 
+> And that seems very buggy and racy indeed: since it doesn't hold the mutex 
+> lock, if the old owner releases the mutex at just the right point (yeah, 
+> yeah, it requires a scheduling event on another CPU in order to also miss 
+> the whole "task_is_current()" logic), the wakeup can get lost, because you 
+> set the state to sleeping perhaps _after_ the task just got woken up. So 
+> we stay sleeping even though the mutex is clear.
 
-Just move the whole "spin_or_schedule()" into sched.c, and you're all 
-done.
 
-Yeah, that requires having sched.c know a bit about mutex locking rules, 
-but the data structures are already exported in <linux/mutex.h>, and while 
-_normal_ code should never care or know exactly how it is used, I think 
-the scheduler might as well. Mutexes are clearly very much a scheduling 
-entity, so it's not too much of a break with internal knowledge.
+That is indeed a bug.
 
-		Linus
+Peter, why did you need to move __set_task_state down here?  The -rt patch 
+does not do this.
+
+-- Steve

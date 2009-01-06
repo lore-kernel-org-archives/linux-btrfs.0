@@ -1,7 +1,7 @@
 From: Linus Torvalds <torvalds@linux-foundation.org>
 Subject: Re: [PATCH][RFC]: mutex: adaptive spin
-Date: Tue, 6 Jan 2009 14:56:23 -0800 (PST)
-Message-ID: <alpine.LFD.2.00.0901061451200.3057@localhost.localdomain>
+Date: Tue, 6 Jan 2009 15:00:47 -0800 (PST)
+Message-ID: <alpine.LFD.2.00.0901061456280.3057@localhost.localdomain>
 References: <87r63ljzox.fsf@basil.nowhere.org>  <20090103191706.GA2002@parisc-linux.org> <1231093310.27690.5.camel@twins>  <20090104184103.GE2002@parisc-linux.org> <1231242031.11687.97.camel@twins>  <20090106121052.GA27232@elte.hu> <4963584A.4090805@novell.com>
   <20090106131643.GA15228@elte.hu> <1231248041.11687.107.camel@twins>  <49636799.1010109@novell.com>  <20090106214229.GD6741@linux.vnet.ibm.com>  <1231278275.11687.111.camel@twins>  <alpine.LFD.2.00.0901061349520.3057@localhost.localdomain>
  <1231279660.11687.121.camel@twins>  <alpine.LFD.2.00.0901061413310.3057@localhost.localdomain> <1231281801.11687.125.camel@twins>
@@ -28,27 +28,41 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 On Tue, 6 Jan 2009, Peter Zijlstra wrote:
-> > 
-> > In fact, I suspect that's the real bug you're hitting: you're enabling 
-> > preemption while holding a spinlock. That is NOT a good idea.
 > 
-> spinlocks also fiddle with preempt_count, that should all work out -
-> although granted, it does look funny.
+> Indeed, the below does boot -- which means I get to sleep now ;-)
 
-It most certainly doesn't always work out.
+Well, if you didn't go to sleep, a few more questions..
 
-For example, the irq-disabling ones do *not* fiddle with preempt_count, 
-because they disable preemption by just disabling interrupts. So doing 
-preempt_enable() inside such a spinlock is almost guaranteed to lock up: 
-because the preempt_enable() will now potentially call the scheduler with 
-a spinlock held and with interrupts disabled.
+>  int __sched
+>  mutex_lock_killable_nested(struct mutex *lock, unsigned int subclass)
+>  {
+> +	int ret;
+> +
+>  	might_sleep();
+> -	return __mutex_lock_common(lock, TASK_KILLABLE, subclass, _RET_IP_);
+> +	ret =  __mutex_lock_common(lock, TASK_KILLABLE, subclass, _RET_IP_);
+> +	if (!ret)
+> +		lock->owner = current;
+> +
+> +	return ret;
 
-That, in turn, can cause any number of problems - deadlocks with other 
-processes that then try to take the spinlock that didn't get released, but 
-also deadlocks with interrupts, since the scheduler will enable interrupts 
-again.
+This looks ugly. Why doesn't __mutex_lock_common() just set the lock 
+owner? Hate seeing it done in the caller that has to re-compute common 
+(yeah, yeah, it's cheap) and just looks ugly.
 
-So mixing preemption and spinlocks is almost always a bug. Yes, _some_ 
-cases work out ok, but I'd call those the odd ones.
+IOW, why didn't this just get done with something like
 
-			Linus
+	--- a/kernel/mutex.c
+	+++ b/kernel/mutex.c
+	@@ -186,6 +186,7 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
+	 done:
+	 	lock_acquired(&lock->dep_map, ip);
+	 	/* got the lock - rejoice! */
+	+	lock->owner = task;
+	 	mutex_remove_waiter(lock, &waiter, task_thread_info(task));
+	 	debug_mutex_set_owner(lock, task_thread_info(task));
+
+instead?  That takes care of all callers, including the conditional thing 
+(since the error case is a totally different path).
+
+		Linus

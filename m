@@ -1,49 +1,58 @@
-From: Steven Rostedt <rostedt@goodmis.org>
-Subject: Re: [PATCH][RFC]: mutex: adaptive spin
-Date: Tue, 6 Jan 2009 14:03:02 -0500 (EST)
-Message-ID: <alpine.DEB.1.10.0901061401270.10871@gandalf.stny.rr.com>
-References: <1230722935.4680.5.camel@think.oraclecorp.com>  <20081231104533.abfb1cf9.akpm@linux-foundation.org>  <1230765549.7538.8.camel@think.oraclecorp.com>  <87r63ljzox.fsf@basil.nowhere.org> <20090103191706.GA2002@parisc-linux.org>  <1231093310.27690.5.camel@twins>
-  <20090104184103.GE2002@parisc-linux.org> <1231242031.11687.97.camel@twins> <alpine.LFD.2.00.0901060948220.3057@localhost.localdomain> <alpine.LFD.2.00.0901061013250.3057@localhost.localdomain>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Btrfs for mainline
+Date: Tue, 06 Jan 2009 14:41:33 -0500
+Message-ID: <1231270893.4888.19.camel@think.oraclecorp.com>
+References: <1230722935.4680.5.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Peter Zijlstra <peterz@infradead.org>,
-	Matthew Wilcox <matthew@wil.cx>,
-	Andi Kleen <andi@firstfloor.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	linux-kernel@vger.kernel.org,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+Content-Type: text/plain
+Cc: linux-fsdevel <linux-fsdevel@vger.kernel.org>,
 	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Ingo Molnar <mingo@elte.hu>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Gregory Haskins <ghaskins@novell.com>,
-	Nick Piggin <npiggin@suse.de>
-To: Linus Torvalds <torvalds@linux-foundation.org>
+	Andrew Morton <akpm@linux-foundation.org>,
+	Linus Torvalds <torvalds@linux-foundation.org>,
+	Andi Kleen <andi@firstfloor.org>,
+	Ryusuke Konishi <ryusuke@osrg.net>
+To: linux-kernel@vger.kernel.org
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <alpine.LFD.2.00.0901061013250.3057@localhost.localdomain>
+In-Reply-To: <1230722935.4680.5.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello everyone,
 
-> 
-> Btw, this also fixes a bug: your patch did
-> 
-> 	+                     __set_task_state(task, state);
-> 	+                     /* didnt get the lock, go to sleep: */
-> 	+                     schedule();
-> 
-> for the schedule case without holding the mutex spinlock.
-> 
-> And that seems very buggy and racy indeed: since it doesn't hold the mutex 
-> lock, if the old owner releases the mutex at just the right point (yeah, 
-> yeah, it requires a scheduling event on another CPU in order to also miss 
-> the whole "task_is_current()" logic), the wakeup can get lost, because you 
-> set the state to sleeping perhaps _after_ the task just got woken up. So 
-> we stay sleeping even though the mutex is clear.
+Thanks for all of the comments so far.  I've pushed out a number of
+fixes for btrfs mainline, covering most of the comments from this
+thread.
+
+* All LINUX_KERNEL_VERSION checks are gone.
+* checkpatch.pl fixes
+* Extra permission checks on the ioctls
+* Some important bug fixes from the btrfs list
+* Andi found a buggy use of kmap_atomic during checksum verification
+* Drop EXPORT_SYMBOLs from extent_io.c
+
+Unresolved from this reviewing thread:
+
+* Should it be named btrfsdev?  My vote is no, it is extra work for the
+distros when we finally do rename it, and I don't think btrfs really has
+the reputation for stability right now.  But if Linus or Andrew would
+prefer the dev on there, I'll do it.
+
+* My ugly mutex_trylock spin.  It's a hefty performance gain so I'm
+hoping to keep it until there is a generic adaptive lock.
+
+The full kernel tree is here:
+
+http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=summary
 
 
-That is indeed a bug.
+The standalone tree just has the btrfs files and commits, reviewers may
+find it easier:
 
-Peter, why did you need to move __set_task_state down here?  The -rt patch 
-does not do this.
+http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable-standalone.git;a=summary
 
--- Steve
+The utilities can be found here:
+
+http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-progs-unstable.git;a=summary
+
+-chris
+
+

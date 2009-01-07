@@ -1,31 +1,17 @@
-From: Peter Zijlstra <peterz@infradead.org>
+From: Gregory Haskins <ghaskins@novell.com>
 Subject: Re: [PATCH -v5][RFC]: mutex: implement adaptive spinning
-Date: Wed, 07 Jan 2009 23:18:36 +0100
-Message-ID: <1231366716.11687.377.camel@twins>
-References: <87r63ljzox.fsf@basil.nowhere.org>
-	 <20090103191706.GA2002@parisc-linux.org> <1231242031.11687.97.camel@twins>
-	 <20090106121052.GA27232@elte.hu> <4963584A.4090805@novell.com>
-	 <20090106131643.GA15228@elte.hu> <1231248041.11687.107.camel@twins>
-	 <49636799.1010109@novell.com>  <20090106214229.GD6741@linux.vnet.ibm.com>
-	 <1231278275.11687.111.camel@twins>
-	 <alpine.LFD.2.00.0901061349520.3057@localhost.localdomain>
-	 <1231279660.11687.121.camel@twins>
-	 <alpine.LFD.2.00.0901061413310.3057@localhost.localdomain>
-	 <1231281801.11687.125.camel@twins>  <1231283778.11687.136.camel@twins>
-	 <1231329783.11687.287.camel@twins>
-	 <alpine.LFD.2.00.0901070816450.3057@localhost.localdomain>
-	 <1231347442.11687.344.camel@twins>
-	 <alpine.LFD.2.00.0901071016340.3057@localhost.localdomain>
-	 <alpine.DEB.1.10.0901071530490.23456@gandalf.stny.rr.com>
-	 <alpine.LFD.2.00.0901071241360.3057@localhost.localdomain>
-	 <1231365115.11687.361.camel@twins>
-	 <alpine.LFD.2.00.0901071355350.3057@localhost.localdomain>
+Date: Wed, 07 Jan 2009 17:28:12 -0500
+Message-ID: <49652C7C.3000909@novell.com>
+References: <alpine.LFD.2.00.0901061413310.3057@localhost.localdomain> <1231281801.11687.125.camel@twins> <1231283778.11687.136.camel@twins> <1231329783.11687.287.camel@twins> <alpine.LFD.2.00.0901070816450.3057@localhost.localdomain> <1231347442.11687.344.camel@twins> <alpine.LFD.2.00.0901071016340.3057@localhost.localdomain> <alpine.DEB.1.10.0901071530490.23456@gandalf.stny.rr.com> <alpine.LFD.2.00.0901071241360.3057@localhost.localdomain> <20090107210923.GV2002@parisc-linux.org> <20090107213924.GP496@one.firstfloor.org>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Steven Rostedt <rostedt@goodmis.org>, paulmck@linux.vnet.ibm.com,
-	Gregory Haskins <ghaskins@novell.com>,
-	Ingo Molnar <mingo@elte.hu>, Matthew Wilcox <matthew@wil.cx>,
-	Andi Kleen <andi@firstfloor.org>,
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="------------enigBDE06008AA53C040729B7369"
+Cc: Matthew Wilcox <matthew@wil.cx>,
+	Linus Torvalds <torvalds@linux-foundation.org>,
+	Steven Rostedt <rostedt@goodmis.org>,
+	Peter Zijlstra <peterz@infradead.org>,
+	paulmck@linux.vnet.ibm.com, Ingo Molnar <mingo@elte.hu>,
 	Chris Mason <chris.mason@oracle.com>,
 	Andrew Morton <akpm@linux-foundation.org>,
 	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
@@ -35,68 +21,90 @@ Cc: Steven Rostedt <rostedt@goodmis.org>, paulmck@linux.vnet.ibm.com,
 	Nick Piggin <npiggin@suse.de>,
 	Peter Morreale <pmorreale@novell.com>,
 	Sven Dietrich <SDietrich@novell.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <alpine.LFD.2.00.0901071355350.3057@localhost.localdomain>
+To: Andi Kleen <andi@firstfloor.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20090107213924.GP496@one.firstfloor.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2009-01-07 at 13:58 -0800, Linus Torvalds wrote:
-> 
-> On Wed, 7 Jan 2009, Peter Zijlstra wrote:
-> > 
-> > Do we really have to re-do all that code every loop?
-> 
-> No, you're right, we can just look up the cpu once. Which makes Andrew's 
-> argument that "probe_kernel_address()" isn't in any hot path even more 
-> true.
-> 
-> > Also, it would still need to do the funny:
-> > 
-> >  l_owner = ACCESS_ONCE(lock->owner)
-> >  if (l_owner && l_owner != thread)
-> >    break;
-> 
-> Why? That would fall out of the 
-> 
-> 	if (lock->owner != thread)
-> 		break;
-> 
-> part. We don't actually care that it only happens once: this all has 
-> _known_ races, and the "cpu_relax()" is a barrier.
-> 
-> And notice how the _caller_ handles the "owner == NULL" case by not even 
-> calling this, and looping over just the state in the lock itself. That was 
-> in the earlier emails. So this approach is actually pretty different from 
-> the case that depended on the whole spinlock thing.
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--------------enigBDE06008AA53C040729B7369
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
 
-Ah, so now you do loop on !owner, previuosly you insisted we'd go to
-sleep on !owner. Yes, with !owner spinning that is indeed not needed.
+Andi Kleen wrote:
+>> I appreciate this is sample code, but using __get_user() on
+>> non-userspace pointers messes up architectures which have separate
+>> user/kernel spaces (eg the old 4G/4G split for x86-32).  Do we have an=
 
-> +#ifdef CONFIG_SMP
-> +	/* Optimistic spinning.. */
-> +	for (;;) {
-> +		struct thread_struct *owner;
-> +		int oldval = atomic_read(&lock->count);
-> +
-> +		if (oldval <= MUTEX_SLEEPERS)
-> +			break;
-> +		if (oldval == 1) {
-> +			oldval = atomic_cmpxchg(&lock->count, oldval, 0);
-> +			if (oldval == 1) {
-> +				lock->owner = task_thread_info(task);
-> +				return 0;
-> +			}
-> +		} else {
-> +			/* See who owns it, and spin on him if anybody */
-> +			owner = lock->owner;
-> +			if (owner)
-> +				spin_on_owner(lock, owner);
-> +		}
-> +		cpu_relax();
-> +	}
-> +#endif
+>> appropriate function for kernel space pointers?=20
+>>    =20
+>
+> probe_kernel_address().
+>
+> But it's slow.
+>
+> -Andi
+>
+>  =20
 
-Hmm, still wouldn't the spin_on_owner() loopyness and the above need
-that need_resched() check you mentioned to that it can fall into the
-slow path and go to sleep?
+Can I ask a simple question in light of all this discussion?=20
 
+"Is get_task_struct() really that bad?"
+
+I have to admit you guys have somewhat lost me on some of the more
+recent discussion, so its probably just a case of being naive on my
+part...but this whole thing seems to have become way more complex than
+it needs to be.  Lets boil this down to the core requirements:  We need
+to know if the owner task is still running somewhere in the system as a
+predicate to whether we should sleep or spin, period.  Now the question
+is how to do that.
+
+The get/put task is the obvious answer to me (as an aside, we looked at
+task->oncpu rather than the rq->curr stuff which I believe was better),
+and I am inclined to think that is perfectly reasonable way to do this:=20
+After all, even if acquiring a reference is somewhat expensive (which I
+don't really think it is on a modern processor), we are already in the
+slowpath as it is and would sleep otherwise.
+
+Steve proposed a really cool trick with RCU since we know that the task
+cannot release while holding the lock, and the pointer cannot go away
+without waiting for a grace period.  It turned out to introduce latency
+side-effects so it  ultimately couldn't be used (and this was in no way
+a knock against RCU or you, Paul..just wasn't the right tool for the job
+it turned out).
+
+Ok, so onto other ideas.  What if we simply look at something like a
+scheduling sequence id.  If we know (within the wait-lock) that task X
+is the owner and its on CPU A, then we can simply monitor if A context
+switches.  Having something like rq[A]->seq++ every time we schedule()
+would suffice and you wouldnt need to hold a task reference...just note
+A=3DX->cpu from inside the wait-lock.  I guess the downside there is
+putting that extra increment in the schedule() hotpath even if no-one
+cares, but I would surmise that should be reasonably cheap when no-one
+is pulling the cacheline around other than A (i.e. no observers).
+
+But anyway, my impression from observing the direction this discussion
+has taken is that it is being way way over optimized before we even know
+if a) the adaptive stuff helps, and b) the get/put-ref hurts.  Food for
+thought.
+
+-Greg
+
+
+
+
+--------------enigBDE06008AA53C040729B7369
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.9 (GNU/Linux)
+Comment: Using GnuPG with SUSE - http://enigmail.mozdev.org
+
+iEYEARECAAYFAkllLHwACgkQlOSOBdgZUxltbQCgiMIUD97U8uHIuXhe7oTSm32j
+vQAAnAxsiPilJMPng5/vL+8OfAYNJFbB
+=5QzP
+-----END PGP SIGNATURE-----
+
+--------------enigBDE06008AA53C040729B7369--

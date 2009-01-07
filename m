@@ -1,65 +1,48 @@
-From: "Peter W. Morreale" <pmorreale@novell.com>
+From: Linus Torvalds <torvalds@linux-foundation.org>
 Subject: Re: [PATCH -v5][RFC]: mutex: implement adaptive spinning
-Date: Wed, 07 Jan 2009 23:14:24 +0000
-Message-ID: <1231370064.3470.516.camel@hermosa.site>
-References: <1231283778.11687.136.camel@twins>
-	 <1231329783.11687.287.camel@twins>
-	 <alpine.LFD.2.00.0901070816450.3057@localhost.localdomain>
-	 <1231347442.11687.344.camel@twins>
-	 <alpine.LFD.2.00.0901071016340.3057@localhost.localdomain>
-	 <alpine.DEB.1.10.0901071530490.23456@gandalf.stny.rr.com>
-	 <alpine.LFD.2.00.0901071241360.3057@localhost.localdomain>
-	 <20090107210923.GV2002@parisc-linux.org>
-	 <20090107213924.GP496@one.firstfloor.org> <49652C7C.3000909@novell.com>
-	 <20090107223317.GB27629@elte.hu>  <1231368665.3470.513.camel@hermosa.site>
+Date: Wed, 7 Jan 2009 15:15:48 -0800 (PST)
+Message-ID: <alpine.LFD.2.00.0901071510390.3057@localhost.localdomain>
+References: <alpine.LFD.2.00.0901061413310.3057@localhost.localdomain> <1231281801.11687.125.camel@twins> <1231283778.11687.136.camel@twins> <1231329783.11687.287.camel@twins> <alpine.LFD.2.00.0901070816450.3057@localhost.localdomain> <1231347442.11687.344.camel@twins>
+ <alpine.LFD.2.00.0901071016340.3057@localhost.localdomain> <alpine.DEB.1.10.0901071530490.23456@gandalf.stny.rr.com> <alpine.LFD.2.00.0901071241360.3057@localhost.localdomain> <20090107210923.GV2002@parisc-linux.org> <20090107213924.GP496@one.firstfloor.org>
+ <49652C7C.3000909@novell.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Gregory Haskins <ghaskins@novell.com>,
-	Andi Kleen <andi@firstfloor.org>,
-	Matthew Wilcox <matthew@wil.cx>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: Andi Kleen <andi@firstfloor.org>, Matthew Wilcox <matthew@wil.cx>,
 	Steven Rostedt <rostedt@goodmis.org>,
 	Peter Zijlstra <peterz@infradead.org>,
-	paulmck@linux.vnet.ibm.com, Chris Mason <chris.mason@oracle.com>,
+	paulmck@linux.vnet.ibm.com, Ingo Molnar <mingo@elte.hu>,
+	Chris Mason <chris.mason@oracle.com>,
 	Andrew Morton <akpm@linux-foundation.org>,
 	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
 	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
 	linux-btrfs <linux-btrfs@vger.kernel.org>,
 	Thomas Gleixner <tglx@linutronix.de>,
 	Nick Piggin <npiggin@suse.de>,
+	Peter Morreale <pmorreale@novell.com>,
 	Sven Dietrich <SDietrich@novell.com>
-To: Ingo Molnar <mingo@elte.hu>
+To: Gregory Haskins <ghaskins@novell.com>
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <1231368665.3470.513.camel@hermosa.site>
+In-Reply-To: <49652C7C.3000909@novell.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2009-01-07 at 15:51 -0700, Peter W. Morreale wrote:
-> On Wed, 2009-01-07 at 23:33 +0100, Ingo Molnar wrote:
-> > * Gregory Haskins <ghaskins@novell.com> wrote:
-> > 
-> > > Can I ask a simple question in light of all this discussion?
-> > > 
-> > > "Is get_task_struct() really that bad?"
-> > 
-> > it dirties a cacheline and it also involves atomics.
-> > 
-> > Also, it's a small design cleanliness issue to me: get_task_struct() 
-> > impacts the lifetime of an object - and if a locking primitive has 
-> > side-effects on object lifetimes that's never nice.
-> > 
+
+
+On Wed, 7 Jan 2009, Gregory Haskins wrote:
+>
+> Can I ask a simple question in light of all this discussion? 
 > 
-> True, but it's for one iteration * NR_CPUS, max.
-> 
-> Best,
-> -PWM
+> "Is get_task_struct() really that bad?"
 
-Never mind.  Bogus argument.  
+Yes. It's an atomic access (two, in fact, since you need to release it 
+too), which is a huge deal if we're talking about a timing-critical 
+section of code.
 
-That's why we have you Big Guns out there... - To keep us rif-raf in
-line... 
+And this is timing-critical, or we wouldn't even care - even in the 
+contention case. Admittedly btrfs apparently makes it more so that it 
+_should_ be, but Peter had some timings that happened with just regular 
+create/unlink that showed a big difference.
 
-:-)
+So the whole and only point of spinning mutexes is to get rid of the 
+scheduler overhead, but to also not replace it with some other thing ;)
 
-Best,
--PWM
-
+			Linus

@@ -1,59 +1,149 @@
-From: Steven Rostedt <rostedt@goodmis.org>
-Subject: Re: [PATCH -v5][RFC]: mutex: implement adaptive spinning
-Date: Wed, 7 Jan 2009 15:40:12 -0500 (EST)
-Message-ID: <alpine.DEB.1.10.0901071530490.23456@gandalf.stny.rr.com>
-References: <87r63ljzox.fsf@basil.nowhere.org>  <20090103191706.GA2002@parisc-linux.org> <1231093310.27690.5.camel@twins>  <20090104184103.GE2002@parisc-linux.org> <1231242031.11687.97.camel@twins>  <20090106121052.GA27232@elte.hu> <4963584A.4090805@novell.com>
-  <20090106131643.GA15228@elte.hu> <1231248041.11687.107.camel@twins>  <49636799.1010109@novell.com>  <20090106214229.GD6741@linux.vnet.ibm.com>  <1231278275.11687.111.camel@twins>  <alpine.LFD.2.00.0901061349520.3057@localhost.localdomain>
- <1231279660.11687.121.camel@twins>  <alpine.LFD.2.00.0901061413310.3057@localhost.localdomain>  <1231281801.11687.125.camel@twins>  <1231283778.11687.136.camel@twins>  <1231329783.11687.287.camel@twins>  <alpine.LFD.2.00.0901070816450.3057@localhost.localdomain>
- <1231347442.11687.344.camel@twins> <alpine.LFD.2.00.0901071016340.3057@localhost.localdomain>
+From: Josef Bacik <jbacik@redhat.com>
+Subject: Re: [PATCH] Btrfs: support security xattr with SELinux enabled
+Date: Wed, 7 Jan 2009 15:48:47 -0500
+Message-ID: <20090107204846.GG5266@unused.rdu.redhat.com>
+References: <49650E5A.3030602@hp.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Peter Zijlstra <peterz@infradead.org>, paulmck@linux.vnet.ibm.com,
-	Gregory Haskins <ghaskins@novell.com>,
-	Ingo Molnar <mingo@elte.hu>, Matthew Wilcox <matthew@wil.cx>,
-	Andi Kleen <andi@firstfloor.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Nick Piggin <npiggin@suse.de>,
-	Peter Morreale <pmorreale@novell.com>,
-	Sven Dietrich <SDietrich@novell.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: jim owens <jowens@hp.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <alpine.LFD.2.00.0901071016340.3057@localhost.localdomain>
+In-Reply-To: <49650E5A.3030602@hp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, Jan 07, 2009 at 03:19:38PM -0500, jim owens wrote:
+>
+> Add call to LSM security initialization and save
+> resulting security xattr for new inodes.
+>
+> Add xattr support to symlink inode ops.
+>
+> Set inode->i_op for existing special files.
+>
+> Signed-off-by: jim owens <jowens@hp.com>
+> ---
+>  fs/btrfs/inode.c |   23 +++++++++++++++++++----
+>  fs/btrfs/xattr.c |   32 ++++++++++++++++++++++++++++++++
+>  fs/btrfs/xattr.h |    2 ++
+>  3 files changed, 53 insertions(+), 4 deletions(-)
+>
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index cdb7011..dd6152a 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -91,6 +91,16 @@ static noinline int cow_file_range(struct inode *inode,
+>  				   u64 start, u64 end, int *page_started,
+>  				   unsigned long *nr_written, int unlock);
+>
+> +static int btrfs_init_inode_security(struct inode *inode,  struct inode  
+> *dir)
+> +{
+> +	int err;
+> +
+> +	err = btrfs_init_acl(inode, dir);
+> +	if (!err)
+> +		err = btrfs_xattr_security_init(inode, dir);
+> +	return err;
+> +}
+> +
+>  /*
+>   * a very lame attempt at stopping writes when the FS is 85% full.  There
+>   * are countless ways this is incorrect, but it is better than nothing.
+> @@ -2039,6 +2049,7 @@ void btrfs_read_locked_inode(struct inode *inode)
+>  		inode->i_mapping->backing_dev_info = &root->fs_info->bdi;
+>  		break;
+>  	default:
+> +		inode->i_op = &btrfs_special_inode_operations;
+>  		init_special_inode(inode, inode->i_mode, rdev);
+>  		break;
+>  	}
+> @@ -3586,7 +3597,7 @@ static int btrfs_mknod(struct inode *dir, struct  
+> dentry *dentry,
+>  	if (IS_ERR(inode))
+>  		goto out_unlock;
+>
+> -	err = btrfs_init_acl(inode, dir);
+> +	err = btrfs_init_inode_security(inode, dir);
+>  	if (err) {
+>  		drop_inode = 1;
+>  		goto out_unlock;
+> @@ -3649,7 +3660,7 @@ static int btrfs_create(struct inode *dir, struct  
+> dentry *dentry,
+>  	if (IS_ERR(inode))
+>  		goto out_unlock;
+>
+> -	err = btrfs_init_acl(inode, dir);
+> +	err = btrfs_init_inode_security(inode, dir);
+>  	if (err) {
+>  		drop_inode = 1;
+>  		goto out_unlock;
+> @@ -3772,7 +3783,7 @@ static int btrfs_mkdir(struct inode *dir, struct  
+> dentry *dentry, int mode)
+>
+>  	drop_on_err = 1;
+>
+> -	err = btrfs_init_acl(inode, dir);
+> +	err = btrfs_init_inode_security(inode, dir);
+>  	if (err)
+>  		goto out_fail;
+>
+> @@ -4733,7 +4744,7 @@ static int btrfs_symlink(struct inode *dir, struct  
+> dentry *dentry,
+>  	if (IS_ERR(inode))
+>  		goto out_unlock;
+>
+> -	err = btrfs_init_acl(inode, dir);
+> +	err = btrfs_init_inode_security(inode, dir);
+>  	if (err) {
+>  		drop_inode = 1;
+>  		goto out_unlock;
+> @@ -5032,4 +5043,8 @@ static struct inode_operations  
+> btrfs_symlink_inode_operations = {
+>  	.follow_link	= page_follow_link_light,
+>  	.put_link	= page_put_link,
+>  	.permission	= btrfs_permission,
+> +	.setxattr	= btrfs_setxattr,
+> +	.getxattr	= btrfs_getxattr,
+> +	.listxattr	= btrfs_listxattr,
+> +	.removexattr	= btrfs_removexattr,
+>  };
+> diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
+> index 7f332e2..02195f4 100644
+> --- a/fs/btrfs/xattr.c
+> +++ b/fs/btrfs/xattr.c
+> @@ -21,6 +21,7 @@
+>  #include <linux/slab.h>
+>  #include <linux/rwsem.h>
+>  #include <linux/xattr.h>
+> +#include <linux/security.h>
+>  #include "ctree.h"
+>  #include "btrfs_inode.h"
+>  #include "transaction.h"
+> @@ -320,3 +321,34 @@ int btrfs_removexattr(struct dentry *dentry, const  
+> char *name)
+>  		return -EOPNOTSUPP;
+>  	return __btrfs_setxattr(dentry->d_inode, name, NULL, 0, XATTR_REPLACE);
+>  }
+> +
+> +int btrfs_xattr_security_init(struct inode *inode, struct inode *dir)
+> +{
+> +	int err;
+> +	size_t len;
+> +	void *value;
+> +	char *suffix;
+> +	char *name;
+> +
+> +	err = security_inode_init_security(inode, dir, &suffix, &value, &len);
+> +	if (err) {
+> +		if (err == -EOPNOTSUPP)
+> +			return 0;
+> +		return err;
+> +	}
+> +
+> +	name = kmalloc(XATTR_SECURITY_PREFIX_LEN + strlen(suffix) + 1,
+> +		       GFP_NOFS);
 
-On Wed, 7 Jan 2009, Linus Torvalds wrote:
-> 
-> So we can do all that locklessly and optimistically, just going back and 
-> verifying the results later. This is why "thread_info" is actually a 
-> better thing to use than "task_struct" - we can look up the cpu in it with 
-> a simple dereference. We knew the pointer _used_ to be valid, so in any 
-> normal situation, it will never page fault (and if you have 
-> CONFIG_DEBUG_PAGEALLOC and hit a very unlucky race, then performance isn't 
-> your concern anyway: we just need to make the page fault be non-lethal ;)
+Use kzalloc here otherwise the end of name could be some random thing and
+strlen() will read past the end of the memory.  Thanks,
 
-Wow, and I thought I do some crazy things with side effects of different 
-kernel characteristics. So basically, since the owner use to be valid and 
-we take the cpu number directly from the thread_info struct, we do not 
-need to worry about page faulting.
-
-Next comes the issue to know if the owner is still running. Wouldn't we 
-need to do something like
-
-	if (task_thread_info(cpu_rq(cpu)->curr) == owner)
-
-I guess that would have the same characteristic, that even if the task 
-struct of cpu_rq(cpu)->curr was freed, we can still reference the 
-thread_info. Although, we might get garbage, but we don't care.
-
-I understand that this should not be a problem, but I'm afraid it will 
-give me nightmares at night. ;-)
-
-God that code had better be commented well.
-
--- Steve
+Josef

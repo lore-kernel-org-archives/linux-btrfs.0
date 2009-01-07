@@ -1,17 +1,19 @@
 From: Steven Rostedt <rostedt@goodmis.org>
 Subject: Re: [PATCH -v5][RFC]: mutex: implement adaptive spinning
-Date: Wed, 7 Jan 2009 18:47:12 -0500 (EST)
-Message-ID: <alpine.DEB.1.10.0901071846430.23456@gandalf.stny.rr.com>
-References: <1231283778.11687.136.camel@twins> <1231329783.11687.287.camel@twins> <alpine.LFD.2.00.0901070816450.3057@localhost.localdomain> <1231347442.11687.344.camel@twins> <alpine.LFD.2.00.0901071016340.3057@localhost.localdomain>
- <alpine.DEB.1.10.0901071530490.23456@gandalf.stny.rr.com> <alpine.LFD.2.00.0901071241360.3057@localhost.localdomain> <20090107210923.GV2002@parisc-linux.org> <20090107213924.GP496@one.firstfloor.org> <49652C7C.3000909@novell.com> <20090107223317.GB27629@elte.hu>
- <4965331E.8090202@novell.com> <alpine.DEB.1.10.0901071806240.23456@gandalf.stny.rr.com> <alpine.LFD.2.00.0901071529530.3057@localhost.localdomain> <alpine.DEB.1.10.0901071844160.23456@gandalf.stny.rr.com>
+Date: Wed, 7 Jan 2009 18:49:45 -0500 (EST)
+Message-ID: <alpine.DEB.1.10.0901071848431.23456@gandalf.stny.rr.com>
+References: <87r63ljzox.fsf@basil.nowhere.org>  <20090103191706.GA2002@parisc-linux.org> <1231248041.11687.107.camel@twins>  <49636799.1010109@novell.com>  <20090106214229.GD6741@linux.vnet.ibm.com>  <1231278275.11687.111.camel@twins>
+ <alpine.LFD.2.00.0901061349520.3057@localhost.localdomain>  <1231279660.11687.121.camel@twins>  <alpine.LFD.2.00.0901061413310.3057@localhost.localdomain>  <1231281801.11687.125.camel@twins>  <1231283778.11687.136.camel@twins>  <1231329783.11687.287.camel@twins>
+  <alpine.LFD.2.00.0901070816450.3057@localhost.localdomain>  <1231347442.11687.344.camel@twins>  <alpine.LFD.2.00.0901071016340.3057@localhost.localdomain>  <alpine.DEB.1.10.0901071530490.23456@gandalf.stny.rr.com>  <alpine.LFD.2.00.0901071241360.3057@localhost.localdomain>
+  <1231365115.11687.361.camel@twins>  <alpine.LFD.2.00.0901071355350.3057@localhost.localdomain> <1231368870.6686.16.camel@norville.austin.ibm.com> <alpine.LFD.2.00.0901071518570.3057@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Gregory Haskins <ghaskins@novell.com>, Ingo Molnar <mingo@elte.hu>,
-	Andi Kleen <andi@firstfloor.org>,
-	Matthew Wilcox <matthew@wil.cx>,
+Cc: Dave Kleikamp <shaggy@linux.vnet.ibm.com>,
 	Peter Zijlstra <peterz@infradead.org>,
-	paulmck@linux.vnet.ibm.com, Chris Mason <chris.mason@oracle.com>,
+	paulmck@linux.vnet.ibm.com, Gregory Haskins <ghaskins@novell.com>,
+	Ingo Molnar <mingo@elte.hu>, Matthew Wilcox <matthew@wil.cx>,
+	Andi Kleen <andi@firstfloor.org>,
+	Chris Mason <chris.mason@oracle.com>,
 	Andrew Morton <akpm@linux-foundation.org>,
 	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
 	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
@@ -22,18 +24,40 @@ Cc: Gregory Haskins <ghaskins@novell.com>, Ingo Molnar <mingo@elte.hu>,
 	Sven Dietrich <SDietrich@novell.com>
 To: Linus Torvalds <torvalds@linux-foundation.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <alpine.DEB.1.10.0901071844160.23456@gandalf.stny.rr.com>
+In-Reply-To: <alpine.LFD.2.00.0901071518570.3057@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Wed, 7 Jan 2009, Steven Rostedt wrote:
+On Wed, 7 Jan 2009, Linus Torvalds wrote:
+> On Wed, 7 Jan 2009, Dave Kleikamp wrote:
+> > 
+> > Do you need to even do that if CONFIG_DEBUG_PAGEALLOC is unset?
 > 
-> True. I need to keep looking at the code that is posted. In -rt, we force 
-> the fast path into the slowpath as soon as another task fails to get the 
-> lock. Without that, as you pointed out, the code can be racy.
+> No.
+> 
+> > Something like:
+> > 
+> > #ifdef CONFIG_DEBUG_PAGEALLOC
+> >                 /*
+> >                  * Need to access the cpu field knowing that
+> >                  * DEBUG_PAGEALLOC could have unmapped it if
+> >                  * the mutex owner just released it and exited.
+> >                  */
+> >                 if (probe_kernel_address(&thread->cpu, cpu))
+> >                         break;
+> > #else
+> > 		cpu = thread->cpu;
+> > #endif
+> 
+> yes. That would work fine.
 
-I mean we force the fast unlock path into the slow path as soon as another 
-task fails to get the lock.
+What about memory hotplug as Ingo mentioned?
+
+Should that be:
+
+#if defined(CONFIG_DEBUG_PAGEALLOC) || defined(CONFIG_MEMORY_HOTPLUG)
+
+??
 
 -- Steve
 

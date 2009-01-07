@@ -1,69 +1,38 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH -v4][RFC]: mutex: implement adaptive spinning
-Date: Wed, 07 Jan 2009 13:00:12 -0500
-Message-ID: <1231351212.27813.44.camel@think.oraclecorp.com>
-References: <87r63ljzox.fsf@basil.nowhere.org>
-	 <20090103191706.GA2002@parisc-linux.org> <1231093310.27690.5.camel@twins>
-	 <20090104184103.GE2002@parisc-linux.org> <1231242031.11687.97.camel@twins>
-	 <20090106121052.GA27232@elte.hu> <4963584A.4090805@novell.com>
-	 <20090106131643.GA15228@elte.hu> <1231248041.11687.107.camel@twins>
-	 <49636799.1010109@novell.com> <20090106214229.GD6741@linux.vnet.ibm.com>
-	 <1231278275.11687.111.camel@twins>
-	 <alpine.LFD.2.00.0901061349520.3057@localhost.localdomain>
-	 <1231279660.11687.121.camel@twins>
-	 <alpine.LFD.2.00.0901061413310.3057@localhost.localdomain>
-	 <1231281801.11687.125.camel@twins> <1231283778.11687.136.camel@twins>
-	 <1231329783.11687.287.camel@twins>
-	 <alpine.LFD.2.00.0901070816450.3057@localhost.localdomain>
-	 <1231348801.27813.31.camel@think.oraclecorp.com>
-	 <alpine.LFD.2.00.0901070945450.3057@localhost.localdomain>
+Subject: Re: Btrfs for mainline
+Date: Wed, 07 Jan 2009 13:45:57 -0500
+Message-ID: <1231353957.5016.2.camel@think.oraclecorp.com>
+References: <1230722935.4680.5.camel@think.oraclecorp.com>
+	 <1231270893.4888.19.camel@think.oraclecorp.com>
+	 <1231320811.30643.30.camel@macbook.infradead.org>
 Mime-Version: 1.0
 Content-Type: text/plain
-Cc: Peter Zijlstra <peterz@infradead.org>, paulmck@linux.vnet.ibm.com,
-	Gregory Haskins <ghaskins@novell.com>,
-	Ingo Molnar <mingo@elte.hu>, Matthew Wilcox <matthew@wil.cx>,
-	Andi Kleen <andi@firstfloor.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+Cc: linux-kernel@vger.kernel.org,
 	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
 	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Steven Rostedt <rostedt@goodmis.org>,
-	Nick Piggin <npiggin@suse.de>,
-	Peter Morreale <pmorreale@novell.com>,
-	Sven Dietrich <SDietrich@novell.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <alpine.LFD.2.00.0901070945450.3057@localhost.localdomain>
+	Andrew Morton <akpm@linux-foundation.org>,
+	Linus Torvalds <torvalds@linux-foundation.org>,
+	Andi Kleen <andi@firstfloor.org>,
+	Ryusuke Konishi <ryusuke@osrg.net>
+To: David Woodhouse <dwmw2@infradead.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1231320811.30643.30.camel@macbook.infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2009-01-07 at 09:50 -0800, Linus Torvalds wrote:
-> 
-> On Wed, 7 Jan 2009, Chris Mason wrote:
-> > 
-> > So far I haven't found any btrfs benchmarks where this is slower than
-> > mutexes without any spinning.  But, it isn't quite as fast as the btrfs
-> > spin.
-> 
-> Quite frankly, from our history with ext3 and other filesystems, using a 
-> mutex in the filesystem is generally the wrong thing to do anyway. 
-> 
-> Are you sure you can't just use a spinlock, and just release it over IO? 
-> The "have to do IO or extend the btree" case is usually pretty damn clear.
-> 
-> Because it really sounds like you're lock-limited, and you should just try 
-> to clean it up. A pure "just spinlock" in the hotpath is always going to 
-> be better.
+On Wed, 2009-01-07 at 09:33 +0000, David Woodhouse wrote:
+> On Tue, 2009-01-06 at 14:41 -0500, Chris Mason wrote:
 
-There are definitely ways I can improve performance for contention in
-the hot btree nodes, and I think it would be a mistake to tune the
-generic adaptive locks just for my current code.
+> One more thing I'd suggest is removing the INSTALL file. The parts about
+> having to build libcrc32c aren't relevant when it's part of the kernel
+> tree and you have 'select LIBCRC32C', and the documentation on the
+> userspace utilities probably lives _with_ the userspace repo. Might be
+> worth adding a pointer to the userspace utilities though, in
+> Documentation/filesystems/btrfs.txt
+> 
+> I think you can drop your own copy of the GPL too.
+> 
 
-But, it isn't a bad test case to compare the spin with the new patch and
-with the plain mutex.  If the adaptive code gets in, I think it would be
-best for me to drop the spin.
-
-Either way there's more work to be done in the btrfs locking code.
+I've pushed out your patch for this, thanks.
 
 -chris
 

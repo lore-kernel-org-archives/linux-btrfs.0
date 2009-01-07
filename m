@@ -1,49 +1,94 @@
-From: Shen Feng <shen@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: check inode allocaton earlier in btrfs_fill_super
-Date: Wed, 07 Jan 2009 14:56:48 +0800
-Message-ID: <49645230.9050403@cn.fujitsu.com>
+From: Lai Jiangshan <laijs@cn.fujitsu.com>
+Subject: Re: [PATCH][RFC]: mutex: adaptive spin
+Date: Wed, 07 Jan 2009 15:34:47 +0800
+Message-ID: <49645B17.7000001@cn.fujitsu.com>
+References: <87r63ljzox.fsf@basil.nowhere.org>	 <20090103191706.GA2002@parisc-linux.org> <1231093310.27690.5.camel@twins>	 <20090104184103.GE2002@parisc-linux.org> <1231242031.11687.97.camel@twins>	 <20090106121052.GA27232@elte.hu> <4963584A.4090805@novell.com>	 <20090106131643.GA15228@elte.hu> <1231248041.11687.107.camel@twins>	 <49636799.1010109@novell.com>  <20090106214229.GD6741@linux.vnet.ibm.com>	 <1231278275.11687.111.camel@twins>	 <alpine.LFD.2.00.0901061349520.3057@localhost.localdomain>	 <1231279660.11687.121.camel@twins>	 <alpine.LFD.2.00.0901061413310.3057@localhost.localdomain>	 <1231281801.11687.125.camel@twins>  <49642829.20006@cn.fujitsu.com> <1231309970.11687.163.camel@twins>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: Linus Torvalds <torvalds@linux-foundation.org>,
+	paulmck@linux.vnet.ibm.com, Gregory Haskins <ghaskins@novell.com>,
+	Ingo Molnar <mingo@elte.hu>, Matthew Wilcox <matthew@wil.cx>,
+	Andi Kleen <andi@firstfloor.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	linux-kernel@vger.kernel.org,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Steven Rostedt <rostedt@goodmis.org>,
+	Nick Piggin <npiggin@suse.de>,
+	Peter Morreale <pmorreale@novell.com>,
+	Sven Dietrich <SDietrich@novell.com>
+To: Peter Zijlstra <peterz@infradead.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1231309970.11687.163.camel@twins>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Peter Zijlstra wrote:
+> On Wed, 2009-01-07 at 11:57 +0800, Lai Jiangshan wrote:
+>> Peter Zijlstra wrote:
+>>> +void mutex_spin_or_schedule(struct mutex_waiter *waiter, long state, unsigned long *flags)
+>>> +{
+>>> +	struct mutex *lock = waiter->lock;
+>>> +	struct task_struct *task = waiter->task;
+>>> +	struct task_struct *owner = lock->owner;
+>>> +	struct rq *rq;
+>>> +
+>>> +	if (!owner)
+>>> +		goto do_schedule;
+>>> +
+>>> +	rq = task_rq(owner);
+>>> +
+>>> +	if (rq->curr != owner) {
+>>> +do_schedule:
+>>> +		__set_task_state(task, state);
+>>> +		spin_unlock_mutex(&lock->wait_lock, *flags);
+>>> +		schedule();
+>>> +	} else {
+>>> +		spin_unlock_mutex(&lock->wait_lock, *flags);
+>>> +		for (;;) {
+>>> +			/* Stop spinning when there's a pending signal. */
+>>> +			if (signal_pending_state(state, task))
+>>> +				break;
+>>> +
+>>> +			/* Owner changed, bail to revalidate state */
+>>> +			if (lock->owner != owner)
+>>> +				break;
+>>> +
+>>> +			/* Owner stopped running, bail to revalidate state */
+>>> +			if (rq->curr != owner)
+>>> +				break;
+>>> +
+>> 2 questions from my immature thought:
+>>
+>> 1) Do we need keep gcc from optimizing when we access lock->owner
+>>    and rq->curr in the loop?
+> 
+> cpu_relax() is a compiler barrier iirc.
+> 
+>> 2) "if (rq->curr != owner)" need become smarter.
+>>    schedule()
+>>    {
+>> 	select_next
+>> 	rq->curr = next;
+>> 	contex_swith
+>>    }
+>> we also spin when owner is select_next-ing in schedule().
+>> but select_next is not fast enough.
+> 
+> I'm not sure what you're saying here..
+> 
+> 
 
-Just after it's allocation.
+I means when mutex owner calls schedule(), current task is also spinning
+until rq->curr is changed.
 
-Signed-off-by: Shen Feng <shen@cn.fujitsu.com>
----
- fs/btrfs/super.c |    9 +++++----
- 1 files changed, 5 insertions(+), 4 deletions(-)
+I think such spin is not necessary, it is doing nothing but wasting time.
+And this spin period is not short, and when this spin period ended,
+rq->curr is changed too, current task has to sleep.
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index b4c101d..4c31c4f 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -322,6 +322,11 @@ static int btrfs_fill_super(struct super_block *sb,
- 	disk_super = &tree_root->fs_info->super_copy;
- 	inode = btrfs_iget_locked(sb, BTRFS_FIRST_FREE_OBJECTID,
- 				  tree_root->fs_info->fs_root);
-+	if (!inode) {
-+		err = -ENOMEM;
-+		goto fail_close;
-+	}
-+
- 	bi = BTRFS_I(inode);
- 	bi->location.objectid = inode->i_ino;
- 	bi->location.offset = 0;
-@@ -329,10 +334,6 @@ static int btrfs_fill_super(struct super_block *sb,
- 
- 	btrfs_set_key_type(&bi->location, BTRFS_INODE_ITEM_KEY);
- 
--	if (!inode) {
--		err = -ENOMEM;
--		goto fail_close;
--	}
- 	if (inode->i_state & I_NEW) {
- 		btrfs_read_locked_inode(inode);
- 		unlock_new_inode(inode);
--- 
-1.6.0.6
+So I think current task should sleep earlier when it detects that
+mutex owner start schedule().
+
 
 

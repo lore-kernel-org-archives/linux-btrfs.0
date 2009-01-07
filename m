@@ -1,79 +1,58 @@
-From: Ingo Molnar <mingo@elte.hu>
+From: Linus Torvalds <torvalds@linux-foundation.org>
 Subject: Re: [PATCH -v5][RFC]: mutex: implement adaptive spinning
-Date: Wed, 7 Jan 2009 22:57:59 +0100
-Message-ID: <20090107215759.GA17917@elte.hu>
-References: <1231329783.11687.287.camel@twins> <alpine.LFD.2.00.0901070816450.3057@localhost.localdomain> <1231347442.11687.344.camel@twins> <alpine.LFD.2.00.0901071016340.3057@localhost.localdomain> <alpine.DEB.1.10.0901071530490.23456@gandalf.stny.rr.com> <alpine.LFD.2.00.0901071241360.3057@localhost.localdomain> <20090107210923.GV2002@parisc-linux.org> <alpine.LFD.2.00.0901071314490.3057@localhost.localdomain> <20090107213222.GE4597@elte.hu> <20090107134715.9c5e139e.akpm@linux-foundation.org>
+Date: Wed, 7 Jan 2009 13:58:45 -0800 (PST)
+Message-ID: <alpine.LFD.2.00.0901071355350.3057@localhost.localdomain>
+References: <87r63ljzox.fsf@basil.nowhere.org>  <20090103191706.GA2002@parisc-linux.org> <1231242031.11687.97.camel@twins>  <20090106121052.GA27232@elte.hu> <4963584A.4090805@novell.com>  <20090106131643.GA15228@elte.hu> <1231248041.11687.107.camel@twins>
+ <49636799.1010109@novell.com>  <20090106214229.GD6741@linux.vnet.ibm.com>  <1231278275.11687.111.camel@twins>  <alpine.LFD.2.00.0901061349520.3057@localhost.localdomain>  <1231279660.11687.121.camel@twins>  <alpine.LFD.2.00.0901061413310.3057@localhost.localdomain>
+  <1231281801.11687.125.camel@twins>  <1231283778.11687.136.camel@twins>  <1231329783.11687.287.camel@twins>  <alpine.LFD.2.00.0901070816450.3057@localhost.localdomain>  <1231347442.11687.344.camel@twins>  <alpine.LFD.2.00.0901071016340.3057@localhost.localdomain>
+  <alpine.DEB.1.10.0901071530490.23456@gandalf.stny.rr.com>  <alpine.LFD.2.00.0901071241360.3057@localhost.localdomain> <1231365115.11687.361.camel@twins>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: torvalds@linux-foundation.org, matthew@wil.cx, rostedt@goodmis.org,
-	peterz@infradead.org, paulmck@linux.vnet.ibm.com,
-	ghaskins@novell.com, andi@firstfloor.org, chris.mason@oracle.com,
-	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, tglx@linutronix.de, npiggin@suse.de,
-	pmorreale@novell.com, SDietrich@novell.com
-To: Andrew Morton <akpm@linux-foundation.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20090107134715.9c5e139e.akpm@linux-foundation.org>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: Steven Rostedt <rostedt@goodmis.org>, paulmck@linux.vnet.ibm.com,
+	Gregory Haskins <ghaskins@novell.com>,
+	Ingo Molnar <mingo@elte.hu>, Matthew Wilcox <matthew@wil.cx>,
+	Andi Kleen <andi@firstfloor.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Nick Piggin <npiggin@suse.de>,
+	Peter Morreale <pmorreale@novell.com>,
+	Sven Dietrich <SDietrich@novell.com>
+To: Peter Zijlstra <peterz@infradead.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1231365115.11687.361.camel@twins>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-* Andrew Morton <akpm@linux-foundation.org> wrote:
 
-> On Wed, 7 Jan 2009 22:32:22 +0100
-> Ingo Molnar <mingo@elte.hu> wrote:
+On Wed, 7 Jan 2009, Peter Zijlstra wrote:
 > 
-> > > We could do the whole "oldfs = get_fs(); set_fs(KERNEL_DS); .. 
-> > > set_fs(oldfs);" crud, but it would probably be better to just add an 
-> > > architected accessor. Especially since it's going to generally just be a
-> > > 
-> > > 	#define get_kernel_careful(val,p) __get_user(val,p)
-> > > 
-> > > for most architectures.
-> > > 
-> > > We've needed that before (and yes, we've simply mis-used __get_user() on 
-> > > x86 before rather than add it).
-> > 
-> > for the oldfs stuff we already have probe_kernel_read(). OTOH, that 
-> > involves pagefault_disable() which is an atomic op
+> Do we really have to re-do all that code every loop?
+
+No, you're right, we can just look up the cpu once. Which makes Andrew's 
+argument that "probe_kernel_address()" isn't in any hot path even more 
+true.
+
+> Also, it would still need to do the funny:
 > 
-> tisn't.  pagefault_disable() is just preempt_count()+=1;barrier() ?
+>  l_owner = ACCESS_ONCE(lock->owner)
+>  if (l_owner && l_owner != thread)
+>    break;
 
-okay. Not an atomic (which is plenty fast on Nehalem with 20 cycles 
-anyway), but probe_kernel_read() is expensive nevertheless:
+Why? That would fall out of the 
 
-ffffffff8027c092 <probe_kernel_read>:
-ffffffff8027c092:	65 48 8b 04 25 10 00 	mov    %gs:0x10,%rax
-ffffffff8027c099:	00 00 
-ffffffff8027c09b:	53                   	push   %rbx
-ffffffff8027c09c:	48 8b 98 48 e0 ff ff 	mov    -0x1fb8(%rax),%rbx
-ffffffff8027c0a3:	48 c7 80 48 e0 ff ff 	movq   $0xffffffffffffffff,-0x1fb8(%rax)
-ffffffff8027c0aa:	ff ff ff ff 
-ffffffff8027c0ae:	65 48 8b 04 25 10 00 	mov    %gs:0x10,%rax
-ffffffff8027c0b5:	00 00 
-ffffffff8027c0b7:	ff 80 44 e0 ff ff    	incl   -0x1fbc(%rax)
-ffffffff8027c0bd:	e8 0e dd 0d 00       	callq  ffffffff80359dd0 <__copy_from_user_inatomic>
-ffffffff8027c0c2:	65 48 8b 14 25 10 00 	mov    %gs:0x10,%rdx
-ffffffff8027c0c9:	00 00 
-ffffffff8027c0cb:	ff 8a 44 e0 ff ff    	decl   -0x1fbc(%rdx)
-ffffffff8027c0d1:	65 48 8b 14 25 10 00 	mov    %gs:0x10,%rdx
-ffffffff8027c0d8:	00 00 
-ffffffff8027c0da:	48 83 f8 01          	cmp    $0x1,%rax
-ffffffff8027c0de:	48 89 9a 48 e0 ff ff 	mov    %rbx,-0x1fb8(%rdx)
-ffffffff8027c0e5:	48 19 c0             	sbb    %rax,%rax
-ffffffff8027c0e8:	48 f7 d0             	not    %rax
-ffffffff8027c0eb:	48 83 e0 f2          	and    $0xfffffffffffffff2,%rax
-ffffffff8027c0ef:	5b                   	pop    %rbx
-ffffffff8027c0f0:	c3                   	retq   
-ffffffff8027c0f1:	90                   	nop    
+	if (lock->owner != thread)
+		break;
 
-where __copy_user_inatomic() goes into the full __copy_generic_unrolled(). 
-Not pretty.
+part. We don't actually care that it only happens once: this all has 
+_known_ races, and the "cpu_relax()" is a barrier.
 
-> Am suspecting that you guys might be over-optimising this 
-> contended-path-were-going-to-spin-anyway code?
+And notice how the _caller_ handles the "owner == NULL" case by not even 
+calling this, and looping over just the state in the lock itself. That was 
+in the earlier emails. So this approach is actually pretty different from 
+the case that depended on the whole spinlock thing.
 
-not sure. Especially for 'good' locking usage - where there are shortly 
-held locks and the spin times are short, the average time to get _out_ of 
-the spinning section is a kind of secondary fastpath as well.
-
-	Ingo
+			Linus

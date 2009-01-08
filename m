@@ -1,11 +1,14 @@
-From: Linus Torvalds <torvalds@linux-foundation.org>
+From: Steven Rostedt <rostedt@goodmis.org>
 Subject: Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
-Date: Thu, 8 Jan 2009 11:54:23 -0800 (PST)
-Message-ID: <alpine.LFD.2.00.0901081140550.3283@localhost.localdomain>
-References: <1231441350.14304.48.camel@think.oraclecorp.com>
+Date: Thu, 8 Jan 2009 14:45:29 -0500 (EST)
+Message-ID: <alpine.DEB.1.10.0901081440410.24688@gandalf.stny.rr.com>
+References: <alpine.LFD.2.00.0901070816450.3057@localhost.localdomain>  <1231347442.11687.344.camel@twins>  <alpine.LFD.2.00.0901071016340.3057@localhost.localdomain>  <alpine.DEB.1.10.0901071530490.23456@gandalf.stny.rr.com>  <alpine.LFD.2.00.0901071241360.3057@localhost.localdomain>
+  <1231365115.11687.361.camel@twins>  <alpine.LFD.2.00.0901071355350.3057@localhost.localdomain>  <1231366716.11687.377.camel@twins>  <alpine.LFD.2.00.0901071509160.3057@localhost.localdomain>  <1231408718.11687.400.camel@twins> <20090108141808.GC11629@elte.hu>
+  <1231426014.11687.456.camel@twins>  <alpine.LFD.2.00.0901080849550.3283@localhost.localdomain>  <1231434515.14304.27.camel@think.oraclecorp.com>  <alpine.DEB.1.10.0901081227260.24688@gandalf.stny.rr.com>  <alpine.LFD.2.00.0901080943270.3283@localhost.localdomain>
+  <alpine.DEB.1.10.0901081300370.24688@gandalf.stny.rr.com>  <alpine.DEB.1.10.0901081305430.24688@gandalf.stny.rr.com> <1231442273.14304.49.camel@think.oraclecorp.com>
 Mime-Version: 1.0
 Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Steven Rostedt <rostedt@goodmis.org>,
+Cc: Linus Torvalds <torvalds@linux-foundation.org>,
 	Peter Zijlstra <peterz@infradead.org>,
 	Ingo Molnar <mingo@elte.hu>, paulmck@linux.vnet.ibm.com,
 	Gregory Haskins <ghaskins@novell.com>,
@@ -21,66 +24,30 @@ Cc: Steven Rostedt <rostedt@goodmis.org>,
 	Sven Dietrich <SDietrich@novell.com>
 To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <1231441350.14304.48.camel@think.oraclecorp.com>
+In-Reply-To: <1231442273.14304.49.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-
 On Thu, 8 Jan 2009, Chris Mason wrote:
+> On Thu, 2009-01-08 at 13:14 -0500, Steven Rostedt wrote:
+> > 
+> > If it was the current process that preempted the owner and these are RT 
+> > tasks pinned to the same CPU and the owner is of lower priority than the 
+> > spinner, we have a deadlock!
+> > 
+> > Hmm, I do not think the need_sched here will even fix that :-/
 > 
-> The patch below isn't quite what Linus suggested, but it is working here
-> at least.  In every test I've tried so far, this is faster than the ugly
-> btrfs spin.
+> RT tasks could go directly to sleeping.  The spinner would see them on
+> the list and break out.
 
-Sadly, I don't think it's really working.
+True, we could do:
 
-I was pretty sure that adding the unlocked loop should provably not change 
-the mutex lock semantics. Why? Because it's just basically equivalent to 
-just doing the mutex_trylock() without really changing anything really 
-fundamental in the mutex logic.
+	if (owner) {
+		if (!spin_on_owner(lock, owner))	
+			break;
+	} else if (rt_task(current))
+		break;
 
-And that argument is sadly totally bogus. 
+That would at least solve the issue in the short term.
 
-The thing is, we used to have this guarantee that any contention would 
-always go into the slowpath, and then in the slow-path we serialize using 
-the spinlock. 
-
-So I think the bug is still there, we just hid it better by breaking out 
-of the loop with that "if (need_resched())" always eventually triggering. 
-And it would be ok if it really is guaranteed to _eventually_ trigger, and 
-I guess with timeslices it eventually always will, but I suspect we could 
-have some serious latency spikes.
-
-The problem? Setting "lock->count" to 0. That will mean that the next 
-"mutex_unlock()" will not necessarily enter the slowpath at all, and won't 
-necessarily wake things up like it should.
-
-Normally we set lock->count to 0 after getting the lock, and only _inside_ 
-the spinlock, and then we check the waiters after that. The comment says 
-it all:
-
-        /* set it to 0 if there are no waiters left: */
-        if (likely(list_empty(&lock->wait_list)))
-                atomic_set(&lock->count, 0);
-
-and the spinning case violates that rule. 
-
-Now, the spinning case only sets it to 0 if we saw it set to 1, so I think 
-the argument can go something like:
-
- - if it was 1, and we _have_ seen contention, then we know that at 
-   least _one_ person that set it to 1 must have gone through the unlock 
-   slowpath (ie it wasn't just a normal "locked increment".
-
- - So even if _we_ (in the spinning part of stealing that lock) didn't 
-   wake the waiter up, the slowpath wakeup case (that did _not_ wake 
-   us up, since we were spinning and hadn't added ourselves to the wait 
-   list) must have done so.
-
-So maybe it's all really really safe, and we're still guaranteed to have 
-as many wakeups as we had go-to-sleeps. But I have to admit that my brain 
-hurts a bit from worrying about this.
-
-Sleeping mutexes are not ever simple. 
-
-			Linus
+-- Steve

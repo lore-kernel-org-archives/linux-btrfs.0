@@ -1,16 +1,31 @@
-From: Andi Kleen <andi@firstfloor.org>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
-Date: Thu, 8 Jan 2009 20:00:38 +0100
-Message-ID: <20090108190038.GH496@one.firstfloor.org>
-References: <alpine.LFD.2.00.0901071355350.3057@localhost.localdomain> <1231366716.11687.377.camel@twins> <alpine.LFD.2.00.0901071509160.3057@localhost.localdomain> <1231408718.11687.400.camel@twins> <20090108141808.GC11629@elte.hu> <1231426014.11687.456.camel@twins> <alpine.LFD.2.00.0901080849550.3283@localhost.localdomain> <1231434515.14304.27.camel@think.oraclecorp.com> <alpine.LFD.2.00.0901080955400.3283@localhost.localdomain> <20090108183306.GA22916@elte.hu>
+Date: Thu, 08 Jan 2009 14:02:30 -0500
+Message-ID: <1231441350.14304.48.camel@think.oraclecorp.com>
+References: <alpine.LFD.2.00.0901070816450.3057@localhost.localdomain>
+	 <1231347442.11687.344.camel@twins>
+	 <alpine.LFD.2.00.0901071016340.3057@localhost.localdomain>
+	 <alpine.DEB.1.10.0901071530490.23456@gandalf.stny.rr.com>
+	 <alpine.LFD.2.00.0901071241360.3057@localhost.localdomain>
+	 <1231365115.11687.361.camel@twins>
+	 <alpine.LFD.2.00.0901071355350.3057@localhost.localdomain>
+	 <1231366716.11687.377.camel@twins>
+	 <alpine.LFD.2.00.0901071509160.3057@localhost.localdomain>
+	 <1231408718.11687.400.camel@twins> <20090108141808.GC11629@elte.hu>
+	 <1231426014.11687.456.camel@twins>
+	 <alpine.LFD.2.00.0901080849550.3283@localhost.localdomain>
+	 <1231434515.14304.27.camel@think.oraclecorp.com>
+	 <alpine.DEB.1.10.0901081227260.24688@gandalf.stny.rr.com>
+	 <alpine.LFD.2.00.0901080943270.3283@localhost.localdomain>
+	 <alpine.DEB.1.10.0901081300370.24688@gandalf.stny.rr.com>
+	 <alpine.LFD.2.00.0901081005560.3283@localhost.localdomain>
+	 <1231439234.14304.33.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Linus Torvalds <torvalds@linux-foundation.org>,
-	"H. Peter Anvin" <hpa@zytor.com>,
-	Chris Mason <chris.mason@oracle.com>,
+Content-Type: text/plain
+Cc: Steven Rostedt <rostedt@goodmis.org>,
 	Peter Zijlstra <peterz@infradead.org>,
-	Steven Rostedt <rostedt@goodmis.org>,
-	paulmck@linux.vnet.ibm.com, Gregory Haskins <ghaskins@novell.com>,
+	Ingo Molnar <mingo@elte.hu>, paulmck@linux.vnet.ibm.com,
+	Gregory Haskins <ghaskins@novell.com>,
 	Matthew Wilcox <matthew@wil.cx>,
 	Andi Kleen <andi@firstfloor.org>,
 	Andrew Morton <akpm@linux-foundation.org>,
@@ -21,18 +36,69 @@ Cc: Linus Torvalds <torvalds@linux-foundation.org>,
 	Nick Piggin <npiggin@suse.de>,
 	Peter Morreale <pmorreale@novell.com>,
 	Sven Dietrich <SDietrich@novell.com>
-To: Ingo Molnar <mingo@elte.hu>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090108183306.GA22916@elte.hu>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <1231439234.14304.33.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> I'll try to annotate the inline asms (there's not _that_ many of them), 
-> and measure what the size impact is.
+On Thu, 2009-01-08 at 13:27 -0500, Chris Mason wrote:
+> On Thu, 2009-01-08 at 10:16 -0800, Linus Torvalds wrote:
+> > 
+> > On Thu, 8 Jan 2009, Steven Rostedt wrote:
+> > > 
+> > > Ouch! I think you are on to something:
+> > 
+> > Yeah, there's somethign there, but looking at Chris' backtrace, there's 
+> > nothing there to disable preemption. So if it was this simple case, it 
+> > should still have preempted him to let the other process run and finish 
+> > up.
+> > 
+> 
+> My .config has no lockdep or schedule debugging and voluntary preempt.
+> I do have CONFIG_INLINE_OPTIMIZE on, its a good name for trusting gcc I
+> guess.
 
-You can just use the patch I submitted and that you rejected for
-most of them :)
+The patch below isn't quite what Linus suggested, but it is working here
+at least.  In every test I've tried so far, this is faster than the ugly
+btrfs spin.
 
--Andi
+dbench v7.1:        789mb/s
+dbench simple spin: 566MB/s
 
--- 
-ak@linux.intel.com
+50 proc parallel creates v7.1:        162 files/s avg sys: 1.6
+50 proc parallel creates simple spin: 152 files/s avg sys: 2
+
+50 proc parallel stat v7.1:        2.3s total
+50 proc parallel stat simple spin: 3.8s total
+
+It is less fair though, the 50 proc parallel creates had a much bigger
+span between the first and last proc's exit time.  This isn't a huge
+shock, I think it shows the hot path is closer to a real spin lock.
+
+Here's the incremental I was using.  It looks to me like most of the
+things that could change inside spin_on_owner mean we still want to
+spin.  The only exception is the need_resched() flag.
+
+-chris
+
+diff --git a/kernel/mutex.c b/kernel/mutex.c
+index bd6342a..8936410 100644
+--- a/kernel/mutex.c
++++ b/kernel/mutex.c
+@@ -161,11 +161,13 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
+ 			return 0;
+ 		}
+ 
+-		if (old_val < 0 && !list_empty(&lock->wait_list))
++		if (!list_empty(&lock->wait_list))
+ 			break;
+ 
+ 		/* See who owns it, and spin on him if anybody */
+ 		owner = ACCESS_ONCE(lock->owner);
++		if (need_resched())
++			break;
+ 		if (owner && !spin_on_owner(lock, owner))
+ 			break;
+ 
+
+

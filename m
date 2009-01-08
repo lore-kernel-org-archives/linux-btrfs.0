@@ -1,66 +1,52 @@
-From: Peter Zijlstra <peterz@infradead.org>
-Subject: Re: [PATCH -v5][RFC]: mutex: implement adaptive spinning
-Date: Thu, 08 Jan 2009 08:10:30 +0100
-Message-ID: <1231398630.11687.382.camel@twins>
-References: <1231283778.11687.136.camel@twins>
-	 <1231329783.11687.287.camel@twins>
-	 <alpine.LFD.2.00.0901070816450.3057@localhost.localdomain>
-	 <1231347442.11687.344.camel@twins>
-	 <alpine.LFD.2.00.0901071016340.3057@localhost.localdomain>
-	 <alpine.DEB.1.10.0901071530490.23456@gandalf.stny.rr.com>
-	 <alpine.LFD.2.00.0901071241360.3057@localhost.localdomain>
-	 <20090107210923.GV2002@parisc-linux.org>
-	 <20090107213924.GP496@one.firstfloor.org> <49652C7C.3000909@novell.com>
-	 <20090107223317.GB27629@elte.hu> <4965331E.8090202@novell.com>
-	 <alpine.DEB.1.10.0901071806240.23456@gandalf.stny.rr.com>
-	 <alpine.LFD.2.00.0901071529530.3057@localhost.localdomain>
+From: Shen Feng <shen@cn.fujitsu.com>
+Subject: What's wrong with snapshot?
+Date: Thu, 08 Jan 2009 17:27:52 +0800
+Message-ID: <4965C718.8070200@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Steven Rostedt <rostedt@goodmis.org>,
-	Gregory Haskins <ghaskins@novell.com>,
-	Ingo Molnar <mingo@elte.hu>, Andi Kleen <andi@firstfloor.org>,
-	Matthew Wilcox <matthew@wil.cx>, paulmck@linux.vnet.ibm.com,
-	Chris Mason <chris.mason@oracle.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Nick Piggin <npiggin@suse.de>,
-	Peter Morreale <pmorreale@novell.com>,
-	Sven Dietrich <SDietrich@novell.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <alpine.LFD.2.00.0901071529530.3057@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2009-01-07 at 15:32 -0800, Linus Torvalds wrote:
-> 
-> On Wed, 7 Jan 2009, Steven Rostedt wrote:
-> > 
-> > What would be interesting is various benchmarks against all three.
-> > 
-> > 1) no mutex spinning.
-> > 2) get_task_struct() implementation.
-> > 3) spin_or_sched implementation.
-> 
-> One of the issues is that I cannot convince myself that (2) is even 
-> necessarily correct. At least not without having all cases happen inder 
-> the mutex spinlock - which they don't. Even with the original patch, the 
-> uncontended cases set and cleared the owner field outside the lock.
+Hello, 
 
-Yes, 2 isn't feasible for regular mutexes as we have non-atomic owner
-tracking.
+I tried to ceate a snapshot of a subvol.
+But it seems now work.
 
-I've since realized the whole rtmutex thing is fundamentally difference
-on a few levels:
+Please see the test below. I think the file created by dd
+should also in the snap directory.
 
-  a) we have atomic owner tracking (that's the lock itself, it holds the
-task_pointer as a cookie), and 
+[root@localhost mnt]# ./test2.sh 
++ mkfs.btrfs /dev/sdb8
+fs created label (null) on /dev/sdb8
+	nodesize 4096 leafsize 4096 sectorsize 4096 size 18.63GB
+Btrfs v0.16-35-g6e0e6df-dirty
++ btrfsctl -a
+Scanning for Btrfs filesystems
++ mount -t btrfs /dev/sdb8 /mnt/btrfs
++ cd /mnt/btrfs
++ btrfsctl -S sub /mnt/btrfs
+operation complete
+Btrfs v0.16-35-g6e0e6df-dirty
++ btrfsctl -s snap /mnt/btrfs/sub
+operation complete
+Btrfs v0.16-35-g6e0e6df-dirty
++ dd if=/dev/zero of=/mnt/btrfs/sub/file bs=1024 count=1024
+1024+0 records in
+1024+0 records out
+1048576 bytes (1.0 MB) copied, 0.0208993 s, 50.2 MB/s
++ ls -a snap sub
+snap:
+.  ..
 
-  b) we need to do that whole enqueue on the waitlist thing because we
-need to do the PI propagation and such to figure out if the current task
-is even allowed to acquire -- that is, only the highest waiting and or
-lateral steal candidates are allowed to spin acquire.
+sub:
+.  ..  file
++ cd ..
+
+
+Anything wrong?
+Thanks
+
+-Shen
 
 

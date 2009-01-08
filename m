@@ -1,56 +1,93 @@
-From: jim owens <jowens@hp.com>
-Subject: Re: Btrfs for mainline
-Date: Thu, 08 Jan 2009 15:15:01 -0500
-Message-ID: <49665EC5.2090707@hp.com>
-References: <1230722935.4680.5.camel@think.oraclecorp.com> <1231270893.4888.19.camel@think.oraclecorp.com>
+From: Steven Rostedt <rostedt@goodmis.org>
+Subject: Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
+Date: Thu, 8 Jan 2009 15:12:45 -0500 (EST)
+Message-ID: <alpine.DEB.1.10.0901081506460.24688@gandalf.stny.rr.com>
+References: <1231441350.14304.48.camel@think.oraclecorp.com> <alpine.LFD.2.00.0901081140550.3283@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-kernel@vger.kernel.org,
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Peter Zijlstra <peterz@infradead.org>,
+	Ingo Molnar <mingo@elte.hu>, paulmck@linux.vnet.ibm.com,
+	Gregory Haskins <ghaskins@novell.com>,
+	Matthew Wilcox <matthew@wil.cx>,
+	Andi Kleen <andi@firstfloor.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
 	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
 	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
-	Andi Kleen <andi@firstfloor.org>,
-	Ryusuke Konishi <ryusuke@osrg.net>
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1762915AbZAHUP5@vger.kernel.org>
-In-Reply-To: <1231270893.4888.19.camel@think.oraclecorp.com>
+	Thomas Gleixner <tglx@linutronix.de>,
+	Nick Piggin <npiggin@suse.de>,
+	Peter Morreale <pmorreale@novell.com>,
+	Sven Dietrich <SDietrich@novell.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <alpine.LFD.2.00.0901081140550.3283@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote:
+
 > 
-> Unresolved from this reviewing thread:
+> The problem? Setting "lock->count" to 0. That will mean that the next 
+> "mutex_unlock()" will not necessarily enter the slowpath at all, and won't 
+> necessarily wake things up like it should.
 > 
-> * Should it be named btrfsdev?  My vote is no, it is extra work for the
-> distros when we finally do rename it, and I don't think btrfs really has
-> the reputation for stability right now.  But if Linus or Andrew would
-> prefer the dev on there, I'll do it.
+> Normally we set lock->count to 0 after getting the lock, and only _inside_ 
+> the spinlock, and then we check the waiters after that. The comment says 
+> it all:
+> 
+>         /* set it to 0 if there are no waiters left: */
+>         if (likely(list_empty(&lock->wait_list)))
+>                 atomic_set(&lock->count, 0);
+> 
+> and the spinning case violates that rule. 
 
-We know who has the last word on this.
+The difference is that here we have it set to -1 (in the non patched 
+code), and we have to decide if we should change that to 0. To change from 
+-1 to 0 needs the protection of the spin locks.
 
-This is just additional background for those who commented.
+In the loop, we only change from 1 to 0 which is the same as the fast 
+path, and should not cause any problems.
 
-Using tricks such as btrfsdev, mount "unsafe", or kernel
-messages won't provide a guarantee that btrfs is only used
-in appropriate and risk-free ways.  Those tricks also won't
-prevent all problems caused by booting a broken old (or new)
-release.  And the perceived quality and performance of any
-filesystem release, even between stable versions, depends
-very much on individual system configuration and use.
 
-Before Chris posted the code, we had some btrfs concall
-discussions about the best way to set user expectations on
-btrfs mainline 1.0.  Consensus was that the best way we
-could do this was to warn them when they did mkfs.btrfs.
+> 
+> Now, the spinning case only sets it to 0 if we saw it set to 1, so I think 
+> the argument can go something like:
 
-Today I sent a patch to Chris (which he may ignore/change)
-so mkfs.btrfs will say:
+Yep.
 
-WARNING! - Btrfs v0.16-39-gf9972b4 IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
+> 
+>  - if it was 1, and we _have_ seen contention, then we know that at 
+>    least _one_ person that set it to 1 must have gone through the unlock 
+>    slowpath (ie it wasn't just a normal "locked increment".
 
-with a blank line before and after.  They don't have to
-confirm since they can just mkfs a different filesystem
-if I scared them away.  The version is auto-generated.
+Correct.
 
-jim
+> 
+>  - So even if _we_ (in the spinning part of stealing that lock) didn't 
+>    wake the waiter up, the slowpath wakeup case (that did _not_ wake 
+>    us up, since we were spinning and hadn't added ourselves to the wait 
+>    list) must have done so.
+
+Agreed.
+
+> 
+> So maybe it's all really really safe, and we're still guaranteed to have 
+> as many wakeups as we had go-to-sleeps. But I have to admit that my brain 
+> hurts a bit from worrying about this.
+
+I do not think that the issue with the previous bug that Chris showed had 
+anything to do with the actual sleepers. The slow path never changes the 
+lock to '1', so it should not affect the spinners. We can think of the 
+spinners as not having true contention with the lock, and are just like a:
+
+	while (cond) {
+		if (mutex_trylock(lock))
+			goto got_the_lock;
+	}
+
+> 
+> Sleeping mutexes are not ever simple. 
+
+Now you see why in -rt we did all this in the slow path ;-)
+
+-- Steve
+

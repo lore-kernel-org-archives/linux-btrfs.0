@@ -1,17 +1,21 @@
-From: Andi Kleen <andi@firstfloor.org>
-Subject: Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
-Date: Fri, 9 Jan 2009 22:15:13 +0100
-Message-ID: <20090109211513.GO26290@one.firstfloor.org>
-References: <1231408718.11687.400.camel@twins> <20090108141808.GC11629@elte.hu> <1231426014.11687.456.camel@twins> <alpine.LFD.2.00.0901080849550.3283@localhost.localdomain> <1231434515.14304.27.camel@think.oraclecorp.com> <alpine.LFD.2.00.0901080955400.3283@localhost.localdomain> <20090108183306.GA22916@elte.hu> <20090108190038.GH496@one.firstfloor.org> <4966AB74.2090104@zytor.com> <20090109133710.GB31845@elte.hu>
+From: Theodore Tso <tytso@mit.edu>
+Subject: Re: [patch] measurements, numbers about CONFIG_OPTIMIZE_INLINING=y
+	impact
+Date: Fri, 9 Jan 2009 16:23:35 -0500
+Message-ID: <20090109212335.GH23869@mit.edu>
+References: <20090109172011.GD26290@one.firstfloor.org> <20090109172801.GC6936@parisc-linux.org> <20090109174719.GG26290@one.firstfloor.org> <20090109173914.GD6936@parisc-linux.org> <alpine.LFD.2.00.0901090947080.6528@localhost.localdomain> <84fc9c000901091109t2c2aef2fu596f8807b0962688@mail.gmail.com> <alpine.LFD.2.00.0901091128170.6528@localhost.localdomain> <84fc9c000901091214i16fc74b7q349433a5586d5619@mail.gmail.com> <alpine.LFD.2.00.0901091217530.6528@localhost.localdomain> <84fc9c000901091237i68b2e495tab55e61fb3dbd565@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: "H. Peter Anvin" <hpa@zytor.com>, Andi Kleen <andi@firstfloor.org>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
+Cc: Linus Torvalds <torvalds@linux-foundation.org>,
+	Matthew Wilcox <matthew@wil.cx>,
+	Andi Kleen <andi@firstfloor.org>,
+	Dirk Hohndel <hohndel@infradead.org>,
+	"H. Peter Anvin" <hpa@zytor.com>, Ingo Molnar <mingo@elte.hu>,
+	jim owens <jowens@hp.com>,
 	Chris Mason <chris.mason@oracle.com>,
 	Peter Zijlstra <peterz@infradead.org>,
 	Steven Rostedt <rostedt@goodmis.org>,
 	paulmck@linux.vnet.ibm.com, Gregory Haskins <ghaskins@novell.com>,
-	Matthew Wilcox <matthew@wil.cx>,
 	Andrew Morton <akpm@linux-foundation.org>,
 	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
 	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
@@ -19,20 +23,27 @@ Cc: "H. Peter Anvin" <hpa@zytor.com>, Andi Kleen <andi@firstfloor.org>,
 	Thomas Gleixner <tglx@linutronix.de>,
 	Nick Piggin <npiggin@suse.de>,
 	Peter Morreale <pmorreale@novell.com>,
-	Sven Dietrich <SDietrich@novell.com>
-To: Ingo Molnar <mingo@elte.hu>
+	Sven Dietrich <SDietrich@novell.com>, jh@suse.cz
+To: Richard Guenther <richard.guenther@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090109133710.GB31845@elte.hu>
+In-Reply-To: <84fc9c000901091237i68b2e495tab55e61fb3dbd565@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> I've done a finegrained size analysis today (see my other mail in this 
-> thread), and it turns out that on gcc 4.3.x the main (and pretty much 
-> only) inlining annotation that matters in arch/x86/include/asm/*.h is the 
-> onliner patch attached below, annotating constant_test_bit().
+I'm beginning to think that for the kernel, we should just simply
+remove CONFIG_OPTIMIZE_INLINING (so that inline means
+"always_inline"), and -fno-inline-functions
+-fno-inline-functions-called-one (so that gcc never inlines functions
+behind our back) --- and then we create tools that count how many times functions get used, and how big functions are, so that we can flag if some 
+function really should be marked inline when it isn't or vice versa.   
 
-That's pretty cool.
+But given that this is a very hard thing for an automated program
+todo, let's write some tools so we can easily put a human in the loop,
+who can add or remove inline keywords where it makes sense, and let's
+give up on gcc being able to "guess" correctly.
 
-Should definitely file a gcc bug report for that though so that
-they can fix gcc. Did you already do that or should I?
+For some things, like register allocation, I can accept that the
+compiler will usually get these things right.  But whether or not to
+inline a function seems to be one of those things that humans (perhaps
+with some tools assist) can still do a better job than compilers.
 
--Andi
+     	  		    	     - Ted

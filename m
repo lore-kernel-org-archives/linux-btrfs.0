@@ -1,14 +1,15 @@
-From: Linus Torvalds <torvalds@linux-foundation.org>
+From: Theodore Tso <tytso@mit.edu>
 Subject: Re: [patch] measurements, numbers about CONFIG_OPTIMIZE_INLINING=y
- impact
-Date: Fri, 9 Jan 2009 11:48:41 -0800 (PST)
-Message-ID: <alpine.LFD.2.00.0901091145110.6528@localhost.localdomain>
-References: <20090109084620.3c711aad@infradead.org> <20090109172011.GD26290@one.firstfloor.org> <20090109172801.GC6936@parisc-linux.org> <20090109174719.GG26290@one.firstfloor.org> <20090109094142.367012b6@infradead.org> <20090109180213.GH26290@one.firstfloor.org>
- <alpine.LFD.2.00.0901090954410.6528@localhost.localdomain> <20090109185509.GJ26290@one.firstfloor.org> <alpine.LFD.2.00.0901091045090.6528@localhost.localdomain> <20090109193506.GL26290@one.firstfloor.org> <20090109192918.GE6936@parisc-linux.org>
+	impact
+Date: Fri, 9 Jan 2009 14:52:33 -0500
+Message-ID: <20090109195232.GE23869@mit.edu>
+References: <20090109153508.GA4671@elte.hu> <49677CB1.3030701@zytor.com> <20090109084620.3c711aad@infradead.org> <20090109172011.GD26290@one.firstfloor.org> <20090109172801.GC6936@parisc-linux.org> <20090109174719.GG26290@one.firstfloor.org> <20090109094142.367012b6@infradead.org> <20090109180213.GH26290@one.firstfloor.org> <alpine.LFD.2.00.0901090954410.6528@localhost.localdomain> <20090109185509.GJ26290@one.firstfloor.org>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Andi Kleen <andi@firstfloor.org>,
+Content-Type: text/plain; charset=us-ascii
+Cc: Linus Torvalds <torvalds@linux-foundation.org>,
+	Arjan van de Ven <arjan@infradead.org>,
 	Dirk Hohndel <hohndel@infradead.org>,
+	Matthew Wilcox <matthew@wil.cx>,
 	"H. Peter Anvin" <hpa@zytor.com>, Ingo Molnar <mingo@elte.hu>,
 	jim owens <jowens@hp.com>,
 	Chris Mason <chris.mason@oracle.com>,
@@ -23,33 +24,40 @@ Cc: Andi Kleen <andi@firstfloor.org>,
 	Nick Piggin <npiggin@suse.de>,
 	Peter Morreale <pmorreale@novell.com>,
 	Sven Dietrich <SDietrich@novell.com>, jh@suse.cz
-To: Matthew Wilcox <matthew@wil.cx>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20090109192918.GE6936@parisc-linux.org>
+To: Andi Kleen <andi@firstfloor.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20090109185509.GJ26290@one.firstfloor.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On Fri, 9 Jan 2009, Matthew Wilcox wrote:
+On Fri, Jan 09, 2009 at 07:55:09PM +0100, Andi Kleen wrote:
+> > But _users_ just get their oopses sent automatically. So it's not about 
 > 
-> Now, I'm not going to argue the directIO code is a shining example of
-> how we want things to look, but we don't really want ten arguments
-> being marshalled into a function call; we want gcc to inline the
-> direct_io_worker() and do its best to optimise the whole thing.
+> If they send it from distro kernels the automated oops sender could
+> just fetch the debuginfo rpm and decode it down to a line.
+> My old automatic user segfault uploader I did originally
+> for the core pipe code did that too.
 
-Well, except we quite probably would be happier with gcc not doing that, 
-than with gcc doing that too often.
+Fetch a gigabyte's worth of data for the debuginfo RPM?  Um, I think
+most users would not be happy with that, especially if they are behind
+a slow network.  Including the necessary information so someone who
+wants to investigate the oops, or having kerneloops.org pull apart the
+oops makes more sense, I think, and is already done.
 
-There are exceptions. If the caller is really small (ie a pure wrapper 
-that perhaps just does some locking around the call), then sure, inlining 
-a large function that only gets called from one place does make sense.
+Something that would be **really** useful would be a web page where if
+someone sends me an oops message from Fedora or Open SUSE kernel to
+linux-kernel or linux-ext4, I could take the oops message, cut and
+paste it into a web page, along with the kernel version information,
+and the kernel developer could get back a decoded oops information
+with line number information.
 
-But if both the caller and the callee is large, like in your example, then 
-no. DON'T INLINE IT. Unless we _tell_ you, of course, which we probably 
-shouldn't do.
+Kerneloops.org does this, so the code is mostly written; but it does
+this in a blinded fashion, so it only makes sense for oops which are
+very common and for which we don't need to ask the user, "so what were
+you doing at the time".  In cases where the user has already stepped
+up and reported the oops on a mailing list, it would be nice if
+kerneloops.org had a way of decoding the oops via some web page.
 
-Why? Becuase debugging is more important. And deciding to inline that, you 
-probably decided to inline something _else_ too. And now you've quite 
-possibly blown your stackspace.
+Arjan, would something like this be doable, hopefully without too much
+effort?
 
-		Linus
+						- Ted

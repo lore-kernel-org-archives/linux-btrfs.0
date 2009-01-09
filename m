@@ -1,19 +1,18 @@
-From: Andi Kleen <andi@firstfloor.org>
+From: Matthew Wilcox <matthew@wil.cx>
 Subject: Re: [patch] measurements, numbers about CONFIG_OPTIMIZE_INLINING=y impact
-Date: Fri, 9 Jan 2009 18:32:33 +0100
-Message-ID: <20090109173233.GE26290@one.firstfloor.org>
-References: <20090108183306.GA22916@elte.hu> <496648C7.5050700@zytor.com> <alpine.LFD.2.00.0901081943150.6528@localhost.localdomain> <20090109130057.GA31845@elte.hu> <49675920.4050205@hp.com> <20090109153508.GA4671@elte.hu> <49677CB1.3030701@zytor.com> <20090109084620.3c711aad@infradead.org> <49678095.2030803@zytor.com> <alpine.DEB.1.10.0901091206460.17378@gandalf.stny.rr.com>
+Date: Fri, 9 Jan 2009 10:28:01 -0700
+Message-ID: <20090109172801.GC6936@parisc-linux.org>
+References: <alpine.LFD.2.00.0901080955400.3283@localhost.localdomain> <20090108183306.GA22916@elte.hu> <496648C7.5050700@zytor.com> <alpine.LFD.2.00.0901081943150.6528@localhost.localdomain> <20090109130057.GA31845@elte.hu> <49675920.4050205@hp.com> <20090109153508.GA4671@elte.hu> <49677CB1.3030701@zytor.com> <20090109084620.3c711aad@infradead.org> <20090109172011.GD26290@one.firstfloor.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: "H. Peter Anvin" <hpa@zytor.com>,
-	Dirk Hohndel <hohndel@infradead.org>,
-	Ingo Molnar <mingo@elte.hu>, jim owens <jowens@hp.com>,
+Cc: Dirk Hohndel <hohndel@infradead.org>,
+	"H. Peter Anvin" <hpa@zytor.com>, Ingo Molnar <mingo@elte.hu>,
+	jim owens <jowens@hp.com>,
 	Linus Torvalds <torvalds@linux-foundation.org>,
 	Chris Mason <chris.mason@oracle.com>,
 	Peter Zijlstra <peterz@infradead.org>,
+	Steven Rostedt <rostedt@goodmis.org>,
 	paulmck@linux.vnet.ibm.com, Gregory Haskins <ghaskins@novell.com>,
-	Matthew Wilcox <matthew@wil.cx>,
-	Andi Kleen <andi@firstfloor.org>,
 	Andrew Morton <akpm@linux-foundation.org>,
 	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
 	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
@@ -21,27 +20,25 @@ Cc: "H. Peter Anvin" <hpa@zytor.com>,
 	Thomas Gleixner <tglx@linutronix.de>,
 	Nick Piggin <npiggin@suse.de>,
 	Peter Morreale <pmorreale@novell.com>,
-	Sven Dietrich <SDietrich@novell.com>
-To: Steven Rostedt <rostedt@goodmis.org>
+	Sven Dietrich <SDietrich@novell.com>, jh@suse.cz
+To: Andi Kleen <andi@firstfloor.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <alpine.DEB.1.10.0901091206460.17378@gandalf.stny.rr.com>
+In-Reply-To: <20090109172011.GD26290@one.firstfloor.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> I vote for the, get rid of the current inline, rename __always_inline to 
+On Fri, Jan 09, 2009 at 06:20:11PM +0100, Andi Kleen wrote:
+> Also cc Honza in case he has comments (you might want
+> to review more of the thread in the archives) 
 
-There is some code that absolutely requires inline for correctness,
-like the x86-64 vsyscall code. I would advocate to keep the
-explicit __always_inline at least there to make it very clear.
+I think this particular bug is already known and discussed:
 
-> inline, and then remove all non needed inlines from the kernel.
+http://gcc.gnu.org/ml/gcc/2008-12/msg00365.html
 
-Most inlines in .c should be probably dropped.
+and it hints at being fixed with gcc 4.4.  Does anyone want to test
+that?
 
-> 
-> We'll, probably start adding a lot more noinlines.
-
-That would cost you, see the numbers I posted (~4.1% text increase)
-
--Andi
 -- 
-ak@linux.intel.com
+Matthew Wilcox				Intel Open Source Technology Centre
+"Bill, look, we understand that you're interested in selling us this
+operating system, but compare it to ours.  We can't possibly take such
+a retrograde step."

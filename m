@@ -1,19 +1,18 @@
-From: Andi Kleen <andi@firstfloor.org>
+From: Peter Zijlstra <peterz@infradead.org>
 Subject: Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
-Date: Fri, 9 Jan 2009 07:58:41 +0100
-Message-ID: <20090109065841.GB26290@one.firstfloor.org>
-References: <20090108141808.GC11629@elte.hu> <1231426014.11687.456.camel@twins> <alpine.LFD.2.00.0901080849550.3283@localhost.localdomain> <1231434515.14304.27.camel@think.oraclecorp.com> <alpine.LFD.2.00.0901080955400.3283@localhost.localdomain> <20090108183306.GA22916@elte.hu> <1231444786.5715.8.camel@brick> <4966ABF9.9080409@zytor.com> <20090109033531.GR496@one.firstfloor.org> <20090108220028.3b73a509.akpm@linux-foundation.org>
+Date: Fri, 09 Jan 2009 10:28:25 +0100
+Message-ID: <1231493305.11687.528.camel@twins>
+References: <1231441350.14304.48.camel@think.oraclecorp.com>
+	 <alpine.LFD.2.00.0901081109300.3283@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Andi Kleen <andi@firstfloor.org>, "H. Peter Anvin" <hpa@zytor.com>,
-	Harvey Harrison <harvey.harrison@gmail.com>,
-	Ingo Molnar <mingo@elte.hu>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	Peter Zijlstra <peterz@infradead.org>,
+Content-Type: text/plain
+Cc: Chris Mason <chris.mason@oracle.com>,
 	Steven Rostedt <rostedt@goodmis.org>,
-	paulmck@linux.vnet.ibm.com, Gregory Haskins <ghaskins@novell.com>,
+	Ingo Molnar <mingo@elte.hu>, paulmck@linux.vnet.ibm.com,
+	Gregory Haskins <ghaskins@novell.com>,
 	Matthew Wilcox <matthew@wil.cx>,
+	Andi Kleen <andi@firstfloor.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
 	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
 	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
 	linux-btrfs <linux-btrfs@vger.kernel.org>,
@@ -21,35 +20,28 @@ Cc: Andi Kleen <andi@firstfloor.org>, "H. Peter Anvin" <hpa@zytor.com>,
 	Nick Piggin <npiggin@suse.de>,
 	Peter Morreale <pmorreale@novell.com>,
 	Sven Dietrich <SDietrich@novell.com>
-To: Andrew Morton <akpm@linux-foundation.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090108220028.3b73a509.akpm@linux-foundation.org>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <alpine.LFD.2.00.0901081109300.3283@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> foo()
-> {
-> 	char a[1000];
-> }
+On Thu, 2009-01-08 at 11:13 -0800, Linus Torvalds wrote:
 > 
-> bar()
-> {
-> 	char a[1000];
-> }
+> On Thu, 8 Jan 2009, Chris Mason wrote:
+> > 
+> > It is less fair though, the 50 proc parallel creates had a much bigger
+> > span between the first and last proc's exit time.  This isn't a huge
+> > shock, I think it shows the hot path is closer to a real spin lock.
 > 
-> zot()
-> {
-> 	foo();
-> 	bar();
-> }
-> 
-> uses 2000 bytes of stack.
-> And with the right compiler version.
+> Actually, the real spin locks are now fair. We use ticket locks on x86.
 
-I believe that's fixed in newer gcc versions.
+> We _could_ certainly aim for using ticket locks for mutexes too, that 
+> might be quite nice.
 
-For old gccs we might indeed need to add noinlines though.
+Not really, ticket locks cannot handle a spinner going away - and we
+need that here.
 
--Andi
+I've googled around a bit and MCS locks
+(http://www.cs.rice.edu/~johnmc/papers/asplos91.pdf) look like a viable
+way to gain fairness in our situation.
 
--- 
-ak@linux.intel.com

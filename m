@@ -1,14 +1,14 @@
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Subject: Re: [patch] measurements, numbers about CONFIG_OPTIMIZE_INLINING=y
- impact
-Date: Fri, 9 Jan 2009 11:00:00 -0800 (PST)
-Message-ID: <alpine.LFD.2.00.0901091045090.6528@localhost.localdomain>
-References: <49675920.4050205@hp.com> <20090109153508.GA4671@elte.hu> <49677CB1.3030701@zytor.com> <20090109084620.3c711aad@infradead.org> <20090109172011.GD26290@one.firstfloor.org> <20090109172801.GC6936@parisc-linux.org> <20090109174719.GG26290@one.firstfloor.org>
- <20090109094142.367012b6@infradead.org> <20090109180213.GH26290@one.firstfloor.org> <alpine.LFD.2.00.0901090954410.6528@localhost.localdomain> <20090109185509.GJ26290@one.firstfloor.org>
+From: Andi Kleen <andi@firstfloor.org>
+Subject: Re: [patch] measurements, numbers about CONFIG_OPTIMIZE_INLINING=y impact
+Date: Fri, 9 Jan 2009 20:21:58 +0100
+Message-ID: <20090109192158.GK26290@one.firstfloor.org>
+References: <20090109153508.GA4671@elte.hu> <49677CB1.3030701@zytor.com> <20090109084620.3c711aad@infradead.org> <20090109172011.GD26290@one.firstfloor.org> <20090109172801.GC6936@parisc-linux.org> <20090109174719.GG26290@one.firstfloor.org> <20090109173914.GD6936@parisc-linux.org> <alpine.LFD.2.00.0901090947080.6528@localhost.localdomain> <20090109181952.GI26290@one.firstfloor.org> <84fc9c000901091059v65265413wda053d3ce5b0d17a@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Dirk Hohndel <hohndel@infradead.org>,
+Content-Type: text/plain; charset=us-ascii
+Cc: Andi Kleen <andi@firstfloor.org>,
+	Linus Torvalds <torvalds@linux-foundation.org>,
 	Matthew Wilcox <matthew@wil.cx>,
+	Dirk Hohndel <hohndel@infradead.org>,
 	"H. Peter Anvin" <hpa@zytor.com>, Ingo Molnar <mingo@elte.hu>,
 	jim owens <jowens@hp.com>,
 	Chris Mason <chris.mason@oracle.com>,
@@ -23,32 +23,17 @@ Cc: Dirk Hohndel <hohndel@infradead.org>,
 	Nick Piggin <npiggin@suse.de>,
 	Peter Morreale <pmorreale@novell.com>,
 	Sven Dietrich <SDietrich@novell.com>, jh@suse.cz
-To: Andi Kleen <andi@firstfloor.org>
+To: Richard Guenther <richard.guenther@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090109185509.GJ26290@one.firstfloor.org>
+In-Reply-To: <84fc9c000901091059v65265413wda053d3ce5b0d17a@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+> GCC 4.3 should be good in compiling the
+> kernel with default -Os settings.  
 
+It's unfortunately not. It doesn't inline a lot of simple asm() inlines
+for example.
 
-On Fri, 9 Jan 2009, Andi Kleen wrote:
-> 
-> Ok you're saying we should pay the 4.1% by default for this?
-
-The thing is, YOU ARE MAKING THAT NUMBER UP!
-
-First off, the size increase only matters if it actually increases the 
-cache footprint. And it may, but..
-
-Secondly, my whole point here has been that we should not rely on gcc 
-doing things behind our back, because gcc will generally do the wrong 
-thing. If we decided to be more active about this, we could just choose to 
-find the places that matter (in hot code) and fix _those_.
-
-Thirdly, you're just replacing _one_ random gcc choice with _another_ 
-random one.
-
-What happens when you say -fno-inline-functions-called-once? Does it 
-disable inlining for those functions IN GENERAL, or just for the LARGE 
-ones? See?
-
-			Linus
+-Andi
+-- 
+ak@linux.intel.com

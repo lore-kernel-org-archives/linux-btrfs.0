@@ -1,8 +1,8 @@
 From: Ingo Molnar <mingo@elte.hu>
 Subject: Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
-Date: Fri, 9 Jan 2009 21:41:03 +0100
-Message-ID: <20090109204103.GA17212@elte.hu>
-References: <20090108141808.GC11629@elte.hu> <1231426014.11687.456.camel@twins> <alpine.LFD.2.00.0901080849550.3283@localhost.localdomain> <1231434515.14304.27.camel@think.oraclecorp.com> <alpine.LFD.2.00.0901080955400.3283@localhost.localdomain> <20090108183306.GA22916@elte.hu> <20090108190038.GH496@one.firstfloor.org> <4966AB74.2090104@zytor.com> <20090109133710.GB31845@elte.hu> <alpine.LFD.2.00.0901090759420.6528@localhost.localdomain>
+Date: Fri, 9 Jan 2009 21:56:28 +0100
+Message-ID: <20090109205628.GA18871@elte.hu>
+References: <1231426014.11687.456.camel@twins> <alpine.LFD.2.00.0901080849550.3283@localhost.localdomain> <1231434515.14304.27.camel@think.oraclecorp.com> <alpine.LFD.2.00.0901080955400.3283@localhost.localdomain> <20090108183306.GA22916@elte.hu> <20090108190038.GH496@one.firstfloor.org> <4966AB74.2090104@zytor.com> <20090109133710.GB31845@elte.hu> <alpine.LFD.2.00.0901090759420.6528@localhost.localdomain> <20090109204103.GA17212@elte.hu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: "H. Peter Anvin" <hpa@zytor.com>, Andi Kleen <andi@firstfloor.org>,
@@ -20,88 +20,178 @@ Cc: "H. Peter Anvin" <hpa@zytor.com>, Andi Kleen <andi@firstfloor.org>,
 	Peter Morreale <pmorreale@novell.com>,
 	Sven Dietrich <SDietrich@novell.com>
 To: Linus Torvalds <torvalds@linux-foundation.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <alpine.LFD.2.00.0901090759420.6528@localhost.localdomain>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20090109204103.GA17212@elte.hu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-* Linus Torvalds <torvalds@linux-foundation.org> wrote:
+* Ingo Molnar <mingo@elte.hu> wrote:
 
-> On Fri, 9 Jan 2009, Ingo Molnar wrote:
-> >  
-> > -static inline int constant_test_bit(int nr, const volatile unsigned long *addr)
-> > +static __asm_inline int
-> > +constant_test_bit(int nr, const volatile unsigned long *addr)
-> >  {
-> >  	return ((1UL << (nr % BITS_PER_LONG)) &
-> >  		(((unsigned long *)addr)[nr / BITS_PER_LONG])) != 0;
+> Note that meanwhile i also figured out why gcc got the inlining wrong 
+> there: the 'int nr' combined with the '% BITS_PER_LONG' signed 
+> arithmetics was too much for it to figure out at the inlining stage - it 
+> generated IDIV instructions, etc. With forced inlining later 
+> optimization stages managed to prove that the expression can be 
+> simplified.
 > 
-> Thios makes absolutely no sense.
-> 
-> It's called "__always_inline", not __asm_inline.
+> The second patch below that changes 'int nr' to 'unsigned nr' solves 
+> that problem, without the need to mark the function __always_inline.
 
-yeah.
+The patch below that changes all the 'int nr' arguments to 'unsigned int 
+nr' in bitops.h and gives us a 0.3% size win (and all the right inlining 
+behavior) on x86 defconfig:
 
-Note that meanwhile i also figured out why gcc got the inlining wrong 
-there: the 'int nr' combined with the '% BITS_PER_LONG' signed arithmetics 
-was too much for it to figure out at the inlining stage - it generated 
-IDIV instructions, etc. With forced inlining later optimization stages 
-managed to prove that the expression can be simplified.
+    text	   data	    bss	    dec	    hex	filename
+ 6813470	1453188	 801096	9067754	 8a5cea	vmlinux.before
+ 6792602	1453188	 801096	9046886	 8a0b66	vmlinux.after
 
-The second patch below that changes 'int nr' to 'unsigned nr' solves that 
-problem, without the need to mark the function __always_inline.
+i checked other architectures and i can see many cases where the bitops 
+'nr' parameter is defined as unsigned - maybe they noticed this.
 
-
-How did i end up with __asm_inline? The thing is, i started the day under 
-the assumption that there's some big practical problem here. I expected to 
-find a lot of places in need of annotation, so i introduced hpa's 
-suggestion and added the __asm_inline (via the patch attached below).
-
-I wrote 40 patches that annotated 200+ asm inline functions, and i was 
-fully expected to find that GCC made a mess, and i also wrote a patch to 
-disable CONFIG_OPTIMIZE_INLINING on those grounds.
-
-The irony is that indeed pretty much the _only_ annotation that made a 
-difference was the one that isnt even an asm() inline (as you noted).
-
-So, should we not remove CONFIG_OPTIMIZE_INLINING, then the correct one 
-would be to mark it __always_inline [__asm_inline is senseless there], or 
-the second patch below that changes the bit parameter to unsigned int.
+This change makes some sense anyway as a cleanup: a negative 'nr' bitop 
+argument does not make much sense IMO.
 
 	Ingo
 
 ---
- include/linux/compiler.h |    6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
-
-Index: linux/include/linux/compiler.h
-===================================================================
---- linux.orig/include/linux/compiler.h
-+++ linux/include/linux/compiler.h
-@@ -223,7 +223,11 @@ void ftrace_likely_update(struct ftrace_
- #define noinline_for_stack noinline
- 
- #ifndef __always_inline
--#define __always_inline inline
-+# define __always_inline inline
-+#endif
-+
-+#ifndef __asm_inline
-+# define __asm_inline __always_inline
- #endif
- 
- #endif /* __KERNEL__ */
+ arch/x86/include/asm/bitops.h |   31 ++++++++++++++++---------------
+ 1 file changed, 16 insertions(+), 15 deletions(-)
 
 Index: linux/arch/x86/include/asm/bitops.h
 ===================================================================
 --- linux.orig/arch/x86/include/asm/bitops.h
 +++ linux/arch/x86/include/asm/bitops.h
-@@ -300,7 +300,7 @@ static inline int test_and_change_bit(in
+@@ -75,7 +75,7 @@ static inline void set_bit(unsigned int 
+  * If it's called on the same region of memory simultaneously, the effect
+  * may be that only one operation succeeds.
+  */
+-static inline void __set_bit(int nr, volatile unsigned long *addr)
++static inline void __set_bit(unsigned int nr, volatile unsigned long *addr)
+ {
+ 	asm volatile("bts %1,%0" : ADDR : "Ir" (nr) : "memory");
+ }
+@@ -90,7 +90,7 @@ static inline void __set_bit(int nr, vol
+  * you should call smp_mb__before_clear_bit() and/or smp_mb__after_clear_bit()
+  * in order to ensure changes are visible on other processors.
+  */
+-static inline void clear_bit(int nr, volatile unsigned long *addr)
++static inline void clear_bit(unsigned int nr, volatile unsigned long *addr)
+ {
+ 	if (IS_IMMEDIATE(nr)) {
+ 		asm volatile(LOCK_PREFIX "andb %1,%0"
+@@ -117,7 +117,7 @@ static inline void clear_bit_unlock(unsi
+ 	clear_bit(nr, addr);
+ }
+ 
+-static inline void __clear_bit(int nr, volatile unsigned long *addr)
++static inline void __clear_bit(unsigned int nr, volatile unsigned long *addr)
+ {
+ 	asm volatile("btr %1,%0" : ADDR : "Ir" (nr));
+ }
+@@ -152,7 +152,7 @@ static inline void __clear_bit_unlock(un
+  * If it's called on the same region of memory simultaneously, the effect
+  * may be that only one operation succeeds.
+  */
+-static inline void __change_bit(int nr, volatile unsigned long *addr)
++static inline void __change_bit(unsigned int nr, volatile unsigned long *addr)
+ {
+ 	asm volatile("btc %1,%0" : ADDR : "Ir" (nr));
+ }
+@@ -166,7 +166,7 @@ static inline void __change_bit(int nr, 
+  * Note that @nr may be almost arbitrarily large; this function is not
+  * restricted to acting on a single-word quantity.
+  */
+-static inline void change_bit(int nr, volatile unsigned long *addr)
++static inline void change_bit(unsigned int nr, volatile unsigned long *addr)
+ {
+ 	if (IS_IMMEDIATE(nr)) {
+ 		asm volatile(LOCK_PREFIX "xorb %1,%0"
+@@ -187,7 +187,7 @@ static inline void change_bit(int nr, vo
+  * This operation is atomic and cannot be reordered.
+  * It also implies a memory barrier.
+  */
+-static inline int test_and_set_bit(int nr, volatile unsigned long *addr)
++static inline int test_and_set_bit(unsigned int nr, volatile unsigned long *addr)
+ {
+ 	int oldbit;
+ 
+@@ -204,7 +204,7 @@ static inline int test_and_set_bit(int n
+  *
+  * This is the same as test_and_set_bit on x86.
+  */
+-static inline int test_and_set_bit_lock(int nr, volatile unsigned long *addr)
++static inline int test_and_set_bit_lock(unsigned int nr, volatile unsigned long *addr)
+ {
+ 	return test_and_set_bit(nr, addr);
+ }
+@@ -218,7 +218,7 @@ static inline int test_and_set_bit_lock(
+  * If two examples of this operation race, one can appear to succeed
+  * but actually fail.  You must protect multiple accesses with a lock.
+  */
+-static inline int __test_and_set_bit(int nr, volatile unsigned long *addr)
++static inline int __test_and_set_bit(unsigned int nr, volatile unsigned long *addr)
+ {
+ 	int oldbit;
+ 
+@@ -237,7 +237,7 @@ static inline int __test_and_set_bit(int
+  * This operation is atomic and cannot be reordered.
+  * It also implies a memory barrier.
+  */
+-static inline int test_and_clear_bit(int nr, volatile unsigned long *addr)
++static inline int test_and_clear_bit(unsigned int nr, volatile unsigned long *addr)
+ {
+ 	int oldbit;
+ 
+@@ -257,7 +257,7 @@ static inline int test_and_clear_bit(int
+  * If two examples of this operation race, one can appear to succeed
+  * but actually fail.  You must protect multiple accesses with a lock.
+  */
+-static inline int __test_and_clear_bit(int nr, volatile unsigned long *addr)
++static inline int __test_and_clear_bit(unsigned int nr, volatile unsigned long *addr)
+ {
+ 	int oldbit;
+ 
+@@ -269,7 +269,7 @@ static inline int __test_and_clear_bit(i
+ }
+ 
+ /* WARNING: non atomic and it can be reordered! */
+-static inline int __test_and_change_bit(int nr, volatile unsigned long *addr)
++static inline int __test_and_change_bit(unsigned int nr, volatile unsigned long *addr)
+ {
+ 	int oldbit;
+ 
+@@ -289,7 +289,7 @@ static inline int __test_and_change_bit(
+  * This operation is atomic and cannot be reordered.
+  * It also implies a memory barrier.
+  */
+-static inline int test_and_change_bit(int nr, volatile unsigned long *addr)
++static inline int test_and_change_bit(unsigned int nr, volatile unsigned long *addr)
+ {
+ 	int oldbit;
+ 
+@@ -300,13 +300,14 @@ static inline int test_and_change_bit(in
  	return oldbit;
  }
  
 -static inline int constant_test_bit(int nr, const volatile unsigned long *addr)
-+static int constant_test_bit(unsigned int nr, const volatile unsigned long *addr)
++static inline int
++constant_test_bit(unsigned int nr, const volatile unsigned long *addr)
  {
  	return ((1UL << (nr % BITS_PER_LONG)) &
  		(((unsigned long *)addr)[nr / BITS_PER_LONG])) != 0;
+ }
+ 
+-static inline int variable_test_bit(int nr, volatile const unsigned long *addr)
++static inline int variable_test_bit(unsigned int nr, volatile const unsigned long *addr)
+ {
+ 	int oldbit;
+ 
+@@ -324,7 +325,7 @@ static inline int variable_test_bit(int 
+  * @nr: bit number to test
+  * @addr: Address to start counting from
+  */
+-static int test_bit(int nr, const volatile unsigned long *addr);
++static int test_bit(unsigned int nr, const volatile unsigned long *addr);
+ #endif
+ 
+ #define test_bit(nr, addr)			\

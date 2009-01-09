@@ -1,26 +1,31 @@
-From: Harvey Harrison <harvey.harrison@gmail.com>
-Subject: Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
-Date: Fri, 09 Jan 2009 13:59:47 -0800
-Message-ID: <1231538387.5825.2.camel@brick>
-References: <alpine.LFD.2.00.0901080849550.3283@localhost.localdomain>
-	 <1231434515.14304.27.camel@think.oraclecorp.com>
-	 <alpine.LFD.2.00.0901080955400.3283@localhost.localdomain>
-	 <20090108183306.GA22916@elte.hu> <20090108190038.GH496@one.firstfloor.org>
-	 <4966AB74.2090104@zytor.com> <20090109133710.GB31845@elte.hu>
-	 <alpine.LFD.2.00.0901090759420.6528@localhost.localdomain>
-	 <20090109204103.GA17212@elte.hu>
-	 <alpine.LFD.2.00.0901091251380.6528@localhost.localdomain>
-	 <20090109213442.GA20051@elte.hu> <1231537320.5726.2.camel@brick>
-	 <alpine.LFD.2.00.0901091347170.6528@localhost.localdomain>
+From: Arjan van de Ven <arjan@infradead.org>
+Subject: Re: [patch] measurements, numbers about CONFIG_OPTIMIZE_INLINING=y
+ impact
+Date: Fri, 9 Jan 2009 14:07:58 -0800
+Message-ID: <20090109140758.5eecc765@infradead.org>
+References: <20090109153508.GA4671@elte.hu>
+	<49677CB1.3030701@zytor.com>
+	<20090109084620.3c711aad@infradead.org>
+	<20090109172011.GD26290@one.firstfloor.org>
+	<20090109172801.GC6936@parisc-linux.org>
+	<20090109174719.GG26290@one.firstfloor.org>
+	<20090109094142.367012b6@infradead.org>
+	<20090109180213.GH26290@one.firstfloor.org>
+	<alpine.LFD.2.00.0901090954410.6528@localhost.localdomain>
+	<20090109185509.GJ26290@one.firstfloor.org>
+	<20090109195232.GE23869@mit.edu>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>,
-	Andi Kleen <andi@firstfloor.org>,
+Content-Type: text/plain; charset=US-ASCII
+Cc: Andi Kleen <andi@firstfloor.org>,
+	Linus Torvalds <torvalds@linux-foundation.org>,
+	Dirk Hohndel <hohndel@infradead.org>,
+	Matthew Wilcox <matthew@wil.cx>,
+	"H. Peter Anvin" <hpa@zytor.com>, Ingo Molnar <mingo@elte.hu>,
+	jim owens <jowens@hp.com>,
 	Chris Mason <chris.mason@oracle.com>,
 	Peter Zijlstra <peterz@infradead.org>,
 	Steven Rostedt <rostedt@goodmis.org>,
 	paulmck@linux.vnet.ibm.com, Gregory Haskins <ghaskins@novell.com>,
-	Matthew Wilcox <matthew@wil.cx>,
 	Andrew Morton <akpm@linux-foundation.org>,
 	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
 	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
@@ -28,43 +33,56 @@ Cc: Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>,
 	Thomas Gleixner <tglx@linutronix.de>,
 	Nick Piggin <npiggin@suse.de>,
 	Peter Morreale <pmorreale@novell.com>,
-	Sven Dietrich <SDietrich@novell.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>
+	Sven Dietrich <SDietrich@novell.com>, jh@suse.cz
+To: Theodore Tso <tytso@mit.edu>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <alpine.LFD.2.00.0901091347170.6528@localhost.localdomain>
+In-Reply-To: <20090109195232.GE23869@mit.edu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2009-01-09 at 13:50 -0800, Linus Torvalds wrote:
-> 
-> On Fri, 9 Jan 2009, Harvey Harrison wrote:
+On Fri, 9 Jan 2009 14:52:33 -0500
+Theodore Tso <tytso@mit.edu> wrote:
+
+> On Fri, Jan 09, 2009 at 07:55:09PM +0100, Andi Kleen wrote:
+> > > But _users_ just get their oopses sent automatically. So it's not
+> > > about 
 > > 
-> > __needs_inline?  That would imply that it's for correctness reasons.
+> > If they send it from distro kernels the automated oops sender could
+> > just fetch the debuginfo rpm and decode it down to a line.
+> > My old automatic user segfault uploader I did originally
+> > for the core pipe code did that too.
 > 
-> .. but the point is, we have _thousands_ of inlines, and do you know which 
-> is which? We've historically forced them to be inlined, and every time 
-> somebody does that "OPTIMIZE_INLINE=y", something simply _breaks_.
+> Fetch a gigabyte's worth of data for the debuginfo RPM?  Um, I think
+> most users would not be happy with that, especially if they are behind
+> a slow network.  Including the necessary information so someone who
+> wants to investigate the oops, or having kerneloops.org pull apart the
+> oops makes more sense, I think, and is already done.
 > 
 
-My suggestion was just an alternative to __force_inline as a naming...I agree that
-inline should mean __always_inline.....always.
+it is.
 
-> So instead of just continually hitting our head against this wall because 
-> some people seem to be convinced that gcc can do a good job, just do it 
-> the other way around. Make the new one be "inline_hint" (no underscores 
-> needed, btw), and there is ansolutely ZERO confusion about what it means. 
-
-agreed.
-
-> At that point, everybody knows why it's there, and it's clearly not a 
-> correctness issue or anything else.
+> Something that would be **really** useful would be a web page where if
+> someone sends me an oops message from Fedora or Open SUSE kernel to
+> linux-kernel or linux-ext4, I could take the oops message, cut and
+> paste it into a web page, along with the kernel version information,
+> and the kernel developer could get back a decoded oops information
+> with line number information.
 > 
-> Of course, at that point you might as well argue that the thing should not 
-> exist at all, and that such a flag should just be removed entirely. Which 
-> I certainly agree with - I think the only flag we need is "inline", and I 
-> think it should mean what it damn well says.
+> Kerneloops.org does this, so the code is mostly written; but it does
+> this in a blinded fashion, so it only makes sense for oops which are
+> very common and for which we don't need to ask the user, "so what were
+> you doing at the time".  In cases where the user has already stepped
+> up and reported the oops on a mailing list, it would be nice if
+> kerneloops.org had a way of decoding the oops via some web page.
+> 
+> Arjan, would something like this be doable, hopefully without too much
+> effort?
 
-Also agreed, but there needs to start being some education about _not_ using
-inline so much in the kernel.
+I suppose it could be done if the exact idea is there, and it would be
+nice if I'd get help from the distro kernel mainainers so that they'll
+send me the vmlinux'n ;)
 
-Harvey
 
+-- 
+Arjan van de Ven 	Intel Open Source Technology Centre
+For development, discussion and tips for power savings, 
+visit http://www.lesswatts.org

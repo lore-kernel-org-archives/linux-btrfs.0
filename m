@@ -1,33 +1,59 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: wiki spam
-Date: Fri, 09 Jan 2009 09:29:14 -0500
-Message-ID: <1231511354.21333.9.camel@think.oraclecorp.com>
-References: <200901091049.31715.andre@lianse.eu>
+From: Peter Zijlstra <peterz@infradead.org>
+Subject: Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
+Date: Fri, 09 Jan 2009 16:06:54 +0100
+Message-ID: <1231513614.442.11.camel@twins>
+References: <1231441350.14304.48.camel@think.oraclecorp.com>
+	 <alpine.LFD.2.00.0901081140550.3283@localhost.localdomain>
+	 <1231498062.11687.608.camel@twins>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: =?ISO-8859-1?Q?Andr=E9-Sebastian?= Liebe <andre@lianse.eu>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200901091049.31715.andre@lianse.eu>
+Content-Type: text/plain
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Steven Rostedt <rostedt@goodmis.org>,
+	Ingo Molnar <mingo@elte.hu>, paulmck@linux.vnet.ibm.com,
+	Gregory Haskins <ghaskins@novell.com>,
+	Matthew Wilcox <matthew@wil.cx>,
+	Andi Kleen <andi@firstfloor.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Nick Piggin <npiggin@suse.de>,
+	Peter Morreale <pmorreale@novell.com>,
+	Sven Dietrich <SDietrich@novell.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <1231498062.11687.608.camel@twins>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2009-01-09 at 10:49 +0100, Andr=C3=A9-Sebastian Liebe wrote:
-> Hello,
->=20
-> I've spotted some new pages (probably encrypted) in the wiki:
-> http://btrfs.wiki.kernel.org/index.php/Special:RecentChanges
->=20
-> I deleted it's contents but someone might delete the pages at all and=
- check=20
-> the user registration logs to block them.
+On Fri, 2009-01-09 at 11:47 +0100, Peter Zijlstra wrote:
 
-Thanks for finding that, I'm getting the pages deleted.
+> > So I think the bug is still there, we just hid it better by breaking out 
+> > of the loop with that "if (need_resched())" always eventually triggering. 
+> > And it would be ok if it really is guaranteed to _eventually_ trigger, and 
+> > I guess with timeslices it eventually always will, but I suspect we could 
+> > have some serious latency spikes.
+> 
+> Yes, the owner getting preempted after acquiring the lock, but before
+> setting the owner can give some nasties :-(
+> 
+> I initially did that preempt_disable/enable around the fast path, but I
+> agree that slowing down the fast path is unwelcome.
+> 
+> Alternatively we could go back to block on !owner, with the added
+> complexity of not breaking out of the spin on lock->owner != owner
+> when !lock->owner, so that the premature owner clearing of the unlock
+> fast path will not force a schedule right before we get a chance to
+> acquire the lock.
+> 
+> Let me do that..
 
--chris
+Ok a few observations..
 
+Adding that need_resched() in the outer loop utterly destroys the
+performance gain for PREEMPT=y. Voluntary preemption is mostly good, but
+somewhat unstable results.
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Adding that blocking on !owner utterly destroys everything.
+
+Going to look into where that extra preemption comes from.

@@ -1,23 +1,16 @@
-From: Steven Rostedt <rostedt@goodmis.org>
-Subject: Re: [patch] measurements, numbers about CONFIG_OPTIMIZE_INLINING=y
- impact
-Date: Fri, 9 Jan 2009 16:33:04 -0500 (EST)
-Message-ID: <alpine.DEB.1.10.0901091631500.17378@gandalf.stny.rr.com>
-References: <20090109172011.GD26290@one.firstfloor.org> <20090109172801.GC6936@parisc-linux.org> <20090109174719.GG26290@one.firstfloor.org> <20090109173914.GD6936@parisc-linux.org> <alpine.LFD.2.00.0901090947080.6528@localhost.localdomain>
- <84fc9c000901091109t2c2aef2fu596f8807b0962688@mail.gmail.com> <alpine.LFD.2.00.0901091128170.6528@localhost.localdomain> <84fc9c000901091214i16fc74b7q349433a5586d5619@mail.gmail.com> <alpine.LFD.2.00.0901091217530.6528@localhost.localdomain>
- <84fc9c000901091237i68b2e495tab55e61fb3dbd565@mail.gmail.com> <20090109212335.GH23869@mit.edu>
+From: Ingo Molnar <mingo@elte.hu>
+Subject: Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
+Date: Fri, 9 Jan 2009 22:34:42 +0100
+Message-ID: <20090109213442.GA20051@elte.hu>
+References: <alpine.LFD.2.00.0901080849550.3283@localhost.localdomain> <1231434515.14304.27.camel@think.oraclecorp.com> <alpine.LFD.2.00.0901080955400.3283@localhost.localdomain> <20090108183306.GA22916@elte.hu> <20090108190038.GH496@one.firstfloor.org> <4966AB74.2090104@zytor.com> <20090109133710.GB31845@elte.hu> <alpine.LFD.2.00.0901090759420.6528@localhost.localdomain> <20090109204103.GA17212@elte.hu> <alpine.LFD.2.00.0901091251380.6528@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Richard Guenther <richard.guenther@gmail.com>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
-	Matthew Wilcox <matthew@wil.cx>,
-	Andi Kleen <andi@firstfloor.org>,
-	Dirk Hohndel <hohndel@infradead.org>,
-	"H. Peter Anvin" <hpa@zytor.com>, Ingo Molnar <mingo@elte.hu>,
-	jim owens <jowens@hp.com>,
+Content-Type: text/plain; charset=us-ascii
+Cc: "H. Peter Anvin" <hpa@zytor.com>, Andi Kleen <andi@firstfloor.org>,
 	Chris Mason <chris.mason@oracle.com>,
 	Peter Zijlstra <peterz@infradead.org>,
+	Steven Rostedt <rostedt@goodmis.org>,
 	paulmck@linux.vnet.ibm.com, Gregory Haskins <ghaskins@novell.com>,
+	Matthew Wilcox <matthew@wil.cx>,
 	Andrew Morton <akpm@linux-foundation.org>,
 	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
 	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
@@ -25,33 +18,93 @@ Cc: Richard Guenther <richard.guenther@gmail.com>,
 	Thomas Gleixner <tglx@linutronix.de>,
 	Nick Piggin <npiggin@suse.de>,
 	Peter Morreale <pmorreale@novell.com>,
-	Sven Dietrich <SDietrich@novell.com>, jh@suse.cz
-To: Theodore Tso <tytso@mit.edu>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090109212335.GH23869@mit.edu>
+	Sven Dietrich <SDietrich@novell.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <alpine.LFD.2.00.0901091251380.6528@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Fri, 9 Jan 2009, Theodore Tso wrote:
+* Linus Torvalds <torvalds@linux-foundation.org> wrote:
 
-> I'm beginning to think that for the kernel, we should just simply
-> remove CONFIG_OPTIMIZE_INLINING (so that inline means
-> "always_inline"), and -fno-inline-functions
-> -fno-inline-functions-called-one (so that gcc never inlines functions
-> behind our back) --- and then we create tools that count how many times functions get used, and how big functions are, so that we can flag if some 
-> function really should be marked inline when it isn't or vice versa.   
+> On Fri, 9 Jan 2009, Ingo Molnar wrote:
+> > 
+> > So, should we not remove CONFIG_OPTIMIZE_INLINING, then the correct 
+> > one would be to mark it __always_inline [__asm_inline is senseless 
+> > there], or the second patch below that changes the bit parameter to 
+> > unsigned int.
 > 
-> But given that this is a very hard thing for an automated program
-> todo, let's write some tools so we can easily put a human in the loop,
-> who can add or remove inline keywords where it makes sense, and let's
-> give up on gcc being able to "guess" correctly.
+> Well, I certainly don't want to _remove_ the "inline" like your patch 
+> did. Other gcc versions will care. But I committed the pure "change to 
+> unsigned" part.
 > 
-> For some things, like register allocation, I can accept that the
-> compiler will usually get these things right.  But whether or not to
-> inline a function seems to be one of those things that humans (perhaps
-> with some tools assist) can still do a better job than compilers.
+> But we should fix the cmpxchg (and perhaps plain xchg too), shouldn't 
+> we?
+> 
+> That your gcc version gets it right doesn't change the fact that Chris' 
+> gcc version didn't, and out-of-lined it all. So we'll need some 
+> __always_inlines there too..
 
-Adding a function histogram in ftrace should be trivial. I can write one 
-up if you want. It will only count the functions not inlined.
+Yeah. I'll dig out an older version of gcc (latest distros are all 4.3.x 
+based) and run the checks to see which inlines make a difference.
 
--- Steve
+> And no, I don't think it makes any sense to call them "__asm_inline". 
+> Even when there are asms hidden in between the C statements, what's the 
+> difference between "always" and "asm"? None, really.
+
+Well, the difference is small, nitpicky and insignificant: the thing is 
+there are two logically separate categories of __always_inline:
+
+ 1) the places where __always_inline means that in this universe no sane 
+    compiler ever can end up thinking to move that function out of line.
+
+ 2) inlining for_correctness_ reasons: things like vreads or certain 
+    paravirt items. Stuff where the kernel actually crashes if we dont 
+    inline. Here if we do not inline we've got a materially crashy kernel.
+
+The original intention of __always_inline was to only cover the second 
+category above - and thus self-document all the 'correctness inlines'. 
+
+This notion has become bitrotten somewhat: we do use __always_inline in a 
+few other places like the ticket spinlock inlines for non-correctness 
+reasons. That bitrot happened because we simply have no separate symbol 
+for the first category.
+
+So hpa suggested __asm_inline (yesterday, well before all the analysis was 
+conducted) under the assumption that there would be many such annotations 
+needed and that they would be all about cases where GCC's inliner gets 
+confused by inline assembly.
+
+This theory turned out to be a red herring today - asm()s do not seem to 
+confuse latest GCC. (although they certain confuse earlier versions, so 
+it's still a practical issue, so i agree that we do need to annotate a few 
+more places.)
+
+In any case, the __asm_inline name - even if it made some marginal sense 
+originally - is totally moot now, no argument about that.
+
+The naming problem remains though:
+
+- Perhaps we could introduce a name for the first category: __must_inline? 
+  __should_inline? Not because it wouldnt mean 'always', but because it is 
+  'always inline' for another reason than the correctless __always_inline.
+
+- Another possible approach wuld be to rename the second category to 
+  __force_inline. That would signal it rather forcefully that the inlining 
+  there is an absolute correctness issue.
+
+- Or we could go with the status quo and just conflate those two 
+  categories (as it is happening currently) and document the correctness 
+  inlines via in-source comments?
+
+But these are really nuances that pale in comparison to the fundamental 
+questions that were asked in this thread, about the pure existence of this 
+feature.
+
+If the optimize-inlining feature looks worthwile and maintainable to 
+remain upstream then i'd simply like to see the information of these two 
+categories preserved in a structured way (in 5 years i'm not sure i'd 
+remember all the paravirt inlining details), and i dont feel too strongly 
+about the style how we preserve that information.
+
+	Ingo

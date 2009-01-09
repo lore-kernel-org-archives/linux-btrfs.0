@@ -1,20 +1,12 @@
-From: Harvey Harrison <harvey.harrison@gmail.com>
+From: Linus Torvalds <torvalds@linux-foundation.org>
 Subject: Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
-Date: Fri, 09 Jan 2009 13:41:59 -0800
-Message-ID: <1231537320.5726.2.camel@brick>
-References: <alpine.LFD.2.00.0901080849550.3283@localhost.localdomain>
-	 <1231434515.14304.27.camel@think.oraclecorp.com>
-	 <alpine.LFD.2.00.0901080955400.3283@localhost.localdomain>
-	 <20090108183306.GA22916@elte.hu> <20090108190038.GH496@one.firstfloor.org>
-	 <4966AB74.2090104@zytor.com> <20090109133710.GB31845@elte.hu>
-	 <alpine.LFD.2.00.0901090759420.6528@localhost.localdomain>
-	 <20090109204103.GA17212@elte.hu>
-	 <alpine.LFD.2.00.0901091251380.6528@localhost.localdomain>
-	 <20090109213442.GA20051@elte.hu>
+Date: Fri, 9 Jan 2009 13:46:55 -0800 (PST)
+Message-ID: <alpine.LFD.2.00.0901091342350.6528@localhost.localdomain>
+References: <alpine.LFD.2.00.0901080849550.3283@localhost.localdomain> <1231434515.14304.27.camel@think.oraclecorp.com> <alpine.LFD.2.00.0901080955400.3283@localhost.localdomain> <20090108183306.GA22916@elte.hu> <20090108190038.GH496@one.firstfloor.org>
+ <4966AB74.2090104@zytor.com> <20090109133710.GB31845@elte.hu> <alpine.LFD.2.00.0901090759420.6528@localhost.localdomain> <20090109204103.GA17212@elte.hu> <alpine.LFD.2.00.0901091251380.6528@localhost.localdomain> <20090109213442.GA20051@elte.hu>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Linus Torvalds <torvalds@linux-foundation.org>,
-	"H. Peter Anvin" <hpa@zytor.com>, Andi Kleen <andi@firstfloor.org>,
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: "H. Peter Anvin" <hpa@zytor.com>, Andi Kleen <andi@firstfloor.org>,
 	Chris Mason <chris.mason@oracle.com>,
 	Peter Zijlstra <peterz@infradead.org>,
 	Steven Rostedt <rostedt@goodmis.org>,
@@ -29,27 +21,38 @@ Cc: Linus Torvalds <torvalds@linux-foundation.org>,
 	Peter Morreale <pmorreale@novell.com>,
 	Sven Dietrich <SDietrich@novell.com>
 To: Ingo Molnar <mingo@elte.hu>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
 In-Reply-To: <20090109213442.GA20051@elte.hu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2009-01-09 at 22:34 +0100, Ingo Molnar wrote:
-> The naming problem remains though:
+
+
+On Fri, 9 Jan 2009, Ingo Molnar wrote:
 > 
 > - Perhaps we could introduce a name for the first category: __must_inline? 
 >   __should_inline? Not because it wouldnt mean 'always', but because it is 
 >   'always inline' for another reason than the correctless __always_inline.
-> 
-> - Another possible approach wuld be to rename the second category to 
->   __force_inline. That would signal it rather forcefully that the inlining 
->   there is an absolute correctness issue.
 
-__needs_inline?  That would imply that it's for correctness reasons.
+I think you're thinking about this the wrong way.
 
-Then __always_inline is left to mean that it doesn't _need_ to be inline
-but we _want_ it inline regardless of what gcc thinks?
+"inline" is a pretty damn strong hint already.
 
-$0.02
+If you want a weaker one, make it _weaker_ instead of trying to use 
+superlatives like "super_inline" or "must_inline" or whatever.
 
-Harvey
+So I'd suggest:
 
+ - keep "inline" as being a strong hint. In fact, I'd suggest it not be a 
+   hint at all - when we say "inline", we mean it. No ambiguity 
+   _anywhere_, and no need for idiotic "I really really REALLY mean it" 
+   versions.
+
+ - add a "maybe_inline" or "inline_hint" to mean that "ok, compiler, maybe 
+   this is worth inlining, but I'll leave the final choice to you".
+
+That would get rid of the whole rationale for OPTIMIZE_INLINING=y, because 
+at that point, it's no longer potentially a correctness issue. At that 
+point, if we let gcc optimize things, it was a per-call-site conscious 
+decision.
+
+			Linus

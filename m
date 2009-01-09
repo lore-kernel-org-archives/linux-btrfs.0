@@ -1,20 +1,17 @@
-From: Sam Ravnborg <sam@ravnborg.org>
-Subject: Re: [patch] measurements, numbers about CONFIG_OPTIMIZE_INLINING=y impact
-Date: Fri, 9 Jan 2009 21:58:13 +0100
-Message-ID: <20090109205812.GA24837@uranus.ravnborg.org>
-References: <20090109084620.3c711aad@infradead.org> <20090109172011.GD26290@one.firstfloor.org> <20090109172801.GC6936@parisc-linux.org> <20090109174719.GG26290@one.firstfloor.org> <20090109173914.GD6936@parisc-linux.org> <alpine.LFD.2.00.0901090947080.6528@localhost.localdomain> <84fc9c000901091109t2c2aef2fu596f8807b0962688@mail.gmail.com> <alpine.LFD.2.00.0901091128170.6528@localhost.localdomain> <84fc9c000901091214i16fc74b7q349433a5586d5619@mail.gmail.com> <alpine.LFD.2.00.0901091217530.6528@localhost.localdomain>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Subject: Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
+Date: Fri, 9 Jan 2009 12:56:36 -0800 (PST)
+Message-ID: <alpine.LFD.2.00.0901091251380.6528@localhost.localdomain>
+References: <20090108141808.GC11629@elte.hu> <1231426014.11687.456.camel@twins> <alpine.LFD.2.00.0901080849550.3283@localhost.localdomain> <1231434515.14304.27.camel@think.oraclecorp.com> <alpine.LFD.2.00.0901080955400.3283@localhost.localdomain>
+ <20090108183306.GA22916@elte.hu> <20090108190038.GH496@one.firstfloor.org> <4966AB74.2090104@zytor.com> <20090109133710.GB31845@elte.hu> <alpine.LFD.2.00.0901090759420.6528@localhost.localdomain> <20090109204103.GA17212@elte.hu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Richard Guenther <richard.guenther@gmail.com>,
-	Matthew Wilcox <matthew@wil.cx>,
-	Andi Kleen <andi@firstfloor.org>,
-	Dirk Hohndel <hohndel@infradead.org>,
-	"H. Peter Anvin" <hpa@zytor.com>, Ingo Molnar <mingo@elte.hu>,
-	jim owens <jowens@hp.com>,
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: "H. Peter Anvin" <hpa@zytor.com>, Andi Kleen <andi@firstfloor.org>,
 	Chris Mason <chris.mason@oracle.com>,
 	Peter Zijlstra <peterz@infradead.org>,
 	Steven Rostedt <rostedt@goodmis.org>,
 	paulmck@linux.vnet.ibm.com, Gregory Haskins <ghaskins@novell.com>,
+	Matthew Wilcox <matthew@wil.cx>,
 	Andrew Morton <akpm@linux-foundation.org>,
 	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
 	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
@@ -22,29 +19,32 @@ Cc: Richard Guenther <richard.guenther@gmail.com>,
 	Thomas Gleixner <tglx@linutronix.de>,
 	Nick Piggin <npiggin@suse.de>,
 	Peter Morreale <pmorreale@novell.com>,
-	Sven Dietrich <SDietrich@novell.com>, jh@suse.cz
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <alpine.LFD.2.00.0901091217530.6528@localhost.localdomain>
+	Sven Dietrich <SDietrich@novell.com>
+To: Ingo Molnar <mingo@elte.hu>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20090109204103.GA17212@elte.hu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+
+
+On Fri, 9 Jan 2009, Ingo Molnar wrote:
 > 
-> And you do have to realize that Linux has been using gcc for a _loong_ 
-> while. You can talk all you want about how "inline" is just a hint, but 
-> the fact is, it didn't use to be. gcc people _made_ it so, and are having 
-> a damn hard time admitting that it's causing problems.
+> So, should we not remove CONFIG_OPTIMIZE_INLINING, then the correct one 
+> would be to mark it __always_inline [__asm_inline is senseless there], or 
+> the second patch below that changes the bit parameter to unsigned int.
 
-The kernel has used:
-# define inline         inline          __attribute__((always_inline))
+Well, I certainly don't want to _remove_ the "inline" like your patch did. 
+Other gcc versions will care. But I committed the pure "change to 
+unsigned" part.
 
-For a looong time.
+But we should fix the cmpxchg (and perhaps plain xchg too), shouldn't we?
 
-So anyone in the kernel when they said "inline" actually
-said to gcc: if you have any possible way to do so inline this
-sucker.
+That your gcc version gets it right doesn't change the fact that Chris' 
+gcc version didn't, and out-of-lined it all. So we'll need some 
+__always_inlines there too..
 
-Now we have a config option that changes this so inline is only
-a hint. gcc does not pay enough attention to the hint,
-especially compared to the days where the hint was actually a command.
+And no, I don't think it makes any sense to call them "__asm_inline". Even 
+when there are asms hidden in between the C statements, what's the 
+difference between "always" and "asm"? None, really.
 
-	Sam
+		Linus

@@ -1,47 +1,26 @@
-From: Peter Zijlstra <peterz@infradead.org>
-Subject: Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
-Date: Fri, 09 Jan 2009 10:28:25 +0100
-Message-ID: <1231493305.11687.528.camel@twins>
-References: <1231441350.14304.48.camel@think.oraclecorp.com>
-	 <alpine.LFD.2.00.0901081109300.3283@localhost.localdomain>
+From: "=?iso-8859-1?q?Andr=E9-Sebastian?= Liebe" <andre@lianse.eu>
+Subject: wiki spam
+Date: Fri, 9 Jan 2009 10:49:31 +0100
+Message-ID: <200901091049.31715.andre@lianse.eu>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Steven Rostedt <rostedt@goodmis.org>,
-	Ingo Molnar <mingo@elte.hu>, paulmck@linux.vnet.ibm.com,
-	Gregory Haskins <ghaskins@novell.com>,
-	Matthew Wilcox <matthew@wil.cx>,
-	Andi Kleen <andi@firstfloor.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Nick Piggin <npiggin@suse.de>,
-	Peter Morreale <pmorreale@novell.com>,
-	Sven Dietrich <SDietrich@novell.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <alpine.LFD.2.00.0901081109300.3283@localhost.localdomain>
+Content-Type: text/plain; charset=iso-8859-1
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2009-01-08 at 11:13 -0800, Linus Torvalds wrote:
-> 
-> On Thu, 8 Jan 2009, Chris Mason wrote:
-> > 
-> > It is less fair though, the 50 proc parallel creates had a much bigger
-> > span between the first and last proc's exit time.  This isn't a huge
-> > shock, I think it shows the hot path is closer to a real spin lock.
-> 
-> Actually, the real spin locks are now fair. We use ticket locks on x86.
+Hello,
 
-> We _could_ certainly aim for using ticket locks for mutexes too, that 
-> might be quite nice.
+I've spotted some new pages (probably encrypted) in the wiki:
+http://btrfs.wiki.kernel.org/index.php/Special:RecentChanges
 
-Not really, ticket locks cannot handle a spinner going away - and we
-need that here.
+I deleted it's contents but someone might delete the pages at all and c=
+heck=20
+the user registration logs to block them.
 
-I've googled around a bit and MCS locks
-(http://www.cs.rice.edu/~johnmc/papers/asplos91.pdf) look like a viable
-way to gain fairness in our situation.
-
+thanks,
+Andr=E9
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

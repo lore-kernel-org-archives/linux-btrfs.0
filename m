@@ -1,16 +1,12 @@
-From: Peter Zijlstra <peterz@infradead.org>
+From: Linus Torvalds <torvalds@linux-foundation.org>
 Subject: Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
-Date: Fri, 09 Jan 2009 19:16:04 +0100
-Message-ID: <1231524964.442.103.camel@twins>
-References: <1231441350.14304.48.camel@think.oraclecorp.com>
-	 <alpine.LFD.2.00.0901081140550.3283@localhost.localdomain>
-	 <1231498062.11687.608.camel@twins> <1231513614.442.11.camel@twins>
-	 <alpine.DEB.1.10.0901091051591.17378@gandalf.stny.rr.com>
-	 <alpine.LFD.2.00.0901090828510.6528@localhost.localdomain>
-	 <alpine.DEB.1.10.0901091142060.17378@gandalf.stny.rr.com>
+Date: Fri, 9 Jan 2009 10:24:16 -0800 (PST)
+Message-ID: <alpine.LFD.2.00.0901091021070.6528@localhost.localdomain>
+References: <1231441350.14304.48.camel@think.oraclecorp.com>  <alpine.LFD.2.00.0901081140550.3283@localhost.localdomain>  <1231498062.11687.608.camel@twins> <1231513614.442.11.camel@twins>  <alpine.DEB.1.10.0901091051591.17378@gandalf.stny.rr.com>
+ <alpine.LFD.2.00.0901090828510.6528@localhost.localdomain>  <alpine.DEB.1.10.0901091142060.17378@gandalf.stny.rr.com> <1231524964.442.103.camel@twins>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Linus Torvalds <torvalds@linux-foundation.org>,
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: Steven Rostedt <rostedt@goodmis.org>,
 	Chris Mason <chris.mason@oracle.com>,
 	Ingo Molnar <mingo@elte.hu>, paulmck@linux.vnet.ibm.com,
 	Gregory Haskins <ghaskins@novell.com>,
@@ -24,34 +20,42 @@ Cc: Linus Torvalds <torvalds@linux-foundation.org>,
 	Nick Piggin <npiggin@suse.de>,
 	Peter Morreale <pmorreale@novell.com>,
 	Sven Dietrich <SDietrich@novell.com>
-To: Steven Rostedt <rostedt@goodmis.org>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754739AbZAISQt@vger.kernel.org>
-In-Reply-To: <alpine.DEB.1.10.0901091142060.17378@gandalf.stny.rr.com>
+To: Peter Zijlstra <peterz@infradead.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1231524964.442.103.camel@twins>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2009-01-09 at 11:44 -0500, Steven Rostedt wrote:
 
-> When we get to the schedule() it then needs to be a:
+
+On Fri, 9 Jan 2009, Peter Zijlstra wrote:
 > 
-> 	preempt_enable_no_resched();
-> 	schedule();
+> On that note:
+> 
+> Index: linux-2.6/kernel/mutex.c
+> ===================================================================
+> --- linux-2.6.orig/kernel/mutex.c
+> +++ linux-2.6/kernel/mutex.c
+> @@ -220,7 +220,9 @@ __mutex_lock_common(struct mutex *lock, 
+>  		__set_task_state(task, state);
+>  
+>  		/* didnt get the lock, go to sleep: */
+> +		preempt_disable();
+>  		spin_unlock_mutex(&lock->wait_lock, flags);
+> +		preempt_enable_no_resched();
+>  		schedule();
 
-On that note:
+Yes. I think this is a generic issue independently of the whole adaptive 
+thing.
 
-Index: linux-2.6/kernel/mutex.c
-===================================================================
---- linux-2.6.orig/kernel/mutex.c
-+++ linux-2.6/kernel/mutex.c
-@@ -220,7 +220,9 @@ __mutex_lock_common(struct mutex *lock, 
- 		__set_task_state(task, state);
- 
- 		/* didnt get the lock, go to sleep: */
-+		preempt_disable();
- 		spin_unlock_mutex(&lock->wait_lock, flags);
-+		preempt_enable_no_resched();
- 		schedule();
- 		spin_lock_mutex(&lock->wait_lock, flags);
- 	}
+In fact, I think wee could make the mutex code use explicit preemption and 
+then the __raw spinlocks to make this more obvious. Because now there's a 
+hidden "preempt_enable()" in that spin_unlock_mutex, and anybody looking 
+at the code and not realizing it is going to just say "Whaa? Who is this 
+crazy Peter Zijlstra guy, and what drugs is he on? I want me some!".
 
+Because your patch really doesn't make much sense unless you know how 
+spinlocks work, and if you _do_ know how spinlocks work, you go "eww, 
+that's doing extra preemption crud in order to just disable the 
+_automatic_ preemption crud".
 
-actually improves mutex performance on PREEMPT=y
+			Linus

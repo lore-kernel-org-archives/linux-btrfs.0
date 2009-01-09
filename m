@@ -1,17 +1,19 @@
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Subject: Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
-Date: Fri, 9 Jan 2009 10:24:16 -0800 (PST)
-Message-ID: <alpine.LFD.2.00.0901091021070.6528@localhost.localdomain>
-References: <1231441350.14304.48.camel@think.oraclecorp.com>  <alpine.LFD.2.00.0901081140550.3283@localhost.localdomain>  <1231498062.11687.608.camel@twins> <1231513614.442.11.camel@twins>  <alpine.DEB.1.10.0901091051591.17378@gandalf.stny.rr.com>
- <alpine.LFD.2.00.0901090828510.6528@localhost.localdomain>  <alpine.DEB.1.10.0901091142060.17378@gandalf.stny.rr.com> <1231524964.442.103.camel@twins>
+From: Andi Kleen <andi@firstfloor.org>
+Subject: Re: [patch] measurements, numbers about CONFIG_OPTIMIZE_INLINING=y impact
+Date: Fri, 9 Jan 2009 19:55:09 +0100
+Message-ID: <20090109185509.GJ26290@one.firstfloor.org>
+References: <49675920.4050205@hp.com> <20090109153508.GA4671@elte.hu> <49677CB1.3030701@zytor.com> <20090109084620.3c711aad@infradead.org> <20090109172011.GD26290@one.firstfloor.org> <20090109172801.GC6936@parisc-linux.org> <20090109174719.GG26290@one.firstfloor.org> <20090109094142.367012b6@infradead.org> <20090109180213.GH26290@one.firstfloor.org> <alpine.LFD.2.00.0901090954410.6528@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Steven Rostedt <rostedt@goodmis.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	Ingo Molnar <mingo@elte.hu>, paulmck@linux.vnet.ibm.com,
-	Gregory Haskins <ghaskins@novell.com>,
+Content-Type: text/plain; charset=us-ascii
+Cc: Andi Kleen <andi@firstfloor.org>,
+	Dirk Hohndel <hohndel@infradead.org>,
 	Matthew Wilcox <matthew@wil.cx>,
-	Andi Kleen <andi@firstfloor.org>,
+	"H. Peter Anvin" <hpa@zytor.com>, Ingo Molnar <mingo@elte.hu>,
+	jim owens <jowens@hp.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Peter Zijlstra <peterz@infradead.org>,
+	Steven Rostedt <rostedt@goodmis.org>,
+	paulmck@linux.vnet.ibm.com, Gregory Haskins <ghaskins@novell.com>,
 	Andrew Morton <akpm@linux-foundation.org>,
 	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
 	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
@@ -19,43 +21,62 @@ Cc: Steven Rostedt <rostedt@goodmis.org>,
 	Thomas Gleixner <tglx@linutronix.de>,
 	Nick Piggin <npiggin@suse.de>,
 	Peter Morreale <pmorreale@novell.com>,
-	Sven Dietrich <SDietrich@novell.com>
-To: Peter Zijlstra <peterz@infradead.org>
+	Sven Dietrich <SDietrich@novell.com>, jh@suse.cz
+To: Linus Torvalds <torvalds@linux-foundation.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1231524964.442.103.camel@twins>
+In-Reply-To: <alpine.LFD.2.00.0901090954410.6528@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+> But _users_ just get their oopses sent automatically. So it's not about 
+
+If they send it from distro kernels the automated oops sender could
+just fetch the debuginfo rpm and decode it down to a line.
+My old automatic user segfault uploader I did originally
+for the core pipe code did that too.
+
+> "debugging kernels", it's about _normal_ kernels. They are the ones that 
+> need to be debuggable, and the ones that care most about things like the 
+> symbolic EIP being as helpful as possible.
+
+Ok you're saying we should pay the 4.1% by default for this?
+If you want that you can apply the appended patch.
+Not sure if it's really a good idea though. 4.1% is a lot.
+
+-Andi
+
+---
+
+Disable inlining of functions called once by default
+
+This makes oopses easier to read because it's clearer in which
+function the problem is.
+
+Disadvantage: costs ~4.1% of text size (measured with allyesconfig
+on gcc 4.1 on x86-64)
+
+Signed-off-by: Andi Kleen <ak@linux.intel.com>
+
+---
+ Makefile |    4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+Index: linux-2.6.28-git12/Makefile
+===================================================================
+--- linux-2.6.28-git12.orig/Makefile	2009-01-09 07:06:44.000000000 +0100
++++ linux-2.6.28-git12/Makefile	2009-01-09 07:16:21.000000000 +0100
+@@ -546,10 +546,8 @@
+ KBUILD_CFLAGS	+= -pg
+ endif
+ 
+-# We trigger additional mismatches with less inlining
+-ifdef CONFIG_DEBUG_SECTION_MISMATCH
++# Disable too aggressive inlining because it makes oopses harder to read
+ KBUILD_CFLAGS += $(call cc-option, -fno-inline-functions-called-once)
+-endif
+ 
+ # arch Makefile may override CC so keep this after arch Makefile is included
+ NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
 
 
-On Fri, 9 Jan 2009, Peter Zijlstra wrote:
-> 
-> On that note:
-> 
-> Index: linux-2.6/kernel/mutex.c
-> ===================================================================
-> --- linux-2.6.orig/kernel/mutex.c
-> +++ linux-2.6/kernel/mutex.c
-> @@ -220,7 +220,9 @@ __mutex_lock_common(struct mutex *lock, 
->  		__set_task_state(task, state);
->  
->  		/* didnt get the lock, go to sleep: */
-> +		preempt_disable();
->  		spin_unlock_mutex(&lock->wait_lock, flags);
-> +		preempt_enable_no_resched();
->  		schedule();
-
-Yes. I think this is a generic issue independently of the whole adaptive 
-thing.
-
-In fact, I think wee could make the mutex code use explicit preemption and 
-then the __raw spinlocks to make this more obvious. Because now there's a 
-hidden "preempt_enable()" in that spin_unlock_mutex, and anybody looking 
-at the code and not realizing it is going to just say "Whaa? Who is this 
-crazy Peter Zijlstra guy, and what drugs is he on? I want me some!".
-
-Because your patch really doesn't make much sense unless you know how 
-spinlocks work, and if you _do_ know how spinlocks work, you go "eww, 
-that's doing extra preemption crud in order to just disable the 
-_automatic_ preemption crud".
-
-			Linus
+-- 
+ak@linux.intel.com

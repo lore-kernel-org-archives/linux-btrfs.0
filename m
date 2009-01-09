@@ -1,13 +1,13 @@
-From: Peter Zijlstra <peterz@infradead.org>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
-Date: Fri, 09 Jan 2009 16:06:54 +0100
-Message-ID: <1231513614.442.11.camel@twins>
+Date: Fri, 09 Jan 2009 10:11:50 -0500
+Message-ID: <1231513910.21333.19.camel@think.oraclecorp.com>
 References: <1231441350.14304.48.camel@think.oraclecorp.com>
 	 <alpine.LFD.2.00.0901081140550.3283@localhost.localdomain>
-	 <1231498062.11687.608.camel@twins>
+	 <1231498062.11687.608.camel@twins>  <1231513614.442.11.camel@twins>
 Mime-Version: 1.0
 Content-Type: text/plain
-Cc: Chris Mason <chris.mason@oracle.com>,
+Cc: Linus Torvalds <torvalds@linux-foundation.org>,
 	Steven Rostedt <rostedt@goodmis.org>,
 	Ingo Molnar <mingo@elte.hu>, paulmck@linux.vnet.ibm.com,
 	Gregory Haskins <ghaskins@novell.com>,
@@ -21,39 +21,49 @@ Cc: Chris Mason <chris.mason@oracle.com>,
 	Nick Piggin <npiggin@suse.de>,
 	Peter Morreale <pmorreale@novell.com>,
 	Sven Dietrich <SDietrich@novell.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <1231498062.11687.608.camel@twins>
+To: Peter Zijlstra <peterz@infradead.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1231513614.442.11.camel@twins>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2009-01-09 at 11:47 +0100, Peter Zijlstra wrote:
-
-> > So I think the bug is still there, we just hid it better by breaking out 
-> > of the loop with that "if (need_resched())" always eventually triggering. 
-> > And it would be ok if it really is guaranteed to _eventually_ trigger, and 
-> > I guess with timeslices it eventually always will, but I suspect we could 
-> > have some serious latency spikes.
+On Fri, 2009-01-09 at 16:06 +0100, Peter Zijlstra wrote:
+> On Fri, 2009-01-09 at 11:47 +0100, Peter Zijlstra wrote:
 > 
-> Yes, the owner getting preempted after acquiring the lock, but before
-> setting the owner can give some nasties :-(
+> > > So I think the bug is still there, we just hid it better by breaking out 
+> > > of the loop with that "if (need_resched())" always eventually triggering. 
+> > > And it would be ok if it really is guaranteed to _eventually_ trigger, and 
+> > > I guess with timeslices it eventually always will, but I suspect we could 
+> > > have some serious latency spikes.
+> > 
+> > Yes, the owner getting preempted after acquiring the lock, but before
+> > setting the owner can give some nasties :-(
+> > 
+> > I initially did that preempt_disable/enable around the fast path, but I
+> > agree that slowing down the fast path is unwelcome.
+> > 
+> > Alternatively we could go back to block on !owner, with the added
+> > complexity of not breaking out of the spin on lock->owner != owner
+> > when !lock->owner, so that the premature owner clearing of the unlock
+> > fast path will not force a schedule right before we get a chance to
+> > acquire the lock.
+> > 
+> > Let me do that..
 > 
-> I initially did that preempt_disable/enable around the fast path, but I
-> agree that slowing down the fast path is unwelcome.
+> Ok a few observations..
 > 
-> Alternatively we could go back to block on !owner, with the added
-> complexity of not breaking out of the spin on lock->owner != owner
-> when !lock->owner, so that the premature owner clearing of the unlock
-> fast path will not force a schedule right before we get a chance to
-> acquire the lock.
+> Adding that need_resched() in the outer loop utterly destroys the
+> performance gain for PREEMPT=y. Voluntary preemption is mostly good, but
+> somewhat unstable results.
+
+How about if (!owner && need_resched()) break; instead of the
+unconditional need_resched().  That should solve the race that Linus saw
+without and hurt PREEMPT less.
+
 > 
-> Let me do that..
+> Adding that blocking on !owner utterly destroys everything.
+> 
+> Going to look into where that extra preemption comes from.
 
-Ok a few observations..
+-chris
 
-Adding that need_resched() in the outer loop utterly destroys the
-performance gain for PREEMPT=y. Voluntary preemption is mostly good, but
-somewhat unstable results.
 
-Adding that blocking on !owner utterly destroys everything.
-
-Going to look into where that extra preemption comes from.

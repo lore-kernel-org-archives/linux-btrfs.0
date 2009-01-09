@@ -1,28 +1,21 @@
-From: Nicholas Miell <nmiell@comcast.net>
+From: Linus Torvalds <torvalds@linux-foundation.org>
 Subject: Re: [patch] measurements, numbers about CONFIG_OPTIMIZE_INLINING=y
  impact
-Date: Fri, 09 Jan 2009 12:17:56 -0800
-Message-ID: <1231532276.2081.12.camel@entropy>
-References: <20090108141808.GC11629@elte.hu>
-	 <1231426014.11687.456.camel@twins>
-	 <alpine.LFD.2.00.0901080849550.3283@localhost.localdomain>
-	 <1231434515.14304.27.camel@think.oraclecorp.com>
-	 <alpine.LFD.2.00.0901080955400.3283@localhost.localdomain>
-	 <20090108183306.GA22916@elte.hu> <496648C7.5050700@zytor.com>
-	 <alpine.LFD.2.00.0901081943150.6528@localhost.localdomain>
-	 <20090109130057.GA31845@elte.hu> <49675920.4050205@hp.com>
-	 <20090109153508.GA4671@elte.hu>
-	 <alpine.LFD.2.00.0901090817470.6528@localhost.localdomain>
+Date: Fri, 9 Jan 2009 12:26:16 -0800 (PST)
+Message-ID: <alpine.LFD.2.00.0901091217530.6528@localhost.localdomain>
+References: <496648C7.5050700@zytor.com> <49677CB1.3030701@zytor.com>  <20090109084620.3c711aad@infradead.org>  <20090109172011.GD26290@one.firstfloor.org>  <20090109172801.GC6936@parisc-linux.org>  <20090109174719.GG26290@one.firstfloor.org>
+ <20090109173914.GD6936@parisc-linux.org>  <alpine.LFD.2.00.0901090947080.6528@localhost.localdomain>  <84fc9c000901091109t2c2aef2fu596f8807b0962688@mail.gmail.com>  <alpine.LFD.2.00.0901091128170.6528@localhost.localdomain>
+ <84fc9c000901091214i16fc74b7q349433a5586d5619@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Ingo Molnar <mingo@elte.hu>, jim owens <jowens@hp.com>,
-	"H. Peter Anvin" <hpa@zytor.com>,
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: Matthew Wilcox <matthew@wil.cx>, Andi Kleen <andi@firstfloor.org>,
+	Dirk Hohndel <hohndel@infradead.org>,
+	"H. Peter Anvin" <hpa@zytor.com>, Ingo Molnar <mingo@elte.hu>,
+	jim owens <jowens@hp.com>,
 	Chris Mason <chris.mason@oracle.com>,
 	Peter Zijlstra <peterz@infradead.org>,
 	Steven Rostedt <rostedt@goodmis.org>,
 	paulmck@linux.vnet.ibm.com, Gregory Haskins <ghaskins@novell.com>,
-	Matthew Wilcox <matthew@wil.cx>,
-	Andi Kleen <andi@firstfloor.org>,
 	Andrew Morton <akpm@linux-foundation.org>,
 	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
 	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
@@ -30,60 +23,87 @@ Cc: Ingo Molnar <mingo@elte.hu>, jim owens <jowens@hp.com>,
 	Thomas Gleixner <tglx@linutronix.de>,
 	Nick Piggin <npiggin@suse.de>,
 	Peter Morreale <pmorreale@novell.com>,
-	Sven Dietrich <SDietrich@novell.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <alpine.LFD.2.00.0901090817470.6528@localhost.localdomain>
+	Sven Dietrich <SDietrich@novell.com>, jh@suse.cz
+To: Richard Guenther <richard.guenther@gmail.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <84fc9c000901091214i16fc74b7q349433a5586d5619@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2009-01-09 at 08:28 -0800, Linus Torvalds wrote:
+
+
+On Fri, 9 Jan 2009, Richard Guenther wrote:
 > 
-> We get oopses that have a nice symbolic back-trace, and it reports an 
-> error IN TOTALLY THE WRONG FUNCTION, because gcc "helpfully" inlined 
-> things to the point that only an expert can realize "oh, the bug was 
-> actually five hundred lines up, in that other function that was just 
-> called once, so gcc inlined it even though it is huge".
+> This is a case where the improved IPA-CP (interprocedural constant 
+> propagation) of GCC 4.4 may help.  In general GCC cannot say how a call 
+> argument may affect optimization if the function was inlined, so the 
+> size estimates are done with just looking at the function body, not the 
+> arguments (well, for GCC 4.4 this is not completely true, there is now 
+> some "heuristics").  With IPA-CP GCC will clone the function for the 
+> constant arguments, optimize it and eventually inline it if it is small 
+> enough.  At the moment this happens only if all callers call the 
+> function with the same constant though (at least I think so).
+
+Ok, that's useless. The whole point is that everybody gives different - 
+but still constant - arguments.
+
+> The above is definitely one case where using a macro or forced inlining is
+> a better idea than to trust a compiler to figure out that it can optimize the
+> function to a size suitable for inlining if called with a constant parameter.
+
+.. and forced inlining is what we default to. But that's when "let's try 
+letting gcc optimize this" fails. And macros get really unreadable, really 
+quickly.
+
+> > Maybe there was something else going on, and maybe Ingo's tests were off,
+> > but this is an example of gcc not inlining WHEN WE TOLD IT TO, and when
+> > the function was a single instruction.
+> >
+> > How can anybody possibly not consider that to be "stupid"?
 > 
-> See? THIS is the problem with gcc heuristics. It's not about quality of 
-> code, it's about RELIABILITY of code. 
+> Because it's a hard problem, it's not stupid to fail here - you didn't tell the
+> compiler the function optimizes!
 
-[bt]$ cat backtrace.c 
-#include <stdlib.h>
+Well, actually we did. It's that "inline" there. That's how things used to 
+work. It's like "no". It means "no". It doesn't mean "yes, I really want 
+to s*ck your d*ck, but I'm just screaming no at the top of my lungs 
+because I think I should do so".
 
-static void called_once()
-{
-	abort();
-}
+See?
 
-int main(int argc, char* argv[])
-{
-	called_once();
-	return 0;
-}
-[bt]$ gcc -Wall -O2 -g backtrace.c -o backtrace
-[bt]$ gdb --quiet backtrace
-(gdb) disassemble main 
-Dump of assembler code for function main:
-0x00000000004004d0 <main+0>:	sub    $0x8,%rsp
-0x00000000004004d4 <called_once+0>:	callq  0x4003b8 <abort@plt>
-End of assembler dump.
-(gdb) run
-Starting program: /home/nicholas/src/bitbucket/bt/backtrace 
+And you do have to realize that Linux has been using gcc for a _loong_ 
+while. You can talk all you want about how "inline" is just a hint, but 
+the fact is, it didn't use to be. gcc people _made_ it so, and are having 
+a damn hard time admitting that it's causing problems.
 
-Program received signal SIGABRT, Aborted.
-0x0000003d9dc32f05 in raise (sig=<value optimized out>) at ../nptl/sysdeps/unix/sysv/linux/raise.c:64
-64	  return INLINE_SYSCALL (tgkill, 3, pid, selftid, sig);
-(gdb) bt
-#0  0x0000003d9dc32f05 in raise (sig=<value optimized out>) at ../nptl/sysdeps/unix/sysv/linux/raise.c:64
-#1  0x0000003d9dc34a73 in abort () at abort.c:88
-#2  0x00000000004004d9 in called_once () at backtrace.c:5
-#3  main (argc=3989, argv=0xf95) at backtrace.c:10
-(gdb)
+> Experience tells us that people do not know better.  Maybe the kernel is
+> an exception here
 
+Oh, I can well believe it. 
 
-Maybe the kernel's backtrace code should be fixed instead of blaming
-gcc.
+And I don't even think that kernel people get it right nearly enough, but 
+since for the kernel it can even be a _correctness_ issue, at least if we 
+get it wrong, everybody sees it.
 
--- 
-Nicholas Miell <nmiell@comcast.net>
+When _some_ compiler versions get it wrong, it's a disaster.
 
+> But would you still want small functions be inlined even if they are not
+> marked inline?
+
+If you can really tell that they are that small, yes. 
+
+> They do - just constant arguments are obviously not used for optimizing
+> before inlining.  Otherwise you'd scream bloody murder at us for all the
+> increase in compile-time ;)
+
+A large portion of that has gone away now that everybody uses ccache. And 
+if you only did it for functions that we _mark_ inline, it wouldn't even 
+be true. Because those are the ones that presumably really should be 
+inlined.
+
+So no, I don't believe you. You much too easily dismiss the fact that 
+we've explicitly marked these functions for inlining, and then you say 
+"but we were too stupid".
+
+If you cannot afford to do the real job, then trust the user. Don't guess.
+
+		Linus

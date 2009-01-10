@@ -1,14 +1,13 @@
 From: Linus Torvalds <torvalds@linux-foundation.org>
 Subject: Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
-Date: Fri, 9 Jan 2009 17:04:22 -0800 (PST)
-Message-ID: <alpine.LFD.2.00.0901091701010.6528@localhost.localdomain>
-References: <20090109133710.GB31845@elte.hu> <alpine.LFD.2.00.0901090759420.6528@localhost.localdomain> <20090109204103.GA17212@elte.hu> <alpine.LFD.2.00.0901091251380.6528@localhost.localdomain> <20090109213442.GA20051@elte.hu> <1231537320.5726.2.camel@brick>
- <alpine.LFD.2.00.0901091347170.6528@localhost.localdomain> <1231538387.5825.2.camel@brick> <alpine.LFD.2.00.0901091404150.6528@localhost.localdomain> <1231539918.5825.7.camel@brick> <20090110005342.GC1972@shareable.org>
+Date: Fri, 9 Jan 2009 17:06:52 -0800 (PST)
+Message-ID: <alpine.LFD.2.00.0901091705410.6528@localhost.localdomain>
+References: <4966AB74.2090104@zytor.com> <20090109133710.GB31845@elte.hu> <alpine.LFD.2.00.0901090759420.6528@localhost.localdomain> <20090109204103.GA17212@elte.hu> <alpine.LFD.2.00.0901091251380.6528@localhost.localdomain> <20090109213442.GA20051@elte.hu>
+ <1231537320.5726.2.camel@brick> <alpine.LFD.2.00.0901091347170.6528@localhost.localdomain> <20090109231227.GA25070@elte.hu> <alpine.LFD.2.00.0901091522250.6528@localhost.localdomain> <20090110010125.GA31031@elte.hu>
 Mime-Version: 1.0
 Content-Type: TEXT/PLAIN; charset=US-ASCII
 Cc: Harvey Harrison <harvey.harrison@gmail.com>,
-	Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>,
-	Andi Kleen <andi@firstfloor.org>,
+	"H. Peter Anvin" <hpa@zytor.com>, Andi Kleen <andi@firstfloor.org>,
 	Chris Mason <chris.mason@oracle.com>,
 	Peter Zijlstra <peterz@infradead.org>,
 	Steven Rostedt <rostedt@goodmis.org>,
@@ -22,24 +21,25 @@ Cc: Harvey Harrison <harvey.harrison@gmail.com>,
 	Nick Piggin <npiggin@suse.de>,
 	Peter Morreale <pmorreale@novell.com>,
 	Sven Dietrich <SDietrich@novell.com>
-To: Jamie Lokier <jamie@shareable.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20090110005342.GC1972@shareable.org>
+To: Ingo Molnar <mingo@elte.hu>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20090110010125.GA31031@elte.hu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On Sat, 10 Jan 2009, Jamie Lokier wrote:
+On Sat, 10 Jan 2009, Ingo Molnar wrote:
 > 
-> Does "always_inline" complain if the function isn't inlinable, while
-> "inline" allows it?  That would explain the alpha comment.
+> Well, it's not totally meaningless. To begin with, defining 'inline' to 
+> mean 'always inline' is a Linux kernel definition. So we already changed 
+> the behavior - in the hope of getting it right most of the time and in the 
+> hope of thus improving the kernel.
 
-I suspect it dates back to gcc-3.1 days. It's from 2004. And the author of 
-that comment is a part-time gcc hacker who was probably offended by the 
-fact that we thought (correctly) that a lot of gcc inlining was totally 
-broken.
+Umm. No we didn't. We've never changed it. It was "always inline" back in 
+the old days, and then we had to keep it "always inline", which is why we 
+override the default gcc meaning with the preprocessor.
 
-Since he was the main alpha maintainer, he got to do things his way 
-there..
+Now, OPTIMIZE_INLINING _tries_ to change the semantics, and people are 
+complaining..
 
-			Linus
+		Linus

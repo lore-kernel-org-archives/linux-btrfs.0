@@ -1,20 +1,17 @@
-From: Ingo Molnar <mingo@elte.hu>
-Subject: Re: source line numbers with x86_64 modules? [Was: Re: [patch]
-	measurements, numbers about CONFIG_OPTIMIZE_INLINING=y impact]
-Date: Sun, 11 Jan 2009 00:22:45 +0100
-Message-ID: <20090110232245.GA25872@elte.hu>
-References: <170fa0d20901100621m74680e0ewd1916c70f1636c9b@mail.gmail.com> <20090110153446.GA13976@elte.hu> <170fa0d20901101021s3b9a18e9qe6150c374efa4d6f@mail.gmail.com> <20090110211531.GD31579@mit.edu> <20090110222142.GI26290@one.firstfloor.org> <alpine.LFD.2.00.0901101454090.6528@localhost.localdomain>
+From: Jeremy Fitzhardinge <jeremy@goop.org>
+Subject: Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
+Date: Sun, 11 Jan 2009 10:59:05 +1100
+Message-ID: <49693649.1020406@goop.org>
+References: <1231441350.14304.48.camel@think.oraclecorp.com> <alpine.LFD.2.00.0901081109300.3283@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Andi Kleen <andi@firstfloor.org>, Theodore Tso <tytso@mit.edu>,
-	Mike Snitzer <snitzer@gmail.com>,
-	Nicholas Miell <nmiell@comcast.net>, jim owens <jowens@hp.com>,
-	"H. Peter Anvin" <hpa@zytor.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Peter Zijlstra <peterz@infradead.org>,
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
+Cc: Chris Mason <chris.mason@oracle.com>,
 	Steven Rostedt <rostedt@goodmis.org>,
-	paulmck@linux.vnet.ibm.com, Gregory Haskins <ghaskins@novell.com>,
+	Peter Zijlstra <peterz@infradead.org>,
+	Ingo Molnar <mingo@elte.hu>, paulmck@linux.vnet.ibm.com,
+	Gregory Haskins <ghaskins@novell.com>,
 	Matthew Wilcox <matthew@wil.cx>,
+	Andi Kleen <andi@firstfloor.org>,
 	Andrew Morton <akpm@linux-foundation.org>,
 	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
 	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
@@ -22,22 +19,23 @@ Cc: Andi Kleen <andi@firstfloor.org>, Theodore Tso <tytso@mit.edu>,
 	Thomas Gleixner <tglx@linutronix.de>,
 	Nick Piggin <npiggin@suse.de>,
 	Peter Morreale <pmorreale@novell.com>,
-	Sven Dietrich <SDietrich@novell.com>, sam@ravnborg.org,
-	Dave Anderson <anderson@redhat.com>
+	Sven Dietrich <SDietrich@novell.com>
 To: Linus Torvalds <torvalds@linux-foundation.org>
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <alpine.LFD.2.00.0901101454090.6528@localhost.localdomain>
+In-Reply-To: <alpine.LFD.2.00.0901081109300.3283@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Linus Torvalds wrote:
+> Actually, the real spin locks are now fair. We use ticket locks on x86.
+>
+> Well, at least we do unless you enable that broken paravirt support. I'm 
+> not at all clear on why CONFIG_PARAVIRT wants to use inferior locks, but I 
+> don't much care.
+>   
 
-* Linus Torvalds <torvalds@linux-foundation.org> wrote:
+No, it will continue to use ticket locks, but there's the option to 
+switch to byte locks or something else.  Ticket locks are awesomely bad 
+when the VCPU scheduler fights with the run-order required by the ticket 
+order.
 
-> As far as I'm concerned, digital cameras have been more useful than 
-> kernel dumps to kernel debugging.
-
-Yes, especially ones with VGA video capture. (I caught a 
-"oops+triple-fault" crash via that trick once, which was not 
-serial-console capture-able and which was just a single frame in the 25 
-fps video of the incident.)
-
-	Ingo
+    J

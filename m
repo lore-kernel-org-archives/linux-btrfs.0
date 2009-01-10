@@ -1,14 +1,13 @@
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Subject: Re: [patch] measurements, numbers about CONFIG_OPTIMIZE_INLINING=y
- impact
-Date: Fri, 9 Jan 2009 16:41:33 -0800 (PST)
-Message-ID: <alpine.LFD.2.00.0901091630440.6528@localhost.localdomain>
-References: <496648C7.5050700@zytor.com> <alpine.LFD.2.00.0901081943150.6528@localhost.localdomain> <20090109130057.GA31845@elte.hu> <49675920.4050205@hp.com> <20090109153508.GA4671@elte.hu> <alpine.LFD.2.00.0901090817470.6528@localhost.localdomain>
- <1231532276.2081.12.camel@entropy> <alpine.LFD.2.00.0901091227040.6528@localhost.localdomain> <1231543701.2081.185.camel@entropy> <alpine.LFD.2.00.0901091535330.6528@localhost.localdomain> <20090110003709.GT26290@one.firstfloor.org>
+From: Jamie Lokier <jamie@shareable.org>
+Subject: Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
+Date: Sat, 10 Jan 2009 00:53:42 +0000
+Message-ID: <20090110005342.GC1972@shareable.org>
+References: <20090109133710.GB31845@elte.hu> <alpine.LFD.2.00.0901090759420.6528@localhost.localdomain> <20090109204103.GA17212@elte.hu> <alpine.LFD.2.00.0901091251380.6528@localhost.localdomain> <20090109213442.GA20051@elte.hu> <1231537320.5726.2.camel@brick> <alpine.LFD.2.00.0901091347170.6528@localhost.localdomain> <1231538387.5825.2.camel@brick> <alpine.LFD.2.00.0901091404150.6528@localhost.localdomain> <1231539918.5825.7.camel@brick>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Nicholas Miell <nmiell@comcast.net>, Ingo Molnar <mingo@elte.hu>,
-	jim owens <jowens@hp.com>, "H. Peter Anvin" <hpa@zytor.com>,
+Content-Type: text/plain; charset=us-ascii
+Cc: Linus Torvalds <torvalds@linux-foundation.org>,
+	Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>,
+	Andi Kleen <andi@firstfloor.org>,
 	Chris Mason <chris.mason@oracle.com>,
 	Peter Zijlstra <peterz@infradead.org>,
 	Steven Rostedt <rostedt@goodmis.org>,
@@ -22,59 +21,21 @@ Cc: Nicholas Miell <nmiell@comcast.net>, Ingo Molnar <mingo@elte.hu>,
 	Nick Piggin <npiggin@suse.de>,
 	Peter Morreale <pmorreale@novell.com>,
 	Sven Dietrich <SDietrich@novell.com>
-To: Andi Kleen <andi@firstfloor.org>
+To: Harvey Harrison <harvey.harrison@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090110003709.GT26290@one.firstfloor.org>
+In-Reply-To: <1231539918.5825.7.camel@brick>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On Sat, 10 Jan 2009, Andi Kleen wrote:
->
-> > What's the cost/benefit of that 4%? Does it actually improve performance? 
-> > Especially if you then want to keep DWARF unwind information in memory in 
-> > order to fix up some of the problems it causes? At that point, you lost 
+Harvey Harrison wrote:
+> Oh yeah, and figure out what actually breaks on alpha such that they added
+> the following (arch/alpha/include/asm/compiler.h)
 > 
-> dwarf unwind information has nothing to do with this, it doesn't tell
-> you anything about inlining or not inlining.  It just gives you
-> finished frames after all of that has been done.
-> 
-> Full line number information would help, but I don't think anyone 
-> proposed to keep that in memory.
+> #ifdef __KERNEL__
+> /* Some idiots over in <linux/compiler.h> thought inline should imply
+>    always_inline.  This breaks stuff.  We'll include this file whenever
+>    we run into such problems.  */
 
-Yeah, true. Although one of the reasons inlining actually ends up causing 
-problems is because of the bigger stack frames. That leaves a lot of space 
-for old stale function pointers to peek through.
+Does "always_inline" complain if the function isn't inlinable, while
+"inline" allows it?  That would explain the alpha comment.
 
-With denser stack frames, the stack dumps look better, even without an 
-unwinder.
-
-> > Does it help I$ utilization (which can speed things up a lot more, and is 
-> > probably the main reason -Os actually tends to perform better)? Likely 
-> > not. Sure, shrinking code is good for I$, but on the other hand inlining 
-> > can actually be bad for I$ density because if you inline a function that 
-> > doesn't get called, you now fragmented your footprint a lot more.
-> 
-> Not sure that is always true; the gcc basic block reordering 
-> based on its standard branch prediction heuristics (e.g. < 0 or
-> == NULL unlikely or the unlikely macro) might well put it all out of line.
-
-I thought -Os actually disabled the basic-block reordering, doesn't it?
-
-And I thought it did that exactly because it generates bigger code and 
-much worse I$ patterns (ie you have a lot of "conditional branch to other 
-place and then unconditional branch back" instead of "conditional branch 
-over the non-taken code".
-
-Also, I think we've had about as much good luck with guessing 
-"likely/unlikely" as we've had with "inline" ;)
-
-Sadly, apart from some of the "never happens" error cases, the kernel 
-doesn't tend to have lots of nice patterns. We have almost no loops (well, 
-there are loops all over, but most of them we hopefully just loop over 
-once or twice in any good situation), and few really predictable things.
-
-Or rather, they can easily be very predictable under one particular load, 
-and the totally the other way around under another ..
-
-			Linus
+-- Jamie

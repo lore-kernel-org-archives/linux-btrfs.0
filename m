@@ -1,339 +1,76 @@
-From: "Mike Snitzer" <snitzer@gmail.com>
-Subject: source line numbers with x86_64 modules? [Was: Re: [patch] measurements, numbers about CONFIG_OPTIMIZE_INLINING=y impact]
-Date: Sat, 10 Jan 2009 09:21:11 -0500
-Message-ID: <170fa0d20901100621m74680e0ewd1916c70f1636c9b@mail.gmail.com>
+From: Ingo Molnar <mingo@elte.hu>
+Subject: Re: source line numbers with x86_64 modules? [Was: Re: [patch]
+	measurements, numbers about CONFIG_OPTIMIZE_INLINING=y impact]
+Date: Sat, 10 Jan 2009 16:34:46 +0100
+Message-ID: <20090110153446.GA13976@elte.hu>
+References: <170fa0d20901100621m74680e0ewd1916c70f1636c9b@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
-	boundary="----=_Part_284370_2371181.1231597272041"
-Cc: "Linus Torvalds" <torvalds@linux-foundation.org>,
-	"Ingo Molnar" <mingo@elte.hu>, "jim owens" <jowens@hp.com>,
-	"H. Peter Anvin" <hpa@zytor.com>,
-	"Chris Mason" <chris.mason@oracle.com>,
-	"Peter Zijlstra" <peterz@infradead.org>,
-	"Steven Rostedt" <rostedt@goodmis.org>, paulmck@linux.vnet.ibm.com,
-	"Gregory Haskins" <ghaskins@novell.com>,
-	"Matthew Wilcox" <matthew@wil.cx>,
-	"Andi Kleen" <andi@firstfloor.org>,
-	"Andrew Morton" <akpm@linux-foundation.org>,
-	"Linux Kernel Mailing List" <linux-kernel@vger.kernel.org>,
+Content-Type: text/plain; charset=us-ascii
+Cc: Nicholas Miell <nmiell@comcast.net>,
+	Linus Torvalds <torvalds@linux-foundation.org>,
+	jim owens <jowens@hp.com>, "H. Peter Anvin" <hpa@zytor.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Peter Zijlstra <peterz@infradead.org>,
+	Steven Rostedt <rostedt@goodmis.org>,
+	paulmck@linux.vnet.ibm.com, Gregory Haskins <ghaskins@novell.com>,
+	Matthew Wilcox <matthew@wil.cx>,
+	Andi Kleen <andi@firstfloor.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
 	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
 	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	"Thomas Gleixner" <tglx@linutronix.de>,
-	"Nick Piggin" <npiggin@suse.de>,
-	"Peter Morreale" <pmorreale@novell.com>,
-	"Sven Dietrich" <SDietrich@novell.com>, sam@ravnborg.org,
-	"Dave Anderson" <anderson@redhat.com>
-To: "Nicholas Miell" <nmiell@comcast.net>
+	Thomas Gleixner <tglx@linutronix.de>,
+	Nick Piggin <npiggin@suse.de>,
+	Peter Morreale <pmorreale@novell.com>,
+	Sven Dietrich <SDietrich@novell.com>, sam@ravnborg.org,
+	Dave Anderson <anderson@redhat.com>
+To: Mike Snitzer <snitzer@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <170fa0d20901100621m74680e0ewd1916c70f1636c9b@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-------=_Part_284370_2371181.1231597272041
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
 
-On Sat, Jan 10, 2009 at 1:44 AM, Nicholas Miell <nmiell@comcast.net> wrote:
-> On Fri, 2009-01-09 at 20:05 -0800, Linus Torvalds wrote:
->>
->> On Fri, 9 Jan 2009, Nicholas Miell wrote:
->> >
->> > It's only too big if you always keep it in memory, and I wasn't
->> > suggesting that.
->>
->> Umm. We're talking kernel panics here. If it's not in memory, it doesn't
->> exist as far as the kernel is concerned.
->>
->> If it doesn't exist, it cannot be reported.
->
-> The idea was that the kernel would generate a crash dump and then after
-> the reboot, a post-processing tool would do something with it. (e.g. run
-> the dump through crash to get a stack trace using separate debug info or
-> ship the entire dump off to a collection server or something).
->
->> > And this is where we disagree. I believe that crash dumps should be the
->> > norm and all the reasons you have against crash dumps in general are in
->> > fact reasons against Linux's sub-par implementation of crash dumps in
->> > specific.
->>
->> Good luck with that. Go ahead and try it.  You'll find it wasn't so easy
->> after all.
->>
->> > So, here I am, a non-enterprise end user with a non-stale kernel who'd
->> > love to be able to give you a crash dump (or, more likely, a stack trace
->> > created from that crash dump), but I can't because Linux crash dumps are
->> > stuck in the enterprise ghetto.
->>
->> No, you're stuck because you apparently have your mind stuck on a
->> crash-dump, and aren't willing to look at alternatives.
->>
->> You could use a network console. Trust me - if you can't set up a network
->> console, you have no business mucking around with crash dumps.
->
-> netconsole requires a second computer. Feel free to mail me one. :)
->
->> And if the crash is hard enough that you can't any output from that,
->> again, a crash dump wouldn't exactly help, would it?
->>
->> > Hell, I'd be happy if I could get the the normal panic text written to
->> > disk, but since the hard part is the actual writing to disk, there's no
->> > reason not to do the full crash dump if you can.
->>
->> Umm. And why do you think the two have anything to do with each other?
->>
->> Only insane people want the kernel to write to disk when it has problems.
->> Sane people try to write to something that doesn't potentially overwrite
->> their data. Like the network.
->>
->> Which is there. Try it. Trust me, it's a _hell_ of a lot more likely to
->> wotk than a crash dump.
->
-> Well, yes, but that has everything to do with how terrible kdump is and
-> nothing to do with the idea of crash dumps in general.
->
-> Anyway, we've strayed off topic long enough, I'm sure everyone in the Cc
-> list would be happy to stop getting an earful about the merits of crash
-> dumps.
+* Mike Snitzer <snitzer@gmail.com> wrote:
 
-Yes, especially from someone who lacks the ability to properly
-configure kdump.  I'm fairly surprised others are giving you a free
-pass when you keep asserting how broken kdump is with such hollow
-criticism.  I rely heavily on kdump and it works quite well (kvm
-integration was lacking but has improved).
+> Yes, especially from someone who lacks the ability to properly configure 
+> kdump.  I'm fairly surprised others are giving you a free pass when you 
+> keep asserting how broken kdump is with such hollow criticism.  I rely 
+> heavily on kdump and it works quite well (kvm integration was lacking 
+> but has improved).
 
-Now that said, I too value crash dumps and will stray a bit off-topic
-(subject changed), I do have one significant debugability issue when
-using crash dumps: on x86_64 I'm unable to get line number information
-from symbols that reside in a module.
+hm, you say you rely heavily on kdump ... for what exactly, and how does 
+it help the upstream Linux kernel?
 
-I tried to get some insight on this from Dave Anderson (crash utility
-developer/maintainer) here:
-http://www.mail-archive.com/crash-utility@redhat.com/msg01101.html
+I see a single fix from you in the whole repository:
 
-Dave was helpful but ultimately couldn't explain why I'm unable to get
-line numbers with my x86_64 kernel.org kernels (and he/redhat with
-RHEL4 kernels).
+  ffc41cf: nbd: prevent sock_xmit from attempting to use a NULL socket
 
-I strongly respect those cc'd and have to believe someone can help me
-cut through this.
+... and that single fix is a NULL pointer dereference that ought to have 
+been quite debuggable from a plain oops alone.
 
-I've updated scripts/package/mkspec so that the 'make rpm' target
-produces RedHat-style kernel rpms (models redhat's kernel.spec).  This
-includes creating debuginfo rpms.  I've attached a patch that works on
-2.6.28; but again the resulting debuginfo doesn't provide line numbers
-for the kernel modules under crash!?
+In practice i rarely see bugfixes that were debugged via kdump. Normal 
+oops based fixes outnumber kdump based fixes by a ratio of 1:100 or worse 
+- and kdump is readily available these days - just nobody configures it.
 
-If anyone has some insight on what I might be missing (as part of the
-kernel build) I'd _really_ appreciate it.  I provided the mkspec patch
-just as a reference, if the RPM stuff is too opaque please just help
-me understand the bare mechanics of what is needed without mkspec (in
-the meantime I'll try the debuginfo generation patch Sam Ravnborg
-recently posted too).
+For example, in the whole kernel repo there's just 45 commits that mention 
+'kdump' [excluding those commits that develop kdump itself]:
 
-regards,
-Mike
+  $ git log --pretty=format:"%h: %s" --no-merges -i --grep="kdump" |
+        grep -viE 'kdump|kexec|dump|mem' | wc -l
+  45
 
-------=_Part_284370_2371181.1231597272041
-Content-Type: text/x-patch; name=mkspec_2.6.28.patch
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_fpscwwj00
-Content-Disposition: attachment; filename=mkspec_2.6.28.patch
+Contrast that to the 1954 commits that contain the string 'oops' or 
+'crash':
 
-ZGlmZiAtLWdpdCBhL3NjcmlwdHMvcGFja2FnZS9ta3NwZWMgYi9zY3JpcHRzL3BhY2thZ2UvbWtz
-cGVjCmluZGV4IDI1MDA4ODYuLmE3MWI0ZjggMTAwNzU1Ci0tLSBhL3NjcmlwdHMvcGFja2FnZS9t
-a3NwZWMKKysrIGIvc2NyaXB0cy9wYWNrYWdlL21rc3BlYwpAQCAtMjQsMzMgKzI0LDUzIEBAIGZp
-CiBQUk9WSURFUz0iJFBST1ZJREVTIGtlcm5lbC0kS0VSTkVMUkVMRUFTRSIKIF9fS0VSTkVMUkVM
-RUFTRT1gZWNobyAkS0VSTkVMUkVMRUFTRSB8IHNlZCAtZSAicy8tLy9nImAKIAorZWNobyAiJWRl
-ZmluZSBfZW5hYmxlX2RlYnVnX3BhY2thZ2VzIDEiCitlY2hvICIiCisKKyMgZm9yIGNvbXBhdGli
-aWxpdHkgd2l0aCBSZWRIYXQtYmFzZWQga2VybmVsIHNwZWNmaWxlLWlzbXMKK2VjaG8gIiVkZWZp
-bmUgS1ZFUlJFTCAkS0VSTkVMUkVMRUFTRSIKK2VjaG8gIiIKKwogZWNobyAiTmFtZToga2VybmVs
-IgogZWNobyAiU3VtbWFyeTogVGhlIExpbnV4IEtlcm5lbCIKIGVjaG8gIlZlcnNpb246ICRfX0tF
-Uk5FTFJFTEVBU0UiCiAjIHdlIG5lZWQgdG8gZGV0ZXJtaW5lIHRoZSBORVhUIHZlcnNpb24gbnVt
-YmVyIHNvIHRoYXQgdW5hbWUgYW5kCiAjIHJwbSAtcSB3aWxsIGFncmVlCi1lY2hvICJSZWxlYXNl
-OiBgLiAkc3JjdHJlZS9zY3JpcHRzL21rdmVyc2lvbmAiCitlY2hvICJSZWxlYXNlOiBgZWNobyAk
-S0VSTkVMUkVMRUFTRSB8IGN1dCAtZCctJyAtZjItYCIKIGVjaG8gIkxpY2Vuc2U6IEdQTCIKIGVj
-aG8gIkdyb3VwOiBTeXN0ZW0gRW52aXJvbm1lbnQvS2VybmVsIgogZWNobyAiVmVuZG9yOiBUaGUg
-TGludXggQ29tbXVuaXR5IgogZWNobyAiVVJMOiBodHRwOi8vd3d3Lmtlcm5lbC5vcmciCitlY2hv
-ICJQcmVyZXE6IGZpbGV1dGlscywgbW9kdWxlLWluaXQtdG9vbHMsIGluaXRzY3JpcHRzLCBta2lu
-aXRyZCIKIAogaWYgISAkUFJFQlVJTFQ7IHRoZW4KLWVjaG8gIlNvdXJjZToga2VybmVsLSRfX0tF
-Uk5FTFJFTEVBU0UudGFyLmd6IgorZWNobyAiU291cmNlOiBrZXJuZWwtJXtLVkVSUkVMfS50YXIu
-Z3oiCiBmaQogCi1lY2hvICJCdWlsZFJvb3Q6IC92YXIvdG1wLyV7bmFtZX0tJXtQQUNLQUdFX1ZF
-UlNJT059LXJvb3QiCitlY2hvICJCdWlsZFJvb3Q6IC92YXIvdG1wLyV7bmFtZX0tJXtLVkVSUkVM
-fS1yb290IgogZWNobyAiUHJvdmlkZXM6ICRQUk9WSURFUyIKLWVjaG8gIiVkZWZpbmUgX19zcGVj
-X2luc3RhbGxfcG9zdCAvdXNyL2xpYi9ycG0vYnJwLWNvbXByZXNzIHx8IDoiCi1lY2hvICIlZGVm
-aW5lIGRlYnVnX3BhY2thZ2UgJXtuaWx9IgorCiBlY2hvICIiCiBlY2hvICIlZGVzY3JpcHRpb24i
-CiBlY2hvICJUaGUgTGludXggS2VybmVsLCB0aGUgb3BlcmF0aW5nIHN5c3RlbSBjb3JlIGl0c2Vs
-ZiIKIGVjaG8gIiIKIAorIyBkZXZlbCBwYWNrYWdlICh1c2VkIHRvIGFsbG93IG1vZHVsZXMgdG8g
-YmUgYnVpbHQgYWdhaW5zdCB0aGlzIGtlcm5lbCkKK2VjaG8gIiVwYWNrYWdlIGRldmVsIgorZWNo
-byAiU3VtbWFyeTogRGV2ZWxvcG1lbnQgcGFja2FnZSBmb3IgYnVpbGRpbmcga2VybmVsIG1vZHVs
-ZXMgdG8gbWF0Y2ggdGhlIGtlcm5lbC4iCitlY2hvICJHcm91cDogU3lzdGVtIEVudmlyb25tZW50
-L0tlcm5lbCIKK2VjaG8gIkF1dG9SZXFQcm92OiBubyIKK2VjaG8gIlByb3ZpZGVzOiBrZXJuZWwt
-ZGV2ZWwtJXtfdGFyZ2V0X2NwdX0gPSAle3ZlcnNpb259LSV7cmVsZWFzZX0iCitlY2hvICJQcmVy
-ZXE6IC91c3IvYmluL2ZpbmQiCitlY2hvICIiCitlY2hvICIlZGVzY3JpcHRpb24gZGV2ZWwiCitl
-Y2hvICJUaGlzIHBhY2thZ2UgcHJvdmlkZXMga2VybmVsIGhlYWRlcnMgYW5kIG1ha2VmaWxlcyBz
-dWZmaWNpZW50IHRvIGJ1aWxkIG1vZHVsZXMiCitlY2hvICJhZ2FpbnN0IHRoZSBrZXJuZWwgcGFj
-a2FnZS4iCitlY2hvICIiCisKIGlmICEgJFBSRUJVSUxUOyB0aGVuCiBlY2hvICIlcHJlcCIKLWVj
-aG8gIiVzZXR1cCAtcSIKK2VjaG8gIiVzZXR1cCAtcSAtbiBrZXJuZWwtJXtLVkVSUkVMfSIKIGVj
-aG8gIiIKIGZpCiAKQEAgLTU5LDQxICs3OSwyMTAgQEAgZWNobyAiJWJ1aWxkIgogaWYgISAkUFJF
-QlVJTFQ7IHRoZW4KIGVjaG8gIm1ha2UgY2xlYW4gJiYgbWFrZSAlez9fc21wX21mbGFnc30iCiBl
-Y2hvICIiCisKK2VjaG8gIiMjIyIKK2VjaG8gIiMjIyBTcGVjaWFsIGhhY2tzIGZvciBkZWJ1Z2lu
-Zm8gc3VicGFja2FnZXMuIgorZWNobyAiIyMjIgorCitlY2hvICIjIFRoaXMgbWFjcm8gaXMgdXNl
-ZCBieSAlJWluc3RhbGwsIHNvIHdlIG11c3QgcmVkZWZpbmUgaXQgYmVmb3JlIHRoYXQuIgorZWNo
-byAiJWRlZmluZSBkZWJ1Z19wYWNrYWdlICV7bmlsfSIKKworZWNobyAnJWlmICIle19lbmFibGVf
-ZGVidWdfcGFja2FnZXN9IiA9PSAiMSInCitlY2hvICclaWZuYXJjaCBub2FyY2gnCitlY2hvICcl
-Z2xvYmFsIF9fZGVidWdfcGFja2FnZSAxJworZWNobyAiJWVuZGlmIgorZWNobyAiJWVuZGlmIgog
-ZmkKIAogZWNobyAiJWluc3RhbGwiCi1lY2hvICIlaWZhcmNoIGlhNjQiCi1lY2hvICdta2RpciAt
-cCAkUlBNX0JVSUxEX1JPT1QvYm9vdC9lZmkgJFJQTV9CVUlMRF9ST09UL2xpYi9tb2R1bGVzJwot
-ZWNobyAnbWtkaXIgLXAgJFJQTV9CVUlMRF9ST09UL2xpYi9maXJtd2FyZScKLWVjaG8gIiVlbHNl
-IgogZWNobyAnbWtkaXIgLXAgJFJQTV9CVUlMRF9ST09UL2Jvb3QgJFJQTV9CVUlMRF9ST09UL2xp
-Yi9tb2R1bGVzJwogZWNobyAnbWtkaXIgLXAgJFJQTV9CVUlMRF9ST09UL2xpYi9maXJtd2FyZScK
-LWVjaG8gIiVlbmRpZiIKIAogZWNobyAnSU5TVEFMTF9NT0RfUEFUSD0kUlBNX0JVSUxEX1JPT1Qg
-bWFrZSAle19zbXBfbWZsYWdzfSBtb2R1bGVzX2luc3RhbGwnCi1lY2hvICIlaWZhcmNoIGlhNjQi
-Ci1lY2hvICdjcCAkS0JVSUxEX0lNQUdFICRSUE1fQlVJTERfUk9PVCciL2Jvb3QvZWZpL3ZtbGlu
-dXotJEtFUk5FTFJFTEVBU0UiCi1lY2hvICdsbiAtcyAnImVmaS92bWxpbnV6LSRLRVJORUxSRUxF
-QVNFIiAnJFJQTV9CVUlMRF9ST09UJyIvYm9vdC8iCi1lY2hvICIlZWxzZSIKLWVjaG8gIiVpZmFy
-Y2ggcHBjNjQiCi1lY2hvICJjcCB2bWxpbnV4IGFyY2gvcG93ZXJwYy9ib290IgotZWNobyAiY3Ag
-YXJjaC9wb3dlcnBjL2Jvb3QvIickS0JVSUxEX0lNQUdFICRSUE1fQlVJTERfUk9PVCciL2Jvb3Qv
-dm1saW51ei0kS0VSTkVMUkVMRUFTRSIKLWVjaG8gIiVlbHNlIgotZWNobyAnY3AgJEtCVUlMRF9J
-TUFHRSAkUlBNX0JVSUxEX1JPT1QnIi9ib290L3ZtbGludXotJEtFUk5FTFJFTEVBU0UiCi1lY2hv
-ICIlZW5kaWYiCi1lY2hvICIlZW5kaWYiCitlY2hvICdjcCBhcmNoLyV7X2FyY2h9L2Jvb3QvYnpJ
-bWFnZSAkUlBNX0JVSUxEX1JPT1QnIi9ib290L3ZtbGludXotJXtLVkVSUkVMfSIKKworIyBzeW12
-ZXJzIG5lZWRlZCBmb3IgJXBvc3QKK2VjaG8gJ2d6aXAgLWM5IDwgTW9kdWxlLnN5bXZlcnMgPiAk
-UlBNX0JVSUxEX1JPT1QvYm9vdC9zeW12ZXJzLSV7S1ZFUlJFTH0uZ3onCiAKLWVjaG8gJ2NwIFN5
-c3RlbS5tYXAgJFJQTV9CVUlMRF9ST09UJyIvYm9vdC9TeXN0ZW0ubWFwLSRLRVJORUxSRUxFQVNF
-IgorZWNobyAnY3AgU3lzdGVtLm1hcCAkUlBNX0JVSUxEX1JPT1QnIi9ib290L1N5c3RlbS5tYXAt
-JXtLVkVSUkVMfSIKKworZWNobyAnY3AgLmNvbmZpZyAkUlBNX0JVSUxEX1JPT1QnIi9ib290L2Nv
-bmZpZy0le0tWRVJSRUx9IgorCitlY2hvICd0b3VjaCAkUlBNX0JVSUxEX1JPT1QvYm9vdC9pbml0
-cmQtJXtLVkVSUkVMfS5pbWcnCisKK2VjaG8gIiIKKworIyBkZXZlbCBwYWNrYWdlIGluc3RhbGwK
-K2VjaG8gIktlcm5lbFZlcj0le0tWRVJSRUx9IgorCitlY2hvICIjIEFuZCBzYXZlIHRoZSBoZWFk
-ZXJzL21ha2VmaWxlcyBldGMgZm9yIGJ1aWxkaW5nIG1vZHVsZXMgYWdhaW5zdCIKK2VjaG8gIiMi
-CitlY2hvICIjIFRoaXMgYWxsIGxvb2tzIHNjYXJ5LCBidXQgdGhlIGVuZCByZXN1bHQgaXMgc3Vw
-cG9zZWQgdG8gYmU6IgorZWNobyAiIyAqIGFsbCBhcmNoIHJlbGV2YW50IGluY2x1ZGUvIGZpbGVz
-IgorZWNobyAiIyAqIGFsbCBNYWtlZmlsZS9LY29uZmlnIGZpbGVzIgorZWNobyAiIyAqIGFsbCBz
-Y3JpcHQvIGZpbGVzIgorZWNobyAiIgorZWNobyAncm0gLWYgJFJQTV9CVUlMRF9ST09UL2xpYi9t
-b2R1bGVzLyRLZXJuZWxWZXIvYnVpbGQnCitlY2hvICdybSAtZiAkUlBNX0JVSUxEX1JPT1QvbGli
-L21vZHVsZXMvJEtlcm5lbFZlci9zb3VyY2UnCitlY2hvICdta2RpciAtcCAkUlBNX0JVSUxEX1JP
-T1QvbGliL21vZHVsZXMvJEtlcm5lbFZlci9idWlsZCcKK2VjaG8gJyhjZCAkUlBNX0JVSUxEX1JP
-T1QvbGliL21vZHVsZXMvJEtlcm5lbFZlciA7IGxuIC1zIGJ1aWxkIHNvdXJjZSknCitlY2hvICIj
-IGRpcnMgZm9yIGFkZGl0aW9uYWwgbW9kdWxlcyBwZXIgbW9kdWxlLWluaXQtdG9vbHMsIGtidWls
-ZC9tb2R1bGVzLnR4dCIKK2VjaG8gJ21rZGlyIC1wICRSUE1fQlVJTERfUk9PVC9saWIvbW9kdWxl
-cy8kS2VybmVsVmVyL2V4dHJhJworZWNobyAnbWtkaXIgLXAgJFJQTV9CVUlMRF9ST09UL2xpYi9t
-b2R1bGVzLyRLZXJuZWxWZXIvdXBkYXRlcycKK2VjaG8gJ21rZGlyIC1wICRSUE1fQlVJTERfUk9P
-VC9saWIvbW9kdWxlcy8kS2VybmVsVmVyL3dlYWstdXBkYXRlcycKK2VjaG8gJyMgZmlyc3QgY29w
-eSBldmVyeXRoaW5nJworZWNobyAnY3AgLS1wYXJlbnRzIGBmaW5kICAtdHlwZSBmIC1uYW1lICJN
-YWtlZmlsZSoiIC1vIC1uYW1lICJLY29uZmlnKiJgICRSUE1fQlVJTERfUk9PVC9saWIvbW9kdWxl
-cy8kS2VybmVsVmVyL2J1aWxkJworZWNobyAnY3AgTW9kdWxlLnN5bXZlcnMgJFJQTV9CVUlMRF9S
-T09UL2xpYi9tb2R1bGVzLyRLZXJuZWxWZXIvYnVpbGQnCitlY2hvICIjIHRoZW4gZHJvcCBhbGwg
-YnV0IHRoZSBuZWVkZWQgTWFrZWZpbGVzL0tjb25maWcgZmlsZXMiCitlY2hvICdybSAtcmYgJFJQ
-TV9CVUlMRF9ST09UL2xpYi9tb2R1bGVzLyRLZXJuZWxWZXIvYnVpbGQvRG9jdW1lbnRhdGlvbicK
-K2VjaG8gJ3JtIC1yZiAkUlBNX0JVSUxEX1JPT1QvbGliL21vZHVsZXMvJEtlcm5lbFZlci9idWls
-ZC9zY3JpcHRzJworZWNobyAncm0gLXJmICRSUE1fQlVJTERfUk9PVC9saWIvbW9kdWxlcy8kS2Vy
-bmVsVmVyL2J1aWxkL2luY2x1ZGUnCitlY2hvICdjcCAuY29uZmlnICRSUE1fQlVJTERfUk9PVC9s
-aWIvbW9kdWxlcy8kS2VybmVsVmVyL2J1aWxkJworZWNobyAnY3AgLWEgc2NyaXB0cyAkUlBNX0JV
-SUxEX1JPT1QvbGliL21vZHVsZXMvJEtlcm5lbFZlci9idWlsZCcKK2VjaG8gImlmIFsgLWQgYXJj
-aC8le19hcmNofS9zY3JpcHRzIF07IHRoZW4iCitlY2hvICcgIGNwIC1hIGFyY2gvJXtfYXJjaH0v
-c2NyaXB0cyAkUlBNX0JVSUxEX1JPT1QvbGliL21vZHVsZXMvJEtlcm5lbFZlci9idWlsZC9hcmNo
-LyV7X2FyY2h9IHx8IDonCitlY2hvICJmaSIKK2VjaG8gJ2lmIFsgLWYgYXJjaC8le19hcmNofS8q
-bGRzIF07IHRoZW4nCitlY2hvICcgIGNwIC1hIGFyY2gvJXtfYXJjaH0vKmxkcyAkUlBNX0JVSUxE
-X1JPT1QvbGliL21vZHVsZXMvJEtlcm5lbFZlci9idWlsZC9hcmNoLyV7X2FyY2h9LyB8fCA6Jwor
-ZWNobyAiZmkiCitlY2hvICdybSAtZiAkUlBNX0JVSUxEX1JPT1QvbGliL21vZHVsZXMvJEtlcm5l
-bFZlci9idWlsZC9zY3JpcHRzLyoubycKK2VjaG8gJ3JtIC1mICRSUE1fQlVJTERfUk9PVC9saWIv
-bW9kdWxlcy8kS2VybmVsVmVyL2J1aWxkL3NjcmlwdHMvKi8qLm8nCitlY2hvICdta2RpciAtcCAk
-UlBNX0JVSUxEX1JPT1QvbGliL21vZHVsZXMvJEtlcm5lbFZlci9idWlsZC9pbmNsdWRlJworZWNo
-byAnY2QgaW5jbHVkZScKK2VjaG8gJ2NwIC1hIGFjcGkgY29uZmlnIGtleXMgbGludXggbWF0aC1l
-bXUgbWVkaWEgbXRkIG5ldCBwY21jaWEgcmRtYSByeHJwYyBzY3NpIHNvdW5kIHZpZGVvIGFzbSBh
-c20tZ2VuZXJpYyAkUlBNX0JVSUxEX1JPT1QvbGliL21vZHVsZXMvJEtlcm5lbFZlci9idWlsZC9p
-bmNsdWRlJworZWNobyAnY3AgLWEgYHJlYWRsaW5rIGFzbWAgJFJQTV9CVUlMRF9ST09UL2xpYi9t
-b2R1bGVzLyRLZXJuZWxWZXIvYnVpbGQvaW5jbHVkZScKKyNlY2hvICdpZiBbICIle19hcmNofSIg
-PSAieDg2XzY0IiBdOyB0aGVuJworI2VjaG8gJyAgY3AgLWEgYXNtLWkzODYgJFJQTV9CVUlMRF9S
-T09UL2xpYi9tb2R1bGVzLyRLZXJuZWxWZXIvYnVpbGQvaW5jbHVkZScKKyNlY2hvICJmaSIKK2Vj
-aG8gIiIKKworZWNobyAiIyBNYWtlIHN1cmUgdGhlIE1ha2VmaWxlIGFuZCB2ZXJzaW9uLmggaGF2
-ZSBhIG1hdGNoaW5nIHRpbWVzdGFtcCBzbyB0aGF0IgorZWNobyAiIyBleHRlcm5hbCBtb2R1bGVz
-IGNhbiBiZSBidWlsdCIKK2VjaG8gJ3RvdWNoIC1yICRSUE1fQlVJTERfUk9PVC9saWIvbW9kdWxl
-cy8kS2VybmVsVmVyL2J1aWxkL01ha2VmaWxlICRSUE1fQlVJTERfUk9PVC9saWIvbW9kdWxlcy8k
-S2VybmVsVmVyL2J1aWxkL2luY2x1ZGUvbGludXgvdmVyc2lvbi5oJworZWNobyAndG91Y2ggLXIg
-JFJQTV9CVUlMRF9ST09UL2xpYi9tb2R1bGVzLyRLZXJuZWxWZXIvYnVpbGQvLmNvbmZpZyAkUlBN
-X0JVSUxEX1JPT1QvbGliL21vZHVsZXMvJEtlcm5lbFZlci9idWlsZC9pbmNsdWRlL2xpbnV4L2F1
-dG9jb25mLmgnCitlY2hvICcjIENvcHkgLmNvbmZpZyB0byBpbmNsdWRlL2NvbmZpZy9hdXRvLmNv
-bmYgc28gIm1ha2UgcHJlcGFyZSIgaXMgdW5uZWNlc3NhcnkuJworZWNobyAnY3AgJFJQTV9CVUlM
-RF9ST09UL2xpYi9tb2R1bGVzLyRLZXJuZWxWZXIvYnVpbGQvLmNvbmZpZyAkUlBNX0JVSUxEX1JP
-T1QvbGliL21vZHVsZXMvJEtlcm5lbFZlci9idWlsZC9pbmNsdWRlL2NvbmZpZy9hdXRvLmNvbmYn
-CitlY2hvICJjZCAuLiIKK2VjaG8gIiIKKworZWNobyAnZmluZCAkUlBNX0JVSUxEX1JPT1QvbGli
-L21vZHVsZXMvJEtlcm5lbFZlciAtbmFtZSAiKi5rbyIgLXR5cGUgZiA+bW9kbmFtZXMnCitlY2hv
-ICIjIG1hcmsgbW9kdWxlcyBleGVjdXRhYmxlIHNvIHRoYXQgc3RyaXAtdG8tZmlsZSBjYW4gc3Ry
-aXAgdGhlbSIKK2VjaG8gImNhdCBtb2RuYW1lcyB8IHhhcmdzIGNobW9kIHUreCIKK2VjaG8gInJt
-IC1mIG1vZG5hbWVzIgorZWNobyAiIyByZW1vdmUgZmlsZXMgdGhhdCB3aWxsIGJlIGF1dG8gZ2Vu
-ZXJhdGVkIGJ5IGRlcG1vZCBhdCBycG0gLWkgdGltZSIKK2VjaG8gJ3JtIC1mICRSUE1fQlVJTERf
-Uk9PVC9saWIvbW9kdWxlcy8kS2VybmVsVmVyL21vZHVsZXMuKicKK2VjaG8gIiIKK2VjaG8gIiMg
-TW92ZSB0aGUgZGV2ZWwgaGVhZGVycyBvdXQgb2YgdGhlIHJvb3QgZmlsZSBzeXN0ZW0iCitlY2hv
-ICJEZXZlbERpcj0vdXNyL3NyYy9rZXJuZWxzLyV7S1ZFUlJFTH0tJXtfdGFyZ2V0X2NwdX0iCitl
-Y2hvICdta2RpciAtcCAkUlBNX0JVSUxEX1JPT1QvdXNyL3NyYy9rZXJuZWxzJworZWNobyAnbXYg
-JFJQTV9CVUlMRF9ST09UL2xpYi9tb2R1bGVzLyRLZXJuZWxWZXIvYnVpbGQgJFJQTV9CVUlMRF9S
-T09ULyREZXZlbERpcicKK2VjaG8gJ2xuIC1zZiAuLi8uLi8uLiREZXZlbERpciAkUlBNX0JVSUxE
-X1JPT1QvbGliL21vZHVsZXMvJEtlcm5lbFZlci9idWlsZCcKK2VjaG8gIiIKKworIyBkZWJ1Z2lu
-Zm8gcGFja2FnZSBpbnN0YWxsCitlY2hvICclaWYgIiV7X2VuYWJsZV9kZWJ1Z19wYWNrYWdlc30i
-ID09ICIxIicKK2VjaG8gJ21rZGlyIC1wICRSUE1fQlVJTERfUk9PVC91c3IvbGliL2RlYnVnL2Jv
-b3QnCitlY2hvICdta2RpciAtcCAkUlBNX0JVSUxEX1JPT1QvdXNyL2xpYi9kZWJ1Zy9saWIvbW9k
-dWxlcy8kS2VybmVsVmVyJworZWNobyAiIyIKK2VjaG8gIiMgc2F2ZSB0aGUgdm1saW51eCBmaWxl
-IGZvciBrZXJuZWwgZGVidWdnaW5nIGludG8gdGhlIGtlcm5lbC1kZWJ1Z2luZm8gcnBtIgorZWNo
-byAiIyIKK2VjaG8gJ2NwIHZtbGludXggJFJQTV9CVUlMRF9ST09UL3Vzci9saWIvZGVidWcvbGli
-L21vZHVsZXMvJEtlcm5lbFZlcicKK2VjaG8gIiIKKyMgaGVscCBjcmFzaCBmaW5kIHRoZSBMaW51
-eCBzb3VyY2UKK2VjaG8gJ21rZGlyIC1wICRSUE1fQlVJTERfUk9PVC91c3Ivc3JjL2RlYnVnJwor
-ZWNobyAnKGNkICRSUE1fQlVJTERfUk9PVC91c3Ivc3JjL2RlYnVnIDsgbG4gLXMgJXtuYW1lfS0l
-e0tWRVJSRUx9ICV7S1ZFUlJFTH0pJworZWNobyAiJWVuZGlmIgogCi1lY2hvICdjcCAuY29uZmln
-ICRSUE1fQlVJTERfUk9PVCciL2Jvb3QvY29uZmlnLSRLRVJORUxSRUxFQVNFIgogZWNobyAiIgog
-ZWNobyAiJWNsZWFuIgotZWNobyAnI2VjaG8gLXJmICRSUE1fQlVJTERfUk9PVCcKK2VjaG8gIiV7
-X19ybX0gLXJmICV7YnVpbGRyb290fSIKK2VjaG8gIiIKKworIworIyBzY3JpcHRzCisjCisKKyMg
-aW5zdGFsbDogdXBkYXRlIGdydWIuY29uZiBldCBhbAorZWNobyAiJXBvc3QiCitlY2hvICdpZiBb
-IGB1bmFtZSAtaWAgPT0gIng4Nl82NCIgLW8gYHVuYW1lIC1pYCA9PSAiaTM4NiIgXTsgdGhlbicK
-K2VjaG8gIiAgaWYgWyAtZiAvZXRjL3N5c2NvbmZpZy9rZXJuZWwgXTsgdGhlbiIKK2VjaG8gIiAg
-ICAvYmluL3NlZCAtaSAtZSAncy9eREVGQVVMVEtFUk5FTD1rZXJuZWwtc21wJC9ERUZBVUxUS0VS
-TkVMPWtlcm5lbC8nIC9ldGMvc3lzY29uZmlnL2tlcm5lbCB8fCAiJ2V4aXQgJD8nCitlY2hvICIg
-IGZpIgorZWNobyAiZmkiCitlY2hvICcvc2Jpbi9uZXcta2VybmVsLXBrZyAtLXBhY2thZ2Uga2Vy
-bmVsIC0tbWtpbml0cmQgLS1kZXBtb2QgLS1pbnN0YWxsICV7S1ZFUlJFTH0gfHwgZXhpdCAkPycK
-K2VjaG8gImlmIFsgLXggL3NiaW4vd2Vhay1tb2R1bGVzIF0iCitlY2hvICJ0aGVuIgorZWNobyAn
-ICAgIC9zYmluL3dlYWstbW9kdWxlcyAtLWFkZC1rZXJuZWwgJXtLVkVSUkVMfSB8fCBleGl0ICQ/
-JworZWNobyAiZmkiCiBlY2hvICIiCisKKyMgdW5pbnN0YWxsCitlY2hvICIlcHJldW4iCitlY2hv
-ICcvc2Jpbi9uZXcta2VybmVsLXBrZyAtLXJtaW5pdHJkIC0tcm1tb2RkZXAgLS1yZW1vdmUgJXtL
-VkVSUkVMfSB8fCBleGl0ICQ/JworZWNobyAiaWYgWyAteCAvc2Jpbi93ZWFrLW1vZHVsZXMgXSIK
-K2VjaG8gInRoZW4iCitlY2hvICcgICAgL3NiaW4vd2Vhay1tb2R1bGVzIC0tcmVtb3ZlLWtlcm5l
-bCAle0tWRVJSRUx9IHx8IGV4aXQgJD8nCitlY2hvICJmaSIKK2VjaG8gIiIKKwogZWNobyAiJWZp
-bGVzIgogZWNobyAnJWRlZmF0dHIgKC0sIHJvb3QsIHJvb3QpJwotZWNobyAiJWRpciAvbGliL21v
-ZHVsZXMiCi1lY2hvICIvbGliL21vZHVsZXMvJEtFUk5FTFJFTEVBU0UiCitlY2hvICIvYm9vdC92
-bWxpbnV6LSV7S1ZFUlJFTH0iCitlY2hvICIvYm9vdC9TeXN0ZW0ubWFwLSV7S1ZFUlJFTH0iCitl
-Y2hvICIvYm9vdC9zeW12ZXJzLSV7S1ZFUlJFTH0uZ3oiCitlY2hvICIvYm9vdC9jb25maWctJXtL
-VkVSUkVMfSIKK2VjaG8gIiVkaXIgL2xpYi9tb2R1bGVzLyV7S1ZFUlJFTH0iCiBlY2hvICIvbGli
-L2Zpcm13YXJlIgotZWNobyAiL2Jvb3QvKiIKK2VjaG8gIi9saWIvbW9kdWxlcy8le0tWRVJSRUx9
-L2tlcm5lbCIKK2VjaG8gIi9saWIvbW9kdWxlcy8le0tWRVJSRUx9L2J1aWxkIgorZWNobyAiL2xp
-Yi9tb2R1bGVzLyV7S1ZFUlJFTH0vc291cmNlIgorZWNobyAiL2xpYi9tb2R1bGVzLyV7S1ZFUlJF
-TH0vZXh0cmEiCitlY2hvICIvbGliL21vZHVsZXMvJXtLVkVSUkVMfS91cGRhdGVzIgorZWNobyAi
-L2xpYi9tb2R1bGVzLyV7S1ZFUlJFTH0vd2Vhay11cGRhdGVzIgorZWNobyAiJWdob3N0IC9ib290
-L2luaXRyZC0le0tWRVJSRUx9LmltZyIKIGVjaG8gIiIKKworZWNobyAiJWZpbGVzIGRldmVsIgor
-ZWNobyAiJWRlZmF0dHIoLSxyb290LHJvb3QpIgorZWNobyAiJXZlcmlmeShub3QgbXRpbWUpIC91
-c3Ivc3JjL2tlcm5lbHMvJXtLVkVSUkVMfS0le190YXJnZXRfY3B1fSIKK2VjaG8gIiIKKworIyBk
-ZWJ1Z2luZm8gcGFja2FnZXMKK2VjaG8gJyVpZiAiJXtfZW5hYmxlX2RlYnVnX3BhY2thZ2VzfSIg
-PT0gIjEiJworZWNobyAnJWlmbmFyY2ggbm9hcmNoJworCitlY2hvICIlcGFja2FnZSBkZWJ1Z2lu
-Zm8tY29tbW9uIgorZWNobyAiU3VtbWFyeTogS2VybmVsIHNvdXJjZSBmaWxlcyB1c2VkIGJ5ICV7
-bmFtZX0tZGVidWdpbmZvIHBhY2thZ2VzIgorZWNobyAiR3JvdXA6IERldmVsb3BtZW50L0RlYnVn
-IgorZWNobyAiUHJvdmlkZXM6ICV7bmFtZX0tZGVidWdpbmZvLWNvbW1vbi0le190YXJnZXRfY3B1
-fSA9ICV7S1ZFUlJFTH0iCitlY2hvICIiCitlY2hvICIlZGVzY3JpcHRpb24gZGVidWdpbmZvLWNv
-bW1vbiIKK2VjaG8gIlRoaXMgcGFja2FnZSBpcyByZXF1aXJlZCBieSAle25hbWV9LWRlYnVnaW5m
-byBzdWJwYWNrYWdlcy4iCitlY2hvICJJdCBwcm92aWRlcyB0aGUga2VybmVsIHNvdXJjZSBmaWxl
-cyBjb21tb24gdG8gYWxsIGJ1aWxkcy4iCitlY2hvICIiCitlY2hvICIlZmlsZXMgZGVidWdpbmZv
-LWNvbW1vbiIKK2VjaG8gIiVkZWZhdHRyKC0scm9vdCxyb290KSIKK2VjaG8gIi91c3Ivc3JjL2Rl
-YnVnLyV7bmFtZX0tJXtLVkVSUkVMfSIKK2VjaG8gIi91c3Ivc3JjL2RlYnVnLyV7S1ZFUlJFTH0i
-CitlY2hvICIlZGlyIC91c3Ivc3JjL2RlYnVnIgorZWNobyAiJWRpciAvdXNyL2xpYi9kZWJ1ZyIK
-K2VjaG8gIiVkaXIgL3Vzci9saWIvZGVidWcvYm9vdCIKK2VjaG8gIiVkaXIgL3Vzci9saWIvZGVi
-dWcvbGliIgorZWNobyAiJWRpciAvdXNyL2xpYi9kZWJ1Zy9saWIvbW9kdWxlcyIKK2VjaG8gIiVk
-aXIgL3Vzci9saWIvZGVidWcvdXNyL3NyYy9rZXJuZWxzIgorCitlY2hvICIlcGFja2FnZSBkZWJ1
-Z2luZm8iCitlY2hvICJTdW1tYXJ5OiBEZWJ1ZyBpbmZvcm1hdGlvbiBmb3IgcGFja2FnZSAle25h
-bWV9IgorZWNobyAiR3JvdXA6IERldmVsb3BtZW50L0RlYnVnIgorZWNobyAiUmVxdWlyZXM6ICV7
-bmFtZX0tZGVidWdpbmZvLWNvbW1vbi0le190YXJnZXRfY3B1fSA9ICV7S1ZFUlJFTH0iCitlY2hv
-ICJQcm92aWRlczogJXtuYW1lfS1kZWJ1Z2luZm8tJXtfdGFyZ2V0X2NwdX0gPSAle0tWRVJSRUx9
-IgorZWNobyAiJWRlc2NyaXB0aW9uIGRlYnVnaW5mbyIKK2VjaG8gIlRoaXMgcGFja2FnZSBwcm92
-aWRlcyBkZWJ1ZyBpbmZvcm1hdGlvbiBmb3IgcGFja2FnZSAle25hbWV9IgorZWNobyAiVGhpcyBp
-cyByZXF1aXJlZCB0byB1c2UgU3lzdGVtVGFwIHdpdGggJXtuYW1lfS0le0tWRVJSRUx9LiIKK2Vj
-aG8gIiVmaWxlcyBkZWJ1Z2luZm8iCitlY2hvICIlZGVmYXR0cigtLHJvb3Qscm9vdCkiCitlY2hv
-ICIvdXNyL2xpYi9kZWJ1Zy9saWIvbW9kdWxlcy8le0tWRVJSRUx9IgorZWNobyAiL3Vzci9saWIv
-ZGVidWcvdXNyL3NyYy9rZXJuZWxzLyV7S1ZFUlJFTH0tJXtfdGFyZ2V0X2NwdX0iCisKK2VjaG8g
-IiVlbmRpZiIKK2VjaG8gIiVlbmRpZiIK
-------=_Part_284370_2371181.1231597272041--
+  $ git log --pretty=format:"%h: %s" --no-merges -i -E --grep="oops|crash" |
+            wc -l
+  5900
+
+That's a ratio of 1:131. (and probably optimistic in favor of kdump.)
+
+Note, i dont have any negative feelings towards kdump - some people use it 
+and enterprise folks with their frozen, immutable kernels love it - it 
+just has not yet given me a reason to have particularly positive feelings 
+towards it in the upstream kernel space.
+
+	Ingo

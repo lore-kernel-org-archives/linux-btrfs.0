@@ -1,49 +1,45 @@
-From: Andi Kleen <andi@firstfloor.org>
-Subject: Re: gcc inlining heuristics was Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
-Date: Sun, 11 Jan 2009 21:34:41 +0100
-Message-ID: <20090111203441.GQ26290@one.firstfloor.org>
-References: <20090109231227.GA25070@elte.hu> <alpine.LFD.2.00.0901091522250.6528@localhost.localdomain> <20090110010125.GA31031@elte.hu> <20090109174158.096dee70.akpm@linux-foundation.org> <20090110030216.GW26290@one.firstfloor.org> <1231676801.25018.150.camel@macbook.infradead.org> <20090111181307.GM26290@one.firstfloor.org> <alpine.LFD.2.00.0901111114230.6528@localhost.localdomain> <20090111201427.GP26290@one.firstfloor.org> <1231704939.25018.548.camel@macbook.infradead.org>
+From: Theodore Tso <tytso@mit.edu>
+Subject: Re: source line numbers with x86_64 modules? [Was: Re: [patch]
+	measurements, numbers about CONFIG_OPTIMIZE_INLINING=y impact]
+Date: Sun, 11 Jan 2009 15:45:29 -0500
+Message-ID: <20090111204529.GB29383@mit.edu>
+References: <170fa0d20901100621m74680e0ewd1916c70f1636c9b@mail.gmail.com> <20090110153446.GA13976@elte.hu> <170fa0d20901101021s3b9a18e9qe6150c374efa4d6f@mail.gmail.com> <20090110211531.GD31579@mit.edu> <20090111101135.GA3306@webber.adilger.int>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Andi Kleen <andi@firstfloor.org>,
+Cc: Mike Snitzer <snitzer@gmail.com>, Ingo Molnar <mingo@elte.hu>,
+	Nicholas Miell <nmiell@comcast.net>,
 	Linus Torvalds <torvalds@linux-foundation.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Ingo Molnar <mingo@elte.hu>,
-	Harvey Harrison <harvey.harrison@gmail.com>,
-	"H. Peter Anvin" <hpa@zytor.com>,
+	jim owens <jowens@hp.com>, "H. Peter Anvin" <hpa@zytor.com>,
 	Chris Mason <chris.mason@oracle.com>,
 	Peter Zijlstra <peterz@infradead.org>,
 	Steven Rostedt <rostedt@goodmis.org>,
 	paulmck@linux.vnet.ibm.com, Gregory Haskins <ghaskins@novell.com>,
 	Matthew Wilcox <matthew@wil.cx>,
+	Andi Kleen <andi@firstfloor.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
 	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
 	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
 	linux-btrfs <linux-btrfs@vger.kernel.org>,
 	Thomas Gleixner <tglx@linutronix.de>,
 	Nick Piggin <npiggin@suse.de>,
 	Peter Morreale <pmorreale@novell.com>,
-	Sven Dietrich <SDietrich@novell.com>, jh@suse.cz
-To: David Woodhouse <dwmw2@infradead.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1231704939.25018.548.camel@macbook.infradead.org>
+	Sven Dietrich <SDietrich@novell.com>, sam@ravnborg.org,
+	Dave Anderson <anderson@redhat.com>
+To: Andreas Dilger <adilger@sun.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753471AbZAKUqY@vger.kernel.org>
+In-Reply-To: <20090111101135.GA3306@webber.adilger.int>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Isn't the ioctl switch stack issue a separate GCC bug?
-> 
-> It was/is assigning assigning separate space for local variables which
+On Sun, Jan 11, 2009 at 06:11:35PM +0800, Andreas Dilger wrote:
+> I'm sad that netconsole/netdump never made it big.  It was fairly useful,
+> and extending the eth drivers to add the polling mode was trivial to do.
+> We were using that for a few years, but it got replaced by kdump and it
+> appears to be less usable IMHO.
 
-Was -- i think that got fixed in gcc. But again only in newer versions.
+The netdump I'm familiar with had the misfeature that it didn't do
+packet retransmission, so when it was used on a customer network with
+any amount of traffic, packets would get dropped and the crash dump
+would utterly fail.  I honestly can't remember which enterprise distro
+shipped it, but I can't say I was terribly impressed.  :-(
 
-> are mutually exclusive. So instead of the stack footprint of the
-> function with the switch() being equal to the largest individual stack
-> size of all the subfunctions, it's equal to the _sum_ of the stack sizes
-> of the subfunctions. Even though it'll never use them all at the same
-> time.
-> 
-> Without that bug, it would have been harmless to inline them all.
-
-True.
-
--Andi
--- 
-ak@linux.intel.com
+	    	  	      	  	   	       - Ted

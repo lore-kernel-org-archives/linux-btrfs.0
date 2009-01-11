@@ -1,52 +1,31 @@
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Subject: Re: gcc inlining heuristics was Re: [PATCH -v7][RFC]: mutex: implement
- adaptive spinning
-Date: Sun, 11 Jan 2009 12:51:31 -0800 (PST)
-Message-ID: <alpine.LFD.2.00.0901111248060.6528@localhost.localdomain>
-References: <20090109231227.GA25070@elte.hu> <alpine.LFD.2.00.0901091522250.6528@localhost.localdomain> <20090110010125.GA31031@elte.hu> <20090109174158.096dee70.akpm@linux-foundation.org> <20090110030216.GW26290@one.firstfloor.org>
- <1231676801.25018.150.camel@macbook.infradead.org> <20090111181307.GM26290@one.firstfloor.org> <alpine.LFD.2.00.0901111114230.6528@localhost.localdomain> <20090111201427.GP26290@one.firstfloor.org> <1231704939.25018.548.camel@macbook.infradead.org>
- <20090111203441.GQ26290@one.firstfloor.org>
+From: Peter Klotz <peter.klotz@aon.at>
+Subject: 2.6.29-rc1: Cannot loopback mount btrfs formatted file
+Date: Sun, 11 Jan 2009 22:44:26 +0100
+Message-ID: <496A683A.6090004@aon.at>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: David Woodhouse <dwmw2@infradead.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Ingo Molnar <mingo@elte.hu>,
-	Harvey Harrison <harvey.harrison@gmail.com>,
-	"H. Peter Anvin" <hpa@zytor.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Peter Zijlstra <peterz@infradead.org>,
-	Steven Rostedt <rostedt@goodmis.org>,
-	paulmck@linux.vnet.ibm.com, Gregory Haskins <ghaskins@novell.com>,
-	Matthew Wilcox <matthew@wil.cx>,
-	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Nick Piggin <npiggin@suse.de>,
-	Peter Morreale <pmorreale@novell.com>,
-	Sven Dietrich <SDietrich@novell.com>, jh@suse.cz
-To: Andi Kleen <andi@firstfloor.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090111203441.GQ26290@one.firstfloor.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Since 2.6.29-rc1 contains btrfs I had to try it.
+
+However the loopback mount of my btrfs formatted file fails:
+
+user@host:~$ dd if=/dev/zero of=btrfs.img bs=1MB count=512
+
+user@host:~$ mkfs.btrfs btrfs.img
+fs created label (null) on btrfs.img
+     nodesize 4096 leafsize 4096 sectorsize 4096 size 488.28MB
+Btrfs v0.16+da35ab2b0b54
+
+user@host:~$ sudo mount -t btrfs -o loop btrfs.img /mnt/btrfs
+mount: /dev/loop1: can't read superblock
 
 
-On Sun, 11 Jan 2009, Andi Kleen wrote:
-> 
-> Was -- i think that got fixed in gcc. But again only in newer versions.
+Is this version of mkfs.btrfs compatible with the kernel module in 
+2.6.29-rc1?
 
-I doubt it. People have said that about a million times, it has never 
-gotten fixed, and I've never seen any actual proof.
+Any help is appreciated.
 
-I think that what got fixed was that gcc now at least re-uses stack slots 
-for temporary spills. But only for things that fit in registers - not if 
-you actually had variables that are big enough to be of type MEM. And the 
-latter is what tends to eat stack-space (ie structures etc on stack).
-
-But hey, maybe it really did get fixed. But the last big stack user wasn't 
-that long ago, and I saw it and I have a pretty recent gcc (gcc-4.3.2 
-right now, it could obviously have been slightly older back a few months 
-ago).
-
-		Linus
+Regards, Peter.

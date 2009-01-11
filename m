@@ -1,31 +1,37 @@
-From: Peter Klotz <peter.klotz@aon.at>
-Subject: 2.6.29-rc1: Cannot loopback mount btrfs formatted file
-Date: Sun, 11 Jan 2009 22:44:26 +0100
-Message-ID: <496A683A.6090004@aon.at>
+From: Joe Perches <joe@perches.com>
+Subject: [PATCH] btrfs: MAINTAINERS entry
+Date: Sun, 11 Jan 2009 14:15:05 -0800
+Message-ID: <1231712105.1739.112.camel@localhost>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since 2.6.29-rc1 contains btrfs I had to try it.
+Now that btrfs is in mainline, perhaps
+a maintainers entry is appropriate?
 
-However the loopback mount of my btrfs formatted file fails:
+Perhaps:
 
-user@host:~$ dd if=/dev/zero of=btrfs.img bs=1MB count=512
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 6f65a26..138a54c 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -1021,6 +1021,14 @@ M:	mb@bu3sch.de
+ W:	http://bu3sch.de/btgpio.php
+ S:	Maintained
+ 
++BTRFS FILE SYSTEM
++P:	Chris Mason
++M:	chris.mason@oracle.com
++L:	linux-btrfs@vger.kernel.org
++W:	http://btrfs.wiki.kernel.org/
++T:	git kernel.org:/pub/scm/linux/kernel/git/mason/btrfs-unstable.git
++S:	Maintained
++
+ BTTV VIDEO4LINUX DRIVER
+ P:	Mauro Carvalho Chehab
+ M:	mchehab@infradead.org
 
-user@host:~$ mkfs.btrfs btrfs.img
-fs created label (null) on btrfs.img
-     nodesize 4096 leafsize 4096 sectorsize 4096 size 488.28MB
-Btrfs v0.16+da35ab2b0b54
 
-user@host:~$ sudo mount -t btrfs -o loop btrfs.img /mnt/btrfs
-mount: /dev/loop1: can't read superblock
-
-
-Is this version of mkfs.btrfs compatible with the kernel module in 
-2.6.29-rc1?
-
-Any help is appreciated.
-
-Regards, Peter.

@@ -1,10 +1,13 @@
-From: Avi Kivity <avi@redhat.com>
+From: Peter Zijlstra <peterz@infradead.org>
 Subject: Re: [PATCH -v8][RFC] mutex: implement adaptive spinning
-Date: Mon, 12 Jan 2009 19:32:44 +0200
-Message-ID: <496B7EBC.6020208@redhat.com>
-References: <1231774622.4371.96.camel@laptop>  <496B6C23.8000808@redhat.com> <1231780388.4371.185.camel@laptop>
+Date: Mon, 12 Jan 2009 19:07:16 +0100
+Message-ID: <1231783636.4371.201.camel@laptop>
+References: <1231774622.4371.96.camel@laptop>
+	 <alpine.LFD.2.00.0901120802430.6528@localhost.localdomain>
+	 <alpine.LFD.2.00.0901120818070.6528@localhost.localdomain>
+	 <1231780581.4371.193.camel@laptop>  <496B7ED7.3010601@panasas.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain
 Cc: Linus Torvalds <torvalds@linux-foundation.org>,
 	Ingo Molnar <mingo@elte.hu>,
 	"Paul E. McKenney" <paulmck@linux.vnet.ibm.com>,
@@ -21,22 +24,30 @@ Cc: Linus Torvalds <torvalds@linux-foundation.org>,
 	Peter Morreale <pmorreale@novell.com>,
 	Sven Dietrich <SDietrich@novell.com>,
 	Dmitry Adamushko <dmitry.adamushko@gmail.com>
-To: Peter Zijlstra <peterz@infradead.org>
+To: Boaz Harrosh <bharrosh@panasas.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1231780388.4371.185.camel@laptop>
+In-Reply-To: <496B7ED7.3010601@panasas.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Peter Zijlstra wrote:
-> Spinlocks can use 'pure' MCS locks.
->   
+On Mon, 2009-01-12 at 19:33 +0200, Boaz Harrosh wrote:
 
-How about this, then.  In mutex_lock(), keep wait_lock locked and only 
-release it when scheduling out.  Waiter spinning naturally follows.  If 
-spinlocks are cache friendly (are they today?) we inherit that.  If 
-there is no contention on the mutex, then we don't need to reacquire the 
-wait_lock on mutex_unlock() (not that the atomic op is that expensive 
-these days).
+> Which brings me back to my initial reaction to this work. Do we need
+> two flavors of Mutex? some program sections need Fairness, some need
+> performance. Some need low-latency, some need absolute raw CPU power.
 
--- 
-error compiling committee.c: too many arguments to function
+Thing is, its the kernel, we cannot have such knobs per task. So we have
+to pick one and stick with it -- the 'best' we can do is what PREEMPT_RT
+does and replace the thing whole sale at build time.
+
+> Because at the end of the day spinning in a saturated CPU work-load
+> that does not care about latency, eats away cycles that could be spent
+> on computation. Think multi-threaded video processing for example. 
+> Thing I would like to measure is 
+> 1 - how many times we spin and at the end get a lock
+> 2 - how many times we spin and at the end sleep.
+> 3 - how many times we sleep like before.
+> vs. In old case CPU spent on scheduling. Just to see if we are actually loosing
+> cycles at the end.
+
+Feel free to do so ;-)
 

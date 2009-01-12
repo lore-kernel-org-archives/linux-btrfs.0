@@ -1,95 +1,114 @@
-From: Steven Rostedt <rostedt@goodmis.org>
-Subject: Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
-Date: Thu, 8 Jan 2009 13:03:09 -0500 (EST)
-Message-ID: <alpine.DEB.1.10.0901081300370.24688__29112.3486626477$1232290315$gmane$org@gandalf.stny.rr.com>
-References: <alpine.LFD.2.00.0901070816450.3057@localhost.localdomain>  <1231347442.11687.344.camel@twins>  <alpine.LFD.2.00.0901071016340.3057@localhost.localdomain>  <alpine.DEB.1.10.0901071530490.23456@gandalf.stny.rr.com>  <alpine.LFD.2.00.0901071241360.3057@localhost.localdomain>
-  <1231365115.11687.361.camel@twins>  <alpine.LFD.2.00.0901071355350.3057@localhost.localdomain>  <1231366716.11687.377.camel@twins>  <alpine.LFD.2.00.0901071509160.3057@localhost.localdomain>  <1231408718.11687.400.camel@twins> <20090108141808.GC11629@elte.hu>
-  <1231426014.11687.456.camel@twins>  <alpine.LFD.2.00.0901080849550.3283@localhost.localdomain> <1231434515.14304.27.camel@think.oraclecorp.com> <alpine.DEB.1.10.0901081227260.24688@gandalf.stny.rr.com>
- <alpine.LFD.2.00.0901080943270.3283@localhost.localdomain>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Subject: Re: gcc inlining heuristics was Re: [PATCH -v7][RFC]: mutex: implement
+ adaptive spinning
+Date: Mon, 12 Jan 2009 11:42:55 -0800 (PST)
+Message-ID: <alpine.LFD.2.00.0901121128080.6528__33422.5328093909$1232291247$gmane$org@localhost.localdomain>
+References: <20090111201427.GP26290@one.firstfloor.org> <1231704939.25018.548.camel@macbook.infradead.org> <20090111203441.GQ26290@one.firstfloor.org> <alpine.LFD.2.00.0901111248060.6528@localhost.localdomain> <alpine.LFD.2.00.0901111458290.6528@localhost.localdomain>
+ <20090112001255.GR26290@one.firstfloor.org> <alpine.LFD.2.00.0901111619400.6528@localhost.localdomain> <20090112005228.GS26290@one.firstfloor.org> <496B86B5.3090707@t-online.de> <alpine.LFD.2.00.0901121034170.6528@localhost.localdomain>
+ <20090112193201.GA23848@one.firstfloor.org>
 Mime-Version: 1.0
 Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Peter Zijlstra <peterz@infradead.org>,
-	Ingo Molnar <mingo@elte.hu>, paulmck@linux.vnet.ibm.com,
-	Gregory Haskins <ghaskins@novell.com>,
-	Matthew Wilcox <matthew@wil.cx>,
-	Andi Kleen <andi@firstfloor.org>,
+Cc: Bernd Schmidt <bernds_cb1@t-online.de>,
+	David Woodhouse <dwmw2@infradead.org>,
 	Andrew Morton <akpm@linux-foundation.org>,
+	Ingo Molnar <mingo@elte.hu>,
+	Harvey Harrison <harvey.harrison@gmail.com>,
+	"H. Peter Anvin" <hpa@zytor.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Peter Zijlstra <peterz@infradead.org>,
+	Steven Rostedt <rostedt@goodmis.org>,
+	paulmck@linux.vnet.ibm.com, Gregory Haskins <ghaskins@novell.com>,
+	Matthew Wilcox <matthew@wil.cx>,
 	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
 	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
 	linux-btrfs <linux-btrfs@vger.kernel.org>,
 	Thomas Gleixner <tglx@linutronix.de>,
 	Nick Piggin <npiggin@suse.de>,
 	Peter Morreale <pmorreale@novell.com>,
-	Sven Dietrich <SDietrich@novell.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>
+	Sven Dietrich <SDietrich@novell.com>, jh@suse.cz
+To: Andi Kleen <andi@firstfloor.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <alpine.LFD.2.00.0901080943270.3283@localhost.localdomain>
+In-Reply-To: <20090112193201.GA23848@one.firstfloor.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Thu, 8 Jan 2009, Linus Torvalds wrote:
-> 
-> And I don't even believe that is the bug. I suspect the bug is simpler. 
-> 
-> I think the "need_resched()" needs to go in the outer loop, or at least 
-> happen in the "!owner" case. Because at least with preemption, what can 
-> happen otherwise is
-> 
->  - process A gets the lock, but gets preempted before it sets lock->owner.
-> 
->    End result: count = 0, owner = NULL.
-> 
->  - processes B/C goes into the spin loop, filling up all CPU's (assuming 
->    dual-core here), and will now both loop forever if they hold the kernel 
->    lock (or have some other preemption disabling thing over their down()).
-> 
-> And all the while, process A would _happily_ set ->owner, and eventually 
-> release the mutex, but it never gets to run to do either of them so.
-> 
-> In fact, you might not even need a process C: all you need is for B to be 
-> on the same runqueue as A, and having enough load on the other CPU's that 
-> A never gets migrated away. So "C" might be in user space.
-> 
-> I dunno. There are probably variations on the above.
 
-Ouch! I think you are on to something:
+On Mon, 12 Jan 2009, Andi Kleen wrote:
+>
+> What I find nonsensical is that -fno-strict-aliasing generates
+> better code here. Normally one would expect the compiler seeing
+> more aliases with that option and then be more conservative
+> regarding any sharing. But it seems to be the other way round
+> here.
 
-        for (;;) {
-                struct thread_info *owner;
+No, that's not the surprising part. And in fact, now that you mention it, 
+I can even tell you why gcc does what it does.
 
-                old_val = atomic_cmpxchg(&lock->count, 1, 0);
-                if (old_val == 1) {
-                        lock_acquired(&lock->dep_map, ip);
-                        mutex_set_owner(lock);
-                        return 0;
-                }
+But you'll need some background to it:
 
-                if (old_val < 0 && !list_empty(&lock->wait_list))
-                        break;
+Type-based aliasing is _stupid_. It's so incredibly stupid that it's not 
+even funny. It's broken. And gcc took the broken notion, and made it more 
+so by making it a "by-the-letter-of-the-law" thing that makes no sense.
 
-                /* See who owns it, and spin on him if anybody */
-                owner = ACCESS_ONCE(lock->owner);
+What happens (well, maybe it's fixed, but this was _literally_ what gcc 
+used to do) is that the type-based aliasing overrode everything else, so 
+if two accesses were to different types (and not in a union, and none of 
+the types were "char"), then gcc "knew" that they clearly could not alias, 
+and could thus wildly re-order accesses.
 
-The owner was preempted before assigning lock->owner (as you stated).
+That's INSANE. It's so incredibly insane that people who do that should 
+just be put out of their misery before they can reproduce. But real gcc 
+developers really thought that it makes sense, because the standard allows 
+it, and it gives the compiler the maximal freedom - because it can now do 
+things that are CLEARLY NONSENSICAL.
 
-                if (owner && !spin_on_owner(lock, owner))
-                        break;
+And to compiler people, being able to do things that are clearly 
+nonsensical seems to often be seen as a really good thing, because it 
+means that they no longer have to worry about whether the end result works 
+or not - they just got permission to do stupid things in the name of 
+optimization.
 
-We just spin :-(
+So gcc did. I know for a _fact_ that gcc would re-order write accesses 
+that were clearly to (statically) the same address. Gcc would suddenly 
+think that
 
-I think adding the:
+	unsigned long a;
 
-+		if (need_resched())
-+			break;
+	a = 5;
+	*(unsigned short *)&a = 4;
 
-would solve the problem.
+could be re-ordered to set it to 4 first (because clearly they don't alias 
+- by reading the standard), and then because now the assignment of 'a=5' 
+was later, the assignment of 4 could be elided entirely! And if somebody 
+complains that the compiler is insane, the compiler people would say 
+"nyaah, nyaah, the standards people said we can do this", with absolutely 
+no introspection to ask whether it made any SENSE.
 
-Thanks,
+Anyway, once you start doing stupid things like that, and once you start 
+thinking that the standard makes more sense than a human being using his 
+brain for 5 seconds, suddenly you end up in a situation where you can move 
+stores around wildly, and it's all 'correct'.
 
--- Steve
+Now, take my stupid example, and make "fn1()" do "a.a = 1" and make 
+"fn2()" do "b.b = 2", and think about what a compiler that thinks it can 
+re-order the two writes willy-nilly will do?
 
+Right. It will say "ok, a.a and b.b can not alias EVEN IF THEY HAVE 
+STATICALLY THE SAME ADDFRESS ON THE STACK", because they are in two 
+different structres. So we can then re-order the accesses, and move the 
+stores around.
 
-                cpu_relax();
-        }
+Guess what happens if you have that kind of insane mentality, and you then 
+try to make sure that they really don't alias, so you allocate extra stack 
+space.
 
+The fact is, Linux uses -fno-strict-aliasing for a damn good reason: 
+because the gcc notion of "strict aliasing" is one huge stinking pile of 
+sh*t. Linux doesn't use that flag because Linux is playing fast and loose, 
+it uses that flag because _not_ using that flag is insane.
+
+Type-based aliasing is unacceptably stupid to begin with, and gcc took 
+that stupidity to totally new heights by making it actually more important 
+than even statically visible aliasing.
+
+		Linus

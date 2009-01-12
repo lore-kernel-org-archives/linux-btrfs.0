@@ -1,13 +1,12 @@
-From: Peter Zijlstra <peterz@infradead.org>
+From: Avi Kivity <avi@redhat.com>
 Subject: Re: [PATCH -v8][RFC] mutex: implement adaptive spinning
-Date: Mon, 12 Jan 2009 18:16:21 +0100
-Message-ID: <1231780581.4371.193.camel@laptop>
-References: <1231774622.4371.96.camel@laptop>
-	 <alpine.LFD.2.00.0901120802430.6528@localhost.localdomain>
-	 <alpine.LFD.2.00.0901120818070.6528@localhost.localdomain>
+Date: Mon, 12 Jan 2009 19:23:38 +0200
+Message-ID: <496B7C9A.7030108@redhat.com>
+References: <1231774622.4371.96.camel@laptop>  <496B6C23.8000808@redhat.com> <1231780388.4371.185.camel@laptop>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Ingo Molnar <mingo@elte.hu>,
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Linus Torvalds <torvalds@linux-foundation.org>,
+	Ingo Molnar <mingo@elte.hu>,
 	"Paul E. McKenney" <paulmck@linux.vnet.ibm.com>,
 	Gregory Haskins <ghaskins@novell.com>,
 	Matthew Wilcox <matthew@wil.cx>,
@@ -22,35 +21,67 @@ Cc: Ingo Molnar <mingo@elte.hu>,
 	Peter Morreale <pmorreale@novell.com>,
 	Sven Dietrich <SDietrich@novell.com>,
 	Dmitry Adamushko <dmitry.adamushko@gmail.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <alpine.LFD.2.00.0901120818070.6528@localhost.localdomain>
+To: Peter Zijlstra <peterz@infradead.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1231780388.4371.185.camel@laptop>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2009-01-12 at 08:20 -0800, Linus Torvalds wrote:
-> 
-> On Mon, 12 Jan 2009, Linus Torvalds wrote:
-> > 
-> > You made it back into the locked version.
-> 
-> Btw, even if you probably had some reason for this, one thing to note is 
-> that I think Chris' performance testing showed that the version using a 
-> lock was inferior to his local btrfs hack, while the unlocked version 
-> actually beat his hack.
-> 
-> Maybe I misunderstood his numbers, though. But if I followed that sub-part 
-> of the test right, it really means that the locked version is pointless - 
-> it will never be able to replace peoples local hacks for this same thing, 
-> because it just doesn't give the performance people are looking for.
-> 
-> Since the whole (and _only_) point of this thing is to perform well, 
-> that's a big deal.
+Peter Zijlstra wrote:
+> On Mon, 2009-01-12 at 18:13 +0200, Avi Kivity wrote:
+>
+>   
+>> One thing that worries me here is that the spinners will spin on a 
+>> memory location in struct mutex, which means that the cacheline holding 
+>> the mutex (which is likely to be under write activity from the owner) 
+>> will be continuously shared by the spinners, slowing the owner down when 
+>> it needs to unshare it.  One way out of this is to spin on a location in 
+>> struct mutex_waiter, and have the mutex owner touch it when it schedules 
+>> out.
+>>     
+>
+> Yeah, that is what pure MCS locks do -- however I don't think its a
+> feasible strategy for this spin/sleep hybrid.
+>   
 
-Like said in reply to Chris' email, I just wanted to see if fairness was
-worth the effort, because the pure unlocked spin showed significant
-unfairness (and I know some people really care about some level of
-fairness).
+Bummer.
 
-Initial testing with the simple test-mutex thing didn't show too bad
-numbers.
+>> So:
+>> - each task_struct has an array of currently owned mutexes, appended to 
+>> by mutex_lock()
+>>     
+>
+> That's not going to fly I think. Lockdep does this but its very
+> expensive and has some issues. We're currently at 48 max owners, and
+> still some code paths manage to exceed that.
+>   
+
+Might make it per-cpu instead, and set a bit in the mutex when 
+scheduling out so we know not to remove it from the list on unlock.
+
+>> - mutex waiters spin on mutex_waiter.wait, which they initialize to zero
+>> - when switching out of a task, walk the mutex list, and for each mutex, 
+>> bump each waiter's wait variable, and clear the owner array
+>>     
+>
+> Which is O(n).
+>   
+
+It may be better than O(n) cpus banging on the mutex for the lock 
+duration.  Of course we should avoid walking the part of the list where 
+non-spinning owners wait (or maybe have a separate list for spinners).
+
+>> - when unlocking a mutex, bump the nearest waiter's wait variable, and 
+>> remove from the owner array
+>>
+>> Something similar might be done to spinlocks to reduce cacheline 
+>> contention from spinners and the owner.
+>>     
+>
+> Spinlocks can use 'pure' MCS locks.
+>   
+
+I'll read up on those, thanks.
+
+-- 
+error compiling committee.c: too many arguments to function
 

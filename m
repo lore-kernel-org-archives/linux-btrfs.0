@@ -1,53 +1,66 @@
-From: Peter Zijlstra <peterz@infradead.org>
-Subject: Re: [PATCH -v8][RFC] mutex: implement adaptive spinning
-Date: Mon, 12 Jan 2009 19:07:16 +0100
-Message-ID: <1231783636.4371.201.camel@laptop>
-References: <1231774622.4371.96.camel@laptop>
-	 <alpine.LFD.2.00.0901120802430.6528@localhost.localdomain>
-	 <alpine.LFD.2.00.0901120818070.6528@localhost.localdomain>
-	 <1231780581.4371.193.camel@laptop>  <496B7ED7.3010601@panasas.com>
+From: Bernd Schmidt <bernds_cb1@t-online.de>
+Subject: Re: gcc inlining heuristics was Re: [PATCH -v7][RFC]: mutex: implement
+ adaptive spinning
+Date: Mon, 12 Jan 2009 19:06:45 +0100
+Message-ID: <496B86B5.3090707@t-online.de>
+References: <1231676801.25018.150.camel@macbook.infradead.org> <20090111181307.GM26290@one.firstfloor.org> <alpine.LFD.2.00.0901111114230.6528@localhost.localdomain> <20090111201427.GP26290@one.firstfloor.org> <1231704939.25018.548.camel@macbook.infradead.org> <20090111203441.GQ26290@one.firstfloor.org> <alpine.LFD.2.00.0901111248060.6528@localhost.localdomain> <alpine.LFD.2.00.0901111458290.6528@localhost.localdomain> <20090112001255.GR26290@one.firstfloor.org> <alpine.LFD.2.00.0901111619400.6528@localhost.localdomain> <20090112005228.GS26290@one.firstfloor.org>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=ISO-8859-1
 Cc: Linus Torvalds <torvalds@linux-foundation.org>,
-	Ingo Molnar <mingo@elte.hu>,
-	"Paul E. McKenney" <paulmck@linux.vnet.ibm.com>,
-	Gregory Haskins <ghaskins@novell.com>,
-	Matthew Wilcox <matthew@wil.cx>,
-	Andi Kleen <andi@firstfloor.org>,
-	Chris Mason <chris.mason@oracle.com>,
+	David Woodhouse <dwmw2@infradead.org>,
 	Andrew Morton <akpm@linux-foundation.org>,
+	Ingo Molnar <mingo@elte.hu>,
+	Harvey Harrison <harvey.harrison@gmail.com>,
+	"H. Peter Anvin" <hpa@zytor.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Peter Zijlstra <peterz@infradead.org>,
+	Steven Rostedt <rostedt@goodmis.org>,
+	paulmck@linux.vnet.ibm.com, Gregory Haskins <ghaskins@novell.com>,
+	Matthew Wilcox <matthew@wil.cx>,
 	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
 	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
 	linux-btrfs <linux-btrfs@vger.kernel.org>,
 	Thomas Gleixner <tglx@linutronix.de>,
 	Nick Piggin <npiggin@suse.de>,
 	Peter Morreale <pmorreale@novell.com>,
-	Sven Dietrich <SDietrich@novell.com>,
-	Dmitry Adamushko <dmitry.adamushko@gmail.com>
-To: Boaz Harrosh <bharrosh@panasas.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <496B7ED7.3010601@panasas.com>
+	Sven Dietrich <SDietrich@novell.com>, jh@suse.cz
+To: Andi Kleen <andi@firstfloor.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20090112005228.GS26290@one.firstfloor.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2009-01-12 at 19:33 +0200, Boaz Harrosh wrote:
+Andi Kleen wrote:
+> On Sun, Jan 11, 2009 at 04:21:03PM -0800, Linus Torvalds wrote:
+>>
+>> On Mon, 12 Jan 2009, Andi Kleen wrote:
+>>> so at least least for this case it works. Your case also doesn't work 
+>>> for me. So it looks like gcc didn't like something you did in your test 
+>>> program.
+>> I very intentionally used _different_ types.
+>>
+>> If you use the same type, gcc will apparenrly happily say "hey, I can 
+>> combine two variables of the same type with different liveness into the 
+>> same variable".
+> 
+> Confirmed.
+> 
+>> But that's not the interesting case.
+> 
+> Weird. I wonder where this strange restriction comes from.
 
-> Which brings me back to my initial reaction to this work. Do we need
-> two flavors of Mutex? some program sections need Fairness, some need
-> performance. Some need low-latency, some need absolute raw CPU power.
+Something at the back of my mind said "aliasing".
 
-Thing is, its the kernel, we cannot have such knobs per task. So we have
-to pick one and stick with it -- the 'best' we can do is what PREEMPT_RT
-does and replace the thing whole sale at build time.
+$ gcc linus.c -O2 -S ; grep subl linus.s
+        subl    $1624, %esp
+$ gcc linus.c -O2 -S -fno-strict-aliasing; grep subl linus.s
+        subl    $824, %esp
 
-> Because at the end of the day spinning in a saturated CPU work-load
-> that does not care about latency, eats away cycles that could be spent
-> on computation. Think multi-threaded video processing for example. 
-> Thing I would like to measure is 
-> 1 - how many times we spin and at the end get a lock
-> 2 - how many times we spin and at the end sleep.
-> 3 - how many times we sleep like before.
-> vs. In old case CPU spent on scheduling. Just to see if we are actually loosing
-> cycles at the end.
+That's with 4.3.2.
 
-Feel free to do so ;-)
 
+Bernd
+-- 
+This footer brought to you by insane German lawmakers.
+Analog Devices GmbH      Wilhelm-Wagenfeld-Str. 6      80807 Muenchen
+Sitz der Gesellschaft Muenchen, Registergericht Muenchen HRB 40368
+Geschaeftsfuehrer Thomas Wessel, William A. Martin, Margaret Seif

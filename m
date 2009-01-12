@@ -1,32 +1,27 @@
-From: Christian Hesse <mail@earthworm.de>
-Subject: Re: build error on 2.6.27
-Date: Mon, 12 Jan 2009 11:31:28 +0100
-Message-ID: <200901121131.30372.mail@earthworm.de>
-References: <1231752518.6435.205.camel@localhost.localdomain>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Btrfs for mainline
+Date: Mon, 12 Jan 2009 08:58:50 -0500
+Message-ID: <1231768730.17356.0.camel@think.oraclecorp.com>
+References: <1230722935.4680.5.camel@think.oraclecorp.com>
+	 <20090111153437.b069d38d.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="iso-8859-1"
-Cc: Gabor MICSKO <gmicsko@gmail.com>, linux-btrfs@vger.kernel.org
-To: btrfs-devel@oss.oracle.com
+Content-Type: text/plain
+Cc: linux-kernel@vger.kernel.org,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Andrew Morton <akpm@linux-foundation.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1231752518.6435.205.camel@localhost.localdomain>
+In-Reply-To: <20090111153437.b069d38d.akpm@linux-foundation.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday 12 January 2009, Gabor MICSKO wrote:
-> Hi,
->
-> Since commit eecac8a148137ec5c519fc536effce8d6be89ec8
->
-> ( HEAD is now at eecac8a... Btrfs: drop remaining LINUX_KERNEL_VERSION
-> checks and compat code )
->
-> btrfs kernel module failed to compile on 2.6.27. Older kernel versions not
-> supported anymore?
+On Sun, 2009-01-11 at 15:34 -0800, Andrew Morton wrote:
+> http://bugzilla.kernel.org/show_bug.cgi?id=12435
+> 
+> Congratulations ;)
 
-No, older kernel versions are not supported at the moment. This was nessecary 
-for the mainline merge. But as older kernels are planned to be supported down 
-to 2.6.18 (to get btrfs support in Debian Etch and RHEL) there will be a 
-solution soon I think.
--- 
-Regards,
+Rejected documented, that's the best buzilla tag ever ;)
+
+Thanks,
 Chris
+
+

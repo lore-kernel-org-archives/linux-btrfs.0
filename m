@@ -1,49 +1,31 @@
-From: Chris Samuel <chris@csamuel.org>
-Subject: Definitive btrfs git tree ?
-Date: Tue, 13 Jan 2009 07:26:05 +1100
-Message-ID: <200901130726.08242.chris@csamuel.org>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Definitive btrfs git tree ?
+Date: Mon, 12 Jan 2009 16:28:21 -0500
+Message-ID: <1231795701.22806.42.camel@think.oraclecorp.com>
+References: <200901130726.08242.chris@csamuel.org>
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart2615068.dMYehS9xbR";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
-To: "linux-btrfs" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Samuel <chris@csamuel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <200901130726.08242.chris@csamuel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart2615068.dMYehS9xbR
-Content-Type: text/plain;
-  charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: inline
+On Tue, 2009-01-13 at 07:26 +1100, Chris Samuel wrote:
+> Hi Chris,
+> 
+> Now btrfs has made it into the mainline, which git tree is definitive now ?
 
-Hi Chris,
+Only mainline is definitive ;)
 
-Now btrfs has made it into the mainline, which git tree is definitive now ?
+We'll have a tree with stable fixes that we want Linus to pull, and
+we'll have a development tree with unstable experimental stuff (these
+aren't yet named).
 
-cheers!
-Chris
-=2D-=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+For the progs, the btrfs-progs-unstable tree is up to date and safe.
+I'll make something with a less scary name later this week, and save the
+unstable tree for development.
 
-This email may come with a PGP signature as a file. Do not panic.
-=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
+-chris
 
 
---nextPart2615068.dMYehS9xbR
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iQEVAwUASWunYI1yjaOTJg85AQLQ2gf/UYtXgg8F2f/Zr6+lSxb7Fq1A12gjr6aC
-oiaVxAW7l/tVZjG0UaQO7KCWBwlaIvERguz7tEzySabkNSb6LSeTmPhjpWjlSo2D
-V1ThQMGmIVYt9BLSBfTmP+FMWKQUDzzrPDFh5tLgPzgQwzptVEnL1RK635uMO2JQ
-ujCiTGlmAz0OOamFHYrAQr/4mAkJjt5XtLHGiRs5VB9yV4t+PVVVZTKgIU1jptxU
-9+LHAvHRieGLpJZDVvn7IeqYozuvJzD+2XGdgSkDvCLeRlHhK0hhsIIXO/L0/rh9
-em2nIrrVYQhPCrf90iJdpDPeH6Lg1cqzlP1Y48dqIPegVz7KZL1zOw==
-=6Hwk
------END PGP SIGNATURE-----
-
---nextPart2615068.dMYehS9xbR--

@@ -1,11 +1,8 @@
 From: Peter Zijlstra <peterz@infradead.org>
 Subject: Re: [PATCH -v8][RFC] mutex: implement adaptive spinning
-Date: Mon, 12 Jan 2009 17:50:15 +0100
-Message-ID: <1231779015.4371.138.camel@laptop>
-References: <1231774622.4371.96.camel@laptop>
-	 <alpine.LFD.2.00.0901120802430.6528@localhost.localdomain>
-	 <alpine.LFD.2.00.0901120818070.6528@localhost.localdomain>
-	 <1231778757.22806.24.camel@think.oraclecorp.com>
+Date: Mon, 12 Jan 2009 18:13:08 +0100
+Message-ID: <1231780388.4371.185.camel@laptop>
+References: <1231774622.4371.96.camel@laptop>  <496B6C23.8000808@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain
 Cc: Linus Torvalds <torvalds@linux-foundation.org>,
@@ -14,6 +11,7 @@ Cc: Linus Torvalds <torvalds@linux-foundation.org>,
 	Gregory Haskins <ghaskins@novell.com>,
 	Matthew Wilcox <matthew@wil.cx>,
 	Andi Kleen <andi@firstfloor.org>,
+	Chris Mason <chris.mason@oracle.com>,
 	Andrew Morton <akpm@linux-foundation.org>,
 	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
 	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
@@ -23,41 +21,43 @@ Cc: Linus Torvalds <torvalds@linux-foundation.org>,
 	Peter Morreale <pmorreale@novell.com>,
 	Sven Dietrich <SDietrich@novell.com>,
 	Dmitry Adamushko <dmitry.adamushko@gmail.com>
-To: Chris Mason <chris.mason@oracle.com>
+To: Avi Kivity <avi@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1231778757.22806.24.camel@think.oraclecorp.com>
+In-Reply-To: <496B6C23.8000808@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2009-01-12 at 11:45 -0500, Chris Mason wrote:
-> On Mon, 2009-01-12 at 08:20 -0800, Linus Torvalds wrote:
-> > 
-> > On Mon, 12 Jan 2009, Linus Torvalds wrote:
-> > > 
-> > > You made it back into the locked version.
-> > 
-> > Btw, even if you probably had some reason for this, one thing to note is 
-> > that I think Chris' performance testing showed that the version using a 
-> > lock was inferior to his local btrfs hack, while the unlocked version 
-> > actually beat his hack.
-> > 
-> 
-> The spinning hack was faster than everything before v7 (we'll call it
-> the Linus-fix), and the v7 code was much faster than my spin.
-> 
-> This is somewhere in between, with slightly better fairness than v7.
-> 
->              spin         v7         v8
-> dbench 50    580MB/s      789MB/s    421MB/s
-> file creates 152 file/s   162 file/s 195 file/s
-> file stat    3.8s total   2.3s total 5.3s total
-> 
-> (the file stat run is total run time, so lower is better.  The other
-> numbers are files or MB per second, so higher is better)
-> 
-> For the file create run, v8 had much lower system time than v7,
-> averaging 1s of sys time per proc instead of 1.6s.
+On Mon, 2009-01-12 at 18:13 +0200, Avi Kivity wrote:
 
-Right, how about the spread in completion time, because that is the only
-reason I tried this fairness stuff, because you reported massive
-differences there.
+> One thing that worries me here is that the spinners will spin on a 
+> memory location in struct mutex, which means that the cacheline holding 
+> the mutex (which is likely to be under write activity from the owner) 
+> will be continuously shared by the spinners, slowing the owner down when 
+> it needs to unshare it.  One way out of this is to spin on a location in 
+> struct mutex_waiter, and have the mutex owner touch it when it schedules 
+> out.
+
+Yeah, that is what pure MCS locks do -- however I don't think its a
+feasible strategy for this spin/sleep hybrid.
+
+> So:
+> - each task_struct has an array of currently owned mutexes, appended to 
+> by mutex_lock()
+
+That's not going to fly I think. Lockdep does this but its very
+expensive and has some issues. We're currently at 48 max owners, and
+still some code paths manage to exceed that.
+
+> - mutex waiters spin on mutex_waiter.wait, which they initialize to zero
+> - when switching out of a task, walk the mutex list, and for each mutex, 
+> bump each waiter's wait variable, and clear the owner array
+
+Which is O(n).
+
+> - when unlocking a mutex, bump the nearest waiter's wait variable, and 
+> remove from the owner array
+> 
+> Something similar might be done to spinlocks to reduce cacheline 
+> contention from spinners and the owner.
+
+Spinlocks can use 'pure' MCS locks.
 

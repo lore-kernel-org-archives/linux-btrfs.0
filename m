@@ -1,78 +1,50 @@
 From: Goldwyn Rodrigues <rgoldwyn@gmail.com>
-Subject: [btrfs-progs 3/4] Add man/btrfsck.8.in and Makefile for man pages
-Date: Tue, 13 Jan 2009 18:20:03 +0530
-Message-ID: <20090113125003.GA15217@baloo.junglebook>
+Subject: [btrfs-progs 4/4] Modify Makefile to include man directory
+Date: Tue, 13 Jan 2009 18:21:19 +0530
+Message-ID: <20090113125119.GA15224@baloo.junglebook>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@gmail.com>
 ---
- man/Makefile     |   27 +++++++++++++++++++++++++++
- man/btrfsck.8.in |   17 +++++++++++++++++
- 2 files changed, 44 insertions(+), 0 deletions(-)
- create mode 100644 man/Makefile
- create mode 100644 man/btrfsck.8.in
+ Makefile |   11 +++++++++--
+ 1 files changed, 9 insertions(+), 2 deletions(-)
 
-diff --git a/man/Makefile b/man/Makefile
-new file mode 100644
-index 0000000..2665dd1
---- /dev/null
-+++ b/man/Makefile
-@@ -0,0 +1,27 @@
-+GZIP=gzip
-+INSTALL= install
+diff --git a/Makefile b/Makefile
+index 3349079..8f21c27 100644
+--- a/Makefile
++++ b/Makefile
+@@ -30,7 +30,7 @@ endif
+ 	$(CC) $(DEPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c $<
+ 
+ 
+-all: version $(progs)
++all: version $(progs) manpages
+ 
+ version:
+ 	bash version.sh
+@@ -68,10 +68,17 @@ quick-test: $(objects) quick-test.o
+ convert: $(objects) convert.o
+ 	gcc $(CFLAGS) -o btrfs-convert $(objects) convert.o -lext2fs $(LDFLAGS) $(LIBS)
+ 
++manpages:
++	cd man; make
 +
-+prefix ?= /usr/local
-+bindir = $(prefix)/bin
-+mandir = $(prefix)/man
-+man8dir = $(mandir)/man8
++install-man:
++	cd man; make install
 +
-+MANPAGES = mkfs.btrfs.8.gz btrfsctl.8.gz btrfsck.8.gz
-+
-+all: $(MANPAGES)
-+
-+mkfs.btrfs.8.gz: mkfs.btrfs.8.in
-+	$(GZIP) -n -c mkfs.btrfs.8.in > mkfs.btrfs.8.gz
-+
-+btrfsctl.8.gz: btrfsctl.8.in
-+	$(GZIP) -n -c btrfsctl.8.in > btrfsctl.8.gz
-+
-+btrfsck.8.gz: btrfsck.8.in
-+	$(GZIP) -n -c btrfsck.8.in > btrfsck.8.gz
-+
-+clean :
-+	rm -f $(MANPAGES)
-+
-+install: $(MANPAGES)
-+	$(INSTALL) -m755 -d $(DESTDIR)$(man8dir)
-+	$(INSTALL) -m 644 $(MANPAGES) $(DESTDIR)$(man8dir)
-diff --git a/man/btrfsck.8.in b/man/btrfsck.8.in
-new file mode 100644
-index 0000000..63a0039
---- /dev/null
-+++ b/man/btrfsck.8.in
-@@ -0,0 +1,17 @@
-+.TH BTRFSCK 8 
-+.SH NAME
-+btrfsck \- check a btrfs filesystem
-+.SH SYNOPSIS
-+.B btrfsck \fI device\fP
-+.SH DESCRIPTION
-+\fBbtrfsck\fP is used to check a btrfs filesystem.
-+\fIdevice\fP is the device file where the filesystem is stored.
-+.SH AVAILABILITY
-+.B btrfsck
-+is part of btrfs-progs. Btrfs is currently under heavy development, 
-+and not suitable for for any uses other than benchmarking and review. 
-+Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for 
-+further details.
-+.SH SEE ALSO
-+.BR mkfs.btrfs (8)
-+.BR btrfsctl (8)
+ clean :
+ 	rm -f $(progs) cscope.out *.o .*.d btrfs-convert
++	cd man; make clean
+ 
+-install: $(progs)
++install: $(progs) install-man
+ 	$(INSTALL) -m755 -d $(DESTDIR)$(bindir)
+ 	$(INSTALL) $(progs) $(DESTDIR)$(bindir)
+ 	if [ -e btrfs-convert ]; then $(INSTALL) btrfs-convert $(DESTDIR)$(bindir); fi
 -- 
 1.6.0.2
 

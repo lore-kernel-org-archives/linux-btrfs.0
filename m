@@ -1,31 +1,61 @@
-From: Eric Sesterhenn <snakebyte@gmx.de>
-Subject: Re: Warning and BUG with btrfs and corrupted image
-Date: Tue, 13 Jan 2009 15:43:07 +0100
-Message-ID: <20090113144307.GF16333@alice>
-References: <20090113142147.GE16333@alice> <1231857643.29164.28.camel@think.oraclecorp.com>
+From: Jan Engelhardt <jengelh@medozas.de>
+Subject: btrfs: change/remove typedef
+Date: Tue, 13 Jan 2009 16:03:49 +0100 (CET)
+Message-ID: <alpine.LSU.2.00.0901131559420.27565@fbirervta.pbzchgretzou.qr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1231857643.29164.28.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-* Chris Mason (chris.mason@oracle.com) wrote:
-> On Tue, 2009-01-13 at 15:21 +0100, Eric Sesterhenn wrote:
-> > Hi,
-> > 
-> > when mounting an intentionally corrupted btrfs filesystem i get the
-> > following warning and bug message. The image can be found here
-> > www.cccmz.de/~snakebyte/btrfs.2.img.bck.bz2
-> 
-> Thanks for looking at things
-> 
-> Aside from catching checksumming errors, we're not quite ready for
-> fuzzer style attacks.  The code will be hardened for this but it isn't
-> yet.
 
-Does this mean i should stop trying to break it for now or are you interested
-in further reports?
+parent cc46eb3e855b7c1f628e934e01b97f4f2642973e (v2.6.29-rc1-22-gcc46eb3)
+commit 1589ccc2c3734c3dfbfa8e7504cd8336aeab9bff
+Author: Jan Engelhardt <jengelh@medozas.de>
+Date:   Tue Jan 13 16:03:41 2009 +0100
 
-Greetings, Eric
+btrfs: change/remove typedef
+
+Change one typedef to a regular enum, and remove an unused one.
+
+Signed-off-by: Jan Engelhardt <jengelh@medozas.de>
+---
+ fs/btrfs/ctree.h |   10 ++--------
+ fs/btrfs/x       |    1 +
+ 2 files changed, 3 insertions(+), 8 deletions(-)
+ create mode 100644 fs/btrfs/x
+
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index eee060f..e1fec63 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -454,17 +454,11 @@ struct btrfs_timespec {
+ 	__le32 nsec;
+ } __attribute__ ((__packed__));
+ 
+-typedef enum {
++enum btrfs_compression_type {
+ 	BTRFS_COMPRESS_NONE = 0,
+ 	BTRFS_COMPRESS_ZLIB = 1,
+ 	BTRFS_COMPRESS_LAST = 2,
+-} btrfs_compression_type;
+-
+-/* we don't understand any encryption methods right now */
+-typedef enum {
+-	BTRFS_ENCRYPTION_NONE = 0,
+-	BTRFS_ENCRYPTION_LAST = 1,
+-} btrfs_encryption_type;
++};
+ 
+ struct btrfs_inode_item {
+ 	/* nfs style generation number */
+diff --git a/fs/btrfs/x b/fs/btrfs/x
+new file mode 100644
+index 0000000..fbb1101
+--- /dev/null
++++ b/fs/btrfs/x
+@@ -0,0 +1 @@
++BINO
+-- 
+# Created with git-export-patch
+

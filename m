@@ -1,66 +1,97 @@
-From: Chris Samuel <chris@csamuel.org>
-Subject: Re: Definitive btrfs git tree ?
-Date: Tue, 13 Jan 2009 18:24:54 +1100
-Message-ID: <200901131825.01026.chris@csamuel.org>
-References: <200901130726.08242.chris@csamuel.org> <1231795701.22806.42.camel@think.oraclecorp.com>
+From: Goldwyn Rodrigues <rgoldwyn@gmail.com>
+Subject: [btrfs-progs 1/4] Add man/mkfs.btrfs.8.in
+Date: Tue, 13 Jan 2009 18:18:02 +0530
+Message-ID: <20090113124802.GA15169@baloo.junglebook>
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart1425551.u2692sNj5C";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
+Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1231795701.22806.42.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart1425551.u2692sNj5C
-Content-Type: text/plain;
-  charset="iso-8859-15"
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: inline
+Add man/mkfs.btrfs.8.in
+Kept the name with the name in, so that further processing such as
+BUILD_DATE BUILD_VERSION etc. could be included later.
 
-On Tue, 13 Jan 2009 8:28:21 am Chris Mason wrote:
+All man pages included in the man directory to avoid file cluttering.
 
-> Only mainline is definitive ;)
+Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.de>
+---
+ man/mkfs.btrfs.8.in |   63 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 63 insertions(+), 0 deletions(-)
+ create mode 100644 man/mkfs.btrfs.8.in
 
-Oh ha ha! ;-)
+diff --git a/man/mkfs.btrfs.8.in b/man/mkfs.btrfs.8.in
+new file mode 100644
+index 0000000..f506665
+--- /dev/null
++++ b/man/mkfs.btrfs.8.in
+@@ -0,0 +1,63 @@
++.TH MKFS.BTRFS 8 
++.SH NAME
++mkfs.btrfs \- create an btrfs filesystem
++.SH SYNOPSIS
++.B mkfs.btrfs
++[ \fB\-A\fP\fI alloc-start\fP ]
++[ \fB\-b\fP\fI byte-count\fP ]
++[ \fB \-d\fP\fI data-profile\fP ]
++[ \fB \-l\fP\fI leafsize\fP ]
++[ \fB \-L\fP\fI label\fP ]
++[ \fB \-m\fP\fI metadata profile\fP ]
++[ \fB \-n\fP\fI nodesize\fP ]
++[ \fB \-s\fP\fI sectorsize\fP ]
++[ \fB \-h\fP ]
++[ \fB \-V\fP ] \fI device\fP [ \fI device ...\fP ]
++.SH DESCRIPTION
++.B mkfs.btrfs
++is used to create an btrfs filesystem (usually in a disk partition, or an array
++of disk partitions).
++.I device
++is the special file corresponding to the device (e.g \fI/dev/sdXX\fP ). 
++If multiple \fI devices \fP are specified, btrfs is created 
++spanning across the specified \fI devices\fP.
++.SH OPTIONS
++.TP
++\fB\-A\fR, \fB\-\-alloc\-start \fIoffset\fR
++Specify the offset from the start of the device to start the btrfs filesystem. The default value is zero, or the start of the device.
++.TP
++\fB\-b\fR, \fB\-\-byte\-count \fIsize\fR
++Specify the size of the resultant filesystem. If this option is not used, 
++mkfs.btrfs uses all the available storage for the filesystem.
++.TP
++\fB\-d\fR, \fB\-\-data \fItype\fR
++Specify how the data must be spanned across the devices specified. Valid 
++values are raid0, raid1, raid10 or single.
++.TP
++\fB\-l\fR, \fB\-\-leafsize \fIsize\fR
++Specify the leaf size, the least data item in which btrfs stores data. The
++default value is the page size.
++.TP
++\fB\-L\fR, \fB\-\-label \fIname\fR
++Specify a label for the filesystem. 
++.TP
++\fB\-m\fR, \fB\-\-metadata \fIprofile\fR
++Specify how metadata must be spanned across the devices specified. Valid
++values are raid0, raid1, raid10 or single.
++.TP
++\fB\-n\fR, \fB\-\-nodesize \fIsize\fR
++Specify the nodesize. By default the value is set to the pagesize.
++.TP
++\fB\-s\fR, \fB\-\-sectorsize \fIsize\fR
++Specify the sectorsize, the minimum block allocation.
++.TP
++\fB\-V\fR, \fB\-\-version\fR
++Print the \fBmkfs.btrfs\fP version and exit.
++.SH AVAILABILITY
++.B mkfs.btrfs
++is part of btrfs-progs. Btrfs is currently under heavy development, 
++and not suitable for for any uses other than benchmarking and review. 
++Please refer to the btrfs wiki 
++http://btrfs.wiki.kernel.org for further details.
++.SH SEE ALSO
++.BR btrfsck (8)
+-- 
+1.6.0.2
 
-> We'll have a tree with stable fixes that we want Linus to pull, and
-> we'll have a development tree with unstable experimental stuff (these
-> aren't yet named).
 
-Ah, so for the moment stick with btrfs-unstable-standalone ?
-
-> For the progs, the btrfs-progs-unstable tree is up to date and safe.
-> I'll make something with a less scary name later this week, and save the
-> unstable tree for development.
-
-Cool, not scary is good (though I'm happy to stay with the scary one).
-
-cheers,
-Chris
-=2D-=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
-
-This email may come with a PGP signature as a file. Do not panic.
-=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
-
-
-
---nextPart1425551.u2692sNj5C
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iQEVAwUASWxBzI1yjaOTJg85AQIMRwf/c/urStFr316Ndq4hPt4vKWcuq/Deos6C
-YdrAro57ccrFR0QFgPM1ELfuL/4rHz9rb6TYpi7cb8hK+3Rl3DXan62A6O5HXRth
-9Iyk6+8cl3VyQEN8eIaUTh0UxoJpPY1t/hOMUc2AYJllE0lYN3/uZQIwrsfkSsGP
-wCIDAG7sTdhI4CjgIXcDrErSxY25LCjnoEjeTHDsV3eYwhFY2mH0tQjv1+hmrtqw
-Y7e/AUC1Fsvw00cLE+zjqqW/srU30By2hBt6hrTAVryNNxo1VShHeYtIlt5eBouF
-UW56lDF1QA8F+K5dGmb1WQlijUaPZiKFPIOKEgWGwspTIqVoYhP2kw==
-=BwUt
------END PGP SIGNATURE-----
-
---nextPart1425551.u2692sNj5C--
+-- 
+Goldwyn

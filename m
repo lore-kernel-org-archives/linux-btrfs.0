@@ -1,10 +1,11 @@
-From: Ingo Molnar <mingo@elte.hu>
+From: Linus Torvalds <torvalds@linux-foundation.org>
 Subject: Re: [PATCH -v9][RFC] mutex: implement adaptive spinning
-Date: Tue, 13 Jan 2009 19:12:22 +0100
-Message-ID: <20090113181222.GA24910@elte.hu>
+Date: Tue, 13 Jan 2009 10:21:09 -0800 (PST)
+Message-ID: <alpine.LFD.2.00.0901131013580.6528@localhost.localdomain>
 References: <1231774622.4371.96.camel@laptop> <1231859742.442.128.camel@twins> <alpine.LFD.2.00.0901130812590.6528@localhost.localdomain> <1231863710.7141.3.camel@twins> <1231864854.7141.8.camel@twins> <alpine.LFD.2.00.0901130846320.6528@localhost.localdomain>
+ <20090113181222.GA24910@elte.hu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Cc: Peter Zijlstra <peterz@infradead.org>,
 	"Paul E. McKenney" <paulmck@linux.vnet.ibm.com>,
 	Gregory Haskins <ghaskins@novell.com>,
@@ -20,46 +21,42 @@ Cc: Peter Zijlstra <peterz@infradead.org>,
 	Peter Morreale <pmorreale@novell.com>,
 	Sven Dietrich <SDietrich@novell.com>,
 	Dmitry Adamushko <dmitry.adamushko@gmail.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>
+To: Ingo Molnar <mingo@elte.hu>
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <alpine.LFD.2.00.0901130846320.6528@localhost.localdomain>
+In-Reply-To: <20090113181222.GA24910@elte.hu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-* Linus Torvalds <torvalds@linux-foundation.org> wrote:
 
-> 
-> 
-> On Tue, 13 Jan 2009, Peter Zijlstra wrote:
-> > 
-> > Ok, tested only 1, but that was the one I remember lockups from -- and
-> > that seems to be good with the cmpxchg.
-> > 
-> > Do you fancy me sending v10 or will you make that change locally?
-> 
-> I'd like to get this in, but I'm not going to apply it in any case 
-> without way more testing.
-> 
-> It missed the merge window, but I'm potentially willing to let it slip 
-> in - but only if there are a fair number of people willing to do numbers 
-> and some harsh testing. Preferably people who did see problems earlier, 
-> ie at a minimum Chris and Ingo under the loads they used before and saw 
-> issues with.
+On Tue, 13 Jan 2009, Ingo Molnar wrote:
+>
+> And v8 is rock solid in all my testing - and i'll give v10 a similar 
+> workout as well.
 
-I am tracking Peter's code in tip/core/locking:
+The differences between v8 and v10 are very fundamental, since v8 does the 
+spinning inside the spinlock'ed loop (the spinning itself is not inside 
+the spinlock, but all the "real action" is).  So v8 not showing problems 
+doesn't really say much about v10 - totally different algorithms that 
+share only some of the support code.
 
- c10b491: mutex: implement adaptive spinning, v8
- c356a7c: mutex: implement adaptive spinning, v7
- b89e5d8: mutex: implement adaptive spinning, v6
- 237ac94: mutex: implement adaptive spinning
+So even if many lines look the same, those code-lines aren't the really 
+interesting ones. The only really interesting once is really the 
+atomic_cmpxchg (outside spinlock) vs atomic_xchg (inside spinlock), and 
+those are almost diametrically opposite.
 
-And v8 is rock solid in all my testing - and i'll give v10 a similar 
-workout as well.
+> Would you prefer a single commit or is this kind of delta development 
+> history useful, with all the variants (at least the later, more promising 
+> ones) included?
 
-Would you prefer a single commit or is this kind of delta development 
-history useful, with all the variants (at least the later, more promising 
-ones) included?
+I'm not sure it makes sense to show the history here, especially as there 
+really were two different approaches, and while they share many issues, 
+they sure aren't equivalent nor are we really talking about any evolution 
+of the patch except in the sense of one being the kick-starter for the 
+alternative approach.
 
-The commits are in a tight group with no merges inbetween.
+What _can_ make sense is to commit some of the infrastructure helper code 
+separately, ie the lock ownership and preemption changes, since those 
+really are independent of the spinning code, and at least the preemption 
+thing is interesting and relevant even without it.
 
-	Ingo
+			Linus

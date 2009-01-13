@@ -1,10 +1,12 @@
-From: Linus Torvalds <torvalds@linux-foundation.org>
+From: Peter Zijlstra <peterz@infradead.org>
 Subject: Re: [PATCH -v9][RFC] mutex: implement adaptive spinning
-Date: Tue, 13 Jan 2009 08:16:19 -0800 (PST)
-Message-ID: <alpine.LFD.2.00.0901130812590.6528@localhost.localdomain>
-References: <1231774622.4371.96.camel@laptop> <1231859742.442.128.camel@twins>
+Date: Tue, 13 Jan 2009 17:21:50 +0100
+Message-ID: <1231863710.7141.3.camel@twins>
+References: <1231774622.4371.96.camel@laptop>
+	 <1231859742.442.128.camel@twins>
+	 <alpine.LFD.2.00.0901130812590.6528@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Content-Type: text/plain
 Cc: Ingo Molnar <mingo@elte.hu>,
 	"Paul E. McKenney" <paulmck@linux.vnet.ibm.com>,
 	Gregory Haskins <ghaskins@novell.com>,
@@ -20,35 +22,41 @@ Cc: Ingo Molnar <mingo@elte.hu>,
 	Peter Morreale <pmorreale@novell.com>,
 	Sven Dietrich <SDietrich@novell.com>,
 	Dmitry Adamushko <dmitry.adamushko@gmail.com>
-To: Peter Zijlstra <peterz@infradead.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <1231859742.442.128.camel@twins>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <alpine.LFD.2.00.0901130812590.6528@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On Tue, 13 Jan 2009, Peter Zijlstra wrote:
+On Tue, 2009-01-13 at 08:16 -0800, Linus Torvalds wrote:
 > 
-> Change mutex contention behaviour such that it will sometimes busy wait on
-> acquisition - moving its behaviour closer to that of spinlocks.
+> On Tue, 13 Jan 2009, Peter Zijlstra wrote:
+> > 
+> > Change mutex contention behaviour such that it will sometimes busy wait on
+> > acquisition - moving its behaviour closer to that of spinlocks.
+> 
+> Okey, dokey. Looks reasonable, but I wonder if this part came from v8 and 
+> wasn't intentional:
+> 
+> > +		if (atomic_xchg(&lock->count, -1) == 1) {
+> > +			lock_acquired(&lock->dep_map, ip);
+> > +			mutex_set_owner(lock);
+> > +			preempt_enable();
+> > +			return 0;
+> > +		}
+> 
+> Now you're forcing the slow-path on unlock. Maybe it was intentional, 
+> maybe it wasn't. Did you perhaps mean
+> 
+> 	if (atomic_cmpxchg(&lock->count, 1, 0) == 1) {
+> 
+> here? I thought we agreed it was safe, if only because it should be 
+> equivalent to just having done "mutex_trylock()" instead of a "real" lock 
+> sequence.
 
-Okey, dokey. Looks reasonable, but I wonder if this part came from v8 and 
-wasn't intentional:
+Yes, that was an 'accident' from -v8, yes we did think the cmpxchg was
+good, however I did get some spurious lockups on -v7, and I only noticed
+the thing after I'd done most of the testing, so I decided to let it be
+for now.
 
-> +		if (atomic_xchg(&lock->count, -1) == 1) {
-> +			lock_acquired(&lock->dep_map, ip);
-> +			mutex_set_owner(lock);
-> +			preempt_enable();
-> +			return 0;
-> +		}
-
-Now you're forcing the slow-path on unlock. Maybe it was intentional, 
-maybe it wasn't. Did you perhaps mean
-
-	if (atomic_cmpxchg(&lock->count, 1, 0) == 1) {
-
-here? I thought we agreed it was safe, if only because it should be 
-equivalent to just having done "mutex_trylock()" instead of a "real" lock 
-sequence.
-
-			Linus
+Let me put the cmpxchg back in and see if this is all still good (only
+3*2*2 configs to test :-).

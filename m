@@ -1,94 +1,72 @@
 From: Goldwyn Rodrigues <rgoldwyn@gmail.com>
-Subject: [btrfs-progs 1/4] Add man/mkfs.btrfs.8.in
-Date: Tue, 13 Jan 2009 18:18:02 +0530
-Message-ID: <20090113124802.GA15169@baloo.junglebook>
+Subject: [btrfs-progs 2/4] Add man/btrfsctl.8.in
+Date: Tue, 13 Jan 2009 18:19:01 +0530
+Message-ID: <20090113124901.GA15207@baloo.junglebook>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add man/mkfs.btrfs.8.in
-Kept the name with the name in, so that further processing such as
-BUILD_DATE BUILD_VERSION etc. could be included later.
+Add man/btrfsctl.8.in
 
-All man pages included in the man directory to avoid file cluttering.
-
-Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.de>
+Signed-off-by: Goldwyn Rodrigues <rgoldwyn@gmail.com>
 ---
- man/mkfs.btrfs.8.in |   63 +++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 63 insertions(+), 0 deletions(-)
- create mode 100644 man/mkfs.btrfs.8.in
+ man/btrfsctl.8.in |   45 +++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 45 insertions(+), 0 deletions(-)
+ create mode 100644 man/btrfsctl.8.in
 
-diff --git a/man/mkfs.btrfs.8.in b/man/mkfs.btrfs.8.in
+diff --git a/man/btrfsctl.8.in b/man/btrfsctl.8.in
 new file mode 100644
-index 0000000..f506665
+index 0000000..e11f46a
 --- /dev/null
-+++ b/man/mkfs.btrfs.8.in
-@@ -0,0 +1,63 @@
-+.TH MKFS.BTRFS 8 
++++ b/man/btrfsctl.8.in
+@@ -0,0 +1,45 @@
++.TH BTRFSCTL 8 
 +.SH NAME
-+mkfs.btrfs \- create an btrfs filesystem
++btrfsctl \- control a btrfs filesystem
 +.SH SYNOPSIS
-+.B mkfs.btrfs
-+[ \fB\-A\fP\fI alloc-start\fP ]
-+[ \fB\-b\fP\fI byte-count\fP ]
-+[ \fB \-d\fP\fI data-profile\fP ]
-+[ \fB \-l\fP\fI leafsize\fP ]
-+[ \fB \-L\fP\fI label\fP ]
-+[ \fB \-m\fP\fI metadata profile\fP ]
-+[ \fB \-n\fP\fI nodesize\fP ]
-+[ \fB \-s\fP\fI sectorsize\fP ]
-+[ \fB \-h\fP ]
-+[ \fB \-V\fP ] \fI device\fP [ \fI device ...\fP ]
++.B btrfsctl
++[ \fB\-d\fP\fI file|directory \fP ]
++[ \fB\-s\fP\fI snapshot-name directory\fP ]
++[ \fB \-S\fP\fI subvolume-name directory\fP ]
++[ \fB \-r\fP\fI [+-]size\fP ]
++[ \fB \-A\fP\fI device\fP ]
++[ \fB \-a\fP ]
++[ \fB \-c\fP ]
 +.SH DESCRIPTION
-+.B mkfs.btrfs
-+is used to create an btrfs filesystem (usually in a disk partition, or an array
-+of disk partitions).
-+.I device
-+is the special file corresponding to the device (e.g \fI/dev/sdXX\fP ). 
-+If multiple \fI devices \fP are specified, btrfs is created 
-+spanning across the specified \fI devices\fP.
++.B btrfsctl
++is used to control the filesystem and the files and directories stored. It is the tool to create a new snapshot for the filesystem.
 +.SH OPTIONS
 +.TP
-+\fB\-A\fR, \fB\-\-alloc\-start \fIoffset\fR
-+Specify the offset from the start of the device to start the btrfs filesystem. The default value is zero, or the start of the device.
++\fB\-d\fR \fIfile|directory\fR
++Defragment a file or a directory. If the argument is a directory, the entire b-tree under the directory is defragged.
 +.TP
-+\fB\-b\fR, \fB\-\-byte\-count \fIsize\fR
-+Specify the size of the resultant filesystem. If this option is not used, 
-+mkfs.btrfs uses all the available storage for the filesystem.
++\fB\-s\fR \fIsnapshot-name directory\fR
++Creates a new \fIsnapshot\fP of the \fIdirectory\fP specified.
 +.TP
-+\fB\-d\fR, \fB\-\-data \fItype\fR
-+Specify how the data must be spanned across the devices specified. Valid 
-+values are raid0, raid1, raid10 or single.
++\fB\-S\fR \fIsubvolume-name directory\fR
++Creates a new subvolume.
 +.TP
-+\fB\-l\fR, \fB\-\-leafsize \fIsize\fR
-+Specify the leaf size, the least data item in which btrfs stores data. The
-+default value is the page size.
++\fB\-r\fR \fI[+|-]size\fR
++Resizes the filesystem with the \fIsize\fP specified. If the value is preceded with a signed symbol, the filesystem is resized with respect to the current filesystem size. \fIsize\fP can be suffixed by k,m or g to represent kilobytes, megabytes, or gigabytes respectively.
 +.TP
-+\fB\-L\fR, \fB\-\-label \fIname\fR
-+Specify a label for the filesystem. 
++\fB\-A\fR \fIdevice\fR
++Scans the \fIdevice\fR for btrfs filesystem.
 +.TP
-+\fB\-m\fR, \fB\-\-metadata \fIprofile\fR
-+Specify how metadata must be spanned across the devices specified. Valid
-+values are raid0, raid1, raid10 or single.
++\fB\-a\fR
++Scans all devices present in the system for btrfs filesystem.
 +.TP
-+\fB\-n\fR, \fB\-\-nodesize \fIsize\fR
-+Specify the nodesize. By default the value is set to the pagesize.
-+.TP
-+\fB\-s\fR, \fB\-\-sectorsize \fIsize\fR
-+Specify the sectorsize, the minimum block allocation.
-+.TP
-+\fB\-V\fR, \fB\-\-version\fR
-+Print the \fBmkfs.btrfs\fP version and exit.
++\fB\-c\fR
++Forces a filesystem sync.
 +.SH AVAILABILITY
-+.B mkfs.btrfs
++.B btrfsctl
 +is part of btrfs-progs. Btrfs is currently under heavy development, 
 +and not suitable for for any uses other than benchmarking and review. 
-+Please refer to the btrfs wiki 
-+http://btrfs.wiki.kernel.org for further details.
++Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for 
++further details.
 +.SH SEE ALSO
-+.BR btrfsck (8)
++.BR mkfs.btrfs (8)
 -- 
 1.6.0.2
 

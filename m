@@ -1,16 +1,17 @@
 From: Ingo Molnar <mingo@elte.hu>
 Subject: Re: [GIT PULL] adaptive spinning mutexes
-Date: Wed, 14 Jan 2009 20:28:11 +0100
-Message-ID: <20090114192811.GA19691@elte.hu>
-References: <1231774622.4371.96.camel@laptop> <1231859742.442.128.camel@twins> <alpine.LFD.2.00.0901130812590.6528@localhost.localdomain> <1231863710.7141.3.camel@twins> <1231864854.7141.8.camel@twins> <alpine.LFD.2.00.0901130846320.6528@localhost.localdomain> <1231867314.7141.16.camel@twins> <1231952436.14825.28.camel@laptop> <20090114183319.GA18630@elte.hu> <20090114184746.GA21334@elte.hu>
+Date: Wed, 14 Jan 2009 20:33:17 +0100
+Message-ID: <20090114193317.GA23227@elte.hu>
+References: <1231859742.442.128.camel@twins> <alpine.LFD.2.00.0901130812590.6528@localhost.localdomain> <1231863710.7141.3.camel@twins> <1231864854.7141.8.camel@twins> <alpine.LFD.2.00.0901130846320.6528@localhost.localdomain> <1231867314.7141.16.camel@twins> <1231952436.14825.28.camel@laptop> <20090114183319.GA18630@elte.hu> <20090114105300.66bd014d.akpm@linux-foundation.org> <1231960986.14825.45.camel@laptop>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>,
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+	Linus Torvalds <torvalds@linux-foundation.org>,
+	"Paul E. McKenney" <paulmck@linux.vnet.ibm.com>,
 	Gregory Haskins <ghaskins@novell.com>,
 	Matthew Wilcox <matthew@wil.cx>,
 	Andi Kleen <andi@firstfloor.org>,
 	Chris Mason <chris.mason@oracle.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
 	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
 	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
 	linux-btrfs <linux-btrfs@vger.kernel.org>,
@@ -20,44 +21,68 @@ Cc: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>,
 	Sven Dietrich <SDietrich@novell.com>,
 	Dmitry Adamushko <dmitry.adamushko@gmail.com>,
 	Johannes Weiner <hannes@cmpxchg.org>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-	Peter Zijlstra <a.p.zijlstra@chello.nl>
+To: Peter Zijlstra <a.p.zijlstra@chello.nl>
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20090114184746.GA21334@elte.hu>
+In-Reply-To: <1231960986.14825.45.camel@laptop>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-* Ingo Molnar <mingo@elte.hu> wrote:
+* Peter Zijlstra <a.p.zijlstra@chello.nl> wrote:
 
-> Latest performance figures, on a 2-socket 16-way Nehalem test-system, 
-> running the code above, measured via "test-mutex V 128 10" VFS 
-> creat+unlink scalability test on tmpfs and ext3:
+> On Wed, 2009-01-14 at 10:53 -0800, Andrew Morton wrote:
+> > On Wed, 14 Jan 2009 19:33:19 +0100 Ingo Molnar <mingo@elte.hu> wrote:
+> > 
+> > > Please pull the adaptive-mutexes-for-linus git tree
+> > 
+> > <fear>
+> > 
+> > - It seems a major shortcoming that the feature is disabled if
+> >   CONFIG_DEBUG_MUTEXES=y.  It means that lots of people won't test it.
 > 
->                               no-spin           spin
+> Yes, that's a bit unfortunate, a simple patch to enable that is:
 > 
->  [tmpfs]    avg ops/sec:       291038         392865       (+34.9%)
->  [ext3]     avg ops/sec:       283291         435674       (+53.7%)
+> I must admit I'm a bit stumped on why that debug check triggers, I
+> couldn't reproduce today, but Ingo ran into it quite quickly :/
 
-Btw., for historic kicks i just went back to v2.6.15-2019-gf17578d - the 
-last pre-mutexes semaphore based kernel, using the same .config.
+Yes, the debug patch caused this false positive warning on one of my 
+test-systems:
 
-I tracked down two bugs in it to make it boot on a Nehalem, so we can now 
-compare the above numbers against historic semaphore performance:
+Built 1 zonelists in Zone order, mobility grouping on.  Total pages: 255762
+------------[ cut here ]------------
+WARNING: at kernel/mutex-debug.c:77 debug_mutex_unlock+0x94/0xde()
+Hardware name:         
+Modules linked in:
+Pid: 0, comm: swapper Not tainted 2.6.29-rc1-tip-00983-ge1af3bd-dirty #1
+Call Trace:
+ [<ffffffff8024f2f7>] warn_slowpath+0xd8/0xf7
+ [<ffffffff8024f5ec>] ? wake_up_klogd+0x9/0x2f
+ [<ffffffff80270fd1>] ? graph_lock+0x27/0x66
+ [<ffffffff80275329>] ? validate_chain+0xd4d/0xd9f
+ [<ffffffff802714c4>] ? save_trace+0x3f/0xb2
+ [<ffffffff80275b4f>] ? __lock_acquire+0x7d4/0x832
+ [<ffffffff80275c5f>] ? lock_acquire+0xb2/0xc2
+ [<ffffffff8025091c>] ? cpu_maps_update_begin+0x17/0x19
+ [<ffffffff80271d21>] ? trace_hardirqs_off+0xd/0xf
+ [<ffffffff80270a8e>] debug_mutex_unlock+0x94/0xde
+ [<ffffffff80906d71>] __mutex_unlock_slowpath+0xdd/0x152
+ [<ffffffff80906df4>] mutex_unlock+0xe/0x10
+ [<ffffffff80250955>] cpu_maps_update_done+0x15/0x17
+ [<ffffffff808ce8b5>] register_cpu_notifier+0x2c/0x32
+ [<ffffffff80d7683e>] page_alloc_init+0x10/0x12
+ [<ffffffff80d5ac45>] start_kernel+0x1ba/0x422
+ [<ffffffff80d5a140>] ? early_idt_handler+0x0/0x73
+ [<ffffffff80d5a2c3>] x86_64_start_reservations+0xae/0xb2
+ [<ffffffff80d5a421>] x86_64_start_kernel+0x137/0x146
+---[ end trace a7919e7f17c0a725 ]---
+Kernel command line: root=/dev/sda1 earlyprintk=serial,ttyS0,115200 console=ttyS0,115200 console=tty 5 profile=0 debug initcall_debug apic=debug apic=verbose ignore_loglevel sysrq_always_enabled pci=nomsi
+kernel profiling enabled (shift: 0)
+debug: sysrq always enabled.
+Initializing CPU#0
 
-                      [v2.6.14]     [v2.6.29]
-
-                      Semaphores  | Mutexes
-            ----------------------------------------------
-                                  | no-spin           spin
-                                  |
-  [tmpfs]   ops/sec:       50713  |  291038         392865       (+34.9%)
-  [ext3]    ops/sec:       45214  |  283291         435674       (+53.7%)
-
-A 10x macro-performance improvement on ext3, compared to 2.6.14 :-)
-
-While lots of other details got changed meanwhile, i'm sure most of the 
-performance win on this particular VFS workload comes from mutexes.
-
-So i think the long mutex migration pain was definitely worth it.
+So we left that change out from this pull request. It's not a big deal i 
+think - mutex debugging always had a different fast-path from no-debug 
+mutexes anyway (or a lack of fast-path to begin with). So the performance 
+characteristics were always subtly different. Now they might be more 
+different - but we'll fix that too.
 
 	Ingo

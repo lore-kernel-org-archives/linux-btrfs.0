@@ -1,58 +1,65 @@
-From: Andrew Morton <akpm@linux-foundation.org>
+From: Ingo Molnar <mingo@elte.hu>
 Subject: Re: [GIT PULL] adaptive spinning mutexes
-Date: Wed, 14 Jan 2009 12:44:36 -0800
-Message-ID: <20090114124436.9ac29330.akpm@linux-foundation.org>
-References: <1231863710.7141.3.camel@twins>
-	<1231864854.7141.8.camel@twins>
-	<alpine.LFD.2.00.0901130846320.6528@localhost.localdomain>
-	<1231867314.7141.16.camel@twins>
-	<1231952436.14825.28.camel@laptop>
-	<20090114183319.GA18630@elte.hu>
-	<20090114105300.66bd014d.akpm@linux-foundation.org>
-	<20090114190008.GA13203@elte.hu>
-	<20090114113638.c818fcf8.akpm@linux-foundation.org>
-	<1231962650.14825.55.camel@laptop>
-	<20090114202736.GB6519@elte.hu>
+Date: Wed, 14 Jan 2009 21:51:22 +0100
+Message-ID: <20090114205122.GC6519@elte.hu>
+References: <1231864854.7141.8.camel@twins> <alpine.LFD.2.00.0901130846320.6528@localhost.localdomain> <1231867314.7141.16.camel@twins> <1231952436.14825.28.camel@laptop> <20090114183319.GA18630@elte.hu> <20090114105300.66bd014d.akpm@linux-foundation.org> <20090114190008.GA13203@elte.hu> <20090114113638.c818fcf8.akpm@linux-foundation.org> <20090114201435.GA6519@elte.hu> <20090114123017.9acf42d7.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: a.p.zijlstra@chello.nl, torvalds@linux-foundation.org,
+Content-Type: text/plain; charset=us-ascii
+Cc: torvalds@linux-foundation.org, a.p.zijlstra@chello.nl,
 	paulmck@linux.vnet.ibm.com, ghaskins@novell.com, matthew@wil.cx,
 	andi@firstfloor.org, chris.mason@oracle.com,
 	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
 	linux-btrfs@vger.kernel.org, tglx@linutronix.de, npiggin@suse.de,
 	pmorreale@novell.com, SDietrich@novell.com,
 	dmitry.adamushko@gmail.com, hannes@cmpxchg.org
-To: Ingo Molnar <mingo@elte.hu>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20090114202736.GB6519@elte.hu>
+To: Andrew Morton <akpm@linux-foundation.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20090114123017.9acf42d7.akpm@linux-foundation.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 14 Jan 2009 21:27:36 +0100
-Ingo Molnar <mingo@elte.hu> wrote:
 
-> 
-> * Peter Zijlstra <a.p.zijlstra@chello.nl> wrote:
-> 
-> > On Wed, 2009-01-14 at 11:36 -0800, Andrew Morton wrote:
-> > 
+* Andrew Morton <akpm@linux-foundation.org> wrote:
+
 > > > Do people enable CONFIG_SCHED_DEBUG?
 > > 
-> > Well, I have it always enabled, but I've honestly no idea if that makes
-> > me weird.
-> > 
-> > > CONFIG_DEBUG_MUTEXES=n, CONFIG_SCHED_DEBUG=y is getting to be a pretty 
-> > > small subset?
-> > 
-> > Could be, do you fancy me doing a sysctl? shouldn't be hard.
+> > If they suspect performance problems and want to analyze them?
 > 
-> i dunno, why another fancy sysctl for something that fits quite nicely 
-> into the existing sched_features scheme that we've been using for such 
-> purposes for the past 3-4 kernel releases?
-> 
-> we always provided various toggles for new scheduler features via 
-> /sys/debug/sched_features, so that people can do performance regression 
-> testing, and it works quite well.
-> 
+> The vast majority of users do not and usually cannot compile their own 
+> kernels.
 
-If we know that this control will be reliably available in packaged
-kernels then fine.  But how to we arrange for that?
+... which they derive from distro kernels or some old .config they always 
+used, via 'make oldconfig'. You are arguing against well-established facts 
+here.
+
+If you dont believe my word for it, here's an analysis of all kernel 
+configs posted to lkml in the past 8 months:
+
+   $ grep ^CONFIG_SCHED_DEBUG linux-kernel | wc -l
+   424
+
+   $ grep 'CONFIG_SCHED_DEBUG is not' linux-kernel | wc -l
+   109
+
+i.e. CONFIG_SCHED_DEBUG=y is set in 80% of the configs. A large majority 
+of testers has it enabled and /sys/debug/sched_features was always a good 
+mechanism that we used for runtime toggles.
+
+> > Note that CONFIG_SCHED_DEBUG=y is also the default.
+> 
+> akpm:/usr/src/25> echo $ARCH
+> x86_64
+> akpm:/usr/src/25> make defconfig
+> *** Default configuration is based on 'x86_64_defconfig'
+
+x86 defconfig is used too, but it's a pretty rare usage.
+
+Under default i mean the customary meaning of default config: it's the 
+default if you come via 'make oldconfig' or if you derive your config from 
+a distro config:
+
+| config SCHED_DEBUG
+|        bool "Collect scheduler debugging info"
+|        depends on DEBUG_KERNEL && PROC_FS
+|        default y
+
+	Ingo

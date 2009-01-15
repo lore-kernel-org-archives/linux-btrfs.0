@@ -1,68 +1,56 @@
-From: Chris Samuel <chris@csamuel.org>
+From: Matthew Wilcox <matthew@wil.cx>
 Subject: Re: [GIT PULL] adaptive spinning mutexes
-Date: Thu, 15 Jan 2009 23:53:02 +1100
-Message-ID: <200901152353.05990.chris@csamuel.org>
-References: <20090114105300.66bd014d.akpm@linux-foundation.org> <ac3eb2510901141350x16c0f67cp46376e57062eaef9@mail.gmail.com> <20090114223408.GA19173@elte.hu>
+Date: Thu, 15 Jan 2009 10:44:40 -0700
+Message-ID: <20090115174440.GF29283@parisc-linux.org>
+References: <1231859742.442.128.camel@twins> <alpine.LFD.2.00.0901130812590.6528@localhost.localdomain> <1231863710.7141.3.camel@twins> <1231864854.7141.8.camel@twins> <alpine.LFD.2.00.0901130846320.6528@localhost.localdomain> <1231867314.7141.16.camel@twins> <1231952436.14825.28.camel@laptop> <20090114183319.GA18630@elte.hu> <20090114184746.GA21334@elte.hu> <20090114192811.GA19691@elte.hu>
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart5190305.3EItt4FeP3";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
-Cc: Ingo Molnar <mingo@elte.hu>, Kay Sievers <kay.sievers@vrfy.org>,
+Content-Type: text/plain; charset=us-ascii
+Cc: Linus Torvalds <torvalds@linux-foundation.org>,
+	Peter Zijlstra <a.p.zijlstra@chello.nl>,
+	"Paul E. McKenney" <paulmck@linux.vnet.ibm.com>,
+	Gregory Haskins <ghaskins@novell.com>,
+	Andi Kleen <andi@firstfloor.org>,
+	Chris Mason <chris.mason@oracle.com>,
 	Andrew Morton <akpm@linux-foundation.org>,
-	torvalds@linux-foundation.org, a.p.zijlstra@chello.nl,
-	paulmck@linux.vnet.ibm.com, ghaskins@novell.com, matthew@wil.cx,
-	andi@firstfloor.org, chris.mason@oracle.com,
-	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	tglx@linutronix.de, npiggin@suse.de, pmorreale@novell.com,
-	SDietrich@novell.com, dmitry.adamushko@gmail.com,
-	hannes@cmpxchg.org
-To: linux-btrfs@vger.kernel.org
+	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Nick Piggin <npiggin@suse.de>,
+	Peter Morreale <pmorreale@novell.com>,
+	Sven Dietrich <SDietrich@novell.com>,
+	Dmitry Adamushko <dmitry.adamushko@gmail.com>,
+	Johannes Weiner <hannes@cmpxchg.org>
+To: Ingo Molnar <mingo@elte.hu>
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20090114223408.GA19173@elte.hu>
+In-Reply-To: <20090114192811.GA19691@elte.hu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart5190305.3EItt4FeP3
-Content-Type: text/plain;
-  charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: inline
+On Wed, Jan 14, 2009 at 08:28:11PM +0100, Ingo Molnar wrote:
+>                       [v2.6.14]     [v2.6.29]
+> 
+>                       Semaphores  | Mutexes
+>             ----------------------------------------------
+>                                   | no-spin           spin
+>                                   |
+>   [tmpfs]   ops/sec:       50713  |  291038         392865       (+34.9%)
+>   [ext3]    ops/sec:       45214  |  283291         435674       (+53.7%)
+> 
+> A 10x macro-performance improvement on ext3, compared to 2.6.14 :-)
+> 
+> While lots of other details got changed meanwhile, i'm sure most of the 
+> performance win on this particular VFS workload comes from mutexes.
 
-On Thu, 15 Jan 2009 9:34:08 am Ingo Molnar wrote:
+I asked a couple of our benchmarking teams to try -v9.  Neither the OLTP
+benchmark, nor the kernel-perf test suite found any significant
+performance change.  I suspect mutex contention isn't a significant
+problem for most workloads.
 
-> So the 3 main Linux distros, generating ~95% of the kerneloops.org
-> feedback traffic, all have SCHED_DEBUG=3Dy, and at least two have
-> !DEBUG_MUTEXES. (possibly Ubuntu has that disabled it too)
+Has anyone found a non-synthetic benchmark where this makes a
+significant difference?  Aside from btrfs, I mean.
 
-That looks correct for Ubuntu:
-
-chris@mythtv:~$ grep CONFIG_DEBUG_MUTEXES /boot/config-2.6.2*
-/boot/config-2.6.24-21-generic:# CONFIG_DEBUG_MUTEXES is not set
-/boot/config-2.6.27-7-generic:# CONFIG_DEBUG_MUTEXES is not set
-/boot/config-2.6.27-9-generic:# CONFIG_DEBUG_MUTEXES is not set
-
-
-=2D-=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
-
-This email may come with a PGP signature as a file. Do not panic.
-=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
-
-
---nextPart5190305.3EItt4FeP3
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iQEVAwUASW8xsY1yjaOTJg85AQJttggAjdGnncYFLUopmVOqSR1+znnTz4IoAGGz
-5B58r35VpgvlIqZoldWMzCqK99aDyt2eLc4I+vcpr54za29UgAytrquGR1S9MzDv
-VC/Mm4SfYPAPZ9anbowMUEKQD+rSXXq02yEprcSEE3TyWH9EoqMZoehVkkegJFzd
-ZSXtU/vhZQ4DJavu0FF6xRwvGR2IlDBqCNeDbTFxQAUuXe1HEFqsdqHlLgRKbk2v
-JNB8s+Q3QpGugElMEdK/bXbxm5V3lWioKHM7jOjJWtvYuUGlCXR8ZY5ajHHiTkE2
-VnmqiTEiuBPfKK+wZVkcmGdwyWkqCXUy2+dT6AV4LQwXCbQxr6gANA==
-=bTVt
------END PGP SIGNATURE-----
-
---nextPart5190305.3EItt4FeP3--
+-- 
+Matthew Wilcox				Intel Open Source Technology Centre
+"Bill, look, we understand that you're interested in selling us this
+operating system, but compare it to ours.  We can't possibly take such
+a retrograde step."

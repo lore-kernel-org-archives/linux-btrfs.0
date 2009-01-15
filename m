@@ -1,67 +1,35 @@
 From: Nick Piggin <npiggin@suse.de>
-Subject: Re: [PATCH -v8][RFC] mutex: implement adaptive spinning
-Date: Thu, 15 Jan 2009 01:50:42 +0100
-Message-ID: <20090115005042.GC32044@wotan.suse.de>
-References: <1231774622.4371.96.camel@laptop> <496B6C23.8000808@redhat.com> <1231780388.4371.185.camel@laptop> <496B7EBC.6020208@redhat.com> <1231951599.14825.18.camel@laptop> <20090114170445.GA18964@wotan.suse.de> <496E1F80.20009@redhat.com>
+Subject: Re: [GIT PULL] adaptive spinning mutexes
+Date: Thu, 15 Jan 2009 01:55:47 +0100
+Message-ID: <20090115005547.GE32044@wotan.suse.de>
+References: <20090114183319.GA18630@elte.hu> <20090114105300.66bd014d.akpm@linux-foundation.org> <20090114190008.GA13203@elte.hu> <20090114113638.c818fcf8.akpm@linux-foundation.org> <20090114201435.GA6519@elte.hu> <20090114123017.9acf42d7.akpm@linux-foundation.org> <20090114205122.GC6519@elte.hu> <20090114130642.cf2b18b2.akpm@linux-foundation.org> <20090114211458.GD6519@elte.hu> <20090114133529.317a346c.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Peter Zijlstra <peterz@infradead.org>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
-	Ingo Molnar <mingo@elte.hu>,
-	"Paul E. McKenney" <paulmck@linux.vnet.ibm.com>,
-	Gregory Haskins <ghaskins@novell.com>,
-	Matthew Wilcox <matthew@wil.cx>,
-	Andi Kleen <andi@firstfloor.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Peter Morreale <pmorreale@novell.com>,
-	Sven Dietrich <SDietrich@novell.com>,
-	Dmitry Adamushko <dmitry.adamushko@gmail.com>
-To: Avi Kivity <avi@redhat.com>
+Cc: Ingo Molnar <mingo@elte.hu>, torvalds@linux-foundation.org,
+	a.p.zijlstra@chello.nl, paulmck@linux.vnet.ibm.com,
+	ghaskins@novell.com, matthew@wil.cx, andi@firstfloor.org,
+	chris.mason@oracle.com, linux-kernel@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	tglx@linutronix.de, pmorreale@novell.com, SDietrich@novell.com,
+	dmitry.adamushko@gmail.com, hannes@cmpxchg.org
+To: Andrew Morton <akpm@linux-foundation.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <496E1F80.20009@redhat.com>
+In-Reply-To: <20090114133529.317a346c.akpm@linux-foundation.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 14, 2009 at 07:23:12PM +0200, Avi Kivity wrote:
-> Nick Piggin wrote:
-> >>(no they're not, Nick's ticket locks still spin on a shared cacheline
-> >>IIRC -- the MCS locks mentioned could fix this)
-> >>    
-> >
-> >It reminds me. I wrote a basic variation of MCS spinlocks a while back. And
-> >converted dcache lock to use it, which showed large dbench improvements on
-> >a big machine (of course for different reasons than the dbench improvements
-> >in this threaed).
-> >
-> >http://lkml.org/lkml/2008/8/28/24
-> >
-> >Each "lock" object is sane in size because given set of spin-local queues 
-> >may
-> >only be used once per lock stack. But any spinlocks within a mutex 
-> >acquisition
-> >will always be at the bottom of such a stack anyway, by definition.
-> >
-> >If you can use any code or concept for your code, that would be great.
-> >  
+On Wed, Jan 14, 2009 at 01:35:29PM -0800, Andrew Morton wrote:
+> You're taking a whizzy new feature which drastically changes a critical
+> core kernel feature and jamming it into mainline with a vestigial
+> amount of testing coverage without giving sufficient care and thought
+> to the practical lessons which we have learned from doing this in the
+> past.
 > 
-> Does it make sense to replace 'nest' with a per-cpu counter that's 
-> incremented on each lock?  I guest you'd have to search for the value of 
-> nest on unlock, but it would a very short search (typically length 1, 2 
-> if lock sorting is used to avoid deadlocks).
-> 
-> I think you'd need to make the lock store the actual node pointer, not 
-> the cpu number, since the values of nest would be different on each cpu.
-> 
-> That would allow you to replace spinlocks with mcs_locks wholesale.
+> This is a highly risky change.  It's not that the probability of
+> failure is high - the problem is that the *cost* of the improbable
+> failure is high.  We should seek to minimize that cost.
 
-nest could get quite large (and basically is unbounded), though. I
-think there would definitely be variations (NMCS locks is interesting).
-But OTOH I think that for _most_ spinlocks, optimising for spinning
-case is wrong. For some really tricky global spinlocks, yes I think
-MCS is a good idea. But moreso as a stopgap until hopefully more
-scalable algorithms are written.
+There is very little downside to waiting for at least the next release
+cycle. What's the case for making an exception and merging it right now?
+It actually still seems to be generating a lot of changes and
+discussion right up until yesterday...
 

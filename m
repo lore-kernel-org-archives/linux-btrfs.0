@@ -1,10 +1,11 @@
-From: Ingo Molnar <mingo@elte.hu>
+From: Linus Torvalds <torvalds@linux-foundation.org>
 Subject: Re: [GIT PULL] adaptive spinning mutexes
-Date: Thu, 15 Jan 2009 19:08:44 +0100
-Message-ID: <20090115180844.GL22472@elte.hu>
-References: <1231863710.7141.3.camel@twins> <1231864854.7141.8.camel@twins> <alpine.LFD.2.00.0901130846320.6528@localhost.localdomain> <1231867314.7141.16.camel@twins> <1231952436.14825.28.camel@laptop> <20090114183319.GA18630@elte.hu> <20090114184746.GA21334@elte.hu> <20090114192811.GA19691@elte.hu> <20090115174440.GF29283@parisc-linux.org> <alpine.LFD.2.00.0901150958300.6528@localhost.localdomain>
+Date: Thu, 15 Jan 2009 10:16:53 -0800 (PST)
+Message-ID: <alpine.LFD.2.00.0901151015270.6528@localhost.localdomain>
+References: <1231863710.7141.3.camel@twins> <1231864854.7141.8.camel@twins> <alpine.LFD.2.00.0901130846320.6528@localhost.localdomain> <1231867314.7141.16.camel@twins> <1231952436.14825.28.camel@laptop> <20090114183319.GA18630@elte.hu> <20090114184746.GA21334@elte.hu>
+ <20090114192811.GA19691@elte.hu> <20090115174440.GF29283@parisc-linux.org> <alpine.LFD.2.00.0901150958300.6528@localhost.localdomain> <20090115180844.GL22472@elte.hu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Cc: Matthew Wilcox <matthew@wil.cx>,
 	Peter Zijlstra <a.p.zijlstra@chello.nl>,
 	"Paul E. McKenney" <paulmck@linux.vnet.ibm.com>,
@@ -21,35 +22,28 @@ Cc: Matthew Wilcox <matthew@wil.cx>,
 	Sven Dietrich <SDietrich@novell.com>,
 	Dmitry Adamushko <dmitry.adamushko@gmail.com>,
 	Johannes Weiner <hannes@cmpxchg.org>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <alpine.LFD.2.00.0901150958300.6528@localhost.localdomain>
+To: Ingo Molnar <mingo@elte.hu>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20090115180844.GL22472@elte.hu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-* Linus Torvalds <torvalds@linux-foundation.org> wrote:
 
-> > Has anyone found a non-synthetic benchmark where this makes a 
-> > significant difference?  Aside from btrfs, I mean.
+On Thu, 15 Jan 2009, Ingo Molnar wrote:
 > 
-> Yea, if you have some particular filesystem (or other subsystem) that 
-> uses a global mutex, you'll obviously see way more contention. Btrfs may 
-> not be _unique_ in this regard, but it's definitely doing something that 
-> isn't good.
+> btw., i think spin-mutexes have a design advantage here: in a lot of code 
+> areas it's quite difficult to use spinlocks - cannot allocate memory, 
+> cannot call any code that can sporadically block (but does not _normally_ 
+> block), etc.
 > 
-> Btw, it's doing something that ext3 also used to do iirc, until we fixed 
-> it to use spinlocks instead (the block group lock in particular).
-> 
-> Yeah - just double-checked. Commit c12b9866ea52 in the historical Linux 
-> archive, from 2003. Which made block allocation protected by a per-group 
-> spinlock, rather than lock_super().
+> With mutexes those atomicity constraints go away - and the performance 
+> profile should now be quite close to that of spinlocks as well.
 
-btw., i think spin-mutexes have a design advantage here: in a lot of code 
-areas it's quite difficult to use spinlocks - cannot allocate memory, 
-cannot call any code that can sporadically block (but does not _normally_ 
-block), etc.
+Umm. Except if you wrote the code nicely and used spinlocks, you wouldn't 
+hold the lock over all those unnecessary and complex operations.
 
-With mutexes those atomicity constraints go away - and the performance 
-profile should now be quite close to that of spinlocks as well.
+IOW, if you do pre-allocation instead of holding a lock over the 
+allocation, you win. So yes, spin-mutexes makes it easier to write the 
+code, but it also makes it easier to just plain be lazy.
 
-	Ingo
+			Linus

@@ -1,52 +1,68 @@
-From: Folkert van Heusden <folkert@vanheusden.com>
+From: Chris Samuel <chris@csamuel.org>
 Subject: Re: [GIT PULL] adaptive spinning mutexes
-Date: Thu, 15 Jan 2009 12:45:21 +0100
-Message-ID: <20090115114518.GT23674@vanheusden.com>
-References: <20090114190008.GA13203@elte.hu> <20090114113638.c818fcf8.akpm@linux-foundation.org> <20090114201435.GA6519@elte.hu> <20090114123017.9acf42d7.akpm@linux-foundation.org> <20090114205122.GC6519@elte.hu> <20090114130642.cf2b18b2.akpm@linux-foundation.org> <20090114211458.GD6519@elte.hu> <20090114214158.GA9992@elte.hu> <ac3eb2510901141350x16c0f67cp46376e57062eaef9@mail.gmail.com> <20090114223408.GA19173@elte.hu>
+Date: Thu, 15 Jan 2009 23:53:02 +1100
+Message-ID: <200901152353.05990.chris@csamuel.org>
+References: <20090114105300.66bd014d.akpm@linux-foundation.org> <ac3eb2510901141350x16c0f67cp46376e57062eaef9@mail.gmail.com> <20090114223408.GA19173@elte.hu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Kay Sievers <kay.sievers@vrfy.org>,
+Content-Type: multipart/signed;
+  boundary="nextPart5190305.3EItt4FeP3";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+Cc: Ingo Molnar <mingo@elte.hu>, Kay Sievers <kay.sievers@vrfy.org>,
 	Andrew Morton <akpm@linux-foundation.org>,
 	torvalds@linux-foundation.org, a.p.zijlstra@chello.nl,
 	paulmck@linux.vnet.ibm.com, ghaskins@novell.com, matthew@wil.cx,
 	andi@firstfloor.org, chris.mason@oracle.com,
 	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, tglx@linutronix.de, npiggin@suse.de,
-	pmorreale@novell.com, SDietrich@novell.com,
-	dmitry.adamushko@gmail.com, hannes@cmpxchg.org
-To: Ingo Molnar <mingo@elte.hu>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753063AbZAOLrU@vger.kernel.org>
+	tglx@linutronix.de, npiggin@suse.de, pmorreale@novell.com,
+	SDietrich@novell.com, dmitry.adamushko@gmail.com,
+	hannes@cmpxchg.org
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
 In-Reply-To: <20090114223408.GA19173@elte.hu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> > >> > You just disproved your own case :(
-> > >>
-> > >> how so? 80% is not enough? I also checked Fedora and it has
-> > >> SCHED_DEBUG=y in its kernel rpms.
-> > >
-> > > Ubuntu has CONFIG_SCHED_DEBUG=y as well in their kernels.
+--nextPart5190305.3EItt4FeP3
+Content-Type: text/plain;
+  charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: inline
 
-Debian too:
+On Thu, 15 Jan 2009 9:34:08 am Ingo Molnar wrote:
 
-mauer:~/bin# grep CONFIG_SCHED_DEBUG /boot/config-2.6.2*
-/boot/config-2.6.24-1-amd64:# CONFIG_SCHED_DEBUG is not set
-/boot/config-2.6.25-2-amd64:CONFIG_SCHED_DEBUG=y
-/boot/config-2.6.26-1-amd64:CONFIG_SCHED_DEBUG=y
+> So the 3 main Linux distros, generating ~95% of the kerneloops.org
+> feedback traffic, all have SCHED_DEBUG=3Dy, and at least two have
+> !DEBUG_MUTEXES. (possibly Ubuntu has that disabled it too)
 
-> > $ zgrep DEBUG_MUTEX /proc/config.gz
-> > # CONFIG_DEBUG_MUTEXES is not set
+That looks correct for Ubuntu:
 
-mauer:~/bin# grep DEBUG_MUTEX /boot/config-2.6.2*
-/boot/config-2.6.22-3-amd64:# CONFIG_DEBUG_MUTEXES is not set
-/boot/config-2.6.24-1-amd64:# CONFIG_DEBUG_MUTEXES is not set
-/boot/config-2.6.25-2-amd64:# CONFIG_DEBUG_MUTEXES is not set
-/boot/config-2.6.26-1-amd64:# CONFIG_DEBUG_MUTEXES is not set
+chris@mythtv:~$ grep CONFIG_DEBUG_MUTEXES /boot/config-2.6.2*
+/boot/config-2.6.24-21-generic:# CONFIG_DEBUG_MUTEXES is not set
+/boot/config-2.6.27-7-generic:# CONFIG_DEBUG_MUTEXES is not set
+/boot/config-2.6.27-9-generic:# CONFIG_DEBUG_MUTEXES is not set
 
 
-Folkert van Heusden
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
 
--- 
-Looking for a cheap but fast webhoster with an excellent helpdesk?
-http://keetweej.vanheusden.com/redir.php?id=1001
-----------------------------------------------------------------------
-Phone: +31-6-41278122, PGP-key: 1F28D8AE, www.vanheusden.com
+This email may come with a PGP signature as a file. Do not panic.
+=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
+
+
+--nextPart5190305.3EItt4FeP3
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iQEVAwUASW8xsY1yjaOTJg85AQJttggAjdGnncYFLUopmVOqSR1+znnTz4IoAGGz
+5B58r35VpgvlIqZoldWMzCqK99aDyt2eLc4I+vcpr54za29UgAytrquGR1S9MzDv
+VC/Mm4SfYPAPZ9anbowMUEKQD+rSXXq02yEprcSEE3TyWH9EoqMZoehVkkegJFzd
+ZSXtU/vhZQ4DJavu0FF6xRwvGR2IlDBqCNeDbTFxQAUuXe1HEFqsdqHlLgRKbk2v
+JNB8s+Q3QpGugElMEdK/bXbxm5V3lWioKHM7jOjJWtvYuUGlCXR8ZY5ajHHiTkE2
+VnmqiTEiuBPfKK+wZVkcmGdwyWkqCXUy2+dT6AV4LQwXCbQxr6gANA==
+=bTVt
+-----END PGP SIGNATURE-----
+
+--nextPart5190305.3EItt4FeP3--

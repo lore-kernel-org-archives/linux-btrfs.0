@@ -1,11 +1,11 @@
 From: Ingo Molnar <mingo@elte.hu>
 Subject: Re: [GIT PULL] adaptive spinning mutexes
-Date: Thu, 15 Jan 2009 19:06:19 +0100
-Message-ID: <20090115180619.GK22472@elte.hu>
-References: <alpine.LFD.2.00.0901130812590.6528@localhost.localdomain> <1231863710.7141.3.camel@twins> <1231864854.7141.8.camel@twins> <alpine.LFD.2.00.0901130846320.6528@localhost.localdomain> <1231867314.7141.16.camel@twins> <1231952436.14825.28.camel@laptop> <20090114183319.GA18630@elte.hu> <20090114184746.GA21334@elte.hu> <20090114192811.GA19691@elte.hu> <20090115174440.GF29283@parisc-linux.org>
+Date: Thu, 15 Jan 2009 19:08:44 +0100
+Message-ID: <20090115180844.GL22472@elte.hu>
+References: <1231863710.7141.3.camel@twins> <1231864854.7141.8.camel@twins> <alpine.LFD.2.00.0901130846320.6528@localhost.localdomain> <1231867314.7141.16.camel@twins> <1231952436.14825.28.camel@laptop> <20090114183319.GA18630@elte.hu> <20090114184746.GA21334@elte.hu> <20090114192811.GA19691@elte.hu> <20090115174440.GF29283@parisc-linux.org> <alpine.LFD.2.00.0901150958300.6528@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Linus Torvalds <torvalds@linux-foundation.org>,
+Cc: Matthew Wilcox <matthew@wil.cx>,
 	Peter Zijlstra <a.p.zijlstra@chello.nl>,
 	"Paul E. McKenney" <paulmck@linux.vnet.ibm.com>,
 	Gregory Haskins <ghaskins@novell.com>,
@@ -21,40 +21,35 @@ Cc: Linus Torvalds <torvalds@linux-foundation.org>,
 	Sven Dietrich <SDietrich@novell.com>,
 	Dmitry Adamushko <dmitry.adamushko@gmail.com>,
 	Johannes Weiner <hannes@cmpxchg.org>
-To: Matthew Wilcox <matthew@wil.cx>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1764692AbZAOSGz@vger.kernel.org>
-In-Reply-To: <20090115174440.GF29283@parisc-linux.org>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <alpine.LFD.2.00.0901150958300.6528@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-* Matthew Wilcox <matthew@wil.cx> wrote:
+* Linus Torvalds <torvalds@linux-foundation.org> wrote:
 
-> On Wed, Jan 14, 2009 at 08:28:11PM +0100, Ingo Molnar wrote:
-> >                       [v2.6.14]     [v2.6.29]
-> > 
-> >                       Semaphores  | Mutexes
-> >             ----------------------------------------------
-> >                                   | no-spin           spin
-> >                                   |
-> >   [tmpfs]   ops/sec:       50713  |  291038         392865       (+34.9%)
-> >   [ext3]    ops/sec:       45214  |  283291         435674       (+53.7%)
-> > 
-> > A 10x macro-performance improvement on ext3, compared to 2.6.14 :-)
-> > 
-> > While lots of other details got changed meanwhile, i'm sure most of 
-> > the performance win on this particular VFS workload comes from 
-> > mutexes.
+> > Has anyone found a non-synthetic benchmark where this makes a 
+> > significant difference?  Aside from btrfs, I mean.
 > 
-> I asked a couple of our benchmarking teams to try -v9.  Neither the OLTP 
-> benchmark, nor the kernel-perf test suite found any significant 
-> performance change.  I suspect mutex contention isn't a significant 
-> problem for most workloads.
+> Yea, if you have some particular filesystem (or other subsystem) that 
+> uses a global mutex, you'll obviously see way more contention. Btrfs may 
+> not be _unique_ in this regard, but it's definitely doing something that 
+> isn't good.
+> 
+> Btw, it's doing something that ext3 also used to do iirc, until we fixed 
+> it to use spinlocks instead (the block group lock in particular).
+> 
+> Yeah - just double-checked. Commit c12b9866ea52 in the historical Linux 
+> archive, from 2003. Which made block allocation protected by a per-group 
+> spinlock, rather than lock_super().
 
-basically only VFS is mutex-bound really, and few of the 'benchmarks' tend 
-to be VFS intense. Maybe things like mail-server benchmarks would do that.
+btw., i think spin-mutexes have a design advantage here: in a lot of code 
+areas it's quite difficult to use spinlocks - cannot allocate memory, 
+cannot call any code that can sporadically block (but does not _normally_ 
+block), etc.
 
-Also, -v9 is like two days old code ;-) Old and crufty. The real 
-performance uptick was not even in -v10 but in -v11 (the one we submitted 
-in this thread).
+With mutexes those atomicity constraints go away - and the performance 
+profile should now be quite close to that of spinlocks as well.
 
 	Ingo

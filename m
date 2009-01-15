@@ -1,38 +1,25 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Warning and BUG with btrfs and corrupted image
-Date: Wed, 14 Jan 2009 21:13:37 -0500
-Message-ID: <1231985617.8269.68.camel@think.oraclecorp.com>
-References: <20090113142147.GE16333@alice>
-	 <1231857643.29164.28.camel@think.oraclecorp.com>
-	 <20090113144307.GF16333@alice>
+Subject: Re: [btrfs-progs 1/4] Add man/mkfs.btrfs.8.in
+Date: Wed, 14 Jan 2009 21:18:47 -0500
+Message-ID: <1231985927.8269.73.camel@think.oraclecorp.com>
+References: <20090113124802.GA15169@baloo.junglebook>
 Mime-Version: 1.0
 Content-Type: text/plain
-Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: Eric Sesterhenn <snakebyte@gmx.de>
+Cc: linux-btrfs@vger.kernel.org
+To: Goldwyn Rodrigues <rgoldwyn@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090113144307.GF16333@alice>
+In-Reply-To: <20090113124802.GA15169@baloo.junglebook>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2009-01-13 at 15:43 +0100, Eric Sesterhenn wrote:
-> * Chris Mason (chris.mason@oracle.com) wrote:
-> > On Tue, 2009-01-13 at 15:21 +0100, Eric Sesterhenn wrote:
-> > > Hi,
-> > > 
-> > > when mounting an intentionally corrupted btrfs filesystem i get the
-> > > following warning and bug message. The image can be found here
-> > > www.cccmz.de/~snakebyte/btrfs.2.img.bck.bz2
-> > 
-> > Thanks for looking at things
-> > 
-> > Aside from catching checksumming errors, we're not quite ready for
-> > fuzzer style attacks.  The code will be hardened for this but it isn't
-> > yet.
+On Tue, 2009-01-13 at 18:18 +0530, Goldwyn Rodrigues wrote:
+> Add man/mkfs.btrfs.8.in
+> Kept the name with the name in, so that further processing such as
+> BUILD_DATE BUILD_VERSION etc. could be included later.
 > 
-> Does this mean i should stop trying to break it for now or are you interested
-> in further reports?
+> All man pages included in the man directory to avoid file cluttering.
+> 
 
-For now, you'll be able to break it at will ;)  We'll send out a please
-send us corrupt notice release announcement when we've hardened things.
+Thanks for starting these! I'll queue them up.
 
 -chris
 

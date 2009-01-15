@@ -1,77 +1,56 @@
-From: Qinghuang Feng <qhfeng.kernel@gmail.com>
-Subject: [PATCH] BTRFS: Mark '__init' for btrfs_init_cachep,
- btrfs_init_sysfs,btrfs_interface_init
-Date: Thu, 15 Jan 2009 15:13:45 +0800
-Message-ID: <496ee22e.04686e0a.3cf0.5e40@mx.google.com>
-Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: chris.mason@oracle.com
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: Peter Zijlstra <peterz@infradead.org>
+Subject: Re: [PATCH -v11][RFC] mutex: implement adaptive spinning
+Date: Thu, 15 Jan 2009 08:44:03 +0100
+Message-ID: <1232005443.14825.82.camel@laptop>
+References: <1231774622.4371.96.camel@laptop>
+	 <1231859742.442.128.camel@twins>
+	 <alpine.LFD.2.00.0901130812590.6528@localhost.localdomain>
+	 <1231863710.7141.3.camel@twins> <1231864854.7141.8.camel@twins>
+	 <alpine.LFD.2.00.0901130846320.6528@localhost.localdomain>
+	 <1231867314.7141.16.camel@twins> <1231952436.14825.28.camel@laptop>
+	 <20090114171800.GA18621@wotan.suse.de> <1231953757.14825.33.camel@laptop>
+	 <20090115004645.GB32044@wotan.suse.de>
+Mime-Version: 1.0
+Content-Type: text/plain
+Cc: Linus Torvalds <torvalds@linux-foundation.org>,
+	Ingo Molnar <mingo@elte.hu>,
+	"Paul E. McKenney" <paulmck@linux.vnet.ibm.com>,
+	Gregory Haskins <ghaskins@novell.com>,
+	Matthew Wilcox <matthew@wil.cx>,
+	Andi Kleen <andi@firstfloor.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Peter Morreale <pmorreale@novell.com>,
+	Sven Dietrich <SDietrich@novell.com>,
+	Dmitry Adamushko <dmitry.adamushko@gmail.com>,
+	Johannes Weiner <hannes@cmpxchg.org>
+To: Nick Piggin <npiggin@suse.de>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20090115004645.GB32044@wotan.suse.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There functions are only called by 'static int __init init_btrfs_fs(void)',
-so also mark them as '__init'.
+On Thu, 2009-01-15 at 01:46 +0100, Nick Piggin wrote:
 
-Signed-off-by: Qinghuang Feng <qhfeng.kernel@gmail.com>
----
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index eee060f..7e03ec8 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2045,7 +2045,7 @@ int btrfs_write_inode(struct inode *inode, int wait);
- void btrfs_dirty_inode(struct inode *inode);
- struct inode *btrfs_alloc_inode(struct super_block *sb);
- void btrfs_destroy_inode(struct inode *inode);
--int btrfs_init_cachep(void);
-+int __init btrfs_init_cachep(void);
- void btrfs_destroy_cachep(void);
- long btrfs_ioctl_trans_end(struct file *file);
- struct inode *btrfs_ilookup(struct super_block *s, u64 objectid,
-@@ -2089,7 +2089,7 @@ int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
- 			struct btrfs_root *root, int cache_only);
- 
- /* sysfs.c */
--int btrfs_init_sysfs(void);
-+int __init btrfs_init_sysfs(void);
- void btrfs_exit_sysfs(void);
- int btrfs_sysfs_add_super(struct btrfs_fs_info *fs);
- int btrfs_sysfs_add_root(struct btrfs_root *root);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 8adfe05..7170c4a 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4521,7 +4521,7 @@ struct kmem_cache *btrfs_cache_create(const char *name, size_t size,
- 				 SLAB_MEM_SPREAD | extra_flags), ctor);
- }
- 
--int btrfs_init_cachep(void)
-+int __init btrfs_init_cachep(void)
- {
- 	btrfs_inode_cachep = btrfs_cache_create("btrfs_inode_cache",
- 					  sizeof(struct btrfs_inode),
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 0a14b49..0a3fc0d 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -649,7 +649,7 @@ static struct miscdevice btrfs_misc = {
- 	.fops		= &btrfs_ctl_fops
- };
- 
--static int btrfs_interface_init(void)
-+static int __init btrfs_interface_init(void)
- {
- 	return misc_register(&btrfs_misc);
- }
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index a240b6f..bd73c97 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -254,7 +254,7 @@ void btrfs_sysfs_del_super(struct btrfs_fs_info *fs)
- 	wait_for_completion(&fs->kobj_unregister);
- }
- 
--int btrfs_init_sysfs(void)
-+int __init btrfs_init_sysfs(void)
- {
- 	btrfs_kset = kset_create_and_add("btrfs", NULL, fs_kobj);
- 	if (!btrfs_kset)
+> Hmm, well this is rather a slow path, I would say. I'd prefer not to
+> modify schedule in this way (if we just get scheduled back on after
+> being switched away, the subsequent call to schedule is going to be
+> cache hot and not do too much work).
+> 
+> preempt_enable_noresched maybe if you really care, would close up the
+> window even more. But is it really worthwhile? We'd want to see numbers
+> (when in doubt, keep it  simpler).
+
+I initially did the preempt_enable_no_resched() thing and that showed
+some improvement for PREEMPT=y kernels (lost the numbers though).
+
+When I redid all the patches I tried closing that last hole by doing
+that __schedule() thing, never realizing that schedule() would then get
+extra overhead,.. d'0h.
+
+I agree that that isn't worth it. I shall revert to
+preempt_enable_no_resched() and try to get some new numbers.
 

@@ -1,62 +1,52 @@
-From: Ingo Molnar <mingo@elte.hu>
+From: Folkert van Heusden <folkert@vanheusden.com>
 Subject: Re: [GIT PULL] adaptive spinning mutexes
-Date: Thu, 15 Jan 2009 10:53:21 +0100
-Message-ID: <20090115095321.GC5833@elte.hu>
-References: <1231774622.4371.96.camel@laptop> <1231859742.442.128.camel@twins> <alpine.LFD.2.00.0901130812590.6528@localhost.localdomain> <1231863710.7141.3.camel@twins> <1231864854.7141.8.camel@twins> <alpine.LFD.2.00.0901130846320.6528@localhost.localdomain> <1231867314.7141.16.camel@twins> <1231952436.14825.28.camel@laptop> <20090114183319.GA18630@elte.hu> <1231958447.8269.30.camel@think.oraclecorp.com>
+Date: Thu, 15 Jan 2009 12:45:21 +0100
+Message-ID: <20090115114518.GT23674@vanheusden.com>
+References: <20090114190008.GA13203@elte.hu> <20090114113638.c818fcf8.akpm@linux-foundation.org> <20090114201435.GA6519@elte.hu> <20090114123017.9acf42d7.akpm@linux-foundation.org> <20090114205122.GC6519@elte.hu> <20090114130642.cf2b18b2.akpm@linux-foundation.org> <20090114211458.GD6519@elte.hu> <20090114214158.GA9992@elte.hu> <ac3eb2510901141350x16c0f67cp46376e57062eaef9@mail.gmail.com> <20090114223408.GA19173@elte.hu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Linus Torvalds <torvalds@linux-foundation.org>,
-	Peter Zijlstra <a.p.zijlstra@chello.nl>,
-	"Paul E. McKenney" <paulmck@linux.vnet.ibm.com>,
-	Gregory Haskins <ghaskins@novell.com>,
-	Matthew Wilcox <matthew@wil.cx>,
-	Andi Kleen <andi@firstfloor.org>,
+Cc: Kay Sievers <kay.sievers@vrfy.org>,
 	Andrew Morton <akpm@linux-foundation.org>,
-	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Nick Piggin <npiggin@suse.de>,
-	Peter Morreale <pmorreale@novell.com>,
-	Sven Dietrich <SDietrich@novell.com>,
-	Dmitry Adamushko <dmitry.adamushko@gmail.com>,
-	Johannes Weiner <hannes@cmpxchg.org>
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <1231958447.8269.30.camel@think.oraclecorp.com>
+	torvalds@linux-foundation.org, a.p.zijlstra@chello.nl,
+	paulmck@linux.vnet.ibm.com, ghaskins@novell.com, matthew@wil.cx,
+	andi@firstfloor.org, chris.mason@oracle.com,
+	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, tglx@linutronix.de, npiggin@suse.de,
+	pmorreale@novell.com, SDietrich@novell.com,
+	dmitry.adamushko@gmail.com, hannes@cmpxchg.org
+To: Ingo Molnar <mingo@elte.hu>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753063AbZAOLrU@vger.kernel.org>
+In-Reply-To: <20090114223408.GA19173@elte.hu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+> > >> > You just disproved your own case :(
+> > >>
+> > >> how so? 80% is not enough? I also checked Fedora and it has
+> > >> SCHED_DEBUG=y in its kernel rpms.
+> > >
+> > > Ubuntu has CONFIG_SCHED_DEBUG=y as well in their kernels.
 
-* Chris Mason <chris.mason@oracle.com> wrote:
+Debian too:
 
-> On Wed, 2009-01-14 at 19:33 +0100, Ingo Molnar wrote:
-> > * Peter Zijlstra <peterz@infradead.org> wrote:
-> > 
-> > > Full series, including changelogs available at:
-> > > 
-> > >  http://programming.kicks-ass.net/kernel-patches/mutex-adaptive-spin/
-> > > 
-> > > and should shortly appear in a git tree near Ingo :-)
-> > 
-> > Linus,
-> > 
-> > Please pull the adaptive-mutexes-for-linus git tree from:
-> > 
-> >    git://git.kernel.org/pub/scm/linux/kernel/git/tip/linux-2.6-tip.git adaptive-mutexes-for-linus
-> > 
-> 
-> I was going to put this into the btrfs tree, but since you have a branch
-> just for adaptive mutexes, is it easier to put there?
-> 
-> From: Chris Mason <chris.mason@oracle.com>
-> 
-> Btrfs: stop spinning on mutex_trylock and let the adaptive code spin for us
-> 
-> Mutexes now spin internally and the btrfs spin is no longer required for
-> performance.
-> 
-> Signed-off-by: Chris Mason <chris.mason@oracle.com>
+mauer:~/bin# grep CONFIG_SCHED_DEBUG /boot/config-2.6.2*
+/boot/config-2.6.24-1-amd64:# CONFIG_SCHED_DEBUG is not set
+/boot/config-2.6.25-2-amd64:CONFIG_SCHED_DEBUG=y
+/boot/config-2.6.26-1-amd64:CONFIG_SCHED_DEBUG=y
 
-applied it to tip/core/locking, thanks Chris!
+> > $ zgrep DEBUG_MUTEX /proc/config.gz
+> > # CONFIG_DEBUG_MUTEXES is not set
 
-	Ingo
+mauer:~/bin# grep DEBUG_MUTEX /boot/config-2.6.2*
+/boot/config-2.6.22-3-amd64:# CONFIG_DEBUG_MUTEXES is not set
+/boot/config-2.6.24-1-amd64:# CONFIG_DEBUG_MUTEXES is not set
+/boot/config-2.6.25-2-amd64:# CONFIG_DEBUG_MUTEXES is not set
+/boot/config-2.6.26-1-amd64:# CONFIG_DEBUG_MUTEXES is not set
+
+
+Folkert van Heusden
+
+-- 
+Looking for a cheap but fast webhoster with an excellent helpdesk?
+http://keetweej.vanheusden.com/redir.php?id=1001
+----------------------------------------------------------------------
+Phone: +31-6-41278122, PGP-key: 1F28D8AE, www.vanheusden.com

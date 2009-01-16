@@ -1,60 +1,103 @@
-From: Bill Davidsen <davidsen@tmr.com>
-Subject: Re: [GIT PULL] adaptive spinning mutexes
-Date: Fri, 16 Jan 2009 13:37:10 -0500
-Message-ID: <4970D3D6.3040906@tmr.com>
-References: <1231863710.7141.3.camel@twins> <1231864854.7141.8.camel@twins>	 <alpine.LFD.2.00.0901130846320.6528@localhost.localdomain>	 <1231867314.7141.16.camel@twins> <1231952436.14825.28.camel@laptop>	 <20090114183319.GA18630@elte.hu> <20090114184746.GA21334@elte.hu>	 <20090114192811.GA19691@elte.hu> <20090115174440.GF29283@parisc-linux.org>	 <alpine.LFD.2.00.0901150958300.6528@localhost.localdomain>	 <20090115180844.GL22472@elte.hu>	 <alpine.LFD.2.00.0901151015270.6528@localhost.localdomain> <1232047618.8269.93.camel@think.oraclecorp.com>
+From: =?utf-8?b?0KTQuNC70LjQvyDQkdGA0YfQuNGb?= <brcha@gna.org>
+Subject: [PATCH] (semi)revert compat.h to old version
+Date: Fri, 16 Jan 2009 20:06:59 +0100
+Message-ID: <200901162007.28447.brcha@gna.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: linux-kernel@vger.kernel.org
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S936904AbZAPShx@vger.kernel.org>
-In-Reply-To: <1232047618.8269.93.camel@think.oraclecorp.com>
+Content-Type: multipart/signed;
+  boundary="nextPart1757371.NjIspM2akI";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote:
-> On Thu, 2009-01-15 at 10:16 -0800, Linus Torvalds wrote:
->> On Thu, 15 Jan 2009, Ingo Molnar wrote:
->>> btw., i think spin-mutexes have a design advantage here: in a lot of code 
->>> areas it's quite difficult to use spinlocks - cannot allocate memory, 
->>> cannot call any code that can sporadically block (but does not _normally_ 
->>> block), etc.
->>>
->>> With mutexes those atomicity constraints go away - and the performance 
->>> profile should now be quite close to that of spinlocks as well.
->> Umm. Except if you wrote the code nicely and used spinlocks, you wouldn't 
->> hold the lock over all those unnecessary and complex operations.
->>
-> 
-> While this is true, there are examples of places we should expect
-> speedups for this today.
-> 
-> Concurrent file creation/deletion in a single dir will often find things
-> hot in cache and not have to block anywhere (mail spools).
-> 
-And although not as common, NNTP servers using file per article storage.
+--nextPart1757371.NjIspM2akI
+Content-Type: multipart/mixed;
+  boundary="Boundary-01=_erNcJ7tcrl8+R49"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-> Concurrent O_DIRECT aio writes to the same file, where i_mutex is
-> dropped early on.
-> 
-> pipes should see a huge improvement.
-> 
-I'd like to see that. Didn't realize how slow pipes really are.
+--Boundary-01=_erNcJ7tcrl8+R49
+Content-Type: text/plain;
+  charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: inline
 
-> I'll kick off some runs of my three benchmarks on ext3 for comparison.
-> If there are things less synthetic people would like to see, please let
-> me know.
-> 
-> -chris
-> 
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Hi,
+
+Without this patch btrfs doesn't compile on my system. I have Linux 2.6.27.=
+8=20
+on x86_64 compiled with gcc 4.1.2.
+
+This is mostly the old compat.h with one typedef removed (typedef unsigned=
+=20
+__bitwise__ fmode_t;) as it was already defined on my system.
+
+Happy hacking :)
+Brcha
+
+=2D-=20
+=46ilip Br=C4=8Di=C4=87 <brcha@gna.org>
+WWWeb: http://www.brcha.iz.rs
+Jabber: brcha@kdetalk.net
 
 
--- 
-Bill Davidsen <davidsen@tmr.com>
-   "We have more to fear from the bungling of the incompetent than from
-the machinations of the wicked."  - from Slashdot
+
+--Boundary-01=_erNcJ7tcrl8+R49
+Content-Type: text/x-patch;
+  charset="utf-8";
+  name="btrfs-unstable-standalone-compat.patch"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: attachment;
+	filename="btrfs-unstable-standalone-compat.patch"
+
+diff --git a/compat.h b/compat.h
+index 7c4503e..204cda7 100644
+=2D-- a/compat.h
++++ b/compat.h
+@@ -4,4 +4,29 @@
+ #define btrfs_drop_nlink(inode) drop_nlink(inode)
+ #define btrfs_inc_nlink(inode)	inc_nlink(inode)
+=20
++#if LINUX_VERSION_CODE <=3D KERNEL_VERSION(2, 6, 27)
++static inline struct dentry *d_obtain_alias(struct inode *inode)
++{
++	struct dentry *d;
++
++	if (!inode)
++		return NULL;
++	if (IS_ERR(inode))
++		return ERR_CAST(inode);
++
++	d =3D d_alloc_anon(inode);
++	if (!d)
++		iput(inode);
++	return d;
++}
++#endif
++
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 28)
++# define  __pagevec_lru_add_file __pagevec_lru_add
++# define open_bdev_exclusive open_bdev_excl
++# define close_bdev_exclusive(bdev, mode) close_bdev_excl(bdev)
++/* typedef unsigned __bitwise__ fmode_t; */
++#endif
++
++
+ #endif /* _COMPAT_H_ */
+
+--Boundary-01=_erNcJ7tcrl8+R49--
+
+--nextPart1757371.NjIspM2akI
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.9 (GNU/Linux)
+
+iEYEABECAAYFAklw2vAACgkQeugpoxYs6H+NMACgmcO/SsxrKuQlzoR/x6C1WDkG
+AFkAoPevORl4Gsh/aPwo4Wdvpei+1rcX
+=dJtZ
+-----END PGP SIGNATURE-----
+
+--nextPart1757371.NjIspM2akI--

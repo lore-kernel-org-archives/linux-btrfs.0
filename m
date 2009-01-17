@@ -1,55 +1,78 @@
-From: Qinghuang Feng <qhfeng.kernel@gmail.com>
-Subject: [PATCH] Btrfs: fix bug in open_ctree()
-Date: Sat, 17 Jan 2009 23:03:38 +0800
-Message-ID: <4971f34f.011e6e0a.3bb4.ffff8ae9@mx.google.com>
-Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: chris.mason@oracle.com
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1762321AbZAQPEM@vger.kernel.org>
+From: Gabor MICSKO <gabor.micsko@gmail.com>
+Subject: Re: btrfs progs v0.18 (required for 2.6.29-rc2)
+Date: Sat, 17 Jan 2009 15:57:55 +0100
+Message-ID: <1232204275.15761.47.camel@localhost.localdomain>
+References: <1232194721.28343.0.camel@think.oraclecorp.com>
+Mime-Version: 1.0
+Content-Type: text/plain
+Cc: linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1232194721.28343.0.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-a bug in open_ctree:
+On Sat, 2009-01-17 at 07:18 -0500, Chris Mason wrote:
 
-struct btrfs_root *open_ctree(..)
-{
-....
-	if (!extent_root || !tree_root || !fs_info ||
-	    !chunk_root || !dev_root || !csum_root) {
-		err = -ENOMEM;
-		goto fail;
-//When code flow goes to "fail", fs_info may be NULL or uninitialized.
-	}
-....
+> Hello everyone,
 
-fail:
-	btrfs_close_devices(fs_info->fs_devices);// !
-	btrfs_mapping_tree_free(&fs_info->mapping_tree);// !
+hi,
 
-	kfree(extent_root);
-	kfree(tree_root);
-	bdi_destroy(&fs_info->bdi);// !
-...
-)
+> As mentioned in the ioctl update email, I've released btrfs v0.18.  This
+> only includes the ioctl change and none of the patches that I've been
+> queuing up for testing.
 
-Signed-off-by: Qinghuang Feng <qhfeng.kernel@gmail.com>
----
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 81a3138..f860087 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1828,13 +1828,14 @@ fail_sb_buffer:
- fail_iput:
- 	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
- 	iput(fs_info->btree_inode);
--fail:
-+
- 	btrfs_close_devices(fs_info->fs_devices);
- 	btrfs_mapping_tree_free(&fs_info->mapping_tree);
-+	bdi_destroy(&fs_info->bdi);
+With the following patches everything looks good on 2.6.27.
+
+diff --git a/compat.h b/compat.h
+index 7c4503e..74d2e32 100644
+--- a/compat.h
++++ b/compat.h
+@@ -4,4 +4,28 @@
+ #define btrfs_drop_nlink(inode) drop_nlink(inode)
+ #define btrfs_inc_nlink(inode)	inc_nlink(inode)
  
-+fail:
- 	kfree(extent_root);
- 	kfree(tree_root);
--	bdi_destroy(&fs_info->bdi);
- 	kfree(fs_info);
- 	kfree(chunk_root);
- 	kfree(dev_root);
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 27)
++static inline struct dentry *d_obtain_alias(struct inode *inode)
++{
++       struct dentry *d;
++
++       if (!inode)
++               return NULL;
++       if (IS_ERR(inode))
++               return ERR_CAST(inode);
++
++       d = d_alloc_anon(inode);
++       if (!d)
++               iput(inode);
++       return d;
++}
++#endif
++
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 28)
++# define  __pagevec_lru_add_file __pagevec_lru_add
++# define open_bdev_exclusive open_bdev_excl
++# define close_bdev_exclusive(bdev, mode) close_bdev_excl(bdev)
++typedef unsigned __bitwise__ fmode_t;
++#endif
++
+ #endif /* _COMPAT_H_ */
+diff --git a/extent-tree.c b/extent-tree.c
+index 293da65..41fc059 100644
+--- a/extent-tree.c
++++ b/extent-tree.c
+@@ -869,7 +869,11 @@ static noinline int remove_extent_backref(struct
+btrfs_trans_handle *trans,
+ static void btrfs_issue_discard(struct block_device *bdev,
+ 				u64 start, u64 len)
+ {
+-	blkdev_issue_discard(bdev, start >> 9, len >> 9, GFP_KERNEL);
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
++       blkdev_issue_discard(bdev, start >> 9, len >> 9, GFP_KERNEL);
++#else
++       blkdev_issue_discard(bdev, start >> 9, len >> 9);
++#endif
+ }
+ #endif
+ 
+
+

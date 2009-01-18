@@ -1,61 +1,48 @@
-From: Peter Klotz <peter.klotz@aon.at>
-Subject: Misleading error message in btrfsctl
-Date: Sun, 18 Jan 2009 14:40:08 +0100
-Message-ID: <49733138.4010309@aon.at>
+From: Calvin Walton <calvin.walton@gmail.com>
+Subject: Re: Misleading error message in btrfsctl
+Date: Sun, 18 Jan 2009 09:12:30 -0500
+Message-ID: <1232287950.10058.6.camel@trillian>
+References: <49733138.4010309@aon.at>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="------------030305040000070203030000"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain
+Cc: linux-btrfs@vger.kernel.org
+To: Peter Klotz <peter.klotz@aon.at>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <49733138.4010309@aon.at>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multi-part message in MIME format.
---------------030305040000070203030000
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
+On Sun, 2009-01-18 at 14:40 +0100, Peter Klotz wrote:
+> Calling btrfsctl results in this message when module btrfs.ko is not loaded:
+> 
+> root@asus:/root# btrfsctl -A /dev/sda
+> ioctl:: Bad file descriptor
+..
+> The output with applied patch:
+> 
+> root@asus:/root# btrfsctl -A /dev/sda
+> failed to open /dev/btrfs-control
 
-Calling btrfsctl results in this message when module btrfs.ko is not loaded:
+It would probably be better to use perror() instead of fprintf, in order
+to give the actual error message. I often find it useful to know why the
+device failed to open - is it missing, permission issues? I've updated
+the patch:
 
-root@asus:/root# btrfsctl -A /dev/sda
-ioctl:: Bad file descriptor
-
-An strace shows that actually opening of /dev/btrfs-control failed.
-
-open("/dev/btrfs-control", O_RDWR)      = -1 ENOENT (No such file or 
-directory)
-ioctl(4294967295, 0x50009404, 0x7fff11fb76b0) = -1 EBADF (Bad file 
-descriptor)
-
-The attached patch (against btrfsctl 0.18) terminates btrfsctl if 
-/dev/btrfs-control cannot be opened.
-
-The output with applied patch:
-
-root@asus:/root# btrfsctl -A /dev/sda
-failed to open /dev/btrfs-control
-
-Regards, Peter.
-
---------------030305040000070203030000
-Content-Type: text/x-patch;
- name="btrfs-control-open.patch"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline;
- filename="btrfs-control-open.patch"
-
-diff -Nur btrfs-progs-0.18/btrfsctl.c btrfs-progs-0.18.patched/btrfsctl.c
---- btrfs-progs-0.18/btrfsctl.c	2009-01-17 02:08:19.000000000 +0100
-+++ btrfs-progs-0.18.patched/btrfsctl.c	2009-01-18 14:16:25.000000000 +0100
-@@ -189,6 +189,10 @@
+diff --git a/btrfsctl.c b/btrfsctl.c
+index e049799..df1a165 100644
+--- a/btrfsctl.c
++++ b/btrfsctl.c
+@@ -189,6 +189,10 @@ int main(int ac, char **av)
  
  	if (command == BTRFS_IOC_SCAN_DEV) {
  		fd = open("/dev/btrfs-control", O_RDWR);
 +		if (fd < 0) {
-+                	fprintf(stderr, "failed to open /dev/btrfs-control\n");
-+                       exit(1);
-+	        }
++			perror("failed to open /dev/btrfs-control");
++			exit(1);
++		}
  		name = fname;
  	 } else {
  		fd = open_file_or_dir(fname);
 
---------------030305040000070203030000--
+-- 
+Calvin Walton <calvin.walton@gmail.com>
+

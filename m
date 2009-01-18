@@ -1,39 +1,38 @@
-From: Zach Carter <z.carter@f5.com>
-Subject: BUG: btrfsck segfaults on regular file
-Date: Mon, 19 Jan 2009 10:16:34 -0800
-Message-ID: <200901191016.34941.z.carter@f5.com>
+From: Pavel Machek <pavel@suse.cz>
+Subject: Re: Warning and BUG with btrfs and corrupted image
+Date: Sun, 18 Jan 2009 18:40:35 +0100
+Message-ID: <20090118174035.GG1944@ucw.cz>
+References: <20090113142147.GE16333@alice> <1231857643.29164.28.camel@think.oraclecorp.com> <20090113144307.GF16333@alice>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>, linux-kernel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+To: Eric Sesterhenn <snakebyte@gmx.de>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758066AbZASTNv@vger.kernel.org>
+In-Reply-To: <20090113144307.GF16333@alice>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We should probably just get an informative error message here, not a segfault.
+On Tue 2009-01-13 15:43:07, Eric Sesterhenn wrote:
+> * Chris Mason (chris.mason@oracle.com) wrote:
+> > On Tue, 2009-01-13 at 15:21 +0100, Eric Sesterhenn wrote:
+> > > Hi,
+> > > 
+> > > when mounting an intentionally corrupted btrfs filesystem i get the
+> > > following warning and bug message. The image can be found here
+> > > www.cccmz.de/~snakebyte/btrfs.2.img.bck.bz2
+> > 
+> > Thanks for looking at things
+> > 
+> > Aside from catching checksumming errors, we're not quite ready for
+> > fuzzer style attacks.  The code will be hardened for this but it isn't
+> > yet.
+> 
+> Does this mean i should stop trying to break it for now or are you interested
+> in further reports?
 
-Also, I got the same segfault when running "btrfsck -h" (it was looking for a 
-file named "-h".  I'd be happy to contribute a getopts patch, if that is 
-desired.
-
--Zach
-
-[zcarter@nudj btrfs-progs-unstable]$ touch foo
-[zcarter@nudj btrfs-progs-unstable]$ ./btrfsck ./foo
-No valid Btrfs found on ./foo
-Segmentation fault
-[zcarter@nudj btrfs-progs-unstable]$ gdb ./btrfsck
-GNU gdb Fedora (6.8-29.fc10)
-Copyright (C) 2008 Free Software Foundation, Inc.
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
-This is free software: you are free to change and redistribute it.
-There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
-and "show warranty" for details.
-This GDB was configured as "x86_64-redhat-linux-gnu"...
-(gdb) run ./foo
-Starting program: /opt/src/btrfs-progs-unstable/btrfsck ./foo
-No valid Btrfs found on ./foo
-
-Program received signal SIGSEGV, Segmentation fault.
-check_extents (root=0x0) at btrfsck.c:2006
-2006		add_root_to_pending(root->fs_info->tree_root->node, bits, bits_nr,
-(gdb) 
-
+Does ext2/3 and vfat survive that kind of attacks? Those are 'in
+production' and should survive it...
+									Pavel
+-- 
+(english) http://www.livejournal.com/~pavelmachek
+(cesky, pictures) http://atrey.karlin.mff.cuni.cz/~pavel/picture/horses/blog.html

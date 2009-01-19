@@ -1,47 +1,69 @@
 From: =?utf-8?Q?Am=C3=A9rico?= Wang <xiyou.wangcong@gmail.com>
-Subject: [Patch] btrfs: cleanup fs/btrfs/super.c::btrfs_control_ioctl()
-Date: Mon, 19 Jan 2009 21:36:31 +0800
-Message-ID: <20090119133631.GA7863@hack.private>
+Subject: [Patch] version.sh: clean up the code
+Date: Mon, 19 Jan 2009 21:51:05 +0800
+Message-ID: <20090119135105.GB7863@hack.private>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>,
-	LKML <linux-kernel@vger.kernel.org>,
-	Andrew Morton <akpm@osdl.org>
+Cc: Chris Mason <chris.mason@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-- Remove the unused local variable 'len';
-- Check return value of kmalloc().
+- In bash, integer comparation should use '-eq', not '=='.
+- Remove code for Mercurial, since btrfs now uses git.
 
 Signed-off-by: WANG Cong <wangcong@zeuux.org>
-Cc: Chris Mason <chris.mason@oracle.com>
 
 ---
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index db9fb3b..0e9d259 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -583,17 +583,18 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
- 	struct btrfs_ioctl_vol_args *vol;
- 	struct btrfs_fs_devices *fs_devices;
- 	int ret = -ENOTTY;
--	int len;
+diff --git a/version.sh b/version.sh
+index 92c3953..e69f8f8 100644
+--- a/version.sh
++++ b/version.sh
+@@ -9,7 +9,7 @@
+ v="Btrfs v0.17"
  
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
+ which git &> /dev/null
+-if [ $? == 0 -a -d .git ]; then
++if [ $? -eq 0 -a -d .git ]; then
+     if head=`git rev-parse --verify HEAD 2>/dev/null`; then
+         if tag=`git describe --tags 2>/dev/null`; then
+             v="$tag"
+@@ -23,26 +23,6 @@ if [ $? == 0 -a -d .git ]; then
+         fi
+     fi
+ fi
+-
+-which hg &> /dev/null
+-if [ $? == 0 -a -d .hg ]; then
+-	last=$(hg tags | grep -m1 -o '^v[0-9.]\+')
+-	 
+-	# now check if the repo has commits since then...
+-	if [[ $(hg id -t) == $last || \
+-	    $(hg di -r "$last:." | awk '/^diff/{print $NF}' | sort -u) == .hgtags ]]
+-	then
+-	    # check if it's dirty
+-	    if [[ $(hg id | cut -d' ' -f1) == *+ ]]; then
+-		v=$last+
+-	    else
+-		v=$last
+-	    fi
+-	else
+-	    # includes dirty flag
+-	    v=$last+$(hg id -i)
+-	fi
+-fi
+  
+ echo "#ifndef __BUILD_VERSION" > .build-version.h
+ echo "#define __BUILD_VERSION" >> .build-version.h
+@@ -51,7 +31,7 @@ echo "#endif" >> .build-version.h
  
- 	vol = kmalloc(sizeof(*vol), GFP_KERNEL);
-+	if (!vol)
-+		return -ENOMEM;
-+
- 	if (copy_from_user(vol, (void __user *)arg, sizeof(*vol))) {
- 		ret = -EFAULT;
- 		goto out;
- 	}
--	len = strnlen(vol->name, BTRFS_PATH_NAME_MAX);
+ diff -q version.h .build-version.h >& /dev/null
  
- 	switch (cmd) {
- 	case BTRFS_IOC_SCAN_DEV:
+-if [ $? == 0 ]; then
++if [ $? -eq 0 ]; then
+     rm .build-version.h
+     exit 0
+ fi
+
 

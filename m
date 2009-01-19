@@ -1,69 +1,44 @@
 From: =?utf-8?Q?Am=C3=A9rico?= Wang <xiyou.wangcong@gmail.com>
-Subject: [Patch] version.sh: clean up the code
-Date: Mon, 19 Jan 2009 21:51:05 +0800
-Message-ID: <20090119135105.GB7863@hack.private>
+Subject: [Patch] bit-radix.c: fix declarations
+Date: Mon, 19 Jan 2009 22:19:21 +0800
+Message-ID: <20090119141921.GA8507@hack.private>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-- In bash, integer comparation should use '-eq', not '=='.
-- Remove code for Mercurial, since btrfs now uses git.
+bit-radix.c should #include "bit-radix.h", and add a missing declaration
+for find_next_bit().
 
 Signed-off-by: WANG Cong <wangcong@zeuux.org>
 
 ---
-diff --git a/version.sh b/version.sh
-index 92c3953..e69f8f8 100644
---- a/version.sh
-+++ b/version.sh
-@@ -9,7 +9,7 @@
- v="Btrfs v0.17"
+diff --git a/bit-radix.c b/bit-radix.c
+index 57f6f3c..01bf4af 100644
+--- a/bit-radix.c
++++ b/bit-radix.c
+@@ -17,7 +17,7 @@
+  */
  
- which git &> /dev/null
--if [ $? == 0 -a -d .git ]; then
-+if [ $? -eq 0 -a -d .git ]; then
-     if head=`git rev-parse --verify HEAD 2>/dev/null`; then
-         if tag=`git describe --tags 2>/dev/null`; then
-             v="$tag"
-@@ -23,26 +23,6 @@ if [ $? == 0 -a -d .git ]; then
-         fi
-     fi
- fi
--
--which hg &> /dev/null
--if [ $? == 0 -a -d .hg ]; then
--	last=$(hg tags | grep -m1 -o '^v[0-9.]\+')
--	 
--	# now check if the repo has commits since then...
--	if [[ $(hg id -t) == $last || \
--	    $(hg di -r "$last:." | awk '/^diff/{print $NF}' | sort -u) == .hgtags ]]
--	then
--	    # check if it's dirty
--	    if [[ $(hg id | cut -d' ' -f1) == *+ ]]; then
--		v=$last+
--	    else
--		v=$last
--	    fi
--	else
--	    # includes dirty flag
--	    v=$last+$(hg id -i)
--	fi
--fi
-  
- echo "#ifndef __BUILD_VERSION" > .build-version.h
- echo "#define __BUILD_VERSION" >> .build-version.h
-@@ -51,7 +31,7 @@ echo "#endif" >> .build-version.h
+ #include "kerncompat.h"
+-#include "radix-tree.h"
++#include "bit-radix.h"
  
- diff -q version.h .build-version.h >& /dev/null
+ #define BIT_ARRAY_BYTES 256
+ #define BIT_RADIX_BITS_PER_ARRAY ((BIT_ARRAY_BYTES - sizeof(unsigned long)) * 8)
+diff --git a/bit-radix.h b/bit-radix.h
+index af14e80..ff82c9c 100644
+--- a/bit-radix.h
++++ b/bit-radix.h
+@@ -23,6 +23,8 @@
+ int set_radix_bit(struct radix_tree_root *radix, unsigned long bit);
+ int test_radix_bit(struct radix_tree_root *radix, unsigned long bit);
+ int clear_radix_bit(struct radix_tree_root *radix, unsigned long bit);
++unsigned long find_next_bit(const unsigned long *addr, unsigned long size,
++                unsigned long offset);
+ int find_first_radix_bit(struct radix_tree_root *radix, unsigned long *retbits,
+ 			 unsigned long start, int nr);
  
--if [ $? == 0 ]; then
-+if [ $? -eq 0 ]; then
-     rm .build-version.h
-     exit 0
- fi
-
 

@@ -1,69 +1,64 @@
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Subject: Re: gcc inlining heuristics was Re: [PATCH -v7][RFC]: mutex: implement
- adaptive spinning
-Date: Wed, 21 Jan 2009 08:23:36 +1100 (EST)
-Message-ID: <alpine.LFD.2.00.0901210814130.2892@localhost.localdomain>
-References: <alpine.LFD.2.00.0901121034170.6528@localhost.localdomain> <20090112193201.GA23848@one.firstfloor.org> <alpine.LFD.2.00.0901121128080.6528@localhost.localdomain> <496BBE27.2020206@t-online.de> <20090119001345.GA9880@elte.hu> <20090119062212.GC22584@wotan.suse.de>
- <alpine.LFD.2.00.0901200754100.2974@localhost.localdomain> <20090120005124.GD16304@wotan.suse.de> <20090120123824.GD7790@elte.hu> <1232480940.22233.1435.camel@macbook.infradead.org> <20090120210515.GC19710@elte.hu>
+From: ashford@whisperpc.com
+Subject: [Discussion] Extent Block Group allocations
+Date: Tue, 20 Jan 2009 12:54:33 -0800 (PST)
+Message-ID: <52232.75.80.183.92.1232484873.squirrel@www.whisperpc.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: David Woodhouse <dwmw2@infradead.org>,
-	Nick Piggin <npiggin@suse.de>,
-	Bernd Schmidt <bernds_cb1@t-online.de>,
-	Andi Kleen <andi@firstfloor.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Harvey Harrison <harvey.harrison@gmail.com>,
-	"H. Peter Anvin" <hpa@zytor.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Peter Zijlstra <peterz@infradead.org>,
-	Steven Rostedt <rostedt@goodmis.org>,
-	paulmck@linux.vnet.ibm.com, Gregory Haskins <ghaskins@novell.com>,
-	Matthew Wilcox <matthew@wil.cx>,
-	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Peter Morreale <pmorreale@novell.com>,
-	Sven Dietrich <SDietrich@novell.com>, jh@suse.cz
-To: Ingo Molnar <mingo@elte.hu>
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090120210515.GC19710@elte.hu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi all,
 
+I searched the archives, and didn't find any answers to my questions, so I
+think it's time to ask.
 
-On Tue, 20 Jan 2009, Ingo Molnar wrote:
-> 
-> (Different-type pointer uses are a common pattern: we have a lot of places 
-> where we have pointers to structures with different types so 
-> strict-aliasing optimization opportunities apply quite broadly already.)
+From:  http://btrfs.wiki.kernel.org/index.php/Btrfs_design#Extent_Block_Groups
 
-Yes and no.
+        Block groups have a flag that indicate if they are preferred for data
+        or metadata allocations, and at mkfs time the disk is broken up into
+        alternating metadata (33% of the disk) and data groups (66% of the
+        disk). As the disk fills, a group's preference may change back and
+        forth, but Btrfs always tries to avoid intermixing data and metadata
+        extents in the same group. This substantially improves fsck throughput,
+        and reduces seeks during writeback while the FS is mounted. It does
+        slightly increase the seeks while reading.
 
-It's true that the kernel in general uses mostly pointers through 
-structures that can help the type-based thing.
+Based on this, it appears that there is a semi-fixed allocation of 33% of the
+disk to metadata, but that this allocation can change dynamically as the disk
+fills.  It would appear that if the metadata approaches/exceeds its
+allocation, a data group will be reallocated to it, and the same with the data
+(an extent group would be reallocated).
 
-However, the most common and important cases are actually the very same 
-structures. In particular, things like <linux/list.h>. Same "struct list", 
-often embedded into another case of the same struct.
+At the present, there is only one logical device per file-system (single,
+RAID-0, RAID-1 or RAID-10 - each is one logical device).  Based on the
+documentation, there appears to be an intent to support RAID-6 (and optionally
+RAID-5 - I believe this would be good) as logical devices.
 
-And that's where "restrict" can actually help. It might be interesting to 
-see, for example, if it makes any difference to add a "restrict" qualifier 
-to the "new" pointer in __list_add(). That might give the compiler the 
-ability to schedule the stores to next->prev and prev->next differently, 
-and maybe it could matter? 
+>From what I see in the Multiple Device Support page
+(http://btrfs.wiki.kernel.org/index.php/Multiple_Device_Support), it appears
+that the intent in the future is to allow a BTRFS file-system to reside on
+multiple logical devices.  This is the starting point for my questions.
 
-It probably is not noticeable. The big reason for wanting to do alias 
-analysis tends to not be thatt kind of code at all, but the cases where 
-you can do much bigger simplifications, or on in-order machines where you 
-really want to hoist things like FP loads early and FP stores late, and 
-alias analysis (and here type-based is more reasonable) shows that the FP 
-accesses cannot alias with the integer accesses around it.
+In an installation where a large number of physical devices are available for
+use (something like a Sun Thumper - 48 total disks, or a server connected to a
+SAN), the optimum configuration might be to dedicate certain logical devices
+(small/fast disks in RAID-1) to metadata, and other devices (large/slow disks
+in RAID-5 or RAID-6) to data.  To perform this, the metadata allocation
+percentage would need to be tunable (0% for data-only and 100% for
+metadata-only), and it would have to be able to be locked, so that the block
+group reallocation between metadata and data would be disabled (another option
+might be to allow metadata to reallocate data block groups, but not the other
+way around).
 
-In x86, I doubt _any_ amount of alias analysis makes a hug difference (as 
-long as the compiler at least doesn't think that local variable spills can 
-alias with anything else). Not enough registers, and generally pretty 
-aggressively OoO (with alias analysis in hardware) makes for a much less 
-sensitive platform.
+I believe that a configuration like this would be more flexible than having
+the metadata block groups interleaved with the data block groups.  I also
+believe that this should be able to provide better overall response and
+throughput on a large multi-user server.
 
-			Linus
+Is something like this intended to be possible?
+
+Thank you.
+
+Peter Ashford
+

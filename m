@@ -1,11 +1,11 @@
-From: Nick Piggin <npiggin@suse.de>
+From: Andi Kleen <andi@firstfloor.org>
 Subject: Re: gcc inlining heuristics was Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
-Date: Tue, 20 Jan 2009 01:51:24 +0100
-Message-ID: <20090120005124.GD16304@wotan.suse.de>
+Date: Tue, 20 Jan 2009 05:20:48 +0100
+Message-ID: <20090120042048.GA15750@one.firstfloor.org>
 References: <alpine.LFD.2.00.0901111619400.6528@localhost.localdomain> <20090112005228.GS26290@one.firstfloor.org> <496B86B5.3090707@t-online.de> <alpine.LFD.2.00.0901121034170.6528@localhost.localdomain> <20090112193201.GA23848@one.firstfloor.org> <alpine.LFD.2.00.0901121128080.6528@localhost.localdomain> <496BBE27.2020206@t-online.de> <20090119001345.GA9880@elte.hu> <20090119062212.GC22584@wotan.suse.de> <alpine.LFD.2.00.0901200754100.2974@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Ingo Molnar <mingo@elte.hu>,
+Cc: Nick Piggin <npiggin@suse.de>, Ingo Molnar <mingo@elte.hu>,
 	Bernd Schmidt <bernds_cb1@t-online.de>,
 	Andi Kleen <andi@firstfloor.org>,
 	David Woodhouse <dwmw2@infradead.org>,
@@ -28,41 +28,33 @@ Return-path: <linux-fsdevel-owner@vger.kernel.org>
 In-Reply-To: <alpine.LFD.2.00.0901200754100.2974@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 20, 2009 at 08:01:52AM +1100, Linus Torvalds wrote:
-> 
-> 
-> On Mon, 19 Jan 2009, Nick Piggin wrote:
-> > 
-> > I want to know what is the problem with the restrict keyword?
-> > I'm sure I've read Linus ranting about how bad it is in the
-> > past...
-> 
-> No, I don't think I've ranted about 'restrict'. I think it's a reasonable 
-> solution for performance-critical code, and unlike the whole type-aliasing 
-> model, it actually works for the _sane_ cases (ie doing some operation 
-> over two arrays of the same type, and letting the compiler know that it 
-> can access the arrays without fearing that writing to one would affect 
-> reading from the other).
-> 
 > The problem with 'restrict' is that almost nobody uses it, and it does 
-> obviously require programmer input rather than the compiler doing it 
+
+Also gcc traditionally didn't do a very good job using it (this
+might be better in the very latest versions). At least some of the 3.x
+often discarded this information. 
+
 > automatically. But it should work well as a way to get Fortran-like 
 > performance from HPC workloads written in C - which is where most of the 
 > people are who really want the alias analysis.
 
-OK, that makes sense. I just had a vague feeling that you disliked
-it.
+It's more than just HPC  -- a lot of code has critical loops.
 
- 
 > > it seems like a nice opt-in thing that can be used where the aliases are 
 > > verified and the code is particularly performance critical...
 > 
 > Yes. I think we could use it in the kernel, although I'm not sure how many 
 > cases we would ever find where we really care. 
 
-Yeah, we don't tend to do a lot of intensive data processing, so it is
-normally the cache misses that hurt most as you noted earlier.
+Very little I suspect. Also the optimizations that gcc does with this
+often increase the code size. While that can be a win, with people
+judging gcc's output apparently *ONLY* on the code size as seen
+in this thread[1] it would obviously not compete well.
 
-Some places it might be appropriate, though. It might be nice if it can
-bring code size down too...
+-Andi 
 
+[1] although there are compilers around that generate smaller code
+than gcc at its best.
+
+-- 
+ak@linux.intel.com -- Speaking for myself only.

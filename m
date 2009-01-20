@@ -1,13 +1,14 @@
-From: Ingo Molnar <mingo@elte.hu>
-Subject: Re: gcc inlining heuristics was Re: [PATCH -v7][RFC]: mutex:
-	implement adaptive spinning
-Date: Tue, 20 Jan 2009 22:05:15 +0100
-Message-ID: <20090120210515.GC19710@elte.hu>
-References: <alpine.LFD.2.00.0901121034170.6528@localhost.localdomain> <20090112193201.GA23848@one.firstfloor.org> <alpine.LFD.2.00.0901121128080.6528@localhost.localdomain> <496BBE27.2020206@t-online.de> <20090119001345.GA9880@elte.hu> <20090119062212.GC22584@wotan.suse.de> <alpine.LFD.2.00.0901200754100.2974@localhost.localdomain> <20090120005124.GD16304@wotan.suse.de> <20090120123824.GD7790@elte.hu> <1232480940.22233.1435.camel@macbook.infradead.org>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Subject: Re: gcc inlining heuristics was Re: [PATCH -v7][RFC]: mutex: implement
+ adaptive spinning
+Date: Wed, 21 Jan 2009 08:23:36 +1100 (EST)
+Message-ID: <alpine.LFD.2.00.0901210814130.2892@localhost.localdomain>
+References: <alpine.LFD.2.00.0901121034170.6528@localhost.localdomain> <20090112193201.GA23848@one.firstfloor.org> <alpine.LFD.2.00.0901121128080.6528@localhost.localdomain> <496BBE27.2020206@t-online.de> <20090119001345.GA9880@elte.hu> <20090119062212.GC22584@wotan.suse.de>
+ <alpine.LFD.2.00.0901200754100.2974@localhost.localdomain> <20090120005124.GD16304@wotan.suse.de> <20090120123824.GD7790@elte.hu> <1232480940.22233.1435.camel@macbook.infradead.org> <20090120210515.GC19710@elte.hu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Nick Piggin <npiggin@suse.de>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: David Woodhouse <dwmw2@infradead.org>,
+	Nick Piggin <npiggin@suse.de>,
 	Bernd Schmidt <bernds_cb1@t-online.de>,
 	Andi Kleen <andi@firstfloor.org>,
 	Andrew Morton <akpm@linux-foundation.org>,
@@ -24,44 +25,45 @@ Cc: Nick Piggin <npiggin@suse.de>,
 	Thomas Gleixner <tglx@linutronix.de>,
 	Peter Morreale <pmorreale@novell.com>,
 	Sven Dietrich <SDietrich@novell.com>, jh@suse.cz
-To: David Woodhouse <dwmw2@infradead.org>
+To: Ingo Molnar <mingo@elte.hu>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1232480940.22233.1435.camel@macbook.infradead.org>
+In-Reply-To: <20090120210515.GC19710@elte.hu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-* David Woodhouse <dwmw2@infradead.org> wrote:
 
-> On Tue, 2009-01-20 at 13:38 +0100, Ingo Molnar wrote:
-> > 
-> > * Nick Piggin <npiggin@suse.de> wrote:
-> > 
-> > > > > it seems like a nice opt-in thing that can be used where the aliases 
-> > > > > are verified and the code is particularly performance critical...
-> > > > 
-> > > > Yes. I think we could use it in the kernel, although I'm not sure how 
-> > > > many cases we would ever find where we really care.
-> > > 
-> > > Yeah, we don't tend to do a lot of intensive data processing, so it is 
-> > > normally the cache misses that hurt most as you noted earlier.
-> > > 
-> > > Some places it might be appropriate, though. It might be nice if it can 
-> > > bring code size down too...
-> > 
-> > I checked, its size effects were miniscule [0.17%] on the x86 defconfig 
-> > kernel and it seems to be a clear loss in total cost as there would be an 
-> > ongoing maintenance cost
+On Tue, 20 Jan 2009, Ingo Molnar wrote:
 > 
-> They were talking about 'restrict', not strict-aliasing. Where it can be 
-> used, it's going to give you optimisations that strict-aliasing can't.
+> (Different-type pointer uses are a common pattern: we have a lot of places 
+> where we have pointers to structures with different types so 
+> strict-aliasing optimization opportunities apply quite broadly already.)
 
-the two are obviously related (just that the 'restrict' keyword can be 
-used for same-type pointers so it gives even broader leeway) so i used the 
-0.17% figure i already had to give a ballpark figure about what such type 
-of optimizations can bring us in general.
+Yes and no.
 
-(Different-type pointer uses are a common pattern: we have a lot of places 
-where we have pointers to structures with different types so 
-strict-aliasing optimization opportunities apply quite broadly already.)
+It's true that the kernel in general uses mostly pointers through 
+structures that can help the type-based thing.
 
-	Ingo
+However, the most common and important cases are actually the very same 
+structures. In particular, things like <linux/list.h>. Same "struct list", 
+often embedded into another case of the same struct.
+
+And that's where "restrict" can actually help. It might be interesting to 
+see, for example, if it makes any difference to add a "restrict" qualifier 
+to the "new" pointer in __list_add(). That might give the compiler the 
+ability to schedule the stores to next->prev and prev->next differently, 
+and maybe it could matter? 
+
+It probably is not noticeable. The big reason for wanting to do alias 
+analysis tends to not be thatt kind of code at all, but the cases where 
+you can do much bigger simplifications, or on in-order machines where you 
+really want to hoist things like FP loads early and FP stores late, and 
+alias analysis (and here type-based is more reasonable) shows that the FP 
+accesses cannot alias with the integer accesses around it.
+
+In x86, I doubt _any_ amount of alias analysis makes a hug difference (as 
+long as the compiler at least doesn't think that local variable spills can 
+alias with anything else). Not enough registers, and generally pretty 
+aggressively OoO (with alias analysis in hardware) makes for a much less 
+sensitive platform.
+
+			Linus

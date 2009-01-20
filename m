@@ -1,25 +1,38 @@
-From: Christoph Hellwig <hch@infradead.org>
-Subject: Re: Warning and BUG with btrfs and corrupted image
-Date: Tue, 20 Jan 2009 08:28:29 -0500
-Message-ID: <20090120132829.GA27429@infradead.org>
-References: <20090113142147.GE16333@alice> <1231857643.29164.28.camel@think.oraclecorp.com> <20090113144307.GF16333@alice> <20090118174035.GG1944@ucw.cz> <20090120063150.GC5854@alice> <20090120101119.GB10158@disturbed> <20090120101503.GC17377@alice> <20090120125944.GC10158@disturbed>
+From: Dmitri Nikulin <dnikulin@gmail.com>
+Subject: Re: btrfs and swap files on SSD's ?
+Date: Wed, 21 Jan 2009 00:51:22 +1100
+Message-ID: <3a7f57190901200551s7e9ee262mc3720b5b1452b8dc@mail.gmail.com>
+References: <200901171110.22803.chris@csamuel.org>
+	 <1232382162.6521.108.camel@think.oraclecorp.com>
+	 <4975AA6C.8@schleiser.de>
+	 <1232456536.15042.0.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Eric Sesterhenn <snakebyte@gmx.de>, Pavel Machek <pavel@suse.cz>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+To: Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090120125944.GC10158@disturbed>
+In-Reply-To: <1232456536.15042.0.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 20, 2009 at 11:59:44PM +1100, Dave Chinner wrote:
-> > So far the responses from xfs folks have been disappointing, if you are
-> > interested in bugreports i can send you some.
-> 
-> Sure I am.  It would be good if you could start testing XFS along
-> with all the other filesystems and report anything you find.
+On Wed, Jan 21, 2009 at 12:02 AM, Chris Mason <chris.mason@oracle.com> wrote:
+> There are patches to support swap over NFS that might make it safe to
+> use on btrfs. At any rate, it is a fixable problem.
 
-I think that was the issue with the debug builds.  If you do this
-testing always do it without CONFIG_XFS_DEBUG set as with that option
-we intentionally panic on detected disk corruptions.
+FreeBSD has been able to run swap over NFS for as long as I can
+remember, what is different in Linux that makes it especially
+difficult?
 
+I've read that swap over non-trivial filesystems is hazardous as it
+may lead to a situation in which memory allocation can fail in the
+swap/FS code that was meant to make allocation possible again.
+
+If btrfs is to take the role of a RAID and volume manager, it would
+certainly be very useful to be able to run swap on it, since that
+frees up other volumes from an administrative standpoint.
+
+-- 
+Dmitri Nikulin
+
+Centre for Synchrotron Science
+Monash University
+Victoria 3800, Australia

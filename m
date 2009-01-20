@@ -1,122 +1,49 @@
-From: Ingo Molnar <mingo@elte.hu>
-Subject: Re: gcc inlining heuristics was Re: [PATCH -v7][RFC]: mutex:
-	implement adaptive spinning
-Date: Tue, 20 Jan 2009 23:05:16 +0100
-Message-ID: <20090120220516.GA10483@elte.hu>
-References: <alpine.LFD.2.00.0901121128080.6528@localhost.localdomain> <496BBE27.2020206@t-online.de> <20090119001345.GA9880@elte.hu> <20090119062212.GC22584@wotan.suse.de> <alpine.LFD.2.00.0901200754100.2974@localhost.localdomain> <20090120005124.GD16304@wotan.suse.de> <20090120123824.GD7790@elte.hu> <1232480940.22233.1435.camel@macbook.infradead.org> <20090120210515.GC19710@elte.hu> <alpine.LFD.2.00.0901210814130.2892@localhost.localdomain>
+From: Pavel Machek <pavel@suse.cz>
+Subject: Re: Warning and BUG with btrfs and corrupted image
+Date: Tue, 20 Jan 2009 23:18:08 +0100
+Message-ID: <20090120221808.GA2320@elf.ucw.cz>
+References: <20090113142147.GE16333@alice> <1231857643.29164.28.camel@think.oraclecorp.com> <20090113144307.GF16333@alice> <20090118174035.GG1944@ucw.cz> <20090120063150.GC5854@alice> <20090120101119.GB10158@disturbed> <20090120101503.GC17377@alice> <20090120125944.GC10158@disturbed> <20090120173455.GC21339@alice>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: David Woodhouse <dwmw2@infradead.org>,
-	Nick Piggin <npiggin@suse.de>,
-	Bernd Schmidt <bernds_cb1@t-online.de>,
-	Andi Kleen <andi@firstfloor.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Harvey Harrison <harvey.harrison@gmail.com>,
-	"H. Peter Anvin" <hpa@zytor.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Peter Zijlstra <peterz@infradead.org>,
-	Steven Rostedt <rostedt@goodmis.org>,
-	paulmck@linux.vnet.ibm.com, Gregory Haskins <ghaskins@novell.com>,
-	Matthew Wilcox <matthew@wil.cx>,
-	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Peter Morreale <pmorreale@novell.com>,
-	Sven Dietrich <SDietrich@novell.com>, jh@suse.cz
-To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Chris Mason <chris.mason@oracle.com>, linux-kernel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+To: Eric Sesterhenn <snakebyte@gmx.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <alpine.LFD.2.00.0901210814130.2892@localhost.localdomain>
+In-Reply-To: <20090120173455.GC21339@alice>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-* Linus Torvalds <torvalds@linux-foundation.org> wrote:
-
-> On Tue, 20 Jan 2009, Ingo Molnar wrote:
+On Tue 2009-01-20 18:34:55, Eric Sesterhenn wrote:
+> * Dave Chinner (david@fromorbit.com) wrote:
+> > On Tue, Jan 20, 2009 at 11:15:03AM +0100, Eric Sesterhenn wrote:
+> > > * Dave Chinner (david@fromorbit.com) wrote:
+> > > > On Tue, Jan 20, 2009 at 07:31:50AM +0100, Eric Sesterhenn wrote:
+> > > > > * Pavel Machek (pavel@suse.cz) wrote:
+> > > > > > Does ext2/3 and vfat survive that kind of attacks? Those are 'in
+> > > > > > production' and should survive it...
+> > > > > 
+> > > > > I regularly (once or twice a week) test 100 corrupted images of 
+> > > > > vfat, udf, msdos, swap, iso9660, ext2, ext3, ext4, minix, bfs, befs,
+> > > > > hfs, hfs+, qnx4, affs and cramfs on each of my two test machines.
+> > > > 
+> > > > Any reason you are not testing XFS in that set?
+> > > 
+> > > So far the responses from xfs folks have been disappointing, if you are
+> > > interested in bugreports i can send you some.
 > > 
-> > (Different-type pointer uses are a common pattern: we have a lot of 
-> > places where we have pointers to structures with different types so 
-> > strict-aliasing optimization opportunities apply quite broadly 
-> > already.)
+> > Sure I am.  It would be good if you could start testing XFS along
+> > with all the other filesystems and report anything you find.
 > 
-> Yes and no.
+> Ok, i wont report stuff with only xfs-internal backtraces from
+> xfs_error_report() or are they interesting to you?
 > 
-> It's true that the kernel in general uses mostly pointers through 
-> structures that can help the type-based thing.
-> 
-> However, the most common and important cases are actually the very same 
-> structures. In particular, things like <linux/list.h>. Same "struct 
-> list", often embedded into another case of the same struct.
-> 
-> And that's where "restrict" can actually help. It might be interesting 
-> to see, for example, if it makes any difference to add a "restrict" 
-> qualifier to the "new" pointer in __list_add(). That might give the 
-> compiler the ability to schedule the stores to next->prev and prev->next 
-> differently, and maybe it could matter?
-> 
-> It probably is not noticeable. The big reason for wanting to do alias 
-> analysis tends to not be thatt kind of code at all, but the cases where 
-> you can do much bigger simplifications, or on in-order machines where 
-> you really want to hoist things like FP loads early and FP stores late, 
-> and alias analysis (and here type-based is more reasonable) shows that 
-> the FP accesses cannot alias with the integer accesses around it.
+> This occurs during mount, box is dead afterwards
+> Image can be found here :
+> http://www.cccmz.de/~snakebyte/xfs.11.img.bz2
+> I see this every ~10 images, which makes further testing hard :)
 
-Hm, GCC uses __restrict__, right?
-
-The patch below makes no difference at all on an x86 defconfig:
-
-  vmlinux:
-     text	   data	    bss	    dec	    hex	filename
-  7253544	1641812	1324296	10219652	 9bf084	vmlinux.before
-  7253544	1641812	1324296	10219652	 9bf084	vmlinux.after
-
-not a single instruction was changed:
-
- --- vmlinux.before.asm
- +++ vmlinux.after.asm
- @@ -1,5 +1,5 @@
- 
- -vmlinux.before:     file format elf64-x86-64
- +vmlinux.after:     file format elf64-x86-64
-
-I'm wondering whether there's any internal tie-up between alias analysis 
-and the __restrict__ keyword - so if we turn off aliasing optimizations 
-the __restrict__ keyword's optimizations are turned off as well.
-
-Nope, with aliasing optimizations turned back on there's still no change 
-on the x86 defconfig:
-
-     text	   data	    bss	    dec	    hex	filename
-  7240893	1641796	1324296	10206985	 9bbf09	vmlinux.before
-  7240893	1641796	1324296	10206985	 9bbf09	vmlinux.after
-
-GCC 4.3.2. Maybe i missed something obvious?
-
-	Ingo
-
----
- include/linux/list.h |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-Index: linux/include/linux/list.h
-===================================================================
---- linux.orig/include/linux/list.h
-+++ linux/include/linux/list.h
-@@ -38,7 +38,7 @@ static inline void INIT_LIST_HEAD(struct
-  * the prev/next entries already!
-  */
- #ifndef CONFIG_DEBUG_LIST
--static inline void __list_add(struct list_head *new,
-+static inline void __list_add(struct list_head * __restrict__ new,
- 			      struct list_head *prev,
- 			      struct list_head *next)
- {
-@@ -48,7 +48,7 @@ static inline void __list_add(struct lis
- 	prev->next = new;
- }
- #else
--extern void __list_add(struct list_head *new,
-+extern void __list_add(struct list_head * __restrict__ new,
- 			      struct list_head *prev,
- 			      struct list_head *next);
- #endif
+BTW have you considered trying to run fsck.* on such images? I had lot
+of fun with e2fsck/e3fsck/fsck.vfat.
+									Pavel
+-- 
+(english) http://www.livejournal.com/~pavelmachek
+(cesky, pictures) http://atrey.karlin.mff.cuni.cz/~pavel/picture/horses/blog.html

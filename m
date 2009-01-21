@@ -1,50 +1,69 @@
-From: "H. Peter Anvin" <hpa@zytor.com>
-Subject: Re: gcc inlining heuristics was Re: [PATCH -v7][RFC]: mutex:	implement
- adaptive spinning
-Date: Tue, 20 Jan 2009 17:22:20 -0800
-Message-ID: <497678CC.5060703@zytor.com>
-References: <alpine.LFD.2.00.0901121128080.6528@localhost.localdomain> <496BBE27.2020206@t-online.de> <20090119001345.GA9880@elte.hu> <20090119062212.GC22584@wotan.suse.de> <alpine.LFD.2.00.0901200754100.2974@localhost.localdomain> <20090120005124.GD16304@wotan.suse.de> <20090120123824.GD7790@elte.hu> <1232480940.22233.1435.camel@macbook.infradead.org> <20090120210515.GC19710@elte.hu> <alpine.LFD.2.00.0901210814130.2892@localhost.localdomain> <20090120220516.GA10483@elte.hu>
+From: Shen Feng <shen@cn.fujitsu.com>
+Subject: Re: BUG: btrfsck segfaults on regular file
+Date: Wed, 21 Jan 2009 10:10:37 +0800
+Message-ID: <4976841D.7010107@cn.fujitsu.com>
+References: <200901191016.34941.z.carter@f5.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Linus Torvalds <torvalds@linux-foundation.org>,
-	David Woodhouse <dwmw2@infradead.org>,
-	Nick Piggin <npiggin@suse.de>,
-	Bernd Schmidt <bernds_cb1@t-online.de>,
-	Andi Kleen <andi@firstfloor.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Harvey Harrison <harvey.harrison@gmail.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Peter Zijlstra <peterz@infradead.org>,
-	Steven Rostedt <rostedt@goodmis.org>,
-	paulmck@linux.vnet.ibm.com, Gregory Haskins <ghaskins@novell.com>,
-	Matthew Wilcox <matthew@wil.cx>,
-	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Peter Morreale <pmorreale@novell.com>,
-	Sven Dietrich <SDietrich@novell.com>, jh@suse.cz
-To: Ingo Molnar <mingo@elte.hu>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20090120220516.GA10483@elte.hu>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Zach Carter <z.carter@f5.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <200901191016.34941.z.carter@f5.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ingo Molnar wrote:
-> 
-> Hm, GCC uses __restrict__, right?
-> 
-> I'm wondering whether there's any internal tie-up between alias analysis 
-> and the __restrict__ keyword - so if we turn off aliasing optimizations 
-> the __restrict__ keyword's optimizations are turned off as well.
-> 
 
-Actually I suspect that "restrict" makes little difference for inlines 
-or even statics, since gcc generally can do alias analysis fine there. 
-However, in the presence of an intermodule function call, all alias 
-analysis is off.  This is presumably why type-based analysis is used at 
-all ... to at least be able to a modicum of, say, loop invariant removal 
-in the presence of a library call.  This is also where "restrict" comes 
-into play.
 
-	-hpa
+on 01/20/2009 02:16 AM, Zach Carter wrote:
+> We should probably just get an informative error message here, not a segfault.
+> 
+> Also, I got the same segfault when running "btrfsck -h" (it was looking for a 
+> file named "-h".  I'd be happy to contribute a getopts patch, if that is 
+> desired.
+> 
+> -Zach
+> 
+> [zcarter@nudj btrfs-progs-unstable]$ touch foo
+> [zcarter@nudj btrfs-progs-unstable]$ ./btrfsck ./foo
+> No valid Btrfs found on ./foo
+> Segmentation fault
+> [zcarter@nudj btrfs-progs-unstable]$ gdb ./btrfsck
+> GNU gdb Fedora (6.8-29.fc10)
+> Copyright (C) 2008 Free Software Foundation, Inc.
+> License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+> This is free software: you are free to change and redistribute it.
+> There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+> and "show warranty" for details.
+> This GDB was configured as "x86_64-redhat-linux-gnu"...
+> (gdb) run ./foo
+> Starting program: /opt/src/btrfs-progs-unstable/btrfsck ./foo
+> No valid Btrfs found on ./foo
+> 
+> Program received signal SIGSEGV, Segmentation fault.
+> check_extents (root=0x0) at btrfsck.c:2006
+> 2006		add_root_to_pending(root->fs_info->tree_root->node, bits, bits_nr,
+> (gdb) 
+
+I think the following patch can fix this problem.
+
+Signed-off-by: Shen Feng <shen@cn.fujitsu.com>
+---
+ btrfsck.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/btrfsck.c b/btrfsck.c
+index 4a41e6d..c95fe83 100644
+--- a/btrfsck.c
++++ b/btrfsck.c
+@@ -2074,6 +2074,8 @@ int main(int ac, char **av)
+ 
+ 	radix_tree_init();
+ 	root = open_ctree(av[1], 0, 0);
++	if (!root)
++		return 1;
+ 
+ 	ret = check_extents(root);
+ 	if (ret)
+-- 1.6.0.6 
+
+
 

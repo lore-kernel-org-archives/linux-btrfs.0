@@ -1,36 +1,39 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Misleading error message in btrfsctl
-Date: Wed, 21 Jan 2009 10:05:29 -0500
-Message-ID: <1232550329.17244.8.camel@think.oraclecorp.com>
-References: <49733138.4010309@aon.at>  <1232287950.10058.6.camel@trillian>
+Subject: Re: [PATCH 1/1] ioctl to fetch csums of file extents
+Date: Wed, 21 Jan 2009 12:57:36 -0500
+Message-ID: <1232560656.22819.1.camel@think.oraclecorp.com>
+References: <a37615150812191310y682c746bt4bd669c0fe5eb4ea@mail.gmail.com>
+	 <a37615150812191314q30f7405agf40f4e6b352b123b@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain
-Cc: Peter Klotz <peter.klotz@aon.at>, linux-btrfs@vger.kernel.org
-To: Calvin Walton <calvin.walton@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+To: Yehuda Sadeh Weinraub <yehudasa@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1232287950.10058.6.camel@trillian>
+In-Reply-To: <a37615150812191314q30f7405agf40f4e6b352b123b@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 2009-01-18 at 09:12 -0500, Calvin Walton wrote:
-> On Sun, 2009-01-18 at 14:40 +0100, Peter Klotz wrote:
-> > Calling btrfsctl results in this message when module btrfs.ko is not loaded:
-> > 
-> > root@asus:/root# btrfsctl -A /dev/sda
-> > ioctl:: Bad file descriptor
-> ..
-> > The output with applied patch:
-> > 
-> > root@asus:/root# btrfsctl -A /dev/sda
-> > failed to open /dev/btrfs-control
-> 
-> It would probably be better to use perror() instead of fprintf, in order
-> to give the actual error message. I often find it useful to know why the
-> device failed to open - is it missing, permission issues? I've updated
-> the patch:
+On Fri, 2008-12-19 at 13:14 -0800, Yehuda Sadeh Weinraub wrote:
+> This adds a new ioctl that requests for the csums of file's extent.
+> The csums of contiguous extents can also be requested. The call will
+> not return anything for extents that don't have csum information for
+> their data, or that the csum list is not available.
+> Presumably, the user calls fiemap first in order to get the list of
+> extents. The max number of requested csum items is specified in the
+> request and is updated according to the actual number of returned
+> items.
 > 
 
-Thanks
+The swapfile discussions convinced me we're better off taking fiemap
+support now and disabling bmap entirely, at least until we can fix the
+swapfile code to work properly with btrfs.
 
+So, I'd like to take this patch, but there is line wrapping and other
+whitespace problems.  Could you please send it with a mail client that
+doesn't mangle? ;)
+
+(Attaching it is fine too, at least on this list)
+
+Thanks!
 -chris
 
 

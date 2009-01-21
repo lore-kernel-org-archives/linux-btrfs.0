@@ -1,69 +1,47 @@
-From: Shen Feng <shen@cn.fujitsu.com>
-Subject: Re: BUG: btrfsck segfaults on regular file
-Date: Wed, 21 Jan 2009 10:10:37 +0800
-Message-ID: <4976841D.7010107@cn.fujitsu.com>
-References: <200901191016.34941.z.carter@f5.com>
+From: Dave Chinner <david@fromorbit.com>
+Subject: Re: Warning and BUG with btrfs and corrupted image
+Date: Wed, 21 Jan 2009 15:00:42 +1100
+Message-ID: <20090121040042.GI10158@disturbed>
+References: <20090113142147.GE16333@alice> <1231857643.29164.28.camel@think.oraclecorp.com> <20090113144307.GF16333@alice> <20090118174035.GG1944@ucw.cz> <20090120063150.GC5854@alice> <20090120101119.GB10158@disturbed> <20090120101503.GC17377@alice> <20090120125944.GC10158@disturbed> <20090120132829.GA27429@infradead.org> <20090120222019.GB2320@elf.ucw.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Zach Carter <z.carter@f5.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Christoph Hellwig <hch@infradead.org>,
+	Eric Sesterhenn <snakebyte@gmx.de>,
+	Chris Mason <chris.mason@oracle.com>,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+To: Pavel Machek <pavel@suse.cz>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200901191016.34941.z.carter@f5.com>
+In-Reply-To: <20090120222019.GB2320@elf.ucw.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-on 01/20/2009 02:16 AM, Zach Carter wrote:
-> We should probably just get an informative error message here, not a segfault.
+On Tue, Jan 20, 2009 at 11:20:19PM +0100, Pavel Machek wrote:
+> On Tue 2009-01-20 08:28:29, Christoph Hellwig wrote:
+> > On Tue, Jan 20, 2009 at 11:59:44PM +1100, Dave Chinner wrote:
+> > > > So far the responses from xfs folks have been disappointing, if you are
+> > > > interested in bugreports i can send you some.
+> > > 
+> > > Sure I am.  It would be good if you could start testing XFS along
+> > > with all the other filesystems and report anything you find.
+> > 
+> > I think that was the issue with the debug builds.  If you do this
+> > testing always do it without CONFIG_XFS_DEBUG set as with that option
+> > we intentionally panic on detected disk corruptions.
 > 
-> Also, I got the same segfault when running "btrfsck -h" (it was looking for a 
-> file named "-h".  I'd be happy to contribute a getopts patch, if that is 
-> desired.
-> 
-> -Zach
-> 
-> [zcarter@nudj btrfs-progs-unstable]$ touch foo
-> [zcarter@nudj btrfs-progs-unstable]$ ./btrfsck ./foo
-> No valid Btrfs found on ./foo
-> Segmentation fault
-> [zcarter@nudj btrfs-progs-unstable]$ gdb ./btrfsck
-> GNU gdb Fedora (6.8-29.fc10)
-> Copyright (C) 2008 Free Software Foundation, Inc.
-> License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
-> This is free software: you are free to change and redistribute it.
-> There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
-> and "show warranty" for details.
-> This GDB was configured as "x86_64-redhat-linux-gnu"...
-> (gdb) run ./foo
-> Starting program: /opt/src/btrfs-progs-unstable/btrfsck ./foo
-> No valid Btrfs found on ./foo
-> 
-> Program received signal SIGSEGV, Segmentation fault.
-> check_extents (root=0x0) at btrfsck.c:2006
-> 2006		add_root_to_pending(root->fs_info->tree_root->node, bits, bits_nr,
-> (gdb) 
+> Uhuh, *_DEBUG options are not supposed to make kernel less
+> stable/robust. Should that crashing functionality be guarded with
+> command line option or something? ext2 has errors=panic mount
+> option...
 
-I think the following patch can fix this problem.
+No, it's a debugging option that is described as:
 
-Signed-off-by: Shen Feng <shen@cn.fujitsu.com>
----
- btrfsck.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+	"Say N unless you are an XFS developer, or you play one on TV."
 
-diff --git a/btrfsck.c b/btrfsck.c
-index 4a41e6d..c95fe83 100644
---- a/btrfsck.c
-+++ b/btrfsck.c
-@@ -2074,6 +2074,8 @@ int main(int ac, char **av)
- 
- 	radix_tree_init();
- 	root = open_ctree(av[1], 0, 0);
-+	if (!root)
-+		return 1;
- 
- 	ret = check_extents(root);
- 	if (ret)
--- 1.6.0.6 
+Seriously, if you aren't trying to develop XFS stuff then *don't turn it
+on*.
 
+Cheers,
 
-
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

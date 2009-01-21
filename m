@@ -1,83 +1,50 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [Discussion] Extent Block Group allocations
-Date: Tue, 20 Jan 2009 18:07:21 -0500
-Message-ID: <1232492841.16352.2.camel@think.oraclecorp.com>
-References: <52232.75.80.183.92.1232484873.squirrel@www.whisperpc.com>
+From: "H. Peter Anvin" <hpa@zytor.com>
+Subject: Re: gcc inlining heuristics was Re: [PATCH -v7][RFC]: mutex:	implement
+ adaptive spinning
+Date: Tue, 20 Jan 2009 17:22:20 -0800
+Message-ID: <497678CC.5060703@zytor.com>
+References: <alpine.LFD.2.00.0901121128080.6528@localhost.localdomain> <496BBE27.2020206@t-online.de> <20090119001345.GA9880@elte.hu> <20090119062212.GC22584@wotan.suse.de> <alpine.LFD.2.00.0901200754100.2974@localhost.localdomain> <20090120005124.GD16304@wotan.suse.de> <20090120123824.GD7790@elte.hu> <1232480940.22233.1435.camel@macbook.infradead.org> <20090120210515.GC19710@elte.hu> <alpine.LFD.2.00.0901210814130.2892@localhost.localdomain> <20090120220516.GA10483@elte.hu>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org
-To: ashford@whisperpc.com
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <52232.75.80.183.92.1232484873.squirrel@www.whisperpc.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Linus Torvalds <torvalds@linux-foundation.org>,
+	David Woodhouse <dwmw2@infradead.org>,
+	Nick Piggin <npiggin@suse.de>,
+	Bernd Schmidt <bernds_cb1@t-online.de>,
+	Andi Kleen <andi@firstfloor.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Harvey Harrison <harvey.harrison@gmail.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Peter Zijlstra <peterz@infradead.org>,
+	Steven Rostedt <rostedt@goodmis.org>,
+	paulmck@linux.vnet.ibm.com, Gregory Haskins <ghaskins@novell.com>,
+	Matthew Wilcox <matthew@wil.cx>,
+	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Peter Morreale <pmorreale@novell.com>,
+	Sven Dietrich <SDietrich@novell.com>, jh@suse.cz
+To: Ingo Molnar <mingo@elte.hu>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20090120220516.GA10483@elte.hu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2009-01-20 at 12:54 -0800, ashford@whisperpc.com wrote:
-> Hi all,
+Ingo Molnar wrote:
 > 
-> I searched the archives, and didn't find any answers to my questions, so I
-> think it's time to ask.
+> Hm, GCC uses __restrict__, right?
 > 
-> From:  http://btrfs.wiki.kernel.org/index.php/Btrfs_design#Extent_Block_Groups
-> 
->         Block groups have a flag that indicate if they are preferred for data
->         or metadata allocations, and at mkfs time the disk is broken up into
->         alternating metadata (33% of the disk) and data groups (66% of the
->         disk). As the disk fills, a group's preference may change back and
->         forth, but Btrfs always tries to avoid intermixing data and metadata
->         extents in the same group. This substantially improves fsck throughput,
->         and reduces seeks during writeback while the FS is mounted. It does
->         slightly increase the seeks while reading.
+> I'm wondering whether there's any internal tie-up between alias analysis 
+> and the __restrict__ keyword - so if we turn off aliasing optimizations 
+> the __restrict__ keyword's optimizations are turned off as well.
 > 
 
-I missed this when I last updated the design doc.  It is much more
-flexible now.  Chunks of storage are allocated from each device for use
-as data or metadata as required.
+Actually I suspect that "restrict" makes little difference for inlines 
+or even statics, since gcc generally can do alias analysis fine there. 
+However, in the presence of an intermodule function call, all alias 
+analysis is off.  This is presumably why type-based analysis is used at 
+all ... to at least be able to a modicum of, say, loop invariant removal 
+in the presence of a library call.  This is also where "restrict" comes 
+into play.
 
-> Based on this, it appears that there is a semi-fixed allocation of 33% of the
-> disk to metadata, but that this allocation can change dynamically as the disk
-> fills.  It would appear that if the metadata approaches/exceeds its
-> allocation, a data group will be reallocated to it, and the same with the data
-> (an extent group would be reallocated).
-> 
-> At the present, there is only one logical device per file-system (single,
-> RAID-0, RAID-1 or RAID-10 - each is one logical device).  Based on the
-> documentation, there appears to be an intent to support RAID-6 (and optionally
-> RAID-5 - I believe this would be good) as logical devices.
-> 
-
-There is one logical address space per FS right now.  Each device in the
-FS can contribute to the logical address space.
-
-> >From what I see in the Multiple Device Support page
-> (http://btrfs.wiki.kernel.org/index.php/Multiple_Device_Support), it appears
-> that the intent in the future is to allow a BTRFS file-system to reside on
-> multiple logical devices.  This is the starting point for my questions.
-> 
-> In an installation where a large number of physical devices are available for
-> use (something like a Sun Thumper - 48 total disks, or a server connected to a
-> SAN), the optimum configuration might be to dedicate certain logical devices
-> (small/fast disks in RAID-1) to metadata, and other devices (large/slow disks
-> in RAID-5 or RAID-6) to data.  To perform this, the metadata allocation
-> percentage would need to be tunable (0% for data-only and 100% for
-> metadata-only), and it would have to be able to be locked, so that the block
-> group reallocation between metadata and data would be disabled (another option
-> might be to allow metadata to reallocate data block groups, but not the other
-> way around).
-> 
-
-Yes, we definitely want to be able to tie metadata or data to specific
-drives.  The disk format has what it needs for this, but it hasn't been
-coded up yet.
-
-> I believe that a configuration like this would be more flexible than having
-> the metadata block groups interleaved with the data block groups.  I also
-> believe that this should be able to provide better overall response and
-> throughput on a large multi-user server.
-> 
-> Is something like this intended to be possible?
-
-Definitely ;)  Thanks for these comments.
-
--chris
-
+	-hpa
 

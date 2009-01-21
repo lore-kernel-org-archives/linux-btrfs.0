@@ -1,11 +1,11 @@
-From: Andi Kleen <andi@firstfloor.org>
+From: Nick Piggin <npiggin@suse.de>
 Subject: Re: gcc inlining heuristics was Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
-Date: Wed, 21 Jan 2009 10:20:49 +0100
-Message-ID: <20090121092049.GE15750@one.firstfloor.org>
-References: <20090119062212.GC22584@wotan.suse.de> <alpine.LFD.2.00.0901200754100.2974@localhost.localdomain> <20090120005124.GD16304@wotan.suse.de> <20090120123824.GD7790@elte.hu> <1232480940.22233.1435.camel@macbook.infradead.org> <20090120210515.GC19710@elte.hu> <alpine.LFD.2.00.0901210814130.2892@localhost.localdomain> <20090120220516.GA10483@elte.hu> <20090121085402.GD15750@one.firstfloor.org> <20090121085208.GO24891@wotan.suse.de>
+Date: Wed, 21 Jan 2009 10:25:50 +0100
+Message-ID: <20090121092550.GP24891@wotan.suse.de>
+References: <alpine.LFD.2.00.0901200754100.2974@localhost.localdomain> <20090120005124.GD16304@wotan.suse.de> <20090120123824.GD7790@elte.hu> <1232480940.22233.1435.camel@macbook.infradead.org> <20090120210515.GC19710@elte.hu> <alpine.LFD.2.00.0901210814130.2892@localhost.localdomain> <20090120220516.GA10483@elte.hu> <20090121085402.GD15750@one.firstfloor.org> <20090121085208.GO24891@wotan.suse.de> <20090121092049.GE15750@one.firstfloor.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Andi Kleen <andi@firstfloor.org>, Ingo Molnar <mingo@elte.hu>,
+Cc: Ingo Molnar <mingo@elte.hu>,
 	Linus Torvalds <torvalds@linux-foundation.org>,
 	David Woodhouse <dwmw2@infradead.org>,
 	Bernd Schmidt <bernds_cb1@t-online.de>,
@@ -23,48 +23,78 @@ Cc: Andi Kleen <andi@firstfloor.org>, Ingo Molnar <mingo@elte.hu>,
 	Thomas Gleixner <tglx@linutronix.de>,
 	Peter Morreale <pmorreale@novell.com>,
 	Sven Dietrich <SDietrich@novell.com>, jh@suse.cz
-To: Nick Piggin <npiggin@suse.de>
+To: Andi Kleen <andi@firstfloor.org>
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20090121085208.GO24891@wotan.suse.de>
+In-Reply-To: <20090121092049.GE15750@one.firstfloor.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 21, 2009 at 09:52:08AM +0100, Nick Piggin wrote:
-> On Wed, Jan 21, 2009 at 09:54:02AM +0100, Andi Kleen wrote:
-> > > GCC 4.3.2. Maybe i missed something obvious?
+On Wed, Jan 21, 2009 at 10:20:49AM +0100, Andi Kleen wrote:
+> On Wed, Jan 21, 2009 at 09:52:08AM +0100, Nick Piggin wrote:
+> > On Wed, Jan 21, 2009 at 09:54:02AM +0100, Andi Kleen wrote:
+> > > > GCC 4.3.2. Maybe i missed something obvious?
+> > > 
+> > > The typical use case of restrict is to tell it that multiple given
+> > > arrays are independent and then give the loop optimizer 
+> > > more freedom to handle expressions in the loop that
+> > > accesses these arrays.
+> > > 
+> > > Since there are no loops in the list functions nothing changed.
+> > > 
+> > > Ok presumably there are some other optimizations which 
+> > > rely on that alias information too, but again the list_*
+> > > stuff is probably too simple to trigger any of them.
 > > 
-> > The typical use case of restrict is to tell it that multiple given
-> > arrays are independent and then give the loop optimizer 
-> > more freedom to handle expressions in the loop that
-> > accesses these arrays.
-> > 
-> > Since there are no loops in the list functions nothing changed.
-> > 
-> > Ok presumably there are some other optimizations which 
-> > rely on that alias information too, but again the list_*
-> > stuff is probably too simple to trigger any of them.
+> > Any function that does several interleaved loads and stores
+> > through different pointers could have much more freedom to
+> > move loads early and stores late. 
 > 
-> Any function that does several interleaved loads and stores
-> through different pointers could have much more freedom to
-> move loads early and stores late. 
+> For once that would require more live registers. It's not
+> a clear and obvious win. Especially not if you have
+> only very little registers, like on 32bit x86.
+> 
+> Then it would typically increase code size.
 
-For once that would require more live registers. It's not
-a clear and obvious win. Especially not if you have
-only very little registers, like on 32bit x86.
+The point is that the compiler is then free to do it. If things
+slow down after the compiler gets *more* information, then that
+is a problem with the compiler heuristics rather than the
+information we give it.
 
-Then it would typically increase code size.
+ 
+> Then x86s tend to have very very fast L1 caches and
+> if something is not in L1 on reads then the cost of fetching
+> something for a read dwarfs the few cycles you can typically
+> get out of this.
 
-Then x86s tend to have very very fast L1 caches and
-if something is not in L1 on reads then the cost of fetching
-something for a read dwarfs the few cycles you can typically
-get out of this.
+Well most architectures have L1 caches of several cycles. And
+L2 miss typically means going to L2 which in some cases the
+compiler is expected to attempt to cover as much as possible
+(eg in-order architectures).
 
-And lastly even on a in order system stores can 
-be typically queued without stalling, so it doesn't
-hurt to do them early.
+If the caches are missed completely, then especially with an
+in-order architecture, you want to issue as many parallel loads
+as possible during the stall. If the compiler can't resolve
+aliases, then it simply won't be able to bring some of those
+loads forward.
 
-Also at least x86 gcc normally doesn't do scheduling 
-beyond basic blocks, so any if () shuts it up.
 
--Andi
--- 
-ak@linux.intel.com -- Speaking for myself only.
+> And lastly even on a in order system stores can 
+> be typically queued without stalling, so it doesn't
+> hurt to do them early.
+
+Store queues are, what? On the order of tens of entries for
+big power hungry x86? I'd guess much smaller for low power
+in-order x86 and ARM etc. These can definitely fill up and
+stall, so you still want to get loads out early if possible.
+
+Even a lot of OOOE CPUs I think won't have the best alias
+anaysis, so all else being equal, it wouldn't hurt them to
+move loads earlier.
+
+
+> Also at least x86 gcc normally doesn't do scheduling 
+> beyond basic blocks, so any if () shuts it up.
+
+I don't think any of this is a reason not to use restrict, though.
+But... there are so many places we could add it to the kernel, and
+probably so few where it makes much difference. Maybe it should be
+able to help some critical core code, though.

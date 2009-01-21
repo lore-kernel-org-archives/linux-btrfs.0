@@ -1,100 +1,61 @@
-From: Nick Piggin <npiggin@suse.de>
-Subject: Re: gcc inlining heuristics was Re: [PATCH -v7][RFC]: mutex: implement adaptive spinning
-Date: Wed, 21 Jan 2009 10:25:50 +0100
-Message-ID: <20090121092550.GP24891@wotan.suse.de>
-References: <alpine.LFD.2.00.0901200754100.2974@localhost.localdomain> <20090120005124.GD16304@wotan.suse.de> <20090120123824.GD7790@elte.hu> <1232480940.22233.1435.camel@macbook.infradead.org> <20090120210515.GC19710@elte.hu> <alpine.LFD.2.00.0901210814130.2892@localhost.localdomain> <20090120220516.GA10483@elte.hu> <20090121085402.GD15750@one.firstfloor.org> <20090121085208.GO24891@wotan.suse.de> <20090121092049.GE15750@one.firstfloor.org>
+From: Eric Sesterhenn <snakebyte@gmx.de>
+Subject: Re: Warning and BUG with btrfs and corrupted image
+Date: Wed, 21 Jan 2009 10:36:44 +0100
+Message-ID: <20090121093644.GA2466@alice>
+References: <20090113142147.GE16333@alice> <1231857643.29164.28.camel@think.oraclecorp.com> <20090113144307.GF16333@alice> <20090118174035.GG1944@ucw.cz> <20090120063150.GC5854@alice> <20090120101119.GB10158@disturbed> <20090120101503.GC17377@alice> <20090120125944.GC10158@disturbed> <20090120173455.GC21339@alice> <20090120221808.GA2320@elf.ucw.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Ingo Molnar <mingo@elte.hu>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
-	David Woodhouse <dwmw2@infradead.org>,
-	Bernd Schmidt <bernds_cb1@t-online.de>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Harvey Harrison <harvey.harrison@gmail.com>,
-	"H. Peter Anvin" <hpa@zytor.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Peter Zijlstra <peterz@infradead.org>,
-	Steven Rostedt <rostedt@goodmis.org>,
-	paulmck@linux.vnet.ibm.com, Gregory Haskins <ghaskins@novell.com>,
-	Matthew Wilcox <matthew@wil.cx>,
-	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Peter Morreale <pmorreale@novell.com>,
-	Sven Dietrich <SDietrich@novell.com>, jh@suse.cz
-To: Andi Kleen <andi@firstfloor.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20090121092049.GE15750@one.firstfloor.org>
+Content-Type: text/plain; charset=utf-8
+Cc: Chris Mason <chris.mason@oracle.com>, linux-kernel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+To: Pavel Machek <pavel@suse.cz>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20090120221808.GA2320@elf.ucw.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 21, 2009 at 10:20:49AM +0100, Andi Kleen wrote:
-> On Wed, Jan 21, 2009 at 09:52:08AM +0100, Nick Piggin wrote:
-> > On Wed, Jan 21, 2009 at 09:54:02AM +0100, Andi Kleen wrote:
-> > > > GCC 4.3.2. Maybe i missed something obvious?
+* Pavel Machek (pavel@suse.cz) wrote:
+> On Tue 2009-01-20 18:34:55, Eric Sesterhenn wrote:
+> > * Dave Chinner (david@fromorbit.com) wrote:
+> > > On Tue, Jan 20, 2009 at 11:15:03AM +0100, Eric Sesterhenn wrote:
+> > > > * Dave Chinner (david@fromorbit.com) wrote:
+> > > > > On Tue, Jan 20, 2009 at 07:31:50AM +0100, Eric Sesterhenn wrote:
+> > > > > > * Pavel Machek (pavel@suse.cz) wrote:
+> > > > > > > Does ext2/3 and vfat survive that kind of attacks? Those are 'in
+> > > > > > > production' and should survive it...
+> > > > > > 
+> > > > > > I regularly (once or twice a week) test 100 corrupted images of 
+> > > > > > vfat, udf, msdos, swap, iso9660, ext2, ext3, ext4, minix, bfs, befs,
+> > > > > > hfs, hfs+, qnx4, affs and cramfs on each of my two test machines.
+> > > > > 
+> > > > > Any reason you are not testing XFS in that set?
+> > > > 
+> > > > So far the responses from xfs folks have been disappointing, if you are
+> > > > interested in bugreports i can send you some.
 > > > 
-> > > The typical use case of restrict is to tell it that multiple given
-> > > arrays are independent and then give the loop optimizer 
-> > > more freedom to handle expressions in the loop that
-> > > accesses these arrays.
-> > > 
-> > > Since there are no loops in the list functions nothing changed.
-> > > 
-> > > Ok presumably there are some other optimizations which 
-> > > rely on that alias information too, but again the list_*
-> > > stuff is probably too simple to trigger any of them.
+> > > Sure I am.  It would be good if you could start testing XFS along
+> > > with all the other filesystems and report anything you find.
 > > 
-> > Any function that does several interleaved loads and stores
-> > through different pointers could have much more freedom to
-> > move loads early and stores late. 
+> > Ok, i wont report stuff with only xfs-internal backtraces from
+> > xfs_error_report() or are they interesting to you?
+> > 
+> > This occurs during mount, box is dead afterwards
+> > Image can be found here :
+> > http://www.cccmz.de/~snakebyte/xfs.11.img.bz2
+> > I see this every ~10 images, which makes further testing hard :)
 > 
-> For once that would require more live registers. It's not
-> a clear and obvious win. Especially not if you have
-> only very little registers, like on 32bit x86.
-> 
-> Then it would typically increase code size.
+> BTW have you considered trying to run fsck.* on such images? I had lot
+> of fun with e2fsck/e3fsck/fsck.vfat.
 
-The point is that the compiler is then free to do it. If things
-slow down after the compiler gets *more* information, then that
-is a problem with the compiler heuristics rather than the
-information we give it.
+Not yet, but if one assumes the people writing the userspace code are
+the same writing the kernel code, and probably make the same errors in
+both versions this might be interesting.
 
- 
-> Then x86s tend to have very very fast L1 caches and
-> if something is not in L1 on reads then the cost of fetching
-> something for a read dwarfs the few cycles you can typically
-> get out of this.
+For userspace a more advanced approach than random bit flipping is
+possible with tools like bunny (http://code.google.com/p/bunny-the-fuzzer/)
+Bunny instrumentates the code, and then tries to change the input file
+based on the feedback it gets from the instrumentation. I fired up
+an instance testing ext2, lets see if it finishes until evening :-)
 
-Well most architectures have L1 caches of several cycles. And
-L2 miss typically means going to L2 which in some cases the
-compiler is expected to attempt to cover as much as possible
-(eg in-order architectures).
+Maybe someone is brave enough to test this approach with user mode
+linux... :)
 
-If the caches are missed completely, then especially with an
-in-order architecture, you want to issue as many parallel loads
-as possible during the stall. If the compiler can't resolve
-aliases, then it simply won't be able to bring some of those
-loads forward.
-
-
-> And lastly even on a in order system stores can 
-> be typically queued without stalling, so it doesn't
-> hurt to do them early.
-
-Store queues are, what? On the order of tens of entries for
-big power hungry x86? I'd guess much smaller for low power
-in-order x86 and ARM etc. These can definitely fill up and
-stall, so you still want to get loads out early if possible.
-
-Even a lot of OOOE CPUs I think won't have the best alias
-anaysis, so all else being equal, it wouldn't hurt them to
-move loads earlier.
-
-
-> Also at least x86 gcc normally doesn't do scheduling 
-> beyond basic blocks, so any if () shuts it up.
-
-I don't think any of this is a reason not to use restrict, though.
-But... there are so many places we could add it to the kernel, and
-probably so few where it makes much difference. Maybe it should be
-able to help some critical core code, though.
+Greetings, Eric

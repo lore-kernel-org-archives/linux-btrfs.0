@@ -1,67 +1,38 @@
-From: Phillip Lougher <phil.lougher@gmail.com>
-Subject: Re: Warning and BUG with btrfs and corrupted image
-Date: Thu, 22 Jan 2009 02:15:21 +0000
-Message-ID: <cce9e37e0901211815l2195858cob6e68ac8ad93e679@mail.gmail.com>
-References: <20090113142147.GE16333@alice>
-	 <1231857643.29164.28.camel@think.oraclecorp.com>
-	 <20090113144307.GF16333@alice> <20090118174035.GG1944@ucw.cz>
-	 <20090120063150.GC5854@alice>
-	 <1232457065.15042.2.camel@think.oraclecorp.com>
-	 <20090120165131.GB21339@alice>
+From: =?utf-8?Q?Am=C3=A9rico?= Wang <xiyou.wangcong@gmail.com>
+Subject: Re: [Patch] bit-radix.c: fix declarations
+Date: Fri, 23 Jan 2009 00:09:01 +0800
+Message-ID: <20090122160901.GD9732@hack.private>
+References: <20090119141921.GA8507@hack.private> <1232549902.17244.5.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>, Pavel Machek <pavel@suse.cz>,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	Phil Lougher <phillip@lougher.demon.co.uk>
-To: Eric Sesterhenn <snakebyte@gmx.de>
+Content-Type: text/plain; charset=utf-8
+Cc: linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090120165131.GB21339@alice>
+In-Reply-To: <1232549902.17244.5.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 20, 2009 at 4:51 PM, Eric Sesterhenn <snakebyte@gmx.de> wrote:
-
-> I already tested squashfs. One issue is basically a problem with
-> the zlib-api for which i just posted a patch here
-> http://marc.info/?t=123212807300003&r=1&w=2
+On Wed, Jan 21, 2009 at 09:58:22AM -0500, Chris Mason wrote:
+>On Mon, 2009-01-19 at 22:19 +0800, Am=C3=A9rico Wang wrote:
+>> bit-radix.c should #include "bit-radix.h", and add a missing declara=
+tion
+>> for find_next_bit().
+>>=20
+>> Signed-off-by: WANG Cong <wangcong@zeuux.org>
+>>=20
+>
+>I fixed this a little differently, the bit-radix code wasn't being use=
+d
+>anymore.  It's gone now ;)
 >
 
-Thanks for testing Squashfs.  I've not ignored your emails, but I've
-been busy job hunting, and so have not had time to look into this
-until now.
+Thanks for your explanation!
 
-I hardened Squashfs against fsfuzzer back in November 2006 (remember
-the month of kernel bugs, or MOKB, which highlighted a number of
-issues with Squashfs).  Your testing has thrown up a regression that I
-inadvertently  put in last month!
 
-> The other is an overwritten redzone (also reported in this thread
-> http://marc.info/?l=linux-fsdevel&m=123212794425497&w=2)
-> Looks like a length parameter is passed to squashfs_read_data
-> which is bigger than ((msblk->block_size >> msblk->devblksize_log2) +
-> 1), so the kcalloced buffer gets overwritten later.
+--=20
+"Against stupidity, the gods themselves, contend in vain."
 
-As part of the mainlining effort I changed Squashfs to allocate
-buffers in 4K page sizes rather than use vmalloced large buffers.   As
-far as zlib goes, it means zlib_inflate now decompresses into a
-sequence of 4K buffers rather than one large buffer.   What this means
-is zlib_inflate is called repeatedly moving to the next 4K page
-whenever zlib_inflate asks for another buffer (stream.avail_out == 0).
-
-Your testing have thrown up the case where zlib_inflate is asking for
-too many output buffers, i.e. it has returned with Z_OK,
-stream.avail_in !=0 (more input data to be processed), and
-stream.avail_out == 0 (I'd like another output buffer).  but it has
-consumed all the output buffers.  This isn't checked (the code assumes
-zlib will do the right thing on corrupt data and bomb out).  My guess
-is either zlib_inflate is getting confused with corrupt data, or
-fsfuzzer gets lucky sometimes and corrupts the filesystem to point to
-another valid but larger compressed block (i.e. in your test
-filesystems the 4K datablock is being corrupted to point to an 8K
-metadata block).
-
-This ultimately leads to an oops in zlib_inflate where it has been
-passed a bogus or NULL steam.next_out pointer.
-
-I'll create a patch and send it to you if you're happy to test it.
-
-Phillip
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

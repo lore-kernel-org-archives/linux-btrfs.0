@@ -1,71 +1,33 @@
-From: Yan Zheng <zheng.yan@oracle.com>
-Subject: [PATCH] fix segfault in btrfsck
-Date: Fri, 23 Jan 2009 22:01:06 +0800
-Message-ID: <4979CDA2.80802@oracle.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+From: Julian Andres Klode <jak@jak-linux.org>
+Subject: [PATCH] Rename convert target to btrfs-convert
+Date: Fri, 23 Jan 2009 16:32:26 +0100
+Message-ID: <1232724746-27087-1-git-send-email-jak@jak-linux.org>
+Cc: Julian Andres Klode <jak@jak-linux.org>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-hello,
+The target builds btrfs-convert and should therefore be
+also named this way.
 
-This patch fixes an accessing freed memory bug
-in merge_inode_recs. Thank you,
-
-Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
-
+Signed-off-by: Julian Andres Klode <jak@jak-linux.org>
 ---
-diff -urp btrfs-progs-unstable/btrfsck.c btrfs-progs/btrfsck.c
---- btrfs-progs-unstable/btrfsck.c	2009-01-23 06:01:44.064370471 +0800
-+++ btrfs-progs/btrfsck.c	2009-01-23 11:56:36.000000000 +0800
-@@ -84,6 +84,7 @@ struct inode_backref {
- struct inode_record {
- 	struct list_head backrefs;
- 	unsigned int checked:1;
-+	unsigned int merging:1;
- 	unsigned int found_inode_item:1;
- 	unsigned int found_dir_item:1;
- 	unsigned int found_file_extent:1;
-@@ -120,6 +121,7 @@ struct inode_record {
- #define I_ERR_FILE_NBYTES_WRONG		(1 << 10)
- #define I_ERR_ODD_CSUM_ITEM		(1 << 11)
- #define I_ERR_SOME_CSUM_MISSING		(1 << 12)
-+#define I_ERR_LINK_COUNT_WRONG		(1 << 13)
+ Makefile |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index e6a332c..3b69db6 100644
+--- a/Makefile
++++ b/Makefile
+@@ -65,7 +65,7 @@ dir-test: $(objects) dir-test.o
+ quick-test: $(objects) quick-test.o
+ 	gcc $(CFLAGS) -o quick-test $(objects) quick-test.o $(LDFLAGS) $(LIBS)
  
- struct ptr_node {
- 	struct cache_extent cache;
-@@ -258,7 +260,7 @@ static void maybe_free_inode_rec(struct 
- 		}
- 	}
+-convert: $(objects) convert.o
++btrfs-convert: $(objects) convert.o
+ 	gcc $(CFLAGS) -o btrfs-convert $(objects) convert.o -lext2fs $(LDFLAGS) $(LIBS)
  
--	if (!rec->checked)
-+	if (!rec->checked || rec->merging)
- 		return;
- 
- 	if (S_ISDIR(rec->imode)) {
-@@ -425,6 +427,7 @@ static int merge_inode_recs(struct inode
- 	struct inode_backref *backref;
- 	struct cache_tree *dst_cache = &dst_node->inode_cache;
- 
-+	dst->merging = 1;
- 	list_for_each_entry(backref, &src->backrefs, list) {
- 		if (backref->found_dir_index) {
- 			add_inode_backref(dst_cache, dst->ino, backref->dir,
-@@ -492,6 +495,7 @@ static int merge_inode_recs(struct inode
- 		if (dst_node->current == dst)
- 			dst_node->current = NULL;
- 	}
-+	dst->merging = 0;
- 	maybe_free_inode_rec(dst_cache, dst);
- 	return 0;
- }
-@@ -1159,6 +1163,8 @@ static int check_inode_recs(struct btrfs
- 		error++;
- 		if (!rec->found_inode_item)
- 			rec->errors |= I_ERR_NO_INODE_ITEM;
-+		if (rec->found_link != rec->nlink)
-+			rec->errors |= I_ERR_LINK_COUNT_WRONG;
- 		fprintf(stderr, "root %llu inode %llu errors %x\n",
- 			root->root_key.objectid, rec->ino, rec->errors);
- 		list_for_each_entry(backref, &rec->backrefs, list) {
+ manpages:
+-- 
+1.6.0.6
+

@@ -1,33 +1,39 @@
-From: Julian Andres Klode <jak@jak-linux.org>
-Subject: [PATCH] Rename convert target to btrfs-convert
-Date: Fri, 23 Jan 2009 16:32:26 +0100
-Message-ID: <1232724746-27087-1-git-send-email-jak@jak-linux.org>
-Cc: Julian Andres Klode <jak@jak-linux.org>
+From: ashford@whisperpc.com
+Subject: [PATCH] btrfs-progs/mkfs.c - fix sectorsize validation
+Date: Fri, 23 Jan 2009 10:09:17 -0800 (PST)
+Message-ID: <34501.75.80.183.92.1232734157.squirrel@www.whisperpc.com>
+References: <4979CDA2.80802@oracle.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4979CDA2.80802@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The target builds btrfs-convert and should therefore be
-also named this way.
+It was possible to enter sector sizes larger than a memory page.  This would
+result in some "unpleasantness", including hangs and crashes.  This patch also
+adds a minimum sector size of 512 bytes.
 
-Signed-off-by: Julian Andres Klode <jak@jak-linux.org>
----
- Makefile |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/Makefile b/Makefile
-index e6a332c..3b69db6 100644
---- a/Makefile
-+++ b/Makefile
-@@ -65,7 +65,7 @@ dir-test: $(objects) dir-test.o
- quick-test: $(objects) quick-test.o
- 	gcc $(CFLAGS) -o quick-test $(objects) quick-test.o $(LDFLAGS) $(LIBS)
- 
--convert: $(objects) convert.o
-+btrfs-convert: $(objects) convert.o
- 	gcc $(CFLAGS) -o btrfs-convert $(objects) convert.o -lext2fs $(LDFLAGS) $(LIBS)
- 
- manpages:
--- 
-1.6.0.6
+# diff -u  mkfs.c- mkfs.c
+--- mkfs.c-     2009-01-22 13:39:21.000000000 -0800
++++ mkfs.c      2009-01-23 10:01:06.000000000 -0800
+@@ -390,8 +390,16 @@
+                                print_usage();
+                }
+        }
+-       sectorsize = max(sectorsize, (u32)getpagesize());
++
++       if (sectorsize < 512) {
++               printf("Sectorsize %u smaller than 512 - corrected\n",
++                       sectorsize);
++               sectorsize = 512;
++       } else if (sectorsize > (u32)getpagesize()) {
++               printf("Sectorsize %u larger than pagesize %u - corrected\n",
++                       sectorsize, (u32)getpagesize());
++               sectorsize = (u32)getpagesize();
++       }
+        if ((sectorsize & (sectorsize - 1))) {
+                fprintf(stderr, "Sector size %u must be a power of 2\n",
+                        sectorsize);
 

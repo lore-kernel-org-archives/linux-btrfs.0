@@ -1,66 +1,56 @@
-From: Pavel Machek <pavel@suse.cz>
-Subject: Re: Warning and BUG with btrfs and corrupted image
-Date: Mon, 26 Jan 2009 17:27:11 +0100
-Message-ID: <20090126162711.GA2083@elf.ucw.cz>
-References: <1231857643.29164.28.camel@think.oraclecorp.com> <20090113144307.GF16333@alice> <20090118174035.GG1944@ucw.cz> <20090120063150.GC5854@alice> <20090120101119.GB10158@disturbed> <20090120101503.GC17377@alice> <20090120125944.GC10158@disturbed> <20090120132829.GA27429@infradead.org> <20090120222019.GB2320@elf.ucw.cz> <20090121040042.GI10158@disturbed>
+From: ashford@whisperpc.com
+Subject: [Discussion] Apparent inconsistancies in use of io_align,
+      io_width & sector_size
+Date: Mon, 26 Jan 2009 12:06:21 -0800 (PST)
+Message-ID: <38874.75.80.183.92.1233000381.squirrel@www.whisperpc.com>
+References: <1231857643.29164.28.camel@think.oraclecorp.com>
+    <20090113144307.GF16333@alice> <20090118174035.GG1944@ucw.cz>
+    <20090120063150.GC5854@alice> <20090120101119.GB10158@disturbed>
+    <20090120101503.GC17377@alice> <20090120125944.GC10158@disturbed>
+    <20090120132829.GA27429@infradead.org>
+    <20090120222019.GB2320@elf.ucw.cz> <20090121040042.GI10158@disturbed>
+    <20090126162711.GA2083@elf.ucw.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Christoph Hellwig <hch@infradead.org>,
-	Eric Sesterhenn <snakebyte@gmx.de>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090121040042.GI10158@disturbed>
+In-Reply-To: <20090126162711.GA2083@elf.ucw.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed 2009-01-21 15:00:42, Dave Chinner wrote:
-> On Tue, Jan 20, 2009 at 11:20:19PM +0100, Pavel Machek wrote:
-> > On Tue 2009-01-20 08:28:29, Christoph Hellwig wrote:
-> > > On Tue, Jan 20, 2009 at 11:59:44PM +1100, Dave Chinner wrote:
-> > > > > So far the responses from xfs folks have been disappointing, if you are
-> > > > > interested in bugreports i can send you some.
-> > > > 
-> > > > Sure I am.  It would be good if you could start testing XFS along
-> > > > with all the other filesystems and report anything you find.
-> > > 
-> > > I think that was the issue with the debug builds.  If you do this
-> > > testing always do it without CONFIG_XFS_DEBUG set as with that option
-> > > we intentionally panic on detected disk corruptions.
-> > 
-> > Uhuh, *_DEBUG options are not supposed to make kernel less
-> > stable/robust. Should that crashing functionality be guarded with
-> > command line option or something? ext2 has errors=panic mount
-> > option...
-> 
-> No, it's a debugging option that is described as:
-> 
-> 	"Say N unless you are an XFS developer, or you play one on TV."
-> 
-> Seriously, if you aren't trying to develop XFS stuff then *don't turn it
-> on*.
-
-What about this, then?
-									Pavel
-
----
-Warn in documentation that XFS_DEBUG panics machines.
-
-Signed-off-by: Pavel Machek <pavel@suse.cz>
-
-diff --git a/fs/xfs/Kconfig b/fs/xfs/Kconfig
-index 3f53dd1..55c98eb 100644
---- a/fs/xfs/Kconfig
-+++ b/fs/xfs/Kconfig
-@@ -76,4 +76,7 @@ config XFS_DEBUG
- 	  Note that the resulting code will be HUGE and SLOW, and probably
- 	  not useful unless you are debugging a particular problem.
- 
-+	  Turning this option on will result in kernel panicking any time
-+	  it detects on-disk corruption.
-+
- 	  Say N unless you are an XFS developer, or you play one on TV.
+While digging through btrfs-progs, I noticed that there were several apparent
+discrepancies in the use of io_align, io_width & sector_size (in structure
+btrfs_dev_item).  I believe we need the core developers to define the contents
+of these values, so that the various programs and kernel modules can be
+checked to be sure that the correct values are being used.
 
 
--- 
-(english) http://www.livejournal.com/~pavelmachek
-(cesky, pictures) http://atrey.karlin.mff.cuni.cz/~pavel/picture/horses/blog.html
+I have made some guesses as to the definitions of these values, and the kernel
+code appears to support these guesses at first glance (not too sure about
+io_align).  My guesses are:
+
+sector_size - This is the size, in bytes, of the atomic unit of allocation and
+    I/O within the file-system.  It must be a power of two, must be at least as
+    large as a disk sector, and must be no larger than a kernel page.
+
+io_width - This value is only meaningful in a RAID-0 or RAID-10 (also RAID-5
+    and RAID-6 in the future) volume, or when the underlying device is a RAID
+    array (other than RAID-1).  This is the maximum number of bytes that can be
+    written to a device without switching to another device, and is equivalent
+    to "chunk size" in the MD driver.  This must be a power of two, and an
+    integer multiple of sector_size.
+
+io_align - This value is the offset, in bytes, of the start of the partition to
+    the start of the file-system.  As an example, a value of 1536 would
+    indicate that the file-system starts 1536 bytes (3 disk blocks) into the
+    file-system.  This must be an integer multiple of the disk sector size.
+
+    For optimum RAID performance, it should also be the offset of first RAID
+    segment from the beginning of the partition.  I believe that the intended
+    usage of this value is to allow file-system allocations to align with RAID
+    segments provided by lower levels (Linux MD, HW RAID controllers or SAN
+    controllers).
+
+Thank you.
+
+Peter Ashford
+

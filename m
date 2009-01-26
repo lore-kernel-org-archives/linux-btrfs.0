@@ -1,46 +1,66 @@
-From: ashford@whisperpc.com
-Subject: [PATCH] btrfs_progs/mkfs.c more input data verification cleanup
-Date: Fri, 23 Jan 2009 19:39:32 -0800 (PST)
-Message-ID: <62563.75.80.183.92.1232768372.squirrel@www.whisperpc.com>
-References: <1232745288-4307-1-git-send-email-cascardo@holoscopio.com>
-    <1232745288-4307-2-git-send-email-cascardo@holoscopio.com>
+From: Pavel Machek <pavel@suse.cz>
+Subject: Re: Warning and BUG with btrfs and corrupted image
+Date: Mon, 26 Jan 2009 17:27:11 +0100
+Message-ID: <20090126162711.GA2083@elf.ucw.cz>
+References: <1231857643.29164.28.camel@think.oraclecorp.com> <20090113144307.GF16333@alice> <20090118174035.GG1944@ucw.cz> <20090120063150.GC5854@alice> <20090120101119.GB10158@disturbed> <20090120101503.GC17377@alice> <20090120125944.GC10158@disturbed> <20090120132829.GA27429@infradead.org> <20090120222019.GB2320@elf.ucw.cz> <20090121040042.GI10158@disturbed>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+To: Christoph Hellwig <hch@infradead.org>,
+	Eric Sesterhenn <snakebyte@gmx.de>,
+	Chris Mason <chris.mason@oracle.com>,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1232745288-4307-2-git-send-email-cascardo@holoscopio.com>
+In-Reply-To: <20090121040042.GI10158@disturbed>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Yet another patch for mkfs input data verification.
+On Wed 2009-01-21 15:00:42, Dave Chinner wrote:
+> On Tue, Jan 20, 2009 at 11:20:19PM +0100, Pavel Machek wrote:
+> > On Tue 2009-01-20 08:28:29, Christoph Hellwig wrote:
+> > > On Tue, Jan 20, 2009 at 11:59:44PM +1100, Dave Chinner wrote:
+> > > > > So far the responses from xfs folks have been disappointing, if you are
+> > > > > interested in bugreports i can send you some.
+> > > > 
+> > > > Sure I am.  It would be good if you could start testing XFS along
+> > > > with all the other filesystems and report anything you find.
+> > > 
+> > > I think that was the issue with the debug builds.  If you do this
+> > > testing always do it without CONFIG_XFS_DEBUG set as with that option
+> > > we intentionally panic on detected disk corruptions.
+> > 
+> > Uhuh, *_DEBUG options are not supposed to make kernel less
+> > stable/robust. Should that crashing functionality be guarded with
+> > command line option or something? ext2 has errors=panic mount
+> > option...
+> 
+> No, it's a debugging option that is described as:
+> 
+> 	"Say N unless you are an XFS developer, or you play one on TV."
+> 
+> Seriously, if you aren't trying to develop XFS stuff then *don't turn it
+> on*.
 
-# diff -u mkfs.c- mkfs.c
---- mkfs.c-     2009-01-23 19:26:33.000000000 -0800
-+++ mkfs.c      2009-01-23 19:33:07.000000000 -0800
-@@ -406,13 +406,23 @@
-                exit(1);
-        }
+What about this, then?
+									Pavel
 
--       if (leafsize < sectorsize || (leafsize & (sectorsize - 1))) {
--               fprintf(stderr, "Illegal leafsize %u\n", leafsize);
-+       if (leafsize < sectorsize) {
-+               printf("Leafsize %u smaller than sectorsize %u - corrected\n",
-+                       leafsize, (u32)getpagesize());
-+               leafsize = sectorsize;
-+       } else if ((leafsize & (sectorsize - 1))) {
-+               fprintf(stderr, "Leafsize %u not a multiple of sectorsize %u\n",
-+                       leafsize, sectorsize);
-                exit(1);
-        }
+---
+Warn in documentation that XFS_DEBUG panics machines.
 
--       if (nodesize < sectorsize || (nodesize & (sectorsize - 1))) {
--               fprintf(stderr, "Illegal nodesize %u\n", nodesize);
-+       if (nodesize < sectorsize) {
-+               printf("Nodesize %u smaller than sectorsize %u - corrected\n",
-+                       nodesize, (u32)getpagesize());
-+               nodesize = sectorsize;
-+       } else if ((nodesize & (sectorsize - 1))) {
-+               fprintf(stderr, "Nodesize %u not a multiple of sectorsize %u\n",
-+                       nodesize, sectorsize);
-                exit(1);
-        }
+Signed-off-by: Pavel Machek <pavel@suse.cz>
 
+diff --git a/fs/xfs/Kconfig b/fs/xfs/Kconfig
+index 3f53dd1..55c98eb 100644
+--- a/fs/xfs/Kconfig
++++ b/fs/xfs/Kconfig
+@@ -76,4 +76,7 @@ config XFS_DEBUG
+ 	  Note that the resulting code will be HUGE and SLOW, and probably
+ 	  not useful unless you are debugging a particular problem.
+ 
++	  Turning this option on will result in kernel panicking any time
++	  it detects on-disk corruption.
++
+ 	  Say N unless you are an XFS developer, or you play one on TV.
+
+
+-- 
+(english) http://www.livejournal.com/~pavelmachek
+(cesky, pictures) http://atrey.karlin.mff.cuni.cz/~pavel/picture/horses/blog.html

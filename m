@@ -1,109 +1,589 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Subject: BUG on btrfs_update_extent_ref() retval
-Date: Tue, 27 Jan 2009 18:53:26 +0900
-Message-ID: <20090127095325.GB7407@linux-sh.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-sh@vger.kernel.org
+From: Josef Bacik <jbacik@redhat.com>
+Subject: [PATCH] btrfs: add better -ENOSPC handling VERSION 2
+Date: Tue, 27 Jan 2009 15:51:40 -0500
+Message-ID: <1233089500-17565-1-git-send-email-jbacik@redhat.com>
+Cc: Josef Bacik <jbacik@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Trying out btrfs on sh (using the latest btrfs-progs from git) results in
-the following oops when doing a simple untar:
+This patch removes the large 85% brick wall that was keeping btrfs from panicing
+because it ran out of space, and instead puts a nice 95% drywall in its place.
+Instead of tracking delalloc bytes on a systemwide basis, just do it as per
+space info.  For now that means basically just one space_info has anything set
+for bytes_delalloc, but in the future when there are different allocation
+schemes for different files this will be less overkill.  We reserve space by
+using btrfs_delalloc_reserve_space, and then free space by using
+btrfs_delalloc_free_space.  You need to make sure that these are always even,
+IOW for every reserve you must have a free, so either free if you aren't goign
+to use the reserved space, or free when the space is actually allocated.
 
-------------[ cut here ]------------
-kernel BUG at fs/btrfs/ctree.c:1948!
-Kernel BUG: 003e [#1]
-Modules linked in:
+For checkers we have btrfs_check_data_free_space which checks to make sure we
+have sufficient metadata space and space for bytes allocation.  For metadata
+operations we have btrfs_check_metadata_free_space, which is where the 95% wall
+comes in.  We make sure that we always have at least 5% metadata space free in
+order to make sure we have enough space to rm things if we run out of data
+space.  So btrfs_check_data_free_space will call
+btrfs_check_metadata_free_space, but every metadata operation (like
+mknod/create/link etc) just needs to call btrfs_check_metadata_free_space.  If
+the operation is going to result in free'd space, such as unlink and rmdir, you
+don't need to do the check.
 
-Pid : 4337, Comm:               tar
-CPU : 0                 Not tainted  (2.6.29-rc2-00357-g97a2112-dirty #986)
+There was a slight problem with the first version of this patch, basically if
+our writes were fast enough we could error out because we used up all of the
+space that the space_info knows about, not necessarily all the space on the
+disk.  So what we do in this case is check space_info->full.  If its set then we
+return, otherwise we force a chunk allocation to handle the allocation and then
+recheck to make sure we are ok.
 
-PC is at insert_new_root+0x528/0x57c
-PR is at insert_new_root+0x522/0x57c
-PC  : 8817f360 SP  : 8c809c7c SR  : 40008000 TEA : 296639e0
-R0  : fffffffe R1  : 00000000 R2  : 40008000 R3  : 00000003
-R4  : 89c2c660 R5  : 00000068 R6  : 0000000d R7  : 00000000
-R8  : 89817004 R9  : 89c29380 R10 : 89c29f20 R11 : 00130b80
-R12 : 89817000 R13 : 89c29380 R14 : 8c809c7c
-MACH: 000008d3 MACL: 00000048 GBR : 29719450 PR  : 8817f35a
+NOTE: there is also a fix in this patch where we weren't actually returning the
+right error back to userspace.  If we ran out of space we'd end up returning
+-EEXIST instead of -ENOSPC.  The fix is simply to set err to ret in
+btrfs_file_write if ret is set.  I tested this patch much more thoroughly than
+the original patch and I've not seen problems with it yet.  Thanks,
 
-Call trace:
-[<8817fe00>] split_node+0x878/0x8f8
-[<88181456>] split_leaf+0x92/0xd74
-[<8817ff50>] leaf_space_used+0xd0/0x114
-[<8818002e>] btrfs_leaf_free_space+0x9a/0xfc
-[<88011d0c>] add_preempt_count+0x0/0x74
-[<88182afa>] btrfs_search_slot+0x9c2/0xa48
-[<88011d0c>] add_preempt_count+0x0/0x74
-[<88011c90>] sub_preempt_count+0x0/0x7c
-[<88186e54>] btrfs_find_block_group+0x13c/0x1f0
-[<88182be6>] btrfs_insert_empty_items+0x66/0x698
-[<881a8e8e>] btrfs_new_inode+0xae/0x398
-[<881a8f84>] btrfs_new_inode+0x1a4/0x398
-[<88310000>] gss_mech_get_by_name+0x1c/0xdc
-[<881a956e>] btrfs_create+0xae/0x1d8
-[<881ac94e>] btrfs_permission+0x26/0x38
-[<88076b2e>] vfs_create+0x52/0xb4
-[<88076ec2>] do_filp_open+0x182/0x61c
-[<88034d84>] lock_release+0x11a/0x17a
-[<8808061c>] alloc_fd+0xd0/0x104
-[<8831bdc2>] _spin_unlock+0x1a/0x4c
-[<8831bdc8>] _spin_unlock+0x20/0x4c
-[<8806da1a>] do_sys_open+0x42/0xe8
-[<8806dad6>] sys_open+0x16/0x24
-[<8806dac0>] sys_open+0x0/0x24
-[<88007236>] syscall_call+0xc/0x10
+Signed-off-by: Josef Bacik <jbacik@redhat.com>
+---
+ fs/btrfs/ctree.h       |   33 ++++++++---
+ fs/btrfs/extent-tree.c |  145 +++++++++++++++++++++++++++++++++++++++++++-----
+ fs/btrfs/file.c        |   13 +++-
+ fs/btrfs/inode.c       |   60 +++++---------------
+ fs/btrfs/ioctl.c       |   16 ++++-
+ 5 files changed, 190 insertions(+), 77 deletions(-)
 
-3 locks held by tar/4337:
- #0:  (&sb->s_type->i_mutex_key#9){....}, at: [<88076e50>] do_filp_open+0x110/0x61c
- #1:  (&eb->mutex){....}, at: [<881cc806>] btrfs_tree_lock+0x1a/0xbc
- #2:  (&eb->mutex){....}, at: [<881cc806>] btrfs_tree_lock+0x1a/0xbc
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 2847619..ba7bf33 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -600,13 +600,23 @@ struct btrfs_block_group_item {
+ 
+ struct btrfs_space_info {
+ 	u64 flags;
+-	u64 total_bytes;
+-	u64 bytes_used;
+-	u64 bytes_pinned;
+-	u64 bytes_reserved;
+-	u64 bytes_readonly;
+-	int full;
+-	int force_alloc;
++
++	u64 total_bytes;	/* total bytes in the space */
++	u64 bytes_used;		/* total bytes used on disk */
++	u64 bytes_pinned;	/* total bytes pinned, will be freed when the
++				   transaction finishes */
++	u64 bytes_reserved;	/* total bytes the allocator has reserved for
++				   current allocations */
++	u64 bytes_readonly;	/* total bytes that are read only */
++	u64 bytes_delalloc;	/* number of bytes reserved for allocation,
++				   this space is not necessarily reserved yet
++				   by the allocator */
++
++	int full;		/* indicates that we cannot allocate any more
++				   chunks for this space */
++	int force_alloc;	/* set if we need to force a chunk alloc for
++				   this space */
++
+ 	struct list_head list;
+ 
+ 	/* for block groups in our same type */
+@@ -1787,6 +1797,13 @@ int btrfs_add_dead_reloc_root(struct btrfs_root *root);
+ int btrfs_cleanup_reloc_trees(struct btrfs_root *root);
+ int btrfs_reloc_clone_csums(struct inode *inode, u64 file_pos, u64 len);
+ u64 btrfs_reduce_alloc_profile(struct btrfs_root *root, u64 flags);
++int btrfs_check_metadata_free_space(struct btrfs_root *root);
++int btrfs_check_data_free_space(struct btrfs_root *root, struct inode *inode,
++				u64 bytes);
++int btrfs_delalloc_reserve_space(struct btrfs_root *root, struct inode *inode,
++				 u64 bytes);
++void btrfs_delalloc_free_space(struct btrfs_root *root, struct inode *inode,
++			      u64 bytes);
+ /* ctree.c */
+ int btrfs_previous_item(struct btrfs_root *root,
+ 			struct btrfs_path *path, u64 min_objectid,
+@@ -2030,8 +2047,6 @@ int btrfs_merge_bio_hook(struct page *page, unsigned long offset,
+ unsigned long btrfs_force_ra(struct address_space *mapping,
+ 			      struct file_ra_state *ra, struct file *file,
+ 			      pgoff_t offset, pgoff_t last_index);
+-int btrfs_check_free_space(struct btrfs_root *root, u64 num_required,
+-			   int for_del);
+ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct page *page);
+ int btrfs_readpage(struct file *file, struct page *page);
+ void btrfs_delete_inode(struct inode *inode);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 71ba963..9e56287 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -58,6 +58,9 @@ static int update_block_group(struct btrfs_trans_handle *trans,
+ 			      struct btrfs_root *root,
+ 			      u64 bytenr, u64 num_bytes, int alloc,
+ 			      int mark_free);
++static int do_chunk_alloc(struct btrfs_trans_handle *trans,
++			  struct btrfs_root *extent_root, u64 alloc_bytes,
++			  u64 flags, int force);
+ 
+ static int block_group_bits(struct btrfs_block_group_cache *cache, u64 bits)
+ {
+@@ -1816,6 +1819,7 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
+ 	found->bytes_pinned = 0;
+ 	found->bytes_reserved = 0;
+ 	found->bytes_readonly = 0;
++	found->bytes_delalloc = 0;
+ 	found->full = 0;
+ 	found->force_alloc = 0;
+ 	*space_info = found;
+@@ -1879,6 +1883,131 @@ u64 btrfs_reduce_alloc_profile(struct btrfs_root *root, u64 flags)
+ 	return flags;
+ }
+ 
++static u64 btrfs_get_alloc_profile(struct btrfs_root *root, u64 data)
++{
++	struct btrfs_fs_info *info = root->fs_info;
++	u64 alloc_profile;
++
++	if (data) {
++		alloc_profile = info->avail_data_alloc_bits &
++			info->data_alloc_profile;
++		data = BTRFS_BLOCK_GROUP_DATA | alloc_profile;
++	} else if (root == root->fs_info->chunk_root) {
++		alloc_profile = info->avail_system_alloc_bits &
++			info->system_alloc_profile;
++		data = BTRFS_BLOCK_GROUP_SYSTEM | alloc_profile;
++	} else {
++		alloc_profile = info->avail_metadata_alloc_bits &
++			info->metadata_alloc_profile;
++		data = BTRFS_BLOCK_GROUP_METADATA | alloc_profile;
++	}
++
++	return btrfs_reduce_alloc_profile(root, data);
++}
++
++int btrfs_check_metadata_free_space(struct btrfs_root *root)
++{
++	struct btrfs_fs_info *info = root->fs_info;
++	struct btrfs_space_info *meta_sinfo;
++	u64 alloc_target, thresh;
++
++	/* get the space info for where the metadata will live */
++	alloc_target = btrfs_get_alloc_profile(root, 0);
++	meta_sinfo = __find_space_info(info, alloc_target);
++
++	/*
++	 * if the metadata area isn't maxed out then there is no sense in
++	 * checking how much is used, since we can always allocate a new chunk
++	 */
++	if (!meta_sinfo->full)
++		return 0;
++
++	spin_lock(&meta_sinfo->lock);
++	thresh = meta_sinfo->total_bytes * 95;
++
++	do_div(thresh, 100);
++
++	if (meta_sinfo->bytes_used + meta_sinfo->bytes_reserved +
++	    meta_sinfo->bytes_pinned + meta_sinfo->bytes_readonly > thresh) {
++		spin_unlock(&meta_sinfo->lock);
++		return -ENOSPC;
++	}
++	spin_unlock(&meta_sinfo->lock);
++
++	return 0;
++}
++
++int btrfs_delalloc_reserve_space(struct btrfs_root *root, struct inode *inode,
++				 u64 bytes)
++{
++	struct btrfs_fs_info *info = root->fs_info;
++	struct btrfs_space_info *data_sinfo;
++	u64 alloc_target;
++	int ret = 0;
++
++	/* get the space info for where this inode will be storing its data */
++	alloc_target = btrfs_get_alloc_profile(root, 1);
++	data_sinfo = __find_space_info(info, alloc_target);
++
++again:
++	/* make sure we have enough space to handle the data first */
++	spin_lock(&data_sinfo->lock);
++	if (data_sinfo->total_bytes - data_sinfo->bytes_used -
++	    data_sinfo->bytes_delalloc - data_sinfo->bytes_reserved -
++	    data_sinfo->bytes_pinned - data_sinfo->bytes_readonly < bytes) {
++		if (!data_sinfo->full) {
++			struct btrfs_trans_handle *trans;
++
++			trans = btrfs_start_transaction(root, 1);
++
++			data_sinfo->force_alloc = 1;
++			spin_unlock(&data_sinfo->lock);
++			ret = do_chunk_alloc(trans, root->fs_info->extent_root,
++					     bytes + 2 * 1024 * 1024,
++					     alloc_target, 0);
++			btrfs_end_transaction(trans, root);
++			if (ret)
++				return ret;
++			goto again;
++		}
++		spin_unlock(&data_sinfo->lock);
++		printk(KERN_ERR "no space left, need %llu, %llu delalloc bytes"
++		       ", %llu bytes_used, %llu bytes_reserved, "
++		       "%llu bytes_pinned, %llu bytes_readonly, %llu total\n",
++		       bytes, data_sinfo->bytes_delalloc,
++		       data_sinfo->bytes_used, data_sinfo->bytes_reserved,
++		       data_sinfo->bytes_pinned, data_sinfo->bytes_readonly,
++		       data_sinfo->total_bytes);
++		return -ENOSPC;
++	}
++	data_sinfo->bytes_delalloc += bytes;
++	spin_unlock(&data_sinfo->lock);
++
++	return btrfs_check_metadata_free_space(root);
++}
++
++void btrfs_delalloc_free_space(struct btrfs_root *root, struct inode *inode,
++			      u64 bytes)
++{
++	struct btrfs_space_info *info;
++	u64 alloc_target;
++
++	alloc_target = btrfs_get_alloc_profile(root, 1);
++	info = __find_space_info(root->fs_info, alloc_target);
++
++	spin_lock(&info->lock);
++	if (bytes == (u64)-1) {
++		info->bytes_delalloc = 0;
++	} else if (bytes > info->bytes_delalloc) {
++		printk(KERN_ERR "trying to free more bytes than we have\n");
++		dump_stack();
++		info->bytes_delalloc = 0;
++	} else {
++		info->bytes_delalloc -= bytes;
++	}
++	spin_unlock(&info->lock);
++}
++
+ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
+ 			  struct btrfs_root *extent_root, u64 alloc_bytes,
+ 			  u64 flags, int force)
+@@ -3044,24 +3173,10 @@ static int __btrfs_reserve_extent(struct btrfs_trans_handle *trans,
+ {
+ 	int ret;
+ 	u64 search_start = 0;
+-	u64 alloc_profile;
+ 	struct btrfs_fs_info *info = root->fs_info;
+ 
+-	if (data) {
+-		alloc_profile = info->avail_data_alloc_bits &
+-			info->data_alloc_profile;
+-		data = BTRFS_BLOCK_GROUP_DATA | alloc_profile;
+-	} else if (root == root->fs_info->chunk_root) {
+-		alloc_profile = info->avail_system_alloc_bits &
+-			info->system_alloc_profile;
+-		data = BTRFS_BLOCK_GROUP_SYSTEM | alloc_profile;
+-	} else {
+-		alloc_profile = info->avail_metadata_alloc_bits &
+-			info->metadata_alloc_profile;
+-		data = BTRFS_BLOCK_GROUP_METADATA | alloc_profile;
+-	}
++	data = btrfs_get_alloc_profile(root, data);
+ again:
+-	data = btrfs_reduce_alloc_profile(root, data);
+ 	/*
+ 	 * the only place that sets empty_size is btrfs_realloc_node, which
+ 	 * is not called recursively on allocations
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 3e8023e..b80ddae 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1091,28 +1091,33 @@ static ssize_t btrfs_file_write(struct file *file, const char __user *buf,
+ 		WARN_ON(num_pages > nrptrs);
+ 		memset(pages, 0, sizeof(struct page *) * nrptrs);
+ 
+-		ret = btrfs_check_free_space(root, write_bytes, 0);
++		ret = btrfs_delalloc_reserve_space(root, inode, write_bytes);
+ 		if (ret)
+ 			goto out;
+ 
+ 		ret = prepare_pages(root, file, pages, num_pages,
+ 				    pos, first_index, last_index,
+ 				    write_bytes);
+-		if (ret)
++		if (ret) {
++			btrfs_delalloc_free_space(root, inode, write_bytes);
+ 			goto out;
++		}
+ 
+ 		ret = btrfs_copy_from_user(pos, num_pages,
+ 					   write_bytes, pages, buf);
+ 		if (ret) {
+ 			btrfs_drop_pages(pages, num_pages);
++			btrfs_delalloc_free_space(root, inode, write_bytes);
+ 			goto out;
+ 		}
+ 
+ 		ret = dirty_and_release_pages(NULL, root, file, pages,
+ 					      num_pages, pos, write_bytes);
+ 		btrfs_drop_pages(pages, num_pages);
+-		if (ret)
++		if (ret) {
++			btrfs_delalloc_free_space(root, inode, write_bytes);
+ 			goto out;
++		}
+ 
+ 		if (will_write) {
+ 			btrfs_fdatawrite_range(inode->i_mapping, pos,
+@@ -1136,6 +1141,8 @@ static ssize_t btrfs_file_write(struct file *file, const char __user *buf,
+ 	}
+ out:
+ 	mutex_unlock(&inode->i_mutex);
++	if (ret)
++		err = ret;
+ 
+ out_nolock:
+ 	kfree(pages);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 288c2cd..910907b 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -91,34 +91,6 @@ static noinline int cow_file_range(struct inode *inode,
+ 				   unsigned long *nr_written, int unlock);
+ 
+ /*
+- * a very lame attempt at stopping writes when the FS is 85% full.  There
+- * are countless ways this is incorrect, but it is better than nothing.
+- */
+-int btrfs_check_free_space(struct btrfs_root *root, u64 num_required,
+-			   int for_del)
+-{
+-	u64 total;
+-	u64 used;
+-	u64 thresh;
+-	int ret = 0;
+-
+-	spin_lock(&root->fs_info->delalloc_lock);
+-	total = btrfs_super_total_bytes(&root->fs_info->super_copy);
+-	used = btrfs_super_bytes_used(&root->fs_info->super_copy);
+-	if (for_del)
+-		thresh = total * 90;
+-	else
+-		thresh = total * 85;
+-
+-	do_div(thresh, 100);
+-
+-	if (used + root->fs_info->delalloc_bytes + num_required > thresh)
+-		ret = -ENOSPC;
+-	spin_unlock(&root->fs_info->delalloc_lock);
+-	return ret;
+-}
+-
+-/*
+  * this does all the hard work for inserting an inline extent into
+  * the btree.  The caller should have done a btrfs_drop_extents so that
+  * no overlapping inline items exist in the btree
+@@ -1198,9 +1170,12 @@ static int btrfs_clear_bit_hook(struct inode *inode, u64 start, u64 end,
+ 			       (unsigned long long)end - start + 1,
+ 			       (unsigned long long)
+ 			       root->fs_info->delalloc_bytes);
++			btrfs_delalloc_free_space(root, inode, (u64)-1);
+ 			root->fs_info->delalloc_bytes = 0;
+ 			BTRFS_I(inode)->delalloc_bytes = 0;
+ 		} else {
++			btrfs_delalloc_free_space(root, inode,
++						  end - start + 1);
+ 			root->fs_info->delalloc_bytes -= end - start + 1;
+ 			BTRFS_I(inode)->delalloc_bytes -= end - start + 1;
+ 		}
+@@ -2217,10 +2192,6 @@ static int btrfs_unlink(struct inode *dir, struct dentry *dentry)
+ 
+ 	root = BTRFS_I(dir)->root;
+ 
+-	ret = btrfs_check_free_space(root, 1, 1);
+-	if (ret)
+-		goto fail;
+-
+ 	trans = btrfs_start_transaction(root, 1);
+ 
+ 	btrfs_set_trans_block_group(trans, dir);
+@@ -2233,7 +2204,6 @@ static int btrfs_unlink(struct inode *dir, struct dentry *dentry)
+ 	nr = trans->blocks_used;
+ 
+ 	btrfs_end_transaction_throttle(trans, root);
+-fail:
+ 	btrfs_btree_balance_dirty(root, nr);
+ 	return ret;
+ }
+@@ -2256,10 +2226,6 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
+ 		return -ENOTEMPTY;
+ 	}
+ 
+-	ret = btrfs_check_free_space(root, 1, 1);
+-	if (ret)
+-		goto fail;
+-
+ 	trans = btrfs_start_transaction(root, 1);
+ 	btrfs_set_trans_block_group(trans, dir);
+ 
+@@ -2276,7 +2242,6 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
+ fail_trans:
+ 	nr = trans->blocks_used;
+ 	ret = btrfs_end_transaction_throttle(trans, root);
+-fail:
+ 	btrfs_btree_balance_dirty(root, nr);
+ 
+ 	if (ret && !err)
+@@ -2786,7 +2751,7 @@ int btrfs_cont_expand(struct inode *inode, loff_t size)
+ 	if (size <= hole_start)
+ 		return 0;
+ 
+-	err = btrfs_check_free_space(root, 1, 0);
++	err = btrfs_check_metadata_free_space(root);
+ 	if (err)
+ 		return err;
+ 
+@@ -3563,7 +3528,7 @@ static int btrfs_mknod(struct inode *dir, struct dentry *dentry,
+ 	if (!new_valid_dev(rdev))
+ 		return -EINVAL;
+ 
+-	err = btrfs_check_free_space(root, 1, 0);
++	err = btrfs_check_metadata_free_space(root);
+ 	if (err)
+ 		goto fail;
+ 
+@@ -3626,7 +3591,7 @@ static int btrfs_create(struct inode *dir, struct dentry *dentry,
+ 	u64 objectid;
+ 	u64 index = 0;
+ 
+-	err = btrfs_check_free_space(root, 1, 0);
++	err = btrfs_check_metadata_free_space(root);
+ 	if (err)
+ 		goto fail;
+ 	trans = btrfs_start_transaction(root, 1);
+@@ -3694,7 +3659,7 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
+ 		return -ENOENT;
+ 
+ 	btrfs_inc_nlink(inode);
+-	err = btrfs_check_free_space(root, 1, 0);
++	err = btrfs_check_metadata_free_space(root);
+ 	if (err)
+ 		goto fail;
+ 	err = btrfs_set_inode_index(dir, &index);
+@@ -3740,7 +3705,7 @@ static int btrfs_mkdir(struct inode *dir, struct dentry *dentry, int mode)
+ 	u64 index = 0;
+ 	unsigned long nr = 1;
+ 
+-	err = btrfs_check_free_space(root, 1, 0);
++	err = btrfs_check_metadata_free_space(root);
+ 	if (err)
+ 		goto out_unlock;
+ 
+@@ -4297,7 +4262,7 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct page *page)
+ 	u64 page_start;
+ 	u64 page_end;
+ 
+-	ret = btrfs_check_free_space(root, PAGE_CACHE_SIZE, 0);
++	ret = btrfs_delalloc_reserve_space(root, inode, PAGE_CACHE_SIZE);
+ 	if (ret)
+ 		goto out;
+ 
+@@ -4310,6 +4275,7 @@ again:
+ 
+ 	if ((page->mapping != inode->i_mapping) ||
+ 	    (page_start >= size)) {
++		btrfs_delalloc_free_space(root, inode, PAGE_CACHE_SIZE);
+ 		/* page got truncated out from underneath us */
+ 		goto out_unlock;
+ 	}
+@@ -4332,6 +4298,8 @@ again:
+ 	}
+ 
+ 	btrfs_set_extent_delalloc(inode, page_start, page_end);
++	btrfs_delalloc_free_space(root, inode, PAGE_CACHE_SIZE -
++				  (page_end - page_start + 1));
+ 	ret = 0;
+ 
+ 	/* page is wholly or partially inside EOF */
+@@ -4592,7 +4560,7 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 	if (old_inode->i_ino == BTRFS_FIRST_FREE_OBJECTID)
+ 		return -EXDEV;
+ 
+-	ret = btrfs_check_free_space(root, 1, 0);
++	ret = btrfs_check_metadata_free_space(root);
+ 	if (ret)
+ 		goto out_unlock;
+ 
+@@ -4710,7 +4678,7 @@ static int btrfs_symlink(struct inode *dir, struct dentry *dentry,
+ 	if (name_len > BTRFS_MAX_INLINE_DATA_SIZE(root))
+ 		return -ENAMETOOLONG;
+ 
+-	err = btrfs_check_free_space(root, 1, 0);
++	err = btrfs_check_metadata_free_space(root);
+ 	if (err)
+ 		goto out_fail;
+ 
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 988fdc8..d2ac10f 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -70,7 +70,7 @@ static noinline int create_subvol(struct btrfs_root *root,
+ 	u64 index = 0;
+ 	unsigned long nr = 1;
+ 
+-	ret = btrfs_check_free_space(root, 1, 0);
++	ret = btrfs_check_metadata_free_space(root);
+ 	if (ret)
+ 		goto fail_commit;
+ 
+@@ -203,7 +203,7 @@ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
+ 	if (!root->ref_cows)
+ 		return -EINVAL;
+ 
+-	ret = btrfs_check_free_space(root, 1, 0);
++	ret = btrfs_check_metadata_free_space(root);
+ 	if (ret)
+ 		goto fail_unlock;
+ 
+@@ -371,10 +371,11 @@ static int btrfs_defrag_file(struct file *file)
+ 	unsigned long total_read = 0;
+ 	u64 page_start;
+ 	u64 page_end;
++	u64 size = inode->i_size;
+ 	unsigned long i;
+ 	int ret;
+ 
+-	ret = btrfs_check_free_space(root, inode->i_size, 0);
++	ret = btrfs_delalloc_reserve_space(root, inode, size);
+ 	if (ret)
+ 		return -ENOSPC;
+ 
+@@ -388,14 +389,18 @@ static int btrfs_defrag_file(struct file *file)
+ 		total_read++;
+ again:
+ 		page = grab_cache_page(inode->i_mapping, i);
+-		if (!page)
++		if (!page) {
++			btrfs_delalloc_free_space(root, inode, size);
+ 			goto out_unlock;
++		}
++
+ 		if (!PageUptodate(page)) {
+ 			btrfs_readpage(NULL, page);
+ 			lock_page(page);
+ 			if (!PageUptodate(page)) {
+ 				unlock_page(page);
+ 				page_cache_release(page);
++				btrfs_delalloc_free_space(root, inode, size);
+ 				goto out_unlock;
+ 			}
+ 		}
+@@ -424,6 +429,9 @@ again:
+ 		clear_page_dirty_for_io(page);
+ 
+ 		btrfs_set_extent_delalloc(inode, page_start, page_end);
++		btrfs_delalloc_free_space(root, inode, size -
++					  (page_end - page_start + 1));
++		size -= page_end - page_start + 1;
+ 
+ 		unlock_extent(io_tree, page_start, page_end, GFP_NOFS);
+ 		set_page_dirty(page);
+-- 
+1.5.4.3
 
-Code:
-  8817f35a:  tst       r0, r0
-  8817f35c:  bt.s      8817f362
-  8817f35e:  add       #40, r15
-->8817f360:  trapa     #62
-  8817f362:  mov.l     8817f3ac <insert_new_root+0x574/0x57c>, r1  ! 881c1188 <free_extent_buffer+0x0/0x26>
-  8817f364:  jsr       @r1
-  8817f366:  mov       r9, r4
-  8817f368:  mov.l     8817f3b0 <insert_new_root+0x578/0x57c>, r1  ! 88179b30 <add_root_to_dirty_list+0x0/0x3a>
-  8817f36a:  jsr       @r1
-
-Process: tar (pid: 4337, stack limit = 8c808001)
-Stack: (0x8c809c7c to 0x8c80a000)
-9c60:                                                                00000100
-9c80: 00000000 00000001 00000000 8817fe00 89c33400 89c2c6c8 00000001 88181456
-9ca0: 8c809cbc 89c2c6c8 887b2d8c 8c809df0 00000001 00000000 89c29380 00001000
-9cc0: 8985b000 00000000 8817ff50 8c809ce0 89c33400 89817000 00000019 00000065
-9ce0: 0000002e 8818002e 00000000 88011d0c 00000000 89c29380 88182afa 8c809d20
-9d00: 88011d0c 887b2d8c 88011c90 00000001 00000000 89c29380 000000e2 00000000
-9d20: 00000000 00000000 00000000 00000000 00000000 89c29380 0000002e 89c33400
-9d40: 89817000 8c809df0 89c2c6c8 00000001 00000001 00000000 8c809d74 00000000
-9d60: 89c2c708 00000000 88186e54 88182be6 8c809d94 00000000 0000010a 8c809df0
-9d80: 89817000 000000e2 00000000 000000e2 00000001 8c809d9c 00000000 89817000
-9da0: 00000000 00000000 89c33400 89817000 89c2c6c8 00000002 000000b0 8e42122c
-9dc0: 00800000 881a8e8e 881a8f84 8c809df0 00000000 0000010a 89c3728c 89817000
-9de0: 89c37244 89c37284 8c809e14 00000002 0000010a 00000000 00000001 00000000
-9e00: 00010a00 00000000 01010c00 00000000 88310000 000000a0 00000010 89c33400
-9e20: 89817000 89c2822c 89c30400 89c2c6c8 00000000 00000000 881a956e 8c809e7c
-9e40: 89c3038c 89c2822c 00000000 89817000 89c33400 ffffffe4 00000006 00000101
-9e60: 00000000 0000010a 00000000 00400000 00000000 000081c0 8c809e84 0000010a
-9e80: 00000000 0000000a 00000000 000081c0 00000000 00000000 89c28224 881ac94e
-9ea0: 8c809eb4 88076b2e 8c809ec4 000080c2 8c809ee0 000001c0 89c3038c 89c30908
-9ec0: 89c2822c 88076ec2 8c809ee0 fffff000 000001c0 ffffff9c 89c30908 00000000
-9ee0: 8f80fca0 89c30908 c265fd91 00000006 8c800006 00000700 00000000 00000000
-9f00: 000001c0 00000000 88034d84 8c809f28 8ee249c0 00000001 00000000 8808061c
-9f20: 8f819094 000080c2 000001c0 8ee8fa80 8f80fca0 89c3038c 8831bdc2 8831bdc8
-9f40: 000080c1 000001c0 00000022 00000000 00000080 8f819084 8806da1a 8c809f78
-9f60: 8c800000 fffff000 000001c0 ffffff9c 000080c1 00000004 8806dad6 8c809f98
-9f80: 00000030 296ec7c4 00000000 00000071 0000007f 8806dac0 88007236 7bce14cc
-9fa0: fffffbb0 00008000 7bce14f0 00000005 004566d0 000080c1 000001c0 000001ed
-9fc0: 000001c0 000000c1 004566d0 7bce1538 296ec7c4 00000030 7bce14cc 7bce14cc
-9fe0: 29663a4c 0040eea8 00000001 29719450 2710763a 00000000 0000004c 00000160
----[ end trace 1d089ae5b8ae7652 ]---
-Segmentation fault
-
-Anyone else run in to something similar? Ideas?

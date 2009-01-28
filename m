@@ -1,46 +1,35 @@
-From: Bill Nottingham <notting@redhat.com>
+From: Theodore Tso <tytso@mit.edu>
 Subject: Re: [PATCH] Documentation/Changes: add required versions for new
 	filesystems
-Date: Wed, 28 Jan 2009 11:01:57 -0500
-Message-ID: <20090128160157.GA5598@nostromo.devel.redhat.com>
-References: <1233158441-5475-1-git-send-email-notting@redhat.com>
+Date: Wed, 28 Jan 2009 16:13:47 -0500
+Message-ID: <20090128211347.GG8990@mit.edu>
+References: <1233158441-5475-1-git-send-email-notting@redhat.com> <20090128160157.GA5598@nostromo.devel.redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: linux-kernel@vger.kernel.org, phillip@lougher.demon.co.uk,
 	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1233158441-5475-1-git-send-email-notting@redhat.com>
+In-Reply-To: <20090128160157.GA5598@nostromo.devel.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Bill Nottingham (notting@redhat.com) said: 
-> btrfs requires version 0.18 of its tools, and squashfs requires
-> 4.0.
+On Wed, Jan 28, 2009 at 11:01:57AM -0500, Bill Nottingham wrote:
+> Bill Nottingham (notting@redhat.com) said: 
+> > btrfs requires version 0.18 of its tools, and squashfs requires
+> > 4.0.
+> 
+> This time, with a typo fix.
 
-This time, with a typo fix.
+While you're at it, could you also update e2fsprogs to require 1.41.4.
+It's required for ext4, and even for ext3, if the text is going to
+say, "if you're going to report any bugs, please update to the
+versions of these programs".  So the line for e2fsprogs should read:
 
-...
+ o  e2fsprogs              1.41.4                    # e2fsck -V
 
-btrfs requires version 0.18 of its tools, and squashfs requires
-4.0.
+I could push this as a separate patch, but then there could be patch
+conflicts, so it might be nice if you could update e2fsprogs at the
+same time.
 
-Signed-off-by: Bill Nottingham <notting@redhat.com>
----
- Documentation/Changes |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+Thanks!!
 
-diff --git a/Documentation/Changes b/Documentation/Changes
-index cb2b141..011cc43 100644
---- a/Documentation/Changes
-+++ b/Documentation/Changes
-@@ -37,6 +37,8 @@ o  e2fsprogs              1.29                    # tune2fs
- o  jfsutils               1.1.3                   # fsck.jfs -V
- o  reiserfsprogs          3.6.3                   # reiserfsck -V 2>&1|grep reiserfsprogs
- o  xfsprogs               2.6.0                   # xfs_db -V
-+o  squashfs-tools         4.0                     # mksquashfs -version
-+o  btrfs-progs            0.18                    # btrfsck
- o  pcmciautils            004                     # pccardctl -V
- o  quota-tools            3.09                    # quota -V
- o  PPP                    2.4.0                   # pppd --version
--- 
-1.6.1.1
-
+						- Ted

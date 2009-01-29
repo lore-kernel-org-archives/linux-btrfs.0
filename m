@@ -1,37 +1,58 @@
-From: Randy Dunlap <randy.dunlap@oracle.com>
-Subject: Re: [PATCH] Documentation/Changes: add required versions for new
- filesystems
-Date: Wed, 28 Jan 2009 19:45:10 -0800
-Message-ID: <49812646.306@oracle.com>
-References: <1233158441-5475-1-git-send-email-notting@redhat.com> <20090128160157.GA5598@nostromo.devel.redhat.com> <20090128211347.GG8990@mit.edu>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: btrfs-unstable tree updated to 2.6.29-rc3
+Date: Thu, 29 Jan 2009 11:54:20 -0500
+Message-ID: <1233248060.13087.15.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Theodore Tso <tytso@mit.edu>, linux-kernel@vger.kernel.org,
-	phillip@lougher.demon.co.uk, linux-btrfs@vger.kernel.org
+Content-Type: text/plain
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090128211347.GG8990@mit.edu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Theodore Tso wrote:
-> On Wed, Jan 28, 2009 at 11:01:57AM -0500, Bill Nottingham wrote:
->> Bill Nottingham (notting@redhat.com) said: 
->>> btrfs requires version 0.18 of its tools, and squashfs requires
->>> 4.0.
->> This time, with a typo fix.
-> 
-> While you're at it, could you also update e2fsprogs to require 1.41.4.
-> It's required for ext4, and even for ext3, if the text is going to
-> say, "if you're going to report any bugs, please update to the
-> versions of these programs".  So the line for e2fsprogs should read:
-> 
->  o  e2fsprogs              1.41.4                    # e2fsck -V
-> 
-> I could push this as a separate patch, but then there could be patch
-> conflicts, so it might be nice if you could update e2fsprogs at the
-> same time.
+Hello everyone,
 
-I've done that and can add it to my Docs patches queue for Linus.
+I've pushed out a largish batch of fixes and improvements, and updated
+the unstable tree to 2.6.29-rc3 (a merge conflict on fs/super.c meant I
+had to update it).
 
-Thanks,
--- 
-~Randy
+The big change in this push is new locking btree locking code.  mutexes
+are no longer used to lock metadata, instead I've switched it to a
+spinlock.
+
+But, there are still a number of places we need to have metadata locked
+that can sleep, so I've added a flag to the metadata buffers and a wait
+queue.  When the code needs to sleep with a lock held, there are calls
+to drop the spin lock and force others to wait on the wait queue instead
+of spinning.
+
+Overall, its faster than the old code because the most common places
+where we don't sleep (btree searching) get covered by the spin lock.
+More importantly, it makes the places we do sleep explicit and easy to
+trace.  This way we can go through and get rid of them one by one in an
+orderly (and testable) fashion.
+
+
+Other changes:
+
+* Jim Owen's selinux work.  Thanks Jim, this was included so the fedora
+guys could run with btrfs
+
+* Turn off leak debugging and get rid of the per-FS hash lock.  Both of
+these reduce system time used in every workload.
+
+* Sort references in btrfs_inc_ref before diving into the extent
+allocation tree to update them.  This makes it much more likely we'll do
+efficient IO and find things in cache as we go.
+
+* readdir fix on 32 bit machines.  glibc was having problems in some
+cases with an offset from btrfs that was too large.
+
+* Fix IO stalls on multi-device filesystems.  I think I really got this
+one this time, the async threading code was missing a wakeup call.
+
+The unstable tree hasn't been updated yet, I want to keep it compiling
+against 2.6.28 at the very least.  So, I'm making that merging tree
+today with the 2.6.28 backports.
+
+-chris
+
+

@@ -1,158 +1,37 @@
-From: Josef Bacik <jbacik@redhat.com>
-Subject: Re: [PATCH] btrfs: make sure all pending extent operations are
-	complete
-Date: Wed, 28 Jan 2009 16:29:24 -0500
-Message-ID: <20090128212924.GA24426@unused.rdu.redhat.com>
-References: <1233089524-17631-1-git-send-email-jbacik@redhat.com>
+From: Randy Dunlap <randy.dunlap@oracle.com>
+Subject: Re: [PATCH] Documentation/Changes: add required versions for new
+ filesystems
+Date: Wed, 28 Jan 2009 19:45:10 -0800
+Message-ID: <49812646.306@oracle.com>
+References: <1233158441-5475-1-git-send-email-notting@redhat.com> <20090128160157.GA5598@nostromo.devel.redhat.com> <20090128211347.GG8990@mit.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <jbacik@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Theodore Tso <tytso@mit.edu>, linux-kernel@vger.kernel.org,
+	phillip@lougher.demon.co.uk, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1233089524-17631-1-git-send-email-jbacik@redhat.com>
+In-Reply-To: <20090128211347.GG8990@mit.edu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 27, 2009 at 03:52:04PM -0500, Josef Bacik wrote:
-> Hello,
+Theodore Tso wrote:
+> On Wed, Jan 28, 2009 at 11:01:57AM -0500, Bill Nottingham wrote:
+>> Bill Nottingham (notting@redhat.com) said: 
+>>> btrfs requires version 0.18 of its tools, and squashfs requires
+>>> 4.0.
+>> This time, with a typo fix.
 > 
-> Theres a slight problem with finish_current_insert, if we set all to 1 and then
-> go through and don't actually skip any of the extents on the pending list, we
-> could exit right after we've added new extents.  This is a problem because by
-> inserting the new extents we could have gotten new COW's to happen and such, so
-> we may have some pending updates to do or even more inserts to do after that.
-> So this patch will only exit if we have never skipped any of the extents in the
-> pending list, and we have no extents to insert, this will make sure that all of
-> the pending work is truly done before we return.  I've been running with this
-> patch for a few days with all of my other testing and have not seen issues.
-> Thanks,
+> While you're at it, could you also update e2fsprogs to require 1.41.4.
+> It's required for ext4, and even for ext3, if the text is going to
+> say, "if you're going to report any bugs, please update to the
+> versions of these programs".  So the line for e2fsprogs should read:
 > 
-> Signed-off-by: Josef Bacik <jbacik@redhat.com>
+>  o  e2fsprogs              1.41.4                    # e2fsck -V
+> 
+> I could push this as a separate patch, but then there could be patch
+> conflicts, so it might be nice if you could update e2fsprogs at the
+> same time.
 
-Hello,
+I've done that and can add it to my Docs patches queue for Linus.
 
-Here's an updated patch I've been testing with.  It needs more testing, but its
-very similar to the last patch, it just sets restart = 1 if all is set and we
-updated some backrefs.  Thanks,
-
-Josef
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 9e56287..7ee94b9 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2266,13 +2266,12 @@ static int finish_current_insert(struct btrfs_trans_handle *trans,
- 	u64 end;
- 	u64 priv;
- 	u64 search = 0;
--	u64 skipped = 0;
- 	struct btrfs_fs_info *info = extent_root->fs_info;
- 	struct btrfs_path *path;
- 	struct pending_extent_op *extent_op, *tmp;
- 	struct list_head insert_list, update_list;
- 	int ret;
--	int num_inserts = 0, max_inserts;
-+	int num_inserts = 0, max_inserts, restart = 0;
- 
- 	path = btrfs_alloc_path();
- 	INIT_LIST_HEAD(&insert_list);
-@@ -2288,19 +2287,19 @@ again:
- 		ret = find_first_extent_bit(&info->extent_ins, search, &start,
- 					    &end, EXTENT_WRITEBACK);
- 		if (ret) {
--			if (skipped && all && !num_inserts &&
-+			if (restart && !num_inserts &&
- 			    list_empty(&update_list)) {
--				skipped = 0;
-+				restart = 0;
- 				search = 0;
- 				continue;
- 			}
--			mutex_unlock(&info->extent_ins_mutex);
- 			break;
- 		}
- 
- 		ret = try_lock_extent(&info->extent_ins, start, end, GFP_NOFS);
- 		if (!ret) {
--			skipped = 1;
-+			if (all)
-+				restart = 1;
- 			search = end + 1;
- 			if (need_resched()) {
- 				mutex_unlock(&info->extent_ins_mutex);
-@@ -2319,7 +2318,7 @@ again:
- 			list_add_tail(&extent_op->list, &insert_list);
- 			search = end + 1;
- 			if (num_inserts == max_inserts) {
--				mutex_unlock(&info->extent_ins_mutex);
-+				restart = 1;
- 				break;
- 			}
- 		} else if (extent_op->type == PENDING_BACKREF_UPDATE) {
-@@ -2335,7 +2334,6 @@ again:
- 	 * somebody marked this thing for deletion then just unlock it and be
- 	 * done, the free_extents will handle it
- 	 */
--	mutex_lock(&info->extent_ins_mutex);
- 	list_for_each_entry_safe(extent_op, tmp, &update_list, list) {
- 		clear_extent_bits(&info->extent_ins, extent_op->bytenr,
- 				  extent_op->bytenr + extent_op->num_bytes - 1,
-@@ -2357,6 +2355,10 @@ again:
- 	if (!list_empty(&update_list)) {
- 		ret = update_backrefs(trans, extent_root, path, &update_list);
- 		BUG_ON(ret);
-+
-+		/* we may have COW'ed new blocks, so lets start over */
-+		if (all)
-+			restart = 1;
- 	}
- 
- 	/*
-@@ -2364,9 +2366,9 @@ again:
- 	 * need to make sure everything is cleaned then reset everything and
- 	 * go back to the beginning
- 	 */
--	if (!num_inserts && all && skipped) {
-+	if (!num_inserts && restart) {
- 		search = 0;
--		skipped = 0;
-+		restart = 0;
- 		INIT_LIST_HEAD(&update_list);
- 		INIT_LIST_HEAD(&insert_list);
- 		goto again;
-@@ -2423,27 +2425,19 @@ again:
- 	BUG_ON(ret);
- 
- 	/*
--	 * if we broke out of the loop in order to insert stuff because we hit
--	 * the maximum number of inserts at a time we can handle, then loop
--	 * back and pick up where we left off
-+	 * if restart is set for whatever reason we need to go back and start
-+	 * searching through the pending list again.
-+	 *
-+	 * We just inserted some extents, which could have resulted in new
-+	 * blocks being allocated, which would result in new blocks needing
-+	 * updates, so if all is set we _must_ restart to get the updated
-+	 * blocks.
- 	 */
--	if (num_inserts == max_inserts) {
--		INIT_LIST_HEAD(&insert_list);
--		INIT_LIST_HEAD(&update_list);
--		num_inserts = 0;
--		goto again;
--	}
--
--	/*
--	 * again, if we need to make absolutely sure there are no more pending
--	 * extent operations left and we know that we skipped some, go back to
--	 * the beginning and do it all again
--	 */
--	if (all && skipped) {
-+	if (restart || all) {
- 		INIT_LIST_HEAD(&insert_list);
- 		INIT_LIST_HEAD(&update_list);
- 		search = 0;
--		skipped = 0;
-+		restart = 0;
- 		num_inserts = 0;
- 		goto again;
- 	}
+Thanks,
+-- 
+~Randy

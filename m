@@ -1,61 +1,22 @@
-From: Dave Chinner <david@fromorbit.com>
-Subject: Re: Warning and BUG with btrfs and corrupted image
-Date: Sun, 1 Feb 2009 12:40:50 +1100
-Message-ID: <20090201014050.GD24173@disturbed>
-References: <20090113144307.GF16333@alice> <20090118174035.GG1944@ucw.cz> <20090120063150.GC5854@alice> <20090120101119.GB10158@disturbed> <20090120101503.GC17377@alice> <20090120125944.GC10158@disturbed> <20090120132829.GA27429@infradead.org> <20090120222019.GB2320@elf.ucw.cz> <20090121040042.GI10158@disturbed> <20090126162711.GA2083@elf.ucw.cz>
+From: Josef Bacik <jbacik@redhat.com>
+Subject: Re: [PATCH] btrfs: Handle SGID bit when creating inodes
+Date: Sun, 1 Feb 2009 08:38:48 -0500
+Message-ID: <20090201133848.GA21973@unused.rdu.redhat.com>
+References: <m363ju3jh5.fsf@pullcord.laptop.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Christoph Hellwig <hch@infradead.org>,
-	Eric Sesterhenn <snakebyte@gmx.de>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: Pavel Machek <pavel@suse.cz>
+Cc: linux-btrfs@vger.kernel.org
+To: Chris Ball <cjb@laptop.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090126162711.GA2083@elf.ucw.cz>
+In-Reply-To: <m363ju3jh5.fsf@pullcord.laptop.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 26, 2009 at 05:27:11PM +0100, Pavel Machek wrote:
-> On Wed 2009-01-21 15:00:42, Dave Chinner wrote:
-> > On Tue, Jan 20, 2009 at 11:20:19PM +0100, Pavel Machek wrote:
-> > > On Tue 2009-01-20 08:28:29, Christoph Hellwig wrote:
-> > > > I think that was the issue with the debug builds.  If you do this
-> > > > testing always do it without CONFIG_XFS_DEBUG set as with that option
-> > > > we intentionally panic on detected disk corruptions.
-> > > 
-> > > Uhuh, *_DEBUG options are not supposed to make kernel less
-> > > stable/robust. Should that crashing functionality be guarded with
-> > > command line option or something? ext2 has errors=panic mount
-> > > option...
-> > 
-> > No, it's a debugging option that is described as:
-> > 
-> > 	"Say N unless you are an XFS developer, or you play one on TV."
-> > 
-> > Seriously, if you aren't trying to develop XFS stuff then *don't turn it
-> > on*.
+On Sat, Jan 31, 2009 at 10:48:54PM -0500, Chris Ball wrote:
+> Before this patch, new files/dirs would ignore the SGID bit on their
+> parent directory and always be owned by the creating user's uid/gid.
 > 
-> What about this, then?
+> Signed-off-by: Chris Ball <cjb@laptop.org>
 
-....
+Looks good, thanks much for taking care of this,
 
-> +	  Turning this option on will result in kernel panicking any time
-> +	  it detects on-disk corruption.
-
-Thin end of a wedge. There's a couple of thousand conditions that
-CONFIG_XFS_DEBUG introduces kernel panics on:
-
-$ grep -r ASSERT fs/xfs |wc -l
-2095
-
-
-CONFIG_*_DEBUG means include *debug* code there to help developers,
-including adding additional failure tests into the kernel. Besides,
-which bit of "don't turn it on unless you are an XFS developer"
-don't you understand?
-
-Cheers,
-
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+Josef

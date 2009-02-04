@@ -1,72 +1,38 @@
-From: Jeff Mahoney <jeffm@jeffreymahoney.com>
-Subject: [PATCH] New fs-specific Kconfig options should go in fs/$FS/Kconfig, not fs/Kconfig.
-Date: Tue,  3 Feb 2009 21:58:28 -0500
-Message-ID: <1233716308-19702-1-git-send-email-jeffm@suse.com>
-Cc: Jeff Mahoney <jeffm@suse.com>
-To: Btrfs Development List <linux-btrfs@vger.kernel.org>
+From: Bron Gondwana <brong@fastmail.fm>
+Subject: Re: More performance results
+Date: Wed, 4 Feb 2009 13:57:29 +1100
+Message-ID: <20090204025729.GB2248@brong.net>
+References: <49871813.8090309@austin.ibm.com> <f24d23310902030532w6cad0b6v209951bb24fba388@mail.gmail.com> <1233673296.7246.4.camel@think.oraclecorp.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: debian developer <debiandev@gmail.com>,
+	Steven Pratt <slpratt@austin.ibm.com>,
+	linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1233673296.7246.4.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- Commit 699b6faa2ab283219914501d5117f8a93c7e441b allowed btrfs ACLs to
- be selectable, but put the option in the main fs/Kconfig, and didn't
- make it depend on btrfs.
+On Tue, Feb 03, 2009 at 10:01:36AM -0500, Chris Mason wrote:
+> [...] In my testing
+> here, the big difference between ext4 and btrfs isn't writing to files,
+> it is actually the unlinks.  If I take them out of the run, btrfs is
+> very close to ext4 times.
 
- This patch moves the option and adds the dependency.
+Oh man, what is it with unlinks.  Nobody does them very fast.
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
+We use "delayed delete" with Cyrus so that the majority of unlinks
+get saved for the weekend, and even then run them serially because
+the IO hit is so high.  We do more IO during the cyr_expire run than
+even the peak of U.S. day.
 
- fs/Kconfig       |   13 -------------
- fs/btrfs/Kconfig |   15 +++++++++++++++
- 2 files changed, 15 insertions(+), 13 deletions(-)
+A "multi-unlink" API would be seriously nice, where you could say "I
+want all these files to disappear, so don't bother trying to keep making
+the directory entries consistent in-between-times".
 
-diff --git a/fs/Kconfig b/fs/Kconfig
-index 6198082..ef81718 100644
---- a/fs/Kconfig
-+++ b/fs/Kconfig
-@@ -51,19 +51,6 @@ source "fs/xfs/Kconfig"
- source "fs/gfs2/Kconfig"
- source "fs/ocfs2/Kconfig"
- source "fs/btrfs/Kconfig"
--
--config BTRFS_FS_POSIX_ACL
--	bool "Btrfs POSIX Access Control Lists"
--	select FS_POSIX_ACL
--	help
--	  POSIX Access Control Lists (ACLs) support permissions for users and
--	  groups beyond the owner/group/world scheme.
--
--	  To learn more about Access Control Lists, visit the POSIX ACLs for
--	  Linux website <http://acl.bestbits.at/>.
--
--	  If you don't know what Access Control Lists are, say N
--
- endif # BLOCK
- 
- source "fs/notify/Kconfig"
-diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
-index f8fcf99..42e91e3 100644
---- a/fs/btrfs/Kconfig
-+++ b/fs/btrfs/Kconfig
-@@ -16,3 +16,18 @@ config BTRFS_FS
- 	  module will be called btrfs.
- 
- 	  If unsure, say N.
-+
-+config BTRFS_FS_POSIX_ACL
-+	bool "Btrfs POSIX Access Control Lists"
-+	depends on BTRFS_FS
-+	select FS_POSIX_ACL
-+	help
-+	  POSIX Access Control Lists (ACLs) support permissions for users and
-+	  groups beyond the owner/group/world scheme.
-+
-+	  To learn more about Access Control Lists, visit the POSIX ACLs for
-+	  Linux website <http://acl.bestbits.at/>.
-+
-+	  If you don't know what Access Control Lists are, say N
-+
-+
--- 
-1.6.0.2
+Especially, 'rm -rf' performance really sucks with single unlinks -
+you're re-creating all this directory data that's just going to be
+discarded in a second anyway.
 
+Bron ( wondering how much is "it's a hard problem" and how much is
+       "nobody bothers to optimise it" )

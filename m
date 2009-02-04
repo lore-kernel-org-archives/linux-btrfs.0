@@ -1,34 +1,33 @@
-From: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH] btrfs: balance_level checks !child after access
-Date: Wed, 04 Feb 2009 13:54:48 -0500
-Message-ID: <4989E478.4030907@suse.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH] New fs-specific Kconfig options should go in
+ fs/$FS/Kconfig, not fs/Kconfig.
+Date: Wed, 04 Feb 2009 13:59:31 -0500
+Message-ID: <1233773971.20318.62.camel@think.oraclecorp.com>
+References: <1233716308-19702-1-git-send-email-jeffm@suse.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Btrfs Development List <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain
+Cc: Btrfs Development List <linux-btrfs@vger.kernel.org>,
+	Jeff Mahoney <jeffm@suse.com>
+To: Jeff Mahoney <jeffm@jeffreymahoney.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1233716308-19702-1-git-send-email-jeffm@suse.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- The BUG_ON(!child) should be before it's used.
+On Tue, 2009-02-03 at 21:58 -0500, Jeff Mahoney wrote:
+> Commit 699b6faa2ab283219914501d5117f8a93c7e441b allowed btrfs ACLs to
+>  be selectable, but put the option in the main fs/Kconfig, and didn't
+>  make it depend on btrfs.
+> 
+>  This patch moves the option and adds the dependency.
+> 
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
+FYI, I did merge this but folded it into the original ACL patch.  I
+rebased the tree because Yan found a bug that could cause corruption
+during btrfs-vol -b processing.
 
- fs/btrfs/ctree.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+So, if you've pulled the unstable tree, you'll want to pull again and
+git gc
 
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -917,9 +917,9 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
- 
- 		/* promote the child to a root */
- 		child = read_node_slot(root, mid, 0);
-+		BUG_ON(!child);
- 		btrfs_tree_lock(child);
- 		btrfs_set_lock_blocking(child);
--		BUG_ON(!child);
- 		ret = btrfs_cow_block(trans, root, child, mid, 0, &child, 0);
- 		BUG_ON(ret);
- 
--- 
-Jeff Mahoney
-SUSE Labs
+-chris
+
+

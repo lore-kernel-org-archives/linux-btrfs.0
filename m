@@ -1,32 +1,57 @@
-From: Thomas Kuther <gimpel@sonnenkinder.org>
-Subject: Re: How do I correctly mount a multidevice volume via fstab?
-Date: Fri, 6 Feb 2009 19:17:15 +0000 (UTC)
-Message-ID: <loom.20090206T191551-121@post.gmane.org>
-References: <loom.20090206T174848-929@post.gmane.org> <3d0408630902061019h423d2b06vb444d9d2b54138ef@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+From: Anupam Garg <garga@soe.ucsc.edu>
+Subject: btrfsctl snapshot question
+Date: Sat, 7 Feb 2009 20:11:15 -0800
+Message-ID: <EF9B3EFE-9DDE-4CBC-8536-7180B61799EB@soe.ucsc.edu>
+Mime-Version: 1.0 (Apple Message framework v930.3)
+Content-Type: text/plain; charset=US-ASCII; format=flowed; delsp=yes
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Yan Zheng <yanzheng <at> 21cn.com> writes:
+Hi,
+I am using btrfsctl to snapshot, however it does not seem to be working.
+I am doing:
 
-> > So I have to run btrfsctl -a first, then mounting works. Can this be done
-> > via fstab?
-> 
-> you can add 'device=/dev/xxx' to the mount options field.
-> 
-> for example:
-> /dev/disk/by-id/scsi-SATA_ST31000333AS_9TE12DSC-part7 /mnt/btrfs btrfs
-> device=/dev/disk/by-id/scsi-SATA_ST31000333AS_9TE12DSC-part1 1 2
-> 
-> Regards
-> Yan Zheng
 
-Ah nice, that easy.
++ umount /btrfs
++ mkfs.btrfs /dev/sdb1
 
-Thank you!
+WARNING! - Btrfs v0.18-12-ge3b0f66 IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
 
-Best,
-Thomas
+fs created label (null) on /dev/sdb1
+	nodesize 4096 leafsize 4096 sectorsize 4096 size 19.99GB
+Btrfs v0.18-12-ge3b0f66
++ btrfsctl -A /dev/sdb1
+operation complete
+Btrfs v0.18-12-ge3b0f66
++ mount -t btrfs /dev/sdb1 /btrfs
++ cd /btrfs
++ btrfsctl -S base .
+operation complete
+Btrfs v0.18-12-ge3b0f66
++ dd if=/dev/urandom of=/btrfs/base/data bs=1M count=20
+20+0 records in
+20+0 records out
+20971520 bytes (21 MB) copied, 3.82335 s, 5.5 MB/s
++ ls -l /btrfs/base/data
+-rw-r--r-- 1 root root 20971520 2009-02-07 19:59 /btrfs/base/data
++ btrfsctl -s rev1 /btrfs/base
+operation complete
+Btrfs v0.18-12-ge3b0f66
++ ls -l /btrfs/base/data
+-rw-r--r-- 1 root root 20971520 2009-02-07 19:59 /btrfs/base/data
++ ls -l /btrfs/rev1/data
+-rw-r--r-- 1 root root 0 2009-02-07 19:59 /btrfs/rev1/data
 
+At the end, I expect the sizes of /btrfs/base/data & /btrfs/rev1/data  
+to be the same.
+Is that expectation correct?
+
+I'm sure I'm missing something fundamental here. I'm at the latest  
+progs and kernel according to git.
+I've read the wiki, but can't figure out what I'm missing.
+
+
+thanks in advance for any help or pointers to additional docs,
+-anupam

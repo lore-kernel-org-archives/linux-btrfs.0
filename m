@@ -1,229 +1,384 @@
-From: "Lee Trager" <lt73@cs.drexel.edu>
-Subject: [PATCH] Backport to 2.6.27 and 2.6.26
-Date: Mon, 9 Feb 2009 17:26:30 -0500
-Message-ID: <20090209222630.GA12265@tux64-01>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+From: Aaron Straus <aaron@merfinllc.com>
+Subject: [PATCH] start work on delete snapshot code
+Date: Mon,  9 Feb 2009 16:07:33 -0800
+Message-ID: <1234224453-4227-1-git-send-email-aaron@merfinllc.com>
+Cc: Aaron Straus <aaron@merfinllc.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch will allow btrfs-unstable-standalone to compile cleanly
-against 2.6.27, 2.6.26, and possibly older(I havn't tested older then
-26).
+This is far from complete and in particular it *doesn't* take the necessary
+locks at all i.e. please don't use this yet outside of testing.  This patch is
+more of a request for help with regards to the locking.
 
-Signed-off-by: Lee Trager <lt73@cs.drexel.edu>
+I think there is also a bug in the mainline tree.  When taking snapshots of
+snapshots I'm not sure we're adding the proper references and back references
+in the root_tree.
 
+This code doesn't immediately panic the system and seems to delete a tree
+succesfully in simple tests.  The filesystem even fscks correctly afterwards!
+
+Thanks!
 ---
- compat.h      |   24 ++++++++++++++++++++++++
- export.h      |   28 ++++++++++++++++++++++++++++
- extent-tree.c |    4 ++++
- extent_io.c   |   12 ++++++++++++
- file.c        |    4 ++++
- inode.c       |   16 +++++++++++++++-
- ioctl.c       |    4 ++++
- 7 files changed, 91 insertions(+), 1 deletions(-)
+ fs/btrfs/ioctl.c |  325 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/ioctl.h |    3 +
+ 2 files changed, 328 insertions(+), 0 deletions(-)
 
-diff --git a/compat.h b/compat.h
-index 7c4503e..eedf14c 100644
---- a/compat.h
-+++ b/compat.h
-@@ -4,4 +4,28 @@
- #define btrfs_drop_nlink(inode) drop_nlink(inode)
- #define btrfs_inc_nlink(inode)	inc_nlink(inode)
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 988fdc8..6e09873 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -550,6 +550,329 @@ out:
+ 	return ret;
+ }
  
-+#if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 27)
-+static inline struct dentry *d_obtain_alias(struct inode *inode)
++static noinline int remove_directory_entries(struct btrfs_trans_handle *trans,
++				struct btrfs_root *root, struct inode *dir,
++				struct inode *inode, char *name, int name_len)
 +{
-+	struct dentry *d;
++	struct btrfs_path *path;
++	struct btrfs_dir_item *di;
++	struct btrfs_key key;
++	struct btrfs_key found_key;
++	int ret;
++	unsigned long found_name;
++	struct extent_buffer *leaf;
 +
-+	if (!inode)
-+		return NULL;
-+	if (IS_ERR(inode))
-+		return ERR_CAST(inode);
++	path = btrfs_alloc_path();
++	if (!path) {
++		ret = -ENOMEM;
++		goto out;
++	}
 +
-+	d = d_alloc_anon(inode);
-+	if (!d)
-+		iput(inode);
-+	return d;
++	di = btrfs_lookup_dir_item(trans, root, path, dir->i_ino,
++				    name, name_len, -1);
++
++	if (IS_ERR(di)) {
++		ret = PTR_ERR(di);
++		goto err;
++	}
++
++	if (!di) {
++		printk(KERN_INFO "btrfs: weird no dentry\n");
++		ret = -ENOENT;
++		goto err;
++	}
++
++	ret = btrfs_delete_one_dir_name(trans, root, path, di);
++	if (ret) {
++		printk(KERN_INFO "btrfs: cannot delete name\n");
++		goto err;
++	}
++
++	btrfs_release_path(root, path);
++
++	/* now the tough part... the index.. we can't rely on the inode
++	 * ref b/c the inode ref lives in a different tree... just fall
++	 * back to search */
++	key.objectid = dir->i_ino;
++	key.offset = (u64) -1;
++	key.type = BTRFS_DIR_INDEX_KEY;
++
++	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
++
++	if (ret < 0) {
++		printk(KERN_INFO "btrfs: problem with initial dir index search\n");
++		goto err;
++	}
++
++	BUG_ON(ret == 0);
++
++	ret = 0;
++	di = NULL;
++
++	while (!ret) {
++		ret = btrfs_previous_item(root, path, key.objectid,
++					  BTRFS_DIR_INDEX_KEY);
++
++		if (ret < 0) {
++			printk(KERN_INFO "btrfs: problem scanning backwards for index\n");
++			goto err;
++		}
++
++		if (ret)
++			break;
++
++		btrfs_item_key_to_cpu(path->nodes[0], &found_key,
++				      path->slots[0]);
++		leaf = path->nodes[0];
++
++		BUG_ON(found_key.objectid != key.objectid);
++
++		di = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_dir_item);
++
++		if (btrfs_dir_name_len(leaf, di) == name_len) {
++			found_name = (unsigned long) (di + 1);
++			if (!memcmp_extent_buffer(leaf, name, found_name, name_len))
++				break;
++		}
++
++		di = NULL;
++	}
++
++	/* di will be non-null if we found a match */
++	if (di != NULL) {
++		ret = btrfs_del_item(trans, root, path);
++		BUG_ON(ret);
++		btrfs_release_path(root, path);
++	} else {
++		printk(KERN_INFO "btrfs: hmm no dir index\n");
++	}
++
++	btrfs_i_size_write(dir, dir->i_size - name_len * 2);
++	inode->i_ctime = dir->i_mtime = dir->i_ctime = CURRENT_TIME;
++	btrfs_update_inode(trans, root, dir);
++	dir->i_sb->s_dirt = 1;
++err:
++	btrfs_free_path(path);
++out:
++	return ret;
 +}
-+#endif
 +
-+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 28)
-+#define __pagevec_lru_add_file __pagevec_lru_add
-+#define open_bdev_exclusive open_bdev_excl
-+#define close_bdev_exclusive(bdev, mode) close_bdev_excl(bdev)
-+typedef unsigned __bitwise__ fmode_t;
-+#endif
++static noinline int delete_root_references(struct btrfs_root *dir_root,
++			struct btrfs_root *target_root)
++{
++	struct btrfs_trans_handle *trans;
++	struct btrfs_key key;
++	int ret;
++	int refs;
++	struct btrfs_path *path;
++	struct btrfs_root *root;
 +
- #endif /* _COMPAT_H_ */
-diff --git a/export.h b/export.h
-index 074348a..63b6a20 100644
---- a/export.h
-+++ b/export.h
-@@ -16,4 +16,32 @@ struct btrfs_fid {
- 	u64 parent_root_objectid;
- } __attribute__ ((packed));
++	path = btrfs_alloc_path();
++	if (!path) {
++		ret = -ENOMEM;
++		goto out;
++	}
++
++	root = dir_root->fs_info->tree_root;
++
++	trans = btrfs_start_transaction(root, 1);
++
++	key.objectid = dir_root->root_key.objectid;
++	key.type = BTRFS_ROOT_REF_KEY;
++	key.offset = target_root->root_key.objectid;
++
++	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
++
++	if (ret < 0) {
++		printk(KERN_INFO "btrfs:  problem find root refs\n");
++		goto err;
++	}
++
++	if (!ret)
++		btrfs_del_item(trans, root, path);
++	else
++		printk(KERN_INFO "btrfs:  hmm no root refs\n");
++
++	btrfs_release_path(root, path);
++
++	key.objectid = target_root->root_key.objectid;
++	key.type = BTRFS_ROOT_BACKREF_KEY;
++	key.offset = dir_root->root_key.objectid;
++
++	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
++
++	if (ret < 0) {
++		printk(KERN_INFO "btrfs:  problem find root backrefs\n");
++		goto err;
++	}
++
++	if (!ret)
++		btrfs_del_item(trans, root, path);
++	else
++		printk(KERN_INFO "btrfs:  hmm no root backrefs\n");
++
++	btrfs_release_path(root, path);
++
++	refs = btrfs_root_refs(&target_root->root_item);
++	btrfs_set_root_refs(&target_root->root_item, refs - 1);
++
++	ret = btrfs_update_root(trans, root, &target_root->root_key,
++				&target_root->root_item);
++
++	if (ret) {
++		printk(KERN_INFO "btrfs: problem copying root into btree\n");
++		goto err;
++	}
++
++	ret = btrfs_commit_transaction(trans, root);
++
++	if (ret) {
++		printk(KERN_INFO "btrfs: problem committing transaction\n");
++		goto err;
++	}
++
++err:
++	btrfs_free_path(path);
++out:
++	return ret;
++}
++
++static noinline int btrfs_ioctl_snap_destroy(struct file *file,
++				void __user *arg)
++{
++	struct inode *inode;
++	struct dentry *dir = fdentry(file);
++	struct dentry *dentry;
++	struct btrfs_root *root = BTRFS_I(dir->d_inode)->root;
++	struct btrfs_root *target_root;
++	struct btrfs_ioctl_vol_args *vol_args;
++	struct btrfs_trans_handle *trans;
++	int namelen;
++	int ret = 0;
++	int refs;
++
++	if (root->fs_info->sb->s_flags & MS_RDONLY) {
++		ret = -EROFS;
++		goto out_final;
++	}
++
++	vol_args = kmalloc(sizeof(*vol_args), GFP_NOFS);
++
++	if (!vol_args) {
++		ret = -ENOMEM;
++		goto out_final;
++	}
++
++	if (copy_from_user(vol_args, arg, sizeof(*vol_args))) {
++		ret = -EFAULT;
++		goto out;
++	}
++
++	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
++	namelen = strlen(vol_args->name);
++	if (strchr(vol_args->name, '/')) {
++		ret = -EINVAL;
++		goto out;
++	}
++
++	mutex_lock_nested(&dir->d_inode->i_mutex, I_MUTEX_PARENT);
++
++	dentry = lookup_one_len(vol_args->name, dir, namelen);
++	if (IS_ERR(dentry)) {
++		mutex_unlock(&dir->d_inode->i_mutex);
++		goto out;
++	}
++
++	inode = dentry->d_inode;
++
++	mutex_unlock(&dir->d_inode->i_mutex);
++
++	/* (1) locks needed? */
++	if (!(inode->i_mode & S_IFDIR)) {
++		printk(KERN_INFO "btrfs: not directory\n");
++		ret = -EINVAL;
++		goto out_dput;
++	}
++
++	if (inode->i_ino != BTRFS_FIRST_FREE_OBJECTID) {
++		printk(KERN_INFO "btrfs: not snapshot\n");
++		ret = -EINVAL;
++		goto out_dput;
++	}
++
++	/* (2) lock out submounts? */
++	if (have_submounts(dentry)) {
++		printk(KERN_INFO "btrfs: Snapshot has submounts\n");
++		ret = -EBUSY;
++		goto out_dput;
++	}
++
++	/* (3) lock sb... lock dcache  lock btrfs? */
++	shrink_dcache_parent(dentry);
++
++	if (!list_empty(&dentry->d_subdirs)) {
++		printk(KERN_INFO "btrfs: leftover dentries\n");
++		ret = -EBUSY;
++		goto out_dput;
++	}
++
++	ret = btrfs_check_free_space(root, 1, 1);
++	if (ret) {
++		printk(KERN_INFO "btrfs: not enough space to delete snapshot\n");
++		goto out_dput;
++	}
++
++	trans = btrfs_start_transaction(root, 1);
++	btrfs_set_trans_block_group(trans, dir->d_inode);
++
++	ret = remove_directory_entries(trans, root, dir->d_inode,
++				       inode, vol_args->name, namelen);
++
++	if (ret) {
++		printk(KERN_INFO "btrfs: problem removing dentries\n");
++		goto out_dput;
++	}
++
++	ret = btrfs_commit_transaction(trans, root);
++
++	if (ret) {
++		printk(KERN_INFO "btrfs: problem committing transaction\n");
++		goto out_dput;
++	}
++
++	target_root = BTRFS_I(inode)->root;
++
++	ret = delete_root_references(root, target_root);
++
++	if (ret) {
++		printk(KERN_INFO "btrfs: problem deleting root references\n");
++		goto out_dput;
++	}
++
++	refs = btrfs_root_refs(&target_root->root_item);
++
++	if (!refs) {
++		ret = btrfs_add_dead_root(target_root, root);
++
++		if (ret) {
++			printk(KERN_INFO "btrfs: problem adding dead root\n");
++			goto out_dput;
++		}
++
++		radix_tree_delete(&target_root->fs_info->fs_roots_radix,
++				  (unsigned long)target_root->root_key.objectid);
++
++		/* leak root? */
++	}
++
++out_dput:
++	dput(dentry);
++out:
++	kfree(vol_args);
++out_final:
++	return ret;
++}
++
+ static noinline int btrfs_ioctl_snap_create(struct file *file,
+ 					    void __user *arg, int subvol)
+ {
+@@ -1102,6 +1425,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 	switch (cmd) {
+ 	case BTRFS_IOC_SNAP_CREATE:
+ 		return btrfs_ioctl_snap_create(file, argp, 0);
++	case BTRFS_IOC_SNAP_DESTROY:
++		return btrfs_ioctl_snap_destroy(file, argp);
+ 	case BTRFS_IOC_SUBVOL_CREATE:
+ 		return btrfs_ioctl_snap_create(file, argp, 1);
+ 	case BTRFS_IOC_DEFRAG:
+diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+index b320b10..587d021 100644
+--- a/fs/btrfs/ioctl.h
++++ b/fs/btrfs/ioctl.h
+@@ -66,4 +66,7 @@ struct btrfs_ioctl_clone_range_args {
+ #define BTRFS_IOC_SUBVOL_CREATE _IOW(BTRFS_IOCTL_MAGIC, 14, \
+ 				   struct btrfs_ioctl_vol_args)
  
-+// BTRFS needs the btrfs from fid_type which was added in 2.6.27
-+// All I did was copy the btrfs defse which was found in
-+// linux-2.6.27/include/linux/exportfs.h
-+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
-+enum btrfs_fid_type {
-+	/*
-+	 * 64 bit object ID, 64 bit root object ID,
-+	 * 32 bit generation number.
-+	 */
-+	FILEID_BTRFS_WITHOUT_PARENT = 0x4d,
-+
-+	/*
-+	 * 64 bit object ID, 64 bit root object ID,
-+	 * 32 bit generation number,
-+	 * 64 bit parent object ID, 32 bit parent generation.
-+	 */
-+	FILEID_BTRFS_WITH_PARENT = 0x4e,
-+
-+	/*
-+	 * 64 bit object ID, 64 bit root object ID,
-+	 * 32 bit generation number,
-+	 * 64 bit parent object ID, 32 bit parent generation,
-+	 * 64 bit parent root object ID.
-+	 */
-+	FILEID_BTRFS_WITH_PARENT_ROOT = 0x4f,
-+};
-+#endif
++#define BTRFS_IOC_SNAP_DESTROY _IOW(BTRFS_IOCTL_MAGIC, 15, \
++				   struct btrfs_ioctl_vol_args)
 +
  #endif
-diff --git a/extent-tree.c b/extent-tree.c
-index 293da65..2113f5c 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -869,7 +869,11 @@ static noinline int remove_extent_backref(struct btrfs_trans_handle *trans,
- static void btrfs_issue_discard(struct block_device *bdev,
- 				u64 start, u64 len)
- {
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
- 	blkdev_issue_discard(bdev, start >> 9, len >> 9, GFP_KERNEL);
-+#else
-+	blkdev_issue_discard(bdev, start >> 9, len >> 9);
-+#endif
- }
- #endif
- 
-diff --git a/extent_io.c b/extent_io.c
-index e086d40..072165c 100644
---- a/extent_io.c
-+++ b/extent_io.c
-@@ -3078,13 +3078,21 @@ int clear_extent_buffer_dirty(struct extent_io_tree *tree,
- 			}
- 		}
- 		clear_page_dirty_for_io(page);
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
- 		spin_lock_irq(&page->mapping->tree_lock);
-+#else
-+		read_lock_irq(&page->mapping->tree_lock);
-+#endif
- 		if (!PageDirty(page)) {
- 			radix_tree_tag_clear(&page->mapping->page_tree,
- 						page_index(page),
- 						PAGECACHE_TAG_DIRTY);
- 		}
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
- 		spin_unlock_irq(&page->mapping->tree_lock);
-+#else
-+		read_unlock_irq(&page->mapping->tree_lock);
-+#endif
- 		unlock_page(page);
- 	}
- 	return 0;
-@@ -3262,7 +3270,11 @@ int read_extent_buffer_pages(struct extent_io_tree *tree,
- 	for (i = start_i; i < num_pages; i++) {
- 		page = extent_buffer_page(eb, i);
- 		if (!wait) {
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
- 			if (!trylock_page(page))
-+#else
-+			if(!TestSetPageLocked(page))
-+#endif
- 				goto unlock_exit;
- 		} else {
- 			lock_page(page);
-diff --git a/file.c b/file.c
-index 9026833..f5377b6 100644
---- a/file.c
-+++ b/file.c
-@@ -1043,7 +1043,11 @@ static ssize_t btrfs_file_write(struct file *file, const char __user *buf,
- 	if (count == 0)
- 		goto out_nolock;
- 
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
- 	err = file_remove_suid(file);
-+#else
-+	err = remove_suid(fdentry(file));
-+#endif
- 	if (err)
- 		goto out_nolock;
- 	file_update_time(file);
-diff --git a/inode.c b/inode.c
-index 8adfe05..5eb9125 100644
---- a/inode.c
-+++ b/inode.c
-@@ -3457,8 +3457,13 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
- 	if (objectid > root->highest_inode)
- 		root->highest_inode = objectid;
- 
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
- 	inode->i_uid = current_fsuid();
- 	inode->i_gid = current_fsgid();
-+#else
-+	inode->i_uid = current->fsuid;
-+	inode->i_gid = current->fsgid;
-+#endif
- 	inode->i_mode = mode;
- 	inode->i_ino = objectid;
- 	inode_set_bytes(inode, 0);
-@@ -4492,7 +4497,11 @@ void btrfs_destroy_inode(struct inode *inode)
- 	kmem_cache_free(btrfs_inode_cachep, BTRFS_I(inode));
- }
- 
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
- static void init_once(void *foo)
-+#else
-+static void init_once(struct kmem_cache *bar, void *foo)
-+#endif
- {
- 	struct btrfs_inode *ei = (struct btrfs_inode *) foo;
- 
-@@ -4515,7 +4524,12 @@ void btrfs_destroy_cachep(void)
- 
- struct kmem_cache *btrfs_cache_create(const char *name, size_t size,
- 				       unsigned long extra_flags,
--				       void (*ctor)(void *))
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
-+				       void (*ctor)(void *)
-+#else
-+				       void (*ctor)(struct kmem_cache *, void*)
-+#endif
-+)
- {
- 	return kmem_cache_create(name, size, 0, (SLAB_RECLAIM_ACCOUNT |
- 				 SLAB_MEM_SPREAD | extra_flags), ctor);
-diff --git a/ioctl.c b/ioctl.c
-index c2aa33e..3bb8807 100644
---- a/ioctl.c
-+++ b/ioctl.c
-@@ -241,7 +241,11 @@ static inline int btrfs_may_create(struct inode *dir, struct dentry *child)
- 		return -EEXIST;
- 	if (IS_DEADDIR(dir))
- 		return -ENOENT;
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
- 	return inode_permission(dir, MAY_WRITE | MAY_EXEC);
-+#else
-+	return permission(dir, MAY_WRITE | MAY_EXEC, NULL);
-+#endif
- }
- 
- /*
 -- 
-1.5.6.3
+1.5.6.5
 

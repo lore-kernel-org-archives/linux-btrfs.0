@@ -1,160 +1,380 @@
-From: Josef Bacik <jbacik@redhat.com>
-Subject: [PATCH] btrfs: make sure all pending extent operations are complete
-Date: Wed, 11 Feb 2009 15:18:54 -0500
-Message-ID: <1234383534-10401-1-git-send-email-jbacik@redhat.com>
-Cc: Josef Bacik <jbacik@redhat.com>
+From: "Lee Trager" <lt73@cs.drexel.edu>
+Subject: [PATCH] Updated Backport to 2.6.27 and 2.6.26
+Date: Wed, 11 Feb 2009 16:45:19 -0500
+Message-ID: <20090211214519.GA15900@tux64-01>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Since for the past three weeks all new patches have been submitted only
+to btrfs-unstable I have updated my backport patch for btrfs-unstable.
+This patch only works with 2.6.27 and 2.6.26(thanks Michele for testing
+it for me)
 
-Theres a slight problem with finish_current_insert, if we set all to 1 and then
-go through and don't actually skip any of the extents on the pending list, we
-could exit right after we've added new extents.  This is a problem because by
-inserting the new extents we could have gotten new COW's to happen and such, so
-we may have some pending updates to do or even more inserts to do after that.
-So this patch will only exit if we have never skipped any of the extents in the
-pending list, and we have no extents to insert, this will make sure that all of
-the pending work is truly done before we return.  I've been running with this
-patch for a few days with all of my other testing and have not seen issues.
-Thanks,
+Lee
 
-Signed-off-by: Josef Bacik <jbacik@redhat.com>
----
- fs/btrfs/extent-tree.c |   50 ++++++++++++++++++++++-------------------------
- 1 files changed, 23 insertions(+), 27 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 8121f00..d2bc0fc 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2379,13 +2379,12 @@ static int finish_current_insert(struct btrfs_trans_handle *trans,
- 	u64 end;
- 	u64 priv;
- 	u64 search = 0;
--	u64 skipped = 0;
- 	struct btrfs_fs_info *info = extent_root->fs_info;
- 	struct btrfs_path *path;
- 	struct pending_extent_op *extent_op, *tmp;
- 	struct list_head insert_list, update_list;
- 	int ret;
--	int num_inserts = 0, max_inserts;
-+	int num_inserts = 0, max_inserts, restart = 0;
+diff -Naur btrfs-old/async-thread.c btrfs/async-thread.c
+--- btrfs-old/async-thread.c	2009-02-11 16:24:09.000000000 -0500
++++ btrfs/async-thread.c	2009-02-11 15:47:44.000000000 -0500
+@@ -20,7 +20,10 @@
+ #include <linux/list.h>
+ #include <linux/spinlock.h>
+ #include <linux/freezer.h>
++#include <linux/version.h>
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+ #include <linux/ftrace.h>
++#endif
+ #include "async-thread.h"
  
- 	path = btrfs_alloc_path();
- 	INIT_LIST_HEAD(&insert_list);
-@@ -2401,19 +2400,19 @@ again:
- 		ret = find_first_extent_bit(&info->extent_ins, search, &start,
- 					    &end, EXTENT_WRITEBACK);
- 		if (ret) {
--			if (skipped && all && !num_inserts &&
-+			if (restart && !num_inserts &&
- 			    list_empty(&update_list)) {
--				skipped = 0;
-+				restart = 0;
- 				search = 0;
- 				continue;
- 			}
--			mutex_unlock(&info->extent_ins_mutex);
- 			break;
- 		}
+ #define WORK_QUEUED_BIT 0
+diff -Naur btrfs-old/compat.h btrfs/compat.h
+--- btrfs-old/compat.h	2009-02-11 16:24:09.000000000 -0500
++++ btrfs/compat.h	2009-02-11 15:24:52.000000000 -0500
+@@ -1,7 +1,33 @@
+ #ifndef _COMPAT_H_
+ #define _COMPAT_H_
  
- 		ret = try_lock_extent(&info->extent_ins, start, end, GFP_NOFS);
- 		if (!ret) {
--			skipped = 1;
-+			if (all)
-+				restart = 1;
- 			search = end + 1;
- 			if (need_resched()) {
- 				mutex_unlock(&info->extent_ins_mutex);
-@@ -2432,7 +2431,7 @@ again:
- 			list_add_tail(&extent_op->list, &insert_list);
- 			search = end + 1;
- 			if (num_inserts == max_inserts) {
--				mutex_unlock(&info->extent_ins_mutex);
-+				restart = 1;
- 				break;
- 			}
- 		} else if (extent_op->type == PENDING_BACKREF_UPDATE) {
-@@ -2448,7 +2447,6 @@ again:
- 	 * somebody marked this thing for deletion then just unlock it and be
- 	 * done, the free_extents will handle it
- 	 */
--	mutex_lock(&info->extent_ins_mutex);
- 	list_for_each_entry_safe(extent_op, tmp, &update_list, list) {
- 		clear_extent_bits(&info->extent_ins, extent_op->bytenr,
- 				  extent_op->bytenr + extent_op->num_bytes - 1,
-@@ -2470,6 +2468,10 @@ again:
- 	if (!list_empty(&update_list)) {
- 		ret = update_backrefs(trans, extent_root, path, &update_list);
- 		BUG_ON(ret);
++#include <linux/version.h>
 +
-+		/* we may have COW'ed new blocks, so lets start over */
-+		if (all)
-+			restart = 1;
- 	}
+ #define btrfs_drop_nlink(inode) drop_nlink(inode)
+ #define btrfs_inc_nlink(inode)	inc_nlink(inode)
  
- 	/*
-@@ -2477,9 +2479,9 @@ again:
- 	 * need to make sure everything is cleaned then reset everything and
- 	 * go back to the beginning
- 	 */
--	if (!num_inserts && all && skipped) {
-+	if (!num_inserts && restart) {
- 		search = 0;
--		skipped = 0;
-+		restart = 0;
- 		INIT_LIST_HEAD(&update_list);
- 		INIT_LIST_HEAD(&insert_list);
- 		goto again;
-@@ -2536,27 +2538,19 @@ again:
- 	BUG_ON(ret);
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 27)
++static inline struct dentry *d_obtain_alias(struct inode *inode)
++{
++	struct dentry *d;
++
++	if (!inode)
++		return NULL;
++	if (IS_ERR(inode))
++		return ERR_CAST(inode);
++
++	d = d_alloc_anon(inode);
++	if (!d)
++		iput(inode);
++	return d;
++}
++#endif
++
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 28)
++#define __pagevec_lru_add_file __pagevec_lru_add
++#define open_bdev_exclusive open_bdev_excl
++#define close_bdev_exclusive(bdev, mode) close_bdev_excl(bdev)
++typedef unsigned __bitwise__ fmode_t;
++#endif
++
+ #endif /* _COMPAT_H_ */
+diff -Naur btrfs-old/export.h btrfs/export.h
+--- btrfs-old/export.h	2009-02-11 16:24:11.000000000 -0500
++++ btrfs/export.h	2009-02-11 15:18:16.000000000 -0500
+@@ -16,4 +16,32 @@
+ 	u64 parent_root_objectid;
+ } __attribute__ ((packed));
  
- 	/*
--	 * if we broke out of the loop in order to insert stuff because we hit
--	 * the maximum number of inserts at a time we can handle, then loop
--	 * back and pick up where we left off
-+	 * if restart is set for whatever reason we need to go back and start
-+	 * searching through the pending list again.
-+	 *
-+	 * We just inserted some extents, which could have resulted in new
-+	 * blocks being allocated, which would result in new blocks needing
-+	 * updates, so if all is set we _must_ restart to get the updated
-+	 * blocks.
- 	 */
--	if (num_inserts == max_inserts) {
--		INIT_LIST_HEAD(&insert_list);
--		INIT_LIST_HEAD(&update_list);
--		num_inserts = 0;
--		goto again;
--	}
--
--	/*
--	 * again, if we need to make absolutely sure there are no more pending
--	 * extent operations left and we know that we skipped some, go back to
--	 * the beginning and do it all again
--	 */
--	if (all && skipped) {
-+	if (restart || all) {
- 		INIT_LIST_HEAD(&insert_list);
- 		INIT_LIST_HEAD(&update_list);
- 		search = 0;
--		skipped = 0;
-+		restart = 0;
- 		num_inserts = 0;
- 		goto again;
- 	}
-@@ -2877,6 +2871,8 @@ again:
- 		goto again;
- 	}
- 
-+	if (!err)
-+		finish_current_insert(trans, extent_root, 0);
- 	return err;
++// BTRFS needs the btrfs from fid_type which was added in 2.6.27
++// All I did was copy the btrfs defse which was found in
++// linux-2.6.27/include/linux/exportfs.h
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
++enum btrfs_fid_type {
++	/*
++	 * 64 bit object ID, 64 bit root object ID,
++	 * 32 bit generation number.
++	 */
++	FILEID_BTRFS_WITHOUT_PARENT = 0x4d,
++
++	/*
++	 * 64 bit object ID, 64 bit root object ID,
++	 * 32 bit generation number,
++	 * 64 bit parent object ID, 32 bit parent generation.
++	 */
++	FILEID_BTRFS_WITH_PARENT = 0x4e,
++
++	/*
++	 * 64 bit object ID, 64 bit root object ID,
++	 * 32 bit generation number,
++	 * 64 bit parent object ID, 32 bit parent generation,
++	 * 64 bit parent root object ID.
++	 */
++	FILEID_BTRFS_WITH_PARENT_ROOT = 0x4f,
++};
++#endif
++
+ #endif
+diff -Naur btrfs-old/extent_io.c btrfs/extent_io.c
+--- btrfs-old/extent_io.c	2009-02-11 16:24:11.000000000 -0500
++++ btrfs/extent_io.c	2009-02-11 15:44:02.000000000 -0500
+@@ -2849,6 +2849,7 @@
+ 	return sector;
  }
  
--- 
-1.5.4.3
-
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		__u64 start, __u64 len, get_extent_t *get_extent)
+ {
+@@ -2940,6 +2941,7 @@
+ 			GFP_NOFS);
+ 	return ret;
+ }
++#endif
+ 
+ static inline struct page *extent_buffer_page(struct extent_buffer *eb,
+ 					      unsigned long i)
+@@ -3165,13 +3167,21 @@
+ 			}
+ 		}
+ 		clear_page_dirty_for_io(page);
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+ 		spin_lock_irq(&page->mapping->tree_lock);
++#else
++		read_lock_irq(&page->mapping->tree_lock);
++#endif
+ 		if (!PageDirty(page)) {
+ 			radix_tree_tag_clear(&page->mapping->page_tree,
+ 						page_index(page),
+ 						PAGECACHE_TAG_DIRTY);
+ 		}
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+ 		spin_unlock_irq(&page->mapping->tree_lock);
++#else
++		read_unlock_irq(&page->mapping->tree_lock);
++#endif
+ 		unlock_page(page);
+ 	}
+ 	return 0;
+@@ -3349,7 +3359,11 @@
+ 	for (i = start_i; i < num_pages; i++) {
+ 		page = extent_buffer_page(eb, i);
+ 		if (!wait) {
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+ 			if (!trylock_page(page))
++#else
++			if(!TestSetPageLocked(page))
++#endif
+ 				goto unlock_exit;
+ 		} else {
+ 			lock_page(page);
+diff -Naur btrfs-old/extent_io.h btrfs/extent_io.h
+--- btrfs-old/extent_io.h	2009-02-11 16:24:11.000000000 -0500
++++ btrfs/extent_io.h	2009-02-11 15:44:41.000000000 -0500
+@@ -2,6 +2,7 @@
+ #define __EXTENTIO__
+ 
+ #include <linux/rbtree.h>
++#include <linux/version.h>
+ 
+ /* bits for the extent state */
+ #define EXTENT_DIRTY 1
+@@ -205,8 +206,10 @@
+ 			unsigned from, unsigned to);
+ sector_t extent_bmap(struct address_space *mapping, sector_t iblock,
+ 		get_extent_t *get_extent);
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		__u64 start, __u64 len, get_extent_t *get_extent);
++#endif
+ int set_range_dirty(struct extent_io_tree *tree, u64 start, u64 end);
+ int set_state_private(struct extent_io_tree *tree, u64 start, u64 private);
+ int get_state_private(struct extent_io_tree *tree, u64 start, u64 *private);
+diff -Naur btrfs-old/extent-tree.c btrfs/extent-tree.c
+--- btrfs-old/extent-tree.c	2009-02-11 16:24:11.000000000 -0500
++++ btrfs/extent-tree.c	2009-02-11 15:18:16.000000000 -0500
+@@ -866,7 +866,11 @@
+ static void btrfs_issue_discard(struct block_device *bdev,
+ 				u64 start, u64 len)
+ {
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
+ 	blkdev_issue_discard(bdev, start >> 9, len >> 9, GFP_KERNEL);
++#else
++	blkdev_issue_discard(bdev, start >> 9, len >> 9);
++#endif
+ }
+ #endif
+ 
+diff -Naur btrfs-old/file.c btrfs/file.c
+--- btrfs-old/file.c	2009-02-11 16:24:12.000000000 -0500
++++ btrfs/file.c	2009-02-11 15:18:16.000000000 -0500
+@@ -1042,7 +1042,11 @@
+ 	if (count == 0)
+ 		goto out_nolock;
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+ 	err = file_remove_suid(file);
++#else
++	err = remove_suid(fdentry(file));
++#endif
+ 	if (err)
+ 		goto out_nolock;
+ 	file_update_time(file);
+diff -Naur btrfs-old/inode.c btrfs/inode.c
+--- btrfs-old/inode.c	2009-02-11 16:24:13.000000000 -0500
++++ btrfs/inode.c	2009-02-11 15:42:29.000000000 -0500
+@@ -3489,14 +3489,22 @@
+ 	if (objectid > root->highest_inode)
+ 		root->highest_inode = objectid;
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+ 	inode->i_uid = current_fsuid();
++#else
++	inode->i_uid = current->fsuid;
++#endif
+ 
+ 	if (dir && (dir->i_mode & S_ISGID)) {
+ 		inode->i_gid = dir->i_gid;
+ 		if (S_ISDIR(mode))
+ 			mode |= S_ISGID;
+ 	} else
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+ 		inode->i_gid = current_fsgid();
++#else
++		inode->i_gid = current->fsgid;
++#endif
+ 
+ 	inode->i_mode = mode;
+ 	inode->i_ino = objectid;
+@@ -4197,11 +4205,13 @@
+ 	return -EINVAL;
+ }
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+ static int btrfs_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		__u64 start, __u64 len)
+ {
+ 	return extent_fiemap(inode, fieinfo, start, len, btrfs_get_extent);
+ }
++#endif
+ 
+ int btrfs_readpage(struct file *file, struct page *page)
+ {
+@@ -4532,7 +4542,11 @@
+ 	kmem_cache_free(btrfs_inode_cachep, BTRFS_I(inode));
+ }
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+ static void init_once(void *foo)
++#else
++static void init_once(struct kmem_cache *bar, void *foo)
++#endif
+ {
+ 	struct btrfs_inode *ei = (struct btrfs_inode *) foo;
+ 
+@@ -4555,7 +4569,12 @@
+ 
+ struct kmem_cache *btrfs_cache_create(const char *name, size_t size,
+ 				       unsigned long extra_flags,
+-				       void (*ctor)(void *))
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
++				       void (*ctor)(void *)
++#else
++				       void (*ctor)(struct kmem_cache *, void*)
++#endif
++)
+ {
+ 	return kmem_cache_create(name, size, 0, (SLAB_RECLAIM_ACCOUNT |
+ 				 SLAB_MEM_SPREAD | extra_flags), ctor);
+@@ -5068,7 +5087,9 @@
+ 	.removexattr	= btrfs_removexattr,
+ 	.permission	= btrfs_permission,
+ 	.fallocate	= btrfs_fallocate,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+ 	.fiemap		= btrfs_fiemap,
++#endif
+ };
+ static struct inode_operations btrfs_special_inode_operations = {
+ 	.getattr	= btrfs_getattr,
+diff -Naur btrfs-old/ioctl.c btrfs/ioctl.c
+--- btrfs-old/ioctl.c	2009-02-11 16:24:13.000000000 -0500
++++ btrfs/ioctl.c	2009-02-11 15:18:16.000000000 -0500
+@@ -240,7 +240,11 @@
+ 		return -EEXIST;
+ 	if (IS_DEADDIR(dir))
+ 		return -ENOENT;
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+ 	return inode_permission(dir, MAY_WRITE | MAY_EXEC);
++#else
++	return permission(dir, MAY_WRITE | MAY_EXEC, NULL);
++#endif
+ }
+ 
+ /*
+diff -Naur btrfs-old/super.c btrfs/super.c
+--- btrfs-old/super.c	2009-02-11 16:24:15.000000000 -0500
++++ btrfs/super.c	2009-02-11 15:55:04.000000000 -0500
+@@ -38,6 +38,7 @@
+ #include <linux/namei.h>
+ #include <linux/miscdevice.h>
+ #include <linux/magic.h>
++#include <linux/version.h>
+ #include "compat.h"
+ #include "ctree.h"
+ #include "disk-io.h"
+@@ -51,6 +52,9 @@
+ #include "export.h"
+ #include "compression.h"
+ 
++#ifndef BTRFS_SUPER_MAGIC
++#define BTRFS_SUPER_MAGIC	0x9123683E
++#endif
+ 
+ static struct super_operations btrfs_super_ops;
+ 
+@@ -606,6 +610,8 @@
+ 	return ret;
+ }
+ 
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+ static int btrfs_freeze(struct super_block *sb)
+ {
+ 	struct btrfs_root *root = btrfs_sb(sb);
+@@ -614,6 +620,7 @@
+ 	return 0;
+ }
+ 
++
+ static int btrfs_unfreeze(struct super_block *sb)
+ {
+ 	struct btrfs_root *root = btrfs_sb(sb);
+@@ -622,6 +629,27 @@
+ 	return 0;
+ }
+ 
++
++#else
++
++
++static void btrfs_write_super_lockfs(struct super_block *sb)
++{
++	struct btrfs_root *root = btrfs_sb(sb);
++	mutex_lock(&root->fs_info->transaction_kthread_mutex);
++	mutex_lock(&root->fs_info->cleaner_mutex);
++}
++
++
++static void btrfs_unlockfs(struct super_block *sb)
++{
++	struct btrfs_root *root = btrfs_sb(sb);
++	mutex_unlock(&root->fs_info->cleaner_mutex);
++	mutex_unlock(&root->fs_info->transaction_kthread_mutex);
++}
++#endif
++
++
+ static struct super_operations btrfs_super_ops = {
+ 	.delete_inode	= btrfs_delete_inode,
+ 	.put_super	= btrfs_put_super,
+@@ -634,8 +662,13 @@
+ 	.destroy_inode	= btrfs_destroy_inode,
+ 	.statfs		= btrfs_statfs,
+ 	.remount_fs	= btrfs_remount,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+ 	.freeze_fs	= btrfs_freeze,
+ 	.unfreeze_fs	= btrfs_unfreeze,
++#else
++	.write_super_lockfs	= btrfs_write_super_lockfs,
++	.unlockfs		= btrfs_unlockfs,
++#endif
+ };
+ 
+ static const struct file_operations btrfs_ctl_fops = {

@@ -1,7 +1,7 @@
 From: "Lee Trager" <lt73@cs.drexel.edu>
 Subject: Re: btrfs lockup after mounting for a second time on 2.6.26
-Date: Thu, 12 Feb 2009 11:57:23 -0500
-Message-ID: <20090212165723.GA25305@tux64-01>
+Date: Thu, 12 Feb 2009 12:08:21 -0500
+Message-ID: <20090212170821.GA27379@tux64-01>
 References: <4993C23C.8000108@cs.drexel.edu> <1234450272.8300.2.camel@think.oraclecorp.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
@@ -12,7 +12,7 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1234450272.8300.2.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ok here it is
+Opps didn't include the entire thing last time...
 
 [  227.637684] SysRq : Show Blocked State
 [  227.639369]   task                PC stack   pid father
@@ -64,6 +64,68 @@ Ok here it is
 [  227.639369]   .nr_running                    : 2
 [  227.639369]   .load                          : 2048
 [  227.639369]   .nr_switches                   : 34074
+[  227.639369]   .nr_load_updates               : 15468
+[  227.639369]   .nr_uninterruptible            : 4294967191
+[  227.639369]   .jiffies                       : 4294944976
+[  227.639369]   .next_balance                  : 4294.945040
+[  227.639369]   .curr->pid                     : 3060
+[  227.639369]   .clock                         : 210721.964922
+[  227.639369]   .cpu_load[0]                   : 2048
+[  227.639369]   .cpu_load[1]                   : 1024
+[  227.639369]   .cpu_load[2]                   : 519
+[  227.639369]   .cpu_load[3]                   : 299
+[  227.639369]   .cpu_load[4]                   : 214
+[  227.639369] 
+[  227.639369] cfs_rq[0]:
+[  227.639369]   .exec_clock                    : 0.000000
+[  227.639369]   .MIN_vruntime                  : 49281.152431
+[  227.639369]   .min_vruntime                  : 49309.797267
+[  227.639369]   .max_vruntime                  : 49281.152431
+[  227.639369]   .spread                        : 0.000000
+[  227.639369]   .spread0                       : 0.000000
+[  227.639369]   .nr_running                    : 2
+[  227.639369]   .load                          : 2048
+[  227.639369]   .nr_spread_over                : 0
+[  227.639369] 
+[  227.639369] runnable tasks:
+[  227.639369]             task   PID         tree-key  switches  prio     exec-runtime         sum-exec        sum-sleep
+[  227.639369] ----------------------------------------------------------------------------------------------------------
+[  227.639369]    vmware-guestd  2151     49281.152431      2020   120               0               0               0.000000               0.000000               0.000000 /
+[  227.639369] R           bash  3060     49295.747111        63   120               0               0               0.000000               0.000000               0.000000 /
+[  227.639369] 
+[  227.639369] cpu#1, 2200.225 MHz
+[  227.639369]   .nr_running                    : 2
+[  227.639369]   .load                          : 2048
+[  227.639369]   .nr_switches                   : 26399
+[  227.639369]   .nr_load_updates               : 14353
+[  227.639369]   .nr_uninterruptible            : 106
+[  227.639369]   .jiffies                       : 4294944976
+[  227.639369]   .next_balance                  : 4294.945104
+[  227.639369]   .curr->pid                     : 2411
+[  227.639369]   .clock                         : 210728.301926
+[  227.639369]   .cpu_load[0]                   : 2048
+[  227.639369]   .cpu_load[1]                   : 1024
+[  227.639369]   .cpu_load[2]                   : 519
+[  227.639369]   .cpu_load[3]                   : 321
+[  227.639369]   .cpu_load[4]                   : 275
+[  227.639369] 
+[  227.639369] cfs_rq[1]:
+[  227.639369]   .exec_clock                    : 0.000000
+[  227.639369]   .MIN_vruntime                  : 34787.608965
+[  227.639369]   .min_vruntime                  : 34826.431444
+[  227.639369]   .max_vruntime                  : 34787.608965
+[  227.639369]   .spread                        : 0.000000
+[  227.639369]   .spread0                       : -14483.365823
+[  227.639369]   .nr_running                    : 2
+[  227.639369]   .load                          : 2048
+[  227.639369]   .nr_spread_over                : 0
+[  227.639369] 
+[  227.639369] runnable tasks:
+[  227.639369]             task   PID         tree-key  switches  prio     exec-runtime         sum-exec        sum-sleep
+[  227.639369] ----------------------------------------------------------------------------------------------------------
+[  227.639369] R        syslogd  2411     34791.757624       811   120               0               0               0.000000               0.000000               0.000000 /
+[  227.639369]            klogd  2420     34787.608965       605   120               0               0               0.000000               0.000000               0.000000 /
+[  227.639369] 
 
 On Thu, Feb 12, 2009 at 09:51:12AM -0500, Chris Mason wrote:
 > On Thu, 2009-02-12 at 01:31 -0500, Lee Trager wrote:
@@ -92,8 +154,3 @@ On Thu, Feb 12, 2009 at 09:51:12AM -0500, Chris Mason wrote:
 > 
 > -chris
 > 
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

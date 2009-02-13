@@ -1,46 +1,29 @@
-From: Sander <sander@humilis.net>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: Bonnie++ run with RAID-1 on a single SSD
-	(2.6.29-rc4-224-g4b6136c)
-Date: Fri, 13 Feb 2009 14:27:07 +0100
-Message-ID: <20090213132707.GA25924@cumulus>
+ (2.6.29-rc4-224-g4b6136c)
+Date: Fri, 13 Feb 2009 09:26:11 -0500
+Message-ID: <1234535171.17533.9.camel@think.oraclecorp.com>
 References: <200902132331.12928.chris@csamuel.org>
-Reply-To: sander@humilis.net
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain
+Cc: linux-btrfs@vger.kernel.org
 To: Chris Samuel <chris@csamuel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <200902132331.12928.chris@csamuel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
-
-Thank you for sharing your numbers.
-
-Chris Samuel wrote (ao):
+On Fri, 2009-02-13 at 23:31 +1100, Chris Samuel wrote:
+> Hi folks,
+> 
 > For people who might be interested, here is how btrfs performs
 > with two partitions on a single SSD drive in a RAID-1 mirror.
 > 
 > This is on a Dell E4200 with Core 2 Duo U9300 (1.2GHz), 2GB RAM
 > and a Samsung SSD (128GB Thin uSATA SSD).
+> 
 
-MLC SSDs are famous for their write stalls when the disk gets full and
-old blocks need to be reused.
-
-Do you experience that too? Or can you test that situation?
-
-On your site you write:
-
-"As SSD's are not necessarily as reliable as spinning disk yet for data
-integrity .."
-
-I've skimmed the article you link to. I still think SSDs are much more
-reliable than spinning disks, especially the high end SLC SSDs.
-
-What is the general opinion on this?
-
-Could you also test without RAID1?
-And with the compression mount flag?
-And without the ssd mount flag?
+Thanks for posting these, it is especially good to see the metadata ops
+are still fast on this ssd.
 
 > Version 1.03c       ------Sequential Output------ --Sequential Input- --Random-
 >                     -Per Chr- --Block-- -Rewrite- -Per Chr- --Block-- --Seeks--
@@ -52,17 +35,25 @@ And without the ssd mount flag?
 >                  16  7513  99 +++++ +++  5140  98  3964  67 +++++ +++  5652  99
 > sys26,2G,,,28299,17,18633,12,,,85702,29,3093.9,18,16,7513,99,+++++,+++,5140,98,3964,67,+++++,+++,5652,99
 > 
-> real    3m51.883s
-> user    0m0.360s
-> sys     0m46.099s
 
-I have no experience with Bonnie++, but based on the output it seems you
-use a 2GB file while you have 2GB RAM. Is that a valid test?
+So, btrfs is doing ~28MB/s writes while writing the data  twice and XFS
+is doing 62MB writing it once.  That's not too bad really.
 
-Also the test run of only 3 minutes 52 seconds seems way too short.
+But, one important thing about the ssds is they stripe internally across
+a bunch of flash storage, and then they have the FTL managing all the
+writes.
 
-	With kind regards, Sander
+So, if you make two partitions on a single device, a raid1 data write
+from btrfs is very likely to result in two large IOs, which the FTL very
+well might put directly adjacent to each other on the SSD.
 
--- 
-Humilis IT Services and Solutions
-http://www.humilis.net
+Duplicating the data does make it more likely you'll recover something
+if the device goes bad, but two devices are still safer than one.
+
+I'm not saying the test isn't valid, I just want to make sure people
+reading the list don't run off and partition their ssds in hopes of
+getting raid ;)
+
+-chris
+
+

@@ -1,52 +1,441 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: ssd optimised mode
-Date: Fri, 20 Feb 2009 11:30:25 -0500
-Message-ID: <1235147425.13249.16.camel@think.oraclecorp.com>
-References: <934e480c0902200326m7647d87cq28bfa1675ef012f4@mail.gmail.com>
-	 <20090220160134.GE24890@unused.rdu.redhat.com>
+From: "Lee Trager" <lt73@cs.drexel.edu>
+Subject: [PATCH] Backport for 2.6.27 and 2.6.26 on the experimental branch
+Date: Fri, 20 Feb 2009 12:45:19 -0500
+Message-ID: <20090220174518.GA23955@tux64-01>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: srimugunthan dhandapani <muggy.mit@gmail.com>,
-	linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090220160134.GE24890@unused.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2009-02-20 at 11:01 -0500, Josef Bacik wrote:
-> On Fri, Feb 20, 2009 at 04:56:55PM +0530, srimugunthan dhandapani wrote:
-> > hi all,
-> > I would like to know what are the ssd specific optimisations in btrfs .
-> > I read from the archives that
-> > 
-> > "mount -o ssd option, which clusters file data writes together regardless of
-> > the directory the files belong to.  There are a number of other performance
-> > tweaks for SSD, aimed at clustering metadata and data writes to better take
-> > advantage of the hardware"
-> > Also I read that there are some allocator changes specific to ssd. I
-> > would like to know what these changes are.
-> > 
-> > I tried to see the  v 0.17 code  to understand what ssd specific changes are.
-> > I saw that the SSD option was used in two places in function
-> > find_free_extent and in function btrfs_defrag_leaves.
-> > I couldn't gather much information from the code.
-> > So can somebody help me understand the optimisations and changes in btrfs.
-> > are any documentation or reading material available?
-> > Thanks in advance for helping,
-> 
-> So really the only thing that changes with SSD is that we keep track of the last
-> place we allocated for data, and start looking from there again.  Since there is
-> no seek penalty we can just be dumb in the allocator and use up space
-> sequentially regardless of the file instead of trying to group allocations for
-> the file/dir.  Thanks,
+I have updated my backport patch to apply cleanly to the experimental
+btrfs branch as well as fix a couple of mistakes I had. I am still
+having lockup issues on 2.6.26. My best guess right now is that there is
+some sort of race condition going on. I'm trying to track it down but
+I'm not having any luck. If someone could please help me that would be
+great.
 
-We already do this with metadata, but the ssd mode makes the metadata
-cluster that we try to allocate larger now.  This change was made based
-on benchmarks with an SSD that is bad at random writes, and it made a
-significant difference for metadata writes.
+Thanks,
 
-The short answer is that in ssd mode we don't try to avoid random reads.
+Lee
 
--chris
-
-
+diff -Naur btrfs-orig/async-thread.c btrfs/async-thread.c
+--- btrfs-orig/async-thread.c	2009-02-20 12:10:13.000000000 -0500
++++ btrfs/async-thread.c	2009-02-20 12:13:20.000000000 -0500
+@@ -20,7 +20,10 @@
+ #include <linux/list.h>
+ #include <linux/spinlock.h>
+ #include <linux/freezer.h>
++#include <linux/version.h>
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+ #include <linux/ftrace.h>
++#endif
+ #include "async-thread.h"
+ 
+ #define WORK_QUEUED_BIT 0
+diff -Naur btrfs-orig/compat.h btrfs/compat.h
+--- btrfs-orig/compat.h	2009-02-20 12:10:14.000000000 -0500
++++ btrfs/compat.h	2009-02-20 12:11:30.000000000 -0500
+@@ -1,7 +1,33 @@
+ #ifndef _COMPAT_H_
+ #define _COMPAT_H_
+ 
++#include <linux/version.h>
++
+ #define btrfs_drop_nlink(inode) drop_nlink(inode)
+ #define btrfs_inc_nlink(inode)	inc_nlink(inode)
+ 
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 27)
++static inline struct dentry *d_obtain_alias(struct inode *inode)
++{
++	struct dentry *d;
++
++	if (!inode)
++		return NULL;
++	if (IS_ERR(inode))
++		return ERR_CAST(inode);
++
++	d = d_alloc_anon(inode);
++	if (!d)
++		iput(inode);
++	return d;
++}
++#endif
++
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 28)
++#define __pagevec_lru_add_file __pagevec_lru_add
++#define open_bdev_exclusive open_bdev_excl
++#define close_bdev_exclusive(bdev, mode) close_bdev_excl(bdev)
++typedef unsigned __bitwise__ fmode_t;
++#endif
++
+ #endif /* _COMPAT_H_ */
+diff -Naur btrfs-orig/delayed-ref.c btrfs/delayed-ref.c
+--- btrfs-orig/delayed-ref.c	2009-02-20 12:10:22.000000000 -0500
++++ btrfs/delayed-ref.c	2009-02-20 12:16:21.000000000 -0500
+@@ -18,7 +18,10 @@
+ 
+ #include <linux/sched.h>
+ #include <linux/sort.h>
++#include <linux/version.h>
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+ #include <linux/ftrace.h>
++#endif
+ #include "ctree.h"
+ #include "delayed-ref.h"
+ #include "transaction.h"
+diff -Naur btrfs-orig/delayed-unlink.c btrfs/delayed-unlink.c
+--- btrfs-orig/delayed-unlink.c	2009-02-20 12:10:22.000000000 -0500
++++ btrfs/delayed-unlink.c	2009-02-20 12:15:01.000000000 -0500
+@@ -18,7 +18,10 @@
+ 
+ #include <linux/sched.h>
+ #include <linux/sort.h>
++#include <linux/version.h>
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+ #include <linux/ftrace.h>
++#endif
+ #include "ctree.h"
+ #include "delayed-unlink.h"
+ #include "transaction.h"
+diff -Naur btrfs-orig/export.h btrfs/export.h
+--- btrfs-orig/export.h	2009-02-20 12:10:15.000000000 -0500
++++ btrfs/export.h	2009-02-20 12:11:30.000000000 -0500
+@@ -16,4 +16,32 @@
+ 	u64 parent_root_objectid;
+ } __attribute__ ((packed));
+ 
++// BTRFS needs the btrfs from fid_type which was added in 2.6.27
++// All I did was copy the btrfs defse which was found in
++// linux-2.6.27/include/linux/exportfs.h
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
++enum btrfs_fid_type {
++	/*
++	 * 64 bit object ID, 64 bit root object ID,
++	 * 32 bit generation number.
++	 */
++	FILEID_BTRFS_WITHOUT_PARENT = 0x4d,
++
++	/*
++	 * 64 bit object ID, 64 bit root object ID,
++	 * 32 bit generation number,
++	 * 64 bit parent object ID, 32 bit parent generation.
++	 */
++	FILEID_BTRFS_WITH_PARENT = 0x4e,
++
++	/*
++	 * 64 bit object ID, 64 bit root object ID,
++	 * 32 bit generation number,
++	 * 64 bit parent object ID, 32 bit parent generation,
++	 * 64 bit parent root object ID.
++	 */
++	FILEID_BTRFS_WITH_PARENT_ROOT = 0x4f,
++};
++#endif
++
+ #endif
+diff -Naur btrfs-orig/extent_io.c btrfs/extent_io.c
+--- btrfs-orig/extent_io.c	2009-02-20 12:10:20.000000000 -0500
++++ btrfs/extent_io.c	2009-02-20 12:11:30.000000000 -0500
+@@ -2847,6 +2847,7 @@
+ 	return sector;
+ }
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		__u64 start, __u64 len, get_extent_t *get_extent)
+ {
+@@ -2938,6 +2939,7 @@
+ 			GFP_NOFS);
+ 	return ret;
+ }
++#endif
+ 
+ static inline struct page *extent_buffer_page(struct extent_buffer *eb,
+ 					      unsigned long i)
+@@ -3163,13 +3165,21 @@
+ 			}
+ 		}
+ 		clear_page_dirty_for_io(page);
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+ 		spin_lock_irq(&page->mapping->tree_lock);
++#else
++		read_lock_irq(&page->mapping->tree_lock);
++#endif
+ 		if (!PageDirty(page)) {
+ 			radix_tree_tag_clear(&page->mapping->page_tree,
+ 						page_index(page),
+ 						PAGECACHE_TAG_DIRTY);
+ 		}
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+ 		spin_unlock_irq(&page->mapping->tree_lock);
++#else
++		read_unlock_irq(&page->mapping->tree_lock);
++#endif
+ 		unlock_page(page);
+ 	}
+ 	return 0;
+@@ -3347,7 +3357,11 @@
+ 	for (i = start_i; i < num_pages; i++) {
+ 		page = extent_buffer_page(eb, i);
+ 		if (!wait) {
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+ 			if (!trylock_page(page))
++#else
++			if(!TestSetPageLocked(page))
++#endif
+ 				goto unlock_exit;
+ 		} else {
+ 			lock_page(page);
+diff -Naur btrfs-orig/extent_io.h btrfs/extent_io.h
+--- btrfs-orig/extent_io.h	2009-02-20 12:10:15.000000000 -0500
++++ btrfs/extent_io.h	2009-02-20 12:11:30.000000000 -0500
+@@ -2,6 +2,7 @@
+ #define __EXTENTIO__
+ 
+ #include <linux/rbtree.h>
++#include <linux/version.h>
+ 
+ /* bits for the extent state */
+ #define EXTENT_DIRTY 1
+@@ -205,8 +206,10 @@
+ 			unsigned from, unsigned to);
+ sector_t extent_bmap(struct address_space *mapping, sector_t iblock,
+ 		get_extent_t *get_extent);
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		__u64 start, __u64 len, get_extent_t *get_extent);
++#endif
+ int set_range_dirty(struct extent_io_tree *tree, u64 start, u64 end);
+ int set_state_private(struct extent_io_tree *tree, u64 start, u64 private);
+ int get_state_private(struct extent_io_tree *tree, u64 start, u64 *private);
+diff -Naur btrfs-orig/extent-tree.c btrfs/extent-tree.c
+--- btrfs-orig/extent-tree.c	2009-02-20 12:10:23.000000000 -0500
++++ btrfs/extent-tree.c	2009-02-20 12:15:27.000000000 -0500
+@@ -20,7 +20,10 @@
+ #include <linux/writeback.h>
+ #include <linux/blkdev.h>
+ #include <linux/sort.h>
++#include <linux/version.h>
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+ #include <linux/ftrace.h>
++#endif
+ #include "compat.h"
+ #include "hash.h"
+ #include "crc32c.h"
+@@ -887,7 +890,11 @@
+ static void btrfs_issue_discard(struct block_device *bdev,
+ 				u64 start, u64 len)
+ {
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
+ 	blkdev_issue_discard(bdev, start >> 9, len >> 9, GFP_KERNEL);
++#else
++	blkdev_issue_discard(bdev, start >> 9, len >> 9);
++#endif
+ }
+ #endif
+ 
+diff -Naur btrfs-orig/file.c btrfs/file.c
+--- btrfs-orig/file.c	2009-02-20 12:10:24.000000000 -0500
++++ btrfs/file.c	2009-02-20 12:11:30.000000000 -0500
+@@ -1044,7 +1044,11 @@
+ 	if (count == 0)
+ 		goto out_nolock;
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+ 	err = file_remove_suid(file);
++#else
++	err = remove_suid(fdentry(file));
++#endif
+ 	if (err)
+ 		goto out_nolock;
+ 	file_update_time(file);
+diff -Naur btrfs-orig/inode.c btrfs/inode.c
+--- btrfs-orig/inode.c	2009-02-20 12:10:23.000000000 -0500
++++ btrfs/inode.c	2009-02-20 12:11:30.000000000 -0500
+@@ -3540,14 +3540,22 @@
+ 	if (objectid > root->highest_inode)
+ 		root->highest_inode = objectid;
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+ 	inode->i_uid = current_fsuid();
++#else
++	inode->i_uid = current->fsuid;
++#endif
+ 
+ 	if (dir && (dir->i_mode & S_ISGID)) {
+ 		inode->i_gid = dir->i_gid;
+ 		if (S_ISDIR(mode))
+ 			mode |= S_ISGID;
+ 	} else
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+ 		inode->i_gid = current_fsgid();
++#else
++		inode->i_gid = current->fsgid;
++#endif
+ 
+ 	inode->i_mode = mode;
+ 	inode->i_ino = objectid;
+@@ -4248,11 +4256,13 @@
+ 	return -EINVAL;
+ }
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+ static int btrfs_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		__u64 start, __u64 len)
+ {
+ 	return extent_fiemap(inode, fieinfo, start, len, btrfs_get_extent);
+ }
++#endif
+ 
+ int btrfs_readpage(struct file *file, struct page *page)
+ {
+@@ -4584,7 +4594,11 @@
+ 	kmem_cache_free(btrfs_inode_cachep, BTRFS_I(inode));
+ }
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+ static void init_once(void *foo)
++#else
++static void init_once(struct kmem_cache *bar, void *foo)
++#endif
+ {
+ 	struct btrfs_inode *ei = (struct btrfs_inode *) foo;
+ 
+@@ -4607,7 +4621,12 @@
+ 
+ struct kmem_cache *btrfs_cache_create(const char *name, size_t size,
+ 				       unsigned long extra_flags,
+-				       void (*ctor)(void *))
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
++				       void (*ctor)(void *)
++#else
++				       void (*ctor)(struct kmem_cache *, void*)
++#endif
++)
+ {
+ 	return kmem_cache_create(name, size, 0, (SLAB_RECLAIM_ACCOUNT |
+ 				 SLAB_MEM_SPREAD | extra_flags), ctor);
+@@ -5026,7 +5045,12 @@
+ 	return __set_page_dirty_nobuffers(page);
+ }
+ 
++#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 26)
+ static int btrfs_permission(struct inode *inode, int mask)
++#else
++static int btrfs_permission(struct inode *inode, int mask,
++			    struct nameidata *nd)
++#endif
+ {
+ 	if (btrfs_test_flag(inode, READONLY) && (mask & MAY_WRITE))
+ 		return -EACCES;
+@@ -5120,7 +5144,9 @@
+ 	.removexattr	= btrfs_removexattr,
+ 	.permission	= btrfs_permission,
+ 	.fallocate	= btrfs_fallocate,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+ 	.fiemap		= btrfs_fiemap,
++#endif
+ };
+ static struct inode_operations btrfs_special_inode_operations = {
+ 	.getattr	= btrfs_getattr,
+diff -Naur btrfs-orig/ioctl.c btrfs/ioctl.c
+--- btrfs-orig/ioctl.c	2009-02-20 12:10:23.000000000 -0500
++++ btrfs/ioctl.c	2009-02-20 12:11:30.000000000 -0500
+@@ -240,7 +240,11 @@
+ 		return -EEXIST;
+ 	if (IS_DEADDIR(dir))
+ 		return -ENOENT;
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+ 	return inode_permission(dir, MAY_WRITE | MAY_EXEC);
++#else
++	return permission(dir, MAY_WRITE | MAY_EXEC, NULL);
++#endif
+ }
+ 
+ /*
+diff -Naur btrfs-orig/modules.order btrfs/modules.order
+--- btrfs-orig/modules.order	1969-12-31 19:00:00.000000000 -0500
++++ btrfs/modules.order	2009-02-20 12:17:02.000000000 -0500
+@@ -0,0 +1 @@
++kernel//home/ltrager/btrfs/btrfs/btrfs.ko
+diff -Naur btrfs-orig/super.c btrfs/super.c
+--- btrfs-orig/super.c	2009-02-20 12:10:21.000000000 -0500
++++ btrfs/super.c	2009-02-20 12:11:30.000000000 -0500
+@@ -38,6 +38,7 @@
+ #include <linux/namei.h>
+ #include <linux/miscdevice.h>
+ #include <linux/magic.h>
++#include <linux/version.h>
+ #include "compat.h"
+ #include "ctree.h"
+ #include "disk-io.h"
+@@ -51,6 +52,9 @@
+ #include "export.h"
+ #include "compression.h"
+ 
++#ifndef BTRFS_SUPER_MAGIC
++#define BTRFS_SUPER_MAGIC	0x9123683E
++#endif
+ 
+ static struct super_operations btrfs_super_ops;
+ 
+@@ -609,6 +613,8 @@
+ 	return ret;
+ }
+ 
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+ static int btrfs_freeze(struct super_block *sb)
+ {
+ 	struct btrfs_root *root = btrfs_sb(sb);
+@@ -617,6 +623,7 @@
+ 	return 0;
+ }
+ 
++
+ static int btrfs_unfreeze(struct super_block *sb)
+ {
+ 	struct btrfs_root *root = btrfs_sb(sb);
+@@ -625,6 +632,27 @@
+ 	return 0;
+ }
+ 
++
++#else
++
++
++static void btrfs_write_super_lockfs(struct super_block *sb)
++{
++	struct btrfs_root *root = btrfs_sb(sb);
++	mutex_lock(&root->fs_info->transaction_kthread_mutex);
++	mutex_lock(&root->fs_info->cleaner_mutex);
++}
++
++
++static void btrfs_unlockfs(struct super_block *sb)
++{
++	struct btrfs_root *root = btrfs_sb(sb);
++	mutex_unlock(&root->fs_info->cleaner_mutex);
++	mutex_unlock(&root->fs_info->transaction_kthread_mutex);
++}
++#endif
++
++
+ static struct super_operations btrfs_super_ops = {
+ 	.delete_inode	= btrfs_delete_inode,
+ 	.put_super	= btrfs_put_super,
+@@ -637,8 +665,13 @@
+ 	.destroy_inode	= btrfs_destroy_inode,
+ 	.statfs		= btrfs_statfs,
+ 	.remount_fs	= btrfs_remount,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+ 	.freeze_fs	= btrfs_freeze,
+ 	.unfreeze_fs	= btrfs_unfreeze,
++#else
++	.write_super_lockfs	= btrfs_write_super_lockfs,
++	.unlockfs		= btrfs_unlockfs,
++#endif
+ };
+ 
+ static const struct file_operations btrfs_ctl_fops = {

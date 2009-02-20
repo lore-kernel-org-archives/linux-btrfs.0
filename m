@@ -1,61 +1,52 @@
-From: Jeff Mahoney <jeffm@suse.com>
-Subject: Re: [PATCH] Btrfs-progs: update btrfs-debug-tree
-Date: Fri, 20 Feb 2009 11:24:04 -0500
-Message-ID: <499ED924.2090705@suse.com>
-References: <499D04FF.5020600@cn.fujitsu.com>  <499DFBAC.1020602@suse.com> <1235140108.13249.0.camel@think.oraclecorp.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: ssd optimised mode
+Date: Fri, 20 Feb 2009 11:30:25 -0500
+Message-ID: <1235147425.13249.16.camel@think.oraclecorp.com>
+References: <934e480c0902200326m7647d87cq28bfa1675ef012f4@mail.gmail.com>
+	 <20090220160134.GE24890@unused.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Shen Feng <shen@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain
+Cc: srimugunthan dhandapani <muggy.mit@gmail.com>,
+	linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1235140108.13249.0.camel@think.oraclecorp.com>
+In-Reply-To: <20090220160134.GE24890@unused.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-Chris Mason wrote:
-> On Thu, 2009-02-19 at 19:39 -0500, Jeff Mahoney wrote:
->> -----BEGIN PGP SIGNED MESSAGE-----
->> Hash: SHA1
->>
->> Shen Feng wrote:
->>> output objectid in btrfs_disk_key with human readable strings.
->>> Other updates are included for more readable output.
->> This gets messy fast. I'd like to see some sort of generic extensible
->> printk mechanism in the kernel. 
+On Fri, 2009-02-20 at 11:01 -0500, Josef Bacik wrote:
+> On Fri, Feb 20, 2009 at 04:56:55PM +0530, srimugunthan dhandapani wrote:
+> > hi all,
+> > I would like to know what are the ssd specific optimisations in btrfs .
+> > I read from the archives that
+> > 
+> > "mount -o ssd option, which clusters file data writes together regardless of
+> > the directory the files belong to.  There are a number of other performance
+> > tweaks for SSD, aimed at clustering metadata and data writes to better take
+> > advantage of the hardware"
+> > Also I read that there are some allocator changes specific to ssd. I
+> > would like to know what these changes are.
+> > 
+> > I tried to see the  v 0.17 code  to understand what ssd specific changes are.
+> > I saw that the SSD option was used in two places in function
+> > find_free_extent and in function btrfs_defrag_leaves.
+> > I couldn't gather much information from the code.
+> > So can somebody help me understand the optimisations and changes in btrfs.
+> > are any documentation or reading material available?
+> > Thanks in advance for helping,
 > 
-> This is a btrfs-progs patch ;)
+> So really the only thing that changes with SSD is that we keep track of the last
+> place we allocated for data, and start looking from there again.  Since there is
+> no seek penalty we can just be dumb in the allocator and use up space
+> sequentially regardless of the file instead of trying to group allocations for
+> the file/dir.  Thanks,
 
-Heh, oops. That's an important bit of information.
+We already do this with metadata, but the ssd mode makes the metadata
+cluster that we try to allocate larger now.  This change was made based
+on benchmarks with an SSD that is bad at random writes, and it made a
+significant difference for metadata writes.
 
->> Maybe I've been spoiled by the reiserfs
->> type printing but it seems a lot nicer to do eprintk(&ops, "key: %k\n");
->> than to split them out into different printks. Since the core behavior
->> ends up in vsnprintf, you get it for things like panic for free too.
->> Ideally, the tprintk(&ops, ...) would be hidden behind a btrfs_warning()
->> or something.
->>
->> I have a patch set that implements an extensible printk so that every
->> single pointer type doesn't need to be added to lib/vsprintf.c's pointer().
->>
-> 
-> That would be interesting, I do miss the old reiserfs %k
+The short answer is that in ssd mode we don't try to avoid random reads.
 
-Let me clean them up a bit and send to LKML. I can probably do that
-later today. I decided to rename it to eprintk from a pretty ugly
-printk_custom.
+-chris
 
-- -Jeff
 
-- --
-Jeff Mahoney
-SUSE Labs
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.9 (GNU/Linux)
-Comment: Using GnuPG with SUSE - http://enigmail.mozdev.org
-
-iEYEARECAAYFAkme2SMACgkQLPWxlyuTD7ITSwCeO3XaNGY29kA/5oBcdDL7DqpH
-B5wAnRv7RYjzX5h4pX+FbjTGTBGAFy7S
-=a5iu
------END PGP SIGNATURE-----

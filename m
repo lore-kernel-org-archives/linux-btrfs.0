@@ -1,29 +1,42 @@
-From: srimugunthan dhandapani <muggy.mit@gmail.com>
-Subject: ssd optimised mode
-Date: Fri, 20 Feb 2009 16:56:55 +0530
-Message-ID: <934e480c0902200326m7647d87cq28bfa1675ef012f4@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH] Btrfs-progs: update btrfs-debug-tree
+Date: Fri, 20 Feb 2009 09:28:28 -0500
+Message-ID: <1235140108.13249.0.camel@think.oraclecorp.com>
+References: <499D04FF.5020600@cn.fujitsu.com>  <499DFBAC.1020602@suse.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain
+Cc: Shen Feng <shen@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+To: Jeff Mahoney <jeffm@suse.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <499DFBAC.1020602@suse.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-hi all,
-I would like to know what are the ssd specific optimisations in btrfs .
-I read from the archives that
+On Thu, 2009-02-19 at 19:39 -0500, Jeff Mahoney wrote:
+> -----BEGIN PGP SIGNED MESSAGE-----
+> Hash: SHA1
+> 
+> Shen Feng wrote:
+> > output objectid in btrfs_disk_key with human readable strings.
+> > Other updates are included for more readable output.
+> 
+> This gets messy fast. I'd like to see some sort of generic extensible
+> printk mechanism in the kernel. 
 
-"mount -o ssd option, which clusters file data writes together regardless of
-the directory the files belong to.  There are a number of other performance
-tweaks for SSD, aimed at clustering metadata and data writes to better take
-advantage of the hardware"
-Also I read that there are some allocator changes specific to ssd. I
-would like to know what these changes are.
+This is a btrfs-progs patch ;)
 
-I tried to see the  v 0.17 code  to understand what ssd specific changes are.
-I saw that the SSD option was used in two places in function
-find_free_extent and in function btrfs_defrag_leaves.
-I couldn't gather much information from the code.
-So can somebody help me understand the optimisations and changes in btrfs.
-are any documentation or reading material available?
-Thanks in advance for helping,
-Mugunthan
+> Maybe I've been spoiled by the reiserfs
+> type printing but it seems a lot nicer to do eprintk(&ops, "key: %k\n");
+> than to split them out into different printks. Since the core behavior
+> ends up in vsnprintf, you get it for things like panic for free too.
+> Ideally, the tprintk(&ops, ...) would be hidden behind a btrfs_warning()
+> or something.
+> 
+> I have a patch set that implements an extensible printk so that every
+> single pointer type doesn't need to be added to lib/vsprintf.c's pointer().
+> 
+
+That would be interesting, I do miss the old reiserfs %k
+
+-chris
+
+

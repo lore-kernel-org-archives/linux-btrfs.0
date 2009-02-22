@@ -1,73 +1,36 @@
-From: Steven Pratt <slpratt@austin.ibm.com>
-Subject: Re: Btrfs experimental branch rebased
-Date: Sat, 21 Feb 2009 15:44:10 -0600
-Message-ID: <49A075AA.6080606@austin.ibm.com>
-References: <1234969860.23031.18.camel@think.oraclecorp.com>
+From: Dmitri Nikulin <dnikulin@gmail.com>
+Subject: Re: ssd optimised mode
+Date: Sun, 22 Feb 2009 12:07:11 +1100
+Message-ID: <3a7f57190902211707h37ff1478vdc0e5ffff66fa4da@mail.gmail.com>
+References: <934e480c0902200326m7647d87cq28bfa1675ef012f4@mail.gmail.com>
+	 <20090220160134.GE24890@unused.rdu.redhat.com>
+	 <1235147425.13249.16.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1234969860.23031.18.camel@think.oraclecorp.com>
+In-Reply-To: <1235147425.13249.16.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote:
-> Hello everyone,
->
-> My experimental performance fixes would occasionally trigger corruptions
-> under load, so I've folded an incremental fix back in and rebased the
-> experimental branch.  This was done to prevent git bisects later on from
-> landing on the bad commit and corrupting some poor tester's FS.
->
-> This only affects the experimental branch of btrfs-unstable, which is
-> not what you get when you clone the tree unless you specifically ask for
-> it.
->
-> It also now includes Josef's ENOSPC work, which is a big improvement in
-> enospc handling.  He has one set of fixes pending to avoid early enospc
-> on metadata, and I'll push that out once he sends them along.
->
-> Steve, most of the performance fixes are aimed at the mail server raid
-> workload, and I'd be curious to see how it compares on your hardware.
->   
+On Sat, Feb 21, 2009 at 3:30 AM, Chris Mason <chris.mason@oracle.com> wrote:
+> The short answer is that in ssd mode we don't try to avoid random reads.
 
-OK, I've been out of the country without internet access for  the week.  
-Will try to get some runs in on Monday when I get back to the office.
+In the ideal future where SSDs can be run without a flimsy hardware
+FTL, and btrfs can use something like ubi directly, would SSD mode
+also be able to enable more intelligent wear levelling and safer use
+of eraseblocks?
 
-> I'm afraid that mount -o noatime is required to get good numbers though,
-> the cow  triggered by atime updates is fairly expensive compared with
-> ext[34].
->
->   
-Ok, I'll give it  a try with and without noatime.
+I've read that one of the potentially crippling limitations of ZFS is
+that even its reliability features depend largely on being able to
+perform atomic writes, which are currently impossible (?) on flash
+media where a block has to be erased before it can be updated, clearly
+not an atomic operation. Is there any solution to this that doesn't
+depend on a battery backup? Clearly it's not something a filesystem
+can practically solve.
 
-> The experimental branch can be cloned with:
->
-> git clone git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git experimental
->
-> It has four main groups of changes:
->
-> 1) Create an async queue of extent allocation tree modifications.  This
-> allows the mods to be done outside of critical locks and it allows them
-> to be ordered for less seeky IO.
->
-> 2) Turn btrfs_unlink into a partially async operation.  This allows
-> unlinks to complete in the background without the directory mutex held.
->
-> 3) Josef's ENOSPC work.  This focuses on better accounting of delayed
-> allocations, and covers the majority of the enospc problem.
->
-> 4) Stack footprint reduction.  The async extent allocation tree mods and
-> Josef's ENOSPC work both significantly reduce the depth of the call
-> chains required to do given operations by doing extent allocation tree
-> mods at different times.
->
-> The experimental tree also has commits that reduce stack foot print on a
-> number of functions, and it reorders some extent allocation tree mods
-> for better batching at a more stack friendly time.
->
-> -chris
->
->   
-Steve
+--
+Dmitri Nikulin
 
+Centre for Synchrotron Science
+Monash University
+Victoria 3800, Australia

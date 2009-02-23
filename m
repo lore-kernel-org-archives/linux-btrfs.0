@@ -1,53 +1,39 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: experimental branch rebased
-Date: Fri, 27 Feb 2009 11:25:32 -0500
-Message-ID: <1235751932.12383.11.camel@think.oraclecorp.com>
-References: <1235663145.4631.11.camel@think.oraclecorp.com>
-	 <49A71D95.8030707@austin.ibm.com>
+Subject: Re: SSDs and filesystem alignment...
+Date: Mon, 23 Feb 2009 09:23:00 -0500
+Message-ID: <1235398980.11205.5.camel@think.oraclecorp.com>
+References: <6278d2220902220631r3d89fbcbgc3eef9570c452df3@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Steven Pratt <slpratt@austin.ibm.com>
+Cc: linux-btrfs@vger.kernel.org
+To: Daniel J Blueman <daniel.blueman@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <49A71D95.8030707@austin.ibm.com>
+In-Reply-To: <6278d2220902220631r3d89fbcbgc3eef9570c452df3@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2009-02-26 at 16:54 -0600, Steven Pratt wrote:
-> Chris Mason wrote:
-> > Hello everyone,
-> >
-> > I've rebased the experimental branch again with my latest performance
-> > fixes.
-> >
-> > I took out the delayed unlink code, it wasn't making a big enough
-> > difference in any benchmarks to justify the complexity.
-> >
-> > I changed the delayed backref code to do delayed processing for all
-> > extents.  In general it is much faster and uses less stack.
-> >
-> > I pulled Josef's enospc work into the master branch and asked Linus to
-> > pull it.
-> >
-> > I'm going to hammer on the experimental branch for a few days and ask
-> > Steve to give it another run.
-> >   
-> Done.  Results for RAID are updated in history tree   
-> http://btrfs.boxacle.net/repository/raid/history/History.html
+On Sun, 2009-02-22 at 14:31 +0000, Daniel J Blueman wrote:
+> Does BTRFS perform any journal and/or filesystem structure alignment
+> (for benefit to SSD longevity and SSD, RAID array and large-sector
+> device performance) at present?
 > 
-> This gives back a few of the performance improvements made on the tree 
-> from the 24th (mail server and random write).
+> ext4's Ted Tso will deliver 128KB alignment with the next release of
+> e2fsprogs (ie 1.41.4) [1], so perhaps it's a good idea for btrfsprogs
+> also, if not already available?
 > 
 
-Thanks for doing this.  I'm a little confused by the output though,
-somehow our configs are giving opposite results ;)
+The btrfs metadata works a little differently from ext4, since almost
+nothing is in a fixed place.  The super blocks are aligned to 64k, and
+the rest of the metadata is all dynamic.
 
-When I run the rand-write workload with 128 threads here, btrfs gets
-6236 ops/sec, and ext4 only gets 1509 ops/sec.
+Today, metadata allocations are 4k aligned but we do metadata
+allocations in cluster of 256k in size (2MB in size in mount -o ssd
+mode).  This results in larger metadata writes, and more contiguous
+metadata writes.  The larger writes give the SSD FTL a better chance of
+doing more optimal management of the flash.
 
-My box only has 5 drives, so there is probably a difference in btrfs'
-ability to keep all the drives in the array busy.
-
-So, I'll do some more experiments here.
+Additional tuning for specific alignment is possible as well, the kernel
+is growing the ability to discover device alignment characteristics, and
+I plan on taking advantage of that.
 
 -chris
 

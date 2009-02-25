@@ -1,194 +1,192 @@
-From: Wil Reichert <wil.reichert@gmail.com>
-Subject: lots of kernel threads
-Date: Tue, 24 Feb 2009 20:09:37 -0800
-Message-ID: <7a329d910902242009k6ae3fff7t8711ebc1a8bafea8@mail.gmail.com>
+From: "Mitch Harder (aka DontPanic)" <mmharder@gmail.com>
+Subject: Re: btrfs: warn_slowpath in clean_tree_block and others
+Date: Tue, 24 Feb 2009 22:22:03 -0600
+Message-ID: <89ed0c690902242022u526bb9bn5e7a8682ac0c0a96@mail.gmail.com>
+References: <20090224230249.GA6859@vlad.carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: Hugo Mills <hugo-lkml@carfax.org.uk>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20090224230249.GA6859@vlad.carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm a Gentoo user and figured mounting /usr/portage & /var/portage
-(distfiles, packages, persistent stuff normally in /usr/portage) and
-/tmp moiunted as btrfs.  I figured it would be a decent test & its
-nothing I cann't replace readily.  After about 6 hours of uptime and a
-couple package merges, I checked ps aux & am getting the following:
+I have also been getting similar warnings filling up my logs.
 
-$ ps aux | grep btrfs
-root      3634  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-worker-0]
-root      3635  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-submit-0]
-root      3636  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-delalloc-]
-root      3637  0.0  0.0      0     0 ?        S<   13:47   0:00 [btrfs-fixup-0]
-root      3638  0.0  0.0      0     0 ?        S<   13:47   0:00 [btrfs-endio-0]
-root      3639  0.0  0.0      0     0 ?        S<   13:47   0:00 [btrfs-endio-2]
-root      3640  0.0  0.0      0     0 ?        S<   13:47   0:00 [btrfs-endio-4]
-root      3641  0.0  0.0      0     0 ?        S<   13:47   0:00 [btrfs-endio-6]
-root      3642  0.0  0.0      0     0 ?        S<   13:47   0:00 [btrfs-endio-8]
-root      3643  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-10]
-root      3644  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3645  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3646  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3647  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3648  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3649  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3650  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3651  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3652  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3653  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3654  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3655  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3656  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-wri]
-root      3657  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-wri]
-root      3658  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-wri]
-root      3659  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-wri]
-root      3660  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-wri]
-root      3661  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-wri]
-root      3662  0.0  0.0      0     0 ?        S<   13:47   0:00 [btrfs-cleaner]
-root      3663  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-transacti]
-root      3666  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-worker-0]
-root      3667  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-submit-0]
-root      3668  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-delalloc-]
-root      3669  0.0  0.0      0     0 ?        S<   13:47   0:00 [btrfs-fixup-0]
-root      3670  0.0  0.0      0     0 ?        S<   13:47   0:00 [btrfs-endio-0]
-root      3671  0.0  0.0      0     0 ?        S<   13:47   0:00 [btrfs-endio-2]
-root      3672  0.0  0.0      0     0 ?        S<   13:47   0:00 [btrfs-endio-4]
-root      3673  0.0  0.0      0     0 ?        S<   13:47   0:00 [btrfs-endio-6]
-root      3674  0.0  0.0      0     0 ?        S<   13:47   0:00 [btrfs-endio-8]
-root      3675  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-10]
-root      3676  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3677  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3678  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3679  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3680  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3681  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3682  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3683  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3684  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3685  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3686  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3687  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3688  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-wri]
-root      3689  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-wri]
-root      3690  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-wri]
-root      3691  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-wri]
-root      3692  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-wri]
-root      3693  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-wri]
-root      3694  0.0  0.0      0     0 ?        S<   13:47   0:01 [btrfs-cleaner]
-root      3695  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-transacti]
-root      3698  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-worker-0]
-root      3699  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-submit-0]
-root      3700  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-delalloc-]
-root      3701  0.0  0.0      0     0 ?        S<   13:47   0:00 [btrfs-fixup-0]
-root      3702  0.0  0.0      0     0 ?        S<   13:47   0:00 [btrfs-endio-0]
-root      3703  0.0  0.0      0     0 ?        S<   13:47   0:00 [btrfs-endio-2]
-root      3704  0.0  0.0      0     0 ?        S<   13:47   0:00 [btrfs-endio-4]
-root      3705  0.0  0.0      0     0 ?        S<   13:47   0:00 [btrfs-endio-6]
-root      3706  0.0  0.0      0     0 ?        S<   13:47   0:00 [btrfs-endio-8]
-root      3707  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-10]
-root      3708  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3709  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3710  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3711  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3712  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3713  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3714  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3715  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3716  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3717  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3718  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3719  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-met]
-root      3720  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-wri]
-root      3721  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-wri]
-root      3722  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-wri]
-root      3723  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-wri]
-root      3724  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-wri]
-root      3725  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-endio-wri]
-root      3726  0.0  0.0      0     0 ?        S<   13:47   0:00 [btrfs-cleaner]
-root      3727  0.0  0.0      0     0 ?        S<   13:47   0:00
-[btrfs-transacti]
-root      5394  0.0  0.0      0     0 ?        S<   13:51   0:00
-[btrfs-worker-1]
-root      5395  0.0  0.0      0     0 ?        S<   13:51   0:00
-[btrfs-worker-2]
-root      5420  0.0  0.0      0     0 ?        S<   13:51   0:00
-[btrfs-worker-3]
-root      7324  0.0  0.0      0     0 ?        S<   14:06   0:00
-[btrfs-worker-4]
-root      7325  0.0  0.0      0     0 ?        S<   14:06   0:00
-[btrfs-worker-1]
-root      7326  0.0  0.0      0     0 ?        S<   14:06   0:00
-[btrfs-worker-2]
-root     13218  0.0  0.0      0     0 ?        S<   19:58   0:00
-[btrfs-worker-5]
+However, in my case, I have been experimenting with back-porting btrfs
+to a 2.6.28 kernel.  So I've been waiting for the back-porting efforts
+to get a little further along.
 
-Oh yeah, the kernel is mondays's 29-rc6.  So is this irregular?
+But I thought I'd respond in case this information helps.
 
-Wil
+Here's an example of the warnings I've been seeing:
+
+[80577.151167] ------------[ cut here ]------------
+[80577.151169] WARNING: at
+/var/tmp/portage/sys-fs/btrfs-9998/work/btrfs-9998/disk-io.c:860
+clean_tree_block+0xa4/0xb0 [btrfs]()
+[80577.151172] Modules linked in: btrfs snd_pcm_oss snd_mixer_oss
+snd_seq_dummy snd_seq_oss snd_seq_midi_event snd_seq snd_seq_device
+ipv6 ppdev snd_intel8x0 snd_ac97_codec parport_pc nvidia(P) ac97_bus
+snd_pcm snd_timer ohci_hcd ssb shpchp pci_hotplug pcmcia i2c_nforce2
+snd forcedeth sr_mod pcspkr parport i2c_core snd_page_alloc nvidia_agp
+sl811_hcd pcmcia_core uhci_hcd ehci_hcd
+[80577.151190] Pid: 11503, comm: cp Tainted: P        W  2.6.28-sabayon=
+-r10 #1
+[80577.151192] Call Trace:
+[80577.151195]  [<c011e77f>] warn_on_slowpath+0x5f/0x90
+[80577.151203]  [<c043c427>] rb_insert_color+0x77/0xe0
+[80577.151221]  [<f8c28e9e>] alloc_extent_buffer+0x1fe/0x300 [btrfs]
+[80577.151238]  [<f8c08d54>] clean_tree_block+0xa4/0xb0 [btrfs]
+[80577.151253]  [<f8bf665d>] btrfs_init_new_buffer+0x7d/0x130 [btrfs]
+[80577.151269]  [<f8bfb6f4>] btrfs_alloc_free_block+0x104/0x110 [btrfs]
+[80577.151285]  [<f8bef3da>] __btrfs_cow_block+0x22a/0x8b0 [btrfs]
+[80577.151300]  [<f8bed212>] generic_bin_search+0x162/0x1c0 [btrfs]
+[80577.151315]  [<f8bf00e6>] btrfs_cow_block+0x156/0x200 [btrfs]
+[80577.151330]  [<f8bf3267>] btrfs_search_slot+0x1a7/0x910 [btrfs]
+[80577.151333]  [<c01230e7>] irq_exit+0x27/0x60
+[80577.151336]  [<c01052cb>] do_IRQ+0x6b/0x80
+[80577.151354]  [<f8c24a55>] read_extent_buffer+0xd5/0x170 [btrfs]
+[80577.151369]  [<f8bf3f7d>] btrfs_insert_empty_items+0x6d/0x410 [btrfs=
+]
+[80577.151385]  [<f8bf8f4f>] btrfs_find_block_group+0xff/0x1a0 [btrfs]
+[80577.151402]  [<f8c0fa1d>] btrfs_new_inode+0x18d/0x360 [btrfs]
+[80577.151420]  [<f8c135a9>] btrfs_create+0x189/0x2a0 [btrfs]
+[80577.151423]  [<c04162d9>] security_capable+0x9/0x10
+[80577.151427]  [<c0197f3d>] vfs_create+0xcd/0x160
+[80577.151430]  [<c019ad6f>] do_filp_open+0x5af/0x7d0
+[80577.151433]  [<c01932e9>] cp_new_stat64+0xf9/0x110
+[80577.151436]  [<c018e40e>] do_sys_open+0x4e/0xe0
+[80577.151439]  [<c018e51c>] sys_open+0x2c/0x40
+[80577.151442]  [<c0103165>] sysenter_do_call+0x12/0x21
+[80577.151444] ---[ end trace 79cdc48bc88dedf7 ]---
+
+
+On Tue, Feb 24, 2009 at 5:02 PM, Hugo Mills <hugo-lkml@carfax.org.uk> w=
+rote:
+> =A0 This is essentially a repost of a mail I made last week, to which=
+ I
+> didn't get a reply.
+>
+> =A0 I'm getting huge numbers of kernel warnings whilst using
+> btrfs. They're all "warn_slowpath", and all seem to be in
+> fs/btrfs/disk-io.c. I've included one typical example at the end of
+> this mail.
+>
+> =A0 Kernel versions are 2.6.29-rc2, -rc4 and -rc6.
+>
+> =A0 If I do lots of writes to my btrfs filesystem (e.g. video
+> encoding), I end up with a syslog in the tens-of-megabytes range. Thi=
+s
+> makes logcheck an unhappy bunny...
+>
+> =A0 I don't know if this behaviour is expected, and everyone using
+> btrfs simply puts up with it for now, or if it's something unusual
+> that needs investigating. On the chance that it's the latter, I'm
+> reporting it here.
+>
+> =A0 Hugo.
+>
+> Feb 23 21:45:42 vlad kernel: ------------[ cut here ]------------
+> Feb 23 21:45:42 vlad kernel: WARNING: at fs/btrfs/disk-io.c:815 clean=
+_tree_block+0x9d/0xbb [btrfs]()
+> Feb 23 21:45:42 vlad kernel: Hardware name: System Product Name
+> Feb 23 21:45:42 vlad kernel: Modules linked in: tun ext3 jbd btrfs zl=
+ib_deflate tcp_diag inet_diag kqemu cpufreq_userspace ipv6 nfsd nfs loc=
+kd nfs_acl auth_rpcgss sunrpc af_packet bridge stp llc xfs exportfs it8=
+7 hwmon_vid powernow_k8 sbp2 ieee1394 ide_generic ide_gd_mod ide_cd_mod=
+ pcspkr evdev k8temp hwmon i2c_viapro i2c_core button dm_mirror dm_regi=
+on_hash dm_log dm_snapshot dm_mod raid1 md_mod usbhid usb_storage libus=
+ual sg sr_mod cdrom via82cxxx floppy via_rhine mii ehci_hcd uhci_hcd us=
+bcore pata_via ide_pci_generic ide_core sd_mod thermal processor fan un=
+ix
+> Feb 23 21:45:42 vlad kernel: Pid: 27034, comm: hdparm Tainted: G =A0 =
+=A0 =A0 =A0W =A02.6.29-rc4 #1
+> Feb 23 21:45:42 vlad kernel: Call Trace:
+> Feb 23 21:45:42 vlad kernel: [<ffffffff80228d7d>] warn_slowpath+0xd8/=
+0x111
+> Feb 23 21:45:42 vlad kernel: [<ffffffff80312f11>] radix_tree_insert+0=
+xd7/0x19f
+> Feb 23 21:45:42 vlad kernel: [<ffffffff8024d55d>] add_to_page_cache_l=
+ocked+0x52/0x9e
+> Feb 23 21:45:42 vlad kernel: [<ffffffff8024d5e9>] add_to_page_cache_l=
+ru+0x40/0x58
+> Feb 23 21:45:42 vlad kernel: [<ffffffff8024dbd0>] find_or_create_page=
++0x62/0x88
+> Feb 23 21:45:42 vlad kernel: [<ffffffffa03f992a>] alloc_extent_buffer=
++0x268/0x2ec [btrfs]
+> Feb 23 21:45:42 vlad kernel: [<ffffffffa03e1b18>] clean_tree_block+0x=
+9d/0xbb [btrfs]
+> Feb 23 21:45:42 vlad kernel: [<ffffffffa03d5eaf>] btrfs_init_new_buff=
+er+0x99/0xf3 [btrfs]
+> Feb 23 21:45:42 vlad kernel: [<ffffffffa03d849e>] btrfs_alloc_free_bl=
+ock+0x83/0x8c [btrfs]
+> Feb 23 21:45:42 vlad kernel: [<ffffffffa03cb2f8>] __btrfs_cow_block+0=
+x1ff/0x87e [btrfs]
+> Feb 23 21:45:42 vlad kernel: [<ffffffffa03cc125>] btrfs_cow_block+0x1=
+e7/0x1f6 [btrfs]
+> Feb 23 21:45:42 vlad kernel: [<ffffffff80251d9e>] __alloc_pages_inter=
+nal+0xd2/0x3ec
+> Feb 23 21:45:42 vlad kernel: [<ffffffffa03d0915>] btrfs_search_slot+0=
+x36f/0x99b [btrfs]
+> Feb 23 21:45:42 vlad kernel: [<ffffffffa03d14ee>] btrfs_insert_empty_=
+items+0x7f/0x49d [btrfs]
+> Feb 23 21:45:42 vlad kernel: [<ffffffffa03d825d>] __btrfs_alloc_reser=
+ved_extent+0x19f/0x2bb [btrfs]
+> Feb 23 21:45:42 vlad kernel: [<ffffffffa03d83f0>] btrfs_alloc_extent+=
+0x77/0xa2 [btrfs]
+> Feb 23 21:45:42 vlad kernel: [<ffffffffa03d847f>] btrfs_alloc_free_bl=
+ock+0x64/0x8c [btrfs]
+> Feb 23 21:45:42 vlad kernel: [<ffffffffa03cb2f8>] __btrfs_cow_block+0=
+x1ff/0x87e [btrfs]
+> Feb 23 21:45:42 vlad kernel: [<ffffffffa03d7532>] finish_current_inse=
+rt+0x514/0x528 [btrfs]
+> Feb 23 21:45:42 vlad kernel: [<ffffffffa03d7bf9>] del_pending_extents=
++0xa5/0x33d [btrfs]
+> Feb 23 21:45:42 vlad kernel: [<ffffffffa03cc125>] btrfs_cow_block+0x1=
+e7/0x1f6 [btrfs]
+> Feb 23 21:45:42 vlad kernel: [<ffffffffa03e436d>] btrfs_commit_tree_r=
+oots+0x53/0x1ba [btrfs]
+> Feb 23 21:45:42 vlad kernel: [<ffffffff80403a3e>] schedule_timeout+0x=
+a1/0xbc
+> Feb 23 21:45:42 vlad kernel: [<ffffffffa03e55dd>] btrfs_commit_transa=
+ction+0x322/0x6e5 [btrfs]
+> Feb 23 21:45:42 vlad kernel: [<ffffffff802385fb>] autoremove_wake_fun=
+ction+0x0/0x2e
+> Feb 23 21:45:42 vlad kernel: [<ffffffffa03e4809>] join_transaction+0x=
+129/0x147 [btrfs]
+> Feb 23 21:45:42 vlad kernel: [<ffffffffa03c8788>] btrfs_sync_fs+0x70/=
+0x78 [btrfs]
+> Feb 23 21:45:42 vlad kernel: [<ffffffff8026f332>] sync_filesystems+0x=
+a8/0xde
+> Feb 23 21:45:42 vlad kernel: [<ffffffff80287256>] do_sync+0x25/0x50
+> Feb 23 21:45:42 vlad kernel: [<ffffffff8028728f>] sys_sync+0xe/0x13
+> Feb 23 21:45:42 vlad kernel: [<ffffffff8020b25b>] system_call_fastpat=
+h+0x16/0x1b
+> Feb 23 21:45:42 vlad kernel: ---[ end trace a315082d564863a6 ]---
+>
+>
+> --
+> =3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.=
+org.uk =3D=3D=3D
+> =A0PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org=
+=2Euk
+> =A0 =A0 =A0--- Eighth Army Push Bottles Up Germans -- WWII newspaper =
+---
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 headline (possibly apocryphal=
+)
+>
+> -----BEGIN PGP SIGNATURE-----
+> Version: GnuPG v1.4.9 (GNU/Linux)
+>
+> iD8DBQFJpHyZIKyzvlFcI40RApVLAJoDrHaA+9cebRyJDm+vhGqgEQGiMACguCV+
+> znRCpat0ajek+ivXViQX5rg=3D
+> =3DGsHM
+> -----END PGP SIGNATURE-----
+>
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

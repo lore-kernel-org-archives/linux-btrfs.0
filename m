@@ -1,41 +1,116 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: btrfs: warn_slowpath in clean_tree_block and others
-Date: Wed, 25 Feb 2009 13:36:26 -0500
-Message-ID: <1235586986.32346.48.camel@think.oraclecorp.com>
-References: <20090224230249.GA6859@vlad.carfax.org.uk>
+From: Chris Ball <cjb@laptop.org>
+Subject: [review] Btrfs: Allow shrinking close to used space
+Date: Wed, 25 Feb 2009 14:13:10 -0500
+Message-ID: <m34oyixrcp.fsf@pullcord.laptop.org>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-To: Hugo Mills <hugo-lkml@carfax.org.uk>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090224230249.GA6859@vlad.carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2009-02-24 at 23:02 +0000, Hugo Mills wrote:
-> This is essentially a repost of a mail I made last week, to which I
-> didn't get a reply.
-> 
+Hi,
 
-Sorry I missed replying to this one last week, thanks for resending.
+This patch (against experimental HEAD) attempts to make shrinking more
+robust, by only updating device size if we've succeeded in creating
+enough free space without any failures in btrfs_relocate_chunk().
 
->    I'm getting huge numbers of kernel warnings whilst using
-> btrfs. They're all "warn_slowpath", and all seem to be in
-> fs/btrfs/disk-io.c. I've included one typical example at the end of
-> this mail.
-> 
->    Kernel versions are 2.6.29-rc2, -rc4 and -rc6.
-> 
+Here's a log with my patch applied.  The two things to note are that a
+near-limit shrink now works, and that a failed shrink (in this case,
+trying to shrink to less than the used space) no longer updates the
+device size erroneously:
 
-The warnings look like i386, exactly what hardware is this?  Is your
-kernel compiled for SMP or UP?
+  http://dev.laptop.org/~cjb/btrfs/shrink-log
 
-The warning you're getting is that clean_tree_block expects this block
-to be locked, and giving out a warning because it is showing up as
-unlocked.
+Please review carefully -- I'm still new to btrfs.  The short version of
+the patch is:
 
-So, hopefully you're on a UP kernel and my test for a locked spinlock is
-broken in that config.
+* create a success path, as a break out of the while(1) relocating
+  (rather than going to the "done" label).
+* move the device size updating code into that path
+* leave "path->reada = 2;" behind in the entry path, since path is
+  used by the searching operation rather than the later resize.
 
--chris
+Thanks!
+
+Signed-off-by: Chris Ball <cjb@laptop.org>
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 1316139..e2fa072 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1815,30 +1815,8 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
+ 	if (!path)
+ 		return -ENOMEM;
+ 
+-	trans = btrfs_start_transaction(root, 1);
+-	if (!trans) {
+-		ret = -ENOMEM;
+-		goto done;
+-	}
+-
+ 	path->reada = 2;
+ 
+-	lock_chunks(root);
+-
+-	device->total_bytes = new_size;
+-	if (device->writeable)
+-		device->fs_devices->total_rw_bytes -= diff;
+-	ret = btrfs_update_device(trans, device);
+-	if (ret) {
+-		unlock_chunks(root);
+-		btrfs_end_transaction(trans, root);
+-		goto done;
+-	}
+-	WARN_ON(diff > old_total);
+-	btrfs_set_super_total_bytes(super_copy, old_total - diff);
+-	unlock_chunks(root);
+-	btrfs_end_transaction(trans, root);
+-
+ 	key.objectid = device->devid;
+ 	key.offset = (u64)-1;
+ 	key.type = BTRFS_DEV_EXTENT_KEY;
+@@ -1867,7 +1845,7 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
+ 		length = btrfs_dev_extent_length(l, dev_extent);
+ 
+ 		if (key.offset + length <= new_size)
+-			goto done;
++			break;
+ 
+ 		chunk_tree = btrfs_dev_extent_chunk_tree(l, dev_extent);
+ 		chunk_objectid = btrfs_dev_extent_chunk_objectid(l, dev_extent);
+@@ -1880,6 +1858,31 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
+ 			goto done;
+ 	}
+ 
++	/*
++	 * We've succeeded in freeing up enough space and can now update
++	 * the device's size.
++	 */
++	trans = btrfs_start_transaction(root, 1);
++	if (!trans) {
++		ret = -ENOMEM;
++		goto done;
++	}
++
++	lock_chunks(root);
++	device->total_bytes = new_size;
++	if (device->writeable)
++		device->fs_devices->total_rw_bytes -= diff;
++	ret = btrfs_update_device(trans, device);
++	if (ret) {
++		unlock_chunks(root);
++		btrfs_end_transaction(trans, root);
++		goto done;
++	}
++	WARN_ON(diff > old_total);
++	btrfs_set_super_total_bytes(super_copy, old_total - diff);
++	unlock_chunks(root);
++	btrfs_end_transaction(trans, root);
++
+ done:
+ 	btrfs_free_path(path);
+ 	return ret;
 
 
+-- 
+Chris Ball   <cjb@laptop.org>

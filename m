@@ -1,54 +1,65 @@
-From: Thomas Kuther <gimpel@sonnenkinder.org>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: questions about GRUB and BTRFS
-Date: Wed, 25 Feb 2009 19:19:44 +0100
-Message-ID: <20090225191944.532a3a0f@gimpel.ath.cx>
+Date: Wed, 25 Feb 2009 13:22:20 -0500
+Message-ID: <1235586140.32346.37.camel@think.oraclecorp.com>
 References: <a3a222ba714187fedfe43fe9f7086242@smtp.arbitraryconstant.com>
- <3a7f57190902241753s6738fcdl1b7573dcbf23e151@mail.gmail.com>
- <49A4DF3D.90206@cs.drexel.edu>
 Mime-Version: 1.0
-Content-Type: multipart/signed; boundary="Sig_/gFRCMqWU4CSqEflc_iHllRO";
- protocol="application/pgp-signature"; micalg=PGP-SHA1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain
+Cc: Linux btrfs <linux-btrfs@vger.kernel.org>
+To: Anthony Roberts <btrfs-devel@arbitraryconstant.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <49A4DF3D.90206@cs.drexel.edu>
+In-Reply-To: <a3a222ba714187fedfe43fe9f7086242@smtp.arbitraryconstant.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/gFRCMqWU4CSqEflc_iHllRO
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On Tue, 2009-02-24 at 18:32 -0700, Anthony Roberts wrote:
+> Hi,
+> 
+> A quick googling turns up posts that GRUB support for BTRFS is planned. My
+> curiosity is more towards how this will be managed, because the way this is
+> currently implemented with software RAID/LVM is quite haphazard. I
+> therefore have some questions about GRUB + BTRFS:
+> 
 
-On Mi, 25.02.09 01:03 Lee Trager <lt73@cs.drexel.edu> wrote:
+So, I haven't looked very hard at the grub code, and expected to start
+the btrfs grub support with something very minimal (single device only
+configs).
 
-> I'm not sure when we should start developing BTRFS support for GRUB
-> but I do agree that it will be very difficult to support all the
-> features of BTRFS.  As far as I know GRUB does not support LVM and
-> only supports RAID1. Doing this shouldn't be that hard to do, in fact
+> -With GRUB booting, it's easy to think of awkward use cases and limitations
+> unless it's capable of discovering BTRFS instances, and can boot by
+> specifying BTRFS UUID + subvolume. That seems quite ambitious, but is this
+> planned "eventually"?
 
-GRUB2 maybe?
+Grub today works by giving it a device and a path.  Since all the btrfs
+subvolumes can be found from a path, device + path will actually work
+with the subvolume support.
 
-Using trunk I see things like
+> 
+> -Might it be possible to tweak the userspace component of GRUB to install
+> the bootloader to every member device? This seems necessary for reliable
+> booting and rebuilding after a dead disk.
 
-/lib64/grub/i386-pc/lvm.mod
-/lib64/grub/i386-pc/ext2.mod
-/lib64/grub/i386-pc/reiserfs.mod
-and
-/lib64/grub/i386-pc/raid.mod
+I need to look into the grub code in detail to answer this.
+
+> 
+> -64 kb at the beginning of the device is plenty for MBR + GRUB stage 1 +
+> 1.5. Might this allow bootable BTRFS without paritions being used at all?
+> The space used for partitioning is negligible, however we're on the cusp of
+> disks that are too big to partition with MBR, and GPT booting doesn't seem
+> well supported yet.
+> 
+
+Part of the reason we're 64kb in was to better support bootloaders.
+
+> There's obviously no point in getting worked up about this before
+> production ready support is available in the first place. :) However, I am
+> curious about what sort of implementation is planned.
+
+In the ideal implementation, the grub.conf has a list of devices it is
+allowed to scan, and we put the FS uuid directly in there, let grub scan
+them and we'll be able to boot off multiple volumes in that way.
+
+But, that is a significant project, so we'll have to do it in stages.
+
+-chris
 
 
-...which a grub-install will copy to /boot/grub
-
-I haven't tested those though.
-
---Sig_/gFRCMqWU4CSqEflc_iHllRO
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.10 (GNU/Linux)
-
-iEYEARECAAYFAkmli8QACgkQMQFfAqZTGfzwAACfRZyc6fDXT4y6ACk5RCelLRFq
-WCwAoIVy3yI7I3Uw+eIC40kENh74jGXD
-=nnDa
------END PGP SIGNATURE-----
-
---Sig_/gFRCMqWU4CSqEflc_iHllRO--

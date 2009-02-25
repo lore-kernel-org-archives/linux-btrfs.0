@@ -1,43 +1,56 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: btrfs: warn_slowpath in clean_tree_block and others
-Date: Wed, 25 Feb 2009 14:26:43 -0500
-Message-ID: <1235590003.32346.61.camel@think.oraclecorp.com>
-References: <20090224230249.GA6859@vlad.carfax.org.uk>
-	 <1235586986.32346.48.camel@think.oraclecorp.com>
-	 <89ed0c690902251050g1e6dd23ay5d5426adb7086018@mail.gmail.com>
+From: Pavel Machek <pavel@ucw.cz>
+Subject: Re: Warning and BUG with btrfs and corrupted image
+Date: Wed, 25 Feb 2009 20:54:11 +0100
+Message-ID: <20090225195411.GI2645@elf.ucw.cz>
+References: <20090120222019.GB2320@elf.ucw.cz> <20090121040042.GI10158@disturbed> <20090126162711.GA2083@elf.ucw.cz> <20090201014050.GD24173@disturbed> <20090204182951.GC4797@elf.ucw.cz> <20090205085916.GP24173@disturbed> <20090205090229.GA2011@elf.ucw.cz> <1233838959.15948.6.camel@think.oraclecorp.com> <20090205135011.GA2294@elf.ucw.cz> <498AF570.9030803@hp.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-To: "Mitch Harder (aka DontPanic)" <mmharder@gmail.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Christoph Hellwig <hch@infradead.org>,
+	Eric Sesterhenn <snakebyte@gmx.de>,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+To: jim owens <jowens@hp.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <89ed0c690902251050g1e6dd23ay5d5426adb7086018@mail.gmail.com>
+In-Reply-To: <498AF570.9030803@hp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[ resend with the list cc'd ]
+On Thu 2009-02-05 09:19:28, jim owens wrote:
+> Pavel Machek wrote:
+>>> If you don't want it, don't compile it in.  The Kconfig text is very
+>>> clear.
+>>
+>> No, I'd not expect that option to panic systems. That's why I
+>> suggested:
+>>
+>> diff --git a/fs/xfs/Kconfig b/fs/xfs/Kconfig
+>> index 29228f5..b7ac847 100644
+>> --- a/fs/xfs/Kconfig
+>> +++ b/fs/xfs/Kconfig
+>> @@ -77,4 +77,7 @@ config XFS_DEBUG
+>>  	  Note that the resulting code will be HUGE and SLOW, and probably
+>>  	  not useful unless you are debugging a particular problem.
+>>  +	  Turning this option on will result in kernel panicking any time
+>> +	  it detects on-disk corruption.
+>> +
+>>  	  Say N unless you are an XFS developer, or you play one on TV.
+>
+> If you really want a better warning it should simply be:
+>
+>           Choosing Y will make XFS panic on survivable events.
 
-On Wed, 2009-02-25 at 12:50 -0600, Mitch Harder (aka DontPanic) wrote:
-> I'll try to test that out.
-> 
-> I had just noticed that some of my kernel configuration settings (not
-> sure which ones) seem to affect the clean_tree_block warnings I've
-> been getting, and one of my customizations is usually to configure the
-> kernel for a single processor.
-> 
+Can we get that line there?
 
-I'll push out a patch tonight that fixes things, the code to test for a
-locked buffer is just broken on UP.  For now, the patch below will do:
+> I understand you may have a concern that "normal users" will select
+> the debug option by mistake, but I don't think that is realistic.
+> My experience is they will not build custom debug kernels even if
+> you beg them to.  They will only use the distro build and a
+> distro should never turn this option on outside their own labs.
+>
+> Any non-xfs kernel developer who turns this on and gets
+> snake bit will only do it once.
 
-diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
-index 85506c4..4513ecf 100644
---- a/fs/btrfs/locking.c
-+++ b/fs/btrfs/locking.c
-@@ -222,6 +222,5 @@ int btrfs_tree_unlock(struct extent_buffer *eb)
- 
- int btrfs_tree_locked(struct extent_buffer *eb)
- {
--	return test_bit(EXTENT_BUFFER_BLOCKING, &eb->bflags) ||
--			spin_is_locked(&eb->lock);
-+	return 1;
- }
-
-
+One bite per developer is one bite too many..
+									Pavel
+-- 
+(english) http://www.livejournal.com/~pavelmachek
+(cesky, pictures) http://atrey.karlin.mff.cuni.cz/~pavel/picture/horses/blog.html

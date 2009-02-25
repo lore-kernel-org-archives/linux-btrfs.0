@@ -1,46 +1,26 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: questions about GRUB and BTRFS
-Date: Wed, 25 Feb 2009 15:22:23 -0500
-Message-ID: <1235593343.32346.73.camel@think.oraclecorp.com>
-References: <a3a222ba714187fedfe43fe9f7086242@smtp.arbitraryconstant.com>
-	 <1235586140.32346.37.camel@think.oraclecorp.com>
-	 <6e246ee64cdb6decfd7153436888efcb@smtp.arbitraryconstant.com>
+From: Steven Pratt <slpratt@austin.ibm.com>
+Subject: Performance results on Experimental branch
+Date: Wed, 25 Feb 2009 15:07:33 -0600
+Message-ID: <49A5B315.9070805@austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Linux btrfs <linux-btrfs@vger.kernel.org>
-To: Anthony Roberts <btrfs-devel@arbitraryconstant.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <6e246ee64cdb6decfd7153436888efcb@smtp.arbitraryconstant.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2009-02-25 at 13:04 -0700, Anthony Roberts wrote:
-> Hi Chris,
-> 
-> Cheers for the informative response. :)
-> 
-> > In the ideal implementation, the grub.conf has a list of devices it is
-> > allowed to scan, and we put the FS uuid directly in there, let grub scan
-> > them and we'll be able to boot off multiple volumes in that way.
-> 
-> Hm... perhaps it doesn't even need that much. It we're specifying devices,
-> might it simply pull the UUID out of the initial device it's given, kinda
-> like how the current mounting process works? Enumeration of the drives
-> changes as they come and go, but it doesn't really matter what "hd0" is
-> today as long as it's a member device.
+Have completed the first run of the experimental  branch on my RAID 
+system and the results are encouraging.
 
-The problem is that grub would need some way of knowing which devices to
-scan.  I'd hate to see it off running through everything in a san.
+Compared to 2.6.29-rc2:
+Large file creates  increase 50% plus across all thread counts.
+Mail Server is up about 20%
+Random reads  are pretty much flat
+Random Writes are up 50% or more
+Sequential reads took a 10% hit on single thread, but 20% gain on 128 
+threads.
 
-> 
-> This suggests another question for me... right now you can specify a root=
-> command line to the kernel, though there's other stuff like nfsroot= where
-> more parameters are needed. Is it possible to add a btrfsroot= option with
-> a UUID+subvolume?
+All in all good progress.  Results and graphs can be found here:
 
-I'm not a huge fan of initrds, but the distro initrd scripts already
-have this kind of goodness hooked in.  I think that's the best place for
-it.
+http://btrfs.boxacle.net/repository/raid/history/History.html
 
--chris
-
-
+Steve

@@ -1,24 +1,49 @@
-From: Evgeniy Polyakov <zbr@ioremap.net>
-Subject: Re: BUG: Bonnie++ stresstest with parallel balanceing chunks across all devices
-Date: Fri, 27 Feb 2009 00:06:02 +0300
-Message-ID: <20090226210602.GB6215@ioremap.net>
-References: <20090226203608.GB4024@256bit.org>
+From: Steven Pratt <slpratt@austin.ibm.com>
+Subject: Re: experimental branch rebased
+Date: Thu, 26 Feb 2009 16:54:13 -0600
+Message-ID: <49A71D95.8030707@austin.ibm.com>
+References: <1235663145.4631.11.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Marc Schoechlin <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090226203608.GB4024@256bit.org>
+In-Reply-To: <1235663145.4631.11.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 26, 2009 at 09:36:08PM +0100, Marc Schoechlin (linux-btrfs@vger.kernel.org) wrote:
-> [  359.658789] btrfs allocation failed flags 68, wanted 4096
-> [  359.659966] space_info has 932491264 free, is full
-> [  359.660007] block group 14802485248 has 936378368 bytes, 3522560 used 364544 pinned 0 reserved
-> [  359.660076] 87 blocks of free space at or bigger than bytes is
-> [  359.660226] ------------[ cut here ]------------
-> [  359.660273] kernel BUG at fs/btrfs/extent-tree.c:3190!
+Chris Mason wrote:
+> Hello everyone,
+>
+> I've rebased the experimental branch again with my latest performance
+> fixes.
+>
+> I took out the delayed unlink code, it wasn't making a big enough
+> difference in any benchmarks to justify the complexity.
+>
+> I changed the delayed backref code to do delayed processing for all
+> extents.  In general it is much faster and uses less stack.
+>
+> I pulled Josef's enospc work into the master branch and asked Linus to
+> pull it.
+>
+> I'm going to hammer on the experimental branch for a few days and ask
+> Steve to give it another run.
+>   
+Done.  Results for RAID are updated in history tree   
+http://btrfs.boxacle.net/repository/raid/history/History.html
 
-Looks like a no-space-left feature.
+This gives back a few of the performance improvements made on the tree 
+from the 24th (mail server and random write).
 
--- 
-	Evgeniy Polyakov
+Also, I have reordered the bars with btrfs at the end for 2 reasons. 
+First, makes it a little easier to find the latest btrfs results.  Also 
+this fixes a problem with my scripts where I was not picking up the 
+random write odirect tests.
+
+Single disk tests are running.
+
+Steve
+> -chris
+>
+>   
+

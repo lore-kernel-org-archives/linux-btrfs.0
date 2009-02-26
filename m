@@ -1,7 +1,7 @@
 From: Marc Schoechlin <linux-btrfs@vger.kernel.org>
-Subject: BUG: Bonnie++ stresstest with parallel balanceing chunks across all devices
-Date: Thu, 26 Feb 2009 21:36:08 +0100
-Message-ID: <20090226203608.GB4024@256bit.org>
+Subject: BUG: Mount/Unmount Loop
+Date: Thu, 26 Feb 2009 21:58:47 +0100
+Message-ID: <20090226205847.GA9075@256bit.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
@@ -10,7 +10,7 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello Developers,
 
-it seems that i discovered another bug in btrfs while testing it on a zSeries
+it seems that i discovered a bug in btrfs while testing it on a zSeries
 mainframe :-)
 
 ## Test environment:
@@ -69,24 +69,17 @@ mainframe :-)
 ## How to reproduce the problem
 
 vmcp "sp cons start to *"
-
 modprobe btrfs
-mkfs.btrfs -m raid10 -d raid10 /dev/disk/by-path/ccw-0.0.{3320..3327}
-sleep 1
-mount -t btrfs /dev/disk/by-path/ccw-0.0.3321 ${TESTMNT}
-sleep 5
-mkdir -p ${TESTMNT}/{1..5}
-for i in {1..5};do
- bonnie++ -x 10 -u root -d ${TESTMNT}/$i &>${TESTMNT}/$i.log &
+for j in {1..10000};do
+   mkfs.btrfs -m raid1 -d raid1 $DEVICES
+   for i in $DEVICES;do
+      set -x
+      mount -t btrfs $i ${TESTMNT}
+      umount ${TESTMNT}
+      set +x
+   done
 done
-for i in {1..2000}; do
-   btrfs-vol -b ${TESTMNT}
-   btrfs-show
-done
-
-killall -KILL bonnie++
-umount ${TESTMNT}
-
+modprobe -r btrfs
 vmcp "sp cons stop close"
 
 => Crashes after a few minutes
@@ -94,239 +87,151 @@ vmcp "sp cons stop close"
 
 ## Console Output:
 ----
-ioctl returns 0                                                                                                                     
-Label: none  uuid: bc58bd1b-eec1-468b-9049-04da702d5f92                                                                             
-        Total devices 8 FS bytes used 350.37MB                                                                                      
-        devid    7 size 2.29GB used 1.09GB path /dev/dasdinfo0000
-        devid    5 size 1.40GB used 897.00MB path /dev/dasdinfo0001
-        devid    4 size 2.29GB used 1.09GB path /dev/dasdinfo0002
-        devid    6 size 2.29GB used 1.09GB path /dev/dasdinfo0003
-        devid    2 size 2.29GB used 1.09GB path /dev/dasdinfo0006
-        devid    1 size 2.29GB used 1.11GB path /dev/dasdinfo0007
-        devid    3 size 2.29GB used 1.09GB path /dev/dasdinfo0008
-        devid    8 size 2.29GB used 897.00MB path /dev/dasdinfo0009
+WARNING! - Btrfs Btrfs v0.18 IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
 
+adding device /dev/disk/by-path/ccw-0.0.3321 id 2
+adding device /dev/disk/by-path/ccw-0.0.3322 id 3
+adding device /dev/disk/by-path/ccw-0.0.3323 id 4
+adding device /dev/disk/by-path/ccw-0.0.3324 id 5
+adding device /dev/disk/by-path/ccw-0.0.3325 id 6
+adding device /dev/disk/by-path/ccw-0.0.3326 id 7
+adding device /dev/disk/by-path/ccw-0.0.3327 id 8
+fs created label (null) on /dev/disk/by-path/ccw-0.0.3320
+        nodesize 4096 leafsize 4096 sectorsize 4096 size 17.45GB
 Btrfs Btrfs v0.18
-ioctl returns 0
-Label: none  uuid: bc58bd1b-eec1-468b-9049-04da702d5f92
-        Total devices 8 FS bytes used 770.31MB
-        devid    7 size 2.29GB used 1.53GB path /dev/dasdinfo0000
-        devid    5 size 1.40GB used 1.09GB path /dev/dasdinfo0001
-        devid    4 size 2.29GB used 1.53GB path /dev/dasdinfo0002
-        devid    6 size 2.29GB used 1.53GB path /dev/dasdinfo0003
-        devid    2 size 2.29GB used 1.53GB path /dev/dasdinfo0006
-        devid    1 size 2.29GB used 1.53GB path /dev/dasdinfo0007
-        devid    3 size 2.29GB used 1.53GB path /dev/dasdinfo0008
-        devid    8 size 2.29GB used 1.09GB path /dev/dasdinfo0009
++ mount -t btrfs /dev/disk/by-path/ccw-0.0.3320 /mnt
 
-Btrfs Btrfs v0.18
-ioctl returns 0
-Label: none  uuid: bc58bd1b-eec1-468b-9049-04da702d5f92
-        Total devices 8 FS bytes used 1.82GB
-        devid    7 size 2.29GB used 1.53GB path /dev/dasdinfo0000
-        devid    5 size 1.40GB used 899.00MB path /dev/dasdinfo0001
-        devid    4 size 2.29GB used 1.53GB path /dev/dasdinfo0002
-        devid    6 size 2.29GB used 1.53GB path /dev/dasdinfo0003
-        devid    2 size 2.29GB used 1.53GB path /dev/dasdinfo0006
-        devid    1 size 2.29GB used 1.54GB path /dev/dasdinfo0007
-        devid    3 size 2.29GB used 1.53GB path /dev/dasdinfo0008
-        devid    8 size 2.29GB used 899.00MB path /dev/dasdinfo0009
-
-Btrfs Btrfs v0.18
-
-Message from syslogd@virtual-206 at Thu Feb 26 21:25:52 2009 ...
-virtual-206 kernel: [  359.660226] ------------[ cut here ]------------
-
-Message from syslogd@virtual-206 at Thu Feb 26 21:25:56 2009 ...
-virtual-206 kernel: [  363.469831] ------------[ cut here ]------------
-
+Message from syslogd@virtual-206 at Thu Feb 26 20:59:23 2009 ...
+virtual-206 kernel: [  121.409129] ------------[ cut here ]------------
++ umount /mnt
+Segmentation fault
++ set +x
++ mount -t btrfs /dev/disk/by-path/ccw-0.0.3321 /mnt
 ----
 
 ## DMESG Output:
 ----
-
-
-[   53.069782] Btrfs loaded                                                                                                                                           
-[   53.213829] device fsid 32bbc958ce94417a-b4a274f96684ba51 devid 1 transid 5 /dev/disk/by-path/ccw-0.0.3320                                                         
-[   53.260832] device fsid 32bbc958ce94417a-b4a274f96684ba51 devid 2 transid 5 /dev/disk/by-path/ccw-0.0.3321                                                         
-[   53.296270] device fsid 32bbc958ce94417a-b4a274f96684ba51 devid 3 transid 5 /dev/disk/by-path/ccw-0.0.3322                                                         
-[   53.334252] device fsid 32bbc958ce94417a-b4a274f96684ba51 devid 4 transid 5 /dev/disk/by-path/ccw-0.0.3323                                                         
-[   53.391716] device fsid 32bbc958ce94417a-b4a274f96684ba51 devid 5 transid 5 /dev/disk/by-path/ccw-0.0.3324                                                         
-[   53.424834] device fsid 32bbc958ce94417a-b4a274f96684ba51 devid 6 transid 5 /dev/disk/by-path/ccw-0.0.3325                                                         
-[   53.457949] device fsid 32bbc958ce94417a-b4a274f96684ba51 devid 7 transid 5 /dev/disk/by-path/ccw-0.0.3326                                                         
-[   53.498292] device fsid 32bbc958ce94417a-b4a274f96684ba51 devid 8 transid 5 /dev/disk/by-path/ccw-0.0.3327                                                         
-[   82.871301] device fsid bc58bd1beec1468b-904904da702d5f92 devid 1 transid 5 /dev/disk/by-path/ccw-0.0.3320                                                         
-[   82.903317] device fsid bc58bd1beec1468b-904904da702d5f92 devid 2 transid 5 /dev/disk/by-path/ccw-0.0.3321                                                         
-[   82.940807] device fsid bc58bd1beec1468b-904904da702d5f92 devid 3 transid 5 /dev/disk/by-path/ccw-0.0.3322                                                         
-[   82.973923] device fsid bc58bd1beec1468b-904904da702d5f92 devid 4 transid 5 /dev/disk/by-path/ccw-0.0.3323                                                         
-[   82.995348] device fsid bc58bd1beec1468b-904904da702d5f92 devid 5 transid 5 /dev/disk/by-path/ccw-0.0.3324                                                         
-[   83.017108] device fsid bc58bd1beec1468b-904904da702d5f92 devid 6 transid 5 /dev/disk/by-path/ccw-0.0.3325                                                         
-[   83.043754] device fsid bc58bd1beec1468b-904904da702d5f92 devid 7 transid 5 /dev/disk/by-path/ccw-0.0.3326                                                         
-[   83.086491] device fsid bc58bd1beec1468b-904904da702d5f92 devid 8 transid 5 /dev/disk/by-path/ccw-0.0.3327                                                         
-[   84.120060] device fsid bc58bd1beec1468b-904904da702d5f92 devid 2 transid 9 /dev/dasdd                                                                             
-[  118.619900] btrfs relocating chunk 965738496                                                                                                                       
-[  118.619937] btrfs relocating block group 965738496 flags 65                                                                                                        
-[  139.000278] btrfs found 43 extents in pass 0                                                                                                                       
-[  139.416544] btrfs found 43 extents in pass 1                                                                                                                       
-[  139.659585] btrfs found 43 extents in pass 2                                                                                                                       
-[  140.245022] btrfs found 11 extents in pass 3                                                                                                                       
-[  140.544328] btrfs found 1 extents in pass 4                                                                                                                        
-[  141.588530] btrfs found 1 extents in pass 5                                                                                                                        
-[  141.720213] btrfs found 1 extents in pass 6                                                                                                                        
-[  142.017749] btrfs relocating chunk 29360128                                                                                                                        
-[  142.017776] btrfs relocating block group 29360128 flags 68                                                                                                         
-[  143.741564] btrfs found 102 extents in pass 0                                                                                                                      
-[  143.934231] btrfs relocating chunk 20971520                                                                                                                        
-[  143.934264] btrfs relocating block group 20971520 flags 66                                                                                                         
-[  144.400321] btrfs found 1 extents in pass 0                                                                                                                        
-[  144.763732] btrfs relocating chunk 12582912                                                                                                                        
-[  144.763761] btrfs relocating block group 12582912 flags 1                                                                                                          
-[  145.343867] btrfs relocating chunk 4194304                                                                                                                         
-[  145.343908] btrfs relocating block group 4194304 flags 4                                                                                                           
-[  146.322339] btrfs relocating chunk 6358302720                                                                                                                      
-[  146.322370] btrfs relocating block group 6358302720 flags 66                                                                                                       
-[  147.272337] btrfs relocating chunk 6349914112                                                                                                                      
-[  147.272366] btrfs relocating block group 6349914112 flags 66                                                                                                       
-[  147.500374] btrfs found 1 extents in pass 0                                                                                                                        
-[  147.758909] btrfs relocating chunk 5647630336                                                                                                                      
-[  147.758938] btrfs relocating block group 5647630336 flags 68                                                                                                       
-[  148.210632] btrfs relocating chunk 4711251968                                                                                                                      
-[  148.210660] btrfs relocating block group 4711251968 flags 68                                                                                                       
-[  148.687160] btrfs found 126 extents in pass 0                                                                                                                      
-[  149.021782] btrfs relocating chunk 3774873600                                                                                                                      
-[  149.021810] btrfs relocating block group 3774873600 flags 65                                                                                                       
-[  149.781615] btrfs relocating chunk 2838495232
-[  149.781645] btrfs relocating block group 2838495232 flags 65
-[  150.540691] btrfs relocating chunk 1902116864
-[  150.540720] btrfs relocating block group 1902116864 flags 65
-[  206.451286] btrfs found 396 extents in pass 0
-[  207.953457] btrfs found 396 extents in pass 1
-[  208.549774] btrfs found 98 extents in pass 2
-[  208.907137] btrfs found 8 extents in pass 3
-[  209.588814] btrfs found 8 extents in pass 4
-[  209.773634] btrfs found 6 extents in pass 5
-[  210.564362] btrfs relocating chunk 10822877184
-[  210.564396] btrfs relocating block group 10822877184 flags 65
-[  212.243715] btrfs relocating chunk 9886498816
-[  212.243743] btrfs relocating block group 9886498816 flags 65
-[  212.995054] btrfs relocating chunk 8950120448
-[  212.995082] btrfs relocating block group 8950120448 flags 65
-[  213.438304] btrfs relocating chunk 8013742080
-[  213.438332] btrfs relocating block group 8013742080 flags 65
-[  314.303946] ioctl32(btrfsctl:1845): Unknown cmd fd(3) cmd(50009401){t:94;sz:4096} arg(7fb999b8) on /home/mschoechlin
-[  341.213654] btrfs found 1082 extents in pass 0
-[  344.069185] btrfs found 1082 extents in pass 1
-[  347.430837] btrfs found 98 extents in pass 2
-[  348.116550] btrfs found 31 extents in pass 3
-[  348.455565] btrfs found 16 extents in pass 4
-[  348.603883] btrfs found 16 extents in pass 5
-[  348.777141] btrfs found 4 extents in pass 6
-[  349.844488] btrfs relocating chunk 7311458304
-[  349.844517] btrfs relocating block group 7311458304 flags 68
-[  351.621378] btrfs relocating chunk 6375079936
-[  351.621407] btrfs relocating block group 6375079936 flags 68
-[  354.068177] btrfs found 667 extents in pass 0
-[  354.855161] btrfs relocating chunk 6366691328
-[  354.855188] btrfs relocating block group 6366691328 flags 66
-[  356.699006] btrfs relocating chunk 6358302720
-[  356.699036] btrfs relocating block group 6358302720 flags 66
-[  357.133819] btrfs found 1 extents in pass 0
-[  357.689341] btrfs relocating chunk 15747252224
-[  357.689372] btrfs relocating block group 15747252224 flags 66
-[  358.786261] btrfs relocating chunk 15738863616
-[  358.786290] btrfs relocating block group 15738863616 flags 66
-[  359.415243] btrfs found 1 extents in pass 0
-[  359.653452] btrfs relocating chunk 14802485248
-[  359.653480] btrfs relocating block group 14802485248 flags 68
-[  359.658755] btrfs searching for 4096 bytes, num_bytes 4096, loop 2, allowed_alloc 1
-[  359.658789] btrfs allocation failed flags 68, wanted 4096
-[  359.659966] space_info has 932491264 free, is full
-[  359.660007] block group 14802485248 has 936378368 bytes, 3522560 used 364544 pinned 0 reserved
-[  359.660076] 87 blocks of free space at or bigger than bytes is
-[  359.660226] ------------[ cut here ]------------
-[  359.660273] kernel BUG at fs/btrfs/extent-tree.c:3190!
-[  359.660329] illegal operation: 0001 [#1] SMP
-[  359.660403] Modules linked in: btrfs zlib_deflate zlib_inflate crc32c libcrc32c dm_snapshot dm_mirror dm_region_hash dm_log dm_mod ocfs2 jbd2 ocfs2_nodemanager con+figfs ocfs2_stackglue quota_tree vmcp loop qeth_l3 qeth vmur ccwgroup ext3 jbd mbcache dasd_eckd_mod dasd_mod+
-[  359.661261] CPU: 0 Not tainted 2.6.29-rc3 #1
-[  359.661331] Process bonnie++ (pid: 1823, task: 000000001eb16140, ksp: 0000000018f1b538)
-[  359.666651] Krnl PSW : 0704000180000000 000003e000716688 (__btrfs_reserve_extent+0x2fc/0x314 [btrfs])
-[  359.666829]            R:0 T:1 IO:1 EX:1 Key:0 M:1 W:0 P:0 AS:0 CC:0 PM:0 EA:3
-[  359.666852] Krnl GPRS: 000000000116d318 0000000000000000 000000001f0364e0 0000000000000001
-[  359.666875]            00000000002ad696 000000000000478f 0000000000059000 000000001f0364c8
-[  359.666896]            0000000000001000 000000001f0364e0 000000001915682c 000000001f036410
-[  359.666918]            000000001f2b4c88 000003e00075be58 000003e000716684 0000000018f1b710
-[  359.666987] Krnl Code: 000003e00071667a: b9040029            lgr     %r2,%r9
-[  359.667014]            000003e00071667e: c0e5ffff5cf9        brasl   %r14,3e000702070
-[  359.667041]            000003e000716684: a7f40001            brc     15,3e000716686
-[  359.667067]           >000003e000716688: a7f40000            brc     15,3e000716688
-[  359.667097]            000003e00071668c: e340f1200004        lg      %r4,288(%r15)
-[  359.667123]            000003e000716692: a7290000            lghi    %r2,0
-[  359.667153]            000003e000716696: eb6ff0e00004        lmg     %r6,%r15,224(%r15)
-[  359.667178]            000003e00071669c: 07f4                bcr     15,%r4
-[  359.667197] Call Trace:
-[  359.667207] ([<000003e000716658>] __btrfs_reserve_extent+0x2cc/0x314 [btrfs])
-[  359.667298]  [<000003e0007184e2>] btrfs_alloc_extent+0x4e/0xc8 [btrfs]
-[  359.667389]  [<000003e0007185c8>] btrfs_alloc_free_block+0x6c/0xb0 [btrfs]
-[  359.667483]  [<000003e00070841a>] __btrfs_cow_block+0x242/0xa08 [btrfs]
-[  359.667576]  [<000003e0007093e4>] btrfs_cow_block+0x220/0x234 [btrfs]
-[  359.667669]  [<000003e00070e8ce>] btrfs_search_slot+0x3ce/0xadc [btrfs]
-[  359.667777]  [<000003e000721a38>] btrfs_lookup_inode+0x48/0xe4 [btrfs]
-[  359.667875]  [<000003e00072ccf8>] btrfs_update_inode+0x54/0xf4 [btrfs]
-[  359.667978]  [<000003e000730034>] btrfs_dirty_inode+0x4c/0x60 [btrfs]
-[  359.668080]  [<00000000000f289a>] __mark_inode_dirty+0x46/0x1cc
-[  359.668112]  [<00000000000e6336>] file_update_time+0xd6/0x120
-[  359.668138]  [<000003e000732d96>] btrfs_file_write+0x1a2/0x750 [btrfs]
-[  359.668301]  [<00000000000d0774>] vfs_write+0xa0/0x178
-[  359.668327]  [<00000000000d093a>] SyS_write+0x52/0x80
-[  359.668348]  [<00000000000266e2>] sysc_noemu+0x10/0x16
-[  359.668374]  [<0000000077d8660a>] 0x77d8660a
-[  359.668398] Last Breaking-Event-Address:
-[  359.668410]  [<0000000000000000>] 0x0
-[  359.668428]  <4>---[ end trace cff1a51b3218779a ]---
-[  363.469543] btrfs searching for 4096 bytes, num_bytes 4096, loop 2, allowed_alloc 0
-[  363.469579] btrfs allocation failed flags 68, wanted 4096
-[  363.469604] space_info has 932491264 free, is full
-[  363.469635] block group 14802485248 has 936378368 bytes, 3522560 used 364544 pinned 0 reserved
-[  363.469705] 87 blocks of free space at or bigger than bytes is
-[  363.469831] ------------[ cut here ]------------
-[  363.469870] kernel BUG at fs/btrfs/extent-tree.c:3190!
-[  363.469925] illegal operation: 0001 [#2] SMP
-[  363.469987] Modules linked in: btrfs zlib_deflate zlib_inflate crc32c libcrc32c dm_snapshot dm_mirror dm_region_hash dm_log dm_mod ocfs2 jbd2 ocfs2_nodemanager con+figfs ocfs2_stackglue quota_tree vmcp loop qeth_l3 qeth vmur ccwgroup ext3 jbd mbcache dasd_eckd_mod dasd_mod
-[  363.470703] CPU: 1 Tainted: G      D    2.6.29-rc3 #1
-[  363.470768] Process btrfs-cleaner (pid: 1815, task: 000000001fb8ae40, ksp: 0000000018febd10)
-[  363.470842] Krnl PSW : 0704000180000000 000003e000716688 (__btrfs_reserve_extent+0x2fc/0x314 [btrfs])
-[  363.471259]            R:0 T:1 IO:1 EX:1 Key:0 M:1 W:0 P:0 AS:0 CC:0 PM:0 EA:3
-[  363.471281] Krnl GPRS: 000000000116d318 0000000000000000 000000001f0364e0 0000000000000001
-[  363.471304]            00000000002ad696 0000000000005529 0000000000059000 000000001f0364c8
-[  363.471325]            0000000000001000 000000001f0364e0 000000001915682c 000000001f036410
-[  363.471347]            000003e000701000 000003e00075be58 000003e000716684 0000000018feb570
-[  363.471414] Krnl Code: 000003e00071667a: b9040029            lgr     %r2,%r9
-[  363.471443]            000003e00071667e: c0e5ffff5cf9        brasl   %r14,3e000702070
-[  363.471471]            000003e000716684: a7f40001            brc     15,3e000716686
-[  363.471498]           >000003e000716688: a7f40000            brc     15,3e000716688
-[  363.471530]            000003e00071668c: e340f1200004        lg      %r4,288(%r15)
-[  363.471557]            000003e000716692: a7290000            lghi    %r2,0
-[  363.471589]            000003e000716696: eb6ff0e00004        lmg     %r6,%r15,224(%r15)
-[  363.471615]            000003e00071669c: 07f4                bcr     15,%r4
-[  363.471635] Call Trace:
-[  363.471646] ([<000003e000716658>] __btrfs_reserve_extent+0x2cc/0x314 [btrfs])
-[  363.471741]  [<000003e0007184e2>] btrfs_alloc_extent+0x4e/0xc8 [btrfs]
-[  363.471841]  [<000003e0007185c8>] btrfs_alloc_free_block+0x6c/0xb0 [btrfs]
-[  363.471933]  [<000003e00070841a>] __btrfs_cow_block+0x242/0xa08 [btrfs]
-[  363.472022]  [<000003e0007093e4>] btrfs_cow_block+0x220/0x234 [btrfs]
-[  363.472113]  [<000003e00070e8ce>] btrfs_search_slot+0x3ce/0xadc [btrfs]
-[  363.472250]  [<000003e00071159c>] lookup_extent_backref+0x50/0x104 [btrfs]
-[  363.472355]  [<000003e0007195e2>] __btrfs_free_extent+0x33a/0x868 [btrfs]
-[  363.472448]  [<000003e000719bf4>] cache_drop_leaf_ref+0xe4/0x178 [btrfs]
-[  363.472663]  [<000003e00071a51c>] drop_level_one_refs+0x4a0/0x4ac [btrfs]
-[  363.472758]  [<000003e00071a6e2>] walk_down_tree+0x1ba/0x69c [btrfs]
-[  363.472850]  [<000003e00071d62c>] btrfs_drop_snapshot+0x220/0x314 [btrfs]
-[  363.472943]  [<000003e0007285f0>] drop_dirty_roots+0xbc/0x31c [btrfs]
-[  363.473039]  [<000003e000728904>] btrfs_clean_old_snapshots+0xb4/0xcc [btrfs]
-[  363.473136]  [<000003e000723b74>] cleaner_kthread+0xd8/0x140 [btrfs]
-[  363.473239]  [<000000000005fa0e>] kthread+0x62/0x98
-[  363.473267]  [<000000000001c55e>] kernel_thread_starter+0x6/0xc
-[  363.473292]  [<000000000001c558>] kernel_thread_starter+0x0/0xc
-[  363.473327]  [<0000000000000000>] 0x0
-[  363.473349]  <4>---[ end trace cff1a51b3218779b ]---
+[   32.240137] eth0: no IPv6 routers present
+[  115.488507] Btrfs loaded
+[  115.866519] device fsid 29b83b8d393a4dc1-8cb6f13d4c8056c9 devid 1 transid 5 /dev/disk/by-path/ccw-0.0.3320
+[  115.915710] device fsid 29b83b8d393a4dc1-8cb6f13d4c8056c9 devid 2 transid 5 /dev/disk/by-path/ccw-0.0.3321
+[  115.946999] device fsid 29b83b8d393a4dc1-8cb6f13d4c8056c9 devid 3 transid 5 /dev/disk/by-path/ccw-0.0.3322
+[  115.980178] device fsid 29b83b8d393a4dc1-8cb6f13d4c8056c9 devid 4 transid 5 /dev/disk/by-path/ccw-0.0.3323
+[  116.010257] device fsid 29b83b8d393a4dc1-8cb6f13d4c8056c9 devid 5 transid 5 /dev/disk/by-path/ccw-0.0.3324
+[  116.040025] device fsid 29b83b8d393a4dc1-8cb6f13d4c8056c9 devid 6 transid 5 /dev/disk/by-path/ccw-0.0.3325
+[  116.087553] device fsid 29b83b8d393a4dc1-8cb6f13d4c8056c9 devid 7 transid 5 /dev/disk/by-path/ccw-0.0.3326
+[  116.165206] device fsid 29b83b8d393a4dc1-8cb6f13d4c8056c9 devid 8 transid 5 /dev/disk/by-path/ccw-0.0.3327
+[  116.192679] device fsid 29b83b8d393a4dc1-8cb6f13d4c8056c9 devid 1 transid 9 /dev/dasdc
+[  116.837284] device fsid 29b83b8d393a4dc1-8cb6f13d4c8056c9 devid 2 transid 13 /dev/dasdd
+[  116.937046] device fsid 29b83b8d393a4dc1-8cb6f13d4c8056c9 devid 3 transid 17 /dev/dasde
+[  117.049434] device fsid 29b83b8d393a4dc1-8cb6f13d4c8056c9 devid 4 transid 21 /dev/dasdf
+[  117.160114] device fsid 29b83b8d393a4dc1-8cb6f13d4c8056c9 devid 5 transid 25 /dev/dasdg
+[  117.253106] device fsid 29b83b8d393a4dc1-8cb6f13d4c8056c9 devid 6 transid 29 /dev/dasdh
+[  117.406531] device fsid 29b83b8d393a4dc1-8cb6f13d4c8056c9 devid 7 transid 33 /dev/dasdi
+[  117.758589] device fsid 29b83b8d393a4dc1-8cb6f13d4c8056c9 devid 8 transid 37 /dev/dasdj
+[  117.968097] device fsid 454e58b0e5104735-8ff7df6e6d6df02f devid 1 transid 5 /dev/disk/by-path/ccw-0.0.3320
+[  117.989932] device fsid 454e58b0e5104735-8ff7df6e6d6df02f devid 2 transid 5 /dev/disk/by-path/ccw-0.0.3321
+[  118.012034] device fsid 454e58b0e5104735-8ff7df6e6d6df02f devid 3 transid 5 /dev/disk/by-path/ccw-0.0.3322
+[  118.034295] device fsid 454e58b0e5104735-8ff7df6e6d6df02f devid 4 transid 5 /dev/disk/by-path/ccw-0.0.3323
+[  118.056272] device fsid 454e58b0e5104735-8ff7df6e6d6df02f devid 5 transid 5 /dev/disk/by-path/ccw-0.0.3324
+[  118.078121] device fsid 454e58b0e5104735-8ff7df6e6d6df02f devid 6 transid 5 /dev/disk/by-path/ccw-0.0.3325
+[  118.099741] device fsid 454e58b0e5104735-8ff7df6e6d6df02f devid 7 transid 5 /dev/disk/by-path/ccw-0.0.3326
+[  118.122498] device fsid 454e58b0e5104735-8ff7df6e6d6df02f devid 8 transid 5 /dev/disk/by-path/ccw-0.0.3327
+[  118.143336] device fsid 454e58b0e5104735-8ff7df6e6d6df02f devid 1 transid 9 /dev/dasdc
+[  118.994406] device fsid 454e58b0e5104735-8ff7df6e6d6df02f devid 2 transid 13 /dev/dasdd
+[  119.300427] device fsid 454e58b0e5104735-8ff7df6e6d6df02f devid 3 transid 17 /dev/dasde
+[  119.500473] device fsid 454e58b0e5104735-8ff7df6e6d6df02f devid 4 transid 21 /dev/dasdf
+[  119.663706] device fsid 454e58b0e5104735-8ff7df6e6d6df02f devid 5 transid 25 /dev/dasdg
+[  119.798536] device fsid 454e58b0e5104735-8ff7df6e6d6df02f devid 6 transid 29 /dev/dasdh
+[  120.027853] device fsid 454e58b0e5104735-8ff7df6e6d6df02f devid 7 transid 33 /dev/dasdi
+[  120.243321] device fsid 454e58b0e5104735-8ff7df6e6d6df02f devid 8 transid 37 /dev/dasdj
+[  120.496215] device fsid dc29925c1c64a29-a7b79331712e87ee devid 1 transid 5 /dev/disk/by-path/ccw-0.0.3320
+[  120.535382] device fsid dc29925c1c64a29-a7b79331712e87ee devid 2 transid 5 /dev/disk/by-path/ccw-0.0.3321
+[  120.596624] device fsid dc29925c1c64a29-a7b79331712e87ee devid 3 transid 5 /dev/disk/by-path/ccw-0.0.3322
+[  120.618358] device fsid dc29925c1c64a29-a7b79331712e87ee devid 4 transid 5 /dev/disk/by-path/ccw-0.0.3323
+[  120.650429] device fsid dc29925c1c64a29-a7b79331712e87ee devid 5 transid 5 /dev/disk/by-path/ccw-0.0.3324
+[  120.678140] device fsid dc29925c1c64a29-a7b79331712e87ee devid 6 transid 5 /dev/disk/by-path/ccw-0.0.3325
+[  120.700876] device fsid dc29925c1c64a29-a7b79331712e87ee devid 7 transid 5 /dev/disk/by-path/ccw-0.0.3326
+[  120.743745] device fsid dc29925c1c64a29-a7b79331712e87ee devid 8 transid 5 /dev/disk/by-path/ccw-0.0.3327
+[  120.767434] device fsid dc29925c1c64a29-a7b79331712e87ee devid 1 transid 9 /dev/dasdc
+[  121.339701] btrfs bad tree block start 0 29380608
+[  121.401478] btrfs bad tree block start 0 29384704
+[  121.406788] btrfs bad fsid on block 29384704
+[  121.408995] btrfs bad tree block start 0 29384704
+[  121.409129] ------------[ cut here ]------------
+[  121.409158] Badness at fs/btrfs/disk-io.c:849
+[  121.409188] Modules linked in: btrfs zlib_deflate zlib_inflate crc32c libcrc32c dm_snapshot dm_mirror dm_region_hash dm_log dm_mod ocfs2 jbd2 ocfs2_nodemanager con+figfs ocfs2_stackglue quota_tree vmcp loop qeth_l3 vmur qeth ccwgroup ext3 jbd mbcache dasd_eckd_mod dasd_mod+
+[  121.409691] CPU: 1 Not tainted 2.6.29-rc3 #1
+[  121.409742] Process mount (pid: 2245, task: 000000001fb693c0, ksp: 0000000016e2b740)
+[  121.409802] Krnl PSW : 0704100180000000 000003e00072306a (read_tree_block+0x6a/0x7c [btrfs])
+[  121.410021]            R:0 T:1 IO:1 EX:1 Key:0 M:1 W:0 P:0 AS:0 CC:1 PM:0 EA:3
+[  121.410092] Krnl GPRS: 00000000000001c3 0000000000000001 fffffffffffffffb 0000000017c0d0e0
+[  121.410194]            000003e000723040 00000000002bc950 000000001efb7000 0000000000001000
+[  121.415338]            000000001e507b2b 0000000000000009 000000001efb7000 0000000017c1f5b0
+[  121.415360]            000003e000701000 000003e00075c2c8 000003e000723040 0000000016e2ba70
+[  121.415429] Krnl Code: 000003e00072305e: a744fff9            brc     4,3e000723050
+[  121.415460]            000003e000723062: a7f40004            brc     15,3e00072306a
+[  121.415487]            000003e000723066: a7f40001            brc     15,3e000723068
+[  121.415518]           >000003e00072306a: e340f0c80004        lg      %r4,200(%r15)
+[  121.415544]            000003e000723070: b904002b            lgr     %r2,%r11
+[  121.415574]            000003e000723074: eb9ff0a00004        lmg     %r9,%r15,160(%r15)
+[  121.415600]            000003e00072307a: 07f4                bcr     15,%r4
+[  121.415630]            000003e00072307c: eb6ff0480024        stmg    %r6,%r15,72(%r15)
+[  121.415651] Call Trace:
+[  121.415661] ([<000003e000723040>] read_tree_block+0x40/0x7c [btrfs])
+[  121.415763]  [<000003e000723868>] find_and_setup_root+0xa8/0xd0 [btrfs]
+[  121.415856]  [<000003e000726172>] open_ctree+0xb86/0xfe0 [btrfs]
+[  121.421161]  [<000003e000704734>] btrfs_get_sb+0x2bc/0x508 [btrfs]
+[  121.421258]  [<00000000000d2c92>] vfs_kern_mount+0xb2/0x168
+[  121.421289]  [<00000000000d2dae>] do_kern_mount+0x52/0x108
+[  121.421309]  [<00000000000edcf8>] do_mount+0x7d8/0x824
+[  121.421331]  [<0000000000110d38>] compat_sys_mount+0x280/0x2d8
+[  121.421356]  [<00000000000266e2>] sysc_noemu+0x10/0x16
+[  121.421379]  [<0000000077f23a5a>] 0x77f23a5a
+[  121.421404] Last Breaking-Event-Address:
+[  121.421415]  [<0000000000000000>] 0x0
+[  121.435245] btrfs bad fsid on block 29376512
+[  121.449967] Unable to handle kernel pointer dereference at virtual kernel address (null)
+[  121.450001] Oops: 0004 [#1] SMP
+[  121.450032] Modules linked in: btrfs zlib_deflate zlib_inflate crc32c libcrc32c dm_snapshot dm_mirror dm_region_hash dm_log dm_mod ocfs2 jbd2 ocfs2_nodemanager con+figfs ocfs2_stackglue quota_tree vmcp loop qeth_l3 vmur qeth ccwgroup ext3 jbd mbcache dasd_eckd_mod dasd_mod
+[  121.450431] CPU: 2 Tainted: G        W  2.6.29-rc3 #1
+[  121.450475] Process umount (pid: 2273, task: 0000000016f6a6c0, ksp: 0000000016e33a70)
+[  121.450527] Krnl PSW : 0704200180000000 00000000002af5b6 (down_read+0xe/0x28)
+[  121.450617]            R:0 T:1 IO:1 EX:1 Key:0 M:1 W:0 P:0 AS:0 CC:2 PM:0 EA:3
+[  121.450680] Krnl GPRS: 0000000000000003 0000000000000000 0000000000000060 0000000000000001
+[  121.450768]            0000000017705da8 0000000000000000 0000000000000000 0000000017c13370
+[  121.450840]            0000000000000000 0000000000000000 0000000000010000 0000000000000000
+[  121.450983]            000003e000701000 000003e00075be40 000003e000715ec6 0000000016e33798
+[  121.451044] Krnl Code: 00000000002af5a8: e31020000004        lg      %r1,0(%r2)
+[  121.451068]            00000000002af5ae: b9040031            lgr     %r3,%r1
+[  121.451093]            00000000002af5b2: a73b0001            aghi    %r3,1
+[  121.451124]           >00000000002af5b6: eb1320000030        csg     %r1,%r3,0(%r2)
+[  121.451150]            00000000002af5bc: a744fff9            brc     4,2af5ae
+[  121.451175]            00000000002af5c0: b9020011            ltgr    %r1,%r1
+[  121.451199]            00000000002af5c4: a7a40005            brc     10,2af5ce
+[  121.451226]            00000000002af5c8: c0f400000790        brcl    15,2b04e8
+[  121.451245] Call Trace:
+[  121.451255] ([<000003e000715e3e>] find_free_extent+0x236/0x784 [btrfs])
+[  121.451396]  [<000003e0007164f0>] __btrfs_reserve_extent+0x164/0x314 [btrfs]
+[  121.451489]  [<000003e0007184e2>] btrfs_alloc_extent+0x4e/0xc8 [btrfs]
+[  121.451583]  [<000003e0007185c8>] btrfs_alloc_free_block+0x6c/0xb0 [btrfs]
+[  121.451676]  [<000003e00070841a>] __btrfs_cow_block+0x242/0xa08 [btrfs]
+[  121.451766]  [<000003e0007093e4>] btrfs_cow_block+0x220/0x234 [btrfs]
+[  121.451857]  [<000003e00072761a>] btrfs_commit_tree_roots+0x6e/0x21c [btrfs]
+[  121.452077]  [<000003e000728c56>] btrfs_commit_transaction+0x33a/0x7ac [btrfs]
+[  121.452175]  [<000003e000704bec>] btrfs_sync_fs+0x88/0xa0 [btrfs]
+[  121.452264]  [<0000000000121d88>] quota_sync_sb+0x50/0x118
+[  121.452287]  [<00000000000d23e8>] __fsync_super+0x30/0xfc
+[  121.452309]  [<00000000000d24d2>] fsync_super+0x1e/0x30
+[  121.452330]  [<00000000000d28c6>] generic_shutdown_super+0x3e/0x1a4
+[  121.452352]  [<00000000000d2a96>] kill_anon_super+0x1e/0x60
+[  121.452373]  [<00000000000d2bb6>] deactivate_super+0x9a/0xc4
+[  121.452394]  [<00000000000ec3a0>] SyS_umount+0x35c/0x38c
+[  121.452415]  [<00000000000266e2>] sysc_noemu+0x10/0x16
+[  121.452438]  [<0000000077f403ea>] 0x77f403ea
+[  121.452459] Last Breaking-Event-Address:
+[  121.452470]  [<0000000000000000>] 0x0
+[  121.452486]  <4>---[ end trace f340bd908bfc75e9 ]---
+[  121.487837] device fsid dc29925c1c64a29-a7b79331712e87ee devid 2 transid 9 /dev/dasdd
 

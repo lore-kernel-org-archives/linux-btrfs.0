@@ -1,62 +1,33 @@
-From: =?utf-8?b?0KTQuNC70LjQvyDQkdGA0YfQuNGb?= <brcha@gna.org>
-Subject: Btrfs on Ubuntu
-Date: Mon, 2 Mar 2009 16:58:57 +0100
-Message-ID: <200903021658.59890.brcha@gna.org>
+From: Peter Vander Klippe <peter.vk@gmail.com>
+Subject: Re: Btrfs on Ubuntu
+Date: Mon, 2 Mar 2009 16:27:34 +0000 (UTC)
+Message-ID: <loom.20090302T162433-108@post.gmane.org>
+References: <200903021658.59890.brcha@gna.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+=D0=A4=D0=B8=D0=BB=D0=B8=D0=BF =D0=91=D1=80=D1=87=D0=B8=D1=9B <brcha <a=
+t> gna.org> writes:
+> Hi,
+>=20
+> I just wanted to inform you all that I've built btrfs packages for ub=
+untu=20
+> (intrepid). You can find them in my PPA=20
+> (http://launchpad.net/~brcha/+archive/ppa)=20
 
-I just wanted to inform you all that I've built btrfs packages for ubun=
-tu=20
-(intrepid). You can find them in my PPA=20
-(http://launchpad.net/~brcha/+archive/ppa) and install them in the foll=
-owing=20
-way:
+Thanks for this! I've been slowly working on a wiki page on the ubuntu=20
+community help site for exactly this.
 
-=46irst add the following lines to your /etc/apt/sources.list:
+https://help.ubuntu.com/community/btrfs
 
-  deb http://ppa.launchpad.net/brcha/ppa/ubuntu intrepid main
-  deb-src http://ppa.launchpad.net/brcha/ppa/ubuntu intrepid main
+Please feel free to edit if you have any suggestions.
 
-Then import my PPA signing key:
+--
+Peter VK
 
-$ sudo apt-key adv --recv-keys --keyserver keyserver.ubuntu.com=20
-17f547c39c5c4071e254d0a7313d312748a22a95
-
-update your package list:
-
-$ sudo apt-get update
-
-install btrfs-source and btrfs programs:
-
-$ sudo apt-get install btrfs-source btrfs-progs module-assistant
-
-and tell module assistant to build the btrfs module
-
-$ sudo module-assistant prepare btrfs
-$ sudo module-assistant auto-install btrfs
-
-The packages include the latest "stable" versions of btrfs and btrfs pr=
-ogs=20
-(with a patched compat.h in btrfs module so that it can compile with 2.=
-6.27.*=20
-kernel).
-
-Cheers & happy hacking :)
-
-Brcha
-
---=20
-=46ilip Br=C4=8Di=C4=87 <brcha@gna.org>
-WWWeb: http://www.brcha.iz.rs
-Jabber: brcha@kdetalk.net
-
-This email may come with a PGP signature as a file. Do not panic.
-=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

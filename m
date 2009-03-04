@@ -1,41 +1,26 @@
-From: jim owens <jowens@hp.com>
-Subject: Re: experimental branch rebased
-Date: Tue, 03 Mar 2009 17:07:22 -0500
-Message-ID: <49ADAA1A.6050709@hp.com>
-References: <1235663145.4631.11.camel@think.oraclecorp.com> <20090226190527.GA13057@tux64-01>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Btrfs conf call
+Date: Wed, 04 Mar 2009 08:59:19 -0500
+Message-ID: <1236175159.782.8.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Lee Trager <lt73@cs.drexel.edu>
+Content-Type: text/plain
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090226190527.GA13057@tux64-01>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Lee,
+Hello everyone,
 
-The 02/26/2009 version is missing some of the patches that
-were in the 02/20/2009 version so it will not compile on 26.
+There will be a btrfs conference call Wed March 4.  Topics will
+include the experimental tree, and our current pending work.
 
-I found the bug in the patch that breaks on 26:
+Time: 1:30pm US Eastern (10:30am Pacific)
 
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
-  			if (!trylock_page(page))
-+#else
-+			if(!TestSetPageLocked(page))
-+#endif
+* Dial-in Number(s):
+* Toll Free: +1-888-967-2253
+* Toll  +1-650-607-2253 
+* Meeting id: 665734
+* Passcode: 428737 (which hopefully spells 4Btrfs)
 
-It should be
+-chris
 
-	if (TestSetPageLocked(page))
 
-because pass/fail is reversed on those functions.
-
-While I was testing, I ported back to 24 on
-ubuntu and made it work with 2.6.24-23-generic
-with the experimental tree from feb 25.
-
-I will give you the 24 patches to include in your
-patch as soon as you have a version that I can
-rebase against the current experimental on 24/26.
-
-jim

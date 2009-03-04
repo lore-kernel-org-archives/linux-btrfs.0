@@ -1,350 +1,125 @@
-From: Josef Bacik <jbacik@redhat.com>
-Subject: [PATCH] Btrfs: group metadata allocations with the root
-Date: Wed,  4 Mar 2009 11:33:53 -0500
-Message-ID: <1236184433-23490-1-git-send-email-jbacik@redhat.com>
-Cc: Josef Bacik <jbacik@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: Hugo Mills <hugo-lkml@carfax.org.uk>
+Subject: Entirely unexpected ENOSPC?
+Date: Wed, 4 Mar 2009 18:06:19 +0000
+Message-ID: <20090304180619.GA3282@selene>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="6c2NcOVqGQ03X4Wi"
+To: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+	Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch lets each root keep track of a small area of contigous space from
-which to allocate from in order to keep blocks for different roots interleaving
-themselves on disk.  This happens in two parts
 
-1) If we have not already reserved some space for the root, we go into the
-normal allocator.  Here we try and allocate a cluster of free space.  If we are
-successfull we give the current allocation what it needs, and then set the
-offset and size to the cluster we have found, and remove the entire section from
-the free space cache.  Of course if we can't find space this ends up being just
-a normal allocation.
+--6c2NcOVqGQ03X4Wi
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-2) If we have some reserved space in the root we just use that chunk for the
-allocation and return.
+   Last night, this event jammed up a good chunk of my server:
 
-This also cleans up some of allocation code.  There will be another patch coming
-later to clean it up some more.  Testing the cold-cache read speed we aren't
-actually doing anything faster, but we are definitely seeking less, so there is
-a clear win there.
+Mar  4 01:51:36 vlad kernel: btrfs searching for 1716224 bytes, num_bytes 1716224, loop 2, allowed_alloc 1
+Mar  4 01:51:36 vlad kernel: btrfs searching for 860160 bytes, num_bytes 860160, loop 2, allowed_alloc 1
+[lots of this...]
+Mar  4 01:55:52 vlad kernel: btrfs searching for 4096 bytes, num_bytes 4096, loop 2, allowed_alloc 1
+Mar  4 01:55:52 vlad kernel: btrfs allocation failed flags 1, wanted 4096
+Mar  4 01:55:52 vlad kernel: space_info has 0 free, is full
+Mar  4 01:55:52 vlad kernel: block group 12582912 has 8388608 bytes, 8388608 used 0 pinned 0 reserved
+Mar  4 01:55:52 vlad kernel: 0 blocks of free space at or bigger than bytes is
+Mar  4 01:55:52 vlad kernel: block group 1103101952 has 1073741824 bytes, 1073741824 used 0 pinned 0 reserved
+Mar  4 01:55:52 vlad kernel: 0 blocks of free space at or bigger than bytes is
+[30 more lines of this]
+Mar  4 01:55:52 vlad kernel: ------------[ cut here ]------------
+Mar  4 01:55:52 vlad kernel: kernel BUG at fs/btrfs/extent-tree.c:3190!
+Mar  4 01:55:52 vlad kernel: invalid opcode: 0000 [#1]
+Mar  4 01:55:52 vlad kernel: last sysfs file: /sys/devices/virtual/block/dm-1/removable
+Mar  4 01:55:52 vlad kernel: CPU 0
+Mar  4 01:55:52 vlad kernel: Modules linked in: tcp_diag inet_diag kqemu tun cpufreq_userspace ipv6 nfsd nfs lockd nfs_acl auth_rpcgss sunrpc bridge stp llc btrfs zlib_deflate xfs exportfs it87 hwmon_vid powernow_k8 sbp2 ieee1394 ide_generic ide_gd_mod ide_cd_mod pcspkr evdev k8temp hwmon i2c_viapro i2c_core button usbhid usb_storage libusual dm_mirror dm_region_hash dm_log dm_snapshot dm_mod raid1 md_mod sg sr_mod cdrom via82cxxx floppy via_rhine mii ehci_hcd uhci_hcd usbcore pata_via ide_pci_generic ide_core sd_mod thermal processor fan unix
+Mar  4 01:55:52 vlad kernel: Pid: 218, comm: pdflush Tainted: G    B      2.6.29-rc6 #1 System Product Name
+Mar  4 01:55:52 vlad kernel: RIP: 0010:[<ffffffffa0256b6b>]  [<ffffffffa0256b6b>] __btrfs_reserve_extent+0x296/0x2ab [btrfs]
+Mar  4 01:55:52 vlad kernel: RSP: 0018:ffff88003ea618d0  EFLAGS: 00010282
+Mar  4 01:55:52 vlad kernel: RAX: ffff880039924aa0 RBX: ffff8800399249d0 RCX: 0000000000001000
+Mar  4 01:55:52 vlad kernel: RDX: 00000000ffffffff RSI: 0000000000023b8a RDI: ffff880039924a98
+Mar  4 01:55:52 vlad kernel: RBP: ffff880039924a88 R08: 0000000000000000 R09: 000000000000000a
+Mar  4 01:55:52 vlad kernel: R10: 000000000000000a R11: ffff88000100f980 R12: ffff880039924a98
+Mar  4 01:55:52 vlad kernel: R13: 0000000000001000 R14: ffff88003cb74488 R15: 0000000000001000
+Mar  4 01:55:52 vlad kernel: FS:  00007ff4154246e0(0000) GS:ffffffff80577010(0000) knlGS:0000000000000000
+Mar  4 01:55:52 vlad kernel: CS:  0010 DS: 0018 ES: 0018 CR0: 000000008005003b
+Mar  4 01:55:52 vlad kernel: CR2: 00007f45ee1f54f8 CR3: 000000003bdea000 CR4: 00000000000006e0
+Mar  4 01:55:52 vlad kernel: DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+Mar  4 01:55:52 vlad kernel: DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+Mar  4 01:55:52 vlad kernel: Process pdflush (pid: 218, threadinfo ffff88003ea60000, task ffff88003f93b1b0)
+Mar  4 01:55:52 vlad kernel: Stack:
+Mar  4 01:55:52 vlad kernel: 0000000381c00000 ffff88003ea619f0 0000000000000000 0000000000000000
+Mar  4 01:55:52 vlad kernel: ffff880000000001 0000000381c00000 0000000000000000 ffff88003ea619f0
+Mar  4 01:55:52 vlad kernel: 000000001da5d000 0000000000001000 ffff88003ef22800 ffff88003a8214f0
+Mar  4 01:55:52 vlad kernel: Call Trace:
+Mar  4 01:55:52 vlad kernel: [<ffffffffa0256bae>] ? btrfs_reserve_extent+0x2e/0x52 [btrfs]
+Mar  4 01:55:52 vlad kernel: [<ffffffffa026903d>] ? cow_file_range+0x1ae/0x307 [btrfs]
+Mar  4 01:55:52 vlad kernel: [<ffffffffa026983f>] ? run_delalloc_range+0x9e/0x2f1 [btrfs]
+Mar  4 01:55:52 vlad kernel: [<ffffffffa027c814>] ? find_lock_delalloc_range+0x124/0x17d [btrfs]
+Mar  4 01:55:52 vlad kernel: [<ffffffffa027d066>] ? __extent_writepage+0x1e3/0x791 [btrfs]
+Mar  4 01:55:52 vlad kernel: [<ffffffff802890ff>] ? sync_buffer+0x0/0x3d
+Mar  4 01:55:52 vlad kernel: [<ffffffff80312f86>] ? radix_tree_gang_lookup_tag_slot+0x7d/0xa2
+Mar  4 01:55:52 vlad kernel: [<ffffffff8024d343>] ? find_get_pages_tag+0x46/0xb6
+Mar  4 01:55:52 vlad kernel: [<ffffffff802387b1>] ? wake_bit_function+0x0/0x23
+Mar  4 01:55:52 vlad kernel: [<ffffffffa027a95a>] ? extent_write_cache_pages+0x13c/0x242 [btrfs]
+Mar  4 01:55:52 vlad kernel: [<ffffffffa027967a>] ? flush_write_bio+0x0/0x23 [btrfs]
+Mar  4 01:55:52 vlad kernel: [<ffffffffa027ce83>] ? __extent_writepage+0x0/0x791 [btrfs]
+Mar  4 01:55:52 vlad kernel: [<ffffffffa027aa9b>] ? extent_writepages+0x3b/0x5c [btrfs]
+Mar  4 01:55:52 vlad kernel: [<ffffffffa02677c9>] ? btrfs_get_extent+0x0/0x73c [btrfs]
+Mar  4 01:55:52 vlad kernel: [<ffffffff80252cf5>] ? do_writepages+0x20/0x2d
+Mar  4 01:55:52 vlad kernel: [<ffffffff80284549>] ? __writeback_single_inode+0x15a/0x33b
+Mar  4 01:55:52 vlad kernel: [<ffffffffa01048b2>] ? dm_any_congested+0x2f/0x39 [dm_mod]
+Mar  4 01:55:52 vlad kernel: [<ffffffff80284afa>] ? generic_sync_sb_inodes+0x287/0x3e4
+Mar  4 01:55:52 vlad kernel: [<ffffffff80284dbe>] ? writeback_inodes+0x68/0xa1
+Mar  4 01:55:52 vlad kernel: [<ffffffff80252e10>] ? wb_kupdate+0x8b/0xfd
+Mar  4 01:55:52 vlad kernel: [<ffffffff8025374b>] ? pdflush+0x0/0x1b5
+Mar  4 01:55:52 vlad kernel: [<ffffffff8025374b>] ? pdflush+0x0/0x1b5
+Mar  4 01:55:52 vlad kernel: [<ffffffff80253869>] ? pdflush+0x11e/0x1b5
+Mar  4 01:55:52 vlad kernel: [<ffffffff80252d85>] ? wb_kupdate+0x0/0xfd
+Mar  4 01:55:52 vlad kernel: [<ffffffff802383f1>] ? kthread+0x47/0x73
+Mar  4 01:55:52 vlad kernel: [<ffffffff8020c07a>] ? child_rip+0xa/0x20
+Mar  4 01:55:52 vlad kernel: [<ffffffff802383aa>] ? kthread+0x0/0x73
+Mar  4 01:55:52 vlad kernel: [<ffffffff8020c070>] ? child_rip+0x0/0x20
+Mar  4 01:55:52 vlad kernel: Code: 8b 83 b8 00 00 00 48 8d 98 48 ff ff ff 48 8b 83 b8 00 00 00 0f 18 08 48 8d 83 b8 00 00 00 48 39 c5 75 b0 4c 89 e7 e8 63 42 fe df <0f> 0b eb fe 48 83 c4 38 31 c0 5b 5d 41 5c 41 5d 41 5e 41 5f c3
+Mar  4 01:55:52 vlad kernel: RIP  [<ffffffffa0256b6b>] __btrfs_reserve_extent+0x296/0x2ab [btrfs]
+Mar  4 01:55:52 vlad kernel: RSP <ffff88003ea618d0>
+Mar  4 01:55:52 vlad kernel: ---[ end trace eb8a7132a207a474 ]---
 
-Signed-off-by: Josef Bacik <jbacik@redhat.com>
----
- fs/btrfs/ctree.h       |    4 +
- fs/btrfs/disk-io.c     |    3 +
- fs/btrfs/extent-tree.c |  167 ++++++++++++++++++++++++------------------------
- 3 files changed, 91 insertions(+), 83 deletions(-)
+   Now, to my untrained eye, this looks like it might be an ENOSPC
+problem, and thus wouldn't be entirely unexpected, except for one
+thing:
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 82491ba..bdf826c 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -878,6 +878,10 @@ struct btrfs_root {
- 	 * for stat.  It may be used for more later
- 	 */
- 	struct super_block anon_super;
-+
-+	spinlock_t alloc_lock;
-+	u64 alloc_bytes;
-+	u64 alloc_offset;
- };
- 
- /*
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index adda739..057fe07 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -926,6 +926,9 @@ static int __setup_root(u32 nodesize, u32 leafsize, u32 sectorsize,
- 	INIT_LIST_HEAD(&root->anon_super.s_list);
- 	INIT_LIST_HEAD(&root->anon_super.s_instances);
- 	init_rwsem(&root->anon_super.s_umount);
-+	spin_lock_init(&root->alloc_lock);
-+	root->alloc_bytes = 0;
-+	root->alloc_offset = 0;
- 
- 	return 0;
- }
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 6b5966a..1ab5f20 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3084,14 +3084,11 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
- 	struct btrfs_root *root = orig_root->fs_info->extent_root;
- 	u64 total_needed = num_bytes;
- 	u64 *last_ptr = NULL;
--	u64 last_wanted = 0;
- 	struct btrfs_block_group_cache *block_group = NULL;
--	int chunk_alloc_done = 0;
--	int empty_cluster = 2 * 1024 * 1024;
- 	int allowed_chunk_alloc = 0;
- 	struct list_head *head = NULL, *cur = NULL;
- 	int loop = 0;
--	int extra_loop = 0;
-+	int fill_root_alloc_info = 0;
- 	struct btrfs_space_info *space_info;
- 
- 	WARN_ON(num_bytes < root->sectorsize);
-@@ -3104,30 +3101,21 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
- 
- 	if (data & BTRFS_BLOCK_GROUP_METADATA) {
- 		last_ptr = &root->fs_info->last_alloc;
--		if (!btrfs_test_opt(root, SSD))
--			empty_cluster = 64 * 1024;
-+		if (!btrfs_test_opt(root, SSD)) {
-+			fill_root_alloc_info = 1;
-+			empty_size += 64 * 1024;
-+		}
- 	}
- 
- 	if ((data & BTRFS_BLOCK_GROUP_DATA) && btrfs_test_opt(root, SSD))
- 		last_ptr = &root->fs_info->last_data_alloc;
- 
--	if (last_ptr) {
--		if (*last_ptr) {
--			hint_byte = *last_ptr;
--			last_wanted = *last_ptr;
--		} else
--			empty_size += empty_cluster;
--	} else {
--		empty_cluster = 0;
--	}
-+	if (last_ptr && *last_ptr)
-+		hint_byte = *last_ptr;
-+
- 	search_start = max(search_start, first_logical_byte(root, 0));
- 	search_start = max(search_start, hint_byte);
- 
--	if (last_wanted && search_start != last_wanted) {
--		last_wanted = 0;
--		empty_size += empty_cluster;
--	}
--
- 	total_needed += empty_size;
- 	block_group = btrfs_lookup_block_group(root->fs_info, search_start);
- 	if (!block_group)
-@@ -3138,13 +3126,6 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
- 	down_read(&space_info->groups_sem);
- 	while (1) {
- 		struct btrfs_free_space *free_space;
--		/*
--		 * the only way this happens if our hint points to a block
--		 * group thats not of the proper type, while looping this
--		 * should never happen
--		 */
--		if (empty_size)
--			extra_loop = 1;
- 
- 		if (!block_group)
- 			goto new_group_no_lock;
-@@ -3170,6 +3151,7 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
- 			u64 start = block_group->key.objectid;
- 			u64 end = block_group->key.objectid +
- 				block_group->key.offset;
-+			int used = 0;
- 
- 			search_start = stripe_align(root, free_space->offset);
- 
-@@ -3181,24 +3163,6 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
- 			if (search_start + num_bytes > end)
- 				goto new_group;
- 
--			if (last_wanted && search_start != last_wanted) {
--				total_needed += empty_cluster;
--				empty_size += empty_cluster;
--				last_wanted = 0;
--				/*
--				 * if search_start is still in this block group
--				 * then we just re-search this block group
--				 */
--				if (search_start >= start &&
--				    search_start < end) {
--					mutex_unlock(&block_group->alloc_mutex);
--					continue;
--				}
--
--				/* else we go to the next block group */
--				goto new_group;
--			}
--
- 			if (exclude_nr > 0 &&
- 			    (search_start + num_bytes > exclude_start &&
- 			     search_start < exclude_start + exclude_nr)) {
-@@ -3210,7 +3174,6 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
- 				if (search_start >= start &&
- 				    search_start < end) {
- 					mutex_unlock(&block_group->alloc_mutex);
--					last_wanted = 0;
- 					continue;
- 				}
- 
-@@ -3221,8 +3184,53 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
- 			ins->objectid = search_start;
- 			ins->offset = num_bytes;
- 
--			btrfs_remove_free_space_lock(block_group, search_start,
--						     num_bytes);
-+			if (!fill_root_alloc_info) {
-+				btrfs_remove_free_space_lock(block_group,
-+							     search_start,
-+							     num_bytes);
-+				mutex_unlock(&block_group->alloc_mutex);
-+				break;
-+			}
-+
-+			spin_lock(&orig_root->alloc_lock);
-+			if (orig_root->alloc_bytes >= num_bytes) {
-+				ins->objectid = orig_root->alloc_offset;
-+				orig_root->alloc_offset += num_bytes;
-+				orig_root->alloc_bytes -= num_bytes;
-+
-+				if (!orig_root->alloc_bytes) {
-+					orig_root->alloc_bytes = total_needed;
-+					orig_root->alloc_offset = search_start;
-+					used = 1;
-+				}
-+				spin_unlock(&orig_root->alloc_lock);
-+			} else if (orig_root->alloc_bytes) {
-+				u64 offset = orig_root->alloc_offset;
-+				u64 bytes = orig_root->alloc_bytes;
-+
-+				used = 1;
-+				orig_root->alloc_offset = search_start +
-+					num_bytes;
-+				orig_root->alloc_bytes = total_needed -
-+					num_bytes;
-+				spin_unlock(&orig_root->alloc_lock);
-+
-+				btrfs_add_free_space_lock(block_group, offset,
-+							  bytes);
-+			} else {
-+				used = 1;
-+				orig_root->alloc_offset = search_start +
-+					num_bytes;
-+				orig_root->alloc_bytes = total_needed -
-+					num_bytes;
-+				spin_unlock(&orig_root->alloc_lock);
-+			}
-+
-+			if (used)
-+				btrfs_remove_free_space_lock(block_group,
-+							     search_start,
-+							     total_needed);
-+
- 			/* we are all good, lets return */
- 			mutex_unlock(&block_group->alloc_mutex);
- 			break;
-@@ -3232,11 +3240,6 @@ new_group:
- 		put_block_group(block_group);
- 		block_group = NULL;
- new_group_no_lock:
--		/* don't try to compare new allocations against the
--		 * last allocation any more
--		 */
--		last_wanted = 0;
--
- 		/*
- 		 * Here's how this works.
- 		 * loop == 0: we were searching a block group via a hint
-@@ -3258,42 +3261,28 @@ new_group_no_lock:
- 
- 			/* at this point we give up on the empty_size
- 			 * allocations and just try to allocate the min
--			 * space.
--			 *
--			 * The extra_loop field was set if an empty_size
--			 * allocation was attempted above, and if this
--			 * is try we need to try the loop again without
--			 * the additional empty_size.
-+			 * space, if empty_size was set.
- 			 */
- 			total_needed -= empty_size;
--			empty_size = 0;
--			keep_going = extra_loop;
-+			keep_going = empty_size;
-+			fill_root_alloc_info = 0;
- 			loop++;
- 
--			if (allowed_chunk_alloc && !chunk_alloc_done) {
-+			if (allowed_chunk_alloc) {
- 				up_read(&space_info->groups_sem);
- 				ret = do_chunk_alloc(trans, root, num_bytes +
- 						     2 * 1024 * 1024, data, 1);
- 				down_read(&space_info->groups_sem);
--				if (ret < 0)
--					goto loop_check;
--				head = &space_info->block_groups;
--				/*
--				 * we've allocated a new chunk, keep
--				 * trying
--				 */
--				keep_going = 1;
--				chunk_alloc_done = 1;
-+				if (!ret)
-+					keep_going = 1;
- 			} else if (!allowed_chunk_alloc) {
- 				space_info->force_alloc = 1;
- 			}
--loop_check:
--			if (keep_going) {
-+
-+			if (keep_going)
- 				cur = head->next;
--				extra_loop = 0;
--			} else {
-+			else
- 				break;
--			}
- 		} else if (cur == head) {
- 			break;
- 		}
-@@ -3314,14 +3303,8 @@ loop_check:
- 		if (last_ptr)
- 			*last_ptr = ins->objectid + ins->offset;
- 		ret = 0;
--	} else if (!ret) {
--		printk(KERN_ERR "btrfs searching for %llu bytes, "
--		       "num_bytes %llu, loop %d, allowed_alloc %d\n",
--		       (unsigned long long)total_needed,
--		       (unsigned long long)num_bytes,
--		       loop, allowed_chunk_alloc);
--		ret = -ENOSPC;
- 	}
-+
- 	if (block_group)
- 		put_block_group(block_group);
- 
-@@ -3370,7 +3353,24 @@ static int __btrfs_reserve_extent(struct btrfs_trans_handle *trans,
- 	struct btrfs_fs_info *info = root->fs_info;
- 
- 	data = btrfs_get_alloc_profile(root, data);
-+
- again:
-+	if (data & BTRFS_BLOCK_GROUP_METADATA && !btrfs_test_opt(root, SSD)) {
-+		u64 total = num_bytes + empty_size;
-+
-+		spin_lock(&root->alloc_lock);
-+		if (root->alloc_bytes >= total) {
-+			ins->objectid = root->alloc_offset;
-+			ins->offset = num_bytes;
-+			btrfs_set_key_type(ins, BTRFS_EXTENT_ITEM_KEY);
-+			root->alloc_bytes -= num_bytes;
-+			root->alloc_offset += num_bytes;
-+			spin_unlock(&root->alloc_lock);
-+			return 0;
-+		}
-+		spin_unlock(&root->alloc_lock);
-+	}
-+
- 	/*
- 	 * the only place that sets empty_size is btrfs_realloc_node, which
- 	 * is not called recursively on allocations
-@@ -3388,6 +3388,7 @@ again:
- 	}
- 
- 	WARN_ON(num_bytes < root->sectorsize);
-+
- 	ret = find_free_extent(trans, root, num_bytes, empty_size,
- 			       search_start, search_end, hint_byte, ins,
- 			       trans->alloc_exclude_start,
+hrm@vlad:~ $ df -h
+Filesystem            Size  Used Avail Use% Mounted on
+[...]
+/dev/mapper/media-scratch
+                       41G   17G   25G  42% /media/vlad/video/video
+
+   The filesystem was nowhere near full, and I wasn't expecting it to
+become anywhere near full. The only thing that writes to the
+filesystem is deliberately coded to leave several gigabytes of space
+free.
+
+   Hugo.
+
 -- 
-1.5.4.3
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+   --- Nothing wrong with being written in Perl... Some of my best ---   
+                      friends are written in Perl.                       
 
+--6c2NcOVqGQ03X4Wi
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+iD8DBQFJrsMaIKyzvlFcI40RAsZpAJ0Q6pW217dRssE9SII00289AluZEwCeKAJn
+WuNXdJLjZ6+PKzKkLjJkBSI=
+=kmjq
+-----END PGP SIGNATURE-----
+
+--6c2NcOVqGQ03X4Wi--

@@ -1,377 +1,255 @@
 From: Josef Bacik <jbacik@redhat.com>
-Subject: [PATCH] Btrfs: clean up find_free_extent
-Date: Fri,  6 Mar 2009 11:18:37 -0500
-Message-ID: <1236356317-14729-1-git-send-email-jbacik@redhat.com>
+Subject: [PATCH] Btrfs: take block group fragmentation into account for allocation
+Date: Fri,  6 Mar 2009 14:30:48 -0500
+Message-ID: <1236367848-17972-1-git-send-email-jbacik@redhat.com>
 Cc: Josef Bacik <jbacik@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The whole loop=0,1,2 thing was kind of odd and not very self explanatory.  I've
-replaced it with a list_for_each_entry on space_info->block_groups.  If we have
-a hint we just jump into the loop with the block group and start looking for
-space.  If we don't find anything we start at the beginning and start looking.
-We never come out of the loop with a ref on the block_group _unless_ we found
-space to use, then we drop it after we set the trans block_group.  I've tested
-this with my ENOSPC handlers, and profiled it.  Its made the cold-cache-read
-faster by a second.
+This patch improves the allocators packing ability to greatly improve cold-cache
+reads.  Instead of handling the empty_size logic within find_free_extent, we
+simply pass it to btrfs_find_free_space, where it will check the fragmentation
+level of the block group and decide if it wants to look for a empty cluster, or
+simply allocate space for what we need.
+
+This is accomplished by taking the total amount of free space fragments and
+dividing it by the maximum number of free space fragments there can be and
+multiplying it by 100.  This gives us the percentage of free space
+fragmentation.  The maximum number of free space fragments is simply the free
+space divided by the sectorsize, and then dividing that by 2.  If we are 20% or
+more fragmented we will ignore the empty_size and just allocate num_bytes as
+close to search_start as we can.  This results in the allocator trying its best
+to fill up block groups before moving on to one farther down the disk.
+
+I've also changed how the allocation hints are given.  Instead of relying on the
+last allocation for the transaction, we rely on the last offset the particular
+root allocated from.  This will help in packing allocations per roots close
+together even in the face of fragmentation.  I may take out the alloc hint in
+the transaction altogether, but that will be farther down the line.
 
 Signed-off-by: Josef Bacik <jbacik@redhat.com>
 ---
- fs/btrfs/extent-tree.c |  282 +++++++++++++++++++++++-------------------------
- 1 files changed, 135 insertions(+), 147 deletions(-)
+ fs/btrfs/ctree.h            |    6 +++++-
+ fs/btrfs/extent-tree.c      |   25 +++++++++++++++----------
+ fs/btrfs/free-space-cache.c |   42 +++++++++++++-----------------------------
+ 3 files changed, 33 insertions(+), 40 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index bdf826c..64b4ee6 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -651,6 +651,10 @@ struct btrfs_block_group_cache {
+ 	struct rb_root free_space_bytes;
+ 	struct rb_root free_space_offset;
+ 
++	/* free space fragmentation stuff */
++	u64 fragments;
++	u64 fragment_size;
++
+ 	/* block group cache stuff */
+ 	struct rb_node cache_node;
+ 
+@@ -2141,7 +2145,7 @@ void btrfs_remove_free_space_cache(struct btrfs_block_group_cache
+ 				   *block_group);
+ struct btrfs_free_space *btrfs_find_free_space(struct btrfs_block_group_cache
+ 					       *block_group, u64 offset,
+-					       u64 bytes);
++					       u64 bytes, u64 empty_size);
+ void btrfs_dump_free_space(struct btrfs_block_group_cache *block_group,
+ 			   u64 bytes);
+ u64 btrfs_block_group_free_space(struct btrfs_block_group_cache *block_group);
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 1ab5f20..38820b1 100644
+index 38820b1..2a6fe71 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -3086,9 +3086,8 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
+@@ -3082,8 +3082,8 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
+ {
+ 	int ret = 0;
+ 	struct btrfs_root *root = orig_root->fs_info->extent_root;
+-	u64 total_needed = num_bytes;
  	u64 *last_ptr = NULL;
++	u64 total_used = 0;
  	struct btrfs_block_group_cache *block_group = NULL;
  	int allowed_chunk_alloc = 0;
--	struct list_head *head = NULL, *cur = NULL;
--	int loop = 0;
  	int fill_root_alloc_info = 0;
-+	int using_hint = 0;
- 	struct btrfs_space_info *space_info;
+@@ -3111,13 +3111,12 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
+ 	if ((data & BTRFS_BLOCK_GROUP_DATA) && btrfs_test_opt(root, SSD))
+ 		last_ptr = &root->fs_info->last_data_alloc;
  
- 	WARN_ON(num_bytes < root->sectorsize);
-@@ -3096,6 +3095,8 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
- 	ins->objectid = 0;
- 	ins->offset = 0;
+-	if (last_ptr && *last_ptr)
++	if (last_ptr && *last_ptr && !hint_byte)
+ 		hint_byte = *last_ptr;
  
-+	space_info = __find_space_info(root->fs_info, data);
-+
- 	if (orig_root->ref_cows || empty_size)
- 		allowed_chunk_alloc = 1;
+ 	search_start = max(search_start, first_logical_byte(root, 0));
+ 	search_start = max(search_start, hint_byte);
  
-@@ -3121,194 +3122,181 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
+-	total_needed += empty_size;
+ 	block_group = btrfs_lookup_block_group(root->fs_info, search_start);
  	if (!block_group)
  		block_group = btrfs_lookup_first_block_group(root->fs_info,
- 							     search_start);
--	space_info = __find_space_info(root->fs_info, data);
-+	if (block_group &&
-+	    (!block_group_bits(block_group, data) || block_group->ro)) {
-+		put_block_group(block_group);
-+		block_group = NULL;
-+	}
- 
-+search:
- 	down_read(&space_info->groups_sem);
--	while (1) {
-+	if (block_group) {
-+		using_hint = 1;
-+		goto have_block_group;
-+	}
-+
-+	list_for_each_entry(block_group, &space_info->block_groups, list) {
- 		struct btrfs_free_space *free_space;
-+		u64 start, end;
-+		int used;
- 
--		if (!block_group)
--			goto new_group_no_lock;
-+		atomic_inc(&block_group->count);
-+		search_start = block_group->key.objectid;
-+
-+have_block_group:
-+		used = 0;
-+		start = block_group->key.objectid;
-+		end = block_group->key.objectid + block_group->key.offset;
- 
- 		if (unlikely(!block_group->cached)) {
- 			mutex_lock(&block_group->cache_mutex);
- 			ret = cache_block_group(root, block_group);
- 			mutex_unlock(&block_group->cache_mutex);
--			if (ret)
-+			if (ret) {
-+				put_block_group(block_group);
- 				break;
-+			}
- 		}
- 
- 		mutex_lock(&block_group->alloc_mutex);
--		if (unlikely(!block_group_bits(block_group, data)))
--			goto new_group;
--
- 		if (unlikely(block_group->ro))
--			goto new_group;
-+			goto loop;
+@@ -3163,10 +3162,12 @@ have_block_group:
+ 			goto loop;
  
  		free_space = btrfs_find_free_space(block_group, search_start,
- 						   total_needed);
--		if (free_space) {
--			u64 start = block_group->key.objectid;
--			u64 end = block_group->key.objectid +
--				block_group->key.offset;
--			int used = 0;
--
--			search_start = stripe_align(root, free_space->offset);
--
--			/* move on to the next group */
--			if (search_start + num_bytes >= search_end)
--				goto new_group;
--
--			/* move on to the next group */
--			if (search_start + num_bytes > end)
--				goto new_group;
--
--			if (exclude_nr > 0 &&
--			    (search_start + num_bytes > exclude_start &&
--			     search_start < exclude_start + exclude_nr)) {
--				search_start = exclude_start + exclude_nr;
--				/*
--				 * if search_start is still in this block group
--				 * then we just re-search this block group
--				 */
--				if (search_start >= start &&
--				    search_start < end) {
--					mutex_unlock(&block_group->alloc_mutex);
--					continue;
--				}
--
--				/* else we go to the next block group */
--				goto new_group;
--			}
-+		if (!free_space)
-+			goto loop;
+-						   total_needed);
++						   num_bytes, empty_size);
+ 		if (!free_space)
+ 			goto loop;
  
--			ins->objectid = search_start;
--			ins->offset = num_bytes;
-+		search_start = stripe_align(root, free_space->offset);
++		total_used = min_t(u64, num_bytes + empty_size,
++				   free_space->bytes);
+ 		search_start = stripe_align(root, free_space->offset);
  
--			if (!fill_root_alloc_info) {
--				btrfs_remove_free_space_lock(block_group,
--							     search_start,
--							     num_bytes);
--				mutex_unlock(&block_group->alloc_mutex);
--				break;
--			}
-+		/* past where we're allowed to search */
-+		if (search_start + num_bytes >= search_end)
-+			goto loop;
+ 		/* past where we're allowed to search */
+@@ -3222,7 +3223,7 @@ have_block_group:
+ 			orig_root->alloc_bytes -= num_bytes;
  
--			spin_lock(&orig_root->alloc_lock);
--			if (orig_root->alloc_bytes >= num_bytes) {
--				ins->objectid = orig_root->alloc_offset;
--				orig_root->alloc_offset += num_bytes;
--				orig_root->alloc_bytes -= num_bytes;
-+		/* past the end of this block group */
-+		if (search_start + num_bytes > end)
-+			goto loop;
- 
--				if (!orig_root->alloc_bytes) {
--					orig_root->alloc_bytes = total_needed;
--					orig_root->alloc_offset = search_start;
--					used = 1;
--				}
--				spin_unlock(&orig_root->alloc_lock);
--			} else if (orig_root->alloc_bytes) {
--				u64 offset = orig_root->alloc_offset;
--				u64 bytes = orig_root->alloc_bytes;
-+		/* in the excluded area */
-+		if (exclude_nr &&
-+		    (search_start + num_bytes > exclude_start &&
-+		     search_start < exclude_start + exclude_nr)) {
-+			search_start = exclude_start + exclude_nr;
- 
--				used = 1;
--				orig_root->alloc_offset = search_start +
--					num_bytes;
--				orig_root->alloc_bytes = total_needed -
--					num_bytes;
--				spin_unlock(&orig_root->alloc_lock);
--
--				btrfs_add_free_space_lock(block_group, offset,
--							  bytes);
--			} else {
--				used = 1;
--				orig_root->alloc_offset = search_start +
--					num_bytes;
--				orig_root->alloc_bytes = total_needed -
--					num_bytes;
--				spin_unlock(&orig_root->alloc_lock);
-+			/*
-+			 * if we are still within the block group, just adjust
-+			 * the search start and try again
-+			 */
-+			if (search_start >= start && search_start < end) {
-+				mutex_unlock(&block_group->alloc_mutex);
-+				goto have_block_group;
+ 			if (!orig_root->alloc_bytes) {
+-				orig_root->alloc_bytes = total_needed;
++				orig_root->alloc_bytes = total_used;
+ 				orig_root->alloc_offset = search_start;
+ 				used = 1;
  			}
-+			goto loop;
-+		}
+@@ -3232,23 +3233,23 @@ have_block_group:
+ 			u64 bytes = orig_root->alloc_bytes;
  
--			if (used)
--				btrfs_remove_free_space_lock(block_group,
--							     search_start,
--							     total_needed);
-+		ins->objectid = search_start;
-+		ins->offset = num_bytes;
+ 			orig_root->alloc_offset = search_start + num_bytes;
+-			orig_root->alloc_bytes = total_needed - num_bytes;
++			orig_root->alloc_bytes = total_used - num_bytes;
+ 			used = 1;
+ 			spin_unlock(&orig_root->alloc_lock);
  
--			/* we are all good, lets return */
-+		/* we arent allocating space for our orig_root */
-+		if (!fill_root_alloc_info) {
-+			btrfs_remove_free_space_lock(block_group, search_start,
-+						     num_bytes);
- 			mutex_unlock(&block_group->alloc_mutex);
-+
-+			if (last_ptr)
-+				*last_ptr = search_start + num_bytes;
- 			break;
- 		}
--new_group:
--		mutex_unlock(&block_group->alloc_mutex);
--		put_block_group(block_group);
--		block_group = NULL;
--new_group_no_lock:
-+
-+		spin_lock(&orig_root->alloc_lock);
-+
- 		/*
--		 * Here's how this works.
--		 * loop == 0: we were searching a block group via a hint
--		 *		and didn't find anything, so we start at
--		 *		the head of the block groups and keep searching
--		 * loop == 1: we're searching through all of the block groups
--		 *		if we hit the head again we have searched
--		 *		all of the block groups for this space and we
--		 *		need to try and allocate, if we cant error out.
--		 * loop == 2: we allocated more space and are looping through
--		 *		all of the block groups again.
-+		 * Need to figure out if somebody had already reserved space for
-+		 * this root.  If so use that area if there is enough space.  If
-+		 * there is not enough space, free it up and use this newly
-+		 * found area.
- 		 */
--		if (loop == 0) {
--			head = &space_info->block_groups;
--			cur = head->next;
--			loop++;
--		} else if (loop == 1 && cur == head) {
--			int keep_going;
--
--			/* at this point we give up on the empty_size
--			 * allocations and just try to allocate the min
--			 * space, if empty_size was set.
--			 */
--			total_needed -= empty_size;
--			keep_going = empty_size;
--			fill_root_alloc_info = 0;
--			loop++;
--
--			if (allowed_chunk_alloc) {
--				up_read(&space_info->groups_sem);
--				ret = do_chunk_alloc(trans, root, num_bytes +
--						     2 * 1024 * 1024, data, 1);
--				down_read(&space_info->groups_sem);
--				if (!ret)
--					keep_going = 1;
--			} else if (!allowed_chunk_alloc) {
--				space_info->force_alloc = 1;
-+		if (orig_root->alloc_bytes >= num_bytes) {
-+			ins->objectid = orig_root->alloc_offset;
-+			orig_root->alloc_offset += num_bytes;
-+			orig_root->alloc_bytes -= num_bytes;
-+
-+			if (!orig_root->alloc_bytes) {
-+				orig_root->alloc_bytes = total_needed;
-+				orig_root->alloc_offset = search_start;
-+				used = 1;
- 			}
-+			spin_unlock(&orig_root->alloc_lock);
-+		} else if (orig_root->alloc_bytes) {
-+			u64 offset = orig_root->alloc_offset;
-+			u64 bytes = orig_root->alloc_bytes;
- 
--			if (keep_going)
--				cur = head->next;
--			else
--				break;
--		} else if (cur == head) {
--			break;
-+			orig_root->alloc_offset = search_start + num_bytes;
-+			orig_root->alloc_bytes = total_needed - num_bytes;
-+			used = 1;
-+			spin_unlock(&orig_root->alloc_lock);
-+
-+			btrfs_add_free_space_lock(block_group, offset, bytes);
-+		} else {
-+			orig_root->alloc_offset = search_start + num_bytes;
-+			orig_root->alloc_bytes = total_needed - num_bytes;
-+			used = 1;
-+			spin_unlock(&orig_root->alloc_lock);
+ 			btrfs_add_free_space_lock(block_group, offset, bytes);
+ 		} else {
+ 			orig_root->alloc_offset = search_start + num_bytes;
+-			orig_root->alloc_bytes = total_needed - num_bytes;
++			orig_root->alloc_bytes = total_used - num_bytes;
+ 			used = 1;
+ 			spin_unlock(&orig_root->alloc_lock);
  		}
  
--		block_group = list_entry(cur, struct btrfs_block_group_cache,
--					 list);
--		atomic_inc(&block_group->count);
-+		if (used) {
-+			btrfs_remove_free_space_lock(block_group, search_start,
-+						     total_needed);
-+			if (last_ptr)
-+				*last_ptr = search_start + total_needed;
-+		}
+ 		if (used) {
+ 			btrfs_remove_free_space_lock(block_group, search_start,
+-						     total_needed);
++						     total_used);
+ 			if (last_ptr)
+-				*last_ptr = search_start + total_needed;
++				*last_ptr = search_start + total_used;
+ 		}
  
--		search_start = block_group->key.objectid;
--		cur = cur->next;
-+		mutex_unlock(&block_group->alloc_mutex);
-+		break;
-+
-+loop:
-+		mutex_unlock(&block_group->alloc_mutex);
-+		put_block_group(block_group);
-+		if (using_hint) {
-+			block_group =
-+				list_entry(space_info->block_groups.next,
-+					   struct btrfs_block_group_cache,
-+					   list);
-+			using_hint = 0;
-+		}
-+	}
-+	up_read(&space_info->groups_sem);
-+
-+	if (!ins->objectid && (empty_size || allowed_chunk_alloc)) {
-+		int try_again = empty_size;
-+
-+		block_group = NULL;
-+		total_needed -= empty_size;
-+		empty_size = 0;
-+
-+		if (allowed_chunk_alloc) {
-+			ret = do_chunk_alloc(trans, root, num_bytes +
-+					     2 * 1024 * 1024, data, 1);
-+			if (!ret)
-+				try_again = 1;
-+			allowed_chunk_alloc = 0;
-+		} else {
-+			space_info->force_alloc = 1;
-+		}
-+
-+		if (try_again)
-+			goto search;
-+		ret = -ENOSPC;
+ 		mutex_unlock(&block_group->alloc_mutex);
+@@ -3271,7 +3272,6 @@ loop:
+ 		int try_again = empty_size;
+ 
+ 		block_group = NULL;
+-		total_needed -= empty_size;
+ 		empty_size = 0;
+ 
+ 		if (allowed_chunk_alloc) {
+@@ -3356,6 +3356,7 @@ again:
+ 			spin_unlock(&root->alloc_lock);
+ 			return 0;
+ 		}
++		hint_byte = root->alloc_offset;
+ 		spin_unlock(&root->alloc_lock);
  	}
  
--	/* we found what we needed */
- 	if (ins->objectid) {
- 		if (!(data & BTRFS_BLOCK_GROUP_DATA))
- 			trans->block_group = block_group->key.objectid;
- 
--		if (last_ptr)
--			*last_ptr = ins->objectid + ins->offset;
-+		put_block_group(block_group);
- 		ret = 0;
+@@ -6398,6 +6399,8 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 		set_avail_alloc_bits(root->fs_info, cache->flags);
+ 		if (btrfs_chunk_readonly(root, cache->key.objectid))
+ 			set_block_group_readonly(cache);
++		cache->fragments = 0;
++		cache->fragment_size = root->sectorsize;
  	}
+ 	ret = 0;
+ error:
+@@ -6430,6 +6433,8 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
+ 	mutex_init(&cache->alloc_mutex);
+ 	mutex_init(&cache->cache_mutex);
+ 	INIT_LIST_HEAD(&cache->list);
++	cache->fragments = 0;
++	cache->fragment_size = root->sectorsize;
  
--	if (block_group)
--		put_block_group(block_group);
--
--	up_read(&space_info->groups_sem);
+ 	btrfs_set_block_group_used(&cache->item, bytes_used);
+ 	btrfs_set_block_group_chunk_objectid(&cache->item, chunk_objectid);
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index d1e5f0e..23cb12c 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -163,6 +163,7 @@ static void unlink_free_space(struct btrfs_block_group_cache *block_group,
+ {
+ 	rb_erase(&info->offset_index, &block_group->free_space_offset);
+ 	rb_erase(&info->bytes_index, &block_group->free_space_bytes);
++	block_group->fragments -= 1;
+ }
+ 
+ static int link_free_space(struct btrfs_block_group_cache *block_group,
+@@ -181,6 +182,8 @@ static int link_free_space(struct btrfs_block_group_cache *block_group,
+ 	if (ret)
+ 		return ret;
+ 
++	block_group->fragments += 1;
++
  	return ret;
  }
  
+@@ -447,44 +450,25 @@ void btrfs_remove_free_space_cache(struct btrfs_block_group_cache *block_group)
+ 	mutex_unlock(&block_group->alloc_mutex);
+ }
+ 
+-#if 0
+-static struct btrfs_free_space *btrfs_find_free_space_offset(struct
+-						      btrfs_block_group_cache
+-						      *block_group, u64 offset,
+-						      u64 bytes)
++static int fragmentation_percent(struct btrfs_block_group_cache *block_group)
+ {
+-	struct btrfs_free_space *ret;
++	u64 max_fragments;
+ 
+-	mutex_lock(&block_group->alloc_mutex);
+-	ret = tree_search_offset(&block_group->free_space_offset, offset,
+-				 bytes, 0);
+-	mutex_unlock(&block_group->alloc_mutex);
+-
+-	return ret;
++	max_fragments = (block_group->key.offset -
++		btrfs_block_group_used(&block_group->item)) /
++		block_group->fragment_size;
++	return ((block_group->fragments / max_fragments) * 100);
+ }
+ 
+-static struct btrfs_free_space *btrfs_find_free_space_bytes(struct
+-						     btrfs_block_group_cache
+-						     *block_group, u64 offset,
+-						     u64 bytes)
+-{
+-	struct btrfs_free_space *ret;
+-
+-	mutex_lock(&block_group->alloc_mutex);
+-
+-	ret = tree_search_bytes(&block_group->free_space_bytes, offset, bytes);
+-	mutex_unlock(&block_group->alloc_mutex);
+-
+-	return ret;
+-}
+-#endif
+-
+ struct btrfs_free_space *btrfs_find_free_space(struct btrfs_block_group_cache
+ 					       *block_group, u64 offset,
+-					       u64 bytes)
++					       u64 bytes, u64 empty_size)
+ {
+ 	struct btrfs_free_space *ret = NULL;
+ 
++	if (empty_size && fragmentation_percent(block_group) < 20)
++		bytes += empty_size;
++
+ 	ret = tree_search_offset(&block_group->free_space_offset, offset,
+ 				 bytes, 0);
+ 	if (!ret)
 -- 
 1.5.4.3
 

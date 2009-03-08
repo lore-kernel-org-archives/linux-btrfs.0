@@ -1,401 +1,117 @@
-From: "Lee Trager" <lt73@cs.drexel.edu>
-Subject: Re: experimental branch rebased
-Date: Fri, 6 Mar 2009 23:53:59 -0500
-Message-ID: <20090307045359.GA14354@tux64-01>
-References: <1235663145.4631.11.camel@think.oraclecorp.com> <20090226190527.GA13057@tux64-01> <49ADAA1A.6050709@hp.com>
+From: Yien Zheng <esprout@gmail.com>
+Subject: Re: Entirely unexpected ENOSPC?
+Date: Sun, 8 Mar 2009 01:32:08 -0600
+Message-ID: <2c259a8f0903072332n31d9d20dscad1801b4b468520@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Lee Trager <lt73@cs.drexel.edu>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: jim owens <jowens@hp.com>
+Content-Type: text/plain; charset=ISO-8859-2
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+To: Hugo Mills <hugo-lkml@carfax.org.uk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <49ADAA1A.6050709@hp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sorry it took so long to reply its been a crazy week for me. Anyway
-thanks for figuring this out for me. I can't believe I made such a
-stupid mistake. Anyway here is the rebased patch.
+On Wed, 04 Mar 2009 14:48:43 -0600, Hugo Mills <hugo-lkml@carfax.org.uk=
+> wrote:
 
-Lee
+> On Wed, Mar 04, 2009 at 01:50:53PM -0500, Josef Bacik wrote:
+>> On Wed, Mar 04, 2009 at 06:06:19PM +0000, Hugo Mills wrote:
+>> >    Last night, this event jammed up a good chunk of my server:
+>> >
+>> > Mar  4 01:51:36 vlad kernel: btrfs searching for 1716224 bytes,
+>> num_bytes 1716224, loop 2, allowed_alloc 1
+>> > Mar  4 01:51:36 vlad kernel: btrfs searching for 860160 bytes,
+>> num_bytes 860160, loop 2, allowed_alloc 1
+>> > [lots of this...]
+>> > Mar  4 01:55:52 vlad kernel: btrfs searching for 4096 bytes,
+>> num_bytes 4096, loop 2, allowed_alloc 1
+>> > Mar  4 01:55:52 vlad kernel: btrfs allocation failed flags 1, want=
+ed
+>> 4096
+>> > Mar  4 01:55:52 vlad kernel: space_info has 0 free, is full
+>> > Mar  4 01:55:52 vlad kernel: block group 12582912 has 8388608 byte=
+s,
+>> 8388608 used 0 pinned 0 reserved
+>> > Mar  4 01:55:52 vlad kernel: 0 blocks of free space at or bigger t=
+han
+>> bytes is
+>> > Mar  4 01:55:52 vlad kernel: block group 1103101952 has 1073741824
+>> bytes, 1073741824 used 0 pinned 0 reserved
+>> > Mar  4 01:55:52 vlad kernel: 0 blocks of free space at or bigger t=
+han
+>> bytes is
+>> > [30 more lines of this]
+>>
+>> So yeah thats expected, you ran out of space.  The key thing is this
+>>
+>> Mar  4 01:55:52 vlad kernel: space_info has 0 free, is full
+>>
+>> If space_info has 0 free and is full, then there is no space to
+>> allocate for it
+>> and its completely used.  I'd recommend switching to the -rc7 kernel
+>> since that
+>> has things in place to keep this from happening as often.  Thanks,
+>
+>    I'll do that.
+>
+>    However, what's confusing me is that the filesystem was reported a=
+s
+> less than half full (17/41GiB used) at the time that it decided it ha=
+d
+> no space. Is there any likely explanation for that behaviour?
+>
+>    I've used btrfsctl to resize it online several times: shrink by
+> 1GiB, then enlarge by 12, 10, 10GiB. Might that have been a factor?
+>
+>    Hugo.
+>
 
-diff -Naur btrfs-orig/async-thread.c btrfs/async-thread.c
---- btrfs-orig/async-thread.c	2009-02-26 13:07:03.000000000 -0500
-+++ btrfs/async-thread.c	2009-02-26 14:02:05.000000000 -0500
-@@ -20,7 +20,10 @@
- #include <linux/list.h>
- #include <linux/spinlock.h>
- #include <linux/freezer.h>
-+#include <linux/version.h>
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
- #include <linux/ftrace.h>
-+#endif
- #include "async-thread.h"
- 
- #define WORK_QUEUED_BIT 0
-diff -Naur btrfs-orig/compat.h btrfs/compat.h
---- btrfs-orig/compat.h	2009-02-26 13:07:03.000000000 -0500
-+++ btrfs/compat.h	2009-02-26 14:02:05.000000000 -0500
-@@ -1,7 +1,33 @@
- #ifndef _COMPAT_H_
- #define _COMPAT_H_
- 
-+#include <linux/version.h>
-+
- #define btrfs_drop_nlink(inode) drop_nlink(inode)
- #define btrfs_inc_nlink(inode)	inc_nlink(inode)
- 
-+#if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 27)
-+static inline struct dentry *d_obtain_alias(struct inode *inode)
-+{
-+	struct dentry *d;
-+
-+	if (!inode)
-+		return NULL;
-+	if (IS_ERR(inode))
-+		return ERR_CAST(inode);
-+
-+	d = d_alloc_anon(inode);
-+	if (!d)
-+		iput(inode);
-+	return d;
-+}
-+#endif
-+
-+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 28)
-+#define __pagevec_lru_add_file __pagevec_lru_add
-+#define open_bdev_exclusive open_bdev_excl
-+#define close_bdev_exclusive(bdev, mode) close_bdev_excl(bdev)
-+typedef unsigned __bitwise__ fmode_t;
-+#endif
-+
- #endif /* _COMPAT_H_ */
-diff -Naur btrfs-orig/export.h btrfs/export.h
---- btrfs-orig/export.h	2009-02-26 13:07:05.000000000 -0500
-+++ btrfs/export.h	2009-02-26 14:02:05.000000000 -0500
-@@ -16,4 +16,32 @@
- 	u64 parent_root_objectid;
- } __attribute__ ((packed));
- 
-+// BTRFS needs the btrfs from fid_type which was added in 2.6.27
-+// All I did was copy the btrfs defse which was found in
-+// linux-2.6.27/include/linux/exportfs.h
-+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
-+enum btrfs_fid_type {
-+	/*
-+	 * 64 bit object ID, 64 bit root object ID,
-+	 * 32 bit generation number.
-+	 */
-+	FILEID_BTRFS_WITHOUT_PARENT = 0x4d,
-+
-+	/*
-+	 * 64 bit object ID, 64 bit root object ID,
-+	 * 32 bit generation number,
-+	 * 64 bit parent object ID, 32 bit parent generation.
-+	 */
-+	FILEID_BTRFS_WITH_PARENT = 0x4e,
-+
-+	/*
-+	 * 64 bit object ID, 64 bit root object ID,
-+	 * 32 bit generation number,
-+	 * 64 bit parent object ID, 32 bit parent generation,
-+	 * 64 bit parent root object ID.
-+	 */
-+	FILEID_BTRFS_WITH_PARENT_ROOT = 0x4f,
-+};
-+#endif
-+
- #endif
-diff -Naur btrfs-orig/extent_io.c btrfs/extent_io.c
---- btrfs-orig/extent_io.c	2009-02-26 13:07:06.000000000 -0500
-+++ btrfs/extent_io.c	2009-03-06 23:43:36.000000000 -0500
-@@ -2847,6 +2847,7 @@
- 	return sector;
- }
- 
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
- int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		__u64 start, __u64 len, get_extent_t *get_extent)
- {
-@@ -2938,6 +2939,7 @@
- 			GFP_NOFS);
- 	return ret;
- }
-+#endif
- 
- static inline struct page *extent_buffer_page(struct extent_buffer *eb,
- 					      unsigned long i)
-@@ -3163,13 +3165,21 @@
- 			}
- 		}
- 		clear_page_dirty_for_io(page);
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
- 		spin_lock_irq(&page->mapping->tree_lock);
-+#else
-+		read_lock_irq(&page->mapping->tree_lock);
-+#endif
- 		if (!PageDirty(page)) {
- 			radix_tree_tag_clear(&page->mapping->page_tree,
- 						page_index(page),
- 						PAGECACHE_TAG_DIRTY);
- 		}
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
- 		spin_unlock_irq(&page->mapping->tree_lock);
-+#else
-+		read_unlock_irq(&page->mapping->tree_lock);
-+#endif
- 		unlock_page(page);
- 	}
- 	return 0;
-@@ -3347,7 +3357,11 @@
- 	for (i = start_i; i < num_pages; i++) {
- 		page = extent_buffer_page(eb, i);
- 		if (!wait) {
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
- 			if (!trylock_page(page))
-+#else
-+			if(TestSetPageLocked(page))
-+#endif
- 				goto unlock_exit;
- 		} else {
- 			lock_page(page);
-diff -Naur btrfs-orig/extent_io.h btrfs/extent_io.h
---- btrfs-orig/extent_io.h	2009-02-26 13:07:06.000000000 -0500
-+++ btrfs/extent_io.h	2009-02-26 14:02:05.000000000 -0500
-@@ -2,6 +2,7 @@
- #define __EXTENTIO__
- 
- #include <linux/rbtree.h>
-+#include <linux/version.h>
- 
- /* bits for the extent state */
- #define EXTENT_DIRTY 1
-@@ -205,8 +206,10 @@
- 			unsigned from, unsigned to);
- sector_t extent_bmap(struct address_space *mapping, sector_t iblock,
- 		get_extent_t *get_extent);
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
- int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		__u64 start, __u64 len, get_extent_t *get_extent);
-+#endif
- int set_range_dirty(struct extent_io_tree *tree, u64 start, u64 end);
- int set_state_private(struct extent_io_tree *tree, u64 start, u64 private);
- int get_state_private(struct extent_io_tree *tree, u64 start, u64 *private);
-diff -Naur btrfs-orig/extent-tree.c btrfs/extent-tree.c
---- btrfs-orig/extent-tree.c	2009-02-26 13:07:06.000000000 -0500
-+++ btrfs/extent-tree.c	2009-02-26 14:02:05.000000000 -0500
-@@ -870,7 +870,11 @@
- static void btrfs_issue_discard(struct block_device *bdev,
- 				u64 start, u64 len)
- {
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
- 	blkdev_issue_discard(bdev, start >> 9, len >> 9, GFP_KERNEL);
-+#else
-+	blkdev_issue_discard(bdev, start >> 9, len >> 9);
-+#endif
- }
- #endif
- 
-diff -Naur btrfs-orig/file.c btrfs/file.c
---- btrfs-orig/file.c	2009-02-26 13:07:06.000000000 -0500
-+++ btrfs/file.c	2009-02-26 14:02:05.000000000 -0500
-@@ -1042,7 +1042,11 @@
- 	if (count == 0)
- 		goto out_nolock;
- 
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
- 	err = file_remove_suid(file);
-+#else
-+	err = remove_suid(fdentry(file));
-+#endif
- 	if (err)
- 		goto out_nolock;
- 	file_update_time(file);
-diff -Naur btrfs-orig/inode.c btrfs/inode.c
---- btrfs-orig/inode.c	2009-02-26 13:07:07.000000000 -0500
-+++ btrfs/inode.c	2009-02-26 14:02:05.000000000 -0500
-@@ -3456,14 +3456,22 @@
- 	if (objectid > root->highest_inode)
- 		root->highest_inode = objectid;
- 
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
- 	inode->i_uid = current_fsuid();
-+#else
-+	inode->i_uid = current->fsuid;
-+#endif
- 
- 	if (dir && (dir->i_mode & S_ISGID)) {
- 		inode->i_gid = dir->i_gid;
- 		if (S_ISDIR(mode))
- 			mode |= S_ISGID;
- 	} else
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
- 		inode->i_gid = current_fsgid();
-+#else
-+		inode->i_gid = current->fsgid;
-+#endif
- 
- 	inode->i_mode = mode;
- 	inode->i_ino = objectid;
-@@ -4164,11 +4172,13 @@
- 	return -EINVAL;
- }
- 
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
- static int btrfs_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		__u64 start, __u64 len)
- {
- 	return extent_fiemap(inode, fieinfo, start, len, btrfs_get_extent);
- }
-+#endif
- 
- int btrfs_readpage(struct file *file, struct page *page)
- {
-@@ -4500,7 +4510,11 @@
- 	kmem_cache_free(btrfs_inode_cachep, BTRFS_I(inode));
- }
- 
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
- static void init_once(void *foo)
-+#else
-+static void init_once(struct kmem_cache *bar, void *foo)
-+#endif
- {
- 	struct btrfs_inode *ei = (struct btrfs_inode *) foo;
- 
-@@ -4523,7 +4537,12 @@
- 
- struct kmem_cache *btrfs_cache_create(const char *name, size_t size,
- 				       unsigned long extra_flags,
--				       void (*ctor)(void *))
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
-+				       void (*ctor)(void *)
-+#else
-+				       void (*ctor)(struct kmem_cache *, void*)
-+#endif
-+)
- {
- 	return kmem_cache_create(name, size, 0, (SLAB_RECLAIM_ACCOUNT |
- 				 SLAB_MEM_SPREAD | extra_flags), ctor);
-@@ -4942,7 +4961,12 @@
- 	return __set_page_dirty_nobuffers(page);
- }
- 
-+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 26)
- static int btrfs_permission(struct inode *inode, int mask)
-+#else
-+static int btrfs_permission(struct inode *inode, int mask,
-+			    struct nameidata *nd)
-+#endif
- {
- 	if (btrfs_test_flag(inode, READONLY) && (mask & MAY_WRITE))
- 		return -EACCES;
-@@ -5036,7 +5060,9 @@
- 	.removexattr	= btrfs_removexattr,
- 	.permission	= btrfs_permission,
- 	.fallocate	= btrfs_fallocate,
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
- 	.fiemap		= btrfs_fiemap,
-+#endif
- };
- static struct inode_operations btrfs_special_inode_operations = {
- 	.getattr	= btrfs_getattr,
-diff -Naur btrfs-orig/ioctl.c btrfs/ioctl.c
---- btrfs-orig/ioctl.c	2009-02-26 13:07:07.000000000 -0500
-+++ btrfs/ioctl.c	2009-02-26 14:02:05.000000000 -0500
-@@ -240,7 +240,11 @@
- 		return -EEXIST;
- 	if (IS_DEADDIR(dir))
- 		return -ENOENT;
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
- 	return inode_permission(dir, MAY_WRITE | MAY_EXEC);
-+#else
-+	return permission(dir, MAY_WRITE | MAY_EXEC, NULL);
-+#endif
- }
- 
- /*
-diff -Naur btrfs-orig/modules.order btrfs/modules.order
---- btrfs-orig/modules.order	1969-12-31 19:00:00.000000000 -0500
-+++ btrfs/modules.order	2009-03-06 23:44:15.000000000 -0500
-@@ -0,0 +1 @@
-+kernel//root/btrfs/btrfs/btrfs.ko
-diff -Naur btrfs-orig/super.c btrfs/super.c
---- btrfs-orig/super.c	2009-02-26 13:07:10.000000000 -0500
-+++ btrfs/super.c	2009-02-26 14:02:05.000000000 -0500
-@@ -38,6 +38,7 @@
- #include <linux/namei.h>
- #include <linux/miscdevice.h>
- #include <linux/magic.h>
-+#include <linux/version.h>
- #include "compat.h"
- #include "ctree.h"
- #include "disk-io.h"
-@@ -51,6 +52,9 @@
- #include "export.h"
- #include "compression.h"
- 
-+#ifndef BTRFS_SUPER_MAGIC
-+#define BTRFS_SUPER_MAGIC	0x9123683E
-+#endif
- 
- static struct super_operations btrfs_super_ops;
- 
-@@ -609,6 +613,8 @@
- 	return ret;
- }
- 
-+
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
- static int btrfs_freeze(struct super_block *sb)
- {
- 	struct btrfs_root *root = btrfs_sb(sb);
-@@ -617,6 +623,7 @@
- 	return 0;
- }
- 
-+
- static int btrfs_unfreeze(struct super_block *sb)
- {
- 	struct btrfs_root *root = btrfs_sb(sb);
-@@ -625,6 +632,27 @@
- 	return 0;
- }
- 
-+
-+#else
-+
-+
-+static void btrfs_write_super_lockfs(struct super_block *sb)
-+{
-+	struct btrfs_root *root = btrfs_sb(sb);
-+	mutex_lock(&root->fs_info->transaction_kthread_mutex);
-+	mutex_lock(&root->fs_info->cleaner_mutex);
-+}
-+
-+
-+static void btrfs_unlockfs(struct super_block *sb)
-+{
-+	struct btrfs_root *root = btrfs_sb(sb);
-+	mutex_unlock(&root->fs_info->cleaner_mutex);
-+	mutex_unlock(&root->fs_info->transaction_kthread_mutex);
-+}
-+#endif
-+
-+
- static struct super_operations btrfs_super_ops = {
- 	.delete_inode	= btrfs_delete_inode,
- 	.put_super	= btrfs_put_super,
-@@ -637,8 +665,13 @@
- 	.destroy_inode	= btrfs_destroy_inode,
- 	.statfs		= btrfs_statfs,
- 	.remount_fs	= btrfs_remount,
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
- 	.freeze_fs	= btrfs_freeze,
- 	.unfreeze_fs	= btrfs_unfreeze,
-+#else
-+	.write_super_lockfs	= btrfs_write_super_lockfs,
-+	.unlockfs		= btrfs_unlockfs,
-+#endif
- };
- 
- static const struct file_operations btrfs_ctl_fops = {
+I just started playing with btrfs on my SSD drive last week and
+encountered the out of space problem using VirtualBox .vdi disks on
+the btrfs partition.  I initially used the backport to ubuntu posted
+by Filip Br=E8i=E6 with my 2.6.27-7-generic kernel (from Linux Mint 6 K=
+DE
+CE RC1).
+
+I downloaded and compiled the latest git version ( 2.6.29-rc7) with
+the ENOSPC patches, but still run out of disk space quite prematurely.
+ With 2.6.27-7 based on btrfs 0.17, I was running out of disk space at
+with 1.9G free.  Now with the patched git in 2.6.29-rc7, it's running
+out with 1.7G free:
+
+df -h /mnt/btrfs/
+=46ilesystem            Size  Used Avail Use% Mounted on
+/dev/sdc1              13G   11G  1.7G  87% /mnt/btrfs
+
+This is the same result as from the btrfs unstable repository based on
+2.6.29-rc3 which I also tried from git clone
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git.
+ It looks like the btrfs code from this repository is identical to
+rc7, but I was hoping some other kernel changes in rc7 made the
+situation better as Josef implied.
+
+I supposed this is not really an ENOSPC, but it's running out of space
+much earlier than I would expect.
+
+Here's my dmesg output:
+
+[  884.445441] no space left, need 8192, 2760704 delalloc bytes,
+10717552640 bytes_used, 0 bytes_reserved, 0 bytes_pinned, 0
+bytes_readonly, 0 may use10720313344 total
+[  912.026372] btrfs searching for 524288 bytes, num_bytes 524288,
+loop 2, allowed_alloc 1
+[  912.026389] btrfs searching for 262144 bytes, num_bytes 262144,
+loop 2, allowed_alloc 1
+[  912.026403] btrfs searching for 131072 bytes, num_bytes 131072,
+loop 2, allowed_alloc 1
+[  912.026426] btrfs searching for 458752 bytes, num_bytes 458752,
+loop 2, allowed_alloc 1
+[  912.026439] btrfs searching for 229376 bytes, num_bytes 229376,
+loop 2, allowed_alloc 1
+[...more lines like this]
+[ 1363.318175] no space left, need 8192, 81920 delalloc bytes,
+10720231424 bytes_used, 0 bytes_reserved, 0 bytes_pinned, 0
+bytes_readonly, 0 may use10720313344 total
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

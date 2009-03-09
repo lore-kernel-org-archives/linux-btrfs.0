@@ -1,27 +1,58 @@
-From: jim owens <jowens@hp.com>
-Subject: Re: experimental branch rebased
-Date: Mon, 09 Mar 2009 09:26:30 -0400
-Message-ID: <49B51906.5010901@hp.com>
-References: <1235663145.4631.11.camel@think.oraclecorp.com> <20090226190527.GA13057@tux64-01> <49ADAA1A.6050709@hp.com> <20090307045359.GA14354@tux64-01>
+From: Simon Holm =?ISO-8859-1?Q?Th=F8gersen?= <odie@cs.aau.dk>
+Subject: Re: [PATCH] Btrfs: take block group fragmentation into account for
+ allocation
+Date: Mon, 09 Mar 2009 14:56:33 +0100
+Message-ID: <1236606993.7842.8.camel@odie.local>
+References: <2c259a8f0903080742l6e2f6233g709b036281bf962c@mail.gmail.com>
+	 <20090308163707.GC11787@kernel.dk>
+	 <2c259a8f0903081903w7cebb98excfbf9a4ec5c147d8@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Lee Trager <lt73@cs.drexel.edu>
+Content-Type: text/plain; charset=UTF-8
+Cc: Jens Axboe <jens.axboe@oracle.com>, linux-btrfs@vger.kernel.org,
+	Josef Bacik <jbacik@redhat.com>
+To: Yien Zheng <esprout@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090307045359.GA14354@tux64-01>
+In-Reply-To: <2c259a8f0903081903w7cebb98excfbf9a4ec5c147d8@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Lee Trager wrote:
-> Sorry it took so long to reply its been a crazy week for me. 
+s=C3=B8n, 08 03 2009 kl. 20:03 -0600, skrev Yien Zheng:
+> Thanks Jens!  My research had indicated something about 64-bit
+> division and using do_div, but you cleared it up for me.
+>=20
+> The fragmentation_percent function ultimately does another divide to
+> get the percentage, so here's what I did to get the function to work:
+>=20
+> static int fragmentation_percent(struct btrfs_block_group_cache *bloc=
+k_group)
+> {
+>         u64 max_fragments;
+>         u64 fragments_ratio;
+>=20
+>         max_fragments =3D block_group->key.offset -
+>                 btrfs_block_group_used(&block_group->item);
+>         do_div(max_fragments, block_group->fragment_size);
+>         fragments_ratio =3D block_group->fragments;
+>         do_div(fragments_ratio, max_fragments);
+>         return (fragments_ratio * 100);
+> }
+>=20
+So the idea of the function is to return an integer in the range
+[0,100]? The problem is that it will only return either 0 or 100, but
+nothing in between, right?
 
-You're lucky it was only a week, I often have crazy months!
+Wouldn't something along the lines of the following be better?
 
-> I can't believe I made such a stupid mistake.
+u64 tmp =3D (block_group->key.offset -
+	btrfs_block_group_used(&block_group->item);
+u64 tmp2 =3D 100 * block_group->fragment_size * block_group->fragments;
+do_div(tmp2, tmp);
+return tmp2;
 
-Back when I started in computers, I thought 16 bits would
-be more than I would ever need to count the number of times
-I said that exact thing to myself.
 
-Just another stupid mistake I made... the count overflowed :)
+Simon Holm Th=C3=B8gersen
 
-jim
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

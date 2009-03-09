@@ -1,74 +1,71 @@
-From: Yien Zheng <esprout@gmail.com>
-Subject: Re: [PATCH] Btrfs: take block group fragmentation into account for
-	allocation
-Date: Sun, 8 Mar 2009 20:03:36 -0600
-Message-ID: <2c259a8f0903081903w7cebb98excfbf9a4ec5c147d8@mail.gmail.com>
-References: <2c259a8f0903080742l6e2f6233g709b036281bf962c@mail.gmail.com>
-	 <20090308163707.GC11787@kernel.dk>
+From: Hugo Mills <hugo-lkml@carfax.org.uk>
+Subject: Online resize vs ENOSPC
+Date: Mon, 9 Mar 2009 10:31:41 +0000
+Message-ID: <20090309103141.GA5335@vlad.carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@redhat.com>
-To: Jens Axboe <jens.axboe@oracle.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="n8g4imXOkfNTN/H1"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090308163707.GC11787@kernel.dk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks Jens!  My research had indicated something about 64-bit
-division and using do_div, but you cleared it up for me.
 
-The fragmentation_percent function ultimately does another divide to
-get the percentage, so here's what I did to get the function to work:
+--n8g4imXOkfNTN/H1
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-static int fragmentation_percent(struct btrfs_block_group_cache *block_=
-group)
-{
-        u64 max_fragments;
-        u64 fragments_ratio;
+   After an online resize, the filesystem reports its new size, but
+still runs out of space at the old size:
 
-        max_fragments =3D block_group->key.offset -
-                btrfs_block_group_used(&block_group->item);
-        do_div(max_fragments, block_group->fragment_size);
-        fragments_ratio =3D block_group->fragments;
-        do_div(fragments_ratio, max_fragments);
-        return (fragments_ratio * 100);
-}
+Mar  9 08:12:59 vlad kernel: no space left, need 4096, 380928 delalloc bytes, 51509866496 bytes_used, 0 bytes_reserved, 0 bytes_pinned, 0 bytes_readonly, 0 may use51510247424 total
+[...]
+Mar  9 08:14:21 vlad kernel: no space left, need 4096, 0 delalloc bytes, 51510247424 bytes_used, 0 bytes_reserved, 0 bytes_pinned, 0 bytes_readonly, 0 may use51510247424 total
 
-On Sun, Mar 8, 2009 at 10:37 AM, Jens Axboe <jens.axboe@oracle.com> wro=
-te:
-> On Sun, Mar 08 2009, Yien Zheng wrote:
->> I tried applying this patch, but the fragmentation_percent function =
-is
->> giving me:
->>
->> WARNING: "__udivdi3"
->> [/home/partition6/yien/git/linux-git/fs/btrfs/btrfs.ko] undefined!
->>
->> when I compile, and the module fails to load, even though the build
->> completes. =A0I've traced it to the calculation of max_fragments:
->>
->> max_fragments =3D (block_group->key.offset -
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 btrfs_block_group_used(&block_group->ite=
-m)) /
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 block_group->fragment_size;
->>
->> It seems that accessing block_group in here is causing a reference t=
-o
->> __udivdi3 somehow. =A0Any idea what's going on here?
->
-> You can't to 64-bit divides on 32-bit archs. Make that
->
-> max_fragments =3D block_group->key.offset - btrfs_block_group_used(&b=
-lock_group->item);
-> do_div(max_fragments, block_group->fragment_size);
->
-> and it should work.
->
-> --
-> Jens Axboe
->
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+hrm@vlad:~ $ df -h
+Filesystem            Size  Used Avail Use% Mounted on
+[...]
+/dev/mapper/media-scratch
+                       70G   48G   23G  68% /media/vlad/video/video
+
+   This was online resized from 50G to 70G, using:
+
+$ sudo lvresize media/scratch -L 70G
+$ sudo btrfsctl -r 70G /media/vlad/video/video
+
+   Version numbers:
+
+$ btrfsctl
+[...]
+Btrfs v0.18-ge3b0f66
+$ uname -a
+Linux vlad 2.6.29-rc7 #1 Fri Mar 6 23:32:13 GMT 2009 x86_64 GNU/Linux
+
+   Unmounting and remounting the filesystem seems to make the new
+space available for use again.
+
+   This is the second time I've had this happen to me now, so it seems
+to be more-or-less reproducible, although I haven't deliberately tried
+to trigger the behaviour yet.
+
+   Hugo.
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+    --- Klytus! Are your men on the right pills? Maybe you should ---    
+                         execute their trainer!                          
+
+--n8g4imXOkfNTN/H1
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+iD8DBQFJtPANIKyzvlFcI40RAsLpAJ9QRmuM7P0b3ceFjT699oJJMXpNYACeNvz5
+Ty4O6/brH8OFlR22EtwwB1A=
+=4KKo
+-----END PGP SIGNATURE-----
+
+--n8g4imXOkfNTN/H1--

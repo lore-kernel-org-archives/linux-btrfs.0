@@ -1,73 +1,28 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: Re: Online resize vs ENOSPC
-Date: Mon, 9 Mar 2009 14:35:01 +0000
-Message-ID: <20090309143501.GD6698@vlad.carfax.org.uk>
-References: <20090309103141.GA5335@vlad.carfax.org.uk>
+From: "Oliver Mattos" <oliver.mattos08@imperial.ac.uk>
+Subject: Re: [PATCH] Btrfs: take block group fragmentation into account for allocation
+Date: Mon, 9 Mar 2009 15:21:06 -0000
+Message-ID: <9F6FB775EC554CDBB1949CDCAC6F08EC@laptop>
+References: <2c259a8f0903080742l6e2f6233g709b036281bf962c@mail.gmail.com> <20090308163707.GC11787@kernel.dk> <2c259a8f0903081903w7cebb98excfbf9a4ec5c147d8@mail.gmail.com> <1236606993.7842.8.camel@odie.local>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="DrWhICOqskFTAXiy"
-To: Hugo Mills <hugo-lkml@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain;
+	format=flowed;
+	charset="utf-8";
+	reply-type=original
+Cc: "Jens Axboe" <jens.axboe@oracle.com>,
+	<linux-btrfs@vger.kernel.org>, "Josef Bacik" <jbacik@redhat.com>
+To: =?utf-8?Q?Simon_Holm_Th=C3=B8gersen?= <odie@cs.aau.dk>,
+	"Yien Zheng" <esprout@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090309103141.GA5335@vlad.carfax.org.uk>
+In-Reply-To: <1236606993.7842.8.camel@odie.local>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---DrWhICOqskFTAXiy
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+> So the idea of the function is to return an integer in the range
+> [0,100]?
 
-On Mon, Mar 09, 2009 at 10:31:41AM +0000, Hugo Mills wrote:
->    After an online resize, the filesystem reports its new size, but
-> still runs out of space at the old size:
-[...]
->    Unmounting and remounting the filesystem seems to make the new
-> space available for use again.
-> 
->    This is the second time I've had this happen to me now, so it seems
-> to be more-or-less reproducible, although I haven't deliberately tried
-> to trigger the behaviour yet.
+Why are we using a range of 0 to 100 anyway?  100 seems like an arbitary 
+value for kernel space - why not just keep it as a value in the range 
+[0,2^32) ?   That eliminates the arbitary constant of 100, and in some cases 
+could reduce the effects of rounding and allow finer control at no 
+additional expense. 
 
-   Just to confirm, I can indeed reproduce it trivially:
-
-$ sudo lvcreate scratch -n testresize -L 5G
-$ sudo mkfs.btrfs /dev/scratch/testresize
-$ sudo mount /dev/scratch/testresize /mnt
-$ sudo chmod ug+w /mnt
-$ sudo chown hrm. /mnt
-$ cd /mnt
-$ dd if=/dev/zero of=foo.txt bs=1M count=4096
-$ sudo lvextend scratch/testresize -L 9G
-$ sudo btrfsctl -r 9G /mnt
-$ dd if=/dev/zero of=foo2.txt bs=1M count=4096
-
-and I get an out-of-space error within a few hundred blocks.
-
-$ cd ..
-$ sudo umount /mnt
-$ sudo mount /dev/scratch/testresize /mnt
-$ cd /mnt
-$ dd if=/dev/zero of=foo2.txt bs=1M count=4096
-
-and then I can write the full 4G of data.
-
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-           --- There are three mistaiks in this sentance. ---            
-
---DrWhICOqskFTAXiy
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iD8DBQFJtSkVIKyzvlFcI40RAnDDAKCCQccw15sqXMFeicGHtelmij/MQQCbBAYe
-Wfz4878rdIOG3U26zNa4S0M=
-=3md5
------END PGP SIGNATURE-----
-
---DrWhICOqskFTAXiy--

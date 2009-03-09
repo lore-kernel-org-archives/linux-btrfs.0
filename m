@@ -1,71 +1,52 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: Online resize vs ENOSPC
-Date: Mon, 9 Mar 2009 10:31:41 +0000
-Message-ID: <20090309103141.GA5335@vlad.carfax.org.uk>
+From: Yien Zheng <esprout@gmail.com>
+Subject: Re: Entirely unexpected ENOSPC?
+Date: Mon, 9 Mar 2009 07:08:16 -0600
+Message-ID: <2c259a8f0903090608r36c50773qaa0bc1606beb5065@mail.gmail.com>
+References: <2c259a8f0903072332n31d9d20dscad1801b4b468520@mail.gmail.com>
+	 <3a7f57190903080035lf10104fq87eca697cc4dfb43@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="n8g4imXOkfNTN/H1"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Dmitri Nikulin <dnikulin@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <3a7f57190903080035lf10104fq87eca697cc4dfb43@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+>
+> This is just a hunch, but maybe the handling of spare files (such as
+> .vdi) is not ideal or not what we're used to with extN. Normally
+> "skipped" blocks do not count towards the disk full size, but given
+> btrfs' nature they may count as a reservation that would certainly
+> cause an early ENOSPC.
+>
 
---n8g4imXOkfNTN/H1
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+I don't think this is the case, since my .vdi is a dynamically
+expanding file, and isn't a sparse file that wants to reserve more
+space than it actually is taking up.  So the vdi file is reported to
+be 5G by du, and it is indeed taking up 5G (and not 3G).
 
-   After an online resize, the filesystem reports its new size, but
-still runs out of space at the old size:
+> You can try to narrow down the problem using qemu-img or dd. Example:
+>
+> qemu-img create -f raw test.img 16G
+>
+> See if it counts towards the disk fill count and ENOSPC threshold. See
+> if it even completes at all :P
+>
 
-Mar  9 08:12:59 vlad kernel: no space left, need 4096, 380928 delalloc bytes, 51509866496 bytes_used, 0 bytes_reserved, 0 bytes_pinned, 0 bytes_readonly, 0 may use51510247424 total
-[...]
-Mar  9 08:14:21 vlad kernel: no space left, need 4096, 0 delalloc bytes, 51510247424 bytes_used, 0 bytes_reserved, 0 bytes_pinned, 0 bytes_readonly, 0 may use51510247424 total
+I tried a test like this for kicks after deleting my vdi file.  I
+tried a while loop:
 
-hrm@vlad:~ $ df -h
-Filesystem            Size  Used Avail Use% Mounted on
-[...]
-/dev/mapper/media-scratch
-                       70G   48G   23G  68% /media/vlad/video/video
+while [ 1 ]; dd if=/dev/zero of=file.`date +%s` count=2097152; done
 
-   This was online resized from 50G to 70G, using:
+My machine subsequently froze.  Repeating the experiment unvieled that
+eventually the system get stuck on pdflush taking up 100% CPU.  At
+this point, I had to turn off my laptop, as a soft reset was not
+possible, even with a "halt" command.
 
-$ sudo lvresize media/scratch -L 70G
-$ sudo btrfsctl -r 70G /media/vlad/video/video
-
-   Version numbers:
-
-$ btrfsctl
-[...]
-Btrfs v0.18-ge3b0f66
-$ uname -a
-Linux vlad 2.6.29-rc7 #1 Fri Mar 6 23:32:13 GMT 2009 x86_64 GNU/Linux
-
-   Unmounting and remounting the filesystem seems to make the new
-space available for use again.
-
-   This is the second time I've had this happen to me now, so it seems
-to be more-or-less reproducible, although I haven't deliberately tried
-to trigger the behaviour yet.
-
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-    --- Klytus! Are your men on the right pills? Maybe you should ---    
-                         execute their trainer!                          
-
---n8g4imXOkfNTN/H1
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iD8DBQFJtPANIKyzvlFcI40RAsLpAJ9QRmuM7P0b3ceFjT699oJJMXpNYACeNvz5
-Ty4O6/brH8OFlR22EtwwB1A=
-=4KKo
------END PGP SIGNATURE-----
-
---n8g4imXOkfNTN/H1--
+At this point I'm wondering if this is a anomaly or if it has anything
+to do with using an SSD.  It seems the pre-2.7.29-rc7 code had a hard
+stop at 85%.  But the recent patch doesn't seem to have solve the
+issue for me.  Is there another issue that makes btrfs want to reserve
+2G free?  I see another email with someone growing their filesystem
+from 48G to 70G because they ran out of space on their 50G disk, which
+should still have 2G free.

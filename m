@@ -1,35 +1,46 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Online resize vs ENOSPC
-Date: Tue, 10 Mar 2009 09:37:34 -0400
-Message-ID: <1236692254.23800.6.camel@think.oraclecorp.com>
-References: <20090309103141.GA5335@vlad.carfax.org.uk>
-	 <20090309143501.GD6698@vlad.carfax.org.uk>
+From: Aaron Straus <aaron@merfinllc.com>
+Subject: Re: Unable to create the previously deleted snapshot or subvolume
+Date: Tue, 10 Mar 2009 09:20:09 -0700
+Message-ID: <20090310162009.GA31499@merfinllc.com>
+References: <d853ebb60903090614r57bc11cfpb446681a10c6f204@mail.gmail.com> <d853ebb60903100212h67282cfck99a097a4530c4e6a@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org
-To: Hugo Mills <hugo-lkml@carfax.org.uk>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+To: Siddhartha Swaroop <siddhartha.swaroop@greenturtles.in>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090309143501.GD6698@vlad.carfax.org.uk>
+In-Reply-To: <d853ebb60903100212h67282cfck99a097a4530c4e6a@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2009-03-09 at 14:35 +0000, Hugo Mills wrote:
-> On Mon, Mar 09, 2009 at 10:31:41AM +0000, Hugo Mills wrote:
-> >    After an online resize, the filesystem reports its new size, but
-> > still runs out of space at the old size:
-> [...]
-> >    Unmounting and remounting the filesystem seems to make the new
-> > space available for use again.
-> > 
-> >    This is the second time I've had this happen to me now, so it seems
-> > to be more-or-less reproducible, although I haven't deliberately tried
-> > to trigger the behaviour yet.
-> 
->    Just to confirm, I can indeed reproduce it trivially:
-> 
+Hi Siddhartha,
 
-Ok, thanks for tracking this down.  I see the bug and will send out a
-fix shortly for you to try.
+On Mar 10 02:42 PM, Siddhartha Swaroop wrote:
+> So from about test case the problem I faced is when ever I try to
+> create a snapshot or subvolume of same name which previously deleted
+> it says file exists.But when I do "$ ls " that file will not be
+> present in that directory.  But once in a while am able to create it
+> as u can see in the about test steps  7,8,9.
 
--chris
+Thanks.  That patch is certainly dangerous and meant more as a request
+for help!  :)
+
+That said, the most important thing I still don't understand is the tree
+root forward and back refs.  
+
+In particular I don't think BTRFS is adding all the forward and back
+refs in the snapshot of snapshot case.
+
+The will make snapshot deletion difficult because one cannot tell if the
+tree root is still being referenced by another tree root (or not)...
+
+Anyway, I think that's still the first thing to be cleaned up.
+
+				Regards,
+				=a=
 
 
+
+
+-- 
+===================
+Aaron Straus
+aaron@merfinllc.com

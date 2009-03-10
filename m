@@ -1,40 +1,79 @@
-From: jim owens <jowens@hp.com>
-Subject: Re: [PATCH] Btrfs: take block group fragmentation into account for
- allocation
-Date: Mon, 09 Mar 2009 13:29:02 -0400
-Message-ID: <49B551DE.7040304@hp.com>
-References: <2c259a8f0903080742l6e2f6233g709b036281bf962c@mail.gmail.com> <20090308163707.GC11787@kernel.dk> <2c259a8f0903081903w7cebb98excfbf9a4ec5c147d8@mail.gmail.com> <1236606993.7842.8.camel@odie.local> <9F6FB775EC554CDBB1949CDCAC6F08EC@laptop> <20090309152417.GA31524@unused.rdu.redhat.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Oliver Mattos <oliver.mattos08@imperial.ac.uk>,
-	=?ISO-8859-1?Q?Simon_?= =?ISO-8859-1?Q?Holm_Th=F8gersen?=
-	<odie@cs.aau.dk>, Yien Zheng <esprout@gmail.com>,
-	Jens Axboe <jens.axboe@oracle.com>, linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+From: Stoyan Gaydarov <stoyboyker@gmail.com>
+Subject: [PATCH 01/25] [btrfs] BUG to BUG_ON changes
+Date: Tue, 10 Mar 2009 00:10:26 -0500
+Message-ID: <1236661850-8237-2-git-send-email-stoyboyker@gmail.com>
+References: <1236661850-8237-1-git-send-email-stoyboyker@gmail.com>
+Cc: Stoyan Gaydarov <stoyboyker@gmail.com>, chris.mason@oracle.com,
+	linux-btrfs@vger.kernel.org
+To: linux-kernel@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090309152417.GA31524@unused.rdu.redhat.com>
+In-Reply-To: <1236661850-8237-1-git-send-email-stoyboyker@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Josef Bacik wrote:
-> On Mon, Mar 09, 2009 at 03:21:06PM -0000, Oliver Mattos wrote:
->>> So the idea of the function is to return an integer in the range
->>> [0,100]?
->> Why are we using a range of 0 to 100 anyway?  100 seems like an arbitary  
->> value for kernel space - why not just keep it as a value in the range  
->> [0,2^32) ?   That eliminates the arbitary constant of 100, and in some 
->> cases could reduce the effects of rounding and allow finer control at no  
->> additional expense. 
->>
-> 
-> Its not arbitrary, its a percentage, so 0-100 percent.
+Signed-off-by: Stoyan Gaydarov <stoyboyker@gmail.com>
+---
+ fs/btrfs/ctree.c            |    3 +--
+ fs/btrfs/extent-tree.c      |    3 +--
+ fs/btrfs/free-space-cache.c |    3 +--
+ fs/btrfs/tree-log.c         |    3 +--
+ 4 files changed, 4 insertions(+), 8 deletions(-)
 
-True, however the decision to use a percentage scheme is arbitrary.
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 37f31b5..2c590b0 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -2174,8 +2174,7 @@ static int insert_ptr(struct btrfs_trans_handle *trans, struct btrfs_root
+ 	BUG_ON(!path->nodes[level]);
+ 	lower = path->nodes[level];
+ 	nritems = btrfs_header_nritems(lower);
+-	if (slot > nritems)
+-		BUG();
++	BUG_ON(slot > nritems);
+ 	if (nritems == BTRFS_NODEPTRS_PER_BLOCK(root))
+ 		BUG();
+ 	if (slot != nritems) {
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 9abf81f..0314ab6 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -672,8 +672,7 @@ static noinline int insert_extents(struct btrfs_trans_handle *trans,
+ 					      keys+i, data_size+i, total-i);
+ 		BUG_ON(ret < 0);
+ 
+-		if (last && ret > 1)
+-			BUG();
++		BUG_ON(last && ret > 1);
+ 
+ 		leaf = path->nodes[0];
+ 		for (c = 0; c < ret; c++) {
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index d1e5f0e..b0c7661 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -267,8 +267,7 @@ static int __btrfs_add_free_space(struct btrfs_block_group_cache *block_group,
+ out:
+ 	if (ret) {
+ 		printk(KERN_ERR "btrfs: unable to add free space :%d\n", ret);
+-		if (ret == -EEXIST)
+-			BUG();
++		BUG_ON(ret == -EEXIST);
+ 	}
+ 
+ 	kfree(alloc_info);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 9c462fb..2c892f6 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -1150,8 +1150,7 @@ insert:
+ 	ret = insert_one_name(trans, root, path, key->objectid, key->offset,
+ 			      name, name_len, log_type, &log_key);
+ 
+-	if (ret && ret != -ENOENT)
+-		BUG();
++	BUG_ON(ret && ret != -ENOENT);
+ 	goto out;
+ }
+ 
+-- 
+1.6.1.3
 
-For triggers like this it is just as good to pick points
-like 1/8 (12.5%) or 1/4 (25%) that can be calculated without
-doing division.  Forgetting the 32 bit architecture problem,
-many architectures are really slow at divide so it is better
-to not use them unless it adds real value.  Other than percent
-being easy to document, what is the justification for percent.
-
-jim

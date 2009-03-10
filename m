@@ -1,28 +1,34 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH 01/25] [btrfs] BUG to BUG_ON changes
-Date: Tue, 10 Mar 2009 09:24:55 -0400
-Message-ID: <1236691495.23800.5.camel@think.oraclecorp.com>
-References: <1236661850-8237-1-git-send-email-stoyboyker@gmail.com>
-	 <1236661850-8237-2-git-send-email-stoyboyker@gmail.com>
+Subject: Re: Online resize vs ENOSPC
+Date: Tue, 10 Mar 2009 09:37:34 -0400
+Message-ID: <1236692254.23800.6.camel@think.oraclecorp.com>
+References: <20090309103141.GA5335@vlad.carfax.org.uk>
+	 <20090309143501.GD6698@vlad.carfax.org.uk>
 Mime-Version: 1.0
 Content-Type: text/plain
-Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: Stoyan Gaydarov <stoyboyker@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+To: Hugo Mills <hugo-lkml@carfax.org.uk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1236661850-8237-2-git-send-email-stoyboyker@gmail.com>
+In-Reply-To: <20090309143501.GD6698@vlad.carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2009-03-10 at 00:10 -0500, Stoyan Gaydarov wrote:
-> Signed-off-by: Stoyan Gaydarov <stoyboyker@gmail.com>
-> ---
->  fs/btrfs/ctree.c            |    3 +--
->  fs/btrfs/extent-tree.c      |    3 +--
->  fs/btrfs/free-space-cache.c |    3 +--
->  fs/btrfs/tree-log.c         |    3 +--
->  4 files changed, 4 insertions(+), 8 deletions(-)
+On Mon, 2009-03-09 at 14:35 +0000, Hugo Mills wrote:
+> On Mon, Mar 09, 2009 at 10:31:41AM +0000, Hugo Mills wrote:
+> >    After an online resize, the filesystem reports its new size, but
+> > still runs out of space at the old size:
+> [...]
+> >    Unmounting and remounting the filesystem seems to make the new
+> > space available for use again.
+> > 
+> >    This is the second time I've had this happen to me now, so it seems
+> > to be more-or-less reproducible, although I haven't deliberately tried
+> > to trigger the behaviour yet.
+> 
+>    Just to confirm, I can indeed reproduce it trivially:
 > 
 
-Thanks, I've queued this one up.
+Ok, thanks for tracking this down.  I see the bug and will send out a
+fix shortly for you to try.
 
 -chris
 

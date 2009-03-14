@@ -1,43 +1,51 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Btrfs experimental branch updates
-Date: Fri, 13 Mar 2009 21:33:41 -0400
-Message-ID: <1236994421.17095.7.camel@think.oraclecorp.com>
-References: <1236959774.17095.3.camel@think.oraclecorp.com>
-	 <49BAE39F.8050102@austin.ibm.com>
+From: Thomas Kuther <gimpel@sonnenkinder.org>
+Subject: How do I boot a system root on a multidevice BTRFS subvol?
+Date: Sat, 14 Mar 2009 21:05:45 +0100
+Message-ID: <20090314210545.773b1d89@gimpel.ath.cx>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org
-To: Steven Pratt <slpratt@austin.ibm.com>
+Content-Type: multipart/signed; boundary="Sig_/fL03_0E1QKsUHbMz2blq3EN";
+ protocol="application/pgp-signature"; micalg=PGP-SHA1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <49BAE39F.8050102@austin.ibm.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2009-03-13 at 17:52 -0500, Steven Pratt wrote:
-> Chris Mason wrote:
-> > Hello everyone,
-> >
-> > I've rebased the experimental branch to include most of the
-> > optimizations I've been working on.
-> >
-> > The two major changes are doing all extent tree operations in delayed
-> > processing queues and removing many of the blocking points with btree
-> > locks held.
-> >
-> > In addition to smoothing out IO performance, these changes really cut
-> > down on the amount of stack btrfs is using, which is especially
-> > important for kernels with 4k stacks enabled (fedora).
-> >
-> >   
-> Well, no drastic changes.  On Raid, creates got better, but random write 
-> got worse. Mail server was mixed. For single disk, pretty much the same 
-> story, although CPU savings is noticeable on write, although at the 
-> expense of performance.
-> 
+--Sig_/fL03_0E1QKsUHbMz2blq3EN
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-Thanks for running this, but the main performance fixes for your test
-are still in testing locally.  One thing that makes a huge difference on
-the random write run is to mount -o ssd.
+Hello,
 
--chris
+recently I installed a distribution I want to look at via chroot into a
+btrfs subvolume on a multidevice btrfs.
 
+Now I tried to boot this, the kernel command line in GRUB looks as
+follows so far:
 
+/kernel-2.6.29-rc7-git3 root=3D/dev/sdb7 rootfstype=3Dbtrfs
+rootflags=3Ddevice=3D/dev/sda1,subvol=3Darchroot
+
+This gives "VFS: cannot find sdb7 or bad block", like it would when
+trying to mount via fstab without -o device=3Dfoo
+
+The fstab line for / looks like:
+/dev/sdb7  /  btrfs  device=3D/dev/sda1,subvol=3Darchroot  1 1
+
+Is this possible already, or am I doing something wrong?
+
+Many thanks in advance!
+
+Thomas
+
+--Sig_/fL03_0E1QKsUHbMz2blq3EN
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.10 (GNU/Linux)
+
+iEYEARECAAYFAkm8DiIACgkQMQFfAqZTGfyMuwCeNLjZwYWoICxwvjuz32jagJaw
+Td8An3p9J+W/95MwqU0MIhmPAkjHK5f1
+=/rbi
+-----END PGP SIGNATURE-----
+
+--Sig_/fL03_0E1QKsUHbMz2blq3EN--

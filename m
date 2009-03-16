@@ -1,31 +1,32 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Btrfs experimental branch updates
-Date: Mon, 16 Mar 2009 09:31:58 -0400
-Message-ID: <1237210318.30224.4.camel@think.oraclecorp.com>
-References: <1236959774.17095.3.camel@think.oraclecorp.com>
-	 <49BD534B.7030303@gmail.com>
+From: CSights <csights@fastmail.fm>
+Subject: metadata copied/data not copied?
+Date: Mon, 16 Mar 2009 10:35:19 -0400
+Message-ID: <200903161035.19446.csights@fastmail.fm>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org
-To: Grigory Makarevich <grigorymakarevich@gmail.com>
+Content-Type: text/plain;
+  charset="utf-8"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <49BD534B.7030303@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 2009-03-15 at 15:13 -0400, Grigory Makarevich wrote:
-> Dear All,
-> 
-> I was wondering if the experimental branch is smth. different or it is 
-> the same
-> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable-standalone.git
-> 
-> That repository does not seem to have any branches other than head and 
-> master.
-> 
+Hi everyone,
+	I'm curious what would happen in btrfs if the following commands were issued:
 
-Unfortunately I still need to update the standalone tree.  All of these
-changes are only in the btrfs-unstable.git tree.
+# cp file1 file2
+# chown newuser:newgroup file2
 
--chris
+Where file1 was owned by olduser:oldgroup.
 
 
+	If I understand copy-on-write correctly the "cp" would merely create a new 
+pointer (or whatever it is called :( ) containing the files' metadata but the 
+file contents would not actually be duplicated.
+	Then the "chown" would change the metadata so that file2's metadata indicates 
+newuser:newgroup owned the file contents.  At the same time the metadata of 
+file1 would say that olduser:oldgroup owned the file contents.
+	
+	(If a user modified the file contents, the contents would be copied at that 
+time.)
+
+Thanks, curious newbie,
+	C.

@@ -1,46 +1,63 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Btrfs experimental branch updates
-Date: Mon, 16 Mar 2009 21:24:49 -0400
-Message-ID: <1237253089.31273.4.camel@think.oraclecorp.com>
-References: <1236959774.17095.3.camel@think.oraclecorp.com>
-	 <49BAE39F.8050102@austin.ibm.com>
-	 <1236994421.17095.7.camel@think.oraclecorp.com>
-	 <49BD12E4.4070505@austin.ibm.com>
+From: CSights <csights@fastmail.fm>
+Subject: Re: metadata copied/data not copied?
+Date: Tue, 17 Mar 2009 11:34:41 -0400
+Message-ID: <200903171134.41896.csights@fastmail.fm>
+References: <200903161035.19446.csights@fastmail.fm> <49BE7003.2050404@hp.com> <1237249545.3814.4.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org
-To: Steven Pratt <slpratt@austin.ibm.com>
+Content-Type: text/plain;
+  charset="iso-8859-1"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <49BD12E4.4070505@austin.ibm.com>
+In-Reply-To: <1237249545.3814.4.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 2009-03-15 at 09:38 -0500, Steven Pratt wrote:
-> > Thanks for running this, but the main performance fixes for your test
-> > are still in testing locally.  One thing that makes a huge difference on
-> > the random write run is to mount -o ssd.
-> >
-> >   
-> Tried a run with -o ssd on the raid system. It made some minor 
-> improvements in random write performance. Helps more on odirect, but 
-> mainly at the 16thread count. Single and 128 threads it doesn't make 
-> much difference.
-> 
-> Results syncing now to history boxacle
-> http://btrfs.boxacle.net/repository/raid/history/History.html
+> This is true, cp makes a full copy of the file.
+>
+> The btrfs utilities include a program called bcp that makes a COW copy
+> of a single file (or directory tree) with a btrfs specific ioctl.
 
-Well, still completely different from my test rig ;)  For the random
-write run, yours runs at 580 trans/sec for btrfs and mine is going along
-at 8000 trans/sec.
+Okay, what happens if in the original example "cp" is changed to "bcp"?
 
-The part that confuses me is that you seem to have some big gaps where
-just a single CPU is stuck in IO wait, and not much CPU time is in use.
+# bcp file1 file2
+# chown newuser:newgroup file2
+(Where file1 was owned by olduser:oldgroup.)
 
-Do you happen to have the blktrace logs for any of the btrfs runs?  I'd
-be interested in a script that did sysrq-w every 5s and captured the
-output.
-
--chris
+	Is using "bcp" the same as copying with hardlinks ("cp -l file1 file2")?
 
 
+	Here is an expanded example which is how I imagined COW would handle changes 
+to the file's data ("file contents").  One can pretend it is an attempt to 
+inject malicious code into /bin/sh (e.g. file1 is /bin/sh).
+
+[METADATA]                     -->  DATA
+[file1 perms olduser:oldgroup] -->  file contents
 
 
+# cp file1 file2
+[file1 perms olduser:oldgroup "COW"]  \
+                                       -->  file contents
+[file1 perms olduser:oldgroup "COW"]  /   
+(A "COW" flag is set in btrfs's (hidden) metadata.)
+
+
+# chown newuser:newgroup file2
+[file1 perms olduser:oldgroup "COW"]  \
+                                       -->  file contents
+[file1 perms newuser:newgroup "COW"]  /
+(chown, chmod, others? are not "writes" to file contents, so file contents 
+don't need to be copied-on-write yet.)
+
+
+# cat newcontent >> file2
+[file1 perms olduser:oldgroup] -->  file contents
+[file2 perms newuser:newgroup] -->  file contents + newcontent
+(File contents are modified.  This is a "write" that triggers COW.  The file 
+contents are copied and then modified. Metadata for file2 are hooked up to 
+copied then modified file contents.  "COW" flag is cleared.)
+
+	Would this work?  At least in this example it looks like the filesystem can 
+track whether the file contents should be copied or not without hints from 
+userspace.
+
+Thanks,
+	newb.

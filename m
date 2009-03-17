@@ -1,98 +1,81 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: metadata copied/data not copied?
-Date: Tue, 17 Mar 2009 13:24:45 -0400
-Message-ID: <1237310685.31273.31.camel@think.oraclecorp.com>
-References: <200903161035.19446.csights@fastmail.fm>
-	 <200903171134.41896.csights@fastmail.fm>
-	 <1237305370.31273.29.camel@think.oraclecorp.com>
-	 <200903171308.05848.csights@fastmail.fm>
+From: Steven Pratt <slpratt@austin.ibm.com>
+Subject: Re: Btrfs experimental branch updates
+Date: Tue, 17 Mar 2009 15:57:28 -0500
+Message-ID: <49C00EB8.6050200@austin.ibm.com>
+References: <1236959774.17095.3.camel@think.oraclecorp.com>	 <49BAE39F.8050102@austin.ibm.com>	 <1236994421.17095.7.camel@think.oraclecorp.com>	 <49BD12E4.4070505@austin.ibm.com> <1237253089.31273.4.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Cc: linux-btrfs@vger.kernel.org
-To: CSights <csights@fastmail.fm>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200903171308.05848.csights@fastmail.fm>
+In-Reply-To: <1237253089.31273.4.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2009-03-17 at 13:08 -0400, CSights wrote:
-> Hi everyone,
-> 
-> > > 	Here is an expanded example which is how I imagined COW would handle
-> > > changes to the file's data ("file contents").  One can pretend it is an
-> > > attempt to inject malicious code into /bin/sh (e.g. file1 is /bin/sh).
-> > >
-> > > [METADATA]                     -->  DATA
-> > > [file1 perms olduser:oldgroup] -->  file contents
-> > >
-> > >
-> > > # cp file1 file2
-> > > [file1 perms olduser:oldgroup "COW"]  \
-> > >                                        -->  file contents
-> > > [file1 perms olduser:oldgroup "COW"]  /
-> > > (A "COW" flag is set in btrfs's (hidden) metadata.)
-> > >
-> > >
-> > > # chown newuser:newgroup file2
-> > > [file1 perms olduser:oldgroup "COW"]  \
-> > >                                        -->  file contents
-> > > [file1 perms newuser:newgroup "COW"]  /
-> > > (chown, chmod, others? are not "writes" to file contents, so file
-> > > contents don't need to be copied-on-write yet.)
-> > >
-> > >
-> > > # cat newcontent >> file2
-> > > [file1 perms olduser:oldgroup] -->  file contents
-> > > [file2 perms newuser:newgroup] -->  file contents + newcontent
-> > > (File contents are modified.  This is a "write" that triggers COW.  The
-> > > file contents are copied and then modified. Metadata for file2 are hooked
-> > > up to copied then modified file contents.  "COW" flag is cleared.)
-> >
-> > It would work, but it is slightly different from how btrfs works.  There
-> > are two ways to read COW (copy on write):
-> >
-> > 1) Before changing something, make a copy of the old data and put it
-> > somewhere else.  Then overwrite the original location.
-> >
-> > 2) Don't ever overwrite the original location, write somewhere new
-> > instead.  The old copy stays in the original location.
-> >
-> > Btrfs does #2.
-> 
-> 	Does the choice #1 or #2 change whether the extended example works or not?  
-> It seems as though either way makes sense for the example given...?
-> 
+Chris Mason wrote:
+> On Sun, 2009-03-15 at 09:38 -0500, Steven Pratt wrote:
+>   
+>>> Thanks for running this, but the main performance fixes for your test
+>>> are still in testing locally.  One thing that makes a huge difference on
+>>> the random write run is to mount -o ssd.
+>>>
+>>>   
+>>>       
+>> Tried a run with -o ssd on the raid system. It made some minor 
+>> improvements in random write performance. Helps more on odirect, but 
+>> mainly at the 16thread count. Single and 128 threads it doesn't make 
+>> much difference.
+>>
+>> Results syncing now to history boxacle
+>> http://btrfs.boxacle.net/repository/raid/history/History.html
+>>     
+>
+> Well, still completely different from my test rig ;)  For the random
+> write run, yours runs at 580 trans/sec for btrfs and mine is going along
+> at 8000 trans/sec.
+>   
+That is odd.  However, I think I have found 1 factor.  In rerunning with 
+blktrace and sysrq an interesting thing happened.  The results got a lot 
+faster.  What I did was just run the 128 thread odirect random write 
+test.  Instead of 2.8MB/sec, I got 17MB/sec. Still far below the 100+ of 
+ext4 and JFS, but one heck of a difference.  Here is what I think is 
+going on.  We make use of a flag in FFSB to reuse the existing fileset 
+if the fileset meets the setup criteria exactly.  For the test I am 
+running that is 1024 100MB files.  Since all of the random write test 
+are doing overwrites within the file, the file sizes do not change and 
+therefore the fileset is valid for reuse.  For most Filesystems this is 
+fine, but with BTRFS COW, this will result in a very different file 
+layout at the start of each variation of the random write test.  The 
+latest 128 thread was on a newly formatted FS. So...., I will do 2 new 
+runs tonight.  First, I will re-mkfs before each random write test and 
+otherwise run as usual.  Second, I plan on running the 128 threads test 
+multiple times (5 minute runs each) to see if it does really degrade 
+over time.  What worries me is that for the case describer above, we 
+only have about 25 minutes of aging on the filesystem by the time we 
+execute th last random write test, which is not a whole lot.
 
-Yes, either way works.  #1 is what lvm snapshotting uses, which avoids
-fragmentation of the original, but it doesn't scale well to lots of
-snapshots.
+> The part that confuses me is that you seem to have some big gaps where
+> just a single CPU is stuck in IO wait, and not much CPU time is in use.
+>   
+Yes, I have noticed that.
 
-> > The bcp command creates a second inode that points to the same data
-> > extents as the first inode.  So, modifications to the inodes themselves
-> > (such as chown, chmod, touch etc) don't touch the data extents.
-> >
-> > Modifications to the data extents go through the COW mechanism to make
-> > sure we don't overwrite the originals.
-> 
-> 	To me it sounds like if cp were replaced with bcp, then btrfs would behave as 
-> I imagined in my example...
+> Do you happen to have the blktrace logs for any of the btrfs runs?  I'd
+> be interested in a script that did sysrq-w every 5s and captured the
+> output.
+>   
+No, but as I mentioned above, I ran this today.  Had a bug collecting 
+the sysrq, so I'll re-run tonight and post as soon as I can.
 
-The long term goal is to get cp to use a new system call to cow link
-files.
+Steve
 
-> 	Why is a "bcp" separate from cp needed?  Is it because with cp btrfs 
-> doesn't "know" a simple copy is being made, but just gets a stream of data to 
-> write to disk?
-> 	Is it possible to update cp to do the btrfs ioctl automatically, or must the 
-> commands always remain separate because there are situations where it would 
-> be a problem for the file contents to be COW?  (It seems to me the fact that 
-> the data contents are COW would be transparent to userland apps, so the bcp 
-> ioctl could be built in to cp.)
-> 
-> Looking forward to (a stable) btrfs!
-> 	Eager User. :)
 
-;)
-
--chris
-
+> -chris
+>
+>
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>   
 

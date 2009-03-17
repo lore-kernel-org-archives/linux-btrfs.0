@@ -1,44 +1,46 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: metadata copied/data not copied?
-Date: Mon, 16 Mar 2009 20:25:45 -0400
-Message-ID: <1237249545.3814.4.camel@think.oraclecorp.com>
-References: <200903161035.19446.csights@fastmail.fm>
-	 <49BE7003.2050404@hp.com>
+Subject: Re: Btrfs experimental branch updates
+Date: Mon, 16 Mar 2009 21:24:49 -0400
+Message-ID: <1237253089.31273.4.camel@think.oraclecorp.com>
+References: <1236959774.17095.3.camel@think.oraclecorp.com>
+	 <49BAE39F.8050102@austin.ibm.com>
+	 <1236994421.17095.7.camel@think.oraclecorp.com>
+	 <49BD12E4.4070505@austin.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain
-Cc: CSights <csights@fastmail.fm>, linux-btrfs@vger.kernel.org
-To: jim owens <jowens@hp.com>
+Cc: linux-btrfs@vger.kernel.org
+To: Steven Pratt <slpratt@austin.ibm.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <49BE7003.2050404@hp.com>
+In-Reply-To: <49BD12E4.4070505@austin.ibm.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2009-03-16 at 11:28 -0400, jim owens wrote:
-> CSights wrote:
-> > Hi everyone,
-> > 	I'm curious what would happen in btrfs if the following commands were issued:
-> > 
-> > # cp file1 file2
-> > # chown newuser:newgroup file2
-> > 
-> > Where file1 was owned by olduser:oldgroup.
-> > 
-> > 
-> > 	If I understand copy-on-write correctly the "cp" would merely create a new 
-> > pointer (or whatever it is called :( ) containing the files' metadata but the 
-> > file contents would not actually be duplicated.
+On Sun, 2009-03-15 at 09:38 -0500, Steven Pratt wrote:
+> > Thanks for running this, but the main performance fixes for your test
+> > are still in testing locally.  One thing that makes a huge difference on
+> > the random write run is to mount -o ssd.
+> >
+> >   
+> Tried a run with -o ssd on the raid system. It made some minor 
+> improvements in random write performance. Helps more on odirect, but 
+> mainly at the 16thread count. Single and 128 threads it doesn't make 
+> much difference.
 > 
-> NO.  The concept you describe requires "deduplicate".
-> 
-> What you are forgetting is that "cp" is a user-space program that
-> reads data and writes it to a new file.  The kernel does not see
-> this as a Copy.
-> 
+> Results syncing now to history boxacle
+> http://btrfs.boxacle.net/repository/raid/history/History.html
 
-This is true, cp makes a full copy of the file.
+Well, still completely different from my test rig ;)  For the random
+write run, yours runs at 580 trans/sec for btrfs and mine is going along
+at 8000 trans/sec.
 
-The btrfs utilities include a program called bcp that makes a COW copy
-of a single file (or directory tree) with a btrfs specific ioctl.
+The part that confuses me is that you seem to have some big gaps where
+just a single CPU is stuck in IO wait, and not much CPU time is in use.
+
+Do you happen to have the blktrace logs for any of the btrfs runs?  I'd
+be interested in a script that did sysrq-w every 5s and captured the
+output.
 
 -chris
+
+
 
 

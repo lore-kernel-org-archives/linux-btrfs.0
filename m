@@ -1,28 +1,44 @@
-From: Dmitri Nikulin <dnikulin@gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: metadata copied/data not copied?
-Date: Tue, 17 Mar 2009 08:18:22 +1100
-Message-ID: <3a7f57190903161418l790cae8ek9b48ff278e23de66@mail.gmail.com>
+Date: Mon, 16 Mar 2009 20:25:45 -0400
+Message-ID: <1237249545.3814.4.camel@think.oraclecorp.com>
 References: <200903161035.19446.csights@fastmail.fm>
-	 <3a7f57190903161414s2118b763q9bad5ce1046b54e5@mail.gmail.com>
+	 <49BE7003.2050404@hp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain
+Cc: CSights <csights@fastmail.fm>, linux-btrfs@vger.kernel.org
+To: jim owens <jowens@hp.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <3a7f57190903161414s2118b763q9bad5ce1046b54e5@mail.gmail.com>
+In-Reply-To: <49BE7003.2050404@hp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 17, 2009 at 8:14 AM, Dmitri Nikulin <dnikulin@gmail.com> wrote:
-> Otherwise you could soft link
-> /bin/sh into your home directly, setuid the link, and own the machine.
+On Mon, 2009-03-16 at 11:28 -0400, jim owens wrote:
+> CSights wrote:
+> > Hi everyone,
+> > 	I'm curious what would happen in btrfs if the following commands were issued:
+> > 
+> > # cp file1 file2
+> > # chown newuser:newgroup file2
+> > 
+> > Where file1 was owned by olduser:oldgroup.
+> > 
+> > 
+> > 	If I understand copy-on-write correctly the "cp" would merely create a new 
+> > pointer (or whatever it is called :( ) containing the files' metadata but the 
+> > file contents would not actually be duplicated.
+> 
+> NO.  The concept you describe requires "deduplicate".
+> 
+> What you are forgetting is that "cp" is a user-space program that
+> reads data and writes it to a new file.  The kernel does not see
+> this as a Copy.
+> 
 
-Sorry, that was a terrible example, only root can setuid anyway. A
-better example is linking to /bin/sh and making your link writable,
-then using that to inject malicious code, which is just as good and
-would be possible with the semantics you described.
+This is true, cp makes a full copy of the file.
 
--- 
-Dmitri Nikulin
+The btrfs utilities include a program called bcp that makes a COW copy
+of a single file (or directory tree) with a btrfs specific ioctl.
 
-Centre for Synchrotron Science
-Monash University
-Victoria 3800, Australia
+-chris
+
+

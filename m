@@ -1,32 +1,45 @@
-From: "nick d." <blumph@gmail.com>
-Subject: [PATCH] minor spelling correction in utilities
-Date: Wed, 25 Mar 2009 10:34:52 +1000
-Message-ID: <9e66534b0903241734w6272929ft520445001ce4247b@mail.gmail.com>
+From: jim owens <jowens@hp.com>
+Subject: [PATCH] remove unused ftrace include
+Date: Wed, 25 Mar 2009 11:21:47 -0400
+Message-ID: <49CA4C0B.1060500@hp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Minor spelling mistake when running 'btrfsck' when argument doesn't exist.
 
+ftrace does not exist in earlier kernels and requires backport patching
+
+Signed-off-by: jim owens <jowens@hp.com>
 ---
- disk-io.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+  fs/btrfs/async-thread.c |    1 -
+  fs/btrfs/delayed-ref.c  |    1 -
+  2 files changed, 0 insertions(+), 2 deletions(-)
 
-diff --git a/disk-io.c b/disk-io.c
-index e49c220..9e0cfe8 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -530,7 +530,7 @@ struct btrfs_root *open_ctree(const char
-*filename, u64 sb_bytenr, int writes)
+diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
+index c84ca1f..61c7d95 100644
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+@@ -20,7 +20,6 @@
+  #include <linux/list.h>
+  #include <linux/spinlock.h>
+  #include <linux/freezer.h>
+-#include <linux/ftrace.h>
+  #include "async-thread.h"
 
-        fp = open(filename, flags, 0600);
-        if (fp < 0) {
--               fprintf (stderr, "Coult not open %s\n", filename);
-+               fprintf (stderr, "Could not open %s\n", filename);
-                return NULL;
-        }
-        root = open_ctree_fd(fp, filename, sb_bytenr, writes);
---
-1.6.2
+  #define WORK_QUEUED_BIT 0
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index d513d70..a972584 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -18,7 +18,6 @@
+
+  #include <linux/sched.h>
+  #include <linux/sort.h>
+-#include <linux/ftrace.h>
+  #include "ctree.h"
+  #include "delayed-ref.h"
+  #include "transaction.h"
+-- 
+1.5.4.3

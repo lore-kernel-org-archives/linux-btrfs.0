@@ -1,27 +1,32 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: btrfs-unstable updates
-Date: Tue, 24 Mar 2009 17:03:22 -0400
-Message-ID: <1237928602.5633.25.camel@think.oraclecorp.com>
+From: "nick d." <blumph@gmail.com>
+Subject: [PATCH] minor spelling correction in utilities
+Date: Wed, 25 Mar 2009 10:34:52 +1000
+Message-ID: <9e66534b0903241734w6272929ft520445001ce4247b@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello everyone,
+Minor spelling mistake when running 'btrfsck' when argument doesn't exist.
 
-The experimental branch is proving pretty stable, and growing important
-fixes, so I've rebased those commits on top of 2.6.29 into the master
-branch.  These aren't quite ready for sending to Linus, but pretty
-close.
+---
+ disk-io.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-I'll also pull in fixes the mailing list has collected for the master
-branch.
+diff --git a/disk-io.c b/disk-io.c
+index e49c220..9e0cfe8 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -530,7 +530,7 @@ struct btrfs_root *open_ctree(const char
+*filename, u64 sb_bytenr, int writes)
 
-I've put all of my locking work into the experimental branch, along with
-some cleanups from Josef.  This stuff is still pretty dangerous, but
-they make a very big difference on lock contention.
-
--chris
-
-
+        fp = open(filename, flags, 0600);
+        if (fp < 0) {
+-               fprintf (stderr, "Coult not open %s\n", filename);
++               fprintf (stderr, "Could not open %s\n", filename);
+                return NULL;
+        }
+        root = open_ctree_fd(fp, filename, sb_bytenr, writes);
+--
+1.6.2

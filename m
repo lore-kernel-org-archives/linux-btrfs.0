@@ -1,45 +1,28 @@
-From: jim owens <jowens@hp.com>
-Subject: [PATCH] remove unused ftrace include
-Date: Wed, 25 Mar 2009 11:21:47 -0400
-Message-ID: <49CA4C0B.1060500@hp.com>
+From: error27@gmail.com
+Subject: btrfs:  memory leak on error path
+Date: Thu, 26 Mar 2009 16:39:42 +0300 (EAT)
+Message-ID: <Pine.LNX.4.64.0903261633260.31773@usbsys.site>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: linux-btrfs@vger.kernel.org
+To: chris.mason@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This was found by smatch (http://repo.or.cz/w/smatch.git/)
 
-ftrace does not exist in earlier kernels and requires backport patching
+regards,
+dan carpenter
 
-Signed-off-by: jim owens <jowens@hp.com>
----
-  fs/btrfs/async-thread.c |    1 -
-  fs/btrfs/delayed-ref.c  |    1 -
-  2 files changed, 0 insertions(+), 2 deletions(-)
+Signed-off-by: Dan Carpenter <error27@gmail.com>
 
-diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
-index c84ca1f..61c7d95 100644
---- a/fs/btrfs/async-thread.c
-+++ b/fs/btrfs/async-thread.c
-@@ -20,7 +20,6 @@
-  #include <linux/list.h>
-  #include <linux/spinlock.h>
-  #include <linux/freezer.h>
--#include <linux/ftrace.h>
-  #include "async-thread.h"
-
-  #define WORK_QUEUED_BIT 0
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index d513d70..a972584 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -18,7 +18,6 @@
-
-  #include <linux/sched.h>
-  #include <linux/sort.h>
--#include <linux/ftrace.h>
-  #include "ctree.h"
-  #include "delayed-ref.h"
-  #include "transaction.h"
--- 
-1.5.4.3
+--- orig/fs/btrfs/volumes.c	2009-03-26 15:59:39.000000000 +0300
++++ devel/fs/btrfs/volumes.c	2009-03-26 16:00:28.000000000 +0300
+@@ -342,6 +342,7 @@
+ 	return fs_devices;
+ error:
+ 	free_fs_devices(fs_devices);
++	kfree(device);
+ 	return ERR_PTR(-ENOMEM);
+ }
+ 

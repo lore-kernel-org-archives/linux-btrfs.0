@@ -1,31 +1,34 @@
 From: Dan Carpenter <error27@gmail.com>
-Subject: [patch] btrfs: remove dead code
-Date: Thu, 26 Mar 2009 17:10:11 +0300 (EAT)
-Message-ID: <Pine.LNX.4.64.0903261708330.1976@usbsys.site>
+Subject: [patch] btrfs: remove dead code #3
+Date: Thu, 26 Mar 2009 17:20:38 +0300 (EAT)
+Message-ID: <Pine.LNX.4.64.0903261716270.1976@usbsys.site>
 References: <Pine.LNX.4.64.0903261633260.31773@usbsys.site>
  <Pine.LNX.4.64.0903261650260.31773@usbsys.site>
 Mime-Version: 1.0
 Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: linux-btrfs@vger.kernel.org
-To: chris.mason@oracle.com
+Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+To: unlisted-recipients:; (no To-header on input)
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <Pine.LNX.4.64.0903261650260.31773@usbsys.site>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-merge is always NULL at this point.
+kzalloc() already initialized ->error to zero.
 
 regards,
 dan carpenter
 
 Signed-off-by: Dan Carpenter <error27@gmail.com>
 
---- orig/fs/btrfs/extent_map.c	2009-03-26 17:07:20.000000000 +0300
-+++ devel/fs/btrfs/extent_map.c	2009-03-26 17:07:39.000000000 +0300
-@@ -234,7 +234,6 @@
- 	rb = tree_insert(&tree->map, em->start, &em->rb_node);
- 	if (rb) {
- 		ret = -EEXIST;
--		free_extent_map(merge);
- 		goto out;
+--- orig/fs/btrfs/volumes.c	2009-03-26 17:14:13.000000000 +0300
++++ devel/fs/btrfs/volumes.c	2009-03-26 17:14:55.000000000 +0300
+@@ -2422,10 +2422,8 @@
+ 		multi = kzalloc(btrfs_multi_bio_size(stripes_allocated),
+ 				GFP_NOFS);
+ 		if (!multi)
+ 			return -ENOMEM;
+-
+-		atomic_set(&multi->error, 0);
  	}
- 	atomic_inc(&em->refs);
+ 
+ 	spin_lock(&em_tree->lock);
+ 	em = lookup_extent_mapping(em_tree, logical, *length);

@@ -1,139 +1,84 @@
-From: Chris Ball <cjb@laptop.org>
-Subject: [PATCH] Add a "-v" flag for verbose scanning, and ignore floppy devices.
-Date: Sun, 29 Mar 2009 21:22:03 -0400
-Message-ID: <m3vdprby9w.fsf@pullcord.laptop.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+From: Peng Tao <bergwolf@gmail.com>
+Subject: [PATCH] add btrfs-image man page
+Date: Mon, 30 Mar 2009 21:43:52 +0800
+Message-ID: <1238420632-17695-1-git-send-email-bergwolf@gmail.com>
+Cc: Peng Tao <bergwolf@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A user on IRC reported that btrfsctl -a appeared to hang -- this was
-because it was trying to read the fd0 floppy device, and getting I/O
-errors back.  This patch introduces "btrfsctl -a -v" to print device
-names as they are scanned, and ignores devices with the floppy major
-device ID (2).
+add man/btrfs-image.8.in
 
-Signed-off-by: Chris Ball <cjb@laptop.org>
+Signed-off-by: Peng Tao <bergwolf@gmail.com>
 ---
- btrfs-show.c |    2 +-
- btrfsctl.c   |   11 ++++++++---
- utils.c      |   17 +++++++++++++++--
- utils.h      |    2 +-
- 4 files changed, 25 insertions(+), 7 deletions(-)
+ man/Makefile         |    5 ++++-
+ man/btrfs-image.8.in |   34 ++++++++++++++++++++++++++++++++++
+ 2 files changed, 38 insertions(+), 1 deletions(-)
+ create mode 100644 man/btrfs-image.8.in
 
-diff --git a/btrfs-show.c b/btrfs-show.c
-index c49626c..91e0e43 100644
---- a/btrfs-show.c
-+++ b/btrfs-show.c
-@@ -133,7 +133,7 @@ int main(int ac, char **av)
- 		search = av[optind];
- 	}
+diff --git a/man/Makefile b/man/Makefile
+index 2665dd1..b7a7340 100644
+--- a/man/Makefile
++++ b/man/Makefile
+@@ -6,7 +6,7 @@ bindir = $(prefix)/bin
+ mandir = $(prefix)/man
+ man8dir = $(mandir)/man8
  
--	ret = btrfs_scan_one_dir("/dev", 0);
-+	ret = btrfs_scan_one_dir("/dev", 0, 0);
- 	if (ret)
- 		fprintf(stderr, "error %d while scanning\n", ret);
+-MANPAGES = mkfs.btrfs.8.gz btrfsctl.8.gz btrfsck.8.gz
++MANPAGES = mkfs.btrfs.8.gz btrfsctl.8.gz btrfsck.8.gz btrfs-image.8.gz
  
-diff --git a/btrfsctl.c b/btrfsctl.c
-index b323818..e0193f2 100644
---- a/btrfsctl.c
-+++ b/btrfsctl.c
-@@ -46,7 +46,7 @@ static inline int ioctl(int fd, int define, void *arg) { return 0; }
- static void print_usage(void)
- {
- 	printf("usage: btrfsctl [ -d file|dir] [ -s snap_name subvol|tree ]\n");
--	printf("                [-r size] [-A device] [-a] [-c]\n");
-+	printf("                [-r size] [-A device] [-a] [-c] [-v]\n");
- 	printf("\t-d filename: defragments one file\n");
- 	printf("\t-d directory: defragments the entire Btree\n");
- 	printf("\t-s snap_name dir: creates a new snapshot of dir\n");
-@@ -55,6 +55,7 @@ static void print_usage(void)
- 	printf("\t-A device: scans the device file for a Btrfs filesystem\n");
- 	printf("\t-a: scans all devices for Btrfs filesystems\n");
- 	printf("\t-c: forces a single FS sync\n");
-+	printf("\t-v: verbose output while scanning devices\n");
- 	printf("%s\n", BTRFS_BUILD_VERSION);
- 	exit(1);
- }
-@@ -100,10 +101,14 @@ int main(int ac, char **av)
- 	unsigned long command = 0;
- 	int len;
- 	char *fullpath;
-+	int verbose = 0;
+ all: $(MANPAGES)
  
--	if (ac == 2 && strcmp(av[1], "-a") == 0) {
-+	if (ac == 3 && strcmp(av[2], "-v") == 0)
-+		verbose = 1;
+@@ -19,6 +19,9 @@ btrfsctl.8.gz: btrfsctl.8.in
+ btrfsck.8.gz: btrfsck.8.in
+ 	$(GZIP) -n -c btrfsck.8.in > btrfsck.8.gz
+ 
++btrfs-image.8.gz: btrfs-image.8.in
++	$(GZIP) -n -c btrfs-image.8.in > btrfs-image.8.gz
 +
-+	if ((ac == 2 || ac == 3) && strcmp(av[1], "-a") == 0) {
- 		fprintf(stderr, "Scanning for Btrfs filesystems\n");
--		btrfs_scan_one_dir("/dev", 1);
-+		btrfs_scan_one_dir("/dev", 1, verbose);
- 		exit(0);
- 	}
- 	for (i = 1; i < ac; i++) {
-diff --git a/utils.c b/utils.c
-index a87c5a8..1f38a82 100644
---- a/utils.c
-+++ b/utils.c
-@@ -41,6 +41,8 @@
- #include "volumes.h"
- #include "ioctl.h"
+ clean :
+ 	rm -f $(MANPAGES)
  
-+#define MAJOR(x) (((x)>>8)&0xff)
-+
- #ifdef __CHECKER__
- #define BLKGETSIZE64 0
- static inline int ioctl(int fd, int define, u64 *size) { return 0; }
-@@ -663,7 +665,7 @@ void btrfs_register_one_device(char *fname)
- 	close(fd);
- }
- 
--int btrfs_scan_one_dir(char *dirname, int run_ioctl)
-+int btrfs_scan_one_dir(char *dirname, int run_ioctl, int verbose)
- {
- 	DIR *dirp = NULL;
- 	struct dirent *dirent;
-@@ -735,6 +737,17 @@ again:
- 			fprintf(stderr, "failed to read %s\n", fullpath);
- 			continue;
- 		}
-+
-+		if (MAJOR(st.st_rdev) == 2) {
-+			if (verbose)
-+				fprintf(stderr, "Skipping floppy device %s\n",
-+					fullpath);
-+			continue;
-+		}
-+
-+		if (verbose)
-+			fprintf(stderr, "Scanning %s\n", fullpath);
-+
- 		ret = btrfs_scan_one_device(fd, fullpath, &tmp_devices,
- 					    &num_devices,
- 					    BTRFS_SUPER_INFO_OFFSET);
-@@ -762,7 +775,7 @@ fail:
- int btrfs_scan_for_fsid(struct btrfs_fs_devices *fs_devices, u64 total_devs,
- 			int run_ioctls)
- {
--	return btrfs_scan_one_dir("/dev", run_ioctls);
-+	return btrfs_scan_one_dir("/dev", run_ioctls, 0);
- }
- 
- int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
-diff --git a/utils.h b/utils.h
-index 7ff542b..a85ba41 100644
---- a/utils.h
-+++ b/utils.h
-@@ -35,7 +35,7 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
- int btrfs_scan_for_fsid(struct btrfs_fs_devices *fs_devices, u64 total_devs,
- 			int run_ioctls);
- void btrfs_register_one_device(char *fname);
--int btrfs_scan_one_dir(char *dirname, int run_ioctl);
-+int btrfs_scan_one_dir(char *dirname, int run_ioctl, int verbose);
- int check_mounted(char *devicename);
- int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
- 				 int super_offset);
+diff --git a/man/btrfs-image.8.in b/man/btrfs-image.8.in
+new file mode 100644
+index 0000000..722c433
+--- /dev/null
++++ b/man/btrfs-image.8.in
+@@ -0,0 +1,34 @@
++.TH MKFS.BTRFS 8
++.SH NAME
++btrfs-image \- create/restore an image of the filesystem
++.SH SYNOPSIS
++.B btrfs-image
++[options] \fIsource\fP \fItarget\fP
++.SH DESCRIPTION
++.B btrfs-image
++is used to create an image of a btrfs filesystem. All data will be zeroed,
++but metadata and the like is preserved.
++.I source
++is the special file corresponding to the device containing a btrfs filesystem.
++(e.g \fI/dev/sdXX\fP).
++.I target
++is the image file that btrfs-image creates. When used with \fB-r\fP option,
++\fBbtrfs-image\fP restores the image file from source into target.
++.SH OPTIONS
++.TP
++\fB\-r\fP
++restore metadump image.
++.TP
++\fB\-c\fR \fIvalue\fP
++compression level (0 ~ 9).
++.TP
++\fB\-t\fR \fIvalue\fP
++number of threads (1 ~ 32) to be used to process the image dump or restore.
++.SH AVAILABILITY
++.B btrfs-image
++is part of btrfs-progs. Btrfs is currently under heavy development,
++and not suitable for any uses other than benchmarking and review.
++Please refer to the btrfs wiki
++http://btrfs.wiki.kernel.org for further details.
++.SH SEE ALSO
++.BR btrfsck (8), btrfsctl (8), mkfs.btrfs (8)
 -- 
-1.6.2
+1.6.2-rc2.GIT
+

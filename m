@@ -1,271 +1,224 @@
-From: Hisashi Hifumi <hifumi.hisashi@oss.ntt.co.jp>
-Subject: [RFC] [PATCH] Btrfs: improve fsync/osync write performance
-Date: Tue, 31 Mar 2009 14:18:07 +0900
-Message-ID: <6.0.0.20.2.20090331115027.05879e88@172.19.0.2>
+From: Tom van Klinken / ISP Services BV <tom@isp-services.nl>
+Subject: Re: Crash in 2.6.29-rc8
+Date: Tue, 31 Mar 2009 13:26:52 +0200
+Message-ID: <49D1FDFC.3090904@isp-services.nl>
+References: <49C8F103.1090407@isp-services.nl> <1237916586.5633.14.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: multipart/mixed;
+ boundary="------------090504010302010706050201"
 Cc: linux-btrfs@vger.kernel.org
-To: chris.mason@oracle.com
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1237916586.5633.14.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris.
+This is a multi-part message in MIME format.
+--------------090504010302010706050201
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
 
-I noticed performance of fsync() and write() with O_SYNC flag on Btrfs is
-very slow as compared to ext3/4. I used blktrace to try to investigate the 
-cause of this. One of cause is that unplug is done by kblockd even if the I/O is 
-issued through fsync() or write() with O_SYNC flag. kblockd's unplug timeout
-is 3msec, so unplug via blockd can decrease I/O response. To increase 
-fsync/osync write performance, speeding up unplug should be done here.
+Hi Chris,
 
-Btrfs's write I/O is issued via kernel thread, not via user application context
-that calls fsync(). While waiting for page writeback, wait_on_page_writeback() 
-can not unplug I/O sometimes on Btrfs because submit_bio is not called from 
-user application context so when submit_bio is called from kernel thread, 
-wait_on_page_writeback() sleeps on io_schedule(). 
+Chris Mason wrote:
+> On Tue, 2009-03-24 at 15:41 +0100, Tom van Klinken / ISP Services BV
+> wrote:
+>> <CUT>
+> 
+> This is a metadata enospc oops.  You actually had about 400MB free but
+> it was pinned down and waiting for a commit to free it all.
+>
+Today I had a similar issue. See attached kernel trace.
 
-I introduced btrfs_wait_on_page_writeback() on following patch, this is replacement 
-of wait_on_page_writeback() for Btrfs. This does unplug every 1 tick while
-waiting for page writeback.
+I'm quite sure the filesystem is not full (I have around 15GB of free 
+space).
 
-I did a performance test using the sysbench.
+Is their anything I can test/do?
 
-# sysbench --num-threads=4 --max-requests=10000  --test=fileio --file-num=1 
---file-block-size=4K --file-total-size=128M --file-test-mode=rndwr 
---file-fsync-freq=5  run
+-- 
+Met vriendelijke groet,
+Tom van Klinken
+ISP Services BV
+http://www.isp-services.nl/contact
 
-The result was:
--2.6.29
+--------------090504010302010706050201
+Content-Type: text/plain;
+ name="btrfc-trace2.txt"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline;
+ filename="btrfc-trace2.txt"
 
-Test execution summary:
-    total time:                          628.1047s
-    total number of events:              10000
-    total time taken by event execution: 413.0834
-    per-request statistics:
-         min:                            0.0000s
-         avg:                            0.0413s
-         max:                            1.9075s
-         approx.  95 percentile:         0.3712s
+Mar 31 00:20:07 db03b btrfs searching for 4096 bytes, num_bytes 4096, loop 2, allowed_alloc 0
+Mar 31 00:20:07 db03b btrfs allocation failed flags 36, wanted 4096
+Mar 31 00:20:07 db03b space_info has 204537856 free, is full
+Mar 31 00:20:07 db03b space_info total=1073741824, pinned=271077376, delalloc=0, may_use=0, used=598126592
+Mar 31 00:20:07 db03b block group 29360128 has 1073741824 bytes, 598126592 used 271077376 pinned 0 reserved
+Mar 31 00:20:07 db03b 0 blocks of free space at or bigger than bytes is
+Mar 31 00:20:07 db03b ------------[ cut here ]------------
+Mar 31 00:20:07 db03b kernel BUG at fs/btrfs/extent-tree.c:2880!
+Mar 31 00:20:07 db03b invalid opcode: 0000 [#1] SMP 
+Mar 31 00:20:07 db03b last sysfs file: /sys/devices/pci0000:00/0000:00:1f.2/host0/target0:0:0/0:0:0:0/model
+Mar 31 00:20:07 db03b CPU 5 
+Mar 31 00:20:07 db03b Modules linked in:
+Mar 31 00:20:07 db03b Pid: 16746, comm: mysqld Not tainted 2.6.29-22648-g1a81af4 #1 X7DVL-3
+Mar 31 00:20:07 db03b RIP: 0010:[<ffffffff803bd1b4>]  [<ffffffff803bd1b4>] __btrfs_reserve_extent+0x26c/0x281
+Mar 31 00:20:07 db03b RSP: 0018:ffff88015d0438e8  EFLAGS: 00010246
+Mar 31 00:20:07 db03b RAX: ffff88032b1df4b8 RBX: ffff88032e642aac RCX: ffffffff806e810d
+Mar 31 00:20:07 db03b RDX: ffff88032b1df498 RSI: 0000000000000246 RDI: 0000000000000246
+Mar 31 00:20:07 db03b RBP: ffff88032b1df3e0 R08: 0000000000000000 R09: 0000000000000000
+Mar 31 00:20:07 db03b R10: 0000000000000000 R11: 00000000ffffffff R12: ffff88032b1df440
+Mar 31 00:20:07 db03b R13: 0000000000001000 R14: ffff88032b1df4b0 R15: ffff8802e5c22000
+Mar 31 00:20:07 db03b FS:  0000000040998950(0063) GS:ffff88032e4f3740(0000) knlGS:0000000000000000
+Mar 31 00:20:07 db03b CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+Mar 31 00:20:07 db03b CR2: 00007f2c169b700f CR3: 00000001d2bef000 CR4: 00000000000006e0
+Mar 31 00:20:07 db03b DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+Mar 31 00:20:07 db03b DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+Mar 31 00:20:07 db03b Process mysqld (pid: 16746, threadinfo ffff88015d042000, task ffff880230d3d9d0)
+Mar 31 00:20:07 db03b Stack:
+Mar 31 00:20:07 db03b 0000000000000000 ffff88015d0439e8 0000000000000000 0000000000000000
+Mar 31 00:20:07 db03b 0000000000000024 0000000000000000 0000000000000000 0000000000001000
+Mar 31 00:20:07 db03b ffff88015d0439e8 0000000000000002 ffff880289417420 ffff88032ccf8000
+Mar 31 00:20:07 db03b Call Trace:
+Mar 31 00:20:07 db03b [<ffffffff803bd215>] ? btrfs_alloc_extent+0x4c/0xc0
+Mar 31 00:20:07 db03b [<ffffffff803bd2f2>] ? btrfs_alloc_free_block+0x69/0x98
+Mar 31 00:20:07 db03b [<ffffffff803b3e88>] ? __btrfs_cow_block+0x1e2/0xaa7
+Mar 31 00:20:07 db03b [<ffffffff803b4e7b>] ? btrfs_cow_block+0x270/0x27f
+Mar 31 00:20:07 db03b [<ffffffff803b804a>] ? btrfs_search_slot+0x35f/0xa2f
+Mar 31 00:20:07 db03b [<ffffffff803beaa8>] ? add_extent_ref+0x86/0x220
+Mar 31 00:20:07 db03b [<ffffffff806e8000>] ? _write_trylock+0x2/0x1f
+Mar 31 00:20:07 db03b [<ffffffff803bf6eb>] ? run_one_delayed_ref+0xe2/0x17c
+Mar 31 00:20:07 db03b [<ffffffff803bb8d9>] ? select_delayed_ref+0x14/0x64
+Mar 31 00:20:07 db03b [<ffffffff803c010d>] ? run_clustered_refs+0xce/0x14a
+Mar 31 00:20:07 db03b [<ffffffff803c023c>] ? btrfs_run_delayed_refs+0xb3/0x1ac
+Mar 31 00:20:07 db03b [<ffffffff803ccbf2>] ? __btrfs_end_transaction+0x5c/0x11a
+Mar 31 00:20:07 db03b [<ffffffff802abdc1>] ? __mark_inode_dirty+0x29/0x180
+Mar 31 00:20:07 db03b [<ffffffff802a46b2>] ? file_update_time+0xba/0xff
+Mar 31 00:20:07 db03b [<ffffffff803d6c3d>] ? btrfs_file_write+0x1c1/0x688
+Mar 31 00:20:07 db03b [<ffffffff8024894e>] ? autoremove_wake_function+0x0/0x2e
+Mar 31 00:20:07 db03b [<ffffffff80293c51>] ? vfs_write+0xad/0x136
+Mar 31 00:20:07 db03b [<ffffffff80294257>] ? sys_pwrite64+0x50/0x70
+Mar 31 00:20:07 db03b [<ffffffff8020b3ea>] ? system_call_fastpath+0x16/0x1b
+Mar 31 00:20:07 db03b Code: 00 48 81 ed b8 00 00 00 48 8b 85 b8 00 00 00 48 8d 95 b8 00 00 00 0f 18 08 49 8d 44 24 58 48 39 c2 75 95 4c 89 f7 e8 42 e1 e8 ff <0f> 0b eb fe 48 83 c4 38 31 c0 5b 5d 41 5c 41 5d 41 5e 41 5f c3 
+Mar 31 00:20:07 db03b RIP  [<ffffffff803bd1b4>] __btrfs_reserve_extent+0x26c/0x281
+Mar 31 00:20:07 db03b RSP <ffff88015d0438e8>
+Mar 31 00:20:07 db03b ---[ end trace 6da0c5d3bc31360b ]---
+Mar 31 00:20:12 db03b btrfs searching for 4096 bytes, num_bytes 4096, loop 2, allowed_alloc 1
+Mar 31 00:20:12 db03b btrfs allocation failed flags 36, wanted 4096
+Mar 31 00:20:12 db03b space_info has 204537856 free, is full
+Mar 31 00:20:12 db03b space_info total=1073741824, pinned=271077376, delalloc=0, may_use=0, used=598126592
+Mar 31 00:20:12 db03b block group 29360128 has 1073741824 bytes, 598126592 used 271077376 pinned 0 reserved
+Mar 31 00:20:12 db03b 0 blocks of free space at or bigger than bytes is
+Mar 31 00:20:12 db03b ------------[ cut here ]------------
+Mar 31 00:20:12 db03b kernel BUG at fs/btrfs/extent-tree.c:2880!
+Mar 31 00:20:12 db03b invalid opcode: 0000 [#2] SMP 
+Mar 31 00:20:12 db03b last sysfs file: /sys/devices/pci0000:00/0000:00:1f.2/host0/target0:0:0/0:0:0:0/model
+Mar 31 00:20:12 db03b CPU 6 
+Mar 31 00:20:12 db03b Modules linked in:
+Mar 31 00:20:12 db03b Pid: 7621, comm: btrfs-endio-wri Tainted: G      D    2.6.29-22648-g1a81af4 #1 X7DVL-3
+Mar 31 00:20:12 db03b RIP: 0010:[<ffffffff803bd1b4>]  [<ffffffff803bd1b4>] __btrfs_reserve_extent+0x26c/0x281
+Mar 31 00:20:12 db03b RSP: 0018:ffff8802e5d1b940  EFLAGS: 00010246
+Mar 31 00:20:12 db03b RAX: ffff88032b1df4b8 RBX: ffff88032e642aac RCX: ffffffff806e810d
+Mar 31 00:20:12 db03b RDX: ffff88032b1df498 RSI: 0000000000000246 RDI: 0000000000000246
+Mar 31 00:20:12 db03b RBP: ffff88032b1df3e0 R08: 0000000000000000 R09: ffff8800280dc040
+Mar 31 00:20:12 db03b R10: 0000000000000000 R11: 000001ff80a8b84e R12: ffff88032b1df440
+Mar 31 00:20:12 db03b R13: 0000000000001000 R14: ffff88032b1df4b0 R15: ffff8802e5c22000
+Mar 31 00:20:12 db03b FS:  0000000000000000(0000) GS:ffff88032e4f30c0(0000) knlGS:0000000000000000
+Mar 31 00:20:12 db03b CS:  0010 DS: 0018 ES: 0018 CR0: 000000008005003b
+Mar 31 00:20:12 db03b CR2: 00007f6e1f3a6000 CR3: 00000001d2bef000 CR4: 00000000000006e0
+Mar 31 00:20:12 db03b DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+Mar 31 00:20:12 db03b DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+Mar 31 00:20:12 db03b Process btrfs-endio-wri (pid: 7621, threadinfo ffff8802e5d1a000, task ffff88031a596090)
+Mar 31 00:20:12 db03b Stack:
+Mar 31 00:20:12 db03b 0000000040000000 ffff8802e5d1ba40 0000000000000000 0000000000000000
+Mar 31 00:20:12 db03b 0000000000000024 0000000040000000 0000000000000000 0000000000001000
+Mar 31 00:20:12 db03b ffff8802e5d1ba40 0000000000000005 ffff880289417520 ffff88032b19d800
+Mar 31 00:20:12 db03b Call Trace:
+Mar 31 00:20:12 db03b [<ffffffff803bd215>] ? btrfs_alloc_extent+0x4c/0xc0
+Mar 31 00:20:12 db03b [<ffffffff803bd2f2>] ? btrfs_alloc_free_block+0x69/0x98
+Mar 31 00:20:12 db03b [<ffffffff803b3e88>] ? __btrfs_cow_block+0x1e2/0xaa7
+Mar 31 00:20:12 db03b [<ffffffff803b4e7b>] ? btrfs_cow_block+0x270/0x27f
+Mar 31 00:20:12 db03b [<ffffffff803b804a>] ? btrfs_search_slot+0x35f/0xa2f
+Mar 31 00:20:12 db03b [<ffffffff803c64d2>] ? btrfs_lookup_file_extent+0x35/0x3a
+Mar 31 00:20:12 db03b [<ffffffff803d7b6f>] ? btrfs_drop_extents+0xb4/0xb51
+Mar 31 00:20:12 db03b [<ffffffff803af794>] ? leaf_space_used+0xde/0x111
+Mar 31 00:20:12 db03b [<ffffffff803da558>] ? btrfs_key_generation+0xb8/0xc6
+Mar 31 00:20:12 db03b [<ffffffff8022d897>] ? __wake_up+0x30/0x44
+Mar 31 00:20:12 db03b [<ffffffff803ce9a4>] ? insert_reserved_file_extent+0x9d/0x24d
+Mar 31 00:20:12 db03b [<ffffffff803e2e75>] ? set_extent_bit+0x24f/0x28f
+Mar 31 00:20:12 db03b [<ffffffff803e344c>] ? lock_extent+0x38/0x84
+Mar 31 00:20:12 db03b [<ffffffff803d2834>] ? btrfs_finish_ordered_io+0x179/0x230
+Mar 31 00:20:12 db03b [<ffffffff8026b832>] ? test_clear_page_writeback+0xda/0xe6
+Mar 31 00:20:12 db03b [<ffffffff803e4eed>] ? end_bio_extent_writepage+0x9b/0x186
+Mar 31 00:20:12 db03b [<ffffffff803ec4f0>] ? worker_loop+0x62/0x1de
+Mar 31 00:20:12 db03b [<ffffffff803ec48e>] ? worker_loop+0x0/0x1de
+Mar 31 00:20:12 db03b [<ffffffff803ec48e>] ? worker_loop+0x0/0x1de
+Mar 31 00:20:12 db03b [<ffffffff802487fd>] ? kthread+0x47/0x76
+Mar 31 00:20:12 db03b [<ffffffff8020c5da>] ? child_rip+0xa/0x20
+Mar 31 00:20:12 db03b [<ffffffff802487b6>] ? kthread+0x0/0x76
+Mar 31 00:20:12 db03b [<ffffffff8020c5d0>] ? child_rip+0x0/0x20
+Mar 31 00:20:12 db03b Code: 00 48 81 ed b8 00 00 00 48 8b 85 b8 00 00 00 48 8d 95 b8 00 00 00 0f 18 08 49 8d 44 24 58 48 39 c2 75 95 4c 89 f7 e8 42 e1 e8 ff <0f> 0b eb fe 48 83 c4 38 31 c0 5b 5d 41 5c 41 5d 41 5e 41 5f c3 
+Mar 31 00:20:12 db03b RIP  [<ffffffff803bd1b4>] __btrfs_reserve_extent+0x26c/0x281
+Mar 31 00:20:12 db03b RSP <ffff8802e5d1b940>
+Mar 31 00:20:12 db03b ---[ end trace 6da0c5d3bc31360c ]---
+Mar 31 00:20:12 db03b btrfs searching for 4096 bytes, num_bytes 4096, loop 2, allowed_alloc 1
+Mar 31 00:20:12 db03b btrfs allocation failed flags 36, wanted 4096
+Mar 31 00:20:12 db03b space_info has 204537856 free, is full
+Mar 31 00:20:12 db03b space_info total=1073741824, pinned=271077376, delalloc=0, may_use=0, used=598126592
+Mar 31 00:20:12 db03b block group 29360128 has 1073741824 bytes, 598126592 used 271077376 pinned 0 reserved
+Mar 31 00:20:12 db03b 0 blocks of free space at or bigger than bytes is
+Mar 31 00:20:12 db03b ------------[ cut here ]------------
+Mar 31 00:20:12 db03b kernel BUG at fs/btrfs/extent-tree.c:2880!
+Mar 31 00:20:12 db03b invalid opcode: 0000 [#3] SMP 
+Mar 31 00:20:12 db03b last sysfs file: /sys/devices/pci0000:00/0000:00:1f.2/host0/target0:0:0/0:0:0:0/model
+Mar 31 00:20:12 db03b CPU 6 
+Mar 31 00:20:12 db03b Modules linked in:
+Mar 31 00:20:12 db03b Pid: 7623, comm: btrfs-endio-wri Tainted: G      D    2.6.29-22648-g1a81af4 #1 X7DVL-3
+Mar 31 00:20:12 db03b RIP: 0010:[<ffffffff803bd1b4>]  [<ffffffff803bd1b4>] __btrfs_reserve_extent+0x26c/0x281
+Mar 31 00:20:12 db03b RSP: 0018:ffff880317d15940  EFLAGS: 00010246
+Mar 31 00:20:12 db03b RAX: ffff88032b1df4b8 RBX: ffff88032e642aac RCX: ffffffff806e810d
+Mar 31 00:20:12 db03b RDX: ffff88032b1df498 RSI: 0000000000000246 RDI: 0000000000000246
+Mar 31 00:20:12 db03b RBP: ffff88032b1df3e0 R08: 0000000000000000 R09: ffff8800280dc040
+Mar 31 00:20:12 db03b R10: 0000000000000000 R11: 000001ff80a8c5da R12: ffff88032b1df440
+Mar 31 00:20:12 db03b R13: 0000000000001000 R14: ffff88032b1df4b0 R15: ffff8802e5c22000
+Mar 31 00:20:12 db03b FS:  0000000000000000(0000) GS:ffff88032e4f30c0(0000) knlGS:0000000000000000
+Mar 31 00:20:12 db03b CS:  0010 DS: 0018 ES: 0018 CR0: 000000008005003b
+Mar 31 00:20:12 db03b CR2: 00007f6e1f3a6000 CR3: 00000001d2bef000 CR4: 00000000000006e0
+Mar 31 00:20:12 db03b DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+Mar 31 00:20:12 db03b DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+Mar 31 00:20:12 db03b Process btrfs-endio-wri (pid: 7623, threadinfo ffff880317d14000, task ffff88031a597690)
+Mar 31 00:20:12 db03b Stack:
+Mar 31 00:20:12 db03b 0000000000000000 ffff880317d15a40 0000000000000000 0000000000000000
+Mar 31 00:20:12 db03b 0000000000000024 0000000000000000 0000000000000000 0000000000001000
+Mar 31 00:20:12 db03b ffff880317d15a40 0000000000000005 ffff880289417560 ffff88032b19d800
+Mar 31 00:20:12 db03b Call Trace:
+Mar 31 00:20:12 db03b [<ffffffff803bd215>] ? btrfs_alloc_extent+0x4c/0xc0
+Mar 31 00:20:12 db03b [<ffffffff803bd2f2>] ? btrfs_alloc_free_block+0x69/0x98
+Mar 31 00:20:12 db03b [<ffffffff803b3e88>] ? __btrfs_cow_block+0x1e2/0xaa7
+Mar 31 00:20:12 db03b [<ffffffff803b4e7b>] ? btrfs_cow_block+0x270/0x27f
+Mar 31 00:20:12 db03b [<ffffffff803b804a>] ? btrfs_search_slot+0x35f/0xa2f
+Mar 31 00:20:12 db03b [<ffffffff803c64d2>] ? btrfs_lookup_file_extent+0x35/0x3a
+Mar 31 00:20:12 db03b [<ffffffff803d7b6f>] ? btrfs_drop_extents+0xb4/0xb51
+Mar 31 00:20:12 db03b [<ffffffff803bec2d>] ? add_extent_ref+0x20b/0x220
+Mar 31 00:20:12 db03b [<ffffffff803af582>] ? generic_bin_search+0x18f/0x1a3
+Mar 31 00:20:12 db03b [<ffffffff803da558>] ? btrfs_key_generation+0xb8/0xc6
+Mar 31 00:20:12 db03b [<ffffffff803ce9a4>] ? insert_reserved_file_extent+0x9d/0x24d
+Mar 31 00:20:12 db03b [<ffffffff803e2e75>] ? set_extent_bit+0x24f/0x28f
+Mar 31 00:20:12 db03b [<ffffffff803e344c>] ? lock_extent+0x38/0x84
+Mar 31 00:20:12 db03b [<ffffffff803d2834>] ? btrfs_finish_ordered_io+0x179/0x230
+Mar 31 00:20:12 db03b [<ffffffff8026b832>] ? test_clear_page_writeback+0xda/0xe6
+Mar 31 00:20:12 db03b [<ffffffff803e4eed>] ? end_bio_extent_writepage+0x9b/0x186
+Mar 31 00:20:12 db03b [<ffffffff803ec4f0>] ? worker_loop+0x62/0x1de
+Mar 31 00:20:12 db03b [<ffffffff803ec48e>] ? worker_loop+0x0/0x1de
+Mar 31 00:20:12 db03b [<ffffffff803ec48e>] ? worker_loop+0x0/0x1de
+Mar 31 00:20:12 db03b [<ffffffff802487fd>] ? kthread+0x47/0x76
+Mar 31 00:20:12 db03b [<ffffffff8020c5da>] ? child_rip+0xa/0x20
+Mar 31 00:20:12 db03b [<ffffffff802487b6>] ? kthread+0x0/0x76
+Mar 31 00:20:12 db03b [<ffffffff8020c5d0>] ? child_rip+0x0/0x20
+Mar 31 00:20:12 db03b Code: 00 48 81 ed b8 00 00 00 48 8b 85 b8 00 00 00 48 8d 95 b8 00 00 00 0f 18 08 49 8d 44 24 58 48 39 c2 75 95 4c 89 f7 e8 42 e1 e8 ff <0f> 0b eb fe 48 83 c4 38 31 c0 5b 5d 41 5c 41 5d 41 5e 41 5f c3 
+Mar 31 00:20:12 db03b RIP  [<ffffffff803bd1b4>] __btrfs_reserve_extent+0x26c/0x281
+Mar 31 00:20:12 db03b RSP <ffff880317d15940>
+Mar 31 00:20:12 db03b ---[ end trace 6da0c5d3bc31360d ]---
 
-Threads fairness:
-    events (avg/stddev):           2500.0000/29.21
-    execution time (avg/stddev):   103.2708/4.04
 
+--------------090504010302010706050201--
 
--2.6.29-patched
-
-Test execution summary:
-    total time:                          579.8049s
-    total number of events:              10004
-    total time taken by event execution: 355.3098
-    per-request statistics:
-         min:                            0.0000s
-         avg:                            0.0355s
-         max:                            1.7670s
-         approx.  95 percentile:         0.3154s
-
-Threads fairness:
-    events (avg/stddev):           2501.0000/8.03
-    execution time (avg/stddev):   88.8274/1.94
-
-
-This patch has some effect for performance improvement. 
-
-I think there are other reasons that should be fixed why fsync() or 
-write() with O_SYNC flag is slow on Btrfs.
-
-Thanks.
-
-Signed-off-by: Hisashi Hifumi <hifumi.hisashi@oss.ntt.co.jp> 
-
-diff -Nrup linux-2.6.29.org/fs/btrfs/ctree.h linux-2.6.29.btrfs/fs/btrfs/ctree.h
---- linux-2.6.29.org/fs/btrfs/ctree.h	2009-03-24 08:12:14.000000000 +0900
-+++ linux-2.6.29.btrfs/fs/btrfs/ctree.h	2009-03-24 16:48:36.000000000 +0900
-@@ -1703,6 +1703,14 @@ static inline struct dentry *fdentry(str
- 	return file->f_path.dentry;
- }
- 
-+extern void btrfs_wait_on_page_bit(struct page *page);
-+
-+static inline void btrfs_wait_on_page_writeback(struct page *page)
-+{
-+	if (PageWriteback(page))
-+		btrfs_wait_on_page_bit(page);
-+}
-+
- /* extent-tree.c */
- int btrfs_lookup_extent(struct btrfs_root *root, u64 start, u64 len);
- int btrfs_lookup_extent_ref(struct btrfs_trans_handle *trans,
-diff -Nrup linux-2.6.29.org/fs/btrfs/extent-tree.c linux-2.6.29.btrfs/fs/btrfs/extent-tree.c
---- linux-2.6.29.org/fs/btrfs/extent-tree.c	2009-03-24 08:12:14.000000000 +0900
-+++ linux-2.6.29.btrfs/fs/btrfs/extent-tree.c	2009-03-24 15:34:12.000000000 +0900
-@@ -4529,7 +4529,7 @@ again:
- 				goto out_unlock;
- 			}
- 		}
--		wait_on_page_writeback(page);
-+		btrfs_wait_on_page_writeback(page);
- 
- 		page_start = (u64)page->index << PAGE_CACHE_SHIFT;
- 		page_end = page_start + PAGE_CACHE_SIZE - 1;
-diff -Nrup linux-2.6.29.org/fs/btrfs/extent_io.c linux-2.6.29.btrfs/fs/btrfs/extent_io.c
---- linux-2.6.29.org/fs/btrfs/extent_io.c	2009-03-24 08:12:14.000000000 +0900
-+++ linux-2.6.29.btrfs/fs/btrfs/extent_io.c	2009-03-24 15:34:30.000000000 +0900
-@@ -2423,7 +2423,7 @@ retry:
- 			if (wbc->sync_mode != WB_SYNC_NONE) {
- 				if (PageWriteback(page))
- 					flush_fn(data);
--				wait_on_page_writeback(page);
-+				btrfs_wait_on_page_writeback(page);
- 			}
- 
- 			if (PageWriteback(page) ||
-diff -Nrup linux-2.6.29.org/fs/btrfs/file.c linux-2.6.29.btrfs/fs/btrfs/file.c
---- linux-2.6.29.org/fs/btrfs/file.c	2009-03-24 08:12:14.000000000 +0900
-+++ linux-2.6.29.btrfs/fs/btrfs/file.c	2009-03-24 15:34:49.000000000 +0900
-@@ -967,7 +967,7 @@ again:
- 			err = -ENOMEM;
- 			BUG_ON(1);
- 		}
--		wait_on_page_writeback(pages[i]);
-+		btrfs_wait_on_page_writeback(pages[i]);
- 	}
- 	if (start_pos < inode->i_size) {
- 		struct btrfs_ordered_extent *ordered;
-diff -Nrup linux-2.6.29.org/fs/btrfs/inode.c linux-2.6.29.btrfs/fs/btrfs/inode.c
---- linux-2.6.29.org/fs/btrfs/inode.c	2009-03-24 08:12:14.000000000 +0900
-+++ linux-2.6.29.btrfs/fs/btrfs/inode.c	2009-03-24 15:35:23.000000000 +0900
-@@ -2733,7 +2733,7 @@ again:
- 			goto out_unlock;
- 		}
- 	}
--	wait_on_page_writeback(page);
-+	btrfs_wait_on_page_writeback(page);
- 
- 	lock_extent(io_tree, page_start, page_end, GFP_NOFS);
- 	set_page_extent_mapped(page);
-@@ -4240,7 +4240,7 @@ static void btrfs_invalidatepage(struct 
- 	u64 page_start = page_offset(page);
- 	u64 page_end = page_start + PAGE_CACHE_SIZE - 1;
- 
--	wait_on_page_writeback(page);
-+	btrfs_wait_on_page_writeback(page);
- 	tree = &BTRFS_I(page->mapping->host)->io_tree;
- 	if (offset) {
- 		btrfs_releasepage(page, GFP_NOFS);
-@@ -4322,7 +4322,7 @@ again:
- 		/* page got truncated out from underneath us */
- 		goto out_unlock;
- 	}
--	wait_on_page_writeback(page);
-+	btrfs_wait_on_page_writeback(page);
- 
- 	lock_extent(io_tree, page_start, page_end, GFP_NOFS);
- 	set_page_extent_mapped(page);
-diff -Nrup linux-2.6.29.org/fs/btrfs/ioctl.c linux-2.6.29.btrfs/fs/btrfs/ioctl.c
---- linux-2.6.29.org/fs/btrfs/ioctl.c	2009-03-24 08:12:14.000000000 +0900
-+++ linux-2.6.29.btrfs/fs/btrfs/ioctl.c	2009-03-24 15:35:46.000000000 +0900
-@@ -400,7 +400,7 @@ again:
- 			}
- 		}
- 
--		wait_on_page_writeback(page);
-+		btrfs_wait_on_page_writeback(page);
- 
- 		page_start = (u64)page->index << PAGE_CACHE_SHIFT;
- 		page_end = page_start + PAGE_CACHE_SIZE - 1;
-diff -Nrup linux-2.6.29.org/fs/btrfs/ordered-data.c linux-2.6.29.btrfs/fs/btrfs/ordered-data.c
---- linux-2.6.29.org/fs/btrfs/ordered-data.c	2009-03-24 08:12:14.000000000 +0900
-+++ linux-2.6.29.btrfs/fs/btrfs/ordered-data.c	2009-03-25 11:04:32.000000000 +0900
-@@ -21,6 +21,7 @@
- #include <linux/blkdev.h>
- #include <linux/writeback.h>
- #include <linux/pagevec.h>
-+#include <linux/hash.h>
- #include "ctree.h"
- #include "transaction.h"
- #include "btrfs_inode.h"
-@@ -673,6 +674,46 @@ int btrfs_fdatawrite_range(struct addres
- 	return btrfs_writepages(mapping, &wbc);
- }
- 
-+static void process_timeout(unsigned long __data)
-+{
-+	wake_up_process((struct task_struct *)__data);
-+}
-+
-+static int btrfs_sync_page(void *word)
-+{
-+	struct address_space *mapping;
-+	struct page *page;
-+	struct timer_list timer;
-+
-+	page = container_of((unsigned long *)word, struct page, flags);
-+
-+	smp_mb();
-+	mapping = page->mapping;
-+	if (mapping && mapping->a_ops && mapping->a_ops->sync_page)
-+		mapping->a_ops->sync_page(page);
-+	setup_timer(&timer, process_timeout, (unsigned long)current);
-+	__mod_timer(&timer, jiffies + 1);
-+	io_schedule();
-+	del_timer_sync(&timer);
-+	return 0;
-+}
-+
-+static wait_queue_head_t *page_waitqueue(struct page *page)
-+{
-+	const struct zone *zone = page_zone(page);
-+
-+	return &zone->wait_table[hash_ptr(page, zone->wait_table_bits)];
-+}
-+
-+void btrfs_wait_on_page_bit(struct page *page)
-+{
-+	DEFINE_WAIT_BIT(wait, &page->flags, PG_writeback);
-+
-+	if (test_bit(PG_writeback, &page->flags))
-+		__wait_on_bit(page_waitqueue(page), &wait, btrfs_sync_page,
-+							TASK_UNINTERRUPTIBLE);
-+}
-+
- /**
-  * taken from mm/filemap.c because it isn't exported
-  *
-@@ -710,7 +751,7 @@ int btrfs_wait_on_page_writeback_range(s
- 			if (page->index > end)
- 				continue;
- 
--			wait_on_page_writeback(page);
-+			btrfs_wait_on_page_writeback(page);
- 			if (PageError(page))
- 				ret = -EIO;
- 		}
-diff -Nrup linux-2.6.29.org/fs/btrfs/transaction.c linux-2.6.29.btrfs/fs/btrfs/transaction.c
---- linux-2.6.29.org/fs/btrfs/transaction.c	2009-03-24 08:12:14.000000000 +0900
-+++ linux-2.6.29.btrfs/fs/btrfs/transaction.c	2009-03-24 15:37:19.000000000 +0900
-@@ -352,7 +352,7 @@ int btrfs_write_and_wait_marked_extents(
- 
- 			if (PageWriteback(page)) {
- 				if (PageDirty(page))
--					wait_on_page_writeback(page);
-+					btrfs_wait_on_page_writeback(page);
- 				else {
- 					unlock_page(page);
- 					page_cache_release(page);
-@@ -380,12 +380,12 @@ int btrfs_write_and_wait_marked_extents(
- 				continue;
- 			if (PageDirty(page)) {
- 				btree_lock_page_hook(page);
--				wait_on_page_writeback(page);
-+				btrfs_wait_on_page_writeback(page);
- 				err = write_one_page(page, 0);
- 				if (err)
- 					werr = err;
- 			}
--			wait_on_page_writeback(page);
-+			btrfs_wait_on_page_writeback(page);
- 			page_cache_release(page);
- 			cond_resched();
- 		}
 

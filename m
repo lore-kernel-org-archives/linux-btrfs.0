@@ -1,77 +1,48 @@
-From: Jens Axboe <jens.axboe@oracle.com>
-Subject: Re: [RFC] [PATCH] Btrfs: improve fsync/osync write performance
-Date: Wed, 1 Apr 2009 19:01:49 +0200
-Message-ID: <20090401170149.GL5178@kernel.dk>
-References: <6.0.0.20.2.20090331115027.05879e88@172.19.0.2> <1238599038.18549.39.camel@think.oraclecorp.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Crash in 2.6.29-rc8
+Date: Wed, 01 Apr 2009 13:58:31 -0400
+Message-ID: <1238608711.18549.58.camel@think.oraclecorp.com>
+References: <49C8F103.1090407@isp-services.nl>
+	 <1237916586.5633.14.camel@think.oraclecorp.com>
+	 <49D1FDFC.3090904@isp-services.nl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Hisashi Hifumi <hifumi.hisashi@oss.ntt.co.jp>,
-	linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain
+Cc: linux-btrfs@vger.kernel.org
+To: Tom van Klinken / ISP Services BV <tom@isp-services.nl>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1238599038.18549.39.camel@think.oraclecorp.com>
+In-Reply-To: <49D1FDFC.3090904@isp-services.nl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 01 2009, Chris Mason wrote:
-> On Tue, 2009-03-31 at 14:18 +0900, Hisashi Hifumi wrote:
-> > Hi Chris.
+On Tue, 2009-03-31 at 13:26 +0200, Tom van Klinken / ISP Services BV
+wrote:
+> Hi Chris,
+> 
+> Chris Mason wrote:
+> > On Tue, 2009-03-24 at 15:41 +0100, Tom van Klinken / ISP Services BV
+> > wrote:
+> >> <CUT>
 > > 
-> > I noticed performance of fsync() and write() with O_SYNC flag on Btrfs is
-> > very slow as compared to ext3/4. I used blktrace to try to investigate the 
-> > cause of this. One of cause is that unplug is done by kblockd even if the I/O is 
-> > issued through fsync() or write() with O_SYNC flag. kblockd's unplug timeout
-> > is 3msec, so unplug via blockd can decrease I/O response. To increase 
-> > fsync/osync write performance, speeding up unplug should be done here.
-> > 
+> > This is a metadata enospc oops.  You actually had about 400MB free but
+> > it was pinned down and waiting for a commit to free it all.
+> >
+> Today I had a similar issue. See attached kernel trace.
 > 
-> I realized today that all of the async thread handling btrfs does for
-> writes gives us plenty of time to queue up IO for the block device.  If
-> that's true, we can just unplug the block device in async helper thread
-> and get pretty good coverage for the problem you're describing.
+> I'm quite sure the filesystem is not full (I have around 15GB of free 
+> space).
 > 
-> Could you please try the patch below and see if it performs well?  I did
-> some O_DIRECT testing on a 5 drive array, and tput jumped from 386MB/s
-> to 450MB/s for large writes.
+> Is their anything I can test/do?
 > 
-> Thanks again for digging through this problem.
-> 
-> -chris
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index dd06e18..bf377ab 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -146,7 +146,7 @@ static noinline int run_scheduled_bios(struct btrfs_device *device)
->  	unsigned long num_run = 0;
->  	unsigned long limit;
->  
-> -	bdi = device->bdev->bd_inode->i_mapping->backing_dev_info;
-> +	bdi = blk_get_backing_dev_info(device->bdev);
->  	fs_info = device->dev_root->fs_info;
->  	limit = btrfs_async_submit_limit(fs_info);
->  	limit = limit * 2 / 3;
-> @@ -231,6 +231,19 @@ loop_lock:
->  	if (device->pending_bios)
->  		goto loop_lock;
->  	spin_unlock(&device->io_lock);
-> +
-> +	/*
-> +	 * IO has already been through a long path to get here.  Checksumming,
-> +	 * async helper threads, perhaps compression.  We've done a pretty
-> +	 * good job of collecting a batch of IO and should just unplug
-> +	 * the device right away.
-> +	 *
-> +	 * This will help anyone who is waiting on the IO, they might have
-> +	 * already unplugged, but managed to do so before the bio they
-> +	 * cared about found its way down here.
-> +	 */
-> +	if (bdi->unplug_io_fn)
-> +		bdi->unplug_io_fn(bdi, NULL);
+> plain text document attachment (btrfc-trace2.txt)
+> Mar 31 00:20:07 db03b btrfs searching for 4096 bytes, num_bytes 4096, loop 2, allowed_alloc 0
+> Mar 31 00:20:07 db03b btrfs allocation failed flags 36, wanted 4096
+> Mar 31 00:20:07 db03b space_info has 204537856 free, is full
 
-blk_run_backing_dev(bdi, NULL);
+Well, the problem is that you've filled up the metadata areas of your
+FS.  So, even though the FS reads 15GB free, the space available for
+metadata is full.
 
-:-)
+I'm working on some patches to help.
 
--- 
-Jens Axboe
+-chris
+
 

@@ -1,27 +1,72 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Btrfs Conf Call
-Date: Wed, 01 Apr 2009 09:14:01 -0400
-Message-ID: <1238591641.18549.13.camel@think.oraclecorp.com>
+Subject: Re: [RFC] [PATCH] Btrfs: improve fsync/osync write performance
+Date: Wed, 01 Apr 2009 11:17:18 -0400
+Message-ID: <1238599038.18549.39.camel@think.oraclecorp.com>
+References: <6.0.0.20.2.20090331115027.05879e88@172.19.0.2>
 Mime-Version: 1.0
 Content-Type: text/plain
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: linux-btrfs@vger.kernel.org
+To: Hisashi Hifumi <hifumi.hisashi@oss.ntt.co.jp>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <6.0.0.20.2.20090331115027.05879e88@172.19.0.2>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello everyone,
+On Tue, 2009-03-31 at 14:18 +0900, Hisashi Hifumi wrote:
+> Hi Chris.
+> 
+> I noticed performance of fsync() and write() with O_SYNC flag on Btrfs is
+> very slow as compared to ext3/4. I used blktrace to try to investigate the 
+> cause of this. One of cause is that unplug is done by kblockd even if the I/O is 
+> issued through fsync() or write() with O_SYNC flag. kblockd's unplug timeout
+> is 3msec, so unplug via blockd can decrease I/O response. To increase 
+> fsync/osync write performance, speeding up unplug should be done here.
+> 
 
-There will be a btrfs conference call Wed April 1.  Topics will
-include benchmarking and our current pending work.
+I realized today that all of the async thread handling btrfs does for
+writes gives us plenty of time to queue up IO for the block device.  If
+that's true, we can just unplug the block device in async helper thread
+and get pretty good coverage for the problem you're describing.
 
-Time: 1:30pm US Eastern (10:30am Pacific)
+Could you please try the patch below and see if it performs well?  I did
+some O_DIRECT testing on a 5 drive array, and tput jumped from 386MB/s
+to 450MB/s for large writes.
 
-* Dial-in Number(s):
-* Toll Free: +1-888-967-2253
-* Toll  +1-650-607-2253 
-* Meeting id: 665734
-* Passcode: 428737 (which hopefully spells 4Btrfs)
+Thanks again for digging through this problem.
 
 -chris
 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index dd06e18..bf377ab 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -146,7 +146,7 @@ static noinline int run_scheduled_bios(struct btrfs_device *device)
+ 	unsigned long num_run = 0;
+ 	unsigned long limit;
+ 
+-	bdi = device->bdev->bd_inode->i_mapping->backing_dev_info;
++	bdi = blk_get_backing_dev_info(device->bdev);
+ 	fs_info = device->dev_root->fs_info;
+ 	limit = btrfs_async_submit_limit(fs_info);
+ 	limit = limit * 2 / 3;
+@@ -231,6 +231,19 @@ loop_lock:
+ 	if (device->pending_bios)
+ 		goto loop_lock;
+ 	spin_unlock(&device->io_lock);
++
++	/*
++	 * IO has already been through a long path to get here.  Checksumming,
++	 * async helper threads, perhaps compression.  We've done a pretty
++	 * good job of collecting a batch of IO and should just unplug
++	 * the device right away.
++	 *
++	 * This will help anyone who is waiting on the IO, they might have
++	 * already unplugged, but managed to do so before the bio they
++	 * cared about found its way down here.
++	 */
++	if (bdi->unplug_io_fn)
++		bdi->unplug_io_fn(bdi, NULL);
+ done:
+ 	return 0;
+ }
 
 

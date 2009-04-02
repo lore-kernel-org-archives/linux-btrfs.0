@@ -1,34 +1,24 @@
-From: Anupam Garg <garga@soe.ucsc.edu>
-Subject: Re: performance issues on btrfs after many snaps
-Date: Thu, 2 Apr 2009 10:32:05 -0700
-Message-ID: <8254822C-96EC-4185-920E-84C647E22672@soe.ucsc.edu>
-References: <2DE16EF0-63DB-404A-8826-AA7A6AD535C4@soe.ucsc.edu> <1238692294.29739.7.camel@think.oraclecorp.com>
-Mime-Version: 1.0 (Apple Message framework v930.3)
-Content-Type: text/plain; charset=US-ASCII; format=flowed; delsp=yes
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH] btrfs: flushoncommit mount option
+Date: Thu, 02 Apr 2009 13:32:25 -0400
+Message-ID: <1238693545.29739.18.camel@think.oraclecorp.com>
+References: <1232755349-27099-1-git-send-email-sage@newdream.net>
+	 <Pine.LNX.4.64.0903031059110.18308@cobra.newdream.net>
+Mime-Version: 1.0
+Content-Type: text/plain
 Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+To: Sage Weil <sage@newdream.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1238692294.29739.7.camel@think.oraclecorp.com>
+In-Reply-To: <Pine.LNX.4.64.0903031059110.18308@cobra.newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-thanks chris.
 
->
-> Is this a source base that I can try to reproduce these performance
-> problems with?
+Hi Sage,
 
-no. unfortunately not.
-I can give my workflow script (a few python lines).
-Over the weekend, I'll try to switch it to build the linux kernel over  
-consecutive changes.
+I've got both flushoncommit and notreelog included in my queue now.
 
->
-> The first question would be why were the slower runs slower?  I'm
-> assuming they need to read more off the disk, but capturing vmstat
-> output during the fast and slow btrfs runs would help.
+Thanks!
 
-I'll reproduce the current experiment with vmstat output as well.
+-chris
 
-thanks much,
--anupam
 

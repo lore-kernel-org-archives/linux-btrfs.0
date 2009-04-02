@@ -1,78 +1,43 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [RFC] [PATCH] Btrfs: improve fsync/osync write performance
-Date: Thu, 02 Apr 2009 07:25:36 -0400
-Message-ID: <1238671536.27540.7.camel@think.oraclecorp.com>
-References: <6.0.0.20.2.20090331115027.05879e88@172.19.0.2>
-	 <1238599038.18549.39.camel@think.oraclecorp.com>
-	 <6.0.0.20.2.20090402112809.06d828e0@172.19.0.2>
+Subject: Re: interesting use case for multiple devices and delayed raid?
+Date: Thu, 02 Apr 2009 07:27:16 -0400
+Message-ID: <1238671636.27540.8.camel@think.oraclecorp.com>
+References: <1238577447.9099.150.camel@pc.interlinx.bc.ca>
+	 <3a7f57190904010313q230f004chf7db770bb1169daa@mail.gmail.com>
+	 <gr0kt0$t9l$3@ger.gmane.org>
+	 <3a7f57190904012241y40f7a906x3edd1ad8002c3208@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain
 Cc: linux-btrfs@vger.kernel.org
-To: Hisashi Hifumi <hifumi.hisashi@oss.ntt.co.jp>
+To: Dmitri Nikulin <dnikulin@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <6.0.0.20.2.20090402112809.06d828e0@172.19.0.2>
+In-Reply-To: <3a7f57190904012241y40f7a906x3edd1ad8002c3208@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2009-04-02 at 15:25 +0900, Hisashi Hifumi wrote:
-> I tested your unplug patch.
+On Thu, 2009-04-02 at 16:41 +1100, Dmitri Nikulin wrote:
+> On Thu, Apr 2, 2009 at 8:04 AM, Brian J. Murrell <brian@interlinx.bc.ca> wrote:
+> >> A more complete solution, that requires no software changes, would be
+> >> to have 3 or 4 disks. A stripe for really fast reads and writes, and
+> >> another disk (or another stripe) to act as a slave to the data being
+> >> written to the primary stripe. This seems to do what you want, at a
+> >> small price premium.
+> >
+> > No.  That's not really what I am describing at all.
 > 
-> # sysbench --num-threads=4 --max-requests=10000  --test=fileio --file-num=1 
->  --file-block-size=4K --file-total-size=128M --file-test-mode=rndwr 
->  --file-fsync-freq=5  run
+> Well you get the bandwidth of 2 disks when reading and writing, and
+> still mirrored to a second stripe as time permits. Kind of like
+> delayed RAID10.
 > 
-> -2.6.29
-> Test execution summary:
->     total time:                          626.9416s
->     total number of events:              10004
->     total time taken by event execution: 442.5869
->     per-request statistics:
->          min:                            0.0000s
->          avg:                            0.0442s
->          max:                            1.4229s
->          approx.  95 percentile:         0.3959s
+> > I apologize if my original description was unclear.  Hopefully it is
+> > more so now.
 > 
-> Threads fairness:
->     events (avg/stddev):           2501.0000/73.43
->     execution time (avg/stddev):   110.6467/7.15
-
-> -2.6.29-patched
-> Operations performed:  0 Read, 10003 Write, 1996 Other = 11999 Total
-> Read 0b  Written 39.074Mb  Total transferred 39.074Mb  (68.269Kb/sec)
->    17.07 Requests/sec executed
-> 
-> Test execution summary:
->     total time:                          586.0944s
->     total number of events:              10003
->     total time taken by event execution: 347.5348
->     per-request statistics:
->          min:                            0.0000s
->          avg:                            0.0347s
->          max:                            2.2546s
->          approx.  95 percentile:         0.3090s
-> 
-> Threads fairness:
->     events (avg/stddev):           2500.7500/54.98
->     execution time (avg/stddev):   86.8837/3.06
+> Yes. It'll be up to the actual filesystem devs to weigh in on whether
+> it's worth implementing.
 > 
 
-Very nice.
-
-> 
-> We can get some performance improvement by this patch.
-> What if the case write() without O_SYNC ?
-> I am concerned about decreasing optimization effect on block layer (merge, sort)
-> when the I/O is not fsync or write with O_SYNC.
-
-The performance should still be good for normal workloads, mostly
-because the async threads try to collect IO already.  Basically what
-happens is the bio is first sent to the checksumming threads, which do a
-bunch of checksums but still queue things in such a way that the IO is
-sent down in order.  This takes some time.
-
-Then the bios are put into the submit bio thread pool, which wakes up a
-different process to send it down.  It might be slightly less merging
-than before, but it should still give the elevator enough bios to work
-with.
+It's an interesting idea, but I think we've got fast front end devices
+higher up on the todo list.  That will still support the destaging to
+slower disks idea, but will be more flexible overall.
 
 -chris
 

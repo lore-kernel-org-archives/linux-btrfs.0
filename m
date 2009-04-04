@@ -1,40 +1,55 @@
-From: James Bottomley <James.Bottomley@HansenPartnership.com>
-Subject: Re: btrfs for enterprise raid arrays
-Date: Fri, 03 Apr 2009 08:51:54 -0500
-Message-ID: <1238766714.3359.7.camel@mulgrave.int.hansenpartnership.com>
-References: <B7F26A02AFF8EB44B8635EB1D34BAC2C0536C8BF@USSCCEVS102.corp.hds.com>
-	 <49D5F679.6060702@redhat.com>
+From: "Morten P.D. Stevens" <mstevens@win-professional.com>
+Subject: btrfs vs ext4 benchmark
+Date: Sat, 4 Apr 2009 15:37:54 +0200
+Message-ID: <001001c9b52a$8ef00bc0$acd02340$@com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Erwin van Londen <erwin.vanlonden@hds.com>,
-	linux-btrfs@vger.kernel.org, Alasdair G Kergon <agk@redhat.com>,
-	willy@linux.intel.com, David.Woodhouse@intel.com,
-	Tom Coughlan <coughlan@redhat.com>
-To: Ric Wheeler <rwheeler@redhat.com>
+Content-Type: text/plain;
+	charset="us-ascii"
+To: <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <49D5F679.6060702@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2009-04-03 at 07:43 -0400, Ric Wheeler wrote:
-> Erwin van Londen wrote:
-> > Another thing is that some arrays have the capability to "thin-provision" volumes. In the back-end on the physical layer the array configures, let say, a 1 TB volume and virtually provisions 5TB to the host. On writes it dynamically allocates more pages in the pool up to the 5TB point. Now if for some reason large holes occur on the volume, maybe a couple of ISO images that have been deleted, what normally happens is just some pointers in the inodes get deleted so from an array perspective there is still data on those locations and will never release those allocated blocks. New firmware/microcode versions are able to reclaim that space if it sees a certain number of consecutive zero's and will reclaim that space to the volume pool. Are there any thoughts on writing a low-priority tread
-  that zeros out those "non-used" blocks?
-> >   
-> 
-> Patches have been floating around to support this - see the recent 
-> patches around "DISCARD" on linux-ide and lkml.  It would be great to 
-> get access to a box that implemented the T10 proposed UNMAP commands 
-> that we could test against. 
+Hi,
 
-So we went several times around the block in the upcoming Linux
-Filesystem and Storage workshop to see if anyone from the array vendors
-might be interested in discussing thin provisioning.  The general result
-was no since travel is tight.  The upshot will be that most of our
-discard infrastructure will be focussed on SSD TRIM, but that we'll try
-to preserve the TP option for arrays ... there are still private
-conversations going on with various people who know the UNMAP/WRITE SAME
-requirements of the various arrays at the various vendors.
+here are some tests on an IBM server with btrfs vs. ext4.
 
-James
+Kernel: 2.6.29.1
+Benchmark software: compilerbench with options -i 10 -r 30
+CPU: Intel Xeon Quadcore E5310
+Chipset: Intel 5000
+Memory: 4 GB FB-DIMM DDR2-667
+HDDs: 2x WD6400AAKS @ Raid0
+Storage Controller: IBM Serveraid 8k
 
+btrfs Result:
+
+intial create total runs 10 avg 50.89 MB/s (user 0.85s sys 2.59s)
+create total runs 5 avg 23.62 MB/s (user 0.82s sys 2.55s)
+patch total runs 4 avg 11.35 MB/s (user 0.38s sys 2.22s)
+compile total runs 7 avg 66.33 MB/s (user 0.19s sys 1.32s)
+clean total runs 4 avg 195.76 MB/s (user 0.03s sys 0.50s)
+read tree total runs 2 avg 11.99 MB/s (user 0.66s sys 2.59s)
+read compiled tree total runs 1 avg 30.14 MB/s (user 0.88s sys 3.64s)
+delete tree total runs 2 avg 10.79 seconds (user 0.43s sys 3.39s)
+no runs for delete compiled tree
+stat tree total runs 4 avg 9.62 seconds (user 0.41s sys 1.03s)
+stat compiled tree total runs 1 avg 10.51 seconds (user 0.49s sys 1.19s)
+
+ext4 Result:
+
+intial create total runs 10 avg 96.09 MB/s (user 0.77s sys 1.34s)
+create total runs 5 avg 50.84 MB/s (user 0.82s sys 1.20s)
+patch total runs 4 avg 20.17 MB/s (user 0.28s sys 1.04s)
+compile total runs 7 avg 94.39 MB/s (user 0.17s sys 1.07s)
+clean total runs 4 avg 959.66 MB/s (user 0.03s sys 0.11s)
+read tree total runs 2 avg 14.67 MB/s (user 0.78s sys 1.26s)
+read compiled tree total runs 1 avg 31.96 MB/s (user 0.87s sys 2.31s)
+delete tree total runs 2 avg 2.14 seconds (user 0.34s sys 0.81s)
+no runs for delete compiled tree
+stat tree total runs 4 avg 1.82 seconds (user 0.40s sys 0.35s)
+stat compiled tree total runs 1 avg 1.83 seconds (user 0.35s sys 0.33s)
+
+Best regards,
+
+Morten
 

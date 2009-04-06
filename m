@@ -1,67 +1,45 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: Problem with renaming devices
-Date: Mon, 6 Apr 2009 18:41:35 +0100
-Message-ID: <20090406174135.GC27111@vlad.carfax.org.uk>
+From: Steven Pratt <slpratt@austin.ibm.com>
+Subject: New performance results
+Date: Mon, 06 Apr 2009 17:01:11 -0500
+Message-ID: <49DA7BA7.7010607@austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="DIOMP1UsTsWJauNi"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I am continuing to do runs to provide more data on the random write 
+issues with btrfs. I have just posted 2 sets of runs here:
+http://btrfs.boxacle.net/repository/raid/longrun/
 
---DIOMP1UsTsWJauNi
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+these are on a pull of the btrfs-unstable experimental branch from 4/3.
 
-   There seems to be some issue over changing the names of the device
-that a btrfs filesystem lives on:
+These are 100 minute runs of the 128 thread random write workload on the 
+raid system (1 for btrfs and 1 for ext3).  Included in these runs are 
+graphs of all the iostat, sar and mpstat data (see analysis directories).
 
-# lvcreate scratch -n fstest -L 2G
-  Logical volume "fstest" created
-# mkfs -t btrfs /dev/scratch/fstest
+A couple of interesting things. First, we see the choppiness of the IO 
+in btrfs compared to ext3.
+http://btrfs.boxacle.net/repository/raid/longrun/btrfs-longrun/btrfs1.ffsb.random_writes__threads_0128.09-04-06_10.25.03/analysis/iostat-processed.001/chart.html 
 
-WARNING! - Btrfs v0.18-ge3b0f66 IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
+http://btrfs.boxacle.net/repository/raid/longrun/ext3-longrun/btrfs1.ffsb.random_writes__threads_0128.09-04-06_13.44.49/analysis/iostat-processed.001/chart.html 
 
-fs created label (null) on /dev/scratch/fs1
-	nodesize 4096 leafsize 4096 sectorsize 4096 size 2.00GB
-Btrfs v0.18-ge3b0f66
 
-# mount /dev/scratch/fstest /mnt
-# umount /mnt
+In particular look at graphs 7 and 11 which show write iops and 
+throughput.  Ext3 is nice and smooth, while btrfs has a repeating 
+pattern of dips and spikes, with IO going to 0 on  a regular basis.
 
-# lvrename scratch fstest derek
-  Renamed "fstest" to "derek" in volume group "scratch"
-# mount /dev/scratch/derek /mnt
-mount: /dev/mapper/scratch-derek: can't read superblock
+Another interesting observation is what looks a lot like a memory leak.  
+Looking at chart 6 Memory at :
+http://btrfs.boxacle.net/repository/raid/longrun/btrfs-longrun/btrfs1.ffsb.random_writes__threads_0128.09-04-06_10.25.03/analysis/sar-processed.001/chart.html 
 
-# lvrename scratch derek fstest
-  Renamed "derek" to "fstest" in volume group "scratch"
-# mount /dev/scratch/fstest /mnt
-[success]
+we see that the amount of page cache drops slowly throughout the entire 
+run.  Starting up around 3.5GB and dropping to about 2.3GB by the end of 
+the run.  The memory seems to have moved to the slab which grew to 
+1.5GB.  Doing a repeat of the run while watching slabtop, we see that 
+size-2048 is responsible for the majority of the slab usage (over 1GB).
 
-   The rename works properly on a completely virgin filesystem, but
-not on one that's been mounted and unmounted (as above).
+We do not see this behavior under ext3.
 
-   Hugo.
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-             --- Happiness is mandatory.  Are you happy? ---             
-
---DIOMP1UsTsWJauNi
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iD8DBQFJ2j7PIKyzvlFcI40RAtiGAJ9hoAhKsmaBQjLP0ER+owJGptUj6QCgyQ4m
-8M4BqtockkQ8qcXeCDjX7dg=
-=UvHl
------END PGP SIGNATURE-----
-
---DIOMP1UsTsWJauNi--
+Steve

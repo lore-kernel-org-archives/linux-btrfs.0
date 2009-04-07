@@ -1,90 +1,78 @@
-From: Jeff Mahoney <jeffm@suse.com>
-Subject: Re: [patch] error handling of ERR_PTR() returns
-Date: Tue, 07 Apr 2009 10:46:03 -0400
-Message-ID: <49DB672B.7070007@suse.com>
-References: <alpine.DEB.2.00.0904071632560.1465@bicker> <2a31deca0904070734y3f4c3366h5772c032381b38cc@mail.gmail.com>
+From: Steven Pratt <slpratt@austin.ibm.com>
+Subject: Re: New performance results
+Date: Tue, 07 Apr 2009 10:45:21 -0500
+Message-ID: <49DB7511.5020008@austin.ibm.com>
+References: <49DA7BA7.7010607@austin.ibm.com> <1239075439.17426.11.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Dan Carpenter <error27@gmail.com>, chris.mason@oracle.com,
-	linux-btrfs@vger.kernel.org
-To: Andrey Kuzmin <andrey.v.kuzmin@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <2a31deca0904070734y3f4c3366h5772c032381b38cc@mail.gmail.com>
+In-Reply-To: <1239075439.17426.11.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+Chris Mason wrote:
+> On Mon, 2009-04-06 at 17:01 -0500, Steven Pratt wrote:
+>   
+>> I am continuing to do runs to provide more data on the random write 
+>> issues with btrfs. I have just posted 2 sets of runs here:
+>> http://btrfs.boxacle.net/repository/raid/longrun/
+>>
+>> these are on a pull of the btrfs-unstable experimental branch from 4/3.
+>>
+>> These are 100 minute runs of the 128 thread random write workload on the 
+>> raid system (1 for btrfs and 1 for ext3).  Included in these runs are 
+>> graphs of all the iostat, sar and mpstat data (see analysis directories).
+>>
+>> A couple of interesting things. First, we see the choppiness of the IO 
+>> in btrfs compared to ext3.
+>> http://btrfs.boxacle.net/repository/raid/longrun/btrfs-longrun/btrfs1.ffsb.random_writes__threads_0128.09-04-06_10.25.03/analysis/iostat-processed.001/chart.html 
+>>
+>> http://btrfs.boxacle.net/repository/raid/longrun/ext3-longrun/btrfs1.ffsb.random_writes__threads_0128.09-04-06_13.44.49/analysis/iostat-processed.001/chart.html 
+>>
+>>
+>> In particular look at graphs 7 and 11 which show write iops and 
+>> throughput.  Ext3 is nice and smooth, while btrfs has a repeating 
+>> pattern of dips and spikes, with IO going to 0 on  a regular basis.
+>>
+>>     
+>
+> The dips and spikes may be from the allocator.  Basically what happens
+> is after each commit we end up with a bunch of small blocks available
+> for filling again.  Could you please try with -o ssd?
+>
+>   
+Will give it a shot.
+>   
+>> Another interesting observation is what looks a lot like a memory leak.  
+>> Looking at chart 6 Memory at :
+>> http://btrfs.boxacle.net/repository/raid/longrun/btrfs-longrun/btrfs1.ffsb.random_writes__threads_0128.09-04-06_10.25.03/analysis/sar-processed.001/chart.html 
+>>
+>> we see that the amount of page cache drops slowly throughout the entire 
+>> run.  Starting up around 3.5GB and dropping to about 2.3GB by the end of 
+>> the run.  The memory seems to have moved to the slab which grew to 
+>> 1.5GB.  Doing a repeat of the run while watching slabtop, we see that 
+>> size-2048 is responsible for the majority of the slab usage (over 1GB).
+>>
+>>     
+>
+> size-2048?  That's probably the csums.  I'll give it a shot when I get
+> back next week
 
-Andrey Kuzmin wrote:
-> Since both NULL ptr and IS_ERR(ptr) are treated as error, why not
-> redefine IS_ERR to handle both, simplifying caller's life?
+Ok.
 
-IS_ERR is a global kernel function, and NULL isn't always an error.
+One other thing I noticed that is really bad.  For ext3, we see 
+115MB/sec both from the benchmark reporting and from iostat write 
+throughput.  However, for btrfs, we see a benchmark throughput of 
+2.5MB/sec while iostat shows a whopping 35MB/sec of writes.  That to me 
+implies that btrfs is doing an additional 32-33MB/sec of metadata or 
+journal writes.  More than 10x the amount of actual data being written.  
+Can that be right?
 
-- -Jeff
+Steve
+> .
+>
+> -chris
+>
+>   
 
-> On Tue, Apr 7, 2009 at 5:38 PM, Dan Carpenter <error27@gmail.com> wrote:
->> There are a couple functions which return ERR_PTR as well as NULL.  The
->> caller needs to handle both.
->>
->> Smatch also complains about the handling of alloc_extent_map() but as far
->> as I can see that doesn't actually return an ERR_PTR.
->>
->> Compile tested on 2.6.29.
->>
->> regards,
->> dan carpenter
->>
->> --- orig/fs/btrfs/disk-io.c     2009-04-07 16:15:36.000000000 +0300
->> +++ devel/fs/btrfs/disk-io.c    2009-04-07 16:23:33.000000000 +0300
->> @@ -123,7 +123,7 @@
->>
->>        spin_lock(&em_tree->lock);
->>        em = lookup_extent_mapping(em_tree, start, len);
->> -       if (em) {
->> +       if (!IS_ERR(em) && em) {
->>                em->bdev =
->>                        BTRFS_I(inode)->root->fs_info->fs_devices->latest_bdev;
->>                spin_unlock(&em_tree->lock);
->> @@ -1216,8 +1216,8 @@
->>        int ret;
->>
->>        root = btrfs_read_fs_root_no_name(fs_info, location);
->> -       if (!root)
->> -               return NULL;
->> +       if (!root || IS_ERR(root))
->> +               return root;
->>
->>        if (root->in_sysfs)
->>                return root;
->> @@ -1324,7 +1324,7 @@
->>        spin_lock(&em_tree->lock);
->>        em = lookup_extent_mapping(em_tree, offset, PAGE_CACHE_SIZE);
->>        spin_unlock(&em_tree->lock);
->> -       if (!em) {
->> +       if (!em || IS_ERR(em)) {
->>                __unplug_io_fn(bdi, page);
->>                return;
->>        }
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
-- --
-Jeff Mahoney
-SUSE Labs
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.9 (GNU/Linux)
-Comment: Using GnuPG with SUSE - http://enigmail.mozdev.org
-
-iEYEARECAAYFAknbZysACgkQLPWxlyuTD7K0IQCgiZSrwJWtZCG3uRDAKjEPTBeT
-qX8AnjaMRgZ9mqw6icQlGNCfOeYGHvO7
-=d73O
------END PGP SIGNATURE-----

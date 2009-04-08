@@ -1,157 +1,47 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH 2/6] btrfs: use memdup_user()
-Date: Wed, 08 Apr 2009 15:06:54 +0800
-Message-ID: <49DC4D0E.9090807@cn.fujitsu.com>
-References: <49DC4CC0.9050805@cn.fujitsu.com>
+From: Patrick Goetz <pgoetz@math.utexas.edu>
+Subject: Atomicity or the ext4 open-write-close-rename debacle
+Date: Wed, 08 Apr 2009 10:21:33 -0500
+Message-ID: <49DCC0FD.3010200@math.utexas.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: LKML <linux-kernel@vger.kernel.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	linux-btrfs@vger.kernel.org
-To: chris.mason@oracle.com
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <49DC4CC0.9050805@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Remove open-coded memdup_user().
+Hi -
 
-Note this changes some GFP_NOFS to GFP_KERNEL, since copy_from_user() may
-cause pagefault, it's pointless to pass GFP_NOFS to kmalloc().
+I've been trying to get up to speed on new linux filesystem efforts and 
+stumbled upon the following post from a btrfs developer to lwn.net:
 
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
- fs/btrfs/ioctl.c |   49 ++++++++++++-------------------------------------
- fs/btrfs/super.c |   13 ++++---------
- 2 files changed, 16 insertions(+), 46 deletions(-)
+-----------------------------------------------------------
+Posted Mar 16, 2009 16:50 UTC (Mon) by masoncl (subscriber, #47138)
+The btrfs data=ordered implementation is different from ext34 and 
+reiserfs. It decouples data writes from the metadata transaction, and 
+simply updates the metadata for file extents after the data blocks are 
+on disk.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 7594bec..9f135e8 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -461,15 +461,9 @@ static int btrfs_ioctl_resize(struct btrfs_root *root, void __user *arg)
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
- 
--	vol_args = kmalloc(sizeof(*vol_args), GFP_NOFS);
--
--	if (!vol_args)
--		return -ENOMEM;
--
--	if (copy_from_user(vol_args, arg, sizeof(*vol_args))) {
--		ret = -EFAULT;
--		goto out;
--	}
-+	vol_args = memdup_user(arg, sizeof(*vol_args));
-+	if (IS_ERR(vol_args))
-+		return PTR_ERR(vol_args);
- 
- 	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
- 	namelen = strlen(vol_args->name);
-@@ -545,7 +539,6 @@ static int btrfs_ioctl_resize(struct btrfs_root *root, void __user *arg)
- 
- out_unlock:
- 	mutex_unlock(&root->fs_info->volume_mutex);
--out:
- 	kfree(vol_args);
- 	return ret;
- }
-@@ -565,15 +558,9 @@ static noinline int btrfs_ioctl_snap_create(struct file *file,
- 	if (root->fs_info->sb->s_flags & MS_RDONLY)
- 		return -EROFS;
- 
--	vol_args = kmalloc(sizeof(*vol_args), GFP_NOFS);
--
--	if (!vol_args)
--		return -ENOMEM;
--
--	if (copy_from_user(vol_args, arg, sizeof(*vol_args))) {
--		ret = -EFAULT;
--		goto out;
--	}
-+	vol_args = memdup_user(arg, sizeof(*vol_args));
-+	if (IS_ERR(vol_args))
-+		return PTR_ERR(vol_args);
- 
- 	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
- 	namelen = strlen(vol_args->name);
-@@ -675,19 +662,13 @@ static long btrfs_ioctl_add_dev(struct btrfs_root *root, void __user *arg)
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
- 
--	vol_args = kmalloc(sizeof(*vol_args), GFP_NOFS);
-+	vol_args = memdup_user(arg, sizeof(*vol_args));
-+	if (IS_ERR(vol_args))
-+		return PTR_ERR(vol_args);
- 
--	if (!vol_args)
--		return -ENOMEM;
--
--	if (copy_from_user(vol_args, arg, sizeof(*vol_args))) {
--		ret = -EFAULT;
--		goto out;
--	}
- 	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
- 	ret = btrfs_init_new_device(root, vol_args->name);
- 
--out:
- 	kfree(vol_args);
- 	return ret;
- }
-@@ -703,19 +684,13 @@ static long btrfs_ioctl_rm_dev(struct btrfs_root *root, void __user *arg)
- 	if (root->fs_info->sb->s_flags & MS_RDONLY)
- 		return -EROFS;
- 
--	vol_args = kmalloc(sizeof(*vol_args), GFP_NOFS);
-+	vol_args = memdup_user(arg, sizeof(*vol_args));
-+	if (IS_ERR(vol_args))
-+		return PTR_ERR(vol_args);
- 
--	if (!vol_args)
--		return -ENOMEM;
--
--	if (copy_from_user(vol_args, arg, sizeof(*vol_args))) {
--		ret = -EFAULT;
--		goto out;
--	}
- 	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
- 	ret = btrfs_rm_device(root, vol_args->name);
- 
--out:
- 	kfree(vol_args);
- 	return ret;
- }
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 9744af9..a7acfe6 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -635,14 +635,9 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
- 
--	vol = kmalloc(sizeof(*vol), GFP_KERNEL);
--	if (!vol)
--		return -ENOMEM;
--
--	if (copy_from_user(vol, (void __user *)arg, sizeof(*vol))) {
--		ret = -EFAULT;
--		goto out;
--	}
-+	vol = memdup_user((void __user *)arg, sizeof(*vol));
-+	if (IS_ERR(vol))
-+		return PTR_ERR(vol);
- 
- 	switch (cmd) {
- 	case BTRFS_IOC_SCAN_DEV:
-@@ -650,7 +645,7 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
- 					    &btrfs_fs_type, &fs_devices);
- 		break;
- 	}
--out:
-+
- 	kfree(vol);
- 	return ret;
- }
--- 
-1.5.4.rc3
+This means the transaction commit doesn't have to wait for the data 
+blocks because the metadata for the file extents always reflects extents 
+that are actually on disk.
 
+When you rename one file over another, the destination file is 
+atomically replaced with the new file. The new file is fully consistent 
+with the data that has already been written, which in the worst case 
+means it has a size of zero after a crash.
+...
+-----------------------------------------------------------
+
+Frankly this comment doesn't make any sense to me at all.  First of all, 
+"this means the transaction commit doesn't have to wait for the data 
+blocks...".  Is the data ordered or not? If you commit the transaction 
+-- i.e. update the metadata before the data blocks are committed -- then 
+the operations are occurring out of order and ext4 
+open-write-close-rename mayhem ensues.
+
+Second, atomicity in this context means that when executing a rename, 
+you always get either the old data (exactly) or the new data (exactly) 
+even after a crash. The "worst case scenario" described above -- a size 
+of zero after crash -- precisely violates atomicity.
+
+Any comments on this?
 

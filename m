@@ -1,83 +1,31 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Is compression mode activated?
-Date: Wed, 08 Apr 2009 12:46:53 -0400
-Message-ID: <1239209213.28688.2.camel@think.oraclecorp.com>
-References: <d853ebb60904080304o11101887kdbbcd4626ebb9c96@mail.gmail.com>
+From: Patrick Goetz <pgoetz@math.utexas.edu>
+Subject: Re: Atomicity or the ext4 open-write-close-rename debacle
+Date: Wed, 08 Apr 2009 13:28:37 -0500
+Message-ID: <49DCECD5.3030801@math.utexas.edu>
+References: <49DCC0FD.3010200@math.utexas.edu> <1239208095.22111.4.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Cc: linux-btrfs@vger.kernel.org
-To: Siddhartha Swaroop <siddhartha.swaroop@greenturtles.in>
+To: unlisted-recipients:; (no To-header on input)
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <d853ebb60904080304o11101887kdbbcd4626ebb9c96@mail.gmail.com>
+In-Reply-To: <1239208095.22111.4.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2009-04-08 at 15:34 +0530, Siddhartha Swaroop wrote:
-> Hello,
+Chris Mason wrote:
 > 
-> I'm Siddhartha Swaroop from Green Turtle Technologies.
-> As you mentioned in mailing list, am  trying to write ioctl that
-> reports on the actual size of the
-> compressed file. So before starting to write I have to enable compress
-> mode and check manually how much size is compressed.
+> With 2.6.30, extra ordering is added to btrfs, making sure that metadata
+> and data are both atomically replaced during a rename.  In other words,
+> for renames it will work like ext3 data=ordered mode.
 > 
-> For that this is the test case what I did 
-> 
-> Test case:
-> 
-> $ du -h file
-> 116K    file
-> 
-> $ mount -t btrfs /dev/sda4 /mnt/
-> 
-> $ cp file /mnt/
-> 
-> $ du -h /mnt/file 
-> 108K    /mnt/file
-> 
-> $ du -h install.log
-> 48K     install.log
->  
-> $ cp install.log /mnt/
-> 
-> $ du -h /mnt/install.log 
-> 44K     /mnt/install.log
-> 
-> $ rm /mnt/file
-> 
-> $ rm /mnt/install.log
-> 
-> $ umount /mnt
-> 
-> $ mount -t btrfs -o compress /dev/sda4 /mnt
-> 
-> $ cp file /mnt/
-> 
-> $ du -h /mnt/file 
-> 108K    /mnt/file
-> 
-> $ cp install.log /mnt/
-> 
-> $ du -h /mnt/install.log 
-> 44K     /mnt/install.log
-> 
-> So now my question is 
-> 1>whether compress mode is activated in my system or not?
 
-If you mounted -o compress, it is activated.
-> 
-> 2>If yes then what is the use of this compress mode because the size
-> of the file is same as before compress mode is activated in btrfs.
-> 
-The idea behind transparent compression is that it is transparent ;)
-The inode fields from stat need to reflect the uncompressed size,
-because userland applications expect them to work a certain way.
+Thanks for the speedy response.
 
-In order to find the actual space used, you need to walk the btrfs btree
-and count the extents.
+After spending several hours slogging through the discussion on Ted 
+Tso's blog and spending much more time than anticipated learning about 
+FUA, write barriers, fsync vs. fdatasync, how fsync is implemented in 
+linux, etc., I'm curious about the technical details of how this is 
+accomplished.  Any place where I can find this short of reading through 
+the source code?
 
-df is another good way to check, since df shows the actual blocks
-allocated.
-
--chris
 
 

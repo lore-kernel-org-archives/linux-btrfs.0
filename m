@@ -1,62 +1,82 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Atomicity or the ext4 open-write-close-rename debacle
-Date: Wed, 08 Apr 2009 12:28:15 -0400
-Message-ID: <1239208095.22111.4.camel@think.oraclecorp.com>
-References: <49DCC0FD.3010200@math.utexas.edu>
+Subject: Re: Is compression mode activated?
+Date: Wed, 08 Apr 2009 12:46:53 -0400
+Message-ID: <1239209213.28688.2.camel@think.oraclecorp.com>
+References: <d853ebb60904080304o11101887kdbbcd4626ebb9c96@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain
 Cc: linux-btrfs@vger.kernel.org
-To: Patrick Goetz <pgoetz@math.utexas.edu>
+To: Siddhartha Swaroop <siddhartha.swaroop@greenturtles.in>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <49DCC0FD.3010200@math.utexas.edu>
+In-Reply-To: <d853ebb60904080304o11101887kdbbcd4626ebb9c96@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2009-04-08 at 10:21 -0500, Patrick Goetz wrote:
-> Hi -
+On Wed, 2009-04-08 at 15:34 +0530, Siddhartha Swaroop wrote:
+> Hello,
 > 
-> I've been trying to get up to speed on new linux filesystem efforts and 
-> stumbled upon the following post from a btrfs developer to lwn.net:
+> I'm Siddhartha Swaroop from Green Turtle Technologies.
+> As you mentioned in mailing list, am  trying to write ioctl that
+> reports on the actual size of the
+> compressed file. So before starting to write I have to enable compress
+> mode and check manually how much size is compressed.
 > 
-> -----------------------------------------------------------
-> Posted Mar 16, 2009 16:50 UTC (Mon) by masoncl (subscriber, #47138)
-> The btrfs data=ordered implementation is different from ext34 and 
-> reiserfs. It decouples data writes from the metadata transaction, and 
-> simply updates the metadata for file extents after the data blocks are 
-> on disk.
+> For that this is the test case what I did 
 > 
-> This means the transaction commit doesn't have to wait for the data 
-> blocks because the metadata for the file extents always reflects extents 
-> that are actually on disk.
+> Test case:
 > 
-> When you rename one file over another, the destination file is 
-> atomically replaced with the new file. The new file is fully consistent 
-> with the data that has already been written, which in the worst case 
-> means it has a size of zero after a crash.
-> ...
-> -----------------------------------------------------------
+> $ du -h file
+> 116K    file
 > 
-> Frankly this comment doesn't make any sense to me at all.  First of all, 
-> "this means the transaction commit doesn't have to wait for the data 
-> blocks...".  Is the data ordered or not? If you commit the transaction 
-> -- i.e. update the metadata before the data blocks are committed -- then 
-> the operations are occurring out of order and ext4 
-> open-write-close-rename mayhem ensues.
+> $ mount -t btrfs /dev/sda4 /mnt/
 > 
-> Second, atomicity in this context means that when executing a rename, 
-> you always get either the old data (exactly) or the new data (exactly) 
-> even after a crash. The "worst case scenario" described above -- a size 
-> of zero after crash -- precisely violates atomicity.
+> $ cp file /mnt/
 > 
-> Any comments on this?
+> $ du -h /mnt/file 
+> 108K    /mnt/file
+> 
+> $ du -h install.log
+> 48K     install.log
+>  
+> $ cp install.log /mnt/
+> 
+> $ du -h /mnt/install.log 
+> 44K     /mnt/install.log
+> 
+> $ rm /mnt/file
+> 
+> $ rm /mnt/install.log
+> 
+> $ umount /mnt
+> 
+> $ mount -t btrfs -o compress /dev/sda4 /mnt
+> 
+> $ cp file /mnt/
+> 
+> $ du -h /mnt/file 
+> 108K    /mnt/file
+> 
+> $ cp install.log /mnt/
+> 
+> $ du -h /mnt/install.log 
+> 44K     /mnt/install.log
+> 
+> So now my question is 
+> 1>whether compress mode is activated in my system or not?
 
-There isn't a quick and short description for this.  Before 2.6.30,
-btrfs would allow renames to result in zero length files after a crash.
-Filesystem developers have always considered the rename-is-atomic
-requirement to refer only to the directory entries themselves.
+If you mounted -o compress, it is activated.
+> 
+> 2>If yes then what is the use of this compress mode because the size
+> of the file is same as before compress mode is activated in btrfs.
+> 
+The idea behind transparent compression is that it is transparent ;)
+The inode fields from stat need to reflect the uncompressed size,
+because userland applications expect them to work a certain way.
 
-With 2.6.30, extra ordering is added to btrfs, making sure that metadata
-and data are both atomically replaced during a rename.  In other words,
-for renames it will work like ext3 data=ordered mode.
+In order to find the actual space used, you need to walk the btrfs btree
+and count the extents.
+
+df is another good way to check, since df shows the actual blocks
+allocated.
 
 -chris
 

@@ -1,62 +1,41 @@
-From: Subrata Modak <subrata@linux.vnet.ibm.com>
-Subject: Re: Btrfs TODO
-Date: Fri, 10 Apr 2009 12:12:41 +0530
-Message-ID: <1239345763.5029.18.camel@subratamodak.linux.ibm.com>
-References: <20090409162418.GC20769@unused.rdu.redhat.com>
-Reply-To: subrata@linux.vnet.ibm.com
-Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org, ltp-list <ltp-list@lists.sf.net>
-To: Josef Bacik <josef@redhat.com>
+From: Harald Glatt <mail@hachre.de>
+Subject: Unable to mount btrfs after crash
+Date: Sun, 12 Apr 2009 02:03:46 +0200
+Message-ID: <EE151463-E687-43D0-91E0-02003C32972F@hachre.de>
+Mime-Version: 1.0 (Apple Message framework v930.3)
+Content-Type: text/plain; charset=US-ASCII; format=flowed; delsp=yes
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090409162418.GC20769@unused.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Josef,
+Hi,
 
-On Thu, 2009-04-09 at 12:24 -0400, Josef Bacik wrote:
-> Hello,
-> 
-> Trying to put together a list of TODO items for btrfs so we can update the wiki
-> page fully.  So far these things are on the list
-> 
-> * Proper ENOSPC handling 
-> * O_DIRECT support (without checksumming) 
-> * AIO support 
-> * Subvolume quotas and inherited space usage information 
-> * Snapshot removal
-> * QA Suite for automated regression testing 
+I have set up a btrfs within a 200 GB file that I mount via -o loop.
 
-We at LTP would be interested in the above. Please let us know your
-plans in doing Btrfs testing in any ways you do.
+It worked fine so far but today it crashed when there was alot of  
+concurrent writing/reading going on.
+I'm testing it with a torrent client, so the data is really irrelevant  
+- but it's a good amount of stress.
 
-Regards--
-Subrata
+When it crashed dmesg got logged onto my /var/log which filled up the  
+entire harddrive within a few minutes... Since I wasn't able to reboot  
+properly I deleted the relevant log files and am not able to give a  
+dmesg output of the crash :(
 
-> * Reserved space for online fsck and the ability to add storage so that a
-> * background extent allocation check can proceed 
-> * Additional ioctls to set per-inode attributes (nodatacow, nodatasum, etc)
-> 
-> So I think all of those are still true.  Things that I know are being worked on
-> are
-> 
-> * async block group cacheing - me
-> * locking changes - Chris
-> * backref stuff - Yan
-> 
-> Som other things off the top of my head are
-> 
-> * a better way to cache block groups in general, for this I was thinking of a
-> 	bitmap or something like that per block group of free space
-> * space balancing.  this will likely need to wait on proper ENOSPC handling
-> * grub support :)
-> 
-> Thats all that I can think of atm.  Add things to the list if you think of them,
-> and hopefully we can update the wiki early next week.  Thanks,
-> 
-> Josef
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I adjusted my logging now so I should be able to provide more info  
+next time.
 
+When I try to mount the filesystem now mount hangs forever though and  
+dmesg is flooding this message several times per second:
+parent transid verify failed on 164143104 wanted 22325 found 22209
+
+I don't really care about the data but I would like to restore one  
+config file from the filesystem.
+
+Is there any way to get it mounted? Or to extract single files?
+
+If you need any more info feel free to ask, I'll try to help as much  
+as possible.
+
+Thanks
+Harald

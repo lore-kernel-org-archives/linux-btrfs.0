@@ -1,56 +1,85 @@
-From: Kay Sievers <kay.sievers@vrfy.org>
-Subject: Re: btrfs and /proc/self/mountinfo
-Date: Sun, 12 Apr 2009 12:01:41 -0700
-Message-ID: <ac3eb2510904121201p66ee37a2gcd75aeea683ff254@mail.gmail.com>
-References: <7b13a0f80904120735r41736455hb7e226ab8ad30bd7@mail.gmail.com>
+From: Andrey Kuzmin <andrey.v.kuzmin@gmail.com>
+Subject: Re: Btrfs and raw zvol-like partition
+Date: Sun, 12 Apr 2009 23:54:53 +0400
+Message-ID: <2a31deca0904121254h45d602f2u9a0a9f789b42be0f@mail.gmail.com>
+References: <49E197BC.40703@enix.org> <2a31deca0904120613s56d8570pc1403284afcac094@mail.gmail.com>
+	<49E233BD.8050700@enix.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Cc: linux-btrfs@vger.kernel.org
-To: David Zeuthen <zeuthen@gmail.com>
+To: sw@enix.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <7b13a0f80904120735r41736455hb7e226ab8ad30bd7@mail.gmail.com>
+In-Reply-To: <49E233BD.8050700@enix.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Apr 12, 2009 at 07:35, David Zeuthen <zeuthen@gmail.com> wrote:
-
-> But we'd still need some kind of way of having the kernel tell user
-> space what devices are currently claimed by the btrfs filesystem
-> instance (and we'd need notifications on changes too). Otherwise we
-> don't have enough information for the desktop shell and partitioning
-> programs to let the user know that /dev/sdb2 or /dev/sdc1 or whatever
-> is currently claimed by the 0:19 btrfs mount at /media/fedora-usb.
+On Sun, Apr 12, 2009 at 10:32 PM, S=C3=A9bastien Wacquiez <sw@enix.org>=
+ wrote:
+> Andrey Kuzmin a =C3=A9crit :
+>>
+>> zvol (interface) does not just =C2=A0'export raw device' but rather
+>> implements volume =C2=A0abstraction and integrates volume management=
+ into
+>> file-system.
+>>
 >
-> One idea is to have a pollable file, /proc/fs/btrfs/devs, that maps
-> from the dev_t of the btrfs filesystem instance (as used in
-> /proc/self/mountinfo) to the set of dev_t for block devices currently
-> claimed? E.g. for the example above we'd have
+> Yep. I suck at writing english, thanks for pointing that out :)
 >
-> =C2=A0/proc/fs/btrfs/devs:
-> =C2=A00:19 =C2=A0 =C2=A08:18
+> I surely mislead myself, but I think that the "volume management" of =
+ZFS
+> could be done with file.
 
-Btrfs used to export some information in /sys/fs/btrfs/, this is
-disabled for now. Maybe we can possibly make it export something like:
-  $ tree /sys/fs/btrfs/
-  /sys/fs/btrfs/
-  |-- 969d1386-a002-4c28-94f2-47be23f344e4
-  |   |-- ba1532f3-849b-400b-9c76-2c9aee126c52
-  |   |   |-- device -> ../../../devices/.../block/sda/sda3
-  |   |   |-- attribute1
-  |   |   |-- ...
-  |   `-- 45645656-849b-400b-9c76-2c9aee126c52
-  |       |-- device -> ../../../devices/.../block/sdb/sdb3
-  |       |-- attribute1
-  |       ....
-  `-- 645645686-a002-4c28-94f2-47be23f344e4
-      |-- ...
+Basically volume abstraction aims to provide a layer above raw device
+implementing extra functionality not found with raw disk (e.g.,
+fault-tolerance), expandability (one can add disks to a volume as
+needed) and single point of control over a bunch of disks.
 
+>
+> Alloc on write ? Use sparse file. Resizing ? Append or truncate the f=
+ile.
+> Snapshot ? Snapshot the file. Another Volume ? An other file :)
 
-So you could look for a "device" link at the subvolume devices? Or if
-that does not fit for some reason, we could also add a "btrfs" class,
-to export details about the subvolumes.
+Basically you're right and, for instance, (deprecated) opensolaris
+user-spce iSCSI target supports exporting a regular zfs file to remote
+clients as raw scsi block device. At the same time,  implementing a
+'volume' on-top of a regular zfs file might be unsafe (file-system
+makes some assumptions wrt I/O that are fine with raw devices below
+real volume but do not necessarily hold for a regular file) .
 
-Thanks,
-Kay
+>
+> In fact, the two thinks that have to be done, for me, is :
+> 1/ Optimise the different layer to bypass permission, acl, & co, and =
+surely
+> the way data is written.
+> 2/ Be able to export those file directly as block device. (Allowing s=
+ome
+> more optimisation :) )
+>
+> It's why I called this feature "export raw device" (as in "export raw=
+ file
+> as block device"). As I say, it could be emulated with file and loopb=
+ack,
+> but it'll surely be slow ... So I wanna know if btrfs plan to have th=
+ose
+> type of optimization (and the user land tools to simplify it's manage=
+ment).
+>
+
+That's a question to linux-btrfs@, I'm quite new to this one.
+
+Regards,
+Andrey
+>
+> Regards,
+>
+>
+> S=C3=A9bastien Wacquiez
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =C2=A0http://vger.kernel.org/majordomo-info.ht=
+ml
+>
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

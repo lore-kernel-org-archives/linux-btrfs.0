@@ -1,41 +1,39 @@
-From: Harald Glatt <mail@hachre.de>
-Subject: Unable to mount btrfs after crash
-Date: Sun, 12 Apr 2009 02:03:46 +0200
-Message-ID: <EE151463-E687-43D0-91E0-02003C32972F@hachre.de>
-Mime-Version: 1.0 (Apple Message framework v930.3)
-Content-Type: text/plain; charset=US-ASCII; format=flowed; delsp=yes
+From: =?ISO-8859-1?Q?S=E9bastien_Wacquiez?= <sw@enix.org>
+Subject: Btrfs and raw zvol-like partition
+Date: Sun, 12 Apr 2009 09:26:52 +0200
+Message-ID: <49E197BC.40703@enix.org>
+Reply-To: sw@enix.org
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1;
+	format=flowed
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
 
-I have set up a btrfs within a 200 GB file that I mount via -o loop.
+A nice feature is ZFS is the "ZVOL" layer, that permit you to export=20
+(directly) a raw device from your zfs pool of disc, with the benefit of=
+=20
+powerful (growing!) snapshot and easy raid management from zfs. It's=20
+particulary usefull when you use it with virtual server, allowing you t=
+o=20
+centralize all your backup problematic, etc
 
-It worked fine so far but today it crashed when there was alot of  
-concurrent writing/reading going on.
-I'm testing it with a torrent client, so the data is really irrelevant  
-- but it's a good amount of stress.
+Does btrfs plan to support this kind of feature ? (please, don't tell m=
+e=20
+that lvm do, lvm just sucks when you make a snapshot of your disk, and=20
+lack of the "growing", commit, rollback, diffsend feature).
 
-When it crashed dmesg got logged onto my /var/log which filled up the  
-entire harddrive within a few minutes... Since I wasn't able to reboot  
-properly I deleted the relevant log files and am not able to give a  
-dmesg output of the crash :(
+Thanks !
 
-I adjusted my logging now so I should be able to provide more info  
-next time.
 
-When I try to mount the filesystem now mount hangs forever though and  
-dmesg is flooding this message several times per second:
-parent transid verify failed on 164143104 wanted 22325 found 22209
+S=E9bastien Wacquiez
 
-I don't really care about the data but I would like to restore one  
-config file from the filesystem.
-
-Is there any way to get it mounted? Or to extract single files?
-
-If you need any more info feel free to ask, I'll try to help as much  
-as possible.
-
-Thanks
-Harald
+PS : see http://opensolaris.org/os/community/zfs/source/zfstour.png if=20
+you don't know what zvol do.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

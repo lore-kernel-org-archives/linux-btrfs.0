@@ -1,37 +1,48 @@
-From: Christoph Hellwig <hch@infradead.org>
-Subject: Re: Unable to mount btrfs after crash
-Date: Mon, 13 Apr 2009 09:31:31 -0400
-Message-ID: <20090413133131.GA26533@infradead.org>
-References: <EE151463-E687-43D0-91E0-02003C32972F@hachre.de> <1239629308.24841.2.camel@think.oraclecorp.com>
+From: Christoph Hellwig <hch@lst.de>
+Subject: [PATCH] btrfs: simplify makefile
+Date: Mon, 13 Apr 2009 15:32:28 +0200
+Message-ID: <20090413133228.GA11746@lst.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Harald Glatt <mail@hachre.de>, linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1239629308.24841.2.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 13, 2009 at 09:28:28AM -0400, Chris Mason wrote:
-> On Sun, 2009-04-12 at 02:03 +0200, Harald Glatt wrote:
-> > Hi,
-> > 
-> > I have set up a btrfs within a 200 GB file that I mount via -o loop.
-> > 
-> > It worked fine so far but today it crashed when there was alot of  
-> > concurrent writing/reading going on.
-> > I'm testing it with a torrent client, so the data is really irrelevant  
-> > - but it's a good amount of stress.
-> > 
-> 
-> Loopback is somewhat tricky because the kernel loopback driver only
-> writes into the page cache of the underlying file in the host
-> filesystem.  So, the filesystem inside the loopback file thinks it has
-> written things to disk but in reality it is just in cache.
-> 
-> If you crash in the middle of all of this, you're going to see
-> significant corruptions of the FS inside the loopback file.
+Get rid of the hacks for building out of tree, and always use += for
+assigning to the object lists.
 
-There's a patch floating around to add barrier support to the loop
-driver to fix this issue.  I hoped it would get merged for 2.6.30
-but it's not in yet.
 
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+
+Index: linux-2.6/fs/btrfs/Makefile
+===================================================================
+--- linux-2.6.orig/fs/btrfs/Makefile	2009-04-13 13:18:36.258480097 +0200
++++ linux-2.6/fs/btrfs/Makefile	2009-04-13 13:24:19.297482010 +0200
+@@ -1,25 +1,10 @@
+-ifneq ($(KERNELRELEASE),)
+-# kbuild part of makefile
+ 
+ obj-$(CONFIG_BTRFS_FS) := btrfs.o
+-btrfs-y := super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
++
++btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
+ 	   file-item.o inode-item.o inode-map.o disk-io.o \
+ 	   transaction.o inode.o file.o tree-defrag.o \
+ 	   extent_map.o sysfs.o struct-funcs.o xattr.o ordered-data.o \
+ 	   extent_io.o volumes.o async-thread.o ioctl.o locking.o orphan.o \
+ 	   ref-cache.o export.o tree-log.o acl.o free-space-cache.o zlib.o \
+ 	   compression.o delayed-ref.o
+-else
+-
+-# Normal Makefile
+-
+-KERNELDIR := /lib/modules/`uname -r`/build
+-all:
+-	$(MAKE) -C $(KERNELDIR) M=`pwd` CONFIG_BTRFS_FS=m modules
+-
+-modules_install:
+-	$(MAKE) -C $(KERNELDIR) M=`pwd` modules_install
+-clean:
+-	$(MAKE) -C $(KERNELDIR) M=`pwd` clean
+-
+-endif

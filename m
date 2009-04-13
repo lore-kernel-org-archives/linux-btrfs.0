@@ -1,52 +1,46 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: btrfs and /proc/self/mountinfo
-Date: Mon, 13 Apr 2009 09:40:51 -0400
-Message-ID: <1239630051.24841.12.camel@think.oraclecorp.com>
-References: <7b13a0f80904120735r41736455hb7e226ab8ad30bd7@mail.gmail.com>
+Subject: Re: Btrfs and raw zvol-like partition
+Date: Mon, 13 Apr 2009 09:56:26 -0400
+Message-ID: <1239630986.24841.18.camel@think.oraclecorp.com>
+References: <49E197BC.40703@enix.org>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=UTF-8
 Cc: linux-btrfs@vger.kernel.org
-To: David Zeuthen <zeuthen@gmail.com>
+To: sw@enix.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <7b13a0f80904120735r41736455hb7e226ab8ad30bd7@mail.gmail.com>
+In-Reply-To: <49E197BC.40703@enix.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 2009-04-12 at 10:35 -0400, David Zeuthen wrote:
+On Sun, 2009-04-12 at 09:26 +0200, S=C3=A9bastien Wacquiez wrote:
 > Hi,
-> 
-> I have a question about how btrfs is supposed to work with
-> /proc/self/mountinfo. It appears that the dev_t isn't matching what
-> one would expect when mounting a btrfs filesystem - here's /dev/sdb2
-> mounted at /media/usb-fedora
-> 
->  # cat /proc/self/mountinfo |grep btrfs
->  17 19 0:19 / /media/usb-fedora rw,nosuid,nodev,relatime - btrfs /dev/sdb2 rw
-> 
+>=20
+> A nice feature is ZFS is the "ZVOL" layer, that permit you to export=20
+> (directly) a raw device from your zfs pool of disc, with the benefit =
+of=20
+> powerful (growing!) snapshot and easy raid management from zfs. It's=20
+> particulary usefull when you use it with virtual server, allowing you=
+ to=20
+> centralize all your backup problematic, etc
+>=20
+> Does btrfs plan to support this kind of feature ? (please, don't tell=
+ me=20
+> that lvm do, lvm just sucks when you make a snapshot of your disk, an=
+d=20
+> lack of the "growing", commit, rollback, diffsend feature).
+>=20
 
-Yes, this is because I switched to an anonymous super to remove
-restrictions about which devices could be removed from a mounted
-filesystem. 
+I've always been interested in a btrfs export via loop or dm.  The
+problem with loop is that it needs to be switched over to O_DIRECT or
+something similar.
 
-Today it is possible to do something like this:
-
-mkfs.ext3 /dev/sdb
-mkfs.ext3 /dev/sdc
-
-mount /dev/sdb /mnt
-mount /dev/sdc /mnt
-
-Which gives me this in mountinfo:
-
-29 14 8:16 / /mnt rw - ext3 /dev/sdb rw,errors=continue,data=ordered
-31 29 8:32 / /mnt rw - ext3 /dev/sdc rw,errors=continue,data=ordered
-
-So, applications can already see duplicate device entries for the same
-mount point.  Do they deal with that today?  I'm not sure I'll be able
-to get control over the dev_ts mountinfo spits out just for btrfs, but
-we can always float a patch.
-
-Otherwise, we'll have to use the sysfs goo Kay is working on.
+At any rate, it would be a fun project for someone looking to know dm
+better.
 
 -chris
 
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

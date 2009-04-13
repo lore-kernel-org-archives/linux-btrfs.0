@@ -1,104 +1,83 @@
-From: "Oliver Mattos" <oliver.mattos08@imperial.ac.uk>
-Subject: Re: btrfs and /proc/self/mountinfo
-Date: Mon, 13 Apr 2009 00:19:22 +0100
-Message-ID: <E281A61508114F9EB4D379C2407588D6@home.omattos.com>
-References: <7b13a0f80904120735r41736455hb7e226ab8ad30bd7@mail.gmail.com> <ac3eb2510904121201p66ee37a2gcd75aeea683ff254@mail.gmail.com> <7b13a0f80904121408i1872ec7ej73ea2bf2dc72f4ed@mail.gmail.com>
+From: Subrata Modak <subrata@linux.vnet.ibm.com>
+Subject: Re: [LTP] Btrfs TODO
+Date: Mon, 13 Apr 2009 18:44:08 +0530
+Message-ID: <1239628449.16922.18.camel@subratamodak.linux.ibm.com>
+References: <20090409162418.GC20769@unused.rdu.redhat.com>
+	 <1239345763.5029.18.camel@subratamodak.linux.ibm.com>
+Reply-To: subrata@linux.vnet.ibm.com
 Mime-Version: 1.0
-Content-Type: text/plain;
-	format=flowed;
-	charset="iso-8859-1";
-	reply-type=original
-Cc: <linux-btrfs@vger.kernel.org>
-To: "David Zeuthen" <zeuthen@gmail.com>,
-	"Kay Sievers" <kay.sievers@vrfy.org>
+Content-Type: text/plain
+Cc: ltp-list <ltp-list@lists.sf.net>, linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <7b13a0f80904121408i1872ec7ej73ea2bf2dc72f4ed@mail.gmail.com>
+In-Reply-To: <1239345763.5029.18.camel@subratamodak.linux.ibm.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It would be nice to keep legacy compatibility for the most common case - one 
-filesystem on one device with one active subvolume.  If that is true, then 
-it is important btrfs should look like any other filesystem to userspace 
-apps reading /proc/self/mountinfo
+Hi Josef,
 
------ Original Message ----- 
-From: "David Zeuthen" <zeuthen@gmail.com>
-To: "Kay Sievers" <kay.sievers@vrfy.org>
-Cc: <linux-btrfs@vger.kernel.org>
-Sent: Sunday, April 12, 2009 10:08 PM
-Subject: Re: btrfs and /proc/self/mountinfo
+On Fri, 2009-04-10 at 12:12 +0530, Subrata Modak wrote:
+> Hi Josef,
+> 
+> On Thu, 2009-04-09 at 12:24 -0400, Josef Bacik wrote:
+> > Hello,
+> > 
+> > Trying to put together a list of TODO items for btrfs so we can update the wiki
+> > page fully.  So far these things are on the list
+> > 
+> > * Proper ENOSPC handling 
+> > * O_DIRECT support (without checksumming) 
+> > * AIO support 
+> > * Subvolume quotas and inherited space usage information 
+> > * Snapshot removal
+> > * QA Suite for automated regression testing 
+> 
+> We at LTP would be interested in the above. Please let us know your
+> plans in doing Btrfs testing in any ways you do.
+> 
 
+Any thoughts for us ?
 
-On Sun, Apr 12, 2009 at 3:01 PM, Kay Sievers <kay.sievers@vrfy.org> wrote:
-> Btrfs used to export some information in /sys/fs/btrfs/, this is
-> disabled for now. Maybe we can possibly make it export something like:
-> $ tree /sys/fs/btrfs/
-> /sys/fs/btrfs/
-> |-- 969d1386-a002-4c28-94f2-47be23f344e4
-> | |-- ba1532f3-849b-400b-9c76-2c9aee126c52
-> | | |-- device -> ../../../devices/.../block/sda/sda3
-> | | |-- attribute1
-> | | |-- ...
-> | `-- 45645656-849b-400b-9c76-2c9aee126c52
-> | |-- device -> ../../../devices/.../block/sdb/sdb3
-> | |-- attribute1
-> | ....
-> `-- 645645686-a002-4c28-94f2-47be23f344e4
-> |-- ...
->
->
-> So you could look for a "device" link at the subvolume devices? Or if
-> that does not fit for some reason, we could also add a "btrfs" class,
-> to export details about the subvolumes.
+Regards--
+Subrata
 
-I guess that either approach would work. The important thing for me is
-to figure out what block devices are part of a mounted btrfs volume
-including getting change notifications. This also includes the mount
-point and the mount options so I think some kind information "linking"
-entries in /proc/self/mountinfo to /sys/fs/btrfs would be helpful.
-
-For example if /sys/fs/btrfs looked like this
-
-  $ tree /sys/fs/btrfs/
-  /sys/fs/btrfs/
-  |-- 0:19
-  |   |   969d1386-a002-4c28-94f2-47be23f344e4
-  |   |   |-- ba1532f3-849b-400b-9c76-2c9aee126c52
-  |   |   |   |-- device -> ../../../../devices/.../block/sda/sda3
-  |   |   |   |-- attribute1
-  |   |   |   |-- ...
-  |   |   `-- 45645656-849b-400b-9c76-2c9aee126c52
-  |   |       |-- device -> ../../../../devices/.../block/sdb/sdb3
-  |   |       |-- attribute1
-  |   |       ....
-  |-- 0:20
-  |   `-- 645645686-a002-4c28-94f2-47be23f344e4
-  |       |-- ...
-
-then it's really easy to figure out that sda3 and sdb3 are both active
-subvolumes of the btrfs volume 969d1386-a002-4c28-94f2-47be23f344e4
-that is mounted with dev_t 0:19.
-
-E.g. the app would go through /proc/self/mountinfo, see that 0:19 is
-mounted at /foo with options bar,baz, see that the fstype is 'btrfs'
-and then look up /sys/fs/btrfs/0:19 to get the subvolumes.
-
-Ideally we'd also get events (POLLPRI or POLLERR) on
-/proc/self/mountinfo when btrfs subvolumes are attached and detached.
-
-(apologies if 'active', 'attached' and 'detached' isn't proper btrfs lingo)
-
-I mean, this approach probably require the least amount of changes to
-apps if they want to properly support btrfs. I think at least *some*
-changes are to be expected due to the multi-disk nature of btrfs.
-
-There might be an easier way to solve this, I don't know. Perhaps if
-every btrfs subvolume had an entry in /proc/self/mountinfo at least
-some legacy apps wouldn't need modifications... yet others would
-probably fail... I don't know.
-
-     David
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Regards--
+> Subrata
+> 
+> > * Reserved space for online fsck and the ability to add storage so that a
+> > * background extent allocation check can proceed 
+> > * Additional ioctls to set per-inode attributes (nodatacow, nodatasum, etc)
+> > 
+> > So I think all of those are still true.  Things that I know are being worked on
+> > are
+> > 
+> > * async block group cacheing - me
+> > * locking changes - Chris
+> > * backref stuff - Yan
+> > 
+> > Som other things off the top of my head are
+> > 
+> > * a better way to cache block groups in general, for this I was thinking of a
+> > 	bitmap or something like that per block group of free space
+> > * space balancing.  this will likely need to wait on proper ENOSPC handling
+> > * grub support :)
+> > 
+> > Thats all that I can think of atm.  Add things to the list if you think of them,
+> > and hopefully we can update the wiki early next week.  Thanks,
+> > 
+> > Josef
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 
+> ------------------------------------------------------------------------------
+> This SF.net email is sponsored by:
+> High Quality Requirements in a Collaborative Environment.
+> Download a free trial of Rational Requirements Composer Now!
+> http://p.sf.net/sfu/www-ibm-com
+> _______________________________________________
+> Ltp-list mailing list
+> Ltp-list@lists.sourceforge.net
+> https://lists.sourceforge.net/lists/listinfo/ltp-list
 

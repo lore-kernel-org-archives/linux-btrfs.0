@@ -1,65 +1,52 @@
-From: Christoph Hellwig <hch@lst.de>
-Subject: [PATCH] btrfs: don't export symbols
-Date: Mon, 13 Apr 2009 15:33:56 +0200
-Message-ID: <20090413133356.GC11746@lst.de>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: btrfs and /proc/self/mountinfo
+Date: Mon, 13 Apr 2009 09:40:51 -0400
+Message-ID: <1239630051.24841.12.camel@think.oraclecorp.com>
+References: <7b13a0f80904120735r41736455hb7e226ab8ad30bd7@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain
+Cc: linux-btrfs@vger.kernel.org
+To: David Zeuthen <zeuthen@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <7b13a0f80904120735r41736455hb7e226ab8ad30bd7@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently the extent_map code is only for btrfs so don't export it's
-symbols. 
+On Sun, 2009-04-12 at 10:35 -0400, David Zeuthen wrote:
+> Hi,
+> 
+> I have a question about how btrfs is supposed to work with
+> /proc/self/mountinfo. It appears that the dev_t isn't matching what
+> one would expect when mounting a btrfs filesystem - here's /dev/sdb2
+> mounted at /media/usb-fedora
+> 
+>  # cat /proc/self/mountinfo |grep btrfs
+>  17 19 0:19 / /media/usb-fedora rw,nosuid,nodev,relatime - btrfs /dev/sdb2 rw
+> 
+
+Yes, this is because I switched to an anonymous super to remove
+restrictions about which devices could be removed from a mounted
+filesystem. 
+
+Today it is possible to do something like this:
+
+mkfs.ext3 /dev/sdb
+mkfs.ext3 /dev/sdc
+
+mount /dev/sdb /mnt
+mount /dev/sdc /mnt
+
+Which gives me this in mountinfo:
+
+29 14 8:16 / /mnt rw - ext3 /dev/sdb rw,errors=continue,data=ordered
+31 29 8:32 / /mnt rw - ext3 /dev/sdc rw,errors=continue,data=ordered
+
+So, applications can already see duplicate device entries for the same
+mount point.  Do they deal with that today?  I'm not sure I'll be able
+to get control over the dev_ts mountinfo spits out just for btrfs, but
+we can always float a patch.
+
+Otherwise, we'll have to use the sysfs goo Kay is working on.
+
+-chris
 
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
-
-Index: linux-2.6/fs/btrfs/extent_map.c
-===================================================================
---- linux-2.6.orig/fs/btrfs/extent_map.c	2009-04-13 13:15:06.919487729 +0200
-+++ linux-2.6/fs/btrfs/extent_map.c	2009-04-13 13:16:14.001604970 +0200
-@@ -38,7 +38,6 @@ void extent_map_tree_init(struct extent_
- 	tree->map.rb_node = NULL;
- 	spin_lock_init(&tree->lock);
- }
--EXPORT_SYMBOL(extent_map_tree_init);
- 
- /**
-  * alloc_extent_map - allocate new extent map structure
-@@ -59,7 +58,6 @@ struct extent_map *alloc_extent_map(gfp_
- 	atomic_set(&em->refs, 1);
- 	return em;
- }
--EXPORT_SYMBOL(alloc_extent_map);
- 
- /**
-  * free_extent_map - drop reference count of an extent_map
-@@ -78,7 +76,6 @@ void free_extent_map(struct extent_map *
- 		kmem_cache_free(extent_map_cache, em);
- 	}
- }
--EXPORT_SYMBOL(free_extent_map);
- 
- static struct rb_node *tree_insert(struct rb_root *root, u64 offset,
- 				   struct rb_node *node)
-@@ -259,7 +256,6 @@ int add_extent_mapping(struct extent_map
- out:
- 	return ret;
- }
--EXPORT_SYMBOL(add_extent_mapping);
- 
- /* simple helper to do math around the end of an extent, handling wrap */
- static u64 range_end(u64 start, u64 len)
-@@ -321,7 +317,6 @@ found:
- out:
- 	return em;
- }
--EXPORT_SYMBOL(lookup_extent_mapping);
- 
- /**
-  * remove_extent_mapping - removes an extent_map from the extent tree
-@@ -341,4 +336,3 @@ int remove_extent_mapping(struct extent_
- 	em->in_tree = 0;
- 	return ret;
- }
--EXPORT_SYMBOL(remove_extent_mapping);

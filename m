@@ -1,144 +1,65 @@
 From: Christoph Hellwig <hch@lst.de>
-Subject: [PATCH] btrfs: kill btrfs_cache_create
-Date: Mon, 13 Apr 2009 15:33:09 +0200
-Message-ID: <20090413133309.GB11746@lst.de>
+Subject: [PATCH] btrfs: don't export symbols
+Date: Mon, 13 Apr 2009 15:33:56 +0200
+Message-ID: <20090413133356.GC11746@lst.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just use kmem_cache_create directly.
+Currently the extent_map code is only for btrfs so don't export it's
+symbols. 
 
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 
-Index: btrfs-unstable/fs/btrfs/extent_io.c
+Index: linux-2.6/fs/btrfs/extent_map.c
 ===================================================================
---- btrfs-unstable.orig/fs/btrfs/extent_io.c	2008-12-17 18:33:15.000000000 +0100
-+++ btrfs-unstable/fs/btrfs/extent_io.c	2008-12-17 18:35:44.000000000 +0100
-@@ -18,12 +18,6 @@
- #include "ctree.h"
- #include "btrfs_inode.h"
- 
--/* temporary define until extent_map moves out of btrfs */
--struct kmem_cache *btrfs_cache_create(const char *name, size_t size,
--				       unsigned long extra_flags,
--				       void (*ctor)(void *, struct kmem_cache *,
--						    unsigned long));
--
- static struct kmem_cache *extent_state_cache;
- static struct kmem_cache *extent_buffer_cache;
- 
-@@ -56,15 +50,15 @@ struct extent_page_data {
- 
- int __init extent_io_init(void)
- {
--	extent_state_cache = btrfs_cache_create("extent_state",
--					    sizeof(struct extent_state), 0,
--					    NULL);
-+	extent_state_cache = kmem_cache_create("extent_state",
-+			sizeof(struct extent_state), 0,
-+			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
- 	if (!extent_state_cache)
- 		return -ENOMEM;
- 
--	extent_buffer_cache = btrfs_cache_create("extent_buffers",
--					    sizeof(struct extent_buffer), 0,
--					    NULL);
-+	extent_buffer_cache = kmem_cache_create("extent_buffers",
-+			sizeof(struct extent_buffer), 0,
-+			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
- 	if (!extent_buffer_cache)
- 		goto free_state_cache;
- 	return 0;
-Index: btrfs-unstable/fs/btrfs/extent_map.c
-===================================================================
---- btrfs-unstable.orig/fs/btrfs/extent_map.c	2008-12-17 18:33:15.000000000 +0100
-+++ btrfs-unstable/fs/btrfs/extent_map.c	2008-12-17 18:42:52.000000000 +0100
-@@ -7,19 +7,14 @@
- #include <linux/hardirq.h>
- #include "extent_map.h"
- 
--/* temporary define until extent_map moves out of btrfs */
--struct kmem_cache *btrfs_cache_create(const char *name, size_t size,
--				       unsigned long extra_flags,
--				       void (*ctor)(void *, struct kmem_cache *,
--						    unsigned long));
- 
- static struct kmem_cache *extent_map_cache;
- 
- int __init extent_map_init(void)
- {
--	extent_map_cache = btrfs_cache_create("extent_map",
--					    sizeof(struct extent_map), 0,
--					    NULL);
-+	extent_map_cache = kmem_cache_create("extent_map",
-+			sizeof(struct extent_map), 0,
-+			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
- 	if (!extent_map_cache)
- 		return -ENOMEM;
- 	return 0;
-Index: btrfs-unstable/fs/btrfs/inode.c
-===================================================================
---- btrfs-unstable.orig/fs/btrfs/inode.c	2008-12-17 18:33:15.000000000 +0100
-+++ btrfs-unstable/fs/btrfs/inode.c	2008-12-17 18:40:32.000000000 +0100
-@@ -4519,39 +4519,35 @@ void btrfs_destroy_cachep(void)
- 		kmem_cache_destroy(btrfs_path_cachep);
+--- linux-2.6.orig/fs/btrfs/extent_map.c	2009-04-13 13:15:06.919487729 +0200
++++ linux-2.6/fs/btrfs/extent_map.c	2009-04-13 13:16:14.001604970 +0200
+@@ -38,7 +38,6 @@ void extent_map_tree_init(struct extent_
+ 	tree->map.rb_node = NULL;
+ 	spin_lock_init(&tree->lock);
  }
+-EXPORT_SYMBOL(extent_map_tree_init);
  
--struct kmem_cache *btrfs_cache_create(const char *name, size_t size,
--				       unsigned long extra_flags,
--				       void (*ctor)(void *))
--{
--	return kmem_cache_create(name, size, 0, (SLAB_RECLAIM_ACCOUNT |
--				 SLAB_MEM_SPREAD | extra_flags), ctor);
--}
--
- int btrfs_init_cachep(void)
- {
--	btrfs_inode_cachep = btrfs_cache_create("btrfs_inode_cache",
--					  sizeof(struct btrfs_inode),
--					  0, init_once);
-+	btrfs_inode_cachep = kmem_cache_create("btrfs_inode_cache",
-+			sizeof(struct btrfs_inode), 0,
-+			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, init_once);
- 	if (!btrfs_inode_cachep)
- 		goto fail;
--	btrfs_trans_handle_cachep =
--			btrfs_cache_create("btrfs_trans_handle_cache",
--					   sizeof(struct btrfs_trans_handle),
--					   0, NULL);
-+
-+	btrfs_trans_handle_cachep = kmem_cache_create("btrfs_trans_handle_cache",
-+			sizeof(struct btrfs_trans_handle), 0,
-+			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
- 	if (!btrfs_trans_handle_cachep)
- 		goto fail;
--	btrfs_transaction_cachep = btrfs_cache_create("btrfs_transaction_cache",
--					     sizeof(struct btrfs_transaction),
--					     0, NULL);
-+
-+	btrfs_transaction_cachep = kmem_cache_create("btrfs_transaction_cache",
-+			sizeof(struct btrfs_transaction), 0,
-+			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
- 	if (!btrfs_transaction_cachep)
- 		goto fail;
--	btrfs_path_cachep = btrfs_cache_create("btrfs_path_cache",
--					 sizeof(struct btrfs_path),
--					 0, NULL);
-+
-+	btrfs_path_cachep = kmem_cache_create("btrfs_path_cache",
-+			sizeof(struct btrfs_path), 0,
-+			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
- 	if (!btrfs_path_cachep)
- 		goto fail;
--	btrfs_bit_radix_cachep = btrfs_cache_create("btrfs_radix", 256,
--					      SLAB_DESTROY_BY_RCU, NULL);
-+
-+	btrfs_bit_radix_cachep = kmem_cache_create("btrfs_radix", 256, 0,
-+			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD |
-+			SLAB_DESTROY_BY_RCU, NULL);
- 	if (!btrfs_bit_radix_cachep)
- 		goto fail;
- 	return 0;
+ /**
+  * alloc_extent_map - allocate new extent map structure
+@@ -59,7 +58,6 @@ struct extent_map *alloc_extent_map(gfp_
+ 	atomic_set(&em->refs, 1);
+ 	return em;
+ }
+-EXPORT_SYMBOL(alloc_extent_map);
+ 
+ /**
+  * free_extent_map - drop reference count of an extent_map
+@@ -78,7 +76,6 @@ void free_extent_map(struct extent_map *
+ 		kmem_cache_free(extent_map_cache, em);
+ 	}
+ }
+-EXPORT_SYMBOL(free_extent_map);
+ 
+ static struct rb_node *tree_insert(struct rb_root *root, u64 offset,
+ 				   struct rb_node *node)
+@@ -259,7 +256,6 @@ int add_extent_mapping(struct extent_map
+ out:
+ 	return ret;
+ }
+-EXPORT_SYMBOL(add_extent_mapping);
+ 
+ /* simple helper to do math around the end of an extent, handling wrap */
+ static u64 range_end(u64 start, u64 len)
+@@ -321,7 +317,6 @@ found:
+ out:
+ 	return em;
+ }
+-EXPORT_SYMBOL(lookup_extent_mapping);
+ 
+ /**
+  * remove_extent_mapping - removes an extent_map from the extent tree
+@@ -341,4 +336,3 @@ int remove_extent_mapping(struct extent_
+ 	em->in_tree = 0;
+ 	return ret;
+ }
+-EXPORT_SYMBOL(remove_extent_mapping);

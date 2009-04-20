@@ -1,25 +1,31 @@
-From: Ahmed Kamal <email.ahmedkamal@googlemail.com>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: Btrfs development plans
-Date: Mon, 20 Apr 2009 18:10:13 +0200
-Message-ID: <3da3b5b40904200910x63e4e26cqe058ce0e4bc7f8c8@mail.gmail.com>
+Date: Mon, 20 Apr 2009 12:38:57 -0400
+Message-ID: <1240245537.16213.59.camel@think.oraclecorp.com>
 References: <1240238253.16213.48.camel@think.oraclecorp.com>
 	 <20090420153118.GB6195@mother.fordon.pl.eu.org>
+	 <3da3b5b40904200910x63e4e26cqe058ce0e4bc7f8c8@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Ahmed Kamal <email.ahmedkamal@googlemail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090420153118.GB6195@mother.fordon.pl.eu.org>
+In-Reply-To: <3da3b5b40904200910x63e4e26cqe058ce0e4bc7f8c8@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> =A0But now Oracle can re-license Solaris and merge ZFS with btrfs.
-> Just kidding, I don't think it would be technically feasible.
->
+On Mon, 2009-04-20 at 18:10 +0200, Ahmed Kamal wrote:
+> >  But now Oracle can re-license Solaris and merge ZFS with btrfs.
+> > Just kidding, I don't think it would be technically feasible.
+> >
+> 
+> May I suggest the name "ZbtrFS" :)
+> Sorry couldn't resist. On a more serious note though, is there any
+> technical benefits that justify continuing to push money in btrfs
 
-May I suggest the name "ZbtrFS" :)
-Sorry couldn't resist. On a more serious note though, is there any
-technical benefits that justify continuing to push money in btrfs
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+The short answer from my point of view is yes.  This doesn't really
+change the motivations for working on btrfs or the problems we're trying
+to solve.
+
+-chris
+
+

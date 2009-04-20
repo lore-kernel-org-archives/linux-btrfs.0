@@ -1,43 +1,31 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Unstable tree updated to 2.6.29-rc2
-Date: Mon, 20 Apr 2009 17:06:46 -0400
-Message-ID: <1240261606.7114.4.camel@think.oraclecorp.com>
-References: <1240259539.7114.3.camel@think.oraclecorp.com>
-	 <89ed0c690904201348t617a4dcck3ce13aaff2a41f12@mail.gmail.com>
+From: Alex Elsayed <eternaleye@gmail.com>
+Subject: Re: Btrfs development plans
+Date: Mon, 20 Apr 2009 10:39:21 -0700
+Message-ID: <gsj87t$cvu$1@ger.gmane.org>
+References: <1240238253.16213.48.camel@think.oraclecorp.com> <20090420153118.GB6195@mother.fordon.pl.eu.org> <3da3b5b40904200910x63e4e26cqe058ce0e4bc7f8c8@mail.gmail.com> <2a31deca0904200957v39badd2eu4b26844e78fdcde3@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org
-To: "Mitch Harder (aka DontPanic)" <mmharder@gmail.com>
+Content-Type: text/plain; charset="us-ascii"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <89ed0c690904201348t617a4dcck3ce13aaff2a41f12@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2009-04-20 at 15:48 -0500, Mitch Harder (aka DontPanic) wrote:
-> I believe you mean 2.6.30-rc2
-> 
+Andrey Kuzmin wrote:
 
-Sorry, updated to 2.6.30-rc2
+<snip>
+> Personally, I don't see any. Porting zfs to Linux will cost (quite)
+> some time and effort, but this is peanuts compared to what's needed to
+> get btrfs  (no offense meant) to maturity level/feature parity with
+> zfs. The only thing that could prevent this is CDDL licensing issues
+> and patent claims from NTAP over zfs snapshots  and other features;
+> btrfs is free from both.
+<snip>
 
-thanks
-Chris
+There's one thing you're overlooking: the core kernel developers have 
+already stated that ZFS is a "rampant layering violation" and otherwise 
+indicated they do not want ZFS in the Linux kernel, whereas BtrFS has
+gotten a much more positive response. It may well be that on the /Oracle/ 
+side, the political and technical problems with porting ZFS are smaller than 
+those with finishing BtrFS, but if the kernel developers wouldn't accept it, 
+_any_ money and effort spent on it would be wasted money and effort.
 
-> On Mon, Apr 20, 2009 at 3:32 PM, Chris Mason <chris.mason@oracle.com> wrote:
-> > Hello everyone,
-> >
-> > I've updated the unstable tree to 2.6.29-rc2 and pushed out some of the
-> > pending fixes.  This has my current fixes for fsync latency, which make
-> > btrfs behave much better when mixing synchronous and async writes.
-> >
-> > -chris
-> >
-> >
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 

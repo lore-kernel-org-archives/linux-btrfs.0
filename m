@@ -1,37 +1,36 @@
-From: Tomasz Torcz <tomek@pipebreaker.pl>
-Subject: Re: Btrfs development plans
-Date: Mon, 20 Apr 2009 17:31:19 +0200
-Message-ID: <20090420153118.GB6195@mother.fordon.pl.eu.org>
-References: <1240238253.16213.48.camel@think.oraclecorp.com>
+From: Christoph Hellwig <hch@lst.de>
+Subject: Re: [PATCH] btrfs: implement FS_IOC_GETFLAGS/SETFLAGS/GETVERSION
+Date: Mon, 20 Apr 2009 17:47:25 +0200
+Message-ID: <20090420154725.GA14284@lst.de>
+References: <20090417083741.GA14933@lst.de> <49E855EB.5010001@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: Christoph Hellwig <hch@lst.de>, linux-btrfs@vger.kernel.org
+To: Edward Shishkin <edward.shishkin@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1240238253.16213.48.camel@think.oraclecorp.com>
+In-Reply-To: <49E855EB.5010001@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 20, 2009 at 10:37:33AM -0400, Chris Mason wrote:
-> Hello everyone,
->=20
-> Just a quick note about the recently announced purchase of Sun by
-> Oracle.  This does not change Oracle's plans for Btrfs at all, and Bt=
-rfs
-> is still a key project for us.
+On Fri, Apr 17, 2009 at 12:11:55PM +0200, Edward Shishkin wrote:
+> Christoph Hellwig wrote:
+> >Add support for the standard attributes set via chattr and read vis
+> >lsattr.  Currently we store the attributes in the flags value in
+> >the btrfs inode, but I wonder whether we should split it into two so
+> >that we don't have to keep converting between the two formats.
+> >  
+> 
+> Imho, since inode items are of fixed size, is won't be possible
+> to avoid such workarounds like conversion between formats.
+> No?
 
-  But now Oracle can re-license Solaris and merge ZFS with btrfs.
-Just kidding, I don't think it would be technically feasible.
+While the inode format is fixed it has 256 spare bits for expansion.
+But what I mean with the above is to split the current 64bit flags value
+into a a 32 bit internal flags and a 32bit user visible flags value
+and store the ioctl flags in the latter.
 
-  (OTOH, acquiring Sun's patent portfolio=E2=80=A6  there are some stra=
-nge places
-on earth where people care about software patents).
+OTOH every filesystem but extN seem to need some conversion so btrfs
+wouldn't be unusual at that.  And the GETFLAGS/SETFLAGS flags value
+are pretty ugly anyway as they mix up flags for user visible behaviour
+with extN implementation details that shouldn't really need to be
+exposed to userspace.
 
---=20
-Tomasz Torcz               RIP is irrevelant. Spoofing is futile.
-xmpp: zdzichubg@chrome.pl     Your routes will be aggreggated. -- Alex =
-Yuriev
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

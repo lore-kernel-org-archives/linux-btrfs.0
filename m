@@ -1,36 +1,25 @@
-From: Christoph Hellwig <hch@lst.de>
-Subject: Re: [PATCH] btrfs: implement FS_IOC_GETFLAGS/SETFLAGS/GETVERSION
-Date: Mon, 20 Apr 2009 17:47:25 +0200
-Message-ID: <20090420154725.GA14284@lst.de>
-References: <20090417083741.GA14933@lst.de> <49E855EB.5010001@gmail.com>
+From: Ahmed Kamal <email.ahmedkamal@googlemail.com>
+Subject: Re: Btrfs development plans
+Date: Mon, 20 Apr 2009 18:10:13 +0200
+Message-ID: <3da3b5b40904200910x63e4e26cqe058ce0e4bc7f8c8@mail.gmail.com>
+References: <1240238253.16213.48.camel@think.oraclecorp.com>
+	 <20090420153118.GB6195@mother.fordon.pl.eu.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Christoph Hellwig <hch@lst.de>, linux-btrfs@vger.kernel.org
-To: Edward Shishkin <edward.shishkin@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <49E855EB.5010001@gmail.com>
+In-Reply-To: <20090420153118.GB6195@mother.fordon.pl.eu.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 17, 2009 at 12:11:55PM +0200, Edward Shishkin wrote:
-> Christoph Hellwig wrote:
-> >Add support for the standard attributes set via chattr and read vis
-> >lsattr.  Currently we store the attributes in the flags value in
-> >the btrfs inode, but I wonder whether we should split it into two so
-> >that we don't have to keep converting between the two formats.
-> >  
-> 
-> Imho, since inode items are of fixed size, is won't be possible
-> to avoid such workarounds like conversion between formats.
-> No?
+> =A0But now Oracle can re-license Solaris and merge ZFS with btrfs.
+> Just kidding, I don't think it would be technically feasible.
+>
 
-While the inode format is fixed it has 256 spare bits for expansion.
-But what I mean with the above is to split the current 64bit flags value
-into a a 32 bit internal flags and a 32bit user visible flags value
-and store the ioctl flags in the latter.
-
-OTOH every filesystem but extN seem to need some conversion so btrfs
-wouldn't be unusual at that.  And the GETFLAGS/SETFLAGS flags value
-are pretty ugly anyway as they mix up flags for user visible behaviour
-with extN implementation details that shouldn't really need to be
-exposed to userspace.
-
+May I suggest the name "ZbtrFS" :)
+Sorry couldn't resist. On a more serious note though, is there any
+technical benefits that justify continuing to push money in btrfs
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

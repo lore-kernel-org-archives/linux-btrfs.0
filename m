@@ -1,39 +1,69 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] btrfs: implement FS_IOC_GETFLAGS/SETFLAGS/GETVERSION
-Date: Thu, 23 Apr 2009 15:56:21 -0400
-Message-ID: <1240516581.28015.21.camel@think.oraclecorp.com>
-References: <20090417083741.GA14933@lst.de>
+From: Sage Weil <sage@newdream.net>
+Subject: Re: [PATCH] btrfs: fix throttle_on_drops deadlock with user transactions
+Date: Thu, 23 Apr 2009 13:52:16 -0700 (PDT)
+Message-ID: <Pine.LNX.4.64.0904231350320.25207@cobra.newdream.net>
+References: <1239640812-13453-1-git-send-email-sage@newdream.net>
+ <1240516097.28015.20.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Cc: linux-btrfs@vger.kernel.org
-To: Christoph Hellwig <hch@lst.de>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090417083741.GA14933@lst.de>
+In-Reply-To: <1240516097.28015.20.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2009-04-17 at 10:37 +0200, Christoph Hellwig wrote:
-> Add support for the standard attributes set via chattr and read vis
-> lsattr.  Currently we store the attributes in the flags value in
-> the btrfs inode, but I wonder whether we should split it into two so
-> that we don't have to keep converting between the two formats.
+On Thu, 23 Apr 2009, Chris Mason wrote:
+> On Mon, 2009-04-13 at 09:40 -0700, Sage Weil wrote:
+> > Starting in b7ec40d7845bffca8bb3af2ea3f192d6257bbe21, drop_dirty_roots()
+> > tries to avoid generating delayed refs in a transaction that is currently
+> > closing (and trying to flush dirty refs out) by waiting for it to close.
+> > However, if a transaction is held open by a user space TRANS_START ioctl,
+> > that will deadlock against throttle_on_drops().
+> >
+> > The underlying problem is that by the time we are ready to wait in
+> > wait_transaction_pre_flush(), drop_dirty_roots() has already signaled its
+> > intent to drop in fs_info->throttles, and the process calling
+> > throttle_on_drops() will block.  If the throttling process is part of a
+> > user transaction, the transaction will never close and we deadlock.
+> > 
 > 
-> Remove the btrfs_clear_flag/btrfs_set_flag/btrfs_test_flag macros
-> as they were obsfuction the existing code and got in the way of the
-> new additions.
+> Thanks for this patch,
 > 
-> Also add the FS_IOC_GETVERSION ioctl for getting i_generation as it's
-> trivial.
+> I think that even if non-userland ioctl code doesn't deadlock it can
+> wait too long for throttle_on_drops in this case.
 > 
+> Would something like the patch below also work?:
 
-Thanks.
+That does the trick, yep.
 
-> Btw, any idea what the BTRFS_INODE_REDONLY flag is for?  It's a subset
-> of the immutable flag, but can't actually be set anywhere from the
-> filesystem code.
+Thanks!
+sage
+
 > 
-
-The ext3 converter sets BTRFS_INODE_READONLY on the ext3 image file.
-
--chris
-
-
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index 2869b33..01b1436 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -687,7 +687,13 @@ static noinline int wait_transaction_pre_flush(struct btrfs_fs_info *info)
+>  		prepare_to_wait(&info->transaction_wait, &wait,
+>  				TASK_UNINTERRUPTIBLE);
+>  		mutex_unlock(&info->trans_mutex);
+> +
+> +		atomic_dec(&info->throttles);
+> +		wake_up(&info->transaction_throttle);
+> +
+>  		schedule();
+> +
+> +		atomic_inc(&info->throttles);
+>  		mutex_lock(&info->trans_mutex);
+>  		finish_wait(&info->transaction_wait, &wait);
+>  	}
+> 
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 

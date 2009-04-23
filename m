@@ -1,32 +1,61 @@
-From: Christoph Hellwig <hch@lst.de>
-Subject: Re: [PATCH] btrfs: implement FS_IOC_GETFLAGS/SETFLAGS/GETVERSION
-Date: Thu, 23 Apr 2009 20:01:31 +0200
-Message-ID: <20090423180131.GA17835@lst.de>
-References: <20090417083741.GA14933@lst.de> <m3vdovo4fc.fsf@pullcord.laptop.org>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: LVM vs btrfs as a "volume manager" for SANs
+Date: Thu, 23 Apr 2009 14:45:13 -0400
+Message-ID: <1240512313.28015.14.camel@think.oraclecorp.com>
+References: <49EF6DF7.9020406@wpkg.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Christoph Hellwig <hch@lst.de>, linux-btrfs@vger.kernel.org
-To: Chris Ball <cjb@laptop.org>
+Content-Type: text/plain
+Cc: linux-btrfs@vger.kernel.org
+To: Tomasz Chmielewski <mangoo@wpkg.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <m3vdovo4fc.fsf@pullcord.laptop.org>
+In-Reply-To: <49EF6DF7.9020406@wpkg.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 23, 2009 at 10:00:55AM -0400, Chris Ball wrote:
-> Hi Christoph,
+On Wed, 2009-04-22 at 21:20 +0200, Tomasz Chmielewski wrote:
+> Right now, the majority of Linux users probably have LVM on their SAN 
+> devices (i.e those being iSCSI targets).
 > 
->    > Add support for the standard attributes set via chattr and read
->    > vis lsattr.  Currently we store the attributes in the flags value
->    > in the btrfs inode, but I wonder whether we should split it into
->    > two so that we don't have to keep converting between the two
->    > formats.
+> Using LVM on a SAN device is easy: just create a new logical volume or 
+> its snapshot, make it a target to iSCSI initiators, done.
 > 
-> Any thoughts on how best to add support for setting the custom btrfs
-> flags (nodatasum/nodatacow/nocompress) via an ioctl?  Is it possible
-> to reuse FS_IOC_SETFLAGS for these too, or do we need a new ioctl?
-> If we need a new one, any preference between an ioctl per flag vs.
-> a single ioctl that accepts a new set of flags?
 
-I think adding them here is a good idea.  In fact nocompress already
-has a flag assigned, I just didn't want to put it in without broader
-consultation first as it's not used yet in any mainline code.
+This is definitely one of the target use cases for btrfs.
+
+> I was wondering how btrfs would fit here and if it could replace LVM.
+> 
+> 
+> I see the following benefits of using btrfs instead of LVM:
+> 
+> - you can create sparse files which would grow as iSCSI initators use 
+> more space (you can do it with ext3 now as well)
+>
+> - you can use btrfs compression, to further reduce used space and 
+> perhaps increase speed (SANs are mostly IO bound, not CPU bound)
+> 
+> - LVM has a big performance hit when using snapshots; btrfs doesn't
+> 
+> 
+> 
+> However, with btrfs, I'm not sure about:
+> 
+> - what happens if SAN machine crashes while the iSCSI file images were 
+> being written to; with LVM and its block devices, I'm somehow more 
+> confident it wouldn't make more data loss than necessary
+
+If iscsi is writing with O_DIRECT|O_SYNC it should work.  But, tuning
+for this config is something we have to concentrate more on.
+
+> 
+> - taking snapshots of individual files (file images on SAN) is not 
+> possible with btrfs? Probably they would have to be placed in separate 
+> directories first to make snapshots - some minor manageability issue
+
+Btrfs can't snapshot a single dir, but it can snapshot a single file.
+See the bcp command included with btrfs-progs.
+
+I'd also suggest using preallocated files (via fallocate) instead of
+sparse files.  I will perform better in general.
+
+-chris
+
 

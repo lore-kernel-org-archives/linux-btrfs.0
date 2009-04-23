@@ -1,28 +1,33 @@
-From: Dmitri Nikulin <dnikulin@gmail.com>
-Subject: Re: LVM vs btrfs as a "volume manager" for SANs
-Date: Thu, 23 Apr 2009 10:13:31 +1000
-Message-ID: <3a7f57190904221713p1c923e18ga9f3183741cb00ef@mail.gmail.com>
-References: <49EF6DF7.9020406@wpkg.org>
+From: Chris Ball <cjb@laptop.org>
+Subject: Re: [PATCH] btrfs: implement FS_IOC_GETFLAGS/SETFLAGS/GETVERSION
+Date: Thu, 23 Apr 2009 10:00:55 -0400
+Message-ID: <m3vdovo4fc.fsf@pullcord.laptop.org>
+References: <20090417083741.GA14933@lst.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Christoph Hellwig <hch@lst.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <49EF6DF7.9020406@wpkg.org>
+In-Reply-To: <20090417083741.GA14933@lst.de> (Christoph Hellwig's message of
+	"Fri, 17 Apr 2009 10:37:41 +0200")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 23, 2009 at 5:20 AM, Tomasz Chmielewski <mangoo@wpkg.org> wrote:
-> - what happens if SAN machine crashes while the iSCSI file images were being
-> written to; with LVM and its block devices, I'm somehow more confident it
-> wouldn't make more data loss than necessary
+Hi Christoph,
 
-I would hope that COW applies to such a setting. It certainly does for
-ZFS, making it an excellent backend for iSCSI. At least, having it on
-btrfs shouldn't make it any less reliable than on LVM, as long as
-btrfs does its job correctly.
+   > Add support for the standard attributes set via chattr and read
+   > vis lsattr.  Currently we store the attributes in the flags value
+   > in the btrfs inode, but I wonder whether we should split it into
+   > two so that we don't have to keep converting between the two
+   > formats.
 
+Any thoughts on how best to add support for setting the custom btrfs
+flags (nodatasum/nodatacow/nocompress) via an ioctl?  Is it possible
+to reuse FS_IOC_SETFLAGS for these too, or do we need a new ioctl?
+If we need a new one, any preference between an ioctl per flag vs.
+a single ioctl that accepts a new set of flags?
+
+Thanks,
+
+- Chris.
 -- 
-Dmitri Nikulin
-
-Centre for Synchrotron Science
-Monash University
-Victoria 3800, Australia
+Chris Ball   <cjb@laptop.org>

@@ -1,45 +1,35 @@
-From: Tomasz Chmielewski <mangoo@wpkg.org>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: LVM vs btrfs as a "volume manager" for SANs
-Date: Fri, 24 Apr 2009 01:34:02 +0200
-Message-ID: <49F0FAEA.2020904@wpkg.org>
-References: <49EF6DF7.9020406@wpkg.org> <1240512313.28015.14.camel@think.oraclecorp.com>
+Date: Fri, 24 Apr 2009 08:38:38 -0400
+Message-ID: <1240576718.29896.2.camel@think.oraclecorp.com>
+References: <49EF6DF7.9020406@wpkg.org>
+	 <1240512313.28015.14.camel@think.oraclecorp.com>
+	 <49F0FAEA.2020904@wpkg.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain
 Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+To: Tomasz Chmielewski <mangoo@wpkg.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1240512313.28015.14.camel@think.oraclecorp.com>
+In-Reply-To: <49F0FAEA.2020904@wpkg.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason schrieb:
-
->> However, with btrfs, I'm not sure about:
->>
->> - what happens if SAN machine crashes while the iSCSI file images were 
->> being written to; with LVM and its block devices, I'm somehow more 
->> confident it wouldn't make more data loss than necessary
+On Fri, 2009-04-24 at 01:34 +0200, Tomasz Chmielewski wrote:
+> Chris Mason schrieb:
 > 
-> If iscsi is writing with O_DIRECT|O_SYNC it should work.
-
-What if it doesn't?
-
-
-> But, tuning
-> for this config is something we have to concentrate more on.
+> >> However, with btrfs, I'm not sure about:
+> >>
+> >> - what happens if SAN machine crashes while the iSCSI file images were 
+> >> being written to; with LVM and its block devices, I'm somehow more 
+> >> confident it wouldn't make more data loss than necessary
+> > 
+> > If iscsi is writing with O_DIRECT|O_SYNC it should work.
 > 
->> - taking snapshots of individual files (file images on SAN) is not 
->> possible with btrfs? Probably they would have to be placed in separate 
->> directories first to make snapshots - some minor manageability issue
+> What if it doesn't?
 > 
-> Btrfs can't snapshot a single dir, but it can snapshot a single file.
-> See the bcp command included with btrfs-progs.
-> 
-> I'd also suggest using preallocated files (via fallocate) instead of
-> sparse files.  I will perform better in general.
 
-When performance is needed - sure.
+Writes would go to the page cache only (not O_DIRECT) and the metadata
+wouldn't get flushed with each write (not O_SYNC).
+
+-chris
 
 
--- 
-Tomasz Chmielewski
-http://wpkg.org

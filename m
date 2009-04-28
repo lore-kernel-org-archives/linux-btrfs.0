@@ -1,104 +1,68 @@
-From: "Marc R. O'Connor" <mroconnor@oel.state.nj.us>
-Subject: Re: kernel bug in file-item.c
-Date: Tue, 28 Apr 2009 15:30:06 -0400
-Message-ID: <49F7593E.6050407@oel.state.nj.us>
-References: <49F73F69.4010205@oel.state.nj.us>
- <1240946633.15136.55.camel@think.oraclecorp.com>
-Reply-To: mroconnor@oel.state.nj.us
+From: Thomas Glanzmann <thomas@glanzmann.de>
+Subject: Re: Data Deduplication with the help of an online filesystem check
+Date: Tue, 28 Apr 2009 22:10:26 +0200
+Message-ID: <20090428201026.GH7217@cip.informatik.uni-erlangen.de>
+References: <20090427033331.GC17677@cip.informatik.uni-erlangen.de> <1240839448.26451.13.camel@think.oraclecorp.com> <20090428052215.GA22921@cip.informatik.uni-erlangen.de> <1240912971.2149.5.camel@think.oraclecorp.com> <2a31deca0904280649w29d9cca8re9c0abc910ff99@mail.gmail.com> <1240927102.15136.0.camel@think.oraclecorp.com> <20090428140401.GA4223@cip.informatik.uni-erlangen.de> <1240939275.15136.20.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="Boundary_(ID_Giddf74XT/RdtgJ3qUNKZg)"
-Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: Andrey Kuzmin <andrey.v.kuzmin@gmail.com>,
+	linux-btrfs@vger.kernel.org
 To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <1240946633.15136.55.camel@think.oraclecorp.com>
+In-Reply-To: <1240939275.15136.20.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multi-part message in MIME format.
+Hello Chris,
 
---Boundary_(ID_Giddf74XT/RdtgJ3qUNKZg)
-Content-type: text/plain; charset=UTF-8
-Content-transfer-encoding: 7BIT
+> Right now the blocksize can only be the same as the page size.  For
+> this external dedup program you have in mind, you could use any
+> multiple of the page size.
 
+perfect. Exactly what I need.
 
+> Three days is probably not quite enough ;)  I'd honestly prefer the
+> dedup happen entirely in the kernel in a setup similar to the
+> compression code.
 
-Chris Mason wrote:
-> On Tue, 2009-04-28 at 13:39 -0400, Marc R. O'Connor wrote:
->> I have had two 'kernel bug' issues today both referencing file-item.c.
->> The first oops happened when i was cp'ing from and external HD(ext3) to
->> and ext3 partition. The second happened during boot up. I have attached
->> them both.
->>
->> Im using btrfs that was merged into my kernel yesterday.
->>
->> plain text document attachment (btrfs_bug_1)
->> Apr 28 10:55:10 cosmo2 ------------[ cut here ]------------
->> Apr 28 10:55:10 cosmo2 kernel BUG at fs/btrfs/file-item.c:494!
-> 
-> Well, I think I see the bug.  It looks like we want to do
-> 
-> -        if (key->offset < bytenr && csum_end <= end_byte) {
-> +        if (key->offset <= bytenr && csum_end <= end_byte) {
-> 
-> in truncate_one_csum.  But I need to test that here for a bit and send
-> you a patch.
-> 
-> -chris
-> 
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I see. I think that it wouldn't scale because than all the checksums
+need to be stored in memory or at least in an efficient b*tree. For a
+1 Tbyte filesystem with 4 kbyte blocks that would mean more 5 G (!)
+(assuming a 16 kbyte checksum and 4 byte block identifier and that
+leaves out the b*tree overhead for fast searching) of memory.
 
+> But, that would use _lots_ of CPU, so an offline dedup is probably a
+> good feature even if we have transparent dedup.
 
-Thanks, I am a patient kind of guy ;)
+I think that is the right way to go.
 
--- 
+> Wire up a userland database that stores checksums and points to
+> file, offset tuples
 
---
-Marc R. O'Connor
-Information Systems
-Camden County Board of Social Services
-600 Market St.
-Camden, NJ 08102
-mroconnor@oel.state.nj.us
-856-225-8915 Ofc.
-609-206-3458 Blackberry
-319D8AF1 BB PIN
+exactly. And if there is a way to retrieve the already calculated
+checksums from kernel land, than it would be possible to implement a
+,,systemcall'' that gives the kernel a hint of a possible duplicated
+block (like providing a list of lists of blocks to the kernel that might
+be duplicated because they have the same checksum). Than the kernel code
+could dedup the block after byte-byte comparing it.
 
+> Make the ioctl to replace a given file extent if and only if the file
+> contents match a given checksum over a range of bytes.  The ioctl should
+> be able to optionally do a byte compare of the src and destination pages
+> to make 100% sure the data is really the same.
 
---Boundary_(ID_Giddf74XT/RdtgJ3qUNKZg)
-Content-type: text/x-vcard; charset=utf-8; name=mroconnor.vcf
-Content-transfer-encoding: 7BIT
-Content-disposition: attachment; filename=mroconnor.vcf
+Exactly.
 
-begin:vcard
-fn:Marc O'Connor
-n:O'Connor;Marc
-org:Camden County Board of Social Services;Information Technology
-adr:;;600 Market St.;Camden;NJ;08102;USA
-email;internet:mroconnor@oel.state.nj.us
-tel;work:856-225-8915
-tel;cell:609-206-3458
-version:2.1
-end:vcard
+> Make another ioctl to report on which parts of a file have changed
+> since a given transaction. This will greatly reduce the time spent
+> scanning for new blocks.
 
+That would be perfect. Even better would be a systemcall that reports
+all the blocks that have been touched since a specific transaction. Like
+a bitmap that sets a ,,1'' for every block that has been touched.
 
---Boundary_(ID_Giddf74XT/RdtgJ3qUNKZg)
-Content-type: Text/Plain; name=disclaimer.txt
-Content-transfer-encoding: 7BIT
-Content-disposition: attachment; Filename=disclaimer.txt
-X-NAIMIME-Disclaimer: 1
-X-NAIMIME-Modified: 1
+> It isn't painfully hard, but you're looking at about 3 weeks total
+> time.
 
-This E-mail, including any attachments, may be intended solely for the personal 
-and confidential use of the sender and recipient(s) named above. This message 
-may include advisory, consultative and/or deliberative material and, as such, 
-would be privileged and confidential and not a public document. Any Information 
-in this e-mail identifying a client of the Department of Human Services is 
-confidential. If you have received this e-mail in error, you must not review, 
-transmit, convert to hard copy, copy, use or disseminate this e-mail or any 
-attachments to it and you must delete this message. You are requested to notify 
-the sender by return e-mail.
+I see, so no quick hack to get it going.
 
---Boundary_(ID_Giddf74XT/RdtgJ3qUNKZg)--
+        Thomas

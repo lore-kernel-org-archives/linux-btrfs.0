@@ -1,37 +1,36 @@
 From: Thomas Glanzmann <thomas@glanzmann.de>
 Subject: Re: Data Deduplication with the help of an online filesystem check
-Date: Tue, 28 Apr 2009 22:14:07 +0200
-Message-ID: <20090428201407.GI7217@cip.informatik.uni-erlangen.de>
-References: <20090427033331.GC17677@cip.informatik.uni-erlangen.de> <1240839448.26451.13.camel@think.oraclecorp.com> <20090428155900.GA1722@cip.informatik.uni-erlangen.de> <49F728F6.6030307@wpkg.org> <20090428173251.GB7217@cip.informatik.uni-erlangen.de> <49F73FC9.3070607@partiallystapled.com>
+Date: Tue, 28 Apr 2009 22:15:53 +0200
+Message-ID: <20090428201553.GJ7217@cip.informatik.uni-erlangen.de>
+References: <20090427033331.GC17677@cip.informatik.uni-erlangen.de> <1240839448.26451.13.camel@think.oraclecorp.com> <20090428155900.GA1722@cip.informatik.uni-erlangen.de> <1240939437.15136.23.camel@think.oraclecorp.com> <20090428173719.GD7217@cip.informatik.uni-erlangen.de> <1240940588.15136.31.camel@think.oraclecorp.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Tomasz Chmielewski <mangoo@wpkg.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs@vger.kernel.org
-To: Michael Tharp <gxti@partiallystapled.com>
+Cc: linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <49F73FC9.3070607@partiallystapled.com>
+In-Reply-To: <1240940588.15136.31.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Michael,
+Hello Chris,
 
-> I'd start with a crc32 and/or MD5 to find candidate blocks, then do a 
-> bytewise comparison before actually merging them. Even the risk of an 
-> accidental collision is too high, and considering there are plenty of 
-> birthday-style MD5 attacks it would not be extraordinarily difficult to 
-> construct a block that collides with e.g. a system library.
+> Yes, but for the purposes of dedup, it's not exactly what you want.
+> You want an index by checksum, and the current btrfs code indexes by
+> logical byte number in the disk.
 
-I agree. But using a crc32 to identify blocks might me give to much
-false positives, but actually someone need to try that in practice and
-run some statics on real data to tell if it is the case.
+that would be good for online dedup, but in practice that is not going
+to work or I don't see how.
 
-> Keep in mind that although digests do a fairly good job of making
-> unique identifiers for larger chunks of data, they can only hold so
-> many unique combinations. Considering you're comparing blocks of a few
-> kibibytes in size it's best to just do a foolproof comparison. There's
-> nothing wrong with using a checksum/digest as a screening mechanism
-> though.
+> So you need an extra index either way.  It makes sense to keep the
+> crc32c csums for fast verification of the data read from disk and only
+> use the expensive csums for dedup. 
 
-Again absolutly agreed.
+I think that this should be part of a userland programm. It can take all
+the time it wants during weekends to find dedup blocks.
+
+> > Does that mean that I can dedup 4k blocks even if you use extents?
+
+> Yes.
+
+Perfect. :-)
 
         Thomas

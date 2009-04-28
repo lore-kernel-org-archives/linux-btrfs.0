@@ -1,68 +1,37 @@
 From: Thomas Glanzmann <thomas@glanzmann.de>
 Subject: Re: Data Deduplication with the help of an online filesystem check
-Date: Tue, 28 Apr 2009 22:10:26 +0200
-Message-ID: <20090428201026.GH7217@cip.informatik.uni-erlangen.de>
-References: <20090427033331.GC17677@cip.informatik.uni-erlangen.de> <1240839448.26451.13.camel@think.oraclecorp.com> <20090428052215.GA22921@cip.informatik.uni-erlangen.de> <1240912971.2149.5.camel@think.oraclecorp.com> <2a31deca0904280649w29d9cca8re9c0abc910ff99@mail.gmail.com> <1240927102.15136.0.camel@think.oraclecorp.com> <20090428140401.GA4223@cip.informatik.uni-erlangen.de> <1240939275.15136.20.camel@think.oraclecorp.com>
+Date: Tue, 28 Apr 2009 22:14:07 +0200
+Message-ID: <20090428201407.GI7217@cip.informatik.uni-erlangen.de>
+References: <20090427033331.GC17677@cip.informatik.uni-erlangen.de> <1240839448.26451.13.camel@think.oraclecorp.com> <20090428155900.GA1722@cip.informatik.uni-erlangen.de> <49F728F6.6030307@wpkg.org> <20090428173251.GB7217@cip.informatik.uni-erlangen.de> <49F73FC9.3070607@partiallystapled.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Andrey Kuzmin <andrey.v.kuzmin@gmail.com>,
+Cc: Tomasz Chmielewski <mangoo@wpkg.org>,
+	Chris Mason <chris.mason@oracle.com>,
 	linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+To: Michael Tharp <gxti@partiallystapled.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1240939275.15136.20.camel@think.oraclecorp.com>
+In-Reply-To: <49F73FC9.3070607@partiallystapled.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Chris,
+Hello Michael,
 
-> Right now the blocksize can only be the same as the page size.  For
-> this external dedup program you have in mind, you could use any
-> multiple of the page size.
+> I'd start with a crc32 and/or MD5 to find candidate blocks, then do a 
+> bytewise comparison before actually merging them. Even the risk of an 
+> accidental collision is too high, and considering there are plenty of 
+> birthday-style MD5 attacks it would not be extraordinarily difficult to 
+> construct a block that collides with e.g. a system library.
 
-perfect. Exactly what I need.
+I agree. But using a crc32 to identify blocks might me give to much
+false positives, but actually someone need to try that in practice and
+run some statics on real data to tell if it is the case.
 
-> Three days is probably not quite enough ;)  I'd honestly prefer the
-> dedup happen entirely in the kernel in a setup similar to the
-> compression code.
+> Keep in mind that although digests do a fairly good job of making
+> unique identifiers for larger chunks of data, they can only hold so
+> many unique combinations. Considering you're comparing blocks of a few
+> kibibytes in size it's best to just do a foolproof comparison. There's
+> nothing wrong with using a checksum/digest as a screening mechanism
+> though.
 
-I see. I think that it wouldn't scale because than all the checksums
-need to be stored in memory or at least in an efficient b*tree. For a
-1 Tbyte filesystem with 4 kbyte blocks that would mean more 5 G (!)
-(assuming a 16 kbyte checksum and 4 byte block identifier and that
-leaves out the b*tree overhead for fast searching) of memory.
-
-> But, that would use _lots_ of CPU, so an offline dedup is probably a
-> good feature even if we have transparent dedup.
-
-I think that is the right way to go.
-
-> Wire up a userland database that stores checksums and points to
-> file, offset tuples
-
-exactly. And if there is a way to retrieve the already calculated
-checksums from kernel land, than it would be possible to implement a
-,,systemcall'' that gives the kernel a hint of a possible duplicated
-block (like providing a list of lists of blocks to the kernel that might
-be duplicated because they have the same checksum). Than the kernel code
-could dedup the block after byte-byte comparing it.
-
-> Make the ioctl to replace a given file extent if and only if the file
-> contents match a given checksum over a range of bytes.  The ioctl should
-> be able to optionally do a byte compare of the src and destination pages
-> to make 100% sure the data is really the same.
-
-Exactly.
-
-> Make another ioctl to report on which parts of a file have changed
-> since a given transaction. This will greatly reduce the time spent
-> scanning for new blocks.
-
-That would be perfect. Even better would be a systemcall that reports
-all the blocks that have been touched since a specific transaction. Like
-a bitmap that sets a ,,1'' for every block that has been touched.
-
-> It isn't painfully hard, but you're looking at about 3 weeks total
-> time.
-
-I see, so no quick hack to get it going.
+Again absolutly agreed.
 
         Thomas

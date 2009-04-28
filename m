@@ -1,41 +1,37 @@
-From: Thomas Glanzmann <thomas@glanzmann.de>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: Data Deduplication with the help of an online filesystem check
-Date: Tue, 28 Apr 2009 19:37:19 +0200
-Message-ID: <20090428173719.GD7217@cip.informatik.uni-erlangen.de>
-References: <20090427033331.GC17677@cip.informatik.uni-erlangen.de> <1240839448.26451.13.camel@think.oraclecorp.com> <20090428155900.GA1722@cip.informatik.uni-erlangen.de> <1240939437.15136.23.camel@think.oraclecorp.com>
+Date: Tue, 28 Apr 2009 13:38:24 -0400
+Message-ID: <1240940304.15136.27.camel@think.oraclecorp.com>
+References: <20090427033331.GC17677@cip.informatik.uni-erlangen.de>
+	 <1240839448.26451.13.camel@think.oraclecorp.com>
+	 <20090428155900.GA1722@cip.informatik.uni-erlangen.de>
+	 <49F728F6.6030307@wpkg.org> <49F73CEF.4030105@gmail.com>
+	 <20090428173401.GC7217@cip.informatik.uni-erlangen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain
+Cc: Edward Shishkin <edward.shishkin@gmail.com>,
+	Tomasz Chmielewski <mangoo@wpkg.org>,
+	linux-btrfs@vger.kernel.org
+To: Thomas Glanzmann <thomas@glanzmann.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1240939437.15136.23.camel@think.oraclecorp.com>
+In-Reply-To: <20090428173401.GC7217@cip.informatik.uni-erlangen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Chris,
+On Tue, 2009-04-28 at 19:34 +0200, Thomas Glanzmann wrote:
+> Hello,
+> 
+> > I wouldn't rely on crc32: it is not a strong hash,
+> > Such deduplication can lead to various problems,
+> > including security ones.
+> 
+> sure thing, did you think of replacing crc32 with sha1 or md5, is this
+> even possible (is there enough space reserved so that the change can be
+> done without changing the filesystem layout) at the moment with btrfs?
 
-> > Is there a checksum for every block in btrfs?
+It is possible, there's room in the metadata for about about 4k of
+checksum for each 4k of data.  The initial btrfs code used sha256, but
+the real limiting factor is the CPU time used.
 
-> Yes, but they are only crc32c.
+-chris
 
-I see, is it easily possible to exchange that with sha-1 or md5?
 
-> > Is it possible to retrieve these checksums from userland?
-
-> Not today.  The sage developers sent a patch to make an ioctl for
-> this, but since it was hard coded to crc32c I haven't taken it yet.
-
-I see.
-
-> Yes, btrfs uses extents but for the purposes of dedup, 4k blocksizes
-> are fine.
-
-Does that mean that I can dedup 4k blocks even if you use extents?
-
-> Virtual machines are the ideal dedup workload.  But, you do get a big
-> portion of the dedup benefits by just starting with a common image and
-> cloning it instead of doing copies of each vm.
-
-True, the operating system can be almost completely deduped but as soon
-as you start patching you loose the benefit.
-
-        Thomas

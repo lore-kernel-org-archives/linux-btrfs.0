@@ -1,49 +1,84 @@
-From: Dmitri Nikulin <dnikulin@gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: Data Deduplication with the help of an online filesystem check
-Date: Wed, 29 Apr 2009 07:19:01 +1000
-Message-ID: <3a7f57190904281419u2d8e2666v34105fb99953d264@mail.gmail.com>
+Date: Tue, 28 Apr 2009 17:26:17 -0400
+Message-ID: <1240953977.15136.76.camel@think.oraclecorp.com>
 References: <20090427033331.GC17677@cip.informatik.uni-erlangen.de>
-	 <1240839448.26451.13.camel@think.oraclecorp.com>
-	 <20090428155900.GA1722@cip.informatik.uni-erlangen.de>
-	 <1240939437.15136.23.camel@think.oraclecorp.com>
-	 <20090428173719.GD7217@cip.informatik.uni-erlangen.de>
-	 <1240940588.15136.31.camel@think.oraclecorp.com>
+	 <200904281945.10274.hjclaes@web.de>
+	 <20090428201619.GK7217@cip.informatik.uni-erlangen.de>
+	 <200904282236.07428.hjclaes@web.de>
+	 <20090428205242.GA13112@cip.informatik.uni-erlangen.de>
+	 <1240952295.15136.73.camel@think.oraclecorp.com>
+	 <20090428211255.GB13112@cip.informatik.uni-erlangen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain
+Cc: Heinz-Josef Claes <hjclaes@web.de>,
+	Edward Shishkin <edward.shishkin@gmail.com>,
+	Tomasz Chmielewski <mangoo@wpkg.org>,
+	linux-btrfs@vger.kernel.org
+To: Thomas Glanzmann <thomas@glanzmann.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1240940588.15136.31.camel@think.oraclecorp.com>
+In-Reply-To: <20090428211255.GB13112@cip.informatik.uni-erlangen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 29, 2009 at 3:43 AM, Chris Mason <chris.mason@oracle.com> w=
-rote:
-> So you need an extra index either way. =C2=A0It makes sense to keep t=
-he
-> crc32c csums for fast verification of the data read from disk and onl=
-y
-> use the expensive csums for dedup.
+On Tue, 2009-04-28 at 23:12 +0200, Thomas Glanzmann wrote:
+> Hello,
+> 
+> > >         - Implement a system call that reports all checksums and unique
+> > >           block identifiers for all stored blocks.
+> 
+> > This would require storing the larger checksums in the filesystem.  It
+> > is much better done in the dedup program.
+> 
+> I think I misunderstood something here. I thought the checksums per
+> block would already be stored somewhere in btrfs?
 
-What about self-healing? With only a CRC32 to distinguish a good block
-from a bad one, statistically you're likely to get an incorrectly
-healed block in only every few billion blocks. And that may not be
-your machine, but it'll be somebody's, since the probability is way
-too high for it not to happen to somebody. Even just a 64 bit checksum
-would drop the probability plenty, but I'd really only start with 128
-bits. NetApp does 64 for 4k of data, ZFS does 256 bits per block, and
-this traces back to the root like a highly dynamic Merkle tree.
+They are, but only the crc32c are stored today.
 
-In the CRC case the only safe redundancy is one that has 3+ copies of
-the block, to compare the raw data itself, at which point you may as
-well have just been using healing RAID1 without checksums.
+> 
+> > >         - Implement another system call that reports all checksums and
+> > >           unique identifiers for all stored blocks since the last
+> > >           report. This can be easily implemented:
+> 
+> > This is racey because there's no way to prevent new changes.
+> 
+> I got the point.
+> 
+> > >           Use a block bitmap for every block on the filesystem use one
+> > >           bit. If the block is modified set the bit to one, when a
+> > >           bitmap is retrieved simply zero it out:
+> 
+> > >         Assuming a 4 kbyte block size that would mean for a 1 Tbyte
+> > >         filesystem:
+> 
+> > >         1Tbyte / 4096 / 8 = 32 Mbyte of memory (this should of course
+> > >         be saved to disk from time to time and be restored on startup).
+> 
+> > Sorry, a 1TB drive is teeny, I don't think a bitmap is practical
+> > across the whole FS.  Btrfs has metadata that can quickly and easily
+> > tell you which files and which blocks in which files have changed
+> > since a given transaction id.  This is how you want to find new
+> > things.
+> 
+> You're right the bitmap would not scale. So what is missing is a
+> systemcall to report the changes to userland? (Is this feature used to
+> generate off-site backups as well?)
 
---=20
-Dmitri Nikulin
+Yes, that's the idea.  An ioctl to walk the tree and report on changes,
+but this doesn't have to be done with version 1 of the dedup code, you
+can just scan the file based on mtime/ctime.
 
-Centre for Synchrotron Science
-Monash University
-Victoria 3800, Australia
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> > But, the ioctl to actually do the dedup needs to be able to verify a
+> > given block has the contents you expect it to.  The only place you can
+> > lock down the pages in the file and prevent new changes is inside the
+> > kernel.
+> 
+> I totally agree to that. How much time would it consume to implement
+> such a systemcall?
+
+It is probably a 3 week to one month effort.
+
+-chris
+
+
+

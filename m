@@ -1,57 +1,52 @@
 From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: Data Deduplication with the help of an online filesystem check
-Date: Tue, 28 Apr 2009 13:21:14 -0400
-Message-ID: <1240939275.15136.20.camel@think.oraclecorp.com>
+Date: Tue, 28 Apr 2009 13:23:57 -0400
+Message-ID: <1240939437.15136.23.camel@think.oraclecorp.com>
 References: <20090427033331.GC17677@cip.informatik.uni-erlangen.de>
 	 <1240839448.26451.13.camel@think.oraclecorp.com>
-	 <20090428052215.GA22921@cip.informatik.uni-erlangen.de>
-	 <1240912971.2149.5.camel@think.oraclecorp.com>
-	 <2a31deca0904280649w29d9cca8re9c0abc910ff99@mail.gmail.com>
-	 <1240927102.15136.0.camel@think.oraclecorp.com>
-	 <20090428140401.GA4223@cip.informatik.uni-erlangen.de>
+	 <20090428155900.GA1722@cip.informatik.uni-erlangen.de>
 Mime-Version: 1.0
 Content-Type: text/plain
-Cc: Andrey Kuzmin <andrey.v.kuzmin@gmail.com>,
-	linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
 To: Thomas Glanzmann <thomas@glanzmann.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090428140401.GA4223@cip.informatik.uni-erlangen.de>
+In-Reply-To: <20090428155900.GA1722@cip.informatik.uni-erlangen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2009-04-28 at 16:04 +0200, Thomas Glanzmann wrote:
-> Chris,
-> what blocksizes can I choose with btrfs? 
+On Tue, 2009-04-28 at 17:59 +0200, Thomas Glanzmann wrote:
+> Hello,
+> I have a few more questions to this:
+> 
+>         - Is there a checksum for every block in btrfs?
 
-Right now the blocksize can only be the same as the page size.  For this
-external dedup program you have in mind, you could use any multiple of
-the page size.
+Yes, but they are only crc32c.
 
-> Do you think that it is
-> possible for an outsider like me to submit patches to btrfs which enable
-> dedup in three fulltime days?
+> 
+>         - Is it possible to retrieve these checksums from userland?
+> 
 
-Three days is probably not quite enough ;)  I'd honestly prefer the
-dedup happen entirely in the kernel in a setup similar to the
-compression code.
+Not today.  The sage developers sent a patch to make an ioctl for this,
+but since it was hard coded to crc32c I haven't taken it yet.
 
-But, that would use _lots_ of CPU, so an offline dedup is probably a
-good feature even if we have transparent dedup.
+>         - Is it possible to use a blocksize of 4 or 8 kbyte with btrfs?
+> 
 
-You'd have to:
+Yes, btrfs uses extents but for the purposes of dedup, 4k blocksizes are
+fine.
 
-Wire up a userland database that stores checksums and points to
-file,offset tuples
+> To get a bit more specific: If it is relatively easy to identify and
+> deduplicate blocks, and if btrfs supports relatively small block sizes
+> like 4 / 8 kbyte, it is the perfect candidate for VMs. To give you some
+> data. I took 300 Gbyte (note this is the disk space that is used not the
+> provisioned space (the space that isn't currently used by the VM so it's the
+> data that are in use) of VMs running different operating systems and used a
+> perl script to identify how many data could be deduped give a specific
+> blocksize:
+> 
 
-Make the ioctl to replace a given file extent if and only if the file
-contents match a given checksum over a range of bytes.  The ioctl should
-be able to optionally do a byte compare of the src and destination pages
-to make 100% sure the data is really the same.
-
-Make another ioctl to report on which parts of a file have changed since
-a given transaction.  This will greatly reduce the time spent scanning
-for new blocks.
-
-It isn't painfully hard, but you're looking at about 3 weeks total time.
+Virtual machines are the ideal dedup workload.  But, you do get a big
+portion of the dedup benefits by just starting with a common image and
+cloning it instead of doing copies of each vm.
 
 -chris
 

@@ -1,46 +1,32 @@
-From: Heinz-Josef Claes <hjclaes@web.de>
+From: Michael Tharp <gxti@partiallystapled.com>
 Subject: Re: Data Deduplication with the help of an online filesystem check
-Date: Tue, 28 Apr 2009 19:45:09 +0200
-Message-ID: <200904281945.10274.hjclaes@web.de>
-References: <20090427033331.GC17677@cip.informatik.uni-erlangen.de> <20090428173401.GC7217@cip.informatik.uni-erlangen.de> <1240940304.15136.27.camel@think.oraclecorp.com>
+Date: Tue, 28 Apr 2009 13:41:29 -0400
+Message-ID: <49F73FC9.3070607@partiallystapled.com>
+References: <20090427033331.GC17677@cip.informatik.uni-erlangen.de> <1240839448.26451.13.camel@think.oraclecorp.com> <20090428155900.GA1722@cip.informatik.uni-erlangen.de> <49F728F6.6030307@wpkg.org> <20090428173251.GB7217@cip.informatik.uni-erlangen.de>
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="utf-8"
-Cc: Thomas Glanzmann <thomas@glanzmann.de>,
-	Edward Shishkin <edward.shishkin@gmail.com>,
-	Tomasz Chmielewski <mangoo@wpkg.org>,
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Tomasz Chmielewski <mangoo@wpkg.org>,
+	Chris Mason <chris.mason@oracle.com>,
 	linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+To: Thomas Glanzmann <thomas@glanzmann.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1240940304.15136.27.camel@think.oraclecorp.com>
+In-Reply-To: <20090428173251.GB7217@cip.informatik.uni-erlangen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Dienstag, 28. April 2009 19:38:24 schrieb Chris Mason:
-> On Tue, 2009-04-28 at 19:34 +0200, Thomas Glanzmann wrote:
-> > Hello,
-> >
-> > > I wouldn't rely on crc32: it is not a strong hash,
-> > > Such deduplication can lead to various problems,
-> > > including security ones.
-> >
-> > sure thing, did you think of replacing crc32 with sha1 or md5, is this
-> > even possible (is there enough space reserved so that the change can be
-> > done without changing the filesystem layout) at the moment with btrfs?
->
-> It is possible, there's room in the metadata for about about 4k of
-> checksum for each 4k of data.  The initial btrfs code used sha256, but
-> the real limiting factor is the CPU time used.
->
-> -chris
->
-It's not only cpu time, it's also memory. You need 32 byte for each 4k block. 
-It needs to be in RAM for performance reason.
+Thomas Glanzmann wrote:
+> no, I just used the md5 checksum. And even if I have a hash escalation
+> which is highly unlikely it still gives a good house number.
 
-hjc
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I'd start with a crc32 and/or MD5 to find candidate blocks, then do a 
+bytewise comparison before actually merging them. Even the risk of an 
+accidental collision is too high, and considering there are plenty of 
+birthday-style MD5 attacks it would not be extraordinarily difficult to 
+construct a block that collides with e.g. a system library.
 
+Keep in mind that although digests do a fairly good job of making unique 
+identifiers for larger chunks of data, they can only hold so many unique 
+combinations. Considering you're comparing blocks of a few kibibytes in 
+size it's best to just do a foolproof comparison. There's nothing wrong 
+with using a checksum/digest as a screening mechanism though.
 
+-- m. tharp

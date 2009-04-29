@@ -1,7 +1,7 @@
 From: "Marc R. O'Connor" <mroconnor@oel.state.nj.us>
 Subject: Re: kernel bug in file-item.c
-Date: Wed, 29 Apr 2009 14:46:48 -0400
-Message-ID: <49F8A098.4020106@oel.state.nj.us>
+Date: Wed, 29 Apr 2009 15:04:15 -0400
+Message-ID: <49F8A4AF.3020907@oel.state.nj.us>
 References: <49F73F69.4010205@oel.state.nj.us>
  <1240946633.15136.55.camel@think.oraclecorp.com>
  <49F87A7F.7090804@oel.state.nj.us>
@@ -9,50 +9,37 @@ References: <49F73F69.4010205@oel.state.nj.us>
  <49F89AB4.2090001@oel.state.nj.us>
  <1241029841.20099.53.camel@think.oraclecorp.com>
  <49F89E91.3020604@oel.state.nj.us>
- <1241030419.20099.55.camel@think.oraclecorp.com>
+ <1241030419.20099.55.camel@think.oraclecorp.com> <49F8A159.6090207@oracle.com>
 Reply-To: mroconnor@oel.state.nj.us
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="Boundary_(ID_heolF4E3xFvXg+QBKvoHJg)"
-Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: multipart/mixed; boundary="Boundary_(ID_t/QcNzUaZeEJxxujTJ67hQ)"
+Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+To: Zach Brown <zach.brown@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <1241030419.20099.55.camel@think.oraclecorp.com>
+In-reply-to: <49F8A159.6090207@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a multi-part message in MIME format.
 
---Boundary_(ID_heolF4E3xFvXg+QBKvoHJg)
+--Boundary_(ID_t/QcNzUaZeEJxxujTJ67hQ)
 Content-type: text/plain; charset=UTF-8
 Content-transfer-encoding: 7BIT
 
-To be honest I have no idea. Let me see if I can find a different
-version to test with and see. I think I'm still under warranty. ;)
 
-Chris Mason wrote:
-> On Wed, 2009-04-29 at 14:38 -0400, Marc R. O'Connor wrote:
->>>> I have done that on all btrfs partitions I have and btrfsck did not
->>>> return anything odd.
->>>>
->>> In that case, the bad ordering is being introduced at run time.  Could
->>> you please run memtest86 on the box?
->>>
->>> -chris
->>>
->>>
->>  memtest comes back with two errors very early on then reboots the
->> sysrescueCD. :(
-> 
-> Well, then I'm surprised btrfs doesn't crash more violently and more
-> often ;)
-> 
-> Do you think you're hitting a memtest bug or is the HW really bad?
-> 
-> -chris
-> 
-> 
-> 
-> 
 
+Zach Brown wrote:
+>> Do you think you're hitting a memtest bug or is the HW really bad?
+> 
+> If you can stomach it, you can get a second opinion from the bootable
+> windows memory testing iso:
+> 
+>   http://oca.microsoft.com/en/windiag.asp
+> 
+> - z
+
+
+It will be hard but I might just try it. Two versions of memtest86+ die
+in the middle of the scan. Ugh.
 -- 
 
 --
@@ -67,7 +54,7 @@ mroconnor@oel.state.nj.us
 319D8AF1 BB PIN
 
 
---Boundary_(ID_heolF4E3xFvXg+QBKvoHJg)
+--Boundary_(ID_t/QcNzUaZeEJxxujTJ67hQ)
 Content-type: text/x-vcard; charset=utf-8; name=mroconnor.vcf
 Content-transfer-encoding: 7BIT
 Content-disposition: attachment; filename=mroconnor.vcf
@@ -84,7 +71,7 @@ version:2.1
 end:vcard
 
 
---Boundary_(ID_heolF4E3xFvXg+QBKvoHJg)
+--Boundary_(ID_t/QcNzUaZeEJxxujTJ67hQ)
 Content-type: Text/Plain; name=disclaimer.txt
 Content-transfer-encoding: 7BIT
 Content-disposition: attachment; Filename=disclaimer.txt
@@ -101,4 +88,4 @@ transmit, convert to hard copy, copy, use or disseminate this e-mail or any
 attachments to it and you must delete this message. You are requested to notify 
 the sender by return e-mail.
 
---Boundary_(ID_heolF4E3xFvXg+QBKvoHJg)--
+--Boundary_(ID_t/QcNzUaZeEJxxujTJ67hQ)--

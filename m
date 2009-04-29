@@ -1,62 +1,35 @@
-From: Wu Fengguang <fengguang.wu@intel.com>
-Subject: Re: btrfs BUG on creating huge sparse file
-Date: Wed, 29 Apr 2009 19:45:26 +0800
-Message-ID: <20090429114526.GA24418@localhost>
-References: <20090407151010.E72A91D0471@basil.firstfloor.org> <1239210239.28688.15.camel@think.oraclecorp.com> <20090409072949.GF14687@one.firstfloor.org> <20090409075805.GG14687@one.firstfloor.org> <1239283829.23150.34.camel@think.oraclecorp.com> <20090409140257.GI14687@one.firstfloor.org> <1239287859.23150.57.camel@think.oraclecorp.com> <20090429081616.GA8339@localhost> <20090429082151.GA15170@localhost> <1241005222.19174.1.camel@think.oraclecorp.com>
+From: Thomas Glanzmann <thomas@glanzmann.de>
+Subject: Re: Data Deduplication with the help of an online filesystem check
+Date: Wed, 29 Apr 2009 14:03:00 +0200
+Message-ID: <20090429120300.GG22917@cip.informatik.uni-erlangen.de>
+References: <20090427033331.GC17677@cip.informatik.uni-erlangen.de> <200904281945.10274.hjclaes@web.de> <20090428201619.GK7217@cip.informatik.uni-erlangen.de> <200904282236.07428.hjclaes@web.de> <20090428205242.GA13112@cip.informatik.uni-erlangen.de> <1240952295.15136.73.camel@think.oraclecorp.com> <20090428211255.GB13112@cip.informatik.uni-erlangen.de> <1240953977.15136.76.camel@think.oraclecorp.com> <20090428221455.GA27794@cip.informatik.uni-erlangen.de> <1240960687.15136.88.camel@think.oraclecorp.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Andi Kleen <andi@firstfloor.org>, "hugh@veritas.com" <hugh@veritas.com>,
-	"npiggin@suse.de" <npiggin@suse.de>,
-	"riel@redhat.com" <riel@redhat.com>,
-	"lee.schermerhorn@hp.com" <lee.schermerhorn@hp.com>,
-	"akpm@linux-foundation.org" <akpm@linux-foundation.org>,
-	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-	"linux-mm@kvack.org" <linux-mm@kvack.org>,
-	"x86@kernel.org" <x86@kernel.org>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Cc: Heinz-Josef Claes <hjclaes@web.de>,
+	Edward Shishkin <edward.shishkin@gmail.com>,
+	Tomasz Chmielewski <mangoo@wpkg.org>,
+	linux-btrfs@vger.kernel.org
 To: Chris Mason <chris.mason@oracle.com>
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <1241005222.19174.1.camel@think.oraclecorp.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1240960687.15136.88.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 29, 2009 at 07:40:22PM +0800, Chris Mason wrote:
-> On Wed, 2009-04-29 at 16:21 +0800, Wu Fengguang wrote:
-> > On Wed, Apr 29, 2009 at 04:16:16PM +0800, Wu Fengguang wrote:
-> > > On Thu, Apr 09, 2009 at 10:37:39AM -0400, Chris Mason wrote:
-> > [snip]
-> > > > PagePrivate is very common.  try_to_releasepage failing on a clean page
-> > > > without the writeback bit set and without dirty/locked buffers will be
-> > > > pretty rare.
-> > > 
-> > > Yup. btrfs seems to tag most(if not all) dirty pages with PG_private.
-> > > While ext4 won't.
-> > 
-> > Chris, I run into a btrfs BUG() when doing
-> > 
-> >         dd if=/dev/zero of=/b/sparse bs=1k count=1 seek=104857512345
-> > 
-> > The half created sparse file is
-> > 
-> >         -rw-r--r-- 1 root root 98T 2009-04-29 14:54 /b/sparse
-> >         Or
-> >         -rw-r--r-- 1 root root 107374092641280 2009-04-29 14:54 /b/sparse
-> > 
-> > Below is the kernel messages. I can test patches you throw at me :-)
-> > 
-> 
-> How big was the FS you were testing this on?  It works for me...
+Hello Chris,
 
-df says:
+> You can start with the code documentation section on
+> http://btrfs.wiki.kernel.org
 
-/dev/sda3             4.3G   28K  4.3G   1% /b
+I read through this and at the moment one questions come in my mind:
 
-Oh bad, I cannot reproduce it now..
+http://btrfs.wiki.kernel.org/images-btrfs/7/72/Chunks-overview.png
 
-Thanks,
-Fengguang
+Looking at this picture, when I'm going to implement the dedup code, do I also
+have to take care to spread the blocks over the different devices or is
+there already infrastructure in place that automates that process?
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+> I'll write up my ideas on how userspace controlled dedup should work.
+
+I'm looking forward to this and will use it as an implementation road
+map.
+
+        Thomas

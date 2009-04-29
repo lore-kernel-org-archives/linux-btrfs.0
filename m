@@ -1,76 +1,41 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: Bron Gondwana <brong@fastmail.fm>
 Subject: Re: Data Deduplication with the help of an online filesystem check
-Date: Tue, 28 Apr 2009 19:18:07 -0400
-Message-ID: <1240960687.15136.88.camel@think.oraclecorp.com>
-References: <20090427033331.GC17677@cip.informatik.uni-erlangen.de>
-	 <200904281945.10274.hjclaes@web.de>
-	 <20090428201619.GK7217@cip.informatik.uni-erlangen.de>
-	 <200904282236.07428.hjclaes@web.de>
-	 <20090428205242.GA13112@cip.informatik.uni-erlangen.de>
-	 <1240952295.15136.73.camel@think.oraclecorp.com>
-	 <20090428211255.GB13112@cip.informatik.uni-erlangen.de>
-	 <1240953977.15136.76.camel@think.oraclecorp.com>
-	 <20090428221455.GA27794@cip.informatik.uni-erlangen.de>
+Date: Wed, 29 Apr 2009 10:06:17 +1000
+Message-ID: <20090429000617.GA14794@brong.net>
+References: <20090427033331.GC17677@cip.informatik.uni-erlangen.de> <200904281945.10274.hjclaes@web.de> <20090428201619.GK7217@cip.informatik.uni-erlangen.de> <200904282236.07428.hjclaes@web.de> <20090428205242.GA13112@cip.informatik.uni-erlangen.de> <1240952295.15136.73.camel@think.oraclecorp.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Heinz-Josef Claes <hjclaes@web.de>,
+Content-Type: text/plain; charset=us-ascii
+Cc: Thomas Glanzmann <thomas@glanzmann.de>,
+	Heinz-Josef Claes <hjclaes@web.de>,
 	Edward Shishkin <edward.shishkin@gmail.com>,
 	Tomasz Chmielewski <mangoo@wpkg.org>,
 	linux-btrfs@vger.kernel.org
-To: Thomas Glanzmann <thomas@glanzmann.de>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090428221455.GA27794@cip.informatik.uni-erlangen.de>
+In-Reply-To: <1240952295.15136.73.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2009-04-29 at 00:14 +0200, Thomas Glanzmann wrote:
-> Hello Chris,
+On Tue, Apr 28, 2009 at 04:58:15PM -0400, Chris Mason wrote:
+> >         Assuming a 4 kbyte block size that would mean for a 1 Tbyte
+> >         filesystem:
+> > 
+> >         1Tbyte / 4096 / 8 = 32 Mbyte of memory (this should of course
+> >         be saved to disk from time to time and be restored on startup).
+> > 
 > 
-> > They are, but only the crc32c are stored today.
-> 
-> maybe crc32c is good enough to identify duplicated blocks, I mean we
-> only need a hint, the dedup ioctl does the double checking. I will write
-> tomorrow a perl script and compare the results to the one that uses md5
-> and repoort back.
+> Sorry, a 1TB drive is teeny, I don't think a bitmap is practical across
+> the whole FS.
 
-Its a start at least.
+32Mbyte of memory is teeny too.  You can pick up a server with 32Gb for
+about $5k these days.  Using 10% of that gives you room for 100Tb of
+storage, which is getting to be a reasonable size.  More than that and
+you would be thinking of bigger machines anyway to have enough memory
+for a decent cache.
 
-> 
-> > Yes, that's the idea.  An ioctl to walk the tree and report on
-> > changes, but this doesn't have to be done with version 1 of the dedup
-> > code, you can just scan the file based on mtime/ctime.
-> 
-> Good point.
-> 
-> > > > But, the ioctl to actually do the dedup needs to be able to verify a
-> > > > given block has the contents you expect it to.  The only place you can
-> > > > lock down the pages in the file and prevent new changes is inside the
-> > > > kernel.
-> 
-> > > I totally agree to that. How much time would it consume to implement
-> > > such a systemcall?
-> 
-> > It is probably a 3 week to one month effort.
-> 
-> I'm taking the challenge. Is there a document that I can read that
-> introduces me to the structures used in btrfs or can someone walk me
-> through on the phone to get a quick start?
-> 
+(32Gb seems to be the nice price point, because 4Gb dimms are cheap as
+chips, and 8Gb are way expensive.  We're buying 32Gb machines at the
+moment)
 
-Great to hear.  It's an ambitious project, but I'll definitely help
-explain things.
-
-You can start with the code documentation section on
-http://btrfs.wiki.kernel.org
-
-I'll write up my ideas on how userspace controlled dedup should work.
-
-> I also would like to retrieve the checksums and identify the potential
-> blocks and after that work is done (even in a very preliminary state) in
-> a way that someone can work with it, I would like to move on to the
-> dedup ioctl.
-
-Sounds fair, I'll forward the original patch.
-
--chris
-
-
+Bron ( ok, so I don't work with giant enterprise systems.  I can see
+       that there are cases where this might suck, but memory seems
+       to be growing as fast as disk in the low end )

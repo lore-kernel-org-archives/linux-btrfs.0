@@ -1,7 +1,7 @@
-From: Dmitri Nikulin <dnikulin@gmail.com>
+From: Paul Komkoff <i@stingr.net>
 Subject: Re: kernel bug in file-item.c
-Date: Thu, 30 Apr 2009 17:23:14 +1000
-Message-ID: <3a7f57190904300023k411bf55crf527003096884a2c@mail.gmail.com>
+Date: Thu, 30 Apr 2009 10:08:04 +0100
+Message-ID: <715ea5c10904300208l5c0ac6f1ma07f96b662304c4a@mail.gmail.com>
 References: <49F73F69.4010205@oel.state.nj.us>
 	 <1240946633.15136.55.camel@think.oraclecorp.com>
 	 <49F87A7F.7090804@oel.state.nj.us>
@@ -10,40 +10,22 @@ References: <49F73F69.4010205@oel.state.nj.us>
 	 <1241029841.20099.53.camel@think.oraclecorp.com>
 	 <49F89E91.3020604@oel.state.nj.us>
 	 <1241030419.20099.55.camel@think.oraclecorp.com>
-	 <49F8A159.6090207@oracle.com> <49F8A4AF.3020907@oel.state.nj.us>
+	 <20090429193207.GK26602@tracyreed.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Chris Mason <chris.mason@oracle.com>, mroconnor@oel.state.nj.us,
+	linux-btrfs@vger.kernel.org
+To: Tracy Reed <treed@ultraviolet.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <49F8A4AF.3020907@oel.state.nj.us>
+In-Reply-To: <20090429193207.GK26602@tracyreed.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 30, 2009 at 5:04 AM, Marc R. O'Connor
-<mroconnor@oel.state.nj.us> wrote:
->> If you can stomach it, you can get a second opinion from the bootabl=
-e
->> windows memory testing iso:
->>
->> =C2=A0 http://oca.microsoft.com/en/windiag.asp
->
->
-> It will be hard but I might just try it. Two versions of memtest86+ d=
-ie
-> in the middle of the scan. Ugh.
+On Wed, Apr 29, 2009 at 8:32 PM, Tracy Reed <treed@ultraviolet.org> wrote:
+> Note that this will be a problem that btrfs must properly manage. And
+> it must be done MUCH better than a certain previously semi-popular
+> filesystem did. The expectation needs to be set that due to the much
 
-Also try memtester in Linux. Boot up as you normally do and give it a
-fair chunk of your RAM to run on. Unlike memtest it leaves all the
-actual low level stuff to the kernel. Doesn't even need root, let
-alone boot. At least then you can thoroughly rule out a memtest86 bug.
-
---=20
-Dmitri Nikulin
-
-Centre for Synchrotron Science
-Monash University
-Victoria 3800, Australia
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I don't think it's workable or feasible or whatever.
+As soon as you have faulty memory or CPU, all bets are off.
+-- 
+This message represents the official view of the voices in my head

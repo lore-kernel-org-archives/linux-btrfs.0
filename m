@@ -1,46 +1,42 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] btrfs: remove the improper comment for
- btrfs_ioctl_resize()
-Date: Mon, 04 May 2009 11:11:56 -0400
-Message-ID: <1241449916.7244.15.camel@think.oraclecorp.com>
-References: <3a3680030905032205u2c3490e8r62e66c48aff97fee@mail.gmail.com>
+From: Thomas Glanzmann <thomas@glanzmann.de>
+Subject: Re: Data Deduplication with the help of an online filesystem check
+Date: Mon, 4 May 2009 17:15:18 +0200
+Message-ID: <20090504151518.GA13777@cip.informatik.uni-erlangen.de>
+References: <20090427033331.GC17677@cip.informatik.uni-erlangen.de> <1240839448.26451.13.camel@think.oraclecorp.com> <20090428155900.GA1722@cip.informatik.uni-erlangen.de> <49F728F6.6030307@wpkg.org> <20090428173251.GB7217@cip.informatik.uni-erlangen.de> <49F73FC9.3070607@partiallystapled.com> <49FEFBE6.40209@redhat.com> <49FEFE27.5090804@wpkg.org> <49FEFF9A.8060803@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org, lizf@cn.fujitsu.com,
-	linux-kernel@vger.kernel.org
-To: Li Hong <lihong.hi@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Tomasz Chmielewski <mangoo@wpkg.org>,
+	Michael Tharp <gxti@partiallystapled.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs@vger.kernel.org
+To: Ric Wheeler <rwheeler@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <3a3680030905032205u2c3490e8r62e66c48aff97fee@mail.gmail.com>
+In-Reply-To: <49FEFF9A.8060803@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2009-05-04 at 01:05 -0400, Li Hong wrote:
-> In Li Zefan's commit dae7b665cf6d6e6e733f1c9c16cf55547dd37e33,
-> a combination call of kmalloc() and copy_from_user() is replaced by
-> memdup_user(). So btrfs_ioctl_resize() doesn't use GFP_NOFS any more.
-> 
-> Signed-off-by: Li Hong <lihong.hi@gmail.com>
-> ---
->  fs/btrfs/ioctl.c |    4 ----
->  1 files changed, 0 insertions(+), 4 deletions(-)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 5e94ea6..2624b53 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -437,10 +437,6 @@ out_unlock:
->  	return 0;
->  }
-> 
-> -/*
-> - * Called inside transaction, so use GFP_NOFS
-> - */
-> -
->  static int btrfs_ioctl_resize(struct btrfs_root *root, void __user *arg)
->  {
->  	u64 new_size;
+Hello Ric,
 
-Thanks, I've queued this one up.
+> (1) Block level or file level dedup?
 
--chris
+what is the difference between the two?
 
+> (2) Inband dedup (during a write) or background dedup?
 
+I think inband dedup is way to intensive on ressources (memory) and also
+would kill every performance benchmark. So I think the offline dedup is
+the right way to go.
+
+> (3) How reliably can you protect the pool of blocks? How reliably can
+> you protect the database that maps hashes to blocks?
+
+You have to lock down the i/o requests for the blocks in question and
+compare them byte by byte anyway, just to make sure.
+
+> (4) Can you give users who are somewhat jaded confidence in your
+> solution (this is where stats come in very handy!)
+
+For virtual machines you can reduce the used data by 1/3. Of course it
+can blow in your face when you don't watch your physical resources
+closely.
+
+        Thomas

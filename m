@@ -1,45 +1,42 @@
-From: Edward Shishkin <edward.shishkin@gmail.com>
-Subject: Re: [BUG] fallocate behavior when crossing end-of-file
-Date: Wed, 06 May 2009 17:36:14 +0200
-Message-ID: <4A01AE6E.1050400@gmail.com>
-References: <4A018A90.7050109@mccme.ru> <4A01A5DF.5050406@gmail.com> <4A01A8C4.20205@mail.ru>
+From: Michael Raskin <7c6f434c@mail.ru>
+Subject: [MISFEATURE] Size reporting on small devices
+Date: Wed, 06 May 2009 20:53:29 +0400
+Message-ID: <4A01C089.2080201@mail.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Michael Raskin <7c6f434c@mail.ru>
+Content-Type: text/plain; charset=KOI8-R
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4A01A8C4.20205@mail.ru>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Michael Raskin wrote:
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
->
-> Edward Shishkin wrote:
->   
->>> Desired: something (probably, one block) is allocated/reserved for the
->>> file. File length is set to 1 byte.
->>>       
->>              
->> Where is it documented?
->>
->> IMHO we should only guarantee that writes
->> to [0, 1] won't fail because of lack of disk space.
->> Other things (including file size) are up to implementation.
->>     
->
-> POSIX, SUS.
->
-> http://www.opengroup.org/onlinepubs/009695399/functions/posix_fallocate.html
->
-> <<<
-> If the offset+ len is beyond the current file size, then
-> posix_fallocate() shall adjust the file size to offset+ len. Otherwise,
-> the file size shall not be changed.
->   
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-fallocate (2) is something different from posix_fallocate:
+		Hello
+	During testing, I tried to create small BtrFS images (256M, 1G) and
+just fill them up with large (100M) files. During these tests df -h
+showed 130M at the time BtrFS reported "disk is full".
 
-"...This default behavior closely resembles the behavior
-of the posix_fallocate(3) library function, and is intended
-as a method of optimally implementing that function."
+/dev/loop2            1.0G  895M  130M  88% /root/mnt/loop
+
+One-byte files (80K+) allow to reproduce
+
+/dev/loop2            1.0G   49M  976M   5% /root/mnt/loop
+
+(and disk-full behavior) with Kernel BUG in
+__btrfs_reserve_extent+0x351/0x35f , but that seems to be well-known.
+Maybe df -i could be useful until metadata/data split is flexible? Is
+there any way to inspect the metadata filling up and change the split?
+
+Michael Raskin
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.11 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org
+
+iQEcBAEBAgAGBQJKAcCIAAoJEE6tnN0aWvw3VooH/RLHZrjk4DAsAWOt/H/3OvUb
++HPPpkbCjTwPwpBd+ckRe0abKpwhcisJJg9BSpF/Co3kRlwSKkwj+K0gIUJtOwj8
+R1AejEP++cW90l6GgeJGdA8sdGVSY4QBIjqdPYeDNn/GitrTOe/E8H2d+54JmDwm
+v3664219SXmJas/jbKPBXi3DXNVc5Y9ZIWwp4RruOGJvS+NHUXRMVIjMMrsaqUZQ
+g4qnXYFJeIePGErHlUcVYYwHWee9Xlv1EqV6u4M5UaLXcyZqW8+VIm+02amypcsp
+otLsrLMCxedX90M/FlgbkECgWe6ttBYhTwRuAaSszuO+ip4/NfFOayGU4kJWzfc=
+=UFlT
+-----END PGP SIGNATURE-----

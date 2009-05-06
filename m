@@ -1,46 +1,143 @@
-From: Michael Raskin <7c6f434c@mail.ru>
-Subject: Re: [BUG] fallocate behavior when crossing end-of-file
-Date: Thu, 07 May 2009 01:07:18 +0400
-Message-ID: <4A01FC06.80703@mail.ru>
-References: <4A018A90.7050109@mccme.ru> <4A01A5DF.5050406@gmail.com> <4A01A8C4.20205@mail.ru> <4A01AE6E.1050400@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Edward Shishkin <edward.shishkin@gmail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4A01AE6E.1050400@gmail.com>
+From: akpm@linux-foundation.org
+Subject: [patch 04/16] fiemap: fix problem with setting FIEMAP_EXTENT_LAST
+Date: Wed, 06 May 2009 16:02:53 -0700
+Message-ID: <200905062302.n46N2sGX032415@imap1.linux-foundation.org>
+Cc: akpm@linux-foundation.org, jbacik@redhat.com,
+	Joel.Becker@oracle.com, linux-btrfs@vger.kernel.org,
+	linux-ext4@vger.kernel.org, mfasheh@suse.com, sandeen@redhat.com,
+	stable@kernel.org, swhiteho@redhat.com, xfs-masters@oss.sgi.com
+To: torvalds@linux-foundation.org
+Return-path: <linux-ext4-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+From: Josef Bacik <jbacik@redhat.com>
 
-Edward Shishkin wrote:
->> <<<
->> If the offset+ len is beyond the current file size, then
->> posix_fallocate() shall adjust the file size to offset+ len. Otherwise,
->> the file size shall not be changed.
->>   
-> 
-> fallocate (2) is something different from posix_fallocate:
-> 
-> "...This default behavior closely resembles the behavior
-> of the posix_fallocate(3) library function, and is intended
-> as a method of optimally implementing that function."
+Fix a problem where the generic block based fiemap stuff would not
+properly set FIEMAP_EXTENT_LAST on the last extent.  I've reworked things
+to keep track if we go past the EOF, and mark the last extent properly. 
+The problem was reported by and tested by Eric Sandeen.
 
-If you overincrement file size counter, the only way for glibc to
-correctly implement is to ftruncate after fallocate . It doesn't look
-like an optimal implementation of posix_fallocate (2 system calls). It
-also doesn't look like something glibc would do. It currently doesn't.
+Tested-by: Eric Sandeen <sandeen@redhat.com>
+Signed-off-by: Josef Bacik <jbacik@redhat.com>
+Cc: <linux-ext4@vger.kernel.org>
+Cc: <xfs-masters@oss.sgi.com>
+Cc: <linux-btrfs@vger.kernel.org>
+Cc: Steven Whitehouse <swhiteho@redhat.com>
+Cc: Mark Fasheh <mfasheh@suse.com>
+Cc: Joel Becker <Joel.Becker@oracle.com>
+Cc: <stable@kernel.org>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+---
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.11 (GNU/Linux)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org
+ fs/ioctl.c |   75 +++++++++++++++++++++++++++++++++++++--------------
+ 1 file changed, 55 insertions(+), 20 deletions(-)
 
-iQEcBAEBAgAGBQJKAfwBAAoJEE6tnN0aWvw3NQAH/2XFOZE/9MBAxySxOyNY9Gft
-ttotQ4+g7SuKX47tQzskcWde3qbofEYzrsF/ADebjczEwbiKcZaJwlLzqL1X6siC
-IWzBS8hIWbbKkyF2erQJP3QZEJq/IwRCK6bOj8EJckGJ6q6tLCIasXGs+GOAjhrB
-1NWjDfprXP5M4s1xvG9KRH4Lo38Bz4/5w7ZGqGuXOy+M21ZHim+o9Tbkp7LaV9KP
-OHqxgXV6tpHHv+Ai16cR1cJzY8XAIZ6EsL4lfpw7nZGlgRC+snccNdyoN3MltFOG
-fbqIxrcPb8jL+3sAY+F1EK9oOKrCjQhY8VKxksy++M8+uP7OmgRiRkPyNewbYlw=
-=fY9t
------END PGP SIGNATURE-----
+diff -puN fs/ioctl.c~fiemap-fix-problem-with-setting-fiemap_extent_last fs/ioctl.c
+--- a/fs/ioctl.c~fiemap-fix-problem-with-setting-fiemap_extent_last
++++ a/fs/ioctl.c
+@@ -258,7 +258,7 @@ int __generic_block_fiemap(struct inode 
+ 	long long length = 0, map_len = 0;
+ 	u64 logical = 0, phys = 0, size = 0;
+ 	u32 flags = FIEMAP_EXTENT_MERGED;
+-	int ret = 0;
++	int ret = 0, past_eof = 0, whole_file = 0;
+ 
+ 	if ((ret = fiemap_check_flags(fieinfo, FIEMAP_FLAG_SYNC)))
+ 		return ret;
+@@ -266,6 +266,9 @@ int __generic_block_fiemap(struct inode 
+ 	start_blk = logical_to_blk(inode, start);
+ 
+ 	length = (long long)min_t(u64, len, i_size_read(inode));
++	if (length < len)
++		whole_file = 1;
++
+ 	map_len = length;
+ 
+ 	do {
+@@ -282,11 +285,26 @@ int __generic_block_fiemap(struct inode 
+ 
+ 		/* HOLE */
+ 		if (!buffer_mapped(&tmp)) {
++			length -= blk_to_logical(inode, 1);
++			start_blk++;
++
++			/*
++			 * we want to handle the case where there is an
++			 * allocated block at the front of the file, and then
++			 * nothing but holes up to the end of the file properly,
++			 * to make sure that extent at the front gets properly
++			 * marked with FIEMAP_EXTENT_LAST
++			 */
++			if (!past_eof &&
++			    blk_to_logical(inode, start_blk) >=
++			    blk_to_logical(inode, 0)+i_size_read(inode))
++				past_eof = 1;
++
+ 			/*
+ 			 * first hole after going past the EOF, this is our
+ 			 * last extent
+ 			 */
+-			if (length <= 0) {
++			if (past_eof && size) {
+ 				flags = FIEMAP_EXTENT_MERGED|FIEMAP_EXTENT_LAST;
+ 				ret = fiemap_fill_next_extent(fieinfo, logical,
+ 							      phys, size,
+@@ -294,15 +312,37 @@ int __generic_block_fiemap(struct inode 
+ 				break;
+ 			}
+ 
+-			length -= blk_to_logical(inode, 1);
+-
+ 			/* if we have holes up to/past EOF then we're done */
+-			if (length <= 0)
++			if (length <= 0 || past_eof)
+ 				break;
+-
+-			start_blk++;
+ 		} else {
+-			if (length <= 0 && size) {
++			/*
++			 * we have gone over the length of what we wanted to
++			 * map, and it wasn't the entire file, so add the extent
++			 * we got last time and exit.
++			 *
++			 * This is for the case where say we want to map all the
++			 * way up to the second to the last block in a file, but
++			 * the last block is a hole, making the second to last
++			 * block FIEMAP_EXTENT_LAST.  In this case we want to
++			 * see if there is a hole after the second to last block
++			 * so we can mark it properly.  If we found data after
++			 * we exceeded the length we were requesting, then we
++			 * are good to go, just add the extent to the fieinfo
++			 * and break
++			 */
++			if (length <= 0 && !whole_file) {
++				ret = fiemap_fill_next_extent(fieinfo, logical,
++							      phys, size,
++							      flags);
++				break;
++			}
++
++			/*
++			 * if size != 0 then we know we already have an extent
++			 * to add, so add it.
++			 */
++			if (size) {
+ 				ret = fiemap_fill_next_extent(fieinfo, logical,
+ 							      phys, size,
+ 							      flags);
+@@ -319,19 +359,14 @@ int __generic_block_fiemap(struct inode 
+ 			start_blk += logical_to_blk(inode, size);
+ 
+ 			/*
+-			 * if we are past the EOF we need to loop again to see
+-			 * if there is a hole so we can mark this extent as the
+-			 * last one, and if not keep mapping things until we
+-			 * find a hole, or we run out of slots in the extent
+-			 * array
++			 * If we are past the EOF, then we need to make sure as
++			 * soon as we find a hole that the last extent we found
++			 * is marked with FIEMAP_EXTENT_LAST
+ 			 */
+-			if (length <= 0)
+-				continue;

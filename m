@@ -1,39 +1,35 @@
-From: Christian Kujau <lists@nerdbynature.de>
-Subject: Re: BUG at fs/buffer.c:2933 during umount
-Date: Tue, 5 May 2009 13:15:27 -0700 (PDT)
-Message-ID: <alpine.DEB.2.01.0905051304050.6162@bogon.housecafe.de>
-References: <alpine.DEB.2.01.0905051212210.6162@bogon.housecafe.de>  <1241551898.7244.99.camel@think.oraclecorp.com>  <alpine.DEB.2.01.0905051246380.6162@bogon.housecafe.de> <1241553533.7244.104.camel@think.oraclecorp.com>
+From: Raskin Michael <raskin@mccme.ru>
+Subject: [BUG] fallocate behavior when crossing end-of-file
+Date: Wed, 06 May 2009 17:03:12 +0400
+Message-ID: <4A018A90.7050109@mccme.ru>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=KOI8-R
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1241553533.7244.104.camel@think.oraclecorp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 5 May 2009, Chris Mason wrote:
-> For ext3, mount -o barrier=1 and you should see something exciting.  It
-> won't BUG because ext3 isn't as serious about telling the users about IO
-> problems as we are, but you should at least see messages.
+		Hello.
+	I found the following bug in BtrFS:
 
-With that option, ext3 gives a waring, yes:
+	1. Create and open an empty file
+	2. fallocate (fd, 0, 1)
+	
+Desired: something (probably, one block) is allocated/reserved for the
+file. File length is set to 1 byte.
 
-[ 1743.370971] JBD: barrier-based sync failed on xvdc - disabling barriers
+Actual: A block is allocated. File length is set to 1 block (4096
+bytes). The rest of the file is filled with zeros.
 
-Ext4 seems to enable barriers right away and when I actually write to the 
-filesystem, it emits a warning indeed:
+	last_byte = min(extent_map_end(em), alloc_end);
+	last_byte = (last_byte + mask) & ~mask;
+	if (em->block_start == EXTENT_MAP_HOLE) {
+		ret = prealloc_file_range(trans, inode, cur_offset,
+				last_byte, locked_end + 1,
+				alloc_hint, mode);
 
-# umount /mnt/d2
-[...]
-[ 1409.043735] JBD: barrier-based sync failed on xvdc:8 - disabling barriers
-[ 1413.700390] EXT4-fs: mballoc: 1531 blocks 46 reqs (24 success)
-[ 1413.700406] EXT4-fs: mballoc: 23 extents scanned, 1 goal hits, 23 2^N hits, 0 breaks, 0 lost
-[ 1413.700415] EXT4-fs: mballoc: 2 generated and it took 4884
-[ 1413.700421] EXT4-fs: mballoc: 1212 preallocated, 690 discarded
+That part seems strange to me. You make an effort for block size to
+divide last_byte. But last_byte should be
+max(i_size_read(inode), offset+len)
+- without any rounding.
 
-I still find the BUG somehow...misleading. An error message seems to be 
-more appropriate.
-
-Christian.
--- 
-The universe was created to serve as Bruce Schneier's crib text.
+Michael Raskin

@@ -1,15 +1,26 @@
 From: akpm@linux-foundation.org
-Subject: [patch 04/16] fiemap: fix problem with setting FIEMAP_EXTENT_LAST
-Date: Wed, 06 May 2009 16:02:53 -0700
-Message-ID: <200905062302.n46N2sGX032415@imap1.linux-foundation.org>
-Cc: akpm@linux-foundation.org, jbacik@redhat.com,
-	Joel.Becker@oracle.com, linux-btrfs@vger.kernel.org,
-	linux-ext4@vger.kernel.org, mfasheh@suse.com, sandeen@redhat.com,
-	stable@kernel.org, swhiteho@redhat.com, xfs-masters@oss.sgi.com
-To: torvalds@linux-foundation.org
+Subject: [merged] fiemap-fix-problem-with-setting-fiemap_extent_last.patch removed from -mm tree
+Date: Thu, 07 May 2009 12:16:00 -0700
+Message-ID: <200905071916.n47JG0rf020019@imap1.linux-foundation.org>
+To: jbacik@redhat.com, Joel.Becker@oracle.com,
+	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+	mfasheh@suse.com, sandeen@redhat.com, stable@kernel.org,
+	swhiteho@redhat.com, xfs-m
 Return-path: <linux-ext4-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+
+The patch titled
+     fiemap: fix problem with setting FIEMAP_EXTENT_LAST
+has been removed from the -mm tree.  Its filename was
+     fiemap-fix-problem-with-setting-fiemap_extent_last.patch
+
+This patch was dropped because it was merged into mainline or a subsystem tree
+
+The current -mm tree may be found at http://userweb.kernel.org/~akpm/mmotm/
+
+------------------------------------------------------
+Subject: fiemap: fix problem with setting FIEMAP_EXTENT_LAST
 From: Josef Bacik <jbacik@redhat.com>
 
 Fix a problem where the generic block based fiemap stuff would not

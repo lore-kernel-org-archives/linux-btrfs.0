@@ -1,154 +1,31 @@
-From: akpm@linux-foundation.org
-Subject: [merged] fiemap-fix-problem-with-setting-fiemap_extent_last.patch removed from -mm tree
-Date: Thu, 07 May 2009 12:16:00 -0700
-Message-ID: <200905071916.n47JG0rf020019@imap1.linux-foundation.org>
-To: jbacik@redhat.com, Joel.Becker@oracle.com,
-	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-	mfasheh@suse.com, sandeen@redhat.com, stable@kernel.org,
-	swhiteho@redhat.com, xfs-m
-Return-path: <linux-ext4-owner@vger.kernel.org>
+From: Sankar P <sankar.curiosity@gmail.com>
+Subject: [PATCH] Spelling fix in btrfs code comment
+Date: Sat, 09 May 2009 16:49:03 +0530
+Message-ID: <1241867943.26731.5.camel@blr-psankar.blr.novell.com>
+Mime-Version: 1.0
+Content-Type: text/plain
+To: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	trivial@kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Fix a trivial spelling error in a comment
 
-The patch titled
-     fiemap: fix problem with setting FIEMAP_EXTENT_LAST
-has been removed from the -mm tree.  Its filename was
-     fiemap-fix-problem-with-setting-fiemap_extent_last.patch
+Signed-off-by: Sankar P <sankar.curiosity@gmail.com>
 
-This patch was dropped because it was merged into mainline or a subsystem tree
-
-The current -mm tree may be found at http://userweb.kernel.org/~akpm/mmotm/
-
-------------------------------------------------------
-Subject: fiemap: fix problem with setting FIEMAP_EXTENT_LAST
-From: Josef Bacik <jbacik@redhat.com>
-
-Fix a problem where the generic block based fiemap stuff would not
-properly set FIEMAP_EXTENT_LAST on the last extent.  I've reworked things
-to keep track if we go past the EOF, and mark the last extent properly. 
-The problem was reported by and tested by Eric Sandeen.
-
-Tested-by: Eric Sandeen <sandeen@redhat.com>
-Signed-off-by: Josef Bacik <jbacik@redhat.com>
-Cc: <linux-ext4@vger.kernel.org>
-Cc: <xfs-masters@oss.sgi.com>
-Cc: <linux-btrfs@vger.kernel.org>
-Cc: Steven Whitehouse <swhiteho@redhat.com>
-Cc: Mark Fasheh <mfasheh@suse.com>
-Cc: Joel Becker <Joel.Becker@oracle.com>
-Cc: <stable@kernel.org>
-Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 ---
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index e496644..3e2c7c7 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -312,7 +312,7 @@ btrfs_lookup_first_block_group(struct btrfs_fs_info *info, u64 bytenr)
+ }
+ 
+ /*
+- * return the block group that contains teh given bytenr
++ * return the block group that contains the given bytenr
+  */
+ struct btrfs_block_group_cache *btrfs_lookup_block_group(
+ 						 struct btrfs_fs_info *info,
 
- fs/ioctl.c |   75 +++++++++++++++++++++++++++++++++++++--------------
- 1 file changed, 55 insertions(+), 20 deletions(-)
 
-diff -puN fs/ioctl.c~fiemap-fix-problem-with-setting-fiemap_extent_last fs/ioctl.c
---- a/fs/ioctl.c~fiemap-fix-problem-with-setting-fiemap_extent_last
-+++ a/fs/ioctl.c
-@@ -258,7 +258,7 @@ int __generic_block_fiemap(struct inode 
- 	long long length = 0, map_len = 0;
- 	u64 logical = 0, phys = 0, size = 0;
- 	u32 flags = FIEMAP_EXTENT_MERGED;
--	int ret = 0;
-+	int ret = 0, past_eof = 0, whole_file = 0;
- 
- 	if ((ret = fiemap_check_flags(fieinfo, FIEMAP_FLAG_SYNC)))
- 		return ret;
-@@ -266,6 +266,9 @@ int __generic_block_fiemap(struct inode 
- 	start_blk = logical_to_blk(inode, start);
- 
- 	length = (long long)min_t(u64, len, i_size_read(inode));
-+	if (length < len)
-+		whole_file = 1;
-+
- 	map_len = length;
- 
- 	do {
-@@ -282,11 +285,26 @@ int __generic_block_fiemap(struct inode 
- 
- 		/* HOLE */
- 		if (!buffer_mapped(&tmp)) {
-+			length -= blk_to_logical(inode, 1);
-+			start_blk++;
-+
-+			/*
-+			 * we want to handle the case where there is an
-+			 * allocated block at the front of the file, and then
-+			 * nothing but holes up to the end of the file properly,
-+			 * to make sure that extent at the front gets properly
-+			 * marked with FIEMAP_EXTENT_LAST
-+			 */
-+			if (!past_eof &&
-+			    blk_to_logical(inode, start_blk) >=
-+			    blk_to_logical(inode, 0)+i_size_read(inode))
-+				past_eof = 1;
-+
- 			/*
- 			 * first hole after going past the EOF, this is our
- 			 * last extent
- 			 */
--			if (length <= 0) {
-+			if (past_eof && size) {
- 				flags = FIEMAP_EXTENT_MERGED|FIEMAP_EXTENT_LAST;
- 				ret = fiemap_fill_next_extent(fieinfo, logical,
- 							      phys, size,
-@@ -294,15 +312,37 @@ int __generic_block_fiemap(struct inode 
- 				break;
- 			}
- 
--			length -= blk_to_logical(inode, 1);
--
- 			/* if we have holes up to/past EOF then we're done */
--			if (length <= 0)
-+			if (length <= 0 || past_eof)
- 				break;
--
--			start_blk++;
- 		} else {
--			if (length <= 0 && size) {
-+			/*
-+			 * we have gone over the length of what we wanted to
-+			 * map, and it wasn't the entire file, so add the extent
-+			 * we got last time and exit.
-+			 *
-+			 * This is for the case where say we want to map all the
-+			 * way up to the second to the last block in a file, but
-+			 * the last block is a hole, making the second to last
-+			 * block FIEMAP_EXTENT_LAST.  In this case we want to
-+			 * see if there is a hole after the second to last block
-+			 * so we can mark it properly.  If we found data after
-+			 * we exceeded the length we were requesting, then we
-+			 * are good to go, just add the extent to the fieinfo
-+			 * and break
-+			 */
-+			if (length <= 0 && !whole_file) {
-+				ret = fiemap_fill_next_extent(fieinfo, logical,
-+							      phys, size,
-+							      flags);
-+				break;
-+			}
-+
-+			/*
-+			 * if size != 0 then we know we already have an extent
-+			 * to add, so add it.
-+			 */
-+			if (size) {
- 				ret = fiemap_fill_next_extent(fieinfo, logical,
- 							      phys, size,
- 							      flags);
-@@ -319,19 +359,14 @@ int __generic_block_fiemap(struct inode 
- 			start_blk += logical_to_blk(inode, size);
- 
- 			/*
--			 * if we are past the EOF we need to loop again to see
--			 * if there is a hole so we can mark this extent as the
--			 * last one, and if not keep mapping things until we
--			 * find a hole, or we run out of slots in the extent
--			 * array
-+			 * If we are past the EOF, then we need to make sure as
-+			 * soon as we find a hole that the last extent we found
-+			 * is marked with FIEMAP_EXTENT_LAST
- 			 */
--			if (length <= 0)
--				continue;

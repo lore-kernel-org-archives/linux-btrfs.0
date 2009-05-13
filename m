@@ -1,179 +1,242 @@
-From: <gregkh@suse.de>
-Subject: patch fiemap-fix-problem-with-setting-fiemap_extent_last.patch added to 2.6.29-stable tree
-Date: Tue, 12 May 2009 12:27:39 -0700
-Message-ID: <20090512193138.0523E48FAE@coco.kroah.org>
-Cc: <stable@kernel.org>, <stable-commits@vger.kernel.org>
-To: jbacik@redhat.com, akpm@linux-foundation.org, gregkh@suse.de,
-	Joel.Becker@oracle.com, linux-btrfs@vger.kernel.org,
-	linux-ext4@vger.kernel.org, mfasheh@suse.com, sandeen@redhat.com,
-	sw
+From: Edward Shishkin <edward.shishkin@gmail.com>
+Subject: Re: Some basic benchmarking
+Date: Wed, 13 May 2009 13:54:26 +0200
+Message-ID: <4A0AB4F2.7070902@gmail.com>
+References: <2d23818a0905120947j5c54b069g63a52653a090070@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8;
+	format=flowed
+Cc: linux-btrfs@vger.kernel.org
+To: Jaime sanchez <jskartman@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <2d23818a0905120947j5c54b069g63a52653a090070@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Jaime sanchez wrote:
+> Hi list,
+>
+> I am tired of "syntetic" benchmarks and i wrote a script to totally
+> automate benchmarking for various file system (command line option)
+> through the same partition, collect the data and show results in a
+> nice way.
+>
+> There are 4 basic benchmarks performed, copy, compress, uncompress an=
+d
+> delete. The data folder i used is the linus-source-2.6.30-rc5
+> (uncompressed).
+>
+> The script can be downloaded here:
+> http://rapidshare.com/files/232159335/abench.tar.gz (use abench -h fo=
+r
+> help)
+>
+> Here are some results for core2duo, Western digital green power hard
+> disk (WD5000AACS):
+>
+> =E2=94=8C=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=AC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=AC=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=AC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=AC=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=90
+> =E2=94=82                       =E2=94=82  Copy      =E2=94=82 Compre=
+ss  =E2=94=82 Uncompre =E2=94=82 Delete   =E2=94=82
+> =E2=94=82                       =E2=94=82  time      =E2=94=82 time  =
+    =E2=94=82 time     =E2=94=82 time     =E2=94=82
+> =E2=94=9C=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=A4
+> =E2=94=82 ext4                  =E2=94=82 0m33.283s  =E2=94=82 0m26.8=
+34s =E2=94=82 0m7.229s =E2=94=82 0m0.866s =E2=94=82
+> =E2=94=82 noatime,async         =E2=94=82            =E2=94=82       =
+    =E2=94=82          =E2=94=82          =E2=94=82
+> =E2=94=9C=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=A4
+> =E2=94=82 ext3                  =E2=94=82 0m46.947s  =E2=94=82 0m27.0=
+03s =E2=94=82 0m7.953s =E2=94=82 0m0.786s =E2=94=82
+> =E2=94=82 noatime,async         =E2=94=82            =E2=94=82       =
+    =E2=94=82          =E2=94=82          =E2=94=82
+> =E2=94=9C=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=A4
+> =E2=94=82 ext2                  =E2=94=82 0m19.624s  =E2=94=82 0m26.7=
+16s =E2=94=82 0m7.259s =E2=94=82 0m0.477s =E2=94=82
+> =E2=94=82 noatime,async         =E2=94=82            =E2=94=82       =
+    =E2=94=82          =E2=94=82          =E2=94=82
+> =E2=94=9C=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=A4
+> =E2=94=82 reiserfs              =E2=94=82 0m38.056s  =E2=94=82 0m27.9=
+96s =E2=94=82 0m12.264 =E2=94=82 0m1.474s =E2=94=82
+> =E2=94=82 noatime,async         =E2=94=82            =E2=94=82       =
+    =E2=94=82          =E2=94=82          =E2=94=82
+> =E2=94=9C=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=A4
+> =E2=94=82 btrfs                 =E2=94=82 0m20.411s  =E2=94=82 0m30.7=
+93s =E2=94=82 0m11.618 =E2=94=82 0m5.599s =E2=94=82
+> =E2=94=82 defaults              =E2=94=82            =E2=94=82       =
+    =E2=94=82          =E2=94=82          =E2=94=82
+> =E2=94=9C=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=A4
+> =E2=94=82 btrfs                 =E2=94=82 0m21.630s  =E2=94=82 0m27.8=
+91s =E2=94=82 0m11.926 =E2=94=82 0m8.473s =E2=94=82
+> =E2=94=82 async                 =E2=94=82            =E2=94=82       =
+    =E2=94=82          =E2=94=82          =E2=94=82
+> =E2=94=9C=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=A4
+> =E2=94=82 btrfs                 =E2=94=82 0m19.277s  =E2=94=82 0m27.6=
+03s =E2=94=82 0m11.238 =E2=94=82 0m10.468s=E2=94=82
+> =E2=94=82 async,noatime         =E2=94=82            =E2=94=82       =
+    =E2=94=82          =E2=94=82          =E2=94=82
+> =E2=94=9C=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=A4
+> =E2=94=82 btrfs                 =E2=94=82 0m17.086s  =E2=94=82 0m27.5=
+20s =E2=94=82 0m10.062 =E2=94=82 0m11.688s=E2=94=82
+> =E2=94=82 nodatacsum,nodatacow,n=E2=94=82atime,async =E2=94=82       =
+    =E2=94=82          =E2=94=82          =E2=94=82
+> =E2=94=9C=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=A4
+> =E2=94=82 btrfs                 =E2=94=82 0m23.708s  =E2=94=82 0m28.6=
+63s =E2=94=82 0m15.326 =E2=94=82 0m7.318s =E2=94=82
+> =E2=94=82 compress,async,atime  =E2=94=82            =E2=94=82       =
+    =E2=94=82          =E2=94=82          =E2=94=82
+> =E2=94=9C=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=A4
+>  =20
 
-This is a note to let you know that we have just queued up the patch titled
+Btw, it might be roaches in the code:
+transparent compression should win 20-25%...
 
-    Subject: fiemap: fix problem with setting FIEMAP_EXTENT_LAST
-
-to the 2.6.29-stable tree.  Its filename is
-
-    fiemap-fix-problem-with-setting-fiemap_extent_last.patch
-
-A git repo of this tree can be found at 
-    http://www.kernel.org/git/?p=linux/kernel/git/stable/stable-queue.git;a=summary
-
-
->From df3935ffd6166fdd00702cf548fb5bb55737758b Mon Sep 17 00:00:00 2001
-From: Josef Bacik <jbacik@redhat.com>
-Date: Wed, 6 May 2009 16:02:53 -0700
-Subject: fiemap: fix problem with setting FIEMAP_EXTENT_LAST
-
-From: Josef Bacik <jbacik@redhat.com>
-
-commit df3935ffd6166fdd00702cf548fb5bb55737758b upstream.
-
-Fix a problem where the generic block based fiemap stuff would not
-properly set FIEMAP_EXTENT_LAST on the last extent.  I've reworked things
-to keep track if we go past the EOF, and mark the last extent properly.
-The problem was reported by and tested by Eric Sandeen.
-
-Tested-by: Eric Sandeen <sandeen@redhat.com>
-Signed-off-by: Josef Bacik <jbacik@redhat.com>
-Cc: <linux-ext4@vger.kernel.org>
-Cc: <xfs-masters@oss.sgi.com>
-Cc: <linux-btrfs@vger.kernel.org>
-Cc: Steven Whitehouse <swhiteho@redhat.com>
-Cc: Mark Fasheh <mfasheh@suse.com>
-Cc: Joel Becker <Joel.Becker@oracle.com>
-Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
-Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
-Signed-off-by: Greg Kroah-Hartman <gregkh@suse.de>
-
----
- fs/ioctl.c |   75 ++++++++++++++++++++++++++++++++++++++++++++-----------------
- 1 file changed, 55 insertions(+), 20 deletions(-)
-
---- a/fs/ioctl.c
-+++ b/fs/ioctl.c
-@@ -258,7 +258,7 @@ int __generic_block_fiemap(struct inode 
- 	long long length = 0, map_len = 0;
- 	u64 logical = 0, phys = 0, size = 0;
- 	u32 flags = FIEMAP_EXTENT_MERGED;
--	int ret = 0;
-+	int ret = 0, past_eof = 0, whole_file = 0;
- 
- 	if ((ret = fiemap_check_flags(fieinfo, FIEMAP_FLAG_SYNC)))
- 		return ret;
-@@ -266,6 +266,9 @@ int __generic_block_fiemap(struct inode 
- 	start_blk = logical_to_blk(inode, start);
- 
- 	length = (long long)min_t(u64, len, i_size_read(inode));
-+	if (length < len)
-+		whole_file = 1;
-+
- 	map_len = length;
- 
- 	do {
-@@ -282,11 +285,26 @@ int __generic_block_fiemap(struct inode 
- 
- 		/* HOLE */
- 		if (!buffer_mapped(&tmp)) {
-+			length -= blk_to_logical(inode, 1);
-+			start_blk++;
-+
-+			/*
-+			 * we want to handle the case where there is an
-+			 * allocated block at the front of the file, and then
-+			 * nothing but holes up to the end of the file properly,
-+			 * to make sure that extent at the front gets properly
-+			 * marked with FIEMAP_EXTENT_LAST
-+			 */
-+			if (!past_eof &&
-+			    blk_to_logical(inode, start_blk) >=
-+			    blk_to_logical(inode, 0)+i_size_read(inode))
-+				past_eof = 1;
-+
- 			/*
- 			 * first hole after going past the EOF, this is our
- 			 * last extent
- 			 */
--			if (length <= 0) {
-+			if (past_eof && size) {
- 				flags = FIEMAP_EXTENT_MERGED|FIEMAP_EXTENT_LAST;
- 				ret = fiemap_fill_next_extent(fieinfo, logical,
- 							      phys, size,
-@@ -294,15 +312,37 @@ int __generic_block_fiemap(struct inode 
- 				break;
- 			}
- 
--			length -= blk_to_logical(inode, 1);
--
- 			/* if we have holes up to/past EOF then we're done */
--			if (length <= 0)
-+			if (length <= 0 || past_eof)
- 				break;
--
--			start_blk++;
- 		} else {
--			if (length <= 0 && size) {
-+			/*
-+			 * we have gone over the length of what we wanted to
-+			 * map, and it wasn't the entire file, so add the extent
-+			 * we got last time and exit.
-+			 *
-+			 * This is for the case where say we want to map all the
-+			 * way up to the second to the last block in a file, but
-+			 * the last block is a hole, making the second to last
-+			 * block FIEMAP_EXTENT_LAST.  In this case we want to
-+			 * see if there is a hole after the second to last block
-+			 * so we can mark it properly.  If we found data after
-+			 * we exceeded the length we were requesting, then we
-+			 * are good to go, just add the extent to the fieinfo
-+			 * and break
-+			 */
-+			if (length <= 0 && !whole_file) {
-+				ret = fiemap_fill_next_extent(fieinfo, logical,
-+							      phys, size,
-+							      flags);
-+				break;
-+			}
-+
-+			/*
-+			 * if size != 0 then we know we already have an extent
-+			 * to add, so add it.
-+			 */
-+			if (size) {
- 				ret = fiemap_fill_next_extent(fieinfo, logical,
- 							      phys, size,
- 							      flags);
-@@ -319,19 +359,14 @@ int __generic_block_fiemap(struct inode 
- 			start_blk += logical_to_blk(inode, size);
- 
- 			/*
--			 * if we are past the EOF we need to loop again to see
--			 * if there is a hole so we can mark this extent as the
--			 * last one, and if not keep mapping things until we
--			 * find a hole, or we run out of slots in the extent
--			 * array
-+			 * If we are past the EOF, then we need to make sure as
-+			 * soon as we find a hole that the last extent we found
-+			 * is marked with FIEMAP_EXTENT_LAST
- 			 */
--			if (length <= 0)
--				continue;
--
--			ret = fiemap_fill_next_extent(fieinfo, logical, phys,
--						      size, flags);
--			if (ret)
--				break;
-+			if (!past_eof &&
-+			    logical+size >=
-+			    blk_to_logical(inode, 0)+i_size_read(inode))
-+				past_eof = 1;
- 		}
- 		cond_resched();
- 	} while (1);
-
-
-Patches currently in stable-queue which might be from jbacik@redhat.com are
-
+> =E2=94=82 btrfs                 =E2=94=82 0m20.418s  =E2=94=82 0m27.4=
+84s =E2=94=82 0m9.871s =E2=94=82 0m8.989s =E2=94=82
+> =E2=94=82 compress,async,atime,n=E2=94=82datacsum,nod=E2=94=82tacow  =
+    =E2=94=82          =E2=94=82          =E2=94=82
+> =E2=94=9C=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=A4
+> =E2=94=82 reiser4               =E2=94=82 0m19.750s  =E2=94=82 0m27.0=
+58s =E2=94=82 0m10.196 =E2=94=82 0m2.709s =E2=94=82
+> =E2=94=82 noatime,async         =E2=94=82            =E2=94=82       =
+    =E2=94=82          =E2=94=82          =E2=94=82
+> =E2=94=9C=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=BC=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=A4
+> =E2=94=82 reiser4               =E2=94=82 0m16.121s  =E2=94=82 0m27.9=
+24s =E2=94=82 0m9.798s =E2=94=82 0m8.582s =E2=94=82
+> =E2=94=82 noatime,async,compress=E2=94=82            =E2=94=82       =
+    =E2=94=82          =E2=94=82          =E2=94=82
+> =E2=94=94=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=B4=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=B4=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=B4=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=B4=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=98
+>
+> It seems that btrfs has good performance, except for delete times.
+>
+> Regards
+> Antonio
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

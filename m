@@ -1,32 +1,29 @@
-From: Tomasz Chmielewski <mangoo@wpkg.org>
-Subject: Re: Oops on a converted ext4 system
-Date: Tue, 26 May 2009 14:28:14 +0200
-Message-ID: <4A1BE05E.5040804@wpkg.org>
-References: <4A1B8BD0.6050203@wpkg.org> <20090526091404.GA25723@think> <4A1BB4BC.3000301@wpkg.org>
+From: Yan Zheng <zheng.yan@oracle.com>
+Subject: [PATCH 0/6] Mixed back reference #2
+Date: Tue, 26 May 2009 20:53:55 +0800
+Message-ID: <4A1BE663.3040106@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: Chris Mason <chris.mason@oracle.com>,
-	Tomasz Chmielewski <mangoo@wpkg.org>,
-	linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4A1BB4BC.3000301@wpkg.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Tomasz Chmielewski wrote:
+Hi,
 
->>> Pid: 11454, comm: lzop Not tainted (2.6.30-0.rc7.1mdv #1) MS-6728
->>
->> Does this kernel have any extra patches in it?
-> 
-> It's a distribution kernel with this description: "NOTE: This kernel has 
-> no patches and no third-party drivers".
-> So there shouldn't be any extra patches in it.
+Here's the 2nd version of mixed back reference patches.
+Changes since previous version:
 
-BTW, mini-904.img.lzo is ~57 GB big; I wanted to uncompress it on the 
-same btrfs filesystem with 15 GB left; but it failed immediately.
+- Add backward compatibility.
+- Pack back ref items in extent item.
+- Don't increase data extents' reference counts when tree log
+  references them. 
+- Remove the BTRFS_BLOCK_NO_OWNER_REF tree block flag, since
+  it's too difficult to keep the flag consistent. (The purperse
+  of this flag was helping btrfsck checking the correctness of
+  the back reference system)
+
+Thanks
+Yan, Zheng 
 
 
--- 
-Tomasz Chmielewski
-http://wpkg.org
 

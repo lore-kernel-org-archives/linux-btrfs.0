@@ -1,52 +1,60 @@
-From: Linda Knippers <linda.knippers@hp.com>
-Subject: Re: [RFC] new free space caching stuff
-Date: Tue, 26 May 2009 12:12:21 -0400
-Message-ID: <4A1C14E5.2050601@hp.com>
-References: <20090521184351.GC11101@dhcp231-156.rdu.redhat.com> <20090522141133.GA8762@think>
-Reply-To: linda.knippers@hp.com
+From: Tomasz Chmielewski <mangoo@wpkg.org>
+Subject: Re: Oops on a converted ext4 system
+Date: Tue, 26 May 2009 23:25:18 +0200
+Message-ID: <4A1C5E3E.1040607@wpkg.org>
+References: <4A1B8BD0.6050203@wpkg.org> <20090526091404.GA25723@think> <4A1BB4BC.3000301@wpkg.org> <4A1BE05E.5040804@wpkg.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 To: Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+	Tomasz Chmielewski <mangoo@wpkg.org>,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090522141133.GA8762@think>
+In-Reply-To: <4A1BE05E.5040804@wpkg.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote:
-> On Thu, May 21, 2009 at 02:43:52PM -0400, Josef Bacik wrote:
->> Hello,
->>
->> Okay I'm looking at redoing all of this stuff again, and I'd like to make this
->> the last time, so I'm going to outline what we currently have, what the problems
->> are with it, and what I want to do.  I would appreciate any/all input so I can
->> try and get this right the first time.
->>
+Tomasz Chmielewski wrote:
+> Tomasz Chmielewski wrote:
 > 
-> Josef and I hashed this out someone on IRC.  I think the bitmaps alone
-> aren't going to scale all that well for huge filesystems, so he is
-> looking into a hybrid bitmap/extent approach based on the size of the
-> free space.
+>>>> Pid: 11454, comm: lzop Not tainted (2.6.30-0.rc7.1mdv #1) MS-6728
+>>>
+>>> Does this kernel have any extra patches in it?
+>>
+>> It's a distribution kernel with this description: "NOTE: This kernel 
+>> has no patches and no third-party drivers".
+>> So there shouldn't be any extra patches in it.
+> 
+> BTW, mini-904.img.lzo is ~57 GB big; I wanted to uncompress it on the 
+> same btrfs filesystem with 15 GB left; but it failed immediately.
 
-I don't know if this is of any interest but I thought I'd provide a
-pointer to the AdvFS design spec for space allocation.
-http://advfs.svn.sourceforge.net/viewvc/advfs/advfs_design_docs_v1/porting_designs/storage_allocation.pdf?revision=1
+I rebooted the system and tried once again - after uncompressing about 3 
+GB, it didn't like the checksums:
 
-The Tru64 version of AdvFS used bitmaps but this was changed during the
-port to HP-UX to
-use a combination of b-trees.  Both the original and new designs are
-discussed in
-section 2 of the spec and there's a description of other design options
-considered but then rejected.
+# lzop -d mini-904.img.lzo
+lzop: mini-904.img.lzo: Checksum error
 
-The docs in the original tarball I posted were not very user friendly so
-I checked them into an svc tree to make them a little easier to browse.
-If it will be useful, I can do the same with the source code.
+# dmesg
+btrfs no csum found for inode 9874460 start 2604158976
+btrfs no csum found for inode 9874460 start 2604163072
+btrfs no csum found for inode 9874460 start 2604167168
+btrfs no csum found for inode 9874460 start 2604171264
+btrfs no csum found for inode 9874460 start 2604175360
+btrfs no csum found for inode 9874460 start 2604179456
+btrfs no csum found for inode 9874460 start 2604183552
+btrfs no csum found for inode 9874460 start 2604187648
+btrfs no csum found for inode 9874460 start 2604191744
+btrfs no csum found for inode 9874460 start 2604195840
+btrfs csum failed ino 9874460 off 2604167168 csum 2329941848 private 0
+btrfs csum failed ino 9874460 off 2604163072 csum 318014017 private 0
+btrfs csum failed ino 9874460 off 2604158976 csum 414044261 private 0
+btrfs csum failed ino 9874460 off 2604195840 csum 3818597601 private 0
+btrfs csum failed ino 9874460 off 2604191744 csum 315821168 private 0
+btrfs csum failed ino 9874460 off 2604187648 csum 2401592681 private 0
+btrfs csum failed ino 9874460 off 2604183552 csum 402930804 private 0
+btrfs csum failed ino 9874460 off 2604179456 csum 2710516765 private 0
+btrfs csum failed ino 9874460 off 2604175360 csum 3446408033 private 0
+btrfs csum failed ino 9874460 off 2604171264 csum 3221630271 private 0
 
--- ljk
 
-> -chris
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
+-- 
+Tomasz Chmielewski
+http://wpkg.org

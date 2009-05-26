@@ -1,85 +1,52 @@
-From: Yan Zheng <zheng.yan@oracle.com>
-Subject: [PATCH] btrfs: Fix set/clear_extent_bit for 'end == (u64)-1'
-Date: Tue, 26 May 2009 20:59:08 +0800
-Message-ID: <4A1BE79C.3030801@oracle.com>
+From: Linda Knippers <linda.knippers@hp.com>
+Subject: Re: [RFC] new free space caching stuff
+Date: Tue, 26 May 2009 12:12:21 -0400
+Message-ID: <4A1C14E5.2050601@hp.com>
+References: <20090521184351.GC11101@dhcp231-156.rdu.redhat.com> <20090522141133.GA8762@think>
+Reply-To: linda.knippers@hp.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20090522141133.GA8762@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are some 'start = state->end + 1;' like code in set_extent_bit
-and clear_extent_bit. They overflow when end == (u64)-1.
+Chris Mason wrote:
+> On Thu, May 21, 2009 at 02:43:52PM -0400, Josef Bacik wrote:
+>> Hello,
+>>
+>> Okay I'm looking at redoing all of this stuff again, and I'd like to make this
+>> the last time, so I'm going to outline what we currently have, what the problems
+>> are with it, and what I want to do.  I would appreciate any/all input so I can
+>> try and get this right the first time.
+>>
+> 
+> Josef and I hashed this out someone on IRC.  I think the bitmaps alone
+> aren't going to scale all that well for huge filesystems, so he is
+> looking into a hybrid bitmap/extent approach based on the size of the
+> free space.
 
-Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
+I don't know if this is of any interest but I thought I'd provide a
+pointer to the AdvFS design spec for space allocation.
+http://advfs.svn.sourceforge.net/viewvc/advfs/advfs_design_docs_v1/porting_designs/storage_allocation.pdf?revision=1
 
----
-diff -urpN 7/fs/btrfs/extent_io.c 8/fs/btrfs/extent_io.c
---- 7/fs/btrfs/extent_io.c	2009-05-08 00:59:34.000000000 +0800
-+++ 8/fs/btrfs/extent_io.c	2009-05-26 16:00:37.000000000 +0800
-@@ -476,6 +476,7 @@ int clear_extent_bit(struct extent_io_tr
- 	struct extent_state *state;
- 	struct extent_state *prealloc = NULL;
- 	struct rb_node *node;
-+	u64 last_end;
- 	int err;
- 	int set = 0;
- 
-@@ -498,6 +499,7 @@ again:
- 	if (state->start > end)
- 		goto out;
- 	WARN_ON(state->end < start);
-+	last_end = state->end;
- 
- 	/*
- 	 *     | ---- desired range ---- |
-@@ -524,9 +526,11 @@ again:
- 		if (err)
- 			goto out;
- 		if (state->end <= end) {
--			start = state->end + 1;
- 			set |= clear_state_bit(tree, state, bits,
- 					wake, delete);
-+			if (last_end == (u64)-1)
-+				goto out;
-+			start = last_end + 1;
- 		} else {
- 			start = state->start;
- 		}
-@@ -552,8 +556,10 @@ again:
- 		goto out;
- 	}
- 
--	start = state->end + 1;
- 	set |= clear_state_bit(tree, state, bits, wake, delete);
-+	if (last_end == (u64)-1)
-+		goto out;
-+	start = last_end + 1;
- 	goto search_again;
- 
- out:
-@@ -707,8 +713,10 @@ again:
- 			goto out;
- 		}
- 		set_state_bits(tree, state, bits);
--		start = state->end + 1;
- 		merge_state(tree, state);
-+		if (last_end == (u64)-1)
-+			goto out;
-+		start = last_end + 1;
- 		goto search_again;
- 	}
- 
-@@ -742,8 +750,10 @@ again:
- 			goto out;
- 		if (state->end <= end) {
- 			set_state_bits(tree, state, bits);
--			start = state->end + 1;
- 			merge_state(tree, state);
-+			if (last_end == (u64)-1)
-+				goto out;
-+			start = last_end + 1;
- 		} else {
- 			start = state->start;
- 		}
+The Tru64 version of AdvFS used bitmaps but this was changed during the
+port to HP-UX to
+use a combination of b-trees.  Both the original and new designs are
+discussed in
+section 2 of the spec and there's a description of other design options
+considered but then rejected.
+
+The docs in the original tarball I posted were not very user friendly so
+I checked them into an svc tree to make them a little easier to browse.
+If it will be useful, I can do the same with the source code.
+
+-- ljk
+
+> -chris
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 

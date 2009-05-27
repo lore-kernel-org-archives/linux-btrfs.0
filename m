@@ -1,36 +1,46 @@
-From: =?EUC-KR?B?yKu9xSBzaGluIGhvbmc=?= <hongshin@gmail.com>
-Subject: [PATCH] BTRFS: fix data race
-Date: Wed, 27 May 2009 21:43:18 +0900
-Message-ID: <2014bcab0905270543s44976c64p2cda48bd4f3c8b8a@mail.gmail.com>
+From: Edward Shishkin <edward.shishkin@gmail.com>
+Subject: [patch] btrfs-progs: fix btrfs_read_dev_super
+Date: Wed, 27 May 2009 15:30:19 +0200
+Message-ID: <4A1D406B.6090404@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: multipart/mixed;
+ boundary="------------030607010405040703030002"
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch fixes a bug which may result race condition
-between btrfs_start_workers() and worker_loop().
+This is a multi-part message in MIME format.
+--------------030607010405040703030002
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
 
-btrfs_start_workers() executed in a parent thread writes
-on workers->worker and worker_loop() in a child thread
-reads workers->worker. However, there is no synchronization
-enforcing the order of two operations.
 
-This patch makes btrfs_start_workers() writes workers->worker
-before it starts a child thread with worker_loop() in order to
-resolve possible race condition.
 
---- a/fs/btrfs/async-thread.c
-+++ b/fs/btrfs/async-thread.c
-@@ -273,10 +273,10 @@
-                INIT_LIST_HEAD(&worker->worker_list);
-                spin_lock_init(&worker->lock);
-                atomic_set(&worker->num_pending, 0);
-+               worker->workers = workers;
-                worker->task = kthread_run(worker_loop, worker,
-                                           "btrfs-%s-%d", workers->name,
-                                           workers->num_workers + i);
--               worker->workers = workers;
-                if (IS_ERR(worker->task)) {
-                        kfree(worker);
-                        ret = PTR_ERR(worker->task);
+--------------030607010405040703030002
+Content-Type: text/plain;
+ name="btrfsprogs-fix-read_super.patch"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline;
+ filename="btrfsprogs-fix-read_super.patch"
+
+Don't break in the middle of search,
+taste also other super mirrors.
+
+Signed-off-by: Edward Shishkin <edward.shishkin@gmail.com>
+---
+ disk-io.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- btrfs-progs-0.18.orig/disk-io.c
++++ btrfs-progs-0.18/disk-io.c
+@@ -716,7 +716,7 @@ int btrfs_read_dev_super(int fd, struct 
+ 		bytenr = btrfs_sb_offset(i);
+ 		ret = pread64(fd, &buf, sizeof(buf), bytenr);
+ 		if (ret < sizeof(buf))
+-			break;
++			continue;
+ 
+ 		if (btrfs_super_bytenr(&buf) != bytenr ||
+ 		    strncmp((char *)(&buf.magic), BTRFS_MAGIC,
+
+--------------030607010405040703030002--

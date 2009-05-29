@@ -1,37 +1,30 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Compression of large files
-Date: Wed, 27 May 2009 10:41:27 -0400
-Message-ID: <20090527144127.GA11706@think>
-References: <4A1D49C1.8070903@dpf.gov.br>
+From: Miguel F Mascarenhas Sousa Filipe <miguel.filipe@gmail.com>
+Subject: brtfs ssd mode texted on phoronix
+Date: Fri, 29 May 2009 17:46:27 +0100
+Message-ID: <f058a9c30905290946s32a9a41ds6b693e22c3fb0243@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Atila Romero <atila.alr@dpf.gov.br>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4A1D49C1.8070903@dpf.gov.br>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 27, 2009 at 11:10:09AM -0300, Atila Romero wrote:
-> During a file write, if the compression doesn't proves to be economical
-> to a portion of the file, the whole file is marked as nocompress, and
-> subsequent writes don't use compression at all. This can be seen as a 
-> feature, as it saves CPU in files like videos. But if the file is a dd
-> image of a disk, or other types of large files, this behavior is
-> undesirable, since different portions of the file will have different
-> compression ratios.
-> I only became aware of this after searching the source code, after
-> spending some hours trying to find out why the compression wasn't
-> working. This can be a really unexpected behavior for a end user who is
-> looking for compression.
-> The specific part of the code is at inode.c:
-> 477 <#l477>
->                 /* flag the file so we don't compress in the future */
-> 478 <#l478>                 btrfs_set_flag(inode, NOCOMPRESS);
-> 
-> How about commenting line 478?
+Hi there,
 
-The plan is to add a flag for the file to make it always compress even
-when parts of the file do not compress well.
+The phoronix guy tested btrfs in Fedora 11 + rawhide in SSD mode and
+normal mode in a bunch of tests from the phoronix-test-suite.
 
--chris
+http://www.phoronix.com/scan.php?page=article&item=btrfs_ssd_mode&num=1
 
+The drive was a: OCZ Vertex SATA 2.0 SSD
+The drive is supposedly not that bad, of course is worse than the
+intel X-25 MLC one, but much more consumer level and afordable.
+
+these are mostly sintetic tests but I think are worth the look.
+
+SSD mode had worse results almost consistently.
+
+Kind regards,
+
+
+--
+Miguel Sousa Filipe

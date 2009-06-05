@@ -1,50 +1,56 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Data Deduplication with the help of an online filesystem check
-Date: Fri, 5 Jun 2009 08:50:16 -0400
-Message-ID: <20090605125016.GA6942@think>
-References: <1240960687.15136.88.camel@think.oraclecorp.com> <20090429120300.GG22917@cip.informatik.uni-erlangen.de> <1241010875.20099.2.camel@think.oraclecorp.com> <20090429135804.GI22917@cip.informatik.uni-erlangen.de> <1241015512.20099.30.camel@think.oraclecorp.com> <20090429152614.GJ22917@cip.informatik.uni-erlangen.de> <1241019915.20099.35.camel@think.oraclecorp.com> <20090604084919.GB22607@cip.informatik.uni-erlangen.de> <20090604114357.GK13945@think> <4A290DA0.5090105@wpkg.org>
+Subject: Re: New experimental btrfs branch ready for testing
+Date: Fri, 5 Jun 2009 10:20:08 -0400
+Message-ID: <20090605142008.GB6942@think>
+References: <20090601210447.GC3890@think> <4A281A3C.6000006@austin.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Thomas Glanzmann <thomas@glanzmann.de>,
-	Heinz-Josef Claes <hjclaes@web.de>,
-	Edward Shishkin <edward.shishkin@gmail.com>,
-	linux-btrfs@vger.kernel.org
-To: Tomasz Chmielewski <mangoo@wpkg.org>
+Cc: linux-btrfs@vger.kernel.org
+To: Steven Pratt <slpratt@austin.ibm.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4A290DA0.5090105@wpkg.org>
+In-Reply-To: <4A281A3C.6000006@austin.ibm.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 05, 2009 at 02:20:48PM +0200, Tomasz Chmielewski wrote:
+On Thu, Jun 04, 2009 at 02:02:20PM -0500, Steven Pratt wrote:
 > Chris Mason wrote:
->> On Thu, Jun 04, 2009 at 10:49:19AM +0200, Thomas Glanzmann wrote:
->>> Hello Chris,
->>>
->>>>>  My question is now, how often can a block in btrfs be refferenced?
->>>> The exact answer depends on if we are referencing it from a single
->>>> file or from multiple files.  But either way it is roughly 2^32.
->>> could you please explain to me what underlying datastructure is used to
->>> monitor if the block is still referenced or already free? Is a counter
->>> used, bitmap (but that can't be if is 2^32) or some sort of list? I
->>> assume that a counter is used. If this is the case, I assume when a
->>> snapshot for example is deleted the reference counter of every block
->>> that was referenced in the snapshot will be decremented by one. Is this
->>> correct or am I missing something here?
+>> Hello everyone,
 >>
->> It is a counter and a back reference.  With Yan Zheng's new format work,
->> the limit is not 2^64.
+>> Yan Zheng has been doing some major surgery to the back references and
+>> extent allocation code, tackling bottlenecks in the code that tracks
+>> extents.  It scales better with many snapshots and performs better in
+>> the common case of no snapshots at all.
 >>
->> When a snapshot is deleted, the btree is walked to efficiently drop the
->> references on the blocks it referenced.
+>> THE NEW CODE IS A FORWARD ROLLING DISK FORMAT CHANGE.  This means it is
+>> compatible with the current btrfs disk format, but once you mount a
+>> filesystem with the new code, it WILL NO LONGER BE MOUNTABLE FROM OLD
+>> KERNELS.  Old kernels spit out an error message when you try them on new
+>> format filesystems.
 >>
->> From a dedup point of view, we'll want the dedup file to hold a
->> reference on the file extents.  The kernel ioctl side of things will
->> take care of that part.
->
-> I wonder how well would deduplication work with defragmentation? One  
-> excludes the other to some extent.
+>> This is a large change, and I'm hoping to have it stable in time for the
+>> 2.6.31 merge window.  I've been testing it for about a week now, and
+>> haven't been able to cause major problems yet.  But, testing the
+>> compatibility with old format filesystems is the hard part, and
+>> everyone that pulls the new code should backup their data first.
+>>
+>> I've setup git branches called newformat where you can pull the new code.
+>>
+>> For the kernel (based on 2.6.30-rc7):
+>>
+>> git pull git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git newformat
+>>
+>>   
+> So I started the performance runs on this. The base tests completed fine  
+> on the raid system and I will post results as soon as I can finish  
+> postprocessing, but when I tried to do nodatacow that machine it crashed  
+> pretty early. Here is console log:
 
-Very much so ;)  Ideally we end up doing dedup in large extents, but it
-will definitely increase the overall fragmentation of the FS.
+Hi Steve,
+
+Thanks again for hammering on these.  Yan Zheng and I have both been
+trying to reproduce problems with nodatacow and with the database random
+write run.
+
+But, so far we haven't been able to trigger any crashes.    Do you see
+anything in your config or setup that is unusual?
 
 -chris
-

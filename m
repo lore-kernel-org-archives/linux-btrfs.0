@@ -1,56 +1,40 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: New experimental btrfs branch ready for testing
-Date: Fri, 5 Jun 2009 10:20:08 -0400
-Message-ID: <20090605142008.GB6942@think>
-References: <20090601210447.GC3890@think> <4A281A3C.6000006@austin.ibm.com>
+From: Tomasz Chmielewski <mangoo@wpkg.org>
+Subject: Re: Data Deduplication with the help of an online filesystem check
+Date: Fri, 05 Jun 2009 17:35:54 +0200
+Message-ID: <4A293B5A.3050308@wpkg.org>
+References: <1240960687.15136.88.camel@think.oraclecorp.com> <20090429120300.GG22917@cip.informatik.uni-erlangen.de> <1241010875.20099.2.camel@think.oraclecorp.com> <20090429135804.GI22917@cip.informatik.uni-erlangen.de> <1241015512.20099.30.camel@think.oraclecorp.com> <20090429152614.GJ22917@cip.informatik.uni-erlangen.de> <1241019915.20099.35.camel@think.oraclecorp.com> <20090604084919.GB22607@cip.informatik.uni-erlangen.de> <20090604114357.GK13945@think> <4A290DA0.5090105@wpkg.org> <20090605125016.GA6942@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Steven Pratt <slpratt@austin.ibm.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Chris Mason <chris.mason@oracle.com>,
+	Tomasz Chmielewski <mangoo@wpkg.org>,
+	Thomas Glanzmann <thomas@glanzmann.de>,
+	Heinz-Josef Claes <hjclaes@web.de>,
+	Edward Shishkin <edward.shishk
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4A281A3C.6000006@austin.ibm.com>
+In-Reply-To: <20090605125016.GA6942@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 04, 2009 at 02:02:20PM -0500, Steven Pratt wrote:
-> Chris Mason wrote:
->> Hello everyone,
->>
->> Yan Zheng has been doing some major surgery to the back references and
->> extent allocation code, tackling bottlenecks in the code that tracks
->> extents.  It scales better with many snapshots and performs better in
->> the common case of no snapshots at all.
->>
->> THE NEW CODE IS A FORWARD ROLLING DISK FORMAT CHANGE.  This means it is
->> compatible with the current btrfs disk format, but once you mount a
->> filesystem with the new code, it WILL NO LONGER BE MOUNTABLE FROM OLD
->> KERNELS.  Old kernels spit out an error message when you try them on new
->> format filesystems.
->>
->> This is a large change, and I'm hoping to have it stable in time for the
->> 2.6.31 merge window.  I've been testing it for about a week now, and
->> haven't been able to cause major problems yet.  But, testing the
->> compatibility with old format filesystems is the hard part, and
->> everyone that pulls the new code should backup their data first.
->>
->> I've setup git branches called newformat where you can pull the new code.
->>
->> For the kernel (based on 2.6.30-rc7):
->>
->> git pull git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git newformat
->>
->>   
-> So I started the performance runs on this. The base tests completed fine  
-> on the raid system and I will post results as soon as I can finish  
-> postprocessing, but when I tried to do nodatacow that machine it crashed  
-> pretty early. Here is console log:
+Chris Mason wrote:
 
-Hi Steve,
+>> I wonder how well would deduplication work with defragmentation? One  
+>> excludes the other to some extent.
+> 
+> Very much so ;)  Ideally we end up doing dedup in large extents, but it
+> will definitely increase the overall fragmentation of the FS.
 
-Thanks again for hammering on these.  Yan Zheng and I have both been
-trying to reproduce problems with nodatacow and with the database random
-write run.
+Defragmentation could lead to interesting problems if it's not aware of 
+dedupliction.
 
-But, so far we haven't been able to trigger any crashes.    Do you see
-anything in your config or setup that is unusual?
 
--chris
+I can imagine "freeing up space" (i.e., as seen by userspace) where 
+duplicated blocks are found, but keeping track of duplicated blocks 
+internally (and not allowing to overwrite any block which is duplicated).
+
+Only when free space is really needed, "deduplicate" blocks which have 
+more copies, and allow to overwrite them with data.
+
+Perhaps complicated though.
+
+
+-- 
+Tomasz Chmielewski

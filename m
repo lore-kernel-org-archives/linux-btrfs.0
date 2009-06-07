@@ -1,58 +1,46 @@
-From: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
+From: Daniel Cordero <theappleman@gmail.com>
 Subject: Re: New experimental btrfs branch ready for testing
-Date: Sun, 7 Jun 2009 13:50:51 +0200
-Message-ID: <8B019CAA-9B37-4403-B5FB-A925A17C045A@karlsbakk.net>
+Date: Sun, 7 Jun 2009 13:13:41 +0100
+Message-ID: <20090607121341.GA11706@cumin.applehq.eu>
 References: <20090601210447.GC3890@think>
-Reply-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Mime-Version: 1.0 (Apple Message framework v935.3)
-Content-Type: text/plain; charset=ISO-8859-1;
-	format=flowed	delsp=yes
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+ <8B019CAA-9B37-4403-B5FB-A925A17C045A@karlsbakk.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090601210447.GC3890@think>
+In-Reply-To: <8B019CAA-9B37-4403-B5FB-A925A17C045A@karlsbakk.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 1. juni. 2009, at 23.04, Chris Mason wrote:
-
-> I've setup git branches called newformat where you can pull the new =20
-> code.
+On Sun, Jun 07, 2009 at 01:50:27PM +0200, Roy Sigurd Karlsbakk wrote:
+> On 1. juni. 2009, at 23.04, Chris Mason wrote:
 >
-> For the kernel (based on 2.6.30-rc7):
+>> I've setup git branches called newformat where you can pull the new  
+>> code.
+>>
+>> For the kernel (based on 2.6.30-rc7):
+>>
+>> git pull git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs- 
+>> unstable.git newformat
 >
-> git pull git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-=20
+> # git pull git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs- 
 > unstable.git newformat
-
-# git pull git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-=20
-unstable.git newformat
-fatal: Not a git repository
-
-> For the progs:
+> fatal: Not a git repository
 >
-> git pull git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-=20
+>> For the progs:
+>>
+>> git pull git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs- 
+>> progs-unstable.git newformat
+>
+> # git pull git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs- 
 > progs-unstable.git newformat
-
-# git pull git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-=20
-progs-unstable.git newformat
-fatal: Not a git repository
-
+> fatal: Not a git repository
 >
-Have this code been removed, or is it me doing something funny?
+>>
+> Have this code been removed, or is it me doing something funny?
 
-roy
---
-Roy Sigurd Karlsbakk
-(+47) 97542685
-roy@karlsbakk.net
-http://blogg.karlsbakk.net/
---
-I all pedagogikk er det essensielt at pensum presenteres =20
-intelligibelt. Det er et element=E6rt imperativ for alle pedagoger =E5 =
-=20
-unng=E5 eksessiv anvendelse av idiomer med fremmed opprinnelse. I de =20
-fleste tilfeller eksisterer adekvate og relevante synonymer p=E5 norsk.
+You're doing something funny.
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I'm guessing you don't already have a copy of the btrfs repositories, so
+you should be using clone instead of pull.
+If you do have them, cd into them.

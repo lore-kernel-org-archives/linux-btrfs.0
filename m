@@ -1,44 +1,30 @@
-From: Hisashi Hifumi <hifumi.hisashi@oss.ntt.co.jp>
-Subject: Re: [PATCH] btrfs: fix write_dev_supers
-Date: Tue, 09 Jun 2009 20:28:23 +0900
-Message-ID: <6.0.0.20.2.20090609202623.072644a8@172.19.0.2>
-References: <6.0.0.20.2.20090608181508.05e4b708@172.19.0.2>
- <20090609112516.GB4009@think>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: New experimental btrfs branch ready for testing
+Date: Tue, 9 Jun 2009 11:26:39 -0400
+Message-ID: <20090609152639.GB9556@think>
+References: <20090601210447.GC3890@think> <4A281A3C.6000006@austin.ibm.com> <20090605142008.GB6942@think> <4A294194.6050006@austin.ibm.com> <4A298DDB.6070002@austin.ibm.com> <20090606002021.GE3824@think> <4A2A9B95.5050604@austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+To: Steven Pratt <slpratt@austin.ibm.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090609112516.GB4009@think>
+In-Reply-To: <4A2A9B95.5050604@austin.ibm.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sat, Jun 06, 2009 at 11:38:45AM -0500, Steven Pratt wrote:
+>
+> No problem.  Raid results are uploading to  
+> http://btrfs.boxacle.net/repository/raid/history/History.html  now.   
+> There were massive improvements in the random write workloads,  
+> especially with cow enabled!!  MailServer had moderate perf gains, but  
+> dramatic decrease in CPU utilization, so this is very good as well.
+>
+> The only regression I see is on large file creates, CPU is up 200% or  
+> more while performance is fairly flat.  btrfs_tree_lock now dominates  
+> the profile.
 
-At 20:25 09/06/09, Chris Mason wrote:
->On Tue, Jun 09, 2009 at 10:46:55AM +0900, Hisashi Hifumi wrote:
->> Hi.
->> 
->> I got following BUG trace.
->> This is violation of BUG_ON(!buffer_locked(bh)) check on submit_bh() function.
->> In write_dev_supers(), if wait parameter is set and buffer_uptodate() check
->> is negative,  submit_bh() is executed and hit above BUG_ON.
->> So I fixed this issue.
->
->Thanks for finding this bug and sending the patch.
->
->This function is very confusing.  If wait parameter is set, it
->isn't supposed to do any IO at all.  The caller first does
->write_dev_supers with wait == 0, and that sends all the supers down on
->all the devices.
->
->Then it calls again with wait == 1, which is supposed to make sure all
->the supers actually got to disk.
->
->We should change the wait == 0 behavior to leave a reference held on all
->the buffers, and wait == 1 to drop that reference.  That way the buffer
->won't disappear while we are waiting, and we can return an error if the
->buffer wasn't up to date when wait == 1.
->
->Are you interested in fixing this?
+I'm not able to reproduce the btrfs_tree_lock usage that you're seeing.
+Could you please use the callgraph option to oprofile?
 
-Yes, I want to fix this. 
+-chris
 

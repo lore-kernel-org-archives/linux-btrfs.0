@@ -1,30 +1,29 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: New experimental btrfs branch ready for testing
-Date: Tue, 9 Jun 2009 11:26:39 -0400
-Message-ID: <20090609152639.GB9556@think>
-References: <20090601210447.GC3890@think> <4A281A3C.6000006@austin.ibm.com> <20090605142008.GB6942@think> <4A294194.6050006@austin.ibm.com> <4A298DDB.6070002@austin.ibm.com> <20090606002021.GE3824@think> <4A2A9B95.5050604@austin.ibm.com>
+Subject: Re: New new format branch ready for testing
+Date: Tue, 9 Jun 2009 20:45:44 -0400
+Message-ID: <20090610004544.GA4964@think>
+References: <20090608205848.GB4130@think>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Steven Pratt <slpratt@austin.ibm.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4A2A9B95.5050604@austin.ibm.com>
+In-Reply-To: <20090608205848.GB4130@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jun 06, 2009 at 11:38:45AM -0500, Steven Pratt wrote:
->
-> No problem.  Raid results are uploading to  
-> http://btrfs.boxacle.net/repository/raid/history/History.html  now.   
-> There were massive improvements in the random write workloads,  
-> especially with cow enabled!!  MailServer had moderate perf gains, but  
-> dramatic decrease in CPU utilization, so this is very good as well.
->
-> The only regression I see is on large file creates, CPU is up 200% or  
-> more while performance is fairly flat.  btrfs_tree_lock now dominates  
-> the profile.
+Hello everyone,
 
-I'm not able to reproduce the btrfs_tree_lock usage that you're seeing.
-Could you please use the callgraph option to oprofile?
+Just a quick note that I've updated the newformat2 kernel branch to
+include some fixes for buffered IO stalls and a new mount -o ssd_spread
+mount option that should perform better than regular mount -o ssd when
+used on lower end SSDs.
+
+The big difference is that mount -o ssd_spread forces allocations to
+find fully free areas, where mount -o ssd will find rough groupings of
+free blocks that might have allocated blocks mixed in.
+
+Tomorrow I'll add some autodetection for devices that have the
+non-rotational flag set, which is a hint the block layer gives us that
+we're operating on an SSD.
 
 -chris
 

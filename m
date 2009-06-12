@@ -1,42 +1,48 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Btrfs SSD autodetection and mount options
-Date: Thu, 11 Jun 2009 16:54:20 -0400
-Message-ID: <20090611205420.GB3834@think>
+Subject: Re: cleanup after a small data loss on incorrect shutdown.
+Date: Fri, 12 Jun 2009 06:53:32 -0400
+Message-ID: <20090612105332.GG3834@think>
+References: <4A30FC2E.3030804@rambler.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+To: Michael Raskin <a0091f122@rambler.ru>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4A30FC2E.3030804@rambler.ru>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello everyone,
+On Thu, Jun 11, 2009 at 04:44:30PM +0400, Michael Raskin wrote:
+> 	Hello.
+> 
+> 	I am continuing my tests of BtrFS under a practical workload. Recently
+> an incorrect poweroff (or maybe a small bug in BtrFS) caused a small
+> data loss. The actual damage was non-existent.
+> 	I used old branch, so maybe the relevant code is already improved.
+> 	
+> 	1. Why btrfsck says "bad block" on that partition? What does it mean?
+> My fist reaction was to use badblocks. It found no badblocks in its own
+> sense, so I assume btrfsck means something else. It would be nice to
+> explain that to user. Maybe "damaged FS data block" ?
 
-A quick update on the btrfs SSD modes.  The pull request I just to Linus
-includes autodetection of ssd devices based on the queue rotating flag.
-You can see this for your devices in /sys/block/xxx/queue/rotating
+Yes, it would make sense to make these more informative.
 
-If all the devices in your FS have a 0 in the rotating flag, btrfs
-automatically enables ssd mode.  You can turn this off with
-mount -o nossd.
+> 
+> 	2. I found a file which is listed in the directory, but stat on it
+> returns "No such file or directory". Certainly, rm and unlink cannot
+> remove it. The partition has 14G in use. What can I do to provide a
+> useful piece of FS structure information? How can I remove the file
+> afterwards.
 
-The default ssd flag tries to find rough groupings of blocks to allocate
-on, and will try to pack blocks into the free space available.  So,
-if you have something like this (pretending a bitmap of free blocks)
+I'd say to send us the btrfsck output, it will help answer these
+questions.
 
-free | free | used | free | used | free | free | used
+> 	
+> 	3. On a 30G partition with 14G used btrfsck was left overnight. It has
+> neither finished nor printed any meaningful request for interaction. Is
+> it normal?
 
-Btrfs SSD mode will collect a large region of mostly free blocks and
-allocate from that.  This works well on newer and high end ssds that
-prefer us to reuse blocks instead of spreading IO across the hole
-device.
-
-But, low end devices may have to do a read/modify/write cycle when we
-actually do IO in this case.  I've added a new mount option for those
-devices:
-
-mount -o ssd_spread.  This is not autodetected, you still need to pass
-it on the mount command line or in /etc/fstab.  In ssd_spread mode,
-btrfs will try much harder to find a contiguous chunk of free blocks and
-hand those out.
+Definitely not ;)  You can check with vmstat to see if btrfsck is
+actually doing anything, but it sounds like you hit a bug.  Which
+version of the kernel and tools are you using?
 
 -chris
-

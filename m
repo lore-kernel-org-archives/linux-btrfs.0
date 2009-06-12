@@ -1,29 +1,41 @@
-From: Michael Raskin <a0091f122@rambler.ru>
-Subject: Re: cleanup after a small data loss on incorrect shutdown.
-Date: Fri, 12 Jun 2009 22:52:57 +0400
-Message-ID: <4A32A409.3030208@rambler.ru>
-References: <4A30FC2E.3030804@rambler.ru> <20090612105332.GG3834@think> <4A32374A.6080900@rambler.ru> <20090612114230.GH3834@think>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Subject: Re: [GIT PULL] Btrfs updates for 2.6.31-rc
+Date: Fri, 12 Jun 2009 14:55:33 -0700 (PDT)
+Message-ID: <alpine.LFD.2.01.0906121450530.3237@localhost.localdomain>
+References: <20090611204456.GA3834@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>,
-	Michael Raskin <a0091f122@rambler.ru>,
-	linux-btrfs@vger.kernel.org
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090612114230.GH3834@think>
+In-Reply-To: <20090611204456.GA3834@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote:
->> That's all. Reading one of the damaged file actually returned
->> "Input/output error" - probably it tried to read beyond end-of-device. I
->>  had to kill this file (practical testing means that to continue to use
->> my notebook normally I had to nuke the damaged file and get intact
->> copies). The "no such file except in readdir" is still there right now.
-> 
-> Ok, btrfsck will give us more output when it finishes, but it hasn't
-> finished.  It would help to use btrfs-image to send us a coyp of the
-> metadata so we can fix the btrfsck bug.
 
-I have a 74M compressed btrfs-image of a partition with a ghost file (I
-sent btrfsck logs earlier). Would they be of any use in debugging
-handling of such situations? If yes - how should I transmit the image
-file? How can I kill the ghost file?
+
+On Thu, 11 Jun 2009, Chris Mason wrote:
+> 
+> Existing filesystems will be upgraded to the new format on the first
+> mount.  All of your old data will still be there and still work
+> properly, but I strongly recommend a full backup before going to the new
+> code.
+
+Auugh.
+
+This is horrible. I just screwed up my system by booting a kernel on this: 
+it worked beatifully, but due to other reasons I then wanted to bisect a 
+totally unrelated issue. While having _totally_ forgotten about this 
+issue, even if I was technically aware of it.
+
+.. so I installed a new kernel, and now it won't boot due to "couldn't 
+mount because of unsupported optional features (1)". In fact, I have no 
+kernel available on that system that will boot, since my normal "safe" 
+fall-back kernels are all distro kernels that can't boot this either.
+
+Ok, so I'll end up booting from a USB stick, and it will all work out in 
+the end, but this does essentially make it entirely impossible to do any 
+bisection on any btrfs system.
+
+Double-plus-ungood.
+
+		Linus

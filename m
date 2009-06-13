@@ -1,18 +1,19 @@
-From: Theodore Tso <tytso@mit.edu>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: [GIT PULL] Btrfs updates for 2.6.31-rc
-Date: Fri, 12 Jun 2009 19:19:03 -0400
-Message-ID: <20090612231903.GE24336@mit.edu>
+Date: Fri, 12 Jun 2009 20:18:02 -0400
+Message-ID: <20090613001802.GM4808@think>
 References: <20090611204456.GA3834@think> <alpine.LFD.2.01.0906121450530.3237@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>, linux-kernel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
 To: Linus Torvalds <torvalds@linux-foundation.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <alpine.LFD.2.01.0906121450530.3237@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 On Fri, Jun 12, 2009 at 02:55:33PM -0700, Linus Torvalds wrote:
+> 
+> 
 > On Thu, 11 Jun 2009, Chris Mason wrote:
 > > 
 > > Existing filesystems will be upgraded to the new format on the first
@@ -31,25 +32,32 @@ On Fri, Jun 12, 2009 at 02:55:33PM -0700, Linus Torvalds wrote:
 > mount because of unsupported optional features (1)". In fact, I have no 
 > kernel available on that system that will boot, since my normal "safe" 
 > fall-back kernels are all distro kernels that can't boot this either.
+> 
+> Ok, so I'll end up booting from a USB stick, and it will all work out in 
+> the end, but this does essentially make it entirely impossible to do any 
+> bisection on any btrfs system.
 
-We learned this lesson the hard way with ext3, a long time ago,
-although occasionally we've had to relearn it along the way.  The
-normal failure mode is that some user is still using some ancient
-distribution, (say, Red Hat 8), and for some reason they boot using a
-Fedora Rescue CD, and are really annoyed when the filesystem is no
-longer mountable using the 2.4 kernel that comes with their ancient
-distribution.
+First off, I'm sorry.  I definitely knew this was going to happen to
+some of the btrfs users.  I wanted to get it in as close as possible to
+2.6.30 so that it would be close to the good end of the git bisecting.
 
-So my policy at least with ext4 is to *never* add any new patches were
-the kernel automatically adds some new feature to the compatibility
-bitmasks.  The user should have to explicitly and manually use a
-userspace program (i.e., tune2fs) to add some new feature.  At least
-initially we had some cases where ext4 would automatically add some
-new feature flag thanks to a mount option, but I believe we've gotten
-rid of all of those cases.
+My choices were:
 
-I'd suggest that btrfs follow the same strategy; yeah, it means you
-have to keep more backwards compatibility code for longer, but as
-btrfs matures, it'll definitely be a Good Thing.
+1) No backward compatibility at all
+2) Forward rolling (what we did)
+3) Maintain the code to write the old and new formats the way Ted
+suggests.
 
-					- Ted
+A number of people argued for #1.  The problem with #3 is that it
+explodes our testing matrix even more, and this is already the most
+complex part of the FS.  For the stage Btrfs is at, I think #2 was the
+best option.
+
+Our future format features will be what Ted is describing, explicitly
+enabled and much more fined grained.
+
+I'll try to find some livecd images for usb sticks that support Btrfs,
+and make links on the btrfs homepage.
+
+-chris
+

@@ -1,26 +1,41 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] Always update root items for fs trees at commit time
-Date: Mon, 15 Jun 2009 09:26:03 -0400
-Message-ID: <20090615132603.GB4712@think>
-References: <4A364B17.9030609@oracle.com>
+From: Steven Pratt <slpratt@austin.ibm.com>
+Subject: Re: New experimental btrfs branch ready for testing
+Date: Mon, 15 Jun 2009 10:46:17 -0500
+Message-ID: <4A366CC9.8000603@austin.ibm.com>
+References: <20090601210447.GC3890@think> <4A281A3C.6000006@austin.ibm.com> <20090605142008.GB6942@think> <4A294194.6050006@austin.ibm.com> <4A298DDB.6070002@austin.ibm.com> <20090606002021.GE3824@think> <4A2A9B95.5050604@austin.ibm.com> <20090609152639.GB9556@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Yan Zheng <zheng.yan@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Chris Mason <chris.mason@oracle.com>,
+	Steven Pratt <slpratt@austin.ibm.com>,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4A364B17.9030609@oracle.com>
+In-Reply-To: <20090609152639.GB9556@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 15, 2009 at 09:22:31PM +0800, Yan Zheng wrote:
-> commit_fs_roots skips updating root items for fs trees that aren't modified.
-> This is unsafe since relocation code modifies root item's last_snapshot field
-> without modifying corresponding fs tree.
+Chris Mason wrote:
+> On Sat, Jun 06, 2009 at 11:38:45AM -0500, Steven Pratt wrote:
+>   
+>> No problem.  Raid results are uploading to  
+>> http://btrfs.boxacle.net/repository/raid/history/History.html  now.   
+>> There were massive improvements in the random write workloads,  
+>> especially with cow enabled!!  MailServer had moderate perf gains, but  
+>> dramatic decrease in CPU utilization, so this is very good as well.
+>>
+>> The only regression I see is on large file creates, CPU is up 200% or  
+>> more while performance is fairly flat.  btrfs_tree_lock now dominates  
+>> the profile.
+>>     
+>
+> I'm not able to reproduce the btrfs_tree_lock usage that you're seeing.
+> Could you please use the callgraph option to oprofile?
+>   
 
-Thanks for working on these patches.
+Ok, back from vacation and have re-engaged my brain :-)  Was thinking I 
+would have to re-run this for you, but we already have callgraph data 
+for all the runs.  For the 128 thread create workload it is here:
+http://btrfs.boxacle.net/repository/raid//2-6-30-rc7-newformat/btrfs-6-2-newformat/btrfs1.ffsb.large_file_creates__threads_0128.09-06-04_01.23.30/analysis/oprofile.breakout.001/oprofile-callgraph
 
-This could make commit pretty expensive when there are many snapshots in
-place that don't get modified.  Could you please change the balance code
-to mark the root to force writeout?
-
--chris
+Steve
+> -chris
+>   
 

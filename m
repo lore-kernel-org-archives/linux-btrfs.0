@@ -1,26 +1,26 @@
-From: Christoph Hellwig <hch@infradead.org>
-Subject: Re: [PATCH 1/3] Add ioctl to set per file 'compress' flag
-Date: Mon, 15 Jun 2009 09:24:25 -0400
-Message-ID: <20090615132424.GA8621@infradead.org>
-References: <4A3305B9.30700@gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH] Always update root items for fs trees at commit time
+Date: Mon, 15 Jun 2009 09:26:03 -0400
+Message-ID: <20090615132603.GB4712@think>
+References: <4A364B17.9030609@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
-	"gud@ksu.edu" <gud@ksu.edu>
-To: Amit Gud <amitgud@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+To: Yan Zheng <zheng.yan@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4A3305B9.30700@gmail.com>
+In-Reply-To: <4A364B17.9030609@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 12, 2009 at 06:49:45PM -0700, Amit Gud wrote:
-> 
-> An ioctl is needed to set compress flag (i.e. clear
-> BTRFS_INODE_NOCOMPRESS flag) on per file basis. This patch adds that.
-> 
-> Introduces a generic function to be used by subsequent patches.
+On Mon, Jun 15, 2009 at 09:22:31PM +0800, Yan Zheng wrote:
+> commit_fs_roots skips updating root items for fs trees that aren't modified.
+> This is unsafe since relocation code modifies root item's last_snapshot field
+> without modifying corresponding fs tree.
 
-It's probably a better idea to fit these into the existing per-inode
-flags.  This will need some coordination with Ted on how to re-use
-the existing compression flags if at all and where to fit the new
-flags in the numerical namespaces.
+Thanks for working on these patches.
+
+This could make commit pretty expensive when there are many snapshots in
+place that don't get modified.  Could you please change the balance code
+to mark the root to force writeout?
+
+-chris
 

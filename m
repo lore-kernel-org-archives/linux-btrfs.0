@@ -1,37 +1,37 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: Removal of snapshots (and subvolumes)
-Date: Mon, 15 Jun 2009 14:19:18 -0400
-Message-ID: <20090615181918.GE3085@localhost.localdomain>
-References: <4A367CC6.1000302@siemens.com>
+Subject: Weird compile issue on sparc
+Date: Mon, 15 Jun 2009 18:00:59 -0400
+Message-ID: <20090615220059.GG3085@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, aaron@merfinllc.com
-To: Jan Kiszka <jan.kiszka@siemens.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4A367CC6.1000302@siemens.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 15, 2009 at 06:54:30PM +0200, Jan Kiszka wrote:
-> Hi,
-> 
-> obviously btrfs is yet lacking any means to delete snapshots and
-> subvolumes, well, at least their names (I read something about deleting
-> their content...). We wanted to start playing with circular snapshots
-> over btrfs driven by an application, so this limitation is a bit unhandy
-> - even if everything is highly experimental here anyway.
-> 
-> Browsing the archive, I found Aaron's first patches to fill this gap.
-> What happened to them? Besides likely a few remaining bugs, the biggest
-> seems to have been some lacking references in btrfs' tree roots. Did
-> this situation change meanwhile? What is the schedule for this feature?
-> If it's just lacking someone to pick up already existing bits and bring
-> them in shape, I could offer a hand. Just hacking on btrfs with broader
-> scope is currently not possible.
->
+Hello,
 
-Its a little tricky atm, with Yan's new format patches.  The drop snapshots
-patch he sent recently will be needed.  You just need to use that to drop the
-items in the snapshot root, and then you'll need to add some extra code to
-actually remove the root.  I think thats everything.  Thanks,
+When trying to rebuild fedora for sparc, the btrfs-progs package failed to
+compile.  This is what it spit out in the build log
 
-Josef 
+gcc -Wp,-MMD,./.convert.o.d,-MT,convert.o -Wall -fno-strict-aliasing
+-D_FILE_OFFSET_BITS=64 -D_FORTIFY_SOURCE=2 -O2 -g -pipe -Wall
+-Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector --param=ssp-buffer-size=4
+-m64 -mcpu=ultrasparc -c convert.c
+In file included from /usr/include/ext2fs/ext2_types.h:23,
+                 from /usr/include/ext2fs/ext2_fs.h:19,
+                 from convert.c:41:
+/usr/include/ext2fs/ext2_types-sparc64.h:97: error: conflicting types for
+'__u64'
+/usr/include/asm-generic/int-ll64.h:28: note: previous declaration of '__u64'
+was here
+/usr/include/ext2fs/ext2_types-sparc64.h:113: error: conflicting types for
+'__s64'
+/usr/include/asm-generic/int-ll64.h:27: note: previous declaration of '__s64'
+was here
+
+I assume its because we typedef in kerncompat.h and then it gets done elsewhere
+via the ext2 headers.  This was just brought to my attention.  I will look at it
+tomorrow unless somebody has an idea of how to fix this before then (like say
+Yan :) ) then I would be grateful.  Thanks,
+
+Josef

@@ -1,57 +1,40 @@
-From: Amit Gud <amitgud@gmail.com>
-Subject: [PATCH 3/3] progs: Add BTRFS_IOC_NODATASUM ioctl to progs
-Date: Fri, 12 Jun 2009 19:01:08 -0700
-Message-ID: <4A330864.1040609@gmail.com>
+From: Ravi Pinjala <ravi@p-static.net>
+Subject: Mounting multiple regular files as a filesystem
+Date: Mon, 15 Jun 2009 00:36:22 -0500
+Message-ID: <4A35DDD6.9020307@p-static.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org, chris.mason@oracle.com,
-	"gud@ksu.edu" <gud@ksu.edu>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-Add the new ioctl to progs.
-
-Signed-off-by: Amit Gud <gud@ksu.edu>
-
-Index: btrfs-progs-unstable/btrfsctl.c
-===================================================================
---- btrfs-progs-unstable.orig/btrfsctl.c
-+++ btrfs-progs-unstable/btrfsctl.c
-@@ -57,6 +57,7 @@ static void print_usage(void)
- 	printf("\t-c: forces a single FS sync\n");
- 	printf("\t--compress filename: sets compress flag on the file\n");
- 	printf("\t--nodatacow filename: sets nodatacow flag on the file\n");
-+	printf("\t--nodatasum filename: sets nodatasum flag on the file\n");
- 	printf("%s\n", BTRFS_BUILD_VERSION);
- 	exit(1);
- }
-@@ -192,6 +193,12 @@ int main(int ac, char **av)
- 				print_usage();
- 			}
- 			command = BTRFS_IOC_NODATACOW;
-+		} else if (strcmp(av[i], "--nodatasum") == 0) {
-+			if (i >= ac - 1) {
-+				fprintf(stderr, "-r requires an arg\n");
-+				print_usage();
-+			}
-+			command = BTRFS_IOC_NODATASUM;
- 		}
- 	}
- 	if (command == 0) {
-Index: btrfs-progs-unstable/ioctl.h
-===================================================================
---- btrfs-progs-unstable.orig/ioctl.h
-+++ btrfs-progs-unstable/ioctl.h
-@@ -60,4 +60,6 @@ struct btrfs_ioctl_vol_args {
- 			   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_NODATACOW _IOW(BTRFS_IOCTL_MAGIC, 16, \
- 			   struct btrfs_ioctl_vol_args)
-+#define BTRFS_IOC_NODATASUM _IOW(BTRFS_IOCTL_MAGIC, 17, \
-+			   struct btrfs_ioctl_vol_args)
- #endif
+I'm trying to create a multi-device filesystem on top of regular files
+(not actual disks), and mount that to a loopback device. For a
+filesystem created on a single file, it works fine, but for a filesystem
+across multiple files, it doesn't.
 
 
--- 
-May the source be with you.
-http://www.cis.ksu.edu/~gud
+
+dd if=/dev/zero of=img1 bs=4096 count=65536
+dd if=/dev/zero of=img2 bs=4096 count=65536
+dd if=/dev/zero of=img3 bs=4096 count=65536
+dd if=/dev/zero of=img4 bs=4096 count=65536
+
+mkfs.btrfs img1
+mount -o loop -t btrfs img1 /mnt/test # works
+
+mkfs.btrfs img1 img2 img3 img4
+mount -o loop -t btrfs img1 /mnt/test # fails
+
+
+
+When I try to mount with multiple files, it also prints a message to syslog:
+
+Jun 15 00:32:10 3vil device fsid a147d6b950f66dca-3e2e7f52011c93b0 devid
+4 transid 9 /dev/loop/0
+Jun 15 00:32:10 3vil btrfs: failed to read chunk tree on loop0
+Jun 15 00:32:10 3vil btrfs: open_ctree failed
+
+Am I doing something wrong, or is this use case broken right now?
+
+--Ravi

@@ -1,37 +1,35 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Weird compile issue on sparc
-Date: Mon, 15 Jun 2009 18:00:59 -0400
-Message-ID: <20090615220059.GG3085@localhost.localdomain>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Btrfs rescue images
+Date: Mon, 15 Jun 2009 20:53:19 -0400
+Message-ID: <20090616005319.GA3735@think>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+To: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	Linus Torvalds <torvalds@linux-foundation.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hello everyone,
 
-When trying to rebuild fedora for sparc, the btrfs-progs package failed to
-compile.  This is what it spit out in the build log
+As Linus discovered, the new btrfs disk format in 2.6.31-git can be
+problematic if your FS gets forward rolled to the new format and you end
+up bisecting back to the old code.
 
-gcc -Wp,-MMD,./.convert.o.d,-MT,convert.o -Wall -fno-strict-aliasing
--D_FILE_OFFSET_BITS=64 -D_FORTIFY_SOURCE=2 -O2 -g -pipe -Wall
--Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector --param=ssp-buffer-size=4
--m64 -mcpu=ultrasparc -c convert.c
-In file included from /usr/include/ext2fs/ext2_types.h:23,
-                 from /usr/include/ext2fs/ext2_fs.h:19,
-                 from convert.c:41:
-/usr/include/ext2fs/ext2_types-sparc64.h:97: error: conflicting types for
-'__u64'
-/usr/include/asm-generic/int-ll64.h:28: note: previous declaration of '__u64'
-was here
-/usr/include/ext2fs/ext2_types-sparc64.h:113: error: conflicting types for
-'__s64'
-/usr/include/asm-generic/int-ll64.h:27: note: previous declaration of '__s64'
-was here
+It would also be nice to have a way to run btrfsck on a root filesystem
+and do other assorted tasks.  So, I'm making live boot usb images for
+both x86 and x86-64.
 
-I assume its because we typedef in kerncompat.h and then it gets done elsewhere
-via the ext2 headers.  This was just brought to my attention.  I will look at it
-tomorrow unless somebody has an idea of how to fix this before then (like say
-Yan :) ) then I would be grateful.  Thanks,
+They should have enough to get your filesystems mounted and they also
+include git, gcc, make and enough to compile the kernel.  These are
+based on the Arch 2.6.30 distro with just the btrfs newformat code
+added.
 
-Josef
+I've got the 32 bit image uploaded, and I'll queue up 64 bit overnight.
+If anyone is feeling brave, just dd the image onto a usb stick and
+rescue boot away.
+
+They work on both of my test boxes, but a little extra testing would be
+nice.
+
+-chris
+

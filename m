@@ -1,41 +1,29 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: Sander <sander@humilis.net>
 Subject: Re: Phoronix article slaming BTRFS
-Date: Tue, 23 Jun 2009 10:41:23 -0400
-Message-ID: <20090623144123.GB19276@think>
-References: <loom.20090623T024010-331@post.gmane.org>
+Date: Tue, 23 Jun 2009 16:53:59 +0200
+Message-ID: <20090623145358.GA700@cumulus>
+References: <loom.20090623T024010-331@post.gmane.org> <20090623144123.GB19276@think>
+Reply-To: sander@humilis.net
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Mike Ramsey <MikeJRamsey@comcast.net>
+To: Chris Mason <chris.mason@oracle.com>,
+	Mike Ramsey <MikeJRamsey@comcast.net>,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <loom.20090623T024010-331@post.gmane.org>
+In-Reply-To: <20090623144123.GB19276@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 23, 2009 at 02:51:41AM +0000, Mike Ramsey wrote:
-> I ran across this article "Testing Out The SSD Mode In Btrfs". 
-> http://www.phoronix.com/scan.php?page=article&item=btrfs_ssd_mode&num=1
-> 
-> At first I was disappointed.  It gave a very disappointing set of benchmarks.
-> However, a close reading revealed this:
-> 
-> "With the OCZ Vertex SATA 2.0 SSD, which we used for this testing today, had its
-> write caching always enabled. When attempting to disable the write cache through
-> hdparm it would remain enabled regardless and when using sdparm it would report
-> change_mode_page: failed setting page: Caching (SBC)."
-> 
-> This invalidates the benchmark! Disabling the write cache would yield a 2X
-> improvement.  
+Chris Mason wrote (ao):
+> Jens Axboe tried to reproduce the phoronix results on his ocz drive,
+> and generally found that each run was slower than the last regardless
+> of which mount options were used. This isn't entirely surprising, but
+> it did make it very difficult to nail down good or bad performance.
 
-Hmmm, I'm not sure I follow.  I'm guessing the write cache is critical
-on the vertex drives because they are using it to queue up writes into
-large enough units to fill an entire erasure block at once.  If they
-took the time to put 64MB of the stuff in there, it probably does
-something good ;)
+The performance should stabilize within a handful max fills I believe?
 
-Jens Axboe tried to reproduce the phoronix results on his ocz drive, and
-generally found that each run was slower than the last regardless of
-which mount options were used.  This isn't entirely surprising, but it
-did make it very difficult to nail down good or bad performance.
+There should be a moment where things don't get more complicated for the
+controller I thought.
 
--chris
-
+-- 
+Humilis IT Services and Solutions
+http://www.humilis.net

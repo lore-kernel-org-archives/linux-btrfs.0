@@ -1,71 +1,84 @@
 From: Miguel F Mascarenhas Sousa Filipe <miguel.filipe@gmail.com>
-Subject: Re: Release plan
-Date: Tue, 23 Jun 2009 11:09:35 +0100
-Message-ID: <f058a9c30906230309y316920e1he31ab3bdb467c311@mail.gmail.com>
-References: <loom.20090622T151046-988@post.gmane.org>
-	 <f058a9c30906230308m2062bbdbs519d65389400e39e@mail.gmail.com>
+Subject: Re: Phoronix article slaming BTRFS
+Date: Tue, 23 Jun 2009 11:13:12 +0100
+Message-ID: <f058a9c30906230313v10d94a5eg8cf123cef30fb5b8@mail.gmail.com>
+References: <loom.20090623T024010-331@post.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: linux-btrfs@vger.kernel.org
+To: Mike Ramsey <MikeJRamsey@comcast.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <f058a9c30906230308m2062bbdbs519d65389400e39e@mail.gmail.com>
+In-Reply-To: <loom.20090623T024010-331@post.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi there,
-
-On Mon, Jun 22, 2009 at 4:53 PM, Mike Ramsey <michael.j.ramsey@lmco.com=
-> wrote:
+On Tue, Jun 23, 2009 at 3:51 AM, Mike Ramsey<MikeJRamsey@comcast.net> w=
+rote:
+> I ran across this article "Testing Out The SSD Mode In Btrfs".
+> http://www.phoronix.com/scan.php?page=3Darticle&item=3Dbtrfs_ssd_mode=
+&num=3D1
 >
-> I was looking at file systems for Linux, Ubuntu in particular. =C2=A0=
-I really like
-> Sun's ZPF. =C2=A0ZPF's copy-on-write transaction model strikes me as =
-the correct
-> way to go. =C2=A0But ZPF lacks a GNU General Public License which blo=
-cks ZPF's
-> adoption by the Linux kernel. This led me to btrfs.
+> At first I was disappointed. =C2=A0It gave a very disappointing set o=
+f benchmarks.
+> However, a close reading revealed this:
+>
+> "With the OCZ Vertex SATA 2.0 SSD, which we used for this testing tod=
+ay, had its
+> write caching always enabled. When attempting to disable the write ca=
+che through
+> hdparm it would remain enabled regardless and when using sdparm it wo=
+uld report
+> change_mode_page: failed setting page: Caching (SBC)."
+>
+> This invalidates the benchmark! Disabling the write cache would yield=
+ a 2X
+> improvement.
+>
+> Digging deeper, I found this:
+> http://www.mail-archive.com/linux-scsi@vger.kernel.org/msg07949.html
+>
+> " Michael,
+> =C2=A0My information may be out of date, but last time I
+> =C2=A0looked libata didn't support MODE SELECT which is
+> =C2=A0the SCSI command to change mode page settings.
+> =C2=A0[I have sent patches several times to add support
+> =C2=A0for this in libata but ...]
+>
+> Ahhha!!!
+>
+> That looks exactly the case.
+>
+> I tested the two drives (AS and NS ones) on different
+> machines, and currently, NS (where things doesn't work)
+> is connected to AHCI controller, while the AS one is
+> behind mptsas. =C2=A0So it just looks like mptsas is doing
+> the right thing in the first place, while ahci (or
+> libata, whatever) is failing."
+>
+> So the article managed to unjustly smear both OCZ Vertex and BTRFS in=
+ one shot.
 
+allways take phoronix tests with a very big grain of salt. :-p
 
-You mean ZFS, but I think everybody who read this "self-corrected" your=
- typo.
+usually they are made/prepared "with their eyes closed".. completely
+in the dark and they don't diagnose or try to understand the results.
+nevertheless, they do test stuff out...
 
 
 >
-> I understand that the B-TRee File System is a "copy-on-write file sys=
-tem for
-> Linux announced by Oracle in 2007 and published under the GNU General=
- Public
-> License (GPL)".
+> --Mike Ramsey
 >
-> For planning purposes, what timeframe do you see for releasing a stab=
-le
-> version of btrfs? =C2=A0I am not a paying customer nor am I an annoyi=
-ng manager. =C2=A0I
-> am just curious as to when I should plan to start paying closer atten=
-tion. =C2=A04Q
-> 2009? 2Q 2010?
-
-=46ilesystems take a long time to mature, btrfs is stable enough for
-daily use, has long has you don't use it for sensitive/critical data.
-There are still some problems, the most anoying being the premature
-"out of space"/"disc full" errors.
-I would say that in time for Fedora 12, you will probably have a btrfs
-more usable for the common user, but still not advised for the faint
-of heart.
-
-Consider the time that ext4 took to mature and for people to trust it.
-Ext4 is stable for quite some months, but even now, the majority of
-recent distro builds choose ext3 has the default filesystem.
-
-Again.. filesystems take quite a bit of time to mature...
-
-disclaimer: I'm not a btrfs developer, just a entusiast that follows
-the developement.
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =C2=A0http://vger.kernel.org/majordomo-info.ht=
+ml
+>
 
 
-Kind regards,
 
-
---
+--=20
 Miguel Sousa Filipe
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =

@@ -1,87 +1,41 @@
-From: Miguel F Mascarenhas Sousa Filipe <miguel.filipe@gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: Phoronix article slaming BTRFS
-Date: Tue, 23 Jun 2009 11:13:12 +0100
-Message-ID: <f058a9c30906230313v10d94a5eg8cf123cef30fb5b8@mail.gmail.com>
+Date: Tue, 23 Jun 2009 10:41:23 -0400
+Message-ID: <20090623144123.GB19276@think>
 References: <loom.20090623T024010-331@post.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
 To: Mike Ramsey <MikeJRamsey@comcast.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <loom.20090623T024010-331@post.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 23, 2009 at 3:51 AM, Mike Ramsey<MikeJRamsey@comcast.net> w=
-rote:
-> I ran across this article "Testing Out The SSD Mode In Btrfs".
-> http://www.phoronix.com/scan.php?page=3Darticle&item=3Dbtrfs_ssd_mode=
-&num=3D1
->
-> At first I was disappointed. =C2=A0It gave a very disappointing set o=
-f benchmarks.
+On Tue, Jun 23, 2009 at 02:51:41AM +0000, Mike Ramsey wrote:
+> I ran across this article "Testing Out The SSD Mode In Btrfs". 
+> http://www.phoronix.com/scan.php?page=article&item=btrfs_ssd_mode&num=1
+> 
+> At first I was disappointed.  It gave a very disappointing set of benchmarks.
 > However, a close reading revealed this:
->
-> "With the OCZ Vertex SATA 2.0 SSD, which we used for this testing tod=
-ay, had its
-> write caching always enabled. When attempting to disable the write ca=
-che through
-> hdparm it would remain enabled regardless and when using sdparm it wo=
-uld report
+> 
+> "With the OCZ Vertex SATA 2.0 SSD, which we used for this testing today, had its
+> write caching always enabled. When attempting to disable the write cache through
+> hdparm it would remain enabled regardless and when using sdparm it would report
 > change_mode_page: failed setting page: Caching (SBC)."
->
-> This invalidates the benchmark! Disabling the write cache would yield=
- a 2X
-> improvement.
->
-> Digging deeper, I found this:
-> http://www.mail-archive.com/linux-scsi@vger.kernel.org/msg07949.html
->
-> " Michael,
-> =C2=A0My information may be out of date, but last time I
-> =C2=A0looked libata didn't support MODE SELECT which is
-> =C2=A0the SCSI command to change mode page settings.
-> =C2=A0[I have sent patches several times to add support
-> =C2=A0for this in libata but ...]
->
-> Ahhha!!!
->
-> That looks exactly the case.
->
-> I tested the two drives (AS and NS ones) on different
-> machines, and currently, NS (where things doesn't work)
-> is connected to AHCI controller, while the AS one is
-> behind mptsas. =C2=A0So it just looks like mptsas is doing
-> the right thing in the first place, while ahci (or
-> libata, whatever) is failing."
->
-> So the article managed to unjustly smear both OCZ Vertex and BTRFS in=
- one shot.
+> 
+> This invalidates the benchmark! Disabling the write cache would yield a 2X
+> improvement.  
 
-allways take phoronix tests with a very big grain of salt. :-p
+Hmmm, I'm not sure I follow.  I'm guessing the write cache is critical
+on the vertex drives because they are using it to queue up writes into
+large enough units to fill an entire erasure block at once.  If they
+took the time to put 64MB of the stuff in there, it probably does
+something good ;)
 
-usually they are made/prepared "with their eyes closed".. completely
-in the dark and they don't diagnose or try to understand the results.
-nevertheless, they do test stuff out...
+Jens Axboe tried to reproduce the phoronix results on his ocz drive, and
+generally found that each run was slower than the last regardless of
+which mount options were used.  This isn't entirely surprising, but it
+did make it very difficult to nail down good or bad performance.
 
+-chris
 
->
-> --Mike Ramsey
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =C2=A0http://vger.kernel.org/majordomo-info.ht=
-ml
->
-
-
-
---=20
-Miguel Sousa Filipe
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,57 +1,53 @@
 From: Mike Ramsey <MikeJRamsey@comcast.net>
 Subject: Re: Phoronix article slaming BTRFS
-Date: Wed, 24 Jun 2009 12:57:40 +0000 (UTC)
-Message-ID: <loom.20090624T124800-384@post.gmane.org>
-References: <loom.20090623T024010-331@post.gmane.org> <f058a9c30906230313v10d94a5eg8cf123cef30fb5b8@mail.gmail.com> <2d23818a0906231026g6e4567fdv8eda3d6c4828ef4d@mail.gmail.com> <2d23818a0906231028t43d97e64t901610ca18e749d0@mail.gmail.com> <loom.20090624T011230-219@post.gmane.org> <7a329d910906231920l49236acer404369643a2cf833@mail.gmail.com> <loom.20090624T022909-701@post.gmane.org> <1245835894.6366.1321909165@webmail.messagingengine.com>
+Date: Wed, 24 Jun 2009 13:11:02 +0000 (UTC)
+Message-ID: <loom.20090624T130012-322@post.gmane.org>
+References: <loom.20090623T024010-331@post.gmane.org> <20090623144123.GB19276@think> <20090623181935.2b01c17d.skraw@ithnet.com> <loom.20090624T021752-858@post.gmane.org> <20090624083116.GI31415@kernel.dk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Bron Gondwana <brong <at> fastmail.fm> writes:
+Jens Axboe <jens.axboe <at> oracle.com> writes:
 
 > 
-> 
-> On Tue, 23 Jun 2009 22:47 +0000, "Mike Ramsey" <MikeJRamsey <at> comcast.net>
-wrote:
-> > Wil Reichert <wil.reichert <at> gmail.com> writes:
-> > > My suggestion is either to show where their
-> > > benchmarks are in err, 
+> On Wed, Jun 24 2009, Mike Ramsey wrote:
+> > Stephan von Krawczynski <skraw <at> ithnet.com> writes:
+[snip]
+> > Depends on who you talk to.
 > > 
-> > I did this, didn't I?
-> >  1. Vertex with write cache enabled; disabled would have seen a 
-> >     2X improvement.
-> >  2. Error in libata
+> > http://www.tomshardware.com/news/ocz-ssd-vertex-intel-solid-state,7127.html
+> > 
+> > "OCZ Says Its New Vertex SSD Beats Intel's X25-E"
 > 
-> Meaning that nobody can turn off the write cache in linux without deep kernel
-hackery.
-
-I would say this differently.  "Meaning that nobody can turn off the write cache
-in linux without applying the known fixes to libata."
-
+> Heh, the Vertex beating the X25-E? I think such a statement could only
+> come from OCZ. No amount of magic will suddenly make MLC beat SLC, let
+> alone a well tuned firmware like the X25-E's. I'm sure they concocted
+> some synthetic benchmark where the Vertex has some slight edge. In the
+> real world, the X25-E wipes the floor with the Vertex.
 > 
-> Sounds to me like they are benchmarking the real world rather than trying to
-favour btrfs by making changes
-> that are unlikely to be viable for anyone trying to run it in production. 
-I.e. they're benchmarking reality.
-
-Real world is running kernel software that is compatible with the unit under
-test.  Benchmarking Butters with a broken kernel is not real world; it's unfair.
-
+> The Vertex is indeed a good performer, in its price range it's currently
+> the one to beat. I have doubts about the maturity of the product though,
+> looks mostly like a live beta being tested in the field. So I'd just be
+> careful with what kind of use they are put to. But just running tests on
+> the drive does show that it performs well for most things.
 > 
-> Sure there are ways that btrfs performance could be improved, but they're not
-realistically available to
-> mortals selecting "use btrfs for /home" in their Ubuntu "Bleeding-Edge Badger"
-release.
 
-Butters is experimental. Currently, it should only be used under adult
-supervision.  I am looking forward to the day that Butters can be used by
-novices when they click http://www.ubuntu.com/products/GetUbuntu/download
+If I was buying for business than the Intel drives would be my choice.  
+They are clearly the quality leader.  For instance, Intel has tweaked 
+their firmware to optimize for small IOs.  The X25-E and X25-M are class.
+We agree here I think.
 
-> 
-> Bron.
+For home use where it is *my* money I am willing to have a little faith 
+in order to save a couple hundred dollars.  I realize that OCZ and its
+controller supplier will be shipping firmware updates.  But don't kid 
+yourself, so is Intel.
 
+BTW, what OCZ did to increase speed was to increase the cache size in 
+their large capacity high end Vertex models.  This wouldn't help my 
+30 GB model.
 
+Mike Ramsey
 
 

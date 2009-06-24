@@ -1,47 +1,60 @@
 From: Mike Ramsey <MikeJRamsey@comcast.net>
-Subject: Re: Release plan
-Date: Wed, 24 Jun 2009 01:11:24 +0000 (UTC)
-Message-ID: <loom.20090624T010114-686@post.gmane.org>
-References: <loom.20090622T151046-988@post.gmane.org>  <f058a9c30906230308m2062bbdbs519d65389400e39e@mail.gmail.com> <f058a9c30906230309y316920e1he31ab3bdb467c311@mail.gmail.com>
+Subject: Re: Phoronix article slaming BTRFS
+Date: Wed, 24 Jun 2009 01:27:06 +0000 (UTC)
+Message-ID: <loom.20090624T011230-219@post.gmane.org>
+References: <loom.20090623T024010-331@post.gmane.org>  <f058a9c30906230313v10d94a5eg8cf123cef30fb5b8@mail.gmail.com>  <2d23818a0906231026g6e4567fdv8eda3d6c4828ef4d@mail.gmail.com> <2d23818a0906231028t43d97e64t901610ca18e749d0@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Miguel F Mascarenhas Sousa Filipe <miguel.filipe <at> gmail.com> writes:
+Jaime sanchez <jskartman <at> gmail.com> writes:
 
-[snip]
-> 
-> You mean ZFS, but I think everybody who read this "self-corrected" your typo.
+>=20
+> They are using 2.6.29.4 kernel, it isn't a bit old??
+>=20
+>  I think that kernel doesn't have the last btrfs updates, and that it
+>  is a very bad work and benchmarks results from phoronix part. If u a=
+re
+>  benchmarking an experimental file system benchmark it with the lates=
+t
+>  updates =C2=BF? it doesn't have sense.
+[snip]=20
 
-Yes, I mean ZFS.  ZFS used to be known as the Zettapoint File System.  
-I guess my subconsciousness couldn't let go of the "point".
- 
-[snip]
-> 
-> File systems take a long time to mature, btrfs is stable enough for
-> daily use, has long has you don't use it for sensitive/critical data.
-> There are still some problems, the most annoying being the premature
-> "out of space"/"disc full" errors.
-> I would say that in time for Fedora 12, you will probably have a btrfs
-> more usable for the common user, but still not advised for the faint
-> of heart.
-> 
-> Consider the time that ext4 took to mature and for people to trust it.
-> Ext4 is stable for quite some months, but even now, the majority of
-> recent distro builds choose ext3 has the default file system.
-> 
-> Again.. file systems take quite a bit of time to mature...
-[snip]
+I agree.  It was either a hatchet job or just a poor effort.  The probl=
+em is
+that a lot of people are going to read it and lose interest in btrfs.  =
+I was
+disheartened but then the analyst in me said, "Wait, this just can't be=
+ right.=20
+A copy-on-write file system has got be screaming!" =20
 
-I know.  A schedule has an amazing way of focusing people on what is 
-important.  There may be ten things that should be done but not all ten 
-things  need to be done.  :-)
+So I decided to dig deeper. =20
 
---Best regards,
+It might not be a bad idea to get some counter information out there.  =
+It should
+explicitly reference and refute the phoronix article.  Tom's Hardware
+http://www.tomshardware.com/
+is a reputable place.  They would run a fair benchmark and their work w=
+ould
+carry weight.
+
+BTW, the Sun side of Oracle isn't likely to release ZFS to the Linux wo=
+rld
+because they need to preserve a competitive edge for Solaris. =20
+
+Butters has a future.  Believe it.
+
 --Mike Ramsey
 
 
 
 
+
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

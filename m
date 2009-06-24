@@ -1,53 +1,38 @@
-From: Mike Ramsey <MikeJRamsey@comcast.net>
-Subject: Re: Phoronix article slaming BTRFS
-Date: Wed, 24 Jun 2009 13:11:02 +0000 (UTC)
-Message-ID: <loom.20090624T130012-322@post.gmane.org>
-References: <loom.20090623T024010-331@post.gmane.org> <20090623144123.GB19276@think> <20090623181935.2b01c17d.skraw@ithnet.com> <loom.20090624T021752-858@post.gmane.org> <20090624083116.GI31415@kernel.dk>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+From: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
+Subject: Re: Read errors while benchmarking
+Date: Wed, 24 Jun 2009 18:53:12 +0200
+Message-ID: <0A1AF375-3962-4B54-A36D-52CC98CEAF9A@karlsbakk.net>
+References: <q6apg6-5d2.ln1@phenom2.trippelsdorf.de> <3d0408630906180223l7dc509c4s440fc666c8a2b1bc@mail.gmail.com>
+Mime-Version: 1.0 (Apple Message framework v935.3)
+Content-Type: text/plain; charset=ISO-8859-1;
+	format=flowed	delsp=yes
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <3d0408630906180223l7dc509c4s440fc666c8a2b1bc@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jens Axboe <jens.axboe <at> oracle.com> writes:
-
-> 
-> On Wed, Jun 24 2009, Mike Ramsey wrote:
-> > Stephan von Krawczynski <skraw <at> ithnet.com> writes:
-[snip]
-> > Depends on who you talk to.
-> > 
-> > http://www.tomshardware.com/news/ocz-ssd-vertex-intel-solid-state,7127.html
-> > 
-> > "OCZ Says Its New Vertex SSD Beats Intel's X25-E"
-> 
-> Heh, the Vertex beating the X25-E? I think such a statement could only
-> come from OCZ. No amount of magic will suddenly make MLC beat SLC, let
-> alone a well tuned firmware like the X25-E's. I'm sure they concocted
-> some synthetic benchmark where the Vertex has some slight edge. In the
-> real world, the X25-E wipes the floor with the Vertex.
-> 
-> The Vertex is indeed a good performer, in its price range it's currently
-> the one to beat. I have doubts about the maturity of the product though,
-> looks mostly like a live beta being tested in the field. So I'd just be
-> careful with what kind of use they are put to. But just running tests on
-> the drive does show that it performs well for most things.
-> 
-
-If I was buying for business than the Intel drives would be my choice.  
-They are clearly the quality leader.  For instance, Intel has tweaked 
-their firmware to optimize for small IOs.  The X25-E and X25-M are class.
-We agree here I think.
-
-For home use where it is *my* money I am willing to have a little faith 
-in order to save a couple hundred dollars.  I realize that OCZ and its
-controller supplier will be shipping firmware updates.  But don't kid 
-yourself, so is Intel.
-
-BTW, what OCZ did to increase speed was to increase the cache size in 
-their large capacity high end Vertex models.  This wouldn't help my 
-30 GB model.
-
-Mike Ramsey
+> Currently, btrfs doesn't support using direct I/O for read.
 
 
+Is anyone working on this? It /is/ a rather basic feature, and testing =
+=20
+with iozone would be nice.
+
+roy
+--
+Roy Sigurd Karlsbakk
+(+47) 97542685
+roy@karlsbakk.net
+http://blogg.karlsbakk.net/
+--
+I all pedagogikk er det essensielt at pensum presenteres =20
+intelligibelt. Det er et element=E6rt imperativ for alle pedagoger =E5 =
+=20
+unng=E5 eksessiv anvendelse av idiomer med fremmed opprinnelse. I de =20
+fleste tilfeller eksisterer adekvate og relevante synonymer p=E5 norsk.
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

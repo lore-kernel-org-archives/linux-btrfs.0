@@ -1,50 +1,42 @@
-From: Jens Axboe <jens.axboe@oracle.com>
+From: "Bron Gondwana" <brong@fastmail.fm>
 Subject: Re: Phoronix article slaming BTRFS
-Date: Wed, 24 Jun 2009 10:31:16 +0200
-Message-ID: <20090624083116.GI31415@kernel.dk>
-References: <loom.20090623T024010-331@post.gmane.org> <20090623144123.GB19276@think> <20090623181935.2b01c17d.skraw@ithnet.com> <loom.20090624T021752-858@post.gmane.org>
+Date: Wed, 24 Jun 2009 05:31:34 -0400
+Message-ID: <1245835894.6366.1321909165@webmail.messagingengine.com>
+References: <loom.20090623T024010-331@post.gmane.org>
+ <f058a9c30906230313v10d94a5eg8cf123cef30fb5b8@mail.gmail.com>
+ <2d23818a0906231026g6e4567fdv8eda3d6c4828ef4d@mail.gmail.com>
+ <2d23818a0906231028t43d97e64t901610ca18e749d0@mail.gmail.com>
+ <loom.20090624T011230-219@post.gmane.org>
+ <7a329d910906231920l49236acer404369643a2cf833@mail.gmail.com>
+ <loom.20090624T022909-701@post.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Mike Ramsey <MikeJRamsey@comcast.net>
+Content-Type: text/plain; charset="us-ascii"
+To: "Mike Ramsey" <MikeJRamsey@comcast.net>,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <loom.20090624T021752-858@post.gmane.org>
+In-Reply-To: <loom.20090624T022909-701@post.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 24 2009, Mike Ramsey wrote:
-> Stephan von Krawczynski <skraw <at> ithnet.com> writes:
-> 
-> [snip]
-> > 
-> > Can someone explain to a quite naive person like me why one should be
-> > interested in SSDs that perform worse than Intel? Why shouldn't I just buy the
-> > best-performing product? This is a moving market, and it is obvious that the
-> > bad performers will be left behind...
-> > If you really care to fiddle with ssd options then use a real bad hw for
-> > testing the performance - take an ide interface and connect a CF card.
-> > This is a common setup for embedded usage and frequently used. Everything in
-> > between CF and Intel will just be dead before your fs options will become
-> > really stable. So why loose time with it?
-> > 
-> 
-> Depends on who you talk to.
-> 
-> http://www.tomshardware.com/news/ocz-ssd-vertex-intel-solid-state,7127.html
-> 
-> "OCZ Says Its New Vertex SSD Beats Intel's X25-E"
 
-Heh, the Vertex beating the X25-E? I think such a statement could only
-come from OCZ. No amount of magic will suddenly make MLC beat SLC, let
-alone a well tuned firmware like the X25-E's. I'm sure they concocted
-some synthetic benchmark where the Vertex has some slight edge. In the
-real world, the X25-E wipes the floor with the Vertex.
 
-The Vertex is indeed a good performer, in its price range it's currently
-the one to beat. I have doubts about the maturity of the product though,
-looks mostly like a live beta being tested in the field. So I'd just be
-careful with what kind of use they are put to. But just running tests on
-the drive does show that it performs well for most things.
+On Tue, 23 Jun 2009 22:47 +0000, "Mike Ramsey" <MikeJRamsey@comcast.net> wrote:
+> Wil Reichert <wil.reichert <at> gmail.com> writes:
+> > My suggestion is either to show where their
+> > benchmarks are in err, 
+> 
+> I did this, didn't I?
+>  1. Vertex with write cache enabled; disabled would have seen a 
+>     2X improvement.
+>  2. Error in libata
 
+Meaning that nobody can turn off the write cache in linux without deep kernel hackery.
+
+Sounds to me like they are benchmarking the real world rather than trying to favour btrfs by making changes that are unlikely to be viable for anyone trying to run it in production.  I.e. they're benchmarking reality.
+
+Sure there are ways that btrfs performance could be improved, but they're not realistically available to mortals selecting "use btrfs for /home" in their Ubuntu "Bleeding-Edge Badger" release.
+
+Bron.
 -- 
-Jens Axboe
+  Bron Gondwana
+  brong@fastmail.fm
 

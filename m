@@ -1,67 +1,43 @@
-From: Mike Ramsey <MikeJRamsey@comcast.net>
+From: Sander <sander@humilis.net>
 Subject: Re: Phoronix article slaming BTRFS
-Date: Wed, 24 Jun 2009 02:47:32 +0000 (UTC)
-Message-ID: <loom.20090624T022909-701@post.gmane.org>
-References: <loom.20090623T024010-331@post.gmane.org>  <f058a9c30906230313v10d94a5eg8cf123cef30fb5b8@mail.gmail.com>  <2d23818a0906231026g6e4567fdv8eda3d6c4828ef4d@mail.gmail.com>  <2d23818a0906231028t43d97e64t901610ca18e749d0@mail.gmail.com>  <loom.20090624T011230-219@post.gmane.org> <7a329d910906231920l49236acer404369643a2cf833@mail.gmail.com>
+Date: Wed, 24 Jun 2009 10:20:09 +0200
+Message-ID: <20090624082009.GA16357@cumulus>
+References: <loom.20090623T024010-331@post.gmane.org> <20090623144123.GB19276@think> <20090623181935.2b01c17d.skraw@ithnet.com> <loom.20090624T021752-858@post.gmane.org>
+Reply-To: sander@humilis.net
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+To: Mike Ramsey <MikeJRamsey@comcast.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <loom.20090624T021752-858@post.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Wil Reichert <wil.reichert <at> gmail.com> writes:
-
+Mike Ramsey wrote (ao):
+> Depends on who you talk to.
 > 
-> On Tue, Jun 23, 2009 at 6:27 PM, Mike Ramsey<MikeJRamsey <at> 
-> comcast.net> wrote:
-> > Jaime sanchez <jskartman <at> gmail.com> writes:
-> >
-> >>
-[snip]
+> http://www.tomshardware.com/news/ocz-ssd-vertex-intel-solid-state,7127.html
 > 
-> I seriously doubt Phoronix has anything against btrfs, most likely
-> quite the opposite.  
+> "OCZ Says Its New Vertex SSD Beats Intel's X25-E"
+> 
+> I am not taking sides.  I am just saying that the SSD market is fluid.
 
-I gave two possibilities, 
+Read and write speeds specs mean (almost) nothing when it comes to SSD.
 
-1. Hatchet job i.e. malice with forethought
-2. Just a poor effort
+The true performance is shown in heavy long-running benchmarks. OCZ has
+a long history of very bad performing SSD products.
 
-I am not necessary favoring option 1.  Regarding option 2, to err 
-is human.
+The Intel SSD did set the standard since it came on the market (hence
+the reason OCZ mentions the X25-E).
 
-Just admit it, correct it, and then don't repeat it.
+Btw, not only benchmarks show paper specs mean (almost) nothing: check
+the OCZ forums and google on real life usage performance problems
+(stutters mostly) under normal to low load.
 
-> My suggestion is either to show where their
-> benchmarks are in err, 
+Especially small writes kill OCZ SSD performance, although their
+products have improved with the last releases.
 
-I did this, didn't I?
- 1. Vertex with write cache enabled; disabled would have seen a 
-    2X improvement.
- 2. Error in libata
+	With kind regards, Sander
 
-> or come up with better benchmarks that
-> demonstrate btrfs in a more positive light.  
-
-That is the ticket.  I suggest that someone contact Tom's Hardware
-http://www.tomshardware.com/
-
-And arrange to work with them to perform an honest benchmark.  
-Head to head with Ext4 would work for me.  :-)
-
-> Its quite possible
-> Phoronix would post updated benchmarks regarding the topic.
-
-They should either repeat the benchmark and do it right, or print a r
-etraction.
-
-BTW, thank you for your reply.  I hope that none of the above sounded 
-too harsh. The article was IMO damaging and needs to be countered.
-
---Mike Ramsey
- 
-[snip]
-
-
-
-
+-- 
+Humilis IT Services and Solutions
+http://www.humilis.net

@@ -1,34 +1,34 @@
-From: Jiri Slaby <jirislaby@gmail.com>
-Subject: [PATCH 3/5] FS: btrfs, don't touch freed memory
-Date: Mon, 29 Jun 2009 18:01:45 +0200
-Message-ID: <1246291305-3444-1-git-send-email-jirislaby@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, viro@zeniv.linux.org.uk,
-	linux-kernel@vger.kernel.org, Jiri Slaby <jirislaby@gmail.com>
-To: chris.mason@oracle.com
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760437AbZF2QCQ@vger.kernel.org>
+From: Sage Weil <sage@newdream.net>
+Subject: Re: [PATCH] btrfs: 'usertrans' mount option to allow unprivileged
+ userspace transactions
+Date: Mon, 29 Jun 2009 09:40:54 -0700 (PDT)
+Message-ID: <Pine.LNX.4.64.0906290940030.9725@cobra.newdream.net>
+References: <Pine.LNX.4.64.0906221434150.9993@cobra.newdream.net>
+ <20090626170944.GB2412@infradead.org>
+Mime-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: linux-btrfs@vger.kernel.org
+To: Christoph Hellwig <hch@infradead.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20090626170944.GB2412@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-worker memory is already freed on one fail path in btrfs_start_workers,
-but is still dereferenced. Switch the dereference and kfree.
+On Fri, 26 Jun 2009, Christoph Hellwig wrote:
+> On Thu, Jun 25, 2009 at 02:45:39PM -0700, Sage Weil wrote:
+> > This lets an administrator give non-root users access to the btrfs 
+> > transaction start/end ioctls via a mount option.
+> > 
+> > Currently any process using the ioctls must run as root.  That's 
+> > appropriate in general, since the ioctls allow let any process to hang fs 
+> > commits by holding an open transaction indefinitely.  But on locked down 
+> > hosts (i.e. no users), that can be inconvenient because daemons using 
+> > transactions have to run as root.
+> 
+> If the system is locked down there is no problem giving the capability
+> to the daemon user.  I'm strong against adding any kind of
+> privilegue-evading options to filesystems.
 
-Signed-off-by: Jiri Slaby <jirislaby@gmail.com>
----
- fs/btrfs/async-thread.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+Well, I was hoping for finer granularity that CAP_SYS_ADMIN, but i can 
+live with it.  Thanks.
 
-diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
-index 7f88628..6e4f6c5 100644
---- a/fs/btrfs/async-thread.c
-+++ b/fs/btrfs/async-thread.c
-@@ -299,8 +299,8 @@ int btrfs_start_workers(struct btrfs_workers *workers, int num_workers)
- 					   "btrfs-%s-%d", workers->name,
- 					   workers->num_workers + i);
- 		if (IS_ERR(worker->task)) {
--			kfree(worker);
- 			ret = PTR_ERR(worker->task);
-+			kfree(worker);
- 			goto fail;
- 		}
- 
--- 
-1.6.3.2
+sage

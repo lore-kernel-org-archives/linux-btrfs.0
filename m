@@ -1,232 +1,45 @@
-From: Piavlo <piavka@cs.bgu.ac.il>
-Subject: high cpu load for random write
-Date: Tue, 30 Jun 2009 15:54:09 +0300
-Message-ID: <4A4A0AF1.9060107@cs.bgu.ac.il>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: high cpu load for random write
+Date: Tue, 30 Jun 2009 09:41:03 -0400
+Message-ID: <20090630134103.GB8345@think>
+References: <4A4A0AF1.9060107@cs.bgu.ac.il>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Piavlo <piavka@cs.bgu.ac.il>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4A4A0AF1.9060107@cs.bgu.ac.il>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- Hi,
+On Tue, Jun 30, 2009 at 03:54:09PM +0300, Piavlo wrote:
+>  Hi,
+> 
+> I've just ran a tiobench benchmark  on  2.6.31-rc1-git5 with
+> btrfs-progs-0.18
+> on single ATA disk with default mount options.  Then performance now
+> looks great compared with previous kernel versions.
+> 
+> But one thing that I noticed - is that CPU load (besides being terribly
+> high) for random write  - is several  times higher than for sequential
+> write.
+> While for all other file systems ever tried, I've always seen the
+> opposite - the less data is written to the disk the less is the cpu load
+> (no matter if it's random or sequential writes).
 
-I've just ran a tiobench benchmark  on  2.6.31-rc1-git5 with
-btrfs-progs-0.18
-on single ATA disk with default mount options.  Then performance now
-looks great compared with previous kernel versions.
+There are two causes of the high CPU load.  The first is data
+checksumming (which is constant for creating the file and for random
+writes) and the second is the cost of maintaining back references for
+the file data extent.
 
-But one thing that I noticed - is that CPU load (besides being terribly
-high) for random write  - is several  times higher than for sequential
-write.
-While for all other file systems ever tried, I've always seen the
-opposite - the less data is written to the disk the less is the cpu load
-(no matter if it's random or sequential writes).
+In btrfs, we track the owners of each extent, which makes repair, volume
+management and other things much easier.  Small random writes make for a
+lot of extents, and so they also make for a lot of tracking.
 
- I fail to understand why this is happening, could someone shed the
-light on the issue?
+In general, you'll find that mount -o ssd will be faster here, just
+because it forces the allocator into more sequential allocations for
+this workload.
 
-Here is a sample output for one thread (this is a SMT enabled pentium4
-single cpu system).
-########################################
-Tiotest results for 1 concurrent io threads:
-,----------------------------------------------------------------------.
-| Item                  | Time     | Rate         | Usr CPU  | Sys CPU |
-+-----------------------+----------+--------------+----------+---------+
-| Write              9000 MBs |  189.1 s |  47.599 MB/s |   0.8 %  | 
-38.9 % |
-| Random Write   59 MBs |   17.6 s |     3.327 MB/s |   0.2 %  |  89.1 % |
-| Read               9000 MBs |  189.1 s |  47.589 MB/s |   0.6 %  | 
-11.8 % |
-| Random Read    59 MBs |  124.4 s |    0.471 MB/s |   0.0 %  |   1.1 % |
-`----------------------------------------------------------------------'
-Tiotest latency results:
-,-------------------------------------------------------------------------.
-| Item         | Average latency | Maximum latency | % >2 sec | % >10 sec |
-+--------------+-----------------+-----------------+----------+-----------+
-| Write        |        0.077 ms |     2569.866 ms |  0.00009 |   0.00000 |
-| Random Write |        0.022 ms |        0.970 ms |  0.00000 |   0.00000 |
-| Read         |        0.082 ms |      216.677 ms |  0.00000 |   0.00000 |
-| Random Read  |        8.293 ms |      124.126 ms |  0.00000 |   0.00000 |
-|--------------+-----------------+-----------------+----------+-----------|
-| Total        |        0.106 ms |     2569.866 ms |  0.00004 |   0.00000 |
-`--------------+-----------------+-----------------+----------+-----------'
-#########################################
+You'll find that mount -o nodatacow uses much less CPU time, but this
+disables checksumming and a few other advanced features.
 
-PS. Just for compare of ext4, brtfs & nilfs2 here are several runs results.
-The script is:
-------------------
-#!/bin/bash
-
-num_threads=$1
-
-for x in /ext4 /btrfs /nilfs2; do
-        echo 3 > /proc/sys/vm/drop_caches
-        mount $x
-        rm -rf $x/*
-        echo "############################### $x
-###############################"
-        tiotest -t $num_threads -f 9000 -r 15000 -b 4096 -d $x
-        umount $x
-done
------------------
-
-The results for 1 io thread
-------------------------------------------------------------
-shell> ./test.tio 1
-############################### /ext4 ###############################
-Tiotest results for 1 concurrent io threads:
-,----------------------------------------------------------------------.
-| Item                  | Time     | Rate         | Usr CPU  | Sys CPU |
-+-----------------------+----------+--------------+----------+---------+
-| Write              9000 MBs |  221.1 s |  40.707 MB/s |   0.8 %  | 
-17.6 % |
-| Random Write   59 MBs |   42.6 s |     1.374 MB/s |   0.0 %  |   1.2 % |
-| Read               9000 MBs |  215.5 s |  41.768 MB/s |   0.5 %  |  
-7.7 % |
-| Random Read    59 MBs |  123.2 s |    0.476 MB/s |   0.0 %  |   0.8 % |
-`----------------------------------------------------------------------'
-Tiotest latency results:
-,-------------------------------------------------------------------------.
-| Item         | Average latency | Maximum latency | % >2 sec | % >10 sec |
-+--------------+-----------------+-----------------+----------+-----------+
-| Write                |        0.094 ms |    2812.766 ms |  0.00026 |  
-0.00000 |
-| Random Write |        0.012 ms |          0.168 ms |  0.00000 |  
-0.00000 |
-| Read                 |        0.093 ms |      164.746 ms |  0.00000
-|   0.00000 |
-| Random Read  |        8.213 ms |        30.767 ms |  0.00000 |   0.00000 |
-|--------------+-----------------+-----------------+----------+-----------|
-| Total        |        0.119 ms |     2812.766 ms |  0.00013 |   0.00000 |
-`--------------+-----------------+-----------------+----------+-----------'
-
-############################### /btrfs ###############################
-Tiotest results for 1 concurrent io threads:
-,----------------------------------------------------------------------.
-| Item                  | Time     | Rate         | Usr CPU  | Sys CPU |
-+-----------------------+----------+--------------+----------+---------+
-| Write              9000 MBs |  189.1 s |  47.599 MB/s |   0.8 %  | 
-38.9 % |
-| Random Write   59 MBs |   17.6 s |     3.327 MB/s |   0.2 %  |  89.1 % |
-| Read               9000 MBs |  189.1 s |  47.589 MB/s |   0.6 %  | 
-11.8 % |
-| Random Read    59 MBs |  124.4 s |    0.471 MB/s |   0.0 %  |   1.1 % |
-`----------------------------------------------------------------------'
-Tiotest latency results:
-,-------------------------------------------------------------------------.
-| Item         | Average latency | Maximum latency | % >2 sec | % >10 sec |
-+--------------+-----------------+-----------------+----------+-----------+
-| Write                |        0.077 ms |    2569.866 ms |  0.00009 |  
-0.00000 |
-| Random Write |        0.022 ms |          0.970 ms |  0.00000 |  
-0.00000 |
-| Read                 |        0.082 ms |      216.677 ms |  0.00000
-|   0.00000 |
-| Random Read  |        8.293 ms |      124.126 ms |  0.00000 |   0.00000 |
-|--------------+-----------------+-----------------+----------+-----------|
-| Total        |        0.106 ms |     2569.866 ms |  0.00004 |   0.00000 |
-`--------------+-----------------+-----------------+----------+-----------'
-
-############################### /nilfs2 ###############################
-Tiotest results for 1 concurrent io threads:
-,----------------------------------------------------------------------.
-| Item                  | Time     | Rate         | Usr CPU  | Sys CPU |
-+-----------------------+----------+--------------+----------+---------+
-| Write              9000 MBs |  275.8 s |  32.628 MB/s |   0.5 %  | 
-18.0 % |
-| Random Write   59 MBs |      8.3 s |    7.087 MB/s |   0.0 %  |   3.6 % |
-| Read               9000 MBs |  251.5 s |  35.787 MB/s |   0.4 %  |  
-7.1 % |
-| Random Read    59 MBs |  129.8 s |    0.451 MB/s |   0.0 %  |   0.8 % |
-`----------------------------------------------------------------------'
-Tiotest latency results:
-,-------------------------------------------------------------------------.
-| Item         | Average latency | Maximum latency | % >2 sec | % >10 sec |
-+--------------+-----------------+-----------------+----------+-----------+
-| Write                |        0.119 ms |      766.254 ms |  0.00000
-|   0.00000 |
-| Random Write |        0.501 ms |     1874.413 ms |  0.00000 |   0.00000 |
-| Read                 |        0.109 ms |      267.389 ms |  0.00000
-|   0.00000 |
-| Random Read  |        8.654 ms |      354.470 ms |  0.00000 |   0.00000 |
-|--------------+-----------------+-----------------+----------+-----------|
-| Total        |        0.143 ms |     1874.413 ms |  0.00000 |   0.00000 |
-`--------------+-----------------+-----------------+----------+-----------'
-------------------------------------------------------------
-
-and resuts for 2 io threads
-------------------------------------------------------------
-shell> ./test.tio 2
-############################### /ext4 ###############################
- Tiotest results for 2 concurrent io threads:
-,----------------------------------------------------------------------.
-| Item                  | Time     | Rate         | Usr CPU  | Sys CPU |
-+-----------------------+----------+--------------+----------+---------+
-| Write             18000 MBs |  509.0 s |  35.365 MB/s |   1.5 %  | 
-34.6 % |
-| Random Write  117 MBs |   91.3 s |     1.284 MB/s |   0.0 %  |   3.6 % |
-| Read              18000 MBs |  483.5 s |  37.228 MB/s |   0.8 %  | 
-13.2 % |
-| Random Read   117 MBs |  266.6 s |    0.440 MB/s |   0.0 %  |   1.6 % |
-`----------------------------------------------------------------------'
-Tiotest latency results:
-,-------------------------------------------------------------------------.
-| Item         | Average latency | Maximum latency | % >2 sec | % >10 sec |
-+--------------+-----------------+-----------------+----------+-----------+
-| Write        |        0.214 ms |     5004.055 ms |  0.00135 |   0.00000 |
-| Random Write |        0.022 ms |        6.633 ms |  0.00000 |   0.00000 |
-| Read         |        0.209 ms |      444.293 ms |  0.00000 |   0.00000 |
-| Random Read  |       17.714 ms |      295.614 ms |  0.00000 |   0.00000 |
-|--------------+-----------------+-----------------+----------+-----------|
-| Total        |        0.268 ms |     5004.055 ms |  0.00067 |   0.00000 |
-`--------------+-----------------+-----------------+----------+-----------'
-
-############################### /btrfs ###############################
-Tiotest results for 2 concurrent io threads:
-,----------------------------------------------------------------------.
-| Item                  | Time     | Rate         | Usr CPU  | Sys CPU |
-+-----------------------+----------+--------------+----------+---------+
-| Write             18000 MBs |  387.9 s |  46.405 MB/s |   1.9 %  | 
-84.8 % |
-| Random Write  117 MBs |   45.4 s |     2.583 MB/s |   0.1 %  | 344.0 % |
-| Read              18000 MBs |  438.7 s |  41.027 MB/s |   0.9 %  | 
-19.3 % |
-| Random Read   117 MBs |  268.2 s |    0.437 MB/s |   0.0 %  |   2.1 % |
-`----------------------------------------------------------------------'
-Tiotest latency results:
-,-------------------------------------------------------------------------.
-| Item         | Average latency | Maximum latency | % >2 sec | % >10 sec |
-+--------------+-----------------+-----------------+----------+-----------+
-| Write        |        0.167 ms |     1607.292 ms |  0.00000 |   0.00000 |
-| Random Write |        0.054 ms |      153.586 ms |  0.00000 |   0.00000 |
-| Read         |        0.190 ms |      562.645 ms |  0.00000 |   0.00000 |
-| Random Read  |       17.853 ms |      249.707 ms |  0.00000 |   0.00000 |
-|--------------+-----------------+-----------------+----------+-----------|
-| Total        |        0.235 ms |     1607.292 ms |  0.00000 |   0.00000 |
-`--------------+-----------------+-----------------+----------+-----------'
-
-############################### /nilfs2 ###############################
-Tiotest results for 2 concurrent io threads:
-,----------------------------------------------------------------------.
-| Item                  | Time     | Rate         | Usr CPU  | Sys CPU |
-+-----------------------+----------+--------------+----------+---------+
-| Write             18000 MBs |  548.4 s |   32.825 MB/s |   1.4 %  | 
-55.0 % |
-| Random Write  117 MBs |   76.1 s |      1.539 MB/s |   0.1 %  |   2.1 % |
-| Read              18000 MBs | 1118.8 s |  16.088 MB/s |   0.4 %  |  
-6.3 % |
-| Random Read   117 MBs |  346.2 s |     0.338 MB/s |   0.0 %  |   1.3 % |
-`----------------------------------------------------------------------'
-Tiotest latency results:
-,-------------------------------------------------------------------------.
-| Item         | Average latency | Maximum latency | % >2 sec | % >10 sec |
-+--------------+-----------------+-----------------+----------+-----------+
-| Write        |        0.237 ms |     1152.280 ms |  0.00000 |   0.00000 |
-| Random Write |        4.966 ms |     1801.617 ms |  0.00000 |   0.00000 |
-| Read         |        0.485 ms |      502.967 ms |  0.00000 |   0.00000 |
-| Random Read  |       22.985 ms |      465.145 ms |  0.00000 |   0.00000 |
-|--------------+-----------------+-----------------+----------+-----------|
-| Total        |        0.449 ms |     1801.617 ms |  0.00000 |   0.00000 |
-`--------------+-----------------+-----------------+----------+-----------'
-
-------------------------------------------------------------
+-chris

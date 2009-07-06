@@ -1,58 +1,56 @@
-From: Amerigo Wang <amwang@redhat.com>
-Subject: [Patch v2] btrfs: use file_remove_suid() after i_mutex is held
-Date: Mon, 6 Jul 2009 03:18:29 -0400
-Message-ID: <20090706072043.6555.13669.sendpatchset@localhost.localdomain>
-Cc: Jeff Mahoney <jeffm@suse.com>, Yan Zheng <zheng.yan@oracle.com>,
+From: Tao Ma <tao.ma@oracle.com>
+Subject: Re: [Patch v2] btrfs: use file_remove_suid() after i_mutex is held
+Date: Mon, 06 Jul 2009 15:42:51 +0800
+Message-ID: <4A51AAFB.1000601@oracle.com>
+References: <20090706072043.6555.13669.sendpatchset@localhost.localdomain>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-kernel@vger.kernel.org, Jeff Mahoney <jeffm@suse.com>,
+	Yan Zheng <zheng.yan@oracle.com>,
 	Josef Bacik <jbacik@redhat.com>, Arjan <arjan@infradead.org>,
 	Chris Mason <chris.mason@oracle.com>,
-	Amerigo Wang <amwang@redhat.com>, akpm@linux-foundation.org,
-	linux-btrfs@vger.kernel.org,
+	akpm@linux-foundation.org, linux-btrfs@vger.kernel.org,
 	Sven Wegener <sven.wegener@stealer.net>
-To: linux-kernel@vger.kernel.org
+To: Amerigo Wang <amwang@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20090706072043.6555.13669.sendpatchset@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Amerigo,
 
-V1 -> V2:
-Move kmalloc() before mutex_lock(), suggested by Arjan.
+Amerigo Wang wrote:
+> V1 -> V2:
+> Move kmalloc() before mutex_lock(), suggested by Arjan.
+> 
+> file_remove_suid() should be called with i_mutex held,
+> file_update_time() too. So move them after mutex_lock().
+> 
+> Plus, check the return value of kmalloc().
+> 
+> Signed-off-by: WANG Cong <amwang@redhat.com>
+> Cc: Arjan <arjan@infradead.org>
+> Cc: Chris Mason <chris.mason@oracle.com>
+> Cc: Yan Zheng <zheng.yan@oracle.com>
+> Cc: Sven Wegener <sven.wegener@stealer.net>
+> Cc: Josef Bacik <jbacik@redhat.com>
+> Cc: Jeff Mahoney <jeffm@suse.com>
+> 
+> ---
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 7c3cd24..09ef5d6 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -944,14 +944,17 @@ static ssize_t btrfs_file_write(struct file *file, const char __user *buf,
+>  	if (count == 0)
+>  		goto out_nolock;
+>  
+> +	pages = kmalloc(nrptrs * sizeof(struct page *), GFP_KERNEL);
+> +	if (!pages)
+> +		goto out_nolock;
+I guess you need to set err to -ENOMEM here so that the caller knows 
+what's wrong. With your patch, this function just return 0(since 
+num_written and err are both 0) with no error, and I guess it is worse 
+than kernel BUG out when the NULL pages is used later.
 
-file_remove_suid() should be called with i_mutex held,
-file_update_time() too. So move them after mutex_lock().
-
-Plus, check the return value of kmalloc().
-
-Signed-off-by: WANG Cong <amwang@redhat.com>
-Cc: Arjan <arjan@infradead.org>
-Cc: Chris Mason <chris.mason@oracle.com>
-Cc: Yan Zheng <zheng.yan@oracle.com>
-Cc: Sven Wegener <sven.wegener@stealer.net>
-Cc: Josef Bacik <jbacik@redhat.com>
-Cc: Jeff Mahoney <jeffm@suse.com>
-
----
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 7c3cd24..09ef5d6 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -944,14 +944,17 @@ static ssize_t btrfs_file_write(struct file *file, const char __user *buf,
- 	if (count == 0)
- 		goto out_nolock;
- 
-+	pages = kmalloc(nrptrs * sizeof(struct page *), GFP_KERNEL);
-+	if (!pages)
-+		goto out_nolock;
-+
-+	mutex_lock(&inode->i_mutex);
-+
- 	err = file_remove_suid(file);
- 	if (err)
--		goto out_nolock;
-+		goto out;
- 	file_update_time(file);
- 
--	pages = kmalloc(nrptrs * sizeof(struct page *), GFP_KERNEL);
--
--	mutex_lock(&inode->i_mutex);
- 	BTRFS_I(inode)->sequence++;
- 	first_index = pos >> PAGE_CACHE_SHIFT;
- 	last_index = (pos + count) >> PAGE_CACHE_SHIFT;
+Regards,
+Tao

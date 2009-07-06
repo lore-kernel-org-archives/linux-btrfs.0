@@ -1,58 +1,47 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [GIT PULL] Btrfs updates for 2.6.31-rc
-Date: Thu, 2 Jul 2009 15:46:05 -0400
-Message-ID: <20090702194605.GB3832@think>
-References: <20090702191035.GA3832@think>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-	linux-kernel <linux-kernel@vger.kernel.org>,
-	linux-btrfs@vger.kernel.org
+From: Amerigo Wang <amwang@redhat.com>
+Subject: [Patch] btrfs: use file_remove_suid() after i_mutex is held
+Date: Mon, 6 Jul 2009 01:29:14 -0400
+Message-ID: <20090706053128.6318.16410.sendpatchset@localhost.localdomain>
+Cc: Jeff Mahoney <jeffm@suse.com>, Yan Zheng <zheng.yan@oracle.com>,
+	Josef Bacik <jbacik@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Amerigo Wang <amwang@redhat.com>, akpm@linux-foundation.org,
+	linux-btrfs@vger.kernel.org,
+	Sven Wegener <sven.wegener@stealer.net>
+To: linux-kernel@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090702191035.GA3832@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 02, 2009 at 03:10:35PM -0400, Chris Mason wrote:
-> Hello everyone,
-> 
-> Here are some btrfs updates.  Most of them are small bug fixes, but the
-> large commit from Yan Zheng is step one in getting snapshot deletion
-> rolling.  There is also has a nice CPU usage reduction for
-> streaming writes to a file.
-> 
-> Linus, please pull the master branch of btrfs-unstable:
-> 
-> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
-> 
 
-Sorry, I was a two commits off in generating the stats.  The code in the
-btrfs-unstable tree hasn't changed, but here are the correct stats:
+file_remove_suid() should be called with i_mutex held,
+file_update_time() too. So move them after mutex_lock().
 
-Chris Mason (3) commits (+15/-9):
-    Btrfs: don't log the inode in file_write while growing the file (+4/-1)
-    Btrfs: fix the file clone ioctl for preallocated extents (+4/-2)
-    Btrfs: honor nodatacow/sum mount options for new files (+7/-6)
+Plus, check the return value of kmalloc().
 
-Yan Zheng (1) commits (+395/-181):
-    Btrfs: update backrefs while dropping snapshot
+Signed-off-by: WANG Cong <amwang@redhat.com>
 
-Josef Bacik (1) commits (+11/-1):
-    Btrfs: account for space we may use in fallocate
-
-Jiri Slaby (1) commits (+1/-1):
-    Btrfs: fix use after free in btrfs_start_workers fail path
-
-Hu Tao (1) commits (+1/-1):
-    Btrfs: fix error message formatting
-
-Total: (7) commits
-
- fs/btrfs/async-thread.c |    2 
- fs/btrfs/ctree.h        |    3 
- fs/btrfs/extent-tree.c  |  566 +++++++++++++++++++++++++++++++++---------------
- fs/btrfs/file.c         |    5 
- fs/btrfs/inode.c        |   25 +-
- fs/btrfs/ioctl.c        |    6 
- fs/btrfs/relocation.c   |    5 
- fs/btrfs/transaction.c  |    4 
- 8 files changed, 423 insertions(+), 193 deletions(-)
+---
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 7c3cd24..cd36301 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -944,14 +944,17 @@ static ssize_t btrfs_file_write(struct file *file, const char __user *buf,
+ 	if (count == 0)
+ 		goto out_nolock;
+ 
++	mutex_lock(&inode->i_mutex);
++
+ 	err = file_remove_suid(file);
+ 	if (err)
+-		goto out_nolock;
++		goto out;
+ 	file_update_time(file);
+ 
+ 	pages = kmalloc(nrptrs * sizeof(struct page *), GFP_KERNEL);
++	if (!pages)
++		goto out;
+ 
+-	mutex_lock(&inode->i_mutex);
+ 	BTRFS_I(inode)->sequence++;
+ 	first_index = pos >> PAGE_CACHE_SHIFT;
+ 	last_index = (pos + count) >> PAGE_CACHE_SHIFT;

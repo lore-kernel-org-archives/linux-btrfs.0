@@ -1,42 +1,258 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: LVM vs btrfs as a "volume manager" for SANs
-Date: Mon, 6 Jul 2009 14:51:53 -0400
-Message-ID: <20090706185153.GC4092@think>
-References: <49EF6DF7.9020406@wpkg.org> <1240512313.28015.14.camel@think.oraclecorp.com> <49F0FAEA.2020904@wpkg.org> <1240576718.29896.2.camel@think.oraclecorp.com> <4A4CD0B0.2080907@wpkg.org>
+From: Yan Zheng <zheng.yan@oracle.com>
+Subject: [PATCH] speed up snapshot dropping
+Date: Tue, 07 Jul 2009 17:39:31 +0800
+Message-ID: <4A5317D3.5000908@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Tomasz Chmielewski <mangoo@wpkg.org>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org, chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4A4CD0B0.2080907@wpkg.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 02, 2009 at 05:22:24PM +0200, Tomasz Chmielewski wrote:
-> Chris Mason wrote:
->> On Fri, 2009-04-24 at 01:34 +0200, Tomasz Chmielewski wrote:
->>> Chris Mason schrieb:
->>>
->>>>> However, with btrfs, I'm not sure about:
->>>>>
->>>>> - what happens if SAN machine crashes while the iSCSI file images 
->>>>> were being written to; with LVM and its block devices, I'm 
->>>>> somehow more confident it wouldn't make more data loss than 
->>>>> necessary
->>>> If iscsi is writing with O_DIRECT|O_SYNC it should work.
->>> What if it doesn't?
->>>
->>
->> Writes would go to the page cache only (not O_DIRECT) and the metadata
->> wouldn't get flushed with each write (not O_SYNC).
->
-> What about the "administrative" part of using btrfs as a volume manager?
+This patch contains two changes to avoid unnecessary tree block reads during
+snapshot dropping. First, check tree block's reference count and flags before
+reading the tree block. if reference count > 1 and there is no need to update
+backrefs, we can avoid reading the tree block. Second, save when snapshot was
+created in root_key.offset. we can compare block pointer's generation with
+snapshot's creation generation during updating backrefs. If a given block was
+created before snapshot was created, the snapshot can't be the tree block's
+owner. So we can avoid reading the block.
 
-In this case it depends on exactly how you do it.  If you're just using
-files and putting filesystems on those files (not partitioning inside
-the image), then you can use truncate to shrink the image and fallocate
-(or truncate if you want it sparse) to extend it.
+Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
 
-If you want to make partition tables inside the volumes, then you need
-to do the truncate/fallocate game and also change the partition table.
-
--chris
+---
+diff -urp 1/fs/btrfs/extent-tree.c 2/fs/btrfs/extent-tree.c
+--- 1/fs/btrfs/extent-tree.c	2009-07-03 08:08:34.152846801 +0800
++++ 2/fs/btrfs/extent-tree.c	2009-07-03 14:34:50.455818000 +0800
+@@ -4568,11 +4568,6 @@ struct walk_control {
+ /*
+  * hepler to process tree block while walking down the tree.
+  *
+- * when wc->stage == DROP_REFERENCE, this function checks
+- * reference count of the block. if the block is shared and
+- * we need update back refs for the subtree rooted at the
+- * block, this function changes wc->stage to UPDATE_BACKREF
+- *
+  * when wc->stage == UPDATE_BACKREF, this function updates
+  * back refs for pointers in the block.
+  *
+@@ -4585,14 +4580,9 @@ static noinline int walk_down_proc(struc
+ {
+ 	int level = wc->level;
+ 	struct extent_buffer *eb = path->nodes[level];
+-	struct btrfs_key key;
+ 	u64 flag = BTRFS_BLOCK_FLAG_FULL_BACKREF;
+ 	int ret;
+ 
+-	if (wc->stage == UPDATE_BACKREF &&
+-	    btrfs_header_owner(eb) != root->root_key.objectid)
+-		return 1;
+-
+ 	/*
+ 	 * when reference count of tree block is 1, it won't increase
+ 	 * again. once full backref flag is set, we never clear it.
+@@ -4608,21 +4598,6 @@ static noinline int walk_down_proc(struc
+ 		BUG_ON(wc->refs[level] == 0);
+ 	}
+ 
+-	if (wc->stage == DROP_REFERENCE &&
+-	    wc->update_ref && wc->refs[level] > 1) {
+-		BUG_ON(eb == root->node);
+-		BUG_ON(path->slots[level] > 0);
+-		if (level == 0)
+-			btrfs_item_key_to_cpu(eb, &key, path->slots[level]);
+-		else
+-			btrfs_node_key_to_cpu(eb, &key, path->slots[level]);
+-		if (btrfs_header_owner(eb) == root->root_key.objectid &&
+-		    btrfs_comp_cpu_keys(&key, &wc->update_progress) >= 0) {
+-			wc->stage = UPDATE_BACKREF;
+-			wc->shared_level = level;
+-		}
+-	}
+-
+ 	if (wc->stage == DROP_REFERENCE) {
+ 		if (wc->refs[level] > 1)
+ 			return 1;
+@@ -4635,6 +4610,8 @@ static noinline int walk_down_proc(struc
+ 	}
+ 
+ 	/* wc->stage == UPDATE_BACKREF */
++	BUG_ON(btrfs_header_owner(eb) != root->root_key.objectid);
++
+ 	if (!(wc->flags[level] & flag)) {
+ 		BUG_ON(!path->locks[level]);
+ 		ret = btrfs_inc_ref(trans, root, eb, 1);
+@@ -4659,6 +4636,113 @@ static noinline int walk_down_proc(struc
+ }
+ 
+ /*
++ * hepler to process tree block pointer.
++ *
++ * when wc->stage == DROP_REFERENCE, this function checks
++ * reference count of the block pointed to. if the block
++ * is shared and we need update back refs for the subtree
++ * rooted at the block, this function changes wc->stage to
++ * UPDATE_BACKREF. if the block is shared and there is no
++ * need to update back, this function drops the reference
++ * to the block.
++ *
++ * NOTE: return value 1 means we should stop walking down.
++ */
++static noinline int do_walk_down(struct btrfs_trans_handle *trans,
++				 struct btrfs_root *root,
++				 struct btrfs_path *path,
++				 struct walk_control *wc)
++{
++	u64 bytenr;
++	u64 generation;
++	u64 parent;
++	u32 blocksize;
++	struct btrfs_key key;
++	struct extent_buffer *next = NULL;
++	int level = wc->level;
++	int ret = 0;
++
++	generation = btrfs_node_ptr_generation(path->nodes[level],
++					       path->slots[level]);
++	/*
++	 * if the lower level block was created before the snapshot
++	 * was created, we know there is no need to update back refs
++	 * for the subtree
++	 */
++	if (wc->stage == UPDATE_BACKREF &&
++	    generation <= root->root_key.offset)
++		return 1;
++
++	bytenr = btrfs_node_blockptr(path->nodes[level], path->slots[level]);
++	blocksize = btrfs_level_size(root, level - 1);
++
++	if (wc->stage == DROP_REFERENCE) {
++		next = btrfs_find_create_tree_block(root, bytenr, blocksize);
++		btrfs_tree_lock(next);
++		btrfs_set_lock_blocking(next);
++
++		ret = btrfs_lookup_extent_info(trans, root, bytenr, blocksize,
++					       &wc->refs[level - 1],
++					       &wc->flags[level - 1]);
++		BUG_ON(ret);
++		BUG_ON(wc->refs[level - 1] == 0);
++
++		if (wc->refs[level - 1] > 1) {
++			if (!wc->update_ref ||
++			    generation <= root->root_key.offset)
++				goto skip;
++
++			btrfs_node_key_to_cpu(path->nodes[level], &key,
++					      path->slots[level]);
++			ret = btrfs_comp_cpu_keys(&key, &wc->update_progress);
++			if (ret < 0)
++				goto skip;
++
++			wc->stage = UPDATE_BACKREF;
++			wc->shared_level = level - 1;
++		}
++		if (!btrfs_buffer_uptodate(next, generation)) {
++			btrfs_tree_unlock(next);
++			free_extent_buffer(next);
++			next = NULL;
++		}
++	}
++
++	if (!next) {
++		next = read_tree_block(root, bytenr, blocksize, generation);
++		btrfs_tree_lock(next);
++		btrfs_set_lock_blocking(next);
++	}
++
++	level--;
++	BUG_ON(level != btrfs_header_level(next));
++	path->nodes[level] = next;
++	path->slots[level] = 0;
++	path->locks[level] = 1;
++	wc->level = level;
++	return 0;
++skip:
++	wc->refs[level - 1] = 0;
++	wc->flags[level - 1] = 0;
++
++	if (wc->flags[level] & BTRFS_BLOCK_FLAG_FULL_BACKREF) {
++		parent = path->nodes[level]->start;
++	} else {
++		BUG_ON(root->root_key.objectid !=
++		       btrfs_header_owner(path->nodes[level]));
++		parent = 0;
++	}
++
++	ret = btrfs_free_extent(trans, root, bytenr, blocksize, parent,
++				root->root_key.objectid, level - 1, 0);
++	BUG_ON(ret);
++
++	btrfs_tree_unlock(next);
++	free_extent_buffer(next);
++	return 1;
++}
++
++/*
+  * hepler to process tree block while walking up the tree.
+  *
+  * when wc->stage == DROP_REFERENCE, this function drops
+@@ -4770,17 +4854,13 @@ static noinline int walk_down_tree(struc
+ 				   struct btrfs_path *path,
+ 				   struct walk_control *wc)
+ {
+-	struct extent_buffer *next;
+-	struct extent_buffer *cur;
+-	u64 bytenr;
+-	u64 ptr_gen;
+-	u32 blocksize;
+ 	int level = wc->level;
+ 	int ret;
+ 
+ 	while (level >= 0) {
+-		cur = path->nodes[level];
+-		BUG_ON(path->slots[level] >= btrfs_header_nritems(cur));
++		if (path->slots[level] >=
++		    btrfs_header_nritems(path->nodes[level]))
++			break;
+ 
+ 		ret = walk_down_proc(trans, root, path, wc);
+ 		if (ret > 0)
+@@ -4789,20 +4869,12 @@ static noinline int walk_down_tree(struc
+ 		if (level == 0)
+ 			break;
+ 
+-		bytenr = btrfs_node_blockptr(cur, path->slots[level]);
+-		blocksize = btrfs_level_size(root, level - 1);
+-		ptr_gen = btrfs_node_ptr_generation(cur, path->slots[level]);
+-
+-		next = read_tree_block(root, bytenr, blocksize, ptr_gen);
+-		btrfs_tree_lock(next);
+-		btrfs_set_lock_blocking(next);
+-
+-		level--;
+-		BUG_ON(level != btrfs_header_level(next));
+-		path->nodes[level] = next;
+-		path->slots[level] = 0;
+-		path->locks[level] = 1;
+-		wc->level = level;
++		ret = do_walk_down(trans, root, path, wc);
++		if (ret > 0) {
++			path->slots[level]++;
++			continue;
++		}
++		level = wc->level;
+ 	}
+ 	return 0;
+ }
+diff -urp 1/fs/btrfs/transaction.c 2/fs/btrfs/transaction.c
+--- 1/fs/btrfs/transaction.c	2009-07-03 08:08:34.161846457 +0800
++++ 2/fs/btrfs/transaction.c	2009-07-07 15:39:08.452836151 +0800
+@@ -715,7 +715,8 @@ static noinline int create_pending_snaps
+ 	memcpy(new_root_item, &root->root_item, sizeof(*new_root_item));
+ 
+ 	key.objectid = objectid;
+-	key.offset = 0;
++	/* record when the snapshot was created in key.offset */
++	key.offset = trans->transid;
+ 	btrfs_set_key_type(&key, BTRFS_ROOT_ITEM_KEY);
+ 
+ 	old = btrfs_lock_root_node(root);

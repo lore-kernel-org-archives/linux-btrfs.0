@@ -1,207 +1,33 @@
-From: "Morten P.D. Stevens" <mstevens@win-professional.com>
-Subject: RE: new benchmark btrfs 0.19 vs. ext4
-Date: Wed, 8 Jul 2009 02:06:05 +0200
-Message-ID: <520B2A28AACEE94388C511BBB834933707AA86AEA5@IGR-IMC-01.corp.win-professional.com>
+From: Josh Berry <des@condordes.net>
+Subject: Re: new benchmark btrfs 0.19 vs. ext4
+Date: Tue, 7 Jul 2009 18:46:00 -0700
+Message-ID: <2feea0a0907071846j23ee0a83x53d0e91563ad33fa@mail.gmail.com>
 References: <523742.16459.qm@web51910.mail.re2.yahoo.com>
+	 <520B2A28AACEE94388C511BBB834933707AA86AEA5@IGR-IMC-01.corp.win-professional.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Brian Neu <proclivity76@yahoo.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Brian Neu <proclivity76@yahoo.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: "Morten P.D. Stevens" <mstevens@win-professional.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <523742.16459.qm@web51910.mail.re2.yahoo.com>
+In-Reply-To: <520B2A28AACEE94388C511BBB834933707AA86AEA5@IGR-IMC-01.corp.win-professional.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Brian,
-
-thanks for the chart.
-
-Here are the results visually for all:
-
-http://www2.win-professional.com/images2/btrfs01.png
-
-http://www2.win-professional.com/images2/btrfs02.png
-
-
-
------Original Message-----
-=46rom: Brian Neu [mailto:proclivity76@yahoo.com]=20
-Sent: Tuesday, July 07, 2009 4:16 AM
-To: Morten P.D. Stevens
-Subject: Re: new benchmark btrfs 0.19 vs. ext4
-
-These graphs represent your data.
-
-I thought it would be easier to see the progress visually.
-
-I tried posting to the list, but my post may have exceeded the size lim=
-it.  Maybe you could put on the web and post a link?
-
-
---- On Mon, 7/6/09, Morten P.D. Stevens <mstevens@win-professional.com>=
- wrote:
-
-> From: Morten P.D. Stevens <mstevens@win-professional.com>
-> Subject: new benchmark btrfs 0.19 vs. ext4
-> To: "chris.mason@oracle.com" <chris.mason@oracle.com>
-> Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-> Date: Monday, July 6, 2009, 8:45 AM
-> Hi Chris and all btrfs users,
->=20
-> here is a new benchmark with the newest btrfs version 0.19 vs. ext4.
->=20
-> Linux lenny 2.6.31-rc2 #1 SMP Mon Jul 6 11:36:22 CEST 2009
-> x86_64 GNU/Linux
->=20
-> lenny:/# btrfsctl -A /dev/sdb
-> operation complete
-> Btrfs Btrfs v0.19
->=20
-> btrfs:
->=20
-> ./compilebench -D /btrfs/compilebench -i 90 -r 150
->=20
->=20
-> run complete:
-> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
-> =3D=3D=3D=3D intial create total runs 90 avg 57.27 MB/s (user 0.44s s=
-ys
-> 2.47s)
-> create total runs 20 avg 30.30 MB/s (user 0.51s sys 1.74s) patch tota=
-l=20
-> runs 24 avg 9.98 MB/s (user 0.08s sys 2.17s) compile total runs 23 av=
-g=20
-> 64.19 MB/s (user 0.08s sys
-> 0.94s)
-> clean total runs 14 avg 323.74 MB/s (user 0.01s sys 0.38s) read tree=20
-> total runs 17 avg 18.81 MB/s (user 0.11s sys
-> 3.75s)
-> read compiled tree total runs 8 avg 25.30 MB/s (user 0.13s sys 4.82s)=
-=20
-> delete tree total runs 14 avg 7.34 seconds (user 0.19s sys
-> 2.49s)
-> delete compiled tree total runs 6 avg 12.32 seconds (user 0.20s sys=20
-> 2.93s) stat tree total runs 14 avg 3.56 seconds (user 0.14s sys
-> 0.93s)
-> stat compiled tree total runs 10 avg 4.06 seconds (user 0.14s sys=20
-> 1.04s)
->=20
->=20
-> and ext4:
->=20
-> ./compilebench -D /ext4/compilebench -i 90 -r 150
->=20
->=20
-> run complete:
-> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
-> =3D=3D=3D=3D intial create total runs 90 avg 80.66 MB/s (user 0.44s s=
-ys
-> 1.75s)
-> create total runs 20 avg 34.31 MB/s (user 0.52s sys 1.25s) patch tota=
-l=20
-> runs 24 avg 17.42 MB/s (user 0.06s sys 1.44s) compile total runs 23=20
-> avg 86.51 MB/s (user 0.06s sys
-> 1.10s)
-> clean total runs 14 avg 1378.57 MB/s (user 0.01s sys
-> 0.15s)
-> read tree total runs 17 avg 30.97 MB/s (user 0.04s sys
-> 2.83s)
-> read compiled tree total runs 8 avg 35.61 MB/s (user 0.04s sys 4.33s)=
-=20
-> delete tree total runs 14 avg 1.32 seconds (user 0.10s sys
-> 0.92s)
-> delete compiled tree total runs 6 avg 1.71 seconds (user 0.11s sys=20
-> 1.06s) stat tree total runs 14 avg 0.93 seconds (user 0.08s sys
-> 0.62s)
-> stat compiled tree total runs 10 avg 1.09 seconds (user 0.09s sys=20
-> 0.68s)
->=20
->=20
-> and here the old benchmark:
->=20
-> > On Tue, 2009-04-07 at 13:47 +0200, Morten P.D. Stevens
-> wrote:
-> >
-> > linux 2.6.29.1
-> >
-> > btrfs: (btrfs 0.18)
-> >=20
-> > ./compilebench -D /btrfs/work2 -i 90 -r 150
-> >=20
-> > run complete:
-> >
-> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
-> =3D=3D=3D=3D
-> > intial create total runs 90 avg 45.18 MB/s (user 0.84s
-> sys 2.89s)
-> > create total runs 20 avg 13.30 MB/s (user 0.88s sys
-> 2.93s)
-> > patch total runs 24 avg 5.94 MB/s (user 0.34s sys
-> 2.56s)
-> > compile total runs 23 avg 37.04 MB/s (user 0.19s sys
-> 1.60s)
-> > clean total runs 14 avg 71.36 MB/s (user 0.03s sys
-> 0.83s)
-> > read tree total runs 17 avg 7.02 MB/s (user 0.75s sys
-> 3.26s)
-> > read compiled tree total runs 8 avg 16.27 MB/s (user
-> 0.86s sys 4.83s)
-> > delete tree total runs 14 avg 21.51 seconds (user
-> 0.45s sys 4.07s)
-> > delete compiled tree total runs 6 avg 29.23 seconds
-> (user 0.57s sys 4.66s)
-> > stat tree total runs 14 avg 15.99 seconds (user 0.41s
-> sys 1.31s)
-> > stat compiled tree total runs 10 avg 19.68 seconds
-> (user 0.41s sys 1.51s)
-> >=20
-> >=20
-> > ext4:
-> >=20
-> > ./compilebench -D /mnt/work2 -i 90 -r 150
-> >=20
-> >=20
-> > run complete:
-> >
-> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
-> =3D=3D=3D=3D
-> > intial create total runs 90 avg 92.42 MB/s (user 0.76s
-> sys 1.38s)
-> > create total runs 20 avg 52.06 MB/s (user 0.73s sys
-> 1.26s)
-> > patch total runs 24 avg 17.28 MB/s (user 0.37s sys
-> 0.96s)
-> > compile total runs 23 avg 85.64 MB/s (user 0.17s sys
-> 1.05s)
-> > clean total runs 14 avg 887.53 MB/s (user 0.02s sys
-> 0.11s)
-> > read tree total runs 17 avg 13.60 MB/s (user 0.79s sys
-> 1.34s)
-> > read compiled tree total runs 8 avg 24.65 MB/s (user
-> 0.95s sys 2.07s)
-> > delete tree total runs 14 avg 2.26 seconds (user 0.39s
-> sys 0.78s)
-> > delete compiled tree total runs 6 avg 2.82 seconds
-> (user 0.43s sys 0.91s)
-> > stat tree total runs 14 avg 1.71 seconds (user 0.38s
-> sys 0.33s)
-> > stat compiled tree total runs 10 avg 1.99 seconds
-> (user 0.42s sys 0.33s)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-"=20
-> in the body of a message to majordomo@vger.kernel.org More majordomo=20
-> info at=A0 http://vger.kernel.org/majordomo-info.html
+On Tue, Jul 7, 2009 at 17:06, Morten P.D.
+Stevens<mstevens@win-professional.com> wrote:
+> Hi Brian,
 >
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> thanks for the chart.
+>
+> Here are the results visually for all:
+>
+> http://www2.win-professional.com/images2/btrfs01.png
+>
+> http://www2.win-professional.com/images2/btrfs02.png
+
+What are the units?  Are those measuring throughput or latency?
+
+I read these graphs as saying btrfs is either blazingly fast,
+blazingly slow, or some combination thereof. ;)
+
+-- Josh

@@ -1,80 +1,207 @@
-From: Raskin Michael <raskin@mccme.ru>
-Subject: Ghost file.
-Date: Tue, 07 Jul 2009 23:05:31 +0400
-Message-ID: <4A539C7B.7000506@mccme.ru>
+From: "Morten P.D. Stevens" <mstevens@win-professional.com>
+Subject: RE: new benchmark btrfs 0.19 vs. ext4
+Date: Wed, 8 Jul 2009 02:06:05 +0200
+Message-ID: <520B2A28AACEE94388C511BBB834933707AA86AEA5@IGR-IMC-01.corp.win-professional.com>
+References: <523742.16459.qm@web51910.mail.re2.yahoo.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=KOI8-R
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=iso-8859-1
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Brian Neu <proclivity76@yahoo.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <523742.16459.qm@web51910.mail.re2.yahoo.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+Hi Brian,
 
-I mentioned a ghost file. Here is the dump (less than 65M):
-http://dev.mccme.ru/~raskin/btrfs.dump
+thanks for the chart.
 
-ghost file is:
-885dj1l4788pymp3bk2f3dz52ggcvw4v-empty/garbage-1/mwave.h.tmp-31838-1822528541
+Here are the results visually for all:
 
-It has a name, but stat fails (so no inode, I guess). Also I can create
-another file with the same name in the directory. I cannot remove the
-file, or containing directory.
+http://www2.win-professional.com/images2/btrfs01.png
 
-fsck output:
+http://www2.win-professional.com/images2/btrfs02.png
 
-root 5 inode 273 errors 0
-        unresolved ref dir 270 index 2 namelen 4 name attr filetype 0
-error 3
-root 5 inode 274 errors 0
-        unresolved ref dir 271 index 2 namelen 2 name cs filetype 0 error 3
-root 5 inode 275 errors 0
-        unresolved ref dir 271 index 3 namelen 2 name de filetype 0 error 3
-root 5 inode 276 errors 0
-        unresolved ref dir 271 index 4 namelen 2 name es filetype 0 error 3
-root 5 inode 277 errors 0
-        unresolved ref dir 271 index 5 namelen 2 name fr filetype 0 error 3
-root 5 inode 278 errors 0
-        unresolved ref dir 271 index 6 namelen 2 name gl filetype 0 error 3
-root 5 inode 279 errors 0
-        unresolved ref dir 271 index 7 namelen 2 name nl filetype 0 error 3
-root 5 inode 280 errors 0
-        unresolved ref dir 271 index 8 namelen 2 name pl filetype 0 error 3
-root 5 inode 281 errors 0
-        unresolved ref dir 271 index 9 namelen 2 name sv filetype 0 error 3
-root 5 inode 290 errors 0
-        unresolved ref dir 272 index 2 namelen 4 name man1 filetype 0
-error 3
-root 5 inode 291 errors 0
-        unresolved ref dir 272 index 3 namelen 4 name man2 filetype 0
-error 3
-root 5 inode 292 errors 0
-        unresolved ref dir 272 index 4 namelen 4 name man3 filetype 0
-error 3
-root 5 inode 293 errors 0
-        unresolved ref dir 272 index 5 namelen 4 name man5 filetype 0
-error 3
-root 5 inode 316 errors 2000
-        unresolved ref dir 353285 index 1288 namelen 28 name
-mwave.h.tmp-31838-1822528541 filetype 1 error 1
-root 5 inode 353285 errors 200
-found 11118575893 bytes used err is 1
-total csum bytes: 10369224
-total tree bytes: 433348608
-total fs tree bytes: 373395456
-btree space waste bytes: 106980960
-file data blocks allocated: 10831892480
- referenced 10617970688
-Btrfs Btrfs v0.19
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.12 (GNU/Linux)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org
 
-iQEcBAEBAgAGBQJKU5x5AAoJEE6tnN0aWvw3SH4H/i0nQpWWkHL/ZpzgvjvSAjK7
-43fkxKTf5VjWB2PJ2H/UTcjp1QIET45HLhH9UN76F9FIYamUOf57bxS5f6XLj8gP
-h2WjpIcHkOfmP/+bgge9iUc4zufyHjvPSiwr+ODhWZD0OvOnYww9QxzG6DIctJPF
-KwFC8OolWlZt09gSTlkozNLZxJxprKw2g7MrL7j2yKC3fC+MJGfjLMMlzP4ouoPO
-8HI/X8I4YLJWyRC4fMCuAVTgMBdV/dZUM3zjp0GNbkavcqWFGTSg3I9H7aqRJvgP
-2hSc7PzAPah9kQZUu5fVHhUUOHFK1GJnMuVmDLtbFY70IGCFcvqUoCXJezGQjcA=
-=eVog
------END PGP SIGNATURE-----
+
+-----Original Message-----
+=46rom: Brian Neu [mailto:proclivity76@yahoo.com]=20
+Sent: Tuesday, July 07, 2009 4:16 AM
+To: Morten P.D. Stevens
+Subject: Re: new benchmark btrfs 0.19 vs. ext4
+
+These graphs represent your data.
+
+I thought it would be easier to see the progress visually.
+
+I tried posting to the list, but my post may have exceeded the size lim=
+it.  Maybe you could put on the web and post a link?
+
+
+--- On Mon, 7/6/09, Morten P.D. Stevens <mstevens@win-professional.com>=
+ wrote:
+
+> From: Morten P.D. Stevens <mstevens@win-professional.com>
+> Subject: new benchmark btrfs 0.19 vs. ext4
+> To: "chris.mason@oracle.com" <chris.mason@oracle.com>
+> Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+> Date: Monday, July 6, 2009, 8:45 AM
+> Hi Chris and all btrfs users,
+>=20
+> here is a new benchmark with the newest btrfs version 0.19 vs. ext4.
+>=20
+> Linux lenny 2.6.31-rc2 #1 SMP Mon Jul 6 11:36:22 CEST 2009
+> x86_64 GNU/Linux
+>=20
+> lenny:/# btrfsctl -A /dev/sdb
+> operation complete
+> Btrfs Btrfs v0.19
+>=20
+> btrfs:
+>=20
+> ./compilebench -D /btrfs/compilebench -i 90 -r 150
+>=20
+>=20
+> run complete:
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+> =3D=3D=3D=3D intial create total runs 90 avg 57.27 MB/s (user 0.44s s=
+ys
+> 2.47s)
+> create total runs 20 avg 30.30 MB/s (user 0.51s sys 1.74s) patch tota=
+l=20
+> runs 24 avg 9.98 MB/s (user 0.08s sys 2.17s) compile total runs 23 av=
+g=20
+> 64.19 MB/s (user 0.08s sys
+> 0.94s)
+> clean total runs 14 avg 323.74 MB/s (user 0.01s sys 0.38s) read tree=20
+> total runs 17 avg 18.81 MB/s (user 0.11s sys
+> 3.75s)
+> read compiled tree total runs 8 avg 25.30 MB/s (user 0.13s sys 4.82s)=
+=20
+> delete tree total runs 14 avg 7.34 seconds (user 0.19s sys
+> 2.49s)
+> delete compiled tree total runs 6 avg 12.32 seconds (user 0.20s sys=20
+> 2.93s) stat tree total runs 14 avg 3.56 seconds (user 0.14s sys
+> 0.93s)
+> stat compiled tree total runs 10 avg 4.06 seconds (user 0.14s sys=20
+> 1.04s)
+>=20
+>=20
+> and ext4:
+>=20
+> ./compilebench -D /ext4/compilebench -i 90 -r 150
+>=20
+>=20
+> run complete:
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+> =3D=3D=3D=3D intial create total runs 90 avg 80.66 MB/s (user 0.44s s=
+ys
+> 1.75s)
+> create total runs 20 avg 34.31 MB/s (user 0.52s sys 1.25s) patch tota=
+l=20
+> runs 24 avg 17.42 MB/s (user 0.06s sys 1.44s) compile total runs 23=20
+> avg 86.51 MB/s (user 0.06s sys
+> 1.10s)
+> clean total runs 14 avg 1378.57 MB/s (user 0.01s sys
+> 0.15s)
+> read tree total runs 17 avg 30.97 MB/s (user 0.04s sys
+> 2.83s)
+> read compiled tree total runs 8 avg 35.61 MB/s (user 0.04s sys 4.33s)=
+=20
+> delete tree total runs 14 avg 1.32 seconds (user 0.10s sys
+> 0.92s)
+> delete compiled tree total runs 6 avg 1.71 seconds (user 0.11s sys=20
+> 1.06s) stat tree total runs 14 avg 0.93 seconds (user 0.08s sys
+> 0.62s)
+> stat compiled tree total runs 10 avg 1.09 seconds (user 0.09s sys=20
+> 0.68s)
+>=20
+>=20
+> and here the old benchmark:
+>=20
+> > On Tue, 2009-04-07 at 13:47 +0200, Morten P.D. Stevens
+> wrote:
+> >
+> > linux 2.6.29.1
+> >
+> > btrfs: (btrfs 0.18)
+> >=20
+> > ./compilebench -D /btrfs/work2 -i 90 -r 150
+> >=20
+> > run complete:
+> >
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+> =3D=3D=3D=3D
+> > intial create total runs 90 avg 45.18 MB/s (user 0.84s
+> sys 2.89s)
+> > create total runs 20 avg 13.30 MB/s (user 0.88s sys
+> 2.93s)
+> > patch total runs 24 avg 5.94 MB/s (user 0.34s sys
+> 2.56s)
+> > compile total runs 23 avg 37.04 MB/s (user 0.19s sys
+> 1.60s)
+> > clean total runs 14 avg 71.36 MB/s (user 0.03s sys
+> 0.83s)
+> > read tree total runs 17 avg 7.02 MB/s (user 0.75s sys
+> 3.26s)
+> > read compiled tree total runs 8 avg 16.27 MB/s (user
+> 0.86s sys 4.83s)
+> > delete tree total runs 14 avg 21.51 seconds (user
+> 0.45s sys 4.07s)
+> > delete compiled tree total runs 6 avg 29.23 seconds
+> (user 0.57s sys 4.66s)
+> > stat tree total runs 14 avg 15.99 seconds (user 0.41s
+> sys 1.31s)
+> > stat compiled tree total runs 10 avg 19.68 seconds
+> (user 0.41s sys 1.51s)
+> >=20
+> >=20
+> > ext4:
+> >=20
+> > ./compilebench -D /mnt/work2 -i 90 -r 150
+> >=20
+> >=20
+> > run complete:
+> >
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+> =3D=3D=3D=3D
+> > intial create total runs 90 avg 92.42 MB/s (user 0.76s
+> sys 1.38s)
+> > create total runs 20 avg 52.06 MB/s (user 0.73s sys
+> 1.26s)
+> > patch total runs 24 avg 17.28 MB/s (user 0.37s sys
+> 0.96s)
+> > compile total runs 23 avg 85.64 MB/s (user 0.17s sys
+> 1.05s)
+> > clean total runs 14 avg 887.53 MB/s (user 0.02s sys
+> 0.11s)
+> > read tree total runs 17 avg 13.60 MB/s (user 0.79s sys
+> 1.34s)
+> > read compiled tree total runs 8 avg 24.65 MB/s (user
+> 0.95s sys 2.07s)
+> > delete tree total runs 14 avg 2.26 seconds (user 0.39s
+> sys 0.78s)
+> > delete compiled tree total runs 6 avg 2.82 seconds
+> (user 0.43s sys 0.91s)
+> > stat tree total runs 14 avg 1.71 seconds (user 0.38s
+> sys 0.33s)
+> > stat compiled tree total runs 10 avg 1.99 seconds
+> (user 0.42s sys 0.33s)
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+"=20
+> in the body of a message to majordomo@vger.kernel.org More majordomo=20
+> info at=A0 http://vger.kernel.org/majordomo-info.html
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

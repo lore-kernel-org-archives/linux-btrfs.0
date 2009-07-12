@@ -1,33 +1,38 @@
-From: David Woodhouse <dwmw2@infradead.org>
-Subject: Re: raidz-like operation?
-Date: Sat, 11 Jul 2009 15:59:50 +0100
-Message-ID: <1247324390.17811.9.camel@macbook.infradead.org>
-References: <952FC056-F524-420A-9826-F8A287BB2139@karlsbakk.net>
+From: Oliver <oli1417@hallo.ms>
+Subject: Re: Soft lockup by using 256K sizes
+Date: Sun, 12 Jul 2009 11:26:00 +0200
+Message-ID: <200907121126.01550.oli1417@hallo.ms>
+References: <901705186@web.de> <56419.75.80.183.92.1247274694.squirrel@www.whisperpc.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <952FC056-F524-420A-9826-F8A287BB2139@karlsbakk.net>
+In-Reply-To: <56419.75.80.183.92.1247274694.squirrel@www.whisperpc.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2009-07-10 at 10:58 +0200, Roy Sigurd Karlsbakk wrote:
-> I know it's not in yet, but is there a plan to implement raid-z(2)- 
-> like operation? I have heard of plans to integrate with the existing  
-> md-subsystem in the kernel, but I'm not sure if this will be  
-> appropriate comparing this to how things are done in zfs/raid-z.
+Hello, 
 
-I'm currently working on the basic implementation of RAID5/RAID6 (qv).
-I don't think there'll be much integration with the md subsystem --
-we'll probably just shift the cunning GF arithmetic out into lib/raid6
-or something, then let them both use it from there.
+Thanks a lot the explanations. In the v0.18 version used I indeed hit patch #1. The other patches don't seem to (may be in v0.19 ?).
 
-We do want to do full stripe writes to the RAID[56] parts, so we're
-going to want to do something like falling back to RAID1 (or to a RAID5
-chunk with smaller stripe length) for smaller allocations. That's
-basically what you're talking about, isn't it?
+Cheers, Oliver
 
--- 
-David Woodhouse                            Open Source Technology Centre
-David.Woodhouse@intel.com                              Intel Corporation
+On Saturday 11 July 2009 03:11:34 ashford@whisperpc.com wrote:
+> Oliver,
+> 
+> > I just tried btrfs with a big blocksize (-n,-l,-s) of 256K. Creating the fs
+> > worked Ok. I had to put all three -n,-l,-s options to 256K, otherwise
+> > mkfs.btrfs complained. But mounting results in a soft lockup (reproducible).
+> > It's not the latest btrfs version however. The details are shown below.
+> 
+> The problem is that the block size is being set to a value that's larger than
+> the memory page size.  This is not supported.  I sent in some validation
+> patches for the MKFS command in January, but they may not have been tested &
+> integrated yet.
+> 
+> Good luck.
+> 
+> Peter Ashford
+> 
+> 
 

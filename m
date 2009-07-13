@@ -1,39 +1,30 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] brtfs: less- and greater than confusion
-Date: Mon, 13 Jul 2009 09:22:52 -0400
-Message-ID: <20090713132252.GB4704@think>
-References: <4A5A6418.2070906@gmail.com>
+From: David Woodhouse <dwmw2@infradead.org>
+Subject: Re: replacing failed disks in RAID-1 (kernel BUG)?
+Date: Mon, 13 Jul 2009 14:23:33 +0100
+Message-ID: <1247491413.19180.172.camel@macbook.infradead.org>
+References: <4A5B0C39.5030905@wpkg.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org,
-	Andrew Morton <akpm@linux-foundation.org>, yan.zheng@oracle.com
-To: Roel Kluin <roel.kluin@gmail.com>
+Content-Type: text/plain
+Cc: linux-btrfs@vger.kernel.org
+To: Tomasz Chmielewski <mangoo@wpkg.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4A5A6418.2070906@gmail.com>
+In-Reply-To: <4A5B0C39.5030905@wpkg.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 13, 2009 at 12:30:48AM +0200, Roel Kluin wrote:
-> Without this the loop won't start
-> 
-> Signed-off-by: Roel Kluin <roel.kluin@gmail.com>
-> ---
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 3ab80e9..2c873c9 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -2795,7 +2795,7 @@ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
->  		}
->  	}
->  
-> -	for (i = 0; i > nr; i++) {
-> +	for (i = 0; i < nr; i++) {
->  		struct btrfs_multi_bio *multi;
->  		struct btrfs_bio_stripe *stripe;
->  		int ret;
+On Mon, 2009-07-13 at 12:28 +0200, Tomasz Chmielewski wrote:
+> How do I replace failed disks in RAID-1 mode?
 
-Thanks, this does look buggy.  That second loop should just be to verify
-the first loop didn't mess things up.  Yan Zheng, is there any reason we
-shouldn't delete it?
+I don't think you can. In theory you can remove the broken one, and you
+can add a _new_ empty one -- I say 'in theory' because you seem to have
+demonstrated both of those actions failing.
 
--chris
+But I don't believe we have yet implemented anything to let you
+_replace_ a failed disk and recreate its original contents.
+
+I had that on my TODO list for some time after I get the basic RAID[56]
+operation working.
+
+-- 
+David Woodhouse                            Open Source Technology Centre
+David.Woodhouse@intel.com                              Intel Corporation
 

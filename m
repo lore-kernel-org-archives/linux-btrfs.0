@@ -1,55 +1,63 @@
-From: Julia Lawall <julia@diku.dk>
-Subject: [PATCH 4/4] fs/btrfs: adjust NULL test
-Date: Mon, 13 Jul 2009 22:48:31 +0200 (CEST)
-Message-ID: <Pine.LNX.4.64.0907132244330.12374@ask.diku.dk>
-Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org
+From: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
+Subject: Re: raidz-like operation?
+Date: Tue, 14 Jul 2009 01:14:25 +0200
+Message-ID: <5E752AC2-382C-4079-A20F-0E7FA1DB02B8@karlsbakk.net>
+References: <952FC056-F524-420A-9826-F8A287BB2139@karlsbakk.net> <1247324390.17811.9.camel@macbook.infradead.org>
+Reply-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Mime-Version: 1.0 (Apple Message framework v935.3)
+Content-Type: text/plain; charset=ISO-8859-1;
+	format=flowed	delsp=yes
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1247324390.17811.9.camel@macbook.infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Julia Lawall <julia@diku.dk>
+On 11. juli. 2009, at 16.59, David Woodhouse wrote:
 
-Move the call to BUG_ON to before the dereference of the tested value.
+> On Fri, 2009-07-10 at 10:58 +0200, Roy Sigurd Karlsbakk wrote:
+>> I know it's not in yet, but is there a plan to implement raid-z(2)-
+>> like operation? I have heard of plans to integrate with the existing
+>> md-subsystem in the kernel, but I'm not sure if this will be
+>> appropriate comparing this to how things are done in zfs/raid-z.
+>
+> I'm currently working on the basic implementation of RAID5/RAID6 (qv)=
+=2E
+> I don't think there'll be much integration with the md subsystem --
+> we'll probably just shift the cunning GF arithmetic out into lib/raid=
+6
+> or something, then let them both use it from there.
+>
+> We do want to do full stripe writes to the RAID[56] parts, so we're
+> going to want to do something like falling back to RAID1 (or to a =20
+> RAID5
+> chunk with smaller stripe length) for smaller allocations. That's
+> basically what you're talking about, isn't it?
 
-A simplified version of the semantic match that finds this problem is as
-follows: (http://www.emn.fr/x-info/coccinelle/)
 
-// <smpl>
-@r@
-expression x,E,E1;
-identifier f,l;
-position p1,p2;
-@@
+In ZFS/RAIDZ(2) they are said to use RAID3-like partial writes as with =
+=20
+with a file-level redundancy, meaning if a file won't cover a whole =20
+stripe, it'll use a partial one. I'm not sure if this is the case, but =
+=20
+it's what I've been told by the people from Sun. This may open for =20
+fewer IOPs per write. Is something like this in the thoughts of the =20
+new RAID[56] in BTRFS?
 
-*x@p1->f = E1;
-... when != x = E
-    when != goto l;
-(
-*x@p2 == NULL
-|
-*x@p2 != NULL
-)
-// </smpl>
+roy
+--
+Roy Sigurd Karlsbakk
+(+47) 97542685
+roy@karlsbakk.net
+http://blogg.karlsbakk.net/
+--
+I all pedagogikk er det essensielt at pensum presenteres =20
+intelligibelt. Det er et element=E6rt imperativ for alle pedagoger =E5 =
+=20
+unng=E5 eksessiv anvendelse av idiomer med fremmed opprinnelse. I de =20
+fleste tilfeller eksisterer adekvate og relevante synonymer p=E5 norsk.
 
-Signed-off-by: Julia Lawall <julia@diku.dk>
-
----
- fs/btrfs/inode.c                    |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 7ffa3d3..8cc6025 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2604,8 +2604,8 @@ noinline int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
- 	if (root->ref_cows)
- 		btrfs_drop_extent_cache(inode, new_size & (~mask), (u64)-1, 0);
- 	path = btrfs_alloc_path();
--	path->reada = -1;
- 	BUG_ON(!path);
-+	path->reada = -1;
- 
- 	/* FIXME, add redo link to tree so we don't leak on crash */
- 	key.objectid = inode->i_ino;
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

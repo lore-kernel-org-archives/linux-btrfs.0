@@ -1,72 +1,55 @@
-From: David Woodhouse <dwmw2@infradead.org>
-Subject: [PATCH 3/4] Btrfs: Fix another partial discard bug in on RAID
-Date: Mon, 13 Jul 2009 15:11:58 +0100
-Message-ID: <1247494318.19180.270.camel@macbook.infradead.org>
+From: Julia Lawall <julia@diku.dk>
+Subject: [PATCH 4/4] fs/btrfs: adjust NULL test
+Date: Mon, 13 Jul 2009 22:48:31 +0200 (CEST)
+Message-ID: <Pine.LNX.4.64.0907132244330.12374@ask.diku.dk>
 Mime-Version: 1.0
-Content-Type: text/plain
-To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Each call to btrfs_map_block() will only return a single stripe length,
-so we need to loop until we've freed as much as we need.
+From: Julia Lawall <julia@diku.dk>
 
-(We should actually move this whole function into volumes.c and let it
-do cunning things so that it frees a single contiguous range on each
-backing device. I'll do that when I have to unbreak it for RAID5 anyway.)
+Move the call to BUG_ON to before the dereference of the tested value.
 
-Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+A simplified version of the semantic match that finds this problem is as
+follows: (http://www.emn.fr/x-info/coccinelle/)
+
+// <smpl>
+@r@
+expression x,E,E1;
+identifier f,l;
+position p1,p2;
+@@
+
+*x@p1->f = E1;
+... when != x = E
+    when != goto l;
+(
+*x@p2 == NULL
+|
+*x@p2 != NULL
+)
+// </smpl>
+
+Signed-off-by: Julia Lawall <julia@diku.dk>
+
 ---
- fs/btrfs/extent-tree.c |   25 +++++++++++++++----------
- 1 files changed, 15 insertions(+), 10 deletions(-)
+ fs/btrfs/inode.c                    |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 1496925..d829ef3 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -1421,23 +1421,28 @@ static int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
- 	struct btrfs_multi_bio *multi = NULL;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 7ffa3d3..8cc6025 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2604,8 +2604,8 @@ noinline int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+ 	if (root->ref_cows)
+ 		btrfs_drop_extent_cache(inode, new_size & (~mask), (u64)-1, 0);
+ 	path = btrfs_alloc_path();
+-	path->reada = -1;
+ 	BUG_ON(!path);
++	path->reada = -1;
  
- 	/* Tell the block device(s) that the sectors can be discarded */
--	ret = btrfs_map_block(&root->fs_info->mapping_tree, WRITE,
--			      bytenr, &map_length, &multi, 0);
--	if (!ret) {
--		struct btrfs_bio_stripe *stripe = multi->stripes;
-+	while (num_bytes) {
- 		int i;
- 
-+		ret = btrfs_map_block(&root->fs_info->mapping_tree, WRITE,
-+				      bytenr, &map_length, &multi, 0);
-+		if (ret)
-+			break;
-+
-+			
- 		if (map_length > num_bytes)
- 			map_length = num_bytes;
--
--		for (i = 0; i < multi->num_stripes; i++, stripe++) {
--			btrfs_issue_discard(stripe->dev->bdev,
--					    stripe->physical,
-+			
-+		for (i = 0; i < multi->num_stripes; i++)
-+			btrfs_issue_discard(multi->stripes[i].dev->bdev,
-+					    multi->stripes[i].physical,
- 					    map_length);
--		}
-+
- 		kfree(multi);
--	}
- 
-+		num_bytes -= map_length;
-+		bytenr += map_length;
-+	}
- 	return ret;
- #else
- 	return 0;
--- 
-1.6.2.5
-
--- 
-David Woodhouse                            Open Source Technology Centre
-David.Woodhouse@intel.com                              Intel Corporation
-
+ 	/* FIXME, add redo link to tree so we don't leak on crash */
+ 	key.objectid = inode->i_ino;

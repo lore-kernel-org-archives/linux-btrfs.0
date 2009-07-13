@@ -1,68 +1,68 @@
 From: David Woodhouse <dwmw2@infradead.org>
-Subject: [PATCH 4/4] Btrfs: Remove broken sanity check from
- btrfs_rmap_block()
-Date: Mon, 13 Jul 2009 15:12:02 +0100
-Message-ID: <1247494322.19180.271.camel@macbook.infradead.org>
+Subject: [PATCH 3/4] Btrfs: Fix another partial discard bug in on RAID
+Date: Mon, 13 Jul 2009 15:11:58 +0100
+Message-ID: <1247494318.19180.270.camel@macbook.infradead.org>
 Mime-Version: 1.0
 Content-Type: text/plain
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It was never actually doing anything anyway (see the loop condition),
-and it would be a PITA to make it work for RAID[56].
+Each call to btrfs_map_block() will only return a single stripe length,
+so we need to loop until we've freed as much as we need.
 
-Even if it was actually working, it's checking for the wrong thing
-anyway. Instead of checking whether we list a block which _doesn't_ land
-at the relevant physical location, it should be checking that we _have_
-listed all the logical blocks which refer to the required physical
-location on all devices.
-
-This function is only called from remove_sb_from_cache() to ensure that
-we reserve the logical blocks which would reside at the same physical
-location as the superblock copies. So listing more blocks than we need
-is actually OK.
-
-With RAID[56] we're going to throw away an entire stripe for each block
-we have to ignore, so we _are_ going to list blocks other than the
-ones which actually contain the superblock.
+(We should actually move this whole function into volumes.c and let it
+do cunning things so that it frees a single contiguous range on each
+backing device. I'll do that when I have to unbreak it for RAID5 anyway.)
 
 Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
 ---
- fs/btrfs/volumes.c |   20 --------------------
- 1 files changed, 0 insertions(+), 20 deletions(-)
+ fs/btrfs/extent-tree.c |   25 +++++++++++++++----------
+ 1 files changed, 15 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 3ab80e9..f1f10ea 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2795,26 +2795,6 @@ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
- 		}
- 	}
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 1496925..d829ef3 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1421,23 +1421,28 @@ static int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
+ 	struct btrfs_multi_bio *multi = NULL;
  
--	for (i = 0; i > nr; i++) {
--		struct btrfs_multi_bio *multi;
--		struct btrfs_bio_stripe *stripe;
--		int ret;
+ 	/* Tell the block device(s) that the sectors can be discarded */
+-	ret = btrfs_map_block(&root->fs_info->mapping_tree, WRITE,
+-			      bytenr, &map_length, &multi, 0);
+-	if (!ret) {
+-		struct btrfs_bio_stripe *stripe = multi->stripes;
++	while (num_bytes) {
+ 		int i;
+ 
++		ret = btrfs_map_block(&root->fs_info->mapping_tree, WRITE,
++				      bytenr, &map_length, &multi, 0);
++		if (ret)
++			break;
++
++			
+ 		if (map_length > num_bytes)
+ 			map_length = num_bytes;
 -
--		length = 1;
--		ret = btrfs_map_block(map_tree, WRITE, buf[i],
--				      &length, &multi, 0);
--		BUG_ON(ret);
--
--		stripe = multi->stripes;
--		for (j = 0; j < multi->num_stripes; j++) {
--			if (stripe->physical >= physical &&
--			    physical < stripe->physical + length)
--				break;
+-		for (i = 0; i < multi->num_stripes; i++, stripe++) {
+-			btrfs_issue_discard(stripe->dev->bdev,
+-					    stripe->physical,
++			
++		for (i = 0; i < multi->num_stripes; i++)
++			btrfs_issue_discard(multi->stripes[i].dev->bdev,
++					    multi->stripes[i].physical,
+ 					    map_length);
 -		}
--		BUG_ON(j >= multi->num_stripes);
--		kfree(multi);
++
+ 		kfree(multi);
 -	}
--
- 	*logical = buf;
- 	*naddrs = nr;
- 	*stripe_len = map->stripe_len;
+ 
++		num_bytes -= map_length;
++		bytenr += map_length;
++	}
+ 	return ret;
+ #else
+ 	return 0;
 -- 
 1.6.2.5
 

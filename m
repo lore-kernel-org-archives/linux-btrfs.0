@@ -1,425 +1,87 @@
-From: David Woodhouse <dwmw2@infradead.org>
-Subject: First attempt at writing RAID[56] parity stripes
-Date: Mon, 13 Jul 2009 11:05:13 +0100
-Message-ID: <1247479513.19180.41.camel@macbook.infradead.org>
-References: <1247323186.17045.15.camel@macbook.infradead.org>
-	 <1247477428.19180.28.camel@macbook.infradead.org>
+From: Tomasz Chmielewski <mangoo@wpkg.org>
+Subject: replacing failed disks in RAID-1 (kernel BUG)?
+Date: Mon, 13 Jul 2009 12:28:09 +0200
+Message-ID: <4A5B0C39.5030905@wpkg.org>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=UTF-8; format=flowed
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1247477428.19180.28.camel@macbook.infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a fairly crap hack. Even if the file system _does_ want to write
-a full stripe-set at a time, the merge_bio_hook logic will prevent it
-from doing so, and ensure that we always have to read the other stripes
-to recreate the parity -- with all the concurrency issues that involves.
+How do I replace failed disks in RAID-1 mode?
 
-The raid_hack_mutex is a brute-force approach which isn't even really
-sufficient to fix the RAID5 'write hole' problem, but does protect us
-against simultaneous writes to different data stripes in the same set.
+I followed the http://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices, but it triggered a kernel BUG (using 2.6.30.1 kernel):
 
-This hack serves two purposes:
- - It does actually write parity (and RAID6 syndrome) blocks so that I
-   can implement and test the recovery.
- - It will hopefully offend someone more clueful about the higher layers
-   of the filesystem, provoking them to help me with the task of
-   ensuring that we only ever write full stripe-sets (or at least that we can
-   waste the remaining free space in the stripe-set, if we can't manage that).
 
-So hopefully most of this code can go away in the end -- although some
-of it may be cannibalised to handle rebuilding after a disk replacement.
+# mount -o degraded /dev/sdb4 /mnt/btrfs/
 
-Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
----
- fs/btrfs/Kconfig   |    1 +
- fs/btrfs/volumes.c |  321 +++++++++++++++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 316 insertions(+), 6 deletions(-)
+# btrfs-vol -r missing /mnt/btrfs/
+removing missing devices from /mnt/btrfs/
+ioctl returns -1
 
-diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
-index 7bb3c02..4703325 100644
---- a/fs/btrfs/Kconfig
-+++ b/fs/btrfs/Kconfig
-@@ -4,6 +4,7 @@ config BTRFS_FS
- 	select LIBCRC32C
- 	select ZLIB_INFLATE
- 	select ZLIB_DEFLATE
-+	select MD_RAID6_PQ
- 	help
- 	  Btrfs is a new filesystem with extents, writable snapshotting,
- 	  support for multiple devices and many more features.
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 55facd3..1f509ab 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -21,6 +21,7 @@
- #include <linux/blkdev.h>
- #include <linux/random.h>
- #include <linux/iocontext.h>
-+#include <linux/raid/pq.h>
- #include <asm/div64.h>
- #include "compat.h"
- #include "ctree.h"
-@@ -61,6 +62,12 @@ static int init_first_rw_device(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *root,
- 				struct btrfs_device *device);
- static int btrfs_relocate_sys_chunks(struct btrfs_root *root);
-+static int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
-+				 int async, struct btrfs_multi_bio *multi,
-+				 u64 *raid_map, u64 stripe_len, int mirror_num);
-+static int raid56_parity_write(struct btrfs_root *root, struct bio *bio,
-+			       int async, struct btrfs_multi_bio *multi,
-+			       u64 *raid_map, u64 stripe_len);
- 
- #define RAID5_P_STRIPE ((u64)-1)
- #define RAID6_Q_STRIPE ((u64)-2)
-@@ -3052,6 +3059,7 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
- 	u64 logical = (u64)bio->bi_sector << 9;
- 	u64 length = 0;
- 	u64 map_length;
-+	u64 *raid_map = NULL;
- 	struct btrfs_multi_bio *multi = NULL;
- 	int ret;
- 	int dev_nr = 0;
-@@ -3061,10 +3069,25 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
- 	map_tree = &root->fs_info->mapping_tree;
- 	map_length = length;
- 
--	ret = btrfs_map_block(map_tree, rw, logical, &map_length, &multi,
--			      mirror_num);
-+	ret = __btrfs_map_block(map_tree, rw, logical, &map_length, &multi,
-+				mirror_num, NULL, &raid_map);
- 	BUG_ON(ret);
- 
-+	multi->end_io = first_bio->bi_end_io;
-+	multi->private = first_bio->bi_private;
-+	multi->orig_bio = first_bio;
-+	atomic_set(&multi->stripes_pending, multi->num_stripes);
-+
-+	if (raid_map) {
-+		if (rw == READ)
-+			return raid56_parity_recover(root, bio, async_submit,
-+						     multi, raid_map, map_length,
-+						     mirror_num);
-+		else
-+			return raid56_parity_write(root, bio, async_submit, multi,
-+						   raid_map, map_length);
-+	}
-+
- 	total_devs = multi->num_stripes;
- 	if (map_length < length) {
- 		printk(KERN_CRIT "mapping failed logical %llu bio len %llu "
-@@ -3073,10 +3096,6 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
- 		       (unsigned long long)map_length);
- 		BUG();
- 	}
--	multi->end_io = first_bio->bi_end_io;
--	multi->private = first_bio->bi_private;
--	multi->orig_bio = first_bio;
--	atomic_set(&multi->stripes_pending, multi->num_stripes);
- 
- 	while (dev_nr < total_devs) {
- 		if (total_devs > 1) {
-@@ -3494,3 +3513,293 @@ error:
- 	btrfs_free_path(path);
- 	return ret;
- }
-+
-+static DEFINE_MUTEX(raid_hack_mutex);
-+
-+struct btrfs_raid_multi_bio {
-+	struct btrfs_root *root;
-+	struct btrfs_multi_bio *multi;
-+	u64 *raid_map;
-+	struct bio *bio[0];
-+};
-+
-+static void raid_write_end_io(struct bio *bio, int err)
-+{
-+	struct btrfs_raid_multi_bio *rmult = bio->bi_private;
-+	int i, j;
-+	int nr_pages = rmult->multi->orig_bio->bi_size >> PAGE_SHIFT;
-+
-+	if (err)
-+		atomic_inc(&rmult->multi->error);
-+
-+	if (!atomic_dec_and_test(&rmult->multi->stripes_pending))
-+		return;
-+
-+	/* OK, we have read all the stripes we need to. */
-+	if (atomic_read(&rmult->multi->error)) {
-+		bio_endio(rmult->multi->orig_bio, -EIO);
-+		goto cleanup;
-+	}
-+	
-+	rmult->multi->orig_bio->bi_private = rmult->multi->private;
-+	rmult->multi->orig_bio->bi_end_io = rmult->multi->end_io;
-+	bio_endio(rmult->multi->orig_bio, 0);
-+
-+ cleanup:
-+	for (i = 0; i < rmult->multi->num_stripes; i++) {
-+		if (!rmult->bio[i])
-+			continue;
-+		for (j = 0; j < nr_pages; j++) {
-+			__free_page(rmult->bio[i]->bi_io_vec[j].bv_page);
-+		}
-+		bio_put(rmult->bio[i]);
-+	}
-+	kfree(rmult->raid_map);
-+	kfree(rmult->multi);
-+	kfree(rmult);
-+	mutex_unlock(&raid_hack_mutex);
-+}
-+
-+static void raid_read_end_io(struct bio *bio, int err)
-+{
-+	struct btrfs_raid_multi_bio *rmult = bio->bi_private;
-+	int nr_pages = rmult->multi->orig_bio->bi_size >> PAGE_SHIFT;
-+	int i, j, k;
-+	void **pointers;
-+	void *q_ptr = NULL, *p_ptr;
-+	int dstripe, pstripe, qstripe;
-+
-+	if (err)
-+		atomic_inc(&rmult->multi->error);
-+
-+	if (!atomic_dec_and_test(&rmult->multi->stripes_pending))
-+		return;
-+
-+	/* OK, we have read all the stripes we need to. */
-+	if (atomic_read(&rmult->multi->error)) {
-+		bio_endio(rmult->multi->orig_bio, -EIO);
-+		goto cleanup;
-+	}
-+
-+	pointers = kmalloc(rmult->multi->num_stripes * sizeof(void *), GFP_ATOMIC);
-+	BUG_ON(!pointers); /* FIXME */
-+
-+	for (i = 0; i < nr_pages; i++) {
-+		p_ptr = q_ptr = NULL;
-+		k = 0;
-+		for (j = 0; j < rmult->multi->num_stripes; j++) {
-+			struct bio *bio = rmult->bio[j];
-+			if (!bio)
-+				bio = rmult->multi->orig_bio;
-+
-+			/* Is this always a valid assumption? */
-+			BUG_ON(bio->bi_io_vec[i].bv_len != PAGE_SIZE);
-+			BUG_ON(bio->bi_io_vec[i].bv_offset);
-+			
-+			/* FIXME: Would be nice to kmap here so that we can allow highmem
-+			   pages, but since we're in end_io context it would need to be
-+			   kmap_atomic, and there are an arbitrary number of pages... */
-+			if (rmult->raid_map[j] == RAID5_P_STRIPE)
-+				p_ptr = phys_to_virt(page_to_phys(bio->bi_io_vec[i].bv_page));
-+			else if (rmult->raid_map[j] == RAID6_Q_STRIPE)
-+				q_ptr = phys_to_virt(page_to_phys(bio->bi_io_vec[i].bv_page));
-+			else
-+				pointers[k++] = phys_to_virt(page_to_phys(bio->bi_io_vec[i].bv_page));
-+		}
-+		if (q_ptr) {
-+			pointers[k++] = p_ptr;
-+			if (q_ptr)
-+				pointers[k++] = q_ptr;
-+			BUG_ON(k != j);
-+
-+			raid6_call.gen_syndrome(rmult->multi->num_stripes,
-+						PAGE_SIZE, pointers);
-+		} else {
-+			memset(p_ptr, 0, PAGE_SIZE);
-+			for (j = 0; j < PAGE_SIZE; j += sizeof(unsigned long)) {
-+				for (k = 0; k < rmult->multi->num_stripes - 1; k++) {
-+					*(unsigned long *)(p_ptr + j) ^=
-+						*(unsigned long *)(pointers[k] + j);
-+				}
-+			}
-+		}
-+		/* kunmap pages here */
-+	}
-+	kfree(pointers);
-+
-+	/* Now, submit the P and Q blocks as well as the original write */
-+	/* Find which data stripe the original write goes to */
-+
-+	dstripe = pstripe = qstripe = -1;
-+	for (i = 0; i < rmult->multi->num_stripes; i++) {
-+		if (!rmult->bio[i])
-+			dstripe = i;
-+		else if (rmult->raid_map[i] == RAID5_P_STRIPE)
-+			pstripe = i;
-+		else if (rmult->raid_map[i] == RAID6_Q_STRIPE)
-+			qstripe = i;
-+	}
-+
-+	atomic_set(&rmult->multi->stripes_pending, (qstripe == -1)?2:3);
-+
-+	rmult->bio[pstripe]->bi_sector = rmult->multi->stripes[pstripe].physical >> 9;
-+	rmult->bio[pstripe]->bi_private = rmult;
-+	rmult->bio[pstripe]->bi_end_io = raid_write_end_io;
-+	schedule_bio(rmult->root, rmult->multi->stripes[pstripe].dev, WRITE,
-+		     rmult->bio[pstripe]);
-+
-+	if (qstripe != -1) {
-+		rmult->bio[qstripe]->bi_sector = rmult->multi->stripes[qstripe].physical >> 9;
-+		rmult->bio[qstripe]->bi_private = rmult;
-+		rmult->bio[qstripe]->bi_end_io = raid_write_end_io;
-+		schedule_bio(rmult->root, rmult->multi->stripes[qstripe].dev, WRITE,
-+			     rmult->bio[qstripe]);
-+	}
-+
-+	rmult->multi->orig_bio->bi_sector = rmult->multi->stripes[dstripe].physical >> 9;
-+	rmult->multi->orig_bio->bi_private = rmult;
-+	rmult->multi->orig_bio->bi_end_io = raid_write_end_io;
-+	schedule_bio(rmult->root, rmult->multi->stripes[dstripe].dev, WRITE,
-+		     rmult->multi->orig_bio);
-+
-+	return;
-+
-+ cleanup:
-+	for (i = 0; i < rmult->multi->num_stripes; i++) {
-+		if (!rmult->bio[i])
-+			continue;
-+		for (j = 0; j < nr_pages; j++) {
-+			__free_page(rmult->bio[i]->bi_io_vec[j].bv_page);
-+		}
-+		bio_put(rmult->bio[i]);
-+	}
-+	kfree(rmult->raid_map);
-+	kfree(rmult->multi);
-+	kfree(rmult);
-+	mutex_unlock(&raid_hack_mutex);
-+}
-+
-+static struct bio *alloc_raid_stripe_bio(struct btrfs_bio_stripe *stripe,
-+					 u64 len)
-+{
-+	struct bio *bio;
-+
-+	bio = bio_alloc(GFP_NOFS, len >> PAGE_SHIFT?:1);
-+	if (!bio)
-+		return NULL;
-+
-+	bio->bi_size = 0;
-+	bio->bi_bdev = stripe->dev->bdev;
-+	bio->bi_sector = stripe->physical >> 9;
-+
-+	while (len) {
-+		int this = min_t(u64, len, PAGE_SIZE);
-+		struct page *page = alloc_page(GFP_NOFS);
-+		if (!page || bio_add_page(bio, page, this, 0) < this) {
-+			if (page)
-+				__free_page(page);
-+			/* FIXME free pages attached to it */
-+			bio_put(bio);
-+			return NULL;
-+		}
-+		len -= this;
-+	}
-+	return bio;
-+}
-+
-+static int raid56_parity_write(struct btrfs_root *root, struct bio *bio,
-+			       int async, struct btrfs_multi_bio *multi,
-+			       u64 *raid_map, u64 stripe_len)
-+{
-+	int i;
-+	int start_ofs, end_ofs;
-+	int stripes_to_read = 0;
-+	u64 logical = (u64)bio->bi_sector << 9;
-+
-+	struct btrfs_raid_multi_bio *rmult;
-+
-+	rmult = kzalloc(sizeof(*rmult) + multi->num_stripes * sizeof(void *),
-+			GFP_NOFS);
-+	if (!rmult) {
-+		kfree(raid_map);
-+		kfree(multi);
-+		return -ENOMEM;
-+	}
-+	rmult->multi = multi;
-+	rmult->raid_map = raid_map;
-+	rmult->root = root;
-+
-+	/*
-+	 * FIXME: the merge_bio_hook logic currently ensures that writes only
-+	 * cover one stripe, meaning we _always_ have to read the other data
-+	 * stripes to generate the parity (unless we have the minimum number
-+	 * of disks. We want to avoid that read/modify/write cycle somehow by
-+	 * ensuring that the file system submits writes that cover a full
-+	 * stripe-set.
-+	 *
-+	 * When we achieve that, we'll want to split the original write bio
-+	 * into its individual stripes here (which means that the parity
-+	 * calculation code doesn't have to be _completely_ rewritten.) 
-+	 *
-+	 * And we can ditch this mutex too:
-+	 */
-+	mutex_lock(&raid_hack_mutex);
-+
-+	/* What subrange of the stripe are we writing? */
-+	start_ofs = do_div(logical, stripe_len);
-+	end_ofs = start_ofs + bio->bi_size;
-+	BUG_ON(end_ofs > stripe_len);
-+
-+	/* Allocate bios for reading and for the parity and q-stripe writes */
-+	logical = (u64)bio->bi_sector << 9;
-+	for (i = 0; i < multi->num_stripes; i++) {
-+		if (start_ofs) {
-+			if (!is_parity_stripe(raid_map[i]))
-+				raid_map[i] += start_ofs;
-+			multi->stripes[i].physical += start_ofs;
-+		}
-+		if (raid_map[i] == logical) {
-+			/* Set the correct bdev for the original write bio */
-+			bio->bi_bdev = multi->stripes[i].dev->bdev;
-+		} else {
-+			rmult->bio[i] = alloc_raid_stripe_bio(&multi->stripes[i],
-+							      bio->bi_size);
-+			BUG_ON(!rmult->bio[i]); /* FIXME */
-+			rmult->bio[i]->bi_private = rmult;
-+
-+			if (!is_parity_stripe(raid_map[i]))
-+				stripes_to_read++;
-+		}
-+	}
-+	if (!stripes_to_read) {
-+		/* Nothing to read -- just calculate parity and write it all */
-+		atomic_set(&multi->stripes_pending, 1);
-+		bio->bi_private = rmult;
-+		raid_read_end_io(bio, 0);
-+		return 0;
-+	}
-+
-+	atomic_set(&multi->stripes_pending, stripes_to_read);
-+	for (i = 0; i < multi->num_stripes; i++) {
-+		if (rmult->bio[i] && !is_parity_stripe(raid_map[i])) {
-+			rmult->bio[i]->bi_end_io = raid_read_end_io;
-+			if (async)
-+				schedule_bio(root, multi->stripes[i].dev, READ, rmult->bio[i]);
-+			else
-+				submit_bio(READ, rmult->bio[i]);
-+		}
-+	}
-+	return 0;
-+}
-+
-+static int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
-+				 int async, struct btrfs_multi_bio *multi,
-+				 u64 *raid_map, u64 stripe_len, int mirror_num)
-+{
-+	WARN_ON(1);
-+	kfree(multi);
-+	kfree(raid_map);
-+	bio_endio(bio, -EIO);
-+	return 0;
-+}
-+
--- 
-1.6.2.2
+# dmesg -c
+btrfs: unable to go below two devices on raid1
+
+# btrfs-vol -a /dev/sda4 /mnt/btrfs/
+Speicherzugriffsfehler
+
+# dmesg
+btrfs allocation failed flags 18, wanted 4096
+space_info has 8384512 free, is not full
+space_info total=8388608, pinned=0, delalloc=0, may_use=0, used=4096
+block group 20971520 has 8388608 bytes, 4096 used 0 pinned 0 reserved
+entry offset 20975616, bytes 8384512
+1 blocks of free space at or bigger than bytes is
+------------[ cut here ]------------
+kernel BUG at fs/btrfs/extent-tree.c:2930!
+invalid opcode: 0000 [#1] SMP
+last sysfs file: /sys/devices/system/cpu/cpu7/cache/index2/shared_cpu_map
+CPU 1
+Modules linked in: btrfs zlib_deflate crc32c libcrc32c cpufreq_stats tun af_packet fglrx(P) ipv6 coretemp binfmt_misc loop ext3 jbd joydev dm_mod hid_multilaser usbhid cpufreq_ondemand cpufreq_conservative cpufreq_powersave acpi_cpufreq freq_table hid kvm_intel kvm snd_hda_codec_atihdmi snd_hda_codec_realtek snd_hda_intel snd_hda_codec snd_seq_dummy snd_hwdep snd_seq_oss snd_seq_midi_event snd_seq snd_seq_device snd_pcm_oss snd_pcm snd_timer snd_mixer_oss snd pcspkr soundcore e1000e iTCO_wdt iTCO_vendor_support serio_raw snd_page_alloc i2c_i801 rtc_cmos i2c_core evdev thermal processor button wmi ehci_hcd uhci_hcd sr_mod sg usbcore ata_piix ahci libata sd_mod scsi_mod crc_t10dif raid1 ext4 jbd2 crc16
+Pid: 23996, comm: btrfs-vol Tainted: P           2.6.30.1-desktop-1mnb #1
+RIP: 0010:[<ffffffffa06a5426>]  [<ffffffffa06a5426>] __btrfs_reserve_extent+0x296/0x310 [btrfs]
+RSP: 0018:ffff8800bb441808  EFLAGS: 00010246
+RAX: 0000000000000000 RBX: ffff88023cd9da2c RCX: 000000000001ffff
+RDX: 0000000000000000 RSI: 0000000000000246 RDI: 0000000000000246
+RBP: ffff8800bb4418b8 R08: 000000000000ddd9 R09: 000000000000000a
+R10: 0000000000000000 R11: 0000000000000000 R12: ffff88023d644c68
+R13: 0000000000001000 R14: ffff88023d644d30 R15: ffff88023d644d18
+FS:  00007ffc25a67740(0000) GS:ffff88002f21b000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+CR2: 00007f0645383ea4 CR3: 00000000be85c000 CR4: 00000000000026e0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+Process btrfs-vol (pid: 23996, threadinfo ffff8800bb440000, task ffff88013a1a0000)
+Stack:
+ 0000000000000000 ffff8800bb441988 0000000000000000 0000000000000000
+ 0000000000000012 ffff88023fc016d0 ffff8800bb4418a8 ffff880149532000
+ 0000000000000000 ffff8800bb441988 ffffffffffffffff 0000000000000000
+Call Trace:
+ [<ffffffffa06a550e>] btrfs_alloc_extent+0x6e/0x100 [btrfs]
+ [<ffffffffa06a5619>] btrfs_alloc_free_block+0x79/0xd0 [btrfs]
+ [<ffffffffa0693779>] __btrfs_cow_block+0x199/0x880 [btrfs]
+ [<ffffffffa0693f7d>] btrfs_cow_block+0x11d/0x250 [btrfs]
+ [<ffffffffa069a9b6>] btrfs_search_slot+0x476/0x8c0 [btrfs]
+ [<ffffffffa069b5bd>] btrfs_insert_empty_items+0x8d/0x100 [btrfs]
+ [<ffffffffa0691718>] ? btrfs_alloc_path+0x28/0x50 [btrfs]
+ [<ffffffffa06d8d29>] btrfs_add_device+0x89/0x210 [btrfs]
+ [<ffffffff80346db4>] ? kill_bdev+0x44/0x70
+ [<ffffffffa06ddc4a>] btrfs_init_new_device+0x65a/0xb20 [btrfs]
+ [<ffffffffa06e0b8d>] ? btrfs_ioctl+0x3cd/0x910 [btrfs]
+ [<ffffffffa06e0baf>] btrfs_ioctl+0x3ef/0x910 [btrfs]
+ [<ffffffff80325680>] vfs_ioctl+0x30/0xd0
+ [<ffffffff8034de53>] ? inotify_inode_queue_event+0xf3/0x130
+ [<ffffffff80213ece>] ? apic_timer_interrupt+0xe/0x20
+ [<ffffffff80325e5b>] do_vfs_ioctl+0x31b/0x5b0
+ [<ffffffff8027cd6c>] ? up_read+0x1c/0x40
+ [<ffffffff80326189>] sys_ioctl+0x99/0xc0
+ [<ffffffff80213342>] system_call_fastpath+0x16/0x1b
+Code: 4c 8b 63 58 49 81 ec b0 00 00 00 49 8b 84 24 b0 00 00 00 0f 18 08 49 8d 84 24 b0 00 00 00 49 39 c7 75 27 4c 89 f7 e8 2a 79 bd df <0f> 0b eb fe be 5c 0b 00 00 48 c7 c7 9b d2 6e a0 e8 05 5d bb df
+RIP  [<ffffffffa06a5426>] __btrfs_reserve_extent+0x296/0x310 [btrfs]
+ RSP <ffff8800bb441808>
+---[ end trace a51370eaca1eb6d6 ]---
 
 
 -- 
-David Woodhouse                            Open Source Technology Centre
-David.Woodhouse@intel.com                              Intel Corporation
-
+Tomasz Chmielewski
+http://wpkg.org

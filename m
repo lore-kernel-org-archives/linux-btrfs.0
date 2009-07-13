@@ -1,45 +1,61 @@
-From: David Woodhouse <dwmw2@infradead.org>
-Subject: Re: [PATCH] brtfs: less- and greater than confusion
-Date: Mon, 13 Jul 2009 14:28:04 +0100
-Message-ID: <1247491684.19180.178.camel@macbook.infradead.org>
-References: <4A5A6418.2070906@gmail.com>  <20090713132252.GB4704@think>
+From: Tomasz Chmielewski <mangoo@wpkg.org>
+Subject: Re: replacing failed disks in RAID-1 (kernel BUG)?
+Date: Mon, 13 Jul 2009 15:35:48 +0200
+Message-ID: <4A5B3834.1040003@wpkg.org>
+References: <4A5B0C39.5030905@wpkg.org> <1247491413.19180.172.camel@macbook.infradead.org>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Roel Kluin <roel.kluin@gmail.com>, linux-btrfs@vger.kernel.org,
-	Andrew Morton <akpm@linux-foundation.org>, yan.zheng@oracle.com
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: linux-btrfs@vger.kernel.org
+To: David Woodhouse <dwmw2@infradead.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090713132252.GB4704@think>
+In-Reply-To: <1247491413.19180.172.camel@macbook.infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2009-07-13 at 09:22 -0400, Chris Mason wrote:
-> On Mon, Jul 13, 2009 at 12:30:48AM +0200, Roel Kluin wrote:
-> > Without this the loop won't start
-> > 
-> > Signed-off-by: Roel Kluin <roel.kluin@gmail.com>
-> > ---
-> > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> > index 3ab80e9..2c873c9 100644
-> > --- a/fs/btrfs/volumes.c
-> > +++ b/fs/btrfs/volumes.c
-> > @@ -2795,7 +2795,7 @@ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
-> >  		}
-> >  	}
-> >  
-> > -	for (i = 0; i > nr; i++) {
-> > +	for (i = 0; i < nr; i++) {
-> >  		struct btrfs_multi_bio *multi;
-> >  		struct btrfs_bio_stripe *stripe;
-> >  		int ret;
+David Woodhouse wrote:
+> On Mon, 2009-07-13 at 12:28 +0200, Tomasz Chmielewski wrote:
+>> How do I replace failed disks in RAID-1 mode?
 > 
-> Thanks, this does look buggy.  That second loop should just be to verify
-> the first loop didn't mess things up.  Yan Zheng, is there any reason we
-> shouldn't delete it?
+> I don't think you can. In theory you can remove the broken one, and you
+> can add a _new_ empty one -- I say 'in theory' because you seem to have
+> demonstrated both of those actions failing.
+> 
+> But I don't believe we have yet implemented anything to let you
+> _replace_ a failed disk and recreate its original contents.
+> 
+> I had that on my TODO list for some time after I get the basic RAID[56]
+> operation working.
 
-I deleted it in my tree because it made my head hurt for RAID5:
-http://git.infradead.org/users/dwmw2/btrfs-raid56.git?a=commitdiff;h=93562d49
+It would be also interesting to have a tool to monitor the state of the 
+RAID (i.e. similar to what /proc/mdstat provides for md).
+
+
+I also tried to compare what happens when we do writes to md-raid and to 
+btrfs-raid (RAID-1 in both cases) and it looks... strange for btrfs. Or 
+perhaps this is how RAID-1 works in btrfs?
+
+I used iostat to monitor the writes on both devices.
+
+
+With md RAID-1, when we do:
+
+# dd if=/dev/zero of=/mnt/md-raid-1/testfile
+
+and
+
+# iostat -dk 1
+
+
+We can see the write speed on both devices is more or less the same.
+
+
+With btrfs RAID-1, when we do the same, I can see that writes go to one 
+drive, while the second drive receives 0 kb/s writes; then it changes 
+(one drive is written to, the second isn't). Only sometimes, writes 
+happen concurrently to both drives, like with md RAID-1.
+
+Is it intended?
+
 
 -- 
-David Woodhouse                            Open Source Technology Centre
-David.Woodhouse@intel.com                              Intel Corporation
-
+Tomasz Chmielewski
+http://wpkg.org

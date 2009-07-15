@@ -1,27 +1,37 @@
 From: Yan Zheng <zheng.yan@oracle.com>
-Subject: [PATCH] fix definition of struct btrfs_extent_inline_ref
-Date: Wed, 15 Jul 2009 15:33:39 +0800
-Message-ID: <4A5D8653.2070808@oracle.com>
+Subject: [PATCH] properly update space information after shrinking device.
+Date: Wed, 15 Jul 2009 15:33:48 +0800
+Message-ID: <4A5D865C.7090406@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+To: chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-use __le64 instead of u64 in on-disk structure definition.
+change 'goto done' to 'break' for the case of all device extents have
+been freed, so that the code updates space information will be execute.
 
 Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
 
 ---
-diff -urp 1/fs/btrfs/ctree.h 2/fs/btrfs/ctree.h
---- 1/fs/btrfs/ctree.h	2009-07-03 08:08:34.148847040 +0800
-+++ 2/fs/btrfs/ctree.h	2009-07-15 14:59:31.779493061 +0800
-@@ -483,7 +483,7 @@ struct btrfs_shared_data_ref {
+diff -urp 1/fs/btrfs/volumes.c 2/fs/btrfs/volumes.c
+--- 1/fs/btrfs/volumes.c	2009-06-12 21:32:39.847088561 +0800
++++ 2/fs/btrfs/volumes.c	2009-07-15 14:49:41.064455477 +0800
+@@ -2007,7 +2007,7 @@ int btrfs_shrink_device(struct btrfs_dev
+ 			goto done;
+ 		if (ret) {
+ 			ret = 0;
+-			goto done;
++			break;
+ 		}
  
- struct btrfs_extent_inline_ref {
- 	u8 type;
--	u64 offset;
-+	__le64 offset;
- } __attribute__ ((__packed__));
+ 		l = path->nodes[0];
+@@ -2015,7 +2015,7 @@ int btrfs_shrink_device(struct btrfs_dev
+ 		btrfs_item_key_to_cpu(l, &key, path->slots[0]);
  
- /* old style backrefs item */
+ 		if (key.objectid != device->devid)
+-			goto done;
++			break;
+ 
+ 		dev_extent = btrfs_item_ptr(l, slot, struct btrfs_dev_extent);
+ 		length = btrfs_dev_extent_length(l, dev_extent);

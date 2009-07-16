@@ -1,38 +1,24 @@
-From: "H. Peter Anvin" <hpa@zytor.com>
-Subject: Re: [PATCH 1/4] md: Factor out RAID6 algorithms into lib/
-Date: Thu, 16 Jul 2009 13:38:24 -0400
-Message-ID: <4A5F6590.9000006@zytor.com>
-References: <1247494302.19180.268.camel@macbook.infradead.org> <e9c3a7c20907151223j1d976ea9gdd224c9e6c2c36e3@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Btrfs warnings: -rc2
+Date: Thu, 16 Jul 2009 14:32:50 -0400
+Message-ID: <20090716183250.GC3883@think>
+References: <4A5F3AD9.5040005@rambler.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: David Woodhouse <dwmw2@infradead.org>, chris.mason@oracle.com,
-	linux-btrfs@vger.kernel.org, neilb@suse.de,
-	linux-raid@vger.kernel.org
-To: Dan Williams <dan.j.williams@intel.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Michael Raskin <a0091f122@rambler.ru>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <e9c3a7c20907151223j1d976ea9gdd224c9e6c2c36e3@mail.gmail.com>
+In-Reply-To: <4A5F3AD9.5040005@rambler.ru>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dan Williams wrote:
-> On Mon, Jul 13, 2009 at 7:11 AM, David Woodhouse<dwmw2@infradead.org> wrote:
->> We'll want to use these in btrfs too.
->>
->> Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+On Thu, Jul 16, 2009 at 06:36:09PM +0400, Michael Raskin wrote:
+> 	I checked the same usage scenario with -rc2 kernel..
 > 
-> Do you suspect that btrfs will also want to perform these operations
-> asynchronously?  I am preparing an updated release of the raid6
-> offload patch kit, but the previous WIP release can be browsed at:
-> 
-> http://git.kernel.org/?p=linux/kernel/git/djbw/async_tx.git;a=shortlog;h=raid6
-> 
-> The routines are housed in crypto/async_tx/async_pq.c and
-> crypto/async_tx/async_raid6_recov.c.
-> 
-> I also wonder if the raid6 algos are a better fit under crypto/ alongside xor?
-> 
+> 	Looks like it is just because of allmodconfig. Interesting fact,
+> though: now warnings are thrown on on-disk operations, errors are on
+> rbtree operations.
 
-I am also sitting on a set of synchronous (CPU) acceleration patches for 
-RAID-6 recovery, just waiting for the APIs to stabilize.
+Could you please touch foo ; ls -lai foo and send us the results.  Yan
+Zheng has a theory that it is related to inode numbers
 
-	-hpa
-
+-chris

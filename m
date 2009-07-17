@@ -1,99 +1,57 @@
-From: Yan Zheng <yanzheng@21cn.com>
-Subject: Re: Ghost file.
-Date: Fri, 17 Jul 2009 14:44:46 +0800
-Message-ID: <3d0408630907162344o5ed0b1fen807e67c5c87c42fa@mail.gmail.com>
-References: <4A539C7B.7000506@mccme.ru>
+From: David Woodhouse <dwmw2@infradead.org>
+Subject: [PATCH] Btrfs: Fix crash on read failures at mount
+Date: Fri, 17 Jul 2009 12:02:25 +0100
+Message-ID: <1247828545.22313.55.camel@macbook.infradead.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain
 Cc: linux-btrfs@vger.kernel.org
-To: Raskin Michael <raskin@mccme.ru>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4A539C7B.7000506@mccme.ru>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2009/7/8 Raskin Michael <raskin@mccme.ru>:
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
->
-> I mentioned a ghost file. Here is the dump (less than 65M):
-> http://dev.mccme.ru/~raskin/btrfs.dump
->
-> ghost file is:
-> 885dj1l4788pymp3bk2f3dz52ggcvw4v-empty/garbage-1/mwave.h.tmp-31838-18=
-22528541
->
-> It has a name, but stat fails (so no inode, I guess). Also I can crea=
-te
-> another file with the same name in the directory. I cannot remove the
-> file, or containing directory.
->
-> fsck output:
->
-> root 5 inode 273 errors 0
-> =A0 =A0 =A0 =A0unresolved ref dir 270 index 2 namelen 4 name attr fil=
-etype 0
-> error 3
-> root 5 inode 274 errors 0
-> =A0 =A0 =A0 =A0unresolved ref dir 271 index 2 namelen 2 name cs filet=
-ype 0 error 3
-> root 5 inode 275 errors 0
-> =A0 =A0 =A0 =A0unresolved ref dir 271 index 3 namelen 2 name de filet=
-ype 0 error 3
-> root 5 inode 276 errors 0
-> =A0 =A0 =A0 =A0unresolved ref dir 271 index 4 namelen 2 name es filet=
-ype 0 error 3
-> root 5 inode 277 errors 0
-> =A0 =A0 =A0 =A0unresolved ref dir 271 index 5 namelen 2 name fr filet=
-ype 0 error 3
-> root 5 inode 278 errors 0
-> =A0 =A0 =A0 =A0unresolved ref dir 271 index 6 namelen 2 name gl filet=
-ype 0 error 3
-> root 5 inode 279 errors 0
-> =A0 =A0 =A0 =A0unresolved ref dir 271 index 7 namelen 2 name nl filet=
-ype 0 error 3
-> root 5 inode 280 errors 0
-> =A0 =A0 =A0 =A0unresolved ref dir 271 index 8 namelen 2 name pl filet=
-ype 0 error 3
-> root 5 inode 281 errors 0
-> =A0 =A0 =A0 =A0unresolved ref dir 271 index 9 namelen 2 name sv filet=
-ype 0 error 3
-> root 5 inode 290 errors 0
-> =A0 =A0 =A0 =A0unresolved ref dir 272 index 2 namelen 4 name man1 fil=
-etype 0
-> error 3
-> root 5 inode 291 errors 0
-> =A0 =A0 =A0 =A0unresolved ref dir 272 index 3 namelen 4 name man2 fil=
-etype 0
-> error 3
-> root 5 inode 292 errors 0
-> =A0 =A0 =A0 =A0unresolved ref dir 272 index 4 namelen 4 name man3 fil=
-etype 0
-> error 3
-> root 5 inode 293 errors 0
-> =A0 =A0 =A0 =A0unresolved ref dir 272 index 5 namelen 4 name man5 fil=
-etype 0
-> error 3
-> root 5 inode 316 errors 2000
-> =A0 =A0 =A0 =A0unresolved ref dir 353285 index 1288 namelen 28 name
-> mwave.h.tmp-31838-1822528541 filetype 1 error 1
-> root 5 inode 353285 errors 200
-> found 11118575893 bytes used err is 1
-> total csum bytes: 10369224
-> total tree bytes: 433348608
-> total fs tree bytes: 373395456
-> btree space waste bytes: 106980960
-> file data blocks allocated: 10831892480
-> =A0referenced 10617970688
-> Btrfs Btrfs v0.19
+I spent a while this morning trying to work out how I'd screwed up
+parity recovery on RAID5, before coming to my senses and realising that
+I was still using my RAID6 test case -- and knocking two drives out of a
+RAID5 array is _expected_ to fail.
 
-I suspect these errors were caused by an unknown tree log bug.
-Would you please mount btrfs with -o notreelog option from now on,
-and check if you still get more errors.
+My code was doing _exactly_ the right thing, and failing the bio with
+-EIO. But then we were using the stale buffers anyway. This patch fixes
+a couple of places where we do that, and gives me a much saner failure
+mode. There are probably other places which need a similar fix.
 
-Thank you
-Yan, Zheng
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 0d50d49..55d9d18 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1783,6 +1783,11 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 					   btrfs_super_chunk_root(disk_super),
+ 					   blocksize, generation);
+ 	BUG_ON(!chunk_root->node);
++	if (!test_bit(EXTENT_BUFFER_UPTODATE, &chunk_root->node->bflags)) {
++		printk(KERN_WARNING "btrfs: failed to read chunk root on %s\n",
++		       sb->s_id);
++		goto fail_chunk_root;
++	}
+ 	btrfs_set_root_node(&chunk_root->root_item, chunk_root->node);
+ 	chunk_root->commit_root = btrfs_root_node(chunk_root);
+ 
+@@ -1810,6 +1815,11 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 					  blocksize, generation);
+ 	if (!tree_root->node)
+ 		goto fail_chunk_root;
++	if (!test_bit(EXTENT_BUFFER_UPTODATE, &tree_root->node->bflags)) {
++		printk(KERN_WARNING "btrfs: failed to read tree root on %s\n",
++		       sb->s_id);
++		goto fail_tree_root;
++	}
+ 	btrfs_set_root_node(&tree_root->root_item, tree_root->node);
+ 	tree_root->commit_root = btrfs_root_node(tree_root);
+ 
+
+
+-- 
+David Woodhouse                            Open Source Technology Centre
+David.Woodhouse@intel.com                              Intel Corporation
+

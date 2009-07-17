@@ -1,57 +1,56 @@
-From: David Woodhouse <dwmw2@infradead.org>
-Subject: [PATCH] Btrfs: Fix crash on read failures at mount
-Date: Fri, 17 Jul 2009 12:02:25 +0100
-Message-ID: <1247828545.22313.55.camel@macbook.infradead.org>
+From: Ric Wheeler <rwheeler@redhat.com>
+Subject: Re: [PATCH 1/4] md: Factor out RAID6 algorithms into lib/
+Date: Fri, 17 Jul 2009 10:22:11 -0400
+Message-ID: <4A608913.1060808@redhat.com>
+References: <1247494302.19180.268.camel@macbook.infradead.org> <e9c3a7c20907151223j1d976ea9gdd224c9e6c2c36e3@mail.gmail.com> <4A5F6590.9000006@zytor.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Dan Williams <dan.j.williams@intel.com>,
+	David Woodhouse <dwmw2@infradead.org>, chris.mason@oracle.com,
+	linux-btrfs@vger.kernel.org, neilb@suse.de,
+	linux-raid@vger.kernel.org
+To: "H. Peter Anvin" <hpa@zytor.com>
+Return-path: <linux-raid-owner@vger.kernel.org>
+In-Reply-To: <4A5F6590.9000006@zytor.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I spent a while this morning trying to work out how I'd screwed up
-parity recovery on RAID5, before coming to my senses and realising that
-I was still using my RAID6 test case -- and knocking two drives out of a
-RAID5 array is _expected_ to fail.
+On 07/16/2009 01:38 PM, H. Peter Anvin wrote:
+> Dan Williams wrote:
+>> On Mon, Jul 13, 2009 at 7:11 AM, David Woodhouse<dwmw2@infradead.org> 
+>> wrote:
+>>> We'll want to use these in btrfs too.
+>>>
+>>> Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+>>
+>> Do you suspect that btrfs will also want to perform these operations
+>> asynchronously?  I am preparing an updated release of the raid6
+>> offload patch kit, but the previous WIP release can be browsed at:
+>>
+>> http://git.kernel.org/?p=linux/kernel/git/djbw/async_tx.git;a=shortlog;h=raid6 
+>>
+>>
+>> The routines are housed in crypto/async_tx/async_pq.c and
+>> crypto/async_tx/async_raid6_recov.c.
+>>
+>> I also wonder if the raid6 algos are a better fit under crypto/ 
+>> alongside xor?
+>>
+>
+> I am also sitting on a set of synchronous (CPU) acceleration patches 
+> for RAID-6 recovery, just waiting for the APIs to stabilize.
+>
+>     -hpa
+>
 
-My code was doing _exactly_ the right thing, and failing the bio with
--EIO. But then we were using the stale buffers anyway. This patch fixes
-a couple of places where we do that, and gives me a much saner failure
-mode. There are probably other places which need a similar fix.
+Worth sharing a pointer to a really neat set of papers that describe 
+open source friendly RAID6 and erasure encoding algorithms that were 
+presented last year and this at FAST:
 
-Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+http://www.cs.utk.edu/~plank/plank/papers/papers.html
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 0d50d49..55d9d18 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1783,6 +1783,11 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 					   btrfs_super_chunk_root(disk_super),
- 					   blocksize, generation);
- 	BUG_ON(!chunk_root->node);
-+	if (!test_bit(EXTENT_BUFFER_UPTODATE, &chunk_root->node->bflags)) {
-+		printk(KERN_WARNING "btrfs: failed to read chunk root on %s\n",
-+		       sb->s_id);
-+		goto fail_chunk_root;
-+	}
- 	btrfs_set_root_node(&chunk_root->root_item, chunk_root->node);
- 	chunk_root->commit_root = btrfs_root_node(chunk_root);
- 
-@@ -1810,6 +1815,11 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 					  blocksize, generation);
- 	if (!tree_root->node)
- 		goto fail_chunk_root;
-+	if (!test_bit(EXTENT_BUFFER_UPTODATE, &tree_root->node->bflags)) {
-+		printk(KERN_WARNING "btrfs: failed to read tree root on %s\n",
-+		       sb->s_id);
-+		goto fail_tree_root;
-+	}
- 	btrfs_set_root_node(&tree_root->root_item, tree_root->node);
- 	tree_root->commit_root = btrfs_root_node(tree_root);
- 
+If I remember correctly, James Plank's papers also have implemented and 
+benchmarked the various encodings,
 
+Ric
 
--- 
-David Woodhouse                            Open Source Technology Centre
-David.Woodhouse@intel.com                              Intel Corporation
 

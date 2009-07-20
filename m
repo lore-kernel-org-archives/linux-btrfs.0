@@ -1,51 +1,45 @@
-From: =?ISO-8859-1?Q?S=E9bastien_Wacquiez?= <sw@enix.org>
-Subject: Re: Offtopic: Which SAS / SATA HBA do you recommend?
-Date: Mon, 20 Jul 2009 12:22:56 +0200
-Message-ID: <4A644580.7000401@enix.org>
-References: <20090720092838.GA1375@cumulus>
+From: Daniel Cadete <danielcadete10@gmail.com>
+Subject: [PATCH] Remove of redundant btrfs_header_level
+Date: Mon, 20 Jul 2009 12:18:31 +0100
+Message-ID: <60f1813f0907200418i88a8e9x572ae04dc7d762fa@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: sander@humilis.net
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090720092838.GA1375@cumulus>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sander wrote:
-> What SAS (or SATA) controller do you use or recommend in combination
-> with a SSD and BTRFS?
-> I'm looking for a non-RAID controller with four or eight ports and of
-> course full Linux support.
->  =20
-Hi,
+This removes the continues call's of btrfs_header_level. One call of
+btrfs_header_level(c) its enough.
 
-I don't have any ssd yet, but if you want cheap card without hardware
-raid, you could look at those :
+Signed-off-by Daniel Cadete <danielncadete10@gmail.com>
 
-http://www.supermicro.com/products/accessories/addon/AOC-USASLP-L8i.cfm
-http://www.supermicro.com/products/accessories/addon/AOC-USAS-L8i.cfm
-
-You'll need to revert the bracket as they're designed to be in a
-supermicro UIO slot (In fact, they are just standart PCIe card upside
-down). They use the mptsas driver in linux which works ok for a long
-time, and can be found for ~ 130$. It work pretty fast (~ 800 Mo/s with
-a 8 drives raid10f2 in my brand new nehalem server).
-
-You can also find this one  for ~ 120 bucks :
-http://www.supermicro.com/products/accessories/addon/AOC-SASLP-MV8.cfm
-
-No proprietary slot this time, the chipset is supported in 2.6.30 (but =
-I
-haven't tested it yet) via the mvsas drivers.
-
-
-Hope you find this usefull.
-
-
-
-Wacquiez S=E9bastien
+---
+diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
+index 6d6523d..533c82d 100644
+--- a/fs/btrfs/print-tree.c
++++ b/fs/btrfs/print-tree.c
+@@ -309,7 +309,7 @@ void btrfs_print_tree(struct btrfs_root *root,
+struct extent_buffer *c)
+        }
+        printk(KERN_INFO "node %llu level %d total ptrs %d free spc %u\n",
+               (unsigned long long)btrfs_header_bytenr(c),
+-              btrfs_header_level(c), nr,
++              level, nr,
+               (u32)BTRFS_NODEPTRS_PER_BLOCK(root) - nr);
+        for (i = 0; i < nr; i++) {
+                btrfs_node_key_to_cpu(c, &key, i);
+@@ -326,10 +326,10 @@ void btrfs_print_tree(struct btrfs_root *root,
+struct extent_buffer *c)
+                                        btrfs_level_size(root, level - 1),
+                                        btrfs_node_ptr_generation(c, i));
+                if (btrfs_is_leaf(next) &&
+-                   btrfs_header_level(c) != 1)
++                   level != 1)
+                        BUG();
+                if (btrfs_header_level(next) !=
+-                       btrfs_header_level(c) - 1)
++                       level - 1)
+                        BUG();
+                btrfs_print_tree(root, next);
+                free_extent_buffer(next);
 --
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

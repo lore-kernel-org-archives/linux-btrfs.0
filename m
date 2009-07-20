@@ -1,43 +1,56 @@
-From: Daniel Cadete <danielcadete10@gmail.com>
-Subject: [PATCH] Remove of redundant btrfs_header_level
-Date: Mon, 20 Jul 2009 12:44:33 +0100
-Message-ID: <60f1813f0907200444t664b9e8es6b74c58b0a6dd9a7@mail.gmail.com>
-References: <60f1813f0907191846q5dbc909fhb1379faa9ccd8408@mail.gmail.com>
+From: Sander <sander@humilis.net>
+Subject: Re: Offtopic: Which SAS / SATA HBA do you recommend?
+Date: Mon, 20 Jul 2009 14:16:53 +0200
+Message-ID: <20090720121653.GA2181@cumulus>
+References: <20090720092838.GA1375@cumulus>
+ <4A644580.7000401@enix.org>
+Reply-To: sander@humilis.net
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: chris Mason <chris.mason@oracle.com>
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, sander@humilis.net
+To: S?bastien Wacquiez <sw@enix.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <60f1813f0907191846q5dbc909fhb1379faa9ccd8408@mail.gmail.com>
+In-Reply-To: <4A644580.7000401@enix.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-SSBmb3Jnb3QgdG8gQ2MgQ2hyaXMgTWFzb24gaW4gdGhlIHByZXZpb3VzIGVtYWlsLgoKCi0tLS0t
-LS0tLS0gRm9yd2FyZGVkIG1lc3NhZ2UgLS0tLS0tLS0tLQpGcm9tOiBEYW5pZWwgQ2FkZXRlIDxk
-YW5pZWxjYWRldGUxMEBnbWFpbC5jb20+CkRhdGU6IDIwMDkvNy8yMApTdWJqZWN0OiBbUEFUQ0hd
-IFJlbW92ZSBvZiByZWR1bmRhbnQgYnRyZnNfaGVhZGVyX2xldmVsClRvOiBsaW51eC1idHJmc0B2
-Z2VyLmtlcm5lbC5vcmcKCgpUaGlzIHJlbW92ZXMgdGhlIGNvbnRpbnVlcyBjYWxsJ3Mgb2YgYnRy
-ZnNfaGVhZGVyX2xldmVsLiBPbmUgY2FsbCBvZgpidHJmc19oZWFkZXJfbGV2ZWwoYykgaXRzIGVu
-b3VnaC4KClNpZ25lZC1vZmYtYnkgRGFuaWVsIENhZGV0ZSA8ZGFuaWVsbmNhZGV0ZTEwQGdtYWls
-LmNvbT4KCi0tLQpkaWZmIC0tZ2l0IGEvZnMvYnRyZnMvcHJpbnQtdHJlZS5jIGIvZnMvYnRyZnMv
-cHJpbnQtdHJlZS5jCmluZGV4IDZkNjUyM2QuLjUzM2M4MmQgMTAwNjQ0Ci0tLSBhL2ZzL2J0cmZz
-L3ByaW50LXRyZWUuYworKysgYi9mcy9idHJmcy9wcmludC10cmVlLmMKQEAgLTMwOSw3ICszMDks
-NyBAQCB2b2lkIGJ0cmZzX3ByaW50X3RyZWUoc3RydWN0IGJ0cmZzX3Jvb3QgKnJvb3QsCnN0cnVj
-dCBleHRlbnRfYnVmZmVyICpjKQqgoKCgoKCgIH0KoKCgoKCgoCBwcmludGsoS0VSTl9JTkZPICJu
-b2RlICVsbHUgbGV2ZWwgJWQgdG90YWwgcHRycyAlZCBmcmVlIHNwYyAldVxuIiwKoKCgoKCgoKCg
-oKCgoKAgKHVuc2lnbmVkIGxvbmcgbG9uZylidHJmc19oZWFkZXJfYnl0ZW5yKGMpLAotoKCgoKCg
-oKCgoKCgoCBidHJmc19oZWFkZXJfbGV2ZWwoYyksIG5yLAoroKCgoKCgoKCgoKCgoCBsZXZlbCwg
-bnIsCqCgoKCgoKCgoKCgoKCgICh1MzIpQlRSRlNfTk9ERVBUUlNfUEVSX0JMT0NLKHJvb3QpIC0g
-bnIpOwqgoKCgoKCgIGZvciAoaSA9IDA7IGkgPCBucjsgaSsrKSB7CqCgoKCgoKCgoKCgoKCgoCBi
-dHJmc19ub2RlX2tleV90b19jcHUoYywgJmtleSwgaSk7CkBAIC0zMjYsMTAgKzMyNiwxMCBAQCB2
-b2lkIGJ0cmZzX3ByaW50X3RyZWUoc3RydWN0IGJ0cmZzX3Jvb3QgKnJvb3QsCnN0cnVjdCBleHRl
-bnRfYnVmZmVyICpjKQqgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKAgYnRy
-ZnNfbGV2ZWxfc2l6ZShyb290LCBsZXZlbCAtIDEpLAqgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCg
-oKCgoKCgoKCgoKCgoKAgYnRyZnNfbm9kZV9wdHJfZ2VuZXJhdGlvbihjLCBpKSk7CqCgoKCgoKCg
-oKCgoKCgoCBpZiAoYnRyZnNfaXNfbGVhZihuZXh0KSAmJgotoKCgoKCgoKCgoKCgoKCgoKCgIGJ0
-cmZzX2hlYWRlcl9sZXZlbChjKSAhPSAxKQoroKCgoKCgoKCgoKCgoKCgoKCgIGxldmVsICE9IDEp
-CqCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgIEJVRygpOwqgoKCgoKCgoKCgoKCgoKAgaWYgKGJ0cmZz
-X2hlYWRlcl9sZXZlbChuZXh0KSAhPQotoKCgoKCgoKCgoKCgoKCgoKCgoKCgoCBidHJmc19oZWFk
-ZXJfbGV2ZWwoYykgLSAxKQoroKCgoKCgoKCgoKCgoKCgoKCgoKCgoCBsZXZlbCAtIDEpCqCgoKCg
-oKCgoKCgoKCgoKCgoKCgoKCgIEJVRygpOwqgoKCgoKCgoKCgoKCgoKAgYnRyZnNfcHJpbnRfdHJl
-ZShyb290LCBuZXh0KTsKoKCgoKCgoKCgoKCgoKCgIGZyZWVfZXh0ZW50X2J1ZmZlcihuZXh0KTsK
-LS0K
+S?bastien Wacquiez wrote (ao):
+> Sander wrote:
+> > What SAS (or SATA) controller do you use or recommend in combination
+> > with a SSD and BTRFS?
+> > I'm looking for a non-RAID controller with four or eight ports and
+> > of course full Linux support.
+> 
+> I don't have any ssd yet, but if you want cheap card without hardware
+> raid, you could look at those :
+> 
+> http://www.supermicro.com/products/accessories/addon/AOC-USASLP-L8i.cfm
+> http://www.supermicro.com/products/accessories/addon/AOC-USAS-L8i.cfm
+> 
+> You'll need to revert the bracket as they're designed to be in a
+> supermicro UIO slot (In fact, they are just standart PCIe card upside
+> down). They use the mptsas driver in linux which works ok for a long
+> time, and can be found for ~ 130$. It work pretty fast (~ 800 Mo/s with
+> a 8 drives raid10f2 in my brand new nehalem server).
+> 
+> You can also find this one  for ~ 120 bucks :
+> http://www.supermicro.com/products/accessories/addon/AOC-SASLP-MV8.cfm
+> 
+> No proprietary slot this time, the chipset is supported in 2.6.30 (but I
+> haven't tested it yet) via the mvsas drivers.
+> 
+> Hope you find this usefull.
+
+Very useful, much appreciated, thanks!
+
+I think I go for a Marvell based controller (again), as Marvell chips
+seem to have quite a history when it comes to open source drivers.
+
+No more Adaptec ..
+
+Thanks again Sebastien.
+
+	With kind regards, Sander
+
+-- 
+Humilis IT Services and Solutions
+http://www.humilis.net

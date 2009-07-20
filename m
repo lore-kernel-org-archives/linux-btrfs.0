@@ -1,45 +1,31 @@
-From: Daniel Cadete <danielcadete10@gmail.com>
-Subject: [PATCH] Remove of redundant btrfs_header_level
-Date: Mon, 20 Jul 2009 12:18:31 +0100
-Message-ID: <60f1813f0907200418i88a8e9x572ae04dc7d762fa@mail.gmail.com>
+From: Yan Zheng <zheng.yan@oracle.com>
+Subject: [PATCH] Fix corner case in btrfs_next_leaf
+Date: Mon, 20 Jul 2009 19:27:44 +0800
+Message-ID: <4A6454B0.4030703@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+To: chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This removes the continues call's of btrfs_header_level. One call of
-btrfs_header_level(c) its enough.
+if 1 is returned by btrfs_search_slot, the path already points to the
+first item with 'key > searching key'. So increasing path->slots[0] by
+one is superfluous in that case.
 
-Signed-off-by Daniel Cadete <danielncadete10@gmail.com>
+Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
 
 ---
-diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
-index 6d6523d..533c82d 100644
---- a/fs/btrfs/print-tree.c
-+++ b/fs/btrfs/print-tree.c
-@@ -309,7 +309,7 @@ void btrfs_print_tree(struct btrfs_root *root,
-struct extent_buffer *c)
-        }
-        printk(KERN_INFO "node %llu level %d total ptrs %d free spc %u\n",
-               (unsigned long long)btrfs_header_bytenr(c),
--              btrfs_header_level(c), nr,
-+              level, nr,
-               (u32)BTRFS_NODEPTRS_PER_BLOCK(root) - nr);
-        for (i = 0; i < nr; i++) {
-                btrfs_node_key_to_cpu(c, &key, i);
-@@ -326,10 +326,10 @@ void btrfs_print_tree(struct btrfs_root *root,
-struct extent_buffer *c)
-                                        btrfs_level_size(root, level - 1),
-                                        btrfs_node_ptr_generation(c, i));
-                if (btrfs_is_leaf(next) &&
--                   btrfs_header_level(c) != 1)
-+                   level != 1)
-                        BUG();
-                if (btrfs_header_level(next) !=
--                       btrfs_header_level(c) - 1)
-+                       level - 1)
-                        BUG();
-                btrfs_print_tree(root, next);
-                free_extent_buffer(next);
---
+diff -urp 1/fs/btrfs/ctree.c 2/fs/btrfs/ctree.c
+--- 1/fs/btrfs/ctree.c	2009-07-17 16:05:20.583924545 +0800
++++ 2/fs/btrfs/ctree.c	2009-07-20 14:52:49.715697336 +0800
+@@ -4146,7 +4175,8 @@ again:
+ 	 * advance the path if there are now more items available.
+ 	 */
+ 	if (nritems > 0 && path->slots[0] < nritems - 1) {
+-		path->slots[0]++;
++		if (ret == 0)
++			path->slots[0]++;
+ 		ret = 0;
+ 		goto done;
+ 	}
+

@@ -1,45 +1,49 @@
-From: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
+From: =?ISO-8859-1?Q?S=E9bastien_Wacquiez?= <sw@enix.org>
 Subject: Re: Offtopic: Which SAS / SATA HBA do you recommend?
-Date: Mon, 20 Jul 2009 12:15:38 +0200
-Message-ID: <60C47D35-D393-45B7-91A0-5225DC673DF8@karlsbakk.net>
+Date: Mon, 20 Jul 2009 12:22:56 +0200
+Message-ID: <4A644580.7000401@enix.org>
 References: <20090720092838.GA1375@cumulus>
-Reply-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Mime-Version: 1.0 (Apple Message framework v935.3)
-Content-Type: text/plain; charset=ISO-8859-1;
-	format=flowed	delsp=yes
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: sander@humilis.net
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <20090720092838.GA1375@cumulus>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 20. juli. 2009, at 11.28, Sander wrote:
+Sander wrote:
+> What SAS (or SATA) controller do you use or recommend in combination
+> with a SSD and BTRFS?
+> I'm looking for a non-RAID controller with four or eight ports and of
+> course full Linux support.
+>  =20
+Hi,
 
-> Hi all,
->
-> Sorry for the offtopic question. I hope though that others on this =20
-> list
-> or reading the archive find the answers useful too.
+I don't have any ssd yet, but if you want cheap card without hardware
+raid, you could look at those :
+
+http://www.supermicro.com/products/accessories/addon/AOC-USASLP-L8i.cfm
+http://www.supermicro.com/products/accessories/addon/AOC-USAS-L8i.cfm
+
+You'll need to revert the bracket as they're designed to be in a
+supermicro UIO slot (In fact, they are just standart PCIe card upside
+down). They use the mptsas driver in linux which works ok for a long
+time, and can be found for ~ 130$. It work pretty fast (~ 800 Mo/s with
+a 8 drives raid10f2 in my brand new nehalem server).
+
+You can also find this one  for ~ 120 bucks :
+http://www.supermicro.com/products/accessories/addon/AOC-SASLP-MV8.cfm
+
+No proprietary slot this time, the chipset is supported in 2.6.30 (but =
+I
+haven't tested it yet) via the mvsas drivers.
 
 
-try this. they're supposed to be good, so long that you don't need =20
-"hardware" RAID. Sun uses the same chipset in their opensolaris-based =20
-storage solution
+Hope you find this usefull.
 
-http://www.newegg.com/Product/Product.aspx?Item=3DN82E16815121009
 
-roy
---
-Roy Sigurd Karlsbakk
-(+47) 97542685
-roy@karlsbakk.net
-http://blogg.karlsbakk.net/
---
-I all pedagogikk er det essensielt at pensum presenteres =20
-intelligibelt. Det er et element=E6rt imperativ for alle pedagoger =E5 =
-=20
-unng=E5 eksessiv anvendelse av idiomer med fremmed opprinnelse. I de =20
-fleste tilfeller eksisterer adekvate og relevante synonymer p=E5 norsk.
 
+Wacquiez S=E9bastien
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

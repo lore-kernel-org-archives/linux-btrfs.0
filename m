@@ -1,53 +1,41 @@
 From: Sander <sander@humilis.net>
 Subject: Re: Offtopic: Which SAS / SATA HBA do you recommend?
-Date: Mon, 20 Jul 2009 14:16:53 +0200
-Message-ID: <20090720121653.GA2181@cumulus>
+Date: Mon, 20 Jul 2009 14:23:04 +0200
+Message-ID: <20090720122304.GB2181@cumulus>
 References: <20090720092838.GA1375@cumulus>
- <4A644580.7000401@enix.org>
+ <60C47D35-D393-45B7-91A0-5225DC673DF8@karlsbakk.net>
 Reply-To: sander@humilis.net
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, sander@humilis.net
-To: S?bastien Wacquiez <sw@enix.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4A644580.7000401@enix.org>
+In-Reply-To: <60C47D35-D393-45B7-91A0-5225DC673DF8@karlsbakk.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-S?bastien Wacquiez wrote (ao):
-> Sander wrote:
-> > What SAS (or SATA) controller do you use or recommend in combination
-> > with a SSD and BTRFS?
-> > I'm looking for a non-RAID controller with four or eight ports and
-> > of course full Linux support.
+Roy Sigurd Karlsbakk wrote (ao):
+> On 20. juli. 2009, at 11.28, Sander wrote:
+> >Sorry for the offtopic question. I hope though that others on this
+> >list or reading the archive find the answers useful too.
 > 
-> I don't have any ssd yet, but if you want cheap card without hardware
-> raid, you could look at those :
+> try this. they're supposed to be good, so long that you don't need
+> "hardware" RAID. Sun uses the same chipset in their
+> opensolaris-based storage solution
 > 
-> http://www.supermicro.com/products/accessories/addon/AOC-USASLP-L8i.cfm
-> http://www.supermicro.com/products/accessories/addon/AOC-USAS-L8i.cfm
-> 
-> You'll need to revert the bracket as they're designed to be in a
-> supermicro UIO slot (In fact, they are just standart PCIe card upside
-> down). They use the mptsas driver in linux which works ok for a long
-> time, and can be found for ~ 130$. It work pretty fast (~ 800 Mo/s with
-> a 8 drives raid10f2 in my brand new nehalem server).
-> 
-> You can also find this one  for ~ 120 bucks :
-> http://www.supermicro.com/products/accessories/addon/AOC-SASLP-MV8.cfm
-> 
-> No proprietary slot this time, the chipset is supported in 2.6.30 (but I
-> haven't tested it yet) via the mvsas drivers.
-> 
-> Hope you find this usefull.
+> http://www.newegg.com/Product/Product.aspx?Item=N82E16815121009
 
-Very useful, much appreciated, thanks!
+That is the AOC-SAT2-MV8 which I have indeed :-)  (is listed as
+MV88SX6081 with lspci).
 
-I think I go for a Marvell based controller (again), as Marvell chips
-seem to have quite a history when it comes to open source drivers.
+Works pretty well btw, but all eight ports are filled hence the search
+for a new one. Preferably a newer generation with better specs.
 
-No more Adaptec ..
+The Areca ARC-1300-4i listed on
+http://www.areca.us/products/sasnoneraid.htm looks interesting, as is
+the AOC-SASLP-MV8 listed on
+http://www.supermicro.com/products/accessories/addon/AOC-SASLP-MV8.cfm
 
-Thanks again Sebastien.
+Thanks a lot for your input!
 
 	With kind regards, Sander
 

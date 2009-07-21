@@ -1,59 +1,62 @@
-From: Yan Zheng <yanzheng@21cn.com>
+From: Steven Pratt <slpratt@austin.ibm.com>
 Subject: Re: Random write regression
-Date: Tue, 21 Jul 2009 15:04:04 +0800
-Message-ID: <3d0408630907210004g34a49196xb235aa2f6a1f0f1b@mail.gmail.com>
-References: <4A646D0E.1060006@austin.ibm.com>
+Date: Tue, 21 Jul 2009 09:48:38 -0500
+Message-ID: <4A65D546.9000602@austin.ibm.com>
+References: <4A646D0E.1060006@austin.ibm.com> <3d0408630907210004g34a49196xb235aa2f6a1f0f1b@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Steven Pratt <slpratt@austin.ibm.com>
+To: Yan Zheng <yanzheng@21cn.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4A646D0E.1060006@austin.ibm.com>
+In-Reply-To: <3d0408630907210004g34a49196xb235aa2f6a1f0f1b@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2009/7/20 Steven Pratt <slpratt@austin.ibm.com>:
-> Finally got around to going through latest data. =A0Seems like we los=
-t all the
-> random write performance gains. =A0Creates are better, but total regr=
-ession on
-> the random workload. =A0Sequential reads seem to have dropped as well=
-=2E
+Yan Zheng wrote:
+> 2009/7/20 Steven Pratt <slpratt@austin.ibm.com>:
+>   
+>> Finally got around to going through latest data.  Seems like we lost all the
+>> random write performance gains.  Creates are better, but total regression on
+>> the random workload.  Sequential reads seem to have dropped as well.
+>>
+>> Results are uploading now.
+>>  http://btrfs.boxacle.net/repository/raid/history/History.html
+>>
+>> These are for RAID only as single disk system still having issues completing
+>> btrfs runs.  Also, missing oprofile duw to oprofile causing an NMI and
+>> killing the system.
+>>
+>> Chris, this was built on 7/6, but I see no new changes sine 7/2/.
+>> Steve
+>>
+>>
+>>     
 >
-> Results are uploading now.
-> =A0http://btrfs.boxacle.net/repository/raid/history/History.html
+> The output of ffsb in the latest 128 threads random odirect write benchmark was
+> ....
+> checking existing fs: /mnt/ffsb1
+> fs setup took 6 secs
+> Syncing()...2 sec
+> ....
 >
-> These are for RAID only as single disk system still having issues com=
-pleting
-> btrfs runs. =A0Also, missing oprofile duw to oprofile causing an NMI =
-and
-> killing the system.
+> The corresponding output on 30 June was
+> ....
+> creating new fileset /mnt/ffsb1
+> fs setup took 847 secs
+> Syncing()...1 sec
+> ....
 >
-> Chris, this was built on 7/6, but I see no new changes sine 7/2/.
-> Steve
->
->
+> It seems the filesystem used in the latest benchmark wasn't freshly created.
+>   
+Yes, the older (better) random write performance did indeed recreate the 
+files before the test. Thanks for catching this.  I had 2 job files, 1 
+for just btrfs and 1 for all file systems and the reuse flag is 
+different between them.  Please ignore this regression.   I will re-run 
+without the reuse flag and expect things to be similar.  This does 
+indicate that btrfs degrades quite rapidly under random write, but that 
+is a separate topic.
 
-The output of ffsb in the latest 128 threads random odirect write bench=
-mark was
-=2E...
-checking existing fs: /mnt/ffsb1
-fs setup took 6 secs
-Syncing()...2 sec
-=2E...
+Steve
 
-The corresponding output on 30 June was
-=2E...
-creating new fileset /mnt/ffsb1
-fs setup took 847 secs
-Syncing()...1 sec
-=2E...
+> Yan, Zheng
+>   
 
-It seems the filesystem used in the latest benchmark wasn't freshly cre=
-ated.
-
-Yan, Zheng
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

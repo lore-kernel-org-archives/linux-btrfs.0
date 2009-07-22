@@ -1,29 +1,52 @@
-From: LiYu <raise.sail@gmail.com>
-Subject: [PATCH] btrfs-progs: remove a redundant btrfs_find_block_group()
- call
-Date: Wed, 22 Jul 2009 15:18:53 +0800
-Message-ID: <4A66BD5D.9060403@gmail.com>
+From: btrfs@think-future.com
+Subject: loop-mount btrfs .19 w/ 2.6.30: btrfs: open_ctree failed
+Date: Wed, 22 Jul 2009 12:30:04 +0200
+Message-ID: <20090722103003.GC16472@localhost>
+Reply-To: btrfs@think-future.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=GB2312
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hey,
 
-It seem that we have a redundant btrfs_find_block_group() call in extent-tree.c/find_search_start(), is this guess right?
+Just tried to mount a btrfs 0.19 in a image file:
 
-Signed-off-by: Li Yu <raise.sail@gmail.com>
+dd if=/dev/zero of=btrfs-play.img bs=1024k count=256
 
----
-diff --git a/extent-tree.c b/extent-tree.c
-index b2f9bb2..1c932c2 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -299,7 +299,6 @@ no_cache:
-                goto out;
-        }
-        cache = btrfs_find_block_group(root, cache, last, data, 0);
--       cache = btrfs_find_block_group(root, cache, last, data, 0);
-        if (!cache)
-                goto no_cache;
- 
+losetup -f btrfs-play.img
+losetup -a
+/dev/loop0: [fd02]:24653 (btrfs-play.img)
+
+mkfs.btrfs -L BTRFStest /dev/loop0
+
+WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
+
+fs created label BTRFStest on /dev/loop0
+        nodesize 4096 leafsize 4096 sectorsize 4096 size 256.00MB
+Btrfs Btrfs v0.19
+
+btrfsctl -A /dev/loop0
+operation complete
+Btrfs Btrfs v0.19
+
+mount -t btrfs /dev/loop0 btrfs-test/
+mount: tipo fs errato, opzione non valida, superblocco su /dev/loop0 danneggiato,
+       codepage o programma ausiliario mancante, o altro errore
+        In alcuni casi si possono trovare informazioni utili in syslog. Provare
+       ad esempio 'dmesg | tail'
+
+dmesg | tail
+[140443.202115] device label BTRFS_mypole devid 1 transid 7 /dev/loop0
+[140443.202369] BTRFS: couldn't mount because of unsupported optional features (1).
+[140443.202480] btrfs: open_ctree failed
+
+Did I miss something? Using ext3/4 the above works flawlessly..
+
+Probably it's only due to the "open_ctree" problem above. Using kernel 2.6.30 and btrfs-tools 19-2 (debian).
+
+Any hints?
+
+Thanks.

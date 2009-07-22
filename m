@@ -1,22 +1,26 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] btrfs-progs: remove a redundant
-	btrfs_find_block_group() call
-Date: Wed, 22 Jul 2009 10:41:53 -0400
-Message-ID: <20090722144153.GD29886@think>
-References: <4A66BD5D.9060403@gmail.com>
+From: btrfs@think-future.com
+Subject: loop-mount btrfs .19 w/ 2.6.30: btrfs: open_ctree failed
+Date: Wed, 22 Jul 2009 17:29:12 +0200
+Message-ID: <20090722152912.GA7825@localhost>
+References: <3d0408630907220357k7e323f16u1c8db807146feb4b@mail.gmail.com>
+Reply-To: btrfs@think-future.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: LiYu <raise.sail@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4A66BD5D.9060403@gmail.com>
+In-Reply-To: <3d0408630907220357k7e323f16u1c8db807146feb4b@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 22, 2009 at 03:18:53PM +0800, LiYu wrote:
-> 
-> It seem that we have a redundant btrfs_find_block_group() call in extent-tree.c/find_search_start(), is this guess right?
+Hey Zheng,
 
-Thanks for sending this patch along.
+Thanks for your message.
 
--chris
+Thought I read some note somewhere that this change had been taken place in 2.6.30 and was using .19 w/o thinking about trying the .18.
 
+Had a look at the module sources but maybe missed some version indication. Is
+there a var/macro telling the btrfs source version? If not it'd be a nice thing
+to have. 
+
+Thanks again.
+
+Nils

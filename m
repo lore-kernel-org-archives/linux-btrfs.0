@@ -1,49 +1,39 @@
-From: Tomasz Chmielewski <mangoo@wpkg.org>
-Subject: Re: btrfs not iSCSI-target safe?
-Date: Thu, 23 Jul 2009 18:50:53 +0200
-Message-ID: <4A6894ED.6020701@wpkg.org>
-References: <20090722112706.GA7374@mother.pipebreaker.pl> <20090722144031.GC29886@think> <20090723132852.GA23960@mother.pipebreaker.pl>
+From: Pekka Enberg <penberg@cs.helsinki.fi>
+Subject: [PATCH] btrfs-progs: Check /etc/mtab in check_mounted()
+Date: Thu, 23 Jul 2009 21:11:08 +0300
+Message-ID: <1248372668.7187.2.camel@penberg-laptop>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=iso-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: Tomasz Torcz <tomek@pipebreaker.pl>
+To: chris.mason@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090723132852.GA23960@mother.pipebreaker.pl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Tomasz Torcz wrote:
-> On Wed, Jul 22, 2009 at 10:40:31AM -0400, Chris Mason wrote:
->> On Wed, Jul 22, 2009 at 01:27:06PM +0200, Tomasz Torcz wrote:
->>>   Hi,
->>>
->>> I tried to export file from btrfs volume using iSCSI target.
->>> As soon as some initiator have read it over network, server
->>> oopsed: http://www.kerneloops.org/submitresult.php?number=557979
->>>  Kernel is Fedora's 2.6.29.6-213.fc11.x86_64. I'm aware that
->>> target iSCSI functionality is out-of-tree (I'm using iscsitarget-0.4.17-3),
->>> so it may not be safe. But is there any known incompatibility
->>> between iscsi-target and btrfs?
->> Sorry, I don't know of any problems between btrfs and iscsi.  Is the
->> iscsi target configured to use linux aio?  That could be the problem.
-> 
->   I'm not sure, I'm a mere user. This target software seems to read
-> files from kernelspace, which as I understand is frowned upon.
->   If you are interested, sourcecode is at http://iscsitarget.sourceforge.net/
-> Ooops occured in fileio_make_request(), in iscsitarget-0.4.17/kernel/file-io.c
-> file.
+From: Pekka Enberg <penberg@cs.helsinki.fi>
 
-Have you tried other target implementations, for example tgt[1] or scst[2]?
+The setmntent() lookup for '/proc/mounts' returns NULL on Ubuntu so use
+'/etc/mtab' instead.
 
- From experience, I have to say iscsitarget has a couple of serious 
-instability problems (at least it was the case about a year ago, could 
-be that the things improved).
+Signed-off-by: Pekka Enberg <penberg@cs.helsinki.fi>
+---
+ utils.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-[1] http://stgt.berlios.de
-[2] http://scst.sf.net
-
-
+diff --git a/utils.c b/utils.c
+index 2f4c6e1..af1c6ec 100644
+--- a/utils.c
++++ b/utils.c
+@@ -600,7 +600,7 @@ int check_mounted(char *file)
+ 	FILE *f;
+ 	int ret = 0;
+ 
+-	if ((f = setmntent ("/proc/mounts", "r")) == NULL)
++	if ((f = setmntent ("/etc/mtab", "r")) == NULL)
+ 		return -errno;
+ 
+ 	if (stat(file, &st_buf) < 0) {
 -- 
-Tomasz Chmielewski
-http://wpkg.org
+1.5.6.3
+
 
 

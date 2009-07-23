@@ -1,55 +1,63 @@
-From: Steven Pratt <steve@dangyankee.net>
-Subject: Updated performance results
-Date: Thu, 23 Jul 2009 13:35:21 -0500
-Message-ID: <4A68AD69.4030803@dangyankee.net>
+From: Oystein Viggen <oysteivi@tihlde.org>
+Subject: Re: [PATCH] Add supported kernel version check to mkfs.btrfs
+Date: Thu, 23 Jul 2009 19:50:48 +0200
+Message-ID: <038wif2sqv.fsf@msgid.viggen.net>
+References: <20090723023411.23E8A8C03F@csamuel.org>
+	<D102393B-AFF2-4771-822E-71D3762A1B45@karlsbakk.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=iso-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have re-run the raid tests with re-creating the fileset between each 
-of the random write workloads and performance does now match the 
-previous newformat results.  The bad news is that the huge gain that I 
-had attributed to the newformat release, does not really exist.  All of 
-the previous results(except for the newformat run) were not re-creating 
-the fileset, so the gain in performance was due only to having a fresh 
-set of files, not any code changes.
+* [Roy Sigurd Karlsbakk]=20
 
-So, I have done 2 new sets of runs to look into this further. One is a 3 
-hour run of single threaded random write to the RAID system.  I have 
-compared this to ext3.  Performance results are here:  
-http://btrfs.boxacle.net/repository/raid/longwrite/longwrite/Longrandomwrite.html
+> On 23. juli. 2009, at 04.09, Chris Samuel wrote:
+>
+>> +	if ( kern_major > min_major )
+>> +		return( 0 );
+>> +	if ( kern_major < min_major )
+>> +		return( -1 );
+>> +	if ( kern_medium > min_medium )
+>> +		return( 0 );
+>> +	if ( kern_medium < min_medium )
+>> +		return( -1 );
+>> +	if ( kern_minor < min_minor )
+>> +		return( -1 );
+>> +
+>> +	return( 0 );
+>
+>
+> Why not simply this?
+>
+> if (kern_major < min_major || kern_medium < min_medium || kern_minor =
+< =20
+> min_minor)
+>          return -1;
+>
+> return 0;
 
-and graphing of all the iostat data can be found here:
+Doesn't look equivalent.  I think your shorter code would return -1 for
+any kernel version a.b.c where any of a, b, or c is less than the
+minimum.  Say, 2.8.10 (minor) or 3.0.40 (medium).
 
-http://btrfs.boxacle.net/repository/raid/longwrite/summary.html
+Either way, I guess the RHEL developers could tell people a thing or tw=
+o
+about the cleverness of assuming a kernel version equals a specific set
+of features and/or bugs.  WIBNI the btrfs kernel driver could export
+some kind of "btrfs_version" property that btrfs-tools could check
+instead?
 
-The iostat graphs for btrfs are interesting for a number of reasons.  
-First, it takes about 3000 seconds (or 50 minutes) for btrfs to reach 
-steady state.  Second, if you look at write throughput from the device 
-view vs. the btrfs/application view, we see that for a application 
-throughput of 21.5MB/sec it requires 63MB/sec of actual disk writes.  
-That is an overhead of 3 to 1 vs an overhead of ~0 for ext3. Also, 
-looking at the change in iops vs MB/sec, we see that while  btrfs starts 
-out with reasonable size IOs, it quickly deteriorate to an average IO 
-size of only 13kb.  Remember, the starting file set is only 100GB on a 
-2.1TB filesystem, and all data is overwrite, and this is single 
-threaded, so there is no reason this should fragment.  It seems like the 
-allocator is having a problem doing sequential allocations.
+Then again, the need for shenanigans like this should pass quickly as
+the file system matures.
 
-Another set of runs I did was to do repetitive 5 minute random write 
-runs.  Results are here:
-http://btrfs.boxacle.net/repository/raid/repeat/repeat/repeat.html
+=D8ystein
+--=20
+"Windows is too dangerous to be left to Windows admins."
+                 -- James Riden in the monastery
 
-This shows the dramatic degredation after just a short time, but I 
-believe there is a fair amount of overhead in btrfs after newly mounting 
-the FS (which this test did between each run) so I repeated without 
-unmounting and remounting and results are here:
-http://btrfs.boxacle.net/repository/raid/repeat-nomount/repeat/repeat-nomount.html
-
-These results show a much less dramatic degradation, but btrfs still 
-degrades by over 40% in just 30 minutes of run time.  In fact, it was 
-still degrading by 10% every 5 minutes when this test ended.
-
-Steve
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

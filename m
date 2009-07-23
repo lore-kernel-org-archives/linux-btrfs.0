@@ -1,63 +1,63 @@
-From: Oystein Viggen <oysteivi@tihlde.org>
-Subject: Re: [PATCH] Add supported kernel version check to mkfs.btrfs
-Date: Thu, 23 Jul 2009 19:50:48 +0200
-Message-ID: <038wif2sqv.fsf@msgid.viggen.net>
-References: <20090723023411.23E8A8C03F@csamuel.org>
-	<D102393B-AFF2-4771-822E-71D3762A1B45@karlsbakk.net>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Updated performance results
+Date: Thu, 23 Jul 2009 17:00:51 -0400
+Message-ID: <20090723210051.GB1040@think>
+References: <4A68AD69.4030803@dangyankee.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Steven Pratt <steve@dangyankee.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4A68AD69.4030803@dangyankee.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-* [Roy Sigurd Karlsbakk]=20
+On Thu, Jul 23, 2009 at 01:35:21PM -0500, Steven Pratt wrote:
+> I have re-run the raid tests with re-creating the fileset between each  
+> of the random write workloads and performance does now match the  
+> previous newformat results.  The bad news is that the huge gain that I  
+> had attributed to the newformat release, does not really exist.  All of  
+> the previous results(except for the newformat run) were not re-creating  
+> the fileset, so the gain in performance was due only to having a fresh  
+> set of files, not any code changes.
 
-> On 23. juli. 2009, at 04.09, Chris Samuel wrote:
+Thanks for doing all of these runs.  This is still a little different
+than what I have here, my initial runs are very very fast and after 10
+or so level out to a relatively low performance on random writes.  With
+nodatacow, it stays even.
+
 >
->> +	if ( kern_major > min_major )
->> +		return( 0 );
->> +	if ( kern_major < min_major )
->> +		return( -1 );
->> +	if ( kern_medium > min_medium )
->> +		return( 0 );
->> +	if ( kern_medium < min_medium )
->> +		return( -1 );
->> +	if ( kern_minor < min_minor )
->> +		return( -1 );
->> +
->> +	return( 0 );
+> So, I have done 2 new sets of runs to look into this further. One is a 3  
+> hour run of single threaded random write to the RAID system.  I have  
+> compared this to ext3.  Performance results are here:   
+> http://btrfs.boxacle.net/repository/raid/longwrite/longwrite/Longrandomwrite.html
 >
+> and graphing of all the iostat data can be found here:
 >
-> Why not simply this?
+> http://btrfs.boxacle.net/repository/raid/longwrite/summary.html
 >
-> if (kern_major < min_major || kern_medium < min_medium || kern_minor =
-< =20
-> min_minor)
->          return -1;
->
-> return 0;
+> The iostat graphs for btrfs are interesting for a number of reasons.   
+> First, it takes about 3000 seconds (or 50 minutes) for btrfs to reach  
+> steady state.  Second, if you look at write throughput from the device  
+> view vs. the btrfs/application view, we see that for a application  
+> throughput of 21.5MB/sec it requires 63MB/sec of actual disk writes.   
+> That is an overhead of 3 to 1 vs an overhead of ~0 for ext3. Also,  
+> looking at the change in iops vs MB/sec, we see that while  btrfs starts  
+> out with reasonable size IOs, it quickly deteriorate to an average IO  
+> size of only 13kb.  Remember, the starting file set is only 100GB on a  
+> 2.1TB filesystem, and all data is overwrite, and this is single  
+> threaded, so there is no reason this should fragment.  It seems like the  
+> allocator is having a problem doing sequential allocations.
 
-Doesn't look equivalent.  I think your shorter code would return -1 for
-any kernel version a.b.c where any of a, b, or c is less than the
-minimum.  Say, 2.8.10 (minor) or 3.0.40 (medium).
+There are two things happening.  First the default allocation scheme
+isn't very well suited to this, mount -o ssd will perform better.  But
+over the long term, random overwrites to the file cause a lot of writes
+to the extent allocation tree.  That's really what -o nodatacow is
+saving us.  There are optimizations we can do, but we're holding off on
+that in favor of enospc and other pressing things.
 
-Either way, I guess the RHEL developers could tell people a thing or tw=
-o
-about the cleverness of assuming a kernel version equals a specific set
-of features and/or bugs.  WIBNI the btrfs kernel driver could export
-some kind of "btrfs_version" property that btrfs-tools could check
-instead?
+But, with all of that said, Josef has some really important allocator
+improvements.  I've put them out along with our pending patches into the
+experimental branch of the btrfs-unstable tree.  Could you please give
+this branch a try both with and without the ssd mount option?
 
-Then again, the need for shenanigans like this should pass quickly as
-the file system matures.
-
-=D8ystein
---=20
-"Windows is too dangerous to be left to Windows admins."
-                 -- James Riden in the monastery
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-chris

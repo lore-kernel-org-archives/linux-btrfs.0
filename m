@@ -1,38 +1,54 @@
-From: Tomasz Torcz <tomek@pipebreaker.pl>
-Subject: Re: btrfs not iSCSI-target safe?
-Date: Thu, 23 Jul 2009 15:28:52 +0200
-Message-ID: <20090723132852.GA23960@mother.pipebreaker.pl>
-References: <20090722112706.GA7374@mother.pipebreaker.pl> <20090722144031.GC29886@think>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+From: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
+Subject: Re: [PATCH] Add supported kernel version check to mkfs.btrfs
+Date: Thu, 23 Jul 2009 15:50:44 +0200
+Message-ID: <D102393B-AFF2-4771-822E-71D3762A1B45@karlsbakk.net>
+References: <20090723023411.23E8A8C03F@csamuel.org>
+Mime-Version: 1.0 (Apple Message framework v935.3)
+Content-Type: text/plain; charset=ISO-8859-1;
+	format=flowed	delsp=yes
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090722144031.GC29886@think>
+In-Reply-To: <20090723023411.23E8A8C03F@csamuel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 22, 2009 at 10:40:31AM -0400, Chris Mason wrote:
-> On Wed, Jul 22, 2009 at 01:27:06PM +0200, Tomasz Torcz wrote:
-> > 
-> >   Hi,
-> > 
-> > I tried to export file from btrfs volume using iSCSI target.
-> > As soon as some initiator have read it over network, server
-> > oopsed: http://www.kerneloops.org/submitresult.php?number=557979
-> >  Kernel is Fedora's 2.6.29.6-213.fc11.x86_64. I'm aware that
-> > target iSCSI functionality is out-of-tree (I'm using iscsitarget-0.4.17-3),
-> > so it may not be safe. But is there any known incompatibility
-> > between iscsi-target and btrfs?
-> 
-> Sorry, I don't know of any problems between btrfs and iscsi.  Is the
-> iscsi target configured to use linux aio?  That could be the problem.
+On 23. juli. 2009, at 04.09, Chris Samuel wrote:
 
-  I'm not sure, I'm a mere user. This target software seems to read
-files from kernelspace, which as I understand is frowned upon.
-  If you are interested, sourcecode is at http://iscsitarget.sourceforge.net/
-Ooops occured in fileio_make_request(), in iscsitarget-0.4.17/kernel/file-io.c
-file.
+> +	if ( kern_major > min_major )
+> +		return( 0 );
+> +	if ( kern_major < min_major )
+> +		return( -1 );
+> +	if ( kern_medium > min_medium )
+> +		return( 0 );
+> +	if ( kern_medium < min_medium )
+> +		return( -1 );
+> +	if ( kern_minor < min_minor )
+> +		return( -1 );
+> +
+> +	return( 0 );
 
--- 
-Tomasz Torcz                 "God, root, what's the difference?"
-xmpp: zdzichubg@chrome.pl         "God is more forgiving."
 
+Why not simply this?
+
+if (kern_major < min_major || kern_medium < min_medium || kern_minor < =
+=20
+min_minor)
+         return -1;
+
+return 0;
+--
+Roy Sigurd Karlsbakk
+(+47) 97542685
+roy@karlsbakk.net
+http://blogg.karlsbakk.net/
+--
+I all pedagogikk er det essensielt at pensum presenteres =20
+intelligibelt. Det er et element=E6rt imperativ for alle pedagoger =E5 =
+=20
+unng=E5 eksessiv anvendelse av idiomer med fremmed opprinnelse. I de =20
+fleste tilfeller eksisterer adekvate og relevante synonymer p=E5 norsk.
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

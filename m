@@ -1,48 +1,46 @@
-From: Suno Ano <suno.ano@sunoano.org>
-Subject: Re: Offtopic: Which SAS / SATA HBA do you recommend?
-Date: Sun, 26 Jul 2009 10:07:03 +0200
-Message-ID: <87skgjeul4.fsf@wks.lan>
-References: <20090720092838.GA1375@cumulus> <4A644580.7000401@enix.org>
-        <20090720121653.GA2181@cumulus>
+From: Giuseppe Scrivano <gscrivano@gnu.org>
+Subject: [PATCH] Check the `sectors' vector length before use it
+Date: Sun, 26 Jul 2009 23:21:32 +0200
+Message-ID: <87d47n9m3n.fsf@master.homenet>
 Mime-Version: 1.0
-Content-Type: multipart/signed; boundary="=-=-=";
-	micalg=pgp-sha512; protocol="application/pgp-signature"
+Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---=-=-=
+Hi all,
 
- Sander> I think I go for a Marvell based controller (again), as Marvell
- Sander> chips seem to have quite a history when it comes to open source
- Sander> drivers. No more Adaptec ..
+I noticed that the "btrfs-debug-tree -e DEVICE" command returns an empty
+list.  If it is a normal behaviour then this trivial patch solves a
+problem in the show-blocks program, where the `sectors' vector is used
+even in the case its length is zero.
 
-I am very happy with all my Adaptec gear plus drivers are in Mainline
-since 2.4. Also, Adaptec is up and about to start packaging ASM (Adaptec
-Storage Manager) etc. for Debian and its offsprings afaict:
+Regards,
+Giuseppe
 
-http://linux.adaptec.com/2009/07/24/improving-support-for-debian-based-oss/
-http://sunoano.name/ws/public_xhtml/hardware.html#adaptec_31205_raid_hba
 
---=-=-=
-Content-Type: application/pgp-signature
+>From 7caf73f4a7be8baa1493578c56477d3b279773ec Mon Sep 17 00:00:00 2001
+From: Giuseppe Scrivano <gscrivano@gnu.org>
+Date: Sun, 26 Jul 2009 23:12:38 +0200
+Subject: [PATCH] Check the vector length before use it
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
+---
+ show-blocks |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-iQIcBAEBCgAGBQJKbA6qAAoJEP1u/LUtID1UFzMQAI8+Bc6MrteYtYKwnT868MEv
-Kcs/ykc7l/rVXwv8vrrfJ7F47lKFnhW80NmVohmksaj19EA0LFs9ARllVH76agKv
-jV8+Cixtt/DclyOPPjeLBrSZrDJwCTFqit8DHm4znEJ0vAUormWG4Xi/n4IhhTBk
-lLKoz8t+obz3u/OUI0wTrwNjmnRbthKyS3SWbQ5lL8ohnEVLEoA9Rijx8TTUKs1c
-9RUZYqZjFIzt6fbPGWVCnJ5rHMJHctlCtWcMt0OXuBsfQKxUw4YBTMXy687yNLrd
-cMy5UuWxCiyvqmHBtfqB58MDFAM6WM6ELByWDCLuLR17COWIr/8GnFL2YleXZ/hT
-JD7WTsQ8KSDgoSJe4BmCR+ppfHRdCyO2blUPRzXwlX/RhH4SB6W2ahv3lLNQxEhF
-P5yqzbj+DSeCHaY56hTPtu9yR03bvKbQB81LG8tjUJJiEp13zY7jWD5dxobOnv3S
-bpsCkPfHHBg6QbaDRfmY+vAL+JwOrkTWFnd2PH69mcgMu11LelcpvdlQCEbv5H9k
-Hk0pEjtzI8B9FoUG9btzkiQNOy2hkPCrLuuGKx75R5qVsLJNb/WSKYQliiqDnxrx
-4d9TjN7ZQSSZspbt155tPp4+US68vNjFgYTUiPtz6UbO5yVn3yMJfH73L5OqnrR2
-gH8UHkfC3TBLAcX4YrWz
-=Cqd7
------END PGP SIGNATURE-----
---=-=-=--
+diff --git a/show-blocks b/show-blocks
+index 0164be9..c6cdc12 100755
+--- a/show-blocks
++++ b/show-blocks
+@@ -228,7 +228,7 @@ shapeit(data)
+ sectors = data[:,0]
+ sizes = data[:,1]
+ datalen = len(data)
+-sectormax = numpy.max(sectors)
++sectormax = numpy.max(sectors) if len(sectors) > 0 else 0
+ sectormin = 0
+ num_cells = 800
+ total_cells = num_cells * num_cells
+-- 
+1.6.3.3
 

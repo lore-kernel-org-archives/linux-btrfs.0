@@ -1,70 +1,63 @@
-From: Julia Lawall <julia@diku.dk>
-Subject: [PATCH 4/9] fs/btrfs: correct error-handling code
-Date: Tue, 28 Jul 2009 17:53:53 +0200 (CEST)
-Message-ID: <Pine.LNX.4.64.0907281753260.28189@ask.diku.dk>
+From: Giuseppe Scrivano <gscrivano@gnu.org>
+Subject: Re: BTRFS file clone support for cp
+Date: Tue, 28 Jul 2009 22:06:35 +0200
+Message-ID: <8763dcvagk.fsf@master.homenet>
+References: <87d47o3fip.fsf@master.homenet> <4A6CEA48.5050208@draigBrady.com>
+	<8763defuvq.fsf@meyering.net> <87ws5tvrq8.fsf@master.homenet>
+	<4A6E3ADE.6050008@draigBrady.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=utf-8
+Cc: bug-coreutils@gnu.org, Jim Meyering <jim@meyering.net>,
+	linux-btrfs@vger.kernel.org
+To: =?utf-8?Q?P=C3=A1draig?= Brady <P@draigBrady.com>
+Return-path: <bug-coreutils-bounces+gcgcb-bug-coreutils-616=gmane.org@gnu.org>
+In-Reply-To: <4A6E3ADE.6050008@draigBrady.com> (=?utf-8?Q?=22P=C3=A1draig?=
+	Brady"'s message of "Tue, 28 Jul 2009 00:40:14 +0100")
+List-Unsubscribe: <http://lists.gnu.org/mailman/listinfo/bug-coreutils>,
+	<mailto:bug-coreutils-request@gnu.org?subject=unsubscribe>
+List-Archive: <http://lists.gnu.org/pipermail/bug-coreutils>
+List-Post: <mailto:bug-coreutils@gnu.org>
+List-Help: <mailto:bug-coreutils-request@gnu.org?subject=help>
+List-Subscribe: <http://lists.gnu.org/mailman/listinfo/bug-coreutils>,
+	<mailto:bug-coreutils-request@gnu.org?subject=subscribe>
+Errors-To: bug-coreutils-bounces+gcgcb-bug-coreutils-616=gmane.org@gnu.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Julia Lawall <julia@diku.dk>
+Hi P=C3=A1draig,
 
-find_zlib_workspace returns an ERR_PTR value in an error case instead of NULL.
 
-A simplified version of the semantic match that finds this problem is as
-follows: (http://coccinelle.lip6.fr/)
+P=C3=A1draig Brady <P@draigBrady.com> writes:
 
-// <smpl>
-@match exists@
-expression x, E;
-statement S1, S2;
-@@
+> How different exactly?
+> OK I tried this myself on F11 with inconclusive results.
 
-x = find_zlib_workspace(...)
-... when != x = E
-(
-*  if (x == NULL || ...) S1 else S2
-|
-*  if (x == NULL && ...) S1 else S2
-)
-// </smpl>
+I can't replicate it now, all tests I am doing report that blocks used
+before and after the clone are the same.  Probably yesterday the
+difference I noticed was in reality the original file flushed to the
+disk.
 
-Signed-off-by: Julia Lawall <julia@diku.dk>
 
----
- fs/btrfs/zlib.c |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
+> The above suggests that the clone does actually allocate space
+> but btrfs isn't reporting it through statvfs correctly?
 
-diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
-index ecfbce8..3e2b90e 100644
---- a/fs/btrfs/zlib.c
-+++ b/fs/btrfs/zlib.c
-@@ -208,7 +208,7 @@ int btrfs_zlib_compress_pages(struct address_space *mapping,
- 	*total_in = 0;
- 
- 	workspace = find_zlib_workspace();
--	if (!workspace)
-+	if (IS_ERR(workspace))
- 		return -1;
- 
- 	if (Z_OK != zlib_deflateInit(&workspace->def_strm, 3)) {
-@@ -366,7 +366,7 @@ int btrfs_zlib_decompress_biovec(struct page **pages_in,
- 	char *kaddr;
- 
- 	workspace = find_zlib_workspace();
--	if (!workspace)
-+	if (IS_ERR(workspace))
- 		return -ENOMEM;
- 
- 	data_in = kmap(pages_in[page_in_index]);
-@@ -547,9 +547,9 @@ int btrfs_zlib_decompress(unsigned char *data_in,
- 		return -ENOMEM;
- 
- 	workspace = find_zlib_workspace();
--	if (!workspace)
-+	if (IS_ERR(workspace))
- 		return -ENOMEM;
- 
- 	workspace->inf_strm.next_in = data_in;
+The same message appeared here too some days ago, though I cloned only
+few Kb files, not much to fill the entire partition.
+
+
+> If the clone does allocate space, then how can one
+> clone without allocation which could be very useful
+> for snapshotting for example?
+
+I don't know if snapshotting is handled in the same way as a "clone",
+but in this case it seems more obvious to me that no additional space
+should be reported.
+
+
+> Also I tried the above twice and both times got:
+> http://www.kerneloops.org/submitresult.php?number=3D578993
+
+I didn't get these errors.  I am using the btrfs git version.
+
+
+Regards,
+Giuseppe

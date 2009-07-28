@@ -1,96 +1,116 @@
-From: =?ISO-8859-1?Q?P=E1draig_Brady?= <P@draigBrady.com>
-Subject: Re: BTRFS file clone support for cp
-Date: Tue, 28 Jul 2009 00:40:14 +0100
-Message-ID: <4A6E3ADE.6050008@draigBrady.com>
-References: <87d47o3fip.fsf@master.homenet>
-	<4A6CEA48.5050208@draigBrady.com>	<8763defuvq.fsf@meyering.net>
-	<87ws5tvrq8.fsf@master.homenet>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: First impression (pure user)
+Date: Tue, 28 Jul 2009 07:22:18 -0400
+Message-ID: <20090728112218.GC3667@think>
+References: <200907241237.18071@fortytwo.ch>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
-Cc: bug-coreutils@gnu.org, Jim Meyering <jim@meyering.net>,
-	linux-btrfs@vger.kernel.org
-To: Giuseppe Scrivano <gscrivano@gnu.org>
-Return-path: <bug-coreutils-bounces+gcgcb-bug-coreutils-616=gmane.org@gnu.org>
-In-Reply-To: <87ws5tvrq8.fsf@master.homenet>
-List-Unsubscribe: <http://lists.gnu.org/mailman/listinfo/bug-coreutils>,
-	<mailto:bug-coreutils-request@gnu.org?subject=unsubscribe>
-List-Archive: <http://lists.gnu.org/pipermail/bug-coreutils>
-List-Post: <mailto:bug-coreutils@gnu.org>
-List-Help: <mailto:bug-coreutils-request@gnu.org?subject=help>
-List-Subscribe: <http://lists.gnu.org/mailman/listinfo/bug-coreutils>,
-	<mailto:bug-coreutils-request@gnu.org?subject=subscribe>
-Errors-To: bug-coreutils-bounces+gcgcb-bug-coreutils-616=gmane.org@gnu.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Adrian von Bidder <avbidder@fortytwo.ch>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <200907241237.18071@fortytwo.ch>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Giuseppe Scrivano wrote:
-> Jim Meyering <jim@meyering.net> writes:
->=20
->>> Another possible issue with this I can think of is
->>> depending on the modification pattern of the COW files,
->>> the modification processes could fragment the file or
->>> more seriously be given ENOSPC errors.
->> I hope btrfs takes care of this behind the scene.
->>
->> How does the clone work wrt to space consumed, a la df?
->> If copying a 1GB file this way does not update usage
->> stats to reflect the additional 1GB of space used, ...
->=20
-> I tried to clone a big file and df reported a different "used blocks"
-> stat that it was before the clone operation.
+On Fri, Jul 24, 2009 at 12:37:13PM +0200, Adrian von Bidder wrote:
+> Heyho!
+> 
+> Just a first impression report from a pure user.  I've started to play 
+> around with btrfs a bit, without using any btrfs-specific features so far, 
+> though.
 
-How different exactly?
-OK I tried this myself on F11 with inconclusive results.
+Hi, thanks for sending this along.
 
-$ uname -r
-2.6.29.6-213.fc11.i586
-$ sudo yum install btrfs-progs
-# dd bs=3D1M count=3D300 if=3D/dev/zero of=3D/btrfs.img #min size?
-# mkfs.btrfs /btrfs.img
-# mkdir /btrfs
-# mount -o loop /btrfs.img /btrfs
-# cd /btrfs
-# dd bs=3D1M count=3D100 if=3D/dev/zero of=3Dalloc.test
-# df -h .
-Filesystem            Size  Used Avail Use% Mounted on
-/dev/loop0            300M   28K  300M   1% /btrfs
-# df -h . #only allocated about 30s later
-Filesystem            Size  Used Avail Use% Mounted on
-/dev/loop0            300M  101M  200M  34% /btrfs
-# /home/padraig/clone_file alloc.test alloc.test.clone
-# umount /btrfs
-# mount -o loop /btrfs.img /btrfs
-# cd btrfs
-# df -h .
-Filesystem            Size  Used Avail Use% Mounted on
-/dev/loop0            300M  101M  200M  34% /btrfs
+> 
+> 700G, ca. 1/2 full, tons of small files, lots of hardlinks ("dirvish" backup 
+> trees of my workstations at home.)
+> 
+> The disk is currently attached to a very old machine that serves as home 
+> server/router, so only 128M RAM and very slow CPU (350MHz PentiumII.)  And 
+> only USB 1, no less, which I didn't realize when I bought the disk :-)  
+> Since dirvish only writes new files, I can live with it for now.
+> 
+> Software: Debian packages, btrfs-tools 0.19 and kernel 2.6.31-rc1 (soon to 
+> be rc3)
+> 
+> btrfs-convert (using my desktop, which is more or less ok performance-wise, 
+> not the old machine): still took ca. 10h.
 
-OK the above suggests that the clone doesn't take
-any space as I would expect. Then it starts getting confusing...
+The btrfs-convert speeds are mostly limited by the speed that you can
+read the ext3 metadata and data.  If you do the conversion without doing
+csums, it is faster because it doesn't have to read the ext3 data.
 
-# du -h *
-100M    alloc.test
-244M    alloc.test.clone #wha?
-# dd bs=3D1M count=3D200 if=3D/dev/zero of=3Duse.space
-dd: writing `use.space': No space left on device
-101+0 records in
-100+0 records out
-# ls -l
-total 454656
--rw-r--r-- 1 root root 104857600 2009-07-28 00:06 alloc.test
--rw-r--r-- 1 root root 104857600 2009-07-28 00:07 alloc.test.clone
--rw-r--r-- 1 root root 104857600 2009-07-28 00:18 use.space
-# df -h .
-Filesystem            Size  Used Avail Use% Mounted on
-/dev/loop0            300M  184M  117M  62% /btrfs
+>  * some progress indication would be nice (needn't be very accurate, but it 
+> would be nice if it could tell me if I'm about to wait another hour or 
+> another day...)
 
-The above suggests that the clone does actually allocate space
-but btrfs isn't reporting it through statvfs correctly?
-If the clone does allocate space, then how can one
-clone without allocation which could be very useful
-for snapshotting for example?
+Definitely.
 
-Also I tried the above twice and both times got:
-http://www.kerneloops.org/submitresult.php?number=3D578993
+>  * documentation: what happens when I kill btrfs-convert?  Will I have an 
+> ext3 with only free space having been written to, or will I have an 
+> unfinished btrfs that I need to rollback with btrfs-convert?  Documentation 
+> would be nice.  (I haven't tried what happens.)
 
-cheers,
-P=E1draig.
+You'll have one or the other, but not something halfway between.
+> 
+> Ok, now I have a btrfs, attached it to the old router.
+> 
+> I'm now collecting data if the slow CPU or the slow USB is worse by 
+> enabling/disabling -o compress on the mount (will metadata be compressed as 
+> well?)
+
+Only data is compressed.
+
+> 
+> Since it basically worked: now tried to delete the image file in the 
+> ext2_saved subvolume, which exposed very unexpected behaviour:  it takes 
+> ages (ok, we're still on USB1 and the file is huge, after all) and then it 
+> kicks the oom killer into action; the system then becomes unusable.  Plenty 
+> of swapspace free, so I guess "rm" uses quite a bit kernel memory.  The 
+> backtraces I've seen all are just about tasks the OOM killer got rid of, 
+> nothing into the btrfs code.
+
+Ouch, I haven't seen this but I'll try to reproduce it.
+
+> 
+> On a faster machine with more memory and USB2, removing the image file 
+> worked, but I was still surprised at how long it took.  Quite some time was 
+> spent with vmstat reporting only 1-4M/s reads (dd manages ~20M/s to that 
+> disk, full USB2); I can't tell if it was seeking wildly or if it was CPU 
+> (sorry, didn't think to watch.)
+> 
+> After, it seems the free space isn't tracked properly, the removed image 
+> file should have freed up lots of space but no increase in free space is 
+> reported by df.
+
+The free space won't show up immediately, it takes a full commit before
+you'll see it (run sync).  The conversion reuses all of the ext3 data
+blocks, so the only free space you get back is the ext3 metadata. 
+> 
+> Ok, after all those crashes, I'll now run btrfsck just to be safe. (I 
+> haven't so far, given that it'll take ages...)
+> 
+> Again, progress indication would be nice.
+> 
+> And: I notice that btrfsck /dev/sda1 doesn't complain even if the device is 
+> currently mounted.  Is online fsck already implemented?  Or will fsck run 
+> just in readonly mode?  A warning would be appropriate.
+
+Yes, we do need a warning ;)
+
+> 
+> Ok, enough complaints.  I'm amazed at what you guys are doing, and await 
+> eagerly the moment where I can switch my compuers to btrfs fully (ENOSPC 
+> handling and the ability to remove snapshots/subvolumes are the critical 
+> bits for me, and of course it shouldn't eat data.  Then creating snapshots 
+> before "aptitude upgrade" orgies will make trying out new stuff so much 
+> more fun!
+
+Thanks for trying things out and writing up your experience.
+
+> Btw, will it be possible to designate a new snapshot 
+> the "default" snapshot and remove the old default?  Not critical, though.)
+
+Yes.
+
+-chris
+

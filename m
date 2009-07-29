@@ -1,29 +1,48 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [2.6.31-rc4] uninitialised memory during read_sb...
-Date: Wed, 29 Jul 2009 09:03:07 -0400
-Message-ID: <20090729130307.GG13940@think>
-References: <6278d2220907271505y65c98631o8a117d86140a1785@mail.gmail.com>
- <6278d2220907290242p1d8bb168g818e4e517847ad5f@mail.gmail.com>
+From: =?ISO-8859-1?Q?P=E1draig_Brady?= <P@draigBrady.com>
+Subject: Re: BTRFS file clone support for cp
+Date: Wed, 29 Jul 2009 15:14:49 +0100
+Message-ID: <4A705959.7010303@draigBrady.com>
+References: <87d47o3fip.fsf@master.homenet> <4A6CEA48.5050208@draigBrady.com> <8763defuvq.fsf@meyering.net> <87ws5tvrq8.fsf@master.homenet> <4A6E3ADE.6050008@draigBrady.com> <8763dcvagk.fsf@master.homenet> <20090729130106.GF13940@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Daniel J Blueman <daniel.blueman@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>,
+	Giuseppe Scrivano <gscrivano@gnu.org>,
+	Jim Meyering <jim@meyering.net>, bug-coreutils@gnu.org,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <6278d2220907290242p1d8bb168g818e4e517847ad5f@mail.gmail.com>
+In-Reply-To: <20090729130106.GF13940@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 29, 2009 at 10:42:09AM +0100, Daniel J Blueman wrote:
-> When mounting a btrfs filesystem on my server running 2.6.31-rc4,
-> kmemcheck spotted some believed-uninitialised memory [1] 128 bytes
-> into the inode structure access from BTRFS_I [2,3].
-> 
-> The filesystem was created with btrfstools-0.18 under 2.6.30 - perhaps
-> an issue relating to the forward rolling disk format changes - or
-> simply relating to the inode size? Should
-> be reproducible.
+Chris Mason wrote:
+> On Tue, Jul 28, 2009 at 10:06:35PM +0200, Giuseppe Scrivano wrote:
+>>
+>> I can't replicate it now, all tests I am doing report that blocks us=
+ed
+>> before and after the clone are the same.  Probably yesterday the
+>> difference I noticed was in reality the original file flushed to the
+>> disk.
+>=20
+> The clone will use some additional space for the metadata required to
+> point to the cloned blocks.  It isn't exactly O(1) it is O(metadata f=
+or
+> the file).
 
-Ok, this is coming from the RB_CLEAR_NODE() call, which reads the
-current value of the parent pointer.  I'll fix it up, thanks for sending
-the bug report along.
+Thanks for the clarification Chris.
+So the just committed change in cp will
+link the destination file to the extents of the source.
 
--chris
+We may need to play around with fallocate()
+if we want to get back to the original
+cp semantics of actually allocating space
+on the file system for the new file.
+
+I'll test this when I get an up to date btrfs
+and when the fallocate interface in glibc settles down.
+
+cheers,
+P=E1draig.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

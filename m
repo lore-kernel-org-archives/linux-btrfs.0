@@ -1,126 +1,80 @@
-From: Yan Zheng <zheng.yan@oracle.com>
-Subject: [PATCH] properly preserve commit_root for async caching
-Date: Thu, 30 Jul 2009 21:27:28 +0800
-Message-ID: <4A719FC0.5000601@oracle.com>
+From: Ric Wheeler <rwheeler@redhat.com>
+Subject: Re: BTRFS file clone support for cp
+Date: Thu, 30 Jul 2009 12:28:16 -0400
+Message-ID: <4A71CA20.2070906@redhat.com>
+References: <87d47o3fip.fsf@master.homenet> <4A6CEA48.5050208@draigBrady.com>	<8763defuvq.fsf@meyering.net> <87ws5tvrq8.fsf@master.homenet>	<4A6E3ADE.6050008@draigBrady.com> <8763dcvagk.fsf@master.homenet>	<20090729130106.GF13940@think> <4A705959.7010303@draigBrady.com>	<20090729161014.GJ13940@think> <4A70918D.6020003@draigBrady.com>	<20090730005702.GA32157@mail.oracle.com> <87fxcevcuy.fsf@meyering.net> <4A715C61.1080607@draigBrady.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8;
+	format=flowed
+Cc: Jim Meyering <jim@meyering.net>,
+	Chris Mason <chris.mason@oracle.com>,
+	Giuseppe Scrivano <gscrivano@gnu.org>, bug-coreutils@gnu.org,
+	linux-btrfs@vger.kernel.org
+To: =?UTF-8?B?UMOhZHJhaWcgQnJhZHk=?= <P@draigBrady.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4A715C61.1080607@draigBrady.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The extent allocation tree is recursive, it may change after
-update_cowonly_root is called. So we shouldn't update extent
-tree's commit_root directly in update_cowonly_root. 
+On 07/30/2009 04:40 AM, P=C3=A1draig Brady wrote:
+> Jim Meyering wrote:
+>   =20
+>> Joel Becker wrote:
+>>
+>>     =20
+>>> On Wed, Jul 29, 2009 at 07:14:37PM +0100, P=C3=A1draig Brady wrote:
+>>>       =20
+>>>> At the moment we have these linking options:
+>>>>
+>>>> cp -l, --link #for hardlinks
+>>>> cp -s, --symbolic-link #for symlinks
+>>>>
+>>>> So perhaps we should support:
+>>>>
+>>>> cp --link=3D{soft,hard,cow}
+>>>> for symlink(), link() and reflink() respectively?
+>>>> I.E. link to the name, inode or extents respectively.
+>>>>         =20
+>>> 	I've cooked up 'ln -r' for reflinks, which works for ln(1) but
+>>> not for cp(1).
+>>>       =20
+>> Thanks.  I haven't looked, but after reading about the reflink sysca=
+ll
+>> [http://lwn.net/Articles/332802/] had come to the same conclusion:
+>> this feature belongs with ln rather than with cp.
+>>     =20
+>
+> Right. It definitely should be in ln anyway.
+>
+>   =20
+>> Besides, putting the new behavior on a new option avoids
+>> the current semantic change we would otherwise induce in cp.
+>>     =20
+>
+> Yes doing reflink() in cp by default currently can
+> be problematic as discussed, especially on mechanical hard disks.
+> Though in future I can see most users of cp preferring
+> reflink() to be done, rather than read()/write(). Ponder...
+>
+>   =20
 
+I think that doing reflink by default would be a horrible idea - one=20
+good reason to copy a file is to increase your level of fault tolerance=
+=20
+and reflink magically avoids that :-)
 
-Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
+reflink is a neat feature, but should be used on purpose in my opinion,
 
----
-diff -urp 1/fs/btrfs/ctree.h 2/fs/btrfs/ctree.h
---- 1/fs/btrfs/ctree.h	2009-07-29 10:03:04.258858190 +0800
-+++ 2/fs/btrfs/ctree.h	2009-07-30 10:06:08.837786432 +0800
-@@ -827,6 +827,7 @@ struct btrfs_fs_info {
- 	struct mutex drop_mutex;
- 	struct mutex volume_mutex;
- 	struct mutex tree_reloc_mutex;
-+	struct rw_semaphore extent_commit_sem;
- 
- 	/*
- 	 * this protects the ordered operations list only while we are
-@@ -961,9 +962,6 @@ struct btrfs_root {
- 	/* the node lock is held while changing the node pointer */
- 	spinlock_t node_lock;
- 
--	/* taken when updating the commit root */
--	struct rw_semaphore commit_root_sem;
--
- 	struct extent_buffer *commit_root;
- 	struct btrfs_root *log_root;
- 	struct btrfs_root *reloc_root;
-diff -urp 1/fs/btrfs/disk-io.c 2/fs/btrfs/disk-io.c
---- 1/fs/btrfs/disk-io.c	2009-07-29 10:03:04.260858403 +0800
-+++ 2/fs/btrfs/disk-io.c	2009-07-30 10:07:27.230037079 +0800
-@@ -907,7 +907,6 @@ static int __setup_root(u32 nodesize, u3
- 	spin_lock_init(&root->inode_lock);
- 	mutex_init(&root->objectid_mutex);
- 	mutex_init(&root->log_mutex);
--	init_rwsem(&root->commit_root_sem);
- 	init_waitqueue_head(&root->log_writer_wait);
- 	init_waitqueue_head(&root->log_commit_wait[0]);
- 	init_waitqueue_head(&root->log_commit_wait[1]);
-@@ -1624,6 +1623,7 @@ struct btrfs_root *open_ctree(struct sup
- 	mutex_init(&fs_info->cleaner_mutex);
- 	mutex_init(&fs_info->volume_mutex);
- 	mutex_init(&fs_info->tree_reloc_mutex);
-+	init_rwsem(&fs_info->extent_commit_sem);
- 
- 	btrfs_init_free_cluster(&fs_info->meta_alloc_cluster);
- 	btrfs_init_free_cluster(&fs_info->data_alloc_cluster);
-diff -urp 1/fs/btrfs/extent-tree.c 2/fs/btrfs/extent-tree.c
---- 1/fs/btrfs/extent-tree.c	2009-07-29 10:03:04.264855268 +0800
-+++ 2/fs/btrfs/extent-tree.c	2009-07-30 10:08:34.582036148 +0800
-@@ -267,7 +267,7 @@ static int caching_kthread(void *data)
- 	last = max_t(u64, block_group->key.objectid, BTRFS_SUPER_INFO_OFFSET);
- again:
- 	/* need to make sure the commit_root doesn't disappear */
--	down_read(&fs_info->extent_root->commit_root_sem);
-+	down_read(&fs_info->extent_commit_sem);
- 
- 	/*
- 	 * We don't want to deadlock with somebody trying to allocate a new
-@@ -304,7 +302,7 @@ again:
- 
- 			if (need_resched()) {
- 				btrfs_release_path(fs_info->extent_root, path);
--				up_read(&fs_info->extent_root->commit_root_sem);
-+				up_read(&fs_info->extent_commit_sem);
- 				cond_resched();
- 				goto again;
- 			}
-@@ -345,7 +343,7 @@ next:
- 
- err:
- 	btrfs_free_path(path);
--	up_read(&fs_info->extent_root->commit_root_sem);
-+	up_read(&fs_info->extent_commit_sem);
- 	atomic_dec(&block_group->space_info->caching_threads);
- 	wake_up(&block_group->caching_q);
- 
-diff -urp 1/fs/btrfs/transaction.c 2/fs/btrfs/transaction.c
---- 1/fs/btrfs/transaction.c	2009-07-29 10:03:04.481858667 +0800
-+++ 2/fs/btrfs/transaction.c	2009-07-30 10:18:04.331033676 +0800
-@@ -42,10 +42,8 @@ static noinline void put_transaction(str
- 
- static noinline void switch_commit_root(struct btrfs_root *root)
- {
--	down_write(&root->commit_root_sem);
- 	free_extent_buffer(root->commit_root);
- 	root->commit_root = btrfs_root_node(root);
--	up_write(&root->commit_root_sem);
- }
- 
- /*
-@@ -466,7 +464,10 @@ static int update_cowonly_root(struct bt
- 		ret = btrfs_write_dirty_block_groups(trans, root);
- 		BUG_ON(ret);
- 	}
--	switch_commit_root(root);
-+	
-+	if (root != root->fs_info->extent_root)
-+		switch_commit_root(root);
-+
- 	return 0;
- }
- 
-@@ -499,6 +500,11 @@ static noinline int commit_cowonly_roots
- 
- 		update_cowonly_root(trans, root);
- 	}
-+
-+	down_write(&fs_info->extent_commit_sem);
-+	switch_commit_root(fs_info->extent_root);
-+	up_write(&fs_info->extent_commit_sem);
-+
- 	return 0;
- }
- 
+ric
+
+> In any case putting --link=3Dcow or --reflink or whatever in cp
+> could be very useful for creating writeable snapshot branches.
+>
+> cheers,
+> P=C3=A1draig.
+>   =20
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

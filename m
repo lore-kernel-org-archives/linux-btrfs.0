@@ -1,12 +1,14 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: make sure we find a bitmap entry
-Date: Fri, 31 Jul 2009 09:42:18 -0400
-Message-ID: <20090731134218.GA14255@localhost.localdomain>
+Subject: [PATCH] Btrfs: make sure we find a bitmap entry v2
+Date: Fri, 31 Jul 2009 10:31:31 -0400
+Message-ID: <20090731143130.GB15150@localhost.localdomain>
+References: <20090731134218.GA14255@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: zheng.yan@oracle.com
-To: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, zheng.yan@oracle.com
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20090731134218.GA14255@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Yan Zheng hit a problem where we tried to remove some free space but failed
@@ -24,18 +26,19 @@ Also this adds some debugging stuff to make sure that the free space we are
 trying to remove from the bitmap is in fact there.  This can probably go away
 after a while, but since this code is only used by the tree-logging stuff it
 would be nice to run with it for a while to make sure there are no problems.
-Thanks,
+
+Version 2 actually has comments :).  Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@redhat.com>
 ---
- fs/btrfs/free-space-cache.c |   40 +++++++++++++++++++++++++++++++---------
- 1 files changed, 31 insertions(+), 9 deletions(-)
+ fs/btrfs/free-space-cache.c |   73 +++++++++++++++++++++++++++++++++++++-----
+ 1 files changed, 64 insertions(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index af99b78..691ea95 100644
+index af99b78..5edcee3 100644
 --- a/fs/btrfs/free-space-cache.c
 +++ b/fs/btrfs/free-space-cache.c
-@@ -414,11 +414,20 @@ static noinline int remove_from_bitmap(struct btrfs_block_group_cache *block_gro
+@@ -414,11 +414,29 @@ static noinline int remove_from_bitmap(struct btrfs_block_group_cache *block_gro
  			      u64 *offset, u64 *bytes)
  {
  	u64 end;
@@ -46,9 +49,18 @@ index af99b78..691ea95 100644
  	end = bitmap_info->offset +
  		(u64)(BITS_PER_BITMAP * block_group->sectorsize) - 1;
  
++	/*
++	 * XXX - this can go away after a few releases.
++	 *
++	 * since the only user of btrfs_remove_free_space is the tree logging
++	 * stuff, and the only way to test that is under crash conditions, we
++	 * want to have this debug stuff here just in case somethings not
++	 * working.  Search the bitmap for the space we are trying to use to
++	 * make sure its actually there.  If its not there then we need to stop
++	 * because something has gone wrong.
++	 */
 +	search_start = *offset;
 +	search_bytes = *bytes;
-+
 +	ret = search_bitmap(block_group, bitmap_info, &search_start,
 +			    &search_bytes);
 +	BUG_ON(ret < 0 || search_start != *offset);
@@ -56,7 +68,7 @@ index af99b78..691ea95 100644
  	if (*offset > bitmap_info->offset && *offset + *bytes > end) {
  		bitmap_clear_bits(block_group, bitmap_info, *offset,
  				  end - *offset + 1);
-@@ -430,6 +439,7 @@ again:
+@@ -430,6 +448,7 @@ again:
  	}
  
  	if (*bytes) {
@@ -64,7 +76,7 @@ index af99b78..691ea95 100644
  		if (!bitmap_info->bytes) {
  			unlink_free_space(block_group, bitmap_info);
  			kfree(bitmap_info->bitmap);
-@@ -438,16 +448,22 @@ again:
+@@ -438,16 +457,36 @@ again:
  			recalculate_thresholds(block_group);
  		}
  
@@ -73,17 +85,31 @@ index af99b78..691ea95 100644
 -								  *offset),
 -						 1, 0);
 -		if (!bitmap_info)
++		/*
++		 * no entry after this bitmap, but we still have bytes to
++		 * remove, so something has gone wrong.
++		 */
 +		if (!next)
  			return -EINVAL;
  
 +		bitmap_info = rb_entry(next, struct btrfs_free_space,
 +				       offset_index);
++
++		/*
++		 * if the next entry isn't a bitmap we need to return to let the
++		 * extent stuff do its work.
++		 */
  		if (!bitmap_info->bitmap)
  			return -EAGAIN;
  
++		/*
++		 * Ok the next item is a bitmap, but it may not actually hold
++		 * the information for the rest of this free space stuff, so
++		 * look for it, and if we don't find it return so we can try
++		 * everything over again.
++		 */
 +		search_start = *offset;
 +		search_bytes = *bytes;
-+
 +		ret = search_bitmap(block_group, bitmap_info, &search_start,
 +				    &search_bytes);
 +		if (ret < 0 || search_start != *offset)
@@ -92,12 +118,16 @@ index af99b78..691ea95 100644
  		goto again;
  	} else if (!bitmap_info->bytes) {
  		unlink_free_space(block_group, bitmap_info);
-@@ -644,8 +660,13 @@ int btrfs_remove_free_space(struct btrfs_block_group_cache *block_group,
+@@ -644,8 +683,17 @@ int btrfs_remove_free_space(struct btrfs_block_group_cache *block_group,
  again:
  	info = tree_search_offset(block_group, offset, 0, 0);
  	if (!info) {
 -		WARN_ON(1);
 -		goto out_lock;
++		/*
++		 * oops didn't find an extent that matched the space we wanted
++		 * to remove, look for a bitmap instead
++		 */
 +		info = tree_search_offset(block_group,
 +					  offset_to_bitmap(block_group, offset),
 +					  1, 0);
@@ -108,12 +138,18 @@ index af99b78..691ea95 100644
  	}
  
  	if (info->bytes < bytes && rb_next(&info->offset_index)) {
-@@ -957,8 +978,9 @@ static u64 btrfs_alloc_from_bitmap(struct btrfs_block_group_cache *block_group,
+@@ -957,8 +1005,15 @@ static u64 btrfs_alloc_from_bitmap(struct btrfs_block_group_cache *block_group,
  	if (cluster->block_group != block_group)
  		goto out;
  
 -	entry = tree_search_offset(block_group, search_start, 0, 0);
 -
++	/*
++	 * search_start is the beginning of the bitmap, but at some point it may
++	 * be a good idea to point to the actual start of the free area in the
++	 * bitmap, so do the offset_to_bitmap trick anyway, and set bitmap_only
++	 * to 1 to make sure we get the bitmap entry
++	 */
 +	entry = tree_search_offset(block_group,
 +				   offset_to_bitmap(block_group, search_start),
 +				   1, 0);

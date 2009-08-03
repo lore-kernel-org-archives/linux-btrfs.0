@@ -1,32 +1,41 @@
-From: Tomasz Chmielewski <mangoo@wpkg.org>
-Subject: Re: Mass-Hardlinking Oops
-Date: Mon, 03 Aug 2009 17:00:08 +0200
-Message-ID: <4A76FB78.5000207@wpkg.org>
-References: <4A74401B.90801@mccme.ru> <20090803145741.GC3765@think>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: snapshot-removal - timeline ?
+Date: Mon, 3 Aug 2009 12:18:00 -0400
+Message-ID: <20090803161800.GB5492@think>
+References: <1552F85577A149D68B0BFF2A44E0FF0A@bui.materna.com>
+ <20090803130412.GB3570@think>
+ <10F3F7E4-276B-49C3-B944-61320D634C93@karlsbakk.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: Chris Mason <chris.mason@oracle.com>,
-	Raskin Michael <raskin@mccme.ru>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: Roland <devzero@web.de>, linux-btrfs@vger.kernel.org
+To: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090803145741.GC3765@think>
+In-Reply-To: <10F3F7E4-276B-49C3-B944-61320D634C93@karlsbakk.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote:
-> On Sat, Aug 01, 2009 at 05:16:11PM +0400, Raskin Michael wrote:
->> -----BEGIN PGP SIGNED MESSAGE-----
->> Hash: SHA1
->>
->> This is distinct from the old mass-symlinking warnings. I run a program
->> which promised to hardlink all the same-content files on the partition.
->> The failure occured reasonably quickly...
+On Mon, Aug 03, 2009 at 04:33:13PM +0200, Roy Sigurd Karlsbakk wrote:
+> On 3. aug.. 2009, at 15.04, Chris Mason wrote:
 > 
-> As Yan said on IRC there's a limit to the number of hardlinks per file
-> in a given directory.  We clearly need to change this from BUG() to
-> return a nice error.
+> >On Sat, Aug 01, 2009 at 02:03:37PM +0200, Roland wrote:
+> >>Hello,
+> >>
+> >>is there a timeline for snapshot-removal ?
+> >>
+> >>i did intensively play with btrfs about a year ago and was really
+> >>impressed, but i quit due to the lack of snapshot removal.
+> >>(i tried btrfs mostly because of the snapshot feature)
+> >>
+> >>has there been some progress on this or is there a timeline when
+> >>this feature will be available ?
+> >>
+> >>i wonder if it`s just so hard to implement or if it`s  just too low
+> >>priority on the todo list..... maybe both ? ;)
+> >
+> >Its a little of both ;)  The plan is to have this in 2.6.32
+> 
+> 
+> Last I heard, someone was saying .31... Is it being moved?
 
-BTW, what limit is that?
+Yes, it was delayed so we could finalize the other changes in .31.
 
-
--- 
-Tomasz Chmielewski
-http://wpkg.org
+-chris

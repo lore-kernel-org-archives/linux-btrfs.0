@@ -1,62 +1,45 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Crash in __btrfs_reserve_extent
-Date: Thu, 6 Aug 2009 15:22:19 -0400
-Message-ID: <20090806192219.GD17129@think>
-References: <4A7A9A04.5010006@redpill-linpro.com>
- <20090806135436.GD3655@dhcp231-156.rdu.redhat.com>
- <4A7AE579.1050403@redpill-linpro.com>
- <20090806142750.GE3655@dhcp231-156.rdu.redhat.com>
- <4A7B15DD.2010101@redpill-linpro.com>
- <20090806180432.GG3655@dhcp231-156.rdu.redhat.com>
- <4A7B1D6D.6090402@redpill-linpro.com>
- <20090806183712.GH3655@dhcp231-156.rdu.redhat.com>
- <4A7B25C3.4020206@redpill-linpro.com>
- <20090806190118.GI3655@dhcp231-156.rdu.redhat.com>
+From: Bartlomiej Zolnierkiewicz <bzolnier@gmail.com>
+Subject: [PATCH] btrfs: remove superfluous NULL pointer check in btrfs_rename()
+Date: Thu, 6 Aug 2009 21:48:11 +0200
+Message-ID: <200908062148.12946.bzolnier@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Tore Anderson <tore.anderson@redpill-linpro.com>,
-	linux-btrfs@vger.kernel.org, Hugo Mills <hugo-lkml@carfax.org.uk>
-To: Josef Bacik <josef@redhat.com>
+Content-Type: Text/Plain;
+  charset="us-ascii"
+Cc: Dan Carpenter <error27@gmail.com>,
+	Jonathan Corbet <corbet@lwn.net>, Eugene Teo <eteo@redhat.com>,
+	Julia Lawall <julia@diku.dk>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090806190118.GI3655@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 06, 2009 at 03:01:18PM -0400, Josef Bacik wrote:
-> On Thu, Aug 06, 2009 at 08:49:39PM +0200, Tore Anderson wrote:
-> > * Josef Bacik
-> > 
-> > > Ok good news is, btrfs-vol -b will fix your problem.  Somehow most of
-> > > your disk has been allocated to use metadata.  So did you have a
-> > > whole bunch of stuff on this disk and then delete it all?  Because
-> > > that would put you in that situation.  If you have not then there is
-> > > likely a bug in the metadata ratio stuff that needs to be fixed.
-> > 
-> > As far as I know there hasn't been a lot of stuff on the file system,
-> > I'm afraid.  The file system was created by the Fedora 11 installer,
-> > and it has just been used as the system drive (I've got /home on NFS).
-> > 
-> > btrfs-vol -b / (from btrfs-progs-0.19) made my system crash and burn.
-> > I've was able to get output from dmesg before my SSH sessions started
-> > hanging - maybe you can make anything out of it?  Anyway, right now I
-> > have no more remote access to the box so any further debugging will
-> > have to wait until tomorrow morning.
-> > 
-> 
-> Hrm yeah I was afraid of that.  So you will have to try and free up some data so
-> the balancer as enough room to move things around.  Also one thing that _may_
-> help is mounting with nocow for a little bit, so any writing (like logging and
-> such) just over-writes stuff instead of needing a new extent, until btrfs-vol -b
-> can finish, and then you can go back to the normal mount options.  I still can't
-> figure out how this happened, but one thing to do for now would be to mount with
-> metadata_ratio=100.  This will make you more likely to panic in the event that
-> you run out of metadata, but its not that likely to happen, especially with as
-> much disk space as you have.  Sorry about all of this, hopefully a better
-> solution will be coming down in a few months.  Thanks,
+From: Bartlomiej Zolnierkiewicz <bzolnier@gmail.com>
+Subject: [PATCH] btrfs: remove superfluous NULL pointer check in btrfs_rename()
 
-We can code a fix for the balancer problem quickly, but you might have a
-hard time recompiling it and getting it on that box.
+This takes care of the following entry from Dan's list:
 
-If this data is critical we'll write something up.
+fs/btrfs/inode.c +4788 btrfs_rename(36) warning: variable derefenced before check 'old_inode'
 
--chris
+Reported-by: Dan Carpenter <error27@gmail.com>
+Cc: Jonathan Corbet <corbet@lwn.net>
+Cc: Eugene Teo <eteo@redhat.com>
+Cc: Julia Lawall <julia@diku.dk>
+Signed-off-by: Bartlomiej Zolnierkiewicz <bzolnier@gmail.com>
+---
+ fs/btrfs/inode.c |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
+Index: b/fs/btrfs/inode.c
+===================================================================
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4785,8 +4785,7 @@ static int btrfs_rename(struct inode *ol
+ 	 * and the replacement file is large.  Start IO on it now so
+ 	 * we don't add too much work to the end of the transaction
+ 	 */
+-	if (new_inode && old_inode && S_ISREG(old_inode->i_mode) &&
+-	    new_inode->i_size &&
++	if (new_inode && S_ISREG(old_inode->i_mode) && new_inode->i_size &&
+ 	    old_inode->i_size > BTRFS_ORDERED_OPERATIONS_FLUSH_LIMIT)
+ 		filemap_flush(old_inode->i_mapping);
+ 

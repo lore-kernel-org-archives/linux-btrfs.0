@@ -1,8 +1,17 @@
-From: Josef Bacik <josef@redhat.com>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: Crash in __btrfs_reserve_extent
-Date: Thu, 6 Aug 2009 15:01:18 -0400
-Message-ID: <20090806190118.GI3655@dhcp231-156.rdu.redhat.com>
-References: <4A7A7F9F.1080809@redpill-linpro.com> <4A7A9A04.5010006@redpill-linpro.com> <20090806135436.GD3655@dhcp231-156.rdu.redhat.com> <4A7AE579.1050403@redpill-linpro.com> <20090806142750.GE3655@dhcp231-156.rdu.redhat.com> <4A7B15DD.2010101@redpill-linpro.com> <20090806180432.GG3655@dhcp231-156.rdu.redhat.com> <4A7B1D6D.6090402@redpill-linpro.com> <20090806183712.GH3655@dhcp231-156.rdu.redhat.com> <4A7B25C3.4020206@redpill-linpro.com>
+Date: Thu, 6 Aug 2009 14:57:45 -0400
+Message-ID: <20090806185745.GB17129@think>
+References: <4A7A7F9F.1080809@redpill-linpro.com>
+ <4A7A9A04.5010006@redpill-linpro.com>
+ <20090806135436.GD3655@dhcp231-156.rdu.redhat.com>
+ <4A7AE579.1050403@redpill-linpro.com>
+ <20090806142750.GE3655@dhcp231-156.rdu.redhat.com>
+ <4A7B15DD.2010101@redpill-linpro.com>
+ <20090806180432.GG3655@dhcp231-156.rdu.redhat.com>
+ <4A7B1D6D.6090402@redpill-linpro.com>
+ <20090806183712.GH3655@dhcp231-156.rdu.redhat.com>
+ <4A7B25C3.4020206@redpill-linpro.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
@@ -31,16 +40,11 @@ On Thu, Aug 06, 2009 at 08:49:39PM +0200, Tore Anderson wrote:
 > have no more remote access to the box so any further debugging will
 > have to wait until tomorrow morning.
 > 
+> btrfs relocating chunk 129952120832
+> btrfs relocating block group 129952120832 flags 1
 
-Hrm yeah I was afraid of that.  So you will have to try and free up some data so
-the balancer as enough room to move things around.  Also one thing that _may_
-help is mounting with nocow for a little bit, so any writing (like logging and
-such) just over-writes stuff instead of needing a new extent, until btrfs-vol -b
-can finish, and then you can go back to the normal mount options.  I still can't
-figure out how this happened, but one thing to do for now would be to mount with
-metadata_ratio=100.  This will make you more likely to panic in the event that
-you run out of metadata, but its not that likely to happen, especially with as
-much disk space as you have.  Sorry about all of this, hopefully a better
-solution will be coming down in a few months.  Thanks,
+Ugh, it hit the data group first, which it can't relocate because there
+is nowhere to put the blocks.
 
-Josef
+-chris
+

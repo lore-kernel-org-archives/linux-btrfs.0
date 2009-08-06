@@ -1,45 +1,30 @@
-From: Josef Bacik <josef@redhat.com>
+From: Robert =?iso-8859-1?q?F=F6rster?= <Dessa@gmake.de>
 Subject: Re: Crash in __btrfs_reserve_extent
-Date: Thu, 6 Aug 2009 11:20:58 -0400
-Message-ID: <20090806152058.GF3655@dhcp231-156.rdu.redhat.com>
-References: <200908061657.50989.Dessa@gmake.de>
+Date: Thu, 6 Aug 2009 17:36:10 +0200
+Message-ID: <200908061736.11515.Dessa@gmake.de>
+References: <200908061657.50989.Dessa@gmake.de> <20090806152058.GF3655@dhcp231-156.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
 Cc: linux-btrfs@vger.kernel.org
-To: Robert =?iso-8859-1?Q?F=F6rster?= <Dessa@gmake.de>
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200908061657.50989.Dessa@gmake.de>
+In-Reply-To: <20090806152058.GF3655@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 06, 2009 at 04:57:50PM +0200, Robert F=F6rster wrote:
-> Hello,=20
->=20
-> i thought i'd jump in since i have the same issue:
-> btrfs-show output:
->=20
-> Label: none  uuid: 7f4f3bcb-7ba1-49c5-8996-e897b5483c7c
->         Total devices 1 FS bytes used 5.32GB
->         devid    1 size 51.22GB used 51.22GB path /dev/sdb1
->=20
-> df -h output:
->=20
-> Filesystem            Size  Used Avail Use% Mounted on
-> rootfs                 52G  5,4G   46G  11% /
->=20
-
-Alrighty, so btrfs-show says you have used up all of your disk, but for=
- some
-reason statfs is saying you havent.  Can you cd into / and run
-
-du -h -s
-
-and then wait a very long time and then tell me what it comes back with=
- :).
-That will tell us for sure what the hell is going on.  Thank you,
-
-Josef
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+QW0gRG9ubmVyc3RhZywgNi4gQXVndXN0IDIwMDkgMTc6MjA6NTggc2NocmllYiBKb3NlZiBCYWNp
+azoKPiBPbiBUaHUsIEF1ZyAwNiwgMjAwOSBhdCAwNDo1Nzo1MFBNICswMjAwLCBSb2JlcnQgRvZy
+c3RlciB3cm90ZToKPiA+IEhlbGxvLAo+ID4KPiA+IGkgdGhvdWdodCBpJ2QganVtcCBpbiBzaW5j
+ZSBpIGhhdmUgdGhlIHNhbWUgaXNzdWU6Cj4gPiBidHJmcy1zaG93IG91dHB1dDoKPiA+Cj4gPiBM
+YWJlbDogbm9uZSAgdXVpZDogN2Y0ZjNiY2ItN2JhMS00OWM1LTg5OTYtZTg5N2I1NDgzYzdjCj4g
+PiAgICAgICAgIFRvdGFsIGRldmljZXMgMSBGUyBieXRlcyB1c2VkIDUuMzJHQgo+ID4gICAgICAg
+ICBkZXZpZCAgICAxIHNpemUgNTEuMjJHQiB1c2VkIDUxLjIyR0IgcGF0aCAvZGV2L3NkYjEKPiA+
+Cj4gPiBkZiAtaCBvdXRwdXQ6Cj4gPgo+ID4gRmlsZXN5c3RlbSAgICAgICAgICAgIFNpemUgIFVz
+ZWQgQXZhaWwgVXNlJSBNb3VudGVkIG9uCj4gPiByb290ZnMgICAgICAgICAgICAgICAgIDUyRyAg
+NSw0RyAgIDQ2RyAgMTElIC8KPgo+IEFscmlnaHR5LCBzbyBidHJmcy1zaG93IHNheXMgeW91IGhh
+dmUgdXNlZCB1cCBhbGwgb2YgeW91ciBkaXNrLCBidXQgZm9yCj4gc29tZSByZWFzb24gc3RhdGZz
+IGlzIHNheWluZyB5b3UgaGF2ZW50LiAgQ2FuIHlvdSBjZCBpbnRvIC8gYW5kIHJ1bgo+Cj4gZHUg
+LWggLXMKPgo+IGFuZCB0aGVuIHdhaXQgYSB2ZXJ5IGxvbmcgdGltZSBhbmQgdGhlbiB0ZWxsIG1l
+IHdoYXQgaXQgY29tZXMgYmFjayB3aXRoIDopLgo+IFRoYXQgd2lsbCB0ZWxsIHVzIGZvciBzdXJl
+IHdoYXQgdGhlIGhlbGwgaXMgZ29pbmcgb24uICBUaGFuayB5b3UsCj4KPiBKb3NlZgoKNDBHICAg
+ICAuCg==

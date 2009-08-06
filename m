@@ -1,51 +1,49 @@
-From: Tore Anderson <tore.anderson@redpill-linpro.com>
-Subject: Re: Crash in __btrfs_reserve_extent
-Date: Thu, 06 Aug 2009 10:53:24 +0200
-Message-ID: <4A7A9A04.5010006@redpill-linpro.com>
-References: <4A7A7F9F.1080809@redpill-linpro.com>
+From: David Woodhouse <dwmw2@infradead.org>
+Subject: RAID[56] status
+Date: Thu, 06 Aug 2009 11:17:13 +0100
+Message-ID: <1249553833.568.23.camel@macbook.infradead.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Hugo Mills <hugo-lkml@carfax.org.uk>
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: chris.mason@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4A7A7F9F.1080809@redpill-linpro.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-* Tore Anderson
+If we've abandoned the idea of putting the number of redundant blocks
+into the top bits of the type bitmask (and I hope we have), then we're
+fairly much there. Current code is at:
 
-> I have btrfs on my root filesystem and at the time of the crash I
-> taring together some files from a NFS filesystem onto it.  There was
-> plenty of free space on the btrfs filesystem.
+   git://, http://git.infradead.org/users/dwmw2/btrfs-raid56.git
+   git://, http://git.infradead.org/users/dwmw2/btrfs-progs-raid56.git=20
 
-Some more info - the file system is acting really strange after a
-reboot.  A lot of messages like these are printed to /var/log/messages:
+We have recovery working, as well as both full-stripe writes and a
+temporary hack to allow smaller writes to work (with the 'write hole'
+problem, of course). The main thing we need to do is ensure that we
+_always_ do full-stripe writes, and then we can ditch the partial write
+support.
 
-no space left, need 4096, 0 delalloc bytes, 16577376256 bytes_used, 0
-bytes_reserved, 0 bytes_pinned, 0 bytes_readonly, 69816320 may
-use16647192576 total
+I want to do a few other things, but AFAICT none of that needs to delay
+the merge:
 
-Many commands gives the error message "no space left on device".
-Curiously enough /var/log/messages is stored on the very same file
-system, and new lines appears in it, so it appears those writes are
-avoiding the ENOSPC somehow.
+  - Better rebuild support -- if we lose a disk and add a replacement,
+    we want to recreate only the contents of that disk, rather than
+    allocating a new chunk elsewhere and then rewriting _everything_.
+=20
+  - Support for more than 2 redundant blocks per stripe (RAID[789] or
+    RAID6[=C2=B3=E2=81=B4=E2=81=B5] or whatever we'll call it).
 
-Anyway, there's plenty of free space on the file system:
+  - RAID[56789]0 support.
 
-Filesystem            Size  Used Avail Use% Mounted on
-/dev/mapper/vg_echo-lv_root  228G   16G  212G   7% /
+  - Clean up the discard support to do the right thing.
 
-It has never been resized, by the way.  I found that this issue had been
-mentioned on the mailing list by Hugo Mills (Cc-ed) before after all -
-apologies for posting a dupe:
+--=20
+David Woodhouse                            Open Source Technology Centr=
+e
+David.Woodhouse@intel.com                              Intel Corporatio=
+n
 
-http://thread.gmane.org/gmane.comp.file-systems.btrfs/2694
-
-Is this bug fixed in later versions of btrfs or is it still unresolved,
-I wonder?  If the latter, I'll be glad to help out with any debugging
-info you might need before I try to fix it (or re-install).
-
-Best regards,
--- 
-Tore Anderson
-Redpill Linpro AS - http://www.redpill-linpro.com/
-Tel: +47 21 54 41 27
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

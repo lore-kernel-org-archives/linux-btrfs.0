@@ -1,30 +1,34 @@
-From: Robert =?iso-8859-1?q?F=F6rster?= <Dessa@gmake.de>
+From: Tore Anderson <tore.anderson@redpill-linpro.com>
 Subject: Re: Crash in __btrfs_reserve_extent
-Date: Thu, 6 Aug 2009 17:36:10 +0200
-Message-ID: <200908061736.11515.Dessa@gmake.de>
+Date: Thu, 06 Aug 2009 19:15:35 +0200
+Message-ID: <4A7B0FB7.2010401@redpill-linpro.com>
 References: <200908061657.50989.Dessa@gmake.de> <20090806152058.GF3655@dhcp231-156.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: =?ISO-8859-1?Q?Robert_F=F6rster?= <Dessa@gmake.de>,
+	linux-btrfs@vger.kernel.org
 To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <20090806152058.GF3655@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-QW0gRG9ubmVyc3RhZywgNi4gQXVndXN0IDIwMDkgMTc6MjA6NTggc2NocmllYiBKb3NlZiBCYWNp
-azoKPiBPbiBUaHUsIEF1ZyAwNiwgMjAwOSBhdCAwNDo1Nzo1MFBNICswMjAwLCBSb2JlcnQgRvZy
-c3RlciB3cm90ZToKPiA+IEhlbGxvLAo+ID4KPiA+IGkgdGhvdWdodCBpJ2QganVtcCBpbiBzaW5j
-ZSBpIGhhdmUgdGhlIHNhbWUgaXNzdWU6Cj4gPiBidHJmcy1zaG93IG91dHB1dDoKPiA+Cj4gPiBM
-YWJlbDogbm9uZSAgdXVpZDogN2Y0ZjNiY2ItN2JhMS00OWM1LTg5OTYtZTg5N2I1NDgzYzdjCj4g
-PiAgICAgICAgIFRvdGFsIGRldmljZXMgMSBGUyBieXRlcyB1c2VkIDUuMzJHQgo+ID4gICAgICAg
-ICBkZXZpZCAgICAxIHNpemUgNTEuMjJHQiB1c2VkIDUxLjIyR0IgcGF0aCAvZGV2L3NkYjEKPiA+
-Cj4gPiBkZiAtaCBvdXRwdXQ6Cj4gPgo+ID4gRmlsZXN5c3RlbSAgICAgICAgICAgIFNpemUgIFVz
-ZWQgQXZhaWwgVXNlJSBNb3VudGVkIG9uCj4gPiByb290ZnMgICAgICAgICAgICAgICAgIDUyRyAg
-NSw0RyAgIDQ2RyAgMTElIC8KPgo+IEFscmlnaHR5LCBzbyBidHJmcy1zaG93IHNheXMgeW91IGhh
-dmUgdXNlZCB1cCBhbGwgb2YgeW91ciBkaXNrLCBidXQgZm9yCj4gc29tZSByZWFzb24gc3RhdGZz
-IGlzIHNheWluZyB5b3UgaGF2ZW50LiAgQ2FuIHlvdSBjZCBpbnRvIC8gYW5kIHJ1bgo+Cj4gZHUg
-LWggLXMKPgo+IGFuZCB0aGVuIHdhaXQgYSB2ZXJ5IGxvbmcgdGltZSBhbmQgdGhlbiB0ZWxsIG1l
-IHdoYXQgaXQgY29tZXMgYmFjayB3aXRoIDopLgo+IFRoYXQgd2lsbCB0ZWxsIHVzIGZvciBzdXJl
-IHdoYXQgdGhlIGhlbGwgaXMgZ29pbmcgb24uICBUaGFuayB5b3UsCj4KPiBKb3NlZgoKNDBHICAg
-ICAuCg==
+* Josef Bacik
+
+> Alrighty, so btrfs-show says you have used up all of your disk, but
+> for some reason statfs is saying you havent.  Can you cd into / and
+> run
+> 
+> du -h -s
+> 
+> and then wait a very long time and then tell me what it comes back
+> with :). That will tell us for sure what the hell is going on.  Thank
+> you,
+
+I think this needs to be "du -h -s -x" (otherwise you'll include space
+used by files on other file systems as well).
+
+Best regards,
+-- 
+Tore Anderson
+Redpill Linpro AS - http://www.redpill-linpro.com/
+Tel: +47 21 54 41 27

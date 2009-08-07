@@ -1,65 +1,60 @@
-From: debian developer <debiandev@gmail.com>
-Subject: Re: Updated performance results
-Date: Fri, 7 Aug 2009 13:00:17 +0530
-Message-ID: <f24d23310908070030u2ee49b41obcaafa5d7547cf69@mail.gmail.com>
-References: <4A68AD69.4030803@dangyankee.net> <20090723210051.GB1040@think>
-	 <4A68DE81.3020505@dangyankee.net> <20090724132407.GC16192@think>
-	 <20090724140002.GD16192@think> <4A6F5BB6.4020204@austin.ibm.com>
-	 <20090728202355.GC13940@think> <4A6F6951.9020304@austin.ibm.com>
-	 <20090805203526.GE12524@think>
+From: Yan Zheng <zheng.yan@oracle.com>
+Subject: Re: [PATCH] Fix balance Oops
+Date: Fri, 07 Aug 2009 17:07:32 +0800
+Message-ID: <4A7BEED4.90405@oracle.com>
+References: <4A7BC631.3040106@oracle.com> <20090807065039.GR12579@kernel.dk> <4A7BD4B0.2080104@oracle.com> <20090807071952.GS12579@kernel.dk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>,
-	Steven Pratt <slpratt@austin.ibm.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+To: Jens Axboe <jens.axboe@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090805203526.GE12524@think>
+In-Reply-To: <20090807071952.GS12579@kernel.dk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-HI,
+On 08/07/2009 03:19 PM, Jens Axboe wrote:
+> On Fri, Aug 07 2009, Yan Zheng wrote:
+>> On 08/07/2009 02:50 PM, Jens Axboe wrote:
+>>> On Fri, Aug 07 2009, Yan Zheng wrote:
+>>>> invalidate_inode_pages2_range may return -EBUSY occasionally
+>>>> which results Oops. This patch fixes the issue by moving
+>>>> invalidate_inode_pages2_range into a loop and keeping calling
+>>>> it until the return value is not -EBUSY.
+>>>>
+>>>> Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
+>>>>
+>>>> ---
+>>>> diff -urp 1/fs/btrfs/relocation.c 2/fs/btrfs/relocation.c
+>>>> --- 1/fs/btrfs/relocation.c	2009-07-29 10:03:04.367858774 +0800
+>>>> +++ 2/fs/btrfs/relocation.c	2009-08-07 13:26:43.882147138 +0800
+>>>> @@ -2553,8 +2553,13 @@ int relocate_inode_pages(struct inode *i
+>>>>  	last_index = (start + len - 1) >> PAGE_CACHE_SHIFT;
+>>>>  
+>>>>  	/* make sure the dirty trick played by the caller work */
+>>>> -	ret = invalidate_inode_pages2_range(inode->i_mapping,
+>>>> -					    first_index, last_index);
+>>>> +	while (1) {
+>>>> +		ret = invalidate_inode_pages2_range(inode->i_mapping,
+>>>> +						    first_index, last_index);
+>>>> +		if (ret != -EBUSY)
+>>>> +			break;
+>>>> +		cond_resched();
+>>>> +	}
+>>> If it returns EBUSY, would it not make more sense to call
+>>> filemap_write_and_wait_range() instead of hammering on invalidate?
+>>>
+>> The pages to invalidate are not dirty, they are from page read-ahead.
+>> Actually I have no idea how invalidate_inode_pages2_range can return
+>> -EBUSY here. (the only user of the inode is the balancer, and it does
+>> not hold references to the pages)
+> 
+> Weird, I looked it up, and it already does a writeback wait. But I guess
+> that's not your issue. Patch still looks like a hack though, it would be
+> far better to figure out why it returns EBUSY and fix/wait appropriately
+> for that to pass.
+> 
 
-Do you have any benchmarks against non-raid common workloads?
-Like say a desktop user? It would be great to compare against ext3,
-ext4, xfs etc.,
+EBUSY is from the EXTENT_LOCK test in try_release_extent_state. The test
+can be true is because some codes call lock_extent while corresponding
+pages are not all locked. (one example is btrfs_finish_ordered_io)
 
-Thanks,
-
-On Thu, Aug 6, 2009 at 2:05 AM, Chris Mason<chris.mason@oracle.com> wrote:
-> On Tue, Jul 28, 2009 at 04:10:41PM -0500, Steven Pratt wrote:
->> >
->> >Hi Steve,
->> >
->> >I think I'm going to start tuning something other than the
->> >random-writes, there is definitely low hanging fruit in the large file
->> >creates workload ;)  Thanks again for posting all of these.
->> Sure, no problem.
->>
->> >The history graph has 2.6.31-rc btrfs against 2.6.29-rc ext4.  Have you
->> >done more recent runs on ext4?
->> >
->> Yes, thanks for pointing that out, had so many issues I forgot to
->> update the graphs for other file systems.  Just pushed new graphs
->> with data for 2.6.30-rc7 for all the other file systems.  This was
->> from your "newformat" branch from June 6th.
->
-> I've been tuning the 128 thread large file streaming writes, and found
-> some easy optimizations.  While I'm fixing up these patches, could you
-> please do a streaming O_DIRECT write test run for me?  I think buffered
-> writeback in general has some problems right now on high end arrays.
->
-> On my box 2.6.31-rc5 streaming buffered write with xfs only got at
-> 200MB/s (with the 128 thread ffsb workload).  Buffered btrfs goes at
-> 175MB/s.
->
-> O_DIRECT btrfs runs at 390MB/s, while XFS varies a bit between 330MB/s
-> and 250MB/s.
->
-> I'm using a 1MB write blocksize.
->
-> -chris
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+Yan, Zheng

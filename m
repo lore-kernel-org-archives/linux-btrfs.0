@@ -1,73 +1,68 @@
-From: Victor Grishchenko <victor.grishchenko@gmail.com>
-Subject: binmaps: any useful?
-Date: Fri, 7 Aug 2009 13:46:00 +0200
-Message-ID: <771E82FC-F0AD-440F-99BD-8B528C30DE25@gmail.com>
-Mime-Version: 1.0 (Apple Message framework v935.3)
-Content-Type: text/plain; charset=US-ASCII; format=flowed
-To: linux-btrfs@vger.kernel.org
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH] Fix balance Oops
+Date: Fri, 7 Aug 2009 08:51:22 -0400
+Message-ID: <20090807125122.GG17129@think>
+References: <4A7BC631.3040106@oracle.com>
+ <20090807065039.GR12579@kernel.dk>
+ <4A7BD4B0.2080104@oracle.com>
+ <20090807071952.GS12579@kernel.dk>
+ <4A7BEED4.90405@oracle.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: Jens Axboe <jens.axboe@oracle.com>, linux-btrfs@vger.kernel.org
+To: Yan Zheng <zheng.yan@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4A7BEED4.90405@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi!
+On Fri, Aug 07, 2009 at 05:07:32PM +0800, Yan Zheng wrote:
+> On 08/07/2009 03:19 PM, Jens Axboe wrote:
+> > On Fri, Aug 07 2009, Yan Zheng wrote:
+> >> On 08/07/2009 02:50 PM, Jens Axboe wrote:
+> >>> On Fri, Aug 07 2009, Yan Zheng wrote:
+> >>>> invalidate_inode_pages2_range may return -EBUSY occasionally
+> >>>> which results Oops. This patch fixes the issue by moving
+> >>>> invalidate_inode_pages2_range into a loop and keeping calling
+> >>>> it until the return value is not -EBUSY.
+> >>>>
+> >>>> Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
+> >>>>
+> >>>> ---
+> >>>> diff -urp 1/fs/btrfs/relocation.c 2/fs/btrfs/relocation.c
+> >>>> --- 1/fs/btrfs/relocation.c	2009-07-29 10:03:04.367858774 +0800
+> >>>> +++ 2/fs/btrfs/relocation.c	2009-08-07 13:26:43.882147138 +0800
+> >>>> @@ -2553,8 +2553,13 @@ int relocate_inode_pages(struct inode *i
+> >>>>  	last_index = (start + len - 1) >> PAGE_CACHE_SHIFT;
+> >>>>  
+> >>>>  	/* make sure the dirty trick played by the caller work */
+> >>>> -	ret = invalidate_inode_pages2_range(inode->i_mapping,
+> >>>> -					    first_index, last_index);
+> >>>> +	while (1) {
+> >>>> +		ret = invalidate_inode_pages2_range(inode->i_mapping,
+> >>>> +						    first_index, last_index);
+> >>>> +		if (ret != -EBUSY)
+> >>>> +			break;
+> >>>> +		cond_resched();
+> >>>> +	}
+> >>> If it returns EBUSY, would it not make more sense to call
+> >>> filemap_write_and_wait_range() instead of hammering on invalidate?
+> >>>
+> >> The pages to invalidate are not dirty, they are from page read-ahead.
+> >> Actually I have no idea how invalidate_inode_pages2_range can return
+> >> -EBUSY here. (the only user of the inode is the balancer, and it does
+> >> not hold references to the pages)
+> > 
+> > Weird, I looked it up, and it already does a writeback wait. But I guess
+> > that's not your issue. Patch still looks like a hack though, it would be
+> > far better to figure out why it returns EBUSY and fix/wait appropriately
+> > for that to pass.
+> > 
+> 
+> EBUSY is from the EXTENT_LOCK test in try_release_extent_state. The test
+> can be true is because some codes call lock_extent while corresponding
+> pages are not all locked. (one example is btrfs_finish_ordered_io)
 
-I spotted the recent Btrfs changes related to free space
-tracking and I am interested whether one datastracture I
-came up with might be of any help. It is named a "binmap",
-basically a hybrid of a bitmap and a binary tree. It is
-useful for holding well-aggregatable bitmaps with long
-extents of zeros or ones.
+Ok, please use schedule_timeout(HZ/10) instead then.
 
-More on binmaps.
-
-A ``binmap'' is a binary tree consisting of (say) 32-bit
-cells, each made of two 16-bit halves. Each half is either a
-bitmap of layer L or an index pointing to a cell at layer
-L-1.  ``Layer'' of a bitmap means that every bit stands for
-an aligned 2**L-long base bit range (i.e. range in a virtual
-plain bitmap storing the same data). Layer 0 is the base
-layer. If a two-bitmap cell looks like
-     11001111 00110000 11111100 00000000
-then it is immediately aggregated to a L+1 layer half
-     10110100 1110 0000
-Thus, long ranges of zeros or ones stay well aggregated into
-logarithmic bins. E.g. considering the file system, if in
-some area the space is taken consistently in multiplies of
-4MB (aligned), a binmap for that area will not be more
-detailed than 1 bit for 4MB, plus another bit of overhead.
-
-In the worst case of 1010101010... binmap, the overhead,
-compared to a plain bitmap, is 100%. Obviously, a red-black
-tree is much worse off in such a case, at least 32 to 2 even
-without the overhead. So, a binmap combines logarithmical
-access time of a tree and space efficiency of a bitmap.
-
-Note on memory layout. A binmap is naturally hosted in a
-plain integer vector, up to 2**16 cells. To adapt to paged
-storage and also to extend the maximum size of a tree, a
-binmap might be chunked, i.e. subtrees might be hosted at
-different vectors/chunks. By sacrificing one bit of an
-offset-carrying half, we point either at a child cell or to
-another vector/chunk, where the child cell is a root. Thus,
-we extend the datastructure to 2**30 cells at most.
-
-Note on possibilities. There is an interesting possibility
-of doing bitwise operations with binmaps. The computational
-complexity is O(N+M) where N and M are sizes of respective
-binmaps. It is also possible to associate a k-bit integer
-with every range by employing k binmaps; arithmetic
-operations on such sets are also possible. Probably, things
-become too complex at this point.
-
-Note on prior art. The Mondrian memory protection system
-used somewhat similar approach of three-layer bitmaps plus
-misc stunts. The current btrfs approach, as I see, tapes
-together red-black trees and bitmaps.
-
--- 
-
-     Victor Grishchenko
-     post-doc, TU Delft
--- 
-
-		V
+-chris
 

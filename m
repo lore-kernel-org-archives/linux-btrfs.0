@@ -1,60 +1,87 @@
-From: Yan Zheng <zheng.yan@oracle.com>
-Subject: Re: [PATCH] Fix balance Oops
-Date: Fri, 07 Aug 2009 17:07:32 +0800
-Message-ID: <4A7BEED4.90405@oracle.com>
-References: <4A7BC631.3040106@oracle.com> <20090807065039.GR12579@kernel.dk> <4A7BD4B0.2080104@oracle.com> <20090807071952.GS12579@kernel.dk>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
-To: Jens Axboe <jens.axboe@oracle.com>
+From: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
+Subject: Re: RAID[56] status
+Date: Fri, 7 Aug 2009 11:43:10 +0200
+Message-ID: <774E55AE-1639-4537-B001-E8F96311F4CD@karlsbakk.net>
+References: <1249553833.568.23.camel@macbook.infradead.org>
+Reply-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Mime-Version: 1.0 (Apple Message framework v935.3)
+Content-Type: text/plain; charset=UTF-8;
+	format=flowed	delsp=yes
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090807071952.GS12579@kernel.dk>
+In-Reply-To: <1249553833.568.23.camel@macbook.infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/07/2009 03:19 PM, Jens Axboe wrote:
-> On Fri, Aug 07 2009, Yan Zheng wrote:
->> On 08/07/2009 02:50 PM, Jens Axboe wrote:
->>> On Fri, Aug 07 2009, Yan Zheng wrote:
->>>> invalidate_inode_pages2_range may return -EBUSY occasionally
->>>> which results Oops. This patch fixes the issue by moving
->>>> invalidate_inode_pages2_range into a loop and keeping calling
->>>> it until the return value is not -EBUSY.
->>>>
->>>> Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
->>>>
->>>> ---
->>>> diff -urp 1/fs/btrfs/relocation.c 2/fs/btrfs/relocation.c
->>>> --- 1/fs/btrfs/relocation.c	2009-07-29 10:03:04.367858774 +0800
->>>> +++ 2/fs/btrfs/relocation.c	2009-08-07 13:26:43.882147138 +0800
->>>> @@ -2553,8 +2553,13 @@ int relocate_inode_pages(struct inode *i
->>>>  	last_index = (start + len - 1) >> PAGE_CACHE_SHIFT;
->>>>  
->>>>  	/* make sure the dirty trick played by the caller work */
->>>> -	ret = invalidate_inode_pages2_range(inode->i_mapping,
->>>> -					    first_index, last_index);
->>>> +	while (1) {
->>>> +		ret = invalidate_inode_pages2_range(inode->i_mapping,
->>>> +						    first_index, last_index);
->>>> +		if (ret != -EBUSY)
->>>> +			break;
->>>> +		cond_resched();
->>>> +	}
->>> If it returns EBUSY, would it not make more sense to call
->>> filemap_write_and_wait_range() instead of hammering on invalidate?
->>>
->> The pages to invalidate are not dirty, they are from page read-ahead.
->> Actually I have no idea how invalidate_inode_pages2_range can return
->> -EBUSY here. (the only user of the inode is the balancer, and it does
->> not hold references to the pages)
-> 
-> Weird, I looked it up, and it already does a writeback wait. But I guess
-> that's not your issue. Patch still looks like a hack though, it would be
-> far better to figure out why it returns EBUSY and fix/wait appropriately
-> for that to pass.
-> 
+Hi
 
-EBUSY is from the EXTENT_LOCK test in try_release_extent_state. The test
-can be true is because some codes call lock_extent while corresponding
-pages are not all locked. (one example is btrfs_finish_ordered_io)
+This is great. How does the current code handle corruption on a drive, =
+=20
+or two drives with RAID-6 in a stripe? Is the checksumming done per =20
+drive or for the whole stripe?
 
-Yan, Zheng
+roy
+
+On 6. aug.. 2009, at 12.17, David Woodhouse wrote:
+
+> If we've abandoned the idea of putting the number of redundant blocks
+> into the top bits of the type bitmask (and I hope we have), then we'r=
+e
+> fairly much there. Current code is at:
+>
+>   git://, http://git.infradead.org/users/dwmw2/btrfs-raid56.git
+>   git://, http://git.infradead.org/users/dwmw2/btrfs-progs-raid56.git
+>
+> We have recovery working, as well as both full-stripe writes and a
+> temporary hack to allow smaller writes to work (with the 'write hole'
+> problem, of course). The main thing we need to do is ensure that we
+> _always_ do full-stripe writes, and then we can ditch the partial =20
+> write
+> support.
+>
+> I want to do a few other things, but AFAICT none of that needs to =20
+> delay
+> the merge:
+>
+>  - Better rebuild support -- if we lose a disk and add a replacement,
+>    we want to recreate only the contents of that disk, rather than
+>    allocating a new chunk elsewhere and then rewriting _everything_.
+>
+>  - Support for more than 2 redundant blocks per stripe (RAID[789] or
+>    RAID6[=C2=B3=E2=81=B4=E2=81=B5] or whatever we'll call it).
+>
+>  - RAID[56789]0 support.
+>
+>  - Clean up the discard support to do the right thing.
+>
+> --=20
+> David Woodhouse                            Open Source Technology =20
+> Centre
+> David.Woodhouse@intel.com                              Intel =20
+> Corporation
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-=20
+> btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+
+--
+Roy Sigurd Karlsbakk
+(+47) 97542685
+roy@karlsbakk.net
+http://blogg.karlsbakk.net/
+--
+I all pedagogikk er det essensielt at pensum presenteres =20
+intelligibelt. Det er et element=C3=A6rt imperativ for alle pedagoger =C3=
+=A5 =20
+unng=C3=A5 eksessiv anvendelse av idiomer med fremmed opprinnelse. I de=
+ =20
+fleste tilfeller eksisterer adekvate og relevante synonymer p=C3=A5 nor=
+sk.
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,68 +1,44 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] Fix balance Oops
-Date: Fri, 7 Aug 2009 08:51:22 -0400
-Message-ID: <20090807125122.GG17129@think>
-References: <4A7BC631.3040106@oracle.com>
- <20090807065039.GR12579@kernel.dk>
- <4A7BD4B0.2080104@oracle.com>
- <20090807071952.GS12579@kernel.dk>
- <4A7BEED4.90405@oracle.com>
+From: Tomasz Torcz <tomek@pipebreaker.pl>
+Subject: Re: btrfs not iSCSI-target safe?
+Date: Fri, 7 Aug 2009 14:57:25 +0200
+Message-ID: <20090807125725.GC4020@mother.pipebreaker.pl>
+References: <20090722112706.GA7374@mother.pipebreaker.pl> <20090722144031.GC29886@think> <20090723132852.GA23960@mother.pipebreaker.pl> <4A6894ED.6020701@wpkg.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Jens Axboe <jens.axboe@oracle.com>, linux-btrfs@vger.kernel.org
-To: Yan Zheng <zheng.yan@oracle.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4A7BEED4.90405@oracle.com>
+In-Reply-To: <4A6894ED.6020701@wpkg.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 07, 2009 at 05:07:32PM +0800, Yan Zheng wrote:
-> On 08/07/2009 03:19 PM, Jens Axboe wrote:
-> > On Fri, Aug 07 2009, Yan Zheng wrote:
-> >> On 08/07/2009 02:50 PM, Jens Axboe wrote:
-> >>> On Fri, Aug 07 2009, Yan Zheng wrote:
-> >>>> invalidate_inode_pages2_range may return -EBUSY occasionally
-> >>>> which results Oops. This patch fixes the issue by moving
-> >>>> invalidate_inode_pages2_range into a loop and keeping calling
-> >>>> it until the return value is not -EBUSY.
-> >>>>
-> >>>> Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
-> >>>>
-> >>>> ---
-> >>>> diff -urp 1/fs/btrfs/relocation.c 2/fs/btrfs/relocation.c
-> >>>> --- 1/fs/btrfs/relocation.c	2009-07-29 10:03:04.367858774 +0800
-> >>>> +++ 2/fs/btrfs/relocation.c	2009-08-07 13:26:43.882147138 +0800
-> >>>> @@ -2553,8 +2553,13 @@ int relocate_inode_pages(struct inode *i
-> >>>>  	last_index = (start + len - 1) >> PAGE_CACHE_SHIFT;
-> >>>>  
-> >>>>  	/* make sure the dirty trick played by the caller work */
-> >>>> -	ret = invalidate_inode_pages2_range(inode->i_mapping,
-> >>>> -					    first_index, last_index);
-> >>>> +	while (1) {
-> >>>> +		ret = invalidate_inode_pages2_range(inode->i_mapping,
-> >>>> +						    first_index, last_index);
-> >>>> +		if (ret != -EBUSY)
-> >>>> +			break;
-> >>>> +		cond_resched();
-> >>>> +	}
-> >>> If it returns EBUSY, would it not make more sense to call
-> >>> filemap_write_and_wait_range() instead of hammering on invalidate?
-> >>>
-> >> The pages to invalidate are not dirty, they are from page read-ahead.
-> >> Actually I have no idea how invalidate_inode_pages2_range can return
-> >> -EBUSY here. (the only user of the inode is the balancer, and it does
-> >> not hold references to the pages)
-> > 
-> > Weird, I looked it up, and it already does a writeback wait. But I guess
-> > that's not your issue. Patch still looks like a hack though, it would be
-> > far better to figure out why it returns EBUSY and fix/wait appropriately
-> > for that to pass.
-> > 
-> 
-> EBUSY is from the EXTENT_LOCK test in try_release_extent_state. The test
-> can be true is because some codes call lock_extent while corresponding
-> pages are not all locked. (one example is btrfs_finish_ordered_io)
+On Thu, Jul 23, 2009 at 06:50:53PM +0200, Tomasz Chmielewski wrote:
+> Tomasz Torcz wrote:
+>> On Wed, Jul 22, 2009 at 10:40:31AM -0400, Chris Mason wrote:
+>>> On Wed, Jul 22, 2009 at 01:27:06PM +0200, Tomasz Torcz wrote:
+>>>>   Hi,
+>>>>
+>>>> I tried to export file from btrfs volume using iSCSI target.
+>>>> As soon as some initiator have read it over network, server
+>>>> oopsed: http://www.kerneloops.org/submitresult.php?number=557979
+>>>>  Kernel is Fedora's 2.6.29.6-213.fc11.x86_64. I'm aware that
+>>>> target iSCSI functionality is out-of-tree (I'm using iscsitarget-0.4.17-3),
+>>>> so it may not be safe. But is there any known incompatibility
+>>>> between iscsi-target and btrfs?
+>>> Sorry, I don't know of any problems between btrfs and iscsi.  Is the
+>>> iscsi target configured to use linux aio?  That could be the problem.
+>>
+>>   I'm not sure, I'm a mere user. This target software seems to read
+>> files from kernelspace, which as I understand is frowned upon.
+>>   If you are interested, sourcecode is at http://iscsitarget.sourceforge.net/
+>> Ooops occured in fileio_make_request(), in iscsitarget-0.4.17/kernel/file-io.c
+>> file.
+>
+> Have you tried other target implementations, for example tgt[1] or scst[2]?
 
-Ok, please use schedule_timeout(HZ/10) instead then.
+  FTR: tgt works fine with btrfs. Using iscsitarget was a mistake, but it
+was only hit in "yum search iscsi target". tgt package name in Fedora is
+scsi-target-utils.
 
--chris
+-- 
+Tomasz Torcz                Only gods can safely risk perfection,
+xmpp: zdzichubg@chrome.pl     it's a dangerous thing for a man.  -- Alia
 

@@ -1,87 +1,73 @@
-From: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
-Subject: Re: RAID[56] status
-Date: Fri, 7 Aug 2009 11:43:10 +0200
-Message-ID: <774E55AE-1639-4537-B001-E8F96311F4CD@karlsbakk.net>
-References: <1249553833.568.23.camel@macbook.infradead.org>
-Reply-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Victor Grishchenko <victor.grishchenko@gmail.com>
+Subject: binmaps: any useful?
+Date: Fri, 7 Aug 2009 13:46:00 +0200
+Message-ID: <771E82FC-F0AD-440F-99BD-8B528C30DE25@gmail.com>
 Mime-Version: 1.0 (Apple Message framework v935.3)
-Content-Type: text/plain; charset=UTF-8;
-	format=flowed	delsp=yes
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=US-ASCII; format=flowed
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1249553833.568.23.camel@macbook.infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi
+Hi!
 
-This is great. How does the current code handle corruption on a drive, =
-=20
-or two drives with RAID-6 in a stripe? Is the checksumming done per =20
-drive or for the whole stripe?
+I spotted the recent Btrfs changes related to free space
+tracking and I am interested whether one datastracture I
+came up with might be of any help. It is named a "binmap",
+basically a hybrid of a bitmap and a binary tree. It is
+useful for holding well-aggregatable bitmaps with long
+extents of zeros or ones.
 
-roy
+More on binmaps.
 
-On 6. aug.. 2009, at 12.17, David Woodhouse wrote:
+A ``binmap'' is a binary tree consisting of (say) 32-bit
+cells, each made of two 16-bit halves. Each half is either a
+bitmap of layer L or an index pointing to a cell at layer
+L-1.  ``Layer'' of a bitmap means that every bit stands for
+an aligned 2**L-long base bit range (i.e. range in a virtual
+plain bitmap storing the same data). Layer 0 is the base
+layer. If a two-bitmap cell looks like
+     11001111 00110000 11111100 00000000
+then it is immediately aggregated to a L+1 layer half
+     10110100 1110 0000
+Thus, long ranges of zeros or ones stay well aggregated into
+logarithmic bins. E.g. considering the file system, if in
+some area the space is taken consistently in multiplies of
+4MB (aligned), a binmap for that area will not be more
+detailed than 1 bit for 4MB, plus another bit of overhead.
 
-> If we've abandoned the idea of putting the number of redundant blocks
-> into the top bits of the type bitmask (and I hope we have), then we'r=
-e
-> fairly much there. Current code is at:
->
->   git://, http://git.infradead.org/users/dwmw2/btrfs-raid56.git
->   git://, http://git.infradead.org/users/dwmw2/btrfs-progs-raid56.git
->
-> We have recovery working, as well as both full-stripe writes and a
-> temporary hack to allow smaller writes to work (with the 'write hole'
-> problem, of course). The main thing we need to do is ensure that we
-> _always_ do full-stripe writes, and then we can ditch the partial =20
-> write
-> support.
->
-> I want to do a few other things, but AFAICT none of that needs to =20
-> delay
-> the merge:
->
->  - Better rebuild support -- if we lose a disk and add a replacement,
->    we want to recreate only the contents of that disk, rather than
->    allocating a new chunk elsewhere and then rewriting _everything_.
->
->  - Support for more than 2 redundant blocks per stripe (RAID[789] or
->    RAID6[=C2=B3=E2=81=B4=E2=81=B5] or whatever we'll call it).
->
->  - RAID[56789]0 support.
->
->  - Clean up the discard support to do the right thing.
->
-> --=20
-> David Woodhouse                            Open Source Technology =20
-> Centre
-> David.Woodhouse@intel.com                              Intel =20
-> Corporation
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-=20
-> btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+In the worst case of 1010101010... binmap, the overhead,
+compared to a plain bitmap, is 100%. Obviously, a red-black
+tree is much worse off in such a case, at least 32 to 2 even
+without the overhead. So, a binmap combines logarithmical
+access time of a tree and space efficiency of a bitmap.
 
---
-Roy Sigurd Karlsbakk
-(+47) 97542685
-roy@karlsbakk.net
-http://blogg.karlsbakk.net/
---
-I all pedagogikk er det essensielt at pensum presenteres =20
-intelligibelt. Det er et element=C3=A6rt imperativ for alle pedagoger =C3=
-=A5 =20
-unng=C3=A5 eksessiv anvendelse av idiomer med fremmed opprinnelse. I de=
- =20
-fleste tilfeller eksisterer adekvate og relevante synonymer p=C3=A5 nor=
-sk.
+Note on memory layout. A binmap is naturally hosted in a
+plain integer vector, up to 2**16 cells. To adapt to paged
+storage and also to extend the maximum size of a tree, a
+binmap might be chunked, i.e. subtrees might be hosted at
+different vectors/chunks. By sacrificing one bit of an
+offset-carrying half, we point either at a child cell or to
+another vector/chunk, where the child cell is a root. Thus,
+we extend the datastructure to 2**30 cells at most.
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Note on possibilities. There is an interesting possibility
+of doing bitwise operations with binmaps. The computational
+complexity is O(N+M) where N and M are sizes of respective
+binmaps. It is also possible to associate a k-bit integer
+with every range by employing k binmaps; arithmetic
+operations on such sets are also possible. Probably, things
+become too complex at this point.
+
+Note on prior art. The Mondrian memory protection system
+used somewhat similar approach of three-layer bitmaps plus
+misc stunts. The current btrfs approach, as I see, tapes
+together red-black trees and bitmaps.
+
+-- 
+
+     Victor Grishchenko
+     post-doc, TU Delft
+-- 
+
+		V
+

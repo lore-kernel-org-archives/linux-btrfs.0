@@ -1,44 +1,79 @@
-From: Tomasz Torcz <tomek@pipebreaker.pl>
-Subject: Re: btrfs not iSCSI-target safe?
-Date: Fri, 7 Aug 2009 14:57:25 +0200
-Message-ID: <20090807125725.GC4020@mother.pipebreaker.pl>
-References: <20090722112706.GA7374@mother.pipebreaker.pl> <20090722144031.GC29886@think> <20090723132852.GA23960@mother.pipebreaker.pl> <4A6894ED.6020701@wpkg.org>
+From: Steven Pratt <slpratt@austin.ibm.com>
+Subject: Re: Updated performance results
+Date: Fri, 07 Aug 2009 08:56:06 -0500
+Message-ID: <4A7C3276.4020802@austin.ibm.com>
+References: <4A68AD69.4030803@dangyankee.net> <20090723210051.GB1040@think>	 <4A68DE81.3020505@dangyankee.net> <20090724132407.GC16192@think>	 <20090724140002.GD16192@think> <4A6F5BB6.4020204@austin.ibm.com>	 <20090728202355.GC13940@think> <4A6F6951.9020304@austin.ibm.com>	 <20090805203526.GE12524@think> <f24d23310908070030u2ee49b41obcaafa5d7547cf69@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: debian developer <debiandev@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4A6894ED.6020701@wpkg.org>
+In-Reply-To: <f24d23310908070030u2ee49b41obcaafa5d7547cf69@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 23, 2009 at 06:50:53PM +0200, Tomasz Chmielewski wrote:
-> Tomasz Torcz wrote:
->> On Wed, Jul 22, 2009 at 10:40:31AM -0400, Chris Mason wrote:
->>> On Wed, Jul 22, 2009 at 01:27:06PM +0200, Tomasz Torcz wrote:
->>>>   Hi,
->>>>
->>>> I tried to export file from btrfs volume using iSCSI target.
->>>> As soon as some initiator have read it over network, server
->>>> oopsed: http://www.kerneloops.org/submitresult.php?number=557979
->>>>  Kernel is Fedora's 2.6.29.6-213.fc11.x86_64. I'm aware that
->>>> target iSCSI functionality is out-of-tree (I'm using iscsitarget-0.4.17-3),
->>>> so it may not be safe. But is there any known incompatibility
->>>> between iscsi-target and btrfs?
->>> Sorry, I don't know of any problems between btrfs and iscsi.  Is the
->>> iscsi target configured to use linux aio?  That could be the problem.
->>
->>   I'm not sure, I'm a mere user. This target software seems to read
->> files from kernelspace, which as I understand is frowned upon.
->>   If you are interested, sourcecode is at http://iscsitarget.sourceforge.net/
->> Ooops occured in fileio_make_request(), in iscsitarget-0.4.17/kernel/file-io.c
->> file.
+debian developer wrote:
+> HI,
 >
-> Have you tried other target implementations, for example tgt[1] or scst[2]?
+> Do you have any benchmarks against non-raid common workloads?
+> Like say a desktop user? It would be great to compare against ext3,
+> ext4, xfs etc.,
+>   
+Yes, have had a little trouble with that box recently, but plenty of 
+results based on the 2.6.29 kernels here:
 
-  FTR: tgt works fine with btrfs. Using iscsitarget was a mistake, but it
-was only hit in "yum search iscsi target". tgt package name in Fedora is
-scsi-target-utils.
+http://btrfs.boxacle.net/repository/single-disk/History/History.html
 
--- 
-Tomasz Torcz                Only gods can safely risk perfection,
-xmpp: zdzichubg@chrome.pl     it's a dangerous thing for a man.  -- Alia
+If you are not familiar with the runs I have been doing, you can find 
+the details of the benchmarking machine and test procedures here: 
+http://btrfs.boxacle.net/
+
+Steve
+
+> Thanks,
+>
+> On Thu, Aug 6, 2009 at 2:05 AM, Chris Mason<chris.mason@oracle.com> wrote:
+>   
+>> On Tue, Jul 28, 2009 at 04:10:41PM -0500, Steven Pratt wrote:
+>>     
+>>>> Hi Steve,
+>>>>
+>>>> I think I'm going to start tuning something other than the
+>>>> random-writes, there is definitely low hanging fruit in the large file
+>>>> creates workload ;)  Thanks again for posting all of these.
+>>>>         
+>>> Sure, no problem.
+>>>
+>>>       
+>>>> The history graph has 2.6.31-rc btrfs against 2.6.29-rc ext4.  Have you
+>>>> done more recent runs on ext4?
+>>>>
+>>>>         
+>>> Yes, thanks for pointing that out, had so many issues I forgot to
+>>> update the graphs for other file systems.  Just pushed new graphs
+>>> with data for 2.6.30-rc7 for all the other file systems.  This was
+>>> from your "newformat" branch from June 6th.
+>>>       
+>> I've been tuning the 128 thread large file streaming writes, and found
+>> some easy optimizations.  While I'm fixing up these patches, could you
+>> please do a streaming O_DIRECT write test run for me?  I think buffered
+>> writeback in general has some problems right now on high end arrays.
+>>
+>> On my box 2.6.31-rc5 streaming buffered write with xfs only got at
+>> 200MB/s (with the 128 thread ffsb workload).  Buffered btrfs goes at
+>> 175MB/s.
+>>
+>> O_DIRECT btrfs runs at 390MB/s, while XFS varies a bit between 330MB/s
+>> and 250MB/s.
+>>
+>> I'm using a 1MB write blocksize.
+>>
+>> -chris
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>>     
 

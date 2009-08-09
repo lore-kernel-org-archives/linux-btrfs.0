@@ -1,34 +1,51 @@
-From: Yan Zheng <yanzheng@21cn.com>
-Subject: Re: btrfs-cache processes
-Date: Sun, 9 Aug 2009 12:00:15 +0800
-Message-ID: <3d0408630908082100s395dd7d2s7174c63c16120c69@mail.gmail.com>
-References: <20090809001723.223a0962.adrian@blinkenlights.ch>
+From: "sparx, India" <sparx.mailing.list@gmail.com>
+Subject: Project idea regarding transparency for distributed systems to be
+	incorporated in the btrfs design
+Date: Sun, 9 Aug 2009 12:29:23 +0530
+Message-ID: <ce8c6160908082359u5dd1df12gee1e3066aae6d3db@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Adrian Ulrich <adrian@blinkenlights.ch>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090809001723.223a0962.adrian@blinkenlights.ch>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2009/8/9 Adrian Ulrich <adrian@blinkenlights.ch>:
-> Hi,
->
-> I've upgraded my system to 2.6.31-rc5 some days ago. Yesterday i've discovered that
-> this kernel produces some berserk btrfs-cache processes:
->
-> There are about 4 of them and they use ~95% sys-cputime.
-> About 20 seconds after they started 'freaking out' all writes to BTRFS will
-> block and umounting also doesn't work anymore. Reading the volume
-> still works (mostly) and there appers to be no disk activity (iostat/top
-> reports nothing unusual).
->
-> This isn't normal, isn't it? ;-)
->
-> Everything appears to work fine on Linux 2.6.31-rc3
->
+Hi,
+We are a group of four undergraduate students studying in final year
+completing our computer engineering course from the University of
+Pune, India.
 
-This has been fixed in the unstable tree. The fix will be in 2.6.31-rc6
-soon.
+We would like to do an operating system related project over a period
+of 6 months.
+We have studied and understood the design of Btrfs.
 
-Yan, Zheng
+We came across this paper presented in Fast '07 on transparent file
+systems in distributed networks. (TFS)
+The paper basically suggests some design changes in a regular file
+system so as to support (and minimize) the efforts of contributory
+applications for storage resources in a distributed system. This would
+enable greater resource contribution without affecting local
+performance ( Storage contribution can increase upto 40% in corporate
+networks)
+
+To support transparent memory allocation to a shared pool efficiently
+a file sytem should:
+1.Allocate most blocks in a given region
+2.View storage media as a series of chunks
+3.Some replicative power of its own.
+However the TFS design does not interfere with a file systems own
+allocation policy.
+
+ We could not find any article/information which specifically mentions
+that Btrfs handles memory allocation in distributed systems
+transparently.
+
+We would like to ask your suggestions on the following points:
+
+1. Are we correct in our assumption that Btrfs does not handle
+transparent allocation as yet or have we missed something?
+2. Would the Btrfs community appreciate this contribution   to the
+file system?(i.e. do you think it is worth our investing our time and
+effort in this and that it contributes positively to btrfs?)
+
+Thank-you for your consideration.
+-Sparx group

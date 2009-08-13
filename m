@@ -1,35 +1,25 @@
-From: Markus Trippelsdorf <markus@trippelsdorf.de>
-Subject: fallocate overhead
-Date: Thu, 13 Aug 2009 16:07:32 +0200
-Message-ID: <20090813140732.GA1915@phenom2.trippelsdorf.de>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: fallocate overhead
+Date: Thu, 13 Aug 2009 10:45:23 -0400
+Message-ID: <20090813144523.GG4652@think>
+References: <20090813140732.GA1915@phenom2.trippelsdorf.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: lkml@rtr.ca
-To: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, lkml@rtr.ca
+To: Markus Trippelsdorf <markus@trippelsdorf.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20090813140732.GA1915@phenom2.trippelsdorf.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I was playing with the new hdparm wiper script (
-http://sourceforge.net/projects/hdparm/files/) on my Vertex SSD and
-it appears that btrfs needs a huge space overhead when dealing with
-fallocate system calls. Basically what the wiper script does is to
-fallocate one huge file using all free space minus a safety margin.
-And this margin has to be about 30% on btrfs, e.g.:
+On Thu, Aug 13, 2009 at 04:07:32PM +0200, Markus Trippelsdorf wrote:
+> I was playing with the new hdparm wiper script (
+> http://sourceforge.net/projects/hdparm/files/) on my Vertex SSD and
+> it appears that btrfs needs a huge space overhead when dealing with
+> fallocate system calls. Basically what the wiper script does is to
+> fallocate one huge file using all free space minus a safety margin.
+> And this margin has to be about 30% on btrfs, e.g.:
 
-# df -T /
-Filesystem    Type   1K-blocks      Used Available Use% Mounted on
-/dev/root    btrfs    31266648  10464096  20802552  34% /
-# hdparm --fallocate 20002552 test_temp
-test_temp: No space left on device
-# hdparm --fallocate 16002552 test_temp
-test_temp: No space left on device
-# hdparm --fallocate 15002552 test_temp
-#
+We're actively fixing this ;)  The margin is just a hard coded limit to
+try and avoid enospc oopsen.  It should improve in 2.6.32.
 
-and from dmesg:
-no space left, need 20482613248, 4096 delalloc bytes, 9786335232 bytes_used, 0 bytes_reserved, 0 bytes_pinned, 0 bytes_readonly, 0 may use 25545211904 total
-no space left, need 16386613248, 4096 delalloc bytes, 9786335232 bytes_used, 0 bytes_reserved, 0 bytes_pinned, 0 bytes_readonly, 0 may use 25545211904 total
-
-My question is if 30% isn't a bit too much overhead?
--- 
-Markus
+-chris

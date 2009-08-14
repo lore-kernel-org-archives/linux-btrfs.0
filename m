@@ -1,25 +1,57 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: fallocate overhead
-Date: Thu, 13 Aug 2009 10:45:23 -0400
-Message-ID: <20090813144523.GG4652@think>
-References: <20090813140732.GA1915@phenom2.trippelsdorf.de>
+From: Tomasz Chmielewski <mangoo@wpkg.org>
+Subject: can't mount RAID-1 btrfs after reboot
+Date: Fri, 14 Aug 2009 11:34:42 +0200
+Message-ID: <4A852FB2.2030205@wpkg.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, lkml@rtr.ca
-To: Markus Trippelsdorf <markus@trippelsdorf.de>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090813140732.GA1915@phenom2.trippelsdorf.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 13, 2009 at 04:07:32PM +0200, Markus Trippelsdorf wrote:
-> I was playing with the new hdparm wiper script (
-> http://sourceforge.net/projects/hdparm/files/) on my Vertex SSD and
-> it appears that btrfs needs a huge space overhead when dealing with
-> fallocate system calls. Basically what the wiper script does is to
-> fallocate one huge file using all free space minus a safety margin.
-> And this margin has to be about 30% on btrfs, e.g.:
+I can't mount RAID-1 btrfs after reboot (well, sort of).
 
-We're actively fixing this ;)  The margin is just a hard coded limit to
-try and avoid enospc oopsen.  It should improve in 2.6.32.
+Using 2.6.31-rc5 and btrfs-progs 0.19, I created a RAID-1 fileystem 
+using these command line options:
 
--chris
+# mkfs.btrfs -L btrfs-data -m raid1 -d raid1 /dev/sda4 /dev/sdb4
+
+
+After which I was able to mount the filesystem with either of the below 
+(or both):
+
+# mount /dev/sda4 /mnt/btrfs-sda4
+
+# mount /dev/sdb4 /mnt/btrfs-sdb4
+
+
+After a reboot, I'm no longer able to mount the filesystem from /dev/sda4:
+
+# mount /dev/sda4 /mnt/btrfs/
+
+Mount command complains and doesn't mount it and says I can find more 
+info in dmesg:
+
+Btrfs loaded
+device label btrfs-data devid 1 transid 67 /dev/sda4
+btrfs: failed to read the system array on sda4
+btrfs: open_ctree failed
+
+
+I'm able to mount the filesystem by using /dev/sdb4:
+
+# mount /dev/sdb4 /mnt/btrfs/
+
+After which I can unmount it, and use /dev/sda4 to mount the filesystem:
+
+# umount /dev/sdb4
+# mount /dev/sda4 /mnt/btrfs/
+
+
+Does it make sense?
+
+It behaved like this also with some earlier kernels.
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org

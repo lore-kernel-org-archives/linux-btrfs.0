@@ -1,35 +1,41 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: btrfs failing fsx-linux
-Date: Tue, 18 Aug 2009 13:59:50 -0400
-Message-ID: <20090818175950.GA2348@localhost.localdomain>
-References: <20090818172641.GC30325@wotan.suse.de>
+From: "Yan, Zheng " <yanzheng@21cn.com>
+Subject: Re: [patch] btrfs: fix inode rbtree corruption
+Date: Wed, 19 Aug 2009 02:56:54 +0800
+Message-ID: <3d0408630908181156l16ccbc92p529f38cf622949cb@mail.gmail.com>
+References: <20090818164542.GB30325@wotan.suse.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
 Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
 To: Nick Piggin <npiggin@suse.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090818172641.GC30325@wotan.suse.de>
+In-Reply-To: <20090818164542.GB30325@wotan.suse.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 18, 2009 at 07:26:41PM +0200, Nick Piggin wrote:
-> Hi Chris,
-> 
-> Don't know if this is a known issue, but I have btrfs (after my previous
-> inode_tree fixup patch) failing fsx-linux in Linus's current git tree.
-> 
-> This makes it a bit hard for me to test my btrfs truncate conversion patch
-> unfortunately, though it does seem pretty stable so I will probably just
-> send it out anyway.
-> 
-> Anyway, just a head's up. Oh, the way I reproduce is to create btrfs
-> on 1GB rd, run 4 instances of fsx-linux on different files in the root
-> directory, and run `while true ; do sync ; echo 3 > /proc/sys/vm/drop_caches;
-> done` at the same time.
-> 
+2009/8/19 Nick Piggin <npiggin@suse.de>:
+> Hi,
+>
+> Ran into a problem stress testing my btrfs truncate conversion attempt...
+> Unfortunately it was an existing btrfs problem. Fortunately I think I
+> was able to fix it.
+>
+> Thanks,
+> Nick
+>
+> --
+> btrfs: fix inode rbtree corruption
+>
+> Node may not be inserted over existing node. This causes inode tree
+> corruption and I was seeing crashes in inode_tree_del which I can not
+> reproduce after this patch.
+>
+> The other way to fix this would be to tie inode lifetime in the rbtree
+> with inode while not in freeing state. I had a look at this but it is
+> not so trivial at this point. At least this patch gets things working again.
+>
 
-Nick,
+I'm not quite understand this. rbtree allows entries having the same keys.
+I guess your problem is because of some nodes get inserted into the tree
+twice. But I have no idea how can it happen.
 
-I'll take a look at this later today and see what I can come up with.  Thanks
-for reporting it.
-
-Josef
+Regards
+Yan, Zheng

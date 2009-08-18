@@ -1,47 +1,43 @@
 From: Jens Axboe <jens.axboe@oracle.com>
-Subject: Re: [patch] btrfs: fix inode rbtree corruption
-Date: Tue, 18 Aug 2009 23:19:10 +0200
-Message-ID: <20090818211910.GR12579@kernel.dk>
-References: <20090818164542.GB30325@wotan.suse.de> <3d0408630908181156l16ccbc92p529f38cf622949cb@mail.gmail.com>
+Subject: Re: Why does stat() return invalid st_dev field for btrfs ??
+Date: Tue, 18 Aug 2009 23:21:49 +0200
+Message-ID: <20090818212149.GS12579@kernel.dk>
+References: <4A89C1DA.6040601@rtr.ca> <ac3eb2510908171729k2e53914fu6ffe49483310aeba@mail.gmail.com> <4A8A0B76.1030800@rtr.ca>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Nick Piggin <npiggin@suse.de>,
+Cc: Kay Sievers <kay.sievers@vrfy.org>, linux-btrfs@vger.kernel.org,
 	Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs@vger.kernel.org
-To: "Yan, Zheng " <yanzheng@21cn.com>
+	Linux Kernel <linux-kernel@vger.kernel.org>
+To: Mark Lord <lkml@rtr.ca>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <3d0408630908181156l16ccbc92p529f38cf622949cb@mail.gmail.com>
+In-Reply-To: <4A8A0B76.1030800@rtr.ca>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 19 2009, Yan, Zheng  wrote:
-> 2009/8/19 Nick Piggin <npiggin@suse.de>:
-> > Hi,
-> >
-> > Ran into a problem stress testing my btrfs truncate conversion attempt...
-> > Unfortunately it was an existing btrfs problem. Fortunately I think I
-> > was able to fix it.
-> >
-> > Thanks,
-> > Nick
-> >
-> > --
-> > btrfs: fix inode rbtree corruption
-> >
-> > Node may not be inserted over existing node. This causes inode tree
-> > corruption and I was seeing crashes in inode_tree_del which I can not
-> > reproduce after this patch.
-> >
-> > The other way to fix this would be to tie inode lifetime in the rbtree
-> > with inode while not in freeing state. I had a look at this but it is
-> > not so trivial at this point. At least this patch gets things working again.
-> >
-> 
-> I'm not quite understand this. rbtree allows entries having the same keys.
-> I guess your problem is because of some nodes get inserted into the tree
-> twice. But I have no idea how can it happen.
+On Mon, Aug 17 2009, Mark Lord wrote:
+> Kay Sievers wrote:
+>> On Mon, Aug 17, 2009 at 22:47, Mark Lord<lkml@rtr.ca> wrote:
+>>> Chris / list,
+>>>
+>>> stat(2) seems to return invalid major/minor device info
+>>> for btrfs filesystems.
+>>>
+>>> Why?  Is this a bug?
+>>
+>> This is not invalid and not a bug. It's a superblock without a device,
+>> and expected behavior.
+>>
+>> There is no one-to-one relation from a btrfs mountpoint to a device,
+>> it's a tree, and therefore therefore there can not be a single
+>> major/minor.
+> ..
+>
+> Sure there is for the most common case.
+> When there is only a single device, stat() should return that device.
+> When there are several, it should do something different.
 
-It can work with key aliases, if it's a problem then it's likely due to
-another problem in related lookup code.
+I actually think it's quite sane, since then you get the same behaviour
+on multi vs single disk file systems. The last thing you want is to have
+different behaviour when you later add a disk, for instance.
 
 -- 
 Jens Axboe

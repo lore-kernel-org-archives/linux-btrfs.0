@@ -1,75 +1,58 @@
-From: "Yan, Zheng " <yanzheng@21cn.com>
+From: Nick Piggin <npiggin@suse.de>
 Subject: Re: [patch] btrfs: fix inode rbtree corruption
-Date: Wed, 19 Aug 2009 17:34:08 +0800
-Message-ID: <3d0408630908190234m1effa947yef5b014e21c25fae@mail.gmail.com>
-References: <20090818164542.GB30325@wotan.suse.de>
-	 <3d0408630908181156l16ccbc92p529f38cf622949cb@mail.gmail.com>
-	 <20090818211910.GR12579@kernel.dk>
-	 <20090819084530.GD25721@wotan.suse.de>
-	 <3d0408630908190156r60931de3w637a9e8a4d5f44c1@mail.gmail.com>
-	 <20090819090436.GG25721@wotan.suse.de>
+Date: Wed, 19 Aug 2009 12:47:32 +0200
+Message-ID: <20090819104732.GH25721@wotan.suse.de>
+References: <20090818164542.GB30325@wotan.suse.de> <3d0408630908181156l16ccbc92p529f38cf622949cb@mail.gmail.com> <20090818211910.GR12579@kernel.dk> <20090819084530.GD25721@wotan.suse.de> <3d0408630908190156r60931de3w637a9e8a4d5f44c1@mail.gmail.com> <20090819090436.GG25721@wotan.suse.de> <3d0408630908190234m1effa947yef5b014e21c25fae@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=iso-8859-1
 Cc: Jens Axboe <jens.axboe@oracle.com>,
 	Chris Mason <chris.mason@oracle.com>,
 	linux-btrfs@vger.kernel.org
-To: Nick Piggin <npiggin@suse.de>
+To: "Yan, Zheng " <yanzheng@21cn.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090819090436.GG25721@wotan.suse.de>
+In-Reply-To: <3d0408630908190234m1effa947yef5b014e21c25fae@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2009/8/19 Nick Piggin <npiggin@suse.de>:
-> On Wed, Aug 19, 2009 at 04:56:12PM +0800, Yan, Zheng =A0wrote:
->> 2009/8/19 Nick Piggin <npiggin@suse.de>:
->> > On Tue, Aug 18, 2009 at 11:19:10PM +0200, Jens Axboe wrote:
->> >> On Wed, Aug 19 2009, Yan, Zheng =A0wrote:
->> >> > 2009/8/19 Nick Piggin <npiggin@suse.de>:
->> >> It can work with key aliases, if it's a problem then it's likely =
-due to
->> >> another problem in related lookup code.
->> > See my other reply. It *can* work with key aliases, but this parti=
-cular
->> > code does not.
->> > It is pretty easy obviously to put in duplicates because the rbtre=
-e
->> > code doesn't know about keys, but if we do this then it looks like
->> > it might cause the search code to miss some valid inodes and inste=
-ad
->> > return freeing inodes -- so you'd also have to look at that and up=
-date
->> > it which is why I didn't go down this route..
->>
->> There is no search code. The only place uses the inode tree is
->> the relocation code, it traverses the tree and uses igrab to guarant=
-ee
->> freeing inodes are not touched. I'm still confused :(
-> Firstly, the insert/delete code is wrong for duplicates and it will c=
-rash in
-> the absense of any search activity. Agree?
-> Secondly, OK now if we did allow duplicates in the tree as-per my las=
-t
-> patch to Jens, then look what happens with igrab: it will correctly
-> prevent us from getting a freeing inode, but then it will set the nex=
-t
-> inode to search at ino+1 -- ie. it will not correctly traverse duplic=
+On Wed, Aug 19, 2009 at 05:34:08PM +0800, Yan, Zheng  wrote:
+> 2009/8/19 Nick Piggin <npiggin@suse.de>:
+> > On Wed, Aug 19, 2009 at 04:56:12PM +0800, Yan, Zheng =A0wrote:
+> > Firstly, the insert/delete code is wrong for duplicates and it will=
+ crash in
+> > the absense of any search activity. Agree?
+> > Secondly, OK now if we did allow duplicates in the tree as-per my l=
+ast
+> > patch to Jens, then look what happens with igrab: it will correctly
+> > prevent us from getting a freeing inode, but then it will set the n=
+ext
+> > inode to search at ino+1 -- ie. it will not correctly traverse dupl=
+icates
+> > without modifications. Agree?
+> > So with that in mind -- the fact that you don't want to see freeing
+> > inodes in your search code, then there is no point to handle duplic=
 ates
-> without modifications. Agree?
-> So with that in mind -- the fact that you don't want to see freeing
-> inodes in your search code, then there is no point to handle duplicat=
-es
-> at all; simply remove freeing inodes from the tree.
->
+> > at all; simply remove freeing inodes from the tree.
+> >
+>=20
+> I agree all of this. Thing confuses me is you saw crashes in
+> inode_tree_del.  It's unlikely you were playing btrfsctl -b when you
+> encountered the problem. So no search code got involved, only
+> inode_tree_add/del modified the tree. I don't think the crash was
+> caused by duplicates in the tree.
 
-I agree all of this. Thing confuses me is you saw crashes in
-inode_tree_del.  It's unlikely you were playing btrfsctl -b when you
-encountered the problem. So no search code got involved, only
-inode_tree_add/del modified the tree. I don't think the crash was
-caused by duplicates in the tree.
+Oh, it is because inodes get reclaimed then presumably the inode number
+gets reused while an inode of the same number is being freed. I'm not
+exactly sure how the inode and inode number lifetimes work in btrfs...
 
-I have no objection to take this patch.
+Duplicate inodes are definitely being added because I put a message in
+there and it is being triggered. What happens is that the duplicate
+insertion code is wrong, and it kicks the old inode out of the tree
+with the inode still marked as being in the tree.  So when you try to
+delete that inode, it crashes.
 
-Regards
-Yan, Zheng
+I'm not quite sure how to explain it any better. It is pretty easy to
+reproduce (it is the same workload as I describe in fsx-linux failures
+mail) if you would like to verify what is happening.
+
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

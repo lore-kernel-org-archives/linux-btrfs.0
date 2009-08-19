@@ -1,63 +1,45 @@
-From: Jens Axboe <jens.axboe@oracle.com>
-Subject: Re: [patch] btrfs: fix inode rbtree corruption
-Date: Wed, 19 Aug 2009 10:46:59 +0200
-Message-ID: <20090819084658.GT12579@kernel.dk>
-References: <20090818164542.GB30325@wotan.suse.de> <3d0408630908181156l16ccbc92p529f38cf622949cb@mail.gmail.com> <20090818211910.GR12579@kernel.dk> <20090819084530.GD25721@wotan.suse.de>
+From: Nick Piggin <npiggin@suse.de>
+Subject: Re: btrfs failing fsx-linux
+Date: Wed, 19 Aug 2009 10:50:40 +0200
+Message-ID: <20090819085040.GE25721@wotan.suse.de>
+References: <20090818172641.GC30325@wotan.suse.de> <20090818175950.GA2348@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: "Yan, Zheng " <yanzheng@21cn.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs@vger.kernel.org
-To: Nick Piggin <npiggin@suse.de>
+Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090819084530.GD25721@wotan.suse.de>
+In-Reply-To: <20090818175950.GA2348@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 19 2009, Nick Piggin wrote:
-> On Tue, Aug 18, 2009 at 11:19:10PM +0200, Jens Axboe wrote:
-> > On Wed, Aug 19 2009, Yan, Zheng  wrote:
-> > > 2009/8/19 Nick Piggin <npiggin@suse.de>:
-> > > > Hi,
-> > > >
-> > > > Ran into a problem stress testing my btrfs truncate conversion attempt...
-> > > > Unfortunately it was an existing btrfs problem. Fortunately I think I
-> > > > was able to fix it.
-> > > >
-> > > > Thanks,
-> > > > Nick
-> > > >
-> > > > --
-> > > > btrfs: fix inode rbtree corruption
-> > > >
-> > > > Node may not be inserted over existing node. This causes inode tree
-> > > > corruption and I was seeing crashes in inode_tree_del which I can not
-> > > > reproduce after this patch.
-> > > >
-> > > > The other way to fix this would be to tie inode lifetime in the rbtree
-> > > > with inode while not in freeing state. I had a look at this but it is
-> > > > not so trivial at this point. At least this patch gets things working again.
-> > > >
-> > > 
-> > > I'm not quite understand this. rbtree allows entries having the same keys.
-> > > I guess your problem is because of some nodes get inserted into the tree
-> > > twice. But I have no idea how can it happen.
+On Tue, Aug 18, 2009 at 01:59:50PM -0400, Josef Bacik wrote:
+> On Tue, Aug 18, 2009 at 07:26:41PM +0200, Nick Piggin wrote:
+> > Hi Chris,
 > > 
-> > It can work with key aliases, if it's a problem then it's likely due to
-> > another problem in related lookup code.
+> > Don't know if this is a known issue, but I have btrfs (after my previous
+> > inode_tree fixup patch) failing fsx-linux in Linus's current git tree.
+> > 
+> > This makes it a bit hard for me to test my btrfs truncate conversion patch
+> > unfortunately, though it does seem pretty stable so I will probably just
+> > send it out anyway.
+> > 
+> > Anyway, just a head's up. Oh, the way I reproduce is to create btrfs
+> > on 1GB rd, run 4 instances of fsx-linux on different files in the root
+> > directory, and run `while true ; do sync ; echo 3 > /proc/sys/vm/drop_caches;
+> > done` at the same time.
+> > 
 > 
-> See my other reply. It *can* work with key aliases, but this particular
-> code does not.
+> Nick,
 > 
-> It is pretty easy obviously to put in duplicates because the rbtree
-> code doesn't know about keys, but if we do this then it looks like
-> it might cause the search code to miss some valid inodes and instead
-> return freeing inodes -- so you'd also have to look at that and update
-> it which is why I didn't go down this route..
+> I'll take a look at this later today and see what I can come up with.  Thanks
+> for reporting it.
+> 
+> Josef
 
-Mine was just a generic statement, I didn't read the btrfs code (hence
-my comment about potential lookup bug, if you allow aliases you have to
-be careful).
+Thanks. After spending a good chunk of my life tracking down fsx-linux
+problems in fsblock and mm code, I can't say I envy you :) It's a great
+test to run though (especially syncing and dropping caches because that
+hits writeback and bypasses caches far far more than fsx ever does
+on its own).
 
--- 
-Jens Axboe
+Let me know if you need me to test any patches.
 

@@ -1,45 +1,33 @@
 From: Nick Piggin <npiggin@suse.de>
-Subject: Re: btrfs failing fsx-linux
-Date: Wed, 19 Aug 2009 10:50:40 +0200
-Message-ID: <20090819085040.GE25721@wotan.suse.de>
-References: <20090818172641.GC30325@wotan.suse.de> <20090818175950.GA2348@localhost.localdomain>
+Subject: Re: [patch] btrfs: fix inode rbtree corruption
+Date: Wed, 19 Aug 2009 10:52:08 +0200
+Message-ID: <20090819085208.GF25721@wotan.suse.de>
+References: <20090818164542.GB30325@wotan.suse.de> <3d0408630908181156l16ccbc92p529f38cf622949cb@mail.gmail.com> <20090818211910.GR12579@kernel.dk> <20090819084530.GD25721@wotan.suse.de> <20090819084658.GT12579@kernel.dk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Cc: "Yan, Zheng " <yanzheng@21cn.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs@vger.kernel.org
+To: Jens Axboe <jens.axboe@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090818175950.GA2348@localhost.localdomain>
+In-Reply-To: <20090819084658.GT12579@kernel.dk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 18, 2009 at 01:59:50PM -0400, Josef Bacik wrote:
-> On Tue, Aug 18, 2009 at 07:26:41PM +0200, Nick Piggin wrote:
-> > Hi Chris,
+On Wed, Aug 19, 2009 at 10:46:59AM +0200, Jens Axboe wrote:
+> On Wed, Aug 19 2009, Nick Piggin wrote:
+> > See my other reply. It *can* work with key aliases, but this particular
+> > code does not.
 > > 
-> > Don't know if this is a known issue, but I have btrfs (after my previous
-> > inode_tree fixup patch) failing fsx-linux in Linus's current git tree.
-> > 
-> > This makes it a bit hard for me to test my btrfs truncate conversion patch
-> > unfortunately, though it does seem pretty stable so I will probably just
-> > send it out anyway.
-> > 
-> > Anyway, just a head's up. Oh, the way I reproduce is to create btrfs
-> > on 1GB rd, run 4 instances of fsx-linux on different files in the root
-> > directory, and run `while true ; do sync ; echo 3 > /proc/sys/vm/drop_caches;
-> > done` at the same time.
-> > 
+> > It is pretty easy obviously to put in duplicates because the rbtree
+> > code doesn't know about keys, but if we do this then it looks like
+> > it might cause the search code to miss some valid inodes and instead
+> > return freeing inodes -- so you'd also have to look at that and update
+> > it which is why I didn't go down this route..
 > 
-> Nick,
-> 
-> I'll take a look at this later today and see what I can come up with.  Thanks
-> for reporting it.
-> 
-> Josef
+> Mine was just a generic statement, I didn't read the btrfs code (hence
+> my comment about potential lookup bug, if you allow aliases you have to
+> be careful).
 
-Thanks. After spending a good chunk of my life tracking down fsx-linux
-problems in fsblock and mm code, I can't say I envy you :) It's a great
-test to run though (especially syncing and dropping caches because that
-hits writeback and bypasses caches far far more than fsx ever does
-on its own).
-
-Let me know if you need me to test any patches.
+Ah ok. Well yeah in this case btrfs is definitely wrong in the way it
+tried to insert aliases.
 

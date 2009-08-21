@@ -1,79 +1,84 @@
 From: Jens Axboe <jens.axboe@oracle.com>
-Subject: Re: [patch] btrfs: fix inode rbtree corruption
-Date: Fri, 21 Aug 2009 10:10:18 +0200
-Message-ID: <20090821081018.GX12579@kernel.dk>
-References: <20090819084530.GD25721@wotan.suse.de> <20090819084658.GT12579@kernel.dk> <20090819085208.GF25721@wotan.suse.de> <20090819085906.GV12579@kernel.dk> <20090820132346.GN25721@wotan.suse.de> <3d0408630908200651i4bfbf0ebk6b18975e1a06da7e@mail.gmail.com> <20090820220736.GQ12579@kernel.dk> <3d0408630908201755x6f59dabay7011775954874d44@mail.gmail.com> <20090821062015.GS12579@kernel.dk> <3d0408630908210106y49132e66h41f35d1010030a11@mail.gmail.com>
+Subject: [GIT PULL] btrfs rb corruption fix
+Date: Fri, 21 Aug 2009 10:12:50 +0200
+Message-ID: <20090821081250.GY12579@kernel.dk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: Nick Piggin <npiggin@suse.de>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs@vger.kernel.org
-To: "Yan, Zheng " <yanzheng@21cn.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Linux Kernel <linux-kernel@vger.kernel.org>,
+	linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>,
+	zheng.yan@oracle.com
+To: Linus Torvalds <torvalds@linux-foundation.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <3d0408630908210106y49132e66h41f35d1010030a11@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 21 2009, Yan, Zheng  wrote:
-> 2009/8/21 Jens Axboe <jens.axboe@oracle.com>:
-> > On Fri, Aug 21 2009, Yan, Zheng =A0wrote:
-> >> 2009/8/21 Jens Axboe <jens.axboe@oracle.com>:
-> >> > On Thu, Aug 20 2009, Yan, Zheng =A0wrote:
-> >> >> 2009/8/20 Nick Piggin <npiggin@suse.de>:
-> >> >> > On Wed, Aug 19, 2009 at 10:59:07AM +0200, Jens Axboe wrote:
-> >> >> >> On Wed, Aug 19 2009, Nick Piggin wrote:
-> >> >> >> > On Wed, Aug 19, 2009 at 10:46:59AM +0200, Jens Axboe wrote=
-:
-> >> >> >> > > On Wed, Aug 19 2009, Nick Piggin wrote:
-> >> >> >> > > > See my other reply. It *can* work with key aliases, bu=
-t this particular
-> >> >> >> > > > code does not.
-> >> >> >> > > >
-> >> >> >> > > > It is pretty easy obviously to put in duplicates becau=
-se the rbtree
-> >> >> >> > > > code doesn't know about keys, but if we do this then i=
-t looks like
-> >> >> >> > > > it might cause the search code to miss some valid inod=
-es and instead
-> >> >> >> > > > return freeing inodes -- so you'd also have to look at=
- that and update
-> >> >> >> > > > it which is why I didn't go down this route..
-> >> >> >> > >
-> >> >> >> > > Mine was just a generic statement, I didn't read the btr=
-fs code (hence
-> >> >> >> > > my comment about potential lookup bug, if you allow alia=
-ses you have to
-> >> >> >> > > be careful).
-> >> >> >> >
-> >> >> >> > Ah ok. Well yeah in this case btrfs is definitely wrong in=
- the way it
-> >> >> >> > tried to insert aliases.
-> >> >> >>
-> >> >> >> I looked at the actual problem now and I agree, it cannot wo=
-rk that way.
-> >> >> >> I don't know if Linus is planning another -rc, we should pro=
-bably get
-> >> >> >> this upstream sooner rather than later. Chris is away this w=
-eek, so if
-> >> >> >> we can get Yan to agree on this patch as well, I'll submit i=
-t.
-> >> >> > I think the first patch I submitted was agreed?
-> >> >> >
-> >> >>
-> >> >> Of course, thank you.
-> >> > Yan, are you sending this upstream?
-> >>
-> >> No. =A0Jens, please submit it. Thanks
-> > Will do. Can I add your acked-by?
->=20
-> Acked-by: Yan Zheng <zheng.yan@oracle.com>
+Hi Linus,
 
-Thanks Yan, going upstream now.
+Nick found a bad rb tree corruption problem in btrfs with fsx. It would
+be nice to have this in 2.6.31, so please pull. Thanks!
 
---=20
+  git://git.kernel.dk/linux-2.6-block.git btrfs
+
+From: Nick Piggin (1):
+      btrfs: fix inode rbtree corruption
+
+ fs/btrfs/inode.c |   21 ++++++++++++++-------
+ 1 files changed, 14 insertions(+), 7 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 272b9b2..59cba18 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3099,8 +3099,12 @@ static void inode_tree_add(struct inode *inode)
+ {
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_inode *entry;
+-	struct rb_node **p = &root->inode_tree.rb_node;
+-	struct rb_node *parent = NULL;
++	struct rb_node **p;
++	struct rb_node *parent;
++
++again:
++	p = &root->inode_tree.rb_node;
++	parent = NULL;
+ 
+ 	spin_lock(&root->inode_lock);
+ 	while (*p) {
+@@ -3108,13 +3112,16 @@ static void inode_tree_add(struct inode *inode)
+ 		entry = rb_entry(parent, struct btrfs_inode, rb_node);
+ 
+ 		if (inode->i_ino < entry->vfs_inode.i_ino)
+-			p = &(*p)->rb_left;
++			p = &parent->rb_left;
+ 		else if (inode->i_ino > entry->vfs_inode.i_ino)
+-			p = &(*p)->rb_right;
++			p = &parent->rb_right;
+ 		else {
+ 			WARN_ON(!(entry->vfs_inode.i_state &
+ 				  (I_WILL_FREE | I_FREEING | I_CLEAR)));
+-			break;
++			rb_erase(parent, &root->inode_tree);
++			RB_CLEAR_NODE(parent);
++			spin_unlock(&root->inode_lock);
++			goto again;
+ 		}
+ 	}
+ 	rb_link_node(&BTRFS_I(inode)->rb_node, parent, p);
+@@ -3126,12 +3133,12 @@ static void inode_tree_del(struct inode *inode)
+ {
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 
++	spin_lock(&root->inode_lock);
+ 	if (!RB_EMPTY_NODE(&BTRFS_I(inode)->rb_node)) {
+-		spin_lock(&root->inode_lock);
+ 		rb_erase(&BTRFS_I(inode)->rb_node, &root->inode_tree);
+-		spin_unlock(&root->inode_lock);
+ 		RB_CLEAR_NODE(&BTRFS_I(inode)->rb_node);
+ 	}
++	spin_unlock(&root->inode_lock);
+ }
+ 
+ static noinline void init_btrfs_i(struct inode *inode)
+
+-- 
 Jens Axboe
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

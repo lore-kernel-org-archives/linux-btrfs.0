@@ -1,53 +1,20 @@
-From: Goffredo Baroncelli <kreijack@alice.it>
-Subject: Re: subvolume/snapshot usage question
-Date: Sat, 22 Aug 2009 08:34:35 +0200
-Message-ID: <200908220834.36388.kreijack@alice.it>
-References: <84fb38e30908212135r296382a9t294926ac4d977089@mail.gmail.com>
+From: tsuraan <tsuraan@gmail.com>
+Subject: Re: RAID[56] with arbitrary numbers of "parity" stripes.
+Date: Sat, 22 Aug 2009 10:34:03 -0500
+Message-ID: <84fb38e30908220834pab3f891we9ca7114a16988c0@mail.gmail.com>
+References: <1249502665.23206.5.camel@macbook.infradead.org>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <84fb38e30908212135r296382a9t294926ac4d977089@mail.gmail.com>
+In-Reply-To: <1249502665.23206.5.camel@macbook.infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello tsuraan,
+> We discussed using the top bits of the chunk type field field to store a
+> number of redundant disks -- so instead of RAID5, RAID6, etc., we end up
+> with a single 'RAID56' flag, and the amount of redundancy is stored
+> elsewhere.
 
-"bcp" is what you need. "bcp" is part of "btrfs-prog-unstable"
-
-See http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg02292.html
-
-
-BR
-Goffredo
-
-On Saturday 22 August 2009, tsuraan wrote:
-> Suppose I have a directory under my home on a btrfs filesystem where I
-> store virtual machine images.  I have one base virtual machine, and
-> from it I make copies that I actually run.  To make a copy of a VM
-> today, I do cp -r, which seems pretty wasteful since the VMs are
-> almost entirely identical.  Is there some way that I can do a snapshot
-> of just the directory that holds my base VM, and then mount different
-> "forks" of that snapshot to be the bases of my different running
-> machines?
-> 
-> It looks like I could create a snapshot of the root of my btrfs
-> filesystem for each vm, mount that snapshot somewhere, and run the vm
-> from that full fs snapshot, but that's not ideal.  I could also create
-> a large file for my base VM directory, format it btrfs, mount it using
-> the loopback device, and then mount snapshots of that loopback
-> filesystem, but having to preallocate filesystem space for my VMs is
-> not as nice as being able to share space with the rest of my
-> filesystem.  Is there a partial-snapshot capability in btrfs?  I don't
-> understand what subvolumes are, and I think they're unrelated to what
-> I want, but the name sounds promising...
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
-
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+Is there any sort of timeline for RAID5/6 support in btrfs?  I
+currently have 8 drives in a zfs-fuse RAIDZ2 (RAID6) configuration,
+and I'd love to see how btrfs compares to that, once it's ready.

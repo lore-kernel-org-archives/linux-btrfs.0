@@ -1,84 +1,29 @@
-From: Jens Axboe <jens.axboe@oracle.com>
-Subject: [GIT PULL] btrfs rb corruption fix
-Date: Fri, 21 Aug 2009 10:12:50 +0200
-Message-ID: <20090821081250.GY12579@kernel.dk>
+From: tsuraan <tsuraan@gmail.com>
+Subject: subvolume/snapshot usage question
+Date: Fri, 21 Aug 2009 23:35:00 -0500
+Message-ID: <84fb38e30908212135r296382a9t294926ac4d977089@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Linux Kernel <linux-kernel@vger.kernel.org>,
-	linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>,
-	zheng.yan@oracle.com
-To: Linus Torvalds <torvalds@linux-foundation.org>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+Suppose I have a directory under my home on a btrfs filesystem where I
+store virtual machine images.  I have one base virtual machine, and
+from it I make copies that I actually run.  To make a copy of a VM
+today, I do cp -r, which seems pretty wasteful since the VMs are
+almost entirely identical.  Is there some way that I can do a snapshot
+of just the directory that holds my base VM, and then mount different
+"forks" of that snapshot to be the bases of my different running
+machines?
 
-Nick found a bad rb tree corruption problem in btrfs with fsx. It would
-be nice to have this in 2.6.31, so please pull. Thanks!
-
-  git://git.kernel.dk/linux-2.6-block.git btrfs
-
-From: Nick Piggin (1):
-      btrfs: fix inode rbtree corruption
-
- fs/btrfs/inode.c |   21 ++++++++++++++-------
- 1 files changed, 14 insertions(+), 7 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 272b9b2..59cba18 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3099,8 +3099,12 @@ static void inode_tree_add(struct inode *inode)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_inode *entry;
--	struct rb_node **p = &root->inode_tree.rb_node;
--	struct rb_node *parent = NULL;
-+	struct rb_node **p;
-+	struct rb_node *parent;
-+
-+again:
-+	p = &root->inode_tree.rb_node;
-+	parent = NULL;
- 
- 	spin_lock(&root->inode_lock);
- 	while (*p) {
-@@ -3108,13 +3112,16 @@ static void inode_tree_add(struct inode *inode)
- 		entry = rb_entry(parent, struct btrfs_inode, rb_node);
- 
- 		if (inode->i_ino < entry->vfs_inode.i_ino)
--			p = &(*p)->rb_left;
-+			p = &parent->rb_left;
- 		else if (inode->i_ino > entry->vfs_inode.i_ino)
--			p = &(*p)->rb_right;
-+			p = &parent->rb_right;
- 		else {
- 			WARN_ON(!(entry->vfs_inode.i_state &
- 				  (I_WILL_FREE | I_FREEING | I_CLEAR)));
--			break;
-+			rb_erase(parent, &root->inode_tree);
-+			RB_CLEAR_NODE(parent);
-+			spin_unlock(&root->inode_lock);
-+			goto again;
- 		}
- 	}
- 	rb_link_node(&BTRFS_I(inode)->rb_node, parent, p);
-@@ -3126,12 +3133,12 @@ static void inode_tree_del(struct inode *inode)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 
-+	spin_lock(&root->inode_lock);
- 	if (!RB_EMPTY_NODE(&BTRFS_I(inode)->rb_node)) {
--		spin_lock(&root->inode_lock);
- 		rb_erase(&BTRFS_I(inode)->rb_node, &root->inode_tree);
--		spin_unlock(&root->inode_lock);
- 		RB_CLEAR_NODE(&BTRFS_I(inode)->rb_node);
- 	}
-+	spin_unlock(&root->inode_lock);
- }
- 
- static noinline void init_btrfs_i(struct inode *inode)
-
--- 
-Jens Axboe
-
+It looks like I could create a snapshot of the root of my btrfs
+filesystem for each vm, mount that snapshot somewhere, and run the vm
+from that full fs snapshot, but that's not ideal.  I could also create
+a large file for my base VM directory, format it btrfs, mount it using
+the loopback device, and then mount snapshots of that loopback
+filesystem, but having to preallocate filesystem space for my VMs is
+not as nice as being able to share space with the rest of my
+filesystem.  Is there a partial-snapshot capability in btrfs?  I don't
+understand what subvolumes are, and I think they're unrelated to what
+I want, but the name sounds promising...

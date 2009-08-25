@@ -1,73 +1,44 @@
-From: "Yan, Zheng" <zheng.yan@oracle.com>
-Subject: [PATCH] btrfsctl: add destroy snapshot ioctl
-Date: Tue, 25 Aug 2009 22:39:53 +0800
-Message-ID: <4A93F7B9.1030303@oracle.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: snapshot/subvol deletion
+Date: Tue, 25 Aug 2009 11:03:51 -0400
+Message-ID: <20090825150351.GB16561@think>
+References: <4A93F749.3010708@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: aaron@merfinllc.com
-To: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: "Yan, Zheng" <zheng.yan@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4A93F749.3010708@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-resend Aaron Straus's patch
+On Tue, Aug 25, 2009 at 10:38:01PM +0800, Yan, Zheng wrote:
+> Hi,
+> 
+> I will send a series patches that add snapshot/subvol deletion soon.
+> But the way to delete snapshot/subvol is far from people's expectancy.
+> To delete a snapshot/subvol, we need four steps: 1) snapshot/subvol
+> deletion ioctl or rmdir; 2) umount; 3) btrfsck; 4) mount the fs.
+> 
+> The reason for this is bug in root back & forward references. In simple
+> terms, the bug prevents us from knowing how many places a snapshot/subvol
+> is referenced. So it's unsafe delete corresponding fs tree immediately
+> after a link to snapshot/subvol is removed.
 
-Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
+Thanks for working on this, its a major feature.  The problem with the
+forward/backward reference counting is that our links to a subvolume or
+snapshot are really more like symbolic links than active references.
 
----
- btrfsctl.c |   15 ++++++++++++++-
- ioctl.h    |    3 +++
- 2 files changed, 17 insertions(+), 1 deletions(-)
+If a directory entry points to a subvolume and someone uses rm -rf to
+delete the files inside that subvolume or snapshot, you get the same kind of
+semantics as deleting the subvolume with the ioctl.
 
-diff --git a/btrfsctl.c b/btrfsctl.c
-index b323818..66c4e89 100644
---- a/btrfsctl.c
-+++ b/btrfsctl.c
-@@ -46,7 +46,7 @@ static inline int ioctl(int fd, int define, void *arg) { return 0; }
- static void print_usage(void)
- {
- 	printf("usage: btrfsctl [ -d file|dir] [ -s snap_name subvol|tree ]\n");
--	printf("                [-r size] [-A device] [-a] [-c]\n");
-+	printf("                [-r size] [-A device] [-a] [-c] [-D dir .]\n");
- 	printf("\t-d filename: defragments one file\n");
- 	printf("\t-d directory: defragments the entire Btree\n");
- 	printf("\t-s snap_name dir: creates a new snapshot of dir\n");
-@@ -55,6 +55,7 @@ static void print_usage(void)
- 	printf("\t-A device: scans the device file for a Btrfs filesystem\n");
- 	printf("\t-a: scans all devices for Btrfs filesystems\n");
- 	printf("\t-c: forces a single FS sync\n");
-+	printf("\t-D: delete snapshot\n");
- 	printf("%s\n", BTRFS_BUILD_VERSION);
- 	exit(1);
- }
-@@ -158,6 +159,18 @@ int main(int ac, char **av)
- 				print_usage();
- 			}
- 			command = BTRFS_IOC_DEFRAG;
-+		} else if (strcmp(av[i], "-D") == 0) {
-+			if (i >= ac - 1) {
-+				fprintf(stderr, "-D requires an arg\n");
-+				print_usage();
-+			}
-+			command = BTRFS_IOC_SNAP_DESTROY;
-+			name = av[i + 1];
-+			len = strlen(name);
-+			if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
-+				fprintf(stderr, "-D size too long\n");
-+				exit(1);
-+			}
- 		} else if (strcmp(av[i], "-A") == 0) {
- 			if (i >= ac - 1) {
- 				fprintf(stderr, "-A requires an arg\n");
-diff --git a/ioctl.h b/ioctl.h
-index a084f33..4410ac0 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -56,4 +56,7 @@ struct btrfs_ioctl_vol_args {
- /* 13 is for CLONE_RANGE */
- #define BTRFS_IOC_SUBVOL_CREATE _IOW(BTRFS_IOCTL_MAGIC, 14, \
- 				   struct btrfs_ioctl_vol_args)
-+
-+#define BTRFS_IOC_SNAP_DESTROY _IOW(BTRFS_IOCTL_MAGIC, 15, \
-+				   struct btrfs_ioctl_vol_args)
- #endif
+So, we should be able to delete the snapshot without the unmount step.
+It may create an invalid reference but the code to follow snapshot
+directory items will have to be changed to deal with that.
+
+If we later on allow root ids to be reused, the directory item pointing
+to a subvol will again be like a symbolic link.  You'll end up in the
+new subvol instead of the old.
+
+-chris
 

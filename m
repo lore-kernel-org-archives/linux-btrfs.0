@@ -1,571 +1,380 @@
 From: "Yan, Zheng" <zheng.yan@oracle.com>
-Subject: [PATCH 2/4] add snapshot/subvol support for rename and rmdir
-Date: Tue, 25 Aug 2009 22:38:30 +0800
-Message-ID: <4A93F766.7060607@oracle.com>
+Subject: [PATCH 1/4] speed up snapshot dropping
+Date: Tue, 25 Aug 2009 22:38:18 +0800
+Message-ID: <4A93F75A.9050108@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Links to snapshots/subvols are similar to normal directories.
-The main difference is snapshots/subvols use root back & forward
-references instead of inode back references. This patch adds code
-that handles back & forward references for rename and rmdir.
+This patch contains two changes to avoid unnecessary tree block reads during
+snapshot dropping. First, check tree block's reference count and flags before
+reading the tree block. if reference count > 1 and there is no need to update
+backrefs, we can avoid reading the tree block. Second, save when snapshot was
+created in root_key.offset. we can compare block pointer's generation with
+snapshot's creation generation during updating backrefs. If a given block was
+created before snapshot was created, the snapshot can't be the tree block's
+owner. So we can avoid reading the block.
 
 Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
 
 ---
-diff -urp 2/fs/btrfs/ctree.h 3/fs/btrfs/ctree.h
---- 2/fs/btrfs/ctree.h	2009-08-24 10:36:46.212099000 +0800
-+++ 3/fs/btrfs/ctree.h	2009-08-24 10:38:34.280386024 +0800
-@@ -2102,12 +2102,15 @@ int btrfs_drop_subtree(struct btrfs_tran
- 			struct extent_buffer *parent);
- /* root-item.c */
- int btrfs_find_root_ref(struct btrfs_root *tree_root,
--		   struct btrfs_path *path,
--		   u64 root_id, u64 ref_id);
-+			struct btrfs_path *path,
-+			u64 root_id, u64 ref_id);
- int btrfs_add_root_ref(struct btrfs_trans_handle *trans,
- 		       struct btrfs_root *tree_root,
--		       u64 root_id, u8 type, u64 ref_id,
--		       u64 dirid, u64 sequence,
-+		       u64 root_id, u64 ref_id, u64 dirid, u64 sequence,
-+		       const char *name, int name_len);
-+int btrfs_del_root_ref(struct btrfs_trans_handle *trans,
-+		       struct btrfs_root *tree_root,
-+		       u64 root_id, u64 ref_id, u64 dirid, u64 *sequence,
- 		       const char *name, int name_len);
- int btrfs_del_root(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 		   struct btrfs_key *key);
-@@ -2140,6 +2143,10 @@ btrfs_lookup_dir_index_item(struct btrfs
- 			    struct btrfs_path *path, u64 dir,
- 			    u64 objectid, const char *name, int name_len,
- 			    int mod);
-+struct btrfs_dir_item *
-+btrfs_search_dir_index_item(struct btrfs_root *root,
-+			    struct btrfs_path *path, u64 dirid,
-+			    const char *name, int name_len);
- struct btrfs_dir_item *btrfs_match_dir_item_name(struct btrfs_root *root,
- 			      struct btrfs_path *path,
- 			      const char *name, int name_len);
-@@ -2234,6 +2241,10 @@ int btrfs_unlink_inode(struct btrfs_tran
- int btrfs_add_link(struct btrfs_trans_handle *trans,
- 		   struct inode *parent_inode, struct inode *inode,
- 		   const char *name, int name_len, int add_backref, u64 index);
-+int btrfs_unlink_subvol(struct btrfs_trans_handle *trans,
-+			struct btrfs_root *root,
-+			struct inode *dir, struct inode *inode,
-+			const char *name, int name_len);
- int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
- 			       struct btrfs_root *root,
- 			       struct inode *inode, u64 new_size,
-diff -urp 2/fs/btrfs/dir-item.c 3/fs/btrfs/dir-item.c
---- 2/fs/btrfs/dir-item.c	2009-08-24 10:36:46.213099000 +0800
-+++ 3/fs/btrfs/dir-item.c	2009-08-24 10:38:34.281099463 +0800
-@@ -281,6 +281,53 @@ btrfs_lookup_dir_index_item(struct btrfs
- 	return btrfs_match_dir_item_name(root, path, name, name_len);
- }
+diff -urp 1/fs/btrfs/extent-tree.c 2/fs/btrfs/extent-tree.c
+--- 1/fs/btrfs/extent-tree.c	2009-08-11 09:49:15.643738232 +0800
++++ 2/fs/btrfs/extent-tree.c	2009-08-24 10:36:43.016348000 +0800
+@@ -4779,19 +4779,90 @@ struct walk_control {
+ 	int shared_level;
+ 	int update_ref;
+ 	int keep_locks;
++	int reada_end;
++	int reada_count;
+ };
  
-+struct btrfs_dir_item *
-+btrfs_search_dir_index_item(struct btrfs_root *root,
-+			    struct btrfs_path *path, u64 dirid,
-+			    const char *name, int name_len)
+ #define DROP_REFERENCE	1
+ #define UPDATE_BACKREF	2
+ 
++static noinline void reada_walk_down(struct btrfs_trans_handle *trans,
++				     struct btrfs_root *root,
++				     struct walk_control *wc,
++				     struct btrfs_path *path)
 +{
-+	struct extent_buffer *leaf;
-+	struct btrfs_dir_item *di;
-+	struct btrfs_key key;
++	u64 bytenr;
++	u64 generation;
++	u64 refs;
++	u64 last = 0;
 +	u32 nritems;
++	u32 blocksize;
++	struct btrfs_key key;
++	struct extent_buffer *eb;
 +	int ret;
++	int slot;
++	int nread = 0;
 +
-+	key.objectid = dirid;
-+	key.type = BTRFS_DIR_INDEX_KEY;
-+	key.offset = 0;
++	if (path->slots[wc->level] < wc->reada_end) {
++		wc->reada_count = wc->reada_count * 2 / 3;
++		wc->reada_count = max(wc->reada_count, 2);
++	} else {
++		wc->reada_count = wc->reada_count * 3 / 2;
++		wc->reada_count = min_t(int, wc->reada_count,
++					BTRFS_NODEPTRS_PER_BLOCK(root));
++	}
 +
-+	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+	if (ret < 0)
-+		return ERR_PTR(ret);
++	eb = path->nodes[wc->level];
++	nritems = btrfs_header_nritems(eb);
++	blocksize = btrfs_level_size(root, wc->level - 1);
 +
-+	leaf = path->nodes[0];
-+	nritems = btrfs_header_nritems(leaf);
-+
-+	while (1) {
-+		if (path->slots[0] >= nritems) {
-+			ret = btrfs_next_leaf(root, path);
-+			if (ret < 0)
-+				return ERR_PTR(ret);
-+			if (ret > 0)
-+				break;
-+			leaf = path->nodes[0];
-+			nritems = btrfs_header_nritems(leaf);
-+			continue;
-+		}
-+
-+		btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
-+		if (key.objectid != dirid || key.type != BTRFS_DIR_INDEX_KEY)
++	for (slot = path->slots[wc->level]; slot < nritems; slot++) {
++		if (nread >= wc->reada_count)
 +			break;
 +
-+		di = btrfs_match_dir_item_name(root, path, name, name_len);
-+		if (di)
-+			return di;
++		cond_resched();
++		bytenr = btrfs_node_blockptr(eb, slot);
++		generation = btrfs_node_ptr_generation(eb, slot);
 +
-+		path->slots[0]++;
-+	}
-+	return NULL;
-+}
++		if (slot == path->slots[wc->level])
++			goto reada;
 +
- struct btrfs_dir_item *btrfs_lookup_xattr(struct btrfs_trans_handle *trans,
- 					  struct btrfs_root *root,
- 					  struct btrfs_path *path, u64 dir,
-diff -urp 2/fs/btrfs/inode.c 3/fs/btrfs/inode.c
---- 2/fs/btrfs/inode.c	2009-08-24 10:36:46.217098000 +0800
-+++ 3/fs/btrfs/inode.c	2009-08-24 10:38:34.284098975 +0800
-@@ -2356,6 +2356,72 @@ static int btrfs_unlink(struct inode *di
- 	return ret;
- }
- 
-+int btrfs_unlink_subvol(struct btrfs_trans_handle *trans,
-+			struct btrfs_root *root,
-+			struct inode *dir, struct inode *inode,
-+			const char *name, int name_len)
-+{
-+	struct btrfs_path *path;
-+	struct extent_buffer *leaf;
-+	struct btrfs_dir_item *di;
-+	struct btrfs_key key;
-+	u64 index;
-+	int ret;
++		if (wc->stage == UPDATE_BACKREF &&
++		    generation <= root->root_key.offset)
++			continue;
 +
-+	WARN_ON(root == BTRFS_I(inode)->root);
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
++		if (wc->stage == DROP_REFERENCE) {
++			ret = btrfs_lookup_extent_info(trans, root,
++						bytenr, blocksize,
++						&refs, NULL);
++			BUG_ON(ret);
++			BUG_ON(refs == 0);
++			if (refs == 1)
++				goto reada;
 +
-+	di = btrfs_lookup_dir_item(trans, root, path, dir->i_ino,
-+				   name, name_len, -1);
-+	BUG_ON(!di || IS_ERR(di));
-+
-+	leaf = path->nodes[0];
-+	btrfs_dir_item_key_to_cpu(leaf, di, &key);
-+	WARN_ON(key.type != BTRFS_ROOT_ITEM_KEY ||
-+		key.objectid != BTRFS_I(inode)->root->root_key.objectid);
-+	ret = btrfs_delete_one_dir_name(trans, root, path, di);
-+	BUG_ON(ret);
-+	btrfs_release_path(root, path);
-+
-+	ret = btrfs_del_root_ref(trans, root->fs_info->tree_root,
-+				 BTRFS_I(inode)->root->root_key.objectid,
-+				 root->root_key.objectid, dir->i_ino,
-+				 &index, name, name_len);
-+	if (ret < 0) {
-+		BUG_ON(ret != -ENOENT);
-+		di = btrfs_search_dir_index_item(root, path, dir->i_ino,
-+						 name, name_len);
-+		BUG_ON(!di || IS_ERR(di));
-+
-+		leaf = path->nodes[0];
-+		btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
-+		btrfs_release_path(root, path);
-+		index = key.offset;
-+	}
-+
-+	di = btrfs_lookup_dir_index_item(trans, root, path, dir->i_ino,
-+					 index, name, name_len, -1);
-+	BUG_ON(!di || IS_ERR(di));
-+
-+	btrfs_dir_item_key_to_cpu(leaf, di, &key);
-+	WARN_ON(key.type != BTRFS_ROOT_ITEM_KEY ||
-+		key.objectid != BTRFS_I(inode)->root->root_key.objectid);
-+	ret = btrfs_delete_one_dir_name(trans, root, path, di);
-+	BUG_ON(ret);
-+	btrfs_release_path(root, path);
-+
-+	btrfs_i_size_write(dir, dir->i_size - name_len * 2);
-+	dir->i_mtime = dir->i_ctime = CURRENT_TIME;
-+	ret = btrfs_update_inode(trans, root, dir);
-+	BUG_ON(ret);
-+	dir->i_sb->s_dirt = 1;
-+
-+	btrfs_free_path(path);
-+	return 0;
-+}
-+
- static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
- {
- 	struct inode *inode = dentry->d_inode;
-@@ -2369,25 +2435,30 @@ static int btrfs_rmdir(struct inode *dir
- 	 * the FIRST_FREE_OBJECTID check makes sure we don't try to rmdir
- 	 * the root of a subvolume or snapshot
- 	 */
--	if (inode->i_size > BTRFS_EMPTY_DIR_SIZE ||
--	    inode->i_ino == BTRFS_FIRST_FREE_OBJECTID) {
-+	if (inode->i_size > BTRFS_EMPTY_DIR_SIZE)
- 		return -ENOTEMPTY;
--	}
- 
- 	trans = btrfs_start_transaction(root, 1);
- 	btrfs_set_trans_block_group(trans, dir);
- 
-+	if (unlikely(inode->i_ino == BTRFS_FIRST_FREE_OBJECTID)) {
-+		root->fs_info->last_trans_log_full_commit = trans->transid;
-+		err = btrfs_unlink_subvol(trans, root, dir, dentry->d_inode,
-+					  dentry->d_name.name,
-+					  dentry->d_name.len);
-+		goto out;
-+	}
-+
- 	err = btrfs_orphan_add(trans, inode);
- 	if (err)
--		goto fail_trans;
-+		goto out;
- 
- 	/* now the directory is empty */
- 	err = btrfs_unlink_inode(trans, root, dir, dentry->d_inode,
- 				 dentry->d_name.name, dentry->d_name.len);
- 	if (!err)
- 		btrfs_i_size_write(inode, 0);
--
--fail_trans:
-+out:
- 	nr = trans->blocks_used;
- 	ret = btrfs_end_transaction_throttle(trans, root);
- 	btrfs_btree_balance_dirty(root, nr);
-@@ -3674,26 +3745,36 @@ int btrfs_add_link(struct btrfs_trans_ha
- 		   struct inode *parent_inode, struct inode *inode,
- 		   const char *name, int name_len, int add_backref, u64 index)
- {
--	int ret;
-+	int ret = 0;
- 	struct btrfs_key key;
- 	struct btrfs_root *root = BTRFS_I(parent_inode)->root;
- 
--	key.objectid = inode->i_ino;
--	btrfs_set_key_type(&key, BTRFS_INODE_ITEM_KEY);
--	key.offset = 0;
-+	if (unlikely(inode->i_ino == BTRFS_FIRST_FREE_OBJECTID)) {
-+		memcpy(&key, &BTRFS_I(inode)->root->root_key, sizeof(key));
-+		key.offset = (u64)-1;
-+	} else {
-+		key.objectid = inode->i_ino;
-+		btrfs_set_key_type(&key, BTRFS_INODE_ITEM_KEY);
-+		key.offset = 0;
-+	}
-+
-+	if (unlikely(inode->i_ino == BTRFS_FIRST_FREE_OBJECTID)) {
-+		ret = btrfs_add_root_ref(trans, root->fs_info->tree_root,
-+					 key.objectid, root->root_key.objectid,
-+					 parent_inode->i_ino,
-+					 index, name, name_len);
-+	} else if (add_backref) {
-+		ret = btrfs_insert_inode_ref(trans, root,
-+					     name, name_len, inode->i_ino,
-+					     parent_inode->i_ino, index);
-+	}
- 
--	ret = btrfs_insert_dir_item(trans, root, name, name_len,
--				    parent_inode->i_ino,
--				    &key, btrfs_inode_type(inode),
--				    index);
- 	if (ret == 0) {
--		if (add_backref) {
--			ret = btrfs_insert_inode_ref(trans, root,
--						     name, name_len,
--						     inode->i_ino,
--						     parent_inode->i_ino,
--						     index);
--		}
-+		ret = btrfs_insert_dir_item(trans, root, name, name_len,
-+					    parent_inode->i_ino, &key,
-+					    btrfs_inode_type(inode), index);
-+		BUG_ON(ret);
-+
- 		btrfs_i_size_write(parent_inode, parent_inode->i_size +
- 				   name_len * 2);
- 		parent_inode->i_mtime = parent_inode->i_ctime = CURRENT_TIME;
-@@ -4782,20 +4863,12 @@ static int btrfs_rename(struct inode *ol
- 	int ret;
- 
- 	/* we're not allowed to rename between subvolumes */
--	if (BTRFS_I(old_inode)->root->root_key.objectid !=
--	    BTRFS_I(new_dir)->root->root_key.objectid)
-+	if (BTRFS_I(old_dir)->root != BTRFS_I(new_dir)->root)
- 		return -EXDEV;
- 
- 	if (S_ISDIR(old_inode->i_mode) && new_inode &&
--	    new_inode->i_size > BTRFS_EMPTY_DIR_SIZE) {
-+	    new_inode->i_size > BTRFS_EMPTY_DIR_SIZE)
- 		return -ENOTEMPTY;
--	}
--
--	/* to rename a snapshot or subvolume, we need to juggle the
--	 * backrefs.  This isn't coded yet
--	 */
--	if (old_inode->i_ino == BTRFS_FIRST_FREE_OBJECTID)
--		return -EXDEV;
- 
- 	ret = btrfs_check_metadata_free_space(root);
- 	if (ret)
-@@ -4812,6 +4885,11 @@ static int btrfs_rename(struct inode *ol
- 
- 	trans = btrfs_start_transaction(root, 1);
- 
-+	/* force full log commit if snapshot or subvolume gets involved. */
-+	if (old_inode->i_ino == BTRFS_FIRST_FREE_OBJECTID ||
-+	    (new_inode && new_inode->i_ino == BTRFS_FIRST_FREE_OBJECTID))
-+		root->fs_info->last_trans_log_full_commit = trans->transid;
-+
- 	/*
- 	 * make sure the inode gets flushed if it is replacing
- 	 * something.
-@@ -4840,18 +4918,35 @@ static int btrfs_rename(struct inode *ol
- 	if (old_dentry->d_parent != new_dentry->d_parent)
- 		btrfs_record_unlink_dir(trans, old_dir, old_inode, 1);
- 
--	ret = btrfs_unlink_inode(trans, root, old_dir, old_dentry->d_inode,
--				 old_dentry->d_name.name,
--				 old_dentry->d_name.len);
-+	if (unlikely(old_inode->i_ino == BTRFS_FIRST_FREE_OBJECTID)) {
-+		ret = btrfs_unlink_subvol(trans, root, old_dir,
-+					  old_dentry->d_inode,
-+					  old_dentry->d_name.name,
-+					  old_dentry->d_name.len);
-+	} else {
-+		btrfs_inc_nlink(old_dentry->d_inode);
-+		ret = btrfs_unlink_inode(trans, root, old_dir,
-+					 old_dentry->d_inode,
-+					 old_dentry->d_name.name,
-+					 old_dentry->d_name.len);
-+	}
- 	if (ret)
- 		goto out_fail;
- 
- 	if (new_inode) {
- 		new_inode->i_ctime = CURRENT_TIME;
--		ret = btrfs_unlink_inode(trans, root, new_dir,
--					 new_dentry->d_inode,
--					 new_dentry->d_name.name,
--					 new_dentry->d_name.len);
-+		if (unlikely(new_inode->i_ino == BTRFS_FIRST_FREE_OBJECTID)) {
-+			ret = btrfs_unlink_subvol(trans, root, new_dir,
-+						  new_dentry->d_inode,
-+						  new_dentry->d_name.name,
-+						  new_dentry->d_name.len);
-+			WARN_ON(new_inode->i_nlink == 0);
-+		} else {
-+			ret = btrfs_unlink_inode(trans, root, new_dir,
-+						 new_dentry->d_inode,
-+						 new_dentry->d_name.name,
-+						 new_dentry->d_name.len);
++			if (!wc->update_ref ||
++			    generation <= root->root_key.offset)
++				continue;
++			btrfs_node_key_to_cpu(eb, &key, slot);
++			ret = btrfs_comp_cpu_keys(&key,
++						  &wc->update_progress);
++			if (ret < 0)
++				continue;
 +		}
- 		if (ret)
- 			goto out_fail;
- 		if (new_inode->i_nlink == 0) {
-@@ -4859,7 +4954,6 @@ static int btrfs_rename(struct inode *ol
- 			if (ret)
- 				goto out_fail;
- 		}
--
- 	}
- 	ret = btrfs_set_inode_index(new_dir, &index);
- 	if (ret)
-diff -urp 2/fs/btrfs/ioctl.c 3/fs/btrfs/ioctl.c
---- 2/fs/btrfs/ioctl.c	2009-08-24 10:36:46.219099000 +0800
-+++ 3/fs/btrfs/ioctl.c	2009-08-24 10:38:34.286099535 +0800
-@@ -323,18 +323,8 @@ static noinline int create_subvol(struct
- 	ret = btrfs_update_inode(trans, root, dir);
- 	BUG_ON(ret);
- 
--	/* add the backref first */
- 	ret = btrfs_add_root_ref(trans, root->fs_info->tree_root,
--				 objectid, BTRFS_ROOT_BACKREF_KEY,
--				 root->root_key.objectid,
--				 dir->i_ino, index, name, namelen);
--
--	BUG_ON(ret);
--
--	/* now add the forward ref */
--	ret = btrfs_add_root_ref(trans, root->fs_info->tree_root,
--				 root->root_key.objectid, BTRFS_ROOT_REF_KEY,
--				 objectid,
-+				 objectid, root->root_key.objectid,
- 				 dir->i_ino, index, name, namelen);
- 
- 	BUG_ON(ret);
-diff -urp 2/fs/btrfs/root-tree.c 3/fs/btrfs/root-tree.c
---- 2/fs/btrfs/root-tree.c	2009-08-24 10:36:46.220099000 +0800
-+++ 3/fs/btrfs/root-tree.c	2009-08-24 10:38:34.287099466 +0800
-@@ -278,31 +278,57 @@ out:
- 	return ret;
- }
- 
--#if 0 /* this will get used when snapshot deletion is implemented */
- int btrfs_del_root_ref(struct btrfs_trans_handle *trans,
- 		       struct btrfs_root *tree_root,
--		       u64 root_id, u8 type, u64 ref_id)
-+		       u64 root_id, u64 ref_id, u64 dirid, u64 *sequence,
-+		       const char *name, int name_len)
-+
- {
-+	struct btrfs_path *path;
-+	struct btrfs_root_ref *ref;
-+	struct extent_buffer *leaf;
- 	struct btrfs_key key;
-+	unsigned long ptr;
-+	int err = 0;
- 	int ret;
--	struct btrfs_path *path;
- 
- 	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
- 
- 	key.objectid = root_id;
--	key.type = type;
-+	key.type = BTRFS_ROOT_BACKREF_KEY;
- 	key.offset = ref_id;
--
-+again:
- 	ret = btrfs_search_slot(trans, tree_root, &key, path, -1, 1);
--	BUG_ON(ret);
--
--	ret = btrfs_del_item(trans, tree_root, path);
--	BUG_ON(ret);
-+	BUG_ON(ret < 0);
-+	if (ret == 0) {
-+		leaf = path->nodes[0];
-+		ref = btrfs_item_ptr(leaf, path->slots[0],
-+				     struct btrfs_root_ref);
-+
-+		WARN_ON(btrfs_root_ref_dirid(leaf, ref) != dirid);
-+		WARN_ON(btrfs_root_ref_name_len(leaf, ref) != name_len);
-+		ptr = (unsigned long)(ref + 1);
-+		WARN_ON(memcmp_extent_buffer(leaf, name, ptr, name_len));
-+		*sequence = btrfs_root_ref_sequence(leaf, ref);
-+
-+		ret = btrfs_del_item(trans, tree_root, path);
-+		BUG_ON(ret);
-+	} else
-+		err = -ENOENT;
-+
-+	if (key.type == BTRFS_ROOT_BACKREF_KEY) {
-+		btrfs_release_path(tree_root, path);
-+		key.objectid = ref_id;
-+		key.type = BTRFS_ROOT_REF_KEY;
-+		key.offset = root_id;
-+		goto again;
++reada:
++		ret = readahead_tree_block(root, bytenr, blocksize,
++					   generation);
++		if (ret)
++			break;
++		last = bytenr + blocksize;
++		nread++;
 +	}
- 
- 	btrfs_free_path(path);
--	return ret;
-+	return err;
- }
--#endif
- 
- int btrfs_find_root_ref(struct btrfs_root *tree_root,
- 		   struct btrfs_path *path,
-@@ -319,7 +345,6 @@ int btrfs_find_root_ref(struct btrfs_roo
- 	return ret;
- }
- 
--
++	wc->reada_end = slot;
++}
++
  /*
-  * add a btrfs_root_ref item.  type is either BTRFS_ROOT_REF_KEY
-  * or BTRFS_ROOT_BACKREF_KEY.
-@@ -335,8 +360,7 @@ int btrfs_find_root_ref(struct btrfs_roo
-  */
- int btrfs_add_root_ref(struct btrfs_trans_handle *trans,
- 		       struct btrfs_root *tree_root,
--		       u64 root_id, u8 type, u64 ref_id,
--		       u64 dirid, u64 sequence,
-+		       u64 root_id, u64 ref_id, u64 dirid, u64 sequence,
- 		       const char *name, int name_len)
+  * hepler to process tree block while walking down the tree.
+  *
+- * when wc->stage == DROP_REFERENCE, this function checks
+- * reference count of the block. if the block is shared and
+- * we need update back refs for the subtree rooted at the
+- * block, this function changes wc->stage to UPDATE_BACKREF
+- *
+  * when wc->stage == UPDATE_BACKREF, this function updates
+  * back refs for pointers in the block.
+  *
+@@ -4804,7 +4875,6 @@ static noinline int walk_down_proc(struc
  {
- 	struct btrfs_key key;
-@@ -346,13 +370,14 @@ int btrfs_add_root_ref(struct btrfs_tran
- 	struct extent_buffer *leaf;
- 	unsigned long ptr;
+ 	int level = wc->level;
+ 	struct extent_buffer *eb = path->nodes[level];
+-	struct btrfs_key key;
+ 	u64 flag = BTRFS_BLOCK_FLAG_FULL_BACKREF;
+ 	int ret;
  
+@@ -4827,21 +4897,6 @@ static noinline int walk_down_proc(struc
+ 		BUG_ON(wc->refs[level] == 0);
+ 	}
+ 
+-	if (wc->stage == DROP_REFERENCE &&
+-	    wc->update_ref && wc->refs[level] > 1) {
+-		BUG_ON(eb == root->node);
+-		BUG_ON(path->slots[level] > 0);
+-		if (level == 0)
+-			btrfs_item_key_to_cpu(eb, &key, path->slots[level]);
+-		else
+-			btrfs_node_key_to_cpu(eb, &key, path->slots[level]);
+-		if (btrfs_header_owner(eb) == root->root_key.objectid &&
+-		    btrfs_comp_cpu_keys(&key, &wc->update_progress) >= 0) {
+-			wc->stage = UPDATE_BACKREF;
+-			wc->shared_level = level;
+-		}
+-	}
 -
- 	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
- 
- 	key.objectid = root_id;
--	key.type = type;
-+	key.type = BTRFS_ROOT_BACKREF_KEY;
- 	key.offset = ref_id;
--
-+again:
- 	ret = btrfs_insert_empty_item(trans, tree_root, path, &key,
- 				      sizeof(*ref) + name_len);
- 	BUG_ON(ret);
-@@ -366,6 +391,14 @@ int btrfs_add_root_ref(struct btrfs_tran
- 	write_extent_buffer(leaf, name, ptr, name_len);
- 	btrfs_mark_buffer_dirty(leaf);
- 
-+	if (key.type == BTRFS_ROOT_BACKREF_KEY) {
-+		btrfs_release_path(tree_root, path);
-+		key.objectid = ref_id;
-+		key.type = BTRFS_ROOT_REF_KEY;
-+		key.offset = root_id;
-+		goto again;
-+	}
-+
- 	btrfs_free_path(path);
--	return ret;
-+	return 0;
+ 	if (wc->stage == DROP_REFERENCE) {
+ 		if (wc->refs[level] > 1)
+ 			return 1;
+@@ -4878,6 +4933,123 @@ static noinline int walk_down_proc(struc
  }
-diff -urp 2/fs/btrfs/transaction.c 3/fs/btrfs/transaction.c
---- 2/fs/btrfs/transaction.c	2009-08-24 10:36:46.248107000 +0800
-+++ 3/fs/btrfs/transaction.c	2009-08-24 10:38:34.288098978 +0800
-@@ -779,24 +779,14 @@ static noinline int finish_pending_snaps
- 	ret = btrfs_update_inode(trans, parent_root, parent_inode);
- 	BUG_ON(ret);
  
--	/* add the backref first */
- 	ret = btrfs_add_root_ref(trans, parent_root->fs_info->tree_root,
- 				 pending->root_key.objectid,
--				 BTRFS_ROOT_BACKREF_KEY,
- 				 parent_root->root_key.objectid,
- 				 parent_inode->i_ino, index, pending->name,
- 				 namelen);
- 
- 	BUG_ON(ret);
- 
--	/* now add the forward ref */
--	ret = btrfs_add_root_ref(trans, parent_root->fs_info->tree_root,
--				 parent_root->root_key.objectid,
--				 BTRFS_ROOT_REF_KEY,
--				 pending->root_key.objectid,
--				 parent_inode->i_ino, index, pending->name,
--				 namelen);
--
- 	inode = btrfs_lookup_dentry(parent_inode, pending->dentry);
- 	d_instantiate(pending->dentry, inode);
- fail:
-diff -urp 2/fs/btrfs/tree-log.c 3/fs/btrfs/tree-log.c
---- 2/fs/btrfs/tree-log.c	2009-08-24 10:36:46.248107000 +0800
-+++ 3/fs/btrfs/tree-log.c	2009-08-24 10:38:34.290099887 +0800
-@@ -2885,6 +2885,11 @@ int btrfs_log_inode_parent(struct btrfs_
- 	if (ret)
- 		goto end_no_trans;
- 
-+	if (root != BTRFS_I(inode)->root) {
-+		ret = 0;
-+		goto end_no_trans;
+ /*
++ * hepler to process tree block pointer.
++ *
++ * when wc->stage == DROP_REFERENCE, this function checks
++ * reference count of the block pointed to. if the block
++ * is shared and we need update back refs for the subtree
++ * rooted at the block, this function changes wc->stage to
++ * UPDATE_BACKREF. if the block is shared and there is no
++ * need to update back, this function drops the reference
++ * to the block.
++ *
++ * NOTE: return value 1 means we should stop walking down.
++ */
++static noinline int do_walk_down(struct btrfs_trans_handle *trans,
++				 struct btrfs_root *root,
++				 struct btrfs_path *path,
++				 struct walk_control *wc)
++{
++	u64 bytenr;
++	u64 generation;
++	u64 parent;
++	u32 blocksize;
++	struct btrfs_key key;
++	struct extent_buffer *next;
++	int level = wc->level;
++	int reada = 0;
++	int ret = 0;
++
++	generation = btrfs_node_ptr_generation(path->nodes[level],
++					       path->slots[level]);
++	/*
++	 * if the lower level block was created before the snapshot
++	 * was created, we know there is no need to update back refs
++	 * for the subtree
++	 */
++	if (wc->stage == UPDATE_BACKREF &&
++	    generation <= root->root_key.offset)
++		return 1;
++
++	bytenr = btrfs_node_blockptr(path->nodes[level], path->slots[level]);
++	blocksize = btrfs_level_size(root, level - 1);
++
++	next = btrfs_find_tree_block(root, bytenr, blocksize);
++	if (!next) {
++		next = btrfs_find_create_tree_block(root, bytenr, blocksize);
++		reada = 1;
++	}
++	btrfs_tree_lock(next);
++	btrfs_set_lock_blocking(next);
++
++	if (wc->stage == DROP_REFERENCE) {
++		ret = btrfs_lookup_extent_info(trans, root, bytenr, blocksize,
++					       &wc->refs[level - 1],
++					       &wc->flags[level - 1]);
++		BUG_ON(ret);
++		BUG_ON(wc->refs[level - 1] == 0);
++
++		if (wc->refs[level - 1] > 1) {
++			if (!wc->update_ref ||
++			    generation <= root->root_key.offset)
++				goto skip;
++
++			btrfs_node_key_to_cpu(path->nodes[level], &key,
++					      path->slots[level]);
++			ret = btrfs_comp_cpu_keys(&key, &wc->update_progress);
++			if (ret < 0)
++				goto skip;
++
++			wc->stage = UPDATE_BACKREF;
++			wc->shared_level = level - 1;
++		}
 +	}
 +
- 	start_log_trans(trans, root);
++	if (!btrfs_buffer_uptodate(next, generation)) {
++		btrfs_tree_unlock(next);
++		free_extent_buffer(next);
++		next = NULL;
++	}
++
++	if (!next) {
++		if (reada && level == 1)
++			reada_walk_down(trans, root, wc, path);
++		next = read_tree_block(root, bytenr, blocksize, generation);
++		btrfs_tree_lock(next);
++		btrfs_set_lock_blocking(next);
++	}
++
++	level--;
++	BUG_ON(level != btrfs_header_level(next));
++	path->nodes[level] = next;
++	path->slots[level] = 0;
++	path->locks[level] = 1;
++	wc->level = level;
++	if (wc->level == 1)
++		wc->reada_end = 0;
++	return 0;
++skip:
++	wc->refs[level - 1] = 0;
++	wc->flags[level - 1] = 0;
++
++	if (wc->flags[level] & BTRFS_BLOCK_FLAG_FULL_BACKREF) {
++		parent = path->nodes[level]->start;
++	} else {
++		BUG_ON(root->root_key.objectid !=
++		       btrfs_header_owner(path->nodes[level]));
++		parent = 0;
++	}
++
++	ret = btrfs_free_extent(trans, root, bytenr, blocksize, parent,
++				root->root_key.objectid, level - 1, 0);
++	BUG_ON(ret);
++
++	btrfs_tree_unlock(next);
++	free_extent_buffer(next);
++	return 1;
++}
++
++/*
+  * hepler to process tree block while walking up the tree.
+  *
+  * when wc->stage == DROP_REFERENCE, this function drops
+@@ -4904,7 +5076,6 @@ static noinline int walk_up_proc(struct 
+ 		if (level < wc->shared_level)
+ 			goto out;
  
- 	ret = btrfs_log_inode(trans, root, inode, inode_only);
-@@ -2907,6 +2912,9 @@ int btrfs_log_inode_parent(struct btrfs_
+-		BUG_ON(wc->refs[level] <= 1);
+ 		ret = find_next_key(path, level + 1, &wc->update_progress);
+ 		if (ret > 0)
+ 			wc->update_ref = 0;
+@@ -4935,8 +5106,6 @@ static noinline int walk_up_proc(struct 
+ 				path->locks[level] = 0;
+ 				return 1;
+ 			}
+-		} else {
+-			BUG_ON(level != 0);
+ 		}
+ 	}
+ 
+@@ -4989,17 +5158,13 @@ static noinline int walk_down_tree(struc
+ 				   struct btrfs_path *path,
+ 				   struct walk_control *wc)
+ {
+-	struct extent_buffer *next;
+-	struct extent_buffer *cur;
+-	u64 bytenr;
+-	u64 ptr_gen;
+-	u32 blocksize;
+ 	int level = wc->level;
+ 	int ret;
+ 
+ 	while (level >= 0) {
+-		cur = path->nodes[level];
+-		BUG_ON(path->slots[level] >= btrfs_header_nritems(cur));
++		if (path->slots[level] >=
++		    btrfs_header_nritems(path->nodes[level]))
++			break;
+ 
+ 		ret = walk_down_proc(trans, root, path, wc);
+ 		if (ret > 0)
+@@ -5008,20 +5173,12 @@ static noinline int walk_down_tree(struc
+ 		if (level == 0)
  			break;
  
- 		inode = parent->d_inode;
-+		if (root != BTRFS_I(inode)->root)
-+			break;
-+
- 		if (BTRFS_I(inode)->generation >
- 		    root->fs_info->last_trans_committed) {
- 			ret = btrfs_log_inode(trans, root, inode, inode_only);
+-		bytenr = btrfs_node_blockptr(cur, path->slots[level]);
+-		blocksize = btrfs_level_size(root, level - 1);
+-		ptr_gen = btrfs_node_ptr_generation(cur, path->slots[level]);
+-
+-		next = read_tree_block(root, bytenr, blocksize, ptr_gen);
+-		btrfs_tree_lock(next);
+-		btrfs_set_lock_blocking(next);
+-
+-		level--;
+-		BUG_ON(level != btrfs_header_level(next));
+-		path->nodes[level] = next;
+-		path->slots[level] = 0;
+-		path->locks[level] = 1;
+-		wc->level = level;
++		ret = do_walk_down(trans, root, path, wc);
++		if (ret > 0) {
++			path->slots[level]++;
++			continue;
++		}
++		level = wc->level;
+ 	}
+ 	return 0;
+ }
+@@ -5111,9 +5268,7 @@ int btrfs_drop_snapshot(struct btrfs_roo
+ 			err = ret;
+ 			goto out;
+ 		}
+-		btrfs_node_key_to_cpu(path->nodes[level], &key,
+-				      path->slots[level]);
+-		WARN_ON(memcmp(&key, &wc->update_progress, sizeof(key)));
++		WARN_ON(ret > 0);
+ 
+ 		/*
+ 		 * unlock our path, this is safe because only this
+@@ -5148,6 +5303,7 @@ int btrfs_drop_snapshot(struct btrfs_roo
+ 	wc->stage = DROP_REFERENCE;
+ 	wc->update_ref = update_ref;
+ 	wc->keep_locks = 0;
++	wc->reada_count = BTRFS_NODEPTRS_PER_BLOCK(root);
+ 
+ 	while (1) {
+ 		ret = walk_down_tree(trans, root, path, wc);
+@@ -5254,6 +5410,7 @@ int btrfs_drop_subtree(struct btrfs_tran
+ 	wc->stage = DROP_REFERENCE;
+ 	wc->update_ref = 0;
+ 	wc->keep_locks = 1;
++	wc->reada_count = BTRFS_NODEPTRS_PER_BLOCK(root);
+ 
+ 	while (1) {
+ 		wret = walk_down_tree(trans, root, path, wc);
+diff -urp 1/fs/btrfs/transaction.c 2/fs/btrfs/transaction.c
+--- 1/fs/btrfs/transaction.c	2009-07-31 13:48:03.038025845 +0800
++++ 2/fs/btrfs/transaction.c	2009-08-24 10:36:46.248107000 +0800
+@@ -720,7 +720,8 @@ static noinline int create_pending_snaps
+ 	memcpy(new_root_item, &root->root_item, sizeof(*new_root_item));
+ 
+ 	key.objectid = objectid;
+-	key.offset = 0;
++	/* record when the snapshot was created in key.offset */
++	key.offset = trans->transid;
+ 	btrfs_set_key_type(&key, BTRFS_ROOT_ITEM_KEY);
+ 
+ 	old = btrfs_lock_root_node(root);

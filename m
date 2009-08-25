@@ -1,70 +1,55 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: snapshot/subvol deletion
-Date: Tue, 25 Aug 2009 12:04:14 -0400
-Message-ID: <20090825160414.GC16561@think>
-References: <4A93F749.3010708@oracle.com>
- <20090825150351.GB16561@think>
- <20090825155317.GA6155@localhost.localdomain>
+From: Sage Weil <sage@newdream.net>
+Subject: [PATCH] Btrfs: fix arithmetic error in clone ioctl
+Date: Tue, 25 Aug 2009 13:19:53 -0700 (PDT)
+Message-ID: <Pine.LNX.4.64.0908251318450.1229@cobra.newdream.net>
+References: <bcf98daa0908232200r854444dwde3cfcf6b2181c6b@mail.gmail.com>
+ <bcf98daa0908232217m85e5479je26f9d37df39f6f7@mail.gmail.com>
+ <20090824115232.GC15449@think> <4A928CEF.2060903@dpf.gov.br>
+ <bcf98daa0908240652p22b786a9m9c9b3d563b0903f6@mail.gmail.com>
+ <bcf98daa0908240722y6a6e767ahfab958d8e973370c@mail.gmail.com>
+ <bcf98daa0908240942l1f2ad95v609321409434801c@mail.gmail.com>
+ <Pine.LNX.4.64.0908240956500.2289@cobra.newdream.net>
+ <bcf98daa0908250104j199d6e7ey705cc3b9913a5bbd@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: "Yan, Zheng" <zheng.yan@oracle.com>, linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: Atila <atila.alr@dpf.gov.br>, linux-btrfs@vger.kernel.org,
+	Chris Mason <chris.mason@oracle.com>
+To: Markus Suvanto <markus.suvanto@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090825155317.GA6155@localhost.localdomain>
+In-Reply-To: <bcf98daa0908250104j199d6e7ey705cc3b9913a5bbd@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 25, 2009 at 11:53:17AM -0400, Josef Bacik wrote:
-> On Tue, Aug 25, 2009 at 11:03:51AM -0400, Chris Mason wrote:
-> > On Tue, Aug 25, 2009 at 10:38:01PM +0800, Yan, Zheng wrote:
-> > > Hi,
-> > > 
-> > > I will send a series patches that add snapshot/subvol deletion soon.
-> > > But the way to delete snapshot/subvol is far from people's expectancy.
-> > > To delete a snapshot/subvol, we need four steps: 1) snapshot/subvol
-> > > deletion ioctl or rmdir; 2) umount; 3) btrfsck; 4) mount the fs.
-> > > 
-> > > The reason for this is bug in root back & forward references. In simple
-> > > terms, the bug prevents us from knowing how many places a snapshot/subvol
-> > > is referenced. So it's unsafe delete corresponding fs tree immediately
-> > > after a link to snapshot/subvol is removed.
-> > 
-> > Thanks for working on this, its a major feature.  The problem with the
-> > forward/backward reference counting is that our links to a subvolume or
-> > snapshot are really more like symbolic links than active references.
-> > 
-> > If a directory entry points to a subvolume and someone uses rm -rf to
-> > delete the files inside that subvolume or snapshot, you get the same kind of
-> > semantics as deleting the subvolume with the ioctl.
-> > 
-> > So, we should be able to delete the snapshot without the unmount step.
-> > It may create an invalid reference but the code to follow snapshot
-> > directory items will have to be changed to deal with that.
-> > 
-> > If we later on allow root ids to be reused, the directory item pointing
-> > to a subvol will again be like a symbolic link.  You'll end up in the
-> > new subvol instead of the old.
-> > 
-> 
-> So the problem is the directory entry for the snapshot?  What if we just went
-> ahead and added an orphan item for the inode, remove the dir index and dir
-> item's so that it doesn't show up on ls and such, and then the next time we
-> mount the orphan entry gets cleaned up.  That way we can skip the fsck
-> altogether.  Or am I missing something as per usual?
+Markus,
 
-;) The problem is the directory entry for the snapshot, but its a little
-more complex. Lets say subvolA has a directory entry for snapshotZ, and
-then someone wanders in and snapshots subvolA, creating snapshotA'.
+This should fix your problem!
 
-This means that both subvolA and snashotA' have a directory entry for
-snapshotZ.  If we delete snapshotZ we have to deal with both directory
-entries.
+sage
 
-We can solve this by expanding the backref code for subvol roots, but
-then taking a new snapshot becomes O(number of snapshots in the
-original) for updating backrefs.
+---
+Subject: [PATCH] Btrfs: fix arithmetic error in clone ioctl
 
-Or we could give in and admit that snapshot references in the filesystem
-are symbolic links.  Both methods have disadvantages ;)
+Fix an arithmetic error that was breaking extents cloned via the clone
+ioctl starting in the second half of a file.
 
--chris
+Signed-off-by: Sage Weil <sage@newdream.net>
+---
+ fs/btrfs/ioctl.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index e8e4ebe..63ca12a 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1072,8 +1072,7 @@ static long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 					datao += off - key.offset;
+ 					datal -= off - key.offset;
+ 				}
+-				if (key.offset + datao + datal + key.offset >
+-				    off + len)
++				if (key.offset + datao + datal > off + len)
+ 					datal = off + len - key.offset - datao;
+ 				/* disko == 0 means it's a hole */
+ 				if (!disko)
+-- 
+1.5.6.5
 

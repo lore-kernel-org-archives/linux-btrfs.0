@@ -1,77 +1,51 @@
-From: Markus Suvanto <markus.suvanto@gmail.com>
-Subject: Re: [PATCH] Btrfs: fix arithmetic error in clone ioctl
-Date: Wed, 26 Aug 2009 10:19:50 +0300
-Message-ID: <bcf98daa0908260019k67716e05i1d205c61545ab6f8@mail.gmail.com>
-References: <bcf98daa0908232200r854444dwde3cfcf6b2181c6b@mail.gmail.com>
-	 <bcf98daa0908232217m85e5479je26f9d37df39f6f7@mail.gmail.com>
-	 <20090824115232.GC15449@think> <4A928CEF.2060903@dpf.gov.br>
-	 <bcf98daa0908240652p22b786a9m9c9b3d563b0903f6@mail.gmail.com>
-	 <bcf98daa0908240722y6a6e767ahfab958d8e973370c@mail.gmail.com>
-	 <bcf98daa0908240942l1f2ad95v609321409434801c@mail.gmail.com>
-	 <Pine.LNX.4.64.0908240956500.2289@cobra.newdream.net>
-	 <bcf98daa0908250104j199d6e7ey705cc3b9913a5bbd@mail.gmail.com>
-	 <Pine.LNX.4.64.0908251318450.1229@cobra.newdream.net>
+From: "Yan, Zheng" <zheng.yan@oracle.com>
+Subject: Re: snapshot/subvol deletion
+Date: Wed, 26 Aug 2009 17:19:04 +0800
+Message-ID: <4A94FE08.8030005@oracle.com>
+References: <4A93F749.3010708@oracle.com> <20090825150351.GB16561@think> <4A94C735.2000102@oracle.com> <20090826065029.GA30017@think>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Atila <atila.alr@dpf.gov.br>, linux-btrfs@vger.kernel.org,
-	Chris Mason <chris.mason@oracle.com>
-To: Sage Weil <sage@newdream.net>
+To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <Pine.LNX.4.64.0908251318450.1229@cobra.newdream.net>
+In-Reply-To: <20090826065029.GA30017@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2009/8/25 Sage Weil <sage@newdream.net>:
-> Markus,
->
-> This should fix your problem!
->
+On 08/26/2009 02:50 PM, Chris Mason wrote:
+> On Wed, Aug 26, 2009 at 01:25:09PM +0800, Yan, Zheng wrote:
+>> On 08/25/2009 11:03 PM, Chris Mason wrote:
+>>> On Tue, Aug 25, 2009 at 10:38:01PM +0800, Yan, Zheng wrote:
+>>>> Hi,
+>>>>
+>>>> I will send a series patches that add snapshot/subvol deletion soon.
+>>>> But the way to delete snapshot/subvol is far from people's expectancy.
+>>>> To delete a snapshot/subvol, we need four steps: 1) snapshot/subvol
+>>>> deletion ioctl or rmdir; 2) umount; 3) btrfsck; 4) mount the fs.
+>>>>
+>>>> The reason for this is bug in root back & forward references. In simple
+>>>> terms, the bug prevents us from knowing how many places a snapshot/subvol
+>>>> is referenced. So it's unsafe delete corresponding fs tree immediately
+>>>> after a link to snapshot/subvol is removed.
+>>>
+>>> Thanks for working on this, its a major feature.  The problem with the
+>>> forward/backward reference counting is that our links to a subvolume or
+>>> snapshot are really more like symbolic links than active references.
+>>>
+>>> If a directory entry points to a subvolume and someone uses rm -rf to
+>>> delete the files inside that subvolume or snapshot, you get the same kind of
+>>> semantics as deleting the subvolume with the ioctl.
+>>>
+>>
+>> I don't think so. For each links to a subvolume, there is a separate dentry.
+>> For all symbolic links to a directory, there is only one dentry. So the
+>> semantics are different, at least from VFS' point of view.
+> 
+> Yes, in terms of how things are implemented in the VFS, it is different.
+> In terms of the behavior seen by users its a symbolic link.  We could
+> actually implement them as symlinks, but I didn't like the idea of
+> having to follow links as part of cp -a.
+> 
 
-It works now , thanks!
+I thought about it again. I think we can use vfsmount to simulate symbolic's
+behavior.
 
--Markus
-
-
-> ---
-> Subject: [PATCH] Btrfs: fix arithmetic error in clone ioctl
->
-> Fix an arithmetic error that was breaking extents cloned via the clon=
-e
-> ioctl starting in the second half of a file.
->
-> Signed-off-by: Sage Weil <sage@newdream.net>
-> ---
-> =A0fs/btrfs/ioctl.c | =A0 =A03 +--
-> =A01 files changed, 1 insertions(+), 2 deletions(-)
->
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index e8e4ebe..63ca12a 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -1072,8 +1072,7 @@ static long btrfs_ioctl_clone(struct file *file=
-, unsigned long srcfd,
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
- =A0 =A0datao +=3D off - key.offset;
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
- =A0 =A0datal -=3D off - key.offset;
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0}
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (key=
-=2Eoffset + datao + datal + key.offset >
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
- off + len)
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (key=
-=2Eoffset + datao + datal > off + len)
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
- =A0 =A0datal =3D off + len - key.offset - datao;
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0/* dis=
-ko =3D=3D 0 means it's a hole */
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0if (!d=
-isko)
-> --
-> 1.5.6.5
->
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Yan, Zheng

@@ -1,43 +1,47 @@
-From: Giuseppe Scrivano <gscrivano@gnu.org>
-Subject: [PATCH] documentation: update the ioctl numbers list
-Date: Wed, 26 Aug 2009 12:17:36 +0200
-Message-ID: <87my5mnakf.fsf@gnu.org>
+From: Joel Reed <joelwreed@gmail.com>
+Subject: btrfsctl -a doesn't find my btrfs
+Date: Wed, 26 Aug 2009 15:11:20 -0400
+Message-ID: <4A9588D8.7020208@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+If I scan I device with a btrfs with -A, it finds it:
 
-shouldn't the ioctl number used by the BTRFS file system be mentioned in
-the documentation ioctl numbers list?
+(~/btrfs-progs-unstable) sudo ./btrfsctl -A /dev/sda5
+operation complete
+Btrfs v0.19-1-g4f89b6e-dirty
 
-Cheers,
-Giuseppe
+But when I do a "scan all devices", it can't find my btrfs on /dev/sda5:
 
+(~/btrfs-progs-unstable) sudo ./btrfsctl -a
+Scanning for Btrfs filesystems
+failed to read /dev/sr0
 
->From 8cc465afd0bcfcb8930593af667f12a9ee096d01 Mon Sep 17 00:00:00 2001
-From: Giuseppe Scrivano <gscrivano@gnu.org>
-Date: Wed, 26 Aug 2009 11:33:49 +0200
-Subject: [PATCH] documentation: update the ioctl numbers list
+I'm using btrfs-progs-unstable version 
+4f89b6eb0718ade63152791db32794da78fbba70. Am I doing something wrong or 
+misinterpreting how btrfsctl works?
 
-Mention the ioctl number used by BTRFS.
----
- Documentation/ioctl/ioctl-number.txt |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+I notice that "-a" does a:
 
-diff --git a/Documentation/ioctl/ioctl-number.txt b/Documentation/ioctl/ioctl-number.txt
-index 1f779a2..fe91e3e 100644
---- a/Documentation/ioctl/ioctl-number.txt
-+++ b/Documentation/ioctl/ioctl-number.txt
-@@ -177,6 +177,7 @@ Code	Seq#	Include File		Comments
- 					<http://www.proximity.com.au/~brian/winradio/>
- 0x90	00	drivers/cdrom/sbpcd.h
- 0x93	60-7F	linux/auto_fs.h
-+0x94	01-0E	fs/btrfs/ioctl.h	BTRFS
- 0x99	00-0F				537-Addinboard driver
- 					<mailto:buk@buks.ipn.de>
- 0xA0	all	linux/sdp/sdp.h		Industrial Device Project
--- 
-1.6.3.3
+     ret = btrfs_scan_one_device(fd, fullpath, &tmp_devices,
+&num_devices,
+               BTRFS_SUPER_INFO_OFFSET);
+
+Whereas "-A" does a:
+
+     fd = open("/dev/btrfs-control", O_RDWR);
+     if (fd < 0) {
+       perror("failed to open /dev/btrfs-control");
+       exit(1);
+     }
+
+Followed by a:
+
+  ret = ioctl(fd, BTRFS_IOC_SCAN_DEV, &args);
+
+Should "-a" be taught to follow "-A"? I could make a patch if so...
+
+jr

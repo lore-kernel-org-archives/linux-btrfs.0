@@ -1,51 +1,43 @@
-From: "Yan, Zheng" <zheng.yan@oracle.com>
-Subject: Re: snapshot/subvol deletion
-Date: Wed, 26 Aug 2009 17:19:04 +0800
-Message-ID: <4A94FE08.8030005@oracle.com>
-References: <4A93F749.3010708@oracle.com> <20090825150351.GB16561@think> <4A94C735.2000102@oracle.com> <20090826065029.GA30017@think>
+From: Giuseppe Scrivano <gscrivano@gnu.org>
+Subject: [PATCH] documentation: update the ioctl numbers list
+Date: Wed, 26 Aug 2009 12:17:36 +0200
+Message-ID: <87my5mnakf.fsf@gnu.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+To: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090826065029.GA30017@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/26/2009 02:50 PM, Chris Mason wrote:
-> On Wed, Aug 26, 2009 at 01:25:09PM +0800, Yan, Zheng wrote:
->> On 08/25/2009 11:03 PM, Chris Mason wrote:
->>> On Tue, Aug 25, 2009 at 10:38:01PM +0800, Yan, Zheng wrote:
->>>> Hi,
->>>>
->>>> I will send a series patches that add snapshot/subvol deletion soon.
->>>> But the way to delete snapshot/subvol is far from people's expectancy.
->>>> To delete a snapshot/subvol, we need four steps: 1) snapshot/subvol
->>>> deletion ioctl or rmdir; 2) umount; 3) btrfsck; 4) mount the fs.
->>>>
->>>> The reason for this is bug in root back & forward references. In simple
->>>> terms, the bug prevents us from knowing how many places a snapshot/subvol
->>>> is referenced. So it's unsafe delete corresponding fs tree immediately
->>>> after a link to snapshot/subvol is removed.
->>>
->>> Thanks for working on this, its a major feature.  The problem with the
->>> forward/backward reference counting is that our links to a subvolume or
->>> snapshot are really more like symbolic links than active references.
->>>
->>> If a directory entry points to a subvolume and someone uses rm -rf to
->>> delete the files inside that subvolume or snapshot, you get the same kind of
->>> semantics as deleting the subvolume with the ioctl.
->>>
->>
->> I don't think so. For each links to a subvolume, there is a separate dentry.
->> For all symbolic links to a directory, there is only one dentry. So the
->> semantics are different, at least from VFS' point of view.
-> 
-> Yes, in terms of how things are implemented in the VFS, it is different.
-> In terms of the behavior seen by users its a symbolic link.  We could
-> actually implement them as symlinks, but I didn't like the idea of
-> having to follow links as part of cp -a.
-> 
+Hello,
 
-I thought about it again. I think we can use vfsmount to simulate symbolic's
-behavior.
+shouldn't the ioctl number used by the BTRFS file system be mentioned in
+the documentation ioctl numbers list?
 
-Yan, Zheng
+Cheers,
+Giuseppe
+
+
+>From 8cc465afd0bcfcb8930593af667f12a9ee096d01 Mon Sep 17 00:00:00 2001
+From: Giuseppe Scrivano <gscrivano@gnu.org>
+Date: Wed, 26 Aug 2009 11:33:49 +0200
+Subject: [PATCH] documentation: update the ioctl numbers list
+
+Mention the ioctl number used by BTRFS.
+---
+ Documentation/ioctl/ioctl-number.txt |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/Documentation/ioctl/ioctl-number.txt b/Documentation/ioctl/ioctl-number.txt
+index 1f779a2..fe91e3e 100644
+--- a/Documentation/ioctl/ioctl-number.txt
++++ b/Documentation/ioctl/ioctl-number.txt
+@@ -177,6 +177,7 @@ Code	Seq#	Include File		Comments
+ 					<http://www.proximity.com.au/~brian/winradio/>
+ 0x90	00	drivers/cdrom/sbpcd.h
+ 0x93	60-7F	linux/auto_fs.h
++0x94	01-0E	fs/btrfs/ioctl.h	BTRFS
+ 0x99	00-0F				537-Addinboard driver
+ 					<mailto:buk@buks.ipn.de>
+ 0xA0	all	linux/sdp/sdp.h		Industrial Device Project
+-- 
+1.6.3.3

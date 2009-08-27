@@ -1,33 +1,58 @@
-From: Andy Lutomirski <luto@mit.edu>
-Subject: Re: snapshot/subvol deletion
-Date: Wed, 26 Aug 2009 23:47:25 -0400
-Message-ID: <4A9601CD.8040005@mit.edu>
-References: <4A93F749.3010708@oracle.com> <20090825150351.GB16561@think> <20090825155317.GA6155@localhost.localdomain> <20090825160414.GC16561@think>
+From: Atila <atila.alr@dpf.gov.br>
+Subject: [PATCH]Re: The first character disappears
+Date: Thu, 27 Aug 2009 14:44:20 -0300
+Message-ID: <4A96C5F4.4000500@dpf.gov.br>
+References: <bcf98daa0908232200r854444dwde3cfcf6b2181c6b@mail.gmail.com> <bcf98daa0908232217m85e5479je26f9d37df39f6f7@mail.gmail.com> <20090824115232.GC15449@think>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>,
-	"Yan, Zheng" <zheng.yan@oracle.com>, linux-btrfs@vger.kernel.org
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090825160414.GC16561@think>
+In-Reply-To: <20090824115232.GC15449@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote:
-> 
-> ;) The problem is the directory entry for the snapshot, but its a little
-> more complex. Lets say subvolA has a directory entry for snapshotZ, and
-> then someone wanders in and snapshots subvolA, creating snapshotA'.
-> 
-> This means that both subvolA and snashotA' have a directory entry for
-> snapshotZ.  If we delete snapshotZ we have to deal with both directory
-> entries.
+Should be rstrip instead of strip.
 
-I would've expected that, if we delete snapshotZ by IOCTL / rmdir / 
-whatever from within snapshotA', then it still exists until it's also 
-deleted from (the original) subvolA.  But maybe I just don't get it.
+Atila
 
-Is there some end-user-oriented documentation on what the semantics of 
-snapshots and subvolumes are supposed to be?  I couldn't find it with a 
-bit of Googling and wiki reading.
 
---Andy
+Signed-off-by: Atila <atila.alr@dpf.gov.br>
+---
+  bcp |    6 +++---
+  1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/bcp b/bcp
+index 5729e91..7c6b351 100755
+--- a/bcp
++++ b/bcp
+@@ -107,7 +107,7 @@ if src_args > 1:
+          exit(1)
+
+  for srci in xrange(0, src_args):
+-    src = args[srci]
++    src = args[srci].rstrip('/')
+      if os.path.isfile(src):
+          statinfo = os.lstat(src)
+          force_name = None
+@@ -136,7 +136,7 @@ for srci in xrange(0, src_args):
+              srcname = os.path.join(dirpath, x)
+              statinfo = os.lstat(srcname)
+
+-            if srcname.startswith(src):
++            if srcname.startswith(src + '/'):
+                  part = srcname[len(src) + 1:]
+
+              if stat.S_ISLNK(statinfo.st_mode):
+@@ -152,7 +152,7 @@ for srci in xrange(0, src_args):
+
+          for f in filenames:
+              srcname = os.path.join(dirpath, f)
+-            if srcname.startswith(src):
++            if srcname.startswith(src + '/'):
+                  part = srcname[len(src) + 1:]
+
+              statinfo = os.lstat(srcname)
+-- 
+1.6.4
+
+*
+

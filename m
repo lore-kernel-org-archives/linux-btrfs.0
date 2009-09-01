@@ -1,44 +1,27 @@
-From: Calvin Walton <calvin.walton@gmail.com>
-Subject: Re: can't mount RAID-1 btrfs after reboot
-Date: Mon, 31 Aug 2009 01:21:44 -0400
-Message-ID: <1251696114.5925.2.camel@ayu>
-References: <4A852FB2.2030205@wpkg.org> <20090814104109.GO12579@kernel.dk>
-	 <4A9B06BA.7060701@wpkg.org>
+From: Massimo Maggi <massimo@mmmm.it>
+Subject: New idea about RAID and SSD
+Date: Tue, 01 Sep 2009 14:44:54 +0200
+Message-ID: <4A9D1746.1020407@mmmm.it>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Jens Axboe <jens.axboe@oracle.com>, linux-btrfs@vger.kernel.org
-To: Tomasz Chmielewski <mangoo@wpkg.org>
+Content-Type: text/plain; charset=ISO-8859-15
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4A9B06BA.7060701@wpkg.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2009-08-31 at 01:09 +0200, Tomasz Chmielewski wrote:
-> Jens Axboe wrote:
-> 
-> >> I'm able to mount the filesystem by using /dev/sdb4:
-> >>
-> >> # mount /dev/sdb4 /mnt/btrfs/
-> >>
-> >> After which I can unmount it, and use /dev/sda4 to mount the filesystem:
-> >>
-> >> # umount /dev/sdb4
-> >> # mount /dev/sda4 /mnt/btrfs/
-> > 
-> > Try btrfsctl -a first.
-> 
-> It seems to do the trick.
-> 
-> I suppose longer term, doing "btrfsctl -a" before mounting a (RAID) 
-> btrfs filesystem shouldn't be needed, or?
+Hi,
+SSDs have low latency but a high price per GB,
+Traditional hard disks have high latency, but high sequential read/write
+speed and low price per GB.
+Is possibile to use a SSD for metadata, which requires many seeks and is
+relatively small, in a special "RAID mode" with a traditional hard disk
+for the extents of the real data?
+A cheap but performant SSD (maybe 32 GB) + a big and fast HD (maybe 1.5
+TB, or two in RAID0 - 3TB ), wouldn't create an array much cheaper than
+a ssd-only array of the same size, and much faster (in
+not-only-sequential workload)  than one or two traditional HDs in RAID0?
+Would it work?
+Thank you for your precious time!
+Massimo Maggi
+massimo@mmmm.it
 
-Shorter term, writing a udev rule along the lines of
-
-ENV{ID_FS_TYPE}=="btrfs", RUN+="/sbin/btrfsctl -A %N"
-
-(put it in /etc/udev/rules.d/64-btrfs-scan.rules or so) will cause your
-btrfs to be scanned when found. Possibly something like this could be
-distributed with btrfsprogs?
-
--- 
-Calvin Walton <calvin.walton@gmail.com>
 

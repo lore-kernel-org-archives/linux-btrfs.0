@@ -1,13 +1,13 @@
-From: Josef Bacik <josef@redhat.com>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: btrfs failing fsx-linux
-Date: Wed, 2 Sep 2009 13:29:36 -0400
-Message-ID: <20090902172935.GA15846@localhost.localdomain>
-References: <20090818172641.GC30325@wotan.suse.de> <20090818175950.GA2348@localhost.localdomain> <20090902171450.GF28052@wotan.suse.de>
+Date: Wed, 2 Sep 2009 15:07:21 -0400
+Message-ID: <20090902190721.GA4043@think>
+References: <20090818172641.GC30325@wotan.suse.de>
+ <20090818175950.GA2348@localhost.localdomain>
+ <20090902171450.GF28052@wotan.suse.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs@vger.kernel.org
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
 To: Nick Piggin <npiggin@suse.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <20090902171450.GF28052@wotan.suse.de>
@@ -39,9 +39,8 @@ On Wed, Sep 02, 2009 at 07:14:50PM +0200, Nick Piggin wrote:
 > Any progress with this? Were you able to reproduce?
 > 
 
-Err sorry no, I got distracted with my -ENOSPC stuff, it's taking longer than I
-expected it to.  I hope to wrap it up today and take a look at this next.  I was
-able to reproduce the problem on the experimental branch of Chris's tree, so
-it's not something that has been fixed yet.  Thanks,
+I thought this was where the rb tree patch came from, sorry.  I'll try
+to reproduce.
 
-Josef
+-chris
+

@@ -1,45 +1,29 @@
-From: "Yan, Zheng " <yanzheng@21cn.com>
-Subject: Re: BUG? a suspected race bug at cleaner_kthread()
-Date: Thu, 3 Sep 2009 11:21:18 +0800
-Message-ID: <3d0408630909022021o52398945l65c89ec722df9790@mail.gmail.com>
-References: <2014bcab0909021817o4dfa14f2g2634501878e085ff@mail.gmail.com>
+From: Nick Piggin <npiggin@suse.de>
+Subject: Re: btrfs failing fsx-linux
+Date: Thu, 3 Sep 2009 09:10:11 +0200
+Message-ID: <20090903071011.GA979@wotan.suse.de>
+References: <20090818172641.GC30325@wotan.suse.de> <20090818175950.GA2348@localhost.localdomain> <20090902171450.GF28052@wotan.suse.de> <20090902190721.GA4043@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: =?UTF-8?B?7ZmN7IugIHNoaW4gaG9uZw==?= <hongshin@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+To: Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <2014bcab0909021817o4dfa14f2g2634501878e085ff@mail.gmail.com>
+In-Reply-To: <20090902190721.GA4043@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2009/9/3 =ED=99=8D=EC=8B=A0 shin hong <hongshin@gmail.com>:
-> Hello. I am reporting a suspected race bug at cleaner_kthread()
-> in btrfs/disk-io.c of Linux 2.6.30.4.
->
-> I hope this report is helpful. Please examine the report and
-> please let me know your opinion.
->
-> clear_ktherad() is spawned as a thread by open_ctree().
->
-> The function is finished if kthread_should_stop() or
-> root->fs_info->closing becomes non-zero.
->
-> If clear_kthread() is finished before other thread invoke
-> kthread_stop() for clear_kthread(),
-> the caller of kthread_stop() might have problem (waiting indefinitely=
-).
->
-> It seems that close_ctree() set fs_info->closing
-> and then kthread_stop(root->fs_info->cleaner_kthread)
-> so that it might result this type of error.
->
+On Wed, Sep 02, 2009 at 03:07:21PM -0400, Chris Mason wrote:
+> On Wed, Sep 02, 2009 at 07:14:50PM +0200, Nick Piggin wrote:
+> > On Tue, Aug 18, 2009 at 01:59:50PM -0400, Josef Bacik wrote:
+> > > I'll take a look at this later today and see what I can come up with.  Thanks
+> > > for reporting it.
+> > 
+> > Any progress with this? Were you able to reproduce?
+> > 
+> 
+> I thought this was where the rb tree patch came from, sorry.  I'll try
+> to reproduce.
 
-You are right. Would you please send a patch.
+Oh, I must not have been clear: I first hit the rbtree bug, then when
+that was fixed, the same workload was eventually showing up fsx-linux
+failures (but no more kernel crashes).
 
-Note: there is similar bug in transaction_kthread.
-
-Yan, Zheng
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

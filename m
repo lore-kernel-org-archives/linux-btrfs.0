@@ -1,29 +1,64 @@
-From: Nick Piggin <npiggin@suse.de>
-Subject: Re: btrfs failing fsx-linux
-Date: Thu, 3 Sep 2009 09:10:11 +0200
-Message-ID: <20090903071011.GA979@wotan.suse.de>
-References: <20090818172641.GC30325@wotan.suse.de> <20090818175950.GA2348@localhost.localdomain> <20090902171450.GF28052@wotan.suse.de> <20090902190721.GA4043@think>
+From: =?UTF-8?B?7ZmN7IugIHNoaW4gaG9uZw==?= <hongshin@gmail.com>
+Subject: [PATCH] Don't exist from cleaner_kthread and transaction_kthread
+	until kthread_should_stop is true
+Date: Thu, 3 Sep 2009 19:12:47 +0900
+Message-ID: <2014bcab0909030312i73f6cccfib1e612da0501cfc6@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090902190721.GA4043@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 02, 2009 at 03:07:21PM -0400, Chris Mason wrote:
-> On Wed, Sep 02, 2009 at 07:14:50PM +0200, Nick Piggin wrote:
-> > On Tue, Aug 18, 2009 at 01:59:50PM -0400, Josef Bacik wrote:
-> > > I'll take a look at this later today and see what I can come up with.  Thanks
-> > > for reporting it.
-> > 
-> > Any progress with this? Were you able to reproduce?
-> > 
-> 
-> I thought this was where the rb tree patch came from, sorry.  I'll try
-> to reproduce.
+upstream commit 2ad49887150894b9ed6a87a76b409adceee6b074
 
-Oh, I must not have been clear: I first hit the rbtree bug, then when
-that was fixed, the same workload was eventually showing up fsx-linux
-failures (but no more kernel crashes).
+Motivated from the commit,
+I found that cleaner_kthread() and transaction_kthread()
+can result similar error since these two function can exit
+even though kthread_should_stop() is not true.
 
+In order to resolve the bug, break statements are changed
+into continue statements in order to wait until kthread_should_stop()
+becomes true.
+
+
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+
+--- a/fs/btrfs/disk-io.c   2009-08-17 06:19:38.000000000 +0900
++++ a/fs/btrfs/disk-io.c 2009-09-03 19:09:14.640625000 +0900
+@@ -1435,7 +1435,7 @@
+        do {
+                smp_mb();
+                if (root->fs_info->closing)
+-                       break;
++                       continue;
+
+                vfs_check_frozen(root->fs_info->sb, SB_FREEZE_WRITE);
+                mutex_lock(&root->fs_info->cleaner_mutex);
+@@ -1447,7 +1447,7 @@
+                } else {
+                        smp_mb();
+                        if (root->fs_info->closing)
+-                               break;
++                               continue;
+                        set_current_state(TASK_INTERRUPTIBLE);
+                        schedule();
+                        __set_current_state(TASK_RUNNING);
+@@ -1468,7 +1468,7 @@
+        do {
+                smp_mb();
+                if (root->fs_info->closing)
+-                       break;
++                       continue;
+
+                delay = HZ * 30;
+                vfs_check_frozen(root->fs_info->sb, SB_FREEZE_WRITE);
+@@ -1499,7 +1499,7 @@
+                        refrigerator();
+                } else {
+                        if (root->fs_info->closing)
+-                               break;
++                               continue;
+                        set_current_state(TASK_INTERRUPTIBLE);
+                        schedule_timeout(delay);
+                        __set_current_state(TASK_RUNNING);

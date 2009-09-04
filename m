@@ -1,64 +1,30 @@
 From: =?UTF-8?B?7ZmN7IugIHNoaW4gaG9uZw==?= <hongshin@gmail.com>
-Subject: [PATCH] Don't exist from cleaner_kthread and transaction_kthread
+Subject: Re: [PATCH] Don't exist from cleaner_kthread and transaction_kthread
 	until kthread_should_stop is true
-Date: Thu, 3 Sep 2009 19:12:47 +0900
-Message-ID: <2014bcab0909030312i73f6cccfib1e612da0501cfc6@mail.gmail.com>
+Date: Fri, 4 Sep 2009 09:11:51 +0900
+Message-ID: <2014bcab0909031711k64c0ff21jaffb15c4a405c6a5@mail.gmail.com>
+References: <2014bcab0909030312i73f6cccfib1e612da0501cfc6@mail.gmail.com>
+	 <2014bcab0909031706y5d3397f9nd14fc1000c8b8aaf@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=UTF-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <2014bcab0909031706y5d3397f9nd14fc1000c8b8aaf@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-upstream commit 2ad49887150894b9ed6a87a76b409adceee6b074
+However, it seems that the kthread_stop() patch is not yet applied.
+Linux 2.6.30.5 still use the order one.
 
-Motivated from the commit,
-I found that cleaner_kthread() and transaction_kthread()
-can result similar error since these two function can exit
-even though kthread_should_stop() is not true.
-
-In order to resolve the bug, break statements are changed
-into continue statements in order to wait until kthread_should_stop()
-becomes true.
-
-
---- a/fs/btrfs/async-thread.c
-+++ b/fs/btrfs/async-thread.c
-
---- a/fs/btrfs/disk-io.c   2009-08-17 06:19:38.000000000 +0900
-+++ a/fs/btrfs/disk-io.c 2009-09-03 19:09:14.640625000 +0900
-@@ -1435,7 +1435,7 @@
-        do {
-                smp_mb();
-                if (root->fs_info->closing)
--                       break;
-+                       continue;
-
-                vfs_check_frozen(root->fs_info->sb, SB_FREEZE_WRITE);
-                mutex_lock(&root->fs_info->cleaner_mutex);
-@@ -1447,7 +1447,7 @@
-                } else {
-                        smp_mb();
-                        if (root->fs_info->closing)
--                               break;
-+                               continue;
-                        set_current_state(TASK_INTERRUPTIBLE);
-                        schedule();
-                        __set_current_state(TASK_RUNNING);
-@@ -1468,7 +1468,7 @@
-        do {
-                smp_mb();
-                if (root->fs_info->closing)
--                       break;
-+                       continue;
-
-                delay = HZ * 30;
-                vfs_check_frozen(root->fs_info->sb, SB_FREEZE_WRITE);
-@@ -1499,7 +1499,7 @@
-                        refrigerator();
-                } else {
-                        if (root->fs_info->closing)
--                               break;
-+                               continue;
-                        set_current_state(TASK_INTERRUPTIBLE);
-                        schedule_timeout(delay);
-                        __set_current_state(TASK_RUNNING);
+On Fri, Sep 4, 2009 at 9:06 AM, =ED=99=8D=EC=8B=A0 shin hong<hongshin@g=
+mail.com> wrote:
+> However, Vitaily Gusev notice me that kthread_stop() has been changed
+> recently so that it may executed for threads which was existed.
+> (commit =C2=A063706172f332fd3f6e7458ebfb35fa6de9c21dc5
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0kthreads: rework kthr=
+ead_stop())
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

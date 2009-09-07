@@ -1,34 +1,38 @@
-From: David Zeuthen <zeuthen@gmail.com>
-Subject: Re: Discrepant st_rdev and st_dev stats in btrfs block and fs device
-	ids
-Date: Sun, 6 Sep 2009 21:43:31 -0400
-Message-ID: <7b13a0f80909061843w70f74ea7ibfca3c8761f679ba@mail.gmail.com>
-References: <7a83c8e0909060851w70305142oc775b28bcd1ef093@mail.gmail.com>
+From: "Yan, Zheng " <yanzheng@21cn.com>
+Subject: Re: Question about back references
+Date: Mon, 7 Sep 2009 17:41:50 +0800
+Message-ID: <3d0408630909070241x78f043fdu9bf3f1ddd41a4ddd@mail.gmail.com>
+References: <4AA2C7E6.40200@eecs.harvard.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: Marcus <smurca@googlemail.com>
+To: Peter Macko <pmacko@eecs.harvard.edu>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <7a83c8e0909060851w70305142oc775b28bcd1ef093@mail.gmail.com>
+In-Reply-To: <4AA2C7E6.40200@eecs.harvard.edu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hey,
+2009/9/6 Peter Macko <pmacko@eecs.harvard.edu>:
+> I am trying to understand how exactly the file extent back references work
+> in btrfs. Can please someone tell me if the following is correct? - The back
+> references are accumulated in an in-memory balanced tree (delayed-ref.c and
+> delayed-ref.h) and pushed to disk during the transaction commit (a part of a
+> checkpoint). They are placed into the B-tree under the key (bytenr,
+> BTRFS_EXTENT_REF_KEY, hash of the four fields of the record), so that they
+> are stored next to the file extent forward references.
+>
+This was correct for btrfs in 2.6.30 and earlier version. We introduced a new
+back references format in 2.6.31. For more information about the new format,
+please read the comments in extent-tree.c
 
-> Can anyone repeat this? Any ideas why this could be happening?
-> Is this expected?
+> I am also wondering about the implications of copy on write: Imagine that
+> you have an inode with four file extents and thus also four back references.
+> COW of one of the extents then causes the COW of the inode. The new version
+> of the inode has a different transaction ID, which is also one of the fields
+> of back reference records. This causes the file system to add four new back
+> reference records - one for the modified extent and three for the unmodified
+> ones (since the transaction ID field has to be updated). Does this really
+> happen, or is there some scheme to avoid adding these extra records?
+>
+It's avoid by using the new back references format.
 
-There was some discussion about this some time ago, see
-
- http://news.gmane.org/find-root.php?message_id=%3c7b13a0f80904120735r41736455hb7e226ab8ad30bd7%40mail.gmail.com%3e
-
-I don't think it's resolved yet - the work-around I currently use in
-devkit-disks-daemon (which is used by e.g. GNOME to show names
-and icons for storage devices) looks like this:
-
- http://cgit.freedesktop.org/DeviceKit/DeviceKit-disks/tree/src/devkit-disks-mount-monitor.c?id=006#n351
-
-and I don't think this will work for multi-disk btrfs filesystems. Thinking
-about this again, we probably want to treat such btrfs multi-disk filesystems
-in the UI the same way we treat e.g. md raid devices....
-
-    David
+Yan, Zheng

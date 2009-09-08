@@ -1,60 +1,53 @@
-From: Peter Macko <pmacko@eecs.harvard.edu>
-Subject: Re: Question about back references
-Date: Tue, 08 Sep 2009 17:40:07 -0400
-Message-ID: <4AA6CF37.3090206@eecs.harvard.edu>
-References: <4AA2C7E6.40200@eecs.harvard.edu> <3d0408630909070241x78f043fdu9bf3f1ddd41a4ddd@mail.gmail.com>
+From: Tracy Reed <treed@ultraviolet.org>
+Subject: Re: btrfs csum failed on git .pack file
+Date: Tue, 8 Sep 2009 14:53:57 -0700
+Message-ID: <20090908215357.GK6779@tracyreed.org>
+References: <20090907203531.GA1889@phenom2.trippelsdorf.de>
+ <20090908200041.GF18599@kernel.dk>
+ <20090908202211.GA1901@phenom2.trippelsdorf.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: "Yan, Zheng " <yanzheng@21cn.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="qicme7IxPpkH/pPU"
+Cc: Jens Axboe <jens.axboe@oracle.com>, linux-btrfs@vger.kernel.org
+To: Markus Trippelsdorf <markus@trippelsdorf.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <3d0408630909070241x78f043fdu9bf3f1ddd41a4ddd@mail.gmail.com>
+In-Reply-To: <20090908202211.GA1901@phenom2.trippelsdorf.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks! I have a follow up question: Are back references reference 
-counted? If so, this should mean that after the file system COWs an 
-inode, it must increase the reference counts of its file extent back 
-references. Do we know what is the overhead? In the case they are not 
-reference counted, how does the system know when to drop the reference?
 
-What are the bookend extents? Is the number of bookend requests in the 
-fourth field of a file extent back reference  the number of times the 
-extent occurs within the file?
+--qicme7IxPpkH/pPU
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Thank you,
+On Tue, Sep 08, 2009 at 10:22:11PM +0200, Markus Trippelsdorf spake thusly:
+> I've already deleted the file in question unfortunately.
+> On IRC Chris decided that either bad RAM or a harddrive error was the
+> most likely reason for this chechsum mismatch.
 
-Peter Macko
+Which raises an interesting point: I know reiserfs had its problems
+but it also turned up a lot of machines with bad RAM which contributed
+to giving the fs a bad name. With more and more complicated and memory
+consuming filesystem datastructures being stored in RAM, larger volumes
+of RAM in systems, and RAM not really getting any more reliable will
+we ever see a day where something like btrfs is not recommended for
+use in any machine that doesn't have ECC? Does the filesystem do
+anything to protect itself from bad hardware?
 
+--=20
+Tracy Reed
+http://tracyreed.org
 
-Yan, Zheng wrote:
-> 2009/9/6 Peter Macko <pmacko@eecs.harvard.edu>:
->   
->> I am trying to understand how exactly the file extent back references work
->> in btrfs. Can please someone tell me if the following is correct? - The back
->> references are accumulated in an in-memory balanced tree (delayed-ref.c and
->> delayed-ref.h) and pushed to disk during the transaction commit (a part of a
->> checkpoint). They are placed into the B-tree under the key (bytenr,
->> BTRFS_EXTENT_REF_KEY, hash of the four fields of the record), so that they
->> are stored next to the file extent forward references.
->>
->>     
-> This was correct for btrfs in 2.6.30 and earlier version. We introduced a new
-> back references format in 2.6.31. For more information about the new format,
-> please read the comments in extent-tree.c
->
->   
->> I am also wondering about the implications of copy on write: Imagine that
->> you have an inode with four file extents and thus also four back references.
->> COW of one of the extents then causes the COW of the inode. The new version
->> of the inode has a different transaction ID, which is also one of the fields
->> of back reference records. This causes the file system to add four new back
->> reference records - one for the modified extent and three for the unmodified
->> ones (since the transaction ID field has to be updated). Does this really
->> happen, or is there some scheme to avoid adding these extra records?
->>
->>     
-> It's avoid by using the new back references format.
->
-> Yan, Zheng
->   
+--qicme7IxPpkH/pPU
+Content-Type: application/pgp-signature
+Content-Disposition: inline
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.5 (GNU/Linux)
+
+iD8DBQFKptJ19PIYKZYVAq0RAvqxAJ0YDk42NPP6P1MgSXzY2zkEhyYqOQCeMdHk
+0QLTFqyzrvjPLFy0MYJWKu0=
+=0WaE
+-----END PGP SIGNATURE-----
+
+--qicme7IxPpkH/pPU--

@@ -1,32 +1,39 @@
-From: Markus Trippelsdorf <markus@trippelsdorf.de>
-Subject: btrfs csum failed on git .pack file
-Date: Mon, 7 Sep 2009 22:35:31 +0200
-Message-ID: <20090907203531.GA1889@phenom2.trippelsdorf.de>
+From: David Woodhouse <dwmw2@infradead.org>
+Subject: Re: [PATCH] don't OOPs when we are not raid56
+Date: Tue, 08 Sep 2009 10:15:29 +0100
+Message-ID: <1252401329.4483.579.camel@macbook.infradead.org>
+References: <1249553833.568.23.camel@macbook.infradead.org>
+	 <774E55AE-1639-4537-B001-E8F96311F4CD@karlsbakk.net>
+	 <1249658554.568.214.camel@macbook.infradead.org>  <4A9E9E00.5080608@hp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: jim owens <jowens@hp.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4A9E9E00.5080608@hp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just got this error today in my dmesg:
-btrfs csum failed ino 1483065 off 158482432 csum 4283543305 private 43905798
+On Wed, 2009-09-02 at 12:32 -0400, jim owens wrote:
+> @@ -2895,7 +2895,7 @@ again:
+>                 multi->num_stripes = num_stripes;
+>                 multi->max_errors = max_errors;
+>         }
+> -       if (raid_map_ret) {
+> +       if (raid_map) {
+>                 sort_parity_stripes(multi, raid_map);
+>                 *raid_map_ret = raid_map;
+>         }
 
-linux % find . -inum 1483065
-./.git/objects/pack/pack-f9251bcc6a8afe3c92193e14d1d742f2f0182ce5.pack
+Applied (manually, because I think your mail was whitespace-damaged).
+Thanks.
 
-It's the main pack file from my git linux kernel tree:
+Chris, where do we stand with getting this merged? You were going to
+sort out the upper layers to handle the minimum write size, weren't you?
 
-linux % ls -l ./.git/objects/pack/
-total 562848
--rw-r--r-- 1 markus markus   1891324 2008-11-29 19:49 pack-011b43fa6956667db5e67fba859e40cb4b154226.idx
--rw-r--r-- 1 markus markus  44002938 2008-11-29 19:54 pack-011b43fa6956667db5e67fba859e40cb4b154226.pack.temp
--rw-r--r-- 1 markus markus    730332 2008-11-29 19:49 pack-67be92b3fab3dab175683582dab0b719517e55a5.idx
--r--r--r-- 1 markus markus  36061684 2009-09-06 21:48 pack-f9251bcc6a8afe3c92193e14d1d742f2f0182ce5.idx
--r--r--r-- 1 markus markus 335202742 2009-09-06 21:48 pack-f9251bcc6a8afe3c92193e14d1d742f2f0182ce5.pack
--rw------- 1 markus markus 158457856 2009-09-07 22:15 tmp_pack_OUdxER
-
-I'm running the latest git kernel and I've been using btrfs as my root
-fs for the last few weeks without problems so far.
-
+I'm also going to do RAID50/60 support, and with hpa's help I'll extend
+it to do RAID7/70 too -- but you're not waiting for that, are you?
+ 
 -- 
-Markus
+David Woodhouse                            Open Source Technology Centre
+David.Woodhouse@intel.com                              Intel Corporation
+

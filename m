@@ -1,54 +1,35 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: btrfs csum failed on git .pack file
-Date: Wed, 9 Sep 2009 07:19:55 -0400
-Message-ID: <20090909111955.GA3473@think>
-References: <20090907203531.GA1889@phenom2.trippelsdorf.de>
- <20090908200041.GF18599@kernel.dk>
- <20090908202211.GA1901@phenom2.trippelsdorf.de>
- <20090908203214.GH18599@kernel.dk>
- <20090909065533.GA2861@phenom2.trippelsdorf.de>
- <20090909070141.GL18599@kernel.dk>
- <6278d2220909090118o6cdadb38ic38f2991d4fd1e10@mail.gmail.com>
- <20090909082636.GP18599@kernel.dk>
- <6278d2220909090137k68d23db8p169c3a83d37d2a95@mail.gmail.com>
+Subject: Re: btrfs failing fsx-linux
+Date: Wed, 9 Sep 2009 09:13:49 -0400
+Message-ID: <20090909131349.GB4522@think>
+References: <20090818172641.GC30325@wotan.suse.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Jens Axboe <jens.axboe@oracle.com>,
-	Markus Trippelsdorf <markus@trippelsdorf.de>,
-	linux-btrfs@vger.kernel.org
-To: Daniel J Blueman <daniel.blueman@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+To: Nick Piggin <npiggin@suse.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <6278d2220909090137k68d23db8p169c3a83d37d2a95@mail.gmail.com>
+In-Reply-To: <20090818172641.GC30325@wotan.suse.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 09, 2009 at 09:37:42AM +0100, Daniel J Blueman wrote:
-> >>
-> >> http://www.ocztechnologyforum.com/forum/showthread.php?t=57516
-> >
-> > The issue is pretty much moot at this point, since OCZ support were not
-> > really interested in providing any sort of real technical support to
-> > find out what really caused this issue. My main worry was reliability of
-> > these cheaper SSD drives, and that worry is still not resolved. If you
-> > read the blog entries, I do comment on the apparently scary basic bugs
-> > taht are still being fixed on the Indilinx controllers. I do expect some
-> > basic level of data integrity from a consumer product and at least some
-> > interest in resolving weird corruption issues if things go wrong. Since
-> > OCZ cannot provide anything like that, I have a hard time recommending
-> > these drives for anything but very casual use. Fast, cheap, reliable.
-> > Pick any two.
-> >
-> > My drive was running 1.10 at the time of the problem.
+On Tue, Aug 18, 2009 at 07:26:41PM +0200, Nick Piggin wrote:
+> Hi Chris,
 > 
-> It looks like we need a small tool which performs patterned block I/O
-> to the device, updating a checksum as it goes, and performing
-> integrity sweeps at intervals, lower level than fsx. It must be
-> trusted or not.
+> Don't know if this is a known issue, but I have btrfs (after my previous
+> inode_tree fixup patch) failing fsx-linux in Linus's current git tree.
 > 
-> I had a problem like this with nVidia CK804/MCP55 chipsets corrupting
-> data under a triple-edge case workload.
+> This makes it a bit hard for me to test my btrfs truncate conversion patch
+> unfortunately, though it does seem pretty stable so I will probably just
+> send it out anyway.
+> 
+> Anyway, just a head's up. Oh, the way I reproduce is to create btrfs
+> on 1GB rd, run 4 instances of fsx-linux on different files in the root
+> directory, and run `while true ; do sync ; echo 3 > /proc/sys/vm/drop_caches;
+> done` at the same time.
 
-Well, just use git ;)  Apply a bunch of patches (say the mm tree) with
-guilt and repack in a loop.
+Just an update, I think I've tracked this down.  Our fixup code for when
+set_page_dirty was called without page_mkwrite wasn't catching every
+case.  I'm hitting other problems because I'm testing on my new
+performance code, but hopefully this will all be nailed down soon.
 
 -chris
 

@@ -1,45 +1,40 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: BUG? a possible bug for the absence of memory barrier
-Date: Thu, 10 Sep 2009 16:38:53 -0400
-Message-ID: <20090910203853.GB18366@think>
-References: <2014bcab0909090815jf4929efib21cbf52b963e330@mail.gmail.com>
+From: Premysl Hruby <dfenze@gmail.com>
+Subject: slight simplification in transaction.c
+Date: Thu, 10 Sep 2009 23:04:49 +0200
+Message-ID: <20090910210449.GA5329@baldr.the>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Cc: linux-btrfs@vger.kernel.org
-To: =?utf-8?B?7ZmN7Iug?= shin hong <hongshin@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <2014bcab0909090815jf4929efib21cbf52b963e330@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 10, 2009 at 12:15:24AM +0900, =ED=99=8D=EC=8B=A0 shin hong =
-wrote:
-> Hello. I am reporting possible bugs caused
-> by the absence of memory barriers.
->=20
-> Please examine this issue and let me know your opinion.
->=20
-> In add_async_extent(), an async_extent object is allocated and initia=
-lized
-> and then links to &cow->extents.
+Hi there,
 
-Memory barriers have an impact when there are multiple CPUs accessing
-the same data structures at the same time.  In the case of
-add_async_extent only one worker thread is working on that list at a
-time.
+While reading source, I found possible simplification 
+in btrfs_record_root_in_trans 
 
->=20
-> However, since there is no memory barrier
-> between the initialization and the linking to the list,
-> these two operations are executed opposite order.
-> And the re-ordering might result race condition.
->=20
-> The similar issue is also in join_transaction().
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index cdbb502..7cd7bf9 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -123,12 +123,9 @@ int btrfs_record_root_in_trans(struct btrfs_trans_handle *trans,
+                return 0;
+ 
+        mutex_lock(&root->fs_info->trans_mutex);
+-       if (root->last_trans == trans->transid) {
+-               mutex_unlock(&root->fs_info->trans_mutex);
+-               return 0;
+-       }
++       if (root->last_trans != trans->transid)
++               record_root_in_trans(trans, root);
+ 
+-       record_root_in_trans(trans, root);
+        mutex_unlock(&root->fs_info->trans_mutex);
+        return 0;
+ }
 
-In join_transaction, that list is protected by the trans_mutex.
 
--chris
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-- 
+Premysl "Anydot" Hruby, http://www.redrum.cz/
+-
+I'm a signature virus. Please add me to your signature and help me spread!

@@ -1,48 +1,45 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Question about back references
-Date: Thu, 10 Sep 2009 08:54:44 -0400
-Message-ID: <20090910125444.GF5106@think>
-References: <4AA2C7E6.40200@eecs.harvard.edu>
- <3d0408630909070241x78f043fdu9bf3f1ddd41a4ddd@mail.gmail.com>
- <4AA6CF37.3090206@eecs.harvard.edu>
+Subject: Re: BUG? a possible bug for the absence of memory barrier
+Date: Thu, 10 Sep 2009 16:38:53 -0400
+Message-ID: <20090910203853.GB18366@think>
+References: <2014bcab0909090815jf4929efib21cbf52b963e330@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: "Yan, Zheng " <yanzheng@21cn.com>, linux-btrfs@vger.kernel.org
-To: Peter Macko <pmacko@eecs.harvard.edu>
+Content-Type: text/plain; charset=utf-8
+Cc: linux-btrfs@vger.kernel.org
+To: =?utf-8?B?7ZmN7Iug?= shin hong <hongshin@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4AA6CF37.3090206@eecs.harvard.edu>
+In-Reply-To: <2014bcab0909090815jf4929efib21cbf52b963e330@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 08, 2009 at 05:40:07PM -0400, Peter Macko wrote:
-> Thanks! I have a follow up question: Are back references reference
-> counted? If so, this should mean that after the file system COWs an
-> inode, it must increase the reference counts of its file extent back
-> references. Do we know what is the overhead? In the case they are
-> not reference counted, how does the system know when to drop the
-> reference?
+On Thu, Sep 10, 2009 at 12:15:24AM +0900, =ED=99=8D=EC=8B=A0 shin hong =
+wrote:
+> Hello. I am reporting possible bugs caused
+> by the absence of memory barriers.
+>=20
+> Please examine this issue and let me know your opinion.
+>=20
+> In add_async_extent(), an async_extent object is allocated and initia=
+lized
+> and then links to &cow->extents.
 
-The reference counts live in a tree that is maintained via cow
-but not reference counted.
+Memory barriers have an impact when there are multiple CPUs accessing
+the same data structures at the same time.  In the case of
+add_async_extent only one worker thread is working on that list at a
+time.
 
-> 
-> What are the bookend extents? Is the number of bookend requests in
-> the fourth field of a file extent back reference  the number of
-> times the extent occurs within the file?
+>=20
+> However, since there is no memory barrier
+> between the initialization and the linking to the list,
+> these two operations are executed opposite order.
+> And the re-ordering might result race condition.
+>=20
+> The similar issue is also in join_transaction().
 
-bookends are how we do cow with large extents without needing to read in
-the entire large extent.
-
-Picture a large 128MB extent where you want to overwrite 4K in the
-middle.  What we do is create two pointers to the original extent, and
-then make a new extent for the new 4K mod.  Our pointers end up like
-this:
-
-[ old extent part 1 ] [ new 4k extent ] [ old extent part 2 ]
-
-A future mod will be to split and modify the old extent when we know
-there aren't any other reference holders on it.  The bookend system
-assumes that a given extent is in use by multiple snapshots, where we
-aren't allowed to change the actual extent records because it is in use in
-other places.
+In join_transaction, that list is protected by the trans_mutex.
 
 -chris
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

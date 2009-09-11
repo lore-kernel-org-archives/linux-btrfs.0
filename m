@@ -1,42 +1,36 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Updated performance results
-Date: Fri, 11 Sep 2009 15:29:55 -0400
-Message-ID: <20090911192955.GB2894@think>
-References: <4A68DE81.3020505@dangyankee.net>
- <20090724132407.GC16192@think>
- <20090724140002.GD16192@think>
- <4A6F5BB6.4020204@austin.ibm.com>
- <20090728202355.GC13940@think>
- <4A6F6951.9020304@austin.ibm.com>
- <20090805203526.GE12524@think>
- <4A7C32A4.9070106@austin.ibm.com>
- <20090807231240.GD3710@think>
- <4A9C0D19.5010108@austin.ibm.com>
+Subject: Re: btrfs failing fsx-linux
+Date: Fri, 11 Sep 2009 15:36:18 -0400
+Message-ID: <20090911193618.GD2894@think>
+References: <20090818172641.GC30325@wotan.suse.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Steven Pratt <slpratt@austin.ibm.com>
+Cc: linux-btrfs@vger.kernel.org
+To: Nick Piggin <npiggin@suse.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4A9C0D19.5010108@austin.ibm.com>
+In-Reply-To: <20090818172641.GC30325@wotan.suse.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 31, 2009 at 12:49:13PM -0500, Steven Pratt wrote:
-> Better late than never. Finally got this finished up.  Mixed bag on
-> this one.  BTRFS lags significantly on single threaded.  Seems
-> unable to keep IO outstanding to the device.  Less that 60% busy on
-> the DM device, compared to 97%+ for all other filesystems.
-> nodatacow helps out, increasing utilization to about 70%, but still
-> trails by a large margin.
+On Tue, Aug 18, 2009 at 07:26:41PM +0200, Nick Piggin wrote:
+> Hi Chris,
+> 
+> Don't know if this is a known issue, but I have btrfs (after my previous
+> inode_tree fixup patch) failing fsx-linux in Linus's current git tree.
 
-Hi Steve,
+Thanks for your help on this Nick, I've got my current fixes for fsx in
+the master branch of the btrfs-unstable repo:
 
-Jens Axboe did some profiling on his big test rig and I think we found
-the biggest CPU problems.  The end result is now setting in the master
-branch of the btrfs-unstable repo.
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git
 
-On his boxes, btrfs went from around 400MB/s streaming writes to 1GB/s
-limit, and we're now tied with XFS while using less CPU time.
+If you're curious, the 3 most relevant commits are here:
 
-Hopefully you will see similar results ;)
+http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=commit;h=93c82d575055f1bd0277acae6f966bebafd80dd5
+
+http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=commit;h=50a9b214bc6c052caa05a210ebfc1bdf0d7085b2
+
+http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=commit;h=a1ed835e1ab5795f91b198d08c43e2f56848dcf3
+
+But these fixes are built on top of my performance work (which was sure
+to break fsx on its own).
 
 -chris

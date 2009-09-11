@@ -1,40 +1,76 @@
-From: Premysl Hruby <dfenze@gmail.com>
-Subject: slight simplification in transaction.c
-Date: Thu, 10 Sep 2009 23:04:49 +0200
-Message-ID: <20090910210449.GA5329@baldr.the>
+From: Julia Lawall <julia@diku.dk>
+Subject: [PATCH 7/8] fs/btrfs: introduce missing kfree
+Date: Fri, 11 Sep 2009 18:22:47 +0200 (CEST)
+Message-ID: <Pine.LNX.4.64.0909111822280.10552@pc-004.diku.dk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754807AbZIKQWs@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi there,
+From: Julia Lawall <julia@diku.dk>
 
-While reading source, I found possible simplification 
-in btrfs_record_root_in_trans 
+Error handling code following a kzalloc should free the allocated data.
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index cdbb502..7cd7bf9 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -123,12 +123,9 @@ int btrfs_record_root_in_trans(struct btrfs_trans_handle *trans,
-                return 0;
+The semantic match that finds the problem is as follows:
+(http://www.emn.fr/x-info/coccinelle/)
+
+// <smpl>
+@r exists@
+local idexpression x;
+statement S;
+expression E;
+identifier f,f1,l;
+position p1,p2;
+expression *ptr != NULL;
+@@
+
+x@p1 = \(kmalloc\|kzalloc\|kcalloc\)(...);
+...
+if (x == NULL) S
+<... when != x
+     when != if (...) { <+...x...+> }
+(
+x->f1 = E
+|
+ (x->f1 == NULL || ...)
+|
+ f(...,x->f1,...)
+)
+...>
+(
+ return \(0\|<+...x...+>\|ptr\);
+|
+ return@p2 ...;
+)
+
+@script:python@
+p1 << r.p1;
+p2 << r.p2;
+@@
+
+print "* file: %s kmalloc %s return %s" % (p1[0].file,p1[0].line,p2[0].line)
+// </smpl>
+
+Signed-off-by: Julia Lawall <julia@diku.dk>
+---
+ fs/btrfs/volumes.c                  |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 5cf405b..4ced7c3 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -446,8 +446,10 @@ static struct btrfs_fs_devices *clone_fs_devices(struct btrfs_fs_devices *orig)
+ 			goto error;
  
-        mutex_lock(&root->fs_info->trans_mutex);
--       if (root->last_trans == trans->transid) {
--               mutex_unlock(&root->fs_info->trans_mutex);
--               return 0;
--       }
-+       if (root->last_trans != trans->transid)
-+               record_root_in_trans(trans, root);
+ 		device->name = kstrdup(orig_dev->name, GFP_NOFS);
+-		if (!device->name)
++		if (!device->name) {
++			kfree(device);
+ 			goto error;
++		}
  
--       record_root_in_trans(trans, root);
-        mutex_unlock(&root->fs_info->trans_mutex);
-        return 0;
- }
-
-
--- 
-Premysl "Anydot" Hruby, http://www.redrum.cz/
--
-I'm a signature virus. Please add me to your signature and help me spread!
+ 		device->devid = orig_dev->devid;
+ 		device->work.func = pending_bios_fn;

@@ -1,76 +1,42 @@
-From: Julia Lawall <julia@diku.dk>
-Subject: [PATCH 7/8] fs/btrfs: introduce missing kfree
-Date: Fri, 11 Sep 2009 18:22:47 +0200 (CEST)
-Message-ID: <Pine.LNX.4.64.0909111822280.10552@pc-004.diku.dk>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Updated performance results
+Date: Fri, 11 Sep 2009 15:29:55 -0400
+Message-ID: <20090911192955.GB2894@think>
+References: <4A68DE81.3020505@dangyankee.net>
+ <20090724132407.GC16192@think>
+ <20090724140002.GD16192@think>
+ <4A6F5BB6.4020204@austin.ibm.com>
+ <20090728202355.GC13940@think>
+ <4A6F6951.9020304@austin.ibm.com>
+ <20090805203526.GE12524@think>
+ <4A7C32A4.9070106@austin.ibm.com>
+ <20090807231240.GD3710@think>
+ <4A9C0D19.5010108@austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754807AbZIKQWs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Steven Pratt <slpratt@austin.ibm.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4A9C0D19.5010108@austin.ibm.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Julia Lawall <julia@diku.dk>
+On Mon, Aug 31, 2009 at 12:49:13PM -0500, Steven Pratt wrote:
+> Better late than never. Finally got this finished up.  Mixed bag on
+> this one.  BTRFS lags significantly on single threaded.  Seems
+> unable to keep IO outstanding to the device.  Less that 60% busy on
+> the DM device, compared to 97%+ for all other filesystems.
+> nodatacow helps out, increasing utilization to about 70%, but still
+> trails by a large margin.
 
-Error handling code following a kzalloc should free the allocated data.
+Hi Steve,
 
-The semantic match that finds the problem is as follows:
-(http://www.emn.fr/x-info/coccinelle/)
+Jens Axboe did some profiling on his big test rig and I think we found
+the biggest CPU problems.  The end result is now setting in the master
+branch of the btrfs-unstable repo.
 
-// <smpl>
-@r exists@
-local idexpression x;
-statement S;
-expression E;
-identifier f,f1,l;
-position p1,p2;
-expression *ptr != NULL;
-@@
+On his boxes, btrfs went from around 400MB/s streaming writes to 1GB/s
+limit, and we're now tied with XFS while using less CPU time.
 
-x@p1 = \(kmalloc\|kzalloc\|kcalloc\)(...);
-...
-if (x == NULL) S
-<... when != x
-     when != if (...) { <+...x...+> }
-(
-x->f1 = E
-|
- (x->f1 == NULL || ...)
-|
- f(...,x->f1,...)
-)
-...>
-(
- return \(0\|<+...x...+>\|ptr\);
-|
- return@p2 ...;
-)
+Hopefully you will see similar results ;)
 
-@script:python@
-p1 << r.p1;
-p2 << r.p2;
-@@
-
-print "* file: %s kmalloc %s return %s" % (p1[0].file,p1[0].line,p2[0].line)
-// </smpl>
-
-Signed-off-by: Julia Lawall <julia@diku.dk>
----
- fs/btrfs/volumes.c                  |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 5cf405b..4ced7c3 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -446,8 +446,10 @@ static struct btrfs_fs_devices *clone_fs_devices(struct btrfs_fs_devices *orig)
- 			goto error;
- 
- 		device->name = kstrdup(orig_dev->name, GFP_NOFS);
--		if (!device->name)
-+		if (!device->name) {
-+			kfree(device);
- 			goto error;
-+		}
- 
- 		device->devid = orig_dev->devid;
- 		device->work.func = pending_bios_fn;
+-chris

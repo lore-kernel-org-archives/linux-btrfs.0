@@ -1,7 +1,7 @@
 From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: Updated performance results
-Date: Wed, 16 Sep 2009 14:17:14 -0400
-Message-ID: <20090916181714.GF2641@think>
+Date: Wed, 16 Sep 2009 14:20:22 -0400
+Message-ID: <20090916182022.GG2641@think>
 References: <4A9C0D19.5010108@austin.ibm.com>
  <20090911192955.GB2894@think>
  <4AAAC2B6.8040105@austin.ibm.com>
@@ -11,17 +11,17 @@ References: <4A9C0D19.5010108@austin.ibm.com>
  <4AB1010F.70001@austin.ibm.com>
  <4AB12702.30601@austin.ibm.com>
  <20090916180719.GE2641@think>
- <4AB12B30.1020205@austin.ibm.com>
+ <4AB12B98.9050708@austin.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: Eric Whitney <eric.whitney@hp.com>,
 	linux-btrfs <linux-btrfs@vger.kernel.org>
 To: Steven Pratt <slpratt@austin.ibm.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4AB12B30.1020205@austin.ibm.com>
+In-Reply-To: <4AB12B98.9050708@austin.ibm.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 16, 2009 at 01:15:12PM -0500, Steven Pratt wrote:
+On Wed, Sep 16, 2009 at 01:16:56PM -0500, Steven Pratt wrote:
 > Chris Mason wrote:
 > >On Wed, Sep 16, 2009 at 12:57:22PM -0500, Steven Pratt wrote:
 > >>Steven Pratt wrote:
@@ -49,10 +49,9 @@ On Wed, Sep 16, 2009 at 01:15:12PM -0500, Steven Pratt wrote:
 > >
 > >If I'm reading this right, you've got a softlockup in crc32c?  Something
 > >has gone really wrong here.  Are you reusing datasets from old runs?
-> No, mkfs before every run.
+> From the second machine a single bug:
+> Sep 16 11:53:42 btrfs2 kernel: [ 3769.298240] ------------[ cut here
 
-Could you please send me the full softlockup output?  Its hard to read
-all line wrapped, so the original files would help.
+Ok, which mount options and job file is this from?
 
 -chris
-

@@ -1,57 +1,85 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: Steven Pratt <slpratt@austin.ibm.com>
 Subject: Re: Updated performance results
-Date: Wed, 16 Sep 2009 14:20:22 -0400
-Message-ID: <20090916182022.GG2641@think>
-References: <4A9C0D19.5010108@austin.ibm.com>
- <20090911192955.GB2894@think>
- <4AAAC2B6.8040105@austin.ibm.com>
- <20090914135130.GE8839@think>
- <4AAEB89C.3040100@austin.ibm.com>
- <20090916005225.GG23965@think>
- <4AB1010F.70001@austin.ibm.com>
- <4AB12702.30601@austin.ibm.com>
- <20090916180719.GE2641@think>
- <4AB12B98.9050708@austin.ibm.com>
+Date: Wed, 16 Sep 2009 13:37:08 -0500
+Message-ID: <4AB13054.6050803@austin.ibm.com>
+References: <4A9C0D19.5010108@austin.ibm.com> <20090911192955.GB2894@think> <4AAAC2B6.8040105@austin.ibm.com> <20090914135130.GE8839@think> <4AAEB89C.3040100@austin.ibm.com> <20090916005225.GG23965@think> <4AB1010F.70001@austin.ibm.com> <4AB12702.30601@austin.ibm.com> <20090916180719.GE2641@think> <4AB12B98.9050708@austin.ibm.com> <20090916182022.GG2641@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Eric Whitney <eric.whitney@hp.com>,
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Chris Mason <chris.mason@oracle.com>,
+	Steven Pratt <slpratt@austin.ibm.com>,
+	Eric Whitney <eric.whitney@hp.com>,
 	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Steven Pratt <slpratt@austin.ibm.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4AB12B98.9050708@austin.ibm.com>
+In-Reply-To: <20090916182022.GG2641@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 16, 2009 at 01:16:56PM -0500, Steven Pratt wrote:
-> Chris Mason wrote:
-> >On Wed, Sep 16, 2009 at 12:57:22PM -0500, Steven Pratt wrote:
-> >>Steven Pratt wrote:
-> >>>Chris Mason wrote:
-> >>>>On Mon, Sep 14, 2009 at 04:41:48PM -0500, Steven Pratt wrote:
-> >>>>>Only bit of bad news is I did get one error that crashed the system
-> >>>>>on single threaded nocow run. So that data point is missing.
-> >>>>>Output below:
-> >>>>I hope I've got this fixed.  If you pull from the master branch of
-> >>>>btrfs-unstable there are fixes for async thread races.  The single
-> >>>>patch I sent before is included, but not enough.
-> >>>Glad you said that.  Keeps me from sending the email that said the
-> >>>patch didn't help :-)
-> >>>
-> >>>Steve
-> >>Well, still getting oopses even with new code.
-> >>
-> >>Lots of:
-> >>Sep 16 11:07:27 btrfs1 kernel: [ 1862.942754] BUG: soft lockup -
-> >>CPU#10 stuck for 61s! [btrfs-endio-1:30250]
-> >>Sep 16 11:07:27 btrfs1 kernel: [ 1862.942754] Pid: 30250, comm:
-> >>btrfs-endio-1 Not tainted 2.6.31-autokern1 #1 IBM x3950-[88726RU]-
-> >>Sep 16 11:07:27 btrfs1 kernel: [ 1862.942754] RIP:
-> >>0010:[<ffffffff81153920>]  [<ffffffff81153920>] crc32c+0x20/0x26
-> >
-> >If I'm reading this right, you've got a softlockup in crc32c?  Something
-> >has gone really wrong here.  Are you reusing datasets from old runs?
-> From the second machine a single bug:
-> Sep 16 11:53:42 btrfs2 kernel: [ 3769.298240] ------------[ cut here
+Chris Mason wrote:
+> On Wed, Sep 16, 2009 at 01:16:56PM -0500, Steven Pratt wrote:
+>   
+>> Chris Mason wrote:
+>>     
+>>> On Wed, Sep 16, 2009 at 12:57:22PM -0500, Steven Pratt wrote:
+>>>       
+>>>> Steven Pratt wrote:
+>>>>         
+>>>>> Chris Mason wrote:
+>>>>>           
+>>>>>> On Mon, Sep 14, 2009 at 04:41:48PM -0500, Steven Pratt wrote:
+>>>>>>             
+>>>>>>> Only bit of bad news is I did get one error that crashed the system
+>>>>>>> on single threaded nocow run. So that data point is missing.
+>>>>>>> Output below:
+>>>>>>>               
+>>>>>> I hope I've got this fixed.  If you pull from the master branch of
+>>>>>> btrfs-unstable there are fixes for async thread races.  The single
+>>>>>> patch I sent before is included, but not enough.
+>>>>>>             
+>>>>> Glad you said that.  Keeps me from sending the email that said the
+>>>>> patch didn't help :-)
+>>>>>
+>>>>> Steve
+>>>>>           
+>>>> Well, still getting oopses even with new code.
+>>>>
+>>>> Lots of:
+>>>> Sep 16 11:07:27 btrfs1 kernel: [ 1862.942754] BUG: soft lockup -
+>>>> CPU#10 stuck for 61s! [btrfs-endio-1:30250]
+>>>> Sep 16 11:07:27 btrfs1 kernel: [ 1862.942754] Pid: 30250, comm:
+>>>> btrfs-endio-1 Not tainted 2.6.31-autokern1 #1 IBM x3950-[88726RU]-
+>>>> Sep 16 11:07:27 btrfs1 kernel: [ 1862.942754] RIP:
+>>>> 0010:[<ffffffff81153920>]  [<ffffffff81153920>] crc32c+0x20/0x26
+>>>>         
+>>> If I'm reading this right, you've got a softlockup in crc32c?  Something
+>>> has gone really wrong here.  Are you reusing datasets from old runs?
+>>>       
+>> From the second machine a single bug:
+>> Sep 16 11:53:42 btrfs2 kernel: [ 3769.298240] ------------[ cut here
+>>     
+>
+> Ok, which mount options and job file is this from?
+>
+>   
+mount -t btrfs  /dev/ffsbdev1 /mnt/ffsb1'
+[20090916-11:47:37.738883526] PROCESSING COMMAND : 'run 
+random_writes__threads_0001 ffsb 
+http://hks.austin.ibm.com/users/corry/btrfs/ffsb/profiles/btrfs2/random_writes.ffsb 
+num_threads=1'
 
-Ok, which mount options and job file is this from?
 
--chris
+So , this is single disk machine, running single threaded random write 
+workload.  Buffered, not odirect.
+
+I'm packaging up full messages file, repeated errros makes it big. Will 
+send separately.
+
+Steve
+
+
+
+> -chris
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>   
+

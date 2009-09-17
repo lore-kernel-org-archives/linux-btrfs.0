@@ -1,78 +1,37 @@
 From: Chris Ball <cjb@laptop.org>
-Subject: [PATCH 1/2] Btrfs: Use CONFIG_BTRFS_POSIX_ACL to enable ACL code
-Date: Thu, 17 Sep 2009 01:40:15 -0400
-Message-ID: <m3skemjfi8.fsf@pullcord.laptop.org>
+Subject: [PATCH 2/2] Btrfs: Fix setting umask when POSIX ACLs are not enabled
+Date: Thu, 17 Sep 2009 01:42:35 -0400
+Message-ID: <m3r5u6jfec.fsf@pullcord.laptop.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We've already defined CONFIG_BTRFS_POSIX_ACL in Kconfig, but we're
-currently not using it and are testing CONFIG_FS_POSIX_ACL instead.
-CONFIG_FS_POSIX_ACL states "Never use this symbol for ifdefs".
+We currently set sb->s_flags |= MS_POSIXACL unconditionally, which is
+incorrect -- it tells the VFS that it shouldn't set umask because we
+will, yet we don't set it ourselves if we aren't using POSIX ACLs, so
+the umask ends up ignored.
 
 Signed-off-by: Chris Ball <cjb@laptop.org>
 ---
- fs/btrfs/acl.c   |    6 +++---
- fs/btrfs/ctree.h |    2 +-
- fs/btrfs/xattr.c |    2 +-
- 3 files changed, 5 insertions(+), 5 deletions(-)
+ fs/btrfs/super.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index f128427..69b355a 100644
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -27,7 +27,7 @@
- #include "btrfs_inode.h"
- #include "xattr.h"
- 
--#ifdef CONFIG_FS_POSIX_ACL
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 6d6d06c..48ed1c0 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -344,7 +344,9 @@ static int btrfs_fill_super(struct super_block *sb,
+ 	sb->s_export_op = &btrfs_export_ops;
+ 	sb->s_xattr = btrfs_xattr_handlers;
+ 	sb->s_time_gran = 1;
 +#ifdef CONFIG_BTRFS_POSIX_ACL
+ 	sb->s_flags |= MS_POSIXACL;
++#endif
  
- static struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
- {
-@@ -313,7 +313,7 @@ struct xattr_handler btrfs_xattr_acl_access_handler = {
- 	.set	= btrfs_xattr_acl_access_set,
- };
+ 	tree_root = open_ctree(sb, fs_devices, (char *)data);
  
--#else /* CONFIG_FS_POSIX_ACL */
-+#else /* CONFIG_BTRFS_POSIX_ACL */
- 
- int btrfs_acl_chmod(struct inode *inode)
- {
-@@ -325,4 +325,4 @@ int btrfs_init_acl(struct inode *inode, struct inode *dir)
- 	return 0;
- }
- 
--#endif /* CONFIG_FS_POSIX_ACL */
-+#endif /* CONFIG_BTRFS_POSIX_ACL */
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 837435c..22b9a84 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2317,7 +2317,7 @@ int btrfs_parse_options(struct btrfs_root *root, char *options);
- int btrfs_sync_fs(struct super_block *sb, int wait);
- 
- /* acl.c */
--#ifdef CONFIG_FS_POSIX_ACL
-+#ifdef CONFIG_BTRFS_POSIX_ACL
- int btrfs_check_acl(struct inode *inode, int mask);
- #else
- #define btrfs_check_acl NULL
-diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
-index a9d3bf4..b0fc93f 100644
---- a/fs/btrfs/xattr.c
-+++ b/fs/btrfs/xattr.c
-@@ -260,7 +260,7 @@ err:
-  * attributes are handled directly.
-  */
- struct xattr_handler *btrfs_xattr_handlers[] = {
--#ifdef CONFIG_FS_POSIX_ACL
-+#ifdef CONFIG_BTRFS_POSIX_ACL
- 	&btrfs_xattr_acl_access_handler,
- 	&btrfs_xattr_acl_default_handler,
- #endif
 -- 
 1.6.4
 

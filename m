@@ -1,85 +1,68 @@
-From: Steven Pratt <slpratt@austin.ibm.com>
-Subject: Re: Updated performance results
-Date: Wed, 16 Sep 2009 13:37:08 -0500
-Message-ID: <4AB13054.6050803@austin.ibm.com>
-References: <4A9C0D19.5010108@austin.ibm.com> <20090911192955.GB2894@think> <4AAAC2B6.8040105@austin.ibm.com> <20090914135130.GE8839@think> <4AAEB89C.3040100@austin.ibm.com> <20090916005225.GG23965@think> <4AB1010F.70001@austin.ibm.com> <4AB12702.30601@austin.ibm.com> <20090916180719.GE2641@think> <4AB12B98.9050708@austin.ibm.com> <20090916182022.GG2641@think>
+From: Markus Trippelsdorf <markus@trippelsdorf.de>
+Subject: Re: btrfs csum failed on git .pack file
+Date: Thu, 17 Sep 2009 07:05:12 +0200
+Message-ID: <20090917050512.GB1916@phenom2.trippelsdorf.de>
+References: <20090907203531.GA1889@phenom2.trippelsdorf.de>
+ <20090908200041.GF18599@kernel.dk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: Chris Mason <chris.mason@oracle.com>,
-	Steven Pratt <slpratt@austin.ibm.com>,
-	Eric Whitney <eric.whitney@hp.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Jens Axboe <jens.axboe@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090916182022.GG2641@think>
+In-Reply-To: <20090908200041.GF18599@kernel.dk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote:
-> On Wed, Sep 16, 2009 at 01:16:56PM -0500, Steven Pratt wrote:
->   
->> Chris Mason wrote:
->>     
->>> On Wed, Sep 16, 2009 at 12:57:22PM -0500, Steven Pratt wrote:
->>>       
->>>> Steven Pratt wrote:
->>>>         
->>>>> Chris Mason wrote:
->>>>>           
->>>>>> On Mon, Sep 14, 2009 at 04:41:48PM -0500, Steven Pratt wrote:
->>>>>>             
->>>>>>> Only bit of bad news is I did get one error that crashed the system
->>>>>>> on single threaded nocow run. So that data point is missing.
->>>>>>> Output below:
->>>>>>>               
->>>>>> I hope I've got this fixed.  If you pull from the master branch of
->>>>>> btrfs-unstable there are fixes for async thread races.  The single
->>>>>> patch I sent before is included, but not enough.
->>>>>>             
->>>>> Glad you said that.  Keeps me from sending the email that said the
->>>>> patch didn't help :-)
->>>>>
->>>>> Steve
->>>>>           
->>>> Well, still getting oopses even with new code.
->>>>
->>>> Lots of:
->>>> Sep 16 11:07:27 btrfs1 kernel: [ 1862.942754] BUG: soft lockup -
->>>> CPU#10 stuck for 61s! [btrfs-endio-1:30250]
->>>> Sep 16 11:07:27 btrfs1 kernel: [ 1862.942754] Pid: 30250, comm:
->>>> btrfs-endio-1 Not tainted 2.6.31-autokern1 #1 IBM x3950-[88726RU]-
->>>> Sep 16 11:07:27 btrfs1 kernel: [ 1862.942754] RIP:
->>>> 0010:[<ffffffff81153920>]  [<ffffffff81153920>] crc32c+0x20/0x26
->>>>         
->>> If I'm reading this right, you've got a softlockup in crc32c?  Something
->>> has gone really wrong here.  Are you reusing datasets from old runs?
->>>       
->> From the second machine a single bug:
->> Sep 16 11:53:42 btrfs2 kernel: [ 3769.298240] ------------[ cut here
->>     
->
-> Ok, which mount options and job file is this from?
->
->   
-mount -t btrfs  /dev/ffsbdev1 /mnt/ffsb1'
-[20090916-11:47:37.738883526] PROCESSING COMMAND : 'run 
-random_writes__threads_0001 ffsb 
-http://hks.austin.ibm.com/users/corry/btrfs/ffsb/profiles/btrfs2/random_writes.ffsb 
-num_threads=1'
+On Tue, Sep 08, 2009 at 10:00:42PM +0200, Jens Axboe wrote:
+> On Mon, Sep 07 2009, Markus Trippelsdorf wrote:
+> > Just got this error today in my dmesg:
+> > btrfs csum failed ino 1483065 off 158482432 csum 4283543305 private 43905798
+> > 
+> > linux % find . -inum 1483065
+> > ./.git/objects/pack/pack-f9251bcc6a8afe3c92193e14d1d742f2f0182ce5.pack
+> > 
+> > It's the main pack file from my git linux kernel tree:
+> > 
+> > linux % ls -l ./.git/objects/pack/
+> > total 562848
+> > -rw-r--r-- 1 markus markus   1891324 2008-11-29 19:49 pack-011b43fa6956667db5e67fba859e40cb4b154226.idx
+> > -rw-r--r-- 1 markus markus  44002938 2008-11-29 19:54 pack-011b43fa6956667db5e67fba859e40cb4b154226.pack.temp
+> > -rw-r--r-- 1 markus markus    730332 2008-11-29 19:49 pack-67be92b3fab3dab175683582dab0b719517e55a5.idx
+> > -r--r--r-- 1 markus markus  36061684 2009-09-06 21:48 pack-f9251bcc6a8afe3c92193e14d1d742f2f0182ce5.idx
+> > -r--r--r-- 1 markus markus 335202742 2009-09-06 21:48 pack-f9251bcc6a8afe3c92193e14d1d742f2f0182ce5.pack
+> > -rw------- 1 markus markus 158457856 2009-09-07 22:15 tmp_pack_OUdxER
+> > 
+> > I'm running the latest git kernel and I've been using btrfs as my root
+> > fs for the last few weeks without problems so far.
+> 
+> Hmm, I ran into something very similar. Care to check what the corrupted
+> block of data looks like (and how big it is)?
 
+I've hit the same problem again today:
 
-So , this is single disk machine, running single threaded random write 
-workload.  Buffered, not odirect.
+btrfs csum failed ino 1826333 off 150208512 csum 4148434891 private 1660028275
 
-I'm packaging up full messages file, repeated errros makes it big. Will 
-send separately.
+The file in question is:
+./.git/objects/pack/pack-a2330b703d5a7fd62626b39a5fdfb6eecf739d0d.pack
 
-Steve
+I can't read the file directly, because of the csum mismatch:
 
+08F3FF80   58 C8 18 3D  36 58 B0 B0  CC 35 3A 3D  72 95 8E 71  9E AA 34 14  0B C4 B4 41  5F E0 6F 66  03 B9 0B 79  X..=6X...5:=r..q..4....A_.of...y
+08F3FFA0   9C 94 6B 15  F9 CA 93 AC  C4 34 6E 2C  FA 4C 99 31  55 35 36 3B  46 04 71 7E  2E 66 21 1C  89 FC 1B 92  ..k......4n,.L.1U56;F.q~.f!.....
+08F3FFC0   90 FE B2 4D  0D 28 A9 3F  CC D8 B1 9A  38 28 51 86  10 69 88 CA  46 A6 07 FE  EC 0F 2B 7E  81 65 30 86  ...M.(.?....8(Q..i..F.....+~.e0.
+08F3FFE0   8E 2A 37 E9  88 CC 6F 1A  8D CF 82 7C  9D 43 A5 B1  FF 2C 62 72  2E 06 E6 44  44 02 45 03  BC 12 EA 3B  .*7...o....|.C...,br...DD.E....;
+08F40000
 
+where 0x8F40000=150208512.
 
-> -chris
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->   
+# hdparm --fibmap /usr/src/linux/.git/objects/pack/pack-a2330b703d5a7fd62626b39a5fdfb6eecf739d0d.pack
+0,13: device not found in /dev
 
+does not work unfortunately. How do I get the LBAs of the file instead?
+
+I did a hex-search on the raw devive with hexedit for 
+"90FEB24D0D28A93FCCD8B19A38285186106988CA46A607FEEC0F2B7E81653086", but
+there is no obvious corruption in the vicinity of the few places that are
+found.
+
+-- 
+Markus

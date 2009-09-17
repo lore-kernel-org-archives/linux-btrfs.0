@@ -1,38 +1,48 @@
-From: Tomasz Torcz <tomek@pipebreaker.pl>
-Subject: Re: btrfs csum failed on git .pack file
-Date: Thu, 17 Sep 2009 19:50:01 +0200
-Message-ID: <20090917175001.GA23973@mother.pipebreaker.pl>
-References: <20090907203531.GA1889@phenom2.trippelsdorf.de> <20090908200041.GF18599@kernel.dk> <20090917050512.GB1916@phenom2.trippelsdorf.de> <20090917064456.GZ23126@kernel.dk> <20090917090428.GA1877@phenom2.trippelsdorf.de> <20090917090549.GE23126@kernel.dk> <20090917121501.GB1877@phenom2.trippelsdorf.de> <4AB26B2C.9030703@oracle.com> <20090917171006.GA1935@phenom2.trippelsdorf.de>
+From: Eric Whitney <eric.whitney@hp.com>
+Subject: Re: Updated performance results
+Date: Thu, 17 Sep 2009 14:32:13 -0400
+Message-ID: <4AB280AD.5080306@hp.com>
+References: <20090728202355.GC13940@think> <4A6F6951.9020304@austin.ibm.com> <20090805203526.GE12524@think> <4A7C32A4.9070106@austin.ibm.com> <20090807231240.GD3710@think> <4A9C0D19.5010108@austin.ibm.com> <20090911192955.GB2894@think> <4AAAC2B6.8040105@austin.ibm.com> <20090914135130.GE8839@think> <4AAEB89C.3040100@austin.ibm.com> <20090916005225.GG23965@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Chris Mason <chris.mason@oracle.com>,
+	Steven Pratt <slpratt@austin.ibm.com>,
+	Eric Whitney <eric.whitney@hp.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090917171006.GA1935@phenom2.trippelsdorf.de>
+In-Reply-To: <20090916005225.GG23965@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 17, 2009 at 07:10:06PM +0200, Markus Trippelsdorf wrote:
-> > > 06CD DFC0: 0D 86 2B B2 57 A4 5A CD  78 4B 08 94 C0 65 17 3A
-> > > 06CD DFC0: 0D 86 2B B2 57 A4 5A CD  78 0B 08 94 C0 65 17 3A
-> > 
-> > 4B = 01001011
-> > 0B = 00001011
-> > 
-> > And so on.
-> > 
-> > It looks like a few bits are getting flipped at the same byte offset.
-> > One can imagine software bugs that would do this, certainly, but upset
-> > hardware seems awfully likely too.
+
+
+Chris Mason wrote:
+> On Mon, Sep 14, 2009 at 04:41:48PM -0500, Steven Pratt wrote:
+>> Only bit of bad news is I did get one error that crashed the system
+>> on single threaded nocow run. So that data point is missing.
+>> Output below:
 > 
-> I'm afraid you're right. I did some further tests and now I'm pretty
-> sure that a bad RAM module was the root cause of it all...
-> Oh well.
+> I hope I've got this fixed.  If you pull from the master branch of
+> btrfs-unstable there are fixes for async thread races.  The single
+> patch I sent before is included, but not enough.
 
-  On the other hand, that what's so great in checksumming filesystems.
-You found bad module thanks to btrfs, otherwise you wouldn't suspect
-anything wrong. If you have had raid-1 for data, this corruption would
-have been fixed by btrfs.
+Chris:
 
--- 
-Tomasz Torcz                                                       72->|   80->|
-xmpp: zdzichubg@chrome.pl                                          72->|   80->|
+FYI - all five of my test systems have now finished my standard test 
+cycle on the -unstable master branch, and I've not seen a single hang. 
+So, your fix for the async thread shutdown race seems to have fixed my 
+problems, even if Steve's still seeing trouble.
 
+I'll note that the running times for fsstress on some of my systems have 
+become rather longer with btrfs-unstable/master kernels - 3.5 rather 
+than 2.5 hours on multidevice filesystems.  Running times on single 
+device filesystems are roughly the same.
+
+I'm going to start another set of tests for thoroughness unless you've 
+got more patches coming.
+
+Thanks,
+Eric
+
+> 
+> -chris
+> 

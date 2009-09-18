@@ -1,380 +1,286 @@
 From: "Yan, Zheng" <zheng.yan@oracle.com>
-Subject: [PATCH 1/4] speed up snapshot dropping
-Date: Fri, 18 Sep 2009 20:18:12 +0800
-Message-ID: <4AB37A84.8080301@oracle.com>
+Subject: [PATCH 2/4] do not reuse objectid of deleted snapshot/subvol
+Date: Fri, 18 Sep 2009 20:18:39 +0800
+Message-ID: <4AB37A9F.4030502@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+To: linux-btrfs@vger.kernel.org, chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch contains two changes to avoid unnecessary tree block reads during
-snapshot dropping. First, check tree block's reference count and flags before
-reading the tree block. if reference count > 1 and there is no need to update
-backrefs, we can avoid reading the tree block. Second, save when snapshot was
-created in root_key.offset. we can compare block pointer's generation with
-snapshot's creation generation during updating backrefs. If a given block was
-created before snapshot was created, the snapshot can't be the tree block's
-owner. So we can avoid reading the block.
+The new back reference format does not allow reusing objectid of
+deleted snapshot/subvol. So we use ++highest_objectid to allocate
+objectid for new snapshot/subvol.
+
+Now we use ++highest_objectid to allocate objectid for both new inode
+and new snapshot/subvolume, so this patch removes 'find hole' code in
+btrfs_find_free_objectid.
 
 Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
 
 ---
-diff -urp 1/fs/btrfs/extent-tree.c 2/fs/btrfs/extent-tree.c
---- 1/fs/btrfs/extent-tree.c	2009-09-16 15:24:37.254170718 +0800
-+++ 2/fs/btrfs/extent-tree.c	2009-09-18 15:00:46.433350551 +0800
-@@ -4779,19 +4779,90 @@ struct walk_control {
- 	int shared_level;
- 	int update_ref;
- 	int keep_locks;
-+	int reada_slot;
-+	int reada_count;
- };
+diff -urp 2/fs/btrfs/ctree.h 3/fs/btrfs/ctree.h
+--- 2/fs/btrfs/ctree.h	2009-09-16 15:24:37.250169000 +0800
++++ 3/fs/btrfs/ctree.h	2009-09-18 15:01:03.954130853 +0800
+@@ -996,8 +996,8 @@ struct btrfs_root {
+ 	u32 stripesize;
  
- #define DROP_REFERENCE	1
- #define UPDATE_BACKREF	2
- 
-+static noinline void reada_walk_down(struct btrfs_trans_handle *trans,
-+				     struct btrfs_root *root,
-+				     struct walk_control *wc,
-+				     struct btrfs_path *path)
-+{
-+	u64 bytenr;
-+	u64 generation;
-+	u64 refs;
-+	u64 last = 0;
-+	u32 nritems;
-+	u32 blocksize;
-+	struct btrfs_key key;
-+	struct extent_buffer *eb;
-+	int ret;
-+	int slot;
-+	int nread = 0;
+ 	u32 type;
+-	u64 highest_inode;
+-	u64 last_inode_alloc;
 +
-+	if (path->slots[wc->level] < wc->reada_slot) {
-+		wc->reada_count = wc->reada_count * 2 / 3;
-+		wc->reada_count = max(wc->reada_count, 2);
-+	} else {
-+		wc->reada_count = wc->reada_count * 3 / 2;
-+		wc->reada_count = min_t(int, wc->reada_count,
-+					BTRFS_NODEPTRS_PER_BLOCK(root));
-+	}
-+
-+	eb = path->nodes[wc->level];
-+	nritems = btrfs_header_nritems(eb);
-+	blocksize = btrfs_level_size(root, wc->level - 1);
-+
-+	for (slot = path->slots[wc->level]; slot < nritems; slot++) {
-+		if (nread >= wc->reada_count)
-+			break;
-+
-+		cond_resched();
-+		bytenr = btrfs_node_blockptr(eb, slot);
-+		generation = btrfs_node_ptr_generation(eb, slot);
-+
-+		if (slot == path->slots[wc->level])
-+			goto reada;
-+
-+		if (wc->stage == UPDATE_BACKREF &&
-+		    generation <= root->root_key.offset)
-+			continue;
-+
-+		if (wc->stage == DROP_REFERENCE) {
-+			ret = btrfs_lookup_extent_info(trans, root,
-+						bytenr, blocksize,
-+						&refs, NULL);
-+			BUG_ON(ret);
-+			BUG_ON(refs == 0);
-+			if (refs == 1)
-+				goto reada;
-+
-+			if (!wc->update_ref ||
-+			    generation <= root->root_key.offset)
-+				continue;
-+			btrfs_node_key_to_cpu(eb, &key, slot);
-+			ret = btrfs_comp_cpu_keys(&key,
-+						  &wc->update_progress);
-+			if (ret < 0)
-+				continue;
-+		}
-+reada:
-+		ret = readahead_tree_block(root, bytenr, blocksize,
-+					   generation);
-+		if (ret)
-+			break;
-+		last = bytenr + blocksize;
-+		nread++;
-+	}
-+	wc->reada_slot = slot;
-+}
-+
- /*
-  * hepler to process tree block while walking down the tree.
-  *
-- * when wc->stage == DROP_REFERENCE, this function checks
-- * reference count of the block. if the block is shared and
-- * we need update back refs for the subtree rooted at the
-- * block, this function changes wc->stage to UPDATE_BACKREF
-- *
-  * when wc->stage == UPDATE_BACKREF, this function updates
-  * back refs for pointers in the block.
-  *
-@@ -4804,7 +4875,6 @@ static noinline int walk_down_proc(struc
- {
- 	int level = wc->level;
- 	struct extent_buffer *eb = path->nodes[level];
--	struct btrfs_key key;
- 	u64 flag = BTRFS_BLOCK_FLAG_FULL_BACKREF;
- 	int ret;
- 
-@@ -4827,21 +4897,6 @@ static noinline int walk_down_proc(struc
- 		BUG_ON(wc->refs[level] == 0);
++	u64 highest_objectid;
+ 	int ref_cows;
+ 	int track_dirty;
+ 	u64 defrag_trans_start;
+diff -urp 2/fs/btrfs/disk-io.c 3/fs/btrfs/disk-io.c
+--- 2/fs/btrfs/disk-io.c	2009-09-16 15:24:37.251170000 +0800
++++ 3/fs/btrfs/disk-io.c	2009-09-18 15:01:03.956351209 +0800
+@@ -895,8 +895,7 @@ static int __setup_root(u32 nodesize, u3
+ 	root->fs_info = fs_info;
+ 	root->objectid = objectid;
+ 	root->last_trans = 0;
+-	root->highest_inode = 0;
+-	root->last_inode_alloc = 0;
++	root->highest_objectid = 0;
+ 	root->name = NULL;
+ 	root->in_sysfs = 0;
+ 	root->inode_tree.rb_node = NULL;
+@@ -1095,7 +1094,6 @@ struct btrfs_root *btrfs_read_fs_root_no
+ 	struct btrfs_fs_info *fs_info = tree_root->fs_info;
+ 	struct btrfs_path *path;
+ 	struct extent_buffer *l;
+-	u64 highest_inode;
+ 	u64 generation;
+ 	u32 blocksize;
+ 	int ret = 0;
+@@ -1110,7 +1108,7 @@ struct btrfs_root *btrfs_read_fs_root_no
+ 			kfree(root);
+ 			return ERR_PTR(ret);
+ 		}
+-		goto insert;
++		goto out;
  	}
  
--	if (wc->stage == DROP_REFERENCE &&
--	    wc->update_ref && wc->refs[level] > 1) {
--		BUG_ON(eb == root->node);
--		BUG_ON(path->slots[level] > 0);
--		if (level == 0)
--			btrfs_item_key_to_cpu(eb, &key, path->slots[level]);
--		else
--			btrfs_node_key_to_cpu(eb, &key, path->slots[level]);
--		if (btrfs_header_owner(eb) == root->root_key.objectid &&
--		    btrfs_comp_cpu_keys(&key, &wc->update_progress) >= 0) {
--			wc->stage = UPDATE_BACKREF;
--			wc->shared_level = level;
+ 	__setup_root(tree_root->nodesize, tree_root->leafsize,
+@@ -1120,39 +1118,30 @@ struct btrfs_root *btrfs_read_fs_root_no
+ 	path = btrfs_alloc_path();
+ 	BUG_ON(!path);
+ 	ret = btrfs_search_slot(NULL, tree_root, location, path, 0, 0);
+-	if (ret != 0) {
+-		if (ret > 0)
+-			ret = -ENOENT;
+-		goto out;
++	if (ret == 0) {
++		l = path->nodes[0];
++		read_extent_buffer(l, &root->root_item,
++				btrfs_item_ptr_offset(l, path->slots[0]),
++				sizeof(root->root_item));
++		memcpy(&root->root_key, location, sizeof(*location));
+ 	}
+-	l = path->nodes[0];
+-	read_extent_buffer(l, &root->root_item,
+-	       btrfs_item_ptr_offset(l, path->slots[0]),
+-	       sizeof(root->root_item));
+-	memcpy(&root->root_key, location, sizeof(*location));
+-	ret = 0;
+-out:
+-	btrfs_release_path(root, path);
+ 	btrfs_free_path(path);
+ 	if (ret) {
+-		kfree(root);
++		if (ret > 0)
++			ret = -ENOENT;
+ 		return ERR_PTR(ret);
+ 	}
++
+ 	generation = btrfs_root_generation(&root->root_item);
+ 	blocksize = btrfs_level_size(root, btrfs_root_level(&root->root_item));
+ 	root->node = read_tree_block(root, btrfs_root_bytenr(&root->root_item),
+ 				     blocksize, generation);
+ 	root->commit_root = btrfs_root_node(root);
+ 	BUG_ON(!root->node);
+-insert:
+-	if (location->objectid != BTRFS_TREE_LOG_OBJECTID) {
++out:
++	if (location->objectid != BTRFS_TREE_LOG_OBJECTID)
+ 		root->ref_cows = 1;
+-		ret = btrfs_find_highest_inode(root, &highest_inode);
+-		if (ret == 0) {
+-			root->highest_inode = highest_inode;
+-			root->last_inode_alloc = highest_inode;
 -		}
 -	}
--
- 	if (wc->stage == DROP_REFERENCE) {
- 		if (wc->refs[level] > 1)
- 			return 1;
-@@ -4878,6 +4933,123 @@ static noinline int walk_down_proc(struc
++
+ 	return root;
  }
  
- /*
-+ * hepler to process tree block pointer.
-+ *
-+ * when wc->stage == DROP_REFERENCE, this function checks
-+ * reference count of the block pointed to. if the block
-+ * is shared and we need update back refs for the subtree
-+ * rooted at the block, this function changes wc->stage to
-+ * UPDATE_BACKREF. if the block is shared and there is no
-+ * need to update back, this function drops the reference
-+ * to the block.
-+ *
-+ * NOTE: return value 1 means we should stop walking down.
-+ */
-+static noinline int do_walk_down(struct btrfs_trans_handle *trans,
-+				 struct btrfs_root *root,
-+				 struct btrfs_path *path,
-+				 struct walk_control *wc)
-+{
-+	u64 bytenr;
-+	u64 generation;
-+	u64 parent;
-+	u32 blocksize;
-+	struct btrfs_key key;
-+	struct extent_buffer *next;
-+	int level = wc->level;
-+	int reada = 0;
-+	int ret = 0;
-+
-+	generation = btrfs_node_ptr_generation(path->nodes[level],
-+					       path->slots[level]);
-+	/*
-+	 * if the lower level block was created before the snapshot
-+	 * was created, we know there is no need to update back refs
-+	 * for the subtree
-+	 */
-+	if (wc->stage == UPDATE_BACKREF &&
-+	    generation <= root->root_key.offset)
-+		return 1;
-+
-+	bytenr = btrfs_node_blockptr(path->nodes[level], path->slots[level]);
-+	blocksize = btrfs_level_size(root, level - 1);
-+
-+	next = btrfs_find_tree_block(root, bytenr, blocksize);
-+	if (!next) {
-+		next = btrfs_find_create_tree_block(root, bytenr, blocksize);
-+		reada = 1;
-+	}
-+	btrfs_tree_lock(next);
-+	btrfs_set_lock_blocking(next);
-+
-+	if (wc->stage == DROP_REFERENCE) {
-+		ret = btrfs_lookup_extent_info(trans, root, bytenr, blocksize,
-+					       &wc->refs[level - 1],
-+					       &wc->flags[level - 1]);
-+		BUG_ON(ret);
-+		BUG_ON(wc->refs[level - 1] == 0);
-+
-+		if (wc->refs[level - 1] > 1) {
-+			if (!wc->update_ref ||
-+			    generation <= root->root_key.offset)
-+				goto skip;
-+
-+			btrfs_node_key_to_cpu(path->nodes[level], &key,
-+					      path->slots[level]);
-+			ret = btrfs_comp_cpu_keys(&key, &wc->update_progress);
-+			if (ret < 0)
-+				goto skip;
-+
-+			wc->stage = UPDATE_BACKREF;
-+			wc->shared_level = level - 1;
-+		}
-+	}
-+
-+	if (!btrfs_buffer_uptodate(next, generation)) {
-+		btrfs_tree_unlock(next);
-+		free_extent_buffer(next);
-+		next = NULL;
-+	}
-+
-+	if (!next) {
-+		if (reada && level == 1)
-+			reada_walk_down(trans, root, wc, path);
-+		next = read_tree_block(root, bytenr, blocksize, generation);
-+		btrfs_tree_lock(next);
-+		btrfs_set_lock_blocking(next);
-+	}
-+
-+	level--;
-+	BUG_ON(level != btrfs_header_level(next));
-+	path->nodes[level] = next;
-+	path->slots[level] = 0;
-+	path->locks[level] = 1;
-+	wc->level = level;
-+	if (wc->level == 1)
-+		wc->reada_slot = 0;
-+	return 0;
-+skip:
-+	wc->refs[level - 1] = 0;
-+	wc->flags[level - 1] = 0;
-+
-+	if (wc->flags[level] & BTRFS_BLOCK_FLAG_FULL_BACKREF) {
-+		parent = path->nodes[level]->start;
-+	} else {
-+		BUG_ON(root->root_key.objectid !=
-+		       btrfs_header_owner(path->nodes[level]));
-+		parent = 0;
-+	}
-+
-+	ret = btrfs_free_extent(trans, root, bytenr, blocksize, parent,
-+				root->root_key.objectid, level - 1, 0);
-+	BUG_ON(ret);
-+
-+	btrfs_tree_unlock(next);
-+	free_extent_buffer(next);
-+	return 1;
-+}
-+
-+/*
-  * hepler to process tree block while walking up the tree.
-  *
-  * when wc->stage == DROP_REFERENCE, this function drops
-@@ -4904,7 +5076,6 @@ static noinline int walk_up_proc(struct 
- 		if (level < wc->shared_level)
- 			goto out;
+diff -urp 2/fs/btrfs/inode.c 3/fs/btrfs/inode.c
+--- 2/fs/btrfs/inode.c	2009-09-16 15:24:37.330169000 +0800
++++ 3/fs/btrfs/inode.c	2009-09-18 15:01:03.960350728 +0800
+@@ -3616,9 +3616,6 @@ static struct inode *btrfs_new_inode(str
+ 	if (ret != 0)
+ 		goto fail;
  
--		BUG_ON(wc->refs[level] <= 1);
- 		ret = find_next_key(path, level + 1, &wc->update_progress);
- 		if (ret > 0)
- 			wc->update_ref = 0;
-@@ -4935,8 +5106,6 @@ static noinline int walk_up_proc(struct 
- 				path->locks[level] = 0;
- 				return 1;
- 			}
--		} else {
--			BUG_ON(level != 0);
- 		}
+-	if (objectid > root->highest_inode)
+-		root->highest_inode = objectid;
+-
+ 	inode->i_uid = current_fsuid();
+ 
+ 	if (dir && (dir->i_mode & S_ISGID)) {
+diff -urp 2/fs/btrfs/inode-item.c 3/fs/btrfs/inode-item.c
+--- 2/fs/btrfs/inode-item.c	2009-07-24 09:51:38.372057000 +0800
++++ 3/fs/btrfs/inode-item.c	2009-09-18 15:01:03.961350939 +0800
+@@ -177,8 +177,6 @@ int btrfs_insert_empty_inode(struct btrf
+ 
+ 	ret = btrfs_insert_empty_item(trans, root, path, &key,
+ 				      sizeof(struct btrfs_inode_item));
+-	if (ret == 0 && objectid > root->highest_inode)
+-		root->highest_inode = objectid;
+ 	return ret;
+ }
+ 
+diff -urp 2/fs/btrfs/inode-map.c 3/fs/btrfs/inode-map.c
+--- 2/fs/btrfs/inode-map.c	2009-07-24 09:51:38.385052000 +0800
++++ 3/fs/btrfs/inode-map.c	2009-09-18 15:01:03.962350871 +0800
+@@ -43,9 +43,10 @@ int btrfs_find_highest_inode(struct btrf
+ 		slot = path->slots[0] - 1;
+ 		l = path->nodes[0];
+ 		btrfs_item_key_to_cpu(l, &found_key, slot);
+-		*objectid = found_key.objectid;
++		*objectid = max_t(u64, found_key.objectid,
++				  BTRFS_FIRST_FREE_OBJECTID - 1);
+ 	} else {
+-		*objectid = BTRFS_FIRST_FREE_OBJECTID;
++		*objectid = BTRFS_FIRST_FREE_OBJECTID - 1;
  	}
+ 	ret = 0;
+ error:
+@@ -53,91 +54,28 @@ error:
+ 	return ret;
+ }
  
-@@ -4989,17 +5158,13 @@ static noinline int walk_down_tree(struc
- 				   struct btrfs_path *path,
- 				   struct walk_control *wc)
+-/*
+- * walks the btree of allocated inodes and find a hole.
+- */
+ int btrfs_find_free_objectid(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root,
+ 			     u64 dirid, u64 *objectid)
  {
--	struct extent_buffer *next;
--	struct extent_buffer *cur;
--	u64 bytenr;
--	u64 ptr_gen;
--	u32 blocksize;
- 	int level = wc->level;
+-	struct btrfs_path *path;
+-	struct btrfs_key key;
  	int ret;
- 
- 	while (level >= 0) {
--		cur = path->nodes[level];
--		BUG_ON(path->slots[level] >= btrfs_header_nritems(cur));
-+		if (path->slots[level] >=
-+		    btrfs_header_nritems(path->nodes[level]))
-+			break;
- 
- 		ret = walk_down_proc(trans, root, path, wc);
- 		if (ret > 0)
-@@ -5008,20 +5173,12 @@ static noinline int walk_down_tree(struc
- 		if (level == 0)
- 			break;
- 
--		bytenr = btrfs_node_blockptr(cur, path->slots[level]);
--		blocksize = btrfs_level_size(root, level - 1);
--		ptr_gen = btrfs_node_ptr_generation(cur, path->slots[level]);
+-	int slot = 0;
+-	u64 last_ino = 0;
+-	int start_found;
+-	struct extent_buffer *l;
+-	struct btrfs_key search_key;
+-	u64 search_start = dirid;
 -
--		next = read_tree_block(root, bytenr, blocksize, ptr_gen);
--		btrfs_tree_lock(next);
--		btrfs_set_lock_blocking(next);
+ 	mutex_lock(&root->objectid_mutex);
+-	if (root->last_inode_alloc >= BTRFS_FIRST_FREE_OBJECTID &&
+-	    root->last_inode_alloc < BTRFS_LAST_FREE_OBJECTID) {
+-		*objectid = ++root->last_inode_alloc;
+-		mutex_unlock(&root->objectid_mutex);
+-		return 0;
+-	}
+-	path = btrfs_alloc_path();
+-	BUG_ON(!path);
+-	search_start = max(search_start, (u64)BTRFS_FIRST_FREE_OBJECTID);
+-	search_key.objectid = search_start;
+-	search_key.type = 0;
+-	search_key.offset = 0;
 -
--		level--;
--		BUG_ON(level != btrfs_header_level(next));
--		path->nodes[level] = next;
--		path->slots[level] = 0;
--		path->locks[level] = 1;
--		wc->level = level;
-+		ret = do_walk_down(trans, root, path, wc);
-+		if (ret > 0) {
-+			path->slots[level]++;
-+			continue;
-+		}
-+		level = wc->level;
+-	start_found = 0;
+-	ret = btrfs_search_slot(trans, root, &search_key, path, 0, 0);
+-	if (ret < 0)
+-		goto error;
+ 
+-	while (1) {
+-		l = path->nodes[0];
+-		slot = path->slots[0];
+-		if (slot >= btrfs_header_nritems(l)) {
+-			ret = btrfs_next_leaf(root, path);
+-			if (ret == 0)
+-				continue;
+-			if (ret < 0)
+-				goto error;
+-			if (!start_found) {
+-				*objectid = search_start;
+-				start_found = 1;
+-				goto found;
+-			}
+-			*objectid = last_ino > search_start ?
+-				last_ino : search_start;
+-			goto found;
+-		}
+-		btrfs_item_key_to_cpu(l, &key, slot);
+-		if (key.objectid >= search_start) {
+-			if (start_found) {
+-				if (last_ino < search_start)
+-					last_ino = search_start;
+-				if (key.objectid > last_ino) {
+-					*objectid = last_ino;
+-					goto found;
+-				}
+-			} else if (key.objectid > search_start) {
+-				*objectid = search_start;
+-				goto found;
+-			}
+-		}
+-		if (key.objectid >= BTRFS_LAST_FREE_OBJECTID)
+-			break;
++	if (unlikely(root->highest_objectid < BTRFS_FIRST_FREE_OBJECTID)) {
++		ret = btrfs_find_highest_inode(root, &root->highest_objectid);
++		if (ret)
++			goto out;
++	}
+ 
+-		start_found = 1;
+-		last_ino = key.objectid + 1;
+-		path->slots[0]++;
++	if (unlikely(root->highest_objectid >= BTRFS_LAST_FREE_OBJECTID)) {
++		ret = -ENOSPC;
++		goto out;
  	}
- 	return 0;
+-	BUG_ON(1);
+-found:
+-	btrfs_release_path(root, path);
+-	btrfs_free_path(path);
+-	BUG_ON(*objectid < search_start);
+-	mutex_unlock(&root->objectid_mutex);
+-	return 0;
+-error:
+-	btrfs_release_path(root, path);
+-	btrfs_free_path(path);
++
++	*objectid = ++root->highest_objectid;
++	ret = 0;
++out:
+ 	mutex_unlock(&root->objectid_mutex);
+ 	return ret;
  }
-@@ -5111,9 +5268,7 @@ int btrfs_drop_snapshot(struct btrfs_roo
- 			err = ret;
- 			goto out;
++
+diff -urp 2/fs/btrfs/tree-log.c 3/fs/btrfs/tree-log.c
+--- 2/fs/btrfs/tree-log.c	2009-09-16 15:24:37.334172000 +0800
++++ 3/fs/btrfs/tree-log.c	2009-09-18 15:01:03.965350528 +0800
+@@ -2951,7 +2951,6 @@ int btrfs_recover_log_trees(struct btrfs
+ 	struct btrfs_key tmp_key;
+ 	struct btrfs_root *log;
+ 	struct btrfs_fs_info *fs_info = log_root_tree->fs_info;
+-	u64 highest_inode;
+ 	struct walk_control wc = {
+ 		.process_func = process_one_buffer,
+ 		.stage = 0,
+@@ -3010,11 +3009,6 @@ again:
+ 						      path);
+ 			BUG_ON(ret);
  		}
--		btrfs_node_key_to_cpu(path->nodes[level], &key,
--				      path->slots[level]);
--		WARN_ON(memcmp(&key, &wc->update_progress, sizeof(key)));
-+		WARN_ON(ret > 0);
+-		ret = btrfs_find_highest_inode(wc.replay_dest, &highest_inode);
+-		if (ret == 0) {
+-			wc.replay_dest->highest_inode = highest_inode;
+-			wc.replay_dest->last_inode_alloc = highest_inode;
+-		}
  
- 		/*
- 		 * unlock our path, this is safe because only this
-@@ -5148,6 +5303,7 @@ int btrfs_drop_snapshot(struct btrfs_roo
- 	wc->stage = DROP_REFERENCE;
- 	wc->update_ref = update_ref;
- 	wc->keep_locks = 0;
-+	wc->reada_count = BTRFS_NODEPTRS_PER_BLOCK(root);
- 
- 	while (1) {
- 		ret = walk_down_tree(trans, root, path, wc);
-@@ -5254,6 +5410,7 @@ int btrfs_drop_subtree(struct btrfs_tran
- 	wc->stage = DROP_REFERENCE;
- 	wc->update_ref = 0;
- 	wc->keep_locks = 1;
-+	wc->reada_count = BTRFS_NODEPTRS_PER_BLOCK(root);
- 
- 	while (1) {
- 		wret = walk_down_tree(trans, root, path, wc);
-diff -urp 1/fs/btrfs/transaction.c 2/fs/btrfs/transaction.c
---- 1/fs/btrfs/transaction.c	2009-09-16 15:24:37.333171090 +0800
-+++ 2/fs/btrfs/transaction.c	2009-09-18 15:00:46.435351323 +0800
-@@ -720,7 +720,8 @@ static noinline int create_pending_snaps
- 	memcpy(new_root_item, &root->root_item, sizeof(*new_root_item));
- 
- 	key.objectid = objectid;
--	key.offset = 0;
-+	/* record when the snapshot was created in key.offset */
-+	key.offset = trans->transid;
- 	btrfs_set_key_type(&key, BTRFS_ROOT_ITEM_KEY);
- 
- 	old = btrfs_lock_root_node(root);
+ 		key.offset = found_key.offset - 1;
+ 		wc.replay_dest->log_root = NULL;

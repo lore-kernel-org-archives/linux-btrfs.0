@@ -1,53 +1,38 @@
-From: Premysl Hruby <dfenze@gmail.com>
-Subject: Re: [PATCH] btrfs-progs: remove hard-coding of "gcc" and "make"
- from Makefile
-Date: Mon, 21 Sep 2009 20:25:49 +0200
-Message-ID: <20090921182549.GC10659@baldr.the>
-References: <4AB7A76D.8050902@skyrush.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH 3/4] change how subvolumes are organized
+Date: Mon, 21 Sep 2009 17:01:22 -0400
+Message-ID: <20090921210122.GF10825@think>
+References: <4AB37AAF.5040508@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+To: "Yan, Zheng" <zheng.yan@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4AB7A76D.8050902@skyrush.com>
+In-Reply-To: <4AB37AAF.5040508@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi
-
-On (21/09/09 10:18), Joe Peterson wrote:
-> Date:	Mon, 21 Sep 2009 10:18:53 -0600
-> From: Joe Peterson <joe@skyrush.com>
-> To: Btrfs Development List <linux-btrfs@vger.kernel.org>
-> Subject: [PATCH] btrfs-progs: remove hard-coding of "gcc" and "make" from
->  Makefile
-> User-Agent: Thunderbird 2.0.0.23 (X11/20090920)
-> List-ID: <linux-btrfs.vger.kernel.org>
-
-BTW:
-
+On Fri, Sep 18, 2009 at 08:18:55PM +0800, Yan, Zheng wrote:
+> btrfs allows subvolumes and snapshots anywhere in the directory tree.
+> If we snapshot a subvolume that contains a link to other subvolume
+> called subvolA, subvolA can be accessed through both the original
+> subvolume and the snapshot. This is similar to creating hard link to
+> directory, and has the very similar problems.
 > 
->  manpages:
-> -	cd man; make
-> +	cd man; $(MAKE)
+> The aim of this patch is enforcing there is only one access point to
+> each subvolume. Only the first directory entry (the one added when
+> the subvolume/snapshot was created) is treated as valid access point.
+> The first directory entry is distinguished by checking root forward
+> reference. If the corresponding root forward reference is missing,
+> we know the entry is not the first one.
 
-	=> $(MAKE) -C man
->  
->  install-man:
-> -	cd man; make install
-> +	cd man; $(MAKE) install
+This is a good compromise between wanting all the features and something
+maintainable.  I like how it closes the directory looping and a bunch of
+the related problems.
 
-	=> $(MAKE) -C man install
+Pretty much all of the things I don't like about this approach can be
+solved with a recursive snapshotting ioctl, and that can easily be added
+later.
 
->  
->  clean :
->  	rm -f $(progs) cscope.out *.o .*.d btrfs-convert
-> -	cd man; make clean
-> +	cd man; $(MAKE) clean
+Fantastic, thank you!
 
-	=> $(MAKE) clean
-  
-
-
--- 
-Premysl "Anydot" Hruby, http://www.redrum.cz/
--
-I'm a signature virus. Please add me to your signature and help me spread!
+-chris

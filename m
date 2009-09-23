@@ -1,57 +1,64 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: Fix possible overflow of total bytes calculation
-	for data enospc
-Date: Tue, 22 Sep 2009 15:26:00 -0400
-Message-ID: <20090922192559.GA18159@localhost.localdomain>
+From: Steven Pratt <slpratt@austin.ibm.com>
+Subject: Re: Updated performance results
+Date: Wed, 23 Sep 2009 10:24:42 -0500
+Message-ID: <4ABA3DBA.6000607@austin.ibm.com>
+References: <4AAAC2B6.8040105@austin.ibm.com> <20090914135130.GE8839@think> <4AAEB89C.3040100@austin.ibm.com> <20090916005225.GG23965@think> <4AB280AD.5080306@hp.com> <4AB28245.2000704@austin.ibm.com> <20090917185220.GA18165@think> <20090917201714.GE18165@think> <20090917204331.GG18165@think> <4AB2B25B.5070706@austin.ibm.com> <20090918201409.GF21798@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Chris Mason <chris.mason@oracle.com>,
+	Eric Whitney <eric.whitney@hp.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20090918201409.GF21798@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Because of a bug where we sometimes don't know if a page has been dirtied
-until its too late, there is a possibility that we could end up accounting
-for more space than what we have.  This will of course cause an ENOSPC bug,
-but it will also cause us to drive farther off into the weeds, since we
-take total_bytes - (all of our counters), so any checks will always pass
-just fine since the number will wrap.  Fix it so we add up all of the used
-counters and then compare that way, so we don't dig ourselves a hole thats
-much deeper than it already is.
+Chris Mason wrote:
+> On Thu, Sep 17, 2009 at 05:04:11PM -0500, Steven Pratt wrote:
+>   
+>> Chris Mason wrote:
+>>     
+>>> On Thu, Sep 17, 2009 at 04:17:14PM -0400, Chris Mason wrote:
+>>>       
+>>>> [ crashes on runs involving unmounts ]
+>>>>
+>>>> The run is still going here, but it has survived longer than before.
+>>>> I'm trying with Yan Zheng's patch:
+>>>>
+>>>> From: Yan Zheng <zheng.yan@oracle.com>
+>>>> Date: Fri, 11 Sep 2009 16:11:19 -0400
+>>>> Subject: [PATCH] Btrfs: improve async block group caching
+>>>>         
+>>> Quick update, I got through a full run of Steve's test with this
+>>> applied.  I'll start  a few more ;)
+>>>       
+>> Seems to work for me too!  Got through all the random write tests
+>> with no problems. Will kick off full run overnight.
+>>     
+>
+> Thanks again.
+>
+> I've updated the btrfs-unstable tree to include Yan Zheng's fix.  I've
+> also included two more buffered writeback speedups, and I expect these
+> to make a difference on the multi-threaded tests.
+>
+> I took a look at 1MB O_DIRECT writes, and the latencies of sending off
+> checksumming to the checksum threads seem to be the biggest problem.  I
+> get full tput at 8MB O_DIRECT writes, so for now I'm going to leave this
+> one alone.
+>   
+Updated performance results are available.  Ran both the 9/16 tree + 
+async patches and the tree from 9/18.  Results are a mixed bag, some 
+faster some slower.
 
-Signed-off-by: Josef Bacik <jbacik@redhat.com>
----
- fs/btrfs/extent-tree.c |   11 +++++++----
- 1 files changed, 7 insertions(+), 4 deletions(-)
+http://btrfs.boxacle.net/repository/raid/history/History.html
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 7919050..a165260 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3006,6 +3006,7 @@ int btrfs_check_data_free_space(struct btrfs_root *root, struct inode *inode,
- 				u64 bytes)
- {
- 	struct btrfs_space_info *data_sinfo;
-+	u64 used;
- 	int ret = 0, committed = 0;
- 
- 	/* make sure bytes are sectorsize aligned */
-@@ -3015,10 +3016,12 @@ int btrfs_check_data_free_space(struct btrfs_root *root, struct inode *inode,
- again:
- 	/* make sure we have enough space to handle the data first */
- 	spin_lock(&data_sinfo->lock);
--	if (data_sinfo->total_bytes - data_sinfo->bytes_used -
--	    data_sinfo->bytes_delalloc - data_sinfo->bytes_reserved -
--	    data_sinfo->bytes_pinned - data_sinfo->bytes_readonly -
--	    data_sinfo->bytes_may_use - data_sinfo->bytes_super < bytes) {
-+
-+	used = data_sinfo->bytes_used + data_sinfo->bytes_delalloc +
-+		data_sinfo->bytes_reserved + data_sinfo->bytes_pinned +
-+		data_sinfo->bytes_readonly + data_sinfo->bytes_may_use +
-+		data_sinfo->bytes_super;
-+	if (used + bytes > data_sinfo->total_bytes) {
- 		struct btrfs_trans_handle *trans;
- 
- 		/*
--- 
-1.5.4.3
+Steve
+
+> -chris
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>   
 

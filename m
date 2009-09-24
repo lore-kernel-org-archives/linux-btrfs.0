@@ -1,38 +1,50 @@
-From: Robert Millan <rmh@aybabtu.com>
-Subject: Re: grub-0.97: btrfs multidevice  support [PATCH]
-Date: Thu, 24 Sep 2009 22:21:46 +0200
-Message-ID: <20090924202146.GA16412@thorin>
-References: <4ABBC1F5.70808@redhat.com>
-Reply-To: The development of GRUB 2 <grub-devel@gnu.org>
+From: Sage Weil <sage@newdream.net>
+Subject: [PATCH] Btrfs: fix deadlock with free space handling and user
+ transactions
+Date: Thu, 24 Sep 2009 14:58:07 -0700 (PDT)
+Message-ID: <Pine.LNX.4.64.0909241456470.5597@cobra.newdream.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Ric Wheeler <rwheeler@redhat.com>, Chris Mason <chris.mason@oracle.com>,
-	The development of BTRFS <linux-btrfs@vger.kernel.org>
-To: The development of GRUB 2 <grub-devel@gnu.org>
-Return-path: <grub-devel-bounces+gcbgd-grub-devel=m.gmane.org@gnu.org>
-In-Reply-To: <4ABBC1F5.70808@redhat.com>
-List-Unsubscribe: <http://lists.gnu.org/mailman/listinfo/grub-devel>,
-	<mailto:grub-devel-request@gnu.org?subject=unsubscribe>
-List-Archive: <http://lists.gnu.org/pipermail/grub-devel>
-List-Post: <mailto:grub-devel@gnu.org>
-List-Help: <mailto:grub-devel-request@gnu.org?subject=help>
-List-Subscribe: <http://lists.gnu.org/mailman/listinfo/grub-devel>,
-	<mailto:grub-devel-request@gnu.org?subject=subscribe>
-Errors-To: grub-devel-bounces+gcbgd-grub-devel=m.gmane.org@gnu.org
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
-Hi Edward,
+If an ioctl-initiated transaction is open, we can't force a commit during 
+the free space checks in order to free up pinned extents or else we 
+deadlock.  Just ENOSPC instead.
 
-I'm sorry but GRUB Legacy is not maintained.  At least not by us;  we've
-deprecated it in favour of GRUB 2.
+A more satisfying solution that reserves space for the entire user
+transaction up front is forthcoming...
 
-It is also being abandoned by distributors, so I wouldn't recommend that you
-put any effort in developing for it.
+Signed-off-by: Sage Weil <sage@newdream.net>
+---
+ fs/btrfs/extent-tree.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 90d314e..63d86ae 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2813,7 +2813,7 @@ alloc:
+ 		}
+ 		spin_unlock(&meta_sinfo->lock);
+ 
+-		if (!committed) {
++		if (!committed && !root->fs_info->open_ioctl_trans) {
+ 			committed = 1;
+ 			trans = btrfs_join_transaction(root, 1);
+ 			if (!trans)
+@@ -2887,7 +2887,7 @@ alloc:
+ 		spin_unlock(&data_sinfo->lock);
+ 
+ 		/* commit the current transaction and try again */
+-		if (!committed) {
++		if (!committed && !root->fs_info->open_ioctl_trans) {
+ 			committed = 1;
+ 			trans = btrfs_join_transaction(root, 1);
+ 			if (!trans)
 -- 
-Robert Millan
+1.5.6.5
 
-  The DRM opt-in fallacy: "Your data belongs to us. We will decide when (and
-  how) you may access your data; but nobody's threatening your freedom: we
-  still allow you to remove your data and not access it at all."

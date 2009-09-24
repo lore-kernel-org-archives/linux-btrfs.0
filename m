@@ -1,36 +1,33 @@
-From: Goffredo Baroncelli <kreijack@alice.it>
-Subject: Btrfs programs repository a bit old ?
-Date: Wed, 23 Sep 2009 20:01:42 +0200
-Message-ID: <200909232001.43202.kreijack@alice.it>
+From: "Yan, Zheng" <zheng.yan@oracle.com>
+Subject: [PATCH] don't rename file into dummy directory
+Date: Thu, 24 Sep 2009 17:08:17 +0800
+Message-ID: <4ABB3701.5090104@oracle.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="us-ascii"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org, chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+A recently change enforces there is only one access point to
+each subvolume. The first directory entry (the one added when
+the subvolume/snapshot was created) is treated as valid access
+point, all other subvolume links are linked to dummy empty
+directories. The dummy directories are temporary inodes that
+only in memory, so we can not rename file into them.
 
-I noticed that the official repository[*] for the btrfs program is quite old. 
-The last commit is dated June 2009.
+Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
 
-   btrfs-progs-unstable$ git log | head -3
-   commit 4f89b6eb0718ade63152791db32794da78fbba70
-   Author: Yan Zheng <zheng.yan@oracle.com>
-   Date:   Fri Jun 12 12:55:50 2009 -0400
-
-I am interested to test the Yan's patches about the snapshot removing, but I 
-need the btrfs utils updated !
-
-Is there another updated repository for the btrfs programs or I have to apply 
-the Yan's patches by hands :-)
-
-BR
-G.Baroncelli
-
-
-[*] git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs-
-unstable.git
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+---
+diff -urp 1/fs/btrfs/inode.c 2/fs/btrfs/inode.c
+--- 1/fs/btrfs/inode.c	2009-09-23 05:49:42.007477065 +0800
++++ 2/fs/btrfs/inode.c	2009-09-23 09:46:22.451357089 +0800
+@@ -5057,6 +5057,9 @@ static int btrfs_rename(struct inode *ol
+ 	u64 root_objectid;
+ 	int ret;
+ 
++	if (new_dir->i_ino == BTRFS_EMPTY_SUBVOL_DIR_OBJECTID)
++		return -EPERM;
++
+ 	/* we only allow rename subvolume link between subvolumes */
+ 	if (old_inode->i_ino != BTRFS_FIRST_FREE_OBJECTID && root != dest)
+ 		return -EXDEV;

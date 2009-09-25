@@ -1,93 +1,87 @@
-From: Bruno Kleinert <fuddl@tauware.de>
-Subject: btrfs-progs: improve -D usage description
-Date: Fri, 25 Sep 2009 14:16:43 +0200
-Message-ID: <1253881003.27645.12.camel@gummipuppe>
+From: Edward Shishkin <edward.shishkin@gmail.com>
+Subject: Re: how does grub exactly work?
+Date: Fri, 25 Sep 2009 15:48:48 +0200
+Message-ID: <4ABCCA40.3020501@gmail.com>
+References: <200909251049.18109.aj@dungeon.inka.de>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature"; boundary="=-SKSwFRPBQEZ8xiypJaqu"
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: The development of BTRFS <linux-btrfs@vger.kernel.org>
+To: Andreas Jellinghaus <aj@dungeon.inka.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <200909251049.18109.aj@dungeon.inka.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Andreas Jellinghaus wrote:
+> Hi Edward,
+>   
 
---=-SKSwFRPBQEZ8xiypJaqu
-Content-Type: multipart/mixed; boundary="=-jr3OpG+xioBRDgWTmZLj"
+Hello.
 
+> I saw your mail on btrfs ml with the grub patches and the notes
+> how to deal with btrfs.
+>
+> can you explain how grub and btrfs work exactly?
+> I read the grub manual at
+> http://www.gnu.org/software/grub/manual/html_node/Bootstrap-
+> tricks.html#Bootstrap-tricks
+>
+> so I wonder: does btrfs provide a "boot loader area" similar
+> to ffs and reiserfs, where grub places the stage 1.5 code
+> and stage 1 can read it?
+>
+>   
 
---=-jr3OpG+xioBRDgWTmZLj
-Content-Type: text/plain
-Content-Transfer-Encoding: quoted-printable
+Yes.
 
-Hi,
+> or does grub find out the sectors of the stage 1.5 file and
+> put the list of those into the stage 1 file (first sector address
+> of stage 1.5 file) and stage 1.5 first sector (list of all
+> other sectors)?
+>   
 
-when trying out snapshot removal (yeah!) from the for-linus branch I
-thought that the help message of btrfsctl could be a bit better. Also
-the manpage of btrfsctl lacks information about it.
+Grub doesn't make the blocklist for stage1_5
 
-I attached two micro patches against btrfs-progs-unstable.
+Optionally grub makes the blocklist for stage2 (in particular
+when stage1.5 can not be embedded for some reasons).
 
-Cheers - Fuddl
+Note, that it is important to embed and use btrfs_stage1_5.
+First, because btrfs has defragmentator, which can make the
+blocklist out of date (so that you'll need to reinstall grub).
+Second, I am not sure, if the blocklist will be composed
+correctly in the case when stage2 locates in btrfs volume
+(I didn't look at the blocklist specification: it can happen that
+grub installer makes an assumption that all sectors of stage2
+locate on the same device).
 
---=-jr3OpG+xioBRDgWTmZLj
-Content-Disposition: attachment; filename="add-snap-removal-to-man.diff"
-Content-Type: text/x-patch; name="add-snap-removal-to-man.diff"; charset="UTF-8"
-Content-Transfer-Encoding: base64
+> and what would be the proper way to make boot from a raid1 device?
+> so that if one disk fails the other can boot?
+> device (hd0) /dev/sda
+> root (hd0,X) 
+> setup (hd0)
+>
+> device (hd0) /dev/sdb
+> root (hd0,X)
+> setup (hd0)
+>   
 
-ZGlmZiAtLWdpdCBhL21hbi9idHJmc2N0bC44LmluIGIvbWFuL2J0cmZzY3RsLjguaW4NCmluZGV4
-IGMyZDQ0ODguLjM2MzkxZGMgMTAwNjQ0DQotLS0gYS9tYW4vYnRyZnNjdGwuOC5pbg0KKysrIGIv
-bWFuL2J0cmZzY3RsLjguaW4NCkBAIC0xMCw2ICsxMCw3IEBAIGJ0cmZzY3RsIFwtIGNvbnRyb2wg
-YSBidHJmcyBmaWxlc3lzdGVtDQogWyBcZkIgXC1BXGZQXGZJIGRldmljZVxmUCBdDQogWyBcZkIg
-XC1hXGZQIF0NCiBbIFxmQiBcLWNcZlAgXQ0KK1sgXGZCIFwtRFxmUFxmSSBzbmFwc2hvdC1uYW1l
-IGRpcmVjdG9yeVxmUCBdDQogLlNIIERFU0NSSVBUSU9ODQogLkIgYnRyZnNjdGwNCiBpcyB1c2Vk
-IHRvIGNvbnRyb2wgdGhlIGZpbGVzeXN0ZW0gYW5kIHRoZSBmaWxlcyBhbmQgZGlyZWN0b3JpZXMg
-c3RvcmVkLiBJdCBpcyB0aGUgdG9vbCB0byBjcmVhdGUgYSBuZXcgc25hcHNob3QgZm9yIHRoZSBm
-aWxlc3lzdGVtLg0KQEAgLTM1LDYgKzM2LDkgQEAgU2NhbnMgYWxsIGRldmljZXMgcHJlc2VudCBp
-biB0aGUgc3lzdGVtIGZvciBidHJmcyBmaWxlc3lzdGVtLg0KIC5UUA0KIFxmQlwtY1xmUg0KIEZv
-cmNlcyBhIGZpbGVzeXN0ZW0gc3luYy4NCisuVFANCitcZkJcLURcZlIgXGZJc25hcHNob3QtbmFt
-ZSBkaXJlY3RvcnlcZlINCitEZWxldGVzIGEgXGZJc25hcHNob3RcZlAgaW4gdGhlIHNwZWNpZmll
-ZCBcZklkaXJlY3RvcnlcZlAuDQogLlNIIEFWQUlMQUJJTElUWQ0KIC5CIGJ0cmZzY3RsDQogaXMg
-cGFydCBvZiBidHJmcy1wcm9ncy4gQnRyZnMgaXMgY3VycmVudGx5IHVuZGVyIGhlYXZ5IGRldmVs
-b3BtZW50LA0K
+Perhaps, it will work. But officially grub doesn't
+understand software raid, and I am not familiar
+with raid1 specifications, so...  ;)
 
-
---=-jr3OpG+xioBRDgWTmZLj
-Content-Disposition: attachment; filename="improve-snap-removal-help.diff"
-Content-Type: text/x-patch; name="improve-snap-removal-help.diff"; charset="UTF-8"
-Content-Transfer-Encoding: base64
-
-ZGlmZiAtLWdpdCBhL2J0cmZzY3RsLmMgYi9idHJmc2N0bC5jDQppbmRleCA2NmM0ZTg5Li5lMzdl
-MmUzIDEwMDY0NA0KLS0tIGEvYnRyZnNjdGwuYw0KKysrIGIvYnRyZnNjdGwuYw0KQEAgLTQ2LDcg
-KzQ2LDcgQEAgc3RhdGljIGlubGluZSBpbnQgaW9jdGwoaW50IGZkLCBpbnQgZGVmaW5lLCB2b2lk
-ICphcmcpIHsgcmV0dXJuIDA7IH0NCiBzdGF0aWMgdm9pZCBwcmludF91c2FnZSh2b2lkKQ0KIHsN
-CiAJcHJpbnRmKCJ1c2FnZTogYnRyZnNjdGwgWyAtZCBmaWxlfGRpcl0gWyAtcyBzbmFwX25hbWUg
-c3Vidm9sfHRyZWUgXVxuIik7DQotCXByaW50ZigiICAgICAgICAgICAgICAgIFstciBzaXplXSBb
-LUEgZGV2aWNlXSBbLWFdIFstY10gWy1EIGRpciAuXVxuIik7DQorCXByaW50ZigiICAgICAgICAg
-ICAgICAgIFstciBzaXplXSBbLUEgZGV2aWNlXSBbLWFdIFstY10gWy1EIHNuYXBfbmFtZSBkaXJd
-XG4iKTsNCiAJcHJpbnRmKCJcdC1kIGZpbGVuYW1lOiBkZWZyYWdtZW50cyBvbmUgZmlsZVxuIik7
-DQogCXByaW50ZigiXHQtZCBkaXJlY3Rvcnk6IGRlZnJhZ21lbnRzIHRoZSBlbnRpcmUgQnRyZWVc
-biIpOw0KIAlwcmludGYoIlx0LXMgc25hcF9uYW1lIGRpcjogY3JlYXRlcyBhIG5ldyBzbmFwc2hv
-dCBvZiBkaXJcbiIpOw0KQEAgLTU1LDcgKzU1LDcgQEAgc3RhdGljIHZvaWQgcHJpbnRfdXNhZ2Uo
-dm9pZCkNCiAJcHJpbnRmKCJcdC1BIGRldmljZTogc2NhbnMgdGhlIGRldmljZSBmaWxlIGZvciBh
-IEJ0cmZzIGZpbGVzeXN0ZW1cbiIpOw0KIAlwcmludGYoIlx0LWE6IHNjYW5zIGFsbCBkZXZpY2Vz
-IGZvciBCdHJmcyBmaWxlc3lzdGVtc1xuIik7DQogCXByaW50ZigiXHQtYzogZm9yY2VzIGEgc2lu
-Z2xlIEZTIHN5bmNcbiIpOw0KLQlwcmludGYoIlx0LUQ6IGRlbGV0ZSBzbmFwc2hvdFxuIik7DQor
-CXByaW50ZigiXHQtRDogc25hcF9uYW1lIGRpcjogZGVsZXRlIG5hbWVkIHNuYXBzaG90IGluIGRp
-cmVjdG9yeSBkaXJcbiIpOw0KIAlwcmludGYoIiVzXG4iLCBCVFJGU19CVUlMRF9WRVJTSU9OKTsN
-CiAJZXhpdCgxKTsNCiB9DQo=
-
-
---=-jr3OpG+xioBRDgWTmZLj--
-
---=-SKSwFRPBQEZ8xiypJaqu
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Dies ist ein digital signierter Nachrichtenteil
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iEYEABECAAYFAkq8tKMACgkQurEs8MfFj3xJzACgzmKz+YUBiFJIr64HfKCBtc8B
-2QsAoJV1H7d2HMUiHVkEQYVi9823iyiw
-=j51x
------END PGP SIGNATURE-----
-
---=-SKSwFRPBQEZ8xiypJaqu--
+> if data is written to mbr only and the sectors between mbr and
+> the first partition, this could work. but if data is written to
+> mbr and to btrfs (either a "boot loader area" or changes to the
+> stage 1.5 file), then that data can only contain the valid block
+> lists for one of the two hard disks - which shouldn't be a problem
+> if drives are the same and have 100% the same geometry and partitioning.
+>
+> so I wonder, and it would be great if thise fine details would be
+> documented for btrfs somewhere, as there is very little information
+> about them (the situation isn't better with other filesystems either).
+>
+> thanks for your help!
+>
+> Regards, Andreas
+>
+>   
 

@@ -1,44 +1,56 @@
-From: Bron Gondwana <brong@fastmail.fm>
-Subject: Re: grub-0.97: btrfs multidevice  support [PATCH]
-Date: Fri, 25 Sep 2009 08:38:10 +1000
-Message-ID: <20090924223810.GA2638@brong.net>
-References: <4ABBC1F5.70808@redhat.com>
- <20090924202146.GA16412@thorin>
+From: Zhang Jingwang <yyalone@gmail.com>
+Subject: Re: [PATCH 4/4] add snapshot/subvolume destroy ioctl
+Date: Fri, 25 Sep 2009 09:45:13 +0800
+Message-ID: <4486336c0909241845t267fa2a8t3fb39953b45398b7@mail.gmail.com>
+References: <4AB37AB9.3060401@oracle.com>
+	 <4486336c0909240127v2a3320c7s52db89b12d1d7272@mail.gmail.com>
+	 <20090924124322.GB2797@think> <20090924135955.GC2797@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: The development of GRUB 2 <grub-devel@gnu.org>,
-	The development of BTRFS <linux-btrfs@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	Ric Wheeler <rwheeler@redhat.com>
-To: Robert Millan <rmh@aybabtu.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>, john <yyalone@gmail.com>,
+	"Yan, Zheng" <zheng.yan@oracle.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090924202146.GA16412@thorin>
+In-Reply-To: <20090924135955.GC2797@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 24, 2009 at 10:21:46PM +0200, Robert Millan wrote:
-> 
-> Hi Edward,
-> 
-> I'm sorry but GRUB Legacy is not maintained.  At least not by us;  we've
-> deprecated it in favour of GRUB 2.
-> 
-> It is also being abandoned by distributors, so I wouldn't recommend that you
-> put any effort in developing for it.
+My test result confirms that it has been fixed. Thanks for your time.
 
-You've been spouting this line for years, and yet my Ubuntu 10.4 machine
-uses, guess what, GRUB 1.  Mainly because you deprecated GRUB Legacy[tm]
-well before GRUB 2 was usable.
+2009/9/24 Chris Mason <chris.mason@oracle.com>:
+> On Thu, Sep 24, 2009 at 08:43:22AM -0400, Chris Mason wrote:
+>> On Thu, Sep 24, 2009 at 04:27:57PM +0800, john wrote:
+>> > =A0 =A0After a git bisect, I think this patch may introduce a perf=
+ormance
+>> > =A0 =A0regression(about 15% slower) in postmark benchmark. Sometim=
+es(last a few
+>> > =A0 =A0seconds) in the test, CPU usage is 100% wait but NO IO is p=
+erforming, it's
+>> > =A0 =A0not IO-wait. This didn't happen for earlier versions.
+>> > =A0 =A0test*environment:
+>> > =A0 =A0hard disk: INTEL X25-E SSD 64G
+>> > =A0 =A0mkfs options: mkfs.btrfs -m single /dev/xxx
+>> > =A0 =A0mount options: -o ssd,nodatasum,nodatacow
+>>
+>> Thanks, I'll give this a shot here.
+>
+> Looks like Yan Zheng already tracked it down. =A0I've pushed his fix =
+out
+> to the master branch.
+>
+> Thanks,
+> Chris
+>
+>
 
-(you in the generic sense of the GRUB project here)
 
-Edward - please do continue to develop patches for GRUB 1 (the one that
-still actually works plenty well enough for lots of people) and ignore the
-naysayers who are happy to throw out backwards compatibility.
 
-Sometimes you have to maintain crappy code because people out there depend
-on it.  And we thank those who step up and do it rather than throw their
-hands up and pretend it doesn't need doing!
-
-Ta,
-
-Bron.
+--=20
+Zhang Jingwang
+National Research Centre for High Performance Computers
+Institute of Computing Technology, Chinese Academy of Sciences
+No. 6, South Kexueyuan Road, Haidian District
+Beijing, China
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,87 +1,53 @@
-From: Edward Shishkin <edward.shishkin@gmail.com>
-Subject: Re: how does grub exactly work?
-Date: Fri, 25 Sep 2009 15:48:48 +0200
-Message-ID: <4ABCCA40.3020501@gmail.com>
-References: <200909251049.18109.aj@dungeon.inka.de>
+From: Robert Millan <rmh@aybabtu.com>
+Subject: Re: grub-0.97: btrfs multidevice  support [PATCH]
+Date: Fri, 25 Sep 2009 16:09:51 +0200
+Message-ID: <20090925140951.GA6318@thorin>
+References: <4ABBC1F5.70808@redhat.com> <20090924202146.GA16412@thorin> <20090924223810.GA2638@brong.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: The development of BTRFS <linux-btrfs@vger.kernel.org>
-To: Andreas Jellinghaus <aj@dungeon.inka.de>
+Content-Type: text/plain; charset=us-ascii
+Cc: The development of GRUB 2 <grub-devel@gnu.org>,
+	The development of BTRFS <linux-btrfs@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	Ric Wheeler <rwheeler@redhat.com>
+To: Bron Gondwana <brong@fastmail.fm>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200909251049.18109.aj@dungeon.inka.de>
+In-Reply-To: <20090924223810.GA2638@brong.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Andreas Jellinghaus wrote:
-> Hi Edward,
->   
+On Fri, Sep 25, 2009 at 08:38:10AM +1000, Bron Gondwana wrote:
+> On Thu, Sep 24, 2009 at 10:21:46PM +0200, Robert Millan wrote:
+> > 
+> > Hi Edward,
+> > 
+> > I'm sorry but GRUB Legacy is not maintained.  At least not by us;  we've
+> > deprecated it in favour of GRUB 2.
+> > 
+> > It is also being abandoned by distributors, so I wouldn't recommend that you
+> > put any effort in developing for it.
+> 
+> You've been spouting this line for years, and yet my Ubuntu 10.4 machine
+> uses, guess what, GRUB 1.  Mainly because you deprecated GRUB Legacy[tm]
+> well before GRUB 2 was usable.
+> 
+> (you in the generic sense of the GRUB project here)
+> 
+> Edward - please do continue to develop patches for GRUB 1 (the one that
+> still actually works plenty well enough for lots of people) and ignore the
+> naysayers who are happy to throw out backwards compatibility.
+> 
+> Sometimes you have to maintain crappy code because people out there depend
+> on it.  And we thank those who step up and do it rather than throw their
+> hands up and pretend it doesn't need doing!
 
-Hello.
+I'm not telling anyone what should or shouldn't work with.  But if you want to
+work on a branch we consider deprecated, please do it elsewhere.  Discussion
+regarding GRUB Legacy is off-topic in this list.
 
-> I saw your mail on btrfs ml with the grub patches and the notes
-> how to deal with btrfs.
->
-> can you explain how grub and btrfs work exactly?
-> I read the grub manual at
-> http://www.gnu.org/software/grub/manual/html_node/Bootstrap-
-> tricks.html#Bootstrap-tricks
->
-> so I wonder: does btrfs provide a "boot loader area" similar
-> to ffs and reiserfs, where grub places the stage 1.5 code
-> and stage 1 can read it?
->
->   
+Thanks
 
-Yes.
+-- 
+Robert Millan
 
-> or does grub find out the sectors of the stage 1.5 file and
-> put the list of those into the stage 1 file (first sector address
-> of stage 1.5 file) and stage 1.5 first sector (list of all
-> other sectors)?
->   
-
-Grub doesn't make the blocklist for stage1_5
-
-Optionally grub makes the blocklist for stage2 (in particular
-when stage1.5 can not be embedded for some reasons).
-
-Note, that it is important to embed and use btrfs_stage1_5.
-First, because btrfs has defragmentator, which can make the
-blocklist out of date (so that you'll need to reinstall grub).
-Second, I am not sure, if the blocklist will be composed
-correctly in the case when stage2 locates in btrfs volume
-(I didn't look at the blocklist specification: it can happen that
-grub installer makes an assumption that all sectors of stage2
-locate on the same device).
-
-> and what would be the proper way to make boot from a raid1 device?
-> so that if one disk fails the other can boot?
-> device (hd0) /dev/sda
-> root (hd0,X) 
-> setup (hd0)
->
-> device (hd0) /dev/sdb
-> root (hd0,X)
-> setup (hd0)
->   
-
-Perhaps, it will work. But officially grub doesn't
-understand software raid, and I am not familiar
-with raid1 specifications, so...  ;)
-
-> if data is written to mbr only and the sectors between mbr and
-> the first partition, this could work. but if data is written to
-> mbr and to btrfs (either a "boot loader area" or changes to the
-> stage 1.5 file), then that data can only contain the valid block
-> lists for one of the two hard disks - which shouldn't be a problem
-> if drives are the same and have 100% the same geometry and partitioning.
->
-> so I wonder, and it would be great if thise fine details would be
-> documented for btrfs somewhere, as there is very little information
-> about them (the situation isn't better with other filesystems either).
->
-> thanks for your help!
->
-> Regards, Andreas
->
->   
-
+  The DRM opt-in fallacy: "Your data belongs to us. We will decide when (and
+  how) you may access your data; but nobody's threatening your freedom: we
+  still allow you to remove your data and not access it at all."

@@ -1,87 +1,136 @@
 From: Sage Weil <sage@newdream.net>
-Subject: user transactions and ENOSPC...
-Date: Fri, 25 Sep 2009 14:10:14 -0700 (PDT)
-Message-ID: <Pine.LNX.4.64.0909251405560.9827@cobra.newdream.net>
-Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Subject: [PATCH 1/2] Btrfs: refactor btrfs_check_data_free_space
+Date: Fri, 25 Sep 2009 14:10:55 -0700
+Message-ID: <1253913056-8385-1-git-send-email-sage@newdream.net>
+Cc: Sage Weil <sage@newdream.net>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi everyone,
+Pull out the actual free space check, so setting an inode's initial
+space_info is done by the caller instead of a wonky goto.
 
-So, the btrfs user transaction ioctls work like so
+Signed-off-by: Sage Weil <sage@newdream.net>
+---
+ fs/btrfs/extent-tree.c |   81 +++++++++++++++++++++++++++++------------------
+ 1 files changed, 50 insertions(+), 31 deletions(-)
 
- ioctl(fd, BTRFS_IOC_TRANS_START);
- /* do many operations: write(), setxattr(), rmdir(), whatever. */
- ioctl(fd, BTRFS_IOC_TRANS_END);    /* or close(fd); */
-
-and allow an application to ensure some number of operations commit to 
-disk together.  Ceph's storage daemon uses this to avoid the overhead of 
-maintaining a write-ahead journal for complex updates.  I can see this 
-being useful for lots of other services too, since it can avoid all kinds 
-of (often slow) atomicity games.
-
-But there are two problems with the user transaction ioctls as 
-implemented...
-
-The first is that we may get ENOSPC somewhere between START and END
-without any prior warning.  The patch below is intended to fix that by
-adding a new reservation category used only by a new TRANS_RESV_START
-ioctl.  It'll allow an application to specify the total amount of data
-it wants to write when the transaction starts, and get ENOSPC right
-away before it starts making changes.
-
-This isn't a perfect solution: a mix of a transaction workload a regular
-workload will violate the reservations, and we can't really fix that
-without knowing whether any given write() or whatever belongs to a user
-transaction or not.
-
-The second problem is that the application may die between START and 
-END. The current ioctls are "safe" in that the transaction handle is 
-closed when the struct file is released, so the fs won't get wedged if 
-you say segfault.  On the other hand, they're "unsafe" in that a process 
-that is killed or segfaults will result in an imcomplete transaction 
-making it to disk, which leaves the file system in an inconsistent state 
-(from the point of view of the application).
-
-One possibility is to (optionally) disable that safety mechanism with a 
-mount option, so that the file system will wedge if the process dies.  
-That's probably better than nothing.  A cautious app may prefer a wedged 
-system to a partial transaction reaching disk. (Remember these ioctls 
-are already dangerous and require CAP_SYS_ADMIN.  A process can 
-similarly wedge the fs by simply holding a transaction open.)
-
-
-An alternative approach would be to describe the full contents of the 
-user transaction, and submit the entire thing to btrfs at once using a 
-single ioctl().  This makes for an awkward data structure to define the 
-whole thing, but it would allow us to determine which operations belong 
-to a user transaction and reserve/account for free space accordingly.  
-It would also solve the problem of committing partial user transactions, 
-since we could run the full transaction to completion even if the 
-process gets a SIGKILL or seg faults or something.
-
-I had some rough patches for this a while back that just called into vfs_* 
-methods, but they ran up against those methods not being exported to 
-modules.  If exporting those is not a deal breaker, then I can use 
-filp->private_data to mark operations contained by the transaction so that 
-the reservation accounting works, while still taking advantage of the 
-generic vfs_* code.
-
-It would also potentially let us make these non-privileged operations, 
-since submiting the transaction as a unit would avoid the current 
-situation where a misbehaving process can hold a transaction open 
-and wedge the system.
-
-I'm partial to the latter approach, but it'd be nice to have some 
-confidence that it won't be shot down out of hand on principle ("modules 
-should call vfs_*", etc.) before spending too much time on it...
-
-In the meantime, patches to add reservations to the current ioctl 
-approach follow.  Any feedback on how these might be improved are 
-welcome, too!
-
-Thanks-
-sage
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 63d86ae..cb50944 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2830,25 +2830,33 @@ alloc:
+ 	return 0;
+ }
+ 
+-/*
+- * This will check the space that the inode allocates from to make sure we have
+- * enough space for bytes.
+- */
+-int btrfs_check_data_free_space(struct btrfs_root *root, struct inode *inode,
+-				u64 bytes)
++static int __alloc_chunk(struct btrfs_root *root, u64 bytes)
+ {
+-	struct btrfs_space_info *data_sinfo;
+-	int ret = 0, committed = 0;
++	int ret;
++	u64 alloc_target;
++	struct btrfs_trans_handle *trans;
+ 
+-	/* make sure bytes are sectorsize aligned */
+-	bytes = (bytes + root->sectorsize - 1) & ~((u64)root->sectorsize - 1);
++	alloc_target = btrfs_get_alloc_profile(root, 1);
++	trans = btrfs_start_transaction(root, 1);
++	if (!trans)
++		return -ENOMEM;
+ 
+-	data_sinfo = BTRFS_I(inode)->space_info;
+-	if (!data_sinfo)
+-		goto alloc;
++	ret = do_chunk_alloc(trans, root->fs_info->extent_root,
++			     bytes + 2 * 1024 * 1024,
++			     alloc_target, 0);
++	btrfs_end_transaction(trans, root);
++	return ret;
++}
++
++int btrfs_check_data_free_space_info(struct btrfs_root *root,
++				     struct btrfs_space_info *data_sinfo,
++				     u64 bytes,
++				     struct inode *inode)
++{
++	int ret = 0, committed = 0;
+ 
+-again:
+ 	/* make sure we have enough space to handle the data first */
++again:
+ 	spin_lock(&data_sinfo->lock);
+ 	if (data_sinfo->total_bytes - data_sinfo->bytes_used -
+ 	    data_sinfo->bytes_delalloc - data_sinfo->bytes_reserved -
+@@ -2861,27 +2869,11 @@ again:
+ 		 * to alloc a new chunk.
+ 		 */
+ 		if (!data_sinfo->full) {
+-			u64 alloc_target;
+-
+ 			data_sinfo->force_alloc = 1;
+ 			spin_unlock(&data_sinfo->lock);
+-alloc:
+-			alloc_target = btrfs_get_alloc_profile(root, 1);
+-			trans = btrfs_start_transaction(root, 1);
+-			if (!trans)
+-				return -ENOMEM;
+-
+-			ret = do_chunk_alloc(trans, root->fs_info->extent_root,
+-					     bytes + 2 * 1024 * 1024,
+-					     alloc_target, 0);
+-			btrfs_end_transaction(trans, root);
++			ret = __alloc_chunk(root, bytes);
+ 			if (ret)
+ 				return ret;
+-
+-			if (!data_sinfo) {
+-				btrfs_set_inode_space_info(root, inode);
+-				data_sinfo = BTRFS_I(inode)->space_info;
+-			}
+ 			goto again;
+ 		}
+ 		spin_unlock(&data_sinfo->lock);
+@@ -2914,7 +2906,34 @@ alloc:
+ 	data_sinfo->bytes_may_use += bytes;
+ 	BTRFS_I(inode)->reserved_bytes += bytes;
+ 	spin_unlock(&data_sinfo->lock);
++	return 0;
++}
+ 
++/*
++ * This will check the space that the inode allocates from to make sure we have
++ * enough space for bytes.
++ */
++int btrfs_check_data_free_space(struct btrfs_root *root, struct inode *inode,
++				u64 bytes)
++{
++	struct btrfs_space_info *data_sinfo;
++	int ret;
++
++	/* make sure bytes are sectorsize aligned */
++	bytes = (bytes + root->sectorsize - 1) & ~((u64)root->sectorsize - 1);
++
++	data_sinfo = BTRFS_I(inode)->space_info;
++	if (!data_sinfo) {
++		ret = __alloc_chunk(root, bytes);
++		if (ret)
++			return ret;
++		btrfs_set_inode_space_info(root, inode);
++		data_sinfo = BTRFS_I(inode)->space_info;
++	}
++
++	ret = btrfs_check_data_free_space_info(root, data_sinfo, bytes, inode);
++	if (ret)
++		return ret;
+ 	return btrfs_check_metadata_free_space(root);
+ }
+ 
+-- 
+1.5.6.5
 

@@ -1,7 +1,7 @@
-From: Joel Becker <Joel.Becker@oracle.com>
+From: Bron Gondwana <brong@fastmail.fm>
 Subject: Re: grub-0.97: btrfs multidevice  support [PATCH]
-Date: Fri, 25 Sep 2009 16:35:30 -0700
-Message-ID: <20090925233530.GA4133@mail.oracle.com>
+Date: Sat, 26 Sep 2009 09:47:04 +1000
+Message-ID: <20090925234704.GA13393@brong.net>
 References: <4ABBC1F5.70808@redhat.com>
  <20090924202146.GA16412@thorin>
  <20090924223810.GA2638@brong.net>
@@ -20,31 +20,51 @@ In-Reply-To: <20090925150136.GQ13423@riva.ucam.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 On Fri, Sep 25, 2009 at 04:01:36PM +0100, Colin Watson wrote:
+> On Fri, Sep 25, 2009 at 04:09:51PM +0200, Robert Millan wrote:
+> > On Fri, Sep 25, 2009 at 08:38:10AM +1000, Bron Gondwana wrote:
+> > > On Thu, Sep 24, 2009 at 10:21:46PM +0200, Robert Millan wrote:
+> > > > I'm sorry but GRUB Legacy is not maintained.  At least not by us;  we've
+> > > > deprecated it in favour of GRUB 2.
+> > > > 
+> > > > It is also being abandoned by distributors, so I wouldn't recommend that you
+> > > > put any effort in developing for it.
+> > > 
+> > > You've been spouting this line for years, and yet my Ubuntu 10.4 machine
+> > > uses, guess what, GRUB 1.
+> 
+> I assume you typoed, since there's no such thing as Ubuntu 10.4 yet.
+> When there is (well, 10.04 anyway), it will use GRUB 2 by default.
+
+Yeah, I meant 9.04 of course.  Sorry.  The one that's currently
+stable!  I am running GRUB 2 on my 9.10 laptop, as well as my
+Debian "testing" box.  It works fine, though /boot/grub is full
+of a LOT of files.  Still, it's simpler all together.
+
+> > > Edward - please do continue to develop patches for GRUB 1 (the one that
+> > > still actually works plenty well enough for lots of people) and ignore the
+> > > naysayers who are happy to throw out backwards compatibility.
+> 
+> It would be great if somebody could take up Edward's work and port it to
+> GRUB 2. If nobody else does then I'd be interested in doing so myself,
+> although I will not be able to start for a month or two from now.
+> 
+> Robert is working hard on making GRUB 2 usable, and is just advising
+> Edward that, right now, there is no upstream for GRUB Legacy who could
+> either accept or usefully comment on his patch. 
+
+Just out of interest, how long has it been that there was no stable
+supported version of GRUB?  My vague memory is that it's been about
+6 years now since GRUB 1 was declared deprecated in favour of the
+nebulous future.
+
 > This isn't naysaying those people who post patches for GRUB Legacy - but
 > given the reality that nobody is maintaining GRUB Legacy upstream right
 > now, which is better, to have your patch ignored or to receive a note
 > saying that it's against an unmaintained target? I'd go for not being
 > ignored any day.
 
-	Thankfully grub2 is starting to see distro work.  We did ocfs2
-grub2 support years ago and ran into this problem.  Do the work against
-grub and no one will take the patch.  Do the work against grub2 and
-upstream will take the patch, but zero users see it because grub2 was
-unusable by anyone.
-	Here's the original ocfs2 work from Mark Fasheh:
-http://osdir.com/ml/boot-loaders.grub.devel/2005-11/msg00025.html  It's
-sat idle for four years because of the grub2 vs distros confusion.
-Hopefully we can get it upstream again!
+Well, yeah.  True.  There's no really good path out of here other than
+everyone moving to GRUB 2 before running any filesystem that's changed
+in the past few years as root.
 
-Joel
-
--- 
-
-"The only way to get rid of a temptation is to yield to it."
-         - Oscar Wilde 
-
-Joel Becker
-Principal Software Developer
-Oracle
-E-mail: joel.becker@oracle.com
-Phone: (650) 506-8127
+Bron.

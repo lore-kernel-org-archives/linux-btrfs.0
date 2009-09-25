@@ -1,56 +1,93 @@
-From: Zhang Jingwang <yyalone@gmail.com>
-Subject: Re: [PATCH 4/4] add snapshot/subvolume destroy ioctl
-Date: Fri, 25 Sep 2009 09:45:13 +0800
-Message-ID: <4486336c0909241845t267fa2a8t3fb39953b45398b7@mail.gmail.com>
-References: <4AB37AB9.3060401@oracle.com>
-	 <4486336c0909240127v2a3320c7s52db89b12d1d7272@mail.gmail.com>
-	 <20090924124322.GB2797@think> <20090924135955.GC2797@think>
+From: Bruno Kleinert <fuddl@tauware.de>
+Subject: btrfs-progs: improve -D usage description
+Date: Fri, 25 Sep 2009 14:16:43 +0200
+Message-ID: <1253881003.27645.12.camel@gummipuppe>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>, john <yyalone@gmail.com>,
-	"Yan, Zheng" <zheng.yan@oracle.com>, linux-btrfs@vger.kernel.org
+Content-Type: multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature"; boundary="=-SKSwFRPBQEZ8xiypJaqu"
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090924135955.GC2797@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-My test result confirms that it has been fixed. Thanks for your time.
 
-2009/9/24 Chris Mason <chris.mason@oracle.com>:
-> On Thu, Sep 24, 2009 at 08:43:22AM -0400, Chris Mason wrote:
->> On Thu, Sep 24, 2009 at 04:27:57PM +0800, john wrote:
->> > =A0 =A0After a git bisect, I think this patch may introduce a perf=
-ormance
->> > =A0 =A0regression(about 15% slower) in postmark benchmark. Sometim=
-es(last a few
->> > =A0 =A0seconds) in the test, CPU usage is 100% wait but NO IO is p=
-erforming, it's
->> > =A0 =A0not IO-wait. This didn't happen for earlier versions.
->> > =A0 =A0test*environment:
->> > =A0 =A0hard disk: INTEL X25-E SSD 64G
->> > =A0 =A0mkfs options: mkfs.btrfs -m single /dev/xxx
->> > =A0 =A0mount options: -o ssd,nodatasum,nodatacow
->>
->> Thanks, I'll give this a shot here.
->
-> Looks like Yan Zheng already tracked it down. =A0I've pushed his fix =
-out
-> to the master branch.
->
-> Thanks,
-> Chris
->
->
+--=-SKSwFRPBQEZ8xiypJaqu
+Content-Type: multipart/mixed; boundary="=-jr3OpG+xioBRDgWTmZLj"
 
 
+--=-jr3OpG+xioBRDgWTmZLj
+Content-Type: text/plain
+Content-Transfer-Encoding: quoted-printable
 
---=20
-Zhang Jingwang
-National Research Centre for High Performance Computers
-Institute of Computing Technology, Chinese Academy of Sciences
-No. 6, South Kexueyuan Road, Haidian District
-Beijing, China
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Hi,
+
+when trying out snapshot removal (yeah!) from the for-linus branch I
+thought that the help message of btrfsctl could be a bit better. Also
+the manpage of btrfsctl lacks information about it.
+
+I attached two micro patches against btrfs-progs-unstable.
+
+Cheers - Fuddl
+
+--=-jr3OpG+xioBRDgWTmZLj
+Content-Disposition: attachment; filename="add-snap-removal-to-man.diff"
+Content-Type: text/x-patch; name="add-snap-removal-to-man.diff"; charset="UTF-8"
+Content-Transfer-Encoding: base64
+
+ZGlmZiAtLWdpdCBhL21hbi9idHJmc2N0bC44LmluIGIvbWFuL2J0cmZzY3RsLjguaW4NCmluZGV4
+IGMyZDQ0ODguLjM2MzkxZGMgMTAwNjQ0DQotLS0gYS9tYW4vYnRyZnNjdGwuOC5pbg0KKysrIGIv
+bWFuL2J0cmZzY3RsLjguaW4NCkBAIC0xMCw2ICsxMCw3IEBAIGJ0cmZzY3RsIFwtIGNvbnRyb2wg
+YSBidHJmcyBmaWxlc3lzdGVtDQogWyBcZkIgXC1BXGZQXGZJIGRldmljZVxmUCBdDQogWyBcZkIg
+XC1hXGZQIF0NCiBbIFxmQiBcLWNcZlAgXQ0KK1sgXGZCIFwtRFxmUFxmSSBzbmFwc2hvdC1uYW1l
+IGRpcmVjdG9yeVxmUCBdDQogLlNIIERFU0NSSVBUSU9ODQogLkIgYnRyZnNjdGwNCiBpcyB1c2Vk
+IHRvIGNvbnRyb2wgdGhlIGZpbGVzeXN0ZW0gYW5kIHRoZSBmaWxlcyBhbmQgZGlyZWN0b3JpZXMg
+c3RvcmVkLiBJdCBpcyB0aGUgdG9vbCB0byBjcmVhdGUgYSBuZXcgc25hcHNob3QgZm9yIHRoZSBm
+aWxlc3lzdGVtLg0KQEAgLTM1LDYgKzM2LDkgQEAgU2NhbnMgYWxsIGRldmljZXMgcHJlc2VudCBp
+biB0aGUgc3lzdGVtIGZvciBidHJmcyBmaWxlc3lzdGVtLg0KIC5UUA0KIFxmQlwtY1xmUg0KIEZv
+cmNlcyBhIGZpbGVzeXN0ZW0gc3luYy4NCisuVFANCitcZkJcLURcZlIgXGZJc25hcHNob3QtbmFt
+ZSBkaXJlY3RvcnlcZlINCitEZWxldGVzIGEgXGZJc25hcHNob3RcZlAgaW4gdGhlIHNwZWNpZmll
+ZCBcZklkaXJlY3RvcnlcZlAuDQogLlNIIEFWQUlMQUJJTElUWQ0KIC5CIGJ0cmZzY3RsDQogaXMg
+cGFydCBvZiBidHJmcy1wcm9ncy4gQnRyZnMgaXMgY3VycmVudGx5IHVuZGVyIGhlYXZ5IGRldmVs
+b3BtZW50LA0K
+
+
+--=-jr3OpG+xioBRDgWTmZLj
+Content-Disposition: attachment; filename="improve-snap-removal-help.diff"
+Content-Type: text/x-patch; name="improve-snap-removal-help.diff"; charset="UTF-8"
+Content-Transfer-Encoding: base64
+
+ZGlmZiAtLWdpdCBhL2J0cmZzY3RsLmMgYi9idHJmc2N0bC5jDQppbmRleCA2NmM0ZTg5Li5lMzdl
+MmUzIDEwMDY0NA0KLS0tIGEvYnRyZnNjdGwuYw0KKysrIGIvYnRyZnNjdGwuYw0KQEAgLTQ2LDcg
+KzQ2LDcgQEAgc3RhdGljIGlubGluZSBpbnQgaW9jdGwoaW50IGZkLCBpbnQgZGVmaW5lLCB2b2lk
+ICphcmcpIHsgcmV0dXJuIDA7IH0NCiBzdGF0aWMgdm9pZCBwcmludF91c2FnZSh2b2lkKQ0KIHsN
+CiAJcHJpbnRmKCJ1c2FnZTogYnRyZnNjdGwgWyAtZCBmaWxlfGRpcl0gWyAtcyBzbmFwX25hbWUg
+c3Vidm9sfHRyZWUgXVxuIik7DQotCXByaW50ZigiICAgICAgICAgICAgICAgIFstciBzaXplXSBb
+LUEgZGV2aWNlXSBbLWFdIFstY10gWy1EIGRpciAuXVxuIik7DQorCXByaW50ZigiICAgICAgICAg
+ICAgICAgIFstciBzaXplXSBbLUEgZGV2aWNlXSBbLWFdIFstY10gWy1EIHNuYXBfbmFtZSBkaXJd
+XG4iKTsNCiAJcHJpbnRmKCJcdC1kIGZpbGVuYW1lOiBkZWZyYWdtZW50cyBvbmUgZmlsZVxuIik7
+DQogCXByaW50ZigiXHQtZCBkaXJlY3Rvcnk6IGRlZnJhZ21lbnRzIHRoZSBlbnRpcmUgQnRyZWVc
+biIpOw0KIAlwcmludGYoIlx0LXMgc25hcF9uYW1lIGRpcjogY3JlYXRlcyBhIG5ldyBzbmFwc2hv
+dCBvZiBkaXJcbiIpOw0KQEAgLTU1LDcgKzU1LDcgQEAgc3RhdGljIHZvaWQgcHJpbnRfdXNhZ2Uo
+dm9pZCkNCiAJcHJpbnRmKCJcdC1BIGRldmljZTogc2NhbnMgdGhlIGRldmljZSBmaWxlIGZvciBh
+IEJ0cmZzIGZpbGVzeXN0ZW1cbiIpOw0KIAlwcmludGYoIlx0LWE6IHNjYW5zIGFsbCBkZXZpY2Vz
+IGZvciBCdHJmcyBmaWxlc3lzdGVtc1xuIik7DQogCXByaW50ZigiXHQtYzogZm9yY2VzIGEgc2lu
+Z2xlIEZTIHN5bmNcbiIpOw0KLQlwcmludGYoIlx0LUQ6IGRlbGV0ZSBzbmFwc2hvdFxuIik7DQor
+CXByaW50ZigiXHQtRDogc25hcF9uYW1lIGRpcjogZGVsZXRlIG5hbWVkIHNuYXBzaG90IGluIGRp
+cmVjdG9yeSBkaXJcbiIpOw0KIAlwcmludGYoIiVzXG4iLCBCVFJGU19CVUlMRF9WRVJTSU9OKTsN
+CiAJZXhpdCgxKTsNCiB9DQo=
+
+
+--=-jr3OpG+xioBRDgWTmZLj--
+
+--=-SKSwFRPBQEZ8xiypJaqu
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Dies ist ein digital signierter Nachrichtenteil
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iEYEABECAAYFAkq8tKMACgkQurEs8MfFj3xJzACgzmKz+YUBiFJIr64HfKCBtc8B
+2QsAoJV1H7d2HMUiHVkEQYVi9823iyiw
+=j51x
+-----END PGP SIGNATURE-----
+
+--=-SKSwFRPBQEZ8xiypJaqu--
+

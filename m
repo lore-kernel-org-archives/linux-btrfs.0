@@ -1,48 +1,81 @@
-From: Robert Millan <rmh@aybabtu.com>
-Subject: Re: grub-0.97: btrfs multidevice  support [PATCH]
-Date: Sun, 27 Sep 2009 12:38:55 +0200
-Message-ID: <20090927103855.GA22813@thorin>
-References: <4ABBC1F5.70808@redhat.com> <20090924202146.GA16412@thorin> <20090924223810.GA2638@brong.net>
+From: Peng Tao <bergwolf@gmail.com>
+Subject: Re: grub-0.97: btrfs multidevice support [PATCH]
+Date: Mon, 28 Sep 2009 09:53:09 +0800
+Message-ID: <6149e97b0909271853g1de7abcage5356490e5a1d847@mail.gmail.com>
+References: <4ABBC1F5.70808@redhat.com> <20090924202146.GA16412@thorin>
+	 <20090924223810.GA2638@brong.net> <20090925140951.GA6318@thorin>
+	 <20090925150136.GQ13423@riva.ucam.org>
+	 <6149e97b0909262029w30fe3adcq591515f0f2b156c4@mail.gmail.com>
+	 <20090927101804.GA22642@thorin>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: The development of GRUB 2 <grub-devel@gnu.org>,
+Content-Type: text/plain; charset=UTF-8
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Bron Gondwana <brong@fastmail.fm>,
+	Ric Wheeler <rwheeler@redhat.com>,
 	The development of BTRFS <linux-btrfs@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	Ric Wheeler <rwheeler@redhat.com>
-To: Bron Gondwana <brong@fastmail.fm>
+	Colin Watson <cjwatson@ubuntu.com>
+To: The development of GRUB 2 <grub-devel@gnu.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090924223810.GA2638@brong.net>
+In-Reply-To: <20090927101804.GA22642@thorin>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 25, 2009 at 08:38:10AM +1000, Bron Gondwana wrote:
-> 
-> Edward - please do continue to develop patches for GRUB 1 (the one that
-> still actually works plenty well enough for lots of people) and ignore the
-> naysayers who are happy to throw out backwards compatibility.
-> 
-> Sometimes you have to maintain crappy code because people out there depend
-> on it.  And we thank those who step up and do it rather than throw their
-> hands up and pretend it doesn't need doing!
+On Sun, Sep 27, 2009 at 6:18 PM, Robert Millan <rmh@aybabtu.com> wrote:
+> On Sun, Sep 27, 2009 at 11:29:11AM +0800, Peng Tao wrote:
+>> >
+>> > It would be great if somebody could take up Edward's work and port=
+ it to
+>> > GRUB 2. If nobody else does then I'd be interested in doing so mys=
+elf,
+>> > although I will not be able to start for a month or two from now.
+>> Is there any guild lines for porting GPLv2 code to GRUB2? I've looke=
+d
+>> at the GRUB2 wiki but very few things are documented there
+>> (http://grub.enbug.org/). I'd like to see what it would take to port
+>> the patches. If I can afford it, I'd like to try.
+>
+> I assume you mean GPLv2-only code (as opposed to GPLv2-or-later). Fir=
+st
+> step would be to contact the copyright holders and ask them to relice=
+nse
+> under v3-compatible terms (e.g. GPLv2-or-later). =C2=A0Chances are th=
+ey didn't
+> chose these terms as an act of hostility, but were simply being zealo=
+us
+> about allowing something before they knew what it is.
+>
+> If that doesn't work, we'll always have Par^W clean room
+> (http://en.wikipedia.org/wiki/Clean_room_design).
+Edward's patch (stage2/fsys_btrfs.c) is declared GPLv2-or-later. But
+stage2/btrfs.h (which is extracted from btrfs-progs) is GPLv2-only. At
+the point, we only need a clean room for btrfs.h, right?
+And I'm not sure what a clean room design in GRUB2 looks like. Is
+there an example?
+>
+> --
+> Robert Millan
+>
+> =C2=A0The DRM opt-in fallacy: "Your data belongs to us. We will decid=
+e when (and
+> =C2=A0how) you may access your data; but nobody's threatening your fr=
+eedom: we
+> =C2=A0still allow you to remove your data and not access it at all."
+>
+>
+> _______________________________________________
+> Grub-devel mailing list
+> Grub-devel@gnu.org
+> http://lists.gnu.org/mailman/listinfo/grub-devel
+>
 
-Btw, I just wanted to add that although we decide to focus on the codebase
-that has a future, it doesn't bother me at all that GRUB Legacy is useful to
-others.  We made it free software so that it enables as many users as possible
-to use their computer in freedom, and so that distributors can adopt it
-despite our disrecommendation.
 
-I don't regret that they have the practical means to disagree with us and take
-a different path.  It's precisely the freedom we wanted them to benefit from!
 
-Nevertheless, grub-devel is a mailing list for coordination of GRUB 2
-development.  Most of us are volunteers and our time is quite limited, so
-bringing up GRUB Legacy development here is at best a distraction.  I'll
-appreciate if you won't do that anymore.
-
-Thanks for listening
-
--- 
-Robert Millan
-
-  The DRM opt-in fallacy: "Your data belongs to us. We will decide when (and
-  how) you may access your data; but nobody's threatening your freedom: we
-  still allow you to remove your data and not access it at all."
+--=20
+Cheers,
+Peng Tao
+State Key Laboratory of Networking and Switching Technology
+Beijing Univ. of Posts and Telecoms.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

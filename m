@@ -1,41 +1,38 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: ENOSPC patches integrated into the master branch
-Date: Tue, 29 Sep 2009 14:42:38 -0400
-Message-ID: <20090929184238.GD7283@think>
+From: Sage Weil <sage@newdream.net>
+Subject: Re: [PATCH 1/2] Btrfs: refactor btrfs_check_data_free_space
+Date: Tue, 29 Sep 2009 11:49:31 -0700 (PDT)
+Message-ID: <Pine.LNX.4.64.0909291145380.20862@cobra.newdream.net>
+References: <1253913056-8385-1-git-send-email-sage@newdream.net>
+ <20090929171217.GC2650@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org, Steven Pratt <slpratt@austin.ibm.com>,
-	Eric Whitney <eric.whitney@hp.com>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20090929171217.GC2650@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello everyone,
+On Tue, 29 Sep 2009, Chris Mason wrote:
 
-A quick note that Josef's ENOSPC work is now integrated in the master
-branch of the btrfs-unstable repo.  There is still a small window in his
-accounting where ENOSPC oopsen can creep in, but the code is doing very
-well here and the worst case estimates he uses are conservative enough
-that I haven't been able to hit it yet.
+> On Fri, Sep 25, 2009 at 02:10:55PM -0700, Sage Weil wrote:
+> > Pull out the actual free space check, so setting an inode's initial
+> > space_info is done by the caller instead of a wonky goto.
+> > 
+> 
+> Hi Sage,
+> 
+> I've just pushed out an updated enospc branch.  Could you please verify
+> your patches against it?  If you and Josef are happy with them, I'll
+> pull them in.
 
-My plan is to push this out for 2.6.32-rc2 and fine tune any performance
-problems we find from there.  Josef is continuing to improve the code so
-we'll have updates throughout the release cycle.
+I'm resending rebased patches now (things changed a bit).  The first 
+cleanup patch is unrelated to ENOSPC, but needed for the last one to 
+apply, and I didn't see it pushed out yet.
 
-Eric and Steve, if you could both feed this into your respective torture
-tests, it would be great.
+Josef, does the ioctl trans reservation (4/4) look reasonable?  It can 
+fall over if you mix ioctl transactions and regular work, but that's not 
+really avoidable without a more fundamental change to the API (see my 
+email from last week).
 
-ENOSPC gotchas:
-
-btrfs-vol -b and device shrinking don't yet do all the checks required
-for proper enospc support.  They do have some checks in place and most
-of the time they will be fine, but we need to add more.
-
-You probably won't hit 100% device utilization.  Btrfs splits up the
-disk into metadata and data areas in relatively large chunks of about
-1GB (sometimes more in multi-device setups).
-
-This means you can end up with some space dedicated to metadata that
-can't be used as data.
-
--chris
-
+thanks-
+sage

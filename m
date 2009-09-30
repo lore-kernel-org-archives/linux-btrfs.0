@@ -1,39 +1,72 @@
-From: Sage Weil <sage@newdream.net>
-Subject: [PATCH 2/4] Btrfs: fix deadlock with free space handling and user transactions
-Date: Tue, 29 Sep 2009 11:50:03 -0700
-Message-ID: <1254250205-8175-2-git-send-email-sage@newdream.net>
-References: <1254250205-8175-1-git-send-email-sage@newdream.net>
-Cc: Sage Weil <sage@newdream.net>
-To: linux-btrfs@vger.kernel.org
+From: Ric Wheeler <rwheeler@redhat.com>
+Subject: Re: Benchmarking btrfs on HW Raid ... BAD
+Date: Wed, 30 Sep 2009 10:35:23 -0400
+Message-ID: <4AC36CAB.5000208@redhat.com>
+References: <alpine.DEB.2.00.0909280955400.11292@sebohet.brgvxre.pu>  <82tyynxz2g.fsf@mid.bfk.de> <6278d2220909280219h5b38577eqc1bee1a26cbc93e1@mail.gmail.com> <alpine.DEB.2.00.0909281124410.11292@sebohet.brgvxre.pu>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Daniel J Blueman <daniel.blueman@gmail.com>,
+	Florian Weimer <fweimer@bfk.de>, linux-btrfs@vger.kernel.org
+To: Tobias Oetiker <tobi@oetiker.ch>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1254250205-8175-1-git-send-email-sage@newdream.net>
+In-Reply-To: <alpine.DEB.2.00.0909281124410.11292@sebohet.brgvxre.pu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If an ioctl-initiated transaction is open, we can't force a commit during
-the free space checks in order to free up pinned extents or else we
-deadlock.  Just ENOSPC instead.
+On 09/28/2009 05:39 AM, Tobias Oetiker wrote:
+> Hi Daniel,
+>
+> Today Daniel J Blueman wrote:
+>
+>    
+>> On Mon, Sep 28, 2009 at 9:17 AM, Florian Weimer<fweimer@bfk.de>  wrote:
+>>      
+>>> * Tobias Oetiker:
+>>>
+>>>        
+>>>> Running this on a single disk, I get the quite acceptable results.
+>>>> When running on-top of a Areca HW Raid6 (lvm partitioned)
+>>>> then both read and write performance go down by at least 2
+>>>> magnitudes.
+>>>>          
+>>> Does the HW RAID use write caching (preferably battery-backed)?
+>>>        
+>> I believe Areca controllers have an option for writeback or
+>> writethrough caching, so it's worth checking this and that you're
+>> running the current firmware, in case of errata. Ironically, disabling
+>> writeback will give the OS tighter control of request latency, but
+>> throughput may drop a lot. I still can't help thinking that this is
+>> down to the behaviour of the controller, due to the 1-disk case
+>> working well.
+>>      
+> it certainly is down to  a behaviour of the controller, or the
+> results would be the same as with a single sata disk :-) It would
+> be interesting to see what results others get on HW Raid
+> Controllers ...
+>
+>    
+>> One way would be to configure the array as 6 or 7 devices, and allow
+>> BTRFS/DM to mange the array, then see if performance under write load
+>> is better, and with or without writeback caching...
+>>      
+> I can imagine that this would help, but since btrfs aims to be
+> multipurpose, this does not realy help all that much since this
+> fundamentally alters the 'conditions' at the moment the RAID
+> contains different filesystem and is partitioned using lvm ...
+>
+> cheers
+> tobi
+>
+> the results for ext3 fs look like this ...
+>
+>    
 
-A more satisfying solution that reserves space for the entire user
-transaction up front is forthcoming...
+I would be more suspicious of the barrier/flushes being issued. If your 
+write cache is non-volatile, we really do not want to send them down to 
+this type of device. Flushing this type of cache could certainly be 
+very, very expensive and slow.
 
-Signed-off-by: Sage Weil <sage@newdream.net>
----
- fs/btrfs/extent-tree.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+Try "mount -o nobarrier" and see if your performance (write cache still 
+enabled on the controller) is back to expected levels,
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index a4b2b03..d119c03 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3168,7 +3168,7 @@ alloc:
- 		spin_unlock(&data_sinfo->lock);
- 
- 		/* commit the current transaction and try again */
--		if (!committed) {
-+		if (!committed && !root->fs_info->open_ioctl_trans) {
- 			committed = 1;
- 			trans = btrfs_join_transaction(root, 1);
- 			if (!trans)
--- 
-1.5.6.5
+Ric
 

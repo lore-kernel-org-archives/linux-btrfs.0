@@ -1,24 +1,51 @@
-From: Jens Axboe <jens.axboe@oracle.com>
-Subject: Re: yum upgrade on btrfs very slow
-Date: Thu, 1 Oct 2009 11:04:41 +0200
-Message-ID: <20091001090440.GQ14918@kernel.dk>
-References: <20090928121827.GA15930@mother.pipebreaker.pl> <20090928133543.GB6405@think> <20090929061822.GB15930@mother.pipebreaker.pl> <20090929132538.GN6405@think> <20090930194350.GA29166@mother.pipebreaker.pl>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: fix data space leak fix
+Date: Thu, 1 Oct 2009 17:18:11 -0400
+Message-ID: <20091001211811.GF4350@dhcp231-156.rdu.redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: Tomasz Torcz <tomek@pipebreaker.pl>
+To: chris.mason@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20090930194350.GA29166@mother.pipebreaker.pl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 30 2009, Tomasz Torcz wrote:
->   I wouldn't expect barriers to work here (reminder, this is PATA drive
-> on ICH7 sata controller), but I will test tomorrow with nobarrier.
-> Then I probably check his "yum upgrade" under seekwatcher on friday.
+There is a problem where page_mkwrite can be called on a dirtied page that
+already has a delalloc range associated with it.  The fix is to clear any
+delalloc bits for the range we are dirtying so the space accounting gets handled
+properly.  This is the same thing we do in the normal write case, so we are
+consistent across the board.  With this patch we no longer leak reserved space.
 
-Barriers should work fine on that setup. In fact, barriers were first
-implemented for PATA back in the day :-)
+Signed-off-by: Josef Bacik <jbacik@redhat.com>
+---
+ fs/btrfs/inode.c |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index c22075d..1010979 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4666,10 +4666,21 @@ again:
+ 		goto again;
+ 	}
+ 
++	/*
++	 * XXX - page_mkwrite gets called every time the page is dirtied, even
++	 * if it was already dirty, so for space accounting reasons we need to
++	 * clear any delalloc bits for the range we are fixing to save.  There
++	 * is probably a better way to do this, but for now keep consistent with
++	 * prepare_pages in the normal write path.
++	 */
++	clear_extent_bits(&BTRFS_I(inode)->io_tree, page_start, page_end,
++			  EXTENT_DIRTY | EXTENT_DELALLOC, GFP_NOFS);
++
+ 	ret = btrfs_set_extent_delalloc(inode, page_start, page_end);
+ 	if (ret) {
+ 		unlock_extent(io_tree, page_start, page_end, GFP_NOFS);
+ 		ret = VM_FAULT_SIGBUS;
++		btrfs_free_reserved_data_space(root, inode, PAGE_CACHE_SIZE);
+ 		goto out_unlock;
+ 	}
+ 	ret = 0;
 -- 
-Jens Axboe
+1.5.4.3
 

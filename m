@@ -1,7 +1,7 @@
 From: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
-Subject: [PATCH] btrfsck: Fix Check limit in check_node/leaf.
-Date: Fri, 02 Oct 2009 14:39:19 +0900
-Message-ID: <4AC59207.9080309@jp.fujitsu.com>
+Subject: [PATCH] btrfs-progs: CRC on disk printed correctly in CRC error message
+Date: Fri, 02 Oct 2009 14:52:08 +0900
+Message-ID: <4AC59508.6060309@jp.fujitsu.com>
 References: <4AC59118.6030707@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-2022-JP
@@ -12,37 +12,29 @@ In-Reply-To: <4AC59118.6030707@jp.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-In btrfsck.c( check_node/leaf ), it seems that last pair of
-ptrs and items are not checked at 2 place.
+I've tested btrfsck in CRC error case. However CRC on disk printed
+in error message is not correct (extent_buffer itsself is printed).
 
 
 Signed-off-by: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
 ---
- btrfsck.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ disk-io.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/btrfsck.c b/btrfsck.c
-index 73f1836..ecc7b19 100644
---- a/btrfsck.c
-+++ b/btrfsck.c
-@@ -1720,7 +1720,7 @@ static int check_node(struct btrfs_root *root,
- 		if (memcmp(parent_key, &key, sizeof(key)))
+diff --git a/disk-io.c b/disk-io.c
+index addebe1..190301f 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -86,7 +86,7 @@ int csum_tree_block_size(struct extent_buffer *buf, u16 csum_size,
+ 		if (memcmp_extent_buffer(buf, result, 0, csum_size)) {
+ 			printk("checksum verify failed on %llu wanted %X "
+ 			       "found %X\n", (unsigned long long)buf->start,
+-			       *((int *)result), *((int *)buf));
++			       *((int *)result), *((int *)buf->data));
+ 			free(result);
  			return 1;
- 	}
--	for (i = 0; nritems > 1 && i < nritems - 2; i++) {
-+	for (i = 0; nritems > 1 && i < nritems - 1; i++) {
- 		btrfs_node_key(buf, &key, i);
- 		btrfs_node_key_to_cpu(buf, &cpukey, i + 1);
- 		if (btrfs_comp_keys(&key, &cpukey) >= 0)
-@@ -1759,7 +1759,7 @@ static int check_leaf(struct btrfs_root *root,
- 		       (unsigned long long)btrfs_header_bytenr(buf));
- 		return 1;
- 	}
--	for (i = 0; nritems > 1 && i < nritems - 2; i++) {
-+	for (i = 0; nritems > 1 && i < nritems - 1; i++) {
- 		btrfs_item_key(buf, &key, i);
- 		btrfs_item_key_to_cpu(buf, &cpukey, i + 1);
- 		if (btrfs_comp_keys(&key, &cpukey) >= 0) {
+ 		}
 -- 
 1.6.2.1
+
 

@@ -1,51 +1,78 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: fix data space leak fix
-Date: Thu, 1 Oct 2009 17:18:11 -0400
-Message-ID: <20091001211811.GF4350@dhcp231-156.rdu.redhat.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: [GIT PULL] Btrfs updates for 2.6.32-rc
+Date: Thu, 1 Oct 2009 20:30:52 -0400
+Message-ID: <20091002003052.GA5720@think>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: chris.mason@oracle.com
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There is a problem where page_mkwrite can be called on a dirtied page that
-already has a delalloc range associated with it.  The fix is to clear any
-delalloc bits for the range we are dirtying so the space accounting gets handled
-properly.  This is the same thing we do in the normal write case, so we are
-consistent across the board.  With this patch we no longer leak reserved space.
+Hello everyone,
 
-Signed-off-by: Josef Bacik <jbacik@redhat.com>
----
- fs/btrfs/inode.c |   11 +++++++++++
- 1 files changed, 11 insertions(+), 0 deletions(-)
+I've prepared the for-linus branch of the btrfs-unstable tree for
+pulling:
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index c22075d..1010979 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4666,10 +4666,21 @@ again:
- 		goto again;
- 	}
- 
-+	/*
-+	 * XXX - page_mkwrite gets called every time the page is dirtied, even
-+	 * if it was already dirty, so for space accounting reasons we need to
-+	 * clear any delalloc bits for the range we are fixing to save.  There
-+	 * is probably a better way to do this, but for now keep consistent with
-+	 * prepare_pages in the normal write path.
-+	 */
-+	clear_extent_bits(&BTRFS_I(inode)->io_tree, page_start, page_end,
-+			  EXTENT_DIRTY | EXTENT_DELALLOC, GFP_NOFS);
-+
- 	ret = btrfs_set_extent_delalloc(inode, page_start, page_end);
- 	if (ret) {
- 		unlock_extent(io_tree, page_start, page_end, GFP_NOFS);
- 		ret = VM_FAULT_SIGBUS;
-+		btrfs_free_reserved_data_space(root, inode, PAGE_CACHE_SIZE);
- 		goto out_unlock;
- 	}
- 	ret = 0;
--- 
-1.5.4.3
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git for-linus
 
+The master branch has the same changes against 2.6.31, minus a cleanup
+from Christoph that is 2.6.32-rc specific.
+
+The big part of this pull request is Josef Bacik's ENOSPC support.  He
+has added enough tracking to reserve room ahead of time for the metadata
+required to meet all the delayed allocations we do, and gotten rid of
+the half solutions that were in place before.
+
+We already have small updates planned, and the code doesn't yet make
+sure that btrfs-vol -b or device shrinking do the proper reservation to
+avoid oopsen.  But, it is working nicely and I'd like to get it out for
+broader use.
+
+Another change that may get noticed is that Btrfs now uses
+CONFIG_BTRFS_POSIX_ACL for testing to see if it should do acls.  There
+has been some confusion around this and it is more consistent with the
+other filesystems.  So, if you had acls please make sure you've got the
+btrfs posix acl config on.
+
+Chris Ball (2) commits (+7/-5):
+    Btrfs: Fix setting umask when POSIX ACLs are not enabled (+2/-0)
+    Btrfs: Use CONFIG_BTRFS_POSIX_ACL to enable ACL code (+5/-5)
+
+Chris Mason (1) commits (+17/-8):
+    Btrfs: take i_mutex before generic_write_checks
+
+Christoph Hellwig (2) commits (+13/-103):
+    Btrfs: fix arguments to btrfs_wait_on_page_writeback_range (+3/-1)
+    Btrfs: remove duplicates of filemap_ helpers (+10/-102)
+
+Josef Bacik (2) commits (+689/-115):
+    Btrfs: proper -ENOSPC handling (+678/-115)
+    Btrfs: fix data space leak fix (+11/-0)
+
+Julia Lawall (1) commits (+3/-1):
+    Btrfs: introduce missing kfree
+
+Sage Weil (2) commits (+23/-20):
+    Btrfs: fix deadlock with free space handling and user transactions (+1/-1)
+    Btrfs: fix error cases for ioctl transactions (+22/-19)
+
+Total: (10) commits
+
+ fs/btrfs/acl.c          |    6 
+ fs/btrfs/btrfs_inode.h  |    8 
+ fs/btrfs/ctree.h        |   25 ++-
+ fs/btrfs/disk-io.c      |   16 -
+ fs/btrfs/extent-tree.c  |  391 +++++++++++++++++++++++++++++++++++++++++-------
+ fs/btrfs/extent_io.c    |   92 ++++++++---
+ fs/btrfs/extent_io.h    |   13 +
+ fs/btrfs/file.c         |   41 +++--
+ fs/btrfs/inode.c        |  235 +++++++++++++++++++++++++---
+ fs/btrfs/ioctl.c        |   62 +++++--
+ fs/btrfs/ordered-data.c |   93 -----------
+ fs/btrfs/ordered-data.h |    4 
+ fs/btrfs/super.c        |    2 
+ fs/btrfs/transaction.c  |   10 +
+ fs/btrfs/volumes.c      |    4 
+ fs/btrfs/xattr.c        |    2 
+ 16 files changed, 752 insertions(+), 252 deletions(-)

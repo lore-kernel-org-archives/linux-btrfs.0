@@ -1,29 +1,31 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: 2.6.32-rc1: btrfs hugs
-Date: Fri, 2 Oct 2009 14:37:48 -0400
-Message-ID: <20091002183748.GJ2881@think>
-References: <a4423d670910020418w4de348c7x763bb7d548d927ef@mail.gmail.com>
+Subject: Re: [PATCH] btrfs-progs: bug fixes
+Date: Fri, 2 Oct 2009 15:09:57 -0400
+Message-ID: <20091002190957.GL2881@think>
+References: <4AC59118.6030707@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: Alexander Beregalov <a.beregalov@gmail.com>
+To: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <a4423d670910020418w4de348c7x763bb7d548d927ef@mail.gmail.com>
+In-Reply-To: <4AC59118.6030707@jp.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 02, 2009 at 03:18:41PM +0400, Alexander Beregalov wrote:
-> Hi
-> The kernel is  2.6.32-rc2-00196-g0efe5e3
-> SMP, 4cpus
+On Fri, Oct 02, 2009 at 02:35:20PM +0900, TARUISI Hiroaki wrote:
+> Hi,
 > 
-> I tested dbench with 150 threads on 120G partition.
+> I have tested btrfsck in some error case, such as item missing
+> case or CRC error case or so. In this test session I found some
+> bugs in btrfsck.c and disk-io.c in btrfs-progs.
+>   1. The last pair of ptrs and items are not checked at 2 place
+>      of check_node/leaf.
+>   2. Csum printed CRC error message is not correct.
+>   3. In CRC error, btrfsck fails in segmentation fault.
 > 
-> 
-> device fsid b467c30bdb79768-7e6f9a05192ee4b5 devid 1 transid 7 /dev/sda3
-> thread pool is 6
+> I'll post three tiny patches to fix these bugs.
 
-I think I've tracked this down to the helper threads getting stuck
-waiting for ram to start more helper threads.  I've got a fixed version
-here that I'm testing and should push out for 2.6.32-rc3.
+Thank you for spending time in the btrfsck code.  I'll test these out
+and get them pushed into the btrfs-progs repository.
 
 -chris
+

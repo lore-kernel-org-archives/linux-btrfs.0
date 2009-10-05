@@ -1,36 +1,44 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: system hang with btrfs master
-Date: Mon, 5 Oct 2009 09:13:00 -0400
-Message-ID: <20091005131300.GA25969@think>
-References: <200910051440.50155.johannes.hirte@fem.tu-ilmenau.de>
+From: Dirk Gouders <gouders@et.bocholt.fh-gelsenkirchen.de>
+Subject: btrfs-progs trivial: Double definition of BTRFS_CSUM_TYPE_CRC32 in ctree.h
+Date: Mon, 05 Oct 2009 19:29:55 +0200
+Message-ID: <gifx9x6964.fsf@sora.hank.home>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Content-Type: multipart/mixed; boundary="=-=-="
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200910051440.50155.johannes.hirte@fem.tu-ilmenau.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 05, 2009 at 02:40:49PM +0200, Johannes Hirte wrote:
-> I'm using btrfs on two devices here, /usr on sda3 and /home on sdb (dm-crypt 
-> device on the whole disk). With btrfs-master the whole system hangs when 
-> accessing /home. The system hangs when I'm logging in into my account with KDE 
-> and is easily reproducible with dbench. On /usr the hangs appeared also but 
-> not as often as on the /home-device. I've tested on a third device with new 
-> created btrfs on top of dm-crypt, but wasn't able to reproduce the hangs. The 
-> filesystems are created without metadata-mirroring (-m single). I've bisected 
-> this to:
-> 
-> commit 11833d66be94b514652466802100378046c16b72
-> Author: Yan Zheng <zheng.yan@oracle.com>
-> Date:   Fri Sep 11 16:11:19 2009 -0400
-> 
->     Btrfs: improve async block group caching
+--=-=-=
 
 Hello,
 
-Could you please capture the output of sysrq-l and sysrq-t during the
-hang?
+I noticed a double definition of BTRFS_CSUM_TYPE_CRC32 in ctree.h
+and attach a patch that removes it.
 
--chris
+Best regards,
 
+Dirk
+
+
+--=-=-=
+Content-Type: text/x-patch
+Content-Disposition: attachment; filename=ctree.h.diff
+Content-Description: ctree.h.diff
+
+diff --git a/ctree.h b/ctree.h
+index a9062ea..fec0d9e 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -108,10 +108,6 @@ struct btrfs_trans_handle;
+ /* csum types */
+ #define BTRFS_CSUM_TYPE_CRC32	0
+ 
+-
+-/* csum types */
+-#define BTRFS_CSUM_TYPE_CRC32	0
+-
+ static int btrfs_csum_sizes[] = { 4, 0 };
+ 
+ /* four bytes for CRC32 */
+
+--=-=-=--

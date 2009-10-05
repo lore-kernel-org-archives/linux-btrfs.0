@@ -1,25 +1,30 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: ENOSPC at 94% full -- and causing BUGs elsewhere?
-Date: Sat, 3 Oct 2009 17:55:32 -0400
-Message-ID: <20091003215531.GG4350@dhcp231-156.rdu.redhat.com>
-References: <20091003122109.GB3116@selene>
+From: Ric Wheeler <rwheeler@redhat.com>
+Subject: Re: yum upgrade on btrfs very slow
+Date: Mon, 05 Oct 2009 08:09:05 -0400
+Message-ID: <4AC9E1E1.9000001@redhat.com>
+References: <20090928121827.GA15930@mother.pipebreaker.pl> <20090928133543.GB6405@think> <20090929061822.GB15930@mother.pipebreaker.pl> <20090929132538.GN6405@think> <20090930194350.GA29166@mother.pipebreaker.pl> <20091001090440.GQ14918@kernel.dk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Hugo Mills <hugo-lkml@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Tomasz Torcz <tomek@pipebreaker.pl>, linux-btrfs@vger.kernel.org
+To: Jens Axboe <jens.axboe@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20091003122109.GB3116@selene>
+In-Reply-To: <20091001090440.GQ14918@kernel.dk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Oct 03, 2009 at 01:21:09PM +0100, Hugo Mills wrote:
->    I've just had the following on my home server. I believe that it's
-> btrfs that's responsible, as the machine wasn't doing much other than
-> reading/writing on a btrfs filesystem. The process that was doing so
-> is now stuck in D+ state, and can't be killed. The timing of the oops
-> at the end is also suggestive of being involved in the same incident.
-> This is the only btrfs filesystem on the machine.
+On 10/01/2009 05:04 AM, Jens Axboe wrote:
+> On Wed, Sep 30 2009, Tomasz Torcz wrote:
+>    
+>>    I wouldn't expect barriers to work here (reminder, this is PATA drive
+>> on ICH7 sata controller), but I will test tomorrow with nobarrier.
+>> Then I probably check his "yum upgrade" under seekwatcher on friday.
+>>      
+> Barriers should work fine on that setup. In fact, barriers were first
+> implemented for PATA back in the day :-)
 >
+>    
 
-Patches have gone to Linus to fix the enospc problems.  You can try running the
-enospc branch of Chris's git tree and it should behave better for you.  Thanks,
+I think that we first tested them on ich5 & old promise controllers with 
+old (250GB) P-ATA disks :-)
 
-Josef 
+ric
+

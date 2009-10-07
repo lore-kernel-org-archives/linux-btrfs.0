@@ -1,29 +1,22 @@
-From: Andi Kleen <andi@firstfloor.org>
-Subject: Re: [PATCH] Fix possible pointer dereference
-Date: Wed, 07 Oct 2009 02:03:42 +0200
-Message-ID: <873a5w134x.fsf@basil.nowhere.org>
-References: <200910062215.22562.diegocg@gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Warning and BUG using btrfs-vol -b
+Date: Tue, 6 Oct 2009 23:17:54 -0400
+Message-ID: <20091007031754.GB3757@think>
+References: <200910062048.32381.diegocg@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 To: Diego Calleja <diegocg@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200910062215.22562.diegocg@gmail.com> (Diego Calleja's message of "Tue, 6 Oct 2009 22:15:22 +0200")
+In-Reply-To: <200910062048.32381.diegocg@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Diego Calleja <diegocg@gmail.com> writes:
+On Tue, Oct 06, 2009 at 08:48:32PM +0200, Diego Calleja wrote:
+> I was playing with btrfs with 2 files of 3.5 GB (using loop), I completely
+> zeroed one of the files. As expected, I had checksum failures, and I run
+> btrfs-vol -b just to see what happened, and I got this (using -rc3):
 
-> We should always check btrfs_alloc_path(). Some places BUG(),
-> others return -ENOMEM, btrfs_insert_dir_item() seems like it can return
-> safely.
+Thanks, I'll try to reproduce.  Which raid level did you use for data?
+If not raid1, could you try with raid1? ;)
 
-The problem is that all the callers don't handle errors.
-It doesn't make sense to fix it low-level currently when it cannot be handled
-properly higher up anyways.
-
-Proper out of memory handling needs much more work, one liners
-don't really help.
-
--Andi
--- 
-ak@linux.intel.com -- Speaking for myself only.
+-chris

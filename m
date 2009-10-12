@@ -1,40 +1,28 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Mass-Hardlinking Oops
-Date: Mon, 12 Oct 2009 08:47:26 -0400
-Message-ID: <20091012124726.GL2632@think>
-References: <4A74401B.90801@mccme.ru>
- <20090803145741.GC3765@think>
- <4A76FB78.5000207@wpkg.org>
- <20090803235920.C13173@mccme.ru>
- <87my3y3r8u.fsf@faran.nsc.liu.se>
- <3d0408630910111543t23bdf6c3u2274efc65f0fe06c@mail.gmail.com>
- <4AD2E3CF.6080701@wpkg.org>
+Subject: Re: soft lockup when leaf and node bigger than 4KB
+Date: Mon, 12 Oct 2009 08:50:35 -0400
+Message-ID: <20091012125035.GM2632@think>
+References: <4486336c0910120255p6388cc5dl3bf7154a418d068e@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: "Yan, Zheng " <yanzheng@21cn.com>,
-	=?iso-8859-1?B?UORy?= Andersson <paran@lysator.liu.se>,
-	linux-btrfs@vger.kernel.org
-To: Tomasz Chmielewski <mangoo@wpkg.org>
+Cc: linux-btrfs@vger.kernel.org
+To: Zhang Jingwang <yyalone@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4AD2E3CF.6080701@wpkg.org>
+In-Reply-To: <4486336c0910120255p6388cc5dl3bf7154a418d068e@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 12, 2009 at 10:07:43AM +0200, Tomasz Chmielewski wrote:
-> Yan, Zheng wrote:
+On Mon, Oct 12, 2009 at 05:55:47PM +0800, Zhang Jingwang wrote:
+> I make a btrfs use 'mkfs.btrfs -m single -l 16384 -n 16384 /dev/xxx'.
+> After mount it, I run a test script to create lots of files, then soft
+> lockup occurs.
 > 
-> >>What is the reason for the limit, and is there any chance of increasing
-> >>it to something more reasonable as Mikhail suggested?
-> >
-> >The limit is imposed by the format of inode back references. We can
-> >get rid of the limit, but it requires a disk format change.
-> 
-> Please do get rid of this limit, it's ridiculously small.
-> 
-> Of course, not necessarily right now, but when you introduce some
-> other changes needing disk format change, please think of removing
-> the hard link limit as well.
+> After digging into the source code, I think there is a problem with
+> bio->bi_end_io.
 
-Please keep in mind this is only a limit on the number of links to a
-single file where the links and the file are all in the same directory.
+Unfortunately, the larger sizes are not supported right now at all, as
+there are a number of problems to handle.
+
+In my queue of btrfs-progs updates, I have it limited to the page size
+for all of these options.
 
 -chris

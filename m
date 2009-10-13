@@ -1,32 +1,94 @@
-From: Zach Brown <zach.brown@oracle.com>
-Subject: Re: Mass-Hardlinking Oops
-Date: Tue, 13 Oct 2009 10:45:43 -0700
-Message-ID: <4AD4BCC7.3060204@oracle.com>
-References: <4A74401B.90801@mccme.ru> <20090803145741.GC3765@think>	<4A76FB78.5000207@wpkg.org> <20090803235920.C13173@mccme.ru> <87my3y3r8u.fsf@faran.nsc.liu.se> <4AD35667.3020103@hp.com> <DEABA03B-2896-484C-8DF9-F62E3E5AD342@ubuntu.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: fix possible ENOSPC problems with truncate
+Date: Tue, 13 Oct 2009 14:45:53 -0400
+Message-ID: <20091013184552.GA21998@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: jim owens <jowens@hp.com>,
-	=?ISO-8859-1?Q?P=E4r_Andersson?= <paran@lysator.liu.se>,
-	linux-btrfs@vger.kernel.org
-To: John Dong <jdong@ubuntu.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <DEABA03B-2896-484C-8DF9-F62E3E5AD342@ubuntu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+There's a problem where we don't do any space reservation for truncates, which
+can cause you to OOPs because you will be allowed to go off in the weeds a bit
+since we don't account for the delalloc bytes that are created as a result of
+the truncate.  This patch fixes the problem.  Thanks,
 
->>> this thread. I get EMLINK when trying to create more than 311 (not 272)
->>> links in a directory
->>
->> what real-world application uses and needs this many hard links?
-> 
-> I don't think that's a good counterargument for why this is not a bug.
+Signed-off-by: Josef Bacik <jbacik@redhat.com>
+---
+ fs/btrfs/inode.c |   27 ++++++++++++++++++++++++---
+ 1 files changed, 24 insertions(+), 3 deletions(-)
 
-I strongly agree.  Our ignorance of users operating inside existing
-limits of existing file systems shouldn't justify tightening those limits.
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 2720bcc..f08ee0e 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3031,12 +3031,22 @@ static int btrfs_truncate_page(struct address_space *mapping, loff_t from)
+ 
+ 	if ((offset & (blocksize - 1)) == 0)
+ 		goto out;
++	ret = btrfs_check_data_free_space(root, inode, PAGE_CACHE_SIZE);
++	if (ret)
++		goto out;
++
++	ret = btrfs_reserve_metadata_for_delalloc(root, inode, 1);
++	if (ret)
++		goto out;
+ 
+ 	ret = -ENOMEM;
+ again:
+ 	page = grab_cache_page(mapping, index);
+-	if (!page)
++	if (!page) {
++		btrfs_free_reserved_data_space(root, inode, PAGE_CACHE_SIZE);
++		btrfs_unreserve_metadata_for_delalloc(root, inode, 1);
+ 		goto out;
++	}
+ 
+ 	page_start = page_offset(page);
+ 	page_end = page_start + PAGE_CACHE_SIZE - 1;
+@@ -3069,6 +3079,10 @@ again:
+ 		goto again;
+ 	}
+ 
++	clear_extent_bits(&BTRFS_I(inode)->io_tree, page_start, page_end,
++			  EXTENT_DIRTY | EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING,
++			  GFP_NOFS);
++
+ 	ret = btrfs_set_extent_delalloc(inode, page_start, page_end);
+ 	if (ret) {
+ 		unlock_extent(io_tree, page_start, page_end, GFP_NOFS);
+@@ -3087,6 +3101,9 @@ again:
+ 	unlock_extent(io_tree, page_start, page_end, GFP_NOFS);
+ 
+ out_unlock:
++	if (ret)
++		btrfs_free_reserved_data_space(root, inode, PAGE_CACHE_SIZE);
++	btrfs_unreserve_metadata_for_delalloc(root, inode, 1);
+ 	unlock_page(page);
+ 	page_cache_release(page);
+ out:
+@@ -3110,7 +3127,9 @@ int btrfs_cont_expand(struct inode *inode, loff_t size)
+ 	if (size <= hole_start)
+ 		return 0;
+ 
+-	btrfs_truncate_page(inode->i_mapping, inode->i_size);
++	err = btrfs_truncate_page(inode->i_mapping, inode->i_size);
++	if (err)
++		return err;
+ 
+ 	while (1) {
+ 		struct btrfs_ordered_extent *ordered;
+@@ -5005,7 +5024,9 @@ static void btrfs_truncate(struct inode *inode)
+ 	if (IS_APPEND(inode) || IS_IMMUTABLE(inode))
+ 		return;
+ 
+-	btrfs_truncate_page(inode->i_mapping, inode->i_size);
++	ret = btrfs_truncate_page(inode->i_mapping, inode->i_size);
++	if (ret)
++		return;
+ 	btrfs_wait_ordered_range(inode, inode->i_size & (~mask), (u64)-1);
+ 
+ 	trans = btrfs_start_transaction(root, 1);
+-- 
+1.5.4.3
 
-Sure, this is a weird corner case.  But given how early btrfs is in the
-deployment stage, it seems worth changing the format to get rid of this
-risk of teaching people to question their expectation that btrfs will
-just work in environments that previous linux file systems worked in.
-
-- z

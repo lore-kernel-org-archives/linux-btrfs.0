@@ -1,50 +1,39 @@
-From: Christoph Hellwig <hch@lst.de>, Christoph Hellwig <hch@lst.de>
-Subject: [PATCH 1/2] btrfs: enable discard support
-Date: Wed, 14 Oct 2009 03:03:02 +0200
-Message-ID: <20091014010302.GA21031@lst.de>
+From: "Yan, Zheng" <zheng.yan@oracle.com>
+Subject: [PATCH] properly wait log writers during log sync
+Date: Wed, 14 Oct 2009 16:00:34 +0800
+Message-ID: <4AD58522.2070707@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org, chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The discard support code in btrfs currently is guarded by ifdefs for
-BIO_RW_DISCARD, which is never defines as it's the name of an enum
-memeber.  Just remove the useless ifdefs to actually enable the code.
+A recently fsync optimization make btrfs_sync_log skip calling
+wait_for_writer in the single log writer case. This is incorrect
+since the writer count can also be increased by btrfs_pin_log.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
 
-Index: linux-2.6/fs/btrfs/extent-tree.c
-===================================================================
---- linux-2.6.orig/fs/btrfs/extent-tree.c	2009-10-07 11:04:18.451256181 -0400
-+++ linux-2.6/fs/btrfs/extent-tree.c	2009-10-07 11:04:26.225005458 -0400
-@@ -1568,19 +1568,16 @@ static int remove_extent_backref(struct 
- 	return ret;
- }
+---
+diff -urp 1/fs/btrfs/tree-log.c 2/fs/btrfs/tree-log.c
+--- 1/fs/btrfs/tree-log.c	2009-10-14 09:31:46.631606303 +0800
++++ 2/fs/btrfs/tree-log.c	2009-10-14 15:56:15.095844476 +0800
+@@ -1995,12 +1995,13 @@ int btrfs_sync_log(struct btrfs_trans_ha
+ 	if (atomic_read(&root->log_commit[(index1 + 1) % 2]))
+ 		wait_log_commit(trans, root, root->log_transid - 1);
  
--#ifdef BIO_RW_DISCARD
- static void btrfs_issue_discard(struct block_device *bdev,
- 				u64 start, u64 len)
- {
- 	blkdev_issue_discard(bdev, start >> 9, len >> 9, GFP_KERNEL,
- 			     DISCARD_FL_BARRIER);
- }
--#endif
- 
- static int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
- 				u64 num_bytes)
- {
--#ifdef BIO_RW_DISCARD
- 	int ret;
- 	u64 map_length = num_bytes;
- 	struct btrfs_multi_bio *multi = NULL;
-@@ -1604,9 +1601,6 @@ static int btrfs_discard_extent(struct b
- 	}
- 
- 	return ret;
--#else
--	return 0;
--#endif
- }
- 
- int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+-	while (root->log_multiple_pids) {
++	while (1) {
+ 		unsigned long batch = root->log_batch;
+-		mutex_unlock(&root->log_mutex);
+-		schedule_timeout_uninterruptible(1);
+-		mutex_lock(&root->log_mutex);
+-
++		if (root->log_multiple_pids) {
++			mutex_unlock(&root->log_mutex);
++			schedule_timeout_uninterruptible(1);
++			mutex_lock(&root->log_mutex);
++		}
+ 		wait_for_writer(trans, root);
+ 		if (batch == root->log_batch)
+ 			break;

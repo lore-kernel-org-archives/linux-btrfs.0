@@ -1,39 +1,26 @@
-From: "Yan, Zheng" <zheng.yan@oracle.com>
-Subject: [PATCH] properly wait log writers during log sync
-Date: Wed, 14 Oct 2009 16:00:34 +0800
-Message-ID: <4AD58522.2070707@oracle.com>
+From: Christoph Hellwig <hch@lst.de>
+Subject: Re: [PATCH 1/2] btrfs: enable discard support
+Date: Wed, 14 Oct 2009 15:32:03 +0200
+Message-ID: <20091014133203.GA14011@lst.de>
+References: <20091014010302.GA21031@lst.de> <20091014132704.GG7850@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org, chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=us-ascii
+To: Chris Mason <chris.mason@oracle.com>,
+	Christoph Hellwig <hch@lst.de>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20091014132704.GG7850@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A recently fsync optimization make btrfs_sync_log skip calling
-wait_for_writer in the single log writer case. This is incorrect
-since the writer count can also be increased by btrfs_pin_log.
+On Wed, Oct 14, 2009 at 09:27:04AM -0400, Chris Mason wrote:
+> On Wed, Oct 14, 2009 at 03:03:02AM +0200, Christoph Hellwig wrote:
+> > The discard support code in btrfs currently is guarded by ifdefs for
+> > BIO_RW_DISCARD, which is never defines as it's the name of an enum
+> > memeber.  Just remove the useless ifdefs to actually enable the code.
+> 
+> Thanks Christoph,
+> 
+> Any objection to me reordering these?  That way someone bisecting around
+> won't hit discard support without expecting it.
 
-Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
+I'm perfectly fine with reordering them.
 
----
-diff -urp 1/fs/btrfs/tree-log.c 2/fs/btrfs/tree-log.c
---- 1/fs/btrfs/tree-log.c	2009-10-14 09:31:46.631606303 +0800
-+++ 2/fs/btrfs/tree-log.c	2009-10-14 15:56:15.095844476 +0800
-@@ -1995,12 +1995,13 @@ int btrfs_sync_log(struct btrfs_trans_ha
- 	if (atomic_read(&root->log_commit[(index1 + 1) % 2]))
- 		wait_log_commit(trans, root, root->log_transid - 1);
- 
--	while (root->log_multiple_pids) {
-+	while (1) {
- 		unsigned long batch = root->log_batch;
--		mutex_unlock(&root->log_mutex);
--		schedule_timeout_uninterruptible(1);
--		mutex_lock(&root->log_mutex);
--
-+		if (root->log_multiple_pids) {
-+			mutex_unlock(&root->log_mutex);
-+			schedule_timeout_uninterruptible(1);
-+			mutex_lock(&root->log_mutex);
-+		}
- 		wait_for_writer(trans, root);
- 		if (batch == root->log_batch)
- 			break;

@@ -1,25 +1,59 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH 1/2] btrfs: enable discard support
-Date: Wed, 14 Oct 2009 09:27:04 -0400
-Message-ID: <20091014132704.GG7850@think>
-References: <20091014010302.GA21031@lst.de>
+Subject: [GIT PULL] Btrfs updates
+Date: Wed, 14 Oct 2009 20:06:37 -0400
+Message-ID: <20091015000637.GA3004@think>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Christoph Hellwig <hch@lst.de>
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+	linux-kernel <linux-kernel@vger.kernel.org>,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20091014010302.GA21031@lst.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 14, 2009 at 03:03:02AM +0200, Christoph Hellwig wrote:
-> The discard support code in btrfs currently is guarded by ifdefs for
-> BIO_RW_DISCARD, which is never defines as it's the name of an enum
-> memeber.  Just remove the useless ifdefs to actually enable the code.
+Hello everyone,
 
-Thanks Christoph,
+The master branch of btrfs-unstable:
 
-Any objection to me reordering these?  That way someone bisecting around
-won't hit discard support without expecting it.
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
 
--chris
+Has an assortment of bug fixes and performance improvements.  We've
+updated the btrfs fsync code to make sure we don't trigger log commits
+when the file hasn't changed, and also tuned the log commit writeback.
+This makes a pretty big different for rpm and yum.
 
+Also, Christoph Hellwig spent some time testing btrfs discard support
+with his qemu code, so I've included his patches to enable that.
+
+Chris Mason (5) commits (+139/-27):
+    Btrfs: avoid tree log commit when there are no changes (+71/-16)
+    Btrfs: streamline tree-log btree block writeout (+53/-4)
+    Btrfs: only write one super copy during fsync (+1/-1)
+    Btrfs: always pin metadata in discard mode (+8/-0)
+    Btrfs: fix btrfs acl #ifdef checks (+6/-6)
+
+Christoph Hellwig (2) commits (+10/-7):
+    Btrfs: enable discard support (+0/-6)
+    Btrfs: add -o discard option (+10/-1)
+
+Josef Bacik (1) commits (+24/-3):
+    Btrfs: fix possible ENOSPC problems with truncate
+
+Zheng Yan (1) commits (+6/-5):
+    Btrfs: properly wait log writers during log sync
+
+Total: (9) commits
+
+ fs/btrfs/acl.c         |    6 +++---
+ fs/btrfs/btrfs_inode.h |    6 ++++++
+ fs/btrfs/ctree.h       |    4 +++-
+ fs/btrfs/disk-io.c     |    2 ++
+ fs/btrfs/extent-tree.c |   17 +++++++++++------
+ fs/btrfs/file.c        |   41 ++++++++++++++++++++++++++---------------
+ fs/btrfs/inode.c       |   33 +++++++++++++++++++++++++++++----
+ fs/btrfs/super.c       |    9 +++++++--
+ fs/btrfs/transaction.c |   45 ++++++++++++++++++++++++++++++++++++++++++---
+ fs/btrfs/transaction.h |    5 +++++
+ fs/btrfs/tree-log.c    |   48 +++++++++++++++++++++++++++++++++++++++++-------
+ fs/btrfs/tree-log.h    |    3 +++
+ fs/btrfs/xattr.c       |    2 +-
+ 13 files changed, 179 insertions(+), 42 deletions(-)

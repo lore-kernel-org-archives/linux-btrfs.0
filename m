@@ -1,55 +1,55 @@
-From: paran@lysator.liu.se (=?utf-8?Q?P=C3=A4r?= Andersson)
-Subject: Re: Mass-Hardlinking Oops
-Date: Sat, 17 Oct 2009 00:17:28 +0200
-Message-ID: <87fx9jugp3.fsf@faran.nsc.liu.se>
-References: <4A74401B.90801@mccme.ru> <20090803145741.GC3765@think>
-	<4A76FB78.5000207@wpkg.org> <20090803235920.C13173@mccme.ru>
-	<87my3y3r8u.fsf@faran.nsc.liu.se>
-	<3d0408630910111543t23bdf6c3u2274efc65f0fe06c@mail.gmail.com>
-	<4AD2E3CF.6080701@wpkg.org> <20091012124726.GL2632@think>
-	<87my3urf75.fsf@fftw.org>
-Mime-Version: 1.0
-Content-Type: multipart/signed; boundary="=-=-=";
-	micalg=pgp-sha1; protocol="application/pgp-signature"
+From: John Dong <jdong@ubuntu.com>
+Subject: Re: Building btrfs-unstable.git against 2.6.31?
+Date: Sat, 17 Oct 2009 00:43:13 -0400
+Message-ID: <6D54EFC8-5C57-4222-B030-BD008EA4C82A@ubuntu.com>
+References: <3FDCD4F7-B65A-4085-9ED8-72EF31FC0A58@ubuntu.com>
+Mime-Version: 1.0 (Apple Message framework v1076)
+Content-Type: text/plain; charset=windows-1252;
+	format=flowed	delsp=yes
 Cc: linux-btrfs@vger.kernel.org
-To: Matteo Frigo <athena@fftw.org>
+To: John Dong <jdong@ubuntu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <87my3urf75.fsf@fftw.org> (Matteo Frigo's message of "Tue, 13 Oct
-	2009 20:29:02 -0400")
+In-Reply-To: <3FDCD4F7-B65A-4085-9ED8-72EF31FC0A58@ubuntu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---=-=-=
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+Never mind, I'm an idiot. Forgot to update the Makefile targets.
 
-Matteo Frigo <athena@fftw.org> writes:
 
-> For the record, the nnmaildir mail backend in Gnus (an Emacs package
-> for reading news and email) creates multiple hardlinks to the same
-> file in the same directory.  I had several thousands hardlinks at one
-> time.
+On Oct 16, 2009, at 10:59 AM, John Dong wrote:
 
-Gnus with nnmaildir is what I use. I wanted to test how much performance
-and disk space that would be gained with my Maildirs on btrfs, but I hit
-this bug instead.
+> Hey guys, I was trying to build the btrfs modules from btrfs-=20
+> unstable.git/master against the Ubuntu Karmic 2.6.31 kernel, and get =
+=20
+> some failures in ref-cache.c:
+>
+> /home/jdong/code/kernel/btrfs-0.17/ref-cache.h:62: error: =20
+> dereferencing pointer to incomplete type
+> /home/jdong/code/kernel/btrfs-0.17/ref-cache.c: In function =20
+> =91btrfs_remove_leaf_refs=92:
+> /home/jdong/code/kernel/btrfs-0.17/ref-cache.c:123: error: =91struct =
+=20
+> btrfs_root=92 has no member named =91ref_tree=92
+> /home/jdong/code/kernel/btrfs-0.17/ref-cache.c:126: error: =91struct =
+=20
+> btrfs_fs_info=92 has no member named =91shared_ref_tree=92
+>
+>
+> And so on.
+>
+>
+> Am I not supposed to be building btrfs this way?
+>
+> Sorry for the potentially braindead obvious question :)
+>
+>
+> John Dong--
+> To unsubscribe from this list: send the line "unsubscribe linux-=20
+> btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-> I am not saying that what Gnus does is particularly smart, but this is
-> an example of a real world application that may break under btrfs.
-
-Not smart at all, and the amount of hard links is not the only problem
-with nnmaildir. But on other file systems at least it works.
-
-Regards,
-P=C3=A4r Andersson
-
---=-=-=
-Content-Type: application/pgp-signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iEYEARECAAYFAkrY8PoACgkQyi5LJcueYEvqtgCfW8BG7ShrcNEjO5f63V2IgLZD
-83oAnisDCfTBecYNzPeDpXU0v4K45ctC
-=pBzM
------END PGP SIGNATURE-----
---=-=-=--
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

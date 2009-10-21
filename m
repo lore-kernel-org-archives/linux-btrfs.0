@@ -1,37 +1,28 @@
-From: "Yan, Zheng " <yanzheng@21cn.com>
-Subject: Re: btrfsck aborts after transid verify failed?
-Date: Wed, 21 Oct 2009 15:47:42 +0800
-Message-ID: <3d0408630910210047q6021e957n8f84ad611eabb528@mail.gmail.com>
-References: <4ADEA4B6.8050001@ubuntu.com>
+From: Tomasz Torcz <tomek@pipebreaker.pl>
+Subject: Re: yum upgrade on btrfs very slow
+Date: Wed, 21 Oct 2009 11:27:33 +0200
+Message-ID: <20091021092733.GD23138@mother.pipebreaker.pl>
+References: <20090928121827.GA15930@mother.pipebreaker.pl> <20090928133543.GB6405@think> <20090929061822.GB15930@mother.pipebreaker.pl> <20090929132538.GN6405@think> <20090930194350.GA29166@mother.pipebreaker.pl> <20091001090146.GA14522@mother.pipebreaker.pl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: John Dong <jdong@ubuntu.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4ADEA4B6.8050001@ubuntu.com>
+In-Reply-To: <20091001090146.GA14522@mother.pipebreaker.pl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 21, 2009 at 2:05 PM, John Dong <jdong@ubuntu.com> wrote:
-> This is a fairly stock Ubuntu Karmic install within a VMWare session,
-> converted from ext4 via btrfs-convert out of git, and also btrfs.ko c=
-ompiled
-> out of git.
->
-> A btrsfsck run after removing the ext2_saved image yielded the follow=
-ing:
->
-> parent transid verify failed on 17092046848 wanted 9067 found 8931
-> btrfsck: disk-io.c:416: find_and_setup_root: Assertion `!(!root->node=
-)'
-> failed.
-> [1] =A0 =A02252 abort (core dumped) =A0sudo btrfsck /dev/sda2
->
+On Thu, Oct 01, 2009 at 11:01:46AM +0200, Tomasz Torcz wrote:
+> On Wed, Sep 30, 2009 at 09:43:51PM +0200, Tomasz Torcz wrote:
+> > > 
+> > > If you're comparing w/ext3 and wondering why btrfs is sooooooo much
+> > > slower it might be because btrfs has barriers on by default and ext3
+> > > doesn't.  You could mount -o nobarrier for btrfs or mount -o barrier=1
+> > > for ext3 for a proper comparison.
 
-Did you run btrfsck on mounted FS ?
+   Last update: things got noticably faster with 2.6.31.4-88.fc12.x86_64,
+which contains backport of latest mainline btrfs (thank you, Josef!).
+No more comlains from me (for now ;).
 
-Yan, Zheng
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-- 
+Tomasz Torcz                 Morality must always be based on practicality.
+xmpp: zdzichubg@chrome.pl                -- Baron Vladimir Harkonnen
+

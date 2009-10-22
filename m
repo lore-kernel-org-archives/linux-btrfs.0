@@ -1,54 +1,32 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Allocator changes
-Date: Wed, 21 Oct 2009 17:41:36 -0400
-Message-ID: <20091021214135.GA5935@localhost.localdomain>
+From: Andi Drebes <lists-receive@programmierforen.de>
+Subject: Re: Proper error handling on NULL pointers
+Date: Thu, 22 Oct 2009 12:15:59 +0200
+Message-ID: <200910221215.59623.lists-receive@programmierforen.de>
+References: <200910191236.14046.lists-receive@programmierforen.de> <200910211943.51623.diegocg@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: chris.mason@oracle.com
+Content-Type: text/plain;
+  charset="utf-8"
+Cc: linux-btrfs@vger.kernel.org, Andi Kleen <andi@firstfloor.org>
+To: Diego Calleja <diegocg@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <200910211943.51623.diegocg@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+> I don't know what is the developer plan to fix that - apparently it's
+> not in the high-priority list (but it must be certainly in the priority
+> list, anyone who gets out of memory using btrfs will have some chances of
+> getting an oops [...]).
+I'd really appreciate to see a TODO section somewhere in the wiki. All the stuff that doesn't have a very high priority, but that should be done sometime in the future, could be put there. Even the simplest things like search and replace operations. This would be a good point for people not yet familiar with the btrfs code (like me) to get involved and main developers would get rid of the things that don't have a high priority.
 
-I've been thinking recently about how to fix the caching stuff so it isn't so
-damned slow and had started to work on writing out the free space cache into
-bitmaps for every dirty bitmap, but then Eric Sandeen pointed out that xfs just
-has a couple of btree's to track free space, so I started thinking about doing
-it that way, since we do have this nice btree code laying about.
+> [...] Passing the error to the callers and handling
+> all that properly is the real fix, but since it requires auditing the whole
+> FS it's probably not an easy task. I tried to do that with a couple of
+> functions, but Kleen's mail made me realize that it isn't that easy.
+Maybe it would be easier if we found some people helping us to fix this. In this case it would also be really helpful if one of the main developers reviewed the work with a "btrfs expert eye".
 
-There are a couple of problems with adding another free space root however:
+For now I'm going to analyze some dependencies and see how many and *which* functions are affected.
 
-1) Backwards compatibility.  This would be yet another format change that would
-be rolling and users would not be able to go back on.  The problem here is that
-both the userspace and kernel sides would have to be changed, so if old
-userspace tools made changes to a new fs there would be no way of signalling
-that we need to make sure we rebuild the free space tree, so it would have to be
-an incompatible change.  I'm less worried about this, but it is an issue to
-consider.
+What about the main developers? How do you see things? I'd really like to hear your opinion before messing around in the project.
 
-2) COW.  This part really sucks, we get into the same sort of recursiveness that
-we had with the extent tree, only worse because in order to COW a block in the
-free space tree during allocation we'd have to come back into the allocator.
-The way I'm thinking about fixing this is doing something like
-path->recursive_locking = 1.  This way when we do a tree_lock, if we are already
-locked then we just set a flag on the eb->flags to say we recursively locked it,
-and then when we walk back unlocking stuff we check that flag and clear it if
-its set, otherwise we unlock the eb->lock spinlock.
-
-This lets us get rid of all of the free space cache code and simply use the free
-space btree for keeping track of our free space.  This would do well for keeping
-our memory footprint down.  We can still keep the block group stuff and
-find_free_extent mostly in place, that way we can still mark block groups as
-read-only and be sure we don't end up allocating any of the area within that
-byte range.
-
-Once all that is in place, we can do a per_cpu cluster/pool where we add big
-extents that we read out of the btree and then we can keep down the number of
-times we hit the btree.  Then we just flush the percpu extents back to the btree
-everytime we commit the transaction and we're good to go.
-
-This keeps us from having to do the caching kthread at all and I think will
-greatly help our bootup times.  What do you think?  Thanks,
-
-Josef
+	Cheers,
+		Andi

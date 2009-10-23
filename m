@@ -1,54 +1,48 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: Allocator changes
-Date: Thu, 22 Oct 2009 13:37:21 -0400
-Message-ID: <20091022173721.GB1382@dhcp231-156.rdu.redhat.com>
-References: <20091021214135.GA5935@localhost.localdomain>
+From: Jeff Mahoney <jeffm@suse.com>
+Subject: Re: Proper error handling on NULL pointers
+Date: Fri, 23 Oct 2009 14:08:48 -0400
+Message-ID: <4AE1F130.9070807@suse.com>
+References: <200910191236.14046.lists-receive@programmierforen.de> <200910211943.51623.diegocg@gmail.com> <200910221215.59623.lists-receive@programmierforen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Diego Calleja <diegocg@gmail.com>, linux-btrfs@vger.kernel.org,
+	Andi Kleen <andi@firstfloor.org>
+To: Andi Drebes <lists-receive@programmierforen.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20091021214135.GA5935@localhost.localdomain>
+In-Reply-To: <200910221215.59623.lists-receive@programmierforen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 21, 2009 at 05:41:36PM -0400, Josef Bacik wrote:
-> Hello,
+On 10/22/2009 06:15 AM, Andi Drebes wrote:
+>> I don't know what is the developer plan to fix that - apparently it's
+>> not in the high-priority list (but it must be certainly in the priority
+>> list, anyone who gets out of memory using btrfs will have some chances of
+>> getting an oops [...]).
+> I'd really appreciate to see a TODO section somewhere in the wiki. All the stuff that doesn't have a very high priority, but that should be done sometime in the future, could be put there. Even the simplest things like search and replace operations. This would be a good point for people not yet familiar with the btrfs code (like me) to get involved and main developers would get rid of the things that don't have a high priority.
 > 
-> I've been thinking recently about how to fix the caching stuff so it isn't so
-> damned slow and had started to work on writing out the free space cache into
-> bitmaps for every dirty bitmap, but then Eric Sandeen pointed out that xfs just
-> has a couple of btree's to track free space, so I started thinking about doing
-> it that way, since we do have this nice btree code laying about.
+>> [...] Passing the error to the callers and handling
+>> all that properly is the real fix, but since it requires auditing the whole
+>> FS it's probably not an easy task. I tried to do that with a couple of
+>> functions, but Kleen's mail made me realize that it isn't that easy.
+> Maybe it would be easier if we found some people helping us to fix this. In this case it would also be really helpful if one of the main developers reviewed the work with a "btrfs expert eye".
 > 
-> There are a couple of problems with adding another free space root however:
+> For now I'm going to analyze some dependencies and see how many and *which* functions are affected.
 > 
-> 1) Backwards compatibility.  This would be yet another format change that would
-> be rolling and users would not be able to go back on.  The problem here is that
-> both the userspace and kernel sides would have to be changed, so if old
-> userspace tools made changes to a new fs there would be no way of signalling
-> that we need to make sure we rebuild the free space tree, so it would have to be
-> an incompatible change.  I'm less worried about this, but it is an issue to
-> consider.
-> 
-> 2) COW.  This part really sucks, we get into the same sort of recursiveness that
-> we had with the extent tree, only worse because in order to COW a block in the
-> free space tree during allocation we'd have to come back into the allocator.
-> The way I'm thinking about fixing this is doing something like
-> path->recursive_locking = 1.  This way when we do a tree_lock, if we are already
-> locked then we just set a flag on the eb->flags to say we recursively locked it,
-> and then when we walk back unlocking stuff we check that flag and clear it if
-> its set, otherwise we unlock the eb->lock spinlock.
-> 
+> What about the main developers? How do you see things? I'd really like to hear your opinion before messing around in the project.
 
-Actually doing this doesn't actually work, since theres no way to keep track of
-who is recursively locking without saving the pid or some such other garbage.
-So what I'm going to do is have a patch->delay_cow.  Everytime we do a search in
-the free space tree we'll set delay_cow, and mark the nodes in the path that we
-need to cow with what the operation we need to do (cow, split, new root etc),
-and then once we find the leaf with the free space we just look for enough space
-to allocate enough blocks for our operations and then do the cow operations
-then.  We also keep the nodes that we want to cow as blocked so we keep other
-people from walking down that path until after we've run the delayed cow
-operations.  Thanks,
+Hi Andi -
 
-Josef
+I actually have a patch set that addresses these. I submitted it several
+months ago, but nothing happened. The problem with fixes like these is
+that they change context *everywhere* so the best time to add them is
+really when there is a lull in the project. Otherwise, you end up
+forcing people working on other features or fixes to redo a bunch of
+work. When's the last time you saw a lull in btrfs development? :)
+
+I'll refresh it when I get a chance either today or early next week and
+post it again.
+
+-Jeff
+
+-- 
+Jeff Mahoney
+SUSE Labs

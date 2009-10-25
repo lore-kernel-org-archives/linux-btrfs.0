@@ -1,48 +1,57 @@
-From: Jeff Mahoney <jeffm@suse.com>
-Subject: Re: Proper error handling on NULL pointers
-Date: Fri, 23 Oct 2009 14:08:48 -0400
-Message-ID: <4AE1F130.9070807@suse.com>
-References: <200910191236.14046.lists-receive@programmierforen.de> <200910211943.51623.diegocg@gmail.com> <200910221215.59623.lists-receive@programmierforen.de>
+From: Ritesh Raj Sarraf <rrs@researchut.com>
+Subject: some btrfs test results
+Date: Mon, 26 Oct 2009 01:06:16 +0530
+Message-ID: <iuler6-lth.ln1@news.researchut.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Diego Calleja <diegocg@gmail.com>, linux-btrfs@vger.kernel.org,
-	Andi Kleen <andi@firstfloor.org>
-To: Andi Drebes <lists-receive@programmierforen.de>
+Content-Type: text/plain; charset="ISO-8859-1"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200910221215.59623.lists-receive@programmierforen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/22/2009 06:15 AM, Andi Drebes wrote:
->> I don't know what is the developer plan to fix that - apparently it's
->> not in the high-priority list (but it must be certainly in the priority
->> list, anyone who gets out of memory using btrfs will have some chances of
->> getting an oops [...]).
-> I'd really appreciate to see a TODO section somewhere in the wiki. All the stuff that doesn't have a very high priority, but that should be done sometime in the future, could be put there. Even the simplest things like search and replace operations. This would be a good point for people not yet familiar with the btrfs code (like me) to get involved and main developers would get rid of the things that don't have a high priority.
-> 
->> [...] Passing the error to the callers and handling
->> all that properly is the real fix, but since it requires auditing the whole
->> FS it's probably not an easy task. I tried to do that with a couple of
->> functions, but Kleen's mail made me realize that it isn't that easy.
-> Maybe it would be easier if we found some people helping us to fix this. In this case it would also be really helpful if one of the main developers reviewed the work with a "btrfs expert eye".
-> 
-> For now I'm going to analyze some dependencies and see how many and *which* functions are affected.
-> 
-> What about the main developers? How do you see things? I'd really like to hear your opinion before messing around in the project.
+I converted my ext4 volume to btrfs with success. Things seem to be working 
+but there were many performance problems too.
 
-Hi Andi -
+* btrfs-convert /dev/sda6 took almost 5 hrs to create the btrfs metadata for 
+my 120G SATA HDD
 
-I actually have a patch set that addresses these. I submitted it several
-months ago, but nothing happened. The problem with fixes like these is
-that they change context *everywhere* so the best time to add them is
-really when there is a lull in the project. Otherwise, you end up
-forcing people working on other features or fixes to redo a bunch of
-work. When's the last time you saw a lull in btrfs development? :)
+* After I boot into my newly converted btrfs / filesystem, df reports 
+erratic.
 
-I'll refresh it when I get a chance either today or early next week and
-post it again.
+rrs@learner:~$ mount
+/dev/sda6 on / type btrfs (rw)
+tmpfs on /lib/init/rw type tmpfs (rw,nosuid,mode=0755)
+proc on /proc type proc (rw,noexec,nosuid,nodev)
+sysfs on /sys type sysfs (rw,noexec,nosuid,nodev)
+udev on /dev type tmpfs (rw,mode=0755)
+tmpfs on /dev/shm type tmpfs (rw,nosuid,nodev)
+devpts on /dev/pts type devpts (rw,noexec,nosuid,gid=5,mode=620)
+overflow on /tmp type tmpfs (rw,size=1048576,mode=1777)
+fusectl on /sys/fs/fuse/connections type fusectl (rw)
 
--Jeff
 
+rrs@learner:~$ df -h
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/sda6             106G  -64Z  -54G 100% /
+tmpfs                1013M     0 1013M   0% /lib/init/rw
+udev                   10M  244K  9.8M   3% /dev
+tmpfs                1013M     0 1013M   0% /dev/shm
+overflow              1.0M     0  1.0M   0% /tmp
+rrs@learner:~$ df -m
+Filesystem           1M-blocks      Used Available Use% Mounted on
+/dev/sda6               108078 -72057594037764906    -54953 100% /
+tmpfs                     1013         0      1013   0% /lib/init/rw
+udev                        10         1        10   3% /dev
+tmpfs                     1013         0      1013   0% /dev/shm
+overflow                     1         0         1   0% /tmp
+
+On another test device, where an mkfs.btrfs was done, the space utilization 
+was shown correctly.
+
+Kernel: 2.6.31
+Btrfs Btrfs v0.19
+
+Ritesh
 -- 
-Jeff Mahoney
-SUSE Labs
+Given the large number of mailing lists I follow, I request you to CC me
+in replies for quicker response
+

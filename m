@@ -1,33 +1,36 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Building a RAID post-mkfs?
-Date: Mon, 26 Oct 2009 18:35:00 +0900
-Message-ID: <20091026093500.GE5564@think>
-References: <m3skdjusvx.fsf@pullcord.laptop.org>
+Subject: Re: Way to quickly "revert back" to a snapshot?
+Date: Mon, 26 Oct 2009 18:38:42 +0900
+Message-ID: <20091026093842.GF5564@think>
+References: <4AD9FCDC.6060107@ubuntu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: Chris Ball <cjb@laptop.org>
+To: John Dong <jdong@ubuntu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <m3skdjusvx.fsf@pullcord.laptop.org>
+In-Reply-To: <4AD9FCDC.6060107@ubuntu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 16, 2009 at 01:54:10PM -0400, Chris Ball wrote:
-> Hi,
-> 
-> I installed btrfs to one disk using the Fedora 12 installer; it
-> doesn't allow any configuration of the mkfs command by the user,
-> so it wasn't possible to mkfs with more than one disk.
-> 
-> I'd like to add a second disk, with either RAID0 or RAID1 between
-> the two -- the equivalent of "mkfs.btrfs -m raid0/1 -d raid0/1
-> /dev/sda /dev/sdb".  Is it possible to create this non-destructively
-> now?  If not, should it be?  What would the implementation look like?
+On Sat, Oct 17, 2009 at 01:20:28PM -0400, John Dong wrote:
+> Suppose I want to do test something insane (like a massive OS
+> update) to my system, and create a snapshot before doing so.
+> Afterwards, if I decide my system is hosed and I'd like to revert
+> back to the snapshot and forget any of this actually happened,
+> what's the quickest way of doing it. It seems like by btrfs's design
+> there should be a way to just "set the head" of the filesystem back
+> to the snapshot, like git-reset, right?
 
-It's not very complex, you can take a look at how we upgrade from
-single spindle dup to RAID1 for metadata when a second disk is added.
-Basically once we have a block group with the new type we're able to
-force new allocations to the new raid level.  btrfs-vol -b does the
-rest.
+This is near the top of the list of features I want to add for 2.6.33.
+Basically all we need is a way to swap the default subvolume (which is
+just a directory entry) pointer with another subvolume.
+
+We also want a way to find an snapshot all the subvolumes and snapshots
+underneath a given root.  That way the user won't have to do it
+manually (snapshotting isn't recursive by default).
+
+If anyone is interested in a coding project, both are fairly easy, just
+let me know.
 
 -chris
+
 

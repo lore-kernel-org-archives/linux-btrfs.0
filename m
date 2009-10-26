@@ -1,32 +1,33 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Allocator changes
-Date: Mon, 26 Oct 2009 18:28:01 +0900
-Message-ID: <20091026092801.GD5564@think>
-References: <20091021214135.GA5935@localhost.localdomain>
+Subject: Re: Building a RAID post-mkfs?
+Date: Mon, 26 Oct 2009 18:35:00 +0900
+Message-ID: <20091026093500.GE5564@think>
+References: <m3skdjusvx.fsf@pullcord.laptop.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+To: Chris Ball <cjb@laptop.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20091021214135.GA5935@localhost.localdomain>
+In-Reply-To: <m3skdjusvx.fsf@pullcord.laptop.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 21, 2009 at 05:41:36PM -0400, Josef Bacik wrote:
-> Hello,
+On Fri, Oct 16, 2009 at 01:54:10PM -0400, Chris Ball wrote:
+> Hi,
 > 
-> I've been thinking recently about how to fix the caching stuff so it isn't so
-> damned slow and had started to work on writing out the free space cache into
-> bitmaps for every dirty bitmap, but then Eric Sandeen pointed out that xfs just
-> has a couple of btree's to track free space, so I started thinking about doing
-> it that way, since we do have this nice btree code laying about.
+> I installed btrfs to one disk using the Fedora 12 installer; it
+> doesn't allow any configuration of the mkfs command by the user,
+> so it wasn't possible to mkfs with more than one disk.
 > 
-> There are a couple of problems with adding another free space root however:
+> I'd like to add a second disk, with either RAID0 or RAID1 between
+> the two -- the equivalent of "mkfs.btrfs -m raid0/1 -d raid0/1
+> /dev/sda /dev/sdb".  Is it possible to create this non-destructively
+> now?  If not, should it be?  What would the implementation look like?
 
-The free space root seems like it will have a pretty high overhead to
-me.  But, I do like your general idea of caching the free space map at
-commit time as an on-disk cache.  I think as we nail down the enospc
-corners we can go back and give that a try.
-
-To get around the cow problem, we can log the cache to the log tree.
+It's not very complex, you can take a look at how we upgrade from
+single spindle dup to RAID1 for metadata when a second disk is added.
+Basically once we have a block group with the new type we're able to
+force new allocations to the new raid level.  btrfs-vol -b does the
+rest.
 
 -chris
+

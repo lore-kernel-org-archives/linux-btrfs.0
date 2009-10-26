@@ -1,35 +1,49 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: yum upgrade on btrfs very slow
-Date: Mon, 26 Oct 2009 17:55:45 +0900
-Message-ID: <20091026085545.GA5564@think>
-References: <20090928121827.GA15930@mother.pipebreaker.pl>
- <20090928133543.GB6405@think>
- <20090929061822.GB15930@mother.pipebreaker.pl>
- <20090929132538.GN6405@think>
- <20090930194350.GA29166@mother.pipebreaker.pl>
- <20091001090146.GA14522@mother.pipebreaker.pl>
- <20091021092733.GD23138@mother.pipebreaker.pl>
+Subject: Re: Proper error handling on NULL pointers
+Date: Mon, 26 Oct 2009 18:14:32 +0900
+Message-ID: <20091026091432.GB5564@think>
+References: <200910191236.14046.lists-receive@programmierforen.de>
+ <200910211943.51623.diegocg@gmail.com>
+ <200910221215.59623.lists-receive@programmierforen.de>
+ <4AE1F130.9070807@suse.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: Tomasz Torcz <tomek@pipebreaker.pl>, linux-btrfs@vger.kernel.org
+Cc: Andi Drebes <lists-receive@programmierforen.de>,
+	Diego Calleja <diegocg@gmail.com>, linux-btrfs@vger.kernel.org,
+	Andi Kleen <andi@firstfloor.org>
+To: Jeff Mahoney <jeffm@suse.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20091021092733.GD23138@mother.pipebreaker.pl>
+In-Reply-To: <4AE1F130.9070807@suse.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 21, 2009 at 11:27:33AM +0200, Tomasz Torcz wrote:
-> On Thu, Oct 01, 2009 at 11:01:46AM +0200, Tomasz Torcz wrote:
-> > On Wed, Sep 30, 2009 at 09:43:51PM +0200, Tomasz Torcz wrote:
-> > > > 
-> > > > If you're comparing w/ext3 and wondering why btrfs is sooooooo much
-> > > > slower it might be because btrfs has barriers on by default and ext3
-> > > > doesn't.  You could mount -o nobarrier for btrfs or mount -o barrier=1
-> > > > for ext3 for a proper comparison.
+On Fri, Oct 23, 2009 at 02:08:48PM -0400, Jeff Mahoney wrote:
+> On 10/22/2009 06:15 AM, Andi Drebes wrote:
+> >> I don't know what is the developer plan to fix that - apparently it's
+> >> not in the high-priority list (but it must be certainly in the priority
+> >> list, anyone who gets out of memory using btrfs will have some chances of
+> >> getting an oops [...]).
+> > I'd really appreciate to see a TODO section somewhere in the wiki. All the stuff that doesn't have a very high priority, but that should be done sometime in the future, could be put there. Even the simplest things like search and replace operations. This would be a good point for people not yet familiar with the btrfs code (like me) to get involved and main developers would get rid of the things that don't have a high priority.
+> > 
+> >> [...] Passing the error to the callers and handling
+> >> all that properly is the real fix, but since it requires auditing the whole
+> >> FS it's probably not an easy task. I tried to do that with a couple of
+> >> functions, but Kleen's mail made me realize that it isn't that easy.
+> > Maybe it would be easier if we found some people helping us to fix this. In this case it would also be really helpful if one of the main developers reviewed the work with a "btrfs expert eye".
+> > 
+> > For now I'm going to analyze some dependencies and see how many and *which* functions are affected.
+> > 
+> > What about the main developers? How do you see things? I'd really like to hear your opinion before messing around in the project.
 > 
->    Last update: things got noticably faster with 2.6.31.4-88.fc12.x86_64,
-> which contains backport of latest mainline btrfs (thank you, Josef!).
-> No more comlains from me (for now ;).
+> Hi Andi -
+> 
+> I actually have a patch set that addresses these. I submitted it several
+> months ago, but nothing happened.
 
-Fantastic. Are you running with or without barriers now?
+Hi Jeff,
+
+If you're able to refresh this, I'll push it immediately into the .32
+queue.  That way we won't end up having to rediff it again.
+
+Thanks!
 
 -chris
-

@@ -1,54 +1,96 @@
-From: Jeff Mahoney <jeffm@suse.com>
-Subject: Re: Proper error handling on NULL pointers
-Date: Mon, 26 Oct 2009 10:24:53 -0400
-Message-ID: <4AE5B135.6080907@suse.com>
-References: <200910191236.14046.lists-receive@programmierforen.de> <200910211943.51623.diegocg@gmail.com> <200910221215.59623.lists-receive@programmierforen.de> <4AE1F130.9070807@suse.com> <20091026091432.GB5564@think>
+From: Nuutti Kotivuori <naked@iki.fi>
+Subject: Oops and somewhat borked filesystem after btrfs-convert and image removal
+Date: Mon, 26 Oct 2009 21:09:06 +0200
+Message-ID: <87k4yi6kh9.fsf@kiiro.naked.iki.fi>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>,
-	Andi Drebes <lists-receive@programmierforen.de>,
-	Diego Calleja <diegocg@gmail.com>, linux-btrfs@vger.kernel.org,
-	Andi Kleen <andi@firstfloor.org>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20091026091432.GB5564@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/26/2009 05:14 AM, Chris Mason wrote:
-> On Fri, Oct 23, 2009 at 02:08:48PM -0400, Jeff Mahoney wrote:
->> On 10/22/2009 06:15 AM, Andi Drebes wrote:
->>>> I don't know what is the developer plan to fix that - apparently it's
->>>> not in the high-priority list (but it must be certainly in the priority
->>>> list, anyone who gets out of memory using btrfs will have some chances of
->>>> getting an oops [...]).
->>> I'd really appreciate to see a TODO section somewhere in the wiki. All the stuff that doesn't have a very high priority, but that should be done sometime in the future, could be put there. Even the simplest things like search and replace operations. This would be a good point for people not yet familiar with the btrfs code (like me) to get involved and main developers would get rid of the things that don't have a high priority.
->>>
->>>> [...] Passing the error to the callers and handling
->>>> all that properly is the real fix, but since it requires auditing the whole
->>>> FS it's probably not an easy task. I tried to do that with a couple of
->>>> functions, but Kleen's mail made me realize that it isn't that easy.
->>> Maybe it would be easier if we found some people helping us to fix this. In this case it would also be really helpful if one of the main developers reviewed the work with a "btrfs expert eye".
->>>
->>> For now I'm going to analyze some dependencies and see how many and *which* functions are affected.
->>>
->>> What about the main developers? How do you see things? I'd really like to hear your opinion before messing around in the project.
->>
->> Hi Andi -
->>
->> I actually have a patch set that addresses these. I submitted it several
->> months ago, but nothing happened.
-> 
-> Hi Jeff,
-> 
-> If you're able to refresh this, I'll push it immediately into the .32
-> queue.  That way we won't end up having to rediff it again.
+Hello,
 
-Hi Chris -
+I managed to get an oops and a somewhat borked btrfs filesystem after
+using btrfs-convert and then removing the image file. I will explain the
+full sequence of actions below (as I remember it):
 
-I spent some time refreshing it this weekend. I'm doing some review now
-and will hopefully post it later today.
+ - In the beginning, I have an ext3 filesystem that I'd like to convert
+   to btrfs
 
--Jeff
+ - I run btrfs-convert on the filesystem, forgetting to do fsck before
+   it - however, I have done a full fsck recently on the filesystem, and
+   it was cleanly unmounted (no journal replay necessary)
 
--- 
-Jeff Mahoney
-SUSE Labs
+ - Conversion runs smoothly
+
+ - I boot the newly converted filesystem as a root filesystem for my
+   computer, and everything looks good. "df" reports proper free space.
+
+ - I mount the subvolume with the ext2 filesystem under /mnt, while
+   having the btrfs main volume as my root filesystem:
+
+     mount -t btrfs -o subvol=ext2_saved /dev/mapper/perspire-root /mnt
+
+ - I remove the image file from the subvolume:
+
+     rm /mnt/image
+
+ - At this time, during or immediately after the removal, I get a
+   notification of a kernel oops, which is here:
+
+     http://www.kerneloops.org/submitresult.php?number=823167
+
+ - I unmount the subvolume:
+
+     umount /mnt
+
+ - I reboot the computer, after which I check "df":
+
+     /dev/mapper/perspire-root 7245824 -73786976294826385180 -4575460 100% /
+
+   (Sizes in 1K-blocks, used space being the hugely negative number, and
+   available being the somewhat less huge number.)
+
+ - Btrfsck reports:
+
+     root 5 inode 453339 errors 2
+     root 5 inode 453343 errors 2
+     root 5 inode 453347 errors 2
+     root 5 inode 453356 errors 2
+     root 5 inode 466532 errors 2
+     root 5 inode 466537 errors 2
+     root 5 inode 466540 errors 2
+     root 5 inode 466544 errors 2
+     found 5867835392 bytes used err is 1
+     total csum bytes: 5477992
+     total tree bytes: 258371584
+     total fs tree bytes: 228814848
+     btree space waste bytes: 71477071
+     file data blocks allocated: 8317644800
+      referenced 5582884864
+     Btrfs Btrfs v0.19
+
+ - Otherwise the filesystem seems to be in perfect working order, no
+   problems that I can see. I have been using it for several days after
+   the incident now.
+
+Then, useful info:
+
+ - Kernel: 2.6.31-trunk-686 (debian experimental)
+ - Btrfs utilities: 0.19-5 (debian package)
+ - Hardware: Acer Aspire One, with 8 Gb SSD
+
+Please let me know if you have any further questions, or want the
+btrfs-debug-tree output of the filesystem or something similar. I will
+not be reading the list, so please e-mail me directly as well.
+
+Also, I am wondering, how am I supposed to fix this situation? I see
+conflicting info if btrfsck can be run on a mounted filesystem (I did
+run it on a mounted filesystem above, as can be seen) - but is it
+supposed to be able to fix this kind of corruption?
+
+(In this case, the data on the drive is not crucial, I can fix it by
+reinstalling or just copying files out and in, but that's obviously not
+good enough solution for a stable release.)
+
+-- Naked

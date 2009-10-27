@@ -1,50 +1,22 @@
-From: Nuutti Kotivuori <naked@iki.fi>
-Subject: Re: Oops and somewhat borked filesystem after btrfs-convert and image  removal
-Date: Tue, 27 Oct 2009 10:12:49 +0200
-Message-ID: <87bpjt6yri.fsf@kiiro.naked.iki.fi>
-References: <87k4yi6kh9.fsf@kiiro.naked.iki.fi>
-	<3d0408630910261923l70810a4bm99c719919c7cc99e@mail.gmail.com>
+From: "Mitch Harder (aka DontPanic)" <mmharder@gmail.com>
+Subject: Btrfs: OpenOffice Compiling Follow-Up
+Date: Tue, 27 Oct 2009 11:37:27 -0500
+Message-ID: <89ed0c690910270937l58f5b97egf26b887b2a9660c9@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: "Yan\, Zheng " <yanzheng@21cn.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <3d0408630910261923l70810a4bm99c719919c7cc99e@mail.gmail.com> (Zheng Yan's message of "Tue\, 27 Oct 2009 10\:23\:18 +0800")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-"Yan, Zheng " <yanzheng@21cn.com> writes:
-> This is a known bug in btrfs kernel driver, it's fixed in 2.6.32-rcX.
+Since the addition of the latest round of ENOSPC fixes, I wanted to
+provide some feedback on problems I was having compiling OpenOffice on
+a btrfs partition.
 
-Thank you, good to know.
+I had posted a while back that I would encounter ENOSPC bugs before
+filling up the disk when compiling OpenOffice.
 
-> This is a known bug in btrfs-progs 0.19, it's fixed in
-> btrfs-progs-untable tree.
+I have retested with the latest ENOSPC fixes in the Btrfs unstable
+kernel tree, and I can now successfully compile OpenOffice on a Btrfs
+partition without errors.
 
-Thank you, good to know.
-
-> These errors are not critical. Some inodes' link counts are zero,
-> but they aren't marked as orphan inodes. I have no idea how this
-> can happen. Did you run btrfsck on mounted FS?
-
-Yes, I did run it on a mounted FS. An earlier wiki document said that
-btrfsck can be run on a mounted or an unmounted filesystem - however the
-wiki said earlier that it can be run either on a mounted or an unmounted
-fs. Btrfsck doesn't complain that it's being run on a mounted fs... then
-again, I'm not sure if it can know that.
-
-> Copying files out and in is the simplest and safest solution.
-> Sorry for the inconvenience.
-
-No problem.
-
-But, I am wondering, is btrfsck at some point supposed to fix this kind
-of corruption? Is it on the roadmap at some point?
-
-I mean, it's ofcourse obvious that bugs like this are fixed at the
-source, so errors like this should no longer happen. However, there will
-always be bugs, or if not bugs then just the processor randomly
-calculating wrong once in a blue moon, and it would be good to know that
-btrfsck can fix the filesystem even in situations that "cannot"
-happen. And free space accounting is probably easiest of them all.
-
--- Naked
+Thanks and Good Job guys!

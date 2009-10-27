@@ -1,38 +1,34 @@
 From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
-Subject: Re: btrfsck aborts after transid verify failed?
-Date: Tue, 27 Oct 2009 23:23:43 +0100
-Message-ID: <200910272323.43797.johannes.hirte@fem.tu-ilmenau.de>
-References: <4ADF1117.6020903@ubuntu.com> <20091026094104.GG5564@think>
+Subject: Re: [patch 1/2] grub-0.97: btrfs support for a singe device configuration
+Date: Tue, 27 Oct 2009 23:35:04 +0100
+Message-ID: <200910272335.04825.johannes.hirte@fem.tu-ilmenau.de>
+References: <4ABBED68.6090801@redhat.com>
 Mime-Version: 1.0
 Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: John Dong <jdong@ubuntu.com>, linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+  charset="iso-8859-6"
+Cc: The development of BTRFS <linux-btrfs@vger.kernel.org>
+To: Edward Shishkin <edward@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20091026094104.GG5564@think>
+In-Reply-To: <4ABBED68.6090801@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Montag 26 Oktober 2009 10:41:04 schrieb Chris Mason:
-> > On 10/21/2009 09:44 AM, Yan, Zheng wrote:
-> > >On Wed, Oct 21, 2009 at 9:21 PM, John Dong<jdong@ubuntu.com>  wrote:
-> > >>>  On Oct 21, 2009, at 3:47 AM, Yan, Zheng wrote:
-> > >>>>>  Did you run btrfsck on mounted FS ?
-> > >>>>>
-> > >>>>>  Yan, Zheng
-> > >>>
-> > >>>  Yes, I did. I thought it was okay to do so?
-> > >
-> > >No, btrfs doesn't support that.
-> >
-> > Whoops! My bad then!
-> >
-> > BTW, the wiki still says
-> >
-> > http://btrfs.wiki.kernel.org/index.php/Btrfsck:
-> >
-> > Do a limited check of the FS extent trees. Can be run on mounted and
-> > unmounted FS.
+Am Freitag 25 September 2009 00:06:32 schrieb Edward Shishkin:
 > 
-> Thanks!, I've updated the docs.
+> 
+I was trying the patch and got a little confused. How did you get this work
+without linking against libgcc? I've tested it with the gentoo patches for
+grub and get
 
-Will this be added in future or is this feature completely thrown away?
+/usr/src/portage/portage/sys-boot/grub-0.97-r10/work/grub-0.97/stage2/fsys_btrfs.c:551: undefined reference to `__udivdi3'                                            
+/usr/src/portage/portage/sys-boot/grub-0.97-r10/work/grub-0.97/stage2/fsys_btrfs.c:571: undefined reference to `__umoddi3'                                            
+/usr/src/portage/portage/sys-boot/grub-0.97-r10/work/grub-0.97/stage2/fsys_btrfs.c:575: undefined reference to `__umoddi3'                                            
+/usr/src/portage/portage/sys-boot/grub-0.97-r10/work/grub-0.97/stage2/fsys_btrfs.c:581: undefined reference to `__umoddi3'                                            
+/usr/src/portage/portage/sys-boot/grub-0.97-r10/work/grub-0.97/stage2/fsys_btrfs.c:583: undefined reference to `__udivdi3'                                            
+/usr/src/portage/portage/sys-boot/grub-0.97-r10/work/grub-0.97/stage2/fsys_btrfs.c:588: undefined reference to `__umoddi3'                                            
+/usr/src/portage/portage/sys-boot/grub-0.97-r10/work/grub-0.97/stage2/fsys_btrfs.c:589: undefined reference to `__udivdi3'                                            
+collect2: ld returned 1 exit status
+make[2]: *** [pre_stage2.exec] Error 1                                                                                                                                
+make[2]: Leaving directory `/usr/src/portage/portage/sys-boot/grub-0.97-r10/work/grub-0.97/stage2'                                                                    
+make[1]: *** [all-recursive] Error 1                                                                                                                                  
+make[1]: Leaving directory `/usr/src/portage/portage/sys-boot/grub-0.97-r10/work/grub-0.97'                                                                           
+make: *** [all] Error 2

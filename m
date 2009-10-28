@@ -1,56 +1,102 @@
-From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
-Subject: Re: [patch 1/2] grub-0.97: btrfs support for a singe device configuration
-Date: Wed, 28 Oct 2009 01:01:55 +0100
-Message-ID: <200910280101.55688.johannes.hirte@fem.tu-ilmenau.de>
-References: <4ABBED68.6090801@redhat.com> <200910272335.04825.johannes.hirte@fem.tu-ilmenau.de> <4AE77BD3.2010400@gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: fix some metadata enospc issues
+Date: Wed, 28 Oct 2009 11:35:14 -0400
+Message-ID: <20091028153513.GA489@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=US-ASCII
-Cc: The development of BTRFS <linux-btrfs@vger.kernel.org>
-To: Edward Shishkin <edward.shishkin@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4AE77BD3.2010400@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Mittwoch 28 Oktober 2009 00:01:39 schrieb Edward Shishkin:
-> Johannes Hirte wrote:
-> > Am Freitag 25 September 2009 00:06:32 schrieb Edward Shishkin:
-> >   
-> >>     
-> > I was trying the patch and got a little confused. How did you get this work
-> > without linking against libgcc?
-> 
-> Hmm.. Actually my Fedora stuff does link it:
-> [...]
-> 
-> +btrfs_stage1_5_exec_LDADD = @LIBGCC@
-> 
-> [...]
-> I guess you have missed it when porting to Gentoo..
+We weren't reserving metadata space for rename, rmdir and unlink, which could
+cause problems.  This patch fixes that problem.  Thanks,
 
-"btrfs_stage1_5_exec_LDADD = @LIBGCC@" is in place, I've didn't missed.
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/inode.c |   32 +++++++++++++++++++++++++++-----
+ 1 files changed, 27 insertions(+), 5 deletions(-)
 
-My fault, the error log was too short. As far as I can see the error 
-occours at pre_stage2_exec-stage2:
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 78139ef..169396d 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2474,7 +2474,17 @@ static int btrfs_unlink(struct inode *dir, struct dentry *dentry)
+ 
+ 	root = BTRFS_I(dir)->root;
+ 
++	/*
++	 * 5 items for unlink inode
++	 * 1 for orphan
++	 */
++	ret = btrfs_reserve_metadata_space(root, 6);
++	if (ret)
++		return ret;
++
+ 	trans = btrfs_start_transaction(root, 1);
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
+ 
+ 	btrfs_set_trans_block_group(trans, dir);
+ 
+@@ -2489,6 +2499,7 @@ static int btrfs_unlink(struct inode *dir, struct dentry *dentry)
+ 	nr = trans->blocks_used;
+ 
+ 	btrfs_end_transaction_throttle(trans, root);
++	btrfs_unreserve_metadata_space(root, 6);
+ 	btrfs_btree_balance_dirty(root, nr);
+ 	return ret;
+ }
+@@ -2569,7 +2580,14 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
+ 	    inode->i_ino == BTRFS_FIRST_FREE_OBJECTID)
+ 		return -ENOTEMPTY;
+ 
++	ret = btrfs_reserve_metadata_space(root, 5);
++	if (ret)
++		return ret;
++
+ 	trans = btrfs_start_transaction(root, 1);
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
++
+ 	btrfs_set_trans_block_group(trans, dir);
+ 
+ 	if (unlikely(inode->i_ino == BTRFS_EMPTY_SUBVOL_DIR_OBJECTID)) {
+@@ -2592,6 +2610,7 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
+ out:
+ 	nr = trans->blocks_used;
+ 	ret = btrfs_end_transaction_throttle(trans, root);
++	btrfs_unreserve_metadata_space(root, 5);
+ 	btrfs_btree_balance_dirty(root, nr);
+ 
+ 	if (ret && !err)
+@@ -5283,11 +5302,14 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 		return -ENOTEMPTY;
+ 
+ 	/*
+-	 * 2 items for dir items
+-	 * 1 item for orphan entry
+-	 * 1 item for ref
++	 * We want to reserve the absolute worst case amount of items.  So if
++	 * both inodes are subvols and we need to unlink them then that would
++	 * require 4 item modifications, but if they are both normal inodes it
++	 * would require 5 item modifications, so we'll assume their normal
++	 * inodes.  So 5 * 2 is 10, plus 1 for the new link, so 11 total items
++	 * should cover the worst case number of items we'll modify.
+ 	 */
+-	ret = btrfs_reserve_metadata_space(root, 4);
++	ret = btrfs_reserve_metadata_space(root, 11);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -5403,7 +5425,7 @@ out_fail:
+ 	if (old_inode->i_ino == BTRFS_FIRST_FREE_OBJECTID)
+ 		up_read(&root->fs_info->subvol_sem);
+ 
+-	btrfs_unreserve_metadata_space(root, 4);
++	btrfs_unreserve_metadata_space(root, 11);
+ 	return ret;
+ }
+ 
+-- 
+1.5.4.3
 
-mv -f .deps/pre_stage2_exec-stage2.Tpo .deps/pre_stage2_exec-stage2.Po                                                                                                
-mv -f .deps/pre_stage2_exec-graphics.Tpo .deps/pre_stage2_exec-graphics.Po                                                                                            
-mv -f .deps/pre_stage2_exec-tparm.Tpo .deps/pre_stage2_exec-tparm.Po                                                                                                  
-x86_64-pc-linux-gnu-gcc -m32 -Os -fno-stack-protector -fno-builtin -nostdinc  -DSUPPORT_SERIAL=1 -DSUPPORT_HERCULES=1 -DSUPPORT_GRAPHICS=1 -DFSYS_EXT2FS=1 -DFSYS_FAT=1 -DFSYS_FFS=1 -DFSYS_UFS2=1 -DFSYS_MINIX=1 -DFSYS_REISERFS=1 -DFSYS_BTRFS=1 -DFSYS_VSTAFS=1 -DFSYS_JFS=1 -DFSYS_XFS=1 -DFSYS_ISO9660=1 -DUSE_MD5_PASSWORDS=1 -g -nostdlib -Wl,-N -Wl,-Ttext -Wl,8200 -Wl,-O1 -Wl,--sort-common -Wl,-z,combreloc -Wl,--build-id=none -o pre_stage2.exec pre_stage2_exec-asm.o pre_stage2_exec-bios.o pre_stage2_exec-boot.o pre_stage2_exec-builtins.o pre_stage2_exec-char_io.o pre_stage2_exec-cmdline.o pre_stage2_exec-common.o pre_stage2_exec-console.o pre_stage2_exec-disk_io.o pre_stage2_exec-fsys_ext2fs.o pre_stage2_exec-fsys_fat.o pre_stage2_exec-fsys_ffs.o pre_stage2_exec-fsys_iso9660.o pre_stage2_exec
- -fsys_jfs.o pre_stage2_exec-fsys_minix.o pre_stage2_exec-fsys_reiserfs.o pre_stage2_exec-fsys_btrfs.o pre_stage2_exec-fsys_ufs2.o pre_stage2_exec-fsys_vstafs.o pre_stage2_exec-fsys_xfs.o pre_stage2_exec-gunzip.o pre_stage2_exec-hercules.o pre_stage2_exec-md5.o pre_stage2_exec-serial.o pre_stage2_exec-smp-imps.o pre_stage2_exec-stage2.o pre_stage2_exec-terminfo.o pre_stage2_exec-tparm.o pre_stage2_exec-graphics.o                                                                                                                 
-pre_stage2_exec-fsys_btrfs.o: In function `__btrfs_map_block':                                                                                                        
-/usr/src/portage/portage/sys-boot/grub-0.97-r10/work/grub-0.97/stage2/fsys_btrfs.c:551: undefined reference to `__udivdi3'                                            
-/usr/src/portage/portage/sys-boot/grub-0.97-r10/work/grub-0.97/stage2/fsys_btrfs.c:571: undefined reference to `__umoddi3'                                            
-/usr/src/portage/portage/sys-boot/grub-0.97-r10/work/grub-0.97/stage2/fsys_btrfs.c:575: undefined reference to `__umoddi3'                                            
-/usr/src/portage/portage/sys-boot/grub-0.97-r10/work/grub-0.97/stage2/fsys_btrfs.c:581: undefined reference to `__umoddi3'                                            
-/usr/src/portage/portage/sys-boot/grub-0.97-r10/work/grub-0.97/stage2/fsys_btrfs.c:583: undefined reference to `__udivdi3'                                            
-/usr/src/portage/portage/sys-boot/grub-0.97-r10/work/grub-0.97/stage2/fsys_btrfs.c:588: undefined reference to `__umoddi3'                                            
-/usr/src/portage/portage/sys-boot/grub-0.97-r10/work/grub-0.97/stage2/fsys_btrfs.c:589: undefined reference to `__udivdi3'                                            
-collect2: ld returned 1 exit status                                                                                                                                   
-make[2]: *** [pre_stage2.exec] Error 1                                                                                                                                
-make[2]: Leaving directory `/usr/src/portage/portage/sys-boot/grub-0.97-r10/work/grub-0.97/stage2'                                                                    
-make[1]: *** [all-recursive] Error 1                                                                                                                                  
-make[1]: Leaving directory `/usr/src/portage/portage/sys-boot/grub-0.97-r10/work/grub-0.97'                                                                           
-make: *** [all] Error 2
-
-I'm not very familiar with autotools, but I think btrfs_stage1_5_exec_LDADD 
-isn't the right place to catch this.

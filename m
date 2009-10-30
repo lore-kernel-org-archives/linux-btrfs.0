@@ -1,58 +1,54 @@
-From: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
-Subject: Re: Way to quickly "revert back" to a snapshot?
-Date: Fri, 30 Oct 2009 15:52:16 +0900
-Message-ID: <4AEA8D20.3020504@jp.fujitsu.com>
-References: <4AD9FCDC.6060107@ubuntu.com> <20091026093842.GF5564@think>
+From: Christoph Hellwig <hch@lst.de>
+Subject: [PATCH] btrfs-progs: add discard support to mkfs
+Date: Fri, 30 Oct 2009 10:46:01 +0100
+Message-ID: <20091030094601.GA9906@lst.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: chris.mason@oracle.com, zheng.yan@oracle.com
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20091026093842.GF5564@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm trying to make this snapshots/subvolumes listing feature,
-I wonder how the interface should be.
+Discard the whole device before starting to create the filesystem structures.
+Modelled after similar support in mkfs.xfs.
 
-I tried to make this feature using ioctl interface, but I don't
-know how to notify all subvolume informations because number
-of subvolumes are not known before search.
-(It may work, that we call number-notify ioctl before subvol-
- listing ioctl itself, or we call subvol-listing ioctl repeatedly
- to last subvolume. But both seem to be not good to me.)
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 
-Is there any other idea?
-
-Chris Mason wrote:
-> On Sat, Oct 17, 2009 at 01:20:28PM -0400, John Dong wrote:
->> Suppose I want to do test something insane (like a massive OS
->> update) to my system, and create a snapshot before doing so.
->> Afterwards, if I decide my system is hosed and I'd like to revert
->> back to the snapshot and forget any of this actually happened,
->> what's the quickest way of doing it. It seems like by btrfs's design
->> there should be a way to just "set the head" of the filesystem back
->> to the snapshot, like git-reset, right?
-> 
-> This is near the top of the list of features I want to add for 2.6.33.
-> Basically all we need is a way to swap the default subvolume (which is
-> just a directory entry) pointer with another subvolume.
-> 
-> We also want a way to find an snapshot all the subvolumes and snapshots
-> underneath a given root.  That way the user won't have to do it
-> manually (snapshotting isn't recursive by default).
-> 
-> If anyone is interested in a coding project, both are fairly easy, just
-> let me know.
-> 
-> -chris
-> 
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
--- 
-taruisi
-
+Index: btrfs-progs-unstable/utils.c
+===================================================================
+--- btrfs-progs-unstable.orig/utils.c	2009-10-30 09:34:00.000000000 +0000
++++ btrfs-progs-unstable/utils.c	2009-10-30 09:38:01.000000000 +0000
+@@ -46,6 +46,20 @@
+ static inline int ioctl(int fd, int define, u64 *size) { return 0; }
+ #endif
+ 
++#ifndef BLKDISCARD
++#define BLKDISCARD	_IO(0x12,119)
++#endif
++
++static int
++discard_blocks(int fd, u64 start, u64 len)
++{
++	u64 range[2] = { start, len };
++
++	if (ioctl(fd, BLKDISCARD, &range) < 0)
++		return errno;
++	return 0;
++}
++
+ static u64 reference_root_table[] = {
+ 	[1] =	BTRFS_ROOT_TREE_OBJECTID,
+ 	[2] =	BTRFS_EXTENT_TREE_OBJECTID,
+@@ -532,6 +546,13 @@ int btrfs_prepare_device(int fd, char *f
+ 		        "(must be at least 256 MB)\n", file);
+ 		exit(1);
+ 	}
++
++	/*
++	 * We intentionally ignore errors from the discard ioctl.  It is
++	 * not necessary for the mkfs functionality but just an optimization.
++	 */
++	discard_blocks(fd, 0, block_count);
++
+ 	ret = zero_dev_start(fd);
+ 	if (ret) {
+ 		fprintf(stderr, "failed to zero device start %d\n", ret);

@@ -1,63 +1,54 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Proper error handling on NULL pointers
-Date: Fri, 30 Oct 2009 09:49:40 -0400
-Message-ID: <20091030134940.GF2750@think>
-References: <200910191236.14046.lists-receive@programmierforen.de>
- <200910211943.51623.diegocg@gmail.com>
- <200910221215.59623.lists-receive@programmierforen.de>
- <4AE1F130.9070807@suse.com>
- <20091026091432.GB5564@think>
- <4AEAE9C8.8080207@suse.com>
+Subject: Re: Way to quickly "revert back" to a snapshot?
+Date: Fri, 30 Oct 2009 11:35:11 -0400
+Message-ID: <20091030153511.GA9857@think>
+References: <4AD9FCDC.6060107@ubuntu.com>
+ <20091026093842.GF5564@think>
+ <4AEA8D20.3020504@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Andi Drebes <lists-receive@programmierforen.de>,
-	Diego Calleja <diegocg@gmail.com>, linux-btrfs@vger.kernel.org,
-	Andi Kleen <andi@firstfloor.org>
-To: Jeff Mahoney <jeffm@suse.com>
+Cc: zheng.yan@oracle.com, linux-btrfs@vger.kernel.org
+To: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4AEAE9C8.8080207@suse.com>
+In-Reply-To: <4AEA8D20.3020504@jp.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 30, 2009 at 09:27:36AM -0400, Jeff Mahoney wrote:
-> On 10/26/2009 05:14 AM, Chris Mason wrote:
-> > On Fri, Oct 23, 2009 at 02:08:48PM -0400, Jeff Mahoney wrote:
-> >> On 10/22/2009 06:15 AM, Andi Drebes wrote:
-> >>>> I don't know what is the developer plan to fix that - apparently it's
-> >>>> not in the high-priority list (but it must be certainly in the priority
-> >>>> list, anyone who gets out of memory using btrfs will have some chances of
-> >>>> getting an oops [...]).
-> >>> I'd really appreciate to see a TODO section somewhere in the wiki. All the stuff that doesn't have a very high priority, but that should be done sometime in the future, could be put there. Even the simplest things like search and replace operations. This would be a good point for people not yet familiar with the btrfs code (like me) to get involved and main developers would get rid of the things that don't have a high priority.
-> >>>
-> >>>> [...] Passing the error to the callers and handling
-> >>>> all that properly is the real fix, but since it requires auditing the whole
-> >>>> FS it's probably not an easy task. I tried to do that with a couple of
-> >>>> functions, but Kleen's mail made me realize that it isn't that easy.
-> >>> Maybe it would be easier if we found some people helping us to fix this. In this case it would also be really helpful if one of the main developers reviewed the work with a "btrfs expert eye".
-> >>>
-> >>> For now I'm going to analyze some dependencies and see how many and *which* functions are affected.
-> >>>
-> >>> What about the main developers? How do you see things? I'd really like to hear your opinion before messing around in the project.
-> >>
-> >> Hi Andi -
-> >>
-> >> I actually have a patch set that addresses these. I submitted it several
-> >> months ago, but nothing happened.
-> > 
-> > Hi Jeff,
-> > 
-> > If you're able to refresh this, I'll push it immediately into the .32
-> > queue.  That way we won't end up having to rediff it again.
+On Fri, Oct 30, 2009 at 03:52:16PM +0900, TARUISI Hiroaki wrote:
+> I'm trying to make this snapshots/subvolumes listing feature,
+> I wonder how the interface should be.
 > 
-> I had to push this to next week. It builds and I expect it be stable,
-> but since there's been 6+ months of development on btrfs since I last
-> refreshed it, I want to make sure that I'm not missing call paths. I
-> quick check shows that I am and I just haven't had the time to update it
-> this week.
+> I tried to make this feature using ioctl interface, but I don't
+> know how to notify all subvolume informations because number
+> of subvolumes are not known before search.
+> (It may work, that we call number-notify ioctl before subvol-
+>  listing ioctl itself, or we call subvol-listing ioctl repeatedly
+>  to last subvolume. But both seem to be not good to me.)
+> 
+> Is there any other idea?
 
-While I'm sure you'll have to update parts of the patch to catch the
-last 6 months of work, I'd take an incomplete patch as long as it
-doesn't break things.  No sense in needing to update the baseline code
-over and over again.
+Thank you for working on this feature.
+
+We find the subvolumes and snapshots by using the forward references in
+the tree of tree roots, and the offset field of the key is set to the
+root objectid of the subvolume/snapshot we have a reference on (see
+root-tree.c:btrfs_add_root_ref())
+
+So, my plan was to have a 'starting objectid' field in the struct we pass
+from userland in the ioctl.   The ioctl would find the first reference
+that is greater than the starting objectid.  rootid 0 is never used, so
+passing zero is fine for the first call.
+
+The ioctl would be called over and over again until it finds zero
+subvols/snapshots.  I'd pass a buffer from userland so that it can
+return a large list.
+
+I think the ioctl should return the path name to the
+subvolume/snapshot, which the kernel will have to find by walking the
+directory back references up to the top level directory of the snapshot.
+It will also need to return the root objectid so the application can
+pass that into the next ioctl call.
+
+Does this make sense?
 
 -chris
 

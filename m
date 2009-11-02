@@ -1,23 +1,16 @@
-From: Alex Dedul <rotmer@gmail.com>
-Subject: Re: announcement of deduplication in Sun ZFS
-Date: Mon, 2 Nov 2009 22:51:52 +0200
-Message-ID: <5f8586d40911021251n75161177s1230f44c1a4b9917@mail.gmail.com>
-References: <934f64a20911021225o12acdb81u7a8a55afbf49963b@mail.gmail.com>
+From: <goyal7@illinois.edu>
+Subject: Implement the incremental backup
+Date: Mon,  2 Nov 2009 14:47:37 -0600 (CST)
+Message-ID: <20091102144737.BUX66727@expms3.cites.uiuc.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
-To: David Nicol <davidnicol@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <934f64a20911021225o12acdb81u7a8a55afbf49963b@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi!
+Hello,
 
-> Is it inappropriate to post a relevant news item to this list? Please
-> correct me off-list if so.
->
-> http://blogs.sun.com/bonwick/en_US/entry/zfs_dedup
+I was interested in working on the incremental backup requirements as listed on the wiki (http://btrfs.wiki.kernel.org/index.php/Project_ideas#Incremental_backups), is this project still open? If so can someone please be my initial mentor?
 
-In any way thats a nice and interesting feature, thanks! :)
-
-With best regards from the Soul, Alex.
+Regards,
+Nikhil

@@ -1,150 +1,97 @@
 From: "Yan, Zheng" <zheng.yan@oracle.com>
-Subject: [PATCH 6/8] Avoid orphan inodes cleanup during replaying log
-Date: Mon, 02 Nov 2009 17:20:22 +0800
-Message-ID: <4AEEA456.6050705@oracle.com>
+Subject: [PATCH 5/8] Avoid orphan inodes cleanup during committing transaction
+Date: Mon, 02 Nov 2009 17:20:16 +0800
+Message-ID: <4AEEA450.2070503@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org, chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We do log replay in a single transaction, so it's not good to
-do unbound operations during replaying log. This patch makes
-orphan inodes cleanup executed after replaying log. It also
-avoid doing other unbound operations such as truncating a file
-during replaying log. These unbound operations are postponed
-to the orphan inode cleanup stage.
+btrfs_lookup_dentry may trigger orphan cleanup, so it's not good
+to call it during committing transaction.
 
 Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
 
 ---
-diff -urp 5/fs/btrfs/disk-io.c 6/fs/btrfs/disk-io.c
---- 5/fs/btrfs/disk-io.c	2009-10-30 17:02:55.480797000 +0800
-+++ 6/fs/btrfs/disk-io.c	2009-11-02 14:23:15.081890895 +0800
-@@ -1971,6 +1971,9 @@ struct btrfs_root *open_ctree(struct sup
- 		if (sb->s_flags & MS_RDONLY) {
- 			ret =  btrfs_commit_super(tree_root);
- 			BUG_ON(ret);
-+		} else {
-+			ret = btrfs_cleanup_fs_roots(fs_info);
-+			BUG_ON(ret);
- 		}
- 	}
- 
-diff -urp 5/fs/btrfs/inode.c 6/fs/btrfs/inode.c
---- 5/fs/btrfs/inode.c	2009-10-30 17:06:04.403039000 +0800
-+++ 6/fs/btrfs/inode.c	2009-11-02 14:23:15.086890964 +0800
-@@ -2054,6 +2054,9 @@ void btrfs_orphan_cleanup(struct btrfs_r
- 	struct inode *inode;
- 	int ret = 0, nr_unlink = 0, nr_truncate = 0;
- 
-+	if (root->fs_info->log_root_recovering)
-+		return;
-+
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return;
-@@ -2063,7 +2066,6 @@ void btrfs_orphan_cleanup(struct btrfs_r
- 	btrfs_set_key_type(&key, BTRFS_ORPHAN_ITEM_KEY);
- 	key.offset = (u64)-1;
- 
--
- 	while (1) {
- 		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
- 		if (ret < 0) {
-@@ -3236,6 +3238,11 @@ void btrfs_delete_inode(struct inode *in
- 	}
- 	btrfs_wait_ordered_range(inode, 0, (u64)-1);
- 
-+	if (root->fs_info->log_root_recovering) {
-+		BUG_ON(!list_empty(&BTRFS_I(inode)->i_orphan));
-+		goto no_delete;
-+	}
-+
- 	if (inode->i_nlink > 0) {
- 		BUG_ON(btrfs_root_refs(&root->root_item) != 0);
- 		goto no_delete;
-diff -urp 5/fs/btrfs/tree-log.c 6/fs/btrfs/tree-log.c
---- 5/fs/btrfs/tree-log.c	2009-10-30 17:02:55.488797000 +0800
-+++ 6/fs/btrfs/tree-log.c	2009-11-02 14:24:17.388140346 +0800
-@@ -930,6 +930,17 @@ out_nowrite:
- 	return 0;
- }
- 
-+static int insert_orphan_item(struct btrfs_trans_handle *trans,
-+			      struct btrfs_root *root, u64 offset)
-+{
+diff -urp 4/fs/btrfs/ioctl.c 5/fs/btrfs/ioctl.c
+--- 4/fs/btrfs/ioctl.c	2009-10-30 17:02:55.484797548 +0800
++++ 5/fs/btrfs/ioctl.c	2009-10-30 12:54:45.537040000 +0800
+@@ -355,10 +355,10 @@ fail:
+ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
+ 			   char *name, int namelen)
+ {
++	struct inode *inode;
+ 	struct btrfs_pending_snapshot *pending_snapshot;
+ 	struct btrfs_trans_handle *trans;
+-	int ret = 0;
+-	int err;
 +	int ret;
-+	ret = btrfs_find_orphan_item(root, offset);
-+	if (ret > 0)
-+		ret = btrfs_insert_orphan_item(trans, root, offset);
-+	return ret;
-+}
-+
-+
- /*
-  * There are a few corners where the link count of the file can't
-  * be properly maintained during replay.  So, instead of adding
-@@ -997,9 +1008,13 @@ static noinline int fixup_inode_link_cou
+ 	unsigned long nr = 0;
+ 
+ 	if (!root->ref_cows)
+@@ -372,20 +372,20 @@ static int create_snapshot(struct btrfs_
+ 	 */
+ 	ret = btrfs_reserve_metadata_space(root, 6);
+ 	if (ret)
+-		goto fail_unlock;
++		goto fail;
+ 
+ 	pending_snapshot = kzalloc(sizeof(*pending_snapshot), GFP_NOFS);
+ 	if (!pending_snapshot) {
+ 		ret = -ENOMEM;
+ 		btrfs_unreserve_metadata_space(root, 6);
+-		goto fail_unlock;
++		goto fail;
  	}
- 	BTRFS_I(inode)->index_cnt = (u64)-1;
- 
--	if (inode->i_nlink == 0 && S_ISDIR(inode->i_mode)) {
--		ret = replay_dir_deletes(trans, root, NULL, path,
--					 inode->i_ino, 1);
-+	if (inode->i_nlink == 0) {
-+		if (S_ISDIR(inode->i_mode)) {
-+			ret = replay_dir_deletes(trans, root, NULL, path,
-+						 inode->i_ino, 1);
-+			BUG_ON(ret);
-+		}
-+		ret = insert_orphan_item(trans, root, inode->i_ino);
- 		BUG_ON(ret);
+ 	pending_snapshot->name = kmalloc(namelen + 1, GFP_NOFS);
+ 	if (!pending_snapshot->name) {
+ 		ret = -ENOMEM;
+ 		kfree(pending_snapshot);
+ 		btrfs_unreserve_metadata_space(root, 6);
+-		goto fail_unlock;
++		goto fail;
  	}
- 	btrfs_free_path(path);
-@@ -1587,7 +1602,6 @@ static int replay_one_buffer(struct btrf
- 		/* inode keys are done during the first stage */
- 		if (key.type == BTRFS_INODE_ITEM_KEY &&
- 		    wc->stage == LOG_WALK_REPLAY_INODES) {
--			struct inode *inode;
- 			struct btrfs_inode_item *inode_item;
- 			u32 mode;
+ 	memcpy(pending_snapshot->name, name, namelen);
+ 	pending_snapshot->name[namelen] = '\0';
+@@ -395,9 +395,18 @@ static int create_snapshot(struct btrfs_
+ 	pending_snapshot->root = root;
+ 	list_add(&pending_snapshot->list,
+ 		 &trans->transaction->pending_snapshots);
+-	err = btrfs_commit_transaction(trans, root);
++	ret = btrfs_commit_transaction(trans, root);
++	BUG_ON(ret);
  
-@@ -1603,31 +1617,16 @@ static int replay_one_buffer(struct btrf
- 					     eb, i, &key);
- 			BUG_ON(ret);
+-fail_unlock:
++	inode = btrfs_lookup_dentry(dentry->d_parent->d_inode, dentry);
++	if (IS_ERR(inode)) {
++		ret = PTR_ERR(inode);
++		goto fail;
++	}
++	BUG_ON(!inode);
++	d_instantiate(dentry, inode);
++	ret = 0;
++fail:
+ 	btrfs_btree_balance_dirty(root, nr);
+ 	return ret;
+ }
+diff -urp 4/fs/btrfs/transaction.c 5/fs/btrfs/transaction.c
+--- 4/fs/btrfs/transaction.c	2009-10-30 17:02:55.486797545 +0800
++++ 5/fs/btrfs/transaction.c	2009-10-30 17:07:43.758039649 +0800
+@@ -800,7 +800,6 @@ static noinline int finish_pending_snaps
+ 	u64 index = 0;
+ 	struct btrfs_trans_handle *trans;
+ 	struct inode *parent_inode;
+-	struct inode *inode;
+ 	struct btrfs_root *parent_root;
  
--			/* for regular files, truncate away
--			 * extents past the new EOF
-+			/* for regular files, make sure corresponding
-+			 * orhpan item exist. extents past the new EOF
-+			 * will be truncated later by orphan cleanup.
- 			 */
- 			if (S_ISREG(mode)) {
--				inode = read_one_inode(root,
--						       key.objectid);
--				BUG_ON(!inode);
--
--				ret = btrfs_truncate_inode_items(wc->trans,
--					root, inode, inode->i_size,
--					BTRFS_EXTENT_DATA_KEY);
-+				ret = insert_orphan_item(wc->trans, root,
-+							 key.objectid);
- 				BUG_ON(ret);
--
--				/* if the nlink count is zero here, the iput
--				 * will free the inode.  We bump it to make
--				 * sure it doesn't get freed until the link
--				 * count fixup is done
--				 */
--				if (inode->i_nlink == 0) {
--					btrfs_inc_nlink(inode);
--					btrfs_update_inode(wc->trans,
--							   root, inode);
--				}
--				iput(inode);
- 			}
-+
- 			ret = link_to_fixup_dir(wc->trans, root,
- 						path, key.objectid);
- 			BUG_ON(ret);
+ 	parent_inode = pending->dentry->d_parent->d_inode;
+@@ -832,8 +831,6 @@ static noinline int finish_pending_snaps
+ 
+ 	BUG_ON(ret);
+ 
+-	inode = btrfs_lookup_dentry(parent_inode, pending->dentry);
+-	d_instantiate(pending->dentry, inode);
+ fail:
+ 	btrfs_end_transaction(trans, fs_info->fs_root);
+ 	return ret;

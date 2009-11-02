@@ -1,294 +1,256 @@
 From: "Yan, Zheng" <zheng.yan@oracle.com>
-Subject: [PATCH 2/8] Add btrfs_duplicate_item
-Date: Mon, 02 Nov 2009 17:19:55 +0800
-Message-ID: <4AEEA43B.1080007@oracle.com>
+Subject: [PATCH 4/8] Fix disk_i_size update corner case.
+Date: Mon, 02 Nov 2009 17:20:09 +0800
+Message-ID: <4AEEA449.20404@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+To: linux-btrfs@vger.kernel.org, chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_duplicate_item duplicates item with new key, guaranteeing
-the source item and the new items are in the same tree leaf and
-contiguous. It allows us to split file extent in place, without
-using lock_extent to prevent bookend extent race.
+There are some cases file extents are inserted without involving
+ordered struct. In these cases, we update disk_i_size directly,
+without checking pending ordered extent and DELALLOC bit. This
+patch extends btrfs_ordered_update_i_size() to handle these cases.
 
 Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
 
 ---
-diff -urp 1/fs/btrfs/ctree.c 2/fs/btrfs/ctree.c
---- 1/fs/btrfs/ctree.c	2009-09-28 14:13:43.481061458 +0800
-+++ 2/fs/btrfs/ctree.c	2009-10-30 16:44:59.413789640 +0800
-@@ -37,6 +37,11 @@ static int balance_node_right(struct btr
- 			      struct extent_buffer *src_buf);
- static int del_ptr(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 		   struct btrfs_path *path, int level, int slot);
-+static int setup_items_for_insert(struct btrfs_trans_handle *trans,
-+			struct btrfs_root *root, struct btrfs_path *path,
-+			struct btrfs_key *cpu_key, u32 *data_size,
-+			u32 total_data, u32 total_size, int nr);
-+
+diff -urp 3/fs/btrfs/btrfs_inode.h 4/fs/btrfs/btrfs_inode.h
+--- 3/fs/btrfs/btrfs_inode.h	2009-10-15 09:33:17.796992000 +0800
++++ 4/fs/btrfs/btrfs_inode.h	2009-10-30 17:05:01.017070618 +0800
+@@ -44,9 +44,6 @@ struct btrfs_inode {
+ 	 */
+ 	struct extent_io_tree io_failure_tree;
  
- struct btrfs_path *btrfs_alloc_path(void)
- {
-@@ -2997,75 +3002,85 @@ again:
- 	return ret;
+-	/* held while inesrting or deleting extents from files */
+-	struct mutex extent_mutex;
+-
+ 	/* held while logging the inode in tree-log.c */
+ 	struct mutex log_mutex;
+ 
+diff -urp 3/fs/btrfs/inode.c 4/fs/btrfs/inode.c
+--- 3/fs/btrfs/inode.c	2009-10-30 16:53:52.811039000 +0800
++++ 4/fs/btrfs/inode.c	2009-10-30 17:06:04.403039070 +0800
+@@ -188,8 +188,9 @@ static noinline int insert_inline_extent
+ 	btrfs_mark_buffer_dirty(leaf);
+ 	btrfs_free_path(path);
+ 
+-	BTRFS_I(inode)->disk_i_size = inode->i_size;
+-	btrfs_update_inode(trans, root, inode);
++	btrfs_ordered_update_i_size(inode, start + size, NULL);
++	ret = btrfs_update_inode(trans, root, inode);
++	BUG_ON(ret);
+ 	return 0;
+ fail:
+ 	btrfs_free_path(path);
+@@ -1698,18 +1699,27 @@ static int btrfs_finish_ordered_io(struc
+ 		}
+ 	}
+ 
+-	trans = btrfs_join_transaction(root, 1);
+-
+ 	if (!ordered_extent)
+ 		ordered_extent = btrfs_lookup_ordered_extent(inode, start);
+ 	BUG_ON(!ordered_extent);
+-	if (test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags))
+-		goto nocow;
++	if (test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags)) {
++		BUG_ON(!list_empty(&ordered_extent->list));
++		ret = btrfs_ordered_update_i_size(inode, 0, ordered_extent);
++		if (!ret) {
++			trans = btrfs_join_transaction(root, 1);
++			ret = btrfs_update_inode(trans, root, inode);
++			BUG_ON(ret);
++			btrfs_end_transaction(trans, root);
++		}
++		goto out;
++	}
+ 
+ 	lock_extent(io_tree, ordered_extent->file_offset,
+ 		    ordered_extent->file_offset + ordered_extent->len - 1,
+ 		    GFP_NOFS);
+ 
++	trans = btrfs_join_transaction(root, 1);
++
+ 	if (test_bit(BTRFS_ORDERED_COMPRESSED, &ordered_extent->flags))
+ 		compressed = 1;
+ 	if (test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags)) {
+@@ -1736,22 +1746,20 @@ static int btrfs_finish_ordered_io(struc
+ 	unlock_extent(io_tree, ordered_extent->file_offset,
+ 		    ordered_extent->file_offset + ordered_extent->len - 1,
+ 		    GFP_NOFS);
+-nocow:
+ 	add_pending_csums(trans, inode, ordered_extent->file_offset,
+ 			  &ordered_extent->list);
+ 
+-	mutex_lock(&BTRFS_I(inode)->extent_mutex);
+-	btrfs_ordered_update_i_size(inode, ordered_extent);
+-	btrfs_update_inode(trans, root, inode);
++	btrfs_ordered_update_i_size(inode, 0, ordered_extent);
++	ret = btrfs_update_inode(trans, root, inode);
++	BUG_ON(ret);
++	btrfs_end_transaction(trans, root);
++out:
+ 	btrfs_remove_ordered_extent(inode, ordered_extent);
+-	mutex_unlock(&BTRFS_I(inode)->extent_mutex);
+-
+ 	/* once for us */
+ 	btrfs_put_ordered_extent(ordered_extent);
+ 	/* once for the tree */
+ 	btrfs_put_ordered_extent(ordered_extent);
+ 
+-	btrfs_end_transaction(trans, root);
+ 	return 0;
  }
  
--/*
-- * This function splits a single item into two items,
-- * giving 'new_key' to the new item and splitting the
-- * old one at split_offset (from the start of the item).
-- *
-- * The path may be released by this operation.  After
-- * the split, the path is pointing to the old item.  The
-- * new item is going to be in the same node as the old one.
-- *
-- * Note, the item being split must be smaller enough to live alone on
-- * a tree block with room for one extra struct btrfs_item
-- *
-- * This allows us to split the item in place, keeping a lock on the
-- * leaf the entire time.
-- */
--int btrfs_split_item(struct btrfs_trans_handle *trans,
--		     struct btrfs_root *root,
--		     struct btrfs_path *path,
--		     struct btrfs_key *new_key,
--		     unsigned long split_offset)
-+static noinline int setup_leaf_for_split(struct btrfs_trans_handle *trans,
-+					 struct btrfs_root *root,
-+					 struct btrfs_path *path, int ins_len)
+@@ -3510,7 +3518,6 @@ static noinline void init_btrfs_i(struct
+ 	INIT_LIST_HEAD(&BTRFS_I(inode)->ordered_operations);
+ 	RB_CLEAR_NODE(&BTRFS_I(inode)->rb_node);
+ 	btrfs_ordered_inode_tree_init(&BTRFS_I(inode)->ordered_tree);
+-	mutex_init(&BTRFS_I(inode)->extent_mutex);
+ 	mutex_init(&BTRFS_I(inode)->log_mutex);
+ }
+ 
+diff -urp 3/fs/btrfs/ordered-data.c 4/fs/btrfs/ordered-data.c
+--- 3/fs/btrfs/ordered-data.c	2009-10-10 09:08:32.682677000 +0800
++++ 4/fs/btrfs/ordered-data.c	2009-10-30 17:05:01.025790331 +0800
+@@ -591,7 +591,7 @@ out:
+  * After an extent is done, call this to conditionally update the on disk
+  * i_size.  i_size is updated to cover any fully written part of the file.
+  */
+-int btrfs_ordered_update_i_size(struct inode *inode,
++int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
+ 				struct btrfs_ordered_extent *ordered)
  {
--	u32 item_size;
-+	struct btrfs_key key;
- 	struct extent_buffer *leaf;
--	struct btrfs_key orig_key;
--	struct btrfs_item *item;
--	struct btrfs_item *new_item;
--	int ret = 0;
--	int slot;
--	u32 nritems;
--	u32 orig_offset;
--	struct btrfs_disk_key disk_key;
--	char *buf;
-+	struct btrfs_file_extent_item *fi;
-+	u64 extent_len = 0;
-+	u32 item_size;
-+	int ret;
- 
- 	leaf = path->nodes[0];
--	btrfs_item_key_to_cpu(leaf, &orig_key, path->slots[0]);
--	if (btrfs_leaf_free_space(root, leaf) >= sizeof(struct btrfs_item))
--		goto split;
-+	btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
+ 	struct btrfs_ordered_inode_tree *tree = &BTRFS_I(inode)->ordered_tree;
+@@ -600,7 +600,12 @@ int btrfs_ordered_update_i_size(struct i
+ 	u64 new_i_size;
+ 	u64 i_size_test;
+ 	struct rb_node *node;
++	struct rb_node *prev = NULL;
+ 	struct btrfs_ordered_extent *test;
++	int ret = 1;
 +
-+	BUG_ON(key.type != BTRFS_EXTENT_DATA_KEY &&
-+	       key.type != BTRFS_EXTENT_CSUM_KEY);
-+
-+	if (btrfs_leaf_free_space(root, leaf) >= ins_len)
-+		return 0;
++	if (ordered)
++		offset = entry_end(ordered);
  
- 	item_size = btrfs_item_size_nr(leaf, path->slots[0]);
-+	if (key.type == BTRFS_EXTENT_DATA_KEY) {
-+		fi = btrfs_item_ptr(leaf, path->slots[0],
-+				    struct btrfs_file_extent_item);
-+		extent_len = btrfs_file_extent_num_bytes(leaf, fi);
+ 	mutex_lock(&tree->mutex);
+ 	disk_i_size = BTRFS_I(inode)->disk_i_size;
+@@ -609,8 +614,7 @@ int btrfs_ordered_update_i_size(struct i
+ 	 * if the disk i_size is already at the inode->i_size, or
+ 	 * this ordered extent is inside the disk i_size, we're done
+ 	 */
+-	if (disk_i_size >= inode->i_size ||
+-	    ordered->file_offset + ordered->len <= disk_i_size) {
++	if (disk_i_size >= inode->i_size || offset <= disk_i_size) {
+ 		goto out;
+ 	}
+ 
+@@ -618,8 +622,7 @@ int btrfs_ordered_update_i_size(struct i
+ 	 * we can't update the disk_isize if there are delalloc bytes
+ 	 * between disk_i_size and  this ordered extent
+ 	 */
+-	if (test_range_bit(io_tree, disk_i_size,
+-			   ordered->file_offset + ordered->len - 1,
++	if (test_range_bit(io_tree, disk_i_size, offset - 1,
+ 			   EXTENT_DELALLOC, 0, NULL)) {
+ 		goto out;
+ 	}
+@@ -628,11 +631,22 @@ int btrfs_ordered_update_i_size(struct i
+ 	 * if we find an ordered extent then we can't update disk i_size
+ 	 * yet
+ 	 */
+-	node = &ordered->rb_node;
+-	while (1) {
+-		node = rb_prev(node);
+-		if (!node)
+-			break;
++	if (ordered) {
++		node = rb_prev(&ordered->rb_node);
++	} else {
++		prev = tree_search(tree, offset);
++		/*
++		 * we insert file extents without involving ordered struct,
++		 * so there should be no ordered struct cover this offset
++		 */
++		if (prev) {
++			test = rb_entry(prev, struct btrfs_ordered_extent,
++					rb_node);
++			BUG_ON(offset_in_entry(test, offset));
++		}
++		node = prev;
 +	}
- 	btrfs_release_path(root, path);
- 
--	path->search_for_split = 1;
- 	path->keep_locks = 1;
--
--	ret = btrfs_search_slot(trans, root, &orig_key, path, 0, 1);
-+	path->search_for_split = 1;
-+	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
- 	path->search_for_split = 0;
-+	if (ret < 0)
-+		goto err;
- 
-+	ret = -EAGAIN;
-+	leaf = path->nodes[0];
- 	/* if our item isn't there or got smaller, return now */
--	if (ret != 0 || item_size != btrfs_item_size_nr(path->nodes[0],
--							path->slots[0])) {
--		path->keep_locks = 0;
--		return -EAGAIN;
-+	if (ret > 0 || item_size != btrfs_item_size_nr(leaf, path->slots[0]))
-+		goto err;
-+
-+	if (key.type == BTRFS_EXTENT_DATA_KEY) {
-+		fi = btrfs_item_ptr(leaf, path->slots[0],
-+				    struct btrfs_file_extent_item);
-+		if (extent_len != btrfs_file_extent_num_bytes(leaf, fi))
-+			goto err;
++	while (node) {
+ 		test = rb_entry(node, struct btrfs_ordered_extent, rb_node);
+ 		if (test->file_offset + test->len <= disk_i_size)
+ 			break;
+@@ -640,8 +654,9 @@ int btrfs_ordered_update_i_size(struct i
+ 			break;
+ 		if (test->file_offset >= disk_i_size)
+ 			goto out;
++		node = rb_prev(node);
  	}
+-	new_i_size = min_t(u64, entry_end(ordered), i_size_read(inode));
++	new_i_size = min_t(u64, offset, i_size_read(inode));
  
- 	btrfs_set_path_blocking(path);
--	ret = split_leaf(trans, root, &orig_key, path,
--			 sizeof(struct btrfs_item), 1);
--	path->keep_locks = 0;
-+	ret = split_leaf(trans, root, &key, path, ins_len, 1);
- 	BUG_ON(ret);
- 
-+	path->keep_locks = 0;
- 	btrfs_unlock_up_safe(path, 1);
-+	return 0;
-+err:
-+	path->keep_locks = 0;
+ 	/*
+ 	 * at this point, we know we can safely update i_size to at least
+@@ -649,7 +664,14 @@ int btrfs_ordered_update_i_size(struct i
+ 	 * walk forward and see if ios from higher up in the file have
+ 	 * finished.
+ 	 */
+-	node = rb_next(&ordered->rb_node);
++	if (ordered) {
++		node = rb_next(&ordered->rb_node);
++	} else {
++		if (prev)
++			node = rb_next(prev);
++		else
++			node = rb_first(&tree->tree);
++	}
+ 	i_size_test = 0;
+ 	if (node) {
+ 		/*
+@@ -657,7 +679,7 @@ int btrfs_ordered_update_i_size(struct i
+ 		 * between our ordered extent and the next one.
+ 		 */
+ 		test = rb_entry(node, struct btrfs_ordered_extent, rb_node);
+-		if (test->file_offset > entry_end(ordered))
++		if (test->file_offset > offset)
+ 			i_size_test = test->file_offset;
+ 	} else {
+ 		i_size_test = i_size_read(inode);
+@@ -669,15 +691,16 @@ int btrfs_ordered_update_i_size(struct i
+ 	 * are no delalloc bytes in this area, it is safe to update
+ 	 * disk_i_size to the end of the region.
+ 	 */
+-	if (i_size_test > entry_end(ordered) &&
+-	    !test_range_bit(io_tree, entry_end(ordered), i_size_test - 1,
+-			   EXTENT_DELALLOC, 0, NULL)) {
++	if (i_size_test > offset &&
++	    !test_range_bit(io_tree, offset, i_size_test - 1,
++			    EXTENT_DELALLOC, 0, NULL)) {
+ 		new_i_size = min_t(u64, i_size_test, i_size_read(inode));
+ 	}
+ 	BTRFS_I(inode)->disk_i_size = new_i_size;
++	ret = 0;
+ out:
+ 	mutex_unlock(&tree->mutex);
+-	return 0;
 +	return ret;
-+}
-+
-+static noinline int split_item(struct btrfs_trans_handle *trans,
-+			       struct btrfs_root *root,
-+			       struct btrfs_path *path,
-+			       struct btrfs_key *new_key,
-+			       unsigned long split_offset)
-+{
-+	struct extent_buffer *leaf;
-+	struct btrfs_item *item;
-+	struct btrfs_item *new_item;
-+	int slot;
-+	char *buf;
-+	u32 nritems;
-+	u32 item_size;
-+	u32 orig_offset;
-+	struct btrfs_disk_key disk_key;
-+
- 	leaf = path->nodes[0];
- 	BUG_ON(btrfs_leaf_free_space(root, leaf) < sizeof(struct btrfs_item));
- 
--split:
--	/*
--	 * make sure any changes to the path from split_leaf leave it
--	 * in a blocking state
--	 */
- 	btrfs_set_path_blocking(path);
- 
- 	item = btrfs_item_nr(leaf, path->slots[0]);
-@@ -3073,19 +3088,19 @@ split:
- 	item_size = btrfs_item_size(leaf, item);
- 
- 	buf = kmalloc(item_size, GFP_NOFS);
-+	if (!buf)
-+		return -ENOMEM;
-+
- 	read_extent_buffer(leaf, buf, btrfs_item_ptr_offset(leaf,
- 			    path->slots[0]), item_size);
--	slot = path->slots[0] + 1;
--	leaf = path->nodes[0];
- 
-+	slot = path->slots[0] + 1;
- 	nritems = btrfs_header_nritems(leaf);
--
- 	if (slot != nritems) {
- 		/* shift the items */
- 		memmove_extent_buffer(leaf, btrfs_item_nr_offset(slot + 1),
--			      btrfs_item_nr_offset(slot),
--			      (nritems - slot) * sizeof(struct btrfs_item));
--
-+				btrfs_item_nr_offset(slot),
-+				(nritems - slot) * sizeof(struct btrfs_item));
- 	}
- 
- 	btrfs_cpu_key_to_disk(&disk_key, new_key);
-@@ -3113,16 +3128,81 @@ split:
- 			    item_size - split_offset);
- 	btrfs_mark_buffer_dirty(leaf);
- 
--	ret = 0;
--	if (btrfs_leaf_free_space(root, leaf) < 0) {
--		btrfs_print_leaf(root, leaf);
--		BUG();
--	}
-+	BUG_ON(btrfs_leaf_free_space(root, leaf) < 0);
- 	kfree(buf);
-+	return 0;
-+}
-+
-+/*
-+ * This function splits a single item into two items,
-+ * giving 'new_key' to the new item and splitting the
-+ * old one at split_offset (from the start of the item).
-+ *
-+ * The path may be released by this operation.  After
-+ * the split, the path is pointing to the old item.  The
-+ * new item is going to be in the same node as the old one.
-+ *
-+ * Note, the item being split must be smaller enough to live alone on
-+ * a tree block with room for one extra struct btrfs_item
-+ *
-+ * This allows us to split the item in place, keeping a lock on the
-+ * leaf the entire time.
-+ */
-+int btrfs_split_item(struct btrfs_trans_handle *trans,
-+		     struct btrfs_root *root,
-+		     struct btrfs_path *path,
-+		     struct btrfs_key *new_key,
-+		     unsigned long split_offset)
-+{
-+	int ret;
-+	ret = setup_leaf_for_split(trans, root, path,
-+				   sizeof(struct btrfs_item));
-+	if (ret)
-+		return ret;
-+
-+	ret = split_item(trans, root, path, new_key, split_offset);
- 	return ret;
  }
  
  /*
-+ * This function duplicate a item, giving 'new_key' to the new item.
-+ * It guarantees both items live in the same tree leaf and the new item
-+ * is contiguous with the original item.
-+ *
-+ * This allows us to split file extent in place, keeping a lock on the
-+ * leaf the entire time.
-+ */
-+int btrfs_duplicate_item(struct btrfs_trans_handle *trans,
-+			 struct btrfs_root *root,
-+			 struct btrfs_path *path,
-+			 struct btrfs_key *new_key)
-+{
-+	struct extent_buffer *leaf;
-+	int ret;
-+	u32 item_size;
-+
-+	leaf = path->nodes[0];
-+	item_size = btrfs_item_size_nr(leaf, path->slots[0]);
-+	ret = setup_leaf_for_split(trans, root, path,
-+				   item_size + sizeof(struct btrfs_item));
-+	if (ret)
-+		return ret;
-+
-+	path->slots[0]++;
-+	ret = setup_items_for_insert(trans, root, path, new_key, &item_size,
-+				     item_size, item_size +
-+				     sizeof(struct btrfs_item), 1);
-+	BUG_ON(ret);
-+
-+	leaf = path->nodes[0];
-+	memcpy_extent_buffer(leaf,
-+			     btrfs_item_ptr_offset(leaf, path->slots[0]),
-+			     btrfs_item_ptr_offset(leaf, path->slots[0] - 1),
-+			     item_size);
-+	return 0;
-+}
-+
-+/*
-  * make the item pointed to by the path smaller.  new_size indicates
-  * how small to make it, and from_end tells us if we just chop bytes
-  * off the end of the item or if we shift the item to chop bytes off
-diff -urp 1/fs/btrfs/ctree.h 2/fs/btrfs/ctree.h
---- 1/fs/btrfs/ctree.h	2009-10-21 20:43:46.357985256 +0800
-+++ 2/fs/btrfs/ctree.h	2009-10-30 16:44:59.417790124 +0800
-@@ -2089,6 +2089,10 @@ int btrfs_split_item(struct btrfs_trans_
- 		     struct btrfs_path *path,
- 		     struct btrfs_key *new_key,
- 		     unsigned long split_offset);
-+int btrfs_duplicate_item(struct btrfs_trans_handle *trans,
-+			 struct btrfs_root *root,
-+			 struct btrfs_path *path,
-+			 struct btrfs_key *new_key);
- int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root
- 		      *root, struct btrfs_key *key, struct btrfs_path *p, int
- 		      ins_len, int cow);
+diff -urp 3/fs/btrfs/ordered-data.h 4/fs/btrfs/ordered-data.h
+--- 3/fs/btrfs/ordered-data.h	2009-09-28 14:16:59.618812000 +0800
++++ 4/fs/btrfs/ordered-data.h	2009-10-30 17:05:01.026790120 +0800
+@@ -150,7 +150,7 @@ void btrfs_start_ordered_extent(struct i
+ int btrfs_wait_ordered_range(struct inode *inode, u64 start, u64 len);
+ struct btrfs_ordered_extent *
+ btrfs_lookup_first_ordered_extent(struct inode * inode, u64 file_offset);
+-int btrfs_ordered_update_i_size(struct inode *inode,
++int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
+ 				struct btrfs_ordered_extent *ordered);
+ int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr, u32 *sum);
+ int btrfs_wait_on_page_writeback_range(struct address_space *mapping,

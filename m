@@ -1,60 +1,27 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: ext3/jbd oops in journal_start
-Date: Tue, 3 Nov 2009 10:26:51 -0500
-Message-ID: <20091103152651.GA14967@think>
-References: <Pine.LNX.4.64.0910302253100.1867@cobra.newdream.net>
- <87bpjorn6g.fsf@openvz.org>
- <Pine.LNX.4.64.0911022157360.26157@cobra.newdream.net>
+Subject: Re: Implement the incremental backup
+Date: Tue, 3 Nov 2009 10:41:28 -0500
+Message-ID: <20091103154128.GC14967@think>
+References: <20091102144737.BUX66727@expms3.cites.uiuc.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org,
-	Dmitry Monakhov <dmonakhov@openvz.org>,
-	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org
-To: Sage Weil <sage@newdream.net>
+Cc: linux-btrfs@vger.kernel.org, mfasheh@suse.com
+To: goyal7@illinois.edu
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <Pine.LNX.4.64.0911022157360.26157@cobra.newdream.net>
+In-Reply-To: <20091102144737.BUX66727@expms3.cites.uiuc.edu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 02, 2009 at 10:06:36PM -0800, Sage Weil wrote:
-> On Sat, 31 Oct 2009, Dmitry Monakhov wrote:
+On Mon, Nov 02, 2009 at 02:47:37PM -0600, goyal7@illinois.edu wrote:
+> Hello,
 > 
-> > Sage Weil <sage@newdream.net> writes:
-> > 
-> > > Hi,
-> > >
-> > > I'm consistently seeing ext3 oops on a fresh ~60 GB fs on 2.6.32-rc3 (and 
-> > > 2.6.31).  data=writeback or data=ordered.  It's not the hardware or 
-> > > drive... I have 8 boxes (each with slightly different hardware) that crash 
-> > > identically.
-> > Strange, 2.6.31 with ext3 is quite popular configuration...
-> > Can you please post exact test-case.
-> > >
-> > > The oops is at fs/jbd/transaction.c, journal_start():
-> > >
-> > > 		J_ASSERT(handle->h_transaction->t_journal == journal);
-> > *handle = journal_current_handle()
-> > 
-> > IMHO it's looks like you have entered here with current->journal_info != NULL
-> > 
-> > , but journal_info contains unexpected data
-> > This may happens in two cases:
-> > 1) calling jbd code from other filesystem.
-> > 2) Some fs forget to zero current->journal_info on exit from vfs
-> > According to call trace we have got second case. Do you use some 
-> > unusual/experimental fs?
-> 
-> Yep, it was #2.  It turns out btrfs s setting current->journal_info 
-> (for no reason that I can see?), and with the transaction ioctl a 
-> transaction can span multiple calls.
-> 
-> Chris, is it ok to just remove the journal_info bits?  Nothing in fs/btrfs 
-> even looks at it.  I'm not sure what the point of only conditionally 
-> setting/clearly journal_info would be either, unless it's for debugging or 
-> something?
+> I was interested in working on the incremental backup requirements as
+> listed on the wiki
+> (http://btrfs.wiki.kernel.org/index.php/Project_ideas#Incremental_backups),
+> is this project still open? If so can someone please be my initial
+> mentor?
 
-Josef has plans to use it later on, but he sent along patches that will
-avoid setting journal_info for userland trans.  I'll get these
-integrated and pushed out.
+I've cc'd Mark Fasheh who may have started some related code.  I'd be
+happy to mentor you in this project and it is still open.
 
 -chris
 

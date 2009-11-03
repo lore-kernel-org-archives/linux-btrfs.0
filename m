@@ -1,45 +1,100 @@
-From: John Dong <jdong@ubuntu.com>
-Subject: Re: announcement of deduplication in Sun ZFS
-Date: Mon, 2 Nov 2009 18:26:00 -0500
-Message-ID: <706AB5DA-1173-490C-8E62-FC8136DB375A@ubuntu.com>
-References: <934f64a20911021225o12acdb81u7a8a55afbf49963b@mail.gmail.com> <5f8586d40911021251n75161177s1230f44c1a4b9917@mail.gmail.com> <200911031004.57592.chris@csamuel.org>
-Mime-Version: 1.0 (Apple Message framework v1076)
-Content-Type: text/plain; charset=us-ascii; format=flowed; delsp=yes
-Cc: linux-btrfs@vger.kernel.org
-To: Chris Samuel <chris@csamuel.org>
+From: Edward Shishkin <edward@redhat.com>
+Subject: Re: [patch 2/2] grub-0.97: btrfs multidevice configuration support
+Date: Tue, 03 Nov 2009 01:59:39 +0100
+Message-ID: <4AEF807B.6050303@redhat.com>
+References: <4ABBED70.30106@redhat.com> <200911022316.39102.johannes.hirte@fem.tu-ilmenau.de>
+Mime-Version: 1.0
+Content-Type: multipart/mixed;
+ boundary="------------030909010603060709000300"
+Cc: The development of BTRFS <linux-btrfs@vger.kernel.org>
+To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200911031004.57592.chris@csamuel.org>
+In-Reply-To: <200911022316.39102.johannes.hirte@fem.tu-ilmenau.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I don't think ZFS has any goals of being resilient to errors as far as  
-recovering from them without backups / redundant disks.... Errors  
-would still be detected though more data of course would be  
-unavailable potentially.
-On Nov 2, 2009, at 6:04 PM, Chris Samuel wrote:
+This is a multi-part message in MIME format.
+--------------030909010603060709000300
+Content-Type: text/plain; charset=ISO-8859-6; format=flowed
+Content-Transfer-Encoding: 7bit
 
-> On Tue, 3 Nov 2009 07:51:52 am Alex Dedul wrote:
+Johannes Hirte wrote:
+> Am Freitag 25 September 2009 00:06:40 schrieb Edward Shishkin:
+>   
 >
->> In any way thats a nice and interesting feature, thanks! :)
+> Hi Edward,
 >
-> My concern would be that it increases the impact of a corruption of  
-> the block
-> that has been de-dup'd - in other words if the block that now  
-> represents the
-> same data in lots of files gets trashed then all those files have  
-> corrupt
-> data. This implies that you would want to keep around at least one  
-> other copy
-> of that data to be resilient in the face of corruption (checksums  
-> will let you
-> detect it, but not necessarily recover from it without duplicate  
-> copies).
+> I was pointed to a problem with this patch.
 >
-> Given that ZFS prides itself on detecting errors it would be strange  
-> if they
-> hadn't considered this in the implementation but I couldn't see any  
-> mention of
-> it.
+> +static u64 scan_grub_devices(struct btrfs_device *dev,
+> +                            int (*discerner)(struct btrfs_device **, int),
+> +                            int lookup)
+> +{
+> ...
+> +#ifdef SUPPORT_NETBOOT
+> +       errnum = ERR_NONE;
+> +       if (network_ready &&
+> +           !get_diskinfo(NETWORK_DRIVE, &geom)) {
+> +               dev->drive = NETWORK_DRIVE;
+> +               dev->part = 0;
+> +               dev->length = geom.total_sectors;
+> +               if (discerner(&dev, lookup)) {
+> +                       count++;
+> +                       if (lookup)
+> +                               goto exit;
+> +               }
+> +       }
+> +#endif /* SUPPORT_NETBOOT */
+> + exit:
+> +       return count;
+> +}
 >
-> cheers,
-> Chris
+> This won't compile since network_ready is undeclared.
 
+Yup, indeed..
+
+>  Why is the btrfs code 
+> dealing with network devices at all?
+>   
+
+Why not? :)
+Well, would you please disable it for now with the attached patch?
+ 
+Thanks,
+Edward.
+
+--------------030909010603060709000300
+Content-Type: text/plain;
+ name="grub-btrfs-multidev-fixup.patch"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline;
+ filename="grub-btrfs-multidev-fixup.patch"
+
+Disable booting from network devices.
+
+Signed-off-by: Edward Shishkin <edward@redhat.com>
+---
+ stage2/fsys_btrfs.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- grub-0.97.orig/stage2/fsys_btrfs.c
++++ grub-0.97/stage2/fsys_btrfs.c
+@@ -452,7 +452,7 @@ static u64 scan_grub_devices(struct btrf
+ 				goto exit;
+ 		}
+ 	}
+-#ifdef SUPPORT_NETBOOT
++#if 0
+ 	errnum = ERR_NONE;
+ 	if (network_ready &&
+ 	    !get_diskinfo(NETWORK_DRIVE, &geom)) {
+@@ -465,7 +465,7 @@ static u64 scan_grub_devices(struct btrf
+ 				goto exit;
+ 		}
+ 	}
+-#endif /* SUPPORT_NETBOOT */
++#endif /* 0 */
+  exit:
+ 	return count;
+ }
+
+--------------030909010603060709000300--

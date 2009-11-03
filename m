@@ -1,100 +1,106 @@
-From: Edward Shishkin <edward@redhat.com>
-Subject: Re: [patch 2/2] grub-0.97: btrfs multidevice configuration support
-Date: Tue, 03 Nov 2009 01:59:39 +0100
-Message-ID: <4AEF807B.6050303@redhat.com>
-References: <4ABBED70.30106@redhat.com> <200911022316.39102.johannes.hirte@fem.tu-ilmenau.de>
+From: Sage Weil <sage@newdream.net>
+Subject: Re: ext3/jbd oops in journal_start
+Date: Mon, 2 Nov 2009 22:06:36 -0800 (PST)
+Message-ID: <Pine.LNX.4.64.0911022157360.26157@cobra.newdream.net>
+References: <Pine.LNX.4.64.0910302253100.1867@cobra.newdream.net>
+ <87bpjorn6g.fsf@openvz.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="------------030909010603060709000300"
-Cc: The development of BTRFS <linux-btrfs@vger.kernel.org>
-To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200911022316.39102.johannes.hirte@fem.tu-ilmenau.de>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: Dmitry Monakhov <dmonakhov@openvz.org>,
+	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <87bpjorn6g.fsf@openvz.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multi-part message in MIME format.
---------------030909010603060709000300
-Content-Type: text/plain; charset=ISO-8859-6; format=flowed
-Content-Transfer-Encoding: 7bit
+On Sat, 31 Oct 2009, Dmitry Monakhov wrote:
 
-Johannes Hirte wrote:
-> Am Freitag 25 September 2009 00:06:40 schrieb Edward Shishkin:
->   
->
-> Hi Edward,
->
-> I was pointed to a problem with this patch.
->
-> +static u64 scan_grub_devices(struct btrfs_device *dev,
-> +                            int (*discerner)(struct btrfs_device **, int),
-> +                            int lookup)
-> +{
-> ...
-> +#ifdef SUPPORT_NETBOOT
-> +       errnum = ERR_NONE;
-> +       if (network_ready &&
-> +           !get_diskinfo(NETWORK_DRIVE, &geom)) {
-> +               dev->drive = NETWORK_DRIVE;
-> +               dev->part = 0;
-> +               dev->length = geom.total_sectors;
-> +               if (discerner(&dev, lookup)) {
-> +                       count++;
-> +                       if (lookup)
-> +                               goto exit;
-> +               }
-> +       }
-> +#endif /* SUPPORT_NETBOOT */
-> + exit:
-> +       return count;
-> +}
->
-> This won't compile since network_ready is undeclared.
+> Sage Weil <sage@newdream.net> writes:
+> 
+> > Hi,
+> >
+> > I'm consistently seeing ext3 oops on a fresh ~60 GB fs on 2.6.32-rc3 (and 
+> > 2.6.31).  data=writeback or data=ordered.  It's not the hardware or 
+> > drive... I have 8 boxes (each with slightly different hardware) that crash 
+> > identically.
+> Strange, 2.6.31 with ext3 is quite popular configuration...
+> Can you please post exact test-case.
+> >
+> > The oops is at fs/jbd/transaction.c, journal_start():
+> >
+> > 		J_ASSERT(handle->h_transaction->t_journal == journal);
+> *handle = journal_current_handle()
+> 
+> IMHO it's looks like you have entered here with current->journal_info != NULL
+> 
+> , but journal_info contains unexpected data
+> This may happens in two cases:
+> 1) calling jbd code from other filesystem.
+> 2) Some fs forget to zero current->journal_info on exit from vfs
+> According to call trace we have got second case. Do you use some 
+> unusual/experimental fs?
 
-Yup, indeed..
+Yep, it was #2.  It turns out btrfs s setting current->journal_info 
+(for no reason that I can see?), and with the transaction ioctl a 
+transaction can span multiple calls.
 
->  Why is the btrfs code 
-> dealing with network devices at all?
->   
+Chris, is it ok to just remove the journal_info bits?  Nothing in fs/btrfs 
+even looks at it.  I'm not sure what the point of only conditionally 
+setting/clearly journal_info would be either, unless it's for debugging or 
+something?
 
-Why not? :)
-Well, would you please disable it for now with the attached patch?
- 
-Thanks,
-Edward.
+Thanks-
+sage
 
---------------030909010603060709000300
-Content-Type: text/plain;
- name="grub-btrfs-multidev-fixup.patch"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline;
- filename="grub-btrfs-multidev-fixup.patch"
-
-Disable booting from network devices.
-
-Signed-off-by: Edward Shishkin <edward@redhat.com>
 ---
- stage2/fsys_btrfs.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+From: Sage Weil <sage@newdream.net>
+Date: Mon, 2 Nov 2009 14:21:29 -0800
+Subject: [PATCH] Btrfs: don't set current->journal_info
 
---- grub-0.97.orig/stage2/fsys_btrfs.c
-+++ grub-0.97/stage2/fsys_btrfs.c
-@@ -452,7 +452,7 @@ static u64 scan_grub_devices(struct btrf
- 				goto exit;
- 		}
- 	}
--#ifdef SUPPORT_NETBOOT
-+#if 0
- 	errnum = ERR_NONE;
- 	if (network_ready &&
- 	    !get_diskinfo(NETWORK_DRIVE, &geom)) {
-@@ -465,7 +465,7 @@ static u64 scan_grub_devices(struct btrf
- 				goto exit;
- 		}
- 	}
--#endif /* SUPPORT_NETBOOT */
-+#endif /* 0 */
-  exit:
- 	return count;
+Btrfs doesn't use current->journal_info for anything, so don't set it.  
+We currently cause a NULL dereference in jbd if a process starts a btrfs 
+user transaction and then touches another mounted fs that uses jbd, since 
+current->journal_info is only supposed to be set for the duration of a 
+single call into the fs.
+
+Signed-off-by: Sage Weil <sage@newdream.net>
+---
+ fs/btrfs/transaction.c |    8 --------
+ 1 files changed, 0 insertions(+), 8 deletions(-)
+
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index bca82a4..c6dbbb8 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -186,9 +186,6 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
+ 	h->alloc_exclude_start = 0;
+ 	h->delayed_ref_updates = 0;
+ 
+-	if (!current->journal_info)
+-		current->journal_info = h;
+-
+ 	root->fs_info->running_transaction->use_count++;
+ 	record_root_in_trans(h, root);
+ 	mutex_unlock(&root->fs_info->trans_mutex);
+@@ -321,8 +318,6 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+ 	put_transaction(cur_trans);
+ 	mutex_unlock(&info->trans_mutex);
+ 
+-	if (current->journal_info == trans)
+-		current->journal_info = NULL;
+ 	memset(trans, 0, sizeof(*trans));
+ 	kmem_cache_free(btrfs_trans_handle_cachep, trans);
+ 
+@@ -1105,9 +1100,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 
+ 	mutex_unlock(&root->fs_info->trans_mutex);
+ 
+-	if (current->journal_info == trans)
+-		current->journal_info = NULL;
+-
+ 	kmem_cache_free(btrfs_trans_handle_cachep, trans);
+ 	return ret;
  }
+-- 
+1.5.6.5
 
---------------030909010603060709000300--

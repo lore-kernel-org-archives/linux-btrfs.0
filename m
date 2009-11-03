@@ -1,88 +1,60 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: cleanup transaction starting and fix
-	current->journal_info setting
-Date: Tue, 3 Nov 2009 10:16:12 -0500
-Message-ID: <20091103151612.GB5541@localhost.localdomain>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: ext3/jbd oops in journal_start
+Date: Tue, 3 Nov 2009 10:26:51 -0500
+Message-ID: <20091103152651.GA14967@think>
+References: <Pine.LNX.4.64.0910302253100.1867@cobra.newdream.net>
+ <87bpjorn6g.fsf@openvz.org>
+ <Pine.LNX.4.64.0911022157360.26157@cobra.newdream.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com
-To: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org,
+	Dmitry Monakhov <dmonakhov@openvz.org>,
+	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org
+To: Sage Weil <sage@newdream.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <Pine.LNX.4.64.0911022157360.26157@cobra.newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We use journal_info to tell if we're in a nested transaction to make sure we
-don't commit the transaction within a nested transaction.  We use another
-method to see if there are any outstanding ioctl trans handles, so if we're
-starting one do not set current->journal_info, since it will screw with other
-filesystems.  This patch also cleans up the starting stuff so there aren't any
-magic numbers.
+On Mon, Nov 02, 2009 at 10:06:36PM -0800, Sage Weil wrote:
+> On Sat, 31 Oct 2009, Dmitry Monakhov wrote:
+> 
+> > Sage Weil <sage@newdream.net> writes:
+> > 
+> > > Hi,
+> > >
+> > > I'm consistently seeing ext3 oops on a fresh ~60 GB fs on 2.6.32-rc3 (and 
+> > > 2.6.31).  data=writeback or data=ordered.  It's not the hardware or 
+> > > drive... I have 8 boxes (each with slightly different hardware) that crash 
+> > > identically.
+> > Strange, 2.6.31 with ext3 is quite popular configuration...
+> > Can you please post exact test-case.
+> > >
+> > > The oops is at fs/jbd/transaction.c, journal_start():
+> > >
+> > > 		J_ASSERT(handle->h_transaction->t_journal == journal);
+> > *handle = journal_current_handle()
+> > 
+> > IMHO it's looks like you have entered here with current->journal_info != NULL
+> > 
+> > , but journal_info contains unexpected data
+> > This may happens in two cases:
+> > 1) calling jbd code from other filesystem.
+> > 2) Some fs forget to zero current->journal_info on exit from vfs
+> > According to call trace we have got second case. Do you use some 
+> > unusual/experimental fs?
+> 
+> Yep, it was #2.  It turns out btrfs s setting current->journal_info 
+> (for no reason that I can see?), and with the transaction ioctl a 
+> transaction can span multiple calls.
+> 
+> Chris, is it ok to just remove the journal_info bits?  Nothing in fs/btrfs 
+> even looks at it.  I'm not sure what the point of only conditionally 
+> setting/clearly journal_info would be either, unless it's for debugging or 
+> something?
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/transaction.c |   19 +++++++++++++------
- 1 files changed, 13 insertions(+), 6 deletions(-)
+Josef has plans to use it later on, but he sent along patches that will
+avoid setting journal_info for userland trans.  I'll get these
+integrated and pushed out.
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index bca82a4..c207e8c 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -163,8 +163,14 @@ static void wait_current_trans(struct btrfs_root *root)
- 	}
- }
- 
-+enum btrfs_trans_type {
-+	TRANS_START,
-+	TRANS_JOIN,
-+	TRANS_USERSPACE,
-+};
-+
- static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
--					     int num_blocks, int wait)
-+					     int num_blocks, int type)
- {
- 	struct btrfs_trans_handle *h =
- 		kmem_cache_alloc(btrfs_trans_handle_cachep, GFP_NOFS);
-@@ -172,7 +178,8 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
- 
- 	mutex_lock(&root->fs_info->trans_mutex);
- 	if (!root->fs_info->log_root_recovering &&
--	    ((wait == 1 && !root->fs_info->open_ioctl_trans) || wait == 2))
-+	    ((type == TRANS_START && !root->fs_info->open_ioctl_trans) ||
-+	     type == TRANS_USERSPACE))
- 		wait_current_trans(root);
- 	ret = join_transaction(root);
- 	BUG_ON(ret);
-@@ -186,7 +193,7 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
- 	h->alloc_exclude_start = 0;
- 	h->delayed_ref_updates = 0;
- 
--	if (!current->journal_info)
-+	if (!current->journal_info && type != TRANS_USERSPACE)
- 		current->journal_info = h;
- 
- 	root->fs_info->running_transaction->use_count++;
-@@ -198,18 +205,18 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
- struct btrfs_trans_handle *btrfs_start_transaction(struct btrfs_root *root,
- 						   int num_blocks)
- {
--	return start_transaction(root, num_blocks, 1);
-+	return start_transaction(root, num_blocks, TRANS_START);
- }
- struct btrfs_trans_handle *btrfs_join_transaction(struct btrfs_root *root,
- 						   int num_blocks)
- {
--	return start_transaction(root, num_blocks, 0);
-+	return start_transaction(root, num_blocks, TRANS_JOIN);
- }
- 
- struct btrfs_trans_handle *btrfs_start_ioctl_transaction(struct btrfs_root *r,
- 							 int num_blocks)
- {
--	return start_transaction(r, num_blocks, 2);
-+	return start_transaction(r, num_blocks, TRANS_USERSPACE);
- }
- 
- /* wait for a transaction commit to be fully complete */
--- 
-1.5.4.3
+-chris
 

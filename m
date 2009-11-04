@@ -1,37 +1,24 @@
-From: Jeff Mahoney <jeffm@suse.com>
-Subject: Re: [patch 00/10] btrfs: Error handling/propagation queue
-Date: Wed, 04 Nov 2009 14:43:18 -0500
-Message-ID: <4AF1D956.1020407@suse.com>
-References: <20091104190346.971762946@suse.com>
+From: David Nicol <davidnicol@gmail.com>
+Subject: Re: Way to quickly "revert back" to a snapshot?
+Date: Wed, 4 Nov 2009 15:57:26 -0600
+Message-ID: <934f64a20911041357y57ee5854r83130ecac797b7ff@mail.gmail.com>
+References: <4AD9FCDC.6060107@ubuntu.com> <20091026093842.GF5564@think>
+	<4AEA8D20.3020504@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: unlisted-recipients:; (no To-header on input)
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20091104190346.971762946@suse.com>
+In-Reply-To: <4AEA8D20.3020504@jp.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/04/2009 02:03 PM, Jeff Mahoney wrote:
->  This patch series fixes a few existing problems and then addresses
->  the need for better error handling and propagation in btrfs.
-> 
->  The handling and propagation patch set first finds all locations of
->  a particular condition not being checked and annotates them with
->  BTRFS_UERROR to designate that there is an error condition that
->  is currently unhandled but should be. Then, another patch traverses
->  the call path to ensure that errors are properly propogated. When the
->  fix for recovering or passing the error is obvious, we do that too.
-> 
->  This set is not complete and I expect there to be more fixes coming. In
->  particular, it currently only annotates btrfs_alloc_path failures as
->  the call graph for it is quite large. This is in response to Chris asking
->  for what I already have instead of waiting for it to be complete.
+On Fri, Oct 30, 2009 at 12:52 AM, TARUISI Hiroaki
+<taruishi.hiroak@jp.fujitsu.com> wrote:
+> I'm trying to make this snapshots/subvolumes listing feature,
+> I wonder how the interface should be.
+>
+> Is there any other idea?
 
-I should be clear that this is just what I've been working on so far and
-hasn't received any testing yet. It was a quick quilt mail in the middle
-of working on it. (As you might notice by the fact that it doesn't build.)
-
--Jeff
-
--- 
-Jeff Mahoney
-SUSE Labs
+It's layers above where you're working, but how about providing a
+virtual directory off the mounting root, like the lost+found
+directories in other FSes, that would appear to contain them?

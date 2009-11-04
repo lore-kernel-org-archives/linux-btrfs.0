@@ -1,81 +1,88 @@
-From: "Yan, Zheng " <yanzheng@21cn.com>
+From: "Rui Miguel Silva" <rmfrfs@gmail.com>
 Subject: Re: [PATCH]] Btrfs: fix destroy snapshot to get the right parent
-	dentry
-Date: Wed, 4 Nov 2009 07:20:02 +0800
-Message-ID: <3d0408630911031520k78af1c39g16988123739a16e2@mail.gmail.com>
+ dentry
+Date: Wed, 04 Nov 2009 10:00:28 -0000
+Message-ID: <op.u2u7e0budmptbl@gentoo-vm>
 References: <20091103161054.GA13781@gentoo-vm.octal.tv>
+ <3d0408630911031520k78af1c39g16988123739a16e2@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=utf-8; format=flowed; delsp=yes
 Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
-To: Rui Miguel Silva <rmfrfs@gmail.com>
+To: "Yan, Zheng " <yanzheng@21cn.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20091103161054.GA13781@gentoo-vm.octal.tv>
+In-Reply-To: <3d0408630911031520k78af1c39g16988123739a16e2@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 4, 2009 at 12:10 AM, Rui Miguel Silva <rmfrfs@gmail.com> wr=
-ote:
-> In snapshot destroy the dentry used for parent was the snapshot dentr=
-y
-> itself. Remove d_invalidate since always return EBUSY, making possibl=
-e
-> to remove a snapshot using the btrfsctl -D option.
->
+On Tue, 03 Nov 2009 23:20:02 -0000, Yan, Zheng  <yanzheng@21cn.com> wrote:
 
-This is not correct. The snapshot destroy ioctl receives two parameters=
-=2E
-The first one provides directory that the snapshot is in, the second on=
-e
-provides the name of snapshot..
-
-The usage of 'btrfsctl -D' is:
-btrfsctl -D [name of snapshot] [directory that holds the snapshot]
-
-Yan, Zheng
-
-
-> Signed-off-by: Rui Miguel Silva <rmfrfs@gmail.com>
-> ---
-> =A0fs/btrfs/ioctl.c | =A0 =A07 ++-----
-> =A01 files changed, 2 insertions(+), 5 deletions(-)
+> On Wed, Nov 4, 2009 at 12:10 AM, Rui Miguel Silva <rmfrfs@gmail.com>  
+> wrote:
+>> In snapshot destroy the dentry used for parent was the snapshot dentry
+>> itself. Remove d_invalidate since always return EBUSY, making possible
+>> to remove a snapshot using the btrfsctl -D option.
+>>
 >
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index cdbb054..fe6ac9a 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -741,7 +741,7 @@ out:
-> =A0static noinline int btrfs_ioctl_snap_destroy(struct file *file,
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
- =A0 =A0 =A0 =A0 void __user *arg)
-> =A0{
-> - =A0 =A0 =A0 struct dentry *parent =3D fdentry(file);
-> + =A0 =A0 =A0 struct dentry *parent =3D file->f_path.dentry->d_parent=
-;
-> =A0 =A0 =A0 =A0struct dentry *dentry;
-> =A0 =A0 =A0 =A0struct inode *dir =3D parent->d_inode;
-> =A0 =A0 =A0 =A0struct inode *inode;
-> @@ -793,9 +793,6 @@ static noinline int btrfs_ioctl_snap_destroy(stru=
-ct file *file,
-> =A0 =A0 =A0 =A0dest =3D BTRFS_I(inode)->root;
+> This is not correct. The snapshot destroy ioctl receives two parameters.
+> The first one provides directory that the snapshot is in, the second one
+> provides the name of snapshot..
 >
-> =A0 =A0 =A0 =A0mutex_lock(&inode->i_mutex);
-> - =A0 =A0 =A0 err =3D d_invalidate(dentry);
-> - =A0 =A0 =A0 if (err)
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 goto out_unlock;
+> The usage of 'btrfsctl -D' is:
+> btrfsctl -D [name of snapshot] [directory that holds the snapshot]
 >
-> =A0 =A0 =A0 =A0down_write(&root->fs_info->subvol_sem);
+> Yan, Zheng
 >
-> @@ -827,7 +824,7 @@ static noinline int btrfs_ioctl_snap_destroy(stru=
-ct file *file,
-> =A0 =A0 =A0 =A0inode->i_flags |=3D S_DEAD;
-> =A0out_up_write:
-> =A0 =A0 =A0 =A0up_write(&root->fs_info->subvol_sem);
-> -out_unlock:
-> +
-> =A0 =A0 =A0 =A0mutex_unlock(&inode->i_mutex);
-> =A0 =A0 =A0 =A0if (!err) {
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0shrink_dcache_sb(root->fs_info->sb);
+Hi,
+thanks for the explanation. I just saw the usage output: " [-D dir .]"  
+"-D: delete snapshot" and I didn't understand it like the usage that you  
+explained above.
+I understood it like this: btrfsctl -D relative/path/to/snapshot comparing  
+to the -s option "-s snap_name dir: creates a new snapshot of dir" which  
+is more clear.
+
+That makes the patch completely wrong. Once again many thanks.
+
+Cheers,
+-- Rui
+>
+>> Signed-off-by: Rui Miguel Silva <rmfrfs@gmail.com>
+>> ---
+>>  fs/btrfs/ioctl.c |    7 ++-----
+>>  1 files changed, 2 insertions(+), 5 deletions(-)
+>>
+>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+>> index cdbb054..fe6ac9a 100644
+>> --- a/fs/btrfs/ioctl.c
+>> +++ b/fs/btrfs/ioctl.c
+>> @@ -741,7 +741,7 @@ out:
+>>  static noinline int btrfs_ioctl_snap_destroy(struct file *file,
+>>                                             void __user *arg)
+>>  {
+>> -       struct dentry *parent = fdentry(file);
+>> +       struct dentry *parent = file->f_path.dentry->d_parent;
+>>        struct dentry *dentry;
+>>        struct inode *dir = parent->d_inode;
+>>        struct inode *inode;
+>> @@ -793,9 +793,6 @@ static noinline int btrfs_ioctl_snap_destroy(struct  
+>> file *file,
+>>        dest = BTRFS_I(inode)->root;
+>>
+>>        mutex_lock(&inode->i_mutex);
+>> -       err = d_invalidate(dentry);
+>> -       if (err)
+>> -               goto out_unlock;
+>>
+>>        down_write(&root->fs_info->subvol_sem);
+>>
+>> @@ -827,7 +824,7 @@ static noinline int btrfs_ioctl_snap_destroy(struct  
+>> file *file,
+>>        inode->i_flags |= S_DEAD;
+>>  out_up_write:
+>>        up_write(&root->fs_info->subvol_sem);
+>> -out_unlock:
+>> +
+>>        mutex_unlock(&inode->i_mutex);
+>>        if (!err) {
+>>                shrink_dcache_sb(root->fs_info->sb);
+
+
 --
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

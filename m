@@ -1,40 +1,23 @@
-From: Li Dongyang <jerry87905@gmail.com>
-Subject: [PATCH]don't call btrfs_release_path in btrfs_update_root and
- btrfs_del_root
-Date: Fri, 6 Nov 2009 22:33:01 +0800
-Message-ID: <20091106143301.GB5451@Archlinux>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: patchwork
+Date: Fri, 6 Nov 2009 10:37:31 -0500
+Message-ID: <20091106153731.GG16082@think>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We don't need to call btrfs_release_path because btrfs_free_path will do
-that for us.
+Hello everyone,
 
-Signed-off-by: Li Dongyang <Jerry87905@gmail.com>
----
- fs/btrfs/root-tree.c |    2 --
- 1 files changed, 0 insertions(+), 2 deletions(-)
+I've asked the kernel.org admins to setup patchwork tracking for the
+btrfs mailing list.  This is a pretty cool tool that tracks patches sent
+to the list and makes it easy to download and apply them.
 
-diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-index 9351428..67fa2d2 100644
---- a/fs/btrfs/root-tree.c
-+++ b/fs/btrfs/root-tree.c
-@@ -159,7 +159,6 @@ int btrfs_update_root(struct btrfs_trans_handle *trans, struct btrfs_root
- 	write_extent_buffer(l, item, ptr, sizeof(*item));
- 	btrfs_mark_buffer_dirty(path->nodes[0]);
- out:
--	btrfs_release_path(root, path);
- 	btrfs_free_path(path);
- 	return ret;
- }
-@@ -332,7 +331,6 @@ int btrfs_del_root(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 	BUG_ON(refs != 0);
- 	ret = btrfs_del_item(trans, root, path);
- out:
--	btrfs_release_path(root, path);
- 	btrfs_free_path(path);
- 	return ret;
- }
+I'll be the main consumer of this, but you can check out the interface
+at:
+
+http://patchwork.kernel.org/project/linux-btrfs/list/
+
+-chris
+

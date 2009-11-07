@@ -1,51 +1,36 @@
-From: Sage Weil <sage@newdream.net>
-Subject: [PATCH] Btrfs: fail mount on bad mount options
-Date: Fri,  6 Nov 2009 22:19:16 -0800
-Message-ID: <1257574756-13333-1-git-send-email-sage@newdream.net>
-Cc: Sage Weil <sage@newdream.net>
+From: Prasad Joshi <prasadjoshi124@gmail.com>
+Subject: List of devices added to a btrfs file system
+Date: Sat, 7 Nov 2009 18:34:44 +0530
+Message-ID: <fe291c8c0911070504v12957f85je800890fd4a89942@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We shouldn't silently ignore unrecognized options.
+Hi All,
 
-Signed-off-by: Sage Weil <sage@newdream.net>
----
- fs/btrfs/super.c |    9 ++++++++-
- 1 files changed, 8 insertions(+), 1 deletions(-)
+I want to know the list of devices added to a mounted btrfs file
+system. I could not figure out how to find the list.
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index ad4d378..73adcef 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -129,6 +129,7 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 	substring_t args[MAX_OPT_ARGS];
- 	char *p, *num;
- 	int intarg;
-+	int ret = 0;
- 
- 	if (!options)
- 		return 0;
-@@ -268,12 +269,18 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 		case Opt_discard:
- 			btrfs_set_opt(info->mount_opt, DISCARD);
- 			break;
-+		case Opt_err:
-+			printk(KERN_INFO "btrfs: unrecognized mount option "
-+			       "'%s'\n", p);
-+			ret = -EINVAL;
-+			goto out;
- 		default:
- 			break;
- 		}
- 	}
-+out:
- 	kfree(options);
--	return 0;
-+	return ret;
- }
- 
- /*
--- 
-1.5.6.5
+I created file system on 2 devices. Now I could mount the file system
+using any device.
+$ mkfs.btrfs /dev/sdb /dev/sdc
 
+$ mount -t btrfs /dev/sdb /mnt
+
+$ umount /mnt
+
+$ mount -t btrfs /dev/sdc /mnt
+
+$ mount -t btrfs /dev/sdb /mnt
+mount -t btrfs /dev/sdb /mnt
+mount: /dev/sdb already mounted or /mnt busy
+mount: according to mtab, /dev/sdc is already mounted on /mnt
+
+This works really fine, but there should be a way to list the number
+of device and device names added to the file system. Is there any way
+to get that list?
+
+Thanks and Regards,
+Prasad

@@ -1,26 +1,44 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: chmod errors compiling on btrfs
-Date: Mon, 9 Nov 2009 10:15:03 -0500
-Message-ID: <20091109151503.GA2812@think>
-References: <4AF5DA58.1060600@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+From: John Dong <jdong@ubuntu.com>
+Subject: Re: rootfs snapshots and rollback (i.e. testing updates)
+Date: Mon, 9 Nov 2009 11:24:31 -0500
+Message-ID: <D567FA1E-67BA-495D-A311-426468FF07EB@ubuntu.com>
+References: <4AF82E78.1010200@wpkg.org>
+Mime-Version: 1.0 (Apple Message framework v1076)
+Content-Type: text/plain; charset=us-ascii; format=flowed; delsp=yes
 Cc: linux-btrfs@vger.kernel.org
-To: Andrew Benton <b3nton@gmail.com>
+To: Tomasz Chmielewski <mangoo@wpkg.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4AF5DA58.1060600@gmail.com>
+In-Reply-To: <4AF82E78.1010200@wpkg.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Nov 07, 2009 at 08:36:40PM +0000, Andrew Benton wrote:
-> 
-> Both times the files created were world writeable when they should
-> have been read only. I get the same errors if I compile as myself or
-> root. If I compile in my home folder (on a reiserfs partition) they
-> compile with no problem. I'm using a self compiled vanila 2.6.31.4
-> kernel. I created the partition with btrfs-progs-0.19.
+Hi,
 
-We fixed some umask problems recently, these should be fixed in the
-master branch of the btrfs-unstable repo (which is against 2.6.31).
+I asked this question about a month ago, and the answer is roughly  
+"It's theoretically possible with minor feature implementations to  
+btrfs, though nobody's done it yet"
+On Nov 9, 2009, at 10:00 AM, Tomasz Chmielewski wrote:
 
--chris
+> Is it possible, with current btrfs:
+>
+> - to take a rootfs snapshot (i.e. prior to a major update),
+>
+> - do changes in the root filesystem (i.e. install major update),
+>
+> - if we don't like what the major update did to the system (rootfs),  
+> "rollback" the snapshot and make it the "original" rootfs again  
+> (perhaps, with a reboot in between).
+>
+>
+>
+> If it's possible, what would be the steps/commands?
+>
+>
+> -- 
+> Tomasz Chmielewski
+> http://wpkg.org
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux- 
+> btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 

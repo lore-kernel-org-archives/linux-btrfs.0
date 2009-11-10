@@ -1,27 +1,31 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: chmod errors compiling on btrfs
-Date: Mon, 9 Nov 2009 14:14:13 -0500
-Message-ID: <20091109191413.GB4868@think>
-References: <4AF5DA58.1060600@gmail.com>
- <20091109151503.GA2812@think>
- <4AF8663F.8000605@gmail.com>
+From: Dan Carpenter <error27@gmail.com>
+Subject: [patch] avoid null deref in unpin_extent_cache()
+Date: Tue, 10 Nov 2009 11:01:43 +0200 (SAST)
+Message-ID: <alpine.DEB.2.00.0911072313580.30287@bicker>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Cc: linux-btrfs@vger.kernel.org
-To: Andrew Benton <b3nton@gmail.com>
+To: chris.mason@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4AF8663F.8000605@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 09, 2009 at 06:58:07PM +0000, Andrew Benton wrote:
-> On 09/11/09 15:15, Chris Mason wrote:
-> >We fixed some umask problems recently, these should be fixed in the
-> >master branch of the btrfs-unstable repo (which is against 2.6.31).
-> >
-> 
-> Thanks, that did the trick. Will these umask fixes be in the 2.6.32 kernel?
+I re-orderred the checks to avoid dereferencing "em" if it was null.
 
-Great.  They are already included in 2.6.32-rc releases
+Found by smatch static checker.
 
--chris
+regards,
+dan carpenter
 
+Signed-off-by: Dan Carpenter <error27@gmail.com>
+
+--- orig/fs/btrfs/extent_map.c	2009-11-08 14:01:09.000000000 +0200
++++ devel/fs/btrfs/extent_map.c	2009-11-08 14:01:44.000000000 +0200
+@@ -208,7 +208,7 @@
+ 	write_lock(&tree->lock);
+ 	em = lookup_extent_mapping(tree, start, len);
+ 
+-	WARN_ON(em->start != start || !em);
++	WARN_ON(!em || em->start != start);
+ 
+ 	if (!em)
+ 		goto out;

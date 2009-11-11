@@ -1,43 +1,60 @@
-From: Zach Brown <zach.brown@oracle.com>
-Subject: Re: [RFC] big fat transaction ioctl
-Date: Wed, 11 Nov 2009 10:22:22 -0800
-Message-ID: <4AFB00DE.9070101@oracle.com>
-References: <Pine.LNX.4.64.0911101143120.31818@cobra.newdream.net> <20091111145435.GB5566@think>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: [GIT PULL] Btrfs updates for 2.6.32-rc
+Date: Wed, 11 Nov 2009 16:25:54 -0500
+Message-ID: <20091111212554.GA2898@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: Chris Mason <chris.mason@oracle.com>,
-	Sage Weil <sage@newdream.net>, linux-btrfs@vger.kernel.org,
-	hch@lst.de
+Content-Type: text/plain; charset=us-ascii
+To: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	Linus Torvalds <torvalds@linux-foundation.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20091111145435.GB5566@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello everyone,
 
-> I like this much more than providing a journal start/stop to userland.
-> If we can get Christoph to ack the exports we can work on the interface
-> in general.
+The master branch of the btrfs-unstable repo has an assortment of fixes
+and speedups.
 
-I'll note, briefly, that it seems dangerous to call right into the sys_
-functions instead of going through the architecture's syscall number
-dispatching path.  Do you know if the syscalls you're calling have
-compat wrappers on some architectures for some userspace abis?
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
 
-With that out of the way, though, I'll get on to my bigger point.
+These are mostly minor fixes, but there is an important fix for using
+btrfs and ceph together.  Josef has a block group caching performance
+patch that reduces his boot time dramatically, which is the biggest
+change in the bunch.
 
-This interface for specifying an array of syscalls to call looks a whole
-lot like the work that fs/aio.c, syslets, and acall have all done.  The
-flags for stopping processing of the array based on errors from the
-syscalls are remarkably similar to Ingo's atom structs.
+We also now handle enospc with mount -o compress, before this was
+actually more likely to fail than uncompressed mounts because mount -o
+compress expected to be able to find multi-block contiguous extents on
+disk.
 
-So maybe there's an opportunity for a generic syscall for processing
-batches of syscalls.  Maybe you'll bracket some of them with btrfs
-ioctls for flagging the task_struct as being in a btrfs transaction, but
-maybe you'll also flag some for concurrent acall processing or nutty
-syslet thread spawning if they block.
+I know Linus likes to look for obvious rebases, and I did rebase this
+morning before pushing out to drop a small mount option patch that we
+don't strictly need for .32.
 
-It'll probably take some work to be able to call syscall handlers from C
-on all architectures, and we'd have to be really careful about the
-semantics if we start mixing btrfs ioctls and async flags, but it just
-might be worth it.
+Chris Mason (1) commits (+2/-2):
+    Btrfs: allow more metadata chunk preallocation
 
-- z
+Dan Carpenter (1) commits (+1/-1):
+    Btrfs: avoid null deref in unpin_extent_cache()
+
+Josef Bacik (7) commits (+180/-45):
+    Btrfs: cleanup transaction starting and fix journal_info usage (+13/-6)
+    Btrfs: fix panic when trying to destroy a newly allocated (+10/-0)
+    Btrfs: fallback on uncompressed io if compressed io fails (+23/-8)
+    Btrfs: fix how we set max_size for free space clusters (+1/-1)
+    Btrfs: find ideal block group for caching (+86/-23)
+    Btrfs: fix some metadata enospc issues (+31/-5)
+    Btrfs: fix data allocation hint start (+16/-2)
+
+Li Dongyang (1) commits (+0/-2):
+    Btrfs: skip btrfs_release_path in btrfs_update_root and btrfs_del_root
+
+Total: (10) commits
+
+ fs/btrfs/extent-tree.c      |  113 ++++++++++++++++++++++++++++++++++----------
+ fs/btrfs/extent_map.c       |    2 
+ fs/btrfs/free-space-cache.c |    2 
+ fs/btrfs/inode.c            |   95 +++++++++++++++++++++++++++++++-----
+ fs/btrfs/root-tree.c        |    2 
+ fs/btrfs/transaction.c      |   19 +++++--
+ 6 files changed, 183 insertions(+), 50 deletions(-)
+

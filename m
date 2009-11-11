@@ -1,81 +1,26 @@
-From: Sage Weil <sage@newdream.net>
-Subject: Re: [RFC] big fat transaction ioctl
-Date: Tue, 10 Nov 2009 21:15:26 -0800 (PST)
-Message-ID: <Pine.LNX.4.64.0911102104300.6244@cobra.newdream.net>
-References: <Pine.LNX.4.64.0911101143120.31818@cobra.newdream.net>
- <2a31deca0911101244l2a84ece6p6c5dbcce5e101e9b@mail.gmail.com>
- <Pine.LNX.4.64.0911101400270.27554@cobra.newdream.net> <4AFA0A14.7070701@goop.org>
+From: "Gong, Zhipeng" <zhipeng.gong@intel.com>
+Subject: btrfsctl exit with 1 when succeed
+Date: Wed, 11 Nov 2009 14:16:24 +0800
+Message-ID: <E88DD564E9DC5446A76B2B47C3BCCA150221B14DD3@pdsmsx503.ccr.corp.intel.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Andrey Kuzmin <andrey.v.kuzmin@gmail.com>,
-	linux-btrfs@vger.kernel.org
-To: Jeremy Fitzhardinge <jeremy@goop.org>
+Content-Type: text/plain; charset=iso-8859-1
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4AFA0A14.7070701@goop.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 10 Nov 2009, Jeremy Fitzhardinge wrote:
+We'd like to use btrfsctl in a shell script, however, btrfsctl exit wit=
+h 1 even if the operation is successful, which is opposite to the usual=
+ shell command convention.
+Why btrfsctl add this conversion in the end?
+=A0=A0=A0=A0=A0=A0=A0=A0 if (ret)
+=A0=A0=A0=A0=A0=A0=A0=A0 =A0=A0=A0=A0=A0=A0=A0=A0 exit(0);
+=A0=A0=A0=A0=A0=A0=A0=A0 else
+=A0=A0=A0=A0=A0=A0=A0=A0 =A0=A0=A0=A0=A0=A0=A0=A0 exit(1);
 
-> On 11/10/09 14:13, Sage Weil wrote:
-> > On Tue, 10 Nov 2009, Andrey Kuzmin wrote:
-> >
-> >   
-> >> On Tue, Nov 10, 2009 at 11:12 PM, Sage Weil <sage@newdream.net> wrote:
-> >>     
-> >>> Hi all,
-> >>>
-> >>> This is an alternative approach to atomic user transactions for btrfs.
-> >>> The old start/end ioctls suffer from some basic limitations, namely
-> >>>
-> >>>  - We can't properly reserve space ahead of time to avoid ENOSPC part
-> >>> way through the transaction, and
-> >>>  - The process may die (seg fault, SIGKILL) part way through the
-> >>> transaction.  Currently when that happens the partial transaction will
-> >>> commit.
-> >>>
-> >>> This patch implements an ioctl that lets the application completely
-> >>> specify the entire transaction in a single syscall.  If the process gets
-> >>> killed or seg faults part way through, the entire transaction will still
-> >>> complete.
-> >>>
-> >>> The goal is to atomically commit updates to multiple files, xattrs,
-> >>> directories.  But this is still a file system: we don't get rollback if
-> >>> things go wrong.  Instead, do what we can up front to make sure things
-> >>> will work out.  And if things do go wrong, optionally prevent a partial
-> >>> result from reaching the disk.
-> >>>       
-> >> Why not snapshot respective root (doesn't work if transaction spans
-> >> multiple file-systems, but this doesn't look like a real-world
-> >> limitation), run txn against that snapshot and rollback on failure
-> >> instead? Snapshots are writable, cheap, and this looks like a real
-> >> transaction abort mechanism.
-> >>     
-> > Good question.  :)
-> >
-> > I hadn't looked into this before, but I think the snapshots could be used 
-> > to achieve both atomicity and rollback.  If userspace uses an rw mutex to 
-> > quiesce writes, it can make sure all transactions complete before creating 
-> > a snapshot (commit).  The problem with this currently is the create 
-> > snapshot ioctl is relatively slow... it calls commit_transaction, which 
-> > blocks until everything reaches disk.  I think to perform well this 
-> > approach would need a hook to start a commit and then return as soon as it 
-> > can guarantee than any subsequent operation's start_transaction can't join 
-> > in that commit.
-> >
-> > This may be a better way to go about this, though.  Does that sound 
-> > reasonable, Chris?
-> >   
-> 
-> If snapshots only capture what's currently physically on disk, then it
-> means that the transactions will be fairly heavyweight in requiring
-> everything to be physically synced.  That may be what some apps want
-> anyway, but I can certainly imagine apps wanting transaction semantics
-> without having fsync-level durability requirements.
-
-Just to be clear, the transactions I'm talking about _only_ control the 
-way operations are grouped when they commit to disk.  They do not in any 
-way affect the view of the file system that another concurrently running 
-process might see.  It's the application's responsibility to deal with 
-the sort of transaction concurrency you're talking about.
-
-sage
+Thanks
+Zhipeng
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,26 +1,30 @@
-From: "Gong, Zhipeng" <zhipeng.gong@intel.com>
-Subject: btrfsctl exit with 1 when succeed
-Date: Wed, 11 Nov 2009 14:16:24 +0800
-Message-ID: <E88DD564E9DC5446A76B2B47C3BCCA150221B14DD3@pdsmsx503.ccr.corp.intel.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [RFC] big fat transaction ioctl
+Date: Wed, 11 Nov 2009 09:54:35 -0500
+Message-ID: <20091111145435.GB5566@think>
+References: <Pine.LNX.4.64.0911101143120.31818@cobra.newdream.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, hch@lst.de
+To: Sage Weil <sage@newdream.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <Pine.LNX.4.64.0911101143120.31818@cobra.newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We'd like to use btrfsctl in a shell script, however, btrfsctl exit wit=
-h 1 even if the operation is successful, which is opposite to the usual=
- shell command convention.
-Why btrfsctl add this conversion in the end?
-=A0=A0=A0=A0=A0=A0=A0=A0 if (ret)
-=A0=A0=A0=A0=A0=A0=A0=A0 =A0=A0=A0=A0=A0=A0=A0=A0 exit(0);
-=A0=A0=A0=A0=A0=A0=A0=A0 else
-=A0=A0=A0=A0=A0=A0=A0=A0 =A0=A0=A0=A0=A0=A0=A0=A0 exit(1);
+On Tue, Nov 10, 2009 at 12:12:14PM -0800, Sage Weil wrote:
+> Hi all,
+> 
+> This is an alternative approach to atomic user transactions for btrfs.  
+> The old start/end ioctls suffer from some basic limitations, namely
+> 
+>  - We can't properly reserve space ahead of time to avoid ENOSPC part 
+> way through the transaction, and
+>  - The process may die (seg fault, SIGKILL) part way through the 
+> transaction.  Currently when that happens the partial transaction will 
+> commit.
 
-Thanks
-Zhipeng
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I like this much more than providing a journal start/stop to userland.
+If we can get Christoph to ack the exports we can work on the interface
+in general.
+
+-chris

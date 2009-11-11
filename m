@@ -1,71 +1,54 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [RFC] big fat transaction ioctl
-Date: Wed, 11 Nov 2009 10:55:08 -0500
-Message-ID: <20091111155508.GE5566@think>
-References: <Pine.LNX.4.64.0911101143120.31818@cobra.newdream.net>
- <2a31deca0911101244l2a84ece6p6c5dbcce5e101e9b@mail.gmail.com>
- <Pine.LNX.4.64.0911101400270.27554@cobra.newdream.net>
- <20091111150356.GC5566@think>
- <2a31deca0911110741xb3529cbi982d982ef171de9f@mail.gmail.com>
+Subject: Re: BUG? a possible race due to the absence of memory barrier
+Date: Wed, 11 Nov 2009 11:06:43 -0500
+Message-ID: <20091111160643.GF5566@think>
+References: <2014bcab0911110707i3f2e8782i772603a9b899e353@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: Sage Weil <sage@newdream.net>, linux-btrfs@vger.kernel.org
-To: Andrey Kuzmin <andrey.v.kuzmin@gmail.com>
+Content-Type: text/plain; charset=utf-8
+Cc: linux-btrfs@vger.kernel.org
+To: =?utf-8?B?7ZmN7Iug?= shin hong <hongshin@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <2a31deca0911110741xb3529cbi982d982ef171de9f@mail.gmail.com>
+In-Reply-To: <2014bcab0911110707i3f2e8782i772603a9b899e353@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 11, 2009 at 06:41:06PM +0300, Andrey Kuzmin wrote:
-> >> I hadn't looked into this before, but I think the snapshots could =
-be used
-> >> to achieve both atomicity and rollback. =A0If userspace uses an rw=
- mutex to
-> >> quiesce writes, it can make sure all transactions complete before =
-creating
-> >> a snapshot (commit). =A0The problem with this currently is the cre=
-ate
-> >> snapshot ioctl is relatively slow... it calls commit_transaction, =
-which
-> >> blocks until everything reaches disk. =A0I think to perform well t=
-his
-> >> approach would need a hook to start a commit and then return as so=
-on as it
-> >> can guarantee than any subsequent operation's start_transaction ca=
-n't join
-> >> in that commit.
-> >>
-> >> This may be a better way to go about this, though. =A0Does that so=
-und
-> >> reasonable, Chris?
-> >
-> > Yes, we could do this, but I don't think it will perform very well
-> > compared to your multi-operation ioctl. =A0It really does depend on=
- how
-> > often you need to do atomic ops (my guess is very).
-> >
-> > Honestly you'll get better performance with a simple write-ahead lo=
-g
-> > from userland:
+On Thu, Nov 12, 2009 at 12:07:05AM +0900, =ED=99=8D=EC=8B=A0 shin hong =
+wrote:
+> Hello. I am reporting possible data race
+> due to the the absence of memory barriers.
 >=20
-> Write-ahead logging is necessary anyway if the aim is to provide
-> transactional semantics to an application.
+> I reported a similar issue. Although the previous one turns out to be=
+ safe,
+> please examine this issue and let me know your opinion.
+>=20
+> In btrfs_init_new_device(), a btrfs_device object is allocated and in=
+itialized
+> and then links to &root->fs_info->fs_devcies->alloc_list.
+>=20
+> It seems that a memory barrier is necessary
+> between the initialization and the linking to the list.
+>=20
+> If these two operations are re-ordered so that executed opposite orde=
+rs,
+> it may result data race where uninitialized values are read by other =
+threads.
+>=20
+> For btrfs_init_new_device(), i think __btfs_alloc_chunk() is a suspec=
+ted
+> to be possible to contribute data race by concurrent execution.
 
-Sage's big fat ioctl does provide the subset of transactional semantics
-that ceph (and many other apps) require.  In this case, they just want
-to know that a given set of operations will happen together.
+Thanks for searching for races in this code, it definitely has a lot of
+locks to go through.
 
-> But, at the same time, w/o
-> snapshot there is no synchronization between the log and file-system
-> state.
+In this case, btrfs_init_new_device has the chunk mutex held (from
+lock_chunks), and __btrfs_alloc_chunk should always be called by with
+the chunk mutex held as well.
 
-Synchronizing the log and the filesystem state happens when the
-application starts up after the crash (either app crash or system
-crash).  The application would be in charge of applying the log to its
-own files to get the system into whatever state the app thinks is
-consistent.
+In general the btrfs locking tries not to rely on barriers and ordering
+unless a given area of the code is very performance sensitive.  It's
+very easy for subtle bugs to creep in with barriers only, so I try to
+use mutexes and spinlocks everywhere that I can get away with it.
 
 -chris
-
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

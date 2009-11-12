@@ -1,261 +1,171 @@
 From: "Yan, Zheng" <zheng.yan@oracle.com>
-Subject: [PATCH 01/12] Btrfs: Avoid superfluous tree-log writeout
-Date: Thu, 12 Nov 2009 17:33:26 +0800
-Message-ID: <4AFBD666.6000406@oracle.com>
+Subject: [PATCH 07/12] Btrfs: Make fallocate(2) more ENOSPC friendly
+Date: Thu, 12 Nov 2009 17:34:52 +0800
+Message-ID: <4AFBD6BC.3080104@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org, chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We allow two log transactions at a time, but use same flag
-to mark dirty tree-log btree blocks. So we may flush dirty
-blocks belonging to newer log transaction when committing a
-log transaction. This patch fixes the issue by using two
-flags to mark dirty tree-log btree blocks.
+fallocate(2) may allocate large number of file extents, so it's not
+good to do it in a single transaction. This patch make fallocate(2)
+start a new transaction for each file extents it allocates.
 
 Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
 ---
- fs/btrfs/disk-io.c     |    6 +++---
- fs/btrfs/extent-tree.c |   12 ++++++++++--
- fs/btrfs/transaction.c |   21 +++++++++++----------
- fs/btrfs/transaction.h |    6 +++---
- fs/btrfs/tree-log.c    |   33 ++++++++++++++++++++-------------
- 5 files changed, 47 insertions(+), 31 deletions(-)
+ fs/btrfs/inode.c |   65 ++++++++++++++++++++++++++---------------------------
+ 1 files changed, 32 insertions(+), 33 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index d4132aa..0cf1781 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -982,12 +982,12 @@ int btrfs_free_log_root_tree(struct btrfs_trans_handle *trans,
- 
- 	while (1) {
- 		ret = find_first_extent_bit(&log_root_tree->dirty_log_pages,
--				    0, &start, &end, EXTENT_DIRTY);
-+				0, &start, &end, EXTENT_DIRTY | EXTENT_NEW);
- 		if (ret)
- 			break;
- 
--		clear_extent_dirty(&log_root_tree->dirty_log_pages,
--				   start, end, GFP_NOFS);
-+		clear_extent_bits(&log_root_tree->dirty_log_pages, start, end,
-+				  EXTENT_DIRTY | EXTENT_NEW, GFP_NOFS);
- 	}
- 	eb = fs_info->log_root_tree->node;
- 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 8d1fd6d..30df7fd 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4918,8 +4918,16 @@ struct extent_buffer *btrfs_init_new_buffer(struct btrfs_trans_handle *trans,
- 	btrfs_set_buffer_uptodate(buf);
- 
- 	if (root->root_key.objectid == BTRFS_TREE_LOG_OBJECTID) {
--		set_extent_dirty(&root->dirty_log_pages, buf->start,
--			 buf->start + buf->len - 1, GFP_NOFS);
-+		/*
-+		 * we allow two log transactions at a time, use different
-+		 * EXENT bit to differentiate dirty pages.
-+		 */
-+		if (root->log_transid % 2 == 0)
-+			set_extent_dirty(&root->dirty_log_pages, buf->start,
-+					buf->start + buf->len - 1, GFP_NOFS);
-+		else
-+			set_extent_new(&root->dirty_log_pages, buf->start,
-+					buf->start + buf->len - 1, GFP_NOFS);
- 	} else {
- 		set_extent_dirty(&trans->transaction->dirty_pages, buf->start,
- 			 buf->start + buf->len - 1, GFP_NOFS);
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index c207e8c..b7b22c3 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -354,7 +354,7 @@ int btrfs_end_transaction_throttle(struct btrfs_trans_handle *trans,
-  * those extents are sent to disk but does not wait on them
-  */
- int btrfs_write_marked_extents(struct btrfs_root *root,
--			       struct extent_io_tree *dirty_pages)
-+			       struct extent_io_tree *dirty_pages, int mark)
- {
- 	int ret;
- 	int err = 0;
-@@ -367,7 +367,7 @@ int btrfs_write_marked_extents(struct btrfs_root *root,
- 
- 	while (1) {
- 		ret = find_first_extent_bit(dirty_pages, start, &start, &end,
--					    EXTENT_DIRTY);
-+					    mark);
- 		if (ret)
- 			break;
- 		while (start <= end) {
-@@ -413,7 +413,7 @@ int btrfs_write_marked_extents(struct btrfs_root *root,
-  * on all the pages and clear them from the dirty pages state tree
-  */
- int btrfs_wait_marked_extents(struct btrfs_root *root,
--			      struct extent_io_tree *dirty_pages)
-+			      struct extent_io_tree *dirty_pages, int mark)
- {
- 	int ret;
- 	int err = 0;
-@@ -425,12 +425,12 @@ int btrfs_wait_marked_extents(struct btrfs_root *root,
- 	unsigned long index;
- 
- 	while (1) {
--		ret = find_first_extent_bit(dirty_pages, 0, &start, &end,
--					    EXTENT_DIRTY);
-+		ret = find_first_extent_bit(dirty_pages, start, &start, &end,
-+					    mark);
- 		if (ret)
- 			break;
- 
--		clear_extent_dirty(dirty_pages, start, end, GFP_NOFS);
-+		clear_extent_bits(dirty_pages, start, end, mark, GFP_NOFS);
- 		while (start <= end) {
- 			index = start >> PAGE_CACHE_SHIFT;
- 			start = (u64)(index + 1) << PAGE_CACHE_SHIFT;
-@@ -460,13 +460,13 @@ int btrfs_wait_marked_extents(struct btrfs_root *root,
-  * those extents are on disk for transaction or log commit
-  */
- int btrfs_write_and_wait_marked_extents(struct btrfs_root *root,
--					struct extent_io_tree *dirty_pages)
-+				struct extent_io_tree *dirty_pages, int mark)
- {
- 	int ret;
- 	int ret2;
- 
--	ret = btrfs_write_marked_extents(root, dirty_pages);
--	ret2 = btrfs_wait_marked_extents(root, dirty_pages);
-+	ret = btrfs_write_marked_extents(root, dirty_pages, mark);
-+	ret2 = btrfs_wait_marked_extents(root, dirty_pages, mark);
- 	return ret || ret2;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 75a6647..f60cd94 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5659,10 +5659,10 @@ out_fail:
+ 	return err;
  }
  
-@@ -479,7 +479,8 @@ int btrfs_write_and_wait_transaction(struct btrfs_trans_handle *trans,
- 		return filemap_write_and_wait(btree_inode->i_mapping);
- 	}
- 	return btrfs_write_and_wait_marked_extents(root,
--					   &trans->transaction->dirty_pages);
-+					   &trans->transaction->dirty_pages,
-+					   EXTENT_DIRTY);
- }
- 
- /*
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index d4e3e7a..93c7ccb 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -107,10 +107,10 @@ void btrfs_throttle(struct btrfs_root *root);
- int btrfs_record_root_in_trans(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *root);
- int btrfs_write_and_wait_marked_extents(struct btrfs_root *root,
--					struct extent_io_tree *dirty_pages);
-+				struct extent_io_tree *dirty_pages, int mark);
- int btrfs_write_marked_extents(struct btrfs_root *root,
--					struct extent_io_tree *dirty_pages);
-+				struct extent_io_tree *dirty_pages, int mark);
- int btrfs_wait_marked_extents(struct btrfs_root *root,
--					struct extent_io_tree *dirty_pages);
-+				struct extent_io_tree *dirty_pages, int mark);
- int btrfs_transaction_in_commit(struct btrfs_fs_info *info);
- #endif
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index f51bf13..013cc6f 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -1977,10 +1977,11 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+-static int prealloc_file_range(struct btrfs_trans_handle *trans,
+-			       struct inode *inode, u64 start, u64 end,
++static int prealloc_file_range(struct inode *inode, u64 start, u64 end,
+ 			       u64 alloc_hint, int mode)
  {
- 	int index1;
- 	int index2;
-+	int mark;
- 	int ret;
- 	struct btrfs_root *log = root->log_root;
- 	struct btrfs_root *log_root_tree = root->fs_info->log_root_tree;
--	u64 log_transid = 0;
-+	unsigned long log_transid = 0;
++	struct btrfs_trans_handle *trans;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_key ins;
+ 	u64 alloc_size;
+@@ -5673,17 +5673,23 @@ static int prealloc_file_range(struct btrfs_trans_handle *trans,
+ 	while (num_bytes > 0) {
+ 		alloc_size = min(num_bytes, root->fs_info->max_extent);
  
- 	mutex_lock(&root->log_mutex);
- 	index1 = root->log_transid % 2;
-@@ -2014,24 +2015,29 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 		goto out;
- 	}
- 
-+	log_transid = root->log_transid;
-+	if (log_transid % 2 == 0)
-+		mark = EXTENT_DIRTY;
-+	else
-+		mark = EXTENT_NEW;
+-		ret = btrfs_reserve_metadata_space(root, 1);
+-		if (ret)
+-			goto out;
+-
+ 		ret = btrfs_reserve_extent(trans, root, alloc_size,
+ 					   root->sectorsize, 0, alloc_hint,
+ 					   (u64)-1, &ins, 1);
+ 		if (ret) {
+ 			WARN_ON(1);
+-			goto out;
++			break;
++		}
 +
- 	/* we start IO on  all the marked extents here, but we don't actually
- 	 * wait for them until later.
- 	 */
--	ret = btrfs_write_marked_extents(log, &log->dirty_log_pages);
-+	ret = btrfs_write_marked_extents(log, &log->dirty_log_pages, mark);
- 	BUG_ON(ret);
++		ret = btrfs_reserve_metadata_space(root, 3);
++		if (ret) {
++			btrfs_free_reserved_extent(root, ins.objectid,
++						   ins.offset);
++			break;
+ 		}
++
++		trans = btrfs_start_transaction(root, 1);
++
+ 		ret = insert_reserved_file_extent(trans, inode,
+ 						  cur_offset, ins.objectid,
+ 						  ins.offset, ins.offset,
+@@ -5692,22 +5698,25 @@ static int prealloc_file_range(struct btrfs_trans_handle *trans,
+ 		BUG_ON(ret);
+ 		btrfs_drop_extent_cache(inode, cur_offset,
+ 					cur_offset + ins.offset -1, 0);
++
+ 		num_bytes -= ins.offset;
+ 		cur_offset += ins.offset;
+ 		alloc_hint = ins.objectid + ins.offset;
+-		btrfs_unreserve_metadata_space(root, 1);
+-	}
+-out:
+-	if (cur_offset > start) {
++
+ 		inode->i_ctime = CURRENT_TIME;
+ 		BTRFS_I(inode)->flags |= BTRFS_INODE_PREALLOC;
+ 		if (!(mode & FALLOC_FL_KEEP_SIZE) &&
+-		    cur_offset > i_size_read(inode))
+-			btrfs_i_size_write(inode, cur_offset);
++		    cur_offset > inode->i_size) {
++			i_size_write(inode, cur_offset);
++			btrfs_ordered_update_i_size(inode, cur_offset, NULL);
++		}
++
+ 		ret = btrfs_update_inode(trans, root, inode);
+ 		BUG_ON(ret);
+-	}
  
- 	btrfs_set_root_node(&log->root_item, log->node);
++		btrfs_end_transaction(trans, root);
++		btrfs_unreserve_metadata_space(root, 3);
++	}
+ 	return ret;
+ }
  
- 	root->log_batch = 0;
--	log_transid = root->log_transid;
- 	root->log_transid++;
- 	log->log_transid = root->log_transid;
- 	root->log_start_pid = 0;
- 	smp_mb();
- 	/*
--	 * log tree has been flushed to disk, new modifications of
--	 * the log will be written to new positions. so it's safe to
--	 * allow log writers to go in.
-+	 * IO has been started, blocks of the log tree have WRITTEN flag set
-+	 * in their headers. new modifications of the log will be written to
-+	 * new positions. so it's safe to allow log writers to go in.
- 	 */
- 	mutex_unlock(&root->log_mutex);
+@@ -5722,8 +5731,6 @@ static long btrfs_fallocate(struct inode *inode, int mode,
+ 	u64 locked_end;
+ 	u64 mask = BTRFS_I(inode)->root->sectorsize - 1;
+ 	struct extent_map *em;
+-	struct btrfs_trans_handle *trans;
+-	struct btrfs_root *root;
+ 	int ret;
  
-@@ -2052,7 +2058,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 
- 	index2 = log_root_tree->log_transid % 2;
- 	if (atomic_read(&log_root_tree->log_commit[index2])) {
--		btrfs_wait_marked_extents(log, &log->dirty_log_pages);
-+		btrfs_wait_marked_extents(log, &log->dirty_log_pages, mark);
- 		wait_log_commit(trans, log_root_tree,
- 				log_root_tree->log_transid);
- 		mutex_unlock(&log_root_tree->log_mutex);
-@@ -2072,16 +2078,17 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	 * check the full commit flag again
- 	 */
- 	if (root->fs_info->last_trans_log_full_commit == trans->transid) {
--		btrfs_wait_marked_extents(log, &log->dirty_log_pages);
-+		btrfs_wait_marked_extents(log, &log->dirty_log_pages, mark);
- 		mutex_unlock(&log_root_tree->log_mutex);
- 		ret = -EAGAIN;
- 		goto out_wake_log_root;
+ 	alloc_start = offset & ~mask;
+@@ -5742,9 +5749,7 @@ static long btrfs_fallocate(struct inode *inode, int mode,
+ 			goto out;
  	}
  
- 	ret = btrfs_write_and_wait_marked_extents(log_root_tree,
--				&log_root_tree->dirty_log_pages);
-+				&log_root_tree->dirty_log_pages,
-+				EXTENT_DIRTY | EXTENT_NEW);
- 	BUG_ON(ret);
--	btrfs_wait_marked_extents(log, &log->dirty_log_pages);
-+	btrfs_wait_marked_extents(log, &log->dirty_log_pages, mark);
- 
- 	btrfs_set_super_log_root(&root->fs_info->super_for_commit,
- 				log_root_tree->node->start);
-@@ -2147,12 +2154,12 @@ int btrfs_free_log(struct btrfs_trans_handle *trans, struct btrfs_root *root)
- 
+-	root = BTRFS_I(inode)->root;
+-
+-	ret = btrfs_check_data_free_space(root, inode,
++	ret = btrfs_check_data_free_space(BTRFS_I(inode)->root, inode,
+ 					  alloc_end - alloc_start);
+ 	if (ret)
+ 		goto out;
+@@ -5753,12 +5758,6 @@ static long btrfs_fallocate(struct inode *inode, int mode,
  	while (1) {
- 		ret = find_first_extent_bit(&log->dirty_log_pages,
--				    0, &start, &end, EXTENT_DIRTY);
-+				0, &start, &end, EXTENT_DIRTY | EXTENT_NEW);
- 		if (ret)
- 			break;
+ 		struct btrfs_ordered_extent *ordered;
  
--		clear_extent_dirty(&log->dirty_log_pages,
--				   start, end, GFP_NOFS);
-+		clear_extent_bits(&log->dirty_log_pages, start, end,
-+				  EXTENT_DIRTY | EXTENT_NEW, GFP_NOFS);
- 	}
+-		trans = btrfs_start_transaction(BTRFS_I(inode)->root, 1);
+-		if (!trans) {
+-			ret = -EIO;
+-			goto out_free;
+-		}
+-
+ 		/* the extent lock is ordered inside the running
+ 		 * transaction
+ 		 */
+@@ -5772,8 +5771,6 @@ static long btrfs_fallocate(struct inode *inode, int mode,
+ 			btrfs_put_ordered_extent(ordered);
+ 			unlock_extent(&BTRFS_I(inode)->io_tree,
+ 				      alloc_start, locked_end, GFP_NOFS);
+-			btrfs_end_transaction(trans, BTRFS_I(inode)->root);
+-
+ 			/*
+ 			 * we can't wait on the range with the transaction
+ 			 * running or with the extent lock held
+@@ -5794,9 +5791,12 @@ static long btrfs_fallocate(struct inode *inode, int mode,
+ 		BUG_ON(IS_ERR(em) || !em);
+ 		last_byte = min(extent_map_end(em), alloc_end);
+ 		last_byte = (last_byte + mask) & ~mask;
+-		if (em->block_start == EXTENT_MAP_HOLE) {
+-			ret = prealloc_file_range(trans, inode, cur_offset,
+-						last_byte, alloc_hint, mode);
++		if (em->block_start == EXTENT_MAP_HOLE ||
++		    (cur_offset >= inode->i_size &&
++		     !test_bit(EXTENT_FLAG_PREALLOC, &em->flags))) {
++			ret = prealloc_file_range(inode,
++						  cur_offset, last_byte,
++						  alloc_hint, mode);
+ 			if (ret < 0) {
+ 				free_extent_map(em);
+ 				break;
+@@ -5815,9 +5815,8 @@ static long btrfs_fallocate(struct inode *inode, int mode,
+ 	unlock_extent(&BTRFS_I(inode)->io_tree, alloc_start, locked_end,
+ 		      GFP_NOFS);
  
- 	if (log->log_transid > 0) {
+-	btrfs_end_transaction(trans, BTRFS_I(inode)->root);
+-out_free:
+-	btrfs_free_reserved_data_space(root, inode, alloc_end - alloc_start);
++	btrfs_free_reserved_data_space(BTRFS_I(inode)->root, inode,
++				       alloc_end - alloc_start);
+ out:
+ 	mutex_unlock(&inode->i_mutex);
+ 	return ret;
 -- 
 1.6.2.5
 

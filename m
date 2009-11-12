@@ -1,217 +1,138 @@
 From: "Yan, Zheng" <zheng.yan@oracle.com>
-Subject: [PATCH 12/12] Btrfs: Fix per root used space accounting
-Date: Thu, 12 Nov 2009 17:36:50 +0800
-Message-ID: <4AFBD732.4000709@oracle.com>
+Subject: [PATCH 06/12] Btrfs: Avoid orphan inodes cleanup during committing
+ transaction
+Date: Thu, 12 Nov 2009 17:37:02 +0800
+Message-ID: <4AFBD73E.2070204@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org, chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The bytes_used field in root item was originally planned to
-trace the amount of used data and tree blocks. But it never
-worked right since we can't trace freeing of data accurately.
-This patch changes it to only trace the amount of tree blocks.
+btrfs_lookup_dentry may trigger orphan cleanup, so it's not good
+to call it during committing transaction.
 
 Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
 ---
- fs/btrfs/ctree.c       |   31 ++++++++++++++-----------------
- fs/btrfs/ctree.h       |    4 ++++
- fs/btrfs/extent-tree.c |   31 +++++++++++++++++++++++--------
- fs/btrfs/ioctl.c       |    2 +-
- fs/btrfs/transaction.c |    6 +++++-
- 5 files changed, 47 insertions(+), 27 deletions(-)
+ fs/btrfs/ioctl.c       |   29 +++++++++++++++++------------
+ fs/btrfs/transaction.c |    4 ----
+ 2 files changed, 17 insertions(+), 16 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 9d4ba34..c4bc570 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -456,9 +456,8 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
- 		extent_buffer_get(cow);
- 		spin_unlock(&root->node_lock);
- 
--		btrfs_free_extent(trans, root, buf->start, buf->len,
--				  parent_start, root->root_key.objectid,
--				  level, 0);
-+		btrfs_free_tree_block(trans, root, buf->start, buf->len,
-+				parent_start, root->root_key.objectid, level);
- 		free_extent_buffer(buf);
- 		add_root_to_dirty_list(root);
- 	} else {
-@@ -473,9 +472,8 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
- 		btrfs_set_node_ptr_generation(parent, parent_slot,
- 					      trans->transid);
- 		btrfs_mark_buffer_dirty(parent);
--		btrfs_free_extent(trans, root, buf->start, buf->len,
--				  parent_start, root->root_key.objectid,
--				  level, 0);
-+		btrfs_free_tree_block(trans, root, buf->start, buf->len,
-+				parent_start, root->root_key.objectid, level);
- 	}
- 	if (unlock_orig)
- 		btrfs_tree_unlock(buf);
-@@ -1035,8 +1033,8 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
- 		btrfs_tree_unlock(mid);
- 		/* once for the path */
- 		free_extent_buffer(mid);
--		ret = btrfs_free_extent(trans, root, mid->start, mid->len,
--					0, root->root_key.objectid, level, 1);
-+		ret = btrfs_free_tree_block(trans, root, mid->start, mid->len,
-+					    0, root->root_key.objectid, level);
- 		/* once for the root ptr */
- 		free_extent_buffer(mid);
- 		return ret;
-@@ -1100,10 +1098,10 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
- 				       1);
- 			if (wret)
- 				ret = wret;
--			wret = btrfs_free_extent(trans, root, bytenr,
--						 blocksize, 0,
--						 root->root_key.objectid,
--						 level, 0);
-+			wret = btrfs_free_tree_block(trans, root,
-+						     bytenr, blocksize, 0,
-+						     root->root_key.objectid,
-+						     level);
- 			if (wret)
- 				ret = wret;
- 		} else {
-@@ -1148,9 +1146,8 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
- 		wret = del_ptr(trans, root, path, level + 1, pslot);
- 		if (wret)
- 			ret = wret;
--		wret = btrfs_free_extent(trans, root, bytenr, blocksize,
--					 0, root->root_key.objectid,
--					 level, 0);
-+		wret = btrfs_free_tree_block(trans, root, bytenr, blocksize,
-+					 0, root->root_key.objectid, level);
- 		if (wret)
- 			ret = wret;
- 	} else {
-@@ -3794,8 +3791,8 @@ static noinline int btrfs_del_leaf(struct btrfs_trans_handle *trans,
- 	 */
- 	btrfs_unlock_up_safe(path, 0);
- 
--	ret = btrfs_free_extent(trans, root, leaf->start, leaf->len,
--				0, root->root_key.objectid, 0, 0);
-+	ret = btrfs_free_tree_block(trans, root, leaf->start, leaf->len,
-+				    0, root->root_key.objectid, 0);
- 	return ret;
- }
- /*
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index f98c06c..635ac0b 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1982,6 +1982,10 @@ struct extent_buffer *btrfs_alloc_free_block(struct btrfs_trans_handle *trans,
- 					u64 parent, u64 root_objectid,
- 					struct btrfs_disk_key *key, int level,
- 					u64 hint, u64 empty_size);
-+int btrfs_free_tree_block(struct btrfs_trans_handle *trans,
-+			  struct btrfs_root *root,
-+			  u64 bytenr, u32 blocksize,
-+			  u64 parent, u64 root_objectid, int level);
- struct extent_buffer *btrfs_init_new_buffer(struct btrfs_trans_handle *trans,
- 					    struct btrfs_root *root,
- 					    u64 bytenr, u32 blocksize,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 51fdaa6..157eb54 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3453,14 +3453,6 @@ static int update_block_group(struct btrfs_trans_handle *trans,
- 	else
- 		old_val -= num_bytes;
- 	btrfs_set_super_bytes_used(&info->super_copy, old_val);
--
--	/* block accounting for root item */
--	old_val = btrfs_root_used(&root->root_item);
--	if (alloc)
--		old_val += num_bytes;
--	else
--		old_val -= num_bytes;
--	btrfs_set_root_used(&root->root_item, old_val);
- 	spin_unlock(&info->delalloc_lock);
- 
- 	while (total) {
-@@ -4048,6 +4040,21 @@ int btrfs_free_extent(struct btrfs_trans_handle *trans,
- 	return ret;
- }
- 
-+int btrfs_free_tree_block(struct btrfs_trans_handle *trans,
-+			  struct btrfs_root *root,
-+			  u64 bytenr, u32 blocksize,
-+			  u64 parent, u64 root_objectid, int level)
-+{
-+	u64 used;
-+	spin_lock(&root->node_lock);
-+	used = btrfs_root_used(&root->root_item) - blocksize;
-+	btrfs_set_root_used(&root->root_item, used);
-+	spin_unlock(&root->node_lock);
-+
-+	return btrfs_free_extent(trans, root, bytenr, blocksize,
-+				 parent, root_objectid, level, 0);
-+}
-+
- static u64 stripe_align(struct btrfs_root *root, u64 val)
- {
- 	u64 mask = ((u64)root->stripesize - 1);
-@@ -4896,6 +4903,14 @@ static int alloc_tree_block(struct btrfs_trans_handle *trans,
- 					extent_op);
- 		BUG_ON(ret);
- 	}
-+
-+	if (root_objectid == root->root_key.objectid) {
-+		u64 used;
-+		spin_lock(&root->node_lock);
-+		used = btrfs_root_used(&root->root_item) + num_bytes;
-+		btrfs_set_root_used(&root->root_item, used);
-+		spin_unlock(&root->node_lock);
-+	}
- 	return ret;
- }
- 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 3d6b338..645a179 100644
+index a1a8db8..3d6b338 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -289,7 +289,7 @@ static noinline int create_subvol(struct btrfs_root *root,
- 	btrfs_set_root_generation(&root_item, trans->transid);
- 	btrfs_set_root_level(&root_item, 0);
- 	btrfs_set_root_refs(&root_item, 1);
--	btrfs_set_root_used(&root_item, 0);
-+	btrfs_set_root_used(&root_item, leaf->len);
- 	btrfs_set_root_last_snapshot(&root_item, 0);
+@@ -237,7 +237,6 @@ static noinline int create_subvol(struct btrfs_root *root,
+ 	u64 objectid;
+ 	u64 new_dirid = BTRFS_FIRST_FREE_OBJECTID;
+ 	u64 index = 0;
+-	unsigned long nr = 1;
  
- 	memset(&root_item.drop_progress, 0, sizeof(root_item.drop_progress));
+ 	/*
+ 	 * 1 - inode item
+@@ -342,24 +341,21 @@ static noinline int create_subvol(struct btrfs_root *root,
+ 
+ 	d_instantiate(dentry, btrfs_lookup_dentry(dir, dentry));
+ fail:
+-	nr = trans->blocks_used;
+ 	err = btrfs_commit_transaction(trans, root);
+ 	if (err && !ret)
+ 		ret = err;
+ 
+ 	btrfs_unreserve_metadata_space(root, 6);
+-	btrfs_btree_balance_dirty(root, nr);
+ 	return ret;
+ }
+ 
+ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
+ 			   char *name, int namelen)
+ {
++	struct inode *inode;
+ 	struct btrfs_pending_snapshot *pending_snapshot;
+ 	struct btrfs_trans_handle *trans;
+-	int ret = 0;
+-	int err;
+-	unsigned long nr = 0;
++	int ret;
+ 
+ 	if (!root->ref_cows)
+ 		return -EINVAL;
+@@ -372,20 +368,20 @@ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
+ 	 */
+ 	ret = btrfs_reserve_metadata_space(root, 6);
+ 	if (ret)
+-		goto fail_unlock;
++		goto fail;
+ 
+ 	pending_snapshot = kzalloc(sizeof(*pending_snapshot), GFP_NOFS);
+ 	if (!pending_snapshot) {
+ 		ret = -ENOMEM;
+ 		btrfs_unreserve_metadata_space(root, 6);
+-		goto fail_unlock;
++		goto fail;
+ 	}
+ 	pending_snapshot->name = kmalloc(namelen + 1, GFP_NOFS);
+ 	if (!pending_snapshot->name) {
+ 		ret = -ENOMEM;
+ 		kfree(pending_snapshot);
+ 		btrfs_unreserve_metadata_space(root, 6);
+-		goto fail_unlock;
++		goto fail;
+ 	}
+ 	memcpy(pending_snapshot->name, name, namelen);
+ 	pending_snapshot->name[namelen] = '\0';
+@@ -395,10 +391,19 @@ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
+ 	pending_snapshot->root = root;
+ 	list_add(&pending_snapshot->list,
+ 		 &trans->transaction->pending_snapshots);
+-	err = btrfs_commit_transaction(trans, root);
++	ret = btrfs_commit_transaction(trans, root);
++	BUG_ON(ret);
++	btrfs_unreserve_metadata_space(root, 6);
+ 
+-fail_unlock:
+-	btrfs_btree_balance_dirty(root, nr);
++	inode = btrfs_lookup_dentry(dentry->d_parent->d_inode, dentry);
++	if (IS_ERR(inode)) {
++		ret = PTR_ERR(inode);
++		goto fail;
++	}
++	BUG_ON(!inode);
++	d_instantiate(dentry, inode);
++	ret = 0;
++fail:
+ 	return ret;
+ }
+ 
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 75b31ca..b2acc79 100644
+index b7b22c3..728e8fe 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
-@@ -501,13 +501,16 @@ static int update_cowonly_root(struct btrfs_trans_handle *trans,
- {
- 	int ret;
- 	u64 old_root_bytenr;
-+	u64 old_root_used;
- 	struct btrfs_root *tree_root = root->fs_info->tree_root;
+@@ -796,7 +796,6 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	memcpy(&pending->root_key, &key, sizeof(key));
+ fail:
+ 	kfree(new_root_item);
+-	btrfs_unreserve_metadata_space(root, 6);
+ 	return ret;
+ }
  
-+	old_root_used = btrfs_root_used(&root->root_item);
- 	btrfs_write_dirty_block_groups(trans, root);
+@@ -808,7 +807,6 @@ static noinline int finish_pending_snapshot(struct btrfs_fs_info *fs_info,
+ 	u64 index = 0;
+ 	struct btrfs_trans_handle *trans;
+ 	struct inode *parent_inode;
+-	struct inode *inode;
+ 	struct btrfs_root *parent_root;
  
- 	while (1) {
- 		old_root_bytenr = btrfs_root_bytenr(&root->root_item);
--		if (old_root_bytenr == root->node->start)
-+		if (old_root_bytenr == root->node->start &&
-+		    old_root_used == btrfs_root_used(&root->root_item))
- 			break;
+ 	parent_inode = pending->dentry->d_parent->d_inode;
+@@ -840,8 +838,6 @@ static noinline int finish_pending_snapshot(struct btrfs_fs_info *fs_info,
  
- 		btrfs_set_root_node(&root->root_item, root->node);
-@@ -516,6 +519,7 @@ static int update_cowonly_root(struct btrfs_trans_handle *trans,
- 					&root->root_item);
- 		BUG_ON(ret);
+ 	BUG_ON(ret);
  
-+		old_root_used = btrfs_root_used(&root->root_item);
- 		ret = btrfs_write_dirty_block_groups(trans, root);
- 		BUG_ON(ret);
- 	}
+-	inode = btrfs_lookup_dentry(parent_inode, pending->dentry);
+-	d_instantiate(pending->dentry, inode);
+ fail:
+ 	btrfs_end_transaction(trans, fs_info->fs_root);
+ 	return ret;
 -- 
 1.6.2.5
+

@@ -1,72 +1,67 @@
-From: =?UTF-8?B?7ZmN7IugIHNoaW4gaG9uZw==?= <hongshin@gmail.com>
-Subject: Re: BUG? a possible race due to the absence of memory barrier
-Date: Thu, 12 Nov 2009 10:14:48 +0900
-Message-ID: <2014bcab0911111714m7cbc3909r9af0e7117ed08749@mail.gmail.com>
-References: <2014bcab0911110707i3f2e8782i772603a9b899e353@mail.gmail.com>
-	 <20091111160643.GF5566@think>
+From: Alexander Beregalov <a.beregalov@gmail.com>
+Subject: btrfsck: checksum verify failed
+Date: Thu, 12 Nov 2009 05:08:53 +0300
+Message-ID: <a4423d670911111808i3affd6d4q4aa14c6086d9c28f@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-To: Chris Mason <chris.mason@oracle.com>,
-	=?UTF-8?B?7ZmN7IugIHNoaW4gaG9uZw==?= <hongshin@gmail.com>,
-	linux-btrfs@vger.kernel.org
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20091111160643.GF5566@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thank you for the review.
+# for i in `seq 1 20`; do btrfsck /dev/sde|grep "checksum verify
+failed";echo; done
+checksum verify failed on 31945617408 wanted 6607632D found 9CC3ED0
+checksum verify failed on 31945617408 wanted 6607632D found AFBBF41
 
-I did not notice that lock_chunks() is a locking function.
+checksum verify failed on 31945617408 wanted 6607632D found A4F0ED0
+checksum verify failed on 31945617408 wanted 6607632D found B7E8F41
 
-I am using my own static analysis for finding bugs.
-As I register lock_chunks() as a locking functions,
-the bug alarm is disappeared.
+checksum verify failed on 31945617408 wanted 6607632D found A83DED0
+checksum verify failed on 31945617408 wanted 6607632D found BB35F41
 
-On Thu, Nov 12, 2009 at 1:06 AM, Chris Mason <chris.mason@oracle.com> w=
-rote:
-> On Thu, Nov 12, 2009 at 12:07:05AM +0900, =ED=99=8D=EC=8B=A0 shin hon=
-g wrote:
->> Hello. I am reporting possible data race
->> due to the the absence of memory barriers.
->>
->> I reported a similar issue. Although the previous one turns out to b=
-e safe,
->> please examine this issue and let me know your opinion.
->>
->> In btrfs_init_new_device(), a btrfs_device object is allocated and i=
-nitialized
->> and then links to &root->fs_info->fs_devcies->alloc_list.
->>
->> It seems that a memory barrier is necessary
->> between the initialization and the linking to the list.
->>
->> If these two operations are re-ordered so that executed opposite ord=
-ers,
->> it may result data race where uninitialized values are read by other=
- threads.
->>
->> For btrfs_init_new_device(), i think __btfs_alloc_chunk() is a suspe=
-cted
->> to be possible to contribute data race by concurrent execution.
->
-> Thanks for searching for races in this code, it definitely has a lot =
-of
-> locks to go through.
->
-> In this case, btrfs_init_new_device has the chunk mutex held (from
-> lock_chunks), and __btrfs_alloc_chunk should always be called by with
-> the chunk mutex held as well.
->
-> In general the btrfs locking tries not to rely on barriers and orderi=
-ng
-> unless a given area of the code is very performance sensitive. =C2=A0=
-It's
-> very easy for subtle bugs to creep in with barriers only, so I try to
-> use mutexes and spinlocks everywhere that I can get away with it.
->
-> -chris
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+checksum verify failed on 31945617408 wanted 6607632D found A0D5ED0
+checksum verify failed on 31945617408 wanted 6607632D found B3CDF41
+
+checksum verify failed on 31945617408 wanted 6607632D found A37BED0
+checksum verify failed on 31945617408 wanted 6607632D found B673F41
+
+checksum verify failed on 31945617408 wanted 6607632D found AB7FED0
+checksum verify failed on 31945617408 wanted 6607632D found BE77F41
+
+checksum verify failed on 31945617408 wanted 6607632D found AB73ED0
+checksum verify failed on 31945617408 wanted 6607632D found BE6BF41
+
+checksum verify failed on 31945617408 wanted 6607632D found A76DED0
+checksum verify failed on 31945617408 wanted 6607632D found BA65F41
+
+checksum verify failed on 31945617408 wanted 6607632D found 98E6ED0
+checksum verify failed on 31945617408 wanted 6607632D found ABDEF41
+
+checksum verify failed on 31945617408 wanted 6607632D found 9038ED0
+checksum verify failed on 31945617408 wanted 6607632D found A330F41
+
+checksum verify failed on 31945617408 wanted 6607632D found A150ED0
+checksum verify failed on 31945617408 wanted 6607632D found B448F41
+
+checksum verify failed on 31945617408 wanted 6607632D found 916CED0
+checksum verify failed on 31945617408 wanted 6607632D found A464F41
+
+checksum verify failed on 31945617408 wanted 6607632D found 9277ED0
+checksum verify failed on 31945617408 wanted 6607632D found A56FF41
+
+checksum verify failed on 31945617408 wanted 6607632D found A9C4ED0
+checksum verify failed on 31945617408 wanted 6607632D found BCBCF41
+
+checksum verify failed on 31945617408 wanted 6607632D found A81CED0
+checksum verify failed on 31945617408 wanted 6607632D found BB14F41
+
+checksum verify failed on 31945617408 wanted 6607632D found A886ED0
+checksum verify failed on 31945617408 wanted 6607632D found BB7EF41
+
+checksum verify failed on 31945617408 wanted 6607632D found 944AED0
+checksum verify failed on 31945617408 wanted 6607632D found A742F41
+
+It looks like
+10XX XXXXXXXX XXXX1110 11010000
+and
+10XX XXXXXXXX XXXX1111 01000001

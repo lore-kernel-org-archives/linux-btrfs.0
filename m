@@ -1,7 +1,7 @@
-From: Andrey Kuzmin <andrey.v.kuzmin@gmail.com>
+From: "Yan, Zheng " <yanzheng@21cn.com>
 Subject: Re: [PATCH] Btrfs: fix possible panic on unmount
-Date: Fri, 13 Nov 2009 20:29:37 +0300
-Message-ID: <2a31deca0911130929k4df4685fxddbedd44bada5e54@mail.gmail.com>
+Date: Sat, 14 Nov 2009 03:56:28 +0800
+Message-ID: <3d0408630911131156o1ebdefb2gdbd66fe95a760b3a@mail.gmail.com>
 References: <20091113170651.GD26371@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
@@ -11,7 +11,7 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <20091113170651.GD26371@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 13, 2009 at 8:06 PM, Josef Bacik <josef@redhat.com> wrote:
+On Sat, Nov 14, 2009 at 1:06 AM, Josef Bacik <josef@redhat.com> wrote:
 > We can race with the unmount of an fs and the stopping of a kthread w=
 here we
 > will free the block group before we're done using it. =A0The reason f=
@@ -50,33 +50,19 @@ roup_cache *cache)
 >
 > =A0 =A0 =A0 =A0atomic_inc(&cache->space_info->caching_threads);
 > + =A0 =A0 =A0 atomic_inc(&cache->count);
-
-It would be slightly more informative/stylish if
-atomic_inc(&cache->count) is replaced by a cal to
-static inline void btrfs_get_block_group(struct btrfs_block_group_cache=
- *cache)
-{
-	atomic_inc(&cache->count);
-}
-
-
-Regards,
-Andrey
-
 >
 > =A0 =A0 =A0 =A0tsk =3D kthread_run(caching_kthread, cache, "btrfs-cac=
 he-%llu\n",
 > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0cache->key.objecti=
 d);
 > --
-> 1.5.4.3
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->
+
+This won't work since btrfs_free_block_groups call kfree without
+checking the reference
+count. I think the correct way to fix the race is waiting until
+caching threads exit
+
+Yan, Zheng
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

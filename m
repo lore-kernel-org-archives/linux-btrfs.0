@@ -1,131 +1,166 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] btrfs: fix possible panic on unmount V2.
-Date: Fri, 13 Nov 2009 15:12:59 -0500
-Message-ID: <20091113201259.GG26371@localhost.localdomain>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: btrfsck: checksum verify failed
+Date: Fri, 13 Nov 2009 16:17:29 -0500
+Message-ID: <20091113211729.GE11332@think>
+References: <a4423d670911111808i3affd6d4q4aa14c6086d9c28f@mail.gmail.com>
+ <20091112140233.GB5211@think>
+ <a4423d670911120616k2538809erc006c26fe86eb14d@mail.gmail.com>
+ <20091112145051.GB3196@think>
+ <a4423d670911120743o3759d594v533bc6ff8cdedd9@mail.gmail.com>
+ <20091112172502.GA2811@think>
+ <a4423d670911120941x47ca35e7l661e13861dba750e@mail.gmail.com>
+ <20091112200349.GB2811@think>
+ <a4423d670911121344k4b2fbc5j165525602f801aa4@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=iso-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Alexander Beregalov <a.beregalov@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <a4423d670911121344k4b2fbc5j165525602f801aa4@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Changes since V1:
--Do not kfree directly in btrfs_free_block_groups, just put the last reference
--Instead of open coding atomic_inc(&cache->count), move it into a helper
- function.
+On Fri, Nov 13, 2009 at 12:44:47AM +0300, Alexander Beregalov wrote:
+> 2009/11/12 Chris Mason <chris.mason@oracle.com>:
+> > On Thu, Nov 12, 2009 at 08:41:44PM +0300, Alexander Beregalov wrote=
+:
+> >> 2009/11/12 Chris Mason <chris.mason@oracle.com>:
+> >> > On Thu, Nov 12, 2009 at 06:43:00PM +0300, Alexander Beregalov wr=
+ote:
+> >> >> 2009/11/12 Chris Mason <chris.mason@oracle.com>:
+> >> >> > On Thu, Nov 12, 2009 at 05:16:34PM +0300, Alexander Beregalov=
+ wrote:
+> >> >> >> 2009/11/12 Chris Mason <chris.mason@oracle.com>:
+> >> >> >> > On Thu, Nov 12, 2009 at 05:08:53AM +0300, Alexander Berega=
+lov wrote:
+> >> >> >> >> # for i in `seq 1 20`; do btrfsck /dev/sde|grep "checksum=
+ verify
+> >> >> >> >> failed";echo; done
+> >> >> >> >> checksum verify failed on 31945617408 wanted 6607632D fou=
+nd 9CC3ED0
+> >> >> >> >> checksum verify failed on 31945617408 wanted 6607632D fou=
+nd AFBBF41
+> >> >> >> >
+> >> >> >> > Was your filesystem mounted at the time? =A0It's strange t=
+hat the checksum
+> >> >> >> > keeps changing, that points to the data in the block chang=
+ing.
+> >> >> >>
+> >> >> >> It was not.
+> >> >> >> Any tips how I can try to find a root cause?
+> >> >> >> It is raid0 of two disks.
+> >> >> >
+> >> >> > Well, I'd start by looking for anything else that could be to=
+uching the
+> >> >> > FS or the devices. =A0You shouldn't see more than two differe=
+nt csums in this
+> >> >> > configuration (one from each disk).
+> >> >> I always see only these two blocks in output.
+> >> >
+> >> > The wanted is always the same but the found is always different?
+> >>
+> >> Yes, exactly. The bits marked as X look as random.
+> >
+> > Ok, I've added a new tool to the btrfs-unstable-progs repo. =A0It i=
+s
+> > called btrfs-map-logical and it will print the logical->physical ma=
+pping
+> > for any metadata or data block in the FS. =A0The FS should not be m=
+ounted
+> > when you run this program...it'll mostly work mounted but the resul=
+ts
+> > won't be 100% accurate.
+> >
+> > For your case:
+> >
+> > btrfs-map-logical -l 31945617408 -c 1 -o mirror1 /dev/sde
+> > btrfs-map-logical -l 31945617408 -c 2 -o mirror2 /dev/sde
+> >
+> > This will print to the screen the mappings for that block and also =
+save
+> > the contents of the first mirror of the block to a file called mirr=
+or1.
+> > The second command will save the contents of the second mirror.
+> >
+> > If the FS isn't mounted and isn't being changed by someone else, yo=
+u
+> > should get exactly the same mappings every time and exactly the sam=
+e
+> > contents in the files mirror1 and mirror2 every time.
+> >
+> > Just let me know if you have any problems. =A0The most recent commi=
+t in
+> > the btrfs-progs repo is:
+> >
+> > commit ab8fb4c99516c186641bda1dbc0e788f68b4dc77
+> > Author: Chris Mason <chris.mason@oracle.com>
+> > Date: =A0 Thu Nov 12 14:34:09 2009 -0500
+> >
+> > =A0 =A0Add btrfs-map-logical program to map and read logical block =
+numbers
+> >
+> > If you check kernel.org and this commit isn't there, just try again=
+ ;)
+> > The mirror takes a few minutes to update. =A0I'm pretty sure it goe=
+s
+> > faster if you hit reload over and over again, but that's just a gue=
+ss.
+> >
+> > -chris
+> >
+>=20
+> sh-4.0$  sudo ./btrfs-map-logical -l 31945617408 -c 1 -o /tmp/mirror1
+> /dev/sde; md5sum /tmp/mirror1
+> mirror 1 logical 31945617408 physical 16913231872 device /dev/sde
+> mirror 2 logical 31945617408 physical 16893308928 device /dev/sdf
+> bcce5ab8cc65c948650376e936952547  /tmp/mirror1
+>=20
+> sh-4.0$  sudo ./btrfs-map-logical -l 31945617408 -c 2 -o /tmp/mirror2
+> /dev/sde; md5sum /tmp/mirror2
+> mirror 1 logical 31945617408 physical 16913231872 device /dev/sde
+> mirror 2 logical 31945617408 physical 16893308928 device /dev/sdf
+> 347034331d8879096e262a736fd02ba0  /tmp/mirror2
+>=20
+> sh-4.0$  sudo ./btrfs-map-logical -l 31945617408 -c 1 -o /tmp/mirror1
+> /dev/sde; md5sum /tmp/mirror1
+> mirror 1 logical 31945617408 physical 16913231872 device /dev/sde
+> mirror 2 logical 31945617408 physical 16893308928 device /dev/sdf
+> bcce5ab8cc65c948650376e936952547  /tmp/mirror1
+>=20
+> sh-4.0$  sudo ./btrfs-map-logical -l 31945617408 -c 2 -o /tmp/mirror2
+> /dev/sde; md5sum /tmp/mirror2
+> mirror 1 logical 31945617408 physical 16913231872 device /dev/sde
+> mirror 2 logical 31945617408 physical 16893308928 device /dev/sdf
+> 347034331d8879096e262a736fd02ba0  /tmp/mirror2
 
-We can race with the unmount of an fs and the stopping of a kthread where we
-will free the block group before we're done using it.  The reason for this is
-because we do not hold a reference on the block group while its caching, since
-the allocator drops its reference once it exits or moves on to the next block
-group.  This patch fixes the problem by taking a reference to the block group
-before we start caching and dropping it when we're done to make sure all
-accesses to the block group are safe.  Thanks,
+You're getting different answers for the two blocks, which is ok (one
+could be corrupt).  What doesn't make sense is that btrfsck isn't
+dealing with this correctly.  When you read both copies again, you get
+the same answers as the first time, so this looks like a btrfsck bug to
+me.
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/extent-tree.c |   32 +++++++++++++++++++-------------
- 1 files changed, 19 insertions(+), 13 deletions(-)
+I'll try to reproduce.  If you're in a hurry, you could do something
+like this (with the FS unmounted).  Keep a good copy of both mirror1 an=
+d
+mirror2
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 2a4cdce..55132dd 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -83,6 +83,17 @@ static int block_group_bits(struct btrfs_block_group_cache *cache, u64 bits)
- 	return (cache->flags & bits) == bits;
- }
- 
-+void btrfs_get_block_group(struct btrfs_block_group_cache *cache)
-+{
-+	atomic_inc(&cache->count);
-+}
-+
-+void btrfs_put_block_group(struct btrfs_block_group_cache *cache)
-+{
-+	if (atomic_dec_and_test(&cache->count))
-+		kfree(cache);
-+}
-+
- /*
-  * this adds the block group to the fs_info rb tree for the block group
-  * cache
-@@ -156,7 +167,7 @@ block_group_cache_tree_search(struct btrfs_fs_info *info, u64 bytenr,
- 		}
- 	}
- 	if (ret)
--		atomic_inc(&ret->count);
-+		btrfs_get_block_group(ret);
- 	spin_unlock(&info->block_group_cache_lock);
- 
- 	return ret;
-@@ -399,6 +410,8 @@ err:
- 
- 	put_caching_control(caching_ctl);
- 	atomic_dec(&block_group->space_info->caching_threads);
-+	btrfs_put_block_group(block_group);
-+
- 	return 0;
- }
- 
-@@ -439,6 +452,7 @@ static int cache_block_group(struct btrfs_block_group_cache *cache)
- 	up_write(&fs_info->extent_commit_sem);
- 
- 	atomic_inc(&cache->space_info->caching_threads);
-+	btrfs_get_block_group(cache);
- 
- 	tsk = kthread_run(caching_kthread, cache, "btrfs-cache-%llu\n",
- 			  cache->key.objectid);
-@@ -478,12 +492,6 @@ struct btrfs_block_group_cache *btrfs_lookup_block_group(
- 	return cache;
- }
- 
--void btrfs_put_block_group(struct btrfs_block_group_cache *cache)
--{
--	if (atomic_dec_and_test(&cache->count))
--		kfree(cache);
--}
--
- static struct btrfs_space_info *__find_space_info(struct btrfs_fs_info *info,
- 						  u64 flags)
- {
-@@ -2573,7 +2581,7 @@ next_block_group(struct btrfs_root *root,
- 	if (node) {
- 		cache = rb_entry(node, struct btrfs_block_group_cache,
- 				 cache_node);
--		atomic_inc(&cache->count);
-+		btrfs_get_block_group(cache);
- 	} else
- 		cache = NULL;
- 	spin_unlock(&root->fs_info->block_group_cache_lock);
-@@ -4211,7 +4219,7 @@ search:
- 		u64 offset;
- 		int cached;
- 
--		atomic_inc(&block_group->count);
-+		btrfs_get_block_group(block_group);
- 		search_start = block_group->key.objectid;
- 
- have_block_group:
-@@ -4299,7 +4307,7 @@ have_block_group:
- 
- 				btrfs_put_block_group(block_group);
- 				block_group = last_ptr->block_group;
--				atomic_inc(&block_group->count);
-+				btrfs_get_block_group(block_group);
- 				spin_unlock(&last_ptr->lock);
- 				spin_unlock(&last_ptr->refill_lock);
- 
-@@ -7372,9 +7380,7 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
- 			wait_block_group_cache_done(block_group);
- 
- 		btrfs_remove_free_space_cache(block_group);
--
--		WARN_ON(atomic_read(&block_group->count) != 1);
--		kfree(block_group);
-+		btrfs_put_block_group(block_group);
- 
- 		spin_lock(&info->block_group_cache_lock);
- 	}
--- 
-1.5.4.3
+dd if=3D/tmp/mirror1 of=3D/dev/sde bs=3D1 seek=3D16913231872 count=3D40=
+96
+dd if=3D/tmp/mirror1 of=3D/dev/sdf bs=3D1 seek=3D16893308928 count=3D40=
+96
+sync
 
+btrfsck.  If that doesn't work:
+
+dd if=3D/tmp/mirror2 of=3D/dev/sde bs=3D1 seek=3D16913231872 count=3D40=
+96
+dd if=3D/tmp/mirror2 of=3D/dev/sdf bs=3D1 seek=3D16893308928 count=3D40=
+96
+
+btrfsck again.
+
+-chris
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,7 +1,7 @@
 From: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
-Subject: [PATCH] Subvolume Listing feature for ioctl.
-Date: Mon, 16 Nov 2009 10:44:12 +0900
-Message-ID: <4B00AE6C.7080507@jp.fujitsu.com>
+Subject: [PATCH] Subvolume Listing feature for btrfsctl.
+Date: Mon, 16 Nov 2009 10:45:37 +0900
+Message-ID: <4B00AEC1.70008@jp.fujitsu.com>
 References: <4B00ADE8.4090205@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-2022-JP
@@ -12,376 +12,132 @@ In-Reply-To: <4B00ADE8.4090205@jp.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 New feature to list up subvolume/snapshots under
-specified tree of file is introduced to ioctl.
+specified tree of file is introduced to btrfsctl.
+
+This patch should apply with corresponding patch
+for kernel.
 
 ---
- fs/btrfs/ioctl.c |  321 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/ioctl.h |   27 ++++
- 2 files changed, 348 insertions(+)
+ btrfsctl.c |   58 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ ioctl.h    |   17 +++++++++++++++++
+ 2 files changed, 74 insertions(+), 1 deletion(-)
 
-Index: b/fs/btrfs/ioctl.c
+Index: b/btrfsctl.c
 ===================================================================
---- a/fs/btrfs/ioctl.c	2009-11-12 23:47:05.000000000 +0900
-+++ b/fs/btrfs/ioctl.c	2009-11-12 23:54:21.000000000 +0900
-@@ -48,6 +48,7 @@
- #include "print-tree.h"
- #include "volumes.h"
- #include "locking.h"
-+#include "ctree.h"
-
- /* Mask out flags that are inappropriate for the given type of inode. */
- static inline __u32 btrfs_mask_flags(umode_t mode, __u32 flags)
-@@ -738,6 +739,323 @@ out:
- 	return ret;
- }
-
-+/*
-+  Search INODE_REFs to identify path name of 'dirid' directory
-+  in a 'tree_id' tree. and sets path name to 'name'.
-+*/
-+static noinline int btrfs_search_path_in_tree(struct btrfs_fs_info *info,
-+				u64 tree_id, u64 dirid, char *name)
-+{
-+	struct btrfs_root *root;
-+	struct btrfs_key key;
-+	char *name_stack, *ptr;
-+	int ret = -1;
-+	int slot;
-+	int len;
-+	int total_len = 0;
-+	struct btrfs_inode_ref *iref;
-+	struct extent_buffer *l;
-+	struct btrfs_path *path;
-+
-+	if (dirid == BTRFS_FIRST_FREE_OBJECTID) {
-+		name[0]='\0';
-+		ret = 0;
-+		goto out_direct;
-+	}
-+
-+	path = btrfs_alloc_path();
-+	name_stack = kzalloc(BTRFS_PATH_NAME_MAX+1, GFP_NOFS);
-+	ptr = &name_stack[BTRFS_PATH_NAME_MAX];
-+
-+	key.objectid = tree_id;
-+	key.type = BTRFS_ROOT_ITEM_KEY;
-+	key.offset = (u64)-1;
-+	root = btrfs_read_fs_root_no_name(info, &key);
-+
-+	key.objectid = dirid;
-+	key.type = BTRFS_INODE_REF_KEY;
-+	key.offset = 0;
-+
-+	while(1) {
-+		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+		if (ret<0)
-+			goto out;
-+
-+		l = path->nodes[0];
-+		slot = path->slots[0];
-+		btrfs_item_key_to_cpu(l, &key, slot);
-+
-+		if (ret>0 && (key.objectid != dirid ||
-+					key.type != BTRFS_INODE_REF_KEY))
-+			goto out;
-+
-+		iref = btrfs_item_ptr(l, slot, struct btrfs_inode_ref);
-+		len = btrfs_inode_ref_name_len(l, iref);
-+		ptr -= len+1;
-+		total_len += len+1;
-+		if (ptr < name_stack)
-+			goto out;
-+
-+		*(ptr + len) = '/';
-+		read_extent_buffer(l, ptr,(unsigned long)(iref + 1), len);
-+
-+		if (key.offset == BTRFS_FIRST_FREE_OBJECTID)
-+			break;
-+
-+		btrfs_release_path(root, path);
-+		key.objectid = key.offset;
-+		key.offset = 0;
-+		dirid = key.objectid;
-+
-+	}
-+	if (ptr < name_stack)
-+		goto out;
-+	strncpy(name, ptr, total_len);
-+	name[total_len]='\0';
-+	ret = 0;
-+out:
-+	btrfs_release_path(root, path);
-+	kfree(path);
-+	kfree(name_stack);
-+
-+out_direct:
-+	return ret;
-+}
-+
-+/*
-+  Helper function to search tree root directory which contains
-+  specified dentry.
-+  This function is used in btrfs_ioctl_snap_listing function,
-+  to notify root directory(different from the directory what
-+  user specified) to user.
-+*/
-+static noinline struct dentry *btrfs_walkup_dentry_to_root(struct dentry *d)
-+{
-+	u64 ino;
-+	struct dentry *dent=d;
-+
-+	ino = dent->d_inode->i_ino;
-+	while (ino!=BTRFS_FIRST_FREE_OBJECTID) {
-+		dent = dent->d_parent;
-+		ino = dent->d_inode->i_ino;
-+	}
-+	return dent;
-+}
-+
-+/*
-+  Create a list of Snapshot/Subvolume in specified tree.
-+  Target tree is specified by struct file.
-+*/
-+static noinline int btrfs_ioctl_snap_listing(struct file *file,
-+					     void __user *arg)
-+{
-+	struct btrfs_ioctl_subvol_name *svol_iname;
-+	struct btrfs_ioctl_subvol_cache *subvol, *tmp;
-+	struct btrfs_ioctl_subvol_args *svol;
-+	struct btrfs_root *tree_root, *root;
-+	struct btrfs_root_ref *ref;
-+	struct extent_buffer *l;
-+	struct btrfs_path *path=NULL;
-+	struct btrfs_key key;
-+	u64 tree_id;
-+	char *work_path, *f_path, *name;
-+	int err, ret = 0, slot = 0, seq = 0;
-+	LIST_HEAD(pending_subvols);
-+	struct list_head *cur;
-+	struct path vfs_path;
-+	struct inode *d_inode;
-+
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	svol_iname = kzalloc(sizeof(*svol_iname), GFP_NOFS);
-+	name = kzalloc(BTRFS_PATH_NAME_MAX+1, GFP_NOFS);
-+	svol = memdup_user(arg, sizeof(*svol));
-+	if (!svol_iname || IS_ERR(svol) || !name)
-+		return -ENOMEM;
-+
-+	/* identify tree base and set it to user parameter. */
-+	svol->nr = 0;
-+	if (svol->seq == 0) {
-+		work_path = kzalloc(BTRFS_PATH_NAME_MAX+1, GFP_NOFS);
-+		if (!work_path) {
-+			ret = -ENOMEM;
-+			goto error_unrelease;
-+		}
-+		vfs_path.mnt = file->f_path.mnt;
-+		vfs_path.dentry = btrfs_walkup_dentry_to_root(file->f_path.dentry);
-+		f_path = d_path(&vfs_path, work_path, BTRFS_PATH_NAME_MAX);
-+		if (!IS_ERR(f_path)) {
-+			strcpy(svol_iname->name, f_path);
-+			strcat(svol_iname->name, "/");
-+			svol_iname->objectid = 0;
-+			if (copy_to_user((svol->subvols), svol_iname,
-+						sizeof(*svol_iname))) {
-+				ret = -EFAULT;
-+				kfree(work_path);
-+				goto error_unrelease;
-+			};
-+			svol->nr++;
-+		}
-+		kfree(work_path);
-+	}
-+
-+	/* identify tree id and tree root */
-+	d_inode = file->f_path.dentry->d_inode;
-+	root = BTRFS_I(d_inode)->root;
-+	tree_root = root->fs_info->tree_root;
-+	tree_id = root->root_key.objectid;
-+
-+	/* create first tree info to search subvolume and add it to inner list */
-+	subvol = kzalloc(sizeof(struct btrfs_ioctl_subvol_cache), GFP_NOFS);
-+	subvol->tree_id = tree_id;
-+	subvol->name_len = 0;
-+	subvol->path_len = 0;
-+	list_add_tail(&subvol->list, &pending_subvols);
-+	path = btrfs_alloc_path();
-+
-+	/* finalize path name info and search subvolumes until list get empty */
-+	while (!list_empty(&pending_subvols)) {
-+
-+		/* pick up tree info */
-+		subvol = list_entry(pending_subvols.next,
-+					struct btrfs_ioctl_subvol_cache, list);
-+		tree_id = subvol->tree_id;
-+
-+		/* if not first tree, identfy its path in the parent tree.
-+		   subvol->path_name holds path_name from the specified root
-+		   to the parent tree root. so, we concatenate subvol->path_name,
-+		   and path_name in the parent tree, and directry name itself. */
-+		if (subvol->name_len > 0) {
-+			btrfs_search_path_in_tree(root->fs_info,
-+						subvol->parent, subvol->dirid, name);
-+
-+			if (strlen(name)+subvol->name_len>BTRFS_PATH_NAME_MAX) {
-+				ret = -1;
-+				goto error_unrelease;
-+			}
-+			strcpy(svol_iname->name, subvol->path_name);
-+			strcpy(svol_iname->name+strlen(subvol->path_name), name);
-+			strcpy(svol_iname->name+strlen(subvol->path_name)+strlen(name),
-+						subvol->name);
-+			/* this name string is used to set subvolume info as path name
-+			   of parent tree. */
-+			strcpy(name, svol_iname->name);
-+
-+			/* if sequence is bigger than required, return subvol info to
-+				user parameter */
-+			if(seq > svol->seq) {
-+				strcat(svol_iname->name, "/");
-+				svol_iname->objectid = tree_id;
-+				if (copy_to_user((svol->subvols+svol->nr),
-+							svol_iname, sizeof(*svol_iname))) {
-+					ret = -EFAULT;
-+					goto error;
-+				}
-+				svol->nr++;
-+				if (svol->nr >= svol->max) {
-+					list_for_each_entry_safe(subvol, tmp,
-+								&pending_subvols, list) {
-+						list_del(&subvol->list);
-+						if (subvol->name_len != 0)
-+							kfree(subvol->name);
-+						if (subvol->path_name)
-+							kfree(subvol->path_name);
-+						kfree(subvol);
-+					}
-+					ret = 1;
-+					goto reach_limit;
-+				}
-+			}
-+		}
-+
-+		/* search root tree to find subvolumes */
-+		key.objectid = tree_id;
-+		key.type = BTRFS_ROOT_REF_KEY;
-+		key.offset = 0;
-+		list_del(&subvol->list);
-+		if (subvol->name_len != 0)
-+			kfree(subvol->name);
-+		if (subvol->path_name)
-+			kfree(subvol->path_name);
-+		kfree(subvol);
-+		seq++;
-+
-+		err = btrfs_search_slot(NULL, tree_root, &key, path, 0, 0);
-+		if (err < 0) {
-+			printk("search slot failed: code=%d\n", err);
-+			ret = -1;
-+			goto error_unrelease;
-+		}
-+		cur = &pending_subvols;
-+
-+		/* traverse leafs to search subvolumes under the subvolume */
-+		while (1) {
-+			l = path->nodes[0];
-+			slot = path->slots[0];
-+			btrfs_item_key_to_cpu( l, &key, path->slots[0]);
-+			if (slot >= btrfs_header_nritems(l)) {
-+				err = btrfs_next_leaf(tree_root, path);
-+				if (err == 0)
-+					continue;
-+				if (err < 0) {
-+					printk("next_leaf failed: code=%d\n", err);
-+					ret = -1;
-+					goto error;
-+				}
-+			}
-+			if (key.type != BTRFS_ROOT_REF_KEY || key.objectid != tree_id)
-+				break;
-+
-+			subvol = kzalloc(sizeof(struct btrfs_ioctl_subvol_cache),
-+						GFP_NOFS);
-+			subvol->tree_id = key.offset;
-+			subvol->parent = key.objectid;
-+
-+			/* set to subvolume info its name and info about parent tree */
-+			ref = btrfs_item_ptr(l, slot, struct btrfs_root_ref);
-+			subvol->name_len = btrfs_root_ref_name_len( l, ref);
-+			subvol->name = kzalloc(subvol->name_len+1, GFP_NOFS);
-+			read_extent_buffer(l, subvol->name,
-+					(unsigned long)(ref + 1), subvol->name_len);
-+			subvol->path_name = kzalloc(strlen(name)+2, GFP_NOFS);
-+			if (strlen(name)!=0) {
-+				strcpy(subvol->path_name, name);
-+				strcat(subvol->path_name, "/");
-+			}
-+			subvol->dirid = btrfs_root_ref_dirid(l, ref);
-+
-+			list_add(&subvol->list, cur);
-+			cur = &subvol->list;
-+
-+			path->slots[0]++;
-+			cond_resched();
-+		}
-+		btrfs_release_path(tree_root, path);
-+	}
-+
-+reach_limit:
-+	svol->seq = seq;
-+	if (copy_to_user(arg, svol,
-+				sizeof(struct btrfs_ioctl_subvol_args))) {
-+		ret = -EFAULT;
-+	}
-+	btrfs_release_path(tree_root, path);
-+	kfree(svol);
-+	kfree(svol_iname);
-+	kfree(path);
-+	kfree(name);
-+	return ret;
-+error:
-+	btrfs_release_path(tree_root, path);
-+error_unrelease:
-+	kfree(svol);
-+	kfree(svol_iname);
-+	kfree(path);
-+	kfree(name);
-+	return ret;
-+}
-+
- static noinline int btrfs_ioctl_snap_destroy(struct file *file,
- 					     void __user *arg)
+--- a/btrfsctl.c	2009-11-13 01:48:04.000000000 +0900
++++ b/btrfsctl.c	2009-11-16 09:07:29.000000000 +0900
+@@ -47,6 +47,7 @@ static void print_usage(void)
  {
-@@ -1334,10 +1652,13 @@ long btrfs_ioctl(struct file *file, unsi
- 		return btrfs_ioctl_trans_start(file);
- 	case BTRFS_IOC_TRANS_END:
- 		return btrfs_ioctl_trans_end(file);
-+	case BTRFS_IOC_SNAP_LISTING:
-+		return btrfs_ioctl_snap_listing(file, argp);
- 	case BTRFS_IOC_SYNC:
- 		btrfs_sync_fs(file->f_dentry->d_sb, 1);
- 		return 0;
- 	}
-
-+	printk("cmd : %u \n", cmd);
- 	return -ENOTTY;
+ 	printf("usage: btrfsctl [ -d file|dir] [ -s snap_name subvol|tree ]\n");
+ 	printf("                [-r size] [-A device] [-a] [-c] [-D dir .]\n");
++	printf("                [-l dir]\n");
+ 	printf("\t-d filename: defragments one file\n");
+ 	printf("\t-d directory: defragments the entire Btree\n");
+ 	printf("\t-s snap_name dir: creates a new snapshot of dir\n");
+@@ -56,6 +57,7 @@ static void print_usage(void)
+ 	printf("\t-a: scans all devices for Btrfs filesystems\n");
+ 	printf("\t-c: forces a single FS sync\n");
+ 	printf("\t-D: delete snapshot\n");
++	printf("\t-l file: listing snapshot/subvolume under a subvolume\n");
+ 	printf("%s\n", BTRFS_BUILD_VERSION);
+ 	exit(1);
  }
-Index: b/fs/btrfs/ioctl.h
+@@ -96,8 +98,9 @@ int main(int ac, char **av)
+ 	int fd;
+ 	int ret;
+ 	struct btrfs_ioctl_vol_args args;
++	struct btrfs_ioctl_subvol_args *svargs = NULL;
+ 	char *name = NULL;
+-	int i;
++	int i, n;
+ 	unsigned long command = 0;
+ 	int len;
+ 	char *fullpath;
+@@ -191,6 +194,30 @@ int main(int ac, char **av)
+ 			command = BTRFS_IOC_RESIZE;
+ 		} else if (strcmp(av[i], "-c") == 0) {
+ 			command = BTRFS_IOC_SYNC;
++		} else if (strcmp(av[i], "-l") == 0) {
++			if (i >= ac - 1) {
++				fprintf(stderr, "-l requires an arg\n");
++				print_usage();
++			}
++			fullpath = av[i + 1];
++			snap_location = strdup(fullpath);
++			snap_fd = open_file_or_dir(snap_location);
++
++			name = strdup(fullpath);
++			name = basename(name);
++			len = strlen(name);
++
++			if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
++				fprintf(stderr,
++					"listing subvolume name zero length or too long\n");
++				exit(1);
++			}
++			if (strchr(name, '/')) {
++				fprintf(stderr,
++					"error: / not allowed in names\n");
++				exit(1);
++			}
++			command = BTRFS_IOC_SNAP_LISTING;
+ 		}
+ 	}
+ 	if (command == 0) {
+@@ -219,6 +246,35 @@ int main(int ac, char **av)
+ 	if (command == BTRFS_IOC_SNAP_CREATE) {
+ 		args.fd = fd;
+ 		ret = ioctl(snap_fd, command, &args);
++	} else if (command == BTRFS_IOC_SNAP_LISTING) {
++		n = 0;
++		svargs = malloc(sizeof(*svargs));
++		svargs->seq = 0ULL;
++		svargs->nr = 0;
++		svargs->max = BTRFS_SUBVOL_LIST_MAX;
++		svargs->subvols =
++			malloc(sizeof(*svargs->subvols)*BTRFS_SUBVOL_LIST_MAX);
++		ret = ioctl(snap_fd, command, svargs);
++		while (ret >= 0) {
++			for(i = 0; i < svargs->nr; i++) {
++				if (i==0 && svargs->subvols->objectid == 0) {
++					printf("   Base path = %s\n",
++						(svargs->subvols + i)->name);
++					printf("   No.\t   Tree ID\tSubvolume Relative Path\n");
++				} else {
++					n++;
++					printf("%5d\t%10llu\t%s\n",
++								n,
++								(svargs->subvols + i)->objectid,
++								(svargs->subvols + i)->name);
++				}
++			}
++			if (svargs->subvols->objectid == 0 && svargs->nr == 1)
++				printf("\t\tNo Subvolumes\n");
++			if (ret == 0)
++				break;
++			ret = ioctl(snap_fd, command, svargs);
++		}
+ 	} else
+ 		ret = ioctl(fd, command, &args);
+ 	if (ret < 0) {
+Index: b/ioctl.h
 ===================================================================
---- a/fs/btrfs/ioctl.h	2009-11-12 23:47:08.000000000 +0900
-+++ b/fs/btrfs/ioctl.h	2009-11-12 23:47:27.000000000 +0900
-@@ -23,6 +23,7 @@
+--- a/ioctl.h	2009-11-13 01:48:04.000000000 +0900
++++ b/ioctl.h	2009-11-16 09:07:29.000000000 +0900
+@@ -20,16 +20,31 @@
+ #define __IOCTL_
+ #include <asm/types.h>
+ #include <linux/ioctl.h>
++#include "kerncompat.h"
++#include "list.h"
+
  #define BTRFS_IOCTL_MAGIC 0x94
  #define BTRFS_VOL_NAME_MAX 255
  #define BTRFS_PATH_NAME_MAX 4087
 +#define BTRFS_SUBVOL_LIST_MAX 3
 
- /* this should be 4k */
  struct btrfs_ioctl_vol_args {
-@@ -30,6 +31,30 @@ struct btrfs_ioctl_vol_args {
+ 	__s64 fd;
  	char name[BTRFS_PATH_NAME_MAX + 1];
  };
 
@@ -390,7 +146,6 @@ Index: b/fs/btrfs/ioctl.h
 +	char name[BTRFS_PATH_NAME_MAX + 1];
 +};
 +
-+/* these members are same as first three members of btrfs_ioctl_subvol_args_inner */
 +struct btrfs_ioctl_subvol_args {
 +	int max;
 +	int nr;
@@ -398,24 +153,13 @@ Index: b/fs/btrfs/ioctl.h
 +	struct btrfs_ioctl_subvol_name *subvols;
 +};
 +
-+struct btrfs_ioctl_subvol_cache {
-+	struct list_head list;
-+	u64 tree_id;
-+	u64 parent;
-+	u64 dirid;
-+	int path_len;
-+	char *path_name;
-+	int name_len;
-+	char *name;
-+};
-+
- struct btrfs_ioctl_clone_range_args {
-   __s64 src_fd;
-   __u64 src_offset, src_length;
-@@ -67,4 +92,6 @@ struct btrfs_ioctl_clone_range_args {
+ #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
  				   struct btrfs_ioctl_vol_args)
+ #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
+@@ -59,4 +74,6 @@ struct btrfs_ioctl_vol_args {
+
  #define BTRFS_IOC_SNAP_DESTROY _IOW(BTRFS_IOCTL_MAGIC, 15, \
- 				struct btrfs_ioctl_vol_args)
+ 				   struct btrfs_ioctl_vol_args)
 +#define BTRFS_IOC_SNAP_LISTING _IOWR(BTRFS_IOCTL_MAGIC, 16, \
 +				   struct btrfs_ioctl_subvol_args)
  #endif

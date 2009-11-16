@@ -1,81 +1,35 @@
-From: Markus Trippelsdorf <markus@trippelsdorf.de>
-Subject: Re: btrfs failed to delete reference
-Date: Mon, 16 Nov 2009 19:05:22 +0100
-Message-ID: <20091116180522.GA1753@arch.trippelsdorf.de>
-References: <20091116081527.GA1711@arch.trippelsdorf.de>
+From: Roland Dreier <rdreier@cisco.com>
+Subject: UI issues around RAID1
+Date: Mon, 16 Nov 2009 10:45:28 -0800
+Message-ID: <adapr7ib96f.fsf@roland-alpha.cisco.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20091116081527.GA1711@arch.trippelsdorf.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 16, 2009 at 09:15:27AM +0100, Markus Trippelsdorf wrote:
-> Last night the following line was logged:
-> Nov 16 04:01:07 arch kernel: btrfs failed to delete reference to ammintrin.h, inode 118665 parent 2687784
-> 
-> This file is part of an rsnapshot backup directory:
-> /var/.snapshots/hourly.5/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include
-> 
-> arch include # find . -inum 118665
-> find: `./ammintrin.h': No such file or directory
-> 
-> arch include # ls -al
-> ls: cannot access ammintrin.h: No such file or directory
-> total 0
-> drwxr-xr-x 1 root root 22 2009-11-16 08:39 .
-> drwxr-xr-x 1 root root 14 2009-11-16 04:01 ..
-> -????????? ? ?    ?     ?                ? ammintrin.h
-> 
-> arch include # ..
-> arch install-tools # rm -fr include
-> rm: cannot remove directory `include': Directory not empty
+I've just started playing around with btrfs RAID1, and I've noticed a
+couple of what seem to be UI issues.  Suppose I do something like
+"mkfs.btrfs -d raid1 -m raid1 dev1 dev2".  I see the following minor
+usability problems:
 
-Some more date:
+ - Unless I'm missing something, there doesn't seem to be any way later
+   on to see that I set the data policy to raid1, except using
+   btrfs-dump-tree and checking the flags bits for the appropriate
+   group.  Which can make things confusing if I have a bunch of btrfs
+   filesystems around.
 
- # btrfsck /dev/sda1
-bad key ordering 1 2
-bad block 84865024000
-owner ref check failed [84865024000 4096]
-found 43408293888 bytes used err is 1
-total csum bytes: 40020016
-total tree bytes: 2427797504
-total fs tree bytes: 2278412288
-btree space waste bytes: 613750582
-file data blocks allocated: 40987045888
- referenced 40979152896
- Btrfs v0.19-1-g4f89b6e
+ - The free space reporting doesn't seem to take into account the fact
+   that everything is going to be mirrored; so "df" et al report the
+   size of the filesystem and free space on the new filesystem as
+   size(dev1) + size(dev2) -- if dev1 and dev2 are the same size then I
+   would assume it should really be just size(dev1) for a fully-RAID1
+   filesystem.  (Not sure in general what we should say for a
+   metadata-only mirrored filesystem, since we don't really know in
+   advance how much space we have exactly)
 
-.snapshots # find . -inum 118665
-./hourly.0/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
-./weekly.1/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
-./weekly.0/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
-./daily.6/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
-./daily.5/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
-./daily.4/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
-./daily.3/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
-./daily.2/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
-./daily.1/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
-./daily.0/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
-find: `./debug/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h': No such file or directory
-find: `./hourly.5/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h': No such file or directory
-./hourly.4/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
-./hourly.3/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
-./hourly.2/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
-./hourly.1/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
+I'm happy to help fix these issues up; just want to make sure I'm not
+missing something or doing it wrong.
 
-and after deleting most of these hardlinks by hand:
-
-.snapshots # find . -inum 118665
-find: `./daily.3/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h': No such file or directory
-find: `./daily.2/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h': No such file or directory
-find: `./daily.1/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h': No such file or directory
-find: `./daily.0/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h': No such file or directory
-find: `./debug/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h': No such file or directory
-find: `./hourly.5/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h': No such file or directory
-find: `./hourly.4/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h': No such file or directory
-find: `./hourly.3/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h': No such file or directory
-
-
--- 
-Markus
+Thanks,
+  Roland

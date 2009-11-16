@@ -1,48 +1,81 @@
-From: Steven Pratt <slpratt@austin.ibm.com>
-Subject: Re: nodatacsum broken?
-Date: Mon, 16 Nov 2009 11:40:01 -0600
-Message-ID: <4B018E71.3000003@austin.ibm.com>
-References: <4B017C63.5000600@austin.ibm.com> <20091116172327.GD27677@think>
+From: Markus Trippelsdorf <markus@trippelsdorf.de>
+Subject: Re: btrfs failed to delete reference
+Date: Mon, 16 Nov 2009 19:05:22 +0100
+Message-ID: <20091116180522.GA1753@arch.trippelsdorf.de>
+References: <20091116081527.GA1711@arch.trippelsdorf.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20091116172327.GD27677@think>
+In-Reply-To: <20091116081527.GA1711@arch.trippelsdorf.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote:
-> On Mon, Nov 16, 2009 at 10:22:59AM -0600, Steven Pratt wrote:
->   
->> Did we break the ability to run with -o nodatacsum somewhere along
->> the way? I had not run just this option in a while (usually doing
->> nodatacow which implies nodatacsum).  Just did a full run with just
->> nodatacsum and it looks like we still did csums.
->>
->> from proc/mounts:
->>
->> /dev/ffsbdev1 on /mnt/ffsb1 type btrfs (rw,nodatacsum)
->>     
->                                          ^^^^^^^^^^^^^^
->
-> This should be mount -o nodatasum.
->
->   
-Oops. My bad. Re-running.
+On Mon, Nov 16, 2009 at 09:15:27AM +0100, Markus Trippelsdorf wrote:
+> Last night the following line was logged:
+> Nov 16 04:01:07 arch kernel: btrfs failed to delete reference to ammintrin.h, inode 118665 parent 2687784
+> 
+> This file is part of an rsnapshot backup directory:
+> /var/.snapshots/hourly.5/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include
+> 
+> arch include # find . -inum 118665
+> find: `./ammintrin.h': No such file or directory
+> 
+> arch include # ls -al
+> ls: cannot access ammintrin.h: No such file or directory
+> total 0
+> drwxr-xr-x 1 root root 22 2009-11-16 08:39 .
+> drwxr-xr-x 1 root root 14 2009-11-16 04:01 ..
+> -????????? ? ?    ?     ?                ? ammintrin.h
+> 
+> arch include # ..
+> arch install-tools # rm -fr include
+> rm: cannot remove directory `include': Directory not empty
 
-> 2.6.33 will have a patch from Sage to fail mounting when we don't
-> recognize the option instead of silently pretending it worked.  I just
-> didn't want to introduce it this late in the 2.6.32-rc series.
->   
-Good.
+Some more date:
 
-Steve
+ # btrfsck /dev/sda1
+bad key ordering 1 2
+bad block 84865024000
+owner ref check failed [84865024000 4096]
+found 43408293888 bytes used err is 1
+total csum bytes: 40020016
+total tree bytes: 2427797504
+total fs tree bytes: 2278412288
+btree space waste bytes: 613750582
+file data blocks allocated: 40987045888
+ referenced 40979152896
+ Btrfs v0.19-1-g4f89b6e
+
+.snapshots # find . -inum 118665
+./hourly.0/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
+./weekly.1/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
+./weekly.0/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
+./daily.6/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
+./daily.5/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
+./daily.4/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
+./daily.3/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
+./daily.2/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
+./daily.1/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
+./daily.0/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
+find: `./debug/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h': No such file or directory
+find: `./hourly.5/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h': No such file or directory
+./hourly.4/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
+./hourly.3/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
+./hourly.2/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
+./hourly.1/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h
+
+and after deleting most of these hardlinks by hand:
+
+.snapshots # find . -inum 118665
+find: `./daily.3/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h': No such file or directory
+find: `./daily.2/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h': No such file or directory
+find: `./daily.1/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h': No such file or directory
+find: `./daily.0/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h': No such file or directory
+find: `./debug/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h': No such file or directory
+find: `./hourly.5/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h': No such file or directory
+find: `./hourly.4/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h': No such file or directory
+find: `./hourly.3/localhost/usr/local/lib/gcc/x86_64-unknown-linux-gnu/4.2.1/install-tools/include/ammintrin.h': No such file or directory
 
 
-> -chris
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->   
-
+-- 
+Markus

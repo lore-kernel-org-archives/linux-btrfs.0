@@ -1,74 +1,60 @@
-From: jim owens <jowens@hp.com>
-Subject: Re: UI issues around RAID1
-Date: Tue, 17 Nov 2009 10:25:24 -0500
-Message-ID: <4B02C064.50404@hp.com>
-References: <adapr7ib96f.fsf@roland-alpha.cisco.com> <20091116202043.GA9779@localhost.localdomain> 	<4B01C8AF.5040308@hp.com> <2a31deca0911170244m74478cefy2a3f5f7bc1daf476@mail.gmail.com>
+From: Chris Ball <cjb@laptop.org>
+Subject: RFC: Btrfs snapshots feature proposal for Fedora 13
+Date: Tue, 17 Nov 2009 12:00:49 -0500
+Message-ID: <m3lji59jcu.fsf@pullcord.laptop.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Andrey Kuzmin <andrey.v.kuzmin@gmail.com>
+Content-Type: text/plain; charset=utf-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <2a31deca0911170244m74478cefy2a3f5f7bc1daf476@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Andrey Kuzmin wrote:
-> On Tue, Nov 17, 2009 at 12:48 AM, jim owens <jowens@hp.com> wrote:
->> But as we have said many times... if we have different
->> raid types active on different files, any attempt to make
-> 
-> Late question, but could you please explain it a bit further (or point
-> me to respective discussion archive)? Did I get it correct that btrfs
-> supports per-file raid topology? Or is it per-(sub)volume?
+Hi,
 
-The design of btrfs actually allows each extent inside a file
-to have a different raid type.  This probably will never happen
-unless a file is written, we add disks and mount with a new
-raid type, and then modify part of the file. (this may not
-behave how I think but I plan to test it someday soon).
+I've written up a draft of an Fedora 13 feature proposal for
+filesystem rollback using Btrfs snapshots that are automatically
+created by yum:
 
-There is a flag on the file to allow per-file raid setting
-via ioctl/fcntl.  The typical use for this would be to
-make a file DUPlicate type on a simple disk.  DUPlicate acts
-like a raid 1 mirror on a single drive and is the default raid
-type for metadata extents.
+   https://fedoraproject.org/wiki/Features/SystemRollbackWithBtrfs
 
-[disclaimer] btrfs is still in development and Chris might
-say it does not (or will not in the future) work like I think.
+It'd be great to get feedback on whether this is a good idea, and how
+the UI interaction should work.  We're also discussing it in this
+fedora-devel thread:
 
->> df report "raid adjusted numbers" instead of the current raw
->> total storage numbers is going to sometimes give wrong answers.
-> 
-> I have always thought that space (both physical and logical) used by
-> file-system could be accounted for correctly whatever topology or a
-> mixture thereof is in effect, the only point worth discussion being
-> accounting overhead. Free space, under variable topology, of course
-> can only be reliably reported as raw (or as an 'if you use this
-> topology,-then you have this logical capacity left' list).
+   http://thread.gmane.org/gmane.linux.redhat.fedora.devel/123695
 
-So we know the "raw free blocks", but can not guarantee
-"how many raw blocks per new user write-block" will be
-consumed because we do not know what topology will be
-in effect for a new write.
+Some comments I've got already received, from the thread:
 
-We could cheat and use "worst-case topology" numbers
-if all writes are the current default raid.  Of course
-this ignores DUP unless it is set on the whole filesystem.
+* People want the UI to allow independent active snapshots per
+  filesystem (i.e. btrfs /home is the live filesystem, and btrfs / is
+  an older snapshot).
 
-And we also have the problem of metadata - which is dynamic
-and allocated in large chunks and has a DUP type, how do we
-account for that in worst-case calculations.
+* Several people think that the ZFS Time Slider patches to nautilus=C2=B9
+  look good, and want that for btrfs.  Sounds plausible, but I'm
+  more interested in first working on ways to let developers feel
+  comfortable upgrading to the development version of Fedora each
+  day with the possibility of reverting.
 
-The worst-case is probably wrong but may be more useful to
-people to know when they will run out of space. Or at least
-it might make some of our ENOSPC complaints go away :)
+* Instead of inventing a new system-config-blah, this should probably
+  be part of Palimpsest=C2=B2.
 
-Only "raw" and "worst-case" can be explained to users and
-which we report is up to Chris.  Today we report "raw".
+* Perhaps we should encourage people using the Fedora installer with
+  btrfs to create a rootfs separate to their /home, so that they can
+  rollback rootfs snapshots without affecting their homedir.
 
-After spending 10 years on a multi-volume filesystem that
-had (unsolvable) confusing df output, I'm just of the
-opinion that nothing we do will make everyone happy.
+Thanks!
 
-But feel free to run a patch proposal by Chris.
+- Chris.
 
-jim
+=C2=B9:  http://blogs.sun.com/erwann/entry/zfs_on_the_desktop_zfs
+    http://blogs.sun.com/erwann/entry/time_slider_screencast
+    http://blogs.sun.com/erwann/entry/new_time_slider_features_in
+
+=C2=B2:  http://library.gnome.org/users/palimpsest/stable/intro.html.en
+--=20
+Chris Ball   <cjb@laptop.org>
+One Laptop Per Child
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

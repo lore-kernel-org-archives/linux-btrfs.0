@@ -1,37 +1,29 @@
-From: Nuutti Kotivuori <naked@iki.fi>
-Subject: Re: Somewhat borked filesystem in need of fixing
-Date: Wed, 18 Nov 2009 15:20:08 +0200
-Message-ID: <87my2k2cmv.fsf@kiiro.naked.iki.fi>
-References: <87r5rw3mj3.fsf@kiiro.naked.iki.fi>
-	<3d0408630911171840w3ee97037xa9fd5a1ee89f7253@mail.gmail.com>
+From: Roland Dreier <rdreier@cisco.com>
+Subject: Re: UI issues around RAID1
+Date: Wed, 18 Nov 2009 09:54:28 -0800
+Message-ID: <adar5rvafcb.fsf@roland-alpha.cisco.com>
+References: <adapr7ib96f.fsf@roland-alpha.cisco.com>
+	<20091116202043.GA9779@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: "Yan\, Zheng " <yanzheng@21cn.com>
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <3d0408630911171840w3ee97037xa9fd5a1ee89f7253@mail.gmail.com> (Zheng Yan's message of "Wed\, 18 Nov 2009 10\:40\:57 +0800")
+In-Reply-To: <20091116202043.GA9779@localhost.localdomain> (Josef Bacik's
+	message of "Mon, 16 Nov 2009 15:20:43 -0500")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-"Yan, Zheng " <yanzheng@21cn.com> writes:
-> You can try mounting the FS in read only mode and copying files out.
-> If you still get that error, try making verify_parent_transid() in disk-io.c
-> always return 0. These are all we can do now.
 
-Tried mounting it in read only mode, same problem:
+ > >  - Unless I'm missing something, there doesn't seem to be any way later
+ > >    on to see that I set the data policy to raid1, except using
+ > >    btrfs-dump-tree and checking the flags bits for the appropriate
+ > >    group.  Which can make things confusing if I have a bunch of btrfs
+ > >    filesystems around.
 
-  [176994.933016] __ratelimit: 92171 callbacks suppressed
-  [176994.933021] parent transid verify failed on 39669760 wanted 5946 found 5944
+ > You aren't missing anything, theres just nothing that spits that information out
+ > yet.  btrfs-show would probably be a good place to do this.
 
-However, I will keep the filesystem in storage, so you can tell me when
-you wish to start working on the btrfsck side of things. I can run
-different test versions and help debug things until btrfsck is able to
-fix the filesystem.
+Thanks.  I'll look at adding in show more info about RAID policy to the
+btrfs-show output.
 
-Personally, I consider the biggest barrier in adopting new filesystems
-for use to be the quality of their fsck. Checksums and metadata
-checksums do not help against programmatic corruption of data structures
-- and in my opinion, that will happen at some point, either via bugs in
-the code or memory corruption - and a filesystem needs to be able to
-survive that.
-
--- Naked
+ - R.

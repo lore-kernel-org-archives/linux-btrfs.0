@@ -1,26 +1,23 @@
-From: Albert Strasheim <fullung@gmail.com>
-Subject: Re: fsck.btrfs assertion failure with large number of disks in fs
-Date: Fri, 20 Nov 2009 13:44:51 +0200
-Message-ID: <5eec5f300911200344r7bcf391auac31689e1f89e494@mail.gmail.com>
-References: <5eec5f300911192231m33ea0ad4ye9a7fd5eec085cc0@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: btrfsctl -d race with df -h causes hang?
+Date: Fri, 20 Nov 2009 10:35:27 -0500
+Message-ID: <20091120153527.GW3110@think>
+References: <549778BA-0D47-458D-8CE1-022885B2A2BB@ubuntu.com>
+ <30183CDB-9359-493D-B400-3312291C968B@ubuntu.com>
+ <900EA6DB-EECC-4BA8-B551-1A6831949824@ubuntu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: John Dong <jdong@ubuntu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <5eec5f300911192231m33ea0ad4ye9a7fd5eec085cc0@mail.gmail.com>
+In-Reply-To: <900EA6DB-EECC-4BA8-B551-1A6831949824@ubuntu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 20, 2009 at 8:31 AM, Albert Strasheim <fullung@gmail.com> wrote:
-> We are experimenting with btrfs and we've run into some problems.
-> We are running on two Sun Storage J4400 Arrays containing a total of
-> 48 1 TB disks.
-> With 24 disks in the btrfs:
-> Now with one more disk:
+On Thu, Nov 19, 2009 at 06:18:49PM -0500, John Dong wrote:
+> Managed to get some kernel logs this time. Some sort of deadlock?
 
-False alarm. Turns out the server was seeing the same JBOD twice,
-instead of seeing both JBODs, so trying to use more than 24 disks of
-course led to a corrupted file system.
+Ok, if you can still access the machine could you please run sysrq-w and
+sysrq-t.  That will print out the stacks of the stuck procs.  We've
+probably got a lock inversion hiding in the df handling.
 
-Regards,
-
-Albert
+-chris

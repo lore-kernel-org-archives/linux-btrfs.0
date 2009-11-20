@@ -1,43 +1,76 @@
-From: jim owens <jowens@hp.com>
-Subject: Re: Unable to mount loopback devices in RAID mode
-Date: Thu, 19 Nov 2009 18:35:39 -0500
-Message-ID: <4B05D64B.7070705@hp.com>
-References: <200911192026.04694.lists-receive@programmierforen.de>
+From: Albert Strasheim <fullung@gmail.com>
+Subject: fsck.btrfs assertion failure with large number of disks in fs
+Date: Fri, 20 Nov 2009 08:31:58 +0200
+Message-ID: <5eec5f300911192231m33ea0ad4ye9a7fd5eec085cc0@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Andi Drebes <lists-receive@programmierforen.de>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200911192026.04694.lists-receive@programmierforen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Andi Drebes wrote:
-> Hi!
-> I recently tried to mount a filesystem in RAID1 mode using loopback devices. I followed the instructions at [1]. Here's exactly what I've done:
-> 
-> $ dd if=/dev/zero of=raid1_0.img bs=1M count=500
-> $ dd if=/dev/zero of=raid1_1.img bs=1M count=500
-> $ mkfs.btrfs -m raid1 -d raid1 raid1_0.img raid1_1.img
-> $ losetup /dev/loop0 raid1_0.img
-> $ losetup /dev/loop1 raid1_1.img
-> $ mount -t btrfs /dev/loop0 /mnt/btrfs
-> mount: wrong fs type, bad option, bad superblock on /dev/loop0,
->        missing codepage or helper program, or other error
->        In some cases useful info is found in syslog - try
->        dmesg | tail  or so
+Hello all
 
-The problem is btrfs randomly changes the "current master"
-superblock of the filesystem.  Only 1 of the devices will
-be mountable.  You just have to try the other ones, like:
+We are experimenting with btrfs and we've run into some problems.
 
- > $ mount -t btrfs /dev/loop0 /mnt/btrfs
- > mount: wrong fs type, bad option, bad superblock on /dev/loop0,
+We are running on two Sun Storage J4400 Arrays containing a total of
+48 1 TB disks.
 
-$ mount -t btrfs /dev/loop1 /mnt/btrfs
+With 24 disks in the btrfs:
 
-until you find one that works.  I've been testing 4 devices
-and often have to try all 4.  Maybe someday we will fix this
-so ANY raid member can start the mount (but this may need
-a disk format change).
+# mkfs.btrfs /dev/sd[b-y]
 
-jim
+WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
+
+adding device /dev/sdc id 2
+...
+adding device /dev/sdy id 24
+fs created label (null) on /dev/sdb
+        nodesize 4096 leafsize 4096 sectorsize 4096 size 21.83TB
+Btrfs Btrfs v0.19
+
+fsck.btrfs runs fine:
+
+# sudo fsck.btrfs /dev/sdb
+found 36864 bytes used err is 0
+total csum bytes: 0
+total tree bytes: 36864
+total fs tree bytes: 4096
+btree space waste bytes: 26174
+file data blocks allocated: 0
+ referenced 0
+Btrfs Btrfs v0.19
+
+Now with one more disk:
+
+# mkfs.btrfs /dev/sd[b-z]
+
+WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
+
+adding device /dev/sdc id 2
+...
+adding device /dev/sdz id 25
+fs created label (null) on /dev/sdb
+        nodesize 4096 leafsize 4096 sectorsize 4096 size 22.74TB
+Btrfs Btrfs v0.19
+
+# fsck.btrfs /dev/sdb
+fsck.btrfs: volumes.c:1367: btrfs_read_sys_array: Assertion `!(ret)' failed.
+Aborted
+
+mkfs.btrfs compiled from the Git repository fails with the same error message.
+
+Other pertinent information:
+
+# uname -a
+Linux blade1 2.6.31-14-generic #48-Ubuntu SMP Fri Oct 16 14:05:01 UTC
+2009 x86_64 GNU/Linux
+
+We are investigating btrfs for a long term project, so we would be
+happy to provide any debug information or test any kernel or
+btrfs-progs patches.
+
+Regards,
+
+Albert

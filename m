@@ -1,38 +1,43 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: David Nicol <davidnicol@gmail.com>
 Subject: Re: [RFC] proposal for a btrfs filesystem layout
-Date: Fri, 20 Nov 2009 14:54:08 -0500
-Message-ID: <20091120195408.GA3110@think>
-References: <200911201950.06662.kreijack@libero.it>
+Date: Fri, 20 Nov 2009 14:05:11 -0600
+Message-ID: <934f64a20911201205j70b5b9cfm40260a4a3a6c7b0b@mail.gmail.com>
+References: <200911201950.06662.kreijack@libero.it> <934f64a20911201124q2a42fddek87d3f8fe864b3c41@mail.gmail.com>
+	<20091120195017.GZ3110@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, Chris Ball <cjb@laptop.org>
-To: Goffredo Baroncelli <kreijack@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200911201950.06662.kreijack@libero.it>
+In-Reply-To: <20091120195017.GZ3110@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 20, 2009 at 07:50:06PM +0100, Goffredo Baroncelli wrote:
-> Hi all,
-> 
-> after the Chirs (Ball) email, I thought about a possible btrfs file-system 
-> layout, which may permit to snapshot the root and mount (if required) an old 
-> snapshot of the root.
+On Fri, Nov 20, 2009 at 1:50 PM, Chris Mason <chris.mason@oracle.com> w=
+rote:
+> COW semantics require touching btree nodes all the way up to the root=
+ of
+> the btree, but this is different from the directory. =C2=A0Directorie=
+s are
+> stored in the btree, but you won't have to touch more than 8 or so bt=
+ree
+> levels regardless of how deep your directory tree is.
+>
+> -chris
 
-[ very clear description of a filesystem tree layout ]
-> 
-> 
-> Any comments ? 
+Thanks for straightening me out on that point.
 
-This is definitely possible, but not strictly required.  We'll be able
-to create an ioctl (or mount option) that replaces the default subvolume
-('.' in your examples) pointer with a pointer to another subvolume, and
-an ioctl to delete the old root.
+Still, 8 might be a lot.
 
-Basically it will end up hiding the extra layer of indirection your
-proposal adds.  This doesn't mean your ideas were bad, my plan all along
-has been to leave this up to the distros to work out with the users, and
-give them enough tools that they have the flexibility to do what they
-need.
-
--chris
-
+Regardless of the decoupling of btrees and directories, am I right in
+thinking that mounted subvolumes instead of directories would (1)
+reduce contention (2) reduce the number of levels touched since number
+of levels is a function of the number of fs entities in the volume,
+therefore (3) defining a file system entity that transparently becomes
+a mounted subvolume (by transparently I mean without an additional
+mount command) and (4) crafting a utility to streamline
+creation-and-implied-mounting of the entity type from #3 would make
+sense?
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

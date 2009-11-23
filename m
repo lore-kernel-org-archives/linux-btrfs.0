@@ -1,26 +1,52 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: A file cloned with "cp --reflink" different from the original
- one?
-Date: Mon, 23 Nov 2009 10:52:13 -0500
-Message-ID: <20091123155213.GE15294@think>
-References: <119341710911230208j5e60734cvf09cfcacd86ba9f6@mail.gmail.com>
- <4B0A8FC1.4050208@draigBrady.com>
- <119341710911230614h10d7071dq3700cdf39e0c28fb@mail.gmail.com>
- <4B0AAE8A.2020900@draigBrady.com>
- <119341710911230750j10502561xac71cfd37ad9a649@mail.gmail.com>
+From: Jan Engelhardt <jengelh@medozas.de>
+Subject: 32-bit readdir off_t problem again
+Date: Mon, 23 Nov 2009 20:01:17 +0100 (CET)
+Message-ID: <alpine.LSU.2.00.0911231956320.31541@obet.zrqbmnf.qr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: =?iso-8859-1?Q?P=E1draig?= Brady <P@draigbrady.com>,
-	bug-coreutils@gnu.org, linux-btrfs@vger.kernel.org
-To: Jian Lin <lj@linjian.org>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <119341710911230750j10502561xac71cfd37ad9a649@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 23, 2009 at 11:50:47PM +0800, Jian Lin wrote:
-> Thanks. I will try the new version soon.
+Hi,
 
-Note that you'll have to reclone the files, the new version won't fix
-the old clone I'm afraid.
 
--chris
+back at http://lkml.indiana.edu/hypermail/linux/kernel/0901.2/00647.html 
+there was a readdir problem with the last entry. This issue has 
+resurfaced in 2.6.31.6 (yeah, yeah), with only slight differences. 
+Instead of entries being returned with key 4294967295, they are not 
+returned at all anymore.
+
+19:56 borg:../fs/fuse > l
+total 112
+drwxr-xr-x 1 abuild abuild    30 Nov 23 13:55 .
+drwxr-xr-x 1 abuild abuild    16 Nov 23 13:49 ..
+-rw-r--r-- 1 root   root       0 Nov 23 13:55 a
+-rw-r--r-- 1 abuild abuild 13481 Nov 23 13:40 cuse.ko
+-rw-r--r-- 1 abuild abuild 95894 Nov 23 13:40 fuse.ko
+19:56 borg:../fs/fuse > /dev/shm/a.out .
+2 .
+2 ..
+3 cuse.ko
+5 fuse.ko
+19:56 borg:../fs/fuse > /dev/shm/a64 .
+2 .
+2 ..
+3 cuse.ko
+5 fuse.ko
+9223372036854775807 a
+
+(a.out/a64 being the testcase posted at the original post.)
+
+Should I have compiled with -D_FILE_OFFSET_BITS=64? Perhaps:
+
+borg> /dev/shm/a32 .
+2 .
+2 ..
+3 cuse.ko
+5 fuse.ko
+-1 a
+
+depmod(8) however seems to be compiled without FILE_OFFSET_BITS=64
+however and as such *does* miss files (and valuable symbols) due to
+btrfs.

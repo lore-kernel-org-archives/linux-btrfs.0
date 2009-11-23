@@ -1,21 +1,43 @@
-From: John Dong <jdong@ubuntu.com>
-Subject: Re: btrfsctl -d race with df -h causes hang?
-Date: Sun, 22 Nov 2009 11:42:36 -0500
-Message-ID: <56546E3D-061B-4BEC-AFC3-CB13CA88C620@ubuntu.com>
-References: <549778BA-0D47-458D-8CE1-022885B2A2BB@ubuntu.com> <30183CDB-9359-493D-B400-3312291C968B@ubuntu.com> <900EA6DB-EECC-4BA8-B551-1A6831949824@ubuntu.com> <20091120153527.GW3110@think>
-Mime-Version: 1.0 (Apple Message framework v1077)
+From: Karel Zak <kzak@redhat.com>
+Subject: Re: [PATCH 1/2] btrfs-progs: multidevice support for check_mounted
+Date: Mon, 23 Nov 2009 10:01:43 +0100
+Message-ID: <20091123090143.GB10852@nb.net.home>
+References: <200911211533.25878.lists-receive@programmierforen.de> <200911211538.38351.lists-receive@programmierforen.de> <20091121202109.GD16301@nb.net.home> <200911221433.13074.lists-receive@programmierforen.de>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>,
+	"Yan, Zheng" <yanzheng@21cn.com>
+To: Andi Drebes <lists-receive@programmierforen.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20091120153527.GW3110@think>
+In-Reply-To: <200911221433.13074.lists-receive@programmierforen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sun, Nov 22, 2009 at 02:33:13PM +0100, Andi Drebes wrote:
+> In the new patch below, is_pseudo_fs() is replaced by
+> is_existing_blk_or_reg_file(). We ignore entries associated with an
+> invalid path or paths that don't point to a regular or block file.
+> However, if a path used in a pseudo-filesystem entry points to the
+> file that is being checked, check_mounted() returns 1. In my eyes,
+> this is extremely unlikely.
+...
+> +/* Checks if a file exists and is a block or regular file*/
+> +int is_existing_blk_or_reg_file(const char* filename)
+> +{
+> +	struct stat st_buf;
+> +
+> +	if(stat(filename, &st_buf) < 0) {
+> +		if(errno == ENOENT)
+> +			return 0;
+> +		else
+> +			return -errno;
+> +	}
+> +
+> +	return (S_ISBLK(st_buf.st_mode) || S_ISREG(st_buf.st_mode));
+> +}
 
-On Nov 20, 2009, at 10:35 AM, Chris Mason wrote:
+ Yes, this looks better.
 
->  We've
-> probably got a lock inversion hiding in the df handling.
+    Karel
 
-
-Hi Chris, just an update; I've been able to get the hang to happen without issuing df. It seems like the btrfsctl -d activity combined with -o compress is enough to trigger it.
+-- 
+ Karel Zak  <kzak@redhat.com>

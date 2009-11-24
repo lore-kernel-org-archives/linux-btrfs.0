@@ -1,78 +1,72 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [RFC] proposal for a btrfs filesystem layout
-Date: Mon, 23 Nov 2009 20:27:50 -0500
-Message-ID: <20091124012749.GG24068@think>
-References: <200911201950.06662.kreijack@libero.it>
- <20091120195408.GA3110@think>
- <200911210031.06858.kreijack@libero.it>
+From: pragnesh radadia <pragnesh.radadia@gmail.com>
+Subject: Re: kernel oops when trying to compile kernel on btrfs part
+Date: Tue, 24 Nov 2009 20:12:01 +0530
+Message-ID: <3fa5c0870911240642o648806d4l9a42f132663b1e4a@mail.gmail.com>
+References: <3fa5c0870911190516q227a65cau20716cc3b425a5f1@mail.gmail.com>
+	 <20091124012353.GE24068@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Goffredo Baroncelli <kreijack@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>,
+	pragnesh radadia <pragnesh.radadia@gmail.com>,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200911210031.06858.kreijack@libero.it>
+In-Reply-To: <20091124012353.GE24068@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Nov 21, 2009 at 12:31:06AM +0100, Goffredo Baroncelli wrote:
-> Hi Chris,
-> 
-> On Friday 20 November 2009, Chris Mason wrote:
-> > On Fri, Nov 20, 2009 at 07:50:06PM +0100, Goffredo Baroncelli wrote:
-> > > Hi all,
-> > > 
-> > > after the Chirs (Ball) email, I thought about a possible btrfs file-system 
-> > > layout, which may permit to snapshot the root and mount (if required) an 
-> old 
-> > > snapshot of the root.
-> > 
-> > [ very clear description of a filesystem tree layout ]
-> > > 
-> > > 
-> > > Any comments ? 
-> > 
-> > This is definitely possible, but not strictly required.  We'll be able
-> > to create an ioctl (or mount option) that replaces the default subvolume
-> > ('.' in your examples) pointer with a pointer to another subvolume, and
-> > an ioctl to delete the old root.
-> 
-> That was my first thought... but so the risk is to implement with ioctl(s) 
-> commands (rename, delete, list  ) that 
-> a) already exist in the VFS abstraction.
-> b) refer to objects that are like "directories" (in fact the differences 
-> between a volume and a directory are very small)
-
-The 'default' subvolume actually does live in a directory, just one you
-can't see without the ioctl ;)
-
-> 
-> > Basically it will end up hiding the extra layer of indirection your
-> > proposal adds.  
-> 
-> Yes, my idea introduces an extra layer, that
-> a) is different from all other file-systems 
-> b) is not useful if you don't use the snapshot at all
-> And both a) and b) are not good point :((
-> 
-> > This doesn't mean your ideas were bad, my plan all along
-> > has been to leave this up to the distros to work out with the users, and
-> > give them enough tools that they have the flexibility to do what they
-> > need.
-> 
-> My concern is about the btrfs user interface.
-> The biggest difficult that I had to learn the btrfs capabilities is its "user-
-> interface". I have to admit to be not the smartest person, but I spent a lot 
-> of time in order to understand which was the difference between a btrfs 
-> subvolume creation and a "mkfs + mount".
-> Finally I concluded that there no is difference (except the COW behaviour and 
-> other implementation detail). My impression was that in some area too often 
-> the VFS and btrfs do the same things. [*]
-> The point is that if btrfs do the same things of VFS, this may be called as 
-> "flexibility". 
-> But the history has highlight that from a long term point of view is the 
-> orthogonality of the subsystems that leads to the flexibility of the system..
-
-Well, btrfs is using the VFS to expose the subvolumes.  Basically a
-subvolume is a special directory.
-
--chris
-
+On Tue, Nov 24, 2009 at 6:53 AM, Chris Mason <chris.mason@oracle.com> w=
+rote:
+> On Thu, Nov 19, 2009 at 06:46:58PM +0530, pragnesh radadia wrote:
+>> I got following kernel oops when trying to compile kernel on btrfs
+>> partation on my laptop.
+>
+> This is probably running out of space. =A0Could you please send along=
+ the
+> lines around line number 735 in fs/btrfs/inode.c?
+>
+> -chris
+>
+code,
+ 712                 if (ret =3D=3D 0) {
+ 713                         extent_clear_unlock_delalloc(inode,
+ 714
+&BTRFS_I(inode)->io_tree,
+ 715                                                      start, end,
+NULL, 1, 1,
+ 716                                                      1, 1, 1, 1);
+ 717                         *nr_written =3D *nr_written +
+ 718                              (end - start + PAGE_CACHE_SIZE) /
+PAGE_CACHE_SIZE;
+ 719                         *page_started =3D 1;
+ 720                         ret =3D 0;
+ 721                         goto out;
+ 722                 }
+ 723         }
+ 724
+ 725         BUG_ON(disk_num_bytes >
+ 726                btrfs_super_total_bytes(&root->fs_info->super_copy)=
+);
+ 727
+ 728         btrfs_drop_extent_cache(inode, start, start + num_bytes - =
+1, 0);
+ 729
+ 730         while (disk_num_bytes > 0) {
+ 731                 cur_alloc_size =3D min(disk_num_bytes,
+root->fs_info->max_extent);
+ 732                 ret =3D btrfs_reserve_extent(trans, root, cur_allo=
+c_size,
+ 733                                            root->sectorsize, 0, al=
+loc_hint,
+ 734                                            (u64)-1, &ins, 1);
+ 735                 BUG_ON(ret);
+ 736
+ 737                 em =3D alloc_extent_map(GFP_NOFS);
+ 738                 em->start =3D start;
+ 739                 em->orig_start =3D em->start;
+ 740
+ 741                 ram_size =3D ins.offset;
+-pragnesh
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

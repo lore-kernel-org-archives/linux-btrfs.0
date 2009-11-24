@@ -1,63 +1,78 @@
 From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: [RFC] proposal for a btrfs filesystem layout
-Date: Mon, 23 Nov 2009 20:26:08 -0500
-Message-ID: <20091124012608.GF24068@think>
+Date: Mon, 23 Nov 2009 20:27:50 -0500
+Message-ID: <20091124012749.GG24068@think>
 References: <200911201950.06662.kreijack@libero.it>
- <934f64a20911201124q2a42fddek87d3f8fe864b3c41@mail.gmail.com>
- <20091120195017.GZ3110@think>
- <934f64a20911201205j70b5b9cfm40260a4a3a6c7b0b@mail.gmail.com>
+ <20091120195408.GA3110@think>
+ <200911210031.06858.kreijack@libero.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
+Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: David Nicol <davidnicol@gmail.com>
+To: Goffredo Baroncelli <kreijack@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <934f64a20911201205j70b5b9cfm40260a4a3a6c7b0b@mail.gmail.com>
+In-Reply-To: <200911210031.06858.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 20, 2009 at 02:05:11PM -0600, David Nicol wrote:
-> On Fri, Nov 20, 2009 at 1:50 PM, Chris Mason <chris.mason@oracle.com>=
- wrote:
-> > COW semantics require touching btree nodes all the way up to the ro=
-ot of
-> > the btree, but this is different from the directory. =A0Directories=
- are
-> > stored in the btree, but you won't have to touch more than 8 or so =
-btree
-> > levels regardless of how deep your directory tree is.
-> >
-> > -chris
->=20
-> Thanks for straightening me out on that point.
->=20
-> Still, 8 might be a lot.
->=20
-> Regardless of the decoupling of btrees and directories, am I right in
-> thinking that mounted subvolumes instead of directories would (1)
-> reduce contention
+On Sat, Nov 21, 2009 at 12:31:06AM +0100, Goffredo Baroncelli wrote:
+> Hi Chris,
+> 
+> On Friday 20 November 2009, Chris Mason wrote:
+> > On Fri, Nov 20, 2009 at 07:50:06PM +0100, Goffredo Baroncelli wrote:
+> > > Hi all,
+> > > 
+> > > after the Chirs (Ball) email, I thought about a possible btrfs file-system 
+> > > layout, which may permit to snapshot the root and mount (if required) an 
+> old 
+> > > snapshot of the root.
+> > 
+> > [ very clear description of a filesystem tree layout ]
+> > > 
+> > > 
+> > > Any comments ? 
+> > 
+> > This is definitely possible, but not strictly required.  We'll be able
+> > to create an ioctl (or mount option) that replaces the default subvolume
+> > ('.' in your examples) pointer with a pointer to another subvolume, and
+> > an ioctl to delete the old root.
+> 
+> That was my first thought... but so the risk is to implement with ioctl(s) 
+> commands (rename, delete, list  ) that 
+> a) already exist in the VFS abstraction.
+> b) refer to objects that are like "directories" (in fact the differences 
+> between a volume and a directory are very small)
 
-It might, it depends on the workload.  But yes, one point of big
-contention is the root node of the btree and each subvolume has its own
-root.
+The 'default' subvolume actually does live in a directory, just one you
+can't see without the ioctl ;)
 
-> (2) reduce the number of levels touched since number
-> of levels is a function of the number of fs entities in the volume,
-> therefore
+> 
+> > Basically it will end up hiding the extra layer of indirection your
+> > proposal adds.  
+> 
+> Yes, my idea introduces an extra layer, that
+> a) is different from all other file-systems 
+> b) is not useful if you don't use the snapshot at all
+> And both a) and b) are not good point :((
+> 
+> > This doesn't mean your ideas were bad, my plan all along
+> > has been to leave this up to the distros to work out with the users, and
+> > give them enough tools that they have the flexibility to do what they
+> > need.
+> 
+> My concern is about the btrfs user interface.
+> The biggest difficult that I had to learn the btrfs capabilities is its "user-
+> interface". I have to admit to be not the smartest person, but I spent a lot 
+> of time in order to understand which was the difference between a btrfs 
+> subvolume creation and a "mkfs + mount".
+> Finally I concluded that there no is difference (except the COW behaviour and 
+> other implementation detail). My impression was that in some area too often 
+> the VFS and btrfs do the same things. [*]
+> The point is that if btrfs do the same things of VFS, this may be called as 
+> "flexibility". 
+> But the history has highlight that from a long term point of view is the 
+> orthogonality of the subsystems that leads to the flexibility of the system..
 
-It depends on the overall btree size.  Probably.
-
-> (3) defining a file system entity that transparently becomes
-> a mounted subvolume (by transparently I mean without an additional
-> mount command) and (4) crafting a utility to streamline
-> creation-and-implied-mounting of the entity type from #3 would make
-> sense?
-
-Sure.  It definitely makes sense to explore the subvolume and
-snapshotting user interfaces.
+Well, btrfs is using the VFS to expose the subvolumes.  Basically a
+subvolume is a special directory.
 
 -chris
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,72 +1,39 @@
-From: pragnesh radadia <pragnesh.radadia@gmail.com>
-Subject: Re: kernel oops when trying to compile kernel on btrfs part
-Date: Tue, 24 Nov 2009 20:12:01 +0530
-Message-ID: <3fa5c0870911240642o648806d4l9a42f132663b1e4a@mail.gmail.com>
-References: <3fa5c0870911190516q227a65cau20716cc3b425a5f1@mail.gmail.com>
-	 <20091124012353.GE24068@think>
+From: "Goffredo Baroncelli" <kreijack@libero.it>
+Subject: Re: [RFC] proposal for a btrfs filesystem layout
+Date: Tue, 24 Nov 2009 19:27:44 +0100
+Message-ID: <KTMLY8$0856FD6739603291C7EB756874D48C83@libero.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>,
-	pragnesh radadia <pragnesh.radadia@gmail.com>,
-	linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=US-ASCII
+Cc: "kreijack" <kreijack@gmail.com>,
+	"linux-btrfs" <linux-btrfs@vger.kernel.org>
+To: "chris\.mason" <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20091124012353.GE24068@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 24, 2009 at 6:53 AM, Chris Mason <chris.mason@oracle.com> w=
-rote:
-> On Thu, Nov 19, 2009 at 06:46:58PM +0530, pragnesh radadia wrote:
->> I got following kernel oops when trying to compile kernel on btrfs
->> partation on my laptop.
->
-> This is probably running out of space. =A0Could you please send along=
- the
-> lines around line number 735 in fs/btrfs/inode.c?
->
+Chris Mason wrote:
+> On Sat, Nov 21, 2009 at 12:31:06AM +0100, Goffredo Baroncelli wrote:
+[...]
+> > My concern is about the btrfs user interface.
+> > The biggest difficult that I had to learn the btrfs capabilities is its "user-
+> > interface". I have to admit to be not the smartest person, but I spent a lot 
+> > of time in order to understand which was the difference between a btrfs 
+> > subvolume creation and a "mkfs + mount".
+> > Finally I concluded that there no is difference (except the COW behaviour and 
+> > other implementation detail). My impression was that in some area too often 
+> > the VFS and btrfs do the same things. [*]
+> > The point is that if btrfs do the same things of VFS, this may be called as 
+> > "flexibility". 
+> > But the history has highlight that from a long term point of view is the 
+> > orthogonality of the subsystems that leads to the flexibility of the system..
+> 
+> Well, btrfs is using the VFS to expose the subvolumes.  Basically a
+> subvolume is a special directory.
+
+Let me explain better: what I would say was to expose the sub-volume content *only* with a command like "mount -o subvol=<name>".
+To day when I create a snapshot, automatically it is placed in the btrfs filesystem with the snapshot name. IIRC when I move (rename) the directory I change the subvolume/snapshot name also.
+Yes, I can remount the sub-volume with the mount command anywhere and with an arbitrary name. In fact the thing that seems strange to me is that when I create a snapshot, immediately it is mounted: it is not a real problem, it is only a strange behaviour. The "standard" behaviour is to create the file-system and then mount it: two separate actions.
+
 > -chris
->
-code,
- 712                 if (ret =3D=3D 0) {
- 713                         extent_clear_unlock_delalloc(inode,
- 714
-&BTRFS_I(inode)->io_tree,
- 715                                                      start, end,
-NULL, 1, 1,
- 716                                                      1, 1, 1, 1);
- 717                         *nr_written =3D *nr_written +
- 718                              (end - start + PAGE_CACHE_SIZE) /
-PAGE_CACHE_SIZE;
- 719                         *page_started =3D 1;
- 720                         ret =3D 0;
- 721                         goto out;
- 722                 }
- 723         }
- 724
- 725         BUG_ON(disk_num_bytes >
- 726                btrfs_super_total_bytes(&root->fs_info->super_copy)=
-);
- 727
- 728         btrfs_drop_extent_cache(inode, start, start + num_bytes - =
-1, 0);
- 729
- 730         while (disk_num_bytes > 0) {
- 731                 cur_alloc_size =3D min(disk_num_bytes,
-root->fs_info->max_extent);
- 732                 ret =3D btrfs_reserve_extent(trans, root, cur_allo=
-c_size,
- 733                                            root->sectorsize, 0, al=
-loc_hint,
- 734                                            (u64)-1, &ins, 1);
- 735                 BUG_ON(ret);
- 736
- 737                 em =3D alloc_extent_map(GFP_NOFS);
- 738                 em->start =3D start;
- 739                 em->orig_start =3D em->start;
- 740
- 741                 ram_size =3D ins.offset;
--pragnesh
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Goffredo
+
+

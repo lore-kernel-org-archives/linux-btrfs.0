@@ -1,52 +1,21 @@
-From: Jan Engelhardt <jengelh@medozas.de>
-Subject: 32-bit readdir off_t problem again
-Date: Mon, 23 Nov 2009 20:01:17 +0100 (CET)
-Message-ID: <alpine.LSU.2.00.0911231956320.31541@obet.zrqbmnf.qr>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: kernel oops when trying to compile kernel on btrfs part
+Date: Mon, 23 Nov 2009 20:23:53 -0500
+Message-ID: <20091124012353.GE24068@think>
+References: <3fa5c0870911190516q227a65cau20716cc3b425a5f1@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: pragnesh radadia <pragnesh.radadia@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <3fa5c0870911190516q227a65cau20716cc3b425a5f1@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Thu, Nov 19, 2009 at 06:46:58PM +0530, pragnesh radadia wrote:
+> I got following kernel oops when trying to compile kernel on btrfs
+> partation on my laptop.
 
+This is probably running out of space.  Could you please send along the
+lines around line number 735 in fs/btrfs/inode.c?
 
-back at http://lkml.indiana.edu/hypermail/linux/kernel/0901.2/00647.html 
-there was a readdir problem with the last entry. This issue has 
-resurfaced in 2.6.31.6 (yeah, yeah), with only slight differences. 
-Instead of entries being returned with key 4294967295, they are not 
-returned at all anymore.
-
-19:56 borg:../fs/fuse > l
-total 112
-drwxr-xr-x 1 abuild abuild    30 Nov 23 13:55 .
-drwxr-xr-x 1 abuild abuild    16 Nov 23 13:49 ..
--rw-r--r-- 1 root   root       0 Nov 23 13:55 a
--rw-r--r-- 1 abuild abuild 13481 Nov 23 13:40 cuse.ko
--rw-r--r-- 1 abuild abuild 95894 Nov 23 13:40 fuse.ko
-19:56 borg:../fs/fuse > /dev/shm/a.out .
-2 .
-2 ..
-3 cuse.ko
-5 fuse.ko
-19:56 borg:../fs/fuse > /dev/shm/a64 .
-2 .
-2 ..
-3 cuse.ko
-5 fuse.ko
-9223372036854775807 a
-
-(a.out/a64 being the testcase posted at the original post.)
-
-Should I have compiled with -D_FILE_OFFSET_BITS=64? Perhaps:
-
-borg> /dev/shm/a32 .
-2 .
-2 ..
-3 cuse.ko
-5 fuse.ko
--1 a
-
-depmod(8) however seems to be compiled without FILE_OFFSET_BITS=64
-however and as such *does* miss files (and valuable symbols) due to
-btrfs.
+-chris

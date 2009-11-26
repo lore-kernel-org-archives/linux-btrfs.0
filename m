@@ -1,38 +1,45 @@
-From: David Nicol <davidnicol@gmail.com>
-Subject: survey of command line interfaces for working with snapshots
-Date: Wed, 25 Nov 2009 09:13:20 -0600
-Message-ID: <934f64a20911250713i591badd7i516576624fa5bea6@mail.gmail.com>
+From: "Yan, Zheng" <zheng.yan@oracle.com>
+Subject: [PATCH] Btrfs: don't add extent 0 to the free space cache v2
+Date: Thu, 26 Nov 2009 17:31:11 +0800
+Message-ID: <4B0E4ADF.90609@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: unlisted-recipients:; (no To-header on input)
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org, chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 24, 2009 at 12:27 PM, Goffredo Baroncelli <kreijack@libero.it>
+If block group 0 is completely free, btrfs_read_block_groups will
+add extent [0, BTRFS_SUPER_INFO_OFFSET) to the free space cache.
 
-> Yes, I can remount the sub-volume with the mount command anywhere and with an arbitrary name. In fact the thing that seems strange to me is that when I create a snapshot, immediately it is mounted: it is not a real problem, it is only a strange behaviour. The "standard" behaviour is to create the file-system and then mount it: two separate actions.
+Previous patch reveals a bug in add_new_free_space which may cause
+super block be added to the free space cache. This patch fixes it.
 
-GB is correct: Tru64's ADVfs snapshots, which were (are?) essentially
-the same as btrfs snapshots, were (are?) not mounted on creation
-
-http://www.tru64unix.compaq.com/docs/base_doc/DOCUMENTATION/V51B_HTML/MAN/MAN4/0124____.HTM
-
-indicates that these things were (are?) called "clones"
-
-and http://www.tru64unix.compaq.com/docs/base_doc/DOCUMENTATION/V51B_HTML/MAN/MAN8/0048____.HTM
-
- Here's the example code for creating and mounting a clone with tru64
-ADVfs, from clonefset(8):
-
-  The following example creates a read-only copy of the credit_fs fileset
-  that resides in the accounts_dmn domain.  The clone fileset name in this
-  example is credit_clone1.  This example also performs an online backup and
-  removes the clone fileset after the backup is complete:
-
-       # mkdir /mnt/credit_clone1
-       # clonefset accounts_dmn credit_fs credit_clone1
-       # mount -t advfs account_dmn#credit_clone1 /mnt/credit_clone1
-       # vdump /mnt/credit_clone1
-       # umount /mnt/credit_clone1
-       # rmfset account_dmn credit_clone1
+Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
+---
+diff -urp 1/fs/btrfs/extent-tree.c 2/fs/btrfs/extent-tree.c
+--- 1/fs/btrfs/extent-tree.c	2009-11-26 17:09:43.903551612 +0800
++++ 2/fs/btrfs/extent-tree.c	2009-11-26 17:14:11.898800726 +0800
+@@ -195,6 +195,14 @@ static int exclude_super_stripes(struct 
+ 	int stripe_len;
+ 	int i, nr, ret;
+ 
++	if (cache->key.objectid < BTRFS_SUPER_INFO_OFFSET) {
++		stripe_len = BTRFS_SUPER_INFO_OFFSET - cache->key.objectid;
++		cache->bytes_super += stripe_len;
++		ret = add_excluded_extent(root, cache->key.objectid,
++					  stripe_len);
++		BUG_ON(ret);
++	}
++
+ 	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
+ 		bytenr = btrfs_sb_offset(i);
+ 		ret = btrfs_rmap_block(&root->fs_info->mapping_tree,
+@@ -255,7 +263,7 @@ static u64 add_new_free_space(struct btr
+ 		if (ret)
+ 			break;
+ 
+-		if (extent_start == start) {
++		if (extent_start <= start) {
+ 			start = extent_end + 1;
+ 		} else if (extent_start > start && extent_start < end) {
+ 			size = extent_start - start;

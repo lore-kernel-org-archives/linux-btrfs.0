@@ -1,33 +1,35 @@
-From: jim owens <jowens@hp.com>
-Subject: Re: Unable to mount loopback devices in RAID mode
-Date: Fri, 27 Nov 2009 10:57:45 -0500
-Message-ID: <4B0FF6F9.9010603@hp.com>
-References: <200911192026.04694.lists-receive@programmierforen.de> <4B05D64B.7070705@hp.com> <200911202022.19306.lists-receive@programmierforen.de> <20091127053336.GD25509@jsoft.dyndns.org>
+From: "Jean-Philippe Robichaud" <jean.philippe.robichaud@gmail.com>
+Subject: unexpected raid1 behavior?
+Date: Fri, 27 Nov 2009 15:41:17 -0500
+Message-ID: <200911271541.17451.jean.philippe.robichaud@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1;
-	format=flowed
-To: Andi Drebes <lists-receive@programmierforen.de>,
-	linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain;
+  charset="us-ascii"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20091127053336.GD25509@jsoft.dyndns.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jean-S=E9bastien Trottier wrote:
-> In the case of RAID1 (or even RAID10), what happens if loop0 is the
-> current master but is corrupted/dead and you want to mount loop1 to
-> recover your data?
+Hi, I'm starting to play with btrfs on my new computer. I'm running Gentoo and 
+have compiled the 2.6.31 kernel, enabling btrfs.
 
-The problem does not occur with raid1.  In that case, both copies
-are updated and either can mount.  For raid10, 2 of the 4 devices
-should always be mountable (you still have to find which 2).
+Now I have 2 partitions (on 2 different sata disks) that are free for me to 
+play with, each about 375 gb in size.  I wanted to create a "raid1" volume 
+using these two partitions, so I did:
+ 
+# mkfs.btrfs -d raid1 /dev/sda5 /dev/sdb5
+# mount /dev/sda5 /btrfs
 
-The "guess who is the mountable device" problem occurs on raid0
-and on the (not yet in-tree) raid5/6. Better error recovery is
-one of the projects that needs to be done.
+and everything seems fine.
 
-jim
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Now what I find strange is that everything looks like a raid0 was created, not 
+a raid1:
+
+$ df -h /btrfs/
+ Filesystem            Size  Used Avail Use% Mounted on
+/dev/sda5             684G   72G  612G  11% /btrfs
+
+What am I doing (or understanding) wrong?
+
+Thanks!
+
+Jp

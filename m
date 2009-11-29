@@ -1,21 +1,29 @@
-From: Hu Ruihuan <specter118@gmail.com>
-Subject: <BUG>can't read superblock
-Date: Sun, 29 Nov 2009 17:45:45 +0800
-Message-ID: <713d0d430911290145r3a1d4a77uf5e13e0863416689@mail.gmail.com>
+From: Sander <sander@humilis.net>
+Subject: Re: unexpected raid1 behavior?
+Date: Sun, 29 Nov 2009 13:42:56 +0100
+Message-ID: <20091129124256.GA17897@cumulus>
+References: <200911271541.17451.jean.philippe.robichaud@gmail.com>
+ <20091127210442.GA18273@vlad.carfax.org.uk>
+ <200911271736.22930.jean.philippe.robichaud@gmail.com>
+Reply-To: sander@humilis.net
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: =?GB2312?B?uvrI8Lu4?= <specter118@gmail.com>
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Jean-Philippe Robichaud <jean.philippe.robichaud@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <200911271736.22930.jean.philippe.robichaud@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-hi,sir
-   I creat the filesystem with command mkfs.btrfs /dev/sda2, and it returns
-fs created label (null) on /dev/sda2  nodesize 4096 leafsize 4096
-sectorsize 4096 size 2.93GB
+Hello Jean-Philippe,
 
-then I mount the /dev/sda2 with command mount -t btrfs /dev/sda2
-/btrfs/, it returns
-mount: /dev/sda2: can't read superblock.
+Jean-Philippe Robichaud wrote (ao):
+> Is there a place in /sys or /proc where I could perhaps get 'stats'
+> about the btrfs volume?
 
-Why?
+I think btrfs-show should help you there.
+
+	With kind regards, Sander
+
+-- 
+Humilis IT Services and Solutions
+http://www.humilis.net

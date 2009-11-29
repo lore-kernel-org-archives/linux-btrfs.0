@@ -1,17 +1,21 @@
-From: Moesasji <miyamoto.31b@gmail.com>
-Subject: Re: No space left, although 16G are there
-Date: Sun, 29 Nov 2009 09:31:51 +0000 (UTC)
-Message-ID: <loom.20091129T103015-340@post.gmane.org>
-References: <3da3b5b40911261338j352ee3f7i6966a3308bc6fd08@mail.gmail.com>  <3da3b5b40911261341x67c8b696v36f7ed2f4caefe63@mail.gmail.com>  <3da3b5b40911261347x4e9f9b17p953d9f5a39eac61@mail.gmail.com> <3da3b5b40911261446p7d844611kd2a7c507f00fc808@mail.gmail.com>
+From: Hu Ruihuan <specter118@gmail.com>
+Subject: <BUG>can't read superblock
+Date: Sun, 29 Nov 2009 17:45:45 +0800
+Message-ID: <713d0d430911290145r3a1d4a77uf5e13e0863416689@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: =?GB2312?B?uvrI8Lu4?= <specter118@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It seems the same issue as I ran into some time ago. Check the following thread 
-on why it happens and how to get out of it. 
+hi,sir
+   I creat the filesystem with command mkfs.btrfs /dev/sda2, and it returns
+fs created label (null) on /dev/sda2  nodesize 4096 leafsize 4096
+sectorsize 4096 size 2.93GB
 
-http://thread.gmane.org/gmane.comp.file-systems.btrfs/3996/focus=4003
+then I mount the /dev/sda2 with command mount -t btrfs /dev/sda2
+/btrfs/, it returns
+mount: /dev/sda2: can't read superblock.
 
-
+Why?

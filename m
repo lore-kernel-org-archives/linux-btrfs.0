@@ -1,47 +1,17 @@
-From: Tracy Reed <treed@ultraviolet.org>
-Subject: Re: [wiki] btrfs logo
-Date: Sat, 28 Nov 2009 18:23:59 -0800
-Message-ID: <20091129022359.GX3222@tracyreed.org>
-References: <5f9f991c0911280530n62bbe9ffk92f0415f82b610a@mail.gmail.com>
- <934f64a20911280959w208cc751sc27302f1e8b3fdda@mail.gmail.com>
+From: Moesasji <miyamoto.31b@gmail.com>
+Subject: Re: No space left, although 16G are there
+Date: Sun, 29 Nov 2009 09:31:51 +0000 (UTC)
+Message-ID: <loom.20091129T103015-340@post.gmane.org>
+References: <3da3b5b40911261338j352ee3f7i6966a3308bc6fd08@mail.gmail.com>  <3da3b5b40911261341x67c8b696v36f7ed2f4caefe63@mail.gmail.com>  <3da3b5b40911261347x4e9f9b17p953d9f5a39eac61@mail.gmail.com> <3da3b5b40911261446p7d844611kd2a7c507f00fc808@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="ngiTnHdmUEG79yp6"
-Cc: Daniel Lommes <Daniel.Lommes@rub.de>, linux-btrfs@vger.kernel.org
-To: David Nicol <davidnicol@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <934f64a20911280959w208cc751sc27302f1e8b3fdda@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+It seems the same issue as I ran into some time ago. Check the following thread 
+on why it happens and how to get out of it. 
 
---ngiTnHdmUEG79yp6
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+http://thread.gmane.org/gmane.comp.file-systems.btrfs/3996/focus=4003
 
-On Sat, Nov 28, 2009 at 11:59:58AM -0600, David Nicol spake thusly:
-> Wah, it doesn't look like a stick of butter being sliced into hard
-> drive pats. Boo hoo.
 
-And thank god for that. Letting btrfs be known as "butterfs" (fat,
-greasy, slimy, unhealthy) instead of "betterfs" will be just one more
-in a long series of egregious marketing mistakes made by the FLOSS
-community.
-
---=20
-Tracy Reed
-http://tracyreed.org
-
---ngiTnHdmUEG79yp6
-Content-Type: application/pgp-signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.5 (GNU/Linux)
-
-iD8DBQFLEds/9PIYKZYVAq0RAkY4AJ9IPnXZkO37+cjk5WoETOgy7aqVSgCfemqy
-/Pj2WT+++6aBJXYN9PtI62c=
-=csGj
------END PGP SIGNATURE-----
-
---ngiTnHdmUEG79yp6--

@@ -1,60 +1,53 @@
-From: jean-philippe robichaud <jean.philippe.robichaud@gmail.com>
-Subject: Re: unexpected raid1 behavior?
-Date: Mon, 30 Nov 2009 11:20:48 -0500
-Message-ID: <679b1ea70911300820m37c04035p113cda74d380f6fc@mail.gmail.com>
-References: <200911271541.17451.jean.philippe.robichaud@gmail.com>
-	 <200911271736.22930.jean.philippe.robichaud@gmail.com>
-	 <20091129124256.GA17897@cumulus>
-	 <200911291628.26997.jean.philippe.robichaud@gmail.com>
+From: Andi Drebes <lists-receive@programmierforen.de>
+Subject: Re: Unable to mount loopback devices in RAID mode
+Date: Mon, 30 Nov 2009 20:25:22 +0100
+Message-ID: <200911302025.22773.lists-receive@programmierforen.de>
+References: <200911192026.04694.lists-receive@programmierforen.de> <20091130042851.GG25509@jsoft.dyndns.org> <4B13C408.10606@hp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=iso-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: jim owens <jowens@hp.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200911291628.26997.jean.philippe.robichaud@gmail.com>
+In-Reply-To: <4B13C408.10606@hp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Nov 29, 2009 at 4:28 PM, Jean-Philippe Robichaud
-<jean.philippe.robichaud@gmail.com> wrote:
->
-> On Sunday 29 November 2009 07:42:56 Sander wrote:
-> > Hello Jean-Philippe,
-> >
-> > Jean-Philippe Robichaud wrote (ao):
-> > > Is there a place in /sys or /proc where I could perhaps get 'stat=
-s'
-> > > about the btrfs volume?
-> >
-> > I think btrfs-show should help you there.
-> >
-> > =A0 =A0 =A0 With kind regards, Sander
-> >
-> Sure: here it goes:
->
-> # sudo btrfs-show
-> failed to read /dev/sr0
->
-> Label: none =A0uuid: fb9270b4-8779-489f-a599-eaab299d4633
-> =A0 =A0 =A0 =A0Total devices 2 FS bytes used 78.98GB
-> =A0 =A0 =A0 =A0devid =A0 =A01 size 341.69GB used 146.03GB path /dev/s=
-da5
-> =A0 =A0 =A0 =A0devid =A0 =A02 size 341.69GB used 146.01GB path /dev/s=
-db5
->
+Hi!
 
-I'm not sure I actually understand how to read this.The size of each
-device make sense (341GB) as it is the size of both partitions.  Now
-the FS-bytes-used also make sense as it is about the size of data that
-I've copied, but the per-device used space seems strange to me and the
-output of "df -h" is also hard to interpret:
+> So I do not understand why it does not work correctly for
+> him to mount either device.  Maybe this problem is not
+> what I see in my testing (using 32) with disk partitions
+> instead of loop.
+>=20
+> With partitions, I only see the mount problem on raid0,
+> not on raid1.
+Without having looked at the code:
+It seems as if this is a problem in mkfs. The first time, I mount the f=
+resh image I have to search the correct device. After having mounted it=
+ at least once, I can use both devices interchangeably:
 
-=46ilesystem            Size  Used Avail Use% Mounted on
-/dev/sda5             684G   79G  605G  12% /btrfs
+$ dd if=3D/dev/zero of=3Draid1_0.img bs=3D1M count=3D500
+$ dd if=3D/dev/zero of=3Draid1_1.img bs=3D1M count=3D500
+$ mkfs.btrfs -m raid1 -d raid1 raid1_0.img raid1_1.img
+$ losetup /dev/loop0 raid1_0.img
+$ losetup /dev/loop1 raid1_1.img
+$ mount -t btrfs /dev/loop0 /mnt/btrfs
+mount: wrong fs type, bad option, bad superblock on /dev/loop0,
+=A0 =A0 =A0 =A0missing codepage or helper program, or other error
+=A0 =A0 =A0 =A0In some cases useful info is found in syslog - try
+=A0 =A0 =A0 =A0dmesg | tail =A0or so
+$ mount -t btrfs /dev/loop1 /mnt/btrfs
+#OK
+$ umount /mnt/btrfs
+$ mount -t btrfs -o ro /dev/loop0 /mnt/btrfs
+#OK
+$ umount /mnt/btrfs
+$ mount -t btrfs -o ro /dev/loop1 /mnt/btrfs
+#OK
 
-I would have understood if the "Used" field would have been 160GB or
-if "Avail" would have dropped to 520GB.
+So my guess is, that there's something wrong with mkfs.
 
-I guess that I'll come to a point where Used will be 340GB and Avail
-will also be 340GB but I'll be getting No Space Left On Device errors?
+	Cheers,
+		Andi
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

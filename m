@@ -1,34 +1,44 @@
-From: "Jean-Philippe Robichaud" <jean.philippe.robichaud@gmail.com>
-Subject: Re: unexpected raid1 behavior?
-Date: Sun, 29 Nov 2009 16:28:26 -0500
-Message-ID: <200911291628.26997.jean.philippe.robichaud@gmail.com>
-References: <200911271541.17451.jean.philippe.robichaud@gmail.com> <200911271736.22930.jean.philippe.robichaud@gmail.com> <20091129124256.GA17897@cumulus>
+From: =?iso-8859-1?Q?Jean-S=E9bastien?= Trottier <jst1@email.com>
+Subject: Re: Unable to mount loopback devices in RAID mode
+Date: Sun, 29 Nov 2009 23:28:51 -0500
+Message-ID: <20091130042851.GG25509@jsoft.dyndns.org>
+References: <200911192026.04694.lists-receive@programmierforen.de>
+ <4B05D64B.7070705@hp.com>
+ <200911202022.19306.lists-receive@programmierforen.de>
+ <20091127053336.GD25509@jsoft.dyndns.org>
+ <4B0FF6F9.9010603@hp.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=iso-8859-1
+Cc: Andi Drebes <lists-receive@programmierforen.de>,
+	linux-btrfs@vger.kernel.org
+To: jim owens <jowens@hp.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20091129124256.GA17897@cumulus>
+In-Reply-To: <4B0FF6F9.9010603@hp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sunday 29 November 2009 07:42:56 Sander wrote:
-> Hello Jean-Philippe,
-> 
-> Jean-Philippe Robichaud wrote (ao):
-> > Is there a place in /sys or /proc where I could perhaps get 'stats'
-> > about the btrfs volume?
-> 
-> I think btrfs-show should help you there.
-> 
-> 	With kind regards, Sander
-> 
-Sure: here it goes:
+On Fri, Nov 27, 2009 at 10:57:45AM -0500, jim owens wrote:
+> Jean-S=E9bastien Trottier wrote:
+> >In the case of RAID1 (or even RAID10), what happens if loop0 is the
+> >current master but is corrupted/dead and you want to mount loop1 to
+> >recover your data?
+>=20
+> The problem does not occur with raid1.  In that case, both copies
+> are updated and either can mount.  For raid10, 2 of the 4 devices
+> should always be mountable (you still have to find which 2).
 
-# sudo btrfs-show
-failed to read /dev/sr0
+Hmmm... But Andi's original post shows he was having this problem with
+RAID1, no?
 
-Label: none  uuid: fb9270b4-8779-489f-a599-eaab299d4633
-        Total devices 2 FS bytes used 78.98GB
-        devid    1 size 341.69GB used 146.03GB path /dev/sda5
-        devid    2 size 341.69GB used 146.01GB path /dev/sdb5
+JST.
 
+>=20
+> The "guess who is the mountable device" problem occurs on raid0
+> and on the (not yet in-tree) raid5/6. Better error recovery is
+> one of the projects that needs to be done.
+>=20
+> jim
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

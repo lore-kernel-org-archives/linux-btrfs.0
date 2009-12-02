@@ -1,57 +1,44 @@
-From: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
-Subject: Re: Unable to mount loopback devices in RAID mode
-Date: Wed, 02 Dec 2009 08:52:40 +0900
-Message-ID: <4B15AC48.6040506@jp.fujitsu.com>
-References: <200911192026.04694.lists-receive@programmierforen.de>	 <20091130042851.GG25509@jsoft.dyndns.org> <4B13C408.10606@hp.com>	 <200911302025.22773.lists-receive@programmierforen.de>	 <4B14B022.4080102@jp.fujitsu.com> <23a15590912010227v38b62a51r63e5d83fdd9fec4c@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [wiki] btrfs logo
+Date: Tue, 1 Dec 2009 20:23:05 -0500
+Message-ID: <20091202012305.GA8283@think>
+References: <5f9f991c0911280530n62bbe9ffk92f0415f82b610a@mail.gmail.com>
+ <934f64a20911280959w208cc751sc27302f1e8b3fdda@mail.gmail.com>
+ <20091129022359.GX3222@tracyreed.org>
+ <235a4bf70911301733y45ca42dbue4d083b83165daf1@mail.gmail.com>
+ <5f9f991c0912011106u27d06ca5vd5d6ca9a2e3750a2@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: lists-receive@programmierforen.de, jowens@hp.com,
+Content-Type: text/plain; charset=us-ascii
+Cc: Roger Bumgarner <roger.bumgarner@gmail.com>,
 	linux-btrfs@vger.kernel.org
-To: skolima@gmail.com
+To: Daniel Lommes <Daniel.Lommes@rub.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <23a15590912010227v38b62a51r63e5d83fdd9fec4c@mail.gmail.com>
+In-Reply-To: <5f9f991c0912011106u27d06ca5vd5d6ca9a2e3750a2@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Yes. 'device' options work good on boot.
-(There may be trivial differences, perhaps.)
-
-Both 'btrfsctl -a|A' and device option of mount calls a same
-device collection function, 'scan_one_device' and by this
-function btrfs knows devices for btrfs.
-
-# But, there's no mount option like 'btrfsctl -a', so
-# option string grows longer and longer as number of
-# devices increases...
-
-Leszek Ciesielski wrote:
-> On Tue, Dec 1, 2009 at 6:56 AM, TARUISI Hiroaki
-> <taruishi.hiroak@jp.fujitsu.com> wrote:
->> Btrfs collects block device information when mount or mkfs
->> (device_list_add in volumes.c), and know devid-device relation
->> by collected information. So, if we make filesystem on plain
->> file, btrfs cannot know devid-device relation. As a result,
->> btrfs cannot know which is 'devid=n', and mount fails. Same as
->> this, if collected relation is cleared by shutdown, mount fails.
->>
->> If wlee need to mount a filesystem without fail(cf, /etc/fstab line),
->> we should specify 'device' options for every devices(except mount
->> target device) like this.
->>
->> # mount -t btrfs -o device=/dev/loop2,device=/dev/loop3,
->>  device=/dev/loop4 /dev/loop1 /mnt/
->>   (when a filesystem is constructed by /dev/loop[1-4])
->>
->> Regards,
->> taruisi
+On Tue, Dec 01, 2009 at 08:06:29PM +0100, Daniel Lommes wrote:
+> On Tue, Dec 1, 2009 at 02:33, Roger Bumgarner <roger.bumgarner@gmail.com> wrote:
+> > I just think butter is delicious. Does this mean someone should change
+> > the Wikipedia page as well? "Btrfs ("B-tree file system," pronounced
+> > "Butter F S") is a GPL-licensed copy-on-write file system for Linux
+> > announced by Oracle in 2007."
+> >
 > 
-> Would this option ["mount -t btrfs -o device=/dev/sdb2 /dev/sda2
-> /mnt"] work on boot, bypasing the need for "btrfsctl -a" to mount a
-> multi-device filesystem?
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> you can't just change wikipedia like that, that is if you don't want
+> to get reverted. the idea is that you give a reliable source.
+> currently Valerie Henson is listed as a source for the "Butter F S"
+> pronunciation. If you get Chris Mason to state that it is pronounced
+> "better F S" than this would probably trump Valerie. If not, and you
+> change Wikipedia, expect to get reverted.
 
--- 
-taruisi
+[ logo ] Hey, thanks.  It's always fun to see logos.
+
+Honestly I try not to take the name part too seriously.  At the end of
+the day the filesystem is only a small part of what makes the OS an OS
+and its a good idea to have some fun with it.
+
+I've always said butterfs, but betterfs and btreefs are allowed for
+anyone who can't bring themselves to say butterfs in public.
+
+-chris
 

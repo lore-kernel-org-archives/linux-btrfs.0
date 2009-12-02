@@ -1,44 +1,30 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [wiki] btrfs logo
-Date: Tue, 1 Dec 2009 20:23:05 -0500
-Message-ID: <20091202012305.GA8283@think>
-References: <5f9f991c0911280530n62bbe9ffk92f0415f82b610a@mail.gmail.com>
- <934f64a20911280959w208cc751sc27302f1e8b3fdda@mail.gmail.com>
- <20091129022359.GX3222@tracyreed.org>
- <235a4bf70911301733y45ca42dbue4d083b83165daf1@mail.gmail.com>
- <5f9f991c0912011106u27d06ca5vd5d6ca9a2e3750a2@mail.gmail.com>
-Mime-Version: 1.0
+From: John Dong <jdong@johndong.com>
+Subject: Re: btrfsctl -d race with df -h causes hang?
+Date: Wed, 2 Dec 2009 01:30:39 -0500
+Message-ID: <DBE1C27D-386C-4B4B-82A0-F01C4281EF01@johndong.com>
+References: <549778BA-0D47-458D-8CE1-022885B2A2BB@ubuntu.com> <30183CDB-9359-493D-B400-3312291C968B@ubuntu.com> <900EA6DB-EECC-4BA8-B551-1A6831949824@ubuntu.com> <20091120153527.GW3110@think> <56546E3D-061B-4BEC-AFC3-CB13CA88C620@ubuntu.com>
+Mime-Version: 1.0 (Apple Message framework v1077)
 Content-Type: text/plain; charset=us-ascii
-Cc: Roger Bumgarner <roger.bumgarner@gmail.com>,
-	linux-btrfs@vger.kernel.org
-To: Daniel Lommes <Daniel.Lommes@rub.de>
+Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+To: John Dong <jdong@ubuntu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <5f9f991c0912011106u27d06ca5vd5d6ca9a2e3750a2@mail.gmail.com>
+In-Reply-To: <56546E3D-061B-4BEC-AFC3-CB13CA88C620@ubuntu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 01, 2009 at 08:06:29PM +0100, Daniel Lommes wrote:
-> On Tue, Dec 1, 2009 at 02:33, Roger Bumgarner <roger.bumgarner@gmail.com> wrote:
-> > I just think butter is delicious. Does this mean someone should change
-> > the Wikipedia page as well? "Btrfs ("B-tree file system," pronounced
-> > "Butter F S") is a GPL-licensed copy-on-write file system for Linux
-> > announced by Oracle in 2007."
-> >
+Anything else I can do to help? I can definitely still consistently reproduce this behavior...
+
+
+On Nov 22, 2009, at 11:42 AM, John Dong wrote:
+
 > 
-> you can't just change wikipedia like that, that is if you don't want
-> to get reverted. the idea is that you give a reliable source.
-> currently Valerie Henson is listed as a source for the "Butter F S"
-> pronunciation. If you get Chris Mason to state that it is pronounced
-> "better F S" than this would probably trump Valerie. If not, and you
-> change Wikipedia, expect to get reverted.
-
-[ logo ] Hey, thanks.  It's always fun to see logos.
-
-Honestly I try not to take the name part too seriously.  At the end of
-the day the filesystem is only a small part of what makes the OS an OS
-and its a good idea to have some fun with it.
-
-I've always said butterfs, but betterfs and btreefs are allowed for
-anyone who can't bring themselves to say butterfs in public.
-
--chris
+> On Nov 20, 2009, at 10:35 AM, Chris Mason wrote:
+> 
+>> We've
+>> probably got a lock inversion hiding in the df handling.
+> 
+> 
+> Hi Chris, just an update; I've been able to get the hang to happen without issuing df. It seems like the btrfsctl -d activity combined with -o compress is enough to trigger it.--
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 

@@ -1,73 +1,122 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Subject: Re: [PATCH] Btrfs: change how we mount subvolumes
-Date: Fri, 4 Dec 2009 19:49:11 +0100
-Message-ID: <200912041949.12320.kreijack@alice.it>
-References: <20091204173827.GB5962@localhost.localdomain>
+From: Josef Bacik <josef@redhat.com>
+Subject: [RFC] Btrfs: add ioctl to set the default mount subvol
+Date: Fri, 4 Dec 2009 16:57:13 -0500
+Message-ID: <20091204215713.GD7441@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: chris.mason@oracle.com
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20091204173827.GB5962@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Josef
+This patch needs to go along with my previous patch.  This lets us set the
+default dir item's location to whatever root we want to use as our default
+mounting subvol.  With this we don't have to use mount -o subvol=<tree id>
+anymore to mount a different subvol, we can just set the new one and it will
+just magically work.  I've just done some superficial testing on this, but it
+works well enough.  It breaks the snapshot listing thing so don't try and use
+that with this patch, I will fix that later, I just want to run this by
+everybody to make sure this is what we want.  Thanks,
 
-On Friday 04 December 2009, Josef Bacik wrote:
-> This work is in preperation for being able to set a different root as the
-> default mounting root.
-> 
-> There is currently a problem with how we mount subvolumes.  We cannot 
-currently
-> mount a subvolume of a subvolume, you can only mount subvolumes/snapshots of 
-the
-> default subvolume.  So say you take a snapshot of the default subvolume and 
-call
-> it snap1, and then take a snapshot of snap1 and call it snap2, so now you 
-have
-> 
-> /
-> /snap1
-> /snap1/snap2
-> 
-> as your available volumes.  Currently you can only mount / and /snap1, you
-> cannot mount /snap1/snap2.  To fix this problem instead of passing 
-subvol=<name>
-> you must pass in subvol=<treeid>, where <treeid> is the tree id that gets 
-spit
-> out via the subvolume listing you get from the subvolume listing patches
-> (btrfsctl -l).  This allows us to mount /, /snap1 and /snap1/snap2 as the 
-root
-> volume.
->
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/ioctl.c |   64 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/ioctl.h |    2 +
+ 2 files changed, 66 insertions(+), 0 deletions(-)
 
-Nice feature.
-But only for clarification purpose I have to correct you: the only limit of 
-the "subvol=" mount option is that the "volume name" or "snapshot name" have 
-to be under the root of the "btrfs" filesystem (or if you prefer under the 
-root of the "." volume).
-So:
-- a subvolume created under / may be mounted using the subvol= mount option
-- a subvolume created under a directory *can't* be mounted using the subvol= 
-mount option
-- a subvolume created under a directory and moved under "/" *may* be mounted 
-using the subvol= mount option
-- a snapshot of a subvolume created under / may be mounted using the subvol= 
-option
-And so...
-
-(As side note: a subvol may be renamed/moved with a simple "mv" command.)
-
-In fact the "subvol=" mount option related code, search in the root of the 
-btrfs a subvolume/snapshot named as required, then mount it. Doesn't matter if 
-it is a snapshot of a subvolume or where it is originally created.
-
-In any case I like your idea.
-
-BR
-G.Baroncelli
-
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index c157eb7..9b747a9 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1551,6 +1551,68 @@ out:
+ 	return ret;
+ }
+ 
++static long btrfs_ioctl_default_subvol(struct file *file, void __user *argp)
++{
++	struct inode *inode = fdentry(file)->d_inode;
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	struct btrfs_root *new_root;
++	struct btrfs_dir_item *di;
++	struct btrfs_trans_handle *trans;
++	struct btrfs_path *path;
++	struct btrfs_key location;
++	struct btrfs_disk_key disk_key;
++	u64 objectid = 0;
++	u64 dir_id;
++
++	if (copy_from_user(&objectid, argp, sizeof(objectid)))
++		return -EFAULT;
++
++	if (!objectid)
++		objectid = root->root_key.objectid;
++
++	location.objectid = objectid;
++	location.type = BTRFS_ROOT_ITEM_KEY;
++	location.offset = (u64)-1;
++
++	new_root = btrfs_read_fs_root_no_name(root->fs_info, &location);
++	if (IS_ERR(new_root))
++		return PTR_ERR(new_root);
++
++	if (btrfs_root_refs(&new_root->root_item) == 0)
++		return -ENOENT;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++	path->leave_spinning = 1;
++
++	trans = btrfs_start_transaction(root, 1);
++	if (!trans) {
++		btrfs_free_path(path);
++		return -ENOMEM;
++	}
++
++	dir_id = btrfs_super_root_dir(&root->fs_info->super_copy);
++	di = btrfs_lookup_dir_item(trans, root->fs_info->tree_root, path,
++				   dir_id, "default", 7, 1);
++	if (!di) {
++		btrfs_free_path(path);
++		btrfs_end_transaction(trans, root);
++		printk(KERN_ERR "Umm, you don't have the default dir item, "
++		       "this isn't going to work\n");
++		return -ENOENT;
++	}
++
++	btrfs_cpu_key_to_disk(&disk_key, &new_root->root_key);
++	btrfs_set_dir_item_key(path->nodes[0], di, &disk_key);
++	btrfs_mark_buffer_dirty(path->nodes[0]);
++	btrfs_free_path(path);
++
++	btrfs_end_transaction(trans, root);
++
++	return 0;
++}
++
+ /*
+  * there are many ways the trans_start and trans_end ioctls can lead
+  * to deadlocks.  They should only be used by applications that
+@@ -1597,6 +1659,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		return btrfs_ioctl_snap_create(file, argp, 1);
+ 	case BTRFS_IOC_SNAP_DESTROY:
+ 		return btrfs_ioctl_snap_destroy(file, argp);
++	case BTRFS_IOC_DEFAULT_SUBVOL:
++		return btrfs_ioctl_default_subvol(file, argp);
+ 	case BTRFS_IOC_DEFRAG:
+ 		return btrfs_ioctl_defrag(file);
+ 	case BTRFS_IOC_RESIZE:
+diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+index 18c554b..9e5074c 100644
+--- a/fs/btrfs/ioctl.h
++++ b/fs/btrfs/ioctl.h
+@@ -96,4 +96,6 @@ struct btrfs_ioctl_clone_range_args {
+ 				struct btrfs_ioctl_vol_args)
+ #define BTRFS_IOC_SNAP_LISTING _IOWR(BTRFS_IOCTL_MAGIC, 16, \
+ 				   struct btrfs_ioctl_subvol_args)
++#define BTRFS_IOC_DEFAULT_SUBVOL _IOW(BTRFS_IOCTL_MAGIC, 17, u64)
++
+ #endif
 -- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+1.5.4.3
+

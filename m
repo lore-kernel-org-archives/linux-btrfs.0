@@ -1,30 +1,48 @@
-From: John Dong <jdong@johndong.com>
-Subject: Re: btrfsctl -d race with df -h causes hang?
-Date: Wed, 2 Dec 2009 01:30:39 -0500
-Message-ID: <DBE1C27D-386C-4B4B-82A0-F01C4281EF01@johndong.com>
-References: <549778BA-0D47-458D-8CE1-022885B2A2BB@ubuntu.com> <30183CDB-9359-493D-B400-3312291C968B@ubuntu.com> <900EA6DB-EECC-4BA8-B551-1A6831949824@ubuntu.com> <20091120153527.GW3110@think> <56546E3D-061B-4BEC-AFC3-CB13CA88C620@ubuntu.com>
-Mime-Version: 1.0 (Apple Message framework v1077)
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
-To: John Dong <jdong@ubuntu.com>
+From: Michal Hrusecky <mhrusecky@suse.cz>
+Subject: Segfault when transid verify fails
+Date: Fri, 4 Dec 2009 13:28:03 +0100
+Message-ID: <20091204122802.GA1644@misibook.miska.isageek.net>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="jI8keyz6grp/JLjh"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <56546E3D-061B-4BEC-AFC3-CB13CA88C620@ubuntu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Anything else I can do to help? I can definitely still consistently reproduce this behavior...
 
+--jI8keyz6grp/JLjh
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-On Nov 22, 2009, at 11:42 AM, John Dong wrote:
+Hi,
 
-> 
-> On Nov 20, 2009, at 10:35 AM, Chris Mason wrote:
-> 
->> We've
->> probably got a lock inversion hiding in the df handling.
-> 
-> 
-> Hi Chris, just an update; I've been able to get the hang to happen without issuing df. It seems like the btrfsctl -d activity combined with -o compress is enough to trigger it.--
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I'm trying to use btrfs on my other Linux installation as a root
+filesystem. Somehow I cannot boot any longer and I've got dmesg full of
+repeating error lines. So I booted up my other Linux system and tried to
+run btrfsck, but it segfaults after producing similar error message:
 
+# btrfsck /dev/disk/by-label/suse
+parent transid verify failed on 67510272 wanted 352 found 394
+Segmentation fault
+
+I tried both btrfs-progs 0.19 and current git of btrfs-progs. I'm
+running 2.6.32 vanilla kernel. I can provide strace and probably try to
+obtain some backtrace, but I guess as I cannot boot system with this
+rootfs that the error will be somewhere deeper...
+
+Best Regards,
+	Michal HRUSECKY
+
+--jI8keyz6grp/JLjh
+Content-Type: application/pgp-signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.13 (GNU/Linux)
+
+iEYEARECAAYFAksZAFIACgkQJkqfF/7WVvZDmgCdFJWBsBUmDKcCu0rpvH3e4IOu
+1pkAnjJUp+Dx9fV+rVKpzhqTkVIw2Wsu
+=t+a5
+-----END PGP SIGNATURE-----
+
+--jI8keyz6grp/JLjh--

@@ -1,185 +1,183 @@
-From: Sage Weil <sage@newdream.net>
-Subject: Re: committing new snapshots
-Date: Tue, 8 Dec 2009 09:03:49 -0800 (PST)
-Message-ID: <Pine.LNX.4.64.0912080856370.1307@cobra.newdream.net>
-References: <Pine.LNX.4.64.0912071411560.31714@cobra.newdream.net>
- <20091208160507.GA3374@localhost.localdomain>
+From: Daniel Armak <danarmak@gmail.com>
+Subject: Kernel oops trying to remove a missing disk
+Date: Wed, 9 Dec 2009 01:51:17 +0200
+Message-ID: <200912090151.17319.danarmak@gmail.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Content-Type: Text/Plain;
+  charset="us-ascii"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20091208160507.GA3374@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 8 Dec 2009, Josef Bacik wrote:
+Hello,
 
-> On Mon, Dec 07, 2009 at 02:25:50PM -0800, Sage Weil wrote:
-> > When you create a new snap or subvol, first a new ROOT_ITEM is created 
-> > while everything commits, and then the referring directory entry is set up 
-> > (with a correspond ROOT_BACKREF).  
-> > 
-> > First, if you say 'btrfsctl -s foo .' and then 'reboot -f -n' before the 
-> > next regularly scheduled commit, the snap is created, but lost.. there's 
-> > no reference.  Second, the unreferenced ROOT_ITEM is never cleaned up.
-> > 
-> > Are there any existing plans for this?  It would be nice if the reference 
-> > could be committed as well the first time around.  That probably requires 
-> > a bit of futzing to determine what the root objectid is going to be 
-> > beforehand, then adding the link in the namespace, then flushing things 
-> > out and updating the root item in the right order?
-> > 
-> 
-> We could probably use the orphan code for this.  Just create an orphan item for
-> the snapshot and then delete it when the snapshot is fully created that way if
-> somebody does reboot -fn we cleanup the root item and such.  Thanks,
+I had a filesystem of 4x1GB disks in raid10. One died (real unplanned disk 
+failure, not part of my testing) in the middle of a btrfs-vol -b run. The bad 
+disk decided it's only 33MB large, so btrfs started displaying various errors 
+related to pointers pointing beyond end of disk.
 
-That'd clean up the lost root... but it would be nice to avoid making it 
-in the first place by committing the dir item with it.  Is there any 
-reason something like the below won't work?  It seems to work.  btrfsck 
-spits out some errors, but it seems to make the same complaints using the 
-existing method as well.
+I've now pulled the bad disk:
 
-256 was created using the current code, 257 using the patch below 
-(cd /mnt/foo ; btrfsctl -s snap1 .).
+Label: none  uuid: e40a14c7-7be7-4248-8b74-22fd5cc1e316
+        Total devices 4 FS bytes used 2.03TB
+        devid    3 size 931.51GB used 582.01GB path /dev/sdb1
+        devid    1 size 922.20GB used 601.01GB path /dev/sdc2
+        devid    2 size 911.95GB used 573.00GB path /dev/sdd4
+        *** Some devices missing
 
-# btrfsck /dev/sdd 
-fs tree 256 refs 2 
-        unresolved ref root 257 dir 256 index 3 namelen 5 name snap1 error 600
-fs tree 257 refs 2 
-        unresolved ref root 257 dir 256 index 5 namelen 5 name snap2 error 600
-found 36864 bytes used err is 1
-total csum bytes: 0
-total tree bytes: 36864
-total fs tree bytes: 16384
-btree space waste bytes: 28374
-file data blocks allocated: 0
- referenced 0
-Btrfs v0.19-3-g6f3cf25
+Mounting with -o degraded prints these kernel errors:
 
-Thanks-
-sage
+btrfs: allowing degraded mounts
+btrfs bad tree block start 17517162628300600453 7668718657536
+btrfs bad tree block start 3141689552950487413 7668718665728
+btrfs bad tree block start 1474953444005052354 7668718669824
+btrfs bad tree block start 13452497792987862783 7668718678016
+btrfs bad tree block start 8270016379796020352 7668718702592
+btrfs bad tree block start 2723291376741258298 7668718706688
+btrfs bad tree block start 10528685341008040285 7668718710784
+btrfs bad tree block start 9043639721281971072 7668718694400
+btrfs bad tree block start 14211769779666844633 7668718698496
+btrfs bad tree block start 6206578445793925291 7668718686208
+warning devid 4 missing
+__ratelimit: 1928 callbacks suppressed
+btrfs bad tree block start 0 7665507205120
+btrfs bad tree block start 0 7665507205120
+btrfs bad tree block start 7471179476992 7647273136128
+btrfs bad tree block start 7471179476992 7647273136128
+btrfs bad tree block start 7471252631552 7647346290688
+btrfs bad tree block start 7471252639744 7647346298880
+btrfs bad tree block start 7471252652032 7647346311168
+btrfs bad tree block start 7471252684800 7647346343936
+btrfs bad tree block start 7471252688896 7647346348032
+btrfs bad tree block start 7471252705280 7647346364416
+__ratelimit: 1504 callbacks suppressed
+btrfs bad tree block start 0 7665581350912
+btrfs bad tree block start 0 7665581350912
+btrfs bad tree block start 0 7665590784000
+btrfs bad tree block start 0 7665590784000
+btrfs bad tree block start 7517129043968 7645978062848
+btrfs bad tree block start 7517129043968 7645978062848
+
+Attempting btrfs-vol -r missing:
+
+btrfs: relocating block group 6286804516864 flags 9                                                                                                                                 
+------------[ cut here ]------------                                                                                                                                                
+WARNING: at fs/btrfs/relocation.c:3588 btrfs_relocate_block_group+0x293/0x3a0 
+[btrfs]()                                                                                             
+Hardware name:                                                                                                                                                                      
+Modules linked in: loop btrfs zlib_deflate crc32c libcrc32c cryptd aes_x86_64 
+aes_generic nfs fscache ipv6 nfsd usbhid lockd nfs_acl hid auth_rpcgss 
+exportfs ata_generic pata_acpi pata_amd snd_hda_codec_realtek ide_pci_generic 
+arc4 fan ecb battery snd_seq_dummy snd_seq_oss ohci_hcd snd_seq_midi_event ac 
+snd_seq snd_seq_device snd_hda_intel ath5k snd_hda_codec snd_hwdep mac80211 
+snd_pcm_oss ath snd_pcm cfg80211 snd_mixer_oss snd_timer amd64_edac_mod snd 
+rfkill edac_core soundcore amd74xx psmouse i2c_nforce2 ehci_hcd thermal evdev 
+serio_raw sg k8temp led_class edac_mce_amd button processor snd_page_alloc 
+sunrpc forcedeth pcspkr ide_core i2c_core usbcore rtc_cmos rtc_core rtc_lib 
+ext4 mbcache jbd2 crc16 sd_mod sata_nv libata scsi_mod                                                                                                                                                                
+Pid: 1919, comm: btrfs-vol Not tainted 2.6.32-ARCH #7                                                                                                                               
+Call Trace:                                                                                                                                                                         
+ [<ffffffff81055b23>] ? warn_slowpath_common+0x73/0xb0                                                                                                                              
+ [<ffffffffa06a7fc3>] ? btrfs_relocate_block_group+0x293/0x3a0 [btrfs]                                                                                                              
+ [<ffffffffa068e3a7>] ? btrfs_relocate_chunk+0x77/0x560 [btrfs]                                                                                                                     
+ [<ffffffffa0678e07>] ? btrfs_dev_extent_chunk_offset+0xf7/0x110 [btrfs]                                                                                                            
+ [<ffffffffa068eae0>] ? btrfs_shrink_device+0x250/0x380 [btrfs]
+ [<ffffffffa068f13a>] ? btrfs_rm_device+0x1da/0x580 [btrfs]
+ [<ffffffffa0693f12>] ? btrfs_ioctl+0x272/0xa60 [btrfs]
+ [<ffffffffa0693f34>] ? btrfs_ioctl+0x294/0xa60 [btrfs]
+ [<ffffffff8111ee8d>] ? vfs_ioctl+0x1d/0xb0
+ [<ffffffff8111f048>] ? do_vfs_ioctl+0x88/0x570
+ [<ffffffff810385d6>] ? do_page_fault+0x136/0x3d0
+ [<ffffffff8111f5b0>] ? sys_ioctl+0x80/0xa0
+ [<ffffffff81012042>] ? system_call_fastpath+0x16/0x1b
+---[ end trace 168f13ad0626c5d7 ]---
+------------[ cut here ]------------
+kernel BUG at fs/btrfs/volumes.c:1746!
+invalid opcode: 0000 [#1] PREEMPT SMP
+last sysfs file: /sys/devices/virtual/block/loop7/removable
+CPU 0
+Modules linked in: loop btrfs zlib_deflate crc32c libcrc32c cryptd aes_x86_64 
+aes_generic nfs fscache ipv6 nfsd usbhid lockd nfs_acl hid auth_rpcgss 
+exportfs ata_generic pata_acpi pata_amd snd_hda_codec_realtek ide_pci_generic 
+arc4 fan ecb battery snd_seq_dummy snd_seq_oss ohci_hcd snd_seq_midi_event ac 
+snd_seq snd_seq_device snd_hda_intel ath5k snd_hda_codec snd_hwdep mac80211 
+snd_pcm_oss ath snd_pcm cfg80211 snd_mixer_oss snd_timer amd64_edac_mod snd 
+rfkill edac_core soundcore amd74xx psmouse i2c_nforce2 ehci_hcd thermal evdev 
+serio_raw sg k8temp led_class edac_mce_amd button processor snd_page_alloc 
+sunrpc forcedeth pcspkr ide_core i2c_core usbcore rtc_cmos rtc_core rtc_lib 
+ext4 mbcache jbd2 crc16 sd_mod sata_nv libata scsi_mod
+Pid: 1919, comm: btrfs-vol Tainted: G        W  2.6.32-ARCH #7
+RIP: 0010:[<ffffffffa068e874>]  [<ffffffffa068e874>] btrfs_relocate_chunk+0x544/0x560 
+[btrfs]
+RSP: 0018:ffff880015b21b98  EFLAGS: 00010282
+RAX: 00000000fffffffb RBX: ffff880015bfc000 RCX: 0000000000000000
+RDX: 000000000000000e RSI: ffffea000046a4b8 RDI: 0000000000000282
+RBP: ffff88001689d800 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000000 R12: ffff88001ab4d000
+R13: 000005b7c2c00000 R14: 0000000000000003 R15: 0000000000000000
+FS:  00007fa3b97fd740(0000) GS:ffff880001800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+CR2: 00007fa3b912e5f0 CR3: 0000000015a8c000 CR4: 00000000000006f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+Process btrfs-vol (pid: 1919, threadinfo ffff880015b20000, task ffff88001b3fbc30)
+Stack:
+ ffff880015b21cf8 0000000073a7c38c 0000000000000003 ffff880015b20000
+<0> ffff880015b21fd8 ffff880015b21fd8 0000000100000000 000005b7c2c00000
+<0> ffff88001689f000 0000000000000000 ffff880016898800 0000000000000003
+Call Trace:
+ [<ffffffffa0678e07>] ? btrfs_dev_extent_chunk_offset+0xf7/0x110 [btrfs]
+ [<ffffffffa068eae0>] ? btrfs_shrink_device+0x250/0x380 [btrfs]
+ [<ffffffffa068f13a>] ? btrfs_rm_device+0x1da/0x580 [btrfs]
+ [<ffffffffa0693f12>] ? btrfs_ioctl+0x272/0xa60 [btrfs]
+ [<ffffffffa0693f34>] ? btrfs_ioctl+0x294/0xa60 [btrfs]
+ [<ffffffff8111ee8d>] ? vfs_ioctl+0x1d/0xb0
+ [<ffffffff8111f048>] ? do_vfs_ioctl+0x88/0x570
+ [<ffffffff810385d6>] ? do_page_fault+0x136/0x3d0
+ [<ffffffff8111f5b0>] ? sys_ioctl+0x80/0xa0
+ [<ffffffff81012042>] ? system_call_fastpath+0x16/0x1b
+Code: ff 31 c0 e9 30 fb ff ff 0f 1f 80 00 00 00 00 0f 0b eb fe 0f 1f 40 00 0f 0b 
+eb fe 0f 0b eb fe 0f 0b eb fe 0f 0b eb fe 0f 0b eb fe <0f> 0b eb fe 0f 0b eb 
+fe 0f 0b eb fe 0f 0b eb fe 0f 0b eb fe 0f
+RIP  [<ffffffffa068e874>] btrfs_relocate_chunk+0x544/0x560 [btrfs]
+ RSP <ffff880015b21b98>
+---[ end trace 168f13ad0626c5d8 ]---
 
 
->From ae23b9542d03266f132b0c8c9070940974f4bb0f Mon Sep 17 00:00:00 2001
-From: Sage Weil <sage@newdream.net>
-Date: Tue, 8 Dec 2009 08:55:34 -0800
-Subject: [PATCH] Btrfs: commit snapshot ref with new root item
+Attempting btrfsck also segfaults:
 
----
- fs/btrfs/transaction.c |   69 +++++++++++++++++++++++------------------------
- 1 files changed, 34 insertions(+), 35 deletions(-)
+[root@faun ~]# btrfsck /dev/sdb1
+warning devid 4 not found already
+leaf parent key incorrect 7638657990656
+bad block 7638657990656
+leaf parent key incorrect 7638662852608
+bad block 7638662852608
+leaf parent key incorrect 7638768693248
+bad block 7638768693248
+bad block 7641986412544
+parent transid verify failed on 7638786170880 wanted 99369 found 98472
+parent transid verify failed on 7638786170880 wanted 99369 found 98472
+Segmentation fault
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index c207e8c..747d481 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -756,6 +756,9 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	struct extent_buffer *old;
- 	int ret;
- 	u64 objectid;
-+	struct inode *parent_inode;
-+	int namelen;
-+	u64 index = 0;
- 
- 	new_root_item = kmalloc(sizeof(*new_root_item), GFP_NOFS);
- 	if (!new_root_item) {
-@@ -775,6 +778,29 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	key.offset = trans->transid;
- 	btrfs_set_key_type(&key, BTRFS_ROOT_ITEM_KEY);
- 
-+	memcpy(&pending->root_key, &key, sizeof(key));
-+	pending->root_key.offset = (u64)-1;
-+
-+	parent_inode = pending->dentry->d_parent->d_inode;
-+	/*
-+	 * insert the directory item
-+	 */
-+	namelen = strlen(pending->name);
-+	ret = btrfs_set_inode_index(parent_inode, &index);
-+	ret = btrfs_insert_dir_item(trans, root,
-+			    pending->name, namelen,
-+			    parent_inode->i_ino,
-+			    &pending->root_key, BTRFS_FT_DIR, index);
-+
-+	if (ret)
-+		goto fail;
-+
-+	btrfs_i_size_write(parent_inode, parent_inode->i_size + namelen * 2);
-+	ret = btrfs_update_inode(trans, root, parent_inode);
-+	BUG_ON(ret);
-+
-+	
-+
- 	old = btrfs_lock_root_node(root);
- 	btrfs_cow_block(trans, root, old, NULL, 0, &old);
- 	btrfs_set_lock_blocking(old);
-@@ -791,8 +817,13 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	if (ret)
- 		goto fail;
- 
--	key.offset = (u64)-1;
--	memcpy(&pending->root_key, &key, sizeof(key));
-+	ret = btrfs_add_root_ref(trans, root->fs_info->tree_root,
-+				 pending->root_key.objectid,
-+				 root->root_key.objectid,
-+				 parent_inode->i_ino, index, pending->name,
-+				 namelen);
-+	BUG_ON(ret);
-+
- fail:
- 	kfree(new_root_item);
- 	btrfs_unreserve_metadata_space(root, 6);
-@@ -802,48 +833,16 @@ fail:
- static noinline int finish_pending_snapshot(struct btrfs_fs_info *fs_info,
- 				   struct btrfs_pending_snapshot *pending)
- {
--	int ret;
--	int namelen;
--	u64 index = 0;
--	struct btrfs_trans_handle *trans;
- 	struct inode *parent_inode;
- 	struct inode *inode;
- 	struct btrfs_root *parent_root;
- 
- 	parent_inode = pending->dentry->d_parent->d_inode;
- 	parent_root = BTRFS_I(parent_inode)->root;
--	trans = btrfs_join_transaction(parent_root, 1);
--
--	/*
--	 * insert the directory item
--	 */
--	namelen = strlen(pending->name);
--	ret = btrfs_set_inode_index(parent_inode, &index);
--	ret = btrfs_insert_dir_item(trans, parent_root,
--			    pending->name, namelen,
--			    parent_inode->i_ino,
--			    &pending->root_key, BTRFS_FT_DIR, index);
--
--	if (ret)
--		goto fail;
--
--	btrfs_i_size_write(parent_inode, parent_inode->i_size + namelen * 2);
--	ret = btrfs_update_inode(trans, parent_root, parent_inode);
--	BUG_ON(ret);
--
--	ret = btrfs_add_root_ref(trans, parent_root->fs_info->tree_root,
--				 pending->root_key.objectid,
--				 parent_root->root_key.objectid,
--				 parent_inode->i_ino, index, pending->name,
--				 namelen);
--
--	BUG_ON(ret);
- 
- 	inode = btrfs_lookup_dentry(parent_inode, pending->dentry);
- 	d_instantiate(pending->dentry, inode);
--fail:
--	btrfs_end_transaction(trans, fs_info->fs_root);
--	return ret;
-+	return 0;
- }
- 
- /*
--- 
-1.5.6.5
+With dmesg merely adding:
+device fsid 4842e77bc7140ae4-16e3c15cfd22748b devid 2 transid 99767 /dev/sdd4
+device fsid 4842e77bc7140ae4-16e3c15cfd22748b devid 1 transid 99767 /dev/sdc2
+device fsid 4842e77bc7140ae4-16e3c15cfd22748b devid 3 transid 99767 /dev/sdb1
+btrfsck[1831]: segfault at c4 ip 000000000040ed3e sp 00007fffc30fde90 error 4 
+in btrfsck[400000+1d000]
 
+------------------
+
+This is kernel 2.6.32 and btrfs-progs from git (I ran 0.19, had this problem, 
+then upgraded but that made no difference).
+
+Is this any use to you? Is there a way to rescue (perhaps part of) the 
+filesystem? The metadata (dir structure, etc) seems fine when mounted in 
+degraded mode, but trying to read (some?) files results in IO errors.
+
+If you want more info or the debug tree, please say so now because I'll reuse 
+the disks in a day or two if I can't get any data out.
+
+Thanks,
+
+Dan Armak

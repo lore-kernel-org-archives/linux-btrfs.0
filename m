@@ -1,8 +1,8 @@
-From: Zhang Jingwang <yyalone@gmail.com>
+From: "Yan, Zheng " <yanzheng@21cn.com>
 Subject: Re: BtrFS does not respond after doing 'fstest' on both original and
 	cloned file
-Date: Wed, 9 Dec 2009 10:19:54 +0800
-Message-ID: <4486336c0912081819x54c6718eha5b725b5059b9fbb@mail.gmail.com>
+Date: Wed, 9 Dec 2009 10:19:43 +0800
+Message-ID: <3d0408630912081819r52dfb101uaa4644eada0671ae@mail.gmail.com>
 References: <603eac2a0912081753j39528ca4id374aa835e5f701a@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
@@ -12,10 +12,7 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <603eac2a0912081753j39528ca4id374aa835e5f701a@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-More information is appreciated. btrfs-show's output, configuration
-info, related dmesg output and so on..
-
-2009/12/9 Jian Lin <mail@linjian.org>:
+On Wed, Dec 9, 2009 at 9:53 AM, Jian Lin <mail@linjian.org> wrote:
 > Hi,
 >
 > I am using Linux 2.6.32 on X86_64 with BtrFS compiled in the kernel.
@@ -74,96 +71,12 @@ rned OK.
 5
 > ff 48
 >
-> [root@node34 ~]# cat /sys/devices/system/cpu/cpu3/cache/index1/shared=
-_cpu_map
-> 00000000,00000000,00000000,00000000,00000000,00000000,00000000,000000=
-0a
-> [root@node34 ~]# ps aux | grep fstest
-> root =A0 =A0 =A07352 =A00.7 =A00.0 =A0 3792 =A0 456 pts/3 =A0 =A0D+ =A0=
- 08:24 =A0 3:55
-> ./fstest-mod testbase 2147483648
-> root =A0 =A0 =A08420 =A00.0 =A00.0 =A061192 =A0 740 pts/6 =A0 =A0S+ =A0=
- 16:44 =A0 0:00 grep fstest
->
-> When I tried to list files on BtrFS, ls process also hanged:
->
-> [root@node34 ~]# ps aux | grep ls
-> root =A0 =A0 =A08290 =A00.0 =A00.0 =A073936 =A0 884 pts/1 =A0 =A0D+ =A0=
- 16:34 =A0 0:00 ls --color=3Dtty
-> root =A0 =A0 =A08327 =A00.0 =A00.0 =A073936 =A0 884 ? =A0 =A0 =A0 =A0=
-D =A0 =A016:35 =A0 0:00 ls --color=3Dtty
-> root =A0 =A0 =A08384 =A00.0 =A00.0 =A073936 =A0 884 pts/5 =A0 =A0D+ =A0=
- 16:42 =A0 0:00 ls
-> --color=3Dtty /root/linjian/mnt_btrfs
-> root =A0 =A0 =A08422 =A00.0 =A00.0 =A061192 =A0 736 pts/6 =A0 =A0S+ =A0=
- 16:44 =A0 0:00 grep ls
->
-> [root@node34 ~]# ps aux | grep btrfs
-> root =A0 =A0 =A03967 =A00.0 =A00.0 =A0 =A0 =A00 =A0 =A0 0 ? =A0 =A0 =A0=
- =A0S =A0 =A0Dec08 =A0 0:00
-> [btrfs-genwork-0]
-> root =A0 =A0 =A03968 =A00.0 =A00.0 =A0 =A0 =A00 =A0 =A0 0 ? =A0 =A0 =A0=
- =A0S =A0 =A0Dec08 =A0 0:39
-> [btrfs-submit-0]
-> root =A0 =A0 =A03969 =A00.0 =A00.0 =A0 =A0 =A00 =A0 =A0 0 ? =A0 =A0 =A0=
- =A0S =A0 =A0Dec08 =A0 0:00
-> [btrfs-delalloc-]
-> root =A0 =A0 =A03970 =A00.0 =A00.0 =A0 =A0 =A00 =A0 =A0 0 ? =A0 =A0 =A0=
- =A0S =A0 =A0Dec08 =A0 0:00 [btrfs-fixup-0]
-> root =A0 =A0 =A03975 =A00.0 =A00.0 =A0 =A0 =A00 =A0 =A0 0 ? =A0 =A0 =A0=
- =A0S =A0 =A0Dec08 =A0 0:00
-> [btrfs-enospc-0]
-> root =A0 =A0 =A03976 =A00.0 =A00.0 =A0 =A0 =A00 =A0 =A0 0 ? =A0 =A0 =A0=
- =A0S =A0 =A0Dec08 =A0 0:00 [btrfs-cleaner]
-> root =A0 =A0 =A03977 =A00.0 =A00.0 =A0 =A0 =A00 =A0 =A0 0 ? =A0 =A0 =A0=
- =A0D =A0 =A0Dec08 =A0 0:04
-> [btrfs-transacti]
-> root =A0 =A0 =A04301 =A00.2 =A00.0 =A0 =A0 =A00 =A0 =A0 0 ? =A0 =A0 =A0=
- =A0S =A0 =A0Dec08 =A0 3:11
-> [btrfs-endio-wri]
-> root =A0 =A0 =A04461 =A00.7 =A00.0 =A0 =A0 =A00 =A0 =A0 0 ? =A0 =A0 =A0=
- =A0S =A0 =A0Dec08 =A0 8:55
-> [btrfs-worker-1]
-> root =A0 =A0 =A04495 =A00.0 =A00.0 =A0 =A0 =A00 =A0 =A0 0 ? =A0 =A0 =A0=
- =A0S =A0 =A0Dec08 =A0 0:20
-> [btrfs-endio-met]
-> root =A0 =A0 =A04601 =A00.0 =A00.0 =A0 =A0 =A00 =A0 =A0 0 ? =A0 =A0 =A0=
- =A0S =A0 =A0Dec08 =A0 0:34 [btrfs-endio-1]
-> root =A0 =A0 =A04623 =A00.0 =A00.0 =A0 =A0 =A00 =A0 =A0 0 ? =A0 =A0 =A0=
- =A0S =A0 =A0Dec08 =A0 0:00
-> [btrfs-endio-met]
-> root =A0 =A0 =A08384 =A00.0 =A00.0 =A073936 =A0 884 ? =A0 =A0 =A0 =A0=
-D =A0 =A016:42 =A0 0:00 ls
-> --color=3Dtty /root/linjian/mnt_btrfs
-> root =A0 =A0 =A08490 =A00.0 =A00.0 =A0 =A0 =A00 =A0 =A0 0 ? =A0 =A0 =A0=
- =A0S =A0 =A017:10 =A0 0:00 [flush-btrfs-1]
-> root =A0 =A0 =A08517 =A00.0 =A00.0 =A061192 =A0 736 pts/6 =A0 =A0S+ =A0=
- 17:14 =A0 0:00 grep btrfs
->
-> Maybe it's a bug of fstest. I will review it's code.
-> However, I don't think a bad user-space program will make file system
-> no-responding.
->
-> Would you please show me some suggestions on this problem.
-> Thanks!
->
-> --
-> Jian Lin
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->
 
+Please send full messages of this oops, you can find them in /var/log/m=
+essages.
 
-
---=20
-Zhang Jingwang
-National Research Centre for High Performance Computers
-Institute of Computing Technology, Chinese Academy of Sciences
-No. 6, South Kexueyuan Road, Haidian District
-Beijing, China
+Regards
+Yan Zheng
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

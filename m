@@ -1,48 +1,32 @@
-From: Jan Engelhardt <jengelh@medozas.de>
-Subject: btrfs: fix missing last-entry in readdir(3)
-Date: Wed, 9 Dec 2009 23:00:38 +0100 (CET)
-Message-ID: <alpine.LSU.2.01.0912092259200.11799@obet.zrqbmnf.qr>
+From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Subject: Re: [patch 0/2] grub-0.97: btrfs support
+Date: Fri, 11 Dec 2009 00:15:46 +0100
+Message-ID: <200912110016.04548.johannes.hirte@fem.tu-ilmenau.de>
+References: <4ABBED5F.6000008@gmail.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: linux-btrfs@vger.kernel.org
-To: cmason@oracle.com
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Cc: The development of BTRFS <linux-btrfs@vger.kernel.org>
+To: Edward Shishkin <edward.shishkin@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4ABBED5F.6000008@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-parent 49313cdac7b34c9f7ecbb1780cfc648b1c082cd7 (v2.6.32-1-g49313cd)
-commit ff48c08e1c05c67e8348ab6f8a24de8034e0e34d
-Author: Jan Engelhardt <jengelh@medozas.de>
-Date:   Wed Dec 9 22:57:36 2009 +0100
+Am Freitag 25 September 2009 00:06:23 schrieb Edward Shishkin:
+> Hello everyone.
+... 
+> The following patches are for Fedora 10(**).
+> The distro-independent package will be put to kernel.org a bit later.
+> 
+> 
+> All comments, bugreports, etc. are welcome as usual.
 
-btrfs: fix missing last-entry in readdir(3)
+Ok, I have another comment/bugreport *g*.
 
-When one does a 32-bit readdir(3), the last entry of a directory is
-missing. This is however not due to passing a large value to filldir,
-but it seems to have to do with glibc doing telldir or something
-quirky. In any case, this patch fixes it in practice.
+I'm testing this patch with gentoo, so the grub sources are not identicaly the 
+same. With this patches applied, grub is unable to detect JFS or XFS 
+filesystems. XFS is reported as unknown, JFS is reported as btrfs. Reiserfs and 
+ext2/3 are detected as expected.
 
-Signed-off-by: Jan Engelhardt <jengelh@medozas.de>
----
- fs/btrfs/inode.c |    6 +++++-
- 1 files changed, 5 insertions(+), 1 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index b3ad168..7bf9811 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3869,7 +3869,11 @@ skip:
- 
- 	/* Reached end of directory/root. Bump pos past the last item. */
- 	if (key_type == BTRFS_DIR_INDEX_KEY)
--		filp->f_pos = INT_LIMIT(off_t);
-+		/*
-+		 * 32-bit glibc will use getdents64, but then strtol -
-+		 * so the last number we can serve is this.
-+		 */
-+		filp->f_pos = 0x7fffffff;
- 	else
- 		filp->f_pos++;
- nopos:
--- 
-# Created with git-export-patch
-
+regards,
+  Johannes

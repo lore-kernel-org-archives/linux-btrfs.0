@@ -1,50 +1,36 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: BUG: Link from sub volume, then remove the subvolume -> wrong link
-Date: Fri, 11 Dec 2009 20:54:25 +0100
-Message-ID: <200912112054.25986.kreijack@libero.it>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH] Subvolume listing feature for ioctl.
+Date: Fri, 11 Dec 2009 15:57:18 -0500
+Message-ID: <20091211205718.GP2191@localhost.localdomain>
+References: <4B00ADE8.4090205@jp.fujitsu.com> <3d0408630911160015t79044d72u3489a42d57c6f844@mail.gmail.com> <4B011435.2080005@jp.fujitsu.com> <4B038897.3000605@jp.fujitsu.com> <4B038936.5020506@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="us-ascii"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: yanzheng@21cn.com, linux-btrfs@vger.kernel.org,
+	chris.mason@oracle.com
+To: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4B038936.5020506@jp.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all
+On Wed, Nov 18, 2009 at 02:42:14PM +0900, TARUISI Hiroaki wrote:
+> New feature to list up subvolume/snapshots under
+> specified tree of file is introduced to ioctl.
+> 
+> Signed-off-by: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
+> ---
+>  fs/btrfs/ioctl.c |  283 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  fs/btrfs/ioctl.h |   29 +++++
+>  2 files changed, 312 insertions(+)
+> 
 
-when I tried to reproduce the bug highlighted by Andrew, I discovered another 
-bug. When I link a file from a subvolume to another, then remove the subvolume 
-I got a wrong link: in my test an *hard* link becomes a *soft* link !!!!
+I've been using this patch to work with my subvolume mounting patches, and it
+seems to have a problem where it will panic the box.  At first I thought it was
+something that I did, but on a freshly mkfs'ed fs I can reproduce the panic
+without doing any of the subvolume mounting weirdness.  If I do btrfsctl -l a
+couple of times it will panic.  This most recent time I did a btrfsctl -l on an
+empty fs, created a subvolume, did a list again, created another subvolume, and
+tried to list again and the box paniced.  I don't have time to look into this
+now, but I will look into it next week if you haven't had a chance to get to it
+before then.  Thanks,
 
-Steps to reproduce the bug:
-
-	root@venice:/tmp/test# sudo btrfsctl -S subvol2 .
-	operation complete
-	Btrfs Btrfs v0.19
-	root@venice:/tmp/test# echo 123 >>subvol2/myfile
-	root@venice:/tmp/test# ln subvol2/myfile .
-	root@venice:/tmp/test# ls -l . subvol2/
-	.:
-	total 4
-	-rw-r--r-- 2 root root  4 2009-12-11 20:40 myfile
-	drwx------ 1 root root 12 2009-12-11 20:40 subvol2
-
-	subvol2/:
-	total 4
-	-rw-r--r-- 2 root root 4 2009-12-11 20:40 myfile
-	root@venice:/tmp/test# btrfsctl -D subvol2 .
-	operation complete
-	Btrfs Btrfs v0.19
-	root@venice:/tmp/test# ls -l
-	total 0
-	lrwxrwxrwx 1 root root 3 2009-11-22 10:56 myfile -> lib
-
-Now myfile is a soft link instead to a hard link!!!! Moreover the soft link is 
-to an incorrect target ( 1) lib doesn't exist, 2) in any case is not the right 
-target).
-
-
-BR
-Goffredo
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+Josef

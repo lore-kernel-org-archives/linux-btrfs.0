@@ -1,106 +1,84 @@
-From: Andrew Lutomirski <luto@mit.edu>
-Subject: Snapshot mysteries (and an oops)
-Date: Fri, 11 Dec 2009 14:16:20 -0500
-Message-ID: <cb0375e10912111116w284bfc33p3bc2bad00b20a9b1@mail.gmail.com>
+From: Edward Shishkin <edward@redhat.com>
+Subject: Re: [patch 0/2] grub-0.97: btrfs support
+Date: Fri, 11 Dec 2009 20:15:30 +0100
+Message-ID: <4B229A52.90904@redhat.com>
+References: <4ABBED5F.6000008@gmail.com> <200912111504.58646.johannes.hirte@fem.tu-ilmenau.de> <4B2264FA.6020804@gmail.com> <200912111825.43853.johannes.hirte@fem.tu-ilmenau.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
+Cc: The development of BTRFS <linux-btrfs@vger.kernel.org>
+To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <200912111825.43853.johannes.hirte@fem.tu-ilmenau.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all-
+Johannes Hirte wrote:
+> Am Freitag 11 Dezember 2009 16:27:54 schrieb Edward Shishkin:
+>   
+>> Johannes Hirte wrote:
+>>     
+>>> Am Freitag 11 Dezember 2009 12:17:29 schrieb Edward Shishkin:
+>>>       
+>>>> Johannes Hirte wrote:
+>>>>         
+>>>>> Am Freitag 11 Dezember 2009 00:15:46 schrieb Johannes Hirte:
+>>>>>           
+>>>>>> Am Freitag 25 September 2009 00:06:23 schrieb Edward Shishkin:
+>>>>>>             
+>>>>>>> Hello everyone.
+>>>>>>>               
+>>>>>> ...
+>>>>>>
+>>>>>>             
+>>>>>>> The following patches are for Fedora 10(**).
+>>>>>>> The distro-independent package will be put to kernel.org a bit later.
+>>>>>>>
+>>>>>>>
+>>>>>>> All comments, bugreports, etc. are welcome as usual.
+>>>>>>>               
+>>>>>> Ok, I have another comment/bugreport *g*.
+>>>>>>
+>>>>>> I'm testing this patch with gentoo, so the grub sources are not
+>>>>>> identicaly the same. With this patches applied, grub is unable to
+>>>>>> detect JFS or XFS filesystems. XFS is reported as unknown, JFS is
+>>>>>> reported as btrfs. Reiserfs and ext2/3 are detected as expected.
+>>>>>>             
+>>>> Yes, this patch is for Fedora. For other distros
+>>>> some issues are possible, so please be careful..
+>>>>         
+>>> I've also tested now with the fedora sources. There is the same bug. The
+>>> btrfs patch breaks the filesystem detection. All filesystems after btrfs
+>>> in fsys_table aren't detected. Moving btrfs to the end of fsys_table is a
+>>> workaround but will interfere with FFS. So this should better be fixed in
+>>> the btrfs-part of grub, so that it:
+>>>
+>>> a) doesn't missdetect a JFS filesystem as btrfs
+>>> b) doesn't break the detection for remaining filesystems in the array.
+>>>       
+>> Hello.
+>>
+>> Yes, I confirm that xfs, etc. file systems are not detected,
+>> but missdetection jfs as btrfs looks rather fantastic :)
+>>
+>> Please, try the attached patch. Report if any problems.
+>>     
+>
+> The patch works, but the problem with misdetected JFS filesystem still 
+> persists. It happens if the device contained a btrfs filesystem before. I 
+> assume that the JFS super block starts later on the device as the btrfs one do 
+> and jfs_mkfs doesn't clean the space ahead of the JFS super block. So if a JFS 
+> filesystem is created on a device that contained a btrfs before, btrfs_mount 
+> still detects the beginning of the old btrfs super block and reads crap later 
+> on.
+>   
 
-I'm a bit mystified by snapshots.  I think that there are some bugs in
-btrfsctl at least (or maybe its documentation).  There's definitely at
-least one bug in the kernel.
+Yup, sticky thing..
 
-Here's some commands I just tried (vanilla 2.6.32, btrfs-progs from
-git today.  "test" is a brand-new empty btrfs filesystem, mounted with
-default options).  Questions and comments are inline:
+> To avoid this, btrfs detection could be placed after JFS. Are there any 
+> objections against this?
+>   
 
-[test]# btrfsctl -S subvol1 .
-operation complete
-Btrfs v0.19-4-gab8fb4c
-[test]# touch subvol1/file1
-[test]# btrfsctl -s snap1 subvol1
-operation complete
-Btrfs v0.19-4-gab8fb4c
-[test]# ls snap1
-file1
-
-OK, so it looks like I can make a snapshot of a subvolume, and
-everything works as expected.
-
-[test]# mkdir dir2
-[test]# touch dir2/file2
-[test]# btrfsctl -s snap2 dir2
-operation complete
-Btrfs v0.19-4-gab8fb4c
-[test]# ls snap2
-dir2  snap1  subvol1
-[test]# ls snap2/snap1
-[test]#
-
-WTF?  It looks like btrfsctl just snapshotted the subvolume containing
-dir2 instead of snapshotting the directory.  I would have expected it
-to either snapshot just the directory or, if that's impossible, to
-fail.
-
-[test]# rm -rf snap1
-rm: cannot remove directory `snap1': Directory not empty
-[test]# ls snap1
-[test]#
-
-OK, so rmdir can't remove snapshots.  (Is there any good reason for that?)
-
-[test]# btrfsctl -D snap1
-ioctl:: No such file or directory
-[test]# btrfsctl -D snap1 .
-operation complete
-Btrfs v0.19-4-gab8fb4c
-
-I can't make any sense of that.  What's the second parameter to -D
-supposed to do?
-
-[test]# btrfsctl -D subvol1 .
-operation complete
-Btrfs v0.19-4-gab8fb4c
-
-Phew.  That worked :)
-
-[test]# rm -rf *
-
-OK, now I'm back to where I started.
-
-[test]# btrfsctl -S subvol2 .
-operation complete
-Btrfs v0.19-4-gab8fb4c
-[test]# touch subvol2/file
-[test]# ln subvol2/file file
-Segmentation fault
-
-Crap.  I guess I wasn't supposed to try that.  dmesg attached:
-
-Process ln (pid: 3153, threadinfo ffff880196940000, task ffff8801a4149780)
-Stack:
- 0000000000000000 ffff88017a741e00 ffff88018af585d0 000000000000000e
-<0> ffff880196941e28 ffff88018af585d0 ffff88017a741e00 ffff88017a7905d0
-<0> ffff88017e4b3680 ffff88017a790688 ffff880196941e78 ffffffff81105988
-Call Trace:
- [<ffffffff81105988>] vfs_link+0xd5/0x14a
+If so, we might want to put if after XFS,
+which is also mistreated in such manner..
 
 Thanks,
-Andy
- [<ffffffff811057e9>] ? lookup_hash+0x3b/0x3f
- [<ffffffff81107eb1>] sys_linkat+0xc4/0x121
- [<ffffffff8106af52>] ? up_read+0xe/0x10
- [<ffffffff8141d2a9>] ? do_page_fault+0x269/0x299
- [<ffffffff81095e6c>] ? audit_syscall_entry+0x11e/0x14a
- [<ffffffff81107f2c>] sys_link+0x1e/0x22
- [<ffffffff81011cf2>] system_call_fastpath+0x16/0x1b
-Code: ff 85 c0 41 89 c6 ba 01 00 00 00 75 39 49 8b 44 24 20 48 89 da
-4c 89 fe 4c 89 e7 49 89 45 e0 e8 8f dc ff ff 85 c0 41 89 c6 74 04 <0f>
-0b eb fe 48 8b 45 b8 31 d2 48 89 de 4c 89 e7 48 8b 48 28 e8
-RIP  [<ffffffffa0bc4305>] btrfs_link+0xcf/0x144 [btrfs]
- RSP <ffff880196941dd8>
----[ end trace 95f0a8585b4e506f ]---
+Edward.

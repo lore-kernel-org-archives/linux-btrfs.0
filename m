@@ -1,58 +1,70 @@
-From: Zhang Jingwang <yyalone@gmail.com>
-Subject: Re: a question about btrfs_writepage
-Date: Fri, 11 Dec 2009 23:57:53 +0800
-Message-ID: <4486336c0912110757p4deb48a8v4360cb33ae4a212b@mail.gmail.com>
-References: <713d0d430912110356t3ed75c22u3b73fe2a19ed162a@mail.gmail.com>
-	 <713d0d430912110400w3ace4ecbsc764d17a4485d96b@mail.gmail.com>
+From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Subject: Re: [patch 0/2] grub-0.97: btrfs support
+Date: Fri, 11 Dec 2009 18:25:42 +0100
+Message-ID: <200912111825.43853.johannes.hirte@fem.tu-ilmenau.de>
+References: <4ABBED5F.6000008@gmail.com> <200912111504.58646.johannes.hirte@fem.tu-ilmenau.de> <4B2264FA.6020804@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Hu Ruihuan <specter118@gmail.com>
+Content-Type: Text/Plain;
+  charset="iso-8859-15"
+Cc: The development of BTRFS <linux-btrfs@vger.kernel.org>,
+	Edward Shishkin <edward@redhat.com>
+To: Edward Shishkin <edward.shishkin@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <713d0d430912110400w3ace4ecbsc764d17a4485d96b@mail.gmail.com>
+In-Reply-To: <4B2264FA.6020804@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Good efficiency or good stableness, it's a question.
+Am Freitag 11 Dezember 2009 16:27:54 schrieb Edward Shishkin:
+> Johannes Hirte wrote:
+> > Am Freitag 11 Dezember 2009 12:17:29 schrieb Edward Shishkin:
+> >> Johannes Hirte wrote:
+> >>> Am Freitag 11 Dezember 2009 00:15:46 schrieb Johannes Hirte:
+> >>>> Am Freitag 25 September 2009 00:06:23 schrieb Edward Shishkin:
+> >>>>> Hello everyone.
+> >>>>
+> >>>> ...
+> >>>>
+> >>>>> The following patches are for Fedora 10(**).
+> >>>>> The distro-independent package will be put to kernel.org a bit later.
+> >>>>>
+> >>>>>
+> >>>>> All comments, bugreports, etc. are welcome as usual.
+> >>>>
+> >>>> Ok, I have another comment/bugreport *g*.
+> >>>>
+> >>>> I'm testing this patch with gentoo, so the grub sources are not
+> >>>> identicaly the same. With this patches applied, grub is unable to
+> >>>> detect JFS or XFS filesystems. XFS is reported as unknown, JFS is
+> >>>> reported as btrfs. Reiserfs and ext2/3 are detected as expected.
+> >>
+> >> Yes, this patch is for Fedora. For other distros
+> >> some issues are possible, so please be careful..
+> >
+> > I've also tested now with the fedora sources. There is the same bug. The
+> > btrfs patch breaks the filesystem detection. All filesystems after btrfs
+> > in fsys_table aren't detected. Moving btrfs to the end of fsys_table is a
+> > workaround but will interfere with FFS. So this should better be fixed in
+> > the btrfs-part of grub, so that it:
+> >
+> > a) doesn't missdetect a JFS filesystem as btrfs
+> > b) doesn't break the detection for remaining filesystems in the array.
+> 
+> Hello.
+> 
+> Yes, I confirm that xfs, etc. file systems are not detected,
+> but missdetection jfs as btrfs looks rather fantastic :)
+> 
+> Please, try the attached patch. Report if any problems.
 
-Every cow file system a block update will cause update to the block
-point to it and recursively to root. Thus these file systems will
-write more blocks than in-place update file systems(like ext3). This
-cannot be avoided.
-
-But do have some technologies to improve this. NetApp's WAFL uses
-NVRAM-cache to log write operations. Log-structured file systems
-always sequentially write to disk to achieve high throughput. BtrFS
-uses a B+ tree to limit the height of the tree (so can reduce blocks
-need to write in a COW operation), and uses a log tree to speed up
-frequently sync operations (I'm not familiar with that).
-
-2009/12/11 Hu Ruihuan <specter118@gmail.com>:
-> 2009/12/11 Hu Ruihuan <specter118@gmail.com>:
->> Hi all,
->> =A0I am puzzled about a question, everytime when btrfs_writepage is
->> called, whethe the noeds in every levels of the fs tree will be
->> updated. This is the case as I read in the code, but if this case,
->> whether it will give rise to the low efficiency?
->> =A0 Thanks!
->>
-> refer to the update of nodes, I mean a cow operation
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->
+The patch works, but the problem with misdetected JFS filesystem still 
+persists. It happens if the device contained a btrfs filesystem before. I 
+assume that the JFS super block starts later on the device as the btrfs one do 
+and jfs_mkfs doesn't clean the space ahead of the JFS super block. So if a JFS 
+filesystem is created on a device that contained a btrfs before, btrfs_mount 
+still detects the beginning of the old btrfs super block and reads crap later 
+on.
+To avoid this, btrfs detection could be placed after JFS. Are there any 
+objections against this?
 
 
-
---=20
-Zhang Jingwang
-National Research Centre for High Performance Computers
-Institute of Computing Technology, Chinese Academy of Sciences
-No. 6, South Kexueyuan Road, Haidian District
-Beijing, China
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+regards,
+  Johannes

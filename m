@@ -1,68 +1,50 @@
 From: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
-Subject: Re: BUG: Link from sub volume, then remove the subvolume -> wrong
- link
-Date: Sat, 12 Dec 2009 09:24:56 +0900
-Message-ID: <4B22E2D8.7020706@jp.fujitsu.com>
-References: <200912112054.25986.kreijack@libero.it>
+Subject: Re: [PATCH] Subvolume listing feature for ioctl.
+Date: Sat, 12 Dec 2009 09:31:25 +0900
+Message-ID: <4B22E45D.7000106@jp.fujitsu.com>
+References: <4B00ADE8.4090205@jp.fujitsu.com> <3d0408630911160015t79044d72u3489a42d57c6f844@mail.gmail.com> <4B011435.2080005@jp.fujitsu.com> <4B038897.3000605@jp.fujitsu.com> <4B038936.5020506@jp.fujitsu.com> <20091211205718.GP2191@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: kreijack@libero.it
+Cc: yanzheng@21cn.com, linux-btrfs@vger.kernel.org,
+	chris.mason@oracle.com
+To: josef@redhat.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200912112054.25986.kreijack@libero.it>
+In-Reply-To: <20091211205718.GP2191@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Thank you for your report.
 
- I don't know how a hard link becomes to a soft link, hard link
-across subvolumes should not allowed in btrfs.
-
- Hard link contains target inode number but not target tree.
-So, if we can create such hard link normally, it points to
-a file which has same inode number in same subvolume.
- As for this problem, Christian Parpart posted a patch, and
-I rebased it.
+I'm going to reprocude this panic and fix it maybe next week.
 
 Regards,
 taruisi
-
-(2009/12/12 4:54), Goffredo Baroncelli wrote:
-> Hi all
+(2009/12/12 5:57), Josef Bacik wrote:
+> On Wed, Nov 18, 2009 at 02:42:14PM +0900, TARUISI Hiroaki wrote:
+>> New feature to list up subvolume/snapshots under
+>> specified tree of file is introduced to ioctl.
+>>
+>> Signed-off-by: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
+>> ---
+>>  fs/btrfs/ioctl.c |  283 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>>  fs/btrfs/ioctl.h |   29 +++++
+>>  2 files changed, 312 insertions(+)
+>>
 > 
-> when I tried to reproduce the bug highlighted by Andrew, I discovered another 
-> bug. When I link a file from a subvolume to another, then remove the subvolume 
-> I got a wrong link: in my test an *hard* link becomes a *soft* link !!!!
+> I've been using this patch to work with my subvolume mounting patches, and it
+> seems to have a problem where it will panic the box.  At first I thought it was
+> something that I did, but on a freshly mkfs'ed fs I can reproduce the panic
+> without doing any of the subvolume mounting weirdness.  If I do btrfsctl -l a
+> couple of times it will panic.  This most recent time I did a btrfsctl -l on an
+> empty fs, created a subvolume, did a list again, created another subvolume, and
+> tried to list again and the box paniced.  I don't have time to look into this
+> now, but I will look into it next week if you haven't had a chance to get to it
+> before then.  Thanks,
 > 
-> Steps to reproduce the bug:
-> 
-> 	root@venice:/tmp/test# sudo btrfsctl -S subvol2 .
-> 	operation complete
-> 	Btrfs Btrfs v0.19
-> 	root@venice:/tmp/test# echo 123 >>subvol2/myfile
-> 	root@venice:/tmp/test# ln subvol2/myfile .
-> 	root@venice:/tmp/test# ls -l . subvol2/
-> 	.:
-> 	total 4
-> 	-rw-r--r-- 2 root root  4 2009-12-11 20:40 myfile
-> 	drwx------ 1 root root 12 2009-12-11 20:40 subvol2
-> 
-> 	subvol2/:
-> 	total 4
-> 	-rw-r--r-- 2 root root 4 2009-12-11 20:40 myfile
-> 	root@venice:/tmp/test# btrfsctl -D subvol2 .
-> 	operation complete
-> 	Btrfs Btrfs v0.19
-> 	root@venice:/tmp/test# ls -l
-> 	total 0
-> 	lrwxrwxrwx 1 root root 3 2009-11-22 10:56 myfile -> lib
-> 
-> Now myfile is a soft link instead to a hard link!!!! Moreover the soft link is 
-> to an incorrect target ( 1) lib doesn't exist, 2) in any case is not the right 
-> target).
-> 
-> 
-> BR
-> Goffredo
+> Josef
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 
 -- 

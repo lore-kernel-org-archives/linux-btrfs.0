@@ -1,63 +1,70 @@
-From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
-Subject: Re: (Little) Patch about null dereference with acl and posix.
-Date: Fri, 11 Dec 2009 23:21:08 +0100
-Message-ID: <200912112321.09143.johannes.hirte@fem.tu-ilmenau.de>
-References: <61bf8f4f0911181328y794436ackb82acca35d578f46@mail.gmail.com>
+From: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
+Subject: Re: BUG: Link from sub volume, then remove the subvolume -> wrong
+ link
+Date: Sat, 12 Dec 2009 09:24:56 +0900
+Message-ID: <4B22E2D8.7020706@jp.fujitsu.com>
+References: <200912112054.25986.kreijack@libero.it>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: kreijack@libero.it
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <61bf8f4f0911181328y794436ackb82acca35d578f46@mail.gmail.com>
+In-Reply-To: <200912112054.25986.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Mittwoch 18 November 2009 22:28:27 schrieb briaeros007:
-> Hello,
-> For some days, i've got oops on my system and i've investigate it a bit.
-> The trouble was with  "posix_acl_equiv_mode" , and for some reason
-> (corrupted metadata ?) btrfs sometimes call it with "acl"==NULL
-> This function doesn't like it.
-> So in my patch I've first put a little error protection around the
-> call, and then avoid to call btrfs_set_acl with acl=NULL.
-> 
-> I'm not sure if it's ok with best practice, but i've done the test
-> which produce the oops, and know it doesn't (but some csum failed.
-> Well if my btrfs is corrupted, it's comprehensible).
-> 
-> The patch is the following.
-> 
-> diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-> index 3616042..f8ade24 100644
-> --- a/fs/btrfs/acl.c
-> +++ b/fs/btrfs/acl.c
-> @@ -111,7 +111,8 @@ static int btrfs_set_acl(struct inode *inode,
-> struct posix_acl *acl, int type)
->         switch (type) {
->         case ACL_TYPE_ACCESS:
->                 mode = inode->i_mode;
-> -               ret = posix_acl_equiv_mode(acl, &mode);
-> +               if (acl && mode)
-> +                       ret = posix_acl_equiv_mode(acl, &mode);
->                 if (ret < 0)
->                         return ret;
->                 ret = 0;
-> @@ -165,12 +166,13 @@ static int btrfs_xattr_set_acl(struct inode
-> *inode, int type,
->                 } else if (IS_ERR(acl)) {
->                         return PTR_ERR(acl);
->                 }
-> +               else
-> +               {
-> +                       ret = btrfs_set_acl(inode, acl, type);
-> +                       posix_acl_release(acl);
-> +               }
->         }
-> 
-> -       ret = btrfs_set_acl(inode, acl, type);
-> -
-> -       posix_acl_release(acl);
-> -
->         return ret;
->  }
+Hi,
 
-Shouldn't this go upstream and into stable review?
+ I don't know how a hard link becomes to a soft link, hard link
+across subvolumes should not allowed in btrfs.
+
+ Hard link contains target inode number but not target tree.
+So, if we can create such hard link normally, it points to
+a file which has same inode number in same subvolume.
+ As for this problem, Christian Parpart posted a patch, and
+I rebased it.
+
+Regards,
+taruisi
+
+(2009/12/12 4:54), Goffredo Baroncelli wrote:
+> Hi all
+> 
+> when I tried to reproduce the bug highlighted by Andrew, I discovered another 
+> bug. When I link a file from a subvolume to another, then remove the subvolume 
+> I got a wrong link: in my test an *hard* link becomes a *soft* link !!!!
+> 
+> Steps to reproduce the bug:
+> 
+> 	root@venice:/tmp/test# sudo btrfsctl -S subvol2 .
+> 	operation complete
+> 	Btrfs Btrfs v0.19
+> 	root@venice:/tmp/test# echo 123 >>subvol2/myfile
+> 	root@venice:/tmp/test# ln subvol2/myfile .
+> 	root@venice:/tmp/test# ls -l . subvol2/
+> 	.:
+> 	total 4
+> 	-rw-r--r-- 2 root root  4 2009-12-11 20:40 myfile
+> 	drwx------ 1 root root 12 2009-12-11 20:40 subvol2
+> 
+> 	subvol2/:
+> 	total 4
+> 	-rw-r--r-- 2 root root 4 2009-12-11 20:40 myfile
+> 	root@venice:/tmp/test# btrfsctl -D subvol2 .
+> 	operation complete
+> 	Btrfs Btrfs v0.19
+> 	root@venice:/tmp/test# ls -l
+> 	total 0
+> 	lrwxrwxrwx 1 root root 3 2009-11-22 10:56 myfile -> lib
+> 
+> Now myfile is a soft link instead to a hard link!!!! Moreover the soft link is 
+> to an incorrect target ( 1) lib doesn't exist, 2) in any case is not the right 
+> target).
+> 
+> 
+> BR
+> Goffredo
+
+
+-- 
+taruisi
+

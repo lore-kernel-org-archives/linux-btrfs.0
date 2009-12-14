@@ -1,47 +1,37 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: make subvol=0 mount the original default root
-Date: Mon, 14 Dec 2009 14:18:38 -0500
-Message-ID: <20091214191838.GC2165@localhost.localdomain>
+From: Matthew Wilcox <matthew@wil.cx>
+Subject: [PATCH] btrfs: Show discard option in /proc/mounts
+Date: Mon, 14 Dec 2009 15:01:12 -0700
+Message-ID: <20091214220112.GJ7812@parisc-linux.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com
-To: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Christoph Hellwig <hch@lst.de>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since theres not a good way to make sure the user sees the original default root
-tree id, and not to mention it's 5 so is way different than any other volume,
-just make subvol=0 mount the original default root.  This makes it a bit easier
-for users to handle in the long run.  Thanks,
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/super.c |   12 +++++++++---
- 1 files changed, 9 insertions(+), 3 deletions(-)
+Christoph's patch e244a0aeb6a599c19a7c802cda6e2d67c847b154 doesn't display
+the discard option in /proc/mounts, leading to some confusion for me.
+Here's the missing bit.
+
+Signed-off-by: Matthew Wilcox <willy@linux.intel.com>
 
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index bcbdc1b..ccc0380 100644
+index 752a546..5e5bd29 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -305,9 +305,15 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
- 		switch (token) {
- 		case Opt_subvol:
- 			intarg = 0;
--			match_int(&args[0], &intarg);
--			if (intarg)
--				*subvol_objectid = intarg;
-+			error = match_int(&args[0], &intarg);
-+			if (!error) {
-+				/* we want the original fs_tree */
-+				if (!intarg)
-+					*subvol_objectid =
-+						BTRFS_FS_TREE_OBJECTID;
-+				else
-+					*subvol_objectid = intarg;
-+			}
- 			break;
- 		case Opt_device:
- 			error = btrfs_scan_one_device(match_strdup(&args[0]),
--- 
-1.5.4.3
+@@ -450,6 +450,8 @@ static int btrfs_show_options(struct seq_file *seq, struct vfsmount *vfs)
+ 		seq_puts(seq, ",notreelog");
+ 	if (btrfs_test_opt(root, FLUSHONCOMMIT))
+ 		seq_puts(seq, ",flushoncommit");
++	if (btrfs_test_opt(root, DISCARD))
++		seq_puts(seq, ",discard");
+ 	if (!(root->fs_info->sb->s_flags & MS_POSIXACL))
+ 		seq_puts(seq, ",noacl");
+ 	return 0;
 
+-- 
+Matthew Wilcox				Intel Open Source Technology Centre
+"Bill, look, we understand that you're interested in selling us this
+operating system, but compare it to ours.  We can't possibly take such
+a retrograde step."

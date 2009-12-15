@@ -1,49 +1,27 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 4/4] btrfs: remove tree_search() in extent_map.c
-Date: Tue, 15 Dec 2009 14:54:17 +0800
-Message-ID: <4B273299.5040309@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+From: Andrew Lutomirski <luto@mit.edu>
+Subject: Where is current btrfs and btrfs-progs development?
+Date: Tue, 15 Dec 2009 12:16:06 -0500
+Message-ID: <cb0375e10912150916q7b03f9bbua8408cedea9424f3@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch removes tree_search() in extent_map.c because it is not called by
-anything.
+It looks like the git trees at:
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
- fs/btrfs/extent_map.c |   14 --------------
- 1 files changed, 0 insertions(+), 14 deletions(-)
+http://git.kernel.org/smart/pub/scm/linux/kernel/git/mason/btrfs-progs-unstable.git
 
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 07ec673..fe4bb5e 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -150,20 +150,6 @@ static struct rb_node *__tree_search(struct rb_root *root, u64 offset,
- 	return NULL;
- }
- 
--/*
-- * look for an offset in the tree, and if it can't be found, return
-- * the first offset we can find smaller than 'offset'.
-- */
--static inline struct rb_node *tree_search(struct rb_root *root, u64 offset)
--{
--	struct rb_node *prev;
--	struct rb_node *ret;
--	ret = __tree_search(root, offset, &prev, NULL);
--	if (!ret)
--		return prev;
--	return ret;
--}
--
- /* check to see if two extent_map structs are adjacent and safe to merge */
- static int mergable_maps(struct extent_map *prev, struct extent_map *next)
- {
--- 
-1.6.2.2
+and
 
+http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=summary
 
+are several weeks out of date.  For example, the patch here:
+
+http://news.gmane.org/gmane.comp.file-systems.btrfs
+
+looks like it's based on a revision that isn't in the
+btrfs-progs-unstable tree.  Is there an up to date tree or patch queue
+somewhere?
+
+--Andy

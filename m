@@ -1,63 +1,57 @@
-From: Andy Lutomirski <luto@myrealbox.com>
-Subject: Re: BUG: Link from sub volume, then remove the subvolume -> wrong
-    link
-Date: Mon, 14 Dec 2009 23:04:14 -0500
-Message-ID: <4B270ABE.5090109@myrealbox.com>
-References: <200912112054.25986.kreijack@libero.it> <4B22E2D8.7020706@jp.fujitsu.com> 	<4B23E378.1090905@mit.edu> <4B257BF4.5060807@jp.fujitsu.com> <cb0375e10912141043u476619bey766cfa366a8aac46@mail.gmail.com> <4B26D504.3080201@jp.fujitsu.com>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: [PATCH 1/4] btrfs: fix the bug that __tree_search() returns the wrong
+ result in extent_map.c
+Date: Tue, 15 Dec 2009 14:54:08 +0800
+Message-ID: <4B273290.6090503@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: luto@mit.edu, kreijack@libero.it, linux-btrfs@vger.kernel.org,
-	chris.mason@oracle.com
-To: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4B26D504.3080201@jp.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-TARUISI Hiroaki wrote:
-> Hi,
-> 
-> I think message:'Operation not permitted' is more
-> proper for this problem than 'Invalid cross-device
-> link' simply because this link is not cross-device
-> link.
-> 
-> Of course, this operation is prohibited not by security
-> policy but by inner limitation of btrfs, this usage of
-> EPERM may be a kind of abuses...
-> 
+__tree_search() returns the reverse result about the prev node and the next node. And we can
+get the prev node and the next node directly by rb_prev() and rb_next(), so it is unnecessary
+to use while loop to get them.
 
-EOPNOTSUPP?  EINVAL?
+This patch fixes this bug of the wrong result.
 
-Seriously, though, something should go in.  Chris, any opinion?
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/extent_map.c |   13 ++++---------
+ 1 files changed, 4 insertions(+), 9 deletions(-)
 
---Andy
+diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+index 46bea0f..16744f4 100644
+--- a/fs/btrfs/extent_map.c
++++ b/fs/btrfs/extent_map.c
+@@ -136,20 +136,15 @@ static struct rb_node *__tree_search(struct rb_root *root, u64 offset,
+ 
+ 	if (prev_ret) {
+ 		orig_prev = prev;
+-		while (prev && offset >= extent_map_end(prev_entry)) {
+-			prev = rb_next(prev);
+-			prev_entry = rb_entry(prev, struct extent_map, rb_node);
+-		}
++		if (prev && offset < prev_entry->start)
++			prev = rb_prev(prev);
+ 		*prev_ret = prev;
+ 		prev = orig_prev;
+ 	}
+ 
+ 	if (next_ret) {
+-		prev_entry = rb_entry(prev, struct extent_map, rb_node);
+-		while (prev && offset < prev_entry->start) {
+-			prev = rb_prev(prev);
+-			prev_entry = rb_entry(prev, struct extent_map, rb_node);
+-		}
++		if (prev && offset >= extent_map_end(prev_entry))
++			prev = rb_next(prev);
+ 		*next_ret = prev;
+ 	}
+ 	return NULL;
+-- 
+1.6.5.2
 
-> Regards,
-> taruisi
-> 
-> (2009/12/15 3:43), Andrew Lutomirski wrote:
->> [cc: Chris -- This, or something like it, should probably go to
->> stable, but it needs to make it to upstream somewhere first.]
->>
->> On Sun, Dec 13, 2009 at 6:42 PM, TARUISI Hiroaki
->> <taruishi.hiroak@jp.fujitsu.com> wrote:
->>> Hi,
->>>
->>> We can see the patch in ML archive or at 'Patchwork' site.
->>>
->>>  http://patchwork.kernel.org/patch/59519/
->> That fixes the bug, but shouldn't the error be EXDEV?  It has nothing
->> to do with permissions.
->>
->> --Andy
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
 

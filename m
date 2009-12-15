@@ -1,27 +1,23 @@
-From: Andrew Lutomirski <luto@mit.edu>
-Subject: Where is current btrfs and btrfs-progs development?
-Date: Tue, 15 Dec 2009 12:16:06 -0500
-Message-ID: <cb0375e10912150916q7b03f9bbua8408cedea9424f3@mail.gmail.com>
+From: David Nicol <davidnicol@gmail.com>
+Subject: Re: BUG: Link from sub volume, then remove the subvolume -> wrong
+	link
+Date: Tue, 15 Dec 2009 11:31:51 -0600
+Message-ID: <934f64a20912150931q46aea2eer12bc907ecb0137fc@mail.gmail.com>
+References: <200912112054.25986.kreijack@libero.it> <4B22E2D8.7020706@jp.fujitsu.com>
+	<4B23E378.1090905@mit.edu> <4B257BF4.5060807@jp.fujitsu.com>
+	<cb0375e10912141043u476619bey766cfa366a8aac46@mail.gmail.com>
+	<4B26D504.3080201@jp.fujitsu.com> <4B270ABE.5090109@myrealbox.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: unlisted-recipients:; (no To-header on input)
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4B270ABE.5090109@myrealbox.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It looks like the git trees at:
+how about supporting the operation, as a feature, and allowing a file
+to be in two different subvolumes at the same time? Would that make
+the link semantics too confusing?
 
-http://git.kernel.org/smart/pub/scm/linux/kernel/git/mason/btrfs-progs-unstable.git
-
-and
-
-http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=summary
-
-are several weeks out of date.  For example, the patch here:
-
-http://news.gmane.org/gmane.comp.file-systems.btrfs
-
-looks like it's based on a revision that isn't in the
-btrfs-progs-unstable tree.  Is there an up to date tree or patch queue
-somewhere?
-
---Andy
+-- 
+Is it the time when there isn't time to discuss but there is time to act yet?

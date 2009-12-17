@@ -1,43 +1,35 @@
-From: jim owens <jowens@hp.com>
-Subject: PATCH] Do not limit RAID1 and DUP transfer length to one stripe
-Date: Thu, 17 Dec 2009 14:04:11 -0500
-Message-ID: <4B2A80AB.9080401@hp.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: make set/get functions for the super compat_ro
+	flags use compat_ro
+Date: Thu, 17 Dec 2009 16:32:27 -0500
+Message-ID: <20091217213227.GB4122@dhcp231-156.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Chris Mason <chris.mason@oracle.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Our set/get functions for compat_ro_flags actually look at compat_flags.  This
+will mess any attempt to use compat flags up.  The fix is obvious.  Thanks,
 
-The 65k stripe length should be ignored as the stripes are
-physically contiguous on disk so transfers can span stripes.
-
-Signed-off-by: jim owens <jowens@hp.com>
+Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/volumes.c |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/ctree.h |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 20cbd2e..4a0c8e5 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2697,13 +2697,13 @@ again:
- 	/* stripe_offset is the offset of this block in its stripe*/
- 	stripe_offset = offset - stripe_offset;
- 
--	if (map->type & (BTRFS_BLOCK_GROUP_RAID0 | BTRFS_BLOCK_GROUP_RAID1 |
--			 BTRFS_BLOCK_GROUP_RAID10 |
--			 BTRFS_BLOCK_GROUP_DUP)) {
-+	if (map->type & (BTRFS_BLOCK_GROUP_RAID0 |
-+			 BTRFS_BLOCK_GROUP_RAID10)) {
- 		/* we limit the length of each bio to what fits in a stripe */
- 		*length = min_t(u64, em->len - offset,
- 			      map->stripe_len - stripe_offset);
- 	} else {
-+		/* RAID1, DUP, and simple disk stripes are all contiguous */
- 		*length = em->len - offset;
- 	}
- 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 464f688..917211b 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1834,7 +1834,7 @@ BTRFS_SETGET_STACK_FUNCS(super_num_devices, struct btrfs_super_block,
+ BTRFS_SETGET_STACK_FUNCS(super_compat_flags, struct btrfs_super_block,
+ 			 compat_flags, 64);
+ BTRFS_SETGET_STACK_FUNCS(super_compat_ro_flags, struct btrfs_super_block,
+-			 compat_flags, 64);
++			 compat_ro_flags, 64);
+ BTRFS_SETGET_STACK_FUNCS(super_incompat_flags, struct btrfs_super_block,
+ 			 incompat_flags, 64);
+ BTRFS_SETGET_STACK_FUNCS(super_csum_type, struct btrfs_super_block,
 -- 
-1.5.6.3
+1.5.4.3
+

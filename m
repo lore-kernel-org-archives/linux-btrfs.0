@@ -1,27 +1,43 @@
-From: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
-Subject: Re: BUG: Link from sub volume, then remove the subvolume -> wrong
- 	link
-Date: Thu, 17 Dec 2009 09:00:04 +0900
-Message-ID: <4B297484.8010408@jp.fujitsu.com>
-References: <200912112054.25986.kreijack@libero.it> <4B22E2D8.7020706@jp.fujitsu.com> 	<4B23E378.1090905@mit.edu> <4B257BF4.5060807@jp.fujitsu.com> 	<cb0375e10912141043u476619bey766cfa366a8aac46@mail.gmail.com> 	<4B26D504.3080201@jp.fujitsu.com> <4B270ABE.5090109@myrealbox.com> <934f64a20912150931q46aea2eer12bc907ecb0137fc@mail.gmail.com>
+From: jim owens <jowens@hp.com>
+Subject: PATCH] Do not limit RAID1 and DUP transfer length to one stripe
+Date: Thu, 17 Dec 2009 14:04:11 -0500
+Message-ID: <4B2A80AB.9080401@hp.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: davidnicol@gmail.com
+Cc: Chris Mason <chris.mason@oracle.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <934f64a20912150931q46aea2eer12bc907ecb0137fc@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Supporting it may be not so confusing, but it may need
-a little format change to record tree and inode number.
-I think it's not so acceptable.
 
-Regards,
-taruisi
+The 65k stripe length should be ignored as the stripes are
+physically contiguous on disk so transfers can span stripes.
 
-(2009/12/16 2:31), David Nicol wrote:
-> how about supporting the operation, as a feature, and allowing a file
-> to be in two different subvolumes at the same time? Would that make
-> the link semantics too confusing?
-> 
+Signed-off-by: jim owens <jowens@hp.com>
+---
+ fs/btrfs/volumes.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 20cbd2e..4a0c8e5 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2697,13 +2697,13 @@ again:
+ 	/* stripe_offset is the offset of this block in its stripe*/
+ 	stripe_offset = offset - stripe_offset;
+ 
+-	if (map->type & (BTRFS_BLOCK_GROUP_RAID0 | BTRFS_BLOCK_GROUP_RAID1 |
+-			 BTRFS_BLOCK_GROUP_RAID10 |
+-			 BTRFS_BLOCK_GROUP_DUP)) {
++	if (map->type & (BTRFS_BLOCK_GROUP_RAID0 |
++			 BTRFS_BLOCK_GROUP_RAID10)) {
+ 		/* we limit the length of each bio to what fits in a stripe */
+ 		*length = min_t(u64, em->len - offset,
+ 			      map->stripe_len - stripe_offset);
+ 	} else {
++		/* RAID1, DUP, and simple disk stripes are all contiguous */
+ 		*length = em->len - offset;
+ 	}
+ 
+-- 
+1.5.6.3

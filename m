@@ -1,36 +1,49 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Re: [PATCH] btrfs: Simplify offset calculation method for
- ctree.h
-Date: Fri, 18 Dec 2009 09:10:03 -0500
-Message-ID: <20091218141003.GB3202@think>
-References: <4B2ADB4C.7010900@cn.fujitsu.com>
- <9bd6b5360912172039y432361fu243d0f05bf75b7b7@mail.gmail.com>
- <4B2B1852.6080105@cn.fujitsu.com>
+Subject: Re: PATCH] Do not limit RAID1 and DUP transfer length to one stripe
+Date: Fri, 18 Dec 2009 09:23:24 -0500
+Message-ID: <20091218142324.GC3202@think>
+References: <4B2A80AB.9080401@hp.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: sniper <s3c24xx@gmail.com>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>
-To: Zhaolei <zhaolei@cn.fujitsu.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: jim owens <jowens@hp.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4B2B1852.6080105@cn.fujitsu.com>
+In-Reply-To: <4B2A80AB.9080401@hp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 18, 2009 at 01:51:14PM +0800, Zhaolei wrote:
-> sniper wrote:
-> > No, many pointers in btrfs function arguments are not pointing to an
-> > absolute address, but relative to the start address of extent.
-> > Take following function as example, argument inode_item is an offset
-> > value to the beginning of leaf. So we can't reach its member with
-> > &inode_item->xxx
+On Thu, Dec 17, 2009 at 02:04:11PM -0500, jim owens wrote:
 > 
-> Notice that we are not reach its member, we are getting pointer of its
-> member with &inode_item->mtime.
-> This operation have same effect as old one.
+> The 65k stripe length should be ignored as the stripes are
+> physically contiguous on disk so transfers can span stripes.
+> 
+> Signed-off-by: jim owens <jowens@hp.com>
+> ---
+>  fs/btrfs/volumes.c |    6 +++---
+>  1 files changed, 3 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 20cbd2e..4a0c8e5 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -2697,13 +2697,13 @@ again:
+>  	/* stripe_offset is the offset of this block in its stripe*/
+>  	stripe_offset = offset - stripe_offset;
+>  
+> -	if (map->type & (BTRFS_BLOCK_GROUP_RAID0 | BTRFS_BLOCK_GROUP_RAID1 |
+> -			 BTRFS_BLOCK_GROUP_RAID10 |
+> -			 BTRFS_BLOCK_GROUP_DUP)) {
+> +	if (map->type & (BTRFS_BLOCK_GROUP_RAID0 |
+> +			 BTRFS_BLOCK_GROUP_RAID10)) {
+>  		/* we limit the length of each bio to what fits in a stripe */
+>  		*length = min_t(u64, em->len - offset,
+>  			      map->stripe_len - stripe_offset);
+>  	} else {
+> +		/* RAID1, DUP, and simple disk stripes are all contiguous */
+>  		*length = em->len - offset;
+>  	}
 
-It relies on gcc doing something specific with the pointer address
-manipulation while the original code makes it clear we're just taking
-the offset.  We do rely on gcc being gcc in lots of places in the code,
-but in this case I prefer the offsetof.
+We do need to make sure the bio doesn't try to span a chunk.  The
+mapping code can't handle that.
 
 -chris
+

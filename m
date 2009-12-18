@@ -1,7 +1,7 @@
 From: jim owens <jowens@hp.com>
-Subject: [PATCH] Btrfs: remove dead code for unplugging pages.
-Date: Fri, 18 Dec 2009 10:52:02 -0500
-Message-ID: <4B2BA522.9020801@hp.com>
+Subject: [PATCH V2] Btrfs: remove dead code for unplugging pages.
+Date: Fri, 18 Dec 2009 11:51:45 -0500
+Message-ID: <4B2BB321.4050700@hp.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Cc: Chris Mason <chris.mason@oracle.com>
@@ -17,10 +17,10 @@ for btrfs directio more difficult so I'm removing all of it.
 
 Signed-off-by: jim owens <jowens@hp.com>
 ---
- fs/btrfs/disk-io.c |   62 ++----------------------------------------------
- fs/btrfs/volumes.c |   66 ++++++++++++++-------------------------------------
+ fs/btrfs/disk-io.c |   62 ++---------------------------------------------
+ fs/btrfs/volumes.c |   67 +++++++++++++--------------------------------------
  fs/btrfs/volumes.h |    2 -
- 3 files changed, 21 insertions(+), 109 deletions(-)
+ 3 files changed, 20 insertions(+), 111 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
 index d4132aa..ce049a1 100644
@@ -104,7 +104,7 @@ index d4132aa..ce049a1 100644
   * If this fails, caller must call bdi_destroy() to get rid of the
   * bdi again.
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index db5fe6c..567ba66 100644
+index db5fe6c..0f498ab 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
 @@ -2614,10 +2614,10 @@ static int find_live_mirror(struct map_lookup *map, int first, int num,
@@ -120,7 +120,7 @@ index db5fe6c..567ba66 100644
  {
  	struct extent_map *em;
  	struct map_lookup *map;
-@@ -2629,13 +2629,13 @@ static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
+@@ -2629,15 +2629,12 @@ static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
  	int i;
  	int num_stripes;
  	int max_errors;
@@ -132,11 +132,12 @@ index db5fe6c..567ba66 100644
  	read_unlock(&em_tree->lock);
  
 -	if (!em && unplug_page)
-+	if (!em)
- 		return 0;
- 
+-		return 0;
+-
  	if (!em) {
-@@ -2673,7 +2673,7 @@ static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
+ 		printk(KERN_CRIT "unable to find logical %llu len %llu\n",
+ 		       (unsigned long long)logical,
+@@ -2673,7 +2670,7 @@ static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
  		*length = min(*length, em->len - offset);
  	}
  
@@ -145,7 +146,7 @@ index db5fe6c..567ba66 100644
  		goto out;
  
  	if (mirror_num > map->num_stripes)
-@@ -2691,7 +2691,7 @@ static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
+@@ -2691,7 +2688,7 @@ static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
  	num_stripes = 1;
  	stripe_index = 0;
  	if (map->type & BTRFS_BLOCK_GROUP_RAID1) {
@@ -154,7 +155,7 @@ index db5fe6c..567ba66 100644
  			num_stripes = map->num_stripes;
  		else if (mirror_num)
  			stripe_index = mirror_num - 1;
-@@ -2713,7 +2713,7 @@ static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
+@@ -2713,7 +2710,7 @@ static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
  		stripe_index = do_div(stripe_nr, factor);
  		stripe_index *= map->sub_stripes;
  
@@ -163,7 +164,7 @@ index db5fe6c..567ba66 100644
  			num_stripes = map->sub_stripes;
  		else if (mirror_num)
  			stripe_index += mirror_num - 1;
-@@ -2732,34 +2732,20 @@ static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
+@@ -2732,34 +2729,20 @@ static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
  	}
  	BUG_ON(stripe_index >= map->num_stripes);
  
@@ -209,7 +210,7 @@ index db5fe6c..567ba66 100644
  		stripe_index++;
  	}
  out:
-@@ -2767,14 +2753,6 @@ out:
+@@ -2767,14 +2750,6 @@ out:
  	return 0;
  }
  
@@ -224,7 +225,7 @@ index db5fe6c..567ba66 100644
  int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
  		     u64 chunk_start, u64 physical, u64 devid,
  		     u64 **logical, int *naddrs, int *stripe_len)
-@@ -2840,14 +2818,6 @@ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
+@@ -2840,14 +2815,6 @@ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
  	return 0;
  }
  

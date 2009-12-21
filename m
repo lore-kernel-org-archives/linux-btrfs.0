@@ -1,54 +1,46 @@
-From: Liuwenyi <qingshenlwy@gmail.com>
-Subject: [PATCHv2 02/12]posix_acl: Add the check items
-Date: Mon, 21 Dec 2009 19:52:58 +0800
-Message-ID: <4B2F619A.8000407@gmail.com>
-Reply-To: qingshenlwy@gmail.com
+From: Christoph Hellwig <hch@lst.de>
+Subject: Re: [PATCHv2 00/12]posix_acl: Add the check items
+Date: Mon, 21 Dec 2009 13:36:54 +0100
+Message-ID: <20091221123654.GA9201__37381.0922181748$1261399205$gmane$org@lst.de>
+References: <4B2F6153.8010609@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=GB2312
-To: chris.mason@oracle.com, viro@zeniv.linux.org.uk,
-	joel.becker@oracle.com, cjb@laptop.org, jmorris@namei.org,
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-	onlyflyer@gmail.
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756640AbZLULt2@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: adilger@sun.com, jack@suse.cz, neilb@suse.de, jeffm@suse.com,
+        bfields@fieldses.org, linux-mtd@lists.infradead.org,
+        onlyflyer@gmail.com, hch@lst.de, tiger.yang@oracle.com,
+        strongzgy@gmail.com, ffilzlnx@us.ibm.com, sandeen@sandeen.net,
+        jmorris@namei.org, cluster-devel@redhat.com, aelder@sgi.com,
+        cjb@laptop.org, bharrosh@panasas.com, reiserfs-devel@vger.kernel.org,
+        xfs@oss.sgi.com, xfs-masters@oss.sgi.com, viro@zeniv.linux.org.uk,
+        chris.mason@oracle.com, linux-nfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, tytso@mit.edu, akpm@linux-foundation.org,
+        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, serue@us.ibm.com, dwmw2@infradead.orgã,
+        ocfs2-devel@oss.oracle.com
+To: Liuwenyi <qingshenlwy@gmail.com>
+Return-path: <cluster-devel-bounces@redhat.com>
+In-Reply-To: <4B2F6153.8010609@gmail.com>
+List-Unsubscribe: <https://www.redhat.com/mailman/options/cluster-devel>,
+	<mailto:cluster-devel-request@redhat.com?subject=unsubscribe>
+List-Archive: <https://www.redhat.com/archives/cluster-devel>
+List-Post: <mailto:cluster-devel@redhat.com>
+List-Help: <mailto:cluster-devel-request@redhat.com?subject=help>
+List-Subscribe: <https://www.redhat.com/mailman/listinfo/cluster-devel>,
+	<mailto:cluster-devel-request@redhat.com?subject=subscribe>
+Errors-To: cluster-devel-bounces@redhat.com
 List-ID: <linux-btrfs.vger.kernel.org>
 
-move the ACL validation check in to fs/posix_acl.c.
-Including nullpointer check and PTR_ERR check.
+I like taking these checks into posix_acl_valid, but I think the patch
+submission needs a bit more work.
+
+All the patches are extremly whitespace mangled.  And I don't think
+splitting them up makes a whole lot of sense, when we do API changes
+like this we usually fix up all callers.  So please try to fix your
+mailer, merged them all into one, and maybe also chose a more
+descriptive subject line, e.g.
+
+Subject: take checks for NULL and error pointers into posix_acl_valid()
 
 
----
-Signed-off-by: Liuwenyi <qingshenlwy@gmail.com>
-Cc: Chris Mason <chris.mason@oracle.com>
-Cc: Al Viro <viro@zeniv.linux.org.uk>
-Cc: Joel Becker <joel.becker@oracle.com>
-Cc: Chris Ball <cjb@laptop.org>
-Cc: James Morris <jmorris@namei.org>
-Cc: linux-btrfs@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
-
----
-diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index 2e9e699..0f14f95 100644
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -102,12 +102,9 @@ static int btrfs_set_acl(struct btrfs_trans_handle
-*trans,
-char *value = NULL;
-mode_t mode;
-
-- if (acl) {
-- ret = posix_acl_valid(acl);
-- if (ret < 0)
-- return ret;
-- ret = 0;
-- }
-+ ret = posix_acl_valid(acl);
-+ if (ret < 0)
-+ return ret;
-
-switch (type) {
-case ACL_TYPE_ACCESS:
-
--- 
-Best Regards,
-Liuwenyi
+And btw, at least the XFS change seems incorrect - previously we
+returned NULL acl pointer and this patch changes it to -EINVAL.

@@ -1,87 +1,52 @@
-From: Basavanagowda Kanur <gowda@kanur.in>
-Subject: [PATCH] btrfsctl: scan device and exit without using ioctl
-Date: Mon, 21 Dec 2009 21:20:46 +0530
-Message-ID: <20091221154140.GA26204@shift>
+From: Christoph Hellwig <hch@lst.de>
+Subject: Re: [PATCHv2 00/12]posix_acl: Add the check items
+Date: Mon, 21 Dec 2009 13:36:54 +0100
+Message-ID: <20091221123654.GA9201__41342.0190722265$1261412983$gmane$org@lst.de>
+References: <4B2F6153.8010609@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Cc: adilger@sun.com, jack@suse.cz, neilb@suse.de, jeffm@suse.com,
+        joel.becker@oracle.com, bfields@fieldses.org,
+        linux-mtd@lists.infradead.org, onlyflyer@gmail.com, hch@lst.de,
+        tiger.yang@oracle.com, strongzgy@gmail.com, ffilzlnx@us.ibm.com,
+        sandeen@sandeen.net, jmorris@namei.org, cluster-devel@redhat.com,
+        aelder@sgi.com, cjb@laptop.org, mfasheh@suse.com, bharrosh@panasas.com,
+        reiserfs-devel@vger.kernel.org, xfs@oss.sgi.com,
+        xfs-masters@oss.sgi.com, viro@zeniv.linux.org.uk, swhiteho@redhat.com,
+        chris.mason@oracle.com, linux-nfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, tytso@mit.edu, akpm@linux-foundation.org,
+        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, serue@us.ibm.com, dwmw2@infradead.orgã,
+        ocfs2-devel@oss.oracle.com
+To: Liuwenyi <qingshenlwy@gmail.com>
+Return-path: <xfs-bounces@oss.sgi.com>
+In-Reply-To: <4B2F6153.8010609@gmail.com>
+List-Unsubscribe: <http://oss.sgi.com/mailman/options/xfs>,
+	<mailto:xfs-request@oss.sgi.com?subject=unsubscribe>
+List-Archive: <http://oss.sgi.com/pipermail/xfs>
+List-Post: <mailto:xfs@oss.sgi.com>
+List-Help: <mailto:xfs-request@oss.sgi.com?subject=help>
+List-Subscribe: <http://oss.sgi.com/mailman/listinfo/xfs>,
+	<mailto:xfs-request@oss.sgi.com?subject=subscribe>
+Errors-To: xfs-bounces@oss.sgi.com
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I like taking these checks into posix_acl_valid, but I think the patch
+submission needs a bit more work.
 
-'btrfsctl -A /path/to/device/file' would only scan for a valid btrfs
-on the device using volume recognition helpers.
----
- btrfsctl.c |   42 ++++++++++++++++++++++++++++++++++++------
- 1 files changed, 36 insertions(+), 6 deletions(-)
+All the patches are extremly whitespace mangled.  And I don't think
+splitting them up makes a whole lot of sense, when we do API changes
+like this we usually fix up all callers.  So please try to fix your
+mailer, merged them all into one, and maybe also chose a more
+descriptive subject line, e.g.
 
-diff --git a/btrfsctl.c b/btrfsctl.c
-index 66c4e89..61020de 100644
---- a/btrfsctl.c
-+++ b/btrfsctl.c
-@@ -34,6 +34,8 @@
- #include "transaction.h"
- #include "utils.h"
- #include "version.h"
-+#include "disk-io.h"
-+#include "volumes.h"
- 
- #ifdef __CHECKER__
- #define BLKGETSIZE64 0
-@@ -88,6 +90,30 @@ static int open_file_or_dir(const char *fname)
- 	}
- 	return fd;
- }
-+
-+int btrfs_scan_file (const char *path)
-+{
-+        int ret = -1;
-+        struct btrfs_fs_devices *fs_devices = NULL;
-+        u64 dev_count = 0;
-+        int fd = -1;
-+
-+        fd = open (path, O_RDONLY);
-+        if (fd < 0) {
-+                fprintf (stderr, "failed to open %s: %s\n",
-+                         path, strerror (errno));
-+        } else {
-+
-+                ret = btrfs_scan_one_device (fd, path, &fs_devices,
-+                                             &dev_count,
-+                                             BTRFS_SUPER_INFO_OFFSET);
-+
-+                close (fd);
-+        }
-+
-+        return ret;
-+}
-+
- int main(int ac, char **av)
- {
- 	char *fname = NULL;
-@@ -201,12 +227,16 @@ int main(int ac, char **av)
- 	fname = av[ac - 1];
- 
- 	if (command == BTRFS_IOC_SCAN_DEV) {
--		fd = open("/dev/btrfs-control", O_RDWR);
--		if (fd < 0) {
--			perror("failed to open /dev/btrfs-control");
--			exit(1);
--		}
--		name = fname;
-+                ret = btrfs_scan_file (fname);
-+                if (ret < 0) {
-+                        fprintf (stdout, "could not find a btrfs volume on "
-+                                 "%s\n", fname);
-+                } else {
-+                        fprintf (stdout, "found a btrfs volume on %s\n",
-+                                 fname);
-+                }
-+
-+                exit (1);
- 	 } else {
- 		fd = open_file_or_dir(fname);
- 	 }
--- 
-1.6.4
+Subject: take checks for NULL and error pointers into posix_acl_valid()
 
+
+And btw, at least the XFS change seems incorrect - previously we
+returned NULL acl pointer and this patch changes it to -EINVAL.
+
+_______________________________________________
+xfs mailing list
+xfs@oss.sgi.com
+http://oss.sgi.com/mailman/listinfo/xfs

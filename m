@@ -1,56 +1,33 @@
-From: liu weni <qingshenlwy@gmail.com>
+From: Al Viro <viro@ZenIV.linux.org.uk>
 Subject: Re: [PATCHv2 02/12]posix_acl: Add the check items
-Date: Tue, 22 Dec 2009 22:31:38 +0800
-Message-ID: <b3657a100912220631n4d69ea66x23c1296e1abc468a@mail.gmail.com>
-References: <4B2F619A.8000407@gmail.com>
-	 <20091222120803.GR18217@ZenIV.linux.org.uk>
+Date: Tue, 22 Dec 2009 14:48:51 +0000
+Message-ID: <20091222144851.GS18217@ZenIV.linux.org.uk>
+References: <4B2F619A.8000407@gmail.com> <20091222120803.GR18217@ZenIV.linux.org.uk> <b3657a100912220631n4d69ea66x23c1296e1abc468a@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
 Cc: chris.mason@oracle.com, joel.becker@oracle.com, cjb@laptop.org,
 	jmorris@namei.org, linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org, onlyflyer@gmail.com,
 	strongzgy@gmail.com
-To: Al Viro <viro@zeniv.linux.org.uk>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753029AbZLVObl@vger.kernel.org>
-In-Reply-To: <20091222120803.GR18217@ZenIV.linux.org.uk>
+To: liu weni <qingshenlwy@gmail.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753426AbZLVOs5@vger.kernel.org>
+In-Reply-To: <b3657a100912220631n4d69ea66x23c1296e1abc468a@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi All:
+On Tue, Dec 22, 2009 at 10:31:38PM +0800, liu weni wrote:
+> Hi All:
+> 
+>     I'm sorry for my stupid. I am crazy for fixing this bug.
+> And make so much mistake.
 
-    I'm sorry for my stupid. I am crazy for fixing this bug.
-And make so much mistake.
-Maybe I need cool down and think more.
+Welcome to the club.  It's OK, _everyone_ around here had done that.
+Many times.
 
---
-Best Regards,
-Liuwenyi
-2009-12-22
-
-
-
-2009/12/22 Al Viro <viro@zeniv.linux.org.uk>:
-> On Mon, Dec 21, 2009 at 07:52:58PM +0800, Liuwenyi wrote:
->> @@ -102,12 +102,9 @@ static int btrfs_set_acl(struct btrfs_trans_han=
-dle
->> *trans,
->> char *value =3D NULL;
->> mode_t mode;
->>
->> - if (acl) {
->> - ret =3D posix_acl_valid(acl);
->> - if (ret < 0)
->> - return ret;
->> - ret =3D 0;
->> - }
->> + ret =3D posix_acl_valid(acl);
->> + if (ret < 0)
->> + return ret;
->
-> ... and now you can't remove acl from btrfs inode. =A0At all.
->
-> NAK the entire series. =A0You are changing existing user-visible beha=
-viour
-> for all filesystems for no reason and at least in this case it's clea=
-rly
-> wrong change.
->
+> Maybe I need cool down and think more.
+ 
+Always a good advice, but in this case it's a bit more specific - if you
+see that you are modifying behaviour for some arguments, figure out what
+would lead to such arguments and see if that behaviour is intentional ;-)
+And if after that you are still not sure whether it's a bug or not, ask the
+people involved what the hell had they intended to happen in such-and-such
+case (often enough that'll bring variants of "nice catch" - bugs *do* happen).

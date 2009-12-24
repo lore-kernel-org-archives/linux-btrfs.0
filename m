@@ -1,56 +1,43 @@
-From: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
-Subject: [PATCH] btrfs-progs: check slash in deleting subvolumes.
-Date: Thu, 24 Dec 2009 12:04:20 +0900
-Message-ID: <4B32DA34.7030101@jp.fujitsu.com>
+From: Christian Kujau <lists@nerdbynature.de>
+Subject: benchmark results
+Date: Thu, 24 Dec 2009 02:31:10 -0800 (PST)
+Message-ID: <alpine.DEB.2.01.0912240205510.3483@bogon.housecafe.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-2022-JP
-To: linux-btrfs@vger.kernel.org
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+To: xfs@oss.sgi.com, reiserfs-devel@vger.kernel.org,
+	linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	jfs-discussion@lists.sourceforge.net,
+	ext-users <ext3-users@redhat.com>, linu
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For now, btrfsctl does not check whether subvolume name contains slash
-or not. If someone specify subvolume with trailing slash (in case
-using shell completion), ioctl returns with EINVAL and this error
-may confuse some careless users like me. So, this patch adds check
-slashes in subvolume name in deletion same as snapshot/subvolume
-creating. But considering shell completion, this fix allows trailing
-slash.
+I've had the chance to use a testsystem here and couldn't resist running a 
+few benchmark programs on them: bonnie++, tiobench, dbench and a few 
+generic ones (cp/rm/tar/etc...) on ext{234}, btrfs, jfs, ufs, xfs, zfs.
 
-Regards,
-taruisi
+All with standard mkfs/mount options and +noatime for all of them.
 
-Signed-off-by: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
----
- btrfsctl.c |   11 +++++++++++
- 1 file changed, 11 insertions(+)
+Here are the results, no graphs - sorry:
+   http://nerdbynature.de/benchmarks/v40z/2009-12-22/
 
-Index: b/btrfsctl.c
-===================================================================
---- a/btrfsctl.c	2009-12-24 11:40:15.000000000 +0900
-+++ b/btrfsctl.c	2009-12-24 11:38:51.000000000 +0900
-@@ -266,6 +266,7 @@ int main(int ac, char **av)
- 	unsigned long command = 0;
- 	int len;
- 	char *fullpath;
-+	char *pos;
+Reiserfs is locking up during dbench, so I removed it from the 
+config, here are some earlier results:
 
- 	if (ac == 2 && strcmp(av[1], "-a") == 0) {
- 		fprintf(stderr, "Scanning for Btrfs filesystems\n");
-@@ -332,6 +333,16 @@ int main(int ac, char **av)
- 			command = BTRFS_IOC_SNAP_DESTROY;
- 			name = av[i + 1];
- 			len = strlen(name);
-+			pos = strchr(name, '/');
-+			if (pos) {
-+				if (*(pos + 1) == '\0')
-+					*(pos) = '\0';
-+				else {
-+					fprintf(stderr,
-+						"error: / not allowed in names\n");
-+					exit(1);
-+				}
-+			}
- 			if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
- 				fprintf(stderr, "-D size too long\n");
- 				exit(1);
+   http://nerdbynature.de/benchmarks/v40z/2009-12-21/bonnie.html
 
+Bonnie++ couldn't complete on nilfs2, only the generic tests 
+and tiobench were run. As nilfs2, ufs, zfs aren't supporting xattr, dbench 
+could not be run on these filesystems.
+   
+Short summary, AFAICT:
+    - btrfs, ext4 are the overall winners
+    - xfs to, but creating/deleting many files was *very* slow
+    - if you need only fast but no cool features or journaling, ext2
+      is still a good choice :)
+
+Thanks,
+Christian.
+-- 
+BOFH excuse #84:
+
+Someone is standing on the ethernet cable, causing a kink in the cable

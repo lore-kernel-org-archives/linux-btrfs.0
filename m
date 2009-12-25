@@ -1,67 +1,38 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Subject: Re: btrfsctl exit with 1 when succeed
-Date: Fri, 25 Dec 2009 10:25:56 +0100
-Message-ID: <200912251025.57158.kreijack@libero.it>
-References: <E88DD564E9DC5446A76B2B47C3BCCA150221B14DD3@pdsmsx503.ccr.corp.intel.com> <4B340502.10806@jp.fujitsu.com>
+From: lakshmi pathi <lakshmipathi.g@gmail.com>
+Subject: Re: [Jfs-discussion] benchmark results
+Date: Fri, 25 Dec 2009 18:49:19 +0530
+Message-ID: <ae2f51270912250519p22aebc0di4faec9e96e8c1707@mail.gmail.com>
+References: <alpine.DEB.2.01.0912240205510.3483@bogon.housecafe.de>
+	 <19251.26403.762180.228181@tree.ty.sabi.co.uk>
+	 <20091224212756.GM21594@thunk.org>
+	 <alpine.DEB.2.01.0912241739160.3483@bogon.housecafe.de>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: linux-btrfs@vger.kernel.org, zhipeng.gong@intel.com
-To: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4B340502.10806@jp.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: tytso@mit.edu, jfs-discussion@lists.sourceforge.net,
+	linux-nilfs@vger.kernel.org, xfs@oss.sgi.com,
+	reiserfs-devel@vger.kernel.org,
+	Peter Grandi <pg_jf2@jf2.for.sabi.co.uk>,
+	ext-users <ext3-users@redhat.com>, linux-ext4@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+To: Christian Kujau <lists@nerdbynature.de>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <alpine.DEB.2.01.0912241739160.3483@bogon.housecafe.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Friday 25 December 2009, TARUISI Hiroaki wrote:
-> I also want to know why this conversion is needed.
-> This might be a typo, I think.
-> 
-> Could someone tell us why?
-> Can we fix this conversion? Or shouldn't we fix it
-> considering back-compatibility?
-> 
+I'm a file system testing newbie, I have a  question/doubt,please let
+me know if i'm wrong.
 
-It is even worse: the result code returned by btrfsctl is not coherent.
-btrfsctl returns always 1 except:
-- after a devices scan (in this case the result is _always_ 0)
-- if the ioctl returns a value greater than 0 
+Do you think a tool, which uses output from "hdparm" command,to get
+hard drives maximum  performance and compares it specific file system
+(say for example,"ext4 provides xx throughput against max. device
+throughput yy" ) would be more meaningful.
 
-In other all cases (error in the command line, the device btrfs-control 
-doesn't exists, error in opening a file) the return code is 1.
+Does using hdparm (or other device throughput related tools) for
+benchmarking will be useful?
 
-That doesn't permit to differentiate an error from a good return. 
-
-BR
-Goffredo
-
-
-> Regards,
-> taruisi
-> 
-> (2009/11/11 15:16), Gong, Zhipeng wrote:
-> > We'd like to use btrfsctl in a shell script, however, btrfsctl exit with 1 
-even if the operation is successful, which is opposite to the usual shell 
-command convention.
-> > Why btrfsctl add this conversion in the end?
-> >          if (ret)
-> >                   exit(0);
-> >          else
-> >                   exit(1);
-> > 
-> > Thanks
-> > Zhipeng
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+Thanks.
 
 -- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+Cheers,
+Lakshmipathi.G
+www.giis.co.in

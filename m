@@ -1,33 +1,42 @@
-From: Christian Kujau <lists@nerdbynature.de>
+From: jim owens <jowens@hp.com>
 Subject: Re: [Jfs-discussion] benchmark results
-Date: Fri, 25 Dec 2009 11:32:58 -0800 (PST)
-Message-ID: <alpine.DEB.2.01.0912251126080.3483@bogon.housecafe.de>
-References: <alpine.DEB.2.01.0912240205510.3483@bogon.housecafe.de> <19251.26403.762180.228181@tree.ty.sabi.co.uk> <20091224212756.GM21594@thunk.org> <alpine.DEB.2.01.0912241739160.3483@bogon.housecafe.de> <20091225161453.GD32757@thunk.org>
- <20091225162238.GB19303@bitmover.com> <20091225163341.GE32757@thunk.org> <alpine.DEB.2.01.0912251054200.3483@bogon.housecafe.de>
+Date: Sat, 26 Dec 2009 11:00:59 -0500
+Message-ID: <4B36333B.3030600@hp.com>
+References: <alpine.DEB.2.01.0912240205510.3483@bogon.housecafe.de> <19251.26403.762180.228181@tree.ty.sabi.co.uk> <20091224212756.GM21594@thunk.org> <alpine.DEB.2.01.0912241739160.3483@bogon.housecafe.de> <20091225161453.GD32757@thunk.org> <20091225162238.GB19303@bitmover.com> <alpine.DEB.2.01.0912251042540.3483@bogon.housecafe.de>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Larry McVoy <lm@bitmover.com>,
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Larry McVoy <lm@bitmover.com>, tytso@mit.edu,
 	jfs-discussion@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
 	xfs@oss.sgi.com, reiserfs-devel@vger.kernel.org,
 	Peter Grandi <pg_jf2@jf2.for.sabi.co.UK>,
 	ext-users <ext3-users@redhat.com>, linux-ext4@vger.kernel.org,
 	linux-btrfs@vger.kernel.org
-To: tytso@mit.edu
-Return-path: <reiserfs-devel-owner@vger.kernel.org>
-In-Reply-To: <alpine.DEB.2.01.0912251054200.3483@bogon.housecafe.de>
+To: Christian Kujau <lists@nerdbynature.de>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <alpine.DEB.2.01.0912251042540.3483@bogon.housecafe.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 25 Dec 2009 at 10:56, Christian Kujau wrote:
-> Thanks for the hint, I could find sys/vm/drop-caches documented in 
-------------------------------^ not, was what I meant to say,
-but it's all there, as "drop_caches" in Documentation/sysctl/vm.txt
+Christian Kujau wrote:
+ 
+> I was using "sync" to make sure that the data "should" be on the disks 
 
-Christian.
+Good, but not good enough for many tests... info sync
 
-> Documentation/ but it's good to know there's a way to flush all these 
-> caces via this knob. Maybe I should add this to those "genric" tests to be 
-> more comparable to the other benchmarks.
--- 
-BOFH excuse #129:
+CONFORMING TO
+       POSIX.2
 
-The ring needs another token
+NOTES
+       On Linux, sync is only guaranteed to  schedule  the  dirty  blocks  for
+       writing;  it  can  actually take a short time before all the blocks are
+       finally written.
+
+This is consistent with all the feels-like-unix OSes I have used.
+
+And to make it even more random, the hardware (drive/controller)
+write cache state needs to be accounted for, and what the filesystem
+does if anything to try to ensure device-cache-to-media consistency.
+
+That does not mean I'm saying the tests are invalid or not useful,
+only that people need to evaluate "what do they really tell me".
+
+jim

@@ -1,113 +1,46 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Subject: Re: btrfs-progs: New utility to swap subvolumes
-Date: Sun, 27 Dec 2009 21:23:37 +0100
-Message-ID: <200912272123.37585.kreijack@alice.it>
-References: <4B32CF4D.90406@jp.fujitsu.com>
+From: Christian Kujau <lists@nerdbynature.de>
+Subject: Re: [Jfs-discussion] benchmark results
+Date: Sun, 27 Dec 2009 13:55:26 -0800 (PST)
+Message-ID: <alpine.DEB.2.01.0912271346240.3483@bogon.housecafe.de>
+References: <alpine.DEB.2.01.0912240205510.3483@bogon.housecafe.de> <19251.26403.762180.228181@tree.ty.sabi.co.uk> <20091224212756.GM21594@thunk.org> <alpine.DEB.2.01.0912241739160.3483@bogon.housecafe.de> <20091225161453.GD32757@thunk.org>
+ <20091225162238.GB19303@bitmover.com> <alpine.DEB.2.01.0912251042540.3483@bogon.housecafe.de> <4B36333B.3030600@hp.com> <4B365EBE.5050804@nerdbynature.de> <4B37BA76.7050403@hp.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-2022-jp"
-Cc: linux-btrfs@vger.kernel.org
-To: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4B32CF4D.90406@jp.fujitsu.com>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: Larry McVoy <lm@bitmover.com>, tytso@mit.edu,
+	jfs-discussion@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
+	xfs@oss.sgi.com, reiserfs-devel@vger.kernel.org,
+	Peter Grandi <pg_jf2@jf2.for.sabi.co.UK>,
+	ext-users <ext3-users@redhat.com>, linux-ext4@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+To: jim owens <jowens@hp.com>
+Return-path: <reiserfs-devel-owner@vger.kernel.org>
+In-Reply-To: <4B37BA76.7050403@hp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thursday 24 December 2009, TARUISI Hiroaki wrote:
-> New utility(btrfsrevert) added to swap subvolumes.
-> 
-> With this utility, a subvolume (Source Subvolume) takes place of
-> another subvolume (Target Subvolume), and target subvolume goes
-> under hidden directory(".old_trees") in filesystem root(fs tree,
-> tree id=5), and its name is expanded with random UUID.
+On Sun, 27 Dec 2009 at 14:50, jim owens wrote:
+> And I don't even care about comparing 2 filesystems, I only care about
+> timing 2 versions of code in the single filesystem I am working on,
+> and forgetting about hardware cache effects has screwed me there.  
 
+Not me, I'm comparing filesystems - and when the HBA or whatever plays 
+tricks and "sync" doesn't flush all the data, it'll do so for every tested 
+filesystem. Of course, filesystem could handle "sync" differently, and 
+they probably do, hence the different times they take to complete. That's 
+what my tests are about: timing comparision (does that still fall under 
+the "benchmark" category?), not functional comparision. That's left as a 
+task for the reader of these results: "hm, filesystem xy is so much faster 
+when doing foo, why is that? And am I willing to sacrifice e.g. proper 
+syncs to gain more speed?"
 
-Hi Taruisi,
+> So unless you are sure you have no hardware cache effects...
+> "the comparison still stands" is *false*.
 
-which is the supposed goal of this program ? If I understand correctly 
-"btrfsrevert" renames subvolumes. But we can rename a subvolume using the mv 
-command. So "btrfsrevert" may be simulated with a couple of 'mv' command:
+Again, I don't argue with "hardware caches will have effects", but that's 
+not the point of these tests. Of course hardware is different, but 
+filesystems are too and I'm testing filesystems (on the same hardware).
 
-# btrfsrevert -s vola-id -t volb-id /dev/sdX
-
-is equivalent to
-
-# mount /dev/sdX/ /mnt  	# only needed if the filesystem is un-mounted
-# mkdir /mnt/.old_trees
-# mv /mnt/volb /mnt/.old_trees/volb.<random-number>
-# mv /mnt/vola /mnt/volb
-# umount /mnt               
-
-Is right ? And moreover btrfsrevert has the limit that the file-system shall 
-not be mounted...
-
-On the plus side of btrfsrevert, I can "swap" volumes without having the btrfs 
-module loaded ...
-
-
-BR
-G.Baroncelli
-
-> 
-> This utility cannot operate mounted filesystem. This is only for
-> unmounted device.
-> And this utility also cannot operate filesystem root. For now,
-> if we want to swap filesystem root, we can use btrfsctl with
-> Josef Bacik's patch. I wonder which is better, integrating 'root swap'
-> ioctl or not supporting 'root swap' as for this utility...
-> 
-> A patch follows this mail.
-> 
-> 
-> man-page-like description and examples are as follows.
-> 
-> NAME
->        btrfsrevert - swap subvolumes.
-> 
-> SYNOPSIS
->        btrfsrevert -s source_subvolume -t target_subvolume device
-> 
-> OPTIONS
->        -s source subvolume
->             Specify subvolume number which replace target
->             subvolume.
->        -t target subvolume
->             Specify subvolume number which is replaced by
->             source subvolume.
-> 
->        device
->             Specify target device which is not mounted.
-> 
-> SAMPLES
->        Consider two subvolumes 'target'(id=256) and 'source'(id=300)
->        exist in filesystem root.
->            / +
->              +- 'target' (id=256)
->              +- 'source' (id=300)
-> 
->        In this case, following command swaps subvolume,
-> 
->           # btrfsrevert -s 300 -t 256 /dev/hda1
-> 
->        like this.
->            / +
->              +- 'target' (id=300)
->              |
->              +- '.old_tree'
->                  +- 'target_[random uuid]' (id=256)
-> 
->             A subvolume(id:256) is replaced with a subvolume(id:300),
->             and replaced subvolume(id:256) goes to .old_trees directory.
-> 
-> Regards,
-> taruisi
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
-
+Christian.
 -- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+BOFH excuse #278:
+
+The Dilithium Crystals need to be rotated.

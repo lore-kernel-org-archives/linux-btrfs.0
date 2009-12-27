@@ -1,75 +1,68 @@
-From: "Lex \"x-demon\" Rivera" <x-demon@x-demon.org>
-Subject: Btrfs fails randomly
-Date: Sun, 27 Dec 2009 10:34:45 +0300
-Message-ID: <fcfb36620912262334s68416a0aj66db9f7c8c7e0f88@mail.gmail.com>
-References: <fcfb36620912262329s73b1f1ffj5eb7f3ae8acb0013@mail.gmail.com>
+From: jim owens <jowens@hp.com>
+Subject: Re: [Jfs-discussion] benchmark results
+Date: Sun, 27 Dec 2009 14:50:14 -0500
+Message-ID: <4B37BA76.7050403@hp.com>
+References: <alpine.DEB.2.01.0912240205510.3483@bogon.housecafe.de> <19251.26403.762180.228181@tree.ty.sabi.co.uk> <20091224212756.GM21594@thunk.org> <alpine.DEB.2.01.0912241739160.3483@bogon.housecafe.de> <20091225161453.GD32757@thunk.org> <20091225162238.GB19303@bitmover.com> <alpine.DEB.2.01.0912251042540.3483@bogon.housecafe.de> <4B36333B.3030600@hp.com> <4B365EBE.5050804@nerdbynature.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <fcfb36620912262329s73b1f1ffj5eb7f3ae8acb0013@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Larry McVoy <lm@bitmover.com>, tytso@mit.edu,
+	jfs-discussion@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
+	xfs@oss.sgi.com, reiserfs-devel@vger.kernel.org,
+	Peter Grandi <pg_jf2@jf2.for.sabi.co.UK>,
+	ext-users <ext3-users@redhat.com>, linux-ext4@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+To: Christian Kujau <lists@nerdbynature.de>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <4B365EBE.5050804@nerdbynature.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs fails randomly, after this error in dmesg i can't exec any apps,
-but can read/write to disc. Log attached, it's always the same, except
-process that caused this.
+Christian Kujau wrote:
+> On 26.12.09 08:00, jim owens wrote:
+>>> I was using "sync" to make sure that the data "should" be on the disks 
+>> Good, but not good enough for many tests... info sync
+> [...]
+>>        On Linux, sync is only guaranteed to  schedule  the  dirty  blocks  for
+>>        writing;  it  can  actually take a short time before all the blocks are
+>>        finally written.
 
-t fs/btrfs/ordered-data.c:672!
-invalid opcode: 0000 [#1] PREEMPT SMP
-last sysfs file: /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq
-Modules linked in: ipv6 fuse aes_i586 aes_generic rfcomm sco bridge
-stp llc bnep l2cap crc16 ext3 jbd mbcache arc4 ecb b43 btusb
-snd_hda_codec_analog bluetooth snd_seq_dummy pciehp uvcvideo mac80211
-pci_hotplug videodev v4l1_compat cfg80211 snd_seq_oss rfkill
-snd_seq_midi_event cpufreq_conservative snd_hda_intel iTCO_wdt ssb
-snd_seq iTCO_vendor_support snd_hda_codec snd_seq_device joydev
-snd_hwdep snd_pcm_oss snd_mixer_oss hp_accel snd_pcm mmc_core
-lis3lv02d acpi_cpufreq snd_timer uhci_hcd snd ehci_hcd fan
-input_polldev pcmcia soundcore sky2 usbcore led_class wmi
-snd_page_alloc pcmcia_core evdev psmouse ac thermal battery serio_raw
-pcspkr sg freq_table processor rtc_cmos rtc_core rtc_lib sd_mod
-ata_piix ahci libata scsi_mod btrfs crc32c libcrc32c zlib_deflate lzo
-lzo_decompress lzo_compress i915 drm_kms_helper drm i2c_algo_bit
-button i2c_core video output intel_agp agpgart
+OK, that was wrong per Ted's explanation:
+> 
+> But for quite some time, under Linux the sync(2) system call will wait
+> for the blocks to be flushed out to HBA, although we currently don't
+> wait for the blocks to have been committed to the platters (at least
+> not for all file systems).   
 
-Pid: 15778, comm: iron Not tainted (2.6.32-ZEN #1) HP 2140
-EIP: 0060:[<f85bd96b>] EFLAGS: 00210287 CPU: 1
-EIP is at btrfs_ordered_update_i_size+0x40b/0x750 [btrfs]
-EAX: 00006000 EBX: 00005e7d ECX: a40e8f80 EDX: 00000000
-ESI: 00000000 EDI: b2dc5684 EBP: 00000000 ESP: a3157e74
-=C2=A0DS: 007b ES: 007b FS: 00d8 GS: 00e0 SS: 0068
-=C2=A0Process iron (pid: 15778, ti=3Da3156000 task=3Db68e6bd0 task.ti=3D=
-a3156000)
-=C2=A0Stack:
-=C2=A000005e7c 00000000 00000020 00000000 00000000 22222222 22222222 b2=
-dc5570
-=C2=A0<0> b2dc5550 00000000 b2dc55cc f858cd75 f6983000 00000000 00005e7=
-d fffff000
-=C2=A0<0> b2dc5570 0000d000 00000000 a3157f34 00000000 b2dc5684 0000000=
-0 f85ac3f7
-=C2=A0Call Trace:
-[<f858cd75>] ? __find_space_info+0x55/0x60 [btrfs]
-[<f85ac3f7>] ? btrfs_setattr+0x1e7/0x310 [btrfs]
-[<810f7324>] ? notify_change+0x134/0x320
-[<812b144c>] ? __mutex_lock_slowpath+0x1ec/0x2c0
-[<810e1721>] ? do_truncate+0x61/0x90
-[<810cf186>] ? mmap_region+0x1b6/0x450
-[<810e1842>] ? do_sys_ftruncate+0xf2/0x150
-[<810e18cd>] ? sys_ftruncate64+0x2d/0x40
-[<810039f3>] ? sysenter_do_call+0x12/0x28
-Code: 9c 00 00 00 85 c0 74 30 8b 50 bc 8d 48 b8 8b 40 b8 39 d6 72 23
-77 04 39 c3 72 1d 03 41 10 13 51 14 39 d6 72 06 77 11 39 c3 73 0d <0f>
-0b 8d 76 00 eb fb 8d b6 00 00 00 00 8b 44 24 20 8b 88 98 00
-EIP: [<f85bd96b>] btrfs_ordered_update_i_size+0x40b/0x750 [btrfs]
-SS:ESP 0068:a3157e74
----[ end trace 1adab407699b39c3 ]---
+But Christian Kujau wrote:
 
+> Noted, many times already. That's why I wrote "should be" - but in this
+> special scenario (filesystem speed tests) I don't care for file
+> integrity: if I pull the plug after "sync" and some data didn't make it
+> to the disks, I'll only look if the testscript got all the timestamps
+> and move on to the next test. I'm not testing for "filesystem integrity
+> after someone pulls the plug" here. And remember, I'm doing "sync" for
+> all the filesystems tested, so the comparison still stands.
 
+You did not understand my point.  It was not about data integrity,
+it was about test timing validity.
 
-Best regards, Lex "x-demon" Rivera
-|| ICQ 625558 | Jabber x-demon@x-demon.org | http://x-demon.org ||
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+And even with sync(2) behaving as Ted describes, *timing* may still
+tell you the wrong thing or not tell you something important.
+
+I have a battery-backed HBA cache.  Writes are HBA cached.  Timing only
+shows "to HBA memory". So 1000 pages (4MB total) that are at 1000 places
+on the disk will time (almost) the same completion as 1000 pages that
+are in 200 extents of 50 pages each.  Writing to disk the time difference
+between these would be an obvious slap upside the head.
+
+Hardware caches can trick you into thinking a filesystem performs
+much better than it really does for some operations.  Or trick you
+about relative performance between 2 filesystems.
+
+And I don't even care about comparing 2 filesystems, I only care about
+timing 2 versions of code in the single filesystem I am working on,
+and forgetting about hardware cache effects has screwed me there.  
+
+So unless you are sure you have no hardware cache effects...
+"the comparison still stands" is *false*.
+
+jim

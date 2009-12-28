@@ -1,78 +1,79 @@
-From: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
-Subject: Re: btrfsctl exit with 1 when succeed
-Date: Mon, 28 Dec 2009 08:39:31 +0900
-Message-ID: <4B37F033.30700@jp.fujitsu.com>
-References: <E88DD564E9DC5446A76B2B47C3BCCA150221B14DD3@pdsmsx503.ccr.corp.intel.com> <4B340502.10806@jp.fujitsu.com> <200912251025.57158.kreijack@libero.it>
+From: Christian Kujau <lists@nerdbynature.de>
+Subject: Re: [Jfs-discussion] benchmark results
+Date: Sun, 27 Dec 2009 17:24:05 -0800 (PST)
+Message-ID: <alpine.DEB.2.01.0912271707240.3483@bogon.housecafe.de>
+References: <19251.26403.762180.228181@tree.ty.sabi.co.uk> <20091224212756.GM21594@thunk.org> <alpine.DEB.2.01.0912241739160.3483@bogon.housecafe.de> <20091225161453.GD32757@thunk.org> <20091225162238.GB19303@bitmover.com> <alpine.DEB.2.01.0912251042540.3483@bogon.housecafe.de>
+ <4B36333B.3030600@hp.com> <4B365EBE.5050804@nerdbynature.de> <4B37BA76.7050403@hp.com> <alpine.DEB.2.01.0912271346240.3483@bogon.housecafe.de> <20091227223307.GA4429@thunk.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org, zhipeng.gong@intel.com,
-	chris.mason@oracle.com
-To: kreijack@gmail.com
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200912251025.57158.kreijack@libero.it>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: jim owens <jowens@hp.com>, Larry McVoy <lm@bitmover.com>,
+	jfs-discussion@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
+	xfs@oss.sgi.com, reiserfs-devel@vger.kernel.org,
+	Peter Grandi <pg_jf2@jf2.for.sabi.co.UK>,
+	ext-users <ext3-users@redhat.com>, linux-ext4@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+To: tytso@mit.edu
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <20091227223307.GA4429@thunk.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thank you, I don't think of a devices scan.
+On Sun, 27 Dec 2009 at 17:33, tytso@mit.edu wrote:
+> Yes, but given many of the file systems have almost *exactly* the same
 
-After all, I wonder why. Return codes must be
-coherent so that we can know good from no-good
-by them. In this spec, it's very hard to make
-shell scripts with btrfsctl. If there isn't good
-reason, we need to fix it, I think.
+"Almost" indeed - but curiously enough some filesystem are *not* the same, 
+although they should. Again: we have 8GB RAM, I'm copying ~3GB of data, so 
+why _are_ there differences? (Answer: because filesystems are different). 
+That's the only point of this test. Also note the disclaimer[0] I added to 
+the results page a few days ago.
 
-(2009/12/25 18:25), Goffredo Baroncelli wrote:
-> On Friday 25 December 2009, TARUISI Hiroaki wrote:
->> I also want to know why this conversion is needed.
->> This might be a typo, I think.
->>
->> Could someone tell us why?
->> Can we fix this conversion? Or shouldn't we fix it
->> considering back-compatibility?
->>
-> 
-> It is even worse: the result code returned by btrfsctl is not coherent.
-> btrfsctl returns always 1 except:
-> - after a devices scan (in this case the result is _always_ 0)
-> - if the ioctl returns a value greater than 0 
-> 
-> In other all cases (error in the command line, the device btrfs-control 
-> doesn't exists, error in opening a file) the return code is 1.
-> 
-> That doesn't permit to differentiate an error from a good return. 
-> 
-> BR
-> Goffredo
-> 
-> 
->> Regards,
->> taruisi
->>
->> (2009/11/11 15:16), Gong, Zhipeng wrote:
->>> We'd like to use btrfsctl in a shell script, however, btrfsctl exit with 1 
-> even if the operation is successful, which is opposite to the usual shell 
-> command convention.
->>> Why btrfsctl add this conversion in the end?
->>>          if (ret)
->>>                   exit(0);
->>>          else
->>>                   exit(1);
->>>
->>> Thanks
->>> Zhipeng
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> 
-> 
+> measurement is 5 times the disk bandwidith as measured by hdparm, it
+> makes me suspect that you are doing this:
+> /bin/time /bin/cp -r /source/tree /filesystem-under-test
+> sync
 
+No, I'm not - see the test script[1] - I'm taking the time for cp/rm/tar 
+*and* sync. But even if I would only take the time *only* for say "cp", 
+not the sync part. Still, it would be a valid comparison across 
+filesystems (the same operation for every filesystem) also a not very 
+realistic one - because in the real world I *want* to make sure my data is 
+on the disk. But that's as far as I go in these tests, I'm not even 
+messing around with disk caches or HBA caches - that's not the scope of 
+these tests.
 
+> You might notice it if you include the "sync" in the timing, i.e.:
+> /bin/time /bin/sh -c "/bin/cp -r /source/tree /filesystem-under-test;/bin/sync"
+
+Yes, that's exactly what the tests do.
+
+> "/bin/cp" returns, then sure, do whatever you want.  But if you want
+> the tests to have meaning if, for example, you have 2GB of memory and
+> you are copying 8GB of data, 
+
+For the bonnie++ tests I chose a filesize (16GB) so that disk performance 
+will matter here. As the generic tests shuffle around much more smaller 
+data, no disk performance, but filesystem performance is measured (and 
+compared to other filesystems) - well aware of the fact that caches *Are* 
+being used. Why would I want to discard caches? My daily usage pattern 
+(opening webrowsers, terminal windows, spreadcheats deal with much smaller 
+datasets and I'm happy that Linux is so hungry for cache - yet some 
+filesystems do not seem to utilize this opportunity as good as others do. 
+That's the whole point of this particular test. But constantly explaining 
+my point over and over again I see what I have to do: I shall run the 
+generic tests again with much bigger datasets, so that disk-performance is 
+also reflected, as people do seem to care about this (I don't - I can 
+switch filesystems more easily than disks).
+
+> The bottom line is that it's very hard to do good comparisons that are
+> useful in the general case.
+
+And it's difficult to find out what's a "useful comparison" for the 
+general public :-)
+
+Christian.
+
+[0] http://nerdbynature.de/benchmarks/v40z/2009-12-22/
+[1] http://nerdbynature.de/benchmarks/v40z/2009-12-22/env/fs-bench.sh.txt
 -- 
-taruisi
+BOFH excuse #292:
 
+We ran out of dial tone and we're and waiting for the phone company to deliver another bottle.

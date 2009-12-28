@@ -1,46 +1,136 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Subject: Re: btrfs-progs: New utility to swap subvolumes
-Date: Mon, 28 Dec 2009 20:08:31 +0100
-Message-ID: <200912282008.31628.kreijack@libero.it>
-References: <4B32CF4D.90406@jp.fujitsu.com> <200912272123.37585.kreijack@alice.it> <4B380C22.4010809@jp.fujitsu.com>
+From: "Lex \"x-demon\" Rivera" <x-demon@x-demon.org>
+Subject: Re: Btrfs fails randomly
+Date: Tue, 29 Dec 2009 00:51:49 +0300
+Message-ID: <fcfb36620912281351h28f87b3cy2db815ffc6a47421@mail.gmail.com>
+References: <fcfb36620912262329s73b1f1ffj5eb7f3ae8acb0013@mail.gmail.com>
+	<fcfb36620912262334s68416a0aj66db9f7c8c7e0f88@mail.gmail.com>
+	<3d0408630912272101j71c60ea0t5862ea5da09e7e15@mail.gmail.com>
+	<fcfb36620912280137l3cab6b0du5678a6da77f7b301@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-2022-jp"
+Content-Type: text/plain; charset=UTF-8
 Cc: linux-btrfs@vger.kernel.org
-To: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
+To: "Yan, Zheng" <yanzheng@21cn.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4B380C22.4010809@jp.fujitsu.com>
+In-Reply-To: <fcfb36620912280137l3cab6b0du5678a6da77f7b301@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Taruisi,
+Whole day running, no problems. Without patch it crashes 4-5 times/day.=
+ Thanks!
 
-On Monday 28 December 2009, TARUISI Hiroaki wrote:
-[...]
- 
-> We can swap subvolumes regardless of mounted-subvolume. (only
-> when we mount other subvolume than fs tree)
-I resolved this kind of problem as described in my previous email ([RFC] 
-proposal for a btrfs filesystem layout - 20/Nov/2009): I used a sub-volume as 
-root of my system, but I mounted also the root of the btrfs filesystem for 
-handling the sub-volumes under "/var/btrfs". It work quiet well:
-1) I can swap the sub-volumes only with the mv commands
-2) I can switch to an old snapshot of the root at boot time, because my 
-scripts update the grub entries with the list of the valid snapshots
-3) I can switch permanently two sub-volumes exchanging their names
-4) I can remove a sub-volume quite easily
 
-> And, because we can identify snapshot (its date or target subvol)
-> with subvolume ID, it is suitable to swap with ID.
-Why you want to to identify a sub-volume with its id ? 
-I like the idea to identify a sub-volumes with an identifier which is not 
-file-system related. To me the fact that a sub-volume is identified with its 
-"mount point" seems to me a limit instead that an advantage. But it seems that 
-I am alone to thinking that :-(
-So I am curious about your reasons.
+Best regards, Lex "x-demon" Rivera
+|| ICQ 625558 | Jabber x-demon@x-demon.org | http://x-demon.org ||
 
-BR
-Goffredo
 
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+
+
+On Mon, Dec 28, 2009 at 12:37 PM, Lex "x-demon" Rivera
+<x-demon@x-demon.org> wrote:
+> Patched, installed, running. (After some sex with vermagic, but in wo=
+rks)
+> Will report after 6-7 hours of running without failures.
+>
+>
+> Best regards, Lex "x-demon" Rivera
+> || ICQ 625558 | Jabber x-demon@x-demon.org | http://x-demon.org ||
+>
+>
+>
+>
+> On Mon, Dec 28, 2009 at 8:01 AM, Yan, Zheng <yanzheng@21cn.com> wrote=
+:
+>> On Sun, Dec 27, 2009 at 3:34 PM, Lex "x-demon" Rivera
+>> <x-demon@x-demon.org> wrote:
+>>> Btrfs fails randomly, after this error in dmesg i can't exec any ap=
+ps,
+>>> but can read/write to disc. Log attached, it's always the same, exc=
+ept
+>>> process that caused this.
+>>>
+>>> t fs/btrfs/ordered-data.c:672!
+>>> invalid opcode: 0000 [#1] PREEMPT SMP
+>>> last sysfs file: /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_f=
+req
+>>> Modules linked in: ipv6 fuse aes_i586 aes_generic rfcomm sco bridge
+>>> stp llc bnep l2cap crc16 ext3 jbd mbcache arc4 ecb b43 btusb
+>>> snd_hda_codec_analog bluetooth snd_seq_dummy pciehp uvcvideo mac802=
+11
+>>> pci_hotplug videodev v4l1_compat cfg80211 snd_seq_oss rfkill
+>>> snd_seq_midi_event cpufreq_conservative snd_hda_intel iTCO_wdt ssb
+>>> snd_seq iTCO_vendor_support snd_hda_codec snd_seq_device joydev
+>>> snd_hwdep snd_pcm_oss snd_mixer_oss hp_accel snd_pcm mmc_core
+>>> lis3lv02d acpi_cpufreq snd_timer uhci_hcd snd ehci_hcd fan
+>>> input_polldev pcmcia soundcore sky2 usbcore led_class wmi
+>>> snd_page_alloc pcmcia_core evdev psmouse ac thermal battery serio_r=
+aw
+>>> pcspkr sg freq_table processor rtc_cmos rtc_core rtc_lib sd_mod
+>>> ata_piix ahci libata scsi_mod btrfs crc32c libcrc32c zlib_deflate l=
+zo
+>>> lzo_decompress lzo_compress i915 drm_kms_helper drm i2c_algo_bit
+>>> button i2c_core video output intel_agp agpgart
+>>>
+>>> Pid: 15778, comm: iron Not tainted (2.6.32-ZEN #1) HP 2140
+>>> EIP: 0060:[<f85bd96b>] EFLAGS: 00210287 CPU: 1
+>>> EIP is at btrfs_ordered_update_i_size+0x40b/0x750 [btrfs]
+>>> EAX: 00006000 EBX: 00005e7d ECX: a40e8f80 EDX: 00000000
+>>> ESI: 00000000 EDI: b2dc5684 EBP: 00000000 ESP: a3157e74
+>>> =C2=A0DS: 007b ES: 007b FS: 00d8 GS: 00e0 SS: 0068
+>>> =C2=A0Process iron (pid: 15778, ti=3Da3156000 task=3Db68e6bd0 task.=
+ti=3Da3156000)
+>>> =C2=A0Stack:
+>>> =C2=A000005e7c 00000000 00000020 00000000 00000000 22222222 2222222=
+2 b2dc5570
+>>> =C2=A0<0> b2dc5550 00000000 b2dc55cc f858cd75 f6983000 00000000 000=
+05e7d fffff000
+>>> =C2=A0<0> b2dc5570 0000d000 00000000 a3157f34 00000000 b2dc5684 000=
+00000 f85ac3f7
+>>> =C2=A0Call Trace:
+>>> [<f858cd75>] ? __find_space_info+0x55/0x60 [btrfs]
+>>> [<f85ac3f7>] ? btrfs_setattr+0x1e7/0x310 [btrfs]
+>>> [<810f7324>] ? notify_change+0x134/0x320
+>>> [<812b144c>] ? __mutex_lock_slowpath+0x1ec/0x2c0
+>>> [<810e1721>] ? do_truncate+0x61/0x90
+>>> [<810cf186>] ? mmap_region+0x1b6/0x450
+>>> [<810e1842>] ? do_sys_ftruncate+0xf2/0x150
+>>> [<810e18cd>] ? sys_ftruncate64+0x2d/0x40
+>>> [<810039f3>] ? sysenter_do_call+0x12/0x28
+>>> Code: 9c 00 00 00 85 c0 74 30 8b 50 bc 8d 48 b8 8b 40 b8 39 d6 72 2=
+3
+>>> 77 04 39 c3 72 1d 03 41 10 13 51 14 39 d6 72 06 77 11 39 c3 73 0d <=
+0f>
+>>> 0b 8d 76 00 eb fb 8d b6 00 00 00 00 8b 44 24 20 8b 88 98 00
+>>> EIP: [<f85bd96b>] btrfs_ordered_update_i_size+0x40b/0x750 [btrfs]
+>>> SS:ESP 0068:a3157e74
+>>> ---[ end trace 1adab407699b39c3 ]---
+>>>
+>>>
+>> Thank you for reporting this. Please try patch attached below.
+>>
+>> Yan, Zheng
+>>
+>> ---
+>> diff -urp 1/fs/btrfs/ordered-data.c 2/fs/btrfs/ordered-data.c
+>> --- 1/fs/btrfs/ordered-data.c =C2=A0 2009-12-28 12:23:42.088546898 +=
+0800
+>> +++ 2/fs/btrfs/ordered-data.c =C2=A0 2009-12-28 12:57:24.250542741 +=
+0800
+>> @@ -626,6 +626,8 @@ int btrfs_ordered_update_i_size(struct i
+>>
+>> =C2=A0 =C2=A0 =C2=A0 =C2=A0if (ordered)
+>> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0offset =3D en=
+try_end(ordered);
+>> + =C2=A0 =C2=A0 =C2=A0 else
+>> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 offset =3D ALIGN(=
+offset, BTRFS_I(inode)->root->sectorsize);
+>>
+>> =C2=A0 =C2=A0 =C2=A0 =C2=A0mutex_lock(&tree->mutex);
+>> =C2=A0 =C2=A0 =C2=A0 =C2=A0disk_i_size =3D BTRFS_I(inode)->disk_i_si=
+ze;
+>> ---
+>>
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

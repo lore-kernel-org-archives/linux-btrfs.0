@@ -1,132 +1,98 @@
-From: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
-Subject: Re: btrfs-progs: New utility to swap subvolumes
-Date: Mon, 28 Dec 2009 10:38:42 +0900
-Message-ID: <4B380C22.4010809@jp.fujitsu.com>
-References: <4B32CF4D.90406@jp.fujitsu.com> <200912272123.37585.kreijack@alice.it>
+From: "Yan, Zheng " <yanzheng@21cn.com>
+Subject: Re: Btrfs fails randomly
+Date: Mon, 28 Dec 2009 13:01:58 +0800
+Message-ID: <3d0408630912272101j71c60ea0t5862ea5da09e7e15@mail.gmail.com>
+References: <fcfb36620912262329s73b1f1ffj5eb7f3ae8acb0013@mail.gmail.com>
+	 <fcfb36620912262334s68416a0aj66db9f7c8c7e0f88@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-2022-JP
+Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: kreijack@gmail.com
+To: Lex x-demon Rivera <x-demon@x-demon.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <200912272123.37585.kreijack@alice.it>
+In-Reply-To: <fcfb36620912262334s68416a0aj66db9f7c8c7e0f88@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thank you for your mail.
+On Sun, Dec 27, 2009 at 3:34 PM, Lex "x-demon" Rivera
+<x-demon@x-demon.org> wrote:
+> Btrfs fails randomly, after this error in dmesg i can't exec any apps=
+,
+> but can read/write to disc. Log attached, it's always the same, excep=
+t
+> process that caused this.
+>
+> t fs/btrfs/ordered-data.c:672!
+> invalid opcode: 0000 [#1] PREEMPT SMP
+> last sysfs file: /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_fre=
+q
+> Modules linked in: ipv6 fuse aes_i586 aes_generic rfcomm sco bridge
+> stp llc bnep l2cap crc16 ext3 jbd mbcache arc4 ecb b43 btusb
+> snd_hda_codec_analog bluetooth snd_seq_dummy pciehp uvcvideo mac80211
+> pci_hotplug videodev v4l1_compat cfg80211 snd_seq_oss rfkill
+> snd_seq_midi_event cpufreq_conservative snd_hda_intel iTCO_wdt ssb
+> snd_seq iTCO_vendor_support snd_hda_codec snd_seq_device joydev
+> snd_hwdep snd_pcm_oss snd_mixer_oss hp_accel snd_pcm mmc_core
+> lis3lv02d acpi_cpufreq snd_timer uhci_hcd snd ehci_hcd fan
+> input_polldev pcmcia soundcore sky2 usbcore led_class wmi
+> snd_page_alloc pcmcia_core evdev psmouse ac thermal battery serio_raw
+> pcspkr sg freq_table processor rtc_cmos rtc_core rtc_lib sd_mod
+> ata_piix ahci libata scsi_mod btrfs crc32c libcrc32c zlib_deflate lzo
+> lzo_decompress lzo_compress i915 drm_kms_helper drm i2c_algo_bit
+> button i2c_core video output intel_agp agpgart
+>
+> Pid: 15778, comm: iron Not tainted (2.6.32-ZEN #1) HP 2140
+> EIP: 0060:[<f85bd96b>] EFLAGS: 00210287 CPU: 1
+> EIP is at btrfs_ordered_update_i_size+0x40b/0x750 [btrfs]
+> EAX: 00006000 EBX: 00005e7d ECX: a40e8f80 EDX: 00000000
+> ESI: 00000000 EDI: b2dc5684 EBP: 00000000 ESP: a3157e74
+> =A0DS: 007b ES: 007b FS: 00d8 GS: 00e0 SS: 0068
+> =A0Process iron (pid: 15778, ti=3Da3156000 task=3Db68e6bd0 task.ti=3D=
+a3156000)
+> =A0Stack:
+> =A000005e7c 00000000 00000020 00000000 00000000 22222222 22222222 b2d=
+c5570
+> =A0<0> b2dc5550 00000000 b2dc55cc f858cd75 f6983000 00000000 00005e7d=
+ fffff000
+> =A0<0> b2dc5570 0000d000 00000000 a3157f34 00000000 b2dc5684 00000000=
+ f85ac3f7
+> =A0Call Trace:
+> [<f858cd75>] ? __find_space_info+0x55/0x60 [btrfs]
+> [<f85ac3f7>] ? btrfs_setattr+0x1e7/0x310 [btrfs]
+> [<810f7324>] ? notify_change+0x134/0x320
+> [<812b144c>] ? __mutex_lock_slowpath+0x1ec/0x2c0
+> [<810e1721>] ? do_truncate+0x61/0x90
+> [<810cf186>] ? mmap_region+0x1b6/0x450
+> [<810e1842>] ? do_sys_ftruncate+0xf2/0x150
+> [<810e18cd>] ? sys_ftruncate64+0x2d/0x40
+> [<810039f3>] ? sysenter_do_call+0x12/0x28
+> Code: 9c 00 00 00 85 c0 74 30 8b 50 bc 8d 48 b8 8b 40 b8 39 d6 72 23
+> 77 04 39 c3 72 1d 03 41 10 13 51 14 39 d6 72 06 77 11 39 c3 73 0d <0f=
+>
+> 0b 8d 76 00 eb fb 8d b6 00 00 00 00 8b 44 24 20 8b 88 98 00
+> EIP: [<f85bd96b>] btrfs_ordered_update_i_size+0x40b/0x750 [btrfs]
+> SS:ESP 0068:a3157e74
+> ---[ end trace 1adab407699b39c3 ]---
+>
+>
+Thank you for reporting this. Please try patch attached below.
 
-I intended to create a swap utility including root subvolume.
-That was the goal. Swapping root subvolume is not implemented
-yet...
+Yan, Zheng
 
-For now, as you say, in some cases this utility does simple
-mv commands, but in some cases, it has some advantages.
+---
+diff -urp 1/fs/btrfs/ordered-data.c 2/fs/btrfs/ordered-data.c
+--- 1/fs/btrfs/ordered-data.c	2009-12-28 12:23:42.088546898 +0800
++++ 2/fs/btrfs/ordered-data.c	2009-12-28 12:57:24.250542741 +0800
+@@ -626,6 +626,8 @@ int btrfs_ordered_update_i_size(struct i
 
-We can swap subvolumes regardless of mounted-subvolume. (only
-when we mount other subvolume than fs tree)
-And, because we can identify snapshot (its date or target subvol)
-with subvolume ID, it is suitable to swap with ID.
+ 	if (ordered)
+ 		offset =3D entry_end(ordered);
++	else
++		offset =3D ALIGN(offset, BTRFS_I(inode)->root->sectorsize);
 
-Regards,
-taruisi
-
-(2009/12/28 5:23), Goffredo Baroncelli wrote:
-> On Thursday 24 December 2009, TARUISI Hiroaki wrote:
->> New utility(btrfsrevert) added to swap subvolumes.
->>
->> With this utility, a subvolume (Source Subvolume) takes place of
->> another subvolume (Target Subvolume), and target subvolume goes
->> under hidden directory(".old_trees") in filesystem root(fs tree,
->> tree id=5), and its name is expanded with random UUID.
-> 
-> 
-> Hi Taruisi,
-> 
-> which is the supposed goal of this program ? If I understand correctly 
-> "btrfsrevert" renames subvolumes. But we can rename a subvolume using the mv 
-> command. So "btrfsrevert" may be simulated with a couple of 'mv' command:
-> 
-> # btrfsrevert -s vola-id -t volb-id /dev/sdX
-> 
-> is equivalent to
-> 
-> # mount /dev/sdX/ /mnt  	# only needed if the filesystem is un-mounted
-> # mkdir /mnt/.old_trees
-> # mv /mnt/volb /mnt/.old_trees/volb.<random-number>
-> # mv /mnt/vola /mnt/volb
-> # umount /mnt               
-> 
-> Is right ? And moreover btrfsrevert has the limit that the file-system shall 
-> not be mounted...
-> 
-> On the plus side of btrfsrevert, I can "swap" volumes without having the btrfs 
-> module loaded ...
-> 
-> 
-> BR
-> G.Baroncelli
-> 
->>
->> This utility cannot operate mounted filesystem. This is only for
->> unmounted device.
->> And this utility also cannot operate filesystem root. For now,
->> if we want to swap filesystem root, we can use btrfsctl with
->> Josef Bacik's patch. I wonder which is better, integrating 'root swap'
->> ioctl or not supporting 'root swap' as for this utility...
->>
->> A patch follows this mail.
->>
->>
->> man-page-like description and examples are as follows.
->>
->> NAME
->>        btrfsrevert - swap subvolumes.
->>
->> SYNOPSIS
->>        btrfsrevert -s source_subvolume -t target_subvolume device
->>
->> OPTIONS
->>        -s source subvolume
->>             Specify subvolume number which replace target
->>             subvolume.
->>        -t target subvolume
->>             Specify subvolume number which is replaced by
->>             source subvolume.
->>
->>        device
->>             Specify target device which is not mounted.
->>
->> SAMPLES
->>        Consider two subvolumes 'target'(id=256) and 'source'(id=300)
->>        exist in filesystem root.
->>            / +
->>              +- 'target' (id=256)
->>              +- 'source' (id=300)
->>
->>        In this case, following command swaps subvolume,
->>
->>           # btrfsrevert -s 300 -t 256 /dev/hda1
->>
->>        like this.
->>            / +
->>              +- 'target' (id=300)
->>              |
->>              +- '.old_tree'
->>                  +- 'target_[random uuid]' (id=256)
->>
->>             A subvolume(id:256) is replaced with a subvolume(id:300),
->>             and replaced subvolume(id:256) goes to .old_trees directory.
->>
->> Regards,
->> taruisi
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> 
-> 
-
-
--- 
-taruisi
-
+ 	mutex_lock(&tree->mutex);
+ 	disk_i_size =3D BTRFS_I(inode)->disk_i_size;
+---
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

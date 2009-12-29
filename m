@@ -1,136 +1,111 @@
-From: "Lex \"x-demon\" Rivera" <x-demon@x-demon.org>
-Subject: Re: Btrfs fails randomly
-Date: Tue, 29 Dec 2009 00:51:49 +0300
-Message-ID: <fcfb36620912281351h28f87b3cy2db815ffc6a47421@mail.gmail.com>
-References: <fcfb36620912262329s73b1f1ffj5eb7f3ae8acb0013@mail.gmail.com>
-	<fcfb36620912262334s68416a0aj66db9f7c8c7e0f88@mail.gmail.com>
-	<3d0408630912272101j71c60ea0t5862ea5da09e7e15@mail.gmail.com>
-	<fcfb36620912280137l3cab6b0du5678a6da77f7b301@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: "Yan, Zheng" <yanzheng@21cn.com>
+From: Ted Phelps <phelps@gnusto.com>
+Subject: btrfsck core dump
+Date: Tue, 29 Dec 2009 14:26:49 +1000
+Message-ID: <200912290426.nBT4QnfQ012260@laika.gnusto.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <fcfb36620912280137l3cab6b0du5678a6da77f7b301@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Whole day running, no problems. Without patch it crashes 4-5 times/day.=
- Thanks!
+
+Summary:
+
+My btrfs test partition started failing btrfsck (0.19) today, which may
+be of interest.  What's probably more interesting is that git head
+version of btrfsck reliably crashes when pointed at the filesystem.
+What's more interesting still is that, after unmounting the filesystem,
+btrfsck (both 0.19 and git head) finds no errors.  I have to admit that
+I find this a bit confusing.  Is this expected behavior?
 
 
-Best regards, Lex "x-demon" Rivera
-|| ICQ 625558 | Jabber x-demon@x-demon.org | http://x-demon.org ||
+Details:
+
+Today I ran btrfsck-0.19 and it ran to completion without errors.  I
+then deleted a large number of files from the btrfs filesystem, ran
+sync, and then re-ran btrfsck-0.19.  This time it reported a large
+number of errors.
+
+Its output ended thusly:
+
+    ...
+    Extent back ref already exists for 63434379264 parent 0 root 2 
+    Extent back ref already exists for 48350736384 parent 0 root 2 
+    Extent back ref already exists for 48365748224 parent 0 root 2 
+    leaf 63447334912 items 52 free space 43 generation 1754 owner 2
+    fs uuid cc48abf1-0be4-4163-bde6-f8a5264ffa46
+    chunk uuid ffbb5c4b-3848-4154-b7f7-ece63fefde52
+            item 0 key (63453257728 EXTENT_ITEM 4096) itemoff 3944 itemsize 51
+                    extent refs 1 gen 1753 flags 2
+                    tree block key (4128112 54 564550111) level 0
+                    tree block backref root 5
+    ...
+            item 50 key (63454093312 EXTENT_ITEM 4096) itemoff 1394 itemsize 51
+                    extent refs 1 gen 1754 flags 2
+                    tree block key (4123891 c 4123493) level 0
+                    tree block backref root 5
+            item 51 key (63454117888 EXTENT_ITEM 4096) itemoff 1343 itemsize 51
+                    extent refs 1 gen 1745 flags 2
+                    tree block key (4121053 60 24) level 0
+                    tree block backref root 5
+    failed to find block number 63453356032
+    Abort
+
+A second run produced different output and crashed at a different location:
+
+    parent transid verify failed on 63451648000 wanted 1764 found 1740
+    parent transid verify failed on 63451648000 wanted 1764 found 1740
+    parent transid verify failed on 63452520448 wanted 1764 found 1740
+    ...
+    leaf parent key incorrect 63453581312
+    bad block 63453581312
+    parent transid verify failed on 63453335552 wanted 1764 found 1739
+    parent transid verify failed on 63453335552 wanted 1764 found 1739
+    parent transid verify failed on 63453335552 wanted 1764 found 1739
+    warning, start mismatch 61248888832 61248884736
+    warning, start mismatch 61248942080 61248937984
+    warning, start mismatch 61249093632 61249077248
+    block 61249077248 rec extent_item_refs 1, passed 1
+    warning, start mismatch 61249105920 61249110016
+    block 61249110016 rec extent_item_refs 1, passed 1
+    Abort
+
+Unfortunately, the beginning of the first run scrolled off the top of my
+scrollback buffer, but the entirety of what I do have is here:
+
+    http://www.gnusto.com/btrfs/dump-20091229.txt
 
 
+I then tried running btrfsck from git head (ab8fb4c9) and it crashed:
 
+    parent transid verify failed on 63447986176 wanted 1765 found 1742
+    parent transid verify failed on 63447986176 wanted 1765 found 1742
+    parent transid verify failed on 63447531520 wanted 1765 found 1736
+    ...
+    parent transid verify failed on 63447908352 wanted 1765 found 1742
+    parent transid verify failed on 63447908352 wanted 1765 found 1742
+    parent transid verify failed on 63447908352 wanted 1765 found 1763
+    Segmentation fault (core dumped)
 
-On Mon, Dec 28, 2009 at 12:37 PM, Lex "x-demon" Rivera
-<x-demon@x-demon.org> wrote:
-> Patched, installed, running. (After some sex with vermagic, but in wo=
-rks)
-> Will report after 6-7 hours of running without failures.
->
->
-> Best regards, Lex "x-demon" Rivera
-> || ICQ 625558 | Jabber x-demon@x-demon.org | http://x-demon.org ||
->
->
->
->
-> On Mon, Dec 28, 2009 at 8:01 AM, Yan, Zheng <yanzheng@21cn.com> wrote=
-:
->> On Sun, Dec 27, 2009 at 3:34 PM, Lex "x-demon" Rivera
->> <x-demon@x-demon.org> wrote:
->>> Btrfs fails randomly, after this error in dmesg i can't exec any ap=
-ps,
->>> but can read/write to disc. Log attached, it's always the same, exc=
-ept
->>> process that caused this.
->>>
->>> t fs/btrfs/ordered-data.c:672!
->>> invalid opcode: 0000 [#1] PREEMPT SMP
->>> last sysfs file: /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_f=
-req
->>> Modules linked in: ipv6 fuse aes_i586 aes_generic rfcomm sco bridge
->>> stp llc bnep l2cap crc16 ext3 jbd mbcache arc4 ecb b43 btusb
->>> snd_hda_codec_analog bluetooth snd_seq_dummy pciehp uvcvideo mac802=
-11
->>> pci_hotplug videodev v4l1_compat cfg80211 snd_seq_oss rfkill
->>> snd_seq_midi_event cpufreq_conservative snd_hda_intel iTCO_wdt ssb
->>> snd_seq iTCO_vendor_support snd_hda_codec snd_seq_device joydev
->>> snd_hwdep snd_pcm_oss snd_mixer_oss hp_accel snd_pcm mmc_core
->>> lis3lv02d acpi_cpufreq snd_timer uhci_hcd snd ehci_hcd fan
->>> input_polldev pcmcia soundcore sky2 usbcore led_class wmi
->>> snd_page_alloc pcmcia_core evdev psmouse ac thermal battery serio_r=
-aw
->>> pcspkr sg freq_table processor rtc_cmos rtc_core rtc_lib sd_mod
->>> ata_piix ahci libata scsi_mod btrfs crc32c libcrc32c zlib_deflate l=
-zo
->>> lzo_decompress lzo_compress i915 drm_kms_helper drm i2c_algo_bit
->>> button i2c_core video output intel_agp agpgart
->>>
->>> Pid: 15778, comm: iron Not tainted (2.6.32-ZEN #1) HP 2140
->>> EIP: 0060:[<f85bd96b>] EFLAGS: 00210287 CPU: 1
->>> EIP is at btrfs_ordered_update_i_size+0x40b/0x750 [btrfs]
->>> EAX: 00006000 EBX: 00005e7d ECX: a40e8f80 EDX: 00000000
->>> ESI: 00000000 EDI: b2dc5684 EBP: 00000000 ESP: a3157e74
->>> =C2=A0DS: 007b ES: 007b FS: 00d8 GS: 00e0 SS: 0068
->>> =C2=A0Process iron (pid: 15778, ti=3Da3156000 task=3Db68e6bd0 task.=
-ti=3Da3156000)
->>> =C2=A0Stack:
->>> =C2=A000005e7c 00000000 00000020 00000000 00000000 22222222 2222222=
-2 b2dc5570
->>> =C2=A0<0> b2dc5550 00000000 b2dc55cc f858cd75 f6983000 00000000 000=
-05e7d fffff000
->>> =C2=A0<0> b2dc5570 0000d000 00000000 a3157f34 00000000 b2dc5684 000=
-00000 f85ac3f7
->>> =C2=A0Call Trace:
->>> [<f858cd75>] ? __find_space_info+0x55/0x60 [btrfs]
->>> [<f85ac3f7>] ? btrfs_setattr+0x1e7/0x310 [btrfs]
->>> [<810f7324>] ? notify_change+0x134/0x320
->>> [<812b144c>] ? __mutex_lock_slowpath+0x1ec/0x2c0
->>> [<810e1721>] ? do_truncate+0x61/0x90
->>> [<810cf186>] ? mmap_region+0x1b6/0x450
->>> [<810e1842>] ? do_sys_ftruncate+0xf2/0x150
->>> [<810e18cd>] ? sys_ftruncate64+0x2d/0x40
->>> [<810039f3>] ? sysenter_do_call+0x12/0x28
->>> Code: 9c 00 00 00 85 c0 74 30 8b 50 bc 8d 48 b8 8b 40 b8 39 d6 72 2=
-3
->>> 77 04 39 c3 72 1d 03 41 10 13 51 14 39 d6 72 06 77 11 39 c3 73 0d <=
-0f>
->>> 0b 8d 76 00 eb fb 8d b6 00 00 00 00 8b 44 24 20 8b 88 98 00
->>> EIP: [<f85bd96b>] btrfs_ordered_update_i_size+0x40b/0x750 [btrfs]
->>> SS:ESP 0068:a3157e74
->>> ---[ end trace 1adab407699b39c3 ]---
->>>
->>>
->> Thank you for reporting this. Please try patch attached below.
->>
->> Yan, Zheng
->>
->> ---
->> diff -urp 1/fs/btrfs/ordered-data.c 2/fs/btrfs/ordered-data.c
->> --- 1/fs/btrfs/ordered-data.c =C2=A0 2009-12-28 12:23:42.088546898 +=
-0800
->> +++ 2/fs/btrfs/ordered-data.c =C2=A0 2009-12-28 12:57:24.250542741 +=
-0800
->> @@ -626,6 +626,8 @@ int btrfs_ordered_update_i_size(struct i
->>
->> =C2=A0 =C2=A0 =C2=A0 =C2=A0if (ordered)
->> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0offset =3D en=
-try_end(ordered);
->> + =C2=A0 =C2=A0 =C2=A0 else
->> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 offset =3D ALIGN(=
-offset, BTRFS_I(inode)->root->sectorsize);
->>
->> =C2=A0 =C2=A0 =C2=A0 =C2=A0mutex_lock(&tree->mutex);
->> =C2=A0 =C2=A0 =C2=A0 =C2=A0disk_i_size =3D BTRFS_I(inode)->disk_i_si=
-ze;
->> ---
->>
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+The core file shows the following stack:
+
+(gdb) bt
+    #0  0x000000000041e242 in btrfs_header_nritems (eb=0x0) at ctree.h:1411
+    #1  0x000000000041f87c in btrfs_print_leaf (root=0x1e2e200, l=0x0) at print-tree.c:454
+    #2  0x00000000004197e4 in btrfs_lookup_extent_info (trans=0x0, root=0x1e2e200, bytenr=63447326720, num_bytes=4096, refs=0x0, flags=0x7fff58a1f5c0) at extent-tree.c:1450
+    #3  0x0000000000408582 in run_next_block (root=0x1e2e200, bits=0x1e2f410, bits_nr=1024, last=0x7fff58a1f798, pending=0x7fff58a1f890, seen=0x7fff58a1f8a0, reada=0x7fff58a1f880, nodes=0x7fff58a1f870, extent_cache=0x7fff58a1f8b0) at btrfsck.c:2509
+    #4  0x000000000040942f in check_extents (root=0x1e2e200) at btrfsck.c:2797
+    #5  0x000000000040951c in main (ac=2, av=0x7fff58a1fa28) at btrfsck.c:2829
+
+At this point, I copied all of the files to another partition.  No
+errors were logged to syslog, which I thought a little odd/impressive.
+At this point I ran btrfs-image (also from git head).  It complained
+about various transid verify failures but produced the following 90MB
+image:
+
+    http://www.gnusto.com/btrfs/btrfs-image-20091229.img
+
+The partition was mounted with compress and noatime options only.  I
+then unmounted the file system and re-ran btrfsck-0.19 and it reported
+no errors.  Ditto for btrfsck from git head.
+
+Thanks,
+-Ted

@@ -1,48 +1,38 @@
-From: Ted Phelps <phelps@gnusto.com>
-Subject: Re: btrfsck core dump
-Date: Tue, 29 Dec 2009 19:17:27 +1000
-Message-ID: <26236.1262078247@laika.gnusto.com>
-References: <200912290426.nBT4QnfQ012260@laika.gnusto.com> <3d0408630912290046i6514f924j7e4ed4fb87ea0463@mail.gmail.com>
+From: Emmanuel Florac <eflorac@intellique.com>
+Subject: Re: benchmark results
+Date: Tue, 29 Dec 2009 12:27:44 +0100
+Message-ID: <20091229122744.40a4b707@galadriel.home>
+References: <alpine.DEB.2.01.0912240205510.3483@bogon.housecafe.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Cc: linux-btrfs@vger.kernel.org
-To: "Yan\, Zheng " <yanzheng@21cn.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: Your message of Tue, 29 Dec 2009 16:46:09 +0800.
-	<3d0408630912290046i6514f924j7e4ed4fb87ea0463@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: xfs@oss.sgi.com, reiserfs-devel@vger.kernel.org,
+	linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	jfs-discussion@lists.sourceforge.net,
+	ext-users <ext3-users@redhat.com>, linux-nilfs@vger.kernel.org
+To: Christian Kujau <lists@nerdbynature.de>
+Return-path: <reiserfs-devel-owner@vger.kernel.org>
+In-Reply-To: <alpine.DEB.2.01.0912240205510.3483@bogon.housecafe.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Yan, Zheng writes:
-> On Tue, Dec 29, 2009 at 12:26 PM, Ted Phelps <phelps@gnusto.com> wrot=
-e:
-> > My btrfs test partition started failing btrfsck (0.19) today, which=
- may
-> > be of interest. =C2=A0What's probably more interesting is that git =
-head
-> > version of btrfsck reliably crashes when pointed at the filesystem.
-> > What's more interesting still is that, after unmounting the filesys=
-tem,
-> > btrfsck (both 0.19 and git head) finds no errors. =C2=A0I have to a=
-dmit that
-> > I find this a bit confusing. =C2=A0Is this expected behavior?
->=20
-> btrfsck doesn't support checking mounted fs.
+Le Thu, 24 Dec 2009 02:31:10 -0800 (PST) vous =E9criviez:
 
-Ok, that's reasonable.  I recognize that the tools are very new and tha=
-t
-there are many things to be done, but it would be nice if this
-restriction were mentioned in the btrfsck man page so that the next
-person to try this doesn't think that his filesystem is corrupt.
+>     - btrfs, ext4 are the overall winners
+>     - xfs to, but creating/deleting many files was *very* slow
 
-Of course, it would be nicer still if btrfsck refused to operate on a
-mounted filesystem, and if it didn't crash when presented with a
-"damaged" filesystem, though I can see that such bells and whistles
-might not be your top priority at the moment.
+xfs is slow at file creation/deletion if you mount it with barriers on
+standard disk drives (not so with hardware RAID controllers).
 
-Thanks,
--Ted
+--=20
+-----------------------------------------------------------------------=
+-
+Emmanuel Florac     |   Direction technique
+                    |   Intellique
+                    |	<eflorac@intellique.com>
+                    |   +33 1 78 94 84 02
+-----------------------------------------------------------------------=
+-
 --
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
+To unsubscribe from this list: send the line "unsubscribe reiserfs-deve=
+l" in
 the body of a message to majordomo@vger.kernel.org
 More majordomo info at  http://vger.kernel.org/majordomo-info.html

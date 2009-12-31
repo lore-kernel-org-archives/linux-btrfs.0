@@ -1,24 +1,40 @@
-From: Gregory Maxwell <gmaxwell@gmail.com>
-Subject: Re: l2arc-like ability in btrfs
-Date: Tue, 29 Dec 2009 18:09:10 -0500
-Message-ID: <e692861c0912291509o4b5cd170oc15f5472c73ae5d2@mail.gmail.com>
-References: <1262127361.3705.9.camel@gandalfpc>
+From: regomodo <regomodo@googlemail.com>
+Subject: Mount via /etc/fstab constant failure
+Date: Thu, 31 Dec 2009 18:22:57 +0000
+Message-ID: <200912311822.57397.regomodo@googlemail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Hans van den Bogert <gandalf@unit-westland.nl>
+Content-Type: Text/Plain;
+  charset="us-ascii"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1262127361.3705.9.camel@gandalfpc>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 29, 2009 at 5:56 PM, Hans van den Bogert
-<gandalf@unit-westland.nl> wrote:
-> Will btrfs in the future implement a read cache like zfs has with l2arc,
-> following it's hybrid storage concept.
-> This would take away the hassle of choosing what and what not should be
-> on your SSD, it would speed up the things you do most. And not what you
-> did a lot a week ago. It should be persistent between boots so your boot
-> sequence would benefit too.
+Hi,
 
-A useful link for those who don't track all the details of ZFS development:
-http://blogs.sun.com/brendan/entry/test
+I have a btrfs 'pool' of x2 Samsung 500GB HDD's in non-raid format. It works 
+fine for the most part except for mounting on bootup. Every bootup I have to 
+change the block-device to and fro /dev/sda & /dev/sdb. This happens on 
+linux-2.6.32.2 and 2.6.33-rc2.
+
+My relevant fstab section is:
+
+/dev/sda        /mnt/btrfs      btrfs           defaults                0       
+0
+/dev/sda       /home           btrfs           subvol=HOME             0       
+1
+/dev/sdb       /media/data     btrfs           subvol=DATA            0       
+0 
+
+I get some output in /var/log/messages (2.6.32.2) also:
+Dec 31 11:05:17 funtoo-pc kernel: device label BTRFS devid 1 transid 12372 
+/dev/sda                         
+Dec 31 11:05:17 funtoo-pc kernel: btrfs: failed to read the system array on 
+sda                             
+Dec 31 11:05:17 funtoo-pc kernel: btrfs: open_ctree failed                                                  
+
+Is this a known issue as I know of one other person with exactly the same 
+issue?
+
+Regards
+
+Reg

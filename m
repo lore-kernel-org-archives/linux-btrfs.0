@@ -1,35 +1,39 @@
-From: "Carlos R. Mafra" <crmafra2@gmail.com>
-Subject: 2.6.33-rc2+ bug in fs/btrfs/ordered-data.c:672
-Date: Sat, 2 Jan 2010 11:32:27 +0100
-Message-ID: <20100102103227.GA3678@Pilar.aei.mpg.de>
+From: regomodo <regomodo@googlemail.com>
+Subject: Re: Mount via /etc/fstab constant failure
+Date: Sat, 2 Jan 2010 12:26:01 +0000
+Message-ID: <201001021226.01754.regomodo@googlemail.com>
+References: <200912311822.57397.regomodo@googlemail.com> <200912312044.58341.regomodo@googlemail.com> <201001011451.32725@fortytwo.ch>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-kernel@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752670Ab0ABKdN@vger.kernel.org>
+Content-Type: Text/Plain;
+  charset="iso-8859-15"
+Cc: linux-btrfs@vger.kernel.org
+To: Adrian von Bidder <avbidder@fortytwo.ch>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201001011451.32725@fortytwo.ch>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I started testing btrfs for my /home a few days ago and yesterday
-I hit a kernel bug, using 2.6.33-rc2-00187-g08d869a.
-
-I wasn't doing any stress test with it, I was simply watching a
-DVD with xine while chrome was open in another workspace.
-
-I noticed the kernel bug when the movie was over and I typed
-'echo mem > /sys/power/state' to go to sleep but it got stuck,
-so I checked what was happening in dmesg and I saw the bug in there.
-By looking at the printk timings the bug was there for ~16 minutes, so
-that last suspend to RAM atempt was not guilty in this bug. However,
-the laptop was turned on for some hours already and had already passed
-through a few suspend to RAM in this period.
-
-I tried to save the dmesg but it failed writing, so I took a picture
-of the bug trace
-
-http://www.aei.mpg.de/~crmafra/btrfs_bug.jpg
-
-Some info about my laptop is in this dmesg from this morning
-
-http://www.aei.mpg.de/~crmafra/dmesg-2.6.33-rc2.txt
-
-I hope this helps.
+On Friday 01 January 2010 13:51:26 Adrian von Bidder wrote:
+> On Thursday 31 December 2009 21.44:58 regomodo wrote:
+> > On Thursday 31 December 2009 19:24:12 Chris Ball wrote:
+> > > Hi Reg,
+> > >
+> > >    > Hi, I have a btrfs 'pool' of x2 Samsung 500GB HDD's in non-raid
+> > >    > format. It works fine for the most part except for mounting on
+> > >    > bootup. Every bootup I have to change the block-device to and fro
+> > >    > /dev/sda & /dev/sdb. This happens on linux-2.6.32.2 and
+> > >    > 2.6.33-rc2.
+> > >
+> > > Are you running "btrfsctl -a" in an initrd?  It's necessary to do that
+> > > before the mount call on a multi-disk volume.
+> >
+> > I did not know that. I've just given it a try on Funtoo and Ubuntu and it
+> > makes no difference. On Funtoo, my small script runs 'btrfsctl -a' at the
+> >  boot runlevel but I still get those 3 errors. I even try running
+> >  'btrfsctl -a' again before I try 'mount -av' but still no luck.
+btrfs is compiled into my kernel. Should I make it a module instead?
+> I had a similar issue and discovered that "btrfsctl -a" doesn't load the
+> btrfs module.  So I do "modprobe btrfs; btrfsctl -a"
+> 
+> cheers
+> -- vbi
+> 

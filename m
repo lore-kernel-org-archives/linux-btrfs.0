@@ -1,141 +1,146 @@
 From: Steve Freitas <sflist@ihonk.com>
-Subject: Segfault in btrfsck
-Date: Sat, 02 Jan 2010 15:56:05 -0800
-Message-ID: <1262476565.17096.20.camel@phat>
+Subject: btrfs volume mounts and dies (was Re: Segfault in btrfsck)
+Date: Sun, 03 Jan 2010 14:57:01 -0800
+Message-ID: <1262559421.17096.50.camel@phat>
+References: <1262476565.17096.20.camel@phat>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="UTF-8"
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1262476565.17096.20.camel@phat>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've got a Debian unstable system (kernel is 2.6.32-trunk-amd64) with
-the root partition running btrfs. Used it for a few weeks with no large
-problems, but had to reboot it this morning after it became unresponsive
-simultaneous with unexplained constant disk access. It wouldn't reboot
--- it loaded the kernel fine off the ext3 /boot partition but couldn't
-mount root.
+Got some more information. I installed Debian on another disk ("rescue")
+running 2.6.32, pulled the latest btrfs module code from git, applied an
+earlier mentioned patch[1], then compiled and loaded the new module.
+It's able to mount the volume initially...
 
-Booted into the Karmic live disk (2.6.31-14, also amd64). Ran their
-stock btrfsck and it crashed. Pulled the latest from unstable git and it
-did the same.
+Jan  3 14:46:57 rescue kernel: [   25.984141] Btrfs loaded
+Jan  3 14:46:57 rescue kernel: [   25.984711] device fsid
+334a5cd99de23fc4-ed77fc1dc6f59780 devid 1 transid 29665 /dev/sdb3
+Jan  3 14:46:57 rescue kernel: [   25.985137] btrfs: use compression
 
-I didn't build btrfsck with debug enabled, so if you want that let me
-know how to change the Makefile (or whatever). I can also supply the
-core file if you like. Also, smartctl is telling me this hard drive has
-lots of bad sectors :-D, but don't know if that's relevant here.
+But after a little activity (chrooting in and running "apt-get update"),
+the apt-get freezes and I get many hundreds of thousands of these:
 
-Thanks!
+Jan  3 14:47:30 rescue kernel: [   59.275031] parent transid verify
+failed on 111181824 wanted 29645 found 27038
 
-- Steve
+Eventually, I get this:
 
-root@ubuntu:~# btrfsck /dev/sda3
-leaf 72134656 items 26 free space 2019 generation 29647 owner 2
-fs uuid c43fe29d-d95c-4a33-8097-f5c61dfc77ed
-chunk uuid 6a52db0a-04d3-4a1e-8e27-f73306b28a51
-	item 0 key (69120000 EXTENT_ITEM 4096) itemoff 3944 itemsize 51
-		extent refs 1 gen 25448 flags 2
-		tree block key (204066004992 a8 8192) level 0
-		tree block backref root 2
-	item 1 key (69124096 EXTENT_ITEM 4096) itemoff 3893 itemsize 51
-		extent refs 1 gen 25448 flags 2
-		tree block key (204069421056 a8 524288) level 0
-		tree block backref root 2
-	item 2 key (69128192 EXTENT_ITEM 4096) itemoff 3842 itemsize 51
-		extent refs 1 gen 25448 flags 2
-		tree block key (204071538688 a8 81920) level 0
-		tree block backref root 2
-	item 3 key (69132288 EXTENT_ITEM 4096) itemoff 3791 itemsize 51
-		extent refs 1 gen 25448 flags 2
-		tree block key (204075094016 a8 16384) level 0
-		tree block backref root 2
-	item 4 key (69136384 EXTENT_ITEM 4096) itemoff 3740 itemsize 51
-		extent refs 1 gen 25448 flags 2
-		tree block key (204078809088 a8 49152) level 0
-		tree block backref root 2
-	item 5 key (69144576 EXTENT_ITEM 4096) itemoff 3689 itemsize 51
-		extent refs 1 gen 28342 flags 2
-		tree block key (214869 54 2384640830) level 2
-		tree block backref root 5
-	item 6 key (69148672 EXTENT_ITEM 4096) itemoff 3638 itemsize 51
-		extent refs 1 gen 25448 flags 2
-		tree block key (204124024832 a8 8192) level 0
-		tree block backref root 2
-	item 7 key (69152768 EXTENT_ITEM 4096) itemoff 3587 itemsize 51
-		extent refs 1 gen 25448 flags 2
-		tree block key (204131520512 a8 20480) level 0
-		tree block backref root 2
-	item 8 key (69156864 EXTENT_ITEM 4096) itemoff 3536 itemsize 51
-		extent refs 1 gen 25448 flags 2
-		tree block key (204142813184 a8 421888) level 1
-		tree block backref root 2
-	item 9 key (69160960 EXTENT_ITEM 4096) itemoff 3485 itemsize 51
-		extent refs 1 gen 25448 flags 2
-		tree block key (204142813184 a8 421888) level 0
-		tree block backref root 2
-	item 10 key (69165056 EXTENT_ITEM 4096) itemoff 3434 itemsize 51
-		extent refs 1 gen 25448 flags 2
-		tree block key (204149268480 a8 507904) level 0
-		tree block backref root 2
-	item 11 key (69169152 EXTENT_ITEM 4096) itemoff 3383 itemsize 51
-		extent refs 1 gen 25448 flags 2
-		tree block key (204154077184 a8 65536) level 0
-		tree block backref root 2
-	item 12 key (69173248 EXTENT_ITEM 4096) itemoff 3332 itemsize 51
-		extent refs 1 gen 28052 flags 2
-		tree block key (18446744073709551606 80 223654449152) level 1
-		tree block backref root 7
-	item 13 key (69177344 EXTENT_ITEM 4096) itemoff 3281 itemsize 51
-		extent refs 1 gen 28052 flags 2
-		tree block key (18446744073709551606 80 223726600192) level 0
-		tree block backref root 7
-	item 14 key (69181440 EXTENT_ITEM 4096) itemoff 3230 itemsize 51
-		extent refs 1 gen 25448 flags 2
-		tree block key (18446744073709551606 80 204194607104) level 1
-		tree block backref root 7
-	item 15 key (69185536 EXTENT_ITEM 4096) itemoff 3179 itemsize 51
-		extent refs 1 gen 25448 flags 2
-		tree block key (18446744073709551606 80 204258570240) level 0
-		tree block backref root 7
-	item 16 key (69189632 EXTENT_ITEM 4096) itemoff 3128 itemsize 51
-		extent refs 1 gen 25448 flags 2
-		tree block key (18446744073709551606 80 204256403456) level 0
-		tree block backref root 7
-	item 17 key (69193728 EXTENT_ITEM 4096) itemoff 3077 itemsize 51
-		extent refs 1 gen 25448 flags 2
-		tree block key (18446744073709551606 80 204252368896) level 0
-		tree block backref root 7
-	item 18 key (69197824 EXTENT_ITEM 4096) itemoff 3026 itemsize 51
-		extent refs 1 gen 25448 flags 2
-		tree block key (18446744073709551606 80 204248334336) level 0
-		tree block backref root 7
-	item 19 key (69201920 EXTENT_ITEM 4096) itemoff 2975 itemsize 51
-		extent refs 1 gen 25448 flags 2
-		tree block key (18446744073709551606 80 204244299776) level 0
-		tree block backref root 7
-	item 20 key (69206016 EXTENT_ITEM 4096) itemoff 2924 itemsize 51
-		extent refs 1 gen 25448 flags 2
-		tree block key (18446744073709551606 80 204243025920) level 0
-		tree block backref root 7
-	item 21 key (69210112 EXTENT_ITEM 4096) itemoff 2873 itemsize 51
-		extent refs 1 gen 25448 flags 2
-		tree block key (18446744073709551606 80 204238987264) level 0
-		tree block backref root 7
-	item 22 key (69214208 EXTENT_ITEM 4096) itemoff 2822 itemsize 51
-		extent refs 1 gen 25448 flags 2
-		tree block key (18446744073709551606 80 204234952704) level 0
-		tree block backref root 7
-	item 23 key (69218304 EXTENT_ITEM 4096) itemoff 2771 itemsize 51
-		extent refs 1 gen 25448 flags 2
-		tree block key (18446744073709551606 80 204229103616) level 0
-		tree block backref root 7
-	item 24 key (69222400 EXTENT_ITEM 4096) itemoff 2720 itemsize 51
-		extent refs 1 gen 25448 flags 2
-		tree block key (18446744073709551606 80 204225191936) level 0
-		tree block backref root 7
-	item 25 key (69226496 EXTENT_ITEM 4096) itemoff 2669 itemsize 51
-		extent refs 1 gen 28342 flags 2
-		tree block key (216906 54 775391778) level 1
-		tree block backref root 5
-failed to find block number 69140480
-Aborted (core dumped)
+Jan  3 14:50:31 rescue kernel: [  240.364274] INFO: task
+btrfs-transacti:1400 blocked for more than 120 seconds.
+Jan  3 14:50:31 rescue kernel: [  240.364337] "echo 0
+> /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+Jan  3 14:50:31 rescue kernel: [  240.364399] btrfs-transac D
+0000000000000000     0  1400      2 0x00000000
+Jan  3 14:50:31 rescue kernel: [  240.364515]  ffff88021f06b880
+0000000000000046 0000000000000000 ffffffffa02d4e98
+Jan  3 14:50:31 rescue kernel: [  240.364692]  ffffea0007646b10
+0000000000000000 000000000000f8a0 ffff88021cb75fd8
+Jan  3 14:50:31 rescue kernel: [  240.364867]  00000000000155c0
+00000000000155c0 ffff88021dc37810 ffff88021dc37b08
+Jan  3 14:50:31 rescue kernel: [  240.365042] Call Trace:
+Jan  3 14:50:31 rescue kernel: [  240.365097]  [<ffffffffa02d4e98>] ?
+update_block_group+0x1b1/0x1d3 [btrfs]
+Jan  3 14:50:31 rescue kernel: [  240.365150]  [<ffffffff8106bebd>] ?
+ktime_get_ts+0x68/0xb2
+Jan  3 14:50:31 rescue kernel: [  240.365201]  [<ffffffff810989b2>] ?
+delayacct_end+0x74/0x7f
+Jan  3 14:50:31 rescue kernel: [  240.365251]  [<ffffffff810b2c91>] ?
+sync_page+0x0/0x46
+Jan  3 14:50:31 rescue kernel: [  240.365300]  [<ffffffff812e412e>] ?
+io_schedule+0x73/0xb7
+Jan  3 14:50:31 rescue kernel: [  240.365349]  [<ffffffff810b2cd2>] ?
+sync_page+0x41/0x46
+Jan  3 14:50:31 rescue kernel: [  240.365397]  [<ffffffff812e462e>] ?
+__wait_on_bit+0x41/0x70
+Jan  3 14:50:31 rescue kernel: [  240.365447]  [<ffffffff810b2e56>] ?
+wait_on_page_bit+0x6b/0x71
+Jan  3 14:50:31 rescue kernel: [  240.365496]  [<ffffffff81064a9c>] ?
+wake_bit_function+0x0/0x23
+Jan  3 14:50:31 rescue kernel: [  240.365547]  [<ffffffff810ba94e>] ?
+pagevec_lookup_tag+0x1a/0x21
+Jan  3 14:50:31 rescue kernel: [  240.365596]  [<ffffffff810b35f2>] ?
+wait_on_page_writeback_range+0x69/0x11b
+Jan  3 14:50:31 rescue kernel: [  240.365655]  [<ffffffffa02f83d9>] ?
+btrfs_wait_ordered_range+0x6b/0x112 [btrfs]
+Jan  3 14:50:31 rescue kernel: [  240.365725]  [<ffffffffa02f865e>] ?
+btrfs_run_ordered_operations+0x12d/0x1b6 [btrfs]
+Jan  3 14:50:31 rescue kernel: [  240.365794]  [<ffffffffa02e353f>] ?
+btrfs_commit_transaction+0x29f/0x618 [btrfs]
+Jan  3 14:50:31 rescue kernel: [  240.365857]  [<ffffffff81064a6e>] ?
+autoremove_wake_function+0x0/0x2e
+Jan  3 14:50:31 rescue kernel: [  240.365913]  [<ffffffffa02df2cf>] ?
+transaction_kthread+0x173/0x204 [btrfs]
+Jan  3 14:50:31 rescue kernel: [  240.365970]  [<ffffffffa02df15c>] ?
+transaction_kthread+0x0/0x204 [btrfs]
+Jan  3 14:50:31 rescue kernel: [  240.366021]  [<ffffffff810647a1>] ?
+kthread+0x79/0x81
+Jan  3 14:50:31 rescue kernel: [  240.366070]  [<ffffffff81011b6a>] ?
+child_rip+0xa/0x20
+Jan  3 14:50:31 rescue kernel: [  240.366118]  [<ffffffff81064728>] ?
+kthread+0x0/0x81
+Jan  3 14:50:31 rescue kernel: [  240.366166]  [<ffffffff81011b60>] ?
+child_rip+0x0/0x20
+Jan  3 14:50:31 rescue kernel: [  240.366214] INFO: task apt-get:1411
+blocked for more than 120 seconds.
+Jan  3 14:50:31 rescue kernel: [  240.366264] "echo 0
+> /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+Jan  3 14:50:31 rescue kernel: [  240.366326] apt-get       D
+0000000000000002     0  1411   1407 0x00000004
+Jan  3 14:50:31 rescue kernel: [  240.366433]  ffff88021dc32a60
+0000000000000082 0000005001c9f000 0000000001c9f000
+Jan  3 14:50:31 rescue kernel: [  240.366608]  0000000000000000
+0000000000000000 000000000000f8a0 ffff88021b869fd8
+Jan  3 14:50:31 rescue kernel: [  240.366782]  00000000000155c0
+00000000000155c0 ffff88021c3d69f0 ffff88021c3d6ce8
+Jan  3 14:50:31 rescue kernel: [  240.366957] Call Trace:
+Jan  3 14:50:31 rescue kernel: [  240.367002]  [<ffffffff810b7df3>] ?
+__pagevec_free+0x69/0x80
+Jan  3 14:50:31 rescue kernel: [  240.367051]  [<ffffffff81017131>] ?
+read_tsc+0xa/0x20
+Jan  3 14:50:31 rescue kernel: [  240.367100]  [<ffffffff810b2c91>] ?
+sync_page+0x0/0x46
+Jan  3 14:50:31 rescue kernel: [  240.367148]  [<ffffffff812e412e>] ?
+io_schedule+0x73/0xb7
+Jan  3 14:50:31 rescue kernel: [  240.367197]  [<ffffffff810b2cd2>] ?
+sync_page+0x41/0x46
+Jan  3 14:50:31 rescue kernel: [  240.367245]  [<ffffffff812e462e>] ?
+__wait_on_bit+0x41/0x70
+Jan  3 14:50:31 rescue kernel: [  240.367294]  [<ffffffff810b2e56>] ?
+wait_on_page_bit+0x6b/0x71
+Jan  3 14:50:31 rescue kernel: [  240.367343]  [<ffffffff81064a9c>] ?
+wake_bit_function+0x0/0x23
+Jan  3 14:50:31 rescue kernel: [  240.367393]  [<ffffffff810bb33e>] ?
+lock_page+0x9/0x1f
+Jan  3 14:50:31 rescue kernel: [  240.367441]  [<ffffffff810bba88>] ?
+truncate_inode_pages_range+0x257/0x2b0
+Jan  3 14:50:31 rescue kernel: [  240.367500]  [<ffffffffa02e9881>] ?
+btrfs_delete_inode+0x27/0x132 [btrfs]
+Jan  3 14:50:31 rescue kernel: [  240.367557]  [<ffffffffa02e985a>] ?
+btrfs_delete_inode+0x0/0x132 [btrfs]
+Jan  3 14:50:31 rescue kernel: [  240.367609]  [<ffffffff810fd840>] ?
+generic_delete_inode+0xdc/0x168
+Jan  3 14:50:31 rescue kernel: [  240.367659]  [<ffffffff810fa1ff>] ?
+d_kill+0x34/0x55
+Jan  3 14:50:31 rescue kernel: [  240.367707]  [<ffffffff810fbd76>] ?
+dput+0x13d/0x149
+Jan  3 14:50:31 rescue kernel: [  240.367755]  [<ffffffff810f651c>] ?
+sys_renameat+0x184/0x1e9
+Jan  3 14:50:31 rescue kernel: [  240.367804]  [<ffffffff81064a6e>] ?
+autoremove_wake_function+0x0/0x2e
+Jan  3 14:50:31 rescue kernel: [  240.367854]  [<ffffffff8106bebd>] ?
+ktime_get_ts+0x68/0xb2
+Jan  3 14:50:31 rescue kernel: [  240.367904]  [<ffffffff810ec812>] ?
+vfs_read+0xca/0xff
+Jan  3 14:50:31 rescue kernel: [  240.367953]  [<ffffffff81010b02>] ?
+system_call_fastpath+0x16/0x1b
+
+Any ideas? I'm happy to apply any patches you suggest and try again...
+
+Steve
+
+[1]http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg03686.html
+
 

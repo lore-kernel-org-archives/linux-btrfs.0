@@ -1,146 +1,81 @@
-From: Steve Freitas <sflist@ihonk.com>
-Subject: btrfs volume mounts and dies (was Re: Segfault in btrfsck)
-Date: Sun, 03 Jan 2010 14:57:01 -0800
-Message-ID: <1262559421.17096.50.camel@phat>
-References: <1262476565.17096.20.camel@phat>
+From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Subject: Re: 2.6.33-rc2+ bug in fs/btrfs/ordered-data.c:672
+Date: Mon, 4 Jan 2010 01:22:35 +0100
+Message-ID: <201001040122.36431.johannes.hirte@fem.tu-ilmenau.de>
+References: <20100102103227.GA3678@Pilar.aei.mpg.de> <20100102223416.GA6090@Pilar>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-To: linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+	Chris Mason <chris.mason@oracle.com>
+To: "Carlos R. Mafra" <crmafra2@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1262476565.17096.20.camel@phat>
+In-Reply-To: <20100102223416.GA6090@Pilar>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Got some more information. I installed Debian on another disk ("rescue")
-running 2.6.32, pulled the latest btrfs module code from git, applied an
-earlier mentioned patch[1], then compiled and loaded the new module.
-It's able to mount the volume initially...
+Am Samstag 02 Januar 2010 23:34:17 schrieb Carlos R. Mafra:
+> On Sa  2.Jan'10 at 11:32:27 +0100, Carlos R. Mafra wrote:
+> > I started testing btrfs for my /home a few days ago and yesterday
+> > I hit a kernel bug, using 2.6.33-rc2-00187-g08d869a.
+> >
+> > I wasn't doing any stress test with it, I was simply watching a
+> > DVD with xine while chrome was open in another workspace.
+> 
+> Today I hit the bug twice, and it was always with chrome. I've
+> seen the other two reports in kerneloops.org involving
+> btrfs_ordered_update_i_size() and chrome was there too.
+> 
+> And now I saved the dmesg in the ext3 partition, so now there
+> is no need for the photo,
+> 
+> 
+> [13450.613952] ------------[ cut here ]------------
+> [13450.613957] kernel BUG at fs/btrfs/ordered-data.c:672!
+> [13450.613960] invalid opcode: 0000 [#1] SMP
+> [13450.613963] last sysfs file:
+>  /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq [13450.613966] CPU 1
+> [13450.613970] Pid: 3372, comm: chrome Not tainted
+>  2.6.33-rc2-fs-00187-g08d869a #293 VAIO/VGN-FZ240E [13450.613973] RIP:
+>  0010:[<ffffffff811d9537>]  [<ffffffff811d9537>]
+>  btrfs_ordered_update_i_size+0x237/0x3d0 [13450.613982] RSP:
+>  0018:ffff880071355da8  EFLAGS: 00010287
+> [13450.613984] RAX: ffff88007f0c0728 RBX: 0000000000000000 RCX:
+>  ffff880077c0c6a8 [13450.613986] RDX: 00000000002b5000 RSI:
+>  0000000000000000 RDI: ffff880077c0c6b8 [13450.613989] RBP:
+>  ffff880071355e18 R08: 0000000000000000 R09: 0000000000000000
+>  [13450.613991] R10: 0000000000000000 R11: 0000000000000000 R12:
+>  ffff8800729dd260 [13450.613993] R13: 00000000002b4b24 R14:
+>  0000000000000000 R15: 00000000002b4b24 [13450.613996] FS: 
+>  00007f2b3db68910(0000) GS:ffff880001b00000(0000) knlGS:0000000000000000
+>  [13450.613999] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> [13450.614001] CR2: 00007f2b3c2a4000 CR3: 0000000071167000 CR4:
+>  00000000000006e0 [13450.614003] DR0: 0000000000000000 DR1:
+>  0000000000000000 DR2: 0000000000000000 [13450.614005] DR3:
+>  0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+>  [13450.614008] Process chrome (pid: 3372, threadinfo ffff880071354000,
+>  task ffff88007d380640) [13450.614010] Stack:
+> [13450.614011]  ffff8800729dd0c0 0000000000000000 fffffffffffff000
+>  0000000000000fff [13450.614015] <0> ffff8800729dd0f0 ffff88007c7cc000
+>  ffff8800729dd0c0 ffff8800729dd170 [13450.614019] <0> ffff880071355e18
+>  ffff880071355ee8 ffff8800729dd260 0000000000000000 [13450.614023] Call
+>  Trace:
+> [13450.614028]  [<ffffffff811c915d>] btrfs_setattr+0x17d/0x270
+> [13450.614033]  [<ffffffff810e5fe4>] notify_change+0x104/0x2e0
+> [13450.614037]  [<ffffffff810ce84f>] do_truncate+0x5f/0x90
+> [13450.614041]  [<ffffffff810d0002>] ? vfs_write+0x132/0x180
+> [13450.614044]  [<ffffffff810cef79>] sys_ftruncate+0xe9/0x130
+> [13450.614049]  [<ffffffff81002dab>] system_call_fastpath+0x16/0x1b
+> [13450.614050] Code: 0f 1f 40 00 eb 88 66 0f 1f 44 00 00 49 8b 84 24 38 ff
+>  ff ff 48 85 c0 74 1b 48 8b 50 98 49 39 d5 72 12 48 03 50 a8 49 39 d5 73 09
+>  <0f> 0b eb fe 0f 1f 44 00 00 49 8b 94 24 30 ff ff ff 48 89 55 b8
+>  [13450.614082] RIP  [<ffffffff811d9537>]
+>  btrfs_ordered_update_i_size+0x237/0x3d0 [13450.614087]  RSP
+>  <ffff880071355da8>
+> [13450.614090] ---[ end trace 74172209f4d15206 ]---
 
-Jan  3 14:46:57 rescue kernel: [   25.984141] Btrfs loaded
-Jan  3 14:46:57 rescue kernel: [   25.984711] device fsid
-334a5cd99de23fc4-ed77fc1dc6f59780 devid 1 transid 29665 /dev/sdb3
-Jan  3 14:46:57 rescue kernel: [   25.985137] btrfs: use compression
+Sounds like the bug reported here: http://article.gmane.org/gmane.comp.file-
+systems.btrfs/4332/match=btrfs+fails+randomly. Can you try the patch provided 
+in that thread?
 
-But after a little activity (chrooting in and running "apt-get update"),
-the apt-get freezes and I get many hundreds of thousands of these:
-
-Jan  3 14:47:30 rescue kernel: [   59.275031] parent transid verify
-failed on 111181824 wanted 29645 found 27038
-
-Eventually, I get this:
-
-Jan  3 14:50:31 rescue kernel: [  240.364274] INFO: task
-btrfs-transacti:1400 blocked for more than 120 seconds.
-Jan  3 14:50:31 rescue kernel: [  240.364337] "echo 0
-> /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-Jan  3 14:50:31 rescue kernel: [  240.364399] btrfs-transac D
-0000000000000000     0  1400      2 0x00000000
-Jan  3 14:50:31 rescue kernel: [  240.364515]  ffff88021f06b880
-0000000000000046 0000000000000000 ffffffffa02d4e98
-Jan  3 14:50:31 rescue kernel: [  240.364692]  ffffea0007646b10
-0000000000000000 000000000000f8a0 ffff88021cb75fd8
-Jan  3 14:50:31 rescue kernel: [  240.364867]  00000000000155c0
-00000000000155c0 ffff88021dc37810 ffff88021dc37b08
-Jan  3 14:50:31 rescue kernel: [  240.365042] Call Trace:
-Jan  3 14:50:31 rescue kernel: [  240.365097]  [<ffffffffa02d4e98>] ?
-update_block_group+0x1b1/0x1d3 [btrfs]
-Jan  3 14:50:31 rescue kernel: [  240.365150]  [<ffffffff8106bebd>] ?
-ktime_get_ts+0x68/0xb2
-Jan  3 14:50:31 rescue kernel: [  240.365201]  [<ffffffff810989b2>] ?
-delayacct_end+0x74/0x7f
-Jan  3 14:50:31 rescue kernel: [  240.365251]  [<ffffffff810b2c91>] ?
-sync_page+0x0/0x46
-Jan  3 14:50:31 rescue kernel: [  240.365300]  [<ffffffff812e412e>] ?
-io_schedule+0x73/0xb7
-Jan  3 14:50:31 rescue kernel: [  240.365349]  [<ffffffff810b2cd2>] ?
-sync_page+0x41/0x46
-Jan  3 14:50:31 rescue kernel: [  240.365397]  [<ffffffff812e462e>] ?
-__wait_on_bit+0x41/0x70
-Jan  3 14:50:31 rescue kernel: [  240.365447]  [<ffffffff810b2e56>] ?
-wait_on_page_bit+0x6b/0x71
-Jan  3 14:50:31 rescue kernel: [  240.365496]  [<ffffffff81064a9c>] ?
-wake_bit_function+0x0/0x23
-Jan  3 14:50:31 rescue kernel: [  240.365547]  [<ffffffff810ba94e>] ?
-pagevec_lookup_tag+0x1a/0x21
-Jan  3 14:50:31 rescue kernel: [  240.365596]  [<ffffffff810b35f2>] ?
-wait_on_page_writeback_range+0x69/0x11b
-Jan  3 14:50:31 rescue kernel: [  240.365655]  [<ffffffffa02f83d9>] ?
-btrfs_wait_ordered_range+0x6b/0x112 [btrfs]
-Jan  3 14:50:31 rescue kernel: [  240.365725]  [<ffffffffa02f865e>] ?
-btrfs_run_ordered_operations+0x12d/0x1b6 [btrfs]
-Jan  3 14:50:31 rescue kernel: [  240.365794]  [<ffffffffa02e353f>] ?
-btrfs_commit_transaction+0x29f/0x618 [btrfs]
-Jan  3 14:50:31 rescue kernel: [  240.365857]  [<ffffffff81064a6e>] ?
-autoremove_wake_function+0x0/0x2e
-Jan  3 14:50:31 rescue kernel: [  240.365913]  [<ffffffffa02df2cf>] ?
-transaction_kthread+0x173/0x204 [btrfs]
-Jan  3 14:50:31 rescue kernel: [  240.365970]  [<ffffffffa02df15c>] ?
-transaction_kthread+0x0/0x204 [btrfs]
-Jan  3 14:50:31 rescue kernel: [  240.366021]  [<ffffffff810647a1>] ?
-kthread+0x79/0x81
-Jan  3 14:50:31 rescue kernel: [  240.366070]  [<ffffffff81011b6a>] ?
-child_rip+0xa/0x20
-Jan  3 14:50:31 rescue kernel: [  240.366118]  [<ffffffff81064728>] ?
-kthread+0x0/0x81
-Jan  3 14:50:31 rescue kernel: [  240.366166]  [<ffffffff81011b60>] ?
-child_rip+0x0/0x20
-Jan  3 14:50:31 rescue kernel: [  240.366214] INFO: task apt-get:1411
-blocked for more than 120 seconds.
-Jan  3 14:50:31 rescue kernel: [  240.366264] "echo 0
-> /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-Jan  3 14:50:31 rescue kernel: [  240.366326] apt-get       D
-0000000000000002     0  1411   1407 0x00000004
-Jan  3 14:50:31 rescue kernel: [  240.366433]  ffff88021dc32a60
-0000000000000082 0000005001c9f000 0000000001c9f000
-Jan  3 14:50:31 rescue kernel: [  240.366608]  0000000000000000
-0000000000000000 000000000000f8a0 ffff88021b869fd8
-Jan  3 14:50:31 rescue kernel: [  240.366782]  00000000000155c0
-00000000000155c0 ffff88021c3d69f0 ffff88021c3d6ce8
-Jan  3 14:50:31 rescue kernel: [  240.366957] Call Trace:
-Jan  3 14:50:31 rescue kernel: [  240.367002]  [<ffffffff810b7df3>] ?
-__pagevec_free+0x69/0x80
-Jan  3 14:50:31 rescue kernel: [  240.367051]  [<ffffffff81017131>] ?
-read_tsc+0xa/0x20
-Jan  3 14:50:31 rescue kernel: [  240.367100]  [<ffffffff810b2c91>] ?
-sync_page+0x0/0x46
-Jan  3 14:50:31 rescue kernel: [  240.367148]  [<ffffffff812e412e>] ?
-io_schedule+0x73/0xb7
-Jan  3 14:50:31 rescue kernel: [  240.367197]  [<ffffffff810b2cd2>] ?
-sync_page+0x41/0x46
-Jan  3 14:50:31 rescue kernel: [  240.367245]  [<ffffffff812e462e>] ?
-__wait_on_bit+0x41/0x70
-Jan  3 14:50:31 rescue kernel: [  240.367294]  [<ffffffff810b2e56>] ?
-wait_on_page_bit+0x6b/0x71
-Jan  3 14:50:31 rescue kernel: [  240.367343]  [<ffffffff81064a9c>] ?
-wake_bit_function+0x0/0x23
-Jan  3 14:50:31 rescue kernel: [  240.367393]  [<ffffffff810bb33e>] ?
-lock_page+0x9/0x1f
-Jan  3 14:50:31 rescue kernel: [  240.367441]  [<ffffffff810bba88>] ?
-truncate_inode_pages_range+0x257/0x2b0
-Jan  3 14:50:31 rescue kernel: [  240.367500]  [<ffffffffa02e9881>] ?
-btrfs_delete_inode+0x27/0x132 [btrfs]
-Jan  3 14:50:31 rescue kernel: [  240.367557]  [<ffffffffa02e985a>] ?
-btrfs_delete_inode+0x0/0x132 [btrfs]
-Jan  3 14:50:31 rescue kernel: [  240.367609]  [<ffffffff810fd840>] ?
-generic_delete_inode+0xdc/0x168
-Jan  3 14:50:31 rescue kernel: [  240.367659]  [<ffffffff810fa1ff>] ?
-d_kill+0x34/0x55
-Jan  3 14:50:31 rescue kernel: [  240.367707]  [<ffffffff810fbd76>] ?
-dput+0x13d/0x149
-Jan  3 14:50:31 rescue kernel: [  240.367755]  [<ffffffff810f651c>] ?
-sys_renameat+0x184/0x1e9
-Jan  3 14:50:31 rescue kernel: [  240.367804]  [<ffffffff81064a6e>] ?
-autoremove_wake_function+0x0/0x2e
-Jan  3 14:50:31 rescue kernel: [  240.367854]  [<ffffffff8106bebd>] ?
-ktime_get_ts+0x68/0xb2
-Jan  3 14:50:31 rescue kernel: [  240.367904]  [<ffffffff810ec812>] ?
-vfs_read+0xca/0xff
-Jan  3 14:50:31 rescue kernel: [  240.367953]  [<ffffffff81010b02>] ?
-system_call_fastpath+0x16/0x1b
-
-Any ideas? I'm happy to apply any patches you suggest and try again...
-
-Steve
-
-[1]http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg03686.html
-
-
+regards,
+  Johannes

@@ -1,8 +1,8 @@
 From: jim owens <jowens@hp.com>
-Subject: [RFC 07/12 PATCH] Btrfs: split btrfs_map_block into two parts for
- direct I/O.
-Date: Mon, 04 Jan 2010 16:13:47 -0500
-Message-ID: <4B425A0B.4050602@hp.com>
+Subject: [RFC 08/12 PATCH] Btrfs: add direct I/O helper routines to decode
+ em map_lookup.
+Date: Mon, 04 Jan 2010 16:13:56 -0500
+Message-ID: <4B425A14.2030102@hp.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
@@ -10,180 +10,54 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-The part of btrfs_map_block() that decodes the extent map and
-rw/logical/length/mirror parameters is split into a routine
-btrfs_map_to_stripe() so direct I/O can build multiple bios
-with one lookup_extent_mapping().
-
-The part of btrfs_map_block() that does lookup_extent_mapping()
-and optional creation of the btrfs_multi_bio struct now calls
-btrfs_map_to_stripe().
+Direct I/O needs the total number of block devices and the
+struct block_device for each to allocate control structures
+prior to building bios for an extent.  When building a bio,
+the device's base physical address of the chunk is needed.
 
 Signed-off-by: jim owens <jowens@hp.com>
 ---
- fs/btrfs/volumes.c |   84 +++++++++++++++++++++++++++++++--------------------
- fs/btrfs/volumes.h |   10 ++++++
- 2 files changed, 61 insertions(+), 33 deletions(-)
+ fs/btrfs/volumes.c |   15 +++++++++++++++
+ fs/btrfs/volumes.h |    3 +++
+ 2 files changed, 18 insertions(+), 0 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 0e3146a..48727ee 100644
+index 48727ee..6aa04e4 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -2614,33 +2614,16 @@ static int find_live_mirror(struct map_lookup *map, int first, int num,
+@@ -2614,6 +2614,21 @@ static int find_live_mirror(struct map_lookup *map, int first, int num,
  	return optimal;
  }
  
--int btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
--			     u64 logical, u64 *length,
--			     struct btrfs_multi_bio **multi_ret,
--			     int mirror_num)
-+void btrfs_map_to_stripe(struct extent_map *em, int rw, int mirror_num,
-+			u64 logical, u64 *length,
-+			struct btrfs_stripe_info *stripe_info)
- {
--	struct extent_map *em;
- 	struct map_lookup *map;
--	struct extent_map_tree *em_tree = &map_tree->map_tree;
- 	u64 offset;
- 	u64 stripe_offset;
- 	u64 stripe_nr;
- 	int stripe_index;
--	int i;
- 	int num_stripes;
--	int max_errors;
--	struct btrfs_multi_bio *multi;
--
--	read_lock(&em_tree->lock);
--	em = lookup_extent_mapping(em_tree, logical, *length);
--	read_unlock(&em_tree->lock);
--
--	if (!em) {
--		printk(KERN_CRIT "unable to find logical %llu len %llu\n",
--		       (unsigned long long)logical,
--		       (unsigned long long)*length);
--		BUG();
--	}
- 
- 	BUG_ON(em->start > logical || em->start + em->len < logical);
- 	map = (struct map_lookup *)em->bdev;
-@@ -2670,19 +2653,19 @@ int btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
- 		*length = min(*length, em->len - offset);
- 	}
- 
--	if (!multi_ret)
--		goto out;
-+	if (!stripe_info)
-+		return;
- 
- 	if (mirror_num > map->num_stripes)
- 		mirror_num = 0;
- 
--	max_errors = 0;
-+	stripe_info->max_errors = 0;
- 	if (rw & (1 << BIO_RW)) {
- 		if (map->type & (BTRFS_BLOCK_GROUP_RAID1 |
- 				 BTRFS_BLOCK_GROUP_DUP))
--			max_errors = 1;
-+			stripe_info->max_errors = 1;
- 		else if (map->type & BTRFS_BLOCK_GROUP_RAID10)
--			max_errors = 1;
-+			stripe_info->max_errors = 1;
- 	}
- 
- 	num_stripes = 1;
-@@ -2729,22 +2712,57 @@ int btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
- 	}
- 	BUG_ON(stripe_index >= map->num_stripes);
- 
--	multi = kzalloc(btrfs_multi_bio_size(num_stripes), GFP_NOFS);
-+	stripe_info->num_stripes = num_stripes;
-+	stripe_info->stripe_index = stripe_index;
-+	stripe_info->phys_offset = stripe_offset + stripe_nr * map->stripe_len;
++int btrfs_map_stripe_count(struct extent_map *em)
++{
++	return ((struct map_lookup *)em->bdev)->num_stripes;
 +}
 +
-+int btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
-+			u64 logical, u64 *length,
-+			struct btrfs_multi_bio **multi_ret, int mirror_num)
++struct block_device *btrfs_map_stripe_bdev(struct extent_map *em, int stripe)
 +{
-+	struct extent_map *em;
-+	struct map_lookup *map;
-+	struct extent_map_tree *em_tree = &map_tree->map_tree;
-+	struct btrfs_multi_bio *multi;
-+	struct btrfs_stripe_info stripe_info;
-+	int i;
++	return ((struct map_lookup *)em->bdev)->stripes[stripe].dev->bdev;
++}
 +
-+	read_lock(&em_tree->lock);
-+	em = lookup_extent_mapping(em_tree, logical, *length);
-+	read_unlock(&em_tree->lock);
++u64 btrfs_map_stripe_physical(struct extent_map *em, int stripe)
++{
++	return ((struct map_lookup *)em->bdev)->stripes[stripe].physical;
++}
 +
-+	if (!em) {
-+		printk(KERN_CRIT "unable to find logical %llu len %llu\n",
-+		       (unsigned long long)logical,
-+		       (unsigned long long)*length);
-+		BUG();
-+	}
-+
-+	btrfs_map_to_stripe(em, rw, mirror_num, logical, length,
-+				multi_ret ? &stripe_info : NULL);
-+	if (!multi_ret)
-+		goto out;
-+
-+	multi = kzalloc(btrfs_multi_bio_size(stripe_info.num_stripes), GFP_NOFS);
- 	if (!multi)
- 		return -ENOMEM;
- 	*multi_ret = multi;
- 
- 	atomic_set(&multi->error, 0);
--	multi->num_stripes = num_stripes;
--	multi->max_errors = max_errors;
-+	multi->num_stripes = stripe_info.num_stripes;
-+	multi->max_errors = stripe_info.max_errors;
- 
--	for (i = 0; i < num_stripes; i++) {
-+	map = (struct map_lookup *)em->bdev;
-+	for (i = 0; i < stripe_info.num_stripes; i++) {
- 		multi->stripes[i].physical =
--			map->stripes[stripe_index].physical +
--			stripe_offset + stripe_nr * map->stripe_len;
--		multi->stripes[i].dev = map->stripes[stripe_index].dev;
--		stripe_index++;
-+			map->stripes[stripe_info.stripe_index].physical +
-+			stripe_info.phys_offset;
-+		multi->stripes[i].dev =
-+			map->stripes[stripe_info.stripe_index].dev;
-+		stripe_info.stripe_index++;
- 	}
-+
- out:
- 	free_extent_map(em);
- 	return 0;
+ void btrfs_map_to_stripe(struct extent_map *em, int rw, int mirror_num,
+ 			u64 logical, u64 *length,
+ 			struct btrfs_stripe_info *stripe_info)
 diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index d5aab74..76c4394 100644
+index 76c4394..226200d 100644
 --- a/fs/btrfs/volumes.h
 +++ b/fs/btrfs/volumes.h
-@@ -135,6 +135,13 @@ struct btrfs_multi_bio {
- 	struct btrfs_bio_stripe stripes[];
- };
- 
-+struct btrfs_stripe_info {
-+	int num_stripes;
-+	int max_errors;
-+	int stripe_index;
-+	u64 phys_offset;
-+};
-+
- #define btrfs_multi_bio_size(n) (sizeof(struct btrfs_multi_bio) + \
- 			    (sizeof(struct btrfs_bio_stripe) * (n)))
- 
-@@ -142,6 +149,9 @@ int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
- 			   struct btrfs_device *device,
- 			   u64 chunk_tree, u64 chunk_objectid,
- 			   u64 chunk_offset, u64 start, u64 num_bytes);
-+void btrfs_map_to_stripe(struct extent_map *em, int rw, int mirror_num,
-+			u64 logical, u64 *length,
-+			struct btrfs_stripe_info *stripe_info);
- int btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
- 		    u64 logical, u64 *length,
- 		    struct btrfs_multi_bio **multi_ret, int mirror_num);
+@@ -192,4 +192,7 @@ int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset);
+ int find_free_dev_extent(struct btrfs_trans_handle *trans,
+ 			 struct btrfs_device *device, u64 num_bytes,
+ 			 u64 *start, u64 *max_avail);
++int btrfs_map_stripe_count(struct extent_map *em);
++struct block_device *btrfs_map_stripe_bdev(struct extent_map *em, int stripe);
++u64 btrfs_map_stripe_physical(struct extent_map *em, int stripe);
+ #endif
 -- 
 1.5.6.3

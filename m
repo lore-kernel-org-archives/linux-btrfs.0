@@ -1,75 +1,36 @@
 From: jim owens <jowens@hp.com>
-Subject: [RFC 12/12 PATCH] Btrfs: add direct I/O helper to return mirror count
- from extent_map.
-Date: Mon, 04 Jan 2010 16:14:28 -0500
-Message-ID: <4B425A34.6000801@hp.com>
+Subject: [RFC 00/12] btrfs core patches for direct I/O
+Date: Mon, 04 Jan 2010 16:11:04 -0500
+Message-ID: <4B425968.4020308@hp.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+As if a Monday after a long holiday was not bad enough... this series
+has some simple patches in existing btrfs code that I want to make for
+btrfs directio code.
 
-Direct I/O retry needs to know the number of mirror copies.
+The RESEND patches 1-5 were sent to Chris in December because IMO
+they have value without my directio code.  You need them to apply
+some of the subsequent patches.
 
-Signed-off-by: jim owens <jowens@hp.com>
----
- fs/btrfs/volumes.c |   22 ++++++++++++++--------
- fs/btrfs/volumes.h |    1 +
- 2 files changed, 15 insertions(+), 8 deletions(-)
+IMO patch 6 is also of value independent of direct I/O, it reduces
+vmalloc use by 42K per worker, though we still use 268K per worker (ouch).
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 6aa04e4..3dda2ce 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2574,10 +2574,20 @@ void btrfs_mapping_tree_free(struct btrfs_mapping_tree *tree)
- 	}
- }
- 
-+int btrfs_map_num_copies(struct extent_map *em)
-+{
-+	struct map_lookup *map = (struct map_lookup *)em->bdev;
-+
-+	if (map->type & (BTRFS_BLOCK_GROUP_DUP | BTRFS_BLOCK_GROUP_RAID1))
-+		return map->num_stripes;
-+	if (map->type & BTRFS_BLOCK_GROUP_RAID10)
-+		return map->sub_stripes;
-+	return 1; 
-+}
-+
- int btrfs_num_copies(struct btrfs_mapping_tree *map_tree, u64 logical, u64 len)
- {
- 	struct extent_map *em;
--	struct map_lookup *map;
- 	struct extent_map_tree *em_tree = &map_tree->map_tree;
- 	int ret;
- 
-@@ -2587,13 +2597,9 @@ int btrfs_num_copies(struct btrfs_mapping_tree *map_tree, u64 logical, u64 len)
- 	BUG_ON(!em);
- 
- 	BUG_ON(em->start > logical || em->start + em->len < logical);
--	map = (struct map_lookup *)em->bdev;
--	if (map->type & (BTRFS_BLOCK_GROUP_DUP | BTRFS_BLOCK_GROUP_RAID1))
--		ret = map->num_stripes;
--	else if (map->type & BTRFS_BLOCK_GROUP_RAID10)
--		ret = map->sub_stripes;
--	else
--		ret = 1;
-+
-+	ret = btrfs_map_num_copies(em);
-+
- 	free_extent_map(em);
- 	return ret;
- }
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 226200d..732c8c5 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -195,4 +195,5 @@ int find_free_dev_extent(struct btrfs_trans_handle *trans,
- int btrfs_map_stripe_count(struct extent_map *em);
- struct block_device *btrfs_map_stripe_bdev(struct extent_map *em, int stripe);
- u64 btrfs_map_stripe_physical(struct extent_map *em, int stripe);
-+int btrfs_map_num_copies(struct extent_map *em);
- #endif
--- 
-1.5.6.3
+Patches 7 - 12 don't have value without direct I/O.  I'm sending
+them RFC as they can be understood by themselves, and they are much
+simpler than the directio code that uses them. :)
+
+Note - might as well explain this now as later when I send the big
+mess of dio.c for review.  The existing core code for pagecache
+doesn't work for directio because the existing I/O routines depend
+on peeking inside a struct page to get the valid btrfs inode info.
+Sorry, no can do, we don't own that page. And rewriting the whole
+pagecache I/O stack to eliminate dependence on struct page would
+be too scary IMO.
+
+FWIW, fsx didn't crash on this series.
+
+jim

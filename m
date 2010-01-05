@@ -1,44 +1,42 @@
-From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
-Subject: [PATCH] check for NULL pointer dereference in btrfs_set_acl
-Date: Tue, 5 Jan 2010 21:33:47 +0100
-Message-ID: <201001052133.48355.johannes.hirte@fem.tu-ilmenau.de>
+From: Piavlo <piavka@cs.bgu.ac.il>
+Subject: snapshot/subvolume removal
+Date: Tue, 05 Jan 2010 23:18:19 +0200
+Message-ID: <4B43AC9B.5030109@cs.bgu.ac.il>
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="us-ascii"
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755657Ab0AEUd4@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Check for for NULL pointer in btrfs_set_acl and omit calling 
-posix_acl_equiv_mode in this case to avoid NULL pointer dereference there. 
+ Hi,
 
-Signed-off-by: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Does btrfs support snapshot or/and subvolume removal ?
+If yes how, since I could not find the commands to do that?
+If not is there any estimation when this feature will be available?
 
-diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index 2e9e699..3a3a96d 100644
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -111,13 +111,15 @@ static int btrfs_set_acl(struct btrfs_trans_handle 
-*trans,
+Is there a tool to list the existing subvolumes/snapshots?
 
-        switch (type) {
-        case ACL_TYPE_ACCESS:
--               mode = inode->i_mode;
--               ret = posix_acl_equiv_mode(acl, &mode);
--               if (ret < 0)
--                       return ret;
--               ret = 0;
--               inode->i_mode = mode;
-                name = POSIX_ACL_XATTR_ACCESS;
-+               if (acl) {
-+                       mode = inode->i_mode;
-+                       ret = posix_acl_equiv_mode(acl, &mode);
-+                       if (ret < 0)
-+                               return ret;
-+                       ret = 0;
-+                       inode->i_mode = mode;
-+               }
-                break;
-        case ACL_TYPE_DEFAULT:
-                if (!S_ISDIR(inode->i_mode))
+It looks like the snapshots can overridden by subvolumes, see below:
+
+shell>  btrfsctl  -s rsync-snap rsync
+operation complete
+Btrfs v0.19-4-gab8fb4c-dirty
+shell>  btrfsctl  -S rsync-snap rsync
+operation complete
+Btrfs v0.19-4-gab8fb4c-dirty
+shell> btrfsctl  -s rsync-snap rsync
+ioctl:: File exists
+shell>
+
+Is that expected?
+What happens to the snapshot  then it is overridden by subvolume?
+It does not seem reasonable that snapshot can be converted into 
+subvolume, since newly created subvolume
+holds no data ,while the snapshot is a snapshot of other previously
+existing subvolume and holds data.
+So is snapshots simply destroyed prior to subvolume creation, in the
+above scenario?
+
+ Thanks
+ Alex
+

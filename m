@@ -1,256 +1,70 @@
-From: jim owens <jowens@hp.com>
-Subject: [RFC 05/12 RESEND PATCH] Btrfs: remove dead code for unplugging pages.
-Date: Mon, 04 Jan 2010 16:13:14 -0500
-Message-ID: <4B4259EA.4080001@hp.com>
+From: Dave Chinner <david@fromorbit.com>
+Subject: Re: [Jfs-discussion] benchmark results
+Date: Tue, 5 Jan 2010 11:41:17 +1100
+Message-ID: <20100105004117.GP13802__10028.1050465584$1262653113$gmane$org@discord.disaster>
+References: <alpine.DEB.2.01.0912240205510.3483@bogon.housecafe.de> <19251.26403.762180.228181@tree.ty.sabi.co.uk> <20091224212756.GM21594@thunk.org> <20091224234631.GA1028@ioremap.net> <20091225161146.GC32757@thunk.org> <20100104162748.GA11932@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+To: Chris Mason <chris.mason@oracle.com>, tytso@mit.edu,
+	Evgeniy Polyakov <zbr@ioremap.net>,
+	Peter Grandi <pg_jf2@jf2.for.sabi.co.UK>, xfs@oss.sgi.com,
+	reiserfs-devel@vger.kernel.org, lin
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100104162748.GA11932@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, Jan 04, 2010 at 11:27:48AM -0500, Chris Mason wrote:
+> On Fri, Dec 25, 2009 at 11:11:46AM -0500, tytso@mit.edu wrote:
+> > On Fri, Dec 25, 2009 at 02:46:31AM +0300, Evgeniy Polyakov wrote:
+> > > > [1] http://samba.org/ftp/tridge/dbench/README
+> > > 
+> > > Was not able to resist to write a small notice, what no matter what, but
+> > > whatever benchmark is running, it _does_ show system behaviour in one
+> > > or another condition. And when system behaves rather badly, it is quite
+> > > a common comment, that benchmark was useless. But it did show that
+> > > system has a problem, even if rarely triggered one :)
+> > 
+> > If people are using benchmarks to improve file system, and a benchmark
+> > shows a problem, then trying to remedy the performance issue is a good
+> > thing to do, of course.  Sometimes, though the case which is
+> > demonstrated by a poor benchmark is an extremely rare corner case that
+> > doesn't accurately reflect common real-life workloads --- and if
+> > addressing it results in a tradeoff which degrades much more common
+> > real-life situations, then that would be a bad thing.
+> > 
+> > In situations where benchmarks are used competitively, it's rare that
+> > it's actually a *problem*.  Instead it's much more common that a
+> > developer is trying to prove that their file system is *better* to
+> > gullible users who think that a single one-dimentional number is
+> > enough for them to chose file system X over file system Y.
+> 
+> [ Look at all this email from my vacation...sorry for the delay ]
+> 
+> It's important that people take benchmarks from filesystem developers
+> with a big grain of salt, which is one reason the boxacle.net results
+> are so nice.  Steve more than willing to take patches and experiment to
+> improve a given FS results, but his business is a fair representation of
+> performance and it shows.
 
-The code in btrfs_unplug_io_fn() to selectively unplug just the
-stripes affected by a page had been previously disabled.  The
-unneeded code for unplug_page in __btrfs_map_block made changes
-for btrfs directio more difficult so I'm removing all of it.
+Just looking at the results there, I notice that the RAID system XFS
+mailserver results dropped by an order of magnitude between
+2.6.29-rc2 and 2.6.31. The single disk results are pretty
+much identical across the two kernels.
 
-Signed-off-by: jim owens <jowens@hp.com>
----
- fs/btrfs/disk-io.c |   62 ++---------------------------------------------
- fs/btrfs/volumes.c |   67 +++++++++++++--------------------------------------
- fs/btrfs/volumes.h |    2 -
- 3 files changed, 20 insertions(+), 111 deletions(-)
+IIRC, in 2.6.31 RAID0 started passing barriers through so I suspect
+this is the issue. However, seeing as dmesg is not collected by
+the scripts after the run and the output of the mounttab does
+not show default options, I cannot tell if this is the case. This
+might be worth checking by running XFS with the "nobarrier" mount
+option....
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 009e3bd..72c08fa 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1289,10 +1289,10 @@ static int btrfs_congested_fn(void *congested_data, int bdi_bits)
- }
- 
- /*
-- * this unplugs every device on the box, and it is only used when page
-- * is null
-+ * this unplugs every device on the box, and yes that is ugly
-+ * but there are currently no low cost alternatives
-  */
--static void __unplug_io_fn(struct backing_dev_info *bdi, struct page *page)
-+static void btrfs_unplug_io_fn(struct backing_dev_info *bdi, struct page *page)
- {
- 	struct btrfs_device *device;
- 	struct btrfs_fs_info *info;
-@@ -1308,62 +1308,6 @@ static void __unplug_io_fn(struct backing_dev_info *bdi, struct page *page)
- 	}
- }
- 
--static void btrfs_unplug_io_fn(struct backing_dev_info *bdi, struct page *page)
--{
--	struct inode *inode;
--	struct extent_map_tree *em_tree;
--	struct extent_map *em;
--	struct address_space *mapping;
--	u64 offset;
--
--	/* the generic O_DIRECT read code does this */
--	if (1 || !page) {
--		__unplug_io_fn(bdi, page);
--		return;
--	}
--
--	/*
--	 * page->mapping may change at any time.  Get a consistent copy
--	 * and use that for everything below
--	 */
--	smp_mb();
--	mapping = page->mapping;
--	if (!mapping)
--		return;
--
--	inode = mapping->host;
--
--	/*
--	 * don't do the expensive searching for a small number of
--	 * devices
--	 */
--	if (BTRFS_I(inode)->root->fs_info->fs_devices->open_devices <= 2) {
--		__unplug_io_fn(bdi, page);
--		return;
--	}
--
--	offset = page_offset(page);
--
--	em_tree = &BTRFS_I(inode)->extent_tree;
--	read_lock(&em_tree->lock);
--	em = lookup_extent_mapping(em_tree, offset, PAGE_CACHE_SIZE);
--	read_unlock(&em_tree->lock);
--	if (!em) {
--		__unplug_io_fn(bdi, page);
--		return;
--	}
--
--	if (em->block_start >= EXTENT_MAP_LAST_BYTE) {
--		free_extent_map(em);
--		__unplug_io_fn(bdi, page);
--		return;
--	}
--	offset = offset - em->start;
--	btrfs_unplug_page(&BTRFS_I(inode)->root->fs_info->mapping_tree,
--			  em->block_start + offset, page);
--	free_extent_map(em);
--}
--
- /*
-  * If this fails, caller must call bdi_destroy() to get rid of the
-  * bdi again.
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index e6599ef..0e3146a 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2614,10 +2614,10 @@ static int find_live_mirror(struct map_lookup *map, int first, int num,
- 	return optimal;
- }
- 
--static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
-+int btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
- 			     u64 logical, u64 *length,
- 			     struct btrfs_multi_bio **multi_ret,
--			     int mirror_num, struct page *unplug_page)
-+			     int mirror_num)
- {
- 	struct extent_map *em;
- 	struct map_lookup *map;
-@@ -2629,15 +2629,12 @@ static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
- 	int i;
- 	int num_stripes;
- 	int max_errors;
--	struct btrfs_multi_bio *multi = NULL;
-+	struct btrfs_multi_bio *multi;
- 
- 	read_lock(&em_tree->lock);
- 	em = lookup_extent_mapping(em_tree, logical, *length);
- 	read_unlock(&em_tree->lock);
- 
--	if (!em && unplug_page)
--		return 0;
--
- 	if (!em) {
- 		printk(KERN_CRIT "unable to find logical %llu len %llu\n",
- 		       (unsigned long long)logical,
-@@ -2673,7 +2670,7 @@ static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
- 		*length = min(*length, em->len - offset);
- 	}
- 
--	if (!multi_ret && !unplug_page)
-+	if (!multi_ret)
- 		goto out;
- 
- 	if (mirror_num > map->num_stripes)
-@@ -2691,7 +2688,7 @@ static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
- 	num_stripes = 1;
- 	stripe_index = 0;
- 	if (map->type & BTRFS_BLOCK_GROUP_RAID1) {
--		if (unplug_page || (rw & (1 << BIO_RW)))
-+		if (rw & (1 << BIO_RW))
- 			num_stripes = map->num_stripes;
- 		else if (mirror_num)
- 			stripe_index = mirror_num - 1;
-@@ -2713,7 +2710,7 @@ static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
- 		stripe_index = do_div(stripe_nr, factor);
- 		stripe_index *= map->sub_stripes;
- 
--		if (unplug_page || (rw & (1 << BIO_RW)))
-+		if (rw & (1 << BIO_RW))
- 			num_stripes = map->sub_stripes;
- 		else if (mirror_num)
- 			stripe_index += mirror_num - 1;
-@@ -2732,34 +2729,20 @@ static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
- 	}
- 	BUG_ON(stripe_index >= map->num_stripes);
- 
--	if (multi_ret) {
--		multi = kzalloc(btrfs_multi_bio_size(num_stripes), GFP_NOFS);
--		if (!multi)
--			return -ENOMEM;
--		*multi_ret = multi;
-+	multi = kzalloc(btrfs_multi_bio_size(num_stripes), GFP_NOFS);
-+	if (!multi)
-+		return -ENOMEM;
-+	*multi_ret = multi;
- 
--		atomic_set(&multi->error, 0);
--		multi->num_stripes = num_stripes;
--		multi->max_errors = max_errors;
--	}
-+	atomic_set(&multi->error, 0);
-+	multi->num_stripes = num_stripes;
-+	multi->max_errors = max_errors;
- 
- 	for (i = 0; i < num_stripes; i++) {
--		if (unplug_page) {
--			struct btrfs_device *device;
--			struct backing_dev_info *bdi;
--
--			device = map->stripes[stripe_index].dev;
--			if (device->bdev) {
--				bdi = blk_get_backing_dev_info(device->bdev);
--				if (bdi->unplug_io_fn)
--					bdi->unplug_io_fn(bdi, unplug_page);
--			}
--		} else {
--			multi->stripes[i].physical =
--				map->stripes[stripe_index].physical +
--				stripe_offset + stripe_nr * map->stripe_len;
--			multi->stripes[i].dev = map->stripes[stripe_index].dev;
--		}
-+		multi->stripes[i].physical =
-+			map->stripes[stripe_index].physical +
-+			stripe_offset + stripe_nr * map->stripe_len;
-+		multi->stripes[i].dev = map->stripes[stripe_index].dev;
- 		stripe_index++;
- 	}
- out:
-@@ -2767,14 +2750,6 @@ out:
- 	return 0;
- }
- 
--int btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
--		      u64 logical, u64 *length,
--		      struct btrfs_multi_bio **multi_ret, int mirror_num)
--{
--	return __btrfs_map_block(map_tree, rw, logical, length, multi_ret,
--				 mirror_num, NULL);
--}
--
- int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
- 		     u64 chunk_start, u64 physical, u64 devid,
- 		     u64 **logical, int *naddrs, int *stripe_len)
-@@ -2840,14 +2815,6 @@ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
- 	return 0;
- }
- 
--int btrfs_unplug_page(struct btrfs_mapping_tree *map_tree,
--		      u64 logical, struct page *page)
--{
--	u64 length = PAGE_CACHE_SIZE;
--	return __btrfs_map_block(map_tree, READ, logical, &length,
--				 NULL, 0, page);
--}
--
- static void end_bio_multi_stripe(struct bio *bio, int err)
- {
- 	struct btrfs_multi_bio *multi = bio->bi_private;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 31b0fab..d5aab74 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -169,8 +169,6 @@ int btrfs_add_device(struct btrfs_trans_handle *trans,
- int btrfs_rm_device(struct btrfs_root *root, char *device_path);
- int btrfs_cleanup_fs_uuids(void);
- int btrfs_num_copies(struct btrfs_mapping_tree *map_tree, u64 logical, u64 len);
--int btrfs_unplug_page(struct btrfs_mapping_tree *map_tree,
--		      u64 logical, struct page *page);
- int btrfs_grow_device(struct btrfs_trans_handle *trans,
- 		      struct btrfs_device *device, u64 new_size);
- struct btrfs_device *btrfs_find_device(struct btrfs_root *root, u64 devid,
+FWIW, is it possible to get these benchmarks run on each filesystem for
+each kernel release so ext/xfs/btrfs all get some regular basic
+performance regression test coverage?
+
+Cheers,
+
+Dave.
 -- 
-1.5.6.3
+Dave Chinner
+david@fromorbit.com

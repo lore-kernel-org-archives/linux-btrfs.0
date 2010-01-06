@@ -1,37 +1,26 @@
-From: Sander <sander@humilis.net>
-Subject: Re: btrfs volume mounts and dies (was Re: Segfault in btrfsck)
-Date: Wed, 6 Jan 2010 08:52:53 +0100
-Message-ID: <20100106075253.GA5665@cumulus>
-References: <1262476565.17096.20.camel@phat>
- <1262559421.17096.50.camel@phat>
- <1262565474.17096.68.camel@phat>
- <1262732153.4509.1.camel@phat>
-Reply-To: sander@humilis.net
+From: Piavlo <piavka@cs.bgu.ac.il>
+Subject: Re: snapshot/subvolume removal
+Date: Wed, 06 Jan 2010 10:33:25 +0200
+Message-ID: <4B444AD5.1060501@cs.bgu.ac.il>
+References: <4B43AC9B.5030109@cs.bgu.ac.il> <4B43D9AB.1090606@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Steve Freitas <sflist@ihonk.com>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1262732153.4509.1.camel@phat>
+In-Reply-To: <4B43D9AB.1090606@jp.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Steve,
+TARUISI Hiroaki wrote:
+> Hi,
+>
+> We can delete snapshot with btrfsctl -D . It's available for
+> your btrfs-progs version.
+-D works great
 
-Steve Freitas wrote (ao):
-> Should I take it by the lack of list response that I should just flush
-> this partition down the toilet and start over? Or is everybody either
-> flummoxed or on vacation?
+Also how can I know if some directory is subvolume or snapshot or just a
+normal directory?
+Is there a way to list all the existing snapshots & subvolumes under btrfs?
 
-I don't have your original mail, but I think I remember you mentioned a
-lot of bad sectors on that disk reported by SMART.
+Thanks
+Alex
 
-If that is indeed the case it might be dificult for the people who might
-be able to help you, to help you.
-
-Please ignore me if I confused your mail with another.
-
-	With kind regard, Sander
-
--- 
-Humilis IT Services and Solutions
-http://www.humilis.net

@@ -1,26 +1,53 @@
-From: Piavlo <piavka@cs.bgu.ac.il>
-Subject: Re: snapshot/subvolume removal
-Date: Wed, 06 Jan 2010 10:33:25 +0200
-Message-ID: <4B444AD5.1060501@cs.bgu.ac.il>
-References: <4B43AC9B.5030109@cs.bgu.ac.il> <4B43D9AB.1090606@jp.fujitsu.com>
+From: Xiao Guangrong <xiaoguangrong@cn.fujitsu.com>
+Subject: [PATCH] btrfs: using btrfs_stack_device_id() get devid
+Date: Wed, 06 Jan 2010 19:48:18 +0800
+Message-ID: <4B447882.2090806@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4B43D9AB.1090606@jp.fujitsu.com>
+Cc: Yan Zheng <zheng.yan@oracle.com>, Julia Lawall <julia@diku.dk>,
+	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
+	LKML <linux-kernel@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755771Ab0AFLuS@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-TARUISI Hiroaki wrote:
-> Hi,
->
-> We can delete snapshot with btrfsctl -D . It's available for
-> your btrfs-progs version.
--D works great
+We can use btrfs_stack_device_id() to get dev_item->devid
 
-Also how can I know if some directory is subvolume or snapshot or just a
-normal directory?
-Is there a way to list all the existing snapshots & subvolumes under btrfs?
+Signed-off-by: Xiao Guangrong <xiaoguangrong@cn.fujitsu.com>
+---
+ fs/btrfs/volumes.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
 
-Thanks
-Alex
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 198cff2..3b8b2b9 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -592,7 +592,7 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ 			goto error_close;
+ 
+ 		disk_super = (struct btrfs_super_block *)bh->b_data;
+-		devid = le64_to_cpu(disk_super->dev_item.devid);
++		devid = btrfs_stack_device_id(&disk_super->dev_item);
+ 		if (devid != device->devid)
+ 			goto error_brelse;
+ 
+@@ -694,7 +694,7 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+ 		goto error_close;
+ 	}
+ 	disk_super = (struct btrfs_super_block *)bh->b_data;
+-	devid = le64_to_cpu(disk_super->dev_item.devid);
++	devid = btrfs_stack_device_id(&disk_super->dev_item);
+ 	transid = btrfs_super_generation(disk_super);
+ 	if (disk_super->label[0])
+ 		printk(KERN_INFO "device label %s ", disk_super->label);
+@@ -1187,7 +1187,7 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 			goto error_close;
+ 		}
+ 		disk_super = (struct btrfs_super_block *)bh->b_data;
+-		devid = le64_to_cpu(disk_super->dev_item.devid);
++		devid = btrfs_stack_device_id(&disk_super->dev_item);
+ 		dev_uuid = disk_super->dev_item.uuid;
+ 		device = btrfs_find_device(root, devid, dev_uuid,
+ 					   disk_super->fsid);
+-- 
+1.6.1.2

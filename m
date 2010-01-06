@@ -1,79 +1,62 @@
-From: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
+From: Adrian von Bidder <avbidder@fortytwo.ch>
 Subject: Re: snapshot/subvolume removal
-Date: Wed, 06 Jan 2010 09:30:35 +0900
-Message-ID: <4B43D9AB.1090606@jp.fujitsu.com>
-References: <4B43AC9B.5030109@cs.bgu.ac.il>
+Date: Wed, 6 Jan 2010 07:54:12 +0100
+Message-ID: <201001060754.18256@fortytwo.ch>
+References: <4B43AC9B.5030109@cs.bgu.ac.il> <4B43D9AB.1090606@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: piavka@cs.bgu.ac.il
+Content-Type: multipart/signed;
+  boundary="nextPart2261016.2nDFC23W8y";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4B43AC9B.5030109@cs.bgu.ac.il>
+In-Reply-To: <4B43D9AB.1090606@jp.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+--nextPart2261016.2nDFC23W8y
+Content-Type: Text/Plain;
+  charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
 
-We can delete snapshot with btrfsctl -D . It's available for
-your btrfs-progs version.
+On Wednesday 06 January 2010 01.30:35 TARUISI Hiroaki wrote:
+> In creating snapshots, the last argument implies the directory
+> where subvolume is to be created, but in taking snapshots,
+> the last argument implies subvolume we take snapshot of, and
+> snapshots are created under current directory.
+>=20
 
-And parameters of btrfsctl -s/S are not coherent at the last
-argument.
-In creating snapshots, the last argument implies the directory
-where subvolume is to be created, but in taking snapshots,
-the last argument implies subvolume we take snapshot of, and
-snapshots are created under current directory.
+This was a bit confusing to me at first, too.  (But obviously '-s' needs th=
+e=20
+input which volume to take the snapshot from.)
 
-So,
-> shell>  btrfsctl  -s rsync-snap rsync
-> operation complete
+Would it be a good idea to make btrfsctl -s fail if the last argument is no=
+t=20
+the root of a subvolume?  That way, the directory given to "btrfsctl -s"=20
+would always match what ends up in a snapshot.  (It is a bit strange for=20
+people who are not familiar with btrfs to do "btrfsctl -s snap=20
+some/directory/somewhere" and then realize that the snapshot is created fro=
+m=20
+"some" and not from "somewhere" because "some" is the subvolume root.)
 
-snapshot rsync-snap is created under current directory, and,
+cheers
+=2D- vbi
 
-> Btrfs v0.19-4-gab8fb4c-dirty
-> shell>  btrfsctl  -S rsync-snap rsync
-> operation complete
+=2D-=20
+Pushing 40 is exercise enough.
 
-subvolume rsync-snap is created under rsync directory in current
-directory. They are created under different directories.
+--nextPart2261016.2nDFC23W8y
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
 
-Regards,
-taruisi
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+Comment: get my key from http://fortytwo.ch/gpg/92082481
 
-(2010/01/06 6:18), Piavlo wrote:
->  Hi,
-> 
-> Does btrfs support snapshot or/and subvolume removal ?
-> If yes how, since I could not find the commands to do that?
-> If not is there any estimation when this feature will be available?
-> 
-> Is there a tool to list the existing subvolumes/snapshots?
-> 
-> It looks like the snapshots can overridden by subvolumes, see below:
-> 
-> shell>  btrfsctl  -s rsync-snap rsync
-> operation complete
-> Btrfs v0.19-4-gab8fb4c-dirty
-> shell>  btrfsctl  -S rsync-snap rsync
-> operation complete
-> Btrfs v0.19-4-gab8fb4c-dirty
-> shell> btrfsctl  -s rsync-snap rsync
-> ioctl:: File exists
-> shell>
-> 
-> Is that expected?
-> What happens to the snapshot  then it is overridden by subvolume?
-> It does not seem reasonable that snapshot can be converted into 
-> subvolume, since newly created subvolume
-> holds no data ,while the snapshot is a snapshot of other previously
-> existing subvolume and holds data.
-> So is snapshots simply destroyed prior to subvolume creation, in the
-> above scenario?
-> 
->  Thanks
->  Alex
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+iKcEABECAGcFAktEM5VgGmh0dHA6Ly9mb3J0eXR3by5jaC9sZWdhbC9ncGcvZW1h
+aWwuMjAwMjA4MjI/dmVyc2lvbj0xLjUmbWQ1c3VtPTVkZmY4NjhkMTE4NDMyNzYw
+NzFiMjVlYjcwMDZkYTNlAAoJECqqZti935l6MkIAn1sEHjkAGLMxgjK1p0IOPvHB
+aHEwAJ44fWlmbWzq36RaLZ8oEv+OnUcz0w==
+=t0w0
+-----END PGP SIGNATURE-----
 
+--nextPart2261016.2nDFC23W8y--

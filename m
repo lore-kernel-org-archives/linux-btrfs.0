@@ -1,58 +1,43 @@
-From: Jiri Slaby <jslaby@suse.cz>
-Subject: [PATCH 1/1] FS: btrfs, fix memory leaks
-Date: Wed,  6 Jan 2010 17:57:22 +0100
-Message-ID: <1262797042-24179-1-git-send-email-jslaby@suse.cz>
-Cc: viro@zeniv.linux.org.uk, linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org, jirislaby@gmail.com,
-	linux-btrfs@vger.kernel.org
-To: chris.mason@oracle.com
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
+From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Subject: Re: btrfs volume mounts and dies (was Re: Segfault in btrfsck)
+Date: Wed, 6 Jan 2010 18:24:35 +0100
+Message-ID: <201001061824.37159.johannes.hirte@fem.tu-ilmenau.de>
+References: <1262476565.17096.20.camel@phat> <20100106075253.GA5665@cumulus> <1262793595.6214.5.camel@phat>
+Mime-Version: 1.0
+Content-Type: Text/Plain;
+  charset="utf-8"
+Cc: linux-btrfs@vger.kernel.org
+To: Steve Freitas <sflist@ihonk.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1262793595.6214.5.camel@phat>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Stanse found 2 memory leaks in relocate_block_group and
-__btrfs_map_block. cluster and multi are not freed/assigned on all
-paths. Fix that.
+Am Mittwoch 06 Januar 2010 16:59:55 schrieb Steve Freitas:
+> Hi Sander,
+> 
+> On Wed, 2010-01-06 at 08:52 +0100, Sander wrote:
+> > I don't have your original mail, but I think I remember you mentioned a
+> > lot of bad sectors on that disk reported by SMART.
+> >
+> > If that is indeed the case it might be dificult for the people who might
+> > be able to help you, to help you.
+> 
+> Thanks for your  response. You're correct about the bad sector warning.
+> So please correct me if I have some mistaken assumptions. I thought
+> btrfs would be tolerant of that -- if a block failed the checksum test,
+> it would reconstruct and remap it. 
+Only if enough redundancy is left. And with the default setup btrfs is only 
+mirroring the metadata not the data.
 
-Signed-off-by: Jiri Slaby <jslaby@suse.cz>
-Cc: Chris Mason <chris.mason@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
----
- fs/btrfs/relocation.c |    4 +++-
- fs/btrfs/volumes.c    |    4 +++-
- 2 files changed, 6 insertions(+), 2 deletions(-)
+> (Also, I assumed that if a drive
+> hadn't filled its bad sector remapping table, it could handle it at the
+> hardware level, and SMART's warning was just that -- a warning, not a
+> dire pronouncement of utter unsuitability -- but that's something else.)
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index cfcc93c..4565f5b 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -3274,8 +3274,10 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 		return -ENOMEM;
- 
- 	path = btrfs_alloc_path();
--	if (!path)
-+	if (!path) {
-+		kfree(cluster);
- 		return -ENOMEM;
-+	}
- 
- 	rc->extents_found = 0;
- 	rc->extents_skipped = 0;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 7eda483..8555028 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2649,8 +2649,10 @@ again:
- 	em = lookup_extent_mapping(em_tree, logical, *length);
- 	read_unlock(&em_tree->lock);
- 
--	if (!em && unplug_page)
-+	if (!em && unplug_page) {
-+		kfree(multi);
- 		return 0;
-+	}
- 
- 	if (!em) {
- 		printk(KERN_CRIT "unable to find logical %llu len %llu\n",
--- 
-1.6.5.7
+Bad sectors are only remapped by the drive on write time. As long as this 
+isn't the case, they are only marked as pending. As you have written, that 
+SMART detected many bad blocks, I suspect the FS is really damaged. And as 
+btrfsck is limited, I don't think it can fix this.
 
+regards,
+  Johannes

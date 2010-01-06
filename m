@@ -1,53 +1,29 @@
-From: Xiao Guangrong <xiaoguangrong@cn.fujitsu.com>
-Subject: [PATCH] btrfs: using btrfs_stack_device_id() get devid
-Date: Wed, 06 Jan 2010 19:48:18 +0800
-Message-ID: <4B447882.2090806@cn.fujitsu.com>
+From: Andi Kleen <andi@firstfloor.org>
+Subject: Re: [RFC 00/12] btrfs core patches for direct I/O
+Date: Wed, 06 Jan 2010 12:50:23 +0100
+Message-ID: <87ocl7bgg0.fsf@basil.nowhere.org>
+References: <4B425968.4020308@hp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Yan Zheng <zheng.yan@oracle.com>, Julia Lawall <julia@diku.dk>,
-	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
-	LKML <linux-kernel@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755771Ab0AFLuS@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: jim owens <jowens@hp.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4B425968.4020308@hp.com> (jim owens's message of "Mon, 04 Jan 2010 16:11:04 -0500")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We can use btrfs_stack_device_id() to get dev_item->devid
+jim owens <jowens@hp.com> writes:
 
-Signed-off-by: Xiao Guangrong <xiaoguangrong@cn.fujitsu.com>
----
- fs/btrfs/volumes.c |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
+> The existing core code for pagecache
+> doesn't work for directio because the existing I/O routines depend
+> on peeking inside a struct page to get the valid btrfs inode info.
+> Sorry, no can do, we don't own that page. And rewriting the whole
+> pagecache I/O stack to eliminate dependence on struct page would
+> be too scary IMO.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 198cff2..3b8b2b9 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -592,7 +592,7 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
- 			goto error_close;
- 
- 		disk_super = (struct btrfs_super_block *)bh->b_data;
--		devid = le64_to_cpu(disk_super->dev_item.devid);
-+		devid = btrfs_stack_device_id(&disk_super->dev_item);
- 		if (devid != device->devid)
- 			goto error_brelse;
- 
-@@ -694,7 +694,7 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 		goto error_close;
- 	}
- 	disk_super = (struct btrfs_super_block *)bh->b_data;
--	devid = le64_to_cpu(disk_super->dev_item.devid);
-+	devid = btrfs_stack_device_id(&disk_super->dev_item);
- 	transid = btrfs_super_generation(disk_super);
- 	if (disk_super->label[0])
- 		printk(KERN_INFO "device label %s ", disk_super->label);
-@@ -1187,7 +1187,7 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 			goto error_close;
- 		}
- 		disk_super = (struct btrfs_super_block *)bh->b_data;
--		devid = le64_to_cpu(disk_super->dev_item.devid);
-+		devid = btrfs_stack_device_id(&disk_super->dev_item);
- 		dev_uuid = disk_super->dev_item.uuid;
- 		device = btrfs_find_device(root, devid, dev_uuid,
- 					   disk_super->fsid);
+That would simply need another passed argument in a few strategic
+places, won't it? I can't imagine it would need a full "rewrite"
+
+-Andi
+
 -- 
-1.6.1.2
+ak@linux.intel.com -- Speaking for myself only.

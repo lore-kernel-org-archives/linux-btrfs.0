@@ -1,29 +1,42 @@
-From: Andi Kleen <andi@firstfloor.org>
-Subject: Re: [RFC 00/12] btrfs core patches for direct I/O
-Date: Wed, 06 Jan 2010 12:50:23 +0100
-Message-ID: <87ocl7bgg0.fsf@basil.nowhere.org>
-References: <4B425968.4020308@hp.com>
+From: liu weni <qingshenlwy@gmail.com>
+Subject: [PATCH]btrfs: Remove a extra condition
+Date: Wed, 6 Jan 2010 22:11:54 +0800
+Message-ID: <b3657a101001060611k57407d6aj94f5931a2f0a5f33@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: jim owens <jowens@hp.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org,
+	linux-kernel <linux-kernel@vger.kernel.org>,
+	zheng.yan@oracle.com, chris.mason@oracle.com,
+	Xiao Guangrong <xiaoguangrong@cn.fujitsu.com>,
+	strongzgy <stro
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4B425968.4020308@hp.com> (jim owens's message of "Mon, 04 Jan 2010 16:11:04 -0500")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-jim owens <jowens@hp.com> writes:
+This patch remove a extra condition.
+In this place, the outer is if (!cur || !uptodate)
+and then, there are 2 ways: !cur or ! uptodate.
+The "else if (!uptodate)" is not necessary.
+I think "else" is better.
 
-> The existing core code for pagecache
-> doesn't work for directio because the existing I/O routines depend
-> on peeking inside a struct page to get the valid btrfs inode info.
-> Sorry, no can do, we don't own that page. And rewriting the whole
-> pagecache I/O stack to eliminate dependence on struct page would
-> be too scary IMO.
+---
+Signed-off-by: Liuwenyi <qingshenlwy@gmail.com>
 
-That would simply need another passed argument in a few strategic
-places, won't it? I can't imagine it would need a full "rewrite"
+---
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index c4bc570..654f702 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -679,7 +679,7 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
+ 			if (!cur) {
+ 				cur = read_tree_block(root, blocknr,
+ 							 blocksize, gen);
+-			} else if (!uptodate) {
++			} else {
+ 				btrfs_read_buffer(cur, gen);
+ 			}
+ 		}
+---
 
--Andi
-
--- 
-ak@linux.intel.com -- Speaking for myself only.
+Best Regards,
+Liuwenyi
+20100107

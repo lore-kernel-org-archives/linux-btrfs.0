@@ -1,69 +1,37 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Subject: Re: btrfs-progs: New utility to swap subvolumes
-Date: Wed, 6 Jan 2010 08:56:17 +0100
-Message-ID: <201001060856.17940.kreijack@libero.it>
-References: <4B32CF4D.90406@jp.fujitsu.com> <201001041820.03591.kreijack@libero.it> <4B43D4C9.2000705@jp.fujitsu.com>
+From: Sander <sander@humilis.net>
+Subject: Re: btrfs volume mounts and dies (was Re: Segfault in btrfsck)
+Date: Wed, 6 Jan 2010 08:52:53 +0100
+Message-ID: <20100106075253.GA5665@cumulus>
+References: <1262476565.17096.20.camel@phat>
+ <1262559421.17096.50.camel@phat>
+ <1262565474.17096.68.camel@phat>
+ <1262732153.4509.1.camel@phat>
+Reply-To: sander@humilis.net
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-2022-jp"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Steve Freitas <sflist@ihonk.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4B43D4C9.2000705@jp.fujitsu.com>
+In-Reply-To: <1262732153.4509.1.camel@phat>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wednesday 06 January 2010, TARUISI Hiroaki wrote:
-> Thanks for your greetings.
-> 
-> I read your article, and could follow your idea, which looks
-> very practical rule to me.
-> But we may need some application which support to create or maintain
-> these rules because the relation mount point and subvolumes and
-> snapshots gets complicated as number of subvolumes increases.
+Hello Steve,
 
-I wrote a little script which handle the snapshot creation/deleting/listing 
-and grub config file update.
+Steve Freitas wrote (ao):
+> Should I take it by the lack of list response that I should just flush
+> this partition down the toilet and start over? Or is everybody either
+> flummoxed or on vacation?
 
-This script supposing the layout which I discussed
+I don't have your original mail, but I think I remember you mentioned a
+lot of bad sectors on that disk reported by SMART.
 
-- under /var/btrfs is mounter the real root btrfs filesystem
-- under the real root file-system there are the snapshots and the root of the 
-system (rootfs)
-- in /var/btrfs/snaplist.txt there is the list of snaphsot
-- in /boot/grub/menu.lst there is the grub configuration
+If that is indeed the case it might be dificult for the people who might
+be able to help you, to help you.
 
-In you are interested, I can send you.
+Please ignore me if I confused your mail with another.
 
-BR 
-Goffredo
-
-> Regards,
-> taruisi
-> 
-> (2010/01/05 2:20), Goffredo Baroncelli wrote:
-> > On Monday 04 January 2010, TARUISI Hiroaki wrote:
-> >> Buon anno, Goffredo.
-> > あけまして おめでとう Taruisi,
-> > 
-> > (I hope that happy new year is correctly written)
-> >>
-> >> Taking snapshot in btrfs is very easy, but handling snapshots is
-> >> very confusing. So, we must make a rule of snapshotting such as
-> >> your proposal, which seems to me very good and useful.
-> >> If rules like this are forced regardless of operator's preference,
-> >> this utility may become a deadwood.
-> > 
-> > I detailed this idea in this article
-> > 
-> > http://kreijack.blogspot.com/2010/01/linux-btrfs-example-of-layout.html
-> > 
-> > BR
-> > G.Baroncelli
-> > 
-> 
-> 
-> 
-
+	With kind regard, Sander
 
 -- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+Humilis IT Services and Solutions
+http://www.humilis.net

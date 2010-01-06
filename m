@@ -1,30 +1,40 @@
-From: jim owens <jowens@hp.com>
-Subject: Re: [RFC 00/12] btrfs core patches for direct I/O
-Date: Wed, 06 Jan 2010 13:53:02 -0500
-Message-ID: <4B44DC0E.5050903@hp.com>
-References: <4B425968.4020308@hp.com> <87ocl7bgg0.fsf@basil.nowhere.org>
+From: Steve Freitas <sflist@ihonk.com>
+Subject: Re: btrfs volume mounts and dies (was Re: Segfault in btrfsck)
+Date: Wed, 06 Jan 2010 12:11:35 -0800
+Message-ID: <1262808695.6214.9.camel@phat>
+References: <1262476565.17096.20.camel@phat> <20100106075253.GA5665@cumulus>
+	 <1262793595.6214.5.camel@phat>
+	 <201001061824.37159.johannes.hirte@fem.tu-ilmenau.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Andi Kleen <andi@firstfloor.org>
+Content-Type: text/plain; charset="UTF-8"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <87ocl7bgg0.fsf@basil.nowhere.org>
+In-Reply-To: <201001061824.37159.johannes.hirte@fem.tu-ilmenau.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Andi Kleen wrote:
-> jim owens <jowens@hp.com> writes:
-> 
->> The existing core code for pagecache
->> doesn't work for directio because the existing I/O routines depend
->> on peeking inside a struct page to get the valid btrfs inode info.
->> Sorry, no can do, we don't own that page. And rewriting the whole
->> pagecache I/O stack to eliminate dependence on struct page would
->> be too scary IMO.
-> 
-> That would simply need another passed argument in a few strategic
-> places, won't it? I can't imagine it would need a full "rewrite"
+Hi Johannes,
 
-I should not have said "rewrite", it is the wrong word, and yes
-some changes in some places would be easy.
+On Wed, 2010-01-06 at 18:24 +0100, Johannes Hirte wrote:
+> Am Mittwoch 06 Januar 2010 16:59:55 schrieb Steve Freitas:
+> > Thanks for your  response. You're correct about the bad sector warning.
+> > So please correct me if I have some mistaken assumptions. I thought
+> > btrfs would be tolerant of that -- if a block failed the checksum test,
+> > it would reconstruct and remap it. 
+> Only if enough redundancy is left. And with the default setup btrfs is only 
+> mirroring the metadata not the data.
 
-jim
+Okay. What capacity does btrfs have for reconstructing data, and how do
+I enable it (if any) for a new partition? I think I've confused
+checksums with magical ponies.
+
+> Bad sectors are only remapped by the drive on write time. As long as this 
+> isn't the case, they are only marked as pending. As you have written, that 
+> SMART detected many bad blocks, I suspect the FS is really damaged. And as 
+> btrfsck is limited, I don't think it can fix this.
+
+Alright, I'll trash it and start over with a different drive.
+
+Thanks,
+
+Steve
+

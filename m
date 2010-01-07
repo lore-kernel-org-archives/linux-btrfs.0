@@ -1,36 +1,32 @@
-From: Alexander Beregalov <a.beregalov@gmail.com>
-Subject: [PATCH] btrfs: free cluster before exit
-Date: Thu,  7 Jan 2010 05:03:06 +0300
-Message-ID: <1262829786-29662-1-git-send-email-a.beregalov@gmail.com>
-Cc: linux-btrfs@vger.kernel.org,
-	Alexander Beregalov <a.beregalov@gmail.com>
-To: chris.mason@oracle.com
+From: Sander <sander@humilis.net>
+Subject: Re: btrfs volume mounts and dies (was Re: Segfault in btrfsck)
+Date: Thu, 7 Jan 2010 09:23:05 +0100
+Message-ID: <20100107082305.GA29892@cumulus>
+References: <1262476565.17096.20.camel@phat>
+ <20100106075253.GA5665@cumulus>
+ <1262793595.6214.5.camel@phat>
+ <201001061824.37159.johannes.hirte@fem.tu-ilmenau.de>
+ <1262808695.6214.9.camel@phat>
+Reply-To: sander@humilis.net
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Steve Freitas <sflist@ihonk.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1262808695.6214.9.camel@phat>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fix possible memory leak.
+Hello Steve,
 
-Signed-off-by: Alexander Beregalov <a.beregalov@gmail.com>
----
- fs/btrfs/relocation.c |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
+Steve Freitas wrote (ao):
+> Alright, I'll trash it and start over with a different drive.
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index a972868..ed3e4a2 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -3281,8 +3281,10 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 		return -ENOMEM;
- 
- 	path = btrfs_alloc_path();
--	if (!path)
-+	if (!path) {
-+		kfree(cluster);
- 		return -ENOMEM;
-+	}
- 
- 	rc->extents_found = 0;
- 	rc->extents_skipped = 0;
+With the danger of mentioning the obvious: you could do a few
+destructive badblocks runs on that disk to see if SMART keeps adding up
+to the bad blocks list.
+
+	With kind regards, Sander
+
 -- 
-1.6.6
-
+Humilis IT Services and Solutions
+http://www.humilis.net

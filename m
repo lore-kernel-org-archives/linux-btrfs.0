@@ -1,32 +1,33 @@
-From: Sander <sander@humilis.net>
-Subject: Re: btrfs volume mounts and dies (was Re: Segfault in btrfsck)
-Date: Thu, 7 Jan 2010 09:23:05 +0100
-Message-ID: <20100107082305.GA29892@cumulus>
-References: <1262476565.17096.20.camel@phat>
- <20100106075253.GA5665@cumulus>
- <1262793595.6214.5.camel@phat>
- <201001061824.37159.johannes.hirte@fem.tu-ilmenau.de>
- <1262808695.6214.9.camel@phat>
-Reply-To: sander@humilis.net
+From: Dan Carpenter <error27@gmail.com>
+Subject: [patch] btrfs: remove dead code
+Date: Thu, 7 Jan 2010 18:25:44 +0300
+Message-ID: <20100107152544.GC8134@bicker>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: Steve Freitas <sflist@ihonk.com>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1262808695.6214.9.camel@phat>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Steve,
+rb_node cannot be an ERR_PTR() here.  Both implimentations of __tree_search()
+return either a valid pointer or NULL.
 
-Steve Freitas wrote (ao):
-> Alright, I'll trash it and start over with a different drive.
+It doesn't make a runtime difference but without this patch smatch thinks that
+lookup_extent_mapping() can return an ERR_PTR().  It can wait until 2.6.34 
+obviously.
 
-With the danger of mentioning the obvious: you could do a few
-destructive badblocks runs on that disk to see if SMART keeps adding up
-to the bad blocks list.
+Signed-off-by: Dan Carpenter <error27@gmail.com>
 
-	With kind regards, Sander
-
--- 
-Humilis IT Services and Solutions
-http://www.humilis.net
+--- orig/fs/btrfs/extent_map.c	2010-01-07 10:50:30.000000000 +0300
++++ devel/fs/btrfs/extent_map.c	2010-01-07 10:50:40.000000000 +0300
+@@ -349,10 +349,6 @@ struct extent_map *lookup_extent_mapping
+ 		em = NULL;
+ 		goto out;
+ 	}
+-	if (IS_ERR(rb_node)) {
+-		em = ERR_PTR(PTR_ERR(rb_node));
+-		goto out;
+-	}
+ 	em = rb_entry(rb_node, struct extent_map, rb_node);
+ 	if (end > em->start && start < extent_map_end(em))
+ 		goto found;

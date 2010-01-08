@@ -1,49 +1,45 @@
-From: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
-Subject: Re: snapshot/subvolume removal
-Date: Fri, 08 Jan 2010 17:28:42 +0900
-Message-ID: <4B46ECBA.2030402@jp.fujitsu.com>
-References: <4B43AC9B.5030109@cs.bgu.ac.il> <4B43D9AB.1090606@jp.fujitsu.com> <4B444AD5.1060501@cs.bgu.ac.il>
+From: Simon Schubert <corecode@fs.ei.tum.de>
+Subject: btrfs development git tree
+Date: Fri, 08 Jan 2010 13:41:25 +0100
+Message-ID: <4B4727F5.1080803@fs.ei.tum.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: piavka@cs.bgu.ac.il
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="------------enig4A86491C6D276947B18D0AE4"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4B444AD5.1060501@cs.bgu.ac.il>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For now, subvolumes and snapshots look like just directories.
-If you want to distinguish them, there's only an unusual way,
-that is, analyzing with btrfs-debug-tree.
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--------------enig4A86491C6D276947B18D0AE4
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
 
-I posted patches for listing snapshots/subvolumes two months ago,
-and Josef Bacik posted its bugfix patch. This feature may be
-delivered in sooner or later.
-If you want to try it now, check these URLs.
-  http://patchwork.kernel.org/patch/60923/raw/
-  http://patchwork.kernel.org/patch/60920/raw/
-  http://patchwork.kernel.org/patch/67332/raw/
-Patches and requests are welcome.
+Hey,
 
-Regards,
-taruisi
+I apologize for this ignorant question upfront, but:
 
-(2010/01/06 17:33), Piavlo wrote:
-> TARUISI Hiroaki wrote:
->> Hi,
->>
->> We can delete snapshot with btrfsctl -D . It's available for
->> your btrfs-progs version.
-> -D works great
-> 
-> Also how can I know if some directory is subvolume or snapshot or just a
-> normal directory?
-> Is there a way to list all the existing snapshots & subvolumes under btrfs?
-> 
-> Thanks
-> Alex
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Where can I find a current btrfs git repo?  The one linked from the wiki
+(I think cmason's unstable tree) did not update in the last 3 weeks, and
+I don't think nothing happened since then.  Maybe the wiki could list
+also alternative repos from other developers?
 
+thanks
+  simon
+
+
+--------------enig4A86491C6D276947B18D0AE4
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org
+
+iEYEARECAAYFAktHJ/sACgkQr5S+dk6z85pogQCg1PG2O9HQ/9Qpjq2MkpzxqgF2
+u2kAn3ezyHsf25QYyUEuuKxnFBteCj3a
+=3lGK
+-----END PGP SIGNATURE-----
+
+--------------enig4A86491C6D276947B18D0AE4--

@@ -1,29 +1,43 @@
-From: "Michael Niederle" <mniederle@gmx.at>
-Subject: /dev/btrfs-control
-Date: Fri, 8 Jan 2010 17:37:20 +0100
-Message-ID: <20100108173720.07a6de69@simplux>
-References: <4B4727F5.1080803@fs.ei.tum.de>
+From: jim owens <jowens@hp.com>
+Subject: [RFC PATCH 00/01] Btrfs: add decompression code for direct I/O.
+Date: Fri, 08 Jan 2010 12:10:18 -0500
+Message-ID: <4B4766FA.3090004@hp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4B4727F5.1080803@fs.ei.tum.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Some btrfs-tools make use of "/dev/btrfs-control".
+The following patch has the btrfs code changes/additions needed
+to support reading compressed data in my directio code.
 
-How should I create this node? Is this a block or a character device (I suppose
-it should be a character device), which major and minor numbers should be
-assigned?
+The code always runs in process context.
 
-I do not use udev, so I have to create all device nodes "by hand" or "by
-script".
+The callbacks:
 
-I started using btrfs with the arrival of kernel 2.6.32 - no problems until
-now! :-) I'm very interested in using its snapshot feature. Currently I'm not
-able to mount a snapshot (subvolume), but this might be connected to the
-missing device-node.
+int (*get_next_in)(struct bio_vec *vec, struct btrfs_inflate *icb);
+int (*get_next_out)(struct bio_vec *vec, struct btrfs_inflate *icb);
 
-Thanks in advance for any help,
+track where we currently are in the compressed pages (get_next_in) and
+uncompressed output user pages (get_next_out).  (in) is always full pages,
+(out) may be partial pages with offsets as the user input to direct I/O is
+a set of memory vectors/lengths.
 
-Michael
+The callback:
+
+void (*done_with_out)(struct bio_vec *vec, struct btrfs_inflate *icb);
+
+is currently coded in directio as:
+
+static void btrfs_dio_done_with_out(struct bio_vec *ovec,
+				struct btrfs_inflate *icb)
+{
+	flush_dcache_page(ovec->bv_page);
+	if (!PageCompound(ovec->bv_page))
+		set_page_dirty_lock(ovec->bv_page);
+	page_cache_release(ovec->bv_page);
+}
+
+Again, this patch has no value without my directio code.
+
+jim

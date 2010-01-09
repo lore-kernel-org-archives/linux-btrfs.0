@@ -1,25 +1,43 @@
-From: Kay Sievers <kay.sievers@vrfy.org>
-Subject: Re: /dev/btrfs-control
-Date: Fri, 8 Jan 2010 19:54:30 +0100
-Message-ID: <ac3eb2511001081054t1a40aba3l41decd9063b11b9f@mail.gmail.com>
-References: <4B4727F5.1080803@fs.ei.tum.de> <20100108173720.07a6de69@simplux>
+From: Liuwenyi <qingshenlwy@gmail.com>
+Subject: Re: btrfs development git tree
+Date: Sat, 09 Jan 2010 08:57:57 +0800
+Message-ID: <4B47D495.6060402@gmail.com>
+References: <4B4727F5.1080803@fs.ei.tum.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=UTF-8;
+	format=flowed
 Cc: linux-btrfs@vger.kernel.org
-To: Michael Niederle <mniederle@gmx.at>
+To: Simon Schubert <corecode@fs.ei.tum.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100108173720.07a6de69@simplux>
+In-Reply-To: <4B4727F5.1080803@fs.ei.tum.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 8, 2010 at 17:37, Michael Niederle <mniederle@gmx.at> wrote:
-> Some btrfs-tools make use of "/dev/btrfs-control".
+=E4=BA=8E 2010-1-8 20:41, Simon Schubert =E5=86=99=E9=81=93:
+> Hey,
 >
-> How should I create this node? Is this a block or a character device (I suppose
-> it should be a character device), which major and minor numbers should be
-> assigned?
+> I apologize for this ignorant question upfront, but:
+>
+> Where can I find a current btrfs git repo?  The one linked from the w=
+iki
+> (I think cmason's unstable tree) did not update in the last 3 weeks, =
+and
+> I don't think nothing happened since then.  Maybe the wiki could list
+> also alternative repos from other developers?
+>
+> thanks
+>    simon
+>
+>   =20
 
-It's a char device node:
-  $ cat /sys/class/misc/btrfs-control/dev
-  10:62
+Maybe there is no suitable patch accepted by community.
+You can search the maillist in past 3 weeks or more and find it out.
 
-Kay
+--=20
+Best Regards,
+Liuwenyi
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

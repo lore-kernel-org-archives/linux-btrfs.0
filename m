@@ -1,81 +1,125 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Subject: Re: How to mount a subvolume?
-Date: Sat, 9 Jan 2010 21:07:37 +0100
-Message-ID: <201001092107.38133.kreijack@libero.it>
-References: <20100109150757.1051fd79@simplux>
+From: Piavlo <piavka@cs.bgu.ac.il>
+Subject: Re: snapshot/subvolume removal
+Date: Sun, 10 Jan 2010 00:01:48 +0200
+Message-ID: <4B48FCCC.9050004@cs.bgu.ac.il>
+References: <4B43AC9B.5030109@cs.bgu.ac.il> <4B43D9AB.1090606@jp.fujitsu.com> <4B444AD5.1060501@cs.bgu.ac.il> <4B46ECBA.2030402@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
+Content-Type: text/plain; charset=UTF-8
 Cc: linux-btrfs@vger.kernel.org
-To: "Dipl.-Ing. Michael Niederle" <mniederle@gmx.at>
+To: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100109150757.1051fd79@simplux>
+In-Reply-To: <4B46ECBA.2030402@jp.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Saturday 09 January 2010, Dipl.-Ing. Michael Niederle wrote:
-> First thanks alot to Kay and Goffredo!
-> 
-> But I have another question.
-> 
-> I read that the current tools cannot display subvolumes, but one should 
-still
-> be able to mount them. If I try I get an error message:
-> 
-> > mount -t btrfs -o subvol=root.2010-01-07 /dev/sda3 /save
-> mount: /dev/sda3 is not a valid block device
-> 
-> root.2010-01-07 is a snapshot of the /root-directory
-> 
-> /save is an empty directory used for mounting backups
-> 
-> taken (successfully) with the following command:
-> 
-> > btrfsctl -s root.2010-01-07 /root
-> 
-> What am I doing wrong? Isn't it possible to mount the whole filesystem and a
-> subvolume at the same time?
+TARUISI Hiroaki wrote:
+> For now, subvolumes and snapshots look like just directories.
+> If you want to distinguish them, there's only an unusual way,
+> that is, analyzing with btrfs-debug-tree.
+>
+> I posted patches for listing snapshots/subvolumes two months ago,
+> and Josef Bacik posted its bugfix patch. This feature may be
+> delivered in sooner or later.
+> If you want to try it now, check these URLs.
+>   http://patchwork.kernel.org/patch/60923/raw/
+>   http://patchwork.kernel.org/patch/60920/raw/
+>   http://patchwork.kernel.org/patch/67332/raw/
+>   
+Thanks for pointing me all the needed patched, the btrfsctl -l is
+working for me fine.
+> Patches and requests are welcome.
+>   
+Currently btrfsctl -l show only which directories are
+snapshots/subvolumes, it would be nice if it would also show
+a hierarchy of snapshots i.e. from which subvolume/snapshot a specific
+snapshot was taken from.
 
-It is possible. I do that on my machine. The magic part is that the 
-subvolume/snapshot (are the same thing) has to be under the / of the 
-filesystem.
+For example:
 
-  ghigo@arakne:/tmp$ mkdir test 
-  ghigo@arakne:/tmp$ mkdir test-snap
-  ghigo@arakne:/tmp$ sudo mount -o /dev/sdc test
-  ghigo@arakne:/tmp$ mount | grep btrfs                  
-  /dev/sdc on /tmp/test type btrfs (rw)
-  ghigo@arakne:/tmp$ cd test                    
-  ghigo@arakne:/tmp/test$ sudo mkdir a
-  ghigo@arakne:/tmp/test$ sudo btrfsctl -s a/snap-on-subdir .
-  operation complete
-  Btrfs Btrfs v0.19
-  ghigo@arakne:/tmp/test$ sudo btrfsctl -s snap-of-root .
-  operation complete
-  Btrfs Btrfs v0.19
-  ghigo@arakne:/tmp/test$ cd ..
-  ghigo@arakne:/tmp$ sudo mount -o subvol=snap-on-subdir  /dev/sdc test-snap/
-  mount: /dev/sdc is not a valid block device
-  ghigo@arakne:/tmp$ sudo mount -o subvol=snap-of-root  /dev/sdc test-snap/
-  ghigo@arakne:/tmp$ mount | grep btrfs
-  /dev/sdc on /tmp/test type btrfs (rw)
-  /dev/sdc on /tmp/test-snap type btrfs (rw,subvol=snap-of-root)
+/ # cd /.btrfs
+/.btrfs #  btrfsctl -l /.btrfs
+   Base path = /.btrfs/
+   No.     Tree ID      Subvolume Relative Path
+    1          275      rootfs-old/
+    2          277      rootfs/
+operation complete
+Btrfs v0.19-4-gab8fb4c-dirty
+/.btrfs # btrfsctl -S subvol0 .
+operation complete
+Btrfs v0.19-4-gab8fb4c-dirty
+/.btrfs #  btrfsctl -l /.btrfs/
+   Base path = /.btrfs/
+   No.     Tree ID      Subvolume Relative Path
+    1          275      rootfs-old/
+    2          277      rootfs/
+    3          279      subvol0/
+operation complete
+Btrfs v0.19-4-gab8fb4c-dirty
+/.btrfs # btrfsctl -s subvol0-snap subvol0
+operation complete
+Btrfs v0.19-4-gab8fb4c-dirty
+/.btrfs # btrfsctl -s subvol0/subvol1-snap subvol0
+operation complete
+Btrfs v0.19-4-gab8fb4c-dirty
+/.btrfs # btrfsctl -s subvol1-snap-snap subvol0/subvol1-snap
+operation complete
+Btrfs v0.19-4-gab8fb4c-dirty
+/.btrfs #  btrfsctl -l /.btrfs/
+   Base path = /.btrfs/
+   No.     Tree ID      Subvolume Relative Path
+    1          275      rootfs-old/
+    2          277      rootfs/
+    3          279      subvol0/
+    4          281      subvol0/subvol1-snap/
+    5          280      subvol0-snap/
+    6          282      subvol1-snap-snap/
+operation complete
+Btrfs v0.19-4-gab8fb4c-dirty
+/ .btrfs #                   
 
-Note:
-- both the root of the btrfs filesystem and its snapshot are mounted at the 
-same time
-- if a subvolume/snapshot not placed in the root is mounted an error is 
-returned (/dev/sdX is not a valid block device)
+It would be nice if it would possible to show the youngest snapshot
+ancestor  - something like this:
 
-> Greetings, Michael
+ /.btrfs #  btrfsctl -l /.btrfs/
+   Base path = /.btrfs/
+   No.     Tree ID      Subvolume Relative Path       Snapshot Ancestor
+    1          275      rootfs-old/                                  none
+    2          277      rootfs/                                        
+rootfs-old/
+    3          279      subvol0/                                      none
+    4          281      subvol0/subvol1-snap/                subvol0/
+    5          280      subvol0-snap/                              subvol0/
+    6          282      subvol1-snap-snap/                    
+subvol0/subvol1-snap/
+operation complete
+Btrfs v0.19-4-gab8fb4c-dirty
+/.btrfs #  btrfsctl -D subvol1-snap subvol0
+operation complete
+Btrfs v0.19-4-gab8fb4c-dirty
+/.btrfs #  btrfsctl -l .
+   Base path = /.btrfs/
+   No.     Tree ID      Subvolume Relative Path    Snapshot Ancestor
+    1          275      rootfs-old/                                none
+    2          277      rootfs/                                      
+rootfs-old/
+    3          279      subvol0/                                    none
+    4          280      subvol0-snap/                           subvol0/
+    5          282      subvol1-snap-snap/                   subvol0/
+operation complete
+Btrfs v0.19-4-gab8fb4c-dirty
+/.btrfs #  btrfsctl -D subvol0 .
+operation complete
+Btrfs v0.19-4-gab8fb4c-dirty
+/.btrfs #  btrfsctl -l .
+   Base path = /.btrfs/
+   No.     Tree ID      Subvolume Relative Path     Snapshot Origin
+    1          275      rootfs-old/                                  none
+    2          277      rootfs/                                       
+rootfs-old/
+    3          280      subvol0-snap/                            none
+    4          282      subvol1-snap-snap/                    none
+operation complete
+Btrfs v0.19-4-gab8fb4c-dirty
+/.btrfs #          
 
-Goffredo
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
-
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+Thanks
+Alex

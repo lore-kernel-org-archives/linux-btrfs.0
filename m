@@ -1,30 +1,30 @@
-From: "Dipl.-Ing. Michael Niederle" <mniederle@gmx.at>
+From: Tomasz Torcz <tomek@pipebreaker.pl>
 Subject: Re: How to mount a subvolume?
-Date: Sat, 9 Jan 2010 16:09:50 +0100
-Message-ID: <20100109160950.07b12bd8@simplux>
+Date: Sat, 9 Jan 2010 16:41:13 +0100
+Message-ID: <20100109154112.GA25080@mother.pipebreaker.pl>
 References: <20100109150757.1051fd79@simplux>
-	<201001091430.39569.dirk.heinrichs@online.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: "Dirk Heinrichs" <dirk.heinrichs@online.de>,
-	linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201001091430.39569.dirk.heinrichs@online.de>
+In-Reply-To: <20100109150757.1051fd79@simplux>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Dirk!
+On Sat, Jan 09, 2010 at 03:07:57PM +0100, Dipl.-Ing. Michael Niederle wrote:
+> I read that the current tools cannot display subvolumes, but one should still
+> be able to mount them. If I try I get an error message:
+> 
+> > mount -t btrfs -o subvol=root.2010-01-07 /dev/sda3 /save
+> mount: /dev/sda3 is not a valid block device
+> 
+> root.2010-01-07 is a snapshot of the /root-directory
+> taken (successfully) with the following command:
+> > btrfsctl -s root.2010-01-07 /root
+ 
+  Snapshots aren't subvolumes. You create mountable subvolumes with
+btrfsctl -S
 
-> Does /dev/sda3 actually exist?
+-- 
+Tomasz Torcz               RIP is irrevelant. Spoofing is futile.
+xmpp: zdzichubg@chrome.pl     Your routes will be aggreggated. -- Alex Yuriev
 
-/dev/sda3 does exist; it is an btrfs formatted partition containing my root
-file system:
-
-> mount
-...
-/dev/sda3 on / type btrfs (rw,relatime,noacl)
-...
-
-Greetings, Michael
-
-@Johannes: I will recreate the /dev/brtfs-control device node in the startup
-scripts using the information from /sys/class/misc/btrfs-control/dev - thanks!

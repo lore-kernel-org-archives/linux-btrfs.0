@@ -1,42 +1,58 @@
-From: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
+From: Adrian von Bidder <avbidder@fortytwo.ch>
 Subject: Re: snapshot/subvolume removal
-Date: Tue, 12 Jan 2010 17:04:02 +0900
-Message-ID: <4B4C2CF2.5070402@jp.fujitsu.com>
-References: <4B43AC9B.5030109@cs.bgu.ac.il> <4B43D9AB.1090606@jp.fujitsu.com> <4B444AD5.1060501@cs.bgu.ac.il> <4B46ECBA.2030402@jp.fujitsu.com> <4B48FCCC.9050004@cs.bgu.ac.il> <4B4BC6D2.6030906@jp.fujitsu.com> <4B4C1FEA.70109@cs.bgu.ac.il>
+Date: Tue, 12 Jan 2010 10:12:46 +0100
+Message-ID: <201001121012.52665@fortytwo.ch>
+References: <4B43AC9B.5030109@cs.bgu.ac.il> <4B4BC6D2.6030906@jp.fujitsu.com> <4B4C1FEA.70109@cs.bgu.ac.il>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: piavka@cs.bgu.ac.il
+Content-Type: multipart/signed;
+  boundary="nextPart2569590.3k3qMkPACN";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+Cc: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>,
+	linux-btrfs@vger.kernel.org
+To: Piavlo <piavka@cs.bgu.ac.il>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <4B4C1FEA.70109@cs.bgu.ac.il>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Yes, it's not enough reliable for all users, and it may be
-possible, but disk format may be the last point to change.
+--nextPart2569590.3k3qMkPACN
+Content-Type: Text/Plain;
+  charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
 
-If we want to change it, we need to discuss its necessity
-carefully and implement it [almost] without incompatibility.
+Hi,
 
-Regards,
-taruisi
-
-(2010/01/12 16:08), Piavlo wrote:
-> TARUISI Hiroaki wrote:
->> Thanks for your comment.
->>
->> I think your request is reasonable but because there's
->> no information about a hierachy of snapshots in filesystem,
->> we cannot know it for now.
->>
->> In future, these information may be supplied by application
->> programs which manage all snapshots or backups.
->>   
+On Tuesday 12 January 2010 08.08:26 Piavlo wrote:
 > Maintaining snapshot hierarchy by  external application is not reliable
 > and error prone
 > compared to maintaining it withing the btrfs itself,
 > probably by adding the parent treeid field for every  shapshot/subvolume.
-> 
-> Thanks
-> Alex
-> 
 
+What should, in your opinion, happen if the parent snapshot is deleted? =20
+Orphan? Re-parent to parent of parent?  I guess depending on application,=20
+there may be more than one "right" solution.
+
+cheers
+=2D- vbi
+
+=2D-=20
+When Al sends me patches, I apply them.
+I worry what would happen if I didn't.
+        -- Linus Torvalds
+
+--nextPart2569590.3k3qMkPACN
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+Comment: get my key from http://fortytwo.ch/gpg/92082481
+
+iKcEABECAGcFAktMPQ5gGmh0dHA6Ly9mb3J0eXR3by5jaC9sZWdhbC9ncGcvZW1h
+aWwuMjAwMjA4MjI/dmVyc2lvbj0xLjUmbWQ1c3VtPTVkZmY4NjhkMTE4NDMyNzYw
+NzFiMjVlYjcwMDZkYTNlAAoJECqqZti935l6bOkAoJfqzgx2NtndGLKX7Mmhq+z6
+nSeAAJ4uF0enrSAPCLYaA/vbv82SgLWstw==
+=hOJI
+-----END PGP SIGNATURE-----
+
+--nextPart2569590.3k3qMkPACN--

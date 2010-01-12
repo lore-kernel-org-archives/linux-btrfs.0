@@ -1,30 +1,27 @@
 From: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
 Subject: Re: snapshot/subvolume removal
-Date: Tue, 12 Jan 2010 09:48:18 +0900
-Message-ID: <4B4BC6D2.6030906@jp.fujitsu.com>
-References: <4B43AC9B.5030109@cs.bgu.ac.il> <4B43D9AB.1090606@jp.fujitsu.com> <4B444AD5.1060501@cs.bgu.ac.il> <4B46ECBA.2030402@jp.fujitsu.com> <4B48FCCC.9050004@cs.bgu.ac.il>
+Date: Tue, 12 Jan 2010 10:12:24 +0900
+Message-ID: <4B4BCC78.7020207@jp.fujitsu.com>
+References: <4B43AC9B.5030109@cs.bgu.ac.il> <4B43D9AB.1090606@jp.fujitsu.com> <4B444AD5.1060501@cs.bgu.ac.il> <4B46ECBA.2030402@jp.fujitsu.com> <20100110201812.GB32195@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: piavka@cs.bgu.ac.il
+Content-Type: text/plain; charset=ISO-8859-1
+To: chris.mason@oracle.com, piavka@cs.bgu.ac.il,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4B48FCCC.9050004@cs.bgu.ac.il>
+In-Reply-To: <20100110201812.GB32195@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for your comment.
+Thanks for reply and changing.
 
-I think your request is reasonable but because there's
-no information about a hierachy of snapshots in filesystem,
-we cannot know it for now.
-
-In future, these information may be supplied by application
-programs which manage all snapshots or backups.
+I planned one more patch to list up all subvolumes
+under fs tree. This must be useful in case of
+mounting with subvol parameter.
 
 Regards,
 taruisi
 
-(2010/01/10 07:01), Piavlo wrote:
-> TARUISI Hiroaki wrote:
+(2010/01/11 5:18), Chris Mason wrote:
+> On Fri, Jan 08, 2010 at 05:28:42PM +0900, TARUISI Hiroaki wrote:
 >> For now, subvolumes and snapshots look like just directories.
 >> If you want to distinguish them, there's only an unusual way,
 >> that is, analyzing with btrfs-debug-tree.
@@ -33,107 +30,24 @@ taruisi
 >> and Josef Bacik posted its bugfix patch. This feature may be
 >> delivered in sooner or later.
 >> If you want to try it now, check these URLs.
->>    http://patchwork.kernel.org/patch/60923/raw/
->>    http://patchwork.kernel.org/patch/60920/raw/
->>    http://patchwork.kernel.org/patch/67332/raw/
->>
-> Thanks for pointing me all the needed patched, the btrfsctl -l is
-> working for me fine.
+>>   http://patchwork.kernel.org/patch/60923/raw/
+>>   http://patchwork.kernel.org/patch/60920/raw/
+>>   http://patchwork.kernel.org/patch/67332/raw/
 >> Patches and requests are welcome.
->>
-> Currently btrfsctl -l show only which directories are
-> snapshots/subvolumes, it would be nice if it would also show
-> a hierarchy of snapshots i.e. from which subvolume/snapshot a specific
-> snapshot was taken from.
->
-> For example:
->
-> / # cd /.btrfs
-> /.btrfs #  btrfsctl -l /.btrfs
->     Base path = /.btrfs/
->     No.     Tree ID      Subvolume Relative Path
->      1          275      rootfs-old/
->      2          277      rootfs/
-> operation complete
-> Btrfs v0.19-4-gab8fb4c-dirty
-> /.btrfs # btrfsctl -S subvol0 .
-> operation complete
-> Btrfs v0.19-4-gab8fb4c-dirty
-> /.btrfs #  btrfsctl -l /.btrfs/
->     Base path = /.btrfs/
->     No.     Tree ID      Subvolume Relative Path
->      1          275      rootfs-old/
->      2          277      rootfs/
->      3          279      subvol0/
-> operation complete
-> Btrfs v0.19-4-gab8fb4c-dirty
-> /.btrfs # btrfsctl -s subvol0-snap subvol0
-> operation complete
-> Btrfs v0.19-4-gab8fb4c-dirty
-> /.btrfs # btrfsctl -s subvol0/subvol1-snap subvol0
-> operation complete
-> Btrfs v0.19-4-gab8fb4c-dirty
-> /.btrfs # btrfsctl -s subvol1-snap-snap subvol0/subvol1-snap
-> operation complete
-> Btrfs v0.19-4-gab8fb4c-dirty
-> /.btrfs #  btrfsctl -l /.btrfs/
->     Base path = /.btrfs/
->     No.     Tree ID      Subvolume Relative Path
->      1          275      rootfs-old/
->      2          277      rootfs/
->      3          279      subvol0/
->      4          281      subvol0/subvol1-snap/
->      5          280      subvol0-snap/
->      6          282      subvol1-snap-snap/
-> operation complete
-> Btrfs v0.19-4-gab8fb4c-dirty
-> / .btrfs #
->
-> It would be nice if it would possible to show the youngest snapshot
-> ancestor  - something like this:
->
->   /.btrfs #  btrfsctl -l /.btrfs/
->     Base path = /.btrfs/
->     No.     Tree ID      Subvolume Relative Path       Snapshot Ancestor
->      1          275      rootfs-old/                                  none
->      2          277      rootfs/
-> rootfs-old/
->      3          279      subvol0/                                      none
->      4          281      subvol0/subvol1-snap/                subvol0/
->      5          280      subvol0-snap/                              subvol0/
->      6          282      subvol1-snap-snap/
-> subvol0/subvol1-snap/
-> operation complete
-> Btrfs v0.19-4-gab8fb4c-dirty
-> /.btrfs #  btrfsctl -D subvol1-snap subvol0
-> operation complete
-> Btrfs v0.19-4-gab8fb4c-dirty
-> /.btrfs #  btrfsctl -l .
->     Base path = /.btrfs/
->     No.     Tree ID      Subvolume Relative Path    Snapshot Ancestor
->      1          275      rootfs-old/                                none
->      2          277      rootfs/
-> rootfs-old/
->      3          279      subvol0/                                    none
->      4          280      subvol0-snap/                           subvol0/
->      5          282      subvol1-snap-snap/                   subvol0/
-> operation complete
-> Btrfs v0.19-4-gab8fb4c-dirty
-> /.btrfs #  btrfsctl -D subvol0 .
-> operation complete
-> Btrfs v0.19-4-gab8fb4c-dirty
-> /.btrfs #  btrfsctl -l .
->     Base path = /.btrfs/
->     No.     Tree ID      Subvolume Relative Path     Snapshot Origin
->      1          275      rootfs-old/                                  none
->      2          277      rootfs/
-> rootfs-old/
->      3          280      subvol0-snap/                            none
->      4          282      subvol1-snap-snap/                    none
-> operation complete
-> Btrfs v0.19-4-gab8fb4c-dirty
-> /.btrfs #
->
-> Thanks
-> Alex
+> 
+> Thanks again for the subvolume listing patch, it's going to be a great
+> feature.
+> 
+> I'm afraid I've had to make some small changes.  ioctls have
+> some very strict rules for the arguments, and pointers and list heads
+> should not be passed in ioctl structs.
+> 
+> We also need to change the patch to make the ioct args struct the same
+> size on both 32 bit and 64 bit machines, which usually just means
+> aligning and padding the fields as required.
+> 
+> I have started on this and hope to finish it on Tuesday.  But if you
+> have any additions to the patch please let me know.
+> 
+> -chris
 

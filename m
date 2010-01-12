@@ -1,41 +1,28 @@
-From: "Dipl.-Ing. Michael Niederle" <mniederle@gmx.at>
-Subject: btrfsctl -s returns 1
-Date: Tue, 12 Jan 2010 20:08:51 +0100
-Message-ID: <20100112200851.4c44b75b@simplux>
+From: Sage Weil <sage@newdream.net>
+Subject: snapshot creation
+Date: Tue, 12 Jan 2010 11:24:39 -0800 (PST)
+Message-ID: <Pine.LNX.4.64.1001121116250.2394@cobra.newdream.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: linux-btrfs@vger.kernel.org
+To: chris.mason@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I wrote a script generating snapshots of several subvolumes. But the script
-failed after taking the first snapshot.
+Hi Chris,
 
-I then did it by hand:
+What is the motivation behind the two phases of snapshot creation 
+(create_pending_snapshot, finish_pending_snapshot)?  Is it just to avoid 
+putting a reference to the snap subvol inside the snapped version of the 
+subvol (forming a loop)?
 
-> btrfsctl -s /.backups/2010-01-12.1/home /home
-operation complete
-Btrfs v0.19-4-gab8fb4c
-> echo $?
-1
+If that's the case, I think the problem can be solved in other ways (by 
+not following the subvol link if it loops to self, or by also delaying the 
+root creation to avoid leaking an unreferenced root).  And the rest of the 
+time (when the link is outside the linked-to subvol) committing the root 
+and it's reference in one commit.
 
-Usually commands return 0 if everything went ok (and it seems that the snapshot
-was taken correctly).
+Unless I'm missing something else?
 
-Has the returned "1" some special meaning?
-
-------
-
-Another, minor issue:
-
-Mayby my manual is out of date. It tells me
-
-> man btrfsctl
-...
-       -s snapshot-name directory
-              Creates a new snapshot of the directory specified.
-...
-
-but as I learned one can only take a snapshot of a subvolume.
-
-Greetings, Michael
+Thanks-
+sage

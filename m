@@ -1,38 +1,41 @@
-From: jim owens <jowens@hp.com>
-Subject: Re: Metadata Duplication on a Single Disk Btrfs Setup
-Date: Tue, 12 Jan 2010 13:27:52 -0500
-Message-ID: <4B4CBF28.6010602@hp.com>
-References: <26a1f7961001121008u2d55eacobf2efd7a8ad39c7c@mail.gmail.com>
+From: "Dipl.-Ing. Michael Niederle" <mniederle@gmx.at>
+Subject: btrfsctl -s returns 1
+Date: Tue, 12 Jan 2010 20:08:51 +0100
+Message-ID: <20100112200851.4c44b75b@simplux>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <26a1f7961001121008u2d55eacobf2efd7a8ad39c7c@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Mitch Harder wrote:
-> On a single disk btrfs setup, such as for a desktop computer, what are
-> the implecations of creating your btrfs partition with '-m single'?
-> 
-> At first, I assumed I would want a single disk desktop setup to be
-> configured as 'single'.  But that may not be the case for metadata.
-> 
-> I see that the default is for metadata duplication in a single disk scenario.
-> 
-> Is duplication of the metadata important for recovery from common
-> desktop user problems such as power interruption?
+I wrote a script generating snapshots of several subvolumes. But the script
+failed after taking the first snapshot.
 
-Duplication of metadata protects against unreadable disk blocks
-or disk blocks that have garbage written in them. Power interruption
-can cause that in rare cases (and on some hardware not so rare).
+I then did it by hand:
 
-The more usual power loss issue is incomplete or stale data.  Even
-single metadata mode should protect from that.
+> btrfsctl -s /.backups/2010-01-12.1/home /home
+operation complete
+Btrfs v0.19-4-gab8fb4c
+> echo $?
+1
 
-So the short answer is it provides some additional protection
-at the expense of more space used.  How much you need that extra
-protection depends on your hardware, power reliability, and how
-valuable your data is.
+Usually commands return 0 if everything went ok (and it seems that the snapshot
+was taken correctly).
 
-jim
+Has the returned "1" some special meaning?
+
+------
+
+Another, minor issue:
+
+Mayby my manual is out of date. It tells me
+
+> man btrfsctl
+...
+       -s snapshot-name directory
+              Creates a new snapshot of the directory specified.
+...
+
+but as I learned one can only take a snapshot of a subvolume.
+
+Greetings, Michael

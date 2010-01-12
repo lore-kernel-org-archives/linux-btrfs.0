@@ -1,46 +1,20 @@
-From: Piavlo <piavka@cs.bgu.ac.il>
-Subject: Re: snapshot/subvolume removal
-Date: Tue, 12 Jan 2010 13:03:53 +0200
-Message-ID: <4B4C5719.7020406@cs.bgu.ac.il>
-References: <4B43AC9B.5030109@cs.bgu.ac.il> <4B4BC6D2.6030906@jp.fujitsu.com> <4B4C1FEA.70109@cs.bgu.ac.il> <201001121012.52665@fortytwo.ch>
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: Metadata Duplication on a Single Disk Btrfs Setup
+Date: Tue, 12 Jan 2010 12:08:19 -0600
+Message-ID: <26a1f7961001121008u2d55eacobf2efd7a8ad39c7c@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>,
-	linux-btrfs@vger.kernel.org
-To: Adrian von Bidder <avbidder@fortytwo.ch>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201001121012.52665@fortytwo.ch>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Adrian von Bidder wrote:
-> Hi,
->
-> On Tuesday 12 January 2010 08.08:26 Piavlo wrote:
->   
->> Maintaining snapshot hierarchy by  external application is not reliable
->> and error prone
->> compared to maintaining it withing the btrfs itself,
->> probably by adding the parent treeid field for every  shapshot/subvolume.
->>     
->
-> What should, in your opinion, happen if the parent snapshot is deleted?  
-> Orphan? Re-parent to parent of parent?
-Re-parent to parent of parent.
-And if there is no grandparent then  point to itself (like with root
-directory).
-This hierarchy should be tracked/modifed within same subvolume only - so
-each subvolume has it's own snapshots hierarchy.
-This would allow, for example, easy rollback of most recent subvolume
-state to previous states (probably with btrfsctl)  without maintaining
-snapshots hierarchy state in userspace applications.
+On a single disk btrfs setup, such as for a desktop computer, what are
+the implecations of creating your btrfs partition with '-m single'?
 
- Thanks
-  Alex
->   I guess depending on application, 
-> there may be more than one "right" solution.
->
-> cheers
-> -- vbi
->
->   
+At first, I assumed I would want a single disk desktop setup to be
+configured as 'single'.  But that may not be the case for metadata.
 
+I see that the default is for metadata duplication in a single disk scenario.
+
+Is duplication of the metadata important for recovery from common
+desktop user problems such as power interruption?

@@ -1,61 +1,51 @@
-From: Tomas Carnecky <tomas.carnecky@gmail.com>
-Subject: Script for easier handling of subvolumes/snapshots
-Date: Tue, 12 Jan 2010 02:12:08 +0100
-Message-ID: <4B4BCC68.4060006@gmail.com>
+From: "Michael Niederle" <mniederle@gmx.at>
+Subject: snapshots of directories
+Date: Tue, 12 Jan 2010 03:12:43 +0100
+Message-ID: <20100112031243.09e072b0@simplux>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I just wrote this litte scrip to help me create/list/restore/destroy 
-subvolumes and snapshots. It is a really simple bash script that uses 
-the btrfsctl commandline utility. Here is a transcript of a short session:
+I try to take a snapshot of a single directory, e.g. root:
 
-$ ./bsu.sh create /pool/subvol
-$ echo 1 > /pool/subvol/file
-$ sync
-$ ./bsu.sh create /pool/subvol@snapshot
-$ echo 2 > /pool/subvol/file
-$ sync
-$ ./bsu.sh create /pool/subvol@snapshot2
-$ ./bsu.sh list /pool/subvol
-    snapshot
-    snapshot2
-$ ./bsu.sh restore /pool/subvol@snapshot
-$ cat /pool/subvol/file
-1
-$ ./bsu.sh list /pool/subvol
-    snapshot
-    snapshot2
-$ ./bsu.sh destroy /pool/subvol@snapshot
-$ ./bsu.sh destroy /pool/subvol@snapshot2
-$ ./bsu.sh destroy /pool/subvol
+> btrfsctl -s root.2010-01-12 /root
+operation complete
+Btrfs v0.19-4-gab8fb4c-dirty
 
-How it works: subvolumes are created as usual, snapshots are created in 
-a separate subvolume which is saved as .btrfs in the original subvolume. 
-Because the snapshots are kept separate, reverting to an earlier 
-snapshot doesn't destroy newer snapshots.
+Then I take look what's inside the newly created snapshot:
 
-The script can create nested subvolumes and snapshots of those, but 
-unfortunately snapshots don't preserve subvolumes which are contained 
-within the original filesystem:
+> ls -l /root.2010-01-12/
+total 0
+drwxr-xr-x 1 root root 1192 2010-01-03 20:32:12 bin
+drwxr-xr-x 1 root root   76 2009-06-25  0:40:35 boot
+drwxr-xr-x 1 root root 1756 2010-01-12  2:33:07 cmds
+drwxr-xr-x 1 root root    0 2010-01-06 12:21:46 data
+drwxr-xr-x 1 root root 4356 2010-01-12  2:07:00 dev
+drwxr-xr-x 1 root root   42 2010-01-04 12:29:45 downloads
+drwxr-xr-x 1 root root 4528 2010-01-12  2:12:12 etc
+drwxr-xr-x 1 root root   52 2010-01-11 12:57:47 home
+drwxr-xr-x 1 root root    0 2007-11-10  4:44:07 initrd
+drwxr-xr-x 1 root root 4490 2010-01-05 20:15:53 lib
+drwxr-xr-x 1 root root  124 2008-04-27 14:53:39 mnt
+drwxr-xr-x 1 root root   62 2008-01-08  0:21:58 net
+drwxr-xr-x 1 root root    0 2008-04-09  3:19:16 objects
+drwxr-xr-x 1 root root  316 2009-12-28 23:23:13 opt
+dr-xr-xr-x 1 root root    0 2007-11-10  3:35:28 proc
+drwxr-xr-x 1 root root 7676 2010-01-11  0:35:41 root
+drwxr-xr-x 1 root root    0 2010-01-12  1:56:17 save
+drwxr-xr-x 1 root root    0 2010-01-12  1:55:58 save2
+drwxr-xr-x 1 root root 3804 2010-01-06  2:36:08 sbin
+drwxr-xr-x 1 root root    0 2007-11-10  3:35:28 sys
+drwxr-xr-x 1 root root  358 2010-01-11 18:44:29 tmp
+drwxr-xr-x 1 root root  176 2009-12-29 17:08:37 usr
+drwxr-xr-x 1 root root   72 2010-01-05 20:03:00 var
 
-/pool/foo # <- subvol
-/pool/foo/bar # <- subvol
-btrfsctl -s copy /pool/foo
-# /pool/copy/bar is a normal directory, not a subvolume and can be 
-deleted with a simple 'rmdir'
+It seems that always a snapshot of the root is taken instead one of the
+specified directory? Is this by design?
 
-I don't know if that is a bug or btrfs working as intended. Either way, 
-don't use my script to create such nested subvolumes. It might or might 
-not badly break and delete all your data.
+Snapshotting the root works fine, but if you take several snapshots it's a bit
+"recursive", because every new snapshot contains all previous snapshots.
 
-A shell script can only do so much, so if it were to be extended, it 
-would probably be worth investigating if rewriting it in C is viable. I 
-think especially handling the recursive features would be easier from C.
-
-The script is available in my btrfs-tools repository on github:
-http://github.com/wereHamster/btrfs-tools
-
-tom
+Greetings, Michael

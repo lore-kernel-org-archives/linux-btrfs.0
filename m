@@ -1,75 +1,36 @@
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: Re: Metadata Duplication on a Single Disk Btrfs Setup
-Date: Wed, 13 Jan 2010 16:17:35 -0600
-Message-ID: <26a1f7961001131417h6ecbe5b6lfe4b19a2185b6b6a@mail.gmail.com>
-References: <26a1f7961001121008u2d55eacobf2efd7a8ad39c7c@mail.gmail.com>
-	 <4B4CBF28.6010602@hp.com>
+From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Subject: Re: task imap:2958 blocked for more than 120 seconds
+Date: Wed, 13 Jan 2010 23:37:33 +0100
+Message-ID: <201001132337.34909.johannes.hirte@fem.tu-ilmenau.de>
+References: <201001102105.47192.johannes.hirte@fem.tu-ilmenau.de> <20100110201926.GC32195@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: jim owens <jowens@hp.com>, linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4B4CBF28.6010602@hp.com>
+In-Reply-To: <20100110201926.GC32195@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 12, 2010 at 12:27 PM, jim owens <jowens@hp.com> wrote:
-> Mitch Harder wrote:
->> On a single disk btrfs setup, such as for a desktop computer, what a=
-re
->> the implecations of creating your btrfs partition with '-m single'?
->>
->> At first, I assumed I would want a single disk desktop setup to be
->> configured as 'single'. =A0But that may not be the case for metadata=
-=2E
->>
->> I see that the default is for metadata duplication in a single disk =
-scenario.
->>
->> Is duplication of the metadata important for recovery from common
->> desktop user problems such as power interruption?
->
-> Duplication of metadata protects against unreadable disk blocks
-> or disk blocks that have garbage written in them. Power interruption
-> can cause that in rare cases (and on some hardware not so rare).
->
-> The more usual power loss issue is incomplete or stale data. =A0Even
-> single metadata mode should protect from that.
->
-> So the short answer is it provides some additional protection
-> at the expense of more space used. =A0How much you need that extra
-> protection depends on your hardware, power reliability, and how
-> valuable your data is.
->
-> jim
->
+Am Sonntag 10 Januar 2010 21:19:26 schrieb Chris Mason:
+> On Sun, Jan 10, 2010 at 09:05:46PM +0100, Johannes Hirte wrote:
+> > I've observed this hanging task now several times. Not sure when this
+> > started, but 2.6.32 is affected too, IIRC. I don't have a test pattern
+> > for this. Dovecot imap triggers this from time to time. I've enabled
+> > CONFIG_DETECT_HUNG_TASK now
+> 
+> > and got this two tasks which hang:
+> You're stuck on a read, could you please do a sysrq-w when this happens?
 
-To satisfy my curiosity, I did a series of kernel compilation
-comparisons on freshly formatted partitions with and without '-m
-single -d single', and with and without compression.  I also added in
-a control run on the same partition with default ext4 formatting.
+Will do so when it happens again.
 
-I did not see much difference between the disk usage when disabling
-metadata duplication.
+> Also, do you eventually recover or are you stuck forever?
 
-I was also surprised to see so little difference in compile time
-between the different cases.  I guess most of the files remained in
-cache.
+I didn't wait too long when it happened, so I'm not sure.  The longest time 
+I've waited was 20-30min, until reboot without recover. So either it's stuck 
+forever or it takes really long to recover.
 
-Here's a summary of my results:
+And one question I have: How do you identify a read in this call trace? 
 
-Case #1: Ext4 control case
-Case #2: Btrfs (mkfs defaults, no compression)
-Case #3: Btrfs (Single metadata (& data), no compression)
-Case #4: Btrfs (mkfs defaults, with compression)
-Case #5: Btrfs (Single metadata (& data), with compression)
-
-Case          (time make -j3)     1k blocks Used
-Case #1        24m45.857s           1370140
-Case #2        24m49.270s           1182080
-Case #3        24m47.637s           1181932
-Case #4        24m54.318s            477592
-Case #5        24m54.720s            477744
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+regards,
+  Johannes

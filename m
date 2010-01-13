@@ -1,55 +1,155 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: snapshot creation
-Date: Wed, 13 Jan 2010 09:44:02 -0500
-Message-ID: <20100113144402.GN14979@think>
-References: <Pine.LNX.4.64.1001121116250.2394@cobra.newdream.net>
- <20100112202550.GF14979@think>
- <Pine.LNX.4.64.1001121241050.2394@cobra.newdream.net>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH] Btrfs: add a "df" ioctl for btrfs
+Date: Wed, 13 Jan 2010 13:19:06 -0500
+Message-ID: <20100113181905.GA2774@dhcp231-156.rdu.redhat.com>
+References: <20100112202513.GA13414@localhost.localdomain> <20100113143100.GM14979@think>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Sage Weil <sage@newdream.net>
+To: Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <Pine.LNX.4.64.1001121241050.2394@cobra.newdream.net>
+In-Reply-To: <20100113143100.GM14979@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 12, 2010 at 12:47:22PM -0800, Sage Weil wrote:
-> On Tue, 12 Jan 2010, Chris Mason wrote:
-> 
-> > On Tue, Jan 12, 2010 at 11:24:39AM -0800, Sage Weil wrote:
-> > > Hi Chris,
-> > > 
-> > > What is the motivation behind the two phases of snapshot creation 
-> > > (create_pending_snapshot, finish_pending_snapshot)?  Is it just to avoid 
-> > > putting a reference to the snap subvol inside the snapped version of the 
-> > > subvol (forming a loop)?
-> > > 
-> > > If that's the case, I think the problem can be solved in other ways (by 
-> > > not following the subvol link if it loops to self, or by also delaying the 
-> > > root creation to avoid leaking an unreferenced root).  And the rest of the 
-> > > time (when the link is outside the linked-to subvol) committing the root 
-> > > and it's reference in one commit.
-> > > 
-> > > Unless I'm missing something else?
+On Wed, Jan 13, 2010 at 09:31:00AM -0500, Chris Mason wrote:
+> On Tue, Jan 12, 2010 at 03:25:13PM -0500, Josef Bacik wrote:
+> > df is a very loaded question in btrfs.  This gives us a way to get the per-space
+> > usage information so we can tell exactly what is in use where.  This will help
+> > us figure out ENOSPC problems, and help users better understand where their disk
+> > space is going.
 > > 
-> > Part of the problem is that we want to make sure we have a consistent
-> > view of a given root.  So if we tell snapshot abc to point to a specific
-> > root block, the reference that gets taken and all the cow rules get
-> > complex in a hurry.
-> > 
-> > I'm guessing that you want to do snapshot creation without forcing a
-> > commit?
+> > diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+> > index 9e5074c..850e0ee 100644
+> > --- a/fs/btrfs/ioctl.h
+> > +++ b/fs/btrfs/ioctl.h
+> > @@ -54,6 +54,18 @@ struct btrfs_ioctl_subvol_leaf {
+> >  	struct btrfs_ioctl_subvol_items items[];
+> >  };
+> >  
+> > +struct btrfs_ioctl_space_info {
+> > +	u32 flags;
+> > +	u64 total_bytes;
+> > +	u64 used_bytes;
+> > +};
 > 
-> Actually I just want the snapshot AND the reference to it to commit at 
-> once.  (Currently, you create a snap, a commit happens, and then you still 
-> need to sync one more time or it can get orphaned.)  I posted a patch a 
-> few weeks back that did that, but it wasn't clear to me why the snapshot 
-> link was delayed in the first place.  If it's loop avoidance, maybe we can 
-> at least avoid that in the case where the reference isn't in the same root 
-> it refers to...
+> Could you please bump that u32 to a u64?
+> 
 
-Ok, it's not loop avoidance, its just keeping the whole tree consistent.
-I'll pick up the patch from you.
+Here you are, sorry about that.  Thanks,
 
--chris
+Josef
+
+
+>From 6c486aea6268c2e214ba3c73cb2bb1422335c84b Mon Sep 17 00:00:00 2001
+From: Josef Bacik <josef@redhat.com>
+Date: Wed, 13 Jan 2010 13:02:59 -0500
+Subject: [PATCH] Btrfs: add a "df" ioctl for btrfs
+
+df is a very loaded question in btrfs.  This gives us a way to get the per-space
+usage information so we can tell exactly what is in use where.  This will help
+us figure out ENOSPC problems, and help users better understand where their disk
+space is going.
+
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/ioctl.c |   45 +++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/ioctl.h |   15 ++++++++++++++-
+ 2 files changed, 59 insertions(+), 1 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 9070b86..7405e42 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1623,6 +1623,49 @@ static long btrfs_ioctl_default_subvol(struct file *file, void __user *argp)
+ 	return 0;
+ }
+ 
++long btrfs_ioctl_space_info(struct btrfs_root *root, void __user *arg)
++{
++	struct btrfs_ioctl_space_args space_args;
++	struct btrfs_ioctl_space_info space;
++	struct btrfs_ioctl_space_info *dest;
++	struct btrfs_space_info *info;
++	int ret = 0;
++
++	if (copy_from_user(&space_args,
++			   (struct btrfs_ioctl_space_args __user *)arg,
++			   sizeof(space_args)))
++		return -EFAULT;
++
++	space_args.total_spaces = 0;
++	dest = (struct btrfs_ioctl_space_info *)
++		(arg + sizeof(struct btrfs_ioctl_space_args));
++
++	rcu_read_lock();
++	list_for_each_entry_rcu(info, &root->fs_info->space_info, list) {
++		if (!space_args.space_slots) {
++			space_args.total_spaces++;
++			continue;
++		}
++		if (space_args.total_spaces >= space_args.space_slots)
++			break;
++		space.flags = info->flags;
++		space.total_bytes = info->total_bytes;
++		space.used_bytes = info->bytes_used;
++		if (copy_to_user(dest, &space, sizeof(space))) {
++			ret = -EFAULT;
++			break;
++		}
++		dest++;
++		space_args.total_spaces++;
++	}
++	rcu_read_unlock();
++
++	if (copy_to_user(arg, &space_args, sizeof(space_args)))
++		ret = -EFAULT;
++
++	return ret;
++}
++
+ /*
+  * there are many ways the trans_start and trans_end ioctls can lead
+  * to deadlocks.  They should only be used by applications that
+@@ -1691,6 +1734,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		return btrfs_ioctl_trans_end(file);
+ 	case BTRFS_IOC_SNAP_LISTING:
+ 		return btrfs_ioctl_snap_listing(file, argp);
++	case BTRFS_IOC_SPACE_INFO:
++		return btrfs_ioctl_space_info(root, argp);
+ 	case BTRFS_IOC_SYNC:
+ 		btrfs_sync_fs(file->f_dentry->d_sb, 1);
+ 		return 0;
+diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+index 9e5074c..d5a8e7a 100644
+--- a/fs/btrfs/ioctl.h
++++ b/fs/btrfs/ioctl.h
+@@ -54,6 +54,18 @@ struct btrfs_ioctl_subvol_leaf {
+ 	struct btrfs_ioctl_subvol_items items[];
+ };
+ 
++struct btrfs_ioctl_space_info {
++	u64 flags;
++	u64 total_bytes;
++	u64 used_bytes;
++};
++
++struct btrfs_ioctl_space_args {
++	u64 space_slots;
++	u64 total_spaces;
++	struct btrfs_ioctl_space_info spaces[0];
++};
++
+ #define BTRFS_SUBVOL_LEAF_SIZE_MIN sizeof(struct btrfs_ioctl_subvol_leaf) + \
+ 	sizeof(struct btrfs_ioctl_subvol_items)
+ 
+@@ -97,5 +109,6 @@ struct btrfs_ioctl_clone_range_args {
+ #define BTRFS_IOC_SNAP_LISTING _IOWR(BTRFS_IOCTL_MAGIC, 16, \
+ 				   struct btrfs_ioctl_subvol_args)
+ #define BTRFS_IOC_DEFAULT_SUBVOL _IOW(BTRFS_IOCTL_MAGIC, 17, u64)
+-
++#define BTRFS_IOC_SPACE_INFO _IOWR(BTRFS_IOCTL_MAGIC, 18, \
++				    struct btrfs_ioctl_space_args)
+ #endif
+-- 
+1.5.4.3
 

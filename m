@@ -1,129 +1,167 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] Btrfs: add a "df" ioctl for btrfs
-Date: Wed, 13 Jan 2010 13:19:06 -0500
-Message-ID: <20100113181905.GA2774@dhcp231-156.rdu.redhat.com>
-References: <20100112202513.GA13414@localhost.localdomain> <20100113143100.GM14979@think>
+Subject: Re: [PATCH] Btrfs-progs: add btrfsctl -i to print space info
+Date: Wed, 13 Jan 2010 13:21:23 -0500
+Message-ID: <20100113182123.GB2774@dhcp231-156.rdu.redhat.com>
+References: <20100112203157.GB13414@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100113143100.GM14979@think>
+In-Reply-To: <20100112203157.GB13414@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 13, 2010 at 09:31:00AM -0500, Chris Mason wrote:
-> On Tue, Jan 12, 2010 at 03:25:13PM -0500, Josef Bacik wrote:
-> > df is a very loaded question in btrfs.  This gives us a way to get the per-space
-> > usage information so we can tell exactly what is in use where.  This will help
-> > us figure out ENOSPC problems, and help users better understand where their disk
-> > space is going.
-> > 
-> > diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-> > index 9e5074c..850e0ee 100644
-> > --- a/fs/btrfs/ioctl.h
-> > +++ b/fs/btrfs/ioctl.h
-> > @@ -54,6 +54,18 @@ struct btrfs_ioctl_subvol_leaf {
-> >  	struct btrfs_ioctl_subvol_items items[];
-> >  };
-> >  
-> > +struct btrfs_ioctl_space_info {
-> > +	u32 flags;
-> > +	u64 total_bytes;
-> > +	u64 used_bytes;
-> > +};
-> 
-> Could you please bump that u32 to a u64?
+On Tue, Jan 12, 2010 at 03:31:57PM -0500, Josef Bacik wrote:
+> This goes along with the new space info ioctl.  This will spit out the space
+> info all nice and pretty with the type, it's flags (DUP, RAID) and how much
+> space is in that group and how much is in use.  Thanks,
 > 
 
-Here you are, sorry about that.  Thanks,
+Here is an updated patch with u64 flags.  Thanks,
 
 Josef
 
 
->From 6c486aea6268c2e214ba3c73cb2bb1422335c84b Mon Sep 17 00:00:00 2001
+>From 8cb701c685ca1c3285f916c92564d6e966c614f9 Mon Sep 17 00:00:00 2001
 From: Josef Bacik <josef@redhat.com>
-Date: Wed, 13 Jan 2010 13:02:59 -0500
-Subject: [PATCH] Btrfs: add a "df" ioctl for btrfs
+Date: Wed, 13 Jan 2010 13:06:06 -0500
+Subject: [PATCH] Btrfs-progs: add btrfsctl -i to print space info
 
-df is a very loaded question in btrfs.  This gives us a way to get the per-space
-usage information so we can tell exactly what is in use where.  This will help
-us figure out ENOSPC problems, and help users better understand where their disk
-space is going.
+This goes along with the new space info ioctl.  This will spit out the space
+info all nice and pretty with the type, it's flags (DUP, RAID) and how much
+space is in that group and how much is in use.  Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/ioctl.c |   45 +++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/ioctl.h |   15 ++++++++++++++-
- 2 files changed, 59 insertions(+), 1 deletions(-)
+ btrfsctl.c |   88 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ ioctl.h    |   15 +++++++++-
+ 2 files changed, 102 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 9070b86..7405e42 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1623,6 +1623,49 @@ static long btrfs_ioctl_default_subvol(struct file *file, void __user *argp)
+diff --git a/btrfsctl.c b/btrfsctl.c
+index 81d2a30..4a516fd 100644
+--- a/btrfsctl.c
++++ b/btrfsctl.c
+@@ -61,6 +61,8 @@ static void print_usage(void)
+ 	printf("\t-l file: listing snapshot/subvolume under a subvolume\n");
+ 	printf("\t-m [tree id] directory: set the default mounted subvolume"
+ 	       " to the [tree id] or the directory\n");
++	printf("\t-i dir: print out detailed space usage information on the"
++	       " volume\n");
+ 	printf("%s\n", BTRFS_BUILD_VERSION);
+ 	exit(1);
+ }
+@@ -213,6 +215,88 @@ int btrfs_show_subvolume(struct list_head *list_top, char *path,
  	return 0;
  }
  
-+long btrfs_ioctl_space_info(struct btrfs_root *root, void __user *arg)
++int btrfs_print_space_info(int fd)
 +{
-+	struct btrfs_ioctl_space_args space_args;
-+	struct btrfs_ioctl_space_info space;
-+	struct btrfs_ioctl_space_info *dest;
-+	struct btrfs_space_info *info;
-+	int ret = 0;
++	struct btrfs_ioctl_space_args *sargs;
++	u64 count = 0, i;
++	int ret;
 +
-+	if (copy_from_user(&space_args,
-+			   (struct btrfs_ioctl_space_args __user *)arg,
-+			   sizeof(space_args)))
-+		return -EFAULT;
++	sargs = malloc(sizeof(struct btrfs_ioctl_space_args));
++	if (!sargs)
++		return -ENOMEM;
 +
-+	space_args.total_spaces = 0;
-+	dest = (struct btrfs_ioctl_space_info *)
-+		(arg + sizeof(struct btrfs_ioctl_space_args));
++	sargs->space_slots = 0;
++	sargs->total_spaces = 0;
 +
-+	rcu_read_lock();
-+	list_for_each_entry_rcu(info, &root->fs_info->space_info, list) {
-+		if (!space_args.space_slots) {
-+			space_args.total_spaces++;
-+			continue;
-+		}
-+		if (space_args.total_spaces >= space_args.space_slots)
-+			break;
-+		space.flags = info->flags;
-+		space.total_bytes = info->total_bytes;
-+		space.used_bytes = info->bytes_used;
-+		if (copy_to_user(dest, &space, sizeof(space))) {
-+			ret = -EFAULT;
-+			break;
-+		}
-+		dest++;
-+		space_args.total_spaces++;
++	ret = ioctl(fd, BTRFS_IOC_SPACE_INFO, sargs);
++	if (ret) {
++		free(sargs);
++		return ret;
 +	}
-+	rcu_read_unlock();
 +
-+	if (copy_to_user(arg, &space_args, sizeof(space_args)))
-+		ret = -EFAULT;
++	if (!sargs->total_spaces)
++		return 0;
 +
-+	return ret;
++	count = sargs->total_spaces;
++
++	sargs = realloc(sargs, sizeof(struct btrfs_ioctl_space_args) +
++			(count * sizeof(struct btrfs_ioctl_space_info)));
++	if (!sargs)
++		return -ENOMEM;
++
++	sargs->space_slots = count;
++	sargs->total_spaces = 0;
++
++	ret = ioctl(fd, BTRFS_IOC_SPACE_INFO, sargs);
++	if (ret) {
++		free(sargs);
++		return ret;
++	}
++
++	for (i = 0; i < sargs->total_spaces; i++) {
++		char description[80];
++		char *total_bytes;
++		char *used_bytes;
++		int written = 0;
++		u64 flags = sargs->spaces[i].flags;
++
++		memset(description, 0, 80);
++
++		if (flags & BTRFS_BLOCK_GROUP_DATA) {
++			snprintf(description, 5, "%s", "Data");
++			written += 4;
++		} else if (flags & BTRFS_BLOCK_GROUP_SYSTEM) {
++			snprintf(description, 7, "%s", "System");
++			written += 6;
++		} else if (flags & BTRFS_BLOCK_GROUP_METADATA) {
++			snprintf(description, 9, "%s", "Metadata");
++			written += 8;
++		}
++
++		if (flags & BTRFS_BLOCK_GROUP_RAID0) {
++			snprintf(description+written, 8, "%s", ", RAID0");
++			written += 7;
++		} else if (flags & BTRFS_BLOCK_GROUP_RAID1) {
++			snprintf(description+written, 8, "%s", ", RAID1");
++			written += 7;
++		} else if (flags & BTRFS_BLOCK_GROUP_DUP) {
++			snprintf(description+written, 6, "%s", ", DUP");
++			written += 5;
++		} else if (flags & BTRFS_BLOCK_GROUP_RAID10) {
++			snprintf(description+written, 9, "%s", ", RAID10");
++			written += 8;
++		}
++
++		total_bytes = pretty_sizes(sargs->spaces[i].total_bytes);
++		used_bytes = pretty_sizes(sargs->spaces[i].used_bytes);
++		printf("%s: total=%s, used=%s\n", description, total_bytes,
++		       used_bytes);
++	}
++
++	free(sargs);
++
++	return 0;
 +}
-+
- /*
-  * there are many ways the trans_start and trans_end ioctls can lead
-  * to deadlocks.  They should only be used by applications that
-@@ -1691,6 +1734,8 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_trans_end(file);
- 	case BTRFS_IOC_SNAP_LISTING:
- 		return btrfs_ioctl_snap_listing(file, argp);
-+	case BTRFS_IOC_SPACE_INFO:
-+		return btrfs_ioctl_space_info(root, argp);
- 	case BTRFS_IOC_SYNC:
- 		btrfs_sync_fs(file->f_dentry->d_sb, 1);
- 		return 0;
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 9e5074c..d5a8e7a 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -54,6 +54,18 @@ struct btrfs_ioctl_subvol_leaf {
+ 
+ int btrfs_list_subvolumes(int fd, unsigned long command)
+ {
+@@ -394,6 +478,8 @@ int main(int ac, char **av)
+ 					exit(1);
+ 				}
+ 			}
++		} else if (strcmp(av[i], "-i") == 0) {
++			command = BTRFS_IOC_SPACE_INFO;
+ 		}
+ 	}
+ 	if (command == 0) {
+@@ -427,6 +513,8 @@ int main(int ac, char **av)
+ 	} else if (command == BTRFS_IOC_DEFAULT_SUBVOL) {
+ 		printf("objectid is %llu\n", objectid);
+ 		ret = ioctl(fd, command, &objectid);
++	} else if (command == BTRFS_IOC_SPACE_INFO) {
++		ret = btrfs_print_space_info(fd);
+ 	} else
+ 		ret = ioctl(fd, command, &args);
+ 	if (ret < 0) {
+diff --git a/ioctl.h b/ioctl.h
+index 70fc15d..ee369e2 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -57,6 +57,18 @@ struct btrfs_ioctl_subvol_leaf {
  	struct btrfs_ioctl_subvol_items items[];
  };
  
@@ -142,7 +180,7 @@ index 9e5074c..d5a8e7a 100644
  #define BTRFS_SUBVOL_LEAF_SIZE_MIN sizeof(struct btrfs_ioctl_subvol_leaf) + \
  	sizeof(struct btrfs_ioctl_subvol_items)
  
-@@ -97,5 +109,6 @@ struct btrfs_ioctl_clone_range_args {
+@@ -92,5 +104,6 @@ struct btrfs_ioctl_subvol_leaf {
  #define BTRFS_IOC_SNAP_LISTING _IOWR(BTRFS_IOCTL_MAGIC, 16, \
  				   struct btrfs_ioctl_subvol_args)
  #define BTRFS_IOC_DEFAULT_SUBVOL _IOW(BTRFS_IOCTL_MAGIC, 17, u64)

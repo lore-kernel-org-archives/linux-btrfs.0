@@ -1,193 +1,94 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] Btrfs-progs: add btrfsctl -i to print space info
-Date: Wed, 13 Jan 2010 13:21:23 -0500
-Message-ID: <20100113182123.GB2774@dhcp231-156.rdu.redhat.com>
-References: <20100112203157.GB13414@localhost.localdomain>
+From: Andrey Kuzmin <andrey.v.kuzmin@gmail.com>
+Subject: Re: snapshots of directories
+Date: Wed, 13 Jan 2010 22:04:47 +0300
+Message-ID: <2a31deca1001131104s1181bc89nbcc719d0b9e4b0ab@mail.gmail.com>
+References: <20100112031243.09e072b0@simplux> <4B4BDC36.4000304@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: mniederle@gmx.at, linux-btrfs@vger.kernel.org
+To: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100112203157.GB13414@localhost.localdomain>
+In-Reply-To: <4B4BDC36.4000304@jp.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 12, 2010 at 03:31:57PM -0500, Josef Bacik wrote:
-> This goes along with the new space info ioctl.  This will spit out the space
-> info all nice and pretty with the type, it's flags (DUP, RAID) and how much
-> space is in that group and how much is in use.  Thanks,
-> 
+Did I get you right in that btrfs does not support snapshots of an
+arbitrary directory?
 
-Here is an updated patch with u64 flags.  Thanks,
-
-Josef
+Regards,
+Andrey
 
 
->From 8cb701c685ca1c3285f916c92564d6e966c614f9 Mon Sep 17 00:00:00 2001
-From: Josef Bacik <josef@redhat.com>
-Date: Wed, 13 Jan 2010 13:06:06 -0500
-Subject: [PATCH] Btrfs-progs: add btrfsctl -i to print space info
 
-This goes along with the new space info ioctl.  This will spit out the space
-info all nice and pretty with the type, it's flags (DUP, RAID) and how much
-space is in that group and how much is in use.  Thanks,
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- btrfsctl.c |   88 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- ioctl.h    |   15 +++++++++-
- 2 files changed, 102 insertions(+), 1 deletions(-)
-
-diff --git a/btrfsctl.c b/btrfsctl.c
-index 81d2a30..4a516fd 100644
---- a/btrfsctl.c
-+++ b/btrfsctl.c
-@@ -61,6 +61,8 @@ static void print_usage(void)
- 	printf("\t-l file: listing snapshot/subvolume under a subvolume\n");
- 	printf("\t-m [tree id] directory: set the default mounted subvolume"
- 	       " to the [tree id] or the directory\n");
-+	printf("\t-i dir: print out detailed space usage information on the"
-+	       " volume\n");
- 	printf("%s\n", BTRFS_BUILD_VERSION);
- 	exit(1);
- }
-@@ -213,6 +215,88 @@ int btrfs_show_subvolume(struct list_head *list_top, char *path,
- 	return 0;
- }
- 
-+int btrfs_print_space_info(int fd)
-+{
-+	struct btrfs_ioctl_space_args *sargs;
-+	u64 count = 0, i;
-+	int ret;
-+
-+	sargs = malloc(sizeof(struct btrfs_ioctl_space_args));
-+	if (!sargs)
-+		return -ENOMEM;
-+
-+	sargs->space_slots = 0;
-+	sargs->total_spaces = 0;
-+
-+	ret = ioctl(fd, BTRFS_IOC_SPACE_INFO, sargs);
-+	if (ret) {
-+		free(sargs);
-+		return ret;
-+	}
-+
-+	if (!sargs->total_spaces)
-+		return 0;
-+
-+	count = sargs->total_spaces;
-+
-+	sargs = realloc(sargs, sizeof(struct btrfs_ioctl_space_args) +
-+			(count * sizeof(struct btrfs_ioctl_space_info)));
-+	if (!sargs)
-+		return -ENOMEM;
-+
-+	sargs->space_slots = count;
-+	sargs->total_spaces = 0;
-+
-+	ret = ioctl(fd, BTRFS_IOC_SPACE_INFO, sargs);
-+	if (ret) {
-+		free(sargs);
-+		return ret;
-+	}
-+
-+	for (i = 0; i < sargs->total_spaces; i++) {
-+		char description[80];
-+		char *total_bytes;
-+		char *used_bytes;
-+		int written = 0;
-+		u64 flags = sargs->spaces[i].flags;
-+
-+		memset(description, 0, 80);
-+
-+		if (flags & BTRFS_BLOCK_GROUP_DATA) {
-+			snprintf(description, 5, "%s", "Data");
-+			written += 4;
-+		} else if (flags & BTRFS_BLOCK_GROUP_SYSTEM) {
-+			snprintf(description, 7, "%s", "System");
-+			written += 6;
-+		} else if (flags & BTRFS_BLOCK_GROUP_METADATA) {
-+			snprintf(description, 9, "%s", "Metadata");
-+			written += 8;
-+		}
-+
-+		if (flags & BTRFS_BLOCK_GROUP_RAID0) {
-+			snprintf(description+written, 8, "%s", ", RAID0");
-+			written += 7;
-+		} else if (flags & BTRFS_BLOCK_GROUP_RAID1) {
-+			snprintf(description+written, 8, "%s", ", RAID1");
-+			written += 7;
-+		} else if (flags & BTRFS_BLOCK_GROUP_DUP) {
-+			snprintf(description+written, 6, "%s", ", DUP");
-+			written += 5;
-+		} else if (flags & BTRFS_BLOCK_GROUP_RAID10) {
-+			snprintf(description+written, 9, "%s", ", RAID10");
-+			written += 8;
-+		}
-+
-+		total_bytes = pretty_sizes(sargs->spaces[i].total_bytes);
-+		used_bytes = pretty_sizes(sargs->spaces[i].used_bytes);
-+		printf("%s: total=%s, used=%s\n", description, total_bytes,
-+		       used_bytes);
-+	}
-+
-+	free(sargs);
-+
-+	return 0;
-+}
- 
- int btrfs_list_subvolumes(int fd, unsigned long command)
- {
-@@ -394,6 +478,8 @@ int main(int ac, char **av)
- 					exit(1);
- 				}
- 			}
-+		} else if (strcmp(av[i], "-i") == 0) {
-+			command = BTRFS_IOC_SPACE_INFO;
- 		}
- 	}
- 	if (command == 0) {
-@@ -427,6 +513,8 @@ int main(int ac, char **av)
- 	} else if (command == BTRFS_IOC_DEFAULT_SUBVOL) {
- 		printf("objectid is %llu\n", objectid);
- 		ret = ioctl(fd, command, &objectid);
-+	} else if (command == BTRFS_IOC_SPACE_INFO) {
-+		ret = btrfs_print_space_info(fd);
- 	} else
- 		ret = ioctl(fd, command, &args);
- 	if (ret < 0) {
-diff --git a/ioctl.h b/ioctl.h
-index 70fc15d..ee369e2 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -57,6 +57,18 @@ struct btrfs_ioctl_subvol_leaf {
- 	struct btrfs_ioctl_subvol_items items[];
- };
- 
-+struct btrfs_ioctl_space_info {
-+	u64 flags;
-+	u64 total_bytes;
-+	u64 used_bytes;
-+};
-+
-+struct btrfs_ioctl_space_args {
-+	u64 space_slots;
-+	u64 total_spaces;
-+	struct btrfs_ioctl_space_info spaces[0];
-+};
-+
- #define BTRFS_SUBVOL_LEAF_SIZE_MIN sizeof(struct btrfs_ioctl_subvol_leaf) + \
- 	sizeof(struct btrfs_ioctl_subvol_items)
- 
-@@ -92,5 +104,6 @@ struct btrfs_ioctl_subvol_leaf {
- #define BTRFS_IOC_SNAP_LISTING _IOWR(BTRFS_IOCTL_MAGIC, 16, \
- 				   struct btrfs_ioctl_subvol_args)
- #define BTRFS_IOC_DEFAULT_SUBVOL _IOW(BTRFS_IOCTL_MAGIC, 17, u64)
--
-+#define BTRFS_IOC_SPACE_INFO _IOWR(BTRFS_IOCTL_MAGIC, 18, \
-+				    struct btrfs_ioctl_space_args)
- #endif
--- 
-1.5.4.3
-
+On Tue, Jan 12, 2010 at 5:19 AM, TARUISI Hiroaki
+<taruishi.hiroak@jp.fujitsu.com> wrote:
+> In btrfs, snapshot is a clone of subvolume, not arbitrary
+> directory.
+> You specified '/root' directory and it is not subvolume,
+> snapshot is created for parent subvolume, root of filesystem.
+>
+> Regards,
+> taruisi
+>
+> (2010/01/12 11:12), Michael Niederle wrote:
+>> I try to take a snapshot of a single directory, e.g. root:
+>>
+>>> btrfsctl -s root.2010-01-12 /root
+>> operation complete
+>> Btrfs v0.19-4-gab8fb4c-dirty
+>>
+>> Then I take look what's inside the newly created snapshot:
+>>
+>>> ls -l /root.2010-01-12/
+>> total 0
+>> drwxr-xr-x 1 root root 1192 2010-01-03 20:32:12 bin
+>> drwxr-xr-x 1 root root =A0 76 2009-06-25 =A00:40:35 boot
+>> drwxr-xr-x 1 root root 1756 2010-01-12 =A02:33:07 cmds
+>> drwxr-xr-x 1 root root =A0 =A00 2010-01-06 12:21:46 data
+>> drwxr-xr-x 1 root root 4356 2010-01-12 =A02:07:00 dev
+>> drwxr-xr-x 1 root root =A0 42 2010-01-04 12:29:45 downloads
+>> drwxr-xr-x 1 root root 4528 2010-01-12 =A02:12:12 etc
+>> drwxr-xr-x 1 root root =A0 52 2010-01-11 12:57:47 home
+>> drwxr-xr-x 1 root root =A0 =A00 2007-11-10 =A04:44:07 initrd
+>> drwxr-xr-x 1 root root 4490 2010-01-05 20:15:53 lib
+>> drwxr-xr-x 1 root root =A0124 2008-04-27 14:53:39 mnt
+>> drwxr-xr-x 1 root root =A0 62 2008-01-08 =A00:21:58 net
+>> drwxr-xr-x 1 root root =A0 =A00 2008-04-09 =A03:19:16 objects
+>> drwxr-xr-x 1 root root =A0316 2009-12-28 23:23:13 opt
+>> dr-xr-xr-x 1 root root =A0 =A00 2007-11-10 =A03:35:28 proc
+>> drwxr-xr-x 1 root root 7676 2010-01-11 =A00:35:41 root
+>> drwxr-xr-x 1 root root =A0 =A00 2010-01-12 =A01:56:17 save
+>> drwxr-xr-x 1 root root =A0 =A00 2010-01-12 =A01:55:58 save2
+>> drwxr-xr-x 1 root root 3804 2010-01-06 =A02:36:08 sbin
+>> drwxr-xr-x 1 root root =A0 =A00 2007-11-10 =A03:35:28 sys
+>> drwxr-xr-x 1 root root =A0358 2010-01-11 18:44:29 tmp
+>> drwxr-xr-x 1 root root =A0176 2009-12-29 17:08:37 usr
+>> drwxr-xr-x 1 root root =A0 72 2010-01-05 20:03:00 var
+>>
+>> It seems that always a snapshot of the root is taken instead one of =
+the
+>> specified directory? Is this by design?
+>>
+>> Snapshotting the root works fine, but if you take several snapshots =
+it's a bit
+>> "recursive", because every new snapshot contains all previous snapsh=
+ots.
+>>
+>> Greetings, Michael
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrf=
+s" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,8 +1,9 @@
-From: Josef Bacik <josef@redhat.com>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: [PATCH] Btrfs: add a "df" ioctl for btrfs
-Date: Wed, 13 Jan 2010 08:33:41 -0500
-Message-ID: <20100113133341.GA14746@localhost.localdomain>
-References: <20100112202513.GA13414@localhost.localdomain> <20100113102503.GA6887@infradead.org>
+Date: Wed, 13 Jan 2010 09:29:23 -0500
+Message-ID: <20100113142923.GL14979@think>
+References: <20100112202513.GA13414@localhost.localdomain>
+ <20100113102503.GA6887@infradead.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
@@ -21,14 +22,11 @@ On Wed, Jan 13, 2010 at 05:25:03AM -0500, Christoph Hellwig wrote:
 > Just as discussed before I think it's a really bad idea.  We always had
 > df reporting inconsistencies due to the way metadata is managed, and
 > btrfs isn't special in that way.
-> 
-> so, NACK
 
-Right, this isn't changing how DF works, it just lets me get a better insight
-into the fs if I need it.  It's very helpful to me to see how the fs is broken
-up and whats in use for debugging ENOSPC things, as well as being nice to have
-something to show users how their volume is being used.
+This is more than just df being inaccurate, it's a way to find out how
+much space is used by each of the raid modes.  We've had a ton of
+feature requests for this, and it really helps identify drives that have
+a ton of free space tied up for data vs metadata.
 
-Think of it more as a debugging thing than a replacement for df :).  Thanks,
+-chris
 
-Josef

@@ -1,99 +1,38 @@
-From: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
-Subject: Re: snapshots of directories
-Date: Thu, 14 Jan 2010 09:40:52 +0900
-Message-ID: <4B4E6814.1020405@jp.fujitsu.com>
-References: <20100112031243.09e072b0@simplux> <4B4BDC36.4000304@jp.fujitsu.com> <2a31deca1001131104s1181bc89nbcc719d0b9e4b0ab@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH] Btrfs: add a "df" ioctl for btrfs
+Date: Wed, 13 Jan 2010 19:55:28 -0500
+Message-ID: <20100114005528.GC3428@think>
+References: <20100112202513.GA13414@localhost.localdomain>
+ <20100113102503.GA6887@infradead.org>
+ <20100113142923.GL14979@think>
+ <20100113214620.GA27943@infradead.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: mniederle@gmx.at, linux-btrfs@vger.kernel.org
-To: andrey.v.kuzmin@gmail.com
+Content-Type: text/plain; charset=us-ascii
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+To: Christoph Hellwig <hch@infradead.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <2a31deca1001131104s1181bc89nbcc719d0b9e4b0ab@mail.gmail.com>
+In-Reply-To: <20100113214620.GA27943@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Yes. I mean that.
-In detail, 'non subvolume directory' may be more precise
-than 'arbitrary directory'.
-
-Thanks for your description.
-
-Regards,
-taruisi
-
-(2010/01/14 4:04), Andrey Kuzmin wrote:
-> Did I get you right in that btrfs does not support snapshots of an
-> arbitrary directory?
+On Wed, Jan 13, 2010 at 04:46:20PM -0500, Christoph Hellwig wrote:
+> On Wed, Jan 13, 2010 at 09:29:23AM -0500, Chris Mason wrote:
+> > This is more than just df being inaccurate, it's a way to find out how
+> > much space is used by each of the raid modes.  We've had a ton of
+> > feature requests for this, and it really helps identify drives that have
+> > a ton of free space tied up for data vs metadata.
 > 
-> Regards,
-> Andrey
-> 
-> 
-> 
-> 
-> On Tue, Jan 12, 2010 at 5:19 AM, TARUISI Hiroaki
-> <taruishi.hiroak@jp.fujitsu.com> wrote:
->> In btrfs, snapshot is a clone of subvolume, not arbitrary
->> directory.
->> You specified '/root' directory and it is not subvolume,
->> snapshot is created for parent subvolume, root of filesystem.
->>
->> Regards,
->> taruisi
->>
->> (2010/01/12 11:12), Michael Niederle wrote:
->>> I try to take a snapshot of a single directory, e.g. root:
->>>
->>>> btrfsctl -s root.2010-01-12 /root
->>> operation complete
->>> Btrfs v0.19-4-gab8fb4c-dirty
->>>
->>> Then I take look what's inside the newly created snapshot:
->>>
->>>> ls -l /root.2010-01-12/
->>> total 0
->>> drwxr-xr-x 1 root root 1192 2010-01-03 20:32:12 bin
->>> drwxr-xr-x 1 root root   76 2009-06-25  0:40:35 boot
->>> drwxr-xr-x 1 root root 1756 2010-01-12  2:33:07 cmds
->>> drwxr-xr-x 1 root root    0 2010-01-06 12:21:46 data
->>> drwxr-xr-x 1 root root 4356 2010-01-12  2:07:00 dev
->>> drwxr-xr-x 1 root root   42 2010-01-04 12:29:45 downloads
->>> drwxr-xr-x 1 root root 4528 2010-01-12  2:12:12 etc
->>> drwxr-xr-x 1 root root   52 2010-01-11 12:57:47 home
->>> drwxr-xr-x 1 root root    0 2007-11-10  4:44:07 initrd
->>> drwxr-xr-x 1 root root 4490 2010-01-05 20:15:53 lib
->>> drwxr-xr-x 1 root root  124 2008-04-27 14:53:39 mnt
->>> drwxr-xr-x 1 root root   62 2008-01-08  0:21:58 net
->>> drwxr-xr-x 1 root root    0 2008-04-09  3:19:16 objects
->>> drwxr-xr-x 1 root root  316 2009-12-28 23:23:13 opt
->>> dr-xr-xr-x 1 root root    0 2007-11-10  3:35:28 proc
->>> drwxr-xr-x 1 root root 7676 2010-01-11  0:35:41 root
->>> drwxr-xr-x 1 root root    0 2010-01-12  1:56:17 save
->>> drwxr-xr-x 1 root root    0 2010-01-12  1:55:58 save2
->>> drwxr-xr-x 1 root root 3804 2010-01-06  2:36:08 sbin
->>> drwxr-xr-x 1 root root    0 2007-11-10  3:35:28 sys
->>> drwxr-xr-x 1 root root  358 2010-01-11 18:44:29 tmp
->>> drwxr-xr-x 1 root root  176 2009-12-29 17:08:37 usr
->>> drwxr-xr-x 1 root root   72 2010-01-05 20:03:00 var
->>>
->>> It seems that always a snapshot of the root is taken instead one of the
->>> specified directory? Is this by design?
->>>
->>> Snapshotting the root works fine, but if you take several snapshots it's a bit
->>> "recursive", because every new snapshot contains all previous snapshots.
->>>
->>> Greetings, Michael
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
+> Which again is not a fs specific feature.  Much better to add a statfs
+> revision to the core that does this for everone.
 
+Is anyone else splitting metadata and raid levels up like btrfs is?  As
+far as I know we're the only snowflake in the kernel working like this.
+I'm not against a generic revision, but I think btrfs needs to send out
+significantly more data than the others.
 
--- 
-taruisi
+> That would also
+> have the nice side effect that we could actually make it statvfs and
+> could get rid of the braindamage in glibc's current statvfs wrapper.
+> 
+
+-chris
 

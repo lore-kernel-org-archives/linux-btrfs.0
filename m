@@ -1,43 +1,37 @@
 From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: task imap:2958 blocked for more than 120 seconds
-Date: Wed, 13 Jan 2010 20:07:09 -0500
-Message-ID: <20100114010709.GD3428@think>
+Date: Wed, 13 Jan 2010 20:08:29 -0500
+Message-ID: <20100114010829.GE3428@think>
 References: <201001102105.47192.johannes.hirte@fem.tu-ilmenau.de>
- <20100110201926.GC32195@think>
- <201001132337.34909.johannes.hirte@fem.tu-ilmenau.de>
+ <201001110834.36865@fortytwo.ch>
+ <201001110945.32352@fortytwo.ch>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755309Ab0ANBHo@vger.kernel.org>
-In-Reply-To: <201001132337.34909.johannes.hirte@fem.tu-ilmenau.de>
+Cc: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>,
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Adrian von Bidder <avbidder@fortytwo.ch>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201001110945.32352@fortytwo.ch>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 13, 2010 at 11:37:33PM +0100, Johannes Hirte wrote:
-> Am Sonntag 10 Januar 2010 21:19:26 schrieb Chris Mason:
-> > On Sun, Jan 10, 2010 at 09:05:46PM +0100, Johannes Hirte wrote:
-> > > I've observed this hanging task now several times. Not sure when this
-> > > started, but 2.6.32 is affected too, IIRC. I don't have a test pattern
-> > > for this. Dovecot imap triggers this from time to time. I've enabled
-> > > CONFIG_DETECT_HUNG_TASK now
+On Mon, Jan 11, 2010 at 09:45:31AM +0100, Adrian von Bidder wrote:
+> On Monday 11 January 2010 08.34:36 Adrian von Bidder wrote:
+> > "btrfs-vol -b" on an 2T btrfs fs (raid 1 mode over 4 disks) on an arm
+> >  CPU  has triggered it several times, so it seems a reliable way to
+> >  reproduce this.
 > > 
-> > > and got this two tasks which hang:
-> > You're stuck on a read, could you please do a sysrq-w when this happens?
 > 
-> Will do so when it happens again.
+> Found it (Debian kernel 2.6.32 on ARM):
+> 
+> [78260.386272] INFO: task btrfs-vol:10979 blocked for more than 120 seconds.
+> [78260.386306] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> [78260.386331] btrfs-vol     D c02b080c     0 10979      1 0x00000001
+> [78260.386373] [<c02b080c>] (schedule+0x424/0x488) from [<c02b0c9c>] (schedule_timeout+0x1c/0x244)
+> [78260.386408] [<c02b0c9c>] (schedule_timeout+0x1c/0x244) from [<c02b0b10>] (wait_for_common+0xdc/0x178)
+> [78260.386611] [<c02b0b10>] (wait_for_common+0xdc/0x178) from [<bf29b880>] (merge_reloc_roots+0x15c/0x1a4 [btrfs])
+> [78260.386940] [<bf29b880>] (merge_reloc_roots+0x15c/0x1a4 [btrfs]) from [<bf2a3fd8>] (relocate_block_group+0x548/0x5c8 [btrfs])
 
-No need, I reread the trace, you're stuck in copy_from_user and probably
-hitting a deadlock in the btrfs page faulting path.  This is pretty
-rare, but I'll put it into the queue to fix up.
-> 
-> > Also, do you eventually recover or are you stuck forever?
-> 
-> I didn't wait too long when it happened, so I'm not sure.  The longest time 
-> I've waited was 20-30min, until reboot without recover. So either it's stuck 
-> forever or it takes really long to recover.
-> 
-> And one question I have: How do you identify a read in this call trace? 
-
-Lock page followed by sync page is usually for reading.
+Blocking here isn't a huge surprise, relocation can involve some long
+held locks.  Does this recover?
 
 -chris

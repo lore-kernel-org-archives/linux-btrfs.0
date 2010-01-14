@@ -1,202 +1,153 @@
-From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
-Subject: Re: [btrfs] kernel BUG at include/linux/spinlock.h:376!
-Date: Thu, 14 Jan 2010 16:36:00 +0100
-Message-ID: <201001141636.01448.johannes.hirte@fem.tu-ilmenau.de>
-References: <201001072229.33976.johannes.hirte@fem.tu-ilmenau.de>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: Bug in btrfs_rename (kernel BUG at fs/btrfs/inode.c:5595!)
+Date: Thu, 14 Jan 2010 12:03:23 -0500
+Message-ID: <20100114170323.GA2190@localhost.localdomain>
+References: <4B4E1A5D.1070203@gmail.com> <20100113201317.GC2774@dhcp231-156.rdu.redhat.com> <4B4E290F.9010100@gmail.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757297Ab0ANPgP@vger.kernel.org>
-In-Reply-To: <201001072229.33976.johannes.hirte@fem.tu-ilmenau.de>
+Content-Type: text/plain; charset=us-ascii
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+To: Tomas Carnecky <tomas.carnecky@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4B4E290F.9010100@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Donnerstag 07 Januar 2010 22:29:32 schrieb Johannes Hirte:
-> One of my btrfs filesystems gives the following bug message on access:
-> 
-> Jan  6 23:08:12 datengrab kernel: ------------[ cut here ]------------
-> Jan  6 23:08:12 datengrab kernel: kernel BUG at
-> include/linux/spinlock.h:376! Jan  6 23:08:12 datengrab kernel: invalid
-> opcode: 0000 [#1] SMP
-> Jan  6 23:08:12 datengrab kernel: last sysfs file:
-> /sys/devices/pci0000:00/0000:00:18.3/temp1_input
-> Jan  6 23:08:12 datengrab kernel: CPU 1
-> Jan  6 23:08:12 datengrab kernel: Pid: 2837, comm: btrfs-endio-wri Not
-> tainted 2.6.33-rc3-00033-g03b7675 #12 TYAN Tiger K8W Dual AMD Opteron,
-> S2875/To Be Filled
-> By O.E.M.
-> Jan  6 23:08:12 datengrab kernel: RIP: 0010:[<ffffffff8118f7ea>] 
-> [<ffffffff8118f7ea>] btrfs_assert_tree_locked+0x16/0x1c
-> Jan  6 23:08:12 datengrab kernel: RSP: 0018:ffff8800237b5a50  EFLAGS:
-> 00010246 Jan  6 23:08:12 datengrab kernel: RAX: 0000000000000404 RBX:
-> ffff88011f444ea0 RCX: ffff880000000000
-> Jan  6 23:08:12 datengrab kernel: RDX: 0000000000000004 RSI:
-> ffff88011c219000 RDI: ffff8800829b3c00
-> Jan  6 23:08:12 datengrab kernel: RBP: ffff8800237b5a50 R08:
-> 0000000000000016 R09: ffff8800237b5a30
-> Jan  6 23:08:12 datengrab kernel: R10: ffff8800237b5a28 R11:
-> 0000000000000191 R12: ffff88011c219000
-> Jan  6 23:08:12 datengrab kernel: R13: 000000000000000c R14:
-> 0000000000000001 R15: ffff88011981e740
-> Jan  6 23:08:12 datengrab kernel: FS:  00007f2c79ac8700(0000)
-> GS:ffff88002b400000(0000) knlGS:0000000000000000
-> Jan  6 23:08:12 datengrab kernel: CS:  0010 DS: 0000 ES: 0000 CR0:
-> 000000008005003b
-> Jan  6 23:08:12 datengrab kernel: CR2: 00000000026300a0 CR3:
-> 0000000116b7f000 CR4: 00000000000006f0
-> Jan  6 23:08:12 datengrab kernel: DR0: 0000000000000000 DR1:
-> 0000000000000000 DR2: 0000000000000000
-> Jan  6 23:08:12 datengrab kernel: DR3: 0000000000000000 DR6:
-> 00000000ffff0ff0 DR7: 0000000000000400
-> Jan  6 23:08:12 datengrab kernel: Process btrfs-endio-wri (pid: 2837,
-> threadinfo ffff8800237b4000, task ffff8800235037e0)
-> Jan  6 23:08:12 datengrab kernel: Stack:
-> Jan  6 23:08:12 datengrab kernel: ffff8800237b5ac0 ffffffff81154ded
-> 000000000000012c 000000000000000c
-> Jan  6 23:08:12 datengrab kernel: <0> ffff880000000016 0000000181150b93
-> 0000000000000ce3 00000f6600000000
-> Jan  6 23:08:12 datengrab kernel: <0> ffff88007ff44000 ffff8800829b3d00
-> 0000000000000000 ffff88011f444ea0
-> Jan  6 23:08:12 datengrab kernel: Call Trace:
-> Jan  6 23:08:12 datengrab kernel: [<ffffffff81154ded>]
-> push_leaf_left+0x9f/0x158 Jan  6 23:08:12 datengrab kernel:
-> [<ffffffff8115539e>] btrfs_del_items+0x363/0x48f Jan  6 23:08:12 datengrab
-> kernel: [<ffffffff81175b06>]
-> btrfs_mark_extent_written+0x53b/0x55f
-> Jan  6 23:08:12 datengrab kernel: [<ffffffff8105616c>] ?
-> trace_hardirqs_on+0xd/0xf Jan  6 23:08:12 datengrab kernel:
-> [<ffffffff8138bc85>] ? mutex_unlock+0x9/0xb Jan  6 23:08:12 datengrab
-> kernel: [<ffffffff8117422d>]
-> btrfs_finish_ordered_io+0x176/0x247
-> Jan  6 23:08:12 datengrab kernel: [<ffffffff810544cf>] ?
-> trace_hardirqs_off+0xd/0xf Jan  6 23:08:12 datengrab kernel:
-> [<ffffffff81174313>]
-> btrfs_writepage_end_io_hook+0x15/0x17
-> Jan  6 23:08:12 datengrab kernel: [<ffffffff81184dd5>]
-> end_bio_extent_writepage+0xa9/0x154
-> Jan  6 23:08:12 datengrab kernel: [<ffffffff8105613b>] ?
-> trace_hardirqs_on_caller+0x10c/0x130
-> Jan  6 23:08:12 datengrab kernel: [<ffffffff810c8d27>] bio_endio+0x26/0x28
-> Jan  6 23:08:12 datengrab kernel: [<ffffffff81167b8d>]
-> end_workqueue_fn+0x10c/0x11b
-> Jan  6 23:08:12 datengrab kernel: [<ffffffff8118d259>]
-> worker_loop+0x175/0x44d Jan  6 23:08:12 datengrab kernel:
-> [<ffffffff8118d0e4>] ? worker_loop+0x0/0x44d Jan  6 23:08:12 datengrab
-> kernel: [<ffffffff81047197>] kthread+0x7a/0x82 Jan  6 23:08:12 datengrab
-> kernel: [<ffffffff81002c94>]
-> kernel_thread_helper+0x4/0x10
-> Jan  6 23:08:12 datengrab kernel: [<ffffffff8138e13c>] ?
-> restore_args+0x0/0x30 Jan  6 23:08:12 datengrab kernel:
-> [<ffffffff8104711d>] ? kthread+0x0/0x82 Jan  6 23:08:12 datengrab kernel:
-> [<ffffffff81002c90>] ?
-> kernel_thread_helper+0x0/0x10
-> Jan  6 23:08:12 datengrab kernel: Code: c8 ff 48 81 c4 88 00 00 00 5b 41 5c
-> 41 5d 41 5e 41 5f c9 c3 90 f6 47 38 02 55 48 89 e5 75 10 8b 47 70 89 c2 c1
-> fa 08 38 c
-> 2 75 04 <0f> 0b eb fe c9 c3 55 31 c0 65 48 8b 14 25 48 b5 00 00 48 89 e5
-> Jan  6 23:08:12 datengrab kernel: RIP  [<ffffffff8118f7ea>]
-> btrfs_assert_tree_locked+0x16/0x1c
-> Jan  6 23:08:12 datengrab kernel: RSP <ffff8800237b5a50>
-> Jan  6 23:08:12 datengrab kernel: ---[ end trace 96d932f09da027f6 ]---
-> 
-> It only happens on write access. I was able to copy all the data to another
-> drive without any error. The filesystem is damaged, btrfsck gives
-> 
-> root 5 inode 6969680 errors 2000
-> found 191511994368 bytes used err is 1
-> total csum bytes: 186404900
-> total tree bytes: 629936128
-> total fs tree bytes: 388333568
-> btree space waste bytes: 146015924
-> file data blocks allocated: 191957340160
->  referenced 190751694848
-> Btrfs v0.19-4-gab8fb4c
-> 
-> It's the btrfs-code from 2.6.33 with the following additional patches:
-> 
-> diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-> index 2e9e699..3a3a96d 100644
-> --- a/fs/btrfs/acl.c
-> +++ b/fs/btrfs/acl.c
-> @@ -111,13 +111,15 @@ static int btrfs_set_acl(struct btrfs_trans_handle
-> *trans,
-> 
->         switch (type) {
->         case ACL_TYPE_ACCESS:
-> -               mode = inode->i_mode;
-> -               ret = posix_acl_equiv_mode(acl, &mode);
-> -               if (ret < 0)
-> -                       return ret;
-> -               ret = 0;
-> -               inode->i_mode = mode;
->                 name = POSIX_ACL_XATTR_ACCESS;
-> +               if (acl) {
-> +                       mode = inode->i_mode;
-> +                       ret = posix_acl_equiv_mode(acl, &mode);
-> +                       if (ret < 0)
-> +                               return ret;
-> +                       ret = 0;
-> +                       inode->i_mode = mode;
-> +               }
->                 break;
->         case ACL_TYPE_DEFAULT:
->                 if (!S_ISDIR(inode->i_mode))
-> 
-> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> index c4bc570..654f702 100644
-> --- a/fs/btrfs/ctree.c
-> +++ b/fs/btrfs/ctree.c
-> @@ -679,7 +679,7 @@ int btrfs_realloc_node(struct btrfs_trans_handle
-> *trans, if (!cur) {
->                                 cur = read_tree_block(root, blocknr,
->                                                          blocksize, gen);
-> -                       } else if (!uptodate) {
-> +                       } else {
->                                 btrfs_read_buffer(cur, gen);
->                         }
->                 }
-> 
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index a972868..ed3e4a2 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -3281,8 +3281,10 @@ static noinline_for_stack int
-> relocate_block_group(struct reloc_control *rc)
->                 return -ENOMEM;
-> 
->         path = btrfs_alloc_path();
-> -       if (!path)
-> +       if (!path) {
-> +               kfree(cluster);
->                 return -ENOMEM;
-> +       }
-> 
->         rc->extents_found = 0;
->         rc->extents_skipped = 0;
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 198cff2..220dad5 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -2649,8 +2649,10 @@ again:
->         em = lookup_extent_mapping(em_tree, logical, *length);
->         read_unlock(&em_tree->lock);
-> 
-> -       if (!em && unplug_page)
-> +       if (!em && unplug_page) {
-> +               kfree(multi);
->                 return 0;
-> +       }
-> 
->         if (!em) {
->                 printk(KERN_CRIT "unable to find logical %llu len %llu\n",
-> 
-> I don't think that anyone of these patches causes the bug or FS corruption.
-> 
-> regards,
->   Johannes
+On Wed, Jan 13, 2010 at 09:11:59PM +0100, Tomas Carnecky wrote:
+>  On 1/13/10 9:13 PM, Josef Bacik wrote:
+>> On Wed, Jan 13, 2010 at 08:09:17PM +0100, Tomas Carnecky wrote:
+>>>   I was running v2.6.33-rc2-187-g08d869a and everything was ok. Today I
+>>> decided to update the kernel (to v2.6.33-rc4) and a minute or two after
+>>> logging into the gnome desktop this kernel bug appeared in dmesg. I then
+>>> went back to the old kernel but the bug didn't disappear, not even after
+>>> running btrfsck on the filesystem.
+>>>
+>> Ok will you please run with this patch?  It shouldn't panic your box, since it
+>> seems ret is -EEXIST.  Just watch your logs for
+>>
+>> OH NO, ORPHAN ENTRY ALREADY EXISTS FOR<number>
+>>
+>> and then look up and find all occurances of
+>>
+>> Btrfs: orphan add<number>
+>>
+>> with the stack trace and send it back to me so I can verify that nothing heinous
+>> is happening.  I assume we're just racing with unlink/rename so all that needs
+>> to be done is to take that BUG_ON out, but it would be nice to know for sure.
+>
 
-Noone any ideas here? If more infos are needed, please say.
+Ok will you try this patch?  I've not built it, so sorry if it doesn't compile
+:).  Look for the "OH NO" messages again.  If they show up then the problem is
+still there, if they go away the problem is fixed.  I tried to reproduce this
+locally but I can't seem to do it, so you are my only hope :).  
 
-regards,
-  Johannes
+By the way, this replaces the last patch I sent you, so unapply the previous
+patch and apply this one instead.  Thanks,
+
+Josef
+
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 5440bab..c255dcb 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2096,6 +2096,13 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans, struct inode *inode)
+ 	 */
+ 	ret = btrfs_insert_orphan_item(trans, root, inode->i_ino);
+ 
++	printk(KERN_ERR "Btrfs: orphan add %llu\n", (unsigned long long)inode->i_ino);
++	dump_stack();
++	if (ret) {
++		printk(KERN_ERR "OH NO, ORPHAN ENTRY ALREADY EXISTS FOR %llu\n",
++		       (unsigned long long)inode->i_ino);
++	}
++
+ 	return ret;
+ }
+ 
+@@ -3293,10 +3300,10 @@ static int btrfs_setattr_size(struct inode *inode, struct iattr *attr)
+ 	unsigned long nr;
+ 	int ret;
+ 
+-	if (attr->ia_size == inode->i_size)
++	if (attr->ia_size == i_size_read(inode))
+ 		return 0;
+ 
+-	if (attr->ia_size > inode->i_size) {
++	if (attr->ia_size > i_size_read(inode)) {
+ 		unsigned long limit;
+ 		limit = current->signal->rlim[RLIMIT_FSIZE].rlim_cur;
+ 		if (attr->ia_size > inode->i_sb->s_maxbytes)
+@@ -3305,24 +3312,7 @@ static int btrfs_setattr_size(struct inode *inode, struct iattr *attr)
+ 			send_sig(SIGXFSZ, current, 0);
+ 			return -EFBIG;
+ 		}
+-	}
+-
+-	ret = btrfs_reserve_metadata_space(root, 1);
+-	if (ret)
+-		return ret;
+-
+-	trans = btrfs_start_transaction(root, 1);
+-	btrfs_set_trans_block_group(trans, inode);
+-
+-	ret = btrfs_orphan_add(trans, inode);
+-	BUG_ON(ret);
+-
+-	nr = trans->blocks_used;
+-	btrfs_end_transaction(trans, root);
+-	btrfs_unreserve_metadata_space(root, 1);
+-	btrfs_btree_balance_dirty(root, nr);
+ 
+-	if (attr->ia_size > inode->i_size) {
+ 		ret = btrfs_cont_expand(inode, attr->ia_size);
+ 		if (ret) {
+ 			btrfs_truncate(inode);
+@@ -3345,6 +3335,21 @@ static int btrfs_setattr_size(struct inode *inode, struct iattr *attr)
+ 		btrfs_end_transaction(trans, root);
+ 		btrfs_btree_balance_dirty(root, nr);
+ 		return 0;
++	} else if (attr->ia_size < i_size_read(inode)) {
++		ret = btrfs_reserve_metadata_space(root, 1);
++		if (ret)
++			return ret;
++
++		trans = btrfs_start_transaction(root, 1);
++		btrfs_set_trans_block_group(trans, inode);
++
++		ret = btrfs_orphan_add(trans, inode);
++		BUG_ON(ret);
++
++		nr = trans->blocks_used;
++		btrfs_end_transaction(trans, root);
++		btrfs_unreserve_metadata_space(root, 1);
++		btrfs_btree_balance_dirty(root, nr);
+ 	}
+ 
+ 	/*
+@@ -3355,10 +3360,6 @@ static int btrfs_setattr_size(struct inode *inode, struct iattr *attr)
+ 	if (attr->ia_size == 0)
+ 		BTRFS_I(inode)->ordered_data_close = 1;
+ 
+-	/* we don't support swapfiles, so vmtruncate shouldn't fail */
+-	ret = vmtruncate(inode, attr->ia_size);
+-	BUG_ON(ret);
+-
+ 	return 0;
+ }
+ 
+@@ -3376,7 +3377,6 @@ static int btrfs_setattr(struct dentry *dentry, struct iattr *attr)
+ 		if (err)
+ 			return err;
+ 	}
+-	attr->ia_valid &= ~ATTR_SIZE;
+ 
+ 	if (attr->ia_valid)
+ 		err = inode_setattr(inode, attr);
+@@ -5592,7 +5592,7 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 		BUG_ON(ret);
+ 		if (new_inode->i_nlink == 0) {
+ 			ret = btrfs_orphan_add(trans, new_dentry->d_inode);
+-			BUG_ON(ret);
++			BUG_ON(ret && ret != -EEXIST);
+ 		}
+ 	}
+ 

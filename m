@@ -1,32 +1,22 @@
-From: Paul Komkoff <i@stingr.net>
-Subject: Re: btrfs fallocate woes
-Date: Thu, 14 Jan 2010 20:33:30 +0000
-Message-ID: <715ea5c11001141233i78410267qc4d0767f5b7b8250@mail.gmail.com>
-References: <715ea5c11001140328g6198447axce1ba884a6e6fb96@mail.gmail.com>
-	 <aday6k0lhpx.fsf@roland-alpha.cisco.com>
-	 <20100114192035.GC23810@think>
+From: Tomas Carnecky <tomas.carnecky@gmail.com>
+Subject: Re: Bug in btrfs_rename (kernel BUG at fs/btrfs/inode.c:5595!)
+Date: Fri, 15 Jan 2010 00:59:12 +0100
+Message-ID: <4B4FAFD0.1070304@gmail.com>
+References: <4B4E1A5D.1070203@gmail.com>	 <20100113201317.GC2774@dhcp231-156.rdu.redhat.com>	 <4B4E290F.9010100@gmail.com>	 <20100114170323.GA2190@localhost.localdomain>	 <20100114190004.GB2190@localhost.localdomain> <3d0408631001141220m5941ad58t91d01fb918daf8ab@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>,
-	Roland Dreier <rdreier@cisco.com>, Paul Komkoff <i@stingr.net>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+To: "Yan, Zheng " <yanzheng@21cn.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100114192035.GC23810@think>
+In-Reply-To: <3d0408631001141220m5941ad58t91d01fb918daf8ab@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 14, 2010 at 7:20 PM, Chris Mason <chris.mason@oracle.com> wrote:
-> The file size should still be 4 bytes I think, even if we allocate 4096.
+On 01/14/2010 09:20 PM, Yan, Zheng wrote:
+> It looks like a ENOSPC related problem, btrfs_truncate doesn't remove the orphan
+> item if it fails to finish its operation. so I don't think this patch
+> fixes the problem
 
-Yes, to clarify - I changed the code to be
-  fallocate(fd, 0, 0, 4);
-and then
-  posix_fallocate(fd, 0, 4);
+Around the time when it happened, the filesystem was used only to ~55% 
+(31G of 56G).
 
-(which is the same I guess)
-
-and tried it on different filesystems, and on btrfs I ended up with
-entire block (of zeroes).
-If it's fixed in latest tree it's fine, I guess that fix isn't in
-fedora's 2.6.32.3
--- 
-This message represents the official view of the voices in my head
+tom

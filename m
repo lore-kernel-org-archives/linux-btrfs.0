@@ -1,36 +1,22 @@
-From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
-Subject: Re: task imap:2958 blocked for more than 120 seconds
-Date: Wed, 13 Jan 2010 23:37:33 +0100
-Message-ID: <201001132337.34909.johannes.hirte@fem.tu-ilmenau.de>
-References: <201001102105.47192.johannes.hirte@fem.tu-ilmenau.de> <20100110201926.GC32195@think>
+From: "Andy G. Carlson" <ts55428@bjc.org>
+Subject: Kudos
+Date: Wed, 13 Jan 2010 18:07:20 -0600
+Message-ID: <4B4E0BD8020000210004BE03@upbcgwg06>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain;
+ charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100110201926.GC32195@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Sonntag 10 Januar 2010 21:19:26 schrieb Chris Mason:
-> On Sun, Jan 10, 2010 at 09:05:46PM +0100, Johannes Hirte wrote:
-> > I've observed this hanging task now several times. Not sure when this
-> > started, but 2.6.32 is affected too, IIRC. I don't have a test pattern
-> > for this. Dovecot imap triggers this from time to time. I've enabled
-> > CONFIG_DETECT_HUNG_TASK now
-> 
-> > and got this two tasks which hang:
-> You're stuck on a read, could you please do a sysrq-w when this happens?
+I have been testing btrfs, some before, but mainly since 2.6.32 and v.19 of the progs.  I mainly was testing it for the compression aspect, but also because I believe btrfs is the future on Linux.  I ran into a problem at filesystem full condition where any processes accessing (writing) to btrfs would hang, requiring a reboot.  I new that full condition has problems, so I didn't worry about it since I figured someone was working on it.  I pulled down the unstable tree today, and surprose surprise, it's fixed.  Kudos to all of you hard workers on the FS - it is appreciated.  
 
-Will do so when it happens again.
+P.S. - I got 4 to 1 compression, but the data was highly compressible.
 
-> Also, do you eventually recover or are you stuck forever?
+Andy Carlson
+Technical Specialist
+(314) 362-0516
 
-I didn't wait too long when it happened, so I'm not sure.  The longest time 
-I've waited was 20-30min, until reboot without recover. So either it's stuck 
-forever or it takes really long to recover.
+Gamecube:$150,PSO:$50,Broadband Adapter: $35, Hunters License: $8.95/month,
+The feeling of seeing the red box with the item you want in it:Priceless.
 
-And one question I have: How do you identify a read in this call trace? 
-
-regards,
-  Johannes

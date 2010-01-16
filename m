@@ -1,68 +1,70 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
+From: Svein Erik Brostigen <svein.brostigen@oracle.com>
 Subject: Re: Free space left
-Date: Sat, 16 Jan 2010 20:20:08 +0100
-Message-ID: <201001162020.08633.kreijack@libero.it>
-References: <20100116164120.47eceecd@simplux> <201001162010.37752.kreijack@libero.it> <20100116201733.1e30dad1@simplux>
+Date: Sat, 16 Jan 2010 14:31:44 -0500
+Message-ID: <4B521420.8030306@oracle.com>
+References: <20100116164120.47eceecd@simplux> <201001162010.37752.kreijack@libero.it>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Cc: linux-btrfs@vger.kernel.org
-To: "Dipl.-Ing. Michael Niederle" <mniederle@gmx.at>
+To: Goffredo Baroncelli <kreijack@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100116201733.1e30dad1@simplux>
+In-Reply-To: <201001162010.37752.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Saturday 16 January 2010, you (Dipl.-Ing. Michael Niederle) wrote:
-> Hi, Goffredo!
-> 
-> > Try btrfs-show
-> 
-> Thanks for your advice!
-> 
-> btrfs-show works but it displays a lot of error message for non-btrfs 
-devices:
-> 
-> > btrfs-show
-> failed to read /dev/sdg
-> failed to read /dev/sdg1
-> failed to read /dev/sdg2
-> failed to read /dev/sdg3
-> failed to read /dev/sdg4
-> failed to read /dev/md1
-> failed to read /dev/fd0
-> failed to read /dev/fd0u1440
-> failed to read /dev/fd1
-> failed to read /dev/hda
-> failed to read /dev/hda1
-> failed to read /dev/hda10
-> failed to read /dev/hda11
-> failed to read /dev/hda12
-> ...
-> failed to read /dev/sr0
-> failed to read /dev/sr1
-> failed to read /dev/sr2
-> failed to read /dev/sr3
-> ...
-> Label: Alpha4  uuid: 63b82dad-ed81-41f4-910f-7b358ceb77ba
-> 	Total devices 1 FS bytes used 11.81GB
-> 	devid    1 size 20.01GB used 20.01GB path /dev/sda3
-> 
-> Btrfs v0.19-4-gab8fb4c
-> 
-> Even if I try
-> 
-> btrfs-show /dev/sda3
-> 
-> I get the same output.
-> 
-> Greetings, Michael
-> 
-Yes they search in every block devices a btrfs file-system. It may be 
-smarter/faster skipping the floppy and the cd-rom..
+Goffredo Baroncelli wrote:
+> Try btrfs-show
+>   
+Ok:
 
-BR
-G.Baroncelli
+$ mount
+/dev/sdc on /media/452f782b-738a-4699-abfa-588eecab07ea type btrfs 
+(rw,nosuid,nodev,uhelper=devkit)
 
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+$ df
+/dev/sdc              932G  6.7G  925G   1% 
+/media/452f782b-738a-4699-abfa-588eecab07ea
+
+$ btrfs-show
+failed to read /dev/sdb1
+failed to read /dev/sdc
+failed to read /dev/sdb
+failed to read /dev/sda5
+failed to read /dev/sda1
+failed to read /dev/sda6
+failed to read /dev/sda2
+failed to read /dev/sda
+failed to read /dev/sr0
+failed to read /dev/loop1
+failed to read /dev/ram2
+failed to read /dev/ram10
+failed to read /dev/ram11
+failed to read /dev/loop7
+failed to read /dev/ram1
+failed to read /dev/loop0
+failed to read /dev/loop5
+failed to read /dev/loop2
+failed to read /dev/loop3
+failed to read /dev/loop4
+failed to read /dev/loop6
+failed to read /dev/ram12
+failed to read /dev/ram4
+failed to read /dev/ram13
+failed to read /dev/ram5
+failed to read /dev/ram8
+failed to read /dev/ram14
+failed to read /dev/ram15
+failed to read /dev/ram0
+failed to read /dev/ram3
+failed to read /dev/ram6
+failed to read /dev/ram9
+failed to read /dev/ram7
+Btrfs Btrfs v0.19
+
+The drive used is a Seagate FreeAgent 1Tb USB drive under Ubuntu 9.10
+
+$ uname -a
+Linux ebrostig-laptop 2.6.31-18-generic-pae #55-Ubuntu SMP Fri Jan 8 
+16:13:23 UTC 2010 i686 GNU/Linux
+
+Erik
+

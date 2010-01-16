@@ -1,41 +1,56 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
+From: "Dipl.-Ing. Michael Niederle" <mniederle@gmx.at>
 Subject: Re: Free space left
-Date: Sat, 16 Jan 2010 20:10:37 +0100
-Message-ID: <201001162010.37752.kreijack@libero.it>
+Date: Sat, 16 Jan 2010 20:17:33 +0100
+Message-ID: <20100116201733.1e30dad1@simplux>
 References: <20100116164120.47eceecd@simplux>
+	<201001162010.37752.kreijack@libero.it>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=US-ASCII
+Cc: linux-btrfs@vger.kernel.org
+To: Goffredo Baroncelli <kreijack@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100116164120.47eceecd@simplux>
+In-Reply-To: <201001162010.37752.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Saturday 16 January 2010, Michael Niederle wrote:
-> How can I detect how much free space is left on a btrfs-volume?
-> 
-> As I read (and learned in practice!) "df" reports cannot be trusted if used 
-on
-> btrfs-volumes.
+Hi, Goffredo!
 
-Try btrfs-show
+> Try btrfs-show
 
-$ btrfs-show
-Label: bar  uuid: ec2918cd-ad47-4eac-9e85-5604b02fd922
-        Total devices 1 FS bytes used 302.25MB
-        devid    1 size 964.81MB used 614.50MB path /dev/sdc1
+Thanks for your advice!
 
-Label: debian-root  uuid: 6e2a647f-5da2-4bd0-a7d7-9b13d13a47cc
-        Total devices 1 FS bytes used 23.52GB
-        devid    1 size 232.11GB used 118.03GB path /dev/sdc3
+btrfs-show works but it displays a lot of error message for non-btrfs devices:
 
-Btrfs Btrfs v0.19
+> btrfs-show
+failed to read /dev/sdg
+failed to read /dev/sdg1
+failed to read /dev/sdg2
+failed to read /dev/sdg3
+failed to read /dev/sdg4
+failed to read /dev/md1
+failed to read /dev/fd0
+failed to read /dev/fd0u1440
+failed to read /dev/fd1
+failed to read /dev/hda
+failed to read /dev/hda1
+failed to read /dev/hda10
+failed to read /dev/hda11
+failed to read /dev/hda12
+...
+failed to read /dev/sr0
+failed to read /dev/sr1
+failed to read /dev/sr2
+failed to read /dev/sr3
+...
+Label: Alpha4  uuid: 63b82dad-ed81-41f4-910f-7b358ceb77ba
+	Total devices 1 FS bytes used 11.81GB
+	devid    1 size 20.01GB used 20.01GB path /dev/sda3
 
+Btrfs v0.19-4-gab8fb4c
 
-BR
-G.Baroncelli
+Even if I try
 
+btrfs-show /dev/sda3
 
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+I get the same output.
+
+Greetings, Michael

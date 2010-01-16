@@ -1,67 +1,18 @@
-From: Edward Shishkin <edward.shishkin@gmail.com>
-Subject: Re: [Jfs-discussion] benchmark results
-Date: Fri, 15 Jan 2010 22:42:38 +0100
-Message-ID: <4B50E14E.5050204__11863.7251238853$1263591917$gmane$org@gmail.com>
-References: <20091224212756.GM21594@thunk.org> <alpine.DEB.2.01.0912241739160.3483@bogon.housecafe.de> <20091225161453.GD32757@thunk.org> <20091225162238.GB19303@bitmover.com> <alpine.DEB.2.01.0912251042540.3483@bogon.housecafe.de> <4B36333B.3030600@hp.com> <4B365EBE.5050804@nerdbynature.de> <4B37BA76.7050403@hp.com> <alpine.DEB.2.01.0912271346240.3483@bogon.housecafe.de> <20091227223307.GA4429@thunk.org> <20091228140855.GD10982@bitmover.com>
+From: "Michael Niederle" <mniederle@gmx.at>
+Subject: Free space left
+Date: Sat, 16 Jan 2010 16:41:20 +0100
+Message-ID: <20100116164120.47eceecd@simplux>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: Larry McVoy <lm@bitmover.com>, tytso@mit.edu,
-	Christian Kujau <lists@nerdbynature.de>,
-	jim owens <jowens@hp.com>,
-	jfs-discussion@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
-	x
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20091228140855.GD10982@bitmover.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+How can I detect how much free space is left on a btrfs-volume?
 
-> When things didn't match up that was a clue that either
->
->     - the benchmark was broken
->     - the code was broken
->   
-[...]
+As I read (and learned in practice!) "df" reports cannot be trusted if used on
+btrfs-volumes.
 
-I would carry out an object-oriented dualism here.
+Greetings, Michael
 
 
-[1] methods (kernel module) ---- [2] objects (formatted partition)
-
- |                                |
- |                                |
-
-[3] benchmarks ----------------- [4] user-space utilities (fsck)
-
-
-User-space utilities investigate "object corruptions",
-whereas benchmarks investigate "software corruptions"
-(including bugs in source code, broken design, etc, etc..)
-
-It is clear that "software" can be "corrupted" by a larger
-number of ways than "objects". Indeed, it is known that
-dual space V* (of all linear functions over V) is a much
-more complex object than V.
-
-So benchmark is a process which takes a set of methods
-(we consider only "software" benchmarks) and puts numerical
-values populated with a special (the worst) value CRASH.
-
-Three main categories of benchmarks using:
-
-1) Internal testing
-
-An engineer makes optimizations in a file system (e.g. for a
-customer) via choosing functions or plugins as winners in
-a set of internal (local) "nominations".
-
-2) Business plans
-
-A system administrator chooses a "winner" in some (global)
-"nomination" of file systems in accordance with internal
-business-plans.
-
-3) Flame and politics
-
-Someone presents a "nomination" (usually with the "winner"
-among restricted number of nominated members) to the public
-while nobody asked him to do it.

@@ -1,44 +1,36 @@
-From: Mathieu Chouquet-Stringer <mchouque@free.fr>
-Subject: Re: Free space left
-Date: 16 Jan 2010 20:46:19 +0100
-Message-ID: <m3tyulq1dg.fsf@mobydick.mine.nu>
-References: <20100116164120.47eceecd@simplux>
-	<201001162010.37752.kreijack@libero.it>
+From: =?ISO-8859-1?Q?Andr=E9_Goddard_Rosa?= <andre.goddard@gmail.com>
+Subject: btrfsck segmentation fault
+Date: Sat, 16 Jan 2010 23:27:56 -0200
+Message-ID: <b8bf37781001161727vc023a93u529aa4bf1fd1cdc3@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: kreijack@gmail.com (Goffredo Baroncelli)
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201001162010.37752.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-        Hello,
+Hello,
 
-kreijack@gmail.com (Goffredo Baroncelli) writes:
-> Try btrfs-show
-> [...]
+     when trying to btrfsck my filesystem, I got the following error:
 
-How do you read this then:
+# btrfsck /dev/sda7
+parent transid verify failed on 13785038848 wanted 45848 found 45839
+Segmentation fault
 
-Label: none  uuid: 27fafa43-7ad0-4e8a-ada8-36f73ef8984c
-        Total devices 2 FS bytes used 79.63GB
-        devid    2 size 111.79GB used 111.01GB path /dev/sdb
-        devid    1 size 111.79GB used 111.03GB path /dev/sda
+    Crash occurs at extent-tree.c:find_first_block_group when it gets:
 
-I'm pretty sure I created this fs with -d raid1 -m raid1!  Speaking
-of which, is there a way to read a FS configuration: how can I tell
-this FS really uses raid1 for both data and metadata?
+                leaf =3D path->nodes[0];
 
-The used column is surprising: if it's a mirror why 111.01 and
-111.03?  And why all the space is being used anyway: I mean what's
-the difference between the 79.63GB and 111.0[13]?
+    after that btrfs_header_nritems dereferences the leaf unconditional=
+ly:
 
-And the output of df is confusing too:
-/dev/sdb             234441648  83501968 150939680  36% /space
+        struct btrfs_header *h =3D (struct btrfs_header *)leaf->data;
 
-It's reporting twice the total space but I think I remember looking
-it up and that should be fixed in a future kernel version.
--- 
-Mathieu Chouquet-Stringer                           mchouque@free.fr
-            The sun itself sees not till heaven clears.
-	             -- William Shakespeare --
+    Any thoughts on how to make it succeed?
+
+Thank you,
+Andr=E9
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

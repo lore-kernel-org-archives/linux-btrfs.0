@@ -1,36 +1,37 @@
-From: =?ISO-8859-1?Q?Andr=E9_Goddard_Rosa?= <andre.goddard@gmail.com>
-Subject: btrfsck segmentation fault
-Date: Sat, 16 Jan 2010 23:27:56 -0200
-Message-ID: <b8bf37781001161727vc023a93u529aa4bf1fd1cdc3@mail.gmail.com>
+From: Sander <sander@humilis.net>
+Subject: Re: worse than expected compression ratios with -o compress
+Date: Sun, 17 Jan 2010 15:34:22 +0100
+Message-ID: <20100117143422.GA18448@cumulus>
+References: <alpine.DEB.2.00.1001161048330.16549@alumni-linux.ccs.neu.edu>
+Reply-To: sander@humilis.net
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Jim Faulkner <jfaulkne@ccs.neu.edu>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <alpine.DEB.2.00.1001161048330.16549@alumni-linux.ccs.neu.edu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hello Jim,
 
-     when trying to btrfsck my filesystem, I got the following error:
+Jim Faulkner wrote (ao):
+> To contrast, rzip can compress a database dump of this data to
+> around 7% of its original size.  This is an older database dump,
+> which is why it is smaller.  Before:
+> -rw------- 1 root root  69G 2010-01-15 14:55 mysqlurdbackup.2010-01-15
+> and after:
+> -rw------- 1 root root 5.2G 2010-01-16 05:34 mysqlurdbackup.2010-01-15.rz
+> 
+> Of course it took 15 hours to compress the data, and btrfs wouldn't
+> be able to use rzip for compression anyway.
 
-# btrfsck /dev/sda7
-parent transid verify failed on 13785038848 wanted 45848 found 45839
-Segmentation fault
+The difference between a life MySQL database and a dump of that database
+is that the dump is text, while the database files are binary.
 
-    Crash occurs at extent-tree.c:find_first_block_group when it gets:
+A fair comparison would be to compress the actual database files.
 
-                leaf =3D path->nodes[0];
+	With kind regards, Sander
 
-    after that btrfs_header_nritems dereferences the leaf unconditional=
-ly:
-
-        struct btrfs_header *h =3D (struct btrfs_header *)leaf->data;
-
-    Any thoughts on how to make it succeed?
-
-Thank you,
-Andr=E9
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-- 
+Humilis IT Services and Solutions
+http://www.humilis.net

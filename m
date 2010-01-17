@@ -1,37 +1,61 @@
-From: Sander <sander@humilis.net>
-Subject: Re: worse than expected compression ratios with -o compress
-Date: Sun, 17 Jan 2010 15:34:22 +0100
-Message-ID: <20100117143422.GA18448@cumulus>
-References: <alpine.DEB.2.00.1001161048330.16549@alumni-linux.ccs.neu.edu>
-Reply-To: sander@humilis.net
+From: Jim Meyering <jim@meyering.net>
+Subject: Re: tests/misc/ls-time
+Date: Sun, 17 Jan 2010 16:08:16 +0100
+Message-ID: <874omkzs4f.fsf@meyering.net>
+References: <fa9257d4-02e5-11df-9b6a-001cc0cda50c@msgid.mathom.us>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Jim Faulkner <jfaulkne@ccs.neu.edu>
+Cc: bug-coreutils <bug-coreutils@gnu.org>, linux-btrfs@vger.kernel.org
+To: Michael Stone <mstone@mathom.us>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <alpine.DEB.2.00.1001161048330.16549@alumni-linux.ccs.neu.edu>
+In-Reply-To: <fa9257d4-02e5-11df-9b6a-001cc0cda50c@msgid.mathom.us> (Michael
+	Stone's message of "Sat, 16 Jan 2010 16:34:49 -0500")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Jim,
+Michael Stone wrote:
+> It seems that touch -a does update ctime on btrfs, invalidating one of
+> the assumptions behind this test and causing it to fail.
 
-Jim Faulkner wrote (ao):
-> To contrast, rzip can compress a database dump of this data to
-> around 7% of its original size.  This is an older database dump,
-> which is why it is smaller.  Before:
-> -rw------- 1 root root  69G 2010-01-15 14:55 mysqlurdbackup.2010-01-15
-> and after:
-> -rw------- 1 root root 5.2G 2010-01-16 05:34 mysqlurdbackup.2010-01-15.rz
-> 
-> Of course it took 15 hours to compress the data, and btrfs wouldn't
-> be able to use rzip for compression anyway.
+s/does/does not/
 
-The difference between a life MySQL database and a dump of that database
-is that the dump is text, while the database files are binary.
+Thanks for the report.
 
-A fair comparison would be to compress the actual database files.
+I've just confirmed this test failure by building and running coreutils'
+"make check" on a btrfs file system I'd just created using mkfs.btrfs
+v0.19 on Fedora 12, btrfs-progs-0.19-9.fc12.x86_64
 
-	With kind regards, Sander
+However, it has nothing to do with touch, but rather looks
+like a bug (or at least a difference) in btrfs.
 
--- 
-Humilis IT Services and Solutions
-http://www.humilis.net
+Here's a function to provide a quick demo:
+
+ctime_vs_link_test() { env rm -f a b x; : > a; : > b; ln a x
+stat -f --pr '%T: ' .; case "$(env ls -ct a b)" in a*b) echo pass;; \
+  *) echo fail; env stat --format='%n %z' a b;; esac; }
+
+Use it on a few file systems.
+This test passes on all I tried except btrfs:
+[note: $HOME is ext4]
+
+    $ for i in $HOME/tmp /t /fs/btrfs /fs/xfs /fs/nilfs2; do
+        cd $i && ctime_vs_link_test; done
+    ext2/ext3: pass
+    tmpfs: pass
+    btrfs: fail
+    a 2010-01-17 14:54:12.470194921 +0000
+    b 2010-01-17 14:54:12.471193684 +0000
+    xfs: pass
+    nilfs2: pass
+
+In case it's not immediately obvious (time-stamp problems rarely are),
+here's a blow-by-blow:
+
+    # After this, a's ctime precedes b's, even if just by ~1ms.
+    rm -f a b x; : > a; : > b
+
+    # Increasing a's link count must update its ctime to the present,
+    # making it more recent than b's.
+    ln a x
+
+    # Sorting on ctime, a should come first:
+    env ls -ct a b

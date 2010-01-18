@@ -1,57 +1,43 @@
 From: "Ronny H. Kavli" <ronny.kavli@gmail.com>
-Subject: Inconsistent reports after disk-error.
-Date: Mon, 18 Jan 2010 23:45:40 +0100
-Message-ID: <1263854740.6829.20.camel@bollox.stuffit.loc>
+Subject: Re: Inconsistent reports after disk-error.
+Date: Mon, 18 Jan 2010 23:59:37 +0100
+Message-ID: <1263855577.6829.26.camel@bollox.stuffit.loc>
+References: <1263854740.6829.20.camel@bollox.stuffit.loc>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="UTF-8"
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1263854740.6829.20.camel@bollox.stuffit.loc>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've been running btrfs on some disks with Ubuntu kernel 2.6.31 for a
-while now. Recently I had a bad USB-cable to one of those disks which
-left the btrfs filesystem in a somewhat sad state. Fair enough.
+Ah. I can reply to myself after checking the logs when I try to mount
+with dmesg(1).
 
-What worries me is what btrfsck reports back to me during two successive
-runs:
-root@bollox:/home/kavli# btrfsck /dev/mapper/vg3-vbox1 
-checksum verify failed on 142837022720 wanted 5D18D333 found 95085E8
-checksum verify failed on 142837022720 wanted 5D18D333 found 95085E8
-checksum verify failed on 142837022720 wanted 5D18D333 found 95085E8
-btrfsck: disk-io.c:741: open_ctree_fd: Assertion `!(!tree_root->node)'
-failed.
-Aborted
-root@bollox:/home/kavli# btrfsck /dev/mapper/vg3-vbox1 
-checksum verify failed on 142837022720 wanted 5D18D333 found 81D15E8
-checksum verify failed on 142837022720 wanted 5D18D333 found 81D15E8
-checksum verify failed on 142837022720 wanted 5D18D333 found 81D15E8
-btrfsck: disk-io.c:741: open_ctree_fd: Assertion `!(!tree_root->node)'
-failed.
-Aborted
+Two successive mount-attempts give indeed a consistent result:
 
-I'd expected the checksums for the two separate runs to be equal.
+[ 3712.163040] device fsid 794be0222f8f0708-ffaf918752666783 devid 1
+transid 9044 /dev/mapper/vg3-vbox1
+[ 3712.172059] btrfs: dm-7 checksum verify failed on 142837022720 wanted
+5D181110 found 5D18D333 level 0
+[ 3712.172931] btrfs: dm-7 checksum verify failed on 142837022720 wanted
+5D181110 found 5D18D333 level 0
+[ 3712.173433] btrfs: dm-7 checksum verify failed on 142837022720 wanted
+5D185110 found 5D18D333 level 0
+[ 3712.173440] btrfs: failed to read tree root on dm-7
+[ 3712.173762] btrfs: open_ctree failed
+[ 3714.210952] device fsid 794be0222f8f0708-ffaf918752666783 devid 1
+transid 9044 /dev/mapper/vg3-vbox1
+[ 3714.220220] btrfs: dm-7 checksum verify failed on 142837022720 wanted
+5D181110 found 5D18D333 level 0
+[ 3714.220718] btrfs: dm-7 checksum verify failed on 142837022720 wanted
+5D181110 found 5D18D333 level 0
+[ 3714.221217] btrfs: dm-7 checksum verify failed on 142837022720 wanted
+5D185110 found 5D18D333 level 0
+[ 3714.221224] btrfs: failed to read tree root on dm-7
+[ 3714.221461] btrfs: open_ctree failed
 
-This is a vanilla filesystem that resides on one physical disk:
-root@bollox:/home/kavli# btrfs-show /dev/mapper/vg3-vbox1 
-failed to read /dev/sr0
-Label: none  uuid: 08078f2f-22e0-4b79-8367-66528791afff
-        Total devices 1 FS bytes used 106.79GB
-        devid    1 size 232.88GB used 218.04GB
-path /dev/mapper/vg3-vbox1
-
-Btrfs Btrfs v0.19
-
-I've googled a bit and found one case with a similar problem in a raid1
-setup (I guess incorrectly stated as raid0):
- http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg03429.html
-
-There were no followups beyond that point which stated the cause of this
-behaviour.
-
-BTW: Is there any hope of recovery of this filesystem, or is it just a
-new mkfs that can help?
-
-Regards,
+I then make the the assumption that my copy of btrfsck is not giving
+correct output.
 
  -- RHK
 

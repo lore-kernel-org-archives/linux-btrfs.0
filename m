@@ -1,62 +1,75 @@
-From: Josef Bacik <josef@redhat.com>
+From: Jim Faulkner <jfaulkne@ccs.neu.edu>
 Subject: Re: worse than expected compression ratios with -o compress
-Date: Mon, 18 Jan 2010 09:12:40 -0500
-Message-ID: <20100118141240.GA10710@localhost.localdomain>
-References: <alpine.DEB.2.00.1001161048330.16549@alumni-linux.ccs.neu.edu>
+Date: Mon, 18 Jan 2010 09:46:42 -0500 (EST)
+Message-ID: <alpine.DEB.2.00.1001180906050.14760@alumni-linux.ccs.neu.edu>
+References: <alpine.DEB.2.00.1001161048330.16549@alumni-linux.ccs.neu.edu> <20100117143422.GA18448@cumulus>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: TEXT/PLAIN; format=flowed; charset=US-ASCII
 Cc: linux-btrfs@vger.kernel.org
-To: Jim Faulkner <jfaulkne@ccs.neu.edu>
+To: Sander <sander@humilis.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <alpine.DEB.2.00.1001161048330.16549@alumni-linux.ccs.neu.edu>
+In-Reply-To: <20100117143422.GA18448@cumulus>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jan 16, 2010 at 11:16:50AM -0500, Jim Faulkner wrote:
->
-> I have a mysql database which consists of hundreds of millions, if not  
-> billions of Usenet newsgroup headers.  This data should be highly  
-> compressable, so I put the mysql data directory on a btrfs filesystem  
-> mounted with the compress option:
-> /dev/sdi on /var/news/mysql type btrfs (rw,noatime,compress,noacl)
->
-> However, I'm not seeing the kind of compression ratios that I would 
-> expect with this type of data.  FYI, all my tests are using Linux 
-> 2.6.32.3. Here's my current disk usage:
-> Filesystem            Size  Used Avail Use% Mounted on
-> /dev/sdi              302G  122G  181G  41% /var/news/mysql
->
-> and here's the actual size of all files:
-> delta-9 mysql # pwd
-> /var/news/mysql
-> delta-9 mysql # du -h --max-depth=1
-> 747K    ./mysql
-> 0       ./test
-> 125G    ./urd
-> 125G    .
-> delta-9 mysql #
->
-> As you can see, I am only shaving off 3 gigs out of 125 gigs worth of 
-> what should be very compressable data.  The compressed data ends up being 
-> around 98% the size of the original data.
->
-> To contrast, rzip can compress a database dump of this data to around 7%  
-> of its original size.  This is an older database dump, which is why it is 
-> smaller.  Before:
-> -rw------- 1 root root  69G 2010-01-15 14:55 mysqlurdbackup.2010-01-15
-> and after:
-> -rw------- 1 root root 5.2G 2010-01-16 05:34 mysqlurdbackup.2010-01-15.rz
->
-> Of course it took 15 hours to compress the data, and btrfs wouldn't be  
-> able to use rzip for compression anyway.
->
-> However, I still would expect to see better compression ratios than 98% 
-> on such data.  Are there plans to implement a better compression 
-> algorithm? Alternatively, is there a way to tune btrfs compression to 
-> achieve better ratios?
->
 
-Currently the only compression algorithm we support is gzip, so try gzipp'ing
-your database to get a better comparison.  The plan is to eventually support
-other compression algorithms, but currently we do not.  Thanks,
+On Sun, 17 Jan 2010, Sander wrote:
 
-Josef
+> A fair comparison would be to compress the actual database files.
+
+You are absolutely right.  I've run some more tests, this time against the 
+database files themselves.
+
+This time there are 73 GB worth of database files:
+delta-9 mysql # du -h
+747K    ./mysql
+0       ./test
+73G     ./urd
+73G     .
+
+btrfs compresses this to 70 GB:
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/sdi              187G   70G  117G  38% /var/news/mysql
+
+which is 96% compression ratio.  I then tried compressing /var/news/mysql 
+with some popular compressors.
+
+zip -5, zip -9, and gzip all ended up producing archives that are roughly 
+11 GB:
+delta-9 btrfs-mysql-test-jim # ls -lh btrfs-mysql-test.gz 
+btrfs-mysql-test-9.zip btrfs-mysql-test-5.zip
+-rw-r--r-- 1 jim jim 11G 2010-01-18 01:50 btrfs-mysql-test-5.zip
+-rw-r--r-- 1 jim jim 11G 2010-01-18 06:56 btrfs-mysql-test-9.zip
+-rw-r--r-- 1 jim jim 11G 2010-01-18 02:17 btrfs-mysql-test.gz
+delta-9 btrfs-mysql-test-jim #
+
+This is a 15% compression ratio.
+
+bzip2 produced an 8 GB archive, which is an 11% compression ratio:
+-rw-r--r-- 1 jim jim 8.0G 2010-01-18 09:08 btrfs-mysql-test.bz2
+
+7z produced a 6.1 GB archive, which is an 8% compression ratio:
+-rw-r--r-- 1 jim jim 6.1G 2010-01-18 07:36 btrfs-mysql-test.7z
+
+Finally, all of these are just command line compressors, I wanted to get a 
+test in with actual disk compression software.  I haven't had a DOS box 
+running doublespace since I was rather young, so I plugged an extra drive 
+into a Windows Vista machine, formatted it with NTFS, and enabled 
+compression via the drive properties menu.  I then copied the mysql data 
+directory onto the compressed NTFS drive:
+http://www.ccs.neu.edu/home/jfaulkne/ntfscompression1.jpg
+
+The end result was 72.4 GB of data using 29.5 GB of disk space:
+http://www.ccs.neu.edu/home/jfaulkne/ntfscompression2.jpg
+
+This is a 41% compression ratio.
+
+So, in summary, the compression ratios are:
+btrfs: 96%
+zip/gzip: 15%
+bzip2: 11%
+7z: 8%
+NTFS: 41%
+
+I think most would agree that btrfs is doing a rather poor job of 
+compressing my data, even compared to gzip and NTFS compression. 
+Thoughts?

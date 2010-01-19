@@ -1,114 +1,82 @@
-From: Wenyi Liu <qingshenlwy@gmail.com>
-Subject: Re: static analysis tool cppcheck meets the btrfs code - four issues
-Date: Tue, 19 Jan 2010 23:31:24 +0800
-Message-ID: <b3657a101001190731l7256fe35r4263df7415080cb@mail.gmail.com>
-References: <BLU108-W91E576564C5751190B2C59C650@phx.gbl>
+From: Josef Bacik <josef@redhat.com>
+Subject: [RFC] make btrfs-image work
+Date: Tue, 19 Jan 2010 11:04:17 -0500
+Message-ID: <20100119160417.GA16384@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: d binderman <dcb314@hotmail.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BLU108-W91E576564C5751190B2C59C650@phx.gbl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2010/1/19 d binderman <dcb314@hotmail.com>:
->
->
-> Hello there,
->
-> I just ran the sourceforge tool cppcheck over the source code of the
-> new Linux kernel 2.6.32.4
->
-> It said
->
-> 1.
->
-> [./btrfs/free-space-cache.c:600]: (style) Redundant condition. It is =
-safe to deallocate a NULL pointer
->
-> The source code is
->
-> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 if (info->bitmap)
-> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=
- kfree(info->bitmap);
->
-> I agree with cppcheck. Suggest delete the if test.
->
-> 2.
->
-> [./btrfs/free-space-cache.c:906]: (style) Redundant condition. It is =
-safe to deallocate a NULL pointer
->
-> Duplicate.
-> 3.
->
-> [./btrfs/relocation.c:3278]: (error) Memory leak: cluster
->
-> The source code is
->
-> =A0=A0=A0=A0=A0=A0=A0 cluster =3D kzalloc(sizeof(*cluster), GFP_NOFS)=
-;
-> =A0=A0=A0=A0=A0=A0=A0 if (!cluster)
-> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 return -ENOMEM;
->
-> =A0=A0=A0=A0=A0=A0=A0 path =3D btrfs_alloc_path();
-> =A0=A0=A0=A0=A0=A0=A0 if (!path)
-> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 return -ENOMEM;
->
-> Suggest new code
->
-> =A0=A0=A0=A0=A0=A0=A0 cluster =3D kzalloc(sizeof(*cluster), GFP_NOFS)=
-;
-> =A0=A0=A0=A0=A0=A0=A0 if (!cluster)
-> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 return -ENOMEM;
->
-> =A0=A0=A0=A0=A0=A0=A0 path =3D btrfs_alloc_path();
-> =A0=A0=A0=A0=A0=A0=A0 if (!path)
-> =A0=A0=A0=A0=A0=A0=A0 {
-> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 kfree( cluster);
-> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 return -ENOMEM;
-> =A0=A0=A0=A0=A0=A0=A0 }
-sounds good, but the code format...
->
-> 4.
->
-> [./btrfs/volumes.c:1257]: (error) Possible null pointer dereference: =
-fs_devices
->
-> The source code is
->
-> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 while (fs_devices) {
-> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=
- if (fs_devices->seed =3D=3D device->fs_devices)
-> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=
-=A0=A0=A0=A0=A0=A0=A0=A0 break;
-> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=
- fs_devices =3D fs_devices->seed;
-> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 }
-> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 fs_devices->seed =3D de=
-vice->fs_devices->seed;
->
-> So presumably fs_devices can never be NULL i.e. the while loop will
-> always find what it is looking for and so no code to test for NULL is
-> required.
->
->
-> Regards
->
-> David Binderman
->
->
->
-> _________________________________________________________________
-> Do you have a story that started on Hotmail? Tell us now
-> http://clk.atdmt.com/UKM/go/195013117/direct/01/--
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Hello,
+
+btrfs-image would be very helpful for debugging some users problems that we
+can't reproduce ourselves, but every image that i try and re-create with
+btrfs-image makes btrfs panic.  This is because we zero out the superblocks
+chunk array and re-create our uuid.  This means that we end up not being able to
+read the chunk tree on mount, and then even if we could the uuid's of the
+metadata we read back wouldn't match the uuid of the device.  The way I've fixed
+this is to just spit the metadata back onto the disk exactly the way we got it.
+The caveat to this I think is that if we try to image a multi-device setup that
+it won't work right unless we have a multi-device setup to restore the image
+onto.  I'm not sure if thats the goal or not.  This patch makes the single disk
+case work fine for me.  Let me know what you think.  Thanks,
+
+Josef
+
+diff --git a/btrfs-image.c b/btrfs-image.c
+index f2bbcc8..2d45ac3 100644
+--- a/btrfs-image.c
++++ b/btrfs-image.c
+@@ -564,41 +564,6 @@ static int create_metadump(const char *input, FILE *out, int num_threads,
+ 	return 0;
+ }
+ 
+-static void update_super(u8 *buffer)
+-{
+-	struct btrfs_super_block *super = (struct btrfs_super_block *)buffer;
+-	struct btrfs_chunk *chunk;
+-	struct btrfs_disk_key *key;
+-	u32 sectorsize = btrfs_super_sectorsize(super);
+-	u64 flags = btrfs_super_flags(super);
+-
+-	flags |= BTRFS_SUPER_FLAG_METADUMP;
+-	btrfs_set_super_flags(super, flags);
+-
+-	key = (struct btrfs_disk_key *)(super->sys_chunk_array);
+-	chunk = (struct btrfs_chunk *)(super->sys_chunk_array +
+-				       sizeof(struct btrfs_disk_key));
+-
+-	btrfs_set_disk_key_objectid(key, BTRFS_FIRST_CHUNK_TREE_OBJECTID);
+-	btrfs_set_disk_key_type(key, BTRFS_CHUNK_ITEM_KEY);
+-	btrfs_set_disk_key_offset(key, 0);
+-
+-	btrfs_set_stack_chunk_length(chunk, (u64)-1);
+-	btrfs_set_stack_chunk_owner(chunk, BTRFS_EXTENT_TREE_OBJECTID);
+-	btrfs_set_stack_chunk_stripe_len(chunk, 64 * 1024);
+-	btrfs_set_stack_chunk_type(chunk, BTRFS_BLOCK_GROUP_SYSTEM);
+-	btrfs_set_stack_chunk_io_align(chunk, sectorsize);
+-	btrfs_set_stack_chunk_io_width(chunk, sectorsize);
+-	btrfs_set_stack_chunk_sector_size(chunk, sectorsize);
+-	btrfs_set_stack_chunk_num_stripes(chunk, 1);
+-	btrfs_set_stack_chunk_sub_stripes(chunk, 0);
+-	chunk->stripe.devid = super->dev_item.devid;
+-	chunk->stripe.offset = cpu_to_le64(0);
+-	memcpy(chunk->stripe.dev_uuid, super->dev_item.uuid, BTRFS_UUID_SIZE);
+-	btrfs_set_super_sys_array_size(super, sizeof(*key) + sizeof(*chunk));
+-	csum_block(buffer, 4096);
+-}
+-
+ static void *restore_worker(void *data)
+ {
+ 	struct mdrestore_struct *mdres = (struct mdrestore_struct *)data;
+@@ -637,9 +602,6 @@ static void *restore_worker(void *data)
+ 			size = async->bufsize;
+ 		}
+ 
+-		if (async->start == BTRFS_SUPER_INFO_OFFSET)
+-			update_super(outbuf);
+-
+ 		ret = pwrite64(outfd, outbuf, size, async->start);
+ 		BUG_ON(ret != size);
+ 

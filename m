@@ -1,29 +1,114 @@
-From: Paul Komkoff <i@stingr.net>
-Subject: Re: btrfs fallocate woes
-Date: Tue, 19 Jan 2010 15:18:26 +0000
-Message-ID: <715ea5c11001190718u396f41cua51ccf74c498482a@mail.gmail.com>
-References: <715ea5c11001140328g6198447axce1ba884a6e6fb96@mail.gmail.com>
-	 <aday6k0lhpx.fsf@roland-alpha.cisco.com>
-	 <20100114192035.GC23810@think>
-	 <715ea5c11001141233i78410267qc4d0767f5b7b8250@mail.gmail.com>
+From: Wenyi Liu <qingshenlwy@gmail.com>
+Subject: Re: static analysis tool cppcheck meets the btrfs code - four issues
+Date: Tue, 19 Jan 2010 23:31:24 +0800
+Message-ID: <b3657a101001190731l7256fe35r4263df7415080cb@mail.gmail.com>
+References: <BLU108-W91E576564C5751190B2C59C650@phx.gbl>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>,
-	Roland Dreier <rdreier@cisco.com>, Paul Komkoff <i@stingr.net>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: linux-btrfs@vger.kernel.org
+To: d binderman <dcb314@hotmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <715ea5c11001141233i78410267qc4d0767f5b7b8250@mail.gmail.com>
+In-Reply-To: <BLU108-W91E576564C5751190B2C59C650@phx.gbl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 14, 2010 at 8:33 PM, Paul Komkoff <i@stingr.net> wrote:
-> If it's fixed in latest tree it's fine, I guess that fix isn't in
-> fedora's 2.6.32.3
-
-Sorry for popping up again, but did anyone fix this/verified there's
-no problem in recent kernels? For some reasons I cannot run latest git
-so I'm stuck with fedora kernels, and every one I have around me (with
-btrfs) has this problem.
-
-Thanks.
--- 
-This message represents the official view of the voices in my head
+2010/1/19 d binderman <dcb314@hotmail.com>:
+>
+>
+> Hello there,
+>
+> I just ran the sourceforge tool cppcheck over the source code of the
+> new Linux kernel 2.6.32.4
+>
+> It said
+>
+> 1.
+>
+> [./btrfs/free-space-cache.c:600]: (style) Redundant condition. It is =
+safe to deallocate a NULL pointer
+>
+> The source code is
+>
+> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 if (info->bitmap)
+> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=
+ kfree(info->bitmap);
+>
+> I agree with cppcheck. Suggest delete the if test.
+>
+> 2.
+>
+> [./btrfs/free-space-cache.c:906]: (style) Redundant condition. It is =
+safe to deallocate a NULL pointer
+>
+> Duplicate.
+> 3.
+>
+> [./btrfs/relocation.c:3278]: (error) Memory leak: cluster
+>
+> The source code is
+>
+> =A0=A0=A0=A0=A0=A0=A0 cluster =3D kzalloc(sizeof(*cluster), GFP_NOFS)=
+;
+> =A0=A0=A0=A0=A0=A0=A0 if (!cluster)
+> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 return -ENOMEM;
+>
+> =A0=A0=A0=A0=A0=A0=A0 path =3D btrfs_alloc_path();
+> =A0=A0=A0=A0=A0=A0=A0 if (!path)
+> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 return -ENOMEM;
+>
+> Suggest new code
+>
+> =A0=A0=A0=A0=A0=A0=A0 cluster =3D kzalloc(sizeof(*cluster), GFP_NOFS)=
+;
+> =A0=A0=A0=A0=A0=A0=A0 if (!cluster)
+> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 return -ENOMEM;
+>
+> =A0=A0=A0=A0=A0=A0=A0 path =3D btrfs_alloc_path();
+> =A0=A0=A0=A0=A0=A0=A0 if (!path)
+> =A0=A0=A0=A0=A0=A0=A0 {
+> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 kfree( cluster);
+> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 return -ENOMEM;
+> =A0=A0=A0=A0=A0=A0=A0 }
+sounds good, but the code format...
+>
+> 4.
+>
+> [./btrfs/volumes.c:1257]: (error) Possible null pointer dereference: =
+fs_devices
+>
+> The source code is
+>
+> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 while (fs_devices) {
+> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=
+ if (fs_devices->seed =3D=3D device->fs_devices)
+> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=
+=A0=A0=A0=A0=A0=A0=A0=A0 break;
+> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=
+ fs_devices =3D fs_devices->seed;
+> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 }
+> =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 fs_devices->seed =3D de=
+vice->fs_devices->seed;
+>
+> So presumably fs_devices can never be NULL i.e. the while loop will
+> always find what it is looking for and so no code to test for NULL is
+> required.
+>
+>
+> Regards
+>
+> David Binderman
+>
+>
+>
+> _________________________________________________________________
+> Do you have a story that started on Hotmail? Tell us now
+> http://clk.atdmt.com/UKM/go/195013117/direct/01/--
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

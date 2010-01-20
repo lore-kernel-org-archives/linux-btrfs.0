@@ -1,64 +1,56 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [RFC] make btrfs-image work
-Date: Tue, 19 Jan 2010 21:37:36 -0500
-Message-ID: <20100120023736.GB16384@localhost.localdomain>
-References: <20100119160417.GA16384@localhost.localdomain> <3d0408631001191828v65fbb983w482f478b5ed92bbf@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: [GIT PULL] Btrfs updates for 2.6.33-git
+Date: Tue, 19 Jan 2010 21:42:46 -0500
+Message-ID: <20100120024246.GA3001@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
-To: "Yan, Zheng " <yanzheng@21cn.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <3d0408631001191828v65fbb983w482f478b5ed92bbf@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+	linux-kernel <linux-kernel@vger.kernel.org>,
+	linux-btrfs@vger.kernel.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755055Ab0ATCoK@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 20, 2010 at 10:28:01AM +0800, Yan, Zheng  wrote:
-> On Wed, Jan 20, 2010 at 12:04 AM, Josef Bacik <josef@redhat.com> wrot=
-e:
-> > Hello,
-> >
-> > btrfs-image would be very helpful for debugging some users problems=
- that we
-> > can't reproduce ourselves, but every image that i try and re-create=
- with
-> > btrfs-image makes btrfs panic. =A0This is because we zero out the s=
-uperblocks
-> > chunk array and re-create our uuid. =A0This means that we end up no=
-t being able to
-> > read the chunk tree on mount, and then even if we could the uuid's =
-of the
-> > metadata we read back wouldn't match the uuid of the device. =A0The=
- way I've fixed
-> > this is to just spit the metadata back onto the disk exactly the wa=
-y we got it.
-> > The caveat to this I think is that if we try to image a multi-devic=
-e setup that
-> > it won't work right unless we have a multi-device setup to restore =
-the image
-> > onto. =A0I'm not sure if thats the goal or not. =A0This patch makes=
- the single disk
-> > case work fine for me. =A0Let me know what you think. =A0Thanks,
-> >
->=20
-> The goal of btrfs-image is create image that can be  examined by btrf=
-sck and
-> btrfs-debug-tree. btrfs-image creates metadata image for btrfs' logic=
-al address
-> space. So your patch only works for the uncommon case that btrfs' log=
-ical
-> address is mapped to offset of device.
->=20
+Hello everyone,
 
-Ok, but I think it would be helpful to be able to restore the fs onto a=
- device
-and still be able to use it like a normal fs so we can debug other type=
-s of
-problems.  But I don't really care that much so if that wasn't the inte=
-nded goal
-I'll find something else to work on.  Thanks,
+The master branch of the btrfs unstable tree:
 
-Josef
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
+
+Is against 2.6.32 but pulls cleanly into Linus' current git.  These are
+various bug fixes, nothing stands out but some are commonly hit.
+
+The readdir fix brings btrfs in line with what xfs does, limiting the
+max directory entry offset for proper results in both 32 bit and 64 bit
+environments.
+
+For everyone waiting for Josef's snapshot-rollback work for snapshot
+protected upgrades, I'm collecting those into a .34 testing branch along
+with other development work.  It will be available this week.
+
+Chris Mason (1) commits (+7/-5):
+    Btrfs: deal with NULL acl sent to btrfs_set_acl
+
+Jan Engelhardt (1) commits (+5/-1):
+    btrfs: fix missing last-entry in readdir(3)
+
+Jiri Slaby (1) commits (+6/-2):
+    Btrfs, fix memory leaks in error paths
+
+Josef Bacik (2) commits (+25/-13):
+    Btrfs: fix regression in orphan cleanup (+6/-0)
+    Btrfs: fix possible panic on unmount (+19/-13)
+
+Zheng Yan (2) commits (+82/-20):
+    Btrfs: align offsets for btrfs_ordered_update_i_size (+2/-0)
+    Btrfs: Fix race in btrfs_mark_extent_written (+80/-20)
+
+Total: (7) commits
+
+ fs/btrfs/acl.c          |   12 +++--
+ fs/btrfs/extent-tree.c  |   32 +++++++++------
+ fs/btrfs/file.c         |  100 ++++++++++++++++++++++++++++++++++++++----------
+ fs/btrfs/inode.c        |   12 +++++
+ fs/btrfs/ordered-data.c |    2 
+ fs/btrfs/relocation.c   |    4 +
+ fs/btrfs/volumes.c      |    4 +
+ 7 files changed, 125 insertions(+), 41 deletions(-)

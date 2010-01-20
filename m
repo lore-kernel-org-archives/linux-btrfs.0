@@ -1,22 +1,64 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Inconsistent reports after disk-error.
-Date: Wed, 20 Jan 2010 16:36:30 -0500
-Message-ID: <20100120213630.GI3001@think>
-References: <1263854740.6829.20.camel@bollox.stuffit.loc>
+From: Eric Sandeen <sandeen@redhat.com>
+Subject: [PATCH] fix up userspace for newer glibc
+Date: Wed, 20 Jan 2010 15:42:35 -0600
+Message-ID: <4B5778CB.5090909@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: "Ronny H. Kavli" <ronny.kavli@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1263854740.6829.20.camel@bollox.stuffit.loc>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 18, 2010 at 11:45:40PM +0100, Ronny H. Kavli wrote:
-> 
-> BTW: Is there any hope of recovery of this filesystem, or is it just a
-> new mkfs that can help?
+Rawhide is getting cranky with posix compliance, and a few
+things have stopped building.
 
-I'd expect that we can help at least copy some data off.
+getpagesize() is now only available -with- __USE_XOPEN_EXTENDED
+or __USE_BSD, and NOT __USE_XOPEN2K.
 
--chris
+_GNU_SOURCE must define __USE_XOPEN2K because getpagesize()
+has gone away for mkfs.  I gave up and used sysconf.
+
+Also, something used to pull in stat that no longer does, so
+things like S_ISREG weren't getting defined.
+
+The following fixes things for me.
+
+Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+---
+
+Index: btrfs-progs-0.19/btrfsck.c
+===================================================================
+--- btrfs-progs-0.19.orig/btrfsck.c
++++ btrfs-progs-0.19/btrfsck.c
+@@ -21,6 +21,9 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <fcntl.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <unistd.h>
+ #include "kerncompat.h"
+ #include "ctree.h"
+ #include "disk-io.h"
+Index: btrfs-progs-0.19/mkfs.c
+===================================================================
+--- btrfs-progs-0.19.orig/mkfs.c
++++ btrfs-progs-0.19/mkfs.c
+@@ -341,7 +341,7 @@ int main(int ac, char **av)
+ 	u64 alloc_start = 0;
+ 	u64 metadata_profile = BTRFS_BLOCK_GROUP_RAID1 | BTRFS_BLOCK_GROUP_DUP;
+ 	u64 data_profile = BTRFS_BLOCK_GROUP_RAID0;
+-	u32 leafsize = getpagesize();
++	u32 leafsize = sysconf(_SC_PAGESIZE);
+ 	u32 sectorsize = 4096;
+ 	u32 nodesize = leafsize;
+ 	u32 stripesize = 4096;
+@@ -398,7 +398,7 @@ int main(int ac, char **av)
+ 				print_usage();
+ 		}
+ 	}
+-	sectorsize = max(sectorsize, (u32)getpagesize());
++	sectorsize = max(sectorsize, (u32)sysconf(_SC_PAGESIZE));
+ 	if (leafsize < sectorsize || (leafsize & (sectorsize - 1))) {
+ 		fprintf(stderr, "Illegal leafsize %u\n", leafsize);
+ 		exit(1);
 

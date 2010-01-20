@@ -1,28 +1,83 @@
-From: "Mr. Tux" <tuxoholic@hotmail.de>
-Subject: Howto mount intact left-over device of a degraded btrfs-raid?
-Date: Wed, 20 Jan 2010 19:31:24 +0100
-Message-ID: <BLU0-SMTP89D73FD06036781FE98000D8640@phx.gbl>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: btrfs write behavior on idle system
+Date: Wed, 20 Jan 2010 16:29:53 -0500
+Message-ID: <20100120212953.GG3001@think>
+References: <20100118171756.GA4165@Pilar.aei.mpg.de>
+ <4B54A513.7060902@p-static.net>
+ <20100118193637.GB5367@Pilar.aei.mpg.de>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="us-ascii"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: Ravi Pinjala <ravi@p-static.net>, linux-btrfs@vger.kernel.org
+To: "Carlos R. Mafra" <crmafra2@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100118193637.GB5367@Pilar.aei.mpg.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi list
+On Mon, Jan 18, 2010 at 08:36:37PM +0100, Carlos R. Mafra wrote:
+> On Mo 18.Jan'10 at 12:14:43 -0600, Ravi Pinjala wrote:
+> > On 01/18/10 11:17, Carlos R. Mafra wrote:
+> > >Hi everyone,
+> > >
+> > >I am using btrfs for my /home partition since I upgraded my slow
+> > >laptop hdd for an ssd 3 weeks ago. I am always in sync with Linus'
+> > >tree of the day (plus a btrfs patch which is not in there yet) and
+> > >so far I haven't lost any data, so all is good.
+> > >
+> > >I have a question about the write behavior of the various [btrfs- ]
+> > >kernel threads, as I've been monitoring what is writing to the ssd
+> > >just in case.
+> > >
+> > >So what I've been observing with 'iostat', 'iotop' and 'blktrace'
+> > >is the following. If my laptop is almost absolutely idle (just
+> > >a plain Window Maker and a few xterms and a couple dockapps open)
+> > >there is nothing writing to the disk (which is OK).
+> > >
+> > >But as soon as I leave an open tab in chrome (or firefox) the various
+> > >[btrfs- ] threads start writing in my /home, and I don't know what.
+> > >For testing purposes, I mounted the config dir of chrome (~/.config/google-chrome)
+> > >in my SD card (at /dev/mmcblk0p1) to exclude the possibility of maybe chrome
+> > >trying to update its history or something, so that it does not write
+> > >anything in my /home partition with btrfs.
+> > >
+> > >But I see this in the output of 'iotop' from a 60 sec interval, showing
+> > >only the processes which wrote something:
+> > >
+> > >Total DISK READ: 0 B/s | Total DISK WRITE: 10.26 K/s
+> > >   PID USER      DISK READ  DISK WRITE   SWAPIN    IO    COMMAND
+> > >   485 root           0 B/s    5.19 K/s  0.00 %  0.02 % [btrfs-transacti]
+> > >  3792 root           0 B/s       0 B/s  0.00 %  0.01 % [flush-btrfs-1]
+> > >   476 root           0 B/s    0.13 K/s  0.00 %  0.00 % [btrfs-delalloc-]
+> > >   481 root           0 B/s    4.93 K/s  0.00 %  0.00 % [btrfs-endio-wri]
+> > >
+> > >and there are more instances like this. Is there a way to avoid (or reduce)
+> > >the writings of these threads?
+> > >
+> > >And when I start opening some pages in chrome and use it some more I
+> > >get many many writes on my /home partition from these threads (and swapper,
+> > >see below) even though I mounted the .config/google-chrome dir under
+> > >/dev/mmcblk0p1 which uses ext4.
+> > >
+> > >>From another experiment where chrome was showing a blank tab a ~7 minutes
+> > >run of 'blktrace -a write /dev/sda3' (sda3 is my /home) ends like this
+> > >(from 'blkparse -s sda3.blktrace.0'):
+> > >
+> > - snip -
+> > 
+> > Don't forget cache - should be under ~/.cache/google-chrome. That
+> > would probably explain the disk activity you're seeing.
+> 
+> Oh my... what a shame! That was it; I moved it to the SD card and
+> now my ssd is not suffering anymore.
 
-I tried to mount the intact device of a two memer btrfs raid array with one 
-device missing:
+Web browsers can write a lot (really a lot) to disk.  There are caches
+of the images, caches of the web pages, your history, book mark updates,
+and then whatever tracking and bank account numbers google is holding on
+to for you.
 
-# mount -o degraded /dev/sdb /mnt
+Does anyone know if chrome share's firefox's affinity to use fsync
+heavily?  You could test with strace.
 
-this wouldn't work with kernel 2.6.32-2 - caused some sort of memory segfault
+Either way, lots of writing when surfing the web isn't a big surprise.
 
-# btrfs-vol -r missing /mnt
+-chris
 
-complained and refused to mount the array degraded with only one intact array 
-member left -> demanded two intact members
-
-How can I mount this array anyway?
-
-thanks!

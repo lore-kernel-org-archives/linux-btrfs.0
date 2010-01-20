@@ -1,83 +1,59 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: btrfs write behavior on idle system
-Date: Wed, 20 Jan 2010 16:29:53 -0500
-Message-ID: <20100120212953.GG3001@think>
-References: <20100118171756.GA4165@Pilar.aei.mpg.de>
- <4B54A513.7060902@p-static.net>
- <20100118193637.GB5367@Pilar.aei.mpg.de>
+Subject: Re: Inconsistent reports after disk-error.
+Date: Wed, 20 Jan 2010 16:35:55 -0500
+Message-ID: <20100120213555.GH3001@think>
+References: <1263854740.6829.20.camel@bollox.stuffit.loc>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Ravi Pinjala <ravi@p-static.net>, linux-btrfs@vger.kernel.org
-To: "Carlos R. Mafra" <crmafra2@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+To: "Ronny H. Kavli" <ronny.kavli@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100118193637.GB5367@Pilar.aei.mpg.de>
+In-Reply-To: <1263854740.6829.20.camel@bollox.stuffit.loc>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 18, 2010 at 08:36:37PM +0100, Carlos R. Mafra wrote:
-> On Mo 18.Jan'10 at 12:14:43 -0600, Ravi Pinjala wrote:
-> > On 01/18/10 11:17, Carlos R. Mafra wrote:
-> > >Hi everyone,
-> > >
-> > >I am using btrfs for my /home partition since I upgraded my slow
-> > >laptop hdd for an ssd 3 weeks ago. I am always in sync with Linus'
-> > >tree of the day (plus a btrfs patch which is not in there yet) and
-> > >so far I haven't lost any data, so all is good.
-> > >
-> > >I have a question about the write behavior of the various [btrfs- ]
-> > >kernel threads, as I've been monitoring what is writing to the ssd
-> > >just in case.
-> > >
-> > >So what I've been observing with 'iostat', 'iotop' and 'blktrace'
-> > >is the following. If my laptop is almost absolutely idle (just
-> > >a plain Window Maker and a few xterms and a couple dockapps open)
-> > >there is nothing writing to the disk (which is OK).
-> > >
-> > >But as soon as I leave an open tab in chrome (or firefox) the various
-> > >[btrfs- ] threads start writing in my /home, and I don't know what.
-> > >For testing purposes, I mounted the config dir of chrome (~/.config/google-chrome)
-> > >in my SD card (at /dev/mmcblk0p1) to exclude the possibility of maybe chrome
-> > >trying to update its history or something, so that it does not write
-> > >anything in my /home partition with btrfs.
-> > >
-> > >But I see this in the output of 'iotop' from a 60 sec interval, showing
-> > >only the processes which wrote something:
-> > >
-> > >Total DISK READ: 0 B/s | Total DISK WRITE: 10.26 K/s
-> > >   PID USER      DISK READ  DISK WRITE   SWAPIN    IO    COMMAND
-> > >   485 root           0 B/s    5.19 K/s  0.00 %  0.02 % [btrfs-transacti]
-> > >  3792 root           0 B/s       0 B/s  0.00 %  0.01 % [flush-btrfs-1]
-> > >   476 root           0 B/s    0.13 K/s  0.00 %  0.00 % [btrfs-delalloc-]
-> > >   481 root           0 B/s    4.93 K/s  0.00 %  0.00 % [btrfs-endio-wri]
-> > >
-> > >and there are more instances like this. Is there a way to avoid (or reduce)
-> > >the writings of these threads?
-> > >
-> > >And when I start opening some pages in chrome and use it some more I
-> > >get many many writes on my /home partition from these threads (and swapper,
-> > >see below) even though I mounted the .config/google-chrome dir under
-> > >/dev/mmcblk0p1 which uses ext4.
-> > >
-> > >>From another experiment where chrome was showing a blank tab a ~7 minutes
-> > >run of 'blktrace -a write /dev/sda3' (sda3 is my /home) ends like this
-> > >(from 'blkparse -s sda3.blktrace.0'):
-> > >
-> > - snip -
-> > 
-> > Don't forget cache - should be under ~/.cache/google-chrome. That
-> > would probably explain the disk activity you're seeing.
+On Mon, Jan 18, 2010 at 11:45:40PM +0100, Ronny H. Kavli wrote:
+> I've been running btrfs on some disks with Ubuntu kernel 2.6.31 for a
+> while now. Recently I had a bad USB-cable to one of those disks which
+> left the btrfs filesystem in a somewhat sad state. Fair enough.
 > 
-> Oh my... what a shame! That was it; I moved it to the SD card and
-> now my ssd is not suffering anymore.
+> What worries me is what btrfsck reports back to me during two successive
+> runs:
+> root@bollox:/home/kavli# btrfsck /dev/mapper/vg3-vbox1 
+> checksum verify failed on 142837022720 wanted 5D18D333 found 95085E8
+> checksum verify failed on 142837022720 wanted 5D18D333 found 95085E8
+> checksum verify failed on 142837022720 wanted 5D18D333 found 95085E8
+> btrfsck: disk-io.c:741: open_ctree_fd: Assertion `!(!tree_root->node)'
+> failed.
+> Aborted
+> root@bollox:/home/kavli# btrfsck /dev/mapper/vg3-vbox1 
+> checksum verify failed on 142837022720 wanted 5D18D333 found 81D15E8
+> checksum verify failed on 142837022720 wanted 5D18D333 found 81D15E8
+> checksum verify failed on 142837022720 wanted 5D18D333 found 81D15E8
+> btrfsck: disk-io.c:741: open_ctree_fd: Assertion `!(!tree_root->node)'
+> failed.
+> Aborted
+> 
+> I'd expected the checksums for the two separate runs to be equal.
+> 
+> This is a vanilla filesystem that resides on one physical disk:
+> root@bollox:/home/kavli# btrfs-show /dev/mapper/vg3-vbox1 
+> failed to read /dev/sr0
+> Label: none  uuid: 08078f2f-22e0-4b79-8367-66528791afff
+>         Total devices 1 FS bytes used 106.79GB
+>         devid    1 size 232.88GB used 218.04GB
+> path /dev/mapper/vg3-vbox1
+> 
+> Btrfs Btrfs v0.19
+> 
+> I've googled a bit and found one case with a similar problem in a raid1
+> setup (I guess incorrectly stated as raid0):
+>  http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg03429.html
+> 
+> There were no followups beyond that point which stated the cause of this
+> behaviour.
 
-Web browsers can write a lot (really a lot) to disk.  There are caches
-of the images, caches of the web pages, your history, book mark updates,
-and then whatever tracking and bank account numbers google is holding on
-to for you.
-
-Does anyone know if chrome share's firefox's affinity to use fsync
-heavily?  You could test with strace.
-
-Either way, lots of writing when surfing the web isn't a big surprise.
+I haven't been able to reproduce it locally, but I definitely think it
+sounds like the same problem.  Have you tried the btrfs-map-logical
+program in the unstable btrfs-progs repo?
 
 -chris
-

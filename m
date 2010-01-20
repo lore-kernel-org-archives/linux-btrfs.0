@@ -1,63 +1,51 @@
-From: Liuwenyi <qingshenlwy@gmail.com>
-Subject: Re: [RFC INFO PATCH 02/03] export use_mm and unuse_mm for filesystem
- modules.
-Date: Wed, 20 Jan 2010 07:37:55 +0800
-Message-ID: <4B564253.20405@gmail.com>
-References: <4B562B14.3050208@hp.com>
+From: "Yan, Zheng " <yanzheng@21cn.com>
+Subject: Re: [RFC] make btrfs-image work
+Date: Wed, 20 Jan 2010 10:28:01 +0800
+Message-ID: <3d0408631001191828v65fbb983w482f478b5ed92bbf@mail.gmail.com>
+References: <20100119160417.GA16384@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
-	format=flowed
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: jim owens <jowens@hp.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4B562B14.3050208@hp.com>
+In-Reply-To: <20100119160417.GA16384@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Maybe, you should send this patch to
-
-Andrew Morton <akpm@linux-foundation.org>
-Andrea Arcangeli <aarcange@redhat.com>
-Michael S. Tsirkin <mst@redhat.com>
-linux-kernel@vger.kernel.org
-linux-mm@kvack.org
-
-
-=E4=BA=8E 2010=E5=B9=B401=E6=9C=8820=E6=97=A5 05:58, jim owens =E5=86=99=
-=E9=81=93:
-> required for btrfs directio worker threads.
+On Wed, Jan 20, 2010 at 12:04 AM, Josef Bacik <josef@redhat.com> wrote:
+> Hello,
 >
-> Signed-off-by: jim owens<jowens@hp.com>
-> ---
-> mm/mmu_context.c |    3 +++
-> 1 files changed, 3 insertions(+), 0 deletions(-)
+> btrfs-image would be very helpful for debugging some users problems t=
+hat we
+> can't reproduce ourselves, but every image that i try and re-create w=
+ith
+> btrfs-image makes btrfs panic. =A0This is because we zero out the sup=
+erblocks
+> chunk array and re-create our uuid. =A0This means that we end up not =
+being able to
+> read the chunk tree on mount, and then even if we could the uuid's of=
+ the
+> metadata we read back wouldn't match the uuid of the device. =A0The w=
+ay I've fixed
+> this is to just spit the metadata back onto the disk exactly the way =
+we got it.
+> The caveat to this I think is that if we try to image a multi-device =
+setup that
+> it won't work right unless we have a multi-device setup to restore th=
+e image
+> onto. =A0I'm not sure if thats the goal or not. =A0This patch makes t=
+he single disk
+> case work fine for me. =A0Let me know what you think. =A0Thanks,
 >
-> diff --git a/mm/mmu_context.c b/mm/mmu_context.c
-> index ded9081..daabf4d 100644
-> --- a/mm/mmu_context.c
-> +++ b/mm/mmu_context.c
-> @@ -3,6 +3,7 @@
->   * See ../COPYING for licensing terms.
->   */
->
-> +#include<linux/module.h>
-> #include<linux/mm.h>
-> #include<linux/mmu_context.h>
-> #include<linux/sched.h>
-> @@ -37,6 +38,7 @@ void use_mm(struct mm_struct *mm)
->      if (active_mm !=3D mm)
->          mmdrop(active_mm);
-> }
-> +EXPORT_SYMBOL_GPL(use_mm);
->
-> /*
->   * unuse_mm
-> @@ -56,3 +58,4 @@ void unuse_mm(struct mm_struct *mm)
->      enter_lazy_tlb(mm, tsk);
->      task_unlock(tsk);
-> }
-> +EXPORT_SYMBOL_GPL(unuse_mm);
->   =20
 
+The goal of btrfs-image is create image that can be  examined by btrfsc=
+k and
+btrfs-debug-tree. btrfs-image creates metadata image for btrfs' logical=
+ address
+space. So your patch only works for the uncommon case that btrfs' logic=
+al
+address is mapped to offset of device.
+
+Yan, Zheng
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

@@ -1,26 +1,46 @@
 From: jim owens <jowens@hp.com>
-Subject: Re: [RFC INFO PATCH 02/03] export use_mm and unuse_mm for filesystem
- modules.
-Date: Wed, 20 Jan 2010 12:08:46 -0500
-Message-ID: <4B57389E.8020601@hp.com>
-References: <4B562B14.3050208@hp.com> <4B564253.20405@gmail.com> <4B570662.2030201@hp.com>
+Subject: [FIXED PATCH 02] mm: export use_mm and unuse_mm for filesystem modules.
+Date: Wed, 20 Jan 2010 12:08:58 -0500
+Message-ID: <4B5738AA.8010005@hp.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-To: Liuwenyi <qingshenlwy@gmail.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4B570662.2030201@hp.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-jim owens wrote:
-> 
-> What I did not say was it was sent on December 9, 2009
-> to every addess on your list, except for Andrea.
 
-OK, as josef told me, the patch is corrupt and will not apply.
+required for btrfs directio worker threads.
 
-I am sending a new one I just made against btrfs-unstable
-to linux-btrfs and will create a new patch for Andrew
-when the directIO code has been tested.
+Signed-off-by: jim owens <jowens@hp.com>
+---
+ mm/mmu_context.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
 
-jim
+diff --git a/mm/mmu_context.c b/mm/mmu_context.c
+index ded9081..ecfb087 100644
+--- a/mm/mmu_context.c
++++ b/mm/mmu_context.c
+@@ -3,6 +3,7 @@
+  * See ../COPYING for licensing terms.
+  */
+ 
++#include <linux/module.h>
+ #include <linux/mm.h>
+ #include <linux/mmu_context.h>
+ #include <linux/sched.h>
+@@ -37,6 +38,7 @@ void use_mm(struct mm_struct *mm)
+ 	if (active_mm != mm)
+ 		mmdrop(active_mm);
+ }
++EXPORT_SYMBOL_GPL(use_mm);
+ 
+ /*
+  * unuse_mm
+@@ -56,3 +58,5 @@ void unuse_mm(struct mm_struct *mm)
+ 	enter_lazy_tlb(mm, tsk);
+ 	task_unlock(tsk);
+ }
++EXPORT_SYMBOL_GPL(unuse_mm);
++
+-- 
+1.5.6.3

@@ -1,64 +1,87 @@
-From: Liuwenyi <qingshenlwy@gmail.com>
-Subject: Re: Unable to handle kernel NULL pointer dereference at virtual address
- 00000008
-Date: Thu, 21 Jan 2010 18:53:56 +0800
-Message-ID: <4B583244.40405@gmail.com>
-References: <20100121060710.GA5301@cumulus> <20100121083849.GA7790@mother.pipebreaker.pl> <20100121085736.GB20543@cumulus>
+From: Jim Faulkner <jfaulkne@ccs.neu.edu>
+Subject: Re: worse than expected compression ratios with -o compress
+Date: Thu, 21 Jan 2010 13:16:31 -0500 (EST)
+Message-ID: <alpine.DEB.2.00.1001211224530.19136@alumni-linux.ccs.neu.edu>
+References: <alpine.DEB.2.00.1001161048330.16549@alumni-linux.ccs.neu.edu> <20100118141240.GA10710@localhost.localdomain> <20100118212951.GC4065@think> <alpine.DEB.2.00.1001181706590.31608@alumni-linux.ccs.neu.edu> <20100120163011.GE3001@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
-	format=flowed
-Cc: Tomasz Torcz <tomek@pipebreaker.pl>, linux-btrfs@vger.kernel.org
-To: sander@humilis.net
+Content-Type: TEXT/PLAIN; charset=US-ASCII; format=flowed
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100121085736.GB20543@cumulus>
+In-Reply-To: <20100120163011.GE3001@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-=E4=BA=8E 2010-1-21 16:57, Sander =E5=86=99=E9=81=93:
-> Hello Tomasz,
->
-> Tomasz Torcz wrote (ao):
->   =20
->> On Thu, Jan 21, 2010 at 07:07:10AM +0100, Sander wrote:
->>     =20
->>> [26678.568532] [<c026c294>] (btrfs_get_acl+0x60/0x250) from [<c026c=
-494>] (btrfs_xattr_get_acl+0x10/0x70)
->>> [26678.577802] [<c026c494>] (btrfs_xattr_get_acl+0x10/0x70) from [<=
-c019bb20>] (generic_getxattr+0x78/0x7c)
->>> [26678.587243] [<c019bb20>] (generic_getxattr+0x78/0x7c) from [<c01=
-9c01c>] (vfs_getxattr+0x58/0x5c)
->>> [26678.596074] [<c019c01c>] (vfs_getxattr+0x58/0x5c) from [<c019c0c=
-4>] (getxattr+0xa4/0x11c)
->>> [26678.604298] [<c019c0c4>] (getxattr+0xa4/0x11c) from [<c019c220>]=
- (sys_getxattr+0x44/0x58)
->>> [26678.612525] [<c019c220>] (sys_getxattr+0x44/0x58) from [<c0122e2=
-0>] (ret_fast_syscall+0x0/0x28)
->>>       =20
->>    Although your oops is in btrfs_get_acl(), you may need similar fi=
-x
->> as done for btrfs_set_acl() in this commit:
->>
->>    http://git.kernel.org/?p=3Dlinux/kernel/git/mason/btrfs-unstable.=
-git;a=3Dcommitdiff;h=3Da9cc71a60c29a09174bee2fcef8f924c529fd4b7
->>     =20
-> Thanks, that makes sense.
->
-> Unfortunately I'm no kernel hacker so I can't provide a patch. I'm mo=
-re
-> than happy to test patches of course.
->
-> 	With kind regards, Sander
->
->   =20
 
-I remember that the lastest git pull had fixed this bug, it was Chris=20
-Mason's patch.
+On Wed, 20 Jan 2010, Chris Mason wrote:
 
---=20
-Best Regards,
-Liuwenyi
+> Please let me know if this improves your ratios
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+It most certainly does!  It also greatly reduced the time required to copy 
+the data to my (not very fast) disk.  All my testing was done on 2.6.32.4. 
+The line numbers in your patch were a little off for 2.6.32.4, but I did 
+manage to apply it cleanly.  Here's the results of my testing:
+
+First let's see the results with plain old mount -o compress:
+delta-9 ~ # mkfs.btrfs /dev/sdi
+
+WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
+
+fs created label (null) on /dev/sdi
+         nodesize 4096 leafsize 4096 sectorsize 4096 size 186.31GB
+Btrfs Btrfs v0.19
+delta-9 ~ # mount -o noacl,compress,noatime /dev/sdi /var/news/mysql
+delta-9 ~ # time cp -a /nfs/media/tmp/btrfs-mysql-test /var/news/mysql
+
+real    57m6.983s
+user    0m0.807s
+sys     1m28.494s
+delta-9 ~ # cd /var/news/mysql
+delta-9 mysql # du -h --max-depth=1
+73G     ./btrfs-mysql-test
+73G     .
+delta-9 mysql # df -h
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/sdi              187G   67G  120G  36% /var/news/mysql
+
+So, with plain mount -o compress, it took 57 minutes to copy the data to 
+my btrfs disk, and it achieved a 92% compression ratio.
+
+Now let's test with mount -o compress-force.  First I'll create a new 
+btrfs filesystem so we're getting a fresh start:
+
+delta-9 ~ # mkbtrfs /dev/sdi
+
+WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
+
+fs created label (null) on /dev/sdi
+         nodesize 4096 leafsize 4096 sectorsize 4096 size 186.31GB
+Btrfs Btrfs v0.19
+delta-9 ~ # mount -o noatime,noacl,compress-force /dev/sdi /var/news/mysql
+delta-9 ~ # time cp -a /nfs/media/tmp/btrfs-mysql-test /var/news/mysql/
+
+real    14m45.742s
+user    0m0.547s
+sys     1m30.551s
+delta-9 ~ # df -h
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/sdi              187G   14G  173G   8% /var/news/mysql
+delta-9 ~ # cd /var/news/mysql
+delta-9 mysql # du -h --max-depth=1
+73G     ./btrfs-mysql-test
+73G     .
+delta-9 mysql #
+
+Wow!  So not only did mount -o compress-force achieve a 19% compression 
+ratio, using 53 GB less disk space than mount -o compress, it managed to 
+copy the data in only 15 minutes, compared to 57 minutes with mount -o 
+compress.
+
+The disk in question is an old IDE disk in a cheap external USB 2.0 
+enclosure, which is probably not exactly the type of storage that btrfs is 
+being developed for.  Nevertheless, it is nice to see such a huge 
+improvement in the time required to copy the data around.
+
+I'd be very happy to see the -o compress-force option in the mainline 
+kernel someday!

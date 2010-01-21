@@ -1,64 +1,45 @@
-From: Eric Sandeen <sandeen@redhat.com>
-Subject: [PATCH] fix up userspace for newer glibc
-Date: Wed, 20 Jan 2010 15:42:35 -0600
-Message-ID: <4B5778CB.5090909@redhat.com>
+From: Brian Neu <proclivity76@yahoo.com>
+Subject: removing a snapshot that is outside the subvolume directory fails, sorta
+Date: Wed, 20 Jan 2010 17:11:15 -0800 (PST)
+Message-ID: <593044.1345.qm@web51908.mail.re2.yahoo.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Rawhide is getting cranky with posix compliance, and a few
-things have stopped building.
+Well, it fails the way that I'm trying to do it.
+kernel:            2.6.31.9-174.fc12.x86_64
+btrfs-progs:     btrfs-progs-0.19-9.fc12.x86_64
 
-getpagesize() is now only available -with- __USE_XOPEN_EXTENDED
-or __USE_BSD, and NOT __USE_XOPEN2K.
+On a new filesystem:
 
-_GNU_SOURCE must define __USE_XOPEN2K because getpagesize()
-has gone away for mkfs.  I gave up and used sysconf.
+$ cd /mnt/btrfs1
+$ btrfsctl -S subvol1 .
+operation complete
+Btrfs Btrfs v0.19
+$ btrfsctl -s snapofsubvol1 subvol1
+operation complete
+Btrfs Btrfs v0.19
+$ btrfsctl -D snapofsubvol1 subvol1
+ioctl:: No such file or directory
 
-Also, something used to pull in stat that no longer does, so
-things like S_ISREG weren't getting defined.
 
-The following fixes things for me.
 
-Signed-off-by: Eric Sandeen <sandeen@redhat.com>
----
+$ btrfsctl -S subvol2 .
+operation complete
+Btrfs Btrfs v0.19
+--------> # cd subvol2    <------------
+$ btrfsctl -s snapofsubvol2 subvol2
+operation complete
+Btrfs Btrfs v0.19
+$ btrfsctl -D snapofsubvol2 subvol2
+operation complete
+Btrfs Btrfs v0.19
 
-Index: btrfs-progs-0.19/btrfsck.c
-===================================================================
---- btrfs-progs-0.19.orig/btrfsck.c
-+++ btrfs-progs-0.19/btrfsck.c
-@@ -21,6 +21,9 @@
- #include <stdio.h>
- #include <stdlib.h>
- #include <fcntl.h>
-+#include <sys/types.h>
-+#include <sys/stat.h>
-+#include <unistd.h>
- #include "kerncompat.h"
- #include "ctree.h"
- #include "disk-io.h"
-Index: btrfs-progs-0.19/mkfs.c
-===================================================================
---- btrfs-progs-0.19.orig/mkfs.c
-+++ btrfs-progs-0.19/mkfs.c
-@@ -341,7 +341,7 @@ int main(int ac, char **av)
- 	u64 alloc_start = 0;
- 	u64 metadata_profile = BTRFS_BLOCK_GROUP_RAID1 | BTRFS_BLOCK_GROUP_DUP;
- 	u64 data_profile = BTRFS_BLOCK_GROUP_RAID0;
--	u32 leafsize = getpagesize();
-+	u32 leafsize = sysconf(_SC_PAGESIZE);
- 	u32 sectorsize = 4096;
- 	u32 nodesize = leafsize;
- 	u32 stripesize = 4096;
-@@ -398,7 +398,7 @@ int main(int ac, char **av)
- 				print_usage();
- 		}
- 	}
--	sectorsize = max(sectorsize, (u32)getpagesize());
-+	sectorsize = max(sectorsize, (u32)sysconf(_SC_PAGESIZE));
- 	if (leafsize < sectorsize || (leafsize & (sectorsize - 1))) {
- 		fprintf(stderr, "Illegal leafsize %u\n", leafsize);
- 		exit(1);
 
+AHA, I figured it out!
+
+$ btrfsctl -D snapofsubvol1 subvol1/..
+
+I don't know if that's the intended syntax or if it's accidental, but I'll go ahead and send this as an FYI if anyone has the same issue.  Maybe it's obvious to some, but it wasn't to me.

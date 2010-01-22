@@ -1,62 +1,63 @@
-From: Thomas Kupper <thomas@kupper.org>
-Subject: Re: mount command not honoring rootflags passed
-Date: Fri, 22 Jan 2010 10:30:05 +0100
-Message-ID: <81D051DA-822A-46A5-8F24-64BAF3C3B6A4@kupper.org>
-References: <D31BF6EF-2E01-434F-BA36-B3939DC5F9EE@kupper.org> <23a15591001220059y4d3c41c0k1ade5c4da358cb66@mail.gmail.com> <6F0F6C78-26BD-44CC-911A-1DECC31EABA7@kupper.org> <23a15591001220117n69ffb37ch1f6ead22964d1361@mail.gmail.com>
-Mime-Version: 1.0 (Apple Message framework v1077)
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Leszek Ciesielski <skolima@gmail.com>
+From: Adrian von Bidder <avbidder@fortytwo.ch>
+Subject: Re: [RFC] Move all btrfs command to only one command
+Date: Fri, 22 Jan 2010 09:23:57 +0100
+Message-ID: <201001220923.57416@fortytwo.ch>
+References: <201001212029.26681.kreijack@libero.it>
+Mime-Version: 1.0
+Content-Type: multipart/signed;
+  boundary="nextPart6518130.A9VlM6r2ph";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+Cc: Goffredo Baroncelli <kreijack@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <23a15591001220117n69ffb37ch1f6ead22964d1361@mail.gmail.com>
+In-Reply-To: <201001212029.26681.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+--nextPart6518130.A9VlM6r2ph
+Content-Type: Text/Plain;
+  charset="iso-8859-15"
+Content-Transfer-Encoding: quoted-printable
 
-On 22 Jan 2010, at 10:17, Leszek Ciesielski wrote:
+Hi,
 
-> On Fri, Jan 22, 2010 at 10:06 AM, Thomas Kupper <thomas@kupper.org> wrote:
->> 
->> On 22 Jan 2010, at 09:59, Leszek Ciesielski wrote:
->> 
->>> On Fri, Jan 22, 2010 at 12:55 AM, Thomas Kupper <thomas@kupper.org> wrote:
->>>> Using btrfs as the root filesystem on my Ubuntu 9.10 powered laptop I discoverd that mount is not showing the actual passed rootflags= but shows what is put in the /etc/fstab.
->>>> 
->>>> First of all, I'm not sure if that is an intended behavior and if not, if it's a problem of mount or btrfs.
->>>> 
->>>> Example:
->>>> Following Goffredo's example there's a subvolume called rootfs which is - surprisingly ;) - the root of the linux. The corresponding line in fstab is
->>>> 
->>>> $ cat /etc/fstab
->>>> [...]
->>>> # / was on /dev/sda3 during installation
->>>> UUID=<some-scary-UUID>   /   btrfs   subvol=rootfs   0   1
->>>> 
->>>> $ mount
->>>> [...]
->>>> /dev/sda3 on / type btrfs (rw,subvol=rootfs)
->>>> 
->>>> I create a snapshot of the rootfs called rootfs-snap-001 and create it in the / of the btrfs volume itself. Not modifying grub2, I just edit grub on the go. While booting I edit the /linux-kernel... entry and replace rootflags=subvol=rootfs with rootflags=subvol=rootfs-snap-001. That boots up just fine but the mount output still is
->>>> 
->>>> $ mount
->>>> [...]
->>>> /dev/sda3 on / type btrfs (rw,subvol=rootfs)
->>>> 
->>>> ... and /etc/mtab is indeed
->>>> 
->>>> $ cat /etc/mtab
->>>> [...]
->>>> /dev/sda3 / btrfs rw,subvol=rootfs 0 0
->>>> 
->>>> shouldn't mount and /etc/mtab reflect the parameters in use?
->>>> 
->>> 
->>> No. The same thing happens with whatever filesystem you use for rootfs.
->> 
->> Thanks for the clarification. How do I see then what subvolume is mounted as root? Assume I play around with lots of snapshots and wonder with what snapshot I booted. Sure, I should know but sometimes I want to make sure I did boot the right one before deleting an other snapshot.
-> 
-> azazel ~ # cat /proc/cmdline
-> root=/dev/sda3 rootfstype=ext4
+I like this very much, I found myself wondering which program did what agai=
+n=20
+and again when I started to use btrfs, too.
 
-Again, thanks alot. That does the trick.
+On Thursday 21 January 2010 20.29:26 Goffredo Baroncelli wrote:
+>        btrfs resize|-r [+/-]<newsize>[gkm]|max <filesystem>
+>                Resize the file system. If 'max' is passed, the filesystem
+>                will occupe all available space on the device.
 
-Maybe a bit of a pain in the a$#: Is there a specific reason the mount utility doesn't show the actual mount options in use? Wouldn't one - I certainly do - expect /etc/mtab or mount to show how a certain partition is mounted? Not really a btrfs issue, I'm aware.
+Switch the arguments, and if the 2nd is missing do what you propose for=20
+"max".
+
+>         btrfs scan|-S [<device> [<device>..]
+>                 Scan all device for or the passed device for a btrfs
+> filesystem.
+
+This is the only that *migt* be sensible to have as a separate tool, if=20
+"btrfs" ends up requiring additional runtime dependencies: the scan utility=
+=20
+should be small since it will need to be included in the initrd.
+
+=2D-=20
+Protect your privacy - encrypt your email: http://fortytwo.ch/gpg/intro
+
+--nextPart6518130.A9VlM6r2ph
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+Comment: get my key from http://fortytwo.ch/gpg/92082481
+
+iKcEABECAGcFAktZYJ1gGmh0dHA6Ly9mb3J0eXR3by5jaC9sZWdhbC9ncGcvZW1h
+aWwuMjAwMjA4MjI/dmVyc2lvbj0xLjUmbWQ1c3VtPTVkZmY4NjhkMTE4NDMyNzYw
+NzFiMjVlYjcwMDZkYTNlAAoJECqqZti935l6sEIAnRwepZA/g44Q2MAqZcYOxTnY
+9pNsAJ9IxDgprjuGXPDxRGCcmQIN7pLaXQ==
+=jWNr
+-----END PGP SIGNATURE-----
+
+--nextPart6518130.A9VlM6r2ph--

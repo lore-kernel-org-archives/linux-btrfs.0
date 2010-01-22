@@ -1,51 +1,56 @@
-From: Thomas Kupper <thomas@kupper.org>
-Subject: Re: mount command not honoring rootflags passed
-Date: Fri, 22 Jan 2010 10:06:32 +0100
-Message-ID: <6F0F6C78-26BD-44CC-911A-1DECC31EABA7@kupper.org>
-References: <D31BF6EF-2E01-434F-BA36-B3939DC5F9EE@kupper.org> <23a15591001220059y4d3c41c0k1ade5c4da358cb66@mail.gmail.com>
-Mime-Version: 1.0 (Apple Message framework v1077)
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Leszek Ciesielski <skolima@gmail.com>
+From: Xavier Nicollet <nicollet@jeru.org>
+Subject: Re: [RFC] Move all btrfs command to only one command
+Date: Fri, 22 Jan 2010 10:33:46 +0100
+Message-ID: <20100122093346.GW29256@jeru.org>
+References: <201001212029.26681.kreijack@libero.it> <20100122011107.7bc36b2b@simplux>
+Reply-To: nicollet@jeru.org
+Mime-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-15
+Cc: Goffredo Baroncelli <kreijack@gmail.com>,
+	linux-btrfs@vger.kernel.org, David Nicol <davidnicol@gmail.com>,
+	taruishi.hiroak@jp.fujitsu.com
+To: Michael Niederle <mniederle@gmx.at>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <23a15591001220059y4d3c41c0k1ade5c4da358cb66@mail.gmail.com>
+In-Reply-To: <20100122011107.7bc36b2b@simplux>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Le 22 janvier 2010 =E0 01:11, Michael Niederle a =E9crit:
+> >         btrfs clone|-c <source> [<dest>/]<name>    =20
+> >                 Clone the subvolume <source> with the name <name> i=
+n the=20
+> > <dest>
+> >                 directory.                                         =
+           =20
 
-On 22 Jan 2010, at 09:59, Leszek Ciesielski wrote:
+Maybe you should add the "writable snapshot" in the description, since
+everyone is using the word "snapshot" on the mailing list.
+When I hear "clone", I understand "dump".
 
-> On Fri, Jan 22, 2010 at 12:55 AM, Thomas Kupper <thomas@kupper.org> wrote:
->> Using btrfs as the root filesystem on my Ubuntu 9.10 powered laptop I discoverd that mount is not showing the actual passed rootflags= but shows what is put in the /etc/fstab.
->> 
->> First of all, I'm not sure if that is an intended behavior and if not, if it's a problem of mount or btrfs.
->> 
->> Example:
->> Following Goffredo's example there's a subvolume called rootfs which is - surprisingly ;) - the root of the linux. The corresponding line in fstab is
->> 
->> $ cat /etc/fstab
->> [...]
->> # / was on /dev/sda3 during installation
->> UUID=<some-scary-UUID>   /   btrfs   subvol=rootfs   0   1
->> 
->> $ mount
->> [...]
->> /dev/sda3 on / type btrfs (rw,subvol=rootfs)
->> 
->> I create a snapshot of the rootfs called rootfs-snap-001 and create it in the / of the btrfs volume itself. Not modifying grub2, I just edit grub on the go. While booting I edit the /linux-kernel... entry and replace rootflags=subvol=rootfs with rootflags=subvol=rootfs-snap-001. That boots up just fine but the mount output still is
->> 
->> $ mount
->> [...]
->> /dev/sda3 on / type btrfs (rw,subvol=rootfs)
->> 
->> ... and /etc/mtab is indeed
->> 
->> $ cat /etc/mtab
->> [...]
->> /dev/sda3 / btrfs rw,subvol=rootfs 0 0
->> 
->> shouldn't mount and /etc/mtab reflect the parameters in use?
->> 
-> 
-> No. The same thing happens with whatever filesystem you use for rootfs.
+> >         btrfs delete|-d
+> > <subvolume> Delete the subvolume <subvolume>.                      =
+       =20
 
-Thanks for the clarification. How do I see then what subvolume is mounted as root? Assume I play around with lots of snapshots and wonder with what snapshot I booted. Sure, I should know but sometimes I want to make sure I did boot the right one before deleting an other snapshot.
+> >         btrfs rem|-R <dev> <path>
+> >                 Remove a device to a filesystem
+
+> Just a small suggestion:
+> "btrfs remove" instead of "btrfs rem"
+
+Why not "btrfs rm", which reminds "git rm" ?
+Actually, I would do something like:
+
+btrfs vol add
+btrfs vol rm
+
+btrfs dev add
+btrfs dev rm=20
+
+It would bet simpler, wouldn't it ?
+
+--=20
+Xavier Nicollet
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,62 +1,75 @@
-From: "Michael Niederle" <mniederle@gmx.at>
-Subject: Re: [RFC] Move all btrfs command to only one command
-Date: Fri, 22 Jan 2010 01:11:07 +0100
-Message-ID: <20100122011107.7bc36b2b@simplux>
-References: <201001212029.26681.kreijack@libero.it>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: linux-btrfs@vger.kernel.org, David Nicol <davidnicol@gmail.com>,
-	taruishi.hiroak@jp.fujitsu.com
-To: Goffredo Baroncelli <kreijack@gmail.com>
+From: "Aneesh Kumar K.V" <aneesh.kumar@linux.vnet.ibm.com>
+Subject: [PATCH -v2] btrfs: Use correct values when updating inode i_size on fallocate
+Date: Fri, 22 Jan 2010 11:02:45 +0530
+Message-ID: <1264138365-13989-1-git-send-email-aneesh.kumar@linux.vnet.ibm.com>
+Cc: linux-btrfs@vger.kernel.org,
+	"Aneesh Kumar K.V" <aneesh.kumar@linux.vnet.ibm.com>
+To: chris.mason@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201001212029.26681.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> $ btrfs                         
-> Usage:                                              
->         btrfs clone|-c <source> [<dest>/]<name>     
->                 Clone the subvolume <source> with the name <name> in the 
-> <dest>
->                 directory.                                                     
->         btrfs delete|-d
-> <subvolume> Delete the subvolume <subvolume>.                              
->         btrfs create|-C [<dest>/]<name>
->                 Create a subvolume in <dest> (or the current directory if not
->                 passed.
->         btrfs defrag|-d <file>|<dir> [<file>|<dir>...]
->                 Defragment a file or a directory.
->         btrfs fssync|-s <path>
->                 Force a fs sync on the filesystem <path>
->         btrfs resize|-r [+/-]<newsize>[gkm]|max <filesystem>
->                 Resize the file system. If 'max' is passed, the filesystem
->                 will occupe all available space on the device.
->         btrfs scan|-S [<device> [<device>..]
->                 Scan all device for or the passed device for a btrfs 
-> filesystem.
->         btrfs show|-l <dev>|<label> [<dev>|<label>.. ]
->                 Show the btrfs devices
->         btrfs balance|-b <path>
->                 Balance teh chunk across the device
->         btrfs add|-A <dev> <path>
->                 Add a device to a filesystem
->         btrfs rem|-R <dev> <path>
->                 Remove a device to a filesystem
-> 
->         btrfs help|--help|-h
->                 Show the help.
+Even though we allocate more, we should be updating inode i_size
+as per the arguments passed
 
-I like this idea!
+Signed-off-by: Aneesh Kumar K.V <aneesh.kumar@linux.vnet.ibm.com>
+---
+Changes from V1:
+ We should update i_size only if actual_len and cur_offset are both
+ larger than i_size. Otherwise if actual_len is < i_size and cur_offset > i_size
+ we may end up setting wrong i_size value
 
-Just a small suggestion:
+ fs/btrfs/inode.c |   17 ++++++++++++-----
+ 1 files changed, 12 insertions(+), 5 deletions(-)
 
-"btrfs remove" instead of "btrfs rem"
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 5440bab..ac4cb6b 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5789,7 +5789,7 @@ out_fail:
+ }
+ 
+ static int prealloc_file_range(struct inode *inode, u64 start, u64 end,
+-			       u64 alloc_hint, int mode)
++			u64 alloc_hint, int mode, loff_t actual_len)
+ {
+ 	struct btrfs_trans_handle *trans;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+@@ -5798,6 +5798,7 @@ static int prealloc_file_range(struct inode *inode, u64 start, u64 end,
+ 	u64 cur_offset = start;
+ 	u64 num_bytes = end - start;
+ 	int ret = 0;
++	u64 i_size;
+ 
+ 	while (num_bytes > 0) {
+ 		alloc_size = min(num_bytes, root->fs_info->max_extent);
+@@ -5835,9 +5836,15 @@ static int prealloc_file_range(struct inode *inode, u64 start, u64 end,
+ 		inode->i_ctime = CURRENT_TIME;
+ 		BTRFS_I(inode)->flags |= BTRFS_INODE_PREALLOC;
+ 		if (!(mode & FALLOC_FL_KEEP_SIZE) &&
+-		    cur_offset > inode->i_size) {
+-			i_size_write(inode, cur_offset);
+-			btrfs_ordered_update_i_size(inode, cur_offset, NULL);
++			(actual_len > inode->i_size) &&
++			(cur_offset > inode->i_size)) {
++
++			if (cur_offset > actual_len)
++				i_size  = actual_len;
++			else
++				i_size = cur_offset;
++			i_size_write(inode, i_size);
++			btrfs_ordered_update_i_size(inode, i_size, NULL);
+ 		}
+ 
+ 		ret = btrfs_update_inode(trans, root, inode);
+@@ -5930,7 +5937,7 @@ static long btrfs_fallocate(struct inode *inode, int mode,
+ 		     !test_bit(EXTENT_FLAG_PREALLOC, &em->flags))) {
+ 			ret = prealloc_file_range(inode,
+ 						  cur_offset, last_byte,
+-						  alloc_hint, mode);
++						alloc_hint, mode, offset+len);
+ 			if (ret < 0) {
+ 				free_extent_map(em);
+ 				break;
+-- 
+1.6.6.1.383.g5a9f
 
------
-
-Another question: Is there a simple way to convert a directory into a subvolume?
-
-Currently I first create the new subvolume; copy or move the data of the
-directory into the new subvolume, then delete the directory and finally
-rename the subvolume.
-
-Greetings, Michael

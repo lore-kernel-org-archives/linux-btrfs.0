@@ -1,61 +1,45 @@
-From: Thomas Kupper <thomas@kupper.org>
-Subject: Re: R: Re: mount command not honoring rootflags passed
-Date: Fri, 22 Jan 2010 14:18:49 +0100
-Message-ID: <03220294-6494-4E57-A2A2-329454FB2C25@kupper.org>
-References: <16366420.67811264163868365.JavaMail.defaultUser@defaultHost>
-Mime-Version: 1.0 (Apple Message framework v1077)
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Leszek Ciesielski <skolima@gmail.com>
-To: "kreijack@libero.it" <kreijack@libero.it>
+From: =?iso-8859-2?Q?Jarom=EDr=20C=E1p=EDk?= <tavvva@seznam.cz>
+Subject: =?us-ascii?Q?btrfs=20bad=20tree=20block=20start=20?=
+Date: Fri, 22 Jan 2010 16:08:01 +0100 (CET)
+Message-ID: <6227.2322.6038-7563-1397129237-1264172881@seznam.cz>
+Mime-Version: 1.0
+Content-Type: text/plain;
+	charset="us-ascii"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <16366420.67811264163868365.JavaMail.defaultUser@defaultHost>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Goffredo,
+Hello.
 
-On 22 Jan 2010, at 13:37, kreijack@libero.it wrote:
+3 days ago I switched my root fs from ext4 to btrfs.
+The system was working without problems till this morning.
+I got 2 "btrfs bad tree block start 3581956096 3581652992"
+messages while booting and later I discovered that 
+some fonts were corrupted. 
 
-> Hi Thomas,
-> 
->> ----Messaggio originale----
->> Da: thomas@kupper.org
->> Data: 22/01/2010 10.48
->> A: "Leszek Ciesielski"<skolima@gmail.com>
->> Cc: "linux-btrfs"<linux-btrfs@vger.kernel.org>
->> Ogg: Re: mount command not honoring rootflags passed
->> 
->> 
->> On 22 Jan 2010, at 10:40, Leszek Ciesielski wrote:
->> 
->>> On Fri, Jan 22, 2010 at 10:30 AM, Thomas Kupper <thomas@kupper.org> wrote:
-> [...]
->>> Doesn't 'cat /proc/mounts' show the actually used mount options?
->> 
->> No, it doesn't in my case - Ubuntu 9.10 with 2.6.32-10-generic kernel.
->> 
->> thomas # cat /proc/mounts | fgrep ' / '
->> rootfs / rootfs rw 0 0
->> /dev/sda3 / btrfs rw,relatime 0 0
->> 
->> thomas # cat /proc/cmdline
->> [...] root=/dev/sda3 ro rootflags=subvol=rootfs-snapshot-001--
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-> The btrfs code doesn't show the subvol= mount option in cat /proc/mount. I 
-> sent a patch which should solve it.
-> 
-> http://article.gmane.org/gmane.comp.file-systems.btrfs/4487
-> 
-> But today it is not merged.
+/usr/share/fonts/TTF/liberation/*
 
-Excellent! That was fast, thanks alot. I have to get around how to compile one module only first anyway (the Ubuntu or Debian way).
+I tried to reinstall the liberation font package, 
+but the system got frozen. 
+I tried to run btrfsck from USB stick (the same 
+kernel version 2.6.32-3 and btrfsprogs 0.19),
+but I got "Segmentation fault".
 
-> Br
-> Goffredo
+I cannot delete the mentioned directory.
+It seems to be empty, but I still get the following
+message : "directory not empty".
 
-Have a good day,
-Thomas
+The only workaround was to rename the directory
+and reinstall the font package (a new directory was
+created and the liberation font is usable again).
+
+I would like to know if there's any way how to delete
+the corrupted directory or how to make the btrfsck working.
+
+I can also provide You with some debug info
+when needed.
+
+Thanks in advance for any kind of help.
+
+Regards,
+Jaromir Capik.

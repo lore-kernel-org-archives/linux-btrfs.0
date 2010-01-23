@@ -1,39 +1,19 @@
-From: Neil Schemenauer <nas@arctrix.com>
-Subject: Btrfs st_nlink for directories
-Date: Fri, 22 Jan 2010 20:28:12 -0600
-Message-ID: <20100123022812.GA16124@arctrix.com>
+From: "Michael Niederle" <mniederle@gmx.at>
+Subject: btrfsck failed
+Date: Sat, 23 Jan 2010 14:49:02 +0100
+Message-ID: <20100123144902.43dafd60@simplux>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+I tried an (offline) btrfsck and got the following error message:
 
-It looks like Btrfs does not follow Unix traditions for st_nlink
-attribute of directories. It seems to be always one, no matter the
-number of sub-directories.
+> btrfsck /dev/sdb3
+btrfsck: btrfsck.c:584: splice_shared_node: Assertion `!(src ==
+&src_node->root_cache)' failed. Aborted
 
-Is this intentional? I couldn't find it discussed anywhere. I
-gather the Mac OS HFS+ doesn't follow traditional st_nlink behavior
-as well. The 'find' man page has this note:
+I use kernel version 2.6.32.2 with builtin btrfs-drivers.
 
-   -noleaf
-          Do  not  optimize  by  assuming that directories contain 2 fewer
-          subdirectories than their  hard  link  count.   This  option  is
-          needed  when  searching  filesystems that do not follow the Unix
-          directory-link convention, such as CD-ROM or MS-DOS  filesystems
-          or  AFS  volume  mount  points.  Each directory on a normal Unix
-          filesystem has at least 2 hard  links:  its  name  and  its  `.'
-          entry.   Additionally,  its  subdirectories (if any) each have a
-          `..'  entry linked to that directory.  When find is examining  a
-          directory,  after it has statted 2 fewer subdirectories than the
-          directory's link count, it knows that the rest of the entries in
-          the directory are non-directories (`leaf' files in the directory
-          tree).  If only the files' names need to be examined,  there  is
-          no  need  to  stat  them;  this  gives a significant increase in
-          search speed.
-
-Regards,
-
-  Neil
+Greetings, Michael

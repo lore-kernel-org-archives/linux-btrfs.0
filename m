@@ -1,29 +1,36 @@
 From: Goffredo Baroncelli <kreijack@gmail.com>
-Subject: Re: mount after reboot of btrfs RAID-10 fails with "btrfs: failed to read the system array on sda"
-Date: Sun, 24 Jan 2010 09:02:38 +0100
-Message-ID: <201001240902.38535.kreijack@libero.it>
-References: <c67eed301001232153j5cb755f6ge2924df740d750d8@mail.gmail.com>
+Subject: Re: severe hardlink bug
+Date: Sun, 24 Jan 2010 09:09:44 +0100
+Message-ID: <201001240909.44753.kreijack@libero.it>
+References: <20100124015138.092c4959@simplux>
 Mime-Version: 1.0
 Content-Type: Text/Plain;
   charset="iso-8859-1"
-Cc: linux-btrfs@vger.kernel.org
-To: 0bo0 <0.bugs.only.0@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <c67eed301001232153j5cb755f6ge2924df740d750d8@mail.gmail.com>
+In-Reply-To: <20100124015138.092c4959@simplux>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sunday 24 January 2010, 0bo0 wrote:
-> after a simple reboot,
-                 ^^^^^^
-Have you do
+On Sunday 24 January 2010, Michael Niederle wrote:
+> I'm using btrfs with a kernel 2.6.32.2 (builtin) as the root file system of 
+a
+> Gentoo Linux installation.
+> 
+> While attempting to install the plt-scheme package a strange error about 
+link
+> counts occurred ([Error 31] Too many Links).
 
-  # btrfsctl -a
+See this thread:
 
-before mounting the filesystem ? This command scans all the block devices 
-searching the btrfs volume. So when you mount a device of an array the system 
-is able to retrieves the others.
+Mass-Hardlinking Oops - http://thread.gmane.org/gmane.comp.file-
+systems.btrfs/3427
 
-[..]
+There is a limit of the number of hardlink for a file. The maximum number of 
+the link depends by  name length.
+
+BR
+Goffredo
+
 
 -- 
 gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.it>

@@ -1,66 +1,50 @@
-From: Piavlo <piavka@cs.bgu.ac.il>
-Subject: Re: [RFC] Move all btrfs command to only one command: btrfs.c
-Date: Sun, 24 Jan 2010 20:34:43 +0200
-Message-ID: <4B5C92C3.2090400@cs.bgu.ac.il>
-References: <201001212029.26681.kreijack@libero.it> <201001241835.40562.kreijack@libero.it>
+From: Leszek Ciesielski <skolima@gmail.com>
+Subject: Re: mount after reboot of btrfs RAID-10 fails with "btrfs: failed to
+	read the system array on sda"
+Date: Mon, 25 Jan 2010 00:35:39 +0100
+Message-ID: <23a15591001241535h3768f413iee4bde3214a07bc5@mail.gmail.com>
+References: <c67eed301001232153j5cb755f6ge2924df740d750d8@mail.gmail.com>
+	 <201001240902.38535.kreijack@libero.it>
+	 <c67eed301001240846y74ec4cdajdf2b07934782eaae@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-15
-Cc: linux-btrfs@vger.kernel.org
-To: Goffredo Baroncelli <kreijack@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Goffredo Baroncelli <kreijack@gmail.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: 0bo0 <0.bugs.only.0@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201001241835.40562.kreijack@libero.it>
+In-Reply-To: <c67eed301001240846y74ec4cdajdf2b07934782eaae@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Goffredo Baroncelli wrote:
-> Hi all,
+On Sun, Jan 24, 2010 at 5:46 PM, 0bo0 <0.bugs.only.0@gmail.com> wrote:
+> hi
 >
-> this is a follow-up of the previous email. I rewrite the btrfs command in C. 
-> Now the following actions are implemented:
+> On Sun, Jan 24, 2010 at 12:02 AM, Goffredo Baroncelli
+> <kreijack@gmail.com> wrote:
+>> On Sunday 24 January 2010, 0bo0 wrote:
+>>> after a simple reboot,
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 ^^^^^^
+>> Have you do
+>>
+>> =A0# btrfsctl -a
+>>
+>> before mounting the filesystem ? This command scans all the block de=
+vices
+>> searching the btrfs volume. So when you mount a device of an array t=
+he system
+>> is able to retrieves the others.
 >
-> snapshot (-s) -> create a snapshot
-> delete   (-D) -> delete a subvolume or a snapshot
-> create   (-S) -> create a subvolume
-> defrag   (-d) -> defrag a tree or a file
-> fssync   (-c) -> sync a filesystem
-> scan     (-a) -> scan devices searching a btrfs filesystem
-> show     (-l) -> list the btrfs fs and its  volumes
-> balance  (-b) -> balance the chunk across the volumes
-> add-dev  (-A) -> add a volume to a filesystem
-> rem-dev  (-R) -> remove a volume to a filesystem
+> that does the trick! =A0and, i found/understood the reference in tthe
+> wiki. thanks.
 >
-> I cared that btrfs returns appropriate error code. And I check that a correct 
-> parameters number is passed. Finally, where appropriate if a subvolume is 
-> required (for example in case of snapshot and or delete) is checked that the 
-> passed path is a subvolume. This should limits the complain like:
-> - I snapshot a sub directory, but I got a snapshot of the entire tree.
->
-> I renamed remove (a volume) in rem-dev in order to avoid confusion with delete 
-> (a subvolume).
->   
-To avoid such confusion IMHO it's logically better to have two commands
-instead one for handling actions at volume level
-and other command at file system level  - something like btrfs & btrpool
-- like in other well known file system :)
+> how would that, then, get handled for automount @ boot via fstab? =A0=
+i
+> guess that the scan needs to get done as well ...
+> --
 
-Alex
-> You can find a git repository in 
->
-> 	http://cassiopea.homelinux.net/git/?p=btrfs-command.git;a=summary
->
-> select the branch "btrfs-command"
->
-> TODO:
-> * resizing implementation
-> * btrfstune implementation
-> * btrfslabel implementation (but it require patch to the kernel)
-> * mkfs implementation
-> * check of the label length
-> * test suite finalisation
-> * test, test, test
->
-> Suggestions are welcome.
->
-> BR
-> G.Baroncelli
->   
-
+Please see this discussion:
+http://thread.gmane.org/gmane.comp.file-systems.btrfs/4126/focus=3D4187
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

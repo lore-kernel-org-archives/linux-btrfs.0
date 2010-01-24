@@ -1,48 +1,43 @@
-From: mail ignored <0.bugs.only.0@gmail.com>
-Subject: when/why to use diffferent raid values for btrfs data & metadata?
-Date: Sat, 23 Jan 2010 20:02:33 -0800
-Message-ID: <c67eed301001232002o2f89f2fct4dc9fe8516b976bc@mail.gmail.com>
+From: 0bo0 <0.bugs.only.0@gmail.com>
+Subject: RAID-10 arrays built with btrfs & md report 2x difference in
+	available size?
+Date: Sat, 23 Jan 2010 21:31:07 -0800
+Message-ID: <c67eed301001232131n2a7f88acx857df19ea95371a4@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=windows-1252
+Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+I created a btrfs RAID-10 array across 4-drives,
 
-Just getting started with btrfs.
+ mkfs.btrfs -L TEST -m raid10 -d raid10 /dev/sda /dev/sdb /dev/sdc /dev/sdd
+ btrfs-show
+ 	Label: TEST  uuid: 2ac85206-2d88-47d7-a1e7-a93d80b199f8
+ 	        Total devices 4 FS bytes used 28.00KB
+ 	        devid    1 size 931.51GB used 2.03GB path /dev/sda
+ 	        devid    2 size 931.51GB used 2.01GB path /dev/sdb
+ 	        devid    4 size 931.51GB used 2.01GB path /dev/sdd
+ 	        devid    3 size 931.51GB used 2.01GB path /dev/sdc
 
-I understand that btrfs stores data/metadata in two different tree
-structures =96 one for file/directory names, and one for data blocks.
+@ mount,
 
-Reading @,
+ mount /dev/sda /mnt
+ df -H | grep /dev/sda
+	/dev/sda               4.1T    29k   4.1T   1% /mnt
 
- http://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devic=
-es
-  Use raid10 for both data and metadata
-    mkfs.btrfs -m raid10 -d raid10 /dev/sdb /dev/sdc /dev/sdd /dev/sde
+for RAID-10 across 4-drives, shouldn't the reported/available size be
+1/2x4TB ~ 2TB?
 
-and @,
+e.g., using mdadm to build a RAID-10 array across the same drives,
 
- "Churning Butter(FS): An Interview with Chris Mason"
-  http://www.linux-mag.com/id/7329
+ mdadm -v --create /dev/md0 --level=raid10 --raid-devices=4 /dev/sd[abcd]1
+ pvcreate     /dev/md0
+pvs
+  PV         VG   Fmt  Attr PSize   PFree
+  /dev/md0        lvm2 --   1.82T 1.82T
 
-    CM Today you can do this:
-    mkfs.btrfs -m raid1 -d raid10 /dev/sda /dev/sdb /dev/sdc /dev/sdd
-And you=92ll get metadata on raid1 and data on raid10. The raid10 will
-use all four drives and the raid1 will use two drives at a time. Yes,
-btrfs allows you to pick different values for data or metadata.
+is the difference in available array space real, an artifact, or a
+misunderstanding on my part?
 
-The fact that I *can* setup data & metadata differently is clear.  But
-I'm not at all clear *why* I'd want to, or what the advantages are.
-I'd guess it's a balance/combination of performance & resiliency.
-
-Naively "-m raid10 -d raid10" seems to make the most sense -- if i
-have it, use it.
-
-Are there any benchmarks, guidelines or recommendations?
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+thanks.

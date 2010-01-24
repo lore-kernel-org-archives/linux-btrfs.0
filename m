@@ -1,56 +1,48 @@
-From: "Michael Niederle" <mniederle@gmx.at>
-Subject: severe hardlink bug
-Date: Sun, 24 Jan 2010 01:51:38 +0100
-Message-ID: <20100124015138.092c4959@simplux>
+From: mail ignored <0.bugs.only.0@gmail.com>
+Subject: when/why to use diffferent raid values for btrfs data & metadata?
+Date: Sat, 23 Jan 2010 20:02:33 -0800
+Message-ID: <c67eed301001232002o2f89f2fct4dc9fe8516b976bc@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=windows-1252
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm using btrfs with a kernel 2.6.32.2 (builtin) as the root file system of a
-Gentoo Linux installation.
+Hi,
 
-While attempting to install the plt-scheme package a strange error about link
-counts occurred ([Error 31] Too many Links).
+Just getting started with btrfs.
 
-I was able to create a simple scenario to reproduce the error:
+I understand that btrfs stores data/metadata in two different tree
+structures =96 one for file/directory names, and one for data blocks.
 
-Create an empty directory and run the following script within the directory:
+Reading @,
 
-#!/bin/bash
+ http://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devic=
+es
+  Use raid10 for both data and metadata
+    mkfs.btrfs -m raid10 -d raid10 /dev/sdb /dev/sdc /dev/sdd /dev/sde
 
-echo "abc" >.tab-snip-class_scrbl.dep._portage_merge_.9766
-for x in $(seq 80)
-do echo $x; ln .tab-snip-class_scrbl.dep._portage_merge_.9766 \
-.tab-snip-class_scrbl.dep._portage_merge_.9766.$x; done
+and @,
 
+ "Churning Butter(FS): An Interview with Chris Mason"
+  http://www.linux-mag.com/id/7329
 
-(The names are taken from the original Gentoo package.)
+    CM Today you can do this:
+    mkfs.btrfs -m raid1 -d raid10 /dev/sda /dev/sdb /dev/sdc /dev/sdd
+And you=92ll get metadata on raid1 and data on raid10. The raid10 will
+use all four drives and the raid1 will use two drives at a time. Yes,
+btrfs allows you to pick different values for data or metadata.
 
-When I run this script the first 66 links are created properly. All further
-link creations fail:
+The fact that I *can* setup data & metadata differently is clear.  But
+I'm not at all clear *why* I'd want to, or what the advantages are.
+I'd guess it's a balance/combination of performance & resiliency.
 
-...
-63
-64
-65
-66
-67
-ln: creating hard link to `.tab-snip-class_scrbl.dep._portage_merge_.9766': Too
-many links 68
-ln: creating hard link to `.tab-snip-class_scrbl.dep._portage_merge_.9766': Too
-many links 69
-ln: creating hard link to `.tab-snip-class_scrbl.dep._portage_merge_.9766': Too
-many links 70
-ln: creating hard link to `.tab-snip-class_scrbl.dep._portage_merge_.9766': Too
-many links
-...
+Naively "-m raid10 -d raid10" seems to make the most sense -- if i
+have it, use it.
 
-
-I was able to reproduce the bug independently on two different machines.
-
-During earlier tests I determined that filename length has an effect as well as
-the link count.
-
-Greetings, Michael
+Are there any benchmarks, guidelines or recommendations?
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

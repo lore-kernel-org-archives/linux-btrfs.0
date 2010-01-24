@@ -1,68 +1,30 @@
-From: 0bo0 <0.bugs.only.0@gmail.com>
-Subject: mount after reboot of btrfs RAID-10 fails with "btrfs: failed to read
-	the system array on sda"
-Date: Sat, 23 Jan 2010 21:53:25 -0800
-Message-ID: <c67eed301001232153j5cb755f6ge2924df740d750d8@mail.gmail.com>
+From: Goffredo Baroncelli <kreijack@gmail.com>
+Subject: Re: mount after reboot of btrfs RAID-10 fails with "btrfs: failed to read the system array on sda"
+Date: Sun, 24 Jan 2010 09:02:38 +0100
+Message-ID: <201001240902.38535.kreijack@libero.it>
+References: <c67eed301001232153j5cb755f6ge2924df740d750d8@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Cc: linux-btrfs@vger.kernel.org
+To: 0bo0 <0.bugs.only.0@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <c67eed301001232153j5cb755f6ge2924df740d750d8@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-after a simple reboot,
+On Sunday 24 January 2010, 0bo0 wrote:
+> after a simple reboot,
+                 ^^^^^^
+Have you do
 
-	btrfs-show
-		Label: TEST uuid: 2ac85206-2d88-47d7-a1e7-a93d80b199f8
-		        Total devices 4 FS bytes used 28.00KB
-		        devid    1 size 931.51GB used 2.03GB path /dev/sda
-		        devid    2 size 931.51GB used 2.01GB path /dev/sdb
-		        devid    3 size 931.51GB used 2.01GB path /dev/sdc
-		        devid    4 size 931.51GB used 2.01GB path /dev/sdd
+  # btrfsctl -a
 
-but,
+before mounting the filesystem ? This command scans all the block devices 
+searching the btrfs volume. So when you mount a device of an array the system 
+is able to retrieves the others.
 
-	mount /dev/sda /mnt
-		mount: wrong fs type, bad option, bad superblock on /dev/sda,
-		       missing codepage or helper program, or other error
-		       In some cases useful info is found in syslog - try
-		       dmesg | tail  or so
+[..]
 
-where,
-
-	tail -f /var/log/messages,
-
-		Jan 23 21:49:23 test kernel: [   94.949335] device fsid
-f9452f77524a701a-28bb2c0e9bab5a99 devid 1 transid 17 /dev/sda
-		Jan 23 21:49:23 test kernel: [   94.951716] btrfs: failed to read
-the system array on sda
-		Jan 23 21:49:23 test kernel: [   94.952748] btrfs: open_ctree failed
-
-mkfs.btrfs -m raid10 -d raid10 /dev/sd[abcd]
-
-	WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
-	WARNING! - see http://btrfs.wiki.kernel.org before using
-	
-	adding device /dev/sdb id 2
-	adding device /dev/sdc id 3
-	adding device /dev/sdd id 4
-	fs created label (null) on /dev/sda
-	        nodesize 4096 leafsize 4096 sectorsize 4096 size 3.64TB
-	Btrfs Btrfs v0.19
-
-mount /dev/sda /mnt
-df -H | grep -i sda
-	/dev/sda               4.1T    29k   4.1T   1% /mnt
-
-fyi,
-
-lsb_release -ri
-  Distributor ID: SUSE LINUX
-  Release:        11.2
-uname -a
-  Linux test 2.6.31.8-0.1-xen #1 SMP 2009-12-15 23:55:40 +0100 x86_64
-x86_64 x86_64 GNU/Linux
-rpm -qa | grep btr
-  btrfsprogs-0.19-10.1.x86_64
-
-
-a bug?
+-- 
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

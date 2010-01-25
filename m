@@ -1,219 +1,49 @@
-From: jim owens <jowens@hp.com>
-Subject: [PATCH] Btrfs: correct mistakes in direct I/O read found by fsx
-Date: Mon, 25 Jan 2010 09:01:12 -0500
-Message-ID: <4B5DA428.3020109@hp.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [btrfs] kernel BUG at include/linux/spinlock.h:376!
+Date: Mon, 25 Jan 2010 10:17:26 -0500
+Message-ID: <20100125151726.GA331@think>
+References: <201001072229.33976.johannes.hirte@fem.tu-ilmenau.de>
+ <20100114193708.GD23810@think>
+ <201001232123.58602.johannes.hirte@fem.tu-ilmenau.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753197Ab0AYPR4@vger.kernel.org>
+In-Reply-To: <201001232123.58602.johannes.hirte@fem.tu-ilmenau.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sat, Jan 23, 2010 at 09:23:56PM +0100, Johannes Hirte wrote:
+> Am Donnerstag 14 Januar 2010 20:37:08 schrieb Chris Mason:
+> > On Thu, Jan 07, 2010 at 10:29:32PM +0100, Johannes Hirte wrote:
+> > > One of my btrfs filesystems gives the following bug message on access:
+> > > 
+> > > Jan  6 23:08:12 datengrab kernel: ------------[ cut here ]------------
+> > > Jan  6 23:08:12 datengrab kernel: kernel BUG at
+> > > include/linux/spinlock.h:376! Jan  6 23:08:12 datengrab kernel: invalid
+> > > opcode: 0000 [#1] SMP
+> > > Jan  6 23:08:12 datengrab kernel: last sysfs file:
+> > > /sys/devices/pci0000:00/0000:00:18.3/temp1_input
+> > > Jan  6 23:08:12 datengrab kernel: CPU 1
+> > > Jan  6 23:08:12 datengrab kernel: Pid: 2837, comm: btrfs-endio-wri Not
+> > > tainted 2.6.33-rc3-00033-g03b7675 #12 TYAN Tiger K8W Dual AMD Opteron,
+> > > S2875/To Be Filled
+> > > By O.E.M.
+> > > Jan  6 23:08:12 datengrab kernel: RIP: 0010:[<ffffffff8118f7ea>] 
+> > > [<ffffffff8118f7ea>] btrfs_assert_tree_locked+0x16/0x1c
+> > 
+> > Well, we really should have this tree block locked, but
+> > btrfs_mark_extent_written is doing some special things.  Is the trace
+> > always the same?
+> 
+> Sorry for the long delay. Yes the trace was always the same. I can't test 
+> patches, since I'm not working on the corrupted FS anymore. The bug only 
+> occurred on the corrupted filesystem. But as I've seen, Yan Zheng has tracked 
+> it down (commit 6c7d54ac87f338c479d9729e8392eca3f76e11e1). 
+> 
+> I still suspect that the FS corruption was caused by this bug. It didn't 
+> happened again. If so, I'll report.
 
-Thanks to Josef Bacik for breaking the code with fsx and
-figuring out with Chris what I was doing wrong:
+Right, we should have it fixed now, thanks for the report.
 
-1) change inline extent processing because an inline can
-   be at the beginning of a large file when a hole follows
-   and any access within the first block points at the
-   inline even when the starting fpos is in that hole.
-2) change compressed extent expansion because the end of
-   the extent can be another implied hole that is not
-   part of the compressed data stream.
-3) reorder EOF test to be safer with concurrent write.
-4) add better error reporting for inline extents.
-
-Signed-off-by: jim owens <jowens@hp.com>
----
- fs/btrfs/dio.c |  101 ++++++++++++++++++++++++++++++++++++++++----------------
- 1 files changed, 72 insertions(+), 29 deletions(-)
-
-diff --git a/fs/btrfs/dio.c b/fs/btrfs/dio.c
-index 2c0579a..3315cc9 100644
---- a/fs/btrfs/dio.c
-+++ b/fs/btrfs/dio.c
-@@ -203,7 +203,7 @@ static void btrfs_dio_submit_bio(struct btrfs_dio_extcb *extcb, int dvn);
- static int btrfs_dio_add_user_pages(u64 *dev_left, struct btrfs_dio_extcb *extcb, int dvn);
- static int btrfs_dio_add_temp_pages(u64 *dev_left, struct btrfs_dio_extcb *extcb, int dvn);
- static int btrfs_dio_hole_read(struct btrfs_diocb *diocb, u64 hole_len);
--static int btrfs_dio_inline_read(struct btrfs_diocb *diocb, u64 data_len);
-+static int btrfs_dio_inline_read(struct btrfs_diocb *diocb, u64 *data_len);
- static int btrfs_dio_read_csum(struct btrfs_dio_extcb *extcb);
- static void btrfs_dio_free_retry(struct btrfs_dio_extcb *extcb);
- static int btrfs_dio_retry_block(struct btrfs_dio_extcb *extcb);
-@@ -433,9 +433,21 @@ static void btrfs_dio_read(struct btrfs_diocb *diocb)
- 
- 	/* expand lock region to include what we read to validate checksum */ 
- 	diocb->lockstart = diocb->start & ~(diocb->blocksize-1);
-+	diocb->lockend = ALIGN(diocb->terminate, diocb->blocksize) - 1;
- 
- getlock:
- 	mutex_lock(&diocb->inode->i_mutex);
-+		
-+	/* ensure writeout and btree update on everything
-+	 * we might read for checksum or compressed extents
-+	 */
-+	data_len = diocb->lockend + 1 - diocb->lockstart;
-+	err = btrfs_wait_ordered_range(diocb->inode, diocb->lockstart, data_len);
-+	if (err) {
-+		diocb->error = err;
-+		mutex_unlock(&diocb->inode->i_mutex);
-+		return;
-+	}
- 	data_len = i_size_read(diocb->inode);
- 	if (data_len < end)
- 		end = data_len;
-@@ -448,17 +460,7 @@ getlock:
- 		diocb->terminate = end;
- 		diocb->lockend = ALIGN(diocb->terminate, diocb->blocksize) - 1;
- 	}
--		
--	/* ensure writeout and btree update on everything
--	 * we might read for checksum or compressed extents
--	 */
--	data_len = diocb->lockend + 1 - diocb->lockstart;
--	err = btrfs_wait_ordered_range(diocb->inode, diocb->lockstart, data_len);
--	if (err) {
--		diocb->error = err;
--		mutex_unlock(&diocb->inode->i_mutex);
--		return;
--	}
-+
- 	lock_extent(io_tree, diocb->lockstart, diocb->lockend, GFP_NOFS);
- 	mutex_unlock(&diocb->inode->i_mutex);
- 
-@@ -483,7 +485,18 @@ getlock:
- 		}
- 		
- 		if (em->block_start == EXTENT_MAP_INLINE) {
--			err = btrfs_dio_inline_read(diocb, len);
-+			/* ugly stuff because inline can exist in a large file
-+			 * with other extents if a hole immediately follows.
-+			 * the inline might end short of the btrfs block with
-+			 * an implied hole that we need to zero here.
-+			 */
-+			u64 expected = min(diocb->start + len, em->start + em->len);
-+			err = btrfs_dio_inline_read(diocb, &len);
-+			if (!err && expected > diocb->start) {
-+				data_len -= len;
-+				len = expected - diocb->start;
-+				err = btrfs_dio_hole_read(diocb, len);
-+			}
- 		} else {
- 			len = min(len, em->len - (diocb->start - em->start));
- 			if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags) ||
-@@ -1183,9 +1196,24 @@ static void btrfs_dio_decompress(struct btrfs_dio_extcb *extcb)
- 	u32 len = extcb->icb.out_len;
- 
- 	extcb->error = btrfs_zlib_inflate(&extcb->icb);
--	if (extcb->icb.out_len != len && !extcb->error)
--		extcb->error = -EIO;
- 
-+	/* ugly again - compressed extents can end with an implied hole */
-+	if (!extcb->error && extcb->icb.out_len != len) {
-+		while (extcb->umc.todo) {
-+			struct bio_vec uv;
-+			char *out;
-+
-+			extcb->error = btrfs_dio_get_user_bvec(&uv, &extcb->umc);
-+			if (extcb->error)
-+				goto fail;
-+			out = kmap_atomic(uv.bv_page, KM_USER0);
-+			memset(out + uv.bv_offset, 0, uv.bv_len);
-+			kunmap_atomic(out, KM_USER0);
-+
-+			btrfs_dio_done_with_out(&uv, NULL);
-+		}
-+	}
-+fail:
- 	btrfs_dio_release_bios(extcb, 0);
- }
- 
-@@ -1432,7 +1460,7 @@ fail:
- 	return err;
- }
- 
--static int btrfs_dio_inline_read(struct btrfs_diocb *diocb, u64 data_len)
-+static int btrfs_dio_inline_read(struct btrfs_diocb *diocb, u64 *data_len)
- {
- 	int err;
- 	size_t size;
-@@ -1452,8 +1480,11 @@ static int btrfs_dio_inline_read(struct btrfs_diocb *diocb, u64 data_len)
- 		if (err < 0)
- 			goto notfound;
- 		err= -EDOM;
--		if (path->slots[0] == 0)
-+		if (path->slots[0] == 0) {
-+		printk(KERN_ERR "btrfs directIO inline extent leaf not found ino %lu\n",
-+				diocb->inode->i_ino);
- 			goto fail;
-+		}
- 		path->slots[0]--;
- 	}
- 
-@@ -1473,16 +1504,26 @@ static int btrfs_dio_inline_read(struct btrfs_diocb *diocb, u64 data_len)
- 	extent_start = found_key.offset;
- 	/* uncompressed size */
- 	size = btrfs_file_extent_inline_len(leaf, item);
--	if (diocb->start < extent_start || diocb->start >= extent_start + size) {
--		printk(KERN_ERR "btrfs directIO inline extent leaf mismatch ino %lu\n",
--				diocb->inode->i_ino);
-+	if (diocb->start < extent_start) {
-+		printk(KERN_ERR "btrfs directIO inline extent range mismatch ino %lu"
-+			" fpos %lld found start %lld size %ld\n",
-+			diocb->inode->i_ino,diocb->start,extent_start,size);
- 		err= -EDOM;
- 		goto fail;
- 	}
- 
-+	/* we can end here when we start in an implied hole on a larger file */
-+	if (diocb->start >= extent_start + size) {
-+		*data_len = 0;
-+		err = 0;
-+		goto fail;
-+	}
-+
- 	extent_offset = diocb->start - extent_start;
-+	size = min_t(u64, *data_len, size - extent_offset);
- 
--	size = min_t(u64, data_len, size);
-+	size = min_t(u64, *data_len, size);
-+	*data_len = size;
- 
- 	if (btrfs_file_extent_compression(leaf, item) ==
- 						BTRFS_COMPRESS_ZLIB) {
-@@ -1523,11 +1564,11 @@ static int btrfs_dio_inline_read(struct btrfs_diocb *diocb, u64 data_len)
- 		if (!err)
- 			diocb->start += size;
- 
--		/* needed if we ever allowed extents after inline
--		 * diocb->umc.work_iov = extcb->umc.work_iov;
--		 * diocb->umc.user_iov = extcb->umc.user_iov;
--		 * diocb->umc.remaining = extcb->umc.remaining;
--		 */
-+		/* we allow extents after inline if a hole follows */
-+		diocb->umc.work_iov = extcb->umc.work_iov;
-+		diocb->umc.user_iov = extcb->umc.user_iov;
-+		diocb->umc.remaining = extcb->umc.remaining;
-+
- 		kfree(extcb);
- 	} else {
- 		unsigned long inline_start;
-@@ -1556,9 +1597,11 @@ fail:
- 	btrfs_release_path(root, path);
- notfound:
- 	btrfs_free_path(path);
--	unlock_extent(&BTRFS_I(diocb->inode)->io_tree, diocb->lockstart,
--			diocb->lockstart + data_len - 1, GFP_NOFS);
--	diocb->lockstart += data_len;
-+	if (!err && *data_len) {
-+		unlock_extent(&BTRFS_I(diocb->inode)->io_tree, diocb->lockstart,
-+				diocb->lockstart + *data_len - 1, GFP_NOFS);
-+		diocb->lockstart += *data_len;
-+	}
- 	return err;
- }
- 
--- 
-1.5.6.3
+-chris

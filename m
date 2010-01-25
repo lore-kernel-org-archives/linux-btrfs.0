@@ -1,52 +1,75 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: fix another orphan cleanup problem
-Date: Mon, 25 Jan 2010 16:01:47 -0500
-Message-ID: <20100125210147.GB2204@localhost.localdomain>
+From: "Mr. Tux" <tuxoholic@hotmail.de>
+Subject: Re: Howto mount intact left-over device of a degraded btrfs-raid?
+Date: Mon, 25 Jan 2010 22:46:47 +0100
+Message-ID: <BLU0-SMTP645D546639865D7DF323B2D85F0@phx.gbl>
+References: <BLU0-SMTP89D73FD06036781FE98000D8640@phx.gbl> <20100125184326.GA2204@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100125184326.GA2204@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Because orphan cleanup now happens well after the fs is all initialized and
-such, we can run into this problem where we find orphan entries that were just
-added to the fs, not ones that were added previously during a crash.  This does
-not bode well for the system, and results in a couple of odd things happening,
-like truncate being run on non-regular files.  In order to fix this we just
-check and see if the inode has been added to the in-memory orphan list, and if
-it has, set the key to it's inode number - 1 so we don't find this orphan entry
-again, and continue searching.
+On Monday 25 January 2010 19.43:27 Josef Bacik wrote:
+>
+> How did you setup this array to begin with?  I'm trying to reproduce this
+> bug but I haven't been able to.  Thanks,
+>
 
-This problem kept popping up while running xfs tests, and was 100%
-reproduceable.  With this patch the problem no longer happens.  Thanks,
+Hi Josef,
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/inode.c |   11 +++++++++++
- 1 files changed, 11 insertions(+), 0 deletions(-)
+Thanks for your help!
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index c7fbfaa..067f4b5 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2202,6 +2202,17 @@ void btrfs_orphan_cleanup(struct btrfs_root *root)
- 		 * the proper thing when we hit it
- 		 */
- 		spin_lock(&root->list_lock);
-+		if (!list_empty(&BTRFS_I(inode)->i_orphan)) {
-+			/*
-+			 * This inode is on the in-memory list, which means we
-+			 * shouldn't be cleaning it up, move on to the next
-+			 * orphan item.
-+			 */
-+			spin_unlock(&root->list_lock);
-+			key.offset = inode->i_ino - 1;
-+			iput(inode);
-+			continue;
-+		}
- 		list_add(&BTRFS_I(inode)->i_orphan, &root->orphan_list);
- 		spin_unlock(&root->list_lock);
- 
--- 
-1.5.4.3
+Linux Kernel 2.6.32.2 from kernel.org (was marked as stable at that time,  I 
+compiled it using make-kpkg with btrfs support inside the kernel -> not 
+modular)
+
+OS: Debian Lenny 5.03
+
+I created the btrfs raid on a two sata-II drives like this:
+
+mkfs.btrfs -d raid1 -m raid 1 /dev/sda4 /dev/sdb4
+
+Then I mounted the btrfs with:
+
+mount /dev/sda4 /mnt/
+
+cat /proc/mounts and dmesg showed the raid was mounted successfully
+
+Then I started to copy large amount of data into the raid1 from a file server. 
+With the copying process ongoing I detached the data cable from one device to 
+simulate hardware failure. Copying process went on as planed to the drive 
+still attached.
+
+Then I unmounted the btrfs raid like this:
+
+umount /mnt/
+
+and I shut down the system.
+
+Now the goal was to boot and mount only the intact btrfs partition again as a 
+degraded raid.
+
+I followed the multiple-device-wiki of btrfs [1]
+
+I didn't try to remove the faulty device - I shut down the system already and 
+booted again without the faulty drive. So I tried this:
+
+mount -o degraded /dev/sda /mnt/
+
+This caused a memory segfault - the system still ran, but I couldn't use the 
+array any more.
+
+So I used the next command
+
+btrfs-vol -r missing /mnt
+
+Complained it couldn't mount with only one member present.
+
+My assumption: Bad luck with the kernel - or did this memory segfault happen 
+on earlier kernel versions as well?
+
+[1] 
+http://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices#Replacing_Failed_Devices
 

@@ -1,35 +1,47 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: Howto mount intact left-over device of a degraded btrfs-raid?
-Date: Mon, 25 Jan 2010 13:43:27 -0500
-Message-ID: <20100125184326.GA2204@localhost.localdomain>
-References: <BLU0-SMTP89D73FD06036781FE98000D8640@phx.gbl>
+From: 0bo0 <0.bugs.only.0@gmail.com>
+Subject: Re: mount after reboot of btrfs RAID-10 fails with "btrfs: failed to
+	read the system array on sda"
+Date: Mon, 25 Jan 2010 11:33:20 -0800
+Message-ID: <c67eed301001251133i1a167415x4b94bd119be7a977@mail.gmail.com>
+References: <c67eed301001232153j5cb755f6ge2924df740d750d8@mail.gmail.com>
+	 <23a15591001241535h3768f413iee4bde3214a07bc5@mail.gmail.com>
+	 <c67eed301001242100x92e5fc2s6e130ed6ccf3b97d@mail.gmail.com>
+	 <201001251919.40182.kreijack@libero.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: "Mr. Tux" <tuxoholic@hotmail.de>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org, Leszek Ciesielski <skolima@gmail.com>
+To: Goffredo Baroncelli <kreijack@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BLU0-SMTP89D73FD06036781FE98000D8640@phx.gbl>
+In-Reply-To: <201001251919.40182.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 20, 2010 at 07:31:24PM +0100, Mr. Tux wrote:
-> Hi list
-> 
-> I tried to mount the intact device of a two memer btrfs raid array with one 
-> device missing:
-> 
-> # mount -o degraded /dev/sdb /mnt
-> 
-> this wouldn't work with kernel 2.6.32-2 - caused some sort of memory segfault
-> 
-> # btrfs-vol -r missing /mnt
-> 
-> complained and refused to mount the array degraded with only one intact array 
-> member left -> demanded two intact members
-> 
-> How can I mount this array anyway?
-> 
+On Mon, Jan 25, 2010 at 10:19 AM, Goffredo Baroncelli
+<kreijack@gmail.com> wrote:
+>> =A0 =A0/dev/sda =A0 =A0/mnt =A0 =A0btrfs  device=3D/dev/sdb,device=3D=
+/dev/sdc,device=3D/dev/sdd =A0 =A0 1 2
+>
+> Yes; it works for me.
 
-How did you setup this array to begin with?  I'm trying to reproduce this bug
-but I haven't been able to.  Thanks,
+thanks for the confirmation.
 
-Josef
+verifying, with that in /etc/fstab, after boot i see,
+
+  mount | grep sda
+    /dev/sda on /mnt type btrfs
+(rw,device=3D/dev/sdb,device=3D/dev/sdc,device=3D/dev/sdd)
+
+which apparenlty worked.
+
+still, the RAID size is wrong ...
+
+ df -H | grep sda
+  /dev/sda               4.1T    29k   4.1T   1% /mnt
+
+but that's a different thread.
+
+thanks again.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

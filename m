@@ -1,53 +1,35 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Subject: Re: mount after reboot of btrfs RAID-10 fails with "btrfs: failed to read the system array on sda"
-Date: Mon, 25 Jan 2010 19:19:39 +0100
-Message-ID: <201001251919.40182.kreijack@libero.it>
-References: <c67eed301001232153j5cb755f6ge2924df740d750d8@mail.gmail.com> <23a15591001241535h3768f413iee4bde3214a07bc5@mail.gmail.com> <c67eed301001242100x92e5fc2s6e130ed6ccf3b97d@mail.gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: Howto mount intact left-over device of a degraded btrfs-raid?
+Date: Mon, 25 Jan 2010 13:43:27 -0500
+Message-ID: <20100125184326.GA2204@localhost.localdomain>
+References: <BLU0-SMTP89D73FD06036781FE98000D8640@phx.gbl>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: linux-btrfs@vger.kernel.org, Leszek Ciesielski <skolima@gmail.com>
-To: 0bo0 <0.bugs.only.0@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: "Mr. Tux" <tuxoholic@hotmail.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <c67eed301001242100x92e5fc2s6e130ed6ccf3b97d@mail.gmail.com>
+In-Reply-To: <BLU0-SMTP89D73FD06036781FE98000D8640@phx.gbl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday 25 January 2010, 0bo0 wrote:
-> On Sun, Jan 24, 2010 at 3:35 PM, Leszek Ciesielski <skolima@gmail.com> 
-wrote:
-> >> how would that, then, get handled for automount @ boot via fstab?  i
-> >> guess that the scan needs to get done as well ...
-> >> --
-> >
-> > Please see this discussion:
-> > http://thread.gmane.org/gmane.comp.file-systems.btrfs/4126/focus=4187
+On Wed, Jan 20, 2010 at 07:31:24PM +0100, Mr. Tux wrote:
+> Hi list
 > 
-> Thanks for the reference.
+> I tried to mount the intact device of a two memer btrfs raid array with one 
+> device missing:
 > 
-> @ that link,
+> # mount -o degraded /dev/sdb /mnt
 > 
->   "Would this option ["mount -t btrfs -o device=/dev/sdb2 /dev/sda2
->   /mnt"] work on boot, bypasing the need for "btrfsctl -a" to mount a
->   multi-device filesystem?"
+> this wouldn't work with kernel 2.6.32-2 - caused some sort of memory segfault
 > 
+> # btrfs-vol -r missing /mnt
 > 
-> would translate how, in my case, to an fstab entry?
+> complained and refused to mount the array degraded with only one intact array 
+> member left -> demanded two intact members
 > 
->    /dev/sda    /mnt    btrfs
-> device=/dev/sdb,device=/dev/sdc,device=/dev/sdd     1 2
-> 
-> ?
-
-Yes; it works for me.
-
-> thanks
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> How can I mount this array anyway?
 > 
 
+How did you setup this array to begin with?  I'm trying to reproduce this bug
+but I haven't been able to.  Thanks,
 
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+Josef

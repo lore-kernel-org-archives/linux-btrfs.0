@@ -1,47 +1,52 @@
-From: 0bo0 <0.bugs.only.0@gmail.com>
-Subject: Re: mount after reboot of btrfs RAID-10 fails with "btrfs: failed to
-	read the system array on sda"
-Date: Mon, 25 Jan 2010 11:33:20 -0800
-Message-ID: <c67eed301001251133i1a167415x4b94bd119be7a977@mail.gmail.com>
-References: <c67eed301001232153j5cb755f6ge2924df740d750d8@mail.gmail.com>
-	 <23a15591001241535h3768f413iee4bde3214a07bc5@mail.gmail.com>
-	 <c67eed301001242100x92e5fc2s6e130ed6ccf3b97d@mail.gmail.com>
-	 <201001251919.40182.kreijack@libero.it>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: fix another orphan cleanup problem
+Date: Mon, 25 Jan 2010 16:01:47 -0500
+Message-ID: <20100125210147.GB2204@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org, Leszek Ciesielski <skolima@gmail.com>
-To: Goffredo Baroncelli <kreijack@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201001251919.40182.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 25, 2010 at 10:19 AM, Goffredo Baroncelli
-<kreijack@gmail.com> wrote:
->> =A0 =A0/dev/sda =A0 =A0/mnt =A0 =A0btrfs  device=3D/dev/sdb,device=3D=
-/dev/sdc,device=3D/dev/sdd =A0 =A0 1 2
->
-> Yes; it works for me.
+Because orphan cleanup now happens well after the fs is all initialized and
+such, we can run into this problem where we find orphan entries that were just
+added to the fs, not ones that were added previously during a crash.  This does
+not bode well for the system, and results in a couple of odd things happening,
+like truncate being run on non-regular files.  In order to fix this we just
+check and see if the inode has been added to the in-memory orphan list, and if
+it has, set the key to it's inode number - 1 so we don't find this orphan entry
+again, and continue searching.
 
-thanks for the confirmation.
+This problem kept popping up while running xfs tests, and was 100%
+reproduceable.  With this patch the problem no longer happens.  Thanks,
 
-verifying, with that in /etc/fstab, after boot i see,
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/inode.c |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
 
-  mount | grep sda
-    /dev/sda on /mnt type btrfs
-(rw,device=3D/dev/sdb,device=3D/dev/sdc,device=3D/dev/sdd)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index c7fbfaa..067f4b5 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2202,6 +2202,17 @@ void btrfs_orphan_cleanup(struct btrfs_root *root)
+ 		 * the proper thing when we hit it
+ 		 */
+ 		spin_lock(&root->list_lock);
++		if (!list_empty(&BTRFS_I(inode)->i_orphan)) {
++			/*
++			 * This inode is on the in-memory list, which means we
++			 * shouldn't be cleaning it up, move on to the next
++			 * orphan item.
++			 */
++			spin_unlock(&root->list_lock);
++			key.offset = inode->i_ino - 1;
++			iput(inode);
++			continue;
++		}
+ 		list_add(&BTRFS_I(inode)->i_orphan, &root->orphan_list);
+ 		spin_unlock(&root->list_lock);
+ 
+-- 
+1.5.4.3
 
-which apparenlty worked.
-
-still, the RAID size is wrong ...
-
- df -H | grep sda
-  /dev/sda               4.1T    29k   4.1T   1% /mnt
-
-but that's a different thread.
-
-thanks again.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

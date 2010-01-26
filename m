@@ -1,86 +1,37 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: Howto mount intact left-over device of a degraded btrfs-raid?
-Date: Mon, 25 Jan 2010 17:08:39 -0500
-Message-ID: <20100125220839.GC2204@localhost.localdomain>
-References: <BLU0-SMTP89D73FD06036781FE98000D8640@phx.gbl> <20100125184326.GA2204@localhost.localdomain> <BLU0-SMTP645D546639865D7DF323B2D85F0@phx.gbl>
+From: Yang Hongyang <yanghy@cn.fujitsu.com>
+Subject: [PATCH]btrfs:fix a memory leak in acl
+Date: Tue, 26 Jan 2010 08:48:23 +0800
+Message-ID: <4B5E3BD7.9000001@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: "Mr. Tux" <tuxoholic@hotmail.de>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BLU0-SMTP645D546639865D7DF323B2D85F0@phx.gbl>
+Content-Type: text/plain; charset=UTF-8
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752217Ab0AZArN@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 25, 2010 at 10:46:47PM +0100, Mr. Tux wrote:
-> On Monday 25 January 2010 19.43:27 Josef Bacik wrote:
-> >
-> > How did you setup this array to begin with?  I'm trying to reproduce this
-> > bug but I haven't been able to.  Thanks,
-> >
-> 
-> Hi Josef,
-> 
-> Thanks for your help!
-> 
-> Linux Kernel 2.6.32.2 from kernel.org (was marked as stable at that time,  I 
-> compiled it using make-kpkg with btrfs support inside the kernel -> not 
-> modular)
-> 
-> OS: Debian Lenny 5.03
-> 
-> I created the btrfs raid on a two sata-II drives like this:
-> 
-> mkfs.btrfs -d raid1 -m raid 1 /dev/sda4 /dev/sdb4
-> 
-> Then I mounted the btrfs with:
-> 
-> mount /dev/sda4 /mnt/
-> 
-> cat /proc/mounts and dmesg showed the raid was mounted successfully
-> 
-> Then I started to copy large amount of data into the raid1 from a file server. 
-> With the copying process ongoing I detached the data cable from one device to 
-> simulate hardware failure. Copying process went on as planed to the drive 
-> still attached.
-> 
-> Then I unmounted the btrfs raid like this:
-> 
-> umount /mnt/
-> 
-> and I shut down the system.
-> 
-> Now the goal was to boot and mount only the intact btrfs partition again as a 
-> degraded raid.
-> 
-> I followed the multiple-device-wiki of btrfs [1]
-> 
-> I didn't try to remove the faulty device - I shut down the system already and 
-> booted again without the faulty drive. So I tried this:
-> 
-> mount -o degraded /dev/sda /mnt/
-> 
-> This caused a memory segfault - the system still ran, but I couldn't use the 
-> array any more.
-> 
-> So I used the next command
-> 
-> btrfs-vol -r missing /mnt
-> 
-> Complained it couldn't mount with only one member present.
-> 
-> My assumption: Bad luck with the kernel - or did this memory segfault happen 
-> on earlier kernel versions as well?
-> 
-> [1] 
-> http://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices#Replacing_Failed_Devices
-> 
+In btrfs_init_acl(),cloned acl is not released.Fix that.
 
-Hmm well I'm trying to reproduce that here and it's working fine, course I can't
-pull a cable on my disk since I only have one disk to test with.  Would you mind
-sending me your dmesg after you try
+Signed-off-by: Yang Hongyang <yanghy@cn.fujitsu.com>
 
-mount -o degraded /dev/sda1 /mnt/
+---
+ fs/btrfs/acl.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-so I can see whats going on.  Thanks,
+diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+index 54f4798..6df6d6e 100644
+--- a/fs/btrfs/acl.c
++++ b/fs/btrfs/acl.c
+@@ -244,6 +244,7 @@ int btrfs_init_acl(struct btrfs_trans_handle *trans,
+ 						    ACL_TYPE_ACCESS);
+ 			}
+ 		}
++		posix_acl_release(clone);
+ 	}
+ failed:
+ 	posix_acl_release(acl);
+-- 
+1.6.5.2
 
-Josef
+-- 
+Regards
+Yang Hongyang

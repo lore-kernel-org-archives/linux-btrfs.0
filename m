@@ -1,37 +1,63 @@
-From: "Mr. Tux" <tuxoholic@hotmail.de>
-Subject: Re: Howto mount intact left-over device of a degraded btrfs-raid?
-Date: Tue, 26 Jan 2010 13:20:30 +0100
-Message-ID: <BLU0-SMTP1013A688BD201E681FCA798D85E0@phx.gbl>
-References: <BLU0-SMTP89D73FD06036781FE98000D8640@phx.gbl> <BLU0-SMTP645D546639865D7DF323B2D85F0@phx.gbl> <20100125220839.GC2204@localhost.localdomain>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: run orphan cleanup on default fs root
+Date: Tue, 26 Jan 2010 09:30:53 -0500
+Message-ID: <20100126143052.GA2183@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
+Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100125220839.GC2204@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday 25 January 2010 23:08:39 Josef Bacik wrote:
+This patch revert's commit
 
-Hi Josef
+6c090a11e1c403b727a6a8eff0b97d5fb9e95cb5
 
->
-> Hmm well I'm trying to reproduce that here and it's working fine, course I
-> can't pull a cable on my disk since I only have one disk to test with. 
-> Would you mind sending me your dmesg after you try
->
-> mount -o degraded /dev/sda1 /mnt/
->
-> so I can see whats going on.  Thanks,
->
+since it introduces this problem where we can run orphan cleanup on a volume
+that can have orphan entries re-added.  Instead of my original fix, Yan Zheng
+pointed out that we can just revert my original fix and then run the orphan
+cleanup in open_ctree after we look up the fs_root.  I have tested this with all
+the tests that gave me problems and this patch fixes both problems.  Thanks,
 
-Did you try 2.6.32.2 from kernel.org? Is it possible to use  a second test 
-drive like I did? I know you can create a raid array with one device missing, 
-but the segfault happened with a two member raid1.
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/disk-io.c |    6 ++++++
+ fs/btrfs/inode.c   |    6 ------
+ 2 files changed, 6 insertions(+), 6 deletions(-)
 
-I don't have the test environment any more, so I can't offer a backtrace right 
-now - but I will set it up again in the next few days. If it happens again I 
-will contact you and send you a backtrace.
-
-Mr. Tux
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 72c08fa..1ce093f 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1937,6 +1937,12 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 	if (!fs_info->fs_root)
+ 		goto fail_trans_kthread;
+ 
++	if (!(sb->s_flags & MS_RDONLY)) {
++		down_read(&fs_info->cleanup_work_sem);
++		btrfs_orphan_cleanup(fs_info->fs_root);
++		up_read(&fs_info->cleanup_work_sem);
++	}
++
+ 	return tree_root;
+ 
+ fail_trans_kthread:
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index c7fbfaa..09a4d8e 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3795,12 +3795,6 @@ struct inode *btrfs_lookup_dentry(struct inode *dir, struct dentry *dentry)
+ 
+ 	if (location.type == BTRFS_INODE_ITEM_KEY) {
+ 		inode = btrfs_iget(dir->i_sb, &location, root);
+-		if (unlikely(root->clean_orphans) &&
+-		    !(inode->i_sb->s_flags & MS_RDONLY)) {
+-			down_read(&root->fs_info->cleanup_work_sem);
+-			btrfs_orphan_cleanup(root);
+-			up_read(&root->fs_info->cleanup_work_sem);
+-		}
+ 		return inode;
+ 	}
+ 
+-- 
+1.5.4.3
 

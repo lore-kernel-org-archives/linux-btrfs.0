@@ -1,36 +1,43 @@
-From: "Dipl.-Ing. Michael Niederle" <mniederle@gmx.at>
-Subject: Re: What's the benefit of COW without checksum?
-Date: Wed, 27 Jan 2010 00:44:29 +0100
-Message-ID: <20100127004429.01516fbd@simplux>
-References: <977a2be21001252315w36afcb39v4ba130f6d8e53707@mail.gmail.com>
-	<20100126190705.GB2770@think>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: do not mark the chunk as readonly if in degraded
+	mode
+Date: Tue, 26 Jan 2010 21:07:59 -0500
+Message-ID: <20100127020758.GA11767@dhcp231-156.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: Zhu Yanhai <zhu.yanhai@gmail.com>, linux-btrfs@vger.kernel.org,
-	Yan Zheng <zheng.yan@oracle.com>, austin.zhang@intel.com,
-	yong.y.wang@intel.com, bing.wei.liu@intel.com,
-	Zhu Yanhai <yanhai.zhu@linux.intel.com>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100126190705.GB2770@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm using btrfs for a distribution specialized to be used with USB pen drives.
+If a RAID setup has chunks that span multiple disks, and one of those disks has
+failed, btrfs_chunk_readonly will return 1 since one of the disks in that
+chunk's stripes is dead and therefore not writeable.  So instead if we are in
+degraded mode, return 0 so we can go ahead and allocate stuff.  Without this
+patch all of the block groups in a RAID1 setup will end up read-only, which will
+mean we can't add new disks to the array since we won't be able to make
+allocations.
 
-btrfs ist the first file system (besides nilfs) that is fast enough to be used
-with media (flash memory) that has a severe restriction on the number of writes
-per second (to be more precise: the number of page deletes per second).
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/volumes.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
 
-Until now I had to use a layered approached using some kind of union file
-system and a ramdisk as the top level layer.
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 3dda2ce..68fe767 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2538,6 +2538,11 @@ int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset)
+ 	if (!em)
+ 		return 1;
+ 
++	if (btrfs_test_opt(root, DEGRADED)) {
++		free_extent_map(em);
++		return 0;
++	}
++
+ 	map = (struct map_lookup *)em->bdev;
+ 	for (i = 0; i < map->num_stripes; i++) {
+ 		if (!map->stripes[i].dev->writeable) {
+-- 
+1.5.4.3
 
-I first testet btrfs last June when it entered the official kernel. At
-that time is was much to slow to be used in the described scenario. But the
-speedups during the last months made its use possible! :-)
-
-So lots of thanks to Chris Mason and all others who brought us such a
-groundbreaking file system. They have done a great piece of work. Yet there's
-still a lot to be done, but I'm optimistic that we will end up with a very well
-designed file system useable for lots of different application scenarios.
-
-Greetings, Michael

@@ -1,45 +1,75 @@
-From: Daniel J Blueman <daniel.blueman@gmail.com>
-Subject: Re: file/extent checksums for dedup/sync...
-Date: Wed, 27 Jan 2010 13:23:28 +0000
-Message-ID: <6278d2221001270523r13ab8973v927c8b60da181c9c@mail.gmail.com>
-References: <6278d2221001270410k1493582fvccdf23bed14cc0ff@mail.gmail.com>
-	 <87pr4venm4.fsf@basil.nowhere.org>
+From: Liuwenyi <qingshenlwy@gmail.com>
+Subject: Re: [PATCH]btrfs: avoid comparing with NULL pointer
+Date: Wed, 27 Jan 2010 22:19:50 +0800
+Message-ID: <4B604B86.9040307@gmail.com>
+References: <4B5FDCD1.8060806@gmail.com> <3d0408631001270000w49fc9100yb1e3b59df2e032e9@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Andi Kleen <andi@firstfloor.org>,
-	Linux BTRFS <linux-btrfs@vger.kernel.org>,
-	Linux Kernel <linux-kernel@vger.kernel.org>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754648Ab0A0NXc@vger.kernel.org>
-In-Reply-To: <87pr4venm4.fsf@basil.nowhere.org>
+Content-Type: text/plain; charset=UTF-8;
+	format=flowed
+Cc: chris.mason@oracle.com, jbacik@redhat.com, jens.axboe@oracle.com,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	linux-kernel@vger.kernel.org, strongzgy@gmail.com
+To: "Yan, Zheng " <yanzheng@21cn.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755253Ab0A0OUA@vger.kernel.org>
+In-Reply-To: <3d0408631001270000w49fc9100yb1e3b59df2e032e9@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 27, 2010 at 12:30 PM, Andi Kleen <andi@firstfloor.org> wrote:
-> Daniel J Blueman <daniel.blueman@gmail.com> writes:
->
->> For purposes of data deduplication and data synchronisation, it would
->> be a powerful tool to expose file data checksums.
+=E4=BA=8E 2010=E5=B9=B401=E6=9C=8827=E6=97=A5 16:00, Yan, Zheng =E5=86=99=
+=E9=81=93:
+> 2010/1/27 Liuwenyi<qingshenlwy@gmail.com>:
+>   =20
+>> In this patch, I adjust the seqence of if-conditions.
+>> It will assess the page->private situation.
+>> First, we make sure the page->private is not null.
+>> And then, we can do some with this page->private.
 >>
->> Since eg BTRFS uses the crc32c algorithm [1], it's possible to compute
->> the file's overall CRC from the accumulation of the CRCs from all it's
->> extents' CRCs.
+>> ---
+>> Signed-off-by: Liuwenyi<qingshenlwy@gmail.com>
+>> Cc: Chris Mason<chris.mason@oracle.com>
+>> Cc: Yan Zheng<zheng.yan@oracle.com>
+>> Cc: Josef Bacik<jbacik@redhat.com>
+>> Cc: Jens Axboe<jens.axboe@oracle.com>
+>> Cc: linux-btrfs@vger.kernel.org
+>> Cc: linux-kernel@vger.kernel.org
 >>
->> For now, exposing this via an IOCTL may be sufficient, though any
->> ideas for introducing it in a more standard way? (it's a pity that
->> when stat64 was introduced, reserved fields weren't added)
+>> ---
+>> fs/btrfs/disk-io.c | 4 ++--
+>> 1 files changed, 2 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>> index 009e3bd..a300dca 100644
+>> --- a/fs/btrfs/disk-io.c
+>> +++ b/fs/btrfs/disk-io.c
+>> @@ -1407,11 +1407,11 @@ static int bio_ready_for_csum(struct bio *bi=
+o)
+>>
+>> bio_for_each_segment(bvec, bio, i) {
+>> page =3D bvec->bv_page;
+>> - if (page->private =3D=3D EXTENT_PAGE_PRIVATE) {
+>> + if (!page->private) {
+>> length +=3D bvec->bv_len;
+>> continue;
+>> }
+>> - if (!page->private) {
+>> + if (page->private =3D=3D EXTENT_PAGE_PRIVATE) {
+>> length +=3D bvec->bv_len;
+>> continue;
+>> }
+>> --
+>>     =20
+> Why do you want to do this? The code is perfect safe even
+> page->private is NULL. Furthermore, your patch is malformed.
 >
-> The problem of doing it in any "standard way" is that it would
-> hard code the way the file system does checksums in the applications.
-> So the file system could never change it without breaking
-> user space.
+> Yan, Zheng
+>   =20
+Yes, I agree with you, this code is safe.
+But I think we should check whether the pointer is available first.
+It is unnecessary judge the "(page->private =3D=3D EXTENT_PAGE_PRIVATE)=
+"
+while page->private is null.
 
-I guess the filesystem would need to express this in the resulting
-data-structure, eg:
- - type 1 corresponds to using the crc32c algorithm with starting seed
-N and accumulating ascending over data extents, padding with modulus
-remainder or sparse holes with 0
- - type 2 etc
 
-The next question, is does filesystem (eg BTRFS) compression come
-before or after checksumming?
--- 
-Daniel J Blueman
+---
+Best Regards,
+Liuwenyi
+2010-1-27

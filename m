@@ -1,51 +1,49 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: check total number of devices when removing missing
-Date: Tue, 26 Jan 2010 21:09:38 -0500
-Message-ID: <20100127020938.GC11767@dhcp231-156.rdu.redhat.com>
+Subject: Re: Howto mount intact left-over device of a degraded btrfs-raid?
+Date: Tue, 26 Jan 2010 21:12:49 -0500
+Message-ID: <20100127021249.GD11767@dhcp231-156.rdu.redhat.com>
+References: <BLU0-SMTP89D73FD06036781FE98000D8640@phx.gbl> <BLU0-SMTP645D546639865D7DF323B2D85F0@phx.gbl> <20100125220839.GC2204@localhost.localdomain> <BLU0-SMTP1013A688BD201E681FCA798D85E0@phx.gbl>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+To: "Mr. Tux" <tuxoholic@hotmail.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <BLU0-SMTP1013A688BD201E681FCA798D85E0@phx.gbl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If you have a disk failure in RAID1 and then add a new disk to the array, and
-then try to remove the missing volume, it will fail.  The reason is the sanity
-check only looks at the total number of rw devices, which is just 2 because we
-have 2 good disks and 1 bad one.  Instead check the total number of devices in
-the array to make sure we can actually remove the device.  Tested this with a
-failed disk setup and with this test we can now run
+On Tue, Jan 26, 2010 at 01:20:30PM +0100, Mr. Tux wrote:
+> On Monday 25 January 2010 23:08:39 Josef Bacik wrote:
+> 
+> Hi Josef
+> 
+> >
+> > Hmm well I'm trying to reproduce that here and it's working fine, course I
+> > can't pull a cable on my disk since I only have one disk to test with. 
+> > Would you mind sending me your dmesg after you try
+> >
+> > mount -o degraded /dev/sda1 /mnt/
+> >
+> > so I can see whats going on.  Thanks,
+> >
+> 
+> Did you try 2.6.32.2 from kernel.org? Is it possible to use  a second test 
+> drive like I did? I know you can create a raid array with one device missing, 
+> but the segfault happened with a two member raid1.
+> 
+> I don't have the test environment any more, so I can't offer a backtrace right 
+> now - but I will set it up again in the next few days. If it happens again I 
+> will contact you and send you a backtrace.
+>
 
-btrfs-vol -r missing /mount/point
+Ok I think I've tracked down all the various problems that you were having with
+this.  I've sent 3 patches to the list just now
 
-and it works fine.
+Btrfs: check total number of devices when removing missing
+Btrfs: check return value of open_bdev_exclusive properly
+Btrfs: do not mark the chunk as readonly if in degraded mode
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/volumes.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+Make sure you run btrfsctl -a before running mount -o degraded.  I made that
+mistake and things still didnt work.  Let me know if you have any problems.
+Thanks,
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 605ea5b..98a48a3 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1135,7 +1135,7 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 		root->fs_info->avail_metadata_alloc_bits;
- 
- 	if ((all_avail & BTRFS_BLOCK_GROUP_RAID10) &&
--	    root->fs_info->fs_devices->rw_devices <= 4) {
-+	    root->fs_info->fs_devices->num_devices <= 4) {
- 		printk(KERN_ERR "btrfs: unable to go below four devices "
- 		       "on raid10\n");
- 		ret = -EINVAL;
-@@ -1143,7 +1143,7 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 	}
- 
- 	if ((all_avail & BTRFS_BLOCK_GROUP_RAID1) &&
--	    root->fs_info->fs_devices->rw_devices <= 2) {
-+	    root->fs_info->fs_devices->num_devices <= 2) {
- 		printk(KERN_ERR "btrfs: unable to go below two "
- 		       "devices on raid1\n");
- 		ret = -EINVAL;
--- 
-1.5.4.3
-
+Josef 

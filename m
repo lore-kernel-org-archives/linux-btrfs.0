@@ -1,43 +1,38 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: do not mark the chunk as readonly if in degraded
-	mode
-Date: Tue, 26 Jan 2010 21:07:59 -0500
-Message-ID: <20100127020758.GA11767@dhcp231-156.rdu.redhat.com>
+Subject: [PATCH] Btrfs: check return value of open_bdev_exclusive properly
+Date: Tue, 26 Jan 2010 21:09:00 -0500
+Message-ID: <20100127020859.GB11767@dhcp231-156.rdu.redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If a RAID setup has chunks that span multiple disks, and one of those disks has
-failed, btrfs_chunk_readonly will return 1 since one of the disks in that
-chunk's stripes is dead and therefore not writeable.  So instead if we are in
-degraded mode, return 0 so we can go ahead and allocate stuff.  Without this
-patch all of the block groups in a RAID1 setup will end up read-only, which will
-mean we can't add new disks to the array since we won't be able to make
-allocations.
+Hit this problem while testing RAID1 failure stuff.  open_bdev_exclusive returns
+ERR_PTR(), not NULL.  So change the return value properly.  This is important if
+you accidently specify a device that doesn't exist when trying to add a new
+device to an array, you will panic the box dereferencing bdev.
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/volumes.c |    5 +++++
- 1 files changed, 5 insertions(+), 0 deletions(-)
+ fs/btrfs/volumes.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 3dda2ce..68fe767 100644
+index 68fe767..605ea5b 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -2538,6 +2538,11 @@ int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset)
- 	if (!em)
- 		return 1;
+@@ -1434,8 +1434,8 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
+ 		return -EINVAL;
  
-+	if (btrfs_test_opt(root, DEGRADED)) {
-+		free_extent_map(em);
-+		return 0;
-+	}
-+
- 	map = (struct map_lookup *)em->bdev;
- 	for (i = 0; i < map->num_stripes; i++) {
- 		if (!map->stripes[i].dev->writeable) {
+ 	bdev = open_bdev_exclusive(device_path, 0, root->fs_info->bdev_holder);
+-	if (!bdev)
+-		return -EIO;
++	if (IS_ERR(bdev))
++		return PTR_ERR(bdev);
+ 
+ 	if (root->fs_info->fs_devices->seeding) {
+ 		seeding_dev = 1;
 -- 
 1.5.4.3
 

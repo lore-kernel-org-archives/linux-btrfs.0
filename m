@@ -1,17 +1,23 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: check return value of open_bdev_exclusive properly
-Date: Tue, 26 Jan 2010 21:09:00 -0500
-Message-ID: <20100127020859.GB11767@dhcp231-156.rdu.redhat.com>
+Subject: [PATCH] Btrfs: check total number of devices when removing missing
+Date: Tue, 26 Jan 2010 21:09:38 -0500
+Message-ID: <20100127020938.GC11767@dhcp231-156.rdu.redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hit this problem while testing RAID1 failure stuff.  open_bdev_exclusive returns
-ERR_PTR(), not NULL.  So change the return value properly.  This is important if
-you accidently specify a device that doesn't exist when trying to add a new
-device to an array, you will panic the box dereferencing bdev.
+If you have a disk failure in RAID1 and then add a new disk to the array, and
+then try to remove the missing volume, it will fail.  The reason is the sanity
+check only looks at the total number of rw devices, which is just 2 because we
+have 2 good disks and 1 bad one.  Instead check the total number of devices in
+the array to make sure we can actually remove the device.  Tested this with a
+failed disk setup and with this test we can now run
+
+btrfs-vol -r missing /mount/point
+
+and it works fine.
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
@@ -19,20 +25,27 @@ Signed-off-by: Josef Bacik <josef@redhat.com>
  1 files changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 68fe767..605ea5b 100644
+index 605ea5b..98a48a3 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -1434,8 +1434,8 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
- 		return -EINVAL;
+@@ -1135,7 +1135,7 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 		root->fs_info->avail_metadata_alloc_bits;
  
- 	bdev = open_bdev_exclusive(device_path, 0, root->fs_info->bdev_holder);
--	if (!bdev)
--		return -EIO;
-+	if (IS_ERR(bdev))
-+		return PTR_ERR(bdev);
+ 	if ((all_avail & BTRFS_BLOCK_GROUP_RAID10) &&
+-	    root->fs_info->fs_devices->rw_devices <= 4) {
++	    root->fs_info->fs_devices->num_devices <= 4) {
+ 		printk(KERN_ERR "btrfs: unable to go below four devices "
+ 		       "on raid10\n");
+ 		ret = -EINVAL;
+@@ -1143,7 +1143,7 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 	}
  
- 	if (root->fs_info->fs_devices->seeding) {
- 		seeding_dev = 1;
+ 	if ((all_avail & BTRFS_BLOCK_GROUP_RAID1) &&
+-	    root->fs_info->fs_devices->rw_devices <= 2) {
++	    root->fs_info->fs_devices->num_devices <= 2) {
+ 		printk(KERN_ERR "btrfs: unable to go below two "
+ 		       "devices on raid1\n");
+ 		ret = -EINVAL;
 -- 
 1.5.4.3
 

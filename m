@@ -1,41 +1,42 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: cp --reflink with Btrfs
-Date: Thu, 28 Jan 2010 16:09:06 -0500
-Message-ID: <20100128210906.GC30822@think>
-References: <20100127105322.GA1983@mails.so.argh.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Sage Weil <sage@newdream.net>, linux-btrfs@vger.kernel.org
-To: Andreas Barth <aba@not.so.argh.org>
+From: Jiri Slaby <jslaby@suse.cz>
+Subject: [PATCH 1/1] FS: btrfs, use helpers for rlimits
+Date: Thu, 28 Jan 2010 22:44:35 +0100
+Message-ID: <1264715075-7383-1-git-send-email-jslaby@suse.cz>
+Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+	jirislaby@gmail.com, linux-btrfs@vger.kernel.org
+To: chris.mason@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100127105322.GA1983@mails.so.argh.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 27, 2010 at 11:53:22AM +0100, Andreas Barth wrote:
-> * Sage Weil (sage@newdream.net) [091216 17:55]:
-> > On Wed, 16 Dec 2009, Li Dongyang wrote:
-> > 
-> > > Have a look at line 998, ioctl.c, inside btrfs_ioctl_clone(),
-> > > the src->i_size(the size of the testfile created by touch) is just 0, and this 
-> > > will cause btrfs_ioctl_clone just return -EINVAL.
-> > > I'm not sure if it makes sense to clone a file which actually doesn't have any 
-> > > data extents.
-> > 
-> > Probably not, but it seems more consistent to return success instead than 
-> > -EINVAL.  Requiring the caller to check and special case empty files isn't 
-> > very friendly...
-> 
-> 
-> Actually it makes lots of sense if trying to e.g. cow-copy an chroot
-> on an buildd, and there are some empty files inside of the linux
-> installation (which normally just are).
-> 
-> Can I hope on getting the patch (or another patch) incorporated into
-> the kernel?
+Make sure compiler won't do weird things with limits. E.g. fetching
+them twice may return 2 different values after writable limits are
+implemented.
 
-In this case the application is responsible for duplicating the file.
-The clone ioctl doesn't actually clone any of the file metadata or
-anything else.
+I.e. either use rlimit helpers added in
+3e10e716abf3c71bdb5d86b8f507f9e72236c9cd
+or ACCESS_ONCE if not applicable.
 
--chris
+Signed-off-by: Jiri Slaby <jslaby@suse.cz>
+Cc: Chris Mason <chris.mason@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+---
+ fs/btrfs/inode.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index bbdc870..45bd8a2 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3297,8 +3297,7 @@ static int btrfs_setattr_size(struct inode *inode, struct iattr *attr)
+ 		return 0;
+ 
+ 	if (attr->ia_size > inode->i_size) {
+-		unsigned long limit;
+-		limit = current->signal->rlim[RLIMIT_FSIZE].rlim_cur;
++		unsigned long limit = rlimit(RLIMIT_FSIZE);
+ 		if (attr->ia_size > inode->i_sb->s_maxbytes)
+ 			return -EFBIG;
+ 		if (limit != RLIM_INFINITY && attr->ia_size > limit) {
+-- 
+1.6.6.1
 

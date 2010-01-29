@@ -1,32 +1,36 @@
-From: Roel Kluin <roel.kluin@gmail.com>
-Subject: [PATCH] Btrfs: make error return negative in btrfs_sync_file()
-Date: Fri, 29 Jan 2010 11:42:11 +0100
-Message-ID: <4B62BB83.7030907@gmail.com>
+From: Sander <sander@humilis.net>
+Subject: Re: btrfs kernel oops and hot storage removing
+Date: Fri, 29 Jan 2010 17:41:55 +0100
+Message-ID: <20100129164155.GA3786@attic.humilis.net>
+References: <792ba59f1001281533w5e238744k134ebbdb6a166647@mail.gmail.com>
+Reply-To: sander@humilis.net
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
-	Andrew Morton <akpm@linux-foundation.org>,
-	LKML <linux-kernel@vger.kernel.org>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754894Ab0A2Kg2@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Maksim 'max_posedon' Melnikau <maxposedon@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <792ba59f1001281533w5e238744k134ebbdb6a166647@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It appears the error return should be negative
+Hello Maksim,
 
-Signed-off-by: Roel Kluin <roel.kluin@gmail.com>
----
-But I fail to see how ret can be positive, unless maybe when we already
-did a BUG()?
+Maksim 'max_posedon' Melnikau wrote (ao):
+> I'm running btrfs on my sheevaplug on storage attached via usb. I use
+> multi-device configuration for testing (use different partitions for
+> emulate this). I catched kernel oops on hot removing storage (without
+> umount/etc). First one was one device decide reboot themselves, second
+> when I manually turned it off and on.
+> 
+> Basically I don't expect correct btrfs working in such situation, but
+> as I know it designed to work correctly in raid configuration, so, may
+> be somebody expect better behavior even in such situation.
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index c020335..9d08096 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1133,7 +1133,7 @@ int btrfs_sync_file(struct file *file, struct dentry *dentry, int datasync)
- 	}
- 	mutex_lock(&dentry->d_inode->i_mutex);
- out:
--	return ret > 0 ? EIO : ret;
-+	return ret > 0 ? -EIO : ret;
- }
- 
- static const struct vm_operations_struct btrfs_file_vm_ops = {
+You pull the entire raid array when removing the USB storage, as the
+Sheevaplug has only one USB port. That will not work and it is not the
+fault of btrfs :-)
+
+	With kind regards, Sander
+
+-- 
+Humilis IT Services and Solutions
+http://www.humilis.net

@@ -1,28 +1,40 @@
-From: RK <rkasl@computer.org>
-Subject: btrfs roadmap
-Date: Sun, 31 Jan 2010 09:01:51 -0500
-Message-ID: <4B658D4F.7030309@computer.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+From: "Aneesh Kumar K.V" <aneesh.kumar@linux.vnet.ibm.com>
+Subject: [RFC PATCH] Add debug-btrfs command to btrfs-progs
+Date: Sun, 31 Jan 2010 19:51:34 +0530
+Message-ID: <1264947698-32371-1-git-send-email-aneesh.kumar@linux.vnet.ibm.com>
+Cc: linux-btrfs@vger.kernel.org
+To: chris.mason@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello, how far or how close we are to some stable release (I assume that
-would be 1.0) ?
+Hi,
 
-I was looking for some "detailed" timeline, but I found only this link 
-http://btrfs.wiki.kernel.org/index.php/Development_timeline
+The below set of patches add debug-btrfs command to btrfs-progs package.
+The new command depends on the libss.a library provided e2fsprogs. To build
+one have to set E2FSPRGS_BUILD_DIR to point to the e2fsprogs build directory.
+Once we get e2fsprogs to create a proper libss package we should be able
+to remove the above export.
 
-... but I was looking for something like ubuntu has 
-https://wiki.ubuntu.com/LucidReleaseSchedule
+Currently supported list of commands are listed below. It should be really
+easy to add new commands
 
-...it would be great if ubuntu 10.04 ships with btrfs 1.0
+debug-btrfs:  ?
+Available debug-btrfs requests:
 
-...  "If we manage to work fast enough to add installer support for
-Lucid,  it will not be presented by default, as it is not clear that the
-filesystem is stable enough yet...",
-https://wiki.ubuntu.com/FoundationsTeam/BtrfsSupport
+show_debugfs_params, params
+                         Show btrfs_debug parameters
+open_filesys, open       Open the file system
+dump_tree                Show full btrfs tree
+dump_root_tree           Show root tree
+dump_chunk_tree          Show btrfs chunk tree
+print_inode              Print inode details
+help                     Display info on command or topic.
+list_requests, lr, ?     List available commands.
+quit, q                  Leave the subsystem.
 
-cheers,
-rk
+
+You should be able to get the patches with --no-renames at
+http://www.kernel.org/pub/linux/kernel/people/kvaneesh/debug-btrfs/
+
+-aneesh
+

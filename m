@@ -1,42 +1,24 @@
 From: "Yan, Zheng" <zheng.yan@oracle.com>
-Subject: [PATCH] btrfs: Fix oopsen when dropping empty tree.
-Date: Mon, 01 Feb 2010 10:41:17 +0800
-Message-ID: <4B663F4D.8090007@oracle.com>
+Subject: [PATCH] btrfsck: Remove superfluous WARN_ON
+Date: Mon, 01 Feb 2010 11:08:46 +0800
+Message-ID: <4B6645BE.4060903@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org, chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When dropping a empty tree, walk_down_tree() skips checking
-extent information for the tree root. This will triggers a
-BUG_ON in walk_up_proc().
-
 Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
 
 ---
-diff -urp 1/fs/btrfs/extent-tree.c 2/fs/btrfs/extent-tree.c
---- 1/fs/btrfs/extent-tree.c	2010-01-22 12:16:34.203525744 +0800
-+++ 2/fs/btrfs/extent-tree.c	2010-02-01 10:26:19.865562007 +0800
-@@ -5402,10 +5402,6 @@ static noinline int walk_down_tree(struc
- 	int ret;
- 
- 	while (level >= 0) {
--		if (path->slots[level] >=
--		    btrfs_header_nritems(path->nodes[level]))
--			break;
--
- 		ret = walk_down_proc(trans, root, path, wc, lookup_info);
- 		if (ret > 0)
- 			break;
-@@ -5413,6 +5409,10 @@ static noinline int walk_down_tree(struc
- 		if (level == 0)
- 			break;
- 
-+		if (path->slots[level] >=
-+		    btrfs_header_nritems(path->nodes[level]))
-+			break;
-+
- 		ret = do_walk_down(trans, root, path, wc, &lookup_info);
- 		if (ret > 0) {
- 			path->slots[level]++;
+diff -urp btrfs-progs-unstable/btrfsck.c btrfs-progs-2/btrfsck.c
+--- btrfs-progs-unstable/btrfsck.c	2009-09-28 15:54:55.980479398 +0800
++++ btrfs-progs-2/btrfsck.c	2010-01-31 09:46:24.645485459 +0800
+@@ -581,7 +581,6 @@ again:
+ 		}
+ 		ret = insert_existing_cache_extent(dst, &ins->cache);
+ 		if (ret == -EEXIST) {
+-			WARN_ON(src == &src_node->root_cache);
+ 			conflict = get_inode_rec(dst, rec->ino, 1);
+ 			merge_inode_recs(rec, conflict, dst);
+ 			if (rec->checked) {

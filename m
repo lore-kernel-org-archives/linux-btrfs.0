@@ -1,108 +1,91 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH 1/2] Btrfs: do not try and lookup the file extent when
-	finishing ordered io
-Date: Tue, 2 Feb 2010 15:50:10 -0500
-Message-ID: <20100202205010.GB15957@localhost.localdomain>
+Subject: [PATCH 2/2] Btrfs: cache ordered extent when completing io
+Date: Tue, 2 Feb 2010 15:51:14 -0500
+Message-ID: <20100202205113.GC15957@localhost.localdomain>
+References: <20100202205010.GB15957@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100202205010.GB15957@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When running the following fio job
-
-[torrent]
-filename=torrent-test
-rw=randwrite
-size=4g
-filesize=4g
-bs=4k
-ioengine=sync
-
-you would see long stalls where no work was being done.  That is because we were
-doing all this extra work to read in the file extent outside of the transaction,
-however in the random io case this ends up hurting us because the file extents
-are not there to begin with.  So axe this logic, since we end up reading in the
-file extent when we go to update it anyway.  This took the fio job from 11 mb/s
-with several ~10 second stalls to 24 mb/s to a couple of 1-2 second stalls.
+When finishing io we run btrfs_dec_test_ordered_pending, and then immediately
+run btrfs_lookup_ordered_extent, but btrfs_dec_test_ordered_pending does that
+already, so we're searching twice when we don't have to.  This patch lets us
+pass a btrfs_ordered_extent in to btrfs_dec_test_ordered_pending so if we do
+complete io on that ordered extent we can just use the one we found then instead
+of having to do another btrfs_lookup_ordered_extent.  This made my fio job with
+the other patch go from 24 mb/s to 29 mb/s.
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/inode.c |   46 ++--------------------------------------------
- 1 files changed, 2 insertions(+), 44 deletions(-)
+ fs/btrfs/inode.c        |    5 ++---
+ fs/btrfs/ordered-data.c |    7 ++++++-
+ fs/btrfs/ordered-data.h |    3 ++-
+ 3 files changed, 10 insertions(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e8be185..9a1c746 100644
+index 9a1c746..26574d8 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -1679,24 +1679,6 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
-  * before we start the transaction.  It limits the amount of btree
-  * reads required while inside the transaction.
-  */
--static noinline void reada_csum(struct btrfs_root *root,
--				struct btrfs_path *path,
--				struct btrfs_ordered_extent *ordered_extent)
--{
--	struct btrfs_ordered_sum *sum;
--	u64 bytenr;
--
--	sum = list_entry(ordered_extent->list.next, struct btrfs_ordered_sum,
--			 list);
--	bytenr = sum->sums[0].bytenr;
--
--	/*
--	 * we don't care about the results, the point of this search is
--	 * just to get the btree leaves into ram
--	 */
--	btrfs_lookup_csum(NULL, root->fs_info->csum_root, path, bytenr, 0);
--}
--
- /* as ordered data IO finishes, this gets called so we can finish
-  * an ordered extent if the range of bytes in the file it covers are
-  * fully written.
-@@ -1707,7 +1689,6 @@ static int btrfs_finish_ordered_io(struct inode *inode, u64 start, u64 end)
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_ordered_extent *ordered_extent = NULL;
- 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
--	struct btrfs_path *path;
+@@ -1692,11 +1692,10 @@ static int btrfs_finish_ordered_io(struct inode *inode, u64 start, u64 end)
  	int compressed = 0;
  	int ret;
  
-@@ -1715,32 +1696,9 @@ static int btrfs_finish_ordered_io(struct inode *inode, u64 start, u64 end)
+-	ret = btrfs_dec_test_ordered_pending(inode, start, end - start + 1);
++	ret = btrfs_dec_test_ordered_pending(inode, &ordered_extent, start,
++					     end - start + 1);
  	if (!ret)
  		return 0;
- 
--	/*
--	 * before we join the transaction, try to do some of our IO.
--	 * This will limit the amount of IO that we have to do with
--	 * the transaction running.  We're unlikely to need to do any
--	 * IO if the file extents are new, the disk_i_size checks
--	 * covers the most common case.
--	 */
--	if (start < BTRFS_I(inode)->disk_i_size) {
--		path = btrfs_alloc_path();
--		if (path) {
--			ret = btrfs_lookup_file_extent(NULL, root, path,
--						       inode->i_ino,
--						       start, 0);
--			ordered_extent = btrfs_lookup_ordered_extent(inode,
--								     start);
--			if (!list_empty(&ordered_extent->list)) {
--				btrfs_release_path(root, path);
--				reada_csum(root, path, ordered_extent);
--			}
--			btrfs_free_path(path);
--		}
--	}
 -
--	if (!ordered_extent)
--		ordered_extent = btrfs_lookup_ordered_extent(inode, start);
-+	ordered_extent = btrfs_lookup_ordered_extent(inode, start);
+-	ordered_extent = btrfs_lookup_ordered_extent(inode, start);
  	BUG_ON(!ordered_extent);
-+
+ 
  	if (test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags)) {
- 		BUG_ON(!list_empty(&ordered_extent->list));
- 		ret = btrfs_ordered_update_i_size(inode, 0, ordered_extent);
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 5c2a9e7..c44054b 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -232,11 +232,12 @@ int btrfs_add_ordered_sum(struct inode *inode,
+  * to make sure this function only returns 1 once for a given ordered extent.
+  */
+ int btrfs_dec_test_ordered_pending(struct inode *inode,
++				   struct btrfs_ordered_extent **cached,
+ 				   u64 file_offset, u64 io_size)
+ {
+ 	struct btrfs_ordered_inode_tree *tree;
+ 	struct rb_node *node;
+-	struct btrfs_ordered_extent *entry;
++	struct btrfs_ordered_extent *entry = NULL;
+ 	int ret;
+ 
+ 	tree = &BTRFS_I(inode)->ordered_tree;
+@@ -264,6 +265,10 @@ int btrfs_dec_test_ordered_pending(struct inode *inode,
+ 	else
+ 		ret = 1;
+ out:
++	if (!ret && cached && entry) {
++		*cached = entry;
++		atomic_inc(&entry->refs);
++	}
+ 	mutex_unlock(&tree->mutex);
+ 	return ret == 0;
+ }
+diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+index 1fe1282..398bfc6 100644
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -137,7 +137,8 @@ int btrfs_put_ordered_extent(struct btrfs_ordered_extent *entry);
+ int btrfs_remove_ordered_extent(struct inode *inode,
+ 				struct btrfs_ordered_extent *entry);
+ int btrfs_dec_test_ordered_pending(struct inode *inode,
+-				       u64 file_offset, u64 io_size);
++				   struct btrfs_ordered_extent **cached,
++				   u64 file_offset, u64 io_size);
+ int btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+ 			     u64 start, u64 len, u64 disk_len, int tyep);
+ int btrfs_add_ordered_sum(struct inode *inode,
 -- 
 1.6.6
 

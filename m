@@ -1,70 +1,64 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH] btrfs: remove BUG_ON() due to mounting bad filesystem
-Date: Tue, 02 Feb 2010 16:46:44 +0800
-Message-ID: <4B67E674.2080505@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+From: Wengang Wang <wen.gang.wang@oracle.com>
+Subject: Re: [PATCH] btrfs-progs: add mounted-checking for btrfs-vol
+Date: Tue, 2 Feb 2010 17:08:13 +0800
+Message-ID: <20100202090813.GC4080@laptop.oracle.com>
+References: <4B67E646.4050001@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Miao Xie <miaox@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4B67E646.4050001@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Mounting a bad filesystem caused a BUG_ON(). The following is steps to
-reproduce it.
- # mkfs.btrfs /dev/sda2
- # mount /dev/sda2 /mnt
- # mkfs.btrfs /dev/sda1 /dev/sda2
- (the program says that /dev/sda2 was mounted, and then exits. )
- # umount /mnt
- # mount /dev/sda1 /mnt
+Hi,
 
-At the third step, mkfs.btrfs exited in the way of make filesystem. So the
-initialization of the filesystem didn't finish. So the filesystem was bad, and
-it caused BUG_ON() when mounting it. But BUG_ON() should be called by the wrong
-code, not user's operation, so I think it is a bug of btrfs.
+A problem that not in this patch.
 
-This patch fixes it.
+On 10-02-02 16:45, Miao Xie wrote:
+> Adding a mounted device is dangerous because it will destroy the filesystem
+> on that mounted device. So we add mounted-checking for btrfs-vol.
+> 
+> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+> ---
+>  btrfs-vol.c |   16 +++++++++++++++-
+>  1 files changed, 15 insertions(+), 1 deletions(-)
+> 
+> diff --git a/btrfs-vol.c b/btrfs-vol.c
+> index 8069778..f781c06 100644
+> --- a/btrfs-vol.c
+> +++ b/btrfs-vol.c
+> @@ -108,10 +108,24 @@ int main(int ac, char **av)
+>  	if (device && strcmp(device, "missing") == 0 &&
+>  	    cmd == BTRFS_IOC_RM_DEV) {
+>  		fprintf(stderr, "removing missing devices from %s\n", mnt);
+> -	} else if (device) {
+> +	} else if (cmd != BTRFS_IOC_BALANCE) {
+> +		if (cmd == BTRFS_IOC_ADD_DEV) {
+> +			ret = check_mounted(device);
+> +			if (ret < 0) {
+> +				fprintf(stderr,
+> +					"error checking %s mount status\n",
+> +					device);
+> +				exit(1);
+> +			}
+> +			if (ret == 1) {
+> +				fprintf(stderr, "%s is mounted\n", device);
+> +				exit(1);
+> +			}
+> +		}
+>  		devfd = open(device, O_RDWR);
+>  		if (!devfd) {
+I think open() returning -1 means an error. So it should be
+		if (devfd < 0)
+instead of 
+		if (!devfd)
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
- fs/btrfs/disk-io.c    |    7 ++++++-
- fs/btrfs/relocation.c |    3 ++-
- 2 files changed, 8 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 87b2554..2b59201 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1982,7 +1982,12 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 
- 	if (!(sb->s_flags & MS_RDONLY)) {
- 		ret = btrfs_recover_relocation(tree_root);
--		BUG_ON(ret);
-+		if (ret < 0) {
-+			printk(KERN_WARNING
-+			       "btrfs: failed to recover relocation\n");
-+			err = -EINVAL;
-+			goto fail_trans_kthread;
-+		}
- 	}
- 
- 	location.objectid = BTRFS_FS_TREE_OBJECTID;
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index ed3e4a2..ab7ab53 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -3764,7 +3764,8 @@ out:
- 				       BTRFS_DATA_RELOC_TREE_OBJECTID);
- 		if (IS_ERR(fs_root))
- 			err = PTR_ERR(fs_root);
--		btrfs_orphan_cleanup(fs_root);
-+		else
-+			btrfs_orphan_cleanup(fs_root);
- 	}
- 	return err;
- }
--- 
-1.6.5.2
-
-
+regards,
+wengang.
+>  			fprintf(stderr, "Unable to open device %s\n", device);
+> +			exit(1);
+>  		}
+>  		ret = fstat(devfd, &st);
+>  		if (ret) {

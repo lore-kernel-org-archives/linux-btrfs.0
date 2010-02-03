@@ -1,55 +1,51 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH -V2] btrfs-progs: add mounted-checking for btrfs-vol
-Date: Wed, 03 Feb 2010 10:12:44 +0800
-Message-ID: <4B68DB9C.9050501@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+From: Shaohua Li <shaohua.li@intel.com>
+Subject: [patch]btrfs: finish read pages in the order they are submitted
+Date: Wed, 3 Feb 2010 15:45:11 +0800
+Message-ID: <20100203074511.GA26548@sli10-desk.sh.intel.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>,
-	Wengang Wang <wen.gang.wang@oracle.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Adding a mounted device is dangerous because it will destroy the filesystem
-on that mounted device. So we add mounted-checking for btrfs-vol.
+the endio is done at reverse order of bio vectors. That means for a sequential
+read, the page first submitted will finish last in a bio. Considering we will
+do checksum (making cache hot) for every page, this does introduce delay (and
+chance to squeeze cache used soon) for pages submitted at the begining. I
+don't observe obvious performance difference with below patch at my simple test,
+but seems more natural to finish read in the order they are submitted.
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
- btrfs-vol.c |   18 ++++++++++++++++--
- 1 files changed, 16 insertions(+), 2 deletions(-)
+Signed-off-by: Shaohua Li <shaohua.li@intel.com>
 
-diff --git a/btrfs-vol.c b/btrfs-vol.c
-index 8069778..4ed799d 100644
---- a/btrfs-vol.c
-+++ b/btrfs-vol.c
-@@ -108,10 +108,24 @@ int main(int ac, char **av)
- 	if (device && strcmp(device, "missing") == 0 &&
- 	    cmd == BTRFS_IOC_RM_DEV) {
- 		fprintf(stderr, "removing missing devices from %s\n", mnt);
--	} else if (device) {
-+	} else if (cmd != BTRFS_IOC_BALANCE) {
-+		if (cmd == BTRFS_IOC_ADD_DEV) {
-+			ret = check_mounted(device);
-+			if (ret < 0) {
-+				fprintf(stderr,
-+					"error checking %s mount status\n",
-+					device);
-+				exit(1);
-+			}
-+			if (ret == 1) {
-+				fprintf(stderr, "%s is mounted\n", device);
-+				exit(1);
-+			}
-+		}
- 		devfd = open(device, O_RDWR);
--		if (!devfd) {
-+		if (devfd < 0) {
- 			fprintf(stderr, "Unable to open device %s\n", device);
-+			exit(1);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 96577e8..4df0c56 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1750,7 +1750,8 @@ static void end_bio_extent_writepage(struct bio *bio, int err)
+ static void end_bio_extent_readpage(struct bio *bio, int err)
+ {
+ 	int uptodate = test_bit(BIO_UPTODATE, &bio->bi_flags);
+-	struct bio_vec *bvec = bio->bi_io_vec + bio->bi_vcnt - 1;
++	struct bio_vec *bvec_end = bio->bi_io_vec + bio->bi_vcnt - 1;
++	struct bio_vec *bvec = bio->bi_io_vec;
+ 	struct extent_io_tree *tree;
+ 	u64 start;
+ 	u64 end;
+@@ -1773,7 +1774,7 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
+ 		else
+ 			whole_page = 0;
+ 
+-		if (--bvec >= bio->bi_io_vec)
++		if (++bvec <= bvec_end)
+ 			prefetchw(&bvec->bv_page->flags);
+ 
+ 		if (uptodate && tree->ops && tree->ops->readpage_end_io_hook) {
+@@ -1818,7 +1819,7 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
+ 			}
+ 			check_page_locked(tree, page);
  		}
- 		ret = fstat(devfd, &st);
- 		if (ret) {
--- 
-1.6.5.2
-
+-	} while (bvec >= bio->bi_io_vec);
++	} while (bvec <= bvec_end);
+ 
+ 	bio_put(bio);
+ }

@@ -1,56 +1,62 @@
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: Btrfs Partition Reaches 'Disk Full' Early
-Date: Wed, 3 Feb 2010 20:43:58 -0600
-Message-ID: <26a1f7961002031843t665677aeh53e5b7cc6aaab6a6@mail.gmail.com>
+From: "Yan, Zheng " <yanzheng@21cn.com>
+Subject: Re: btrfs-vol -b endless loop
+Date: Thu, 4 Feb 2010 10:59:16 +0800
+Message-ID: <3d0408631002031859r69ac7ef8r248ffab3a2774b6a@mail.gmail.com>
+References: <87636ej6t3.fsf@nsc.liu.se>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+To: =?ISO-8859-1?Q?P=E4r_Andersson?= <paran@lysator.liu.se>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <87636ej6t3.fsf@nsc.liu.se>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've been trying to get a handle on where my Btrfs partition would run
-out of room, and I'm reaching the 'no space left' point earlier than I
-was expecting.
+On Thu, Feb 4, 2010 at 6:25 AM, P=E4r Andersson <paran@lysator.liu.se> =
+wrote:
+> Hi,
+>
+> I have a 11G btrfs file system where "btrfs-vol -b" get stuck in a
+> loop. The "found 7 extents" messages and heavy disk io continues unti=
+l I
+> reboot:
+>
+> [26223.544037] btrfs: relocating block group 42079027200 flags 36
+> [26228.082740] btrfs: found 2457 extents
+> [26228.104515] btrfs: relocating block group 41407938560 flags 1
+> [26228.423981] btrfs: found 124 extents
+> [26229.514583] btrfs: found 124 extents
+> [26229.544160] btrfs: found 7 extents
+> [26229.812494] btrfs: found 7 extents
+> [26230.453720] btrfs: found 7 extents
+> [26230.733233] btrfs: found 7 extents
+> [26231.383321] btrfs: found 7 extents
+> [26231.652815] btrfs: found 7 extents
+> ...
+>
+> The error is repeatable. btrfsck does not report any errors:
+>
+> root@faran:~# btrfsck /dev/sda5
+> found 9035055104 bytes used err is 0
+> total csum bytes: 8293152
+> total tree bytes: 542867456
+> total fs tree bytes: 503087104
+> btree space waste bytes: 108089491
+> file data blocks allocated: 8492187648
+> =A0referenced 10314125312
+> Btrfs Btrfs v0.19
+>
+> The kernel is Linus' master from two days ago, and seems to have all =
+the
+> latest btrfs code merged.
+>
 
-I'm running the btrfs-unstable.git version as of commit 035fe03a Thu,
-28 Jan 2010 21:20:39 (Btrfs: check total number of devices when
-removing missing) back-ported to a 2.6.32 kernel.
+The loop is due to fragments of free space. I'm working on make 'btrfs-=
+vol -b'
+return -ENOSPC in this case.
 
-Also, I've manually added Josef Bacik's 'btrfsctl -i' patches to get
-more information about the state when full.
-
-I'm using a single 13.4GB partition as a root partition for a Sabayon
-Linux system.  With the btrfs file system ~59% full, I booted to
-another partition, and filled the remainder of the space using 'dd'
-(dd if=/dev/urandom of=/<path-to-btrfs-mounted-partition>/randomdata
-bs=1024k) to see where I'd get a full-disk error.
-
-A btrfs 'no space left' error is received with the 'df' command
-showing only 81% full.
-
-'df -T' reports:
-Filesystem    Type   1K-blocks      Used Available Use% Mounted on
-/dev/sda5    btrfs    14008648  11314552   2694096  81% /mnt/sabayon-btrfs
-
-The dmesg disk full error reported:
-[ 1606.386085] no space left, need 1048576, 89128960 delalloc bytes,
- 10639556608 bytes_used, 3981312 bytes_reserved, 0 bytes_pinned,
- 0 bytes_readonly, 0 may use 10733551616 total
-
-Josef Bacik's 'btrfsctl -i' command reported:
-# btrfsctl -i /mnt/sabayon-btrfs/
-Metadata, DUP: total=1.67GB, used=813.89MB
-System, DUP: total=8.00MB, used=4.00KB
-Data: total=10.00GB, used=10.00GB
-Metadata: total=8.00MB, used=0.00
-System: total=4.00MB, used=0.00
-operation complete
-Btrfs Btrfs v0.19
-
-Using 'btrfsctl -i', I'm still having trouble closing the loop on disk
-utilization.  10.00 GB Data + 1.67 GB Metadata = 11.67GB.  Since this
-is a 13.4GB partition, I'm still missing ~1.7GB, based on the
-'btrfsctl -i' reporting.
-
-Is 1.67 GB reserved for Metadata about what might be expected for a
-messy root partition with ~10GB of files?
+Yan, Zheng
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

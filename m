@@ -1,46 +1,22 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: [GIT PULL] Btrfs updates for 2.6.33
-Date: Thu, 4 Feb 2010 20:59:14 -0500
-Message-ID: <20100205015913.GA2770@think>
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: Re: Btrfs Kernel Oops on Full Volume
+Date: Thu, 4 Feb 2010 22:14:15 -0600
+Message-ID: <26a1f7961002042014u69b03b4cue48861cffe43b1ab@mail.gmail.com>
+References: <26a1f7961002041506v75ce7610s356dd42ffca1c9b5@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-	linux-kernel <linux-kernel@vger.kernel.org>,
-	linux-btrfs@vger.kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <26a1f7961002041506v75ce7610s356dd42ffca1c9b5@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello everyone,
+Some quick follow-up.
 
-The master branch of the btrfs unstable tree:
+I pulled the most recent patches pushed to the git repository today,
+backported them to my 2.6.32 kernel, and repeated the operation.
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
-
-Has a small collection of fixes.  These are mostly bugs, but I put in
-one of Josef's safer performance tweaks as well.
-
-Aneesh Kumar K.V (1) commits (+3/-1):
-    Btrfs: apply updated fallocate i_size fix
-
-Josef Bacik (1) commits (+2/-44):
-    Btrfs: do not try and lookup the file extent when finishing ordered io
-
-Miao Xie (1) commits (+8/-2):
-    Btrfs: remove BUG_ON() due to mounting bad filesystem
-
-Roel Kluin (1) commits (+1/-1):
-    Btrfs: make error return negative in btrfs_sync_file()
-
-Zheng Yan (2) commits (+5/-6):
-    Btrfs: fix race between allocate and release extent buffer. (+1/-2)
-    Btrfs: Fix oopsen when dropping empty tree. (+4/-4)
-
-Total: (6) commits
-
- fs/btrfs/disk-io.c     |    7 +++++-
- fs/btrfs/extent-tree.c |    8 +++----
- fs/btrfs/extent_io.c   |    3 --
- fs/btrfs/file.c        |    2 -
- fs/btrfs/inode.c       |   50 ++++---------------------------------------------
- fs/btrfs/relocation.c  |    3 +-
- 6 files changed, 19 insertions(+), 54 deletions(-)
+I received the same kernel Oops:
+[ 1113.667345] BUG: unable to handle kernel NULL pointer dereference at 0000001c
+[ 1113.667348] IP: [<c124a475>] btrfs_print_leaf+0xe/0x6e3
+[ 1113.667354] *pde = 00000000
+[ 1113.667357] Oops: 0000 [#1]

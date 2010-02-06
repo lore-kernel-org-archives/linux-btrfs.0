@@ -1,34 +1,42 @@
-From: David Miller <davem@davemloft.net>
-Subject: Re: Kernel unaligned access at TPC[10101f18]
- btrfs_csum_final+0x38/0x60
-Date: Fri, 05 Feb 2010 22:43:10 -0800 (PST)
-Message-ID: <20100205.224310.06173989.davem@davemloft.net>
-References: <alpine.DEB.2.01.1002052106400.3483@bogon.housecafe.de>
-	<20100205.213220.147487541.davem@davemloft.net>
-	<alpine.DEB.2.01.1002052226480.3483@bogon.housecafe.de>
+From: Daniel J Blueman <daniel.blueman@gmail.com>
+Subject: Re: does btrfs have RAID I/O throughput (un)limiting sysctls, similar
+	to md?
+Date: Sat, 6 Feb 2010 13:10:56 +0000
+Message-ID: <6278d2221002060510i947059bx12697ba0a4f5e4c@mail.gmail.com>
+References: <c67eed301002051637p1288e120tb37c649ac44d40c@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: lists@nerdbynature.de
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: 0bo0 <0.bugs.only.0@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <alpine.DEB.2.01.1002052226480.3483@bogon.housecafe.de>
+In-Reply-To: <c67eed301002051637p1288e120tb37c649ac44d40c@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Christian Kujau <lists@nerdbynature.de>
-Date: Fri, 5 Feb 2010 22:28:47 -0800 (PST)
+On Sat, Feb 6, 2010 at 12:37 AM, 0bo0 <0.bugs.only.0@gmail.com> wrote:
+> i've a 4 drive array connected via a PCIe SATA card.
+>
+> per OS (opensuse) default, md RAID I/O performance was being limited =
+by,
+>
+> =A0cat /proc/sys/dev/raid/speed_limit_min
+> =A0 =A01000
+> =A0cat /proc/sys/dev/raid/speed_limit_max
+> =A0 =A0200000
+>
+> changing,
+>
+> =A0echo "dev.raid.speed_limit_min=3D100000" >> /etc/sysctl.conf
+> =A0echo "dev.raid.speed_limit_max=3D600000" >> /etc/sysctl.conf
+>
+> enabled full/best I/O throughput.
 
-> Hm, now it looks like this, but I don't know how it'd reveal more 
-> information:
-> 
-> [  210.707051] Kernel unaligned access at TPC[10101f18] btrfs_csum_final+0x38/0x60 [btrfs]
-> [  210.802236] Caller [10101f1c:btrfs_csum_final+0x3c/0x60 [btrfs]]
-> [  210.874620] Kernel unaligned access at TPC[10101f18] btrfs_csum_final+0x38/0x60 [btrfs]
-> [  210.969899] Caller [10101f1c:btrfs_csum_final+0x3c/0x60 [btrfs]]
-> [  228.724982] Kernel unaligned access at TPC[10101f18] btrfs_csum_final+0x38/0x60 [btrfs]
-> [  228.820220] Caller [10101f1c:btrfs_csum_final+0x3c/0x60 [btrfs]]
-> [  228.892286] Kernel unaligned access at TPC[10101f18] btrfs_csum_final+0x38/0x60 [btrfs]
-> [  228.987851] Caller [10101f1c:btrfs_csum_final+0x3c/0x60 [btrfs]]
-> 
-> I'm open for more patches :-)
-
-Confusing for me too.  I'll try to think about this some more.
+These proc entries affect just array reconstruction, not general I/O
+performance/throughput, so affect just an edge-case of applications
+requiring maximum latency/minimum throughout guarantees.
+--=20
+Daniel J Blueman
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

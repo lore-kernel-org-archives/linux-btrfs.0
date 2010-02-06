@@ -1,46 +1,58 @@
-From: David Miller <davem@davemloft.net>
-Subject: Re: Kernel unaligned access at TPC[10101f18]
- btrfs_csum_final+0x38/0x60
-Date: Fri, 05 Feb 2010 12:01:51 -0800 (PST)
-Message-ID: <20100205.120151.128582331.davem@davemloft.net>
-References: <alpine.DEB.2.01.1002051020020.3483@bogon.housecafe.de>
+From: 0bo0 <0.bugs.only.0@gmail.com>
+Subject: semantics in btrfs multi-device (RAID) mount-by-disk-label ?
+Date: Fri, 5 Feb 2010 16:20:28 -0800
+Message-ID: <c67eed301002051620i5a2dfc7dl4c2e3b6ec7efe9e3@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: lists@nerdbynature.de
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <alpine.DEB.2.01.1002051020020.3483@bogon.housecafe.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Christian Kujau <lists@nerdbynature.de>
-Date: Fri, 5 Feb 2010 10:36:52 -0800 (PST)
+i created a array,
 
-> When writing to a newly created btrfs (vanilla 2.6.33-rc6, sparc64) the 
-> following messages are printed:
-> 
-> [28617.650231] Kernel unaligned access at TPC[10101f18] btrfs_csum_final+0x38/0x60 [btrfs]
-> [28617.745783] Kernel unaligned access at TPC[10101f18] btrfs_csum_final+0x38/0x60 [btrfs]
-> [28654.589492] Kernel unaligned access at TPC[10101f18] btrfs_csum_final+0x38/0x60 [btrfs]
-> [28654.685036] Kernel unaligned access at TPC[10101f18] btrfs_csum_final+0x38/0x60 [btrfs]
-> [28689.595394] Kernel unaligned access at TPC[10101f18] btrfs_csum_final+0x38/0x60 [btrfs]
+ mkfs.btrfs -L TEST -m raid10 -d raid10 /dev/sda /dev/sdb /dev/sdc /dev/sdd
 
-Can you rerun your test with the following patch applied?
+btrfs-show
+	Label: TEST  uuid: 85aa9ac8-0089-4dd3-b8b2-3c0cbb96c924
+	        Total devices 4 FS bytes used 28.00KB
+	        devid    3 size 931.51GB used 2.01GB path /dev/sdc
+	        devid    4 size 931.51GB used 2.01GB path /dev/sdd
+	        devid    2 size 931.51GB used 2.01GB path /dev/sdb
+	        devid    1 size 931.51GB used 2.03GB path /dev/sda
 
-It will obtain more information for the btrfs developers.
+this,
 
-Thanks!
+ /dev/sda /mnt/TEST btrfs
+compress,device=/dev/sdb,device=/dev/sdc,device=/dev/sdd  1 2
 
-diff --git a/arch/sparc/kernel/unaligned_64.c b/arch/sparc/kernel/unaligned_64.c
-index 378ca82..cbde2ea 100644
---- a/arch/sparc/kernel/unaligned_64.c
-+++ b/arch/sparc/kernel/unaligned_64.c
-@@ -283,6 +283,9 @@ static void log_unaligned(struct pt_regs *regs)
- 		count++;
- 		printk("Kernel unaligned access at TPC[%lx] %pS\n",
- 		       regs->tpc, (void *) regs->tpc);
-+		printk("Caller [%lx:%pS]\n",
-+		       regs->u_regs[UREG_RETPC],
-+		       (void *) regs->u_regs[UREG_RETPC]);
- 	}
- }
- 
+in /etc/fstab, mounts the array on boot.
+
+is it correct that it does NOT matter which device I actually mount,
+specifying the 'other' devices in the array as options?
+
+i.e.,
+
+ /dev/sda ... device=/dev/sdb,device=/dev/sdc,device=/dev/sdd ...
+ /dev/sdb ... device=/dev/sda,device=/dev/sdc,device=/dev/sdd ...
+ /dev/sdc ... device=/dev/sda,device=/dev/sdb,device=/dev/sdd ...
+ /dev/sdd ... device=/dev/sda,device=/dev/sdb,device=/dev/sdc ...
+
+would all be equivalent?
+
+i understand (http://marc.info/?l=btrfs-devel&m=121302854724031&w=2)
+that i can also mount by label.
+
+ls -al /dev/disk/by-label/NAS_TEST
+ lrwxrwxrwx 1 root root 9 2010-02-05 15:56 /dev/disk/by-label/TEST -> ../../sdd
+
+
+ /dev/disk/by-label/TEST /mnt/TEST btrfs
+compress,device=/dev/sda,device=/dev/sdb,device=/dev/sdc  1 2
+
+apparently, at device creation, the TEST-label is symlinked
+(arbitrarily?) to /dev/sdd, so as devices I suppose I add the "other"
+devices, /dev/sd[abc].
+
+in this instance, given the symlink to /dev/sdd, do I still have the
+option to use any combination of "other three" devices, or am I fixed
+to the symlinked /dev/sdd?

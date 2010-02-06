@@ -1,55 +1,27 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: when/why to use diffferent raid values for btrfs data & metadata?
-Date: Sat, 6 Feb 2010 14:16:48 +0100
-Message-ID: <201002061416.48549.kreijack@libero.it>
-References: <c67eed301001232002o2f89f2fct4dc9fe8516b976bc@mail.gmail.com> <c67eed301001240838y7fa0fe02o39326052a1c4679d@mail.gmail.com> <c67eed301002051623v3946be29g1aa83a0f66ff6f18@mail.gmail.com>
+From: 0bo0 <0.bugs.only.0@gmail.com>
+Subject: Re: does btrfs have RAID I/O throughput (un)limiting sysctls, similar
+	to md?
+Date: Sat, 6 Feb 2010 06:48:34 -0800
+Message-ID: <c67eed301002060648p436a7347w3c7189e385ed79bc@mail.gmail.com>
+References: <c67eed301002051637p1288e120tb37c649ac44d40c@mail.gmail.com>
+	 <6278d2221002060510i947059bx12697ba0a4f5e4c@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Daniel J Blueman <daniel.blueman@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <c67eed301002051623v3946be29g1aa83a0f66ff6f18@mail.gmail.com>
+In-Reply-To: <6278d2221002060510i947059bx12697ba0a4f5e4c@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Saturday 06 February 2010, 0bo0 wrote:
-> anyone on when/why to use different RAID geometries for data & metadata?
-> 
+On Sat, Feb 6, 2010 at 5:10 AM, Daniel J Blueman
+<daniel.blueman@gmail.com> wrote:
+> These proc entries affect just array reconstruction, not general I/O
+> performance/throughput, so affect just an edge-case of applications
+> requiring maximum latency/minimum throughout guarantees.
 
-I expected that the size of data and meta-data are different by several order 
-of magnitude. So I can choice different trade-off between 
-space/speed/reliability for data and/or metadata.
+although i'd 1st seen the perf hit at the (re)construction stage, i
+didn't recognize that the sysctls were limited to that case.
 
-If I need speed I can put the meta-data in a "fast" raid (like raid10) and put 
-the data in a slow raid (like raid6). 
-Or if I can tolerate the lost of data, I can put the meta-data in raid1 and 
-the data in raid0. A fault of a disk, may lead to lost of data, but not to 
-lost of the meta-data (the file-system is fully working).
+so, iiuc, btrfs has no such issues?
 
-
-> On Sun, Jan 24, 2010 at 8:38 AM, 0bo0 <0.bugs.only.0@gmail.com> wrote:
-> > hi
-> >
-> > On Sun, Jan 24, 2010 at 3:28 AM, RK <rkasl@computer.org> wrote:
-> >> try this article "Linux Don't Need No Stinkin' ZFS: BTRFS Intro &
-> >> Benchmarks"
-> >> http://www.linux-mag.com/id/7308/3/
-> >> , there is a benchmark table and speed analysis (very informative), but
-> >> all the benchmarks are done with same -m and -d mkfs.btrfs option
-> >
-> > that's one of the articles i' read.  it also does mention that you can
-> > define data/metadata as differnt RAID, afaict, it doesn't (?) say
-> > anything about the what/why you would ... which is what i'm unclear
-> > about.
-> >
-> > thanks!
-> >
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
-
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+thanks for clarifying!

@@ -1,55 +1,71 @@
-From: Martin Steigerwald <Martin@lichtvoll.de>
-Subject: Re: does btrfs have RAID I/O throughput (un)limiting sysctls, similar to md?
-Date: Sun, 7 Feb 2010 12:48:20 +0100
-Message-ID: <201002071248.20721.Martin@lichtvoll.de>
-References: <c67eed301002051637p1288e120tb37c649ac44d40c@mail.gmail.com> <6278d2221002060510i947059bx12697ba0a4f5e4c@mail.gmail.com> <c67eed301002060648p436a7347w3c7189e385ed79bc@mail.gmail.com> (sfid-20100206_162038_531041_018BACCE)
+From: Ric Wheeler <rwheeler@redhat.com>
+Subject: Linux Storage and Filesystems Summit 8-9 August
+Date: Sun, 07 Feb 2010 09:30:35 -0500
+Message-ID: <4B6ECE8B.104@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart2651970.tAQqSdKXby";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
-To: linux-btrfs@vger.kernel.org, 0bo0 <0.bugs.only.0@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: lsf10-pc@lists.linux-foundation.org
+To: linux-fsdevel@vger.kernel.org,
+	"linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	linux-nfs@vger.kernel.org, reiserfs-devel@vger.ker
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <c67eed301002060648p436a7347w3c7189e385ed79bc@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart2651970.tAQqSdKXby
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
 
-Am Samstag 06 Februar 2010 schrieben Sie:
-> On Sat, Feb 6, 2010 at 5:10 AM, Daniel J Blueman
->=20
-> <daniel.blueman@gmail.com> wrote:
-> > These proc entries affect just array reconstruction, not general I/O
-> > performance/throughput, so affect just an edge-case of applications
-> > requiring maximum latency/minimum throughout guarantees.
->=20
-> although i'd 1st seen the perf hit at the (re)construction stage, i
-> didn't recognize that the sysctls were limited to that case.
+This year we'll hold the Linux Storage and Filesystems summit jointly
+with the VM summit on the two days before LinuxCon in Boston (that's
+Sunday and Monday) at the Renaissance Hotel:
 
-Limiting rebuild throughput helps to have productively running=20
-applications getting their share of I/O during RAID rebuilds.
-=20
-> so, iiuc, btrfs has no such issues?
+http://events.linuxfoundation.org/events/linuxcon
 
-Issues? I would call that a feature, not an issue.
+We're planning to hold some sessions jointly and split into three tracks
+(Filesystems, Storage and VM) for others, so we're encouraging proposals
+for discussion that cover areas relevant to all three groups as well as
+more specific technical topics.
 
-=2D-=20
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+Suggestions for agenda topics should be sent to
 
---nextPart2651970.tAQqSdKXby
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
+lsf10-pc@lists.linuxfoundation.org
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
+and optionally cc the Linux list which would be most interested in it:
 
-iEYEABECAAYFAktuqIQACgkQmRvqrKWZhMeFwACfboJJ/qssvhjV7PdJp18wRl4A
-aWsAoKjnwSb3c601kEef0T1zJoIJfZnX
-=IDns
------END PGP SIGNATURE-----
+SCSI: linux-scsi@vger.kernel.org
+FS: linux-fsdevel@vger.kernel.org (plus relevant fs specific list)
+MM: linux-mm@kvack.org
 
---nextPart2651970.tAQqSdKXby--
+Please tag your subject with [LSF/VM TOPIC] so those of us who're not
+very organised can find them easily in our inboxes.  The agenda topics
+and attendees will be selected by the programme committee, but the final
+agenda will be by formed by consensus of the attendees on the day.
+
+We'll try to cap attendance at around 20 per track to facilitate
+discussions although the final numbers will depend on the room sizes
+at the venue.
+
+Requests to attend should be sent to:
+
+lsf10-pc@lists.linuxfoundation.org
+
+please summarise what you'll bring to the meeting, and what you'd like
+to discuss.  please also tag your email with [ATTEND] so there's less
+chance of it getting lost in the large mail pile.
+
+Presentations are allowed to guide discussion, but are strongly
+discouraged.  There will be no recording or audio bridge, however
+written minutes will be published as in previous years:
+
+2009:
+http://lwn.net/Articles/327601/
+http://lwn.net/Articles/327740/
+http://lwn.net/Articles/328347/
+
+Prior years:
+http://www.usenix.org/events/lsf08/tech/lsf08sums.pdf
+http://www.usenix.org/publications/login/2007-06/openpdfs/lsf07sums.pdf
+
+If you have feedback on last year's meeting that we can use to improve
+this year's, please also send that to:
+
+lsf10-pc@lists.linuxfoundation.org
+

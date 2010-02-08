@@ -1,36 +1,42 @@
-From: jim owens <jowens@hp.com>
-Subject: Re: RAID-10 arrays built with btrfs & md report 2x difference in
- 	available size?
-Date: Mon, 08 Feb 2010 09:33:35 -0500
-Message-ID: <4B7020BF.4010302@hp.com>
-References: <048D5581-1D1D-4F82-9FE3-0DBC1106EDB4@kupper.org>	 <c67eed301001291413p51f248d6y7f3b2ac9ba02c447@mail.gmail.com>	 <4B63634F.6090600@computer.org> <4B63735E.1060609@hp.com>	 <c67eed301001291553m8d59819oaab942b42e10c35d@mail.gmail.com>	 <4B645215.6060006@hp.com> <c67eed301002071954n2c8500adrd634b914cfe34484@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Kernel unaligned access at TPC[10101f18]
+ btrfs_csum_final+0x38/0x60
+Date: Mon, 8 Feb 2010 16:46:19 -0500
+Message-ID: <20100208214619.GB2814@think>
+References: <alpine.DEB.2.01.1002052106400.3483@bogon.housecafe.de>
+ <20100205.213220.147487541.davem@davemloft.net>
+ <alpine.DEB.2.01.1002052226480.3483@bogon.housecafe.de>
+ <20100205.224310.06173989.davem@davemloft.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: RK <rkasl@computer.org>, linux-btrfs <linux-btrfs@vger.kernel.org>
-To: 0bo0 <0.bugs.only.0@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: lists@nerdbynature.de, linux-btrfs@vger.kernel.org
+To: David Miller <davem@davemloft.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <c67eed301002071954n2c8500adrd634b914cfe34484@mail.gmail.com>
+In-Reply-To: <20100205.224310.06173989.davem@davemloft.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-0bo0 wrote:
-> On Sat, Jan 30, 2010 at 7:36 AM, jim owens <jowens@hp.com> wrote:
->> So Josef Bacik has sent patches to btrfs and btrfs-progs that
->> allow you to see raid-mode data and metadata adjusted values
->> with btrfs-ctrl -i instead of using "df".
->>
->> These patches have not been merged yet so you will have to pull
->> them and apply yourself.
+On Fri, Feb 05, 2010 at 10:43:10PM -0800, David Miller wrote:
+> From: Christian Kujau <lists@nerdbynature.de>
+> Date: Fri, 5 Feb 2010 22:28:47 -0800 (PST)
 > 
-> Where exactly can these be pulled from? Is there a separate git tree?
-> I just built from the btrfs & btrfs-progs heads, and still do not see
-> these add'l features.
+> > Hm, now it looks like this, but I don't know how it'd reveal more 
+> > information:
+> > 
+> > [  210.707051] Kernel unaligned access at TPC[10101f18] btrfs_csum_final+0x38/0x60 [btrfs]
+> > [  210.802236] Caller [10101f1c:btrfs_csum_final+0x3c/0x60 [btrfs]]
+> > [  210.874620] Kernel unaligned access at TPC[10101f18] btrfs_csum_final+0x38/0x60 [btrfs]
+> > [  210.969899] Caller [10101f1c:btrfs_csum_final+0x3c/0x60 [btrfs]]
+> > [  228.724982] Kernel unaligned access at TPC[10101f18] btrfs_csum_final+0x38/0x60 [btrfs]
+> > [  228.820220] Caller [10101f1c:btrfs_csum_final+0x3c/0x60 [btrfs]]
+> > [  228.892286] Kernel unaligned access at TPC[10101f18] btrfs_csum_final+0x38/0x60 [btrfs]
+> > [  228.987851] Caller [10101f1c:btrfs_csum_final+0x3c/0x60 [btrfs]]
+> > 
+> > I'm open for more patches :-)
+> 
+> Confusing for me too.  I'll try to think about this some more.
 
-Chris does not merge patches into the tree until they are
-pushed to Linus. Sometimes he creates "experimental" branches
-with code for testing but I don't think he has done that recently.
+It is probably the directory code.  I switched that to crc32c since
+you tried things.
 
-You can find proposed unmerged patches at:
+-chris
 
-http://patchwork.kernel.org/project/linux-btrfs/list/
-
-jim

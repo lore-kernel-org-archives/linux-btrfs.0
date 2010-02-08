@@ -1,48 +1,36 @@
-From: Jens Axboe <jens.axboe@oracle.com>
-Subject: Re: [patch]btrfs: finish read pages in the order they are submitted
-Date: Mon, 8 Feb 2010 12:44:34 +0100
-Message-ID: <20100208114433.GD1025@kernel.dk>
-References: <20100203074511.GA26548@sli10-desk.sh.intel.com> <20100203181845.GE22119@think> <20100208105901.GA1025@kernel.dk>
+From: jim owens <jowens@hp.com>
+Subject: Re: RAID-10 arrays built with btrfs & md report 2x difference in
+ 	available size?
+Date: Mon, 08 Feb 2010 09:33:35 -0500
+Message-ID: <4B7020BF.4010302@hp.com>
+References: <048D5581-1D1D-4F82-9FE3-0DBC1106EDB4@kupper.org>	 <c67eed301001291413p51f248d6y7f3b2ac9ba02c447@mail.gmail.com>	 <4B63634F.6090600@computer.org> <4B63735E.1060609@hp.com>	 <c67eed301001291553m8d59819oaab942b42e10c35d@mail.gmail.com>	 <4B645215.6060006@hp.com> <c67eed301002071954n2c8500adrd634b914cfe34484@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Shaohua Li <shaohua.li@intel.com>, linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: RK <rkasl@computer.org>, linux-btrfs <linux-btrfs@vger.kernel.org>
+To: 0bo0 <0.bugs.only.0@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100208105901.GA1025@kernel.dk>
+In-Reply-To: <c67eed301002071954n2c8500adrd634b914cfe34484@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 08 2010, Jens Axboe wrote:
-> Cache stats (millions)
+0bo0 wrote:
+> On Sat, Jan 30, 2010 at 7:36 AM, jim owens <jowens@hp.com> wrote:
+>> So Josef Bacik has sent patches to btrfs and btrfs-progs that
+>> allow you to see raid-mode data and metadata adjusted values
+>> with btrfs-ctrl -i instead of using "df".
+>>
+>> These patches have not been merged yet so you will have to pull
+>> them and apply yourself.
 > 
-> Kernel          References              Misses
-> ----------------------------------------------
-> baseline        3547                    2387
-> patched         3822                    2351
-> 
-> These numbers are very stable, the above were also averaged over 3 runs,
-> but variability was very low.
+> Where exactly can these be pulled from? Is there a separate git tree?
+> I just built from the btrfs & btrfs-progs heads, and still do not see
+> these add'l features.
 
-Update on this. I setup the storage system for more stable runs and
-repeated the above test. It runs a bit faster as well, completes the
-workload at 2.5GB/sec average.
+Chris does not merge patches into the tree until they are
+pushed to Linus. Sometimes he creates "experimental" branches
+with code for testing but I don't think he has done that recently.
 
-Cache stats (millions)
+You can find proposed unmerged patches at:
 
-Kernel          References              Misses
-----------------------------------------------
-baseline        3384                    2318
-baseline        3417                    2313
-baseline        3382                    2323
-baseline avg    3394                    2318
+http://patchwork.kernel.org/project/linux-btrfs/list/
 
-patched         3518                    2258
-patched         3428                    2201
-patched         3536                    2274
-patched avg     3494                    2244
-
-So for those runs, ~3% more references and ~3 less misses. Even with the
-variability here, that looks like a win in my book.
-
--- 
-Jens Axboe
-
+jim

@@ -1,31 +1,79 @@
-From: 0bo0 <0.bugs.only.0@gmail.com>
-Subject: Re: RAID-10 arrays built with btrfs & md report 2x difference in
-	available size?
-Date: Sun, 7 Feb 2010 19:54:54 -0800
-Message-ID: <c67eed301002071954n2c8500adrd634b914cfe34484@mail.gmail.com>
-References: <048D5581-1D1D-4F82-9FE3-0DBC1106EDB4@kupper.org>
-	 <c67eed301001291413p51f248d6y7f3b2ac9ba02c447@mail.gmail.com>
-	 <4B63634F.6090600@computer.org> <4B63735E.1060609@hp.com>
-	 <c67eed301001291553m8d59819oaab942b42e10c35d@mail.gmail.com>
-	 <4B645215.6060006@hp.com>
+From: Jens Axboe <jens.axboe@oracle.com>
+Subject: Re: [patch]btrfs: finish read pages in the order they are submitted
+Date: Mon, 8 Feb 2010 11:59:01 +0100
+Message-ID: <20100208105901.GA1025@kernel.dk>
+References: <20100203074511.GA26548@sli10-desk.sh.intel.com> <20100203181845.GE22119@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: RK <rkasl@computer.org>, linux-btrfs <linux-btrfs@vger.kernel.org>
-To: jim owens <jowens@hp.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Shaohua Li <shaohua.li@intel.com>, linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4B645215.6060006@hp.com>
+In-Reply-To: <20100203181845.GE22119@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jan 30, 2010 at 7:36 AM, jim owens <jowens@hp.com> wrote:
-> So Josef Bacik has sent patches to btrfs and btrfs-progs that
-> allow you to see raid-mode data and metadata adjusted values
-> with btrfs-ctrl -i instead of using "df".
->
-> These patches have not been merged yet so you will have to pull
-> them and apply yourself.
+On Wed, Feb 03 2010, Chris Mason wrote:
+> On Wed, Feb 03, 2010 at 03:45:11PM +0800, Shaohua Li wrote:
+> > the endio is done at reverse order of bio vectors. That means for a sequential
+> > read, the page first submitted will finish last in a bio. Considering we will
+> > do checksum (making cache hot) for every page, this does introduce delay (and
+> > chance to squeeze cache used soon) for pages submitted at the begining. I
+> > don't observe obvious performance difference with below patch at my simple test,
+> > but seems more natural to finish read in the order they are submitted.
+> 
+> Interesting, I wonder if we'd be able to see this on a higher throughput
+> system.  Jens, care to give it a shot (patch below)?
 
-Where exactly can these be pulled from? Is there a separate git tree?
-I just built from the btrfs & btrfs-progs heads, and still do not see
-these add'l features.
+Sure, I gave it a spin. Baseline is current -git (-rc7'ish), and the
+workload is just stream reading 8 16GB files. I used large streaming
+reads as the bigger ios would hopefully help show the effect of doing
+the reverse completions. The run takes ~1 minute, and the results are
+averaged over 3 runs.
 
-Thanks.
+Throughput:
+
+Kernel          Slowest         Fastest         Average
+-------------------------------------------------------
+baseline        2041MB/sec      2229MB/sec      2155MB/sec
+patched         2052MB/sec      2071MB/sec      2062MB/sec
+
+
+Completion latency average (msecs):
+
+Kernel          Best            Worst           Average
+-------------------------------------------------------
+baseline        1.72            1.89            1.79
+patche          1.83            1.89            1.85
+
+
+Probably would need a LOT more runs to get a statistically significant
+number here, it would be nice if O_DIRECT worked (hint, hint!) which
+usually makes these things easier to test. If I look at the throughput
+of the runs, the baseline usually starts a little slower (1.8GB/sec or
+so) and gets faster, while the patched run starts much higher (close to
+3.0GB/sec) and drops to 2.0GB/sec after that for the rest of the run.
+
+So I did some perf stat checks too, to see if we see an improvement for
+cache utilization. Results below.
+
+
+Cache stats (millions)
+
+Kernel          References              Misses
+----------------------------------------------
+baseline        3547                    2387
+patched         3822                    2351o
+
+These numbers are very stable, the above were also averaged over 3 runs,
+but variability was very low.
+
+My feeling is that the patch should be included. Cache misses are
+provably down and the patch makes a lot of sense just logically. The
+patched runs seemed more stable, and my gut tells me that the unpatched
+runs may have been a bit flukey (one fast run, should probably be
+excluded).
+
+Let me know if you want more tests.
+
+-- 
+Jens Axboe
+

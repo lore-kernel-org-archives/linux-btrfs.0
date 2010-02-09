@@ -1,52 +1,56 @@
 From: Ian Kumlien <pomac@vapor.com>
 Subject: Re: [bug] Reclaim space.
-Date: Tue, 09 Feb 2010 22:48:55 +0100
-Message-ID: <1265752135.5943.10.camel@pi>
+Date: Wed, 10 Feb 2010 00:13:49 +0100
+Message-ID: <1265757229.5943.13.camel@pi>
 References: <1265740911.5943.7.camel@pi>
-	 <m3iqa62n8t.fsf@pullcord.laptop.org> <m3d40e2kdn.fsf@pullcord.laptop.org>
-	 <1265749549.5943.8.camel@pi> <m38wb22k5m.fsf@pullcord.laptop.org>
-	 <1265750019.5943.9.camel@pi>  <m31vgu2jnd.fsf@pullcord.laptop.org>
+	 <m3iqa62n8t.fsf@pullcord.laptop.org>  <m3d40e2kdn.fsf@pullcord.laptop.org>
 Reply-To: pomac@vapor.com
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature"; boundary="=-TtDREqh/ypCBUxaBIjLJ"
+Content-Type: multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature"; boundary="=-XcqiIfS5wX/Tc+nD/goZ"
 Cc: linux-btrfs@vger.kernel.org
 To: Chris Ball <cjb@laptop.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <m31vgu2jnd.fsf@pullcord.laptop.org>
+In-Reply-To: <m3d40e2kdn.fsf@pullcord.laptop.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-TtDREqh/ypCBUxaBIjLJ
+--=-XcqiIfS5wX/Tc+nD/goZ
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On tis, 2010-02-09 at 16:17 -0500, Chris Ball wrote:
+On tis, 2010-02-09 at 16:02 -0500, Chris Ball wrote:
 > Hi,
 >=20
->    > btrfsctl -D ext2_saved/
->    > ioctl:: Invalid argument
+>    > Here's a patch to btrfsck from Josef that should fix this:
 >=20
-> It's merged (during 2.6.32) -- I think you just have the wrong syntax.
-> See http://btrfs.wiki.kernel.org/index.php/Btrfsctl.
+> Sorry, that was an older patch.  This is the working one:
 
-Ahh, now i get it, thanks =3D)
+It didn't apply cleanly to latest git, so i remerged the patch...
+The new output sure looks better in my eyes:
 
-> - Chris.
+/dev/mapper/root      145G  135G   11G  93% /
+
+=3D)
+
+Thanks, I do wonder btw, btrfsck always seems to segfault when you check
+a filesystem in real use - ie loged in users and daemons running - but
+not on a normal 'single' user boot. Anything that could be done with
+this? (It doesn't inspire confidence ;))
 
 --=20
 Ian Kumlien <pomac () vapor ! com> -- http://pomac.netswarm.net
 
---=-TtDREqh/ypCBUxaBIjLJ
+--=-XcqiIfS5wX/Tc+nD/goZ
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: This is a digitally signed message part
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.14 (GNU/Linux)
 
-iEYEABECAAYFAktx2EcACgkQ7F3Euyc51N+cEQCcC4lI7OiNy5MdL0v6j9u5UHLZ
-gWcAnArSjUiafkHjIpILeHf+aHAPTTlw
-=IXDF
+iEYEABECAAYFAktx7CwACgkQ7F3Euyc51N9X4QCfdcBW3+fGW8UgbtP8l99mPIZm
++r0AnAwBw9S5n9c33Di64yXERcJsbjQn
+=FxOd
 -----END PGP SIGNATURE-----
 
---=-TtDREqh/ypCBUxaBIjLJ--
+--=-XcqiIfS5wX/Tc+nD/goZ--
 

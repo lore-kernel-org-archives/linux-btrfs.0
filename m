@@ -1,123 +1,129 @@
-From: Yang Hongyang <yanghy@cn.fujitsu.com>
+From: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
 Subject: Re: [PATCH]btrfs: Update existing btrfs_device for renaming device
-Date: Tue, 09 Feb 2010 13:23:20 +0800
-Message-ID: <4B70F148.6010605@cn.fujitsu.com>
-References: <69e11d1f0911071341n4c0a845ds7bbf5d64b039d8f@mail.gmail.com> <69e11d1f0911071344n7c059bd3o53896f4e8982e20b@mail.gmail.com> <4B70DB0D.2060007@jp.fujitsu.com>
+Date: Tue, 09 Feb 2010 15:28:15 +0900
+Message-ID: <4B71007F.3000507@jp.fujitsu.com>
+References: <69e11d1f0911071341n4c0a845ds7bbf5d64b039d8f@mail.gmail.com> <69e11d1f0911071344n7c059bd3o53896f4e8982e20b@mail.gmail.com> <4B70DB0D.2060007@jp.fujitsu.com> <4B70F148.6010605@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Cc: gjalves@gjalves.com.br, linux-btrfs@vger.kernel.org
-To: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
+To: yanghy@cn.fujitsu.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4B70DB0D.2060007@jp.fujitsu.com>
+In-Reply-To: <4B70F148.6010605@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-TARUISI Hiroaki wrote:
-> This patch updates device name in btrfs device.
-> We can mount a device if its name are changed.
->=20
-> Signed-off-by: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
-> ---
->  fs/btrfs/volumes.c |    7 +++++++
->  1 file changed, 7 insertions(+)
->=20
-> Index: b/fs/btrfs/volumes.c
-> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+Yes, exactly. I'll fix this. Thanks.
+
+Regards,
+taruisi
+
+(2010/02/09 14:23), Yang Hongyang wrote:
+> TARUISI Hiroaki wrote:
+>> This patch updates device name in btrfs device.
+>> We can mount a device if its name are changed.
+>>
+>> Signed-off-by: TARUISI Hiroaki <taruishi.hiroak@jp.fujitsu.com>
+>> ---
+>>  fs/btrfs/volumes.c |    7 +++++++
+>>  1 file changed, 7 insertions(+)
+>>
+>> Index: b/fs/btrfs/volumes.c
+>> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
 =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
 =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
-> --- a/fs/btrfs/volumes.c	2010-02-09 12:11:33.000000000 +0900
-> +++ b/fs/btrfs/volumes.c	2010-02-09 12:43:29.000000000 +0900
-> @@ -365,6 +365,7 @@ static noinline int device_list_add(cons
->  	struct btrfs_device *device;
->  	struct btrfs_fs_devices *fs_devices;
->  	u64 found_transid =3D btrfs_super_generation(disk_super);
-> +	char *name;
+>> --- a/fs/btrfs/volumes.c	2010-02-09 12:11:33.000000000 +0900
+>> +++ b/fs/btrfs/volumes.c	2010-02-09 12:43:29.000000000 +0900
+>> @@ -365,6 +365,7 @@ static noinline int device_list_add(cons
+>>  	struct btrfs_device *device;
+>>  	struct btrfs_fs_devices *fs_devices;
+>>  	u64 found_transid =3D btrfs_super_generation(disk_super);
+>> +	char *name;
+>>
+>>  	fs_devices =3D find_fsid(disk_super->fsid);
+>>  	if (!fs_devices) {
+>> @@ -411,6 +412,12 @@ static noinline int device_list_add(cons
+>>
+>>  		device->fs_devices =3D fs_devices;
+>>  		fs_devices->num_devices++;
+>> +	} else if (strcmp(device->name, path)) {
+>> +		name =3D kstrdup(path, GFP_NOFS);
+>> +		if (!device->name)
 >=20
->  	fs_devices =3D find_fsid(disk_super->fsid);
->  	if (!fs_devices) {
-> @@ -411,6 +412,12 @@ static noinline int device_list_add(cons
+> 		It should be "if (!name)" here?
 >=20
->  		device->fs_devices =3D fs_devices;
->  		fs_devices->num_devices++;
-> +	} else if (strcmp(device->name, path)) {
-> +		name =3D kstrdup(path, GFP_NOFS);
-> +		if (!device->name)
-
-		It should be "if (!name)" here?
-
-> +			return -ENOMEM;
-> +		kfree(device->name);
-> +		device->name =3D name;
->  	}
->=20
->  	if (found_transid > fs_devices->latest_trans) {
->=20
-> (2009/11/08 6:44), Gustavo Alves wrote:
->> Hi Chris,
+>> +			return -ENOMEM;
+>> +		kfree(device->name);
+>> +		device->name =3D name;
+>>  	}
 >>
->> I found the same problem on 2.6.32-0.33.rc5.git1 with btrfs-progs
->> 0.19. This problem is already fixed?
+>>  	if (found_transid > fs_devices->latest_trans) {
 >>
->> Thanks
->>
->> ----
->> Gustavo Junior Alves
->> Specchio Solu=E7=F5es em TI
->> http://specchio.inf.br
->> Tel: +55 19 9223-0500
->>
->>
->>> From: Chris Mason <chris.mason_=E4t_oracle.com>
->>> Date: Tue, 07 Apr 2009 07:35:56 -0400
+>> (2009/11/08 6:44), Gustavo Alves wrote:
+>>> Hi Chris,
 >>>
->>> On Mon, 2009-04-06 at 18:41 +0100, Hugo Mills wrote:
->>>> There seems to be some issue over changing the names of the device
->>>> that a btrfs filesystem lives on:
->>>>
->>>> # lvcreate scratch -n fstest -L 2G
->>>> Logical volume "fstest" created
->>>> # mkfs -t btrfs /dev/scratch/fstest
->>>>
->>>> WARNING! - Btrfs v0.18-ge3b0f66 IS EXPERIMENTAL
->>>> WARNING! - see http://btrfs.wiki.kernel.org before using
->>>>
->>>> fs created label (null) on /dev/scratch/fs1
->>>> nodesize 4096 leafsize 4096 sectorsize 4096 size 2.00GB
->>>> Btrfs v0.18-ge3b0f66
->>>>
->>>> # mount /dev/scratch/fstest /mnt
->>>> # umount /mnt
->>>>
->>>> # lvrename scratch fstest derek
->>>> Renamed "fstest" to "derek" in volume group "scratch"
->>>> # mount /dev/scratch/derek /mnt
->>>> mount: /dev/mapper/scratch-derek: can't read superblock
->>>>
->>>> # lvrename scratch derek fstest
->>>> Renamed "derek" to "fstest" in volume group "scratch"
->>>> # mount /dev/scratch/fstest /mnt
->>>> [success]
->>>>
->>>> The rename works properly on a completely virgin filesystem, but
->>>> not on one that's been mounted and unmounted (as above).
->>> Whoops, we need to reset the pathname when a probe finds a given de=
-v
->>> uuid on a given device. I'll patch it up when I get back next week.
+>>> I found the same problem on 2.6.32-0.33.rc5.git1 with btrfs-progs
+>>> 0.19. This problem is already fixed?
 >>>
->>> Thanks for this bug report.
+>>> Thanks
 >>>
->>> -chris
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrf=
-s" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>> ----
+>>> Gustavo Junior Alves
+>>> Specchio Solu=E7=F5es em TI
+>>> http://specchio.inf.br
+>>> Tel: +55 19 9223-0500
+>>>
+>>>
+>>>> From: Chris Mason <chris.mason_=E4t_oracle.com>
+>>>> Date: Tue, 07 Apr 2009 07:35:56 -0400
+>>>>
+>>>> On Mon, 2009-04-06 at 18:41 +0100, Hugo Mills wrote:
+>>>>> There seems to be some issue over changing the names of the devic=
+e
+>>>>> that a btrfs filesystem lives on:
+>>>>>
+>>>>> # lvcreate scratch -n fstest -L 2G
+>>>>> Logical volume "fstest" created
+>>>>> # mkfs -t btrfs /dev/scratch/fstest
+>>>>>
+>>>>> WARNING! - Btrfs v0.18-ge3b0f66 IS EXPERIMENTAL
+>>>>> WARNING! - see http://btrfs.wiki.kernel.org before using
+>>>>>
+>>>>> fs created label (null) on /dev/scratch/fs1
+>>>>> nodesize 4096 leafsize 4096 sectorsize 4096 size 2.00GB
+>>>>> Btrfs v0.18-ge3b0f66
+>>>>>
+>>>>> # mount /dev/scratch/fstest /mnt
+>>>>> # umount /mnt
+>>>>>
+>>>>> # lvrename scratch fstest derek
+>>>>> Renamed "fstest" to "derek" in volume group "scratch"
+>>>>> # mount /dev/scratch/derek /mnt
+>>>>> mount: /dev/mapper/scratch-derek: can't read superblock
+>>>>>
+>>>>> # lvrename scratch derek fstest
+>>>>> Renamed "derek" to "fstest" in volume group "scratch"
+>>>>> # mount /dev/scratch/fstest /mnt
+>>>>> [success]
+>>>>>
+>>>>> The rename works properly on a completely virgin filesystem, but
+>>>>> not on one that's been mounted and unmounted (as above).
+>>>> Whoops, we need to reset the pathname when a probe finds a given d=
+ev
+>>>> uuid on a given device. I'll patch it up when I get back next week=
+=2E
+>>>>
+>>>> Thanks for this bug report.
+>>>>
+>>>> -chris
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btr=
+fs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>>
 >=20
 >=20
 
-
---=20
-Regards
-Yang Hongyang
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

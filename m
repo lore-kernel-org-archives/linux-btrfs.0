@@ -1,39 +1,43 @@
-From: Oystein Viggen <oysteivi@tihlde.org>
-Subject: Re: [bug] Reclaim space.
-Date: Wed, 10 Feb 2010 14:16:35 +0100
-Message-ID: <03zl3hgrik.fsf@msgid.viggen.net>
-References: <1265740911.5943.7.camel@pi> <m3iqa62n8t.fsf@pullcord.laptop.org>
-	<m3d40e2kdn.fsf@pullcord.laptop.org> <1265757229.5943.13.camel@pi>
+From: Chris Ball <cjb@laptop.org>
+Subject: Re: Using snapshots as quick restore point
+Date: Wed, 10 Feb 2010 09:12:41 -0500
+Message-ID: <m3mxzh18o6.fsf@pullcord.laptop.org>
+References: <1265796562.8697.110.camel@rupert-desktop>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Robert Pankowecki <robert@cubiware.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1265796562.8697.110.camel@rupert-desktop> (Robert Pankowecki's
+	message of "Wed, 10 Feb 2010 11:09:22 +0100")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-* [Ian Kumlien]=20
+Hi,
 
-> Thanks, I do wonder btw, btrfsck always seems to segfault when you ch=
-eck
-> a filesystem in real use - ie loged in users and daemons running - bu=
-t
-> not on a normal 'single' user boot. Anything that could be done with
-> this? (It doesn't inspire confidence ;))
+   > * create snapshot
+   > * mount it somewhere (read-write)
+   > * operate on the snapshot, change some files etc...
+   > * revert changes made to the snapshot to its original state
 
-Online filesystem check isn't yet implemented.  What you're seeing is
-btrfsck not actually checking to see if the fs is mounted before
-running.  Make sure to always umount before running btrfsck.
+Make two snapshots instead of one, and only modify one of them?
+Because of CoW, new snapshots have very low overhead.
 
-(I remember reading something about such a check being added to btrfsck=
-,
-so it might be better with newer btrfs-tools).
+   > with or without unmounting it.
 
-=D8ystein
---=20
-Outgoing mail is certified Virus Free.
-=2E.of course, the virus would tell you the same thing..
+You would have to unmount it if it had any open files.
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+   > If not, is there any filesystem that can do that ?
+
+I don't know of any filesystem that lets you discard changes to a
+snapshot, but I've just described a method for doing so where you
+always make a read-only -pristine version of that snapshot and have
+tools that base your read-write snapshots on that.
+
+I don't think it would be possible for any filesystem to handle
+changing snapshot on a mounted filesystem with files open, so it
+makes sense that it's a remount operation.
+
+- Chris.
+-- 
+Chris Ball   <cjb@laptop.org>
+One Laptop Per Child

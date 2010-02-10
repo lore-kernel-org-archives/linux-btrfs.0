@@ -1,43 +1,43 @@
-From: Chris Ball <cjb@laptop.org>
-Subject: Re: Using snapshots as quick restore point
-Date: Wed, 10 Feb 2010 09:12:41 -0500
-Message-ID: <m3mxzh18o6.fsf@pullcord.laptop.org>
-References: <1265796562.8697.110.camel@rupert-desktop>
+From: Mat <jackdachef@gmail.com>
+Subject: [mount] commit intervall for metadata and btrfs - is it planned ?
+Date: Wed, 10 Feb 2010 18:15:26 +0000 (UTC)
+Message-ID: <loom.20100210T190536-373@post.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Robert Pankowecki <robert@cubiware.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1265796562.8697.110.camel@rupert-desktop> (Robert Pankowecki's
-	message of "Wed, 10 Feb 2010 11:09:22 +0100")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hi guys,
 
-   > * create snapshot
-   > * mount it somewhere (read-write)
-   > * operate on the snapshot, change some files etc...
-   > * revert changes made to the snapshot to its original state
+First off: you guys are doing amazing work !
 
-Make two snapshots instead of one, and only modify one of them?
-Because of CoW, new snapshots have very low overhead.
+btrfs "Better-FS" gets more and more stable, fast and space-efficient than
+all/most of the other filesystems :)
 
-   > with or without unmounting it.
 
-You would have to unmount it if it had any open files.
+It being able to survive compiling of openoffice, chromium webbrowser and other
+stressful stuff is a testament to its ever growing maturity 
 
-   > If not, is there any filesystem that can do that ?
 
-I don't know of any filesystem that lets you discard changes to a
-snapshot, but I've just described a method for doing so where you
-always make a read-only -pristine version of that snapshot and have
-tools that base your read-write snapshots on that.
+Now on to my question:
 
-I don't think it would be possible for any filesystem to handle
-changing snapshot on a mounted filesystem with files open, so it
-makes sense that it's a remount operation.
+Since I'm using btrfs on more and more test-partitions on my system and also am
+into energy saving:
 
-- Chris.
--- 
-Chris Ball   <cjb@laptop.org>
-One Laptop Per Child
+is the following mount-option which exists for reiserfs, ext2-4 and reiser4
+(tmgr.atom_max_age) also planned to be implemented for btrfs ?
+
+       commit=nrsec
+              Sync all data and metadata  every  nrsec  seconds.  The  default
+              value is 5 seconds. Zero means default.
+
+(in this case ext3)
+
+if yes, when will it be added ?
+
+
+Many thanks in advance
+
+Mat
+

@@ -1,56 +1,41 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [mount] commit intervall for metadata and btrfs - is it
-	planned ?
-Date: Wed, 10 Feb 2010 13:55:37 -0500
-Message-ID: <20100210185537.GA20133@localhost.localdomain>
-References: <loom.20100210T190536-373@post.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Mat <jackdachef@gmail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <loom.20100210T190536-373@post.gmane.org>
+From: Jiri Slaby <jslaby@suse.cz>
+Subject: [PATCH 1/1] FS: btrfs, use helpers for rlimits
+Date: Wed, 10 Feb 2010 21:00:09 +0100
+Message-ID: <1265832009-8070-1-git-send-email-jslaby@suse.cz>
+Cc: linux-kernel@vger.kernel.org, jirislaby@gmail.com,
+	linux-btrfs@vger.kernel.org
+To: chris.mason@oracle.com
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 10, 2010 at 06:15:26PM +0000, Mat wrote:
-> Hi guys,
-> 
-> First off: you guys are doing amazing work !
-> 
-> btrfs "Better-FS" gets more and more stable, fast and space-efficient than
-> all/most of the other filesystems :)
-> 
-> 
-> It being able to survive compiling of openoffice, chromium webbrowser and other
-> stressful stuff is a testament to its ever growing maturity 
-> 
-> 
-> Now on to my question:
-> 
-> Since I'm using btrfs on more and more test-partitions on my system and also am
-> into energy saving:
-> 
-> is the following mount-option which exists for reiserfs, ext2-4 and reiser4
-> (tmgr.atom_max_age) also planned to be implemented for btrfs ?
-> 
->        commit=nrsec
->               Sync all data and metadata  every  nrsec  seconds.  The  default
->               value is 5 seconds. Zero means default.
-> 
-> (in this case ext3)
-> 
-> if yes, when will it be added ?
-> 
-> 
+Make sure compiler won't do weird things with limits. E.g. fetching
+them twice may return 2 different values after writable limits are
+implemented.
 
-It would be simple enough to do, but keep in mind that btrfs doesnt act like
-ext2/3 does, so the commit doesn't necessarily mean _all_ data will go down to
-disk, just data thats been allocated and writeout has been started on, which is
-mostly controlled by the vm's dirty writeback stuff or if the apps you use have
-been using fsync().  Any metadata thats been dirtied will be sync'ed every 30
-seconds.  Doing much more than that is just widening the window for you to lose
-new files and stuff (again, if they've not been fsync()'ed).  Personally 30
-seconds is a good balance between being safe and saving battery life, but I'm
-sure at some point we'll expose the commit interval via a mount option.  Thanks,
+I.e. either use rlimit helpers added in
+3e10e716abf3c71bdb5d86b8f507f9e72236c9cd
+or ACCESS_ONCE if not applicable.
 
-Josef
+Signed-off-by: Jiri Slaby <jslaby@suse.cz>
+Cc: Chris Mason <chris.mason@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+---
+ fs/btrfs/inode.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index c41db6d..5aa0cef 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3256,8 +3256,7 @@ static int btrfs_setattr_size(struct inode *inode, struct iattr *attr)
+ 		return 0;
+ 
+ 	if (attr->ia_size > inode->i_size) {
+-		unsigned long limit;
+-		limit = current->signal->rlim[RLIMIT_FSIZE].rlim_cur;
++		unsigned long limit = rlimit(RLIMIT_FSIZE);
+ 		if (attr->ia_size > inode->i_sb->s_maxbytes)
+ 			return -EFBIG;
+ 		if (limit != RLIM_INFINITY && attr->ia_size > limit) {
+-- 
+1.6.6.1

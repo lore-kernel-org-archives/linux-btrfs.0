@@ -1,189 +1,79 @@
 From: Dmitry Monakhov <dmonakhov@openvz.org>
-Subject: [PATCH 4/4] btrfs: add discard_compat support
-Date: Thu, 11 Feb 2010 14:01:14 +0300
-Message-ID: <1265886074-22135-1-git-send-email-dmonakhov@openvz.org>
+Subject: Re: [PATCH 4/4] btrfs: add discard_compat support
+Date: Thu, 11 Feb 2010 14:15:51 +0300
+Message-ID: <87tytoqazc.fsf@openvz.org>
 References: <1265885625-21608-1-git-send-email-dmonakhov@openvz.org>
-Cc: jens.axboe@oracle.com, linux-btrfs@vger.kernel.org,
-	Dmitry Monakhov <dmonakhov@openvz.org>
+	<1265886074-22135-1-git-send-email-dmonakhov@openvz.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
 To: linux-kernel@vger.kernel.org
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-reply-to: <1265885625-21608-1-git-send-email-dmonakhov@openvz.org>
+In-Reply-To: <1265886074-22135-1-git-send-email-dmonakhov@openvz.org> (Dmitry
+	Monakhov's message of "Thu, 11 Feb 2010 14:01:14 +0300")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If any device in the list has no native discard support we add
-discard compat support. Devices with native discard support still
-getting real discard requests.
+Dmitry Monakhov <dmonakhov@openvz.org> writes:
 
-Signed-off-by: Dmitry Monakhov <dmonakhov@openvz.org>
----
- fs/btrfs/ctree.h       |    1 +
- fs/btrfs/disk-io.c     |    8 ++++++++
- fs/btrfs/extent-tree.c |   14 ++++++++------
- fs/btrfs/super.c       |    8 +++++++-
- fs/btrfs/volumes.c     |    6 ++++++
- fs/btrfs/volumes.h     |    6 +++++-
- 6 files changed, 35 insertions(+), 8 deletions(-)
+> If any device in the list has no native discard support we add
+> discard compat support. Devices with native discard support still
+> getting real discard requests.
+Note: Seems what enabling discard requests result in triggering
+hidden bug. Orphan list corruption.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 9f806dd..54854d1 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1161,6 +1161,7 @@ struct btrfs_root {
- #define BTRFS_MOUNT_SSD_SPREAD		(1 << 8)
- #define BTRFS_MOUNT_NOSSD		(1 << 9)
- #define BTRFS_MOUNT_DISCARD		(1 << 10)
-+#define BTRFS_MOUNT_DISCARD_COMPAT	(1 << 11)
- 
- #define btrfs_clear_opt(o, opt)		((o) &= ~BTRFS_MOUNT_##opt)
- #define btrfs_set_opt(o, opt)		((o) |= BTRFS_MOUNT_##opt)
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 009e3bd..c7d4812 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1945,6 +1945,14 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 		       "mode\n");
- 		btrfs_set_opt(fs_info->mount_opt, SSD);
- 	}
-+	if (btrfs_test_opt(tree_root, DISCARD) &&
-+	    fs_info->fs_devices->discard_compat) {
-+		printk(KERN_INFO "Btrfs detected devices without native discard"
-+			" support, enabling discard_compat mode mode\n");
-+		btrfs_clear_opt(fs_info->mount_opt, DISCARD);
-+		btrfs_set_opt(fs_info->mount_opt, DISCARD_COMPAT);
-+	}
-+
- 
- 	if (btrfs_super_log_root(disk_super) != 0) {
- 		u64 bytenr = btrfs_super_log_root(disk_super);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 432a2da..b4c3124 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -1585,20 +1585,21 @@ static int remove_extent_backref(struct btrfs_trans_handle *trans,
- }
- 
- static void btrfs_issue_discard(struct block_device *bdev,
--				u64 start, u64 len)
-+				u64 start, u64 len, int do_compat)
- {
- 	blkdev_issue_discard(bdev, start >> 9, len >> 9, GFP_KERNEL,
--			     DISCARD_FL_BARRIER);
-+			     DISCARD_FL_BARRIER |
-+				(do_compat ? DISCARD_FL_COMPAT : 0));
- }
- 
- static int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
- 				u64 num_bytes)
- {
--	int ret;
-+	int ret, do_compat = btrfs_test_opt(root, DISCARD_COMPAT);
- 	u64 map_length = num_bytes;
- 	struct btrfs_multi_bio *multi = NULL;
- 
--	if (!btrfs_test_opt(root, DISCARD))
-+	if (!btrfs_test_opt(root, DISCARD) && !do_compat)
- 		return 0;
- 
- 	/* Tell the block device(s) that the sectors can be discarded */
-@@ -1614,7 +1615,8 @@ static int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
- 		for (i = 0; i < multi->num_stripes; i++, stripe++) {
- 			btrfs_issue_discard(stripe->dev->bdev,
- 					    stripe->physical,
--					    map_length);
-+					    map_length,
-+					    do_compat);
- 		}
- 		kfree(multi);
- 	}
-@@ -3700,7 +3702,7 @@ static int pin_down_bytes(struct btrfs_trans_handle *trans,
- 	 * individual btree blocks isn't a good plan.  Just
- 	 * pin everything in discard mode.
- 	 */
--	if (btrfs_test_opt(root, DISCARD))
-+	if (btrfs_test_opt(root, DISCARD) || btrfs_test_opt(root, DISCARD_COMPAT))
- 		goto pinit;
- 
- 	buf = btrfs_find_tree_block(root, bytenr, num_bytes);
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 3f9b457..fe7ccf4 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -67,7 +67,7 @@ enum {
- 	Opt_max_extent, Opt_max_inline, Opt_alloc_start, Opt_nobarrier,
- 	Opt_ssd, Opt_nossd, Opt_ssd_spread, Opt_thread_pool, Opt_noacl,
- 	Opt_compress, Opt_notreelog, Opt_ratio, Opt_flushoncommit,
--	Opt_discard, Opt_err,
-+	Opt_discard, Opt_discard_compat, Opt_err,
- };
- 
- static match_table_t tokens = {
-@@ -90,6 +90,7 @@ static match_table_t tokens = {
- 	{Opt_flushoncommit, "flushoncommit"},
- 	{Opt_ratio, "metadata_ratio=%d"},
- 	{Opt_discard, "discard"},
-+	{Opt_discard_compat, "discard_compat"},
- 	{Opt_err, NULL},
- };
- 
-@@ -263,6 +264,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 		case Opt_discard:
- 			btrfs_set_opt(info->mount_opt, DISCARD);
- 			break;
-+		case Opt_discard_compat:
-+			btrfs_set_opt(info->mount_opt, DISCARD_COMPAT);
-+			break;
- 		case Opt_err:
- 			printk(KERN_INFO "btrfs: unrecognized mount option "
- 			       "'%s'\n", p);
-@@ -459,6 +463,8 @@ static int btrfs_show_options(struct seq_file *seq, struct vfsmount *vfs)
- 		seq_puts(seq, ",flushoncommit");
- 	if (btrfs_test_opt(root, DISCARD))
- 		seq_puts(seq, ",discard");
-+	if (btrfs_test_opt(root, DISCARD_COMPAT))
-+		seq_puts(seq, ",discard_compat");
- 	if (!(root->fs_info->sb->s_flags & MS_POSIXACL))
- 		seq_puts(seq, ",noacl");
- 	return 0;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 220dad5..02e18c8 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -621,6 +621,9 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
- 		if (!blk_queue_nonrot(bdev_get_queue(bdev)))
- 			fs_devices->rotating = 1;
- 
-+		if (!blk_queue_discard(bdev_get_queue(bdev)))
-+			fs_devices->discard_compat = 1;
-+
- 		fs_devices->open_devices++;
- 		if (device->writeable) {
- 			fs_devices->rw_devices++;
-@@ -1522,6 +1525,9 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
- 	if (!blk_queue_nonrot(bdev_get_queue(bdev)))
- 		root->fs_info->fs_devices->rotating = 1;
- 
-+	if (!blk_queue_discard(bdev_get_queue(bdev)))
-+		root->fs_info->fs_devices->discard_compat = 1;
-+
- 	total_bytes = btrfs_super_total_bytes(&root->fs_info->super_copy);
- 	btrfs_set_super_total_bytes(&root->fs_info->super_copy,
- 				    total_bytes + device->total_bytes);
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 31b0fab..ceb66f0 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -116,7 +116,11 @@ struct btrfs_fs_devices {
- 	/* set when we find or add a device that doesn't have the
- 	 * nonrot flag set
- 	 */
--	int rotating;
-+	unsigned int rotating:1;
-+	/* set then we find or add a device that doesn't have the
-+	 * DISCARD flags set
-+	 */
-+	unsigned int discard_compat:1;
- };
- 
- struct btrfs_bio_stripe {
--- 
-1.6.6
+  ------------[ cut here ]------------
+ WARNING: at lib/list_debug.c:26 __list_add+0x3f/0x81()
+ Hardware name:         
+ list_add corruption. next->prev should be prev (ffff88012029eb20), but was ffff88012239c730. (next=ffff8801223bc348).
+ Modules linked in: btrfs zlib_deflate libcrc32c cpufreq_ondemand acpi_cpufreq freq_table ppdev parport_pc parport pcspkr [last unloaded: btrfs]
+ Pid: 1254, comm: fsstress Not tainted 2.6.33-rc5 #3
+ Call Trace:
+ [<ffffffff81038f79>] warn_slowpath_common+0x7c/0x94
+ [<ffffffff81038fe8>] warn_slowpath_fmt+0x41/0x43
+ [<ffffffffa00df87a>] ? btrfs_unlink_inode+0x243/0x258 [btrfs]
+ [<ffffffff811c0e22>] __list_add+0x3f/0x81
+ [<ffffffffa00dfac7>] btrfs_orphan_add+0x61/0x80 [btrfs]
+ [<ffffffffa00e015a>] btrfs_unlink+0xb2/0xf2 [btrfs]
+ [<ffffffff810ec5a3>] vfs_unlink+0x67/0xa2
+ [<ffffffff810eafec>] ? lookup_hash+0x36/0x3a
+ [<ffffffff810edd97>] do_unlinkat+0xcd/0x15b
+ [<ffffffff810eabc4>] ? path_put+0x22/0x27
+ [<ffffffff8107edac>] ? audit_syscall_entry+0x11e/0x14a
+ [<ffffffff810ede3b>] sys_unlink+0x16/0x18
+ [<ffffffff81002adb>] system_call_fastpath+0x16/0x1b
+ ---[ end trace 18d84c057a649cf7 ]---
+ ------------[ cut here ]------------
+ kernel BUG at fs/btrfs/inode.c:3320!
+ invalid opcode: 0000 [#1] SMP 
+ last sysfs file: /sys/devices/pci0000:00/0000:00:1f.2/host0/target0:0:0/0:0:0:0/block/sda/uevent
+ CPU 3 
+ Pid: 1250, comm: fsstress Tainted: G        W  2.6.33-rc5 #3 DH55TC                /        
+ RIP: 0010:[<ffffffffa00e071b>]  [<ffffffffa00e071b>] btrfs_setattr+0x101/0x244 [btrfs]
+ RSP: 0018:ffff88012095de08  EFLAGS: 00010292
+ RAX: 0000000000000021 RBX: ffff8801223b4bd8 RCX: 000000000000711a
+ RDX: 0000000000000000 RSI: 0000000000000046 RDI: ffffffff81730984
+ RBP: ffff88012095de48 R08: ffff88012095ddb4 R09: 0000000000000000
+ R10: 0000000000000001 R11: ffff88012095dd00 R12: ffff88012095ded8
+ R13: ffff88012029e800 R14: ffff88012233d140 R15: 0000000000000000
+ FS:  00007f313c3c6700(0000) GS:ffff8800282c0000(0000) knlGS:0000000000000000
+ CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+ CR2: 00007fffa0ac3f4c CR3: 00000001212c7000 CR4: 00000000000006e0
+ DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+ DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+ Process fsstress (pid: 1250, threadinfo ffff88012095c000, task ffff880122c68000)
+ Stack:
+ ffff8801223b4cb0 ffff88011c452180 ffff88012095de28 ffff88012095ded8
+ <0> ffff88011c452180 ffff8801223b4bd8 0000000000000008 0000000000000008
+ <0> ffff88012095deb8 ffffffff810f5e52 ffff88012095df38 ffffffff810ee418
+ Call Trace:
+ [<ffffffff810f5e52>] notify_change+0x17b/0x2c9
+ [<ffffffff810ee418>] ? user_path_at+0x64/0x93
+ [<ffffffff810e1e0d>] do_truncate+0x6a/0x87
+ [<ffffffff810ea962>] ? generic_permission+0x1c/0x9f
+ [<ffffffff810eaa5e>] ? get_write_access+0x1d/0x48
+ [<ffffffff810e1f46>] sys_truncate+0x11c/0x160
+ [<ffffffff81002adb>] system_call_fastpath+0x16/0x1b
+ Code: e0 48 89 de 4c 89 f7 49 89 46 20 e8 66 f3 ff ff 85 c0 74 1b 89 c2 48 c7 c6 e0 b4 10 a0 48 c7 c7 9c d1 10 a0 31 c0 e8 7c 5c 25 e1 <0f> 0b eb 3d 49 8b 46 10 4c 89 ee 4c 89 f7 48 89 45 c8 e8 47 7d 
+ RIP  [<ffffffffa00e071b>] btrfs_setattr+0x101/0x244 [btrfs]
+ RSP <ffff88012095de08>
+ ---[ end trace 18d84c057a649cf8 ]---

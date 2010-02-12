@@ -1,38 +1,25 @@
-From: Chris Ball <cjb@laptop.org>
+From: Christoph Hellwig <hch@infradead.org>
 Subject: Re: zero-length files in snapshots
-Date: Fri, 12 Feb 2010 14:03:03 -0500
-Message-ID: <m3hbpmxons.fsf@pullcord.laptop.org>
-References: <12b5f1ef1002111749u4f33b626jb6a901b29f05337f@mail.gmail.com>
-	<m38wazywow.fsf@pullcord.laptop.org>
-	<93cdabd21002112050x795ab5e2s9bcd426f19032f8c@mail.gmail.com>
-	<20100212151940.GA4191@localhost.localdomain>
-	<4B759C54.8050907@p-static.net>
+Date: Fri, 12 Feb 2010 14:10:46 -0500
+Message-ID: <20100212191046.GA3508@infradead.org>
+References: <12b5f1ef1002111749u4f33b626jb6a901b29f05337f@mail.gmail.com> <m38wazywow.fsf@pullcord.laptop.org> <93cdabd21002112050x795ab5e2s9bcd426f19032f8c@mail.gmail.com> <20100212151940.GA4191@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Ravi Pinjala <ravi@p-static.net>
+Cc: Mike Fedyk <mfedyk@mikefedyk.com>, Chris Ball <cjb@laptop.org>,
+	Nickolai Zeldovich <nickolai@csail.mit.edu>,
+	linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4B759C54.8050907@p-static.net> (Ravi Pinjala's message of "Fri,
-	12 Feb 2010 12:22:12 -0600")
+In-Reply-To: <20100212151940.GA4191@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Fri, Feb 12, 2010 at 10:19:40AM -0500, Josef Bacik wrote:
+> 3) sync - this is not as obvious.  sync doesn't mean anything than "start
+> writing back dirty data to the fs", and returns before it's done.  For btrfs
+> what that means is we run through _every_ inode that has delalloc pages
+> associated with them and start writeback on them.  This will get most of your
+> data into the current transaction, which is when the snapshot happens.
 
-   > Is there a race in there? It seems like if a process starts
-   > modifying a file between the sync and the snapshot, data could
-   > still be lost. Is there something else going on here that I'm
-   > missing that would prevent this race?
+sync does return synchronously on Linux, even if that is not guaranted
+by Posix.
 
-AIUI, you're correct that a writer process concurrent to a snapshot
-leads to a race with data that doesn't make it in to the snapshot, but
-I think you're wrong in thinking that there's much we could do about
-it -- either you miss writes between sync and snapshot, as we do now,
-or we do sync-and-snapshot atomically, and the concurrent writes are
-missed because we decided to block further writes from that process
-before we took the snapshot.  The only real answer is to quiesce the
-writer process before you begin.  Does that make sense?
-
-- Chris.
--- 
-Chris Ball   <cjb@laptop.org>
-One Laptop Per Child

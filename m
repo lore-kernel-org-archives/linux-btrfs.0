@@ -1,38 +1,53 @@
-From: Chris Ball <cjb@laptop.org>
+From: Mike Fedyk <mfedyk@mikefedyk.com>
 Subject: Re: zero-length files in snapshots
-Date: Thu, 11 Feb 2010 22:11:59 -0500
-Message-ID: <m38wazywow.fsf@pullcord.laptop.org>
+Date: Thu, 11 Feb 2010 20:50:48 -0800
+Message-ID: <93cdabd21002112050x795ab5e2s9bcd426f19032f8c@mail.gmail.com>
 References: <12b5f1ef1002111749u4f33b626jb6a901b29f05337f@mail.gmail.com>
+	 <m38wazywow.fsf@pullcord.laptop.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Nickolai Zeldovich <nickolai@csail.mit.edu>
+Content-Type: text/plain; charset=UTF-8
+Cc: Nickolai Zeldovich <nickolai@csail.mit.edu>,
+	linux-btrfs@vger.kernel.org
+To: Chris Ball <cjb@laptop.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <12b5f1ef1002111749u4f33b626jb6a901b29f05337f@mail.gmail.com>
-	(Nickolai Zeldovich's message of "Thu, 11 Feb 2010 20:49:42 -0500")
+In-Reply-To: <m38wazywow.fsf@pullcord.laptop.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Thu, Feb 11, 2010 at 7:11 PM, Chris Ball <cjb@laptop.org> wrote:
+> =C2=A0 > echo x1 > /mnt/x/d/foo.txt || exit 2
+> =C2=A0 > btrfsctl -s /mnt/x/snap /mnt/x/d
+>
+> You're just missing a sync/fsync() between these two lines.
+>
+> We argued on IRC a while ago about whether this is a sensible default=
+;
+> cmason wants the no-sync version of snapshot creation to be available=
+,
+> but was amenable to the idea of changing the default to be sync befor=
+e
+> snapshot, since it was pointed out that no-one other than him had
+> understood we were supposed to be running sync first.
+>
+You're saying that it only snapshots the on-disk data structures and
+not the in-memory versions?  That can only lead to pain.  What do you
+do if something else during this race condition?  What would a sync do
+to solve this?  Have the semantics of sync been changed in btrfs from
+"sync everything that hasn't been written yet" to "sync this
+subvolume"?
 
-   > I often get zero-length files in btrfs snapshots (when the
-   > original files were not zero-length).  The shell script below
-   > reproduces this problem on two Ubuntu machines, with Ubuntu
-   > kernels 2.6.31-17.54 and 2.6.32-12.17.  Is there some mistaken
-   > assumption I'm making here in terms of how btrfsctl works?
-   > [..]
-   > 
-   > echo x1 > /mnt/x/d/foo.txt || exit 2
-   > btrfsctl -s /mnt/x/snap /mnt/x/d
+=46rom what I understand what should be happening is much like what LVM=
+ should do:
 
-You're just missing a sync/fsync() between these two lines.
+step 1: defer all other writes to subvolume (userspace processes get
+stuck in D state until step 4)
+step 2: sync all changes not already committed to subvolume
+step 3: create snapshot
+step 4: resume writes from userspace
 
-We argued on IRC a while ago about whether this is a sensible default;
-cmason wants the no-sync version of snapshot creation to be available,
-but was amenable to the idea of changing the default to be sync before
-snapshot, since it was pointed out that no-one other than him had
-understood we were supposed to be running sync first.
-
-- Chris.
--- 
-Chris Ball   <cjb@laptop.org>
-One Laptop Per Child
+Now if all 4 steps can be done with in-memory data structures without
+forcing data (not necessarily meta-data) to disk, so much the better.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

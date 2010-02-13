@@ -1,54 +1,59 @@
-From: Victor Hooi <victorhooi@yahoo.com>
-Subject: Btrfs - Unable to mount, can't read superblock?
-Date: Sat, 13 Feb 2010 23:45:21 +1100
-Message-ID: <d0c6e4d91002130445x18cbb05fv6e54411283158775@mail.gmail.com>
+From: Mike Fedyk <mfedyk@mikefedyk.com>
+Subject: Re: zero-length files in snapshots
+Date: Sat, 13 Feb 2010 11:26:09 -0800
+Message-ID: <93cdabd21002131126v4b4d3c1ei2a747a7a5de7b1c8@mail.gmail.com>
+References: <12b5f1ef1002111749u4f33b626jb6a901b29f05337f@mail.gmail.com>
+	 <m38wazywow.fsf@pullcord.laptop.org>
+	 <93cdabd21002112050x795ab5e2s9bcd426f19032f8c@mail.gmail.com>
+	 <20100212151940.GA4191@localhost.localdomain>
+	 <93cdabd21002120818g4c47e2b6k3083a368286651e5@mail.gmail.com>
+	 <20100212162207.GB4191@localhost.localdomain>
+	 <93cdabd21002120827k493a4c1ao2ba4b6840f2ab427@mail.gmail.com>
+	 <20100212163246.GC4191@localhost.localdomain>
+	 <93cdabd21002120913h1b1eaa2cke8941aa8557b66f3@mail.gmail.com>
+	 <20100213112540.GB23512@attic.humilis.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: Josef Bacik <josef@redhat.com>, Chris Ball <cjb@laptop.org>,
+	Nickolai Zeldovich <nickolai@csail.mit.edu>,
+	linux-btrfs@vger.kernel.org
+To: sander@humilis.net
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100213112540.GB23512@attic.humilis.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-heya,
-
-This is on kernel 2.6.32.8-1, on Arch Linux 64-bit. I have an external
-harddisk, with a btrfs filessystem on it. Just now, after a reboot, I
-seem to be unable to mount it.
-
-KDE gives a message about being unable to find the superblock, trying
-to mount it from the command-line gives something similar:
-
-> mount: /dev/sdc1: can't read superblock
-
-I do know the last time I used the disk, it may not have been
-unmounted cleanly. Could that have caused this current issue? Any
-possible remedy? I'm really hoping it is, because that's a 1.5 Tb
-external disk...lol.
-
-Also, dmesg contains:
+On Sat, Feb 13, 2010 at 3:25 AM, Sander <sander@humilis.net> wrote:
+> Mike Fedyk wrote (ao):
+>> On Fri, Feb 12, 2010 at 8:32 AM, Josef Bacik <josef@redhat.com> wrot=
+e:
+>> > Creating a file is a metadata operation, and _any_ metadata operat=
+ion has to be
+>> > committed to disk when the transaction commits in order to maintai=
+n a coherent
+>> > fs. ??Thanks,
+>>
+>> What I still don't understand though is that the create could have
+>> taken up to 30 seconds to commit and the same for the few bytes of
+>> data, but a few ms later a snapshot was made and the metadata change
+>> was there and the data change was not. =C2=A0Could it have happened =
+that
+>> the snapshot would not have the newly created file and this was just=
+ a
+>> timing issue that should not be relied upon?
+>>
+>> I'm just wondering why that file was there at all.
 >
-> usb 2-2: new high speed USB device using ehci_hcd and address 8
-> usb 2-2: configuration #1 chosen from 1 choice
-> scsi10 : SCSI emulation for USB Mass Storage devices
-> usb-storage: device found at 8
-> usb-storage: waiting for device to settle before scanning
-> scsi 10:0:0:0: Direct-Access=A0=A0=A0=A0 WDC WD15 EADS-00P8B0=A0=A0=A0=
-=A0=A0=A0=A0=A0=A0=A0 PQ: 0 ANSI: 2
-> sd 10:0:0:0: Attached scsi generic sg2 type 0
-> usb-storage: device scan complete
-> sd 10:0:0:0: [sdc] 2930277168 512-byte logical blocks: (1.50 TB/1.36 =
-TiB)
-> sd 10:0:0:0: [sdc] Write Protect is off
-> sd 10:0:0:0: [sdc] Mode Sense: 38 00 00 00
-> sd 10:0:0:0: [sdc] Assuming drive cache: write through
-> sd 10:0:0:0: [sdc] Assuming drive cache: write through
-> =A0sdc: sdc1
-> sd 10:0:0:0: [sdc] Assuming drive cache: write through
-> sd 10:0:0:0: [sdc] Attached SCSI disk
-> device label tessier-ashpool devid 1 transid 4882 /dev/sdc1
-> open /dev/sdd1 failed
+> I would say that is because the moment the file got created, the
+> resulting metadata was commited immediately. The data not yet.
+>
 
-Cheers,
-Victor
+Josef explained it to me on IRC.  Meta-data changes like file creation
+get added to the current transaction and snapshots start a new
+transaction so that is why the empty file is in the snapshot.
+
+The file is empty because with delayed allocation, the data has not
+hit the filesystem yet and thus has no representation in filesystem
+operations like snapshots.
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

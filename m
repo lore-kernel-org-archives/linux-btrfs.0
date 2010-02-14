@@ -1,41 +1,43 @@
-From: James Cloos <cloos@jhcloos.com>
-Subject: [Regression] Filesystem I/O is CPU-bound in rc7 and rc8
-Date: Sat, 13 Feb 2010 22:11:07 -0500
-Message-ID: <m3pr48bjfg.fsf@lugabout.jhcloos.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, jfs-discussion@lists.sourceforge.net
-To: linux-kernel@vger.kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
+From: Eduard - Gabriel Munteanu <eduard.munteanu@linux360.ro>
+Subject: [PATCH] bcp: fix off-by-one errors in path handling
+Date: Sun, 14 Feb 2010 09:26:55 +0200
+Message-ID: <1266132415-17837-1-git-send-email-eduard.munteanu@linux360.ro>
+Cc: linux-btrfs@vger.kernel.org,
+	Eduard - Gabriel Munteanu <eduard.munteanu@linux360.ro>
+To: chris.mason@oracle.com
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sometime between rc6 and rc7 all filesystem I/O started using 100% CPU,
-usually on the order of 60% sys, 40% user.
+This fixes a bug which causes the first character of each filename in
+the destination to be omitted.
 
-I've tried this with each of ext4, jfs and btrfs filesystems.  All show
-the same issue.
+Signed-off-by: Eduard - Gabriel Munteanu <eduard.munteanu@linux360.ro>
+---
+ bcp |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-Using dd(1) to read from the block specials directly works as well and
-as fast as it always has; only reading or writing to mounted filesystems
-is affected.
-
-Box is 32-bit x86, PentiumIII-M; drives are ide using libata.
-
-If the btrfs fs is mounted, the slowdown is enought to trigger the
-hung_task call trace (120s) on the btrfs-transac process.
-
-But the regression is just as apparent when only jfs and ext4 are mounted.
-
-The only filesystems I've found which avoid the regression are tmpfs and
-devtmpfs.
-
-I didn't have time to write up a report when I noticed this in rc7 but
-had to boot back into rc6 for work.
-
-Some of the commits since rc7 looked like they might have addressed this
-regression, but it persists in rc8.
-
--JimC
+diff --git a/bcp b/bcp
+index 5729e91..c6b4bef 100755
+--- a/bcp
++++ b/bcp
+@@ -137,7 +137,7 @@ for srci in xrange(0, src_args):
+             statinfo = os.lstat(srcname)
+ 
+             if srcname.startswith(src):
+-                part = srcname[len(src) + 1:]
++                part = srcname[len(src):]
+ 
+             if stat.S_ISLNK(statinfo.st_mode):
+                 copylink(srcname, dst, part, statinfo, None)
+@@ -153,7 +153,7 @@ for srci in xrange(0, src_args):
+         for f in filenames:
+             srcname = os.path.join(dirpath, f)
+             if srcname.startswith(src):
+-                part = srcname[len(src) + 1:]
++                part = srcname[len(src):]
+ 
+             statinfo = os.lstat(srcname)
+             copyfile(srcname, dst, part, statinfo, None)
 -- 
-James Cloos <cloos@jhcloos.com>         OpenPGP: 1024D/ED7DAEA6
+1.6.4.4
+

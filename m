@@ -1,26 +1,48 @@
-From: Massimiliano Adamo <maxadamo@gmail.com>
-Subject: support of "chattr +c" flag
-Date: Sun, 14 Feb 2010 22:36:39 +0100
-Message-ID: <4B786CE7.9000709@gmail.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Subject: Re: [Regression] Filesystem I/O is CPU-bound in rc7 and rc8
+Date: Mon, 15 Feb 2010 00:12:25 +0100
+Message-ID: <201002150012.25572.rjw@sisk.pl>
+References: <m3pr48bjfg.fsf@lugabout.jhcloos.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	jfs-discussion@lists.sourceforge.net
+To: James Cloos <cloos@jhcloos.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <m3pr48bjfg.fsf@lugabout.jhcloos.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+On Sunday 14 February 2010, James Cloos wrote:
+> Sometime between rc6 and rc7 all filesystem I/O started using 100% CPU,
+> usually on the order of 60% sys, 40% user.
+> 
+> I've tried this with each of ext4, jfs and btrfs filesystems.  All show
+> the same issue.
+> 
+> Using dd(1) to read from the block specials directly works as well and
+> as fast as it always has; only reading or writing to mounted filesystems
+> is affected.
+> 
+> Box is 32-bit x86, PentiumIII-M; drives are ide using libata.
+> 
+> If the btrfs fs is mounted, the slowdown is enought to trigger the
+> hung_task call trace (120s) on the btrfs-transac process.
+> 
+> But the regression is just as apparent when only jfs and ext4 are mounted.
+> 
+> The only filesystems I've found which avoid the regression are tmpfs and
+> devtmpfs.
+> 
+> I didn't have time to write up a report when I noticed this in rc7 but
+> had to boot back into rc6 for work.
+> 
+> Some of the commits since rc7 looked like they might have addressed this
+> regression, but it persists in rc8.
 
-After trying the filesystem I noticed the following:
-as you know the "chattr" have a "c" flag to provide transparent 
-compression on directories/files.
-Of course, to use this flag the filesystem must have the transparent 
-compression feature, and must be aware of the flag itself.
-In the case of ext4, the flag is properly set (and lsattr shows the "c" 
-flag) but it won't work, because ext4 doesn't support transparent 
-compression.
-In the case of "btrfs" I cannot set the flag and I get the following error:
-Operation not supported while setting flags on xxxx
-Are you planning to support the use of this flag within btrfs?
+I have created the bug entry at http://bugzilla.kernel.org/show_bug.cgi?id=15306
+for your report.
 
-cheers
-Massimiliano
+Thanks,
+Rafael

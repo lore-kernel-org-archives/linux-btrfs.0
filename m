@@ -1,62 +1,46 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH V2] Btrfs: Full direct I/O and AIO read implementation.
-Date: Tue, 16 Feb 2010 14:39:59 -0500
-Message-ID: <20100216193958.GD17106@localhost.localdomain>
-References: <4B7300BE.5000909@hp.com> <20100212192804.GE4191@localhost.localdomain> <4B7AF1C0.6030904@gmail.com>
+From: Alex Elsayed <eternaleye@gmail.com>
+Subject: Re: Kernel BUG on mounting BtrFS / after reboot
+Date: Wed, 17 Feb 2010 06:47:28 +0000 (UTC)
+Message-ID: <loom.20100217T074453-978@post.gmane.org>
+References: <loom.20100212T220341-877@post.gmane.org> <93cdabd21002121450i75586f4ahfe658e4db9204a8e@mail.gmail.com> <loom.20100212T235536-583@post.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>
-To: jim owens <owens6336@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4B7AF1C0.6030904@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 16, 2010 at 02:28:00PM -0500, jim owens wrote:
-> Josef Bacik wrote:
->> On Wed, Feb 10, 2010 at 01:53:50PM -0500, jim owens wrote:
->>> +
->>> +static int btrfs_dio_hole_read(struct btrfs_diocb *diocb, u64 hole_len)
->>> +{
->>> +	int err = 0;
->>> +	diocb->umc.todo = hole_len;
->>> +	while (diocb->umc.todo) {
->>> +		struct bio_vec uv;
->>> +		char *out;
->>> +
->>> +		err = btrfs_dio_get_user_bvec(&uv, &diocb->umc);
->>> +		if (err)
->>> +			goto fail;
->>> +		diocb->start += uv.bv_len;
->>> +		out = kmap_atomic(uv.bv_page, KM_USER0);
->>> +		memset(out + uv.bv_offset, 0, uv.bv_len);
->>> +		kunmap_atomic(out, KM_USER0);
->>> +
->>
->> /me hands jim a zero_user_page()
->>
->>> +		btrfs_dio_done_with_out(&uv, NULL);
->>> +	}
->
-> As promised... why I'm keeping my code :)
->
-> cscope says there is no zero_user_page() so I think
-> you mean the same one I looked at zero_user(), which
-> calls the far more complicated zero_user_segments().
->
-> I did not use it for 3 reasons:
->
-> 1) More generated code (but maybe gcc reduces it).
->
-> 2) My btrfs_dio_done_with_out() must do (so repeat) the
-> flush_dcache_page which is not a noop on every arch.
->
-> 3) Everywhere else in btrfs does the same as my code.
->
+Alex Elsayed <eternaleye <at> gmail.com> writes:
 
-Hmm I swore it was zero_user_page but now I can't find it.  Yeah the extra
-flush_dcace_page is reason enough to not use it, seems reasonable enough to me.
-Thanks,
+> 
+> Mike Fedyk <mfedyk <at> mikefedyk.com> writes:
+> 
+> > 
+> > On Fri, Feb 12, 2010 at 1:04 PM, Alex Elsayed <eternaleye <at> gmail.com> 
+> wrote:
+> > > I'm getting a rather nasty BUG when I try to mount this filesystem,
+> > > _including_ when I specify -o ro. I'm unsure what caused it, but the 
+problem
+> > > manifested after my computer hardlocked while reading my RSS feeds, 
+complete
+> > > with flashing lights. After I rebooted it, the screen filled with panic
+> > > messages when the initramfs tried to mount it RO to pivot into. I am 
+running
+> > > 2.6.33-rc6. The BUG message is as follows:
+> > 
+> > Is this the bug you mentioned on IRC that you fixed somehow?
+> > 
+> > If so please post the steps you performed.
+> 
+> No, that bug was on a different hard drive and was due to bad blocks. That 
+> instance was converted from ext4, while this is a new mkfs. The steps 
+necessary 
+> to reproduce the BUG are simple - mount -o ro /dev/Arkadios/Root $mountpoint.
+> I'm currently running from my initramfs, with that old system  mounted ro and 
+> bound to /usr (since that problem only occurred when writing to the disk, it 
+> makes a passable recovery environment).
 
-Josef
+I have run btrfs-image on the partition, but due to it spanning the better part 
+of 500GB (80% full), it's 1.1GB. I therefore can't attach it, but if there's 
+somewhere I can FTP or otherwise upload it to so it can be examined, please let 
+me know.
+

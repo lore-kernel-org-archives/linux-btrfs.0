@@ -1,213 +1,71 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Subject: [PATCH 2/2 V2] btrfs, a new tool to manage a btrfs filesystem; man page
-Date: Wed, 17 Feb 2010 21:02:35 +0100
-Message-ID: <201002172102.35886.kreijack@inwind.it>
+From: James Cloos <cloos@jhcloos.com>
+Subject: Re: [Regression] Filesystem I/O is CPU-bound in
+	rc7 and rc8
+Date: Wed, 17 Feb 2010 15:04:47 -0500
+Message-ID: <m3d403632g.fsf@lugabout.jhcloos.org>
+References: <m3pr48bjfg.fsf@lugabout.jhcloos.org>
+	<20100215154516.GB11057@think>
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart2072150.JBbG5U66Xo";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
-Cc: Daniel J Blueman <daniel.blueman@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Cc: linux-fsdevel@vger.kernel.org, jfs-discussion@lists.sourceforge.net,
+	linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	Chris Mason <chris.mason@oracle.com>
+To: linux-kernel@vger.kernel.org
+Return-path: <jfs-discussion-bounces@lists.sourceforge.net>
+In-Reply-To: <20100215154516.GB11057@think> (Chris Mason's message of "Mon, 15
+	Feb 2010 10:45:16 -0500")
+List-Unsubscribe: <https://lists.sourceforge.net/lists/listinfo/jfs-discussion>,
+	<mailto:jfs-discussion-request@lists.sourceforge.net?subject=unsubscribe>
+List-Archive: <http://sourceforge.net/mailarchive/forum.php?forum_name=jfs-discussion>
+List-Post: <mailto:jfs-discussion@lists.sourceforge.net>
+List-Help: <mailto:jfs-discussion-request@lists.sourceforge.net?subject=help>
+List-Subscribe: <https://lists.sourceforge.net/lists/listinfo/jfs-discussion>,
+	<mailto:jfs-discussion-request@lists.sourceforge.net?subject=subscribe>
+Errors-To: jfs-discussion-bounces@lists.sourceforge.net
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart2072150.JBbG5U66Xo
-Content-Type: Text/Plain;
-  charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+While getting re-aquainted with perf, and after upgrading to the current
+version, I see that do_page_fault, unmap_vmas, get_page_from_freelist,
+handle_mm_fault, __do_fault and T.1339 tend to get the most time when the
+kernel is spinning.
 
-This is the source code of the man page of btrfs.
-The main changes from my previous patch are:
-=2D Rearranged the short command in order to avoid conflicts
-=2D Renamed the 'create' verb is 'subvolume'
+T.1339 is in this part of kallsyms:
 
-Thanks to Daniel for some tweaks on the syntax
+,----< grep -E -C9 ^c1027750 /proc/kallsyms >
+| c10266a0 T sched_setscheduler_nocheck
+| c10266c0 T sched_setscheduler
+| c10266e0 t do_sched_setscheduler
+| c1026770 T sys_sched_setparam
+| c1026790 T sys_sched_setscheduler
+| c10267c0 T sched_fork
+| c1026900 T task_oncpu_function_call
+| c1026960 T print_cfs_rq
+| c1027640 T scheduler_tick
+| c1027750 t T.1339
+| c10277f0 T schedule_tail
+| c1027830 t ftrace_raw_output_sched_kthread_stop
+| c1027930 t ftrace_raw_output_sched_kthread_stop_ret
+| c1027a30 t ftrace_raw_output_sched_wait_task
+| c1027b40 t ftrace_raw_output_sched_switch
+| c1027c90 t ftrace_raw_output_sched_migrate_task
+| c1027da0 t ftrace_raw_output_sched_process_wait
+| c1027eb0 t ftrace_raw_output_sched_process_fork
+| c1027fc0 t ftrace_raw_output_sched_stat_runtime
+`----
 
-BR
-G.Baroncelli
+suggesting that T.1339 is part of sched.
 
-diff --git a/man/Makefile b/man/Makefile
-index 4e8893b..4a90b75 100644
-=2D-- a/man/Makefile
-+++ b/man/Makefile
-@@ -7,13 +7,16 @@ mandir =3D $(prefix)/man
- man8dir =3D $(mandir)/man8
-=20
- MANPAGES =3D mkfs.btrfs.8.gz btrfsctl.8.gz btrfsck.8.gz btrfs-image.8.gz \
-=2D	   btrfs-show.8.gz
-+	   btrfs-show.8.gz btrfs.8.gz
-=20
- all: $(MANPAGES)
-=20
- mkfs.btrfs.8.gz: mkfs.btrfs.8.in
- 	$(GZIP) -n -c mkfs.btrfs.8.in > mkfs.btrfs.8.gz
-=20
-+btrfs.8.gz: btrfs.8.in
-+	$(GZIP) -n -c btrfs.8.in > btrfs.8.gz
-+
- btrfsctl.8.gz: btrfsctl.8.in
- 	$(GZIP) -n -c btrfsctl.8.in > btrfsctl.8.gz
-=20
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-new file mode 100644
-index 0000000..31d3850
-=2D-- /dev/null
-+++ b/man/btrfs.8.in
-@@ -0,0 +1,122 @@
-+.TH BTRFS 8 "" "btrfs" "btrfs"
-+.\"
-+.\" Man page written by Goffredo Baroncelli <kreijack@inwind.it> (Feb 2010)
-+.\"
-+.SH NAME
-+btrfs \- control a btrfs filesystem
-+.SH SYNOPSIS
-+\fBbtrfs\fP \fB snapshot|\-s \fP\fI <source> [<dest>/]<name>\fP
-+.PP
-+\fBbtrfs\fP \fB delete|\-D \fP\fI <subvolume>\fP
-+.PP
-+\fBbtrfs\fP \fB subvolume|\-c \fP\fI [<dest>/]<name>\fP
-+.PP
-+\fBbtrfs\fP \fB defrag|\-f \fP\fI <file>|<dir> [<file>|<dir>...]\fP
-+.PP
-+\fBbtrfs\fP \fB fssync|\-y \fP\fI <path> \fP
-+.PP
-+\fBbtrfs\fP \fB resize|\-z \fP\fI [+/\-]<size>[gkm]|max <filesystem>\fP
-+.PP
-+\fBbtrfs\fP \fB scan|\-n \fP\fI [<device> [<device>..]]\fP
-+.PP
-+\fBbtrfs\fP \fB show|\-l \fP\fI <dev>|<label> [<dev>|<label>...]\fP
-+.PP
-+\fBbtrfs\fP \fB balance|\-b \fP\fI <path> \fP
-+.PP
-+\fBbtrfs\fP \fB add\-dev|\-A \fP\fI <dev> [<dev>..] <path> \fP
-+.PP
-+\fBbtrfs\fP \fB rm\-dev|\-R \fP\fI <dev> [<dev>..] <path> \fP]
-+
-+.PP
-+\fBbtrfs\fP \fB help|\-\-help|\-h \fP\fI\fP
-+.PP
-+.SH DESCRIPTION
-+.B btrfs
-+is used to control the filesystem and the files and directories stored. It=
- is
-+the tool to create or destroy a new snapshot or a new subvolume for the
-+filesystem, to defrag a file or a directory, to flush the dato to the disk,
-+to resize the filesystem, to scan the device.
-+
-+.SH OPTIONS
-+.TP
-+
-+\fBsnapshot|\-s\fR\fI <source> [<dest>/]<name>\fR
-+Create a writeble snapshot of the subvolume \fI<source>\fR with the name
-+\fI<name>\fR in the \fI<dest>\fR directory. If \fI<source>\fR is not a
-+subvolume, \fBbtrfs\fR returns an error.
-+.TP
-+
-+\fBdelete|\-D\fR\fI <subvolume>\fR
-+Delete the subvolume \fI<subvolume>\fR. If \fI<subvolume>\fR is not a
-+subvolume, \fBbtrfs\fR returns an error.
-+.TP
-+
-+\fBsubvolume|\-c\fR\fI [<dest>/]<name>\fR
-+Create a subvolume in \fI<dest>\fR (or in the current directory if
-+\fI<dest>\fR is not passed).
-+.TP
-+
-+\fBdefrag|\-f\fP\fI <file>|<dir> [<file>|<dir>...]\fR
-+Defragment files and/or directories.
-+.TP
-+
-+\fBscan|\-n\fR \fI[<device> [<device>..]]\fR
-+Scan devices for a btrfs filesystem. If no devices are passed, \fBbtrfs\fR=
-=20
-scans
-+all the block devices.
-+.TP
-+
-+\fBfssync|\-y\fR\fI <path> \fR
-+Force a sync for the filesystem identified by \fI<path>\fR.
-+.TP
-+
-+.\"
-+.\" Some wording are extracted by the resize2fs man page
-+.\"
-+
-+\fBresize|\-z\fR\fI [+/\-]<size>[gkm]|max <filesystem>\fR
-+Resize a file system identified by \fI<path>\fR.
-+The \fI<size>\fR parameter specifies the new size of the filesystem.
-+If the prefix \fI+\fR or \fI\-\fR is present the size is increased or=20
-decreased
-+by the quantity \fI<size>\fR.
-+If no units are specified, the unit of the \fI<size>\fR parameter is the=20
-byte.
-+Optionally, the size parameter may be suffixed by one of the following the=
-=20
-units
-+designators: 'K', 'M', or 'G', kilobytes, megabytes, or gigabytes,=20
-respectively.
-+
-+If 'max' is passed, the filesystem will occupy all available space on the
-+volume(s).
-+
-+The \fBresize\fR command \fBdoes not\fR manipulate the size of underlying
-+partitions.  If you wish to enlarge/reduce a filesystem, you must make sur=
-e=20
-you
-+can expand/reduce the size of the partition also.
-+.TP
-+
-+\fBshow|\-l\fR [<dev>|<label>...]\fR
-+Show the btrfs devices with some additional info. If no devices or labels =
-are
-+passed, \fBbtrfs\fR scans all the block devices.
-+.TP
-+
-+\fBbalance|\-b\fR \fI<path>\fR
-+Balance the chunk of the filesystem identified by \fI<path>\fR
-+across the devices.
-+.TP
-+
-+\fBadd\-dev|\-A \fR\fI <dev> [<dev>..] <path>\fR
-+Add device(s) to the filesystem identified by \fI<path>\fR.
-+.TP
-+
-+\fBrm\-dev|\-R \fR\fI <dev> [<dev>..] <path>\fR
-+Remove device(s) to the filesystem identified by \fI<path>\fR.
-+.PP
-+
-+.SH EXIT STATUS
-+\fBbtrf\fR returns a zero exist status if it succeeds. Non zero is returne=
-d=20
-in
-+case of failure.
-+
-+.SH AVAILABILITY
-+.B btrfs
-+is part of btrfs-progs. Btrfs filesystem is currently under heavy=20
-development,
-+and not suitable for any uses other than benchmarking and review.
-+Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for
-+further details.
-+.SH SEE ALSO
-+.BR mkfs.btrfs (8)
+This leaves the impression that the issue is related to either
+scheduling or paging.
 
+I don't see any commits in the rc6..rc7 timeframe which stand out
+as likely suspects.
 
-=2D-=20
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.i=
-t>
-Key fingerprint =3D 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+-JimC
+-- 
+James Cloos <cloos@jhcloos.com>         OpenPGP: 1024D/ED7DAEA6
 
---nextPart2072150.JBbG5U66Xo
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iD8DBQBLfEtbvwTxYT3FBRIRAtgfAJ9jamdj0kU8m/6HjbIysM60EKdnogCfcuOF
-fH7vqTdLhDcQYZRNmaVgWSU=
-=7n3J
------END PGP SIGNATURE-----
-
---nextPart2072150.JBbG5U66Xo--
+------------------------------------------------------------------------------
+SOLARIS 10 is the OS for Data Centers - provides features such as DTrace,
+Predictive Self Healing and Award Winning ZFS. Get Solaris 10 NOW
+http://p.sf.net/sfu/solaris-dev2dev

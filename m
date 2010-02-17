@@ -1,46 +1,33 @@
-From: Alex Elsayed <eternaleye@gmail.com>
-Subject: Re: Kernel BUG on mounting BtrFS / after reboot
-Date: Wed, 17 Feb 2010 06:47:28 +0000 (UTC)
-Message-ID: <loom.20100217T074453-978@post.gmane.org>
-References: <loom.20100212T220341-877@post.gmane.org> <93cdabd21002121450i75586f4ahfe658e4db9204a8e@mail.gmail.com> <loom.20100212T235536-583@post.gmane.org>
+From: Chris Mason <chris.mason@ORACLE.COM>
+Subject: Re: Broken btrfs; btrfsck and btrfs-debug-tree core dumps
+Date: Wed, 17 Feb 2010 09:11:12 -0500
+Message-ID: <20100217141112.GG29430@think>
+References: <20100216101543.GA11570@alea.gnuu.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=iso-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: =?iso-8859-1?Q?J=F6rg?= Sommer <joerg@alea.gnuu.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100216101543.GA11570@alea.gnuu.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Alex Elsayed <eternaleye <at> gmail.com> writes:
+On Tue, Feb 16, 2010 at 11:15:44AM +0100, J=F6rg Sommer wrote:
+> Hi,
+>=20
+> I've an utterly broken btrfs that makes btrfsck and btrfs-debug-tree
+> (version 0.19) die with a core dump. Are you interested in this
+> filesystem? Unfortunely, it has a size of 1TB and contains the backup=
+s of
+> our customers. Hence, I can't publish it. How can we come together?
 
-> 
-> Mike Fedyk <mfedyk <at> mikefedyk.com> writes:
-> 
-> > 
-> > On Fri, Feb 12, 2010 at 1:04 PM, Alex Elsayed <eternaleye <at> gmail.com> 
-> wrote:
-> > > I'm getting a rather nasty BUG when I try to mount this filesystem,
-> > > _including_ when I specify -o ro. I'm unsure what caused it, but the 
-problem
-> > > manifested after my computer hardlocked while reading my RSS feeds, 
-complete
-> > > with flashing lights. After I rebooted it, the screen filled with panic
-> > > messages when the initramfs tried to mount it RO to pivot into. I am 
-running
-> > > 2.6.33-rc6. The BUG message is as follows:
-> > 
-> > Is this the bug you mentioned on IRC that you fixed somehow?
-> > 
-> > If so please post the steps you performed.
-> 
-> No, that bug was on a different hard drive and was due to bad blocks. That 
-> instance was converted from ext4, while this is a new mkfs. The steps 
-necessary 
-> to reproduce the BUG are simple - mount -o ro /dev/Arkadios/Root $mountpoint.
-> I'm currently running from my initramfs, with that old system  mounted ro and 
-> bound to /usr (since that problem only occurred when writing to the disk, it 
-> makes a passable recovery environment).
+I'm most interested in how it got corrupted.  Was there a specific even=
+t
+that you think caused this?
 
-I have run btrfs-image on the partition, but due to it spanning the better part 
-of 500GB (80% full), it's 1.1GB. I therefore can't attach it, but if there's 
-somewhere I can FTP or otherwise upload it to so it can be examined, please let 
-me know.
+-chris
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,188 +1,88 @@
-From: Mike Fedyk <mfedyk@mikefedyk.com>
-Subject: Re: [PATCH 0/2 V2] btrfs: a new tool to manage a btrfs filesystem
-Date: Wed, 17 Feb 2010 15:35:26 -0800
-Message-ID: <93cdabd21002171535w55ad862fpd5ea845117cdcb85@mail.gmail.com>
-References: <201002172102.17816.kreijack@libero.it>
+From: Alex Elsayed <eternaleye@gmail.com>
+Subject: Re: Kernel BUG on mounting BtrFS / after reboot
+Date: Thu, 18 Feb 2010 00:35:18 +0000 (UTC)
+Message-ID: <loom.20100218T013258-629@post.gmane.org>
+References: <loom.20100212T220341-877@post.gmane.org> <20100217141813.GH29430@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
-	Thomas Kupper <thomas@kupper.org>,
-	"Dipl.-Ing. Michael Niederle" <mniederle@gmx.at>,
-	rk <rkasl@computer.org>
-To: Goffredo Baroncelli <kreijack@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201002172102.17816.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I think he need some command hierarchy here.
+Chris Mason <chris.mason <at> oracle.com> writes:
 
-On Wed, Feb 17, 2010 at 12:02 PM, Goffredo Baroncelli
-<kreijack@gmail.com> wrote:
-> OPTIONS
-> =C2=A0 =C2=A0 =C2=A0 snapshot|-s <source> [<dest>/]<name>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0Create a writeble sna=
-pshot of the subvolume =C2=A0<source> =C2=A0with =C2=A0the
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0name =C2=A0<name> =C2=
-=A0in the <dest> directory. If <source> is not a sub=E2=80=90
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0volume, btrfs returns=
- an error.
+> 
+> On Fri, Feb 12, 2010 at 09:04:39PM +0000, Alex Elsayed wrote:
+> > I'm getting a rather nasty BUG when I try to mount this filesystem, 
+> > _including_ when I specify -o ro. I'm unsure what caused it, but the problem 
+> > manifested after my computer hardlocked while reading my RSS feeds, complete 
+> > with flashing lights. After I rebooted it, the screen filled with panic 
+> > messages when the initramfs tried to mount it RO to pivot into. I am running 
+> > 2.6.33-rc6. The BUG message is as follows:
+> 
+> The good news is this looks like a bug that Yan Zheng fixed.  2.6.33-rc7
+> or later should mount without problems.  If you're having trouble
+> getting that image onto that box, I'll get a usb boot image up with it
+> running for you.
+> 
+> -chris
 
-This should be "btrfs subvolume snapshot <source> [<dest>/]<name>".
-It only works on subvolumes.
+No such luck. -rc8 still BUGs. Trace below:
 
->
->
-> =C2=A0 =C2=A0 =C2=A0 delete|-D <subvolume>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0Delete the subvolume =
-<subvolume>. If <subvolume> is not =C2=A0a =C2=A0sub=E2=80=90
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0volume, btrfs returns=
- an error.
->
+[ 1340.258885] ------------[ cut here ]------------
+[ 1340.258895] kernel BUG at fs/btrfs/tree-log.c:809!
+[ 1340.258901] invalid opcode: 0000 [#1] PREEMPT SMP
+[ 1340.258910] last sysfs file: /sys/fs/ecryptfs/version
+[ 1340.258915] CPU 0
+[ 1340.258924] Pid: 2795, comm: mount Not tainted 2.6.33-rc8-zen1 #1 MS-
+1651/GX620
+[ 1340.258930] RIP: 0010:[<ffffffff8124662c>]  [<ffffffff8124662c>] 
+add_inode_ref+0x69/0x423
+[ 1340.258947] RSP: 0018:ffff880037ae7888  EFLAGS: 00010246
+[ 1340.258952] RAX: 0000000000000000 RBX: ffff8800375df090 RCX: ffff880104b41f80
+[ 1340.258958] RDX: ffff880037ae77e8 RSI: ffff8800bd5b7800 RDI: ffff88013b6c3800
+[ 1340.258964] RBP: ffff880037ae7948 R08: ffff880005a12800 R09: ffff88010bebe0d0
+[ 1340.258970] R10: ffff880037ae7758 R11: 0000000000000000 R12: ffff8800bd5b7800
+[ 1340.258976] R13: ffff880104b41940 R14: 0000000000000000 R15: ffff880037ae79a8
+[ 1340.258983] FS:  00007f8363b58740(0000) GS:ffff880005a00000(0000) 
+knlGS:0000000000000000
+[ 1340.258989] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[ 1340.258995] CR2: 00007fa762002000 CR3: 0000000037af2000 CR4: 00000000000006f0
+[ 1340.259001] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+[ 1340.259007] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+[ 1340.259013] Process mount (pid: 2795, threadinfo ffff880037ae6000, task 
+ffff880037971700)
+[ 1340.259018] Stack:
+[ 1340.259022]  ffff880037ae7900 ffffffff00000004 ffff8800bd5b4800 
+00000000000000ac
+[ 1340.259032] <0> 0000000000000065 00000002375995a0 0000000000000097 
+ffffffff81728165
+[ 1340.259042] <0> ffff880037ae78d8 ffffffff81235642 ffff880037ae7948 
+ffffffff8122be16
+[ 1340.259054] Call Trace:
+[ 1340.259066]  [<ffffffff81728165>] ? sub_preempt_count+0x9/0x83
+[ 1340.259074]  [<ffffffff81235642>] ? unmap_extent_buffer+0x13/0x2e
+[ 1340.259083]  [<ffffffff8122be16>] ? btrfs_item_size+0xbb/0xcb
+[ 1340.259092]  [<ffffffff81247788>] replay_one_buffer+0x27e/0x310
+[ 1340.259102]  [<ffffffff81244a6c>] walk_down_log_tree+0x277/0x5fd
+[ 1340.259111]  [<ffffffff81244ed1>] walk_log_tree+0xdf/0x250
+[ 1340.259119]  [<ffffffff81724cf1>] ? _raw_spin_unlock+0x15/0x30
+[ 1340.259128]  [<ffffffff81246048>] btrfs_recover_log_trees+0x1be/0x2d6
+[ 1340.259137]  [<ffffffff8124750a>] ? replay_one_buffer+0x0/0x310
+[ 1340.259146]  [<ffffffff812185fd>] ? btree_read_extent_buffer_pages+0x71/0xaf
+[ 1340.259156]  [<ffffffff8121c568>] open_ctree+0x12bc/0x15c9
+[ 1340.259165]  [<ffffffff812dda73>] ? vsnprintf+0x1d8/0x44b
+[ 1340.259177]  [<ffffffff811ff32d>] btrfs_get_sb+0x1d0/0x3ec
+[ 1340.259188]  [<ffffffff81124f46>] vfs_kern_mount+0xa9/0x168
+[ 1340.259196]  [<ffffffff8112506d>] do_kern_mount+0x4d/0xed
+[ 1340.259206]  [<ffffffff8113b917>] do_mount+0x786/0x7fd
+[ 1340.259215]  [<ffffffff810effe4>] ? strndup_user+0x5d/0x85
+[ 1340.259223]  [<ffffffff8113ba16>] sys_mount+0x88/0xc2
+[ 1340.259233]  [<ffffffff81009c52>] system_call_fastpath+0x16/0x1b
+[ 1340.259238] Code: 89 e7 e8 05 eb ff ff 49 89 c5 b8 fe ff ff ff 4d 85 ed 0f 84 
+bb 03 00 00 49 8b 37 4c 89 e7 e8 e9 ea ff ff 49 89 c6 48 85 c0 75 04 <0f> 0b eb 
+fe 48 63 85 6c ff ff ff 48 8b 7d b0 48 6b c0 19 48 83
+[ 1340.259327] RIP  [<ffffffff8124662c>] add_inode_ref+0x69/0x423
+[ 1340.259337]  RSP <ffff880037ae7888>
+[ 1340.259377] ---[ end trace 81037f7cb67410e7 ]---
 
-This becomes:
-
-btrfs subvolume delete <subvolume>
-
-This works with snapshots as well.
-
->
-> =C2=A0 =C2=A0 =C2=A0 subvolume|-c [<dest>/]<name>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0Create =C2=A0a =C2=A0=
-subvolume =C2=A0in =C2=A0<dest> (or in the current directory if
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0<dest> is not passed)=
-=2E
-
-btrfs subvolume create [<dest>/]<name>
-
->
->
-> =C2=A0 =C2=A0 =C2=A0 defrag|-f <file>|<dir> [<file>|<dir>...]
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0Defragment files and/=
-or directories.
-
-This will defrag individual files?  Does it defrag a directory tree?
-Does it defrag a subvolume?  Does it defrag a pool?
-
->
->
-> =C2=A0 =C2=A0 =C2=A0 scan|-n [<device> [<device>..]]
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0Scan devices for a bt=
-rfs filesystem. If no devices =C2=A0are =C2=A0passed,
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0btrfs scans all the b=
-lock devices.
-
-btrfs pool scan [<device> [<device>..]]
-
->
->
-> =C2=A0 =C2=A0 =C2=A0 fssync|-y <path>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0Force a sync for the =
-filesystem identified by <path>.
->
-
-Does it sync a pool or subvolume?  Assuming it works against
-subvolumes, it would be:
-
-btrfs subvolume sync <path>
-
->
->
-> =C2=A0 =C2=A0 =C2=A0 resize|-z [+/-]<size>[gkm]|max <filesystem>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0Resize a file system =
-identified by <path>. =C2=A0The <size> parameter
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0specifies the new siz=
-e of the filesystem. =C2=A0If the prefix + or =C2=A0-
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0is =C2=A0present =C2=A0=
-the =C2=A0size is increased or decreased by the quantity
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0<size>. =C2=A0If no u=
-nits are =C2=A0specified, =C2=A0the =C2=A0unit =C2=A0of =C2=A0the =C2=A0=
-<size>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0parameter =C2=A0is =C2=
-=A0the =C2=A0byte. =C2=A0Optionally, the size parameter may be
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0suffixed by one of th=
-e following =C2=A0the =C2=A0units =C2=A0designators: =C2=A0'K',
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0'M', or 'G', kilobyte=
-s, megabytes, or gigabytes, respectively.
->
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0If =C2=A0'max' =C2=A0=
-is =C2=A0passed, =C2=A0the filesystem will occupy all available
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0space on the volume(s=
-).
->
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0The resize command do=
-es not manipulate the =C2=A0size =C2=A0of =C2=A0underlying
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0partitions. =C2=A0 If=
- =C2=A0you =C2=A0wish =C2=A0to enlarge/reduce a filesystem, you
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0must make sure you ca=
-n expand/reduce the size of =C2=A0the =C2=A0partition
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0also.
->
-
-This works with physical devices, not a pool or subvolume.  I get the
-name "physical volume" from lvm.  Also I think it should resize to max
-without arguments, in order to do that, the size argument would need
-to be the last argument.
-
-It becomes:
-
-btrfs pvolume resize [+/-]<size>[gkm]|max <filesystem>
-
-Or:
-
-btrfs pvolume resize <filesystem> [[+/-]<size>[gkm]]
-
->
-> =C2=A0 =C2=A0 =C2=A0 show|-l [<dev>|<label>...]
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0Show =C2=A0the btrfs =
-devices with some additional info. If no devices
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0or labels are passed,=
- btrfs scans all the block devices.
-
-This becomes:
-
-btrfs pool show [<dev>|<label>...]
-
->
->
-> =C2=A0 =C2=A0 =C2=A0 balance|-b <path>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0Balance the chunk of =
-the filesystem identified by <path> =C2=A0across
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0the devices.
-
-Is path to one of the block devices in the pool?
-
-This becomes:
-
-btrfs pool balance <path>
-
->
->
-> =C2=A0 =C2=A0 =C2=A0 add-dev|-A =C2=A0<dev> [<dev>..] <path>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0Add device(s) to the =
-filesystem identified by <path>.
-
-What is path?  Somewhere the pool is mounted?  The root of where the
-pool is mounted?
-
-this becomes:
-
-btrfs pvolume add <dev> [<dev>..] <path>
-
->
->
-> =C2=A0 =C2=A0 =C2=A0 rm-dev|-R =C2=A0<dev> [<dev>..] <path>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0Remove device(s) to t=
-he filesystem identified by <path>.
-
-(same questions as with add)
-
-This becomes:
-
-btrfs pvolume remove <dev> [<dev>..] <path>
-
-Mike
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

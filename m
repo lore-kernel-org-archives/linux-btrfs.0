@@ -1,61 +1,103 @@
 From: Goffredo Baroncelli <kreijack@gmail.com>
 Subject: Re: [PATCH 0/2 V2] btrfs: a new tool to manage a btrfs filesystem
-Date: Thu, 18 Feb 2010 22:00:40 +0100
-Message-ID: <201002182200.40446.kreijack@libero.it>
-References: <201002172102.17816.kreijack@libero.it> <93cdabd21002171535w55ad862fpd5ea845117cdcb85@mail.gmail.com> <20100218165841.GO10559@think>
+Date: Thu, 18 Feb 2010 22:04:12 +0100
+Message-ID: <201002182204.12890.kreijack@libero.it>
+References: <201002172102.17816.kreijack@libero.it> <93cdabd21002181246g7a46a767m8170859ce85eb0ab@mail.gmail.com> <20100218205809.GX10559@think>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=utf-8
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+To: Chris Mason <chris.mason@oracle.com>,
+	Mike Fedyk <mfedyk@mikefedyk.com>, linux-btrfs@vger.kernel.org,
+	Thomas Kupper <thomas@kupper.org>,
+	"Dipl.-Ing. Michael Niederle" <mniederle@gmx.a
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100218165841.GO10559@think>
+In-Reply-To: <20100218205809.GX10559@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 On Thursday 18 February 2010, Chris Mason wrote:
-> I do like the subcommand method, more details below.
->=20
-> On Wed, Feb 17, 2010 at 03:35:26PM -0800, Mike Fedyk wrote:
-> > I think he need some command hierarchy here.
-> >=20
-> > On Wed, Feb 17, 2010 at 12:02 PM, Goffredo Baroncelli
+> On Thu, Feb 18, 2010 at 12:46:56PM -0800, Mike Fedyk wrote:
+> > On Thu, Feb 18, 2010 at 11:59 AM, Goffredo Baroncelli
 > > <kreijack@gmail.com> wrote:
-> > > OPTIONS
-> > >       snapshot|-s <source> [<dest>/]<name>
-> > >              Create a writeble snapshot of the subvolume  <source=
->  with=20
- the
-> > >              name  <name>  in the <dest> directory. If <source> i=
-s not a=20
-sub=E2=80=90
-> > >              volume, btrfs returns an error.
-> >=20
-> > This should be "btrfs subvolume snapshot <source> [<dest>/]<name>".
-> > It only works on subvolumes.
->=20
-> If we can type subvol instead of subvolume I like it.  Basically the
-> perl/python arg parsing system where any short form of the command th=
-at
-> uniquely matches it is allowed.
+> > > On Thursday 18 February 2010, Chris Mason wrote:
+> > >> I do like the subcommand method, more details below.
+> > >>
+> > >
+> > > I try to summarise your suggestions. But there are some cases not to 
+clear for
+> > > me.
+> > > I grouped the commands in three categories: subvolume, devices, and
+> > > filesystem.
+> > >
+> > >
+> > > devices         scan
+> > > devices         show
+> > > devices         balance
+> > > devices         add
+> > > devices         remove
+> > >
+> > > subvolume       snapshot
+> > > subvolume       delete
+> > > subvolume       create
+> > > [subvolume      list]
+> > >
+> > > filesystem      resize
+> > > [filesystem     label]
+> > >
+> > > ???     defrag
+> > > ???     sync
+> > >
+> > >
+> > >
+> > > For the first two categories both Chris and Mike agreed; but IMHO there 
+are
+> > > some commands that don't fit nor in devices, nor subvolume, like resize 
+(we
+> > > resize a filesystem) and label (not available now).
+> > >
+> > 
+> > A btrfs filesystem can span multiple devices.  Resize resizes how big
+> > of a chunk of one device btrfs uses.
+> 
+> Right, resize is actually always per device.  When there is one device
+> resizing the FS and the device are the same thing.
+> 
+> > This would be used by
+> > partitioning programs for instance.  zfs uses the term "pool" instead
+> > of filesystem to solve this ambiguous use of the term "filesystem"
+> > since btrfs and zfs break people's existing definition of the word
+> > "filesystem".
+> > 
+> > > I don't know how classify defrag (per file / directory level ?) and sync
+> > > (filesystem ?)
+> > 
+> > It turns out that defrag is per file, which seems most cumbersome.
+> > Maybe since it will probably eventually work against several types of
+> > objects we could have:
+> > 
+> > btrfs defrag file <file>
+> > btrfs defrag directory <directory>
+> > btrfs defrag subvol <subvol>
+> 
+> I like these, although we don't currently support the directory/subvol
+> side.  But we can leave the option open to add these later.
 
-So for you
+Sorry, but why:
 
-$ btrfs s s <source> <dest>
+	$ btrfs defrag subvol
 
-is OK ?
+and not 
 
-('btrfs s s' means btrfs subvolume snapshot)
+	$ btrfs  subvol defrag
+
+What do you want:
+
+	$ btrfs <object> <action>
+
+or
+
+	$ btrfs <action> <object>
 
 
-
-> We keep the long forms but allow the user to pick a shorter form if i=
-t
-> isn't ambiguous.
-
---=20
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwi=
-nd.it>
-Key fingerprint =3D 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-- 
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

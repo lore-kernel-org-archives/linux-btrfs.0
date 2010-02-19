@@ -1,127 +1,179 @@
-From: Sage Weil <sage@newdream.net>
-Subject: Re: zero-length files in snapshots
-Date: Fri, 19 Feb 2010 14:22:25 -0800 (PST)
-Message-ID: <Pine.LNX.4.64.1002191355490.21676@cobra.newdream.net>
-References: <12b5f1ef1002111749u4f33b626jb6a901b29f05337f@mail.gmail.com>
- <m38wazywow.fsf@pullcord.laptop.org> <93cdabd21002112050x795ab5e2s9bcd426f19032f8c@mail.gmail.com>
- <20100212151940.GA4191@localhost.localdomain>
- <93cdabd21002120818g4c47e2b6k3083a368286651e5@mail.gmail.com>
- <20100212162207.GB4191@localhost.localdomain>
- <93cdabd21002120827k493a4c1ao2ba4b6840f2ab427@mail.gmail.com>
- <20100212163246.GC4191@localhost.localdomain>
- <93cdabd21002120913h1b1eaa2cke8941aa8557b66f3@mail.gmail.com>
- <20100213112540.GB23512@attic.humilis.net> <93cdabd21002131126v4b4d3c1ei2a747a7a5de7b1c8@mail.gmail.com>
+From: Mike Fedyk <mfedyk@mikefedyk.com>
+Subject: Which volume? no space left, need 4096, 274432 delalloc bytes,
+	8360148992 bytes_used, 4096 bytes_reserved, 0 bytes_pinned, 0 bytes_readonly,
+	0 may use 8360427520 total
+Date: Fri, 19 Feb 2010 15:47:20 -0800
+Message-ID: <93cdabd21002191547i3a0085abmf68f66a7b17d991f@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: MULTIPART/MIXED; BOUNDARY="557981400-578634270-1266617746=:21676"
-Cc: sander@humilis.net, Josef Bacik <josef@redhat.com>,
-	Chris Ball <cjb@laptop.org>,
-	Nickolai Zeldovich <nickolai@csail.mit.edu>,
-	linux-btrfs@vger.kernel.org
-To: Mike Fedyk <mfedyk@mikefedyk.com>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <93cdabd21002131126v4b4d3c1ei2a747a7a5de7b1c8@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-  This message is in MIME format.  The first part should be readable text,
-  while the remaining parts are likely unreadable without MIME-aware tools.
+If I had more than one btrfs volume, how would I know which volume
+caused these errors?  Sure I can look at df and btrfs-show, but
+shouldn't these messages say definitively?
 
---557981400-578634270-1266617746=:21676
-Content-Type: TEXT/PLAIN; CHARSET=iso-8859-1
-Content-Transfer-Encoding: QUOTED-PRINTABLE
-Content-ID: <Pine.LNX.4.64.1002191419151.21676@cobra.newdream.net>
-
-On Sat, 13 Feb 2010, Mike Fedyk wrote:
-> On Sat, Feb 13, 2010 at 3:25 AM, Sander <sander@humilis.net> wrote:
-> > Mike Fedyk wrote (ao):
-> >> On Fri, Feb 12, 2010 at 8:32 AM, Josef Bacik <josef@redhat.com> wrote:
-> >> > Creating a file is a metadata operation, and _any_ metadata operatio=
-n has to be
-> >> > committed to disk when the transaction commits in order to maintain =
-a coherent
-> >> > fs. ??Thanks,
-> >>
-> >> What I still don't understand though is that the create could have
-> >> taken up to 30 seconds to commit and the same for the few bytes of
-> >> data, but a few ms later a snapshot was made and the metadata change
-> >> was there and the data change was not. =A0Could it have happened that
-> >> the snapshot would not have the newly created file and this was just a
-> >> timing issue that should not be relied upon?
-> >>
-> >> I'm just wondering why that file was there at all.
-> >
-> > I would say that is because the moment the file got created, the
-> > resulting metadata was commited immediately. The data not yet.
->=20
-> Josef explained it to me on IRC.  Meta-data changes like file creation
-> get added to the current transaction and snapshots start a new
-> transaction so that is why the empty file is in the snapshot.
->=20
-> The file is empty because with delayed allocation, the data has not
-> hit the filesystem yet and thus has no representation in filesystem
-> operations like snapshots.
-
-You can make btrfs include the file data in the snapshot along with the=20
-metadata with the 'flushoncommit' mount option.  The problem is that this=
-=20
-will make _all_ btrfs commits more expensive, as they'll block new=20
-operations during the commit while old data is being flushed out.
-
-We could trivially make this happen only when there is a new snapshot, to=
-=20
-get the behavior you expect (see patch below).  If the goal is to make a=20
-perfectly consistent snapshot of the file system, this is better than
-
-=09sync ; btrfsctl -s snap whatever
-
-because there wouldn't be a window where metadata changes make it into the=
-=20
-snapshot but file data does not.
-
-Is there really a use case for the sort of 'lazy' snapshots with=20
-out-of-sync data and metadata (like 0-byte files)?  If so, we should add=20
-another ioctl for a full-blown snapshot so that users who _do_ want a=20
-fully consistent snapshot can get it.
-
-If not, something like the below should be sufficient to make all=20
-snapshots fully consistent...
-
-sage
-
----
-
-From: Sage Weil <sage@newdream.net>
-Date: Fri, 19 Feb 2010 14:13:50 -0800
-Subject: [PATCH] Btrfs: flush data on snapshot creation
-
-Flush any delalloc extents when we create a snapshot, so that recently
-written file data is always included in the snapshot.
-
-Signed-off-by: Sage Weil <sage@newdream.net>
----
- fs/btrfs/transaction.c |    5 +----
- 1 files changed, 1 insertions(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index e83d4e1..f5b7029 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1084,13 +1084,10 @@ int btrfs_commit_transaction(struct btrfs_trans_han=
-dle *trans,
-=20
-                mutex_unlock(&root->fs_info->trans_mutex);
-=20
--               if (flush_on_commit) {
-+               if (flush_on_commit || snap_pending) {
-                        btrfs_start_delalloc_inodes(root, 1);
-                        ret =3D btrfs_wait_ordered_extents(root, 0, 1);
-                        BUG_ON(ret);
--               } else if (snap_pending) {
--                       ret =3D btrfs_wait_ordered_extents(root, 0, 1);
--                       BUG_ON(ret);
-                }
-=20
-                /*
---=20
-1.6.6.1
-
---557981400-578634270-1266617746=:21676--
+Feb 19 04:31:26 dt01 kernel: no space left, need 4096, 274432 delalloc
+bytes, 8360148992 bytes_used, 4096 bytes_reserved, 0 bytes_pinned, 0
+bytes_readonly, 0 may use 8360427520 total
+Feb 19 04:34:02 dt01 kernel: no space left, need 4096, 270336 delalloc
+bytes, 8360153088 bytes_used, 4096 bytes_reserved, 0 bytes_pinned, 0
+bytes_readonly, 0 may use 8360427520 total
+Feb 19 04:43:18 dt01 kernel: no space left, need 270336, 36864
+delalloc bytes, 8360140800 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 04:44:03 dt01 kernel: no space left, need 270336, 49152
+delalloc bytes, 8360165376 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 04:44:09 dt01 kernel: device fsid
+5e44906058064a32-b179f2f9b4e606a9 devid 1 transid 7 /dev/sda7
+Feb 19 04:46:18 dt01 kernel: no space left, need 270336, 77824
+delalloc bytes, 8360275968 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 04:47:03 dt01 kernel: no space left, need 270336, 102400
+delalloc bytes, 8360300544 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 04:52:18 dt01 kernel: no space left, need 270336, 65536
+delalloc bytes, 8360214528 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 04:53:03 dt01 kernel: no space left, need 270336, 36864
+delalloc bytes, 8360280064 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 04:53:48 dt01 kernel: no space left, need 270336, 32768
+delalloc bytes, 8360329216 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 05:27:48 dt01 kernel: no space left, need 270336, 36864
+delalloc bytes, 8360140800 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 05:27:58 dt01 kernel: device fsid
+5945de3116704a8a-11f3234550356c85 devid 1 transid 7 /dev/sda7
+Feb 19 05:30:34 dt01 kernel: no space left, need 270336, 53248
+delalloc bytes, 8360284160 bytes_used, 12288 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 05:40:18 dt01 kernel: no space left, need 270336, 32768
+delalloc bytes, 8360378368 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 06:06:33 dt01 kernel: no space left, need 270336, 28672
+delalloc bytes, 8360153088 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 06:07:18 dt01 kernel: no space left, need 270336, 53248
+delalloc bytes, 8360169472 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 06:08:03 dt01 kernel: no space left, need 270336, 65536
+delalloc bytes, 8360206336 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 06:14:03 dt01 kernel: no space left, need 270336, 69632
+delalloc bytes, 8360251392 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 06:14:30 dt01 kernel: no space left, need 270336, 94208
+delalloc bytes, 8360251392 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 06:14:42 dt01 kernel: no space left, need 94208, 24576 delalloc
+bytes, 8360325120 bytes_used, 0 bytes_reserved, 0 bytes_pinned, 0
+bytes_readonly, 0 may use 8360427520 total
+Feb 19 06:15:35 dt01 kernel: no space left, need 270336, 57344
+delalloc bytes, 8360349696 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 06:40:19 dt01 kernel: no space left, need 270336, 49152
+delalloc bytes, 8360202240 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 06:41:49 dt01 kernel: no space left, need 270336, 65536
+delalloc bytes, 8360271872 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 06:42:12 dt01 kernel: no space left, need 94208, 98304 delalloc
+bytes, 8360271872 bytes_used, 0 bytes_reserved, 0 bytes_pinned, 0
+bytes_readonly, 0 may use 8360427520 total
+Feb 19 06:42:33 dt01 kernel: no space left, need 270336, 86016
+delalloc bytes, 8360292352 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 06:44:03 dt01 kernel: no space left, need 270336, 73728
+delalloc bytes, 8360341504 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 06:47:48 dt01 kernel: no space left, need 270336, 24576
+delalloc bytes, 8360312832 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 06:48:25 dt01 kernel: no space left, need 270336, 45056
+delalloc bytes, 8360333312 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 06:48:33 dt01 kernel: no space left, need 270336, 57344
+delalloc bytes, 8360333312 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 07:14:03 dt01 kernel: no space left, need 270336, 36864
+delalloc bytes, 8360185856 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 07:14:26 dt01 kernel: no space left, need 270336, 40960
+delalloc bytes, 8360206336 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 07:15:33 dt01 kernel: no space left, need 270336, 65536
+delalloc bytes, 8360247296 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 07:16:18 dt01 kernel: no space left, need 270336, 53248
+delalloc bytes, 8360284160 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 07:16:47 dt01 kernel: no space left, need 270336, 53248
+delalloc bytes, 8360312832 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 07:17:00 dt01 kernel: no space left, need 270336, 61440
+delalloc bytes, 8360321024 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 07:17:48 dt01 kernel: no space left, need 270336, 57344
+delalloc bytes, 8360357888 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 07:25:42 dt01 kernel: no space left, need 94208, 49152 delalloc
+bytes, 8360357888 bytes_used, 0 bytes_reserved, 0 bytes_pinned, 0
+bytes_readonly, 0 may use 8360427520 total
+Feb 19 07:47:40 dt01 kernel: no space left, need 270336, 45056
+delalloc bytes, 8360177664 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 07:47:48 dt01 kernel: no space left, need 270336, 40960
+delalloc bytes, 8360185856 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 07:49:18 dt01 kernel: no space left, need 270336, 69632
+delalloc bytes, 8360247296 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 07:50:04 dt01 kernel: no space left, need 270336, 81920
+delalloc bytes, 8360271872 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 07:50:48 dt01 kernel: no space left, need 270336, 57344
+delalloc bytes, 8360312832 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 07:51:33 dt01 kernel: no space left, need 270336, 81920
+delalloc bytes, 8360333312 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 07:58:18 dt01 kernel: no space left, need 270336, 28672
+delalloc bytes, 8360353792 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 07:59:03 dt01 kernel: no space left, need 270336, 49152
+delalloc bytes, 8360374272 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 08:23:03 dt01 kernel: no space left, need 270336, 32768
+delalloc bytes, 8360198144 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 08:23:48 dt01 kernel: no space left, need 270336, 49152
+delalloc bytes, 8360226816 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 08:25:45 dt01 kernel: no space left, need 270336, 53248
+delalloc bytes, 8360321024 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 08:26:03 dt01 kernel: no space left, need 270336, 69632
+delalloc bytes, 8360333312 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 08:26:06 dt01 kernel: no space left, need 32768, 86016 delalloc
+bytes, 8360333312 bytes_used, 0 bytes_reserved, 0 bytes_pinned, 0
+bytes_readonly, 0 may use 8360427520 total
+Feb 19 08:31:04 dt01 kernel: no space left, need 606208, 217088
+delalloc bytes, 8359723008 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 08:31:04 dt01 kernel: no space left, need 1318912, 405504
+delalloc bytes, 8359723008 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 08:31:04 dt01 kernel: no space left, need 1744896, 212992
+delalloc bytes, 8359763968 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 08:31:06 dt01 kernel: no space left, need 786432, 303104
+delalloc bytes, 8359788544 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total
+Feb 19 08:31:07 dt01 kernel: no space left, need 28672, 602112
+delalloc bytes, 8359800832 bytes_used, 0 bytes_reserved, 0
+bytes_pinned, 0 bytes_readonly, 0 may use 8360427520 total

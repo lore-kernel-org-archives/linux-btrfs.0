@@ -1,52 +1,53 @@
-From: Yehuda Sadeh <yehuda@hq.newdream.net>
-Subject: [PATCH 1/1] mm: invalidate_mapping_pages checks boundaries when lock fails
-Date: Thu, 18 Feb 2010 17:22:17 -0800
-Message-ID: <1266542537-5040-1-git-send-email-yehuda@hq.newdream.net>
-Cc: Yehuda Sadeh <yehuda@hq.newdream.net>, linux-btrfs@vger.kernel.org, sage@newdream.net
-To: linux-mm@kvack.org
+From: Johannes Weiner <hannes@cmpxchg.org>
+Subject: Re: [PATCH 1/1] mm: invalidate_mapping_pages checks boundaries when lock fails
+Date: Fri, 19 Feb 2010 04:58:54 +0100
+Message-ID: <20100219035854.GA11856@cmpxchg.org>
+References: <1266542537-5040-1-git-send-email-yehuda@hq.newdream.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-mm@kvack.org, linux-btrfs@vger.kernel.org, sage@newdream.net
+To: Yehuda Sadeh <yehuda@hq.newdream.net>
 Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <1266542537-5040-1-git-send-email-yehuda@hq.newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Not sure that I'm not missing something obvious. When invalidate_mapping_pages
-fails to lock the page, we continue to the next iteration, skipping the
-next > end check. This can lead to a case where we invalidate a page that is
-beyond the requested boundaries. Currently there are two callers that might be
-affected, one is btrfs and the second one is the fadvice syscall.
-Does that look right, or am I just missing something?
+Hi,
 
-------
+On Thu, Feb 18, 2010 at 05:22:17PM -0800, Yehuda Sadeh wrote:
+> Not sure that I'm not missing something obvious. When invalidate_mapping_pages
+> fails to lock the page, we continue to the next iteration, skipping the
+> next > end check. This can lead to a case where we invalidate a page that is
+> beyond the requested boundaries. Currently there are two callers that might be
+> affected, one is btrfs and the second one is the fadvice syscall.
+> Does that look right, or am I just missing something?
 
-[PATCH 1/1] mm: invalidate_mapping_pages checks boundaries when lock fails
+This can already happen with the first page being at an index above end
+as the check only happens after we invalidated the page.
 
-When we failed to lock the page, we continued to the next
-iteration, skipping the next > end check. This might cause
-throwing away a page that is beyond the requested boundaries.
+The damage is losing one cache-only (clean, unmapped) page.  It is a bit
+ugly but not a huge problem I suppose.
 
-Signed-off-by: Yehuda Sadeh <yehuda@hq.newdream.net>
----
- mm/truncate.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+How about checking page->index against end, like in the truncation case,
+before the invalidation?  That should take care of both cases.
 
-diff --git a/mm/truncate.c b/mm/truncate.c
-index 450cebd..abb67d4 100644
---- a/mm/truncate.c
-+++ b/mm/truncate.c
-@@ -345,11 +345,12 @@ unsigned long invalidate_mapping_pages(struct address_space *mapping,
- 				next = index;
- 			next++;
- 			if (lock_failed)
--				continue;
-+				goto unlocked;
- 
- 			ret += invalidate_inode_page(page);
- 
- 			unlock_page(page);
-+unlocked:
- 			if (next > end)
- 				break;
- 		}
--- 
-1.5.6.5
+We already rely on a page->index when the page is pinned but locked by
+somebody else.  And I think that's fine.
+
+Can we not just make that the default?  That could simplify the inner
+loop to something like
+
+	index = page->index;
+	if (index > end)
+		break;
+	next = max(index, next) + 1;
+	if (!trylock_page(page))
+		continue;
+	ret += invalidate_inode_page(page);
+	unlock_page(page);
+
+or something.
+
+	Hannes
 
 --
 To unsubscribe, send a message with 'unsubscribe linux-mm' in

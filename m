@@ -1,56 +1,40 @@
-From: Johannes Weiner <hannes@cmpxchg.org>
-Subject: Re: [PATCH 1/1] mm: invalidate_mapping_pages checks boundaries when lock fails
-Date: Fri, 19 Feb 2010 04:58:54 +0100
-Message-ID: <20100219035854.GA11856@cmpxchg.org>
-References: <1266542537-5040-1-git-send-email-yehuda@hq.newdream.net>
+From: Mike Fedyk <mfedyk@mikefedyk.com>
+Subject: df shows wrong device while waiting for umount
+Date: Fri, 19 Feb 2010 00:03:49 -0800
+Message-ID: <93cdabd21002190003o21a06912gd3ab50635aceb411@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-mm@kvack.org, linux-btrfs@vger.kernel.org, sage@newdream.net
-To: Yehuda Sadeh <yehuda@hq.newdream.net>
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <1266542537-5040-1-git-send-email-yehuda@hq.newdream.net>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
 
-On Thu, Feb 18, 2010 at 05:22:17PM -0800, Yehuda Sadeh wrote:
-> Not sure that I'm not missing something obvious. When invalidate_mapping_pages
-> fails to lock the page, we continue to the next iteration, skipping the
-> next > end check. This can lead to a case where we invalidate a page that is
-> beyond the requested boundaries. Currently there are two callers that might be
-> affected, one is btrfs and the second one is the fadvice syscall.
-> Does that look right, or am I just missing something?
+Kernel 2.6.33-0.46.rc8.git1.fc13.x86_64
 
-This can already happen with the first page being at an index above end
-as the check only happens after we invalidated the page.
+I think I ran into the issue that triggers when you write the a btrfs
+filesystem and then umount it and it takes a long time while writing
+out the data.  It ends up writing at about 1MiB/second according to
+dstat.  My understanding this issue is already fixed in the latest
+code.
 
-The damage is losing one cache-only (clean, unmapped) page.  It is a bit
-ugly but not a huge problem I suppose.
+But that is not the issue I am reporting.  While waiting for the
+umount to complete, df shows the wrong device.
 
-How about checking page->index against end, like in the truncation case,
-before the invalidation?  That should take care of both cases.
+# df -h
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/sda2             9.8G  7.5G  2.3G  77% /
+tmpfs                 1.9G  536K  1.9G   1% /dev/shm
+/dev/sda6             485M   62M  398M  14% /boot
+/dev/sda7             111G  464M  111G   1% /mnt/t
 
-We already rely on a page->index when the page is pinned but locked by
-somebody else.  And I think that's fine.
+# umount /mnt/t
 
-Can we not just make that the default?  That could simplify the inner
-loop to something like
+# df -h
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/sda2             9.8G  7.5G  2.3G  77% /
+tmpfs                 1.9G  536K  1.9G   1% /dev/shm
+/dev/sda6             485M   62M  398M  14% /boot
+/dev/sda7             9.8G  7.5G  2.3G  77% /mnt/t
 
-	index = page->index;
-	if (index > end)
-		break;
-	next = max(index, next) + 1;
-	if (!trylock_page(page))
-		continue;
-	ret += invalidate_inode_page(page);
-	unlock_page(page);
-
-or something.
-
-	Hannes
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+The second df was run while waiting for the 111GB partition to unmount.

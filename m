@@ -1,78 +1,87 @@
-From: Alex Elsayed <eternaleye@gmail.com>
-Subject: Re: Kernel BUG on mounting BtrFS / after reboot
-Date: Tue, 23 Feb 2010 08:30:56 +0000 (UTC)
-Message-ID: <loom.20100223T092903-542@post.gmane.org>
-References: <loom.20100212T220341-877@post.gmane.org> <20100217141813.GH29430@think> <loom.20100218T013258-629@post.gmane.org> <20100218150238.GL10559@think> <loom.20100218T183230-637@post.gmane.org> <20100218204843.GW10559@think> <loom.20100218T215310-779@post.gmane.org>
+From: Mat <jackdachef@gmail.com>
+Subject: Re: [mount] commit intervall for metadata and btrfs - is it planned ?
+Date: Tue, 23 Feb 2010 13:49:04 +0100
+Message-ID: <e85b9d31002230449p2f6b62ccg16d6d4029ba1b6ae@mail.gmail.com>
+References: <loom.20100210T190536-373@post.gmane.org>
+	 <20100210185537.GA20133@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100210185537.GA20133@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Alex Elsayed <eternaleye <at> gmail.com> writes:
+On Wed, Feb 10, 2010 at 7:55 PM, Josef Bacik <josef@redhat.com> wrote:
+> On Wed, Feb 10, 2010 at 06:15:26PM +0000, Mat wrote:
+>> Hi guys,
+>>
+>> First off: you guys are doing amazing work !
+>>
+>> btrfs "Better-FS" gets more and more stable, fast and space-efficien=
+t than
+>> all/most of the other filesystems :)
+>>
+>>
+>> It being able to survive compiling of openoffice, chromium webbrowse=
+r and other
+>> stressful stuff is a testament to its ever growing maturity
+>>
+>>
+>> Now on to my question:
+>>
+>> Since I'm using btrfs on more and more test-partitions on my system =
+and also am
+>> into energy saving:
+>>
+>> is the following mount-option which exists for reiserfs, ext2-4 and =
+reiser4
+>> (tmgr.atom_max_age) also planned to be implemented for btrfs ?
+>>
+>> =A0 =A0 =A0 =A0commit=3Dnrsec
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 Sync all data and metadata =A0every =A0n=
+rsec =A0seconds. =A0The =A0default
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 value is 5 seconds. Zero means default.
+>>
+>> (in this case ext3)
+>>
+>> if yes, when will it be added ?
+>>
+>>
+>
+> It would be simple enough to do, but keep in mind that btrfs doesnt a=
+ct like
+> ext2/3 does, so the commit doesn't necessarily mean _all_ data will g=
+o down to
+> disk, just data thats been allocated and writeout has been started on=
+, which is
+> mostly controlled by the vm's dirty writeback stuff or if the apps yo=
+u use have
+> been using fsync(). =A0Any metadata thats been dirtied will be sync'e=
+d every 30
+> seconds. =A0Doing much more than that is just widening the window for=
+ you to lose
+> new files and stuff (again, if they've not been fsync()'ed). =A0Perso=
+nally 30
+> seconds is a good balance between being safe and saving battery life,=
+ but I'm
+> sure at some point we'll expose the commit interval via a mount optio=
+n. =A0Thanks,
+>
+> Josef
+>
 
-> 
-> Chris Mason <chris.mason <at> oracle.com> writes:
-> > I think the btrfsck output is missing.  It sounds like we'll survive if
-> > we just skip this part of the log replay.  I'll cook a patch based on
-> > the btrfsck output.
-> 
-> It was inline in my first message, immediately after the BUG trace.
+Thanks for your answer Josef !
 
-Any update? Including btrfsck output here, in case it got lost:
+I'll tweak /proc/sys/vm/dirty_writeback_centisecs, the other
+/proc/sys/vm/dirty* knobs for now
+and stick to the limit of 30 seconds
 
-Arkadios ~ # btrfsck /dev/Arkadios/Root
-root 5 inode 1525410 errors 400
-root 5 inode 5364659 errors 2
-root 5 inode 5364663 errors 2
-root 5 inode 5364668 errors 2
-root 5 inode 5364677 errors 2
-root 5 inode 6123691 errors 400
-root 5 inode 6239775 errors 2
-root 5 inode 6239779 errors 2
-root 5 inode 6239789 errors 2
-root 5 inode 6239971 errors 2
-root 5 inode 6269030 errors 2
-root 5 inode 6269034 errors 2
-root 5 inode 6269667 errors 2
-root 5 inode 6270025 errors 2
-root 5 inode 6423082 errors 400
-root 5 inode 6424288 errors 2
-root 5 inode 6424328 errors 2
-root 5 inode 6424506 errors 2
-root 5 inode 6424510 errors 2
-root 5 inode 7314036 errors 400
-root 5 inode 7538573 errors 400
-root 5 inode 7541407 errors 400
-root 5 inode 7541533 errors 400
-root 5 inode 7954626 errors 400
-root 5 inode 7955659 errors 2
-root 5 inode 7955723 errors 2
-root 5 inode 7955727 errors 2
-root 5 inode 7957158 errors 2
-root 5 inode 8076299 errors 2
-root 5 inode 8138735 errors 400
-root 5 inode 8346718 errors 400
-root 5 inode 8378669 errors 400
-root 5 inode 8504794 errors 400
-root 5 inode 8628757 errors 400
-root 5 inode 8628952 errors 2
-root 5 inode 8628966 errors 2
-root 5 inode 8628970 errors 2
-root 5 inode 8629003 errors 2
-root 5 inode 8633819 errors 2
-root 5 inode 8693549 errors 400
-root 5 inode 9014871 errors 2
-root 5 inode 9014938 errors 2
-root 5 inode 9014942 errors 2
-root 5 inode 9014946 errors 2
-found 449101881344 bytes used err is 1
-total csum bytes: 433187792
-total tree bytes: 5517582336
-total fs tree bytes: 4585156608
-btree space waste bytes: 1419008115
-file data blocks allocated: 1040877457408
- referenced 439746732032
-Btrfs Btrfs v0.19
+Regards
 
-
+Mat
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

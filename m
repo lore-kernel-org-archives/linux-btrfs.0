@@ -1,8 +1,8 @@
 From: Josef Bacik <josef@redhat.com>
 Subject: Re: [RFC] remove delalloc accounting for
 	__btrfs_remove_ordered_extent
-Date: Wed, 24 Feb 2010 11:09:33 -0500
-Message-ID: <20100224160932.GD2257@localhost.localdomain>
+Date: Wed, 24 Feb 2010 12:01:49 -0500
+Message-ID: <20100224170149.GE2257@localhost.localdomain>
 References: <20100224071205.GA14237@sli10-desk.sh.intel.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
@@ -61,7 +61,8 @@ On Wed, Feb 24, 2010 at 03:12:05PM +0800, Shaohua Li wrote:
 > [  185.779812] note: btrfs-endio-wri[3368] exited with preempt_count
 > 
 
-How do you reproduce this problem?  I've been trying to but it's not reproducing
-for me.  Thanks,
+Are you tired of me emailing you yet :)?  I've reproduced the problem, I'm
+testing a fix and I'll send it along to you when I think I've got it working.
+Thanks,
 
 Josef

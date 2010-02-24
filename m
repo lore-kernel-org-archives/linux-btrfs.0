@@ -1,18 +1,30 @@
-From: Ahmed Kamal <email.ahmedkamal@googlemail.com>
-Subject: Re: No space left on device, btrfsctl segmentation fault
-Date: Wed, 24 Feb 2010 10:50:50 +0200
-Message-ID: <3da3b5b41002240050n73d10e1bnc3ec804f56403517@mail.gmail.com>
-References: <2b0225fb1002231939q2020bf05g145f852e5b4c560@mail.gmail.com>
-	 <2b0225fb1002232027p65709d99nbd0d8d6bab45ae98@mail.gmail.com>
-	 <23a15591002240033i6f3b3b33p3c425d9ecc587125@mail.gmail.com>
+From: wfp5p@viridian.itc.virginia.edu (Bill Pemberton)
+Subject: assertion failures
+Date: Wed, 24 Feb 2010 08:45:32 -0500 (EST)
+Message-ID: <20100224134532.282174094A@viridian.itc.virginia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Boyd Waters <waters.boyd@gmail.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Leszek Ciesielski <skolima@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <23a15591002240033i6f3b3b33p3c425d9ecc587125@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Can someone please explain why it takes btrfs 10% of a 2TB disk *just*
-for metadata ? I'd say 1% is too much
+I've had 2 different filesystems fail in the same way recently.  In
+both cases the server crashed (probably due to something unrelated to
+btrfs).  On reboot the fsck fails as follows:
+
+#  btrfsck /dev/raidvg/vol4
+parent transid verify failed on 20971520 wanted 206856 found 214247
+parent transid verify failed on 20971520 wanted 206856 found 214247
+parent transid verify failed on 20971520 wanted 206856 found 214247
+btrfsck: disk-io.c:723: open_ctree_fd: Assertion `!(!chunk_root->node)' failed.
+Aborted (core dumped)
+
+
+I tried compiling the latest tools from git, but the error is the
+same.  This is on Fedora 12 machine running kernel
+2.6.31.12-174.2.22.fc12.x86_64
+
+
+-- 
+Bill
+

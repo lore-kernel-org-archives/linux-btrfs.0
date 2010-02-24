@@ -1,169 +1,41 @@
-From: Miguel F Mascarenhas Sousa Filipe <miguel.filipe@gmail.com>
-Subject: Re: btrfs-tools backport for Debian Lenny
-Date: Wed, 17 Feb 2010 17:21:57 +0000
-Message-ID: <f058a9c31002170921p37f00b83m1e9c9b91bacb54a8@mail.gmail.com>
-References: <201002171632.38310.ms@teamix.de>
+From: Boyd Waters <waters.boyd@gmail.com>
+Subject: Re: No space left on device, btrfsctl segmentation fault
+Date: Wed, 24 Feb 2010 14:20:43 -0500
+Message-ID: <2b0225fb1002241120y34f9f934na9d43a4fcfda2ac3@mail.gmail.com>
+References: <2b0225fb1002231939q2020bf05g145f852e5b4c560@mail.gmail.com>
+	 <20100224154353.GB2257@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: multipart/alternative; boundary=00032555bd7e6122b4047fcf1662
-Cc: Daniel Baumann <daniel@debian.org>, backports-users@lists.backports.org,
-	linux-btrfs@vger.kernel.org
-To: Martin Steigerwald <ms@teamix.de>
-Return-path: <backports-users-bounces@lists.backports.org>
-In-Reply-To: <201002171632.38310.ms@teamix.de>
-List-Unsubscribe: <http://lists.backports.org/mailman/listinfo/backports-users>,
-	<mailto:backports-users-request@lists.backports.org?subject=unsubscribe>
-List-Archive: <http://lists.backports.org/lurker/list/backports-users.html>
-List-Post: <mailto:backports-users@lists.backports.org>
-List-Help: <mailto:backports-users-request@lists.backports.org?subject=help>
-List-Subscribe: <http://lists.backports.org/mailman/listinfo/backports-users>,
-	<mailto:backports-users-request@lists.backports.org?subject=subscribe>
-Errors-To: backports-users-bounces@lists.backports.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100224154353.GB2257@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---00032555bd7e6122b4047fcf1662
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+Thanks for the suggestions, everyone!
 
-On Wed, Feb 17, 2010 at 3:32 PM, Martin Steigerwald <ms@teamix.de> wrote:
+I copied the data from the 2TB btrfs disk to an identical disk (same
+make and model) formatted with ext4:
 
-> Cc'd backports-users mailing list, cc'd package maintainer Daniel Baumann
-> as
-> well.
->
->
-> Hi!
->
-> JFYI - most of you might prefer to run btrfs-tools from git -, I made a
-> btrfs-tools 0.19 backport for Debian Lenny from the package in Debian
-> Squeeze
-> and put it online at:
->
-> http://people.teamix.net/~ms/debian/lenny-backports/btrfs-tools/
->
-> You can find discussion on sponsoring it here:
->
->
-> http://lists.backports.org/lurker-bpo/thread/20100217.143508.41736c9f.en.=
-html
->
-> I think it won't work with the latest backports 2.6.30 kernel due to btrf=
-s
-> format changes, I test it with a self compiled 2.6.32.3. A 2.6.32 for
-> backports org should be due soon and then my btrfs-tools backport might
-> appear in the bpo archive as well.
->
-> It basically works, but I am wondering it the RAID options work correctly=
-.
-> I
-> used:
->
-> mkfs.btrfs -d raid1 -m
-> raid1 /dev/mango1/homelokal1 /dev/mango2/homelokal2
->
-> on two 200 GiB logical volumes and get
->
-> mango:~# df -hT /mnt/zeit
-> Dateisystem   Typ    Gr=C3=B6=C3=9Fe Benut  Verf Ben% Eingeh=C3=A4ngt auf
-> /dev/mapper/mango1-homelokal1
->             btrfs    400G  101M  400G   1% /mnt/zeit
->
-> Shouldn't that be 200GiB for a BTRFS Raid 1 setup?
->
+/dev/sdi2             1.9T  1.7T  197G  90% /media/onlyhope
+/dev/sdg1             1.8T  1.7T   71G  96% /mnt/newhope
+
+The metadata "overhead" for btrfs is a bit more, but it isn't outrageous IMHO.
+
+==
+
+Re-balancing the tree with "btrfs-vol -b" sounds about right, both in
+terms of time and stability. I haven't tried that yet, but I can
+report on that experiment.
+
+Leszek wrote:
+> The 'used' output of df on a btrfs system does not take metadata into
+account. So the disk is really full. This is what my yesterdays path
+is intended to fix - can you try it out?
 >
 
-this has been discussed several times on the list.
+I would like to try this patch, I apologize for being so new to btrfs
+development: can you tell me where to find the patch? Is it for btrfs
+tools or the btrfs itself? I will try to find it, but a quick pointer
+to it will help me test!
 
-Since btrfs file level redundancy policy, the proper way for it to behave i=
-s
-to show full physical capacity of the devices.
-
-Usage will be correctly accounted, so if you write a 100MB file in that
-raid1 FS tree
-the used space will indicate 200MB of additional used space.
-
-Regards,
-
-
-
-> Ciao,
-> --
-> Martin Steigerwald - team(ix) GmbH - http://www.teamix.de
-> gpg: 19E3 8D42 896F D004 08AC A0CA 1E10 C593 0399 AE90
->
-
-
-
---=20
-Miguel Sousa Filipe
-
---00032555bd7e6122b4047fcf1662
-Content-Type: text/html; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
-
-<br><br><div class=3D"gmail_quote">On Wed, Feb 17, 2010 at 3:32 PM, Martin =
-Steigerwald <span dir=3D"ltr">&lt;<a href=3D"mailto:ms@teamix.de">ms@teamix=
-.de</a>&gt;</span> wrote:<br><blockquote class=3D"gmail_quote" style=3D"mar=
-gin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex;">
-Cc&#39;d backports-users mailing list, cc&#39;d package maintainer Daniel B=
-aumann as<br>
-well.<br>
-<br>
-<br>
-Hi!<br>
-<br>
-JFYI - most of you might prefer to run btrfs-tools from git -, I made a<br>
-btrfs-tools 0.19 backport for Debian Lenny from the package in Debian Squee=
-ze<br>
-and put it online at:<br>
-<br>
-<a href=3D"http://people.teamix.net/~ms/debian/lenny-backports/btrfs-tools/=
-" target=3D"_blank">http://people.teamix.net/~ms/debian/lenny-backports/btr=
-fs-tools/</a><br>
-<br>
-You can find discussion on sponsoring it here:<br>
-<br>
-<a href=3D"http://lists.backports.org/lurker-bpo/thread/20100217.143508.417=
-36c9f.en.html" target=3D"_blank">http://lists.backports.org/lurker-bpo/thre=
-ad/20100217.143508.41736c9f.en.html</a><br>
-<br>
-I think it won&#39;t work with the latest backports 2.6.30 kernel due to bt=
-rfs<br>
-format changes, I test it with a self compiled 2.6.32.3. A 2.6.32 for<br>
-backports org should be due soon and then my btrfs-tools backport might<br>
-appear in the bpo archive as well.<br>
-<br>
-It basically works, but I am wondering it the RAID options work correctly. =
-I<br>
-used:<br>
-<br>
-mkfs.btrfs -d raid1 -m<br>
-raid1 /dev/mango1/homelokal1 /dev/mango2/homelokal2<br>
-<br>
-on two 200 GiB logical volumes and get<br>
-<br>
-mango:~# df -hT /mnt/zeit<br>
-Dateisystem =C2=A0 Typ =C2=A0 =C2=A0Gr=C3=B6=C3=9Fe Benut =C2=A0Verf Ben% E=
-ingeh=C3=A4ngt auf<br>
-/dev/mapper/mango1-homelokal1<br>
- =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 btrfs =C2=A0 =C2=A0400G =C2=A010=
-1M =C2=A0400G =C2=A0 1% /mnt/zeit<br>
-<br>
-Shouldn&#39;t that be 200GiB for a BTRFS Raid 1 setup?<br>
-<br></blockquote><div><br></div><div><br></div><div>this has been discussed=
- several times on the list.</div><div><br></div><div>Since btrfs file level=
- redundancy policy, the proper way for it to behave is to show full physica=
-l capacity of the devices.</div>
-<div><br></div><div>Usage will be correctly accounted, so if you write a 10=
-0MB file in that raid1 FS tree</div><div>the used space will indicate 200MB=
- of additional used space.</div><div><br></div><div>Regards,</div><div>
-<br></div><div>=C2=A0</div><blockquote class=3D"gmail_quote" style=3D"margi=
-n:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex;">
-Ciao,<br>
-<font color=3D"#888888">--<br>
-Martin Steigerwald - team(ix) GmbH - <a href=3D"http://www.teamix.de" targe=
-t=3D"_blank">http://www.teamix.de</a><br>
-gpg: 19E3 8D42 896F D004 08AC A0CA 1E10 C593 0399 AE90<br>
-</font></blockquote></div><br><br clear=3D"all"><br>-- <br>Miguel Sousa Fil=
-ipe<br>
-
---00032555bd7e6122b4047fcf1662--
+Thanks again!

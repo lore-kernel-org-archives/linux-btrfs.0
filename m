@@ -1,8 +1,8 @@
 From: Josef Bacik <josef@redhat.com>
 Subject: Re: [RFC] remove delalloc accounting for
 	__btrfs_remove_ordered_extent
-Date: Wed, 24 Feb 2010 10:45:12 -0500
-Message-ID: <20100224154511.GC2257@localhost.localdomain>
+Date: Wed, 24 Feb 2010 11:09:33 -0500
+Message-ID: <20100224160932.GD2257@localhost.localdomain>
 References: <20100224071205.GA14237@sli10-desk.sh.intel.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
@@ -60,30 +60,8 @@ On Wed, Feb 24, 2010 at 03:12:05PM +0800, Shaohua Li wrote:
 > [  185.779765] ---[ end trace daf2ed048f53f7f0 ]---
 > [  185.779812] note: btrfs-endio-wri[3368] exited with preempt_count
 > 
-> Signed-off-by: Shaohua Li <shaohua.li@intel.com>
-> ---
->  fs/btrfs/ordered-data.c |    6 ------
->  1 files changed, 0 insertions(+), 6 deletions(-)
-> 
-> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-> index 5c2a9e7..eb7a2f9 100644
-> --- a/fs/btrfs/ordered-data.c
-> +++ b/fs/btrfs/ordered-data.c
-> @@ -306,12 +306,6 @@ static int __btrfs_remove_ordered_extent(struct inode *inode,
->  	tree->last = NULL;
->  	set_bit(BTRFS_ORDERED_COMPLETE, &entry->flags);
->  
-> -	spin_lock(&BTRFS_I(inode)->accounting_lock);
-> -	BTRFS_I(inode)->outstanding_extents--;
-> -	spin_unlock(&BTRFS_I(inode)->accounting_lock);
-> -	btrfs_unreserve_metadata_for_delalloc(BTRFS_I(inode)->root,
-> -					      inode, 1);
-> -
->  	spin_lock(&BTRFS_I(inode)->root->fs_info->ordered_extent_lock);
->  	list_del_init(&entry->root_extent_list);
->  
 
-We don't want to remove the accounting until the data is actually on the disk,
-thats why its done here.  Thanks,
+How do you reproduce this problem?  I've been trying to but it's not reproducing
+for me.  Thanks,
 
 Josef

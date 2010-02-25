@@ -1,69 +1,41 @@
-From: Gustavo Alves <gjalves@gjalves.com.br>
-Subject: Re: assertion failures
-Date: Thu, 25 Feb 2010 15:28:19 -0300
-Message-ID: <69e11d1f1002251028s3df20904yb9e90be36c883bbe@mail.gmail.com>
-References: <20100225004004.GK25641@think>
-	 <20100225140420.4EBA940954@viridian.itc.virginia.edu>
+From: Goffredo Baroncelli <kreijack@gmail.com>
+Subject: Re: BTRFS: Newer version available:
+Date: Thu, 25 Feb 2010 19:42:48 +0100
+Message-ID: <201002251942.48447.kreijack@libero.it>
+References: <6842966e1002241222r46a97d5bj38d656ae15ad74a9@mail.gmail.com>
+Reply-To: kreijack@libero.it
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100225140420.4EBA940954@viridian.itc.virginia.edu>
+In-Reply-To: <6842966e1002241222r46a97d5bj38d656ae15ad74a9@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've got the same error before in a similar situation (24 partitions,
-only two with problems). Unfortunally I erased all data after this
-error. Strange that all I've done was shutdown and poweron the
-machine.
+On Wednesday 24 February 2010, Andrew Carlson wrote:
+> I was wondering if there is a newer BTRFS version floating around
+> somewhere.  The version tag on the one I got from git is "Btrfs
+> v2.6.27-rc7-59199-g3f6fae9", which seems kinda old, even though the
+> kernel is 2.6.32.  Thanks, and sorry for the newbie question, but the
+> git unstable is the only place i see to get it.
+> 
+True, the update repository is the btrfs-unstable one. In any case the 
+official kernel source is "quite aligned" to the latest patch (or almost Chris 
+ask quite often Linux to pull its patches)
 
-----
-Gustavo Junior Alves
-
-
-On Thu, Feb 25, 2010 at 11:04 AM, Bill Pemberton
-<wfp5p@viridian.itc.virginia.edu> wrote:
->
-> >
-> > I don't suppose you have the dmesg errors from the crash? =A0This e=
-rror
-> > shows the header in the block is incorrect, so either something was
-> > written to the wrong place or not written at all.
-> >
-> > Have you memtest86 on this system?
-> >
-> > How did it crash...was a power off used to reset the machine?
-> >
->
-> No dmesg. =A0This has happened on two different machines that both ha=
-ve
-> other active btrfs filesystems, so I suspect it's not a memory issue.
-> In both cases it was the same data that was being copied when the
-> crash occurred.
->
-> I didn't deal with the reboot in the first case, so I don't have much
-> in the way of details. =A0In the second case the kernel seemed convin=
-ced
-> the array was having problems (and the load went way up), but the
-> array was convinced it was fine. =A0A normal reboot hung and the serv=
-er
-> had to be powered off.
->
-> Since it appears that the same operation caused the problem in both
-> cases, I'm going to try to reproduce it. =A0I'll let you know if I ca=
-n
-> reproduce it.
->
+> 
 > --
-> Bill
->
->
+> Andy Carlson
+> ---------------------------------------------------------------------------
+> Gamecube:$150,PSO:$50,Broadband Adapter: $35, Hunters License: $8.95/month,
+> The feeling of seeing the red box with the item you want in it:Priceless.
 > --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
+
+-- 
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

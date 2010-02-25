@@ -1,84 +1,98 @@
-From: Leszek Ciesielski <skolima@gmail.com>
-Subject: Re: btrfs no csum found for inode X start 0
-Date: Thu, 25 Feb 2010 21:52:47 +0100
-Message-ID: <23a15591002251252w5b35e761t5311f3bd569b9d41@mail.gmail.com>
-References: <23a15591002242352r665ffddax479d4cbfd8c88cdb@mail.gmail.com>
-	 <23a15591002250134m753cd437jb14e320d2e8b39b3@mail.gmail.com>
+From: Daniel J Blueman <daniel.blueman@gmail.com>
+Subject: Re: [2.6.33 regression] btrfs mount causes memory corruption
+Date: Thu, 25 Feb 2010 21:38:38 +0000
+Message-ID: <6278d2221002251338x6d235485t832ea6238272b9a7@mail.gmail.com>
+References: <cb0375e11002251201v7969b891n687f928e2402f7c9@mail.gmail.com>
+	 <20100225202358.GC10960@localhost.localdomain>
+	 <cb0375e11002251229q2a6989c5n64d739dec4f8de44@mail.gmail.com>
+	 <20100225203834.GD10960@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <23a15591002250134m753cd437jb14e320d2e8b39b3@mail.gmail.com>
+Cc: Andrew Lutomirski <luto@mit.edu>, linux-kernel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20100225203834.GD10960@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have changed the btrfs code to ignore checksum failures and now I
-can read files correctly from the filesystem. Also, moving them onto
-another volume and then back into btrfs fixes the checksums and no
-more errors are reported for the file in question.
-
-Quick and dirty code I used for getting my files out:
-
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index a11a320..d6e6aa9 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -140,8 +140,9 @@ static int check_compressed_csum(struct inode *inode,
-                               "wanted %u mirror %d\n", inode->i_ino,
-                               (unsigned long long)disk_start,
-                               csum, *cb_sum, cb->mirror_num);
--                       ret = -EIO;
--                       goto fail;
-+                       /*ret = -EIO;
-+                       goto fail;*/
-+                       printk("btrfs ignoring compressed csum mismatch");
-                }
-                cb_sum++;
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 4deb280..f1572ce 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1955,8 +1955,9 @@ static int btrfs_readpage_end_io_hook(struct
-page *page, u64 start, u64 end,
-
-        csum = btrfs_csum_data(root, kaddr + offset, csum,  end - start + 1);
-        btrfs_csum_final(csum, (char *)&csum);
--       if (csum != private)
--               goto zeroit;
-+       if (csum != private && printk_ratelimit())
-+               printk(KERN_INFO "btrfs ignoring csum mismatch");
-+//             goto zeroit;
-
-        kunmap_atomic(kaddr, KM_USER0);
- good:
-
-
-On Thu, Feb 25, 2010 at 10:34 AM, Leszek Ciesielski <skolima@gmail.com> wrote:
-> (My previous post seems to have been discarded because of the
-> attachment size, I'm resending it without the dmesg output - which can
-> be found @ http://pastebin.com/T0J3z59j )
+On Thu, Feb 25, 2010 at 8:38 PM, Josef Bacik <josef@redhat.com> wrote:
+> On Thu, Feb 25, 2010 at 03:29:34PM -0500, Andrew Lutomirski wrote:
+>> On Thu, Feb 25, 2010 at 3:23 PM, Josef Bacik <josef@redhat.com> wrot=
+e:
+>> > On Thu, Feb 25, 2010 at 03:01:08PM -0500, Andrew Lutomirski wrote:
+>> >> Mounting btrfs corrupts memory and causes nasty crashes within a =
+few
+>> >> seconds. =A0This seems to happen even if the mount fails (note th=
+e
+>> >> unrecognized mount option). =A0This is a regression from 2.6.32, =
+and
+>> >> I've attached an example.
+>> >>
+>> >
+>> > And it only happens when you mount a btrfs fs? =A0Can you show me =
+a trace of when
+>> > you mount a btrfs fs with valid mount options? =A0I'd like to see =
+if we're not
+>> > cleaning up something properly or what. =A0Thanks,
+>>
+>> Seems OK. =A0Or maybe I just got lucky, but it's crashed every time =
+I
+>> tried to mount with 'acl' before.
+>>
+>> I even went through a couple iterations of trying to mount with
+>> 'xattr' and 'user_xattr', both of which failed.
+>>
 >
-> Hi,
+> Ok it looks like we have a problem kfree'ing the wrong stuff. =A0we k=
+strdup the
+> options string, but then strsep screws with the pointer, so when we k=
+free() it,
+> we're not giving it the right pointer. =A0Please try this patch, and =
+mount with -o
+> acl and other such garbage to make sure it actually worked (acl isn't=
+ a valid
+> mount option btw). =A0Let me know if it works. =A0Thanks,
 >
-> yesterday I updated my kernel (clean clone from
-> mason/btrfs-unstable.gi), pulling in the single latest change I have
-> been missing ( http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=commit;h=3f6fae9559225741c91f1320090b285da1413290
-> ) and adding my patch from http://patchwork.kernel.org/patch/81547/ .
-> Previous kernel version (without my patch - could this be my fault?)
-> has been running fine for 14 days, but after recompiling and
-> rebooting, my dmesg output is full of "btrfs no csum found for inode
-> 386 start 0" and "btrfs csum failed ino 386 extent 65191274496 csum
-> 1851253866 wanted 0 mirror 1" and "btrfs csum failed ino 82619 off
-> 8749056 csum 2686054019 private 0", repeating with different values.
-> Also, accessing pretty much any file ends with "read error" - only
-> small text files remained readable. Newly written files seem to behave
-> correctly. I have tried reverting back to the version from 10.02.2010
-> (last change on 04.02, without my patch) that worked well before, but
-> now it also spits out the same errors and files remain unreadable.
-> Dmesg output is attached. Anything more I can do to help diagnose the
-> problem?
+> Josef
 >
-> Regards,
 >
-> Leszek 'skolima' Ciesielski
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 8a1ea6e..f8b4521 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -128,7 +128,7 @@ int btrfs_parse_options(struct btrfs_root *root, =
+char *options)
+> =A0{
+> =A0 =A0 =A0 =A0struct btrfs_fs_info *info =3D root->fs_info;
+> =A0 =A0 =A0 =A0substring_t args[MAX_OPT_ARGS];
+> - =A0 =A0 =A0 char *p, *num;
+> + =A0 =A0 =A0 char *p, *num, *orig;
+> =A0 =A0 =A0 =A0int intarg;
+> =A0 =A0 =A0 =A0int ret =3D 0;
 >
+> @@ -143,6 +143,7 @@ int btrfs_parse_options(struct btrfs_root *root, =
+char *options)
+> =A0 =A0 =A0 =A0if (!options)
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0return -ENOMEM;
+>
+> + =A0 =A0 =A0 orig =3D options;
+>
+> =A0 =A0 =A0 =A0while ((p =3D strsep(&options, ",")) !=3D NULL) {
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0int token;
+> @@ -280,7 +281,7 @@ int btrfs_parse_options(struct btrfs_root *root, =
+char *options)
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0}
+> =A0 =A0 =A0 =A0}
+> =A0out:
+> - =A0 =A0 =A0 kfree(options);
+> + =A0 =A0 =A0 kfree(orig);
+> =A0 =A0 =A0 =A0return ret;
+> =A0}
+
+The patch is good, and the same as I was testing to fix this issue I
+found a day before with -rc8.
+
+Thanks,
+  Daniel
+--=20
+Daniel J Blueman

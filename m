@@ -1,34 +1,47 @@
 From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: assertion failures
-Date: Fri, 26 Feb 2010 11:15:23 -0500
-Message-ID: <20100226161523.GB12841@think>
+Date: Fri, 26 Feb 2010 11:17:30 -0500
+Message-ID: <20100226161730.GC12841@think>
 References: <20100225004004.GK25641@think>
  <20100225140420.4EBA940954@viridian.itc.virginia.edu>
- <69e11d1f1002251028s3df20904yb9e90be36c883bbe@mail.gmail.com>
- <20100226161332.GA12841@think>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: Gustavo Alves <gjalves@gjalves.com.br>, linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+To: Bill Pemberton <wfp5p@viridian.itc.virginia.edu>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100226161332.GA12841@think>
+In-Reply-To: <20100225140420.4EBA940954@viridian.itc.virginia.edu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 26, 2010 at 11:13:32AM -0500, Chris Mason wrote:
-> On Thu, Feb 25, 2010 at 03:28:19PM -0300, Gustavo Alves wrote:
-> > I've got the same error before in a similar situation (24 partitions,
-> > only two with problems). Unfortunally I erased all data after this
-> > error. Strange that all I've done was shutdown and poweron the
-> > machine.
+On Thu, Feb 25, 2010 at 09:04:20AM -0500, Bill Pemberton wrote:
+> > 
+> > I don't suppose you have the dmesg errors from the crash?  This error
+> > shows the header in the block is incorrect, so either something was
+> > written to the wrong place or not written at all.
+> > 
+> > Have you memtest86 on this system?
+> > 
+> > How did it crash...was a power off used to reset the machine?
+> > 
 > 
-> Basically it looks like the tree of data checksums isn't right.  Which
-> kernels were you running when you had these problems?
+> No dmesg.  This has happened on two different machines that both have
+> other active btrfs filesystems, so I suspect it's not a memory issue.
+> In both cases it was the same data that was being copied when the
+> crash occurred.
 
-Sorry, I mixed up this corruption with one farther down.  The same
-question stands though, this error generally means that IO either didn't
-happen or happened in the wrong place.
+Ok, is there anything special about this data?
 
-So, the more details you can give about your config the easier it will
-be to nail it down.
+> 
+> I didn't deal with the reboot in the first case, so I don't have much
+> in the way of details.  In the second case the kernel seemed convinced
+> the array was having problems (and the load went way up), but the
+> array was convinced it was fine.  A normal reboot hung and the server
+> had to be powered off.
+> 
+> Since it appears that the same operation caused the problem in both
+> cases, I'm going to try to reproduce it.  I'll let you know if I can
+> reproduce it.
+
+What kind of array is this?  It really sounds like the IO isn't
+happening properly.
 
 -chris
-

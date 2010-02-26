@@ -1,95 +1,71 @@
 From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: assertion failures
-Date: Fri, 26 Feb 2010 16:08:53 -0500
-Message-ID: <20100226210853.GM12841@think>
-References: <20100226175927.GG12841@think>
- <20100226181157.50F73414B9@viridian.itc.virginia.edu>
- <20100226190915.GI12841@think>
- <201002262149.14718.diegocg@gmail.com>
+Date: Fri, 26 Feb 2010 16:10:50 -0500
+Message-ID: <20100226211050.GN12841@think>
+References: <20100225004004.GK25641@think>
+ <20100225140420.4EBA940954@viridian.itc.virginia.edu>
+ <69e11d1f1002251028s3df20904yb9e90be36c883bbe@mail.gmail.com>
+ <20100226161332.GA12841@think>
+ <20100226161523.GB12841@think>
+ <69e11d1f1002261157x1b305776w96f6bfcef4b8ae2f@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=iso-8859-1
-Cc: Bill Pemberton <wfp5p@viridian.itc.virginia.edu>,
-	linux-btrfs@vger.kernel.org
-To: Diego Calleja <diegocg@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+To: Gustavo Alves <gjalves@gjalves.com.br>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201002262149.14718.diegocg@gmail.com>
+In-Reply-To: <69e11d1f1002261157x1b305776w96f6bfcef4b8ae2f@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 26, 2010 at 09:49:14PM +0100, Diego Calleja wrote:
-> On Viernes, 26 de Febrero de 2010 20:09:15 Chris Mason escribi=F3:
-> > My would be the super block, it is updated more often and so more l=
-ikely
-> > to get stuck in the array's cache.
+On Fri, Feb 26, 2010 at 04:57:27PM -0300, Gustavo Alves wrote:
+> In my case, kernel 2.6.32-0.51.rc7.git2.fc13.i686.PAE and BTRFS under=
+ LVM2.
 >=20
-> IIRC, this is exactly the same problem that ZFS users have been
-> hitting. Some users got cheap disks that don't honour barriers
-> correctly, so their uberblock didn't have the correct data.
 
-This isn't new, XFS and reiserfs v3 have had problems as well.  But,
-this is just my first suspect, Bill might be hitting something entirely
-different.
-
-> They developed an app that tries to rollback transactions to
-> get the pool into a sane state...I guess that fsck will be able
-> to do that at some point?
-
-Yes, this is something that fsck will need to fix.  This corruption is
-hardest because it involves the tree that maps all the other trees
-(ugh).
-
-The ioctl I'm working on for snapshot/subvol listing will make it easie=
-r
-to create a program to backup the chunk tree externally.
-
->=20
-> Stupid question from someone who is not a fs dev...it's not possible
-> to solve this issue by doing some sort of "superblock journaling"?
-> Since there are several superblock copies you could:
->  -Modify a secondary superblock copy to point to the tree root block
->   that still has not been written to disk
->  -Write whatever tree root block has been COW'ed
->  -Modify the primary superblock
->=20
-> So in case of these failures, mount code could look in the secondary
-> superblock copy before failing. Since barriers are not being honoured=
-,
-> there's still a possibility that the tree root blocks would be writte=
-n
-> before the secondary superblock block that was submitted before, but
-> that problem would be much harder to hit I guess. But maybe the fs co=
-de
-> can not know where the tree root blocks are going to be written befor=
-e
-> writting them, and hence it can't generate a valid superblock?
->=20
-> Sorry if all this has not sense at all, I'm just wondering if there's
-> a way to solve these drive issues without any kind of recovery tools
-
-The problem is that with a writeback cache, any write is likely
-to be missed on power failures.  journalling in general requires some
-notion of being able to wait for block A to be on disk before you write
-block B, and that's difficult to do when the disk lies about what is
-really there ;)
-
-To make things especially difficult, you can't really just roll back to
-an older state.  Internally the filesystem does something like this:
-
-allocate a bunch of blocks
-free a bunch of blocks
-
-commit
-
-reuse blocks that were freed
-
-Basically once that commit is on disk, we're allowed to (and likely to)
-start writing over blocks that were freed in the earlier transaction.
-If you try to roll back to the state at the start of that transaction
-many of those blocks won't have the same data they did before.
-
-Now, the size of the corruption might be smaller in the rolled back
-transaction than in the main transaction or it might be much worse.
+Did you also have power-off based reboots?  Depending on the
+configuration LVM (anything other than a single drive) won't send barri=
+ers to
+the device.
 
 -chris
+
+> ----
+> Gustavo Junior Alves
+> Specchio Solu=E7=F5es em TI
+>=20
+>=20
+> On Fri, Feb 26, 2010 at 1:15 PM, Chris Mason <chris.mason@oracle.com>=
+ wrote:
+> > On Fri, Feb 26, 2010 at 11:13:32AM -0500, Chris Mason wrote:
+> >> On Thu, Feb 25, 2010 at 03:28:19PM -0300, Gustavo Alves wrote:
+> >> > I've got the same error before in a similar situation (24 partit=
+ions,
+> >> > only two with problems). Unfortunally I erased all data after th=
+is
+> >> > error. Strange that all I've done was shutdown and poweron the
+> >> > machine.
+> >>
+> >> Basically it looks like the tree of data checksums isn't right. =A0=
+Which
+> >> kernels were you running when you had these problems?
+> >
+> > Sorry, I mixed up this corruption with one farther down. =A0The sam=
+e
+> > question stands though, this error generally means that IO either d=
+idn't
+> > happen or happened in the wrong place.
+> >
+> > So, the more details you can give about your config the easier it w=
+ill
+> > be to nail it down.
+> >
+> > -chris
+> >
+> >
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

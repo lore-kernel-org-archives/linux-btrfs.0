@@ -1,63 +1,52 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: Gustavo Alves <gjalves@gjalves.com.br>
 Subject: Re: assertion failures
-Date: Fri, 26 Feb 2010 14:15:44 -0500
-Message-ID: <20100226191544.GK12841@think>
-References: <20100226175927.GG12841@think>
- <20100226181157.50F73414B9@viridian.itc.virginia.edu>
- <93cdabd21002261111v211e77e6ic789a2487461a420@mail.gmail.com>
+Date: Fri, 26 Feb 2010 16:57:27 -0300
+Message-ID: <69e11d1f1002261157x1b305776w96f6bfcef4b8ae2f@mail.gmail.com>
+References: <20100225004004.GK25641@think>
+	 <20100225140420.4EBA940954@viridian.itc.virginia.edu>
+	 <69e11d1f1002251028s3df20904yb9e90be36c883bbe@mail.gmail.com>
+	 <20100226161332.GA12841@think> <20100226161523.GB12841@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: Bill Pemberton <wfp5p@viridian.itc.virginia.edu>,
-	linux-btrfs@vger.kernel.org
-To: Mike Fedyk <mfedyk@mikefedyk.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <93cdabd21002261111v211e77e6ic789a2487461a420@mail.gmail.com>
+In-Reply-To: <20100226161523.GB12841@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 26, 2010 at 11:11:07AM -0800, Mike Fedyk wrote:
-> On Fri, Feb 26, 2010 at 10:11 AM, Bill Pemberton
-> <wfp5p@viridian.itc.virginia.edu> wrote:
-> >>
-> >> Does the array have any kind of writeback cache?
-> >>
-> >
-> > Yes, the array has a writeback cache.
-> >
-> >>
-> >> Are all of the filesystems spread across all of the drives? =A0Or =
-do some
-> >> filesystems use some drives only?
-> >>
-> >
-> > In all cases the array is presenting 1 physical volume to the host
-> > system (which is RAID 6 on the array itself). =A0That physical volu=
-me is
-> > made into a volume group and the filesystems are on logical volumes=
- in
-> > that volume group.
-> >
->=20
-> I wonder if the barrier messages are making it to this write back
-> cache.  Do you see any messages about barriers in your kernel logs?
+In my case, kernel 2.6.32-0.51.rc7.git2.fc13.i686.PAE and BTRFS under L=
+VM2.
 
-Most drives with writeback caches will honor the barriers.  Most arrays
-with writeback caches will ignore them.  Usually they also have their
-own battery backup, which should be safe enough to continue using the
-writeback cache.
+----
+Gustavo Junior Alves
+Specchio Solu=E7=F5es em TI
 
-But, that depends on the array.
 
-Bill, I've got a great little application that you can use to test the
-safety of the array against power failures.  You'll have to pull the
-plug on the poor machine about 10 times to be sure, just let me know if
-you're interested.
-
-If the raid array works, the power failure test won't hurt any of the
-existing filesystems.  If not, it's possible they will all get
-corrupted, so I wouldn't blame you for not wanting to run it.
-
--chris
-
+On Fri, Feb 26, 2010 at 1:15 PM, Chris Mason <chris.mason@oracle.com> w=
+rote:
+> On Fri, Feb 26, 2010 at 11:13:32AM -0500, Chris Mason wrote:
+>> On Thu, Feb 25, 2010 at 03:28:19PM -0300, Gustavo Alves wrote:
+>> > I've got the same error before in a similar situation (24 partitio=
+ns,
+>> > only two with problems). Unfortunally I erased all data after this
+>> > error. Strange that all I've done was shutdown and poweron the
+>> > machine.
+>>
+>> Basically it looks like the tree of data checksums isn't right. =A0W=
+hich
+>> kernels were you running when you had these problems?
+>
+> Sorry, I mixed up this corruption with one farther down. =A0The same
+> question stands though, this error generally means that IO either did=
+n't
+> happen or happened in the wrong place.
+>
+> So, the more details you can give about your config the easier it wil=
+l
+> be to nail it down.
+>
+> -chris
+>
+>
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

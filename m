@@ -1,113 +1,71 @@
-From: Akinobu Mita <akinobu.mita@gmail.com>
-Subject: [PATCH] btrfs: use memparse
-Date: Sun, 28 Feb 2010 19:59:11 +0900
-Message-ID: <1267354751-6502-1-git-send-email-akinobu.mita@gmail.com>
-Cc: Akinobu Mita <akinobu.mita@gmail.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs@vger.kernel.org
-To: linux-kernel@vger.kernel.org
+From: Chris Mason <chris.mason@oracle.com>
+Subject: new (dangerous) subvol listing branch
+Date: Sun, 28 Feb 2010 20:29:23 -0500
+Message-ID: <20100301012923.GA11667@think>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use memparse() instead of its own private implementation.
+Hi everyone,
 
-Signed-off-by: Akinobu Mita <akinobu.mita@gmail.com>
-Cc: Chris Mason <chris.mason@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
----
- fs/btrfs/ctree.h |    1 -
- fs/btrfs/ioctl.c |    2 +-
- fs/btrfs/super.c |   31 +++----------------------------
- 3 files changed, 4 insertions(+), 30 deletions(-)
+I've integrated Josef's work to allow switching the subvolume used
+during mount with a new subvolume listing ioctl.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 2aa8ec6..52af317 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2386,7 +2386,6 @@ void btrfs_sysfs_del_super(struct btrfs_fs_info *root);
- ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size);
- 
- /* super.c */
--u64 btrfs_parse_size(char *str);
- int btrfs_parse_options(struct btrfs_root *root, char *options);
- int btrfs_sync_fs(struct super_block *sb, int wait);
- 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 645a179..c359efd 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -608,7 +608,7 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
- 			mod = 1;
- 			sizestr++;
- 		}
--		new_size = btrfs_parse_size(sizestr);
-+		new_size = memparse(sizestr, NULL);
- 		if (new_size == 0) {
- 			ret = -EINVAL;
- 			goto out_unlock;
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 8a1ea6e..aa48c6b 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -95,31 +95,6 @@ static match_table_t tokens = {
- 	{Opt_err, NULL},
- };
- 
--u64 btrfs_parse_size(char *str)
--{
--	u64 res;
--	int mult = 1;
--	char *end;
--	char last;
--
--	res = simple_strtoul(str, &end, 10);
--
--	last = end[0];
--	if (isalpha(last)) {
--		last = tolower(last);
--		switch (last) {
--		case 'g':
--			mult *= 1024;
--		case 'm':
--			mult *= 1024;
--		case 'k':
--			mult *= 1024;
--		}
--		res = res * mult;
--	}
--	return res;
--}
--
- /*
-  * Regular mount options parser.  Everything that is needed only when
-  * reading in a new superblock is parsed here.
-@@ -213,7 +188,7 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 		case Opt_max_extent:
- 			num = match_strdup(&args[0]);
- 			if (num) {
--				info->max_extent = btrfs_parse_size(num);
-+				info->max_extent = memparse(num, NULL);
- 				kfree(num);
- 
- 				info->max_extent = max_t(u64,
-@@ -225,7 +200,7 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 		case Opt_max_inline:
- 			num = match_strdup(&args[0]);
- 			if (num) {
--				info->max_inline = btrfs_parse_size(num);
-+				info->max_inline = memparse(num, NULL);
- 				kfree(num);
- 
- 				if (info->max_inline) {
-@@ -240,7 +215,7 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 		case Opt_alloc_start:
- 			num = match_strdup(&args[0]);
- 			if (num) {
--				info->alloc_start = btrfs_parse_size(num);
-+				info->alloc_start = memparse(num, NULL);
- 				kfree(num);
- 				printk(KERN_INFO
- 					"btrfs: allocations start at %llu\n",
--- 
-1.6.0.6
+The end result is in a new branch of the kernel and progs git repository
+called subvol.  It may be rebased and is only meant for development and
+testing.
+
+Changing the default subvol used for a mount (via a new ioctl)
+allows you to force the kernel to use a snapshot or subvolume other than
+the default.
+
+If the default subvol for mount is changed (via btrfstctl -m), an
+incompat flag gets set on the FS and older kernels will not be able to
+mount the FS.
+
+This only happens when you specifically run the ioctl (btrfsctl -m) to
+change the default subvolume.
+
+It doesn't happen when you use the new listing ioctl (btrfs-list) or if
+you mount an existing FS with the new code.
+
+A new program has been added (btrfs-list) which will give you a list of
+all subvolumes and snapshots along with their paths.  It is based on
+TARUISI Hiroaki's subvolume listing work, but I wanted to extend things a
+little.
+
+The subvolume listing happens via two new ioctls.  The first one is a
+very generic btree search, allowing userland to do almost any search
+through the btree done by the kernel.  Some day we can use this to find
+recently changed files and other important features.
+
+The second ioctl finds the pathname of a directory inside its parent
+subvol.  The btrfs-list program combines them to produce a list of all
+the subvolumes and the path to find them.
+
+Example output:
+
+# btrfs-list /mnt
+ID 256 top level 5 path vol1
+ID 257 top level 5 path vol1/vol2
+ID 258 top level 5 path vol1/vol2/vol3
+ID 259 top level 5 path vol1/vol2/vol3/vol4
+
+ID is the object id of the subvolume.  This is what you'd pass into the
+mount -o subvol=NN mount option or the new btrfsctl -m command.
+
+top level (5 in all of these) is basically the disconnected head of the
+directory chain.  We could have more than one of them if a subvolume was
+unlinked from its directory.  It is a root id, and 5 is the id of the
+default subvolume created during mount.
+
+In this case, mount -o subvol=5 will find all of these subvolumes in a
+single directory tree.
+
+I'm headed off to vacation this week, but I'll be checking email from
+time to time.  Just let me know if there are questions or problems.
+
+-chris
 

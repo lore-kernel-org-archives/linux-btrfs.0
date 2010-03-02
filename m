@@ -1,57 +1,60 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Subject: Re: Quota Clarification
-Date: Mon, 1 Mar 2010 20:22:40 +0100
-Message-ID: <201003012022.41417.kreijack@libero.it>
-References: <c5b98f841002261951k78ad0f1cnec5450218a9ed0d8@mail.gmail.com> <c5b98f841003010823k714af7bam94cabed9ed3c69cc@mail.gmail.com>
-Reply-To: kreijack@libero.it
+From: Robert Collins <robertc@robertcollins.net>
+Subject: BackupPC, per-dir hard link limit, Debian packaging
+Date: Tue, 02 Mar 2010 13:29:05 +1100
+Message-ID: <1267496945.9222.155.camel@lifeless-64>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
+Content-Type: multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature"; boundary="=-IP9TtOA9ArFD5Wi/227b"
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <c5b98f841003010823k714af7bam94cabed9ed3c69cc@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday 01 March 2010, Robert LeBlanc wrote:
-> On Fri, Feb 26, 2010 at 8:51 PM, Robert LeBlanc <robert@leblancnet.us> 
-wrote:
-> > First off, thanks for the great work on btrfs. I've been trying to
-> > follow the development for some time and now that Debian has
-> > everything in Squeeze, I've been playing around with btrfs.
-> >
-> > I would like to implement btrfs on a large file server that we are
-> > currently using ACLs, user and group quotas and LVM snapshots. 
 
-Pay attention that btrfs is under develop.
+--=-IP9TtOA9ArFD5Wi/227b
+Content-Type: text/plain; charset="ANSI_X3.4-1968"
+Content-Transfer-Encoding: quoted-printable
 
-> > While
-[...]
-> > I went to look at the quotas and repquota said that the mount point
-> > doesn't have quotas enabled. I then searched for documentation about
-> > quotas and it was pretty sparse. 
-AFICT quota is not available in btrfs.
+I realise that the hard link limit is in the queue to fix, and I read
+the recent thread as well as the older (october I think) thread.
 
-[...]
-> I fail to see the benefit of having a btrfs root fs that is less than
-> the disk or partition as the space can't be used for anything else. I
-> hope I'm just doing something wrong here.
+I just wanted to note that BackupPC *does* in fact run into the hard
+link limit, and its due to the dpkg configuration scripts.
 
-A possible application is shrinking a filesystem, in case of change of hard 
-disk.
+BackupPC hard links files with the same content together by scanning new
+files and linking them together, whether or not they started as a hard
+link in the backed up source PCs.
 
-> 
-> Thanks,
-> 
-> Robert LeBlanc
-> Life Sciences & Undergraduate Education Computer Support
-> Brigham Young University
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+It also builds a directory structure precisely matching the source
+machine (basically it rsyncs across, then hardlinks aggressively).
 
+If you back up a Debian host, /var/lib/dpkg/info contains many identical
+files because debhelper generates the same script in the common case:
+ls /var/lib/dpkg/info/*.postinst | xargs -n1 sha1sum | awk '{ print
+$1 }' | sort -u | wc -l
+862
+ls /var/lib/dpkg/info/*.postinst | wc -l
+1533
 
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+As I say, I realise this is queued to get addressed anyway, but it seems
+like a realistic thing for people to do (use BackupPC on btrfs) - even
+if something better still can be written to replace the BackupPC store
+in the future. I will note though, that simple snapshots won't achieve
+the deduplication level that BackupPC does, because the fils don't start
+out as the same: they are identified as being identical post-backup.
+
+Cheers,
+Rob
+
+--=-IP9TtOA9ArFD5Wi/227b
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iEYEABECAAYFAkuMd/AACgkQhnv5qfvT646bgACgoBEHvkUU5kjcwGDpdZME2ToE
+MKQAn07gznbGhSC3jgxr/EfHMN0/kGAh
+=G8Zj
+-----END PGP SIGNATURE-----
+
+--=-IP9TtOA9ArFD5Wi/227b--
+

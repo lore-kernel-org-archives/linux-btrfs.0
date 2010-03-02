@@ -1,60 +1,68 @@
-From: Robert Collins <robertc@robertcollins.net>
-Subject: BackupPC, per-dir hard link limit, Debian packaging
-Date: Tue, 02 Mar 2010 13:29:05 +1100
-Message-ID: <1267496945.9222.155.camel@lifeless-64>
+From: Hubert Kario <hka@qbs.com.pl>
+Subject: Re: BackupPC, per-dir hard link limit, Debian packaging
+Date: Tue, 2 Mar 2010 14:09:22 +0100
+Message-ID: <201003021409.22441.hka@qbs.com.pl>
+References: <1267496945.9222.155.camel@lifeless-64>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature"; boundary="=-IP9TtOA9ArFD5Wi/227b"
+Content-Type: Text/Plain; charset=utf-8
+Cc: Robert Collins <robertc@robertcollins.net>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1267496945.9222.155.camel@lifeless-64>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tuesday 02 March 2010 03:29:05 Robert Collins wrote:
+> As I say, I realise this is queued to get addressed anyway, but it se=
+ems
+> like a realistic thing for people to do (use BackupPC on btrfs) - eve=
+n
+> if something better still can be written to replace the BackupPC stor=
+e
+> in the future. I will note though, that simple snapshots won't achiev=
+e
+> the deduplication level that BackupPC does, because the fils don't st=
+art
+> out as the same: they are identified as being identical post-backup.
 
---=-IP9TtOA9ArFD5Wi/227b
-Content-Type: text/plain; charset="ANSI_X3.4-1968"
-Content-Transfer-Encoding: quoted-printable
+Isn't the main idea behind deduplication to merge identical parts of fi=
+les=20
+together using cow? This way you could have many very similar images of=
+=20
+virtual machines, run the deduplication process and reduce massively th=
+e space=20
+used while maintaining the differences between images.
 
-I realise that the hard link limit is in the queue to fix, and I read
-the recent thread as well as the older (october I think) thread.
+If memory serves me right, the plan is to do it in userland on a post-f=
+act=20
+filesystem, not when the data is being saved. If such a daemon or progr=
+am was=20
+available you would run it on the system after rsyncing the workstation=
+s.
 
-I just wanted to note that BackupPC *does* in fact run into the hard
-link limit, and its due to the dpkg configuration scripts.
+Though the question remains which system would reduce space usage more =
+in your=20
+use case. From my experience, hardlinks take less space on disk, I don'=
+t know=20
+whatever it could be possible to optimise btrfs cow system for files th=
+at are=20
+exactly the same.
 
-BackupPC hard links files with the same content together by scanning new
-files and linking them together, whether or not they started as a hard
-link in the backed up source PCs.
+>=20
+> Cheers,
+> Rob
+>=20
 
-It also builds a directory structure precisely matching the source
-machine (basically it rsyncs across, then hardlinks aggressively).
+--=20
+Hubert Kario
+QBS - Quality Business Software
+02-656 Warszawa, ul. Ksawer=C3=B3w 30/85
+tel. +48 (22) 646-61-51, 646-74-24
+www.qbs.com.pl
 
-If you back up a Debian host, /var/lib/dpkg/info contains many identical
-files because debhelper generates the same script in the common case:
-ls /var/lib/dpkg/info/*.postinst | xargs -n1 sha1sum | awk '{ print
-$1 }' | sort -u | wc -l
-862
-ls /var/lib/dpkg/info/*.postinst | wc -l
-1533
-
-As I say, I realise this is queued to get addressed anyway, but it seems
-like a realistic thing for people to do (use BackupPC on btrfs) - even
-if something better still can be written to replace the BackupPC store
-in the future. I will note though, that simple snapshots won't achieve
-the deduplication level that BackupPC does, because the fils don't start
-out as the same: they are identified as being identical post-backup.
-
-Cheers,
-Rob
-
---=-IP9TtOA9ArFD5Wi/227b
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iEYEABECAAYFAkuMd/AACgkQhnv5qfvT646bgACgoBEHvkUU5kjcwGDpdZME2ToE
-MKQAn07gznbGhSC3jgxr/EfHMN0/kGAh
-=G8Zj
------END PGP SIGNATURE-----
-
---=-IP9TtOA9ArFD5Wi/227b--
-
+System Zarz=C4=85dzania Jako=C5=9Bci=C4=85
+zgodny z norm=C4=85 ISO 9001:2000
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

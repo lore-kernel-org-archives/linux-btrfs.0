@@ -1,8 +1,7 @@
 From: jim owens <owens6336@gmail.com>
-Subject: [PATCH V2] Btrfs: add direct I/O helper to return mirror count from
- extent_map.
-Date: Wed, 03 Mar 2010 10:31:03 -0500
-Message-ID: <4B8E80B7.3090404@gmail.com>
+Subject: [PATCH V2] Btrfs: add decompression code for direct I/O.
+Date: Wed, 03 Mar 2010 10:57:43 -0500
+Message-ID: <4B8E86F7.3000600@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
@@ -10,70 +9,223 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-Direct I/O retry needs to know the number of mirror copies.
+Direct I/O needs to inflate compressed temp pages with the
+uncompressed result stored in not-necessarily-aligned user
+memory. Add btrfs_zlib_inflate() to do this and expose
+struct workspace, find_zlib_workspace(), and free_workspace()
+so that multiple extents can be processed using one workspace.
 
 Signed-off-by: jim owens <jowens@hp.com>
 Signed-off-by: jim owens <jim6336@gmail.com>
 ---
 
-V2 fixes whitespace checkpatch warning
+V2 fixes whitespace checkpatch warning and removes JIM testing printk
 
- fs/btrfs/volumes.c |   22 ++++++++++++++--------
- fs/btrfs/volumes.h |    1 +
- 2 files changed, 15 insertions(+), 8 deletions(-)
+ fs/btrfs/compression.h |   20 +++++++
+ fs/btrfs/zlib.c        |  142 +++++++++++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 154 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 5ca2c6d..4cd4754 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2579,10 +2579,20 @@ void btrfs_mapping_tree_free(struct btrfs_mapping_tree *tree)
- 	}
- }
+diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
+index 421f5b4..afd262d 100644
+--- a/fs/btrfs/compression.h
++++ b/fs/btrfs/compression.h
+@@ -19,6 +19,26 @@
+ #ifndef __BTRFS_COMPRESSION_
+ #define __BTRFS_COMPRESSION_
  
-+int btrfs_map_num_copies(struct extent_map *em)
-+{
-+	struct map_lookup *map = (struct map_lookup *)em->bdev;
++#include <linux/zlib.h>
++struct workspace {
++	z_stream z_strm;
++	char *buf;
++	struct list_head list;
++};
 +
-+	if (map->type & (BTRFS_BLOCK_GROUP_DUP | BTRFS_BLOCK_GROUP_RAID1))
-+		return map->num_stripes;
-+	if (map->type & BTRFS_BLOCK_GROUP_RAID10)
-+		return map->sub_stripes;
-+	return 1;
-+}
++struct btrfs_inflate {
++	struct workspace *workspace;
++	int (*get_next_in)(struct bio_vec *vec, struct btrfs_inflate *icb);
++	int (*get_next_out)(struct bio_vec *vec, struct btrfs_inflate *icb);
++	void (*done_with_out)(struct bio_vec *vec, struct btrfs_inflate *icb);
++	u32 out_start;
++	u32 out_len;
++};
 +
- int btrfs_num_copies(struct btrfs_mapping_tree *map_tree, u64 logical, u64 len)
++struct workspace *find_zlib_workspace(void);
++int free_workspace(struct workspace *workspace);
++int btrfs_zlib_inflate(struct btrfs_inflate *icb);
++
+ int btrfs_zlib_decompress(unsigned char *data_in,
+ 			  struct page *dest_page,
+ 			  unsigned long start_byte,
+diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
+index d7bdce5..ea601e6 100644
+--- a/fs/btrfs/zlib.c
++++ b/fs/btrfs/zlib.c
+@@ -41,12 +41,6 @@
+ */
+ #define STREAM_END_SPACE 12
+ 
+-struct workspace {
+-	z_stream z_strm;
+-	char *buf;
+-	struct list_head list;
+-};
+-
+ static LIST_HEAD(idle_workspace);
+ static DEFINE_SPINLOCK(workspace_lock);
+ static unsigned long num_workspace;
+@@ -57,7 +51,7 @@ static DECLARE_WAIT_QUEUE_HEAD(workspace_wait);
+  * this finds an available zlib workspace or allocates a new one
+  * NULL or an ERR_PTR is returned if things go bad.
+  */
+-static struct workspace *find_zlib_workspace(void)
++struct workspace *find_zlib_workspace(void)
  {
- 	struct extent_map *em;
--	struct map_lookup *map;
- 	struct extent_map_tree *em_tree = &map_tree->map_tree;
+ 	struct workspace *workspace;
  	int ret;
- 
-@@ -2592,13 +2602,9 @@ int btrfs_num_copies(struct btrfs_mapping_tree *map_tree, u64 logical, u64 len)
- 	BUG_ON(!em);
- 
- 	BUG_ON(em->start > logical || em->start + em->len < logical);
--	map = (struct map_lookup *)em->bdev;
--	if (map->type & (BTRFS_BLOCK_GROUP_DUP | BTRFS_BLOCK_GROUP_RAID1))
--		ret = map->num_stripes;
--	else if (map->type & BTRFS_BLOCK_GROUP_RAID10)
--		ret = map->sub_stripes;
--	else
--		ret = 1;
-+
-+	ret = btrfs_map_num_copies(em);
-+
- 	free_extent_map(em);
- 	return ret;
+@@ -117,7 +111,7 @@ fail:
+  * put a workspace struct back on the list or free it if we have enough
+  * idle ones sitting around
+  */
+-static int free_workspace(struct workspace *workspace)
++int free_workspace(struct workspace *workspace)
+ {
+ 	spin_lock(&workspace_lock);
+ 	if (num_workspace < num_online_cpus()) {
+@@ -622,3 +616,135 @@ void btrfs_zlib_exit(void)
+ {
+     free_workspaces();
  }
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 226200d..732c8c5 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -195,4 +195,5 @@ int find_free_dev_extent(struct btrfs_trans_handle *trans,
- int btrfs_map_stripe_count(struct extent_map *em);
- struct block_device *btrfs_map_stripe_bdev(struct extent_map *em, int stripe);
- u64 btrfs_map_stripe_physical(struct extent_map *em, int stripe);
-+int btrfs_map_num_copies(struct extent_map *em);
- #endif
++
++/* inflate compressed data for one contiguous file range from directio */
++int btrfs_zlib_inflate(struct btrfs_inflate *icb)
++{
++	struct workspace *workspace = icb->workspace;
++	unsigned long out_start = icb->out_start;
++	unsigned long total_len = icb->out_len + out_start;
++	struct bio_vec ivec;
++	struct bio_vec ovec;
++	char *in;
++	char *out;
++	int err;
++	int wbits;
++
++	icb->out_len = 0;
++	ivec.bv_len = 0;
++	ovec.bv_len = 0;
++	if (!workspace) {
++		workspace = find_zlib_workspace();
++		if (IS_ERR(workspace))
++			return -ENOMEM;
++	}
++
++	err = icb->get_next_in(&ivec, icb);
++	if (err)
++		goto fail;
++	in = kmap_atomic(ivec.bv_page, KM_USER0);
++	workspace->z_strm.next_in = in + ivec.bv_offset;
++	workspace->z_strm.avail_in = ivec.bv_len;
++	workspace->z_strm.total_in = 0;
++	workspace->z_strm.total_out = 0;
++	workspace->z_strm.next_out = workspace->buf;
++	workspace->z_strm.avail_out = PAGE_CACHE_SIZE;
++
++	/* with no preset dictionary, tell zlib to skip the adler32 check */
++	if (!(in[ivec.bv_offset+1] & PRESET_DICT) &&
++		    ((in[ivec.bv_offset] & 0x0f) == Z_DEFLATED) &&
++		    !(((in[ivec.bv_offset]<<8) + in[ivec.bv_offset+1]) % 31)) {
++
++		wbits = -((in[ivec.bv_offset] >> 4) + 8);
++		workspace->z_strm.next_in += 2;
++		workspace->z_strm.avail_in -= 2;
++	} else {
++		wbits = MAX_WBITS;
++	}
++
++	err = zlib_inflateInit2(&workspace->z_strm, wbits);
++	if (err) {
++		kunmap_atomic(in, KM_USER0);
++		goto fail;
++	}
++
++	ivec.bv_len = workspace->z_strm.avail_in;
++	ivec.bv_offset = (char *)workspace->z_strm.next_in - in;
++	kunmap_atomic(in, KM_USER0);
++
++	/* use temp buf to toss everything before the real data we want */
++	while (workspace->z_strm.total_out < out_start) {
++		workspace->z_strm.next_out = workspace->buf;
++		workspace->z_strm.avail_out = min(PAGE_CACHE_SIZE,
++				out_start - workspace->z_strm.total_out);
++
++		if (!ivec.bv_len) {
++			err = icb->get_next_in(&ivec, icb);
++			if (err)
++				goto fail;
++		}
++		in = kmap_atomic(ivec.bv_page, KM_USER0);
++		workspace->z_strm.next_in = in + ivec.bv_offset;
++		workspace->z_strm.avail_in = ivec.bv_len;
++
++		err = zlib_inflate(&workspace->z_strm, Z_NO_FLUSH);
++
++		ivec.bv_len = workspace->z_strm.avail_in;
++		ivec.bv_offset = (char *)workspace->z_strm.next_in - in;
++		kunmap_atomic(in, KM_USER0);
++
++		if (err != Z_OK) /* Z_STREAM_END is no-user-data failure here */
++			goto fail;
++		cond_resched();
++	}
++
++	while (workspace->z_strm.total_out < total_len) {
++		if (!ivec.bv_len) {
++			err = icb->get_next_in(&ivec, icb);
++			if (err)
++				goto fail;
++		}
++		if (!ovec.bv_len) {
++			err = icb->get_next_out(&ovec, icb);
++			if (err)
++				goto fail;
++		}
++
++		in = kmap_atomic(ivec.bv_page, KM_USER0);
++		workspace->z_strm.next_in = in + ivec.bv_offset;
++		workspace->z_strm.avail_in = ivec.bv_len;
++
++		out = kmap_atomic(ovec.bv_page, KM_USER1);
++		workspace->z_strm.next_out = out + ovec.bv_offset;
++		workspace->z_strm.avail_out = ovec.bv_len;
++
++		err = zlib_inflate(&workspace->z_strm, Z_NO_FLUSH);
++
++		icb->out_len += (ovec.bv_len - workspace->z_strm.avail_out);
++		ovec.bv_len = workspace->z_strm.avail_out;
++		ovec.bv_offset = (char *)workspace->z_strm.next_out - out;
++		kunmap_atomic(out, KM_USER1);
++
++		ivec.bv_len = workspace->z_strm.avail_in;
++		ivec.bv_offset = (char *)workspace->z_strm.next_in - in;
++		kunmap_atomic(in, KM_USER0);
++
++		if (!ovec.bv_len)
++			icb->done_with_out(&ovec, icb);
++		else
++			flush_dcache_page(ovec.bv_page);
++
++		if (err != Z_OK)
++			goto fail;
++		cond_resched();
++	}
++
++fail:
++	if (ovec.bv_len)
++		icb->done_with_out(&ovec, icb);
++	if (!icb->workspace)
++		free_workspace(workspace);
++	if (err == Z_OK || err == Z_STREAM_END)
++		return 0;
++	return err;
++}
 -- 
 1.6.3.3

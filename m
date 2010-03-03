@@ -1,7 +1,8 @@
 From: jim owens <owens6336@gmail.com>
-Subject: [PATCH V2] Btrfs: add decompression code for direct I/O.
-Date: Wed, 03 Mar 2010 10:57:43 -0500
-Message-ID: <4B8E86F7.3000600@gmail.com>
+Subject: [PATCH V2] Btrfs: split btrfs_map_block into two parts for direct
+ I/O.
+Date: Wed, 03 Mar 2010 12:23:25 -0500
+Message-ID: <4B8E9B0D.2070904@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
@@ -9,223 +10,185 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-Direct I/O needs to inflate compressed temp pages with the
-uncompressed result stored in not-necessarily-aligned user
-memory. Add btrfs_zlib_inflate() to do this and expose
-struct workspace, find_zlib_workspace(), and free_workspace()
-so that multiple extents can be processed using one workspace.
+The part of btrfs_map_block() that decodes the extent map and
+rw/logical/length/mirror parameters is split into a routine
+btrfs_map_to_stripe() so direct I/O can build multiple bios
+with one lookup_extent_mapping().
+
+The part of btrfs_map_block() that does lookup_extent_mapping()
+and optional creation of the btrfs_multi_bio struct now calls
+btrfs_map_to_stripe().
 
 Signed-off-by: jim owens <jowens@hp.com>
 Signed-off-by: jim owens <jim6336@gmail.com>
 ---
 
-V2 fixes whitespace checkpatch warning and removes JIM testing printk
+V2 fixes long line checkpatch warning
 
- fs/btrfs/compression.h |   20 +++++++
- fs/btrfs/zlib.c        |  142 +++++++++++++++++++++++++++++++++++++++++++++---
- 2 files changed, 154 insertions(+), 8 deletions(-)
+ fs/btrfs/volumes.c |   85 +++++++++++++++++++++++++++++++--------------------
+ fs/btrfs/volumes.h |   10 ++++++
+ 2 files changed, 62 insertions(+), 33 deletions(-)
 
-diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
-index 421f5b4..afd262d 100644
---- a/fs/btrfs/compression.h
-+++ b/fs/btrfs/compression.h
-@@ -19,6 +19,26 @@
- #ifndef __BTRFS_COMPRESSION_
- #define __BTRFS_COMPRESSION_
- 
-+#include <linux/zlib.h>
-+struct workspace {
-+	z_stream z_strm;
-+	char *buf;
-+	struct list_head list;
-+};
-+
-+struct btrfs_inflate {
-+	struct workspace *workspace;
-+	int (*get_next_in)(struct bio_vec *vec, struct btrfs_inflate *icb);
-+	int (*get_next_out)(struct bio_vec *vec, struct btrfs_inflate *icb);
-+	void (*done_with_out)(struct bio_vec *vec, struct btrfs_inflate *icb);
-+	u32 out_start;
-+	u32 out_len;
-+};
-+
-+struct workspace *find_zlib_workspace(void);
-+int free_workspace(struct workspace *workspace);
-+int btrfs_zlib_inflate(struct btrfs_inflate *icb);
-+
- int btrfs_zlib_decompress(unsigned char *data_in,
- 			  struct page *dest_page,
- 			  unsigned long start_byte,
-diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
-index d7bdce5..ea601e6 100644
---- a/fs/btrfs/zlib.c
-+++ b/fs/btrfs/zlib.c
-@@ -41,12 +41,6 @@
- */
- #define STREAM_END_SPACE 12
- 
--struct workspace {
--	z_stream z_strm;
--	char *buf;
--	struct list_head list;
--};
--
- static LIST_HEAD(idle_workspace);
- static DEFINE_SPINLOCK(workspace_lock);
- static unsigned long num_workspace;
-@@ -57,7 +51,7 @@ static DECLARE_WAIT_QUEUE_HEAD(workspace_wait);
-  * this finds an available zlib workspace or allocates a new one
-  * NULL or an ERR_PTR is returned if things go bad.
-  */
--static struct workspace *find_zlib_workspace(void)
-+struct workspace *find_zlib_workspace(void)
- {
- 	struct workspace *workspace;
- 	int ret;
-@@ -117,7 +111,7 @@ fail:
-  * put a workspace struct back on the list or free it if we have enough
-  * idle ones sitting around
-  */
--static int free_workspace(struct workspace *workspace)
-+int free_workspace(struct workspace *workspace)
- {
- 	spin_lock(&workspace_lock);
- 	if (num_workspace < num_online_cpus()) {
-@@ -622,3 +616,135 @@ void btrfs_zlib_exit(void)
- {
-     free_workspaces();
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 98c0924..ee66267 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2619,33 +2619,16 @@ static int find_live_mirror(struct map_lookup *map, int first, int num,
+ 	return optimal;
  }
-+
-+/* inflate compressed data for one contiguous file range from directio */
-+int btrfs_zlib_inflate(struct btrfs_inflate *icb)
-+{
-+	struct workspace *workspace = icb->workspace;
-+	unsigned long out_start = icb->out_start;
-+	unsigned long total_len = icb->out_len + out_start;
-+	struct bio_vec ivec;
-+	struct bio_vec ovec;
-+	char *in;
-+	char *out;
-+	int err;
-+	int wbits;
-+
-+	icb->out_len = 0;
-+	ivec.bv_len = 0;
-+	ovec.bv_len = 0;
-+	if (!workspace) {
-+		workspace = find_zlib_workspace();
-+		if (IS_ERR(workspace))
-+			return -ENOMEM;
-+	}
-+
-+	err = icb->get_next_in(&ivec, icb);
-+	if (err)
-+		goto fail;
-+	in = kmap_atomic(ivec.bv_page, KM_USER0);
-+	workspace->z_strm.next_in = in + ivec.bv_offset;
-+	workspace->z_strm.avail_in = ivec.bv_len;
-+	workspace->z_strm.total_in = 0;
-+	workspace->z_strm.total_out = 0;
-+	workspace->z_strm.next_out = workspace->buf;
-+	workspace->z_strm.avail_out = PAGE_CACHE_SIZE;
-+
-+	/* with no preset dictionary, tell zlib to skip the adler32 check */
-+	if (!(in[ivec.bv_offset+1] & PRESET_DICT) &&
-+		    ((in[ivec.bv_offset] & 0x0f) == Z_DEFLATED) &&
-+		    !(((in[ivec.bv_offset]<<8) + in[ivec.bv_offset+1]) % 31)) {
-+
-+		wbits = -((in[ivec.bv_offset] >> 4) + 8);
-+		workspace->z_strm.next_in += 2;
-+		workspace->z_strm.avail_in -= 2;
-+	} else {
-+		wbits = MAX_WBITS;
-+	}
-+
-+	err = zlib_inflateInit2(&workspace->z_strm, wbits);
-+	if (err) {
-+		kunmap_atomic(in, KM_USER0);
-+		goto fail;
-+	}
-+
-+	ivec.bv_len = workspace->z_strm.avail_in;
-+	ivec.bv_offset = (char *)workspace->z_strm.next_in - in;
-+	kunmap_atomic(in, KM_USER0);
-+
-+	/* use temp buf to toss everything before the real data we want */
-+	while (workspace->z_strm.total_out < out_start) {
-+		workspace->z_strm.next_out = workspace->buf;
-+		workspace->z_strm.avail_out = min(PAGE_CACHE_SIZE,
-+				out_start - workspace->z_strm.total_out);
-+
-+		if (!ivec.bv_len) {
-+			err = icb->get_next_in(&ivec, icb);
-+			if (err)
-+				goto fail;
-+		}
-+		in = kmap_atomic(ivec.bv_page, KM_USER0);
-+		workspace->z_strm.next_in = in + ivec.bv_offset;
-+		workspace->z_strm.avail_in = ivec.bv_len;
-+
-+		err = zlib_inflate(&workspace->z_strm, Z_NO_FLUSH);
-+
-+		ivec.bv_len = workspace->z_strm.avail_in;
-+		ivec.bv_offset = (char *)workspace->z_strm.next_in - in;
-+		kunmap_atomic(in, KM_USER0);
-+
-+		if (err != Z_OK) /* Z_STREAM_END is no-user-data failure here */
-+			goto fail;
-+		cond_resched();
-+	}
-+
-+	while (workspace->z_strm.total_out < total_len) {
-+		if (!ivec.bv_len) {
-+			err = icb->get_next_in(&ivec, icb);
-+			if (err)
-+				goto fail;
-+		}
-+		if (!ovec.bv_len) {
-+			err = icb->get_next_out(&ovec, icb);
-+			if (err)
-+				goto fail;
-+		}
-+
-+		in = kmap_atomic(ivec.bv_page, KM_USER0);
-+		workspace->z_strm.next_in = in + ivec.bv_offset;
-+		workspace->z_strm.avail_in = ivec.bv_len;
-+
-+		out = kmap_atomic(ovec.bv_page, KM_USER1);
-+		workspace->z_strm.next_out = out + ovec.bv_offset;
-+		workspace->z_strm.avail_out = ovec.bv_len;
-+
-+		err = zlib_inflate(&workspace->z_strm, Z_NO_FLUSH);
-+
-+		icb->out_len += (ovec.bv_len - workspace->z_strm.avail_out);
-+		ovec.bv_len = workspace->z_strm.avail_out;
-+		ovec.bv_offset = (char *)workspace->z_strm.next_out - out;
-+		kunmap_atomic(out, KM_USER1);
-+
-+		ivec.bv_len = workspace->z_strm.avail_in;
-+		ivec.bv_offset = (char *)workspace->z_strm.next_in - in;
-+		kunmap_atomic(in, KM_USER0);
-+
-+		if (!ovec.bv_len)
-+			icb->done_with_out(&ovec, icb);
-+		else
-+			flush_dcache_page(ovec.bv_page);
-+
-+		if (err != Z_OK)
-+			goto fail;
-+		cond_resched();
-+	}
-+
-+fail:
-+	if (ovec.bv_len)
-+		icb->done_with_out(&ovec, icb);
-+	if (!icb->workspace)
-+		free_workspace(workspace);
-+	if (err == Z_OK || err == Z_STREAM_END)
-+		return 0;
-+	return err;
+ 
+-int btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
+-			     u64 logical, u64 *length,
+-			     struct btrfs_multi_bio **multi_ret,
+-			     int mirror_num)
++void btrfs_map_to_stripe(struct extent_map *em, int rw, int mirror_num,
++			u64 logical, u64 *length,
++			struct btrfs_stripe_info *stripe_info)
+ {
+-	struct extent_map *em;
+ 	struct map_lookup *map;
+-	struct extent_map_tree *em_tree = &map_tree->map_tree;
+ 	u64 offset;
+ 	u64 stripe_offset;
+ 	u64 stripe_nr;
+ 	int stripe_index;
+-	int i;
+ 	int num_stripes;
+-	int max_errors;
+-	struct btrfs_multi_bio *multi;
+-
+-	read_lock(&em_tree->lock);
+-	em = lookup_extent_mapping(em_tree, logical, *length);
+-	read_unlock(&em_tree->lock);
+-
+-	if (!em) {
+-		printk(KERN_CRIT "unable to find logical %llu len %llu\n",
+-		       (unsigned long long)logical,
+-		       (unsigned long long)*length);
+-		BUG();
+-	}
+ 
+ 	BUG_ON(em->start > logical || em->start + em->len < logical);
+ 	map = (struct map_lookup *)em->bdev;
+@@ -2675,19 +2658,19 @@ int btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
+ 		*length = min(*length, em->len - offset);
+ 	}
+ 
+-	if (!multi_ret)
+-		goto out;
++	if (!stripe_info)
++		return;
+ 
+ 	if (mirror_num > map->num_stripes)
+ 		mirror_num = 0;
+ 
+-	max_errors = 0;
++	stripe_info->max_errors = 0;
+ 	if (rw & (1 << BIO_RW)) {
+ 		if (map->type & (BTRFS_BLOCK_GROUP_RAID1 |
+ 				 BTRFS_BLOCK_GROUP_DUP))
+-			max_errors = 1;
++			stripe_info->max_errors = 1;
+ 		else if (map->type & BTRFS_BLOCK_GROUP_RAID10)
+-			max_errors = 1;
++			stripe_info->max_errors = 1;
+ 	}
+ 
+ 	num_stripes = 1;
+@@ -2734,22 +2717,58 @@ int btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
+ 	}
+ 	BUG_ON(stripe_index >= map->num_stripes);
+ 
+-	multi = kzalloc(btrfs_multi_bio_size(num_stripes), GFP_NOFS);
++	stripe_info->num_stripes = num_stripes;
++	stripe_info->stripe_index = stripe_index;
++	stripe_info->phys_offset = stripe_offset + stripe_nr * map->stripe_len;
 +}
++
++int btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
++			u64 logical, u64 *length,
++			struct btrfs_multi_bio **multi_ret, int mirror_num)
++{
++	struct extent_map *em;
++	struct map_lookup *map;
++	struct extent_map_tree *em_tree = &map_tree->map_tree;
++	struct btrfs_multi_bio *multi;
++	struct btrfs_stripe_info stripe_info;
++	int i;
++
++	read_lock(&em_tree->lock);
++	em = lookup_extent_mapping(em_tree, logical, *length);
++	read_unlock(&em_tree->lock);
++
++	if (!em) {
++		printk(KERN_CRIT "unable to find logical %llu len %llu\n",
++		       (unsigned long long)logical,
++		       (unsigned long long)*length);
++		BUG();
++	}
++
++	btrfs_map_to_stripe(em, rw, mirror_num, logical, length,
++				multi_ret ? &stripe_info : NULL);
++	if (!multi_ret)
++		goto out;
++
++	multi = kzalloc(btrfs_multi_bio_size(stripe_info.num_stripes),
++			GFP_NOFS);
+ 	if (!multi)
+ 		return -ENOMEM;
+ 	*multi_ret = multi;
+ 
+ 	atomic_set(&multi->error, 0);
+-	multi->num_stripes = num_stripes;
+-	multi->max_errors = max_errors;
++	multi->num_stripes = stripe_info.num_stripes;
++	multi->max_errors = stripe_info.max_errors;
+ 
+-	for (i = 0; i < num_stripes; i++) {
++	map = (struct map_lookup *)em->bdev;
++	for (i = 0; i < stripe_info.num_stripes; i++) {
+ 		multi->stripes[i].physical =
+-			map->stripes[stripe_index].physical +
+-			stripe_offset + stripe_nr * map->stripe_len;
+-		multi->stripes[i].dev = map->stripes[stripe_index].dev;
+-		stripe_index++;
++			map->stripes[stripe_info.stripe_index].physical +
++			stripe_info.phys_offset;
++		multi->stripes[i].dev =
++			map->stripes[stripe_info.stripe_index].dev;
++		stripe_info.stripe_index++;
+ 	}
++
+ out:
+ 	free_extent_map(em);
+ 	return 0;
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index d5aab74..76c4394 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -135,6 +135,13 @@ struct btrfs_multi_bio {
+ 	struct btrfs_bio_stripe stripes[];
+ };
+ 
++struct btrfs_stripe_info {
++	int num_stripes;
++	int max_errors;
++	int stripe_index;
++	u64 phys_offset;
++};
++
+ #define btrfs_multi_bio_size(n) (sizeof(struct btrfs_multi_bio) + \
+ 			    (sizeof(struct btrfs_bio_stripe) * (n)))
+ 
+@@ -142,6 +149,9 @@ int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_device *device,
+ 			   u64 chunk_tree, u64 chunk_objectid,
+ 			   u64 chunk_offset, u64 start, u64 num_bytes);
++void btrfs_map_to_stripe(struct extent_map *em, int rw, int mirror_num,
++			u64 logical, u64 *length,
++			struct btrfs_stripe_info *stripe_info);
+ int btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
+ 		    u64 logical, u64 *length,
+ 		    struct btrfs_multi_bio **multi_ret, int mirror_num);
 -- 
 1.6.3.3

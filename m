@@ -1,120 +1,155 @@
-From: Jim Hughes <jhughes@ctio.noao.edu>
-Subject: Wretched Excess - a 62T btrfs filesystem
-Date: Wed, 03 Mar 2010 11:55:56 -0300
-Message-ID: <4B8E787C.4080001@ctio.noao.edu>
+From: jim owens <owens6336@gmail.com>
+Subject: PATCH V2] Btrfs: add direct I/O checksum option to btrfs_lookup_csums_range.
+Date: Wed, 03 Mar 2010 10:06:15 -0500
+Message-ID: <4B8E7AE7.3000506@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Folks:
 
-Thought you all might be interested to know we've just built a 
-"Backblaze Pod" (see 
-http://blog.backblaze.com/2009/09/01/petabytes-on-a-budget-how-to-build-cheap-cloud-storage/) 
-running Fedora 12 and your latest (as of yesterday) GIT kernel snapshot.
+Direct I/O needs to efficiently fetch an extent range of checksums
+so an option is added to copy raw checksums into a buffer instead
+of locally allocating and returning btrfs_ordered_sum structs.
 
-We mounted *all 45 disks* into one huge 62Tb btrfs RAID10 filesystem, 
-and so far it works just great!
+Signed-off-by: jim owens <jowens@hp.com>
+Signed-off-by: jim owens <jim6336@gmail.com>
+---
 
-I'd be interested in your comments as to pitfall, problems you all see 
-in creating such a huge btrfs file system...
+V2 changes for 32-bit compile, size_t to u32 and remove 64-bit division
 
+ fs/btrfs/ctree.h      |    2 +-
+ fs/btrfs/file-item.c  |   31 ++++++++++++++++++++++++++++---
+ fs/btrfs/inode.c      |    2 +-
+ fs/btrfs/relocation.c |    2 +-
+ fs/btrfs/tree-log.c   |    4 ++--
+ 5 files changed, 33 insertions(+), 8 deletions(-)
 
-Jim Hughes
-Cerro Tololo Interamerican Observatory
-
-La Serena, Chile
-
-----------------
-ferrari.27# df
-Filesystem           1K-blocks      Used Available Use% Mounted on
-/dev/sda1             30237648  20710404   7991244  73% /
-tmpfs                  1978536         0   1978536   0% /dev/shm
-/dev/sda3             42555184    185304  40208188   1% /home
-/dev/sdb             65931236280   6917008 65924319272   1% /raid45
-
-ferrari.28# df -h
-Filesystem            Size  Used Avail Use% Mounted on
-/dev/sda1              29G   20G  7.7G  73% /
-tmpfs                 1.9G     0  1.9G   0% /dev/shm
-/dev/sda3              41G  181M   39G   1% /home
-/dev/sdb               62T  6.6G   62T   1% /raid45
-
-ferrari.29# mount
-/dev/sda1 on / type ext3 (rw)
-proc on /proc type proc (rw)
-sysfs on /sys type sysfs (rw)
-devpts on /dev/pts type devpts (rw,gid=5,mode=620)
-tmpfs on /dev/shm type tmpfs (rw)
-/dev/sda3 on /home type ext4 (rw)
-none on /proc/sys/fs/binfmt_misc type binfmt_misc (rw)
-sunrpc on /var/lib/nfs/rpc_pipefs type rpc_pipefs (rw)
-/dev/sdb on /raid45 type btrfs (rw)
-
-ferrari.30# cat /proc/version
-Linux version 2.6.32 (root@localhost.localdomain) (gcc version 4.4.3 
-20100127 (Red Hat 4.4.3-4) (GCC) ) #1 SMP Tue Mar 2 12:28:10 CLST 2010
-
-ferrari.31# lspci
-00:00.0 Host bridge: Intel Corporation 4 Series Chipset DRAM Controller 
-(rev 03)
-00:02.0 VGA compatible controller: Intel Corporation 4 Series Chipset 
-Integrated Graphics Controller (rev 03)
-00:02.1 Display controller: Intel Corporation 4 Series Chipset 
-Integrated Graphics Controller (rev 03)
-00:03.0 Communication controller: Intel Corporation 4 Series Chipset 
-HECI Controller (rev 03)
-00:19.0 Ethernet controller: Intel Corporation 82567V-2 Gigabit Network 
-Connection
-00:1a.0 USB Controller: Intel Corporation 82801JI (ICH10 Family) USB 
-UHCI Controller #4
-00:1a.1 USB Controller: Intel Corporation 82801JI (ICH10 Family) USB 
-UHCI Controller #5
-00:1a.2 USB Controller: Intel Corporation 82801JI (ICH10 Family) USB 
-UHCI Controller #6
-00:1a.7 USB Controller: Intel Corporation 82801JI (ICH10 Family) USB2 
-EHCI Controller #2
-00:1b.0 Audio device: Intel Corporation 82801JI (ICH10 Family) HD Audio 
-Controller
-00:1c.0 PCI bridge: Intel Corporation 82801JI (ICH10 Family) PCI Express 
-Port 1
-00:1c.1 PCI bridge: Intel Corporation 82801JI (ICH10 Family) PCI Express 
-Port 2
-00:1c.2 PCI bridge: Intel Corporation 82801JI (ICH10 Family) PCI Express 
-Port 3
-00:1c.3 PCI bridge: Intel Corporation 82801JI (ICH10 Family) PCI Express 
-Port 4
-00:1d.0 USB Controller: Intel Corporation 82801JI (ICH10 Family) USB 
-UHCI Controller #1
-00:1d.1 USB Controller: Intel Corporation 82801JI (ICH10 Family) USB 
-UHCI Controller #2
-00:1d.2 USB Controller: Intel Corporation 82801JI (ICH10 Family) USB 
-UHCI Controller #3
-00:1d.7 USB Controller: Intel Corporation 82801JI (ICH10 Family) USB2 
-EHCI Controller #1
-00:1e.0 PCI bridge: Intel Corporation 82801 PCI Bridge (rev 90)
-00:1f.0 ISA bridge: Intel Corporation 82801JIB (ICH10) LPC Interface 
-Controller
-00:1f.2 IDE interface: Intel Corporation 82801JI (ICH10 Family) 4 port 
-SATA IDE Controller
-00:1f.3 SMBus: Intel Corporation 82801JI (ICH10 Family) SMBus Controller
-00:1f.5 IDE interface: Intel Corporation 82801JI (ICH10 Family) 2 port 
-SATA IDE Controller
-02:00.0 RAID bus controller: Silicon Image, Inc. SiI 3132 Serial ATA 
-Raid II Controller (rev 01)
-03:00.0 PCI bridge: Pericom Semiconductor Device e111 (rev 02)
-04:04.0 RAID bus controller: Silicon Image, Inc. SiI 3124 PCI-X Serial 
-ATA Controller (rev 01)
-05:00.0 IDE interface: JMicron Technologies, Inc. JMB368 IDE controller
-06:00.0 RAID bus controller: Silicon Image, Inc. SiI 3124 PCI-X Serial 
-ATA Controller (rev 01)
-06:06.0 FireWire (IEEE 1394): Agere Systems FW322/323 (rev 70)
-
-
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 2aa8ec6..9f82783 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2281,7 +2281,7 @@ int btrfs_csum_truncate(struct btrfs_trans_handle *trans,
+ 			struct btrfs_root *root, struct btrfs_path *path,
+ 			u64 isize);
+ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start,
+-			     u64 end, struct list_head *list);
++			     u64 end, struct list_head *list, u32 *csums);
+ /* inode.c */
+ 
+ /* RHEL and EL kernels have a patch that renames PG_checked to FsMisc */
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index 9b99886..c7f6a68 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -245,7 +245,7 @@ found:
+ }
+ 
+ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
+-			     struct list_head *list)
++			     struct list_head *list, u32 *csums)
+ {
+ 	struct btrfs_key key;
+ 	struct btrfs_path *path;
+@@ -302,8 +302,15 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
+ 		if (key.offset > end)
+ 			break;
+ 
+-		if (key.offset > start)
++		if (key.offset > start) {
++			if (csums) {
++				u32 num = (key.offset - start) >>
++					root->fs_info->sb->s_blocksize_bits;
++				memset(csums, 0, num * csum_size);
++				csums += num;
++			}
+ 			start = key.offset;
++		}
+ 
+ 		size = btrfs_item_size_nr(leaf, path->slots[0]);
+ 		csum_end = key.offset + (size / csum_size) * root->sectorsize;
+@@ -315,7 +322,18 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
+ 		csum_end = min(csum_end, end + 1);
+ 		item = btrfs_item_ptr(path->nodes[0], path->slots[0],
+ 				      struct btrfs_csum_item);
+-		while (start < csum_end) {
++		if (csums) {
++			u32 num = (csum_end - start) >>
++				root->fs_info->sb->s_blocksize_bits;
++			offset = (start - key.offset) >>
++				root->fs_info->sb->s_blocksize_bits;
++			offset *= csum_size;
++			read_extent_buffer(path->nodes[0], csums,
++					((unsigned long)item) +
++					offset, num * csum_size);
++			csums += num;
++			start = csum_end;
++		} else while (start < csum_end) {
+ 			size = min_t(size_t, csum_end - start,
+ 					MAX_ORDERED_SUM_BYTES(root));
+ 			sums = kzalloc(btrfs_ordered_sum_size(root, size),
+@@ -346,6 +364,13 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
+ 		}
+ 		path->slots[0]++;
+ 	}
++
++	if (csums && start < end) {
++		u32 num = (end - start + 1) >>
++				root->fs_info->sb->s_blocksize_bits;
++		memset(csums, 0, num * csum_size);
++	}
++
+ 	ret = 0;
+ fail:
+ 	btrfs_free_path(path);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index ad4b28c..9001b3f 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -979,7 +979,7 @@ static noinline int csum_exist_in_range(struct btrfs_root *root,
+ 	LIST_HEAD(list);
+ 
+ 	ret = btrfs_lookup_csums_range(root->fs_info->csum_root, bytenr,
+-				       bytenr + num_bytes - 1, &list);
++				       bytenr + num_bytes - 1, &list, NULL);
+ 	if (ret == 0 && list_empty(&list))
+ 		return 0;
+ 
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index ab7ab53..4496c33 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -3792,7 +3792,7 @@ int btrfs_reloc_clone_csums(struct inode *inode, u64 file_pos, u64 len)
+ 
+ 	disk_bytenr = file_pos + BTRFS_I(inode)->index_cnt;
+ 	ret = btrfs_lookup_csums_range(root->fs_info->csum_root, disk_bytenr,
+-				       disk_bytenr + len - 1, &list);
++				       disk_bytenr + len - 1, &list, NULL);
+ 
+ 	while (!list_empty(&list)) {
+ 		sums = list_entry(list.next, struct btrfs_ordered_sum, list);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 4a9434b..51ed422 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -604,7 +604,7 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
+ 
+ 			ret = btrfs_lookup_csums_range(root->log_root,
+ 						csum_start, csum_end - 1,
+-						&ordered_sums);
++						&ordered_sums, NULL);
+ 			BUG_ON(ret);
+ 			while (!list_empty(&ordered_sums)) {
+ 				struct btrfs_ordered_sum *sums;
+@@ -2645,7 +2645,7 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
+ 				ret = btrfs_lookup_csums_range(
+ 						log->fs_info->csum_root,
+ 						ds + cs, ds + cs + cl - 1,
+-						&ordered_sums);
++						&ordered_sums, NULL);
+ 				BUG_ON(ret);
+ 			}
+ 		}
 -- 
-This message has been scanned for viruses and
-dangerous content by MailScanner, and is
-believed to be clean.
-
+1.6.3.3

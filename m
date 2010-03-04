@@ -1,43 +1,38 @@
-From: jim owens <owens6336@gmail.com>
-Subject: [PATCH dio.c V2 6/6] Btrfs: fix goto fail mistakes in btrfs_dio_read.
-Date: Wed, 03 Mar 2010 13:55:24 -0500
-Message-ID: <4B8EB09C.6050501@gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: Wretched Excess - a 62T btrfs filesystem
+Date: Thu, 4 Mar 2010 15:37:47 -0500
+Message-ID: <20100304203744.GA8678@localhost.localdomain>
+References: <4B8E787C.4080001@ctio.noao.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Jim Hughes <jhughes@ctio.noao.edu>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4B8E787C.4080001@ctio.noao.edu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, Mar 03, 2010 at 11:55:56AM -0300, Jim Hughes wrote:
+> Folks:
+>
+> Thought you all might be interested to know we've just built a  
+> "Backblaze Pod" (see  
+> http://blog.backblaze.com/2009/09/01/petabytes-on-a-budget-how-to-build-cheap-cloud-storage/) 
+> running Fedora 12 and your latest (as of yesterday) GIT kernel snapshot.
+>
+> We mounted *all 45 disks* into one huge 62Tb btrfs RAID10 filesystem,  
+> and so far it works just great!
+>
+> I'd be interested in your comments as to pitfall, problems you all see  
+> in creating such a huge btrfs file system...
+>
 
-Signed-off-by: jim owens <jim6336@gmail.com>
----
- fs/btrfs/dio.c |    7 ++-----
- 1 files changed, 2 insertions(+), 5 deletions(-)
+Well thats cool.  The only thing that may start to cause problems is as you fill
+it up, the time it takes to cache block groups is going to take _forever_.
+Thankfully we only cache block groups on demand, and we try to do it in a way
+that we save the crappiest ones for last, so even that probably won't be
+terrible.  As of right now balance's will _suck_, since they try to move all
+block groups, but IIRC Yan is working on making balances take less time.  Other
+than that everything should work just as well as if it were a 10gb volume.
+Thanks,
 
-diff --git a/fs/btrfs/dio.c b/fs/btrfs/dio.c
-index 05a7445..b1beafc 100644
---- a/fs/btrfs/dio.c
-+++ b/fs/btrfs/dio.c
-@@ -459,7 +459,7 @@ getlock:
- 		end = data_len;
- 	if (end <= diocb->start) {
- 		mutex_unlock(&diocb->inode->i_mutex);
--		goto fail; /* 0 is returned past EOF */
-+		return; /* 0 is returned past EOF */
- 	}
- 	if (!loop) {
- 		loop++;
-@@ -489,10 +489,7 @@ getlock:
- 				"extent start %llu len %llu\n",
- 				diocb->inode->i_ino, diocb->start, len);
- 			err = -EIO;
--			goto fail;
--		}
--
--		if (em->block_start == EXTENT_MAP_INLINE) {
-+		} else if (em->block_start == EXTENT_MAP_INLINE) {
- 			/* ugly stuff because inline can exist in a large file
- 			 * with other extents if a hole immediately follows.
- 			 * the inline might end short of the btrfs block with
--- 
-1.6.3.3
+Josef

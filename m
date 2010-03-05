@@ -1,8 +1,8 @@
 From: jim owens <owens6336@gmail.com>
 Subject: [PATCH 2/2] Btrfs: change dio.c to use dio_min_blocksize instead
  of 512.
-Date: Fri, 05 Mar 2010 14:42:25 -0500
-Message-ID: <4B915EA1.1030900@gmail.com>
+Date: Fri, 05 Mar 2010 14:51:03 -0500
+Message-ID: <4B9160A7.3090402@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs <linux-btrfs@vger.kernel.org>,

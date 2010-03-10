@@ -1,26 +1,15 @@
-From: Gordan Bobic <gordan@bobich.net>
-Subject: SSD Optimizations
-Date: Wed, 10 Mar 2010 19:49:34 +0000
-Message-ID: <4B97F7CE.4030405@bobich.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs@vger.kernel.org
+From: Philip Love <love_phil@emc.com>
+Subject: Re: btrfs bug while defragmenting
+Date: Wed, 10 Mar 2010 12:47:59 -0800
+Message-ID: <8C229A18-8B01-4F55-A020-659FDD531C35@emc.com>
+References: <D09C8589-EA52-4778-8B29-1B06B27292D0@emc.com> <20100309192516.GQ15485@think> <B908B307-41C6-4F40-BD6B-451FDD32EF8B@emc.com> <D45A73CF-84B9-4814-970F-4CA4B66AE957@emc.com>
+Mime-Version: 1.0 (Apple Message framework v1077)
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <D45A73CF-84B9-4814-970F-4CA4B66AE957@emc.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm looking to try BTRFS on a SSD, and I would like to know what SSD 
-optimizations it applies. Is there a comprehensive list of what ssd 
-mount option does? How are the blocks and metadata arranged? Are there 
-options available comparable to ext2/ext3 to help reduce wear and 
-improve performance?
-
-Specifically, on ext2 (journal means more writes, so I don't use ext3 on 
-SSDs, since fsck typically only takes a few seconds when access time is 
-< 100us), I usually apply the
--b 4096 -E stripe-width = (erase_block/4096)
-parameters to mkfs in order to reduce the multiple erase cycles on the 
-same underlying block.
-
-Are there similar optimizations available in BTRFS?
-
-Gordan
+I obtained a similar error doing a large write to an ext3 filesystem, so there is another problem somewhere. Sorry for the inconvenience.
+Phil

@@ -1,50 +1,78 @@
-From: Stephan von Krawczynski <skraw@ithnet.com>
+From: Gordan Bobic <gordan@bobich.net>
 Subject: Re: SSD Optimizations
-Date: Thu, 11 Mar 2010 12:31:03 +0100
-Message-ID: <20100311123103.34246e95.skraw@ithnet.com>
-References: <4B97F7CE.4030405@bobich.net>
-	<4B9829B1.1020706@bobich.net>
-	<20100311073853.GA26129@attic.humilis.net>
-	<201003111159.58081.hka@qbs.com.pl>
+Date: Thu, 11 Mar 2010 11:59:32 +0000
+Message-ID: <f8e55948796fc6d3de67e18eb3b06807@localhost>
+References: <4B97F7CE.4030405@bobich.net> <93cdabd21003101512n6d773084hcf5e4a85aa180480@mail.gmail.com> <4B9829B1.1020706@bobich.net> <20100311073853.GA26129@attic.humilis.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: linux-btrfs@vger.kernel.org, Gordan Bobic <gordan@bobich.net>
-To: Hubert Kario <hka@qbs.com.pl>
+Content-Type: text/plain; charset=UTF-8
+To: <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201003111159.58081.hka@qbs.com.pl>
+In-Reply-To: <20100311073853.GA26129@attic.humilis.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 11 Mar 2010 11:59:57 +0100
-Hubert Kario <hka@qbs.com.pl> wrote:
-
-> On Thursday 11 March 2010 08:38:53 Sander wrote:
-> > Hello Gordan,
-> > 
-> > Gordan Bobic wrote (ao):
-> > > Mike Fedyk wrote:
-> > > >On Wed, Mar 10, 2010 at 11:49 AM, Gordan Bobic <gordan@bobich.net> wrote:
-> > > >>Are there options available comparable to ext2/ext3 to help reduce
-> > > >>wear and improve performance?
-> > 
-> > With SSDs you don't have to worry about wear.
+On Thu, 11 Mar 2010 08:38:53 +0100, Sander <sander@humilis.net> wrote:
+>> >>Are there options available comparable to ext2/ext3 to help reduce
+>> >>wear and improve performance?
 > 
-> Sorry, but you do have to worry about wear. I was able to destroy a relatively 
-> new SD card (2007 or early 2008) just by writing on the first 10MiB over and 
-> over again for two or three days. The end of the card still works without 
-> problems but about 10 sectors on the beginning give write errors.
+> With SSDs you don't have to worry about wear.
 
-Sorry, the topic was SSD, not SD. SSDs have controllers that contain heavy
-closed magic to circumvent all kinds of troubles you get when using classical
-flash and SD cards.
-Honestly I would just drop the idea of an SSD option simply because the
-vendors implement all kinds of neat strategies in their devices. So in the end
-you cannot really tell if the option does something constructive and not
-destructive in combination with a SSD controller.
-Of course you may well discuss about an option for passive flash devices like
-ide-CF/SD or the like. There is no controller involved so your fs
-implementation may well work out.
+And if you believe that you clearly swallowed the marketing spiel hook
+line and sinker without enough real world exprience to show you otherwise.
+But I'm not going to go off on a tangent now enumerating various victories
+of marketing over mathematics and empirical evidence relating to currently
+popular technologies.
 
--- 
-Regards,
-Stephan
+In short - I have several dead SSDs of various denominations that
+demonstrate otherwise - and all within their warranty period, and not
+having been used in pathologically write-heavy environments. You do have to
+worry about wear. Operations that increase wear also reduce speed (erasing
+a block is slow, and if the disk is fully tainted you cannot write without
+erasing), so you doubly have to worry about it.
 
+Also remember that hardware sectors are 512 bytes, and FS blocks tend to
+be 4096 bytes. It is thus entirely plausible that if you aren't careful
+you'll end up with blocks straddling two erase block boundaries. If that
+happens, you'll make wear twice as bad because you are facing a situation
+where you may need to erase and write two blocks rather than one. Half the
+performance, twice the wear.
+
+>> And while I appreciate hopeful remarks along the lines of "I think
+>> you'll get more out of btrfs", I am really after specifics of what
+>> the ssd mount option does, and what features comparable to the
+>> optimizations that can be done with ext2/3/4 (e.g. the mentioned
+>> stripe-width option) are available to get the best possible
+>> alignment of data and metadata to increase both performance and life
+>> expectancy of a SSD.
+> 
+> Alignment is about the partition, not the fs, and thus taken care of
+> with fdisk and the like.
+> 
+> If you don't create a partition, the fs is aligned with the SSD.
+
+I'm talking about internal FS data structures, not the partition
+alignment.
+
+>> Also, for drives that don't support TRIM, is there a way to make the
+>> FS apply aggressive re-use of erased space (in order to help the
+>> drive's internal wear-leveling)?
+> 
+> TRIM has nothing to do with wear-leveling (although it helps reducing
+> wear).
+
+That's self contradictory. If it helps reduce wear it has something to do
+with wear leveling.
+
+> TRIM lets the OS tell the disk which blocks are not in use anymore, and
+> thus don't have to be copied during a rewrite of the blocks.
+> Wear-leveling is the SSD making sure all blocks are more or less equally
+> written to avoid continuous load on the same blocks.
+
+And thus it is impossible to do wear leveling when all blocks have been
+written to once without TRIM. So I'd say that in the long term, without
+TRIM there is no wear leveling. That makes them pretty related.
+
+So considering that there are various nuggets of opinion floating around
+(correct or otherwise) saying that ext4 has support for TRIM, I'd like to
+know whether there similar support in BTRFS at the moment?
+
+Gordan

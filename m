@@ -1,106 +1,70 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: "Martin K. Petersen" <martin.petersen@oracle.com>
 Subject: Re: SSD Optimizations
-Date: Thu, 11 Mar 2010 11:29:07 -0500
-Message-ID: <20100311162907.GI6509@think>
-References: <4B97F7CE.4030405@bobich.net>
- <20100311142130.GD6509@think>
- <fdd915134f8941e4f2087fc2f4cf4e79@localhost>
+Date: Thu, 11 Mar 2010 11:48:11 -0500
+Message-ID: <yq1fx466bzo.fsf@sermon.lab.mkp.net>
+References: <4B97F7CE.4030405@bobich.net> <4B9829B1.1020706@bobich.net>
+	<20100311073853.GA26129@attic.humilis.net>
+	<201003111159.58081.hka@qbs.com.pl>
+	<20100311123103.34246e95.skraw@ithnet.com>
+	<ce25fe08b6b07e1993f62f6e34670e52@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
+Cc: <linux-btrfs@vger.kernel.org>
 To: Gordan Bobic <gordan@bobich.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <fdd915134f8941e4f2087fc2f4cf4e79@localhost>
+In-Reply-To: <ce25fe08b6b07e1993f62f6e34670e52@localhost> (Gordan Bobic's
+	message of "Thu, 11 Mar 2010 12:17:30 +0000")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 11, 2010 at 04:18:48PM +0000, Gordan Bobic wrote:
-> On Thu, 11 Mar 2010 09:21:30 -0500, Chris Mason <chris.mason@oracle.com>
-> wrote:
-> > On Wed, Mar 10, 2010 at 07:49:34PM +0000, Gordan Bobic wrote:
-> >> I'm looking to try BTRFS on a SSD, and I would like to know what SSD
-> >> optimizations it applies. Is there a comprehensive list of what ssd
-> >> mount option does? How are the blocks and metadata arranged? Are
-> >> there options available comparable to ext2/ext3 to help reduce wear
-> >> and improve performance?
-> >> 
-> >> Specifically, on ext2 (journal means more writes, so I don't use
-> >> ext3 on SSDs, since fsck typically only takes a few seconds when
-> >> access time is < 100us), I usually apply the
-> >> -b 4096 -E stripe-width = (erase_block/4096)
-> >> parameters to mkfs in order to reduce the multiple erase cycles on
-> >> the same underlying block.
-> >> 
-> >> Are there similar optimizations available in BTRFS?
-> > 
-> > All devices (raid, ssd, single spindle) tend to benefit from big chunks
-> > of writes going down close together on disk.  This is true for different
-> > reasons on each one, but it is still the easiest way to optimize writes.
-> > COW filesystems like btrfs are very well suited to send down lots of big
-> > writes because we're always reallocating things.
-> 
-> Doesn't this mean _more_ writes? If that's the case, then that would make
-> btrfs a _bad_ choice for flash based media with limite write cycles.
+>>>>> "Gordan" == Gordan Bobic <gordan@bobich.net> writes:
 
-It just means that when we do write, we don't overwrite the existing
-data in the file.  We allocate a new block instead and write there
-(freeing the old one)
-.
-This gives us a lot of control over grouping writes together, instead of
-being restricted to the layout from when the file was first created.
+Gordan> SD == SSD with an SD interface.
 
-It also fragments the files much more, but this isn't an issue on ssd.
+No, not really.
 
-> 
-> > For traditional storage, we also need to keep blocks from one file (or
-> > files in a directory) close together to reduce seeks during reads.  SSDs
-> > have no such restrictions, and so the mount -o ssd related options in
-> > btrfs focus on tossing out tradeoffs that slow down writes in hopes of
-> > reading faster later.
-> > 
-> > Someone already mentioned the mount -o ssd and ssd_spread options.
-> > Mount -o ssd is targeted at faster SSD that is good at wear leveling and
-> > generally just benefits from having a bunch of data sent down close
-> > together.  In mount -o ssd, you might find a write pattern like this:
-> > 
-> > block N, N+2, N+3, N+4, N+6, N+7, N+16, N+17, N+18, N+19, N+20 ...
-> > 
-> > It's a largely contiguous chunk of writes, but there may be gaps.  Good
-> > ssds don't really care about the gaps, and they benefit more from the
-> > fact that we're preferring to reuse blocks that had once been written
-> > than to go off and find completely contiguous areas of the disk to
-> > write (which are more likely to have never been written at all).
-> > 
-> > mount -o ssd_spread is much more strict.  You'll get N,N+2,N+3,N+4,N+5
-> > etc because crummy ssds really do care about the gaps.
-> > 
-> > Now, btrfs could go off and probe for the erasure size and work very
-> > hard to align things to it.  As someone said, alignment of the partition
-> > table is very important here as well.  But for modern ssd this generally
-> > matters much less than just doing big ios and letting the little log
-> > structured squirrel inside the device figure things out.
-> 
-> Thanks, that's quite helpful. Can you provide any insight into alignment
-> of FS structures in such a way that they do not straddle erase block
-> boundaries?
+It is true that conceivably you could fit a sophisticated controller in
+an SD card form factor.  But fact is that takes up space which could
+otherwise be used for flash.  There may also be power consumption/heat
+dissipation concerns.
 
-We align on 4k (but partition alignment can defeat this).  We don't
-attempt to understand or guess at erasure blocks.  Unless the filesystem
-completely takes over the FTL duties, I don't think it makes sense to do
-more than send large writes whenever we can.
+Most SD card controllers have very, very simple wear leveling that in
+most cases rely on the filesystem being FAT.  These cards are aimed at
+cameras, MP3 players, etc. after all. And consequently it's trivial to
+wear out an SD card by writing a block over and over.
 
-The raid 5/6 patches will add more knobs for strict alignment, but I'd
-be very surprised if they made a big difference on modern ssd.
+The same is kind of true for Compact Flash.  There are two types of
+cards, I prefer to think of them as camera grade and industrial.  Camera
+grade CF is really no different from SD cards or any other consumer
+flash form factor.
 
-> 
-> > For trim, we do have mount -o discard.  It does introduce a run time
-> > performance hit (this varies wildly from device to device) and we're
-> > tuning things as discard capable devices become more common.  If anyone
-> > is looking for a project it would be nice to have an ioctl that triggers
-> > free space discards in bulk.
-> 
-> Are you saying that -o discard implements trim support?
+Industrial CF cards have controllers with sophisticated wear leveling.
+Usually this is not quite as clever as a "big" SSD, but it is close
+enough that you can treat the device as a real disk drive.  I.e. it has
+multiple channels working in parallel unlike the consumer devices.
 
-Yes, it sends trim/discards down to devices that support it.
+As a result of the smarter controller logic and the bigger bank of spare
+flash, industrial cards are much smaller in capacity.  Typically in the
+1-4 GB range.  But they are in many cases indistinguishable from a real
+SSD in terms of performance and reliability.
 
--chris
 
+Gordan> You can make an educated guess. For starters given that visible
+Gordan> sector sizes are not equal to FS block sizes, it means that FS
+Gordan> block sizes can straddle erase block boundaries without the
+Gordan> flash controller, no matter how fancy, being able to determine
+Gordan> this. Thus, at the very least, aligning FS structures so that
+Gordan> they do not straddle erase block boundaries is useful in ALL
+Gordan> cases. Thinking otherwise is just sticking your head in the sand
+Gordan> because you cannot be bothered to think.
+
+There are no means of telling what the erase block size is.  None.  We
+have no idea.  The vendors won't talk.  It's part of their IP.
+
+Also, there is no point in being hung up on the whole erase block thing.
+Only crappy SSDs use block mapping where that matters.  These devices
+will die a horrible death soon enough.  Good SSDs use a technique akin
+to logging filesystems in which the erase block size and all other other
+physical characteristics don't matter (from a host perspective).
+
+-- 
+Martin K. Petersen	Oracle Linux Engineering

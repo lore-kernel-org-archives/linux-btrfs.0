@@ -1,137 +1,167 @@
-From: Gordan Bobic <gordan@bobich.net>
+From: Hubert Kario <hka@qbs.com.pl>
 Subject: Re: SSD Optimizations
-Date: Thu, 11 Mar 2010 13:20:23 +0000
-Message-ID: <be59d9db8e9c4f9fa0dd856a95ed208b@localhost>
-References: <4B97F7CE.4030405@bobich.net>	<4B9829B1.1020706@bobich.net>	<20100311073853.GA26129@attic.humilis.net>	<201003111159.58081.hka@qbs.com.pl>	<20100311123103.34246e95.skraw@ithnet.com>	<ce25fe08b6b07e1993f62f6e34670e52@localhost> <20100311135909.a7acc23e.skraw@ithnet.com>
+Date: Thu, 11 Mar 2010 15:01:55 +0100
+Message-ID: <201003111501.55663.hka@qbs.com.pl>
+References: <4B97F7CE.4030405@bobich.net> <20100311135909.a7acc23e.skraw@ithnet.com> <be59d9db8e9c4f9fa0dd856a95ed208b@localhost>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: <linux-btrfs@vger.kernel.org>
+Content-Type: Text/Plain; charset=utf-8
+Cc: linux-btrfs@vger.kernel.org
+To: Gordan Bobic <gordan@bobich.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100311135909.a7acc23e.skraw@ithnet.com>
+In-Reply-To: <be59d9db8e9c4f9fa0dd856a95ed208b@localhost>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 11 Mar 2010 13:59:09 +0100, Stephan von Krawczynski
-<skraw@ithnet.com> wrote:
+On Thursday 11 March 2010 14:20:23 Gordan Bobic wrote:
+> On Thu, 11 Mar 2010 13:59:09 +0100, Stephan von Krawczynski
+>=20
+> <skraw@ithnet.com> wrote:
+> >> >> > > >On Wed, Mar 10, 2010 at 11:49 AM, Gordan Bobic
+> >> >> > > ><gordan@bobich.net>
+> >> >> > > >
+> >> >> > > >wrote:
+> >> >> > > >>Are there options available comparable to ext2/ext3 to he=
+lp
+> >>
+> >> reduce
+> >>
+> >> >> > > >>wear and improve performance?
+> >> >> >
+> >> >> > With SSDs you don't have to worry about wear.
+> >> >>
+> >> >> Sorry, but you do have to worry about wear. I was able to destr=
+oy a
+> >> >> relatively
+> >> >> new SD card (2007 or early 2008) just by writing on the first 1=
+0MiB
+> >>
+> >> over
+> >>
+> >> >> and
+> >> >> over again for two or three days. The end of the card still wor=
+ks
+> >> >> without
+> >> >> problems but about 10 sectors on the beginning give write error=
+s.
+> >> >
+> >> > Sorry, the topic was SSD, not SD.
+> >>
+> >> SD =3D=3D SSD with an SD interface.
+> >
+> > That really is quite a statement. You really talk of a few-bucks SD=
+ card
+> > (like the one in my android handy) as an SSD comparable with Intel =
+XE
+>=20
+> only with
+>=20
+> > different interface? Come on, stay serious. The product is not only=
+ made
+>=20
+> of
+>=20
+> > SLCs and some raw logic.
+>=20
+> I am saying that there is no reason for the firmware in an SD card to=
+ not
+> be as advanced. If the manufacturer has some advanced logic in their =
+SATA
+> SSD, I cannot see any valid engineering reason to not apply the same =
+logic
+> in a SD product.
 
->> >> > > >On Wed, Mar 10, 2010 at 11:49 AM, Gordan Bobic
->> >> > > ><gordan@bobich.net>
->> >> > > >wrote:
->> >> > > >>Are there options available comparable to ext2/ext3 to help
->> reduce
->> >> > > >>wear and improve performance?
->> >> > 
->> >> > With SSDs you don't have to worry about wear.
->> >> 
->> >> Sorry, but you do have to worry about wear. I was able to destroy a
->> >> relatively
->> >> new SD card (2007 or early 2008) just by writing on the first 10MiB
->> over
->> >> and
->> >> over again for two or three days. The end of the card still works
->> >> without
->> >> problems but about 10 sectors on the beginning give write errors.
->> > 
->> > Sorry, the topic was SSD, not SD.
->> 
->> SD == SSD with an SD interface.
-> 
-> That really is quite a statement. You really talk of a few-bucks SD card
-> (like the one in my android handy) as an SSD comparable with Intel XE
-only with
-> different interface? Come on, stay serious. The product is not only made
-of
-> SLCs and some raw logic.
+The _SD_standard_ states that the media has to implement wear-leveling.
+So any card with an SD logo implements it.
 
-I am saying that there is no reason for the firmware in an SD card to not
-be as advanced. If the manufacturer has some advanced logic in their SATA
-SSD, I cannot see any valid engineering reason to not apply the same logic
-in a SD product.
+As I stated previously, the algorithms used in SD cards may not be as a=
+dvanced=20
+as those in top-of-the-line Intel SSDs, but I bet they don't differ by =
+much to=20
+the ones used in cheapest SSD drives.
 
->> > SSDs have controllers that contain heavy
->> > closed magic to circumvent all kinds of troubles you get when using
->> > classical flash and SD cards.
->> 
->> There is absolutely no basis for thinking that SD cards don't contain
->> wear
->> leveling logic. SD standard, and thus SD cards support a lot of fancy
->> copy
->> protection capabilities, which means there is a lot of firmware
->> involvement
->> on SD cards. It is unlikely that any reputable SD card manufacturer
->> wouldn't also build wear leveling logic into it.
-> 
-> I really don't guess about what is built into an SD or even CF card. But
-we
-> hopefully agree that there is a significant difference compared to a
-> product that calls itself a _disk_.
+Besides, why shouldn't we help the drive firmware by=20
+- writing the data only in erase-block sizes
+- trying to write blocks that are smaller than the erase-block in a way=
+ that=20
+won't cross the erase-block boundary
+- using TRIM on deallocated parts of the drive
 
-Wo don't agree on that. Not at all. I don't see any reason why a CF card
-and an IDE SSD made by the same manufacturer should have any difference
-between them other than capacity and the physical package.
+This will not only increase the life of the SSD but also increase its=20
+performance.
 
->> > Honestly I would just drop the idea of an SSD option simply because
-the
->> > vendors implement all kinds of neat strategies in their devices. So
-in
->> the
->> > end you cannot really tell if the option does something constructive
->> > and not destructive in combination with a SSD controller.
->> 
->> You can make an educated guess. For starters given that visible sector
->> sizes are not equal to FS block sizes, it means that FS block sizes can
->> straddle erase block boundaries without the flash controller, no matter
->> how
->> fancy, being able to determine this. Thus, at the very least, aligning
-FS
->> structures so that they do not straddle erase block boundaries is
-useful
->> in
->> ALL cases. Thinking otherwise is just sticking your head in the sand
->> because you cannot be bothered to think.
-> 
-> And your guess is that intel engineers had no glue when designing the XE
-> including its controller? You think they did not know what you and me
-know
+>=20
+> >> > Honestly I would just drop the idea of an SSD option simply beca=
+use
+>=20
+> the
+>=20
+> >> > vendors implement all kinds of neat strategies in their devices.=
+ So
+>=20
+> in
+>=20
+> >> the
+> >>
+> >> > end you cannot really tell if the option does something construc=
+tive
+> >> > and not destructive in combination with a SSD controller.
+> >>
+> >> You can make an educated guess. For starters given that visible se=
+ctor
+> >> sizes are not equal to FS block sizes, it means that FS block size=
+s can
+> >> straddle erase block boundaries without the flash controller, no m=
+atter
+> >> how
+> >> fancy, being able to determine this. Thus, at the very least, alig=
+ning
+>=20
+> FS
+>=20
+> >> structures so that they do not straddle erase block boundaries is
+>=20
+> useful
+>=20
+> >> in
+> >> ALL cases. Thinking otherwise is just sticking your head in the sa=
+nd
+> >> because you cannot be bothered to think.
+> >
+> > And your guess is that intel engineers had no glue when designing t=
+he XE
+> > including its controller? You think they did not know what you and =
+me
+>=20
+> know
+>=20
+> > and
+> > therefore pray every day that some smart fs designer falls from hea=
+ven
+>=20
 > and
-> therefore pray every day that some smart fs designer falls from heaven
-and
-> saves their product from dying in between? Really?
+>=20
+> > saves their product from dying in between? Really?
+>=20
+> I am saying that there are problems that CANNOT be solved on the disk
+> firmware level. Some problems HAVE to be addressed higher up the stac=
+k.
 
-I am saying that there are problems that CANNOT be solved on the disk
-firmware level. Some problems HAVE to be addressed higher up the stack.
+Exactly, you can't assume that the SSDs firmware understands any and al=
+l file=20
+system layouts, especially if they are on fragmented LVM or other logic=
+al=20
+volume manager partitions.
 
->> > Of course you may well discuss about an option for passive flash
->> > devices
->> > like ide-CF/SD or the like. There is no controller involved so your
-fs
->> > implementation may well work out.
->> 
->> I suggest you educate yourself on the nature of IDE and CF (which is
-just
->> IDE with a different connector). There most certainly are controllers
->> involved. The days when disks (mechanical or solid state) didn't
->> integrate
->> controllers ended with MFM/RLL and ESDI disks some 20+ years ago.
-> 
-> I suggest you don't talk to someone administering some hundred boxes
-based
-> on
-> CF and SSD mediums for _years_ about pro and con of the respective
-> implementation and its long term usage.
-> Sorry, the world is not built out of paper, sometimes you meet the hard
-> facts.
-> And one of it is that the ssd option in fs is very likely already
-overrun
-> by
-> the ssd controller designers and mostly _superfluous_. The market has
-> already decided to make SSDs compatible to standard fs layouts.
+--=20
+Hubert Kario
+QBS - Quality Business Software
+02-656 Warszawa, ul. Ksawer=C3=B3w 30/85
+tel. +48 (22) 646-61-51, 646-74-24
+www.qbs.com.pl
 
-Seems to me that you haven't done any analysis of comparative long term
-failure rates between SSDs used with default layouts (Default? Really? You
-mean you don't apply any special partitioning on your hundreds of servers?)
-and those with carefully aligned FS-es. Just because defaults may be good
-enough for your use case, doesn't mean that somebody with a use case that's
-harder on the flash will observe the same reliability, or deem the the
-unoptimized performance figures good enough.
-
-Gordan
+System Zarz=C4=85dzania Jako=C5=9Bci=C4=85
+zgodny z norm=C4=85 ISO 9001:2000
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

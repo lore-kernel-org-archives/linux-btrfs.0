@@ -1,80 +1,122 @@
-From: Gordan Bobic <gordan@bobich.net>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: SSD Optimizations
-Date: Thu, 11 Mar 2010 16:18:48 +0000
-Message-ID: <fdd915134f8941e4f2087fc2f4cf4e79@localhost>
-References: <4B97F7CE.4030405@bobich.net> <20100311142130.GD6509@think>
+Date: Thu, 11 Mar 2010 11:19:32 -0500
+Message-ID: <20100311161932.GH6509@think>
+References: <4B97F7CE.4030405@bobich.net>
+ <20100311135909.a7acc23e.skraw@ithnet.com>
+ <be59d9db8e9c4f9fa0dd856a95ed208b@localhost>
+ <201003111501.55663.hka@qbs.com.pl>
+ <20100311163533.0ea09173.skraw@ithnet.com>
+ <0592c2cb505638c1110eaef97192eb60@localhost>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Gordan Bobic <gordan@bobich.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100311142130.GD6509@think>
+In-Reply-To: <0592c2cb505638c1110eaef97192eb60@localhost>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 11 Mar 2010 09:21:30 -0500, Chris Mason <chris.mason@oracle.com>
-wrote:
-> On Wed, Mar 10, 2010 at 07:49:34PM +0000, Gordan Bobic wrote:
->> I'm looking to try BTRFS on a SSD, and I would like to know what SSD
->> optimizations it applies. Is there a comprehensive list of what ssd
->> mount option does? How are the blocks and metadata arranged? Are
->> there options available comparable to ext2/ext3 to help reduce wear
->> and improve performance?
->> 
->> Specifically, on ext2 (journal means more writes, so I don't use
->> ext3 on SSDs, since fsck typically only takes a few seconds when
->> access time is < 100us), I usually apply the
->> -b 4096 -E stripe-width = (erase_block/4096)
->> parameters to mkfs in order to reduce the multiple erase cycles on
->> the same underlying block.
->> 
->> Are there similar optimizations available in BTRFS?
+On Thu, Mar 11, 2010 at 04:03:59PM +0000, Gordan Bobic wrote:
+> On Thu, 11 Mar 2010 16:35:33 +0100, Stephan von Krawczynski
+> <skraw@ithnet.com> wrote:
 > 
-> All devices (raid, ssd, single spindle) tend to benefit from big chunks
-> of writes going down close together on disk.  This is true for different
-> reasons on each one, but it is still the easiest way to optimize writes.
-> COW filesystems like btrfs are very well suited to send down lots of big
-> writes because we're always reallocating things.
-
-Doesn't this mean _more_ writes? If that's the case, then that would make
-btrfs a _bad_ choice for flash based media with limite write cycles.
-
-> For traditional storage, we also need to keep blocks from one file (or
-> files in a directory) close together to reduce seeks during reads.  SSDs
-> have no such restrictions, and so the mount -o ssd related options in
-> btrfs focus on tossing out tradeoffs that slow down writes in hopes of
-> reading faster later.
+> >> Besides, why shouldn't we help the drive firmware by 
+> >> - writing the data only in erase-block sizes
+> >> - trying to write blocks that are smaller than the erase-block in a way
+> >> that won't cross the erase-block boundary
+> > 
+> > Because if the designing engineer of a good SSD controller wasn't able
+> to
+> > cope with that he will have no chance to design a second one.
 > 
-> Someone already mentioned the mount -o ssd and ssd_spread options.
-> Mount -o ssd is targeted at faster SSD that is good at wear leveling and
-> generally just benefits from having a bunch of data sent down close
-> together.  In mount -o ssd, you might find a write pattern like this:
+> You seem to be confusing quality of implementation with theoretical
+> possibility.
 > 
-> block N, N+2, N+3, N+4, N+6, N+7, N+16, N+17, N+18, N+19, N+20 ...
+> >> This will not only increase the life of the SSD but also increase its 
+> >> performance.
+> > 
+> > TRIM: maybe yes. Rest: pure handwaving.
+> > 
+> >> [...]
+> >> > > And your guess is that intel engineers had no glue when designing
+> >> > > the XE
+> >> > > including its controller? You think they did not know what you and
+> me
+> >> > > know and
+> >> > > therefore pray every day that some smart fs designer falls from
+> >> > > heaven
+> >> > > and saves their product from dying in between? Really?
+> >> > 
+> >> > I am saying that there are problems that CANNOT be solved on the disk
+> >> > firmware level. Some problems HAVE to be addressed higher up the
+> stack.
+> >> 
+> >> Exactly, you can't assume that the SSDs firmware understands any and
+> all
+> >> file
+> >> system layouts, especially if they are on fragmented LVM or other
+> >> logical
+> >> volume manager partitions.
+> > 
+> > Hopefully the firmware understands exactly no fs layout at all. That
+> would
+> > be
+> > braindead. Instead it should understand how to arrange incoming and
+> > outgoing
+> > data in a way that its own technical requirements are met as perfect as
+> > possible. This is no spinning disk, it is completely irrelevant what the
+> > data
+> > layout looks like as long as the controller finds its way through and
+> copes
+> > best with read/write/erase cycles. It may well use additional RAM for
+> > caching and data reordering.
+> > Do you really believe ascending block numbers are placed in ascending
+> > addresses inside the disk (as an example)? Why should they? What does
+> that
+> > mean for fs block ordering? If you don't know anyway what a controller
+> > does to
+> > your data ordering, how do you want to help it with its job?
+> > Please accept that we are _not_ talking about trivial flash mem here or
+> > pseudo-SSDs consisting of sd cards. The market has already evolved
+> better
+> > products. The dinosaurs are extincted even if some are still looking
+> alive.
 > 
-> It's a largely contiguous chunk of writes, but there may be gaps.  Good
-> ssds don't really care about the gaps, and they benefit more from the
-> fact that we're preferring to reuse blocks that had once been written
-> than to go off and find completely contiguous areas of the disk to
-> write (which are more likely to have never been written at all).
+> I am assuming that you are being deliberately facetious here (the
+> alternative is less kind). The simple fact is that you cannot come up with
+> some magical data (re)ordering method that nullifies problems of common
+> use-cases that are quite nasty for flash based media.
 > 
-> mount -o ssd_spread is much more strict.  You'll get N,N+2,N+3,N+4,N+5
-> etc because crummy ssds really do care about the gaps.
-> 
-> Now, btrfs could go off and probe for the erasure size and work very
-> hard to align things to it.  As someone said, alignment of the partition
-> table is very important here as well.  But for modern ssd this generally
-> matters much less than just doing big ios and letting the little log
-> structured squirrel inside the device figure things out.
+> For example - you have a disk that has had all it's addressable blocks
+> tainted. A new write comes in - what do you do with it? Worse, a write
+> comes in spanning two erase blocks as a consequence of the data
+> re-alignment in the firmware. You have no choice but to wipe them both and
+> re-write the data. You'd be better off not doing the magic and assuming
+> that the FS is sensibly aligned.
 
-Thanks, that's quite helpful. Can you provide any insight into alignment
-of FS structures in such a way that they do not straddle erase block
-boundaries?
+Ok, how exactly would the FS help here?  We have a device with a 256kb
+erasure size, and userland does a 4k write followed by an fsync.
 
-> For trim, we do have mount -o discard.  It does introduce a run time
-> performance hit (this varies wildly from device to device) and we're
-> tuning things as discard capable devices become more common.  If anyone
-> is looking for a project it would be nice to have an ioctl that triggers
-> free space discards in bulk.
+If the FS were to be smart and know about the 256kb requirement, it
+would do a read/modify/write cycle somewhere and then write the 4KB.
 
-Are you saying that -o discard implements trim support?
+The underlying implementation is the same in the device.  It picks a
+destination, reads it then writes it back.  You could argue (and many
+people do) that this operation is risky and has a good chance of
+destroying old data.  Perhaps we're best off if the FS does the rmw
+cycle instead into an entirely safe location.
 
-Gordan
+It's a great place for research and people are definitely looking at it.
+
+But with all of that said, it has nothing to do with alignment or trim.
+Modern ssds are a raid device with a large stripe size, and someone
+somewhere is going to do a read/modify/write to service any small write.
+You can force this up to the FS or the application, it'll happen
+somewhere.
+
+The filesystem metadata writes are a very small percentage of the
+problem overall.  Sure we can do better and try to force larger metadata
+blocks.  This was the whole point behind btrfs' support for large tree
+blocks, which I'll be enabling again shortly.
+
+-chris

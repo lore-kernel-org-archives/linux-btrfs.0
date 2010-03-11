@@ -1,167 +1,71 @@
-From: Hubert Kario <hka@qbs.com.pl>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: SSD Optimizations
-Date: Thu, 11 Mar 2010 15:01:55 +0100
-Message-ID: <201003111501.55663.hka@qbs.com.pl>
-References: <4B97F7CE.4030405@bobich.net> <20100311135909.a7acc23e.skraw@ithnet.com> <be59d9db8e9c4f9fa0dd856a95ed208b@localhost>
+Date: Thu, 11 Mar 2010 09:21:30 -0500
+Message-ID: <20100311142130.GD6509@think>
+References: <4B97F7CE.4030405@bobich.net>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
 To: Gordan Bobic <gordan@bobich.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <be59d9db8e9c4f9fa0dd856a95ed208b@localhost>
+In-Reply-To: <4B97F7CE.4030405@bobich.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thursday 11 March 2010 14:20:23 Gordan Bobic wrote:
-> On Thu, 11 Mar 2010 13:59:09 +0100, Stephan von Krawczynski
->=20
-> <skraw@ithnet.com> wrote:
-> >> >> > > >On Wed, Mar 10, 2010 at 11:49 AM, Gordan Bobic
-> >> >> > > ><gordan@bobich.net>
-> >> >> > > >
-> >> >> > > >wrote:
-> >> >> > > >>Are there options available comparable to ext2/ext3 to he=
-lp
-> >>
-> >> reduce
-> >>
-> >> >> > > >>wear and improve performance?
-> >> >> >
-> >> >> > With SSDs you don't have to worry about wear.
-> >> >>
-> >> >> Sorry, but you do have to worry about wear. I was able to destr=
-oy a
-> >> >> relatively
-> >> >> new SD card (2007 or early 2008) just by writing on the first 1=
-0MiB
-> >>
-> >> over
-> >>
-> >> >> and
-> >> >> over again for two or three days. The end of the card still wor=
-ks
-> >> >> without
-> >> >> problems but about 10 sectors on the beginning give write error=
-s.
-> >> >
-> >> > Sorry, the topic was SSD, not SD.
-> >>
-> >> SD =3D=3D SSD with an SD interface.
-> >
-> > That really is quite a statement. You really talk of a few-bucks SD=
- card
-> > (like the one in my android handy) as an SSD comparable with Intel =
-XE
->=20
-> only with
->=20
-> > different interface? Come on, stay serious. The product is not only=
- made
->=20
-> of
->=20
-> > SLCs and some raw logic.
->=20
-> I am saying that there is no reason for the firmware in an SD card to=
- not
-> be as advanced. If the manufacturer has some advanced logic in their =
-SATA
-> SSD, I cannot see any valid engineering reason to not apply the same =
-logic
-> in a SD product.
+On Wed, Mar 10, 2010 at 07:49:34PM +0000, Gordan Bobic wrote:
+> I'm looking to try BTRFS on a SSD, and I would like to know what SSD
+> optimizations it applies. Is there a comprehensive list of what ssd
+> mount option does? How are the blocks and metadata arranged? Are
+> there options available comparable to ext2/ext3 to help reduce wear
+> and improve performance?
+> 
+> Specifically, on ext2 (journal means more writes, so I don't use
+> ext3 on SSDs, since fsck typically only takes a few seconds when
+> access time is < 100us), I usually apply the
+> -b 4096 -E stripe-width = (erase_block/4096)
+> parameters to mkfs in order to reduce the multiple erase cycles on
+> the same underlying block.
+> 
+> Are there similar optimizations available in BTRFS?
 
-The _SD_standard_ states that the media has to implement wear-leveling.
-So any card with an SD logo implements it.
+All devices (raid, ssd, single spindle) tend to benefit from big chunks
+of writes going down close together on disk.  This is true for different
+reasons on each one, but it is still the easiest way to optimize writes.
+COW filesystems like btrfs are very well suited to send down lots of big writes
+because we're always reallocating things.
 
-As I stated previously, the algorithms used in SD cards may not be as a=
-dvanced=20
-as those in top-of-the-line Intel SSDs, but I bet they don't differ by =
-much to=20
-the ones used in cheapest SSD drives.
+For traditional storage, we also need to keep blocks from one file (or
+files in a directory) close together to reduce seeks during reads.  SSDs
+have no such restrictions, and so the mount -o ssd related options in
+btrfs focus on tossing out tradeoffs that slow down writes in hopes of
+reading faster later.
 
-Besides, why shouldn't we help the drive firmware by=20
-- writing the data only in erase-block sizes
-- trying to write blocks that are smaller than the erase-block in a way=
- that=20
-won't cross the erase-block boundary
-- using TRIM on deallocated parts of the drive
+Someone already mentioned the mount -o ssd and ssd_spread options.
+Mount -o ssd is targeted at faster SSD that is good at wear leveling and
+generally just benefits from having a bunch of data sent down close
+together.  In mount -o ssd, you might find a write pattern like this:
 
-This will not only increase the life of the SSD but also increase its=20
-performance.
+block N, N+2, N+3, N+4, N+6, N+7, N+16, N+17, N+18, N+19, N+20 ...
 
->=20
-> >> > Honestly I would just drop the idea of an SSD option simply beca=
-use
->=20
-> the
->=20
-> >> > vendors implement all kinds of neat strategies in their devices.=
- So
->=20
-> in
->=20
-> >> the
-> >>
-> >> > end you cannot really tell if the option does something construc=
-tive
-> >> > and not destructive in combination with a SSD controller.
-> >>
-> >> You can make an educated guess. For starters given that visible se=
-ctor
-> >> sizes are not equal to FS block sizes, it means that FS block size=
-s can
-> >> straddle erase block boundaries without the flash controller, no m=
-atter
-> >> how
-> >> fancy, being able to determine this. Thus, at the very least, alig=
-ning
->=20
-> FS
->=20
-> >> structures so that they do not straddle erase block boundaries is
->=20
-> useful
->=20
-> >> in
-> >> ALL cases. Thinking otherwise is just sticking your head in the sa=
-nd
-> >> because you cannot be bothered to think.
-> >
-> > And your guess is that intel engineers had no glue when designing t=
-he XE
-> > including its controller? You think they did not know what you and =
-me
->=20
-> know
->=20
-> > and
-> > therefore pray every day that some smart fs designer falls from hea=
-ven
->=20
-> and
->=20
-> > saves their product from dying in between? Really?
->=20
-> I am saying that there are problems that CANNOT be solved on the disk
-> firmware level. Some problems HAVE to be addressed higher up the stac=
-k.
+It's a largely contiguous chunk of writes, but there may be gaps.  Good
+ssds don't really care about the gaps, and they benefit more from the
+fact that we're preferring to reuse blocks that had once been written
+than to go off and find completely contiguous areas of the disk to
+write (which are more likely to have never been written at all).
 
-Exactly, you can't assume that the SSDs firmware understands any and al=
-l file=20
-system layouts, especially if they are on fragmented LVM or other logic=
-al=20
-volume manager partitions.
+mount -o ssd_spread is much more strict.  You'll get N,N+2,N+3,N+4,N+5
+etc because crummy ssds really do care about the gaps.
 
---=20
-Hubert Kario
-QBS - Quality Business Software
-02-656 Warszawa, ul. Ksawer=C3=B3w 30/85
-tel. +48 (22) 646-61-51, 646-74-24
-www.qbs.com.pl
+Now, btrfs could go off and probe for the erasure size and work very
+hard to align things to it.  As someone said, alignment of the partition
+table is very important here as well.  But for modern ssd this generally
+matters much less than just doing big ios and letting the little log
+structured squirrel inside the device figure things out.
 
-System Zarz=C4=85dzania Jako=C5=9Bci=C4=85
-zgodny z norm=C4=85 ISO 9001:2000
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+For trim, we do have mount -o discard.  It does introduce a run time
+performance hit (this varies wildly from device to device) and we're
+tuning things as discard capable devices become more common.  If anyone
+is looking for a project it would be nice to have an ioctl that triggers
+free space discards in bulk.
+
+-chris
+

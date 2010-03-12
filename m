@@ -1,507 +1,238 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Subject: [PATCH 1/2] Re: New btrfs command pushed into the btrfs-progs subvol branch - commands
-Date: Thu, 11 Mar 2010 22:44:21 +0100
-Message-ID: <201003112244.31375.kreijack@inwind.it>
-References: <20100311185421.GM6509@think> <201003112003.18245.kreijack@inwind.it> <20100311190828.GN6509@think>
-Reply-To: kreijack@inwind.it
+From: Hubert Kario <hka@qbs.com.pl>
+Subject: Re: SSD Optimizations
+Date: Fri, 12 Mar 2010 02:07:40 +0100
+Message-ID: <201003120207.40740.hka@qbs.com.pl>
+References: <4B97F7CE.4030405@bobich.net> <0592c2cb505638c1110eaef97192eb60@localhost> <20100311161932.GH6509@think>
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart1310407.Euym9iRH6h";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
-Cc: linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain; charset=iso-8859-1
+Cc: Gordan Bobic <gordan@bobich.net>, linux-btrfs@vger.kernel.org
 To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100311190828.GN6509@think>
+In-Reply-To: <20100311161932.GH6509@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart1310407.Euym9iRH6h
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+On Thursday 11 March 2010 17:19:32 Chris Mason wrote:
+> On Thu, Mar 11, 2010 at 04:03:59PM +0000, Gordan Bobic wrote:
+> > On Thu, 11 Mar 2010 16:35:33 +0100, Stephan von Krawczynski
+> >=20
+> > <skraw@ithnet.com> wrote:
+> > >> Besides, why shouldn't we help the drive firmware by
+> > >> - writing the data only in erase-block sizes
+> > >> - trying to write blocks that are smaller than the erase-block i=
+n a
+> > >> way that won't cross the erase-block boundary
+> > >=20
+> > > Because if the designing engineer of a good SSD controller wasn't=
+ able
+> >=20
+> > to
+> >=20
+> > > cope with that he will have no chance to design a second one.
+> >=20
+> > You seem to be confusing quality of implementation with theoretical
+> > possibility.
+> >=20
+> > >> This will not only increase the life of the SSD but also increas=
+e its
+> > >> performance.
+> > >=20
+> > > TRIM: maybe yes. Rest: pure handwaving.
+> > >=20
+> > >> [...]
+> > >>=20
+> > >> > > And your guess is that intel engineers had no glue when desi=
+gning
+> > >> > > the XE
+> > >> > > including its controller? You think they did not know what y=
+ou and
+> >=20
+> > me
+> >=20
+> > >> > > know and
+> > >> > > therefore pray every day that some smart fs designer falls f=
+rom
+> > >> > > heaven
+> > >> > > and saves their product from dying in between? Really?
+> > >> >=20
+> > >> > I am saying that there are problems that CANNOT be solved on t=
+he
+> > >> > disk firmware level. Some problems HAVE to be addressed higher=
+ up
+> > >> > the
+> >=20
+> > stack.
+> >=20
+> > >> Exactly, you can't assume that the SSDs firmware understands any=
+ and
+> >=20
+> > all
+> >=20
+> > >> file
+> > >> system layouts, especially if they are on fragmented LVM or othe=
+r
+> > >> logical
+> > >> volume manager partitions.
+> > >=20
+> > > Hopefully the firmware understands exactly no fs layout at all. T=
+hat
+> >=20
+> > would
+> >=20
+> > > be
+> > > braindead. Instead it should understand how to arrange incoming a=
+nd
+> > > outgoing
+> > > data in a way that its own technical requirements are met as perf=
+ect as
+> > > possible. This is no spinning disk, it is completely irrelevant w=
+hat
+> > > the data
+> > > layout looks like as long as the controller finds its way through=
+ and
+> >=20
+> > copes
+> >=20
+> > > best with read/write/erase cycles. It may well use additional RAM=
+ for
+> > > caching and data reordering.
+> > > Do you really believe ascending block numbers are placed in ascen=
+ding
+> > > addresses inside the disk (as an example)? Why should they? What =
+does
+> >=20
+> > that
+> >=20
+> > > mean for fs block ordering? If you don't know anyway what a contr=
+oller
+> > > does to
+> > > your data ordering, how do you want to help it with its job?
+> > > Please accept that we are _not_ talking about trivial flash mem h=
+ere or
+> > > pseudo-SSDs consisting of sd cards. The market has already evolve=
+d
+> >=20
+> > better
+> >=20
+> > > products. The dinosaurs are extincted even if some are still look=
+ing
+> >=20
+> > alive.
 
-Hi Chris,
+You seem to be forgetting that CEOs like to save 10 cents per drive to =
+show=20
+"millions of dollars saved" by their work, I highly doubt that we won't=
+ see=20
+SSDs with half assed wear leveling implementations 10 years from now.
 
-I updated my git repository. You can pull from=20
+And no, I don't think that the linear storage that we see at the ATA le=
+vel is=20
+any linear on the drive itself. But erase blocks are still erase blocks=
+=2E I=20
+highly doubt that the abstraction layer works over sector sizes (512B) =
+and not=20
+over whole erase block sizes -- just because it would make it much more=
+=20
+complicated, thus slower.
 
-git pull http://cassiopea.homelinux.net/git/btrfs-command.git mlc-subvol
+This way, even if the writes to the flash cells are made in fashion sim=
+ilar to=20
+a LogFS, one will still get r/m/w cycle if the write is 512B in size on=
+ a=20
+block that has also other data.
 
-(branch mlc-subvol, commit e59135a27dc1fde6acc4fb198499be2b6cbd9f6f)
+> >=20
+> > I am assuming that you are being deliberately facetious here (the
+> > alternative is less kind). The simple fact is that you cannot come =
+up
+> > with some magical data (re)ordering method that nullifies problems =
+of
+> > common use-cases that are quite nasty for flash based media.
+> >=20
+> > For example - you have a disk that has had all it's addressable blo=
+cks
+> > tainted. A new write comes in - what do you do with it? Worse, a wr=
+ite
+> > comes in spanning two erase blocks as a consequence of the data
+> > re-alignment in the firmware. You have no choice but to wipe them b=
+oth
+> > and re-write the data. You'd be better off not doing the magic and
+> > assuming that the FS is sensibly aligned.
+>=20
+> Ok, how exactly would the FS help here?  We have a device with a 256k=
+b
+> erasure size, and userland does a 4k write followed by an fsync.
 
-$ git diff remotes/origin/subvol | diffstat
- btrfs-list.c   |   15 +++--
- btrfs.c        |   56 +++++++++++++++++-
- btrfs_cmds.c   |   84 +++++++++++++++++-----------
- btrfs_cmds.h   |    1=20
- man/btrfs.8.in |  150 +++++++++++++++++++++++++++++++++++++++++++++[...]
- 5 files changed, 283 insertions(+), 43 deletions(-)
+I assume here that the FS knows about erasure size and does implement T=
+RIM.
 
+> If the FS were to be smart and know about the 256kb requirement, it
+> would do a read/modify/write cycle somewhere and then write the 4KB.
 
-As you requested I update the parser in order set the argv[0] argument as t=
+If all the free blocks have been TRIMmed, FS should pick a completely f=
+ree=20
+erasure size block and write those 4KiB of data.
+
+Correct implementation of wear leveling in the drive should notice that=
+ the=20
+write is entirely inside a free block and make just a write cycle addin=
+g zeros=20
+to the end of supplied data.
+
+> The underlying implementation is the same in the device.  It picks a
+> destination, reads it then writes it back.  You could argue (and many
+> people do) that this operation is risky and has a good chance of
+> destroying old data.  Perhaps we're best off if the FS does the rmw
+> cycle instead into an entirely safe location.
+
+And IMO that's the idea behind TRIM -- not to force the device do do rm=
+w=20
+cycles, only write cycle or erase cycle, provided there's free space an=
+d the=20
+free space  doesn't have considerably more write cycles than the alread=
+y=20
+allocated data.
+
+>=20
+> It's a great place for research and people are definitely looking at =
+it.
+>=20
+> But with all of that said, it has nothing to do with alignment or tri=
+m.
+> Modern ssds are a raid device with a large stripe size, and someone
+> somewhere is going to do a read/modify/write to service any small wri=
+te.
+> You can force this up to the FS or the application, it'll happen
+> somewhere.
+
+Yes, and if the parition is full rmw will happen in the drive. But if t=
 he=20
-program name + the verb. For example if I do
+partition is far from full, free space is TRIMmed then than the r/m/w c=
+ycle=20
+will happen inside btrfs and the SSD won't have to do its magic -- maki=
+ng the=20
+process faster.
 
-	$ btrfs dev add
+The effect will be a FS that behaves consistently over a broad range of=
+ SSDs,=20
+provided there's free space left.
 
-the argv[0] will be equal to "btrfs device add". I hope that is what you=20
-requested.
+> The filesystem metadata writes are a very small percentage of the
+> problem overall.  Sure we can do better and try to force larger metad=
+ata
+> blocks.  This was the whole point behind btrfs' support for large tre=
+e
+> blocks, which I'll be enabling again shortly.
 
-Due to this change I update all the commands in order to evaluate the=20
-arguments from argv[1] and not from argv[0] anymore. (I update also your=20
-do_defrag() function)
-
-Also because I implemented that already the week ago:
-=2D I made some small modification to btrfs-list.c in order to be more frie=
-ndly=20
-in case of error (replace some "exit(2)" with "return -ERR")
-=2D I implemented the command "btrf subvolume set-default"
-
-Hoping that this can you help
-Regards=20
-G.Baroncelli
-
-
-diff --git a/btrfs-list.c b/btrfs-list.c
-index 6305d3c..f2f119b 100644
-=2D-- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -66,7 +66,7 @@ struct root_info {
- 	char name[];
- };
-=20
-=2Dvoid root_lookup_init(struct root_lookup *tree)
-+static void root_lookup_init(struct root_lookup *tree)
- {
- 	tree->root.rb_node =3D NULL;
- }
-@@ -275,9 +275,9 @@ static int lookup_ino_path(int fd, struct root_info *ri)
-=20
- 	ret =3D ioctl(fd, BTRFS_IOC_INO_LOOKUP, &args);
- 	if (ret) {
-=2D		fprintf(stderr, "Failed to lookup path for root %llu\n",
-+		fprintf(stderr, "ERROR: Failed to lookup path for root=20
-%llu\n",
- 			(unsigned long long)ri->ref_tree);
-=2D		exit(1);
-+		return ret;
- 	}
-=20
- 	if (args.name[0]) {
-@@ -346,8 +346,8 @@ int list_subvols(int fd)
- 	while(1) {
- 		ret =3D ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
- 		if (ret < 0) {
-=2D			perror("ioctl:");
-=2D			break;
-+			fprintf(stderr, "ERROR: can't perform the search\n");
-+			return ret;
- 		}
- 		/* the ioctl returns the number of item it found in nr_items=20
-*/
- 		if (sk->nr_items =3D=3D 0)
-@@ -398,8 +398,11 @@ int list_subvols(int fd)
- 	n =3D rb_first(&root_lookup.root);
- 	while (n) {
- 		struct root_info *entry;
-+		int ret;
- 		entry =3D rb_entry(n, struct root_info, rb_node);
-=2D		lookup_ino_path(fd, entry);
-+		ret =3D lookup_ino_path(fd, entry);
-+		if(ret < 0)
-+			return ret;
- 		n =3D rb_next(n);
- 	}
-=20
-diff --git a/btrfs.c b/btrfs.c
-index 20f7413..58271f6 100644
-=2D-- a/btrfs.c
-+++ b/btrfs.c
-@@ -60,10 +60,15 @@ static struct Command commands[] =3D {
- 	{ do_subvol_list, 1, "subvolume list", "<path>\n"
- 		"List the snapshot/subvolume of a filesystem."
- 	},
-=2D
- 	{ do_defrag, -1,
- 	  "filesystem defragment", "[-vcf] [-s start] [-l len] [-t size]=20
-<file>|<dir> [<file>|<dir>...]\n"
- 		"Defragment a file or a directory."
-+
-+	},
-+	{ do_set_default_subvol, 2,
-+	  "subvolume set-default", "<id> <path>\n"
-+		"Set the subvolume of the filesystem <path> which will be=20
-mounted\n"
-+		"as default."
- 	},
- 	{ do_fssync, 1,
- 	  "filesystem sync", "<path>\n"
-@@ -88,11 +93,12 @@ static struct Command commands[] =3D {
- 		"Scan all device for or the passed device for a btrfs\n"
- 		"filesystem."
- 	},
-=2D	{ do_add_volume, -1,
-+
-+	{ do_add_volume, -2,
- 	  "device add", "<dev> [<dev>..] <path>\n"
- 		"Add a device to a filesystem."
- 	},
-=2D	{ do_remove_volume, -1,
-+	{ do_remove_volume, -2,
- 	  "device delete", "<dev> [<dev>..] <path>\n"
- 		"Remove a device from a filesystem."
- 	},
-@@ -208,6 +214,41 @@ static int check_ambiguity(struct Command *cmd, char=20
-**argv){
- }
-=20
- /*
-+ * This function, compacts the program name and the command in the first
-+ * element of the '*av' array
-+ */
-+static int prepare_args(int *ac, char ***av, char *prgname, struct Command=
-=20
-*cmd ){
-+
-+	char	**ret;
-+	int	i;
-+	char	*newname;
-+
-+	ret =3D (char **)malloc(sizeof(char*)*(*ac+1));
-+	newname =3D (char*)malloc(strlen(prgname)+strlen(cmd->verb)+2);
-+	if( !ret || !newname ){
-+		free(ret);
-+		free(newname);
-+		return -1;
-+	}
-+
-+	ret[0] =3D newname;
-+	for(i=3D0; i < *ac ; i++ )
-+		ret[i+1] =3D (*av)[i];
-+
-+	strcpy(newname, prgname);
-+	strcat(newname, " ");
-+	strcat(newname, cmd->verb);
-+
-+	(*ac)++;
-+	*av =3D ret;
-+
-+	return 0;
-+
-+}
-+
-+
-+
-+/*
-=20
- 	This function perform the following jobs:
- 	- show the help if '--help' or 'help' or '-h' are passed
-@@ -307,11 +348,18 @@ static int parse_args(int argc, char **argv,
- 			matchcmd->verb, -matchcmd->nargs);
- 			return -2;
- 	}
-=2D	if(matchcmd->nargs >=3D 0 && matchcmd->nargs !=3D *nargs_ && matchcmd-
->nargs !=3D 999 ){
-+
-+	if(matchcmd->nargs >=3D 0 && matchcmd->nargs !=3D *nargs_ && matchcmd-
->nargs !=3D 999){
- 		fprintf(stderr, "ERROR: '%s' requires %d arg(s)\n",
- 			matchcmd->verb, matchcmd->nargs);
- 			return -2;
- 	}
-+=09
-+        if (prepare_args( nargs_, args_, prgname, matchcmd )){
-+                fprintf(stderr, "ERROR: not enough memory\\n");
-+		return -20;
-+        }
-+
-=20
- 	return 1;
- }
-diff --git a/btrfs_cmds.c b/btrfs_cmds.c
-index 3a21be3..89f47c2 100644
-=2D-- a/btrfs_cmds.c
-+++ b/btrfs_cmds.c
-@@ -59,7 +59,7 @@ static inline int ioctl(int fd, int define, void *arg) {=
-=20
-return 0; }
- static int test_issubvolume(char *path)
- {
-=20
-=2D	struct stat	st;
-+	struct stat 	st;
- 	int		res;
-=20
- 	res =3D stat(path, &st);
-@@ -79,7 +79,7 @@ static int test_issubvolume(char *path)
-  */
- static int test_isdir(char *path)
- {
-=2D	struct stat	st;
-+	struct stat 	st;
- 	int		res;
-=20
- 	res =3D stat(path, &st);
-@@ -142,7 +142,7 @@ static u64 parse_size(char *s)
- 	return atoll(s) * mult;
- }
-=20
-=2Dint do_defrag(int ac, char **avp)
-+int do_defrag(int ac, char **av)
- {
- 	int fd;
- 	int compress =3D 0;
-@@ -156,17 +156,6 @@ int do_defrag(int ac, char **avp)
- 	int verbose =3D 0;
- 	int fancy_ioctl =3D 0;
- 	struct btrfs_ioctl_defrag_range_args range;
-=2D	char **av;
-=2D
-=2D	/*
-=2D	 * getopt expects av[0] to be the program name and it seems
-=2D	 * to get confused when this isn't the case
-=2D	 */
-=2D	av =3D malloc((ac + 2) * sizeof(char *));
-=2D	av[0] =3D "defrag";
-=2D	av[ac + 1] =3D NULL;
-=2D	memcpy(av + 1, avp, ac * sizeof(char *));
-=2D	ac +=3D 1;
-=20
- 	optind =3D 1;
- 	while(1) {
-@@ -264,7 +253,7 @@ int do_subvol_list(int argc, char **argv)
- 	int ret;
- 	char *subvol;
-=20
-=2D	subvol =3D argv[0];
-+	subvol =3D argv[1];
-=20
- 	ret =3D test_issubvolume(subvol);
- 	if (ret < 0) {
-@@ -289,13 +278,13 @@ int do_subvol_list(int argc, char **argv)
-=20
- int do_clone(int argc, char **argv)
- {
-=2D	char	*subvol, *dst;
-+	char 	*subvol, *dst;
- 	int	res, fd, fddst, len;
- 	char	*newname;
- 	char	*dstdir;
-=20
-=2D	subvol =3D argv[0];
-=2D	dst =3D argv[1];
-+	subvol =3D argv[1];
-+	dst =3D argv[2];
- 	struct btrfs_ioctl_vol_args	args;
-=20
- 	res =3D test_issubvolume(subvol);
-@@ -375,7 +364,7 @@ int do_delete_subvolume(int argc, char **argv)
- 	int	res, fd, len;
- 	struct btrfs_ioctl_vol_args	args;
- 	char	*dname, *vname, *cpath;
-=2D	char	*path =3D argv[0];
-+	char	*path =3D argv[1];
-=20
- 	res =3D test_issubvolume(path);
- 	if(res<0){
-@@ -436,7 +425,7 @@ int do_create_subvol(int argc, char **argv)
- 	char	*newname;
- 	char	*dstdir;
- 	struct btrfs_ioctl_vol_args	args;
-=2D	char	*dst =3D argv[0];
-+	char	*dst =3D argv[1];
-=20
- 	res =3D test_isdir(dst);
- 	if(res >=3D 0 ){
-@@ -487,7 +476,7 @@ int do_create_subvol(int argc, char **argv)
- int do_fssync(int argc, char **argv)
- {
- 	int fd, res;
-=2D	char	*path =3D argv[0];
-+	char	*path =3D argv[1];
-=20
- 	fd =3D open_file_or_dir(path);
- 	if (fd < 0) {
-@@ -506,10 +495,10 @@ int do_fssync(int argc, char **argv)
- 	return 0;
- }
-=20
-=2Dint do_scan(int nargs, char **argv)
-+int do_scan(int argc, char **argv)
- {
- 	int	i, fd;
-=2D	if(!nargs){
-+	if(argc<=3D1){
- 		int ret;
-=20
- 		printf("Scanning for Btrfs filesystems\n");
-@@ -527,8 +516,8 @@ int do_scan(int nargs, char **argv)
- 		return 10;
- 	}
-=20
-=2D	for( i =3D 0 ; i < nargs ; i++ ){
-=2D		struct btrfs_ioctl_vol_args	args;
-+	for( i =3D 1 ; i < argc ; i++ ){
-+		struct btrfs_ioctl_vol_args 	args;
- 		int	ret;
-=20
- 		printf("Scanning for Btrfs filesystems in '%s'\n", argv[i]);
-@@ -558,8 +547,8 @@ int do_resize(int argc, char **argv)
-=20
- 	struct btrfs_ioctl_vol_args	args;
- 	int	fd, res, len;
-=2D	char	*amount=3Dargv[0], *path=3Dargv[1];
-=2D
-+	char 	*amount=3Dargv[1], *path=3Dargv[2];
-+=09
- 	fd =3D open_file_or_dir(path);
- 	if (fd < 0) {
- 		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
-@@ -646,7 +635,7 @@ int do_show_filesystem(int argc, char **argv)
- 	struct list_head *all_uuids;
- 	struct btrfs_fs_devices *fs_devices;
- 	struct list_head *cur_uuid;
-=2D	char *search =3D argv[0];
-+	char *search =3D argv[1];
- 	int ret;
-=20
- 	ret =3D btrfs_scan_one_dir("/dev", 0);
-@@ -680,8 +669,8 @@ int do_add_volume(int nargs, char **args)
- 		return 12;
- 	}
-=20
-=2D	for(i=3D0 ; i < (nargs-1) ; i++ ){
-=2D		struct	btrfs_ioctl_vol_args ioctl_args;
-+	for(i=3D1 ; i < (nargs-1) ; i++ ){
-+		struct 	btrfs_ioctl_vol_args ioctl_args;
- 		int	devfd, res;
- 		u64 dev_block_count =3D 0;
- 		struct stat st;
-@@ -737,8 +726,8 @@ int do_balance(int argc, char **argv)
- {
-=20
- 	int	fdmnt, ret=3D0;
-=2D	char	*path =3D argv[0];
- 	struct btrfs_ioctl_vol_args args;
-+	char	*path =3D argv[1];
-=20
- 	fdmnt =3D open_file_or_dir(path);
- 	if (fdmnt < 0) {
-@@ -768,8 +757,8 @@ int do_remove_volume(int nargs, char **args)
- 		return 12;
- 	}
-=20
-=2D	for(i=3D0 ; i < (nargs-1) ; i++ ){
-=2D		struct	btrfs_ioctl_vol_args arg;
-+	for(i=3D1 ; i < (nargs-1) ; i++ ){
-+		struct 	btrfs_ioctl_vol_args arg;
- 		int	res;
-=20
- 		strcpy(arg.name, args[i]);
-@@ -786,3 +775,32 @@ int do_remove_volume(int nargs, char **args)
- 	else
- 		return 0;
- }
-+
-+int do_set_default_subvol(int nargs, char **argv)
-+{
-+	int	ret=3D0, fd;
-+	u64	objectid;
-+	char 	*path =3D argv[2];
-+	char	*subvolid =3D argv[1];
-+
-+	fd =3D open_file_or_dir(path);
-+	if (fd < 0) {
-+		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
-+		return 12;
-+	}
-+
-+	objectid =3D (unsigned long long)strtoll(subvolid, NULL, 0);
-+	if (errno =3D=3D ERANGE) {
-+		fprintf(stderr, "ERROR: invalid tree id (%s)\n",subvolid);
-+		return 30;
-+	}
-+	ret =3D ioctl(fd, BTRFS_IOC_DEFAULT_SUBVOL, &objectid);
-+	close(fd);
-+	if( ret < 0 ){
-+		fprintf(stderr, "ERROR: unable to set a new default=20
-subvolume\n");
-+		return 30;
-+	}
-+	return 0;
-+=09
-+}
-+
-diff --git a/btrfs_cmds.h b/btrfs_cmds.h
-index cfdbde2..c63baa9 100644
-=2D-- a/btrfs_cmds.h
-+++ b/btrfs_cmds.h
-@@ -27,4 +27,5 @@ int do_remove_volume(int nargs, char **args);
- int do_scan(int nargs, char **argv);
- int do_resize(int nargs, char **argv);
- int do_subvol_list(int nargs, char **argv);
-+int do_set_default_subvol(int nargs, char **argv);
- int list_subvols(int fd);
-
-
-=2D---
-
-
-
-
-On Thursday 11 March 2010, you (Chris Mason) wrote:
-> Thanks for all your work on btrfs!
->=20
-> -chris
->=20
-> On Thu, Mar 11, 2010 at 08:03:17PM +0100, Goffredo Baroncelli wrote:
-> > On Thursday 11 March 2010, Chris Mason wrote:
-> > > Hi everyone,
-> > >=20
-> > > I've pushed Goffredo's new btrfs utility into the subvol branch of the
-> > > btrfs-progs repo.  I'm using it as my starting point for the subvol
-> > > listing utility as well as my fancy new defrag range ioctl.
-> > >=20
-> > > Goffredo, the new defrag ioctl takes a bunch of arguments, and I used
-> > > getopt inside the command to do it.  The tricky part is that getopt
-> > > expects argv[0] to be the command name, so I had to hack things a bit.
-> > >=20
-> > > Could you please send a patch that changes the commands to include the
-> > > command name in argv[0]?  That'll make it easier to be flexible.
-> > >=20
-> >=20
-> > I will start to work=20
-> >=20
-> > > -chris
-> > >=20
-> >=20
-> >=20
-> > --=20
-> > gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo)=20
-<kreijack@inwind.it>
-> > Key fingerprint =3D 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+--=20
+Hubert Kario
+QBS - Quality Business Software
+ul. Ksawer=F3w 30/85
+02-656 Warszawa
+POLAND
+tel. +48 (22) 646-61-51, 646-74-24
+fax +48 (22) 646-61-50
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
-
-
-=2D-=20
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.=
-it>
-Key fingerprint =3D 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
-
---nextPart1310407.Euym9iRH6h
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iD8DBQBLmWQ2vwTxYT3FBRIRAtlgAJ9J994G89BMc6VqA1cZkh6qMQuGuwCeOYBZ
-WdBrZxEfdOiWNvij9A+AVuo=
-=HBnl
------END PGP SIGNATURE-----
-
---nextPart1310407.Euym9iRH6h--
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

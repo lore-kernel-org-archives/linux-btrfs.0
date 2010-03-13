@@ -1,152 +1,185 @@
 From: Hubert Kario <hka@qbs.com.pl>
 Subject: Re: SSD Optimizations
-Date: Sat, 13 Mar 2010 20:01:26 +0100
-Message-ID: <201003132001.26896.hka@qbs.com.pl>
-References: <4B97F7CE.4030405@bobich.net> <201003121700.09553.hka@qbs.com.pl> <20100313180210.4eb1b705.skraw@ithnet.com>
+Date: Sat, 13 Mar 2010 20:41:35 +0100
+Message-ID: <201003132041.36712.hka@qbs.com.pl>
+References: <4B97F7CE.4030405@bobich.net> <20100311180017.GK6509@think> <20100313174359.ec81c8b7.skraw@ithnet.com>
 Mime-Version: 1.0
 Content-Type: Text/Plain; charset=iso-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Gordan Bobic <gordan@bobich.net>, linux-btrfs@vger.kernel.org
+Cc: Chris Mason <chris.mason@oracle.com>, sander@humilis.net,
+	linux-btrfs@vger.kernel.org, Gordan Bobic <gordan@bobich.net>
 To: Stephan von Krawczynski <skraw@ithnet.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100313180210.4eb1b705.skraw@ithnet.com>
+In-Reply-To: <20100313174359.ec81c8b7.skraw@ithnet.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Saturday 13 March 2010 18:02:10 Stephan von Krawczynski wrote:
-> On Fri, 12 Mar 2010 17:00:08 +0100
-> Hubert Kario <hka@qbs.com.pl> wrote:
-> > > Even on true
-> > > spinning disks your assumption is wrong for relocated sectors.
+On Saturday 13 March 2010 17:43:59 Stephan von Krawczynski wrote:
+> On Thu, 11 Mar 2010 13:00:17 -0500
+> Chris Mason <chris.mason@oracle.com> wrote:
+> > On Thu, Mar 11, 2010 at 06:35:06PM +0100, Stephan von Krawczynski w=
+rote:
+> > > On Thu, 11 Mar 2010 15:39:05 +0100
+> > > Sander <sander@humilis.net> wrote:
+> > > > Stephan von Krawczynski wrote (ao):
+> > > > > Honestly I would just drop the idea of an SSD option simply b=
+ecause
+> > > > > the vendors implement all kinds of neat strategies in their
+> > > > > devices. So in the end you cannot really tell if the option d=
+oes
+> > > > > something constructive and not destructive in combination wit=
+h a
+> > > > > SSD controller.
+> > > >=20
+> > > > My understanding of the ssd mount option is also that the fs do=
+ens't
+> > > > try to do all kinds of smart (and potential expensive) things w=
+hich
+> > > > make sense for rotating media to reduce seeks and the like.
+> > > >=20
+> > > > 	Sander
+> > >=20
+> > > Such an optimization sounds valid on first sight. But re-think cl=
+osely:
+> > > how does the fs really know about seeks needed during some operat=
+ion?
 > >=20
-> > Which we don't have to worry about because if the drive has less th=
-an 5
-> > of 'em, the impact of hitting them is marginal and if there are mor=
-e,
-> > the user has much more pressing problem than the performance of the
-> > drive or FS.
+> > Well the FS makes a few assumptions (in the nonssd case).  First it
+> > assumes the storage is not a memory device.  If things would fit in
+> > memory we wouldn't need filesytems in the first place.
 >=20
-> Are you really sure that a drive firmware tells you about the true nu=
-mber
-> of relocated sectors? I mean if it makes the product look better in
-> comparison to another product, are you really sure that the firmware =
-will
-> not tell you what you expect to see only to make you content and happ=
-y
-> with your drive?
+> Ok, here is the bad news. This assumption everything from right to
+> completely wrong, and you cannot really tell the mainstream answer.
+> Two examples from opposite parts of the technology world:
+> - History: way back in the 80's there was a 3rd party hardware for C=3D=
+1541
+> (floppy drive for C=3D64) that read in the complete floppy and served=
+ all
+> incoming requests from the ram buffer. So your assumption can already=
+ be
+> wrong for a trivial floppy drive from ancient times.
 
-because Joe Sixpack reads SMART values, and even if he does, he will be=
- much=20
-more angry when a drive that has no or few relocations fails, that when=
- a=20
-drive that reports that's failing fails.
+such assumption doesn't make it work slower on such device
 
-If the drive arrives with badsectors, it goes where it came from the sa=
-me day=20
-if it meets an IT guy worth its salt, any IT guy knows that some HDDs d=
-evelop=20
-badsectors no matter the make and model, but if they do, you replace th=
-em.
-
-And as the Google disk survey showed, the SMART has very high percentag=
-e of=20
-Type I errors, but very few Type II errors.
-
-But we're off-topic here
-
-> > > Which
-> > > basically means that every disk controller firmware fiddles aroun=
-d with
-> > > the physical layout since decades. Please accept that you cannot =
-do a
-> > > disks' job in FS. The more advanced technology gets the more disk=
-s
-> > > become black boxes with a defined software interface. Use this
-> > > interface and drop the idea of having inside knowledge of such a
-> > > device. That's other peoples' work. If you want to design smart S=
-SD
-> > > controllers hire at a company that builds those.
-> >=20
-> > And I don't think that doing disks' job in the FS is good idea, but=
- I
-> > think that we should be able to minimise the impact of the translat=
-ion
-> > layer.
-> >=20
-> > The way to do this, is to threat the device as a block device with
-> > sectors the size of erase-blocks. That's nothing too fancy, don't y=
-ou
-> > think?
->=20
-> I don't believe anyone is able to tell the size of erase-blocks of so=
-me
-> device - current and future - for sure.
-
-Well, if the engeneer that designed it doesn't know this, I don't know =
-how he=20
-got his degree.
-
-Just because it isn't publicised now, doesn't mean it won't be in near =
-future.
-
-Besides that, to detect how big the erase-blocks are in size is easy, i=
-f they=20
-have any impact on the performance, if they don't have any impact (what=
-ever=20
-the reason) tunning for their size is pointless anyway.=20
-
-> I do believe that making this
-> guess only reduces the future design options for new devices - if its
-> creators care at all about your guess.
-
-Did I, or any one else, say that we want to hardwire a specific erase-b=
-lock=20
-size to the design of the FS?! That would be utter stupidity!
-
-> Why not let the fs designer take his creative options in fs layer and=
- let
-> the device designer use his brain on the device level and all meet at=
+> - Nowadays: being a linux installation today chances are that the mat=
+rix
+> has you. Quite a lot of installations are virtualized. So your storag=
+e is
+> a virtual one either, which means it is likely being a fs buffer from=
  the
-> predefined software interface in between - and nowhere _else_.
+> host system, i.e. RAM.
 
-We (well, at least Gordon and I) just want a "stripe_width" option adde=
-d to=20
-the mkfs.btrfs, just like it is there for ext2/3/4, reiserfs, xfs and j=
-fs to=20
-name a few. It would need very few additional tweaks to make it SSD fri=
-endly,=20
-hardly any considering how -o ssd or -o ssd_spread already work.
+Buffers use read_ahead and are smaller than the underlaying device, sti=
+ll, such=20
+assumption doesn't make the FS perform worse in this situation.=20
 
-You're forgetting there's an elephant in the room that won't to talk to=
-=20
-devices that don't have sectors 512B in size. If not for it, there woul=
-dn't=20
-even _be_ SSDs with 512B sectors.
+> And sorry to say: "if things would fit in memory" you probably still =
+need a
+> fs simply because there is no actual way to organize data (be it
+> executable or not) in RAM without a fs layer. You can't save data wit=
+hout
+> an abstract file data type. To have one accessible you need a fs.
 
-It's not the way Flash memory works.
+yes, that's why there is tmpfs, btrfs isn't meant to be all and end all=
+ as far=20
+as FSs go
 
-The 512B abstraction is there to be compatible, to work with one curren=
-t OS,=20
-it's not there because it describes better the way Flash memory works o=
-r is=20
-the best way to address the data on the device itself.
+> Btw the other way round is as interesting: there is currently no fs f=
+or
+> linux that knows how to execute in place. Meaning if you really had o=
+nly
+> RAM and you have a fs to organize your data it would be just logical =
+to
+> have ways to _not_ load data (in other parts of the RAM), but to use =
+it in
+> its original storage (RAM-)space.
 
-There are already consumer HDDs with 4kiB sector size, so the situation=
- is =20
-getting better. We can only hope that in few years time the SSDs will h=
-ave=20
-sectors the size of erase-blocks. But in the mean time, stripe_width wo=
-uld be=20
-enough.
+at least ext2 does support XIP on platform that support it...
+
+>=20
+> > Then it assumes that adjacent blocks are cheap to read and blocks t=
+hat
+> > are far away are expensive to read.  Given expensive raid controlle=
+rs,
+> > cache, and everything else, you're correct that sometimes this
+> > assumption is wrong.
+>=20
+> As already mentioned this assumption may be completely wrong even wit=
+hout a
+> raid controller, being within a virtual environment. Even far away bl=
+ocks
+> can be one byte away in the next fs buffer of the underlying host fs
+> (assuming your device is in fact a file on the host;-).
+
+and again, such assumption doesn't reduce the performance
+
+>=20
+> >  But, on average seeking hurts.  Really a lot.
+>=20
+> Yes, seeking hurts. But there is no way to know if there is seeking a=
+t all.
+> On the other hand, if your storage is a netblock device seeking on th=
+e
+> server is probably your smallest problem, compared to the network lat=
+ency
+> in between.
+
+and because of that, there's read ahead and support for big packets on =
+the TCP=20
+level, so the assumption does make the FS perform better with it than w=
+ithout=20
+it.
 
 
-Besides, the stripe_width option will be not only useful for the SSDs b=
-ut also=20
-in environments where btrfs is on a device that is a RAID5/6 array=20
-(reconfiguring a server with many virtual machines is far from easy and=
-=20
-sometimes just can't be done because of heterogeneous virtualised OSs t=
-hat=20
-need the data protection provided by lower layers).
+It's one of the assumptions that you _have_ to make, just like the assu=
+mption=20
+that the computer counts in binary, or there's more disk space than RAM=
+=2E But=20
+those assumptions _don't_ make the performance (much) worse when they d=
+on't=20
+hold true for known devices that can impersonate rotating magnetic medi=
+a.
+
+> > We try to organize files such that files that are likely to be read
+> > together are found together on disk.  Btrfs is fairly good at this
+> > during file creation and not as good as ext*/xfs as files over
+> > overwritten and modified again and again (due to cow).
+>=20
+> You are basically saying that btrfs perfectly organizes write-once de=
+vices
+> ;-)
+>=20
+> > If you turn mount -o ssd on for your drive and do a test, you might=
+ not
+> > notice much difference right away.  ssds tend to be pretty good rig=
+ht
+> > out of the box.  Over time it tends to help, but it is a very hard =
+thing
+> > to benchmark in general.
+>=20
+> Honestly, this sounds like "I give up" to me ;-)
+> You just said that generally it is "very hard to benchmark". Which me=
+ans
+> "nobody can see or feel it in real world" in non-tech language.
+
+No, it's not this. When a SSD is fresh, the undeling write leveling has=
+ many=20
+blocks to choose from, so it's blaizing fast. The same holds true when =
+the=20
+test uses small amount of data (relative to SSD size).
+
+"very hard to benchmark" means just that -- the benchmark is much more=20
+complicated, must take into account much more variables and takes much =
+more=20
+time compared to rotating magnetic media benchmark.
+
+To test SSD performance you need to benchmark both the speed of flash m=
+emory=20
+_and_ the speed and performance of the write leveling algorithm (becaus=
+e it=20
+shows its ugly head only after specific workloads or when all blocks ar=
+e=20
+allocated), and that's non trivial to say the least. Add FS on top of i=
+t and=20
+you have a nice dissertation right there.
 
 --=20
 Hubert Kario

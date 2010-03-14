@@ -1,29 +1,34 @@
-From: Jeremy Fitzhardinge <jeremy@goop.org>
-Subject: Re: SSD Optimizations
-Date: Sat, 13 Mar 2010 19:19:01 -0800
-Message-ID: <4B9C55A5.3090200@goop.org>
-References: <4B97F7CE.4030405@bobich.net>	<4B9829B1.1020706@bobich.net>	<20100311073853.GA26129@attic.humilis.net>	<201003111159.58081.hka@qbs.com.pl>	<20100311123103.34246e95.skraw@ithnet.com>	<20100311143905.GA20569@attic.humilis.net>	<20100311183506.adce61ee.skraw@ithnet.com>	<20100311180017.GK6509@think> <20100313174359.ec81c8b7.skraw@ithnet.com>
+From: Mike Fedyk <mfedyk@mikefedyk.com>
+Subject: Re: [BUG] scheduling while atomic: init/1/0x00000002
+Date: Sat, 13 Mar 2010 22:26:01 -0800
+Message-ID: <93cdabd21003132226s2201c067vfdbcaad56ecffd81@mail.gmail.com>
+References: <45e1b66a1003131549k28173905r85ab74cd870db36e@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Chris Mason <chris.mason@oracle.com>, sander@humilis.net,
-	Hubert Kario <hka@qbs.com.pl>, linux-btrfs@vger.kernel.org,
-	Gordan Bobic <gordan@bobich.net>
-To: Stephan von Krawczynski <skraw@ithnet.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: Phillip Michael <oopsicrappe@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100313174359.ec81c8b7.skraw@ithnet.com>
+In-Reply-To: <45e1b66a1003131549k28173905r85ab74cd870db36e@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/13/2010 08:43 AM, Stephan von Krawczynski wrote:
-> - Nowadays: being a linux installation today chances are that the matrix has
-> you. Quite a lot of installations are virtualized. So your storage is a virtual
-> one either, which means it is likely being a fs buffer from the host system,
-> i.e. RAM.
->    
+On Sat, Mar 13, 2010 at 3:49 PM, Phillip Michael <oopsicrappe@gmail.com=
+> wrote:
+> I have a btrfs filesystem with three subvolumes. One of them (named
+> arch64) has 64 bit linux, one (arch32) =C2=A0has 32 bit linux, and th=
+e
+> third (files) has various files. After an unsuccessful tuxonice
+> resume, the arch64 subvolume will no longer boot. It shows this bug:
+>
+> VFS: Mounted root (btrfs filesystem) readonly on device 0:13.
+> Freeing unused kernel memory: 480k freed
+> BFS CPU scheduler v0.315 by Con Kolivas.
+> BUG: scheduling while atomic: init/1/0x00000002
+> Modules linked in:
+> Pid: 1, comm: init Not tainted 2.6.33-zen2-20100307-stable #6
 
-That would be a strictly amateur-hour implementation.  It is very 
-important for data integrity that at least all writes are synchronous, 
-and ideally all IO should be uncached in the host.  In that case the 
-performance of the guest's virtual IO device will be broadly similar to 
-a real hardware device.
-
-     J
+Can you reproduce this error on stock 2.6.33 without the zen patches?
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

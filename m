@@ -1,32 +1,23 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: consistent oops after power fail during btrfs-vol -r
-Date: Mon, 15 Mar 2010 16:56:23 -0400
-Message-ID: <20100315205623.GB10296@think>
-References: <4B9D266A.3000105@gmail.com>
+From: Phillip Michael <oopsicrappe@gmail.com>
+Subject: Re: [BUG] scheduling while atomic: init/1/0x00000002
+Date: Mon, 15 Mar 2010 15:20:23 -0700
+Message-ID: <45e1b66a1003151520k2be08f2drb976abdad1ef9006@mail.gmail.com>
+References: <45e1b66a1003131549k28173905r85ab74cd870db36e@mail.gmail.com>
+	 <93cdabd21003132226s2201c067vfdbcaad56ecffd81@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: Troy Ablan <tablan@gmail.com>
+To: Mike Fedyk <mfedyk@mikefedyk.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4B9D266A.3000105@gmail.com>
+In-Reply-To: <93cdabd21003132226s2201c067vfdbcaad56ecffd81@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Mar 14, 2010 at 11:09:46AM -0700, Troy Ablan wrote:
-> Hey guys,
-> 
-> In the middle of a long btrfs-vol -r on a 15-device raid1 the machine
-> lost power.  I don't know if that's the cause, but I now have access to
-> the filesystem for only a minute or two, and am now consistently getting
-> this oops shortly after mount:
+>> BUG: scheduling while atomic: init/1/0x00000002
+>> Modules linked in:
+>> Pid: 1, comm: init Not tainted 2.6.33-zen2-20100307-stable #6
+>
+> Can you reproduce this error on stock 2.6.33 without the zen patches?
+>
 
-Just to include comments from irc, this configuration has dm-crypt on
-top of plain sata drives.  This configuration won't pass sata cache
-flushing operations from the filesystem to the drive, and so the
-writeback cache on these drives needs to be turned off to avoid
-corruption during power failures.
-
-This doesn't meant the oopsen are ok, I'm working on a series of EIO
-patches to get us past these bugs and at least help people read the data
-off the drives.
-
--chris
+I get the same bug on a stock archlinux 2.6.33 kernel. I have to
+finish reinstalling before I can build a vanilla kernel to try.

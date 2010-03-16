@@ -1,113 +1,95 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Subject: Re: Saving and restoring btrfs snapshots
-Date: Tue, 16 Mar 2010 19:17:12 +0100
-Message-ID: <201003161917.13131.kreijack@libero.it>
-References: <18f8b4a81003112300h3be917adgd183bb78719019e2@mail.gmail.com> <201003121930.01701.kreijack@libero.it> <20100315135301.GP3035@think>
-Reply-To: kreijack@libero.it
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [GIT PULL] Btrfs updates
+Date: Tue, 16 Mar 2010 17:01:50 -0400
+Message-ID: <20100316210150.GA14886@think>
+References: <20100315191807.GA3449@think>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100315135301.GP3035@think>
+Content-Type: text/plain; charset=us-ascii
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20100315191807.GA3449@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris
-
-On Monday 15 March 2010, Chris Mason wrote:
-> On Fri, Mar 12, 2010 at 07:30:01PM +0100, Goffredo Baroncelli wrote:
-> > On Friday 12 March 2010, Pat Patterson wrote:
-> > > Are there any plans to implement something akin to ZFS send/recv, to
-> > > be able to create a stream representation of a snapshot and restore it
-> > > later/somewhere else? I've spent some time trawling the mailing list
-> > > and wiki, but I don't see anything there.
-> > 
-> > I spent a bit of time on this argument, in order to find how implement an 
-> > efficient method to backup incrementally the data.
-> > 
-> > AFAICT "zfs send" and "zfs recv" do the same thing that tar does. They 
-> > transform a tree (or the difference between a tree and its snapshot) to a 
-> > stream, and vice-versa.
-> > 
-> > To transform a tree to a stream is not very interesting. 
-> > The interesting part is how compare a tree and its snapshot. In fact a 
-> > snapshot of a tree should a be pointer to the original tree, and when a 
-file 
-> > is modified, a branch of the modified part (the extens of the file, the 
-> > directories of the path) is performed (yes I know that this a big 
-> > simplification of the process).
-> > The key is that the file-system knows which part of a snapshot is still 
-equal 
-> > to the source and which not.
-> > 
-> > If this kind of data is available to the user space, comparing a tree and 
-it 
-> > snapshot should be very fast. 
-> > 
-> > Reading the documentation of btrfs, it seems that associated the 
-transaction 
-> > there is a "version number". With this "version  number" of a directory, 
-we 
-> > would be able to verify the equality of two trees comparing only the root 
-of 
-> > the trees. This would increase the seed of two trees.
+On Mon, Mar 15, 2010 at 03:18:07PM -0400, Chris Mason wrote:
+> Hello everyone,
 > 
-> Every btree block and file extent include the transaction id of when
-> they were created.  When COW is on, this means they include the
-> transaction id of when they were last modified.
+> The master branch of the btrfs unstable tree has a collection of fixes
+> and features:
 > 
-> Finding updated file extents means searching through the tree based on
-> transaction id (ignoring any branch in the tree older than transid X),
-> which is exactly what the treelog code does to efficiently log fsyncs.
-> This is especially easy because the tree node pointers include the
-> expected transaction id of what they are pointing to, so you can skip
-> reading any tree block with an old pointer.
+> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
 
-If I understand correctly, you say that it is possible to find the file update 
-between two transaction id. It would be wonderful. Even though a question 
-comes me: what about if the transaction doesn't contain the snapshot alone ? 
-Could the "delta" contain writes happened after the second transaction or 
-before the first transaction ?
+I've updated the master tree with 3 small fixes.  Thanks to Sage for
+sending along a one liner for a bad cast in the searching ioctl, really
+not sure why my gcc isn't giving the same warnings his was.
 
-> In the subvol branch, we have a new ioctl to do tree searches from
-> userland based on these ranges.  It can very easily be used to make a
-> list of files (and extents in those files) that have been updated since
-> a given transid.
-> 
-> > 
-> > But I was never able to get this "version number". There is the ioctl 
-command 
-> > FS_IOC_GETVERSION, which seems to return this number. But when a directory 
-or 
-> > an its children is update, this number doesn't change.
-> > 
-> > I tried to hack the kernel code in order to test different "version" 
-number: I 
-> > tried inode->i_generation, or btrfs_inode->generation or btrfs_inode-
->sequence 
-> > or btrfs_inode->{last|last_sub|logged}_trans...
-> > But none of the above was useful for my purpose.
-> 
-> Right, I decided instead to store the generation in the file extent
-> pointer.  We needed it for other things as well, and it makes it
-> possible to find individual extents that have changed in a file instead
-> of just flagging the file as modified.
-> 
-> This would be a good project if anyone is interested, I'm happy to send
-> along full details.
+I fixed the new space info ioctl to avoid scheduling in a
+rcu_read_lock.  Sage also turned u64 to __u64 in the space_info ioctl
+args struct.
 
+Here is the corrected shortlog:
 
-If you are able to provide further details, I am interested in the things. 
-I appreciate any suggestion how extract the transaction ID given a file (or a 
-directory).
+Josef Bacik (10) commits (+517/-160):
+    Btrfs: make set/get functions for the super compat_ro flags use compat_ro (+1/-1)
+    Btrfs: change the ordered tree to use a spinlock instead of a mutex (+19/-19)
+    Btrfs: add ioctl and incompat flag to set the default mount subvol (+80/-1)
+    Btrfs: cache the extent state everywhere we possibly can V2 (+148/-90)
+    Btrfs: make subvolid=0 mount the original default root (+9/-3)
+    Btrfs: make df be a little bit more understandable (+26/-3)
+    Btrfs: cache extent state in find_delalloc_range (+8/-3)
+    Btrfs: cache ordered extent when completing io (+10/-5)
+    Btrfs: change how we mount subvolumes (+158/-34)
+    Btrfs: add a "df" ioctl for btrfs (+58/-1)
 
-> 
-> -chris
+Chris Mason (7) commits (+619/-67):
+    Btrfs: run the backing dev more often in the submit_bio helper (+10/-10)
+    Btrfs: finish read pages in the order they are submitted (+4/-3)
+    Btrfs: buffer results in the space_info ioctl (+46/-11)
+    Btrfs: don't look at bio flags after submit_bio (+3/-3)
+    Btrfs: be more selective in the defrag ioctl (+140/-10)
+    Btrfs: add search and inode lookup ioctls (+299/-16)
+    Btrfs: add new defrag-range ioctl. (+117/-14)
 
-Goffredo
+Sage Weil (3) commits (+7/-10):
+    Btrfs: flush data on snapshot creation (+1/-4)
+    Btrfs: fix search_ioctl key advance (+1/-1)
+    Btrfs: use __u64 types in ioctl.h (+5/-5)
 
+TARUISI Hiroaki (2) commits (+99/-0):
+    Btrfs: add a function to lookup a directory path by following backrefs (+92/-0)
+    btrfs: Update existing btrfs_device for renaming device (+7/-0)
 
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+Xiao Guangrong (1) commits (+3/-3):
+    btrfs: using btrfs_stack_device_id() get devid
+
+Akinobu Mita (1) commits (+4/-30):
+    btrfs: use memparse
+
+Miao Xie (1) commits (+1/-1):
+    btrfs: fix btrfs_mkdir goto for no free objectids
+
+Nick Piggin (1) commits (+1/-1):
+    Btrfs: fix gfp flags masking in the compression code
+
+Total: (26) commits
+
+ fs/btrfs/ioctl.c        |  757 ++++++++++++++++++++++++++++++++++++++++++++----
+ fs/btrfs/super.c        |  244 +++++++++++----
+ fs/btrfs/inode.c        |  139 +++++---
+ fs/btrfs/ioctl.h        |  123 +++++++
+ fs/btrfs/extent_io.c    |   79 +++--
+ fs/btrfs/ordered-data.c |   41 +-
+ fs/btrfs/volumes.c      |   39 +-
+ fs/btrfs/file.c         |   23 -
+ fs/btrfs/disk-io.c      |   15 
+ fs/btrfs/ctree.h        |   13 
+ fs/btrfs/extent-tree.c  |   11 
+ fs/btrfs/extent_io.h    |   10 
+ fs/btrfs/ordered-data.h |    7 
+ fs/btrfs/transaction.c  |    5 
+ fs/btrfs/btrfs_inode.h  |    5 
+ fs/btrfs/relocation.c   |    4 
+ fs/btrfs/export.c       |    4 
+ fs/btrfs/tree-log.c     |    2 
+ fs/btrfs/compression.c  |    2 
+ 19 files changed, 1251 insertions(+), 272 deletions(-)

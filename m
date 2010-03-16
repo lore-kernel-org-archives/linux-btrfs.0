@@ -1,63 +1,113 @@
-From: David Brown <david@westcontrol.com>
-Subject: Content based storage
-Date: Tue, 16 Mar 2010 10:21:43 +0100
-Message-ID: <hnnijd$jol$1@dough.gmane.org>
+From: Goffredo Baroncelli <kreijack@gmail.com>
+Subject: Re: Saving and restoring btrfs snapshots
+Date: Tue, 16 Mar 2010 19:17:12 +0100
+Message-ID: <201003161917.13131.kreijack@libero.it>
+References: <18f8b4a81003112300h3be917adgd183bb78719019e2@mail.gmail.com> <201003121930.01701.kreijack@libero.it> <20100315135301.GP3035@think>
+Reply-To: kreijack@libero.it
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Cc: linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100315135301.GP3035@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hi Chris
 
-I was wondering if there has been any thought or progress in 
-content-based storage for btrfs beyond the suggestion in the "Project 
-ideas" wiki page?
+On Monday 15 March 2010, Chris Mason wrote:
+> On Fri, Mar 12, 2010 at 07:30:01PM +0100, Goffredo Baroncelli wrote:
+> > On Friday 12 March 2010, Pat Patterson wrote:
+> > > Are there any plans to implement something akin to ZFS send/recv, to
+> > > be able to create a stream representation of a snapshot and restore it
+> > > later/somewhere else? I've spent some time trawling the mailing list
+> > > and wiki, but I don't see anything there.
+> > 
+> > I spent a bit of time on this argument, in order to find how implement an 
+> > efficient method to backup incrementally the data.
+> > 
+> > AFAICT "zfs send" and "zfs recv" do the same thing that tar does. They 
+> > transform a tree (or the difference between a tree and its snapshot) to a 
+> > stream, and vice-versa.
+> > 
+> > To transform a tree to a stream is not very interesting. 
+> > The interesting part is how compare a tree and its snapshot. In fact a 
+> > snapshot of a tree should a be pointer to the original tree, and when a 
+file 
+> > is modified, a branch of the modified part (the extens of the file, the 
+> > directories of the path) is performed (yes I know that this a big 
+> > simplification of the process).
+> > The key is that the file-system knows which part of a snapshot is still 
+equal 
+> > to the source and which not.
+> > 
+> > If this kind of data is available to the user space, comparing a tree and 
+it 
+> > snapshot should be very fast. 
+> > 
+> > Reading the documentation of btrfs, it seems that associated the 
+transaction 
+> > there is a "version number". With this "version  number" of a directory, 
+we 
+> > would be able to verify the equality of two trees comparing only the root 
+of 
+> > the trees. This would increase the seed of two trees.
+> 
+> Every btree block and file extent include the transaction id of when
+> they were created.  When COW is on, this means they include the
+> transaction id of when they were last modified.
+> 
+> Finding updated file extents means searching through the tree based on
+> transaction id (ignoring any branch in the tree older than transid X),
+> which is exactly what the treelog code does to efficiently log fsyncs.
+> This is especially easy because the tree node pointers include the
+> expected transaction id of what they are pointing to, so you can skip
+> reading any tree block with an old pointer.
 
-The basic idea, as I understand it, is that a longer data extent 
-checksum is used (long enough to make collisions unrealistic), and merge 
-data extents with the same checksums.  The result is that "cp foo bar" 
-will have pretty much the same effect as "cp --reflink foo bar" - the 
-two copies will share COW data extents - as long as they remain the 
-same, they will share the disk space.  But you can still access each 
-file independently, unlike with a traditional hard link.
+If I understand correctly, you say that it is possible to find the file update 
+between two transaction id. It would be wonderful. Even though a question 
+comes me: what about if the transaction doesn't contain the snapshot alone ? 
+Could the "delta" contain writes happened after the second transaction or 
+before the first transaction ?
 
-I can see at least three cases where this could be a big win - I'm sure 
-there are more.
-
-Developers often have multiple copies of source code trees as branches, 
-snapshots, etc.  For larger projects (I have multiple "buildroot" trees 
-for one project) this can take a lot of space.  Content-based storage 
-would give the space efficiency of hard links with the independence of 
-straight copies.  Using "cp --reflink" would help for the initial 
-snapshot or branch, of course, but it could not help after the copy.
-
-On servers using lightweight virtual servers such as OpenVZ, you have 
-multiple "root" file systems each with their own copy of "/usr", etc. 
-With OpenVZ, all the virtual roots are part of the host's file system 
-(i.e., not hidden within virtual disks), so content-based storage could 
-merge these, making them very much more efficient.  Because each of 
-these virtual roots can be updated independently, it is not possible to 
-use "cp --reflink" to keep them merged.
-
-For backup systems, you will often have multiple copies of the same 
-files.  A common scheme is to use rsync and "cp -al" to make hard-linked 
-(and therefore space-efficient) snapshots of the trees.  But sometimes 
-these things get out of synchronisation - perhaps your remote rsync dies 
-halfway, and you end up with multiple independent copies of the same 
-files.  Content-based storage can then re-merge these files.
-
-
-I would imagine that content-based storage will sometimes be a 
-performance win, sometimes a loss.  It would be a win when merging 
-results in better use of the file system cache - OpenVZ virtual serving 
-would be an example where you would be using multiple copies of the same 
-file at the same time.  For other uses, such as backups, there would be 
-no performance gain since you seldom (hopefully!) read the backup files. 
-  But in that situation, speed is not a major issue.
+> In the subvol branch, we have a new ioctl to do tree searches from
+> userland based on these ranges.  It can very easily be used to make a
+> list of files (and extents in those files) that have been updated since
+> a given transid.
+> 
+> > 
+> > But I was never able to get this "version number". There is the ioctl 
+command 
+> > FS_IOC_GETVERSION, which seems to return this number. But when a directory 
+or 
+> > an its children is update, this number doesn't change.
+> > 
+> > I tried to hack the kernel code in order to test different "version" 
+number: I 
+> > tried inode->i_generation, or btrfs_inode->generation or btrfs_inode-
+>sequence 
+> > or btrfs_inode->{last|last_sub|logged}_trans...
+> > But none of the above was useful for my purpose.
+> 
+> Right, I decided instead to store the generation in the file extent
+> pointer.  We needed it for other things as well, and it makes it
+> possible to find individual extents that have changed in a file instead
+> of just flagging the file as modified.
+> 
+> This would be a good project if anyone is interested, I'm happy to send
+> along full details.
 
 
-mvh.,
+If you are able to provide further details, I am interested in the things. 
+I appreciate any suggestion how extract the transaction ID given a file (or a 
+directory).
 
-David
+> 
+> -chris
 
+Goffredo
+
+
+-- 
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

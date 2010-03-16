@@ -1,32 +1,63 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [BUG] scheduling while atomic: init/1/0x00000002
-Date: Mon, 15 Mar 2010 20:39:36 -0400
-Message-ID: <20100316003936.GB11905@think>
-References: <45e1b66a1003131549k28173905r85ab74cd870db36e@mail.gmail.com>
- <93cdabd21003132226s2201c067vfdbcaad56ecffd81@mail.gmail.com>
- <45e1b66a1003151520k2be08f2drb976abdad1ef9006@mail.gmail.com>
+From: David Brown <david@westcontrol.com>
+Subject: Content based storage
+Date: Tue, 16 Mar 2010 10:21:43 +0100
+Message-ID: <hnnijd$jol$1@dough.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Mike Fedyk <mfedyk@mikefedyk.com>, linux-btrfs@vger.kernel.org
-To: Phillip Michael <oopsicrappe@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <45e1b66a1003151520k2be08f2drb976abdad1ef9006@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 15, 2010 at 03:20:23PM -0700, Phillip Michael wrote:
-> >> BUG: scheduling while atomic: init/1/0x00000002
-> >> Modules linked in:
-> >> Pid: 1, comm: init Not tainted 2.6.33-zen2-20100307-stable #6
-> >
-> > Can you reproduce this error on stock 2.6.33 without the zen patches?
-> >
-> 
-> I get the same bug on a stock archlinux 2.6.33 kernel. I have to
-> finish reinstalling before I can build a vanilla kernel to try.
+Hi,
 
-This definitely looks like a bad interaction between btrfs and
-tux-on-ice.  I'll see what I can find, but I wouldn't suspend to disk
-until I get it nailed down.
+I was wondering if there has been any thought or progress in 
+content-based storage for btrfs beyond the suggestion in the "Project 
+ideas" wiki page?
 
--chris
+The basic idea, as I understand it, is that a longer data extent 
+checksum is used (long enough to make collisions unrealistic), and merge 
+data extents with the same checksums.  The result is that "cp foo bar" 
+will have pretty much the same effect as "cp --reflink foo bar" - the 
+two copies will share COW data extents - as long as they remain the 
+same, they will share the disk space.  But you can still access each 
+file independently, unlike with a traditional hard link.
+
+I can see at least three cases where this could be a big win - I'm sure 
+there are more.
+
+Developers often have multiple copies of source code trees as branches, 
+snapshots, etc.  For larger projects (I have multiple "buildroot" trees 
+for one project) this can take a lot of space.  Content-based storage 
+would give the space efficiency of hard links with the independence of 
+straight copies.  Using "cp --reflink" would help for the initial 
+snapshot or branch, of course, but it could not help after the copy.
+
+On servers using lightweight virtual servers such as OpenVZ, you have 
+multiple "root" file systems each with their own copy of "/usr", etc. 
+With OpenVZ, all the virtual roots are part of the host's file system 
+(i.e., not hidden within virtual disks), so content-based storage could 
+merge these, making them very much more efficient.  Because each of 
+these virtual roots can be updated independently, it is not possible to 
+use "cp --reflink" to keep them merged.
+
+For backup systems, you will often have multiple copies of the same 
+files.  A common scheme is to use rsync and "cp -al" to make hard-linked 
+(and therefore space-efficient) snapshots of the trees.  But sometimes 
+these things get out of synchronisation - perhaps your remote rsync dies 
+halfway, and you end up with multiple independent copies of the same 
+files.  Content-based storage can then re-merge these files.
+
+
+I would imagine that content-based storage will sometimes be a 
+performance win, sometimes a loss.  It would be a win when merging 
+results in better use of the file system cache - OpenVZ virtual serving 
+would be an example where you would be using multiple copies of the same 
+file at the same time.  For other uses, such as backups, there would be 
+no performance gain since you seldom (hopefully!) read the backup files. 
+  But in that situation, speed is not a major issue.
+
+
+mvh.,
+
+David
 

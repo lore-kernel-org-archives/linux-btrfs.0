@@ -1,144 +1,95 @@
-From: Nick Piggin <npiggin@suse.de>
-Subject: Re: [patch] btrfs: use add_to_page_cache_lru, use
- __page_cache_alloc
-Date: Thu, 18 Mar 2010 00:31:04 +1100
-Message-ID: <20100317133104.GI2869@laptop>
-References: <20100317062053.GB2869@laptop>
+From: Hubert Kario <hka@qbs.com.pl>
+Subject: Re: Content based storage
+Date: Wed, 17 Mar 2010 16:25:50 +0100
+Message-ID: <201003171625.50257.hka@qbs.com.pl>
+References: <hnnijd$jol$1@dough.gmane.org> <hnq3pd$801$1@dough.gmane.org> <201003170948.18819.hjclaes@web.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20100317062053.GB2869@laptop>
+Content-Type: Text/Plain; charset=utf-8
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201003170948.18819.hjclaes@web.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 17, 2010 at 05:20:53PM +1100, Nick Piggin wrote:
-> btrfs: use add_to_page_cache_lru, use __page_cache_alloc
-> 
-> Pagecache pages should be allocated with __page_cache_alloc, so they
-> obey pagecache memory policies.
-> 
-> add_to_page_cache_lru is exported, so it should be used. Benefits over
-> using a private pagevec: neater code, 128 bytes fewer stack used, percpu
-> lru ordering is preserved, and finally don't need to flush pagevec
-> before returning so batching may be shared with other LRU insertions.
-> 
-> Signed-off-by: Nick Piggin <npiggin@suse.de>:
+On Wednesday 17 March 2010 09:48:18 Heinz-Josef Claes wrote:
+> Hi,
+>=20
+> just want to add one correction to your thoughts:
+>=20
+> Storage is not cheap if you think about enterprise storage on a SAN,
+> replicated to another data centre. Using dedup on the storage boxes l=
+eads
+>  to performance issues and other problems - only NetApp is offering t=
+his at
+>  the moment and it's not heavily used (because of the issues).
 
-Missed a rediff.
----
- fs/btrfs/compression.c |   20 ++------------------
- fs/btrfs/extent_io.c   |   22 +++++-----------------
- 2 files changed, 7 insertions(+), 35 deletions(-)
+there are at least two other suppliers with inline dedup products and t=
+here is=20
+OSS solution: lessfs
 
-Index: linux-2.6/fs/btrfs/compression.c
-===================================================================
---- linux-2.6.orig/fs/btrfs/compression.c
-+++ linux-2.6/fs/btrfs/compression.c
-@@ -31,7 +31,6 @@
- #include <linux/swap.h>
- #include <linux/writeback.h>
- #include <linux/bit_spinlock.h>
--#include <linux/pagevec.h>
- #include "compat.h"
- #include "ctree.h"
- #include "disk-io.h"
-@@ -445,7 +444,6 @@ static noinline int add_ra_bio_pages(str
- 	unsigned long nr_pages = 0;
- 	struct extent_map *em;
- 	struct address_space *mapping = inode->i_mapping;
--	struct pagevec pvec;
- 	struct extent_map_tree *em_tree;
- 	struct extent_io_tree *tree;
- 	u64 end;
-@@ -461,7 +459,6 @@ static noinline int add_ra_bio_pages(str
- 
- 	end_index = (i_size_read(inode) - 1) >> PAGE_CACHE_SHIFT;
- 
--	pagevec_init(&pvec, 0);
- 	while (last_offset < compressed_end) {
- 		page_index = last_offset >> PAGE_CACHE_SHIFT;
- 
-@@ -478,26 +475,17 @@ static noinline int add_ra_bio_pages(str
- 			goto next;
- 		}
- 
--		page = alloc_page(mapping_gfp_mask(mapping) & ~__GFP_FS);
-+		page = __page_cache_alloc(mapping_gfp_mask(mapping) &
-+								~__GFP_FS);
- 		if (!page)
- 			break;
- 
--		page->index = page_index;
--		/*
--		 * what we want to do here is call add_to_page_cache_lru,
--		 * but that isn't exported, so we reproduce it here
--		 */
--		if (add_to_page_cache(page, mapping,
--				      page->index, GFP_NOFS)) {
-+		if (add_to_page_cache_lru(page, mapping, page_index,
-+								GFP_NOFS)) {
- 			page_cache_release(page);
- 			goto next;
- 		}
- 
--		/* open coding of lru_cache_add, also not exported */
--		page_cache_get(page);
--		if (!pagevec_add(&pvec, page))
--			__pagevec_lru_add_file(&pvec);
--
- 		end = last_offset + PAGE_CACHE_SIZE - 1;
- 		/*
- 		 * at this point, we have a locked page in the page cache
-@@ -551,8 +539,6 @@ static noinline int add_ra_bio_pages(str
- next:
- 		last_offset += PAGE_CACHE_SIZE;
- 	}
--	if (pagevec_count(&pvec))
--		__pagevec_lru_add_file(&pvec);
- 	return 0;
- }
- 
-Index: linux-2.6/fs/btrfs/extent_io.c
-===================================================================
---- linux-2.6.orig/fs/btrfs/extent_io.c
-+++ linux-2.6/fs/btrfs/extent_io.c
-@@ -2663,33 +2663,21 @@ int extent_readpages(struct extent_io_tr
- {
- 	struct bio *bio = NULL;
- 	unsigned page_idx;
--	struct pagevec pvec;
- 	unsigned long bio_flags = 0;
- 
--	pagevec_init(&pvec, 0);
- 	for (page_idx = 0; page_idx < nr_pages; page_idx++) {
- 		struct page *page = list_entry(pages->prev, struct page, lru);
- 
- 		prefetchw(&page->flags);
- 		list_del(&page->lru);
--		/*
--		 * what we want to do here is call add_to_page_cache_lru,
--		 * but that isn't exported, so we reproduce it here
--		 */
--		if (!add_to_page_cache(page, mapping,
-+		if (add_to_page_cache_lru(page, mapping,
- 					page->index, GFP_KERNEL)) {
--
--			/* open coding of lru_cache_add, also not exported */
--			page_cache_get(page);
--			if (!pagevec_add(&pvec, page))
--				__pagevec_lru_add_file(&pvec);
--			__extent_read_full_page(tree, page, get_extent,
--						&bio, 0, &bio_flags);
-+			page_cache_release(page);
-+			continue;
- 		}
--		page_cache_release(page);
-+		__extent_read_full_page(tree, page, get_extent,
-+						&bio, 0, &bio_flags);
- 	}
--	if (pagevec_count(&pvec))
--		__pagevec_lru_add_file(&pvec);
- 	BUG_ON(!list_empty(pages));
- 	if (bio)
- 		submit_one_bio(READ, bio, 0, bio_flags);
+> So I think it would be a big advantage for professional use to have d=
+edup
+> build into the filesystem - processors are faster and faster today an=
+d not
+>  the cost drivers any more. I do not think it's a problem to "spend" =
+on
+>  core of a 2 socket box with 12 cores for this purpose.
+> Storage is cost intensive:
+> - SAN boxes are expensive
+> - RAID5 in two locations is expensive
+> - FC lines between locations is expensive (depeding very much on wher=
+e you
+> are).
+
+In-line dedup is expensive in two ways: first you have to cache the dat=
+a going=20
+to disk and generate checksum for it, then you have to look if such blo=
+ck is=20
+already stored -- if the database doesn't fit into RAM (for a VM host i=
+t's more=20
+than likely) it requires at least few disk seeks, if not a few dozen fo=
+r=20
+really big databases. Then you should read the block/extent back and co=
+mpare=20
+them bit for bit. And only then write the data to the disk. That reduce=
+s your=20
+IOPS by at least an order of maginitude, if not more.=20
+
+=46or post-process dedup you can go as fast as your HDDs will allow you=
+=2E And=20
+then, when your machine is mostly idle you can go and churn through the=
+ data.
+
+IMHO in-line dedup is a good thing only as storage for backups -- when =
+you=20
+have high probability that the stored data is duplicated (and with a 1:=
+10=20
+dedup ratio you have 90% probability, it is).
+
+So the CPU cost is only one factor. HDDs are a major bottleneck too.
+
+All things considered, it would be best to have both post-process and i=
+n-line=20
+data deduplication, but I think, that in-line dedup will see much less =
+use.
+
+>=20
+> Naturally, you would not use this feature for all kind of use cases (=
+eg.
+> heavily used database), but I think there is enough need.
+>=20
+> my 2 cents,
+> Heinz-Josef Claes
+--=20
+Hubert Kario
+QBS - Quality Business Software
+02-656 Warszawa, ul. Ksawer=C3=B3w 30/85
+tel. +48 (22) 646-61-51, 646-74-24
+www.qbs.com.pl
+
+System Zarz=C4=85dzania Jako=C5=9Bci=C4=85
+zgodny z norm=C4=85 ISO 9001:2000
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

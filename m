@@ -1,61 +1,69 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] Btrfs: fix ENOSPC accounting when max_extent is not
-	maxed out V2
-Date: Fri, 19 Mar 2010 09:59:48 -0400
-Message-ID: <20100319135948.GA2314@localhost.localdomain>
-References: <20100318154730.GA20818@dhcp231-156.rdu.redhat.com> <3d0408631003182009qaca6e9cp6c389dad257b987a@mail.gmail.com>
+Subject: [PATCH] Btrfs: fix data enospc check overflow
+Date: Fri, 19 Mar 2010 10:38:13 -0400
+Message-ID: <20100319143813.GB2314@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
-To: "Yan, Zheng " <yanzheng@21cn.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <3d0408631003182009qaca6e9cp6c389dad257b987a@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 19, 2010 at 11:09:25AM +0800, Yan, Zheng  wrote:
-> On Thu, Mar 18, 2010 at 11:47 PM, Josef Bacik <josef@redhat.com> wrot=
-e:
-> > A user reported a bug a few weeks back where if he set max_extent=3D=
-1m and then
-> > did a dd and then stopped it, we would panic. =A0This is because I =
-miscalculated
-> > how many extents would be needed for splits/merges. =A0Turns out I =
-didn't actually
-> > take max_extent into account properly, since we only ever add 1 ext=
-ent for a
-> > write, which isn't quite right for the case that say max_extent is =
-4k and we do
-> > 8k writes. =A0That would result in more than 1 extent. =A0So this p=
-atch makes us
-> > properly figure out how many extents are needed for the amount of d=
-ata that is
-> > being written, and deals with splitting and merging better. =A0I've=
- tested this ad
-> > nauseum and it works well. =A0This version doesn't depend on my per=
--cpu stuff.
-> > Thanks,
->=20
-> Why not remove the the max_extent check. The max length of file exten=
-t
-> is also affected by fragmentation level of free space. It doesn't mak=
-e sense
-> to introduce complex code to address one factor while lose sight of a=
-nother
-> factor. I think reserving one unit of metadata for each delalloc exte=
-nt in the
-> extent IO tree should be OK. because even a delalloc extent ends up w=
-ith
-> multiple file extents, these file extents are adjacency in the b-tree=
-=2E
->=20
+Because we account for reserved space we get from the allocator before we
+actually account for allocating delalloc space, we can have a small window where
+the amount of "used" space in a space_info is more than the total amount of
+space in the space_info.  This will cause a overflow in our check, so it will
+seem like we have _tons_ of free space, and we'll allow reservations to occur
+that will end up larger than the amount of space we have.  I've seen users
+report ENOSPC panic's in cow_file_range a few times recently, so I tried to
+reproduce this problem and found I could reproduce it if I ran one of my tests
+in a loop for like 20 minutes.  With this patch my test ran all night without
+issues.  Thanks,
 
-Do you mean remove the option for max_extent altogether, or just remove=
- all of
-my code for taking it into account?  Thanks,
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/extent-tree.c |   20 +++++++++++++++-----
+ 1 files changed, 15 insertions(+), 5 deletions(-)
 
-Josef
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 7bb97de..1860969 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3234,7 +3234,8 @@ int btrfs_check_data_free_space(struct btrfs_root *root, struct inode *inode,
+ 				u64 bytes)
+ {
+ 	struct btrfs_space_info *data_sinfo;
+-	int ret = 0, committed = 0;
++	u64 used;
++	int ret = 0, committed = 0, flushed = 0;
+ 
+ 	/* make sure bytes are sectorsize aligned */
+ 	bytes = (bytes + root->sectorsize - 1) & ~((u64)root->sectorsize - 1);
+@@ -3246,12 +3247,21 @@ int btrfs_check_data_free_space(struct btrfs_root *root, struct inode *inode,
+ again:
+ 	/* make sure we have enough space to handle the data first */
+ 	spin_lock(&data_sinfo->lock);
+-	if (data_sinfo->total_bytes - data_sinfo->bytes_used -
+-	    data_sinfo->bytes_delalloc - data_sinfo->bytes_reserved -
+-	    data_sinfo->bytes_pinned - data_sinfo->bytes_readonly -
+-	    data_sinfo->bytes_may_use - data_sinfo->bytes_super < bytes) {
++	used = data_sinfo->bytes_used + data_sinfo->bytes_delalloc +
++		data_sinfo->bytes_reserved + data_sinfo->bytes_pinned +
++		data_sinfo->bytes_readonly + data_sinfo->bytes_may_use +
++		data_sinfo->bytes_super;
++
++	if (used + bytes > data_sinfo->total_bytes) {
+ 		struct btrfs_trans_handle *trans;
+ 
++		if (!flushed) {
++			spin_unlock(&data_sinfo->lock);
++			flush_delalloc(root, data_sinfo);
++			flushed = 1;
++			goto again;
++		}
++
+ 		/*
+ 		 * if we don't have enough free bytes in this space then we need
+ 		 * to alloc a new chunk.
+-- 
+1.6.6
+

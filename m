@@ -1,79 +1,61 @@
-From: Jens Axboe <jens.axboe@oracle.com>
-Subject: Re: btrfs: why default 4M readahead size?
-Date: Fri, 19 Mar 2010 13:57:20 +0100
-Message-ID: <20100319125719.GQ5768@kernel.dk>
-References: <20100318014257.GA30963@sli10-desk.sh.intel.com> <20100318125313.GA14074@think> <20100319005948.GA12851@sli10-desk.sh.intel.com> <20100319025642.GA20828@sli10-desk.sh.intel.com> <20100319082210.GO5768@kernel.dk> <20100319092900.GA28071@sli10-desk.sh.intel.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH] Btrfs: fix ENOSPC accounting when max_extent is not
+	maxed out V2
+Date: Fri, 19 Mar 2010 09:59:48 -0400
+Message-ID: <20100319135948.GA2314@localhost.localdomain>
+References: <20100318154730.GA20818@dhcp231-156.rdu.redhat.com> <3d0408631003182009qaca6e9cp6c389dad257b987a@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	"Wu, Fengguang" <fengguang.wu@intel.com>
-To: Shaohua Li <shaohua.li@intel.com>
+Content-Type: text/plain; charset=iso-8859-1
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+To: "Yan, Zheng " <yanzheng@21cn.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100319092900.GA28071@sli10-desk.sh.intel.com>
+In-Reply-To: <3d0408631003182009qaca6e9cp6c389dad257b987a@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 19 2010, Shaohua Li wrote:
-> On Fri, Mar 19, 2010 at 04:22:11PM +0800, Jens Axboe wrote:
-> > On Fri, Mar 19 2010, Shaohua Li wrote:
-> > > On Fri, Mar 19, 2010 at 08:59:48AM +0800, Shaohua Li wrote:
-> > > > On Thu, Mar 18, 2010 at 08:53:13PM +0800, Chris Mason wrote:
-> > > > > On Thu, Mar 18, 2010 at 09:42:57AM +0800, Shaohua Li wrote:
-> > > > > > Btrfs uses below equation to calculate ra_pages:
-> > > > > > 	fs_info->bdi.ra_pages = max(fs_info->bdi.ra_pages,
-> > > > > >               		4 * 1024 * 1024 / PAGE_CACHE_SIZE);
-> > > > > > is the max() a typo of min()? This makes the readahead size is 4M by default,
-> > > > > > which is too big.
-> > > > > 
-> > > > > Looks like things have changed since I tuned that number.  Fengguang has
-> > > > > been busy ;)
-> > > > > 
-> > > > > > I have a system with 16 CPU, 6G memory and 12 sata disks. I create a btrfs for
-> > > > > > each disk, so this isn't a raid setup. The test is fio, which has 12 tasks to
-> > > > > > access 12 files for each disk. The fio test is mmap sequential read. I measure
-> > > > > > the performance with different readahead size:
-> > > > > > ra size		io throughput
-> > > > > > 4M		268288 k/s
-> > > > > > 2M		367616 k/s
-> > > > > > 1M		431104 k/s
-> > > > > > 512K		474112 k/s
-> > > > > > 256K		512000 k/s
-> > > > > > 128K		538624 k/s
-> > > > > > The 4M default readahead size has poor performance.
-> > > > > > I also does sync sequential read test, the test difference in't that big. But
-> > > > > > the 4M case still has about 10% drop compared to the 512k case.
-> > > > > 
-> > > > > I'm surprised the 4M is so much slower.  At any rate, the larger size
-> > > > > was selected because btrfs checksumming means we need a bigger buffer to
-> > > > > keep the disks saturated.  Were you on a fancy intel box with hardware
-> > > > > crc32c enabled?
-> > > > yes, this machine supports sse4.2 instruction. Let me check the result with checksum
-> > > > disabled.
-> > > Sounds no big difference with checksum disabled. I format the disks and redo
-> > > the test:
-> > > 128k ra: 539648 k/s
-> > > 4m ra: 285696 k/s
-> > 
-> > 4MB is definitely a huge read-ahead size, but I do wonder why it would
-> > perform that much worse than a 128KB window. If you narrow your test
-> > down to a single disk (or something simpler, at least), how does 4MB
-> > compare to 128KB? With 6GB of memory, you should not run into read-ahead
-> > memory thrashing.
-> test data for a single disk(just run one time so far):
-> 128k ra: 88513k/s
-> 4m ra:87630k/s
-> so no big difference.
+On Fri, Mar 19, 2010 at 11:09:25AM +0800, Yan, Zheng  wrote:
+> On Thu, Mar 18, 2010 at 11:47 PM, Josef Bacik <josef@redhat.com> wrot=
+e:
+> > A user reported a bug a few weeks back where if he set max_extent=3D=
+1m and then
+> > did a dd and then stopped it, we would panic. =A0This is because I =
+miscalculated
+> > how many extents would be needed for splits/merges. =A0Turns out I =
+didn't actually
+> > take max_extent into account properly, since we only ever add 1 ext=
+ent for a
+> > write, which isn't quite right for the case that say max_extent is =
+4k and we do
+> > 8k writes. =A0That would result in more than 1 extent. =A0So this p=
+atch makes us
+> > properly figure out how many extents are needed for the amount of d=
+ata that is
+> > being written, and deals with splitting and merging better. =A0I've=
+ tested this ad
+> > nauseum and it works well. =A0This version doesn't depend on my per=
+-cpu stuff.
+> > Thanks,
+>=20
+> Why not remove the the max_extent check. The max length of file exten=
+t
+> is also affected by fragmentation level of free space. It doesn't mak=
+e sense
+> to introduce complex code to address one factor while lose sight of a=
+nother
+> factor. I think reserving one unit of metadata for each delalloc exte=
+nt in the
+> extent IO tree should be OK. because even a delalloc extent ends up w=
+ith
+> multiple file extents, these file extents are adjacency in the b-tree=
+=2E
+>=20
 
-That looks pretty much as expected, unless you hit some sort of memory
-thrashing, a huge read-ahead window should not cause a performance
-degredation. At least not of your magnitude. I would expect performance
-to reach a stable threshold once you have requests that are large enough
-to utilize the full device bandwidth on its own and then remain at that
-plateau.
+Do you mean remove the option for max_extent altogether, or just remove=
+ all of
+my code for taking it into account?  Thanks,
 
-Any chance you could capture blktrace data for a run with 128KB and one
-with 4MB so we could inspect the disk IO pattern?
-
--- 
-Jens Axboe
-
+Josef
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

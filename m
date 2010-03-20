@@ -1,37 +1,39 @@
 From: Dan Carpenter <error27@gmail.com>
-Subject: [patch 1/3] btrfs cleanup: remove dead code
-Date: Sat, 20 Mar 2010 14:26:05 +0300
-Message-ID: <20100320112605.GY5331@bicker>
+Subject: [patch 3/3] btrfs cleanup: unneeded null check
+Date: Sat, 20 Mar 2010 14:37:52 +0300
+Message-ID: <20100320113752.GA5331@bicker>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Christoph Hellwig <hch@lst.de>, Dan Carpenter <error27@gmail.com>,
-	Venkatesh Pallipadi <venkatesh.pallipadi@intel.com>,
-	=?iso-8859-1?Q?Andr=E9?= Goddard Rosa <andre.goddard@gmail.com>,
+Cc: Josef Bacik <josef@redhat.com>, Yan Zheng <zheng.yan@oracle.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
 	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
 	kernel-janitors@vger.kernel.org
 To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-rb_node is never an ERR_PTR() here.  This code confuses smatch.
+old_inode cannot be null here so I removed the check.
+This fixes a smatch warning:
+fs/btrfs/inode.c +5545 btrfs_rename(88) warn: variable dereferenced 
+	before check 'old_inode'
 
 Signed-off-by: Dan Carpenter <error27@gmail.com>
 ---
-This doesn't change anything.  It's just a cleanup.  Could you load
-it up for linux-next?
+linux-next material
 
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 28d87ba..94668b1 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -335,10 +335,6 @@ struct extent_map *lookup_extent_mapping(struct extent_map_tree *tree,
- 		em = NULL;
- 		goto out;
- 	}
--	if (IS_ERR(rb_node)) {
--		em = ERR_PTR(PTR_ERR(rb_node));
--		goto out;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 02bb099..647ce41 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5541,10 +5541,8 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 	 * make sure the inode gets flushed if it is replacing
+ 	 * something.
+ 	 */
+-	if (new_inode && new_inode->i_size &&
+-	    old_inode && S_ISREG(old_inode->i_mode)) {
++	if (new_inode && new_inode->i_size && S_ISREG(old_inode->i_mode))
+ 		btrfs_add_ordered_operation(trans, root, old_inode);
 -	}
- 	em = rb_entry(rb_node, struct extent_map, rb_node);
- 	if (end > em->start && start < extent_map_end(em))
- 		goto found;
+ 
+ 	old_dir->i_ctime = old_dir->i_mtime = ctime;
+ 	new_dir->i_ctime = new_dir->i_mtime = ctime;

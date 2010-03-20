@@ -1,90 +1,65 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: fail to mount if we have problems reading the block
-	groups
-Date: Fri, 19 Mar 2010 16:49:55 -0400
-Message-ID: <20100319204955.GD2314@localhost.localdomain>
+From: "Yan, Zheng " <yanzheng@21cn.com>
+Subject: Re: [PATCH] Btrfs: fix ENOSPC accounting when max_extent is not maxed
+	out V2
+Date: Sat, 20 Mar 2010 10:40:26 +0800
+Message-ID: <3d0408631003191940t79022b7cja6c10fd275f30157@mail.gmail.com>
+References: <20100318154730.GA20818@dhcp231-156.rdu.redhat.com>
+	 <3d0408631003182009qaca6e9cp6c389dad257b987a@mail.gmail.com>
+	 <20100319135948.GA2314@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100319135948.GA2314@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We don't actually check the return value of btrfs_read_block_groups, so we can
-possibly succeed to mount, but then fail to say read the superblock xattr for
-selinux which will cause the vfs code to deactivate the super.  This is a
-problem because in find_free_extent we just assume that we will find the right
-space_info for the allocation we want.  But if we failed to read the block
-groups, we won't have setup any space_info's, and we'll hit a NULL pointer deref
-in find_free_extent.  This patch fixes that problem by checking the return value
-of btrfs_read_block_groups, and failing out properly.  I've also added a check
-in find_free_extent so if for some reason we don't find an appropriate
-space_info, we just return -ENOSPC.  Thanks,
+On Fri, Mar 19, 2010 at 9:59 PM, Josef Bacik <josef@redhat.com> wrote:
+> On Fri, Mar 19, 2010 at 11:09:25AM +0800, Yan, Zheng =A0wrote:
+>> On Thu, Mar 18, 2010 at 11:47 PM, Josef Bacik <josef@redhat.com> wro=
+te:
+>> > A user reported a bug a few weeks back where if he set max_extent=3D=
+1m and then
+>> > did a dd and then stopped it, we would panic. =A0This is because I=
+ miscalculated
+>> > how many extents would be needed for splits/merges. =A0Turns out I=
+ didn't actually
+>> > take max_extent into account properly, since we only ever add 1 ex=
+tent for a
+>> > write, which isn't quite right for the case that say max_extent is=
+ 4k and we do
+>> > 8k writes. =A0That would result in more than 1 extent. =A0So this =
+patch makes us
+>> > properly figure out how many extents are needed for the amount of =
+data that is
+>> > being written, and deals with splitting and merging better. =A0I'v=
+e tested this ad
+>> > nauseum and it works well. =A0This version doesn't depend on my pe=
+r-cpu stuff.
+>> > Thanks,
+>>
+>> Why not remove the the max_extent check. The max length of file exte=
+nt
+>> is also affected by fragmentation level of free space. It doesn't ma=
+ke sense
+>> to introduce complex code to address one factor while lose sight of =
+another
+>> factor. I think reserving one unit of metadata for each delalloc ext=
+ent in the
+>> extent IO tree should be OK. because even a delalloc extent ends up =
+with
+>> multiple file extents, these file extents are adjacency in the b-tre=
+e.
+>>
+>
+> Do you mean remove the option for max_extent altogether, or just remo=
+ve all of
+> my code for taking it into account? =A0Thanks,
+>
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/disk-io.c     |   11 ++++++++---
- fs/btrfs/extent-tree.c |    5 ++++-
- 2 files changed, 12 insertions(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index dfe7a95..6632e5c 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1921,7 +1921,11 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 
- 	csum_root->track_dirty = 1;
- 
--	btrfs_read_block_groups(extent_root);
-+	ret = btrfs_read_block_groups(extent_root);
-+	if (ret) {
-+		printk(KERN_ERR "Failed to read block groups: %d\n", ret);
-+		goto fail_block_groups;
-+	}
- 
- 	fs_info->generation = generation;
- 	fs_info->last_trans_committed = generation;
-@@ -1931,7 +1935,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 	fs_info->cleaner_kthread = kthread_run(cleaner_kthread, tree_root,
- 					       "btrfs-cleaner");
- 	if (IS_ERR(fs_info->cleaner_kthread))
--		goto fail_csum_root;
-+		goto fail_block_groups;
- 
- 	fs_info->transaction_kthread = kthread_run(transaction_kthread,
- 						   tree_root,
-@@ -2019,7 +2023,8 @@ fail_cleaner:
- 	filemap_write_and_wait(fs_info->btree_inode->i_mapping);
- 	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
- 
--fail_csum_root:
-+fail_block_groups:
-+	btrfs_free_block_groups(fs_info);
- 	free_extent_buffer(csum_root->node);
- 	free_extent_buffer(csum_root->commit_root);
- fail_dev_root:
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 1860969..ec84862 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4179,6 +4179,10 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
- 	ins->offset = 0;
- 
- 	space_info = __find_space_info(root->fs_info, data);
-+	if (!space_info) {
-+		printk(KERN_ERR "No space info for %d\n", data);
-+		return -ENOSPC;
-+	}
- 
- 	if (orig_root->ref_cows || empty_size)
- 		allowed_chunk_alloc = 1;
-@@ -7378,7 +7382,6 @@ static int find_first_block_group(struct btrfs_root *root,
- 		}
- 		path->slots[0]++;
- 	}
--	ret = -ENOENT;
- out:
- 	return ret;
- }
--- 
-1.6.6
-
+all of the code for taking max_extent into account
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

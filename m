@@ -1,39 +1,46 @@
 From: Dan Carpenter <error27@gmail.com>
-Subject: [patch 3/3] btrfs cleanup: unneeded null check
-Date: Sat, 20 Mar 2010 14:37:52 +0300
-Message-ID: <20100320113752.GA5331@bicker>
+Subject: [patch 2/3] btrfs cleanup: remove more dead code
+Date: Sat, 20 Mar 2010 14:37:31 +0300
+Message-ID: <20100320113730.GZ5331@bicker>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>, Yan Zheng <zheng.yan@oracle.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
+Cc: Dan Carpenter <error27@gmail.com>, Christoph Hellwig <hch@lst.de>,
+	Venkatesh Pallipadi <venkatesh.pallipadi@intel.com>,
+	=?iso-8859-1?Q?Andr=E9?= Goddard Rosa <andre.goddard@gmail.com>,
 	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
 	kernel-janitors@vger.kernel.org
 To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-old_inode cannot be null here so I removed the check.
-This fixes a smatch warning:
-fs/btrfs/inode.c +5545 btrfs_rename(88) warn: variable dereferenced 
-	before check 'old_inode'
+rb_node cannot be an ERR_PTR() here so I removed the misleading check.
+Also I removed some more dead code at the bottom.
+
+It looks like the code from lookup_extent_mapping() may have been 
+copy and pasted into search_extent_mapping()?
 
 Signed-off-by: Dan Carpenter <error27@gmail.com>
 ---
-linux-next material
+This doesn't change anything.  Could you put it into linux-next?
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 02bb099..647ce41 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5541,10 +5541,8 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
- 	 * make sure the inode gets flushed if it is replacing
- 	 * something.
- 	 */
--	if (new_inode && new_inode->i_size &&
--	    old_inode && S_ISREG(old_inode->i_mode)) {
-+	if (new_inode && new_inode->i_size && S_ISREG(old_inode->i_mode))
- 		btrfs_add_ordered_operation(trans, root, old_inode);
+diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+index 94668b1..010f299 100644
+--- a/fs/btrfs/extent_map.c
++++ b/fs/btrfs/extent_map.c
+@@ -380,16 +380,7 @@ struct extent_map *search_extent_mapping(struct extent_map_tree *tree,
+ 		em = NULL;
+ 		goto out;
+ 	}
+-	if (IS_ERR(rb_node)) {
+-		em = ERR_PTR(PTR_ERR(rb_node));
+-		goto out;
 -	}
- 
- 	old_dir->i_ctime = old_dir->i_mtime = ctime;
- 	new_dir->i_ctime = new_dir->i_mtime = ctime;
+ 	em = rb_entry(rb_node, struct extent_map, rb_node);
+-	goto found;
+-
+-	em = NULL;
+-	goto out;
+-
+ found:
+ 	atomic_inc(&em->refs);
+ out:

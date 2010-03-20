@@ -1,73 +1,49 @@
-From: Ric Wheeler <rwheeler@redhat.com>
+From: Boyd Waters <waters.boyd@gmail.com>
 Subject: Re: Content based storage
-Date: Sat, 20 Mar 2010 09:05:21 -0400
-Message-ID: <4BA4C811.4060702@redhat.com>
-References: <hnnijd$jol$1@dough.gmane.org> <201003171625.50257.hka@qbs.com.pl>	 <23a15591003170833t3ec4dc3fq9630558aa190afc@mail.gmail.com>	 <201003172043.17314.hka@qbs.com.pl> <2b0225fb1003191946k1cf92c63q18e40d41274ce3e8@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Boyd Waters <waters.boyd@gmail.com>
+Date: Sat, 20 Mar 2010 17:24:39 -0400
+Message-ID: <-1949627963487010042@unknownmsgid>
+References: <hnnijd$jol$1@dough.gmane.org> <201003171625.50257.hka@qbs.com.pl>	
+	 <23a15591003170833t3ec4dc3fq9630558aa190afc@mail.gmail.com>	 
+	<201003172043.17314.hka@qbs.com.pl> <2b0225fb1003191946k1cf92c63q18e40d41274ce3e8@mail.gmail.com>
+	<4BA4C811.4060702@redhat.com>
+Mime-Version: 1.0 (iPhone Mail 7C144)
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Ric Wheeler <rwheeler@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <2b0225fb1003191946k1cf92c63q18e40d41274ce3e8@mail.gmail.com>
+In-Reply-To: <4BA4C811.4060702@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/19/2010 10:46 PM, Boyd Waters wrote:
-> 2010/3/17 Hubert Kario<hka@qbs.com.pl>:
->    
->> Read further, Sun did provide a way to enable the compare step by using
->> "verify" instead of "on":
->> zfs set dedup=verify<pool>
->>      
-> I have tested ZFS deduplication on the same data set that I'm using to
-> test btrfs. I used a 5-element radiz, dedup=on, which uses SHA256 for
-> ZFS checksumming and duplication detection on Build 133 of OpenSolaris
-> for x86_64.
->
-> Subjectively, I felt that the array writes were slower than without
-> dedup. For a while, the option for "dedup=fletcher4,verify" was in the
-> system, which permitted the (faster, more prone to collisions)
-> fletcher4 hash for ZFS checksum, and full comparison in the
-> (relatively rare) case of collision. Darren Moffat worked to unify the
-> ZFS SHA256 code with the OpenSolaris crypo-api implementation, which
-> improved performance [1]. But I was not able to test that
-> implementation.
->
-> My dataset reported a dedup factor of 1.28 for about 4TB, meaning that
-> almost a third of the dataset was duplicated. This seemed plausible,
-> as the dataset includes multiple backups of a 400GB data set, as well
-> as numerous VMWare virtual machines.
->    
+On Mar 20, 2010, at 9:05 AM, Ric Wheeler <rwheeler@redhat.com> wrote:
+>>
+>> My dataset reported a dedup factor of 1.28 for about 4TB, meaning
+>> that
+>> almost a third of the dataset was duplicated.
 
-It is always interesting to compare this to the rate you would get with 
-old fashioned compression to see how effective this is. Seems to be not 
-that aggressive if I understand your results correctly.
-
-Any idea of how compressible your data set was?
-
-Regards,
-
-Ric
-
-
-> Despite the performance hit, I'd be pleased to see work on this
-> continue. Darren Moffat's performance improvements were encouraging,
-> and the data set integrity was rock-solid. I had a disk failure during
-> this test, which almost certainly had far more impact on performance
-> than the deduplication: failed writes to the disk were blocking I/O,
-> and it got pretty bad before I was able to replace the disk. I never
-> lost any data, and array management was dead simple.
+> It is always interesting to compare this to the rate you would get
+> with old fashioned compression to see how effective this is. Seems
+> to be not that aggressive if I understand your results correctly.
 >
-> So anyway FWIW the ZFS dedup implementation is a good one, and had
-> headroom for improvement.
->
-> Finally, ZFS also lets you set a minimum number of duplicates that you
-> would like applied to the dataset; it only starts pointing to existing
-> blocks after the "duplication minimum" is reached. (dedupditto
-> property) [2]
->
->
-> [1] http://blogs.sun.com/darren/entry/improving_zfs_dedup_performance_via
-> [2] http://opensolaris.org/jive/thread.jspa?messageID=426661
->
->    
+> Any idea of how compressible your data set was?
 
+Well, of course if I used zip on the whole 4 TB that would deal with
+my duplication issues, and give me a useless, static blob with no
+checksumming. I haven't tried.
+>
+
+One thing that I did do, seven (!) years ago, was to detect duplicate
+files (not blocks) and use hard links. I was able to squeeze out all
+of the air in a series of backups, and was able to see all of them. I
+used a Perl script for all this. It was nuts, but now I understand why
+Apple implemented hard links to directories in HFS in order to get
+thier Time Machine product.  I didn't have copy-on-write, so btrfs
+snapshots completely spank a manual system like this, but I did get 7-
+to-1 compression. These days you can use rsync with "--link-target" to
+make hard-linked duplicates of large directory trees. Tar, cpio, and
+friends tend to break when transferring hundreds of gigabytes with
+thousands of hard links. Or they ignore the hard links.
+
+Good times. I'm not sure how this is germane to btrfs, except to point
+out pathological file-system usage that I've actually attempted in
+real life. I actually use a lot of the ZFS feature set, and I look
+forward to btrfs stability. I think btrfs can get there.

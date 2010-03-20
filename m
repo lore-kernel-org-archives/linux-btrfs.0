@@ -1,46 +1,49 @@
 From: Dan Carpenter <error27@gmail.com>
-Subject: [patch 2/3] btrfs cleanup: remove more dead code
-Date: Sat, 20 Mar 2010 14:37:31 +0300
-Message-ID: <20100320113730.GZ5331@bicker>
+Subject: locking problems: Btrfs: be more selective in the defrag ioctl
+Date: Sat, 20 Mar 2010 14:38:51 +0300
+Message-ID: <20100320113851.GB5331@bicker>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Dan Carpenter <error27@gmail.com>, Christoph Hellwig <hch@lst.de>,
-	Venkatesh Pallipadi <venkatesh.pallipadi@intel.com>,
-	=?iso-8859-1?Q?Andr=E9?= Goddard Rosa <andre.goddard@gmail.com>,
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-	kernel-janitors@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+To: chris.mason@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-rb_node cannot be an ERR_PTR() here so I removed the misleading check.
-Also I removed some more dead code at the bottom.
+Hi Chris,
 
-It looks like the code from lookup_extent_mapping() may have been 
-copy and pasted into search_extent_mapping()?
+There is a locking problem in 
+	940100a4a7b78 "Btrfs: be more selective in the defrag ioctl"
 
-Signed-off-by: Dan Carpenter <error27@gmail.com>
----
-This doesn't change anything.  Could you put it into linux-next?
+There are two places where we break out of the while loop under the 
+lock.
 
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 94668b1..010f299 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -380,16 +380,7 @@ struct extent_map *search_extent_mapping(struct extent_map_tree *tree,
- 		em = NULL;
- 		goto out;
- 	}
--	if (IS_ERR(rb_node)) {
--		em = ERR_PTR(PTR_ERR(rb_node));
--		goto out;
--	}
- 	em = rb_entry(rb_node, struct extent_map, rb_node);
--	goto found;
--
--	em = NULL;
--	goto out;
--
- found:
- 	atomic_inc(&em->refs);
- out:
+fs/btrfs/ioctl.c +708 btrfs_defrag_file(159) error: double lock 'mutex:&inode->i_mutex'
+   600                  mutex_lock(&inode->i_mutex);
+   601                  if (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS)
+   602                          BTRFS_I(inode)->force_compress = 1;
+   603  
+   604                  ret = btrfs_check_data_free_space(root, inode, PAGE_CACHE_SIZE);
+   605                  if (ret) {
+   606                          ret = -ENOSPC;
+   607                          break;
+
+	Here.
+
+   608                  }
+   609  
+   610                  ret = btrfs_reserve_metadata_for_delalloc(root, inode, 1);
+   611                  if (ret) {
+   612                          btrfs_free_reserved_data_space(root, inode,
+   613                                                         PAGE_CACHE_SIZE);
+   614                          ret = -ENOSPC;
+   615                          break;
+
+	And here.
+
+   616                  }
+
+Maybe we should have "goto err_reservations;" instead of break?  I
+don't know the code well enough to say.
+
+regards,
+dan carpenter

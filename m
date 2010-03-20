@@ -1,65 +1,58 @@
-From: "Yan, Zheng " <yanzheng@21cn.com>
-Subject: Re: [PATCH] Btrfs: fix ENOSPC accounting when max_extent is not maxed
-	out V2
-Date: Sat, 20 Mar 2010 10:40:26 +0800
-Message-ID: <3d0408631003191940t79022b7cja6c10fd275f30157@mail.gmail.com>
-References: <20100318154730.GA20818@dhcp231-156.rdu.redhat.com>
-	 <3d0408631003182009qaca6e9cp6c389dad257b987a@mail.gmail.com>
-	 <20100319135948.GA2314@localhost.localdomain>
+From: Boyd Waters <waters.boyd@gmail.com>
+Subject: Re: Content based storage
+Date: Fri, 19 Mar 2010 22:46:27 -0400
+Message-ID: <2b0225fb1003191946k1cf92c63q18e40d41274ce3e8@mail.gmail.com>
+References: <hnnijd$jol$1@dough.gmane.org> <201003171625.50257.hka@qbs.com.pl>
+	 <23a15591003170833t3ec4dc3fq9630558aa190afc@mail.gmail.com>
+	 <201003172043.17314.hka@qbs.com.pl>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100319135948.GA2314@localhost.localdomain>
+In-Reply-To: <201003172043.17314.hka@qbs.com.pl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 19, 2010 at 9:59 PM, Josef Bacik <josef@redhat.com> wrote:
-> On Fri, Mar 19, 2010 at 11:09:25AM +0800, Yan, Zheng =A0wrote:
->> On Thu, Mar 18, 2010 at 11:47 PM, Josef Bacik <josef@redhat.com> wro=
-te:
->> > A user reported a bug a few weeks back where if he set max_extent=3D=
-1m and then
->> > did a dd and then stopped it, we would panic. =A0This is because I=
- miscalculated
->> > how many extents would be needed for splits/merges. =A0Turns out I=
- didn't actually
->> > take max_extent into account properly, since we only ever add 1 ex=
-tent for a
->> > write, which isn't quite right for the case that say max_extent is=
- 4k and we do
->> > 8k writes. =A0That would result in more than 1 extent. =A0So this =
-patch makes us
->> > properly figure out how many extents are needed for the amount of =
-data that is
->> > being written, and deals with splitting and merging better. =A0I'v=
-e tested this ad
->> > nauseum and it works well. =A0This version doesn't depend on my pe=
-r-cpu stuff.
->> > Thanks,
->>
->> Why not remove the the max_extent check. The max length of file exte=
-nt
->> is also affected by fragmentation level of free space. It doesn't ma=
-ke sense
->> to introduce complex code to address one factor while lose sight of =
-another
->> factor. I think reserving one unit of metadata for each delalloc ext=
-ent in the
->> extent IO tree should be OK. because even a delalloc extent ends up =
-with
->> multiple file extents, these file extents are adjacency in the b-tre=
-e.
->>
+2010/3/17 Hubert Kario <hka@qbs.com.pl>:
 >
-> Do you mean remove the option for max_extent altogether, or just remo=
-ve all of
-> my code for taking it into account? =A0Thanks,
->
+> Read further, Sun did provide a way to enable the compare step by using
+> "verify" instead of "on":
+> zfs set dedup=verify <pool>
 
-all of the code for taking max_extent into account
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I have tested ZFS deduplication on the same data set that I'm using to
+test btrfs. I used a 5-element radiz, dedup=on, which uses SHA256 for
+ZFS checksumming and duplication detection on Build 133 of OpenSolaris
+for x86_64.
+
+Subjectively, I felt that the array writes were slower than without
+dedup. For a while, the option for "dedup=fletcher4,verify" was in the
+system, which permitted the (faster, more prone to collisions)
+fletcher4 hash for ZFS checksum, and full comparison in the
+(relatively rare) case of collision. Darren Moffat worked to unify the
+ZFS SHA256 code with the OpenSolaris crypo-api implementation, which
+improved performance [1]. But I was not able to test that
+implementation.
+
+My dataset reported a dedup factor of 1.28 for about 4TB, meaning that
+almost a third of the dataset was duplicated. This seemed plausible,
+as the dataset includes multiple backups of a 400GB data set, as well
+as numerous VMWare virtual machines.
+
+Despite the performance hit, I'd be pleased to see work on this
+continue. Darren Moffat's performance improvements were encouraging,
+and the data set integrity was rock-solid. I had a disk failure during
+this test, which almost certainly had far more impact on performance
+than the deduplication: failed writes to the disk were blocking I/O,
+and it got pretty bad before I was able to replace the disk. I never
+lost any data, and array management was dead simple.
+
+So anyway FWIW the ZFS dedup implementation is a good one, and had
+headroom for improvement.
+
+Finally, ZFS also lets you set a minimum number of duplicates that you
+would like applied to the dataset; it only starts pointing to existing
+blocks after the "duplication minimum" is reached. (dedupditto
+property) [2]
+
+
+[1] http://blogs.sun.com/darren/entry/improving_zfs_dedup_performance_via
+[2] http://opensolaris.org/jive/thread.jspa?messageID=426661

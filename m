@@ -1,49 +1,73 @@
-From: Dan Carpenter <error27@gmail.com>
-Subject: locking problems: Btrfs: be more selective in the defrag ioctl
-Date: Sat, 20 Mar 2010 14:38:51 +0300
-Message-ID: <20100320113851.GB5331@bicker>
+From: Ric Wheeler <rwheeler@redhat.com>
+Subject: Re: Content based storage
+Date: Sat, 20 Mar 2010 09:05:21 -0400
+Message-ID: <4BA4C811.4060702@redhat.com>
+References: <hnnijd$jol$1@dough.gmane.org> <201003171625.50257.hka@qbs.com.pl>	 <23a15591003170833t3ec4dc3fq9630558aa190afc@mail.gmail.com>	 <201003172043.17314.hka@qbs.com.pl> <2b0225fb1003191946k1cf92c63q18e40d41274ce3e8@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-To: chris.mason@oracle.com
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-btrfs@vger.kernel.org
+To: Boyd Waters <waters.boyd@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <2b0225fb1003191946k1cf92c63q18e40d41274ce3e8@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+On 03/19/2010 10:46 PM, Boyd Waters wrote:
+> 2010/3/17 Hubert Kario<hka@qbs.com.pl>:
+>    
+>> Read further, Sun did provide a way to enable the compare step by using
+>> "verify" instead of "on":
+>> zfs set dedup=verify<pool>
+>>      
+> I have tested ZFS deduplication on the same data set that I'm using to
+> test btrfs. I used a 5-element radiz, dedup=on, which uses SHA256 for
+> ZFS checksumming and duplication detection on Build 133 of OpenSolaris
+> for x86_64.
+>
+> Subjectively, I felt that the array writes were slower than without
+> dedup. For a while, the option for "dedup=fletcher4,verify" was in the
+> system, which permitted the (faster, more prone to collisions)
+> fletcher4 hash for ZFS checksum, and full comparison in the
+> (relatively rare) case of collision. Darren Moffat worked to unify the
+> ZFS SHA256 code with the OpenSolaris crypo-api implementation, which
+> improved performance [1]. But I was not able to test that
+> implementation.
+>
+> My dataset reported a dedup factor of 1.28 for about 4TB, meaning that
+> almost a third of the dataset was duplicated. This seemed plausible,
+> as the dataset includes multiple backups of a 400GB data set, as well
+> as numerous VMWare virtual machines.
+>    
 
-There is a locking problem in 
-	940100a4a7b78 "Btrfs: be more selective in the defrag ioctl"
+It is always interesting to compare this to the rate you would get with 
+old fashioned compression to see how effective this is. Seems to be not 
+that aggressive if I understand your results correctly.
 
-There are two places where we break out of the while loop under the 
-lock.
+Any idea of how compressible your data set was?
 
-fs/btrfs/ioctl.c +708 btrfs_defrag_file(159) error: double lock 'mutex:&inode->i_mutex'
-   600                  mutex_lock(&inode->i_mutex);
-   601                  if (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS)
-   602                          BTRFS_I(inode)->force_compress = 1;
-   603  
-   604                  ret = btrfs_check_data_free_space(root, inode, PAGE_CACHE_SIZE);
-   605                  if (ret) {
-   606                          ret = -ENOSPC;
-   607                          break;
+Regards,
 
-	Here.
+Ric
 
-   608                  }
-   609  
-   610                  ret = btrfs_reserve_metadata_for_delalloc(root, inode, 1);
-   611                  if (ret) {
-   612                          btrfs_free_reserved_data_space(root, inode,
-   613                                                         PAGE_CACHE_SIZE);
-   614                          ret = -ENOSPC;
-   615                          break;
 
-	And here.
+> Despite the performance hit, I'd be pleased to see work on this
+> continue. Darren Moffat's performance improvements were encouraging,
+> and the data set integrity was rock-solid. I had a disk failure during
+> this test, which almost certainly had far more impact on performance
+> than the deduplication: failed writes to the disk were blocking I/O,
+> and it got pretty bad before I was able to replace the disk. I never
+> lost any data, and array management was dead simple.
+>
+> So anyway FWIW the ZFS dedup implementation is a good one, and had
+> headroom for improvement.
+>
+> Finally, ZFS also lets you set a minimum number of duplicates that you
+> would like applied to the dataset; it only starts pointing to existing
+> blocks after the "duplication minimum" is reached. (dedupditto
+> property) [2]
+>
+>
+> [1] http://blogs.sun.com/darren/entry/improving_zfs_dedup_performance_via
+> [2] http://opensolaris.org/jive/thread.jspa?messageID=426661
+>
+>    
 
-   616                  }
-
-Maybe we should have "goto err_reservations;" instead of break?  I
-don't know the code well enough to say.
-
-regards,
-dan carpenter

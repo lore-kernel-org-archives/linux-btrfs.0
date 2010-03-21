@@ -1,70 +1,42 @@
-From: Ric Wheeler <rwheeler@redhat.com>
+From: Boyd Waters <waters.boyd@gmail.com>
 Subject: Re: Content based storage
-Date: Sat, 20 Mar 2010 18:44:24 -0400
-Message-ID: <4BA54FC8.60806@redhat.com>
-References: <hnnijd$jol$1@dough.gmane.org> <201003171625.50257.hka@qbs.com.pl>		 <23a15591003170833t3ec4dc3fq9630558aa190afc@mail.gmail.com>	 	<201003172043.17314.hka@qbs.com.pl> <2b0225fb1003191946k1cf92c63q18e40d41274ce3e8@mail.gmail.com> 	<4BA4C811.4060702@redhat.com> <-1949627963487010042@unknownmsgid> <4BA5492C.5030709@redhat.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Boyd Waters <waters.boyd@gmail.com>
+Date: Sun, 21 Mar 2010 02:55:28 -0400
+Message-ID: <-4111028596887385687@unknownmsgid>
+References: <hnnijd$jol$1@dough.gmane.org> <201003171625.50257.hka@qbs.com.pl>	
+		 <23a15591003170833t3ec4dc3fq9630558aa190afc@mail.gmail.com>	 	
+	<201003172043.17314.hka@qbs.com.pl> <2b0225fb1003191946k1cf92c63q18e40d41274ce3e8@mail.gmail.com> 	
+	<4BA4C811.4060702@redhat.com> <-1949627963487010042@unknownmsgid>
+	<4BA5492C.5030709@redhat.com> <4BA54FC8.60806@redhat.com>
+Mime-Version: 1.0 (iPhone Mail 7C144)
+Content-Type: text/plain; charset=ISO-8859-1
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4BA5492C.5030709@redhat.com>
+In-Reply-To: <4BA54FC8.60806@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/20/2010 06:16 PM, Ric Wheeler wrote:
-> On 03/20/2010 05:24 PM, Boyd Waters wrote:
->> On Mar 20, 2010, at 9:05 AM, Ric Wheeler<rwheeler@redhat.com>  wrote:
->>>>
->>>> My dataset reported a dedup factor of 1.28 for about 4TB, meaning
->>>> that
->>>> almost a third of the dataset was duplicated.
->>
->>> It is always interesting to compare this to the rate you would get
->>> with old fashioned compression to see how effective this is. Seems
->>> to be not that aggressive if I understand your results correctly.
->>>
->>> Any idea of how compressible your data set was?
->>
->> Well, of course if I used zip on the whole 4 TB that would deal with
->> my duplication issues, and give me a useless, static blob with no
->> checksumming. I haven't tried.
->
-> gzip/bzip2 of the block device was not meant to give a best case 
-> estimate of what traditional compression can do. Many block devices 
-> (including some single spindle disks) can do encryption internally.
+I realize that I've posted some dumb things in this thread so here's a
+re-cast summary:
 
-I meant to say was not meant to provide a useful compression just meant 
-to measure how well block level encryption could do.
+1) In the past, I experimented with fikesystem backups, using my own
+file-level checksumming that would detect when a file was already in
+the backup repository, and add a hard link rather than allocate new
+blocks. You can do that today on any [posix] fikesystem that supports
+hard links, by using rsync.
 
-ric
+But you are far, far better off using snapshots.
 
->
->>
->> One thing that I did do, seven (!) years ago, was to detect duplicate
->> files (not blocks) and use hard links. I was able to squeeze out all
->> of the air in a series of backups, and was able to see all of them. I
->> used a Perl script for all this. It was nuts, but now I understand why
->> Apple implemented hard links to directories in HFS in order to get
->> thier Time Machine product.  I didn't have copy-on-write, so btrfs
->> snapshots completely spank a manual system like this, but I did get 7-
->> to-1 compression. These days you can use rsync with "--link-target" to
->> make hard-linked duplicates of large directory trees. Tar, cpio, and
->> friends tend to break when transferring hundreds of gigabytes with
->> thousands of hard links. Or they ignore the hard links.
->>
->> Good times. I'm not sure how this is germane to btrfs, except to point
->> out pathological file-system usage that I've actually attempted in
->> real life. I actually use a lot of the ZFS feature set, and I look
->> forward to btrfs stability. I think btrfs can get there.
->
-> File level dedup is something we did in a group I worked with before 
-> and can certainly be quite effective. Even better, it is much easier 
-> to map into normal user expectations :-)
->
-> ric
->
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+2) I said that I got 7-to-1 "deduplication" using my hard-link system.
+That's a meaningless statement, but anyway I was able to save twelve
+or so backups of a 100GB dataset on a 160GB hard disk.
 
+You would almost certainly see much better results by using snapshots
+on ZFS or btrfs, where a snapshot takes almost no storage to create,
+and only uses extra space for any changed blocks. Snapshots are block-
+level.
+
+3) Another meaningless statement was my subjective notion that ZFS
+dedup led to performance degradation. Forget I said that, as actually
+I have no idea. My system was operating with failing drives at the time.
+
+Some people report better performace with ZFS dedup, as it decreases
+the number of disk writes.

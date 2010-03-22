@@ -1,77 +1,71 @@
-From: Sage Weil <sage@newdream.net>
-Subject: [PATCH 5/5] btrfs: add SNAP_DESTROY_ASYNC ioctl
-Date: Mon, 22 Mar 2010 12:13:30 -0700
-Message-ID: <1269285210-19085-6-git-send-email-sage@newdream.net>
-References: <1269285210-19085-1-git-send-email-sage@newdream.net>
- <1269285210-19085-2-git-send-email-sage@newdream.net>
- <1269285210-19085-3-git-send-email-sage@newdream.net>
- <1269285210-19085-4-git-send-email-sage@newdream.net>
- <1269285210-19085-5-git-send-email-sage@newdream.net>
-Cc: Sage Weil <sage@newdream.net>
-To: linux-btrfs@vger.kernel.org
+From: Piavlo <piavka@cs.bgu.ac.il>
+Subject: Re: error during umuont after set-default with 2.6.34-rc2
+Date: Mon, 22 Mar 2010 22:25:50 +0200
+Message-ID: <4BA7D24E.3040600@cs.bgu.ac.il>
+References: <201003212045.o2LKjBgg002162@indigo.cs.bgu.ac.il> <20100322133858.GB32521@think>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1269285210-19085-5-git-send-email-sage@newdream.net>
+In-Reply-To: <20100322133858.GB32521@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There is no reason (aside from user expectations that space be
-freed RIGHT NOW) that transaction removing the root reference
-commit immediately.  Add an alternative ioctl that does not
-commit immediately for those who don't need it to.
+On 03/22/2010 03:38 PM, Chris Mason wrote:
+> On Sun, Mar 21, 2010 at 10:45:11PM +0200, Alexander Piavlo wrote:
+>   
+>> Hi,
+>> trying the new btrfs tool and set-default with 2.6.34-rc2 i hit the the
+>> following problem:
+>>
+>> mkfs.btrfs -d single /dev/sys/btrfs
+>> mount -t btrfs /dev/sys/btrfs /btrfs
+>> btrfs subvolume create /btrfs/newroot
+>> mkdir /btrfs/newroot/.btrfs
+>> btrfs subvolume set-default 256 /btrfs
+>> umount /btrfs
+>> mount -t btrfs /dev/sys/btrfs /btrfs
+>>
+>> up till now everything works ok
+>>
+>> A question How do i access or mount the original root of btrfs? Which
+>> tree id does it have?
+>> It would be great if "btrfs subvolume list ..." would also list the
+>> original root.
+>>
+>> I guessed I need to use 0, so i tried:
+>>   mount -t btrfs -o subvol=0 /dev/sys/btrfs /btrfs/.btrfs
+>> and:
+>>   mount -t btrfs -o subvol=. /dev/sys/btrfs /btrfs/.btrfs
+>> but in both cases it mounted the newroot subvolume with id 256 under
+>> /btrfs/.btrfs
+>>
+>> So I tried setting the original root back with:
+>>   btrfs subvolume set-default 0 /btrfs
+>>     
+> Looks like set-default needs to understand 0 means use the old default,
+>   
 
-Signed-off-by: Sage Weil <sage@newdream.net>
----
- fs/btrfs/ioctl.c |   12 +++++++++---
- fs/btrfs/ioctl.h |    2 ++
- 2 files changed, 11 insertions(+), 3 deletions(-)
+old default = previous default
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index fd824a7..c8e6470 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1255,7 +1255,8 @@ static noinline int btrfs_ioctl_ino_lookup(struct file *file,
- }
- 
- static noinline int btrfs_ioctl_snap_destroy(struct file *file,
--					     void __user *arg)
-+					     void __user *arg,
-+					     int async)
- {
- 	struct dentry *parent = fdentry(file);
- 	struct dentry *dentry;
-@@ -1338,7 +1339,10 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
- 				dest->root_key.objectid);
- 	BUG_ON(ret);
- 
--	ret = btrfs_commit_transaction(trans, root);
-+	if (async)
-+		ret = btrfs_end_transaction(trans, root);
-+	else
-+		ret = btrfs_commit_transaction(trans, root);
- 	BUG_ON(ret);
- 	inode->i_flags |= S_DEAD;
- out_up_write:
-@@ -2037,7 +2041,9 @@ long btrfs_ioctl(struct file *file, unsigned int
- 	case BTRFS_IOC_SUBVOL_CREATE:
- 		return btrfs_ioctl_snap_create(file, argp, 1, 0);
- 	case BTRFS_IOC_SNAP_DESTROY:
--		return btrfs_ioctl_snap_destroy(file, argp);
-+		return btrfs_ioctl_snap_destroy(file, argp, 0);
-+	case BTRFS_IOC_SNAP_DESTROY_ASYNC:
-+		return btrfs_ioctl_snap_destroy(file, argp, 1);
- 	case BTRFS_IOC_DEFAULT_SUBVOL:
- 		return btrfs_ioctl_default_subvol(file, argp);
- 	case BTRFS_IOC_DEFRAG:
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 4f7fe37..8109257 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -184,4 +184,6 @@ struct btrfs_ioctl_space_args {
- #define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
- #define BTRFS_IOC_SNAP_CREATE_ASYNC _IOW(BTRFS_IOCTL_MAGIC, 23, \
- 				   struct btrfs_ioctl_vol_args)
-+#define BTRFS_IOC_SNAP_DESTROY_ASYNC _IOW(BTRFS_IOCTL_MAGIC, 24, \
-+				   struct btrfs_ioctl_vol_args)
- #endif
--- 
-1.6.6.1
+or
+
+old default = top level subvolume
+?
+
+> I'll add this in.
+>
+> btrfs subvolume set-default 5 /btrfs
+>
+>   
+Why 5? is this the tree id of the root subvolume = top level path?
+> or mount -o subvolid=0 /dev/xxx /mnt
+> or mount -o subvolid=5 /dev/xxx /mnt
+>   
+Did not know about the subvolid option, I though one can pass treeid to
+subvol option.
+
+Thanks
+
+> -chris
+>   
 

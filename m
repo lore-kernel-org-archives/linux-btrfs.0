@@ -1,7 +1,8 @@
 From: jim owens <owens6336@gmail.com>
-Subject: [PATCH V3 13/18] Btrfs: add decompression code for direct I/O.
-Date: Sun, 21 Mar 2010 23:30:46 -0400
-Message-ID: <4BA6E466.9080906@gmail.com>
+Subject: [PATCH V3 14/18] Btrfs: add multi-device minimum logical block size
+ for direct I/O.
+Date: Sun, 21 Mar 2010 23:31:35 -0400
+Message-ID: <4BA6E497.5080801@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
@@ -9,219 +10,102 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-Direct I/O needs to inflate compressed temp pages with the
-uncompressed result stored in not-necessarily-aligned user
-memory. Add btrfs_zlib_inflate() to do this and expose
-struct workspace, find_zlib_workspace(), and free_workspace()
-so that multiple extents can be processed using one workspace.
+In a multi-device filesystem, it is possible to have devices with
+different block sizes, as in 512, 1024, 2048, 4096. DirectIO read
+will check user request alignment is valid for at least one device.
 
 Signed-off-by: jim owens <owens6336@gmail.com>
 ---
- fs/btrfs/compression.h |   20 +++++++
- fs/btrfs/zlib.c        |  142 +++++++++++++++++++++++++++++++++++++++++++++---
- 2 files changed, 154 insertions(+), 8 deletions(-)
+ fs/btrfs/volumes.c |   24 +++++++++++++++++++++++-
+ fs/btrfs/volumes.h |    3 +++
+ 2 files changed, 26 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
-index 421f5b4..afd262d 100644
---- a/fs/btrfs/compression.h
-+++ b/fs/btrfs/compression.h
-@@ -19,6 +19,26 @@
- #ifndef __BTRFS_COMPRESSION_
- #define __BTRFS_COMPRESSION_
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index aedef39..a7697ef 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -580,10 +580,14 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ 	u64 devid;
+ 	int seeding = 1;
+ 	int ret = 0;
++	u32 dio_min_blocksize = PAGE_SIZE;
  
-+#include <linux/zlib.h>
-+struct workspace {
-+	z_stream z_strm;
-+	char *buf;
-+	struct list_head list;
-+};
-+
-+struct btrfs_inflate {
-+	struct workspace *workspace;
-+	int (*get_next_in)(struct bio_vec *vec, struct btrfs_inflate *icb);
-+	int (*get_next_out)(struct bio_vec *vec, struct btrfs_inflate *icb);
-+	void (*done_with_out)(struct bio_vec *vec, struct btrfs_inflate *icb);
-+	u32 out_start;
-+	u32 out_len;
-+};
-+
-+struct workspace *find_zlib_workspace(void);
-+int free_workspace(struct workspace *workspace);
-+int btrfs_zlib_inflate(struct btrfs_inflate *icb);
-+
- int btrfs_zlib_decompress(unsigned char *data_in,
- 			  struct page *dest_page,
- 			  unsigned long start_byte,
-diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
-index d7bdce5..ea601e6 100644
---- a/fs/btrfs/zlib.c
-+++ b/fs/btrfs/zlib.c
-@@ -41,12 +41,6 @@
- */
- #define STREAM_END_SPACE 12
+ 	list_for_each_entry(device, head, dev_list) {
+-		if (device->bdev)
++		if (device->bdev) {
++			dio_min_blocksize = min_t(u32, dio_min_blocksize,
++					bdev_logical_block_size(device->bdev));
+ 			continue;
++		}
+ 		if (!device->name)
+ 			continue;
  
--struct workspace {
--	z_stream z_strm;
--	char *buf;
--	struct list_head list;
--};
--
- static LIST_HEAD(idle_workspace);
- static DEFINE_SPINLOCK(workspace_lock);
- static unsigned long num_workspace;
-@@ -57,7 +51,7 @@ static DECLARE_WAIT_QUEUE_HEAD(workspace_wait);
-  * this finds an available zlib workspace or allocates a new one
-  * NULL or an ERR_PTR is returned if things go bad.
-  */
--static struct workspace *find_zlib_workspace(void)
-+struct workspace *find_zlib_workspace(void)
- {
- 	struct workspace *workspace;
- 	int ret;
-@@ -117,7 +111,7 @@ fail:
-  * put a workspace struct back on the list or free it if we have enough
-  * idle ones sitting around
-  */
--static int free_workspace(struct workspace *workspace)
-+int free_workspace(struct workspace *workspace)
- {
- 	spin_lock(&workspace_lock);
- 	if (num_workspace < num_online_cpus()) {
-@@ -622,3 +616,135 @@ void btrfs_zlib_exit(void)
- {
-     free_workspaces();
+@@ -634,6 +638,8 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ 			list_add(&device->dev_alloc_list,
+ 				 &fs_devices->alloc_list);
+ 		}
++		dio_min_blocksize = min_t(u32, dio_min_blocksize,
++					bdev_logical_block_size(device->bdev));
+ 		continue;
+ 
+ error_brelse:
+@@ -653,6 +659,7 @@ error:
+ 	fs_devices->latest_devid = latest_devid;
+ 	fs_devices->latest_trans = latest_transid;
+ 	fs_devices->total_rw_bytes = 0;
++	fs_devices->dio_min_blocksize = dio_min_blocksize;
+ out:
+ 	return ret;
  }
+@@ -1133,6 +1140,7 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 	u64 num_devices;
+ 	u8 *dev_uuid;
+ 	int ret = 0;
++	u32 dio_min_blocksize;
+ 
+ 	mutex_lock(&uuid_mutex);
+ 	mutex_lock(&root->fs_info->volume_mutex);
+@@ -1284,6 +1292,14 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 	kfree(device);
+ 	ret = 0;
+ 
++	dio_min_blocksize = PAGE_SIZE;
++	list_for_each_entry(device,
++				&root->fs_info->fs_devices->devices, dev_list)
++		if (device->bdev)
++			dio_min_blocksize = min_t(u32, dio_min_blocksize,
++					bdev_logical_block_size(device->bdev));
++	root->fs_info->fs_devices->dio_min_blocksize = dio_min_blocksize;
 +
-+/* inflate compressed data for one contiguous file range from directio */
-+int btrfs_zlib_inflate(struct btrfs_inflate *icb)
-+{
-+	struct workspace *workspace = icb->workspace;
-+	unsigned long out_start = icb->out_start;
-+	unsigned long total_len = icb->out_len + out_start;
-+	struct bio_vec ivec;
-+	struct bio_vec ovec;
-+	char *in;
-+	char *out;
-+	int err;
-+	int wbits;
+ error_brelse:
+ 	brelse(bh);
+ error_close:
+@@ -1563,6 +1579,12 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
+ 		ret = btrfs_relocate_sys_chunks(root);
+ 		BUG_ON(ret);
+ 	}
 +
-+	icb->out_len = 0;
-+	ivec.bv_len = 0;
-+	ovec.bv_len = 0;
-+	if (!workspace) {
-+		workspace = find_zlib_workspace();
-+		if (IS_ERR(workspace))
-+			return -ENOMEM;
-+	}
++	if (!ret)
++		root->fs_info->fs_devices->dio_min_blocksize = min_t(u32,
++			root->fs_info->fs_devices->dio_min_blocksize,
++			bdev_logical_block_size(bdev));
 +
-+	err = icb->get_next_in(&ivec, icb);
-+	if (err)
-+		goto fail;
-+	in = kmap_atomic(ivec.bv_page, KM_USER0);
-+	workspace->z_strm.next_in = in + ivec.bv_offset;
-+	workspace->z_strm.avail_in = ivec.bv_len;
-+	workspace->z_strm.total_in = 0;
-+	workspace->z_strm.total_out = 0;
-+	workspace->z_strm.next_out = workspace->buf;
-+	workspace->z_strm.avail_out = PAGE_CACHE_SIZE;
+ out:
+ 	mutex_unlock(&root->fs_info->volume_mutex);
+ 	return ret;
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 732c8c5..cce6039 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -117,6 +117,9 @@ struct btrfs_fs_devices {
+ 	 * nonrot flag set
+ 	 */
+ 	int rotating;
 +
-+	/* with no preset dictionary, tell zlib to skip the adler32 check */
-+	if (!(in[ivec.bv_offset+1] & PRESET_DICT) &&
-+		    ((in[ivec.bv_offset] & 0x0f) == Z_DEFLATED) &&
-+		    !(((in[ivec.bv_offset]<<8) + in[ivec.bv_offset+1]) % 31)) {
-+
-+		wbits = -((in[ivec.bv_offset] >> 4) + 8);
-+		workspace->z_strm.next_in += 2;
-+		workspace->z_strm.avail_in -= 2;
-+	} else {
-+		wbits = MAX_WBITS;
-+	}
-+
-+	err = zlib_inflateInit2(&workspace->z_strm, wbits);
-+	if (err) {
-+		kunmap_atomic(in, KM_USER0);
-+		goto fail;
-+	}
-+
-+	ivec.bv_len = workspace->z_strm.avail_in;
-+	ivec.bv_offset = (char *)workspace->z_strm.next_in - in;
-+	kunmap_atomic(in, KM_USER0);
-+
-+	/* use temp buf to toss everything before the real data we want */
-+	while (workspace->z_strm.total_out < out_start) {
-+		workspace->z_strm.next_out = workspace->buf;
-+		workspace->z_strm.avail_out = min(PAGE_CACHE_SIZE,
-+				out_start - workspace->z_strm.total_out);
-+
-+		if (!ivec.bv_len) {
-+			err = icb->get_next_in(&ivec, icb);
-+			if (err)
-+				goto fail;
-+		}
-+		in = kmap_atomic(ivec.bv_page, KM_USER0);
-+		workspace->z_strm.next_in = in + ivec.bv_offset;
-+		workspace->z_strm.avail_in = ivec.bv_len;
-+
-+		err = zlib_inflate(&workspace->z_strm, Z_NO_FLUSH);
-+
-+		ivec.bv_len = workspace->z_strm.avail_in;
-+		ivec.bv_offset = (char *)workspace->z_strm.next_in - in;
-+		kunmap_atomic(in, KM_USER0);
-+
-+		if (err != Z_OK) /* Z_STREAM_END is no-user-data failure here */
-+			goto fail;
-+		cond_resched();
-+	}
-+
-+	while (workspace->z_strm.total_out < total_len) {
-+		if (!ivec.bv_len) {
-+			err = icb->get_next_in(&ivec, icb);
-+			if (err)
-+				goto fail;
-+		}
-+		if (!ovec.bv_len) {
-+			err = icb->get_next_out(&ovec, icb);
-+			if (err)
-+				goto fail;
-+		}
-+
-+		in = kmap_atomic(ivec.bv_page, KM_USER0);
-+		workspace->z_strm.next_in = in + ivec.bv_offset;
-+		workspace->z_strm.avail_in = ivec.bv_len;
-+
-+		out = kmap_atomic(ovec.bv_page, KM_USER1);
-+		workspace->z_strm.next_out = out + ovec.bv_offset;
-+		workspace->z_strm.avail_out = ovec.bv_len;
-+
-+		err = zlib_inflate(&workspace->z_strm, Z_NO_FLUSH);
-+
-+		icb->out_len += (ovec.bv_len - workspace->z_strm.avail_out);
-+		ovec.bv_len = workspace->z_strm.avail_out;
-+		ovec.bv_offset = (char *)workspace->z_strm.next_out - out;
-+		kunmap_atomic(out, KM_USER1);
-+
-+		ivec.bv_len = workspace->z_strm.avail_in;
-+		ivec.bv_offset = (char *)workspace->z_strm.next_in - in;
-+		kunmap_atomic(in, KM_USER0);
-+
-+		if (!ovec.bv_len)
-+			icb->done_with_out(&ovec, icb);
-+		else
-+			flush_dcache_page(ovec.bv_page);
-+
-+		if (err != Z_OK)
-+			goto fail;
-+		cond_resched();
-+	}
-+
-+fail:
-+	if (ovec.bv_len)
-+		icb->done_with_out(&ovec, icb);
-+	if (!icb->workspace)
-+		free_workspace(workspace);
-+	if (err == Z_OK || err == Z_STREAM_END)
-+		return 0;
-+	return err;
-+}
++	/* smallest logical blocksize possible in file system for direct IO */
++	u32 dio_min_blocksize;
+ };
+ 
+ struct btrfs_bio_stripe {
 -- 
 1.6.3.3

@@ -1,52 +1,55 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: error during umuont after set-default with 2.6.34-rc2
-Date: Mon, 22 Mar 2010 09:38:58 -0400
-Message-ID: <20100322133858.GB32521@think>
-References: <201003212045.o2LKjBgg002162@indigo.cs.bgu.ac.il>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: locking problems: Btrfs: be more selective in the defrag ioctl
+Date: Mon, 22 Mar 2010 09:47:21 -0400
+Message-ID: <20100322134720.GA2383@localhost.localdomain>
+References: <20100320113851.GB5331@bicker>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Alexander Piavlo <piavka@cs.bgu.ac.il>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201003212045.o2LKjBgg002162@indigo.cs.bgu.ac.il>
+To: Dan Carpenter <error27@gmail.com>, chris.mason@oracle.com,
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20100320113851.GB5331@bicker>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Mar 21, 2010 at 10:45:11PM +0200, Alexander Piavlo wrote:
-> Hi,
-> trying the new btrfs tool and set-default with 2.6.34-rc2 i hit the the
-> following problem:
+On Sat, Mar 20, 2010 at 02:38:51PM +0300, Dan Carpenter wrote:
+> Hi Chris,
 > 
-> mkfs.btrfs -d single /dev/sys/btrfs
-> mount -t btrfs /dev/sys/btrfs /btrfs
-> btrfs subvolume create /btrfs/newroot
-> mkdir /btrfs/newroot/.btrfs
-> btrfs subvolume set-default 256 /btrfs
-> umount /btrfs
-> mount -t btrfs /dev/sys/btrfs /btrfs
+> There is a locking problem in 
+> 	940100a4a7b78 "Btrfs: be more selective in the defrag ioctl"
 > 
-> up till now everything works ok
+> There are two places where we break out of the while loop under the 
+> lock.
 > 
-> A question How do i access or mount the original root of btrfs? Which
-> tree id does it have?
-> It would be great if "btrfs subvolume list ..." would also list the
-> original root.
+> fs/btrfs/ioctl.c +708 btrfs_defrag_file(159) error: double lock 'mutex:&inode->i_mutex'
+>    600                  mutex_lock(&inode->i_mutex);
+>    601                  if (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS)
+>    602                          BTRFS_I(inode)->force_compress = 1;
+>    603  
+>    604                  ret = btrfs_check_data_free_space(root, inode, PAGE_CACHE_SIZE);
+>    605                  if (ret) {
+>    606                          ret = -ENOSPC;
+>    607                          break;
 > 
-> I guessed I need to use 0, so i tried:
->   mount -t btrfs -o subvol=0 /dev/sys/btrfs /btrfs/.btrfs
-> and:
->   mount -t btrfs -o subvol=. /dev/sys/btrfs /btrfs/.btrfs
-> but in both cases it mounted the newroot subvolume with id 256 under
-> /btrfs/.btrfs
+> 	Here.
 > 
-> So I tried setting the original root back with:
->   btrfs subvolume set-default 0 /btrfs
+>    608                  }
+>    609  
+>    610                  ret = btrfs_reserve_metadata_for_delalloc(root, inode, 1);
+>    611                  if (ret) {
+>    612                          btrfs_free_reserved_data_space(root, inode,
+>    613                                                         PAGE_CACHE_SIZE);
+>    614                          ret = -ENOSPC;
+>    615                          break;
+> 
+> 	And here.
+> 
+>    616                  }
+> 
+> Maybe we should have "goto err_reservations;" instead of break?  I
+> don't know the code well enough to say.
 
-Looks like set-default needs to understand 0 means use the old default,
-I'll add this in.
+No, everything is accounted for correctly.  If the metadata reservation fails,
+we free the data space reservation and break.  If the data space reservation
+fails, we're good to go and can just exit.  Thanks,
 
-btrfs subvolume set-default 5 /btrfs
-
-or mount -o subvolid=0 /dev/xxx /mnt
-or mount -o subvolid=5 /dev/xxx /mnt
-
--chris
+Josef

@@ -1,7 +1,8 @@
 From: jim owens <owens6336@gmail.com>
-Subject: [PATCH V3 01/18] mm: export use_mm and unuse_mm for filesystem modules.
-Date: Sun, 21 Mar 2010 23:18:54 -0400
-Message-ID: <4BA6E19E.2080005@gmail.com>
+Subject: [PATCH V3 02/18] Btrfs: Do not limit RAID1 and DUP transfer length
+ to one stripe.
+Date: Sun, 21 Mar 2010 23:20:02 -0400
+Message-ID: <4BA6E1E2.2090909@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
@@ -9,38 +10,34 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-required for btrfs directio worker threads.
+The 65k stripe length should be ignored as the stripes are
+physically contiguous on disk so transfers can span stripes.
 
 Signed-off-by: jim owens <owens6336@gmail.com>
 ---
- mm/mmu_context.c |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
+ fs/btrfs/volumes.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/mm/mmu_context.c b/mm/mmu_context.c
-index ded9081..ecfb087 100644
---- a/mm/mmu_context.c
-+++ b/mm/mmu_context.c
-@@ -3,6 +3,7 @@
-  * See ../COPYING for licensing terms.
-  */
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 9df8e3f..8c8908c 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2711,13 +2711,13 @@ again:
+ 	/* stripe_offset is the offset of this block in its stripe*/
+ 	stripe_offset = offset - stripe_offset;
  
-+#include <linux/module.h>
- #include <linux/mm.h>
- #include <linux/mmu_context.h>
- #include <linux/sched.h>
-@@ -37,6 +38,7 @@ void use_mm(struct mm_struct *mm)
- 	if (active_mm != mm)
- 		mmdrop(active_mm);
- }
-+EXPORT_SYMBOL_GPL(use_mm);
+-	if (map->type & (BTRFS_BLOCK_GROUP_RAID0 | BTRFS_BLOCK_GROUP_RAID1 |
+-			 BTRFS_BLOCK_GROUP_RAID10 |
+-			 BTRFS_BLOCK_GROUP_DUP)) {
++	if (map->type & (BTRFS_BLOCK_GROUP_RAID0 |
++			 BTRFS_BLOCK_GROUP_RAID10)) {
+ 		/* we limit the length of each bio to what fits in a stripe */
+ 		*length = min_t(u64, em->len - offset,
+ 			      map->stripe_len - stripe_offset);
+ 	} else {
++		/* RAID1, DUP, and simple disk stripes are all contiguous */
+ 		*length = em->len - offset;
+ 	}
  
- /*
-  * unuse_mm
-@@ -56,3 +58,5 @@ void unuse_mm(struct mm_struct *mm)
- 	enter_lazy_tlb(mm, tsk);
- 	task_unlock(tsk);
- }
-+EXPORT_SYMBOL_GPL(unuse_mm);
-+
 -- 
 1.6.3.3

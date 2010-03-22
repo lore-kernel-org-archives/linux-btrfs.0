@@ -1,30 +1,52 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] Btrfs: kill max_extent mount option
-Date: Mon, 22 Mar 2010 09:25:06 -0400
-Message-ID: <20100322132506.GA32521@think>
-References: <20100319180722.GC2314@localhost.localdomain>
- <20100322013304.GA30742@sli10-desk.sh.intel.com>
+Subject: Re: error during umuont after set-default with 2.6.34-rc2
+Date: Mon, 22 Mar 2010 09:38:58 -0400
+Message-ID: <20100322133858.GB32521@think>
+References: <201003212045.o2LKjBgg002162@indigo.cs.bgu.ac.il>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Shaohua Li <shaohua.li@intel.com>
+Cc: linux-btrfs@vger.kernel.org
+To: Alexander Piavlo <piavka@cs.bgu.ac.il>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100322013304.GA30742@sli10-desk.sh.intel.com>
+In-Reply-To: <201003212045.o2LKjBgg002162@indigo.cs.bgu.ac.il>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 22, 2010 at 09:33:04AM +0800, Shaohua Li wrote:
-> On Sat, Mar 20, 2010 at 02:07:23AM +0800, Josef Bacik wrote:
-> > As Yan pointed out, theres not much reason for all this complicated math to
-> > account for file extents being split up into max_extent chunks, since they are
-> > likely to all end up in the same leaf anyway.  Since there isn't much reason to
-> > use max_extent, just remove the option altogether so we have one less thing we
-> > need to test.  Thanks,
-> Since we sometimes have very big extents like several hundered mega bytes, just
-> curious could removing max_extent limit cause more lock contentation for extent locks?
+On Sun, Mar 21, 2010 at 10:45:11PM +0200, Alexander Piavlo wrote:
+> Hi,
+> trying the new btrfs tool and set-default with 2.6.34-rc2 i hit the the
+> following problem:
+> 
+> mkfs.btrfs -d single /dev/sys/btrfs
+> mount -t btrfs /dev/sys/btrfs /btrfs
+> btrfs subvolume create /btrfs/newroot
+> mkdir /btrfs/newroot/.btrfs
+> btrfs subvolume set-default 256 /btrfs
+> umount /btrfs
+> mount -t btrfs /dev/sys/btrfs /btrfs
+> 
+> up till now everything works ok
+> 
+> A question How do i access or mount the original root of btrfs? Which
+> tree id does it have?
+> It would be great if "btrfs subvolume list ..." would also list the
+> original root.
+> 
+> I guessed I need to use 0, so i tried:
+>   mount -t btrfs -o subvol=0 /dev/sys/btrfs /btrfs/.btrfs
+> and:
+>   mount -t btrfs -o subvol=. /dev/sys/btrfs /btrfs/.btrfs
+> but in both cases it mounted the newroot subvolume with id 256 under
+> /btrfs/.btrfs
+> 
+> So I tried setting the original root back with:
+>   btrfs subvolume set-default 0 /btrfs
 
-The default for the max_extent option is (u64)-1.  So, in general it was
-meant to force smaller extents as part of testing.
+Looks like set-default needs to understand 0 means use the old default,
+I'll add this in.
+
+btrfs subvolume set-default 5 /btrfs
+
+or mount -o subvolid=0 /dev/xxx /mnt
+or mount -o subvolid=5 /dev/xxx /mnt
 
 -chris
-

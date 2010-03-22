@@ -1,8 +1,7 @@
 From: jim owens <owens6336@gmail.com>
-Subject: [PATCH V3 14/18] Btrfs: add multi-device minimum logical block size
- for direct I/O.
-Date: Sun, 21 Mar 2010 23:31:35 -0400
-Message-ID: <4BA6E497.5080801@gmail.com>
+Subject: [PATCH V3 15/18] Btrfs: change btrfs_get_extent for direct I/O merges.
+Date: Sun, 21 Mar 2010 23:32:59 -0400
+Message-ID: <4BA6E4EB.70001@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
@@ -10,102 +9,97 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-In a multi-device filesystem, it is possible to have devices with
-different block sizes, as in 512, 1024, 2048, 4096. DirectIO read
-will check user request alignment is valid for at least one device.
+Direct I/O passes unaligned start and length values that must
+be adjusted to block boundaries for lookup and merging when
+an add_extent_mapping fails with EEXIST.
 
 Signed-off-by: jim owens <owens6336@gmail.com>
 ---
- fs/btrfs/volumes.c |   24 +++++++++++++++++++++++-
- fs/btrfs/volumes.h |    3 +++
- 2 files changed, 26 insertions(+), 1 deletions(-)
+ fs/btrfs/inode.c |   56 ++++++++++++-----------------------------------------
+ 1 files changed, 13 insertions(+), 43 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index aedef39..a7697ef 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -580,10 +580,14 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
- 	u64 devid;
- 	int seeding = 1;
- 	int ret = 0;
-+	u32 dio_min_blocksize = PAGE_SIZE;
- 
- 	list_for_each_entry(device, head, dev_list) {
--		if (device->bdev)
-+		if (device->bdev) {
-+			dio_min_blocksize = min_t(u32, dio_min_blocksize,
-+					bdev_logical_block_size(device->bdev));
- 			continue;
-+		}
- 		if (!device->name)
- 			continue;
- 
-@@ -634,6 +638,8 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
- 			list_add(&device->dev_alloc_list,
- 				 &fs_devices->alloc_list);
- 		}
-+		dio_min_blocksize = min_t(u32, dio_min_blocksize,
-+					bdev_logical_block_size(device->bdev));
- 		continue;
- 
- error_brelse:
-@@ -653,6 +659,7 @@ error:
- 	fs_devices->latest_devid = latest_devid;
- 	fs_devices->latest_trans = latest_transid;
- 	fs_devices->total_rw_bytes = 0;
-+	fs_devices->dio_min_blocksize = dio_min_blocksize;
- out:
- 	return ret;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index aad29fe..49dfc1a 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4573,29 +4573,6 @@ out_unlock:
+ 	return err;
  }
-@@ -1133,6 +1140,7 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 	u64 num_devices;
- 	u8 *dev_uuid;
- 	int ret = 0;
-+	u32 dio_min_blocksize;
  
- 	mutex_lock(&uuid_mutex);
- 	mutex_lock(&root->fs_info->volume_mutex);
-@@ -1284,6 +1292,14 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 	kfree(device);
- 	ret = 0;
+-/* helper for btfs_get_extent.  Given an existing extent in the tree,
+- * and an extent that you want to insert, deal with overlap and insert
+- * the new extent into the tree.
+- */
+-static int merge_extent_mapping(struct extent_map_tree *em_tree,
+-				struct extent_map *existing,
+-				struct extent_map *em,
+-				u64 map_start, u64 map_len)
+-{
+-	u64 start_diff;
+-
+-	BUG_ON(map_start < em->start || map_start >= extent_map_end(em));
+-	start_diff = map_start - em->start;
+-	em->start = map_start;
+-	em->len = map_len;
+-	if (em->block_start < EXTENT_MAP_LAST_BYTE &&
+-	    !test_bit(EXTENT_FLAG_COMPRESSED, &em->flags)) {
+-		em->block_start += start_diff;
+-		em->block_len -= start_diff;
+-	}
+-	return add_extent_mapping(em_tree, em);
+-}
+-
+ static noinline int uncompress_inline(struct btrfs_path *path,
+ 				      struct inode *inode, struct page *page,
+ 				      size_t pg_offset, u64 extent_offset,
+@@ -4873,35 +4850,28 @@ insert:
+ 	if (ret == -EEXIST) {
+ 		struct extent_map *existing;
  
-+	dio_min_blocksize = PAGE_SIZE;
-+	list_for_each_entry(device,
-+				&root->fs_info->fs_devices->devices, dev_list)
-+		if (device->bdev)
-+			dio_min_blocksize = min_t(u32, dio_min_blocksize,
-+					bdev_logical_block_size(device->bdev));
-+	root->fs_info->fs_devices->dio_min_blocksize = dio_min_blocksize;
-+
- error_brelse:
- 	brelse(bh);
- error_close:
-@@ -1563,6 +1579,12 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
- 		ret = btrfs_relocate_sys_chunks(root);
- 		BUG_ON(ret);
+-		ret = 0;
++		/* start and len might not be block aligned, but extents are */
++		u64 lb_start = start & ~(root->sectorsize - 1);
++		u64 em_tail = em->len - (lb_start - em->start);
+ 
+-		existing = lookup_extent_mapping(em_tree, start, len);
+-		if (existing && (existing->start > start ||
+-		    existing->start + existing->len <= start)) {
++		existing = lookup_extent_mapping(em_tree, lb_start, em_tail);
++		if (existing && lb_start < existing->start) {
++			em_tail = existing->start - lb_start;
+ 			free_extent_map(existing);
+ 			existing = NULL;
+ 		}
+ 		if (!existing) {
+-			existing = lookup_extent_mapping(em_tree, em->start,
+-							 em->len);
+-			if (existing) {
+-				err = merge_extent_mapping(em_tree, existing,
+-							   em, start,
+-							   root->sectorsize);
+-				free_extent_map(existing);
+-				if (err) {
+-					free_extent_map(em);
+-					em = NULL;
+-				}
+-			} else {
+-				err = -EIO;
+-				free_extent_map(em);
+-				em = NULL;
++			if (!test_bit(EXTENT_FLAG_COMPRESSED, &em->flags) &&
++			    em->block_start < EXTENT_MAP_LAST_BYTE) {
++				em->block_start += lb_start - em->start;
++				em->block_len -= lb_start - em->start;
+ 			}
++			em->start = lb_start;
++			em->len = em_tail;
++			err = add_extent_mapping(em_tree, em);
+ 		} else {
+ 			free_extent_map(em);
+ 			em = existing;
+-			err = 0;
+ 		}
  	}
-+
-+	if (!ret)
-+		root->fs_info->fs_devices->dio_min_blocksize = min_t(u32,
-+			root->fs_info->fs_devices->dio_min_blocksize,
-+			bdev_logical_block_size(bdev));
-+
- out:
- 	mutex_unlock(&root->fs_info->volume_mutex);
- 	return ret;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 732c8c5..cce6039 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -117,6 +117,9 @@ struct btrfs_fs_devices {
- 	 * nonrot flag set
- 	 */
- 	int rotating;
-+
-+	/* smallest logical blocksize possible in file system for direct IO */
-+	u32 dio_min_blocksize;
- };
- 
- struct btrfs_bio_stripe {
+ 	write_unlock(&em_tree->lock);
 -- 
 1.6.3.3

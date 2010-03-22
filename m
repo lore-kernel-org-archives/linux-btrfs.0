@@ -1,161 +1,195 @@
 From: Sage Weil <sage@newdream.net>
-Subject: [PATCH 3/5] Btrfs: add SNAP_CREATE_ASYNC ioctl
-Date: Mon, 22 Mar 2010 12:13:28 -0700
-Message-ID: <1269285210-19085-4-git-send-email-sage@newdream.net>
+Subject: [PATCH 2/5] Btrfs: add START_SYNC, WAIT_SYNC ioctls
+Date: Mon, 22 Mar 2010 12:13:27 -0700
+Message-ID: <1269285210-19085-3-git-send-email-sage@newdream.net>
 References: <1269285210-19085-1-git-send-email-sage@newdream.net>
  <1269285210-19085-2-git-send-email-sage@newdream.net>
- <1269285210-19085-3-git-send-email-sage@newdream.net>
 Cc: Sage Weil <sage@newdream.net>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1269285210-19085-3-git-send-email-sage@newdream.net>
+In-Reply-To: <1269285210-19085-2-git-send-email-sage@newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Create a snap without waiting for it to commit to disk.  The ioctl is
-ordered such that subsequent operations will not be contained by the
-created snapshot, and the commit is initiated, but the ioctl does not
-wait for the snapshot to commit to disk.
+START_SYNC will start a sync/commit, but not wait for it to
+complete.  Any modification started after the ioctl returns is
+guaranteed not to be included in the commit.  If a non-NULL
+pointer is passed, the transaction id will be returned to
+userspace.
+
+WAIT_SYNC will wait for any in-progress commit to complete.  If a
+transaction id is specified, the ioctl will block and then
+return (success) when the specified transaction has committed.
+If it has already committed when we call the ioctl, it returns
+immediately.  If the specified transaction doesn't exist, it
+returns EINVAL.
+
+If no transaction id is specified, WAIT_SYNC will wait for the
+currently committing transaction to finish it's commit to disk.
+If there is no currently committing transaction, it returns
+success.
+
+These ioctls are useful for applications which want to impose an
+ordering on when fs modifications reach disk, but do not want to
+wait for the full (slow) commit process to do so.
+
+Picky callers can take the transid returned by START_SYNC and
+feed it to WAIT_SYNC, and be certain to wait only as long as
+necessary for the transaction _they_ started to reach disk.
+
+Sloppy callers can START_SYNC and WAIT_SYNC without a transid,
+and provided they didn't wait too long between the calls, they
+will get the same result.  However, if a second commit starts
+before they call WAIT_SYNC, they may end up waiting longer for
+it to commit as well.  Even so, a START_SYNC+WAIT_SYNC still
+guarantees that any operation completed before the START_SYNC
+reaches disk.
 
 Signed-off-by: Sage Weil <sage@newdream.net>
 ---
- fs/btrfs/ioctl.c |   41 +++++++++++++++++++++++++++++------------
- fs/btrfs/ioctl.h |    2 ++
- 2 files changed, 31 insertions(+), 12 deletions(-)
+ fs/btrfs/ioctl.c       |   34 +++++++++++++++++++++++++++++++
+ fs/btrfs/ioctl.h       |    2 +
+ fs/btrfs/transaction.c |   52 ++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/transaction.h |    1 +
+ 4 files changed, 89 insertions(+), 0 deletions(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 8e29712..7ea4ff0 100644
+index 2845c6c..8e29712 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -224,7 +224,8 @@ static int btrfs_ioctl_getversion(struct file *file, int __user *arg)
- 
- static noinline int create_subvol(struct btrfs_root *root,
- 				  struct dentry *dentry,
--				  char *name, int namelen)
-+				  char *name, int namelen,
-+				  u64 *async_transid)
- {
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_key key;
-@@ -342,7 +343,12 @@ static noinline int create_subvol(struct btrfs_root *root,
- 
- 	d_instantiate(dentry, btrfs_lookup_dentry(dir, dentry));
- fail:
--	err = btrfs_commit_transaction(trans, root);
-+	if (async_transid) {
-+		*async_transid = trans->transid;
-+		err = btrfs_commit_transaction_async(trans, root, 1);
-+	} else {
-+		err = btrfs_commit_transaction(trans, root);
-+	}
- 	if (err && !ret)
- 		ret = err;
- 
-@@ -351,7 +357,7 @@ fail:
+@@ -1965,6 +1965,36 @@ long btrfs_ioctl_trans_end(struct file *file)
+ 	return 0;
  }
  
- static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
--			   char *name, int namelen)
-+			   char *name, int namelen, u64 *async_transid)
- {
- 	struct inode *inode;
- 	struct btrfs_pending_snapshot *pending_snapshot;
-@@ -392,7 +398,12 @@ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
- 	pending_snapshot->root = root;
- 	list_add(&pending_snapshot->list,
- 		 &trans->transaction->pending_snapshots);
--	ret = btrfs_commit_transaction(trans, root);
-+	if (async_transid) {
-+		*async_transid = trans->transid;
-+		ret = btrfs_commit_transaction_async(trans, root, 1);
++static long btrfs_ioctl_start_sync(struct file *file, void __user *argp)
++{
++	struct btrfs_root *root = BTRFS_I(file->f_dentry->d_inode)->root;
++	struct btrfs_trans_handle *trans;
++	u64 transid;
++
++	trans = btrfs_start_transaction(root, 0);
++	transid = trans->transid;
++	btrfs_commit_transaction_async(trans, root, 0);
++
++	if (argp)
++		if (copy_to_user(argp, &transid, sizeof(transid)))
++			return -EFAULT;
++	return 0;
++}
++
++static long btrfs_ioctl_wait_sync(struct file *file, void __user *argp)
++{
++	struct btrfs_root *root = BTRFS_I(file->f_dentry->d_inode)->root;
++	u64 transid;
++
++	if (argp) {
++		if (copy_from_user(&transid, argp, sizeof(transid)))
++			return -EFAULT;
 +	} else {
-+		ret = btrfs_commit_transaction(trans, root);
++		transid = 0;  /* current trans */
 +	}
- 	BUG_ON(ret);
- 	btrfs_unreserve_metadata_space(root, 6);
- 
-@@ -425,7 +436,8 @@ static inline int btrfs_may_create(struct inode *dir, struct dentry *child)
-  */
- static noinline int btrfs_mksubvol(struct path *parent,
- 				   char *name, int namelen,
--				   struct btrfs_root *snap_src)
-+				   struct btrfs_root *snap_src,
-+				   u64 *async_transid)
++	return btrfs_wait_for_commit(root, transid);
++}
++
+ long btrfs_ioctl(struct file *file, unsigned int
+ 		cmd, unsigned long arg)
  {
- 	struct inode *dir  = parent->dentry->d_inode;
- 	struct dentry *dentry;
-@@ -457,10 +469,10 @@ static noinline int btrfs_mksubvol(struct path *parent,
- 
- 	if (snap_src) {
- 		error = create_snapshot(snap_src, dentry,
--					name, namelen);
-+					name, namelen, async_transid);
- 	} else {
- 		error = create_subvol(BTRFS_I(dir)->root, dentry,
--				      name, namelen);
-+				      name, namelen, async_transid);
+@@ -2015,6 +2045,10 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 	case BTRFS_IOC_SYNC:
+ 		btrfs_sync_fs(file->f_dentry->d_sb, 1);
+ 		return 0;
++	case BTRFS_IOC_START_SYNC:
++		return btrfs_ioctl_start_sync(file, argp);
++	case BTRFS_IOC_WAIT_SYNC:
++		return btrfs_ioctl_wait_sync(file, argp);
  	}
- 	if (!error)
- 		fsnotify_mkdir(dir, dentry);
-@@ -825,12 +837,14 @@ out_unlock:
- }
  
- static noinline int btrfs_ioctl_snap_create(struct file *file,
--					    void __user *arg, int subvol)
-+					    void __user *arg, int subvol,
-+					    int async)
- {
- 	struct btrfs_root *root = BTRFS_I(fdentry(file)->d_inode)->root;
- 	struct btrfs_ioctl_vol_args *vol_args;
- 	struct file *src_file;
- 	int namelen;
-+	u64 transid = 0;
- 	int ret = 0;
- 
- 	if (root->fs_info->sb->s_flags & MS_RDONLY)
-@@ -849,7 +863,7 @@ static noinline int btrfs_ioctl_snap_create(struct file *file,
- 
- 	if (subvol) {
- 		ret = btrfs_mksubvol(&file->f_path, vol_args->name, namelen,
--				     NULL);
-+				     NULL, async ? &transid : NULL);
- 	} else {
- 		struct inode *src_inode;
- 		src_file = fget(vol_args->fd);
-@@ -867,7 +881,8 @@ static noinline int btrfs_ioctl_snap_create(struct file *file,
- 			goto out;
- 		}
- 		ret = btrfs_mksubvol(&file->f_path, vol_args->name, namelen,
--				     BTRFS_I(src_inode)->root);
-+				     BTRFS_I(src_inode)->root,
-+				     async ? &transid : NULL);
- 		fput(src_file);
- 	}
- out:
-@@ -2009,9 +2024,11 @@ long btrfs_ioctl(struct file *file, unsigned int
- 	case FS_IOC_GETVERSION:
- 		return btrfs_ioctl_getversion(file, argp);
- 	case BTRFS_IOC_SNAP_CREATE:
--		return btrfs_ioctl_snap_create(file, argp, 0);
-+		return btrfs_ioctl_snap_create(file, argp, 0, 0);
-+	case BTRFS_IOC_SNAP_CREATE_ASYNC:
-+		return btrfs_ioctl_snap_create(file, argp, 0, 1);
- 	case BTRFS_IOC_SUBVOL_CREATE:
--		return btrfs_ioctl_snap_create(file, argp, 1);
-+		return btrfs_ioctl_snap_create(file, argp, 1, 0);
- 	case BTRFS_IOC_SNAP_DESTROY:
- 		return btrfs_ioctl_snap_destroy(file, argp);
- 	case BTRFS_IOC_DEFAULT_SUBVOL:
+ 	return -ENOTTY;
 diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index e9a2f7e..d9169d8 100644
+index 424694a..e9a2f7e 100644
 --- a/fs/btrfs/ioctl.h
 +++ b/fs/btrfs/ioctl.h
-@@ -180,4 +180,6 @@ struct btrfs_ioctl_space_args {
+@@ -178,4 +178,6 @@ struct btrfs_ioctl_space_args {
+ #define BTRFS_IOC_DEFAULT_SUBVOL _IOW(BTRFS_IOCTL_MAGIC, 19, u64)
+ #define BTRFS_IOC_SPACE_INFO _IOWR(BTRFS_IOCTL_MAGIC, 20, \
  				    struct btrfs_ioctl_space_args)
- #define BTRFS_IOC_START_SYNC _IOR(BTRFS_IOCTL_MAGIC, 21, __u64)
- #define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
-+#define BTRFS_IOC_SNAP_CREATE_ASYNC _IOW(BTRFS_IOCTL_MAGIC, 23, \
-+				   struct btrfs_ioctl_vol_args)
++#define BTRFS_IOC_START_SYNC _IOR(BTRFS_IOCTL_MAGIC, 21, __u64)
++#define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
  #endif
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 52b5488..6de9983 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -239,6 +239,58 @@ static noinline int wait_for_commit(struct btrfs_root *root,
+ 	return 0;
+ }
+ 
++int btrfs_wait_for_commit(struct btrfs_root *root, u64 transid)
++{
++	struct btrfs_transaction *cur_trans = NULL, *t;
++	int ret;
++
++	mutex_lock(&root->fs_info->trans_mutex);
++
++	ret = 0;
++	if (transid) {
++		if (transid <= root->fs_info->last_trans_committed)
++			goto out_unlock;
++
++		/* find specified transaction */
++		list_for_each_entry(t, &root->fs_info->trans_list, list) {
++			if (t->transid == transid) {
++				cur_trans = t;
++				break;
++			}
++			if (t->transid > transid)
++				break;
++		}
++		ret = -EINVAL;
++		if (!cur_trans)
++			goto out_unlock;  /* bad transid */
++	} else {
++		/* find newest transaction that is committing | committed */
++		list_for_each_entry_reverse(t, &root->fs_info->trans_list,
++					    list) {
++			if (t->in_commit) {
++				if (t->commit_done)
++					goto out_unlock;
++				cur_trans = t;
++				break;
++			}
++		}
++		if (!cur_trans)
++			goto out_unlock;  /* nothing committing|committed */
++	}
++
++	cur_trans->use_count++;
++	mutex_unlock(&root->fs_info->trans_mutex);
++
++	wait_for_commit(root, cur_trans);
++
++	mutex_lock(&root->fs_info->trans_mutex);
++	put_transaction(cur_trans);
++	ret = 0;
++out_unlock:
++	mutex_unlock(&root->fs_info->trans_mutex);
++	return ret;
++}
++
+ #if 0
+ /*
+  * rate limit against the drop_snapshot code.  This helps to slow down new
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index f9c52f2..d4f7b66 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -90,6 +90,7 @@ struct btrfs_trans_handle *btrfs_join_transaction(struct btrfs_root *root,
+ 						   int num_blocks);
+ struct btrfs_trans_handle *btrfs_start_ioctl_transaction(struct btrfs_root *r,
+ 						   int num_blocks);
++int btrfs_wait_for_commit(struct btrfs_root *root, u64 transid);
+ int btrfs_write_and_wait_transaction(struct btrfs_trans_handle *trans,
+ 				     struct btrfs_root *root);
+ int btrfs_commit_tree_roots(struct btrfs_trans_handle *trans,
 -- 
 1.6.6.1
 

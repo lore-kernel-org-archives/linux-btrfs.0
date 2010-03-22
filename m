@@ -1,195 +1,208 @@
 From: Sage Weil <sage@newdream.net>
-Subject: [PATCH 2/5] Btrfs: add START_SYNC, WAIT_SYNC ioctls
-Date: Mon, 22 Mar 2010 12:13:27 -0700
-Message-ID: <1269285210-19085-3-git-send-email-sage@newdream.net>
+Subject: [PATCH 1/5] Btrfs: async transaction commit
+Date: Mon, 22 Mar 2010 12:13:26 -0700
+Message-ID: <1269285210-19085-2-git-send-email-sage@newdream.net>
 References: <1269285210-19085-1-git-send-email-sage@newdream.net>
- <1269285210-19085-2-git-send-email-sage@newdream.net>
 Cc: Sage Weil <sage@newdream.net>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1269285210-19085-2-git-send-email-sage@newdream.net>
+In-Reply-To: <1269285210-19085-1-git-send-email-sage@newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-START_SYNC will start a sync/commit, but not wait for it to
-complete.  Any modification started after the ioctl returns is
-guaranteed not to be included in the commit.  If a non-NULL
-pointer is passed, the transaction id will be returned to
-userspace.
+Add support for an async transaction commit that is ordered such that any
+subsequent operations will join the following transaction, but does not
+wait until the current commit is fully on disk.  This avoids much of the
+latency associated with the btrfs_commit_transaction for callers concerned
+with serialization and not safety.
 
-WAIT_SYNC will wait for any in-progress commit to complete.  If a
-transaction id is specified, the ioctl will block and then
-return (success) when the specified transaction has committed.
-If it has already committed when we call the ioctl, it returns
-immediately.  If the specified transaction doesn't exist, it
-returns EINVAL.
-
-If no transaction id is specified, WAIT_SYNC will wait for the
-currently committing transaction to finish it's commit to disk.
-If there is no currently committing transaction, it returns
-success.
-
-These ioctls are useful for applications which want to impose an
-ordering on when fs modifications reach disk, but do not want to
-wait for the full (slow) commit process to do so.
-
-Picky callers can take the transid returned by START_SYNC and
-feed it to WAIT_SYNC, and be certain to wait only as long as
-necessary for the transaction _they_ started to reach disk.
-
-Sloppy callers can START_SYNC and WAIT_SYNC without a transid,
-and provided they didn't wait too long between the calls, they
-will get the same result.  However, if a second commit starts
-before they call WAIT_SYNC, they may end up waiting longer for
-it to commit as well.  Even so, a START_SYNC+WAIT_SYNC still
-guarantees that any operation completed before the START_SYNC
-reaches disk.
+The wait_for_unblock flag controls whether we wait for the 'middle' portion
+of commit_transaction to complete, which is necessary if the caller expects
+some of the modifications contained in the commit to be available (this is
+the case for subvol/snapshot creation).
 
 Signed-off-by: Sage Weil <sage@newdream.net>
 ---
- fs/btrfs/ioctl.c       |   34 +++++++++++++++++++++++++++++++
- fs/btrfs/ioctl.h       |    2 +
- fs/btrfs/transaction.c |   52 ++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/transaction.h |    1 +
- 4 files changed, 89 insertions(+), 0 deletions(-)
+ fs/btrfs/ctree.h       |    1 +
+ fs/btrfs/disk-io.c     |    1 +
+ fs/btrfs/transaction.c |  119 ++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/transaction.h |    3 +
+ 4 files changed, 124 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 2845c6c..8e29712 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1965,6 +1965,36 @@ long btrfs_ioctl_trans_end(struct file *file)
- 	return 0;
- }
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 1111584..1d0d5f0 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -840,6 +840,7 @@ struct btrfs_fs_info {
+ 	struct btrfs_transaction *running_transaction;
+ 	wait_queue_head_t transaction_throttle;
+ 	wait_queue_head_t transaction_wait;
++	wait_queue_head_t transaction_blocked_wait;
+ 	wait_queue_head_t async_submit_wait;
  
-+static long btrfs_ioctl_start_sync(struct file *file, void __user *argp)
-+{
-+	struct btrfs_root *root = BTRFS_I(file->f_dentry->d_inode)->root;
-+	struct btrfs_trans_handle *trans;
-+	u64 transid;
-+
-+	trans = btrfs_start_transaction(root, 0);
-+	transid = trans->transid;
-+	btrfs_commit_transaction_async(trans, root, 0);
-+
-+	if (argp)
-+		if (copy_to_user(argp, &transid, sizeof(transid)))
-+			return -EFAULT;
-+	return 0;
-+}
-+
-+static long btrfs_ioctl_wait_sync(struct file *file, void __user *argp)
-+{
-+	struct btrfs_root *root = BTRFS_I(file->f_dentry->d_inode)->root;
-+	u64 transid;
-+
-+	if (argp) {
-+		if (copy_from_user(&transid, argp, sizeof(transid)))
-+			return -EFAULT;
-+	} else {
-+		transid = 0;  /* current trans */
-+	}
-+	return btrfs_wait_for_commit(root, transid);
-+}
-+
- long btrfs_ioctl(struct file *file, unsigned int
- 		cmd, unsigned long arg)
- {
-@@ -2015,6 +2045,10 @@ long btrfs_ioctl(struct file *file, unsigned int
- 	case BTRFS_IOC_SYNC:
- 		btrfs_sync_fs(file->f_dentry->d_sb, 1);
- 		return 0;
-+	case BTRFS_IOC_START_SYNC:
-+		return btrfs_ioctl_start_sync(file, argp);
-+	case BTRFS_IOC_WAIT_SYNC:
-+		return btrfs_ioctl_wait_sync(file, argp);
- 	}
+ 	struct btrfs_super_block super_copy;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 11d0ad3..6f3cb33 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1701,6 +1701,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
  
- 	return -ENOTTY;
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 424694a..e9a2f7e 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -178,4 +178,6 @@ struct btrfs_ioctl_space_args {
- #define BTRFS_IOC_DEFAULT_SUBVOL _IOW(BTRFS_IOCTL_MAGIC, 19, u64)
- #define BTRFS_IOC_SPACE_INFO _IOWR(BTRFS_IOCTL_MAGIC, 20, \
- 				    struct btrfs_ioctl_space_args)
-+#define BTRFS_IOC_START_SYNC _IOR(BTRFS_IOCTL_MAGIC, 21, __u64)
-+#define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
- #endif
+ 	init_waitqueue_head(&fs_info->transaction_throttle);
+ 	init_waitqueue_head(&fs_info->transaction_wait);
++	init_waitqueue_head(&fs_info->transaction_blocked_wait);
+ 	init_waitqueue_head(&fs_info->async_submit_wait);
+ 
+ 	__setup_root(4096, 4096, 4096, 4096, tree_root,
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 52b5488..6de9983 100644
+index e75cc84..52b5488 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
-@@ -239,6 +239,58 @@ static noinline int wait_for_commit(struct btrfs_root *root,
- 	return 0;
+@@ -882,6 +882,123 @@ int btrfs_transaction_in_commit(struct btrfs_fs_info *info)
+ 	return ret;
  }
  
-+int btrfs_wait_for_commit(struct btrfs_root *root, u64 transid)
++/*
++ * wait for the current transaction commit to start and block subsequent
++ * transaction joins
++ */
++static void wait_current_trans_commit_start(struct btrfs_root *root,
++					    struct btrfs_transaction *trans)
 +{
-+	struct btrfs_transaction *cur_trans = NULL, *t;
-+	int ret;
++	DEFINE_WAIT(wait);
 +
-+	mutex_lock(&root->fs_info->trans_mutex);
++	if (trans->in_commit)
++		return;
 +
-+	ret = 0;
-+	if (transid) {
-+		if (transid <= root->fs_info->last_trans_committed)
-+			goto out_unlock;
-+
-+		/* find specified transaction */
-+		list_for_each_entry(t, &root->fs_info->trans_list, list) {
-+			if (t->transid == transid) {
-+				cur_trans = t;
-+				break;
-+			}
-+			if (t->transid > transid)
-+				break;
++	while (1) {
++		prepare_to_wait(&root->fs_info->transaction_blocked_wait, &wait,
++				TASK_UNINTERRUPTIBLE);
++		if (trans->in_commit) {
++			finish_wait(&root->fs_info->transaction_blocked_wait,
++				    &wait);
++			break;
 +		}
-+		ret = -EINVAL;
-+		if (!cur_trans)
-+			goto out_unlock;  /* bad transid */
-+	} else {
-+		/* find newest transaction that is committing | committed */
-+		list_for_each_entry_reverse(t, &root->fs_info->trans_list,
-+					    list) {
-+			if (t->in_commit) {
-+				if (t->commit_done)
-+					goto out_unlock;
-+				cur_trans = t;
-+				break;
-+			}
-+		}
-+		if (!cur_trans)
-+			goto out_unlock;  /* nothing committing|committed */
++		mutex_unlock(&root->fs_info->trans_mutex);
++		schedule();
++		mutex_lock(&root->fs_info->trans_mutex);
++		finish_wait(&root->fs_info->transaction_blocked_wait, &wait);
 +	}
++}
 +
++/*
++ * wait for the current transaction to start and then become unblocked.
++ * caller holds ref.
++ */
++static void wait_current_trans_commit_start_and_unblock(struct btrfs_root *root,
++					 struct btrfs_transaction *trans)
++{
++	DEFINE_WAIT(wait);
++
++	if (trans->commit_done || (trans->in_commit && !trans->blocked))
++		return;
++
++	while (1) {
++		prepare_to_wait(&root->fs_info->transaction_wait, &wait,
++				TASK_UNINTERRUPTIBLE);
++		if (trans->commit_done ||
++		    (trans->in_commit && !trans->blocked)) {
++			finish_wait(&root->fs_info->transaction_wait,
++				    &wait);
++			break;
++		}
++		mutex_unlock(&root->fs_info->trans_mutex);
++		schedule();
++		mutex_lock(&root->fs_info->trans_mutex);
++		finish_wait(&root->fs_info->transaction_wait,
++			    &wait);
++	}
++}
++
++/*
++ * commit transactions asynchronously. once btrfs_commit_transaction_async
++ * returns, any subsequent transaction will not be allowed to join.
++ */
++struct btrfs_async_commit {
++	struct btrfs_trans_handle *newtrans;
++	struct btrfs_root *root;
++	struct delayed_work work;
++};
++
++static void do_async_commit(struct work_struct *work)
++{
++	struct btrfs_async_commit *ac =
++		container_of(work, struct btrfs_async_commit, work.work);
++	
++	btrfs_commit_transaction(ac->newtrans, ac->root);
++	kfree(ac);
++}
++
++int btrfs_commit_transaction_async(struct btrfs_trans_handle *trans,
++				   struct btrfs_root *root,
++				   int wait_for_unblock)
++{
++	struct btrfs_async_commit *ac;
++	struct btrfs_transaction *cur_trans;
++
++	ac = kmalloc(sizeof(*ac), GFP_NOFS);
++	BUG_ON(!ac);
++
++	INIT_DELAYED_WORK(&ac->work, do_async_commit);
++	ac->root = root;
++	ac->newtrans = btrfs_join_transaction(root, 0);
++
++	/* take transaction reference */
++	mutex_lock(&root->fs_info->trans_mutex);
++	cur_trans = trans->transaction;
 +	cur_trans->use_count++;
 +	mutex_unlock(&root->fs_info->trans_mutex);
 +
-+	wait_for_commit(root, cur_trans);
++	btrfs_end_transaction(trans, root);
++	schedule_delayed_work(&ac->work, 0);
 +
++	/* wait for transaction to start and unblock */
 +	mutex_lock(&root->fs_info->trans_mutex);
++	if (wait_for_unblock)
++		wait_current_trans_commit_start_and_unblock(root, cur_trans);
++	else
++		wait_current_trans_commit_start(root, cur_trans);
 +	put_transaction(cur_trans);
-+	ret = 0;
-+out_unlock:
 +	mutex_unlock(&root->fs_info->trans_mutex);
-+	return ret;
++
++	return 0;
 +}
 +
- #if 0
- /*
-  * rate limit against the drop_snapshot code.  This helps to slow down new
++/*
++ * btrfs_transaction state sequence:
++ *    in_commit = 0, blocked = 0  (initial)
++ *    in_commit = 1, blocked = 1
++ *    blocked = 0
++ *    commit_done = 1
++ */
+ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root)
+ {
+@@ -931,6 +1048,8 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 
+ 	trans->transaction->in_commit = 1;
+ 	trans->transaction->blocked = 1;
++	wake_up(&root->fs_info->transaction_blocked_wait);
++
+ 	if (cur_trans->list.prev != &root->fs_info->trans_list) {
+ 		prev_trans = list_entry(cur_trans->list.prev,
+ 					struct btrfs_transaction, list);
 diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index f9c52f2..d4f7b66 100644
+index 93c7ccb..f9c52f2 100644
 --- a/fs/btrfs/transaction.h
 +++ b/fs/btrfs/transaction.h
-@@ -90,6 +90,7 @@ struct btrfs_trans_handle *btrfs_join_transaction(struct btrfs_root *root,
- 						   int num_blocks);
- struct btrfs_trans_handle *btrfs_start_ioctl_transaction(struct btrfs_root *r,
- 						   int num_blocks);
-+int btrfs_wait_for_commit(struct btrfs_root *root, u64 transid);
- int btrfs_write_and_wait_transaction(struct btrfs_trans_handle *trans,
- 				     struct btrfs_root *root);
- int btrfs_commit_tree_roots(struct btrfs_trans_handle *trans,
+@@ -101,6 +101,9 @@ int btrfs_defrag_root(struct btrfs_root *root, int cacheonly);
+ int btrfs_clean_old_snapshots(struct btrfs_root *root);
+ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root);
++int btrfs_commit_transaction_async(struct btrfs_trans_handle *trans,
++				   struct btrfs_root *root,
++				   int wait_for_unblock);
+ int btrfs_end_transaction_throttle(struct btrfs_trans_handle *trans,
+ 				   struct btrfs_root *root);
+ void btrfs_throttle(struct btrfs_root *root);
 -- 
 1.6.6.1
 

@@ -1,71 +1,64 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: locking problems: Btrfs: be more selective in the defrag ioctl
-Date: Mon, 22 Mar 2010 10:09:20 -0400
-Message-ID: <20100322140920.GB2383@localhost.localdomain>
-References: <20100320113851.GB5331@bicker> <20100322134720.GA2383@localhost.localdomain> <20100322140330.GR21571@bicker>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Dan Carpenter <error27@gmail.com>, Josef Bacik <josef@redhat.com>,
-	chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20100322140330.GR21571@bicker>
+From: Sage Weil <sage@newdream.net>
+Subject: [PATCH 0/5] asynchronous commit, snapshot ponies
+Date: Mon, 22 Mar 2010 12:13:25 -0700
+Message-ID: <1269285210-19085-1-git-send-email-sage@newdream.net>
+Cc: Sage Weil <sage@newdream.net>
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 22, 2010 at 05:03:30PM +0300, Dan Carpenter wrote:
-> On Mon, Mar 22, 2010 at 09:47:21AM -0400, Josef Bacik wrote:
-> > On Sat, Mar 20, 2010 at 02:38:51PM +0300, Dan Carpenter wrote:
-> > > Hi Chris,
-> > > 
-> > > There is a locking problem in 
-> > > 	940100a4a7b78 "Btrfs: be more selective in the defrag ioctl"
-> > > 
-> > > There are two places where we break out of the while loop under the 
-> > > lock.
-> > > 
-> > > fs/btrfs/ioctl.c +708 btrfs_defrag_file(159) error: double lock 'mutex:&inode->i_mutex'
-> > >    600                  mutex_lock(&inode->i_mutex);
-> > >    601                  if (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS)
-> > >    602                          BTRFS_I(inode)->force_compress = 1;
-> > >    603  
-> > >    604                  ret = btrfs_check_data_free_space(root, inode, PAGE_CACHE_SIZE);
-> > >    605                  if (ret) {
-> > >    606                          ret = -ENOSPC;
-> > >    607                          break;
-> > > 
-> > > 	Here.
-> > > 
-> > >    608                  }
-> > >    609  
-> > >    610                  ret = btrfs_reserve_metadata_for_delalloc(root, inode, 1);
-> > >    611                  if (ret) {
-> > >    612                          btrfs_free_reserved_data_space(root, inode,
-> > >    613                                                         PAGE_CACHE_SIZE);
-> > >    614                          ret = -ENOSPC;
-> > >    615                          break;
-> > > 
-> > > 	And here.
-> > > 
-> > >    616                  }
-> > > 
-> > > Maybe we should have "goto err_reservations;" instead of break?  I
-> > > don't know the code well enough to say.
-> > 
-> > No, everything is accounted for correctly.  If the metadata reservation fails,
-> > we free the data space reservation and break.  If the data space reservation
-> > fails, we're good to go and can just exit.  Thanks,
-> > 
-> 
-> What about the lock on line 606?
-> 
-> > >    600                  mutex_lock(&inode->i_mutex);
-> 
-> If we break on line 615 or 607 that means that we return with the lock 
-> held, or if (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS) is true then we
-> dead lock.
-> 
+Hi everyone,
 
-Ahh yeah you are right, should probably just put a mutex_unlock before the break
-in both cases.  Thanks,
+This patchset is the latest approach I'm using for the Ceph storage daemon to
+keep track of which data has safely committed to disk.  The basic idea is to
+not use the (problematic) user transaction ioctls at all.  Instead, the daemon
+quiesces its own write requests, initiates an async snapshot, and then
+continues.
 
-Josef
+The snapshot approach is nice because it provides rollback.  If something goes
+wrong, we can cleanly go back to the most recent consistent commit.  The
+performance is also very similar to what I was doing before (using the
+'flushoncommit' mount option and tiggering a sync_fs to flush data).  The only
+difference is the old snapshots stick around for a bit longer before I delete
+them and the references get dropped.
+
+The first patch introduces a generic btrfs_commit_transaction_async() helper,
+which starts btrfs_commit_transaction asynchronously and returns either
+when the commit starts (blocked=1) or when it has done it's dirty work
+(blocked=0).  The second patch adds ioctls that let you start and wait for
+an asynchronous commit.  The third introduces a SNAP_CREATE_ASYNC ioctl that
+creates a snap but returns before it hits disk.
+
+The fourth patch returns the commiting transid to userspace, so that it can be
+fed to the WAIT_SYNC ioctl.  I'm not that happy with the interface, though; any
+suggestions for alternatives would be great.  Alternatively, I could get by
+without knowing the exact transid and it wouldn't be the end of the world.
+
+The final patch lets you delete a snapshot/subvol reference without doing an
+immediate commit (btrfs_end_transaction instead of btrfs_commit_transaction).
+AFAICS there's no reason the commit has to happen immediately (user expectations
+aside).
+
+Overall I like this much better than the various user transaction proposals.
+It's simpler, does the job, and the primitives should be useful for other
+applications.  Let me know what you think!  I'm doing more testing this week,
+but so far I haven't seen any problems with these changes.
+
+Thanks-
+sage
+
+Sage Weil (5):
+  Btrfs: async transaction commit
+  Btrfs: add START_SYNC, WAIT_SYNC ioctls
+  Btrfs: add SNAP_CREATE_ASYNC ioctl
+  Btrfs: return transid to userspace from SNAP_CREATE_ASYNC ioctl
+  btrfs: add SNAP_DESTROY_ASYNC ioctl
+
+ fs/btrfs/ctree.h       |    1 +
+ fs/btrfs/disk-io.c     |    1 +
+ fs/btrfs/ioctl.c       |   94 ++++++++++++++++++++++----
+ fs/btrfs/ioctl.h       |   10 +++-
+ fs/btrfs/transaction.c |  171 ++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/transaction.h |    4 +
+ 6 files changed, 265 insertions(+), 16 deletions(-)
+

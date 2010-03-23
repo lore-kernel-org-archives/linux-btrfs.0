@@ -1,44 +1,64 @@
-From: Andi Kleen <andi@firstfloor.org>
-Subject: Re: [PATCH V3 17/18] Btrfs: Full direct I/O and AIO read implementation.
-Date: Tue, 23 Mar 2010 06:49:39 +0100
-Message-ID: <87sk7r60zw.fsf@basil.nowhere.org>
-References: <4BA6E563.4090206@gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: fix how we freeze
+Date: Tue, 23 Mar 2010 10:28:18 -0400
+Message-ID: <20100323142818.GB2381@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: jim owens <owens6336@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4BA6E563.4090206@gmail.com> (jim owens's message of "Sun, 21 Mar 2010 23:34:59 -0400")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-jim owens <owens6336@gmail.com> writes:
+Currently we hold the transaction mutex and the cleaner mutex when we do a
+freeze, but the cleaner kthread does a vfs_check_frozen() to make sure it
+doesn't run while the fs is frozen, so the only thing thats left is the
+transaction stuff.  So add a vfs_check_frozen() into start_transaction and then
+make the freeze functions just return, since vfs_check_frozen() covers us in all
+the cases.  This works because the vfs freezer function sync's the filesystem
+first, and then sets SB_FREEZE_TRANS, so no transaction started after
+SB_FREEZE_TRANS is set should be allowed to complete, including people calling
+btrfs_join_transaction.  Thanks,
 
-Hi Jim,
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/super.c       |    6 ------
+ fs/btrfs/transaction.c |    2 ++
+ 2 files changed, 2 insertions(+), 6 deletions(-)
 
-I read through large chunks of that patch. I don't claim to fully
-understand all the btrfs infrastructure details enough, so it wasn't
-really serious code review.
-
-One thing that stroke me while reading is that, except for the out of line no data
-checksum case, this isn't real classical zero copy direct IO because
-you always have to copy through some buffer.
-
-It's more like "uncached IO"
-
-I was wondering that at least for those cases wouldn't it be simpler
-to use the normal page cache IO path and use new hints that disable
-prefetch/write-behind/caching in the page cache after the IO operation?
-
-Is there any particular reason this wasn't done? Was it because
-of aio?
-
-I know the page cache currently doesn't support that today, but
-presumably it wouldn't be too hard to add.
-
-I guess the code would be much simpler if it only did the no checksum
-case.
-
--Andi
-
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 9ac612e..c9ded47 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -811,17 +811,11 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+ 
+ static int btrfs_freeze(struct super_block *sb)
+ {
+-	struct btrfs_root *root = btrfs_sb(sb);
+-	mutex_lock(&root->fs_info->transaction_kthread_mutex);
+-	mutex_lock(&root->fs_info->cleaner_mutex);
+ 	return 0;
+ }
+ 
+ static int btrfs_unfreeze(struct super_block *sb)
+ {
+-	struct btrfs_root *root = btrfs_sb(sb);
+-	mutex_unlock(&root->fs_info->cleaner_mutex);
+-	mutex_unlock(&root->fs_info->transaction_kthread_mutex);
+ 	return 0;
+ }
+ 
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 2d654c1..c3bc9ba 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -176,6 +176,8 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
+ 		kmem_cache_alloc(btrfs_trans_handle_cachep, GFP_NOFS);
+ 	int ret;
+ 
++	vfs_check_frozen(root->fs_info->sb, SB_FREEZE_TRANS);
++
+ 	mutex_lock(&root->fs_info->trans_mutex);
+ 	if (!root->fs_info->log_root_recovering &&
+ 	    ((type == TRANS_START && !root->fs_info->open_ioctl_trans) ||
 -- 
-ak@linux.intel.com -- Speaking for myself only.
+1.6.6.1
+

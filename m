@@ -1,71 +1,44 @@
-From: Piavlo <piavka@cs.bgu.ac.il>
-Subject: Re: error during umuont after set-default with 2.6.34-rc2
-Date: Mon, 22 Mar 2010 22:25:50 +0200
-Message-ID: <4BA7D24E.3040600@cs.bgu.ac.il>
-References: <201003212045.o2LKjBgg002162@indigo.cs.bgu.ac.il> <20100322133858.GB32521@think>
+From: Andi Kleen <andi@firstfloor.org>
+Subject: Re: [PATCH V3 17/18] Btrfs: Full direct I/O and AIO read implementation.
+Date: Tue, 23 Mar 2010 06:49:39 +0100
+Message-ID: <87sk7r60zw.fsf@basil.nowhere.org>
+References: <4BA6E563.4090206@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: jim owens <owens6336@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100322133858.GB32521@think>
+In-Reply-To: <4BA6E563.4090206@gmail.com> (jim owens's message of "Sun, 21 Mar 2010 23:34:59 -0400")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/22/2010 03:38 PM, Chris Mason wrote:
-> On Sun, Mar 21, 2010 at 10:45:11PM +0200, Alexander Piavlo wrote:
->   
->> Hi,
->> trying the new btrfs tool and set-default with 2.6.34-rc2 i hit the the
->> following problem:
->>
->> mkfs.btrfs -d single /dev/sys/btrfs
->> mount -t btrfs /dev/sys/btrfs /btrfs
->> btrfs subvolume create /btrfs/newroot
->> mkdir /btrfs/newroot/.btrfs
->> btrfs subvolume set-default 256 /btrfs
->> umount /btrfs
->> mount -t btrfs /dev/sys/btrfs /btrfs
->>
->> up till now everything works ok
->>
->> A question How do i access or mount the original root of btrfs? Which
->> tree id does it have?
->> It would be great if "btrfs subvolume list ..." would also list the
->> original root.
->>
->> I guessed I need to use 0, so i tried:
->>   mount -t btrfs -o subvol=0 /dev/sys/btrfs /btrfs/.btrfs
->> and:
->>   mount -t btrfs -o subvol=. /dev/sys/btrfs /btrfs/.btrfs
->> but in both cases it mounted the newroot subvolume with id 256 under
->> /btrfs/.btrfs
->>
->> So I tried setting the original root back with:
->>   btrfs subvolume set-default 0 /btrfs
->>     
-> Looks like set-default needs to understand 0 means use the old default,
->   
+jim owens <owens6336@gmail.com> writes:
 
-old default = previous default
+Hi Jim,
 
-or
+I read through large chunks of that patch. I don't claim to fully
+understand all the btrfs infrastructure details enough, so it wasn't
+really serious code review.
 
-old default = top level subvolume
-?
+One thing that stroke me while reading is that, except for the out of line no data
+checksum case, this isn't real classical zero copy direct IO because
+you always have to copy through some buffer.
 
-> I'll add this in.
->
-> btrfs subvolume set-default 5 /btrfs
->
->   
-Why 5? is this the tree id of the root subvolume = top level path?
-> or mount -o subvolid=0 /dev/xxx /mnt
-> or mount -o subvolid=5 /dev/xxx /mnt
->   
-Did not know about the subvolid option, I though one can pass treeid to
-subvol option.
+It's more like "uncached IO"
 
-Thanks
+I was wondering that at least for those cases wouldn't it be simpler
+to use the normal page cache IO path and use new hints that disable
+prefetch/write-behind/caching in the page cache after the IO operation?
 
-> -chris
->   
+Is there any particular reason this wasn't done? Was it because
+of aio?
 
+I know the page cache currently doesn't support that today, but
+presumably it wouldn't be too hard to add.
+
+I guess the code would be much simpler if it only did the no checksum
+case.
+
+-Andi
+
+-- 
+ak@linux.intel.com -- Speaking for myself only.

@@ -1,42 +1,37 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] Btrfs: fix unaligned access at btrfs_csum_final()
-Date: Tue, 23 Mar 2010 20:51:55 -0400
-Message-ID: <20100324005155.GE5021@think>
-References: <1269214268-1151-1-git-send-email-a.beregalov@gmail.com>
- <20100323153420.GC30249@think>
+Subject: Re: [PATCH V3 17/18] Btrfs: Full direct I/O and AIO read
+ implementation.
+Date: Tue, 23 Mar 2010 20:57:19 -0400
+Message-ID: <20100324005719.GF5021@think>
+References: <4BA6E563.4090206@gmail.com>
+ <87sk7r60zw.fsf@basil.nowhere.org>
+ <4BA93530.4080303@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: Alexander Beregalov <a.beregalov@gmail.com>,
-	linux-btrfs@vger.kernel.org
+Cc: Andi Kleen <andi@firstfloor.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: jim owens <owens6336@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100323153420.GC30249@think>
+In-Reply-To: <4BA93530.4080303@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 23, 2010 at 11:34:20AM -0400, Chris Mason wrote:
-> On Mon, Mar 22, 2010 at 02:31:08AM +0300, Alexander Beregalov wrote:
-> > Btrfs on Sparc64 produces a lot of warnings
-> > Kernel unaligned access at TPC[10148c84] btrfs_csum_final+0x44/0x60 [btrfs]
-> 
-> Great, thanks for trackign this down.
-> 
+On Tue, Mar 23, 2010 at 05:40:00PM -0400, jim owens wrote:
 > > 
-> > It happens when btrfs_csum_final is called from write_dev_supers():
-> > 2195:	btrfs_csum_final(crc, sb->csum);
-> > 
-> > crc is u32, aligning sb->csum on 4-byte boundary fixes the problem.
+> > I know the page cache currently doesn't support that today, but
+> > presumably it wouldn't be too hard to add.
 > 
-> So the size of the csum field is already 4 byte aligned, I'm surprised
-> we need this?
+> The only reason I did not do something like that is:
+> 1) I did not want to disturb the page cache with throw-away pages.
+> 2) "uncached IO" makes it even less like classic direct IO.
+> 3) Writing that page cache code might not be simpler.
+> 
+> As further argument against "uncached IO", Chris sent a very simple
+> patch up to read into page cache then purge it for btrfs direct IO
+> reads and it was NACKed.
 
-Jens did some testing and this patch changes the size of the super
-struct, which changes things on disk.
-
-But, the real problem is write_dev_supers operates on a copy of the
-super struct and that copy isn't aligned.  So we just need to align the
-copy in struct btrfs_fs_info, which Jens should have a neat little patch
-for shortly.
-
-So we should finally have this one fixed up shortly.  Thanks again.
+Yes, but it wasn't NACKed because it was uncached IO, it was just the
+mechanics of how I did it.  We definitely do save some performance by
+not hammering on the page cache though, so I do prefer the non-buffered
+code when it is possible.
 
 -chris
-

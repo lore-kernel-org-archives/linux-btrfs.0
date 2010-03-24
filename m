@@ -1,64 +1,65 @@
-From: Andi Kleen <andi@firstfloor.org>
-Subject: Re: [PATCH V3 17/18] Btrfs: Full direct I/O and AIO read implementation.
-Date: Wed, 24 Mar 2010 03:37:11 +0100
-Message-ID: <20100324023711.GC20695@one.firstfloor.org>
-References: <4BA6E563.4090206@gmail.com> <87sk7r60zw.fsf@basil.nowhere.org> <4BA93530.4080303@gmail.com>
+From: Abhinav Duggal <abhinavduggal@gmail.com>
+Subject: Possible race in btrfs
+Date: Wed, 24 Mar 2010 00:20:25 -0400
+Message-ID: <3d81e70e1003232120t14ba6eaw54f73c939bfab391@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Andi Kleen <andi@firstfloor.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: jim owens <owens6336@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4BA93530.4080303@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 23, 2010 at 05:40:00PM -0400, jim owens wrote:
-> Andi Kleen wrote:
-> 
-> > One thing that stroke me while reading is that, except for the out of line no data
-> > checksum case, this isn't real classical zero copy direct IO because
-> > you always have to copy through some buffer.
-> 
-> Uh no, unless I really messed up or don't understand what you mean.
+Hi all,
+It seems like there is a possible race on delalloc_bytes in  btrfs in
+kernel 2.6.33.Please examine this issue and let me know if this is a
+problem or not.The race could occur between stat system call and
+writeback kernel thread.
+The lines are
+fs/btrfs/inode.c 5422
+fs/btrfs/inode.c 1378
 
-No I misread the code: you don't set temp_pages in that path. 
+The stack traces are
 
-> 
-> Uncompressed data with no checksums only buffers on an error or EOF. 
-> 
-> With checksums enabled, uncompressed reads aligned on the 4k block
-> are classic direct IO to user memory except at EOF.
+For file line fs/btrfs/inode.c 5422
 
-Hmm, but what happens if the user modifies the memory in parallel?
-Would spurious checksum failures be reported then?
+  btrfs_getattr+0x141/0x15e
+  vfs_getattr+0x47/0xf4
+  vfs_fstatat+0x43/0x5a
+  vfs_stat+0x16/0x18
+  sys_newstat+0x3d/0x75
+  system_call_fastpath+0x16/0x1b
 
-Same for writing I guess (data end up on disk with wrong checksum)?
+And for file line fs/btrfs/inode.c 1378
 
-Those both would seem like serious flaws to me.
+  btrfs_clear_bit_hook+0xcc1/0x10f2
+  clear_state_bit+0x4db/0xa89
+  clear_extent_bit+0x9e1/0xc86
+  extent_clear_unlock_delalloc+0x8c/0x1d8
+  cow_file_range+0x1356/0x1432
+  run_delalloc_range+0x263/0x1702
+  __extent_writepage+0x2c4/0x15a8
+  extent_write_cache_pages.clone.0+0x211/0x33d
+  extent_writepages+0x243/0x260
+  btrfs_writepages+0x87/0x92
+  do_writepages+0x1c/0x25
+  writeback_single_inode+0xe2/0x24c
+  writeback_inodes_wb+0x374/0x48d
+  wb_writeback+0x121/0x1f6
+  wb_do_writeback+0x147/0x159
+  bdi_writeback_task+0x3a/0xaa
+  bdi_start_fn+0x63/0xc7
+  kthread+0x7a/0x82
+  kernel_thread_helper+0x4/0x10
 
-> > Is there any particular reason this wasn't done? Was it because
-> > of aio?
-> > 
-> > I know the page cache currently doesn't support that today, but
-> > presumably it wouldn't be too hard to add.
-> 
-> The only reason I did not do something like that is:
+The write to delalloc_bytes in  the function btrfs_clear_bit_hook is
+protected by the spin_lock delalloc_lock whereas the read is not.The
+write is not atomic so the read could return some old value.
 
-Ok.
+I am not sure what would be the implication of this?Is it ok if stat
+system call returns some value which is not consistent with rest of
+the fields? If not then is it better to make this field as atomic_t?
+I am looking for data races in btrfs and I discovered this using some
+kind of dynamic analysis.
+Thanks a lot.
 
-> 1) I did not want to disturb the page cache with throw-away pages.
-> 2) "uncached IO" makes it even less like classic direct IO.
-> 3) Writing that page cache code might not be simpler.
-4) aio support (although It would be cool if someone finally did
-proper aio page cache code)
-
-> As further argument against "uncached IO", Chris sent a very simple
-> patch up to read into page cache then purge it for btrfs direct IO
-> reads and it was NACKed.
-
-I see.
-
--Andi
-
--- 
-ak@linux.intel.com -- Speaking for myself only.
+With Regards,
+Abhinav Duggal

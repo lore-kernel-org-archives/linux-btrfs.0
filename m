@@ -1,8 +1,8 @@
 From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 02/18] btrfs: Calculate member variant's address directly
- for btrfs_##name
-Date: Thu, 25 Mar 2010 20:28:18 +0800
-Message-ID: <4BAB56E2.6050809@cn.fujitsu.com>
+Subject: [PATCH 03/18] btrfs: Calculate member variant's address directly
+ for btrfs_set_##name
+Date: Thu, 25 Mar 2010 20:28:51 +0800
+Message-ID: <4BAB5703.2080104@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -22,10 +22,10 @@ Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
  1 files changed, 5 insertions(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/struct-funcs.c b/fs/btrfs/struct-funcs.c
-index c0f7eca..b0f80c0 100644
+index b0f80c0..4ec8055 100644
 --- a/fs/btrfs/struct-funcs.c
 +++ b/fs/btrfs/struct-funcs.c
-@@ -49,13 +49,13 @@ u##bits btrfs_##name(struct extent_buffer *eb,				\
+@@ -86,13 +86,13 @@ void btrfs_set_##name(struct extent_buffer *eb,				\
  {									\
  	unsigned long part_offset = (unsigned long)s;			\
  	unsigned long offset = part_offset + offsetof(type, member);	\
@@ -36,23 +36,23 @@ index c0f7eca..b0f80c0 100644
  	    offset + sizeof(((type *)0)->member) <= eb->map_start +	\
  	    eb->map_len) {						\
 -		p = (type *)(eb->kaddr + part_offset - eb->map_start);	\
--		return le##bits##_to_cpu(p->member);			\
+-		p->member = cpu_to_le##bits(val);			\
 +		p = (u##bits *)(eb->kaddr + offset - eb->map_start);	\
-+		return le##bits##_to_cpu(*p);				\
++		*p = cpu_to_le##bits(val);				\
+ 		return;							\
  	}								\
  	{								\
- 		int err;						\
-@@ -74,8 +74,8 @@ u##bits btrfs_##name(struct extent_buffer *eb,				\
- 			read_eb_member(eb, s, type, member, &leres);	\
- 			return le##bits##_to_cpu(leres);		\
+@@ -112,8 +112,8 @@ void btrfs_set_##name(struct extent_buffer *eb,				\
+ 			write_eb_member(eb, s, type, member, &val2);	\
+ 			return;						\
  		}							\
 -		p = (type *)(kaddr + part_offset - map_start);		\
--		res = le##bits##_to_cpu(p->member);			\
+-		p->member = cpu_to_le##bits(val);			\
 +		p = (u##bits *)(kaddr + offset - map_start);		\
-+		res = le##bits##_to_cpu(*p);				\
++		*p = cpu_to_le##bits(val);				\
  		if (unmap_on_exit)					\
  			unmap_extent_buffer(eb, map_token, KM_USER1);	\
- 		return res;						\
+ 	}								\
 -- 
 1.6.5.2
 

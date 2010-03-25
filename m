@@ -1,8 +1,7 @@
 From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 03/18] btrfs: Calculate member variant's address directly
- for btrfs_set_##name
-Date: Thu, 25 Mar 2010 20:28:51 +0800
-Message-ID: <4BAB5703.2080104@cn.fujitsu.com>
+Subject: [PATCH 04/18] btrfs: Simplify btrfs_item_ptr macro
+Date: Thu, 25 Mar 2010 20:29:46 +0800
+Message-ID: <4BAB573A.3080003@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -13,46 +12,37 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-It can decrease a additional address calculation and increase little speed.
+btrfs_item_ptr is just a type_cast wrapper of btrfs_item_ptr_offset().
+
+We can use btrfs_item_ptr_offset() in btrfs_item_ptr() to avoid code
+duplication.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/struct-funcs.c |   10 +++++-----
- 1 files changed, 5 insertions(+), 5 deletions(-)
+ fs/btrfs/ctree.h |    6 ++----
+ 1 files changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/struct-funcs.c b/fs/btrfs/struct-funcs.c
-index b0f80c0..4ec8055 100644
---- a/fs/btrfs/struct-funcs.c
-+++ b/fs/btrfs/struct-funcs.c
-@@ -86,13 +86,13 @@ void btrfs_set_##name(struct extent_buffer *eb,				\
- {									\
- 	unsigned long part_offset = (unsigned long)s;			\
- 	unsigned long offset = part_offset + offsetof(type, member);	\
--	type *p;							\
-+	u##bits *p;							\
- 	/* ugly, but we want the fast path here */			\
- 	if (eb->map_token && offset >= eb->map_start &&			\
- 	    offset + sizeof(((type *)0)->member) <= eb->map_start +	\
- 	    eb->map_len) {						\
--		p = (type *)(eb->kaddr + part_offset - eb->map_start);	\
--		p->member = cpu_to_le##bits(val);			\
-+		p = (u##bits *)(eb->kaddr + offset - eb->map_start);	\
-+		*p = cpu_to_le##bits(val);				\
- 		return;							\
- 	}								\
- 	{								\
-@@ -112,8 +112,8 @@ void btrfs_set_##name(struct extent_buffer *eb,				\
- 			write_eb_member(eb, s, type, member, &val2);	\
- 			return;						\
- 		}							\
--		p = (type *)(kaddr + part_offset - map_start);		\
--		p->member = cpu_to_le##bits(val);			\
-+		p = (u##bits *)(kaddr + offset - map_start);		\
-+		*p = cpu_to_le##bits(val);				\
- 		if (unmap_on_exit)					\
- 			unmap_extent_buffer(eb, map_token, KM_USER1);	\
- 	}								\
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 1111584..72228b2 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1947,13 +1947,11 @@ static inline u32 btrfs_level_size(struct btrfs_root *root, int level)
+ }
+ 
+ /* helper function to cast into the data area of the leaf. */
+-#define btrfs_item_ptr(leaf, slot, type) \
+-	((type *)(btrfs_leaf_data(leaf) + \
+-	btrfs_item_offset_nr(leaf, slot)))
+-
+ #define btrfs_item_ptr_offset(leaf, slot) \
+ 	((unsigned long)(btrfs_leaf_data(leaf) + \
+ 	btrfs_item_offset_nr(leaf, slot)))
++#define btrfs_item_ptr(leaf, slot, type) \
++	((type *)btrfs_item_ptr_offset(leaf, slot))
+ 
+ static inline struct dentry *fdentry(struct file *file)
+ {
 -- 
 1.6.5.2
 

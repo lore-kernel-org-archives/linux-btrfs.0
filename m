@@ -1,40 +1,56 @@
 From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 12/18] btrfs: Add error handle for btrfs_search_slot() in
- btrfs_read_chunk_tree()
-Date: Thu, 25 Mar 2010 20:34:49 +0800
-Message-ID: <4BAB5869.6040903@cn.fujitsu.com>
+Subject: [PATCH 13/18] btrfs: Remove unnecessary finish_wait() in wait_current_trans()
+Date: Thu, 25 Mar 2010 20:35:14 +0800
+Message-ID: <4BAB5882.2080205@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+To: Chris Mason <chris.mason@oracle.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-We need to check return value of btrfs_search_slot() in
-btrfs_read_chunk_tree() and do corresponding error handing.
+We only need to call finish_wait() after wait loop.
+
+By the way, this patch makes code of waiting loop similar to
+example in wait.h(no functional change)
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/volumes.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+ fs/btrfs/transaction.c |   15 +++++----------
+ 1 files changed, 5 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 3ae1f42..546de6b 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3389,6 +3389,8 @@ int btrfs_read_chunk_tree(struct btrfs_root *root)
- 	key.type = 0;
- again:
- 	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+	if (ret < 0)
-+		goto error;
- 	while (1) {
- 		leaf = path->nodes[0];
- 		slot = path->slots[0];
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 2d654c1..4305428 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -147,18 +147,13 @@ static void wait_current_trans(struct btrfs_root *root)
+ 		while (1) {
+ 			prepare_to_wait(&root->fs_info->transaction_wait, &wait,
+ 					TASK_UNINTERRUPTIBLE);
+-			if (cur_trans->blocked) {
+-				mutex_unlock(&root->fs_info->trans_mutex);
+-				schedule();
+-				mutex_lock(&root->fs_info->trans_mutex);
+-				finish_wait(&root->fs_info->transaction_wait,
+-					    &wait);
+-			} else {
+-				finish_wait(&root->fs_info->transaction_wait,
+-					    &wait);
++			if (!cur_trans->blocked)
+ 				break;
+-			}
++			mutex_unlock(&root->fs_info->trans_mutex);
++			schedule();
++			mutex_lock(&root->fs_info->trans_mutex);
+ 		}
++		finish_wait(&root->fs_info->transaction_wait, &wait);
+ 		put_transaction(cur_trans);
+ 	}
+ }
 -- 
 1.6.5.2
 

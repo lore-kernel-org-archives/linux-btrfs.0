@@ -1,41 +1,37 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 3/3] btrfs-progs: fix wrong return value
-Date: Thu, 25 Mar 2010 20:40:31 +0800
-Message-ID: <4BAB59BF.8050703@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH 01/18] btrfs: Remove u64 conversion for PAGE_CACHE_SIZE
+Date: Thu, 25 Mar 2010 09:02:31 -0400
+Message-ID: <20100325130230.GG6538@think>
+References: <4BAB56AE.5040009@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
 Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+To: Miao Xie <miaox@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4BAB56AE.5040009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Miao Xie <miaox@cn.fujitsu.com>
+On Thu, Mar 25, 2010 at 08:27:26PM +0800, Miao Xie wrote:
+> From: Zhao Lei <zhaolei@cn.fujitsu.com>
+> 
+> We don't need to convert PAGE_CACHE_SIZE to u64 in bit operation.
 
-btrfsctl returns 1 if it does something successfully. this patch fixes this
-problem.
+For code like this:
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
- btrfsctl.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+u64 size = (some number that doesn't fit in 32 bits)
 
-diff --git a/btrfsctl.c b/btrfsctl.c
-index be6bf25..e2aae17 100644
---- a/btrfsctl.c
-+++ b/btrfsctl.c
-@@ -249,8 +249,8 @@ int main(int ac, char **av)
- 	}
- 	printf("%s\n", BTRFS_BUILD_VERSION);
- 	if (ret)
--		exit(0);
--	else
- 		exit(1);
-+
-+	return 0;
- }
- 
--- 
-1.6.5.2
+if (size & (PAGE_CACHE_SIZE - 1)) {
+}
 
+The answer should be the same either way.  But if the code gets
+switched:
+
+start = size & ~(PAGE_CACHE_SIZE - 1);
+
+Some arches are going to get the wrong answer here.  We had a few bugs
+like this early on and I went through and casted everything to be
+consistent.  While this patch is correct, I would rather leave the casts
+to avoid subtle problems later on as the code changes.
+
+-chris
 

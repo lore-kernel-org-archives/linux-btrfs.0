@@ -1,38 +1,32 @@
-From: Andrea Gelmini <andrea.gelmini@gelma.net>
-Subject: [PATCH 15/16] BTRFS ioctl.c: duplicated include
-Date: Thu, 25 Mar 2010 18:22:45 +0100
-Message-ID: <1269537767-7553-15-git-send-email-andrea.gelmini@gelma.net>
-References: <1269537767-7553-1-git-send-email-andrea.gelmini@gelma.net>
-Cc: Andrea Gelmini <andrea.gelmini@gelma.net>,
-	Chris Mason <chris.mason@oracle.com>,
-	Yan Zheng <zheng.yan@oracle.com>,
-	Josef Bacik <josef@redhat.com>, Sage Weil <sage@newdream.net>,
-	Al Viro <viro@zeniv.linux.org.uk>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-To: linux-doc@vger.kernel.org
-Return-path: <linux-doc-owner@vger.kernel.org>
-In-Reply-To: <1269537767-7553-1-git-send-email-andrea.gelmini@gelma.net>
+From: jim owens <owens6336@gmail.com>
+Subject: Re: [PATCH V3 17/18] Btrfs: Full direct I/O and AIO read implementation.
+Date: Thu, 25 Mar 2010 18:38:54 -0400
+Message-ID: <4BABE5FE.1000701@gmail.com>
+References: <4BA6E563.4090206@gmail.com> <87sk7r60zw.fsf@basil.nowhere.org> <4BA93530.4080303@gmail.com> <20100324023711.GC20695@one.firstfloor.org> <4BAAD397.8060408@gmail.com> <20100325094119.GJ20695@one.firstfloor.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Andi Kleen <andi@firstfloor.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100325094119.GJ20695@one.firstfloor.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-fs/btrfs/ioctl.c: ctree.h is included more than once.
+Andi Kleen wrote:
+> On Wed, Mar 24, 2010 at 11:08:07PM -0400, jim owens wrote:
+>> Agree, so the write design needs to prevent bad checksums.
+> 
+> How? Do you have a plan for that?
 
-Signed-off-by: Andrea Gelmini <andrea.gelmini@gelma.net>
----
- fs/btrfs/ioctl.c |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
+Yes... have Josef do it. ;)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 2845c6c..5c9f8b3 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -48,7 +48,6 @@
- #include "print-tree.h"
- #include "volumes.h"
- #include "locking.h"
--#include "ctree.h"
- 
- /* Mask out flags that are inappropriate for the given type of inode. */
- static inline __u32 btrfs_mask_flags(umode_t mode, __u32 flags)
--- 
-1.7.0.3.296.g9776a
+The options I considered are:
+1 - buffer always for uncompressed, the same as compressed.
+2 - checksum before bio_add_page and again before page_cache_release
+and fail or do buffering if checksum mismatch.
+3 - write protect pages and block them in fault handler.
 
+#3 is done in other operating systems but is painful, so I would
+choose #2 because I think we can do more I/O that way at almost
+the same cpu cost as #1 and we don't double the memory use.
+
+jim

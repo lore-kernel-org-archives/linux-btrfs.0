@@ -1,29 +1,34 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: "Dipl.-Ing. Michael Niederle" <mniederle@gmx.at>
 Subject: Re: btrfs subvol find-modified
-Date: Fri, 26 Mar 2010 15:36:42 -0400
-Message-ID: <20100326193642.GC13680@think>
+Date: Fri, 26 Mar 2010 21:22:07 +0100
+Message-ID: <20100326212207.424db8af@simplux>
 References: <20100326111807.24dcc2f0@simplux>
- <20100326132219.GF16453@think>
- <20100326195147.146db06e@simplux>
+	<20100326132219.GF16453@think>
+	<20100326195147.146db06e@simplux>
+	<20100326193642.GC13680@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=US-ASCII
 Cc: linux-btrfs@vger.kernel.org
-To: "Dipl.-Ing. Michael Niederle" <mniederle@gmx.at>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100326195147.146db06e@simplux>
+In-Reply-To: <20100326193642.GC13680@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 26, 2010 at 07:51:47PM +0100, Dipl.-Ing. Michael Niederle wrote:
-> I have added a command
-> 
-> btrfs subvolume find-modified <path> <last_gen>
-> 	List the recently modified files and directories in a filesystem.
-> 
-> It's similar to find-new with the following differences:
+Hi, Chris!
 
-Ok, I'd suggest two changes.  Add an optional timestamp field to filter
-files that have changed since a given timestamp.
+> Add an optional timestamp field to filter
+> files that have changed since a given timestamp.
 
-Also make it take -e that prints the extents.
+Is there a possibility to derive the timestamp directly from the generation
+number?
 
--chris
+If we have a "-e"-switch for printing extent-information we could also have
+another switch to decide whether to print directory-information or not and
+combine find-new and find-modified into a single command.
+
+Meanwhile I have implemented the (very simple) command
+
+btrfs subvolume max-gen <path>
+	Print the highest generation number in a filesystem.
+
+Greetings, Michael

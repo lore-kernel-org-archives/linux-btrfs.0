@@ -1,32 +1,29 @@
-From: "Dipl.-Ing. Michael Niederle" <mniederle@gmx.at>
-Subject: btrfs subvol find-modified
-Date: Fri, 26 Mar 2010 19:51:47 +0100
-Message-ID: <20100326195147.146db06e@simplux>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: btrfs subvol find-modified
+Date: Fri, 26 Mar 2010 15:36:42 -0400
+Message-ID: <20100326193642.GC13680@think>
 References: <20100326111807.24dcc2f0@simplux>
-	<20100326132219.GF16453@think>
+ <20100326132219.GF16453@think>
+ <20100326195147.146db06e@simplux>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+To: "Dipl.-Ing. Michael Niederle" <mniederle@gmx.at>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100326132219.GF16453@think>
+In-Reply-To: <20100326195147.146db06e@simplux>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have added a command
+On Fri, Mar 26, 2010 at 07:51:47PM +0100, Dipl.-Ing. Michael Niederle wrote:
+> I have added a command
+> 
+> btrfs subvolume find-modified <path> <last_gen>
+> 	List the recently modified files and directories in a filesystem.
+> 
+> It's similar to find-new with the following differences:
 
-btrfs subvolume find-modified <path> <last_gen>
-	List the recently modified files and directories in a filesystem.
+Ok, I'd suggest two changes.  Add an optional timestamp field to filter
+files that have changed since a given timestamp.
 
-It's similar to find-new with the following differences:
+Also make it take -e that prints the extents.
 
-* in addition to modified files it will also display modified directories
-
-* it lists only the paths of the modified files and directories (no extent
-  information)
-
-Directories "." and ".." are filtered.
-
-I will do extensive testing this weekend and then post the patch to this list
-if wanted - if I'm able to master git until then ... ^^
-
-Greetings, Michael
+-chris

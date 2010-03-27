@@ -1,57 +1,45 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
+From: "Dipl.-Ing. Michael Niederle" <mniederle@gmx.at>
 Subject: Re: Missing entry for updated directory
-Date: Sat, 27 Mar 2010 20:47:30 +0100
-Message-ID: <201003272047.30636.kreijack@libero.it>
+Date: Sat, 27 Mar 2010 22:19:53 +0100
+Message-ID: <20100327221953.35781dcd@simplux>
 References: <20100327120420.28af24dd@simplux>
-Reply-To: kreijack@libero.it
+	<201003272047.30636.kreijack@libero.it>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=US-ASCII
+Cc: kreijack@gmail.com, linux-btrfs@vger.kernel.org
+To: kreijack@libero.it
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100327120420.28af24dd@simplux>
+In-Reply-To: <201003272047.30636.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Saturday 27 March 2010, Dipl.-Ing. Michael Niederle wrote:
-> I'm using BTRFS_DIR_INDEX_KEY as suggested by Chris to find all updated
-> directories.
-> 
-> But I'm missing one:
-> 
-> The directory has 3 entries deleted and stat shows different
-> mtimes and ctimes for the directory in the two snapshots.
-> 
-> The highest generation number in the older snapshot is 82623.
-> 
-> But the generation number of the updated directory is 31758 in both 
-snapshots.
-> 
+Hi, Goffredo!
 
+I checked all btrfs-item types (changed sk->max_type to 255 and removed the
+filtering) connected with the updated directory's inode.
 
-I am not an export of the internal btrfs structure, but reading btrfs-print.c 
-it seems to me:
-- the mtimes and ctimes are stored in the INODE_ITEM; 
-- the INODE_ITEM has an own generator
-- the DIR_INDEX doesn't have a own generator; they store only the filename, so 
-it may be not updated if the inode is updated. 
-- On the basis of what Chris said, it seems that the generator for this kind 
-of object (DIR_INDEX) is the generator of the block which may included other 
-changes..
+But none of them had got a new generation number.
 
-The notes above may explain the observed behaviour. But these are only my 
-hypothesis. 
+I found the missing directory only using a more conventional tool that checked
+all files and directories in both snapshots.
 
+Here the output from stat:
 
-Goffredo
+>stat 2010-03-21/root/.googleearth/Temp/.kmztmp/
+  File: `2010-03-21/root/.googleearth/Temp/.kmztmp/'
+  Size: 21340     	Blocks: 0          IO Block: 4096   directory
+Device: 15h/21d	Inode: 31757       Links: 1
+Access: (0755/drwxr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2010-02-19 22:12:25.339932662 +0100
+Modify: 2009-11-18 13:45:52.000000000 +0100
+Change: 2010-01-12 19:48:01.911913031 +0100
 
-> Greetings, Michael
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+>stat 2010-03-22/root/.googleearth/Temp/.kmztmp/
+  File: `2010-03-22/root/.googleearth/Temp/.kmztmp/'
+  Size: 21268     	Blocks: 0          IO Block: 4096   directory
+Device: 16h/22d	Inode: 31757       Links: 1
+Access: (0755/drwxr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2010-02-19 22:12:25.339932662 +0100
+Modify: 2010-03-21 21:49:16.512553912 +0100
+Change: 2010-03-21 21:49:16.512553912 +0100
 
-
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+Greetings, Michael

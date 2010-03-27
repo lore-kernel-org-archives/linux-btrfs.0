@@ -1,46 +1,27 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Subject: Re: btrfs subvol find-modified
-Date: Fri, 26 Mar 2010 23:23:08 +0100
-Message-ID: <201003262323.08270.kreijack@libero.it>
-References: <20100326111807.24dcc2f0@simplux> <201003262136.32330.kreijack@libero.it> <20100326211124.GK13680@think>
-Reply-To: kreijack@libero.it
+From: "Dipl.-Ing. Michael Niederle" <mniederle@gmx.at>
+Subject: directory order in btrfs
+Date: Sat, 27 Mar 2010 10:52:11 +0100
+Message-ID: <20100327105211.1285e637@simplux>
+References: <20100326111807.24dcc2f0@simplux>
+	<20100326212207.424db8af@simplux>
+	<20100326202646.GG13680@think>
+	<201003262136.32330.kreijack@libero.it>
+	<20100326211124.GK13680@think>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-To: Chris Mason <chris.mason@oracle.com>,
-	"Dipl.-Ing. Michael Niederle" <mniederle@gmx.at>,
-	linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=US-ASCII
+Cc: linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <20100326211124.GK13680@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Friday 26 March 2010, Chris Mason wrote:
+Hi, Chris!
 
-> In general, the end goal is backing up a snapshot the changes from a
-> point in time to right now.  We don't actually need a snapshot to do
-> this, we just need the generation number and (optionally) a timestamp.
+I'm writing the btrfs snapshot diff tool and I would like to know, whether the
+entries in a btrfs directory are ordered in some way.
 
-I think that backup the difference between two snapshot has a big advantage: 
-the snapshot is a coherent state.
+I want to find missing entries in a new snapshot's directory. Can I do a "linear
+compare" of the old and new directories or do I have to sort the entries first
+(or do some kind of hashing)?
 
-For example what if we are doing a backup during a package installation or 
-during a database working ? The risk is to take some files from an old "state" 
-and other files from a new "state"...
-
-
-> 
-> So, we could store these things into a state file that gets fed into the
-> next backup, but I'd like to keep a command that can print them as well.
-> 
-> -chris
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
-
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+Greetings, Michael

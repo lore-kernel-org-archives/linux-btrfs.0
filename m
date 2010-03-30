@@ -1,29 +1,32 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Poor performance with qemu
-Date: Tue, 30 Mar 2010 08:56:23 -0400
-Message-ID: <20100330125623.GB13190@think>
-References: <201003281718.03699.diegocg@gmail.com>
+Subject: Re: Workaround for race condition at boot
+Date: Tue, 30 Mar 2010 09:08:02 -0400
+Message-ID: <20100330130802.GF13190@think>
+References: <9A0AC2A7-90F9-4B80-AF0F-8C65083DE1B5@mailservices.uwaterloo.ca>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: Diego Calleja <diegocg@gmail.com>
+To: Mark Rada <marada@uwaterloo.ca>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201003281718.03699.diegocg@gmail.com>
+In-Reply-To: <9A0AC2A7-90F9-4B80-AF0F-8C65083DE1B5@mailservices.uwaterloo.ca>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Mar 28, 2010 at 05:18:03PM +0200, Diego Calleja wrote:
-> Hi, I'm using KVM, and the virtual disk (a 20 GB file using the "raw"
-> qemu format according to virt-manager and, of course, placed on a btrfs
-> filesystem, running the latest mainline git) is awfully slow, no matter
-> what OS is running inside the VM. The PCBSD installer says it's copying
-> data at a 40-50 KB/s rate. Is someone using KVM and having better numbers
-> than me? How can I help to debug this workload?
+On Mon, Mar 29, 2010 at 10:40:12PM -0400, Mark Rada wrote:
+> Hi,
+> 
+> In my time playing around with btrfs I have had difficulty in mounting and btrfs partitions that use multiple devices. I'm aware that there is a note about a gotcha on the wiki, but I'm not trying to mount the btrfs partition as the root.
+> 
+> However, I have noticed that if I force a btrfs filesystem scan before trying to mount, then everything will work.
+> 
+> I originally created a bug report on the Gentoo Bugzilla:
+> http://bugs.gentoo.org/show_bug.cgi?id=309219
+> 
 
-The problem is that qemu uses O_SYNC by default, which makes btrfs do
-log commits for every write.
+This isn't a race condition, it is built into the filesystem.  Later
+versions of btrfs progs will pull the details right out of udev instead
+of needing btrfsctl -a, but today the btrfsctl -a is the only way.
 
-Once the O_DIRECT read patch is in, you can switch to that, or tell qemu
-to use a writeback cache instead.
+This is similar to what needs to happen on lvm, its just that the
+initramfs tools already understand lvm ;)
 
 -chris
-

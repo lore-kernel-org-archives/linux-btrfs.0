@@ -1,43 +1,62 @@
-From: Mark Rada <markrada26@gmail.com>
-Subject: Re: Workaround for race condition at boot
-Date: Tue, 30 Mar 2010 12:03:01 -0400
-Message-ID: <C9E497E0-196F-4FBC-B554-105B4720A667@gmail.com>
-References: <9A0AC2A7-90F9-4B80-AF0F-8C65083DE1B5@mailservices.uwaterloo.ca> <20100330130802.GF13190@think>
-Mime-Version: 1.0 (iPhone Mail 7D11)
-Content-Type: text/plain; charset=us-ascii; format=flowed; delsp=yes
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH 09/18] btrfs: Fix return value of
+ read_extent_buffer_pages() when lock page failed
+Date: Tue, 30 Mar 2010 20:09:47 -0400
+Message-ID: <20100331000947.GS13190@think>
+References: <4BAB5817.8020803@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Miao Xie <miaox@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100330130802.GF13190@think>
+In-Reply-To: <4BAB5817.8020803@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ah, ok, thank you for explaining.
+On Thu, Mar 25, 2010 at 08:33:27PM +0800, Miao Xie wrote:
+> From: Zhao Lei <zhaolei@cn.fujitsu.com>
+> 
+> read_extent_buffer_pages() should return error value instead of 0 when
+> lock page failed, we fix this problem.
 
-Sent from my iPhone
+[ Thanks for all of these patches! ]
 
-On 2010-03-30, at 9:08, Chris Mason <chris.mason@oracle.com> wrote:
+This isn't strictly an IO error, the caller has said they are not
+willing to wait, so we don't wait.  That's different from finding a page
+where the IO had failed.
 
-> On Mon, Mar 29, 2010 at 10:40:12PM -0400, Mark Rada wrote:
->> Hi,
->>
->> In my time playing around with btrfs I have had difficulty in  
->> mounting and btrfs partitions that use multiple devices. I'm aware  
->> that there is a note about a gotcha on the wiki, but I'm not trying  
->> to mount the btrfs partition as the root.
->>
->> However, I have noticed that if I force a btrfs filesystem scan  
->> before trying to mount, then everything will work.
->>
->> I originally created a bug report on the Gentoo Bugzilla:
->> http://bugs.gentoo.org/show_bug.cgi?id=309219
->>
->
-> This isn't a race condition, it is built into the filesystem.  Later
-> versions of btrfs progs will pull the details right out of udev  
-> instead
-> of needing btrfsctl -a, but today the btrfsctl -a is the only way.
->
-> This is similar to what needs to happen on lvm, its just that the
-> initramfs tools already understand lvm ;)
->
-> -chris
+In general we ignore the errors until the caller is willing to wait for
+the result.
+
+-chris
+
+> 
+> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+> ---
+>  fs/btrfs/extent_io.c |    4 +++-
+>  1 files changed, 3 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index bdfbfa6..3194c79 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -3419,8 +3419,10 @@ int read_extent_buffer_pages(struct extent_io_tree *tree,
+>  	for (i = start_i; i < num_pages; i++) {
+>  		page = extent_buffer_page(eb, i);
+>  		if (!wait) {
+> -			if (!trylock_page(page))
+> +			if (!trylock_page(page)) {
+> +				ret = -EIO;
+>  				goto unlock_exit;
+> +			}
+>  		} else {
+>  			lock_page(page);
+>  		}
+> -- 
+> 1.6.5.2
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

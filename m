@@ -1,77 +1,85 @@
 From: Zhaolei <zhaolei@cn.fujitsu.com>
-Subject: Re: Re: [PATCH 05/18] btrfs: Take num_copies out of loop for btree_read_extent_buffer_pages()
-Date: Wed, 31 Mar 2010 12:04:10 +0800
-Message-ID: <4BB2C9BA.5010505@cn.fujitsu.com>
-References: <4BAB5759.7010903@cn.fujitsu.com> <20100331002327.GT13190@think>
+Subject: Re: Re: [PATCH 01/18] btrfs: Remove u64 conversion for PAGE_CACHE_SIZE
+Date: Wed, 31 Mar 2010 12:04:14 +0800
+Message-ID: <4BB2C9BE.6000402@cn.fujitsu.com>
+References: <4BAB56AE.5040009@cn.fujitsu.com> <20100325130230.GG6538@think>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: Chris Mason <chris.mason@oracle.com>,
 	Miao Xie <miaox@cn.fujitsu.com>,
 	Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100331002327.GT13190@think>
+In-Reply-To: <20100325130230.GG6538@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Chris Mason wrote:
-> On Thu, Mar 25, 2010 at 08:30:17PM +0800, Miao Xie wrote:
+> On Thu, Mar 25, 2010 at 08:27:26PM +0800, Miao Xie wrote:
 >> From: Zhao Lei <zhaolei@cn.fujitsu.com>
 >>
->> num_copies's value is not changed in this function,
->> and it is not necessary to calculate its value multi-times.
+>> We don't need to convert PAGE_CACHE_SIZE to u64 in bit operation.
 > 
-> It is true that we don't need to calculate this multiple times, but with
-> the existing code the calculation is only done when there is an IO
-> error.
+> For code like this:
 > 
-> We could use a check for num_copies == 0 before calling the calc
-> function.
+> u64 size = (some number that doesn't fit in 32 bits)
+> 
+> if (size & (PAGE_CACHE_SIZE - 1)) {
+> }
+> 
+> The answer should be the same either way.  But if the code gets
+> switched:
+> 
+> start = size & ~(PAGE_CACHE_SIZE - 1);
+> 
+> Some arches are going to get the wrong answer here.  We had a few bugs
+> like this early on and I went through and casted everything to be
+> consistent.  While this patch is correct, I would rather leave the casts
+> to avoid subtle problems later on as the code changes.
 > 
 > -chris
 
 Hello, chris
 
-I'll modify this patch to read num_copies only in IO error.
+Thanks for your explain.
+I got your meaning.
+
+But at least, we should make code unify:
+
+// with u64:
+[root@localhost btrfs]# grep '((u64)PAGE_CACHE_SIZE - 1)' *
+compression.c:  WARN_ON(start & ((u64)PAGE_CACHE_SIZE - 1));
+extent_io.c:    size_t start_offset = eb->start & ((u64)PAGE_CACHE_SIZE - 1);
+extent_io.c:    size_t start_offset = eb->start & ((u64)PAGE_CACHE_SIZE - 1);
+extent_io.c:    size_t start_offset = eb->start & ((u64)PAGE_CACHE_SIZE - 1);
+extent_io.c:    size_t start_offset = eb->start & ((u64)PAGE_CACHE_SIZE - 1);
+extent_io.c:    size_t start_offset = eb->start & ((u64)PAGE_CACHE_SIZE - 1);
+extent_io.c:    size_t start_offset = dst->start & ((u64)PAGE_CACHE_SIZE - 1);
+extent_io.c:    size_t start_offset = dst->start & ((u64)PAGE_CACHE_SIZE - 1);
+extent_io.c:    size_t start_offset = dst->start & ((u64)PAGE_CACHE_SIZE - 1);
+
+// without u64:
+[root@localhost btrfs]# grep '(PAGE_CACHE_SIZE - 1)' *
+compression.c:                  size_t zero_offset = isize & (PAGE_CACHE_SIZE - 1);
+extent_io.c:                    unsigned long offset = (*start) & (PAGE_CACHE_SIZE - 1);
+extent_io.c:            size_t zero_offset = last_byte & (PAGE_CACHE_SIZE - 1);
+extent_io.c:    pg_offset = i_size & (PAGE_CACHE_SIZE - 1);
+extent_io.c:            block_off_start = block_start & (PAGE_CACHE_SIZE - 1);
+extent_io.c:            page_offset = block_start & (PAGE_CACHE_SIZE - 1);
+extent_io.c:            if ((i == 0 && (eb->start & (PAGE_CACHE_SIZE - 1))) ||
+extent_io.c:                 ((eb->start + eb->len) & (PAGE_CACHE_SIZE - 1)))) {
+extent_io.c:    size_t offset = start & (PAGE_CACHE_SIZE - 1);
+file.c: int offset = pos & (PAGE_CACHE_SIZE - 1);
+file.c: if ((pos & (PAGE_CACHE_SIZE - 1))) {
+file.c: if ((pos + count) & (PAGE_CACHE_SIZE - 1)) {
+file.c:         size_t offset = pos & (PAGE_CACHE_SIZE - 1);
+file-item.c:            memcpy(eb_token + ((unsigned long)item & (PAGE_CACHE_SIZE - 1)),
+inode.c:                offset = start & (PAGE_CACHE_SIZE - 1);
+inode.c:                                (PAGE_CACHE_SIZE - 1);
+inode.c:                        ~(PAGE_CACHE_SIZE - 1);
+inode.c:        if ((end & (PAGE_CACHE_SIZE - 1)) == 0)
 
 Thanks
 Zhaolei
 
->> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
->> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
->> ---
->>  fs/btrfs/disk-io.c |    5 ++---
->>  1 files changed, 2 insertions(+), 3 deletions(-)
->>
->> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->> index 11d0ad3..79d9196 100644
->> --- a/fs/btrfs/disk-io.c
->> +++ b/fs/btrfs/disk-io.c
->> @@ -301,7 +301,8 @@ static int btree_read_extent_buffer_pages(struct btrfs_root *root,
->>  {
->>  	struct extent_io_tree *io_tree;
->>  	int ret;
->> -	int num_copies = 0;
->> +	int num_copies = btrfs_num_copies(&root->fs_info->mapping_tree,
->> +					  eb->start, eb->len);
->>  	int mirror_num = 0;
->>  
->>  	io_tree = &BTRFS_I(root->fs_info->btree_inode)->io_tree;
->> @@ -312,8 +313,6 @@ static int btree_read_extent_buffer_pages(struct btrfs_root *root,
->>  		    !verify_parent_transid(io_tree, eb, parent_transid))
->>  			return ret;
->>  
->> -		num_copies = btrfs_num_copies(&root->fs_info->mapping_tree,
->> -					      eb->start, eb->len);
->>  		if (num_copies == 1)
->>  			return ret;
->>  
->> -- 
->> 1.6.5.2
->>
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org

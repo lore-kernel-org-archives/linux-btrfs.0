@@ -1,49 +1,44 @@
-From: Tao Ma <tao.ma@oracle.com>
-Subject: Re: [PATCH] Btrfs-progs: fix incompat flags
-Date: Fri, 02 Apr 2010 14:10:53 +0800
-Message-ID: <4BB58A6D.7030505@oracle.com>
-References: <20100401191744.GC21486@dhcp231-156.rdu.redhat.com>
+From: Wu Fengguang <fengguang.wu@intel.com>
+Subject: [PATCH][BUGFIX] readahead: fix NULL filp dereference
+Date: Fri, 2 Apr 2010 15:27:50 +0800
+Message-ID: <20100402072750.GA22952@localhost>
+References: <cc557aab1003250606g6b4e3e7dgb1adfd46adc89124@mail.gmail.com> <3d0408631003252040r70c54b2fm24d64b819c59c9c@mail.gmail.com> <20100326040114.GA20717@localhost>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100401191744.GC21486@dhcp231-156.rdu.redhat.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: "Yan, Zheng " <yanzheng@21cn.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"kirill@shutemov.name" <kirill@shutemov.name>,
+	LKML <linux-kernel@vger.kernel.org>,
+	Jens Axboe <jens.axboe@oracle.com>
+To: Andrew Morton <akpm@linux-foundation.org>, stable@kernel.org
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20100326040114.GA20717@localhost>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Josef,
+The btrfs relocate_file_extent_cluster() calls us with NULL filp:
 
-Josef Bacik wrote:
-> I forgot to add BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL to the incompat flags in
-> btrfs-progs.  This adds it so that our tools don't freak out when touching a fs
-> with the default subvolume changed.  Thanks,
-> 
-> Signed-off-by: Josef Bacik <josef@redhat.com>
-> ---
->  ctree.h |    4 +++-
->  1 files changed, 3 insertions(+), 1 deletions(-)
-> 
-> diff --git a/ctree.h b/ctree.h
-> index 64ecf12..b79e238 100644
-> --- a/ctree.h
-> +++ b/ctree.h
-> @@ -350,11 +350,13 @@ struct btrfs_super_block {
->   * ones specified below then we will fail to mount
->   */
->  #define BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF	(1ULL << 0)
-> +#define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(2ULL << 0)
-I am not familiar with btrfs, but I guess the natural way is
-+#define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(1ULL << 1) ?
->  
->  #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
->  #define BTRFS_FEATURE_COMPAT_RO_SUPP		0ULL
->  #define BTRFS_FEATURE_INCOMPAT_SUPP		\
-> -	BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF
-> +	(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF |	\
-> +	 BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL)
->  
->  /*
->   * A leaf is full of items. offset and size tell us where to find
+  [ 4005.426805] BUG: unable to handle kernel NULL pointer dereference at 00000021
+  [ 4005.426818] IP: [<c109a130>] page_cache_sync_readahead+0x18/0x3e
 
-Regards,
-Tao
+CC: Yan Zheng <yanzheng@21cn.com>
+Reported-by: Kirill A. Shutemov <kirill@shutemov.name>
+Signed-off-by: Wu Fengguang <fengguang.wu@intel.com>
+---
+
+Andrew and Greg:
+
+This is an obvious correct bug fix for .34 and .33-stable,
+so I'm resending it directly to you without Kirill's confirmation.
+
+
+--- sound-2.6.orig/mm/readahead.c	2010-03-26 11:51:57.000000000 +0800
++++ sound-2.6/mm/readahead.c	2010-03-26 11:52:11.000000000 +0800
+@@ -502,7 +502,7 @@ void page_cache_sync_readahead(struct ad
+ 		return;
+ 
+ 	/* be dumb */
+-	if (filp->f_mode & FMODE_RANDOM) {
++	if (filp && (filp->f_mode & FMODE_RANDOM)) {
+ 		force_page_cache_readahead(mapping, filp, offset, req_size);
+ 		return;
+ 	}

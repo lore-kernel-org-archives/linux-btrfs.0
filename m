@@ -1,57 +1,78 @@
-From: "Kirill A. Shutemov" <kirill@shutemov.name>
-Subject: Re: [PATCH][BUGFIX] readahead: fix NULL filp dereference
-Date: Fri, 2 Apr 2010 15:18:04 +0300
-Message-ID: <r2gcc557aab1004020518u5329383eh2bfaaf404fc5d8e2@mail.gmail.com>
-References: <cc557aab1003250606g6b4e3e7dgb1adfd46adc89124@mail.gmail.com>
-	 <3d0408631003252040r70c54b2fm24d64b819c59c9c@mail.gmail.com>
-	 <20100326040114.GA20717@localhost> <20100402072750.GA22952@localhost>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: [GIT PULL] Btrfs updates
+Date: Mon, 5 Apr 2010 15:36:37 -0400
+Message-ID: <20100405193637.GC21620@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Andrew Morton <akpm@linux-foundation.org>, stable@kernel.org,
-	"Yan, Zheng" <yanzheng@21cn.com>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>,
-	Jens Axboe <jens.axboe@oracle.com>
-To: Wu Fengguang <fengguang.wu@intel.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20100402072750.GA22952@localhost>
+Content-Type: text/plain; charset=us-ascii
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 2, 2010 at 10:27 AM, Wu Fengguang <fengguang.wu@intel.com> =
-wrote:
-> The btrfs relocate_file_extent_cluster() calls us with NULL filp:
->
-> =C2=A0[ 4005.426805] BUG: unable to handle kernel NULL pointer derefe=
-rence at 00000021
-> =C2=A0[ 4005.426818] IP: [<c109a130>] page_cache_sync_readahead+0x18/=
-0x3e
->
-> CC: Yan Zheng <yanzheng@21cn.com>
-> Reported-by: Kirill A. Shutemov <kirill@shutemov.name>
-> Signed-off-by: Wu Fengguang <fengguang.wu@intel.com>
-> ---
->
-> Andrew and Greg:
->
-> This is an obvious correct bug fix for .34 and .33-stable,
-> so I'm resending it directly to you without Kirill's confirmation.
+Hello everyone,
 
-Sorry.
+The master branch of the btrfs-unstable repo has a collection of fixes:
 
-Tested-by: Kirill A. Shutemov <kirill@shutemov.name>
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
 
-> --- sound-2.6.orig/mm/readahead.c =C2=A0 =C2=A0 =C2=A0 2010-03-26 11:=
-51:57.000000000 +0800
-> +++ sound-2.6/mm/readahead.c =C2=A0 =C2=A02010-03-26 11:52:11.0000000=
-00 +0800
-> @@ -502,7 +502,7 @@ void page_cache_sync_readahead(struct ad
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0return;
->
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0/* be dumb */
-> - =C2=A0 =C2=A0 =C2=A0 if (filp->f_mode & FMODE_RANDOM) {
-> + =C2=A0 =C2=A0 =C2=A0 if (filp && (filp->f_mode & FMODE_RANDOM)) {
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0force_page_cac=
-he_readahead(mapping, filp, offset, req_size);
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0return;
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0}
->
+Josef fixed a few different ENOSPC problems, and removed the mount -o
+max_extent mount option, which was not used and didn't fit in well with
+enospc at all.
+
+Sage fixed up when and how we add the directory entries that go with
+snapshots, which will avoid dangling directory entries if we crash at
+the wrong time during snapshot creation.
+
+Nick Piggin made the btrfs page cache code a little bit less of a special
+snowflake, switching us back to the proper API.
+
+Zhao Lei and Miao Xie contributed a long series of cleanups and fixes.
+I've put the cleanups into a .35 queue and the fixes are here.
+
+Josef Bacik (4) commits (+32/-91):
+    Btrfs: fail to mount if we have problems reading the block groups (+12/-4)
+    Btrfs: fix small race with delalloc flushing waitqueue's (+4/-5)
+    Btrfs: fix chunk allocate size calculation (+3/-1)
+    Btrfs: kill max_extent mount option (+13/-81)
+
+Zhao Lei (3) commits (+9/-12):
+    Btrfs: Simplify num_stripes's calculation logical for __btrfs_alloc_chunk() (+2/-2)
+    Btrfs: Add error handle for btrfs_search_slot() in btrfs_read_chunk_tree() (+2/-0)
+    Btrfs: Remove unnecessary finish_wait() in wait_current_trans() (+5/-10)
+
+Dan Carpenter (3) commits (+5/-1):
+    Btrfs: handle kmalloc() failure in inode lookup ioctl (+3/-0)
+    Btrfs: check btrfs_get_extent return for IS_ERR() (+1/-1)
+    Btrfs: dereferencing freed memory (+1/-0)
+
+Sage Weil (1) commits (+31/-66):
+    Btrfs: create snapshot references in same commit as snapshot
+
+Andrea Gelmini (1) commits (+0/-1):
+    Btrfs: remove duplicate include in ioctl.c
+
+Chris Mason (1) commits (+4/-0):
+    Btrfs: add check for changed leaves in setup_leaf_for_split
+
+Miao Xie (1) commits (+4/-1):
+    Btrfs: add NULL check for do_walk_down()
+
+Nick Piggin (1) commits (+5/-32):
+    Btrfs: use add_to_page_cache_lru, use __page_cache_alloc
+
+Total: (15) commits
+
+ fs/btrfs/transaction.c  |  112 +++++++++++++++---------------------------------
+ fs/btrfs/inode.c        |   59 +------------------------
+ fs/btrfs/super.c        |   23 +--------
+ fs/btrfs/extent-tree.c  |   23 ++++++---
+ fs/btrfs/compression.c  |   22 +--------
+ fs/btrfs/extent_io.c    |   15 ------
+ fs/btrfs/disk-io.c      |   12 +++--
+ fs/btrfs/volumes.c      |   10 +++-
+ fs/btrfs/ioctl.c        |    7 ++-
+ fs/btrfs/ordered-data.c |    6 +-
+ fs/btrfs/ctree.c        |    4 +
+ fs/btrfs/ctree.h        |    1 
+ 12 files changed, 90 insertions(+), 204 deletions(-)
+

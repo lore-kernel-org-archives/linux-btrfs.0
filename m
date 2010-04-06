@@ -1,78 +1,52 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: [GIT PULL] Btrfs updates
-Date: Mon, 5 Apr 2010 15:36:37 -0400
-Message-ID: <20100405193637.GC21620@think>
+From: "Yan, Zheng " <yanzheng@21cn.com>
+Subject: Re: [PATCH] Btrfs: fix chunk allocate size calculation
+Date: Tue, 6 Apr 2010 15:54:27 +0800
+Message-ID: <g2o3d0408631004060054t652c69d2n1b150e7f57fce625@mail.gmail.com>
+References: <20100317204556.GA4409@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100317204556.GA4409@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello everyone,
+On Thu, Mar 18, 2010 at 4:45 AM, Josef Bacik <josef@redhat.com> wrote:
+> If the amount of free space left in a device is less than what we thi=
+nk should
+> be the minimum size, just ignore the minimum size and use the amount =
+we have. =A0I
+> ran into this running tests on a 600mb volume, the chunk allocator wo=
+uldn't let
+> me allocate the last 52mb of the disk for data because we want to hav=
+e at least
+> 64mb chunks for data. =A0This patch fixes that problem. =A0Thanks,
+>
+> Signed-off-by: Josef Bacik <josef@redhat.com>
+>
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 9df8e3f..1c5b5ba 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -2244,8 +2244,10 @@ again:
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0do_div(calc_size, stripe_len);
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0calc_size *=3D stripe_len;
+> =A0 =A0 =A0 =A0}
+> +
+> =A0 =A0 =A0 =A0/* we don't want tiny stripes */
+> - =A0 =A0 =A0 calc_size =3D max_t(u64, min_stripe_size, calc_size);
+> + =A0 =A0 =A0 if (!looped)
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 calc_size =3D max_t(u64, min_stripe_siz=
+e, calc_size);
+>
+> =A0 =A0 =A0 =A0do_div(calc_size, stripe_len);
+> =A0 =A0 =A0 =A0calc_size *=3D stripe_len;
 
-The master branch of the btrfs-unstable repo has a collection of fixes:
-
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
-
-Josef fixed a few different ENOSPC problems, and removed the mount -o
-max_extent mount option, which was not used and didn't fit in well with
-enospc at all.
-
-Sage fixed up when and how we add the directory entries that go with
-snapshots, which will avoid dangling directory entries if we crash at
-the wrong time during snapshot creation.
-
-Nick Piggin made the btrfs page cache code a little bit less of a special
-snowflake, switching us back to the proper API.
-
-Zhao Lei and Miao Xie contributed a long series of cleanups and fixes.
-I've put the cleanups into a .35 queue and the fixes are here.
-
-Josef Bacik (4) commits (+32/-91):
-    Btrfs: fail to mount if we have problems reading the block groups (+12/-4)
-    Btrfs: fix small race with delalloc flushing waitqueue's (+4/-5)
-    Btrfs: fix chunk allocate size calculation (+3/-1)
-    Btrfs: kill max_extent mount option (+13/-81)
-
-Zhao Lei (3) commits (+9/-12):
-    Btrfs: Simplify num_stripes's calculation logical for __btrfs_alloc_chunk() (+2/-2)
-    Btrfs: Add error handle for btrfs_search_slot() in btrfs_read_chunk_tree() (+2/-0)
-    Btrfs: Remove unnecessary finish_wait() in wait_current_trans() (+5/-10)
-
-Dan Carpenter (3) commits (+5/-1):
-    Btrfs: handle kmalloc() failure in inode lookup ioctl (+3/-0)
-    Btrfs: check btrfs_get_extent return for IS_ERR() (+1/-1)
-    Btrfs: dereferencing freed memory (+1/-0)
-
-Sage Weil (1) commits (+31/-66):
-    Btrfs: create snapshot references in same commit as snapshot
-
-Andrea Gelmini (1) commits (+0/-1):
-    Btrfs: remove duplicate include in ioctl.c
-
-Chris Mason (1) commits (+4/-0):
-    Btrfs: add check for changed leaves in setup_leaf_for_split
-
-Miao Xie (1) commits (+4/-1):
-    Btrfs: add NULL check for do_walk_down()
-
-Nick Piggin (1) commits (+5/-32):
-    Btrfs: use add_to_page_cache_lru, use __page_cache_alloc
-
-Total: (15) commits
-
- fs/btrfs/transaction.c  |  112 +++++++++++++++---------------------------------
- fs/btrfs/inode.c        |   59 +------------------------
- fs/btrfs/super.c        |   23 +--------
- fs/btrfs/extent-tree.c  |   23 ++++++---
- fs/btrfs/compression.c  |   22 +--------
- fs/btrfs/extent_io.c    |   15 ------
- fs/btrfs/disk-io.c      |   12 +++--
- fs/btrfs/volumes.c      |   10 +++-
- fs/btrfs/ioctl.c        |    7 ++-
- fs/btrfs/ordered-data.c |    6 +-
- fs/btrfs/ctree.c        |    4 +
- fs/btrfs/ctree.h        |    1 
- 12 files changed, 90 insertions(+), 204 deletions(-)
-
+I encountered an Oops caused by 'calc_size =3D=3D 0'. It's likely intro=
+duced
+by this change. (calc_size can be zero after calling do_div)
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

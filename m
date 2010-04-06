@@ -1,98 +1,74 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] Btrfs: fix chunk allocate size calculation
-Date: Tue, 6 Apr 2010 10:15:41 -0400
-Message-ID: <20100406141541.GC5413@think>
-References: <20100317204556.GA4409@localhost.localdomain>
- <g2o3d0408631004060054t652c69d2n1b150e7f57fce625@mail.gmail.com>
- <20100406111358.GA5218@think>
+Subject: Re: [GIT PULL] Btrfs updates
+Date: Tue, 6 Apr 2010 11:40:47 -0400
+Message-ID: <20100406154047.GE5413@think>
+References: <20100405193637.GC21620@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-To: "Yan, Zheng " <yanzheng@21cn.com>, Josef Bacik <josef@redhat.com>,
-	linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100406111358.GA5218@think>
+In-Reply-To: <20100405193637.GC21620@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 06, 2010 at 07:13:58AM -0400, Chris Mason wrote:
-> On Tue, Apr 06, 2010 at 03:54:27PM +0800, Yan, Zheng  wrote:
-> > On Thu, Mar 18, 2010 at 4:45 AM, Josef Bacik <josef@redhat.com> wro=
-te:
-> > > If the amount of free space left in a device is less than what we=
- think should
-> > > be the minimum size, just ignore the minimum size and use the amo=
-unt we have. =A0I
-> > > ran into this running tests on a 600mb volume, the chunk allocato=
-r wouldn't let
-> > > me allocate the last 52mb of the disk for data because we want to=
- have at least
-> > > 64mb chunks for data. =A0This patch fixes that problem. =A0Thanks=
-,
-> > >
-> > > Signed-off-by: Josef Bacik <josef@redhat.com>
-> > >
-> > > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> > > index 9df8e3f..1c5b5ba 100644
-> > > --- a/fs/btrfs/volumes.c
-> > > +++ b/fs/btrfs/volumes.c
-> > > @@ -2244,8 +2244,10 @@ again:
-> > > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0do_div(calc_size, stripe_len);
-> > > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0calc_size *=3D stripe_len;
-> > > =A0 =A0 =A0 =A0}
-> > > +
-> > > =A0 =A0 =A0 =A0/* we don't want tiny stripes */
-> > > - =A0 =A0 =A0 calc_size =3D max_t(u64, min_stripe_size, calc_size=
-);
-> > > + =A0 =A0 =A0 if (!looped)
-> > > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 calc_size =3D max_t(u64, min_stripe=
-_size, calc_size);
-> > >
-> > > =A0 =A0 =A0 =A0do_div(calc_size, stripe_len);
-> > > =A0 =A0 =A0 =A0calc_size *=3D stripe_len;
-> >=20
-> > I encountered an Oops caused by 'calc_size =3D=3D 0'. It's likely i=
-ntroduced
-> > by this change. (calc_size can be zero after calling do_div)
+On Mon, Apr 05, 2010 at 03:36:37PM -0400, Chris Mason wrote:
+> Hello everyone,
+> 
+> The master branch of the btrfs-unstable repo has a collection of fixes:
+> 
+> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
+> 
 
-Ok, anyone object to this:
+That pull request was missing another enospc fix from Josef, and Yan
+Zheng noticed we were sometimes trying to allocate zero sized chunks
+from the disk pool.  I've updated the git tree with two new commits,
+here is the corrected shortlog:
 
-=46rom 9f680ce04ea19dabbbafe01b57b61930a9b70741 Mon Sep 17 00:00:00 200=
-1
-=46rom: Chris Mason <chris.mason@oracle.com>
-Date: Tue, 6 Apr 2010 09:37:47 -0400
-Subject: [PATCH] Btrfs: make sure the chunk allocator doesn't create ze=
-ro length chunks
+Josef Bacik (5) commits (+47/-96):
+    Btrfs: fail to mount if we have problems reading the block groups (+12/-4)
+    Btrfs: fix small race with delalloc flushing waitqueue's (+4/-5)
+    Btrfs: fix chunk allocate size calculation (+3/-1)
+    Btrfs: fix data enospc check overflow (+15/-5)
+    Btrfs: kill max_extent mount option (+13/-81)
 
-A recent commit allowed for smaller chunks to be created, but didn't
-make sure they were always bigger than a stripe.  After some divides,
-this led to zero length stripes.
+Zhao Lei (3) commits (+9/-12):
+    Btrfs: Simplify num_stripes's calculation logical for __btrfs_alloc_chunk() (+2/-2)
+    Btrfs: Add error handle for btrfs_search_slot() in btrfs_read_chunk_tree() (+2/-0)
+    Btrfs: Remove unnecessary finish_wait() in wait_current_trans() (+5/-10)
 
-Signed-off-by: Chris Mason <chris.mason@oracle.com>
----
- fs/btrfs/volumes.c |    6 ++++++
- 1 files changed, 6 insertions(+), 0 deletions(-)
+Dan Carpenter (3) commits (+5/-1):
+    Btrfs: handle kmalloc() failure in inode lookup ioctl (+3/-0)
+    Btrfs: check btrfs_get_extent return for IS_ERR() (+1/-1)
+    Btrfs: dereferencing freed memory (+1/-0)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 9bf1f58..b584e9a 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2249,6 +2249,12 @@ again:
- 	if (!looped)
- 		calc_size =3D max_t(u64, min_stripe_size, calc_size);
-=20
-+	/*
-+	 * we're about to do_div by the stripe_len so lets make sure
-+	 * we end up with something bigger than a stripe
-+	 */
-+	calc_size =3D max_t(u64, calc_size, stripe_len * 4);
-+
- 	do_div(calc_size, stripe_len);
- 	calc_size *=3D stripe_len;
-=20
---=20
-1.7.0.2
+Chris Mason (2) commits (+10/-0):
+    Btrfs: make sure the chunk allocator doesn't create zero length chunks (+6/-0)
+    Btrfs: add check for changed leaves in setup_leaf_for_split (+4/-0)
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Sage Weil (1) commits (+31/-66):
+    Btrfs: create snapshot references in same commit as snapshot
+
+Andrea Gelmini (1) commits (+0/-1):
+    Btrfs: remove duplicate include in ioctl.c
+
+Miao Xie (1) commits (+4/-1):
+    Btrfs: add NULL check for do_walk_down()
+
+Nick Piggin (1) commits (+5/-32):
+    Btrfs: use add_to_page_cache_lru, use __page_cache_alloc
+
+Total: (17) commits
+
+ fs/btrfs/transaction.c  |  112 +++++++++++++++---------------------------------
+ fs/btrfs/inode.c        |   59 +------------------------
+ fs/btrfs/extent-tree.c  |   43 ++++++++++++------
+ fs/btrfs/super.c        |   23 +--------
+ fs/btrfs/compression.c  |   22 +--------
+ fs/btrfs/volumes.c      |   16 +++++-
+ fs/btrfs/extent_io.c    |   15 ------
+ fs/btrfs/disk-io.c      |   12 +++--
+ fs/btrfs/ioctl.c        |    7 ++-
+ fs/btrfs/ordered-data.c |    6 +-
+ fs/btrfs/ctree.c        |    4 +
+ fs/btrfs/ctree.h        |    1 
+ 12 files changed, 111 insertions(+), 209 deletions(-)

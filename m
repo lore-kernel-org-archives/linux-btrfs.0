@@ -1,74 +1,103 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [GIT PULL] Btrfs updates
-Date: Tue, 6 Apr 2010 11:40:47 -0400
-Message-ID: <20100406154047.GE5413@think>
-References: <20100405193637.GC21620@think>
+From: "yoosty69@netzero.com" <yoosty69@netzero.com>
+Subject: btrfs Bug?
+Date: Tue, 6 Apr 2010 17:08:12 GMT
+Message-ID: <20100406.100812.1985.1@webmail22.vgs.untd.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100405193637.GC21620@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 05, 2010 at 03:36:37PM -0400, Chris Mason wrote:
-> Hello everyone,
-> 
-> The master branch of the btrfs-unstable repo has a collection of fixes:
-> 
-> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
-> 
+Background:
+Was checking E-mail and browsing the internet when suddenly Pidgin crashed out. I thought that was pretty weird so I went to go re-start Pidgin when I noticed the machine hang really hard for about 30 seconds. The machine finally came back and that's when I noticed that my E-mail client (Claws Mail) had stopped responding. I 'touch'ed a file in my home dir and that was fine, but then I went to md5sum a large file and it came back with an I/O error. I ran dmesg and found that there had been a kernel dump (or whatever the proper term is) related to BTRFS. I went to shut down my programs gracefully and do a reboot, unfortunately none of my programs (FF, Pidgin, Claws-Mail, one or two others) wanted to respond so I just used the power-button.
 
-That pull request was missing another enospc fix from Josef, and Yan
-Zheng noticed we were sometimes trying to allocate zero sized chunks
-from the disk pool.  I've updated the git tree with two new commits,
-here is the corrected shortlog:
+I switched my Intel X-25M (2nd gen, latest FW as of about a month ago) to a different SATA cable and on a different port on the motherboard (Supermicro C2SBX) to see if there was some sort of hardware problem there. I booted again into Gentoo and the boot failed (I'm guessing it failed after trying to mount the root partition as RO the first time).
 
-Josef Bacik (5) commits (+47/-96):
-    Btrfs: fail to mount if we have problems reading the block groups (+12/-4)
-    Btrfs: fix small race with delalloc flushing waitqueue's (+4/-5)
-    Btrfs: fix chunk allocate size calculation (+3/-1)
-    Btrfs: fix data enospc check overflow (+15/-5)
-    Btrfs: kill max_extent mount option (+13/-81)
+I booted in to System Rescue CD 1.5.1 and tried to mount the partition and mount returned with a SegFault and dmesg spit out the following:
 
-Zhao Lei (3) commits (+9/-12):
-    Btrfs: Simplify num_stripes's calculation logical for __btrfs_alloc_chunk() (+2/-2)
-    Btrfs: Add error handle for btrfs_search_slot() in btrfs_read_chunk_tree() (+2/-0)
-    Btrfs: Remove unnecessary finish_wait() in wait_current_trans() (+5/-10)
+[code]
 
-Dan Carpenter (3) commits (+5/-1):
-    Btrfs: handle kmalloc() failure in inode lookup ioctl (+3/-0)
-    Btrfs: check btrfs_get_extent return for IS_ERR() (+1/-1)
-    Btrfs: dereferencing freed memory (+1/-0)
+[   75.218065] device label root devid 1 transid 4446 /dev/sda3
+[   75.225843] btrfs: sda3 checksum verify failed on 42488987648 wanted FC733AC3 found F7794308 level 1
+[   75.226049] btrfs: sda3 checksum verify failed on 42488987648 wanted FC733AC3 found F7794308 level 1
+[   75.226238] btrfs: sda3 checksum verify failed on 42488987648 wanted FC733AC3 found F7794308 level 1
+[   75.226271] Btrfs detected SSD devices, enabling SSD mode
+[   75.226490] ------------[ cut here ]------------
+[   75.226492] kernel BUG at fs/btrfs/extent-tree.c:3541!
+[   75.226494] invalid opcode: 0000 [#1] SMP
+[   75.226497] last sysfs file: /sys/kernel/uevent_seqnum
+[   75.226499] CPU 0
+[   75.226500] Modules linked in: video nvidiafb output shpchp pci_hotplug hid_apple i2c_i801 processor button container i2c_core pcspkr psmouse serio_raw vgastate evdev iTCO_wdt iTCO_vendor_support x38_edac edac_core raid10 raid456 async_raid6_recov async_pq raid6_pq async_xor xor async_memcpy async_tx raid1 raid0 multipath linear md_mod sg sd_mod sr_mod crc_t10dif cdrom usbhid hid uhci_hcd ahci libata e1000e ehci_hcd scsi_mod thermal usbcore thermal_sys
+[   75.226534] Pid: 1804, comm: mount Not tainted 2.6.32.10-std151-amd64 #1 C2SBX
+[   75.226536] RIP: 0010:[<ffffffff81298c44>]  [<ffffffff81298c44>] btrfs_pin_extent+0x28/0xab
+[   75.226545] RSP: 0018:ffff88013abeba48  EFLAGS: 00010246
+[   75.226547] RAX: 0000000000000000 RBX: 00000009e492c000 RCX: 00000007c1bfffff
+[   75.226549] RDX: 0000000000000000 RSI: ffff88013a93e000 RDI: 0000000040000000
+[   75.226552] RBP: 0000000000001000 R08: ffff88013abebb68 R09: 0000000000080050
+[   75.226554] R10: 000000000000027c R11: 00000000000338c6 R12: ffff88013a414000
+[   75.226556] R13: 0000000000000000 R14: 0000000000000000 R15: ffffffff812cb15f
+[   75.226564] FS:  0000000000000000(0000) GS:ffff880005400000(0063) knlGS:00000000f75e4b60
+[   75.226566] CS:  0010 DS: 002b ES: 002b CR0: 000000008005003b
+[   75.226568] CR2: 00000000f76b2890 CR3: 000000013b324000 CR4: 00000000000006f0
+[   75.226570] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+[   75.226572] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+[   75.226574] Process mount (pid: 1804, threadinfo ffff88013abea000, task ffff88013ab71500)
+[   75.226575] Stack:
+[   75.226576]  ffff880134781a20 ffff88013abebb68 000000000000115f 0000000000001000
+[   75.226579] <0> ffff88013abebb68 ffffffff812cb18b ffff88013abebb14 ffff880134781b40
+[   75.226582] <0> ffff88013dd8f800 ffffffff812caa63 fffffffffffffffa 00000009e492c000
+[   75.226585] Call Trace:
+[   75.226589]  [<ffffffff812cb18b>] ? process_one_buffer+0x2c/0x5e
+[   75.226592]  [<ffffffff812caa63>] ? walk_down_log_tree+0x2c3/0x362
+[   75.226595]  [<ffffffff812cab7a>] ? walk_log_tree+0x78/0x183
+[   75.226598]  [<ffffffff812a723f>] ? join_transaction+0x174/0x1a0
+[   75.226601]  [<ffffffff812ce073>] ? btrfs_recover_log_trees+0x92/0x283
+[   75.226603]  [<ffffffff812a2b14>] ? btree_get_extent+0x0/0x18b
+[   75.226606]  [<ffffffff812cb15f>] ? process_one_buffer+0x0/0x5e
+[   75.226609]  [<ffffffff812a2a62>] ? btree_read_extent_buffer_pages+0x65/0xa3
+[   75.226612]  [<ffffffff812a6362>] ? open_ctree+0xee5/0x1137
+[   75.226615]  [<ffffffff8133a08d>] ? vsnprintf+0x3f4/0x42d
+[   75.226619]  [<ffffffff8128fe79>] ? btrfs_get_sb+0x1ad/0x3a2
+[   75.226623]  [<ffffffff810ecbb8>] ? vfs_kern_mount+0x96/0x15b
+[   75.226626]  [<ffffffff810eccdc>] ? do_kern_mount+0x49/0xe7
+[   75.226629]  [<ffffffff8110029c>] ? do_mount+0x73e/0x7a4
+[   75.226633]  [<ffffffff8111ce06>] ? compat_sys_mount+0x1f6/0x231
+[   75.226636]  [<ffffffff81037472>] ? ia32_sysret+0x0/0x5
+[   75.226637] Code: 41 5d c3 41 56 41 55 41 89 cd 41 54 55 48 89 d5 53 4c 8b a7 28 01 00 00 48 89 f3 4c 89 e7 e8 d7 e1 ff ff 48 85 c0 49 89 c6 75 04 <0f> 0b eb fe 48 8b b8 90 00 00 00 48 81 c7 b8 00 00 00 e8 65 de
+[   75.226658] RIP  [<ffffffff81298c44>] btrfs_pin_extent+0x28/0xab
+[   75.226662]  RSP <ffff88013abeba48>
+[   75.226664] ---[ end trace 0ab19e2d653aad66 ]---
+root@sysresccd /root %
+[/code]
 
-Chris Mason (2) commits (+10/-0):
-    Btrfs: make sure the chunk allocator doesn't create zero length chunks (+6/-0)
-    Btrfs: add check for changed leaves in setup_leaf_for_split (+4/-0)
+I tried to mount it again to see if I got a different error but then the machine hung and never came back from it's vacation.
 
-Sage Weil (1) commits (+31/-66):
-    Btrfs: create snapshot references in same commit as snapshot
+After another hard restart I tried mounting the filesystem again and got the same exact kernel dump (AFAICT anyways, I'm sure then memory locations are different but the rest looks the same).
 
-Andrea Gelmini (1) commits (+0/-1):
-    Btrfs: remove duplicate include in ioctl.c
+After yet another hard restart (the previous mount attempt didn't want to let me do a reboot) I tried a btrfsck and it spit out basically the same checksum errors:
 
-Miao Xie (1) commits (+4/-1):
-    Btrfs: add NULL check for do_walk_down()
+[code]
 
-Nick Piggin (1) commits (+5/-32):
-    Btrfs: use add_to_page_cache_lru, use __page_cache_alloc
+checksum verify failed on 42488987648 wanted FC733AC3 found F7794308
+checksum verify failed on 42488987648 wanted FC733AC3 found F7794308
+checksum verify failed on 42488987648 wanted FC733AC3 found F7794308
 
-Total: (17) commits
+[/code]
 
- fs/btrfs/transaction.c  |  112 +++++++++++++++---------------------------------
- fs/btrfs/inode.c        |   59 +------------------------
- fs/btrfs/extent-tree.c  |   43 ++++++++++++------
- fs/btrfs/super.c        |   23 +--------
- fs/btrfs/compression.c  |   22 +--------
- fs/btrfs/volumes.c      |   16 +++++-
- fs/btrfs/extent_io.c    |   15 ------
- fs/btrfs/disk-io.c      |   12 +++--
- fs/btrfs/ioctl.c        |    7 ++-
- fs/btrfs/ordered-data.c |    6 +-
- fs/btrfs/ctree.c        |    4 +
- fs/btrfs/ctree.h        |    1 
- 12 files changed, 111 insertions(+), 209 deletions(-)
+and then btrfsck segfaulted. I got the following as I attempted the btrfsck from 'tail -f /var/log/messages'
+
+[code]
+
+Apr  5 18:31:10 sysresccd kernel: [  262.847992] btrfsck[1849]: segfault at a8 ip 0000000008054269 sp 00000000ffc862a0 error 4 in btrfsck[8048000+1c000]
+
+[/code]
+
+I'm using gentoo-sources-2.6.33, and System Rescue CD 1.5.1 uses 2.6.32.10.
+
+
+   Justin
+
+
+____________________________________________________________
+Get Free Email with Video Mail & Video Chat!
+http://www.netzero.net/freeemail?refcd=NZTAGOUT1FREM0210

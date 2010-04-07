@@ -1,26 +1,54 @@
-From: "Mrs.Susan William" <Mrs.Susan@ufba.br>
-Subject: You Won =?iso-8859-1?b?KKM1MDAsMDAwLjAw?= GBP Pounds)
-Date: Tue, 06 Apr 2010 20:40:51 -0300
-Message-ID: <20100406204051.lga60km8wfswk8g8@webmail.ufba.br>
-Reply-To: graham_benfield01@hotmail.com
-Mime-Version: 1.0
-Content-Type: text/plain;
-	charset=ISO-8859-1;
-	DelSp="Yes";
-	format="flowed"
-To: undisclosed-recipients:;
+From: Harshavardhana <harsha@gluster.com>
+Subject: [PATCH] btfs-progs: Add null pointer checks
+Date: Tue,  6 Apr 2010 19:04:37 -0700
+Message-ID: <1270605877-26779-1-git-send-email-harsha@gluster.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+root tree is NULL in case of non btrfs devices, resulting in segfault.
+This patch fixes such issue.
 
-Your Winning details:(CGPN):7-22-71-00-66-12,Ticket no:00869575733664,Serial
-no:/BTD/8070447706/06,Luckyno:12-12-23-35-40-41(12).Contact Mr.Graham
-Benfield.Email:g.benfield147@googlemail.com
+Signed-off-by: Harshavardhana <harsha@gluster.com>
+---
+ btrfs-image.c |    5 +++++
+ btrfstune.c   |    7 +++++++
+ 2 files changed, 12 insertions(+), 0 deletions(-)
 
-
-
-
-
-----------------------------------------------------------------
-Universidade Federal da Bahia - http://www.portal.ufba.br
+diff --git a/btrfs-image.c b/btrfs-image.c
+index f2bbcc8..b3cafbb 100644
+--- a/btrfs-image.c
++++ b/btrfs-image.c
+@@ -491,6 +491,11 @@ static int create_metadump(const char *input, FILE *out, int num_threads,
+ 	int ret;
+ 
+ 	root = open_ctree(input, 0, 0);
++        if (!root) {
++                fprintf (stderr, "unable to open ctree for %s\n", input);
++                return 1;
++        }
++
+ 	BUG_ON(root->nodesize != root->leafsize);
+ 
+ 	ret = metadump_init(&metadump, root, out, num_threads,
+diff --git a/btrfstune.c b/btrfstune.c
+index 47830c5..d2c3d51 100644
+--- a/btrfstune.c
++++ b/btrfstune.c
+@@ -108,6 +108,13 @@ int main(int argc, char *argv[])
+ 
+ 	root = open_ctree(device, 0, 1);
+ 
++        /* root is NULL if btrfs not found */
++        if (!root) {
++                fprintf(stderr, "Unable to open ctree for device: %s\n",
++                        device);
++                return 1;
++        }
++
+ 	if (seeding_flag) {
+ 		ret = update_seeding_flag(root, seeding_value);
+ 		if (!ret)
+-- 
+1.6.6.1
 

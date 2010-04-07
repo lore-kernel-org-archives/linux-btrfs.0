@@ -1,31 +1,22 @@
-From: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
-Subject: Btrfs features/stabilisation timeline?
-Date: Tue, 6 Apr 2010 20:09:27 +0200 (CEST)
-Message-ID: <23688472.10.1270577367897.JavaMail.root@zimbra>
-References: <21598622.8.1270576917138.JavaMail.root@zimbra>
+From: "yoosty69@netzero.com" <yoosty69@netzero.com>
+Subject: Re: btrfs Bug?
+Date: Wed, 7 Apr 2010 00:37:12 GMT
+Message-ID: <20100406.173712.8149.0@webmail08.vgs.untd.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=US-ASCII
+Cc: linux-btrfs@vger.kernel.org
+To: yoosty69@netzero.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <21598622.8.1270576917138.JavaMail.root@zimbra>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all
+After reading around a bit on the btrfs wiki (the Getting_Started page and Gotchas page specifically) I found that I might be able to at least capture an image of the drive in case any devs needed to take a look at it; unfortunately btrfs-image failed with the same error.
+I deduced that a repair of the FS requires it to be mounted with "mount -o degraded <dev> <mount_point>", but trying to mount in degraded mode also failed with the same error.
+Not too sure where to go from here except shedding a tear for the few files that I didn't have backed up and starting over (or returning the drive? badblocks didn't return anything however..).
 
-With Sun^WOracle's changes to the Solaris license and more, Btrfs looks more welcome every day. However, I can't find anything about its progress for stabilisation or features, so I guess it miht be appropriate to ask here?
 
-* How far is Btrfs to become "stable" as in for production use?
-* I think I read a year back that RAID[56] support was started (merge of md code IIRC). How far has this come? Will it allow for what ZFS RAIDZ[123] can do?
-* In ZFS, block sizes vary depending on file size on the same filesystem. Is this a feature that is wanted or that will (or is) included in Btrfs?
-* In ZFS, some dedup has been added. I read somewhere this is a planned feature in Btrfs, but again, is it far away?
-* ZFS is self-healing for device failures or sector errors, given sufficient redundancy with mirrors or raidz[123]. I guess this will the same in Btrfs?
-* in ZFS, scrubbing takes up a very high amount of I/O, significantly reducing disk performance for the zpool (at least this is the case for 2009.06 and Solaris 10). Will there be done efforts to help avoding this with Btrfs?
+   Justin
 
-Best regards
 
-roy
---
-Roy Sigurd Karlsbakk
-(+47) 97542685
-roy@karlsbakk.net
-http://blogg.karlsbakk.net/
+____________________________________________________________
+Get Free Email with Video Mail & Video Chat!
+http://www.netzero.net/freeemail?refcd=NZTAGOUT1FREM0210

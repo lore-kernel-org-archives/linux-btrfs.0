@@ -1,24 +1,32 @@
-From: "Justin" <yoosty69@netzero.com>
-Subject: Re: btrfs Bug?
-Date: Thu, 8 Apr 2010 18:46:40 GMT
-Message-ID: <20100408.114640.18413.0@webmail01.vgs.untd.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: linux-btrfs@vger.kernel.org
-To: chris.mason@oracle.com
+From: Harshavardhana <harsha@gluster.com>
+Subject: [PATCH] fs/btrfs: Return EPERM for rmdir on subvolumes and snapshots
+Date: Thu,  8 Apr 2010 13:35:31 -0700
+Message-ID: <1270758931-5291-1-git-send-email-harsha@gluster.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Unfortunately I did reformat.
-Actually, I did a complete zero-out of the drive with dd, and then I ran "badblocks -w" on the drive, which returned 0 bad blocks (not sure if this is really a good test for SSD's as there's some amount of internal voo-doo on the drive itself).
+rmdir on subvolumes and snapshots should return "EPERM"
+rather than ENOTEMPTY. Just to be more descriptive. 
 
-For future reference, how would I go about getting an image of the drive without being able to use btrfs-image?
+Signed-off-by: Harshavardhana <harsha@gluster.com>
+---
+ fs/btrfs/inode.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index a85b90c..c0fbe03 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2593,7 +2593,7 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
+ 
+ 	if (inode->i_size > BTRFS_EMPTY_DIR_SIZE ||
+ 	    inode->i_ino == BTRFS_FIRST_FREE_OBJECTID)
+-		return -ENOTEMPTY;
++		return -EPERM;
+ 
+ 	ret = btrfs_reserve_metadata_space(root, 5);
+ 	if (ret)
+-- 
+1.6.6.1
 
-   Justin
-
-
-____________________________________________________________
-Car Insurance 18.29/Month
-Get car insurance for as low as $18.29 a month.
-http://thirdpartyoffers.netzero.net/TGL3231/4bbe24ec3a7bb18d3e5st01vuc

@@ -1,59 +1,36 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: ENOTEMPTY on "rm -rf" for snapshot and subvolume
-Date: Thu, 8 Apr 2010 09:52:16 -0400
-Message-ID: <20100408135216.GE1400@think>
-References: <4BBD26E4.7070106@gluster.com>
+Subject: Re: btrfs Bug?
+Date: Thu, 8 Apr 2010 10:04:50 -0400
+Message-ID: <20100408140450.GG1400@think>
+References: <20100406.100812.1985.1@webmail22.vgs.untd.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: Harshavardhana <harsha@gluster.com>
+To: "yoosty69@netzero.com" <yoosty69@netzero.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4BBD26E4.7070106@gluster.com>
+In-Reply-To: <20100406.100812.1985.1@webmail22.vgs.untd.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 07, 2010 at 05:44:20PM -0700, Harshavardhana wrote:
-> Hi Everyone,
+On Tue, Apr 06, 2010 at 05:08:12PM +0000, yoosty69@netzero.com wrote:
+> Background:
+> Was checking E-mail and browsing the internet when suddenly Pidgin crashed out. I thought that was pretty weird so I went to go re-start Pidgin when I noticed the machine hang really hard for about 30 seconds. The machine finally came back and that's when I noticed that my E-mail client (Claws Mail) had stopped responding. I 'touch'ed a file in my home dir and that was fine, but then I went to md5sum a large file and it came back with an I/O error. I ran dmesg and found that there had been a kernel dump (or whatever the proper term is) related to BTRFS. I went to shut down my programs gracefully and do a reboot, unfortunately none of my programs (FF, Pidgin, Claws-Mail, one or two others) wanted to respond so I just used the power-button.
 > 
->      Recently i created a snapshot of an existing volume which had
-> some amount of data.
->      Now that after creating the snapshot i have tried deleting the
-> same snapshot.  But i am
->      getting ENOTEMPTY for "rmdir". But when i see the actual files
-> inside are deleted
->      not the parent directory.
+> I switched my Intel X-25M (2nd gen, latest FW as of about a month ago) to a different SATA cable and on a different port on the motherboard (Supermicro C2SBX) to see if there was some sort of hardware problem there. I booted again into Gentoo and the boot failed (I'm guessing it failed after trying to mount the root partition as RO the first time).
 > 
->      From the code it looks like
+> I booted in to System Rescue CD 1.5.1 and tried to mount the partition and mount returned with a SegFault and dmesg spit out the following:
 > 
->      if (inode->i_size > BTRFS_EMPTY_DIR_SIZE ||
->             inode->i_ino == BTRFS_FIRST_FREE_OBJECTID)
->                 return -ENOTEMPTY;
+> [code]
 > 
->      Why would "unlink" succeeds for the files inside the
-> directory?, yet returning ENOTEMPTY
+> [   75.218065] device label root devid 1 transid 4446 /dev/sda3
+> [   75.225843] btrfs: sda3 checksum verify failed on 42488987648 wanted FC733AC3 found F7794308 level 1
+> [   75.226049] btrfs: sda3 checksum verify failed on 42488987648 wanted FC733AC3 found F7794308 level 1
+> [   75.226238] btrfs: sda3 checksum verify failed on 42488987648 wanted FC733AC3 found F7794308 level 1
 
-You need to use the snapshot deletion ioctl to actually delete the
-snapshot.
+Ok, this checksum verify failed means the block was corrupted.  Do you
+still have this image?  We can pull the data off that one block and see
+what was really there.
 
-> 
->      This looks odd after this, i  went ahead and tried deleting the
-> the existing volume itself
->      same result.
-> 
->      So i was wondering if at all this is supposed to work this way,
-> do i need to use "btrfs"
->      commands to delete subvolumes always? and their relative snapshots?.
-
-Yes.  We could add support for doing this inside rm, it isn't a huge
-amount of code.
-
-> 
->      But either in that case too returning ENOTEMPTY does confuse a
-> user a lot. Isn't it valid
->      just by returning EPERM will explain a lot to users saying that
-> this is a snapshot of a
->      subvolume or a parent subvolume which is not supposed to be
-> deleted this way.
-
-Good point, eperm might be more intuitive.
+The crc errors are most likely from an error on the drive.  But I can
+help you pull the data off if you haven't already reformatted.
 
 -chris

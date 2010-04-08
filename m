@@ -1,40 +1,59 @@
-From: Harshavardhana <harsha@gluster.com>
-Subject: [PATCH] fs/btrfs: Avoid possible NULL pointer dereference for fs_devices
-Date: Wed,  7 Apr 2010 18:24:04 -0700
-Message-ID: <1270689844-8404-1-git-send-email-harsha@gluster.com>
-To: linux-btrfs@vger.kernel.org
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: ENOTEMPTY on "rm -rf" for snapshot and subvolume
+Date: Thu, 8 Apr 2010 09:52:16 -0400
+Message-ID: <20100408135216.GE1400@think>
+References: <4BBD26E4.7070106@gluster.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Harshavardhana <harsha@gluster.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4BBD26E4.7070106@gluster.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-loop is never traversed for fs_devices NULL in volumes.c
+On Wed, Apr 07, 2010 at 05:44:20PM -0700, Harshavardhana wrote:
+> Hi Everyone,
+> 
+>      Recently i created a snapshot of an existing volume which had
+> some amount of data.
+>      Now that after creating the snapshot i have tried deleting the
+> same snapshot.  But i am
+>      getting ENOTEMPTY for "rmdir". But when i see the actual files
+> inside are deleted
+>      not the parent directory.
+> 
+>      From the code it looks like
+> 
+>      if (inode->i_size > BTRFS_EMPTY_DIR_SIZE ||
+>             inode->i_ino == BTRFS_FIRST_FREE_OBJECTID)
+>                 return -ENOTEMPTY;
+> 
+>      Why would "unlink" succeeds for the files inside the
+> directory?, yet returning ENOTEMPTY
 
-<snip>
- while (fs_devices) {
- .........
- ....... }
-</snip>
+You need to use the snapshot deletion ioctl to actually delete the
+snapshot.
 
-Dereferencing happens right after, in this case over NULL pointer. 
+> 
+>      This looks odd after this, i  went ahead and tried deleting the
+> the existing volume itself
+>      same result.
+> 
+>      So i was wondering if at all this is supposed to work this way,
+> do i need to use "btrfs"
+>      commands to delete subvolumes always? and their relative snapshots?.
 
-Signed-off-by: Harshavardhana <harsha@gluster.com>
----
- fs/btrfs/volumes.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+Yes.  We could add support for doing this inside rm, it isn't a huge
+amount of code.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index b584e9a..e3d2e6b 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1261,7 +1261,8 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 				break;
- 			fs_devices = fs_devices->seed;
- 		}
--		fs_devices->seed = device->fs_devices->seed;
-+                if (fs_devices)
-+                        fs_devices->seed = device->fs_devices->seed;
- 		device->fs_devices->seed = NULL;
- 		__btrfs_close_devices(device->fs_devices);
- 		free_fs_devices(device->fs_devices);
--- 
-1.6.6.1
+> 
+>      But either in that case too returning ENOTEMPTY does confuse a
+> user a lot. Isn't it valid
+>      just by returning EPERM will explain a lot to users saying that
+> this is a snapshot of a
+>      subvolume or a parent subvolume which is not supposed to be
+> deleted this way.
 
+Good point, eperm might be more intuitive.
+
+-chris

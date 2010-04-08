@@ -1,36 +1,42 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: btrfs Bug?
-Date: Thu, 8 Apr 2010 10:04:50 -0400
-Message-ID: <20100408140450.GG1400@think>
-References: <20100406.100812.1985.1@webmail22.vgs.untd.com>
+From: Avi Kivity <avi@redhat.com>
+Subject: Re: Poor performance with qemu
+Date: Thu, 08 Apr 2010 17:58:17 +0300
+Message-ID: <4BBDEF09.70306@redhat.com>
+References: <201003281718.03699.diegocg@gmail.com> <20100330125623.GB13190@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: "yoosty69@netzero.com" <yoosty69@netzero.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Chris Mason <chris.mason@oracle.com>,
+	Diego Calleja <diegocg@gmail.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100406.100812.1985.1@webmail22.vgs.untd.com>
+In-Reply-To: <20100330125623.GB13190@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 06, 2010 at 05:08:12PM +0000, yoosty69@netzero.com wrote:
-> Background:
-> Was checking E-mail and browsing the internet when suddenly Pidgin crashed out. I thought that was pretty weird so I went to go re-start Pidgin when I noticed the machine hang really hard for about 30 seconds. The machine finally came back and that's when I noticed that my E-mail client (Claws Mail) had stopped responding. I 'touch'ed a file in my home dir and that was fine, but then I went to md5sum a large file and it came back with an I/O error. I ran dmesg and found that there had been a kernel dump (or whatever the proper term is) related to BTRFS. I went to shut down my programs gracefully and do a reboot, unfortunately none of my programs (FF, Pidgin, Claws-Mail, one or two others) wanted to respond so I just used the power-button.
-> 
-> I switched my Intel X-25M (2nd gen, latest FW as of about a month ago) to a different SATA cable and on a different port on the motherboard (Supermicro C2SBX) to see if there was some sort of hardware problem there. I booted again into Gentoo and the boot failed (I'm guessing it failed after trying to mount the root partition as RO the first time).
-> 
-> I booted in to System Rescue CD 1.5.1 and tried to mount the partition and mount returned with a SegFault and dmesg spit out the following:
-> 
-> [code]
-> 
-> [   75.218065] device label root devid 1 transid 4446 /dev/sda3
-> [   75.225843] btrfs: sda3 checksum verify failed on 42488987648 wanted FC733AC3 found F7794308 level 1
-> [   75.226049] btrfs: sda3 checksum verify failed on 42488987648 wanted FC733AC3 found F7794308 level 1
-> [   75.226238] btrfs: sda3 checksum verify failed on 42488987648 wanted FC733AC3 found F7794308 level 1
+On 03/30/2010 03:56 PM, Chris Mason wrote:
+> On Sun, Mar 28, 2010 at 05:18:03PM +0200, Diego Calleja wrote:
+>    
+>> Hi, I'm using KVM, and the virtual disk (a 20 GB file using the "raw"
+>> qemu format according to virt-manager and, of course, placed on a btrfs
+>> filesystem, running the latest mainline git) is awfully slow, no matter
+>> what OS is running inside the VM. The PCBSD installer says it's copying
+>> data at a 40-50 KB/s rate. Is someone using KVM and having better numbers
+>> than me? How can I help to debug this workload?
+>>      
+> The problem is that qemu uses O_SYNC by default, which makes btrfs do
+> log commits for every write.
+>    
 
-Ok, this checksum verify failed means the block was corrupted.  Do you
-still have this image?  We can pull the data off that one block and see
-what was really there.
+Problem is, btrfs takes the 50 KB/s guest rate and inflates it to 
+something much larger (megabytes/sec).  Are there plans to reduce the 
+amount of O_SYNC overhead writes?
 
-The crc errors are most likely from an error on the drive.  But I can
-help you pull the data off if you haven't already reformatted.
+I saw this too, but with 2.6.31 or 2.6.32 IIRC.
 
--chris
+> Once the O_DIRECT read patch is in, you can switch to that, or tell qemu
+> to use a writeback cache instead.
+>    
+
+Even with writeback qemu will issue a lot of fsyncs.
+
+-- 
+error compiling committee.c: too many arguments to function
+

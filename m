@@ -1,32 +1,32 @@
 From: Harshavardhana <harsha@gluster.com>
-Subject: [PATCH] fs/btrfs: Return EPERM for rmdir on subvolumes and snapshots
-Date: Thu,  8 Apr 2010 13:35:31 -0700
-Message-ID: <1270758931-5291-1-git-send-email-harsha@gluster.com>
-To: linux-btrfs@vger.kernel.org
+Subject: Re: ENOTEMPTY on "rm -rf" for snapshot and subvolume
+Date: Thu, 08 Apr 2010 14:14:14 -0700
+Message-ID: <4BBE4726.2070708@gluster.com>
+References: <4BBD26E4.7070106@gluster.com> <20100408135216.GE1400@think>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100408135216.GE1400@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-rmdir on subvolumes and snapshots should return "EPERM"
-rather than ENOTEMPTY. Just to be more descriptive. 
+On 04/08/2010 06:52 AM, Chris Mason wrote:
+>> >        But either in that case too returning ENOTEMPTY does confuse a
+>> >  user a lot. Isn't it valid
+>> >        just by returning EPERM will explain a lot to users saying that
+>> >  this is a snapshot of a
+>> >        subvolume or a parent subvolume which is not supposed to be
+>> >  deleted this way.
+>>      
+> Good point, eperm might be more intuitive.
+>
+> -chris
+>    
+Thanks a lot for the inputs sent a patch for that.
 
-Signed-off-by: Harshavardhana <harsha@gluster.com>
----
- fs/btrfs/inode.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+Regards
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index a85b90c..c0fbe03 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2593,7 +2593,7 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
- 
- 	if (inode->i_size > BTRFS_EMPTY_DIR_SIZE ||
- 	    inode->i_ino == BTRFS_FIRST_FREE_OBJECTID)
--		return -ENOTEMPTY;
-+		return -EPERM;
- 
- 	ret = btrfs_reserve_metadata_space(root, 5);
- 	if (ret)
 -- 
-1.6.6.1
+Harshavardhana
+http://www.gluster.com
 

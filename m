@@ -1,50 +1,40 @@
 From: Harshavardhana <harsha@gluster.com>
-Subject: ENOTEMPTY on "rm -rf" for snapshot and subvolume
-Date: Wed, 07 Apr 2010 17:44:20 -0700
-Message-ID: <4BBD26E4.7070106@gluster.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Subject: [PATCH] fs/btrfs: Avoid possible NULL pointer dereference for fs_devices
+Date: Wed,  7 Apr 2010 18:24:04 -0700
+Message-ID: <1270689844-8404-1-git-send-email-harsha@gluster.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Everyone,
+loop is never traversed for fs_devices NULL in volumes.c
 
-      Recently i created a snapshot of an existing volume which had some 
-amount of data.
-      Now that after creating the snapshot i have tried deleting the 
-same snapshot.  But i am
-      getting ENOTEMPTY for "rmdir". But when i see the actual files 
-inside are deleted
-      not the parent directory.
+<snip>
+ while (fs_devices) {
+ .........
+ ....... }
+</snip>
 
-      From the code it looks like
+Dereferencing happens right after, in this case over NULL pointer. 
 
-      if (inode->i_size > BTRFS_EMPTY_DIR_SIZE ||
-             inode->i_ino == BTRFS_FIRST_FREE_OBJECTID)
-                 return -ENOTEMPTY;
+Signed-off-by: Harshavardhana <harsha@gluster.com>
+---
+ fs/btrfs/volumes.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-      Why would "unlink" succeeds for the files inside the directory?, 
-yet returning ENOTEMPTY
-
-      This looks odd after this, i  went ahead and tried deleting the 
-the existing volume itself
-      same result.
-
-      So i was wondering if at all this is supposed to work this way, do 
-i need to use "btrfs"
-      commands to delete subvolumes always? and their relative snapshots?.
-
-      But either in that case too returning ENOTEMPTY does confuse a 
-user a lot. Isn't it valid
-      just by returning EPERM will explain a lot to users saying that 
-this is a snapshot of a
-      subvolume or a parent subvolume which is not supposed to be 
-deleted this way.
-
-Regards
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index b584e9a..e3d2e6b 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1261,7 +1261,8 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 				break;
+ 			fs_devices = fs_devices->seed;
+ 		}
+-		fs_devices->seed = device->fs_devices->seed;
++                if (fs_devices)
++                        fs_devices->seed = device->fs_devices->seed;
+ 		device->fs_devices->seed = NULL;
+ 		__btrfs_close_devices(device->fs_devices);
+ 		free_fs_devices(device->fs_devices);
 -- 
-Harshavardhana
-http://www.gluster.com
+1.6.6.1
 

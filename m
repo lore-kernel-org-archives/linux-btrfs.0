@@ -1,40 +1,50 @@
-From: Sage Weil <sage@newdream.net>
-Subject: [PATCH] Btrfs: fix lockdep warning on clone ioctl
-Date: Wed,  7 Apr 2010 11:53:32 -0700
-Message-ID: <1270666412-17012-1-git-send-email-sage@newdream.net>
-Cc: Sage Weil <sage@newdream.net>
+From: Harshavardhana <harsha@gluster.com>
+Subject: ENOTEMPTY on "rm -rf" for snapshot and subvolume
+Date: Wed, 07 Apr 2010 17:44:20 -0700
+Message-ID: <4BBD26E4.7070106@gluster.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm no lockdep expert, but this appears to make the lockdep warning go
-away for the i_mutex locking in the clone ioctl.
+Hi Everyone,
 
-Signed-off-by: Sage Weil <sage@newdream.net>
----
- fs/btrfs/ioctl.c |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
+      Recently i created a snapshot of an existing volume which had some 
+amount of data.
+      Now that after creating the snapshot i have tried deleting the 
+same snapshot.  But i am
+      getting ENOTEMPTY for "rmdir". But when i see the actual files 
+inside are deleted
+      not the parent directory.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index c8e6470..ae2b9a0 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1530,11 +1530,11 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 	path->reada = 2;
- 
- 	if (inode < src) {
--		mutex_lock(&inode->i_mutex);
--		mutex_lock(&src->i_mutex);
-+		mutex_lock_nested(&inode->i_mutex, I_MUTEX_PARENT);
-+		mutex_lock_nested(&src->i_mutex, I_MUTEX_CHILD);
- 	} else {
--		mutex_lock(&src->i_mutex);
--		mutex_lock(&inode->i_mutex);
-+		mutex_lock_nested(&src->i_mutex, I_MUTEX_PARENT);
-+		mutex_lock_nested(&inode->i_mutex, I_MUTEX_CHILD);
- 	}
- 
- 	/* determine range to clone */
+      From the code it looks like
+
+      if (inode->i_size > BTRFS_EMPTY_DIR_SIZE ||
+             inode->i_ino == BTRFS_FIRST_FREE_OBJECTID)
+                 return -ENOTEMPTY;
+
+      Why would "unlink" succeeds for the files inside the directory?, 
+yet returning ENOTEMPTY
+
+      This looks odd after this, i  went ahead and tried deleting the 
+the existing volume itself
+      same result.
+
+      So i was wondering if at all this is supposed to work this way, do 
+i need to use "btrfs"
+      commands to delete subvolumes always? and their relative snapshots?.
+
+      But either in that case too returning ENOTEMPTY does confuse a 
+user a lot. Isn't it valid
+      just by returning EPERM will explain a lot to users saying that 
+this is a snapshot of a
+      subvolume or a parent subvolume which is not supposed to be 
+deleted this way.
+
+Regards
+
 -- 
-1.6.6.1
+Harshavardhana
+http://www.gluster.com
 

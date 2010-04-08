@@ -1,32 +1,26 @@
-From: Harshavardhana <harsha@gluster.com>
-Subject: Re: ENOTEMPTY on "rm -rf" for snapshot and subvolume
-Date: Thu, 08 Apr 2010 14:14:14 -0700
-Message-ID: <4BBE4726.2070708@gluster.com>
-References: <4BBD26E4.7070106@gluster.com> <20100408135216.GE1400@think>
+From: David Brown <btrfs@davidb.org>
+Subject: Re: [PATCH] fs/btrfs: Return EPERM for rmdir on subvolumes and
+ snapshots
+Date: Thu, 8 Apr 2010 15:07:17 -0700
+Message-ID: <20100408220717.GA15666@arch.davidb.org>
+References: <1270758931-5291-1-git-send-email-harsha@gluster.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Cc: linux-btrfs@vger.kernel.org
+To: Harshavardhana <harsha@gluster.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100408135216.GE1400@think>
+In-Reply-To: <1270758931-5291-1-git-send-email-harsha@gluster.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/08/2010 06:52 AM, Chris Mason wrote:
->> >        But either in that case too returning ENOTEMPTY does confuse a
->> >  user a lot. Isn't it valid
->> >        just by returning EPERM will explain a lot to users saying that
->> >  this is a snapshot of a
->> >        subvolume or a parent subvolume which is not supposed to be
->> >  deleted this way.
->>      
-> Good point, eperm might be more intuitive.
->
-> -chris
->    
-Thanks a lot for the inputs sent a patch for that.
+On Thu, Apr 08, 2010 at 01:35:31PM -0700, Harshavardhana wrote:
 
-Regards
 
--- 
-Harshavardhana
-http://www.gluster.com
+> 	if (inode->i_size > BTRFS_EMPTY_DIR_SIZE ||
+> 	    inode->i_ino == BTRFS_FIRST_FREE_OBJECTID)
+>-		return -ENOTEMPTY;
+>+		return -EPERM;
 
+Don't you want to still return ENOTEMPTY for the size check, and only
+the EPERM on the root of subvolume?
+
+David

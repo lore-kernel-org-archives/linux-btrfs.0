@@ -1,33 +1,36 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: [GIT PULL] Btrfs fixes
-Date: Mon, 12 Apr 2010 16:00:54 -0400
-Message-ID: <20100412200054.GS13327@think>
+From: "Sebastian 'gonX' Jensen" <gonx@overclocked.net>
+Subject: Regarding full drives
+Date: Tue, 13 Apr 2010 02:21:52 +0200
+Message-ID: <s2q8a48dc7a1004121721xb76d004et6d5d84abd7c9f86b@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	Linus Torvalds <torvalds@linux-foundation.org>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus
+I'm by no means a Linux guru... but btrfs-show shows me as not being
+entirely full (about 100gb free, so 90% full), and so does df.
 
-The last pull was missing two fixes, which you can find in the
-master branch of the btrfs-unstable repo:
+Yet I still got this in dmesg:
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
+[45219.275507] no space left, need 4096, 0 delalloc bytes,
+886547939328 bytes_used, 0 bytes_reserved, 0 bytes_pinned, 0
+bytes_readonly, 0 may use 886547939328 total
 
-Josef's commit helps close another enospc problem, and the other one
-fixes an oops where we try to allocate a zero sized extent off the
-drive.
+Obviously the drive is full, but with compress enabled I'm surprised
+it did it already when it was about 90% full, even though I had heard
+about this before.
+I've cleaned a bit up on the drives now, but I just want to know
+whether this is a bug that has to be filed, or if this still isn't
+completely fixed.
 
-Chris Mason (1) commits (+6/-0):
-    Btrfs: make sure the chunk allocator doesn't create zero length chunks
+I'm running RAID-0 on metadata and data over 5 drives. I rebalanced
+the array a couple of days ago, but I'm not sure if it finished
+entirely when I rebooted the computer the next day (perhaps this could
+have something to do with it?)
 
-Josef Bacik (1) commits (+15/-5):
-    Btrfs: fix data enospc check overflow
+My latest commit is 9f680ce04ea19dabbbafe01b57b61930a9b70741 - so it
+_is_ up to date.
 
-Total: (2) commits
-
- fs/btrfs/extent-tree.c |   20 +++++++++++++++-----
- fs/btrfs/volumes.c     |    6 ++++++
- 2 files changed, 21 insertions(+), 5 deletions(-)
+Regards,
+Sebastian J.

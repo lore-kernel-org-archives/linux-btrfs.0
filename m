@@ -1,25 +1,59 @@
-From: Tomasz Torcz <tomek@pipebreaker.pl>
-Subject: Re: [RFC] btrfs, udev and btrfs
-Date: Fri, 16 Apr 2010 21:01:08 +0200
-Message-ID: <20100416190108.GA27789@mother.pipebreaker.pl>
-References: <201004162048.14463.kreijack@libero.it>
+From: manio <manio@skyboo.net>
+Subject: Re: NFS mount attempts hangs with btrfs on server side
+Date: Sat, 17 Apr 2010 22:10:15 +0200
+Message-ID: <4BCA15A7.9000502@skyboo.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-2; format=flowed
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201004162048.14463.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 16, 2010 at 08:48:14PM +0200, Goffredo Baroncelli wrote:
-> NOTE: I tested these scripts which an ubuntu 10.4 system. I don't know the 
-> changes which may be required to work for other distributions (like fedora), 
-> but I am very interested in knowing those.
+ > Greetings.
+ >
+ > I am observing a case whereby NFS mounting seems to hang. A tcpdump
+ > trace reveals that it retries forever RPC and exchanging NFS messages
+ > without giving any warning or error message about what's wrong. There is
+ > no firewall active, and the NFSserver (.1) has the client (.101)
+ > unconditionally allowed.
+ >
+ > It's a simple
+ > mount -t nfs 192.168.100.1:/B/home/jengelh /home/jengelh -o tcp,intr,soft
+ >
+ > /B is a btrfs volume. Mounting an ext4 volume over NFS instead completes
+ > in a splitsecond.
+ >
+ > Attached is the pcap file (->wireshark pretty display for deciphering).
+ >
+ > It seems pretty much independent of the Linux kernel used; I can
+ > reproduce this in both 2.6.33-rc8 as well as 2.6.31.12.
 
-  Just few days ago I've asked dracut guys for including btrfs support.
-Current result is here: http://dracut.git.sourceforge.net/git/gitweb.cgi?p=dracut/dracut;a=tree;f=modules.d/90btrfs
-It still being polished a little.
+Hello
+I have very similar behavior. On the server side i have nfs kernel server
+(nfs version 3) - when mounting ext3 directories - all works fine,
+but when i export btrfs directory and try to mount it:
+on client side (debian sid) i've got:
+mount.nfs: Connection timed out
+and during mounting time on server side (debian lenny):
+about 20 lines with: "authenticated mount request ..."
 
+i also tryed it on another client with debian lenny and first mount try
+was about several seconds long and results in:
+mount.nfs: Stale NFS file handle
+next tryes results with same error, but it was very fast responses
+to the mount command
+
+after several mount tryes i always have a problem with restarting
+nfs-kernel-server with debian init script:
+
+Stopping NFS kernel daemon: mountd nfsd.
+Unexporting directories for NFS kernel daemon....
+Exporting directories for NFS kernel daemon....
+Starting NFS kernel daemon: nfsd <--- hungs here
+... and the only way to bring the nfs server back online
+was to reboot the server :(
+
+regards,
 -- 
-Tomasz Torcz               RIP is irrevelant. Spoofing is futile.
-xmpp: zdzichubg@chrome.pl     Your routes will be aggreggated. -- Alex Yuriev
-
+Mariusz Bialonczyk
+jabber/e-mail: manio@skyboo.net
+http://manio.skyboo.net

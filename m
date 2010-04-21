@@ -1,55 +1,33 @@
-From: Jan Engelhardt <jengelh@medozas.de>
-Subject: Re: NFS mount attempts hangs with btrfs on server side
-Date: Wed, 21 Apr 2010 12:29:19 +0200 (CEST)
-Message-ID: <alpine.LSU.2.01.1004211227280.28393@obet.zrqbmnf.qr>
-References: <4BCA15A7.9000502@skyboo.net> <4BCED28B.5040806@skyboo.net>
+From: Dan Carpenter <error27@gmail.com>
+Subject: [patch] btrfs: add check for ERR_PTR()
+Date: Wed, 21 Apr 2010 12:32:04 +0200
+Message-ID: <20100421103204.GD29647@bicker>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: linux-btrfs@vger.kernel.org
-To: Manio <manio@skyboo.net>
+Content-Type: text/plain; charset=us-ascii
+Cc: Al Viro <viro@zeniv.linux.org.uk>,
+	Joel Becker <joel.becker@oracle.com>,
+	James Morris <jmorris@namei.org>,
+	Christoph Hellwig <hch@lst.de>, linux-btrfs@vger.kernel.org,
+	kernel-janitors@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4BCED28B.5040806@skyboo.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+posix_acl_from_xattr() can sometimes return an ERR_PTR().
 
-On Wednesday 2010-04-21 12:25, Manio wrote:
-> On 2010-04-17 22:10, manio wrote:
->>> Greetings.
->>>
->>> I am observing a case whereby NFS mounting seems to hang. A tcpdump
->>> trace reveals that it retries forever RPC and exchanging NFS messages
->>> without giving any warning or error message about what's wrong. There is
->>> no firewall active, and the NFSserver (.1) has the client (.101)
->>> unconditionally allowed.
->>>
->>> It's a simple
->>> mount -t nfs 192.168.100.1:/B/home/jengelh /home/jengelh -o tcp,intr,soft
->>>
->>> /B is a btrfs volume. Mounting an ext4 volume over NFS instead completes
->>> in a splitsecond.
->>
->> Hello
->> I have very similar behavior. On the server side i have nfs kernel server
->> (nfs version 3) - when mounting ext3 directories - all works fine,
->> but when i export btrfs directory and try to mount it:
->> on client side (debian sid) i've got:
->> mount.nfs: Connection timed out
->> and during mounting time on server side (debian lenny):
->> about 20 lines with: "authenticated mount request ..."
->>
->
-> Hello
-> Now i can reply myself - i hope it could be helpful to someone :)
-> The problem was: old nfs-utils and/or userland (portmap and stuff
-> like that).
+Signed-off-by: Dan Carpenter <error27@gmail.com>
 
-I'd rather have a real description rather than "stuff like that".
-Since I am not on debian, "old nfs-utils" would not happen -
-rpcbind-0.1.6+git20080930 and nfs-kernel-server-1.1.3
-should be very much recent enough.
-Especially since exportability of filesystems is usually not
-so much a userspace thing.
-
->First i was trying to repeat mounting on debian sid
-> and it works - so i finally decided to bring up my debian stable
-> to squeeze - and it is working now!! :)
+diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+index 6ef7b26..c6d84ce 100644
+--- a/fs/btrfs/acl.c
++++ b/fs/btrfs/acl.c
+@@ -60,7 +60,8 @@ static struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
+ 		size = __btrfs_getxattr(inode, name, value, size);
+ 		if (size > 0) {
+ 			acl = posix_acl_from_xattr(value, size);
+-			set_cached_acl(inode, type, acl);
++			if (!IS_ERR(acl))
++				set_cached_acl(inode, type, acl);
+ 		}
+ 		kfree(value);
+ 	} else if (size == -ENOENT || size == -ENODATA || size == 0) {

@@ -1,35 +1,41 @@
-From: Christian Kujau <lists@nerdbynature.de>
-Subject: implicit declaration of function 'strndup'
-Date: Thu, 22 Apr 2010 00:50:07 -0700 (PDT)
-Message-ID: <alpine.DEB.2.01.1004220040350.18247@bogon.housecafe.de>
+From: Dan Magenheimer <dan.magenheimer@oracle.com>
+Subject: Cleancache [PATCH 1/7] (was Transcendent Memory):
+	cleancache_poolid in superblock
+Date: Thu, 22 Apr 2010 06:27:49 -0700
+Message-ID: <20100422132749.GA27287__10775.2805030488$1271942986$gmane$org@ca-server1.us.oracle.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: zhaolei@cn.fujitsu.com, miaox@cn.fujitsu.com
-To: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
+Content-Type: text/plain; charset=us-ascii
+To: chris.mason@oracle.com, viro@zeniv.linux.org.uk,
+	akpm@linux-foundation.org, adilger@sun.com, tytso@mit.edu,
+	mfasheh@suse.com, joel.becker@oracle.com, matthew@wil.cx,
+	linux-btrfs@vger.
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+(Sorry for resend... Mail server DNS problems sending to some recipients)
 
-compiling the latest checkout of btrfs-progs-git, I still get the compiler 
-error Miao Xie reported[0] in March, along with a patch:
+Cleancache [PATCH 1/7] (was Transcendent Memory): cleancache_poolid in superblock
 
-  cc1: warnings being treated as errors
-  btrfs-list.c: In function 'ino_resolve':
-  btrfs-list.c:511: warning: implicit declaration of function 'strndup'
-  btrfs-list.c:511: warning: incompatible implicit declaration of built-in 
-  function 'strndup'
-  make: *** [btrfs-list.o] Error 1
+Add cleancache_poolid to superblock structure... not tied
+to CONFIG_CLEANCACHE so as to avoid unnecessary clutter.
 
-I'm on Debian/stable (gcc 4.3.2-1.1, glibc-2.7), the patch from Miao Xie 
-resolved this issue. Is there a reason it's not in git yet?
+Signed-off-by: Dan Magenheimer <dan.magenheimer@oracle.com>
 
-Thanks,
-Christian.
+Diffstat:
+ fs.h                                     |    5 +++++
+ 1 file changed, 5 insertions(+)
 
-[0] https://patchwork.kernel.org/patch/88224/
-    http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg04610.html
--- 
-BOFH excuse #374:
-
-It's the InterNIC's fault.
+--- linux-2.6.34-rc5/include/linux/fs.h	2010-04-19 17:29:56.000000000 -0600
++++ linux-2.6.34-rc5-cleancache/include/linux/fs.h	2010-04-21 10:06:28.000000000 -0600
+@@ -1383,6 +1383,11 @@ struct super_block {
+ 	 * generic_show_options()
+ 	 */
+ 	char *s_options;
++
++	/*
++	 * Saved pool identifier for cleancache (-1 means none)
++	 */
++	int cleancache_poolid;
+ };
+ 
+ extern struct timespec current_fs_time(struct super_block *sb);

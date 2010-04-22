@@ -1,155 +1,82 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH]btrfs: speed up extent_io tree search
-Date: Wed, 21 Apr 2010 09:42:36 -0400
-Message-ID: <20100421134235.GA2331@localhost.localdomain>
-References: <20100420092158.GA5873@sli10-desk.sh.intel.com> <20100420143901.GB2334@localhost.localdomain> <20100421014817.GA12755@sli10-desk.sh.intel.com> <20100421021100.GA5827@localhost.localdomain> <20100421031046.GA18500@sli10-desk.sh.intel.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	"chris.mason@oracle.com" <chris.mason@oracle.com>
-To: Shaohua Li <shaohua.li@intel.com>
+From: Tao Ma <tao.ma@oracle.com>
+Subject: [RFC] btrfs: Don't return extent in fiemap if we meet with a hole.
+Date: Thu, 22 Apr 2010 13:36:30 +0800
+Message-ID: <1271914590-7743-1-git-send-email-tao.ma@oracle.com>
+Cc: sunil.mushran@oracle.com, Tao Ma <tao.ma@oracle.com>,
+	Jeff Liu <jeff.liu@oracle.com>,
+	Chris Mason <chris.mason@oracle.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100421031046.GA18500@sli10-desk.sh.intel.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 21, 2010 at 11:10:46AM +0800, Shaohua Li wrote:
-> On Wed, Apr 21, 2010 at 10:11:01AM +0800, Josef Bacik wrote:
-> > On Wed, Apr 21, 2010 at 09:48:17AM +0800, Shaohua Li wrote:
-> > > On Tue, Apr 20, 2010 at 10:39:01PM +0800, Josef Bacik wrote:
-> > > > On Tue, Apr 20, 2010 at 05:21:58PM +0800, Shaohua Li wrote:
-> > > > > searching extent_io_tree is frequently used and tooks a lot of cpu time.
-> > > > > We could cache last found extent_state to skip some full search. In my
-> > > > > test, the hit rate is from 30% to 70% depending on different workload,
-> > > > > which can speed up the search.
-> > > > > 
-> > > > > Signed-off-by: Shaohua Li <shaohua.li@intel.com>
-> > > > > 
-> > > > > diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> > > > > index d2d0368..645f00c 100644
-> > > > > --- a/fs/btrfs/extent_io.c
-> > > > > +++ b/fs/btrfs/extent_io.c
-> > > > > @@ -110,6 +110,7 @@ void extent_io_tree_init(struct extent_io_tree *tree,
-> > > > >  	spin_lock_init(&tree->lock);
-> > > > >  	spin_lock_init(&tree->buffer_lock);
-> > > > >  	tree->mapping = mapping;
-> > > > > +	tree->cached_state = NULL;
-> > > > >  }
-> > > > >  
-> > > > >  static struct extent_state *alloc_extent_state(gfp_t mask)
-> > > > > @@ -135,6 +136,22 @@ static struct extent_state *alloc_extent_state(gfp_t mask)
-> > > > >  	return state;
-> > > > >  }
-> > > > >  
-> > > > > +static void remove_cached_extent(struct extent_io_tree *tree,
-> > > > > +	struct extent_state *state)
-> > > > > +{
-> > > > > +	if (!tree->cached_state)
-> > > > > +		return;
-> > > > > +	if (tree->cached_state == state)
-> > > > > +		tree->cached_state = NULL;
-> > > > > +}
-> > > > > +
-> > > > > +static void merge_cached_extent(struct extent_io_tree *tree,
-> > > > > +	struct extent_state *first, struct extent_state *last)
-> > > > > +{
-> > > > > +	if (tree->cached_state == first || tree->cached_state == last)
-> > > > > +		tree->cached_state = first;
-> > > > > +}
-> > > > > +
-> > > > >  static void free_extent_state(struct extent_state *state)
-> > > > >  {
-> > > > >  	if (!state)
-> > > > > @@ -188,6 +205,12 @@ static struct rb_node *__etree_search(struct extent_io_tree *tree, u64 offset,
-> > > > >  	struct rb_node *orig_prev = NULL;
-> > > > >  	struct tree_entry *entry;
-> > > > >  	struct tree_entry *prev_entry = NULL;
-> > > > > +	struct tree_entry *cached_entry =
-> > > > > +				(struct tree_entry *)tree->cached_state;
-> > > > > +
-> > > > > +	if (likely(cached_entry && offset >= cached_entry->start &&
-> > > > > +		offset <= cached_entry->end))
-> > > > > +		return &cached_entry->rb_node;
-> > > > >  
-> > > > >  	while (n) {
-> > > > >  		entry = rb_entry(n, struct tree_entry, rb_node);
-> > > > > @@ -198,8 +221,10 @@ static struct rb_node *__etree_search(struct extent_io_tree *tree, u64 offset,
-> > > > >  			n = n->rb_left;
-> > > > >  		else if (offset > entry->end)
-> > > > >  			n = n->rb_right;
-> > > > > -		else
-> > > > > +		else {
-> > > > > +			tree->cached_state = (struct extent_state *)entry;
-> > > > >  			return n;
-> > > > > +		}
-> > > > >  	}
-> > > > >  
-> > > > >  	if (prev_ret) {
-> > > > > @@ -313,6 +338,7 @@ static int merge_state(struct extent_io_tree *tree,
-> > > > >  			merge_cb(tree, state, other);
-> > > > >  			state->start = other->start;
-> > > > >  			other->tree = NULL;
-> > > > > +			merge_cached_extent(tree, state, other);
-> > > > >  			rb_erase(&other->rb_node, &tree->state);
-> > > > >  			free_extent_state(other);
-> > > > >  		}
-> > > > > @@ -325,6 +351,7 @@ static int merge_state(struct extent_io_tree *tree,
-> > > > >  			merge_cb(tree, state, other);
-> > > > >  			other->start = state->start;
-> > > > >  			state->tree = NULL;
-> > > > > +			merge_cached_extent(tree, other, state);
-> > > > >  			rb_erase(&state->rb_node, &tree->state);
-> > > > >  			free_extent_state(state);
-> > > > >  			state = NULL;
-> > > > > @@ -473,6 +500,7 @@ static int clear_state_bit(struct extent_io_tree *tree,
-> > > > >  		wake_up(&state->wq);
-> > > > >  	if (delete || state->state == 0) {
-> > > > >  		if (state->tree) {
-> > > > > +			remove_cached_extent(tree, state);
-> > > > >  			clear_state_cb(tree, state, state->state);
-> > > > >  			rb_erase(&state->rb_node, &tree->state);
-> > > > >  			state->tree = NULL;
-> > > > > diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-> > > > > index bbab481..e60b367 100644
-> > > > > --- a/fs/btrfs/extent_io.h
-> > > > > +++ b/fs/btrfs/extent_io.h
-> > > > > @@ -89,6 +89,7 @@ struct extent_io_tree {
-> > > > >  	spinlock_t lock;
-> > > > >  	spinlock_t buffer_lock;
-> > > > >  	struct extent_io_ops *ops;
-> > > > > +	struct extent_state *cached_state;
-> > > > >  };
-> > > > >  
-> > > > >  struct extent_state {
-> > > > 
-> > > > Sorry I saw this earlier but then forgot about it.  So instead of doing a
-> > > > per-tree thing, which will end up with misses if somebody else tries to search
-> > > > the tree for a different offset, you will want to do something like this
-> > > > 
-> > > > http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=commit;h=2ac55d41b5d6bf49e76bc85db5431240617e2f8f
-> > > > 
-> > > > So that way _anybody_ who does a search will have a cached state, and so all
-> > > > subsequent searches won't be needed, instead of only working for the first guy
-> > > > who gets their state cached.  Thanks,
-> > > Hmm, the patch you pointed out is already in upstream but I still saw the search
-> > > takes a lot of CPU.
-> > > 
-> > 
-> > I've probably missed some places where we could be using cached extent states, I
-> > wasn't terribly thorough when I was checking.  It may be good to instrument the
-> > cases where we come into test/clear/set bits and we not end up using the cached
-> > state to see where the trouble spots are.  Thanks,
-> My test basically is in the code path of .readpage/.readpages and
-> .writepage/.writepages. In my first glance of the code, such places look not easily
-> to covert to use your scheme of cached extent states. But I need more check anyway.
-> 
+Recently, my colleague Jeff tried to add fiemap support to cp(1).
+http://www.mail-archive.com/bug-coreutils@gnu.org/msg19987.html
 
-Hmm I see your point.  I guess this doesn't mess with anybody that already uses
-the cached state stuff, and if it helps out in these more complicated cases then
-I guess thats good enough.
+He just meet with a strange issue with following command:
+dd if=/dev/null of=/btrfs/sparse bs=1 seek=4096
+When we use fiemap to the file, btrfs returns an extent with len '4096'
+and flag 'unwritten' while actually there is no data allocated.
 
-Acked-by: Josef Bacik <josef@redhat.com>
+I just dived into this and to my surprise, it is done by btrfs
+intentionally. I checked other file systems which support fiemap.
+Actually with the file created by the script, ocfs2, ext3/4 and
+xfs all return zero extent. And according to the documentation file
+Documentation/filesystems/fiemap.txt, FIEMAP_EXTENT_UNWRITTEN should
+be used when the extent is allocated but it's data has not been
+initialized. So I think btrfs should work like other filesystems.
 
-Thanks,
+Cc: Jeff Liu <jeff.liu@oracle.com>
+Cc: Chris Mason <chris.mason@oracle.com>
+Signed-off-by: Tao Ma <tao.ma@oracle.com>
+---
+ fs/btrfs/extent_io.c |   15 +++++++++------
+ 1 files changed, 9 insertions(+), 6 deletions(-)
 
-Josef
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index b177ed3..7eb4d77 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2951,7 +2951,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 	u32 flags = 0;
+ 	u64 disko = 0;
+ 	struct extent_map *em = NULL;
+-	int end = 0;
++	int end = 0, hole = 0;
+ 	u64 em_start = 0, em_len = 0;
+ 	unsigned long emflags;
+ 	ret = 0;
+@@ -2978,12 +2978,13 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 
+ 		disko = 0;
+ 		flags = 0;
++		hole = 0;
+ 
+ 		if (em->block_start == EXTENT_MAP_LAST_BYTE) {
+ 			end = 1;
+ 			flags |= FIEMAP_EXTENT_LAST;
+ 		} else if (em->block_start == EXTENT_MAP_HOLE) {
+-			flags |= FIEMAP_EXTENT_UNWRITTEN;
++			hole = 1;
+ 		} else if (em->block_start == EXTENT_MAP_INLINE) {
+ 			flags |= (FIEMAP_EXTENT_DATA_INLINE |
+ 				  FIEMAP_EXTENT_NOT_ALIGNED);
+@@ -3015,10 +3016,12 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 			end = 1;
+ 		}
+ 
+-		ret = fiemap_fill_next_extent(fieinfo, em_start, disko,
+-					em_len, flags);
+-		if (ret)
+-			goto out_free;
++		if (!hole) {
++			ret = fiemap_fill_next_extent(fieinfo, em_start, disko,
++						      em_len, flags);
++			if (ret)
++				goto out_free;
++		}
+ 	}
+ out_free:
+ 	free_extent_map(em);
+-- 
+1.6.3.3.334.g916e1.dirty
+

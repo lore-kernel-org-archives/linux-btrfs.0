@@ -1,7 +1,7 @@
 From: Dan Magenheimer <dan.magenheimer@oracle.com>
-Subject: Cleancache [PATCH 6/7] (was Transcendent Memory): ext4 hook
-Date: Thu, 22 Apr 2010 06:29:29 -0700
-Message-ID: <20100422132929.GA27380__41356.9546807141$1271943156$gmane$org@ca-server1.us.oracle.com>
+Subject: Cleancache [PATCH 5/7] (was Transcendent Memory): btrfs hooks
+Date: Thu, 22 Apr 2010 06:29:09 -0700
+Message-ID: <20100422132909.GA27349__5571.5714967393$1271943157$gmane$org@ca-server1.us.oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: chris.mason@oracle.com, viro@zeniv.linux.org.uk,
@@ -11,32 +11,68 @@ To: chris.mason@oracle.com, viro@zeniv.linux.org.uk,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Cleancache [PATCH 6/7] (was Transcendent Memory): ext4 hook
+(Sorry for resend... Mail server DNS problems sending to some recipients)
 
-Filesystems must explicitly enable cleancache.  For ext4,
-all other cleancache hooks are in the VFS layer.
+Cleancache [PATCH 5/7] (was Transcendent Memory): btrfs hooks
+
+Filesystems must explicitly enable cleancache.  Also, btrfs
+uses its own readpage which must be hooked.
 
 Signed-off-by: Dan Magenheimer <dan.magenheimer@oracle.com>
+Signed-off-by: Chris Mason <chris.mason@oracle.com>
 
 Diffstat:
+ extent_io.c                              |    9 +++++++++
  super.c                                  |    2 ++
- 1 file changed, 2 insertions(+)
+ 2 files changed, 11 insertions(+)
 
---- linux-2.6.34-rc5/fs/ext4/super.c	2010-04-19 17:29:56.000000000 -0600
-+++ linux-2.6.34-rc5-cleancache/fs/ext4/super.c	2010-04-21 10:13:00.000000000 -0600
+--- linux-2.6.34-rc5/fs/btrfs/super.c	2010-04-19 17:29:56.000000000 -0600
++++ linux-2.6.34-rc5-cleancache/fs/btrfs/super.c	2010-04-21 10:08:39.000000000 -0600
 @@ -39,6 +39,7 @@
- #include <linux/ctype.h>
- #include <linux/log2.h>
- #include <linux/crc16.h>
+ #include <linux/miscdevice.h>
+ #include <linux/magic.h>
+ #include <linux/slab.h>
 +#include <linux/cleancache.h>
- #include <asm/uaccess.h>
+ #include "compat.h"
+ #include "ctree.h"
+ #include "disk-io.h"
+@@ -477,6 +478,7 @@ static int btrfs_fill_super(struct super
+ 	sb->s_root = root_dentry;
  
- #include "ext4.h"
-@@ -1784,6 +1785,7 @@ static int ext4_setup_super(struct super
- 			EXT4_INODES_PER_GROUP(sb),
- 			sbi->s_mount_opt);
- 
+ 	save_mount_options(sb, data);
 +	sb->cleancache_poolid = cleancache_init_fs(PAGE_SIZE);
- 	return res;
- }
+ 	return 0;
  
+ fail_close:
+--- linux-2.6.34-rc5/fs/btrfs/extent_io.c	2010-04-19 17:29:56.000000000 -0600
++++ linux-2.6.34-rc5-cleancache/fs/btrfs/extent_io.c	2010-04-21 10:07:31.000000000 -0600
+@@ -10,6 +10,7 @@
+ #include <linux/swap.h>
+ #include <linux/writeback.h>
+ #include <linux/pagevec.h>
++#include <linux/cleancache.h>
+ #include "extent_io.h"
+ #include "extent_map.h"
+ #include "compat.h"
+@@ -2030,6 +2031,13 @@ static int __extent_read_full_page(struc
+ 
+ 	set_page_extent_mapped(page);
+ 
++	if (!PageUptodate(page)) {
++		if (cleancache_get_page(page) == 1) {
++			BUG_ON(blocksize != PAGE_SIZE);
++			goto out;
++		}
++	}
++
+ 	end = page_end;
+ 	lock_extent(tree, start, end, GFP_NOFS);
+ 
+@@ -2146,6 +2154,7 @@ static int __extent_read_full_page(struc
+ 		cur = cur + iosize;
+ 		page_offset += iosize;
+ 	}
++out:
+ 	if (!nr) {
+ 		if (!PageError(page))
+ 			SetPageUptodate(page);

@@ -1,48 +1,25 @@
-From: Dan Magenheimer <dan.magenheimer@oracle.com>
-Subject: Cleancache [PATCH 7/7] (was Transcendent Memory): ocfs2 hook
-Date: Thu, 22 Apr 2010 06:29:49 -0700
-Message-ID: <20100422132949.GA27396__47935.977651696$1271943162$gmane$org@ca-server1.us.oracle.com>
+From: Steven Pratt <slpratt@austin.ibm.com>
+Subject: New performance results
+Date: Fri, 23 Apr 2010 17:31:24 -0500
+Message-ID: <4BD21FBC.5040206@austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: chris.mason@oracle.com, viro@zeniv.linux.org.uk,
-	akpm@linux-foundation.org, adilger@Sun.COM, tytso@mit.edu,
-	mfasheh@suse.com, joel.becker@oracle.com, matthew@wil.cx,
-	linux-btrfs@vger.
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(Sorry for resend... Mail server DNS problems sending to some recipients)
+Well, it's been a while but been very busy on other things. Thanks to 
+Keith Mannthey for helping get some of these runs done.
 
-Cleancache [PATCH 7/7] (was Transcendent Memory): ocfs2 hook
+New raid performance on 2.6.34-rc3:
 
-Filesystems must explicitly enable cleancache.  Ocfs2 is
-currently the only user of the clustered filesystem
-interface but nevertheless, the cleancache hooks in the
-VFS layer are sufficient for ocfs2.
+http://btrfs.boxacle.net/repository/raid/2010-04-14_2004/2.6.34-rc3/2.6.34-rc3.html
 
-Signed-off-by: Dan Magenheimer <dan.magenheimer@oracle.com>
-Acked-by: Joel Becker <joel.becker@oracle.com>
+Also, the long running history graphs are here:
 
-Diffstat:
- super.c                                  |    3 +++
- 1 file changed, 3 insertions(+)
+http://btrfs.boxacle.net/repository/raid/history/History.html
 
---- linux-2.6.34-rc5/fs/ocfs2/super.c	2010-04-19 17:29:56.000000000 -0600
-+++ linux-2.6.34-rc5-cleancache/fs/ocfs2/super.c	2010-04-21 10:13:13.000000000 -0600
-@@ -42,6 +42,7 @@
- #include <linux/seq_file.h>
- #include <linux/quotaops.h>
- #include <linux/smp_lock.h>
-+#include <linux/cleancache.h>
- 
- #define MLOG_MASK_PREFIX ML_SUPER
- #include <cluster/masklog.h>
-@@ -2233,6 +2234,8 @@ static int ocfs2_initialize_super(struct
- 		mlog_errno(status);
- 		goto bail;
- 	}
-+	sb->cleancache_poolid =
-+		cleancache_init_shared_fs((char *)&uuid_net_key, PAGE_SIZE);
- 
- bail:
- 	mlog_exit(status);
+
+Steve
+
+

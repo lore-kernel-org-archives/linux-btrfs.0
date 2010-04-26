@@ -1,54 +1,115 @@
-From: sniper <s3c24xx@gmail.com>
-Subject: Re: list subvolumes with new btrfs command
-Date: Mon, 26 Apr 2010 11:22:46 +0800
-Message-ID: <l2n9bd6b5361004252022wceaf4c6bj3d62a48f389331d2@mail.gmail.com>
-References: <g2kbe6460751004251127tbdf980b6q867cf1b98fc562dc@mail.gmail.com>
-	 <q2j9bd6b5361004251909j8dcf6ccbzd978d627e137fadb@mail.gmail.com>
-	 <z2tbe6460751004251947ve533479ax174cc4f8bff50c01@mail.gmail.com>
+From: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+Subject: Re: No one seems to be using AOP_WRITEPAGE_ACTIVATE?
+Date: Mon, 26 Apr 2010 19:18:32 +0900 (JST)
+Message-ID: <20100426094837.2E5E.A69D9226@jp.fujitsu.com>
+References: <E1O5rld-0001AX-Lk@closure.thunk.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: C Anthony Risinger <anthony@extof.me>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <z2tbe6460751004251947ve533479ax174cc4f8bff50c01@mail.gmail.com>
+Content-Type: text/plain; charset="US-ASCII"
+Cc: kosaki.motohiro@jp.fujitsu.com, linux-mm@kvack.org,
+	linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+	linux-btrfs@vger.kernel.org,
+	Hugh Dickins <hugh.dickins@tiscali.co.uk>
+To: "Theodore Ts'o" <tytso@mit.edu>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <E1O5rld-0001AX-Lk@closure.thunk.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2010/4/26 C Anthony Risinger <anthony@extof.me>:
->> need super root? in my ubuntu10.04 with latest btrfs-progs:
->>
->> $ ./btrfs subvolume list /media/sda3-100g/
->> ERROR: can't perform the search
->> $ sudo ./btrfs subvolume list /media/sda3-100g/
->> ID 258 top level 5 path misc/snap/snap-4-26
->
-> ah sorry, i forgot to mention that it doesn't work as super user
-> either, same result:
->
-> $ sudo btrfs subvolume list /
-> ERROR: can't perform the search
->
-> the btrfs-progs in ubuntu is probably slightly behind git HEAD (what
-> i'm using in Arch package), maybe it broke recently, i might try to
-> bisect and see it i can pinpoint to problem commit. =C2=A0i am also u=
-sing
-> kernel 2.6.33 (ubuntu is .32 i think) that's why i thought maybe ther=
-e
-> was an issue there; it seems like the ioctl() call is failing no
-> matter what in my case.
->
-I am using ubuntu-10.04-rc with kernel compiled from the almost
-lastest source , the btrfs-progs is latest too.
+Hi Ted
 
-You can modify line
 
- fprintf(stderr, "ERROR: can't perform the search\n");
-to
- fprintf(stderr, "ERROR: can't perform the search: %s\n", strerror(errn=
-o));
+> I happened to be going through the source code for write_cache_pages(),
+> and I came across a reference to AOP_WRITEPAGE_ACTIVATE.  I was curious
+> what the heck that was, so I did search for it, and found this in
+> Documentation/filesystems/vfs.txt:
+> 
+>       If wbc->sync_mode is WB_SYNC_NONE, ->writepage doesn't have to
+>       try too hard if there are problems, and may choose to write out
+>       other pages from the mapping if that is easier (e.g. due to
+>       internal dependencies).  If it chooses not to start writeout, it
+>       should return AOP_WRITEPAGE_ACTIVATE so that the VM will not keep
+>       calling ->writepage on that page.
+> 
+>       See the file "Locking" for more details.
+> 
+> No filesystems are currently returning AOP_WRITEPAGE_ACTIVATE when it
+> chooses not to writeout page and call redirty_page_for_writeback()
+> instead.
+> 
+> Is this a change we should make, for example when btrfs refuses a
+> writepage() when PF_MEMALLOC is set, or when ext4 refuses a writepage()
+> if the page involved hasn't been allocated an on-disk block yet (i.e.,
+> delayed allocation)?  The change seems to be that we should call
+> redirty_page_for_writeback() as before, but then _not_ unlock the page,
+> and return AOP_WRITEPAGE_ACTIVATE.  Is this a good and useful thing for
+> us to do?
 
-to see what happened on earth.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Sorry, no.
+
+AOP_WRITEPAGE_ACTIVATE was introduced for ramdisk and tmpfs thing
+(and later rd choosed to use another way).
+Then, It assume writepage refusing aren't happen on majority pages.
+IOW, the VM assume other many pages can writeout although the page can't.
+Then, the VM only make page activation if AOP_WRITEPAGE_ACTIVATE is returned.
+but now ext4 and btrfs refuse all writepage(). (right?)
+
+IOW, I don't think such documentation suppose delayed allocation issue ;)
+
+The point is, Our dirty page accounting only account per-system-memory
+dirty ratio and per-task dirty pages. but It doesn't account per-numa-node
+nor per-zone dirty ratio. and then, to refuse write page and fake numa
+abusing can make confusing our vm easily. if _all_ pages in our VM LRU
+list (it's per-zone), page activation doesn't help. It also lead to OOM.
+
+And I'm sorry. I have to say now all vm developers fake numa is not
+production level quority yet. afaik, nobody have seriously tested our
+vm code on such environment. (linux/arch/x86/Kconfig says "This is only 
+useful for debugging".)
+
+	--------------------------------------------------------------
+	config NUMA_EMU
+	        bool "NUMA emulation"
+	        depends on X86_64 && NUMA
+	        ---help---
+	          Enable NUMA emulation. A flat machine will be split
+	          into virtual nodes when booted with "numa=fake=N", where N is the
+	          number of nodes. This is only useful for debugging.
+
+
+> 
+> Right now, the only writepage() function which is returning
+> AOP_WRITEPAGE_ACTIVATE is shmem_writepage(), and very curiously it's not
+> using redirty_page_for_writeback().  Should it, out of consistency's
+> sake if not to keep various zone accounting straight?
+
+Umm. I don't know the reason. instead I've cc to hugh :)
+
+
+> There are some longer-term issues, including the fact that ext4 and
+> btrfs are violating some of the rules laid out in
+> Documentation/vfs/Locking regarding what writepage() is supposed to do
+> under direct reclaim -- something which isn't going to be practical for
+> us to change on the file-system side, at least not without doing some
+> pretty nasty and serious rework, for both ext4 and I suspect btrfs.  But
+> if returning AOP_WRITEPAGE_ACTIVATE will help the VM deal more
+> gracefully with the fact that ext4 and btrfs will be refusing
+> writepage() calls under certain conditions, maybe we should make this
+> change?
+
+I'm sorry again. I'm pretty sure our vm also need to change if we need
+to solve your company's fake numa use case. I think our vm is still delayed 
+allocation unfriendly. we haven't noticed ext4 delayed allocation issue ;-)
+
+So, I have two questions
+ - I really hope to understand ext4 delayed allocation issue, can you please
+   tell me which url explain ext4 high level design and behavior about delayed
+   allocation.
+ - If my understood is correctly, making very much fake numa node and
+   simple dd can reproduce your issue. right?
+
+Now I'm guessing enough small vm patch can solve this issue. (that's only
+guess, maybe yes maybe no). but correct understanding and correct testing
+way are really necessary. please help.
+
+
+
+

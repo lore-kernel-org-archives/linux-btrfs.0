@@ -1,48 +1,31 @@
-From: Kay Sievers <kay.sievers@vrfy.org>
-Subject: Re: [RFC] btrfs, udev and btrfs
-Date: Tue, 27 Apr 2010 17:32:47 +0200
-Message-ID: <w2yac3eb2511004270832v7971c482s16a951db57832540@mail.gmail.com>
-References: <201004162048.14463.kreijack@libero.it>
+From: manio <manio@skyboo.net>
+Subject: making mirror
+Date: Tue, 27 Apr 2010 21:44:03 +0200
+Message-ID: <4BD73E83.60509@skyboo.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: kreijack@libero.it
+Content-Type: text/plain; charset=ISO-8859-2; format=flowed
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201004162048.14463.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 16, 2010 at 20:48, Goffredo Baroncelli <kreijack@gmail.com>=
- wrote:
-> Instead the first option has the disadvantage to need to be used for =
-every new
-> device.
-> From this observation I write a udev rule which scan the new block de=
-vices,
-> excluding floppy and cdrom.
->
-> Below my udev rule
->
-> =C2=A0$ cat /etc/udev/rules.d/60-btrfs.rules
->
-> =C2=A0# ghigo 15/04/2010
->
-> =C2=A0ACTION!=3D"add|change", GOTO=3D"btrfs_scan_end"
-> =C2=A0SUBSYSTEM!=3D"block", GOTO=3D"btrfs_scan_end"
-> =C2=A0KERNEL!=3D"sd[!0-9]*|hd[!0-9]*", GOTO=3D"btrfs_scan_end"
->
-> =C2=A0IMPORT{program}=3D"/sbin/blkid -o udev -p $tempnode"
+Hello
+I've created btrfs on single partition (/dev/sdc3) using:
+mkfs.btrfs /dev/sdc3
+So far  ... it is running fine - but i would like to switch to raid1 
+configuration.
+Unfortunately - i didn't pass any information about raid (-m raid1 -d 
+raid1) when i created it :(
 
-Udev needs to do this already anyway. People are not encouraged to
-call this in their own rule files again. Just make sure you place the
-rule after the existing standard call that always comes with udev. The
-btrfs rules can just depend on the variable set in the environment.
-Also there are more devices than sd* which could have a btrfs volume,
-but this is also covered by the standard udev call to blkid.
+Now i would like to hot-add a /dev/sda3 (which is same size as currently 
+used /dev/sdc3).
+The problem is - that i don't have free space on other partitions - so i 
+cannot move data away, create FS from start and copy data back to 
+running mirror.
+Perfect solution would be a hot-adding new partition - but can i do it 
+with btrfs-vol? If so - how?
 
-Thanks,
-Kay
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+regards,
+-- 
+manio
+jabber/e-mail: manio@skyboo.net
+http://manio.skyboo.net

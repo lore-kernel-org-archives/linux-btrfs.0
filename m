@@ -1,107 +1,136 @@
-From: Chris Samuel <chris@csamuel.org>
-Subject: [PATCH] [Coccinelle] Convert various if() BUG(); to BUG_ON();
-Date: Wed, 28 Apr 2010 07:50:56 -0400
-Message-ID: <4BD82120.4030008@csamuel.org>
+From: sniper <s3c24xx@gmail.com>
+Subject: bug when removing device
+Date: Thu, 29 Apr 2010 02:11:15 +0800
+Message-ID: <j2x9bd6b5361004281111u565c16d7x24ea3d4640ca365@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=UTF-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch converts the remaining manual tests which
-call BUG() directly after a test to just use BUG_ON()
-instead.
+Hi all,
 
-It is a simple inplace change using Coccinelle's
-BUG_ON.cocci test.
+I tried to reproduce the bug reported by Tomas Thiemel
+(http://www.spinics.net/lists/linux-btrfs/msg04818.html) with loop
+device, and caught a bug report.
 
-Signed-off-by: Chris Samuel <chris@csamuel.org>
----
-  fs/btrfs/ctree.c      |    7 ++-----
-  fs/btrfs/print-tree.c |    8 ++------
-  fs/btrfs/tree-log.c   |    4 +---
-  fs/btrfs/volumes.c    |    3 +--
-  4 files changed, 6 insertions(+), 16 deletions(-)
+kernel: v2.6.34-rc5-279-g1600f9d
+btrfs_progs: v0.19-16-g075587c
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 6795a71..8f6491f 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1178,9 +1178,7 @@ static noinline int balance_level(struct 
-btrfs_trans_handle *trans,
-         }
-         /* double check we haven't messed things up */
-         check_block(root, path, level);
--       if (orig_ptr !=
--           btrfs_node_blockptr(path->nodes[level], path->slots[level]))
--               BUG();
-+       BUG_ON(orig_ptr != btrfs_node_blockptr(path->nodes[level], 
-path->slots[level]));
-  enospc:
-         if (right) {
-                 btrfs_tree_unlock(right);
-@@ -2137,8 +2135,7 @@ static int insert_ptr(struct btrfs_trans_handle 
-*trans, struct btrfs_root
-         lower = path->nodes[level];
-         nritems = btrfs_header_nritems(lower);
-         BUG_ON(slot > nritems);
--       if (nritems == BTRFS_NODEPTRS_PER_BLOCK(root))
--               BUG();
-+       BUG_ON(nritems == BTRFS_NODEPTRS_PER_BLOCK(root));
-         if (slot != nritems) {
-                 memmove_extent_buffer(lower,
-                               btrfs_node_key_ptr_offset(slot + 1),
-diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
-index 0d126be..2d5e1d9 100644
---- a/fs/btrfs/print-tree.c
-+++ b/fs/btrfs/print-tree.c
-@@ -325,12 +325,8 @@ void btrfs_print_tree(struct btrfs_root *root, 
-struct extent_buffer *c)
-                                         btrfs_node_blockptr(c, i),
-                                         btrfs_level_size(root, level - 1),
-                                         btrfs_node_ptr_generation(c, i));
--               if (btrfs_is_leaf(next) &&
--                  level != 1)
--                       BUG();
--               if (btrfs_header_level(next) !=
--                      level - 1)
--                       BUG();
-+               BUG_ON(btrfs_is_leaf(next) && level != 1);
-+               BUG_ON(btrfs_header_level(next) != level - 1);
-                 btrfs_print_tree(root, next);
-                 free_extent_buffer(next);
-         }
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index af57dd2..7a55957 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -375,9 +375,7 @@ insert:
-                                                 item_size - found_size);
-                         BUG_ON(ret);
-                 }
--       } else if (ret) {
--               BUG();
--       }
-+       } else BUG_ON(ret);
-         dst_ptr = btrfs_item_ptr_offset(path->nodes[0],
-                                         path->slots[0]);
+cd /tmp
+mkdir mnt0
+mkdir mnt1
+dd if=/dev/zero of=./disk0 bs=1M count=500
+cp disk0 disk1
+sudo losetup /dev/loop0 ./disk0
+sudo losetup /dev/loop1 ./disk1
+sudo mkfs.btrfs /dev/loop0
+sudo mkfs.btrfs /dev/loop1
+sudo mount -t btrfs /dev/loop0 /tmp/mnt0
+sudo chmod 777 ./mnt0
+cp something to mnt0 to make it about 90% full.
+sync
+sudo btrfs device add /dev/loop1 /tmp/mnt0/
+sudo btrfs device del /dev/loop0 /tmp/mnt0/
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 8db7b14..480edee 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1860,8 +1860,7 @@ again:
-                                                    found_key.offset);
-                         if (ret == -ENOSPC)
-                                 failed++;
--                       else if (ret)
--                               BUG();
-+                       else BUG_ON(ret);
-                 }
 
-                 if (found_key.offset == 0)
--- 
-1.7.0.4
 
--- 
-  Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+[   62.633654] Btrfs loaded
+[   62.683562] device fsid f54c8635a7be86e1-bbbda7c901fc86bc devid 1
+transid 3244 /dev/sda3
+[  146.235105] device fsid e6427ac6ae899005-2bbefc65da08e8e devid 1
+transid 7 /dev/loop0
+[  283.259210] btrfs: relocating block group 465567744 flags 1
+[  283.546271] btrfs: relocating block group 398458880 flags 1
+[  284.081040] btrfs: found 87 extents
+[  285.807272] btrfs: found 87 extents
+[  286.011543] btrfs: relocating block group 331350016 flags 1
+[  286.609884] btrfs: found 4238 extents
+[  288.990953] btrfs: found 4238 extents
+[  289.283116] btrfs: relocating block group 264241152 flags 1
+[  289.905397] btrfs: found 130 extents
+[  291.474489] btrfs: found 130 extents
+[  291.646969] btrfs: relocating block group 197132288 flags 1
+[  292.121484] btrfs: found 236 extents
+[  293.781097] btrfs: found 236 extents
+[  293.979469] btrfs: relocating block group 130023424 flags 1
+[  294.483698] btrfs: found 208 extents
+[  296.108372] btrfs: found 208 extents
+[  296.328261] btrfs: relocating block group 62914560 flags 1
+[  296.822185] btrfs: found 123 extents
+[  298.424613] btrfs: found 123 extents
+[  298.574020] btrfs: relocating block group 20971520 flags 34
+[  298.659502] btrfs allocation failed flags 34, wanted 4096
+[  298.659509] space_info has 8384512 free, is full
+[  298.659514] space_info total=8388608, pinned=0, delalloc=0,
+may_use=0, used=4096, root=0, super=0, reserved=0
+[  298.659519] block group 20971520 has 8388608 bytes, 4096 used 0
+pinned 0 reserved
+[  298.659524] entry offset 20975616, bytes 8384512, bitmap no
+[  298.659527] block group has cluster?: no
+[  298.659530] 1 blocks of free space at or bigger than bytes is
+[  298.659562] ------------[ cut here ]------------
+[  298.659565] kernel BUG at fs/btrfs/relocation.c:2146!
+[  298.659569] invalid opcode: 0000 [#1] SMP
+[  298.659575] last sysfs file:
+/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq
+[  298.659579] Modules linked in: btrfs zlib_deflate crc32c libcrc32c
+binfmt_misc xt_TCPMSS xt_tcpmss xt_tcpudp iptable_mangle ip_tables
+x_tables pppoe pppox ppdev parport_pc snd_hda_codec_nvhdmi
+snd_hda_codec_realtek snd_hda_intel fbcon tileblit snd_hda_codec font
+snd_hwdep bitblit softcursor snd_pcm_oss arc4 snd_mixer_oss snd_pcm
+joydev snd_seq_dummy snd_seq_oss snd_seq_midi uvcvideo nouveau
+snd_rawmidi ttm drm_kms_helper sdhci_pci videodev video sdhci iwlagn
+psmouse v4l1_compat output snd_seq_midi_event lp led_class iwlcore drm
+intel_agp snd_seq serio_raw agpgart i2c_algo_bit parport snd_timer
+snd_seq_device snd jmb38x_ms memstick soundcore snd_page_alloc
+mac80211 cfg80211 usbhid ohci1394 hid usb_storage tg3 ieee1394
+[  298.659679]
+[  298.659685] Pid: 2179, comm: btrfs Not tainted 2.6.34-rc5-custom #1
+KL1                             /IdeaPad Y450
+[  298.659691] EIP: 0060:[<f85f3b7e>] EFLAGS: 00010286 CPU: 1
+[  298.659710] EIP is at relocate_tree_blocks+0x52e/0x590 [btrfs]
+[  298.659714] EAX: cd096dc0 EBX: cd1a83c0 ECX: cd096940 EDX: 00000000
+[  298.659718] ESI: 00000008 EDI: cd096dc0 EBP: cd333c74 ESP: cd333c14
+[  298.659722]  DS: 007b ES: 007b FS: 00d8 GS: 00e0 SS: 0068
+[  298.659727] Process btrfs (pid: 2179, ti=cd332000 task=f6beb340
+task.ti=cd332000)
+[  298.659730] Stack:
+[  298.659733]  cd096554 f6e0eb60 00000000 cd096540 01400000 00000000
+cd333c74 f6331800
+[  298.659744] <0> cd333ccc ffffffe4 f69bbe40 00000000 ed57d570
+f6e0eb60 cd1a83fc 01000000
+[  298.659756] <0> 00000000 d8000000 00000001 00000000 fffa2000
+00000002 f6e0eaf0 f69bbe40
+[  298.659768] Call Trace:
+[  298.659788]  [<f85f3e0f>] ? relocate_block_group+0x22f/0x430 [btrfs]
+[  298.659807]  [<f85b23d3>] ? btrfs_clean_old_snapshots+0x63/0xf0 [btrfs]
+[  298.659824]  [<f85f4187>] ? btrfs_relocate_block_group+0x177/0x350 [btrfs]
+[  298.659842]  [<f85d920e>] ? btrfs_relocate_chunk+0x6e/0x520 [btrfs]
+[  298.659850]  [<c0130370>] ? kunmap_atomic+0x60/0x70
+[  298.659869]  [<f85cf451>] ? unmap_extent_buffer+0x11/0x20 [btrfs]
+[  298.659889]  [<f85c5610>] ? btrfs_dev_extent_chunk_offset+0xe0/0xf0 [btrfs]
+[  298.659907]  [<f85d996e>] ? btrfs_shrink_device+0x2ae/0x3e0 [btrfs]
+[  298.659925]  [<f85d9c5d>] ? btrfs_rm_device+0x1bd/0x530 [btrfs]
+[  298.659933]  [<c01cc2fb>] ? filemap_fault+0xbb/0x400
+[  298.659939]  [<c02024c3>] ? __mem_cgroup_try_charge+0x53/0x330
+[  298.659956]  [<f85e1b9d>] ? btrfs_ioctl+0x79d/0x9c0 [btrfs]
+[  298.659964]  [<c01dd0d8>] ? memdup_user+0x38/0x70
+[  298.659980]  [<f85e1bbc>] ? btrfs_ioctl+0x7bc/0x9c0 [btrfs]
+[  298.659986]  [<c01e28b8>] ? __do_fault+0x3e8/0x560
+[  298.659993]  [<c01e47e5>] ? handle_mm_fault+0x145/0xaa0
+[  298.660000]  [<c0215532>] ? vfs_ioctl+0x32/0xb0
+[  298.660016]  [<f85e1400>] ? btrfs_ioctl+0x0/0x9c0 [btrfs]
+[  298.660022]  [<c0215c92>] ? do_vfs_ioctl+0x72/0x5c0
+[  298.660029]  [<c05a1abd>] ? do_page_fault+0x1cd/0x440
+[  298.660035]  [<c0210e3b>] ? putname+0x2b/0x40
+[  298.660041]  [<c0205e9a>] ? do_sys_open+0xfa/0x120
+[  298.660047]  [<c0216247>] ? sys_ioctl+0x67/0x80
+[  298.660053]  [<c0102fe3>] ? sysenter_do_call+0x12/0x28
+[  298.660057] Code: 85 ff 75 db e9 49 fb ff ff 0f 0b 66 90 eb fc ba
+29 09 00 00 b8 c8 60 5f f8 e8 af 5c b5 c7 0f b6 7e 25 e9 c8 fc ff ff
+0f 0b eb fe <0f> 0b eb fe 8b 45 d4 e8 d6 1b fa ff c7 45 c4 f4 ff ff ff
+e9 02
+[  298.660124] EIP: [<f85f3b7e>] relocate_tree_blocks+0x52e/0x590
+[btrfs] SS:ESP 0068:cd333c14
+[  298.660150] ---[ end trace fb3e62da0e52a0bd ]---

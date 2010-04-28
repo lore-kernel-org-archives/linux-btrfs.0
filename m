@@ -1,75 +1,75 @@
-From: "Vladimir G. Ivanovic" <vladimir@acm.org>
-Subject: crash in btrfsck, btrfs-debug-tree, etc
-Date: Wed, 28 Apr 2010 13:03:13 -0700
-Message-ID: <4BD89481.1060201@acm.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: Linux btrfs <linux-btrfs@vger.kernel.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: Andreas Dilger <adilger@sun.com>
+Subject: Re: Cleancache [PATCH 6/7] (was Transcendent Memory): ext4 hook
+Date: Wed, 28 Apr 2010 17:08:54 -0600
+Message-ID: <8EEE8A6D-343A-4514-BFC8-1EFEDE180B70@sun.com>
+References: <20100422132929.GA27380@ca-server1.us.oracle.com>
+Mime-Version: 1.0 (Apple Message framework v1078)
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>, Al Viro <viro@zeniv.linux.org.uk>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        "Theodore Ts'o" <tytso@mit.edu>, mfasheh@suse.com,
+        Joel Becker <joel.becker@oracle.com>, Matthew Wilcox <matthew@wil.cx>,
+        linux-btrfs@vger.kernel.org,
+        "linux-kernel@vger.kernel.org Mailinglist" <linux-kernel@vger.kernel.org>,
+        linux-fsdevel@vger.kernel.org,
+        linux-ext4 development <linux-ext4@vger.kernel.org>,
+        ocfs2-devel@oss.oracle.com, linux-mm@kvack.org, ngupta@vflare.org,
+        Jeremy Fitzhardinge <jeremy@goop.org>, JBeulich@novell.com,
+        kurt.hackel@oracle.com, Nick Piggin <npiggin@suse.de>,
+        dave.mccracken@oracle.com, Rik van Riel <riel@redhat.com>
+To: Dan Magenheimer <dan.magenheimer@oracle.com>
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <20100422132929.GA27380@ca-server1.us.oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I overwrote some part of the first 195641856 bytes of a 1TB (nominal)
-btrfs volume (I CTRL-C'd out
-before dd finished.) OK, OK, you may stop laughing now. Surely something
-similar has happened to
-you. No? Then it will, someday.
+On 2010-04-22, at 07:29, Dan Magenheimer wrote:
+> Cleancache [PATCH 6/7] (was Transcendent Memory): ext4 hook
+>=20
+> Filesystems must explicitly enable cleancache.  For ext4,
+> all other cleancache hooks are in the VFS layer.
+>=20
+> Signed-off-by: Dan Magenheimer <dan.magenheimer@oracle.com>
 
-First things first: A huge congratulations to the btrfs team because the
-btrfs volume is still
-usable. I do get many errors similar to:
+Given the minimal changes being done to ext3/ext4, I don't have any =
+objection to this.  Being able to hook ext4 into SSDs for hierarchical =
+caching is something that will become increasingly important for huge =
+ext4 filesystems.
 
-    kernel: btrfs bad tree block start 3050544144921548175 12056985
+Acked-by: Andreas Dilger <adilger@sun.com>
 
-but for many of my files, I don't get errors.
+> Diffstat:
+> super.c                                  |    2 ++
+> 1 file changed, 2 insertions(+)
+>=20
+> --- linux-2.6.34-rc5/fs/ext4/super.c	2010-04-19 17:29:56.000000000 =
+-0600
+> +++ linux-2.6.34-rc5-cleancache/fs/ext4/super.c	2010-04-21 =
+10:13:00.000000000 -0600
+> @@ -39,6 +39,7 @@
+>  #include <linux/ctype.h>
+>  #include <linux/log2.h>
+>  #include <linux/crc16.h>
+> +#include <linux/cleancache.h>
+>  #include <asm/uaccess.h>
+> =20
+>  #include "ext4.h"
+> @@ -1784,6 +1785,7 @@ static int ext4_setup_super(struct super
+>  			EXT4_INODES_PER_GROUP(sb),
+>  			sbi->s_mount_opt);
+>=20
+> +	sb->cleancache_poolid =3D cleancache_init_fs(PAGE_SIZE);
+>  	return res;
+>  }
 
-Now, onto my problems. My first thought was to btrfsck the unmount
-volume, but btrfsck crashes:
 
-    # btrfsck /dev/sdc1
-    btrfsck: disk-io.c:723: open_ctree_fd: Assertion
-`!(!chunk_root->node)' failed.
-    Aborted (core dumped)
+Cheers, Andreas
+--
+Andreas Dilger
+Sr. Staff Engineer, Lustre Group
+Sun Microsystems of Canada, Inc.
 
-So does btrfs-debug-tree, and I suspect other utilities will as well. I
-tried the latest utilities
-from btrfs-progs-unstable, but they too crash with the same error. (I'm
-on a Athlon64-powered
-netbook running Fedora 12. btrfs's version is 0.19.) In particular, so
-does btrfs-image, so I can't
-share the volume's metadata.
-
-So, until the utilities are fixed, what are my options?
-
-* Can I create a snapshot of the root volume? Would I end up with
-everything that could be read in
-  the snapshot, or would it also have errors? If this is a good idea,
-would these commands work?
-
-      btrfsctl -s snapshot_of_root /mnt/chopin1
-      mount.btrfs -o subvol=snapshot_of_root /dev/sdc1 /mnt/snap
-
-  do the trick, assuming that btrfsctl doesn't also crash? Then what?
-Copy the snapshot to another
-  disk? Somehow make the new snapshot the new root, allowing me to
-delete the old root?
-
-* Should I just try and copy the data to another disk and reformat my
-current volume?
-
-* Is there a way of testing whether a particular file is good other than
-(slowly) going through
-  each and every file while watching syslog? cat, for example, doesn't
-return an error when the
-  file is bad, so I don't think I can write a shell script to copy good
-files to another volume.
-
-Are there other options that I haven't considered?
-
-Thanks for all help.
-
---- Vladimir
-
--- 
-Vladimir G. Ivanovic                            http://www.leonora.org
-+1 650 450 4101                                       vladimir@acm.org
-
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>

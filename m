@@ -1,22 +1,25 @@
-From: Ilya Shestopalov <yast4ik@yahoo.com>
-Subject: Segmentation fault on partition mount
-Date: Fri, 30 Apr 2010 11:26:16 -0700 (PDT)
-Message-ID: <185920.66632.qm@web58307.mail.re3.yahoo.com>
+From: Tomas Thiemel <tomas.thiemel@tieto.com>
+Subject: RE: btrfs balance failed and kernel oops'd
+Date: Thu, 29 Apr 2010 10:41:24 +0200
+Message-ID: <201004291041.24662.tomas.thiemel@tieto.com>
+Reply-To: tomas.thiemel@tieto.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain;
+  charset="us-ascii"
+Cc: linux-btrfs@vger.kernel.org
+To: yoosty69@netzero.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-My distro: Archlinux
-Kernel: 2.6.34-rc5, 2.6.33.3
-I has 522 Gib btrfs partition and. While I was checking out chromium source, free space on my /home btrfs partition was about 20 Gib. Then I received message "not enough free space" (but there was enough of it). And even after btrfsck I always get segmentation fault. Even btrfs-debug-tree can't be done successfully.
-How can this bug be fixed?
+Hi Justin,
+I use Gentoo and I had Kernel OOPS, too (with 2.6.33), until I upgraded to the 
+lastest "not stable" kernel - 2.6.34-rc5. Now (almost) everything works OK. I 
+also had to re-format partition because there is one small problem:
+When you add disk (in single mode) and then you "rebalance" partition, it 
+changes data mode from "single" to RAID0 so you cannot remove added disk any 
+more :-(
 
-P.S. 
+I also use latest unstable btrfs-progs (Btrfs v0.19-16-g075587c-dirty) to 
+enable "all the bells and whistles".
 
-I can't find btrfs-image in btrfs-progs-unstable from the Archlinux repo.
-
-
-
-
+Tomas Thiemel

@@ -1,87 +1,43 @@
-From: Victor Roetman <victory747@gmail.com>
-Subject: Not compressing with compress (but will with compress-force)
-Date: Fri, 30 Apr 2010 16:51:34 +0800
-Message-ID: <4BDA9A16.1020009@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+From: Bill Pemberton <wfp5p@virginia.edu>
+Subject: [PATCH] btrfs: fix shadows sparse warning
+Date: Fri, 30 Apr 2010 09:55:12 -0400
+Message-ID: <1272635712-9599-1-git-send-email-wfp5p@virginia.edu>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I am running 2.6.34-rc5 64 bit, and testing was done on a 4G USB thumb
-drive. mount with compress-force compresses, but mount with compress
-does not.
+Fix sparse warnings:
 
-The file was a plain text file repeated many times to make a large file.
-It also compresses very well as you can see:
+fs/btrfs/free-space-cache.c:1078:40: warning: symbol 'node' shadows an earlier one
+fs/btrfs/free-space-cache.c:1230:32: warning: symbol 'node' shadows an earlier one
 
--rw-r--r-- 1 vic vic 1.4G 2010-04-30 15:28 PLAINTEXT2.txt
--rw-r--r-- 1 vic vic 8.8M 2010-04-30 15:30 PLAINTEXT2.txt.gz
+Signed-off-by: Bill Pemberton <wfp5p@virginia.edu>
+---
+ fs/btrfs/free-space-cache.c |    4 +---
+ 1 files changed, 1 insertions(+), 3 deletions(-)
 
-$ sudo mkfs.btrfs  -L testcompress /dev/sde1
-$ sudo mount -t btrfs /dev/sde1 /media/testcompress -o compress-force
-$ dmesg | tail -2
-[22583.767477] device label testcompress devid 1 transid 7 /dev/sde1
-[22583.780428] btrfs: forcing compression
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index f488fac..c0d91fb 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -1075,8 +1075,6 @@ u64 btrfs_alloc_from_cluster(struct btrfs_block_group_cache *block_group,
+ 
+ 	while(1) {
+ 		if (entry->bytes < bytes || entry->offset < min_start) {
+-			struct rb_node *node;
+-
+ 			node = rb_next(&entry->offset_index);
+ 			if (!node)
+ 				break;
+@@ -1227,7 +1225,7 @@ again:
+ 	 */
+ 	while (entry->bitmap || found_bitmap ||
+ 	       (!entry->bitmap && entry->bytes < min_bytes)) {
+-		struct rb_node *node = rb_next(&entry->offset_index);
++		node = rb_next(&entry->offset_index);
+ 
+ 		if (entry->bitmap && entry->bytes > bytes + empty_size) {
+ 			ret = btrfs_bitmap_cluster(block_group, entry, cluster,
+-- 
+1.7.0.6
 
-I copied the file three times.
-
-$ ls -al
-total 4225768
-dr-xr-xr-x 1 root root         84 2010-04-30 16:06 .
-drwxr-xr-x 3 root root       4096 2010-04-30 15:46 ..
--rw-r--r-- 1 root root 1449901628 2010-04-30 15:58 PLAINTEXT2.txt
--rw-r--r-- 1 root root 1449901628 2010-04-30 15:59 PLAINTEXT3.txt
--rw-r--r-- 1 root root 1449901628 2010-04-30 16:06 PLAINTEXT4.txt
-
-$ du -sh .
-4.1G	.
-
-$ df -h .
-Filesystem            Size  Used Avail Use% Mounted on
-/dev/sde1             3.8G  295M  3.1G   9% /media/testcompress
-
-$ btrfs filesystem df .
-Metadata, DUP: total=190.88MB, used=5.74MB
-System, DUP: total=8.00MB, used=4.00KB
-Data: total=771.50MB, used=283.61MB
-Metadata: total=8.00MB, used=0.00
-System: total=4.00MB, used=0.00
-
-Why it says 771MB total instead of 3+GB, I don't know. But at least it's
-compressing.
-
-If I remount it with -o compress,
-$ sudo mount -t btrfs /dev/sde1 /media/testcompress -o compress
-$ dmesg | tail -2
-[23422.050375] device label testcompress devid 1 transid 22 /dev/sde1
-[23422.051832] btrfs: use compression
-
-and copy the file again:
-$ ls -al
-total 5509080
-dr-xr-xr-x 1 root root        112 2010-04-30 16:20 .
-drwxr-xr-x 3 root root       4096 2010-04-30 15:46 ..
--rw-r--r-- 1 root root 1449901628 2010-04-30 15:58 PLAINTEXT2.txt
--rw-r--r-- 1 root root 1449901628 2010-04-30 15:59 PLAINTEXT3.txt
--rw-r--r-- 1 root root 1449901628 2010-04-30 16:06 PLAINTEXT4.txt
--rw-r--r-- 1 root root 1449901628 2010-04-30 16:20 PLAINTEXT5.txt
-
-$ du -sh .
-5.5G	.
-
-$ df -h .
-Filesystem            Size  Used Avail Use% Mounted on
-/dev/sde1             3.8G  1.7G  1.8G  49% /media/testcompress
-
-$ btrfs filesystem df .
-Metadata, DUP: total=190.88MB, used=7.49MB
-System, DUP: total=8.00MB, used=4.00KB
-Data: total=2.62GB, used=1.60GB
-Metadata: total=8.00MB, used=0.00
-System: total=4.00MB, used=0.00
-
-It did not seem to compress the file at all, even though it's just plain
-text.
-
-vic

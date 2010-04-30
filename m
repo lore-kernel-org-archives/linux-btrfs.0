@@ -1,75 +1,32 @@
-From: Andreas Dilger <adilger@sun.com>
-Subject: Re: Cleancache [PATCH 6/7] (was Transcendent Memory): ext4 hook
-Date: Wed, 28 Apr 2010 17:08:54 -0600
-Message-ID: <8EEE8A6D-343A-4514-BFC8-1EFEDE180B70@sun.com>
-References: <20100422132929.GA27380@ca-server1.us.oracle.com>
-Mime-Version: 1.0 (Apple Message framework v1078)
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>, Al Viro <viro@zeniv.linux.org.uk>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        "Theodore Ts'o" <tytso@mit.edu>, mfasheh@suse.com,
-        Joel Becker <joel.becker@oracle.com>, Matthew Wilcox <matthew@wil.cx>,
-        linux-btrfs@vger.kernel.org,
-        "linux-kernel@vger.kernel.org Mailinglist" <linux-kernel@vger.kernel.org>,
-        linux-fsdevel@vger.kernel.org,
-        linux-ext4 development <linux-ext4@vger.kernel.org>,
-        ocfs2-devel@oss.oracle.com, linux-mm@kvack.org, ngupta@vflare.org,
-        Jeremy Fitzhardinge <jeremy@goop.org>, JBeulich@novell.com,
-        kurt.hackel@oracle.com, Nick Piggin <npiggin@suse.de>,
-        dave.mccracken@oracle.com, Rik van Riel <riel@redhat.com>
-To: Dan Magenheimer <dan.magenheimer@oracle.com>
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20100422132929.GA27380@ca-server1.us.oracle.com>
+From: sniper <s3c24xx@gmail.com>
+Subject: Re: bug when removing device
+Date: Fri, 30 Apr 2010 21:37:54 +0800
+Message-ID: <k2i9bd6b5361004300637v6463b9f4w5e1348f74d2db06e@mail.gmail.com>
+References: <j2x9bd6b5361004281111u565c16d7x24ea3d4640ca365@mail.gmail.com>
+	 <p2u3d0408631004290158j40591c7coee8c6fc73c3d06d1@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: "Yan, Zheng" <ukernel@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <p2u3d0408631004290158j40591c7coee8c6fc73c3d06d1@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2010-04-22, at 07:29, Dan Magenheimer wrote:
-> Cleancache [PATCH 6/7] (was Transcendent Memory): ext4 hook
->=20
-> Filesystems must explicitly enable cleancache.  For ext4,
-> all other cleancache hooks are in the VFS layer.
->=20
-> Signed-off-by: Dan Magenheimer <dan.magenheimer@oracle.com>
+> I have sent a set of patches that address bugs like this.
+>
 
-Given the minimal changes being done to ext3/ext4, I don't have any =
-objection to this.  Being able to hook ext4 into SSDs for hierarchical =
-caching is something that will become increasingly important for huge =
-ext4 filesystems.
+I applied the V2 patchset to kernel-v2.6.32 (actually, I applied them
+to btrfs-unstalbe, took a kernel-v2.6.32 and replaced its btrfs with
+the patched one in btrfs-unstable), and did the test, then got:
 
-Acked-by: Andreas Dilger <adilger@sun.com>
+$ sudo btrfs device del /dev/loop1 /tmp/mnt0/
+ERROR: error removing the device '/dev/loop1'
+$ sudo btrfs device del /dev/loop0 /tmp/mnt0/
+ERROR: error removing the device '/dev/loop0'
 
-> Diffstat:
-> super.c                                  |    2 ++
-> 1 file changed, 2 insertions(+)
->=20
-> --- linux-2.6.34-rc5/fs/ext4/super.c	2010-04-19 17:29:56.000000000 =
--0600
-> +++ linux-2.6.34-rc5-cleancache/fs/ext4/super.c	2010-04-21 =
-10:13:00.000000000 -0600
-> @@ -39,6 +39,7 @@
->  #include <linux/ctype.h>
->  #include <linux/log2.h>
->  #include <linux/crc16.h>
-> +#include <linux/cleancache.h>
->  #include <asm/uaccess.h>
-> =20
->  #include "ext4.h"
-> @@ -1784,6 +1785,7 @@ static int ext4_setup_super(struct super
->  			EXT4_INODES_PER_GROUP(sb),
->  			sbi->s_mount_opt);
->=20
-> +	sb->cleancache_poolid =3D cleancache_init_fs(PAGE_SIZE);
->  	return res;
->  }
+dmesg:
+[ 3463.136786] btrfs: unable to remove the only writeable device
+[ 3468.205188] btrfs: unable to remove the only writeable device
 
 
-Cheers, Andreas
---
-Andreas Dilger
-Sr. Staff Engineer, Lustre Group
-Sun Microsystems of Canada, Inc.
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+Is it something wrong?

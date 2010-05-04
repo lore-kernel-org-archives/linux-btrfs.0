@@ -1,38 +1,38 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: raild[56] again
-Date: Tue, 4 May 2010 11:11:57 -0400
-Message-ID: <20100504151157.GS3447@think>
-References: <14154949.31.1272916930325.JavaMail.root@zimbra>
- <1272985749.31892.5621.camel@macbook.infradead.org>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH 1/3] fs: allow short direct-io reads to be completed
+	via buffered IO
+Date: Tue, 4 May 2010 11:27:50 -0400
+Message-ID: <20100504152749.GB2573@localhost.localdomain>
+References: <20100503172702.GB3961@localhost.localdomain> <20100504001418.GH2591@dastard>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Roy Sigurd Karlsbakk <roy@karlsbakk.net>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: David Woodhouse <dwmw2@infradead.org>
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+	linux-mm@vger.kernel.org
+To: Dave Chinner <david@fromorbit.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1272985749.31892.5621.camel@macbook.infradead.org>
+In-Reply-To: <20100504001418.GH2591@dastard>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 04, 2010 at 04:09:09PM +0100, David Woodhouse wrote:
-> On Mon, 2010-05-03 at 22:02 +0200, Roy Sigurd Karlsbakk wrote:
-> > Is raid[56] coming to btrfs? There was some talk about it a year back
-> > or so, but I haven't seen anything yet....
+On Tue, May 04, 2010 at 10:14:18AM +1000, Dave Chinner wrote:
+> On Mon, May 03, 2010 at 01:27:02PM -0400, Josef Bacik wrote:
+> > This is similar to what already happens in the write case.  If we have a short
+> > read while doing O_DIRECT, instead of just returning, fallthrough and try to
+> > read the rest via buffered IO.  BTRFS needs this because if we encounter a
+> > compressed or inline extent during DIO, we need to fallback on buffered.  If the
+> > extent is compressed we need to read the entire thing into memory and
+> > de-compress it into the users pages.  I have tested this with fsx and everything
+> > works great.  Thanks,
 > 
-> Um, there was some talk about it about four days ago. You even
-> participated in that thread!
+> Won't this mean that any direct IO read that spans EOF  (i.e. get a
+> short read) now attempt a buffered IO (that will fail) before returning?
 > 
-> As it stands, it has the traditional 'write hole' problem -- when you
-> overwrite _part_ of a stripe, you have to update the parity block(s) too
-> and you have a short period of time where the parity doesn't match the
-> actual data. If you get a crash followed by a disk failure during that
-> period of time, you get data loss.
-> 
-> The solution is always to write a full stripe (across all the disks in
-> the set). Chris said he'd sort that out in the upper layers of btrfs,
-> about which I know little. We've been waiting a while for that.
 
-Yeah, I've got it nailed down for data and metadata here, and I'm
-integrating all these development patches into one branch (O_DIRECT
-etc, raid, zheng's work).
+Hmm yeah you are right.  What would be an acceptable way to avoid this, do a
 
--chris
+if (retval || !count || ppos >= i_size_read(inode))
+	goto out;
+
+type thing?  Thanks,
+
+Josef

@@ -1,40 +1,63 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [BUG] btrfs: report a direct-IO bug
-Date: Wed, 5 May 2010 21:56:42 -0400
-Message-ID: <20100506015641.GA5672@localhost.localdomain>
-References: <4BE21FC1.1010901@cn.fujitsu.com>
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: [PATCH] btrfs/direct-IO: fix a bug of btrfs_dio_read
+Date: Thu, 06 May 2010 10:12:10 +0800
+Message-ID: <4BE2257A.7030005@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: jim owens <owens6336@gmail.com>,
-	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+Content-Type: text/plain; charset=UTF-8
+Cc: Josef Bacik <josef@redhat.com>, jim owens <owens6336@gmail.com>,
 	Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
 	"Yan, Zheng" <zheng.yan@oracle.com>
-To: liubo <liubo2009@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4BE21FC1.1010901@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 06, 2010 at 09:47:45AM +0800, liubo wrote:
-> When we tested the series of jim owens' direct-IO patch, a bug occured.
-> 
-> It could be reproduced on a 2.6.34-rc6 kernel with
-> direct-IO patch by the following steps...
-> 
-> # mkfs.btrfs /dev/sdb
-> # mount /dev/sdb /home/btrfsdisk
-> # cd /home/btrfsdisk
-> # create test.c
-> # dd if=/dev/zero of=file bs=7K count=1
-> # gcc test.c -o test
-> # ./test
-> 
+As I mentioned in the bug-report, when the file size is 
+not n * BUFFERSIZE, this file cannot be read correctly 
+and the system will crash or hang up.
 
-I'm in the middle of re-working the DIO code.  You can pull from my git tree
+After investigation, I fount that data_len should be 
+checked before lock_extent, in order to prevent the 
+situation that when it comes to the file end, 
+diocb->lockstart changes to lockend+1, then lock_extent
+ will cause system's crash or hang.
 
-http://git.kernel.org/?p=linux/kernel/git/josef/btrfs-unstable-josef.git;a=summary
+So move the data_len's check ahead.
 
-Pull from the my-dio branch.  It survives fsx, but it fails on 5 out of 7 AIO
-tests in xfstests, which I'm tracking down.  Thanks,
+Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/dio.c |   10 +++++-----
+ 1 files changed, 5 insertions(+), 5 deletions(-)
 
-Josef
+diff --git a/fs/btrfs/dio.c b/fs/btrfs/dio.c
+index c930ff5..7178a25 100644
+--- a/fs/btrfs/dio.c
++++ b/fs/btrfs/dio.c
+@@ -517,11 +517,6 @@ static void btrfs_dio_read(struct btrfs_diocb *diocb)
+ 	lockend = ALIGN(end, blocksize) - 1;
+ 
+ getlock:
+-	/* writeout everything we read for checksum or compressed extents */
+-	filemap_write_and_wait_range(diocb->inode->i_mapping,
+-				diocb->lockstart, lockend);
+-	lock_extent(io_tree, diocb->lockstart, lockend, GFP_NOFS);
+-
+ 	data_len = min_t(u64, end, i_size_read(diocb->inode));
+ 	if (data_len <= diocb->start) {
+ 		/* whatever we finished (or 0) is returned past EOF */
+@@ -529,6 +524,11 @@ getlock:
+ 	}
+ 	data_len -= diocb->start;
+ 
++	/* writeout everything we read for checksum or compressed extents */
++	filemap_write_and_wait_range(diocb->inode->i_mapping,
++				diocb->lockstart, lockend);
++	lock_extent(io_tree, diocb->lockstart, lockend, GFP_NOFS);
++
+ 	safe_to_read = 0;
+ 	while (data_len && !diocb->error) { /* error in reaper stops submit */
+ 		struct extent_map *em;
+-- 
+1.6.2.5
+
+

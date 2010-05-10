@@ -1,25 +1,52 @@
-From: Zhu Yanhai <yanhai.zhu@linux.intel.com>
-Subject: Author: Zhu Yanhai <yanhai.zhu@linux.intel.com>
-Date: Mon, 10 May 2010 11:54:42 +0800
-Message-ID: <1273463682-4355-1-git-send-email-yanhai.zhu@linux.intel.com>
+From: Bruce Guenter <bruce@untroubled.org>
+Subject: Disk space accounting and subvolume delete
+Date: Mon, 10 May 2010 12:23:52 -0600
+Message-ID: <20100510182352.GA21154@untroubled.org>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="qDbXVdCdHGoSgWSk"
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-    Make csum_tree_block_size complain about the right thing.
-    
-    It dereferenced a wrong pointer before.
 
-diff --git a/disk-io.c b/disk-io.c
-index addebe1..c1ed8c8 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -86,7 +86,7 @@ int csum_tree_block_size(struct extent_buffer *buf, u16 csum_size,
- 		if (memcmp_extent_buffer(buf, result, 0, csum_size)) {
- 			printk("checksum verify failed on %llu wanted %X "
- 			       "found %X\n", (unsigned long long)buf->start,
--			       *((int *)result), *((int *)buf));
-+			       *((int *)result), *((char *)buf->data));
- 			free(result);
- 			return 1;
- 		}
+--qDbXVdCdHGoSgWSk
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+Hi.
+
+When deleting a snapshot, I have observed that the disk space used by
+that snapshot is not immediately released (according to statvfs or df).
+Neither "sync" nor "btrfs filesystem sync" releases the disk space
+neither.  The only way I have found to actually fully release the disk
+space is to issue the sync and then sleep until the statvfs free numbers
+stop changing.
+
+This is a rather problematic approach to managing disk space.  Is there
+any way to either force a wait until the disk space has been released?
+
+My application is automatically managing disk space in the presence of
+snapshots.  I allow the disk (a backup) to fill up with snapshots until
+it is nearly full, and then to delete snapshots until I have a threshold
+free.  However, without the disk space being released promptly and no
+way to wait until it is released, the loop can't tell how many snapshots
+to delete.
+
+--=20
+Bruce Guenter <bruce@untroubled.org>                http://untroubled.org/
+
+--qDbXVdCdHGoSgWSk
+Content-Type: application/pgp-signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.14 (GNU/Linux)
+
+iEYEARECAAYFAkvoTzgACgkQ6W+y3GmZgOiOKwCfYCQ29CD/ygU3qY6CSVbFeTRp
+Si8AnRaaDJjAVHpl0cS+VIblvZl74KtO
+=6ACm
+-----END PGP SIGNATURE-----
+
+--qDbXVdCdHGoSgWSk--

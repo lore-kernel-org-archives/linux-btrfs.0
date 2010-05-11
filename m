@@ -1,49 +1,60 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [MeeGo-dev] Btrfs as default file system
-Date: Tue, 11 May 2010 09:18:44 -0400
-Message-ID: <20100511131844.GB27606@think>
-References: <1273575646.2336.9.camel@sanganak>
- <4BE95584.7000204@linux.intel.com>
- <1273583736.2336.105.camel@sanganak>
+From: Bruce Guenter <bruce@untroubled.org>
+Subject: Re: Disk space accounting and subvolume delete
+Date: Tue, 11 May 2010 09:45:18 -0600
+Message-ID: <20100511154518.GA11710@untroubled.org>
+References: <20100510182352.GA21154@untroubled.org>
+ <AANLkTilDHeJ_aRQSKWUTJgIBhlpLHyNRTy4x4ai_MGJI@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: ext Arjan van de Ven <arjan@linux.intel.com>,
-	"meego-dev@meego.com" <meego-dev@meego.com>,
-	linux-btrfs@vger.kernel.org
-To: Ameya Palande <ameya.palande@nokia.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="AhhlLboLdkugWU4S"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1273583736.2336.105.camel@sanganak>
+In-Reply-To: <AANLkTilDHeJ_aRQSKWUTJgIBhlpLHyNRTy4x4ai_MGJI@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 11, 2010 at 04:15:36PM +0300, Ameya Palande wrote:
-> Hi Arjan,
-> 
-> On Tue, 2010-05-11 at 15:03 +0200, ext Arjan van de Ven wrote:
-> > On 5/11/2010 4:00, Ameya Palande wrote:
-> > > Hi,
-> > >
-> > > I wanted to know why Btrfs is selected as default file system for MeeGo.
-> > > Following text is copied from Btrfs kernel Kconfig option:
-> > >
-> > > Btrfs filesystem (EXPERIMENTAL) Unstable disk format
-> > 
-> > the Kconfig text is out of date.
-> 
-> Thanks for the information :)
-> 
-> I am CCing this to linux-btrfs so that someone can take a look at this
-> text and fix this for 2.6.34 release.
-> 
-> Can someone update the btrfs kconfig text which says that this file
-> system is experimental and on disk format is not yet finalized?
 
-Hi everyone,
+--AhhlLboLdkugWU4S
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-It is too late for such a change in 2.6.34, Linus announced the final RC
-this week.  But I'll have this queued in my .35 releases.
+On Tue, May 11, 2010 at 08:10:38AM +0800, Yan, Zheng  wrote:
+> This is because the snapshot deleting ioctl only removes the a link.
 
-If meego would like to include a patch for this in their kernel, I'd be
-happy to send it along.
+Right, I understand that.  That part is not unexpected, as it works just
+like unlink would.  However...
 
--chris
+> The corresponding tree is dropped in the background by a kernel thread.
 
+The surprise is that 'sync', in any form I was able to try, does not
+wait until all or even most of the I/O is completed.  Apparently the
+standards spec for sync(2) says it is not required to wait for I/O to
+complete, but AFAIK all other Linux FS do wait (the man page for sync(2)
+implies as much, as does the info page for sync in glibc).
+
+The only way I've found so far to force this behavior is to unmount, and
+that's rather intrusive to other users of the FS.
+
+> We could probably add another ioctl that waits until the tree has been
+> completely dropped.
+
+Since the expected behavior for sync is to wait until all pending I/O
+has been completed, I would argue this should be the default action for
+sync.  Am I misunderstanding something?
+
+--=20
+Bruce Guenter <bruce@untroubled.org>                http://untroubled.org/
+
+--AhhlLboLdkugWU4S
+Content-Type: application/pgp-signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.14 (GNU/Linux)
+
+iEYEARECAAYFAkvpe44ACgkQ6W+y3GmZgOh0awCdGDcTnryaH9jLTIHNTTCyTV0p
+sDUAn34lqPSg3e6CzW/haTewk1QG3q2a
+=30hN
+-----END PGP SIGNATURE-----
+
+--AhhlLboLdkugWU4S--

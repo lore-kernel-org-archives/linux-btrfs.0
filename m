@@ -1,40 +1,55 @@
-From: Josef Bacik <josef@redhat.com>
+From: "Yan, Zheng " <yanzheng@21cn.com>
 Subject: Re: Disk space accounting and subvolume delete
-Date: Mon, 10 May 2010 14:50:31 -0400
-Message-ID: <20100510185031.GA2453@localhost.localdomain>
+Date: Tue, 11 May 2010 08:10:38 +0800
+Message-ID: <AANLkTilDHeJ_aRQSKWUTJgIBhlpLHyNRTy4x4ai_MGJI@mail.gmail.com>
 References: <20100510182352.GA21154@untroubled.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <20100510182352.GA21154@untroubled.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 10, 2010 at 12:23:52PM -0600, Bruce Guenter wrote:
+On Tue, May 11, 2010 at 2:23 AM, Bruce Guenter <bruce@untroubled.org> w=
+rote:
 > Hi.
-> 
+>
 > When deleting a snapshot, I have observed that the disk space used by
-> that snapshot is not immediately released (according to statvfs or df).
+> that snapshot is not immediately released (according to statvfs or df=
+).
 > Neither "sync" nor "btrfs filesystem sync" releases the disk space
-> neither.  The only way I have found to actually fully release the disk
-> space is to issue the sync and then sleep until the statvfs free numbers
+> neither. =A0The only way I have found to actually fully release the d=
+isk
+> space is to issue the sync and then sleep until the statvfs free numb=
+ers
 > stop changing.
-> 
-> This is a rather problematic approach to managing disk space.  Is there
-> any way to either force a wait until the disk space has been released?
-> 
-> My application is automatically managing disk space in the presence of
-> snapshots.  I allow the disk (a backup) to fill up with snapshots until
-> it is nearly full, and then to delete snapshots until I have a threshold
-> free.  However, without the disk space being released promptly and no
-> way to wait until it is released, the loop can't tell how many snapshots
+>
+> This is a rather problematic approach to managing disk space. =A0Is t=
+here
+> any way to either force a wait until the disk space has been released=
+?
+>
+> My application is automatically managing disk space in the presence o=
+f
+> snapshots. =A0I allow the disk (a backup) to fill up with snapshots u=
+ntil
+> it is nearly full, and then to delete snapshots until I have a thresh=
+old
+> free. =A0However, without the disk space being released promptly and =
+no
+> way to wait until it is released, the loop can't tell how many snapsh=
+ots
 > to delete.
-> 
+>
 
-The way BTRFS's COW works is that we can't free up space until after a
-transaction has committed.  After the transaction commits (after a sync) we walk
-the list of pinned extents and free them asynchronously.  We could probably make
-btrfs filesystem sync wait for that part to finish tho.  It shouldn't be too
-hard to do, feel free to take a crack at it.  Thanks,
+This is because the snapshot deleting ioctl only removes the a link.
+The corresponding tree is dropped in the background by a kernel thread.
+We could probably add another ioctl that waits until the tree has been
+completely dropped.
 
-Josef
+Yan, Zheng
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

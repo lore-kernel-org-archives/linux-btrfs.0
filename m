@@ -1,77 +1,62 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH 3/5] direct-io: honor dio->boundary a little more
-	strictly
-Date: Tue, 11 May 2010 20:13:48 -0400
-Message-ID: <20100512001347.GB27011@dhcp231-156.rdu.redhat.com>
-References: <20100507174104.GD3360@localhost.localdomain>
+From: "Yan, Zheng " <yanzheng@21cn.com>
+Subject: Re: Disk space accounting and subvolume delete
+Date: Wed, 12 May 2010 13:02:07 +0800
+Message-ID: <AANLkTikzNWS11qycrI94k69PFEZJWpAezwuOF6nmw_PF@mail.gmail.com>
+References: <20100510182352.GA21154@untroubled.org>
+	 <AANLkTilDHeJ_aRQSKWUTJgIBhlpLHyNRTy4x4ai_MGJI@mail.gmail.com>
+	 <20100511154518.GA11710@untroubled.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-mm@kvack.org, hch@infradead.org,
-        akpm@linux-foundation.org
-To: Josef Bacik <josef@redhat.com>
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20100507174104.GD3360@localhost.localdomain>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100511154518.GA11710@untroubled.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 07, 2010 at 01:41:04PM -0400, Josef Bacik wrote:
-> Because BTRFS needs to be able to lookup checksums when we submit the bio's, we
-> need to be able to look up the logical offset in the inode we're submitting the
-> bio for.  The way we do this is in our get_blocks function is return the map_bh
-> with b_blocknr of the logical offset in the file, and then in the submit path
-> turn that into an actual block number on the device.  This causes problems with
-> the DIO stuff since it will try and merge requests that look like they are
-> contiguous, even though they are not actually contiguous on disk.  So BTRFS sets
-> buffer_boundary on the map_bh.  Unfortunately if there is not a bio already
-> setup in the DIO stuff, dio->boundary gets cleared and then the next time a
-> request is made they will get merged.  So instead of clearing dio->boundary in
-> dio_new_bio, save the boundary value before doing anything, that way if
-> dio->boundary gets cleared, we still submit the IO.  Thanks,
-> 
-> Signed-off-by: Josef Bacik <josef@redhat.com>
-> ---
->  fs/direct-io.c |    5 ++++-
->  1 files changed, 4 insertions(+), 1 deletions(-)
-> 
-> diff --git a/fs/direct-io.c b/fs/direct-io.c
-> index 2dbf2e9..98f6f42 100644
-> --- a/fs/direct-io.c
-> +++ b/fs/direct-io.c
-> @@ -615,6 +615,7 @@ static int dio_bio_add_page(struct dio *dio)
->   */
->  static int dio_send_cur_page(struct dio *dio)
->  {
-> +	int boundary = dio->boundary;
->  	int ret = 0;
->  
->  	if (dio->bio) {
-> @@ -627,7 +628,7 @@ static int dio_send_cur_page(struct dio *dio)
->  		 * Submit now if the underlying fs is about to perform a
->  		 * metadata read
->  		 */
-> -		if (dio->boundary)
-> +		if (boundary)
->  			dio_bio_submit(dio);
->  	}
->  
-> @@ -644,6 +645,8 @@ static int dio_send_cur_page(struct dio *dio)
->  			ret = dio_bio_add_page(dio);
->  			BUG_ON(ret != 0);
->  		}
-> +	} else if (boundary) {
-> +		dio_bio_submit(dio);
->  	}
->  out:
->  	return ret;
+On Tue, May 11, 2010 at 11:45 PM, Bruce Guenter <bruce@untroubled.org> =
+wrote:
+> On Tue, May 11, 2010 at 08:10:38AM +0800, Yan, Zheng =A0wrote:
+>> This is because the snapshot deleting ioctl only removes the a link.
+>
+> Right, I understand that. =A0That part is not unexpected, as it works=
+ just
+> like unlink would. =A0However...
+>
+>> The corresponding tree is dropped in the background by a kernel thre=
+ad.
+>
+> The surprise is that 'sync', in any form I was able to try, does not
+> wait until all or even most of the I/O is completed. =A0Apparently th=
+e
+> standards spec for sync(2) says it is not required to wait for I/O to
+> complete, but AFAIK all other Linux FS do wait (the man page for sync=
+(2)
+> implies as much, as does the info page for sync in glibc).
+>
+> The only way I've found so far to force this behavior is to unmount, =
+and
+> that's rather intrusive to other users of the FS.
+>
+>> We could probably add another ioctl that waits until the tree has be=
+en
+>> completely dropped.
+>
+> Since the expected behavior for sync is to wait until all pending I/O
+> has been completed, I would argue this should be the default action f=
+or
+> sync. =A0Am I misunderstanding something?
+>
 
-Self-NACK on this one.  Seems to have an unwanted side-effect of forcing every
-page to be submitted individually.  I'm going to fix this a different way.
-Thanks,
+Dropping a tree can be lengthy. It's not good to let sync wait for hour=
+s.
+=46or most linux FS, 'sync' just force an transaction/journal commit. I=
+ don't
+think they wait for large operations that can span multiple transaction=
+s to
+complete.
 
-Josef
-
+Yan, Zheng
 --
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

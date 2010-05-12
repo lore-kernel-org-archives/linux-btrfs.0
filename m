@@ -1,62 +1,96 @@
-From: "Yan, Zheng " <yanzheng@21cn.com>
-Subject: Re: Disk space accounting and subvolume delete
-Date: Wed, 12 May 2010 13:02:07 +0800
-Message-ID: <AANLkTikzNWS11qycrI94k69PFEZJWpAezwuOF6nmw_PF@mail.gmail.com>
-References: <20100510182352.GA21154@untroubled.org>
-	 <AANLkTilDHeJ_aRQSKWUTJgIBhlpLHyNRTy4x4ai_MGJI@mail.gmail.com>
-	 <20100511154518.GA11710@untroubled.org>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH 1/4] fs: allow short direct-io reads to be completed via
+	buffered IO V2
+Date: Wed, 12 May 2010 16:37:34 -0400
+Message-ID: <20100512203733.GA3597@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	akpm@linux-foundation.org, hch@infradead.org
 To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100511154518.GA11710@untroubled.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 11, 2010 at 11:45 PM, Bruce Guenter <bruce@untroubled.org> =
-wrote:
-> On Tue, May 11, 2010 at 08:10:38AM +0800, Yan, Zheng =A0wrote:
->> This is because the snapshot deleting ioctl only removes the a link.
->
-> Right, I understand that. =A0That part is not unexpected, as it works=
- just
-> like unlink would. =A0However...
->
->> The corresponding tree is dropped in the background by a kernel thre=
-ad.
->
-> The surprise is that 'sync', in any form I was able to try, does not
-> wait until all or even most of the I/O is completed. =A0Apparently th=
-e
-> standards spec for sync(2) says it is not required to wait for I/O to
-> complete, but AFAIK all other Linux FS do wait (the man page for sync=
-(2)
-> implies as much, as does the info page for sync in glibc).
->
-> The only way I've found so far to force this behavior is to unmount, =
-and
-> that's rather intrusive to other users of the FS.
->
->> We could probably add another ioctl that waits until the tree has be=
-en
->> completely dropped.
->
-> Since the expected behavior for sync is to wait until all pending I/O
-> has been completed, I would argue this should be the default action f=
-or
-> sync. =A0Am I misunderstanding something?
->
+V1->V2: Check to see if our current ppos is >= i_size after a short DIO read,
+just in case it was actually a short read and we need to just return.
 
-Dropping a tree can be lengthy. It's not good to let sync wait for hour=
-s.
-=46or most linux FS, 'sync' just force an transaction/journal commit. I=
- don't
-think they wait for large operations that can span multiple transaction=
-s to
-complete.
+This is similar to what already happens in the write case.  If we have a short
+read while doing O_DIRECT, instead of just returning, fallthrough and try to
+read the rest via buffered IO.  BTRFS needs this because if we encounter a
+compressed or inline extent during DIO, we need to fallback on buffered.  If the
+extent is compressed we need to read the entire thing into memory and
+de-compress it into the users pages.  I have tested this with fsx and everything
+works great.  Thanks,
 
-Yan, Zheng
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ mm/filemap.c |   36 +++++++++++++++++++++++++++++++-----
+ 1 files changed, 31 insertions(+), 5 deletions(-)
+
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 140ebda..829ac9c 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -1263,7 +1263,7 @@ generic_file_aio_read(struct kiocb *iocb, const struct iovec *iov,
+ {
+ 	struct file *filp = iocb->ki_filp;
+ 	ssize_t retval;
+-	unsigned long seg;
++	unsigned long seg = 0;
+ 	size_t count;
+ 	loff_t *ppos = &iocb->ki_pos;
+ 
+@@ -1290,21 +1290,47 @@ generic_file_aio_read(struct kiocb *iocb, const struct iovec *iov,
+ 				retval = mapping->a_ops->direct_IO(READ, iocb,
+ 							iov, pos, nr_segs);
+ 			}
+-			if (retval > 0)
++			if (retval > 0) {
+ 				*ppos = pos + retval;
+-			if (retval) {
++				count -= retval;
++			}
++
++			/*
++			 * Btrfs can have a short DIO read if we encounter
++			 * compressed extents, so if there was an error, or if
++			 * we've already read everything we wanted to, or if
++			 * there was a short read because we hit EOF, go ahead
++			 * and return.  Otherwise fallthrough to buffered io for
++			 * the rest of the read.
++			 */
++			if (retval < 0 || !count || *ppos >= size) {
+ 				file_accessed(filp);
+ 				goto out;
+ 			}
+ 		}
+ 	}
+ 
++	count = retval;
+ 	for (seg = 0; seg < nr_segs; seg++) {
+ 		read_descriptor_t desc;
++		loff_t offset = 0;
++
++		/*
++		 * If we did a short DIO read we need to skip the section of the
++		 * iov that we've already read data into.
++		 */
++		if (count) {
++			if (count > iov[seg].iov_len) {
++				count -= iov[seg].iov_len;
++				continue;
++			}
++			offset = count;
++			count = 0;
++		}
+ 
+ 		desc.written = 0;
+-		desc.arg.buf = iov[seg].iov_base;
+-		desc.count = iov[seg].iov_len;
++		desc.arg.buf = iov[seg].iov_base + offset;
++		desc.count = iov[seg].iov_len - offset;
+ 		if (desc.count == 0)
+ 			continue;
+ 		desc.error = 0;
+-- 
+1.6.6.1

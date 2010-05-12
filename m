@@ -1,39 +1,77 @@
-From: Harshavardhana <harsha@gluster.com>
-Subject: Re: rmdir SubVolume?
-Date: Tue, 11 May 2010 08:57:23 -0700
-Message-ID: <4BE97E63.8070409@gluster.com>
-References: <AANLkTin_5GBuC9IzSzoY6hw4brLApJd2FeYfNj6Mo5Jc@mail.gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH 3/5] direct-io: honor dio->boundary a little more
+	strictly
+Date: Tue, 11 May 2010 20:13:48 -0400
+Message-ID: <20100512001347.GB27011@dhcp231-156.rdu.redhat.com>
+References: <20100507174104.GD3360@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Jay Sullivan <notfed@gmail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTin_5GBuC9IzSzoY6hw4brLApJd2FeYfNj6Mo5Jc@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-mm@kvack.org, hch@infradead.org,
+        akpm@linux-foundation.org
+To: Josef Bacik <josef@redhat.com>
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <20100507174104.GD3360@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/11/2010 08:51 AM, Jay Sullivan wrote:
-> Hi,
->
-> I'm just experimenting with btrfs (am currently using btrfs-tools
-> v0.19). I'm curious about deleting subvolume (and snapshot)
-> directories.   What exactly is the technical reason why we need a
-> special command "btrfsctl -D" to delete these?  What's the obstacle
-> preventing "rmdir" from being used on these?
->
->    
-rmdir returns ENOTEMPTY as of now, there was a patch which i sent some 
-time back to return EPERM to make it more intuitive. I am not sure will 
-it be included.
+On Fri, May 07, 2010 at 01:41:04PM -0400, Josef Bacik wrote:
+> Because BTRFS needs to be able to lookup checksums when we submit the bio's, we
+> need to be able to look up the logical offset in the inode we're submitting the
+> bio for.  The way we do this is in our get_blocks function is return the map_bh
+> with b_blocknr of the logical offset in the file, and then in the submit path
+> turn that into an actual block number on the device.  This causes problems with
+> the DIO stuff since it will try and merge requests that look like they are
+> contiguous, even though they are not actually contiguous on disk.  So BTRFS sets
+> buffer_boundary on the map_bh.  Unfortunately if there is not a bio already
+> setup in the DIO stuff, dio->boundary gets cleared and then the next time a
+> request is made they will get merged.  So instead of clearing dio->boundary in
+> dio_new_bio, save the boundary value before doing anything, that way if
+> dio->boundary gets cleared, we still submit the IO.  Thanks,
+> 
+> Signed-off-by: Josef Bacik <josef@redhat.com>
+> ---
+>  fs/direct-io.c |    5 ++++-
+>  1 files changed, 4 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/direct-io.c b/fs/direct-io.c
+> index 2dbf2e9..98f6f42 100644
+> --- a/fs/direct-io.c
+> +++ b/fs/direct-io.c
+> @@ -615,6 +615,7 @@ static int dio_bio_add_page(struct dio *dio)
+>   */
+>  static int dio_send_cur_page(struct dio *dio)
+>  {
+> +	int boundary = dio->boundary;
+>  	int ret = 0;
+>  
+>  	if (dio->bio) {
+> @@ -627,7 +628,7 @@ static int dio_send_cur_page(struct dio *dio)
+>  		 * Submit now if the underlying fs is about to perform a
+>  		 * metadata read
+>  		 */
+> -		if (dio->boundary)
+> +		if (boundary)
+>  			dio_bio_submit(dio);
+>  	}
+>  
+> @@ -644,6 +645,8 @@ static int dio_send_cur_page(struct dio *dio)
+>  			ret = dio_bio_add_page(dio);
+>  			BUG_ON(ret != 0);
+>  		}
+> +	} else if (boundary) {
+> +		dio_bio_submit(dio);
+>  	}
+>  out:
+>  	return ret;
 
-Since there is another idea of actually implementing the btrfsctl -D 
-part into "btrfs_rmdir"
-itself. Never got much time to look into it.
+Self-NACK on this one.  Seems to have an unwanted side-effect of forcing every
+page to be submitted individually.  I'm going to fix this a different way.
+Thanks,
 
-Regards
+Josef
 
--- 
-Harshavardhana
-Gluster Inc - http://www.gluster.com
-
-
-
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>

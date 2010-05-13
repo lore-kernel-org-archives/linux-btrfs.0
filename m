@@ -1,35 +1,34 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: OOPS when subvol=xxx where xxx does not exist
-Date: Thu, 13 May 2010 14:00:05 -0400
-Message-ID: <20100513180005.GG27011@dhcp231-156.rdu.redhat.com>
-References: <4BEBE180.9080705@gmail.com>
+Subject: Re: [PATCH 4/4] Btrfs: add basic DIO read/write support V3
+Date: Thu, 13 May 2010 14:01:37 -0400
+Message-ID: <20100513180137.GH27011@dhcp231-156.rdu.redhat.com>
+References: <20100512204052.GD3597@localhost.localdomain> <20100513151429.GA16916@infradead.org> <20100513153145.GE27011@dhcp231-156.rdu.redhat.com> <20100513152639.GA30954@infradead.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Victor Roetman <victory747@gmail.com>
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	akpm@linux-foundation.org
+To: Christoph Hellwig <hch@infradead.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4BEBE180.9080705@gmail.com>
+In-Reply-To: <20100513152639.GA30954@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 13, 2010 at 07:24:48PM +0800, Victor Roetman wrote:
-> I am running 2.6.34-rc5, testing was done with a 4G thumb drive.
+On Thu, May 13, 2010 at 11:26:39AM -0400, Christoph Hellwig wrote:
+> On Thu, May 13, 2010 at 11:31:45AM -0400, Josef Bacik wrote:
+> > AIO's aio_complete does kmap with KM_IRQ0/1 and it gets called in the same
+> > context as the btrfs completion handler, so if it's ok for aio_complete it
+> > should be ok for btrfs right?  Thanks,
 > 
-> # mkfs.btrfs /dev/sdd1
+> aio_complete does a spin_lock_irqsave before that, which disables
+> interrupts on the local CPU.
 > 
-> WARNING! - Btrfs v0.19-16-g075587c IS EXPERIMENTAL
-> WARNING! - see http://btrfs.wiki.kernel.org before using
-> 
-> fs created label (null) on /dev/sdd1
-> 	nodesize 4096 leafsize 4096 sectorsize 4096 size 3.73GB
-> Btrfs v0.19-16-g075587c
-> 
-> # mkdir one
-> # mkdir two
-> # mount /dev/sdd1 one
-> # mount /dev/sdd1 two -o subvol=xxx
-> mount: /dev/sdd1 is not a valid block device
-> # umount one
 
-Thanks for this, I just posted a patch to fix the problem.
+Ok how about I just do
+
+local_irq_disable()
+kmap(KM_IRQ0)
+local_irq_enable()
+
+would that be acceptable?  Thanks,
 
 Josef

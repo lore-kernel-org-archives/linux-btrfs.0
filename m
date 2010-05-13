@@ -1,68 +1,35 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: fix error handling in btrfs_get_sb
-Date: Thu, 13 May 2010 13:49:14 -0400
-Message-ID: <1273772954-2745-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+Subject: Re: OOPS when subvol=xxx where xxx does not exist
+Date: Thu, 13 May 2010 14:00:05 -0400
+Message-ID: <20100513180005.GG27011@dhcp231-156.rdu.redhat.com>
+References: <4BEBE180.9080705@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Victor Roetman <victory747@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4BEBE180.9080705@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we failed to find the root subvol id, or the subvol=<name>, we would
-deactivate the locked super and close the devices.  The problem is at this point
-we have gotten the SB all setup, which includes setting super_operations, so
-when we'd deactiveate the super, we'd do a close_ctree() which closes the
-devices, so we'd end up closing the devices twice.  So if you do something like
-this
+On Thu, May 13, 2010 at 07:24:48PM +0800, Victor Roetman wrote:
+> I am running 2.6.34-rc5, testing was done with a 4G thumb drive.
+> 
+> # mkfs.btrfs /dev/sdd1
+> 
+> WARNING! - Btrfs v0.19-16-g075587c IS EXPERIMENTAL
+> WARNING! - see http://btrfs.wiki.kernel.org before using
+> 
+> fs created label (null) on /dev/sdd1
+> 	nodesize 4096 leafsize 4096 sectorsize 4096 size 3.73GB
+> Btrfs v0.19-16-g075587c
+> 
+> # mkdir one
+> # mkdir two
+> # mount /dev/sdd1 one
+> # mount /dev/sdd1 two -o subvol=xxx
+> mount: /dev/sdd1 is not a valid block device
+> # umount one
 
-mount /dev/sda1 /mnt/test1
-mount /dev/sda1 /mnt/test2 -o subvol=xxx
-umount /mnt/test1
+Thanks for this, I just posted a patch to fix the problem.
 
-it would blow up (if subvol xxx doesn't exist).  This patch fixes that problem.
-Thanks,
-
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/super.c |    7 +++----
- 1 files changed, 3 insertions(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 1866dff..6ba4142 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -627,7 +627,7 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
- 	if (IS_ERR(root)) {
- 		error = PTR_ERR(root);
- 		deactivate_locked_super(s);
--		goto error;
-+		goto error_free_subvol_name;
- 	}
- 	/* if they gave us a subvolume name bind mount into that */
- 	if (strcmp(subvol_name, ".")) {
-@@ -641,14 +641,14 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
- 			deactivate_locked_super(s);
- 			error = PTR_ERR(new_root);
- 			dput(root);
--			goto error_close_devices;
-+			goto error_free_subvol_name;
- 		}
- 		if (!new_root->d_inode) {
- 			dput(root);
- 			dput(new_root);
- 			deactivate_locked_super(s);
- 			error = -ENXIO;
--			goto error_close_devices;
-+			goto error_free_subvol_name;
- 		}
- 		dput(root);
- 		root = new_root;
-@@ -666,7 +666,6 @@ error_close_devices:
- 	btrfs_close_devices(fs_devices);
- error_free_subvol_name:
- 	kfree(subvol_name);
--error:
- 	return error;
- }
- 
--- 
-1.6.6.1
-
+Josef

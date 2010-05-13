@@ -1,48 +1,23 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Subject: Re: [PATCH 4/4] Btrfs: add basic DIO read/write support V3
-Date: Thu, 13 May 2010 11:11:36 -0700
-Message-ID: <20100513111136.6986e8cc.akpm@linux-foundation.org>
-References: <20100512204052.GD3597@localhost.localdomain>
-	<20100513151429.GA16916@infradead.org>
-	<20100513153145.GE27011@dhcp231-156.rdu.redhat.com>
-	<20100513152639.GA30954@infradead.org>
-	<20100513180137.GH27011@dhcp231-156.rdu.redhat.com>
+From: Andreas Philipp <philipp.andreas@gmail.com>
+Subject: add subvolume when / is not mounted?
+Date: Thu, 13 May 2010 20:19:21 +0200
+Message-ID: <4BEC42A9.4090005@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: Christoph Hellwig <hch@infradead.org>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20100513180137.GH27011@dhcp231-156.rdu.redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 13 May 2010 14:01:37 -0400
-Josef Bacik <josef@redhat.com> wrote:
+Hi,
 
-> On Thu, May 13, 2010 at 11:26:39AM -0400, Christoph Hellwig wrote:
-> > On Thu, May 13, 2010 at 11:31:45AM -0400, Josef Bacik wrote:
-> > > AIO's aio_complete does kmap with KM_IRQ0/1 and it gets called in the same
-> > > context as the btrfs completion handler, so if it's ok for aio_complete it
-> > > should be ok for btrfs right?  Thanks,
-> > 
-> > aio_complete does a spin_lock_irqsave before that, which disables
-> > interrupts on the local CPU.
-> > 
-> 
-> Ok how about I just do
-> 
-> local_irq_disable()
-> kmap(KM_IRQ0)
-> local_irq_enable()
-> 
-> would that be acceptable?  Thanks,
+Well, I do not know if here is the right place to ask questions like
+this one so please tell me if it is not.
+The situation is the following: btrfs (data and metadata single) on
+/dev/sda3 (size 100GB) with two subvolumes /one and /two. Both
+subvolumes are mounted to /mnt/one resp. /mnt/two. Is there a way to
+create a third subvolume, say three outside of the two existing
+subvolumes without mounting "the whole volume /dev/sda3" or even worse
+unmounting the two subvolumes before?
 
-yup.
-
-local_irq_disable() (or local_irq_save())
-kmap_atomic(KM_IRQx);
-<stuff>
-kunmap_atomic(KM_IRQx);
-local_irq_enable() (or local_irq_restore()).
-
-then perhaps flush_dcache_page().
+Thanks,
+Andreas

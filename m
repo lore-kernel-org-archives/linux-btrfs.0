@@ -1,66 +1,87 @@
-From: Christian Kujau <christian.kujau@oracle.com>
-Subject: Re: implicit declaration of function 'strndup'
-Date: Fri, 14 May 2010 06:27:28 -0700
-Message-ID: <4BED4FC0.1000004@oracle.com>
-References: <alpine.DEB.2.01.1004220040350.18247@bogon.housecafe.de>
-Reply-To: Christian Kujau <lists@nerdbynature.de>
+From: Christian Kujau <lists@nerdbynature.de>
+Subject: Re: [MeeGo-dev] Btrfs as default file system
+Date: Fri, 14 May 2010 06:47:24 -0700 (PDT)
+Message-ID: <alpine.DEB.2.01.1005140634170.12512@bogon.housecafe.de>
+References: <1273575646.2336.9.camel@sanganak> <4BE95584.7000204@linux.intel.com> <1273583736.2336.105.camel@sanganak> <20100511131844.GB27606@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: zhaolei@cn.fujitsu.com, miaox@cn.fujitsu.com
-To: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: Ameya Palande <ameya.palande@nokia.com>,
+	ext Arjan van de Ven <arjan@linux.intel.com>,
+	"meego-dev@meego.com" <meego-dev@meego.com>,
+	linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <alpine.DEB.2.01.1004220040350.18247@bogon.housecafe.de>
+In-Reply-To: <20100511131844.GB27606@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Tue, 11 May 2010 at 09:18, Chris Mason wrote:
+> It is too late for such a change in 2.6.34, Linus announced the final RC
+> this week.  But I'll have this queued in my .35 releases.
 
-I've sent this (see below) a while ago, the patch from Miao Xie is from
-March even. I still cannot compile btrfs-progs without his fix. Please
-include this fix into the repo.
+Hm, I'd consider such a Kconfig file change to be cosmetic only and could 
+be included during the RC series. Anyway, .35 is probably fine too.
 
-Thanks,
-Christian.
+> If meego would like to include a patch for this in their kernel, I'd be
+> happy to send it along.
 
-Christian Kujau wrote on 2010-04-22 24:50 :
-> compiling the latest checkout of btrfs-progs-git, I still get the compiler 
-> error Miao Xie reported[0] in March, along with a patch:
-> 
->   cc1: warnings being treated as errors
->   btrfs-list.c: In function 'ino_resolve':
->   btrfs-list.c:511: warning: implicit declaration of function 'strndup'
->   btrfs-list.c:511: warning: incompatible implicit declaration of built-in 
->   function 'strndup'
->   make: *** [btrfs-list.o] Error 1
-> 
-> I'm on Debian/stable (gcc 4.3.2-1.1, glibc-2.7), the patch from Miao Xie 
-> resolved this issue. Is there a reason it's not in git yet?
-> 
-> Thanks,
-> Christian.
-> 
-> [0] https://patchwork.kernel.org/patch/88224/
->     http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg04610.html
+If no-one sends a patch, how about:
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index 7741705..9dedb5d 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -16,6 +16,7 @@
-  * Boston, MA 021110-1307, USA.
-  */
- +#define _GNU_SOURCE
- #ifndef __CHECKER__
- #include <sys/ioctl.h>
- #include <sys/mount.h>
-diff --git a/btrfs.c b/btrfs.c
-index ab5e57f..46314cf 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -14,7 +14,7 @@
-  * Boston, MA 021110-1307, USA.
-  */
- -
-+#define _GNU_SOURCE
- #include <stdio.h>
- #include <stdlib.h>
- #include <string.h>
+  -----------------
+  Remove EXPERIMENTAL flag from btrfs and also state that the disk format 
+  has indeed been finalized.
+
+  Signed-off-by: Christian Kujau <lists@nerdbynature.de>
+
+diff --git a/Documentation/filesystems/btrfs.txt b/Documentation/filesystems/btrfs.txt
+index 64087c3..da67070 100644
+--- a/Documentation/filesystems/btrfs.txt
++++ b/Documentation/filesystems/btrfs.txt
+@@ -12,9 +12,9 @@ number of challenges with scaling to the large storage subsystems that
+ are becoming common in today's data centers. Filesystems need to scale
+ in their ability to address and manage large storage, and also in
+ their ability to detect, repair and tolerate errors in the data stored
+-on disk.  Btrfs is under heavy development, and is not suitable for
+-any uses other than benchmarking and review. The Btrfs disk format is
+-not yet finalized.
++on disk.  Btrfs is under heavy development, but with Linux 2.6.31 the
++Btrfs disk format has been finalized and is not considered experimental
++any more.
+ 
+ The main Btrfs features include:
+ 
+@@ -33,6 +33,7 @@ The main Btrfs features include:
+     * Efficient incremental backup and FS mirroring (not yet implemented)
+     * Online filesystem defragmentation
+ 
++Please see https://btrfs.wiki.kernel.org for details on these features.
+ 
+ 
+ 	MAILING LIST
+diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
+index 7bb3c02..cebb197 100644
+--- a/fs/btrfs/Kconfig
++++ b/fs/btrfs/Kconfig
+@@ -1,16 +1,12 @@
+ config BTRFS_FS
+-	tristate "Btrfs filesystem (EXPERIMENTAL) Unstable disk format"
+-	depends on EXPERIMENTAL
++	tristate "Btrfs filesystem"
+ 	select LIBCRC32C
+ 	select ZLIB_INFLATE
+ 	select ZLIB_DEFLATE
+ 	help
+ 	  Btrfs is a new filesystem with extents, writable snapshotting,
+-	  support for multiple devices and many more features.
+-
+-	  Btrfs is highly experimental, and THE DISK FORMAT IS NOT YET
+-	  FINALIZED.  You should say N here unless you are interested in
+-	  testing Btrfs with non-critical data.
++	  support for multiple devices and many more features. For more
++	  information, please see https://btrfs.wiki.kernel.org.
+ 
+ 	  To compile this file system support as a module, choose M here. The
+ 	  module will be called btrfs.
+-- 
+BOFH excuse #186:
+
+permission denied

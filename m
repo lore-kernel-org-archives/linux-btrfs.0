@@ -1,69 +1,44 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Subject: Re: Mounting raid without a btrfsctl scan
-Date: Sun, 16 May 2010 20:44:23 +0200
-Message-ID: <201005162044.23272.kreijack@libero.it>
-References: <4BEE817A.7060604@gmx.com> <20100516000257.GB651@mother.pipebreaker.pl> <AANLkTinRVuk_uJBLsBD0ANdKkEHs-9zz4Tor_0xi7oCI@mail.gmail.com>
-Reply-To: kreijack@libero.it
+From: Mike Fedyk <mfedyk@mikefedyk.com>
+Subject: Re: Adding mirroring to an existing filesystem
+Date: Sun, 16 May 2010 12:31:55 -0700
+Message-ID: <AANLkTikKYC5XIkgiOe1hF2Gg4Rz6nM2Ab4Z_YbgZjM4A@mail.gmail.com>
+References: <AANLkTimKr24mjku0shVSNmUSd9yW6MgeBBIIYuPsE7BN@mail.gmail.com>
+	 <677718.82116.qm@web112502.mail.gq1.yahoo.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Cc: linux-btrfs@vger.kernel.org
-To: Tomasz Torcz <tomek@pipebreaker.pl>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org, Donald Gordon <don@dis.org.nz>
+To: J G <yoosty_cmn@yahoo.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTinRVuk_uJBLsBD0ANdKkEHs-9zz4Tor_0xi7oCI@mail.gmail.com>
+In-Reply-To: <677718.82116.qm@web112502.mail.gq1.yahoo.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sunday 16 May 2010, Sebastian 'gonX' Jensen wrote:
-> On 16 May 2010 02:02, Tomasz Torcz <tomek@pipebreaker.pl> wrote:
+On Sun, May 16, 2010 at 8:38 AM, J G <yoosty_cmn@yahoo.com> wrote:
+>
+>
+> --- On Sun, 5/16/10, Donald Gordon <don@dis.org.nz> wrote:
+>
+>> From: Donald Gordon <don@dis.org.nz>
+>> Subject: Adding mirroring to an existing filesystem
+>> To: linux-btrfs@vger.kernel.org
+>> Date: Sunday, May 16, 2010, 4:39 AM
+>> Hi
+>>
+>> Is there some way I can add an extra disk as a mirror to an
+>> existing
+>> btrfs filesystem?=C2=A0 Or must I create a new filesystem
+>> with RAID1, and
+>> then copy over all my data?
+>
+> https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Dev=
+ices#Adding_New_Devices
+>
+> I would be sure to back my data up before performing this procedure ;=
+)
 
-[...]
-> I don't know if I mentioned it before, but my system
-> spends at least 6 seconds in the initramfs before passing control over
-> to my distributions initscripts. Part of it is obviously because of
-> btrfs having to spend approximately 3 seconds probing for devices (I
-> have a decent amount of devices). 
-
-
-> However, btrfs does not have that
-> many functions yet. Would it be possible to at least have partial
-> functionality kernel side, so that an initramfs is not required for
-> mounting RAID devices?
-
-I think that the good question is: why a kernel probing should be faster than 
-a user space probing ? 
-
-I think that some reasons of the time required by the btrfsctl scan in user 
-space are:
-1) a scan performed via 'btrfsctl -a' scans every block device (cdrom and 
-floppy included). I suggest to perform a scan via udev (see my previous post); 
-that should be reduce the boot time.
-2) the actual initramfs tools pay attention to wait that _all_ devices 
-appeared. This requires a bit of time which is not related to the "user space" 
-scan.
-
-Comments ?
-
-G.Baroncelli
-
-> 
-> > --
-> > Tomasz Torcz              ,,If you try to upissue this patchset I shall be 
-seeking
-> > xmpp: zdzichubg@chrome.pl   an IP-routable hand grenade.'' -- Andrew 
-Morton (LKML)
-> >
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
-
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+You should have good backups and keep having good backups before and
+during the use of btrfs.  Period.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,53 +1,54 @@
-From: Mike Fedyk <mfedyk@mikefedyk.com>
-Subject: Re: help message of btrfsctl does not tell anything about deletion of
-	a subvolume
-Date: Sat, 15 May 2010 15:42:58 -0700
-Message-ID: <AANLkTilPrTJkoa0KHVrGCLQE_RZP_IAuMqm_DrCeGfl9@mail.gmail.com>
-References: <4BEEEC28.7020100@gmail.com>
+From: Tomasz Torcz <tomek@pipebreaker.pl>
+Subject: Re: Mounting raid without a btrfsctl scan
+Date: Sun, 16 May 2010 02:02:58 +0200
+Message-ID: <20100516000257.GB651@mother.pipebreaker.pl>
+References: <4BEE817A.7060604@gmx.com>
+ <201005151636.08437.kreijack@libero.it>
+ <AANLkTilwCv-RZvdyVyX9ymamEIXUY0P1cozI0R0Aqa07@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Andreas Philipp <philipp.andreas@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4BEEEC28.7020100@gmail.com>
+In-Reply-To: <AANLkTilwCv-RZvdyVyX9ymamEIXUY0P1cozI0R0Aqa07@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, May 15, 2010 at 11:47 AM, Andreas Philipp
-<philipp.andreas@gmail.com> wrote:
-> Hi,
->
-> The help message of the btrfsctl command does not tell anything about
-> the deletion of a subvolume. See patch below.
->
-> Kind regards,
-> Andreas
->
-> diff --git a/btrfsctl.c b/btrfsctl.c
-> index be6bf25..3ed6f2d 100644
-> --- a/btrfsctl.c
-> +++ b/btrfsctl.c
-> @@ -56,7 +56,7 @@ static void print_usage(void)
-> =C2=A0 =C2=A0 printf("\t-A device: scans the device file for a Btrfs =
-filesystem\n");
-> =C2=A0 =C2=A0 printf("\t-a: scans all devices for Btrfs filesystems\n=
-");
-> =C2=A0 =C2=A0 printf("\t-c: forces a single FS sync\n");
-> - =C2=A0 =C2=A0printf("\t-D: delete snapshot\n");
-> + =C2=A0 =C2=A0printf("\t-D: delete snapshot or subvolume\n");
-> =C2=A0 =C2=A0 printf("\t-m [tree id] directory: set the default mount=
-ed subvolume"
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0" to the [tree id] or the di=
-rectory\n");
-> =C2=A0 =C2=A0 printf("%s\n", BTRFS_BUILD_VERSION);
->
+On Sat, May 15, 2010 at 06:47:22PM +0200, Sebastian 'gonX' Jensen wrote:
+> >> Would it be possible and feasible to support mounting btrfs
+> >> raid/multi-device filesystems without having to run 'btrfsctl -a'?
+> >>
+> >> Currently, as you may know, if a one wants to attach a btrfs raid
+> >> filesystem to a system (usb, hotswap, reboot, etc), the user or program
+> >> has to run:
+> >>
+> >> btrfsctl -a (or similar)
+> >> mount /dev/sdb1 /mount/point
+> >>
+> >> While this works, it will require patching of various subsystems
+> >> involved with managing disks, such as udev, mkinitrd, dracut, hal, and
+> >> others. Each one will have to know to scan, then mount.
+> >
+> > In a my previous post ([RFC] btrfs, udev and btrfs - 16/April 2010), I
+> > suggested a solution for this kind of problem. I a Debian/Ubuntu system it is
+> > not necessary to patch anything, it is only required to put some files in the
+> > initramfs-tool configure directories.
+> >
+> > IIRC, also the md (RAID) subsystem require a scan from the user space to find
+> > and activate the volumes. I think also dm (LVM) subsystem requires the same.
+> >
+> 
+> md does not require a scan from userspace with at least both RAID-0
+> and RAID-1. There's a setting in the kernel config you can set, which
+> will automatically detect all RAID drives with the FD partition flag
+> set. DM may however be true.
 
-We have a new command "btrfs subvolume delete <path>" which can be
-shortened even as far as "btrfs s d <path>".
 
-Are we going to keep the btrfsctl program indefinitely when we have a
-replacement in the "btrfs" program?
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+  MD will only detect RAID on MS-DOS partitions (seldom used when RAIDing
+whole devices, not possible to use with devices >2 TiB) and metadata
+0.90, which is not default. Userspace probing is general way kernel 
+subsystem are going, it is more flexible.
+  And dracut already has btrfs module.
+
+-- 
+Tomasz Torcz              ,,If you try to upissue this patchset I shall be seeking
+xmpp: zdzichubg@chrome.pl   an IP-routable hand grenade.'' -- Andrew Morton (LKML)
+

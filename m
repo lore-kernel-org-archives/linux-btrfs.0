@@ -1,38 +1,37 @@
 From: Jakob Unterwurzacher <jakobunt@gmail.com>
 Subject: Re: Rename+crash behaviour of btrfs - nearly ext3!
-Date: Mon, 17 May 2010 22:30:43 +0200
-Message-ID: <4BF1A773.5080006@gmail.com>
-References: <4BF18525.8080904@gmail.com> <20100517192554.GB2322@localhost.localdomain> <20100517200912.GE8635@think>
+Date: Tue, 18 May 2010 02:14:05 +0200
+Message-ID: <4BF1DBCD.7060208@gmail.com>
+References: <4BF18525.8080904@gmail.com> <20100517193652.GC8635@think>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100517200912.GE8635@think>
+In-Reply-To: <20100517193652.GC8635@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 17/05/10 22:09, Chris Mason wrote:
->>> -rw-r--r-- 1 root root 20 2010-05-17 17:06:25.812016407 +0200 01280.cur
->>> -rw-r--r-- 1 root root 20 2010-05-17 17:06:25.835999490 +0200 01281.cur
->>> -rw-r--r-- 1 root root  0 2010-05-17 17:06:25.868035485 +0200 01282.cur
->>> [...]
->>> -rw-r--r-- 1 root root  0 2010-05-17 17:06:26.080003626 +0200 01291.cur
->>> -rw-rw-rw- 1 root root  0 2010-05-17 17:06:26.108010083 +0200 01292.tmp
->>>
->>
->> This isn't actually true.  There is no window, the inode isn't written to disk
->> until all of the data is flushed to disk.  So the in memory inode will be
->> update, and therefore show an i_size of 0 since the io hasn't finished, but if
->> you were to crash at this point, when you came back up you'd have the old data
->> in place because the new inode data wasn't written to disk.  I have a feeling
->> ext4 is the same way, but I'd have to check for sure.  Thanks,
+On 17/05/10 21:36, Chris Mason wrote:
 > 
-> Jacob, could you please confirm if your test includes a crash?
+> That should be a zero second window, we try to force things to disk
+> during renames.
 > 
-> -chris
+> Could you please try this patch:
+> 
+> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+> index c9f1020..9370a71 100644
+> --- a/fs/btrfs/ordered-data.c
+> +++ b/fs/btrfs/ordered-data.c
+> @@ -806,7 +806,7 @@ int btrfs_add_ordered_operation(struct btrfs_trans_handle *trans,
+>  	 * if this file hasn't been changed since the last transaction
+>  	 * commit, we can safely return without doing anything
+>  	 */
+> -	if (last_mod < root->fs_info->last_trans_committed)
+> +	if (0 && last_mod < root->fs_info->last_trans_committed)
 
-Yes, i crash the VM by pressing reset in VirtualBox.
-Note that the "ls" above is from the rename test that does NOT overwrite
-existing files.
+
+Ok, I upgraded to 2.6.34 final and switched to defconfig.
+I only did the rename test ( i.e. no overwrite ), the window is now
+1.1s, both with vanilla and with the patch.
 
 Jakob
+

@@ -1,55 +1,82 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: Thomas Bellman <bellman@nsc.liu.se>
 Subject: Re: Rename+crash behaviour of btrfs - nearly ext3!
-Date: Tue, 18 May 2010 10:36:58 -0400
-Message-ID: <20100518143658.GA8635@think>
-References: <4BF18525.8080904@gmail.com>
- <20100517193652.GC8635@think>
- <4BF1DBCD.7060208@gmail.com>
- <20100518003032.GK8635@think>
- <20100518005926.GM8635@think>
- <4BF28225.2000908@gmail.com>
- <20100518131304.GX8635@think>
- <4BF29EF5.4020408@gmail.com>
+Date: Tue, 18 May 2010 16:47:48 +0200
+Message-ID: <4BF2A894.60204@nsc.liu.se>
+References: <4BF18525.8080904@gmail.com> <20100517193652.GC8635@think>	<4BF1DBCD.7060208@gmail.com> <20100518003032.GK8635@think>	<20100518005926.GM8635@think> <4BF28225.2000908@gmail.com>	<20100518131304.GX8635@think> <0339xpl4pp.fsf@msgid.viggen.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Jakob Unterwurzacher <jakobunt@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4BF29EF5.4020408@gmail.com>
+In-Reply-To: <0339xpl4pp.fsf@msgid.viggen.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 18, 2010 at 04:06:45PM +0200, Jakob Unterwurzacher wrote:
-> On 18/05/10 15:13, Chris Mason wrote:
-> > 
-> > The thing is that different apps have a different version of 'right'.  Rename
-> > is atomically replacing one file with another, and I completely agree
-> > that when we have an established file on disk, we shouldn't replace it
-> > with something that is potentially garbage.
-> > 
-> > But for the zeros case we have a file that isn't on disk and we're just
-> > giving it a new name.  I can see a different class of applications
-> > getting upset about renames slowing the system down dramatically because
-> > they suddenly imply a lot of IO.
-> > 
-> > I'm more than open to discussion on this one, but I don't see how:
-> > 
-> > rm -f foo2
-> > dd if=/dev/zero of=foo bs=1M count=1000
-> > mv foo foo2
-> > 
-> > Should be expected to write 1GB of data.
-> > 
-> > -chris
-> 
-> The idea would be to delay the rename hitting the disk until the data
-> has been written anyway.
-> The mv would return immediately, and someday, after the data has been
-> written to disk, the rename would be written to disk.
+On 05/18/10 15:28, Oystein Viggen wrote:
 
-This is possible, but we have to choose between consuming unbounded
-resources while we queue up all the mvs or sometimes forcing the things
-to disk.  At the end of the day, disks are so slow that eventually you
-do end up waiting on them.
+> * [Chris Mason]
+>
+>> I'm more than open to discussion on this one, but I don't see how:
+>>
+>> rm -f foo2
+>> dd if=/dev/zero of=foo bs=1M count=1000
+>> mv foo foo2
+>>
+>> Should be expected to write 1GB of data.
+>
+> IIRC, the answer you're looking for is "it did with ext3 in the default
+> data=ordered mode".  Combine that with the ext3 data=ordered fsync()
+> escalation where (again IIRC) fsync() tended to force a full sync() of
+> the file system, and it's not that difficult to see why someone would
+> program with the expectation above.
+>
+> Anyway, there's still a question of if a new file system should emulate
+> the quirks of the old file system (read: be bug compatible), or if you
+> can just expect to be popular enough that userspace adapts to the new
+> order and lets you do The Right Thing instead.
 
--chris
+So what *is* the right thing?  What kind of API should userspace have?
+If the obvious thing for an application programmer to do is wrong, and
+the right thing requires going through more hoops, that will ensure
+that the majority of applications will be buggy.  We should strive
+to make it easy to get things right.
 
+It's easy for the kernel, and the filesystem, to just ask the userspace
+programmers to jump through the hoops, and declare those programs that
+don't to be broken.
+
+On the other hand, if you go *too* far in absolving applications of
+responsibility for making things safe, you would end up making all
+filesystem operations synchronous, and that obviously hurts performance
+in big ways.  So we need some kind of compromise, and where that
+compromise should end up being, I don't really have the answer to.
+It's just that I feel that often only the kernel programmers view is
+represented here.
+
+
+The pattern of writing to a file and then changing its name *without*
+overwriting an existing file, is quite common when you write files to
+a spool directory, and have another program that picks up files from
+that directory and processes them.  You
+
+     fd = open("foo4711.tmp", O_CREAT|O_EXCL|O_RDWR);
+     write(fd, "data", strlen("data"));
+     close(fd);
+     link("foo4711.tmp", "foo4711");
+     unlink("foo4711.tmp");
+
+(And note that careful programs don't use rename() here, because that
+would risk clobbering a file some other process has written, and instead
+use link()+unlink().  And I really wish a "safe_rename()" syscall that
+didn't clobber existing files existed.)
+
+The programs I personally have written that did this, also had an fsync()
+there, because I received data from another system and didn't want to ACK
+until I knew it was safely on disk at my end.  But I am a fairly careful
+programmer.
+
+
+Note that in my previous life I was a userspace programmer, and in my
+current life I'm a sysadmin.  I'm speaking as an interrested user of
+Btrfs, not as a kernel programmer.
+
+
+	/Thomas Bellman

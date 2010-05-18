@@ -1,43 +1,55 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Rename+crash behaviour of btrfs - nearly ext3!
-Date: Mon, 17 May 2010 20:30:32 -0400
-Message-ID: <20100518003032.GK8635@think>
-References: <4BF18525.8080904@gmail.com>
- <20100517193652.GC8635@think>
- <4BF1DBCD.7060208@gmail.com>
+From: Shi Weihua <shiwh@cn.fujitsu.com>
+Subject: [PATCH] btrfs: should add a permission check for setfacl
+Date: Tue, 18 May 2010 08:50:32 +0800
+Message-ID: <4BF1E458.7060500@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Jakob Unterwurzacher <jakobunt@gmail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4BF1DBCD.7060208@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-15
+Cc: linux-btrfs@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>
+To: chris.mason@oracle.com, "Yan, Zheng" <zheng.yan@oracle.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 18, 2010 at 02:14:05AM +0200, Jakob Unterwurzacher wrote:
-> On 17/05/10 21:36, Chris Mason wrote:
-> > 
-> > That should be a zero second window, we try to force things to disk
-> > during renames.
-> > 
-> > Could you please try this patch:
-> > 
-> > diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-> > index c9f1020..9370a71 100644
-> > --- a/fs/btrfs/ordered-data.c
-> > +++ b/fs/btrfs/ordered-data.c
-> > @@ -806,7 +806,7 @@ int btrfs_add_ordered_operation(struct btrfs_trans_handle *trans,
-> >  	 * if this file hasn't been changed since the last transaction
-> >  	 * commit, we can safely return without doing anything
-> >  	 */
-> > -	if (last_mod < root->fs_info->last_trans_committed)
-> > +	if (0 && last_mod < root->fs_info->last_trans_committed)
-> 
-> 
-> Ok, I upgraded to 2.6.34 final and switched to defconfig.
-> I only did the rename test ( i.e. no overwrite ), the window is now
-> 1.1s, both with vanilla and with the patch.
+On btrfs, do the following
+------------------
+# su user1
+# cd btrfs-part/
+# touch aaa
+# getfacl aaa
+  # file: aaa
+  # owner: user1
+  # group: user1
+  user::rw-
+  group::rw-
+  other::r--
+# su user2
+# cd btrfs-part/
+# setfacl -m u::rwx aaa
+# getfacl aaa
+  # file: aaa
+  # owner: user1
+  # group: user1
+  user::rwx           <- successed to setfacl
+  group::rw-
+  other::r--
+------------------
+but we should prohibit it that user2 changing user1's acl.
+In fact, on ext3 and other fs, a message occurs:
+  setfacl: aaa: Operation not permitted
 
-Thanks, so much for the easy fix.  I'll take a look.
-
--chris
-
+This patch fixed it.
+Signed-off-by: Shi Weihua <shiwh@cn.fujitsu.com>
+---
+diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+index da3133c..12d7be8 100644
+--- a/fs/btrfs/acl.c
++++ b/fs/btrfs/acl.c
+@@ -159,6 +159,9 @@ static int btrfs_xattr_set_acl(struct inode *inode, int type,
+ 	int ret;
+ 	struct posix_acl *acl = NULL;
+ 
++	if (!is_owner_or_cap(inode))
++		return -EPERM;
++
+ 	if (value) {
+ 		acl = posix_acl_from_xattr(value, size);
+ 		if (acl == NULL) {

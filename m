@@ -1,82 +1,104 @@
-From: Thomas Bellman <bellman@nsc.liu.se>
-Subject: Re: Rename+crash behaviour of btrfs - nearly ext3!
-Date: Tue, 18 May 2010 16:47:48 +0200
-Message-ID: <4BF2A894.60204@nsc.liu.se>
-References: <4BF18525.8080904@gmail.com> <20100517193652.GC8635@think>	<4BF1DBCD.7060208@gmail.com> <20100518003032.GK8635@think>	<20100518005926.GM8635@think> <4BF28225.2000908@gmail.com>	<20100518131304.GX8635@think> <0339xpl4pp.fsf@msgid.viggen.net>
+From: Sean Bartell <wingedtachikoma@gmail.com>
+Subject: Re: [PATCH 2/4] btrfs-convert: Add extent iteration functions.
+Date: Tue, 18 May 2010 11:37:23 -0400
+Message-ID: <20100518153723.GA4380@flcl.lan>
+References: <20100320042649.GA17106@flcl.lan>
+ <AANLkTil0BsmO29G5Q-gkwXogwJPuL9fbL_kztOv9Us4O@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=iso-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: "Yan, Zheng " <yanzheng@21cn.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <0339xpl4pp.fsf@msgid.viggen.net>
+In-Reply-To: <AANLkTil0BsmO29G5Q-gkwXogwJPuL9fbL_kztOv9Us4O@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/18/10 15:28, Oystein Viggen wrote:
+On Tue, May 18, 2010 at 09:06:54PM +0800, Yan, Zheng  wrote:
+> On Sat, Mar 20, 2010 at 12:26 PM, Sean Bartell
+> <wingedtachikoma@gmail.com> wrote:
+> > +int add_file_disk_extent(struct extent_iterate_data *priv, u64 fil=
+e_off,
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0u64 disk_off, u64 =
+size)
+> > +{
+> > + =A0 =A0 =A0 BUG_ON(file_off < priv->last_file_off);
+> > + =A0 =A0 =A0 int ret;
+> > + =A0 =A0 =A0 u64 sectorsize =3D priv->root->sectorsize;
+> > + =A0 =A0 =A0 u64 mask =3D sectorsize - 1;
+> > + =A0 =A0 =A0 if (size =3D=3D 0)
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return 0;
+> > + =A0 =A0 =A0 if ((file_off & mask) !=3D (disk_off & mask)) {
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 /* It's unclear how to CoW this, so d=
+on't. */
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 char *data =3D malloc(size);
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (!data)
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 return -ENOMEM;
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 ret =3D read_disk_extent(priv->root, =
+disk_off, size, data);
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (ret) {
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 free(data);
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 return ret;
+> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0}
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 ret =3D add_file_mem_extent(priv, fil=
+e_off, size, data);
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 free(data);
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return ret;
+> > + =A0 =A0 =A0 }
+> > + =A0 =A0 =A0 if (priv->type =3D=3D EXTENT_ITERATE_TYPE_DISK
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 && priv->file_off + p=
+riv->size =3D=3D file_off
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 && priv->disk_off + p=
+riv->size =3D=3D disk_off) {
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 /* It's a continuation of the same di=
+sk extent. */
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 priv->size +=3D size;
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return 0;
+> > + =A0 =A0 =A0 }
+> > + =A0 =A0 =A0 if (disk_off =3D=3D 0 || disk_off & mask) {
+>=20
+> why "disk_off =3D=3D 0" is needed here?
 
-> * [Chris Mason]
->
->> I'm more than open to discussion on this one, but I don't see how:
->>
->> rm -f foo2
->> dd if=/dev/zero of=foo bs=1M count=1000
->> mv foo foo2
->>
->> Should be expected to write 1GB of data.
->
-> IIRC, the answer you're looking for is "it did with ext3 in the default
-> data=ordered mode".  Combine that with the ext3 data=ordered fsync()
-> escalation where (again IIRC) fsync() tended to force a full sync() of
-> the file system, and it's not that difficult to see why someone would
-> program with the expectation above.
->
-> Anyway, there's still a question of if a new file system should emulate
-> the quirks of the old file system (read: be bug compatible), or if you
-> can just expect to be popular enough that userspace adapts to the new
-> order and lets you do The Right Thing instead.
+To btrfs, a disk offset of 0 represents a sparse extent. If the origina=
+l
+filesystem passes in an extent at 0, this chops off the first block to
+prevent it from being mistakenly interpreted as a sparse extent.
 
-So what *is* the right thing?  What kind of API should userspace have?
-If the obvious thing for an application programmer to do is wrong, and
-the right thing requires going through more hoops, that will ensure
-that the majority of applications will be buggy.  We should strive
-to make it easy to get things right.
-
-It's easy for the kernel, and the filesystem, to just ask the userspace
-programmers to jump through the hoops, and declare those programs that
-don't to be broken.
-
-On the other hand, if you go *too* far in absolving applications of
-responsibility for making things safe, you would end up making all
-filesystem operations synchronous, and that obviously hurts performance
-in big ways.  So we need some kind of compromise, and where that
-compromise should end up being, I don't really have the answer to.
-It's just that I feel that often only the kernel programmers view is
-represented here.
-
-
-The pattern of writing to a file and then changing its name *without*
-overwriting an existing file, is quite common when you write files to
-a spool directory, and have another program that picks up files from
-that directory and processes them.  You
-
-     fd = open("foo4711.tmp", O_CREAT|O_EXCL|O_RDWR);
-     write(fd, "data", strlen("data"));
-     close(fd);
-     link("foo4711.tmp", "foo4711");
-     unlink("foo4711.tmp");
-
-(And note that careful programs don't use rename() here, because that
-would risk clobbering a file some other process has written, and instead
-use link()+unlink().  And I really wish a "safe_rename()" syscall that
-didn't clobber existing files existed.)
-
-The programs I personally have written that did this, also had an fsync()
-there, because I received data from another system and didn't want to ACK
-until I knew it was safely on disk at my end.  But I am a fairly careful
-programmer.
-
-
-Note that in my previous life I was a userspace programmer, and in my
-current life I'm a sysadmin.  I'm speaking as an interrested user of
-Btrfs, not as a kernel programmer.
-
-
-	/Thomas Bellman
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 /* We need to have an aligned start, =
+so give the first part to
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0* add_file_mem_extent if necessary=
+=2E */
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 u64 mem_size =3D min_t(u64, sectorsiz=
+e - (disk_off & mask), size);
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 char *data =3D malloc(mem_size);
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (!data)
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 return -ENOMEM;
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 ret =3D read_disk_extent(priv->root, =
+disk_off, mem_size, data);
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (ret) {
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 free(data);
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 return ret;
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 }
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 ret =3D add_file_mem_extent(priv, fil=
+e_off, mem_size, data);
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 free(data);
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (ret)
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 return ret;
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 file_off +=3D mem_size;
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 disk_off +=3D mem_size;
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 size -=3D mem_size;
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (size =3D=3D 0)
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 return 0;
+> > + =A0 =A0 =A0 }
+> > + =A0 =A0 =A0 ret =3D commit_file_extents(priv);
+> > + =A0 =A0 =A0 if (ret)
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return ret;
+> > + =A0 =A0 =A0 priv->type =3D EXTENT_ITERATE_TYPE_DISK;
+> > + =A0 =A0 =A0 priv->size =3D size;
+> > + =A0 =A0 =A0 priv->file_off =3D file_off;
+> > + =A0 =A0 =A0 priv->disk_off =3D disk_off;
+> > + =A0 =A0 =A0 return 0;
+> > +}
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

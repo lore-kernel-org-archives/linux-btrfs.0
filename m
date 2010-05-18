@@ -1,25 +1,60 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
+From: Jakob Unterwurzacher <jakobunt@gmail.com>
 Subject: Re: Rename+crash behaviour of btrfs - nearly ext3!
-Date: Tue, 18 May 2010 20:01:17 +0200
-Message-ID: <201005182001.17354.kreijack@libero.it>
-References: <4BF18525.8080904@gmail.com> <4BF2B8FD.10301@gmail.com> <20100518161013.GD8635@think>
-Reply-To: kreijack@libero.it
+Date: Tue, 18 May 2010 20:24:48 +0200
+Message-ID: <4BF2DB70.4080702@gmail.com>
+References: <4BF18525.8080904@gmail.com> <20100517193652.GC8635@think> <4BF1DBCD.7060208@gmail.com> <20100518003032.GK8635@think> <20100518005926.GM8635@think> <4BF28225.2000908@gmail.com> <20100518131304.GX8635@think> <4BF29EF5.4020408@gmail.com> <20100518143658.GA8635@think> <4BF2B8FD.10301@gmail.com> <20100518161013.GD8635@think>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <20100518161013.GD8635@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tuesday, May 18, 2010, Chris Mason wrote:
-> On Tue, May 18, 2010 at 05:57:49PM +0200, Jakob Unterwurzacher wrote:
-> > On 18/05/10 16:36, Chris Mason wrote:
-[...]
-> > 
-> > I thought the problem of delaying the renames was complexity, well, at
-> > least T'Tso said it was [1] - I'm not sure if this applies to btrfs as 
-well.
+On 18/05/10 18:10, Chris Mason wrote:
+>>
+>> I'm not sure how much memory a queued rename takes up, but the time that
+>> would be spent flushing it to disk would then be spent flushing file
+>> data, draining the write buffer and freeing memory, no?
+>>
+>> That would be writing to disk
+>>
+>>  [Data..................][Rename]  or
+>>  [Rename][Data..................]
+> 
+> Actually it is:
+> 
+> [Data..................][allow the transaction commit to complete]  or
+> [allow the transaction commit to complete][Data..................]
+> 
+> The problem is that people think of the rename as a tiny thing, but it
+> is really bundled in with all of the other metadata operations that were
+> done in the current transaction.   The space that was allocated to hold
+> the new file name, the space that was freed to remove the old file name,
+> the directory entries, the directory inode etc etc.
+> 
+> This means that holding back that one rename requires holding back every
+> operation done to the filesystem.
+> 
+> In btrfs, we're still able to do fsyncs quickly in this case
+> because we have a dedicated log for that.  But there are a few different
+> types of operations (like disk management) that require us to wait for
+> the transaction to complete even when we use the dedicated log.
+> 
+>>
+>> Whether you drain the file data queue or the rename queue first, in the
+>> end you'd have to write it all....
+> 
+> It's about latency.  The latency required to write the entire file is
+> unbounded (the size of the file is unbounded).  The latency required to
+> commit the transaction without the file data is bounded because we are
+> able to control the amount of metadata in each transaction.
+> 
+> See the firefox vs ext3 wars for an example of all of this, it's the
+> latency the firefox people were (rightly) complaining about.
+> 
+>>
+>> I thought the problem of delaying the renames was complexity, well, at
+>> least T'Tso said it was [1] - I'm not sure if this applies to btrfs as well.
 > 
 > I'm afraid there are lots and lots of different issues at play.  The
 > most important way to look at it is that forcing data to disk is very
@@ -36,27 +71,10 @@ well.
 > 
 > -chris
 
+Thanks for all the insight.
 
-Funny, the first thing that comes to my mind reading this thread, is that this 
-kind of complaint is raised about a file-system which is able to support a 
-full rollback via the snapshot. 
+I will update the wiki FAQ to make clear what "data=ordered" in btrfs
+means, what not, and why (or something like that).
 
-I think that a "right" solution should be to integrate the package manager 
-with the btrfs snapshot capability (as nexenta does [1]). But it is clear that 
-this is a long term solution (IIRC Fedora is working on this).
 
-In the mean time, which should be the "right" solution to solve the dpkg 
-problem ( and in a more general form the package manager problem) with btrfs ?
-
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
-[1] http://www.nexenta.org/os/TransactionalZFSUpgrades
-
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+Jakob

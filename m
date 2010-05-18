@@ -1,104 +1,49 @@
-From: Sean Bartell <wingedtachikoma@gmail.com>
-Subject: Re: [PATCH 2/4] btrfs-convert: Add extent iteration functions.
-Date: Tue, 18 May 2010 11:37:23 -0400
-Message-ID: <20100518153723.GA4380@flcl.lan>
-References: <20100320042649.GA17106@flcl.lan>
- <AANLkTil0BsmO29G5Q-gkwXogwJPuL9fbL_kztOv9Us4O@mail.gmail.com>
+From: Jakob Unterwurzacher <jakobunt@gmail.com>
+Subject: Re: Rename+crash behaviour of btrfs - nearly ext3!
+Date: Tue, 18 May 2010 17:57:49 +0200
+Message-ID: <4BF2B8FD.10301@gmail.com>
+References: <4BF18525.8080904@gmail.com> <20100517193652.GC8635@think> <4BF1DBCD.7060208@gmail.com> <20100518003032.GK8635@think> <20100518005926.GM8635@think> <4BF28225.2000908@gmail.com> <20100518131304.GX8635@think> <4BF29EF5.4020408@gmail.com> <20100518143658.GA8635@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: "Yan, Zheng " <yanzheng@21cn.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTil0BsmO29G5Q-gkwXogwJPuL9fbL_kztOv9Us4O@mail.gmail.com>
+In-Reply-To: <20100518143658.GA8635@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 18, 2010 at 09:06:54PM +0800, Yan, Zheng  wrote:
-> On Sat, Mar 20, 2010 at 12:26 PM, Sean Bartell
-> <wingedtachikoma@gmail.com> wrote:
-> > +int add_file_disk_extent(struct extent_iterate_data *priv, u64 fil=
-e_off,
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0u64 disk_off, u64 =
-size)
-> > +{
-> > + =A0 =A0 =A0 BUG_ON(file_off < priv->last_file_off);
-> > + =A0 =A0 =A0 int ret;
-> > + =A0 =A0 =A0 u64 sectorsize =3D priv->root->sectorsize;
-> > + =A0 =A0 =A0 u64 mask =3D sectorsize - 1;
-> > + =A0 =A0 =A0 if (size =3D=3D 0)
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return 0;
-> > + =A0 =A0 =A0 if ((file_off & mask) !=3D (disk_off & mask)) {
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 /* It's unclear how to CoW this, so d=
-on't. */
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 char *data =3D malloc(size);
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (!data)
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 return -ENOMEM;
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 ret =3D read_disk_extent(priv->root, =
-disk_off, size, data);
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (ret) {
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 free(data);
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 return ret;
-> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0}
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 ret =3D add_file_mem_extent(priv, fil=
-e_off, size, data);
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 free(data);
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return ret;
-> > + =A0 =A0 =A0 }
-> > + =A0 =A0 =A0 if (priv->type =3D=3D EXTENT_ITERATE_TYPE_DISK
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 && priv->file_off + p=
-riv->size =3D=3D file_off
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 && priv->disk_off + p=
-riv->size =3D=3D disk_off) {
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 /* It's a continuation of the same di=
-sk extent. */
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 priv->size +=3D size;
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return 0;
-> > + =A0 =A0 =A0 }
-> > + =A0 =A0 =A0 if (disk_off =3D=3D 0 || disk_off & mask) {
->=20
-> why "disk_off =3D=3D 0" is needed here?
+On 18/05/10 16:36, Chris Mason wrote:
+>>
+>> The idea would be to delay the rename hitting the disk until the data
+>> has been written anyway.
+>> The mv would return immediately, and someday, after the data has been
+>> written to disk, the rename would be written to disk.
+> 
+> This is possible, but we have to choose between consuming unbounded
+> resources while we queue up all the mvs or sometimes forcing the things
+> to disk.  At the end of the day, disks are so slow that eventually you
+> do end up waiting on them.
+> 
+> -chris
+> 
 
-To btrfs, a disk offset of 0 represents a sparse extent. If the origina=
-l
-filesystem passes in an extent at 0, this chops off the first block to
-prevent it from being mistakenly interpreted as a sparse extent.
+I'm not sure how much memory a queued rename takes up, but the time that
+would be spent flushing it to disk would then be spent flushing file
+data, draining the write buffer and freeing memory, no?
 
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 /* We need to have an aligned start, =
-so give the first part to
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0* add_file_mem_extent if necessary=
-=2E */
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 u64 mem_size =3D min_t(u64, sectorsiz=
-e - (disk_off & mask), size);
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 char *data =3D malloc(mem_size);
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (!data)
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 return -ENOMEM;
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 ret =3D read_disk_extent(priv->root, =
-disk_off, mem_size, data);
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (ret) {
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 free(data);
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 return ret;
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 }
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 ret =3D add_file_mem_extent(priv, fil=
-e_off, mem_size, data);
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 free(data);
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (ret)
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 return ret;
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 file_off +=3D mem_size;
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 disk_off +=3D mem_size;
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 size -=3D mem_size;
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (size =3D=3D 0)
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 return 0;
-> > + =A0 =A0 =A0 }
-> > + =A0 =A0 =A0 ret =3D commit_file_extents(priv);
-> > + =A0 =A0 =A0 if (ret)
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return ret;
-> > + =A0 =A0 =A0 priv->type =3D EXTENT_ITERATE_TYPE_DISK;
-> > + =A0 =A0 =A0 priv->size =3D size;
-> > + =A0 =A0 =A0 priv->file_off =3D file_off;
-> > + =A0 =A0 =A0 priv->disk_off =3D disk_off;
-> > + =A0 =A0 =A0 return 0;
-> > +}
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+That would be writing to disk
+
+ [Data..................][Rename]  or
+ [Rename][Data..................]
+
+Whether you drain the file data queue or the rename queue first, in the
+end you'd have to write it all....
+
+I thought the problem of delaying the renames was complexity, well, at
+least T'Tso said it was [1] - I'm not sure if this applies to btrfs as well.
+
+
+Thanks,
+Jakob
+
+
+
+[1] https://bugzilla.kernel.org/show_bug.cgi?id=15910#c9

@@ -1,75 +1,83 @@
-From: "kreijack@libero.it" <kreijack@libero.it>
-Subject: R: default subvolume abilities/restrictions
-Date: Wed, 19 May 2010 13:56:32 +0200 (CEST)
-Message-ID: <29213501.290601274270192630.JavaMail.defaultUser@defaultHost>
-Reply-To: "kreijack@libero.it" <kreijack@libero.it>
+From: Christian Kujau <lists@nerdbynature.de>
+Subject: Re: implicit declaration of function 'strndup'
+Date: Wed, 19 May 2010 05:29:04 -0700 (PDT)
+Message-ID: <alpine.DEB.2.01.1005190527190.3600@bogon.housecafe.de>
+References: <alpine.DEB.2.01.1004220040350.18247@bogon.housecafe.de> <4BED4FC0.1000004@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain;charset="UTF-8"
-Cc: <linux-btrfs@vger.kernel.org>
-To: <anthony@extof.me>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: zhaolei@cn.fujitsu.com, miaox@cn.fujitsu.com
+To: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4BED4FC0.1000004@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Anthony,
 
-I think that for you may be interested to read this thread
-
-http://kerneltrap.org/mailarchive/linux-btrfs/2009/11/20/6588643/thread
-
-and to read a my blog about this argument
-
-http://kreijack.blogspot.com/2010/01/linux-btrfs-example-of-layout.html
-
-Regards
-Goffredo
+ping?
 
 
->----Messaggio originale----
->Da: anthony@extof.me
->Data: 19/05/2010 8.50
->A: <linux-btrfs@vger.kernel.org>
->Ogg: default subvolume abilities/restrictions
->
->hi,
->
->i'm working on an initrd hook
->[http://aur.archlinux.org/packages.php?ID=33376] to support
->non-volatile system rollbacks (promoting a temporary rollback snapshot
->to the new active/default).  when the system is installed to the
->default/"." subvolume (as many users probably initially do), it is
->more difficult/messier to manage system state; there are empty folders
->in each "child" snapshot where a subvolume used to exist (this seems
->like BUG to me, dir should not exist?) in the default subvolume. these
->grow/vary with time.  to work around this and for cleaner
->implementation, i'll intend to permanently boot a named subvolume
->[__active] (though its contents may be swapped out).  ultimately, i
->have to tell the user to manually remove the old junk (/usr, /etc,
->/var, etc...) from the default subvolume (since its really in the
->/__active subvolume)
->
->moving along to a question... can the default subvolume be
->swapped/removed/renamed/popped/shifted?
->
->what would have been useful, would be the ability to generate an
->empty, parent subvolume to _contain_ the current one, and rename it to
->__active.  btrfs gives rise to a "subroot" structure; the structure
->beneath the root.
->
->is something like this possible or can be added?
->
->an alternative idea i had was "promoting" a subvolume to be the new
->root, and anything "above" the new root is lost/forgotten.  then i
->could create the subroot structure in a subvol, snapshot the default
->subvol to where i want it, and promote the subvol to be the new root.
->like a permanent pivot_root/chroot.
->
->great stuff,
->
->C Anthony
->--
->To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->the body of a message to majordomo@vger.kernel.org
->More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+(is nobody using btrfs-progs any more?)
 
+On Fri, 14 May 2010 at 06:27, Christian Kujau wrote:
+> Hi,
+> 
+> I've sent this (see below) a while ago, the patch from Miao Xie is from
+> March even. I still cannot compile btrfs-progs without his fix. Please
+> include this fix into the repo.
+> 
+> Thanks,
+> Christian.
+> 
+> Christian Kujau wrote on 2010-04-22 24:50 :
+> > compiling the latest checkout of btrfs-progs-git, I still get the compiler 
+> > error Miao Xie reported[0] in March, along with a patch:
+> > 
+> >   cc1: warnings being treated as errors
+> >   btrfs-list.c: In function 'ino_resolve':
+> >   btrfs-list.c:511: warning: implicit declaration of function 'strndup'
+> >   btrfs-list.c:511: warning: incompatible implicit declaration of built-in 
+> >   function 'strndup'
+> >   make: *** [btrfs-list.o] Error 1
+> > 
+> > I'm on Debian/stable (gcc 4.3.2-1.1, glibc-2.7), the patch from Miao Xie 
+> > resolved this issue. Is there a reason it's not in git yet?
+> > 
+> > Thanks,
+> > Christian.
+> > 
+> > [0] https://patchwork.kernel.org/patch/88224/
+> >     http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg04610.html
+> 
+> diff --git a/btrfs-list.c b/btrfs-list.c
+> index 7741705..9dedb5d 100644
+> --- a/btrfs-list.c
+> +++ b/btrfs-list.c
+> @@ -16,6 +16,7 @@
+>   * Boston, MA 021110-1307, USA.
+>   */
+>  +#define _GNU_SOURCE
+>  #ifndef __CHECKER__
+>  #include <sys/ioctl.h>
+>  #include <sys/mount.h>
+> diff --git a/btrfs.c b/btrfs.c
+> index ab5e57f..46314cf 100644
+> --- a/btrfs.c
+> +++ b/btrfs.c
+> @@ -14,7 +14,7 @@
+>   * Boston, MA 021110-1307, USA.
+>   */
+>  -
+> +#define _GNU_SOURCE
+>  #include <stdio.h>
+>  #include <stdlib.h>
+>  #include <string.h>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 
 
+-- 
+BOFH excuse #11:
+
+magnetic interference from money/credit cards

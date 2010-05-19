@@ -1,46 +1,43 @@
-From: C Anthony Risinger <anthony@extof.me>
-Subject: default subvolume abilities/restrictions
-Date: Wed, 19 May 2010 01:50:27 -0500
-Message-ID: <AANLkTilY3SUN01IRz1mkKPlkMAJabJr-hYiWazPpeXsx@mail.gmail.com>
+From: Mathijs Kwik <bluescreen303@gmail.com>
+Subject: the flushoncommit mount option
+Date: Wed, 19 May 2010 09:04:35 +0200
+Message-ID: <AANLkTimZ9JkeR-N-eCeeq3Ju-lhzzo8zkx_8im-qfjrD@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=UTF-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-hi,
+Hi all,
 
-i'm working on an initrd hook
-[http://aur.archlinux.org/packages.php?ID=33376] to support
-non-volatile system rollbacks (promoting a temporary rollback snapshot
-to the new active/default).  when the system is installed to the
-default/"." subvolume (as many users probably initially do), it is
-more difficult/messier to manage system state; there are empty folders
-in each "child" snapshot where a subvolume used to exist (this seems
-like BUG to me, dir should not exist?) in the default subvolume. these
-grow/vary with time.  to work around this and for cleaner
-implementation, i'll intend to permanently boot a named subvolume
-[__active] (though its contents may be swapped out).  ultimately, i
-have to tell the user to manually remove the old junk (/usr, /etc,
-/var, etc...) from the default subvolume (since its really in the
-/__active subvolume)
+Over the past few months, I've been trying out btrfs on separate mountpoints.
+I like it very much so I would like to try it on my home or root
+volumes and see if I can do something fun with the snapshots.
+As btrfs still isn't production-ready, I made sure everything is
+backed-up to an external ext4 disk.
 
-moving along to a question... can the default subvolume be
-swapped/removed/renamed/popped/shifted?
+Now when I first moved to try out ext4, there were some issues with
+the way it handled commits(I think) compared to ext3, which made some
+desktop-applications act weird.
+This was fixed later, but I don't remember if it was ext4 to blame or
+the apps changing their behavior to not depend on ext2/3 semantics.
 
-what would have been useful, would be the ability to generate an
-empty, parent subvolume to _contain_ the current one, and rename it to
-__active.  btrfs gives rise to a "subroot" structure; the structure
-beneath the root.
+Now, looking at btrfs's mount options, the flushoncommit description
+sounded vaguely familiar regarding these ext4 oddities.
+However, I couldn't find a good description of what the
+(dis)advantages of flushoncommit would be.
+On the volume I used upto now (music/video storage), I didn't notice
+any differences, but maybe using it for home (dotfiles) or root will
+be a bit different.
 
-is something like this possible or can be added?
+Does anyone remember the ext4 oddities I'm talking about?
+Are they related to this flushoncommit mount option or am a totally
+missing the point here?
+And in case it is related... should I use the option for root or home
+or is it safe to leave out?
 
-an alternative idea i had was "promoting" a subvolume to be the new
-root, and anything "above" the new root is lost/forgotten.  then i
-could create the subroot structure in a subvol, snapshot the default
-subvol to where i want it, and promote the subvol to be the new root.
-like a permanent pivot_root/chroot.
+Thanks for any information about this.
+Mathijs
 
-great stuff,
-
-C Anthony
+FYI: I'm using xubuntu 10.04 64bit, with (backported) 2.6.34 and the
+latest btrfs-progs from git.

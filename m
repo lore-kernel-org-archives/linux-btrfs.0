@@ -1,83 +1,55 @@
-From: Christian Kujau <lists@nerdbynature.de>
-Subject: Re: implicit declaration of function 'strndup'
-Date: Wed, 19 May 2010 05:29:04 -0700 (PDT)
-Message-ID: <alpine.DEB.2.01.1005190527190.3600@bogon.housecafe.de>
-References: <alpine.DEB.2.01.1004220040350.18247@bogon.housecafe.de> <4BED4FC0.1000004@oracle.com>
+From: C Anthony Risinger <anthony@extof.me>
+Subject: Re: default subvolume abilities/restrictions
+Date: Wed, 19 May 2010 09:01:47 -0500
+Message-ID: <AANLkTinCbFQkWvehlmnmGrPdduWfWUjutgYADZAkSlCe@mail.gmail.com>
+References: <29213501.290601274270192630.JavaMail.defaultUser@defaultHost>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: zhaolei@cn.fujitsu.com, miaox@cn.fujitsu.com
-To: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: "kreijack@libero.it" <kreijack@libero.it>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4BED4FC0.1000004@oracle.com>
+In-Reply-To: <29213501.290601274270192630.JavaMail.defaultUser@defaultHost>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, May 19, 2010 at 6:56 AM, kreijack@libero.it <kreijack@libero.it> wrote:
+> Hi Anthony,
+>
+> I think that for you may be interested to read this thread
+>
+> http://kerneltrap.org/mailarchive/linux-btrfs/2009/11/20/6588643/thread
+>
+> and to read a my blog about this argument
+>
+> http://kreijack.blogspot.com/2010/01/linux-btrfs-example-of-layout.html
+>
+> Regards
+> Goffredo
 
-ping?
+thanks for the pointers, however the thread doesn't really offer a
+solution or an indication of whether this will/can be possible :-(,
+and your blog basically comes to the same conclusion that i already
+agree with; the system should be installed into a subvolume from day
+1.  i could be mistaken here, but in my experience, you cannot remove
+a subvolume that has another subvolume within it.  thus, setting a new
+default subvolume doesn't actually change the heirarchy of subvolumes,
+and since the original default subvol (.) contains all other
+subvolumes, it still cannot be removed, as it's the ultimate parent
+subvolume (even though it's not necessarily the default anymore).  is
+this correct?
 
+i need a way, programmatically and safely, to "move" the users
+installation from the original subvolume into an isolated subvolume
+called __active (what you called "rootfs" in you thread/blog), or to
+generate a new, empty default/root subvolume and place the current
+default subvol (.) _into_ it...  how can this be done?  until i figure
+this out i have to tell the user to manually remove the stagnant files
+from the dot (.) subvolume (usr/etc/lib...), since i don't think my
+users would appreciate me issuing an "rm -rf" against their system.
 
-(is nobody using btrfs-progs any more?)
+any other ideas/input?
 
-On Fri, 14 May 2010 at 06:27, Christian Kujau wrote:
-> Hi,
-> 
-> I've sent this (see below) a while ago, the patch from Miao Xie is from
-> March even. I still cannot compile btrfs-progs without his fix. Please
-> include this fix into the repo.
-> 
-> Thanks,
-> Christian.
-> 
-> Christian Kujau wrote on 2010-04-22 24:50 :
-> > compiling the latest checkout of btrfs-progs-git, I still get the compiler 
-> > error Miao Xie reported[0] in March, along with a patch:
-> > 
-> >   cc1: warnings being treated as errors
-> >   btrfs-list.c: In function 'ino_resolve':
-> >   btrfs-list.c:511: warning: implicit declaration of function 'strndup'
-> >   btrfs-list.c:511: warning: incompatible implicit declaration of built-in 
-> >   function 'strndup'
-> >   make: *** [btrfs-list.o] Error 1
-> > 
-> > I'm on Debian/stable (gcc 4.3.2-1.1, glibc-2.7), the patch from Miao Xie 
-> > resolved this issue. Is there a reason it's not in git yet?
-> > 
-> > Thanks,
-> > Christian.
-> > 
-> > [0] https://patchwork.kernel.org/patch/88224/
-> >     http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg04610.html
-> 
-> diff --git a/btrfs-list.c b/btrfs-list.c
-> index 7741705..9dedb5d 100644
-> --- a/btrfs-list.c
-> +++ b/btrfs-list.c
-> @@ -16,6 +16,7 @@
->   * Boston, MA 021110-1307, USA.
->   */
->  +#define _GNU_SOURCE
->  #ifndef __CHECKER__
->  #include <sys/ioctl.h>
->  #include <sys/mount.h>
-> diff --git a/btrfs.c b/btrfs.c
-> index ab5e57f..46314cf 100644
-> --- a/btrfs.c
-> +++ b/btrfs.c
-> @@ -14,7 +14,7 @@
->   * Boston, MA 021110-1307, USA.
->   */
->  -
-> +#define _GNU_SOURCE
->  #include <stdio.h>
->  #include <stdlib.h>
->  #include <string.h>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
+C Anthony
 
--- 
-BOFH excuse #11:
-
-magnetic interference from money/credit cards
+ps. a recursive snapshotting tool could be useful too (if / and /home
+were both subvols, the tool would create both when / was snapped,
+instead of /home being an empty folder in the snapshot).

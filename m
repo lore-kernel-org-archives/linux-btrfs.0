@@ -1,7 +1,7 @@
 From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 03/10] btrfs: Remove variable wake for cleanup
-Date: Thu, 20 May 2010 15:16:17 +0800
-Message-ID: <4BF4E1C1.5070900@cn.fujitsu.com>
+Subject: [PATCH 01/10] btrfs: add a return value for readahead_tree_block()
+Date: Thu, 20 May 2010 15:13:51 +0800
+Message-ID: <4BF4E12F.6010103@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -12,70 +12,27 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Liu Bo <liubo2009@cn.fujitsu.com>
 
-- Put "worker->working" inside "if" to make code clearly.
-
-- If "wake" is 1, "wake_up_process" will be called,
-  meanwhile, "wake" is set to 1 if !worker->working,
-  so remove "wake" and directly call "wake_up_process"
-  if !worker->working.
+Fix return value to get from read_extent_buffer_pages().
 
 Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/async-thread.c |   15 +++++----------
- 1 files changed, 5 insertions(+), 10 deletions(-)
+ fs/btrfs/disk-io.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
-index c0861e7..fec412e 100644
---- a/fs/btrfs/async-thread.c
-+++ b/fs/btrfs/async-thread.c
-@@ -620,7 +620,6 @@ int btrfs_requeue_work(struct btrfs_work *work)
- {
- 	struct btrfs_worker_thread *worker = work->worker;
- 	unsigned long flags;
--	int wake = 0;
- 
- 	if (test_and_set_bit(WORK_QUEUED_BIT, &work->flags))
- 		goto out;
-@@ -643,12 +642,10 @@ int btrfs_requeue_work(struct btrfs_work *work)
- 		spin_unlock(&worker->workers->lock);
- 	}
- 	if (!worker->working) {
--		wake = 1;
- 		worker->working = 1;
-+		wake_up_process(worker->task);
- 	}
- 
--	if (wake)
--		wake_up_process(worker->task);
- 	spin_unlock_irqrestore(&worker->lock, flags);
- out:
- 
-@@ -667,7 +664,6 @@ int btrfs_queue_worker(struct btrfs_workers *workers, struct btrfs_work *work)
- {
- 	struct btrfs_worker_thread *worker;
- 	unsigned long flags;
--	int wake = 0;
- 
- 	/* don't requeue something already on a list */
- 	if (test_and_set_bit(WORK_QUEUED_BIT, &work->flags))
-@@ -703,12 +699,11 @@ int btrfs_queue_worker(struct btrfs_workers *workers, struct btrfs_work *work)
- 	 * avoid calling into wake_up_process if this thread has already
- 	 * been kicked
- 	 */
--	if (!worker->working)
--		wake = 1;
--	worker->working = 1;
--
--	if (wake)
-+	if (!worker->working) {
-+		worker->working = 1;
- 		wake_up_process(worker->task);
-+	}
-+
- 	spin_unlock_irqrestore(&worker->lock, flags);
- 
- out:
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 6632e5c..35916d5 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -794,7 +794,7 @@ int readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
+ 	buf = btrfs_find_create_tree_block(root, bytenr, blocksize);
+ 	if (!buf)
+ 		return 0;
+-	read_extent_buffer_pages(&BTRFS_I(btree_inode)->io_tree,
++	ret = read_extent_buffer_pages(&BTRFS_I(btree_inode)->io_tree,
+ 				 buf, 0, 0, btree_get_extent, 0);
+ 	free_extent_buffer(buf);
+ 	return ret;
 -- 
 1.6.5.2
 

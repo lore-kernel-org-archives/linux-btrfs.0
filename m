@@ -1,59 +1,71 @@
 From: Mike Fedyk <mfedyk@mikefedyk.com>
-Subject: Re: [PATCH 04/10] btrfs: Add error check for add_to_page_cache_lru
-Date: Thu, 20 May 2010 01:43:11 -0700
-Message-ID: <AANLkTiktY-iDvlEZZGFjarYFUB97SD6DDAkudo02hthL@mail.gmail.com>
-References: <4BF4E23D.6080405@cn.fujitsu.com>
+Subject: Re: [PATCH 07/10] btrfs: fix wrong ctime when adding link
+Date: Thu, 20 May 2010 02:01:09 -0700
+Message-ID: <AANLkTilVU-QFaBJKnjt7XF95RPpmrBv1EaZkFtfUraYa@mail.gmail.com>
+References: <4BF4E336.40603@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Cc: Chris Mason <chris.mason@oracle.com>,
 	Linux Btrfs <linux-btrfs@vger.kernel.org>
 To: miaox@cn.fujitsu.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4BF4E23D.6080405@cn.fujitsu.com>
+In-Reply-To: <4BF4E336.40603@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-T24gVGh1LCBNYXkgMjAsIDIwMTAgYXQgMTI6MTggQU0sIE1pYW8gWGllIDxtaWFveEBjbi5mdWpp
-dHN1LmNvbT4gd3JvdGU6Cj4gRnJvbTogTGl1IEJvIDxsaXVibzIwMDlAY24uZnVqaXRzdS5jb20+
-Cj4KPiBJZiBhZGRfdG9fcGFnZV9jYWNoZV9scnUoKSByZXR1cm5zIC1FRVhJU1QsIGl0IGluZGlj
-YXRlcyB0aGUgcGFnZQo+IHRoYXQgYmVsb25ncyB0byB0aGlzIHBhZ2VfaW5kZXggaGFzIGJlZW4g
-YWRkZWQgYW5kIHRoaXMgcmVhZGFoZWFkCj4gYWN0aW9uIGNhbiBnbyBvbiB0byBuZXh0IHBhZ2Uu
-Cj4KPiBJZiBhZGRfdG9fcGFnZV9jYWNoZV9scnUoKSByZXR1cm5zIC1FTk9NRU0sIGl0IHNob3Vs
-ZCBicmVhayBmb3IKPiBubyBtZW1vcnkgbGVmdC4KPgo+IFNpZ25lZC1vZmYtYnk6IExpdSBCbyA8
-bGl1Ym8yMDA5QGNuLmZ1aml0c3UuY29tPgo+IFNpZ25lZC1vZmYtYnk6IE1pYW8gWGllIDxtaWFv
-eEBjbi5mdWppdHN1LmNvbT4KPiAtLS0KPiDCoGZzL2J0cmZzL2NvbXByZXNzaW9uLmMgfCDCoCAx
-OSArKysrKysrKysrKysrKysrLS0tCj4gwqAxIGZpbGVzIGNoYW5nZWQsIDE2IGluc2VydGlvbnMo
-KyksIDMgZGVsZXRpb25zKC0pCj4KPiBkaWZmIC0tZ2l0IGEvZnMvYnRyZnMvY29tcHJlc3Npb24u
-YyBiL2ZzL2J0cmZzL2NvbXByZXNzaW9uLmMKPiBpbmRleCAxZDU0YzUzLi4xYmQ0ZDkyIDEwMDY0
-NAo+IC0tLSBhL2ZzL2J0cmZzL2NvbXByZXNzaW9uLmMKPiArKysgYi9mcy9idHJmcy9jb21wcmVz
-c2lvbi5jCj4gQEAgLTQ4MCwxMCArNDgwLDIzIEBAIHN0YXRpYyBub2lubGluZSBpbnQgYWRkX3Jh
-X2Jpb19wYWdlcyhzdHJ1Y3QgaW5vZGUgKmlub2RlLAo+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
-aWYgKCFwYWdlKQo+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgYnJlYWs7Cj4K
-PiAtIMKgIMKgIMKgIMKgIMKgIMKgIMKgIGlmIChhZGRfdG9fcGFnZV9jYWNoZV9scnUocGFnZSwg
-bWFwcGluZywgcGFnZV9pbmRleCwKPiAtIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
-IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
-IMKgIEdGUF9OT0ZTKSkgewo+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgcmV0ID0gYWRkX3RvX3Bh
-Z2VfY2FjaGVfbHJ1KHBhZ2UsIG1hcHBpbmcsIHBhZ2VfaW5kZXgsCj4gKyDCoCDCoCDCoCDCoCDC
-oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDC
-oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCBHRlBfTk9GUyk7Cj4gKyDCoCDCoCDCoCDCoCDCoCDCoCDC
-oCBpZiAocmV0KSB7Cj4gwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqBwYWdlX2Nh
-Y2hlX3JlbGVhc2UocGFnZSk7Cj4gLSDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCBn
-b3RvIG5leHQ7Cj4gKwo+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgLyoKPiAr
-IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgKiAtRUVYSVNUIGluZGljYXRlcyB0
-aGUgcGFnZSBoYXMgYmVlbiBhZGRlZCwgc28KPiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
-IMKgIMKgIMKgKiBpdCBjYW4gbW92ZSBvbiB0byBuZXh0IHBhZ2UuCj4gKyDCoCDCoCDCoCDCoCDC
-oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCovCj4gKyDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDC
-oCDCoCBpZiAocmV0ID09IC1FRVhJU1QpIHsKPiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
-IMKgIMKgIMKgIMKgIMKgIMKgIG1pc3NlcysrOwo+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAg
-wqAgwqAgwqAgwqAgwqAgwqAgwqAgaWYgKG1pc3NlcyA+IDQpCj4gKyDCoCDCoCDCoCDCoCDCoCDC
-oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCBicmVhazsKClNob3VsZG4n
-dCB0aGlzIHVzZSBhIHByZS1wcm9jZXNzb3IgbGFiZWwgaW5zdGVhZCBvZiBoYXJkIGNvZGluZwpj
-b21wcmVzc2lvbiBzZW5zaXRpdml0eSBvciByZWFkYWhlYWQgdHVuaW5nPyAgdGhpcyB3YXkgaXQn
-bGwgYmUgc2V0IGluCm9uZSBwbGFjZS4KCj4gKyDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDC
-oCDCoCDCoCDCoCDCoCDCoCBnb3RvIG5leHQ7Cj4gKyDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDC
-oCDCoCDCoCB9Cj4gKwo+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgYnJlYWs7
-Cj4gwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqB9Cj4KPiDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoGVu
-ZCA9IGxhc3Rfb2Zmc2V0ICsgUEFHRV9DQUNIRV9TSVpFIC0gMTsKPiAtLQo+IDEuNi41LjIKPgo+
-IC0tCj4gVG8gdW5zdWJzY3JpYmUgZnJvbSB0aGlzIGxpc3Q6IHNlbmQgdGhlIGxpbmUgInVuc3Vi
-c2NyaWJlIGxpbnV4LWJ0cmZzIiBpbgo+IHRoZSBib2R5IG9mIGEgbWVzc2FnZSB0byBtYWpvcmRv
-bW9Admdlci5rZXJuZWwub3JnCj4gTW9yZSBtYWpvcmRvbW8gaW5mbyBhdCDCoGh0dHA6Ly92Z2Vy
-Lmtlcm5lbC5vcmcvbWFqb3Jkb21vLWluZm8uaHRtbAo+Cg==
+On Thu, May 20, 2010 at 12:22 AM, Miao Xie <miaox@cn.fujitsu.com> wrote=
+:
+> the ctime of file has not been updated when I create a link for it.
+>
+> Steps to reproduce:
+> =C2=A0# touch file1
+> =C2=A0# stat -c %Z file1
+> =C2=A01273592239
+> =C2=A0# link flink1 file1
+> =C2=A0# stat -c %Z file1
+> =C2=A01273592239 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 <-- have n=
+ot been updated
+>
+> This patch fix this problem.
+>
+> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+> ---
+> =C2=A0fs/btrfs/inode.c | =C2=A0 =C2=A08 ++++++--
+> =C2=A01 files changed, 6 insertions(+), 2 deletions(-)
+>
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index a85b90c..5271887 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -4218,8 +4218,12 @@ int btrfs_add_link(struct btrfs_trans_handle *=
+trans,
+>
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0btrfs_i_size_w=
+rite(parent_inode, parent_inode->i_size +
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 name_len * 2);
+> - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 parent_inode->i_mt=
+ime =3D parent_inode->i_ctime =3D CURRENT_TIME;
+> - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 ret =3D btrfs_upda=
+te_inode(trans, root, parent_inode);
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 parent_inode->i_mt=
+ime =3D parent_inode->i_ctime =3D inode->i_ctime
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =3D CURRENT_TI=
+ME;
+> +
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 ret =3D btrfs_upda=
+te_inode(trans, root, inode);
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 if (!ret)
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 ret =3D btrfs_update_inode(trans, root, parent_inode);
+
+You only update parent inode if write to current inode fails?
+
+Also should you be updating the ctime of parent inode even with link
+count of parent inode is not modified (btrfs always reports link count
+of 1 on directories)?
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

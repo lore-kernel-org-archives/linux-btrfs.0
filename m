@@ -1,45 +1,59 @@
-From: Christoph Hellwig <hch@infradead.org>
-Subject: Re: [PATCH] btrfs: should add a permission check for setfacl
-Date: Thu, 20 May 2010 04:33:40 -0400
-Message-ID: <20100520083340.GC11920@infradead.org>
-References: <4BF1E458.7060500@cn.fujitsu.com>
+From: Mike Fedyk <mfedyk@mikefedyk.com>
+Subject: Re: [PATCH 04/10] btrfs: Add error check for add_to_page_cache_lru
+Date: Thu, 20 May 2010 01:43:11 -0700
+Message-ID: <AANLkTiktY-iDvlEZZGFjarYFUB97SD6DDAkudo02hthL@mail.gmail.com>
+References: <4BF4E23D.6080405@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com, "Yan, Zheng" <zheng.yan@oracle.com>,
-	linux-btrfs@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>
-To: Shi Weihua <shiwh@cn.fujitsu.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4BF1E458.7060500@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: miaox@cn.fujitsu.com
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4BF4E23D.6080405@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 18, 2010 at 08:50:32AM +0800, Shi Weihua wrote:
-> On btrfs, do the following
-> ------------------
-> # su user1
-> # cd btrfs-part/
-> # touch aaa
-> # getfacl aaa
->   # file: aaa
->   # owner: user1
->   # group: user1
->   user::rw-
->   group::rw-
->   other::r--
-> # su user2
-> # cd btrfs-part/
-> # setfacl -m u::rwx aaa
-> # getfacl aaa
->   # file: aaa
->   # owner: user1
->   # group: user1
->   user::rwx           <- successed to setfacl
->   group::rw-
->   other::r--
-> ------------------
-> but we should prohibit it that user2 changing user1's acl.
-> In fact, on ext3 and other fs, a message occurs:
->   setfacl: aaa: Operation not permitted
-
-Can you add this as a new testcase to xfstests so that we can easiy
-check for regressions and future filesystems implementing this
-correctly?
+T24gVGh1LCBNYXkgMjAsIDIwMTAgYXQgMTI6MTggQU0sIE1pYW8gWGllIDxtaWFveEBjbi5mdWpp
+dHN1LmNvbT4gd3JvdGU6Cj4gRnJvbTogTGl1IEJvIDxsaXVibzIwMDlAY24uZnVqaXRzdS5jb20+
+Cj4KPiBJZiBhZGRfdG9fcGFnZV9jYWNoZV9scnUoKSByZXR1cm5zIC1FRVhJU1QsIGl0IGluZGlj
+YXRlcyB0aGUgcGFnZQo+IHRoYXQgYmVsb25ncyB0byB0aGlzIHBhZ2VfaW5kZXggaGFzIGJlZW4g
+YWRkZWQgYW5kIHRoaXMgcmVhZGFoZWFkCj4gYWN0aW9uIGNhbiBnbyBvbiB0byBuZXh0IHBhZ2Uu
+Cj4KPiBJZiBhZGRfdG9fcGFnZV9jYWNoZV9scnUoKSByZXR1cm5zIC1FTk9NRU0sIGl0IHNob3Vs
+ZCBicmVhayBmb3IKPiBubyBtZW1vcnkgbGVmdC4KPgo+IFNpZ25lZC1vZmYtYnk6IExpdSBCbyA8
+bGl1Ym8yMDA5QGNuLmZ1aml0c3UuY29tPgo+IFNpZ25lZC1vZmYtYnk6IE1pYW8gWGllIDxtaWFv
+eEBjbi5mdWppdHN1LmNvbT4KPiAtLS0KPiDCoGZzL2J0cmZzL2NvbXByZXNzaW9uLmMgfCDCoCAx
+OSArKysrKysrKysrKysrKysrLS0tCj4gwqAxIGZpbGVzIGNoYW5nZWQsIDE2IGluc2VydGlvbnMo
+KyksIDMgZGVsZXRpb25zKC0pCj4KPiBkaWZmIC0tZ2l0IGEvZnMvYnRyZnMvY29tcHJlc3Npb24u
+YyBiL2ZzL2J0cmZzL2NvbXByZXNzaW9uLmMKPiBpbmRleCAxZDU0YzUzLi4xYmQ0ZDkyIDEwMDY0
+NAo+IC0tLSBhL2ZzL2J0cmZzL2NvbXByZXNzaW9uLmMKPiArKysgYi9mcy9idHJmcy9jb21wcmVz
+c2lvbi5jCj4gQEAgLTQ4MCwxMCArNDgwLDIzIEBAIHN0YXRpYyBub2lubGluZSBpbnQgYWRkX3Jh
+X2Jpb19wYWdlcyhzdHJ1Y3QgaW5vZGUgKmlub2RlLAo+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
+aWYgKCFwYWdlKQo+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgYnJlYWs7Cj4K
+PiAtIMKgIMKgIMKgIMKgIMKgIMKgIMKgIGlmIChhZGRfdG9fcGFnZV9jYWNoZV9scnUocGFnZSwg
+bWFwcGluZywgcGFnZV9pbmRleCwKPiAtIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
+IMKgIEdGUF9OT0ZTKSkgewo+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgcmV0ID0gYWRkX3RvX3Bh
+Z2VfY2FjaGVfbHJ1KHBhZ2UsIG1hcHBpbmcsIHBhZ2VfaW5kZXgsCj4gKyDCoCDCoCDCoCDCoCDC
+oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDC
+oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCBHRlBfTk9GUyk7Cj4gKyDCoCDCoCDCoCDCoCDCoCDCoCDC
+oCBpZiAocmV0KSB7Cj4gwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqBwYWdlX2Nh
+Y2hlX3JlbGVhc2UocGFnZSk7Cj4gLSDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCBn
+b3RvIG5leHQ7Cj4gKwo+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgLyoKPiAr
+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgKiAtRUVYSVNUIGluZGljYXRlcyB0
+aGUgcGFnZSBoYXMgYmVlbiBhZGRlZCwgc28KPiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
+IMKgIMKgIMKgKiBpdCBjYW4gbW92ZSBvbiB0byBuZXh0IHBhZ2UuCj4gKyDCoCDCoCDCoCDCoCDC
+oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCovCj4gKyDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDC
+oCDCoCBpZiAocmV0ID09IC1FRVhJU1QpIHsKPiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
+IMKgIMKgIMKgIMKgIMKgIMKgIG1pc3NlcysrOwo+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAg
+wqAgwqAgwqAgwqAgwqAgwqAgwqAgaWYgKG1pc3NlcyA+IDQpCj4gKyDCoCDCoCDCoCDCoCDCoCDC
+oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCBicmVhazsKClNob3VsZG4n
+dCB0aGlzIHVzZSBhIHByZS1wcm9jZXNzb3IgbGFiZWwgaW5zdGVhZCBvZiBoYXJkIGNvZGluZwpj
+b21wcmVzc2lvbiBzZW5zaXRpdml0eSBvciByZWFkYWhlYWQgdHVuaW5nPyAgdGhpcyB3YXkgaXQn
+bGwgYmUgc2V0IGluCm9uZSBwbGFjZS4KCj4gKyDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDC
+oCDCoCDCoCDCoCDCoCDCoCBnb3RvIG5leHQ7Cj4gKyDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDC
+oCDCoCDCoCB9Cj4gKwo+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgYnJlYWs7
+Cj4gwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqB9Cj4KPiDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoGVu
+ZCA9IGxhc3Rfb2Zmc2V0ICsgUEFHRV9DQUNIRV9TSVpFIC0gMTsKPiAtLQo+IDEuNi41LjIKPgo+
+IC0tCj4gVG8gdW5zdWJzY3JpYmUgZnJvbSB0aGlzIGxpc3Q6IHNlbmQgdGhlIGxpbmUgInVuc3Vi
+c2NyaWJlIGxpbnV4LWJ0cmZzIiBpbgo+IHRoZSBib2R5IG9mIGEgbWVzc2FnZSB0byBtYWpvcmRv
+bW9Admdlci5rZXJuZWwub3JnCj4gTW9yZSBtYWpvcmRvbW8gaW5mbyBhdCDCoGh0dHA6Ly92Z2Vy
+Lmtlcm5lbC5vcmcvbWFqb3Jkb21vLWluZm8uaHRtbAo+Cg==

@@ -1,38 +1,51 @@
 From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 01/10] btrfs: add a return value for readahead_tree_block()
-Date: Thu, 20 May 2010 15:13:51 +0800
-Message-ID: <4BF4E12F.6010103@cn.fujitsu.com>
+Subject: [PATCH 07/10] btrfs: fix wrong ctime when adding link
+Date: Thu, 20 May 2010 15:22:30 +0800
+Message-ID: <4BF4E336.40603@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+To: Chris Mason <chris.mason@oracle.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Liu Bo <liubo2009@cn.fujitsu.com>
+the ctime of file has not been updated when I create a link for it.
 
-Fix return value to get from read_extent_buffer_pages().
+Steps to reproduce:
+ # touch file1
+ # stat -c %Z file1
+ 1273592239
+ # link flink1 file1
+ # stat -c %Z file1
+ 1273592239             <-- have not been updated
 
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+This patch fix this problem.
+
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/disk-io.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ fs/btrfs/inode.c |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 6632e5c..35916d5 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -794,7 +794,7 @@ int readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
- 	buf = btrfs_find_create_tree_block(root, bytenr, blocksize);
- 	if (!buf)
- 		return 0;
--	read_extent_buffer_pages(&BTRFS_I(btree_inode)->io_tree,
-+	ret = read_extent_buffer_pages(&BTRFS_I(btree_inode)->io_tree,
- 				 buf, 0, 0, btree_get_extent, 0);
- 	free_extent_buffer(buf);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index a85b90c..5271887 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4218,8 +4218,12 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
+ 
+ 		btrfs_i_size_write(parent_inode, parent_inode->i_size +
+ 				   name_len * 2);
+-		parent_inode->i_mtime = parent_inode->i_ctime = CURRENT_TIME;
+-		ret = btrfs_update_inode(trans, root, parent_inode);
++		parent_inode->i_mtime = parent_inode->i_ctime = inode->i_ctime
++				      = CURRENT_TIME;
++
++		ret = btrfs_update_inode(trans, root, inode);
++		if (!ret)
++			ret = btrfs_update_inode(trans, root, parent_inode);
+ 	}
  	return ret;
+ }
 -- 
 1.6.5.2
 

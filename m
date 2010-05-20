@@ -1,60 +1,21 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 08/10] btrfs: fix memory leak of btrfs_new_inode()
-Date: Thu, 20 May 2010 15:24:01 +0800
-Message-ID: <4BF4E391.4070402@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: [PATCH 06/10] btrfs: fix remap_file_pages error
+Date: Thu, 20 May 2010 04:32:37 -0400
+Message-ID: <20100520083237.GA11920@infradead.org>
+References: <4BF4E30E.3070402@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Miao Xie <miaox@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4BF4E30E.3070402@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_new_inode() forgets to free path when it enters the error path.
+On Thu, May 20, 2010 at 03:21:50PM +0800, Miao Xie wrote:
+> +	if (!mapping->a_ops->readpage)
+> +		return -ENOEXEC;
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
- fs/btrfs/inode.c |   16 +++++++++-------
- 1 files changed, 9 insertions(+), 7 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5271887..1cef510 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4076,15 +4076,15 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
- 	BUG_ON(!path);
- 
- 	inode = new_inode(root->fs_info->sb);
--	if (!inode)
--		return ERR_PTR(-ENOMEM);
-+	if (!inode) {
-+		ret = -ENOMEM;
-+		goto alloc_inode_fail;
-+	}
- 
- 	if (dir) {
- 		ret = btrfs_set_inode_index(dir, index);
--		if (ret) {
--			iput(inode);
--			return ERR_PTR(ret);
--		}
-+		if (ret)
-+			goto set_index_fail;
- 	}
- 	/*
- 	 * index_cnt is ignored for everything but a dir,
-@@ -4167,8 +4167,10 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
- fail:
- 	if (dir)
- 		BTRFS_I(dir)->index_cnt--;
--	btrfs_free_path(path);
-+set_index_fail:
- 	iput(inode);
-+alloc_inode_fail:
-+	btrfs_free_path(path);
- 	return ERR_PTR(ret);
- }
- 
--- 
-1.6.5.2
+I don't think there's any instance of address_space operations without
+a readpage method in btrfs.
 

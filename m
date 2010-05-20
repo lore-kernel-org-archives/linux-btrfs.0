@@ -1,7 +1,7 @@
 From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 04/10] btrfs: Add error check for add_to_page_cache_lru
-Date: Thu, 20 May 2010 15:18:21 +0800
-Message-ID: <4BF4E23D.6080405@cn.fujitsu.com>
+Subject: [PATCH 02/10] btrfs: fix break phase in btrfs_insert_some_items()
+Date: Thu, 20 May 2010 15:14:47 +0800
+Message-ID: <4BF4E167.9070201@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -12,50 +12,29 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Liu Bo <liubo2009@cn.fujitsu.com>
 
-If add_to_page_cache_lru() returns -EEXIST, it indicates the page
-that belongs to this page_index has been added and this readahead
-action can go on to next page.
-
-If add_to_page_cache_lru() returns -ENOMEM, it should break for
-no memory left.
+"nr = i" should be placed before "break" in order to get right "nr". 
 
 Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/compression.c |   19 ++++++++++++++++---
- 1 files changed, 16 insertions(+), 3 deletions(-)
+ fs/btrfs/ctree.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 1d54c53..1bd4d92 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -480,10 +480,23 @@ static noinline int add_ra_bio_pages(struct inode *inode,
- 		if (!page)
- 			break;
- 
--		if (add_to_page_cache_lru(page, mapping, page_index,
--								GFP_NOFS)) {
-+		ret = add_to_page_cache_lru(page, mapping, page_index,
-+								GFP_NOFS);
-+		if (ret) {
- 			page_cache_release(page);
--			goto next;
-+
-+			/*
-+			 * -EEXIST indicates the page has been added, so
-+			 * it can move on to next page.
-+			 */
-+			if (ret == -EEXIST) {
-+				misses++;
-+				if (misses > 4)
-+					break;
-+				goto next;
-+			}
-+
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index babf7fb..7adff4e 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -3430,8 +3430,8 @@ int btrfs_insert_some_items(struct btrfs_trans_handle *trans,
+ 	for (i = 0; i < nr; i++) {
+ 		if (total_size + data_size[i] + sizeof(struct btrfs_item) >
+ 		    BTRFS_LEAF_DATA_SIZE(root)) {
+-			break;
+ 			nr = i;
 +			break;
  		}
- 
- 		end = last_offset + PAGE_CACHE_SIZE - 1;
+ 		total_data += data_size[i];
+ 		total_size += data_size[i] + sizeof(struct btrfs_item);
 -- 
 1.6.5.2
+
 

@@ -1,65 +1,54 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: [PATCH 07/10] btrfs: fix wrong ctime when adding link
-Date: Fri, 21 May 2010 17:36:41 +0800
-Message-ID: <4BF65429.2030802@cn.fujitsu.com>
-References: <4BF4E336.40603@cn.fujitsu.com> <AANLkTilVU-QFaBJKnjt7XF95RPpmrBv1EaZkFtfUraYa@mail.gmail.com>
-Reply-To: miaox@cn.fujitsu.com
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: [PATCH 2/6] direct-io: add a hook for the fs to provide its
+	own submit_bio function V3
+Date: Fri, 21 May 2010 11:20:06 -0400
+Message-ID: <20100521152006.GA16049@infradead.org>
+References: <1274300694-8976-1-git-send-email-josef@redhat.com> <1274300694-8976-2-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Mike Fedyk <mfedyk@mikefedyk.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTilVU-QFaBJKnjt7XF95RPpmrBv1EaZkFtfUraYa@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	linux-kernel@vger.kernel.org, hch@infradead.org,
+	akpm@linux-foundation.org
+To: Josef Bacik <josef@redhat.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <1274300694-8976-2-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-on 2010-5-20 17:01, Mike Fedyk wrote:
-> On Thu, May 20, 2010 at 12:22 AM, Miao Xie <miaox@cn.fujitsu.com> wrote:
->> the ctime of file has not been updated when I create a link for it.
->>
->> Steps to reproduce:
->>  # touch file1
->>  # stat -c %Z file1
->>  1273592239
->>  # link flink1 file1
->>  # stat -c %Z file1
->>  1273592239             <-- have not been updated
->>
->> This patch fix this problem.
->>
->> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
->> ---
->>  fs/btrfs/inode.c |    8 ++++++--
->>  1 files changed, 6 insertions(+), 2 deletions(-)
->>
->> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->> index a85b90c..5271887 100644
->> --- a/fs/btrfs/inode.c
->> +++ b/fs/btrfs/inode.c
->> @@ -4218,8 +4218,12 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
->>
->>                btrfs_i_size_write(parent_inode, parent_inode->i_size +
->>                                   name_len * 2);
->> -               parent_inode->i_mtime = parent_inode->i_ctime = CURRENT_TIME;
->> -               ret = btrfs_update_inode(trans, root, parent_inode);
->> +               parent_inode->i_mtime = parent_inode->i_ctime = inode->i_ctime
->> +                                     = CURRENT_TIME;
->> +
->> +               ret = btrfs_update_inode(trans, root, inode);
->> +               if (!ret)
->> +                       ret = btrfs_update_inode(trans, root, parent_inode);
-> 
-> You only update parent inode if write to current inode fails?
+On Wed, May 19, 2010 at 04:24:50PM -0400, Josef Bacik wrote:
+> V1->V2:
+> -Changed dio_end_io to EXPORT_SYMBOL_GPL
+> -Removed the own_submit blockdev dio helper
+> -Removed the boundary change
 
-I think if write to current inode fails, updating the parent inode is unnecessary,
-it is better to do rollback.
+patch version changelogs go below the --- header so they don't go into
+the commit message.  Also makes reading the patch description a lot
+easier.  Also applies to all the other patches in the series.
 
-> 
-> Also should you be updating the ctime of parent inode even with link
-> count of parent inode is not modified (btrfs always reports link count
-> of 1 on directories)?
+> +void dio_end_io(struct bio *bio, int error)
+> +{
+> +	struct dio *dio = bio->bi_private;
+> +
+> +	if (dio->is_async)
+> +		dio_bio_end_aio(bio, error);
+> +	else
+> +		dio_bio_end_io(bio, error);
+> +}
+> +EXPORT_SYMBOL_GPL(dio_end_io);
 
-the i_size of the parent inode is changed, so we must update the ctime of parent inode.
+This one needs a good kerneldoc comment.
 
-Thanks
+> -	submit_bio(dio->rw, bio);
+> +	if (!dio->submit_io)
+> +		submit_bio(dio->rw, bio);
+> +	else
+> +		dio->submit_io(dio->rw, bio, dio->inode,
+> +			       dio->logical_offset_in_bio);
 
+'d reverse the if condition - no need for an inversion here.
+
+	if (dio->submit_io) {
+		dio->submit_io(dio->rw, bio, dio->inode,
+			       dio->logical_offset_in_bio);
+	} else {
+		submit_bio(dio->rw, bio);
+	}

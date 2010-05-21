@@ -1,54 +1,29 @@
-From: Michael Tharp <gxti@partiallystapled.com>
-Subject: [PATCH] btrfs-progs: Fix implicit strndup() and other warnings on RHEL 5
-Date: Thu, 20 May 2010 11:25:04 -0400
-Message-ID: <201005201707.o4KH7EB5002815@logo.rdu.rpath.com>
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: Re: [PATCH 06/10] btrfs: fix remap_file_pages error
+Date: Fri, 21 May 2010 16:54:45 +0800
+Message-ID: <4BF64A55.9040707@cn.fujitsu.com>
+References: <4BF4E30E.3070402@cn.fujitsu.com> <20100520083237.GA11920@infradead.org>
+Reply-To: miaox@cn.fujitsu.com
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Christoph Hellwig <hch@infradead.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100520083237.GA11920@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Michael Tharp <gxti@partiallystapled.com>
----
- btrfs-list.c |    7 ++++---
- btrfs.c      |    1 +
- 2 files changed, 5 insertions(+), 3 deletions(-)
+on 2010-5-20 16:32, Christoph Hellwig wrote:
+> On Thu, May 20, 2010 at 03:21:50PM +0800, Miao Xie wrote:
+>> +	if (!mapping->a_ops->readpage)
+>> +		return -ENOEXEC;
+> 
+> I don't think there's any instance of address_space operations without
+> a readpage method in btrfs.
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index 7741705..112bed2 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -16,6 +16,7 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
-+#define _GNU_SOURCE
- #ifndef __CHECKER__
- #include <sys/ioctl.h>
- #include <sys/mount.h>
-@@ -662,9 +663,9 @@ static int print_one_extent(int fd, struct btrfs_ioctl_search_header *sh,
- 			    char **cache_dir_name, u64 *cache_ino,
- 			    char **cache_full_name)
- {
--	u64 len;
--	u64 disk_start;
--	u64 disk_offset;
-+	u64 len = 0;
-+	u64 disk_start = 0;
-+	u64 disk_offset = 0;
- 	u8 type;
- 	int compressed = 0;
- 	int flags = 0;
-diff --git a/btrfs.c b/btrfs.c
-index ab5e57f..672ffe2 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -15,6 +15,7 @@
-  */
- 
- 
-+#define _GNU_SOURCE
- #include <stdio.h>
- #include <stdlib.h>
- #include <string.h>
--- 
-1.6.6.1
+But, Btrfs is being developing. Maybe someone implement a instance of
+address_space without a readpage method in the future. So it is better
+to check it, just like ext4.
+
+Thanks
 

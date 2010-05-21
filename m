@@ -1,68 +1,214 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH 3/6] direct-io: do not merge logically non-contiguous requests
-Date: Fri, 21 May 2010 13:03:39 -0400
-Message-ID: <1274461422-18433-3-git-send-email-josef@redhat.com>
+Subject: [PATCH 2/6] direct-io: add a hook for the fs to provide its own submit_bio function
+Date: Fri, 21 May 2010 13:03:38 -0400
+Message-ID: <1274461422-18433-2-git-send-email-josef@redhat.com>
 References: <1274461422-18433-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
 	linux-kernel@vger.kernel.org, hch@infradead.org,
 	akpm@linux-foundation.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
 In-Reply-To: <1274461422-18433-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs cannot handle having logically non-contiguous requests submitted.  For
-example if you have
+Because BTRFS can do RAID and such, we need our own submit hook so we can setup
+the bio's in the correct fashion, and handle checksum errors properly.  So there
+are a few changes here
 
-Logical:  [0-4095][HOLE][8192-12287]
-Physical: [0-4095]      [4096-8191]
+1) The submit_io hook.  This is straightforward, just call this instead of
+submit_bio.
 
-Normally the DIO code would put these into the same BIO's.  The problem is we
-need to know exactly what offset is associated with what BIO so we can do our
-checksumming and unlocking properly, so putting them in the same BIO doesn't
-work.  So add another check where we submit the current BIO if the physical
-blocks are not contigous OR the logical blocks are not contiguous.
+2) Allow the fs to return -ENOTBLK for reads.  Usually this has only worked for
+writes, since writes can fallback onto buffered IO.  But BTRFS needs the option
+of falling back on buffered IO if it encounters a compressed extent, since we
+need to read the entire extent in and decompress it.  So if we get -ENOTBLK back
+from get_block we'll return back and fallback on buffered just like the write
+case.
+
+I've tested these changes with fsx and everything seems to work.  Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
+V1->V2:
+-Changed dio_end_io to EXPORT_SYMBOL_GPL
+-Removed the own_submit blockdev dio helper
+-Removed the boundary change
 
-V1->V2
--Be more verbose in the in-code comment
+V2->V3:
+-Keep track of the logical offset in the current bio
 
- fs/direct-io.c |   20 ++++++++++++++++++--
- 1 files changed, 18 insertions(+), 2 deletions(-)
+V3->V4:
+-Kerneldoc dio_end_io
+-switch if (!dio->submit_io) statement
+
+ fs/direct-io.c     |   42 +++++++++++++++++++++++++++++++++++++-----
+ include/linux/fs.h |   11 ++++++++---
+ 2 files changed, 45 insertions(+), 8 deletions(-)
 
 diff --git a/fs/direct-io.c b/fs/direct-io.c
-index 5949947..da111aa 100644
+index e82adc2..5949947 100644
 --- a/fs/direct-io.c
 +++ b/fs/direct-io.c
-@@ -632,10 +632,26 @@ static int dio_send_cur_page(struct dio *dio)
- 	int ret = 0;
+@@ -82,6 +82,8 @@ struct dio {
+ 	int reap_counter;		/* rate limit reaping */
+ 	get_block_t *get_block;		/* block mapping function */
+ 	dio_iodone_t *end_io;		/* IO completion function */
++	dio_submit_t *submit_io;	/* IO submition function */
++	loff_t logical_offset_in_bio;	/* current first logical block in bio */
+ 	sector_t final_block_in_bio;	/* current final block in bio + 1 */
+ 	sector_t next_block_for_io;	/* next block to be put under IO,
+ 					   in dio_blocks units */
+@@ -96,6 +98,7 @@ struct dio {
+ 	unsigned cur_page_offset;	/* Offset into it, in bytes */
+ 	unsigned cur_page_len;		/* Nr of bytes at cur_page_offset */
+ 	sector_t cur_page_block;	/* Where it starts */
++	loff_t cur_page_fs_offset;	/* Offset in file */
  
- 	if (dio->bio) {
-+		loff_t cur_offset = dio->block_in_file << dio->blkbits;
-+		loff_t bio_next_offset = dio->logical_offset_in_bio +
-+			dio->bio->bi_size;
+ 	/* BIO completion state */
+ 	spinlock_t bio_lock;		/* protects BIO fields below */
+@@ -300,6 +303,26 @@ static void dio_bio_end_io(struct bio *bio, int error)
+ 	spin_unlock_irqrestore(&dio->bio_lock, flags);
+ }
+ 
++/**
++ * dio_end_io - handle the end io action for the given bio
++ * @bio: The direct io bio thats being completed
++ * @error: Error if there was one
++ *
++ * This is meant to be called by any filesystem that uses their own dio_submit_t
++ * so that the DIO specific endio actions are dealt with after the filesystem
++ * has done it's completion work.
++ */
++void dio_end_io(struct bio *bio, int error)
++{
++	struct dio *dio = bio->bi_private;
 +
++	if (dio->is_async)
++		dio_bio_end_aio(bio, error);
++	else
++		dio_bio_end_io(bio, error);
++}
++EXPORT_SYMBOL_GPL(dio_end_io);
++
+ static int
+ dio_bio_alloc(struct dio *dio, struct block_device *bdev,
+ 		sector_t first_sector, int nr_vecs)
+@@ -316,6 +339,7 @@ dio_bio_alloc(struct dio *dio, struct block_device *bdev,
+ 		bio->bi_end_io = dio_bio_end_io;
+ 
+ 	dio->bio = bio;
++	dio->logical_offset_in_bio = dio->cur_page_fs_offset;
+ 	return 0;
+ }
+ 
+@@ -340,10 +364,15 @@ static void dio_bio_submit(struct dio *dio)
+ 	if (dio->is_async && dio->rw == READ)
+ 		bio_set_pages_dirty(bio);
+ 
+-	submit_bio(dio->rw, bio);
++	if (dio->submit_io)
++		dio->submit_io(dio->rw, bio, dio->inode,
++			       dio->logical_offset_in_bio);
++	else
++		submit_bio(dio->rw, bio);
+ 
+ 	dio->bio = NULL;
+ 	dio->boundary = 0;
++	dio->logical_offset_in_bio = 0;
+ }
+ 
+ /*
+@@ -701,6 +730,7 @@ submit_page_section(struct dio *dio, struct page *page,
+ 	dio->cur_page_offset = offset;
+ 	dio->cur_page_len = len;
+ 	dio->cur_page_block = blocknr;
++	dio->cur_page_fs_offset = dio->block_in_file << dio->blkbits;
+ out:
+ 	return ret;
+ }
+@@ -935,7 +965,7 @@ static ssize_t
+ direct_io_worker(int rw, struct kiocb *iocb, struct inode *inode, 
+ 	const struct iovec *iov, loff_t offset, unsigned long nr_segs, 
+ 	unsigned blkbits, get_block_t get_block, dio_iodone_t end_io,
+-	struct dio *dio)
++	dio_submit_t submit_io, struct dio *dio)
+ {
+ 	unsigned long user_addr; 
+ 	unsigned long flags;
+@@ -952,6 +982,7 @@ direct_io_worker(int rw, struct kiocb *iocb, struct inode *inode,
+ 
+ 	dio->get_block = get_block;
+ 	dio->end_io = end_io;
++	dio->submit_io = submit_io;
+ 	dio->final_block_in_bio = -1;
+ 	dio->next_block_for_io = -1;
+ 
+@@ -1008,7 +1039,7 @@ direct_io_worker(int rw, struct kiocb *iocb, struct inode *inode,
+ 		}
+ 	} /* end iovec loop */
+ 
+-	if (ret == -ENOTBLK && (rw & WRITE)) {
++	if (ret == -ENOTBLK) {
  		/*
--		 * See whether this new request is contiguous with the old
-+		 * See whether this new request is contiguous with the old.
-+		 *
-+		 * Btrfs cannot handl having logically non-contiguous requests
-+		 * submitted.  For exmple if you have
-+		 *
-+		 * Logical:  [0-4095][HOLE][8192-12287]
-+		 * Phyiscal: [0-4095]      [4096-8181]
-+		 *
-+		 * We cannot submit those pages together as one BIO.  So if our
-+		 * current logical offset in the file does not equal what would
-+		 * be the next logical offset in the bio, submit the bio we
-+		 * have.
- 		 */
--		if (dio->final_block_in_bio != dio->cur_page_block)
-+		if (dio->final_block_in_bio != dio->cur_page_block ||
-+		    cur_offset != bio_next_offset)
- 			dio_bio_submit(dio);
- 		/*
- 		 * Submit now if the underlying fs is about to perform a
+ 		 * The remaining part of the request will be
+ 		 * be handled by buffered I/O when we return
+@@ -1110,7 +1141,7 @@ ssize_t
+ __blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
+ 	struct block_device *bdev, const struct iovec *iov, loff_t offset, 
+ 	unsigned long nr_segs, get_block_t get_block, dio_iodone_t end_io,
+-	int flags)
++	dio_submit_t submit_io,	int flags)
+ {
+ 	int seg;
+ 	size_t size;
+@@ -1197,7 +1228,8 @@ __blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
+ 		(end > i_size_read(inode)));
+ 
+ 	retval = direct_io_worker(rw, iocb, inode, iov, offset,
+-				nr_segs, blkbits, get_block, end_io, dio);
++				nr_segs, blkbits, get_block, end_io,
++				submit_io, dio);
+ 
+ 	/*
+ 	 * In case of error extending write may have instantiated a few
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 4079ef9..f5dc079 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -2250,10 +2250,15 @@ static inline int xip_truncate_page(struct address_space *mapping, loff_t from)
+ #endif
+ 
+ #ifdef CONFIG_BLOCK
++struct bio;
++typedef void (dio_submit_t)(int rw, struct bio *bio, struct inode *inode,
++			    loff_t file_offset);
++void dio_end_io(struct bio *bio, int error);
++
+ ssize_t __blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
+ 	struct block_device *bdev, const struct iovec *iov, loff_t offset,
+ 	unsigned long nr_segs, get_block_t get_block, dio_iodone_t end_io,
+-	int lock_type);
++	dio_submit_t submit_io,	int lock_type);
+ 
+ enum {
+ 	/* need locking between buffered and direct access */
+@@ -2269,7 +2274,7 @@ static inline ssize_t blockdev_direct_IO(int rw, struct kiocb *iocb,
+ 	dio_iodone_t end_io)
+ {
+ 	return __blockdev_direct_IO(rw, iocb, inode, bdev, iov, offset,
+-				    nr_segs, get_block, end_io,
++				    nr_segs, get_block, end_io, NULL,
+ 				    DIO_LOCKING | DIO_SKIP_HOLES);
+ }
+ 
+@@ -2279,7 +2284,7 @@ static inline ssize_t blockdev_direct_IO_no_locking(int rw, struct kiocb *iocb,
+ 	dio_iodone_t end_io)
+ {
+ 	return __blockdev_direct_IO(rw, iocb, inode, bdev, iov, offset,
+-				nr_segs, get_block, end_io, 0);
++				    nr_segs, get_block, end_io, NULL, 0);
+ }
+ #endif
+ 
 -- 
 1.6.6.1
+

@@ -1,54 +1,90 @@
-From: Mike Fedyk <mfedyk@mikefedyk.com>
-Subject: Re: [PATCH 3/6] direct-io: do not merge logically non-contiguous
-	requests
-Date: Fri, 21 May 2010 18:47:36 -0700
-Message-ID: <AANLkTikwPL8-WefVIMF1ldTZpWVHvS1Lbh4YB8MZ4eu0@mail.gmail.com>
-References: <1274461422-18433-1-git-send-email-josef@redhat.com>
-	 <1274461422-18433-3-git-send-email-josef@redhat.com>
+From: Julia Lawall <julia@diku.dk>
+Subject: [PATCH 3/27] fs/btrfs: Use memdup_user
+Date: Sat, 22 May 2010 10:19:17 +0200 (CEST)
+Message-ID: <Pine.LNX.4.64.1005221018590.13021@ask.diku.dk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org, hch@infradead.org,
-	akpm@linux-foundation.org
-To: Josef Bacik <josef@redhat.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1274461422-18433-3-git-send-email-josef@redhat.com>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 21, 2010 at 10:03 AM, Josef Bacik <josef@redhat.com> wrote:
-> Btrfs cannot handle having logically non-contiguous requests submitte=
-d. =C2=A0For
-> example if you have
->
-> Logical: =C2=A0[0-4095][HOLE][8192-12287]
-> Physical: [0-4095] =C2=A0 =C2=A0 =C2=A0[4096-8191]
->
-> Normally the DIO code would put these into the same BIO's. =C2=A0The =
-problem is we
-> need to know exactly what offset is associated with what BIO so we ca=
-n do our
-> checksumming and unlocking properly, so putting them in the same BIO =
-doesn't
-> work. =C2=A0So add another check where we submit the current BIO if t=
-he physical
-> blocks are not contigous OR the logical blocks are not contiguous.
->
-> Signed-off-by: Josef Bacik <josef@redhat.com>
-> ---
->
-> V1->V2
-> -Be more verbose in the in-code comment
->
-> =C2=A0fs/direct-io.c | =C2=A0 20 ++++++++++++++++++--
-> =C2=A01 files changed, 18 insertions(+), 2 deletions(-)
->
+From: Julia Lawall <julia@diku.dk>
 
-Btrfs has been pretty much self-contained (working well compiled
-against 2.6.32 for example).  Is there a way that this wouldn't just
-start silently breaking for people compiling the latest btrfs with
-dkms against older kernels?
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Use memdup_user when user data is immediately copied into the
+allocated region.
+
+The semantic patch that makes this change is as follows:
+(http://coccinelle.lip6.fr/)
+
+// <smpl>
+@@
+expression from,to,size,flag;
+position p;
+identifier l1,l2;
+@@
+
+-  to = \(kmalloc@p\|kzalloc@p\)(size,flag);
++  to = memdup_user(from,size);
+   if (
+-      to==NULL
++      IS_ERR(to)
+                 || ...) {
+   <+... when != goto l1;
+-  -ENOMEM
++  PTR_ERR(to)
+   ...+>
+   }
+-  if (copy_from_user(to, from, size) != 0) {
+-    <+... when != goto l2;
+-    -EFAULT
+-    ...+>
+-  }
+// </smpl>
+
+Signed-off-by: Julia Lawall <julia@diku.dk>
+
+---
+ fs/btrfs/ioctl.c |   20 ++++++--------------
+ 1 file changed, 6 insertions(+), 14 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 97a9783..5301d78 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1096,14 +1096,10 @@ static noinline int btrfs_ioctl_tree_search(struct file *file,
+ 	if (!capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 
+-	args = kmalloc(sizeof(*args), GFP_KERNEL);
+-	if (!args)
+-		return -ENOMEM;
++	args = memdup_user(argp, sizeof(*args));
++	if (IS_ERR(args))
++		return PTR_ERR(args);
+ 
+-	if (copy_from_user(args, argp, sizeof(*args))) {
+-		kfree(args);
+-		return -EFAULT;
+-	}
+ 	inode = fdentry(file)->d_inode;
+ 	ret = search_ioctl(inode, args);
+ 	if (ret == 0 && copy_to_user(argp, args, sizeof(*args)))
+@@ -1211,14 +1207,10 @@ static noinline int btrfs_ioctl_ino_lookup(struct file *file,
+ 	if (!capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 
+-	args = kmalloc(sizeof(*args), GFP_KERNEL);
+-	if (!args)
+-		return -ENOMEM;
++	args = memdup_user(argp, sizeof(*args));
++	if (IS_ERR(args))
++		return PTR_ERR(args);
+ 
+-	if (copy_from_user(args, argp, sizeof(*args))) {
+-		kfree(args);
+-		return -EFAULT;
+-	}
+ 	inode = fdentry(file)->d_inode;
+ 
+ 	if (args->treeid == 0)

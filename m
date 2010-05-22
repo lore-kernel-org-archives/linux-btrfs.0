@@ -1,7 +1,7 @@
 From: Julia Lawall <julia@diku.dk>
-Subject: [PATCH 3/27] fs/btrfs: Use memdup_user
-Date: Sat, 22 May 2010 10:19:17 +0200 (CEST)
-Message-ID: <Pine.LNX.4.64.1005221018590.13021@ask.diku.dk>
+Subject: [PATCH 5/8] fs/btrfs: Use ERR_CAST
+Date: Sat, 22 May 2010 12:00:38 +0200 (CEST)
+Message-ID: <Pine.LNX.4.64.1005221200210.13021@ask.diku.dk>
 Mime-Version: 1.0
 Content-Type: TEXT/PLAIN; charset=US-ASCII
 To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
@@ -11,80 +11,70 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Julia Lawall <julia@diku.dk>
 
-Use memdup_user when user data is immediately copied into the
-allocated region.
+Use ERR_CAST(x) rather than ERR_PTR(PTR_ERR(x)).  The former makes more
+clear what is the purpose of the operation, which otherwise looks like a
+no-op.
 
 The semantic patch that makes this change is as follows:
 (http://coccinelle.lip6.fr/)
 
 // <smpl>
 @@
-expression from,to,size,flag;
-position p;
-identifier l1,l2;
+type T;
+T x;
+identifier f;
 @@
 
--  to = \(kmalloc@p\|kzalloc@p\)(size,flag);
-+  to = memdup_user(from,size);
-   if (
--      to==NULL
-+      IS_ERR(to)
-                 || ...) {
-   <+... when != goto l1;
--  -ENOMEM
-+  PTR_ERR(to)
-   ...+>
-   }
--  if (copy_from_user(to, from, size) != 0) {
--    <+... when != goto l2;
--    -EFAULT
--    ...+>
--  }
+T f (...) { <+...
+- ERR_PTR(PTR_ERR(x))
++ x
+ ...+> }
+
+@@
+expression x;
+@@
+
+- ERR_PTR(PTR_ERR(x))
++ ERR_CAST(x)
 // </smpl>
 
 Signed-off-by: Julia Lawall <julia@diku.dk>
 
 ---
- fs/btrfs/ioctl.c |   20 ++++++--------------
- 1 file changed, 6 insertions(+), 14 deletions(-)
+ fs/btrfs/extent_map.c |    4 ++--
+ fs/btrfs/super.c      |    2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 97a9783..5301d78 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1096,14 +1096,10 @@ static noinline int btrfs_ioctl_tree_search(struct file *file,
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
+diff -u -p a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+--- a/fs/btrfs/extent_map.c
++++ b/fs/btrfs/extent_map.c
+@@ -335,7 +335,7 @@ struct extent_map *lookup_extent_mapping
+ 		goto out;
+ 	}
+ 	if (IS_ERR(rb_node)) {
+-		em = ERR_PTR(PTR_ERR(rb_node));
++		em = ERR_CAST(rb_node);
+ 		goto out;
+ 	}
+ 	em = rb_entry(rb_node, struct extent_map, rb_node);
+@@ -384,7 +384,7 @@ struct extent_map *search_extent_mapping
+ 		goto out;
+ 	}
+ 	if (IS_ERR(rb_node)) {
+-		em = ERR_PTR(PTR_ERR(rb_node));
++		em = ERR_CAST(rb_node);
+ 		goto out;
+ 	}
+ 	em = rb_entry(rb_node, struct extent_map, rb_node);
+diff -u -p a/fs/btrfs/super.c b/fs/btrfs/super.c
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -378,7 +378,7 @@ static struct dentry *get_default_root(s
+ find_root:
+ 	new_root = btrfs_read_fs_root_no_name(root->fs_info, &location);
+ 	if (IS_ERR(new_root))
+-		return ERR_PTR(PTR_ERR(new_root));
++		return ERR_CAST(new_root);
  
--	args = kmalloc(sizeof(*args), GFP_KERNEL);
--	if (!args)
--		return -ENOMEM;
-+	args = memdup_user(argp, sizeof(*args));
-+	if (IS_ERR(args))
-+		return PTR_ERR(args);
- 
--	if (copy_from_user(args, argp, sizeof(*args))) {
--		kfree(args);
--		return -EFAULT;
--	}
- 	inode = fdentry(file)->d_inode;
- 	ret = search_ioctl(inode, args);
- 	if (ret == 0 && copy_to_user(argp, args, sizeof(*args)))
-@@ -1211,14 +1207,10 @@ static noinline int btrfs_ioctl_ino_lookup(struct file *file,
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
- 
--	args = kmalloc(sizeof(*args), GFP_KERNEL);
--	if (!args)
--		return -ENOMEM;
-+	args = memdup_user(argp, sizeof(*args));
-+	if (IS_ERR(args))
-+		return PTR_ERR(args);
- 
--	if (copy_from_user(args, argp, sizeof(*args))) {
--		kfree(args);
--		return -EFAULT;
--	}
- 	inode = fdentry(file)->d_inode;
- 
- 	if (args->treeid == 0)
+ 	if (btrfs_root_refs(&new_root->root_item) == 0)
+ 		return ERR_PTR(-ENOENT);

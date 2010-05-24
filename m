@@ -1,54 +1,32 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH 6/6] Btrfs: do aio_write instead of write
-Date: Sun, 23 May 2010 19:59:30 -0400
-Message-ID: <20100523235930.GA25333@dhcp231-156.rdu.redhat.com>
-References: <1274461422-18433-1-git-send-email-josef@redhat.com> <1274461422-18433-6-git-send-email-josef@redhat.com> <4BF8E7F8.50800@cn.fujitsu.com>
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: Re: [PATCH 04/10] btrfs: Add error check for add_to_page_cache_lru
+Date: Mon, 24 May 2010 10:34:19 +0800
+Message-ID: <4BF9E5AB.8050506@cn.fujitsu.com>
+References: <4BF4E23D.6080405@cn.fujitsu.com> <AANLkTiktY-iDvlEZZGFjarYFUB97SD6DDAkudo02hthL@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-	hch@infradead.org, akpm@linux-foundation.org
-To: Shi Weihua <shiwh@cn.fujitsu.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4BF8E7F8.50800@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: miaox@cn.fujitsu.com, Chris Mason <chris.mason@oracle.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Mike Fedyk <mfedyk@mikefedyk.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTiktY-iDvlEZZGFjarYFUB97SD6DDAkudo02hthL@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, May 23, 2010 at 04:31:52PM +0800, Shi Weihua wrote:
-> at 2010-5-22 1:03, Josef Bacik wrote:
-> > In order for AIO to work, we need to implement aio_write.  This patch converts
-> > our btrfs_file_write to btrfs_aio_write.  I've tested this with xfstests and
-> > nothing broke, and the AIO stuff magically started working.  Thanks,
-> 
-> But xfstests's case 198(source: src/aio-dio-regress/aiodio_sparse2.c) still failed, 
-> following message outputted.
-> --------------------
-> AIO write offset 0 expected 65536 got -22
-> AIO write offset 5242880 expected 65536 got -22
-> AIO write offset 10485760 expected 65536 got -22
-> AIO write offset 15728640 expected 65536 got -22
-> AIO write offset 20971520 expected 65536 got -22
-> AIO write offset 31457280 expected 65536 got -22
-> AIO write offset 36700160 expected 65536 got -22
-> AIO write offset 41943040 expected 65536 got -22
-> AIO write offset 47185920 expected 65536 got -22
-> AIO write offset 52428800 expected 65536 got -22
-> AIO write offset 57671680 expected 65536 got -22
-> AIO write offset 62914560 expected 65536 got -22
-> AIO write offset 73400320 expected 65536 got -22
-> AIO write offset 78643200 expected 65536 got -22
-> non one buffer at buf[0] => 0x00,00,00,00
-> non-one read at offset 0
-> *** WARNING *** /tmp/aaaa has not been unlinked; if you don't rm it manually first, it may influence the next run
-> -------------------- 
-> 
-> generic_file_direct_write()(in btrfs_file_aio_write(), fs/btrfs/file.c) returned -22, 
-> maybe it's useful for your analysing.
+On 05/20/2010 04:43 PM, Mike Fedyk wrote:
+> Shouldn't this use a pre-processor label instead of hard coding
+> compression sensitivity or readahead tuning?  this way it'll be set in
+> one place.
+>
+>   
 
-Yes, change that testcase to run -a 4096 and it will run fine.  Because BTRFS
-doesn't pass in a bdev to __blockdev_direct_IO it doesn't do 512 byte aligned
-IO, just blocksize aligned IO.  I will fix that at some later point, but its a
-little tricky since we have to figure out which bdev has the largest alignment
-(in case we have a 4k sector device and a 512 byte sector device in the same
-volume).  Thanks,
+All right.
 
-Josef
+Since Adding a macro may make the whole code harder to read, I add a
+"goto" to avoid this kind of hard coding style instead.
+
+Thanks.
+
+-- 
+Liubo 
+
+

@@ -1,28 +1,47 @@
-From: "K. Richard Pixley" <rich@noir.com>
-Subject: Confused by performance
-Date: Mon, 24 May 2010 14:08:13 -0700
-Message-ID: <4BFAEABD.2070700@noir.com>
+From: Dan Magenheimer <dan.magenheimer@oracle.com>
+Subject: RE: Cleancache [PATCH 2/7] (was Transcendent Memory): core files
+Date: Mon, 24 May 2010 19:15:59 -0700 (PDT)
+Message-ID: <c5c17e83-a21c-4360-a201-3bb865062961@default>
+References: <20100422132809.GA27302@ca-server1.us.oracle.com
+ 20100514231815.GY30031@ZenIV.linux.org.uk
+ 1b84523f-a7df-4d6a-870f-b684bd012230@default>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: chris.mason@oracle.com, akpm@linux-foundation.org, adilger@sun.com,
+        tytso@mit.edu, mfasheh@suse.com, joel.becker@oracle.com,
+        matthew@wil.cx, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-ext4@vger.kernel.org, ocfs2-devel@oss.oracle.com,
+        linux-mm@kvack.org, ngupta@vflare.org, jeremy@goop.org,
+        JBeulich@novell.com, kurt.hackel@oracle.com, npiggin@suse.de,
+        dave.mccracken@oracle.com, riel@redhat.com
+To: Al Viro <viro@ZenIV.linux.org.uk>
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <1b84523f-a7df-4d6a-870f-b684bd012230@default>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've just started to work with btrfs so I started with a benchmark.  On 
-four identical servers, (2 dual core cpus, single local disk), I built 
-filesystems - ext3, ext4, nilfs2, and btrfs.  I checked out a sizable 
-code tree and timed a build.  The build is parallelized to use 4 threads 
-when possible.
+> > The third one is pgoff_t; again, use sane types, _if_ you actually
+> want
+> > the argument #3 at all - it can be derived from struct page you are
+> > passing there as well.
+>=20
+> I thought it best to declare the _ops so that the struct page
+> is opaque to the "backend" (driver).  The kernel-side ("frontend")
+> defines the handle and ensures coherency, so the backend shouldn't
+> be allowed to derive or muck with the three-tuple passed by the
+> kernel. In the existing (Xen tmem) driver, the only operation
+> performed on the struct page parameter is page_to_pfn().  OTOH,
+> I could go one step further and pass a pfn_t instead of a
+> struct page, since it is really only the physical page frame that
+> the backend needs to know about and (synchronously) read/write from/to.
+>=20
+> Thoughts?
 
-I'm seeing similar build times on ext[34] and nilfs2 but I'm seeing 
-almost double the times for btrfs using default options.  And I'm having 
-trouble reconciling this performance cost with the benchmarks I'm seeing 
-around the net.
+Silly me.  pfn_t is a Xen/KVM type not otherwise used in the
+kernel AFAICT.  Please ignore...
 
-Is this a common result?  Is there a trick to getting ext4 competitive 
-performance out of btrfs?  Is my application a poor choice for btrfs?  
-Am I missing something obvious here?
-
---rich
-
-
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>

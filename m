@@ -1,223 +1,41 @@
-From: liubo <liubo2009@cn.fujitsu.com>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: [PATCH 6/6] Btrfs: do aio_write instead of write
-Date: Thu, 27 May 2010 11:13:14 +0800
-Message-ID: <4BFDE34A.5010808@cn.fujitsu.com>
-References: <1274461422-18433-1-git-send-email-josef@redhat.com> <1274461422-18433-6-git-send-email-josef@redhat.com> <4BFDE1CE.4030100@cn.fujitsu.com>
+Date: Thu, 27 May 2010 08:59:52 -0400
+Message-ID: <20100527125952.GQ3108@think>
+References: <1274461422-18433-1-git-send-email-josef@redhat.com>
+ <1274461422-18433-6-git-send-email-josef@redhat.com>
+ <4BFDE1CE.4030100@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="------------010401040301010600090107"
-Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org
+To: liubo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
 In-Reply-To: <4BFDE1CE.4030100@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multi-part message in MIME format.
---------------010401040301010600090107
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
-
-On 05/27/2010 11:06 AM, liubo wrote:
+On Thu, May 27, 2010 at 11:06:54AM +0800, liubo wrote:
 > On 05/22/2010 01:03 AM, Josef Bacik wrote:
->   
->> In order for AIO to work, we need to implement aio_write.  This patch converts
->> our btrfs_file_write to btrfs_aio_write.  I've tested this with xfstests and
->> nothing broke, and the AIO stuff magically started working.  Thanks,
->>
->> Signed-off-by: Josef Bacik <josef@redhat.com>
->>   
->>     
->
+> > In order for AIO to work, we need to implement aio_write.  This patch converts
+> > our btrfs_file_write to btrfs_aio_write.  I've tested this with xfstests and
+> > nothing broke, and the AIO stuff magically started working.  Thanks,
+> >
+> > Signed-off-by: Josef Bacik <josef@redhat.com>
+> >   
+> 
 > Hi, Josef,
->
+> 
 > I've tested your patch(May 22) with my tools, and one case triggered a bug
 > which made writev operation hang up, more information is followed.
->
+> 
 > - Steps to trigger it:
 >   # mount /dev/sda8 /home/btrfsdisk -o nodatacow
 >   # gcc direct-io.c -o direct-io
 >   # ./direct-io O_DIRECT writev /home/btrfsdisk/testrw 4M
->
-> then on another tty, after "dmesg"...
->
-> [snip]
-> device fsid f44b0879c75c0e99-1d4b28f2d5c503ae devid 1 transid 11177
-> /dev/sda8
-> btrfs: setting nodatacow
-> INFO: task direct-io:1399 blocked for more than 120 seconds.
-> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-> direct-io     D 0000000000000003     0  1399   1341 0x00000000
->  ffff880137c379c8 0000000000000082 ffff880137c379d8 ffffffff00000000
->  ffff880137c37fd8 ffff880139730000 0000000000015440 ffff880137c37fd8
->  0000000000015440 0000000000015440 0000000000015440 0000000000015440
-> Call Trace:
->  [<ffffffffa0119d4a>] wait_extent_bit+0xe3/0x163 [btrfs]
->  [<ffffffff8106651f>] ? autoremove_wake_function+0x0/0x39
->  [<ffffffffa0119e47>] lock_extent_bits+0x7d/0xa8 [btrfs]
->  [<ffffffffa0119e88>] lock_extent+0x16/0x18 [btrfs]
->  [<ffffffffa01025ce>] btrfs_direct_IO+0x8e/0x1be [btrfs]
->  [<ffffffff810c7301>] generic_file_direct_write+0xed/0x16d
->  [<ffffffffa010bb91>] btrfs_file_aio_write+0x2af/0x8d2 [btrfs]
->  [<ffffffff81100eae>] ? try_get_mem_cgroup_from_mm+0x39/0x49
->  [<ffffffffa010b8e2>] ? btrfs_file_aio_write+0x0/0x8d2 [btrfs]
->  [<ffffffff811063ed>] do_sync_readv_writev+0xc1/0x100
->  [<ffffffff81106120>] ? might_fault+0x21/0x23
->  [<ffffffff81106151>] ? copy_from_user+0x2f/0x31
->  [<ffffffff811c90ab>] ? security_file_permission+0x16/0x18
->  [<ffffffff81107145>] do_readv_writev+0xa7/0x127
->  [<ffffffff81107208>] vfs_writev+0x43/0x4e
->  [<ffffffff811072f8>] sys_writev+0x4a/0x93
->  [<ffffffff81009c32>] system_call_fastpath+0x16/0x1b
->
->
-> So, can you figure out if anything in your patch leads to the bug?
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
->   
 
-Sorry, I forgot the attachment...
+Thanks for sending along this test program and bug report.  We've fixed
+a few bugs in the O_DIRECT patches, and this is working now.
 
-Plz get it.
+The merged result is in the for-linus branch of the btrfs unstable tree.
 
-Thanks,
-
-- Liubo
-
-
---------------010401040301010600090107
-Content-Type: text/plain;
- name="direct-io.c"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment;
- filename="direct-io.c"
-
-LyoqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioq
-KioqKioqKioqKioqKioqKioqKioqKioqKi8KLyogICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKi8K
-LyogQ29weXJpZ2h0IChjKSAyMDEwIEZVSklUU1UgTElNSVRFRCAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgKi8KLyogICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKi8K
-LyogVGhpcyBwcm9ncmFtIGlzIGZyZWUgc29mdHdhcmU7ICB5b3UgY2FuIHJlZGlzdHJpYnV0
-ZSBpdCBhbmQvb3IgbW9kaWZ5ICAgICAgKi8KLyogaXQgdW5kZXIgdGhlIHRlcm1zIG9mIHRo
-ZSBHTlUgR2VuZXJhbCBQdWJsaWMgTGljZW5zZSBhcyBwdWJsaXNoZWQgYnkgICAgICAgKi8K
-LyogdGhlIEZyZWUgU29mdHdhcmUgRm91bmRhdGlvbjsgZWl0aGVyIHZlcnNpb24gMiBvZiB0
-aGUgTGljZW5zZSwgb3IgICAgICAgICAgKi8KLyogKGF0IHlvdXIgb3B0aW9uKSBhbnkgbGF0
-ZXIgdmVyc2lvbi4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKi8K
-LyogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgKi8KLyogVGhpcyBwcm9ncmFtIGlzIGRpc3RyaWJ1
-dGVkIGluIHRoZSBob3BlIHRoYXQgaXQgd2lsbCBiZSB1c2VmdWwsICAgICAgICAgICAgKi8K
-LyogYnV0IFdJVEhPVVQgQU5ZIFdBUlJBTlRZOyAgd2l0aG91dCBldmVuIHRoZSBpbXBsaWVk
-IHdhcnJhbnR5IG9mICAgICAgICAgICAgKi8KLyogTUVSQ0hBTlRBQklMSVRZIG9yIEZJVE5F
-U1MgRk9SIEEgUEFSVElDVUxBUiBQVVJQT1NFLiAgU2VlICAgICAgICAgICAgICAgICAgKi8K
-LyogdGhlIEdOVSBHZW5lcmFsIFB1YmxpYyBMaWNlbnNlIGZvciBtb3JlIGRldGFpbHMuICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgKi8KLyogICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKi8K
-LyogWW91IHNob3VsZCBoYXZlIHJlY2VpdmVkIGEgY29weSBvZiB0aGUgR05VIEdlbmVyYWwg
-UHVibGljIExpY2Vuc2UgICAgICAgICAgKi8KLyogYWxvbmcgd2l0aCB0aGlzIHByb2dyYW07
-ICBpZiBub3QsIHdyaXRlIHRvIHRoZSBGcmVlIFNvZnR3YXJlICAgICAgICAgICAgICAgKi8K
-LyogRm91bmRhdGlvbiwgSW5jLiwgNTkgVGVtcGxlIFBsYWNlLCBTdWl0ZSAzMzAsIEJvc3Rv
-biwgTUEgMDIxMTEtMTMwNyBVU0EgICAgKi8KLyogICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKi8K
-LyogQXV0aG9yOiBMaXUgQm8gPGxpdWJvMjAwOUBjbi5mdWppdHN1LmNvbT4gICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgKi8KLyogICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKi8K
-LyoqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioq
-KioqKioqKioqKioqKioqKioqKioqKioqKi8KCgojaW5jbHVkZSA8c3RkaW8uaD4KI2luY2x1
-ZGUgPHVuaXN0ZC5oPgojaW5jbHVkZSA8c3lzL3R5cGVzLmg+CiNpbmNsdWRlIDxzeXMvc3Rh
-dC5oPgojaW5jbHVkZSA8c3lzL3Vpby5oPgojaW5jbHVkZSA8ZmNudGwuaD4KI2luY2x1ZGUg
-PHN0ZGxpYi5oPgojaW5jbHVkZSA8c3RyaW5nLmg+CiNpbmNsdWRlIDxlcnJuby5oPgojaW5j
-bHVkZSA8c3RyaW5nLmg+CiNpbmNsdWRlIDxtYWxsb2MuaD4KCiNkZWZpbmUgQlVGRkVSU0la
-RSA4MTkyCgojaWZuZGVmIE9fRElSRUNUCiNkZWZpbmUgT19ESVJFQ1QJMDAwNDAwMDAJLyog
-ZGlyZWN0IGRpc2sgYWNjZXNzIGhpbnQgKi8KI2VuZGlmCgpzdGF0aWMgaW50IHJ3X3Rlc3Qo
-Y2hhciAqdHlwZSwgaW50IGZkLCBpbnQgbnVsbGZkLCBpbnQgemVyb2ZkLCBjaGFyICpzaXpl
-KTsKCgovKiBEaXJlY3QtaW8gVGVzdCAKICoKICogUmV0dXJuIFZhbHVlOgogKiAJMDogc3Vj
-Y2VlZAogKiAJMTogZmFpbAogKgogKiBQYXJzZSBjb21tYW5kIGxpbmUgYXJndW1lbnRzIAog
-KiBmbGFnOiAKICogCU9fRElSRUNULCBPX0RJUkVDVCB8IE9fU1lOQwogKiByd3R5cGU6CiAq
-IAlyZWFkLCByZWFkdiwgd3JpdGUsIHdyaXRldgogKiB0ZXN0IGZpbGUgbmFtZToKICogCXRl
-c3RydwogKiB0ZXN0IGZpbGUgc2l6ZToKICogCTAgfCAxSyB8IDRLIHwgNE0gfCA0RyB8IDRH
-KzEJCiAqLwppbnQgbWFpbihpbnQgYXJnYywgY2hhciAqYXJndltdKQp7CgljaGFyICpyd3R5
-cGU7CgljaGFyICp0ZXN0ZmlsZTsKCWNoYXIgKnNpemU7CglpbnQgZmQsIG51bGxmZCwgemVy
-b2ZkOwoJaW50IGZsYWcgPSBPX1JEV1I7CglpbnQgcmV0OwoKCWlmICgtLWFyZ2MgIT0gNCkg
-ewoJCWZwcmludGYoc3RkZXJyLCAiNCBhcmd1bWVudHMgYXJlIG5lZWRlZCFcbiIpOwoJCWV4
-aXQoMSk7Cgl9CgoJaWYgKCFzdHJjbXAoYXJndlsxXSwgIk9fRElSRUNUIikpCgkJZmxhZyB8
-PSBPX0RJUkVDVDsKCWVsc2UgaWYgKCFzdHJjbXAoYXJndlsxXSwgIk9fRElSRUNUIHwgT19T
-WU5DIikgfHwKCQkJCSFzdHJjbXAoYXJndlsxXSwgIk9fRElSRUNUfE9fU1lOQyIpKQoJCWZs
-YWcgfD0gT19ESVJFQ1QgfCBPX1NZTkM7CgoJcnd0eXBlID0gYXJndlsyXTsKCXRlc3RmaWxl
-ID0gYXJndlszXTsKCXNpemUgPSBhcmd2WzRdOwoKCWlmICgoZmQgPSBvcGVuKHRlc3RmaWxl
-LCBmbGFnKSkgPCAwKSB7CgkJZnByaW50ZihzdGRlcnIsICJDYW5ub3Qgb3BlbiB0aGUgdGVz
-dCBmaWxlISBcCgkJCQkJOiAlc1xuXG4iLCBzdHJlcnJvcihlcnJubykpOwoJCWV4aXQoMSk7
-Cgl9CglpZiAoKG51bGxmZCA9IG9wZW4oIi9kZXYvbnVsbCIsIE9fV1JPTkxZKSkgPCAwKSB7
-CgkJZnByaW50ZihzdGRlcnIsICJDYW5ub3Qgb3BlbiB0aGUgdGVzdCBmaWxlISBcCgkJCQkJ
-OiAlc1xuXG4iLCBzdHJlcnJvcihlcnJubykpOwoJCWV4aXQoMSk7Cgl9CglpZiAoKHplcm9m
-ZCA9IG9wZW4oIi9kZXYvemVybyIsIE9fUkRPTkxZKSkgPCAwKSB7CgkJZnByaW50ZihzdGRl
-cnIsICJDYW5ub3Qgb3BlbiB0aGUgdGVzdCBmaWxlISBcCgkJCQkJOiAlc1xuXG4iLCBzdHJl
-cnJvcihlcnJubykpOwoJCWV4aXQoMSk7Cgl9CgoJcmV0ID0gcndfdGVzdChyd3R5cGUsIGZk
-LCBudWxsZmQsIHplcm9mZCwgc2l6ZSk7CgoJY2xvc2UoZmQpOwoJY2xvc2UobnVsbGZkKTsK
-CWNsb3NlKHplcm9mZCk7CgoJaWYgKHJldCAhPSAwKQoJCXJldHVybiAxOwoJcmV0dXJuIDA7
-Cn0KCi8qIAogZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PSIgPj4gJFJFU1VMVEZJ
-TEUKICogcndfdGVzdCBpcyB1c2VkIHRvIHRlc3QgcmVhZC93cml0ZS9yZWFkdi93cml0ZXYu
-CiAqCiAqIEFyZ3VtZW50czoKICogCSAgdHlwZTogcmVhZC93cml0ZS9yZWFkdi93cml0ZXYK
-ICogCSAgICBmZDogcmVhZC93cml0ZSBmaWxlIGRlc2NyaXB0ZXIKICogCW51bGxmZDogd3Jp
-dGUgZmlsZSBkZXNjcmlwdGVyIGJpbmRlZCB0byAvZGV2L251bGwKICoJemVyb2ZkOiByZWFk
-IGZpbGUgZGVzY3JpcHRlciBiaW5kZWQgdG8gL2Rldi96ZXJvCiAqCSAgc2l6ZTogMCB8IDFL
-IHwgNEsgfCA0TSB8IDRHIHwgNEcrMQogKgogKiBSZXR1cm4gdmFsdWU6CiAqIAkgMDogc3Vj
-Y2VlZAogKiAJIDE6IHdyaXRlIGVycm9yCiAqIAktMTogcmVhZCBlcnJvcgogKi8Kc3RhdGlj
-IGludCByd190ZXN0KGNoYXIgKnR5cGUsIGludCBmZCwgaW50IG51bGxmZCwgaW50IHplcm9m
-ZCwgY2hhciAqc2l6ZSkKewoJc3NpemVfdCBuOwoJaW50IGlvdmNudDsKCWxvbmcgbGltaXQg
-PSAwOwoKCWlmKCFzdHJjbXAoc2l6ZSwgIjFLIikpIHsKCQlsaW1pdCA9IDEwMjQ7Cgl9IGVs
-c2UgaWYgKCFzdHJjbXAoc2l6ZSwgIjRLIikpIHsKCQlsaW1pdCA9IDEwMjQgKiA0OwoJfSBl
-bHNlIGlmICghc3RyY21wKHNpemUsICI0TSIpKSB7CgkJbGltaXQgPSAxMDI0ICogMTAyNCAq
-IDQ7Cgl9IGVsc2UgaWYgKCFzdHJjbXAoc2l6ZSwgIjRHIikpIHsKCQlsaW1pdCA9IDEwMjQg
-KiAxMDI0ICogNDsKCQlsaW1pdCAqPSAxMDI0OwoJfSBlbHNlIGlmICghc3RyY21wKHNpemUs
-ICI0RysxIikpIHsKCQlsaW1pdCA9IDEwMjQgKiAxMDI0ICogNDsKCQlsaW1pdCAqPSAxMDI0
-OwoJCWxpbWl0ICs9IDE7Cgl9CgoJaWYgKCFzdHJjbXAodHlwZSwgInJlYWQiKSkgewoJCWNo
-YXIgKmJ1ZjsKCgkJYnVmID0gdmFsbG9jKEJVRkZFUlNJWkUpOwoJCWlmICghYnVmKSB7CgkJ
-CXBlcnJvcigidmFsbG9jIGVycm9yIik7CgkJCWV4aXQoMSk7CgkJfQoJCW1lbXNldChidWYs
-IDAsIEJVRkZFUlNJWkUpOwoKCQl3aGlsZSAoKG4gPSByZWFkKGZkLCBidWYsIEJVRkZFUlNJ
-WkUpKSA+IDApIHsKCQkJaWYgKHdyaXRlKG51bGxmZCwgYnVmLCBuKSAhPSBuKSB7CgkJCQlm
-cHJpbnRmKHN0ZGVyciwgIndyaXRlIGVycm9yISA6XAoJCQkJCQkgJXNcbiIsIHN0cmVycm9y
-KGVycm5vKSk7CgkJCQlyZXR1cm4gMTsKCQkJfQoJCX0KCgkJaWYgKG4gPCAwKSB7CgkJCWZw
-cmludGYoc3RkZXJyLCAicmVhZCBlcnJvciA6ICVzXG5cbiIsIFwKCQkJCQkJCXN0cmVycm9y
-KGVycm5vKSk7CgkJCXJldHVybiAtMTsKCQl9CgoJfSBlbHNlIGlmICghc3RyY21wKHR5cGUs
-ICJ3cml0ZSIpKSB7CgkJY2hhciAqYnVmOwoJCWxvbmcgY291bnQgPSAwOwoKCQlidWYgPSB2
-YWxsb2MoQlVGRkVSU0laRSk7CgkJaWYgKCFidWYpIHsKCQkJcGVycm9yKCJ2YWxsb2MgZXJy
-b3IiKTsKCQkJZXhpdCgxKTsKCQl9CgkJbWVtc2V0KGJ1ZiwgMCwgQlVGRkVSU0laRSk7CgoJ
-CXdoaWxlICgobiA9IHJlYWQoemVyb2ZkLCBidWYsIEJVRkZFUlNJWkUpKSA+IDApIHsKCQkJ
-aWYgKHdyaXRlKGZkLCBidWYsIG4pICE9IG4pIHsKCQkJCWZwcmludGYoc3RkZXJyLCAid3Jp
-dGUgZXJyb3IhIDpcCgkJCQkJCSAlc1xuIiwgc3RyZXJyb3IoZXJybm8pKTsKCQkJCXJldHVy
-biAxOwoJCQl9CgkJCWNvdW50ICs9IG47CgkJCWlmIChjb3VudCA+PSBsaW1pdCkKCQkJCWJy
-ZWFrOwoJCX0KCgkJaWYgKGNvdW50IDwgbGltaXQpIHsKCQkJZnByaW50ZihzdGRlcnIsICJy
-ZWFkIGVycm9yIDogJXNcblxuIiwgXAoJCQkJCQkJc3RyZXJyb3IoZXJybm8pKTsKCQkJcmV0
-dXJuIC0xOwoJCX0KCgl9IGVsc2UgaWYgKCFzdHJjbXAodHlwZSwgInJlYWR2IikpIHsKCQlp
-b3ZjbnQgPSAyOwoJCWNoYXIgKmJ1Zltpb3ZjbnRdOwoJCXN0cnVjdCBpb3ZlYyBpb3ZbaW92
-Y250XTsKCQlpbnQgaTsKCgkJZm9yIChpID0gMDsgaSA8IGlvdmNudDsgaSsrKSB7CgkJCWJ1
-ZltpXSA9IHZhbGxvYyhCVUZGRVJTSVpFKTsKCQkJaWYgKCFidWZbaV0pIHsKCQkJCXBlcnJv
-cigidmFsbG9jIGVycm9yIik7CgkJCQlleGl0KDEpOwoJCQl9CgoJCQltZW1zZXQoYnVmW2ld
-LCAwLCBCVUZGRVJTSVpFKTsKCgkJCWlvdltpXS5pb3ZfYmFzZSA9IGJ1ZltpXTsKCQkJaW92
-W2ldLmlvdl9sZW4gPSBCVUZGRVJTSVpFOwoJCX0KCgkJd2hpbGUgKChuID0gcmVhZHYoZmQs
-IGlvdiwgaW92Y250KSkgPiAwKSB7CgkJCWlmICh3cml0ZXYobnVsbGZkLCBpb3YsIGlvdmNu
-dCkgIT0gCgkJCQkJKGlvdmNudCAqIEJVRkZFUlNJWkUpKSB7CgkJCQlmcHJpbnRmKHN0ZGVy
-ciwgIndyaXRldiBlcnJvciEgOlwKCQkJCQkJICVzXG4iLCBzdHJlcnJvcihlcnJubykpOwoJ
-CQkJcmV0dXJuIDE7CgkJCX0KCQl9CgoJCWlmIChuIDwgMCkgewoJCQlmcHJpbnRmKHN0ZGVy
-ciwgInJlYWR2IGVycm9yIDogJXNcblxuIiwgXAoJCQkJCQkJc3RyZXJyb3IoZXJybm8pKTsK
-CQkJcmV0dXJuIC0xOwoJCX0KCgl9IGVsc2UgaWYgKCFzdHJjbXAodHlwZSwgIndyaXRldiIp
-KSB7CgkJaW92Y250ID0gMjsKCQljaGFyICpidWZbaW92Y250XTsKCQlzdHJ1Y3QgaW92ZWMg
-aW92W2lvdmNudF07CgkJbG9uZyBjb3VudCA9IDA7CgkJaW50IGk7CgoJCWZvciAoaSA9IDA7
-IGkgPCBpb3ZjbnQ7IGkrKykgewoJCQlidWZbaV0gPSB2YWxsb2MoQlVGRkVSU0laRSk7CgkJ
-CWlmICghYnVmW2ldKSB7CgkJCQlwZXJyb3IoInZhbGxvYyBlcnJvciIpOwoJCQkJZXhpdCgx
-KTsKCQkJfQoKCQkJbWVtc2V0KGJ1ZltpXSwgMCwgQlVGRkVSU0laRSk7CgoJCQlpb3ZbaV0u
-aW92X2Jhc2UgPSBidWZbaV07CgkJCWlvdltpXS5pb3ZfbGVuID0gQlVGRkVSU0laRTsKCQl9
-CgoJCXdoaWxlICgobiA9IHJlYWR2KHplcm9mZCwgaW92LCBpb3ZjbnQpKSA+IDApIHsKCQkJ
-aWYgKHdyaXRldihmZCwgaW92LCBpb3ZjbnQpICE9IAoJCQkJCShpb3ZjbnQgKiBCVUZGRVJT
-SVpFKSkgewoJCQkJZnByaW50ZihzdGRlcnIsICJ3cml0ZXYgZXJyb3IhIDpcCgkJCQkJCSAl
-c1xuIiwgc3RyZXJyb3IoZXJybm8pKTsKCQkJCXJldHVybiAxOwoJCQl9CgkJCWNvdW50ICs9
-IG47CgkJCWlmIChjb3VudCA+PSBsaW1pdCkKCQkJCWJyZWFrOwoJCX0KCgkJaWYgKGNvdW50
-IDwgbGltaXQpIHsKCQkJZnByaW50ZihzdGRlcnIsICJyZWFkdiBlcnJvciA6ICVzXG5cbiIs
-IFwKCQkJCQkJCXN0cmVycm9yKGVycm5vKSk7CgkJCXJldHVybiAtMTsKCQl9CgoJfQoKCXJl
-dHVybiAwOwp9Cg==
---------------010401040301010600090107--
+-chris

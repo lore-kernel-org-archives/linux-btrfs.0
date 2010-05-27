@@ -1,98 +1,111 @@
-From: Hubert Kario <hka@qbs.com.pl>
-Subject: Re: A couple of questions
-Date: Thu, 27 May 2010 16:56:00 +0200
-Message-ID: <201005271656.00398.hka@qbs.com.pl>
-References: <201005271539.55644.paul.millar@desy.de>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: [GIT PULL] Btrfs updates
+Date: Thu, 27 May 2010 11:15:15 -0400
+Message-ID: <20100527151515.GA3835@think>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=utf-8
-Cc: linux-btrfs@vger.kernel.org
-To: Paul Millar <paul.millar@desy.de>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201005271539.55644.paul.millar@desy.de>
+Content-Type: text/plain; charset=us-ascii
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel <linux-kernel@vger.kernel.org>,
+	linux-fsdevel@vger.kernel.org
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thursday 27 May 2010 15:39:54 Paul Millar wrote:
-> Hi,
->=20
-> I've been looking at Btrfs and have a couple of naive questions that =
-don't
-> seem to be answered on the wiki or in the articles I've read on the
-> filesystem.
->=20
->=20
-> First: discovering a file's checksum value.
->=20
-> Here's the scenario: software is writing some data as a fresh file.  =
-This
-> software happens to know (a priori) the checksum of this data; for ex=
-ample,
-> a storage server receives the file's data and checksum independently.
->=20
-> I've some confidence that, once the data is stored in btrfs, any corr=
-uption
-> (from the storage fabric) will be spotted; however, the data may have
-> became corrupt before being stored (e.g., from the network).  To catc=
-h
-> this, the checksum of the stored data needs to be calculated and chec=
-ked.
->=20
-> One approach is to calculate the checksum (in user-space) after the d=
-ata is
-> stored.  This adds extra IO- and CPU-load and there's also the possib=
-ility
-> of false-negative results due to the filesystem cache (although btrfs=
- may
-> remove this risk).
->=20
-> Another approach would be to ask btrfs for the checksum.  It seems th=
-at
-> it's possible to combine multiple CRC-32C values to figure out the
-> checksum of the combined data [e.g., zlib's crc32_combine() function]=
-=2E=20
-> So, obtaining a file's checksum might be a light-weight operation.
->=20
-> Yet another possibility would be to push the desired checksum value (=
-via
-> fcntl?) and have btrfs compare the desired checksum with the file's a=
-ctual
-> checksum on close(2), failing that call if the checksums don't match.
->=20
-> Would any of this be possible (without an awful lot of work)?
+Hi everyone,
 
-IMO, if an application recieves data with checksum it can calculate the=
-=20
-checksum of data on the fly, as it writes it to the disk. It won't add =
-any=20
-additional IO to storage subsystem. It won't detect in-memory corruptio=
-n=20
-though, but if you want to be resilant to this, you should be looking a=
-t ECC=20
-RAM as subsequent checks can be affected by it to.
+The master branch of the btrfs-unstable tree:
 
-Second, you shouldn't tie application or network protocol to a CRC sche=
-me used=20
-by filesystem on server! Especially when there can be other CRC algorit=
-hms=20
-used, not only CRC-32C.
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
 
-If the checksum algorithm used by FS was set in stone, then userspace c=
-ould=20
-employ it somehow, but if there can be different CRCs used, I see no re=
-ason to=20
-allow the userspace to read them.
+Has the first round of btrfs updates for 2.6.35-rc.  I still have some
+pending fixes and patches queued up from other people, but this pull
+request has the two major features for this release.
 
+First we've got a large ENOSPC improvement from Yan Zheng.  He hit on
+all the difficult corners including space balancing, drive management,
+fsync logging and many others.  This has been in the works for sometime
+and it has held up very well in testing.
 
---=20
-Hubert Kario
-QBS - Quality Business Software
-02-656 Warszawa, ul. Ksawer=C3=B3w 30/85
-tel. +48 (22) 646-61-51, 646-74-24
-www.qbs.com.pl
+The second batch is O_DIRECT work from Josef Bacik.  We've had a few
+different iterations on ENOSPC floating on the btrfs list, and this one
+takes a much less complex road by hooking into the generic
+fs/direct-io.c code.  Josef added a hook for bio submission to
+fs/direct-io.c so that we could do proper block number transaction and
+properly do multi-device IO.
 
-System Zarz=C4=85dzania Jako=C5=9Bci=C4=85
-zgodny z norm=C4=85 ISO 9001:2000
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+There are small changes in here to fs/direct-io.c, mm/filemap.c and
+include/linux/fs.h.  These have been sent out for review a few times and
+commented on.  The filemap.c change allows O_DIRECT reads to fall back
+to buffered IO, which we need to support compression and do checksumming
+IOs < 1 page.
+
+My commits here are just integrating the two and fixing a few bugs in
+the result.
+
+Zheng Yan (13) commits (+4076/-2679):
+    Btrfs: Integrate metadata reservation with start_transaction (+678/-528)
+    Btrfs: Update metadata reservation for delayed allocation (+232/-415)
+    Btrfs: Shrink delay allocated space in a synchronized (+88/-121)
+    Btrfs: Introduce contexts for metadata reservation (+853/-385)
+    Btrfs: Link block groups of different raid types (+121/-55)
+    Btrfs: Metadata ENOSPC handling for balance (+1163/-747)
+    Btrfs: Metadata ENOSPC handling for tree log (+156/-128)
+    Btrfs: Metadata reservation for orphan inodes (+365/-66)
+    Btrfs: Pre-allocate space for data relocation (+92/-45)
+    Btrfs: Introduce global metadata reservation (+241/-76)
+    Btrfs: Fix block generation verification race (+1/-1)
+    Btrfs: Kill allocate_wait in space_info (+58/-76)
+    Btrfs: Kill init_btrfs_i() (+28/-36)
+
+Chris Mason (9) commits (+314/-80):
+    Btrfs: fix preallocation and nodatacow checks in O_DIRECT (+140/-16)
+    Btrfs: move O_DIRECT space reservation to btrfs_direct_IO (+8/-6)
+    Btrfs: don't walk around with task->state != TASK_RUNNING (+4/-3)
+    Btrfs: use async helpers for DIO write checksumming (+52/-17)
+    Btrfs: add more error checking to btrfs_dirty_inode (+13/-2)
+    Btrfs: avoid ENOSPC errors in btrfs_dirty_inode (+11/-3)
+    Btrfs: rework O_DIRECT enospc handling (+49/-30)
+    Btrfs: drop verbose enospc printk (+2/-0)
+    Btrfs: allow unaligned DIO (+35/-3)
+
+Josef Bacik (5) commits (+829/-134):
+    direct-io: add a hook for the fs to provide its own submit_bio function (+45/-8)
+    fs: allow short direct-io reads to be completed via buffered IO (+31/-5)
+    direct-io: do not merge logically non-contiguous requests (+18/-2)
+    Btrfs: add basic DIO read/write support (+631/-36)
+    Btrfs: do aio_write instead of write (+104/-83)
+
+Total: (27) commits
+
+ fs/btrfs/extent-tree.c  | 2317 ++++++++++++++++++++++++++++--------------------
+ fs/btrfs/relocation.c   | 1991 +++++++++++++++++++++++++----------------
+ fs/btrfs/inode.c        | 1797 +++++++++++++++++++++++++++++--------
+ fs/btrfs/file.c         |  304 +++---
+ fs/btrfs/tree-log.c     |  241 +++-
+ fs/btrfs/transaction.c  |  232 +++-
+ fs/btrfs/ioctl.c        |  206 ++--
+ fs/btrfs/disk-io.c      |  171 +--
+ fs/btrfs/ctree.h        |  163 ++-
+ fs/btrfs/ctree.c        |  109 +-
+ fs/btrfs/delayed-ref.c  |  101 --
+ fs/btrfs/extent_io.c    |   85 -
+ fs/btrfs/ordered-data.c |   82 +
+ fs/direct-io.c          |   62 +
+ mm/filemap.c            |   36 
+ fs/btrfs/super.c        |   30 
+ fs/btrfs/file-item.c    |   28 
+ fs/btrfs/inode-item.c   |   27 
+ fs/btrfs/transaction.h  |   24 
+ fs/btrfs/root-tree.c    |   23 
+ fs/btrfs/volumes.c      |   17 
+ fs/btrfs/extent_io.h    |   14 
+ fs/btrfs/xattr.c        |   12 
+ include/linux/fs.h      |   11 
+ fs/btrfs/ordered-data.h |    9 
+ fs/btrfs/tree-defrag.c  |    7 
+ fs/btrfs/disk-io.h      |    4 
+ fs/btrfs/delayed-ref.h  |    3 
+ fs/btrfs/btrfs_inode.h  |    3 
+ fs/btrfs/tree-log.h     |    2 
+ fs/btrfs/async-thread.c |    1 
+ 31 files changed, 5219 insertions(+), 2893 deletions(-)

@@ -1,50 +1,90 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: raid1 not reporting the right size
-Date: Thu, 27 May 2010 16:04:46 -0400
-Message-ID: <20100527200446.GJ25333@dhcp231-156.rdu.redhat.com>
-References: <alpine.DEB.1.10.1005271527320.19767@mtl.rackplans.net>
+From: Adrian von Bidder <avbidder@fortytwo.ch>
+Subject: Re: btrfsck: doesn't correct errors
+Date: Thu, 27 May 2010 22:02:43 +0200
+Message-ID: <201005272202.44266@fortytwo.ch>
+References: <201005271846.16832@fortytwo.ch> <20100527181553.GF25333@dhcp231-156.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: multipart/signed;
+  boundary="nextPart1419975.ya2Y4iN4UR";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
 Cc: linux-btrfs@vger.kernel.org
-To: gmack@innerfire.net
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <alpine.DEB.1.10.1005271527320.19767@mtl.rackplans.net>
+In-Reply-To: <20100527181553.GF25333@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 27, 2010 at 03:43:05PM -0400, gmack@innerfire.net wrote:
-> I'm trying to create a raid1 (mirrored) raid using two 1 Tb disks.
-> The result is something twice as large as it should be fore mirrored raid.
-> 
-> Any ideas? Linux version 2.6.34
-> 
-> # mkfs.btrfs -d raid1 -m raid1 /dev/sdb1 /dev/sdc1 -L fhome
-> 
-> WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
-> WARNING! - see http://btrfs.wiki.kernel.org before using
-> 
-> adding device /dev/sdc1 id 2
-> fs created label fhome on /dev/sdb1
->         nodesize 4096 leafsize 4096 sectorsize 4096 size 1.82TB
-> Btrfs Btrfs v0.19
-> 
-> # mount /dev/sdb1 /mnt/
-> # df -h /mnt/
-> Filesystem            Size  Used Avail Use% Mounted on
-> /dev/sdb1             1.9T   56K  1.9T   1% /mnt
-> 
-> # btrfs-show
-> failed to read /dev/sr0
-> Label: none  uuid: a2aa44b8-3168-480a-a155-d510e05853e7
->         Total devices 1 FS bytes used 617.45MB
->         devid    1 size 29.33GB used 6.79GB path /dev/sda2
-> 
-> Label: fhome  uuid: 128ddab5-224d-4f45-abc0-6a07d0f63d47
->         Total devices 2 FS bytes used 28.00KB
->         devid    2 size 931.51GB used 2.01GB path /dev/sdc1
->         devid    1 size 931.51GB used 2.03GB path /dev/sdb1
-> 
+--nextPart1419975.ya2Y4iN4UR
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 
-Used will show up as twice the amount that is actually used, instead of looking
-like you only have 1/2 the capacity.  Thanks,
+Thanks for taking the time to answer.
 
-Josef
+(And what I didn't say: as a pure user, for desktop and for the backup=20
+appliance mentioned, I'm using btrfs so far without any problems.  I'm not=
+=20
+hard on it on purpose, but stuff like failed wake-up after suspend to ram=20
+does happen occasionally on the laptop.)
+
+cheers
+=2D- vbi
+
+On Thursday 27 May 2010 20.15:53 Josef Bacik wrote:
+> On Thu, May 27, 2010 at 06:46:04PM +0200, Adrian von Bidder wrote:
+> > Heyho!
+> >=20
+> > (This is using btrfs from Debian's 2.6.32	2.6.32-3-kirkwood kernel (-9
+> > package; btrfs tools is v0.19-16-g075587c)
+> >=20
+> > A few observations about btrfsck:
+> >=20
+> > a btrfsck run on a 2T volume (4 disks) on a QNAP appliance (512M ram)
+> > got killed by Mr. OOM Killer.  Initially, I was quite surprised.  I'm
+> > only moderately surprised now since it might well be that I forgot to
+> > enable swap.
+>=20
+> Yes, btrfsck keeps the entire extent tree in memory, so the bigger the
+> fs, the more RAM it's going to use.
+>=20
+> > A btrfsck run (on a remote machine this time, with nbd) showed quite a
+> > few errors like:
+> > root 268 inode 34001 errors 2000
+> > root 268 inode 34002 errors 2000
+> > root 268 inode 34074 errors 2000
+> > root 268 inode 34102 errors 2000
+> > root 268 inode 34103 errors 2000
+> > root 268 inode 34104 errors 2000
+> > root 268 inode 34132 errors 2000
+> > root 268 inode 34133 errors 2000
+> >=20
+> > 2nd observation: am I supposed to know what this means?
+>=20
+> No not really, atm it's just for us developers.
+>=20
+> > And 3rd observation: btrfsck apparently doesn't correct this kind of
+> > error. Running btrfsck again still shows the error.
+>=20
+> Yeah btrfsck doesn't fix problems yet.  Thats being worked on.  Thanks,
+>=20
+> Josef
+
+=2D-=20
+Wenn Windows 98 die Antwort ist, wie bl=F6d ist dann die Frage gewesen?
+
+--nextPart1419975.ya2Y4iN4UR
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+Comment: get my key from http://fortytwo.ch/gpg/92082481
+
+iKcEABECAGcFAkv+z+NgGmh0dHA6Ly9mb3J0eXR3by5jaC9sZWdhbC9ncGcvZW1h
+aWwuMjAwMjA4MjI/dmVyc2lvbj0xLjUmbWQ1c3VtPTVkZmY4NjhkMTE4NDMyNzYw
+NzFiMjVlYjcwMDZkYTNlAAoJECqqZti935l6InoAn0IcqAPDNH8y9n5HiaWtm6J5
+50ySAJ48id7IP9D9yUYkskmVCkXwKhvtkA==
+=ABwe
+-----END PGP SIGNATURE-----
+
+--nextPart1419975.ya2Y4iN4UR--

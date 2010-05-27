@@ -1,65 +1,71 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: A couple of questions
-Date: Thu, 27 May 2010 12:00:44 -0400
-Message-ID: <20100527160044.GD3835@think>
-References: <201005271539.55644.paul.millar@desy.de>
+From: Adrian von Bidder <avbidder@fortytwo.ch>
+Subject: btrfsck: doesn't correct errors
+Date: Thu, 27 May 2010 18:46:04 +0200
+Message-ID: <201005271846.16832@fortytwo.ch>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Paul Millar <paul.millar@desy.de>
+Content-Type: multipart/signed;
+  boundary="nextPart1996695.VMZtEAD1OC";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201005271539.55644.paul.millar@desy.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 27, 2010 at 03:39:54PM +0200, Paul Millar wrote:
-> Hi,
-> 
-> I've been looking at Btrfs and have a couple of naive questions that don't 
-> seem to be answered on the wiki or in the articles I've read on the 
-> filesystem.
-> 
-> 
-> First: discovering a file's checksum value.
-> 
-> Here's the scenario: software is writing some data as a fresh file.  This 
-> software happens to know (a priori) the checksum of this data; for example, a 
-> storage server receives the file's data and checksum independently.
-> 
-> I've some confidence that, once the data is stored in btrfs, any corruption 
-> (from the storage fabric) will be spotted; however, the data may have became 
-> corrupt before being stored (e.g., from the network).  To catch this, the 
-> checksum of the stored data needs to be calculated and checked.
-> 
-> One approach is to calculate the checksum (in user-space) after the data is 
-> stored.  This adds extra IO- and CPU-load and there's also the possibility of 
-> false-negative results due to the filesystem cache (although btrfs may remove 
-> this risk).
-> 
-> Another approach would be to ask btrfs for the checksum.  It seems that it's 
-> possible to combine multiple CRC-32C values to figure out the checksum of the 
-> combined data [e.g., zlib's crc32_combine() function].  So, obtaining a file's 
-> checksum might be a light-weight operation.
-> 
-> Yet another possibility would be to push the desired checksum value (via 
-> fcntl?) and have btrfs compare the desired checksum with the file's actual 
-> checksum on close(2), failing that call if the checksums don't match.
-> 
-> Would any of this be possible (without an awful lot of work)?
+--nextPart1996695.VMZtEAD1OC
+Content-Type: Text/Plain;
+  charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
 
-I'd suggest that you look at T10 DIF and DIX, which are targeted at
-exactly this kind of thing.  We're looking at integrating dif/dix into
-btrfs at some point.
+Heyho!
 
-> 
-> 
-> 
-> Second: adding support for Adler32?
-> 
-> Looking at the unstable git repo, it looks like there's currently support for 
-> only the CRC-32C checksum algorithm.  Is this correct?  If so, is anyone 
-> working on adding support for Adler32?
+(This is using btrfs from Debian's 2.6.32	2.6.32-3-kirkwood kernel (-9=20
+package; btrfs tools is v0.19-16-g075587c)
 
-We haven't looked at adler32.  crc32c was chosen because it is supported
-in hardware by recent intel CPUs.
+A few observations about btrfsck:
 
--chris
+a btrfsck run on a 2T volume (4 disks) on a QNAP appliance (512M ram) got=20
+killed by Mr. OOM Killer.  Initially, I was quite surprised.  I'm only=20
+moderately surprised now since it might well be that I forgot to enable=20
+swap.
+
+A btrfsck run (on a remote machine this time, with nbd) showed quite a few=
+=20
+errors like:
+root 268 inode 34001 errors 2000
+root 268 inode 34002 errors 2000
+root 268 inode 34074 errors 2000
+root 268 inode 34102 errors 2000
+root 268 inode 34103 errors 2000
+root 268 inode 34104 errors 2000
+root 268 inode 34132 errors 2000
+root 268 inode 34133 errors 2000
+
+2nd observation: am I supposed to know what this means?
+
+And 3rd observation: btrfsck apparently doesn't correct this kind of error.=
+ =20
+Running btrfsck again still shows the error.
+
+cheers
+=2D- vbi
+
+
+=2D-=20
+Could this mail be a fake? (Answer: No! - http://fortytwo.ch/gpg/intro)
+
+--nextPart1996695.VMZtEAD1OC
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+Comment: get my key from http://fortytwo.ch/gpg/92082481
+
+iKcEABECAGcFAkv+oc1gGmh0dHA6Ly9mb3J0eXR3by5jaC9sZWdhbC9ncGcvZW1h
+aWwuMjAwMjA4MjI/dmVyc2lvbj0xLjUmbWQ1c3VtPTVkZmY4NjhkMTE4NDMyNzYw
+NzFiMjVlYjcwMDZkYTNlAAoJECqqZti935l6zX8An3UBOHMrtYLDhPDabKOgPfkh
+tWn1AJ921LqRo+vQt/3WBEv0/gyr0VIfpQ==
+=VZvI
+-----END PGP SIGNATURE-----
+
+--nextPart1996695.VMZtEAD1OC--

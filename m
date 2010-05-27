@@ -1,17 +1,47 @@
-From: Christoph Hellwig <hch@infradead.org>
-Subject: Re: [PATCH] btrfs: should add a permission check for setfacl
-Date: Thu, 27 May 2010 15:19:23 -0400
-Message-ID: <20100527191923.GA20439@infradead.org>
-References: <4BF1E458.7060500@cn.fujitsu.com> <20100520083340.GC11920@infradead.org> <4BFA1F03.6030909@cn.fujitsu.com>
+From: gmack@innerfire.net
+Subject: raid1 not reporting the right size
+Date: Thu, 27 May 2010 15:43:05 -0400 (EDT)
+Message-ID: <alpine.DEB.1.10.1005271527320.19767@mtl.rackplans.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Christoph Hellwig <hch@infradead.org>,
-	"Yan, Zheng" <zheng.yan@oracle.com>, linux-btrfs@vger.kernel.org,
-	chris.mason@oracle.com, xfs@oss.sgi.com
-To: Shi Weihua <shiwh@cn.fujitsu.com>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4BFA1F03.6030909@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks!  I've commit both patches.
+I'm trying to create a raid1 (mirrored) raid using two 1 Tb disks.
+The result is something twice as large as it should be fore mirrored raid.
 
+Any ideas? Linux version 2.6.34
+
+# mkfs.btrfs -d raid1 -m raid1 /dev/sdb1 /dev/sdc1 -L fhome
+
+WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
+
+adding device /dev/sdc1 id 2
+fs created label fhome on /dev/sdb1
+        nodesize 4096 leafsize 4096 sectorsize 4096 size 1.82TB
+Btrfs Btrfs v0.19
+
+# mount /dev/sdb1 /mnt/
+# df -h /mnt/
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/sdb1             1.9T   56K  1.9T   1% /mnt
+
+# btrfs-show
+failed to read /dev/sr0
+Label: none  uuid: a2aa44b8-3168-480a-a155-d510e05853e7
+        Total devices 1 FS bytes used 617.45MB
+        devid    1 size 29.33GB used 6.79GB path /dev/sda2
+
+Label: fhome  uuid: 128ddab5-224d-4f45-abc0-6a07d0f63d47
+        Total devices 2 FS bytes used 28.00KB
+        devid    2 size 931.51GB used 2.01GB path /dev/sdc1
+        devid    1 size 931.51GB used 2.03GB path /dev/sdb1
+
+--
+Gerhard Mack
+
+gmack@innerfire.net
+
+<>< As a computer I find your faith in technology amusing.

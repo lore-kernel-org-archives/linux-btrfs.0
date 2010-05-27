@@ -1,71 +1,43 @@
-From: Adrian von Bidder <avbidder@fortytwo.ch>
-Subject: btrfsck: doesn't correct errors
-Date: Thu, 27 May 2010 18:46:04 +0200
-Message-ID: <201005271846.16832@fortytwo.ch>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Subject: Re: [GIT PULL] Btrfs updates
+Date: Thu, 27 May 2010 10:18:04 -0700 (PDT)
+Message-ID: <alpine.LFD.2.00.1005271014570.3689@i5.linux-foundation.org>
+References: <20100527151515.GA3835@think>
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart1996695.VMZtEAD1OC";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: linux-btrfs@vger.kernel.org,
+	linux-kernel <linux-kernel@vger.kernel.org>,
+	linux-fsdevel@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20100527151515.GA3835@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart1996695.VMZtEAD1OC
-Content-Type: Text/Plain;
-  charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
-
-Heyho!
-
-(This is using btrfs from Debian's 2.6.32	2.6.32-3-kirkwood kernel (-9=20
-package; btrfs tools is v0.19-16-g075587c)
-
-A few observations about btrfsck:
-
-a btrfsck run on a 2T volume (4 disks) on a QNAP appliance (512M ram) got=20
-killed by Mr. OOM Killer.  Initially, I was quite surprised.  I'm only=20
-moderately surprised now since it might well be that I forgot to enable=20
-swap.
-
-A btrfsck run (on a remote machine this time, with nbd) showed quite a few=
-=20
-errors like:
-root 268 inode 34001 errors 2000
-root 268 inode 34002 errors 2000
-root 268 inode 34074 errors 2000
-root 268 inode 34102 errors 2000
-root 268 inode 34103 errors 2000
-root 268 inode 34104 errors 2000
-root 268 inode 34132 errors 2000
-root 268 inode 34133 errors 2000
-
-2nd observation: am I supposed to know what this means?
-
-And 3rd observation: btrfsck apparently doesn't correct this kind of error.=
- =20
-Running btrfsck again still shows the error.
-
-cheers
-=2D- vbi
 
 
-=2D-=20
-Could this mail be a fake? (Answer: No! - http://fortytwo.ch/gpg/intro)
+On Thu, 27 May 2010, Chris Mason wrote:
+> 
+>  fs/btrfs/extent-tree.c  | 2317 ++++++++++++++++++++++++++++--------------------
+>  fs/btrfs/relocation.c   | 1991 +++++++++++++++++++++++++----------------
+>  fs/btrfs/inode.c        | 1797 +++++++++++++++++++++++++++++--------
+>  fs/btrfs/file.c         |  304 +++---
+>  fs/btrfs/tree-log.c     |  241 +++-
+> ...
 
---nextPart1996695.VMZtEAD1OC
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
+What kind of bogus diffstat is this? 
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-Comment: get my key from http://fortytwo.ch/gpg/92082481
+Don't do that. I cannot compare your bogus diffstat with what I get, 
+because it's just random noise. You've apparently sorted it by size of the 
+damage, but the numbers are total crap too. That is _not_ the actual size 
+of the changes at all.
 
-iKcEABECAGcFAkv+oc1gGmh0dHA6Ly9mb3J0eXR3by5jaC9sZWdhbC9ncGcvZW1h
-aWwuMjAwMjA4MjI/dmVyc2lvbj0xLjUmbWQ1c3VtPTVkZmY4NjhkMTE4NDMyNzYw
-NzFiMjVlYjcwMDZkYTNlAAoJECqqZti935l6zX8An3UBOHMrtYLDhPDabKOgPfkh
-tWn1AJ921LqRo+vQt/3WBEv0/gyr0VIfpQ==
-=VZvI
------END PGP SIGNATURE-----
+I suspect you have some script that adds up all the patches, but that's 
+wrong. If a subsequent patch changes the things that an earlier patch has 
+done, then the numbers don't just add up.
 
---nextPart1996695.VMZtEAD1OC--
+And if the diffstat doesn't match what I get when I pull, then my reaction 
+inevitably is "ok, that's not what they asked me to pull, so I'll just 
+reject it out-of-hand". So don't play games with diffstats - that just 
+means that things won't get pulled.
+
+		Linus

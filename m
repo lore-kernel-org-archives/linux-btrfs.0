@@ -1,47 +1,26 @@
-From: gmack@innerfire.net
-Subject: raid1 not reporting the right size
-Date: Thu, 27 May 2010 15:43:05 -0400 (EDT)
-Message-ID: <alpine.DEB.1.10.1005271527320.19767@mtl.rackplans.net>
+From: Chris Ball <cjb@laptop.org>
+Subject: Re: raid1 not reporting the right size
+Date: Thu, 27 May 2010 15:51:33 -0400
+Message-ID: <m3hblti0my.fsf@pullcord.laptop.org>
+References: <alpine.DEB.1.10.1005271527320.19767@mtl.rackplans.net>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: gmack@innerfire.net
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <alpine.DEB.1.10.1005271527320.19767@mtl.rackplans.net>
+	(gmack@innerfire.net's message of "Thu, 27 May 2010 15:43:05 -0400
+	(EDT)")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm trying to create a raid1 (mirrored) raid using two 1 Tb disks.
-The result is something twice as large as it should be fore mirrored raid.
+Hi,
 
-Any ideas? Linux version 2.6.34
+   > I'm trying to create a raid1 (mirrored) raid using two 1 Tb
+   > disks.  The result is something twice as large as it should be
+   > fore mirrored raid.
 
-# mkfs.btrfs -d raid1 -m raid1 /dev/sdb1 /dev/sdc1 -L fhome
+https://btrfs.wiki.kernel.org/index.php/FAQ#Why_does_df_show_incorrect_free_space_for_my_RAID_volume.3F
 
-WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
-
-adding device /dev/sdc1 id 2
-fs created label fhome on /dev/sdb1
-        nodesize 4096 leafsize 4096 sectorsize 4096 size 1.82TB
-Btrfs Btrfs v0.19
-
-# mount /dev/sdb1 /mnt/
-# df -h /mnt/
-Filesystem            Size  Used Avail Use% Mounted on
-/dev/sdb1             1.9T   56K  1.9T   1% /mnt
-
-# btrfs-show
-failed to read /dev/sr0
-Label: none  uuid: a2aa44b8-3168-480a-a155-d510e05853e7
-        Total devices 1 FS bytes used 617.45MB
-        devid    1 size 29.33GB used 6.79GB path /dev/sda2
-
-Label: fhome  uuid: 128ddab5-224d-4f45-abc0-6a07d0f63d47
-        Total devices 2 FS bytes used 28.00KB
-        devid    2 size 931.51GB used 2.01GB path /dev/sdc1
-        devid    1 size 931.51GB used 2.03GB path /dev/sdb1
-
---
-Gerhard Mack
-
-gmack@innerfire.net
-
-<>< As a computer I find your faith in technology amusing.
+-- 
+Chris Ball   <cjb@laptop.org>
+One Laptop Per Child

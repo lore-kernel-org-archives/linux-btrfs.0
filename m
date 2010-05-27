@@ -1,58 +1,53 @@
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Subject: Re: [GIT PULL] Btrfs updates
-Date: Thu, 27 May 2010 10:47:22 -0700 (PDT)
-Message-ID: <alpine.LFD.2.00.1005271036400.3689@i5.linux-foundation.org>
-References: <20100527151515.GA3835@think> <alpine.LFD.2.00.1005271014570.3689@i5.linux-foundation.org> <20100527173220.GG3835@think>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: btrfsck: doesn't correct errors
+Date: Thu, 27 May 2010 14:15:53 -0400
+Message-ID: <20100527181553.GF25333@dhcp231-156.rdu.redhat.com>
+References: <201005271846.16832@fortytwo.ch>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: linux-btrfs@vger.kernel.org,
-	linux-kernel <linux-kernel@vger.kernel.org>,
-	linux-fsdevel@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20100527173220.GG3835@think>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Adrian von Bidder <avbidder@fortytwo.ch>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201005271846.16832@fortytwo.ch>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On Thu, 27 May 2010, Chris Mason wrote:
+On Thu, May 27, 2010 at 06:46:04PM +0200, Adrian von Bidder wrote:
+> Heyho!
 > 
-> # git diff v2.6.34 HEAD | diffstat
+> (This is using btrfs from Debian's 2.6.32	2.6.32-3-kirkwood kernel (-9 
+> package; btrfs tools is v0.19-16-g075587c)
+> 
+> A few observations about btrfsck:
+> 
+> a btrfsck run on a 2T volume (4 disks) on a QNAP appliance (512M ram) got 
+> killed by Mr. OOM Killer.  Initially, I was quite surprised.  I'm only 
+> moderately surprised now since it might well be that I forgot to enable 
+> swap.
+> 
 
-That still has the potential to be wrong (but got the numbers I expected 
-this time). It will be wrong in several cases:
+Yes, btrfsck keeps the entire extent tree in memory, so the bigger the fs, the
+more RAM it's going to use.
 
- - "diffstat" has some random common prefix removal logic that I've never 
-   figured out the exact rules for.
+> A btrfsck run (on a remote machine this time, with nbd) showed quite a few 
+> errors like:
+> root 268 inode 34001 errors 2000
+> root 268 inode 34002 errors 2000
+> root 268 inode 34074 errors 2000
+> root 268 inode 34102 errors 2000
+> root 268 inode 34103 errors 2000
+> root 268 inode 34104 errors 2000
+> root 268 inode 34132 errors 2000
+> root 268 inode 34133 errors 2000
+> 
+> 2nd observation: am I supposed to know what this means?
+> 
 
-   You don't happen to see it, because you actually had changes outside of 
-   fs/btrfs (so there was no common prefix to worry about), but if 
-   everything had been inside fs/btrfs, then at least some versions of 
-   diffstat will just remove that whole thing as common, and talk about 
-   changes to 'ioctl.c' rather than 'fs/btrfs/ioctl.c'
+No not really, atm it's just for us developers.
 
-   (And no, I'm not entirely sure what triggers it. It might only happen 
-   for certain patterns and/or certain versions of diffstat, but it's a 
-   reason to avoid diffstat in general, or at least use "-p1" to make it 
-   reliable)
+> And 3rd observation: btrfsck apparently doesn't correct this kind of error.  
+> Running btrfsck again still shows the error.
+> 
 
- - it will do the wrong thing for renames and copies.
+Yeah btrfsck doesn't fix problems yet.  Thats being worked on.  Thanks,
 
- - it doesn't give the summary that pull-request does, which talks about 
-   new, deleted and file-mode-changed files.
-
-So just do
-
-	git diff --stat --summary -M v2.6.34..HEAD
-
-instead, which gets all the above cases right. Also, you don't even need 
-to remember where you started - you might as well use git to do that too, 
-and write it as (assuming you have an 'origin' branch that points to the 
-upstream tree):
-
-	git diff --stat --summary -M origin...HEAD
-
-(note the *three* dots: that says that you should diff against the common 
-ancestor, so git will just figure out where you started on its own).
-
-		Linus
+Josef

@@ -1,22 +1,42 @@
-From: trentbuck@gmail.com (Trent W. Buck)
-Subject: Re: btrfsck: doesn't correct errors
-Date: Fri, 28 May 2010 11:57:49 +1000
-Message-ID: <87iq68n5ya.fsf@cybersource.com.au>
-References: <201005271846.16832@fortytwo.ch>
-	<20100527181553.GF25333@dhcp231-156.rdu.redhat.com>
+From: Dan Carpenter <error27@gmail.com>
+Subject: dereferencing freed variable in "add basic DIO read/write support"
+Date: Fri, 28 May 2010 12:33:59 +0200
+Message-ID: <20100528103359.GW22515@bicker>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Josef Bacik <josef@redhat.com> writes:
+Hello,
 
->> a btrfsck run on a 2T volume [with] 512M ram got [OOM killed].
->
-> Yes, btrfsck keeps the entire extent tree in memory, so the bigger the
-> fs, the more RAM it's going to use.
+Smatch complains about a possible freed pointer deref introduced by:
+4b46fce2334 "Btrfs: add basic DIO read/write support".  Could you take a
+look?
 
-Is that an inherent property of btrfsck, or do you intend to address it
-sometime before btrfs is labelled "production ready"?
+fs/btrfs/inode.c +5716 btrfs_submit_direct(79)
+  5705  out_err:
+  5706          kfree(dip->csums);
+  5707          kfree(dip);
+                ^^^^^^^^^^^
 
+	dip is freed here.
+
+  5708  free_ordered:
+  5709          /*
+  5710           * If this is a write, we need to clean up the reserved space and kill
+  5711           * the ordered extent.
+  5712           */
+  5713          if (write) {
+  5714                  struct btrfs_ordered_extent *ordered;
+  5715                  ordered = btrfs_lookup_ordered_extent(inode,
+  5716				dip->logical_offset);
+                                ^^^^^^^^^^^^^^^^^^^
+
+	dereferenced here.  Actually, dip could also be null here if the
+	kmalloc failed()
+
+
+regards,
+dan carpenter

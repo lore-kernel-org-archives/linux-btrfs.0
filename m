@@ -1,46 +1,54 @@
-From: Dan Magenheimer <dan.magenheimer@oracle.com>
-Subject: [PATCH V2 7/7] Cleancache (was Transcendent Memory): ocfs2 hook
-Date: Fri, 28 May 2010 10:37:31 -0700
-Message-ID: <20100528173731.GA20227__12667.936521075$1275068449$gmane$org@ca-server1.us.oracle.com>
+From: gmack@innerfire.net
+Subject: linux 2.6.34 raid1 btrfs weird mounting issue
+Date: Fri, 28 May 2010 14:45:27 -0400 (EDT)
+Message-ID: <alpine.DEB.1.10.1005281439280.26232@mtl.rackplans.net>
+References: <alpine.DEB.1.10.1005271527320.19767@mtl.rackplans.net> <m3hblti0my.fsf@pullcord.laptop.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: chris.mason@oracle.com, viro@zeniv.linux.org.uk,
-	akpm@linux-foundation.org, adilger@sun.com, tytso@mit.edu,
-	mfasheh@suse.com, joel.becker@oracle.com, matthew@wil.cx,
-	linux-btrfs@vger.
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <m3hblti0my.fsf@pullcord.laptop.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[PATCH V2 7/7] Cleancache (was Transcendent Memory): ocfs2 hook
+I had my raid set to mount by uuid but that randomly doesn't work so I 
+changed to mounting by the first partition in the raid.. that worked but 
+on the next reboot it failed.  Changing the mount to the second partition 
+worked until the next reboot when I needed it to change it back to the 
+first.  Each change seems to last for one reboot.
 
-Filesystems must explicitly enable cleancache.  Ocfs2 is
-currently the only user of the clustered filesystem
-interface but nevertheless, the cleancache hooks in the
-VFS layer are sufficient for ocfs2.
 
-Signed-off-by: Dan Magenheimer <dan.magenheimer@oracle.com>
-Acked-by: Joel Becker <joel.becker@oracle.com>
+# mount /dev/sdb1  /home
+mount: wrong fs type, bad option, bad superblock on /dev/sdb1,
+       missing codepage or helper program, or other error
+       In some cases useful info is found in syslog - try
+       dmesg | tail  or so
 
-Diffstat:
- super.c                                  |    3 +++
- 1 file changed, 3 insertions(+)
+# mount /dev/sdb1  /home
+mount: wrong fs type, bad option, bad superblock on /dev/sdb1,
+       missing codepage or helper program, or other error
+       In some cases useful info is found in syslog - try
+       dmesg | tail  or so
 
---- linux-2.6.34/fs/ocfs2/super.c	2010-05-16 15:17:36.000000000 -0600
-+++ linux-2.6.34-cleancache/fs/ocfs2/super.c	2010-05-24 12:14:44.000000000 -0600
-@@ -42,6 +42,7 @@
- #include <linux/seq_file.h>
- #include <linux/quotaops.h>
- #include <linux/smp_lock.h>
-+#include <linux/cleancache.h>
- 
- #define MLOG_MASK_PREFIX ML_SUPER
- #include <cluster/masklog.h>
-@@ -2233,6 +2234,8 @@ static int ocfs2_initialize_super(struct
- 		mlog_errno(status);
- 		goto bail;
- 	}
-+	sb->cleancache_poolid =
-+		cleancache_init_shared_fs((char *)&uuid_net_key, PAGE_SIZE);
- 
- bail:
- 	mlog_exit(status);
+mount /dev/sdc1  /home
+(worked)
+# btrfs-show
+failed to read /dev/sr0
+Label: none  uuid: a2aa44b8-3168-480a-a155-d510e05853e7
+        Total devices 1 FS bytes used 5.46GB
+        devid    1 size 29.33GB used 13.29GB path /dev/sda2
+
+Label: fhome  uuid: 128ddab5-224d-4f45-abc0-6a07d0f63d47
+        Total devices 2 FS bytes used 8.24GB
+        devid    1 size 931.51GB used 21.03GB path /dev/sdb1
+        devid    2 size 931.51GB used 21.01GB path /dev/sdc1
+
+
+	Gerhard
+
+
+--
+Gerhard Mack
+
+gmack@innerfire.net
+
+<>< As a computer I find your faith in technology amusing.

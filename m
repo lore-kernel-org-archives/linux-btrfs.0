@@ -1,21 +1,22 @@
-From: "K. Richard Pixley" <rich@noir.com>
-Subject: Re: Confused by performance
-Date: Thu, 27 May 2010 18:45:08 -0700
-Message-ID: <4BFF2024.3040509@noir.com>
-References: <4BFAEABD.2070700@noir.com>
+From: trentbuck@gmail.com (Trent W. Buck)
+Subject: Re: btrfsck: doesn't correct errors
+Date: Fri, 28 May 2010 11:57:49 +1000
+Message-ID: <87iq68n5ya.fsf@cybersource.com.au>
+References: <201005271846.16832@fortytwo.ch>
+	<20100527181553.GF25333@dhcp231-156.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4BFAEABD.2070700@noir.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just as a followup, my problem appears to be hardware related.  It's not 
-clear yet whether it's a strange failure mode or a configuration snafoo, 
-disk or controller, but elsewhere I'm seeing a btfs single disk 
-performance penalty more like 2% over ext[34] which seems completely 
-reasonable.
+Josef Bacik <josef@redhat.com> writes:
 
-Sorry for the panic.
+>> a btrfsck run on a 2T volume [with] 512M ram got [OOM killed].
+>
+> Yes, btrfsck keeps the entire extent tree in memory, so the bigger the
+> fs, the more RAM it's going to use.
 
---rich
+Is that an inherent property of btrfsck, or do you intend to address it
+sometime before btrfs is labelled "production ready"?
+

@@ -1,8 +1,7 @@
 From: Dan Magenheimer <dan.magenheimer@oracle.com>
-Subject: [PATCH V2 1/7] Cleancache (was Transcendent Memory):
-	cleancache_poolid in superblock
-Date: Fri, 28 May 2010 10:35:30 -0700
-Message-ID: <20100528173530.GA12186__20067.1805687763$1275068448$gmane$org@ca-server1.us.oracle.com>
+Subject: [PATCH V2 7/7] Cleancache (was Transcendent Memory): ocfs2 hook
+Date: Fri, 28 May 2010 10:37:31 -0700
+Message-ID: <20100528173731.GA20227__12667.936521075$1275068449$gmane$org@ca-server1.us.oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: chris.mason@oracle.com, viro@zeniv.linux.org.uk,
@@ -12,28 +11,36 @@ To: chris.mason@oracle.com, viro@zeniv.linux.org.uk,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[PATCH V2 1/7] Cleancache (was Transcendent Memory): cleancache_poolid in superblock
+[PATCH V2 7/7] Cleancache (was Transcendent Memory): ocfs2 hook
 
-Add cleancache_poolid to superblock structure... not tied
-to CONFIG_CLEANCACHE so as to avoid unnecessary clutter.
+Filesystems must explicitly enable cleancache.  Ocfs2 is
+currently the only user of the clustered filesystem
+interface but nevertheless, the cleancache hooks in the
+VFS layer are sufficient for ocfs2.
 
 Signed-off-by: Dan Magenheimer <dan.magenheimer@oracle.com>
+Acked-by: Joel Becker <joel.becker@oracle.com>
 
 Diffstat:
- fs.h                                     |    5 +++++
- 1 file changed, 5 insertions(+)
+ super.c                                  |    3 +++
+ 1 file changed, 3 insertions(+)
 
---- linux-2.6.34/include/linux/fs.h	2010-05-16 15:17:36.000000000 -0600
-+++ linux-2.6.34-cleancache/include/linux/fs.h	2010-05-24 12:14:44.000000000 -0600
-@@ -1383,6 +1383,11 @@ struct super_block {
- 	 * generic_show_options()
- 	 */
- 	char *s_options;
-+
-+	/*
-+	 * Saved pool identifier for cleancache (-1 means none)
-+	 */
-+	int cleancache_poolid;
- };
+--- linux-2.6.34/fs/ocfs2/super.c	2010-05-16 15:17:36.000000000 -0600
++++ linux-2.6.34-cleancache/fs/ocfs2/super.c	2010-05-24 12:14:44.000000000 -0600
+@@ -42,6 +42,7 @@
+ #include <linux/seq_file.h>
+ #include <linux/quotaops.h>
+ #include <linux/smp_lock.h>
++#include <linux/cleancache.h>
  
- extern struct timespec current_fs_time(struct super_block *sb);
+ #define MLOG_MASK_PREFIX ML_SUPER
+ #include <cluster/masklog.h>
+@@ -2233,6 +2234,8 @@ static int ocfs2_initialize_super(struct
+ 		mlog_errno(status);
+ 		goto bail;
+ 	}
++	sb->cleancache_poolid =
++		cleancache_init_shared_fs((char *)&uuid_net_key, PAGE_SIZE);
+ 
+ bail:
+ 	mlog_exit(status);

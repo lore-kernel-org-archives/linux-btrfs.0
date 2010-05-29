@@ -1,37 +1,36 @@
 From: Dan Carpenter <error27@gmail.com>
-Subject: [patch 3/11] btrfs: handle kzalloc() failure in open_ctree()
-Date: Sat, 29 May 2010 11:43:07 +0200
-Message-ID: <20100529094307.GD5483@bicker>
+Subject: [patch 4/11] btrfs: btrfs_read_fs_root_no_name() returns ERR_PTRs
+Date: Sat, 29 May 2010 11:44:10 +0200
+Message-ID: <20100529094410.GE5483@bicker>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: Yan Zheng <zheng.yan@oracle.com>, Josef Bacik <josef@redhat.com>,
 	Jens Axboe <jens.axboe@oracle.com>,
 	Christoph Hellwig <hch@lst.de>,
-	Chris Mason <chris.mason@oracle.com>,
-	kernel-janitors@vger.kernel.org
+	kernel-janitors@vger.kernel.org,
+	Chris Mason <chris.mason@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Unwind and return -ENOMEM if the allocation fails here.
+btrfs_read_fs_root_no_name() returns ERR_PTRs on error so I added a
+check for that.  It's not clear to me if it can also return NULL
+pointers or not so I left the original NULL pointer check as is.
 
 Signed-off-by: Dan Carpenter <error27@gmail.com>
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index f3b287c..73895ba 100644
+index 73895ba..34f7c37 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -1941,8 +1941,11 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 		     btrfs_level_size(tree_root,
- 				      btrfs_super_log_root_level(disk_super));
+@@ -1985,6 +1985,10 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 	fs_info->fs_root = btrfs_read_fs_root_no_name(fs_info, &location);
+ 	if (!fs_info->fs_root)
+ 		goto fail_trans_kthread;
++	if (IS_ERR(fs_info->fs_root)) {
++		err = PTR_ERR(fs_info->fs_root);
++		goto fail_trans_kthread;
++	}
  
--		log_tree_root = kzalloc(sizeof(struct btrfs_root),
--						      GFP_NOFS);
-+		log_tree_root = kzalloc(sizeof(struct btrfs_root), GFP_NOFS);
-+		if (!log_tree_root) {
-+			err = -ENOMEM;
-+			goto fail_trans_kthread;
-+		}
- 
- 		__setup_root(nodesize, leafsize, sectorsize, stripesize,
- 			     log_tree_root, fs_info, BTRFS_TREE_LOG_OBJECTID);
+ 	if (!(sb->s_flags & MS_RDONLY)) {
+ 		down_read(&fs_info->cleanup_work_sem);

@@ -1,97 +1,61 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Subject: Re: linux 2.6.34 raid1 btrfs weird mounting issue
-Date: Fri, 28 May 2010 21:06:18 +0200
-Message-ID: <201005282106.19055.kreijack@libero.it>
-References: <alpine.DEB.1.10.1005271527320.19767@mtl.rackplans.net> <m3hblti0my.fsf@pullcord.laptop.org> <alpine.DEB.1.10.1005281439280.26232@mtl.rackplans.net>
-Reply-To: kreijack@libero.it
+From: Dan Carpenter <error27@gmail.com>
+Subject: potential null derefs in fs/btrfs/relocation.c
+Date: Sat, 29 May 2010 11:39:55 +0200
+Message-ID: <20100529093955.GA5483@bicker>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
+Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: gmack@innerfire.net
+To: zheng.yan@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <alpine.DEB.1.10.1005281439280.26232@mtl.rackplans.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Gerhard
+Hi hi,
 
-On Friday, May 28, 2010, gmack@innerfire.net wrote:
-> I had my raid set to mount by uuid but that randomly doesn't work so I 
-> changed to mounting by the first partition in the raid.. that worked but 
-> on the next reboot it failed.  Changing the mount to the second partition 
-> worked until the next reboot when I needed it to change it back to the 
-> first.  Each change seems to last for one reboot.
+Still going through some more smatch stuff and there are two potential
+null dereferences in fs/btrfs/relocation.c
 
+This was introduced by 3fd0a5585e: "Btrfs: Metadata ENOSPC handling for
+balance"
 
-Do you perform a "scan" before mounting the first time (after a reboot) a 
-multivolume btrfs filesystem ?
-On the basis of your report it seems no.  
+fs/btrfs/relocation.c +791 build_backref_tree(142)
+	warn: variable dereferenced before check 'root'
+   787                  root = find_tree_root(rc, eb, ref0);
+   788                  if (!root->ref_cows)
+                             ^^^^^^^^^^^^^^
+	dereference here.
 
-Btrfs requires to know where the components of a multi-volume filesystem are. 
-To do that, you have to "scan" the devices, explicitly
+   789                          cur->cowonly = 1;
+   790                  if (key.objectid == key.offset) {
+   791                          if (root && !should_ignore_root(root))
+                                   ^^^^^^^^
 
-	# btrfs scan /dev/sdX1 /dev/sdx2 ...
+	check here.
 
-or implicitly
+   792                                  cur->root = root;
+   793                          else
+   794                                  list_add(&cur->list, &useless);
+   795                          break;
+   796                  }
 
-        # btrfs scan
+fs/btrfs/relocation.c +1241 __update_reloc_root(15)
+	error: potential null derefence 'node'.
+  1229          struct mapping_node *node = NULL;
+                                    ^^^^^^^^^^^^^
 
-In the last case the btrfs command scans every block device (even the cdrom 
-and/or floppy).
+  1230          struct reloc_control *rc = root->fs_info->reloc_ctl;
+  1231  
+  1232          spin_lock(&rc->reloc_root_tree.lock);
+  1233          rb_node = tree_search(&rc->reloc_root_tree.rb_root,
+  1234                                root->commit_root->start);
+  1235          if (rb_node) {
+  1236                  node = rb_entry(rb_node, struct mapping_node, rb_node);
+  1237                  rb_erase(&node->rb_node, &rc->reloc_root_tree.rb_root);
+  1238          }
+  1239          spin_unlock(&rc->reloc_root_tree.lock);
+  1240  
+  1241          BUG_ON((struct btrfs_root *)node->data != root);
+                                            ^^^^^^^^^^
+	if tree_search() returns NULL it will oops here.
 
-For other information you may want to read this thread which suggests how udev 
-can perform the scan.
-
-http://kerneltrap.org/mailarchive/linux-btrfs/2010/4/16/6884594
-
-Regards
-
-
-
-> 
-> 
-> # mount /dev/sdb1  /home
-> mount: wrong fs type, bad option, bad superblock on /dev/sdb1,
->        missing codepage or helper program, or other error
->        In some cases useful info is found in syslog - try
->        dmesg | tail  or so
-> 
-> # mount /dev/sdb1  /home
-> mount: wrong fs type, bad option, bad superblock on /dev/sdb1,
->        missing codepage or helper program, or other error
->        In some cases useful info is found in syslog - try
->        dmesg | tail  or so
-> 
-> mount /dev/sdc1  /home
-> (worked)
-> # btrfs-show
-> failed to read /dev/sr0
-> Label: none  uuid: a2aa44b8-3168-480a-a155-d510e05853e7
->         Total devices 1 FS bytes used 5.46GB
->         devid    1 size 29.33GB used 13.29GB path /dev/sda2
-> 
-> Label: fhome  uuid: 128ddab5-224d-4f45-abc0-6a07d0f63d47
->         Total devices 2 FS bytes used 8.24GB
->         devid    1 size 931.51GB used 21.03GB path /dev/sdb1
->         devid    2 size 931.51GB used 21.01GB path /dev/sdc1
-> 
-> 
-> 	Gerhard
-> 
-> 
-> --
-> Gerhard Mack
-> 
-> gmack@innerfire.net
-> 
-> <>< As a computer I find your faith in technology amusing.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
-
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+regards,
+dan carpenter

@@ -1,35 +1,24 @@
-From: Dan Carpenter <error27@gmail.com>
-Subject: [patch 11/11] btrfs: The file argument for fsync() is never null
-Date: Sat, 29 May 2010 11:49:07 +0200
-Message-ID: <20100529094907.GL5483@bicker>
+From: "Sam L. Carl" <mail@traffictractor.com>
+Subject: RE: Hey, Opt In Email Lists Give Away!
+Date: Sat, 29 May 2010 14:45:31 +0100
+Message-ID: <00ec247b$40327$1c4b61494375@regina>
+Reply-To: "Sam L. Carl" <mail@traffictractor.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Yan Zheng <zheng.yan@oracle.com>, Josef Bacik <josef@redhat.com>,
-	Christoph Hellwig <hch@lst.de>,
-	Chris Mason <chris.mason@oracle.com>,
-	kernel-janitors@vger.kernel.org
+Content-Type: text/plain
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The "file" argument for fsync is never null so we can remove this check.
+Hey, 
 
-What drew my attention here is that 7ea8085910e: "drop unused dentry 
-argument to ->fsync" introduced an unconditional dereference at the
-start of the function and that generated a smatch warning.
+You have to check this out if your a webmaster. http://www.traffictractor.com is giving away thousands of opt in emails. 
 
-Signed-off-by: Dan Carpenter <error27@gmail.com>
+This is huge! Everyone is talking about it now. With these opt in email addresses you can do so much. It takes years and a lot of money to build a list from scratch but now you have the chance to grab a massive list.
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 787b50a..e252d23 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1140,7 +1140,7 @@ int btrfs_sync_file(struct file *file, int datasync)
- 	/*
- 	 * ok we haven't committed the transaction yet, lets do a commit
- 	 */
--	if (file && file->private_data)
-+	if (file->private_data)
- 		btrfs_ioctl_trans_end(file);
- 
- 	trans = btrfs_start_transaction(root, 0);
+Use it for ezine, email, autoresponders, they will bring your website a huge amount of power, traffic and sales. 
+
+You have to check it out at http://www.traffictractor.com
+
+All the best,
+Sam L. Carl
+

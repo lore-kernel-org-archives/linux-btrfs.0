@@ -1,34 +1,35 @@
 From: Dan Carpenter <error27@gmail.com>
-Subject: [patch 10/11] btrfs: handle ERR_PTR from posix_acl_from_xattr()
-Date: Sat, 29 May 2010 11:48:35 +0200
-Message-ID: <20100529094835.GK5483@bicker>
+Subject: [patch 11/11] btrfs: The file argument for fsync() is never null
+Date: Sat, 29 May 2010 11:49:07 +0200
+Message-ID: <20100529094907.GL5483@bicker>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Al Viro <viro@zeniv.linux.org.uk>,
-	Stephen Hemminger <shemminger@vyatta.com>,
-	Joel Becker <joel.becker@oracle.com>,
-	James Morris <jmorris@namei.org>,
+Cc: Yan Zheng <zheng.yan@oracle.com>, Josef Bacik <josef@redhat.com>,
+	Christoph Hellwig <hch@lst.de>,
 	Chris Mason <chris.mason@oracle.com>,
 	kernel-janitors@vger.kernel.org
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-posix_acl_from_xattr() returns both ERR_PTRs and null, but it's OK to
-pass null values to set_cached_acl()
+The "file" argument for fsync is never null so we can remove this check.
+
+What drew my attention here is that 7ea8085910e: "drop unused dentry 
+argument to ->fsync" introduced an unconditional dereference at the
+start of the function and that generated a smatch warning.
 
 Signed-off-by: Dan Carpenter <error27@gmail.com>
 
-diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index 8d432cd..e24a19a 100644
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -60,6 +60,8 @@ static struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
- 		size = __btrfs_getxattr(inode, name, value, size);
- 		if (size > 0) {
- 			acl = posix_acl_from_xattr(value, size);
-+			if (IS_ERR(acl))
-+				return acl;
- 			set_cached_acl(inode, type, acl);
- 		}
- 		kfree(value);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 787b50a..e252d23 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1140,7 +1140,7 @@ int btrfs_sync_file(struct file *file, int datasync)
+ 	/*
+ 	 * ok we haven't committed the transaction yet, lets do a commit
+ 	 */
+-	if (file && file->private_data)
++	if (file->private_data)
+ 		btrfs_ioctl_trans_end(file);
+ 
+ 	trans = btrfs_start_transaction(root, 0);

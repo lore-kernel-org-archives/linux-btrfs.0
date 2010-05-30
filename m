@@ -1,40 +1,40 @@
-From: Yee-Ting Li <yee379@gmail.com>
-Subject: ioctl returns 0 and wrong fs type on disk addition
-Date: Sat, 29 May 2010 22:53:37 -0700
-Message-ID: <0D557918-A3FB-4D1A-A7EB-9C76D194EF6C@gmail.com>
-Mime-Version: 1.0 (Apple Message framework v1078)
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+From: Dmitri Nikulin <dnikulin@gmail.com>
+Subject: Re: [PATCH 6/6] Btrfs: do aio_write instead of write
+Date: Sun, 30 May 2010 19:33:33 +1000
+Message-ID: <AANLkTiljjXsML35vHoUc-XXTrbOft6TO1KKZyYdj3HUn@mail.gmail.com>
+References: <1274461422-18433-1-git-send-email-josef@redhat.com>
+	<1274461422-18433-6-git-send-email-josef@redhat.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+To: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1274461422-18433-6-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-using v0.19 on ubuntu 10.4
+On Sat, May 22, 2010 at 3:03 AM, Josef Bacik <josef@redhat.com> wrote:
+> + =C2=A0 =C2=A0 =C2=A0 while (1) {
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 lock_extent(tree, =
+start, end, GFP_NOFS);
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 ordered =3D btrfs_=
+lookup_ordered_extent(inode, start);
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 if (!ordered)
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 break;
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 unlock_extent(tree=
+, start, end, GFP_NOFS);
 
-i have a raid0 meta and data across 2 drives (sdf, sdg); i recently added another drive to the mix using 'btrfs-vol -a /dev/sde'. it returned 'ioctl returns 0'. 
+Is it ok not to unlock_extent if !ordered?
+I don't know if you fixed this in a later version but it stuck out to m=
+e :)
 
-i didn't think anything of it as the extra disk showed up. 
+--=20
+Dmitri Nikulin
 
-i did not do a rebalance. but i did write some stuff to the array.
-
-$ btrfs-show
-failed to read /dev/sr0
-Label: none  uuid: ea7ea0b3-bc42-4b0c-9173-346df61d4454
-	Total devices 3 FS bytes used 3.51TB
-	devid    3 size 1.82TB used 0.00 path /dev/sde
-	devid    1 size 1.82TB used 1.82TB path /dev/sdf
-	devid    2 size 1.82TB used 1.82TB path /dev/sdg
-
-however after a rebooted i can now only mount the disk in degraded mode. 
-
-$ mount -t btrfs /dev/sdf /mnt/stripe/
-mount: wrong fs type, bad option, bad superblock on /dev/sdf,
-       missing codepage or helper program, or other error
-       In some cases useful info is found in syslog - try
-       dmesg | tail  or so
-
-dmesg:
-[  107.977464] device fsid c4b42bcb3a07eea-54441df66d347391 devid 1 transid 8747 /dev/sdf
-[  107.977932] btrfs: failed to read the system array on sdf
-[  108.000143] btrfs: open_ctree failed
-
-any suggestions on how i can get out of this pickle? (except for copy all the data off the drives)
+Centre for Synchrotron Science
+Monash University
+Victoria 3800, Australia
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

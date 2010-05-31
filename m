@@ -1,54 +1,60 @@
-From: Andreas Philipp <philipp.andreas@gmail.com>
-Subject: dkms build error
-Date: Mon, 31 May 2010 09:20:22 +0200
-Message-ID: <4C036336.6090708@gmail.com>
+From: Dan Carpenter <error27@gmail.com>
+Subject: Re: [patch 5/11] btrfs: remove unneeded null check in
+	btrfs_rename()
+Date: Mon, 31 May 2010 09:25:18 +0200
+Message-ID: <20100531072518.GO5483@bicker>
+References: <20100529094508.GF5483@bicker> <AANLkTikLkpTgkOGi8M8VL_rZRLyzbJKoKW9RiNMJenMi@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=windows-1252
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=iso-8859-1
+Cc: linux-btrfs@vger.kernel.org, Yan Zheng <zheng.yan@oracle.com>,
+	Josef Bacik <josef@redhat.com>,
+	Al Viro <viro@zeniv.linux.org.uk>,
+	Chris Mason <chris.mason@oracle.com>,
+	kernel-janitors@vger.kernel.org
+To: Mike Fedyk <mfedyk@mikefedyk.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTikLkpTgkOGi8M8VL_rZRLyzbJKoKW9RiNMJenMi@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Sat, May 29, 2010 at 11:01:56AM -0700, Mike Fedyk wrote:
+> On Sat, May 29, 2010 at 2:45 AM, Dan Carpenter <error27@gmail.com> wr=
+ote:
+> > "old_inode" cannot be null here, because we dereference it
+> > unconditionally throughout the function.
+> >
+> > Signed-off-by: Dan Carpenter <error27@gmail.com>
+> >
+> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> > index fa6ccc1..0bc29be 100644
+> > --- a/fs/btrfs/inode.c
+> > +++ b/fs/btrfs/inode.c
+> > @@ -6487,10 +6487,8 @@ static int btrfs_rename(struct inode *old_di=
+r, struct dentry *old_dentry,
+> > =A0 =A0 =A0 =A0 * make sure the inode gets flushed if it is replaci=
+ng
+> > =A0 =A0 =A0 =A0 * something.
+> > =A0 =A0 =A0 =A0 */
+> > - =A0 =A0 =A0 if (new_inode && new_inode->i_size &&
+> > - =A0 =A0 =A0 =A0 =A0 old_inode && S_ISREG(old_inode->i_mode)) {
+> > + =A0 =A0 =A0 if (new_inode && new_inode->i_size && S_ISREG(old_ino=
+de->i_mode))
+> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0btrfs_add_ordered_operation(trans, r=
+oot, old_inode);
+> > - =A0 =A0 =A0 }
+>=20
+> I think code like this is here because there are still a lot of
+> features that are being added to btrfs and it's easier to have the
+> additional checks than continually adding and removing them as the
+> code changes.
 
-Unfortunately, I did not succeed to compile a btrfs module via dkms fro=
-m
-btrfs-unstable (commit 9aeead73782c4b8e2a91def36dbf95db28605c95) for ke=
-rnel
-version 2.6.34-git16. For the exact error message, please see the make.=
-log
-attached. If I replace the symlink to btrfs-unstable/fs/btrfs by a suml=
-ink
-to the corresponding subdirectory of the kernel tree everything works w=
-ell.
+Right right.  I understand about extra checks and api changes.  But in
+this case that doesn't aply.  There is no way this particular check hel=
+ps
+now or in the future, and it just wastes time when someone is auditing
+for inconsistent null checking.
 
-Thanks,
-Andreas Philipp
-
-aph@thor ~ $ cat /var/lib/dkms/btrfs/git/build/make.log
-DKMS make.log for btrfs-git for kernel 2.6.34-git16 (x86_64)
-Sun May 30 20:37:43 CEST 2010
-make: Entering directory `/usr/src/linux-2.6.34-git16'
-  LD      /var/lib/dkms/btrfs/git/build/built-in.o
-  CC [M]  /var/lib/dkms/btrfs/git/build/super.o
-/var/lib/dkms/btrfs/git/build/super.c: In function =91btrfs_fill_super=92=
-:
-/var/lib/dkms/btrfs/git/build/super.c:446: warning: assignment from inc=
-ompatible pointer type
-  CC [M]  /var/lib/dkms/btrfs/git/build/ctree.o
-  CC [M]  /var/lib/dkms/btrfs/git/build/extent-tree.o
-/var/lib/dkms/btrfs/git/build/extent-tree.c: In function =91btrfs_issue=
-_discard=92:
-/var/lib/dkms/btrfs/git/build/extent-tree.c:1699: error: =91DISCARD_FL_=
-BARRIER=92 undeclared (first use in this function)
-/var/lib/dkms/btrfs/git/build/extent-tree.c:1699: error: (Each undeclar=
-ed identifier is reported only once
-/var/lib/dkms/btrfs/git/build/extent-tree.c:1699: error: for each funct=
-ion it appears in.)
-make[1]: *** [/var/lib/dkms/btrfs/git/build/extent-tree.o] Error 1
-make: *** [_module_/var/lib/dkms/btrfs/git/build] Error 2
-make: Leaving directory `/usr/src/linux-2.6.34-git16'
-
-
+regards,
+dan carpenter
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

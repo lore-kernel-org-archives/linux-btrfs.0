@@ -1,62 +1,48 @@
 From: Paul Millar <paul.millar@desy.de>
 Subject: Re: A couple of questions
-Date: Mon, 31 May 2010 19:59:46 +0200
-Message-ID: <201005311959.47212.paul.millar@desy.de>
-References: <201005271539.55644.paul.millar@desy.de> <201005271656.00398.hka@qbs.com.pl>
+Date: Mon, 31 May 2010 20:06:45 +0200
+Message-ID: <201005312006.47321.paul.millar@desy.de>
+References: <201005271539.55644.paul.millar@desy.de> <20100527160044.GD3835@think>
 Mime-Version: 1.0
 Content-Type: Text/Plain;
-  charset="utf-8"
+  charset="iso-8859-1"
 Cc: linux-btrfs@vger.kernel.org
-To: Hubert Kario <hka@qbs.com.pl>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201005271656.00398.hka@qbs.com.pl>
+In-Reply-To: <20100527160044.GD3835@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Hubert,
+Hi Chris,
 
-On Thursday 27 May 2010 16:56:00 Hubert Kario wrote:
-> > Would [obtaining file checksum] be possible (without an awful lot
-> > of work)?
-> 
-> [Calculating checksum in-memory]  won't detect in-memory corruption
-> though, but if you want to be resilant to this, you should be looking at
->  ECC RAM as subsequent checks can be affected by it to.
+On Thursday 27 May 2010 18:00:44 Chris Mason wrote:
+> I'd suggest that you look at T10 DIF and DIX, which are targeted at
+> exactly this kind of thing.  We're looking at integrating dif/dix into
+> btrfs at some point.
 
-Certainly ECC RAM will help, but unfortunately it doesn't remove the 
-possibility of corruption; for example, CERN found [1] that double-bit memory 
-corruptions (which ECC cannot recover from) can still happen.
+I've been keeping half-an-eye on T10's work in ensuring end-to-end integrity.  
+That you guys are planning to integrate dif/dix support is certainly welcome 
+news!
 
-[1] 
-http://indico.cern.ch/getFile.py/access?contribId=3&sessionId=0&resId=1&materialId=paper&confId=13797
+In my use-case (a file-server that receives a new file from a remote client),  
+I believe that, to ensure end-to-end integrity,  the server software would 
+have to push the client-supplied checksum into the FS when writing a new file.  
+(I believe there's some T10 slides somewhere that show this use-case) -- or 
+(equivalently) the server software obtains the FS checksum for the file and 
+matches it against the client-supplied value.
 
-Also, IIRC there was a case where Fermilab tracked down a data corruption to a 
-faulty PCI bus in the server.  So who knows where are all the places 
-corruption could occur?
+I'm deliberately taking the simplest case when the client has chosen the same 
+checksum algorithm as the FS uses.  In reality, this may not be the case, but 
+we can probably cope with that.
 
-I guess the real problem is that, when processing large amounts of data, these 
-rare occurrences start to stack up.
+My concern is that, if the server-software doesn't push the client-provided 
+checksum then the FS checksum (plus T-10 DIF/DIX) would not provide a rigorous 
+assurance that the bytes are the same.  Without this assurance, corruption 
+could still occur; for example, within the server's memory.
 
+> We haven't looked at adler32.  crc32c was chosen because it is supported
+> in hardware by recent intel CPUs.
 
-> Second, you shouldn't tie application or network protocol to a CRC scheme
->  used by filesystem on server! Especially when there can be other CRC
->  algorithms used, not only CRC-32C.
-
-Sure, but the protocol isn't tied to any particular checksum algorithm.
-
- 
-> If the checksum algorithm used by FS was set in stone, then userspace could
-> employ it somehow, but if there can be different CRCs used, I see no reason
->  to allow the userspace to read them.
-
-I agree that a checksum value, without knowing the algorithm, isn't much use.  
-However, the FS reported a string representation of the tuple (algorithm, 
-value); for example:
-
-   0:DCD05C54
-
-(where "0" is from BTRFS_CSUM_TYPE_CRC32)
-
-Would that allow meaningful use of this information?
+OK, fair enough :)
 
 Cheers,
 

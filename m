@@ -1,40 +1,30 @@
 From: "Yan, Zheng" <zheng.yan@oracle.com>
-Subject: [PATCH] btrfs: Fix null dereference in relocation.c
-Date: Mon, 31 May 2010 16:58:47 +0800
-Message-ID: <4C037A47.4030305@oracle.com>
+Subject: [PATCH] btrfs: Fix BUG_ON for fs converted from extN
+Date: Mon, 31 May 2010 17:04:46 +0800
+Message-ID: <4C037BAE.9010300@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>, error27@gmail.com
+Cc: Chris Mason <chris.mason@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fix a potential null dereference in relocation.c
+Tree blocks can live in data block groups in FS converted from extN.
+So it's easy to trigger the BUG_ON.
 
 Signed-off-by: Yan Zheng <zheng.yan@oracle.com>
 
 ---
-diff -urp 1/fs/btrfs/relocation.c 2/fs/btrfs/relocation.c
---- 1/fs/btrfs/relocation.c	2010-05-26 00:13:07.227605825 +0800
-+++ 2/fs/btrfs/relocation.c	2010-05-31 16:35:23.489829633 +0800
-@@ -784,16 +784,17 @@ again:
- 				struct btrfs_extent_ref_v0 *ref0;
- 				ref0 = btrfs_item_ptr(eb, path1->slots[0],
- 						struct btrfs_extent_ref_v0);
--				root = find_tree_root(rc, eb, ref0);
--				if (!root->ref_cows)
--					cur->cowonly = 1;
- 				if (key.objectid == key.offset) {
-+					root = find_tree_root(rc, eb, ref0);
- 					if (root && !should_ignore_root(root))
- 						cur->root = root;
- 					else
- 						list_add(&cur->list, &useless);
- 					break;
- 				}
-+				if (is_cowonly_root(btrfs_ref_root_v0(eb,
-+								      ref0)))
-+					cur->cowonly = 1;
- 			}
- #else
- 		BUG_ON(key.type == BTRFS_EXTENT_REF_V0_KEY);
+diff -urp 1/fs/btrfs/extent-tree.c 3/fs/btrfs/extent-tree.c
+--- 1/fs/btrfs/extent-tree.c	2010-05-26 23:55:46.610378078 +0800
++++ 3/fs/btrfs/extent-tree.c	2010-05-31 16:36:51.907580723 +0800
+@@ -4360,7 +4360,8 @@ void btrfs_free_tree_block(struct btrfs_
+ 
+ 	block_rsv = get_block_rsv(trans, root);
+ 	cache = btrfs_lookup_block_group(root->fs_info, buf->start);
+-	BUG_ON(block_rsv->space_info != cache->space_info);
++	if (block_rsv->space_info != cache->space_info)
++		goto out;
+ 
+ 	if (btrfs_header_generation(buf) == trans->transid) {
+ 		if (root->root_key.objectid != BTRFS_TREE_LOG_OBJECTID) {

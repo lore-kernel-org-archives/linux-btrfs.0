@@ -1,49 +1,73 @@
-From: Bruce Guenter <bruce@untroubled.org>
-Subject: Re: Disk space accounting and subvolume delete
-Date: Mon, 31 May 2010 13:01:07 -0600
-Message-ID: <20100531190107.GA20103@untroubled.org>
-References: <20100510182352.GA21154@untroubled.org>
- <AANLkTilDHeJ_aRQSKWUTJgIBhlpLHyNRTy4x4ai_MGJI@mail.gmail.com>
- <20100511154518.GA11710@untroubled.org>
- <AANLkTikzNWS11qycrI94k69PFEZJWpAezwuOF6nmw_PF@mail.gmail.com>
+From: Mike Fedyk <mfedyk@mikefedyk.com>
+Subject: Re: A couple of questions
+Date: Mon, 31 May 2010 13:33:23 -0700
+Message-ID: <AANLkTim6wNus8lCN_xYt0yx0o6e5cqMtdsadz0HFqBta@mail.gmail.com>
+References: <201005271539.55644.paul.millar@desy.de>
+	<20100527160044.GD3835@think>
+	<201005312006.47321.paul.millar@desy.de>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="u3/rZRmxL6MmkK24"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+To: Paul Millar <paul.millar@desy.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTikzNWS11qycrI94k69PFEZJWpAezwuOF6nmw_PF@mail.gmail.com>
+In-Reply-To: <201005312006.47321.paul.millar@desy.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, May 31, 2010 at 11:06 AM, Paul Millar <paul.millar@desy.de> wro=
+te:
+> Hi Chris,
+>
+> On Thursday 27 May 2010 18:00:44 Chris Mason wrote:
+>> I'd suggest that you look at T10 DIF and DIX, which are targeted at
+>> exactly this kind of thing. =C2=A0We're looking at integrating dif/d=
+ix into
+>> btrfs at some point.
+>
+> I've been keeping half-an-eye on T10's work in ensuring end-to-end in=
+tegrity.
+> That you guys are planning to integrate dif/dix support is certainly =
+welcome
+> news!
+>
+> In my use-case (a file-server that receives a new file from a remote =
+client),
+> I believe that, to ensure end-to-end integrity, =C2=A0the server soft=
+ware would
+> have to push the client-supplied checksum into the FS when writing a =
+new file.
+> (I believe there's some T10 slides somewhere that show this use-case)=
+ -- or
+> (equivalently) the server software obtains the FS checksum for the fi=
+le and
+> matches it against the client-supplied value.
+>
+> I'm deliberately taking the simplest case when the client has chosen =
+the same
+> checksum algorithm as the FS uses. =C2=A0In reality, this may not be =
+the case, but
+> we can probably cope with that.
+>
+> My concern is that, if the server-software doesn't push the client-pr=
+ovided
+> checksum then the FS checksum (plus T-10 DIF/DIX) would not provide a=
+ rigorous
+> assurance that the bytes are the same. =C2=A0Without this assurance, =
+corruption
+> could still occur; for example, within the server's memory.
+>
 
---u3/rZRmxL6MmkK24
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Have you taken into account the boundaries of the data checksums?
+Your app may checksum per file or some logical partition in the file
+format.  Btrfs does the checksum per-extent so unless you keep track
+of where the extent boundaries are, that checksum will be useless to
+the userspace app.  Also the app would be tied specifically to a
+storage technology.  No matter how great foo might be, not everyone's
+going to use it.
 
-On Wed, May 12, 2010 at 01:02:07PM +0800, Yan, Zheng  wrote:
-> Dropping a tree can be lengthy. It's not good to let sync wait for hours.
-> For most linux FS, 'sync' just force an transaction/journal commit. I don=
-'t
-> think they wait for large operations that can span multiple transactions =
-to
-> complete.
-
-What happens to the consistency of the filesystem if a crash happens
-during this process?
-
---=20
-Bruce Guenter <bruce@untroubled.org>                http://untroubled.org/
-
---u3/rZRmxL6MmkK24
-Content-Type: application/pgp-signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.15 (GNU/Linux)
-
-iEYEARECAAYFAkwEB3MACgkQ6W+y3GmZgOi9hQCcDJ34yRiaIPUSuU41cDyHwg90
-6KoAmgMHUp+1GQI8K+I9x1ciGc2kgMze
-=XlXN
------END PGP SIGNATURE-----
-
---u3/rZRmxL6MmkK24--
+Also are you going to get this info over nfs, cifs, lustre, gluster,
+ceph, foo, bar and baz?
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

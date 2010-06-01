@@ -1,53 +1,35 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH 6/6] Btrfs: do aio_write instead of write
-Date: Tue, 1 Jun 2010 09:19:22 -0400
-Message-ID: <20100601131922.GJ8980@think>
-References: <1274461422-18433-1-git-send-email-josef@redhat.com>
- <1274461422-18433-6-git-send-email-josef@redhat.com>
- <AANLkTiljjXsML35vHoUc-XXTrbOft6TO1KKZyYdj3HUn@mail.gmail.com>
+From: "Martin K. Petersen" <martin.petersen@oracle.com>
+Subject: Re: A couple of questions
+Date: Tue, 01 Jun 2010 09:39:52 -0400
+Message-ID: <yq1ljaykh1z.fsf@sermon.lab.mkp.net>
+References: <201005271539.55644.paul.millar@desy.de>
+	<20100527160044.GD3835@think> <201005312006.47321.paul.millar@desy.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
-To: Dmitri Nikulin <dnikulin@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+To: Paul Millar <paul.millar@desy.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTiljjXsML35vHoUc-XXTrbOft6TO1KKZyYdj3HUn@mail.gmail.com>
+In-Reply-To: <201005312006.47321.paul.millar@desy.de> (Paul Millar's message
+	of "Mon, 31 May 2010 20:06:45 +0200")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, May 30, 2010 at 07:33:33PM +1000, Dmitri Nikulin wrote:
-> On Sat, May 22, 2010 at 3:03 AM, Josef Bacik <josef@redhat.com> wrote=
-:
-> > + =A0 =A0 =A0 while (1) {
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 lock_extent(tree, start, end, GFP_NOF=
-S);
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 ordered =3D btrfs_lookup_ordered_exte=
-nt(inode, start);
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (!ordered)
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 break;
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 unlock_extent(tree, start, end, GFP_N=
-OFS);
->=20
-> Is it ok not to unlock_extent if !ordered?
-> I don't know if you fixed this in a later version but it stuck out to=
- me :)
+>>>>> "Paul" == Paul Millar <paul.millar@desy.de> writes:
 
-The construct is confusing.  Ordered extents track things that we have
-allocated on disk and need to write.  New ones can't be created while w=
-e
-have the extent range locked.  But we can't force old ones to disk with
-the lock held.
+Paul> My concern is that, if the server-software doesn't push the
+Paul> client-provided checksum then the FS checksum (plus T-10 DIF/DIX)
+Paul> would not provide a rigorous assurance that the bytes are the
+Paul> same.  Without this assurance, corruption could still occur; for
+Paul> example, within the server's memory.
 
-So, we lock then lookup and if we find nothing we can safely do our
-operation because no io is in progress.  We unlock a little later on, o=
-r
-at endio time.
+For DIX we allow integrity metadata conversion.  Once the data is
+received, the server generates appropriate IMD for the next layer.  Then
+the server verifies that the original IMD matches the data buffer.  That
+way there's no window of error.  But obviously the ideal case is where
+the same IMD can be passed throughout the stack without conversion.
 
-If we find an ordered extent we drop the lock and wait for that IO to
-finish, then loop again.
+Not sure what you use for file service?  I believe NFSv4 allows for
+checksums to be passed along. I have not looked at them closely yet,
+though.
 
--chris
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-- 
+Martin K. Petersen	Oracle Linux Engineering

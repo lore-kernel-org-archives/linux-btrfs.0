@@ -1,41 +1,35 @@
-From: "Yan, Zheng " <yanzheng@21cn.com>
-Subject: Re: Disk space accounting and subvolume delete
-Date: Tue, 1 Jun 2010 10:32:27 +0800
-Message-ID: <AANLkTinLc3_f5U_XSdWjTxfWKdKF_gZIg2HAD44u5Zti@mail.gmail.com>
-References: <20100510182352.GA21154@untroubled.org>
-	<AANLkTilDHeJ_aRQSKWUTJgIBhlpLHyNRTy4x4ai_MGJI@mail.gmail.com>
-	<20100511154518.GA11710@untroubled.org>
-	<AANLkTikzNWS11qycrI94k69PFEZJWpAezwuOF6nmw_PF@mail.gmail.com>
-	<20100531190107.GA20103@untroubled.org>
+From: Dan Carpenter <error27@gmail.com>
+Subject: [patch] btrfs: uninitialized data is check_path_shared()
+Date: Tue, 1 Jun 2010 10:23:11 +0200
+Message-ID: <20100601082311.GM5483@bicker>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100531190107.GA20103@untroubled.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: Yan Zheng <zheng.yan@oracle.com>, Josef Bacik <josef@redhat.com>,
+	Al Viro <viro@zeniv.linux.org.uk>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 1, 2010 at 3:01 AM, Bruce Guenter <bruce@untroubled.org> wr=
-ote:
-> On Wed, May 12, 2010 at 01:02:07PM +0800, Yan, Zheng =A0wrote:
->> Dropping a tree can be lengthy. It's not good to let sync wait for h=
-ours.
->> For most linux FS, 'sync' just force an transaction/journal commit. =
-I don't
->> think they wait for large operations that can span multiple transact=
-ions to
->> complete.
->
-> What happens to the consistency of the filesystem if a crash happens
-> during this process?
->
+refs can be used with uninitialized data if btrfs_lookup_extent_info()
+fails on the first pass through the loop.  In the original code if that
+happens then check_path_shared() probably returns 1, but with this patch
+it will continue through the loop.
 
-This does not break the consistency of the filesystem. Next mount will =
-find the
-partial dropped tree and restart the dropping process.
+I'm not super familiar with this code so please look it over carefully.
 
-Yan, Zheng
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Signed-off-by: Dan Carpenter <error27@gmail.com>
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index fa6ccc1..9640dae 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2673,7 +2673,7 @@ static int check_path_shared(struct btrfs_root *root,
+ 	struct extent_buffer *eb;
+ 	int level;
+ 	int ret;
+-	u64 refs;
++	u64 refs = 0;
+ 
+ 	for (level = 0; level < BTRFS_MAX_LEVEL; level++) {
+ 		if (!path->nodes[level])

@@ -1,35 +1,52 @@
-From: "Martin K. Petersen" <martin.petersen@oracle.com>
-Subject: Re: A couple of questions
-Date: Tue, 01 Jun 2010 09:39:52 -0400
-Message-ID: <yq1ljaykh1z.fsf@sermon.lab.mkp.net>
-References: <201005271539.55644.paul.millar@desy.de>
-	<20100527160044.GD3835@think> <201005312006.47321.paul.millar@desy.de>
+From: Dmitri Nikulin <dnikulin@gmail.com>
+Subject: Re: [PATCH 6/6] Btrfs: do aio_write instead of write
+Date: Wed, 2 Jun 2010 09:20:20 +1000
+Message-ID: <AANLkTikeSoXZYQF_SkWbgejM6b65LUvy6JH8Pavxo8Iz@mail.gmail.com>
+References: <1274461422-18433-1-git-send-email-josef@redhat.com>
+	<1274461422-18433-6-git-send-email-josef@redhat.com> <AANLkTiljjXsML35vHoUc-XXTrbOft6TO1KKZyYdj3HUn@mail.gmail.com>
+	<20100601131922.GJ8980@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
-To: Paul Millar <paul.millar@desy.de>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201005312006.47321.paul.millar@desy.de> (Paul Millar's message
-	of "Mon, 31 May 2010 20:06:45 +0200")
+In-Reply-To: <20100601131922.GJ8980@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
->>>>> "Paul" == Paul Millar <paul.millar@desy.de> writes:
+On Tue, Jun 1, 2010 at 11:19 PM, Chris Mason <chris.mason@oracle.com> w=
+rote:
+>> Is it ok not to unlock_extent if !ordered?
+>> I don't know if you fixed this in a later version but it stuck out t=
+o me :)
+>
+> The construct is confusing. =C2=A0Ordered extents track things that w=
+e have
+> allocated on disk and need to write. =C2=A0New ones can't be created =
+while we
+> have the extent range locked. =C2=A0But we can't force old ones to di=
+sk with
+> the lock held.
+>
+> So, we lock then lookup and if we find nothing we can safely do our
+> operation because no io is in progress. =C2=A0We unlock a little late=
+r on, or
+> at endio time.
+>
+> If we find an ordered extent we drop the lock and wait for that IO to
+> finish, then loop again.
 
-Paul> My concern is that, if the server-software doesn't push the
-Paul> client-provided checksum then the FS checksum (plus T-10 DIF/DIX)
-Paul> would not provide a rigorous assurance that the bytes are the
-Paul> same.  Without this assurance, corruption could still occur; for
-Paul> example, within the server's memory.
+Ok, that's fair enough. Maybe it's worth commenting, I'm sure I'm not
+the only one surprised.
 
-For DIX we allow integrity metadata conversion.  Once the data is
-received, the server generates appropriate IMD for the next layer.  Then
-the server verifies that the original IMD matches the data buffer.  That
-way there's no window of error.  But obviously the ideal case is where
-the same IMD can be passed throughout the stack without conversion.
+Thanks,
 
-Not sure what you use for file service?  I believe NFSv4 allows for
-checksums to be passed along. I have not looked at them closely yet,
-though.
+--=20
+Dmitri Nikulin
 
--- 
-Martin K. Petersen	Oracle Linux Engineering
+Centre for Synchrotron Science
+Monash University
+Victoria 3800, Australia
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

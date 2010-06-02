@@ -1,55 +1,41 @@
-From: Dan Magenheimer <dan.magenheimer@oracle.com>
-Subject: RE: [PATCH V2 0/7] Cleancache (was Transcendent Memory): overview
-Date: Wed, 2 Jun 2010 08:35:43 -0700 (PDT)
-Message-ID: <312cfff6-7ee7-4a6e-a3fd-fc9b6893f0b1@default>
-References: <20100528173510.GA12166@ca-server1.us.oracle.com
- 20100602130014.GB7238@shareable.org>
+From: Sean Bartell <wingedtachikoma@gmail.com>
+Subject: Re: Is there a more aggressive fixer than btrfsck?
+Date: Wed, 2 Jun 2010 11:56:46 -0400
+Message-ID: <20100602155646.GA4041@flcl.lan>
+References: <a51eea046c4dd444f9d90742beb41a6a.squirrel@webmail.sonic.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com, viro@zeniv.linux.org.uk, akpm@linux-foundation.org,
-        adilger@sun.com, tytso@mit.edu, mfasheh@suse.com,
-        joel.becker@oracle.com, matthew@wil.cx, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-ext4@vger.kernel.org, ocfs2-devel@oss.oracle.com,
-        linux-mm@kvack.org, ngupta@vflare.org, jeremy@goop.org,
-        JBeulich@novell.com, kurt.hackel@oracle.com, npiggin@suse.de,
-        dave.mccracken@oracle.com, riel@redhat.com, avi@redhat.com,
-        konrad.wilk@oracle.com
-To: Jamie Lokier <jamie@shareable.org>
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20100602130014.GB7238@shareable.org>
+Cc: linux-btrfs@vger.kernel.org
+To: ulmo@sonic.net
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <a51eea046c4dd444f9d90742beb41a6a.squirrel@webmail.sonic.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> From: Jamie Lokier [mailto:jamie@shareable.org]
-> Subject: Re: [PATCH V2 0/7] Cleancache (was Transcendent Memory):
-> overview
->=20
-> Dan Magenheimer wrote:
-> > Most important, cleancache is "ephemeral".  Pages which are copied
-> into
-> > cleancache have an indefinite lifetime which is completely unknowable
-> > by the kernel and so may or may not still be in cleancache at any
-> later time.
-> > Thus, as its name implies, cleancache is not suitable for dirty
-> pages.  The
-> > pseudo-RAM has complete discretion over what pages to preserve and
-> what
-> > pages to discard and when.
->=20
-> Fwiw, the feature sounds useful to userspace too, for those things
-> with memory hungry caches like web browsers.  Any plans to make it
-> available to userspace?
+On Tue, Jun 01, 2010 at 07:29:56PM -0700, ulmo@sonic.net wrote:
+> Is there a more aggressive filesystem restorer than btrfsck?  It simply
+> gives up immediately with the following error:
+> 
+> btrfsck: disk-io.c:739: open_ctree_fd: Assertion `!(!tree_root->node)'
+> failed.
 
-No plans yet, though we agree it sounds useful, at least for
-apps that bypass the page cache (e.g. O_DIRECT).  If you have
-time and interest to investigate this further, I'd be happy
-to help.  Send email offlist.
+btrfsck currently only checks whether a filesystem is consistent. It
+doesn't try to perform any recovery or error correction at all, so it's
+mostly useful to developers. Any error handling occurs while the
+filesystem is mounted.
 
-Thanks,
-Dan
+> Yet, the filesystem has plenty of data on it, and the discs are good and I
+> didn't do anything to the data except regular btrfs commands and normal
+> mounting.  That's a wildly unreliable filesystem.
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+btrfs is under heavy development, so make sure you're using the latest
+git versions of the kernel module and tools.
+
+> BTW, is there a way to improve delete and copy performance of btrfs?  I'm
+> getting about 50KB/s-500KB/s (per size of file being deleted) in deleting
+> and/or copying files on a disc that usually can go about 80MB/s.  I think
+> it's because they were fragmented.  That implies btrfs is too accepting of
+> writing data in fragmented style when it doesn't have to.  Almost all the
+> files on my btrfs partitions are around a gig, or 20 gigs, or a third of a
+> gig, or stuff like that.  The filesystem is 1.1TB.
+> 
+> Brad

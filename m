@@ -1,49 +1,31 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: [PATCH 01/10] btrfs: add a return value for readahead_tree_block()
-Date: Wed, 02 Jun 2010 11:07:38 +0800
-Message-ID: <4C05CAFA.9000700@cn.fujitsu.com>
-References: <4BF4E12F.6010103@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+From: ulmo@sonic.net
+Subject: Is there a more aggressive fixer than btrfsck?
+Date: Tue, 1 Jun 2010 19:29:56 -0700
+Message-ID: <a51eea046c4dd444f9d90742beb41a6a.squirrel@webmail.sonic.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: miaox@cn.fujitsu.com
+Content-Type: text/plain; charset=US-ASCII
+Cc: ulmo@sonic.net
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4BF4E12F.6010103@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Chris
+Is there a more aggressive filesystem restorer than btrfsck?  It simply
+gives up immediately with the following error:
 
-Could you review this patchset for us? 
+btrfsck: disk-io.c:739: open_ctree_fd: Assertion `!(!tree_root->node)'
+failed.
 
-Regards
-Miao
+Yet, the filesystem has plenty of data on it, and the discs are good and I
+didn't do anything to the data except regular btrfs commands and normal
+mounting.  That's a wildly unreliable filesystem.
 
+BTW, is there a way to improve delete and copy performance of btrfs?  I'm
+getting about 50KB/s-500KB/s (per size of file being deleted) in deleting
+and/or copying files on a disc that usually can go about 80MB/s.  I think
+it's because they were fragmented.  That implies btrfs is too accepting of
+writing data in fragmented style when it doesn't have to.  Almost all the
+files on my btrfs partitions are around a gig, or 20 gigs, or a third of a
+gig, or stuff like that.  The filesystem is 1.1TB.
 
-on 2010-5-20 15:13, Miao Xie wrote:
-> From: Liu Bo <liubo2009@cn.fujitsu.com>
-> 
-> Fix return value to get from read_extent_buffer_pages().
-> 
-> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
-> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
-> ---
->  fs/btrfs/disk-io.c |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 6632e5c..35916d5 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -794,7 +794,7 @@ int readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
->  	buf = btrfs_find_create_tree_block(root, bytenr, blocksize);
->  	if (!buf)
->  		return 0;
-> -	read_extent_buffer_pages(&BTRFS_I(btree_inode)->io_tree,
-> +	ret = read_extent_buffer_pages(&BTRFS_I(btree_inode)->io_tree,
->  				 buf, 0, 0, btree_get_extent, 0);
->  	free_extent_buffer(buf);
->  	return ret;
-
+Brad
 

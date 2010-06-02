@@ -1,73 +1,144 @@
-From: Hubert Kario <hka@qbs.com.pl>
-Subject: Re: A couple of questions
-Date: Wed, 2 Jun 2010 18:19:26 +0200
-Message-ID: <201006021819.26668.hka@qbs.com.pl>
-References: <201005271539.55644.paul.millar@desy.de> <201005271656.00398.hka@qbs.com.pl> <201005311959.47212.paul.millar@desy.de>
+From: Minchan Kim <minchan.kim@gmail.com>
+Subject: Re: [PATCH V2 0/7] Cleancache (was Transcendent Memory): overview
+Date: Thu, 3 Jun 2010 01:38:52 +0900
+Message-ID: <20100602163827.GA5450@barrios-desktop>
+References: <20100528173510.GA12166@ca-server1.us.oracle.comAANLkTilV-4_QaNq5O0WSplDx1Oq7JvkgVrEiR1rgf1up@mail.gmail.com>
+ <1d88619a-bb1e-493f-ad96-bf204b60938d@default>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=utf-8
-Cc: linux-btrfs@vger.kernel.org
-To: Paul Millar <paul.millar@desy.de>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201005311959.47212.paul.millar@desy.de>
+Content-Type: text/plain; charset=iso-8859-1
+Cc: chris.mason@oracle.com, viro@zeniv.linux.org.uk,
+	akpm@linux-foundation.org, adilger@sun.com, tytso@mit.edu,
+	mfasheh@suse.com, joel.becker@oracle.com, matthew@wil.cx,
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+	ocfs2-devel@oss.oracle.com, linux-mm@kvack.org, ngupta@vflare.org,
+	jeremy@goop.org, JBeulich@novell.com, kurt.hackel@oracle.com,
+	npiggin@suse.de, dave.mccracken@oracle.com, riel@redhat.com,
+	avi@redhat.com, konrad.wilk@oracle.com
+To: Dan Magenheimer <dan.magenheimer@oracle.com>
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <1d88619a-bb1e-493f-ad96-bf204b60938d@default>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday 31 May 2010 19:59:46 Paul Millar wrote:
-> Hi Hubert,
+Hi, Dan.=20
+
+On Wed, Jun 02, 2010 at 08:27:48AM -0700, Dan Magenheimer wrote:
+> Hi Minchan --
 >=20
-> On Thursday 27 May 2010 16:56:00 Hubert Kario wrote:
-> > > Would [obtaining file checksum] be possible (without an awful lot
-> > > of work)?
-> >=20
-> > [Calculating checksum in-memory]  won't detect in-memory corruption
-> > though, but if you want to be resilant to this, you should be looki=
-ng at
-> >=20
-> >  ECC RAM as subsequent checks can be affected by it to.
+> > I think cleancache approach is cool. :)
+> > I have some suggestions and questions.
 >=20
-> Certainly ECC RAM will help, but unfortunately it doesn't remove the
-> possibility of corruption; for example, CERN found [1] that double-bi=
+> Thanks for your interest!
+>=20
+> > > If a get_page is successful on a non-shared pool, the page is flush=
+ed
+> > (thus
+> > > making cleancache an "exclusive" cache). =A0On a shared pool, the p=
+age
+> >=20
+> > Do you have any reason about force "exclusive" on a non-shared pool?
+> > To free memory on pesudo-RAM?
+> > I want to make it "inclusive" by some reason but unfortunately I can'=
 t
-> memory corruptions (which ECC cannot recover from) can still happen.
+> > say why I want it now.
 >=20
-> [1]
-> http://indico.cern.ch/getFile.py/access?contribId=3D3&sessionId=3D0&r=
-esId=3D1&mat
-> erialId=3Dpaper&confId=3D13797
->=20
-> Also, IIRC there was a case where Fermilab tracked down a data corrup=
-tion
-> to a faulty PCI bus in the server.  So who knows where are all the pl=
-aces
-> corruption could occur?
->=20
-> I guess the real problem is that, when processing large amounts of da=
-ta,
-> these rare occurrences start to stack up.
->=20
+> The main reason is to free up memory in pseudo-RAM and to
+> avoid unnecessary cleancache_flush calls.  If you want
+> inclusive, the page can be put immediately following
+> the get.  If put-after-get for inclusive becomes common,
+> the interface could easily be extended to add a "get_no_flush"
+> call.
 
-Yes, but AFAIK btrfs checksums don't have internal checksum (e.g. you c=
-an't=20
-check if the read checksum is a valid one or not, it does not have cont=
-rol=20
-bits), as such, if you consider PCI bus corruption as likely, you still=
- don't=20
-get 100% certanity that the data reached the HDD unharmed.
+Sounds good to me.=20
 
-If you need such level of certanity when recording data, I'd consider=20
-mainframe hardware and/or duplicating whole storage stack.
+> =20
+> > While you mentioned it's "exclusive", cleancache_get_page doesn't
+> > flush the page at below code.
+> > Is it a role of user who implement cleancache_ops->get_page?
+>=20
+> Yes, the flush is done by the cleancache implementation.
+>=20
+> > If backed device is ram(ie), Could we _move_ the pages from page cach=
+e
+> > to cleancache?
+> > I mean I don't want to copy page when get/put operation. we can just
+> > move page in case of backed device "ram". Is it possible?
+>=20
+> By "move", do you mean changing the virtual mappings?  Yes,
+> this could be done as long as the source and destination are
+> both directly addressable (that is, true physical RAM), but
+> requires TLB manipulation and has some complicated corner
+> cases.  The copy semantics simplifies the implementation on
+> both the "frontend" and the "backend" and also allows the
+> backend to do fancy things on-the-fly like page compression
+> and page deduplication.
 
-Cheers,
+Agree. But I don't mean it.=20
+If I use brd as backend, i want to do it follwing as.=20
+
+put_page :
+
+remove_from_page_cache(page);
+brd_insert_page(page);
+
+get_page :
+
+brd_lookup_page(page);
+add_to_page_cache(page);
+
+Of course, I know it's impossible without new metadata and modification o=
+f=20
+page cache handling and it makes front and backend's good layered design.=
+=20
+
+What I want is to remove copy overhead when backend is ram and it's also
+part of main memory(ie, we have page descriptor).=20
+
+Do you have an idea?
+
+>=20
+> > You send the patches which is core of cleancache but I don't see any
+> > use case.
+> > Could you send use case patches with this series?
+> > It could help understand cleancache's benefit.
+>=20
+> Do you mean the Xen Transcendent Memory ("tmem") implementation?
+> If so, this is four files in the Xen source tree (common/tmem.c,
+> common/tmem_xen.c, include/xen/tmem.h, include/xen/tmem_xen.h).
+> There is also an html document in the Xen source tree, which can
+> be viewed here:
+> http://oss.oracle.com/projects/tmem/dist/documentation/internals/xen4-i=
+nternals-v01.html=20
+>=20
+> Or did you mean a cleancache_ops "backend"?  For tmem, there
+> is one file linux/drivers/xen/tmem.c and it interfaces between
+> the cleancache_ops calls and Xen hypercalls.  It should be in
+> a Xenlinux pv_ops tree soon, or I can email it sooner.
+
+I mean "backend". :)=20
+
+>=20
+> I am also eagerly awaiting Nitin Gupta's cleancache backend
+> and implementation to do in-kernel page cache compression.
+
+Do Nitin say he will make backend of cleancache for
+page cache compression?=20
+
+It would be good feature.=20
+I have a interest, too. :)
+
+Thanks, Dan.=20
+
+>=20
+> Thanks,
+> Dan
+
 --=20
-Hubert Kario
-QBS - Quality Business Software
-02-656 Warszawa, ul. Ksawer=C3=B3w 30/85
-tel. +48 (22) 646-61-51, 646-74-24
-www.qbs.com.pl
+Kind regards,
+Minchan Kim
 
-System Zarz=C4=85dzania Jako=C5=9Bci=C4=85
-zgodny z norm=C4=85 ISO 9001:2000
 --
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=3Dmailto:"dont@kvack.org"> email@kvack.org </a>

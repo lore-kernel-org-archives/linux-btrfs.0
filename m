@@ -1,71 +1,95 @@
-From: Paul Millar <paul.millar@desy.de>
-Subject: Re: A couple of questions
-Date: Wed, 2 Jun 2010 15:40:24 +0200
-Message-ID: <201006021540.25725.paul.millar@desy.de>
-References: <201005271539.55644.paul.millar@desy.de> <201005312006.47321.paul.millar@desy.de> <yq1ljaykh1z.fsf@sermon.lab.mkp.net>
+From: Dan Magenheimer <dan.magenheimer@oracle.com>
+Subject: RE: [PATCH V2 0/7] Cleancache (was Transcendent Memory): overview
+Date: Wed, 2 Jun 2010 08:27:48 -0700 (PDT)
+Message-ID: <1d88619a-bb1e-493f-ad96-bf204b60938d@default>
+References: <20100528173510.GA12166@ca-server1.us.oracle.com
+ AANLkTilV-4_QaNq5O0WSplDx1Oq7JvkgVrEiR1rgf1up@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
-To: "Martin K. Petersen" <martin.petersen@oracle.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <yq1ljaykh1z.fsf@sermon.lab.mkp.net>
+Content-Type: text/plain; charset=utf-8
+Cc: chris.mason@oracle.com, viro@zeniv.linux.org.uk, akpm@linux-foundation.org,
+        adilger@sun.com, tytso@mit.edu, mfasheh@suse.com,
+        joel.becker@oracle.com, matthew@wil.cx, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-ext4@vger.kernel.org, ocfs2-devel@oss.oracle.com,
+        linux-mm@kvack.org, ngupta@vflare.org, jeremy@goop.org,
+        JBeulich@novell.com, kurt.hackel@oracle.com, npiggin@suse.de,
+        dave.mccracken@oracle.com, riel@redhat.com, avi@redhat.com,
+        konrad.wilk@oracle.com
+To: Minchan Kim <minchan.kim@gmail.com>
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <AANLkTilV-4_QaNq5O0WSplDx1Oq7JvkgVrEiR1rgf1up@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tuesday 01 June 2010 15:39:52 Martin K. Petersen wrote:
-> >>>>> "Paul" == Paul Millar <paul.millar@desy.de> writes:
-> Paul> My concern is that, if the server-software doesn't push the
-> Paul> client-provided checksum then the FS checksum (plus T-10 DIF/DIX)
-> Paul> would not provide a rigorous assurance that the bytes are the
-> Paul> same.  Without this assurance, corruption could still occur; for
-> Paul> example, within the server's memory.
-> 
-> For DIX we allow integrity metadata conversion.  Once the data is
-> received, the server generates appropriate IMD for the next layer.  Then
-> the server verifies that the original IMD matches the data buffer.  That
-> way there's no window of error.  But obviously the ideal case is where
-> the same IMD can be passed throughout the stack without conversion.
+Hi Minchan --
 
-I think we may be talking slightly at cross-purposes here: in my case, one of 
-the end-points (for "end-to-end data integrity") is a remote computer, that is 
-uploading a file with a corresponding checksum.
+> I think cleancache approach is cool. :)
+> I have some suggestions and questions.
 
-Please correct me if I'm wrong here, but T10 DIF/DIX refers only to data 
-integrity protection from the OS's FS-level down to the block device: a 
-userland application doesn't know that it is writing into a FS that is 
-utilising DIX with a DIF-enabled storage system.
+Thanks for your interest!
 
-When a file is uploaded from a remote client to an application with the 
-checksum, the app can verify this checksum internally.  However, there's then 
-a (logical) gap between userland and FS where data integrity is no longer 
-assured.  For example, corruption that occurs after the app has verified the 
-checksum value would not be picked up, even with T10 DIX/DIF, since the FS 
-would receive and store the already-corrupted data "in good faith".
+> > If a get_page is successful on a non-shared pool, the page is flushed
+> (thus
+> > making cleancache an "exclusive" cache). =C2=A0On a shared pool, the pa=
+ge
+>=20
+> Do you have any reason about force "exclusive" on a non-shared pool?
+> To free memory on pesudo-RAM?
+> I want to make it "inclusive" by some reason but unfortunately I can't
+> say why I want it now.
 
-In principle, one can add a btrfs-specific mechanism to continue this 
-assurance from userland down to the FS.  Perhaps the simplest would be to 
-allow userland applications to read the FS's internal checksum (app would read 
-the FS internal checksum after writing and verify it is consistent), but I 
-guess more sophisticated (interleaved IMD, T10-like) mechanisms are also 
-possible.
+The main reason is to free up memory in pseudo-RAM and to
+avoid unnecessary cleancache_flush calls.  If you want
+inclusive, the page can be put immediately following
+the get.  If put-after-get for inclusive becomes common,
+the interface could easily be extended to add a "get_no_flush"
+call.
+=20
+> While you mentioned it's "exclusive", cleancache_get_page doesn't
+> flush the page at below code.
+> Is it a role of user who implement cleancache_ops->get_page?
 
-Unfortunately, any such solution would be btrfs-specific, since (I believe) no 
-one has standardised how to extend T10 into userspace.
+Yes, the flush is done by the cleancache implementation.
 
+> If backed device is ram(ie), Could we _move_ the pages from page cache
+> to cleancache?
+> I mean I don't want to copy page when get/put operation. we can just
+> move page in case of backed device "ram". Is it possible?
 
-> Not sure what you use for file service?  I believe NFSv4 allows for
-> checksums to be passed along. I have not looked at them closely yet,
-> though.
+By "move", do you mean changing the virtual mappings?  Yes,
+this could be done as long as the source and destination are
+both directly addressable (that is, true physical RAM), but
+requires TLB manipulation and has some complicated corner
+cases.  The copy semantics simplifies the implementation on
+both the "frontend" and the "backend" and also allows the
+backend to do fancy things on-the-fly like page compression
+and page deduplication.
 
-I believe NFS currently doesn't support checksums (as per v4.1).  Looking into 
-more detail, Alok Aggarwal gave a talk at 2006 connectathon about this.  
-Alok's slides have a nice diagram (slide 11) showing the kind of end-to-end 
-integrity I'm after.  The issue is how to achieve the assurance between "NFS 
-Server" and "Local FS" on the right.
+> You send the patches which is core of cleancache but I don't see any
+> use case.
+> Could you send use case patches with this series?
+> It could help understand cleancache's benefit.
 
-For NFS, I believe there aren't any plans for introducing checksum support for 
-v4.2.  Perhaps it'll appear with the later minor versions of the standard.
+Do you mean the Xen Transcendent Memory ("tmem") implementation?
+If so, this is four files in the Xen source tree (common/tmem.c,
+common/tmem_xen.c, include/xen/tmem.h, include/xen/tmem_xen.h).
+There is also an html document in the Xen source tree, which can
+be viewed here:
+http://oss.oracle.com/projects/tmem/dist/documentation/internals/xen4-inter=
+nals-v01.html=20
 
-Cheers,
+Or did you mean a cleancache_ops "backend"?  For tmem, there
+is one file linux/drivers/xen/tmem.c and it interfaces between
+the cleancache_ops calls and Xen hypercalls.  It should be in
+a Xenlinux pv_ops tree soon, or I can email it sooner.
 
-Paul.
+I am also eagerly awaiting Nitin Gupta's cleancache backend
+and implementation to do in-kernel page cache compression.
+
+Thanks,
+Dan
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>

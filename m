@@ -1,95 +1,73 @@
-From: Dan Magenheimer <dan.magenheimer@oracle.com>
-Subject: RE: [PATCH V2 0/7] Cleancache (was Transcendent Memory): overview
-Date: Wed, 2 Jun 2010 09:07:10 -0700 (PDT)
-Message-ID: <28f2e0a1-dfb5-4bcc-b0d7-238b5eea3e92@default>
-References: <20100528173510.GA12166@ca-server1.us.oracle.com
- 20100602132427.GA32110@infradead.org>
+From: Hubert Kario <hka@qbs.com.pl>
+Subject: Re: A couple of questions
+Date: Wed, 2 Jun 2010 18:19:26 +0200
+Message-ID: <201006021819.26668.hka@qbs.com.pl>
+References: <201005271539.55644.paul.millar@desy.de> <201005271656.00398.hka@qbs.com.pl> <201005311959.47212.paul.millar@desy.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com, viro@zeniv.linux.org.uk, akpm@linux-foundation.org,
-        adilger@sun.com, tytso@mit.edu, mfasheh@suse.com,
-        joel.becker@oracle.com, matthew@wil.cx, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-ext4@vger.kernel.org, ocfs2-devel@oss.oracle.com,
-        linux-mm@kvack.org, ngupta@vflare.org, jeremy@goop.org,
-        JBeulich@novell.com, kurt.hackel@oracle.com, npiggin@suse.de,
-        dave.mccracken@oracle.com, riel@redhat.com, avi@redhat.com,
-        konrad.wilk@oracle.com
-To: Christoph Hellwig <hch@infradead.org>
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20100602132427.GA32110@infradead.org>
+Content-Type: Text/Plain; charset=utf-8
+Cc: linux-btrfs@vger.kernel.org
+To: Paul Millar <paul.millar@desy.de>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201005311959.47212.paul.millar@desy.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> From: Christoph Hellwig [mailto:hch@infradead.org]
-> Subject: Re: [PATCH V2 0/7] Cleancache (was Transcendent Memory):
-> overview
-
-Hi Christophe --
-
-Thanks for your feedback!
-
-> >  fs/btrfs/super.c           |    2
-> >  fs/buffer.c                |    5 +
-> >  fs/ext3/super.c            |    2
-> >  fs/ext4/super.c            |    2
-> >  fs/mpage.c                 |    7 +
-> >  fs/ocfs2/super.c           |    3
-> >  fs/super.c                 |    8 +
+On Monday 31 May 2010 19:59:46 Paul Millar wrote:
+> Hi Hubert,
 >=20
-> This is missing out a whole lot of filesystems.  Even more so why the
-> hell do you need hooks into the filesystem?
+> On Thursday 27 May 2010 16:56:00 Hubert Kario wrote:
+> > > Would [obtaining file checksum] be possible (without an awful lot
+> > > of work)?
+> >=20
+> > [Calculating checksum in-memory]  won't detect in-memory corruption
+> > though, but if you want to be resilant to this, you should be looki=
+ng at
+> >=20
+> >  ECC RAM as subsequent checks can be affected by it to.
+>=20
+> Certainly ECC RAM will help, but unfortunately it doesn't remove the
+> possibility of corruption; for example, CERN found [1] that double-bi=
+t
+> memory corruptions (which ECC cannot recover from) can still happen.
+>=20
+> [1]
+> http://indico.cern.ch/getFile.py/access?contribId=3D3&sessionId=3D0&r=
+esId=3D1&mat
+> erialId=3Dpaper&confId=3D13797
+>=20
+> Also, IIRC there was a case where Fermilab tracked down a data corrup=
+tion
+> to a faulty PCI bus in the server.  So who knows where are all the pl=
+aces
+> corruption could occur?
+>=20
+> I guess the real problem is that, when processing large amounts of da=
+ta,
+> these rare occurrences start to stack up.
+>=20
 
-Let me rephrase/regroup your question.  Let me know if
-I missed anything...
+Yes, but AFAIK btrfs checksums don't have internal checksum (e.g. you c=
+an't=20
+check if the read checksum is a valid one or not, it does not have cont=
+rol=20
+bits), as such, if you consider PCI bus corruption as likely, you still=
+ don't=20
+get 100% certanity that the data reached the HDD unharmed.
 
-1) Why is the VFS layer involved at all?
+If you need such level of certanity when recording data, I'd consider=20
+mainframe hardware and/or duplicating whole storage stack.
 
-VFS hooks are necessary to avoid a disk read when a page
-is already in cleancache and to maintain coherency (via
-cleancache_flush operations) between cleancache, the
-page cache, and disk.  This very small, very clean set
-of hooks (placed by Chris Mason) all compile into
-nothingness if cleancache is config'ed off, and turn
-into "if (*p =3D=3D NULL)" if config'ed on but no "backend"
-claims cleancache_ops or if an fs doesn't opt-in
-(see below).
+Cheers,
+--=20
+Hubert Kario
+QBS - Quality Business Software
+02-656 Warszawa, ul. Ksawer=C3=B3w 30/85
+tel. +48 (22) 646-61-51, 646-74-24
+www.qbs.com.pl
 
-2) Why do the individual filesystems need to be modified?
-
-Some filesystems are built entirely on top of VFS and
-the hooks in VFS are sufficient, so don't require an
-fs "cleancache_init" hook; the initial implementation
-of cleancache didn't provide this hook.   But for some
-fs (such as btrfs) the VFS hooks are incomplete and
-one or more hooks in the fs-specific code is required.
-For some other fs's (such as tmpfs), cleancache may even
-be counterproductive.
-
-So it seemed prudent to require an fs to "opt in" to
-use cleancache, which requires at least one hook in
-any fs.
-
-3) Why are filesystems missing?
-=20
-Only because they haven't been tested.  The existence
-proof of four fs's (ext3/ext4/ocfs2/btfrs) should be
-sufficient to validate the concept, the opt-in approach
-means that untested filesystems are not affected, and
-the hooks in the four fs's should serve as examples to
-show that it should be very easy to add more fs's in the
-future.
-
-> Please give your patches some semi-resonable subject line.
-
-Not sure what you mean... are the subject lines too short?
-Or should I leave off the back-reference to Transcendent Memory?
-Or please suggest something you think is more reasonable?
-
-Thanks,
-Dan
-
+System Zarz=C4=85dzania Jako=C5=9Bci=C4=85
+zgodny z norm=C4=85 ISO 9001:2000
 --
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

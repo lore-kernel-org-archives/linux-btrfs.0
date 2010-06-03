@@ -1,159 +1,46 @@
-From: Edward Shishkin <edward@redhat.com>
-Subject: Unbound(?) internal fragmentation in Btrfs
-Date: Thu, 03 Jun 2010 16:58:41 +0200
-Message-ID: <4C07C321.8010000@redhat.com>
+From: Dan Magenheimer <dan.magenheimer@oracle.com>
+Subject: RE: [PATCH V2 0/7] Cleancache (was Transcendent Memory): overview
+Date: Thu, 3 Jun 2010 08:43:05 -0700 (PDT)
+Message-ID: <6e97a82a-c754-493e-bbf5-58f0bb6a18b5@default>
+References: <20100528173510.GA12166%ca-server1.us.oracle.comAANLkTilV-4_QaNq5O0WSplDx1Oq7JvkgVrEiR1rgf1up@mail.gmail.com>
+ <489aa002-6d42-4dd5-bb66-81c665f8cdd1@default> <4C07179F.5080106@vflare.org>
+ <3721BEE2-DF2D-452A-8F01-E690E32C6B33@oracle.com 4C074ACE.9020704@vflare.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Ric Wheeler <rwheeler@redhat.com>,
-	Andrew Morton <akpm@linux-foundation.org>
-To: The development of BTRFS <linux-btrfs@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>,
-	linux-fsdevel@vger.kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: Minchan Kim <minchan.kim@gmail.com>, chris.mason@oracle.com,
+        viro@zeniv.linux.org.uk, akpm@linux-foundation.org, adilger@sun.com,
+        tytso@mit.edu, mfasheh@suse.com, joel.becker@oracle.com,
+        matthew@wil.cx, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-ext4@vger.kernel.org, ocfs2-devel@oss.oracle.com,
+        linux-mm@kvack.org, jeremy@goop.org, JBeulich@novell.com,
+        kurt.hackel@oracle.com, npiggin@suse.de, dave.mccracken@oracle.com,
+        riel@redhat.com, avi@redhat.com, konrad.wilk@oracle.com
+To: ngupta@vflare.org, andreas.dilger@oracle.com
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <4C074ACE.9020704@vflare.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello everyone.
+> On 06/03/2010 10:23 AM, Andreas Dilger wrote:
+> > On 2010-06-02, at 20:46, Nitin Gupta wrote:
+>=20
+> > I was thinking it would be quite clever to do compression in, say,
+> > 64kB or 128kB chunks in a mapping (to get decent compression) and
+> > then write these compressed chunks directly from the page cache
+> > to disk in btrfs and/or a revived compressed ext4.
+>=20
+> Batching of pages to get good compression ratio seems doable.
 
-I was asked to review/evaluate Btrfs for using in enterprise
-systems and the below are my first impressions (linux-2.6.33).
+Is there evidence that batching a set of random individual 4K
+pages will have a significantly better compression ratio than
+compressing the pages separately?  I certainly understand that
+if the pages are from the same file, compression is likely to
+be better, but pages evicted from the page cache (which is
+the source for all cleancache_puts) are likely to be quite a
+bit more random than that, aren't they?
 
-The first test I have made was filling an empty 659M (/dev/sdb2)
-btrfs partition (mounted to /mnt) with 2K files:
-
-# for i in $(seq 1000000); \
-do dd if=/dev/zero of=/mnt/file_$i bs=2048 count=1; done
-(terminated after getting "No space left on device" reports).
-
-# ls /mnt | wc -l
-59480
-
-So, I got the "dirty" utilization 59480*2048 / (659*1024*1024) = 0.17,
-and the first obvious question is "hey, where are other 83% of my
-disk space???" I looked at the btrfs storage tree (fs_tree) and was
-shocked with the situation on the leaf level. The Appendix B shows
-5 adjacent btrfs leafs, which have the same parent.
-
-For example, look at the leaf 29425664: "items 1 free space 3892"
-(of 4096!!). Note, that this "free" space (3892) is _dead_: any
-attempts to write to the file system will result in "No space left
-on device".
-
-Internal fragmentation (see Appendix A) of those 5 leafs is
-(1572+3892+1901+3666+1675)/4096*5 = 0.62. This is even worse then
-ext4 and xfs: The last ones in this example will show fragmentation
-near zero with blocksize <= 2K. Even with 4K blocksize they will
-show better utilization 0.50 (against 0.38 in btrfs)!
-
-I have a small question for btrfs developers: Why do you folks put
-"inline extents", xattr, etc items of variable size to the B-tree
-in spite of the fact that B-tree is a data structure NOT for variable
-sized records? This disadvantage of B-trees was widely discussed.
-For example, maestro D. Knuth warned about this issue long time
-ago (see Appendix C).
-
-It is a well known fact that internal fragmentation of classic Bayer's
-B-trees is restricted by the value 0.50 (see Appendix C). However it
-takes place only if your tree contains records of the _same_ length
-(for example, extent pointers). Once you put to your B-tree records
-of variable length (restricted only by leaf size, like btrfs "inline
-extents"), your tree LOSES this boundary. Moreover, even worse:
-it is clear, that in this case utilization of B-tree scales as zero(!).
-That said, for every small E and for every amount of data N we
-can construct a consistent B-tree, which contains data N and has
-utilization worse then E. I.e. from the standpoint of utilization
-such trees can be completely degenerated.
-
-That said, the very important property of B-trees, which guarantees
-non-zero utilization, has been lost, and I don't see in Btrfs code any
-substitution for this property. In other words, where is a formal
-guarantee that all disk space of our users won't be eaten by internal
-fragmentation? I consider such guarantee as a *necessary* condition
-for putting a file system to production.
-
-Any technical comments are welcome.
-
-Thanks,
-Edward.
-
-
-Appendix A.
------------
-Glossary
-
-1. Utilization of data and(or) metadata storage.
-
-The fraction A/B, where
-A is total size in bytes of stored data and(or) metadata.
-B = N * S, where
-N is number of blocks occupied by stored data and(or) metadata.
-S is block size in bytes.
-
-2. Internal fragmentation of data and(or) metadata storage.
-
-difference (1 - U), where U is utilization.
-
-
-Appendix B.
------------
-a "period" in the dump of the fs_tree (btrfs-debug-tree /dev/sdb2)
-
-...
-
-leaf 29982720 items 4 free space 1572 generation 8 owner 5
-fs uuid 50268d9d-2a53-4f4d-b3a3-4fbff74dd956
-chunk uuid 963ba49a-bb2b-48a3-9b35-520d857aade6
-        item 0 key (319 XATTR_ITEM 3817753667) itemoff 3917 itemsize 78
-                location key (0 UNKNOWN 0) type 8
-                namelen 16 datalen 32 name: security.selinux
-        item 1 key (319 EXTENT_DATA 0) itemoff 1848 itemsize 2069
-                inline extent data size 2048 ram 2048 compress 0
-        item 2 key (320 INODE_ITEM 0) itemoff 1688 itemsize 160
-                inode generation 8 size 2048 block group 29360128 mode 
-100644 links 1
-        item 3 key (320 INODE_REF 256) itemoff 1672 itemsize 16
-                inode ref index 65 namelen 6 name: file64
-leaf 29425664 items 1 free space 3892 generation 8 owner 5
-fs uuid 50268d9d-2a53-4f4d-b3a3-4fbff74dd956
-chunk uuid 963ba49a-bb2b-48a3-9b35-520d857aade6
-        item 0 key (320 XATTR_ITEM 3817753667) itemoff 3917 itemsize 78
-                location key (0 UNKNOWN 0) type 8
-                namelen 16 datalen 32 name: security.selinux
-leaf 29990912 items 1 free space 1901 generation 8 owner 5
-fs uuid 50268d9d-2a53-4f4d-b3a3-4fbff74dd956
-chunk uuid 963ba49a-bb2b-48a3-9b35-520d857aade6
-        item 0 key (320 EXTENT_DATA 0) itemoff 1926 itemsize 2069
-                inline extent data size 2048 ram 2048 compress 0
-leaf 29986816 items 3 free space 3666 generation 8 owner 5
-fs uuid 50268d9d-2a53-4f4d-b3a3-4fbff74dd956
-chunk uuid 963ba49a-bb2b-48a3-9b35-520d857aade6
-        item 0 key (321 INODE_ITEM 0) itemoff 3835 itemsize 160
-                inode generation 8 size 2048 block group 29360128 mode 
-100644 links 1
-        item 1 key (321 INODE_REF 256) itemoff 3819 itemsize 16
-                inode ref index 66 namelen 6 name: file65
-        item 2 key (321 XATTR_ITEM 3817753667) itemoff 3741 itemsize 78
-                location key (0 UNKNOWN 0) type 8
-                namelen 16 datalen 32 name: security.selinux
-leaf 29995008 items 3 free space 1675 generation 8 owner 5
-fs uuid 50268d9d-2a53-4f4d-b3a3-4fbff74dd956
-chunk uuid 963ba49a-bb2b-48a3-9b35-520d857aade6
-        item 0 key (321 EXTENT_DATA 0) itemoff 1926 itemsize 2069
-                inline extent data size 2048 ram 2048 compress 0
-        item 1 key (322 INODE_ITEM 0) itemoff 1766 itemsize 160
-                inode generation 8 size 2048 block group 29360128 mode 
-100644 links 1
-        item 2 key (322 INODE_REF 256) itemoff 1750 itemsize 16
-                inode ref index 67 namelen 6 name: file66
-...
-
-Appendix C.
------------
-
-D.E. Knuth, The Art of Computer Programming, vol. 3 (Sorting and Searching),
-Addison-Wesley, Reading, MA, 1973.
-
--- 
-Edward O. Shishkin
-Principal Software Engineer
-Red Hat Czech
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>

@@ -1,131 +1,51 @@
-From: Takuya Yoshikawa <yoshikawa.takuya@oss.ntt.co.jp>
-Subject: [PATCH] btrfs: use zero_user family instead of writing down the
- same sequence repeatedly
-Date: Fri, 4 Jun 2010 17:14:48 +0900
-Message-ID: <20100604171448.4f1e2dbe.yoshikawa.takuya@oss.ntt.co.jp>
+From: Nitin Gupta <ngupta@vflare.org>
+Subject: Re: [PATCH V2 0/7] Cleancache (was Transcendent Memory): overview
+Date: Fri, 04 Jun 2010 15:06:49 +0530
+Message-ID: <4C08C931.3080306@vflare.org>
+References: <20100528173510.GA12166%ca-server1.us.oracle.comAANLkTilV-4_QaNq5O0WSplDx1Oq7JvkgVrEiR1rgf1up@mail.gmail.com> <489aa002-6d42-4dd5-bb66-81c665f8cdd1@default> <4C07179F.5080106@vflare.org> <3721BEE2-DF2D-452A-8F01-E690E32C6B33@oracle.com 4C074ACE.9020704@vflare.org> <6e97a82a-c754-493e-bbf5-58f0bb6a18b5@default>
+Reply-To: ngupta@vflare.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-	takuya.yoshikawa@gmail.com
-To: chris.mason@oracle.com
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: andreas.dilger@oracle.com, Minchan Kim <minchan.kim@gmail.com>,
+	chris.mason@oracle.com, viro@zeniv.linux.org.uk,
+	akpm@linux-foundation.org, adilger@sun.com, tytso@mit.edu,
+	mfasheh@suse.com, joel.becker@oracle.com, matthew@wil.cx,
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+	ocfs2-devel@oss.oracle.com, linux-mm@kvack.org, jeremy@goop.org,
+	JBeulich@novell.com, kurt.hackel@oracle.com, npiggin@suse.de,
+	dave.mccracken@oracle.com, riel@redhat.com, avi@redhat.com,
+	konrad.wilk@oracle.com
+To: Dan Magenheimer <dan.magenheimer@oracle.com>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <6e97a82a-c754-493e-bbf5-58f0bb6a18b5@default>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As other filesystems do, btrfs can use zero_user family.
+On 06/03/2010 09:13 PM, Dan Magenheimer wrote:
+>> On 06/03/2010 10:23 AM, Andreas Dilger wrote:
+>>> On 2010-06-02, at 20:46, Nitin Gupta wrote:
+>>
+>>> I was thinking it would be quite clever to do compression in, say,
+>>> 64kB or 128kB chunks in a mapping (to get decent compression) and
+>>> then write these compressed chunks directly from the page cache
+>>> to disk in btrfs and/or a revived compressed ext4.
+>>
+>> Batching of pages to get good compression ratio seems doable.
+> 
+> Is there evidence that batching a set of random individual 4K
+> pages will have a significantly better compression ratio than
+> compressing the pages separately?  I certainly understand that
+> if the pages are from the same file, compression is likely to
+> be better, but pages evicted from the page cache (which is
+> the source for all cleancache_puts) are likely to be quite a
+> bit more random than that, aren't they?
+> 
 
-Signed-off-by: Takuya Yoshikawa <yoshikawa.takuya@oss.ntt.co.jp>
----
- fs/btrfs/compression.c |   12 +++---------
- fs/btrfs/extent_io.c   |   44 ++++++++------------------------------------
- 2 files changed, 11 insertions(+), 45 deletions(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 396039b..12aded9 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -512,17 +512,11 @@ static noinline int add_ra_bio_pages(struct inode *inode,
- 		free_extent_map(em);
- 
- 		if (page->index == end_index) {
--			char *userpage;
- 			size_t zero_offset = isize & (PAGE_CACHE_SIZE - 1);
- 
--			if (zero_offset) {
--				int zeros;
--				zeros = PAGE_CACHE_SIZE - zero_offset;
--				userpage = kmap_atomic(page, KM_USER0);
--				memset(userpage + zero_offset, 0, zeros);
--				flush_dcache_page(page);
--				kunmap_atomic(userpage, KM_USER0);
--			}
-+			if (zero_offset)
-+				zero_user_segment(page, zero_offset,
-+						  PAGE_CACHE_SIZE);
- 		}
- 
- 		ret = bio_add_page(cb->orig_bio, page,
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index a4080c2..15dce48 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2039,25 +2039,15 @@ static int __extent_read_full_page(struct extent_io_tree *tree,
- 	}
- 
- 	if (page->index == last_byte >> PAGE_CACHE_SHIFT) {
--		char *userpage;
- 		size_t zero_offset = last_byte & (PAGE_CACHE_SIZE - 1);
- 
--		if (zero_offset) {
--			iosize = PAGE_CACHE_SIZE - zero_offset;
--			userpage = kmap_atomic(page, KM_USER0);
--			memset(userpage + zero_offset, 0, iosize);
--			flush_dcache_page(page);
--			kunmap_atomic(userpage, KM_USER0);
--		}
-+		if (zero_offset)
-+			zero_user_segment(page, zero_offset, PAGE_CACHE_SIZE);
- 	}
- 	while (cur <= end) {
- 		if (cur >= last_byte) {
--			char *userpage;
- 			iosize = PAGE_CACHE_SIZE - page_offset;
--			userpage = kmap_atomic(page, KM_USER0);
--			memset(userpage + page_offset, 0, iosize);
--			flush_dcache_page(page);
--			kunmap_atomic(userpage, KM_USER0);
-+			zero_user(page, page_offset, iosize);
- 			set_extent_uptodate(tree, cur, cur + iosize - 1,
- 					    GFP_NOFS);
- 			unlock_extent(tree, cur, cur + iosize - 1, GFP_NOFS);
-@@ -2096,11 +2086,7 @@ static int __extent_read_full_page(struct extent_io_tree *tree,
- 
- 		/* we've found a hole, just zero and go on */
- 		if (block_start == EXTENT_MAP_HOLE) {
--			char *userpage;
--			userpage = kmap_atomic(page, KM_USER0);
--			memset(userpage + page_offset, 0, iosize);
--			flush_dcache_page(page);
--			kunmap_atomic(userpage, KM_USER0);
-+			zero_user(page, page_offset, iosize);
- 
- 			set_extent_uptodate(tree, cur, cur + iosize - 1,
- 					    GFP_NOFS);
-@@ -2236,15 +2222,9 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
- 		return 0;
- 	}
- 
--	if (page->index == end_index) {
--		char *userpage;
-+	if (page->index == end_index)
-+		zero_user_segment(page, pg_offset, PAGE_CACHE_SIZE);
- 
--		userpage = kmap_atomic(page, KM_USER0);
--		memset(userpage + pg_offset, 0,
--		       PAGE_CACHE_SIZE - pg_offset);
--		kunmap_atomic(userpage, KM_USER0);
--		flush_dcache_page(page);
--	}
- 	pg_offset = 0;
- 
- 	set_page_extent_mapped(page);
-@@ -2789,16 +2769,8 @@ int extent_prepare_write(struct extent_io_tree *tree,
- 
- 		if (!PageUptodate(page) && isnew &&
- 		    (block_off_end > to || block_off_start < from)) {
--			void *kaddr;
--
--			kaddr = kmap_atomic(page, KM_USER0);
--			if (block_off_end > to)
--				memset(kaddr + to, 0, block_off_end - to);
--			if (block_off_start < from)
--				memset(kaddr + block_off_start, 0,
--				       from - block_off_start);
--			flush_dcache_page(page);
--			kunmap_atomic(kaddr, KM_USER0);
-+			zero_user_segments(page, to, block_off_end,
-+					   block_off_start, from);
- 		}
- 		if ((em->block_start != EXTENT_MAP_HOLE &&
- 		     em->block_start != EXTENT_MAP_INLINE) &&
--- 
-1.6.3.3
+Batching of pages from random files may not be so effective but
+it would be interesting to collect some data for this. Still,
+per-inode batching of pages seems doable and this should help
+us get over this problem.
+
+Thanks,
+Nitin

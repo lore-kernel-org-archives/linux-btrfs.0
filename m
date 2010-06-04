@@ -1,93 +1,90 @@
-From: Minchan Kim <minchan.kim@gmail.com>
-Subject: Re: [PATCH V2 0/7] Cleancache (was Transcendent Memory): overview
-Date: Fri, 4 Jun 2010 22:45:24 +0900
-Message-ID: <20100604134524.GD1879@barrios-desktop>
-References: <20100528173510.GA12166%ca-server1.us.oracle.comAANLkTilV-4_QaNq5O0WSplDx1Oq7JvkgVrEiR1rgf1up@mail.gmail.com>
- <489aa002-6d42-4dd5-bb66-81c665f8cdd1@default>
- <4C07179F.5080106@vflare.org>
- <3721BEE2-DF2D-452A-8F01-E690E32C6B33@oracle.com4C074ACE.9020704@vflare.org>
- <6e97a82a-c754-493e-bbf5-58f0bb6a18b5@default>
- <4C08C931.3080306@vflare.org>
+From: Dan Magenheimer <dan.magenheimer@oracle.com>
+Subject: RE: [PATCH V2 3/7] Cleancache (was Transcendent Memory): VFS hooks
+Date: Fri, 4 Jun 2010 08:13:14 -0700 (PDT)
+Message-ID: <16b4dcd5-95d8-4cb0-885d-0189ef90c02b@default>
+References: <20100528173610.GA12270@ca-server1.us.oracle.com
+ 20100604132948.GC1879@barrios-desktop>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Dan Magenheimer <dan.magenheimer@oracle.com>, andreas.dilger@oracle.com,
-	chris.mason@oracle.com, viro@zeniv.linux.org.uk,
-	akpm@linux-foundation.org, adilger@sun.com, tytso@mit.edu,
-	mfasheh@suse.com, joel.becker@oracle.com, matthew@wil.cx,
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-	ocfs2-devel@oss.oracle.com, linux-mm@kvack.org, jeremy@goop.org,
-	JBeulich@novell.com, kurt.hackel@oracle.com, npiggin@suse.de,
-	dave.mccracken@oracle.com, riel@redhat.com, avi@redhat.com,
-	konrad.wilk@oracle.com
-To: Nitin Gupta <ngupta@vflare.org>
+Cc: chris.mason@oracle.com, viro@zeniv.linux.org.uk, akpm@linux-foundation.org,
+        adilger@Sun.COM, tytso@mit.edu, mfasheh@suse.com,
+        joel.becker@oracle.com, matthew@wil.cx, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-ext4@vger.kernel.org, ocfs2-devel@oss.oracle.com,
+        linux-mm@kvack.org, ngupta@vflare.org, jeremy@goop.org,
+        JBeulich@novell.com, kurt.hackel@oracle.com, npiggin@suse.de,
+        dave.mccracken@oracle.com, riel@redhat.com, avi@redhat.com,
+        konrad.wilk@oracle.com
+To: Minchan Kim <minchan.kim@gmail.com>
 Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <4C08C931.3080306@vflare.org>
+In-Reply-To: <20100604132948.GC1879@barrios-desktop>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Nitin. 
+> Hi, Dan.
+> I reviewed quickly. So I may be wrong. :)
 
-I am happy to hear you started this work. 
+Hi Minchan --
 
-On Fri, Jun 04, 2010 at 03:06:49PM +0530, Nitin Gupta wrote:
-> On 06/03/2010 09:13 PM, Dan Magenheimer wrote:
-> >> On 06/03/2010 10:23 AM, Andreas Dilger wrote:
-> >>> On 2010-06-02, at 20:46, Nitin Gupta wrote:
-> >>
-> >>> I was thinking it would be quite clever to do compression in, say,
-> >>> 64kB or 128kB chunks in a mapping (to get decent compression) and
-> >>> then write these compressed chunks directly from the page cache
-> >>> to disk in btrfs and/or a revived compressed ext4.
-> >>
-> >> Batching of pages to get good compression ratio seems doable.
-> > 
-> > Is there evidence that batching a set of random individual 4K
-> > pages will have a significantly better compression ratio than
-> > compressing the pages separately?  I certainly understand that
-> > if the pages are from the same file, compression is likely to
-> > be better, but pages evicted from the page cache (which is
-> > the source for all cleancache_puts) are likely to be quite a
-> > bit more random than that, aren't they?
-> > 
-> 
-> 
-> Batching of pages from random files may not be so effective but
-> it would be interesting to collect some data for this. Still,
-> per-inode batching of pages seems doable and this should help
-> us get over this problem.
+Thanks for your thorough review!  I don't think anyone
+else yet has examined the semantics of the cleancache
+patch as deeply as you have.  Excellent!
 
-1)
-Please, consider system memory pressure case. 
-In such case, we have to release compressed cache pages. 
-Or it would be better to discard not-good-compression pages 
-when you compress it. 
+> > +=09/*
+> > +=09 * if we're uptodate, flush out into the cleancache, otherwise
+> > +=09 * invalidate any existing cleancache entries.  We can't leave
+> > +=09 * stale data around in the cleancache once our page is gone
+> > +=09 */
+> > +=09if (PageUptodate(page))
+> > +=09=09cleancache_put_page(page);
+> > +=09else
+> > +=09=09cleancache_flush_page(mapping, page);
+>=20
+> I doubt it's right place related to PFRA.
 
-2)
-This work is related to page reclaiming.
-Page reclaiming is to make free memory. 
-But this work might free memory little than old. 
-I admit your concept is good in terms of I/O cost. 
-But we might discard more clean pages than old if you want to 
-do batching of pages for good compression.
+I agree it doesn't seem to be the right place, but it does work
+and there doesn't seem to be a better place.
+=20
+> 1)
+> You mentiond PFRA in you description and I understood cleancache has
+> a cold clean page which is evicted by reclaimer.
+> But __remove_from_page_cache can be called by other call sites.
+>=20
+> For example, shmem_write page calls it for moving the page from page
+> cache
+> to swap cache. Although there isn't the page in page cache, it is in
+> swap cache.
+> So next read/write of shmem until swapout happens can be read/write in
+> swap cache.
+>=20
+> I didn't looked into whole of callsites. But please review again them.
 
-3)
-testcase. 
+I think the "if (PageUptodate(page))" eliminates all the cases
+where bad things can happen.
 
-As I mentioned, it could be good in terms of I/O cost. 
-But it could change system's behavior due to page consumption of backend. 
-so many page scanning/reclaiming could be happen. 
-It means hot pages can be discarded with this patch.
-But it's a just guessing. 
-So we need number with testcase we can measure I/O and system 
-responsivness. 
+Note that there may be cases where some unnecessary puts/flushes
+occur.  The focus of the patch is on correctness first; it may
+be possible to increase performance (marginally) in the future by
+reducing unnecessary cases.
 
-> 
-> Thanks,
-> Nitin
+> 3) Please consider system memory pressure.
+> And I hope Nitin consider this, too.
 
--- 
-Kind regards,
-Minchan Kim
+This is definitely very important but remember that cleancache
+provides a great deal of flexibility:  Any page in cleancache
+can be thrown away at any time as every page is clean!  It
+can even accept a page and throw it away immediately.  Clearly
+the backend needs to do this intelligently so this will
+take some policy work.
+
+Since I saw you sent a separate response to Nitin, I'll
+let him answer for his in-kernel page cache compression
+work.  The solution to the similar problem for Xen is
+described in the tmem internals document that I think
+I pointed to earlier here:
+http://oss.oracle.com/projects/tmem/documentation/internals/=20
+
+Thanks,
+Dan
 
 --
 To unsubscribe, send a message with 'unsubscribe linux-mm' in

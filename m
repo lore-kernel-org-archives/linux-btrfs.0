@@ -1,65 +1,53 @@
-From: "J. David Beutel" <list@getsu.com>
-Subject: btrfs raid1 still recognized after being overwritten by md raid1
-Date: Sun, 06 Jun 2010 23:12:31 -1000
-Message-ID: <4C0CB7FF.2080405@getsu.com>
+From: Peter Niemayer <niemayer@isg.de>
+Subject: Poor performance (1/4 that of XFS) when appending to lots of files
+Date: Mon, 07 Jun 2010 18:54:18 +0200
+Message-ID: <huj87q$8ov$1@dough.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I created an md raid1 on partitions that had a btrfs raid1, but btrfs is 
-still recognized on one of those partitions.  (Is it finding some 
-left-over, redundant metadata?)  I'm concerned this will confuse me or 
-btrfs in the future.  How should I fix this?
+Hi,
 
-Details:  after installing on btrfs for the first time, I created a 
-btrfs raid1 in Fedora 13 on sda7 sdb7.  Then, while reinstalling Fedora 
-13 from DVD, I created an md raid1 on those partitions, containing / 
-type ext4.  After booting onto that /, btrfs is still recognized on 
-sda7, but sda7 is also in md7, which is mounted on / as type ext4:
+we ran a benchmark using btrfs on a server that essentially does
+the equivalent of the following:
 
-[root@pikake jdb]# cat /proc/mdstat
-Personalities : [raid1]
-md127 : active (auto-read-only) raid1 sdb5[1] sda5[0]
-       204788 blocks super 1.0 [2/2] [UU]
+Open one large (25GB) test-set file for reading, which consists of many
+small randomly generated messages. Each message consists of a
+primary key (an integer in the range of 0 to 1,000,000) and a random
+number of arbitrary data bytes (length in the range from 10 to 1000 byte).
 
-md8 : active raid1 sda8[0] sdb8[1]
-       218100 blocks super 1.0 [2/2] [UU]
+For each message, the server opens the file that is determined by the
+primary key with O_APPEND, write()s the random data bytes to the file.
+Then it closes the file.
+The server runs 4 threads in parallel to spread the above action
+over 4 CPU cores, each thread processes a quarter of the primary keys
+(primary_key & 0x03).
 
-md7 : active raid1 sda7[0] sdb7[1]
-       48820156 blocks super 1.1 [2/2] [UU]
-       bitmap: 1/1 pages [4KB], 65536KB chunk
+The server does so until the whole 25GB test-set is processed (it
+does not do any sync or fsync operation. The machine has 4GB memory,
+so it has to actually write out most of the data).
 
-md3 : active raid1 sda3[0] sdb3[1]
-       12287936 blocks [2/2] [UU]
+This test, when run on a fast SSD (attached to a SAS channel), took us ~ 
+30min to complete using XFS (mounted with "nobarrier", data security is 
+not an issue in this scenario).
 
-unused devices: <none>
-[root@pikake jdb]# btrfs-show
-failed to read /dev/sdf
-failed to read /dev/sde
-failed to read /dev/sdd
-failed to read /dev/sdc
-failed to read /dev/sr0
-Label: none  uuid: 3257ab1a-45de-43d3-bd84-a01ca93d0296
-     Total devices 1 FS bytes used 7.71GB
-     devid    1 size 48.83GB used 14.54GB path /dev/sda6
+When using btrfs on the same hardware (same SSD, same system),
+it took us ~ 120min.
 
-Label: none  uuid: c25ab51a-9fec-4e67-a5d8-4968e7d2e5e8
-     Total devices 2 FS bytes used 7.69GB
-     devid    1 size 46.56GB used 11.40GB path /dev/sda7
-     *** Some devices missing
+The filesystem was mounted using the following options:
+> mount -t btrfs -o nodatasum,nodatacow,nobarrier,ssd,noacl,notreelog,noatime,nodiratime  /dev/sdg /data-ssd3
 
-Btrfs Btrfs v0.19
-[root@pikake jdb]# mount
-/dev/md7 on / type ext4 (rw)
-proc on /proc type proc (rw)
-sysfs on /sys type sysfs (rw)
-devpts on /dev/pts type devpts (rw,gid=5,mode=620)
-tmpfs on /dev/shm type tmpfs (rw,rootcontext="system_u:object_r:tmpfs_t:s0")
-/dev/md8 on /boot type ext4 (rw)
-none on /proc/sys/fs/binfmt_misc type binfmt_misc (rw)
-sunrpc on /var/lib/nfs/rpc_pipefs type rpc_pipefs (rw)
-gvfs-fuse-daemon on /home/jdb/.gvfs type fuse.gvfs-fuse-daemon 
-(rw,nosuid,nodev,user=jdb)
+(Both measurements done under linux-2.6.34).
+
+Looks like btrfs is not really tuned to perform well in the above
+scenario.
+
+I would appreciate any advise on how to improve btrfs' performance for
+the above scenario.
+
+Regards,
+
+Peter Niemayer
 

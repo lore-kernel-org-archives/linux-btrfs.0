@@ -1,41 +1,63 @@
-From: "J. David Beutel" <list@getsu.com>
-Subject: Re: btrfs raid1 still recognized after being overwritten by md raid1
-Date: Mon, 07 Jun 2010 23:18:12 -1000
-Message-ID: <4C0E0AD4.3090902@getsu.com>
-References: <4C0CB7FF.2080405@getsu.com> <4C0D9CDC.5010307@linux.intel.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: minskey guo <chaohong_guo@linux.intel.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4C0D9CDC.5010307@linux.intel.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] fs: make sure to invalidate pages if we fall back on buffered reads
+Date: Tue,  8 Jun 2010 10:24:04 -0400
+Message-ID: <1276007044-17715-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/07/2010 03:29 PM, minskey guo wrote:
-> On 06/07/2010 05:12 PM, J. David Beutel wrote:
->> I created an md raid1 on partitions that had a btrfs raid1, but btrfs is
->> still recognized on one of those partitions. (Is it finding some
->> left-over, redundant metadata?) I'm concerned this will confuse me or
->> btrfs in the future. How should I fix this?
->
->
-> Seem that btrfs-show checks the 1st superblock only, running the 
-> following can zap some part of that superblock,
->
->   dd if=/dev/zero of=/dev/sda7 seek=128 bs=512 count=1
->
-> but probably, you need to zap the 2nd superblock as
->
->  dd if=/dev/zero of=/dev/sda7 seek=128k bs=512 count=1
->
->
-> In case the block is being used, you can dump that block and
-> search "_BHRfS_M" in that block before clear it.
+Since BTRFS can fallback on buffered reads after having done some direct reads,
+we need to make sure to invalidate any pages that we may have read by doing
+buffered IO.  This shouldn't have shown up as a visible user problem, it's just
+for correctness sake.  Thanks,
 
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ mm/filemap.c |    9 ++++++++-
+ 1 files changed, 8 insertions(+), 1 deletions(-)
 
-Thanks!  Both of those blocks had "_BHRfS_M".  Zapping them stopped sda7 
-from showing up in btrfs-show, while /proc/mdstat is unchanged and / 
-still works.
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 829ac9c..ca5aba9 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -1266,6 +1266,7 @@ generic_file_aio_read(struct kiocb *iocb, const struct iovec *iov,
+ 	unsigned long seg = 0;
+ 	size_t count;
+ 	loff_t *ppos = &iocb->ki_pos;
++	bool invalidate = false;
+ 
+ 	count = 0;
+ 	retval = generic_segment_checks(iov, &nr_segs, &count, VERIFY_WRITE);
+@@ -1291,7 +1292,8 @@ generic_file_aio_read(struct kiocb *iocb, const struct iovec *iov,
+ 							iov, pos, nr_segs);
+ 			}
+ 			if (retval > 0) {
+-				*ppos = pos + retval;
++				pos += retval;
++				*ppos = pos;
+ 				count -= retval;
+ 			}
+ 
+@@ -1307,6 +1309,7 @@ generic_file_aio_read(struct kiocb *iocb, const struct iovec *iov,
+ 				file_accessed(filp);
+ 				goto out;
+ 			}
++			invalidate = true;
+ 		}
+ 	}
+ 
+@@ -1343,6 +1346,10 @@ generic_file_aio_read(struct kiocb *iocb, const struct iovec *iov,
+ 		if (desc.count > 0)
+ 			break;
+ 	}
++	if (invalidate && retval > 0)
++		invalidate_mapping_pages(filp->f_mapping,
++					 pos >> PAGE_CACHE_SHIFT,
++					 (*ppos - 1) >> PAGE_CACHE_SHIFT);
+ out:
+ 	return retval;
+ }
+-- 
+1.6.6.1
 
-Cheers,
-11011011

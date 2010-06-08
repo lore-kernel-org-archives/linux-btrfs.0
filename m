@@ -1,113 +1,92 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: read from backup copy if csum fails with DIO
-Date: Mon,  7 Jun 2010 17:07:10 -0400
-Message-ID: <1275944830-4698-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: minskey guo <chaohong_guo@linux.intel.com>
+Subject: Re: btrfs raid1 still recognized after being overwritten by md raid1
+Date: Tue, 08 Jun 2010 09:29:00 +0800
+Message-ID: <4C0D9CDC.5010307@linux.intel.com>
+References: <4C0CB7FF.2080405@getsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-btrfs@vger.kernel.org
+To: "J. David Beutel" <list@getsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4C0CB7FF.2080405@getsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Previously DIO would simply fail if the checksums didn't match when doing DIO
-reads, but if we mirror data then we have another copy we can read from.  This
-patch does this by cloning the bio and resubmitting it against the next mirror.
-I tested this by short-circuiting things so the first mirror _always_ failed,
-and then ran xfstests and fsx with dio enabled.  Both xfstests and fsx ran
-without problems.  Thanks,
+On 06/07/2010 05:12 PM, J. David Beutel wrote:
+> I created an md raid1 on partitions that had a btrfs raid1, but btrfs is
+> still recognized on one of those partitions. (Is it finding some
+> left-over, redundant metadata?) I'm concerned this will confuse me or
+> btrfs in the future. How should I fix this?
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/inode.c |   42 +++++++++++++++++++++++++++++++++++++++++-
- 1 files changed, 41 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d999c53..78c0547 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5494,6 +5494,7 @@ struct btrfs_dio_private {
- 	u64 bytes;
- 	u32 *csums;
- 	void *private;
-+	int mirror;
- };
- 
- static void btrfs_endio_direct_read(struct bio *bio, int err)
-@@ -5503,8 +5504,11 @@ static void btrfs_endio_direct_read(struct bio *bio, int err)
- 	struct btrfs_dio_private *dip = bio->bi_private;
- 	struct inode *inode = dip->inode;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct bio *new_bio;
- 	u64 start;
- 	u32 *private = dip->csums;
-+	int num_copies;
-+	int ret;
- 
- 	start = dip->logical_offset;
- 	do {
-@@ -5528,7 +5532,7 @@ static void btrfs_endio_direct_read(struct bio *bio, int err)
- 				      " %llu csum %u private %u\n",
- 				      inode->i_ino, (unsigned long long)start,
- 				      csum, *private);
--				err = -EIO;
-+				goto failed;
- 			}
- 		}
- 
-@@ -5537,6 +5541,7 @@ static void btrfs_endio_direct_read(struct bio *bio, int err)
- 		bvec++;
- 	} while (bvec <= bvec_end);
- 
-+out:
- 	unlock_extent(&BTRFS_I(inode)->io_tree, dip->logical_offset,
- 		      dip->logical_offset + dip->bytes - 1, GFP_NOFS);
- 	bio->bi_private = dip->private;
-@@ -5544,6 +5549,40 @@ static void btrfs_endio_direct_read(struct bio *bio, int err)
- 	kfree(dip->csums);
- 	kfree(dip);
- 	dio_end_io(bio, err);
-+	return;
-+failed:
-+	num_copies = btrfs_num_copies(&root->fs_info->mapping_tree,
-+				      dip->logical_offset, dip->bytes);
-+	dip->mirror++;
-+	if (dip->mirror > num_copies) {
-+		err = -EIO;
-+		goto out;
-+	}
-+
-+	new_bio = bio_clone(bio, GFP_NOFS);
-+	if (!new_bio) {
-+		err = -EIO;
-+		goto out;
-+	}
-+
-+	new_bio->bi_end_io = btrfs_endio_direct_read;
-+	new_bio->bi_private = dip;
-+	new_bio->bi_size = dip->bytes;
-+	new_bio->bi_sector = dip->disk_bytenr >> 9;
-+
-+	ret = btrfs_bio_wq_end_io(root->fs_info, new_bio, 0);
-+	if (ret) {
-+		bio_put(new_bio);
-+		err = -EIO;
-+		goto out;
-+	}
-+
-+	ret = btrfs_map_bio(root, READ, new_bio, dip->mirror, 1);
-+	if (ret) {
-+		bio_put(new_bio);
-+		err = -EIO;
-+		goto out;
-+	}
- }
- 
- static void btrfs_endio_direct_write(struct bio *bio, int err)
-@@ -5674,6 +5713,7 @@ static void btrfs_submit_direct(int rw, struct bio *bio, struct inode *inode,
- 	dip->private = bio->bi_private;
- 	dip->inode = inode;
- 	dip->logical_offset = file_offset;
-+	dip->mirror = 0;
- 
- 	start = dip->logical_offset;
- 	dip->bytes = 0;
--- 
-1.6.6.1
+Seem that btrfs-show checks the 1st superblock only, running the 
+following can zap some part of that superblock,
+
+   dd if=/dev/zero of=/dev/sda7 seek=128 bs=512 count=1
+
+but probably, you need to zap the 2nd superblock as
+
+  dd if=/dev/zero of=/dev/sda7 seek=128k bs=512 count=1
+
+
+In case the block is being used, you can dump that block and
+search "_BHRfS_M" in that block before clear it.
+
+-minskey
+
+
+> Details: after installing on btrfs for the first time, I created a btrfs
+> raid1 in Fedora 13 on sda7 sdb7. Then, while reinstalling Fedora 13 from
+> DVD, I created an md raid1 on those partitions, containing / type ext4.
+> After booting onto that /, btrfs is still recognized on sda7, but sda7
+> is also in md7, which is mounted on / as type ext4:
+>
+> [root@pikake jdb]# cat /proc/mdstat
+> Personalities : [raid1]
+> md127 : active (auto-read-only) raid1 sdb5[1] sda5[0]
+> 204788 blocks super 1.0 [2/2] [UU]
+>
+> md8 : active raid1 sda8[0] sdb8[1]
+> 218100 blocks super 1.0 [2/2] [UU]
+>
+> md7 : active raid1 sda7[0] sdb7[1]
+> 48820156 blocks super 1.1 [2/2] [UU]
+> bitmap: 1/1 pages [4KB], 65536KB chunk
+>
+> md3 : active raid1 sda3[0] sdb3[1]
+> 12287936 blocks [2/2] [UU]
+>
+> unused devices: <none>
+> [root@pikake jdb]# btrfs-show
+> failed to read /dev/sdf
+> failed to read /dev/sde
+> failed to read /dev/sdd
+> failed to read /dev/sdc
+> failed to read /dev/sr0
+> Label: none uuid: 3257ab1a-45de-43d3-bd84-a01ca93d0296
+> Total devices 1 FS bytes used 7.71GB
+> devid 1 size 48.83GB used 14.54GB path /dev/sda6
+>
+> Label: none uuid: c25ab51a-9fec-4e67-a5d8-4968e7d2e5e8
+> Total devices 2 FS bytes used 7.69GB
+> devid 1 size 46.56GB used 11.40GB path /dev/sda7
+> *** Some devices missing
+>
+> Btrfs Btrfs v0.19
+> [root@pikake jdb]# mount
+> /dev/md7 on / type ext4 (rw)
+> proc on /proc type proc (rw)
+> sysfs on /sys type sysfs (rw)
+> devpts on /dev/pts type devpts (rw,gid=5,mode=620)
+> tmpfs on /dev/shm type tmpfs
+> (rw,rootcontext="system_u:object_r:tmpfs_t:s0")
+> /dev/md8 on /boot type ext4 (rw)
+> none on /proc/sys/fs/binfmt_misc type binfmt_misc (rw)
+> sunrpc on /var/lib/nfs/rpc_pipefs type rpc_pipefs (rw)
+> gvfs-fuse-daemon on /home/jdb/.gvfs type fuse.gvfs-fuse-daemon
+> (rw,nosuid,nodev,user=jdb)
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at http://vger.kernel.org/majordomo-info.html
 

@@ -1,63 +1,26 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] fs: make sure to invalidate pages if we fall back on buffered reads
-Date: Tue,  8 Jun 2010 10:24:04 -0400
-Message-ID: <1276007044-17715-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
+From: Peter Niemayer <niemayer@isg.de>
+Subject: Re: Poor performance (1/4 that of XFS) when appending to lots of
+ files
+Date: Tue, 08 Jun 2010 19:44:22 +0200
+Message-ID: <hulvhm$m1p$1@dough.gmane.org>
+References: <huj87q$8ov$1@dough.gmane.org> <13074499.131.1275983628404.JavaMail.root@zimbra>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8; format=flowed
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <13074499.131.1275983628404.JavaMail.root@zimbra>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since BTRFS can fallback on buffered reads after having done some direct reads,
-we need to make sure to invalidate any pages that we may have read by doing
-buffered IO.  This shouldn't have shown up as a visible user problem, it's just
-for correctness sake.  Thanks,
+On 06/08/2010 09:53 AM, Roy Sigurd Karlsbakk wrote:
+> Can you share the code for this benchmark, please?
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- mm/filemap.c |    9 ++++++++-
- 1 files changed, 8 insertions(+), 1 deletions(-)
+I will find out whether it is reasonably easy to extract
+a distributable benchmark code from the whole server
+(which I couldn't share as a whole, since it's a commercial
+piece of software, after all...).
 
-diff --git a/mm/filemap.c b/mm/filemap.c
-index 829ac9c..ca5aba9 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -1266,6 +1266,7 @@ generic_file_aio_read(struct kiocb *iocb, const struct iovec *iov,
- 	unsigned long seg = 0;
- 	size_t count;
- 	loff_t *ppos = &iocb->ki_pos;
-+	bool invalidate = false;
- 
- 	count = 0;
- 	retval = generic_segment_checks(iov, &nr_segs, &count, VERIFY_WRITE);
-@@ -1291,7 +1292,8 @@ generic_file_aio_read(struct kiocb *iocb, const struct iovec *iov,
- 							iov, pos, nr_segs);
- 			}
- 			if (retval > 0) {
--				*ppos = pos + retval;
-+				pos += retval;
-+				*ppos = pos;
- 				count -= retval;
- 			}
- 
-@@ -1307,6 +1309,7 @@ generic_file_aio_read(struct kiocb *iocb, const struct iovec *iov,
- 				file_accessed(filp);
- 				goto out;
- 			}
-+			invalidate = true;
- 		}
- 	}
- 
-@@ -1343,6 +1346,10 @@ generic_file_aio_read(struct kiocb *iocb, const struct iovec *iov,
- 		if (desc.count > 0)
- 			break;
- 	}
-+	if (invalidate && retval > 0)
-+		invalidate_mapping_pages(filp->f_mapping,
-+					 pos >> PAGE_CACHE_SHIFT,
-+					 (*ppos - 1) >> PAGE_CACHE_SHIFT);
- out:
- 	return retval;
- }
--- 
-1.6.6.1
+Regards,
+
+Peter Niemayer
+
 

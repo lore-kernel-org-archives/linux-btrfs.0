@@ -1,163 +1,436 @@
-From: Hubert Kario <hka@qbs.com.pl>
-Subject: Re: [Fwd: Re: Linking two files together][RFC]
-Date: Wed, 9 Jun 2010 14:24:38 +0200
-Message-ID: <201006091424.38255.hka@qbs.com.pl>
-References: <4C0F809C.4040209@robertoragusa.it>
+From: Nikanth Karthikesan <knikanth@novell.com>
+Subject: [PATCH][RFC] Complex filesystem operations: split and join
+Date: Wed, 9 Jun 2010 20:35:46 +0530
+Message-ID: <201006092035.46481.knikanth@novell.com>
 Mime-Version: 1.0
 Content-Type: Text/Plain; charset=utf-8
-Cc: linux-btrfs@vger.kernel.org
-To: Roberto Ragusa <mail@robertoragusa.it>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4C0F809C.4040209@robertoragusa.it>
+Cc: linux-kernel@vger.kernel.org,
+	Alexander Viro <viro@zeniv.linux.org.uk>,
+	Christoph Hellwig <hch@lst.de>,
+	Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs@vger.kernel.org
+To: linux-fsdevel@vger.kernel.org,
+	OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wednesday 09 June 2010 13:53:00 Roberto Ragusa wrote:
-> Hi,
->=20
-> I hope that ideas about btrfs are not off-topic for this mailing list=
-=2E
->=20
-> The forwarded message below was written by me on fedora-users.
-> The thread is about the ability to link two files in a manner
-> similar to "cat 1 2 >3 && rm 1 2" while avoiding any data
-> movement on the disk.
-> The implementation should just put the original extents together in
-> the new file. Is there any filesystem which is capable of doing that?
-> As btrfs is already based on extents and COW, couldn't this feature b=
-e
-> evaluated for feasibility? I think a lot of usages will be found
-> for it if actually implemented.
 
-It will come naturally with online data deduplication -- though, at the=
- moment=20
-the only FS I know of that can do this is ZFS.
+I had a need to split a file into smaller files on a thumb drive with n=
+o
+free space on it or anywhere else in the system. When the filesystem
+supports sparse files(truncate_range), I could create files, while
+punching holes in the original file. But when the underlying fs is FAT,
+I couldn't. Also why should we do needless I/O, when all I want is to
+split/join files. i.e., all the data are already on the disk, under the
+same filesystem. I just want to do some metadata changes.
 
-Otherwise, we would need a completely new system calls to perform those=
-=20
-operations.
+So, I added two inode operations, namely split and join, that lets me
+tell the OS, that all I want is meta-data changes. And the file-system
+can avoid doing lots of I/O, when only metadata changes are needed.
 
->=20
-> Read the following part if interested.
->=20
-> Thanks.
->=20
-> -------- Original Message --------
-> From: - Thu May 27 20:44:26 2010
-> X-Mozilla-Status: 0001
-> X-Mozilla-Status2: 00000000
-> Message-ID: <4BFE537B.8050002@robertoragusa.it>
-> Date: Thu, 27 May 2010 13:11:55 +0200
-> From: Roberto Ragusa <mail@robertoragusa.it>
-> User-Agent: Thunderbird 2.0.0.23 (X11/20090825)
-> MIME-Version: 1.0
-> To: Community support for Fedora users <users@lists.fedoraproject.org=
->
-> Subject: Re: Linking two files together
-> References:
-> <7F593570D3366E4E85C76BAF70FD0EED0106DBF31FB1@CVMMBX.vetmed.wsu.edu>
-> <4BFD589F.7090601@kjchome.homeip.net> In-Reply-To:
-> <4BFD589F.7090601@kjchome.homeip.net>
-> X-Enigmail-Version: 0.96.0
-> Content-Type: text/plain; charset=3DISO-8859-1
-> Content-Transfer-Encoding: 7bit
->=20
-> Kevin J. Cummings wrote:
-> > On 05/26/2010 01:16 PM, Rector, David wrote:
-> >> Hello,
-> >>=20
-> >> I have studied various filesystems, and am fairly familiar with ho=
-w they
-> >> are structured. However, I am currently stuck on trying to do what
-> >> seems like a simple thing.
-> >>=20
-> >> I would like to join two files together without having to physical=
-ly
-> >> copy bytes (i.e. I have vary large files, so I don't want to use
-> >> 'cat'). It seems to me that it should be possible to simply modify=
- the
-> >> file entry in the filesystem such that the last inode of the first=
- file
-> >> points to the first inode of the second file. I guess this is simi=
-lar
-> >> to a "hard link", but used to join files rather than simply have
-> >> another pointer to one file.
-> >>=20
-> >> I have seen 'mmv' and 'lxsplit' and they all seem to do the same t=
-hing,
-> >> namely they want to physically copy the bytes in order to join two
-> >> files together.
-> >>=20
-> >> Is there any such utility in linux to perform such a hard link to =
-join
-> >> or connect two files together without having to copy bytes?
-> >=20
-> > If you could guarantee that the last extent used by the first file =
-was
-> > completely full of data with no extraneous bytes, it might be possi=
-ble
-> > to "merge" the extent maps of the 2 files into a single file entry.=
-  If
-> > you cannot guarantee that, then you will have to copy bytes from th=
-e 2nd
-> > file to the end of the first file.
->=20
-> But everything becomes possible if the fileystem permits partially em=
-pty
-> blocks in the middle of the file. No filesystem does it AFAIK, but it=
- is
-> not a big issue, as partial blocks (or compacted tails) are already
-> permitted at the end of the file. New filesystems use extents rather =
-than
-> blocks, so if the extents are measured in bytes instead of 512b-block=
-s you
-> can just use a smaller extent in the middle of the file where the joi=
+sys_split(fd1, n, fd2)
+1. Attach the data of file after n bytes in fd1 to fd2.
+2. Truncate fd1 to n bytes.
+
+Roughly can be thought of as equivalent of following commands:
+1. dd if=3Dfile1 of=3Dfile2 skip=3Dn
+2. truncate -c -s n file1
+
+sys_join(fd1, fd2)
+1. Extend fd1 with data of fd2
+2. Truncate fd2 to 0.
+
+Roughly can be thought of as equivalent of following commands:
+1. dd if=3Dfile2 of=3Dfile1 seek=3D`filesize file1`
+2. truncate -c -s 0 file2
+
+Attached is the patch that adds these new syscalls and support for them
+to the FAT filesystem.
+
+I guess, this approach can be extended to splice() kind of call, betwee=
 n
-> happened.
->=20
-> At this point, you can support inplace-joining, inplace-inflating (ad=
-d
-> 10000 bytes in this file at position 300000), inplace-erasure (remove
-> 10000 bytes at position 300000) and data shuffling (swap the first 50=
-meg
-> of the file with the last 50meg).
->=20
-> With heavy usage you have just created a new kind of fragmentation, w=
-hich
-> can be corrected with the usual defragmentation tools (including "cp"=
-).
-> (add that fragmentation is losing importance with the spreading of SS=
-D)
->=20
-> Considering that sparse files have been a reality for decades and tha=
-t
-> the implementation of operation with inside-file byte-grained extents
-> is not more difficult than truncate, I wonder if we will see somethin=
-g
-> of this kind in some advanced filesystem (btrfs?).
->=20
-> There are a lot of possible uses:
-> - delete/replace mail in mbox format repositories
-> - smart packaging (delete from tar, delete from zip)
-> - in-place iso creation
-> and.... just imagine.....
-> - video editing (!) add/remove/replace frames inside a 150GiB capture=
-d
-> video
->=20
-> Where can you submit ideas to btrfs?
-> It also has COW, so everything becomes even more exciting...
+files, instead of pipes. On a COW fs, splice could simply setup blocks
+as shared between files, instead of doing I/O. It would be a kind of
+explicit online data-deduplication. Later when a file modifies any of
+those blocks, we copy blocks. i.e., COW.
 
---=20
-Hubert Kario
-QBS - Quality Business Software
-02-656 Warszawa, ul. Ksawer=C3=B3w 30/85
-tel. +48 (22) 646-61-51, 646-74-24
-www.qbs.com.pl
+Thanks
+Nikanth
 
-System Zarz=C4=85dzania Jako=C5=9Bci=C4=85
-zgodny z norm=C4=85 ISO 9001:2000
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+p.s: Strangely fibrils and syslets came to my mind, when thinking along
+these lines. But, I guess fibrils or syslets are not really related to
+this.
+
+
+
+=46rom: Nikanth Karthikesan <knikanth@suse.de>
+Subject: vfs and vfat: add filesystem operations: split and join
+
+Add 2 new inode_operation, namely sys_split and sys_join, with the
+following semantics.
+
+sys_split(fd1, n, fd2)
+1. Attach the data of file after n bytes in fd1 to fd2.
+2. Truncate fd1 to n bytes.
+
+sys_join(fd1, fd2)
+1. Extend fd1 with data of fd2
+2. Truncate fd2 to 0.
+
+These avoid doing unnecessary I/O that would be needed when the same
+should be accompolished using only read,write,truncate. Also using
+read/write would require temporary additional free space on filesystems
+that do not support sparse files. The files should belong to the same
+super block.
+
+The split should be on a cluster boundary, i.e., it should be a multipl=
+e
+of cluster size i.e., filesystem block-size. And for join the size of
+destination file should be a multiple of filesystem block size i.e., FA=
+T
+cluster size. Also the syscalls are added only to x86_64, for now.
+
+Some performance numbers of splitting a file into half of its size and
+then concatenating it back together using and not using these syscalls.
+
+filesize     Using sys_split & sys_join        Using read/write
+ 1GB                 0.080                        56.557
+ 2GB                 0.117                       116.140
+ 3GB                 0.112                       144.658
+
+All numbers are seconds.
+
+Signed-off-by: Nikanth Karthikesan <knikanth@suse.de>
+
+---
+
+
+diff --git a/arch/x86/include/asm/unistd_64.h b/arch/x86/include/asm/un=
+istd_64.h
+index ff4307b..0b9bdf8 100644
+--- a/arch/x86/include/asm/unistd_64.h
++++ b/arch/x86/include/asm/unistd_64.h
+@@ -663,6 +663,10 @@ __SYSCALL(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueu=
+einfo)
+ __SYSCALL(__NR_perf_event_open, sys_perf_event_open)
+ #define __NR_recvmmsg				299
+ __SYSCALL(__NR_recvmmsg, sys_recvmmsg)
++#define __NR_split				300
++__SYSCALL(__NR_split, sys_split)
++#define __NR_join				301
++__SYSCALL(__NR_join, sys_join)
+=20
+ #ifndef __NO_STUBS
+ #define __ARCH_WANT_OLD_READDIR
+diff --git a/fs/fat/file.c b/fs/fat/file.c
+index 990dfae..81e426c 100644
+--- a/fs/fat/file.c
++++ b/fs/fat/file.c
+@@ -453,7 +453,118 @@ out:
+ }
+ EXPORT_SYMBOL_GPL(fat_setattr);
+=20
++/*
++ * Join the cluster chain of tail_inode to the end of head_inode.
++ */
++int fat_join(struct inode *head_inode, struct inode *tail_inode)
++{
++	struct super_block *sb =3D head_inode->i_sb;
++	struct msdos_sb_info *sbi =3D MSDOS_SB(sb);
++	int nr_cluster;
++	int ret =3D 0;
++
++	nr_cluster =3D head_inode->i_size >> sbi->cluster_bits;
++	if (nr_cluster << sbi->cluster_bits !=3D head_inode->i_size) {
++		return -EINVAL;
++	}
++
++	nr_cluster =3D tail_inode->i_size >> sbi->cluster_bits;
++
++	fat_cache_inval_inode(head_inode);
++	fat_cache_inval_inode(tail_inode);
++
++	ret =3D fat_chain_add(head_inode, MSDOS_I(tail_inode)->i_start, nr_cl=
+uster);
++	if (ret)
++		goto out;
++
++	MSDOS_I(tail_inode)->i_start =3D MSDOS_I(tail_inode)->i_logstart =3D =
+0;
++	ret =3D simple_setsize(head_inode, head_inode->i_size + tail_inode->i=
+_size);
++	if (ret)
++		goto out;
++	head_inode->i_blocks =3D ((head_inode->i_size + tail_inode->i_size)>>=
+ sbi->cluster_bits) << (sbi->cluster_bits - 9);
++	ret =3D simple_setsize(tail_inode, 0);
++	tail_inode->i_blocks =3D 0;
++out:
++	mark_inode_dirty(head_inode);
++	mark_inode_dirty(tail_inode);
++
++	return ret;
++}
++
++/*
++ * Split the cluster chain of head_inode after length/cluster_size clu=
+sters
++ * And attach the remaining chain to tail_inode.
++ */
++int fat_split(struct inode *head_inode, loff_t new_length, struct inod=
+e *tail_inode)
++{
++	struct super_block *sb =3D head_inode->i_sb;
++	struct msdos_sb_info *sbi =3D MSDOS_SB(sb);
++	int ret =3D 0, new_fclus, last;
++	int nr_cluster;
++	struct fat_entry fatent;
++
++	nr_cluster =3D new_length >> sbi->cluster_bits;=20
++	if (nr_cluster << sbi->cluster_bits !=3D new_length)
++		return -EINVAL;
++
++	fat_cache_inval_inode(head_inode);
++	fat_cache_inval_inode(tail_inode);
++
++	last =3D new_fclus =3D 0;
++	if (MSDOS_I(head_inode)->i_start) {
++		int fclus, dclus, last_clus;
++		loff_t oldsize, newsize;
++		struct msdos_sb_info *sbi =3D MSDOS_SB(sb);
++
++		ret =3D fat_get_cluster(head_inode, nr_cluster - 1, &fclus, &dclus);
++		last_clus =3D dclus;
++
++		if (ret < 0)=20
++			goto out;
++
++		if (ret =3D=3D FAT_ENT_EOF) {
++			ret =3D -1;
++			goto out;
++		}
++
++		ret =3D fat_get_cluster(head_inode, nr_cluster, &fclus, &dclus);
++
++		if (ret < 0)=20
++			goto out;
++
++		if (ret =3D=3D FAT_ENT_EOF) {
++			ret =3D -1;
++			goto out;
++		}
++
++		oldsize=3D head_inode->i_size;
++		newsize =3D nr_cluster * sbi->sec_per_clus * 512;
++
++		fatent_init(&fatent);
++		ret =3D fat_ent_read(head_inode, &fatent, last_clus);
++		ret =3D fat_ent_write(head_inode, &fatent, FAT_ENT_EOF, 1);
++		fatent_brelse(&fatent);
++
++		ret =3D simple_setsize(head_inode, newsize);
++		head_inode->i_blocks =3D nr_cluster << (sbi->cluster_bits - 9);
++
++		MSDOS_I(tail_inode)->i_logstart =3D
++		MSDOS_I(tail_inode)->i_start =3D cpu_to_le32(dclus);
++		ret =3D simple_setsize(tail_inode, oldsize - newsize);
++		tail_inode->i_blocks =3D ((oldsize - newsize) >> sbi->cluster_bits) =
+<< (sbi->cluster_bits - 9);
++
++		ret =3D 0;
++	}
++out:
++	mark_inode_dirty(head_inode);
++	mark_inode_dirty(tail_inode);
++
++	return ret;
++}
++
+ const struct inode_operations fat_file_inode_operations =3D {
+ 	.setattr	=3D fat_setattr,
+ 	.getattr	=3D fat_getattr,
++	.split		=3D fat_split,
++	.join		=3D fat_join,
+ };
+diff --git a/fs/open.c b/fs/open.c
+index 5463266..0d1bfc0 100644
+--- a/fs/open.c
++++ b/fs/open.c
+@@ -938,6 +938,146 @@ SYSCALL_DEFINE2(creat, const char __user *, pathn=
+ame, int, mode)
+ #endif
+=20
+ /*
++ * Only vfat supports this, so interface might need changes.
++ *
++ * -1: length should be a multiple of filesystem block size
++ *     i.e., vfat cluster size.
++ * -2: Hacky whacky code. (Hackweek.. Yay)
++ * -3: Error paths not verified.
++ * ...
++ * -=E2=88=9E: Idea not validated with experts
++ */
++SYSCALL_DEFINE2(join, unsigned int, fd_dst, unsigned int, fd_src)
++{
++	int ret =3D 0;
++	struct inode *src_inode;
++	struct inode *dst_inode;
++	struct file *src_f;
++	struct file *dst_f;
++
++	src_f =3D fget(fd_src);
++	if (!src_f)
++		return -EINVAL;
++	dst_f =3D fget(fd_dst);
++	if (!dst_f) {
++		fput(src_f);
++		return -EINVAL;
++	}
++
++	src_inode =3D src_f->f_path.dentry->d_inode;
++	dst_inode =3D dst_f->f_path.dentry->d_inode;
++
++	if (!dst_inode->i_op->join) {
++		ret =3D -ENOTSUPP;
++		goto out;
++	}
++
++	if (src_inode->i_ino < dst_inode->i_ino) {
++		mutex_lock(&src_inode->i_mutex);
++		mutex_lock(&dst_inode->i_mutex);
++	} else {
++		mutex_lock(&dst_inode->i_mutex);
++		mutex_lock(&src_inode->i_mutex);
++	}
++
++	if (!(src_f->f_mode & FMODE_WRITE) || !(dst_f->f_mode & FMODE_WRITE))=
+ {
++		ret =3D -EPERM;
++		goto out;
++	}
++
++	if (dst_inode->i_sb !=3D src_inode->i_sb) {
++		ret =3D -ENOTSUPP;
++		goto out;
++	}
++
++	ret =3D dst_inode->i_op->join(dst_inode, src_inode);
++out:
++	if (src_inode->i_ino < dst_inode->i_ino) {
++		mutex_unlock(&dst_inode->i_mutex);
++		mutex_unlock(&src_inode->i_mutex);
++	} else {
++		mutex_unlock(&src_inode->i_mutex);
++		mutex_unlock(&dst_inode->i_mutex);
++	}
++	fput(src_f);
++	fput(dst_f);
++	return ret;
++}
++
++/*
++ * Only vfat supports this, so interface might need changes.
++ *
++ * -1: length should be a multiple of filesystem block size
++ *     i.e., vfat cluster size.
++ * -2: Hacky whacky code. (Hackweek.. Yay)
++ * -3: Error paths not verified.
++ * ...
++ * -=E2=88=9E: Idea not validated with experts
++ */
++SYSCALL_DEFINE3(split, unsigned int, fd_src, loff_t, length, unsigned =
+int, fd_dst)
++{
++	int ret =3D 0;
++	struct inode *head_inode;
++	struct inode *tail_inode;
++	struct file *f1;
++	struct file *f2;
++
++	f1 =3D fget(fd_src);
++	if (!f1)
++		return -EINVAL;
++	f2 =3D fget(fd_dst);
++	if (!f2) {
++		fput(f1);
++		return -EINVAL;
++	}
++
++	head_inode =3D f1->f_path.dentry->d_inode;
++	tail_inode =3D f2->f_path.dentry->d_inode;
++
++	if (head_inode->i_ino < tail_inode->i_ino) {
++		mutex_lock(&head_inode->i_mutex);
++		mutex_lock(&tail_inode->i_mutex);
++	} else {
++		mutex_lock(&tail_inode->i_mutex);
++		mutex_lock(&head_inode->i_mutex);
++	}
++
++	if (!head_inode->i_op->split) {
++		ret =3D -ENOTSUPP;
++		goto out;
++	}
++
++	if (!(f2->f_mode & FMODE_WRITE) || !(f1->f_mode & FMODE_WRITE)) {
++		ret =3D -EPERM;
++		goto out;
++	}
++=09
++	if (head_inode->i_size < length || tail_inode->i_size !=3D 0) {
++		ret =3D -EINVAL;=09
++		goto out;
++	}
++
++	if (head_inode->i_sb !=3D tail_inode->i_sb) {
++		ret =3D -ENOTSUPP;
++		goto out;
++	}
++
++	ret =3D head_inode->i_op->split(head_inode, length, tail_inode);
++out:
++	if (head_inode->i_ino < tail_inode->i_ino) {
++		mutex_unlock(&tail_inode->i_mutex);
++		mutex_unlock(&head_inode->i_mutex);
++	} else {
++		mutex_unlock(&head_inode->i_mutex);
++		mutex_unlock(&tail_inode->i_mutex);
++	}
++
++	fput(f1);
++	fput(f2);
++	return ret;
++}
++
++/*
+  * "id" is the POSIX thread ID. We use the
+  * files pointer for this..
+  */
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 3428393..4206bb8 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1539,6 +1539,8 @@ struct inode_operations {
+ 			  loff_t len);
+ 	int (*fiemap)(struct inode *, struct fiemap_extent_info *, u64 start,
+ 		      u64 len);
++	int (*split)(struct inode *, loff_t, struct inode *);
++	int (*join)(struct inode *, struct inode *);
+ };
+=20
+ struct seq_file;
+diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
+index a1a86a5..b71e81a 100644
+--- a/include/linux/syscalls.h
++++ b/include/linux/syscalls.h
+@@ -512,6 +512,8 @@ asmlinkage long sys_sendfile64(int out_fd, int in_f=
+d,
+ asmlinkage long sys_readlink(const char __user *path,
+ 				char __user *buf, int bufsiz);
+ asmlinkage long sys_creat(const char __user *pathname, int mode);
++asmlinkage long sys_split(unsigned int fd_src, loff_t length, unsigned=
+ int fd_dst);
++asmlinkage long sys_join(unsigned int fd_dst, unsigned int fd_src);
+ asmlinkage long sys_open(const char __user *filename,
+ 				int flags, int mode);
+ asmlinkage long sys_close(unsigned int fd);

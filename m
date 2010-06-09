@@ -1,26 +1,26 @@
-From: Peter Niemayer <niemayer@isg.de>
-Subject: Re: Poor performance (1/4 that of XFS) when appending to lots of
- files
-Date: Tue, 08 Jun 2010 19:44:22 +0200
-Message-ID: <hulvhm$m1p$1@dough.gmane.org>
-References: <huj87q$8ov$1@dough.gmane.org> <13074499.131.1275983628404.JavaMail.root@zimbra>
+From: Philip Worrall <philip.worrall@googlemail.com>
+Subject: compression type per extent
+Date: Wed, 9 Jun 2010 10:18:21 +0100
+Message-ID: <AANLkTikkFpiSdaoqd7Ut48Bh8U-cAsrKFQiFgDjxGfTm@mail.gmail.com>
+References: <AANLkTinSk7Rx-6EK-xNFvBVMA-NKOOY9gpftRfc_XUJ1@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <13074499.131.1275983628404.JavaMail.root@zimbra>
+In-Reply-To: <AANLkTinSk7Rx-6EK-xNFvBVMA-NKOOY9gpftRfc_XUJ1@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/08/2010 09:53 AM, Roy Sigurd Karlsbakk wrote:
-> Can you share the code for this benchmark, please?
+I am trying to add some hooks to support different compression types
 
-I will find out whether it is reasonably easy to extract
-a distributable benchmark code from the whole server
-(which I couldn't share as a whole, since it's a commercial
-piece of software, after all...).
+In end_compressed_bio_read(struct bio *bio, int err) (compression.c)
+does anyone know how can i read the compression_type flag set for the
+current extent being read for decompression.
 
-Regards,
+I was looking at using btrfs_get_file_extent_compression but I am
+unsure if this is correct in this function.
 
-Peter Niemayer
+At the moment btrfs_zlib_decompress_biovec is called but obviously
+this is because only zlib is supported right now.
 
 
+Philip

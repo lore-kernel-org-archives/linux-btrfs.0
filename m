@@ -1,42 +1,96 @@
-From: C Anthony Risinger <anthony@extof.me>
-Subject: missing include from btrfsck.c?
-Date: Wed, 9 Jun 2010 19:11:37 -0500
-Message-ID: <AANLkTikZeG26t38KwkTYZITlKpHGkCKPKDHwSU5eJNRx@mail.gmail.com>
+From: Nitin Gupta <ngupta@vflare.org>
+Subject: Re: [PATCH V2 2/7] Cleancache (was Transcendent Memory): core files
+Date: Thu, 10 Jun 2010 07:11:52 +0530
+Message-ID: <4C1042E0.8080403@vflare.org>
+References: <20100528173550.GA12219@ca-server1.us.oracle.com>
+Reply-To: ngupta@vflare.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=windows-1252
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: chris.mason@oracle.com, viro@zeniv.linux.org.uk,
+	akpm@linux-foundation.org, adilger@sun.com, tytso@mit.edu,
+	mfasheh@suse.com, joel.becker@oracle.com, matthew@wil.cx,
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+	ocfs2-devel@oss.oracle.com, linux-mm@kvack.org, jeremy@goop.org,
+	JBeulich@novell.com, kurt.hackel@oracle.com, npiggin@suse.de,
+	dave.mccracken@oracle.com, riel@redhat.com, avi@redhat.com,
+	konrad.wilk@oracle.com
+To: Dan Magenheimer <dan.magenheimer@oracle.com>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <20100528173550.GA12219@ca-server1.us.oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-i'm not a C developer, but i like to think i know enough to be
-dangerous (pragmatic) :-D
+Hi,
 
-building from git master failed with:
+On 05/28/2010 11:05 PM, Dan Magenheimer wrote:
+> [PATCH V2 2/7] Cleancache (was Transcendent Memory): core files
 
-=2E.........
-=2E.........
-gcc -Wp,-MMD,./.btrfsck.o.d,-MT,btrfsck.o -Wall -D_FILE_OFFSET_BITS=3D6=
-4
--D_FORTIFY_SOURCE=3D2 -g -Werror -Os -c btrfsck.c
-cc1: warnings being treated as errors
-btrfsck.c: In function =91maybe_free_inode_rec=92:
-btrfsck.c:323:2: error: implicit declaration of function =91S_ISDIR=92
-btrfsck.c:328:2: error: implicit declaration of function =91S_ISREG=92
-btrfsck.c:328:2: error: implicit declaration of function =91S_ISLNK=92
-make: *** [btrfsck.o] Error 1
+I just finished a rough (but working) implementation of in-kernel
+page cache compression backend (called zcache). During this work,
+I found some issues with cleancache, mostly related to (lack of)
+comments/documentation:
 
-grepping the source turned up several other files successfully using
-those functions.  after a quick serach, it looked to be a part of
-stat... and the other files were all including <sys/stat.h>. i'm not
-sure if it's my gcc being paranoid (archlinux), but adding:
 
-#include <sys/stat.h>
+> +
+> +static inline int cleancache_init_fs(size_t pagesize)
+> +
 
-to btrfsck.c fixed the issue for me.
+ - It is not very obvious that this function is called when
+an instance of cleancache supported filesystem is *mounted*.
+Initially, I thought this is called which any such filesystem
+module is loaded.
 
-C Anthony
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+ - It seems that returning pool_id of 0 is considered as error
+condition (as it appears from deactivate_locked_super() changes). 
+This seems weird; I think only negative pool_id should considered
+as error. Anyway, please add function comments for these.
+
+> +int __cleancache_get_page(struct page *page)
+> +{
+> +	int ret = 0;
+> +	int pool_id = page->mapping->host->i_sb->cleancache_poolid;
+> +
+> +	if (pool_id >= 0) {
+> +		ret = (*cleancache_ops->get_page)(pool_id,
+> +						  page->mapping->host->i_ino,
+> +						  page->index,
+> +						  page);
+> +		if (ret == CLEANCACHE_GET_PAGE_SUCCESS)
+> +			succ_gets++;
+> +		else
+> +			failed_gets++;
+> +	}
+> +	return ret;
+> +}
+
+It seems "non-standard" to use '1' as success code. You could simply use
+0 for success and negative error code as failure. Then you can also get
+rid of CLEANCACHE_GET_PAGE_SUCCESS.
+
+> +
+> +int __cleancache_put_page(struct page *page)
+
+What return values stands for successful put? 1? Anyway, following the
+same, 0 for success, negative codes for errors, seems to be better.
+
+> +
+> +int __cleancache_flush_page(struct address_space *mapping, struct page *page)
+
+> +int __cleancache_flush_inode(struct address_space *mapping)
+
+Return values for all the flush functions is ignored everywhere, so
+why not make them return void instead?
+
+> +static inline void cleancache_flush_fs(int pool_id)
+
+Like init_fs, please document that it is called when a cleancache
+aware filesystem is unmounted (or in other cases too?).
+
+
+
+Page cache compression was a long-pending project. I'm glad its
+coming into shape with the help of cleancache :)
+
+Thanks,
+Nitin
+

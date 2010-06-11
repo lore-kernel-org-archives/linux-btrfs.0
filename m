@@ -1,78 +1,48 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [GIT PULL] Btrfs updates for 2.6.35
-Date: Fri, 11 Jun 2010 16:28:33 -0400
-Message-ID: <20100611202833.GG3018@think>
-References: <20100611193731.GA3018@think>
- <AANLkTim6K6x3trUJLSUpoqsCWEpWuhxyN1zVRDUXH3BQ@mail.gmail.com>
- <20100611194812.GD3018@think>
- <AANLkTilRCWlM5ZklGOb26Xj9XAmBdY1S702WyQGuaK_l@mail.gmail.com>
+From: Palmer Cox <palmercox@gmail.com>
+Subject: Re: bcp command not installed by Makefile
+Date: Fri, 11 Jun 2010 19:01:52 -0400
+Message-ID: <AANLkTilAno75C9HQuq8YcDVb6i6ZyzhY8tik36AQZ010@mail.gmail.com>
+References: <AANLkTimRn1NJsivc6HD8W5K3QKQoPdmvfK54o6TOY37c@mail.gmail.com>
+	<201006111412.07560.hka@qbs.com.pl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-kernel <linux-kernel@vger.kernel.org>,
-	linux-btrfs@vger.kernel.org
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <AANLkTilRCWlM5ZklGOb26Xj9XAmBdY1S702WyQGuaK_l@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-2
+Cc: linux-btrfs@vger.kernel.org
+To: Hubert Kario <hka@qbs.com.pl>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201006111412.07560.hka@qbs.com.pl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 11, 2010 at 01:00:02PM -0700, Linus Torvalds wrote:
-> On Fri, Jun 11, 2010 at 12:48 PM, Chris Mason <chris.mason@oracle.com> wrote:
-> >
-> > The others all fix oopsen or big problems, and I think fixing warnings
-> > helps avoid false negatives as others look for real problems?
-> >
-> > I'm happy to rebase out the 3 non-criticals.
-> 
-> There seems to be more than three non-criticals. There's the warning
-> fixes, the "unused variables" thing, the "memdup_user()" thing, a
-> couple of unnecessary NULL checks removed etc. On the whole, I do not
-> get the feeling that the pull request was actively trying to be
-> minimal, and that's what I really want to see.
+I guess not.  I thought that bcp was letting me do a reflink copy of a
+file from one subvolume to the another while cp was not.  Anyway, I
+looked through the code and realized that bcp was just falling back to
+a regular copy. oh well.
 
-The for-linus branch (note the change in branch name) has everything
-that doesn't fix a bug removed.
+-Palmer Cox
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git for-linus
 
-I'll update the master branch to reflect any pulls you do.
-
-Dan Carpenter (9) commits (+19/-8):
-    Btrfs: handle error returns from btrfs_lookup_dir_item() (+2/-0)
-    Btrfs: btrfs_read_fs_root_no_name() returns ERR_PTRs (+4/-0)
-    Btrfs: unwind after btrfs_start_transaction() errors (+1/-1)
-    Btrfs: The file argument for fsync() is never null (+1/-1)
-    Btrfs: handle ERR_PTR from posix_acl_from_xattr() (+2/-0)
-    Btrfs: btrfs_lookup_dir_item() can return ERR_PTR (+1/-1)
-    Btrfs: uninitialized data is check_path_shared() (+1/-1)
-    Btrfs: handle kzalloc() failure in open_ctree() (+5/-2)
-    Btrfs: btrfs_iget() returns ERR_PTR (+2/-2)
-
-Zheng Yan (2) commits (+6/-4):
-    Btrfs: Fix BUG_ON for fs converted from extN (+2/-1)
-    Btrfs: Fix null dereference in relocation.c (+4/-3)
-
-Shi Weihua (2) commits (+6/-0):
-    Btrfs: prohibit a operation of changing acl's mask when noacl mount option used (+3/-0)
-    Btrfs: should add a permission check for setfacl (+3/-0)
-
-Miao Xie (2) commits (+9/-1):
-    Btrfs: fix loop device on top of btrfs (+1/-0)
-    Btrfs: fix remap_file_pages error (+8/-1)
-
-Sage Weil (1) commits (+0/-3):
-    Btrfs: avoid BUG when dropping root and reference in same transaction
-
-Josef Bacik (1) commits (+1/-1):
-    Btrfs: fix fallocate regression
-
-Total: (17) commits (+41/-17)
- fs/btrfs/acl.c         |    8 ++++++++
- fs/btrfs/disk-io.c     |   11 +++++++++--
- fs/btrfs/extent-tree.c |    3 ++-
- fs/btrfs/file.c        |   12 ++++++++++--
- fs/btrfs/inode.c       |    4 ++--
- fs/btrfs/ioctl.c       |    4 ++--
- fs/btrfs/relocation.c  |    7 ++++---
- fs/btrfs/root-tree.c   |    3 ---
- fs/btrfs/super.c       |    6 ++++--
- 9 files changed, 41 insertions(+), 17 deletions(-)
+On Fri, Jun 11, 2010 at 8:12 AM, Hubert Kario <hka@qbs.com.pl> wrote:
+> On Friday 11 of June 2010 03:46:11 Palmer Cox wrote:
+>> Is there a reason the bcp command isn't installed when running make
+>> install? =A0If not, here is a really simple patch to add it to the
+>> install.
+>>
+>> -Palmer Cox
+>
+> Does 'bcp' can do anything additional that the 'cp --reflink=3Dalways=
+'?
+>
+> --
+> Hubert Kario
+> QBS - Quality Business Software
+> 02-656 Warszawa, ul. Ksawer=F3w 30/85
+> tel. +48 (22) 646-61-51, 646-74-24
+> www.qbs.com.pl
+>
+> System Zarz=B1dzania Jako=B6ci=B1
+> zgodny z norm=B1 ISO 9001:2000
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

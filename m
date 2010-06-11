@@ -1,124 +1,38 @@
-From: "Yan, Zheng " <yanzheng@21cn.com>
-Subject: Re: btrfs: hanging processes - race condition?
-Date: Fri, 11 Jun 2010 10:32:07 +0800
-Message-ID: <AANLkTilJCKyddGMIi77QG-uluyqgXPlPYVDcFTmWno8O@mail.gmail.com>
-References: <Pine.LNX.4.64.1006101022570.12518@lyn-del-uti-015>
-	<20100611011242.GA22585@sli10-desk.sh.intel.com>
+From: Adrian - <phaet0n@hotmail.com>
+Subject: Adding to multi-device raid filesystems
+Date: Fri, 11 Jun 2010 00:28:33 -0400
+Message-ID: <COL103-W3834C74893F4923C5FF86F9D90@phx.gbl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Jerome Ibanes <Jerome@ops.zillow.com>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	yanmin.zhang@intel.com, tim.c.chen@intel.com
-To: Shaohua Li <shaohua.li@intel.com>
+Content-Type: text/plain; charset=US-ASCII
+To: <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100611011242.GA22585@sli10-desk.sh.intel.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 11, 2010 at 9:12 AM, Shaohua Li <shaohua.li@intel.com> wrot=
-e:
-> On Fri, Jun 11, 2010 at 01:41:41AM +0800, Jerome Ibanes wrote:
->> List,
->>
->> I ran into a hang issue (race condition: cpu is high when the server=
- is
->> idle, meaning that btrfs is hanging, and IOwait is high as well) run=
-ning
->> 2.6.34 on debian/lenny on a x86_64 server (dual Opteron 275 w/ 16GB =
-ram).
->> The btrfs filesystem live on 18x300GB scsi spindles, configured as R=
-aid-0,
->> as shown below:
->>
->> Label: none =A0uuid: bc6442c6-2fe2-4236-a5aa-6b7841234c52
->> =A0 =A0 =A0 =A0 =A0Total devices 18 FS bytes used 2.94TB
->> =A0 =A0 =A0 =A0 =A0devid =A0 =A05 size 279.39GB used 208.33GB path /=
-dev/cciss/c1d0
->> =A0 =A0 =A0 =A0 =A0devid =A0 17 size 279.39GB used 208.34GB path /de=
-v/cciss/c1d8
->> =A0 =A0 =A0 =A0 =A0devid =A0 16 size 279.39GB used 209.33GB path /de=
-v/cciss/c1d7
->> =A0 =A0 =A0 =A0 =A0devid =A0 =A04 size 279.39GB used 208.33GB path /=
-dev/cciss/c0d4
->> =A0 =A0 =A0 =A0 =A0devid =A0 =A01 size 279.39GB used 233.72GB path /=
-dev/cciss/c0d1
->> =A0 =A0 =A0 =A0 =A0devid =A0 13 size 279.39GB used 208.33GB path /de=
-v/cciss/c1d4
->> =A0 =A0 =A0 =A0 =A0devid =A0 =A08 size 279.39GB used 208.33GB path /=
-dev/cciss/c1d11
->> =A0 =A0 =A0 =A0 =A0devid =A0 12 size 279.39GB used 208.33GB path /de=
-v/cciss/c1d3
->> =A0 =A0 =A0 =A0 =A0devid =A0 =A03 size 279.39GB used 208.33GB path /=
-dev/cciss/c0d3
->> =A0 =A0 =A0 =A0 =A0devid =A0 =A09 size 279.39GB used 208.33GB path /=
-dev/cciss/c1d12
->> =A0 =A0 =A0 =A0 =A0devid =A0 =A06 size 279.39GB used 208.33GB path /=
-dev/cciss/c1d1
->> =A0 =A0 =A0 =A0 =A0devid =A0 11 size 279.39GB used 208.33GB path /de=
-v/cciss/c1d2
->> =A0 =A0 =A0 =A0 =A0devid =A0 14 size 279.39GB used 208.33GB path /de=
-v/cciss/c1d5
->> =A0 =A0 =A0 =A0 =A0devid =A0 =A02 size 279.39GB used 233.70GB path /=
-dev/cciss/c0d2
->> =A0 =A0 =A0 =A0 =A0devid =A0 15 size 279.39GB used 209.33GB path /de=
-v/cciss/c1d6
->> =A0 =A0 =A0 =A0 =A0devid =A0 10 size 279.39GB used 208.33GB path /de=
-v/cciss/c1d13
->> =A0 =A0 =A0 =A0 =A0devid =A0 =A07 size 279.39GB used 208.33GB path /=
-dev/cciss/c1d10
->> =A0 =A0 =A0 =A0 =A0devid =A0 18 size 279.39GB used 208.34GB path /de=
-v/cciss/c1d9
->> Btrfs v0.19-16-g075587c-dirty
->>
->> The filesystem, mounted in /mnt/btrfs is hanging, no existing or new
->> process can access it, however 'df' still displays the disk usage (3=
-TB out
->> of 5). The disks appear to be physically healthy. Please note that a
->> significant number of files were placed on this filesystem, between =
-20 and
->> 30 million files.
->>
->> The relevant kernel messages are displayed below:
->>
->> INFO: task btrfs-submit-0:4220 blocked for more than 120 seconds.
->> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this mes=
-sage.
->> btrfs-submit- D 000000010042e12f =A0 =A0 0 =A04220 =A0 =A0 =A02 0x00=
-000000
->> =A0 ffff8803e584ac70 0000000000000046 0000000000004000 0000000000011=
-680
->> =A0 ffff8803f7349fd8 ffff8803f7349fd8 ffff8803e584ac70 0000000000011=
-680
->> =A0 0000000000000001 ffff8803ff99d250 ffffffff8149f020 0000000081150=
-ab0
->> Call Trace:
->> =A0 [<ffffffff813089f3>] ? io_schedule+0x71/0xb1
->> =A0 [<ffffffff811470be>] ? get_request_wait+0xab/0x140
->> =A0 [<ffffffff810406f4>] ? autoremove_wake_function+0x0/0x2e
->> =A0 [<ffffffff81143a4d>] ? elv_rq_merge_ok+0x89/0x97
->> =A0 [<ffffffff8114a245>] ? blk_recount_segments+0x17/0x27
->> =A0 [<ffffffff81147429>] ? __make_request+0x2d6/0x3fc
->> =A0 [<ffffffff81145b16>] ? generic_make_request+0x207/0x268
->> =A0 [<ffffffff81145c12>] ? submit_bio+0x9b/0xa2
->> =A0 [<ffffffffa01aa081>] ? btrfs_requeue_work+0xd7/0xe1 [btrfs]
->> =A0 [<ffffffffa01a5365>] ? run_scheduled_bios+0x297/0x48f [btrfs]
->> =A0 [<ffffffffa01aa687>] ? worker_loop+0x17c/0x452 [btrfs]
->> =A0 [<ffffffffa01aa50b>] ? worker_loop+0x0/0x452 [btrfs]
->> =A0 [<ffffffff81040331>] ? kthread+0x79/0x81
->> =A0 [<ffffffff81003674>] ? kernel_thread_helper+0x4/0x10
->> =A0 [<ffffffff810402b8>] ? kthread+0x0/0x81
->> =A0 [<ffffffff81003670>] ? kernel_thread_helper+0x0/0x10
-> This looks like the issue we saw too, http://lkml.org/lkml/2010/6/8/3=
-75.
-> This is reproduceable in our setup.
 
-I think I know the cause of http://lkml.org/lkml/2010/6/8/375.
-The code in the first do-while loop in btrfs_commit_transaction
-set current process to TASK_UNINTERRUPTIBLE state, then calls
-btrfs_start_delalloc_inodes, btrfs_wait_ordered_extents and
-btrfs_run_ordered_operations(). All of these function may call
-cond_resched().
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Dear all,
+
+
+
+What raid policy does a subsequent balance operation follow
+
+when adding a new device to an existing -d raid0 filesystem
+
+initially created on two devices? What if the initial creation
+
+was raid1?
+
+
+
+In particular, if I have two 1TB drives that I initially stripe,
+
+can I subsequently mirror them onto a 2TB drive that I add
+
+later on? Can I recover if any single drive fails?
+
+
+
+Thank you.
+ 		 	   		  
+_________________________________________________________________
+Look 'em in the eye: FREE Messenger video chat
+http://go.microsoft.com/?linkid=9734386

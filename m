@@ -1,31 +1,38 @@
-From: Linus Torvalds <torvalds@linux-foundation.org>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: [GIT PULL] Btrfs updates for 2.6.35
-Date: Fri, 11 Jun 2010 13:00:02 -0700
-Message-ID: <AANLkTilRCWlM5ZklGOb26Xj9XAmBdY1S702WyQGuaK_l@mail.gmail.com>
+Date: Fri, 11 Jun 2010 16:02:18 -0400
+Message-ID: <20100611200218.GE3018@think>
 References: <20100611193731.GA3018@think>
-	<AANLkTim6K6x3trUJLSUpoqsCWEpWuhxyN1zVRDUXH3BQ@mail.gmail.com>
-	<20100611194812.GD3018@think>
+ <AANLkTim6K6x3trUJLSUpoqsCWEpWuhxyN1zVRDUXH3BQ@mail.gmail.com>
+ <20100611194812.GD3018@think>
+ <AANLkTilRCWlM5ZklGOb26Xj9XAmBdY1S702WyQGuaK_l@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
-	linux-kernel <linux-kernel@vger.kernel.org>,
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-kernel <linux-kernel@vger.kernel.org>,
 	linux-btrfs@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20100611194812.GD3018@think>
+In-Reply-To: <AANLkTilRCWlM5ZklGOb26Xj9XAmBdY1S702WyQGuaK_l@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 11, 2010 at 12:48 PM, Chris Mason <chris.mason@oracle.com> wrote:
->
-> The others all fix oopsen or big problems, and I think fixing warnings
-> helps avoid false negatives as others look for real problems?
->
-> I'm happy to rebase out the 3 non-criticals.
+On Fri, Jun 11, 2010 at 01:00:02PM -0700, Linus Torvalds wrote:
+> On Fri, Jun 11, 2010 at 12:48 PM, Chris Mason <chris.mason@oracle.com> wrote:
+> >
+> > The others all fix oopsen or big problems, and I think fixing warnings
+> > helps avoid false negatives as others look for real problems?
+> >
+> > I'm happy to rebase out the 3 non-criticals.
+> 
+> There seems to be more than three non-criticals. There's the warning
+> fixes, the "unused variables" thing, the "memdup_user()" thing, a
+> couple of unnecessary NULL checks removed etc. On the whole, I do not
+> get the feeling that the pull request was actively trying to be
+> minimal, and that's what I really want to see.
 
-There seems to be more than three non-criticals. There's the warning
-fixes, the "unused variables" thing, the "memdup_user()" thing, a
-couple of unnecessary NULL checks removed etc. On the whole, I do not
-get the feeling that the pull request was actively trying to be
-minimal, and that's what I really want to see.
+No problem, I like to err on the side of pulling in safe fixes from the
+automated checkers so they don't have to go through results again.
 
-                  Linus
+But, I've got a completely minimal rebase now and I'm double checking
+it.
+
+-chris

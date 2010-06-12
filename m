@@ -1,40 +1,26 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Music-files suddenly not recognized anymore, empty files -
- Btrfschk reports errors
-Date: Sat, 12 Jun 2010 18:39:16 -0400
-Message-ID: <20100612223916.GM3018@think>
-References: <AANLkTim4wf0p5KP29Usd8cp6YOQzR3oiqpPTFl1NoVTP@mail.gmail.com>
+From: Sage Weil <sage@newdream.net>
+Subject: Re: reflinked file size incorrect
+Date: Sat, 12 Jun 2010 15:41:21 -0700 (PDT)
+Message-ID: <Pine.LNX.4.64.1006121511310.12125@cobra.newdream.net>
+References: <20100612164848.GB16863@3e8.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Cc: linux-btrfs@vger.kernel.org
-To: Clemens Eisserer <linuxhippy@gmail.com>
+To: Jim Ursetto <jim@3e8.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTim4wf0p5KP29Usd8cp6YOQzR3oiqpPTFl1NoVTP@mail.gmail.com>
+In-Reply-To: <20100612164848.GB16863@3e8.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jun 12, 2010 at 10:40:53PM +0200, Clemens Eisserer wrote:
-> Hi,
-> 
-> Recently Amarok started to reject some of music files.
-> Some files seem to be simply corrupted (mplayer is still able to play
-> them), other have zero length.
-> 
-> Btrfsck reports:
-> root 5 inode 1371 errors 400
-> found 42498768896 bytes used err is 1
-> total csum bytes: 41015664
-> total tree bytes: 498728960
-> total fs tree bytes: 406466560
-> btree space waste bytes: 110792472
-> file data blocks allocated: 271306133504
->  referenced 46886879232
-> Btrfs Btrfs v0.19
-> 
+On Sat, 12 Jun 2010, Jim Ursetto wrote:
+> Both `cp --reflink` and `bcp` sometimes round the file size up to the next
+> 4k boundary, with the balance consisting of null bytes.  At first glance
+> this behavior occurs for source file size > 3916 bytes.  I have tried this
+> with stock btrfs from kernel 2.6.35-rc2 and 2.6.35-rc1 -- specifically,
+> Ubuntu 2.6.35-2.3~lucid1-server and 2.6.35-1.1~lucid1-server.
+> Any ideas?
 
-These errors are non-fatal, which kernel are you running?  Do you have
-any btrfs related kernel messages?
+This bug is new in 2.6.35-rc1 from a22285a6 (Btrfs: Integrate metadata 
+reservation with start_transaction).  Just sent a patch fixing this up to 
+the list.
 
-Did the system crash at all?
-
--chris
-
+sage

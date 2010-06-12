@@ -1,59 +1,68 @@
-From: Sage Weil <sage@newdream.net>
-Subject: [PATCH] Btrfs: fix CLONE ioctl destination file size expansion to block boundary
-Date: Sat, 12 Jun 2010 15:31:14 -0700
-Message-ID: <1276381874-2964-1-git-send-email-sage@newdream.net>
-Cc: Sage Weil <sage@newdream.net>
+From: C Anthony Risinger <anthony@extof.me>
+Subject: Re: default subvolume abilities/restrictions
+Date: Sat, 12 Jun 2010 18:06:23 -0500
+Message-ID: <AANLkTim0VvWP0CLIWCqHMUZX1dAHPOBWWcRoZYSRUgyn@mail.gmail.com>
+References: <29213501.290601274270192630.JavaMail.defaultUser@defaultHost>
+	<AANLkTinCbFQkWvehlmnmGrPdduWfWUjutgYADZAkSlCe@mail.gmail.com>
+	<AANLkTikHScVP2MylD7EXVC-d-v0RloxVpv8P5SEgrXd6@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTikHScVP2MylD7EXVC-d-v0RloxVpv8P5SEgrXd6@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The CLONE and CLONE_RANGE ioctls round up the range of extents being
-cloned to the block size when the range to clone extends to the end of file
-(this is always the case with CLONE).  It was then using that offset when
-extending the destination file's i_size.  Fix this by not setting i_size
-beyond the originally requested ending offset.
+On Sat, Jun 12, 2010 at 12:24 AM, C Anthony Risinger <anthony@extof.me>=
+ wrote:
+> On Wed, May 19, 2010 at 9:01 AM, C Anthony Risinger <anthony@extof.me=
+> wrote:
+>> ..........
+>> i need a way, programmatically and safely, to "move" the users
+>> installation from the original subvolume into an isolated subvolume
+>> ..........
+>> or to generate a new, empty default/root subvolume and place the cur=
+rent
+>> default subvol (.) _into_ it... =A0how can this be done?
+>
+> can any devs out there make this happen? =A0note, what i'm looking fo=
+r
+> is _not_ setting the default subvolume to be mounted, but actually
+> moving/renaming the default (.) subvolume itself. =A0essentially, can=
+ we
+> get a command to do this:
+>
+> # btrfs subvolume create new_root
+> # mv . new_root/old_root
+>
+> that unsurprisingly fails with:
+>
+> mv: cannot move `.' to `new_root/old_root': Device or resource busy
+>
+> could we extend btrfs-progs tools to allow something like this? =A0do=
+es
+> the on disk format support _moving_ the default subvol? =A0this
+> operation is critical to "upgrade" a user who has installed their
+> system into the default subvol, as most naturally would. =A0clean
+> rollback systems/structures depend on the user having his system
+> installed to an isolated subvol, NOT the default.
+>
+> what sayith you?
 
-This bug was introduced by a22285a6 (2.6.35-rc1).
+i might even try to implement this myself...
 
-Signed-off-by: Sage Weil <sage@newdream.net>
----
- fs/btrfs/ioctl.c |   16 +++++++++++++---
- 1 files changed, 13 insertions(+), 3 deletions(-)
+can i at least get confirmation that the above is possible?
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 4cdb98c..a687f28 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1578,6 +1578,7 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 			u64 disko = 0, diskl = 0;
- 			u64 datao = 0, datal = 0;
- 			u8 comp;
-+			u64 endoff;
- 
- 			size = btrfs_item_size_nr(leaf, slot);
- 			read_extent_buffer(leaf, buf,
-@@ -1712,9 +1713,18 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 			btrfs_release_path(root, path);
- 
- 			inode->i_mtime = inode->i_ctime = CURRENT_TIME;
--			if (new_key.offset + datal > inode->i_size)
--				btrfs_i_size_write(inode,
--						   new_key.offset + datal);
-+
-+			/*
-+			 * we round up to the block size at eof when
-+			 * determining which extents to clone above,
-+			 * but shouldn't round up the file size
-+			 */
-+			endoff = new_key.offset + datal;
-+			if (endoff > off+olen)
-+				endoff = off+olen;
-+			if (endoff > inode->i_size)
-+				btrfs_i_size_write(inode, endoff);
-+
- 			BTRFS_I(inode)->flags = BTRFS_I(src)->flags;
- 			ret = btrfs_update_inode(trans, root, inode);
- 			BUG_ON(ret);
--- 
-1.7.0
+all i want to do is create a new/empty subvol, put the old top-level
+subvol inside it, and make the empty subvol the new root.  this lets
+me put a users installation INTO a subvol even though they originally
+installed the system into the root subvol.
 
+guidance please?  chris? :-)
+
+thanks,
+C Anthony
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

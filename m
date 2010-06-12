@@ -1,58 +1,40 @@
-From: C Anthony Risinger <anthony@extof.me>
-Subject: Re: default subvolume abilities/restrictions
-Date: Sat, 12 Jun 2010 00:24:26 -0500
-Message-ID: <AANLkTikHScVP2MylD7EXVC-d-v0RloxVpv8P5SEgrXd6@mail.gmail.com>
-References: <29213501.290601274270192630.JavaMail.defaultUser@defaultHost>
-	<AANLkTinCbFQkWvehlmnmGrPdduWfWUjutgYADZAkSlCe@mail.gmail.com>
+From: Jim Ursetto <jim@3e8.org>
+Subject: reflinked file size incorrect
+Date: Sat, 12 Jun 2010 11:48:48 -0500
+Message-ID: <20100612164848.GB16863@3e8.org>
+Reply-To: Jim Ursetto <jim@3e8.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTinCbFQkWvehlmnmGrPdduWfWUjutgYADZAkSlCe@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 19, 2010 at 9:01 AM, C Anthony Risinger <anthony@extof.me> =
-wrote:
-> ..........
-> i need a way, programmatically and safely, to "move" the users
-> installation from the original subvolume into an isolated subvolume
-> ..........
-> or to generate a new, empty default/root subvolume and place the curr=
-ent
-> default subvol (.) _into_ it... =A0how can this be done?
+Both `cp --reflink` and `bcp` sometimes round the file size up to the next
+4k boundary, with the balance consisting of null bytes.  At first glance
+this behavior occurs for source file size > 3916 bytes.  I have tried this
+with stock btrfs from kernel 2.6.35-rc2 and 2.6.35-rc1 -- specifically,
+Ubuntu 2.6.35-2.3~lucid1-server and 2.6.35-1.1~lucid1-server.
+Any ideas?
 
-can any devs out there make this happen?  note, what i'm looking for
-is _not_ setting the default subvolume to be mounted, but actually
-moving/renaming the default (.) subvolume itself.  essentially, can we
-get a command to do this:
+$ rm -f abc; dd if=/dev/urandom of=abc bs=1 count=3917; \
+  cp --reflink abc abc.1; ll abc*
+3917 bytes (3.9 kB) copied, 0.0380613 s, 103 kB/s
+-rw-r----- 1 root root 3917 2010-06-12 04:22 abc
+-rw-r----- 1 root root 4096 2010-06-12 04:22 abc.1
 
-# btrfs subvolume create new_root
-# mv . new_root/old_root
+$ rm -f abc; dd if=/dev/urandom of=abc bs=1 count=3916; \
+  cp --reflink abc abc.1; ll abc*
+3916 bytes (3.9 kB) copied, 0.0299729 s, 131 kB/s
+-rw-r----- 1 root root 3916 2010-06-12 04:22 abc
+-rw-r----- 1 root root 3916 2010-06-12 04:22 abc.1
 
-that unsurprisingly fails with:
+$ rm -f abc; dd if=/dev/urandom of=abc bs=1 count=4097; \
+  cp --reflink abc abc.1; ll abc*
+4097 bytes (4.1 kB) copied, 0.0258441 s, 159 kB/s
+-rw-r----- 1 root root 4097 2010-06-12 11:08 abc
+-rw-r----- 1 root root 8192 2010-06-12 11:08 abc.1
 
-mv: cannot move `.' to `new_root/old_root': Device or resource busy
+$ uname -a
+Linux allie 2.6.35-2-server #3~lucid1-Ubuntu SMP Thu Jun 10 17:52:32 UTC 2010 x86_64 GNU/Linux
 
-could we extend btrfs-progs tools to allow something like this?  does
-the on disk format support _moving_ the default subvol?  this
-operation is critical to "upgrade" a user who has installed their
-system into the default subvol, as most naturally would.  clean
-rollback systems/structures depend on the user having his system
-installed to an isolated subvol, NOT the default.
-
-what sayith you?
-
-thanks,
-C Anthony
-
-additionally, is anything like the following on a TODO list anywhere?
-thanks again.
-
-> ps. a recursive snapshotting tool could be useful too (if / and /home
-> were both subvols, the tool would create both when / was snapped,
-> instead of /home being an empty folder in the snapshot [BUG?]).
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Jim

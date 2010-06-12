@@ -1,52 +1,56 @@
-From: Kyungmin Park <kmpark@infradead.org>
-Subject: Re: Question: Build btrfs filesystem from specific directory.
-Date: Sat, 12 Jun 2010 13:47:52 +0900
-Message-ID: <AANLkTinZkD1HOCOk1DnFkCnGoXDCr7N4s4OCact1t_Pn@mail.gmail.com>
-References: <AANLkTimbW5pNGsFxRZYRRjY0Ke-Wyb4aaBkUZgilVMlR@mail.gmail.com>
-	<201006120633.12043.xengine@mail.ru>
+From: C Anthony Risinger <anthony@extof.me>
+Subject: Re: default subvolume abilities/restrictions
+Date: Sat, 12 Jun 2010 00:24:26 -0500
+Message-ID: <AANLkTikHScVP2MylD7EXVC-d-v0RloxVpv8P5SEgrXd6@mail.gmail.com>
+References: <29213501.290601274270192630.JavaMail.defaultUser@defaultHost>
+	<AANLkTinCbFQkWvehlmnmGrPdduWfWUjutgYADZAkSlCe@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: "Evgeny A. Marchenko" <xengine@mail.ru>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201006120633.12043.xengine@mail.ru>
+In-Reply-To: <AANLkTinCbFQkWvehlmnmGrPdduWfWUjutgYADZAkSlCe@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Wed, May 19, 2010 at 9:01 AM, C Anthony Risinger <anthony@extof.me> =
+wrote:
+> ..........
+> i need a way, programmatically and safely, to "move" the users
+> installation from the original subvolume into an isolated subvolume
+> ..........
+> or to generate a new, empty default/root subvolume and place the curr=
+ent
+> default subvol (.) _into_ it... =A0how can this be done?
 
-On Sat, Jun 12, 2010 at 11:33 AM, Evgeny A. Marchenko <xengine@mail.ru>=
- wrote:
->> I'm founding the solution to build btrfs filesystem image from
->> specific directory.
->> it's common concept at mobile build environment.
->> e.g., ubifs and cramfs support this feature.
->>
->> In case of ubifs
->> -r, -d, --root=3DDIR =A0 =A0 =A0 build file system from directory DI=
-R
->> In case of cramfs
->> dirname =A0 =A0root of the filesystem to be compressed
->>
->> But btrfs doesn't support it.
-> Maybe because btrfs is not a compressed read-only filesystem
+can any devs out there make this happen?  note, what i'm looking for
+is _not_ setting the default subvolume to be mounted, but actually
+moving/renaming the default (.) subvolume itself.  essentially, can we
+get a command to do this:
 
-It's just example. it's not matter to support compressed or not.
+# btrfs subvolume create new_root
+# mv . new_root/old_root
 
->
->> So does it have any plan to support this feature at btrfs?
-> You can create file-backed loop device, mount it and copy the directo=
-ry
-> contents there. Than unmount the loop and voila - you have btrfs imag=
-e
+that unsurprisingly fails with:
 
-Right, I used it now, but some build machine doesn't have or support
-btrfs, it mean can't mount btrfs as loopback.
-I just want to create btrfs image from directory without any host
-machine dependency such as kernel version and whatever.
-To simply, just use the mkfs.btrfs itself.
+mv: cannot move `.' to `new_root/old_root': Device or resource busy
 
-Thank you,
-Kyungmin Park
+could we extend btrfs-progs tools to allow something like this?  does
+the on disk format support _moving_ the default subvol?  this
+operation is critical to "upgrade" a user who has installed their
+system into the default subvol, as most naturally would.  clean
+rollback systems/structures depend on the user having his system
+installed to an isolated subvol, NOT the default.
+
+what sayith you?
+
+thanks,
+C Anthony
+
+additionally, is anything like the following on a TODO list anywhere?
+thanks again.
+
+> ps. a recursive snapshotting tool could be useful too (if / and /home
+> were both subvols, the tool would create both when / was snapped,
+> instead of /home being an empty folder in the snapshot [BUG?]).
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

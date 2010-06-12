@@ -1,42 +1,31 @@
-From: Kyungmin Park <kmpark@infradead.org>
-Subject: Question: Build btrfs filesystem from specific directory.
-Date: Sat, 12 Jun 2010 11:20:11 +0900
-Message-ID: <AANLkTimbW5pNGsFxRZYRRjY0Ke-Wyb4aaBkUZgilVMlR@mail.gmail.com>
+From: "Evgeny A. Marchenko" <xengine@mail.ru>
+Subject: Re: Question: Build btrfs filesystem from specific directory.
+Date: Sat, 12 Jun 2010 06:33:11 +0400
+Message-ID: <201006120633.12043.xengine@mail.ru>
+References: <AANLkTimbW5pNGsFxRZYRRjY0Ke-Wyb4aaBkUZgilVMlR@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTimbW5pNGsFxRZYRRjY0Ke-Wyb4aaBkUZgilVMlR@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dear all,
+> I'm founding the solution to build btrfs filesystem image from
+> specific directory.
+> it's common concept at mobile build environment.
+> e.g., ubifs and cramfs support this feature.
+> 
+> In case of ubifs
+> -r, -d, --root=DIR       build file system from directory DIR
+> In case of cramfs
+> dirname    root of the filesystem to be compressed
+> 
+> But btrfs doesn't support it.
+Maybe because btrfs is not a compressed read-only filesystem
 
-I'm not sure it's correct mailing list. but I can't find a btrfs-progs
-mailing list.
+> So does it have any plan to support this feature at btrfs?
+You can create file-backed loop device, mount it and copy the directory 
+contents there. Than unmount the loop and voila - you have btrfs image
 
-I'm founding the solution to build btrfs filesystem image from
-specific directory.
-it's common concept at mobile build environment.
-e.g., ubifs and cramfs support this feature.
-
-In case of ubifs
--r, -d, --root=DIR       build file system from directory DIR
-In case of cramfs
-dirname    root of the filesystem to be compressed
-
-But btrfs doesn't support it.
-usage: mkfs.btrfs [options] dev [ dev ... ]
-options:
-         -A --alloc-start the offset to start the FS
-         -b --byte-count total number of bytes in the FS
-         -d --data data profile, raid0, raid1, raid10 or single
-         -l --leafsize size of btree leaves
-         -L --label set a label
-         -m --metadata metadata profile, values like data profile
-         -n --nodesize size of btree nodes
-         -s --sectorsize min block allocation
-Btrfs v0.19-16-g075587c-dirty
-
-So does it have any plan to support this feature at btrfs?
-
-Thank you,
-Kyungmin Park
+Regards, Evgeny Marchenko

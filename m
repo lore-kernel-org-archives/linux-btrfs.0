@@ -1,73 +1,99 @@
-From: OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>
-Subject: Re: [PATCH][RFC] Complex filesystem operations: split and join
-Date: Sun, 13 Jun 2010 20:42:57 +0900
-Message-ID: <87aaqzp39a.fsf@devron.myhome.or.jp>
-References: <201006092035.46481.knikanth@novell.com>
+From: C Anthony Risinger <anthony@extof.me>
+Subject: Re: default subvolume abilities/restrictions
+Date: Sun, 13 Jun 2010 12:47:16 -0500
+Message-ID: <AANLkTinQTEhdnKLF4UKnv1eAqNpgFTwKYynDfx02itHd@mail.gmail.com>
+References: <29213501.290601274270192630.JavaMail.defaultUser@defaultHost>
+	<AANLkTinCbFQkWvehlmnmGrPdduWfWUjutgYADZAkSlCe@mail.gmail.com>
+	<AANLkTikHScVP2MylD7EXVC-d-v0RloxVpv8P5SEgrXd6@mail.gmail.com>
+	<AANLkTim0VvWP0CLIWCqHMUZX1dAHPOBWWcRoZYSRUgyn@mail.gmail.com>
+	<20100613002252.GA12170@arch.davidb.org>
+	<AANLkTilIw2LO7nA0yFx3A7aon03vPN5Et38pf3ZSTOQN@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-	Alexander Viro <viro@zeniv.linux.org.uk>,
-	Christoph Hellwig <hch@lst.de>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs@vger.kernel.org
-To: Nikanth Karthikesan <knikanth@novell.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <201006092035.46481.knikanth@novell.com> (Nikanth Karthikesan's
-	message of "Wed, 9 Jun 2010 20:35:46 +0530")
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTilIw2LO7nA0yFx3A7aon03vPN5Et38pf3ZSTOQN@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Nikanth Karthikesan <knikanth@novell.com> writes:
+On Sat, Jun 12, 2010 at 8:06 PM, C Anthony Risinger <anthony@extof.me> =
+wrote:
+> On Sat, Jun 12, 2010 at 7:22 PM, David Brown <btrfs@davidb.org> wrote=
+:
+>> On Sat, Jun 12, 2010 at 06:06:23PM -0500, C Anthony Risinger wrote:
+>>
+>>>> # btrfs subvolume create new_root
+>>>> # mv . new_root/old_root
+>>
+>>> can i at least get confirmation that the above is possible?
+>>
+>> I've had no problem with
+>>
+>> =A0# btrfs subvolume snapshot . new_root
+>> =A0# mkdir old_root
+>> =A0# mv * old_root
+>> =A0# rm -rf old_root
+>>
+>> Make sure the 'mv' fails fo move new_root, and I'd look at the
+>> new_root before removing everything.
+>>
+>> David
+>
+> heh, yeah i as i was writing the last email i realized that all i
+> really wanted was to:
+>
+> # mv * new_root
+>
+> for some reason i was convinced that i must snapshot the old_root (.)
+> to new_root... and then remove the erroneous stuff from old_root (.).
+> thus a way to "parent" the default subvol (old_root/.) seemed a bette=
+r
+> solution...
+>
+> but alas, a snapshot isn't necessary. =A0i can create an empty subvol
+> "new_root", and then "mv * new_root".
+>
+> i don't know how that escaped me :-), sorry for all the noise.
+> however, there probably is a legitimate use case for wanting to
+> replace the default subvolume, but this isn't it.
+>
+> C Anthony
 
-> I had a need to split a file into smaller files on a thumb drive with no
-> free space on it or anywhere else in the system. When the filesystem
-> supports sparse files(truncate_range), I could create files, while
-> punching holes in the original file. But when the underlying fs is FAT,
-> I couldn't. Also why should we do needless I/O, when all I want is to
-> split/join files. i.e., all the data are already on the disk, under the
-> same filesystem. I just want to do some metadata changes.
->
-> So, I added two inode operations, namely split and join, that lets me
-> tell the OS, that all I want is meta-data changes. And the file-system
-> can avoid doing lots of I/O, when only metadata changes are needed.
->
-> sys_split(fd1, n, fd2)
-> 1. Attach the data of file after n bytes in fd1 to fd2.
-> 2. Truncate fd1 to n bytes.
->
-> Roughly can be thought of as equivalent of following commands:
-> 1. dd if=file1 of=file2 skip=n
-> 2. truncate -c -s n file1
->
-> sys_join(fd1, fd2)
-> 1. Extend fd1 with data of fd2
-> 2. Truncate fd2 to 0.
->
-> Roughly can be thought of as equivalent of following commands:
-> 1. dd if=file2 of=file1 seek=`filesize file1`
-> 2. truncate -c -s 0 file2
->
-> Attached is the patch that adds these new syscalls and support for them
-> to the FAT filesystem.
->
-> I guess, this approach can be extended to splice() kind of call, between
-> files, instead of pipes. On a COW fs, splice could simply setup blocks
-> as shared between files, instead of doing I/O. It would be a kind of
-> explicit online data-deduplication. Later when a file modifies any of
-> those blocks, we copy blocks. i.e., COW.
+ok i take it all back, i DO need this...
 
-[I'll just ignore implementation for now.., because the patch is totally
-ignoring cache management.]
+i rewrote my initramfs hook to do the following operations:
 
-I have no objections to such those operations (likewise make hole,
-truncate any range, etc. etc.). However, only if someone have enough
-motivation to implement/maintain those operations, AND there are real
-users (i.e. real sane usecase).
+# btrfs subvolume create /new_root
+# mv /* /new_root
 
-Otherwise, IMO it would be bad than nothing. Because, of course, if
-there are such codes, we can't ignore those anymore until remove
-codes completely for e.g. security reasons. And IMHO, those cache
-managements to such operations are not so easy.
+instead of what i had:
 
-Thanks.
--- 
-OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>
+# btrfs subvolume snapshot / /new_root
+
+and it resulted in scarily COPYING my entire system... several gigs
+worth... to the newly created subvolume, which took forever, and
+grinded on my HD for awhile.  i don't know how long because i went to
+bed.
+
+this is why i need a way to "parent" the default subvolume.
+
+a snapshot is nice and quick, but it leaves / full of erroneous
+folders (dev/etc/usr/lib), an entire system, that will no longer be
+used.  this space will in time become dead wasted space unless my
+users manually "rm -rf" themselves.
+
+so... any input on this?  how can i effectively, and efficiently, move
+a users installation into a dedicated subvolume, when they have
+already installed into the default subvolume?
+
+i think the best way is what i originally suggested; make an empty
+subvolume the new top-level subvol, and place the old top-level subvol
+INTO it with a new name.
+
+thoughts?
+
+C Anthony
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

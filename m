@@ -1,59 +1,55 @@
-From: C Anthony Risinger <anthony@extof.me>
-Subject: Re: default subvolume abilities/restrictions
-Date: Sat, 12 Jun 2010 20:06:34 -0500
-Message-ID: <AANLkTilIw2LO7nA0yFx3A7aon03vPN5Et38pf3ZSTOQN@mail.gmail.com>
-References: <29213501.290601274270192630.JavaMail.defaultUser@defaultHost>
-	<AANLkTinCbFQkWvehlmnmGrPdduWfWUjutgYADZAkSlCe@mail.gmail.com>
-	<AANLkTikHScVP2MylD7EXVC-d-v0RloxVpv8P5SEgrXd6@mail.gmail.com>
-	<AANLkTim0VvWP0CLIWCqHMUZX1dAHPOBWWcRoZYSRUgyn@mail.gmail.com>
-	<20100613002252.GA12170@arch.davidb.org>
+From: Jim Ursetto <jim@3e8.org>
+Subject: Re: dkms build error
+Date: Sat, 12 Jun 2010 22:51:47 -0500
+Message-ID: <20100613035147.GC16863@3e8.org>
+Reply-To: Jim Ursetto <jim@3e8.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: multipart/mixed; boundary="AqsLC8rIMeq19msA"
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100613002252.GA12170@arch.davidb.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jun 12, 2010 at 7:22 PM, David Brown <btrfs@davidb.org> wrote:
-> On Sat, Jun 12, 2010 at 06:06:23PM -0500, C Anthony Risinger wrote:
->
->>> # btrfs subvolume create new_root
->>> # mv . new_root/old_root
->
->> can i at least get confirmation that the above is possible?
->
-> I've had no problem with
->
-> =A0# btrfs subvolume snapshot . new_root
-> =A0# mkdir old_root
-> =A0# mv * old_root
-> =A0# rm -rf old_root
->
-> Make sure the 'mv' fails fo move new_root, and I'd look at the
-> new_root before removing everything.
->
-> David
 
-heh, yeah i as i was writing the last email i realized that all i
-really wanted was to:
+--AqsLC8rIMeq19msA
+Content-Type: text/plain; charset=iso-2022-jp
+Content-Disposition: inline
 
-# mv * new_root
+On Mon, 31 May 2010 09:20:22 +0200 Andreas Philipp wrote:
 
-for some reason i was convinced that i must snapshot the old_root (.)
-to new_root... and then remove the erroneous stuff from old_root (.).
-thus a way to "parent" the default subvol (old_root/.) seemed a better
-solution...
+> I did not succeed to compile a btrfs module via dkms from btrfs-unstable...
+> For the exact error message, please see the make.log...
 
-but alas, a snapshot isn't necessary.  i can create an empty subvol
-"new_root", and then "mv * new_root".
+> /var/lib/dkms/btrfs/git/build/extent-tree.c:1699: error: 
+>   ‘DISCARD_FL_BARRIER’ undeclared (first use in this function)
 
-i don't know how that escaped me :-), sorry for all the noise.
-however, there probably is a legitimate use case for wanting to
-replace the default subvolume, but this isn't it.
+The problem is the blkdev flag name change that occurred in this commit from
+Linus' tree around 2.6.35:
 
-C Anthony
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commitdiff;h=fbd9b09a177a481eda256447c881f014f29034fe
+
+which is not in btrfs-unstable.  That patch doesn't apply cleanly to the
+btrfs-unstable tree so attached is one that just modifies extent-tree.c.
+
+Jim
+
+
+--AqsLC8rIMeq19msA
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: attachment; filename="btrfs-extent-tree.diff.txt"
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index b34d32f..c6a4f45 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1589,7 +1589,7 @@ static void btrfs_issue_discard(struct block_device *bdev,
+ 				u64 start, u64 len)
+ {
+ 	blkdev_issue_discard(bdev, start >> 9, len >> 9, GFP_KERNEL,
+-			     DISCARD_FL_BARRIER);
++			BLKDEV_IFL_WAIT | BLKDEV_IFL_BARRIER);
+ }
+ 
+ static int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
+
+
+--AqsLC8rIMeq19msA--

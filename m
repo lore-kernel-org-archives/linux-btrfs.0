@@ -1,111 +1,105 @@
-From: Ed Tomlinson <edt@aei.ca>
-Subject: Re: [GIT PULL] Btrfs updates for 2.6.35
-Date: Mon, 14 Jun 2010 15:24:19 -0400
-Message-ID: <201006141524.20752.edt@aei.ca>
-References: <20100611193731.GA3018@think>
+From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Subject: Re: [patch 11/11] btrfs: The file argument for fsync() is never null
+Date: Mon, 14 Jun 2010 22:07:23 +0200
+Message-ID: <201006142207.25930.johannes.hirte@fem.tu-ilmenau.de>
+References: <20100529094907.GL5483@bicker>
 Mime-Version: 1.0
 Content-Type: Text/Plain;
   charset="iso-8859-1"
-To: Chris Mason <chris.mason@oracle.com>,
-	"linux-kernel" <linux-kernel@vger.kernel.org>,
-	linux-btrfs@vger.kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20100611193731.GA3018@think>
+Cc: linux-btrfs@vger.kernel.org, Yan Zheng <zheng.yan@oracle.com>,
+	Josef Bacik <josef@redhat.com>, Christoph Hellwig <hch@lst.de>,
+	Chris Mason <chris.mason@oracle.com>,
+	kernel-janitors@vger.kernel.org
+To: Dan Carpenter <error27@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100529094907.GL5483@bicker>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Friday 11 June 2010 15:37:31 Chris Mason wrote:
-> Hello everyone,
+Am Samstag 29 Mai 2010, 11:49:07 schrieb Dan Carpenter:
+> The "file" argument for fsync is never null so we can remove this check.
 > 
-> The master branch of the btrfs-unstable tree is a collection of fixes
-> and cleanups, including two btrfs regressions from rc1:
+> What drew my attention here is that 7ea8085910e: "drop unused dentry
+> argument to ->fsync" introduced an unconditional dereference at the
+> start of the function and that generated a smatch warning.
 > 
-> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
+> Signed-off-by: Dan Carpenter <error27@gmail.com>
 > 
-> One is an freeing blocks on an FS converted from ext34 to btrfs,
-> and the other is a fallocate fix.
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 787b50a..e252d23 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -1140,7 +1140,7 @@ int btrfs_sync_file(struct file *file, int datasync)
+>  	/*
+>  	 * ok we haven't committed the transaction yet, lets do a commit
+>  	 */
+> -	if (file && file->private_data)
+> +	if (file->private_data)
+>  		btrfs_ioctl_trans_end(file);
 > 
-> The rest are the usual small bug fixes.
+>  	trans = btrfs_start_transaction(root, 0);
 
-Looks like this still misses any fix for the oops I reported May 8th in thread:
-"[OPPS] btrfs on 33-3 with latest from btrfs-unstable.git master"
+I think you're wrong here. I've run into a kernel null pointer dereference at 
+this point with a NFS exported btrfs filesystem:
 
-Any chance this could be looked into?  I've kept the fs just in case.
 
-Thanks
-Ed Tomlinson
+BUG: unable to handle kernel NULL pointer dereference at 0000000000000098
+IP: [<ffffffff8115d7b3>] btrfs_sync_file+0xa7/0x15a
+PGD 2a72e067 PUD 1c29f067 PMD 0 
+Oops: 0000 [#1] SMP 
+last sysfs file: /sys/devices/pci0000:00/0000:00:01.0/0000:01:00.0/power_method
+CPU 1 
+Modules linked in: snd_seq_midi snd_emu10k1_synth snd_emux_synth 
+snd_seq_virmidi snd_seq_midi_emul snd_seq_oss snd_seq_midi_event snd_seq 
+snd_pcm_oss snd_mixer_oss radeon ttm drm_kms_helper drm i2c_algo_bit 
+snd_emu10k1 snd_rawmidi snd_ac97_codec ac97_bus snd_pcm snd_seq_device 
+snd_timer snd_page_alloc snd_util_mem snd_hwdep snd amd64_edac_mod edac_core 
+uhci_hcd ohci_hcd sata_sil edac_mce_amd sg sr_mod k8temp i2c_amd756 
+i2c_amd8111 hwmon
 
-> 
-> Dan Carpenter (11) commits (+24/-17):
->     Btrfs: handle error returns from btrfs_lookup_dir_item() (+2/-0)
->     Btrfs: btrfs_read_fs_root_no_name() returns ERR_PTRs (+4/-0)
->     Btrfs: unwind after btrfs_start_transaction() errors (+1/-1)
->     Btrfs: remove unneeded null check in btrfs_rename() (+1/-3)
->     Btrfs: The file argument for fsync() is never null (+1/-1)
->     Btrfs: handle ERR_PTR from posix_acl_from_xattr() (+2/-0)
->     Btrfs: btrfs_lookup_dir_item() can return ERR_PTR (+1/-1)
->     Btrfs: uninitialized data is check_path_shared() (+1/-1)
->     Btrfs: handle kzalloc() failure in open_ctree() (+5/-2)
->     Btrfs: silence sparse warnings in ioctl.c (+4/-6)
->     Btrfs: btrfs_iget() returns ERR_PTR (+2/-2)
-> 
-> Zheng Yan (2) commits (+6/-4):
->     Btrfs: Fix BUG_ON for fs converted from extN (+2/-1)
->     Btrfs: Fix null dereference in relocation.c (+4/-3)
-> 
-> Liu Bo (2) commits (+14/-4):
->     Btrfs: Add error check for add_to_page_cache_lru (+13/-3)
->     Btrfs: fix break in btrfs_insert_some_items() (+1/-1)
-> 
-> Julia Lawall (2) commits (+9/-17):
->     Btrfs: Use memdup_user (+6/-14)
->     Btrfs: Use ERR_CAST (+3/-3)
-> 
-> Shi Weihua (2) commits (+6/-0):
->     Btrfs: prohibit a operation of changing acl's mask when noacl mount option used (+3/-0)
->     Btrfs: should add a permission check for setfacl (+3/-0)
-> 
-> Miao Xie (2) commits (+9/-1):
->     Btrfs: fix loop device on top of btrfs (+1/-0)
->     Btrfs: fix remap_file_pages error (+8/-1)
-> 
-> Sage Weil (1) commits (+0/-3):
->     Btrfs: avoid BUG when dropping root and reference in same transaction
-> 
-> Andi Kleen (1) commits (+2/-94):
->     BTRFS: Clean up unused variables -- nonbugs
-> 
-> Josef Bacik (1) commits (+1/-1):
->     Btrfs: fix fallocate regression
-> 
-> Prarit Bhargava (1) commits (+1/-1):
->     Btrfs: Fix warning in tree_search()
-> 
-> Total: (25) commits (+72/-142)
-> 
->  fs/btrfs/acl.c          |    8 ++++++++
->  fs/btrfs/compression.c  |   18 +++++++++++++-----
->  fs/btrfs/ctree.c        |   20 +-------------------
->  fs/btrfs/disk-io.c      |   22 +++++++++-------------
->  fs/btrfs/extent-tree.c  |    5 ++---
->  fs/btrfs/extent_io.c    |    9 ---------
->  fs/btrfs/extent_map.c   |    4 ++--
->  fs/btrfs/file.c         |   12 ++++++++++--
->  fs/btrfs/inode.c        |   22 +++-------------------
->  fs/btrfs/ioctl.c        |   36 ++++++++++++------------------------
->  fs/btrfs/ordered-data.c |    4 +---
->  fs/btrfs/relocation.c   |    7 ++++---
->  fs/btrfs/root-tree.c    |    5 -----
->  fs/btrfs/super.c        |   14 +++++++-------
->  fs/btrfs/tree-defrag.c  |    2 --
->  fs/btrfs/tree-log.c     |   15 ---------------
->  fs/btrfs/volumes.c      |    4 ----
->  fs/btrfs/xattr.c        |    2 --
->  fs/btrfs/zlib.c         |    5 -----
->  19 files changed, 72 insertions(+), 142 deletions(-)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
-> 
-> 
+Pid: 2330, comm: nfsd Not tainted 2.6.34-btrfs-2-drm #1 TYAN Tiger K8W Dual 
+AMD Opteron, S2875/To Be Filled By O.E.M.
+RIP: 0010:[<ffffffff8115d7b3>]  [<ffffffff8115d7b3>] btrfs_sync_file+0xa7/0x15a
+RSP: 0000:ffff880119e9bcf0  EFLAGS: 00010202
+RAX: 0000000000000000 RBX: ffff88011e4da000 RCX: 0000000000000020
+RDX: 0000000000000df8 RSI: 0000000000000000 RDI: ffff88011e495b28
+RBP: ffff88011c30eb78 R08: ffffffff8141bab0 R09: 0000000000000000
+R10: ffff880119e9bc50 R11: ffff88011c30eb78 R12: ffff88011c305240
+R13: 0000000000000000 R14: ffffffff8141bab0 R15: ffff880119d1d040
+FS:  00002ac4c0279180(0000) GS:ffff880001880000(0000) knlGS:00000000f74726d0
+CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+CR2: 0000000000000098 CR3: 0000000015c84000 CR4: 00000000000006f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+Process nfsd (pid: 2330, threadinfo ffff880119e9a000, task ffff880119e185e0)
+Stack:
+ ffff8800273da3d8 0000000200000000 0000000000000003 0000000000000000
+<0> ffff88011c305240 0000000000000000 ffff88011c30ec90 ffffffff810b1a99
+<0> ffff880119d1d040 ffff880000000000 0000000000000000 ffff880023e63240
+Call Trace:
+ [<ffffffff810b1a99>] ? vfs_fsync_range+0x7a/0xa7
+ [<ffffffff8112e055>] ? nfsd4_create_clid_dir+0x12d/0x15d
+ [<ffffffff81129e64>] ? nfsd4_open_confirm+0xec/0x118
+ [<ffffffff8111dcb1>] ? nfsd4_proc_compound+0x1fd/0x3b5
+ [<ffffffff8110f1cb>] ? nfsd_dispatch+0xdf/0x1b5
+ [<ffffffff8132e89a>] ? svc_process+0x41d/0x703
+ [<ffffffff8102bcc3>] ? default_wake_function+0x0/0xf
+ [<ffffffff8110f6dd>] ? nfsd+0xe1/0x125
+ [<ffffffff8110f5fc>] ? nfsd+0x0/0x125
+ [<ffffffff81041fcd>] ? kthread+0x75/0x7d
+ [<ffffffff81002b54>] ? kernel_thread_helper+0x4/0x10
+ [<ffffffff81041f58>] ? kthread+0x0/0x7d
+ [<ffffffff81002b50>] ? kernel_thread_helper+0x0/0x10
+Code: 8b bb 28 01 00 00 89 44 24 08 48 81 c7 28 1b 00 00 e8 1e 79 1f 00 8b 44 
+24 08 e9 b4 00 00 00 48 81 c7 28 1b 00 00 e8 09 79 1f 00 <49> 83 bd 98 00 00 
+00 00 74 08 4c 89 ef e8 06 75 01 00 31 f6 48 
+RIP  [<ffffffff8115d7b3>] btrfs_sync_file+0xa7/0x15a
+ RSP <ffff880119e9bcf0>
+CR2: 0000000000000098
+---[ end trace 5c7989eaf4eda923 ]---
+
+addr2line showed me exact this change you made.
+
+It happend with a linux-2.6.34 with the latest btrfs-changes on top.
+
+regards,
+  Johannes

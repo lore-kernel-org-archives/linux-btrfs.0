@@ -1,71 +1,135 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] fs: make sure to invalidate pages if we fall back on
-	buffered reads
-Date: Mon, 14 Jun 2010 09:13:36 -0400
-Message-ID: <20100614131336.GB2322@localhost.localdomain>
-References: <1276007044-17715-1-git-send-email-josef@redhat.com> <20100614081736.GA29239@infradead.org>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: btrfs: hanging processes - race condition?
+Date: Mon, 14 Jun 2010 09:26:52 -0400
+Message-ID: <20100614132651.GD18266@think>
+References: <Pine.LNX.4.64.1006101022570.12518@lyn-del-uti-015>
+ <20100611011242.GA22585@sli10-desk.sh.intel.com>
+ <AANLkTilJCKyddGMIi77QG-uluyqgXPlPYVDcFTmWno8O@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org
-To: Christoph Hellwig <hch@infradead.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20100614081736.GA29239@infradead.org>
+Content-Type: text/plain; charset=iso-8859-1
+Cc: Shaohua Li <shaohua.li@intel.com>,
+	Jerome Ibanes <Jerome@ops.zillow.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	yanmin.zhang@intel.com, tim.c.chen@intel.com
+To: "Yan, Zheng " <yanzheng@21cn.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTilJCKyddGMIi77QG-uluyqgXPlPYVDcFTmWno8O@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 14, 2010 at 04:17:36AM -0400, Christoph Hellwig wrote:
-> On Tue, Jun 08, 2010 at 10:24:04AM -0400, Josef Bacik wrote:
-> > Since BTRFS can fallback on buffered reads after having done some direct reads,
-> > we need to make sure to invalidate any pages that we may have read by doing
-> > buffered IO.  This shouldn't have shown up as a visible user problem, it's just
-> > for correctness sake.  Thanks,
-> 
-> Everything else in direct I/O land uses invalidate_inode_pages2(_range),
-> why not this one?
->
+On Fri, Jun 11, 2010 at 10:32:07AM +0800, Yan, Zheng  wrote:
+> On Fri, Jun 11, 2010 at 9:12 AM, Shaohua Li <shaohua.li@intel.com> wr=
+ote:
+> > On Fri, Jun 11, 2010 at 01:41:41AM +0800, Jerome Ibanes wrote:
+> >> List,
+> >>
+> >> I ran into a hang issue (race condition: cpu is high when the serv=
+er is
+> >> idle, meaning that btrfs is hanging, and IOwait is high as well) r=
+unning
+> >> 2.6.34 on debian/lenny on a x86_64 server (dual Opteron 275 w/ 16G=
+B ram).
+> >> The btrfs filesystem live on 18x300GB scsi spindles, configured as=
+ Raid-0,
+> >> as shown below:
+> >>
+> >> Label: none =A0uuid: bc6442c6-2fe2-4236-a5aa-6b7841234c52
+> >> =A0 =A0 =A0 =A0 =A0Total devices 18 FS bytes used 2.94TB
+> >> =A0 =A0 =A0 =A0 =A0devid =A0 =A05 size 279.39GB used 208.33GB path=
+ /dev/cciss/c1d0
+> >> =A0 =A0 =A0 =A0 =A0devid =A0 17 size 279.39GB used 208.34GB path /=
+dev/cciss/c1d8
+> >> =A0 =A0 =A0 =A0 =A0devid =A0 16 size 279.39GB used 209.33GB path /=
+dev/cciss/c1d7
+> >> =A0 =A0 =A0 =A0 =A0devid =A0 =A04 size 279.39GB used 208.33GB path=
+ /dev/cciss/c0d4
+> >> =A0 =A0 =A0 =A0 =A0devid =A0 =A01 size 279.39GB used 233.72GB path=
+ /dev/cciss/c0d1
+> >> =A0 =A0 =A0 =A0 =A0devid =A0 13 size 279.39GB used 208.33GB path /=
+dev/cciss/c1d4
+> >> =A0 =A0 =A0 =A0 =A0devid =A0 =A08 size 279.39GB used 208.33GB path=
+ /dev/cciss/c1d11
+> >> =A0 =A0 =A0 =A0 =A0devid =A0 12 size 279.39GB used 208.33GB path /=
+dev/cciss/c1d3
+> >> =A0 =A0 =A0 =A0 =A0devid =A0 =A03 size 279.39GB used 208.33GB path=
+ /dev/cciss/c0d3
+> >> =A0 =A0 =A0 =A0 =A0devid =A0 =A09 size 279.39GB used 208.33GB path=
+ /dev/cciss/c1d12
+> >> =A0 =A0 =A0 =A0 =A0devid =A0 =A06 size 279.39GB used 208.33GB path=
+ /dev/cciss/c1d1
+> >> =A0 =A0 =A0 =A0 =A0devid =A0 11 size 279.39GB used 208.33GB path /=
+dev/cciss/c1d2
+> >> =A0 =A0 =A0 =A0 =A0devid =A0 14 size 279.39GB used 208.33GB path /=
+dev/cciss/c1d5
+> >> =A0 =A0 =A0 =A0 =A0devid =A0 =A02 size 279.39GB used 233.70GB path=
+ /dev/cciss/c0d2
+> >> =A0 =A0 =A0 =A0 =A0devid =A0 15 size 279.39GB used 209.33GB path /=
+dev/cciss/c1d6
+> >> =A0 =A0 =A0 =A0 =A0devid =A0 10 size 279.39GB used 208.33GB path /=
+dev/cciss/c1d13
+> >> =A0 =A0 =A0 =A0 =A0devid =A0 =A07 size 279.39GB used 208.33GB path=
+ /dev/cciss/c1d10
+> >> =A0 =A0 =A0 =A0 =A0devid =A0 18 size 279.39GB used 208.34GB path /=
+dev/cciss/c1d9
+> >> Btrfs v0.19-16-g075587c-dirty
+> >>
+> >> The filesystem, mounted in /mnt/btrfs is hanging, no existing or n=
+ew
+> >> process can access it, however 'df' still displays the disk usage =
+(3TB out
+> >> of 5). The disks appear to be physically healthy. Please note that=
+ a
+> >> significant number of files were placed on this filesystem, betwee=
+n 20 and
+> >> 30 million files.
+> >>
+> >> The relevant kernel messages are displayed below:
+> >>
+> >> INFO: task btrfs-submit-0:4220 blocked for more than 120 seconds.
+> >> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this m=
+essage.
+> >> btrfs-submit- D 000000010042e12f =A0 =A0 0 =A04220 =A0 =A0 =A02 0x=
+00000000
+> >> =A0 ffff8803e584ac70 0000000000000046 0000000000004000 00000000000=
+11680
+> >> =A0 ffff8803f7349fd8 ffff8803f7349fd8 ffff8803e584ac70 00000000000=
+11680
+> >> =A0 0000000000000001 ffff8803ff99d250 ffffffff8149f020 00000000811=
+50ab0
+> >> Call Trace:
+> >> =A0 [<ffffffff813089f3>] ? io_schedule+0x71/0xb1
+> >> =A0 [<ffffffff811470be>] ? get_request_wait+0xab/0x140
+> >> =A0 [<ffffffff810406f4>] ? autoremove_wake_function+0x0/0x2e
+> >> =A0 [<ffffffff81143a4d>] ? elv_rq_merge_ok+0x89/0x97
+> >> =A0 [<ffffffff8114a245>] ? blk_recount_segments+0x17/0x27
+> >> =A0 [<ffffffff81147429>] ? __make_request+0x2d6/0x3fc
+> >> =A0 [<ffffffff81145b16>] ? generic_make_request+0x207/0x268
+> >> =A0 [<ffffffff81145c12>] ? submit_bio+0x9b/0xa2
+> >> =A0 [<ffffffffa01aa081>] ? btrfs_requeue_work+0xd7/0xe1 [btrfs]
+> >> =A0 [<ffffffffa01a5365>] ? run_scheduled_bios+0x297/0x48f [btrfs]
+> >> =A0 [<ffffffffa01aa687>] ? worker_loop+0x17c/0x452 [btrfs]
+> >> =A0 [<ffffffffa01aa50b>] ? worker_loop+0x0/0x452 [btrfs]
+> >> =A0 [<ffffffff81040331>] ? kthread+0x79/0x81
+> >> =A0 [<ffffffff81003674>] ? kernel_thread_helper+0x4/0x10
+> >> =A0 [<ffffffff810402b8>] ? kthread+0x0/0x81
+> >> =A0 [<ffffffff81003670>] ? kernel_thread_helper+0x0/0x10
+> > This looks like the issue we saw too, http://lkml.org/lkml/2010/6/8=
+/375.
+> > This is reproduceable in our setup.
+>=20
+> I think I know the cause of http://lkml.org/lkml/2010/6/8/375.
+> The code in the first do-while loop in btrfs_commit_transaction
+> set current process to TASK_UNINTERRUPTIBLE state, then calls
+> btrfs_start_delalloc_inodes, btrfs_wait_ordered_extents and
+> btrfs_run_ordered_operations(). All of these function may call
+> cond_resched().
 
-In __generic_file_aio_write if we fall back on buffered writes we call
-invalidate_mapping_pages to invalidate the buffered range, so I just did that
-here, is that acceptable?
- 
-> >  	loff_t *ppos = &iocb->ki_pos;
-> > +	bool invalidate = false;
-> >  
-> >  	count = 0;
-> >  	retval = generic_segment_checks(iov, &nr_segs, &count, VERIFY_WRITE);
-> > @@ -1291,7 +1292,8 @@ generic_file_aio_read(struct kiocb *iocb, const struct iovec *iov,
-> >  							iov, pos, nr_segs);
-> >  			}
-> >  			if (retval > 0) {
-> > -				*ppos = pos + retval;
-> > +				pos += retval;
-> > +				*ppos = pos;
-> >  				count -= retval;
-> >  			}
-> >  
-> > @@ -1307,6 +1309,7 @@ generic_file_aio_read(struct kiocb *iocb, const struct iovec *iov,
-> >  				file_accessed(filp);
-> >  				goto out;
-> >  			}
-> > +			invalidate = true;
-> >  		}
-> >  	}
-> >  
-> > @@ -1343,6 +1346,10 @@ generic_file_aio_read(struct kiocb *iocb, const struct iovec *iov,
-> >  		if (desc.count > 0)
-> >  			break;
-> >  	}
-> > +	if (invalidate && retval > 0)
-> > +		invalidate_mapping_pages(filp->f_mapping,
-> > +					 pos >> PAGE_CACHE_SHIFT,
-> > +					 (*ppos - 1) >> PAGE_CACHE_SHIFT);
-> 
-> A little comment here would be surely useful.  Telling that we want to
-> get rid of the pages again if we were falling through from an attempted
-> direct I/O read.
-> 
+The TASK_UNINTERRUPTIBLE problem was fixed with 2.6.35-rc1.  You can
+find the changes in the master branch of the btrfs-unstable repo.
 
-Will do.  I'll send an updated patch when you answer my above question.  Thanks
-for the review.
+-chris
 
-Josef
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

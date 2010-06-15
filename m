@@ -1,48 +1,33 @@
-From: Ed Tomlinson <edt@aei.ca>
-Subject: Re: [GIT PULL] Btrfs updates for 2.6.35
-Date: Tue, 15 Jun 2010 07:17:19 -0400
-Message-ID: <201006150717.19886.edt@aei.ca>
-References: <20100611193731.GA3018@think> <201006141524.20752.edt@aei.ca> <20100615004735.GR18266@think>
+From: OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>
+Subject: Re: [PATCH][RFC] Complex filesystem operations: split and join
+Date: Tue, 15 Jun 2010 21:01:19 +0900
+Message-ID: <87typ4h5dc.fsf@devron.myhome.or.jp>
+References: <201006092035.46481.knikanth@novell.com>
+	<87aaqzp39a.fsf@devron.myhome.or.jp>
+	<201006151611.36443.knikanth@novell.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: "linux-kernel" <linux-kernel@vger.kernel.org>,
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+	Alexander Viro <viro@zeniv.linux.org.uk>,
+	Christoph Hellwig <hch@lst.de>,
+	Chris Mason <chris.mason@oracle.com>,
 	linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20100615004735.GR18266@think>
+To: Nikanth Karthikesan <knikanth@novell.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <201006151611.36443.knikanth@novell.com> (Nikanth Karthikesan's
+	message of "Tue, 15 Jun 2010 16:11:35 +0530")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday 14 June 2010 20:47:35 Chris Mason wrote:
-> On Mon, Jun 14, 2010 at 03:24:19PM -0400, Ed Tomlinson wrote:
-> > On Friday 11 June 2010 15:37:31 Chris Mason wrote:
-> > > Hello everyone,
-> > > 
-> > > The master branch of the btrfs-unstable tree is a collection of fixes
-> > > and cleanups, including two btrfs regressions from rc1:
-> > > 
-> > > git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
-> > > 
-> > > One is an freeing blocks on an FS converted from ext34 to btrfs,
-> > > and the other is a fallocate fix.
-> > > 
-> > > The rest are the usual small bug fixes.
-> > 
-> > Looks like this still misses any fix for the oops I reported May 8th in thread:
-> > "[OPPS] btrfs on 33-3 with latest from btrfs-unstable.git master"
-> > 
-> > Any chance this could be looked into?  I've kept the fs just in case.
-> 
-> The oops shows a crc failure and then we were not able to read the tree
-> block.  Yan Zheng is working on an fsck that can repair things now.
-> Until then the best I can do is help copy things off.
-> 
-> Would you rather save the FS to test fsck?
+Nikanth Karthikesan <knikanth@novell.com> writes:
 
-I can hang on to the FS for a while longer.  One interesting point.  The FS
-has both both meta-data and data mirroring enabled.  I gather the oops is
-implying that both versions are corrupt.  Btw the fs problem occured after
-heavy vm activity caused by running too many kvm(s).
+>> I have no objections to such those operations (likewise make hole,
+>> truncate any range, etc. etc.).
+>
+> As far as FAT is concerned, Sparse files would break the on-disk format?
 
-Thanks
-Ed
+Yes. In the case of making hole on FAT, I guess it will return the
+error, or emulate it by zero fill.
+
+Thanks.
+-- 
+OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>

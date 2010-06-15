@@ -1,53 +1,48 @@
-From: Jonathan Thackray <jthackray@gmail.com>
-Subject: btrfs oops in write_all_supers+0x294/0x2b4 [btrfs]
-Date: Tue, 15 Jun 2010 11:18:19 +0100
-Message-ID: <20100615101819.GA7869@thackray.org>
+From: Ed Tomlinson <edt@aei.ca>
+Subject: Re: [GIT PULL] Btrfs updates for 2.6.35
+Date: Tue, 15 Jun 2010 07:17:19 -0400
+Message-ID: <201006150717.19886.edt@aei.ca>
+References: <20100611193731.GA3018@think> <201006141524.20752.edt@aei.ca> <20100615004735.GR18266@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Cc: "linux-kernel" <linux-kernel@vger.kernel.org>,
+	linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20100615004735.GR18266@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Monday 14 June 2010 20:47:35 Chris Mason wrote:
+> On Mon, Jun 14, 2010 at 03:24:19PM -0400, Ed Tomlinson wrote:
+> > On Friday 11 June 2010 15:37:31 Chris Mason wrote:
+> > > Hello everyone,
+> > > 
+> > > The master branch of the btrfs-unstable tree is a collection of fixes
+> > > and cleanups, including two btrfs regressions from rc1:
+> > > 
+> > > git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
+> > > 
+> > > One is an freeing blocks on an FS converted from ext34 to btrfs,
+> > > and the other is a fallocate fix.
+> > > 
+> > > The rest are the usual small bug fixes.
+> > 
+> > Looks like this still misses any fix for the oops I reported May 8th in thread:
+> > "[OPPS] btrfs on 33-3 with latest from btrfs-unstable.git master"
+> > 
+> > Any chance this could be looked into?  I've kept the fs just in case.
+> 
+> The oops shows a crc failure and then we were not able to read the tree
+> block.  Yan Zheng is working on an fsck that can repair things now.
+> Until then the best I can do is help copy things off.
+> 
+> Would you rather save the FS to test fsck?
 
-I've been running btrfs fine on my Sheevaplug (ARMv5) for a few months.
-However, last night, using kernel 2.6.34, I got repeated reboots, with
-many traces like this in the logs:
+I can hang on to the FS for a while longer.  One interesting point.  The FS
+has both both meta-data and data mirroring enabled.  I gather the oops is
+implying that both versions are corrupt.  Btw the fs problem occured after
+heavy vm activity caused by running too many kvm(s).
 
-   Jun 15 07:45:49 moley kernel: CPU: 0    Not tainted  (2.6.34 #3)
-   Jun 15 07:45:49 moley kernel: PC is at __bug+0x18/0x24
-   Jun 15 07:45:49 moley kernel: LR is at __bug+0x14/0x24
-   Jun 15 07:45:49 moley kernel: pc : [<c002e6dc>]    lr : [<c002e6d8>]    psr: 60000013
-   Jun 15 07:45:49 moley kernel: sp : ded6bec0  ip : 00000000  fp : 00000000
-   Jun 15 07:45:49 moley kernel: r10: df5d5ad0  r9 : 00000000  r8 : df640800
-   Jun 15 07:45:49 moley kernel: r7 : df6fac17  r6 : 00000000  r5 : 00000001  r4 : df5d5ad0
-   Jun 15 07:45:49 moley kernel: r3 : 00000000  r2 : ded6beb4  r1 : c047a1ed  r0 : 0000002d
-   Jun 15 07:45:49 moley kernel: Flags: nZCv  IRQs on  FIQs on  Mode SVC_32  ISA ARM  Segment user
-   Jun 15 07:45:49 moley kernel: Control: 0005397f  Table: 1e068000  DAC: 00000015
-   Jun 15 07:45:49 moley kernel: [<c002e6dc>] (__bug+0x18/0x24) from [<bf0773b0>] (write_all_supers+0x294/0x2b4 [btrfs])
-   Jun 15 07:45:49 moley kernel: [<bf0773b0>] (write_all_supers+0x294/0x2b4 [btrfs]) from [<bf07a5e8>] (btrfs_commit_transaction+0x508/0x610 [btrfs])
-   Jun 15 07:45:49 moley kernel: [<bf07a5e8>] (btrfs_commit_transaction+0x508/0x610 [btrfs]) from [<c00c72ec>] (__sync_filesystem+0x80/0x9c)
-   Jun 15 07:45:49 moley kernel: [<c00c72ec>] (__sync_filesystem+0x80/0x9c) from [<c00c73d8>] (sync_filesystems+0xd0/0x140)
-   Jun 15 07:45:49 moley kernel: [<c00c73d8>] (sync_filesystems+0xd0/0x140) from [<c00c7494>] (sys_sync+0x1c/0x3c)
-   Jun 15 07:45:49 moley kernel: [<c00c7494>] (sys_sync+0x1c/0x3c) from [<c002b9c0>] (ret_fast_syscall+0x0/0x2c)
-   Jun 15 07:45:49 moley kernel: sd 3:0:0:0: [sdd] 15954944 512-byte logical blocks: (8.16 GB/7.60 GiB)
-   Jun 15 07:45:49 moley kernel: sd 3:0:0:0: [sdd] Write Protect is off
-   Jun 15 07:45:49 moley kernel:  sdd: sdd1
-   Jun 15 07:45:49 moley kernel: sd 3:0:0:0: [sdd] Attached SCSI removable disk
-   Jun 15 07:45:49 moley kernel: ---[ end trace e30bc455245b7708 ]---
-   Jun 15 07:57:16 moley syslogd 1.5.0#5ubuntu3: restart.
-
-uname -a gives:
-
-   Linux moley 2.6.34 #3 PREEMPT Mon May 17 02:15:53 MDT 2010 armv5tel GNU/Linux
-
-and I'm using the stock kernel from here:
-
-   http://sheeva.with-linux.com/sheeva/2.6.34/
-
-Not sure if this has been fixed in the recent 2.6.35 changes,
-but I thought I'd report it anyway. Let me know if you want me
-to run any btrfs commands for more debug information.
-
-Many thanks,
-Jonathan.
+Thanks
+Ed

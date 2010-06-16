@@ -1,45 +1,39 @@
-From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
-Subject: Re: [patch 11/11] btrfs: The file argument for fsync() is never null
-Date: Wed, 16 Jun 2010 20:04:07 +0200
-Message-ID: <201006162004.08433.johannes.hirte@fem.tu-ilmenau.de>
-References: <20100529094907.GL5483@bicker> <201006142345.42014.johannes.hirte@fem.tu-ilmenau.de> <20100614220804.GM18266@think>
+From: "K. Richard Pixley" <rich@noir.com>
+Subject: Confused by performance
+Date: Wed, 16 Jun 2010 11:08:48 -0700
+Message-ID: <4C191330.5060905@noir.com>
+References: <4BFAEABD.2070700@noir.com> <4BFF2024.3040509@noir.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: Christoph Hellwig <hch@lst.de>, Dan Carpenter <error27@gmail.com>,
-	linux-btrfs@vger.kernel.org, Yan Zheng <zheng.yan@oracle.com>,
-	Josef Bacik <josef@redhat.com>, kernel-janitors@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100614220804.GM18266@think>
+In-Reply-To: <4BFF2024.3040509@noir.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Dienstag 15 Juni 2010, 02:08:20 schrieb Chris Mason:
-> On Mon, Jun 14, 2010 at 11:45:40PM +0200, Johannes Hirte wrote:
-> > Am Montag 14 Juni 2010, 23:16:01 schrieb Christoph Hellwig:
-> > > On Mon, Jun 14, 2010 at 11:11:20PM +0200, Dan Carpenter wrote:
-> > > > > Looks like you've applied the patch to a far too old kernel.  It
-> > > > > can't be NULL for quite a while already.
-> > > > 
-> > > > You're the expert, but it looks like it could be null in 2.6.34 like
-> > > > he says.  I'm just looking at vfs_fsync_range() in
-> > > > "git show v2.6.34:fs/sync.c".
-> > > 
-> > > 2.6.34 is far too old.
-> > 
-> > For the changes yes, but not for working. I needed the btrfs fixes
-> > without all the other bugs introduced with 2.6.35-rc. I was to careless
-> > and pulled to much changes in. My fault.
-> 
-> Well, my fault.  I usually keep the btrfs-unstable tree against one
-> release old, and the users have come to expect it.
-> 
-> I'll make a .34 branch that works.
-> 
-> -chris
+Once again I'm stumped by some performance numbers and hoping for some 
+insight.
 
-What about backporting only the important patches to the stable series? Or 
-would this be to much work for a still experimental filesystem?
+Using an 8-core server, building in parallel, I'm building some code.  
+Using ext2 over a 5-way, (5 disk), lvm partition, I can build that code 
+in 35 minutes.  Tests with dd on the raw disk and lvm partitions show me 
+that I'm getting near linear improvement from the raw stripe, even with 
+dd runs exceeding 10G, so I think that convinces me that my disks and 
+controller subsystem are capable of operating in parallel and in 
+concert.  hdparm -t numbers seem to support what I'm seeing from dd.
 
-regards,
-  Johannes
+Running the same build, same parallelism, over a btrfs (defaults) 
+partition on a single drive, I'm seeing very consistent build times 
+around an hour, which is reasonable.  I get a little under an hour on 
+ext4 single disk, again, very consistently.
+
+However, if I build a btrfs file system across the 5 disks, my build 
+times decline to around 1.5 - 2hrs, although there's about a 30min 
+variation between different runs.
+
+If I build a btrfs file system across the 5-way lvm stripe, I get even 
+worse performance at around 2.5hrs per build, with about a 45min 
+variation between runs.
+
+I can't explain these last two results.  Any theories?
+
+--rich

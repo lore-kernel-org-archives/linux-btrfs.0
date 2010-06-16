@@ -1,98 +1,65 @@
-From: Kyungmin Park <kmpark@infradead.org>
-Subject: BTRFS is broken with discard request?
-Date: Wed, 16 Jun 2010 08:17:49 +0900
-Message-ID: <AANLkTim8Ipx56Dn2P7_HHBHLWj27_t4sizY4L2De6N_R@mail.gmail.com>
+From: Chris Samuel <chris@csamuel.org>
+Subject: Re: bcp command not installed by Makefile
+Date: Wed, 16 Jun 2010 17:02:28 +1000
+Message-ID: <201006161702.31994.chris@csamuel.org>
+References: <AANLkTimRn1NJsivc6HD8W5K3QKQoPdmvfK54o6TOY37c@mail.gmail.com> <201006111412.07560.hka@qbs.com.pl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org, linux-mmc@vger.kernel.org,
-	chris.mason@oracle.com, Adrian Hunter <adrian.hunter@nokia.com>
+Content-Type: multipart/signed;
+  boundary="nextPart1826178.M0mNyO20uo";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201006111412.07560.hka@qbs.com.pl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Deal all,
+--nextPart1826178.M0mNyO20uo
+Content-Type: Text/Plain;
+  charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
 
-Now I got test the btrfs with discard option on MMC (implemented
-discard request).
-but I can't test the iozone benchmark test program with I/O error.
+On Fri, 11 Jun 2010 10:12:07 pm Hubert Kario wrote:
 
-Of course I disabled the discard option. it works well. and discard
-handling is tested with VFAT well.
-So I think BTRFS discard request seems to broken.
+> Does 'bcp' can do anything additional that the 'cp --reflink=3Dalways'?
 
-Test kernel is commit 7e27d6e778cd87b6f2415515d7127eba53fe5d02
-Author: Linus Torvalds <torvalds@linux-foundation.org>
-Date:   Fri Jun 11 19:14:04 2010 -0700
+No, but would be handy for systems where that's not present as an
+option for cp (such as the current Ubuntu 10.04 release).
 
-    Linux 2.6.35-rc3
+Just noticed that bcp isn't present in the btrfs-tools package in
+that release either:
 
-scenarios are below.
+$ apt-cache policy btrfs-tools
+btrfs-tools:
+  Installed: 0.19-8
+  Candidate: 0.19-8
+  Version table:
+ *** 0.19-8 0
+        500 http://mirror.linux.org.au/ubuntu/ lucid/universe Packages
+        500 http://mirrors.uwa.edu.au/ubuntu/ lucid/universe Packages
+        100 /var/lib/dpkg/status
 
-Any clues?
+cheers,
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
 
-Thank you,
-Kyungmin Park
+This email may come with a PGP signature as a file. Do not panic.
+=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
 
-# mkfs.btrfs /dev/mmcblk0p1 -L mmc
+--nextPart1826178.M0mNyO20uo
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
 
-WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
 
-fs created label mmc on /dev/mmcblk0p1
-        nodesize 4096 leafsize 4096 sectorsize 4096 size 7.40GB
-Btrfs Btrfs v0.19
+iQEVAwUATBh3BI1yjaOTJg85AQIpTAgAxNvTrMrcSbFMllLUHmWCR7fHhZcDVA+7
+zuMrWNpKaEhoxDERr+PwHY6SGUkBl1lH/mm9+5TjhUBRAorxctYemTnClr9VLWio
+jnWR5keudKH+jDcwvX377VAm15znXm4p+4XmZkdWVutzGUMLAWIN1LmmV1n1UoI0
+2crXt4baNlLUBtV/DgaEWD2UQr0AGajtxCRKlN0mBFXIRlvF4FSJTf8nC1bRwwjX
+Kq2Urg5rdTgYa0YV01z0BK9lqBicZqxcLTz3VZa+5Y9xkBptxFRkshG3048a7/0Z
+3YM+fTjtgkCuznHM14kVE2clKRmE9E/T9hxcVvEQSnN+2VcnuP1mFw==
+=GDIf
+-----END PGP SIGNATURE-----
 
-# mount -t btrfs -o ssd,discard /dev/mmcblk0p1 /mnt/mmc
-[39310.465000] device label mmc devid 1 transid 7 /dev/mmcblk0p1
-[39310.470000] btrfs: use ssd allocation scheme
-
-# iozone -A -s 10m -U /mnt/mmc -f /mnt/mmc/test -e
-        Iozone: Performance Test of File I/O
-                Version $Revision: 3.326 $
-                Compiled for 32 bit mode.
-                Build: linux-arm
-
-        Contributors:William Norcott, Don Capps, Isom Crawford, Kirby Collins
-                     Al Slater, Scott Rhine, Mike Wisner, Ken Goss
-                     Steve Landherr, Brad Smith, Mark Kelly, Dr. Alain CYR,
-                     Randy Dunlap, Mark Montague, Dan Million, Gavin Brebner,
-                     Jean-Marc Zucconi, Jeff Blomberg, Benny Halevy,
-                     Erik Habbinga, Kris Strecker, Walter Wong, Joshua Root.
-
-        Run began: Thu Jan  1 10:55:35 1970
-
-        Auto Mode 2. This option is obsolete. Use -az -i0 -i1
-        File size set to 10240 KB
-        Include fsync in write timing
-        Command line used: iozone -A -s 10m -U /mnt/mmc -f /mnt/mmc/test -e
-        Output is in Kbytes/sec
-        Time Resolution = 0.000001 seconds.
-        Processor cache size set to 1024 Kbytes.
-
-        Processor cache line size set to 32 bytes.
-        File stride size set to 17 * record size.
-
-              KB  reclen   write rewrite    read    reread
-
-           10240       4
-[39337.095000] device label mmc devid 1 transid 12 /dev/mmcblk0p1
-[39337.100000] btree_readpage_end_io_hook: 4 callbacks suppressed
-[39337.105000] btrfs bad tree block start 0 29421568
-[39337.110000] btrfs bad tree block start 0 29421568
-[39337.115000] btrfs bad tree block start 0 29425664
-[39337.120000] btrfs bad tree block start 0 29425664
-[39337.125000] btrfs bad tree block start 0 29372416
-[39337.130000] btrfs bad tree block start 0 29372416
-[39337.135000] btrfs bad tree block start 0 29376512
-[39337.140000] btrfs bad tree block start 0 29376512
-[39337.145000] Btrfs detected SSD devices, enabling SSD mode
-[39337.150000] btrfs bad tree block start 0 29380608
-[39337.155000] btrfs bad tree block start 0 29380608
-[39338.880000] device label mmc devid 1 transid 17 /dev/mmcblk0p1
-[39338.895000] Btrfs detected SSD devices, enabling SSD mode
-    7494    8721
-[39340.830000] device label mmc devid 1 transid 21 /dev/mmcblk0p1
-[39340.845000] Btrfs detected SSD devices, enabling SSD mode
-
-Error reading block 0 40200000
-read: Input/output error
-#
+--nextPart1826178.M0mNyO20uo--

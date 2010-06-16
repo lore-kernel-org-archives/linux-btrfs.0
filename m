@@ -1,26 +1,47 @@
-From: Brian Martin <brianmartin@gmail.com>
-Subject: varied drive size raid10
-Date: Wed, 16 Jun 2010 03:19:04 -0400
-Message-ID: <4C187AE8.4040705@gmail.com>
+From: Nikanth Karthikesan <knikanth@suse.de>
+Subject: [PATCH btrfs-unstable#master] Prevent creation of files larger than RLIMIT_FSIZE using fallocate
+Date: Wed, 16 Jun 2010 14:00:53 +0530
+Message-ID: <201006161400.53879.knikanth@suse.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain;
+  charset="us-ascii"
+Cc: linux-btrfs@vger.kernel.org,
+	"Amit K. Arora" <aarora@linux.vnet.ibm.com>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hi Chris
 
-When using raid10 btrfs on four disks of two different sizes (two of one 
-size two of another) does btrfs know to match the similarly sized disks 
-in a mirrored pair?
+I am resending this based on the btrfs-unstable tree. Please apply/reply.
 
-I guess a corallary would be: will btrfs stripe over the mirrored pairs 
-until the smaller pair fills up and then continue writing to the larger 
-pair?
+Thanks
+Nikanth
 
-Also, if raid10 is used with, say, 3 100gb drives and 1 250gb drive 
-would the 250gb drive be able to fail without data loss?  Could it be 
-fully utilized?  How about with a 500gb drive?
+Prevent creation of files larger than RLIMIT_FSIZE using fallocate.
 
-Thanks,
-Brian
+Currently using posix_fallocate one can bypass an RLIMIT_FSIZE limit
+and create a larger file than the limit. Add a check for that.
+
+
+Signed-off-by: Nikanth Karthikesan <knikanth@suse.de>
+Cc: Amit K. Arora <aarora@linux.vnet.ibm.com>
+
+---
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index f08427c..7870f4f 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6842,6 +6842,11 @@ static long btrfs_fallocate(struct inode *inode, int mode,
+ 	btrfs_wait_ordered_range(inode, alloc_start, alloc_end - alloc_start);
+ 
+ 	mutex_lock(&inode->i_mutex);
++
++	ret = inode_newsize_ok(inode, (offset + len));
++	if (ret)
++		goto out;
++
+ 	if (alloc_start > inode->i_size) {
+ 		ret = btrfs_cont_expand(inode, alloc_start);
+ 		if (ret)

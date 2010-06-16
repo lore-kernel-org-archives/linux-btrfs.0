@@ -1,53 +1,73 @@
-From: John Wyzer <john.wyzer@gmx.de>
-Subject: Re: btrfsck segmentation fault + trace
-Date: Wed, 16 Jun 2010 22:25:13 +0200
-Message-ID: <4C193329.1000500@gmx.de>
-References: <4C18F348.80509@gmx.de> <20100616163109.GX27466@think> <4C18FD4D.4070100@gmx.de> <20100616172900.GA27466@think>
+From: Daniel J Blueman <daniel.blueman@gmail.com>
+Subject: Re: Confused by performance
+Date: Wed, 16 Jun 2010 22:44:32 +0100
+Message-ID: <AANLkTil5TqpPNlz17zah_oRX2P-tfIo3puR9SLXcLVG6@mail.gmail.com>
+References: <4BFAEABD.2070700@noir.com>
+	<4BFF2024.3040509@noir.com>
+	<4C191330.5060905@noir.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+To: "K. Richard Pixley" <rich@noir.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100616172900.GA27466@think>
+In-Reply-To: <4C191330.5060905@noir.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 16/06/10 19:29, Chris Mason wrote:
-> On Wed, Jun 16, 2010 at 06:35:25PM +0200, John Wyzer wrote:
->>> Is 2.6.34 working normally?
->>
->> Yes. I can boot with 2.6.34.y and everything works fine. (Actually,
->> before trying 2.6.45-rc3, I had an uptime of two weeks on this laptop.
->> Now, I'm writing this email on 2.6.34.y.)
-> 
-> But every time you boot 2.6.35 you get errors?  Would it be possible to
-> save the console output (netconsole works well)
+On Wed, Jun 16, 2010 at 7:08 PM, K. Richard Pixley <rich@noir.com> wrot=
+e:
+> Once again I'm stumped by some performance numbers and hoping for som=
+e
+> insight.
+>
+> Using an 8-core server, building in parallel, I'm building some code.=
+ =A0Using
+> ext2 over a 5-way, (5 disk), lvm partition, I can build that code in =
+35
+> minutes. =A0Tests with dd on the raw disk and lvm partitions show me =
+that I'm
+> getting near linear improvement from the raw stripe, even with dd run=
+s
+> exceeding 10G, so I think that convinces me that my disks and control=
+ler
+> subsystem are capable of operating in parallel and in concert. =A0hdp=
+arm -t
+> numbers seem to support what I'm seeing from dd.
+>
+> Running the same build, same parallelism, over a btrfs (defaults) par=
+tition
+> on a single drive, I'm seeing very consistent build times around an h=
+our,
+> which is reasonable. =A0I get a little under an hour on ext4 single d=
+isk,
+> again, very consistently.
+>
+> However, if I build a btrfs file system across the 5 disks, my build =
+times
+> decline to around 1.5 - 2hrs, although there's about a 30min variatio=
+n
+> between different runs.
+>
+> If I build a btrfs file system across the 5-way lvm stripe, I get eve=
+n worse
+> performance at around 2.5hrs per build, with about a 45min variation =
+between
+> runs.
+>
+> I can't explain these last two results. =A0Any theories?
 
-[...]
-device fsid 3247922091b53feb-dcb02f0506fbdc8b devid 1 transid 155748
-/dev/mapper/root
-EXT3-fs: barriers not enabled
-kjournald starting.  Commit interval 5 seconds
-EXT3-fs (sda4): warning: maximal mount count reached, running e2fsck is
-recommended
-EXT3-fs (sda4): using internal journal
-EXT3-fs (sda4): recovery complete
-EXT3-fs (sda4): mounted filesystem with writeback data mode
-btrfs: fail to dirty  inode 9959493 error -28
-btrfs: fail to dirty  inode 2987803 error -28
-btrfs: fail to dirty  inode 2987803 error -28
-btrfs: fail to dirty  inode 8873620 error -28
-btrfs: fail to dirty  inode 8873620 error -28
-btrfs: fail to dirty  inode 803894 error -28
-btrfs: fail to dirty  inode 2988335 error -28
-btrfs: fail to dirty  inode 2987971 error -28
-btrfs: fail to dirty  inode 2987972 error -28
-btrfs: fail to dirty  inode 2988336 error -28
-btrfs: fail to dirty  inode 6631 error -28
-btrfs: fail to dirty  inode 803896 error -28
-btrfs: fail to dirty  inode 6632 error -28
-btrfs: fail to dirty  inode 6633 error -28
-btrfs: fail to dirty  inode 6634 error -28
-[...] (nothing new coming, only error -28)
+Try mounting the BTRFS filesystem with 'nobarrier', since this may be
+an obvious difference. Also, for metadata-write-intensive workloads,
+when creating the filesystem try 'mkfs.btrfs -m single'. Of course,
+all this doesn't explain the variance.
 
-Apart from that, I had messages that there was no space left on /, but
-those were from userspace and not logged via netconsole.
+I'd say it's worth emplying 'blktrace' to see what happening at a
+lower level, and even eg varying between deadline/CFQ I/O schedulers.
 
+Daniel
+--=20
+Daniel J Blueman
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,47 +1,59 @@
-From: Nikanth Karthikesan <knikanth@suse.de>
-Subject: [PATCH btrfs-unstable#master] Prevent creation of files larger than RLIMIT_FSIZE using fallocate
-Date: Wed, 16 Jun 2010 14:00:53 +0530
-Message-ID: <201006161400.53879.knikanth@suse.de>
+From: Hugo Mills <hugo-lkml@carfax.org.uk>
+Subject: Odd block-count behaviour
+Date: Wed, 16 Jun 2010 13:47:30 +0100
+Message-ID: <20100616124730.GA1727@vlad.carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="us-ascii"
-Cc: linux-btrfs@vger.kernel.org,
-	"Amit K. Arora" <aarora@linux.vnet.ibm.com>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="/9DWx/yDrRhgMJTb"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris
 
-I am resending this based on the btrfs-unstable tree. Please apply/reply.
+--/9DWx/yDrRhgMJTb
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Thanks
-Nikanth
+   Hi,
 
-Prevent creation of files larger than RLIMIT_FSIZE using fallocate.
+   I've just been copying large quantities of data from one btrfs
+volume to another, and while watching the progress of the copy, I've
+noticed something odd.
 
-Currently using posix_fallocate one can bypass an RLIMIT_FSIZE limit
-and create a larger file than the limit. Add a check for that.
+$ mv source-dir dest-dir
+$ watch du -ms source-dir dest-dir
 
+   This gives me a count of the size of the source and target
+directories, every 2 seconds. As expected, the size of the source dir
+stays constant, and the size of the destination directory increases.
+Except when it doesn't.
 
-Signed-off-by: Nikanth Karthikesan <knikanth@suse.de>
-Cc: Amit K. Arora <aarora@linux.vnet.ibm.com>
+   Occasionally, while copying, the size of the dest-dir *drops* by
+several (tens of) megabytes. I'm not too worried about this, as it all
+seems to be copying the data OK, but it just seems a bit odd, and was
+wondering of there was a sane explanation for this behaviour.
 
----
+   I'm running a linux.org 2.6.32.2 kernel, and the destination
+filesystem has just been created using the most recent btrfs tools.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index f08427c..7870f4f 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6842,6 +6842,11 @@ static long btrfs_fallocate(struct inode *inode, int mode,
- 	btrfs_wait_ordered_range(inode, alloc_start, alloc_end - alloc_start);
- 
- 	mutex_lock(&inode->i_mutex);
-+
-+	ret = inode_newsize_ok(inode, (offset + len));
-+	if (ret)
-+		goto out;
-+
- 	if (alloc_start > inode->i_size) {
- 		ret = btrfs_cont_expand(inode, alloc_start);
- 		if (ret)
+   Hugo.
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+       --- There's many a slip 'twixt wicket-keeper and gully. ---       
+
+--/9DWx/yDrRhgMJTb
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+iD8DBQFMGMfiIKyzvlFcI40RAq30AJ4oABH5mZLd97803NRI+ju7c9TpxgCdG4J6
+InoRv35M5gLDoq5lKMN6Fsg=
+=Tc4S
+-----END PGP SIGNATURE-----
+
+--/9DWx/yDrRhgMJTb--

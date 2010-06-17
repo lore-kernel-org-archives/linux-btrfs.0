@@ -1,55 +1,75 @@
-From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
-Subject: Re: Still ENOSPC problems with 2.6.35-rc3
-Date: Thu, 17 Jun 2010 15:46:00 +0200
-Message-ID: <201006171546.00979.johannes.hirte@fem.tu-ilmenau.de>
-References: <201006161948.26611.johannes.hirte@fem.tu-ilmenau.de> <201006170156.54551.johannes.hirte@fem.tu-ilmenau.de> <AANLkTikL6C9Ize1K-Hixsb9PEePezAQDR7FbQ7EemiRX@mail.gmail.com>
+From: Hubert Kario <hka@qbs.com.pl>
+Subject: Re: [PATCH][RFC] Complex filesystem operations: split and join
+Date: Thu, 17 Jun 2010 17:04:13 +0200
+Message-ID: <201006171704.14541.hka@qbs.com.pl>
+References: <201006092035.46481.knikanth@novell.com> <201006151611.36443.knikanth@novell.com> <e4ea1892f15eaac945c151ea14a5d2d9.squirrel@www.chrestomanci.org>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
-To: "Yan, Zheng " <yanzheng@21cn.com>
+Content-Type: Text/Plain; charset=utf-8
+Cc: "Nikanth Karthikesan" <knikanth@novell.com>,
+	"OGAWA Hirofumi" <hirofumi@mail.parknet.co.jp>,
+	linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+	"Alexander Viro" <viro@zeniv.linux.org.uk>,
+	"Christoph Hellwig" <hch@lst.de>,
+	"Chris Mason" <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+To: "David Pottage" <david@electric-spoon.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTikL6C9Ize1K-Hixsb9PEePezAQDR7FbQ7EemiRX@mail.gmail.com>
+In-Reply-To: <e4ea1892f15eaac945c151ea14a5d2d9.squirrel@www.chrestomanci.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Donnerstag 17 Juni 2010, 02:47:07 schrieb Yan, Zheng:
-> On Thu, Jun 17, 2010 at 7:56 AM, Johannes Hirte
-> 
-> <johannes.hirte@fem.tu-ilmenau.de> wrote:
-> > Am Donnerstag 17 Juni 2010, 01:12:54 schrieb Yan, Zheng:
-> >> On Thu, Jun 17, 2010 at 1:48 AM, Johannes Hirte
-> >> 
-> >> <johannes.hirte@fem.tu-ilmenau.de> wrote:
-> >> > With kernel-2.6.34 I run into the ENOSPC problems that where reported
-> >> > on this list recently. The filesystem was somewhat over 90% full and
-> >> > most operations on it caused a Oops. I was able to delete files by
-> >> > trial and error and freed up half of the filesystem space. Operation
-> >> > on the other files still caused an Oops.
-> >> > 
-> >> > For 2.6.35 there went some patches in, that addressed this problem.
-> >> > Sadly they don't fix it but only avoid the Oops. A simple 'ls' on
-> >> > this filesystem results in
-> >> 
-> >> To avoid ENOSPC oops, btrfs in 2.6.35 reserves more metadata space for
-> >> system use than older btrfs. If the FS has already ran out of metadata
-> >> space, using btrfs in 2.6.35 doesn't help.
-> >> 
-> >> Yan, Zheng
-> > 
-> > So how can this be fixed/avoided? There must be some free metadata space,
-> > since I was able to delete files, more than 20Gig, mostly small files.
-> > Also from my understanding, when freeing space by deleting files,
-> > metadata space should be freed. Or do I get something wrong here?
-> > 2.6.35 does change something, since I can delete more files, where 2.6.34
-> > does Oops. But you're right, it doesn't help at all. So, where is this
-> > space and why it can't be used?
-> 
-> what will happen if you keep deleting files using 2.6.35?
+On Tuesday 15 June 2010 17:16:06 David Pottage wrote:
+> On 15/06/10 11:41, Nikanth Karthikesan wrote:
+> > I had a one-off use-case, where I had no free-space, which made me
+> > think along this line.
+> >=20
+> > 1. We have the GNU split tool for example, which I guess, many of u=
+s
+> > use to split larger files to be transfered via smaller thumb drives=
+,
+> > for example. We do cat many files into one, afterwards. [For this
+> > usecase, one can simply dd with seek and skip and avoid split/cat
+> > completely, but we dont.]
+>=20
+> I am not sure how you gain here as either way you have to do I/O to g=
+et
+> the split files on and off the thumb drive. It might make sense if th=
+e
+> thumb drive is formated with btrfs, and the file needs to be copied t=
+o
+> another filling system that can't handle large files (eg FAT-16), but=
+ I
+> would say that is unlikely.
+>=20
 
-With 2.6.35 I'm able to continue deleting files, even those where 2.6.34 would 
-Oops. It's slow and give me many of this warnings in dmesg but they get 
-deleted. I didn't tried it to the end, but I can do if you want. I've saved 
-the affected filesystem to a separate partition, so I can test with it.
+But you do have to do only half as much of I/O with those features=20
+implemented.
 
-regards,
-  Johannes
+The old way is:
+1. Have a file
+2. split a file (in effect use twice as much drive space)
+3. copy fragments to flash disks
+
+The btrfs way would be:
+1. Have a file
+2. split the file by using COW and referencing blocks in the original f=
+ile (in=20
+effect using only a little more space after splitting)
+3. copy fragments to flash disks
+
+the amount of I/O in the second case is limited only to metadata operat=
+ions,=20
+in the first case, all data must be duplicated
+
+--=20
+Hubert Kario
+QBS - Quality Business Software
+02-656 Warszawa, ul. Ksawer=C3=B3w 30/85
+tel. +48 (22) 646-61-51, 646-74-24
+www.qbs.com.pl
+
+System Zarz=C4=85dzania Jako=C5=9Bci=C4=85
+zgodny z norm=C4=85 ISO 9001:2000
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

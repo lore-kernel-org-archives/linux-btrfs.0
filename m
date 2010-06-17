@@ -1,34 +1,51 @@
-From: David Brown <david@westcontrol.com>
-Subject: Re: Confused by performance
-Date: Thu, 17 Jun 2010 08:57:01 +0200
-Message-ID: <hvch0f$jme$1@dough.gmane.org>
-References: <4BFAEABD.2070700@noir.com>	<4BFF2024.3040509@noir.com>	<4C191330.5060905@noir.com>	<4C19243E.9050507@robertoragusa.it>	<AANLkTinM6ab_KEynfgvVT9v5TmcogoLZ0PLAz2oPnsiS@mail.gmail.com> <AANLkTimKGCk7KlD4KQ8oXhnnOf0pj3VzzDmzzBIK0bNn@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Odd block-count behaviour
+Date: Thu, 17 Jun 2010 05:16:27 -0400
+Message-ID: <20100617091627.GJ27466@think>
+References: <20100616124730.GA1727@vlad.carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+To: Hugo Mills <hugo-lkml@carfax.org.uk>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimKGCk7KlD4KQ8oXhnnOf0pj3VzzDmzzBIK0bNn@mail.gmail.com>
+In-Reply-To: <20100616124730.GA1727@vlad.carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 16/06/2010 21:35, Freddie Cash wrote:
-> <snip a lot of fancy math that missed the point>
->
-> That's all well and good, but you missed the part where he said ext2
-> on a 5-way LVM stripeset is many times faster than btrfs on a 5-way
-> btrfs stripeset.
->
-> IOW, same 5-way stripeset, different filesystems and volume managers,
-> and very different performance.
->
-> And he's wondering why the btrfs method used for striping is so much
-> slower than the lvm method used for striping.
->
+On Wed, Jun 16, 2010 at 01:47:30PM +0100, Hugo Mills wrote:
+>    Hi,
+> 
+>    I've just been copying large quantities of data from one btrfs
+> volume to another, and while watching the progress of the copy, I've
+> noticed something odd.
+> 
+> $ mv source-dir dest-dir
+> $ watch du -ms source-dir dest-dir
+> 
+>    This gives me a count of the size of the source and target
+> directories, every 2 seconds. As expected, the size of the source dir
+> stays constant, and the size of the destination directory increases.
+> Except when it doesn't.
+> 
+>    Occasionally, while copying, the size of the dest-dir *drops* by
+> several (tens of) megabytes. I'm not too worried about this, as it all
+> seems to be copying the data OK, but it just seems a bit odd, and was
+> wondering of there was a sane explanation for this behaviour.
 
-This could easily be explained by Roberto's theory and maths - if the 
-lvm stripe set used large stripe sizes so that the random reads were 
-mostly read from a single disk, it would be fast.  If the btrfs stripes 
-were small, then it would be slow due to all the extra seeks.
+If the files are small, they can be packed into the metadata btree.  But
+this doesn't happen until the file is actually written.
 
-Do we know anything about the stripe sizes used?
+So we start with a worst case estimate on the number of blocks the file
+will consume (4k) and then when it is actually written we update the
+metadata to reflect the number of blocks it is actually using (maybe 1
+or 2).
 
+You can see this with a test:
+
+mkdir testdir
+cd testdir
+dd if=/dev/zero of=foo bs=512 count=1
+du -k .
+sync
+du -k .
+
+-chris
 

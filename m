@@ -1,86 +1,86 @@
-From: Jamie Lokier <jamie@shareable.org>
-Subject: Re: Btrfs: broken file system design (was Unbound(?) internal fragmentation in Btrfs)
-Date: Fri, 18 Jun 2010 16:56:53 +0100
-Message-ID: <20100618155653.GC10919@shareable.org>
-References: <4C07C321.8010000@redhat.com> <AANLkTilKw2onQkdNlZjg7WVnPu2dsNpDSvoxrO_FA2z_@mail.gmail.com> <4C1B7560.1000806@gmail.com>
+From: Edward Shishkin <edward.shishkin@gmail.com>
+Subject: Re: Btrfs: broken file system design (was Unbound(?) internal fragmentation
+ in Btrfs)
+Date: Fri, 18 Jun 2010 18:22:39 +0200
+Message-ID: <4C1B9D4F.6010008__1901.41732241518$1276878248$gmane$org@gmail.com>
+References: <4C07C321.8010000@redhat.com> <AANLkTilKw2onQkdNlZjg7WVnPu2dsNpDSvoxrO_FA2z_@mail.gmail.com> <4C1B7560.1000806@gmail.com> <20100618134755.GG27466@think> <4C1B8B4A.9060308@gmail.com> <20100618151017.GN27466@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Mat <jackdachef@gmail.com>, LKML <linux-kernel@vger.kernel.org>,
-	linux-fsdevel@vger.kernel.org,
-	Chris Mason <chris.mason@oracle.com>,
-	Ric Wheeler <rwheeler@redhat.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
-	The development of BTRFS <linux-btrfs@vger.kernel.org>
-To: Edward Shishkin <edward.shishkin@gmail.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4C1B7560.1000806@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Chris Mason <chris.mason@oracle.com>,
+	Edward Shishkin <edward.shishkin@gmail.com>,
+	Mat <jackdachef@gmail.com>, LKML <linux-kernel@vger.kernel.org>,
+	linux-fsdevel@vger.kernel.org, Ric
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100618151017.GN27466@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Edward Shishkin wrote:
-> If you decide to base your file system on some algorithms then please
-> use the original ones from proper academic papers. DO NOT modify the
-> algorithms in solitude: this is very fragile thing! All such
-> modifications must be reviewed by specialists in the theory of
-> algorithms. Such review can be done in various scientific magazines of
-> proper level.
-> 
-> Personally I don't see any way to improve the situation with Btrfs
-> except full redesigning the last one. If you want to base your file
-> system on the paper of Ohad Rodeh, then please, use *exactly* the
-> Bayer's B-trees that he refers to. That said, make sure that all
-> records you put to the tree has equal length and all non-root nodes of
-> your tree are at least half filled.
+Chris Mason wrote:
+> On Fri, Jun 18, 2010 at 05:05:46PM +0200, Edward Shishkin wrote:
+>   
+>> Chris Mason wrote:
+>>     
+>>> On Fri, Jun 18, 2010 at 03:32:16PM +0200, Edward Shishkin wrote:
+>>>       
+>>>> Mat wrote:
+>>>>         
+>>>>> On Thu, Jun 3, 2010 at 4:58 PM, Edward Shishkin <edward@redhat.com> wrote:
+>>>>>           
+>>>>>> Hello everyone.
+>>>>>>
+>>>>>> I was asked to review/evaluate Btrfs for using in enterprise
+>>>>>> systems and the below are my first impressions (linux-2.6.33).
+>>>>>>
+>>>>>> The first test I have made was filling an empty 659M (/dev/sdb2)
+>>>>>> btrfs partition (mounted to /mnt) with 2K files:
+>>>>>>
+>>>>>> # for i in $(seq 1000000); \
+>>>>>> do dd if=/dev/zero of=/mnt/file_$i bs=2048 count=1; done
+>>>>>> (terminated after getting "No space left on device" reports).
+>>>>>>
+>>>>>> # ls /mnt | wc -l
+>>>>>> 59480
+>>>>>>
+>>>>>> So, I got the "dirty" utilization 59480*2048 / (659*1024*1024) = 0.17,
+>>>>>> and the first obvious question is "hey, where are other 83% of my
+>>>>>> disk space???" I looked at the btrfs storage tree (fs_tree) and was
+>>>>>> shocked with the situation on the leaf level. The Appendix B shows
+>>>>>> 5 adjacent btrfs leafs, which have the same parent.
+>>>>>>
+>>>>>> For example, look at the leaf 29425664: "items 1 free space 3892"
+>>>>>> (of 4096!!). Note, that this "free" space (3892) is _dead_: any
+>>>>>> attempts to write to the file system will result in "No space left
+>>>>>> on device".
+>>>>>>             
+>>> There are two easy ways to fix this problem.  Turn off the inline
+>>> extents (max_inline=0) or allow splitting of the inline extents.  I
+>>> didn't put in the splitting simply because the complexity was high while
+>>> the benefits were low (in comparison with just turning off the inline
+>>> extents).
+>>>       
+>> Hello, Chris. Thanks for response!
+>> I afraid that both ways won't fix the problem. Look at this leaf:
+>>
+>> [...]
+>> leaf 29425664 items 1 free space 3892 generation 8 owner 5
+>> fs uuid 50268d9d-2a53-4f4d-b3a3-4fbff74dd956
+>> chunk uuid 963ba49a-bb2b-48a3-9b35-520d857aade6
+>>        item 0 key (320 XATTR_ITEM 3817753667) itemoff 3917 itemsize 78
+>>                location key (0 UNKNOWN 0) type 8
+>>                namelen 16 datalen 32 name: security.selinux
+>> [...]
+>>
+>> There is no inline extents, and what are you going to split here?
+>> All leafs must be at least a half filled, otherwise we loose all
+>> boundaries, which provides non-zero utilization..
+>>     
+>
+> Right, there is no inline extent because we require them to fit entirely
+> in the leaf.  So we end up with mostly empty leaves because the inline
+> item is large enough to make it difficult to push around but not large
+> enough to fill the leaf.
+>   
 
-First, thanks Edward for identifying a specific problem with the
-current btrfs implementation.
-
-I've studied modified B-trees quite a lot and know enough to be sure
-that they are quite robust when you modify them in all sorts of ways.
-
-Moreover, you are incorrect to say there's an intrinsic algorithmic
-problem with variable-length records.  It is not true; if Knuth said
-so, Knuth was mistaken.
-
-This is easily shown by modelling variable-length records (key ->
-string) as a range of fixed length records ([key,index] -> byte) and
-apply the standard B-tree algorithms to that, which guarantees
-algorithm properties such as space utilisation and time; then you can
-substitute a "compressed" representation of contiguous index runs,
-which amounts to nothing more than just storing the strings (split
-where the algorithm says to do so) and endpoint indexes , and because
-this compression does not expand (in any way that matters), classic
-algorithmic properties are still guaranteed.
-
-Variable-length keys are a different business.  Those are trickier,
-but as far as I know, btrfs doesn't use them.
-
-> As to current Btrfs code: *NOT ACK*!!! I don't think we need such
-> "file systems".
-
-Btrfs provides many useful features that other filesystems don't.  We
-definitely need it, or something like it.  You have identified a bug.
-It's not a corruption bug, but it's definitely a bug, and probably
-affects performance as well as space utilisation.
-
-It is not deep design bug; it is just a result of the packing and
-balancing heuristics.
-
-If you are still interested, please apply your knowledge of B-tree
-algorithms to understanding why btrfs fails to balance the tree
-sufficiently well, and then propose a fix.
-
-Note that it's not necessarily a problem to have a few nodes with low
-utilisation.  Deliberate violation of the classic balancing heuristic
-is often useful for performance.[*]  The problem you've found is only a
-real problem when there are _too many_ nodes with low utilisation.
-
-[*] For example when filling a tree by inserting contiguously
-ascending keys, the classic "split into two when full" heuristic gives
-the worst possible results (50% lost space), and deliberately
-underfilling the most actively updated nodes, which is not permitted
-at all by the classic algorithm, gives denser packing in the end
-(almost zero lost space).  It's also faster.  The trick is to make
-sure there's just the right number of underfilled nodes...
-
--- Jamie
+How about left and right neighbors? They contain a lot of
+free space (1572 and 1901 respectively).
+I am not happy with the very fact of such shallow leafs which
+contain only one small (xattr) item..

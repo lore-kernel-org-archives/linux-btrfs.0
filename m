@@ -1,86 +1,109 @@
 From: Edward Shishkin <edward.shishkin@gmail.com>
-Subject: Re: Btrfs: broken file system design (was Unbound(?) internal fragmentation
+Subject: Re: Btrfs: broken file system design (was Unbound(?) internal 	fragmentation
  in Btrfs)
-Date: Fri, 18 Jun 2010 18:22:39 +0200
-Message-ID: <4C1B9D4F.6010008__1901.41732241518$1276878248$gmane$org@gmail.com>
-References: <4C07C321.8010000@redhat.com> <AANLkTilKw2onQkdNlZjg7WVnPu2dsNpDSvoxrO_FA2z_@mail.gmail.com> <4C1B7560.1000806@gmail.com> <20100618134755.GG27466@think> <4C1B8B4A.9060308@gmail.com> <20100618151017.GN27466@think>
+Date: Fri, 18 Jun 2010 18:50:45 +0200
+Message-ID: <4C1BA3E5.7020400@gmail.com>
+References: <4C07C321.8010000@redhat.com>	<AANLkTilKw2onQkdNlZjg7WVnPu2dsNpDSvoxrO_FA2z_@mail.gmail.com>	<4C1B7560.1000806@gmail.com> <AANLkTilQm8VGAvc1XNW4EaHd1FLd6dXIXwJ9-yT-joQ8@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: Chris Mason <chris.mason@oracle.com>,
-	Edward Shishkin <edward.shishkin@gmail.com>,
-	Mat <jackdachef@gmail.com>, LKML <linux-kernel@vger.kernel.org>,
-	linux-fsdevel@vger.kernel.org, Ric
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100618151017.GN27466@think>
+Cc: Mat <jackdachef@gmail.com>, LKML <linux-kernel@vger.kernel.org>,
+	linux-fsdevel@vger.kernel.org,
+	Chris Mason <chris.mason@oracle.com>,
+	Ric Wheeler <rwheeler@redhat.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Linus Torvalds <torvalds@linux-foundation.org>,
+	The development of BTRFS <linux-btrfs@vger.kernel.org>
+To: Daniel J Blueman <daniel.blueman@gmail.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <AANLkTilQm8VGAvc1XNW4EaHd1FLd6dXIXwJ9-yT-joQ8@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote:
-> On Fri, Jun 18, 2010 at 05:05:46PM +0200, Edward Shishkin wrote:
+Daniel J Blueman wrote:
+> On Fri, Jun 18, 2010 at 1:32 PM, Edward Shishkin
+> <edward.shishkin@gmail.com> wrote:
 >   
->> Chris Mason wrote:
+>> Mat wrote:
 >>     
->>> On Fri, Jun 18, 2010 at 03:32:16PM +0200, Edward Shishkin wrote:
+>>> On Thu, Jun 3, 2010 at 4:58 PM, Edward Shishkin <edward@redhat.com> wrote:
 >>>       
->>>> Mat wrote:
+>>>> Hello everyone.
+>>>>
+>>>> I was asked to review/evaluate Btrfs for using in enterprise
+>>>> systems and the below are my first impressions (linux-2.6.33).
+>>>>
+>>>> The first test I have made was filling an empty 659M (/dev/sdb2)
+>>>> btrfs partition (mounted to /mnt) with 2K files:
+>>>>
+>>>> # for i in $(seq 1000000); \
+>>>> do dd if=/dev/zero of=/mnt/file_$i bs=2048 count=1; done
+>>>> (terminated after getting "No space left on device" reports).
+>>>>
+>>>> # ls /mnt | wc -l
+>>>> 59480
+>>>>
+>>>> So, I got the "dirty" utilization 59480*2048 / (659*1024*1024) = 0.17,
+>>>> and the first obvious question is "hey, where are other 83% of my
+>>>> disk space???" I looked at the btrfs storage tree (fs_tree) and was
+>>>> shocked with the situation on the leaf level. The Appendix B shows
+>>>> 5 adjacent btrfs leafs, which have the same parent.
+>>>>
+>>>> For example, look at the leaf 29425664: "items 1 free space 3892"
+>>>> (of 4096!!). Note, that this "free" space (3892) is _dead_: any
+>>>> attempts to write to the file system will result in "No space left
+>>>> on device".
+>>>>
+>>>> Internal fragmentation (see Appendix A) of those 5 leafs is
+>>>> (1572+3892+1901+3666+1675)/4096*5 = 0.62. This is even worse then
+>>>> ext4 and xfs: The last ones in this example will show fragmentation
+>>>> near zero with blocksize <= 2K. Even with 4K blocksize they will
+>>>> show better utilization 0.50 (against 0.38 in btrfs)!
+>>>>
+>>>> I have a small question for btrfs developers: Why do you folks put
+>>>> "inline extents", xattr, etc items of variable size to the B-tree
+>>>> in spite of the fact that B-tree is a data structure NOT for variable
+>>>> sized records? This disadvantage of B-trees was widely discussed.
+>>>> For example, maestro D. Knuth warned about this issue long time
+>>>> ago (see Appendix C).
+>>>>
+>>>> It is a well known fact that internal fragmentation of classic Bayer's
+>>>> B-trees is restricted by the value 0.50 (see Appendix C). However it
+>>>> takes place only if your tree contains records of the _same_ length
+>>>> (for example, extent pointers). Once you put to your B-tree records
+>>>> of variable length (restricted only by leaf size, like btrfs "inline
+>>>> extents"), your tree LOSES this boundary. Moreover, even worse:
+>>>> it is clear, that in this case utilization of B-tree scales as zero(!).
+>>>> That said, for every small E and for every amount of data N we
+>>>> can construct a consistent B-tree, which contains data N and has
+>>>> utilization worse then E. I.e. from the standpoint of utilization
+>>>> such trees can be completely degenerated.
+>>>>
+>>>> That said, the very important property of B-trees, which guarantees
+>>>> non-zero utilization, has been lost, and I don't see in Btrfs code any
+>>>> substitution for this property. In other words, where is a formal
+>>>> guarantee that all disk space of our users won't be eaten by internal
+>>>> fragmentation? I consider such guarantee as a *necessary* condition
+>>>> for putting a file system to production.
 >>>>         
->>>>> On Thu, Jun 3, 2010 at 4:58 PM, Edward Shishkin <edward@redhat.com> wrote:
->>>>>           
->>>>>> Hello everyone.
->>>>>>
->>>>>> I was asked to review/evaluate Btrfs for using in enterprise
->>>>>> systems and the below are my first impressions (linux-2.6.33).
->>>>>>
->>>>>> The first test I have made was filling an empty 659M (/dev/sdb2)
->>>>>> btrfs partition (mounted to /mnt) with 2K files:
->>>>>>
->>>>>> # for i in $(seq 1000000); \
->>>>>> do dd if=/dev/zero of=/mnt/file_$i bs=2048 count=1; done
->>>>>> (terminated after getting "No space left on device" reports).
->>>>>>
->>>>>> # ls /mnt | wc -l
->>>>>> 59480
->>>>>>
->>>>>> So, I got the "dirty" utilization 59480*2048 / (659*1024*1024) = 0.17,
->>>>>> and the first obvious question is "hey, where are other 83% of my
->>>>>> disk space???" I looked at the btrfs storage tree (fs_tree) and was
->>>>>> shocked with the situation on the leaf level. The Appendix B shows
->>>>>> 5 adjacent btrfs leafs, which have the same parent.
->>>>>>
->>>>>> For example, look at the leaf 29425664: "items 1 free space 3892"
->>>>>> (of 4096!!). Note, that this "free" space (3892) is _dead_: any
->>>>>> attempts to write to the file system will result in "No space left
->>>>>> on device".
->>>>>>             
->>> There are two easy ways to fix this problem.  Turn off the inline
->>> extents (max_inline=0) or allow splitting of the inline extents.  I
->>> didn't put in the splitting simply because the complexity was high while
->>> the benefits were low (in comparison with just turning off the inline
->>> extents).
->>>       
->> Hello, Chris. Thanks for response!
->> I afraid that both ways won't fix the problem. Look at this leaf:
->>
->> [...]
->> leaf 29425664 items 1 free space 3892 generation 8 owner 5
->> fs uuid 50268d9d-2a53-4f4d-b3a3-4fbff74dd956
->> chunk uuid 963ba49a-bb2b-48a3-9b35-520d857aade6
->>        item 0 key (320 XATTR_ITEM 3817753667) itemoff 3917 itemsize 78
->>                location key (0 UNKNOWN 0) type 8
->>                namelen 16 datalen 32 name: security.selinux
->> [...]
->>
->> There is no inline extents, and what are you going to split here?
->> All leafs must be at least a half filled, otherwise we loose all
->> boundaries, which provides non-zero utilization..
->>     
 >
-> Right, there is no inline extent because we require them to fit entirely
-> in the leaf.  So we end up with mostly empty leaves because the inline
-> item is large enough to make it difficult to push around but not large
-> enough to fill the leaf.
+> Wow...a small part of me says 'well said', on the basis that your
+> assertions are true, but I do think there needs to be more
+> constructivity in such critique; it is almost impossible to be a great
+> engineer and a great academic at once in a time-pressured environment.
 >   
 
-How about left and right neighbors? They contain a lot of
-free space (1572 and 1901 respectively).
-I am not happy with the very fact of such shallow leafs which
-contain only one small (xattr) item..
+Sure it is impossible. I believe in division of labour:
+academics writes algorithms, and we (engineers) encode them.
+
+I have noticed that events in Btrfs develop by scenario not predicted
+by the paper of academic Ohad Rodeh (in spite of the announce that
+Btrfs is based on this paper). This is why I have started to grumble..
+
+Thanks.
+
+> If you can produce some specific and suggestions with code references,
+> I'm sure we'll get some good discussion with potential to improve from
+> where we are.
+>
+> Thanks,
+>   Daniel
+>   

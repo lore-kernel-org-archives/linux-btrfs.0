@@ -1,31 +1,26 @@
-From: Edward Shishkin <edward.shishkin@gmail.com>
+From: Christian Stroetmann <stroetmann@ontolab.com>
 Subject: Re: Btrfs: broken file system design (was Unbound(?) internal 	fragmentation
  in Btrfs)
-Date: Fri, 18 Jun 2010 18:50:45 +0200
-Message-ID: <4C1BA3E5.7020400@gmail.com>
+Date: Fri, 18 Jun 2010 20:15:34 +0200
+Message-ID: <4C1BB7C6.40700@ontolab.com>
 References: <4C07C321.8010000@redhat.com>	<AANLkTilKw2onQkdNlZjg7WVnPu2dsNpDSvoxrO_FA2z_@mail.gmail.com>	<4C1B7560.1000806@gmail.com> <AANLkTilQm8VGAvc1XNW4EaHd1FLd6dXIXwJ9-yT-joQ8@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Mat <jackdachef@gmail.com>, LKML <linux-kernel@vger.kernel.org>,
-	linux-fsdevel@vger.kernel.org,
-	Chris Mason <chris.mason@oracle.com>,
-	Ric Wheeler <rwheeler@redhat.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
-	The development of BTRFS <linux-btrfs@vger.kernel.org>
+Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+	linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
 To: Daniel J Blueman <daniel.blueman@gmail.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <AANLkTilQm8VGAvc1XNW4EaHd1FLd6dXIXwJ9-yT-joQ8@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Daniel J Blueman wrote:
 > On Fri, Jun 18, 2010 at 1:32 PM, Edward Shishkin
-> <edward.shishkin@gmail.com> wrote:
->   
+> <edward.shishkin@gmail.com>  wrote:
+>    
 >> Mat wrote:
->>     
->>> On Thu, Jun 3, 2010 at 4:58 PM, Edward Shishkin <edward@redhat.com> wrote:
->>>       
+>>      
+>>> On Thu, Jun 3, 2010 at 4:58 PM, Edward Shishkin<edward@redhat.com>  wrote:
+>>>        
 >>>> Hello everyone.
 >>>>
 >>>> I was asked to review/evaluate Btrfs for using in enterprise
@@ -55,7 +50,7 @@ Daniel J Blueman wrote:
 >>>> Internal fragmentation (see Appendix A) of those 5 leafs is
 >>>> (1572+3892+1901+3666+1675)/4096*5 = 0.62. This is even worse then
 >>>> ext4 and xfs: The last ones in this example will show fragmentation
->>>> near zero with blocksize <= 2K. Even with 4K blocksize they will
+>>>> near zero with blocksize<= 2K. Even with 4K blocksize they will
 >>>> show better utilization 0.50 (against 0.38 in btrfs)!
 >>>>
 >>>> I have a small question for btrfs developers: Why do you folks put
@@ -83,27 +78,21 @@ Daniel J Blueman wrote:
 >>>> guarantee that all disk space of our users won't be eaten by internal
 >>>> fragmentation? I consider such guarantee as a *necessary* condition
 >>>> for putting a file system to production.
->>>>         
->
+>>>>          
 > Wow...a small part of me says 'well said', on the basis that your
 > assertions are true, but I do think there needs to be more
 > constructivity in such critique; it is almost impossible to be a great
 > engineer and a great academic at once in a time-pressured environment.
->   
-
-Sure it is impossible. I believe in division of labour:
-academics writes algorithms, and we (engineers) encode them.
-
-I have noticed that events in Btrfs develop by scenario not predicted
-by the paper of academic Ohad Rodeh (in spite of the announce that
-Btrfs is based on this paper). This is why I have started to grumble..
-
-Thanks.
-
+>    
+I find this is somehow off-topic, but:
+For sure, it isn't impossible. History showed and present shows that 
+there are exceptions.
 > If you can produce some specific and suggestions with code references,
 > I'm sure we'll get some good discussion with potential to improve from
 > where we are.
 >
 > Thanks,
->   Daniel
->   
+>    Daniel
+>    
+Have fun
+Christian Stroetmann

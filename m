@@ -1,99 +1,86 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Btrfs: broken file system design (was Unbound(?) internal
- fragmentation in Btrfs)
-Date: Fri, 18 Jun 2010 11:22:14 -0400
-Message-ID: <20100618152214.GP27466@think>
-References: <4C07C321.8010000@redhat.com>
- <AANLkTilKw2onQkdNlZjg7WVnPu2dsNpDSvoxrO_FA2z_@mail.gmail.com>
- <4C1B7560.1000806@gmail.com>
- <20100618134755.GG27466@think>
- <4C1B8EF1.7080602@ontolab.com>
+From: Jamie Lokier <jamie@shareable.org>
+Subject: Re: Btrfs: broken file system design (was Unbound(?) internal fragmentation in Btrfs)
+Date: Fri, 18 Jun 2010 16:56:53 +0100
+Message-ID: <20100618155653.GC10919@shareable.org>
+References: <4C07C321.8010000@redhat.com> <AANLkTilKw2onQkdNlZjg7WVnPu2dsNpDSvoxrO_FA2z_@mail.gmail.com> <4C1B7560.1000806@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-	linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: Christian Stroetmann <stroetmann@ontolab.com>
+Cc: Mat <jackdachef@gmail.com>, LKML <linux-kernel@vger.kernel.org>,
+	linux-fsdevel@vger.kernel.org,
+	Chris Mason <chris.mason@oracle.com>,
+	Ric Wheeler <rwheeler@redhat.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Linus Torvalds <torvalds@linux-foundation.org>,
+	The development of BTRFS <linux-btrfs@vger.kernel.org>
+To: Edward Shishkin <edward.shishkin@gmail.com>
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4C1B8EF1.7080602@ontolab.com>
+In-Reply-To: <4C1B7560.1000806@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 18, 2010 at 05:21:21PM +0200, Christian Stroetmann wrote:
-> Chris Mason wrote:
-> >On Fri, Jun 18, 2010 at 03:32:16PM +0200, Edward Shishkin wrote:
-> >>Mat wrote:
-> >>>On Thu, Jun 3, 2010 at 4:58 PM, Edward Shishkin<edward@redhat.com>  wrote:
-> >>>>Hello everyone.
-> >>>>
-> >>>>I was asked to review/evaluate Btrfs for using in enterprise
-> >>>>systems and the below are my first impressions (linux-2.6.33).
-> >>>>
-> >>>>The first test I have made was filling an empty 659M (/dev/sdb2)
-> >>>>btrfs partition (mounted to /mnt) with 2K files:
-> >>>>
-> >>>># for i in $(seq 1000000); \
-> >>>>do dd if=/dev/zero of=/mnt/file_$i bs=2048 count=1; done
-> >>>>(terminated after getting "No space left on device" reports).
-> >>>>
-> >>>># ls /mnt | wc -l
-> >>>>59480
-> >>>>
-> >>>>So, I got the "dirty" utilization 59480*2048 / (659*1024*1024) = 0.17,
-> >>>>and the first obvious question is "hey, where are other 83% of my
-> >>>>disk space???" I looked at the btrfs storage tree (fs_tree) and was
-> >>>>shocked with the situation on the leaf level. The Appendix B shows
-> >>>>5 adjacent btrfs leafs, which have the same parent.
-> >>>>
-> >>>>For example, look at the leaf 29425664: "items 1 free space 3892"
-> >>>>(of 4096!!). Note, that this "free" space (3892) is _dead_: any
-> >>>>attempts to write to the file system will result in "No space left
-> >>>>on device".
-> >There are two easy ways to fix this problem.  Turn off the inline
-> >extents (max_inline=0) or allow splitting of the inline extents.  I
-> >didn't put in the splitting simply because the complexity was high while
-> >the benefits were low (in comparison with just turning off the inline
-> >extents).
-> But then the benefits of splitting must be high, because it solves
-> this problem if inline extents are turned on.
+Edward Shishkin wrote:
+> If you decide to base your file system on some algorithms then please
+> use the original ones from proper academic papers. DO NOT modify the
+> algorithms in solitude: this is very fragile thing! All such
+> modifications must be reviewed by specialists in the theory of
+> algorithms. Such review can be done in various scientific magazines of
+> proper level.
+> 
+> Personally I don't see any way to improve the situation with Btrfs
+> except full redesigning the last one. If you want to base your file
+> system on the paper of Ohad Rodeh, then please, use *exactly* the
+> Bayer's B-trees that he refers to. That said, make sure that all
+> records you put to the tree has equal length and all non-root nodes of
+> your tree are at least half filled.
 
-It depends, we might also argue that for larger inline extents like this
-we are better off with much larger leaves or with using max_inline=0
-instead.
+First, thanks Edward for identifying a specific problem with the
+current btrfs implementation.
 
-> >>It must be a highly unexpected and difficult question for file system
-> >>developers: "how efficiently does your file system manage disk space"?
-> >>
-> >>In the meanwhile I confirm that Btrfs design is completely broken:
-> >>records stored in the B-tree differ greatly from each other (it is
-> >>unacceptable!), and the balancing algorithms have been modified in
-> >>insane manner. All these factors has led to loss of *all* boundaries
-> >>holding internal fragmentation and to exhaustive waste of disk space
-> >>(and memory!) in spite of the property "scaling in their ability to
-> >>address large storage".
-> >>
-> >>This is not a large storage, this is a "scalable sieve": you can not
-> >>rely on finding there some given amount of water even after infinite
-> >>increasing the size of the sieve (read escalating the pool of Btrfs
-> >>devices).
-> >>
-> >>It seems that nobody have reviewed Btrfs before its inclusion to the
-> >>mainline. I have only found a pair of recommendations with a common
-> >>idea that Btrfs maintainer is "not a crazy man". Plus a number of
-> >>papers which admire with the "Btrfs phenomena". Sigh.
-> >>
-> >>Well, let's decide what can we do in current situation..
-> >>The first obvious point here is that we *can not* put such file system
-> >>to production. Just because it doesn't provide any guarantees for our
-> >>users regarding disk space utilization.
-> >Are you basing all of this on inline extents?  The other extents of
-> >variable size are more flexible (taking up the room in the leaf), but
-> >they can also easy be split during balancing.
-> If we have to split everywhere, hasn't it then some (dramatic)
-> impact on the performance of the Btrfs filesystem?
-> As it was said above: splitting has a high complexity.
+I've studied modified B-trees quite a lot and know enough to be sure
+that they are quite robust when you modify them in all sorts of ways.
 
-Yes.  Both Edward and I have worked on the reiserfs sources where inline
-extents were split during balancing.  It made for a few surprises in the
-file read/write code.  They aren't impossible by any means, but I wanted
-to avoid them.
+Moreover, you are incorrect to say there's an intrinsic algorithmic
+problem with variable-length records.  It is not true; if Knuth said
+so, Knuth was mistaken.
 
--chris
+This is easily shown by modelling variable-length records (key ->
+string) as a range of fixed length records ([key,index] -> byte) and
+apply the standard B-tree algorithms to that, which guarantees
+algorithm properties such as space utilisation and time; then you can
+substitute a "compressed" representation of contiguous index runs,
+which amounts to nothing more than just storing the strings (split
+where the algorithm says to do so) and endpoint indexes , and because
+this compression does not expand (in any way that matters), classic
+algorithmic properties are still guaranteed.
+
+Variable-length keys are a different business.  Those are trickier,
+but as far as I know, btrfs doesn't use them.
+
+> As to current Btrfs code: *NOT ACK*!!! I don't think we need such
+> "file systems".
+
+Btrfs provides many useful features that other filesystems don't.  We
+definitely need it, or something like it.  You have identified a bug.
+It's not a corruption bug, but it's definitely a bug, and probably
+affects performance as well as space utilisation.
+
+It is not deep design bug; it is just a result of the packing and
+balancing heuristics.
+
+If you are still interested, please apply your knowledge of B-tree
+algorithms to understanding why btrfs fails to balance the tree
+sufficiently well, and then propose a fix.
+
+Note that it's not necessarily a problem to have a few nodes with low
+utilisation.  Deliberate violation of the classic balancing heuristic
+is often useful for performance.[*]  The problem you've found is only a
+real problem when there are _too many_ nodes with low utilisation.
+
+[*] For example when filling a tree by inserting contiguously
+ascending keys, the classic "split into two when full" heuristic gives
+the worst possible results (50% lost space), and deliberately
+underfilling the most actively updated nodes, which is not permitted
+at all by the classic algorithm, gives denser packing in the end
+(almost zero lost space).  It's also faster.  The trick is to make
+sure there's just the right number of underfilled nodes...
+
+-- Jamie

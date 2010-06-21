@@ -1,49 +1,23 @@
-From: Zhang JieJing <kzjeef@gmail.com>
-Subject: Re: [PATCH] Btrfs: handle kmalloc() failure in btrfs_file_aio_write()
-Date: Sun, 20 Jun 2010 12:56:02 +0800
-Message-ID: <AANLkTinv_7JGRhI8PtnmPUY3yqcPJBV7-ENPsCfYJPkb@mail.gmail.com>
-References: <1276971194-24572-1-git-send-email-kzjeef@gmail.com>
+From: ibm-main@tpg.com.au
+Subject: How to un degrade RAID10.
+Date: Mon, 21 Jun 2010 15:43:02 +1000
+Message-ID: <1277098982.4c1efbe612349@postoffice.tpg.com.au>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1276971194-24572-1-git-send-email-kzjeef@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2010/6/20 JieJing.Zhang <kzjeef@gmail.com>
->
-> set errno to -ENOMEM and goto out
->
-> Signed-off-by: JieJing.Zhang <kzjeef@gmail.com>
-> ---
-> =A0fs/btrfs/file.c | =A0 =A04 ++++
-> =A01 files changed, 4 insertions(+), 0 deletions(-)
->
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index e354c33..e0fcb6c 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -926,6 +926,10 @@ static ssize_t btrfs_file_aio_write(struct kiocb=
- *iocb,
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 PAGE_CACHE_SIZE, PAGE_CACHE_S=
-IZE /
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 (sizeof(struct page *)));
-> =A0 =A0 =A0 =A0pages =3D kmalloc(nrptrs * sizeof(struct page *), GFP_=
-KERNEL);
-I think this gfp should changed to GFP_NOFS to avoid deadlock, right ?
-like this commit: 33818bbb84cd371b63ed8849cc5264d24c8b3aa2
-> + =A0 =A0 =A0 if (!pages) {
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 ret =3D -ENOMEM;
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 goto out;
-> + =A0 =A0 =A0 }
->
-> =A0 =A0 =A0 =A0/* generic_write_checks can change our pos */
-> =A0 =A0 =A0 =A0start_pos =3D pos;
-> --
-> 1.7.0.4
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I see I'm not the only one to flounder with this. Btrfs v0.19 on
+openSuSE 11.3-RC1 (2.6.34-9-default).
+I created a RAID10 across 4 partitions - worked fine. Unmounted it and
+zeroed one complete partition (as in of=/dev/sda8). Remounted degraded,
+looked around, data seemed safe.
+Attempted to remove sda8 from the array, but got an ioctl=1. Hmmm.
+
+Did a (normal, non-RAID) mkfs on the partition, then attempted to add it
+back as per the wiki. Won't mount without the degraded option even
+though the 4 partitions are accepted o.k, and a re-balance worked.
+The array now reports as 5 devices with #2 (the original slot for sda8)
+now vacant - dare I say "missing". It reports as "*** Some devices missng"
+This seems counter intuitive to me. Suggestions ?.

@@ -1,136 +1,110 @@
-From: "jeff.liu" <jeff.liu@oracle.com>
-Subject: Re: [PATCH RESEND] btrfs: Don't return extent in fiemap if we meet
- with a hole.
-Date: Mon, 21 Jun 2010 15:36:29 +0800
-Message-ID: <4C1F167D.3040908@oracle.com>
-References: <1277102222-3310-1-git-send-email-tao.ma@oracle.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Balancing leaves when walking from top to down (was Btrfs:...)
+Date: Mon, 21 Jun 2010 09:15:28 -0400
+Message-ID: <20100621131528.GA17979@think>
+References: <4C07C321.8010000@redhat.com>
+ <AANLkTilKw2onQkdNlZjg7WVnPu2dsNpDSvoxrO_FA2z_@mail.gmail.com>
+ <4C1B7560.1000806@gmail.com>
+ <20100618155653.GC10919@shareable.org>
+ <4C1BC924.30604@redhat.com>
+ <20100618193555.GV27466@think>
+ <4C1BED56.9010300@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>, Tao Ma <tao.ma@oracle.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1277102222-3310-1-git-send-email-tao.ma@oracle.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Jamie Lokier <jamie@shareable.org>,
+	Edward Shishkin <edward.shishkin@gmail.com>,
+	Mat <jackdachef@gmail.com>, LKML <linux-kernel@vger.kernel.org>,
+	linux-fsdevel@vger.kernel.org, Ric Wheeler <rwheeler@redhat.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Linus Torvalds <torvalds@linux-foundation.org>,
+	The development of BTRFS <linux-btrfs@vger.kernel.org>
+To: Edward Shishkin <edward@redhat.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4C1BED56.9010300@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
-
-Could you please also consider another tiny patch below combine with Tao's?
-It fix extent flags to FIEMAP_FLAG_UNWRITTEN if it was fallocate(2) and its "em->block_start ==
-EXTENT_MAP_LAST_BYTE".
-
->From 63904ff528842bcbe20e9d34763c5e689c2f7ace Mon Sep 17 00:00:00 2001
-From: Jeff Liu <jeff.liu@oracle.com>
-Date: Mon, 21 Jun 2010 15:28:36 +0800
-Subject: [PATCH] Fix fiemap extent flag to FIEMAP_FLAG_UNWRITTEN if it is fallocated.
-
-Signed-off-by: Jeff Liu <jeff.liu@oracle.com>
----
- fs/btrfs/extent_io.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index a4080c2..e68fd61 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3005,6 +3005,8 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		}
- 		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags))
- 			flags |= FIEMAP_EXTENT_ENCODED;
-+		if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
-+			flags |= FIEMAP_EXTENT_UNWRITTEN;
-
- 		emflags = em->flags;
- 		free_extent_map(em);
--- 
-1.7.1
-
-
-Thanks,
--Jeff
-
-Tao Ma wrote:
-> Hi Chris,
-> 	could you please consider merging this patch? It should be
-> trivial enough. It helps Jeff adding fiemap support to cp.
+On Sat, Jun 19, 2010 at 12:04:06AM +0200, Edward Shishkin wrote:
+> Chris Mason wrote:
+> >On Fri, Jun 18, 2010 at 09:29:40PM +0200, Edward Shishkin wrote:
+> >>Jamie Lokier wrote:
+> >>>Edward Shishkin wrote:
+> >>>>If you decide to base your file system on some algorithms then please
+> >>>>use the original ones from proper academic papers. DO NOT modify the
+> >>>>algorithms in solitude: this is very fragile thing! All such
+> >>>>modifications must be reviewed by specialists in the theory of
+> >>>>algorithms. Such review can be done in various scientific magazines of
+> >>>>proper level.
+> >>>>
+> >>>>Personally I don't see any way to improve the situation with Btrfs
+> >>>>except full redesigning the last one. If you want to base your file
+> >>>>system on the paper of Ohad Rodeh, then please, use *exactly* the
+> >>>>Bayer's B-trees that he refers to. That said, make sure that all
+> >>>>records you put to the tree has equal length and all non-root nodes of
+> >>>>your tree are at least half filled.
+> >>>First, thanks Edward for identifying a specific problem with the
+> >>>current btrfs implementation.
+> >>Hello Jamie.
+> >>
+> >>>I've studied modified B-trees quite a lot and know enough to be sure
+> >>>that they are quite robust when you modify them in all sorts of ways.
+> >>Which property is robust?
+> >>
+> >>>Moreover, you are incorrect to say there's an intrinsic algorithmic
+> >>>problem with variable-length records.  It is not true; if Knuth said
+> >>>so, Knuth was mistaken.
+> >>I didn't say about intrinsic algorithmic problems :)
+> >>I just repeat (after Knuth et al) that B-trees with variable-length
+> >>records don't
+> >>have any sane boundary for internal fragmentation. The common idea
+> >>is that if we
+> >>don't want Btrfs to be in infinite development stage, then we should
+> >>choose some
+> >>*sane* strategy (for example the paper of Ohad Rodeh) and strictly
+> >>adhere this in
+> >>future.
+> >
+> >Again, other than the inline file data, what exactly do you believe
+> >needs to change?
 > 
-> Regards,
-> Tao
+> 1. getting rid of inline extents;
+> 2. new formats for directory and xattr items to not look like a train,
+>   which is able to occupy the whole leaf;
+> 3. make sure we do pro-active balancing like it is described in the paper.
 > 
-> From 909effe7240be30dbc9403dd8cbb326587c3cc02 Mon Sep 17 00:00:00 2001
-> From: Tao Ma <tao.ma@oracle.com>
-> Date: Thu, 22 Apr 2010 12:38:57 +0800
-> Subject: [PATCH RESEND] btrfs: Don't return extent in fiemap if we meet with a hole.
+> Sorry, I don't see other ways for now..
 > 
-> Recently, my colleague Jeff tried to add fiemap support to cp(1).
-> http://www.mail-archive.com/bug-coreutils@gnu.org/msg19987.html
+> >  Top down balancing vs balancing on insertion doesn't
+> >impact our ability to maintain full leaves.  The current code is clearly
+> >choosing not to merge two leaves that it should have merged, which is
+> >just a plain old bug.
 > 
-> He just meet with a strange issue with following command:
-> dd if=/dev/null of=/btrfs/sparse bs=1 seek=4096
-> When we use fiemap to the file, btrfs returns an extent with len '4096'
-> and flag 'unwritten' while actually there is no data allocated.
-> 
-> I just dived into this and to my surprise, it is done by btrfs
-> intentionally. I checked other file systems which support fiemap.
-> Actually with the file created by the script, ocfs2, ext3/4 and
-> xfs all return zero extent. And according to the documentation file
-> Documentation/filesystems/fiemap.txt, FIEMAP_EXTENT_UNWRITTEN should
-> be used when the extent is allocated but it's data has not been
-> initialized. So I think btrfs should work like other filesystems.
-> 
-> Cc: Chris Mason <chris.mason@oracle.com>
-> Signed-off-by: Tao Ma <tao.ma@oracle.com>
-> Tested-by: Jeff Liu <jeff.liu@oracle.com>
-> ---
->  fs/btrfs/extent_io.c |   15 +++++++++------
->  1 files changed, 9 insertions(+), 6 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index b177ed3..7eb4d77 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -2951,7 +2951,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
->  	u64 disko = 0;
->  	struct extent_map *em = NULL;
->  	struct extent_state *cached_state = NULL;
-> -	int end = 0;
-> +	int end = 0, hole = 0;
->  	u64 em_start = 0, em_len = 0;
->  	unsigned long emflags;
->  	ret = 0;
-> @@ -2978,12 +2978,13 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
->  
->  		disko = 0;
->  		flags = 0;
-> +		hole = 0;
->  
->  		if (em->block_start == EXTENT_MAP_LAST_BYTE) {
->  			end = 1;
->  			flags |= FIEMAP_EXTENT_LAST;
->  		} else if (em->block_start == EXTENT_MAP_HOLE) {
-> -			flags |= FIEMAP_EXTENT_UNWRITTEN;
-> +			hole = 1;
->  		} else if (em->block_start == EXTENT_MAP_INLINE) {
->  			flags |= (FIEMAP_EXTENT_DATA_INLINE |
->  				  FIEMAP_EXTENT_NOT_ALIGNED);
-> @@ -3015,10 +3016,12 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
->  			end = 1;
->  		}
->  
-> -		ret = fiemap_fill_next_extent(fieinfo, em_start, disko,
-> -					em_len, flags);
-> -		if (ret)
-> -			goto out_free;
-> +		if (!hole) {
-> +			ret = fiemap_fill_next_extent(fieinfo, em_start, disko,
-> +						      em_len, flags);
-> +			if (ret)
-> +				goto out_free;
-> +		}
->  	}
->  out_free:
->  	free_extent_map(em);
+> How are you going to balance leaves when walking from top to down?
+> Suppose 1) and 2) above are not satisfied and having arrived to the leaf
+> level we see a number of items of variable length. What will we do to
+> keep leaves full?
 
+I think I'm mixing up complaints ;)  top-down balancing is unrelated to
+the variable length items.  You could balance from the bottom up and if
+you have a 1K item that can't be split next to a 3K item that can't be
+split, we're going to have those two items in two leaves.  This is true
+regardless of how we balance.  So the prime complaint here is that you
+don't like variable length items, correct?
 
--- 
-With Windows 7, Microsoft is asserting legal control over your computer and is using this power to
-abuse computer users.
+Ideally leaves are full, and ideally data blocks are full.  In practice
+we can end up with either one utilized less than we would like.   At the
+end of the day, every FS has a worst case setup where it is mostly empty
+in terms of bytes stored but full in terms of blocks. On xfs:
+
+for x in `seq 1 bazallion` ; echo 'f' > $x
+
+This would work on ext4 too, until you ran out of inodes.
+
+> 
+> Could you please provide a sketch of the algorithm?
+> 
+
+I'll reproduce from your test case and provide a fix.  mount -o
+max_inline=1500 would give us 50% usage in the worst case (minus the
+balancing bug you hit).
+
+-chris

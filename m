@@ -1,7 +1,7 @@
 From: Dan Magenheimer <dan.magenheimer@oracle.com>
-Subject: [PATCH V3 5/8] Cleancache: ext3 hook for cleancache
-Date: Mon, 21 Jun 2010 16:20:40 -0700
-Message-ID: <20100621232040.GA19617__97.5435287275062$1277162524$gmane$org@ca-server1.us.oracle.com>
+Subject: [PATCH V3 6/8] Cleancache: btrfs hooks for cleancache
+Date: Mon, 21 Jun 2010 16:21:10 -0700
+Message-ID: <20100621232110.GA19651__10965.3905536563$1277162575$gmane$org@ca-server1.us.oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: chris.mason@oracle.com, viro@zeniv.linux.org.uk,
@@ -11,37 +11,71 @@ To: chris.mason@oracle.com, viro@zeniv.linux.org.uk,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[PATCH V3 5/8] Cleancache: ext3 hook for cleancache
+[PATCH V3 6/8] Cleancache: btrfs hooks for cleancache
 
 Filesystems must explicitly enable cleancache by calling
 cleancache_init_fs anytime a instance of the filesystem
-is mounted and must save the returned poolid.  For ext3,
-all other cleancache hooks are in the VFS layer including
+is mounted and must save the returned poolid.  Btrfs
+uses its own readpage which must be hooked, but all other
+cleancache hooks are in the VFS layer including
 the matching cleancache_flush_fs hook which must be
 called on unmount.
 
 Signed-off-by: Dan Magenheimer <dan.magenheimer@oracle.com>
-Acked-by: Andreas Dilger <adilger@sun.com>
+Signed-off-by: Chris Mason <chris.mason@oracle.com>
 
 Diffstat:
+ extent_io.c                              |    9 +++++++++
  super.c                                  |    2 ++
- 1 file changed, 2 insertions(+)
+ 2 files changed, 11 insertions(+)
 
---- linux-2.6.35-rc2/fs/ext3/super.c	2010-06-05 21:43:24.000000000 -0600
-+++ linux-2.6.35-rc2-cleancache/fs/ext3/super.c	2010-06-11 09:01:37.000000000 -0600
-@@ -37,6 +37,7 @@
- #include <linux/quotaops.h>
- #include <linux/seq_file.h>
- #include <linux/log2.h>
+--- linux-2.6.35-rc2/fs/btrfs/super.c	2010-06-05 21:43:24.000000000 -0600
++++ linux-2.6.35-rc2-cleancache/fs/btrfs/super.c	2010-06-11 09:01:37.000000000 -0600
+@@ -39,6 +39,7 @@
+ #include <linux/miscdevice.h>
+ #include <linux/magic.h>
+ #include <linux/slab.h>
 +#include <linux/cleancache.h>
+ #include "compat.h"
+ #include "ctree.h"
+ #include "disk-io.h"
+@@ -477,6 +478,7 @@ static int btrfs_fill_super(struct super
+ 	sb->s_root = root_dentry;
  
- #include <asm/uaccess.h>
- 
-@@ -1362,6 +1363,7 @@ static int ext3_setup_super(struct super
- 	} else {
- 		ext3_msg(sb, KERN_INFO, "using internal journal");
- 	}
+ 	save_mount_options(sb, data);
 +	sb->cleancache_poolid = cleancache_init_fs(PAGE_SIZE);
- 	return res;
- }
+ 	return 0;
  
+ fail_close:
+--- linux-2.6.35-rc2/fs/btrfs/extent_io.c	2010-06-05 21:43:24.000000000 -0600
++++ linux-2.6.35-rc2-cleancache/fs/btrfs/extent_io.c	2010-06-11 10:28:51.000000000 -0600
+@@ -10,6 +10,7 @@
+ #include <linux/swap.h>
+ #include <linux/writeback.h>
+ #include <linux/pagevec.h>
++#include <linux/cleancache.h>
+ #include "extent_io.h"
+ #include "extent_map.h"
+ #include "compat.h"
+@@ -2027,6 +2028,13 @@ static int __extent_read_full_page(struc
+ 
+ 	set_page_extent_mapped(page);
+ 
++	if (!PageUptodate(page)) {
++		if (cleancache_get_page(page) == 0) {
++			BUG_ON(blocksize != PAGE_SIZE);
++			goto out;
++		}
++	}
++
+ 	end = page_end;
+ 	while (1) {
+ 		lock_extent(tree, start, end, GFP_NOFS);
+@@ -2151,6 +2159,7 @@ static int __extent_read_full_page(struc
+ 		cur = cur + iosize;
+ 		page_offset += iosize;
+ 	}
++out:
+ 	if (!nr) {
+ 		if (!PageError(page))
+ 			SetPageUptodate(page);

@@ -1,145 +1,130 @@
-From: Randy Dunlap <randy.dunlap@oracle.com>
-Subject: Re: [PATCH V3 1/8] Cleancache: Documentation
-Date: Tue, 22 Jun 2010 10:08:16 -0700
-Message-ID: <20100622100816.7d57f588.randy.dunlap@oracle.com>
-References: <20100621231839.GA19454@ca-server1.us.oracle.com>
+From: Edward Shishkin <edward.shishkin@gmail.com>
+Subject: Re: Balancing leaves when walking from top to down (was Btrfs:...)
+Date: Wed, 23 Jun 2010 15:46:49 +0200
+Message-ID: <4C221049.501__2418.29470401189$1277300862$gmane$org@gmail.com>
+References: <4C07C321.8010000@redhat.com> <AANLkTilKw2onQkdNlZjg7WVnPu2dsNpDSvoxrO_FA2z_@mail.gmail.com> <4C1B7560.1000806@gmail.com> <20100618155653.GC10919@shareable.org> <4C1BC924.30604@redhat.com> <20100618193555.GV27466@think> <4C1BED56.9010300@redhat.com> <20100621131528.GA17979@think> <20100621180013.GD17979@think> <4C20C4E9.60203@redhat.com> <20100622142006.GT23009@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: chris.mason@oracle.com, viro@zeniv.linux.org.uk, akpm@linux-foundation.org,
-        adilger@sun.com, tytso@mit.edu, mfasheh@suse.com,
-        joel.becker@oracle.com, matthew@wil.cx, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-ext4@vger.kernel.org, ocfs2-devel@oss.oracle.com,
-        linux-mm@kvack.org, ngupta@vflare.org, jeremy@goop.org,
-        JBeulich@novell.com, kurt.hackel@oracle.com, npiggin@suse.de,
-        dave.mccracken@oracle.com, riel@redhat.com, avi@redhat.com,
-        konrad.wilk@oracle.com
-To: Dan Magenheimer <dan.magenheimer@oracle.com>
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20100621231839.GA19454@ca-server1.us.oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Chris Mason <chris.mason@oracle.com>,
+	Edward Shishkin <edward@redhat.com>,
+	Jamie Lokier <jamie@shareable.org>,
+	Edward Shishkin <edward.shishkin@gmail.com>,
+	Mat <jackdachef@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100622142006.GT23009@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 21 Jun 2010 16:18:39 -0700 Dan Magenheimer wrote:
+Chris Mason wrote:
+> On Tue, Jun 22, 2010 at 04:12:57PM +0200, Edward Shishkin wrote:
+>   
+>> Chris Mason wrote:
+>>     
+>>> On Mon, Jun 21, 2010 at 09:15:28AM -0400, Chris Mason wrote:
+>>>       
+>>>> I'll reproduce from your test case and provide a fix.  mount -o
+>>>> max_inline=1500 would give us 50% usage in the worst case
+>>>>         
+>> This is a very strange statement: how did you calculate this lower bound?
+>>     
+>
+> We want room for the extent and the inode item and the inode backref.
+> It's a rough number that leaves some extra room.  But even with a 2K
+> item we're getting very close to 50% usage of the metadata area.
+>
+>   
+>>>> (minus the
+>>>> balancing bug you hit).
+>>>>         
+>>> Ok, the balancing bug was interesting.  What happens is we create all
+>>> the inodes and directory items nicely packed into the leaves.
+>>>
+>>> Then delayed allocation kicks in and starts inserting the big fat inline
+>>> extents.  This often forces the balancing code to split a leaf twice in
+>>> order to make room for the new inline extent.  The double split code
+>>> wasn't balancing the bits that were left over on either side of our
+>>> desired slot.
+>>>
+>>> The patch below fixes the problem for me, reducing the number of leaves
+>>> that have more than 2K of free space down from 6% of the total to about
+>>> 74 leaves.  It could be zero, but the balancing code doesn't push
+>>> items around if our leaf is in the first or last slot of the parent
+>>> node (complexity vs benefit tradeoff).
+>>>       
+>> Nevertheless, I see leaves, which are not in the first or last slot,
+>> but mergeable with their neighbors (test case is the same):
+>>     
+>
+> Correct, but it was in the first or last slot when it was balanced (I
+> confirmed this with printk).
+>
+> Then the higher layers were balanced and our leaves were no longer in
+> the first/last slot.  We don't rebalance leaves when we balance level 1.
+>
+>   
+>> leaf 269557760 items 22 free space 2323 generation 25 owner 2
+>> fs uuid 614fb921-cfa9-403d-9feb-940021e72382
+>> chunk uuid b1674882-a445-45f9-b250-0985e483d231
+>>
+>> leaf 280027136 items 18 free space 2627 generation 25 owner 2
+>> fs uuid 614fb921-cfa9-403d-9feb-940021e72382
+>> chunk uuid b1674882-a445-45f9-b250-0985e483d231
+>>
+>> node 269549568 level 1 items 60 free 61 generation 25 owner 2
+>> fs uuid 614fb921-cfa9-403d-9feb-940021e72382
+>> chunk uuid b1674882-a445-45f9-b250-0985e483d231
+>>        key (175812608 EXTENT_ITEM 4096) block 175828992 (42927) gen 15
+>>        key (176025600 EXTENT_ITEM 4096) block 176111616 (42996) gen 15
+>>        key (176238592 EXTENT_ITEM 4096) block 176300032 (43042) gen 15
+>>        key (176451584 EXTENT_ITEM 4096) block 216248320 (52795) gen 17
+>>        key (176672768 EXTENT_ITEM 4096) block 216236032 (52792) gen 17
+>>        key (176783360 EXTENT_ITEM 4096) block 216252416 (52796) gen 17
+>>        key (176955392 EXTENT_ITEM 4096) block 138854400 (33900) gen 25
+>>        key (177131520 EXTENT_ITEM 4096) block 280289280 (68430) gen 25
+>>        key (177348608 EXTENT_ITEM 4096) block 280285184 (68429) gen 25
+>>        key (177561600 EXTENT_ITEM 4096) block 269557760 (65810) gen 25
+>>        key (177795072 EXTENT_ITEM 4096) block 280027136 (68366) gen 25
+>>        key (178008064 EXTENT_ITEM 4096) block 280064000 (68375) gen 25
+>>        key (178233344 EXTENT_ITEM 4096) block 285061120 (69595) gen 25
+>>        key (178442240 EXTENT_ITEM 4096) block 178442240 (43565) gen 16
+>>        key (178655232 EXTENT_ITEM 4096) block 178655232 (43617) gen 16
+>>        key (178868224 EXTENT_ITEM 4096) block 178868224 (43669) gen 16
+>> [...]
+>>
+>>     
+>>> With the patch, I'm able to create 106894 files (2K each) on a 1GB FS.
+>>> That doesn't sound like a huge improvement, but the default from
+>>> mkfs.btrfs is to duplicate metadata.  After duplication, that's about
+>>> 417MB or about 40% of the overall space.
+>>>
+>>> When you factor in the space that we reserve to avoid exploding on
+>>> enospc and the space that we have allocated for data extents, that's not
+>>> a very surprising number.
+>>>
+>>> I'm still putting this patch through more testing, the double split code
+>>> is used in some difficult corners and I need to make sure I've tried
+>>> all of them.
+>>>       
+>> Chris, for the further code review we need documents, which reflect
+>> the original ideas of the balancing, etc. Could you please provide them?
+>> Obviously, I can not do it instead of you, as I don't know those ideas.
+>>
+>>     
+>
+> Which part are you most interested in?
+>   
 
-> [PATCH V3 1/8] Cleancache: Documentation
-> 
-> Add cleancache documentation to Documentation/vm and
-> sysfs ABI documentation to Documentation/ABI
-> 
-> Signed-off-by: Dan Magenheimer <dan.magenheimer@oracle.com>
-> 
-> Diffstat:
->  ABI/testing/sysfs-kernel-mm-cleancache   |   11 +
->  vm/cleancache.txt                        |  194 +++++++++++++++++++++
->  2 files changed, 205 insertions(+)
+Balancing.
 
+What conditions do we want to provide?
+Why won't we get utilization slump in future?
+How do we need to fix things when something goes wrong?
+Whereas in accordance with the single existing paper Btrfs
+design looks really broken, because:
+1. the balancing condition n <= number_of_keys <= 2n+1
+   is not satisfied (indeed, when number_of_keys is 1
+   we have 1 <= 2n+1 -- false);
+2. the trees mentioned in this paper don't allow keys of
+   variable length.
 
-> --- linux-2.6.35-rc2/Documentation/vm/cleancache.txt	1969-12-31 17:00:00.000000000 -0700
-> +++ linux-2.6.35-rc2-cleancache/Documentation/vm/cleancache.txt	2010-06-21 16:51:54.000000000 -0600
-> @@ -0,0 +1,194 @@
-
-> +A FAQ is included below:
-
-   FAQs are included below.
-
-> +
-> +IMPLEMENTATION OVERVIEW
-
-> +A "init_shared_fs", like init, obtains a pool id but tells cleancache
-
-   An "init_shared_fs" call, like init_fs,
-
-> +to treat the pool as shared using a 128-bit UUID as a key.  On systems
-> +that may run multiple kernels (such as hard partitioned or virtualized
-> +systems) that may share a clustered filesystem, and where cleancache
-> +may be shared among those kernels, calls to init_shared_fs that specify the
-> +same UUID will receive the same pool id, thus allowing the pages to
-> +be shared.  Note that any security requirements must be imposed outside
-> +of the kernel (e.g. by "tools" that control cleancache).  Or a
-> +cleancache implementation can simply disable shared_init by always
-> +returning a negative value.
-> +
-...
-
-> +FAQ
-> +
-> +1) Where's the value? (Andrew Morton)
-> +
-> +Cleancache (and its sister code "frontswap") provide interfaces for
-> +a new pseudo-RAM memory type that conceptually lies between fast
-> +kernel-directly-addressable RAM and slower DMA/asynchronous devices.
-> +Disallowing direct kernel or userland reads/writes to this pseudo-RAM
-> +is ideal when data is transformed to a different form and size (such
-> +as wiht compression) or secretly moved (as might be useful for write-
-
-      with
-
-> +balancing for some RAM-like devices).  Evicted page-cache pages (and
-> +swap pages) are a great use for this kind of slower-than-RAM-but-much-
-> +faster-than-disk pseudo-RAM and the cleancache (and frontswap)
-> +"page-object-oriented" specification provides a nice way to read and
-> +write -- and indirectly "name" -- the pages.
-> +
-...
-> +
-> +2) Why does cleancache have its sticky fingers so deep inside the
-> +   filesystems and VFS? (Andrew Morton and Christophe Hellwig)
-> +
-> +The core hooks for cleancache in VFS are in most cases a single line
-> +and the minimum set are placed precisely where needed to maintain
-> +coherency (via cleancache_flush operatings) between cleancache,
-
-                                   operations ?
-
-> +the page cache, and disk.  All hooks compile into nothingness if
-> +cleancache is config'ed off and turn into a function-pointer-
-> +compare-to-NULL if config'ed on but no backend claims the ops
-> +functions, or to a compare-struct-element-to-negative if a
-> +backend claims the ops functions but a filesystem doesn't enable
-> +cleancache.
-> +
-> +Some filesystems are built entirely on top of VFS and the hooks
-> +in VFS are sufficient, so don't require a "init_fs" hook; the
-
-                                           an
-
-> +initial implementation of cleancache didn't provide this hook.
-> +But for some filesystems (such as btrfs), the VFS hooks are
-> +incomplete and one or more hooks in fs-specific code are required.
-> +And for some other filesystems, such as tmpfs, cleancache may
-> +be counterproductive.  So it seemed prudent to require a filesystem
-> +to "opt in" to use cleancache, which requires adding a hook in
-> +each filesystem.  Not all filesystems are supported by cleancache
-> +only because they haven't been tested.  The existing set should
-> +be sufficient to validate the concept, the opt-in approach means
-> +that untested filesystems are not affected, and the hooks in the
-> +existing filesystems should make it very easy to add more
-> +filesystems in the future.
-> +
-> +3) Why not make cleancache asynchronous and batched so it can
-> +   more easily interface with real devices with DMA instead
-> +   of copying each individual page? (Minchan Kim)
-> +
-> +The one-page-at-a-time copy semantics simplifies the implementation
-> +on both the frontend and backend and also allows the backend to
-> +do fancy things on-the-fly like page compression and
-> +page deduplication.  And since the data is "gone" (copied into/out
-> +of the pageframe) before the cleancache get/put call returns,
-> +a great deal of race conditions and potential coherency issues
-> +are avoided.  While the interface seems odd for a "real device"
-> +or for real kernel-addressible RAM, it makes perfect sense for
-
-               kernel-addressable
-
-> +pseudo-RAM.
-
-
----
-~Randy
-*** Remember to use Documentation/SubmitChecklist when testing your code ***
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+Thanks,
+Edward.

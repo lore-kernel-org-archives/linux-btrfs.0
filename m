@@ -1,31 +1,29 @@
-From: Dan Carpenter <error27@gmail.com>
-Subject: [patch] btrfs: make code reachable in btrfs_insert_some_items()
-Date: Mon, 28 Jun 2010 13:17:26 +0200
-Message-ID: <20100628111726.GI19184@bicker>
+From: Daniel Kozlowski <dan.kozlowski@gmail.com>
+Subject: Re: Is there a more aggressive fixer than btrfsck?
+Date: Mon, 28 Jun 2010 13:48:01 +0000 (UTC)
+Message-ID: <loom.20100628T154422-48@post.gmane.org>
+References: <a51eea046c4dd444f9d90742beb41a6a.squirrel@webmail.sonic.net> <20100602155646.GA4041@flcl.lan>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Yan Zheng <zheng.yan@oracle.com>,
-	Diego Calleja <diegocg@gmail.com>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The break was in front of the "nr = i" assignment so that was never hit.
+Sean Bartell <wingedtachikoma <at> gmail.com> writes:
 
-Signed-off-by: Dan Carpenter <error27@gmail.com>
+> > Is there a more aggressive filesystem restorer than btrfsck?  It simply
+> > gives up immediately with the following error:
+> > 
+> > btrfsck: disk-io.c:739: open_ctree_fd: Assertion `!(!tree_root->node)'
+> > failed.
+> 
+> btrfsck currently only checks whether a filesystem is consistent. It
+> doesn't try to perform any recovery or error correction at all, so it's
+> mostly useful to developers. Any error handling occurs while the
+> filesystem is mounted.
+> 
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 0d1d966..ceb8ad2 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -3453,8 +3453,8 @@ int btrfs_insert_some_items(struct btrfs_trans_handle *trans,
- 	for (i = 0; i < nr; i++) {
- 		if (total_size + data_size[i] + sizeof(struct btrfs_item) >
- 		    BTRFS_LEAF_DATA_SIZE(root)) {
--			break;
- 			nr = i;
-+			break;
- 		}
- 		total_data += data_size[i];
- 		total_size += data_size[i] + sizeof(struct btrfs_item);
+Is there any plan to implement this functionality. It would seem to me to be a 
+pretty basic feature that is missing ? 
+
+

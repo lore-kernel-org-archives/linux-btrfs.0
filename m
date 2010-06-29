@@ -1,66 +1,50 @@
-From: Frederic Weisbecker <fweisbec@gmail.com>
-Subject: [PATCH] Btrfs-progs: Handle bad extent type case
-Date: Mon, 28 Jun 2010 18:55:16 +0200
-Message-ID: <1277744116-7805-2-git-send-regression-fweisbec@gmail.com>
-References: <1277744116-7805-1-git-send-regression-fweisbec@gmail.com>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: Re: [patch] btrfs: make code reachable in btrfs_insert_some_items()
+Date: Tue, 29 Jun 2010 08:57:54 +0800
+Message-ID: <4C294512.8070302@cn.fujitsu.com>
+References: <20100628111726.GI19184@bicker>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Cc: The development of BTRFS <linux-btrfs@vger.kernel.org>,
-	Frederic Weisbecker <fweisbec@gmail.com>
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1277744116-7805-1-git-send-regression-fweisbec@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Dan Carpenter <error27@gmail.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Yan Zheng <zheng.yan@oracle.com>,
+	Diego Calleja <diegocg@gmail.com>, linux-btrfs@vger.kernel.org,
+	linux-kerne
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20100628111726.GI19184@bicker>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we meet a bad extent type, find_updated_files is going
-to print random things. Better warn the user about what
-happens.
+Hi,
 
-This fixes:
+on 2010-6-28 19:17, Dan Carpenter wrote:
+> The break was in front of the "nr = i" assignment so that was never hit.
 
-btrfs-list.c: Dans la fonction =C2=ABfind_updated_files=C2=BB :
-btrfs-list.c:668: attention : =C2=ABdisk_offset=C2=BB may be used unini=
-tialized in this function
-btrfs-list.c:668: note: =C2=ABdisk_offset=C2=BB was declared here
-btrfs-list.c:667: attention : =C2=ABdisk_start=C2=BB may be used uninit=
-ialized in this function
-btrfs-list.c:667: note: =C2=ABdisk_start=C2=BB was declared here
-btrfs-list.c:666: attention : =C2=ABlen=C2=BB may be used uninitialized=
- in this function
-btrfs-list.c:666: note: =C2=ABlen=C2=BB was declared here
-make: *** [btrfs-list.o] Erreur 1
+This bug has been fixed a month ago, and the patch has been merged into the
+btrfs-unstable tree.
 
-Signed-off-by: Frederic Weisbecker <fweisbec@gmail.com>
----
- btrfs-list.c |    9 +++++++++
- 1 files changed, 9 insertions(+), 0 deletions(-)
+  http://marc.info/?l=linux-btrfs&m=127434036913484&w=2
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index 9dedb5d..c90a1e6 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -698,6 +698,15 @@ static int print_one_extent(int fd, struct btrfs_i=
-octl_search_header *sh,
- 		disk_start =3D 0;
- 		disk_offset =3D 0;
- 		len =3D btrfs_stack_file_extent_ram_bytes(item);
-+	} else {
-+		printf("unhandled extent type %d for inode %llu "
-+		       "file offset %llu gen %llu\n",
-+			type,
-+			(unsigned long long)sh->objectid,
-+			(unsigned long long)sh->offset,
-+			(unsigned long long)found_gen);
-+
-+		return -EIO;
- 	}
- 	printf("inode %llu file offset %llu len %llu disk start %llu "
- 	       "offset %llu gen %llu flags ",
---=20
-1.5.4.3
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Thanks
+Miao
+> 
+> Signed-off-by: Dan Carpenter <error27@gmail.com>
+> 
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index 0d1d966..ceb8ad2 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -3453,8 +3453,8 @@ int btrfs_insert_some_items(struct btrfs_trans_handle *trans,
+>  	for (i = 0; i < nr; i++) {
+>  		if (total_size + data_size[i] + sizeof(struct btrfs_item) >
+>  		    BTRFS_LEAF_DATA_SIZE(root)) {
+> -			break;
+>  			nr = i;
+> +			break;
+>  		}
+>  		total_data += data_size[i];
+>  		total_size += data_size[i] + sizeof(struct btrfs_item);
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

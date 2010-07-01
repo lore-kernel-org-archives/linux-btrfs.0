@@ -1,39 +1,38 @@
-From: Daniel J Blueman <daniel.blueman@gmail.com>
+From: Lubos Kolouch <lubos.kolouch@gmail.com>
 Subject: Re: Copy/move btrfs volume
-Date: Thu, 1 Jul 2010 12:26:10 +0100
-Message-ID: <AANLkTin1O6Oa7oq4nFMfNhv4N5FWCko7bcuTMoR5Xkob@mail.gmail.com>
+Date: Thu, 1 Jul 2010 11:33:59 +0000 (UTC)
+Message-ID: <i0huf7$98a$1@dough.gmane.org>
 References: <i0hqkk$r4h$1@dough.gmane.org>
+	<AANLkTin1O6Oa7oq4nFMfNhv4N5FWCko7bcuTMoR5Xkob@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Lubos Kolouch <lubos.kolouch@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <i0hqkk$r4h$1@dough.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 1 July 2010 11:28, Lubos Kolouch <lubos.kolouch@gmail.com> wrote:
-> Hello,
->
-> I am testing btrfs on one of our backup servers
-> (many millions of files, 1.5TB size, running on (non-btrfs-provided-)
-> raid5).
->
-> I am using subvolumes/snapshots with following rsync.
->
-> It works very well, but I would like to ask a question... say I would need
-> to copy/move the files to different server/disk.
->
-> Normally I would do it with rsync, but I guess it will not preserve the
-> subvolumes, it will also not detect that they are the same files (I guess
-> they are not just normal hardlinks). So I would end up with duplicated
-> files.
->
-> What is the correct way to do this?
+Daniel J Blueman, Thu, 01 Jul 2010 12:26:10 +0100:
+>> What is the correct way to do this?
+> 
+> The only way to do this preserving duplication is to use hardlinks
+> between duplicated files (which reference counts the inode), and use
+> 'rsync -H'.
+> 
+> Dan
 
-The only way to do this preserving duplication is to use hardlinks
-between duplicated files (which reference counts the inode), and use
-'rsync -H'.
+But when the files are on different snaphots, does rsync see them as 
+hardlinked?
 
-Dan
--- 
-Daniel J Blueman
+A scenario - I have raid5 of say, 1TB HDDs. It contains many snapshots.
+Then, few years later, new machine is bought and there are, say, 5TB 
+discs.
+
+So I need to transfer the btrfs volume to the new machine. 
+
+But how to do it so that it looks the *same*, ie. the same snapshots?
+I could of course write a custom script to create the subvolume, rsync 
+the files, create snapshot, rsync files, etc,
+
+but it would be nice if the btrfs toolset supports this by default...
+
+Lubos
+

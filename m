@@ -1,51 +1,163 @@
-From: Oystein Viggen <oysteivi@tihlde.org>
-Subject: Re: Copy/move btrfs volume
-Date: Fri, 02 Jul 2010 08:15:03 +0200
-Message-ID: <03lj9ujtp4.fsf@msgid.viggen.net>
-References: <i0hqkk$r4h$1@dough.gmane.org>
-	<AANLkTin1O6Oa7oq4nFMfNhv4N5FWCko7bcuTMoR5Xkob@mail.gmail.com>
-	<i0huf7$98a$1@dough.gmane.org> <4C2D14DA.3040301@gmx.com>
+From: C Anthony Risinger <anthony@extof.me>
+Subject: Re: Atomic replacement of subvolumes is not possible
+Date: Fri, 2 Jul 2010 11:26:09 -0500
+Message-ID: <AANLkTinDbt77GFgY2Tvgimp1fN1-MCyYmvaaYzJMszxj@mail.gmail.com>
+References: <4C263826.1060702@debian.org>
+	<AANLkTinQmObagOuslcRzuuLZe3ViamIs8e-Jgt-bjRvD@mail.gmail.com>
+	<20100630133142.GU1993@think>
+	<AANLkTilcAfaH4KmSzKGp8M-xj511IlowGgIZnhHopdNx@mail.gmail.com>
+	<20100702013054.GC15319@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>,
+	C Anthony Risinger <anthony@extof.me>, daniel@debian.org,
+	linux-btrfs@vger.kernel.org, Roger Leigh <rleigh@debian.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100702013054.GC15319@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-* [Matt Brown]=20
-
-> With backed up files consisting of hard links, I usually use dd to co=
-py
-> the file systems at the block level
+On Thu, Jul 1, 2010 at 8:30 PM, Chris Mason <chris.mason@oracle.com> wr=
+ote:
+> On Wed, Jun 30, 2010 at 09:26:11AM -0500, C Anthony Risinger wrote:
+>> On Wed, Jun 30, 2010 at 8:31 AM, Chris Mason <chris.mason@oracle.com=
+> wrote:
+>> > On Sun, Jun 27, 2010 at 07:44:12PM -0500, C Anthony Risinger wrote=
+:
+>> >> On Sat, Jun 26, 2010 at 12:25 PM, Daniel Baumann <daniel@debian.o=
+rg> wrote:
+>> >> > Hi,
+>> >> >
+>> >> > this is basically a forward from
+>> >> > http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=3D587253
+>> >> >
+>> >> > "rename(2) allows for the atomic replacement of files. =A0Being=
+ able to
+>> >> > atomically replace subvolume snapshots would be equally invalua=
+ble,
+>> >> > since it would permit lock-free replacement of subvolumes.
+>> >> >
+>> >> > =A0% btrfs subvolume snapshot <src> <dest>
+>> >> >
+>> >> > creates dest as a snapshot of src. However, if I want to do the
+>> >> > converse,
+>> >> >
+>> >> > =A0% btrfs subvolume snapshot <dest> <src>
+>> >> >
+>> >> > then <dest> is snapshotted as <src>/<dest>, i.e. not replacing =
+the
+>> >> > original subvolume, but going inside the original subvolume.
+>> >> >
+>> >> > Use case 1:
+>> >> > =A0I have a subvolume of data under active use, which I want to
+>> >> > =A0periodically update. =A0I'd like to do this by atomically
+>> >> > =A0replacing its contents. =A0I can replace the content right n=
+ow
+>> >> > =A0by deleting the old subvolume and then snapshotting the new
+>> >> > =A0on in its place, but it's racy. =A0It really needs to be
+>> >> > =A0replaced in a single operation, or else there's a small wind=
+ow
+>> >> > =A0where there is no data, and I'd need to resort to some exter=
+nal
+>> >> > =A0locking to protect myself.
+>> >
+>> > I'm not sure I understand use case #1. =A0The problem is that you'=
+ll have
+>> > files open in the subvolume and you can't just pull the rug out fr=
+om
+>> > under them. =A0Could you tell me a little more about what you're t=
+rying to
+>> > do?
+>> >
+>> >> >
+>> >> > Use case 2:
+>> >> > =A0In schroot, we create btrfs subvolume snapshots to get copy-=
+on-
+>> >> > =A0write chroots. =A0This works just fine. =A0We also provide d=
+irect
+>> >> > =A0access to the "source" subvolume, but since it could be
+>> >> > =A0snapshotted in an inconsistent state while being updated, we
+>> >> > =A0want to do the following:
+>> >> >
+>> >> > =A0=B7 snapshot source subvolume
+>> >> > =A0=B7 update snapshot
+>> >> > =A0=B7 replace source volume with updated snapshot"
+>> >> >
+>> >> > Please keep roger in the cc for any replies, thanks.
+>> >>
+>> >> i am also looking for functionality similar to this, except i wou=
+ld
+>> >> like to be able to replace the DEFAULT subvolume, with an empty o=
+r
+>> >> existing subvolume, and put the original default subvolume INSIDE=
+ the
+>> >> new root (or drop it completely), outlined by this post and the t=
+hread
+>> >> it's in:
+>> >>
+>> >> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg05278.=
+html
+>> >>
+>> >> is there any feedback on these actions? =A0no one seems to even r=
+espond :-(
+>> >>
+>> >> it would seem we need ways to swap subvolumes around, _including_=
+ the
+>> >> default, providing the on-disk format supports such operations.
+>> >
+>> > Moving 'default' generally involves a reboot for the same reasons.=
+ =A0We
+>> > have to worry about open files and their view of the filesystem. =A0=
+mv on
+>> > a directory won't affect file handles that are open, and renaming
+>> > subvolumes needs to follow a similar model.
+>>
+>> could we fail if the user tries to replace a subvolume while it's
+>> being used? =A0what if the root device is _not_ the default (".")
+>> subvolume, then can it be swapped?
+>>
+>> in my use case, i am running in initramfs, so the root device has no=
+t
+>> even been mounted or pivoted to; it should be safe to do whatever i
+>> want to the filesystem. =A0i want to move the user's installation to=
+ a
+>> dedicated subvolume.
+>>
+>> what about this: =A0would it be possible to have TWO subvolumes by
+>> "default"? =A0the regular one (current directory, "."):
+>>
+>> mount -o subvol=3D. <btrfs_dev> /mnt
+>>
+>> would behave as it does now. =A0BUT... there would then be a special=
+,
+>> permanent (like "." is right now) subvol, say "parent directory"
+>> (".."):
+>>
+>> mount -o subvol=3D.. <btrfs_dev> /mnt
+>>
+>> TWO dots would mount the parent of ".", where i could then swap out
+>> the real default (".").
+>>
+>> would that work?
 >
-> # dd if=3D/dev/sda of=3D/dev/sdb bs=3D20M
->
-> and then expand the file system. This is because I found that tools l=
-ike
-> rsync, while usually fast, are extremely slow when dealing with milli=
-ons
-> of hard linked files.
->
-> This could also be used for btrfs to keep its snapshots.
+> We do provide a set-default ioctl that can be used to change the defa=
+ult
+> for the next mount. =A0 This is pretty close to what you want, let me
+> think about ways to make it easier to use.
 
-If you can (temporarily) attach the old and new drives to the same
-computer, putting the ext4 BackupPC store on LVM and moving the LV
-around might be more convenient, or at least feel more "high level".
+that's the thing; set-default is not the effect i need to achieve.
 
-=46or btrfs with lots of snapshots, I believe "btrfs device add" of the
-new device followed by "btrfs device remove" of the old one would be th=
-e
-most convenient.
+now, if there was a way i could use "set-default" AND promote that
+subvol to become the real root/default subvol (.), then that would
+work.  maybe as a destructive option to set-default.
 
-One advantage of using LVM and btrfs multi device support in this way i=
-s
-that the actual downtime is minimal -- you can keep the filesystems
-online.  Even on cheap hardware, the only downtime should be to
-attach/remove disks.
+i need to effectively move the users installation from subvol ".", to
+subvol "__active".  this is easy with any subvol _except_ (.).
+without this, the user has a bunch of dead files they will never see,
+and will eventually consume space.  the only way to remove them, as of
+now, is to tell the user to mount the (.) subvol, and "rm -rf"
+bin/lib/usr/etc... because there is no way to manage the "." subvol.
 
-=D8ystein
---=20
-If it ain't broke, don't break it.
-
+C Anthony
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

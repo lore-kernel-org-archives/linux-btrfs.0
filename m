@@ -1,35 +1,51 @@
-From: Yee-Ting Li <yee379@gmail.com>
-Subject: Re: volume broken? btrfsck fails
-Date: Sat, 3 Jul 2010 23:57:14 -0700
-Message-ID: <8F5A3F6C-87B7-46F5-AB32-78A9C8A2A43D@gmail.com>
-References: <569BCC7F-1920-4AC4-8069-369419029373@gmail.com> <loom.20100701T144515-658@post.gmane.org>
-Mime-Version: 1.0 (Apple Message framework v1081)
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Daniel Kozlowski <dan.kozlowski@gmail.com>
+From: Francis GALIEGUE <fge@one2team.com>
+Subject: dmesg filled with "parent transid verify failed" messages using
+	Linus' HEAD as of 20100704
+Date: Sun, 4 Jul 2010 13:09:23 +0200
+Message-ID: <AANLkTikcruG8Bva2xZ_pm02_TPARJ55xUCdSbpnJ3iN6@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <loom.20100701T144515-658@post.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+[Note: I am not on the list, can you please Cc: me on replies? Thank
+you in advance]
 
-On 1 Jul 2010, at 05:51, Daniel Kozlowski wrote:
-> I am also having the same problem with a slightly different setup. In My case I 
-> cannot mount the filesystem. mount, btrfs-endio-met and kblockd/0 will all 
-> continually run until the system freezes up and requires a power cycle.
+Hello,
 
-have you tried mounting with '-o degraded'?
+Kernels: 2.6.34 to HEAD. Using ~amd64 Gentoo. All my filesystems
+except /boot are btrfs.
 
-having monitored the system for a while, i also think that in fact it's btrfs that's killing my system. i'm on ubuntu 10.4 with:
+btrfsck says I have a corrupted btrfs filesystem on my machine, and I
+see this message in dmesg when mounting the filesystem (in
+fs/btrfs/disk-io.c:284):
 
-$ uname -a
-Linux htpc 2.6.32-22-server #36-Ubuntu SMP Thu Jun 3 20:38:33 UTC 2010 x86_64 GNU/Linux
+parent transid verify failed on 48136192 wanted 16424 found 16420
 
-using the default kernel module, but git'd out the tools.
+But there is something strange:
 
-following the other thread 'Is there a more aggressive fixer than btrfsck?' i suspect that we'll just have to wait until some actual fsck operations are available for btrfs :(
+* this message only appears twice when running 2.6.34;
+* it fills my dmesg (several tens of thousands of times a second -
+printk_ratelimit() triggers to suppress the vast majority of them)
+when running HEAD.
 
-on my system, it's btrfs-endio-met (only 1 out of 4) and btrfs-transacti (1 out of 2) that is taking up all the cpu/io wait cycles.
+After a quick git log v2.6.34.. -- fs/btrfs, I found commit
+5bdd3536cbbe2ecd94ecc14410c6b1b31da16381, which I reverted: HEAD now
+"behaves" like 2.6.34, dmesg-wise. Unintended side effect?
 
-i wonder if it's only certain files on the array that are hosed; if that's the case is there a way i can map the kernel messages to a real filename? i don't mind loosing the odd file on this array, but i don't fancy copying it all over to somewhere else (yeah-yeah, up to date backups blah blah!) - i figured given the momentum btrfs was gaining it would be much more stable than this :(
+--=20
 
-Yee.
+=46rancis Galiegue
+ONE2TEAM
+Ing=C3=A9nieur syst=C3=A8me
+Mob : +33 (0) 683 877 875
+Tel : +33 (0) 178 945 552
+fge@one2team.com
+40 avenue Raymond Poincar=C3=A9
+75116 Paris
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

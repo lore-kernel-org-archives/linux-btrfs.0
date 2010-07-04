@@ -1,58 +1,35 @@
-From: Zhang JieJing <kzjeef@gmail.com>
-Subject: Re: [PATCH] Btrfs: handle kmalloc() failure in btrfs_file_aio_write()
-Date: Sun, 4 Jul 2010 01:35:14 +0800
-Message-ID: <AANLkTikZK2TBWoKS6zGTGnk830EK7fwhcjhJqfCgey55@mail.gmail.com>
-References: <1276971194-24572-1-git-send-email-kzjeef@gmail.com>
-	<AANLkTinv_7JGRhI8PtnmPUY3yqcPJBV7-ENPsCfYJPkb@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-fsdevel@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
-To: linux-btrfs@vger.kernel.org
+From: Yee-Ting Li <yee379@gmail.com>
+Subject: Re: volume broken? btrfsck fails
+Date: Sat, 3 Jul 2010 23:57:14 -0700
+Message-ID: <8F5A3F6C-87B7-46F5-AB32-78A9C8A2A43D@gmail.com>
+References: <569BCC7F-1920-4AC4-8069-369419029373@gmail.com> <loom.20100701T144515-658@post.gmane.org>
+Mime-Version: 1.0 (Apple Message framework v1081)
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Daniel Kozlowski <dan.kozlowski@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTinv_7JGRhI8PtnmPUY3yqcPJBV7-ENPsCfYJPkb@mail.gmail.com>
+In-Reply-To: <loom.20100701T144515-658@post.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is the improved of the former patch.
 
->From d9c4cf7dd0e4489a31610e2fb2565ee29f0e4179 Mon Sep 17 00:00:00 2001
-From: JieJing.Zhang <kzjeef@gmail.com>
-Date: Sun, 4 Jul 2010 01:17:54 +0800
-Subject: [PATCH] Btrfs: handle memory alloc failure in btrfs_file_aio_write()
+On 1 Jul 2010, at 05:51, Daniel Kozlowski wrote:
+> I am also having the same problem with a slightly different setup. In My case I 
+> cannot mount the filesystem. mount, btrfs-endio-met and kblockd/0 will all 
+> continually run until the system freezes up and requires a power cycle.
 
-1. kmalloc() should add a check of return valule.
+have you tried mounting with '-o degraded'?
 
-2. In later code it memset zero to the allocated memory,
-   so use kzalloc() instead of kmalloc() when allocation is better.
+having monitored the system for a while, i also think that in fact it's btrfs that's killing my system. i'm on ubuntu 10.4 with:
 
-Signed-off-by: JieJing.Zhang <kzjeef@gmail.com>
----
- fs/btrfs/file.c |    7 +++++--
- 1 files changed, 5 insertions(+), 2 deletions(-)
+$ uname -a
+Linux htpc 2.6.32-22-server #36-Ubuntu SMP Thu Jun 3 20:38:33 UTC 2010 x86_64 GNU/Linux
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index e354c33..961612c 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -925,7 +925,11 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
- 	nrptrs = min((iov_iter_count(&i) + PAGE_CACHE_SIZE - 1) /
- 		     PAGE_CACHE_SIZE, PAGE_CACHE_SIZE /
- 		     (sizeof(struct page *)));
--	pages = kmalloc(nrptrs * sizeof(struct page *), GFP_KERNEL);
-+	pages = kzalloc(nrptrs * sizeof(struct page *), GFP_KERNEL);
-+	if (!pages) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
+using the default kernel module, but git'd out the tools.
 
- 	/* generic_write_checks can change our pos */
- 	start_pos = pos;
-@@ -968,7 +972,6 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
- 					PAGE_CACHE_SHIFT;
+following the other thread 'Is there a more aggressive fixer than btrfsck?' i suspect that we'll just have to wait until some actual fsck operations are available for btrfs :(
 
- 		WARN_ON(num_pages > nrptrs);
--		memset(pages, 0, sizeof(struct page *) * nrptrs);
+on my system, it's btrfs-endio-met (only 1 out of 4) and btrfs-transacti (1 out of 2) that is taking up all the cpu/io wait cycles.
 
- 		ret = btrfs_delalloc_reserve_space(inode, write_bytes);
- 		if (ret)
--- 
-1.7.0.4
+i wonder if it's only certain files on the array that are hosed; if that's the case is there a way i can map the kernel messages to a real filename? i don't mind loosing the odd file on this array, but i don't fancy copying it all over to somewhere else (yeah-yeah, up to date backups blah blah!) - i figured given the momentum btrfs was gaining it would be much more stable than this :(
+
+Yee.

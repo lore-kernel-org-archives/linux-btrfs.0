@@ -1,45 +1,32 @@
-From: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>
-Subject: Re: [PATCH V3 0/8] Cleancache: overview
-Date: Tue, 6 Jul 2010 16:58:20 -0400
-Message-ID: <20100706205820.GB32627@phenom.dumpdata.com>
-References: <20100621231809.GA11111@ca-server1.us.oracle.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: volume broken? btrfsck fails
+Date: Tue, 6 Jul 2010 20:16:22 -0400
+Message-ID: <20100707001622.GH15984@think>
+References: <569BCC7F-1920-4AC4-8069-369419029373@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com, viro@zeniv.linux.org.uk, akpm@linux-foundation.org,
-        adilger@sun.com, tytso@mit.edu, mfasheh@suse.com,
-        joel.becker@oracle.com, matthew@wil.cx, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-ext4@vger.kernel.org, ocfs2-devel@oss.oracle.com,
-        linux-mm@kvack.org, ngupta@vflare.org, jeremy@goop.org,
-        JBeulich@novell.com, kurt.hackel@oracle.com, npiggin@suse.de,
-        dave.mccracken@oracle.com, riel@redhat.com, avi@redhat.com
-To: Dan Magenheimer <dan.magenheimer@oracle.com>
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20100621231809.GA11111@ca-server1.us.oracle.com>
+Cc: The development of BTRFS <linux-btrfs@vger.kernel.org>
+To: Yee-Ting Li <yee379@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <569BCC7F-1920-4AC4-8069-369419029373@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 21, 2010 at 04:18:09PM -0700, Dan Magenheimer wrote:
-> [PATCH V3 0/8] Cleancache: overview
+On Sat, Jun 26, 2010 at 03:15:04PM -0700, Yee-Ting Li wrote:
+> Hi,
+> 
+> i think my btrfs volume is hosed.... it mounts okay, but iostat shows /dev/sdg on 100% load. dmesg shows lots of 'parent transid verify failed on x wanted y found z'. then after a while i can't read from it (access to the filesystem freezes).
+> 
+> the machine had crashed (prob from some other process), and upon reboot i've been experience this problem since.
+> 
+> can anyone provide any guidance in how to proceed?
 
-Dan,
+These are definitely corruptions, and they probably came from the crash.
+Can you tell me more about the crash? (Power failure, what is the
+storage underneath etc, what are the write cache settings).  We don't
+expect these kinds corruptions to happen.
 
-Two comments:
- - Mention where one can get the implementor of the cleancache API.
-   Either a link to where the patches reside or a git branch.
-   If you need pointers on branch names:
-   http://lkml.org/lkml/2010/6/7/269
+Yan Zheng is making a lot of progress on btrfsck, but I don't think
+you'll want to be one of the first testers there.  I can definitely help
+copy things off if you're having trouble accessing the FS.
 
--  Point out the presentation you did on this. It has an excellent
-   overview of how this API works, and most importantly: a) images
-   and b). performance numbers.
-
-Otherwise, please consider all of these patches to have
-Reviewed-by: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>
-
-tag.
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+-chris

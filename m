@@ -1,37 +1,44 @@
-From: Yee-Ting Li <yee379@gmail.com>
-Subject: Re: volume broken? btrfsck fails
-Date: Tue, 6 Jul 2010 22:23:23 -0700
-Message-ID: <60683458-F978-4555-94BF-43C3A1D2E6FE@gmail.com>
-References: <569BCC7F-1920-4AC4-8069-369419029373@gmail.com> <20100707001622.GH15984@think>
-Mime-Version: 1.0 (Apple Message framework v1081)
+From: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>
+Subject: Re: [PATCH V3 3/8] Cleancache: core ops functions and configuration
+Date: Wed, 7 Jul 2010 09:27:44 -0400
+Message-ID: <20100707132744.GB4823@phenom.dumpdata.com>
+References: <20100621231939.GA19505@ca-server1.us.oracle.com>
+ <1277223988.9782.20.camel@nimitz>
+ <20100706205121.GA32627@phenom.dumpdata.com>
+ <4C33D240.80102@vflare.org>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: The development of BTRFS <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100707001622.GH15984@think>
+Cc: Dave Hansen <dave@sr71.net>, Dan Magenheimer <dan.magenheimer@oracle.com>,
+        chris.mason@oracle.com, viro@zeniv.linux.org.uk,
+        akpm@linux-foundation.org, adilger@Sun.COM, tytso@mit.edu,
+        mfasheh@suse.com, joel.becker@oracle.com, matthew@wil.cx,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+        ocfs2-devel@oss.oracle.com, linux-mm@kvack.org, jeremy@goop.org,
+        JBeulich@novell.com, kurt.hackel@oracle.com, npiggin@suse.de,
+        dave.mccracken@oracle.com, riel@redhat.com, avi@redhat.com
+To: Nitin Gupta <ngupta@vflare.org>
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <4C33D240.80102@vflare.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+> > Can you reference with a link or a git branch the patches that utilize
+> > this?
+> > 
+> > And also mention that in the 0/X patch so that folks can reference your
+> > cleancache implementation?
+> > 
+> >
+> 
+> FYI.
+> 
+> I am working on 'zcache' which uses cleancache_ops to provide page cache
+> compression support. I will be posting it to LKML before end of next week.
 
-On 6 Jul 2010, at 17:16, Chris Mason wrote:
-> These are definitely corruptions, and they probably came from the crash.
-> Can you tell me more about the crash? (Power failure, what is the
-> storage underneath etc, what are the write cache settings).  We don't
-> expect these kinds corruptions to happen.
+Yes! That too, please. Thanks for pointing this out.
 
-i think what happened was that the power got pulled accidentally. at the time i had a drive (sde) on an external usb controller. the other two drives are internal on a nForce 730i chipset. they are all 2TB WD drives (combination of EADS and EARS drives). according to hdparm all the drives have write-caching on.
-
-> Yan Zheng is making a lot of progress on btrfsck, but I don't think
-> you'll want to be one of the first testers there.  I can definitely help
-> copy things off if you're having trouble accessing the FS.
-
-i'm performing rsyncs at the moment to get some of the data off. i can read the drive fine, but after a while (i guess when something tries to access the corrupt file) i get the dmesgs again, and high cpu on the two btrfs-transacti and btrfs-endio-met threads.
-
-is there a way i can determine the actual filenames that may be corrupt?
-
-also, as i'm not using the /dev/sde drive (btrfs-show gives used 0.00TB) as i didn't do a balance after i installed it - is there a way i can degrade the array to recover that disk and keep the array with just two disks? then i will have enough storage to copy the 'good' files off :)
-
-once i have a replica, then i can test whatever code you'd like to throw at me :)
-
-cheers,
-
-Yee.
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>

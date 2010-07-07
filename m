@@ -1,66 +1,37 @@
-From: Nitin Gupta <ngupta@vflare.org>
-Subject: Re: [PATCH V3 3/8] Cleancache: core ops functions and configuration
-Date: Wed, 07 Jul 2010 06:32:56 +0530
-Message-ID: <4C33D240.80102@vflare.org>
-References: <20100621231939.GA19505@ca-server1.us.oracle.com> <1277223988.9782.20.camel@nimitz> <20100706205121.GA32627@phenom.dumpdata.com>
-Reply-To: ngupta@vflare.org
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Dave Hansen <dave@sr71.net>,
-	Dan Magenheimer <dan.magenheimer@oracle.com>,
-	chris.mason@oracle.com, viro@zeniv.linux.org.uk,
-	akpm@linux-foundation.org, adilger@Sun.COM, tytso@mit.edu,
-	mfasheh@suse.com, joel.becker@oracle.com, matthew@wil.cx,
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-	ocfs2-devel@oss.oracle.com, linux-mm@kvack.org, jeremy@goop.org,
-	JBeulich@novell.com, kurt.hackel@oracle.com, npiggin@suse.de,
-	dave.mccracken@oracle.com, riel@redhat.com, avi@redhat.com
-To: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <20100706205121.GA32627@phenom.dumpdata.com>
+From: Yee-Ting Li <yee379@gmail.com>
+Subject: Re: volume broken? btrfsck fails
+Date: Tue, 6 Jul 2010 22:23:23 -0700
+Message-ID: <60683458-F978-4555-94BF-43C3A1D2E6FE@gmail.com>
+References: <569BCC7F-1920-4AC4-8069-369419029373@gmail.com> <20100707001622.GH15984@think>
+Mime-Version: 1.0 (Apple Message framework v1081)
+Content-Type: text/plain; charset=us-ascii
+Cc: The development of BTRFS <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100707001622.GH15984@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/07/2010 02:21 AM, Konrad Rzeszutek Wilk wrote:
-> On Tue, Jun 22, 2010 at 09:26:28AM -0700, Dave Hansen wrote:
->> On Mon, 2010-06-21 at 16:19 -0700, Dan Magenheimer wrote:
->>> --- linux-2.6.35-rc2/include/linux/cleancache.h 1969-12-31 17:00:00.000000000 -0700
->>> +++ linux-2.6.35-rc2-cleancache/include/linux/cleancache.h      2010-06-21 14:45:18.000000000 -0600
->>> @@ -0,0 +1,88 @@
->>> +#ifndef _LINUX_CLEANCACHE_H
->>> +#define _LINUX_CLEANCACHE_H
->>> +
->>> +#include <linux/fs.h>
->>> +#include <linux/mm.h>
->>> +
->>> +struct cleancache_ops {
->>> +       int (*init_fs)(size_t);
->>> +       int (*init_shared_fs)(char *uuid, size_t);
->>> +       int (*get_page)(int, ino_t, pgoff_t, struct page *);
->>> +       void (*put_page)(int, ino_t, pgoff_t, struct page *);
->>> +       void (*flush_page)(int, ino_t, pgoff_t);
->>> +       void (*flush_inode)(int, ino_t);
->>> +       void (*flush_fs)(int);
->>> +};
->>> + 
->>
->> How would someone go about testing this code?  Is there an example
->> cleancache implementation?
-> 
-> Dan,
-> 
-> Can you reference with a link or a git branch the patches that utilize
-> this?
-> 
-> And also mention that in the 0/X patch so that folks can reference your
-> cleancache implementation?
-> 
->
 
-FYI.
+On 6 Jul 2010, at 17:16, Chris Mason wrote:
+> These are definitely corruptions, and they probably came from the crash.
+> Can you tell me more about the crash? (Power failure, what is the
+> storage underneath etc, what are the write cache settings).  We don't
+> expect these kinds corruptions to happen.
 
-I am working on 'zcache' which uses cleancache_ops to provide page cache
-compression support. I will be posting it to LKML before end of next week.
+i think what happened was that the power got pulled accidentally. at the time i had a drive (sde) on an external usb controller. the other two drives are internal on a nForce 730i chipset. they are all 2TB WD drives (combination of EADS and EARS drives). according to hdparm all the drives have write-caching on.
 
-Thanks,
-Nitin
+> Yan Zheng is making a lot of progress on btrfsck, but I don't think
+> you'll want to be one of the first testers there.  I can definitely help
+> copy things off if you're having trouble accessing the FS.
+
+i'm performing rsyncs at the moment to get some of the data off. i can read the drive fine, but after a while (i guess when something tries to access the corrupt file) i get the dmesgs again, and high cpu on the two btrfs-transacti and btrfs-endio-met threads.
+
+is there a way i can determine the actual filenames that may be corrupt?
+
+also, as i'm not using the /dev/sde drive (btrfs-show gives used 0.00TB) as i didn't do a balance after i installed it - is there a way i can degrade the array to recover that disk and keep the array with just two disks? then i will have enough storage to copy the 'good' files off :)
+
+once i have a replica, then i can test whatever code you'd like to throw at me :)
+
+cheers,
+
+Yee.

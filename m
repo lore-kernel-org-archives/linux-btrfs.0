@@ -1,7 +1,7 @@
 From: jck <jck@archlinux.us>
-Subject: (unknown)
-Date: Sat, 10 Jul 2010 07:16:17 +0530
-Message-ID: <AANLkTik4VyUgV_ndFQ4Xr-heWTzxVBZaDBmfQPClsJ9j@mail.gmail.com>
+Subject: Disk space usage displayed incorrectly?
+Date: Sat, 10 Jul 2010 07:22:26 +0530
+Message-ID: <AANLkTil1adG5cmYxbjvzv7OygH9q12SyA2HL8bOWtuxp@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org

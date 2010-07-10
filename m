@@ -1,13 +1,11 @@
 From: jck <jck@archlinux.us>
-Subject: Disk space usage displayed incorrectly?
-Date: Sat, 10 Jul 2010 07:12:06 +0530
-Message-ID: <AANLkTinKo6OxEBK2NqPpodfS4-W2KsxUrtXdG_JN_qzO@mail.gmail.com>
-References: <AANLkTinA2QCqlrGoRvUn_uAZ1NxPm65DksQQ9YBeHrqh@mail.gmail.com>
+Subject: (unknown)
+Date: Sat, 10 Jul 2010 07:16:17 +0530
+Message-ID: <AANLkTik4VyUgV_ndFQ4Xr-heWTzxVBZaDBmfQPClsJ9j@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTinA2QCqlrGoRvUn_uAZ1NxPm65DksQQ9YBeHrqh@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello,

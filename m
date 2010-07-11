@@ -1,23 +1,15 @@
-From: nokia <ronin3510@gmail.com>
-Subject: Possible corruption following a crash
-Date: Sun, 11 Jul 2010 00:39:58 +0300
-Message-ID: <4C38E8AE.3070502@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+From: Yee-Ting Li <yee379@gmail.com>
+Subject: show data and metadata raid settings
+Date: Sat, 10 Jul 2010 22:29:08 -0700
+Message-ID: <FBD4FCC6-CEB3-464D-A48C-5F57F5A4D9A6@gmail.com>
+Mime-Version: 1.0 (Apple Message framework v1081)
+Content-Type: text/plain; charset=us-ascii
+To: The development of BTRFS <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- http://pastebin.com/5r07k9Tn    
+btrfs-show can list the disks in a btrfs array, but is there a way i can determine the raid settings on an array? i /though/ i had created a raid1 data and metadata array, but when i copy data into it, each file doesn't appear to occupy double the amount of space on the array as i expected from reading the various threads on the mailing list.
 
+is there a way i can move an existing array between different raid types (within reason of disk space etc)? when's the eta for raid5?
 
-Hi everyone,
-
-A power outage occurring after successfully converting
-ext3-btrfs/mounting an external drive now freezes at least on .32
-kernels (Lucid and F12) with the traceback shown in the pastebin.
-Following cjb's instructions in #btrfs I'm reporting it here.
-
-Thanks,
-
-Gabriel Sfestarof
+on ubuntu 10.4.

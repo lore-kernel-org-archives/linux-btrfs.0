@@ -1,49 +1,41 @@
-From: Aaron Straus <aaron@edgestreamlp.com>
-Subject: Re: Removing snapshots
-Date: Wed, 14 Jul 2010 12:55:22 -0700
-Message-ID: <AANLkTinAvz4FgpoVc_ZLiZhCsmxGoDy7XTZulk1uv2np@mail.gmail.com>
-References: <BB8A38D2-8990-4B87-8A4E-E9BD530D340F@noir.com>
-	<AANLkTik359_CjeNj4dS_LMOEMdP3AMXR9WUiJP4dMuLY@mail.gmail.com>
-	<AANLkTilAOzycyOU2PlIjDJqmocPOWgmpPZVFWTx9cMUG@mail.gmail.com>
-	<4C3E0CE4.4020309@noir.com>
+From: Mathijs Kwik <bluescreen303@gmail.com>
+Subject: snapshotting - what data gets shared?
+Date: Wed, 14 Jul 2010 23:27:39 +0200
+Message-ID: <AANLkTimYETjLEEIp2vW096vX0IYVFbA5cFRaK_avpMv-@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: "K. Richard Pixley" <rich@noir.com>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4C3E0CE4.4020309@noir.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 14, 2010 at 12:15 PM, K. Richard Pixley <rich@noir.com> wro=
-te:
-> =A0Here's what I'm getting on ubuntu-10.04 with standard tools,
-> (/sbin/btrfsctl), and freshly built tools, (/usr/local/bin/btrfsctl).
->
-> Are we sure that the btrfs kernel module in this release is supportin=
-g the
-> right ioctls?
+Hi all,
 
-Yes it works for me, see the correct arguments below.
+I'm used to snapshots with LVM and I would like to compare them to btrfs.
 
-> rich@diamonds> sudo /usr/local/bin/btrfsctl -D snaptest /home
-> ioctl:: No such file or directory
+The case I want to compare is the following:
+At the moment a snapshot is created, no extra space is needed (maybe
+some metadata overhead) and all data is shared between the original
+and the snapshot.
+In LVM, snapshots work at the block-level, so any changes done to the
+original volume trigger a COW to the snapshot.
+If LVM is configured to use 4Mb blocks (default), this means that
+overwriting a 100k file, will lead to 4Mb "snapshot data" to be backed
+up.
+A 800Mb file will take around 800Mb.
+So, for small files (that are not on the same extent/block) this can
+waste quite some space, while for bigger files, or lots of files
+"close" to each other, it doesn't matter much.
 
-The snaptest snapshot is in your home directory (I think), not in
-/home, so you need to specify the full path i.e.:
+How is this for btrfs snapshots?
+Do they work at the file-level? or also at blocks/extents?
 
-sudo /usr/local/bin/btrfsctl -D snaptest /home/rich
+I mean, does changing a 100k file lead to 100k being snapshotted?
 
+What would happen if I have a 20G file (for example a disk image for kvm)?
+Would minor changes in that file lead to the entire 20G to be COWed/"backed up"?
 
-Cheers,
-=3Da=3D
+Is there a distinction between data and metadata?
+Or does touching (ctime/mtime) or visiting (atime) a file cause it to be COWed?
 
-
---=20
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
-Aaron Straus
-aaron@merfinllc.com
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Thanks for any info on this.
+Mathijs

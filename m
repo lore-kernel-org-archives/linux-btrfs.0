@@ -1,55 +1,36 @@
-From: Sean Bartell <wingedtachikoma@gmail.com>
-Subject: Re: snapshotting - what data gets shared?
-Date: Wed, 14 Jul 2010 18:13:01 -0400
-Message-ID: <20100714221301.GA5663@flcl.lan>
-References: <AANLkTimYETjLEEIp2vW096vX0IYVFbA5cFRaK_avpMv-@mail.gmail.com>
+From: Dave Chinner <david@fromorbit.com>
+Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:1353
+Date: Thu, 15 Jul 2010 10:11:04 +1000
+Message-ID: <20100715001104.GF30737@dastard>
+References: <201007081627.24654.johannes.hirte@fem.tu-ilmenau.de>
+ <20100708143109.GR15984@think>
+ <201007141725.24507.johannes.hirte@fem.tu-ilmenau.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Mathijs Kwik <bluescreen303@gmail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimYETjLEEIp2vW096vX0IYVFbA5cFRaK_avpMv-@mail.gmail.com>
+Cc: Chris Mason <chris.mason@oracle.com>, linux-kernel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, zheng.yan@oracle.com,
+	Jens Axboe <axboe@kernel.dk>, linux-fsdevel@vger.kernel.org
+To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <201007141725.24507.johannes.hirte@fem.tu-ilmenau.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 14, 2010 at 11:27:39PM +0200, Mathijs Kwik wrote:
-> Hi all,
+On Wed, Jul 14, 2010 at 05:25:23PM +0200, Johannes Hirte wrote:
+> Am Donnerstag 08 Juli 2010, 16:31:09 schrieb Chris Mason:
+> I'm not sure if btrfs is to blame for this error. After the errors I switched 
+> to XFS on this system and got now this error:
 > 
-> I'm used to snapshots with LVM and I would like to compare them to btrfs.
-> 
-> The case I want to compare is the following:
-> At the moment a snapshot is created, no extra space is needed (maybe
-> some metadata overhead) and all data is shared between the original
-> and the snapshot.
-> In LVM, snapshots work at the block-level, so any changes done to the
-> original volume trigger a COW to the snapshot.
-> If LVM is configured to use 4Mb blocks (default), this means that
-> overwriting a 100k file, will lead to 4Mb "snapshot data" to be backed
-> up.
-> A 800Mb file will take around 800Mb.
-> So, for small files (that are not on the same extent/block) this can
-> waste quite some space, while for bigger files, or lots of files
-> "close" to each other, it doesn't matter much.
-> 
-> How is this for btrfs snapshots?
-> Do they work at the file-level? or also at blocks/extents?
-> 
-> I mean, does changing a 100k file lead to 100k being snapshotted?
+> ls -l .kde4/share/apps/akregator/data/
+> ls: cannot access .kde4/share/apps/akregator/data/feeds.opml: Structure needs 
+> cleaning
+> total 4
+> ?????????? ? ?    ?        ?            ? feeds.opml
 
-Btrfs CoWs file extents, and files can use only the parts of an extent
-they need, so a 1-byte change would only require one additional 4K data
-block. Of course, metadata also needs to be updated, and will require
-a number of additional blocks.
+What is the error reported in dmesg when the XFS filesytem shuts down?
 
-> What would happen if I have a 20G file (for example a disk image for kvm)?
-> Would minor changes in that file lead to the entire 20G to be COWed/"backed up"?
+Cheers,
 
-No, only the relevant portion.
-
-> Is there a distinction between data and metadata?
-> Or does touching (ctime/mtime) or visiting (atime) a file cause it to be COWed?
-
-Metadata is CoWed separately, so there will still only be one copy of
-the data.
-
-> Thanks for any info on this.
-> Mathijs
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

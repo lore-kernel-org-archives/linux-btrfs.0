@@ -1,52 +1,68 @@
-From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
-Subject: Re: csum errors
-Date: Thu, 15 Jul 2010 22:00:24 +0200
-Message-ID: <201007152200.25242.johannes.hirte@fem.tu-ilmenau.de>
-References: <201007081627.24654.johannes.hirte@fem.tu-ilmenau.de> <201007152132.13701.johannes.hirte@fem.tu-ilmenau.de> <20100715193551.GM8623@think>
+From: Sean Bartell <wingedtachikoma@gmail.com>
+Subject: Re: raid modes, balancing, and order in which data gets written
+Date: Thu, 15 Jul 2010 19:19:20 -0400
+Message-ID: <20100715231920.GA12725@flcl.lan>
+References: <AANLkTimPpNmiJ-sr4_DjsWHXAgfb2FUPDeEi6n86pKEH@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Mathijs Kwik <bluescreen303@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100715193551.GM8623@think>
+In-Reply-To: <AANLkTimPpNmiJ-sr4_DjsWHXAgfb2FUPDeEi6n86pKEH@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Donnerstag 15 Juli 2010, 21:35:51 schrieb Chris Mason:
-> On Thu, Jul 15, 2010 at 09:32:12PM +0200, Johannes Hirte wrote:
-> > Am Donnerstag 15 Juli 2010, 21:03:09 schrieb Chris Mason:
-> > > On Thu, Jul 15, 2010 at 08:30:17PM +0200, Johannes Hirte wrote:
-> > > > Am Dienstag 13 Juli 2010, 14:23:58 schrieb Johannes Hirte:
-> > > > > ino 1959333 off 898342912 csum 4271223884 private 4271223883
-> > > > 
-> > > > I think, this is a different error. I've only seen them on
-> > > > filesystems from my Opteron system. It seems that the recorded csums
-> > > > are wrong and it looks to me like rounding errors. The data itself
-> > > > should be correct, as I've tested one affected file via md5sum
-> > > > against the original on another filesystem. Any ideas what is going
-> > > > wrong here?
-> > > 
-> > > Are you doing data mirroring?
-> > 
-> > No, I don't.
-> > 
-> > > We can map that block and do a raw read off the device to see what the
-> > > data blocks actually contain.
-> > 
-> > I've modified the btrfs-source a little to get the data. In inode.c I've
+On Thu, Jul 15, 2010 at 10:29:07AM +0200, Mathijs Kwik wrote:
+> Hi all,
 > 
-> > changed the code to:
-> Great.   The bad csums are all just one bit off, that can't be an
-> accident. When were they written (which kernel?).  Did you boot a 32
-> bit kernel on there at any time?
+> I read that btrfs - in a raid mode - does not mimic the behavior of
+> traditional (hw/sw) raid.
+> After writing to a btrfs raid filesystem, data will only be
+> distributed the way you expect after running a rebalance.
 
-No, I don't have a bootable 32bit installation on this system. I've tested it 
-now with a 32bit system by dumping the whole filesystem to an external drive 
-and mounting this to a 32bit system. The result was the same.
+This is not the case. When you create a btrfs filesystem with RAID
+enabled, stuff written from then on will be written just like with
+traditional RAID.
 
-The affected files were written by different kernels. I think at least 2.6.34, 
-2.6.35-rc3 and 2.6.35-rc4 should be involved, perhaps 2.6.33 too. I'll try to 
-figure it out more exactly.
+The difference with traditional RAID is that different parts of the FS
+can have different RAID settings. Btrfs reserves space in ~1GiB "block
+groups" for data or metadata, each of which has its own RAID settings.
+If you change the RAID mode for an existing filesystem (not yet
+supported IIUC) or add/remove devices, the existing block groups will
+keep their old RAID settings if at all possible.
 
-regards,
-  Johannes
+Rebalancing essentially moves everything into new block groups, which
+will use the new RAID settings and be more balanced between data and
+metadata. It isn't useful unless you change RAID settings, add/remove
+devices, or have too much space reserved for either data or metadata.
+
+> [...]
+
+> If you never rebalance manually, will the filesystem do this in the
+> background (when idle)?
+> Or will the fs never rebalance itself and only become "more balanced"
+> again after writing/changing some files, which it will then place on
+> the drive which has the lowest balance?
+
+Rebalancing isn't done automatically, and nothing can become "more
+balanced" until new block groups are created when you run out of space
+in the old ones.
+
+> Basically, I'm not sure I fully understood balancing, so any info on
+> this would be great.
+> In traditional raid0 and raid10 (block based), it is guaranteed that
+> any big file will always be stiped between disks equally, so a certain
+> performance can be assumed.
+> With non-automatic balancing, I'm afraid some files might not be
+> distributed as well as they could, resulting in lower performance.
+> Is this an issue to be aware of, or can I safely assume that for most
+> use cases the performance will roughly be the same as sw-raid?
+> 2 cases I'm interested in:
+> - big databases(lots of rewrites)
+> - real-time video-capturing (sustained write to 1 or more big files,
+> needing a guaranteed write throughput)
+
+If you initially create the filesystem with the right RAID settings, it
+will act just like normal software RAID. Balancing only comes into play
+when you start changing your mind :).
+
+> Any info on this or balancing in general will be greatly appreciated.

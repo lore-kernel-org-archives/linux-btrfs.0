@@ -1,110 +1,52 @@
-From: <remi.urbillac@orange-ftgroup.com>
-Subject: RE: snapshotting - what data gets shared?
-Date: Thu, 15 Jul 2010 10:50:49 +0200
-Message-ID: <11210_1279183851_4C3ECBEB_11210_61375_1_EABF98D1E9AEBB48A74724A0F1D9E8C71B8677CC26@PUEXCB2A.nanterre.francetelecom.fr>
-References: <AANLkTimYETjLEEIp2vW096vX0IYVFbA5cFRaK_avpMv-@mail.gmail.com>
-	<20100714221301.GA5663@flcl.lan>
- <AANLkTinkQH8JOMSFS0F1TbOkDi0bSlEI-mtJRJs4vzex@mail.gmail.com>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: Re: [BUG] btrfs hangup when we run the "sync" command
+Date: Thu, 15 Jul 2010 17:07:07 +0800
+Message-ID: <4C3ECFBB.40006@cn.fujitsu.com>
+References: <4C3E7E1B.5000002@cn.fujitsu.com> <AANLkTinkuiT9tBiALkCIDMs9d9J9FT9sl9GEyRogq09S@mail.gmail.com>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-To: Mathijs Kwik <bluescreen303@gmail.com>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: "Yan, Zheng" <zheng.yan@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTinkQH8JOMSFS0F1TbOkDi0bSlEI-mtJRJs4vzex@mail.gmail.com>
+In-Reply-To: <AANLkTinkuiT9tBiALkCIDMs9d9J9FT9sl9GEyRogq09S@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,=20
-
-Just to be sure :=20
-LVM snapshots are not COW. They are Copy On First Write.=20
-The first time you update one block, the original data needs to be stor=
-ed in the snapshot area.=20
-
-The COW, aka Copy On Write, is not a very "good" name, because it can l=
-eads to confusion. In fact, the copy means that if you partialy update =
-=20
-
------Message d'origine-----
-De : linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-owner@vger.k=
-ernel.org] De la part de Mathijs Kwik
-Envoy=E9 : jeudi 15 juillet 2010 10:01
-=C0 : Mathijs Kwik; linux-btrfs@vger.kernel.org
-Objet : Re: snapshotting - what data gets shared?
-
-thanks, sounds very promising
-
-On Thu, Jul 15, 2010 at 12:13 AM, Sean Bartell <wingedtachikoma@gmail.c=
-om> wrote:
-> On Wed, Jul 14, 2010 at 11:27:39PM +0200, Mathijs Kwik wrote:
->> Hi all,
+On Thu Jul 15 2010 16:14:31 GMT+0800 (CST), Yan, Zheng wrote:
+> 2010/7/15 Miao Xie<miaox@cn.fujitsu.com>:
+>> Hi, everyone
 >>
->> I'm used to snapshots with LVM and I would like to compare them to b=
-trfs.
+>> I found btrfs will hangup when we run the sync command on my
+>> x86_64 box.
 >>
->> The case I want to compare is the following:
->> At the moment a snapshot is created, no extra space is needed (maybe=
-=20
->> some metadata overhead) and all data is shared between the original=20
->> and the snapshot.
->> In LVM, snapshots work at the block-level, so any changes done to th=
-e=20
->> original volume trigger a COW to the snapshot.
->> If LVM is configured to use 4Mb blocks (default), this means that=20
->> overwriting a 100k file, will lead to 4Mb "snapshot data" to be=20
->> backed up.
->> A 800Mb file will take around 800Mb.
->> So, for small files (that are not on the same extent/block) this can=
-=20
->> waste quite some space, while for bigger files, or lots of files=20
->> "close" to each other, it doesn't matter much.
+>> The reproduce steps is following:
+>> # mkfs.btrfs -s 8192 -l 8192 -n 8192 /dev/sda1
+>> # mount /dev/sda1 /mnt
+>> # echo 1234567>  /mnt/aaa
+>> # sync
+>> (btrfs hangs up)
 >>
->> How is this for btrfs snapshots?
->> Do they work at the file-level? or also at blocks/extents?
+>> It seems that the btrfs doesn't support the sectorsize which is
+>> greater than the page size just like ext2/3/4, though we can use
+>> mkfs.btrfs to make a filesystem with a big sectorsize. Am I right?
 >>
->> I mean, does changing a 100k file lead to 100k being snapshotted?
+>> If yes, we must do more check in the mkfs.btrfs.
+>>
 >
-> Btrfs CoWs file extents, and files can use only the parts of an exten=
-t=20
-> they need, so a 1-byte change would only require one additional 4K=20
-> data block. Of course, metadata also needs to be updated, and will=20
-> require a number of additional blocks.
+> yes, btrfs doesn't support the sectorsize>  PAGE_size.
 >
->> What would happen if I have a 20G file (for example a disk image for=
- kvm)?
->> Would minor changes in that file lead to the entire 20G to be COWed/=
-"backed up"?
->
-> No, only the relevant portion.
->
->> Is there a distinction between data and metadata?
->> Or does touching (ctime/mtime) or visiting (atime) a file cause it t=
-o be COWed?
->
-> Metadata is CoWed separately, so there will still only be one copy of=
-=20
-> the data.
->
->> Thanks for any info on this.
->> Mathijs
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in the body of a message to majordomo@vger.kernel.org More majordomo in=
-fo at  http://vger.kernel.org/majordomo-info.html
 
-*********************************
-This message and any attachments (the "message") are confidential and i=
-ntended solely for the addressees.=20
-Any unauthorised use or dissemination is prohibited.
-Messages are susceptible to alteration.=20
-=46rance Telecom Group shall not be liable for the message if altered, =
-changed or falsified.
-If you are not the intended addressee of this message, please cancel it=
- immediately and inform the sender.
-********************************
+So we must do more check in the mkfs.btrfs to avoid misuse, and I'll
+add some check of the sectorsize into the mkfs.btrfs.
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+BTW, I sent some patches to the btrfs community recently, but I haven't received
+any reply. Could you review them for me? though I have tested them and everything
+works well.
+
+[PATCH 1/2] btrfs: restructure try_release_extent_buffer()
+[PATCH 2/2] btrfs: fix oops when leafsize is greator than nodesize
+[PATCH] btrfs-progs: fix wrong extent buffer size when reading tree block
+
+Thanks
+Miao Xie

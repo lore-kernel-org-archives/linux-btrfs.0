@@ -1,36 +1,33 @@
-From: Dave Chinner <david@fromorbit.com>
-Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:1353
-Date: Thu, 15 Jul 2010 10:11:04 +1000
-Message-ID: <20100715001104.GF30737@dastard>
-References: <201007081627.24654.johannes.hirte@fem.tu-ilmenau.de>
- <20100708143109.GR15984@think>
- <201007141725.24507.johannes.hirte@fem.tu-ilmenau.de>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: [BUG] btrfs hangup when we run the "sync" command
+Date: Thu, 15 Jul 2010 11:18:51 +0800
+Message-ID: <4C3E7E1B.5000002@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>, linux-kernel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, zheng.yan@oracle.com,
-	Jens Axboe <axboe@kernel.dk>, linux-fsdevel@vger.kernel.org
-To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <201007141725.24507.johannes.hirte@fem.tu-ilmenau.de>
+Content-Type: text/plain; charset=GB2312
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Yan Zheng <zheng.yan@oracle.com>,
+	Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 14, 2010 at 05:25:23PM +0200, Johannes Hirte wrote:
-> Am Donnerstag 08 Juli 2010, 16:31:09 schrieb Chris Mason:
-> I'm not sure if btrfs is to blame for this error. After the errors I switched 
-> to XFS on this system and got now this error:
-> 
-> ls -l .kde4/share/apps/akregator/data/
-> ls: cannot access .kde4/share/apps/akregator/data/feeds.opml: Structure needs 
-> cleaning
-> total 4
-> ?????????? ? ?    ?        ?            ? feeds.opml
+Hi, everyone
 
-What is the error reported in dmesg when the XFS filesytem shuts down?
+I found btrfs will hangup when we run the sync command on my
+x86_64 box. 
 
-Cheers,
+The reproduce steps is following:
+# mkfs.btrfs -s 8192 -l 8192 -n 8192 /dev/sda1
+# mount /dev/sda1 /mnt
+# echo 1234567 > /mnt/aaa
+# sync
+(btrfs hangs up)
 
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+It seems that the btrfs doesn't support the sectorsize which is
+greater than the page size just like ext2/3/4, though we can use
+mkfs.btrfs to make a filesystem with a big sectorsize. Am I right?
+
+If yes, we must do more check in the mkfs.btrfs.
+
+Thanks
+Miao Xie

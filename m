@@ -1,59 +1,36 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [BUG] btrfs hangup when we run the "sync" command
-Date: Thu, 15 Jul 2010 12:12:13 -0400
-Message-ID: <20100715161213.GG8623@think>
-References: <4C3E7E1B.5000002@cn.fujitsu.com>
- <AANLkTinkuiT9tBiALkCIDMs9d9J9FT9sl9GEyRogq09S@mail.gmail.com>
- <4C3ECFBB.40006@cn.fujitsu.com>
+From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:1353
+Date: Thu, 15 Jul 2010 20:14:51 +0200
+Message-ID: <201007152014.52924.johannes.hirte@fem.tu-ilmenau.de>
+References: <201007081627.24654.johannes.hirte@fem.tu-ilmenau.de> <201007141725.24507.johannes.hirte@fem.tu-ilmenau.de> <20100715001104.GF30737@dastard>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: "Yan, Zheng" <zheng.yan@oracle.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Miao Xie <miaox@cn.fujitsu.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4C3ECFBB.40006@cn.fujitsu.com>
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Cc: Chris Mason <chris.mason@oracle.com>, linux-kernel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, zheng.yan@oracle.com,
+	Jens Axboe <axboe@kernel.dk>, linux-fsdevel@vger.kernel.org
+To: Dave Chinner <david@fromorbit.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20100715001104.GF30737@dastard>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 15, 2010 at 05:07:07PM +0800, Miao Xie wrote:
-> On Thu Jul 15 2010 16:14:31 GMT+0800 (CST), Yan, Zheng wrote:
-> >2010/7/15 Miao Xie<miaox@cn.fujitsu.com>:
-> >>Hi, everyone
-> >>
-> >>I found btrfs will hangup when we run the sync command on my
-> >>x86_64 box.
-> >>
-> >>The reproduce steps is following:
-> >># mkfs.btrfs -s 8192 -l 8192 -n 8192 /dev/sda1
-> >># mount /dev/sda1 /mnt
-> >># echo 1234567>  /mnt/aaa
-> >># sync
-> >>(btrfs hangs up)
-> >>
-> >>It seems that the btrfs doesn't support the sectorsize which is
-> >>greater than the page size just like ext2/3/4, though we can use
-> >>mkfs.btrfs to make a filesystem with a big sectorsize. Am I right?
-> >>
-> >>If yes, we must do more check in the mkfs.btrfs.
-> >>
-> >
-> >yes, btrfs doesn't support the sectorsize>  PAGE_size.
-> >
+Am Donnerstag 15 Juli 2010, 02:11:04 schrieb Dave Chinner:
+> On Wed, Jul 14, 2010 at 05:25:23PM +0200, Johannes Hirte wrote:
+> > Am Donnerstag 08 Juli 2010, 16:31:09 schrieb Chris Mason:
+> > I'm not sure if btrfs is to blame for this error. After the errors I
+> > switched to XFS on this system and got now this error:
+> > 
+> > ls -l .kde4/share/apps/akregator/data/
+> > ls: cannot access .kde4/share/apps/akregator/data/feeds.opml: Structure
+> > needs cleaning
+> > total 4
+> > ?????????? ? ?    ?        ?            ? feeds.opml
 > 
-> So we must do more check in the mkfs.btrfs to avoid misuse, and I'll
-> add some check of the sectorsize into the mkfs.btrfs.
+> What is the error reported in dmesg when the XFS filesytem shuts down?
 
-Yes, but this is fixed up with the raid code, we'll allow different page
-sizes.
+Nothing. I double checked the logs. There are only the messages when mounting 
+the filesystem. No other errors are reported than the inaccessible file and the 
+output from xfs_check.
 
-> 
-> BTW, I sent some patches to the btrfs community recently, but I haven't received
-> any reply. Could you review them for me? though I have tested them and everything
-> works well.
-> 
-> [PATCH 1/2] btrfs: restructure try_release_extent_buffer()
-> [PATCH 2/2] btrfs: fix oops when leafsize is greator than nodesize
-> [PATCH] btrfs-progs: fix wrong extent buffer size when reading tree block
-
-Thanks, I'll go through these.
-
--chris
+regards,
+  Johannes

@@ -1,53 +1,35 @@
 From: <remi.urbillac@orange-ftgroup.com>
 Subject: RE: snapshotting - what data gets shared?
-Date: Thu, 15 Jul 2010 10:57:23 +0200
-Message-ID: <2428_1279184244_4C3ECD74_2428_84257_1_EABF98D1E9AEBB48A74724A0F1D9E8C71B8677CC34@PUEXCB2A.nanterre.francetelecom.fr>
+Date: Thu, 15 Jul 2010 10:50:49 +0200
+Message-ID: <11210_1279183851_4C3ECBEB_11210_61375_1_EABF98D1E9AEBB48A74724A0F1D9E8C71B8677CC26@PUEXCB2A.nanterre.francetelecom.fr>
 References: <AANLkTimYETjLEEIp2vW096vX0IYVFbA5cFRaK_avpMv-@mail.gmail.com>
 	<20100714221301.GA5663@flcl.lan>
  <AANLkTinkQH8JOMSFS0F1TbOkDi0bSlEI-mtJRJs4vzex@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=iso-8859-1
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Mathijs Kwik <bluescreen303@gmail.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTinkQH8JOMSFS0F1TbOkDi0bSlEI-mtJRJs4vzex@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-=20
 Hi,=20
 
 Just to be sure :=20
-LVM snapshots are not COW. They are Copy On First Write (COFW).=20
+LVM snapshots are not COW. They are Copy On First Write.=20
 The first time you update one block, the original data needs to be stor=
-ed in the dedicated snapshot area.=20
+ed in the snapshot area.=20
 
 The COW, aka Copy On Write, is not a very "good" name, because it can l=
 eads to confusion. In fact, the copy means that if you partialy update =
-one block in the filesystem, you will not update the existing one. You =
-will copy it to a new location, and apply the update before writing dat=
-a.
-
-
-When cow, when cofw ?=20
-- if you can store the snapshot on an other storage space, it is cofw, =
-like snap devices on LVM.
-- if you have a lower write performance with a snapshot, then again, it=
- is COFW.
-- on COW, snapshots and live filesystem are always on the same disks/ra=
-id/pool...=20
-
-
-
-Remi
-
-
-PS : Sorry for the partial send, buggy CTRL key on outlook ^^ ....
-
-
+=20
 
 -----Message d'origine-----
 De : linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-owner@vger.k=
-ernel.org] De la part de Mathijs Kwik Envoy=E9 : jeudi 15 juillet 2010 =
-10:01 =C0 : Mathijs Kwik; linux-btrfs@vger.kernel.org Objet : Re: snaps=
-hotting - what data gets shared?
+ernel.org] De la part de Mathijs Kwik
+Envoy=E9 : jeudi 15 juillet 2010 10:01
+=C0 : Mathijs Kwik; linux-btrfs@vger.kernel.org
+Objet : Re: snapshotting - what data gets shared?
 
 thanks, sounds very promising
 

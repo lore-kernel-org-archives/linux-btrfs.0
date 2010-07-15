@@ -1,52 +1,128 @@
-From: Mathijs Kwik <bluescreen303@gmail.com>
-Subject: raid modes, balancing, and order in which data gets written
-Date: Thu, 15 Jul 2010 10:29:07 +0200
-Message-ID: <AANLkTimPpNmiJ-sr4_DjsWHXAgfb2FUPDeEi6n86pKEH@mail.gmail.com>
+From: <remi.urbillac@orange-ftgroup.com>
+Subject: RE: snapshotting - what data gets shared?
+Date: Thu, 15 Jul 2010 10:57:23 +0200
+Message-ID: <2428_1279184244_4C3ECD74_2428_84257_1_EABF98D1E9AEBB48A74724A0F1D9E8C71B8677CC34@PUEXCB2A.nanterre.francetelecom.fr>
+References: <AANLkTimYETjLEEIp2vW096vX0IYVFbA5cFRaK_avpMv-@mail.gmail.com>
+	<20100714221301.GA5663@flcl.lan>
+ <AANLkTinkQH8JOMSFS0F1TbOkDi0bSlEI-mtJRJs4vzex@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=iso-8859-1
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+=20
+Hi,=20
 
-I read that btrfs - in a raid mode - does not mimic the behavior of
-traditional (hw/sw) raid.
-After writing to a btrfs raid filesystem, data will only be
-distributed the way you expect after running a rebalance.
+Just to be sure :=20
+LVM snapshots are not COW. They are Copy On First Write (COFW).=20
+The first time you update one block, the original data needs to be stor=
+ed in the dedicated snapshot area.=20
 
-Say I write a file to the a raid1 (or raid10) fs, and run the "sync"
-command afterwards to make sure it is fully committed.
-Does btrfs guarantee the data is on at least 2 disks at this stage?
+The COW, aka Copy On Write, is not a very "good" name, because it can l=
+eads to confusion. In fact, the copy means that if you partialy update =
+one block in the filesystem, you will not update the existing one. You =
+will copy it to a new location, and apply the update before writing dat=
+a.
 
-And how about distributing io load on raid0 (or the part of raid10
-"behind" the raid 1), if I write a big file, will it instantly be
-striped/divided between disks?
-Or do I need to rebalance after writing the file for this to happen?
-Does this happen on extent basis or on file basis (in other words, do
-files get striped between disks or does a file always stay whole on
-first write)?
 
-If you never rebalance manually, will the filesystem do this in the
-background (when idle)?
-Or will the fs never rebalance itself and only become "more balanced"
-again after writing/changing some files, which it will then place on
-the drive which has the lowest balance?
+When cow, when cofw ?=20
+- if you can store the snapshot on an other storage space, it is cofw, =
+like snap devices on LVM.
+- if you have a lower write performance with a snapshot, then again, it=
+ is COFW.
+- on COW, snapshots and live filesystem are always on the same disks/ra=
+id/pool...=20
 
-Basically, I'm not sure I fully understood balancing, so any info on
-this would be great.
-In traditional raid0 and raid10 (block based), it is guaranteed that
-any big file will always be stiped between disks equally, so a certain
-performance can be assumed.
-With non-automatic balancing, I'm afraid some files might not be
-distributed as well as they could, resulting in lower performance.
-Is this an issue to be aware of, or can I safely assume that for most
-use cases the performance will roughly be the same as sw-raid?
-2 cases I'm interested in:
-- big databases(lots of rewrites)
-- real-time video-capturing (sustained write to 1 or more big files,
-needing a guaranteed write throughput)
 
-Any info on this or balancing in general will be greatly appreciated.
-Thanks,
-Mathijs
+
+Remi
+
+
+PS : Sorry for the partial send, buggy CTRL key on outlook ^^ ....
+
+
+
+-----Message d'origine-----
+De : linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-owner@vger.k=
+ernel.org] De la part de Mathijs Kwik Envoy=E9 : jeudi 15 juillet 2010 =
+10:01 =C0 : Mathijs Kwik; linux-btrfs@vger.kernel.org Objet : Re: snaps=
+hotting - what data gets shared?
+
+thanks, sounds very promising
+
+On Thu, Jul 15, 2010 at 12:13 AM, Sean Bartell <wingedtachikoma@gmail.c=
+om> wrote:
+> On Wed, Jul 14, 2010 at 11:27:39PM +0200, Mathijs Kwik wrote:
+>> Hi all,
+>>
+>> I'm used to snapshots with LVM and I would like to compare them to b=
+trfs.
+>>
+>> The case I want to compare is the following:
+>> At the moment a snapshot is created, no extra space is needed (maybe=
+=20
+>> some metadata overhead) and all data is shared between the original=20
+>> and the snapshot.
+>> In LVM, snapshots work at the block-level, so any changes done to th=
+e=20
+>> original volume trigger a COW to the snapshot.
+>> If LVM is configured to use 4Mb blocks (default), this means that=20
+>> overwriting a 100k file, will lead to 4Mb "snapshot data" to be=20
+>> backed up.
+>> A 800Mb file will take around 800Mb.
+>> So, for small files (that are not on the same extent/block) this can=
+=20
+>> waste quite some space, while for bigger files, or lots of files=20
+>> "close" to each other, it doesn't matter much.
+>>
+>> How is this for btrfs snapshots?
+>> Do they work at the file-level? or also at blocks/extents?
+>>
+>> I mean, does changing a 100k file lead to 100k being snapshotted?
+>
+> Btrfs CoWs file extents, and files can use only the parts of an exten=
+t=20
+> they need, so a 1-byte change would only require one additional 4K=20
+> data block. Of course, metadata also needs to be updated, and will=20
+> require a number of additional blocks.
+>
+>> What would happen if I have a 20G file (for example a disk image for=
+ kvm)?
+>> Would minor changes in that file lead to the entire 20G to be COWed/=
+"backed up"?
+>
+> No, only the relevant portion.
+>
+>> Is there a distinction between data and metadata?
+>> Or does touching (ctime/mtime) or visiting (atime) a file cause it t=
+o be COWed?
+>
+> Metadata is CoWed separately, so there will still only be one copy of=
+=20
+> the data.
+>
+>> Thanks for any info on this.
+>> Mathijs
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in the body of a message to majordomo@vger.kernel.org More majordomo in=
+fo at  http://vger.kernel.org/majordomo-info.html
+
+*********************************
+This message and any attachments (the "message") are confidential and i=
+ntended solely for the addressees.=20
+Any unauthorised use or dissemination is prohibited.
+Messages are susceptible to alteration.=20
+=46rance Telecom Group shall not be liable for the message if altered, =
+changed or falsified.
+If you are not the intended addressee of this message, please cancel it=
+ immediately and inform the sender.
+********************************
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

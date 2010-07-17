@@ -1,25 +1,24 @@
-From: "Grant Mayor" <grantfinancing@gmail.com>
-Subject: (unknown)
-Date: Sat, 17 Jul 2010 10:06:45 +0200 (CEST)
-Message-ID: <2148.41.138.190.28.1279354005.squirrel__13102.1225163297$1279354226$gmane$org@www.scalabrini.net>
-Reply-To: to.grantfinancing@gmail.com
+From: "SINOPEC OIL AND GAS COMPANY" <info@tdm.co.mz>
+Subject: Re:
+Date: Sat, 17 Jul 2010 04:41:12 +0200 (CAT)
+Message-ID: <3456a196fd2ef7f60ebeb330d790f2de.squirrel@webmail.tdm.co.mz>
+Reply-To: mrwangtianpu102800@yahoo.com.cn
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 To: unlisted-recipients:; (no To-header on input)
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-FUNDING NOTIFICATION.............I am Mr Grant Mayor. i am a loan lender
-as well as an angel investor, I offer funds based on demands and i use the
-best possible interest rate so that it can make both paties smile. I allow
-my clients to decide the loan repayment duration. So i have my door for
-funding opened to all that is in need, If you have been turned down be
-many financial institutions, this is a great time for you to make things
-up. If you need a stress free funing, kindly get back to me with a mail of
-application for funding and you will get funded within 3 working days.
-Send all mails of application to: to.grantfinancing@gmail.com.
+Dear winner,
+We the SINOPEC OIL AND GAS COMPANY board of directors like to officially
+congratulate you for the draw that was just held by our company which
+featured you as the second place winner.Prizes won : Brand New 2010
+Lamborghini Car new model and The Sum Of $570,000.00USD
+(United State Dollars) cash.
+FILL DETAILs BELOW;
+Your Full Name : Address :Country :Phone number :Age :Gender :Occupation :
+Yours,
+Sinopec Oil And Gas Corp.
 
-I await your response.
 
-Grant Mayor.
 

@@ -1,34 +1,23 @@
-From: "Aneesh Kumar K.V" <aneesh.kumar@linux.vnet.ibm.com>
-Subject: [PATCH] btrfs: Fix a memleak on failed posix acl conversion
-Date: Mon, 19 Jul 2010 19:28:44 +0530
-Message-ID: <1279547924-25141-1-git-send-email-aneesh.kumar@linux.vnet.ibm.com>
-Cc: linux-btrfs@vger.kernel.org,
-	"Aneesh Kumar K.V" <aneesh.kumar@linux.vnet.ibm.com>
-To: chris.mason@oracle.com
+From: Arjan van de Ven <arjan@linux.intel.com>
+Subject: Re: [patch 0/2]btrfs: add two ioctls to do metadata readahead
+Date: Mon, 19 Jul 2010 07:00:33 -0700
+Message-ID: <4C445A81.5010808@linux.intel.com>
+References: <1279094536.1528.93.camel@sli10-desk.sh.intel.com> <20100719080354.GA12808@infradead.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Shaohua Li <shaohua.li@intel.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"Wu, Fengguang" <fengguang.wu@intel.com>
+To: Christoph Hellwig <hch@infradead.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100719080354.GA12808@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Aneesh Kumar K.V <aneesh.kumar@linux.vnet.ibm.com>
----
- fs/btrfs/acl.c |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
+On 7/19/2010 1:03 AM, Christoph Hellwig wrote:
+> This seems like iteration 66 of the ill fated mobling readahead crap.
+>    
 
-diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index 2222d16..6d1410e 100644
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -60,8 +60,10 @@ static struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
- 		size = __btrfs_getxattr(inode, name, value, size);
- 		if (size > 0) {
- 			acl = posix_acl_from_xattr(value, size);
--			if (IS_ERR(acl))
-+			if (IS_ERR(acl)) {
-+				kfree(value);
- 				return acl;
-+			}
- 			set_cached_acl(inode, type, acl);
- 		}
- 		kfree(value);
--- 
-1.7.2.rc3.43.g24e7a
+I think you need to actually look at what this patch does before 
+rendering this judgment; something you apparently have not done.
 

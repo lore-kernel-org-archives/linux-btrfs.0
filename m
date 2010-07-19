@@ -1,55 +1,49 @@
-From: Aaron Toponce <aaron.toponce@gmail.com>
-Subject: Re: Status of BTRFS
-Date: Sat, 17 Jul 2010 23:19:00 -0600
-Message-ID: <4C428EC4.8020909@gmail.com>
-References: <000001cb24dd$cab87650$602962f0$@com> <AANLkTikQ4Q2W2MII6vAo3WzBN9-d0R41ZsLkbJOkNjMS@mail.gmail.com> <000101cb24e0$804e4b00$80eae100$@com> <201007181512.02298.chris@csamuel.org>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: Re: [BUG] btrfs hangup when we run the "sync" command
+Date: Mon, 19 Jul 2010 09:56:02 +0800
+Message-ID: <4C43B0B2.1040507@cn.fujitsu.com>
+References: <4C3E7E1B.5000002@cn.fujitsu.com> <AANLkTinkuiT9tBiALkCIDMs9d9J9FT9sl9GEyRogq09S@mail.gmail.com> <4C3ECFBB.40006@cn.fujitsu.com> <20100715161213.GG8623@think>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha512;
- protocol="application/pgp-signature";
- boundary="------------enig9D89C519357EA768BB5FB6EA"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>,
+	"Yan, Zheng" <zheng.yan@oracle.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201007181512.02298.chris@csamuel.org>
+In-Reply-To: <20100715161213.GG8623@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
---------------enig9D89C519357EA768BB5FB6EA
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+On Thu, 15 Jul 2010 12:12:13 -0400, Chris Mason <chris.mason@oracle.com> wrote:
+>>>> It seems that the btrfs doesn't support the sectorsize which is
+>>>> greater than the page size just like ext2/3/4, though we can use
+>>>> mkfs.btrfs to make a filesystem with a big sectorsize. Am I right?
+>>>>
+>>>> If yes, we must do more check in the mkfs.btrfs.
+>>>>
+>>>
+>>> yes, btrfs doesn't support the sectorsize>  PAGE_size.
+>>>
+>>
+>> So we must do more check in the mkfs.btrfs to avoid misuse, and I'll
+>> add some check of the sectorsize into the mkfs.btrfs.
+> 
+> Yes, but this is fixed up with the raid code, we'll allow different page
+> sizes.
 
-On 07/17/2010 11:11 PM, Chris Samuel wrote:
-> On Fri, 16 Jul 2010 10:14:49 pm Edward Ned Harvey wrote:
->> Is it included in any distributions yet?
->=20
-> You can use it after installation in Ubuntu 10.04.  In fact
-> I'm pretty sure it was enabled in the kernel of 9.10 too.
->=20
-> It's not (yet) an option for installation though.
+Is the raid code that you said the initialization code for the block devices?
+just like this:
 
-It's included as an installation choice with openSUSE 11.3.
+fs/btrfs/volumes.c:1430
+int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
+{
+	[snip]
+	set_blocksize(device->bdev, 4096);
+	[snip]
+}
 
---=20
-=2E O .   O . O   . . O   O . .   . O .
-=2E . O   . O O   O . O   . O O   . . O
-O O O   . O .   . O O   O O .   O O O
+If yes, it uses a hard-code value to initialize the blocksize of the block device,
+not the blocksize of the btrfs, so the btrfs doesn't check the blocksize of the btrfs.
 
+Thanks
+Miao Xie
 
---------------enig9D89C519357EA768BB5FB6EA
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.14 (GNU/Linux)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
-
-iQEcBAEBCgAGBQJMQo7EAAoJEM55Ebf8BAiPuusH/RaMir0BqZqV2BGAHFx9KSfq
-7QxcM74WIyBi6JFbEwzD/uGKBSbzssiTLJWFR5yWg6mSJ4tybRkGtjvy53sDIkJs
-B9vosMKBVbzHpC2fbO0AEKhUreCVSX1nJwLOfx+jSpKr+nAotZhkY9+sFh6PohPx
-mukhkmzuIktduWuM3+VMgoEvErnaaGP90xPoO6p4zMofwqPDqX2isqAAfI3bJ3C8
-iPdb3EA3gWZ4vp42bEMt5dftIs3sVjkLnHktkv/xrP5CDcfkl5Zp2d6jZAWZnRhd
-U8DHDUpRskTZzewfg8mTGyK5UvRSzwbUYRgqDjFVpB/SyUT3gOQephfazGMp91Q=
-=pLhG
------END PGP SIGNATURE-----
-
---------------enig9D89C519357EA768BB5FB6EA--

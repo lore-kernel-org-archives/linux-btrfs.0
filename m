@@ -1,72 +1,45 @@
 From: Hubert Kario <hka@qbs.com.pl>
-Subject: Re: [BUG] btrfs hangup when we run the "sync" command
-Date: Wed, 21 Jul 2010 14:36:24 +0200
-Message-ID: <201007211436.39693.hka@qbs.com.pl>
-References: <4C3E7E1B.5000002@cn.fujitsu.com> <AANLkTinkuiT9tBiALkCIDMs9d9J9FT9sl9GEyRogq09S@mail.gmail.com> <4C3ECFBB.40006@cn.fujitsu.com>
+Subject: Re: Copy/move btrfs volume
+Date: Wed, 21 Jul 2010 17:00:12 +0200
+Message-ID: <201007211700.38453.hka@qbs.com.pl>
+References: <i0hqkk$r4h$1@dough.gmane.org> <03lj9ujtp4.fsf@msgid.viggen.net> <i0mp3v$q93$1@dough.gmane.org>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=iso-8859-1
-Cc: "Yan, Zheng" <zheng.yan@oracle.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: miaox@cn.fujitsu.com
+Content-Type: Text/Plain; charset=utf-8
+Cc: linux-btrfs@vger.kernel.org
+To: Lubos Kolouch <lubos.kolouch@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4C3ECFBB.40006@cn.fujitsu.com>
+In-Reply-To: <i0mp3v$q93$1@dough.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thursday 15 July 2010 11:07:07 Miao Xie wrote:
-> On Thu Jul 15 2010 16:14:31 GMT+0800 (CST), Yan, Zheng wrote:
-> > 2010/7/15 Miao Xie<miaox@cn.fujitsu.com>:
-> >> Hi, everyone
-> >>=20
-> >> I found btrfs will hangup when we run the sync command on my
-> >> x86_64 box.
-> >>=20
-> >> The reproduce steps is following:
-> >> # mkfs.btrfs -s 8192 -l 8192 -n 8192 /dev/sda1
-> >> # mount /dev/sda1 /mnt
-> >> # echo 1234567>  /mnt/aaa
-> >> # sync
-> >> (btrfs hangs up)
-> >>=20
-> >> It seems that the btrfs doesn't support the sectorsize which is
-> >> greater than the page size just like ext2/3/4, though we can use
-> >> mkfs.btrfs to make a filesystem with a big sectorsize. Am I right?
-> >>=20
-> >> If yes, we must do more check in the mkfs.btrfs.
+On Saturday 03 July 2010 09:33:19 Lubos Kolouch wrote:
+> Oystein Viggen, Fri, 02 Jul 2010 08:15:03 +0200:
+> > For btrfs with lots of snapshots, I believe "btrfs device add" of t=
+he
+> > new device followed by "btrfs device remove" of the old one would b=
+e the
+> > most convenient.
 > >=20
-> > yes, btrfs doesn't support the sectorsize>  PAGE_size.
+> > =C3=98ystein
 >=20
-> So we must do more check in the mkfs.btrfs to avoid misuse, and I'll
-> add some check of the sectorsize into the mkfs.btrfs.
+> This solution if very elegant and cool - if you can put the discs int=
+o one
+> computer.
+>=20
+> It does not help too much to copy the files over network and preserve=
+ the
+> snapshots... or can you add like this a network-attached device (sshf=
+s) ?
 
-I don't think that denying of creation of FSs with sectorsize > pagesiz=
-e is a=20
-good idea. A warning would be better:
-
-Warning: The filesystem you are about to create won't be usable on your=
+You could also go the totally cool option (albeit a bit creazy) and use=
 =20
-computer architecture. Do you want to continue? y/n:
+network block devices and have no downtime...
 
-Unless the FS created in such way is unusabe in any circumstances...
-
-> BTW, I sent some patches to the btrfs community recently, but I haven=
-'t
-> received any reply. Could you review them for me? though I have teste=
-d
-> them and everything works well.
->=20
-> [PATCH 1/2] btrfs: restructure try_release_extent_buffer()
-> [PATCH 2/2] btrfs: fix oops when leafsize is greator than nodesize
-> [PATCH] btrfs-progs: fix wrong extent buffer size when reading tree b=
-lock
->=20
-> Thanks
-> Miao Xie
+The overall process will take more time though.
 
 --=20
 Hubert Kario
 QBS - Quality Business Software
-ul. Ksawer=F3w 30/85
+ul. Ksawer=C3=B3w 30/85
 02-656 Warszawa
 POLAND
 tel. +48 (22) 646-61-51, 646-74-24

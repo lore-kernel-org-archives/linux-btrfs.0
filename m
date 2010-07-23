@@ -1,38 +1,59 @@
-From: Bob Copeland <me@bobcopeland.com>
-Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:1353
-Date: Fri, 23 Jul 2010 07:14:55 -0400
-Message-ID: <AANLkTi=ffOv44xziJHTBX0LCUWXqdku30NiHqyTW=AGK@mail.gmail.com>
-References: <201007081627.24654.johannes.hirte@fem.tu-ilmenau.de>
-	<201007152014.52924.johannes.hirte@fem.tu-ilmenau.de>
-	<4C44066A.3080701@cn.fujitsu.com>
-	<201007222007.24574.johannes.hirte@fem.tu-ilmenau.de>
+From: Dan Magenheimer <dan.magenheimer@oracle.com>
+Subject: RE: [PATCH V3 0/8] Cleancache: overview
+Date: Fri, 23 Jul 2010 06:58:03 -0700 (PDT)
+Message-ID: <840b32ff-a303-468e-9d4e-30fc92f629f8@default>
+References: <20100621231809.GA11111@ca-server1.us.oracle.com
+ 4C49468B.40307@vflare.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: miaox@cn.fujitsu.com, Dave Chinner <david@fromorbit.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	zheng.yan@oracle.com, Jens Axboe <axboe@kernel.dk>,
-	linux-fsdevel@vger.kernel.org
-To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <201007222007.24574.johannes.hirte@fem.tu-ilmenau.de>
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>, viro@zeniv.linux.org.uk,
+        adilger@sun.com, tytso@mit.edu, mfasheh@suse.com,
+        Joel Becker
+ <joel.becker@oracle.com>, matthew@wil.cx,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+        ocfs2-devel@oss.oracle.com, linux-mm@kvack.org, jeremy@goop.org,
+        JBeulich@novell.com, Kurt Hackel <kurt.hackel@oracle.com>,
+        npiggin@suse.de, Dave Mccracken <dave.mccracken@oracle.com>,
+        riel@redhat.com, avi@redhat.com, Konrad Wilk <konrad.wilk@oracle.com>
+To: ngupta@vflare.org, Christoph Hellwig <hch@infradead.org>,
+        akpm@linux-foundation.org
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <4C49468B.40307@vflare.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 22, 2010 at 2:07 PM, Johannes Hirte
-<johannes.hirte@fem.tu-ilmenau.de> wrote:
->> Is there anything wrong with your disks or memory?
->> Sometimes the bad memory can break the filesystem. I have met this kind of
->> problem some time ago.
->
-> I don't think that's the case. I've checked the RAM with memtest86+ and got no
-> errors. I got the errors with two different disks, the first one with btrfs the
-> second one now with XFS. Before changing to the second disk, I've run
-> badblocks on it to be sure it has no errors.
+> Since zcache is now one of its use cases, I think the major
+> objection that remains against cleancache is its intrusiveness
+> -- in particular, need to change individual filesystems (even
+> though one liners). Changes below should help avoid these
+> per-fs changes and make it more self contained.
 
-You might also try kmemcheck.  There's a good chance that a bug
-that scribbles random memory shows up as FS corruption.  I have had
-ext4 corruption due to an inotify bug, which kmemcheck found on the
-first try.
+Hi Nitin --
 
--- 
-Bob Copeland %% www.bobcopeland.com
+I think my reply at http://lkml.org/lkml/2010/6/22/202 adequately
+refutes the claim of intrusiveness (43 lines!).  And FAQ #2 near
+the end of the original posting at http://lkml.org/lkml/2010/6/21/411
+explains why the per-fs "opt-in" approach is sensible and necessary.
+
+CHRISTOPH AND ANDREW, if you disagree and your concerns have
+not been resolved, please speak up.
+
+Further, the maintainers of the changed filesystems have acked
+the very minor cleancache patches; and maintainers of other
+filesystems are not affected unless they choose to opt-in,
+whereas these other filesystems MAY be affected with your
+suggested changes to the patches.
+
+So I think it's just a matter of waiting for the Linux wheels
+to turn for a patch that (however lightly) touches a number of
+maintainers' code, though I would very much welcome any
+input on anything I can do to make those wheels turn faster.
+
+Thanks,
+Dan
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>

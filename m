@@ -1,41 +1,41 @@
-From: Christoph Hellwig <hch@infradead.org>
-Subject: Re: [PATCH V3 0/8] Cleancache: overview
-Date: Fri, 23 Jul 2010 10:04:40 -0400
-Message-ID: <20100723140440.GA12423@infradead.org>
-References: <20100621231809.GA11111@ca-server1.us.oracle.com4C49468B.40307@vflare.org>
- <840b32ff-a303-468e-9d4e-30fc92f629f8@default>
+From: Sarath Lakshman <sarathlakshman@slynux.com>
+Subject: Re: Btrfs project ideas
+Date: Fri, 23 Jul 2010 20:12:05 +0530
+Message-ID: <AANLkTimMC84iiLbMmo7+NU+SuGWgk9Pgg6fzwRmJrGQV@mail.gmail.com>
+References: <AANLkTin2AdvUWKnSfqqaZrcotJiTJPjZdHTRiB44j4ZG@mail.gmail.com>
+	<AANLkTin4fL8ZCz8F0XPr8lFs9n7SvzCaOBMoh4X73Bsb@mail.gmail.com>
+	<20100722202752.GV3474@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: ngupta@vflare.org, Christoph Hellwig <hch@infradead.org>,
-	akpm@linux-foundation.org, Chris Mason <chris.mason@oracle.com>,
-	viro@zeniv.linux.org.uk, adilger@sun.com, tytso@mit.edu,
-	mfasheh@suse.com, Joel Becker <joel.becker@oracle.com>,
-	matthew@wil.cx, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	linux-ext4@vger.kernel.org, ocfs2-devel@oss.oracle.com,
-	linux-mm@kvack.org, jeremy@goop.org, JBeulich@novell.com,
-	Kurt Hackel <kurt.hackel@oracle.com>, npiggin@suse.de,
-	Dave Mccracken <dave.mccracken@oracle.com>, riel@redhat.com,
-	avi@redhat.com, Konrad Wilk <konrad.wilk@oracle.com>
-To: Dan Magenheimer <dan.magenheimer@oracle.com>
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <840b32ff-a303-468e-9d4e-30fc92f629f8@default>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>,
+	Sarath Lakshman <sarathlakshman@slynux.com>,
+	linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100722202752.GV3474@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 23, 2010 at 06:58:03AM -0700, Dan Magenheimer wrote:
-> CHRISTOPH AND ANDREW, if you disagree and your concerns have
-> not been resolved, please speak up.
+Hi Chris,
 
-Anything that need modification of a normal non-shared fs is utterly
-broken and you'll get a clear NAK, so the propsal before is a good
-one.  There's a couple more issues like the still weird prototypes,
-e.g. and i_ino might not be enoug to uniquely identify an inode
-on serveral filesystems that use 64-bit inode inode numbers on 32-bit
-systems.  Also making the ops vector global is just a bad idea.
-There is nothing making this sort of caching inherently global.
+Thanks for the response :)
+
+
+> I'd love to see someone pick up the 'find newest files in this FS'
+> feature that I started a while back. =A0I'm headed off to the wonderf=
+ul
+> world of vacation land, but when I get back we can talk it over in
+> detail.
+
+
+It seems that finding newest files is already done. Please do ping
+with some ideas when you are back after vaccation. I would be loving
+to contribute with the project.
 
 --
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+Happy Hacking,
+Sarath Lakshman
+http://www.sarathlakshman.info
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

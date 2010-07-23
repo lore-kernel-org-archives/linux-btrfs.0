@@ -1,52 +1,73 @@
-From: Minchan Kim <minchan.kim@gmail.com>
-Subject: Re: [PATCH V3 0/8] Cleancache: overview
-Date: Fri, 23 Jul 2010 17:17:49 +0900
-Message-ID: <AANLkTi=W4xpz1VP9oPbK3pNY-5aODydzsAhuAWv-1+Vt@mail.gmail.com>
-References: <20100621231809.GA11111@ca-server1.us.oracle.com>
-	<4C49468B.40307@vflare.org>
+From: Daniel J Blueman <daniel.blueman@gmail.com>
+Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:1353
+Date: Fri, 23 Jul 2010 12:02:20 +0100
+Message-ID: <AANLkTi=G-HtjtwqfxH0vkHi8Pf7HQD2GQs_mMeiLYNQH@mail.gmail.com>
+References: <201007081627.24654.johannes.hirte@fem.tu-ilmenau.de>
+	<201007152014.52924.johannes.hirte@fem.tu-ilmenau.de>
+	<4C44066A.3080701@cn.fujitsu.com>
+	<201007222007.24574.johannes.hirte@fem.tu-ilmenau.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Dan Magenheimer <dan.magenheimer@oracle.com>, chris.mason@oracle.com,
-	viro@zeniv.linux.org.uk, akpm@linux-foundation.org, adilger@sun.com,
-	tytso@mit.edu, mfasheh@suse.com, joel.becker@oracle.com, matthew@wil.cx,
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-	ocfs2-devel@oss.oracle.com, linux-mm@kvack.org, jeremy@goop.org,
-	JBeulich@novell.com, kurt.hackel@oracle.com, npiggin@suse.de,
-	dave.mccracken@oracle.com, riel@redhat.com, avi@redhat.com,
-	konrad.wilk@oracle.com
-To: ngupta@vflare.org
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <4C49468B.40307@vflare.org>
+Cc: miaox@cn.fujitsu.com, Dave Chinner <david@fromorbit.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	zheng.yan@oracle.com, Jens Axboe <axboe@kernel.dk>,
+	linux-fsdevel@vger.kernel.org
+To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <201007222007.24574.johannes.hirte@fem.tu-ilmenau.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 23, 2010 at 4:36 PM, Nitin Gupta <ngupta@vflare.org> wrote:
+On 22 July 2010 19:07, Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de=
+> wrote:
+> Am Montag 19 Juli 2010, 10:01:46 schrieb Miao Xie:
+>> On Thu, 15 Jul 2010 20:14:51 +0200, Johannes Hirte wrote:
+>> > Am Donnerstag 15 Juli 2010, 02:11:04 schrieb Dave Chinner:
+>> >> On Wed, Jul 14, 2010 at 05:25:23PM +0200, Johannes Hirte wrote:
+>> >>> Am Donnerstag 08 Juli 2010, 16:31:09 schrieb Chris Mason:
+>> >>> I'm not sure if btrfs is to blame for this error. After the erro=
+rs I
+>> >>> switched to XFS on this system and got now this error:
+>> >>>
+>> >>> ls -l .kde4/share/apps/akregator/data/
+>> >>> ls: cannot access .kde4/share/apps/akregator/data/feeds.opml: St=
+ructure
+>> >>> needs cleaning
+>> >>> total 4
+>> >>> ?????????? ? ? =A0 =A0? =A0 =A0 =A0 =A0? =A0 =A0 =A0 =A0 =A0 =A0=
+? feeds.opml
+>> >>
+>> >> What is the error reported in dmesg when the XFS filesytem shuts =
+down?
+>> >
+>> > Nothing. I double checked the logs. There are only the messages wh=
+en
+>> > mounting the filesystem. No other errors are reported than the
+>> > inaccessible file and the output from xfs_check.
+>>
+>> Is there anything wrong with your disks or memory?
+>> Sometimes the bad memory can break the filesystem. I have met this k=
+ind of
+>> problem some time ago.
 >
-> 2. I think change in btrfs can be avoided by moving cleancache_get_page()
-> from do_mpage_reapage() to filemap_fault() and this should work for all
-> filesystems. See:
->
-> handle_pte_fault() -> do_(non)linear_fault() -> __do_fault()
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
-=A0 =A0 =A0 =A0 =A0 =A0-> vma->vm_ops->fault()
->
-> which is defined as filemap_fault() for all filesystems. If some future
-> filesystem uses its own custom function (why?) then it will have to arran=
-ge for
-> call to cleancache_get_page(), if it wants this feature.
+> I don't think that's the case. I've checked the RAM with memtest86+ a=
+nd got no
+> errors. I got the errors with two different disks, the first one with=
+ btrfs the
+> second one now with XFS. Before changing to the second disk, I've run
+> badblocks on it to be sure it has no errors.
 
-
-filemap fault works only in case of file-backed page which is mapped
-but don't work not-mapped cache page.  So we could miss cache page by
-read system call if we move it into filemap_fault.
-
-
+There are some known-buggy chipsets also. One still around is the
+Nvidia CK804/MCP55, under certain patterns of spatially-local pending
+reads and writes to the memory controller, a 64-byte request would
+occasionally be returned with the wrong offset. I was hitting it with
+some 27-Gbit adapters and managed to capture it on a PCI-e protocol
+analyser. Rsync between network and local disk would hit sometimes
+too.
 --=20
-Kind regards,
-Minchan Kim
-
+Daniel J Blueman
 --
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+To unsubscribe from this list: send the line "unsubscribe linux-fsdevel=
+" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

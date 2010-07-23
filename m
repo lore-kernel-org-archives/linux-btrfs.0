@@ -1,88 +1,41 @@
-From: Nitin Gupta <ngupta@vflare.org>
-Subject: Re: [PATCH V3 0/8] Cleancache: overview
-Date: Sat, 24 Jul 2010 00:06:01 +0530
-Message-ID: <4C49E111.2000106@vflare.org>
-References: <20100621231809.GA11111@ca-server1.us.oracle.com4C49468B.40307@vflare.org> <840b32ff-a303-468e-9d4e-30fc92f629f8@default 20100723140440.GA12423@infradead.org 364c83bd-ccb2-48cc-920d-ffcf9ca7df19@default> <c979fa45-8878-4e40-9060-c3e929eebbab@default>
-Reply-To: ngupta@vflare.org
+From: "K. Richard Pixley" <rich@noir.com>
+Subject: btrfsctl returns bad exit status
+Date: Fri, 23 Jul 2010 13:04:40 -0700
+Message-ID: <4C49F5D8.50803@noir.com>
+References: <4C47513D.1070902@noir.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Christoph Hellwig <hch@infradead.org>, akpm@linux-foundation.org,
-	Chris Mason <chris.mason@oracle.com>, viro@zeniv.linux.org.uk,
-	adilger@sun.com, tytso@mit.edu, mfasheh@suse.com,
-	Joel Becker <joel.becker@oracle.com>, matthew@wil.cx,
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-	ocfs2-devel@oss.oracle.com, linux-mm@kvack.org, jeremy@goop.org,
-	JBeulich@novell.com, Kurt Hackel <kurt.hackel@oracle.com>,
-	npiggin@suse.de, Dave Mccracken <dave.mccracken@oracle.com>,
-	riel@redhat.com, avi@redhat.com,
-	Konrad Wilk <konrad.wilk@oracle.com>
-To: Dan Magenheimer <dan.magenheimer@oracle.com>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <c979fa45-8878-4e40-9060-c3e929eebbab@default>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4C47513D.1070902@noir.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/23/2010 11:07 PM, Dan Magenheimer wrote:
->> From: Dan Magenheimer
->> Subject: RE: [PATCH V3 0/8] Cleancache: overview
->>
->>> From: Christoph Hellwig [mailto:hch@infradead.org]
->>> Subject: Re: [PATCH V3 0/8] Cleancache: overview
->>>
->>> On Fri, Jul 23, 2010 at 06:58:03AM -0700, Dan Magenheimer wrote:
->>>> CHRISTOPH AND ANDREW, if you disagree and your concerns have
->>>> not been resolved, please speak up.
->>
->> Hi Christoph --
->>
->> Thanks very much for the quick (instantaneous?) reply!
->>
->>> Anything that need modification of a normal non-shared fs is utterly
->>> broken and you'll get a clear NAK, so the propsal before is a good
->>> one.
->>
->> Unless/until all filesystems are 100% built on top of VFS,
->> I have to disagree.  Abstractions (e.g. VFS) are never perfect.
-> 
-> After thinking about this some more, I can see a way
-> to enforce "opt-in" in the cleancache backend without
-> any changes to non-generic fs code.   I think it's a horrible
-> hack and we can try it, but I expect fs maintainers
-> would prefer the explicit one-line-patch opt-in.
-> 
-> 1) Cleancache backend maintains a list of "known working"
->    filesystems (those that have been tested).
+Using btrfsctl from ubuntu maverick, (built and running on 
+ubuntu-10.04), I get:
 
-Checks against "known working list" indeed looks horrible.
-Isn't there any way to identify pagecache -> disk I/O boundaries
-which every filesystem obeys? I'm not yet sure but if this is
-doable, then we won't require such hacks.
+rich@eisenhower> btrfsctl -s snap1 /home || echo failed
+operation complete
+Btrfs Btrfs v0.19
+failed
+rich@eisenhower> ls -las snap1
+total 4
+4 drwxr-xr-x 1 root    root    32 2010-07-20 18:25 .
+0 drwxr-xr-x 1 rich    rich  1324 2010-07-21 12:47 ..
+0 drwxr-xr-x 1 checker build   22 2010-07-20 18:21 checker
+0 drwxr-xr-x 1 rich    rich  1322 2010-07-21 12:44 rich
+0 drwxr-xr-x 1 root    root    36 2010-07-21 10:47 za-cb
 
-> 
-> 2) Nitin's proposed changes pass the *sb as a parameter.
->   The string name of the filesystem type is available via
->   sb->s_type->name.  This can be compared against
->   the "known working" list.
->
+This would seem to indicate a non-zero exit status despite the fact that 
+the snapshotting operation appears to have succeeded.  This makes it 
+impossible to programmatically check whether a snapshot was created 
+successfully or not as I will need to explicitly discard the exit status 
+from btrfsctl.
 
-sb->s_magic could also be used, or better if we can somehow
-get rid of these checks  :)
+I get the same results when built from git, except that it identifies 
+itself as "v0.19-16-g075587c".
 
-> Using the sb pointer as a "handle" requires an extra
-> table search on every cleancache get/put/flush,
-> and fs/super.c changes are required for fs unmount
-> notification anyway (e.g. to call cleancache_flush_fs)
-> so I'd prefer to keep the cleancache_poolid addition
-> to the sb.  I'll assume this is OK since this is in generic
-> fs code.
-> 
+I would expect that btrfsctl would return zero exit status when it was 
+capable of doing what it was asked and non-zero exit status only when it 
+could not.
 
-
-I will also try making changes to cleancache so it does not
-touch any fs specific code. Though IMHO one liners to fs-code
-should really be acceptable but unfortunately this doesn't seem
-to be the case.  Maybe generic cleancache will have better
-chances.
-
-Thanks,
-Nitin
+--rich

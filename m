@@ -1,68 +1,59 @@
-From: "K. Richard Pixley" <rich@noir.com>
-Subject: Re: btrfsctl returns bad exit status
-Date: Fri, 23 Jul 2010 13:52:27 -0700
-Message-ID: <4C4A010B.1080505@noir.com>
-References: <4C47513D.1070902@noir.com> <4C49F5D8.50803@noir.com> <-3571512987140721780@unknownmsgid>
+From: Dan Magenheimer <dan.magenheimer@oracle.com>
+Subject: RE: [PATCH V3 0/8] Cleancache: overview
+Date: Fri, 23 Jul 2010 14:17:31 -0700 (PDT)
+Message-ID: <fc254547-5926-4cb9-98e1-7a79f7284e30@default>
+References: <20100621231809.GA11111@ca-server1.us.oracle.com4C49468B.40307@vflare.org>
+ <840b32ff-a303-468e-9d4e-30fc92f629f8@default
+ 20100723140440.GA12423@infradead.org
+ 364c83bd-ccb2-48cc-920d-ffcf9ca7df19@default>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: C Anthony Risinger <anthony@extof.me>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <-3571512987140721780@unknownmsgid>
+Content-Type: text/plain; charset=us-ascii
+Cc: ngupta@vflare.org, akpm@linux-foundation.org,
+        Chris Mason
+ <chris.mason@oracle.com>, viro@zeniv.linux.org.uk,
+        adilger@sun.com, tytso@mit.edu, mfasheh@suse.com,
+        Joel Becker <joel.becker@oracle.com>, matthew@wil.cx,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+        ocfs2-devel@oss.oracle.com, linux-mm@kvack.org, jeremy@goop.org,
+        JBeulich@novell.com, Kurt Hackel <kurt.hackel@oracle.com>,
+        npiggin@suse.de, Dave Mccracken <dave.mccracken@oracle.com>,
+        riel@redhat.com, avi@redhat.com, Konrad Wilk <konrad.wilk@oracle.com>
+To: Christoph Hellwig <hch@infradead.org>
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <364c83bd-ccb2-48cc-920d-ffcf9ca7df19@default>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-  Ah!  Thanks.
+> > On Fri, Jul 23, 2010 at 06:58:03AM -0700, Dan Magenheimer wrote:
+> > > CHRISTOPH AND ANDREW, if you disagree and your concerns have
+> > > not been resolved, please speak up.
+>=20
+> Hi Christoph --
+>=20
+> Thanks very much for the quick (instantaneous?) reply!
+>=20
+> > Anything that need modification of a normal non-shared fs is utterly
+> > broken and you'll get a clear NAK, so the propsal before is a good
+> > one.
+>=20
+> No, the per-fs opt-in is very sensible; and its design is
+> very minimal.
 
-Wiki page needs to be updated then.  It shows btrfsctl and doesn't 
-mention btrfs.
+Not to belabor the point, but maybe the right way to think about
+this is:
 
-This one: https://btrfs.wiki.kernel.org/index.php/Getting_started
+Cleancache is a new optional feature provided by the VFS layer
+that potentially dramatically increases page cache effectiveness
+for many workloads in many environments at a negligible cost.
 
---rich
+Filesystems that are well-behaved and conform to certain restrictions
+can utilize cleancache simply by making a call to cleancache_init_fs
+at mount time.  Unusual, misbehaving, or poorly layered filesystems
+must either add additional hooks and/or undergo extensive additional
+testing... or should just not enable the optional cleancache.
 
-On 20100723 13:06, C Anthony Risinger wrote:
-> Try using "btrfs" tool; btrfsctl is/will be deprecated I think...  and
-> it's better anyway.
->
-> C Anthony [mobile]
->
-> On Jul 23, 2010, at 3:04 PM, "K. Richard Pixley"<rich@noir.com>  wrote:
->
->> Using btrfsctl from ubuntu maverick, (built and running on
->> ubuntu-10.04), I get:
->>
->> rich@eisenhower>  btrfsctl -s snap1 /home || echo failed
->> operation complete
->> Btrfs Btrfs v0.19
->> failed
->> rich@eisenhower>  ls -las snap1
->> total 4
->> 4 drwxr-xr-x 1 root    root    32 2010-07-20 18:25 .
->> 0 drwxr-xr-x 1 rich    rich  1324 2010-07-21 12:47 ..
->> 0 drwxr-xr-x 1 checker build   22 2010-07-20 18:21 checker
->> 0 drwxr-xr-x 1 rich    rich  1322 2010-07-21 12:44 rich
->> 0 drwxr-xr-x 1 root    root    36 2010-07-21 10:47 za-cb
->>
->> This would seem to indicate a non-zero exit status despite the fact
->> that the snapshotting operation appears to have succeeded.  This
->> makes it impossible to programmatically check whether a snapshot was
->> created successfully or not as I will need to explicitly discard the
->> exit status from btrfsctl.
->>
->> I get the same results when built from git, except that it
->> identifies itself as "v0.19-16-g075587c".
->>
->> I would expect that btrfsctl would return zero exit status when it
->> was capable of doing what it was asked and non-zero exit status only
->> when it could not.
->>
->> --rich
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-
->> btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>

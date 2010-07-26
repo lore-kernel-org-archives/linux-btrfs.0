@@ -1,32 +1,34 @@
-From: Oystein Viggen <oysteivi@tihlde.org>
-Subject: Re: Configuring default mount options..
-Date: Mon, 26 Jul 2010 08:08:54 +0200
-Message-ID: <037hkiixl5.fsf@msgid.viggen.net>
-References: <1280105806.3327.4.camel@hardline>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: Kulikov Vasiliy <segooon@gmail.com>
+Subject: [PATCH] btrfs: set task state with schedule_timeout_uninterruptible()
+Date: Mon, 26 Jul 2010 12:27:43 +0400
+Message-ID: <1280132864-8266-1-git-send-email-segooon@gmail.com>
+Cc: Chris Mason <chris.mason@oracle.com>, Tejun Heo <tj@kernel.org>,
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+To: kernel-janitors@vger.kernel.org
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-* ["A. James Lewis"]=20
+worker_loop() uses schedule_timeout() without setting state to
+STATE_(UN)INTERRUPTIBLE. As it is called in cycle without checking of
+pending signals, use schedule_timeout_uninterruptible().
 
-> Maybe there is a way to do this already, but it seems like the
-> filesystem itself should contain preferences for the way it is used
-> under those circumstances.
+Signed-off-by: Kulikov Vasiliy <segooon@gmail.com>
+---
+ fs/btrfs/async-thread.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-There has been talk of supporting per-file (and I assume recursive
-per-directory default) attributes for raid level.  Things like
-encryption and compression could fit well into such a scheme.
-
-I don't believe the code for this is written yet, however.
-
-=D8ystein
---=20
-ssh -c rot13 otherhost
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
+index 7ec1409..54eb070 100644
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+@@ -362,7 +362,7 @@ again:
+ 				 * worker->working is still 1, so nobody
+ 				 * is going to try and wake us up
+ 				 */
+-				schedule_timeout(1);
++				schedule_timeout_uninterruptible(1);
+ 				smp_mb();
+ 				if (!list_empty(&worker->pending) ||
+ 				    !list_empty(&worker->prio_pending))
+-- 
+1.7.0.4

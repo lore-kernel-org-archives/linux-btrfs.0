@@ -1,56 +1,48 @@
-From: "A. James Lewis" <james@fsck.co.uk>
-Subject: Re: Configuring default mount options..
-Date: Mon, 26 Jul 2010 12:27:35 +0100
-Message-ID: <1280143655.3327.22.camel@hardline>
-References: <1280105806.3327.4.camel@hardline>
-	 <AANLkTikNemTBWO8ChQ-XYdP4gp=1zKt5EMyzdzLrxgWq@mail.gmail.com>
-	 <1280107386.3327.8.camel@hardline>
-	 <AANLkTimOC0qyDdv3KgY4p_vcW1YQ+f=ToaS4=81VQh4B@mail.gmail.com>
+From: =?ISO-8859-1?Q?J=E9r=F4me_Poulin?= <jeromepoulin@gmail.com>
+Subject: Re: File cloning across subvolumes with BTRFS_IOC_CLONE ioctl
+Date: Mon, 26 Jul 2010 08:55:09 -0400
+Message-ID: <AANLkTi=jfxhiX71Hbug2REhRRXyJ8MDSxo=4LuFmtaOD@mail.gmail.com>
+References: <20100720053934.GA14402@epicurus>
+	<AANLkTil_bqyOwBIlkdZGyn1HAVKBMuEu4cem2UAhei3A@mail.gmail.com>
+	<20100721153224.GY3133@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>,
+	=?ISO-8859-1?Q?J=E9r=F4me_Poulin?= <jeromepoulin@gmail.com>,
+	redneb <redneb@gmx.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimOC0qyDdv3KgY4p_vcW1YQ+f=ToaS4=81VQh4B@mail.gmail.com>
+In-Reply-To: <20100721153224.GY3133@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
->=20
-> From: Oystein Viggen <oysteivi <at> tihlde.org>
-> Subject: Re: Configuring default mount options..
-> Newsgroups: gmane.comp.file-systems.btrfs
-> Date: 2010-07-26 06:08:54 GMT (5 hours and 4 minutes ago)
->=20
-> * ["A. James Lewis"]=20
->=20
-> > Maybe there is a way to do this already, but it seems like the
-> > filesystem itself should contain preferences for the way it is used
-> > under those circumstances.
->=20
-> There has been talk of supporting per-file (and I assume recursive
-> per-directory default) attributes for raid level.  Things like
-> encryption and compression could fit well into such a scheme.
->=20
-That's a nice solution, particularly for encryption... especially once =
-the GUI file managers are able to indicate the settings.... It would se=
-em to be necessary to allow these parameters to be set in the root, but=
- otherwise nice.
+After pulling the new changes, I tried to do the cp --reflink=3Dalways
+and still get files with no data in it.
+cp --reflink=3Dalways on different subvolume: http://pastebin.com/zutMP=
+e1h
+ls -lisa on source: http://pastebin.com/8BU2Xyr5
+ls -lisa on destination after trying to copy: http://pastebin.com/EPV70=
+cD3
 
-I'm not sure if it negates the value of having default "preferences" st=
-ored somwhere... certainly it would take longer to implement, but maybe=
- the default parameters for all these settings are simply equivalent to=
- whatever is defined in the root of each filesystem... so really one so=
-lution can be a subset of the other.
+However, copying on the same subvolume now works perfectly, so I guess
+this is fixed.
 
->=20
-> I don't believe the code for this is written yet, however.
->=20
-> =C3=98ystein
-> --=20
-> ssh -c rot13 otherhost
->=20
->=20
-A. James Lewis
-
-
+On Wed, Jul 21, 2010 at 11:32 AM, Chris Mason <chris.mason@oracle.com> =
+wrote:
+> On Wed, Jul 21, 2010 at 11:11:13AM -0400, J=E9r=F4me Poulin wrote:
+>> I've got the same problem, and that post clearly seems to say it is =
+possible.
+>> cp --reflink=3Dalways source subvolume1/ =A0 gives me:
+>> cp: failed to clone `xxxx': Invalid cross-device link
+>>
+>> Even on the same subvolume I get 10% of the files telling me the sam=
+e.
+>>
+>> btrfs-bcp copy the files in its integrity.
+>
+> Ok, this is a bug in the ioctl. =A0I'll fix it up.
+>
+> -chris
+>
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

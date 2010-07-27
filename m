@@ -1,88 +1,84 @@
-From: Vasiliy Kulikov <segooon@gmail.com>
-Subject: [PATCH v2] btrfs: set task state with
- schedule_timeout_uninterruptible()
-Date: Tue, 27 Jul 2010 21:46:53 +0400
-Message-ID: <20100727174653.GA21048@albatros>
-References: <1280132864-8266-1-git-send-email-segooon@gmail.com>
- <4C4E5560.9060905@cn.fujitsu.com>
+From: Dave Cundiff <syshackmin@gmail.com>
+Subject: Re: Intermittent no space errors
+Date: Tue, 27 Jul 2010 16:30:03 -0400
+Message-ID: <AANLkTimir3SMbevD_PCXOUQgda-3BkiAE01cYcAMz_BR@mail.gmail.com>
+References: <AANLkTik_Dbk7cyS6FR0G9r-MFYq1bCCmbJ-HyHKgpUBr@mail.gmail.com>
+	<AANLkTimVKtyPHi3zadx66i0dbPKzF4CbGJT=OEukLM6R@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: kernel-janitors@vger.kernel.org,
-	Chris Mason <chris.mason@oracle.com>,
-	Tejun Heo <tj@kernel.org>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-To: Miao Xie <miaox@cn.fujitsu.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4C4E5560.9060905@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTimVKtyPHi3zadx66i0dbPKzF4CbGJT=OEukLM6R@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-schedule_timeout() is used without setting state to
-STATE_(UN)INTERRUPTIBLE. As it is called without checking of pending
-signals, use schedule_timeout_uninterruptible() instead.
+Hello,
 
-Signed-off-by: Kulikov Vasiliy <segooon@gmail.com>
----
- fs/btrfs/async-thread.c |    2 +-
- fs/btrfs/extent-tree.c  |    6 +++---
- fs/btrfs/ordered-data.c |    2 +-
- 3 files changed, 5 insertions(+), 5 deletions(-)
+I installed the git repo kernel and added some debug to the ENOSPC
+returns. Unfortunately its still failing. If it helps any its bombing
+out in btrfs_check_data_free_space() in extent-tree.c. Returning on
+the ENOSPC at line 2959.
 
-diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
-index 7ec1409..54eb070 100644
---- a/fs/btrfs/async-thread.c
-+++ b/fs/btrfs/async-thread.c
-@@ -362,7 +362,7 @@ again:
- 				 * worker->working is still 1, so nobody
- 				 * is going to try and wake us up
- 				 */
--				schedule_timeout(1);
-+				schedule_timeout_uninterruptible(1);
- 				smp_mb();
- 				if (!list_empty(&worker->pending) ||
- 				    !list_empty(&worker->prio_pending))
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 32d0940..5b55a20 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -365,7 +365,7 @@ again:
- 			up_read(&fs_info->extent_commit_sem);
- 			mutex_unlock(&caching_ctl->mutex);
- 			if (btrfs_transaction_in_commit(fs_info))
--				schedule_timeout(1);
-+				schedule_timeout_uninterruptible(1);
- 			else
- 				cond_resched();
- 			goto again;
-@@ -2237,7 +2237,7 @@ again:
- 			node = rb_next(node);
- 		}
- 		spin_unlock(&delayed_refs->lock);
--		schedule_timeout(1);
-+		schedule_timeout_uninterruptible(1);
- 		goto again;
- 	}
- out:
-@@ -3686,7 +3686,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 	int ret;
- 
- 	if (btrfs_transaction_in_commit(root->fs_info))
--		schedule_timeout(1);
-+		schedule_timeout_uninterruptible(1);
- 
- 	num_bytes = ALIGN(num_bytes, root->sectorsize);
- again:
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index e56c72b..9ff49e5 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -576,7 +576,7 @@ again:
- 	}
- 	if (found || test_range_bit(&BTRFS_I(inode)->io_tree, start, orig_end,
- 			   EXTENT_DELALLOC, 0, NULL)) {
--		schedule_timeout(1);
-+		schedule_timeout_uninterruptible(1);
- 		goto again;
- 	}
- 	return 0;
--- 
-1.7.0.4
+Unfortunately that is the extent of my ability to debug a filesystem. :=
+P
+
+Thanks,
+
+On Tue, Jul 27, 2010 at 9:19 AM, Yan, Zheng <yanzheng@21cn.com> wrote:
+> On Tue, Jul 27, 2010 at 5:09 AM, Dave Cundiff <syshackmin@gmail.com> =
+wrote:
+>> Hello,
+>>
+>> On 2.6.35-rc5 I'm seeing some weird behavior under heavy IO loads. I
+>> have a backup process that fires up several rsync processes. These
+>> mirror several dozen servers to individual sub-volumes. Everyday I
+>> snapshot each sub-volume and rsync over it.
+>>
+>> The problem I'm seeing is my rsync processes are failing randomly wi=
+th
+>> "No space left on device". This is a 6 Terabyte volume with plenty o=
+f
+>> free space.
+>>
+>> Mount options:
+>> /dev/sdb on /backups type btrfs (rw,max_inline=3D0,compress)
+>>
+>> [root@rsync1 ~]# btrfs filesystem df /backups/
+>> Data: total=3D1.88TB, used=3D1.88TB
+>> Metadata: total=3D43.38GB, used=3D32.06GB
+>> System: total=3D12.00MB, used=3D260.00KB
+>>
+>> [root@rsync1 ~]# df /dev/sdb
+>> Filesystem =A0 =A0 =A0 =A0 =A0 1K-blocks =A0 =A0 =A0Used Available U=
+se% Mounted on
+>> /dev/sdb =A0 =A0 =A0 =A0 =A0 =A0 5781249024 2087273084 3693975940 =A0=
+37% /backups
+>>
+>> They don't all fail at once. Normally I have 4-5 running at a time a=
+nd
+>> 1 or 2 will drop out with a no space error. The rest continue on. I'=
+ve
+>> noticed it will generally occur on ones that are in the middle of
+>> transferring a very large file. If I lighten the load to one rsync a=
+t
+>> a time it appears to happen less frequently.
+>>
+>> Any known issues I should be aware of?
+>>
+>
+> Thank you for reporting this. I will dig in.
+>
+> Yan, Zheng
+>
+
+
+
+--=20
+Dave Cundiff
+System Administrator
+A2Hosting, Inc
+http://www.a2hosting.com
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

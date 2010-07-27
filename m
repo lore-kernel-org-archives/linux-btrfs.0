@@ -1,106 +1,119 @@
-From: Joe Dunn <me@joedunn.com>
-Subject: Btrfs Errors in Fedora 13 ESXi Based Virtual Machine
-Date: Tue, 27 Jul 2010 15:40:02 -0500
-Message-ID: <AANLkTinweLL6AOxBLjbd9JnqyeCAp7GKPv_yXf+W8hrW@mail.gmail.com>
-References: <AANLkTimEjiN4hWhjE7n_ngO3OROCgoZ6v5Tdt_VNnVnS@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimEjiN4hWhjE7n_ngO3OROCgoZ6v5Tdt_VNnVnS@mail.gmail.com>
+From: bchociej@gmail.com
+Subject: [RFC PATCH 0/5] Btrfs: Add hot data tracking functionality
+Date: Tue, 27 Jul 2010 17:00:18 -0500
+Message-ID: <1280268023-18408-1-git-send-email-bchociej@gmail.com>
+Cc: linux-fsdevel@vger.kernel.org, cmm@us.ibm.com, bcchocie@us.ibm.com,
+	mrlupfer@us.ibm.com, crscott@us.ibm.com,
+	linux-kernel@vger.kernel.org
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Here are some of the errors I have collected in my F13 virt machine
-using brtfs. If there is anything else you need just ask and I will
-send along.
+INTRODUCTION:
 
-Jul 18 23:13:50 server01 kernel: btrfs csum failed ino 507592 off
-389177344 csum 3166690140 private 2898406899
-Jul 18 23:13:51 server01 kernel: btrfs csum failed ino 507592 off
-389177344 csum 3166690140 private 2898406899
-Jul 18 23:13:51 server01 kernel: btrfs csum failed ino 507592 off
-389177344 csum 3166690140 private 2898406899
-Jul 18 23:13:51 server01 kernel: btrfs csum failed ino 507592 off
-389177344 csum 3166690140 private 2898406899
-Jul 18 23:13:51 server01 kernel: btrfs csum failed ino 507592 off
-389177344 csum 3166690140 private 2898406899
-Jul 18 23:13:51 server01 kernel: btrfs csum failed ino 507592 off
-389177344 csum 3166690140 private 2898406899
-Jul 18 23:13:51 server01 kernel: btrfs csum failed ino 507592 off
-389177344 csum 3166690140 private 2898406899
-Jul 18 23:13:51 server01 kernel: btrfs csum failed ino 507592 off
-389177344 csum 3166690140 private 2898406899
+This patch series adds experimental support for tracking data
+temperature in Btrfs. Essentially, this means maintaining some key
+stats (like number of reads/writes, last read/write time, frequency of
+reads/writes), then distilling those numbers down to a single
+"temperature" value that reflects what data is "hot."
 
-Jul 24 01:41:03 server01 kernel: btrfs csum failed ino 507592 off
-389177344 csum 3166690140 private 2898406899
-Jul 24 01:41:03 server01 kernel: btrfs csum failed ino 507592 off
-389177344 csum 3166690140 private 2898406899
-Jul 24 01:41:03 server01 kernel: btrfs csum failed ino 507592 off
-389177344 csum 3166690140 private 2898406899
-Jul 24 01:41:03 server01 kernel: btrfs csum failed ino 507592 off
-389177344 csum 3166690140 private 2898406899
-Jul 24 01:41:03 server01 kernel: btrfs csum failed ino 507592 off
-389177344 csum 3166690140 private 2898406899
-Jul 24 01:41:03 server01 kernel: btrfs csum failed ino 507592 off
-389177344 csum 3166690140 private 2898406899
-Jul 24 01:42:37 server01 kernel: btrfs csum failed ino 507592 off
-389177344 csum 3166690140 private 2898406899
-Jul 24 01:42:37 server01 kernel: btrfs csum failed ino 507592 off
-389177344 csum 3166690140 private 2898406899
-Jul 24 01:42:37 server01 kernel: btrfs csum failed ino 507592 off
-389177344 csum 3166690140 private 2898406899
-Jul 24 01:42:37 server01 kernel: btrfs csum failed ino 507592 off
-389177344 csum 3166690140 private 2898406899
+The long-term goal of these patches, as discussed in the Motivation
+section at the end of this message, is to enable Btrfs to perform
+automagic relocation of hot data to fast media like SSD. This goal has
+been motivated by the Project Ideas page on the Btrfs wiki.
 
-Jul 24 02:05:10 server01 kernel: Call Trace:
-Jul 24 02:05:10 server01 kernel: [<ffffffffa008bccf>] ?
-alloc_extent_state+0x16/0x54 [btrfs]
-Jul 24 02:05:10 server01 kernel: [<ffffffff8106bbd4>] ? ktime_get_ts+0xad/0xba
-Jul 24 02:05:10 server01 kernel: [<ffffffffa020537c>] ?
-nfs_wait_bit_uninterruptible+0x0/0xd [nfs]
-Jul 24 02:05:10 server01 kernel: [<ffffffff81428b04>] io_schedule+0x6e/0xb0
-Jul 24 02:05:10 server01 kernel: [<ffffffffa0205385>]
-nfs_wait_bit_uninterruptible+0x9/0xd [nfs]
-Jul 24 02:05:10 server01 kernel: [<ffffffff81429040>] __wait_on_bit+0x43/0x76
-Jul 24 02:05:10 server01 kernel: [<ffffffff811fe623>] ? __lookup_tag+0xbd/0x12d
-Jul 24 02:05:10 server01 kernel: [<ffffffff814290dc>]
-out_of_line_wait_on_bit+0x69/0x74
-Jul 24 02:05:10 server01 kernel: [<ffffffffa020537c>] ?
-nfs_wait_bit_uninterruptible+0x0/0xd [nfs]
-Jul 24 02:05:10 server01 kernel: [<ffffffff810641f3>] ?
-wake_bit_function+0x0/0x2e
-Jul 24 02:05:10 server01 kernel: [<ffffffffa020537a>]
-nfs_wait_on_request+0x23/0x25 [nfs]
-Jul 24 02:05:10 server01 kernel: [<ffffffffa020987f>]
-nfs_sync_mapping_wait+0xf1/0x215 [nfs]
-Jul 24 02:05:10 server01 kernel: [<ffffffffa0209a35>]
-nfs_wb_page+0x92/0xc2 [nfs]
-Jul 24 02:05:10 server01 kernel: [<ffffffffa01fbfdd>]
-nfs_release_page+0x45/0x5f [nfs]
-Jul 24 02:05:10 server01 kernel: [<ffffffff810bfe36>]
-try_to_release_page+0x2f/0x38
-Jul 24 02:05:10 server01 kernel: [<ffffffff810cb7b3>]
-shrink_page_list+0x2fb/0x472
-Jul 24 02:05:10 server01 kernel: [<ffffffff810cbcbe>]
-shrink_inactive_list+0x394/0x675
-Jul 24 02:05:10 server01 kernel: [<ffffffff810cc2f7>] shrink_zone+0x358/0x40c
-Jul 24 02:05:10 server01 kernel: [<ffffffff8106bbd4>] ? ktime_get_ts+0xad/0xba
-Jul 24 02:05:10 server01 kernel: [<ffffffff810cc5b9>]
-do_try_to_free_pages+0x20e/0x381
-Jul 24 02:05:10 server01 kernel: [<ffffffff810cc8ce>]
-try_to_free_pages+0x6a/0x6c
-Jul 24 02:05:10 server01 kernel: [<ffffffff810ca7ae>] ?
-isolate_pages_global+0x0/0x1f2
-Jul 24 02:05:10 server01 kernel: [<ffffffff810c6bc1>]
-__alloc_pages_nodemask+0x3e6/0x630
-Jul 24 02:05:10 server01 kernel: [<ffffffff810ecfd0>]
-alloc_pages_current+0x90/0x99
-Jul 24 02:05:10 server01 kernel: [<ffffffff810c5d00>] __get_free_pages+0x9/0x46
-Jul 24 02:05:10 server01 kernel: [<ffffffff810492b1>] copy_process+0xd4/0x1299
-Jul 24 02:05:10 server01 kernel: [<ffffffff8104a5dc>] do_fork+0x166/0x362
-Jul 24 02:05:10 server01 kernel: [<ffffffff810ff570>] ? fd_install+0x31/0x5e
-Jul 24 02:05:10 server01 kernel: [<ffffffff81109057>] ? path_put+0x1d/0x22
-Jul 24 02:05:10 server01 kernel: [<ffffffff81010c91>] sys_clone+0x23/0x25
-Jul 24 02:05:10 server01 kernel: [<ffffffff81009e23>] stub_clone+0x13/0x20
-Jul 24 02:05:10 server01 kernel: [<ffffffff81009b02>] ?
-system_call_fastpath+0x16/0x1b
+Of course, users are warned not to run this code outside of development
+environments. These patches are EXPERIMENTAL, and as such they might
+eat your data and/or memory.
+
+
+MOTIVATION:
+
+The overall goal of enabling hot data relocation to SSD has been
+motivated by the Project Ideas page on the Btrfs wiki at
+https://btrfs.wiki.kernel.org/index.php/Project_ideas. It is hoped that
+this initial patchset will eventually mature into a usable hybrid
+storage feature set for Btrfs.
+
+This is essentially the traditional cache argument: SSD is fast and
+expensive; HDD is cheap but slow. ZFS, for example, can already take
+advantage of SSD caching. Btrfs should also be able to take advantage
+of hybrid storage without any broad, sweeping changes to existing code.
+
+With Btrfs's COW approach, an external cache (where data is *moved* to
+SSD, rather than just cached there) makes a lot of sense. Though these
+patches don't enable any relocation yet, they do lay an essential
+foundation for enabling that functionality in the near future. We plan
+to roll out an additional patchset introducing some of the automatic
+migration functionality in the next few weeks.
+
+
+SUMMARY:
+
+- Hooks in existing Btrfs functions to track data access frequency
+  (btrfs_direct_IO, btrfs_readpages, and extent_write_cache_pages)
+
+- New rbtrees for tracking access frequency of inodes and sub-file
+  ranges (hotdata_map.c)
+
+- A hash list for indexing data by its temperature (hotdata_hash.c)
+
+- A debugfs interface for dumping data from the rbtrees (debugfs.c)
+
+- A foundation for relocating data to faster media based on temperature
+  (future patchset)
+
+- Mount options for enabling temperature tracking (-o hotdatatrack,
+  -o hotdatamove; move implies track; both default to disabled)
+
+- An ioctl to retrieve the frequency information collected for a certain
+  file
+
+- Ioctls to enable/disable frequency tracking per inode.
+
+
+DIFFSTAT:
+
+ fs/btrfs/Makefile       |    5 +-
+ fs/btrfs/ctree.h        |   42 +++
+ fs/btrfs/debugfs.c      |  500 +++++++++++++++++++++++++++++++++++
+ fs/btrfs/debugfs.h      |   57 ++++
+ fs/btrfs/disk-io.c      |   29 ++
+ fs/btrfs/extent_io.c    |   18 ++
+ fs/btrfs/hotdata_hash.c |  111 ++++++++
+ fs/btrfs/hotdata_hash.h |   89 +++++++
+ fs/btrfs/hotdata_map.c  |  660 +++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/hotdata_map.h  |  118 +++++++++
+ fs/btrfs/inode.c        |   29 ++-
+ fs/btrfs/ioctl.c        |  146 +++++++++++-
+ fs/btrfs/ioctl.h        |   21 ++
+ fs/btrfs/super.c        |   48 ++++-
+ 14 files changed, 1867 insertions(+), 6 deletions(-)
+
+
+IMPLEMENTATION (in a nutshell):
+
+Hooks have been added to various functions (btrfs_writepage(s),
+btrfs_readpages, btrfs_direct_IO, and extent_write_cache_pages) in
+order to track data access patterns. Each of these hooks calls a new
+function, btrfs_update_freqs, that records each access to an inode,
+possibly including some sub-file-level information as well. A data
+structure containing some various frequency metrics gets updated with
+the latest access information.
+
+>From there, a hash list takes over the job of figuring out a total
+"temperature" value for the data and indexing that temperature for fast
+lookup in the future. The function that does the temperature
+distilliation is rather sensitive and can be tuned/tweaked by altering
+various #defined values in hotdata_hash.h.
+
+Aside from the core functionality, there is a debugfs interface to spit
+out some of the data that is collected, and ioctls are also introduced
+to manipulate the new functionality on a per-inode basis.
+
+
+Signed-off-by: Ben Chociej <bcchocie@us.ibm.com>
+Signed-off-by: Matt Lupfer <mrlupfer@us.ibm.com>
+Signed-off-by: Conor Scott <crscott@us.ibm.com>
+Reviewed-by: Mingming Cao <cmm@us.ibm.com>
+Reviewed-by: Steve French <sfrench@us.ibm.com>

@@ -1,23 +1,32 @@
 From: bchociej@gmail.com
-Subject: [RFC PATCH 4/5] Btrfs: Add debugfs interface for hot data stats
-Date: Tue, 27 Jul 2010 17:00:22 -0500
-Message-ID: <1280268023-18408-5-git-send-email-bchociej@gmail.com>
+Subject: [RFC PATCH 2/5] Btrfs: Add data structures for hot data tracking
+Date: Tue, 27 Jul 2010 17:00:20 -0500
+Message-ID: <1280268023-18408-3-git-send-email-bchociej@gmail.com>
 References: <1280268023-18408-1-git-send-email-bchociej@gmail.com>
 Cc: linux-fsdevel@vger.kernel.org, cmm@us.ibm.com, bcchocie@us.ibm.com,
 	mrlupfer@us.ibm.com, crscott@us.ibm.com,
 	linux-kernel@vger.kernel.org
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 In-Reply-To: <1280268023-18408-1-git-send-email-bchociej@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Ben Chociej <bcchocie@us.ibm.com>
 
-Adds a ./btrfs_data/<device_name>/ directory in the debugfs directory
-for each volume. The directory contains two files. The first,
-`inode_data', contains the heat information for inodes that have been
-brought into the hot data map structures. The second, `range_data',
-contains similar information about subfile ranges.
+Adds hot_inode_tree and hot_range_tree structs to keep track of
+frequently accessed files and ranges within files. Trees contain
+hot_{inode,range}_items representing those files and ranges, each of
+which contains a btrfs_freq_data struct with its frequency of access
+metrics (number of {reads, writes}, last {read,write} time, frequency of
+{reads,writes}.
+
+Having these trees means that Btrfs can quickly determine the
+temperature of some data by doing some calculations on the
+btrfs_freq_data struct that hangs off of the tree item.
+
+Also, since it isn't entirely obvious, the "frequency" or reads or
+writes is determined by taking a kind of generalized average of the last
+few (2^N for some tunable N) reads or writes.
 
 Signed-off-by: Ben Chociej <bcchocie@us.ibm.com>
 Signed-off-by: Matt Lupfer <mrlupfer@us.ibm.com>
@@ -25,581 +34,801 @@ Signed-off-by: Conor Scott <crscott@us.ibm.com>
 Reviewed-by: Mingming Cao <cmm@us.ibm.com>
 Reviewed-by: Steve French <sfrench@us.ibm.com>
 ---
- fs/btrfs/debugfs.c |  500 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/debugfs.h |   57 ++++++
- 2 files changed, 557 insertions(+), 0 deletions(-)
- create mode 100644 fs/btrfs/debugfs.c
- create mode 100644 fs/btrfs/debugfs.h
+ fs/btrfs/hotdata_map.c |  660 ++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/hotdata_map.h |  118 +++++++++
+ 2 files changed, 778 insertions(+), 0 deletions(-)
+ create mode 100644 fs/btrfs/hotdata_map.c
+ create mode 100644 fs/btrfs/hotdata_map.h
 
-diff --git a/fs/btrfs/debugfs.c b/fs/btrfs/debugfs.c
+diff --git a/fs/btrfs/hotdata_map.c b/fs/btrfs/hotdata_map.c
 new file mode 100644
-index 0000000..a0e7bb7
+index 0000000..77a560e
 --- /dev/null
-+++ b/fs/btrfs/debugfs.c
-@@ -0,0 +1,500 @@
-+#include <linux/debugfs.h>
-+#include <linux/fs.h>
++++ b/fs/btrfs/hotdata_map.c
+@@ -0,0 +1,660 @@
++#include <linux/err.h>
++#include <linux/slab.h>
 +#include <linux/module.h>
-+#include <linux/types.h>
-+#include <linux/vmalloc.h>
-+#include <linux/limits.h>
++#include <linux/spinlock.h>
++#include <linux/hardirq.h>
 +#include "ctree.h"
 +#include "hotdata_map.h"
 +#include "hotdata_hash.h"
-+#include "debugfs.h"
++#include "btrfs_inode.h"
 +
-+/*
-+ * debugfs.c contains the code to interface with the btrfs debugfs.
-+ * The debugfs outputs range- and file-level access frequency
-+ * statistics for each mounted volume.
-+ */
++/* kmem_cache pointers for slab caches */
++static struct kmem_cache *hot_inode_item_cache;
++static struct kmem_cache *hot_range_item_cache;
 +
-+static int copy_msg_to_log(struct debugfs_vol_data *data, char *msg, int len)
++struct hot_inode_item *btrfs_update_inode_freq(struct btrfs_inode *inode,
++					       int create);
++struct hot_range_item *btrfs_update_range_freq(struct hot_inode_item *he,
++					       u64 off, u64 len, int create,
++					       struct btrfs_root *root);
++/* init hot_inode_item kmem cache */
++int __init hot_inode_item_init(void)
 +{
-+	struct lstring *debugfs_log = data->debugfs_log;
-+	uint new_log_alloc_size;
-+	char *new_log;
-+
-+	if (len >= data->log_alloc_size - debugfs_log->len) {
-+		/* Not enough room in the log buffer for the new message. */
-+		/* Allocate a bigger buffer. */
-+		new_log_alloc_size = data->log_alloc_size + LOG_PAGE_SIZE;
-+		new_log = vmalloc(new_log_alloc_size);
-+
-+		if (new_log) {
-+			memcpy(new_log, debugfs_log->str,
-+				debugfs_log->len);
-+			memset(new_log + debugfs_log->len, 0,
-+				new_log_alloc_size - debugfs_log->len);
-+			vfree(debugfs_log->str);
-+			debugfs_log->str = new_log;
-+			data->log_alloc_size = new_log_alloc_size;
-+		} else {
-+			WARN_ON(1);
-+			if (data->log_alloc_size - debugfs_log->len) {
-+				#define err_msg "No more memory!\n"
-+				strlcpy(debugfs_log->str +
-+					debugfs_log->len,
-+					err_msg, data->log_alloc_size -
-+					debugfs_log->len);
-+				debugfs_log->len +=
-+					min((typeof(debugfs_log->len))
-+					sizeof(err_msg),
-+					((typeof(debugfs_log->len))
-+					data->log_alloc_size -
-+					debugfs_log->len));
-+			}
-+			return 0;
-+		}
-+	}
-+
-+	memcpy(debugfs_log->str + debugfs_log->len,
-+		data->log_work_buff, len);
-+	debugfs_log->len += (unsigned long) len;
-+
-+	return len;
-+}
-+
-+/* Returns the number of bytes written to the log. */
-+static int debugfs_log(struct debugfs_vol_data *data, const char *fmt, ...)
-+{
-+	struct lstring *debugfs_log = data->debugfs_log;
-+	va_list args;
-+	int len;
-+
-+	if (debugfs_log->str == NULL)
-+		return -1;
-+
-+	spin_lock(&data->log_lock);
-+
-+	va_start(args, fmt);
-+	len = vsnprintf(data->log_work_buff, sizeof(data->log_work_buff), fmt,
-+		args);
-+	va_end(args);
-+
-+	if (len >= sizeof(data->log_work_buff)) {
-+		#define truncate_msg "The next message has been truncated.\n"
-+		copy_msg_to_log(data, truncate_msg, sizeof(truncate_msg));
-+	}
-+
-+	len = copy_msg_to_log(data, data->log_work_buff, len);
-+	spin_unlock(&data->log_lock);
-+
-+	return len;
-+}
-+
-+/* initialize a log corresponding to a btrfs volume */
-+static int debugfs_log_init(struct debugfs_vol_data *data)
-+{
-+	int err = 0;
-+	struct lstring *debugfs_log = data->debugfs_log;
-+
-+	spin_lock(&data->log_lock);
-+	debugfs_log->str = vmalloc(INIT_LOG_ALLOC_SIZE);
-+
-+	if (debugfs_log->str) {
-+		memset(debugfs_log->str, 0, INIT_LOG_ALLOC_SIZE);
-+		data->log_alloc_size = INIT_LOG_ALLOC_SIZE;
-+	} else {
-+		err = -ENOMEM;
-+	}
-+
-+	spin_unlock(&data->log_lock);
-+	return err;
-+}
-+
-+/* free a log corresponding to a btrfs volume */
-+static void debugfs_log_exit(struct debugfs_vol_data *data)
-+{
-+	struct lstring *debugfs_log = data->debugfs_log;
-+	spin_lock(&data->log_lock);
-+	vfree(debugfs_log->str);
-+	debugfs_log->str = NULL;
-+	debugfs_log->len = 0;
-+	spin_unlock(&data->log_lock);
-+}
-+
-+/* fops to override for printing range data */
-+static const struct file_operations btrfs_debugfs_range_fops = {
-+	.read	= __btrfs_debugfs_range_read,
-+	.open	= __btrfs_debugfs_open,
-+};
-+
-+/* fops to override for printing inode data */
-+static const struct file_operations btrfs_debugfs_inode_fops = {
-+	.read	= __btrfs_debugfs_inode_read,
-+	.open	= __btrfs_debugfs_open,
-+};
-+
-+/* initialize debugfs for btrfs at module init */
-+int btrfs_init_debugfs(void)
-+{
-+	debugfs_root_dentry = debugfs_create_dir(DEBUGFS_ROOT_NAME, NULL);
-+	/*init list of debugfs data list */
-+	INIT_LIST_HEAD(&debugfs_vol_data_list);
-+	/*init lock to list of debugfs data list */
-+	spin_lock_init(&data_list_lock);
-+	if (!debugfs_root_dentry)
-+		goto debugfs_error;
-+	return 0;
-+
-+debugfs_error:
-+	return -EIO;
-+}
-+
-+/*
-+ * on each volume mount, initialize the debugfs dentries and associated
-+ * structures (debugfs_vol_data and debugfs_log)
-+ */
-+int btrfs_init_debugfs_volume(const char *uuid, struct super_block *sb)
-+{
-+	struct dentry *debugfs_volume_entry = NULL;
-+	struct dentry *debugfs_range_entry = NULL;
-+	struct dentry *debugfs_inode_entry = NULL;
-+	struct debugfs_vol_data *range_data = NULL;
-+	struct debugfs_vol_data *inode_data = NULL;
-+	size_t dev_name_length = strlen(uuid);
-+	char dev[NAME_MAX];
-+
-+	if (!debugfs_root_dentry)
-+		goto debugfs_error;
-+
-+	/* create debugfs folder for this volume by mounted dev name */
-+	memcpy(dev, uuid + DEV_NAME_CHOP, dev_name_length -
-+		DEV_NAME_CHOP + 1);
-+	debugfs_volume_entry = debugfs_create_dir(dev, debugfs_root_dentry);
-+
-+	if (!debugfs_volume_entry)
-+		goto debugfs_error;
-+
-+	/* malloc and initialize debugfs_vol_data for range_data */
-+	range_data = kmalloc(sizeof(struct debugfs_vol_data),
-+		GFP_KERNEL | GFP_NOFS);
-+	memset(range_data, 0, sizeof(struct debugfs_vol_data));
-+	range_data->debugfs_log = NULL;
-+	range_data->sb = sb;
-+	spin_lock_init(&range_data->log_lock);
-+	range_data->log_alloc_size = 0;
-+
-+	/* malloc and initialize debugfs_vol_data for range_data */
-+	inode_data = kmalloc(sizeof(struct debugfs_vol_data),
-+		GFP_KERNEL | GFP_NOFS);
-+	memset(inode_data, 0, sizeof(struct debugfs_vol_data));
-+	inode_data->debugfs_log = NULL;
-+	inode_data->sb = sb;
-+	spin_lock_init(&inode_data->log_lock);
-+	inode_data->log_alloc_size = 0;
-+
-+	/* add debugfs_vol_data for inode data and range data for
-+	 * volume to list */
-+	range_data->de = debugfs_volume_entry;
-+	inode_data->de = debugfs_volume_entry;
-+	spin_lock(&data_list_lock);
-+	list_add(&range_data->node, &debugfs_vol_data_list);
-+	list_add(&inode_data->node, &debugfs_vol_data_list);
-+	spin_unlock(&data_list_lock);
-+
-+	/* create debugfs range_data file */
-+	debugfs_range_entry = debugfs_create_file("range_data",
-+			   S_IFREG | S_IRUSR | S_IWUSR |
-+			   S_IRUGO,
-+			   debugfs_volume_entry,
-+			   (void *) range_data,
-+			   &btrfs_debugfs_range_fops);
-+	if (!debugfs_range_entry)
-+		goto debugfs_error;
-+
-+	/* create debugfs inode_data file */
-+	debugfs_inode_entry = debugfs_create_file("inode_data",
-+			   S_IFREG | S_IRUSR | S_IWUSR |
-+			   S_IRUGO,
-+			   debugfs_volume_entry,
-+			   (void *) inode_data,
-+			   &btrfs_debugfs_inode_fops);
-+
-+	if (!debugfs_inode_entry)
-+		goto debugfs_error;
-+
-+	return 0;
-+
-+debugfs_error:
-+
-+	kfree(range_data);
-+	kfree(inode_data);
-+
-+	return -EIO;
-+}
-+
-+/* find volume mounted (match by superblock) and remove
-+ * debugfs dentry
-+ */
-+void btrfs_exit_debugfs_volume(struct super_block *sb)
-+{
-+	struct list_head *head;
-+	struct list_head *pos;
-+	struct debugfs_vol_data *data;
-+	spin_lock(&data_list_lock);
-+	head = &debugfs_vol_data_list;
-+	/* must clean up memory assicatied with superblock */
-+	list_for_each(pos, head)
-+	{
-+		data = list_entry(pos, struct debugfs_vol_data, node);
-+		if (data->sb == sb) {
-+			list_del(pos);
-+			debugfs_remove_recursive(data->de);
-+			kfree(data);
-+			data = NULL;
-+			break;
-+		}
-+	}
-+	spin_unlock(&data_list_lock);
-+}
-+
-+/* clean up memory and remove dentries for debugsfs */
-+void btrfs_exit_debugfs(void)
-+{
-+	/* first iterate through debugfs_vol_data_list and free memory */
-+	struct list_head *head;
-+	struct list_head *pos;
-+	struct list_head *cur;
-+	struct debugfs_vol_data *data;
-+
-+	spin_lock(&data_list_lock);
-+	head = &debugfs_vol_data_list;
-+	list_for_each_safe(pos, cur, head) {
-+		data = list_entry(pos, struct debugfs_vol_data, node);
-+		if (data && pos != head)
-+			kfree(data);
-+	}
-+	spin_unlock(&data_list_lock);
-+
-+	/* remove all debugfs entries recursively from the root */
-+	debugfs_remove_recursive(debugfs_root_dentry);
-+}
-+
-+/* debugfs open file override from fops table */
-+int __btrfs_debugfs_open(struct inode *inode, struct file *file)
-+{
-+	if (inode->i_private)
-+		file->private_data = inode->i_private;
-+
++	hot_inode_item_cache = kmem_cache_create("hot_inode_item",
++			sizeof(struct hot_inode_item), 0,
++			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
++	if (!hot_inode_item_cache)
++		return -ENOMEM;
 +	return 0;
 +}
 +
-+/* debugfs read file override from fops table */
-+ssize_t __btrfs_debugfs_range_read(struct file *file, char __user *user,
-+			     size_t count, loff_t *ppos)
++/* init hot_range_item kmem cache */
++int __init hot_range_item_init(void)
 +{
-+	int err = 0;
-+	struct super_block *sb;
-+	struct btrfs_root *root;
-+	struct btrfs_root *fs_root;
-+	struct hot_inode_item *current_hot_inode;
-+	struct debugfs_vol_data *data;
-+	struct lstring *debugfs_log;
-+
-+	data = (struct debugfs_vol_data *) file->private_data;
-+	sb = data->sb;
-+	root = btrfs_sb(sb);
-+	fs_root = (struct btrfs_root *) root->fs_info->fs_root;
-+
-+	if (!data->debugfs_log) {
-+		/* initialize debugfs log corresponding to this volume*/
-+		debugfs_log = kmalloc(sizeof(struct lstring),
-+			GFP_KERNEL | GFP_NOFS);
-+		debugfs_log->str = NULL,
-+		debugfs_log->len = 0;
-+		data->debugfs_log = debugfs_log;
-+		debugfs_log_init(data);
-+	}
-+
-+	if ((unsigned long) *ppos > 0) {
-+		/* caller is continuing a previous read, don't walk tree */
-+		if ((unsigned long) *ppos >= data->debugfs_log->len)
-+			goto clean_up;
-+
-+		goto print_to_user;
-+	}
-+
-+	/* walk the inode tree */
-+
-+	current_hot_inode = find_next_hot_inode(fs_root, 0);
-+
-+	while (current_hot_inode) {
-+		/* walk ranges, print data to debugfs log */
-+		__walk_range_tree(current_hot_inode, data);
-+
-+		free_hot_inode_item(current_hot_inode);
-+		current_hot_inode = find_next_hot_inode(fs_root,
-+				(u64) current_hot_inode->i_ino + 1);
-+	}
-+
-+print_to_user:
-+
-+	if (data->debugfs_log->len) {
-+		err = simple_read_from_buffer(user, count, ppos,
-+				      data->debugfs_log->str,
-+				      data->debugfs_log->len);
-+	}
-+
-+	return err;
-+
-+clean_up:
-+
-+	/* reader has finished the file */
-+	/* clean up */
-+
-+	debugfs_log_exit(data);
-+	kfree(data->debugfs_log);
-+	data->debugfs_log = NULL;
-+
++	hot_range_item_cache = kmem_cache_create("hot_range_item",
++			sizeof(struct hot_range_item), 0,
++			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
++	if (!hot_range_item_cache)
++		return -ENOMEM;
 +	return 0;
 +}
 +
-+/* debugfs read file override from fops table */
-+ssize_t __btrfs_debugfs_inode_read(struct file *file, char __user *user,
-+			     size_t count, loff_t *ppos)
++void hot_inode_item_exit(void)
 +{
-+	int err = 0;
-+	struct super_block *sb;
-+	struct btrfs_root *root;
-+	struct btrfs_root *fs_root;
-+	struct hot_inode_item *current_hot_inode;
-+	struct debugfs_vol_data *data;
-+	struct lstring *debugfs_log;
-+
-+	data = (struct debugfs_vol_data *) file->private_data;
-+	sb = data->sb;
-+	root = btrfs_sb(sb);
-+	fs_root = (struct btrfs_root *) root->fs_info->fs_root;
-+
-+	if (!data->debugfs_log) {
-+		/* initialize debugfs log corresponding to this volume */
-+		debugfs_log = kmalloc(sizeof(struct lstring),
-+			GFP_KERNEL | GFP_NOFS);
-+		debugfs_log->str = NULL,
-+		debugfs_log->len = 0;
-+		data->debugfs_log = debugfs_log;
-+		debugfs_log_init(data);
-+	}
-+
-+	if ((unsigned long) *ppos > 0) {
-+		/* caller is continuing a previous read, don't walk tree */
-+		if ((unsigned long) *ppos >= data->debugfs_log->len)
-+			goto clean_up;
-+
-+		goto print_to_user;
-+	}
-+
-+	/* walk the inode tree */
-+
-+	current_hot_inode = find_next_hot_inode(fs_root, 0);
-+
-+	while (current_hot_inode) {
-+		/* walk ranges, print data to debugfs log */
-+		__print_inode_freq_data(current_hot_inode, data);
-+
-+		free_hot_inode_item(current_hot_inode);
-+		current_hot_inode = find_next_hot_inode(fs_root,
-+				(u64) current_hot_inode->i_ino + 1);
-+	}
-+
-+print_to_user:
-+
-+	if (data->debugfs_log->len) {
-+		err = simple_read_from_buffer(user, count, ppos,
-+				      data->debugfs_log->str,
-+				      data->debugfs_log->len);
-+	}
-+
-+	return err;
-+
-+clean_up:
-+
-+	/* reader has finished the file */
-+	/* clean up */
-+	debugfs_log_exit(data);
-+	kfree(data->debugfs_log);
-+	data->debugfs_log = NULL;
-+
-+	return 0;
++	if (hot_inode_item_cache)
++		kmem_cache_destroy(hot_inode_item_cache);
 +}
 +
-+/*
-+ * Take the inode, find ranges associated with inode
-+ * and print each range data struct
-+ */
-+void __walk_range_tree(struct hot_inode_item *hot_inode,
-+		       struct debugfs_vol_data *data)
++void hot_range_item_exit(void)
 +{
-+	struct hot_range_tree *inode_range_tree;
-+	struct rb_node *node;
-+	struct hot_range_item *current_range;
++	if (hot_range_item_cache)
++		kmem_cache_destroy(hot_range_item_cache);
++}
 +
-+	inode_range_tree = &hot_inode->hot_range_tree;
-+	read_lock(&inode_range_tree->lock);
-+	node = rb_first(&inode_range_tree->map);
 +
-+	/* Walk the hot_range_tree for inode */
++/* Initialize the inode tree */
++void hot_inode_tree_init(struct hot_inode_tree *tree)
++{
++	tree->map = RB_ROOT;
++	rwlock_init(&tree->lock);
++}
++
++/* Initialize the hot range tree tree */
++void hot_range_tree_init(struct hot_range_tree *tree)
++{
++	tree->map = RB_ROOT;
++	rwlock_init(&tree->lock);
++}
++
++/* Allocate a new hot_inode_item structure.  The new structure is
++ * returned with a reference count of one and needs to be
++ * freed using free_inode_item() */
++struct hot_inode_item *alloc_hot_inode_item(unsigned long ino)
++{
++	struct hot_inode_item *he;
++	he = kmem_cache_alloc(hot_inode_item_cache, GFP_KERNEL | GFP_NOFS);
++	if (!he || IS_ERR(he))
++		return he;
++
++	atomic_set(&he->refs, 1);
++	he->in_tree = 0;
++	he->i_ino = ino;
++	he->heat_node = alloc_heat_hashlist_node(GFP_KERNEL | GFP_NOFS);
++	he->freq_data.avg_delta_reads = (u64) -1;
++	he->freq_data.avg_delta_writes = (u64) -1;
++	he->freq_data.nr_reads = 0;
++	he->freq_data.nr_writes = 0;
++	he->freq_data.flags = FREQ_DATA_TYPE_INODE;
++	hot_range_tree_init(&he->hot_range_tree);
++
++	spin_lock_init(&he->lock);
++
++	return he;
++}
++
++/* Allocate a new hot_range_item structure.  The new structure is
++ * returned with a reference count of one and needs to be
++ * freed using free_range_item() */
++struct hot_range_item *alloc_hot_range_item(u64 start, u64 len)
++{
++	struct hot_range_item *hr;
++	hr = kmem_cache_alloc(hot_range_item_cache, GFP_KERNEL | GFP_NOFS);
++	if (!hr || IS_ERR(hr))
++		return hr;
++	atomic_set(&hr->refs, 1);
++	hr->in_tree = 0;
++	hr->start = start & RANGE_SIZE_MASK;
++	hr->len = len;
++	hr->heat_node = alloc_heat_hashlist_node(GFP_KERNEL | GFP_NOFS);
++	hr->heat_node->freq_data = &hr->freq_data;
++	hr->freq_data.avg_delta_reads = (u64) -1;
++	hr->freq_data.avg_delta_writes = (u64) -1;
++	hr->freq_data.nr_reads = 0;
++	hr->freq_data.nr_writes = 0;
++	hr->freq_data.flags = FREQ_DATA_TYPE_RANGE;
++
++	spin_lock_init(&hr->lock);
++
++	return hr;
++}
++
++/* Drops the reference out on hot_inode_item by one and free the structure
++ * if the reference count hits zero */
++void free_hot_inode_item(struct hot_inode_item *he)
++{
++	if (!he)
++		return;
++	if (atomic_dec_and_test(&he->refs)) {
++		WARN_ON(he->in_tree);
++		kmem_cache_free(hot_inode_item_cache, he);
++	}
++}
++
++/* Drops the reference out on hot_range_item by one and free the structure
++ * if the reference count hits zero */
++void free_hot_range_item(struct hot_range_item *hr)
++{
++	if (!hr)
++		return;
++	if (atomic_dec_and_test(&hr->refs)) {
++		WARN_ON(hr->in_tree);
++		kmem_cache_free(hot_range_item_cache, hr);
++	}
++}
++
++/* Frees the entire hot_inode_tree. Called by free_fs_root */
++void free_hot_inode_tree(struct btrfs_root *root)
++{
++	struct rb_node *node, *node2;
++	struct hot_inode_item *he;
++	struct hot_range_item *hr;
++
++	/* Free hot inode and range trees on fs root */
++	node = rb_first(&root->hot_inode_tree.map);
++
 +	while (node) {
-+		current_range = rb_entry(node, struct hot_range_item, rb_node);
-+		__print_range_freq_data(hot_inode, current_range, data);
-+		node = rb_next(node);
++		he = rb_entry(node, struct hot_inode_item,
++			rb_node);
++
++		node2 = rb_first(&he->hot_range_tree.map);
++
++		while (node2) {
++			hr = rb_entry(node2, struct hot_range_item,
++				rb_node);
++			remove_hot_range_item(&he->hot_range_tree, hr);
++			free_hot_range_item(hr);
++			node2 = rb_first(&he->hot_range_tree.map);
++		}
++
++		remove_hot_inode_item(&root->hot_inode_tree, he);
++		free_hot_inode_item(he);
++		node = rb_first(&root->hot_inode_tree.map);
 +	}
-+	read_unlock(&inode_range_tree->lock);
 +}
 +
-+/* Print frequency data for each range to log */
-+void __print_range_freq_data(struct hot_inode_item *hot_inode,
-+			     struct hot_range_item *hot_range,
-+			     struct debugfs_vol_data *data)
++static struct rb_node *tree_insert_inode_item(struct rb_root *root,
++					unsigned long inode_num,
++					struct rb_node *node)
 +{
-+	struct btrfs_freq_data *freq_data;
-+	int temp;
-+	freq_data = &hot_range->freq_data;
-+	read_lock(&hot_range->heat_node->hlist->rwlock);
-+	temp = hot_range->heat_node->hlist->temperature;
-+	read_unlock(&hot_range->heat_node->hlist->rwlock);
++	struct rb_node **p = &root->rb_node;
++	struct rb_node *parent = NULL;
++	struct hot_inode_item *entry;
 +
-+	/* Always lock hot_inode_item first */
-+	spin_lock(&hot_inode->lock);
-+	spin_lock(&hot_range->lock);
-+	debugfs_log(data, "inode #%lu, range start "
-+			"%llu (range len %llu) reads %u, writes %u, temp %u\n",
-+			hot_inode->i_ino,
-+			hot_range->start,
-+			hot_range->len,
-+			freq_data->nr_reads,
-+			freq_data->nr_writes,
-+			temp);
-+	spin_unlock(&hot_range->lock);
-+	spin_unlock(&hot_inode->lock);
++	/* walk tree to find insertion point */
++	while (*p) {
++		parent = *p;
++		entry = rb_entry(parent, struct hot_inode_item, rb_node);
++
++		if (inode_num < entry->i_ino)
++			p = &(*p)->rb_left;
++		else if (inode_num > entry->i_ino)
++			p = &(*p)->rb_right;
++		else
++			return parent;
++	}
++
++	entry = rb_entry(node, struct hot_inode_item, rb_node);
++	entry->in_tree = 1;
++	rb_link_node(node, parent, p);
++	rb_insert_color(node, root);
++	return NULL;
 +}
 +
-+/* Print frequency data for each freq data to log */
-+void __print_inode_freq_data(struct hot_inode_item *hot_inode,
-+			     struct debugfs_vol_data *data)
++static u64 range_map_end(struct hot_range_item *hr)
 +{
-+	struct btrfs_freq_data *freq_data;
-+	int temp;
-+	freq_data = &hot_inode->freq_data;
-+
-+	read_lock(&hot_inode->heat_node->hlist->rwlock);
-+	temp = hot_inode->heat_node->hlist->temperature;
-+	read_unlock(&hot_inode->heat_node->hlist->rwlock);
-+
-+	spin_lock(&hot_inode->lock);
-+	debugfs_log(data, "inode #%lu, reads %u, writes %u, temp %u\n",
-+			hot_inode->i_ino,
-+			freq_data->nr_reads,
-+			freq_data->nr_writes,
-+			temp);
-+	spin_unlock(&hot_inode->lock);
++	if (hr->start + hr->len < hr->start)
++		return (u64)-1;
++	return hr->start + hr->len;
 +}
 +
-diff --git a/fs/btrfs/debugfs.h b/fs/btrfs/debugfs.h
++static struct rb_node *tree_insert_range_item(struct rb_root *root,
++					      u64 start,
++					      struct rb_node *node)
++{
++	struct rb_node **p = &root->rb_node;
++	struct rb_node *parent = NULL;
++	struct hot_range_item *entry;
++
++
++	/* walk tree to find insertion point */
++	while (*p) {
++		parent = *p;
++		entry = rb_entry(parent, struct hot_range_item, rb_node);
++
++		if (start < entry->start)
++			p = &(*p)->rb_left;
++		else if (start >= range_map_end(entry))
++			p = &(*p)->rb_right;
++		else
++			return parent;
++	}
++
++	entry = rb_entry(node, struct hot_range_item, rb_node);
++	entry->in_tree = 1;
++	rb_link_node(node, parent, p);
++	rb_insert_color(node, root);
++	return NULL;
++}
++
++/* Add a hot_inode_item to a hot_inode_tree. If the tree already contains
++ * an item with the index given, return -EEXIST */
++int add_hot_inode_item(struct hot_inode_tree *tree,
++		       struct hot_inode_item *he)
++{
++	int ret = 0;
++	struct rb_node *rb;
++	struct hot_inode_item *exist;
++
++	exist = lookup_hot_inode_item(tree, he->i_ino);
++	if (exist) {
++		free_hot_inode_item(exist);
++		ret = -EEXIST;
++		goto out;
++	}
++	rb = tree_insert_inode_item(&tree->map, he->i_ino, &he->rb_node);
++	if (rb) {
++		ret = -EEXIST;
++		goto out;
++	}
++	atomic_inc(&he->refs);
++out:
++	return ret;
++}
++
++/* Add a hot_range_item to a hot_range_tree. If the tree already contains
++ * an item with the index given, return -EEXIST
++ * Also optionally aggressively merge ranges (currently disabled) */
++int add_hot_range_item(struct hot_range_tree *tree,
++		       struct hot_range_item *hr)
++{
++	int ret = 0;
++	struct rb_node *rb;
++	struct hot_range_item *exist;
++	/* struct hot_range_item *merge = NULL; */
++
++	exist = lookup_hot_range_item(tree, hr->start);
++	if (exist) {
++		free_hot_range_item(exist);
++		ret = -EEXIST;
++		goto out;
++	}
++	rb = tree_insert_range_item(&tree->map, hr->start, &hr->rb_node);
++	if (rb) {
++		ret = -EEXIST;
++		goto out;
++	}
++
++	atomic_inc(&hr->refs);
++
++out:
++	return ret;
++}
++
++/* Lookup a hot_inode_item in the hot_inode_tree with the given index
++ * (inode_num) */
++struct hot_inode_item *lookup_hot_inode_item(struct hot_inode_tree *tree,
++					 unsigned long inode_num)
++{
++	struct rb_node **p = &(tree->map.rb_node);
++	struct rb_node *parent = NULL;
++	struct hot_inode_item *entry;
++
++	while (*p) {
++		parent = *p;
++		entry = rb_entry(parent, struct hot_inode_item, rb_node);
++
++		if (inode_num < entry->i_ino)
++			p = &(*p)->rb_left;
++		else if (inode_num > entry->i_ino)
++			p = &(*p)->rb_right;
++		else {
++			atomic_inc(&entry->refs);
++			return entry;
++		}
++	}
++
++	return NULL;
++}
++
++/* Lookup a hot_range_item in a hot_range_tree with the given index
++ * (start, offset) */
++struct hot_range_item *lookup_hot_range_item(struct hot_range_tree *tree,
++					     u64 start)
++{
++	struct rb_node **p = &(tree->map.rb_node);
++	struct rb_node *parent = NULL;
++	struct hot_range_item *entry;
++
++	/* ensure start is on a range boundary */
++	start = start & RANGE_SIZE_MASK;
++
++	while (*p) {
++		parent = *p;
++		entry = rb_entry(parent, struct hot_range_item, rb_node);
++
++		if (start < entry->start)
++			p = &(*p)->rb_left;
++		else if (start >= range_map_end(entry))
++			p = &(*p)->rb_right;
++		else {
++			atomic_inc(&entry->refs);
++			return entry;
++		}
++	}
++	return NULL;
++}
++
++int remove_hot_inode_item(struct hot_inode_tree *tree,
++			  struct hot_inode_item *he)
++{
++	int ret = 0;
++	rb_erase(&he->rb_node, &tree->map);
++	he->in_tree = 0;
++	return ret;
++}
++
++int remove_hot_range_item(struct hot_range_tree *tree,
++			  struct hot_range_item *hr)
++{
++	int ret = 0;
++	rb_erase(&hr->rb_node, &tree->map);
++	hr->in_tree = 0;
++	return ret;
++}
++
++/* main function to update access frequency from read/writepage(s) hooks */
++inline void btrfs_update_freqs(struct inode *inode, u64 start,
++	u64 len, int create)
++{
++	struct hot_inode_item *he;
++	struct hot_range_item *hr;
++	struct btrfs_inode *btrfs_inode = BTRFS_I(inode);
++
++	he = btrfs_update_inode_freq(btrfs_inode, create);
++
++	WARN_ON(!he || IS_ERR(he));
++
++	if (he && !IS_ERR(he)) {
++		hr = btrfs_update_range_freq(he, start, len,
++			create, btrfs_inode->root);
++		WARN_ON(!hr || IS_ERR(hr));
++
++
++		/*
++		 * drop refcounts on inode/range items:
++		 */
++
++		free_hot_inode_item(he);
++
++		if (hr && !IS_ERR(hr))
++			free_hot_range_item(hr);
++	}
++
++}
++
++/* Update inode frequency struct */
++struct hot_inode_item *btrfs_update_inode_freq(struct btrfs_inode *inode,
++					       int create)
++{
++	struct hot_inode_tree *hitree = &inode->root->hot_inode_tree;
++	struct hot_inode_item *he;
++	struct btrfs_root *root = inode->root;
++
++	read_lock(&hitree->lock);
++	he = lookup_hot_inode_item(hitree, inode->vfs_inode.i_ino);
++	read_unlock(&hitree->lock);
++
++	if (!he) {
++		he = alloc_hot_inode_item(inode->vfs_inode.i_ino);
++
++		if (!he || IS_ERR(he))
++			goto out;
++
++		write_lock(&hitree->lock);
++		add_hot_inode_item(hitree, he);
++		write_unlock(&hitree->lock);
++	}
++
++	spin_lock(&he->lock);
++	btrfs_update_freq(&he->freq_data, create);
++	/*
++	 * printk(KERN_DEBUG "btrfs_update_inode_freq avd_r: %llu,"
++	 *	" avd_w: %llu\n",
++	 *	he->freq_data.avg_delta_reads,
++	 *	he->freq_data.avg_delta_writes);
++	 */
++	spin_unlock(&he->lock);
++
++	/* will get its own lock(s) */
++	btrfs_update_heat_index(&he->freq_data, root);
++
++out:
++	return he;
++}
++
++/* Update range frequency struct */
++struct hot_range_item *btrfs_update_range_freq(struct hot_inode_item *he,
++					       u64 off, u64 len, int create,
++					       struct btrfs_root *root)
++{
++	struct hot_range_tree *hrtree = &he->hot_range_tree;
++	struct hot_range_item *hr = NULL;
++	u64 start_off = off & RANGE_SIZE_MASK;
++	u64 end_off = (off + len - 1) & RANGE_SIZE_MASK;
++	u64 cur;
++
++	/*
++	 * Align ranges on RANGE_SIZE boundary to prevent proliferation
++	 * of range structs
++	 */
++	for (cur = start_off; cur <= end_off; cur += RANGE_SIZE) {
++		read_lock(&hrtree->lock);
++		hr = lookup_hot_range_item(hrtree, cur);
++		read_unlock(&hrtree->lock);
++
++		if (!hr) {
++			hr = alloc_hot_range_item(cur, RANGE_SIZE);
++
++			if (!hr || IS_ERR(hr))
++				goto out;
++
++			write_lock(&hrtree->lock);
++			add_hot_range_item(hrtree, hr);
++			write_unlock(&hrtree->lock);
++		}
++
++		spin_lock(&hr->lock);
++		btrfs_update_freq(&hr->freq_data, create);
++		/*
++		 * printk(KERN_DEBUG "btrfs_update_range_freq avd_r: %llu,"
++		 *	" avd_w: %llu\n",
++		 *	he->freq_data.avg_delta_reads,
++		 *	he->freq_data.avg_delta_writes);
++		 */
++		spin_unlock(&hr->lock);
++
++
++		/* will get its own locks */
++		btrfs_update_heat_index(&hr->freq_data, root);
++	}
++out:
++	return hr;
++}
++
++/*
++ * This function does the actual work of updating the frequency numbers,
++ * whatever they turn out to be. BTRFS_FREQ_POWER determines how many atime
++ * deltas we keep track of (as a power of 2). So, setting it to anything above
++ * 16ish is probably overkill. Also, the higher the power, the more bits get
++ * right shifted out of the timestamp, reducing precision, so take note of that
++ * as well.
++ *
++ * The caller (which is probably btrfs_update_freq) should have already locked
++ * fdata's parent's spinlock.
++ */
++#define BTRFS_FREQ_POWER 4
++void btrfs_update_freq(struct btrfs_freq_data *fdata, int create)
++{
++	struct timespec old_atime;
++	struct timespec current_time;
++	struct timespec delta_ts;
++	u64 new_avg;
++	u64 new_delta;
++
++	if (unlikely(create)) {
++		old_atime = fdata->last_write_time;
++		fdata->nr_writes += 1;
++		new_avg = fdata->avg_delta_writes;
++	} else {
++		old_atime = fdata->last_read_time;
++		fdata->nr_reads += 1;
++		new_avg = fdata->avg_delta_reads;
++	}
++
++	current_time = current_kernel_time();
++	delta_ts = timespec_sub(current_time, old_atime);
++	new_delta = timespec_to_ns(&delta_ts) >> BTRFS_FREQ_POWER;
++
++	new_avg = (new_avg << BTRFS_FREQ_POWER) - new_avg + new_delta;
++	new_avg = new_avg >> BTRFS_FREQ_POWER;
++
++	if (unlikely(create)) {
++		fdata->last_write_time = current_time;
++		fdata->avg_delta_writes = new_avg;
++	} else {
++		fdata->last_read_time = current_time;
++		fdata->avg_delta_reads = new_avg;
++	}
++
++}
++
++/*
++ * Get a new temperature and, if necessary, move the heat_node corresponding
++ * to this inode or range to the proper hashlist with the new temperature
++ */
++void btrfs_update_heat_index(struct btrfs_freq_data *fdata,
++			       struct btrfs_root *root)
++{
++	int temp = 0;
++	int moved = 0;
++	struct heat_hashlist_entry *buckets, *current_bucket = NULL;
++	struct hot_inode_item *he;
++	struct hot_range_item *hr;
++
++	if (fdata->flags & FREQ_DATA_TYPE_INODE) {
++		he = freq_data_get_he(fdata);
++		buckets = root->heat_inode_hl;
++
++		spin_lock(&he->lock);
++		temp = btrfs_get_temp(fdata);
++		spin_unlock(&he->lock);
++
++		if (he == NULL)
++			return;
++
++		if (he->heat_node->hlist == NULL) {
++			current_bucket = buckets +
++					temp;
++			moved = 1;
++		} else {
++			current_bucket = he->heat_node->hlist;
++			if (current_bucket->temperature != temp) {
++				write_lock(&current_bucket->rwlock);
++				hlist_del(&he->heat_node->hashnode);
++				write_unlock(&current_bucket->rwlock);
++				current_bucket = buckets + temp;
++				moved = 1;
++			}
++		}
++
++		if (moved) {
++			write_lock(&current_bucket->rwlock);
++			hlist_add_head(&he->heat_node->hashnode,
++				&current_bucket->hashhead);
++			he->heat_node->hlist = current_bucket;
++			write_unlock(&current_bucket->rwlock);
++		}
++
++	} else if (fdata->flags & FREQ_DATA_TYPE_RANGE) {
++		hr = freq_data_get_hr(fdata);
++		buckets = root->heat_range_hl;
++
++		spin_lock(&hr->lock);
++		temp = btrfs_get_temp(fdata);
++		spin_unlock(&hr->lock);
++
++		if (hr == NULL)
++			return;
++
++		if (hr->heat_node->hlist == NULL) {
++			current_bucket = buckets +
++					temp;
++			moved = 1;
++		} else {
++			current_bucket = hr->heat_node->hlist;
++			if (current_bucket->temperature != temp) {
++				write_lock(&current_bucket->rwlock);
++				hlist_del(&hr->heat_node->hashnode);
++				write_unlock(&current_bucket->rwlock);
++				current_bucket = buckets + temp;
++				moved = 1;
++			}
++		}
++
++		if (moved) {
++			write_lock(&current_bucket->rwlock);
++			hlist_add_head(&hr->heat_node->hashnode,
++				&current_bucket->hashhead);
++			hr->heat_node->hlist = current_bucket;
++			write_unlock(&current_bucket->rwlock);
++		}
++	}
++}
++
++/* Walk the hot_inode_tree, locking as necessary */
++struct hot_inode_item *find_next_hot_inode(struct btrfs_root *root,
++						  u64 objectid)
++{
++	struct rb_node *node;
++	struct rb_node *prev;
++	struct hot_inode_item *entry;
++
++	read_lock(&root->hot_inode_tree.lock);
++
++	node = root->hot_inode_tree.map.rb_node;
++	prev = NULL;
++	while (node) {
++		prev = node;
++		entry = rb_entry(node, struct hot_inode_item, rb_node);
++
++		if (objectid < entry->i_ino)
++			node = node->rb_left;
++		else if (objectid > entry->i_ino)
++			node = node->rb_right;
++		else
++			break;
++	}
++	if (!node) {
++		while (prev) {
++			entry = rb_entry(prev, struct hot_inode_item, rb_node);
++			if (objectid <= entry->i_ino) {
++				node = prev;
++				break;
++			}
++			prev = rb_next(prev);
++		}
++	}
++	if (node) {
++		entry = rb_entry(node, struct hot_inode_item, rb_node);
++		/* increase reference count to prevent pruning while
++		 * caller is using the hot_inode_item */
++		atomic_inc(&entry->refs);
++
++		read_unlock(&root->hot_inode_tree.lock);
++		return entry;
++	}
++
++	read_unlock(&root->hot_inode_tree.lock);
++	return NULL;
++}
++
+diff --git a/fs/btrfs/hotdata_map.h b/fs/btrfs/hotdata_map.h
 new file mode 100644
-index 0000000..bdd4938
+index 0000000..46ae1d6
 --- /dev/null
-+++ b/fs/btrfs/debugfs.h
-@@ -0,0 +1,57 @@
-+#ifndef __BTRFS_DEBUGFS__
-+#define __BTRFS_DEBUGFS__
++++ b/fs/btrfs/hotdata_map.h
+@@ -0,0 +1,118 @@
++#ifndef __HOTDATAMAP__
++#define __HOTDATAMAP__
 +
-+/* size of log to vmalloc */
-+#define INIT_LOG_ALLOC_SIZE (PAGE_SIZE * 10)
-+#define LOG_PAGE_SIZE (PAGE_SIZE * 10)
++#include <linux/rbtree.h>
 +
-+/* number of chars of device name of chop off for making debugfs folder
-+ * e.g. /dev/sda -> sda */
-+#define DEV_NAME_CHOP 5
++/* values for btrfs_freq_data flags */
++#define FREQ_DATA_TYPE_INODE 1		/* freq data struct is for an inode */
++#define FREQ_DATA_TYPE_RANGE (1 << 1)	/* freq data struct is for a range */
++#define FREQ_DATA_HEAT_HOT (1 << 2)	/* freq data struct is for hot data */
++					/* (not implemented) */
++#define RANGE_SIZE (1<<12)
++#define RANGE_SIZE_MASK (~((u64)(RANGE_SIZE - 1)))
 +
-+/* list to keep track of each mounted volumes debugfs_vol_data */
-+static struct list_head debugfs_vol_data_list;
-+/* lock for debugfs_vol_data_list */
-+static spinlock_t data_list_lock;
++/* macros to wrap container_of()'s for hot data structs */
++#define freq_data_get_he(x) (struct hot_inode_item *) container_of(x, \
++					struct hot_inode_item, freq_data)
++#define freq_data_get_hr(x) (struct hot_range_item *) container_of(x, \
++					struct hot_range_item, freq_data)
++#define rb_node_get_he(x) (struct hot_inode_item *) container_of(x, \
++					struct hot_inode_item, rb_node)
++#define rb_node_get_hr(x) (struct hot_range_item *) container_of(x, \
++					struct hot_range_item, rb_node)
 +
-+/*
-+ * Name for BTRFS data in debugfs directory
-+ * e.g. /sys/kernel/debug/btrfs_data
-+ */
-+#define DEBUGFS_ROOT_NAME "btrfs_data"
-+/* pointer to top level debugfs dentry */
-+static struct dentry *debugfs_root_dentry;
-+
-+/* log to output to userspace in debugfs files */
-+struct lstring {
-+	char		*str;
-+	unsigned long	len;
++/* A frequency data struct holds values that are used to
++ * determine temperature of files and file ranges. These structs
++ * are members of hot_inode_item and hot_range_item */
++struct btrfs_freq_data {
++	struct timespec last_read_time;
++	struct timespec last_write_time;
++	u32 nr_reads;
++	u32 nr_writes;
++	u64 avg_delta_reads;
++	u64 avg_delta_writes;
++	u8 flags;
 +};
 +
-+/*
-+ * debugfs_vol_data is a struct of items that is passed to the debugfs
-+ */
-+struct debugfs_vol_data {
-+	struct list_head node; /* protected by data_list_lock */
-+	struct lstring *debugfs_log;
-+	struct super_block *sb;
-+	struct dentry *de;
-+	spinlock_t log_lock; /* protects debugfs_log */
-+	char log_work_buff[1024];
-+	uint log_alloc_size;
++/* A tree that sits on the fs_root */
++struct hot_inode_tree {
++	struct rb_root map;
++	rwlock_t lock;
 +};
 +
-+ssize_t __btrfs_debugfs_range_read(struct file *file, char __user *user,
-+	size_t size, loff_t *len);
-+ssize_t __btrfs_debugfs_inode_read(struct file *file, char __user *user,
-+	size_t size, loff_t *len);
-+int __btrfs_debugfs_open(struct inode *inode, struct file *file);
-+void __walk_range_tree(struct hot_inode_item *hot_inode,
-+			struct debugfs_vol_data *data);
-+void __print_range_freq_data(struct hot_inode_item *hot_inode,
-+		       struct hot_range_item *hot_range,
-+		       struct debugfs_vol_data *data);
-+void __print_inode_freq_data(struct hot_inode_item *hot_inode,
-+		       struct debugfs_vol_data *data);
++/* A tree of ranges for each inode in the hot_inode_tree */
++struct hot_range_tree {
++	struct rb_root map;
++	rwlock_t lock;
++};
++
++/* An item representing an inode and its access frequency */
++struct hot_inode_item {
++	struct rb_node rb_node; /* node for hot_inode_tree rb_tree */
++	unsigned long i_ino; /* inode number, copied from vfs_inode */
++	struct hot_range_tree hot_range_tree; /* tree of ranges in this
++						 inode */
++	struct btrfs_freq_data freq_data; /* frequency data for this inode */
++	spinlock_t lock; /* protects freq_data, i_no, in_tree */
++	atomic_t refs; /* prevents kfree */
++	u8 in_tree; /* used to check for errors in ref counting */
++	struct heat_hashlist_node *heat_node; /* hashlist node for this
++						 inode */
++};
++
++/* An item representing a range inside of an inode whose frequency
++ * is being tracked */
++struct hot_range_item {
++	struct rb_node rb_node; /* node for hot_range_tree rb_tree */
++	u64 start; /* starting offset of this range */
++	u64 len; /* length of this range */
++	struct btrfs_freq_data freq_data; /* frequency data for this range */
++	spinlock_t lock; /* protects freq_data, start, len, in_tree */
++	atomic_t refs; /* prevents kfree */
++	u8 in_tree; /* used to check for errors in ref counting */
++	struct heat_hashlist_node *heat_node; /* hashlist node for this
++						 range */
++};
++
++struct btrfs_root;
++struct inode;
++
++void hot_inode_tree_init(struct hot_inode_tree *tree);
++void hot_range_tree_init(struct hot_range_tree *tree);
++
++struct hot_range_item *lookup_hot_range_item(struct hot_range_tree *tree,
++					    u64 start);
++
++struct hot_inode_item *lookup_hot_inode_item(struct hot_inode_tree *tree,
++					    unsigned long inode_num);
++
++int add_hot_inode_item(struct hot_inode_tree *tree,
++		       struct hot_inode_item *he);
++int add_hot_range_item(struct hot_range_tree *tree,
++		       struct hot_range_item *hr);
++
++int remove_hot_inode_item(struct hot_inode_tree *tree,
++			struct hot_inode_item *he);
++int remove_hot_range_item(struct hot_range_tree *tree,
++			 struct hot_range_item *hr);
++
++struct hot_inode_item *alloc_hot_inode_item(unsigned long ino);
++struct hot_range_item *alloc_hot_range_item(u64 start, u64 len);
++
++void free_hot_inode_item(struct hot_inode_item *he);
++void free_hot_range_item(struct hot_range_item *hr);
++void free_hot_inode_tree(struct btrfs_root *root);
++
++int __init hot_inode_item_init(void);
++int __init hot_range_item_init(void);
++
++void hot_inode_item_exit(void);
++void hot_range_item_exit(void);
++
++struct hot_inode_item *find_next_hot_inode(struct btrfs_root *root,
++						  u64 objectid);
++void btrfs_update_freq(struct btrfs_freq_data *fdata, int create);
++void btrfs_update_freqs(struct inode *inode, u64 start, u64 len,
++	int create);
 +
 +#endif
 -- 
 1.7.1
-

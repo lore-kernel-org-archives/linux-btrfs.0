@@ -1,29 +1,39 @@
-From: "Yan, Zheng " <yanzheng@21cn.com>
-Subject: Re: Intermittent no space errors
-Date: Wed, 28 Jul 2010 08:31:10 +0800
-Message-ID: <AANLkTikP_q7zhA2J69Rai964StGtMqCrhf2hGKPA9+J7@mail.gmail.com>
-References: <AANLkTik_Dbk7cyS6FR0G9r-MFYq1bCCmbJ-HyHKgpUBr@mail.gmail.com>
-	<AANLkTimVKtyPHi3zadx66i0dbPKzF4CbGJT=OEukLM6R@mail.gmail.com>
-	<AANLkTimir3SMbevD_PCXOUQgda-3BkiAE01cYcAMz_BR@mail.gmail.com>
+From: wks1986 <wks1986@gmail.com>
+Subject: A device dedicated for metadata?
+Date: Wed, 28 Jul 2010 17:32:01 +0800
+Message-ID: <AANLkTik3Mrf+vY6qW6TTtGEghm48ma8tjiWYGfcLhhMq@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Dave Cundiff <syshackmin@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimir3SMbevD_PCXOUQgda-3BkiAE01cYcAMz_BR@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 28, 2010 at 4:30 AM, Dave Cundiff <syshackmin@gmail.com> wrote:
-> Hello,
->
-> I installed the git repo kernel and added some debug to the ENOSPC
-> returns. Unfortunately its still failing. If it helps any its bombing
-> out in btrfs_check_data_free_space() in extent-tree.c. Returning on
-> the ENOSPC at line 2959.
->
-> Unfortunately that is the extent of my ability to debug a filesystem. :P
->
+Hello
 
-This is really helpful, thank you very much.
+Recently I am learning about the Btrfs.
 
-Yan, Zheng
+My requirement is to construct a cross-device btrfs volume consisting
+of a single SSD and many (much larger) HDDs.  The tricky part is that
+I want the SSD to be dedicated to metadata since SSDs are much faster
+(and more expensive) than HDDs and metadata are much more frequently
+queried than data.  And I do not want ordinary data to use up the
+precious space on the SSD in case there would be no room for metadata.
+
+I have figured out that I can keep the metadata stored inside the
+first device by applying the "-m single" option to mkfs.btrfs.
+However, I do not know how to require that data should NOT be
+allocated on the SSD.  I read the mkfs code.  It appears to me that it
+can be worked around by excluding the SSD from the "raid group" for
+ordinary data.
+
+A recent patch have been proposed to move "hot" (according to
+statistics) data to SSDs in order to improve performance.  My case is
+similar, but I know in advance that metadata are hotter.
+
+I am not very confident about what I have found, so I need some
+comment.  Is it necessary to modify the Btrfs code?  On the other
+hand, I have not figured out exactly how much metadata there would be
+with a given amount of data.  How significant will it be to exclude
+ordinary data from the SSD?
+
+Kunshan Wang

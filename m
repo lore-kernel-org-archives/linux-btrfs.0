@@ -1,66 +1,57 @@
-From: Chris Samuel <chris@csamuel.org>
-Subject: Re: [RFC PATCH 0/5] Btrfs: Add hot data tracking functionality
-Date: Wed, 28 Jul 2010 22:28:19 +1000
-Message-ID: <201007282228.23360.chris@csamuel.org>
-References: <1280268023-18408-1-git-send-email-bchociej@gmail.com> <201007280110.46059.diegocg@gmail.com> <AANLkTi=x9q1XOu_6F2hOv_ZPoM+McKz9Nv2Q5GZNfa4a@mail.gmail.com>
+From: Wengang Wang <wen.gang.wang@oracle.com>
+Subject: Re: A device dedicated for metadata?
+Date: Wed, 28 Jul 2010 21:14:28 +0800
+Message-ID: <20100728131428.GA2664@laptop.jp.oracle.com>
+References: <AANLkTik3Mrf+vY6qW6TTtGEghm48ma8tjiWYGfcLhhMq@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart18833409.WfW9mxhoo8";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
-Cc: Ben Chociej <bchociej@gmail.com>, diegocg@gmail.com,
-	chris.mason@oracle.com, linux-fsdevel@vger.kernel.org,
-	cmm@us.ibm.com, bcchocie@us.ibm.com, mrlupfer@us.ibm.com,
-	crscott@us.ibm.com, linux-kernel@vger.kernel.org
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: wks1986 <wks1986@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=x9q1XOu_6F2hOv_ZPoM+McKz9Nv2Q5GZNfa4a@mail.gmail.com>
+In-Reply-To: <AANLkTik3Mrf+vY6qW6TTtGEghm48ma8tjiWYGfcLhhMq@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart18833409.WfW9mxhoo8
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Hi,
 
-On Wed, 28 Jul 2010 09:18:23 am Ben Chociej wrote:
+I have a question to your requirement:
 
-> Yes, that's correct. It's likely not going to be a cache in the
-> traditional sense, since the entire capacity of both HDD and SSD would
-> be available.
+If the meta is stored on the SSD and not on other HDDs, I think the SSD is must
+to be "online" whenever you mount any of the HDDs. And in other words, without
+the SSD, other HDDs are meaningless. Is that acceptable?
 
-To me that sounds like an HSM type arrangement, with most frequently used d=
-ata=20
-on the highest performing media and less frequently touched data getting=20
-shunted down the chain to SAS, SATA and then tape and/or MAID type devices.
-
-Certainly interesting from my HPC point of view in that I can see it being=
-=20
-useful to parallel filesystems like Ceph if this "just happens".
-
-I guess real HSM devotees would want policies for migration downstream.. ;-)
-
-cheers,
-Chris
-=2D-=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
-
-This email may come with a PGP signature as a file. Do not panic.
-=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
-
---nextPart18833409.WfW9mxhoo8
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iQEVAwUATFAiZI1yjaOTJg85AQKgIAgAmSg0l/BcxEJEUTLWmZbKecFUdmbanuFM
-ugN4G6xY/VItX5HIJmNfLtorciSBMCmHTtFelKs/FPTRIozIv3Pe7/8AZl0rCi+0
-RiM+S2D15oIFyLYOKlxzh0TK4NjS+kW/Xa1xLlNdQtW77jtLZqJaSldK1n15X0Ls
-YwTdPRp63R3TfWqLkuPpN+M0aJmo5YfkKDyUDukSs/dEinVRQEKQZ2+oyie92Gd+
-ZbIeXKJX2q1SZ6oM+4+oiL5R6sXESdEJ5IjqhkXE0FAOcPqyigPrum/pPUtymZa6
-3iBbS38lwiYNDSCR6PbccRUsvstG6tFGtne+JP+dcqP4JWpJKiQriQ==
-=HETq
------END PGP SIGNATURE-----
-
---nextPart18833409.WfW9mxhoo8--
+regards,
+wengang.
+On 10-07-28 17:32, wks1986 wrote:
+> Hello
+> 
+> Recently I am learning about the Btrfs.
+> 
+> My requirement is to construct a cross-device btrfs volume consisting
+> of a single SSD and many (much larger) HDDs.  The tricky part is that
+> I want the SSD to be dedicated to metadata since SSDs are much faster
+> (and more expensive) than HDDs and metadata are much more frequently
+> queried than data.  And I do not want ordinary data to use up the
+> precious space on the SSD in case there would be no room for metadata.
+> 
+> I have figured out that I can keep the metadata stored inside the
+> first device by applying the "-m single" option to mkfs.btrfs.
+> However, I do not know how to require that data should NOT be
+> allocated on the SSD.  I read the mkfs code.  It appears to me that it
+> can be worked around by excluding the SSD from the "raid group" for
+> ordinary data.
+> 
+> A recent patch have been proposed to move "hot" (according to
+> statistics) data to SSDs in order to improve performance.  My case is
+> similar, but I know in advance that metadata are hotter.
+> 
+> I am not very confident about what I have found, so I need some
+> comment.  Is it necessary to modify the Btrfs code?  On the other
+> hand, I have not figured out exactly how much metadata there would be
+> with a given amount of data.  How significant will it be to exclude
+> ordinary data from the SSD?
+> 
+> Kunshan Wang
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

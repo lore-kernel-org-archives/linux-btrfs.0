@@ -1,36 +1,29 @@
-From: Ben Chociej <bchociej@gmail.com>
-Subject: Re: [RFC PATCH 0/5] Btrfs: Add hot data tracking functionality
-Date: Tue, 27 Jul 2010 18:18:23 -0500
-Message-ID: <AANLkTi=x9q1XOu_6F2hOv_ZPoM+McKz9Nv2Q5GZNfa4a@mail.gmail.com>
-References: <1280268023-18408-1-git-send-email-bchociej@gmail.com>
-	<201007280110.46059.diegocg@gmail.com>
+From: "Yan, Zheng " <yanzheng@21cn.com>
+Subject: Re: Intermittent no space errors
+Date: Wed, 28 Jul 2010 08:31:10 +0800
+Message-ID: <AANLkTikP_q7zhA2J69Rai964StGtMqCrhf2hGKPA9+J7@mail.gmail.com>
+References: <AANLkTik_Dbk7cyS6FR0G9r-MFYq1bCCmbJ-HyHKgpUBr@mail.gmail.com>
+	<AANLkTimVKtyPHi3zadx66i0dbPKzF4CbGJT=OEukLM6R@mail.gmail.com>
+	<AANLkTimir3SMbevD_PCXOUQgda-3BkiAE01cYcAMz_BR@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, cmm@us.ibm.com, bcchocie@us.ibm.com,
-	mrlupfer@us.ibm.com, crscott@us.ibm.com,
-	linux-kernel@vger.kernel.org
-To: diegocg@gmail.com
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <201007280110.46059.diegocg@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+To: Dave Cundiff <syshackmin@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTimir3SMbevD_PCXOUQgda-3BkiAE01cYcAMz_BR@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 27, 2010 at 6:10 PM, Diego Calleja <diegocg@gmail.com> wrot=
-e:
-> On Mi=E9rcoles, 28 de Julio de 2010 00:00:18 bchociej@gmail.com escri=
-bi=F3:
->> With Btrfs's COW approach, an external cache (where data is moved to
->> SSD, rather than just cached there) makes a lot of sense. Though the=
-se
+On Wed, Jul 28, 2010 at 4:30 AM, Dave Cundiff <syshackmin@gmail.com> wrote:
+> Hello,
 >
-> As I understand it, what your proyect intends to do is to move "hot"
-> data to a SSD which would be part of a Btrfs pool, and not do any
-> kind of SSD caching, as bcache (http://lwn.net/Articles/394672/) does=
-?
+> I installed the git repo kernel and added some debug to the ENOSPC
+> returns. Unfortunately its still failing. If it helps any its bombing
+> out in btrfs_check_data_free_space() in extent-tree.c. Returning on
+> the ENOSPC at line 2959.
+>
+> Unfortunately that is the extent of my ability to debug a filesystem. :P
 >
 
-Yes, that's correct. It's likely not going to be a cache in the
-traditional sense, since the entire capacity of both HDD and SSD would
-be available.
+This is really helpful, thank you very much.
 
-BC
+Yan, Zheng

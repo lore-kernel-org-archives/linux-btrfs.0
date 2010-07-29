@@ -1,7 +1,8 @@
 From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 3/7] btrfs/acl: add noacl check for btrfs_get_acl()
-Date: Thu, 29 Jul 2010 16:28:28 +0800
-Message-ID: <4C513BAC.8050904@cn.fujitsu.com>
+Subject: [PATCH 6/7] btrfs: check the return value of btrfs_start_workers()
+ in open_ctree()
+Date: Thu, 29 Jul 2010 16:31:34 +0800
+Message-ID: <4C513C66.8010109@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=GB2312
@@ -12,37 +13,58 @@ To: Chris Mason <chris.mason@oracle.com>,
 Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs returned the acl info though it was mounted with "noacl" option.
-
-Steps to reproduce:
- # mkfs.btrfs /dev/sda2
- # mount /dev/sda2 /mnt
- # touch /mnt/file0
- # setfacl -m 'u:root:x,g::x,o::x' /mnt/file0
- # umount /mnt
- # mount /dev/sda2 -o noacl /mnt
- # getfacl /mnt/file0
-
-we add a noacl check for btrfs_get_acl() to fix it.
+If btrfs_start_workers() failed, we must stop mounting the btrfs, otherwise
+the btrfs can't run well because there is no kthread to deal with the request
+submited by it.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/acl.c |    3 +++
- 1 files changed, 3 insertions(+), 0 deletions(-)
+ fs/btrfs/disk-io.c |   33 ++++++++++++++++++++++++---------
+ 1 files changed, 24 insertions(+), 9 deletions(-)
 
-diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index bb35580..b070f58 100644
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -37,6 +37,9 @@ static struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
- 	char *value = NULL;
- 	struct posix_acl *acl;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 280de15..4dd6bf0 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1775,15 +1775,30 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 	fs_info->endio_write_workers.idle_thresh = 2;
+ 	fs_info->endio_meta_write_workers.idle_thresh = 2;
  
-+	if (!IS_POSIXACL(inode))
-+		return NULL;
+-	btrfs_start_workers(&fs_info->workers, 1);
+-	btrfs_start_workers(&fs_info->generic_worker, 1);
+-	btrfs_start_workers(&fs_info->submit_workers, 1);
+-	btrfs_start_workers(&fs_info->delalloc_workers, 1);
+-	btrfs_start_workers(&fs_info->fixup_workers, 1);
+-	btrfs_start_workers(&fs_info->endio_workers, 1);
+-	btrfs_start_workers(&fs_info->endio_meta_workers, 1);
+-	btrfs_start_workers(&fs_info->endio_meta_write_workers, 1);
+-	btrfs_start_workers(&fs_info->endio_write_workers, 1);
++	/*
++	 * We must start generic_worker first because it is used to create
++	 * other workers.
++	 */
++	ret = btrfs_start_workers(&fs_info->generic_worker, 1);
++	if (ret) {
++		printk(KERN_INFO "btrfs: start generic workers failed on %s\n",
++		       sb->s_id);
++		goto fail_iput;
++	}
 +
- 	acl = get_cached_acl(inode, type);
- 	if (acl != ACL_NOT_CACHED)
- 		return acl;
++	ret |= btrfs_start_workers(&fs_info->workers, 1);
++	ret |= btrfs_start_workers(&fs_info->submit_workers, 1);
++	ret |= btrfs_start_workers(&fs_info->delalloc_workers, 1);
++	ret |= btrfs_start_workers(&fs_info->fixup_workers, 1);
++	ret |= btrfs_start_workers(&fs_info->endio_workers, 1);
++	ret |= btrfs_start_workers(&fs_info->endio_meta_workers, 1);
++	ret |= btrfs_start_workers(&fs_info->endio_meta_write_workers, 1);
++	ret |= btrfs_start_workers(&fs_info->endio_write_workers, 1);
++	if (ret) {
++		printk(KERN_INFO "btrfs: start other workers failed on %s\n",
++		       sb->s_id);
++		goto fail_sb_buffer;
++	}
+ 
+ 	fs_info->bdi.ra_pages *= btrfs_super_num_devices(disk_super);
+ 	fs_info->bdi.ra_pages = max(fs_info->bdi.ra_pages,
 -- 
 1.7.0.1

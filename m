@@ -1,88 +1,48 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: can subvolumes be specified as compressed?
-Date: Thu, 29 Jul 2010 18:04:27 +0800
-Message-ID: <4C51522B.8090304@cn.fujitsu.com>
-References: <AANLkTi=_gp3hbXjqCnpzHJRAkBhRZqVZ1V5jhg1B0RAV@mail.gmail.com>	<4C5139FB.8070504@cn.fujitsu.com> <AANLkTi=HwyeSxwMNXWTCDzpzDMqoza1DcTuEzS6oirXF@mail.gmail.com>
-Reply-To: miaox@cn.fujitsu.com
+From: "Yan, Zheng" <zheng.yan@oracle.com>
+Subject: Re: [PATCH 7/7] btrfs: fix a wrong error check in add_ra_bio_pages()
+Date: Thu, 29 Jul 2010 18:38:39 +0800
+Message-ID: <AANLkTim+U2s5-vHhmPqam9wj0+0_=01bq3JjnR=xB8T2@mail.gmail.com>
+References: <4C513C95.3080403@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Wang Shaoyan <stufever@gmail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=HwyeSxwMNXWTCDzpzDMqoza1DcTuEzS6oirXF@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Linux Kernel <linux-kernel@vger.kernel.org>
+To: miaox@cn.fujitsu.com
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4C513C95.3080403@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 29 Jul 2010 16:55:03 +0800, Wang Shaoyan wrote:
-> A prerequisite is: when first mounted file system, not specify '-o
-> compress' options, only on mount subvolume
-> Below is my test:
-> # mkfs.btrfs /dev/sda8
-> # mount /dev/sda8 btrfs
-> # df
->      Used: 56k
-> # btrfs subvolume create mysubvolume
-> # mkdir some_dir_in_root
-> # mount -o compress,subvol=mysubvolume /dev/sda8 some_dir_in_root
-> # cd some_dir_in_root
-> # dd if=/dev/zero of=bigfile count=2048 //create a all-0 file of 1M byte
-> # df
->      Used:1088k
-> we can find it is not compressed at all.
+2010/7/29 Miao Xie <miaox@cn.fujitsu.com>:
+> From: Liu Bo <liubo2009@cn.fujitsu.com>
 >
-> Another test:if we mount subvolume with "-o compress" first, then we
-> mount /dev/sda8 without "-o compress", and create a test file in
-> somewhere not in subvolume, we can find the file is compressed too.
-
-Sorry! I made a mistake.
-
-According to the implement of the btrfs, after we mount a btrfs filesystem
-(include subvol), if we mount the same filesystem again or its subvol, the
-kernel doesn't allocate a new super_block object, and use the super_block
-object that allocated and initiated at the first mount. So the feature is also
-the same as the filesystem mounted first.
-
-Thanks
-Miao
-
+> Only when a page is not found by page_index, we'll go to the error ch=
+eck.
 >
-> 2010/7/29 Miao Xie<miaox@cn.fujitsu.com>:
->> On Thu, 29 Jul 2010 15:50:28 +0800, Wang Shaoyan wrote:
->>>
->>> Hi.
->>> I want a subvolume in root to be compressed, I try to do this:
->>> # mkfs.btrfs /dev/sda8
->>> # mount /dev/sda8 /home/usr/btrfs
->>> # cd /home/usr/btrfs
->>> # btrfs subvolume create mysubvolume
->>> # mount -o compress,subvol=mysubvolume /dev/sda8 some_dir_in_root
->>> but when I create a file in some_dir_in_root, the file isn't
->>> compressed at all. why? How can I specify some subvolumes to be
->>> compressed, and the others Not to be compressed in a single btrfs?
->>
->> The method that you said is right, by this way, I can create a compressed
->> file
->> on the specified subvolume.
->>
->> I think your file has been compressed or is hard to be compressed, so
->> you found it isn't compressed at all. Just like we use a zip tool to
->> compress
->> a compressed file, we will find the file isn't compressed at all.
->>
->> Thanks
->> Miao
->>
->>>
->>> --
->>> Wang Shaoyan
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->>>
->>
->>
+> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+> ---
+> =A0fs/btrfs/compression.c | =A0 =A02 +-
+> =A01 files changed, 1 insertions(+), 1 deletions(-)
 >
->
->
+> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+> index cb3877c..8458840 100644
+> --- a/fs/btrfs/compression.c
+> +++ b/fs/btrfs/compression.c
+> @@ -467,7 +467,7 @@ static noinline int add_ra_bio_pages(struct inode=
+ *inode,
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0rcu_read_lock();
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0page =3D radix_tree_lookup(&mapping->p=
+age_tree, page_index);
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0rcu_read_unlock();
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (page) {
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (!page) {
+> =A0check_misses:
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0misses++;
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0if (misses > 4)
 
+This patch is wrong. The word "miss" here means "miss for read-ahead be=
+cause
+the page is already in the page cache"
+
+Yan, Zheng

@@ -1,68 +1,51 @@
 From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 1/7] btrfs/acl: adjust logical path of btrfs_get_acl()
-Date: Thu, 29 Jul 2010 16:26:25 +0800
-Message-ID: <4C513B31.3010409@cn.fujitsu.com>
+Subject: [PATCH 4/7] Btrfs: fix increasing num_workers_starting twice
+Date: Thu, 29 Jul 2010 16:29:42 +0800
+Message-ID: <4C513BF6.5030906@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=GB2312
-Cc: Linux Kernel <linux-kernel@vger.kernel.org>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Linux Kernel <linux-kernel@vger.kernel.org>
 To: Chris Mason <chris.mason@oracle.com>,
 	Yan Zheng <zheng.yan@oracle.com>
 Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Liu Bo <liubo2009@cn.fujitsu.com>
+num_workers_starting is increased twice when the btrfs uses generic workers
+to create a new kthread.
 
-- There exists a memory leak.
-- More checks of returned "size" are needed.
+The reason is following:
+start_new_worker_func() calls btrfs_start_workers() to start a new kthread,
+this function will add 1 to ->num_workers_starting, but ->num_workers_starting
+has been increased by check_pending_worker_creates()
 
-According to ext3_get_acl()'s style, we do some adjustments here.
+we use __btrfs_start_workers() instead of btrfs_start_workers() to fix it.
 
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/acl.c |   17 ++++++++---------
- 1 files changed, 8 insertions(+), 9 deletions(-)
+ fs/btrfs/async-thread.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index 1606dc1..2f4f65a 100644
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -52,26 +52,25 @@ static struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
- 		BUG();
- 	}
+diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
+index 7ec1409..eb3ec2d 100644
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+@@ -84,11 +84,14 @@ struct worker_start {
+ 	struct btrfs_workers *queue;
+ };
  
--	size = __btrfs_getxattr(inode, name, "", 0);
-+	size = __btrfs_getxattr(inode, name, NULL, 0);
- 	if (size > 0) {
- 		value = kzalloc(size, GFP_NOFS);
- 		if (!value)
- 			return ERR_PTR(-ENOMEM);
- 		size = __btrfs_getxattr(inode, name, value, size);
--		if (size > 0) {
--			acl = posix_acl_from_xattr(value, size);
--			if (IS_ERR(acl))
--				return acl;
--			set_cached_acl(inode, type, acl);
--		}
--		kfree(value);
-+	}
-+	if (size > 0) {
-+		acl = posix_acl_from_xattr(value, size);
- 	} else if (size == -ENOENT || size == -ENODATA || size == 0) {
- 		/* FIXME, who returns -ENOENT?  I think nobody */
- 		acl = NULL;
--		set_cached_acl(inode, type, acl);
- 	} else {
- 		acl = ERR_PTR(-EIO);
- 	}
-+	kfree(value);
++static int __btrfs_start_workers(struct btrfs_workers *workers,
++					int num_workers);
 +
-+	if (!IS_ERR(acl))
-+		set_cached_acl(inode, type, acl);
- 
- 	return acl;
+ static void start_new_worker_func(struct btrfs_work *work)
+ {
+ 	struct worker_start *start;
+ 	start = container_of(work, struct worker_start, work);
+-	btrfs_start_workers(start->queue, 1);
++	__btrfs_start_workers(start->queue, 1);
+ 	kfree(start);
  }
+ 
 -- 
 1.7.0.1

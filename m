@@ -1,75 +1,52 @@
-From: Lubos Kolouch <lubos.kolouch@gmail.com>
-Subject: Re: no space left on device
-Date: Fri, 30 Jul 2010 15:09:59 +0000 (UTC)
-Message-ID: <i2uq07$p75$2@dough.gmane.org>
-References: <i2to2q$b3m$1@dough.gmane.org>
-	<AANLkTikBRfR45DZxZW9LM6wnREWrbysPCr9Z1d3YuYhC@mail.gmail.com>
-	<20100730122756.GA5056@nbgentoo.vslesy.cz>
-	<AANLkTinBj1O-LapAeBCT2Y3A1ZhfFZ3AotCk6SZ-e-2U@mail.gmail.com>
-	<AANLkTimcgzp8Fs524GMzPaancXZU689twnBH3orY0yYn@mail.gmail.com>
-	<i2uphq$p75$1@dough.gmane.org>
+From: Michael Kofler <michael.kofler@gmx.com>
+Subject: how to find out total capacity and raid level of btrfs file system
+Date: Sat, 31 Jul 2010 13:59:35 +0200
+Message-ID: <4C541027.3020105@gmx.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-correction - btrfs-cache processes
+I know df does not report the correct size for btrfs raid systems. Is 
+there any other way to find out the total capacity of a btrfs file 
+system? Or at least the raid level for data / metadata?
 
-Lubos Kolouch, Fri, 30 Jul 2010 15:02:18 +0000:
+My test system is Ubuntu 10.10 alpha with btrfs 0.19 and a 2.6.35 kernel 
+(don't know which rc).
 
-> With 2.6.34 it basically "works", but time to time the load goes up t=
-o
-> 50 and lot of btrfs-cleaner processess are spawned... the system is
-> responsive though, except for the filesystem... after an hour or so t=
-he
-> processes finish and the load goes back to normal
->=20
-> Lubos
->=20
->> On Fri, Jul 30, 2010 at 3:26 PM, Leonidas Spyropoulos
->> <artafinde@gmail.com> wrote:
->>> I use the latest btrfs-tools and 2.6.34-020634-generic kernel for
->>> lucid. Got no issues like that, is it happening with 2.6.34 kernel =
-as
->>> well?
->>>
->>> On Fri, Jul 30, 2010 at 1:27 PM, Lubos Kolouch
->>> <lubos.kolouch@gmail.com> wrote:
->>>>
->>>> Yes, I pulled today's btrfs-progs.
->>>>
->>>> Lubos
->>>>
->>>> On P=C3=A1, =C4=8Dec 30, 2010, 13:03:10, Leonidas Spyropoulos wrot=
-e:
->>>> > Have you updated with latest btrfs-tools?
->>>> >
->>>> > On Fri, Jul 30, 2010 at 6:31 AM, Lubos Kolouch
->>>> > <lubos.kolouch@gmail.com>wrote:
->>>> >
->>>> > > Hello,
->>>> > >
->>>> > > kerner 2.6.35-rc6
->>>> > >
->>>> > > btrfs filesystem df /home
->>>> > > Data: total=3D1.68TB, used=3D987.62GB
->>>> > > Metadata: total=3D56.01GB, used=3D48.16GB System: total=3D12.0=
-0MB,
->>>> > > used=3D200.00KB
->>>> > >
->>>> > > touch: cannot touch `/home/x': No space left on device
->>>> > >
->>>> > > Any ideas what I should do?
->>>> > >
->>>> > > Thank you
->>>> > >
->>>> > > Lubos
->>>> > >
+# uname -a
+Linux ubuntu 2.6.35-12-generic #17-Ubuntu SMP Mon Jul 26 18:48:06 UTC 
+2010 x86_64 GNU/Linux
 
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I created a raid1 system consisting of two 8GB devices (so total 
+capacity would be 8 GB for system + metadata + data)
+
+# mkfs.btrfs -d raid1 -m raid1 /dev/sdb1 /dev/sdc1
+# mount /dev/sdb1 /media/btrfs
+
+Now I gather all information I can with btrfs:
+
+# btrfs filesystem show /dev/sdb1
+Label: none  uuid: dc691a5d-187e-4cb4-a94a-d12dabdffde4
+	Total devices 2 FS bytes used 28.00KB
+	devid    1 size 8.00GB used 2.03GB path /dev/sdb1
+	devid    2 size 8.00GB used 2.01GB path /dev/sdc1
+# btrfs filesystem df /media/btrfs/
+Data:     total=1.01GB, used=0.00
+Metadata: total=1.01GB, used=24.00KB
+System:   total=12.00MB, used=4.00KB
+
+Is there a way to find out how devid 1 and devid 2 are used (i.e. which 
+raid level)?
+
+Is there a btrfs command to get the total capacity of my filesystem? (In 
+my case, it should report total 8 GB, of which 2.03 GB have already been 
+claimed for data + metadata, another 5.97 GB are free. It might also say 
+6,97 GB for data are still available.)
+
+Thank you,
+
+
+	Michael Kofler

@@ -1,40 +1,31 @@
-From: Fabian Kramer <komplexmaster@googlemail.com>
-Subject: how can i recover the btrfs after "parent transid verify failed"?
-Date: Sun, 1 Aug 2010 15:55:21 +0200
-Message-ID: <AANLkTiknZfh5MpGcNmM6_i=S-vJzc7EEVDsWo3oqWR+H@mail.gmail.com>
+From: David Brown <btrfs@davidb.org>
+Subject: Re: Hardlinks-per-directory limit?
+Date: Sun, 1 Aug 2010 10:43:23 -0700
+Message-ID: <201008011043.23048.btrfs@davidb.org>
+References: <7836277d97c74d44d8f2132e87db0b67.squirrel@webmail.jots.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain;
+  charset="us-ascii"
+Cc: linux-btrfs@vger.kernel.org
+To: "Ken D'Ambrosio" <ken@jots.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <7836277d97c74d44d8f2132e87db0b67.squirrel@webmail.jots.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-My raid5 crashed, so i changed the old hdd and started the rebuild.
-But now i can't mount the btrfs, the mount command frozen and the
-kernel give me in a loop the follwing lines:
+On Wednesday 28 July 2010, Ken D'Ambrosio said:
 
-Jul 29 18:37:04 fileserver kernel: [ 1229.692268]
-verify_parent_transid: 2492 callbacks suppressed
-Jul 29 18:37:04 fileserver kernel: [ 1229.692274] parent transid
-verify failed on 6975016271872 wanted 204247 found 204249
-Jul 29 18:37:04 fileserver kernel: [ 1229.692287] parent transid
-verify failed on 6975016271872 wanted 204247 found 204249
-Jul 29 18:37:04 fileserver kernel: [ 1229.696549] parent transid
-verify failed on 6975016271872 wanted 204247 found 204249
-Jul 29 18:37:04 fileserver kernel: [ 1229.696564] parent transid
-verify failed on 6975016271872 wanted 204247 found 204249
-Jul 29 18:37:04 fileserver kernel: [ 1229.700419] parent transid
-verify failed on 6975016271872 wanted 204247 found 204249
-Jul 29 18:37:04 fileserver kernel: [ 1229.700433] parent transid
-verify failed on 6975016271872 wanted 204247 found 204249
-Jul 29 18:37:04 fileserver kernel: [ 1229.704392] parent transid
-verify failed on 6975016271872 wanted 204247 found 204249
-Jul 29 18:37:04 fileserver kernel: [ 1229.704404] parent transid
-verify failed on 6975016271872 wanted 204247 found 204249
-Jul 29 18:37:04 fileserver kernel: [ 1229.708384] parent transid
-verify failed on 6975016271872 wanted 204247 found 204249
-Jul 29 18:37:04 fileserver kernel: [ 1229.708396] parent transid
-verify failed on 6975016271872 wanted 204247 found 204249
+> Hello, all.  I'm thinking of rolling out a BackupPC server, and --
+> based on the strength of the recent Phoronix benchmarks
+> (http://benchmarkreviews.com/index.php?option=com_content&task=view&id=11156&Itemid=23)
+> -- had been strongly considering btrfs.  But I do seem to recall
+> that there was some sort of hardlinks-per-directory limitation, and
+> BackupPC *loves* hardlinks.  Would someone care to either remind me
+> what the issue was, or reassure me that it's been rectified?
 
-Is there any way to revocery the fs?
+btrfs has a limit on the number of hardlinks that can exist in the
+same directory.  I don't believe that BackupPC will create any more
+hardlinks in a given directory than are already in the filesystem you
+are backing up.  It uses hardlinks between directories for files that
+haven't changed.
 
-rgds Fabian Kramer
+David

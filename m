@@ -1,58 +1,28 @@
-From: "Adi" <adalbert.b@gmx.de>
-Subject: Re: wanted X found X-1 but you got X-2
-Date: Mon, 02 Aug 2010 21:37:16 +0200
-Message-ID: <20100802193716.107960@gmx.net>
-References: <20100729131103.323870@gmx.net> <4C526516.30709@cn.fujitsu.com>
- <20100730071354.257500@gmx.net> <20100731163424.105410@gmx.net>
- <4C56199B.8090400@cn.fujitsu.com>
+From: "Michael Niederle" <mniederle@gmx.at>
+Subject: Re: Number of hard links limit
+Date: Mon, 2 Aug 2010 21:56:47 +0200
+Message-ID: <20100802215647.7466601d@simplux>
+References: <20100802114046.GA29926@lh.kyla.fi>
+	<20100802130556.GF30325@jeru.org>
+	<4ad406cb8ee6c52747b67b4c79a6d7dd@smtp.arbitraryconstant.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Cc: linux-btrfs@vger.kernel.org, liubo2009@cn.fujitsu.com
-To: miaox@cn.fujitsu.com
+Content-Type: text/plain; charset=US-ASCII
+Cc: <nicollet@jeru.org>, <linux-btrfs@vger.kernel.org>,
+	<cbarratt@users.sourceforge.net>
+To: Anthony Roberts <btrfs-devel@arbitraryconstant.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4C56199B.8090400@cn.fujitsu.com>
+In-Reply-To: <4ad406cb8ee6c52747b67b4c79a6d7dd@smtp.arbitraryconstant.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-hi Miao,
-
-now i get that error (on btrfsck):
-
-parent transid verify failed on 5403553792 wanted 103380 found 103378
-btrfsck: disk-io.c:739: open_ctree_fd: Assertion `!(!tree_root->node)' failed.
-
-if i want to mount it, it shows the same error in dmesg, but neither one hangs the terminal, as it did without the patches.
-do you need more debug? i didn't know how to activate it on gentoo, what flags do i need to do so?
-hm, and the last patch didn't show any output on "patch -p1"... is that normal?
-
-bye, adi
-
--------- Original-Nachricht --------
-> Datum: Mon, 02 Aug 2010 09:04:27 +0800
-> Von: Miao Xie <miaox@cn.fujitsu.com>
-> An: Adi <adalbert.b@gmx.de>
-> CC: liubo2009@cn.fujitsu.com, linux-btrfs@vger.kernel.org
-> Betreff: Re: wanted X found X-1 but you got X-2
-
-> Hi, Adi
+> Also, I believe it's not strictly 256 links, it's dependent on the length
+> of the names.
 > 
-> On Sat, 31 Jul 2010 18:34:24 +0200, Adi wrote:
-> > ok, i have tried the 2.6.35-rc6 kernel, as TiCPU on #btrfs suggested,
-> but i also got an error. i don't think it has something to do with kcrypt, as
-> i can mount another partition without any problems.
-> [snip]
-> > ------------[ cut here ]------------
-> > kernel BUG at fs/btrfs/async-thread.c:603!
-> > invalid opcode: 0000 [#1] PREEMPT
-> [snip]
-> It seems this problem is the same as the one I have fixed.
-> Could you try to applied the following patches and test again?
->    http://lkml.org/lkml/2010/7/29/86
->    http://lkml.org/lkml/2010/7/29/84
->    http://lkml.org/lkml/2010/7/29/82
-> 
-> Thanks
-> Miao
+> I recall Chris posting something about being able to fix this without a
+> format change, though it wasn't a priority yet.
 
--- 
-Neu: GMX De-Mail - Einfach wie E-Mail, sicher wie ein Brief!  
-Jetzt De-Mail-Adresse reservieren: http://portal.gmx.net/de/go/demail
+As to my knowledge the limit is 64KB for all names of a single file and due to
+Chris it will take a format change to fix this.
+
+I ran into the limit some month ago while installing some Gentoo packages.
+
+Greetings, Michael

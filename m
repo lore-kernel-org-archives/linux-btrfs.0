@@ -1,51 +1,58 @@
-From: Anthony Roberts <btrfs-devel@arbitraryconstant.com>
-Subject: Re: Number of hard links limit
-Date: Mon, 02 Aug 2010 12:31:12 -0600
-Message-ID: <4ad406cb8ee6c52747b67b4c79a6d7dd@smtp.arbitraryconstant.com>
-References: <20100802114046.GA29926@lh.kyla.fi> <20100802130556.GF30325@jeru.org>
+From: "Adi" <adalbert.b@gmx.de>
+Subject: Re: wanted X found X-1 but you got X-2
+Date: Mon, 02 Aug 2010 21:37:16 +0200
+Message-ID: <20100802193716.107960@gmx.net>
+References: <20100729131103.323870@gmx.net> <4C526516.30709@cn.fujitsu.com>
+ <20100730071354.257500@gmx.net> <20100731163424.105410@gmx.net>
+ <4C56199B.8090400@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: <linux-btrfs@vger.kernel.org>, <cbarratt@users.sourceforge.net>
-To: <nicollet@jeru.org>
+Content-Type: text/plain; charset="utf-8"
+Cc: linux-btrfs@vger.kernel.org, liubo2009@cn.fujitsu.com
+To: miaox@cn.fujitsu.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100802130556.GF30325@jeru.org>
+In-Reply-To: <4C56199B.8090400@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2 Aug 2010 15:05:56 +0200, Xavier Nicollet <nicollet@jeru.org>
-wrote:
-> Le 02 ao=C3=BBt 2010 =C3=A0 14:40, Sami Liedes a =C3=A9crit:
->> [BTRFS supports only 256 hard-links per directory ...] but if it
->> indeed needs a disk format change, I think this should be considered
->> before the format is set in stone. I won't personally lose my sleep =
-if
->> this is not fixed - I can use other filesystems for backuppc and oth=
-er
->> similar systems,=20
->=20
-> Wouldn't it be even better to actually patch BackupPC to handle btrfs
-> snapshots and COW (bcp) ?
+hi Miao,
 
-That's not the only application impacted by this.
+now i get that error (on btrfsck):
 
-Also, I think it's unrealistic to expect everyone else to code to
-BTRFS-specific ioctls when there's other filesystems and other platform=
-s to
-worry about. It would also be nice if we could tar/rsync/whatever betwe=
-en
-BTRFS and something else like ext3 or some other OS entirely, without
-archiving tools either blowing up or requiring application-specific
-knowledge of how to convert dedups to hard links and back.
+parent transid verify failed on 5403553792 wanted 103380 found 103378
+btrfsck: disk-io.c:739: open_ctree_fd: Assertion `!(!tree_root->node)' failed.
 
-Also, I believe it's not strictly 256 links, it's dependent on the leng=
-th
-of the names.
+if i want to mount it, it shows the same error in dmesg, but neither one hangs the terminal, as it did without the patches.
+do you need more debug? i didn't know how to activate it on gentoo, what flags do i need to do so?
+hm, and the last patch didn't show any output on "patch -p1"... is that normal?
 
-I recall Chris posting something about being able to fix this without a
-format change, though it wasn't a priority yet.
+bye, adi
 
--Anthony
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-------- Original-Nachricht --------
+> Datum: Mon, 02 Aug 2010 09:04:27 +0800
+> Von: Miao Xie <miaox@cn.fujitsu.com>
+> An: Adi <adalbert.b@gmx.de>
+> CC: liubo2009@cn.fujitsu.com, linux-btrfs@vger.kernel.org
+> Betreff: Re: wanted X found X-1 but you got X-2
+
+> Hi, Adi
+> 
+> On Sat, 31 Jul 2010 18:34:24 +0200, Adi wrote:
+> > ok, i have tried the 2.6.35-rc6 kernel, as TiCPU on #btrfs suggested,
+> but i also got an error. i don't think it has something to do with kcrypt, as
+> i can mount another partition without any problems.
+> [snip]
+> > ------------[ cut here ]------------
+> > kernel BUG at fs/btrfs/async-thread.c:603!
+> > invalid opcode: 0000 [#1] PREEMPT
+> [snip]
+> It seems this problem is the same as the one I have fixed.
+> Could you try to applied the following patches and test again?
+>    http://lkml.org/lkml/2010/7/29/86
+>    http://lkml.org/lkml/2010/7/29/84
+>    http://lkml.org/lkml/2010/7/29/82
+> 
+> Thanks
+> Miao
+
+-- 
+Neu: GMX De-Mail - Einfach wie E-Mail, sicher wie ein Brief!  
+Jetzt De-Mail-Adresse reservieren: http://portal.gmx.net/de/go/demail

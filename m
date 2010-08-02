@@ -1,59 +1,94 @@
-From: Bruce Guenter <bruce@untroubled.org>
-Subject: Re: synchronous removal?
-Date: Mon, 2 Aug 2010 09:02:42 -0600
-Message-ID: <20100802150242.GA12234@untroubled.org>
-References: <4C55E2F3.3030202@noir.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Are enormous extents harmful?
+Date: Mon, 2 Aug 2010 11:12:51 -0400
+Message-ID: <20100802151251.GN16630@think>
+References: <4C557681.90905@kochanski.org>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="fdj2RfSjLxBAspz7"
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Greg Kochanski <gpk@kochanski.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4C55E2F3.3030202@noir.com>
+In-Reply-To: <4C557681.90905@kochanski.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sun, Aug 01, 2010 at 02:28:33PM +0100, Greg Kochanski wrote:
+> I created a btrfs file system with a single 420 megabyte file
+> in it.     And, when I look at the file system with btrfs-debug,
+> I see gigantic extents, as large as 99 megabytes:
+> 
+> > $ sudo btrfs-debug-tree /dev/sdb | grep extent
+> > ...
 
---fdj2RfSjLxBAspz7
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+btrfs-debug-tree is a great way to look at and learn more about the
+btrfs disk layout.
 
-On Sun, Aug 01, 2010 at 02:11:15PM -0700, K. Richard Pixley wrote:
-> I notice that when I remove old snapshots and delete old directories,=20
-> the free space on my disk, (according to df), doesn't rise immediately. =
-=20
+> >         dev extent chunk_tree 3
+> >         dev extent chunk_tree 3
+> >         extent data disk byte 80084992 nr 99958784
+> >         extent data offset 0 nr 99958784 ram 99958784
+> >         extent compression 0
+> >         extent data disk byte 181534720 nr 74969088
+> >         extent data offset 0 nr 74969088 ram 74969088
+> > ...
+> 
+> 
+> This may be too much of a good thing.   From the point
+> of view of efficient reading, large extents are good, because
+> they minimize seeks in sequential reads.
+> But there will be diminishing returns when
+> the extent gets bigger than the size of a physical disk cylinder.
 
-> Basically, I want to check to see if there's enough space available.  If=
-=20
-> not, I want to remove some things, (including at least one snapshot),=20
-> wait for the cleaner to digest, and then start over with the checking to=
-=20
-> see if there's enough space available and loop until I've removed enough=
-=20
-> things that there is enough space available.  How can I do that on a=20
-> btrfs file system?
+Even for small extents, (4k blocks) you can do large IOs.  ext23 both do
+this and generally are able to do ios much larger than a physical
+cylinder.
 
-I asked a similar question a while back, and the short answer is that
-you can't, short of unmounting and remounting the filesystem.  The
-indication was made that writing a new ioctl to wait for all background
-activity wouldn't be too hard, but I don't recall seeing it in any
-recent patches.
+This is another way of saying the size of the extent doesn't have to
+impact fragmentation or seeking.  We can have 512 byte blocks with zero
+seeks if we lay them out correctly.
 
-See this thread:
-http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg04872.html
+> 
+> For instance, modern disks have a data transfer rate of (about) 200MB/s,
+> so adding one extra seek (about 8ms) in the middle of a
+> 200MB extent can't possibly slow things down by more than 1%.
+> (And, that's the worst-possible case.)
+> 
+> But, large extents (I think) also have costs.   For instance, if you are
+> writing a byte into the middle of an extent, doesn't Btrfs have to copy
+> the entire extent?    If so, and if you have a 99MB extent, the cost
+> of that write operation will be *huge*.
 
---=20
-Bruce Guenter <bruce@untroubled.org>                http://untroubled.org/
+Btrfs doesn't do COW on the whole extent, just the portion you are
+changing. 
 
---fdj2RfSjLxBAspz7
-Content-Type: application/pgp-signature
-Content-Disposition: inline
+The real benefit of extents for traditional filesystems is that you just
+don't need as much metadata to describe the space used on disk by a
+given file.  For huge files this matters quite a lot, just look at how
+long it takes to delete a 1TB sparse file on ext3.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.15 (GNU/Linux)
+In btrfs the size of the extent matters even more.  For COW and
+snapshots, we have more tracking per-extent than most filesystems do.
+Keeping larger extents allows us to have less tracking and generally
+makes things much more efficient.
 
-iEYEARECAAYFAkxW3hEACgkQ6W+y3GmZgOhEHQCgm29keLi8tdSQFZ+aLpGG4Wmq
-vesAoInL5Bx/xU3QXPMQhkPz/4nLSAGn
-=JBKF
------END PGP SIGNATURE-----
+> 
+> Likewise, if you have compressed extents, and you want to read one
+> byte near the end of the extent, Btrfs needs to uncompress the
+> entire extent.    Under some circumstances, you might have to
+> decompress 99MB to read one short block of data.   (Admittedly,
+> cacheing will make this worst-case scenario less common, but
+> it will still be there sometimes.)
 
---fdj2RfSjLxBAspz7--
+The size of a compressed extent is limited to 256k, both on disk and in
+ram.  We try to make sure uncompressing the extent won't make the
+machine fall over.
+
+So, the issues you talk about do all exist.  We try to manage the
+compromises around extent size and still keep the benefits of large
+extents.  There was a mount option to limit the max extent size in the
+past, but it was not used very often and made the enospc code
+dramatically more complex.  It was removed to cut down on enospc
+problems.
+
+(more extents mean more metadata which means more space per operation)
+
+-chris

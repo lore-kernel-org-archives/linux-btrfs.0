@@ -1,79 +1,75 @@
-From: Dan Magenheimer <dan.magenheimer@oracle.com>
-Subject: RE: [PATCH V3 0/8] Cleancache: overview
-Date: Tue, 3 Aug 2010 12:09:54 -0700 (PDT)
-Message-ID: <af8b0006-0eb7-468a-bbf8-36ecec9bec35@default>
-References: <20100621231809.GA11111%ca-server1.us.oracle.com4C49468B.40307@vflare.org>
- <840b32ff-a303-468e-9d4e-30fc92f629f8@default>
- <20100723140440.GA12423@infradead.org>
- <364c83bd-ccb2-48cc-920d-ffcf9ca7df19@default>
- <a7f4db53-c348-4cff-8762-7ea4031e4813@default
- 22A6238E-0BA4-4AB9-A4FA-28B206A47513@oracle.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Boaz Harrosh <bharrosh@panasas.com>,
-        Christoph Hellwig
- <hch@infradead.org>, ngupta@vflare.org,
-        akpm@linux-foundation.org, Chris
- Mason <chris.mason@oracle.com>,
-        viro@zeniv.linux.org.uk, adilger@Sun.COM, tytso@mit.edu,
-        mfasheh@suse.com, Joel Becker <joel.becker@oracle.com>, matthew@wil.cx,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-        ocfs2-devel@oss.oracle.com, linux-mm@kvack.org, jeremy@goop.org,
-        JBeulich@novell.com, Kurt Hackel <kurt.hackel@oracle.com>,
-        npiggin@suse.de, Dave Mccracken <dave.mccracken@oracle.com>,
-        riel@redhat.com, avi@redhat.com, Konrad Wilk <konrad.wilk@oracle.com>
-To: Andreas Dilger <andreas.dilger@oracle.com>
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <22A6238E-0BA4-4AB9-A4FA-28B206A47513@oracle.com>
+From: Sage Weil <sage@newdream.net>
+Subject: [PATCH] Btrfs: allow subvol deletion by owner
+Date: Tue,  3 Aug 2010 12:48:20 -0700
+Message-ID: <1280864900-21067-1-git-send-email-sage@newdream.net>
+Cc: Sage Weil <sage@newdream.net>
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> From: Andreas Dilger
-> Sent: Tuesday, August 03, 2010 12:34 PM
-> To: Dan Magenheimer
-> Subject: Re: [PATCH V3 0/8] Cleancache: overview
->=20
-> On 2010-08-03, at 11:35, Dan Magenheimer wrote:
-> > - The FS should be block-device-based (e.g. a ram-based FS
-> >  such as tmpfs should not enable cleancache)
->=20
-> When you say "block device based", does this exclude network
-> filesystems?  It would seem cleancache, like fscache, is actually best
-> suited to high-latency network filesystems.
+Allow users to delete the snapshots/subvols they own.  Instead of
+CAP_SYS_ADMIN, require that
 
-I don't think it should exclude network FSs and agree cleancache
-might be well-suited for them.  So if "block device based"
-leaves out the possibility of network FSs, I am just
-displaying my general ignorance of FSs and I/O, and
-welcome clarification from FS developers.  What I really
-meant is: Don't use cleancache for RAM-based filesystems.
-=20
-> > - To ensure coherency/correctness, inode numbers must be unique
-> >  (e.g. no emulating 64-bit inode space on 32-bit inode numbers)
->=20
-> Does it need to be restricted to inode numbers at all (i.e. can it use
-> an opaque internal identifier like the NFS file handle)?  Disallowing
-> cleancache on a filesystem that uses 64-bit (or larger) inodes on a 32-
-> bit system reduces its usefulness.
+ - the user has write and exec permission on the parent directory
+ - security_inode_rmdir() doesn't object
+ - the user has write and exec permission on the subvol directory
+ - the user owns the subvol directory
+ - the directory and subvol append flags are not set
 
-True... Earlier versions of the patch did not use ino_t but
-instead used an opaque always-64-bit-unsigned "object id".
-The patch changed to use ino_t in response to Al Viro's comment
-to "use sane types".
+This is a bit more strict than the requirements for 'rm -f subvol/*',
+which is allowed with just 'wx' on non-owned non-sticky dirs.  It is less
+strict than 'rmdir subvol', which has additional requirements if the parent
+directory is sticky.  It is less strict than 'rm -rf subvol', which would
+require scanning the entire subvol to ensure all content is deletable.
 
-The <pool_id,object_id,pg_offset> triple must uniquely
-and permanently (unless explicitly flushed) describe
-exactly one page of FS data.  So if usefulness is increased
-by changing object_id back to an explicit 64-bit value,
-I'm happy to do that.  The only disadvantage I can
-see is that 32-bit systems pass an extra 32 bits on
-every call that may always be zero on most FSs.
+Signed-off-by: Sage Weil <sage@newdream.net>
+---
+ fs/btrfs/ioctl.c |   25 ++++++++++++++++++++++---
+ 1 files changed, 22 insertions(+), 3 deletions(-)
 
-Thanks,
-Dan
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 9254b3d..b31283a 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1227,9 +1227,6 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
+ 	int ret;
+ 	int err = 0;
+ 
+-	if (!capable(CAP_SYS_ADMIN))
+-		return -EPERM;
+-
+ 	vol_args = memdup_user(arg, sizeof(*vol_args));
+ 	if (IS_ERR(vol_args))
+ 		return PTR_ERR(vol_args);
+@@ -1264,6 +1261,28 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
+ 		goto out_dput;
+ 	}
+ 
++	/*
++	 * Allow subvol deletion if we own the subvol and we would
++	 * (approximately) be allowed to rmdir it.  Strictly speaking,
++	 * we could possibly delete everything with fewer permissions,
++	 * or might require more permissions to remove all files
++	 * contained by the subvol, but we aren't trying to mimic
++	 * directory semantics perfectly.
++	 */
++	err = inode_permission(dir, MAY_WRITE | MAY_EXEC);
++	if (err)
++		goto out_dput;
++	err = security_inode_rmdir(dir, dentry);
++	if (err)
++		goto out_dput;
++	err = inode_permission(inode, MAY_WRITE | MAY_EXEC);
++	if (err)
++		goto out_dput;
++	err = -EPERM;
++	if (inode->i_uid != current_fsuid() || IS_APPEND(dir) ||
++	    IS_APPEND(inode))
++		goto out_dput;
++
+ 	dest = BTRFS_I(inode)->root;
+ 
+ 	mutex_lock(&inode->i_mutex);
+-- 
+1.7.0
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>

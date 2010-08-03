@@ -1,143 +1,62 @@
-From: birger <birger@birger.sh>
-Subject: Re: birgers RFE #2
-Date: Tue, 03 Aug 2010 16:24:49 +0200
-Message-ID: <1280845489.31210.20.camel@sch30110.bergens-tidende.no>
+From: Boaz Harrosh <bharrosh@panasas.com>
+Subject: Re: [PATCH V3 0/8] Cleancache: overview
+Date: Tue, 03 Aug 2010 19:22:36 +0300
+Message-ID: <4C58424C.1020208@panasas.com>
+References: <20100621231809.GA11111@ca-server1.us.oracle.com4C49468B.40307@vflare.org> <840b32ff-a303-468e-9d4e-30fc92f629f8@default 20100723140440.GA12423@infradead.org 364c83bd-ccb2-48cc-920d-ffcf9ca7df19@default> <fc254547-5926-4cb9-98e1-7a79f7284e30@default>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="=-Li4rT5i92hP76bQi8y/M"
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: Christoph Hellwig <hch@infradead.org>, ngupta@vflare.org,
+ akpm@linux-foundation.org, Chris Mason <chris.mason@oracle.com>,
+ viro@zeniv.linux.org.uk, adilger@sun.com, tytso@mit.edu,
+ mfasheh@suse.com, Joel Becker <joel.becker@oracle.com>, matthew@wil.cx,
+ linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+ linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+ ocfs2-devel@oss.oracle.com, linux-mm@kvack.org, jeremy@goop.org,
+ JBeulich@novell.com, Kurt Hackel <kurt.hackel@oracle.com>,
+ npiggin@suse.de, Dave Mccracken <dave.mccracken@oracle.com>,
+ riel@redhat.com, avi@redhat.com, Konrad Wilk <konrad.wilk@oracle.com>
+To: Dan Magenheimer <dan.magenheimer@oracle.com>
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <fc254547-5926-4cb9-98e1-7a79f7284e30@default>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 07/24/2010 12:17 AM, Dan Magenheimer wrote:
+>>> On Fri, Jul 23, 2010 at 06:58:03AM -0700, Dan Magenheimer wrote:
+>>>> CHRISTOPH AND ANDREW, if you disagree and your concerns have
+>>>> not been resolved, please speak up.
+>>
+>> Hi Christoph --
+>>
+>> Thanks very much for the quick (instantaneous?) reply!
+>>
+>>> Anything that need modification of a normal non-shared fs is utterly
+>>> broken and you'll get a clear NAK, so the propsal before is a good
+>>> one.
+>>
+>> No, the per-fs opt-in is very sensible; and its design is
+>> very minimal.
+> 
+> Not to belabor the point, but maybe the right way to think about
+> this is:
+> 
+> Cleancache is a new optional feature provided by the VFS layer
+> that potentially dramatically increases page cache effectiveness
+> for many workloads in many environments at a negligible cost.
+> 
+> Filesystems that are well-behaved and conform to certain restrictions
+> can utilize cleancache simply by making a call to cleancache_init_fs
+> at mount time.  Unusual, misbehaving, or poorly layered filesystems
+> must either add additional hooks and/or undergo extensive additional
+> testing... or should just not enable the optional cleancache.
 
---=-Li4rT5i92hP76bQi8y/M
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
+OK, So I maintain a filesystem in Kernel. How do I know if my FS
+is not "Unusual, misbehaving, or poorly layered"
 
-Here is mine...
+Thanks
+Boaz
 
---=-Li4rT5i92hP76bQi8y/M
-Content-Type: application/x-shellscript; name="btrfs-snap"
-Content-Disposition: attachment; filename="btrfs-snap"
-Content-Transfer-Encoding: 7bit
-
-#!/bin/bash
-#
-# btrfs-snap - make periodic snapshots of btrfs filesystem
-#
-# Copyright (C) 2010 Birger Monsen birger@birger.sh
-#
-# This program is distributed under the GNU General Public License
-# http://www.gnu.org/licenses/gpl.txt
-#
-
-LOG_FACILITY=local0
-VERSION="1.0"
-prog=${0##*/}
-
-USAGE="Usage: ${prog} -h for usage help
-       ${prog} -V for version
-       ${prog} <mountpoint> <prefix> <count>"
-SYNOPSIS="${prog} <mountpoint> <prefix> <count>
-<mountpoint> is the mountpoint of the btrfs file system to make a
-             snapshot of
-<prefix>     is the prefix to be used in the name of the snapshot.
-             E.g. hourly, daily, weekly...
-<count>      The number of snapshots with the given prefix to keep.
-
-btrfs-snap / hourly 24
-would make a snapshot in /.snapshot called hourly_<date>_<time>
-where <date> is on the form YYYY-MM-DD and <time> is on the form
-HH:MM:SS. This format makes shure snapshot names sort correctly in
-cronological order even when sorted alphabetically. The 24 newest
-snapshots matching the prefix are kept around. The rest are deleted.
-
-Snapshots are always created in a directory called .snapshot at the
-top level of the given mount point.
-
-Example usage for a system with 2 btrfs file systems mounted as
-/ and /home (remember to make these scripts executable):
-
-/etc/cron.hourly/btrfs-snap
-
-#!/bin/bash
-${0} / hourly 24
-${0} /home hourly 24
-
-/etc/cron.daily/btrfs-snap
-
-#!/bin/bash
-${0} / daily 7
-${0} /home daily 7
-
-/etc/cron.weekly/btrfs-snap
-
-#!/bin/bash
-${0} /home weekly 4
-
-Remember that at the moment snapshots cannot be made read-only, but you
-should not modify the snapshots created by this script, as they will
-get deleted without any notice. To restore a file, just copy it back from
-a snapshot to the main branch."
-
-while getopts "hV" arg; do
-	case "${arg}" in
-		h )
-			echo "$SYNOPSIS"
-			exit 0
-			;;
-		V )
-			echo "${prog} Version ${VERSION}"
-			exit 0
-			;;
-		* )
-			echo "$USAGE"
-			exit 1
-			;;
-	esac
-done
-
-
-if [ $# -ne 3 ] ; then
-	echo "$USAGE"
-	exit 1
-fi
-
-if [ -f /etc/sysconfig/btrfs-snap ] ; then
-	. /etc/sysconfig/btrfs-snap
-fi
-
-mp=$1
-pf=$2
-cnt=$(( $3+1 ))
-
-mount -t btrfs | cut -d " " -f 3 | grep "^${mp}$" > /dev/null
-if [ $? -ne 0 ] ; then
-	echo "Error: ${mp} is not a btrfs mountpoint"
-	exit 1
-fi
-
-if [ ! -d "${mp}/.snapshot" ]; then
-	logger -p ${LOG_FACILITY}.info -t ${prog} "Creating ${mp}/.snapshot"
-	mkdir "${mp}/.snapshot"
-fi
-
-dt=`date +'%Y-%m-%d_%H:%M:%S'`
-out=`/sbin/btrfs subvol snapshot ${mp} ${mp}/.snapshot/${pf}_${dt} 2>&1`
-if [ $? -eq 0 ] ; then
-	logger -p ${LOG_FACILITY}.info -t ${prog} "${out}"
-else
-	logger -p ${LOG_FACILITY}.err -t ${prog} "${out}"
-fi
-
-ls -dr ${mp}/.snapshot/${pf}_* | tail -n +${cnt} | while read snap ; do
-	out=`/sbin/btrfs subvolume delete ${snap} 2>&1`
-if [ $? -eq 0 ] ; then
-	logger -p ${LOG_FACILITY}.info -t ${prog} "${out}"
-else
-	logger -p ${LOG_FACILITY}.err -t ${prog} "${out}"
-fi
-done
-
-
---=-Li4rT5i92hP76bQi8y/M--
-
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>

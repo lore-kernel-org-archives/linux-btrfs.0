@@ -1,126 +1,143 @@
-From: Xavier Nicollet <nicollet@jeru.org>
+From: birger <birger@birger.sh>
 Subject: Re: birgers RFE #2
-Date: Tue, 3 Aug 2010 16:33:13 +0200
-Message-ID: <20100803143313.GN30325@jeru.org>
-References: <1280839481.31210.10.camel@sch30110.bergens-tidende.no> <20100803134812.GK30325@jeru.org> <AANLkTimizt+Eh+B+cViWXUBa9J1i0XVK2qU0bEmcVfMB@mail.gmail.com>
-Reply-To: nicollet@jeru.org
+Date: Tue, 03 Aug 2010 16:24:49 +0200
+Message-ID: <1280845489.31210.20.camel@sch30110.bergens-tidende.no>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-15
-Cc: linux-btrfs@vger.kernel.org
-To: Benjamin Griese <der.darude@gmail.com>
+Content-Type: multipart/mixed; boundary="=-Li4rT5i92hP76bQi8y/M"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimizt+Eh+B+cViWXUBa9J1i0XVK2qU0bEmcVfMB@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 03 ao=FBt 2010 =E0 15:42, Benjamin Griese a =E9crit:
-> Hello guys,
-> I would be interested in that script, maybe in both of yours,
 
-It is not supposedly bulletproof. Use at your own risks.
-backup1:/usr/local/bin# crontab -l
-# m h  dom mon dow   command
-# hourly backup
-0 * * * *  /usr/local/bin/snapshots.py -h     =20
-# daily backup
-10 6 * * *  /usr/local/bin/snapshots.py -d
-# weekly backup
-#20 6 * * 0 /usr/local/bin/snapshots.py -w
-# monthly backup
-#30 6 1 * * /usr/local/bin/snapshots.py -m
-# yearly backup
-#40 6 1 1 * /usr/local/bin/snapshots.py -y
+--=-Li4rT5i92hP76bQi8y/M
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
 
+Here is mine...
 
-#! /usr/bin/env python
+--=-Li4rT5i92hP76bQi8y/M
+Content-Type: application/x-shellscript; name="btrfs-snap"
+Content-Disposition: attachment; filename="btrfs-snap"
+Content-Transfer-Encoding: 7bit
 
-""" Daily snapshots for all our backups """
+#!/bin/bash
+#
+# btrfs-snap - make periodic snapshots of btrfs filesystem
+#
+# Copyright (C) 2010 Birger Monsen birger@birger.sh
+#
+# This program is distributed under the GNU General Public License
+# http://www.gnu.org/licenses/gpl.txt
+#
 
-import os
-import os.path
-import glob
-import sys
-import subprocess
-import time
-import re
+LOG_FACILITY=local0
+VERSION="1.0"
+prog=${0##*/}
 
+USAGE="Usage: ${prog} -h for usage help
+       ${prog} -V for version
+       ${prog} <mountpoint> <prefix> <count>"
+SYNOPSIS="${prog} <mountpoint> <prefix> <count>
+<mountpoint> is the mountpoint of the btrfs file system to make a
+             snapshot of
+<prefix>     is the prefix to be used in the name of the snapshot.
+             E.g. hourly, daily, weekly...
+<count>      The number of snapshots with the given prefix to keep.
 
+btrfs-snap / hourly 24
+would make a snapshot in /.snapshot called hourly_<date>_<time>
+where <date> is on the form YYYY-MM-DD and <time> is on the form
+HH:MM:SS. This format makes shure snapshot names sort correctly in
+cronological order even when sorted alphabetically. The 24 newest
+snapshots matching the prefix are kept around. The rest are deleted.
 
-def usage():
-        """ Print usage and exit """
-        print "usage: %s [-y|-m|-d|-h]" % sys.argv[0]
-        sys.exit(2)
+Snapshots are always created in a directory called .snapshot at the
+top level of the given mount point.
 
-def chdir_force(path):
-        """ Chdir even if we have to make the path """
-        try:
-                os.makedirs(path)
-        except OSError:
-                pass
-        os.chdir(path)
+Example usage for a system with 2 btrfs file systems mounted as
+/ and /home (remember to make these scripts executable):
 
-class Tuning:
-        tuning =3D {
-                '-y' : [ 'yearly', 1 ],   # we keep 1 snapshots
-                '-m' : [ 'monthly', 1 ],  # we keep 1 snapshots
-                '-w' : [ 'weekly', 1 ],   # we keep 1 weekly snapshots
-                '-d' : [ 'daily', 4 ],
-                '-h' : [ 'hourly', 2 ],
-        }
+/etc/cron.hourly/btrfs-snap
 
-        def __init__(self):
-                try:
-                        option =3D sys.argv[1]
-                        (self.mode, self.keep) =3D Tuning.tuning[option=
-]
-                except (IndexError, KeyError):
-                        usage()
+#!/bin/bash
+${0} / hourly 24
+${0} /home hourly 24
 
-def get_backup_name():
-        """ Return the backup dir name.=20
-                It depends on the current location and time. """
-        name =3D time.strftime("backup-%y-%m-%d-%H:%M:%S")
-        if os.path.exists(name):
-                print "name already exists"
-                sys.exit(2)
-        return name
+/etc/cron.daily/btrfs-snap
 
-def main():
-        tuning =3D Tuning()
+#!/bin/bash
+${0} / daily 7
+${0} /home daily 7
 
-        backup_path =3D os.path.join("/mnt/btrfs/history", tuning.mode)
-        chdir_force(backup_path)
+/etc/cron.weekly/btrfs-snap
 
-        # Make the new snapshot
-        cmd =3D "/usr/local/bin/btrfs subvolume snapshot".split()
-        backup_name =3D get_backup_name()
-        cmd.extend( ["/backup/", backup_name] )
-        ret =3D subprocess.call(cmd)
-        if ret !=3D 0:
-                print "return from btrfs subvol snap: " + str(ret)
+#!/bin/bash
+${0} /home weekly 4
 
-        # Filter the number of snapshots
-        files =3D sorted( (file for file in glob.glob( "backup-*") if n=
-ot file.endswith(".old")) )
-        if len(files) > tuning.keep:
-                for file in files[:-tuning.keep]:
-                        cmd =3D "/usr/local/bin/btrfs subvolume delete =
-".split()
-                        cmd.append( file )  =20
-                        ret =3D subprocess.call(cmd)
-                        if ret !=3D 0:
-                                print "return from btrfs subvol del: " =
-+ ret
+Remember that at the moment snapshots cannot be made read-only, but you
+should not modify the snapshots created by this script, as they will
+get deleted without any notice. To restore a file, just copy it back from
+a snapshot to the main branch."
 
-if __name__ =3D=3D '__main__':
-        main()
+while getopts "hV" arg; do
+	case "${arg}" in
+		h )
+			echo "$SYNOPSIS"
+			exit 0
+			;;
+		V )
+			echo "${prog} Version ${VERSION}"
+			exit 0
+			;;
+		* )
+			echo "$USAGE"
+			exit 1
+			;;
+	esac
+done
 
 
+if [ $# -ne 3 ] ; then
+	echo "$USAGE"
+	exit 1
+fi
+
+if [ -f /etc/sysconfig/btrfs-snap ] ; then
+	. /etc/sysconfig/btrfs-snap
+fi
+
+mp=$1
+pf=$2
+cnt=$(( $3+1 ))
+
+mount -t btrfs | cut -d " " -f 3 | grep "^${mp}$" > /dev/null
+if [ $? -ne 0 ] ; then
+	echo "Error: ${mp} is not a btrfs mountpoint"
+	exit 1
+fi
+
+if [ ! -d "${mp}/.snapshot" ]; then
+	logger -p ${LOG_FACILITY}.info -t ${prog} "Creating ${mp}/.snapshot"
+	mkdir "${mp}/.snapshot"
+fi
+
+dt=`date +'%Y-%m-%d_%H:%M:%S'`
+out=`/sbin/btrfs subvol snapshot ${mp} ${mp}/.snapshot/${pf}_${dt} 2>&1`
+if [ $? -eq 0 ] ; then
+	logger -p ${LOG_FACILITY}.info -t ${prog} "${out}"
+else
+	logger -p ${LOG_FACILITY}.err -t ${prog} "${out}"
+fi
+
+ls -dr ${mp}/.snapshot/${pf}_* | tail -n +${cnt} | while read snap ; do
+	out=`/sbin/btrfs subvolume delete ${snap} 2>&1`
+if [ $? -eq 0 ] ; then
+	logger -p ${LOG_FACILITY}.info -t ${prog} "${out}"
+else
+	logger -p ${LOG_FACILITY}.err -t ${prog} "${out}"
+fi
+done
 
 
---=20
-Xavier Nicollet
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--=-Li4rT5i92hP76bQi8y/M--
+

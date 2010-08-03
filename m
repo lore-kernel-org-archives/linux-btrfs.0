@@ -1,30 +1,50 @@
-From: Michael Kofler <michael@kofler.info>
-Subject: make snapshot main volume, delete all others?
-Date: Tue, 03 Aug 2010 20:22:38 +0200
-Message-ID: <4C585E6E.3060704@kofler.info>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-15; format=flowed
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: Andreas Dilger <andreas.dilger@oracle.com>
+Subject: Re: [PATCH V3 0/8] Cleancache: overview
+Date: Tue, 3 Aug 2010 12:34:19 -0600
+Message-ID: <22A6238E-0BA4-4AB9-A4FA-28B206A47513@oracle.com>
+References: <20100621231809.GA11111%ca-server1.us.oracle.com4C49468B.40307@vflare.org> <840b32ff-a303-468e-9d4e-30fc92f629f8@default> <20100723140440.GA12423@infradead.org> <364c83bd-ccb2-48cc-920d-ffcf9ca7df19@default> <a7f4db53-c348-4cff-8762-7ea4031e4813@default>
+Mime-Version: 1.0 (Apple Message framework v1081)
+Content-Type: text/plain; charset=us-ascii
+Cc: Boaz Harrosh <bharrosh@panasas.com>, Christoph Hellwig <hch@infradead.org>,
+        ngupta@vflare.org, akpm@linux-foundation.org,
+        Chris Mason <chris.mason@oracle.com>, viro@zeniv.linux.org.uk,
+        adilger@sun.com, tytso@mit.edu, mfasheh@suse.com,
+        Joel Becker <joel.becker@oracle.com>, matthew@wil.cx,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+        ocfs2-devel@oss.oracle.com, linux-mm@kvack.org, jeremy@goop.org,
+        JBeulich@novell.com, Kurt Hackel <kurt.hackel@oracle.com>,
+        npiggin@suse.de, Dave Mccracken <dave.mccracken@oracle.com>,
+        riel@redhat.com, avi@redhat.com, Konrad Wilk <konrad.wilk@oracle.com>
+To: Dan Magenheimer <dan.magenheimer@oracle.com>
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <a7f4db53-c348-4cff-8762-7ea4031e4813@default>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fedora provides yum-fs-snapshot. If installed, on each package 
-installation or update a snapshot of all btrfs filesystems is taken, so 
-it is possible to revert the installation/update.
+On 2010-08-03, at 11:35, Dan Magenheimer wrote:
+> - The FS should be block-device-based (e.g. a ram-based FS
+>  such as tmpfs should not enable cleancache)
 
-Suppose an update failed and I want to get back: with
+When you say "block device based", does this exclude network =
+filesystems?  It would seem cleancache, like fscache, is actually best =
+suited to high-latency network filesystems.
 
-# btrfs subvolume set-default yum-snapshot-whatever /
+> - To ensure coherency/correctness, inode numbers must be unique
+>  (e.g. no emulating 64-bit inode space on 32-bit inode numbers)
 
-I define which snapshot to use at the next boot.
+Does it need to be restricted to inode numbers at all (i.e. can it use =
+an opaque internal identifier like the NFS file handle)?  Disallowing =
+cleancache on a filesystem that uses 64-bit (or larger) inodes on a =
+32-bit system reduces its usefulness.
 
-After rebooting I decide I really want to stay with this snapshot. I can 
-delete all other snapshots, but can I also delete my previous main 
-volume, thus defining the current default snapshot as my new base. (If 
-not, a growing part of the filesystem is wasted for old data I don't 
-need anymore.)
+Cheers, Andreas
+--
+Andreas Dilger
+Lustre Technical Lead
+Oracle Corporation Canada Inc.
 
-Any insight is appreciated!
-
-	Michael Kofler
-
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>

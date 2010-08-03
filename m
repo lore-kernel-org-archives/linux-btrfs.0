@@ -1,68 +1,79 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Subject: Re: make snapshot main volume, delete all others?
-Date: Tue, 3 Aug 2010 20:46:34 +0200
-Message-ID: <201008032046.34521.kreijack@libero.it>
-References: <4C585E6E.3060704@kofler.info>
-Reply-To: kreijack@libero.it
+From: Dan Magenheimer <dan.magenheimer@oracle.com>
+Subject: RE: [PATCH V3 0/8] Cleancache: overview
+Date: Tue, 3 Aug 2010 12:09:54 -0700 (PDT)
+Message-ID: <af8b0006-0eb7-468a-bbf8-36ecec9bec35@default>
+References: <20100621231809.GA11111%ca-server1.us.oracle.com4C49468B.40307@vflare.org>
+ <840b32ff-a303-468e-9d4e-30fc92f629f8@default>
+ <20100723140440.GA12423@infradead.org>
+ <364c83bd-ccb2-48cc-920d-ffcf9ca7df19@default>
+ <a7f4db53-c348-4cff-8762-7ea4031e4813@default
+ 22A6238E-0BA4-4AB9-A4FA-28B206A47513@oracle.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-15"
-Cc: linux-btrfs@vger.kernel.org
-To: Michael Kofler <michael@kofler.info>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4C585E6E.3060704@kofler.info>
+Content-Type: text/plain; charset=us-ascii
+Cc: Boaz Harrosh <bharrosh@panasas.com>,
+        Christoph Hellwig
+ <hch@infradead.org>, ngupta@vflare.org,
+        akpm@linux-foundation.org, Chris
+ Mason <chris.mason@oracle.com>,
+        viro@zeniv.linux.org.uk, adilger@Sun.COM, tytso@mit.edu,
+        mfasheh@suse.com, Joel Becker <joel.becker@oracle.com>, matthew@wil.cx,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+        ocfs2-devel@oss.oracle.com, linux-mm@kvack.org, jeremy@goop.org,
+        JBeulich@novell.com, Kurt Hackel <kurt.hackel@oracle.com>,
+        npiggin@suse.de, Dave Mccracken <dave.mccracken@oracle.com>,
+        riel@redhat.com, avi@redhat.com, Konrad Wilk <konrad.wilk@oracle.com>
+To: Andreas Dilger <andreas.dilger@oracle.com>
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <22A6238E-0BA4-4AB9-A4FA-28B206A47513@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Michael
+> From: Andreas Dilger
+> Sent: Tuesday, August 03, 2010 12:34 PM
+> To: Dan Magenheimer
+> Subject: Re: [PATCH V3 0/8] Cleancache: overview
+>=20
+> On 2010-08-03, at 11:35, Dan Magenheimer wrote:
+> > - The FS should be block-device-based (e.g. a ram-based FS
+> >  such as tmpfs should not enable cleancache)
+>=20
+> When you say "block device based", does this exclude network
+> filesystems?  It would seem cleancache, like fscache, is actually best
+> suited to high-latency network filesystems.
 
-This theme was discussed several times in the past.
+I don't think it should exclude network FSs and agree cleancache
+might be well-suited for them.  So if "block device based"
+leaves out the possibility of network FSs, I am just
+displaying my general ignorance of FSs and I/O, and
+welcome clarification from FS developers.  What I really
+meant is: Don't use cleancache for RAM-based filesystems.
+=20
+> > - To ensure coherency/correctness, inode numbers must be unique
+> >  (e.g. no emulating 64-bit inode space on 32-bit inode numbers)
+>=20
+> Does it need to be restricted to inode numbers at all (i.e. can it use
+> an opaque internal identifier like the NFS file handle)?  Disallowing
+> cleancache on a filesystem that uses 64-bit (or larger) inodes on a 32-
+> bit system reduces its usefulness.
 
-Short answer: now it is not possible, what you are asking.
+True... Earlier versions of the patch did not use ino_t but
+instead used an opaque always-64-bit-unsigned "object id".
+The patch changed to use ino_t in response to Al Viro's comment
+to "use sane types".
 
-Long answer: rearranging the layout of the filesystem, it is easy to do what 
-are you asking with the current tools. But this changes have to be integrated 
-in the distribution, and I don't know any distribution that did so. This is my 
-preferred solution (and the only available today)
-Another solution require the additional of other API to permit to move the 
-root of a btrfs filesystem (with all the subvolumes) from a subvolume/snapshot 
-to another one.
+The <pool_id,object_id,pg_offset> triple must uniquely
+and permanently (unless explicitly flushed) describe
+exactly one page of FS data.  So if usefulness is increased
+by changing object_id back to an explicit 64-bit value,
+I'm happy to do that.  The only disadvantage I can
+see is that 32-bit systems pass an extra 32 bits on
+every call that may always be zero on most FSs.
 
-For additional info see these posts:
-http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg03484.html
-http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg05334.html
-http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg04968.html
+Thanks,
+Dan
 
-Regard
-G.Baroncelli
-
-On Tuesday, 03 August, 2010, Michael Kofler wrote:
-> Fedora provides yum-fs-snapshot. If installed, on each package 
-> installation or update a snapshot of all btrfs filesystems is taken, so 
-> it is possible to revert the installation/update.
-> 
-> Suppose an update failed and I want to get back: with
-> 
-> # btrfs subvolume set-default yum-snapshot-whatever /
-> 
-> I define which snapshot to use at the next boot.
-> 
-> After rebooting I decide I really want to stay with this snapshot. I can 
-> delete all other snapshots, but can I also delete my previous main 
-> volume, thus defining the current default snapshot as my new base. (If 
-> not, a growing part of the filesystem is wasted for old data I don't 
-> need anymore.)
-> 
-> Any insight is appreciated!
-> 
-> 	Michael Kofler
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
-
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>

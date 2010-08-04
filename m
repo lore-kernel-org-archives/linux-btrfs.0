@@ -1,31 +1,74 @@
-From: marcel partap <mpartap@gmx.net>
-Subject: flush-btrfs-1 doing 1MiB/s (avg) writing on idle system??
-Date: Wed, 04 Aug 2010 18:37:50 +0200
-Message-ID: <4C59975E.9020904@gmx.net>
+From: Thomas Kuther <gimpel@sonnenkinder.org>
+Subject: Re: volume broken? btrfsck fails
+Date: Wed, 4 Aug 2010 20:48:40 +0200
+Message-ID: <20100804204840.1652f4cd@gimpel.ath.cx>
+References: <569BCC7F-1920-4AC4-8069-369419029373@gmail.com>
+	<20100707001622.GH15984@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=US-ASCII
+Cc: Chris Mason <chris.mason@oracle.com>
+To: The development of BTRFS <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100707001622.GH15984@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dear BTRFS devs,
-still trying to find the cause for https://bugzilla.kernel.org/show_bug.cgi?id=12309 i stumbled over the strange fact that the 
-flush-btrfs-1 thread is writing about 1MiBps constantly onto my root fs, even after turning off io-prone BOINC and NTOP.. there are 
-other threads doing minor IO but that seems unrelated.
-My kernel is
-> Linux handtuch 2.6.35 #1 SMP PREEMPT Mon Aug 2 13:55:56 CEST 2010 x86_64 AMD Phenom(tm) II X4 920 Processor AuthenticAMD GNU/Linux
-with patch #488 from mentioned bug report applied. The partition is mounted
->/dev/root on / type btrfs (rw,noatime,noacl)
-and btrfs filesystem show /dev/sda2 gives
-> Label: none  uuid: 50719157-1813-4552-bcd5-65f85649e503
->         Total devices 1 FS bytes used 230.12GB
->         devid    1 size 465.58GB used 335.29GB path /dev/sda2
-> Btrfs v0.19-16-g075587c-dirty
-I have uploaded an archived blktrace for about 10 minutes at
-http://hfopi.org/files/temp/btrfs-blktrace-idle.tar.bz2 (18M)
-and the resulting diagram is
-http://hfopi.org/files/temp/btrfs-blktrace-idle-trace.png
-As i couldn't find an easy way to see what actually is located at these blocknumbers i am now kindly asking for assistance here - 
-can anyone make any sense out of this? It surely makes me feel a lil' uncomfortable about my system's kosherness..
-best regards,
-marcel ;)
+On Di, 06.07.10 20:16 Chris Mason <chris.mason@oracle.com> wrote:
+
+> On Sat, Jun 26, 2010 at 03:15:04PM -0700, Yee-Ting Li wrote:
+> > Hi,
+> > 
+> > i think my btrfs volume is hosed.... it mounts okay, but iostat
+> > shows /dev/sdg on 100% load. dmesg shows lots of 'parent transid
+> > verify failed on x wanted y found z'. then after a while i can't
+> > read from it (access to the filesystem freezes).
+> > 
+> > the machine had crashed (prob from some other process), and upon
+> > reboot i've been experience this problem since.
+> > 
+> > can anyone provide any guidance in how to proceed?
+> 
+> These are definitely corruptions, and they probably came from the
+> crash. Can you tell me more about the crash? (Power failure, what is
+> the storage underneath etc, what are the write cache settings).  We
+> don't expect these kinds corruptions to happen.
+> 
+> Yan Zheng is making a lot of progress on btrfsck, but I don't think
+> you'll want to be one of the first testers there.  I can definitely
+> help copy things off if you're having trouble accessing the FS.
+> 
+> -chris
+
+Hello Chris,
+
+sorry if I'm hijacking this thread. I got a similar problem, probably
+caused by a system crash due to faulty/badly timed memory dimms. The
+system suddenly hardlocked during write activity.
+
+- kernel is 2.6.35
+- btrfs on top of a md raid5, which looks healthy. Desktop SATA disks.
+
+# cat /proc/mdstat|grep -A1 md0
+md0 : active raid5 sdb1[0] sdd1[1] sdc1[2]
+      2930271872 blocks level 5, 64k chunk, algorithm 2 [3/3] [UUU]
+
+# btrfsck
+usage: btrfsck dev
+Btrfs v0.19-16-g075587c-dirty
+
+# btrfsck /dev/md0
+parent transid verify failed on 2419218964480 wanted 127839 found 127260
+parent transid verify failed on 2419218964480 wanted 127839 found 127260
+parent transid verify failed on 2419218915328 wanted 127839 found 127260
+parent transid verify failed on 2419218915328 wanted 127839 found 127260
+parent transid verify failed on 2419214266368 wanted 127839 found 127837
+parent transid verify failed on 2419214266368 wanted 127839 found 127837
+parent transid verify failed on 2419214266368 wanted 127839 found 127837
+Segmentation fault
+
+Mount endlessly loops, like explained in this thread.
+
+If there is a way, I would really like some aid copying the data off.
+The backup is quite out of date, shame on me.
+
+Best regards,
+Thomas

@@ -1,54 +1,32 @@
-From: adi <adalbert.buchacz@gmx.de>
-Subject: Re: wanted X found X-1 but you got X-2
-Date: Thu, 05 Aug 2010 18:04:47 +0200
-Message-ID: <4C5AE11F.8060803@gmx.de>
-References: <20100729131103.323870@gmx.net> <4C526516.30709@cn.fujitsu.com> <20100730071354.257500@gmx.net> <20100731163424.105410@gmx.net> <4C56199B.8090400@cn.fujitsu.com> <20100802193716.107960@gmx.net> <4C581477.4030907@cn.fujitsu.com>
+From: Mathieu Chouquet-Stringer <mchouque@free.fr>
+Subject: Re: Poor read performance on high-end server
+Date: 05 Aug 2010 18:21:30 +0200
+Message-ID: <m339ut114l.fsf@mobydick.mine.nu>
+References: <4C5AC52D.9030906@sara.nl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org, liubo2009@cn.fujitsu.com
-To: miaox@cn.fujitsu.com
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Freek.Dijkstra@sara.nl (Freek Dijkstra)
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4C581477.4030907@cn.fujitsu.com>
+In-Reply-To: <4C5AC52D.9030906@sara.nl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- Hi Miao,
+        Hello,
 
-ok, i'll try:
-
-mkfs.ext3 /dev/sdaN
-=C2=BBused it as root-file-system quite a while=C2=AB
-tune2fs -O extents,uninit_bg,dir_index /dev/sdaN  (converted to ext4)
-=C2=BBused it as root file system quite another while=C2=AB
-btrfs-convert /dev/sdaN (converted to btrfs)
-=C2=BBused it as root filesystem with "-compress" quite another while=C2=
-=AB
-installed tuxonice-patches on kernel
-restart -> still works
-suspend-to-disk
-and from here on the bug appeared
-
-hope, this helps,
-Ciao, Adi
-
-
-On 03.08.2010 15:07, Miao Xie wrote:
-> Hi, Adi
+Freek.Dijkstra@sara.nl (Freek Dijkstra) writes:
+> [...]
 >
-> I don't know the detailed reproduce steps.Could you tell us the steps
-> just  like this?
-> # mkfs.btrfs /dev/sdaN
-> # mount /dev/sdaN /mnt
-> # dd ......
-> # (suspend-to-disk)
-> ...
->
-> It is very useful for our analysis.
->
-> Thanks
-> Miao
+> Here are the exact settings:
+> ~# mkfs.btrfs -d raid0 /dev/sdd /dev/sde /dev/sdf /dev/sdg \
+>      /dev/sdh /dev/sdi /dev/sdj /dev/sdk /dev/sdl /dev/sdm \
+>      /dev/sdn /dev/sdo /dev/sdp /dev/sdq /dev/sdr /dev/sds
+> nodesize 4096 leafsize 4096 sectorsize 4096 size 2.33TB
+> Btrfs Btrfs v0.19
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Don't you need to stripe metadata too (with -m raid0)?  Or you may
+be limited by your metadata drive?
+
+-- 
+Mathieu Chouquet-Stringer                           mchouque@free.fr
+            The sun itself sees not till heaven clears.
+	             -- William Shakespeare --

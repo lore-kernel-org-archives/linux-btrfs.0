@@ -1,28 +1,23 @@
-From: Ulrich Hecht <uli@suse.de>
-Subject: Re: [PATCH] Btrfs: compressed file size ioctl
-Date: Fri, 6 Aug 2010 14:22:13 +0200
-Message-ID: <201008061422.13800.uli@suse.de>
-References: <1280402829-28109-1-git-send-email-uli@suse.de> <4C561C3E.8030609@cn.fujitsu.com>
+From: Diego Calleja <diegocg@gmail.com>
+Subject: Re: [PATCH v3] Btrfs: compressed file size ioctl
+Date: Fri, 6 Aug 2010 20:22:24 +0200
+Message-ID: <201008062022.24708.diegocg@gmail.com>
+References: <1281097304-27628-1-git-send-email-uli@suse.de>
+Reply-To: diegocg@gmail.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=gb2312
+Content-Type: Text/Plain; charset=iso-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: miaox@cn.fujitsu.com
+To: Ulrich Hecht <uli@suse.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4C561C3E.8030609@cn.fujitsu.com>
+In-Reply-To: <1281097304-27628-1-git-send-email-uli@suse.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday 02 August 2010, Miao Xie wrote:
-> I think you need use lock_extent()/unlock_extent() to enclose
-> btrfs_get_extent(), but I didn't find lock_extent().
+On Viernes, 6 de Agosto de 2010 14:21:44 Ulrich Hecht escribi=F3:
+>   ioctl(d, BTRFS_IOC_COMPR_SIZE, &size);
 
-Yeah, I think that was missing in the original patch as well. Hope the=20
-latest iteration is OK.
-
-CU
-Uli
-
---=20
-SUSE LINUX Products GmbH, GF: Markus Rex, HRB 16746 (AG N=A8=B9rnberg)
+I wonder...it's not possible to fit this into FIEMAP somehow? I
+though that FIEMAP has been designed with compressed data in
+mind.
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

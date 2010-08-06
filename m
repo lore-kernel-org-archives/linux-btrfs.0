@@ -1,88 +1,117 @@
-From: Sami Liedes <sliedes@cc.hut.fi>
-Subject: Re: Number of hard links limit
-Date: Fri, 6 Aug 2010 14:30:39 +0300
-Message-ID: <20100806113039.GA18858@lh.kyla.fi>
-References: <20100802114046.GA29926@lh.kyla.fi>
- <20100802130556.GF30325@jeru.org>
- <4ad406cb8ee6c52747b67b4c79a6d7dd@smtp.arbitraryconstant.com>
- <20100802215647.7466601d@simplux>
- <4C572DDC.5050108@robertoragusa.it>
- <0362zshcyx.fsf@msgid.viggen.net>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Poor read performance on high-end server
+Date: Fri, 6 Aug 2010 07:41:44 -0400
+Message-ID: <20100806114144.GB29846@think>
+References: <4C5AC52D.9030906@sara.nl>
+ <20100805145138.GJ29846@think>
+ <4C5B2B42.3030407@sara.nl>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha256;
-	protocol="application/pgp-signature"; boundary="J2SCkAp4GZ/dPZZf"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"axboe@kernel.dk" <axboe@kernel.dk>
+To: Freek Dijkstra <Freek.Dijkstra@sara.nl>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <0362zshcyx.fsf@msgid.viggen.net>
+In-Reply-To: <4C5B2B42.3030407@sara.nl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Aug 05, 2010 at 11:21:06PM +0200, Freek Dijkstra wrote:
+> Chris Mason wrote:
+> 
+> > Basically we have two different things to tune.  First the block layer
+> > and then btrfs.
+> 
+> 
+> > And then we need to setup a fio job file that hammers on all the ssds at
+> > once.  I'd have it use adio/dio and talk directly to the drives.
+> 
+> Thanks. First one disk:
+> 
+> > f1: (groupid=0, jobs=1): err= 0: pid=6273
+> >   read : io=32780MB, bw=260964KB/s, iops=12, runt=128626msec
+> >     clat (usec): min=74940, max=80721, avg=78449.61, stdev=923.24
+> >     bw (KB/s) : min=240469, max=269981, per=100.10%, avg=261214.77, stdev=2765.91
+> >   cpu          : usr=0.01%, sys=2.69%, ctx=1747, majf=0, minf=5153
+> >   IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+> >      submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+> >      complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+> >      issued r/w: total=1639/0, short=0/0
+> > 
+> >      lat (msec): 100=100.00%
+> > 
+> > Run status group 0 (all jobs):
+> >    READ: io=32780MB, aggrb=260963KB/s, minb=267226KB/s, maxb=267226KB/s, mint=128626msec, maxt=128626msec
+> > 
+> > Disk stats (read/write):
+> >   sdd: ios=261901/0, merge=0/0, ticks=10135270/0, in_queue=10136460, util=99.30%
+> 
+> So 255 MiByte/s.
+> Out of curiousity, what is the distinction between the reported figures
+> of 260964 kiB/s, 261214.77 kiB/s, 267226 kiB/s and 260963 kiB/s?
 
---J2SCkAp4GZ/dPZZf
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+When there is only one job, they should all be the same.  aggr is the
+total seen across all the jobs, min is the lowest, max is the highest.
 
-On Tue, Aug 03, 2010 at 12:22:14AM +0200, Oystein Viggen wrote:
-> IIRC, the limit on hard links is per directory.  That is, if you put
-> each hard link into its own directory, there's basically no limit to the
-> amount of hard links you can make to one file.
+> 
+> 
+> Now 16 disks (abbreviated):
+> 
+> > ~/fio# ./fio ssd.fio
+> > Starting 16 processes
+> > f1: (groupid=0, jobs=1): err= 0: pid=4756
+> >   read : io=32780MB, bw=212987KB/s, iops=10, runt=157600msec
+> >     clat (msec): min=75, max=138, avg=96.15, stdev= 4.47
+> >      lat (msec): min=75, max=138, avg=96.15, stdev= 4.47
+> >     bw (KB/s) : min=153121, max=268968, per=6.31%, avg=213181.15, stdev=9052.26
+> >   cpu          : usr=0.00%, sys=1.71%, ctx=2737, majf=0, minf=5153
+> >   IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+> >      submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+> >      complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+> >      issued r/w: total=1639/0, short=0/0
+> > 
+> >      lat (msec): 100=97.99%, 250=2.01%
+> > Run status group 0 (all jobs):
+> >    READ: io=524480MB, aggrb=3301MB/s, minb=216323KB/s, maxb=219763KB/s, mint=156406msec, maxt=158893msec
 
-Yes, that's always pointed out in these threads. Still, it seems to be
-breaking real use cases also beyond backuppc (someone mentioned
-installing some Gentoo package).
+> So, the maximum for these 16 disks is 3301 MiByte/s.
+> 
+> I also tried hardware RAID (2 sets of 8 disks), and got a similar result:
+> 
+> > Run status group 0 (all jobs):
+> >    READ: io=65560MB, aggrb=3024MB/s, minb=1548MB/s, maxb=1550MB/s, mint=21650msec, maxt=21681msec
 
-> Thus, many generations of backup with BackupPC shouldn't trigger the
-> problem, as each generation is stored in its own directory tree.  The
-> problem appears when your source data has many identical files in the
-> same directory, since these would be deduplicated as hard links to the
-> same file in the backup pool.
+Great, so we know the drives are fast.
 
-I think you are right. I looked at the errors I reported in
+> 
+> 
+> 
+> > fio should be able to push these devices up to the line speed.  If it
+> > doesn't I would suggest changing elevators (deadline, cfq, noop) and
+> > bumping the max request size to the max supported by the device.
+> 
+> 3301 MiByte/s seems like a reasonable number, given the theoretic
+> maximum of 16 times the single disk performance of 16*256 MiByte/s =
+> 4096 MiByte/s.
+> 
+> Based on this, I have not looked at tuning. Would you recommend that I do?
+> 
+> Our minimal goal is 2500 MiByte/s; that seems achievable as ZFS was able
+> to reach 2750 MiByte/s without tuning.
+> 
+> > When we have a config that does so, we can tune the btrfs side of things
+> > as well.
+> 
+> Some files are created in the root folder of the mount point, but I get
+> errors instead of results:
+> 
 
-  https://bugzilla.kernel.org/show_bug.cgi?id=15762
+Someone else mentioned that btrfs only gained DIO reads in 2.6.35.  I
+think you'll get the best results with that kernel if you can find an
+update.
 
-and figured out what happens there. In dbus's source tree, under
-doc/api/man/man3dbus, there are 119 files with the content ".so
-man3dbus/DBusProtocol.3dbus". I think these are redirects to a single
-man page.
+If not, you can change the fio job file to remove direct=1 and increase the
+bs flag up to 20M.
 
-Interestingly (and only somewhat off-topic), because of deduplication
-backuppc can be used to explore the merits of deduplication in
-filesystems too. I looked at the files I have most copies of. Many of
-them seem perhaps a bit silly.
+I'd also suggest changing /sys/class/bdi/btrfs-1/read_ahead_kb to a
+bigger number.  Try 20480
 
-The most common file has a single line with the text "# dummy". I have
-54991 copies of that file. They are some kind of dependency files
-(perhaps by libtool or something?), always in a directory named .deps
-and with a file extension of .Po or .Plo.
-
-There are also tens of thousands of copies of a file with a single
-line with the text "END". Subversion VCS seems to have two of these
-for every file under version control. In fact a large portion of the
-most common files seem to be owned by Subversion.
-
-	Sami
-
---J2SCkAp4GZ/dPZZf
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iQIcBAEBCAAGBQJMW/JeAAoJEKLT589SE0a06BsQAIFI+ik1aU30Ug8hYTAWvBdc
-5QsCl70OLDToZcu0PVmX4V+TdPHo+XcoSVtDjb+Hxatm/AOPr8SpsFFP0gJALV+A
-7Ri6INdB4503vR3nZnSAfhylY/m9xL2eq651Kx/FoPnOVbf3lTAgnCLxXtMGiF17
-Y38MmoLQ3yEe5Q/DYz7ZRZYwr29DwkalREIGbIpaiKYBTh0bb57uMlwW2UO0N5/A
-0cYeu3JVEgdLRh6TOxBlK+R1UAzV341cs2ct8Jcbg2SyGsY2nLFtEyShggJyiazU
-xEFkS6avbe/O1qOpd8ZQkM6J2Rf9LV5oCrRCEqU4gJP0QJzEghxF47jtgKvFpqm5
-0SWpFke+7g9BFwZwVj4d4kfBhosFaWeAdWRdP6oDHB7YaBkLhM+U2Dc6dVPdo/Ye
-oPPwjv/0u6GtPOyUJbDUvPVHgIMDBk5cxAnl9LEXOzi4SUf9VzcgiTdfUdYma8iE
-hyv3zsJTRUeBQvV3D2Y0soyf3fzogt2cGiPb8+g9FaEqgHimGFO06clcjRt/bwyB
-nqK075O1lPVa623CiXUXIiPTLaffMcbLwvEpBS9tjCrBcYqT6at5fOFlONOpocnZ
-vHQy5R8Idf3065rxjyrlaNjpelRaFQMVPXEXUWbR+FHqaUbnWnuW7FQQBecgHESq
-gjOczs8GGJqZDcWANi/M
-=mLLb
------END PGP SIGNATURE-----
-
---J2SCkAp4GZ/dPZZf--
+-chris

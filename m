@@ -1,94 +1,46 @@
-From: "Sebastian 'gonX' Jensen" <gonx@overclocked.net>
-Subject: Re: Raid0 with btrfs
-Date: Fri, 6 Aug 2010 20:32:37 +0200
-Message-ID: <AANLkTimAvZZdz0LnxM2H+2B4t1L4VDUi43NmsZpZQONm@mail.gmail.com>
-References: <AANLkTimS=bgDsbk9jdcPqW-88eQnq+qss1m2mZBfAif2@mail.gmail.com>
-	<201008051640.51662.hka@qbs.com.pl>
-	<AANLkTin=eOpEXLyhwT_thgU=dnWKVL2FLOQfqs8RR4p0@mail.gmail.com>
+From: Steven Pratt <steve@dangyankee.net>
+Subject: 2.6.35 performance results
+Date: Fri, 06 Aug 2010 13:44:11 -0500
+Message-ID: <4C5C57FB.4090003@dangyankee.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Hubert Kario <hka@qbs.com.pl>, linux-btrfs@vger.kernel.org
-To: Leonidas Spyropoulos <artafinde@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTin=eOpEXLyhwT_thgU=dnWKVL2FLOQfqs8RR4p0@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 6 August 2010 20:23, Leonidas Spyropoulos <artafinde@gmail.com> wrot=
-e:
-> Do I have to change the partition ID flag of each partition?
-> Currently is set to fd (Linux Raid autodetect) for used from mdadm
-> mkfs.btrfs supports that or needs to be 83 (Linux) ?
+Here is the latest set of performance runs from the 2.6.35-rc5 tree. 
+Included is a refresh of all the other filesystems with some changes for 
+barriers on and off since this has been somewhat of a hot topic recently. 
 
-=46D is for mdraid integrated into the Linux kernel. I have mine at 83.
-It won't hurt to have them at FD, but the kernel will spend extra time
-as it probes the devices on boot, causing a slight slowdown.
->
-> On Thu, Aug 5, 2010 at 3:40 PM, Hubert Kario <hka@qbs.com.pl> wrote:
->> On Thursday 05 August 2010 16:15:22 Leonidas Spyropoulos wrote:
->>> Hi all,
->>>
->>> I want to make a btrfs raid0 on 2 partitions of my pc.
->>> Until now I am using the mdadm tools to make a software raid of the=
- 2
->>> partitions /dev/sde2, /dev/sdd2
->>> and then mkfs.etx4 the newly created /dev/md0 device.
->>> From performance point of view is it better to keep the configurati=
-on of
->>> mdadm and just format the /dev/md0 device as btrfs OR
->>> delete the raid device and format the 2 partitions /dev/sde2 /dev/s=
-dd2
->>> as a btrfs with 2 devices?
->>> mkfs.btrfs /dev/sde2 /dev/sdd2
->>
->> Btrfs already supports metadata mirroring when the data is striped. =
-What this
->> means, is while the performance should be more-or-less identical to =
-MD RAID0
->> (if it isn't it's a bug), your data is a bit more secure as the meta=
-data
->> describing it resides on both drives. Later on it will be possible t=
-o selct
->> which directories/files should have what level of redundancy. This w=
-ill allow
->> to have ~/work RAID1-ed and ~/videos RAID0-ed while keeping both dir=
-ectories
->> on the same partition and filesystem.
->>
->>> On a sidenote:
->>> If I decide to go for raid5 which is not supported currently from m=
-kfs
->>> I have to use the mdadm tool anyway, right?
->>
->> yes, RAID5 code is not in trunk yet.
->>
->> --
->> Hubert Kario
->> QBS - Quality Business Software
->> 02-656 Warszawa, ul. Ksawer=C3=B3w 30/85
->> tel. +48 (22) 646-61-51, 646-74-24
->> www.qbs.com.pl
->>
->
->
->
-> --
-> Caution: breathing may be hazardous to your health.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =C2=A0http://vger.kernel.org/majordomo-info.ht=
-ml
->
+New data linked in to the history graphs here:
+http://btrfs.boxacle.net/repository/raid/history/History.html
 
-Regards,
-Sebastian J.
+ From a BTRFS performance perspective, we took a major regression on 
+write heavy workloads. As much as a 10x hit!  The problems seems to be 
+due to this changeset:
+http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=commit;h=5da9d01b66458b180a6bee0e637a1d0a3effc622
+Btrfs: Shrink delay allocated space in a synchronized
 
-PS. Please try to bottom-post rather than top-post. Here's a link I
-can advise reading for a clarification on why bottom posting is
-essential: http://www.caliburn.nl/topposting.html
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Shrink delayed allocation space in a synchronized manner is more
+controllable than flushing all delay allocated space in an async
+thread.
+
+This changeset introduced "btrfs_start_one_delalloc_inode" in
+http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=commitdiff;h=5da9d01b66458b180a6bee0e637a1d0a3effc622
+
+In heavy write workloads this new function is now dominating the profiles:
+
+samples  %        app name                 symbol name
+8914973  65.1261  btrfs.ko                 btrfs_start_one_delalloc_inode
+1024841   7.4867  vmlinux-2.6.35-rc5-autokern1 rb_get_reader_page
+716046    5.2309  vmlinux-2.6.35-rc5-autokern1 ring_buffer_consume
+315354    2.3037  oprofile.ko              add_event_entry
+202484    1.4792  vmlinux-2.6.35-rc5-autokern1 write_inode_now
+195018    1.4247  btrfs.ko                 btrfs_tree_lock
+
+
+Appears to be major contention on the spin lock, as this gets worse with 
+more threads.  This needs to be redone.
+
+
+Steve

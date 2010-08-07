@@ -1,58 +1,184 @@
-From: Christian Ehrhardt <ehrhardt@linux.vnet.ibm.com>
-Subject: Re: PATCH 3/6 - direct-io: do not merge logically non-contiguous
- requests
-Date: Sat, 07 Aug 2010 09:31:14 +0200
-Message-ID: <4C5D0BC2.1040706@linux.vnet.ibm.com>
-References: <4C5BE8DB.5030503@linux.vnet.ibm.com> <20100806120358.GA31601@infradead.org>
+From: Leonidas Spyropoulos <artafinde@gmail.com>
+Subject: Re: Raid0 with btrfs
+Date: Sat, 7 Aug 2010 12:16:32 +0100
+Message-ID: <AANLkTikoMg6Y8SXt2_p0PhJPBqET19SbFEn00tjMKiwP@mail.gmail.com>
+References: <AANLkTimS=bgDsbk9jdcPqW-88eQnq+qss1m2mZBfAif2@mail.gmail.com>
+	<201008051640.51662.hka@qbs.com.pl>
+	<AANLkTin=eOpEXLyhwT_thgU=dnWKVL2FLOQfqs8RR4p0@mail.gmail.com>
+	<AANLkTimAvZZdz0LnxM2H+2B4t1L4VDUi43NmsZpZQONm@mail.gmail.com>
+	<AANLkTimOin7isn9Gyi42x4evVnY6KW1H_ycAWUid-JKG@mail.gmail.com>
+	<AANLkTinBTJV77qDmVAJQ6a2qqT3TS9N7J-rR6UMVvG+R@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1;
-	format=flowed
-Cc: Josef Bacik <josef@redhat.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-	linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: Christoph Hellwig <hch@infradead.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20100806120358.GA31601@infradead.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Hubert Kario <hka@qbs.com.pl>, linux-btrfs@vger.kernel.org
+To: "Sebastian 'gonX' Jensen" <gonx@overclocked.net>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTinBTJV77qDmVAJQ6a2qqT3TS9N7J-rR6UMVvG+R@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sat, Aug 7, 2010 at 1:03 AM, Sebastian 'gonX' Jensen
+<gonx@overclocked.net> wrote:
+> On 7 August 2010 00:24, Leonidas Spyropoulos <artafinde@gmail.com> wr=
+ote:
+>> On Fri, Aug 6, 2010 at 7:32 PM, Sebastian 'gonX' Jensen
+>> <gonx@overclocked.net> wrote:
+>>> On 6 August 2010 20:23, Leonidas Spyropoulos <artafinde@gmail.com> =
+wrote:
+>>>> Do I have to change the partition ID flag of each partition?
+>>>> Currently is set to fd (Linux Raid autodetect) for used from mdadm
+>>>> mkfs.btrfs supports that or needs to be 83 (Linux) ?
+>>>
+>>> FD is for mdraid integrated into the Linux kernel. I have mine at 8=
+3.
+>>> It won't hurt to have them at FD, but the kernel will spend extra t=
+ime
+>>> as it probes the devices on boot, causing a slight slowdown.
+>>
+>> Ok done them id 83 and used 3 devices eventually
+>> Using raid0 for data and metadata
+>> # mkfs.btrfs -m raid0 -d raid0 /dev/sdc1 /dev/sdd2 /dev/sde2
+>>
+>> 2 SATA and 1 ATA drive
+>> I thought that ATA will bottleneck the other 2 drives but seems like=
+ I gain
+>> something from it.
+>> Using iozone for benchmark:
+>> # iozone -s 8g -r 1024 -i 0 -i 1
+>> with 2 SATA devices and then 3 devices (SATA + ATA):
+>> =A0 =A0 =A0 =A0KB =A0reclen =A0 =A0 =A0write =A0 rewrite =A0 =A0 =A0=
+ read =A0 =A0 reread
+>> 8388608 =A0 =A01024 =A0134869 =A0139607 =A0 229146 =A0 228800
+>> 8388608 =A0 =A01024 =A0135151 =A0139050 =A0 233461 =A0 235929
+>>
+>> The above is with -o compress option enabled and my cpu topped up on
+>> 100% cpu (both cores) while test and copy huge data.
+>> Is it possible I am bottlenecked by my cpu speed?
+>> AMD Opteron 165 @ 2700 Mhz
+>>
+>>>>
+>>>> On Thu, Aug 5, 2010 at 3:40 PM, Hubert Kario <hka@qbs.com.pl> wrot=
+e:
+>>>>> On Thursday 05 August 2010 16:15:22 Leonidas Spyropoulos wrote:
+>>>>>> Hi all,
+>>>>>>
+>>>>>> I want to make a btrfs raid0 on 2 partitions of my pc.
+>>>>>> Until now I am using the mdadm tools to make a software raid of =
+the 2
+>>>>>> partitions /dev/sde2, /dev/sdd2
+>>>>>> and then mkfs.etx4 the newly created /dev/md0 device.
+>>>>>> From performance point of view is it better to keep the configur=
+ation of
+>>>>>> mdadm and just format the /dev/md0 device as btrfs OR
+>>>>>> delete the raid device and format the 2 partitions /dev/sde2 /de=
+v/sdd2
+>>>>>> as a btrfs with 2 devices?
+>>>>>> mkfs.btrfs /dev/sde2 /dev/sdd2
+>>>>>
+>>>>> Btrfs already supports metadata mirroring when the data is stripe=
+d. What this
+>>>>> means, is while the performance should be more-or-less identical =
+to MD RAID0
+>>>>> (if it isn't it's a bug), your data is a bit more secure as the m=
+etadata
+>>>>> describing it resides on both drives. Later on it will be possibl=
+e to selct
+>>>>> which directories/files should have what level of redundancy. Thi=
+s will allow
+>>>>> to have ~/work RAID1-ed and ~/videos RAID0-ed while keeping both =
+directories
+>>>>> on the same partition and filesystem.
+>>>>>
+>>>>>> On a sidenote:
+>>>>>> If I decide to go for raid5 which is not supported currently fro=
+m mkfs
+>>>>>> I have to use the mdadm tool anyway, right?
+>>>>>
+>>>>> yes, RAID5 code is not in trunk yet.
+>>>>>
+>>>>> --
+>>>>> Hubert Kario
+>>>>> QBS - Quality Business Software
+>>>>> 02-656 Warszawa, ul. Ksawer=F3w 30/85
+>>>>> tel. +48 (22) 646-61-51, 646-74-24
+>>>>> www.qbs.com.pl
+>>>>>
+>>>>
+>>>>
+>>>>
+>>>> --
+>>>> Caution: breathing may be hazardous to your health.
+>>>> --
+>>>> To unsubscribe from this list: send the line "unsubscribe linux-bt=
+rfs" in
+>>>> the body of a message to majordomo@vger.kernel.org
+>>>> More majordomo info at =A0http://vger.kernel.org/majordomo-info.ht=
+ml
+>>>>
+>>>
+>>> Regards,
+>>> Sebastian J.
+>>>
+>>> PS. Please try to bottom-post rather than top-post. Here's a link I
+>>> can advise reading for a clarification on why bottom posting is
+>>> essential: http://www.caliburn.nl/topposting.html
+>>>
+>> Thanks for the heads up about bottom-posting.
+>>
+>>
+>> --
+>> Caution: breathing may be hazardous to your health.
+>>
+>
+> It seems odd that you are reaching 100% CPU usage. Maybe it's because
+> I am on an Intel processor with the integrated crc32c module, but wit=
+h
+> metadata and data striping on 2 decent desktop drives (60 MB/s in avg
+> each on large reads), I don't go much anywhere near 10% CPU usage, an=
+d
+> I have compress-force enabled. I've never tried a stress test iozone,
+> but if I can still remember it, I will try to run it once I get back
+> from holidays. Sorry that it doesn't help your problem, but it seems
+> like it's something else.
 
+I really doubt my old Opteron has SSE 4.2 and as mentioned from other
+users it makes a huge difference.
+>
+> I'm assuming you're running the nForce4 chipset. I don't recall it
+> being there, but is there an AHCI option for S-ATA in the BIOS, rathe=
+r
+> than legacy or PATA mode, or something in the lines of that? That
+> could in theory reduce CPU usage somewhat, but shouldn't really affec=
+t
+> anything before very high transfer speeds.
+>
+Yes it's an nForce4 chipset (DFI Expert)
+And if I recall it's SATA+PATA mode enabled on mine now.
+I can't be sure since I am working on it from ssh.
 
-On 08/06/2010 02:03 PM, Christoph Hellwig wrote:
-> Something is deeply wrong here.  Raw block device access has a 1:1
-> mapping between logical and physical block numbers.  They really shou=
-ld
-> never be non-contiguous.
+> And yes, you are bottlenecked if you're running at max CPU usage. I
+> would try disabling the compress mount option if the above does not
+> help.
+After disabling the compress and done the test again it affected the wr=
+ite speed
+and my CPU wasn't topped up all the time something like 80-90%
+results with iozone
+        KB   reclen     write   rewrite       read     reread
+8388608    1024  147736  147062   135427   134744
 
-At least I did nothing I know about to break it :-)
+thanks for that
+>
+> Regards,
+> Sebastian J.
+>
 
-As I mentioned just iozone using direct I/O (-I flag of iozone then=20
-using O_DIRECT for the file) on a ext2 file-system.
-The file system was coming clean out of mkfs the file was written with=20
-iozone one step before the traced read run.
-
-The only uncommon thing here might be the block device, which is a scsi=
-=20
-disk on our SAN servers (I'm running on s390) - so the driver in charge=
-=20
-is zfcp (drivers/s390/scsi/).
-I could use dasd (drivers/s390/block) disks as well, but I have no=20
-blktrace of them yet - what I already know is that they show a similar=20
-cost increase. On monday I should be able to get machine resources to=20
-verify that both disk types are affected.
-
-Let me know if I can do anything else on my system to shed some light o=
-n=20
-the matter.
-
+The next step is remove the ATA drive and test again with and without
+compress mount.
 
 
 --=20
-
-Gr=FCsse / regards, Christian Ehrhardt
-IBM Linux Technology Center, System z Linux Performance
+Caution: breathing may be hazardous to your health.
 --
-To unsubscribe from this list: send the line "unsubscribe linux-fsdevel=
-" in
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
 the body of a message to majordomo@vger.kernel.org
 More majordomo info at  http://vger.kernel.org/majordomo-info.html

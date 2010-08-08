@@ -1,32 +1,25 @@
-From: Jens Axboe <axboe@kernel.dk>
-Subject: Re: Poor read performance on high-end server
-Date: Sun, 08 Aug 2010 07:04:38 -0400
-Message-ID: <4C5E8F46.5010706@kernel.dk>
-References: <4C5AC52D.9030906@sara.nl> <20100805145138.GJ29846@think>	<4C5BF829.3020200@kernel.dk> <87r5i98tdf.fsf@basil.nowhere.org>
+From: Roberto Ragusa <mail@robertoragusa.it>
+Subject: Re: Number of hard links limit
+Date: Sun, 08 Aug 2010 14:32:43 +0200
+Message-ID: <4C5EA3EB.802@robertoragusa.it>
+References: <20100802114046.GA29926@lh.kyla.fi> <20100802130556.GF30325@jeru.org> <4ad406cb8ee6c52747b67b4c79a6d7dd@smtp.arbitraryconstant.com> <20100802215647.7466601d@simplux> <4C572DDC.5050108@robertoragusa.it> <0362zshcyx.fsf@msgid.viggen.net> <20100806113039.GA18858@lh.kyla.fi> <20100806134607.GB19942@think>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Freek Dijkstra <Freek.Dijkstra@sara.nl>,
-	linux-btrfs@vger.kernel.org
-To: Andi Kleen <andi@firstfloor.org>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <87r5i98tdf.fsf@basil.nowhere.org>
+In-Reply-To: <20100806134607.GB19942@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/08/2010 03:18 AM, Andi Kleen wrote:
-> Jens Axboe <axboe@kernel.dk> writes:
->>
->> Also, I didn't see Chris mention this, but if you have a newer intel box
->> you can use hw accellerated crc32c instead. For some reason my test box
->> always loads crc32c and not crc32c-intel, so I need to do that manually.
-> 
-> I have a patch for that, will post it later: autoloading of modules
-> based on x86 cpuinfo.
+Chris Mason wrote:
 
-Great, it is pretty annoying to have to do it manually. Sometimes
-you forget. And it's not possible to de-select CRC32C and have
-the intel variant loaded.
+> Right, this will get fixed in a future btrfs update.  We're focusing on
+> stability with what we have right now, but I do agree we should have
+> done this link back reference design differently.
+
+I think people are complaining about this (apparently not too urgent)
+limitation, because if the on-disk format has to be changed, it is better
+to think about it as soon as possible, before back-compatibility becomes
+an issue.
 
 -- 
-Jens Axboe
-
+   Roberto Ragusa    mail at robertoragusa.it

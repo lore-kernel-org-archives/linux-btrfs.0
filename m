@@ -1,68 +1,107 @@
-From: "Smets, Jan (Jan)" <jan.smets@alcatel-lucent.com>
-Subject: unable to handle kernel NULL pointer dereference
-Date: Mon, 9 Aug 2010 13:44:07 +0200
-Message-ID: <14C7F4F06DB5814AB0DE29716C4F6D670C4C7C14@FRMRSSXCHMBSB1.dc-m.alcatel-lucent.com>
+From: Freek Dijkstra <Freek.Dijkstra@sara.nl>
+Subject: Re: Poor read performance on high-end server
+Date: Mon, 09 Aug 2010 16:45:45 +0200
+Message-ID: <4C601499.5040402@sara.nl>
+References: <4C5AC52D.9030906@sara.nl> <20100805145138.GJ29846@think>	<4C5BF829.3020200@kernel.dk> <87r5i98tdf.fsf@basil.nowhere.org> <4C5E8F46.5010706@kernel.dk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Andi Kleen <andi@firstfloor.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Jens Axboe <axboe@kernel.dk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4C5E8F46.5010706@kernel.dk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi list
+Hi all,
 
-Today I was running bonnie++ on a network ceph volume. The storage backend used is btrfs.
+Thanks a lot for the great feedback from before the weekend. Since one
+of my colleagues needed the machine, I could only do the tests today.
 
-You can find a full dmesg output on http://jan.sin.khk.be/dmesg
+In short: just installing 2.6.35 did make some difference, but I was
+mostly impressed with the speedup gained by the hardware acceleration of
+the crc32c_intel module.
 
-If any other action is required from my side, please let me know. I hope this report is of any use.
+Here is some quick data.
 
-Thanks.
- - Jan
+Reference figures:
+16* single disk (theoretical limit):     4092 MiByte/s
+fio data layer tests (achievable limit): 3250 MiByte/s
+ZFS performance:                         2505 MiByte/s
+
+BtrFS figures:
+IOzone on 2.6.32:                         919 MiByte/s
+fio btrfs tests on 2.6.35:               1460 MiByte/s
+IOzone on 2.6.35 with crc32c:            1250 MiByte/s
+IOzone on 2.6.35 with crc32c_intel:      1629 MiByte/s
+IOzone on 2.6.35, using -o nodatasum:    1955 MiByte/s
+
+For those finding this message and want a howto: the easiest way to use
+crc32c_intel is to add the module name to /etc/modules:
+ # echo "crc32c_intel" >> /etc/modules
+ # reboot
+
+Now the next step for us is to tune the block sizes. We only did that
+preliminary, but now that we have a good knowledge of what software to
+use, we can start tuning that in more detail.
+
+If there is interest on this list, I'll gladly post our results here.
+
+
+Jens Axboe wrote:
+
+>>> Also, I didn't see Chris mention this, but if you have a newer intel box
+>>> you can use hw accellerated crc32c instead. For some reason my test box
+>>> always loads crc32c and not crc32c-intel, so I need to do that manually.
+> 
+> it is pretty annoying to have to do it manually. Sometimes
+> you forget. And it's not possible to de-select CRC32C and have
+> the intel variant loaded.
+
+You can, but only if you first unmount the partition:
+
+ # unmount /mnt/mybtrfsdisk
+ # rmmod btrfs
+ # rmmod libcrc32c
+ # rmmod crc32c
+ # modprobe crc32c_intel
+ # mount -t btrfs /dev/sda1 /mnt/mybtrfsdisk
 
 
 
-[ 2400.226987] Call Trace:
-[ 2400.226987]  [<ffffffffa04579d4>] ? btrfs_file_aio_write+0x686/0x7da [btrfs]
-[ 2400.226987]  [<ffffffff810f926b>] ? __d_lookup+0xc1/0x107
-[ 2400.226987]  [<ffffffffa045734e>] ? btrfs_file_aio_write+0x0/0x7da [btrfs]
-[ 2400.226987]  [<ffffffff810e8ce0>] ? do_sync_readv_writev+0x9a/0xd5
-[ 2400.226987]  [<ffffffff810f4163>] ? do_filp_open+0x510/0x58e
-[ 2400.226987]  [<ffffffff810e8a91>] ? copy_from_user+0x18/0x30
-[ 2400.226987]  [<ffffffff810e97ff>] ? rw_copy_check_uvector+0x6a/0xe1
-[ 2400.226987]  [<ffffffff810e991a>] ? do_readv_writev+0xa4/0x118
-[ 2400.226987]  [<ffffffff8103d696>] ? finish_task_switch+0x34/0xb4
-[ 2400.226987]  [<ffffffff812ffd81>] ? mutex_lock+0xd/0x33
-[ 2400.226987]  [<ffffffff810e9ab3>] ? sys_writev+0x45/0x90
-[ 2400.226987]  [<ffffffff810089c2>] ? system_call_fastpath+0x16/0x1b
+
+We encountered a small bug: the btrfs partition with RAID0 that was made
+on 2.6.32 did not mount after a reboot or after unmounting. Running
+btrfsck fixes this, but after a next umount, we had to run btrfsck
+again. After recreating the btrfs partition on 2.6.35, all was well.
+btrfs partitions that don't use (software) RAID work fine.
+
+~# mount -t btrfs -o ssd /dev/sdd /mnt/ssd3
+mount: wrong fs type, bad option, bad superblock on /dev/sdd,
+       missing codepage or helper program, or other error
+       In some cases useful info is found in syslog - try
+       dmesg | tail  or so
+
+~# dmesg | tail
+device fsid ec4d518ec61d4496-81e5aeda2d8ef7b5 devid 1 transid 69 /dev/sdd
+btrfs: use ssd allocation scheme
+btrfs: failed to read the system array on sdd
+btrfs: open_ctree failed
+
+~# btrfsck /dev/sdd
+found 550511136768 bytes used err is 0
+total csum bytes: 536870912
+total tree bytes: 755322880
+total fs tree bytes: 77824
+btree space waste bytes: 169152328
+file data blocks allocated: 549755813888
+ referenced 549755813888
+Btrfs Btrfs v0.19
+
+~# mount -t btrfs -o ssd /dev/sdd /mnt/ssd3
+[and it mounts fine now]
 
 
-[ 2400.966380] Call Trace:
-[ 2400.966380]  [<ffffffffa04576b8>] ? btrfs_file_aio_write+0x36a/0x7da [btrfs]
-[ 2400.966380]  [<ffffffffa04576b8>] ? btrfs_file_aio_write+0x36a/0x7da [btrfs]
-[ 2400.966380]  [<ffffffffa04638ab>] ? set_extent_buffer_dirty+0x4d/0x5e [btrfs]
-[ 2401.148493]  [<ffffffffa044ccd4>] ? btrfs_run_delayed_iputs+0x35/0x104 [btrfs]
-[ 2401.148493]  [<ffffffffa044bb6c>] ? __btrfs_end_transaction+0x19a/0x1a8 [btrfs]
-[ 2401.148493]  [<ffffffff810f926b>] ? __d_lookup+0xc1/0x107
-[ 2401.148493]  [<ffffffffa045734e>] ? btrfs_file_aio_write+0x0/0x7da [btrfs]
-[ 2401.148493]  [<ffffffff810e8ce0>] ? do_sync_readv_writev+0x9a/0xd5
-[ 2401.148493]  [<ffffffff810f4163>] ? do_filp_open+0x510/0x58e
-[ 2401.148493]  [<ffffffff810e8a91>] ? copy_from_user+0x18/0x30
-[ 2401.148493]  [<ffffffff810e97ff>] ? rw_copy_check_uvector+0x6a/0xe1
-[ 2401.148493]  [<ffffffff810e991a>] ? do_readv_writev+0xa4/0x118
-[ 2401.148493]  [<ffffffff812ffd81>] ? mutex_lock+0xd/0x33
-[ 2401.148493]  [<ffffffff810e9ab3>] ? sys_writev+0x45/0x90
-[ 2401.148493]  [<ffffffff810089c2>] ? system_call_fastpath+0x16/0x1b
-
- 2404.104503] Call Trace:
-[ 2404.104503]  [<ffffffff810bf71c>] ? kstrdup+0x2a/0x40
-[ 2404.104503]  [<ffffffff810f19c4>] ? vfs_rename+0xa9/0x3e4
-[ 2404.104503]  [<ffffffff810f0d29>] ? __lookup_hash+0xc2/0xe9
-[ 2404.104503]  [<ffffffff810f3348>] ? sys_renameat+0x1aa/0x22b
-[ 2404.104503]  [<ffffffff8108ef4f>] ? rcu_start_gp+0x1f7/0x218
-[ 2404.104503]  [<ffffffff810ea13a>] ? fput+0x18f/0x1c4
-[ 2404.104503]  [<ffffffff810fd9ea>] ? mntput_no_expire+0x23/0xde
-[ 2404.104503]  [<ffffffff810e7829>] ? filp_close+0x5f/0x6a
-[ 2404.104503]  [<ffffffff810089c2>] ? system_call_fastpath+0x16/0x1b
-[ 2404.104503] Code: 44 00 00 48 89 44 24 08 fa 66 0f 1f 44 00 00 65 4c 8b 04 25 80 ea 00 00 48 8b 45 00 49 01 c0 49 8b 18 48 85 db 74 0d 48 63 45 18 <48> 8b 04 03 49 89 00 eb 14 4c 89 f9 83 ca ff 44 89 f6 48 89 ef 
-[ 2404.104503] RIP  [<ffffffff810e2fef>] __kmalloc_track_caller+0xc7/0x12d
-
+Regards,
+Freek Dijkstra
+SARA High Performance Computing and Networking

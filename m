@@ -1,61 +1,49 @@
-From: Daniel Kozlowski <dan.kozlowski@gmail.com>
-Subject: Re: Recover Corruption - verify_parent_transid
-Date: Tue, 10 Aug 2010 06:30:51 -0400
-Message-ID: <AANLkTinK+JOZKzbZLQmimU72kj+3tbRdQLmCLbjL0ec0@mail.gmail.com>
-References: <1281415061.3192.23.camel@hardline>
+From: "Yan, Zheng " <yanzheng@21cn.com>
+Subject: Re: Code bug or data bug?
+Date: Tue, 10 Aug 2010 19:12:45 +0800
+Message-ID: <AANLkTikWzo1r5FEsdsTfYCA7c+9Xfhfb9NdbhHuM9_2y@mail.gmail.com>
+References: <4C607F45.3020901@noir.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: "A. James Lewis" <james@fsck.co.uk>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: "K. Richard Pixley" <rich@noir.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1281415061.3192.23.camel@hardline>
+In-Reply-To: <4C607F45.3020901@noir.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I had a system in a simelar situation. In my case the fix was to
-upgrade the btrfs module to git-head. After I did that tryig to mount
-gave me an error is syslog about a problem it was having with one disk
-before it went into the transid loop. i remove the disk and re-mounted
-with -o degraded. hat allowed me to actually get teh drives mounted.
-If your on a single disk setup i don't think that would work for you.
-what you can do is check the syslog as you try to mount for  any OOP's
- that you may be able to fix.
-
-On Tue, Aug 10, 2010 at 12:37 AM, A. James Lewis <james@fsck.co.uk> wro=
-te:
-> Not being one of the developers on this project, I cannot offer you a
-> solution to recovering data from this volume, and my guess is that a
-> ready solution is unlikely to be forthcoming simply because if this w=
-as
-> possible then btrfsck would include the code to recover the filesyste=
-m
-> already.
+On Tue, Aug 10, 2010 at 6:20 AM, K. Richard Pixley <rich@noir.com> wrot=
+e:
+> =A0I've just gotten:
 >
-> However, rather than simply observe that anything not backed up is
-> lost... I thought I would offer the solution of the 4th dimension....
-> The data is not "lost", but simply unavailable to you until the tools=
- to
-> repair the filesystem have been developed further. =A0If I had someth=
-ing
-> critical which had become inaccessible, I might be tempted to put the
-> drive on a shelf for 6 months and see if btrfsck was able to repair
-> filesystems by then. =A0It may be that the on disk format is changed
-> before that happens, but I understand that this is now relatively
-> unlikely.
+> rich@diamonds:~$ time sudo /sbin/btrfsck /dev/sda7
+> btrfsck: btrfsck.c:585: splice_shared_node: Assertion `!(src =3D=3D
+> &src_node->root_cache)' failed.
+> Aborted
 >
-> A. James Lewis
+> Does this indicate a coding error in btrfsck or a data error in my fi=
+le
+> system?
 >
+> --rich
 >
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+> rich@diamonds:~$ dpkg -l | grep btrfs
+> ii =A0btrfs-tools =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
+ =A0 =A0 =A00.19+20100601-3
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 Checksumming Copy on Write Filesy=
+stem utilit
+> rich@diamonds:~$ uname -a
+> Linux diamonds 2.6.32-24-generic-pae #38-Ubuntu SMP Mon Jul 5 10:54:2=
+1 UTC
+> 2010 i686 GNU/Linux
+> rich@diamonds:~$ lsb_release -a
+> No LSB modules are available.
+> Distributor ID: Ubuntu
+> Description: =A0 =A0Ubuntu 10.04.1 LTS
+> Release: =A0 =A0 =A0 =A010.04
+> Codename: =A0 =A0 =A0 lucid
 >
 
-
-
---=20
-S.D.G.
+This is a bug in btrfsck.
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

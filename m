@@ -1,51 +1,93 @@
-From: "Yan, Zheng " <yanzheng@21cn.com>
-Subject: Re: Code bug or data bug?
-Date: Tue, 10 Aug 2010 19:12:45 +0800
-Message-ID: <AANLkTikWzo1r5FEsdsTfYCA7c+9Xfhfb9NdbhHuM9_2y@mail.gmail.com>
-References: <4C607F45.3020901@noir.com>
+From: Jeff Moyer <jmoyer@redhat.com>
+Subject: Re: PATCH 3/6 - direct-io: do not merge logically non-contiguous requests
+Date: Tue, 10 Aug 2010 14:40:06 -0400
+Message-ID: <x49ocdab9bt.fsf@segfault.boston.devel.redhat.com>
+References: <4C5BE8DB.5030503@linux.vnet.ibm.com>
+	<20100806120358.GA31601@infradead.org>
+	<4C5D0BC2.1040706@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: "K. Richard Pixley" <rich@noir.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4C607F45.3020901@noir.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Christoph Hellwig <hch@infradead.org>,
+	Josef Bacik <josef@redhat.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	"linux-kernel\@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+	linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
+To: Christian Ehrhardt <ehrhardt@linux.vnet.ibm.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 10, 2010 at 6:20 AM, K. Richard Pixley <rich@noir.com> wrot=
-e:
-> =A0I've just gotten:
->
-> rich@diamonds:~$ time sudo /sbin/btrfsck /dev/sda7
-> btrfsck: btrfsck.c:585: splice_shared_node: Assertion `!(src =3D=3D
-> &src_node->root_cache)' failed.
-> Aborted
->
-> Does this indicate a coding error in btrfsck or a data error in my fi=
-le
-> system?
->
-> --rich
->
-> rich@diamonds:~$ dpkg -l | grep btrfs
-> ii =A0btrfs-tools =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
- =A0 =A0 =A00.19+20100601-3
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 Checksumming Copy on Write Filesy=
-stem utilit
-> rich@diamonds:~$ uname -a
-> Linux diamonds 2.6.32-24-generic-pae #38-Ubuntu SMP Mon Jul 5 10:54:2=
-1 UTC
-> 2010 i686 GNU/Linux
-> rich@diamonds:~$ lsb_release -a
-> No LSB modules are available.
-> Distributor ID: Ubuntu
-> Description: =A0 =A0Ubuntu 10.04.1 LTS
-> Release: =A0 =A0 =A0 =A010.04
-> Codename: =A0 =A0 =A0 lucid
->
+Christian Ehrhardt <ehrhardt@linux.vnet.ibm.com> writes:
 
-This is a bug in btrfsck.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> On 08/06/2010 02:03 PM, Christoph Hellwig wrote:
+>> Something is deeply wrong here.  Raw block device access has a 1:1
+>> mapping between logical and physical block numbers.  They really should
+>> never be non-contiguous.
+>
+> At least I did nothing I know about to break it :-)
+
+I think Christoph missed that you were using ext2, not the block device.
+
+> As I mentioned just iozone using direct I/O (-I flag of iozone then
+> using O_DIRECT for the file) on a ext2 file-system.
+> The file system was coming clean out of mkfs the file was written with
+> iozone one step before the traced read run.
+>
+> The only uncommon thing here might be the block device, which is a
+> scsi disk on our SAN servers (I'm running on s390) - so the driver in
+> charge is zfcp (drivers/s390/scsi/).
+> I could use dasd (drivers/s390/block) disks as well, but I have no
+> blktrace of them yet - what I already know is that they show a similar
+> cost increase. On monday I should be able to get machine resources to
+> verify that both disk types are affected.
+>
+> Let me know if I can do anything else on my system to shed some light
+> on the matter.
+
+Well, the problem is pretty obvious.  Inside submit_page_section, you
+have this code:
+
+	/*
+	 * If there's a deferred page already there then send it.
+	 */
+	if (dio->cur_page) {
+		ret = dio_send_cur_page(dio);
+		page_cache_release(dio->cur_page);
+		dio->cur_page = NULL;
+		if (ret)
+			goto out;
+	}
+
+	page_cache_get(page);/* It is in dio */
+	dio->cur_page = page;
+	dio->cur_page_offset = offset;
+	dio->cur_page_len = len;
+	dio->cur_page_block = blocknr;
+	dio->cur_page_fs_offset = dio->block_in_file << dio->blkbits;
+
+Notice that we're processing a new page, so we submit the old page for
+I/O.
+
+And in dio_send_cur_page, we have this:
+
+	if (dio->final_block_in_bio != dio->cur_page_block ||
+	    cur_offset != bio_next_offset)
+		dio_bio_submit(dio);
+
+So, we are actually comparing values between two different pages, and of
+course, this doesn't work.  We're always one page behind in the I/O.
+
+Also, the block of code above is immediately followed by this:
+
+	/*
+	 * Submit now if the underlying fs is about to perform a
+	 * metadata read
+	 */
+	if (dio->boundary)
+		dio_bio_submit(dio);
+
+So, it looks to me like this could result in submitting the same bio
+twice if you are unlucky enough.  I'll see what I can do to fix this
+up.
+
+Cheers,
+Jeff

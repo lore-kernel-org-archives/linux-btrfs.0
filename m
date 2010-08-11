@@ -1,63 +1,85 @@
-From: =?UTF-8?B?SmFyaSBTZXBww6Rsw6Q=?= <lihamakaroonilaatikko@gmail.com>
-Subject: Fixing raid1 boot
-Date: Wed, 11 Aug 2010 14:21:03 +0300
-Message-ID: <4C62879F.5040205@gmail.com>
+From: Jeff Moyer <jmoyer@redhat.com>
+Subject: Re: PATCH 3/6 - direct-io: do not merge logically non-contiguous requests
+Date: Wed, 11 Aug 2010 09:27:45 -0400
+Message-ID: <x49zkwtb7ou.fsf@segfault.boston.devel.redhat.com>
+References: <4C5BE8DB.5030503@linux.vnet.ibm.com>
+	<20100806120358.GA31601@infradead.org>
+	<4C5D0BC2.1040706@linux.vnet.ibm.com>
+	<x49ocdab9bt.fsf@segfault.boston.devel.redhat.com>
+	<20100811015552.GC9349@dhcp231-156.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: Christian Ehrhardt <ehrhardt@linux.vnet.ibm.com>,
+	Christoph Hellwig <hch@infradead.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	"linux-kernel\@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+	linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20100811015552.GC9349@dhcp231-156.rdu.redhat.com> (Josef Bacik's
+	message of "Tue, 10 Aug 2010 21:55:52 -0400")
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Josef Bacik <josef@redhat.com> writes:
 
-I have av machine which has btrfs raid1 root which I cannot boot
-anymore. The problem seems to be related to "verify_parent_transid"
-messages already discussed on this mailing list. However, there is no
-actual help yet available to my case.
+> So say blocksize of 4k, we do dio to 12k, the first time around
+> dio->block_in_file is 0, we set dio->cur_page, and move on to the next page, and
+> bio->block_in_file is set to 1.  We find that dio->cur_page is set, so we do
+> dio_send_cur_page().  Since !dio->bio we create a new bio, and set
+> dio->logical_offset_in_bio to 0, since thats the offset of dio->cur_page.  Then
+> we setup the next cur_page as the page for logical block 1, and
+> dio->block_in_file gets bumped to 2.  We map the next block and come into
+> dio_send_cur_page() again.  At this point cur_offset would be 8192...and shit I
+> just realized what was wrong.  If you change
+>
+> loff_t cur_offset = dio->block_in_file << dio->blkbits;
+>
+> to
+>
+> loff_t cur_offset = dio->cur_page_fs_offset << dio->blkbits;
 
-Disks
-/dev/sda1 and /dev/sdb1 as /boot, 100Mb, ext3, manually mirrored
-/dev/sda6 and /dev/sda6 as /, 50Gb, btrfs raid1
-/dev/sda7 and /dev/sdb7 as /mnt/share, 543Gb, btrfs raid1
+Sorry, I wasn't very clear in my description, but you figured it out.
+;-)  Of course, cur_page_fs_offset is already in bytes, so that left
+shift is not necessary.
 
-Boot fails and starts to loop with errors "parent transid verify failed=
- on".
+> That should fix the problem.  Sorry guys, I screwed that up.  I'll look at this
+> again tomorrow after I've had my 2 hours of sleep and see if this all still
+> makes sense, but I think the above should fixe the performance thing.  As for
+> the dio->boundary thing, dio_bio_submit() sets dio->boundary to 0, so the same
+> bio won't be submitted twice.
 
-However, I was able to boot from usb stick and mount the partitions wit=
-h
-"mount UUID=3D... <mount point> -o degraded". After unmounting the UUID
-identified partitions I was also able to mount them without the "-o
-degraded". Also btrfs-show shows raid devices as _not_degraded_. The
-initrd+vmlinuz in use have been able to boot the / and /mnt/share befor=
-e
-but one boot caused by power failure corrupted something. I also can
-mount /dev/sd[ab][67] directly but
+While I don't doubt that you are right, I will sleep better at night if
+we do an else if.  (To be fair, this ambiguity was not introduced by
+you).
 
-I tried to use "btrfs-vol -r /dev/sd[ab][67]" with various combinations
-without any luck.
+I've tested this patch, added printk's and watched blktrace to verify
+that we don't split up I/Os.  So long as no one objects, I'll post this
+for inclusion in a new thread.
 
-btrfsck /dev/sda6 or /dev/sdb6 gives
- leaf parent key incorrect <number>
- bad block <number>
+Thanks for looking into it, Josef.
 
-btrfsck /dev/sda7 or /dev/sdb7 gives no errors.
+Cheers,
+Jeff
 
-Any help on how to fix this boot appreciated. Especially
-
-* How can I be sure that raid1 mirror is ok?
-* Is there a way to fix any fs errors? Btrfsck does not fix just
-  reports?
-
-And yes, I know btrfs is experimental but I decided to try it anyway. I=
-t
-worked nicely for a week and only two problems are this recovery from
-failures and hacking mkinitrd to run "btrfs device scan" which enables
-boot from btrfs raid1 root partition.
-
-Jari
---=20
-*** Jari Sepp=C3=A4l=C3=A4
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/direct-io.c b/fs/direct-io.c
+index 7600aac..445901c 100644
+--- a/fs/direct-io.c
++++ b/fs/direct-io.c
+@@ -632,7 +632,7 @@ static int dio_send_cur_page(struct dio *dio)
+ 	int ret = 0;
+ 
+ 	if (dio->bio) {
+-		loff_t cur_offset = dio->block_in_file << dio->blkbits;
++		loff_t cur_offset = dio->cur_page_fs_offset;
+ 		loff_t bio_next_offset = dio->logical_offset_in_bio +
+ 			dio->bio->bi_size;
+ 
+@@ -657,7 +657,7 @@ static int dio_send_cur_page(struct dio *dio)
+ 		 * Submit now if the underlying fs is about to perform a
+ 		 * metadata read
+ 		 */
+-		if (dio->boundary)
++		else if (dio->boundary)
+ 			dio_bio_submit(dio);
+ 	}
+ 

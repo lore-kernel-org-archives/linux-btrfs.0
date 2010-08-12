@@ -1,47 +1,31 @@
-From: Cheng Renquan <crquan@gmail.com>
-Subject: [RFC] why define "static int btrfs_csum_sizes[]" in a header file
-	(ctree.h) ?
-Date: Thu, 12 Aug 2010 08:46:54 +0800
-Message-ID: <AANLkTik7dgX=EppkoSTjiU_Wz4b35r3=FaYFPcDdwbNo@mail.gmail.com>
+From: Andreas Philipp <philipp.andreas@gmail.com>
+Subject: machine gets unresponsive during btrfs balance
+Date: Thu, 12 Aug 2010 09:14:10 +0200
+Message-ID: <4C639F42.3050206@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Josef Bacik <jbacik@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-commit 607d432d referred a static int array defined in a header file,
-and a static inline function (btrfs_super_csum_size) using this array,
-the obvious result is every c file using that function would have
-a local copy of that int array, multiple c files referred multiple copies
-of that array:
+Hi,
 
-$ nm fs/btrfs/btrfs.ko | grep btrfs_csum_sizes
-0000010c r btrfs_csum_sizes
-00000114 r btrfs_csum_sizes
-000001c0 r btrfs_csum_sizes
-000005a0 r btrfs_csum_sizes
+I am using a btrfs filesystem created with raid0 for data and metadata
+for (temporary) storage of tv recordings from my vdr. The filesystem was
+created under kernel version 2.6.34. An initial btrfs balance command
+succeeded. Since I upgraded to 2.6.35-rcX and 2.6.35 btrfs balance no
+longer finishes but puts the machine in some unresponsive state.
+Unfortunately, I do not see any kernel oops or other debug information
+because even the display freezes. The last thing that happens are that
+those two lines are written to /var/log/messages:
+Aug 11 21:42:23 thor kernel: btrfs: found 62911 extents
+Aug 11 21:42:24 thor kernel: btrfs: relocating block group 1723913469952
+flags 9
+After that the machine becomes immediately unresponsive.
 
-the original commit has 4 c files called this static inline function, so
-till now there are still those 4 c files calling it, so there are 4 copies
-of btrfs_csum_sizes; but future code may call it in more c files;
+As I did not see anything that might be related to my problem in the
+changelog for 2.6.35.1 I did not try again with this version.
 
- fs/btrfs/ctree.h     |   19 ++++++++++++++++-
- fs/btrfs/disk-io.c   |   25 +++++++++++++++++----
- fs/btrfs/file-item.c |   56 ++++++++++++++++++++++++++++---------------------
- fs/btrfs/ioctl.c     |    9 ++++---
- fs/btrfs/tree-log.c  |   10 +++++---
- 5 files changed, 81 insertions(+), 38 deletions(-)
+Thanks,
+Andreas
 
-multiple copies are just wasting memory; fixing that need to move
-that int array and inline function to a c file, because that inline function
-is using ARRAY_SIZE that need to know the array size at compile time;
-and then the code would suffer uninlined btrfs_super_csum_size function call;
-
-I wonder if here the community think those useless copies are worthy, or to
-suffer uninlined fuunction call is better?
-
-Cheers,
-
---
-Cheng Renquan, Singapore

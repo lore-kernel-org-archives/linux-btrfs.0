@@ -1,53 +1,42 @@
 From: bchociej@gmail.com
-Subject: [RFC v2 PATCH 2/6] Btrfs: Add data structures for hot data tracking
-Date: Thu, 12 Aug 2010 17:22:02 -0500
-Message-ID: <1281651726-23501-3-git-send-email-bchociej@gmail.com>
+Subject: [RFC v2 PATCH 1/6] Btrfs: Add experimental hot data hash list index
+Date: Thu, 12 Aug 2010 17:22:01 -0500
+Message-ID: <1281651726-23501-2-git-send-email-bchociej@gmail.com>
 References: <1281651726-23501-1-git-send-email-bchociej@gmail.com>
 Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
 	cmm@us.ibm.com, bcchocie@us.ibm.com, mrlupfer@us.ibm.com,
 	crscott@us.ibm.com, bchociej@gmail.com, mlupfer@gmail.com,
 	conscott@vt.edu
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 In-Reply-To: <1281651726-23501-1-git-send-email-bchociej@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Ben Chociej <bchociej@gmail.com>
 
-Adds hot_inode_tree and hot_range_tree structs to keep track of
-frequently accessed files and ranges within files. Trees contain
-hot_{inode,range}_items representing those files and ranges, each of
-which contains a btrfs_freq_data struct with its frequency of access
-metrics (number of {reads, writes}, last {read,write} time, frequency of
-{reads,writes}).
-
-Having these trees means that Btrfs can quickly determine the
-temperature of some data by doing some calculations on the
-btrfs_freq_data struct that hangs off of the tree item.
-
-Also, since it isn't entirely obvious, the "frequency" or reads or
-writes is determined by taking a kind of generalized average of the last
-few (2^N for some tunable N) reads or writes.
+Adds a hash table structure to efficiently lookup the data temperature
+of a file. Also adds a function to calculate that temperature based on
+some metrics kept in custom frequency data structs (in the next patch).
 
 Signed-off-by: Ben Chociej <bchociej@gmail.com>
 Signed-off-by: Matt Lupfer <mlupfer@gmail.com>
 Signed-off-by: Conor Scott <conscott@vt.edu>
 Reviewed-by: Mingming Cao <cmm@us.ibm.com>
 ---
- fs/btrfs/hotdata_map.c |  804 ++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/hotdata_map.h |  167 ++++++++++
- 2 files changed, 971 insertions(+), 0 deletions(-)
- create mode 100644 fs/btrfs/hotdata_map.c
- create mode 100644 fs/btrfs/hotdata_map.h
+ fs/btrfs/hotdata_hash.c |  338 +++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/hotdata_hash.h |  155 ++++++++++++++++++++++
+ 2 files changed, 493 insertions(+), 0 deletions(-)
+ create mode 100644 fs/btrfs/hotdata_hash.c
+ create mode 100644 fs/btrfs/hotdata_hash.h
 
-diff --git a/fs/btrfs/hotdata_map.c b/fs/btrfs/hotdata_map.c
+diff --git a/fs/btrfs/hotdata_hash.c b/fs/btrfs/hotdata_hash.c
 new file mode 100644
-index 0000000..ddae0c4
+index 0000000..b789edd
 --- /dev/null
-+++ b/fs/btrfs/hotdata_map.c
-@@ -0,0 +1,804 @@
++++ b/fs/btrfs/hotdata_hash.c
+@@ -0,0 +1,338 @@
 +/*
-+ * fs/btrfs/hotdata_map.c
++ * fs/btrfs/hotdata_hash.c
 + *
 + * Copyright (C) 2010 International Business Machines Corp.
 + *
@@ -66,798 +55,332 @@ index 0000000..ddae0c4
 + * Boston, MA 021110-1307, USA.
 + */
 +
++#include <linux/list.h>
 +#include <linux/err.h>
 +#include <linux/slab.h>
 +#include <linux/module.h>
 +#include <linux/spinlock.h>
 +#include <linux/hardirq.h>
-+#include <linux/blkdev.h>
-+#include "ctree.h"
++#include <linux/hash.h>
++#include <linux/kthread.h>
++#include <linux/freezer.h>
 +#include "hotdata_map.h"
 +#include "hotdata_hash.h"
-+#include "btrfs_inode.h"
-+#include "volumes.h"
++#include "hotdata_relocate.h"
++#include "async-thread.h"
++#include "ctree.h"
 +
-+/* kmem_cache pointers for slab caches */
-+static struct kmem_cache *hot_inode_item_cache;
-+static struct kmem_cache *hot_range_item_cache;
-+
-+static struct hot_inode_item *btrfs_update_inode_freq(struct btrfs_inode *inode,
-+					       int create);
-+
-+static int btrfs_update_range_freq(struct hot_inode_item *he,
-+					       u64 off, u64 len, int create,
-+					       struct btrfs_root *root);
-+
-+/* init hot_inode_item kmem cache */
-+int __init hot_inode_item_init(void)
++struct heat_hashlist_node *alloc_heat_hashlist_node(gfp_t mask)
 +{
-+	hot_inode_item_cache = kmem_cache_create("hot_inode_item",
-+			sizeof(struct hot_inode_item), 0,
-+			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-+	if (!hot_inode_item_cache)
-+		return -ENOMEM;
-+	return 0;
++	struct heat_hashlist_node *node;
++
++	node = kmalloc(sizeof(struct heat_hashlist_node), mask);
++	if (!node || IS_ERR(node))
++		return node;
++	INIT_HLIST_NODE(&node->hashnode);
++	node->freq_data = NULL;
++	node->hlist = NULL;
++	node->location = BTRFS_ON_ROTATING;
++	spin_lock_init(&node->lock);
++	spin_lock_init(&node->location_lock);
++	atomic_set(&node->refs, 1);
++
++	return node;
 +}
 +
-+/* init hot_range_item kmem cache */
-+int __init hot_range_item_init(void)
++void free_heat_hashlists(struct btrfs_root *root)
 +{
-+	hot_range_item_cache = kmem_cache_create("hot_range_item",
-+			sizeof(struct hot_range_item), 0,
-+			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-+	if (!hot_range_item_cache)
-+		return -ENOMEM;
-+	return 0;
-+}
++	int i;
 +
-+void hot_inode_item_exit(void)
-+{
-+	if (hot_inode_item_cache)
-+		kmem_cache_destroy(hot_inode_item_cache);
-+}
++	/* Free node/range heat hash lists */
++	for (i = 0; i < HEAT_HASH_SIZE; i++) {
++		struct hlist_node *pos = NULL, *pos2 = NULL;
++		struct heat_hashlist_node *heatnode = NULL;
 +
-+void hot_range_item_exit(void)
-+{
-+	if (hot_range_item_cache)
-+		kmem_cache_destroy(hot_range_item_cache);
-+}
-+
-+/*
-+ * Initialize the inode tree. Should be called for each new inode
-+ * access or other user of the hot_inode interface.
-+ */
-+void hot_inode_tree_init(struct hot_inode_tree *tree)
-+{
-+	tree->map = RB_ROOT;
-+	rwlock_init(&tree->lock);
-+}
-+
-+/*
-+ * Initialize the hot range tree. Should be called for each new inode
-+ * access or other user of the hot_range interface.
-+ */
-+void hot_range_tree_init(struct hot_range_tree *tree)
-+{
-+	tree->map = RB_ROOT;
-+	rwlock_init(&tree->lock);
-+}
-+
-+/*
-+ * Allocate a new hot_inode_item structure. The new structure is
-+ * returned with a reference count of one and needs to be
-+ * freed using free_inode_item()
-+ */
-+struct hot_inode_item *alloc_hot_inode_item(unsigned long ino)
-+{
-+	struct hot_inode_item *he;
-+	he = kmem_cache_alloc(hot_inode_item_cache, GFP_KERNEL | GFP_NOFS);
-+	if (!he || IS_ERR(he))
-+		return he;
-+
-+	atomic_set(&he->refs, 1);
-+	he->in_tree = 0;
-+	he->i_ino = ino;
-+	he->heat_node = alloc_heat_hashlist_node(GFP_KERNEL | GFP_NOFS);
-+	he->heat_node->freq_data = &he->freq_data;
-+	he->freq_data.avg_delta_reads = (u64) -1;
-+	he->freq_data.avg_delta_writes = (u64) -1;
-+	he->freq_data.nr_reads = 0;
-+	he->freq_data.nr_writes = 0;
-+	he->freq_data.last_temp = 0;
-+	he->freq_data.flags = FREQ_DATA_TYPE_INODE;
-+	hot_range_tree_init(&he->hot_range_tree);
-+
-+	spin_lock_init(&he->lock);
-+
-+	return he;
-+}
-+
-+/*
-+ * Allocate a new hot_range_item structure. The new structure is
-+ * returned with a reference count of one and needs to be
-+ * freed using free_range_item()
-+ */
-+struct hot_range_item *alloc_hot_range_item(struct hot_inode_item *he,
-+					    u64 start, u64 len)
-+{
-+	struct hot_range_item *hr;
-+	hr = kmem_cache_alloc(hot_range_item_cache, GFP_KERNEL | GFP_NOFS);
-+	if (!hr || IS_ERR(hr))
-+		return hr;
-+	atomic_set(&hr->refs, 1);
-+	hr->in_tree = 0;
-+	hr->start = start & RANGE_SIZE_MASK;
-+	hr->len = len;
-+	hr->hot_inode = he;
-+	hr->heat_node = alloc_heat_hashlist_node(GFP_KERNEL | GFP_NOFS);
-+	hr->heat_node->freq_data = &hr->freq_data;
-+	hr->freq_data.avg_delta_reads = (u64) -1;
-+	hr->freq_data.avg_delta_writes = (u64) -1;
-+	hr->freq_data.nr_reads = 0;
-+	hr->freq_data.nr_writes = 0;
-+	hr->freq_data.flags = FREQ_DATA_TYPE_RANGE;
-+
-+	spin_lock_init(&hr->lock);
-+
-+	return hr;
-+}
-+
-+/*
-+ * Drops the reference out on hot_inode_item by one and free the structure
-+ * if the reference count hits zero
-+ */
-+void free_hot_inode_item(struct hot_inode_item *he)
-+{
-+	if (!he)
-+		return;
-+	if (atomic_dec_and_test(&he->refs)) {
-+		WARN_ON(he->in_tree);
-+		kmem_cache_free(hot_inode_item_cache, he);
++		hlist_for_each_safe(pos, pos2,
++			&root->heat_inode_hl[i].hashhead) {
++			heatnode = hlist_entry(pos, struct heat_hashlist_node,
++				hashnode);
++			hlist_del(pos);
++			kfree(heatnode);
++		}
++		hlist_for_each_safe(pos, pos2,
++			&root->heat_range_hl[i].hashhead) {
++			heatnode = hlist_entry(pos, struct heat_hashlist_node,
++				hashnode);
++			hlist_del(pos);
++			kfree(heatnode);
++		}
 +	}
 +}
 +
 +/*
-+ * Drops the reference out on hot_range_item by one and free the structure
-+ * if the reference count hits zero
++ * btrfs_get_temp is responsible for distilling the six heat criteria, which
++ * are described in detail in hotdata_hash.h) down into a single temperature
++ * value for the data, which is an integer between 0 and HEAT_MAX_VALUE.
++ *
++ * To accomplish this, the raw values from the btrfs_freq_data structure
++ * are shifted various ways in order to make the temperature calculation more
++ * or less sensitive to each value.
++ *
++ * Once this calibration has happened, we do some additional normalization and
++ * make sure that everything fits nicely in a u32. From there, we take a very
++ * rudimentary kind of "average" of each of the values, where the *_COEFF_POWER
++ * values act as weights for the average.
++ *
++ * Finally, we use the HEAT_HASH_BITS value, which determines the size of the
++ * heat hash list, to normalize the temperature to the proper granularity.
 + */
-+void free_hot_range_item(struct hot_range_item *hr)
++int btrfs_get_temp(struct btrfs_freq_data *fdata)
 +{
-+	if (!hr)
-+		return;
-+	if (atomic_dec_and_test(&hr->refs)) {
-+		WARN_ON(hr->in_tree);
-+		kmem_cache_free(hot_range_item_cache, hr);
-+	}
++	u32 result = 0;
++
++	struct timespec ckt = current_kernel_time();
++	u64 cur_time = timespec_to_ns(&ckt);
++
++	u32 nrr_heat = fdata->nr_reads << NRR_MULTIPLIER_POWER;
++	u32 nrw_heat = fdata->nr_writes << NRW_MULTIPLIER_POWER;
++
++	u64 ltr_heat = (cur_time - timespec_to_ns(&fdata->last_read_time))
++			>> LTR_DIVIDER_POWER;
++	u64 ltw_heat = (cur_time - timespec_to_ns(&fdata->last_write_time))
++			>> LTW_DIVIDER_POWER;
++
++	u64 avr_heat = (((u64) -1) - fdata->avg_delta_reads)
++			>> AVR_DIVIDER_POWER;
++	u64 avw_heat = (((u64) -1) - fdata->avg_delta_writes)
++			>> AVR_DIVIDER_POWER;
++
++	if (ltr_heat >= ((u64) 1 << 32))
++		ltr_heat = 0;
++	else
++		ltr_heat = ((u64) 1 << 32) - ltr_heat;
++	/* ltr_heat is now guaranteed to be u32 safe */
++
++	if (ltw_heat >= ((u64) 1 << 32))
++		ltw_heat = 0;
++	else
++		ltw_heat = ((u64) 1 << 32) - ltw_heat;
++	/* ltw_heat is now guaranteed to be u32 safe */
++
++	if (avr_heat >= ((u64) 1 << 32))
++		avr_heat = (u32) -1;
++	/* avr_heat is now guaranteed to be u32 safe */
++
++	if (avw_heat >= ((u64) 1 << 32))
++		avr_heat = (u32) -1;
++	/* avw_heat is now guaranteed to be u32 safe */
++
++	nrr_heat = nrr_heat >> (3 - NRR_COEFF_POWER);
++	nrw_heat = nrw_heat >> (3 - NRW_COEFF_POWER);
++	ltr_heat = ltr_heat >> (3 - LTR_COEFF_POWER);
++	ltw_heat = ltw_heat >> (3 - LTW_COEFF_POWER);
++	avr_heat = avr_heat >> (3 - AVR_COEFF_POWER);
++	avw_heat = avw_heat >> (3 - AVW_COEFF_POWER);
++
++	result = nrr_heat + nrw_heat + (u32) ltr_heat +
++		 (u32) ltw_heat + (u32) avr_heat + (u32) avw_heat;
++
++	return result >> (32 - HEAT_HASH_BITS);
 +}
 +
-+/* Frees the entire hot_inode_tree. Called by free_fs_root */
-+void free_hot_inode_tree(struct btrfs_root *root)
++static int is_old(struct btrfs_freq_data *freq_data)
 +{
-+	struct rb_node *node, *node2;
-+	struct hot_inode_item *he;
-+	struct hot_range_item *hr;
++	int ret = 0;
++	struct timespec ckt = current_kernel_time();
 +
-+	/* Free hot inode and range trees on fs root */
-+	node = rb_first(&root->hot_inode_tree.map);
++	u64 cur_time = timespec_to_ns(&ckt);
++	u64 last_read_ns = (cur_time -
++			    timespec_to_ns(&freq_data->last_read_time));
++	u64 last_write_ns = (cur_time -
++			     timespec_to_ns(&freq_data->last_write_time));
++	u64 kick_ns = TIME_TO_KICK * (u64)1000000000;
++	if ((last_read_ns > kick_ns) && (last_write_ns > kick_ns))
++		ret = 1;
++	return ret;
++}
 +
++
++/* update temps for each range item for aging purposes */
++static void btrfs_update_range_data(struct hot_inode_item *hot_inode,
++				    struct btrfs_root *root)
++{
++	struct hot_range_tree *inode_range_tree;
++	struct rb_node *node;
++	struct rb_node *old_node;
++	struct hot_range_item *current_range;
++	int location, range_is_old;
++
++	inode_range_tree = &hot_inode->hot_range_tree;
++	write_lock(&inode_range_tree->lock);
++	node = rb_first(&inode_range_tree->map);
++	/* Walk the hot_range_tree for inode */
 +	while (node) {
-+		he = rb_entry(node, struct hot_inode_item,
++		current_range = rb_entry(node, struct hot_range_item, rb_node);
++		btrfs_update_heat_index(&current_range->freq_data, root);
++		old_node = node;
++		node = rb_next(node);
++		/* if the inode is cold and off ssd, quit keeping track of it */
++		spin_lock(&current_range->heat_node->location_lock);
++		location = current_range->heat_node->location;
++		spin_unlock(&current_range->heat_node->location_lock);
++
++		spin_lock(&current_range->lock);
++		range_is_old = is_old(&current_range->freq_data);
++		spin_unlock(&current_range->lock);
++
++		if (range_is_old && location == BTRFS_ON_ROTATING) {
++			if (atomic_read(&current_range->heat_node->refs) <= 1)
++				btrfs_remove_range_from_heat_index(hot_inode,
++							current_range, root);
++		}
++	}
++	write_unlock(&inode_range_tree->lock);
++}
++
++/* update temps for each hot inode item and hot range item for aging purposes */
++static void iterate_and_update_heat(struct btrfs_root *root)
++{
++	struct btrfs_root *fs_root;
++	struct hot_inode_item *current_hot_inode;
++	struct hot_inode_tree *hot_inode_tree;
++	unsigned long inode_num;
++
++	hot_inode_tree = &root->hot_inode_tree;
++
++	fs_root = root->fs_info->fs_root;
++	/* walk the inode tree */
++	current_hot_inode = find_next_hot_inode(fs_root, 0);
++	while (current_hot_inode) {
++		btrfs_update_heat_index(&current_hot_inode->freq_data, root);
++		btrfs_update_range_data(current_hot_inode, fs_root);
++		inode_num = current_hot_inode->i_ino;
++		free_hot_inode_item(current_hot_inode);
++		current_hot_inode = find_next_hot_inode(fs_root,
++				inode_num + 1);
++	}
++}
++
++/*
++ * kthread iterates each hot_inode_item and hot_range_item
++ * and update temperatures to be shifted in heat hash table
++ * for purposes of relocation and such hot file detection
++ */
++static int update_inode_kthread(void *arg)
++{
++	struct btrfs_root *root = arg;
++	unsigned long delay;
++	do {
++		delay = HZ * HEAT_UPDATE_DELAY;
++		if (mutex_trylock(&root->fs_info->
++			hot_data_update_kthread_mutex)) {
++			iterate_and_update_heat(root);
++			mutex_unlock(&root->fs_info->
++				     hot_data_update_kthread_mutex);
++		}
++		if (freezing(current)) {
++			refrigerator();
++		} else {
++			set_current_state(TASK_INTERRUPTIBLE);
++			if (!kthread_should_stop())
++				schedule_timeout(delay);
++			__set_current_state(TASK_RUNNING);
++		}
++	} while (!kthread_should_stop());
++	return 0;
++}
++
++/* init the kthread to do temp updates */
++void init_hash_list_kthread(struct btrfs_root *root)
++{
++	root->fs_info->hot_data_update_kthread =
++					kthread_run(update_inode_kthread,
++					root,
++					"update_hot_inode_kthread");
++	if (IS_ERR(root->fs_info->hot_data_update_kthread))
++		kthread_stop(root->fs_info->hot_data_update_kthread);
++}
++
++/*
++ * take hot inode that is now cold and remove from indexes and clean up
++ * any memory associted, involves removing hot inode from rb tree, and
++ * heat hash lists, and freeing up all memory and range memory.
++ */
++void btrfs_remove_inode_from_heat_index(struct hot_inode_item *hot_inode,
++				  struct btrfs_root *root)
++{
++	struct rb_node *node2;
++	struct hot_range_item *hr;
++
++	/* remove hot inode item from rb tree */
++	write_lock(&root->hot_inode_tree.lock);
++	remove_hot_inode_item(&root->hot_inode_tree, hot_inode);
++	write_unlock(&root->hot_inode_tree.lock);
++
++	/* remove the hot inode item from hash table */
++	write_lock(&hot_inode->heat_node->hlist->rwlock);
++	hlist_del(&hot_inode->heat_node->hashnode);
++	write_unlock(&hot_inode->heat_node->hlist->rwlock);
++
++	/* remove ranges in inode from rb-tree and heat table first */
++	write_lock(&hot_inode->hot_range_tree.lock);
++	node2 = rb_first(&hot_inode->hot_range_tree.map);
++	while (node2) {
++		hr = rb_entry(node2, struct hot_range_item,
 +			rb_node);
 +
-+		node2 = rb_first(&he->hot_range_tree.map);
-+
-+		while (node2) {
-+			hr = rb_entry(node2, struct hot_range_item,
-+				rb_node);
-+			remove_hot_range_item(&he->hot_range_tree, hr);
-+			free_hot_range_item(hr);
-+			node2 = rb_first(&he->hot_range_tree.map);
-+		}
-+
-+		remove_hot_inode_item(&root->hot_inode_tree, he);
-+		free_hot_inode_item(he);
-+		node = rb_first(&root->hot_inode_tree.map);
-+	}
-+}
-+
-+static struct rb_node *tree_insert_inode_item(struct rb_root *root,
-+					unsigned long inode_num,
-+					struct rb_node *node)
-+{
-+	struct rb_node **p = &root->rb_node;
-+	struct rb_node *parent = NULL;
-+	struct hot_inode_item *entry;
-+
-+	/* walk tree to find insertion point */
-+	while (*p) {
-+		parent = *p;
-+		entry = rb_entry(parent, struct hot_inode_item, rb_node);
-+
-+		if (inode_num < entry->i_ino)
-+			p = &(*p)->rb_left;
-+		else if (inode_num > entry->i_ino)
-+			p = &(*p)->rb_right;
-+		else
-+			return parent;
-+	}
-+
-+	entry = rb_entry(node, struct hot_inode_item, rb_node);
-+	entry->in_tree = 1;
-+	rb_link_node(node, parent, p);
-+	rb_insert_color(node, root);
-+	return NULL;
-+}
-+
-+static u64 range_map_end(struct hot_range_item *hr)
-+{
-+	if (hr->start + hr->len < hr->start)
-+		return (u64)-1;
-+	return hr->start + hr->len - 1;
-+}
-+
-+static struct rb_node *tree_insert_range_item(struct rb_root *root,
-+					      u64 start,
-+					      struct rb_node *node)
-+{
-+	struct rb_node **p = &root->rb_node;
-+	struct rb_node *parent = NULL;
-+	struct hot_range_item *entry;
-+
-+
-+	/* walk tree to find insertion point */
-+	while (*p) {
-+		parent = *p;
-+		entry = rb_entry(parent, struct hot_range_item, rb_node);
-+
-+		if (start < entry->start)
-+			p = &(*p)->rb_left;
-+		else if (start >= range_map_end(entry))
-+			p = &(*p)->rb_right;
-+		else
-+			return parent;
-+	}
-+
-+	entry = rb_entry(node, struct hot_range_item, rb_node);
-+	entry->in_tree = 1;
-+	rb_link_node(node, parent, p);
-+	rb_insert_color(node, root);
-+	return NULL;
-+}
-+
-+/*
-+ * Add a hot_inode_item to a hot_inode_tree. If the tree already contains
-+ * an item with the index given, return -EEXIST
-+ */
-+int add_hot_inode_item(struct hot_inode_tree *tree,
-+		       struct hot_inode_item *he)
-+{
-+	int ret = 0;
-+	struct rb_node *rb;
-+	struct hot_inode_item *exist;
-+
-+	exist = lookup_hot_inode_item(tree, he->i_ino);
-+	if (exist) {
-+		free_hot_inode_item(exist);
-+		ret = -EEXIST;
-+		goto out;
-+	}
-+	rb = tree_insert_inode_item(&tree->map, he->i_ino, &he->rb_node);
-+	if (rb) {
-+		ret = -EEXIST;
-+		goto out;
-+	}
-+	atomic_inc(&he->refs);
-+out:
-+	return ret;
-+}
-+
-+/*
-+ * Add a hot_range_item to a hot_range_tree. If the tree already contains
-+ * an item with the index given, return -EEXIST
-+ *
-+ * Also optionally aggresively merge ranges (currently disabled)
-+ */
-+int add_hot_range_item(struct hot_range_tree *tree,
-+		       struct hot_range_item *hr)
-+{
-+	int ret = 0;
-+	struct rb_node *rb;
-+	struct hot_range_item *exist;
-+	/* struct hot_range_item *merge = NULL; */
-+
-+	exist = lookup_hot_range_item(tree, hr->start);
-+	if (exist) {
-+		free_hot_range_item(exist);
-+		ret = -EEXIST;
-+		goto out;
-+	}
-+	rb = tree_insert_range_item(&tree->map, hr->start, &hr->rb_node);
-+	if (rb) {
-+		ret = -EEXIST;
-+		goto out;
-+	}
-+
-+	atomic_inc(&hr->refs);
-+
-+out:
-+	return ret;
-+}
-+
-+/*
-+ * Lookup a hot_inode_item in the hot_inode_tree with the given index
-+ * (inode_num)
-+ */
-+struct hot_inode_item *lookup_hot_inode_item(struct hot_inode_tree *tree,
-+					 unsigned long inode_num)
-+{
-+	struct rb_node **p = &(tree->map.rb_node);
-+	struct rb_node *parent = NULL;
-+	struct hot_inode_item *entry;
-+
-+	while (*p) {
-+		parent = *p;
-+		entry = rb_entry(parent, struct hot_inode_item, rb_node);
-+
-+		if (inode_num < entry->i_ino)
-+			p = &(*p)->rb_left;
-+		else if (inode_num > entry->i_ino)
-+			p = &(*p)->rb_right;
-+		else {
-+			atomic_inc(&entry->refs);
-+			return entry;
-+		}
-+	}
-+
-+	return NULL;
-+}
-+
-+/*
-+ * Lookup a hot_range_item in a hot_range_tree with the given index
-+ * (start, offset)
-+ */
-+struct hot_range_item *lookup_hot_range_item(struct hot_range_tree *tree,
-+					     u64 start)
-+{
-+	struct rb_node **p = &(tree->map.rb_node);
-+	struct rb_node *parent = NULL;
-+	struct hot_range_item *entry;
-+
-+	/* ensure start is on a range boundary */
-+	start = start & RANGE_SIZE_MASK;
-+	while (*p) {
-+		parent = *p;
-+		entry = rb_entry(parent, struct hot_range_item, rb_node);
-+
-+		if (start < entry->start)
-+			p = &(*p)->rb_left;
-+		else if (start > range_map_end(entry))
-+			p = &(*p)->rb_right;
-+		else {
-+			atomic_inc(&entry->refs);
-+			return entry;
-+		}
-+	}
-+	return NULL;
-+}
-+
-+int remove_hot_inode_item(struct hot_inode_tree *tree,
-+			  struct hot_inode_item *he)
-+{
-+	int ret = 0;
-+	rb_erase(&he->rb_node, &tree->map);
-+	he->in_tree = 0;
-+	return ret;
-+}
-+
-+int remove_hot_range_item(struct hot_range_tree *tree,
-+			  struct hot_range_item *hr)
-+{
-+	int ret = 0;
-+	rb_erase(&hr->rb_node, &tree->map);
-+	hr->in_tree = 0;
-+	return ret;
-+}
-+
-+/* Returns the percent of SSD that is full. If no SSD is found, returns 101. */
-+inline int __btrfs_ssd_filled(struct btrfs_root *root)
-+{
-+	struct btrfs_space_info *info;
-+	struct btrfs_device *device;
-+	struct list_head *head = &root->fs_info->fs_devices->devices;
-+	int slot_count = 0;
-+	u64 total_ssd_bytes = 0;
-+	u64 ssd_bytes_used = 0;
-+
-+	/*
-+	 * iterate through devices. if they're nonrotating, add their bytes
-+	 * to the total_ssd_bytes
-+	 */
-+	mutex_lock(&root->fs_info->fs_devices->device_list_mutex);
-+
-+	list_for_each_entry(device, head, dev_list) {
-+		if (blk_queue_nonrot(bdev_get_queue(device->bdev)))
-+			total_ssd_bytes += device->total_bytes;
-+	}
-+
-+	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
-+
-+	if (total_ssd_bytes == 0)
-+		return 101;
-+
-+	/*
-+	 * iterate through space_info. if the SSD data block group is found,
-+	 * add the bytes used by that group to ssd_bytes_used
-+	 */
-+	rcu_read_lock();
-+
-+	list_for_each_entry_rcu(info, &root->fs_info->space_info, list)
-+		slot_count++;
-+
-+	list_for_each_entry_rcu(info, &root->fs_info->space_info, list) {
-+		if (slot_count == 0)
-+			break;
-+		slot_count--;
-+
-+		if (info->flags & BTRFS_BLOCK_GROUP_DATA_SSD)
-+			ssd_bytes_used += info->bytes_used;
-+	}
-+
-+	rcu_read_unlock();
-+
-+	/* finish up. return percent of SSD filled. */
-+	BUG_ON(ssd_bytes_used >= total_ssd_bytes);
-+
-+	return (int) div64_u64(ssd_bytes_used * 100, total_ssd_bytes);
-+}
-+
-+/*
-+ * updates the current temperature threshold for hot data
-+ * migration based on how full the SSDs are.
-+ */
-+int btrfs_update_threshold(struct btrfs_root *root, int update)
-+{
-+	int threshold = root->heat_threshold;
-+	int full = __btrfs_ssd_filled(root);
-+	printk(KERN_INFO "btrfs ssd filled %d\n", full);
-+
-+	/* Sometimes update the global threshold, others not */
-+	if (!update && full < HIGH_WATER_LEVEL)
-+		return full;
-+
-+	if (unlikely(full > 100)) {
-+		threshold = HEAT_MAX_VALUE + 1;
-+	} else {
-+
-+		WARN_ON(HIGH_WATER_LEVEL > 100 || LOW_WATER_LEVEL < 0);
-+
-+		if (full >= HIGH_WATER_LEVEL)
-+			threshold += THRESH_UP_SPEED;
-+		else if (full <= LOW_WATER_LEVEL)
-+			threshold -= THRESH_DOWN_SPEED;
-+
-+		if (threshold > HEAT_MAX_VALUE)
-+			threshold = HEAT_MAX_VALUE + 1;
-+		else if (threshold < 0)
-+			threshold = 0;
-+	}
-+
-+	root->heat_threshold = threshold;
-+	return full;
-+}
-+
-+/* main function to update access frequency from read/writepage(s) hooks */
-+inline void btrfs_update_freqs(struct inode *inode, u64 start,
-+	u64 len, int create)
-+{
-+	struct hot_inode_item *he;
-+	struct btrfs_inode *btrfs_inode = BTRFS_I(inode);
-+
-+	he = btrfs_update_inode_freq(btrfs_inode, create);
-+
-+	/*
-+	 * this line was moved to __do_relocate_kthread:
-+	 *
-+	 * __btrfs_update_threshold(btrfs_inode->root);
-+	 */
-+
-+	WARN_ON(!he || IS_ERR(he));
-+
-+	if (he && !IS_ERR(he)) {
-+		btrfs_update_range_freq(he, start, len,
-+			create, btrfs_inode->root);
-+
-+		free_hot_inode_item(he);
-+	}
-+
-+}
-+
-+/* Update inode frequency struct */
-+static struct hot_inode_item *btrfs_update_inode_freq(struct btrfs_inode
-+						*inode, int create)
-+{
-+	struct hot_inode_tree *hitree = &inode->root->hot_inode_tree;
-+	struct hot_inode_item *he;
-+	struct btrfs_root *root = inode->root;
-+
-+	read_lock(&hitree->lock);
-+	he = lookup_hot_inode_item(hitree, inode->vfs_inode.i_ino);
-+	read_unlock(&hitree->lock);
-+
-+	if (!he) {
-+		he = alloc_hot_inode_item(inode->vfs_inode.i_ino);
-+
-+		if (!he || IS_ERR(he))
-+			goto out;
-+
-+		write_lock(&hitree->lock);
-+		add_hot_inode_item(hitree, he);
-+		write_unlock(&hitree->lock);
-+	}
-+
-+	if ((!root->fs_info->hot_data_relocate_kthread)
-+	    || root->fs_info->hot_data_relocate_kthread->pid != current->pid) {
-+		spin_lock(&he->lock);
-+		btrfs_update_freq(&he->freq_data, create);
-+		spin_unlock(&he->lock);
-+		btrfs_update_heat_index(&he->freq_data, root);
-+	}
-+
-+out:
-+	return he;
-+}
-+
-+/* Update range frequency struct */
-+static int btrfs_update_range_freq(struct hot_inode_item *he,
-+					       u64 off, u64 len, int create,
-+					       struct btrfs_root *root)
-+{
-+	struct hot_range_tree *hrtree = &he->hot_range_tree;
-+	struct hot_range_item *hr = NULL;
-+	u64 start_off = off & RANGE_SIZE_MASK;
-+	u64 end_off = (off + len - 1) & RANGE_SIZE_MASK;
-+	u64 cur;
-+	int ret = 0;
-+
-+	if (len == 0)
-+		return 1;
-+
-+	/*
-+	 * Align ranges on RANGE_SIZE boundary to prevent proliferation
-+	 * of range structs
-+	 */
-+	for (cur = start_off; cur <= end_off; cur += RANGE_SIZE) {
-+		read_lock(&hrtree->lock);
-+		hr = lookup_hot_range_item(hrtree, cur);
-+		read_unlock(&hrtree->lock);
-+
-+		if (!hr) {
-+			hr = alloc_hot_range_item(he, cur, RANGE_SIZE);
-+			if (!hr || IS_ERR(hr)) {
-+				ret = 1;
-+				goto out;
-+			}
-+
-+			write_lock(&hrtree->lock);
-+			add_hot_range_item(hrtree, hr);
-+			write_unlock(&hrtree->lock);
-+		}
-+
-+		if ((!root->fs_info->hot_data_relocate_kthread)
-+		     || root->fs_info->hot_data_relocate_kthread->pid
-+		     != current->pid) {
-+			spin_lock(&hr->lock);
-+			btrfs_update_freq(&hr->freq_data, create);
-+			spin_unlock(&hr->lock);
-+
-+			btrfs_update_heat_index(&hr->freq_data, root);
-+		}
-+
++		/* remove range from range tree */
++		remove_hot_range_item(&hot_inode->hot_range_tree, hr);
++
++		/* remove range from hash list */
++		write_lock(&hr->heat_node->hlist->rwlock);
++		hlist_del(&hr->heat_node->hashnode);
++		write_unlock(&hr->heat_node->hlist->rwlock);
++
++		/*free up memory */
++		kfree(hr->heat_node);
 +		free_hot_range_item(hr);
 +
++		node2 = rb_first(&hot_inode->hot_range_tree.map);
 +	}
-+out:
-+	return ret;
++	write_unlock(&hot_inode->hot_range_tree.lock);
++
++	/* free up associated inode memory */
++	kfree(hot_inode->heat_node);
++	free_hot_inode_item(hot_inode);
 +}
 +
 +/*
-+ * This function does the actual work of updating the frequency numbers,
-+ * whatever they turn out to be. BTRFS_FREQ_POWER determines how many atime
-+ * deltas we keep track of (as a power of 2). So, setting it to anything above
-+ * 16ish is probably overkill. Also, the higher the power, the more bits get
-+ * right shifted out of the timestamp, reducing precision, so take note of that
-+ * as well.
-+ *
-+ * The caller should have already locked fdata's parent's spinlock.
-+ *
-+ * BTRFS_FREQ_POWER, defined immediately below, determines how heavily to weight
-+ * the current frequency numbers against the newest access. For example, a value
-+ * of 4 means that the new access information will be weighted 1/16th (ie 2^-4)
-+ * as heavily as the existing frequency info. In essence, this is a kludged-
-+ * together version of a weighted average, since we can't afford to keep all of
-+ * the information that it would take to get a _real_ weighted average.
++ * take hot range that is now cold and remove from indexes and clean up
++ * any memory associted, involves removing hot range from rb tree, and
++ * heat hash lists, and freeing up all memory.
 + */
-+#define BTRFS_FREQ_POWER 4
-+void btrfs_update_freq(struct btrfs_freq_data *fdata, int create)
++void btrfs_remove_range_from_heat_index(struct hot_inode_item *hot_inode,
++					struct hot_range_item *hr,
++					struct btrfs_root *root)
 +{
-+	struct timespec old_atime;
-+	struct timespec current_time;
-+	struct timespec delta_ts;
-+	u64 new_avg;
-+	u64 new_delta;
++	/* remove range from rb tree */
++	remove_hot_range_item(&hot_inode->hot_range_tree, hr);
 +
-+	if (unlikely(create)) {
-+		old_atime = fdata->last_write_time;
-+		fdata->nr_writes += 1;
-+		new_avg = fdata->avg_delta_writes;
-+	} else {
-+		old_atime = fdata->last_read_time;
-+		fdata->nr_reads += 1;
-+		new_avg = fdata->avg_delta_reads;
-+	}
++	/* remove range from hash list */
++	spin_lock(&hr->heat_node->lock);
++	write_lock(&hr->heat_node->hlist->rwlock);
++	hlist_del(&hr->heat_node->hashnode);
++	write_unlock(&hr->heat_node->hlist->rwlock);
++	spin_unlock(&hr->heat_node->lock);
 +
-+	current_time = current_kernel_time();
-+	delta_ts = timespec_sub(current_time, old_atime);
-+	new_delta = timespec_to_ns(&delta_ts) >> BTRFS_FREQ_POWER;
-+
-+	new_avg = (new_avg << BTRFS_FREQ_POWER) - new_avg + new_delta;
-+	new_avg = new_avg >> BTRFS_FREQ_POWER;
-+
-+	if (unlikely(create)) {
-+		fdata->last_write_time = current_time;
-+		fdata->avg_delta_writes = new_avg;
-+	} else {
-+		fdata->last_read_time = current_time;
-+		fdata->avg_delta_reads = new_avg;
-+	}
++	/*free up memory */
++	kfree(hr->heat_node);
++	free_hot_range_item(hr);
 +}
-+
-+/*
-+ * Get a new temperature and, if necessary, move the heat_node corresponding
-+ * to this inode or range to the proper hashlist with the new temperature
-+ */
-+void btrfs_update_heat_index(struct btrfs_freq_data *fdata,
-+			       struct btrfs_root *root)
-+{
-+	int temp = 0;
-+	int moved = 0;
-+	struct heat_hashlist_entry *buckets, *current_bucket = NULL;
-+	struct hot_inode_item *he;
-+	struct hot_range_item *hr;
-+
-+	if (fdata->flags & FREQ_DATA_TYPE_INODE) {
-+		he = freq_data_get_he(fdata);
-+		buckets = root->heat_inode_hl;
-+
-+		spin_lock(&he->lock);
-+		temp = btrfs_get_temp(fdata);
-+		fdata->last_temp = temp;
-+		spin_unlock(&he->lock);
-+
-+		if (he == NULL)
-+			return;
-+
-+		spin_lock(&he->heat_node->lock);
-+		if (he->heat_node->hlist == NULL) {
-+			current_bucket = buckets +
-+					temp;
-+			moved = 1;
-+		} else {
-+			write_lock(&he->heat_node->hlist->rwlock);
-+			current_bucket = he->heat_node->hlist;
-+			if (current_bucket->temperature != temp) {
-+				hlist_del(&he->heat_node->hashnode);
-+				current_bucket = buckets + temp;
-+				moved = 1;
-+			}
-+			write_unlock(&he->heat_node->hlist->rwlock);
-+		}
-+
-+		if (moved) {
-+			write_lock(&current_bucket->rwlock);
-+			hlist_add_head(&he->heat_node->hashnode,
-+				&current_bucket->hashhead);
-+			he->heat_node->hlist = current_bucket;
-+			write_unlock(&current_bucket->rwlock);
-+		}
-+		spin_unlock(&he->heat_node->lock);
-+
-+	} else if (fdata->flags & FREQ_DATA_TYPE_RANGE) {
-+		hr = freq_data_get_hr(fdata);
-+		buckets = root->heat_range_hl;
-+
-+		spin_lock(&hr->lock);
-+		temp = btrfs_get_temp(fdata);
-+		fdata->last_temp = temp;
-+		spin_unlock(&hr->lock);
-+
-+		if (hr == NULL)
-+			return;
-+
-+		spin_lock(&hr->heat_node->lock);
-+		if (hr->heat_node->hlist == NULL) {
-+			current_bucket = buckets +
-+					temp;
-+			moved = 1;
-+		} else {
-+			write_lock(&hr->heat_node->hlist->rwlock);
-+			current_bucket = hr->heat_node->hlist;
-+			if (current_bucket->temperature != temp) {
-+				hlist_del(&hr->heat_node->hashnode);
-+				current_bucket = buckets + temp;
-+				moved = 1;
-+			}
-+			write_unlock(&hr->heat_node->hlist->rwlock);
-+		}
-+
-+		if (moved) {
-+			write_lock(&current_bucket->rwlock);
-+			hlist_add_head(&hr->heat_node->hashnode,
-+				&current_bucket->hashhead);
-+			hr->heat_node->hlist = current_bucket;
-+			write_unlock(&current_bucket->rwlock);
-+		}
-+		spin_unlock(&hr->heat_node->lock);
-+	}
-+}
-+
-+/* Walk the hot_inode_tree, locking as necessary */
-+struct hot_inode_item *find_next_hot_inode(struct btrfs_root *root,
-+						  u64 objectid)
-+{
-+	struct rb_node *node;
-+	struct rb_node *prev;
-+	struct hot_inode_item *entry;
-+
-+	read_lock(&root->hot_inode_tree.lock);
-+
-+	node = root->hot_inode_tree.map.rb_node;
-+	prev = NULL;
-+	while (node) {
-+		prev = node;
-+		entry = rb_entry(node, struct hot_inode_item, rb_node);
-+
-+		if (objectid < entry->i_ino)
-+			node = node->rb_left;
-+		else if (objectid > entry->i_ino)
-+			node = node->rb_right;
-+		else
-+			break;
-+	}
-+	if (!node) {
-+		while (prev) {
-+			entry = rb_entry(prev, struct hot_inode_item, rb_node);
-+			if (objectid <= entry->i_ino) {
-+				node = prev;
-+				break;
-+			}
-+			prev = rb_next(prev);
-+		}
-+	}
-+	if (node) {
-+		entry = rb_entry(node, struct hot_inode_item, rb_node);
-+		/*
-+		 * increase reference count to prevent pruning while
-+		 * caller is using the hot_inode_item
-+		 */
-+		atomic_inc(&entry->refs);
-+
-+		read_unlock(&root->hot_inode_tree.lock);
-+		return entry;
-+	}
-+
-+	read_unlock(&root->hot_inode_tree.lock);
-+	return NULL;
-+}
-+
-diff --git a/fs/btrfs/hotdata_map.h b/fs/btrfs/hotdata_map.h
+diff --git a/fs/btrfs/hotdata_hash.h b/fs/btrfs/hotdata_hash.h
 new file mode 100644
-index 0000000..d359fce
+index 0000000..10d28ee
 --- /dev/null
-+++ b/fs/btrfs/hotdata_map.h
-@@ -0,0 +1,167 @@
++++ b/fs/btrfs/hotdata_hash.h
+@@ -0,0 +1,155 @@
 +/*
-+ * fs/btrfs/hotdata_map.h
++ * fs/btrfs/hotdata_hash.h
 + *
 + * Copyright (C) 2010 International Business Machines Corp.
 + *
@@ -876,153 +399,140 @@ index 0000000..d359fce
 + * Boston, MA 021110-1307, USA.
 + */
 +
-+#ifndef __HOTDATAMAP__
-+#define __HOTDATAMAP__
++#ifndef __HOTDATAHASH__
++#define __HOTDATAHASH__
 +
-+#include <linux/rbtree.h>
++#include <linux/list.h>
++#include <linux/hash.h>
 +
-+/* values for btrfs_freq_data flags */
-+#define FREQ_DATA_TYPE_INODE 1		/* freq data struct is for an inode */
-+#define FREQ_DATA_TYPE_RANGE (1 << 1)	/* freq data struct is for a range */
-+#define FREQ_DATA_HEAT_HOT (1 << 2)	/* freq data struct is for hot data */
-+					/* (not implemented) */
-+/* size of sub-file ranges */
-+#define RANGE_SIZE (1<<20)
-+#define RANGE_SIZE_MASK (~((u64)(RANGE_SIZE - 1)))
++#define HEAT_HASH_BITS 8
++#define HEAT_HASH_SIZE (1 << HEAT_HASH_BITS)
++#define HEAT_HASH_MASK (HEAT_HASH_SIZE - 1)
++#define HEAT_MIN_VALUE 0
++#define HEAT_MAX_VALUE (HEAT_HASH_SIZE - 1)
++#define HEAT_NO_MIGRATE HEAT_HASH_SIZE
 +
-+/* macros to wrap container_of()'s for hot data structs */
-+#define freq_data_get_he(x) (struct hot_inode_item *) container_of(x, \
-+					struct hot_inode_item, freq_data)
-+#define freq_data_get_hr(x) (struct hot_range_item *) container_of(x, \
-+					struct hot_range_item, freq_data)
-+#define rb_node_get_he(x) (struct hot_inode_item *) container_of(x, \
-+					struct hot_inode_item, rb_node)
-+#define rb_node_get_hr(x) (struct hot_range_item *) container_of(x, \
-+					struct hot_range_item, rb_node)
++/* time to quit keeping track of tracking data (seconds)*/
++#define TIME_TO_KICK 400
 +
-+#define HIGH_WATER_LEVEL 75	/* when to raise the threshold */
-+#define LOW_WATER_LEVEL 50	/* when to lower the threshold */
-+#define THRESH_UP_SPEED 10	/* how much to raise it by */
-+#define THRESH_DOWN_SPEED 1	/* how much to lower it by */
++/* set how often to update temps (seconds) */
++#define HEAT_UPDATE_DELAY 400
 +
-+/* A frequency data struct holds values that are used to
-+ * determine temperature of files and file ranges. These structs
-+ * are members of hot_inode_item and hot_range_item */
-+struct btrfs_freq_data {
-+	struct timespec last_read_time;
-+	struct timespec last_write_time;
-+	u32 nr_reads;
-+	u32 nr_writes;
-+	u64 avg_delta_reads;
-+	u64 avg_delta_writes;
-+	u8 flags;
-+	u32 last_temp;
-+};
-+
-+/* A tree that sits on the fs_root */
-+struct hot_inode_tree {
-+	struct rb_root map;
-+	rwlock_t lock;
-+};
-+
-+/* A tree of ranges for each inode in the hot_inode_tree */
-+struct hot_range_tree {
-+	struct rb_root map;
-+	rwlock_t lock;
-+};
-+
-+/* An item representing an inode and its access frequency */
-+struct hot_inode_item {
-+	struct rb_node rb_node; /* node for hot_inode_tree rb_tree */
-+	struct hot_range_tree hot_range_tree; /* tree of ranges in this
-+						 inode */
-+	struct btrfs_freq_data freq_data; /* frequency data for this inode */
-+	struct heat_hashlist_node *heat_node; /* hashlist node for this
-+						 inode */
-+	unsigned long i_ino; /* inode number, copied from vfs_inode */
-+	spinlock_t lock; /* protects freq_data, i_no, in_tree */
-+	atomic_t refs; /* prevents kfree */
-+	u8 in_tree; /* used to check for errors in ref counting */
-+};
++/* initial heat threshold temperature */
++#define HEAT_INITIAL_THRESH 150
 +
 +/*
-+ * An item representing a range inside of an inode whose frequency
-+ * is being tracked
++ * The following comments explain what exactly comprises a unit of heat.
++ *
++ * Each of six values of heat are calculated and combined in order to form an
++ * overall temperature for the data:
++ *
++ * NRR - number of reads since mount
++ * NRW - number of writes since mount
++ * LTR - time elapsed since last read (ns)
++ * LTW - time elapsed since last write (ns)
++ * AVR - average delta between recent reads (ns)
++ * AVW - average delta between recent writes (ns)
++ *
++ * These values are divided (right-shifted) according to the *_DIVIDER_POWER
++ * values defined below to bring the numbers into a reasonable range. You can
++ * modify these values to fit your needs. However, each heat unit is a u32 and
++ * thus maxes out at 2^32 - 1. Therefore, you must choose your dividers quite
++ * carefully or else they could max out or be stuck at zero quite easily.
++ *
++ * (E.g., if you chose AVR_DIVIDER_POWER = 0, nothing less than 4s of atime
++ * delta would bring the temperature above zero, ever.)
++ *
++ * Finally, each value is added to the overall temperature between 0 and 8
++ * times, depending on its *_COEFF_POWER value. Note that the coefficients are
++ * also actually implemented with shifts, so take care to treat these values
++ * as powers of 2. (I.e., 0 means we'll add it to the temp once; 1 = 2x, etc.)
 + */
-+struct hot_range_item {
-+	/* node for hot_range_tree rb_tree */
-+	struct rb_node rb_node;
 +
-+	/* frequency data for this range */
-+	struct btrfs_freq_data freq_data;
++/* NRR/NRW heat unit = 2^X accesses */
++#define NRR_MULTIPLIER_POWER 20
++#define NRR_COEFF_POWER 0
++#define NRW_MULTIPLIER_POWER 20
++#define NRW_COEFF_POWER 0
 +
-+	/* hashlist node for this range */
-+	struct heat_hashlist_node *heat_node;
++/* LTR/LTW heat unit = 2^X ns of age */
++#define LTR_DIVIDER_POWER 30
++#define LTR_COEFF_POWER 1
++#define LTW_DIVIDER_POWER 30
++#define LTW_COEFF_POWER 1
 +
-+	/* the hot_inode_item associated with this hot_range_item */
-+	struct hot_inode_item *hot_inode;
-+
-+	/* starting offset of this range */
-+	u64 start;
-+
-+	/* length of this range */
-+	u64 len;
-+
-+	/* protects freq_data, start, len, and in_tree */
-+	spinlock_t lock;
-+
-+	/* prevents kfree */
-+	atomic_t refs;
-+
-+	/* used to check for errors in ref counting */
-+	u8 in_tree;
-+};
++/*
++ * AVR/AVW cold unit = 2^X ns of average delta
++ * AVR/AVW heat unit = HEAT_MAX_VALUE - cold unit
++ *
++ * E.g., data with an average delta between 0 and 2^X ns will have a cold value
++ * of 0, which means a heat value equal to HEAT_MAX_VALUE.
++ */
++#define AVR_DIVIDER_POWER 40
++#define AVR_COEFF_POWER 0
++#define AVW_DIVIDER_POWER 40
++#define AVW_COEFF_POWER 0
 +
 +struct btrfs_root;
-+struct inode;
 +
-+void hot_inode_tree_init(struct hot_inode_tree *tree);
-+void hot_range_tree_init(struct hot_range_tree *tree);
++/* Hash list heads for heat hash table */
++struct heat_hashlist_entry {
++	struct hlist_head hashhead;
++	rwlock_t rwlock;
++	u32 temperature;
++};
 +
-+struct hot_range_item *lookup_hot_range_item(struct hot_range_tree *tree,
-+					    u64 start);
++/* Nodes stored in each hash list of hash table */
++struct heat_hashlist_node {
++	struct hlist_node hashnode;
++	struct list_head node;
++	struct btrfs_freq_data *freq_data;
++	struct heat_hashlist_entry *hlist;
 +
-+struct hot_inode_item *lookup_hot_inode_item(struct hot_inode_tree *tree,
-+					    unsigned long inode_num);
++	/*
++	 * number of references to this node
++	 * equals 1 (hashlist entry) + number
++	 * of private relocation lists it is on
++	 */
++	atomic_t refs;
 +
-+int add_hot_inode_item(struct hot_inode_tree *tree,
-+		       struct hot_inode_item *he);
-+int add_hot_range_item(struct hot_range_tree *tree,
-+		       struct hot_range_item *hr);
++	spinlock_t lock; /* protects hlist */
++	spinlock_t location_lock; /* protects location */
++	u8 location; /*flag for whether or not on rotating*/
++};
 +
-+int remove_hot_inode_item(struct hot_inode_tree *tree,
-+			struct hot_inode_item *he);
-+int remove_hot_range_item(struct hot_range_tree *tree,
-+			 struct hot_range_item *hr);
++struct heat_hashlist_node *alloc_heat_hashlist_node(gfp_t mask);
++void free_heat_hashlists(struct btrfs_root *root);
 +
-+struct hot_inode_item *alloc_hot_inode_item(unsigned long ino);
-+struct hot_range_item *alloc_hot_range_item(struct hot_inode_item *he,
-+					    u64 start,
-+					    u64 len);
++/*
++ * Returns a value from 0 to HEAT_MAX_VALUE indicating the temperature of the
++ * file (and consequently its bucket number in hashlist) (see hotdata_hash.c)
++ */
++int btrfs_get_temp(struct btrfs_freq_data *fdata);
 +
-+void free_hot_inode_item(struct hot_inode_item *he);
-+void free_hot_range_item(struct hot_range_item *hr);
-+void free_hot_inode_tree(struct btrfs_root *root);
++/*
++ * initialize kthread for each new mount point that
++ * periodically goes through hot inodes and hot ranges and ages them
++ * based on frequency of access
++ */
++void init_hash_list_kthread(struct btrfs_root *root);
 +
-+int __init hot_inode_item_init(void);
-+int __init hot_range_item_init(void);
++/*
++ * recalculates temperatures for inode or range
++ * and moves around in heat hash table based on temp
++ */
++void btrfs_update_heat_index(struct btrfs_freq_data *fdata,
++			       struct btrfs_root *root);
 +
-+void hot_inode_item_exit(void);
-+void hot_range_item_exit(void);
++/* remove from index and clean up all memory associated with hot range */
++void btrfs_remove_range_from_heat_index(struct hot_inode_item *hot_inode,
++					struct hot_range_item *hr,
++					struct btrfs_root *root);
 +
-+struct hot_inode_item *find_next_hot_inode(struct btrfs_root *root,
-+						  u64 objectid);
-+int btrfs_update_threshold(struct btrfs_root *, int update);
-+void btrfs_update_freq(struct btrfs_freq_data *fdata, int create);
-+void btrfs_update_freqs(struct inode *inode, u64 start, u64 len,
-+	int create);
++/* remove form index and clean up all memory associated with hot inode */
++void btrfs_remove_inode_from_heat_index(struct hot_inode_item *hot_inode,
++				  struct btrfs_root *root);
 +
-+#endif
++#endif /* __HOTDATAHASH__ */
 -- 
 1.7.1
-

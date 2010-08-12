@@ -1,31 +1,39 @@
-From: Andreas Philipp <philipp.andreas@gmail.com>
-Subject: machine gets unresponsive during btrfs balance
-Date: Thu, 12 Aug 2010 09:14:10 +0200
-Message-ID: <4C639F42.3050206@gmail.com>
+From: "Yan, Zheng " <yanzheng@21cn.com>
+Subject: Re: machine gets unresponsive during btrfs balance
+Date: Thu, 12 Aug 2010 16:04:30 +0800
+Message-ID: <AANLkTi=B2dr45WmeJop_Te5t55d0trfHP+ZKLE3tBxTg@mail.gmail.com>
+References: <4C639F42.3050206@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+To: Andreas Philipp <philipp.andreas@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4C639F42.3050206@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Thu, Aug 12, 2010 at 3:14 PM, Andreas Philipp
+<philipp.andreas@gmail.com> wrote:
+> Hi,
+>
+> I am using a btrfs filesystem created with raid0 for data and metadata
+> for (temporary) storage of tv recordings from my vdr. The filesystem was
+> created under kernel version 2.6.34. An initial btrfs balance command
+> succeeded. Since I upgraded to 2.6.35-rcX and 2.6.35 btrfs balance no
+> longer finishes but puts the machine in some unresponsive state.
+> Unfortunately, I do not see any kernel oops or other debug information
+> because even the display freezes. The last thing that happens are that
+> those two lines are written to /var/log/messages:
+> Aug 11 21:42:23 thor kernel: btrfs: found 62911 extents
+> Aug 11 21:42:24 thor kernel: btrfs: relocating block group 1723913469952
+> flags 9
+> After that the machine becomes immediately unresponsive.
+>
+> As I did not see anything that might be related to my problem in the
+> changelog for 2.6.35.1 I did not try again with this version.
+>
 
-I am using a btrfs filesystem created with raid0 for data and metadata
-for (temporary) storage of tv recordings from my vdr. The filesystem was
-created under kernel version 2.6.34. An initial btrfs balance command
-succeeded. Since I upgraded to 2.6.35-rcX and 2.6.35 btrfs balance no
-longer finishes but puts the machine in some unresponsive state.
-Unfortunately, I do not see any kernel oops or other debug information
-because even the display freezes. The last thing that happens are that
-those two lines are written to /var/log/messages:
-Aug 11 21:42:23 thor kernel: btrfs: found 62911 extents
-Aug 11 21:42:24 thor kernel: btrfs: relocating block group 1723913469952
-flags 9
-After that the machine becomes immediately unresponsive.
+Do you have more than one machines? would you please setup netconsole
+to see what happen.
 
-As I did not see anything that might be related to my problem in the
-changelog for 2.6.35.1 I did not try again with this version.
-
-Thanks,
-Andreas
-
+Thanks
+Yan, Zheng

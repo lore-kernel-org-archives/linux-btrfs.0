@@ -1,278 +1,199 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Subject: Re: [PATCH 1/2] Btrfs-progs: Add support for hot data ioctls
-Date: Fri, 13 Aug 2010 18:44:25 +0200
-Message-ID: <201008131844.25648.kreijack@libero.it>
-References: <1281652177-23562-1-git-send-email-bchociej@gmail.com> <1281652177-23562-2-git-send-email-bchociej@gmail.com>
-Reply-To: kreijack@libero.it
+From: Andreas Philipp <philipp.andreas@gmail.com>
+Subject: Re: machine gets unresponsive during btrfs balance
+Date: Sat, 14 Aug 2010 00:11:55 +0200
+Message-ID: <4C65C32B.1060109@gmail.com>
+References: <4C639F42.3050206@gmail.com> <AANLkTi=B2dr45WmeJop_Te5t55d0trfHP+ZKLE3tBxTg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-15"
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-To: bchociej@gmail.com, chris.mason@oracle.com
+Content-Type: multipart/mixed;
+ boundary="------------020007020901020109050702"
+Cc: linux-btrfs@vger.kernel.org
+To: "Yan, Zheng " <yanzheng@21cn.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1281652177-23562-2-git-send-email-bchociej@gmail.com>
+In-Reply-To: <AANLkTi=B2dr45WmeJop_Te5t55d0trfHP+ZKLE3tBxTg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Mr Chociej,
+This is a multi-part message in MIME format.
+--------------020007020901020109050702
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
 
-some months ago I wrote a new command (called "btrfs"), with the aim to 
-replace "btrfsctl" at all, for a lot of reasons: bugs, largely unmaintained, 
-difficult to maintain. After a lot of review in the btrfs mailing list now 
-btrfs is in the official source.
-I suggest to update your patches to using the btrfs command. If you need help 
-in this change, please contact me.
+On 12.08.2010 10:04, Yan, Zheng wrote:
+> On Thu, Aug 12, 2010 at 3:14 PM, Andreas Philipp
+> <philipp.andreas@gmail.com> wrote:
+>   
+>> Hi,
+>>
+>> I am using a btrfs filesystem created with raid0 for data and metadata
+>> for (temporary) storage of tv recordings from my vdr. The filesystem was
+>> created under kernel version 2.6.34. An initial btrfs balance command
+>> succeeded. Since I upgraded to 2.6.35-rcX and 2.6.35 btrfs balance no
+>> longer finishes but puts the machine in some unresponsive state.
+>> Unfortunately, I do not see any kernel oops or other debug information
+>> because even the display freezes. The last thing that happens are that
+>> those two lines are written to /var/log/messages:
+>> Aug 11 21:42:23 thor kernel: btrfs: found 62911 extents
+>> Aug 11 21:42:24 thor kernel: btrfs: relocating block group 1723913469952
+>> flags 9
+>> After that the machine becomes immediately unresponsive.
+>>
+>> As I did not see anything that might be related to my problem in the
+>> changelog for 2.6.35.1 I did not try again with this version.
+>>
+>>     
+> Do you have more than one machines? would you please setup netconsole
+> to see what happen.
+>   
+I have reproduced the error on v2.6.35.1 and recorded all kernel output
+with netconsole. The interesting point is that this time the machine did
+not crash but the btrfs balance segfaulted at exact the same position
+where the previous crashes had happened.
 
-The experimental commands may be prefixed with the "test" verb, like
+Yours,
+Andreas
 
-$ btrfs test <whatYouWant ...>
+--------------020007020901020109050702
+Content-Type: application/gzip;
+ name="netconsole.log.gz"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="netconsole.log.gz"
 
-Chris,
-does btrfsctl should be marked as deprecated ?
-
-Regards
-G.Baroncelli
-
-
-
-On Friday, 13 August, 2010, bchociej@gmail.com wrote:
-> From: Ben Chociej <bchociej@gmail.com>
-> 
-> Add support for the new hot data functionality in-kernel. Three ioctls
-> were added to export hot data statistics and turn hot data tracking on
-> and off per inode. This patch enables btrfsctl to interact with those
-> ioctls.
-> 
-> Signed-off-by: Ben Chociej <bchociej@gmail.com>
-> Signed-off-by: Matt Lupfer <mlupfer@gmail.com>
-> Tested-by: Conor Scott <conscott@vt.edu>
-> ---
->  btrfsctl.c   |  107 
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->  ioctl-test.c |    3 ++
->  ioctl.h      |   24 +++++++++++++
->  3 files changed, 134 insertions(+), 0 deletions(-)
-> 
-> diff --git a/btrfsctl.c b/btrfsctl.c
-> index be6bf25..8617d06 100644
-> --- a/btrfsctl.c
-> +++ b/btrfsctl.c
-> @@ -48,6 +48,7 @@ static void print_usage(void)
->  {
->  	printf("usage: btrfsctl [ -d file|dir] [ -s snap_name subvol|tree 
-]\n");
->  	printf("                [-r size] [-A device] [-a] [-c] [-D dir 
-.]\n");
-> +	printf("                [-t file] [-T file] [-h filename [0-2]]\n");
->  	printf("\t-d filename: defragments one file\n");
->  	printf("\t-d directory: defragments the entire Btree\n");
->  	printf("\t-s snap_name dir: creates a new snapshot of dir\n");
-> @@ -57,6 +58,14 @@ static void print_usage(void)
->  	printf("\t-a: scans all devices for Btrfs filesystems\n");
->  	printf("\t-c: forces a single FS sync\n");
->  	printf("\t-D: delete snapshot\n");
-> +	printf("\t-t filename: dump indexed heat information for a file\n");
-> +	printf("\t-T filename: dump live heat informaton for a file\n");
-> +	printf("\t-h filename: query heat tracking/migration status\n");
-> +	printf("\t-h filename level: set heat tracking level:\n");
-> +	printf("\t\tlevel =\n");
-> +	printf("\t\t0: no tracking or relocation\n");
-> +	printf("\t\t1: access tracking only\n");
-> +	printf("\t\t2: tracking and automatic migration to SSD\n");
->  	printf("\t-m [tree id] directory: set the default mounted subvolume"
->  	       " to the [tree id] or the directory\n");
->  	printf("%s\n", BTRFS_BUILD_VERSION);
-> @@ -99,12 +108,14 @@ int main(int ac, char **av)
->  	int fd;
->  	int ret;
->  	struct btrfs_ioctl_vol_args args;
-> +	struct btrfs_ioctl_heat_info hotinfo;
->  	char *name = NULL;
->  	int i;
->  	unsigned long command = 0;
->  	int len;
->  	char *fullpath;
->  	u64 objectid = 0;
-> +	int heatarg;
->  
->  	if (ac == 2 && strcmp(av[1], "-a") == 0) {
->  		fprintf(stderr, "Scanning for Btrfs filesystems\n");
-> @@ -205,6 +216,38 @@ int main(int ac, char **av)
->  					exit(1);
->  				}
->  			}
-> +		} else if (strcmp(av[i], "-t") == 0) {
-> +			if (i >= ac - 1) {
-> +				fprintf(stderr,
-> +					"-t requires a file argument\n");
-> +				print_usage();
-> +			}
-> +			hotinfo.live = 0;
-> +			command = BTRFS_IOC_GET_HEAT_INFO;
-> +		} else if (strcmp(av[i], "-T") == 0) {
-> +			if (i >= ac - 1) {
-> +				fprintf(stderr,
-> +					"-T requires a file argument\n");
-> +				print_usage();
-> +			}
-> +			hotinfo.live = 1;
-> +			command = BTRFS_IOC_GET_HEAT_INFO;
-> +		} else if (strcmp(av[i], "-h") == 0) {
-> +			if (i == ac - 2) {
-> +				command = BTRFS_IOC_GET_HEAT_OPTS;
-> +			} else if (i == ac - 3) {
-> +				command = BTRFS_IOC_SET_HEAT_OPTS;
-> +				heatarg = atoi(av[i + 2]);
-> +			} else {
-> +				fprintf(stderr, "-h invalid number of "
-> +					"arguments\n");
-> +				print_usage();
-> +				exit(1);
-> +			}
-> +
-> +			fprintf(stderr, "Btrfs hot data tracking: `%s'\n\n",
-> +				av[i + 1]);
-> +			av[i + 2] = av[i + 1];
->  		}
->  	}
->  	if (command == 0) {
-> @@ -236,6 +279,70 @@ int main(int ac, char **av)
->  	} else if (command == BTRFS_IOC_DEFAULT_SUBVOL) {
->  		printf("objectid is %llu\n", objectid);
->  		ret = ioctl(fd, command, &objectid);
-> +	} else if (command == BTRFS_IOC_GET_HEAT_INFO) {
-> +		strcpy(hotinfo.filename, fname);
-> +		ret = ioctl(fd, command, &hotinfo);
-> +		if (ret == 0) {
-> +			printf("Btrfs file hotness information\n");
-> +			printf("%s\n\n", hotinfo.filename);
-> +			printf("Last write: %llu\n",
-> +				(u64) hotinfo.last_write_time);
-> +			printf("Last read: %llu\n",
-> +				(u64) hotinfo.last_read_time);
-> +			printf("Average write delta: %llu\n",
-> +				(u64) hotinfo.avg_delta_writes);
-> +			printf("Average read delta: %llu\n",
-> +				(u64) hotinfo.avg_delta_reads);
-> +			printf("Number of writes: %u\n",
-> +				(u32) hotinfo.num_writes);
-> +			printf("Number of reads: %u\n\n",
-> +				(u32) hotinfo.num_reads);
-> +			if (hotinfo.live > 0)
-> +				printf("Temperature (live): %u\n\n",
-> +					hotinfo.temperature);
-> +			else
-> +				printf("Temperature (indexed): %u\n\n",
-> +					hotinfo.temperature);
-> +		}
-> +	} else if (command == BTRFS_IOC_SET_HEAT_OPTS) {
-> +		ret = ioctl(fd, command, &heatarg);
-> +		switch (heatarg) {
-> +		case 0:
-> +			printf("Turning OFF heat tracking and migration inode 
-"
-> +				"flags.\n");
-> +			break;
-> +		case 1:
-> +			printf("Turning ON the heat tracking inode flag.\n");
-> +			printf("Turning OFF the migration inode flag.\n");
-> +			break;
-> +		case 2:
-> +			printf("Turning ON heat tracking and migration inode "
-> +				"flags.\n");
-> +			break;
-> +		default:
-> +			printf("Invalid heat tracking argument.\n");
-> +		}
-> +		printf("(Inode flags can be overridden by mount 
-options)\n\n");
-> +	} else if (command == BTRFS_IOC_GET_HEAT_OPTS) {
-> +		ret = ioctl(fd, command, &heatarg);
-> +		switch (heatarg) {
-> +		case 0:
-> +			printf("Heat tracking and migration inode flags are "
-> +				"OFF.\n");
-> +			break;
-> +		case 1:
-> +			printf("Heat tracking inode flag is ON, migration "
-> +				"inode flag is OFF.\n");
-> +			break;
-> +		case 2:
-> +			printf("Heat tracking and migration inode flags are "
-> +				"both ON.\n");
-> +			break;
-> +		default:
-> +			printf("Wrong filesystem type, or invalid status "
-> +				"returned.\n");
-> +		}
-> +		printf("(Inode flags can be overridden by mount 
-options)\n\n");
->  	} else
->  		ret = ioctl(fd, command, &args);
->  	if (ret < 0) {
-> diff --git a/ioctl-test.c b/ioctl-test.c
-> index 7cf3bc2..8d54301 100644
-> --- a/ioctl-test.c
-> +++ b/ioctl-test.c
-> @@ -22,6 +22,9 @@ unsigned long ioctls[] = {
->  	BTRFS_IOC_INO_LOOKUP,
->  	BTRFS_IOC_DEFAULT_SUBVOL,
->  	BTRFS_IOC_SPACE_INFO,
-> +	BTRFS_IOC_GET_HEAT_INFO,
-> +	BTRFS_IOC_SET_HEAT_OPTS,
-> +	BTRFS_IOC_GET_HEAT_OPTS,
->  	0 };
->  
->  int main(int ac, char **av)
-> diff --git a/ioctl.h b/ioctl.h
-> index 776d7a9..5827338 100644
-> --- a/ioctl.h
-> +++ b/ioctl.h
-> @@ -132,6 +132,18 @@ struct btrfs_ioctl_space_args {
->  	struct btrfs_ioctl_space_info spaces[0];
->  };
->  
-> +struct btrfs_ioctl_heat_info {
-> +	__u64 avg_delta_reads;
-> +	__u64 avg_delta_writes;
-> +	__u64 last_read_time;
-> +	__u64 last_write_time;
-> +	__u32 num_reads;
-> +	__u32 num_writes;
-> +	char filename[BTRFS_PATH_NAME_MAX + 1];
-> +	int temperature;
-> +	__u8 live;
-> +};
-> +
->  #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
->  				   struct btrfs_ioctl_vol_args)
->  #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
-> @@ -169,4 +181,16 @@ struct btrfs_ioctl_space_args {
->  #define BTRFS_IOC_DEFAULT_SUBVOL _IOW(BTRFS_IOCTL_MAGIC, 19, u64)
->  #define BTRFS_IOC_SPACE_INFO _IOWR(BTRFS_IOCTL_MAGIC, 20, \
->  				    struct btrfs_ioctl_space_args)
-> +
-> +/*
-> + * Hot data tracking ioctls:
-> + *
-> + * GET_HEAT_INFO - retrieve frequency of access info on a file
-> + * SET_HEAT_OPTS - set whether a file is tracked/migratable
-> + * GET_HEAT_OPTS - check whether a file is tracked/migratable
-> + */
-> +#define BTRFS_IOC_GET_HEAT_INFO _IOWR(BTRFS_IOCTL_MAGIC, 21, \
-> +				struct btrfs_ioctl_heat_info)
-> +#define BTRFS_IOC_SET_HEAT_OPTS _IOW(BTRFS_IOCTL_MAGIC, 22, int)
-> +#define BTRFS_IOC_GET_HEAT_OPTS _IOR(BTRFS_IOCTL_MAGIC, 23, int)
->  #endif
-> -- 
-> 1.7.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
-
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+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
+DufjHZx/2F3dXa8Pv1u+sMMZ/+Zse/NhcbVdDbvb5W61fjEEKxn/8W/lp+HNd98PZ1eLw3E4
+/HLAvW9w1y+Gc/zjfLX+sF2uD+e3y639/IsQzh/+fiGb38Xzd7vDsZwfF/u362N5gevn43/x
+97gYzg+ry/O79QcsmLOX3/8wyHD23W51d7U+DFfbm/fju3kx3KyPy93NYXe1xhs7Dtvb4+Ly
+an2xX/zP8PPxYrm7vsbv28fb3dV2+Yv9wMUPf/73P44fXr/6t1cv//rw8ds/vX78x19e/fW7
+b74fP373zZv/+OHV62++fTX+8/E3X738y/j3enkz/v3yzz+8+eur13+6/6XFu+Fmc3GzOF4c
+N8fbx8+Hm+vbi8vFYbv89cr218Hb248/eLvfHXcXbzFZDxe2+19/5R2M/+PnT757cb24WS2G
+4+Hi/fV4ES/l5rhfLN8/Dv3m2uNtfbzycCsfL9zfxGH5+Q8+3ujnP/lwux8vY2Zsnr64eLnd
+HS5uDr+9/vCEHy88PufHK3bLmMfj8vb6cBhn9P3x+Mvtevz47pcDlpt9/MsfbI5uNg/iL652
+b+3y9WJpf11tr7fjcrha37w9vrNP79ZXt+u9fVotl6OIl3/+5s2bP/3hvx7E3a3Gq4ejbbDH
+BYaX/vDuP3uQ2w9qV1brzX7x9v6fj7+DiXh7tf54b78OYNMccQvj0lmt9o9P9e2bl9+Pd7g4
+vLu/8cPN6uKw/u+LHd4Avu24hbK4vdvs7dLNam0zPayvY/v554vVh8vh8m6FvTUcj9iCF+s1
+Jup6+LBdrXf2rrb7i/0y40ZtS++H2+Xh9v1+lHC7eLu+WFxhEw6Lu+O7i/3t8i0ELg6/3Cwv
+rtfXy9tfhtX1xfV2v9/th7t3+PJ3y9Xw46gG7m6udovVevXp1vwJG8OUhoQXP/7z5uHPImi8
+jJf9X34aXn/zn/c65ZM/Mrz+Pa7aT8KuSVhdrjayDMPrl7gaP/tz9vr333/82bhe3/P9vw7t
+i+/NuNo/Xn24mcuz15K++Fl8g+jDVWl2yPPj1fzJnaUNJm3Zzl6+eTGMDzl8++ZBRb56/PDy
+dfj47bg364e5PPv206u/yvz2tUxejV9ePft+v4OKPQz3huPvbrd479G6h/5xOL7brxer7c1m
+95tbXeLXMLg4vP/1siw6PIoc/v5s+O2DrvVs+M2EpbCRS0zYv94LvNjulserfwg/l5rPw88N
+XuOP48BPn/4eUPflpqiOv7faXXz45BfTquEXNWzONksry9oI7mrANAOgbtaDQcHNcPa/qgck
+dl65AAA=
+--------------020007020901020109050702--

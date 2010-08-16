@@ -1,39 +1,48 @@
-From: Ric Wheeler <rwheeler@redhat.com>
-Subject: Re: billion file testing of btrfs
-Date: Mon, 16 Aug 2010 09:10:04 -0400
-Message-ID: <4C6938AC.2080703@redhat.com>
-References: <4C692F24.5000208@redhat.com> <20100816123735.GV3315@think>
+From: "Morten P.D. Stevens" <mstevens@imt-systems.com>
+Subject: RE: 2.6.36-rc1 btrfs still unstable
+Date: Mon, 16 Aug 2010 16:17:54 +0200
+Message-ID: <7222A6B8ACA37D4AA1AC37810C43E8A80F5FC5BC@mail.corp.imt-systems.com>
+References: <1281948382.1888.7.camel@chotu> <20100816121658.GT3315@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100816123735.GV3315@think>
+In-Reply-To: <20100816121658.GT3315@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-  On 08/16/2010 08:37 AM, Chris Mason wrote:
-> On Mon, Aug 16, 2010 at 08:29:24AM -0400, Ric Wheeler wrote:
->> I decided to try btrfs on F13 (2.6.33.6-147.2.4.fc13.x86_64 kernel)
->> with the following fs_mark command and a 1.5 TB Seagate S-ATA disk:
->>
->> # fs_mark -s 0 -S 0 -D 1000 -n 1000000 -L 1000 -d /test/ -l btrfs_log.txt
->>
->> btrfs starts off at a fantastic rate - roughly 3-4 times the speed of ext4:
->>
-> [ log ]
+On Mon, Aug 16, 2010 at 2:16 PM, Chris Mason <chris.mason@oracle.com> wrote:
 >
->> I will fill this and get some plots, etc to do relative performance
->> &  then wanted to try the current RC kernel just to refresh.
-> Thanks Ric, I think this is related to the perf problem delalloc
-> flushing performance bug.  I'll nail it down shortly.
+> On Mon, Aug 16, 2010 at 11:46:22AM +0300, Ameya Palande wrote:
+> > Hi Chris,
+> >
+> > Today I was checking the Kconfig option for btrfs and it still says,
+> > "Btrfs filesystem (EXPERIMENTAL) Unstable disk format"
+> >
+> > I remember that some time back we had discussion about this on meego-dev
+> > mailing list:
+> > http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg04881.html
+> >
+> > In case if you have forgotten about this, then can we still change this
+> > for 36-rc2?
+>
+> Yes, I'll go ahead and send this one in.
+>
+> I've spent a great deal of time trying to nail down the interaction
+> between raid56 stripe size and adding/removing volumes from the FS
+> (basically restriping the raid).
+>
+> The end result just isn't as user friendly as I wanted yet, but the raid
+> code is holding up very well.
 >
 > -chris
 
-Great, I will be happy to test patches when you have them. No particular hurry 
-on my end.
+Hi Chris,
 
-I also hope to get our new arrays online and should be able to steal a couple of 
-days run there with luck,
+the other big question is:
 
-Ric
+Is btrfs with 2.6.36 really rockstable and ready to use in productive environments?
 
+Thanks
+
+Morten

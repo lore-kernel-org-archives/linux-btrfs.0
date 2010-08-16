@@ -1,61 +1,47 @@
-From: Julia Lawall <julia@diku.dk>
-Subject: [PATCH 5/16] fs/btrfs: Use available error codes
-Date: Mon, 16 Aug 2010 18:25:57 +0200 (CEST)
-Message-ID: <Pine.LNX.4.64.1008161825390.19313@ask.diku.dk>
+From: Chris Ball <cjb@laptop.org>
+Subject: Re: 2.6.36-rc1 btrfs still unstable
+Date: Mon, 16 Aug 2010 12:32:47 -0400
+Message-ID: <m3aaom4ixc.fsf_-_@pullcord.laptop.org>
+References: <1281948382.1888.7.camel@chotu> <20100816121658.GT3315@think>
+	<7222A6B8ACA37D4AA1AC37810C43E8A80F5FC5BC@mail.corp.imt-systems.com>
+	<m3iq3a4l46.fsf@pullcord.laptop.org>
+	<AANLkTin-q4N9g3=ymsiJy051xts3b2vioNdqku6DMEzQ@mail.gmail.com>
+	<AANLkTi=7BKfWhuRE2pQjQxM5cCVEW_L0ySUXSZnoELuo@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Evert Vorster <evorster@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTi=7BKfWhuRE2pQjQxM5cCVEW_L0ySUXSZnoELuo@mail.gmail.com>
+	(Evert Vorster's message of "Mon, 16 Aug 2010 16:11:15 +0000")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Julia Lawall <julia@diku.dk>
+Hi,
 
-Error codes are stored in ret, but the return value is always 0.  Return
-ret instead.
+   > I don't think the signboards are big enough.
 
-The semantic match that finds this problem is as follows:
-(http://coccinelle.lip6.fr/)
+Sure; that's why I tried to make one of them larger.
 
-// <smpl>
-@r@
-local idexpression x;
-constant C;
-@@
+   > Most people assume that there is some way of fixing a broken file
+   > system, and finding out the btrfs does not have one usually is
+   > quite surprising and just a little too late.
 
-if (...) { ...
-  x = -C
-  ... when != x
-(
-  return <+...x...+>;
-|
-  return NULL;
-|
-  return;
-|
-* return ...;
-)
-}
-// </smpl>
+Agreed, that's my experience from the IRC channel.
 
-Signed-off-by: Julia Lawall <julia@diku.dk>
+   > I was under the impression that with atomic writes it's
+   > impossible to mess up a file system?
 
----
-This changes the semantics and has not been tested.
+Yes, we're not seeing data corruption, we're correctly reporting
+that the transid of the data block doesn't match the transid in the
+parent node's pointer, which means that some writes went missing.
+Then we're hitting a BUG() as a result, which hangs.
 
- fs/btrfs/ioctl.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+I don't know what the right way of dealing with this is going to be,
+but answers like "pretend the lost writes never happened and sync the
+transids", or "do something other than BUG() on verify_parent_transid()
+failure" sound plausible.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 9254b3d..bc7e9c5 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -212,7 +212,7 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 	mnt_drop_write(file->f_path.mnt);
-  out_unlock:
- 	mutex_unlock(&inode->i_mutex);
--	return 0;
-+	return ret;
- }
- 
- static int btrfs_ioctl_getversion(struct file *file, int __user *arg)
+- Chris.
+-- 
+Chris Ball   <cjb@laptop.org>
+One Laptop Per Child

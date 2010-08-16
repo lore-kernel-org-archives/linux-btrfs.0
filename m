@@ -1,91 +1,61 @@
-From: Evert Vorster <evorster@gmail.com>
-Subject: Fwd: 2.6.36-rc1 btrfs still unstable
-Date: Mon, 16 Aug 2010 16:11:15 +0000
-Message-ID: <AANLkTi=7BKfWhuRE2pQjQxM5cCVEW_L0ySUXSZnoELuo@mail.gmail.com>
-References: <1281948382.1888.7.camel@chotu>
-	<20100816121658.GT3315@think>
-	<7222A6B8ACA37D4AA1AC37810C43E8A80F5FC5BC@mail.corp.imt-systems.com>
-	<m3iq3a4l46.fsf@pullcord.laptop.org>
-	<AANLkTin-q4N9g3=ymsiJy051xts3b2vioNdqku6DMEzQ@mail.gmail.com>
+From: Julia Lawall <julia@diku.dk>
+Subject: [PATCH 5/16] fs/btrfs: Use available error codes
+Date: Mon, 16 Aug 2010 18:25:57 +0200 (CEST)
+Message-ID: <Pine.LNX.4.64.1008161825390.19313@ask.diku.dk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTin-q4N9g3=ymsiJy051xts3b2vioNdqku6DMEzQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I thought this would go to the list automatically.
+From: Julia Lawall <julia@diku.dk>
 
-Here it is now.
+Error codes are stored in ret, but the return value is always 0.  Return
+ret instead.
 
+The semantic match that finds this problem is as follows:
+(http://coccinelle.lip6.fr/)
 
----------- Forwarded message ----------
-=46rom: Evert Vorster <evorster@gmail.com>
-Date: Mon, Aug 16, 2010 at 4:04 PM
-Subject: Re: 2.6.36-rc1 btrfs still unstable
-To: Chris Ball <cjb@laptop.org>
+// <smpl>
+@r@
+local idexpression x;
+constant C;
+@@
 
+if (...) { ...
+  x = -C
+  ... when != x
+(
+  return <+...x...+>;
+|
+  return NULL;
+|
+  return;
+|
+* return ...;
+)
+}
+// </smpl>
 
-I lost a btrfs not long ago, and this is the reason I am on this list.
-Lucky for me, I have more than one backup of everything. Most people
-that use computers do not. Also, they unplug USB disks without
-unmounting, etc....
+Signed-off-by: Julia Lawall <julia@diku.dk>
 
-I don't think the signboards are big enough.
+---
+This changes the semantics and has not been tested.
 
-Most people assume that there is some way of fixing a broken file
-system, and finding out the btrfs does not have one usually is quite
-surprising and just a little too late.
+ fs/btrfs/ioctl.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-I was under the impression that with atomic writes it's impossible to
-mess up a file system?
-
--Evert-
-
-On Mon, Aug 16, 2010 at 3:45 PM, Chris Ball <cjb@laptop.org> wrote:
-> Hi,
->
-> =A0 > the other big question is:
-> =A0 >
-> =A0 > Is btrfs with 2.6.36 really rockstable and ready to use in
-> =A0 > productive environments?
->
-> No, certainly not until there's a working fsck tool -- at the moment
-> it's rather easy to kill a btrfs by just losing power.
->
-> I just added a paragraph to the main page of the wiki about this,
-> since we've had a few people on IRC express surprise that their
-> filesystem aren't fixable after power loss. =A0Feel free to reword:
->
-> =A0 Note that Btrfs does not yet have a fsck tool that can fix errors=
-=2E
-> =A0 While Btrfs is stable on a stable machine, it is currently possib=
-le
-> =A0 to corrupt a filesystem irrecoverably if your machine crashes or
-> =A0 loses power. =A0This will be fixed when the fsck tool is ready.
->
-> - Chris.
-> --
-> Chris Ball =A0 <cjb@laptop.org>
-> One Laptop Per Child
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->
-
-
-
---
-http://magnatune.com - Music shared the way it should be.
-
-
-
---=20
-http://magnatune.com - Music shared the way it should be.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 9254b3d..bc7e9c5 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -212,7 +212,7 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+ 	mnt_drop_write(file->f_path.mnt);
+  out_unlock:
+ 	mutex_unlock(&inode->i_mutex);
+-	return 0;
++	return ret;
+ }
+ 
+ static int btrfs_ioctl_getversion(struct file *file, int __user *arg)

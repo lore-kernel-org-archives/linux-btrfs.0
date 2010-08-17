@@ -1,60 +1,31 @@
-From: Jon Nelson <jnelson@jamponi.net>
-Subject: Re: weird ENOSPC with defragment directory
-Date: Mon, 16 Aug 2010 22:20:43 -0500
-Message-ID: <AANLkTinpV9fT3GUuuKC--VpPABERBHx7Xf5fCJSrFRUL@mail.gmail.com>
-References: <AANLkTikgGCOfZo1A-R6bX+XXcAfCz48SDwX_0yhvUeJx@mail.gmail.com>
+From: "Carlos R. Mafra" <crmafra2@gmail.com>
+Subject: Re: 2.6.36-rc1 btrfs still unstable
+Date: Tue, 17 Aug 2010 13:57:26 +0200
+Message-ID: <20100817115726.GA338@Pilar.aei.mpg.de>
+References: <1281948382.1888.7.camel@chotu>
+ <20100816121658.GT3315@think>
+ <7222A6B8ACA37D4AA1AC37810C43E8A80F5FC5BC@mail.corp.imt-systems.com>
+ <m3iq3a4l46.fsf@pullcord.laptop.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: "Morten P.D. Stevens" <mstevens@imt-systems.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Chris Ball <cjb@laptop.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTikgGCOfZo1A-R6bX+XXcAfCz48SDwX_0yhvUeJx@mail.gmail.com>
+In-Reply-To: <m3iq3a4l46.fsf@pullcord.laptop.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 16, 2010 at 10:15 PM, Jon Nelson <jnelson@jamponi.net> wrot=
-e:
-> Most other directories on /var/cache, *except* those created by squid=
-,
-> can be defragmented.
-> The filesystem was converted from ext3/4.
->
-> turnip:~ # uname -a
-> Linux turnip 2.6.34-12-default #1 SMP 2010-06-29 02:39:08 +0200 x86_6=
-4
-> x86_64 x86_64 GNU/Linux
->
-> (stock openSUSE 11.3 kernel)
->
-> turnip:~ btrfsctl -d /var/cache/squid/01/93
-> ioctl:: No space left on device
-> turnip:~ # find !$
-> find /var/cache/squid/01/93
-> /var/cache/squid/01/93
-> /var/cache/squid/01/93/00019321
-> /var/cache/squid/01/93/00019378
-> turnip:~ # ls -la !$
-> ls -la /var/cache/squid/01/93
-> total 2
-> drwxr-x--- 1 squid nogroup =C2=A0 32 Aug 13 17:13 .
-> drwxr-x--- 1 squid nogroup 1024 Jun =C2=A04 18:35 ..
-> -rw-r----- 1 squid nogroup 1777 Jul 13 22:31 00019321
-> -rw-r----- 1 squid nogroup =C2=A0537 Jul 13 22:31 00019378
-> turnip:~ #
->
-> That seems... strange.
+On Mo 16.Aug'10 at 11:45:29 -0400, Chris Ball wrote:
+> 
+>    Note that Btrfs does not yet have a fsck tool that can fix errors.
+>    While Btrfs is stable on a stable machine, it is currently possible
+>    to corrupt a filesystem irrecoverably if your machine crashes or
+>    loses power.  This will be fixed when the fsck tool is ready.
 
-It gets stranger. If I issue a 'sync' command, chances are the
-defragment command will work. If I issue a bunch of them (in series,
-however), then I get ENOSPC.
+Shouldn't this (surprising) information be in the kernel config option too?
 
-find /var/cache -xdev -type d -exec btrfsprogs -d {} \;
+I am testing a btrfs /home on my laptop since January 2010, and somehow
+I missed this particular risk. As I knew about the others, I do backups
+almost everyday, but anyway.
 
-Seems to do it every time, with or without -depth. I get 100% success
-and then 100% failure - no mixing.
-
---=20
-Jon
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

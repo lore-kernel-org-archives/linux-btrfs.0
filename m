@@ -1,231 +1,91 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Poor creat/delete files performance
-Date: Wed, 18 Aug 2010 18:12:46 +0800
-Message-ID: <4C6BB21E.3000809@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+From: "Morten P.D. Stevens" <mstevens@imt-systems.com>
+Subject: RE: Poor creat/delete files performance
+Date: Wed, 18 Aug 2010 12:49:05 +0200
+Message-ID: <7222A6B8ACA37D4AA1AC37810C43E8A80F5FC5C5@mail.corp.imt-systems.com>
+References: <4C6BB21E.3000809@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="------------090707090108030904030907"
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>,
-	Yan Zheng <zheng.yan@oracle.com>
+Content-Type: text/plain; charset=iso-8859-1
+Cc: "miaox@cn.fujitsu.com" <miaox@cn.fujitsu.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4C6BB21E.3000809@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multi-part message in MIME format.
---------------090707090108030904030907
-Content-Type: text/plain; charset=GB2312
-Content-Transfer-Encoding: 7bit
+2010/8/18 Miao Xie <miaox@cn.fujitsu.com>:
+> Hi,
+>
+> We did some performance test and found the create/delete files perfor=
+mance
+> of btrfs is very poor.
+>
+> The test is that we create 50000 files and measure the file-create ti=
+me
+> first, and then delete these 50000 files and measure the file-delete =
+time.
+> (The attached file is the reproduce program)
+>
+> The result is following:
+> (Unit: second)
+> =A0Create file performance
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0BtrFS =A0 =A0 =A0 =A0 =A0 Ext4
+> =A0Total times: =A02.462625 =A0 =A0 =A0 =A01.449550
+> =A0Average: =A0 =A0 =A00.000049 =A0 =A0 =A0 =A00.000029
+>
+> =A0Delete file performance
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0BtrFS =A0 =A0 =A0 =A0 =A0 Ext4
+> =A0Total times: =A03.312796 =A0 =A0 =A0 =A00.997946
+> =A0Average: =A0 =A0 =A00.000066 =A0 =A0 =A0 =A00.000020
+>
+> The results were measured on a x86_64 server with 4 cores and 2 SAS d=
+isks.
+> By debuging, we found the btrfs spent a lot of time on searching and
+> inserting/removing items in the ctree.
+>
+> Is anyone looking at this issue?
+>
+> Regards
+> Miao Xie
 
 Hi,
 
-We did some performance test and found the create/delete files performance
-of btrfs is very poor.
+i can confirm this issue with poor create and delete performance.
 
-The test is that we create 50000 files and measure the file-create time
-first, and then delete these 50000 files and measure the file-delete time. 
-(The attached file is the reproduce program)
+=46or example with unpacking and deleting the linux kernel:
 
-The result is following:
-(Unit: second)
-  Create file performance
-		BtrFS		Ext4
-  Total times:	2.462625	1.449550
-  Average:	0.000049	0.000029
+Btrfs:
 
-  Delete file performance
-		BtrFS		Ext4
-  Total times:	3.312796	0.997946
-  Average:	0.000066	0.000020
+[root@fc13 btrfs]# time tar xfj linux-2.6.36-rc1.tar.bz2
 
-The results were measured on a x86_64 server with 4 cores and 2 SAS disks.
-By debuging, we found the btrfs spent a lot of time on searching and
-inserting/removing items in the ctree.
+real    0m18.794s
+user    0m12.045s
+sys     0m8.241s
+[root@fc13 btrfs]# time rm -rf linux-2.6.36-rc1
 
-Is anyone looking at this issue?
+real    0m2.156s
+user    0m0.028s
+sys     0m2.118s
 
-Regards
-Miao Xie
+ext4:
 
---------------090707090108030904030907
-Content-Type: text/x-csrc;
- name="creat_unlink.c"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment;
- filename="creat_unlink.c"
+[root@fc13 ext4]# time tar xfj linux-2.6.36-rc1.tar.bz2
 
-/* gcc creat_unlink.c -o creat_unlink */
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/time.h>
+real    0m13.140s
+user    0m9.074s
+sys     0m6.327s
+[root@fc13 ext4]# time rm -rf linux-2.6.36-rc1
 
-#define UNUSED          __attribute__ ((unused))
-#define PATH_SIZE       100
-#define TST_DIR		"tst_dir"
+real    0m0.781s
+user    0m0.031s
+sys     0m0.735s
 
-int initialize(void)
-{
-	int ret;
+In all of our benchmarks, ext4 is still faster than btrfs.
 
-	ret = mkdir(TST_DIR, 0775);
-	if (ret) {
-		perror("init fail - mkdir failed\n");
-		goto err;
-	}
+Best regards,
 
-	ret = chdir(TST_DIR);
-	if (ret) {
-		perror("init fail - chdir failed\n");
-		rmdir(TST_DIR);
-	}
-err:
-	return ret;
-}
+Morten
 
-int cleanup(void)
-{
-	int ret;
-
-	ret = chdir("..");
-	if (ret) {
-		perror("cleanup fail - chdir failed\n");
-		goto err;
-	}
-
-	ret = rmdir(TST_DIR);
-	if (ret)
-		perror("cleanup fail - rmdir failed\n");
-
-err:
-	return ret;
-}
-
-int get_start_time(struct timeval *tv)
-{
-	if (gettimeofday(tv, NULL)) {
-		perror("get start time failed.\n");
-		return 1;
-	}
-
-	return 0;
-}
-
-void account_time(struct timeval *stv, struct timeval *etv, int files)
-{
-	if (gettimeofday(etv, NULL)) {
-		perror("get end time failed.\n");
-	} else if (files) {
-		double ts;
-
-		while (etv->tv_usec < stv->tv_usec) {
-			etv->tv_sec--;
-			etv->tv_usec += 1000000;
-		}
-
-		etv->tv_usec -= stv->tv_usec;
-		etv->tv_sec -= stv->tv_sec;
-
-		while (etv->tv_usec > 1000000) {
-			etv->tv_usec -= 1000000;
-			etv->tv_sec++;
-		}
-
-		ts = (double)etv->tv_usec / (double)1000000 + etv->tv_sec;
-		printf("\tTotal files: %d\n", files);
-		printf("\tTotal time: %lf\n", ts);
-
-		ts /= files;
-		printf("\tAverage time: %lf\n", ts);
-	} else
-		perror("Didn't create/delete any files");
-
-}
-
-int create_files(int nfiles)
-{
-	int i, fd;
-	char fpath[PATH_SIZE];
-	struct timeval stv, etv;
-
-	printf("Create files:\n");
-	if (get_start_time(&stv))
-		return 0;
-
-	for (i = 0; i < nfiles; i++) {
-		sprintf(fpath, "%d", i);
-		fd = creat(fpath, 0555);
-		if (fd < 0) {
-			perror("creat file failed.\n");
-			break;
-		}
-		close(fd);
-	}
-
-	account_time(&stv, &etv, i);
-
-	return i;
-}
-
-int unlink_files(int nfiles)
-{
-	int i, ret = 0;
-	char fpath[PATH_SIZE];
-	struct timeval stv, etv;
-
-	printf("Delete files:\n");
-	if (get_start_time(&stv))
-		return 1;
-
-	for (i = 0; i < nfiles; i++) {
-		sprintf(fpath, "%d", i);
-		ret = unlink(fpath);
-		if (ret)
-			break;
-	}
-
-	account_time(&stv, &etv, i);
-
-	return ret;
-}
-
-int main(int argc, char **argv)
-{
-	int nfiles, n_done, ret;
-
-	/* parse the options */
-	if (argc != 2) {
-		fprintf(stderr, "options is wrong.\n");
-		fprintf(stderr, "%s [nfiles]\n", argv[0]);
-		exit(1);
-	}
-
-	nfiles = atoi(argv[1]);
-	if (nfiles <= 0) {
-		fprintf(stderr, "option nfiles is wrong.");
-		exit(1);
-	}
-
-	/* initialize - create the test directory and change the current dir */
-	ret = initialize();
-	if (ret)
-		exit(1);
-
-	n_done = create_files(nfiles);
-	if (n_done != nfiles) {
-		unlink_files(n_done);
-		cleanup();
-		exit(1);
-	}
-
-	ret = unlink_files(n_done);
-	if (ret)
-		exit(1);
-
-	ret = cleanup();
-	if (ret)
-		exit(1);
-
-	return 0;
-}
-
---------------090707090108030904030907--
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

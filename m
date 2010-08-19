@@ -1,118 +1,60 @@
-From: "Morten P.D. Stevens" <mstevens@imt-systems.com>
-Subject: RE: Poor creat/delete files performance
-Date: Wed, 18 Aug 2010 18:26:48 +0200
-Message-ID: <7222A6B8ACA37D4AA1AC37810C43E8A80F5FC5C7@mail.corp.imt-systems.com>
-References: <4C6BB21E.3000809@cn.fujitsu.com>
- <7222A6B8ACA37D4AA1AC37810C43E8A80F5FC5C5@mail.corp.imt-systems.com>
- <20100818142541.GP5854@think>
- <7222A6B8ACA37D4AA1AC37810C43E8A80F5FC5C6@mail.corp.imt-systems.com>
- <20100818153931.GT5854@think>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: Re: Poor creat/delete files performance
+Date: Thu, 19 Aug 2010 08:35:18 +0800
+Message-ID: <4C6C7C46.2000202@cn.fujitsu.com>
+References: <4C6BB21E.3000809@cn.fujitsu.com> <20100818120941.GM5854@think>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	"miaox@cn.fujitsu.com" <miaox@cn.fujitsu.com>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Chris Mason <chris.mason@oracle.com>,
+	Yan Zheng <zheng.yan@oracle.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100818153931.GT5854@think>
+In-Reply-To: <20100818120941.GM5854@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
-
-I'm using a standard fedora 13 kernel.
-Linux fc13.corp.imt-systems.com 2.6.33.6-147.2.4.fc13.x86_64 #1 SMP Fri=
- Jul 23 17:14:44 UTC 2010 x86_64 x86_64 x86_64 GNU/Linux
-
-If you like, I can rerun these benchmarks with 2.6.36-rc1.
-
-My Storage:
-
-2x Western Digital WD5000AAKS SATA Disks with hardware raid 0 on a LSI =
-1068e controller.
-
-Best regards,
-
-Morten
-
-On Wed, Aug 18, 2010 at 5:39 PM, Chris Mason <chris.mason@oracle.com> w=
-rote:
-> On Wed, Aug 18, 2010 at 05:28:44PM +0200, Morten P.D. Stevens wrote:
->> Hi Chris,
+On Wed, 18 Aug 2010 08:09:41 -0400, Chris Mason wrote:
+>> We did some performance test and found the create/delete files performance
+>> of btrfs is very poor.
 >>
->> Your compilebench results are very interesting.
+>> The test is that we create 50000 files and measure the file-create time
+>> first, and then delete these 50000 files and measure the file-delete time.
+>> (The attached file is the reproduce program)
 >>
->> Here are my results with exactly the same benchmark:
+>> The result is following:
+>> (Unit: second)
+>>    Create file performance
+>> 		BtrFS		Ext4
+>>    Total times:	2.462625	1.449550
+>>    Average:	0.000049	0.000029
 >>
->> Btrfs:
+>>    Delete file performance
+>> 		BtrFS		Ext4
+>>    Total times:	3.312796	0.997946
+>>    Average:	0.000066	0.000020
 >>
->> [root@fc13 compilebench-0.6]# ./compilebench -D /mnt/btrfs -i 30 --m=
-akej
->> using working directory /mnt/btrfs, 30 intial dirs 100 runs
->> native unpatched native-0 222MB in 3.14 seconds (70.82 MB/s)
->> native patched native-0 109MB in 0.69 seconds (158.94 MB/s)
->> native patched compiled native-0 691MB in 1.86 seconds (371.83 MB/s)
->> create dir kernel-0 222MB in 2.28 seconds (97.53 MB/s)
->> create dir kernel-1 222MB in 3.45 seconds (64.46 MB/s)
->
-> You'll probably find the btrfs create and delete speeds improve if yo=
-u
-> mount with -o max_inline=3D0. =A0Please confirm which kernel you were
-> running?
->
-> Also btrfs hammers on slab/slub very hard, so a kernel with slab/slub
-> debugging on will tend to be slower on btrfs than the other filesyste=
-ms.
->
-> [ btrfs results for the compile phase ]
->> compile dir kernel-29 680MB in 2.93 seconds (232.30 MB/s)
->> compile dir kernel-11 680MB in 3.24 seconds (210.07 MB/s)
->> compile dir kernel-22 680MB in 3.12 seconds (218.15 MB/s)
->> compile dir kernel-15 680MB in 3.25 seconds (209.43 MB/s)
->> compile dir kernel-13 680MB in 3.23 seconds (210.72 MB/s)
->
+>> The results were measured on a x86_64 server with 4 cores and 2 SAS disks.
+>> By debuging, we found the btrfs spent a lot of time on searching and
+>> inserting/removing items in the ctree.
 >>
->> Ext4:
->>
->> [root@fc13 compilebench-0.6]# ./compilebench -D /mnt/ext4 -i 30 --ma=
-kej
->> using working directory /mnt/ext4, 30 intial dirs 100 runs
->> native unpatched native-0 222MB in 2.34 seconds (95.03 MB/s)
->> native patched native-0 109MB in 0.60 seconds (182.78 MB/s)
->> native patched compiled native-0 691MB in 2.00 seconds (345.80 MB/s)
->> create dir kernel-0 222MB in 2.16 seconds (102.95 MB/s)
->> create dir kernel-1 222MB in 2.37 seconds (93.83 MB/s)
->> create dir kernel-2 222MB in 3.11 seconds (71.50 MB/s)
->> create dir kernel-3 222MB in 3.71 seconds (59.94 MB/s)
->> create dir kernel-4 222MB in 3.55 seconds (62.64 MB/s)
->> create dir kernel-5 222MB in 3.61 seconds (61.60 MB/s)
->> create dir kernel-6 222MB in 3.34 seconds (66.58 MB/s)
->> create dir kernel-7 222MB in 3.72 seconds (59.78 MB/s)
->> create dir kernel-8 222MB in 2.66 seconds (83.60 MB/s)
+>> Is anyone looking at this issue?
 >
-> Wow, much better than my drive. =A0What kind of storage is this?
+> I'm looking at it now, which kernel were you on?  We do spend some CPU
+> time on the btree but it shouldn't be a big bottleneck compared to the
+> disk.
+
+I tested it on v2.6.35 kernel.
+
+Regards
+Miao Xie
+
 >
->> compile dir kernel-29 680MB in 4.10 seconds (166.01 MB/s)
->> compile dir kernel-11 680MB in 4.35 seconds (156.47 MB/s)
->> compile dir kernel-22 680MB in 4.42 seconds (153.99 MB/s)
->> compile dir kernel-15 680MB in 4.59 seconds (148.29 MB/s)
->
-> Much lower than btrfs. =A0Strictly speaking this could be a layout
-> decision. =A0Ext4 could be trying to place the new .o files close to =
-the
-> rest of the files in that subdirectory. =A0Btrfs tries harder to maxi=
-mize
-> writeback speeds because COW causes fragmentation anyway.
+> This should be very similar to the performance regression that Steve
+> Pratt hit.  Our deletion time has always been slower than ext4, but the
+> creation time should be the same or faster.
 >
 > -chris
 >
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+>
 >
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

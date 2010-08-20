@@ -1,17 +1,12 @@
 From: Jonas Bonn <jonas@southpole.se>
 Subject: BUG with seed device
-Date: Fri, 20 Aug 2010 22:17:47 +0200
-Message-ID: <1282335467.4607.17.camel@satguru>
+Date: Fri, 20 Aug 2010 22:40:05 +0200
+Message-ID: <1282336805.4607.19.camel@satguru>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature"; boundary="=-FX35woe8KnRYUWkLOmzq"
+Content-Type: text/plain; charset="UTF-8"
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
-
-
---=-FX35woe8KnRYUWkLOmzq
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
 
 Hi,
 
@@ -22,13 +17,13 @@ have a concrete test case for that yet because I am seeing other issues
 with seeding as well.  The following test case consistently hits a BUG
 on my Ubuntu (Maverick) kernel.
 
-dd if=3D/dev/zero of=3Dseed.img bs=3D1024 count=3D1 seek=3D$(((1<<20)-1))
-dd if=3D/dev/zero of=3Dsprout.img bs=3D1024 count=3D1 seek=3D$(((1<<20)-1))
-mkfs.btrfs seed.img=20
-btrfstune -S 1 seed.img=20
+dd if=/dev/zero of=seed.img bs=1024 count=1 seek=$(((1<<20)-1))
+dd if=/dev/zero of=sprout.img bs=1024 count=1 seek=$(((1<<20)-1))
+mkfs.btrfs seed.img 
+btrfstune -S 1 seed.img 
 mkdir t
 mount -oloop seed.img t
-losetup /dev/loop2 sprout.img=20
+losetup /dev/loop2 sprout.img 
 btrfs device add /dev/loop2 t/
 
 
@@ -41,10 +36,10 @@ btrfs device add /dev/loop2 t/
 [137828.363139] ------------[ cut here ]------------
 [137828.363145] kernel BUG
 at /build/buildd/linux-2.6.35/fs/btrfs/volumes.c:1781!
-[137828.363148] invalid opcode: 0000 [#3] SMP=20
+[137828.363148] invalid opcode: 0000 [#3] SMP 
 [137828.363152] last sysfs
 file: /sys/devices/virtual/block/loop2/queue/rotational
-[137828.363154] CPU 1=20
+[137828.363154] CPU 1 
 [137828.363156] Modules linked in: btrfs zlib_deflate crc32c libcrc32c
 kvm_intel kvm binfmt_misc lp snd_hda_codec_idt snd_hda_intel
 snd_hda_codec snd_hwdep snd_pcm snd_seq_midi snd_rawmidi
@@ -54,9 +49,9 @@ i2c_algo_bit serio_raw video snd_page_alloc output intel_agp usbhid hid
 raid10 raid456 async_pq async_xor xor async_memcpy async_raid6_recov
 raid6_pq async_tx firewire_ohci raid1 firewire_core usb_storage
 crc_itu_t raid0 e1000e multipath pata_marvell linear
-[137828.363200]=20
+[137828.363200] 
 [137828.363203] Pid: 22658, comm: btrfs Tainted: G      D W
-2.6.35-15-generic #21-Ubuntu DG965OT/       =20
+2.6.35-15-generic #21-Ubuntu DG965OT/        
 [137828.363206] RIP: 0010:[<ffffffffa032c4dc>]  [<ffffffffa032c4dc>]
 btrfs_relocate_chunk+0x38c/0x3b0 [btrfs]
 [137828.363223] RSP: 0018:ffff880046f6fca8  EFLAGS: 00010282
@@ -101,7 +96,7 @@ ffff8800b90e40f0
 [137828.363323]  [<ffffffff8100a0f2>] system_call_fastpath+0x16/0x1b
 [137828.363325] Code: 00 48 81 c7 00 1c 00 00 e8 72 ae 25 e1 4c 89 ee 4c
 89 e7 e8 97 aa fd ff e9 d2 fc ff ff 66 90 0f 0b eb fe 0f 1f 40 00 0f 0b
-eb fe <0f> 0b eb fe 0f 0b eb fe 0f 0b eb fe 0f 0b eb fe 0f 0b eb fe 0f=20
+eb fe <0f> 0b eb fe 0f 0b eb fe 0f 0b eb fe 0f 0b eb fe 0f 0b eb fe 0f 
 [137828.363360] RIP  [<ffffffffa032c4dc>] btrfs_relocate_chunk
 +0x38c/0x3b0 [btrfs]
 [137828.363370]  RSP <ffff880046f6fca8>
@@ -109,19 +104,5 @@ eb fe <0f> 0b eb fe 0f 0b eb fe 0f 0b eb fe 0f 0b eb fe 0f 0b eb fe 0f=20
 
 
 Regards,
-Jonas
-
---=-FX35woe8KnRYUWkLOmzq
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iEYEABECAAYFAkxu4ugACgkQ70gcjN2673NhlwCeNJY3rxgBu2SdLm3MM8hpFvji
-cRcAn0FeYoDgdkuL1tLsidBPk3eoc8xC
-=DItX
------END PGP SIGNATURE-----
-
---=-FX35woe8KnRYUWkLOmzq--
+Jonas 
 

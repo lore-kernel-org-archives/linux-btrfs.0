@@ -1,39 +1,83 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Poor read performance on high-end server
-Date: Fri, 20 Aug 2010 10:37:35 -0400
-Message-ID: <20100820143735.GE5854@think>
-References: <4C5AC52D.9030906@sara.nl>
- <20100805145138.GJ29846@think>
- <4C5BF829.3020200@kernel.dk>
- <20100806115939.GC29846@think>
- <20100820045344.GB28712@attic.humilis.net>
+From: Benjamin Griese <der.darude@gmail.com>
+Subject: Re: [RFC] Move all btrfs command to only one command
+Date: Fri, 20 Aug 2010 16:42:46 +0200
+Message-ID: <AANLkTikmka7G-+bCLeqKmQQXbBJp=GkHJDApYpup5t-d@mail.gmail.com>
+References: <AANLkTimyQAgs6Hkhsein_m6iXZMGXK-q6snRmR2V_h=o@mail.gmail.com>
+	<201008201403.41330.kreijack@libero.it>
+	<AANLkTi=fgMC2h86cJQzyHRzUF0M0eSMdoWFtrWrjHorc@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Jens Axboe <axboe@kernel.dk>,
-	Freek Dijkstra <Freek.Dijkstra@sara.nl>,
-	linux-btrfs@vger.kernel.org
-To: Sander <sander@humilis.net>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Jon Nelson <jnelson@jamponi.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100820045344.GB28712@attic.humilis.net>
+In-Reply-To: <AANLkTi=fgMC2h86cJQzyHRzUF0M0eSMdoWFtrWrjHorc@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 20, 2010 at 06:53:44AM +0200, Sander wrote:
-> Chris Mason wrote (ao):
-> > On Fri, Aug 06, 2010 at 01:55:21PM +0200, Jens Axboe wrote:
-> > > Also, I didn't see Chris mention this, but if you have a newer intel box
-> > > you can use hw accellerated crc32c instead. For some reason my test box
-> > > always loads crc32c and not crc32c-intel, so I need to do that manually.
-> > > That helps a lot with higher transfer rates. You can check support for
-> > > hw crc32c by checking for the 'sse4_2' flag in /proc/cpuinfo.
-> > 
-> > Yeah, the HW assisted crc does make a huge difference.
-> 
-> The above says "newer intel box". I did some googling and it seems to
-> mean really Intel CPUs only, not AMD, correct?
-> 
-> Is there a way to get hardware support for crc32c on ARM based systems?
+Hello guys,
 
-So far I only know of the intel sse4.2 systems that support this.
+I would also prefer doing it in an all-in-one tool with various paramet=
+ers.
+I like the concept how the Solaris-Devs did it by consolidating every
+special configuration tool to an "xyzadm"-binary (idea: btrfsadm? i.e.
+similar to mdadm?).
+=46or me as an admin it is easier to remember only one command,
+especially when its neccessery to use it only from time to time.
+There exists only one manpage where every parameter is found (in theory=
+). :)
+And for the devs (sorry, I'm not one of those guys ;) ) maybe its
+easier to maintain/improve only one binary + lib.
 
--chris
+Just my opinion. :)
 
+bye, benjamin
+
+
+On Fri, Aug 20, 2010 at 14:43, Jon Nelson <jnelson@jamponi.net> wrote:
+> On Fri, Aug 20, 2010 at 7:03 AM, Goffredo Baroncelli <kreijack@gmail.=
+com> wrote:
+>>
+>>
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 fprintf(stderr, "ERR-A=
+=2E11: in command '");
+>>
+>> I am not against this kind of error codes, but I prefer
+>>
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 fprintf(stderr, "Error=
+ 'ERR-A.11' in command '");
+>>
+>> And a file.txt which details the error codes (otherwise these errors=
+ are not
+>> very useful).
+>>
+>> Why some error codes contain a dot (see ERR-C.13) and others not (li=
+ke ERR-
+>> A3) ?
+>
+> Goffredo Baroncelli - I think those are good comments!
+>
+> However, I would further suggest that when reporting an error code
+> that including the 'ERR-' prefix is redundant. Therefore, I propose:
+>
+> fprintf(stderr, "Error 'A.11' in command '");
+>
+> What does A. 11 refer to, anyway?
+>
+> --
+> Jon
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+>
+
+
+
+--=20
+To be or not to be -- Shakespeare | To do is to be -- Nietzsche | To
+be is to do -- Sartre | Do be do be do -- Sinatra
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

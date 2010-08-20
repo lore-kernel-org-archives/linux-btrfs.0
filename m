@@ -1,24 +1,35 @@
 From: Jan Kara <jack@suse.cz>
-Subject: Usefulness of max_transid in the tree search?
-Date: Fri, 20 Aug 2010 23:45:31 +0200
-Message-ID: <20100820214531.GA13960@quack.suse.cz>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: Do not return more items that user asked from from search ioctl
+Date: Fri, 20 Aug 2010 23:40:32 +0200
+Message-ID: <1282340432-15564-1-git-send-email-jack@suse.cz>
+Cc: linux-btrfs@vger.kernel.org, Jan Kara <jack@suse.cz>
 To: chris.mason@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-  Hi,
+While searching a tree we didn't properly check number of items we really
+stored in user's buffer thus possibly exceeding number of items requested
+by user. This was mostly harmless since actual buffer overflow is checked
+correctly in a different place. Anyway, let's fix the check.
 
-  I just had a look at how btrfs ioctl searches the tree for new items and
-while looking at the code I've noticed that maximum transaction id as
-specified in the search is rather useless.
-  If I understand right, transaction id is stored in a header of each node.
-Thus when any item of the node gets modified, new transaction id gets
-recorded. So when you give the search some maximum transaction id, you will
-not receive items in nodes where some item has been modified in a later
-transaction. That seems like a rather useless set of items to me... Or am I
-missing something?
+Signed-off-by: Jan Kara <jack@suse.cz>
+---
+ fs/btrfs/ioctl.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-								Honza
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 9254b3d..94e7ab5 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -977,7 +977,7 @@ static noinline int copy_to_sk(struct btrfs_root *root,
+ 		}
+ 		found++;
+ 
+-		if (*num_found >= sk->nr_items)
++		if (*num_found + found >= sk->nr_items)
+ 			break;
+ 	}
+ advance_key:
+-- 
+1.6.4.2
+

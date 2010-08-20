@@ -1,83 +1,49 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
+From: Jon Nelson <jnelson@jamponi.net>
 Subject: Re: [RFC] Move all btrfs command to only one command
-Date: Fri, 20 Aug 2010 14:12:33 +0200
-Message-ID: <201008201412.33334.kreijack@libero.it>
-Reply-To: kreijack@libero.it
+Date: Fri, 20 Aug 2010 07:43:42 -0500
+Message-ID: <AANLkTi=fgMC2h86cJQzyHRzUF0M0eSMdoWFtrWrjHorc@mail.gmail.com>
+References: <AANLkTimyQAgs6Hkhsein_m6iXZMGXK-q6snRmR2V_h=o@mail.gmail.com> <201008201403.41330.kreijack@libero.it>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-15"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: unlisted-recipients:; (no To-header on input)
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201008201403.41330.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Friday, 20 August, 2010, Goffredo Baroncelli wrote:
-> On Thursday, 19 August, 2010, James Smith wrote:
-> > This patch randomizes the error codes and also fixes up some typos 
-> including
-> > capitalization in the output.
-
-I think that you should also update the btrfs man page in order to reflect 
-your changing:
-- the capitalization of the command arguments
-- the list of error codes for every commands
-
-Regards
-G.Baroncelli
-
-
-> > It would almost be nice to see a translation effort for the tool as well.
-> > 
-> 
-> Hi James,
-> 
-> I don't comment the changing the capitalization. Regarding the other 
-changes:
-> 
-> [...]
->  {
->  	struct Command *cp;
->  
-> -	printf("Usage:\n");
-> +	printf("VFS-2593 %s\n", BTRFS_BUILD_VERSION);
->                 ^^^^^^^^
-> 
-> What means VFS-2593 ?
-> 
-> +	printf("\nNo matter where you go, there you are.\n");
-> 
-> Is it really useful this kind of comment ?
-> 
-> 
-> [...]
-> 
-> +			fprintf(stderr, "ERR-A.11: in command '");
-> 
+On Fri, Aug 20, 2010 at 7:03 AM, Goffredo Baroncelli <kreijack@gmail.co=
+m> wrote:
+>
+>
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 fprintf(stderr, "ERR-A.11: in command '");
+>
 > I am not against this kind of error codes, but I prefer
-> 
-> +			fprintf(stderr, "Error 'ERR-A.11' in command '");
-> 
-> And a file.txt which details the error codes (otherwise these errors are 
-not 
+>
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 fprintf(stderr, "Error 'ERR-A.11' in command '");
+>
+> And a file.txt which details the error codes (otherwise these errors =
+are not
 > very useful).
-> 
-> Why some error codes contain a dot (see ERR-C.13) and others not (like ERR-
+>
+> Why some error codes contain a dot (see ERR-C.13) and others not (lik=
+e ERR-
 > A3) ?
-> 
-> 
-> Reagrds
-> G.Baroncelli
-> 
-> -- 
-> gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) 
-> <kreijackATinwind.it>
-> Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
 
+Goffredo Baroncelli - I think those are good comments!
 
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+However, I would further suggest that when reporting an error code
+that including the 'ERR-' prefix is redundant. Therefore, I propose:
+
+fprintf(stderr, "Error 'A.11' in command '");
+
+What does A. 11 refer to, anyway?
+
+--=20
+Jon
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

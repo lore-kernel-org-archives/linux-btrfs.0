@@ -1,95 +1,90 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Subject: Re: [RFC] Move all btrfs command to only one command
-Date: Sat, 21 Aug 2010 11:37:12 +0200
-Message-ID: <201008211137.12565.kreijack@libero.it>
-References: <AANLkTimyQAgs6Hkhsein_m6iXZMGXK-q6snRmR2V_h=o@mail.gmail.com> <AANLkTik=t4mWvSOzLbFR3M7RbxgS=9WAFraj3XUguMLF@mail.gmail.com> <AANLkTinrujaWqN8NLNdaydL=ENOrMEgb9cjWdDD_g6GT@mail.gmail.com>
-Reply-To: kreijack@libero.it
+From: Steven Pratt <slpratt@austin.ibm.com>
+Subject: Re: 2.6.35 performance results
+Date: Sat, 21 Aug 2010 10:25:59 -0500
+Message-ID: <4C6FF007.3080800@austin.ibm.com>
+References: <4C5C57FB.4090003@dangyankee.net> <20100816200444.GJ993@think> <4C69B2D0.4010501@dangyankee.net> <20100819010031.GI5854@think>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTinrujaWqN8NLNdaydL=ENOrMEgb9cjWdDD_g6GT@mail.gmail.com>
+In-Reply-To: <20100819010031.GI5854@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Saturday, 21 August, 2010, James Smith wrote:
-[...]
-> I'll look at a error.txt file (after finding convention) and also
-> update the man. In regards to shortening of dev/device -- is this
-> really neccessary? And what harm does this cause in the first place?
-> In device add-delete functionality.
+Chris Mason wrote:
+> On Mon, Aug 16, 2010 at 04:51:12PM -0500, Steven Pratt wrote:
+>   
+>> Chris Mason wrote:
+>>     
+>>>> This changeset introduced "btrfs_start_one_delalloc_inode" in
+>>>> http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=commitdiff;h=5da9d01b66458b180a6bee0e637a1d0a3effc622
+>>>>
+>>>> In heavy write workloads this new function is now dominating the profiles:
+>>>>
+>>>> samples  %        app name                 symbol name
+>>>> 8914973  65.1261  btrfs.ko                 btrfs_start_one_delalloc_inode
+>>>>         
+>>> Hi Steve,
+>>>
+>>> I think I know why this is a problem and how to fix it, but I'm having a
+>>> trouble reproducing this exact setup.  Which of your tests was this
+>>> oprofile from?
+>>>       
+>> 128 thread random write.  With or without nocow option.
+>>     
+>
+> Ok, I haven't managed to reproduce your problem exactly, but this is
+> faster for me here.  Could you please give it a try:
+>   
+Was out on vacation.  Test is running now. Should have results by 
+uploaded by Monday.
 
-Make sense to rename <dev> in <device> for the "btrfs add/delete" commands
+Steve
 
+> >From 8e965331de749c39f3781d581b55d2c207de060f Mon Sep 17 00:00:00 2001
+> From: Chris Mason <chris.mason@oracle.com>
+> Date: Wed, 18 Aug 2010 13:31:27 -0400
+> Subject: [PATCH] Btrfs: don't trigger delayed allocation throttling as often
+>
+> We reserve metadata space based on the number of delayed allocation
+> extents that are currently pending.  As we run out of space, we start
+> forcing writeback to turn those reservations into physical extents.
+>
+> The reservations are based on some worst case math, so the sooner we
+> turn them into real blocks, the better off we are.
+>
+> But, the writeback is being forced too soon and too often.  This fixes
+> things to be less aggressive.
+>
+> Signed-off-by: Chris Mason <chris.mason@oracle.com>
+> ---
+>  fs/btrfs/extent-tree.c |    7 ++++++-
+>  1 files changed, 6 insertions(+), 1 deletions(-)
+>
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 32d0940..55e1ee0 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -3681,6 +3681,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+>  	struct btrfs_root *root = BTRFS_I(inode)->root;
+>  	struct btrfs_block_rsv *block_rsv = &root->fs_info->delalloc_block_rsv;
+>  	u64 to_reserve;
+> +	u64 max_reserve;
+>  	int nr_extents;
+>  	int retries = 0;
+>  	int ret;
+> @@ -3717,7 +3718,11 @@ again:
+>  
+>  	block_rsv_add_bytes(block_rsv, to_reserve, 1);
+>  
+> -	if (block_rsv->size > 512 * 1024 * 1024)
+> +	/* 10% or 2GB */
+> +	max_reserve = min_t(u64, 2ULL * 1024 * 1024 * 1024,
+> +		    div_factor(root->fs_info->fs_devices->total_rw_bytes, 1));
+> +
+> +	if (block_rsv->size > max_reserve)
+>  		shrink_delalloc(NULL, root, to_reserve);
+>  
+>  	return 0;
+>   
 
-> 
-> 
-> On 8/20/10, Josh Berry <des@condordes.net> wrote:
-> > On Fri, Aug 20, 2010 at 12:00, Andreas Philipp
-> > <philipp.andreas@gmail.com> wrote:
-> >>  On 20.08.2010 20:49, Josh Berry wrote:
-> >>>
-> >>> On Fri, Aug 20, 2010 at 11:34, Andreas Philipp
-> >>> <philipp.andreas@gmail.com>  wrote:
-> >>>>
-> >>>>  On 20.08.2010 20:27, Josh Berry wrote:
-> >>>>>
-> >>>>> On Fri, Aug 20, 2010 at 05:03, Goffredo 
-Baroncelli<kreijack@gmail.com>
-> >>>>>  wrote:
-> >>>>>>
-> >>>>>> On Thursday, 19 August, 2010, James Smith wrote:
-> >>>>>>>
-> >>>>>>> This patch randomizes the error codes and also fixes up some typos
-> >>>>>>
-> >>>>>> including
-> >>>>>>>
-> >>>>>>> capitalization in the output.
-> >>>>>>>
-> >>>>>>> It would almost be nice to see a translation effort for the tool as
-> >>>>>>> well.
-> >>>>>
-> >>>>> [...]
-> >>>>>>
-> >>>>>> +                       fprintf(stderr, "ERR-A.11: in command '");
-> >>>>>>
-> >>>>>> I am not against this kind of error codes, but I prefer
-> >>>>>>
-> >>>>>> +                       fprintf(stderr, "Error 'ERR-A.11' in command
-> >>>>>> '");
-> >>>>>
-> >>>>> As a layman/end user, I disagree.  The former format is easier for
-> >>>>> shell scripts and the like to parse -- the error code can be 
-extracted
-> >>>>> with a simple "cut -d: -f1".
-> >>>>
-> >>>> This makes no difference. A simple `cut -d " " -f1` would do the job 
-in
-> >>>> the
-> >>>> second case.
-> >>>
-> >>> I think you meant -f2, and that still leaves the quotes hanging
-> >>> around.  So you'd need to cut -d" " -f2 |tr -d "'" .  It's not a big
-> >>> deal either way, I just think the former is easier to work with.
-> >>
-> >> Sorry, of course -f2. But why not simply cut -d "'" -f 2?
-> >
-> > Oh right, good point. :)  Though as Goffredo said, using the error
-> > code is probably better anyway.
-> >
-> > -- Josh
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
-
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

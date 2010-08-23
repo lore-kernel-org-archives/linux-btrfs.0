@@ -1,147 +1,28 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH 5/6] btrfs: add a helper try_merge_free_space()
-Date: Mon, 23 Aug 2010 09:15:59 -0400
-Message-ID: <20100823131559.GF2404@localhost.localdomain>
-References: <4C71CD4B.10606@cn.fujitsu.com> <4C71CDA0.5010107@cn.fujitsu.com>
+From: Amr El-Sharnoby <a.elsharnoby@exa.com.sa>
+Subject: du and find is much slower on btrfs than ext4
+Date: Mon, 23 Aug 2010 16:02:14 +0200
+Message-ID: <AANLkTikzPBYZEt_q5HUGUf1LM4ihQkA67ERoQ3ZAo8sr@mail.gmail.com>
+References: <AANLkTintDx=zT7wARJ0UzchamAjfkZ3fcDyR5+-zYCes@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
-	LKML <linux-kernel@vger.kernel.org>
-To: Li Zefan <lizf@cn.fujitsu.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4C71CDA0.5010107@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTintDx=zT7wARJ0UzchamAjfkZ3fcDyR5+-zYCes@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 23, 2010 at 09:23:44AM +0800, Li Zefan wrote:
-> When adding a new extent, we'll firstly see if we can merge
-> this extent to the left or/and right extent. Extract this as
-> a helper try_merge_free_space().
-> 
-> As a side effect, we fix a small bug that if the new extent
-> has non-bitmap left entry but is unmergeble, we'll directly
-> link the extent without trying to drop it into bitmap.
-> 
-> This also prepares for the next patch.
-> 
-> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
-> ---
->  fs/btrfs/free-space-cache.c |   75 ++++++++++++++++++++++++------------------
->  1 files changed, 43 insertions(+), 32 deletions(-)
-> 
-> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-> index 20f3141..faeec8f 100644
-> --- a/fs/btrfs/free-space-cache.c
-> +++ b/fs/btrfs/free-space-cache.c
-> @@ -610,22 +610,14 @@ out:
->  	return ret;
->  }
->  
-> -int btrfs_add_free_space(struct btrfs_block_group_cache *block_group,
-> -			 u64 offset, u64 bytes)
-> +bool try_merge_free_space(struct btrfs_block_group_cache *block_group,
-> +			  struct btrfs_free_space *info)
->  {
-> -	struct btrfs_free_space *right_info = NULL;
-> -	struct btrfs_free_space *left_info = NULL;
-> -	struct btrfs_free_space *info = NULL;
-> -	int ret = 0;
-> -
-> -	info = kzalloc(sizeof(struct btrfs_free_space), GFP_NOFS);
-> -	if (!info)
-> -		return -ENOMEM;
-> -
-> -	info->offset = offset;
-> -	info->bytes = bytes;
-> -
-> -	spin_lock(&block_group->tree_lock);
-> +	struct btrfs_free_space *left_info;
-> +	struct btrfs_free_space *right_info;
-> +	bool merged = false;
-> +	u64 offset = info->offset;
-> +	u64 bytes = info->bytes;
->  
->  	/*
->  	 * first we want to see if there is free space adjacent to the range we
-> @@ -639,27 +631,11 @@ int btrfs_add_free_space(struct btrfs_block_group_cache *block_group,
->  	else
->  		left_info = tree_search_offset(block_group, offset - 1, 0, 0);
->  
-> -	/*
-> -	 * If there was no extent directly to the left or right of this new
-> -	 * extent then we know we're going to have to allocate a new extent, so
-> -	 * before we do that see if we need to drop this into a bitmap
-> -	 */
-> -	if ((!left_info || left_info->bitmap) &&
-> -	    (!right_info || right_info->bitmap)) {
-> -		ret = insert_into_bitmap(block_group, info);
-> -
-> -		if (ret < 0) {
-> -			goto out;
-> -		} else if (ret) {
-> -			ret = 0;
-> -			goto out;
-> -		}
-> -	}
-> -
->  	if (right_info && !right_info->bitmap) {
->  		unlink_free_space(block_group, right_info);
->  		info->bytes += right_info->bytes;
->  		kfree(right_info);
-> +		merged = true;
->  	}
->  
->  	if (left_info && !left_info->bitmap &&
-> @@ -668,8 +644,43 @@ int btrfs_add_free_space(struct btrfs_block_group_cache *block_group,
->  		info->offset = left_info->offset;
->  		info->bytes += left_info->bytes;
->  		kfree(left_info);
-> +		merged = true;
->  	}
->  
-> +	return merged;
-> +}
-> +
-> +int btrfs_add_free_space(struct btrfs_block_group_cache *block_group,
-> +			 u64 offset, u64 bytes)
-> +{
-> +	struct btrfs_free_space *info;
-> +	int ret = 0;
-> +
-> +	info = kzalloc(sizeof(struct btrfs_free_space), GFP_NOFS);
-> +	if (!info)
-> +		return -ENOMEM;
-> +
-> +	info->offset = offset;
-> +	info->bytes = bytes;
-> +
-> +	spin_lock(&block_group->tree_lock);
-> +
-> +	if (try_merge_free_space(block_group, info))
-> +		goto link;
-> +
-> +	/*
-> +	 * There was no extent directly to the left or right of this new
-> +	 * extent then we know we're going to have to allocate a new extent, so
-> +	 * before we do that see if we need to drop this into a bitmap
-> +	 */
-> +	ret = insert_into_bitmap(block_group, info);
-> +	if (ret < 0) {
-> +		goto out;
-> +	} else if (ret) {
-> +		ret = 0;
-> +		goto out;
-> +	}
-> +link:
->  	ret = link_free_space(block_group, info);
->  	if (ret)
->  		kfree(info);
-> -- 
-> 1.7.0.1
-> 
+Hello,
+I've noticed that running "du -sch" on a btrfs takes much longer that
+it on ext4 filesystem have the exact same copy of data ...
+Also, running "find -type f" for example is much slower on btrfs that ext4 ...
 
-Reviewed-by: Josef Bacik <josef@redhat.com>
+I could reproduce this on;
+1- a single 64GB Intel X-25E SSD
+2- and on a 6 x 1TB SATA II disks on RAID-0
 
-Thanks,
+Notes:
+1- Both filesystems have been recently populated with the same copy of data
+2- I'm using -o compress for btrfs
 
-Josef
+Thanks
+
+-- Amr H. El-Sharnoby --

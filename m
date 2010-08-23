@@ -1,9 +1,8 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH 6/6] btrfs: check mergeable free space when removing a
-	cluster
-Date: Mon, 23 Aug 2010 09:15:05 -0400
-Message-ID: <20100823131504.GE2404@localhost.localdomain>
-References: <4C71CD4B.10606@cn.fujitsu.com> <4C71CDB7.6000602@cn.fujitsu.com>
+Subject: Re: [PATCH 5/6] btrfs: add a helper try_merge_free_space()
+Date: Mon, 23 Aug 2010 09:15:59 -0400
+Message-ID: <20100823131559.GF2404@localhost.localdomain>
+References: <4C71CD4B.10606@cn.fujitsu.com> <4C71CDA0.5010107@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: Chris Mason <chris.mason@oracle.com>,
@@ -11,101 +10,138 @@ Cc: Chris Mason <chris.mason@oracle.com>,
 	LKML <linux-kernel@vger.kernel.org>
 To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4C71CDB7.6000602@cn.fujitsu.com>
+In-Reply-To: <4C71CDA0.5010107@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 23, 2010 at 09:24:07AM +0800, Li Zefan wrote:
-> After returing extents from a cluster to the block group, some
-> extents in the block group may be mergeable.
+On Mon, Aug 23, 2010 at 09:23:44AM +0800, Li Zefan wrote:
+> When adding a new extent, we'll firstly see if we can merge
+> this extent to the left or/and right extent. Extract this as
+> a helper try_merge_free_space().
+> 
+> As a side effect, we fix a small bug that if the new extent
+> has non-bitmap left entry but is unmergeble, we'll directly
+> link the extent without trying to drop it into bitmap.
+> 
+> This also prepares for the next patch.
 > 
 > Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 > ---
->  fs/btrfs/free-space-cache.c |   26 ++++++++++++++++++++------
->  1 files changed, 20 insertions(+), 6 deletions(-)
+>  fs/btrfs/free-space-cache.c |   75 ++++++++++++++++++++++++------------------
+>  1 files changed, 43 insertions(+), 32 deletions(-)
 > 
 > diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-> index faeec8f..c11f4f7 100644
+> index 20f3141..faeec8f 100644
 > --- a/fs/btrfs/free-space-cache.c
 > +++ b/fs/btrfs/free-space-cache.c
-> @@ -234,11 +234,18 @@ tree_search_offset(struct btrfs_block_group_cache *block_group,
->  	return entry;
+> @@ -610,22 +610,14 @@ out:
+>  	return ret;
 >  }
 >  
-> -static void unlink_free_space(struct btrfs_block_group_cache *block_group,
-> -			      struct btrfs_free_space *info)
-> +static inline void
-> +__unlink_free_space(struct btrfs_block_group_cache *block_group,
-> +		    struct btrfs_free_space *info)
+> -int btrfs_add_free_space(struct btrfs_block_group_cache *block_group,
+> -			 u64 offset, u64 bytes)
+> +bool try_merge_free_space(struct btrfs_block_group_cache *block_group,
+> +			  struct btrfs_free_space *info)
 >  {
->  	rb_erase(&info->offset_index, &block_group->free_space_offset);
->  	block_group->free_extents--;
-> +}
-> +
-> +static void unlink_free_space(struct btrfs_block_group_cache *block_group,
-> +			      struct btrfs_free_space *info)
-> +{
-> +	__unlink_free_space(block_group, info);
->  	block_group->free_space -= info->bytes;
->  }
+> -	struct btrfs_free_space *right_info = NULL;
+> -	struct btrfs_free_space *left_info = NULL;
+> -	struct btrfs_free_space *info = NULL;
+> -	int ret = 0;
+> -
+> -	info = kzalloc(sizeof(struct btrfs_free_space), GFP_NOFS);
+> -	if (!info)
+> -		return -ENOMEM;
+> -
+> -	info->offset = offset;
+> -	info->bytes = bytes;
+> -
+> -	spin_lock(&block_group->tree_lock);
+> +	struct btrfs_free_space *left_info;
+> +	struct btrfs_free_space *right_info;
+> +	bool merged = false;
+> +	u64 offset = info->offset;
+> +	u64 bytes = info->bytes;
 >  
-> @@ -611,7 +618,7 @@ out:
->  }
->  
->  bool try_merge_free_space(struct btrfs_block_group_cache *block_group,
-> -			  struct btrfs_free_space *info)
-> +			  struct btrfs_free_space *info, bool update_stat)
->  {
->  	struct btrfs_free_space *left_info;
->  	struct btrfs_free_space *right_info;
-> @@ -632,7 +639,10 @@ bool try_merge_free_space(struct btrfs_block_group_cache *block_group,
+>  	/*
+>  	 * first we want to see if there is free space adjacent to the range we
+> @@ -639,27 +631,11 @@ int btrfs_add_free_space(struct btrfs_block_group_cache *block_group,
+>  	else
 >  		left_info = tree_search_offset(block_group, offset - 1, 0, 0);
 >  
+> -	/*
+> -	 * If there was no extent directly to the left or right of this new
+> -	 * extent then we know we're going to have to allocate a new extent, so
+> -	 * before we do that see if we need to drop this into a bitmap
+> -	 */
+> -	if ((!left_info || left_info->bitmap) &&
+> -	    (!right_info || right_info->bitmap)) {
+> -		ret = insert_into_bitmap(block_group, info);
+> -
+> -		if (ret < 0) {
+> -			goto out;
+> -		} else if (ret) {
+> -			ret = 0;
+> -			goto out;
+> -		}
+> -	}
+> -
 >  	if (right_info && !right_info->bitmap) {
-> -		unlink_free_space(block_group, right_info);
-> +		if (update_stat)
-> +			unlink_free_space(block_group, right_info);
-> +		else
-> +			__unlink_free_space(block_group, right_info);
+>  		unlink_free_space(block_group, right_info);
 >  		info->bytes += right_info->bytes;
 >  		kfree(right_info);
->  		merged = true;
-> @@ -640,7 +650,10 @@ bool try_merge_free_space(struct btrfs_block_group_cache *block_group,
+> +		merged = true;
+>  	}
 >  
 >  	if (left_info && !left_info->bitmap &&
->  	    left_info->offset + left_info->bytes == offset) {
-> -		unlink_free_space(block_group, left_info);
-> +		if (update_stat)
-> +			unlink_free_space(block_group, left_info);
-> +		else
-> +			__unlink_free_space(block_group, left_info);
+> @@ -668,8 +644,43 @@ int btrfs_add_free_space(struct btrfs_block_group_cache *block_group,
 >  		info->offset = left_info->offset;
 >  		info->bytes += left_info->bytes;
 >  		kfree(left_info);
-> @@ -665,7 +678,7 @@ int btrfs_add_free_space(struct btrfs_block_group_cache *block_group,
+> +		merged = true;
+>  	}
 >  
->  	spin_lock(&block_group->tree_lock);
->  
-> -	if (try_merge_free_space(block_group, info))
-> +	if (try_merge_free_space(block_group, info, true))
->  		goto link;
->  
->  	/*
-> @@ -883,6 +896,7 @@ __btrfs_return_cluster_to_free_space(
->  		node = rb_next(&entry->offset_index);
->  		rb_erase(&entry->offset_index, &cluster->root);
->  		BUG_ON(entry->bitmap);
-> +		try_merge_free_space(block_group, entry, false);
->  		tree_insert_offset(&block_group->free_space_offset,
->  				   entry->offset, &entry->offset_index, 0);
+> +	return merged;
+> +}
+> +
+> +int btrfs_add_free_space(struct btrfs_block_group_cache *block_group,
+> +			 u64 offset, u64 bytes)
+> +{
+> +	struct btrfs_free_space *info;
+> +	int ret = 0;
+> +
+> +	info = kzalloc(sizeof(struct btrfs_free_space), GFP_NOFS);
+> +	if (!info)
+> +		return -ENOMEM;
+> +
+> +	info->offset = offset;
+> +	info->bytes = bytes;
+> +
+> +	spin_lock(&block_group->tree_lock);
+> +
+> +	if (try_merge_free_space(block_group, info))
+> +		goto link;
+> +
+> +	/*
+> +	 * There was no extent directly to the left or right of this new
+> +	 * extent then we know we're going to have to allocate a new extent, so
+> +	 * before we do that see if we need to drop this into a bitmap
+> +	 */
+> +	ret = insert_into_bitmap(block_group, info);
+> +	if (ret < 0) {
+> +		goto out;
+> +	} else if (ret) {
+> +		ret = 0;
+> +		goto out;
+> +	}
+> +link:
+>  	ret = link_free_space(block_group, info);
+>  	if (ret)
+>  		kfree(info);
+> -- 
+> 1.7.0.1
+> 
 
-It's early in the morning here, so forgive me if I'm missing something obvious,
-but if try_merge_free_space() succeeds here, then won't tree_insert_offset()
-then add an entry that overlaps the same spot?  Should we do something like
+Reviewed-by: Josef Bacik <josef@redhat.com>
 
-merged = try_merge_free_space();
-if (!merged)
-	tree_insert_offset();
-
-?  Thanks,
+Thanks,
 
 Josef

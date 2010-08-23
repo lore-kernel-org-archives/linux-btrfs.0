@@ -1,100 +1,63 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH 6/6] btrfs: check mergeable free space when removing a cluster
-Date: Mon, 23 Aug 2010 09:24:07 +0800
-Message-ID: <4C71CDB7.6000602@cn.fujitsu.com>
-References: <4C71CD4B.10606@cn.fujitsu.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH 1/6] btrfs: fix threshold calculation for block groups
+	smaller than 1GB
+Date: Mon, 23 Aug 2010 09:02:25 -0400
+Message-ID: <20100823130224.GA2404@localhost.localdomain>
+References: <4C71CD4B.10606@cn.fujitsu.com> <4C71CD60.5050507@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
 	LKML <linux-kernel@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4C71CD4B.10606@cn.fujitsu.com>
+In-Reply-To: <4C71CD60.5050507@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-After returing extents from a cluster to the block group, some
-extents in the block group may be mergeable.
+On Mon, Aug 23, 2010 at 09:22:40AM +0800, Li Zefan wrote:
+> If a block group is smaller than 1GB, the extent entry threadhold
+> calculation will always set the threshold to 0.
+> 
+> So as free space gets fragmented, btrfs will switch to use bitmap
+> to manage free space, but then will never switch back to extents
+> due to this bug.
+> 
+> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+> ---
+>  fs/btrfs/free-space-cache.c |    8 ++++++--
+>  1 files changed, 6 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+> index f488fac..7edbef6 100644
+> --- a/fs/btrfs/free-space-cache.c
+> +++ b/fs/btrfs/free-space-cache.c
+> @@ -263,14 +263,18 @@ static void recalculate_thresholds(struct btrfs_block_group_cache *block_group)
+>  	u64 max_bytes;
+>  	u64 bitmap_bytes;
+>  	u64 extent_bytes;
+> +	u64 size = block_group->key.offset;
+>  
+>  	/*
+>  	 * The goal is to keep the total amount of memory used per 1gb of space
+>  	 * at or below 32k, so we need to adjust how much memory we allow to be
+>  	 * used by extent based free space tracking
+>  	 */
+> -	max_bytes = MAX_CACHE_BYTES_PER_GIG *
+> -		(div64_u64(block_group->key.offset, 1024 * 1024 * 1024));
+> +	if (size < 1024 * 1024 * 1024)
+> +		max_bytes = MAX_CACHE_BYTES_PER_GIG;
+> +	else
+> +		max_bytes = MAX_CACHE_BYTES_PER_GIG *
+> +			div64_u64(size, 1024 * 1024 * 1024);
+>  
+>  	/*
+>  	 * we want to account for 1 more bitmap than what we have so we can make
+> -- 
+> 1.7.0.1
+> 
 
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
- fs/btrfs/free-space-cache.c |   26 ++++++++++++++++++++------
- 1 files changed, 20 insertions(+), 6 deletions(-)
+Reviewed-by: Josef Bacik <josef@redhat.com>
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index faeec8f..c11f4f7 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -234,11 +234,18 @@ tree_search_offset(struct btrfs_block_group_cache *block_group,
- 	return entry;
- }
- 
--static void unlink_free_space(struct btrfs_block_group_cache *block_group,
--			      struct btrfs_free_space *info)
-+static inline void
-+__unlink_free_space(struct btrfs_block_group_cache *block_group,
-+		    struct btrfs_free_space *info)
- {
- 	rb_erase(&info->offset_index, &block_group->free_space_offset);
- 	block_group->free_extents--;
-+}
-+
-+static void unlink_free_space(struct btrfs_block_group_cache *block_group,
-+			      struct btrfs_free_space *info)
-+{
-+	__unlink_free_space(block_group, info);
- 	block_group->free_space -= info->bytes;
- }
- 
-@@ -611,7 +618,7 @@ out:
- }
- 
- bool try_merge_free_space(struct btrfs_block_group_cache *block_group,
--			  struct btrfs_free_space *info)
-+			  struct btrfs_free_space *info, bool update_stat)
- {
- 	struct btrfs_free_space *left_info;
- 	struct btrfs_free_space *right_info;
-@@ -632,7 +639,10 @@ bool try_merge_free_space(struct btrfs_block_group_cache *block_group,
- 		left_info = tree_search_offset(block_group, offset - 1, 0, 0);
- 
- 	if (right_info && !right_info->bitmap) {
--		unlink_free_space(block_group, right_info);
-+		if (update_stat)
-+			unlink_free_space(block_group, right_info);
-+		else
-+			__unlink_free_space(block_group, right_info);
- 		info->bytes += right_info->bytes;
- 		kfree(right_info);
- 		merged = true;
-@@ -640,7 +650,10 @@ bool try_merge_free_space(struct btrfs_block_group_cache *block_group,
- 
- 	if (left_info && !left_info->bitmap &&
- 	    left_info->offset + left_info->bytes == offset) {
--		unlink_free_space(block_group, left_info);
-+		if (update_stat)
-+			unlink_free_space(block_group, left_info);
-+		else
-+			__unlink_free_space(block_group, left_info);
- 		info->offset = left_info->offset;
- 		info->bytes += left_info->bytes;
- 		kfree(left_info);
-@@ -665,7 +678,7 @@ int btrfs_add_free_space(struct btrfs_block_group_cache *block_group,
- 
- 	spin_lock(&block_group->tree_lock);
- 
--	if (try_merge_free_space(block_group, info))
-+	if (try_merge_free_space(block_group, info, true))
- 		goto link;
- 
- 	/*
-@@ -883,6 +896,7 @@ __btrfs_return_cluster_to_free_space(
- 		node = rb_next(&entry->offset_index);
- 		rb_erase(&entry->offset_index, &cluster->root);
- 		BUG_ON(entry->bitmap);
-+		try_merge_free_space(block_group, entry, false);
- 		tree_insert_offset(&block_group->free_space_offset,
- 				   entry->offset, &entry->offset_index, 0);
- 	}
--- 
-1.7.0.1
+Thanks,
 
+Josef

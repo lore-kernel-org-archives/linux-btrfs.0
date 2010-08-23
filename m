@@ -1,57 +1,97 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH 1/6] btrfs: fix threshold calculation for block groups
-	smaller than 1GB
-Date: Mon, 23 Aug 2010 09:02:25 -0400
-Message-ID: <20100823130224.GA2404@localhost.localdomain>
-References: <4C71CD4B.10606@cn.fujitsu.com> <4C71CD60.5050507@cn.fujitsu.com>
+Subject: Re: [PATCH 2/6] btrfs: add helper function free_bitmap()
+Date: Mon, 23 Aug 2010 09:03:21 -0400
+Message-ID: <20100823130321.GB2404@localhost.localdomain>
+References: <4C71CD4B.10606@cn.fujitsu.com> <4C71CD75.7020206@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: Chris Mason <chris.mason@oracle.com>,
 	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
 	LKML <linux-kernel@vger.kernel.org>
 To: Li Zefan <lizf@cn.fujitsu.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4C71CD60.5050507@cn.fujitsu.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4C71CD75.7020206@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 23, 2010 at 09:22:40AM +0800, Li Zefan wrote:
-> If a block group is smaller than 1GB, the extent entry threadhold
-> calculation will always set the threshold to 0.
+On Mon, Aug 23, 2010 at 09:23:01AM +0800, Li Zefan wrote:
+> Remove some duplicated code.
 > 
-> So as free space gets fragmented, btrfs will switch to use bitmap
-> to manage free space, but then will never switch back to extents
-> due to this bug.
+> This prepares for the next patch.
 > 
 > Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 > ---
->  fs/btrfs/free-space-cache.c |    8 ++++++--
->  1 files changed, 6 insertions(+), 2 deletions(-)
+>  fs/btrfs/free-space-cache.c |   37 ++++++++++++++++---------------------
+>  1 files changed, 16 insertions(+), 21 deletions(-)
 > 
 > diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-> index f488fac..7edbef6 100644
+> index 7edbef6..017fd55 100644
 > --- a/fs/btrfs/free-space-cache.c
 > +++ b/fs/btrfs/free-space-cache.c
-> @@ -263,14 +263,18 @@ static void recalculate_thresholds(struct btrfs_block_group_cache *block_group)
->  	u64 max_bytes;
->  	u64 bitmap_bytes;
->  	u64 extent_bytes;
-> +	u64 size = block_group->key.offset;
+> @@ -422,6 +422,16 @@ static void add_new_bitmap(struct btrfs_block_group_cache *block_group,
+>  	recalculate_thresholds(block_group);
+>  }
 >  
->  	/*
->  	 * The goal is to keep the total amount of memory used per 1gb of space
->  	 * at or below 32k, so we need to adjust how much memory we allow to be
->  	 * used by extent based free space tracking
->  	 */
-> -	max_bytes = MAX_CACHE_BYTES_PER_GIG *
-> -		(div64_u64(block_group->key.offset, 1024 * 1024 * 1024));
-> +	if (size < 1024 * 1024 * 1024)
-> +		max_bytes = MAX_CACHE_BYTES_PER_GIG;
-> +	else
-> +		max_bytes = MAX_CACHE_BYTES_PER_GIG *
-> +			div64_u64(size, 1024 * 1024 * 1024);
+> +static void free_bitmap(struct btrfs_block_group_cache *block_group,
+> +			struct btrfs_free_space *bitmap_info)
+> +{
+> +	unlink_free_space(block_group, bitmap_info);
+> +	kfree(bitmap_info->bitmap);
+> +	kfree(bitmap_info);
+> +	block_group->total_bitmaps--;
+> +	recalculate_thresholds(block_group);
+> +}
+> +
+>  static noinline int remove_from_bitmap(struct btrfs_block_group_cache *block_group,
+>  			      struct btrfs_free_space *bitmap_info,
+>  			      u64 *offset, u64 *bytes)
+> @@ -462,13 +472,8 @@ again:
 >  
->  	/*
->  	 * we want to account for 1 more bitmap than what we have so we can make
+>  	if (*bytes) {
+>  		struct rb_node *next = rb_next(&bitmap_info->offset_index);
+> -		if (!bitmap_info->bytes) {
+> -			unlink_free_space(block_group, bitmap_info);
+> -			kfree(bitmap_info->bitmap);
+> -			kfree(bitmap_info);
+> -			block_group->total_bitmaps--;
+> -			recalculate_thresholds(block_group);
+> -		}
+> +		if (!bitmap_info->bytes)
+> +			free_bitmap(block_group, bitmap_info);
+>  
+>  		/*
+>  		 * no entry after this bitmap, but we still have bytes to
+> @@ -501,13 +506,8 @@ again:
+>  			return -EAGAIN;
+>  
+>  		goto again;
+> -	} else if (!bitmap_info->bytes) {
+> -		unlink_free_space(block_group, bitmap_info);
+> -		kfree(bitmap_info->bitmap);
+> -		kfree(bitmap_info);
+> -		block_group->total_bitmaps--;
+> -		recalculate_thresholds(block_group);
+> -	}
+> +	} else if (!bitmap_info->bytes)
+> +		free_bitmap(block_group, bitmap_info);
+>  
+>  	return 0;
+>  }
+> @@ -936,13 +936,8 @@ u64 btrfs_find_space_for_alloc(struct btrfs_block_group_cache *block_group,
+>  	ret = offset;
+>  	if (entry->bitmap) {
+>  		bitmap_clear_bits(block_group, entry, offset, bytes);
+> -		if (!entry->bytes) {
+> -			unlink_free_space(block_group, entry);
+> -			kfree(entry->bitmap);
+> -			kfree(entry);
+> -			block_group->total_bitmaps--;
+> -			recalculate_thresholds(block_group);
+> -		}
+> +		if (!entry->bytes)
+> +			free_bitmap(block_group, entry);
+>  	} else {
+>  		unlink_free_space(block_group, entry);
+>  		entry->offset += bytes;
 > -- 
 > 1.7.0.1
 > 

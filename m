@@ -1,13 +1,11 @@
-From: Amr El-Sharnoby <a.elsharnoby@exa.com.sa>
+From: "Amr H. El-Sharnoby" <amr.el.sharnoby@gmail.com>
 Subject: du and find is much slower on btrfs than ext4
-Date: Mon, 23 Aug 2010 16:02:14 +0200
-Message-ID: <AANLkTikzPBYZEt_q5HUGUf1LM4ihQkA67ERoQ3ZAo8sr@mail.gmail.com>
-References: <AANLkTintDx=zT7wARJ0UzchamAjfkZ3fcDyR5+-zYCes@mail.gmail.com>
+Date: Mon, 23 Aug 2010 16:03:01 +0200
+Message-ID: <AANLkTin+O_evkoK577eyivnt=Xo1ffMEzX8aamcRw1ep@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTintDx=zT7wARJ0UzchamAjfkZ3fcDyR5+-zYCes@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello,

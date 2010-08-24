@@ -1,67 +1,92 @@
-From: Dan Magenheimer <dan.magenheimer@oracle.com>
-Subject: RE: cleancache followup from LSF10/MM summit
-Date: Tue, 24 Aug 2010 13:42:55 -0700 (PDT)
-Message-ID: <43348bbd-649d-47db-8edd-c5cb08187f19@default>
-References: <66336896-4396-458f-b8a5-51282a925816@default
- 20100824142718.GA24164@balbir.in.ibm.com>
+From: Goffredo Baroncelli <kreijack@gmail.com>
+Subject: Re: Set/change label
+Date: Tue, 24 Aug 2010 23:35:23 +0200
+Message-ID: <201008242335.23429.kreijack@libero.it>
+References: <20100824091841.GC24929@scooter> <201008241839.38446.kreijack@libero.it> <20100824205023.GA3393@scooter>
+Reply-To: kreijack@libero.it
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Christoph Hellwig <hch@infradead.org>,
-        Boaz Harrosh
- <bharrosh@panasas.com>, ngupta@vflare.org,
-        akpm@linux-foundation.org, Chris
- Mason <chris.mason@oracle.com>,
-        viro@zeniv.linux.org.uk, Andreas Dilger
- <andreas.dilger@oracle.com>,
-        tytso@mit.edu, mfasheh@suse.com, Joel Becker
- <joel.becker@oracle.com>,
-        matthew@wil.cx, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-ext4@vger.kernel.org, ocfs2-devel@oss.oracle.com,
-        linux-mm@kvack.org, jeremy@goop.org, JBeulich@novell.com,
-        Kurt Hackel <kurt.hackel@oracle.com>,
-        Dave Mccracken <dave.mccracken@oracle.com>, riel@redhat.com,
-        Konrad Wilk
- <konrad.wilk@oracle.com>, Mel Gorman <mel@csn.ul.ie>,
-        Ying Han
- <yinghan@google.com>, Greg Thelen <gthelen@google.com>,
-        npiggin@kernel.dk
-To: balbir@linux.vnet.ibm.com
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20100824142718.GA24164@balbir.in.ibm.com>
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Cc: linux-btrfs@vger.kernel.org
+To: Felix Blanke <felixblanke@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100824205023.GA3393@scooter>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Balbir --
+On Tuesday, 24 August, 2010, you (Felix Blanke) wrote:
+> Hi,
+> 
+> thanks for your reply.
+> 
+> You mentioned that it should be possible to change the label of an 
+unmounted
+> filesystem, but you didn't mentioned how. :( I can't find a command that 
+does that.
 
-Thanks for reviewing!
 
-> 1. Can't this be done at the MM layer - why the filesystem hooks? Is
-> it to enable faster block devices in the reclaim hierarchy?
+True, I have to admit that my reply was not very clear.
+The patches of which I posted the link, contains the command btrfslabel which 
+is able to change a label.
+Unfortunately the patches were never accepted.
 
-This is explained in FAQ #2 in: http://lkml.org/lkml/2010/6/21/411
-If I misunderstood your question or the FAQ doesn't answer it, please
-let me know.
+If you are interested I can update and repost the patches.
 
-> 2. I don't see a mention of slabcache in your approach, reclaim free
-> pages or freeing potentially free slab pages.
+Regards
+G.Baroncelli
 
-Cleancache works on clean mapped pages that are reclaimed ("evicted")
-due to (guest) memory pressure but later would result in a refault.
-The decision of what pages to reclaim are left entirely to the
-(guest) kernel, and the "backend" (zcache or Xen tmem) dynamically
-decides how many clean evicted pages to retain based on dynamic
-factors that are unknowable to the (guest) kernel (such as compression
-ratios for zcache and available fallow memory for Xen tmem).
+> 
+> Regards,
+> Felix
+> 
+> On 24. August 2010 - 18:39, Goffredo Baroncelli wrote:
+> > Date:	Tue, 24 Aug 2010 18:39:38 +0200
+> > From: Goffredo Baroncelli <kreijack@gmail.com>
+> > To: linux-btrfs@vger.kernel.org
+> > Subject: Re: Set/change label
+> > 
+> > On Tuesday, 24 August, 2010, Felix Blanke wrote:
+> > > Hi,
+> > > 
+> > > is there any way to set/change the label after the filesystem has been 
+> > created?
+> > 
+> > There was a patch to do that. But AFAICT this patch was never merged.
+> > If you are interested look at
+> > 
+> > [Repost] btrfslabel - kernel space
+> > 
+> > https://kerneltrap.org/mailarchive/linux-btrfs/2010/1/4/6683133/thread
+> > 
+> > IIRC the user space utility, in case of a *unmounted* filesystem, is able 
+to 
+> > change a LABEL without patching the kernel.
+> > 
+> > Goffredo
+> > 
+> > > 
+> > > 
+> > > Best regards,
+> > > Felix
+> > > --
+> > > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" 
+in
+> > > the body of a message to majordomo@vger.kernel.org
+> > > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> > > 
+> > 
+> > 
+> > -- 
+> > gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) 
+<kreijack@inwind.it>
+> > Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> ---end quoted text---
+> 
 
-I'm not sure I see how this could apply to slabcache (and
-I couldn't find anything in your OLS paper that refers to it),
-but if you have some ideas, let's discuss (offlist?).
 
-Thanks,
-Dan
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+-- 
+gpg key@ keyserver.linux.it: Goffredo Baroncelli(ghigo) <kreijackATinwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

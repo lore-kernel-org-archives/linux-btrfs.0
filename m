@@ -1,88 +1,46 @@
-From: Julia Lawall <julia@diku.dk>
-Subject: [PATCH 3/5] fs/btrfs: Eliminate memory leak
-Date: Tue, 24 Aug 2010 16:39:12 +0200 (CEST)
-Message-ID: <Pine.LNX.4.64.1008241638560.15172@ask.diku.dk>
+From: Goffredo Baroncelli <kreijack@gmail.com>
+Subject: Re: Set/change label
+Date: Tue, 24 Aug 2010 18:39:38 +0200
+Message-ID: <201008241839.38446.kreijack@libero.it>
+References: <20100824091841.GC24929@scooter>
+Reply-To: kreijack@libero.it
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100824091841.GC24929@scooter>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Julia Lawall <julia@diku.dk>
+On Tuesday, 24 August, 2010, Felix Blanke wrote:
+> Hi,
+> 
+> is there any way to set/change the label after the filesystem has been 
+created?
 
-This code is preceded by a call to btrfs_alloc_path, which allocates some
-memory.  There is some error handling code at the end of the function that
-frees it, that can be taken advantage of with a little ordering adjustment.
+There was a patch to do that. But AFAICT this patch was never merged.
+If you are interested look at
 
-A simplified version of the semantic match that finds this problem is:
-(http://coccinelle.lip6.fr/)
+[Repost] btrfslabel - kernel space
 
-// <smpl>
-@r exists@
-local idexpression x;
-expression E;
-identifier f1;
-iterator I;
-@@
+https://kerneltrap.org/mailarchive/linux-btrfs/2010/1/4/6683133/thread
 
-x = btrfs_alloc_path(...);
-<... when != x
-     when != true (x == NULL || ...)
-     when != if (...) { <+...x...+> }
-     when != I (...) { <+...x...+> }
-(
- x == NULL
-|
- x == E
-|
- x->f1
-)
-...>
-* return ...;
-// </smpl>
+IIRC the user space utility, in case of a *unmounted* filesystem, is able to 
+change a LABEL without patching the kernel.
 
-Signed-off-by: Julia Lawall <julia@diku.dk>
+Goffredo
 
----
- fs/btrfs/inode.c |   17 +++++++++--------
- 1 file changed, 9 insertions(+), 8 deletions(-)
+> 
+> 
+> Best regards,
+> Felix
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index c038644..d38587c 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4438,15 +4438,14 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
- 	BUG_ON(!path);
- 
- 	inode = new_inode(root->fs_info->sb);
--	if (!inode)
--		return ERR_PTR(-ENOMEM);
--
-+	if (!inode) {
-+		ret = -ENOMEM;
-+		goto fail_path;
-+	}
- 	if (dir) {
- 		ret = btrfs_set_inode_index(dir, index);
--		if (ret) {
--			iput(inode);
--			return ERR_PTR(ret);
--		}
-+		if (ret)
-+			goto fail_inode;
- 	}
- 	/*
- 	 * index_cnt is ignored for everything but a dir,
-@@ -4519,8 +4518,10 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
- fail:
- 	if (dir)
- 		BTRFS_I(dir)->index_cnt--;
--	btrfs_free_path(path);
-+fail_inode:
- 	iput(inode);
-+fail_path:
-+	btrfs_free_path(path);
- 	return ERR_PTR(ret);
- }
- 
+
+-- 
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

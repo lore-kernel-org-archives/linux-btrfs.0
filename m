@@ -1,46 +1,40 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Subject: Re: Set/change label
-Date: Tue, 24 Aug 2010 18:39:38 +0200
-Message-ID: <201008241839.38446.kreijack@libero.it>
-References: <20100824091841.GC24929@scooter>
-Reply-To: kreijack@libero.it
+From: David Rientjes <rientjes@google.com>
+Subject: Re: [patch 1/5] mm: add nofail variants of kmalloc kcalloc and
+ kzalloc
+Date: Tue, 24 Aug 2010 13:08:28 -0700 (PDT)
+Message-ID: <alpine.DEB.2.00.1008241307190.21242@chino.kir.corp.google.com>
+References: <alpine.DEB.2.00.1008240340010.18908@chino.kir.corp.google.com> <1282656558.2605.2742.camel@laptop>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100824091841.GC24929@scooter>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+	Neil Brown <neilb@suse.de>, Alasdair G Kergon <agk@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Steven Whitehouse <swhiteho@redhat.com>,
+	Jens Axboe <jaxboe@fusionio.com>, Jan Kara <jack@suse.cz>,
+	Frederic Weisbecker <fweisbec@gmail.com>,
+	linux-raid@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	cluster-devel@redhat.com, linux-ext4@vger.kernel.org,
+	reiserfs-devel@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Peter Zijlstra <peterz@infradead.org>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <1282656558.2605.2742.camel@laptop>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tuesday, 24 August, 2010, Felix Blanke wrote:
-> Hi,
+On Tue, 24 Aug 2010, Peter Zijlstra wrote:
+
+> > These were added as helper functions for documentation and auditability.
+> > No future callers should be added.
 > 
-> is there any way to set/change the label after the filesystem has been 
-created?
-
-There was a patch to do that. But AFAICT this patch was never merged.
-If you are interested look at
-
-[Repost] btrfslabel - kernel space
-
-https://kerneltrap.org/mailarchive/linux-btrfs/2010/1/4/6683133/thread
-
-IIRC the user space utility, in case of a *unmounted* filesystem, is able to 
-change a LABEL without patching the kernel.
-
-Goffredo
-
-> 
-> 
-> Best regards,
-> Felix
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> git grep GFP_NOFAIL isn't auditable enough?
 > 
 
+I'm trying to remove that bit, and __GFP_REPEAT, to simplify and remove 
+several branches from the page allocator.
 
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+> might as well declare these functions depricated if you really want to
+> do this.
+> 
+> FWIW I think mason said he'd fix btrfs to not suck like this 'soon'.
+> 
+
+Great!

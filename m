@@ -1,98 +1,242 @@
-From: David Rientjes <rientjes@google.com>
-Subject: [patch 4/5] btrfs: add nofail variant of set_extent_dirty
-Date: Tue, 24 Aug 2010 03:50:34 -0700 (PDT)
-Message-ID: <alpine.DEB.2.00.1008240348150.19596@chino.kir.corp.google.com>
+From: Jan Kara <jack@suse.cz>
+Subject: Re: [patch 1/5] mm: add nofail variants of kmalloc kcalloc and
+ kzalloc
+Date: Tue, 24 Aug 2010 14:15:51 +0200
+Message-ID: <20100824121549.GB3713@quack.suse.cz>
 References: <alpine.DEB.2.00.1008240340010.18908@chino.kir.corp.google.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+	Neil Brown <neilb@suse.de>, Alasdair G Kergon <agk@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Steven Whitehouse <swhiteho@redhat.com>,
+	Jens Axboe <jaxboe@fusionio.com>, Jan Kara <jack@suse.cz>,
+	Frederic Weisbecker <fweisbec@gmail.com>,
+	linux-raid@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	cluster-devel@redhat.com, linux-ext4@vger.kernel.org,
+	reiserfs-devel@vger.kernel.org, linux-kernel@vger.kernel.org
+To: David Rientjes <rientjes@google.com>
+Return-path: <reiserfs-devel-owner@vger.kernel.org>
 In-Reply-To: <alpine.DEB.2.00.1008240340010.18908@chino.kir.corp.google.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add set_extent_dirty_nofail().  This function is equivalent to
-set_extent_dirty(), except that it will never fail because of allocation
-failure and instead loop forever trying to allocate memory.
+On Tue 24-08-10 03:50:19, David Rientjes wrote:
+> Add kmalloc_nofail(), kcalloc_nofail(), and kzalloc_nofail().  These
+> functions are equivalent to kmalloc(), kcalloc(), and kzalloc(),
+> respectively, except that they will never return NULL and instead loop
+> forever trying to allocate memory.
+> 
+> If the first allocation attempt fails, a warning will be emitted,
+> including a call trace.  Subsequent failures will suppress this warning.
+> 
+> These were added as helper functions for documentation and auditability.
+> No future callers should be added.
+  This looks like a cleaner approach than the previous one. You can add
+Acked-by: Jan Kara <jack@suse.cz>
+  for the JBD part.
 
-If the first allocation attempt fails, a warning will be emitted,
-including a call trace.  Subsequent failures will suppress this warning.
-
-This was added as a helper function for documentation and auditability.
-No future callers should be added.
-
-Signed-off-by: David Rientjes <rientjes@google.com>
----
- fs/btrfs/extent-tree.c |    8 ++++----
- fs/btrfs/extent_io.c   |   19 +++++++++++++++++++
- fs/btrfs/extent_io.h   |    2 ++
- 3 files changed, 25 insertions(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3831,9 +3831,9 @@ static int update_block_group(struct btrfs_trans_handle *trans,
- 			spin_unlock(&cache->lock);
- 			spin_unlock(&cache->space_info->lock);
- 
--			set_extent_dirty(info->pinned_extents,
-+			set_extent_dirty_nofail(info->pinned_extents,
- 					 bytenr, bytenr + num_bytes - 1,
--					 GFP_NOFS | __GFP_NOFAIL);
-+					 GFP_NOFS);
- 		}
- 		btrfs_put_block_group(cache);
- 		total -= num_bytes;
-@@ -3872,8 +3872,8 @@ static int pin_down_extent(struct btrfs_root *root,
- 	spin_unlock(&cache->lock);
- 	spin_unlock(&cache->space_info->lock);
- 
--	set_extent_dirty(root->fs_info->pinned_extents, bytenr,
--			 bytenr + num_bytes - 1, GFP_NOFS | __GFP_NOFAIL);
-+	set_extent_dirty_nofail(root->fs_info->pinned_extents, bytenr,
-+			 bytenr + num_bytes - 1, GFP_NOFS);
- 	return 0;
- }
- 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -940,6 +940,25 @@ int set_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
- 			      NULL, mask);
- }
- 
-+/*
-+ * NOTE: no new callers of this function should be implemented!
-+ * All memory allocations should be failable whenever possible.
-+ */
-+int set_extent_dirty_nofail(struct extent_io_tree *tree, u64 start, u64 end,
-+		     gfp_t mask)
-+{
-+	int ret;
-+
-+	for (;;) {
-+		ret = set_extent_dirty(tree, start, end, mask);
-+		if (ret != -ENOMEM)
-+			return ret;
-+		WARN_ONCE(1, "Out of memory, no fallback implemented "
-+				"(flags=0x%x)\n",
-+				mask);
-+	}
-+}
-+
- int set_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
- 		    int bits, gfp_t mask)
- {
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -197,6 +197,8 @@ int set_extent_new(struct extent_io_tree *tree, u64 start, u64 end,
- 		   gfp_t mask);
- int set_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
- 		     gfp_t mask);
-+int set_extent_dirty_nofail(struct extent_io_tree *tree, u64 start, u64 end,
-+		     gfp_t mask);
- int clear_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
- 		       gfp_t mask);
- int clear_extent_ordered(struct extent_io_tree *tree, u64 start, u64 end,
+								Honza
+> Signed-off-by: David Rientjes <rientjes@google.com>
+> ---
+>  drivers/md/dm-region-hash.c |    2 +-
+>  fs/btrfs/inode.c            |    2 +-
+>  fs/gfs2/log.c               |    2 +-
+>  fs/gfs2/rgrp.c              |   18 ++++---------
+>  fs/jbd/transaction.c        |   11 ++------
+>  fs/reiserfs/journal.c       |    3 +-
+>  include/linux/slab.h        |   55 +++++++++++++++++++++++++++++++++++++++++++
+>  7 files changed, 68 insertions(+), 25 deletions(-)
+> 
+> diff --git a/drivers/md/dm-region-hash.c b/drivers/md/dm-region-hash.c
+> --- a/drivers/md/dm-region-hash.c
+> +++ b/drivers/md/dm-region-hash.c
+> @@ -290,7 +290,7 @@ static struct dm_region *__rh_alloc(struct dm_region_hash *rh, region_t region)
+>  
+>  	nreg = mempool_alloc(rh->region_pool, GFP_ATOMIC);
+>  	if (unlikely(!nreg))
+> -		nreg = kmalloc(sizeof(*nreg), GFP_NOIO | __GFP_NOFAIL);
+> +		nreg = kmalloc_nofail(sizeof(*nreg), GFP_NOIO);
+>  
+>  	nreg->state = rh->log->type->in_sync(rh->log, region, 1) ?
+>  		      DM_RH_CLEAN : DM_RH_NOSYNC;
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -1967,7 +1967,7 @@ void btrfs_add_delayed_iput(struct inode *inode)
+>  	if (atomic_add_unless(&inode->i_count, -1, 1))
+>  		return;
+>  
+> -	delayed = kmalloc(sizeof(*delayed), GFP_NOFS | __GFP_NOFAIL);
+> +	delayed = kmalloc_nofail(sizeof(*delayed), GFP_NOFS);
+>  	delayed->inode = inode;
+>  
+>  	spin_lock(&fs_info->delayed_iput_lock);
+> diff --git a/fs/gfs2/log.c b/fs/gfs2/log.c
+> --- a/fs/gfs2/log.c
+> +++ b/fs/gfs2/log.c
+> @@ -709,7 +709,7 @@ void gfs2_log_flush(struct gfs2_sbd *sdp, struct gfs2_glock *gl)
+>  	}
+>  	trace_gfs2_log_flush(sdp, 1);
+>  
+> -	ai = kzalloc(sizeof(struct gfs2_ail), GFP_NOFS | __GFP_NOFAIL);
+> +	ai = kzalloc_nofail(sizeof(struct gfs2_ail), GFP_NOFS);
+>  	INIT_LIST_HEAD(&ai->ai_ail1_list);
+>  	INIT_LIST_HEAD(&ai->ai_ail2_list);
+>  
+> diff --git a/fs/gfs2/rgrp.c b/fs/gfs2/rgrp.c
+> --- a/fs/gfs2/rgrp.c
+> +++ b/fs/gfs2/rgrp.c
+> @@ -1440,8 +1440,8 @@ static struct gfs2_rgrpd *rgblk_free(struct gfs2_sbd *sdp, u64 bstart,
+>  		rgrp_blk++;
+>  
+>  		if (!bi->bi_clone) {
+> -			bi->bi_clone = kmalloc(bi->bi_bh->b_size,
+> -					       GFP_NOFS | __GFP_NOFAIL);
+> +			bi->bi_clone = kmalloc_nofail(bi->bi_bh->b_size,
+> +					       GFP_NOFS);
+>  			memcpy(bi->bi_clone + bi->bi_offset,
+>  			       bi->bi_bh->b_data + bi->bi_offset,
+>  			       bi->bi_len);
+> @@ -1759,9 +1759,6 @@ fail:
+>   * @block: the block
+>   *
+>   * Figure out what RG a block belongs to and add that RG to the list
+> - *
+> - * FIXME: Don't use NOFAIL
+> - *
+>   */
+>  
+>  void gfs2_rlist_add(struct gfs2_sbd *sdp, struct gfs2_rgrp_list *rlist,
+> @@ -1789,8 +1786,8 @@ void gfs2_rlist_add(struct gfs2_sbd *sdp, struct gfs2_rgrp_list *rlist,
+>  	if (rlist->rl_rgrps == rlist->rl_space) {
+>  		new_space = rlist->rl_space + 10;
+>  
+> -		tmp = kcalloc(new_space, sizeof(struct gfs2_rgrpd *),
+> -			      GFP_NOFS | __GFP_NOFAIL);
+> +		tmp = kcalloc_nofail(new_space, sizeof(struct gfs2_rgrpd *),
+> +			      GFP_NOFS);
+>  
+>  		if (rlist->rl_rgd) {
+>  			memcpy(tmp, rlist->rl_rgd,
+> @@ -1811,17 +1808,14 @@ void gfs2_rlist_add(struct gfs2_sbd *sdp, struct gfs2_rgrp_list *rlist,
+>   * @rlist: the list of resource groups
+>   * @state: the lock state to acquire the RG lock in
+>   * @flags: the modifier flags for the holder structures
+> - *
+> - * FIXME: Don't use NOFAIL
+> - *
+>   */
+>  
+>  void gfs2_rlist_alloc(struct gfs2_rgrp_list *rlist, unsigned int state)
+>  {
+>  	unsigned int x;
+>  
+> -	rlist->rl_ghs = kcalloc(rlist->rl_rgrps, sizeof(struct gfs2_holder),
+> -				GFP_NOFS | __GFP_NOFAIL);
+> +	rlist->rl_ghs = kcalloc_nofail(rlist->rl_rgrps,
+> +				sizeof(struct gfs2_holder), GFP_NOFS);
+>  	for (x = 0; x < rlist->rl_rgrps; x++)
+>  		gfs2_holder_init(rlist->rl_rgd[x]->rd_gl,
+>  				state, 0,
+> diff --git a/fs/jbd/transaction.c b/fs/jbd/transaction.c
+> --- a/fs/jbd/transaction.c
+> +++ b/fs/jbd/transaction.c
+> @@ -98,14 +98,9 @@ static int start_this_handle(journal_t *journal, handle_t *handle)
+>  	}
+>  
+>  alloc_transaction:
+> -	if (!journal->j_running_transaction) {
+> -		new_transaction = kzalloc(sizeof(*new_transaction),
+> -						GFP_NOFS|__GFP_NOFAIL);
+> -		if (!new_transaction) {
+> -			ret = -ENOMEM;
+> -			goto out;
+> -		}
+> -	}
+> +	if (!journal->j_running_transaction)
+> +		new_transaction = kzalloc_nofail(sizeof(*new_transaction),
+> +						GFP_NOFS);
+>  
+>  	jbd_debug(3, "New handle %p going live.\n", handle);
+>  
+> diff --git a/fs/reiserfs/journal.c b/fs/reiserfs/journal.c
+> --- a/fs/reiserfs/journal.c
+> +++ b/fs/reiserfs/journal.c
+> @@ -2593,8 +2593,7 @@ static int journal_read(struct super_block *sb)
+>  static struct reiserfs_journal_list *alloc_journal_list(struct super_block *s)
+>  {
+>  	struct reiserfs_journal_list *jl;
+> -	jl = kzalloc(sizeof(struct reiserfs_journal_list),
+> -		     GFP_NOFS | __GFP_NOFAIL);
+> +	jl = kzalloc_nofail(sizeof(struct reiserfs_journal_list), GFP_NOFS);
+>  	INIT_LIST_HEAD(&jl->j_list);
+>  	INIT_LIST_HEAD(&jl->j_working_list);
+>  	INIT_LIST_HEAD(&jl->j_tail_bh_list);
+> diff --git a/include/linux/slab.h b/include/linux/slab.h
+> --- a/include/linux/slab.h
+> +++ b/include/linux/slab.h
+> @@ -334,6 +334,61 @@ static inline void *kzalloc_node(size_t size, gfp_t flags, int node)
+>  	return kmalloc_node(size, flags | __GFP_ZERO, node);
+>  }
+>  
+> +/**
+> + * kmalloc_nofail - infinitely loop until kmalloc() succeeds.
+> + * @size: how many bytes of memory are required.
+> + * @flags: the type of memory to allocate (see kmalloc).
+> + *
+> + * NOTE: no new callers of this function should be implemented!
+> + * All memory allocations should be failable whenever possible.
+> + */
+> +static inline void *kmalloc_nofail(size_t size, gfp_t flags)
+> +{
+> +	void *ret;
+> +
+> +	for (;;) {
+> +		ret = kmalloc(size, flags);
+> +		if (ret)
+> +			return ret;
+> +		WARN_ONCE(1, "Out of memory, no fallback implemented "
+> +				"(size=%lu flags=0x%x)\n",
+> +				size, flags);
+> +	}
+> +}
+> +
+> +/**
+> + * kcalloc_nofail - infinitely loop until kcalloc() succeeds.
+> + * @n: number of elements.
+> + * @size: element size.
+> + * @flags: the type of memory to allocate (see kcalloc).
+> + *
+> + * NOTE: no new callers of this function should be implemented!
+> + * All memory allocations should be failable whenever possible.
+> + */
+> +static inline void *kcalloc_nofail(size_t n, size_t size, gfp_t flags)
+> +{
+> +	void *ret;
+> +
+> +	for (;;) {
+> +		ret = kcalloc(n, size, flags);
+> +		if (ret)
+> +			return ret;
+> +		WARN_ONCE(1, "Out of memory, no fallback implemented "
+> +				"(n=%lu size=%lu flags=0x%x)\n",
+> +				n, size, flags);
+> +	}
+> +}
+> +
+> +/**
+> + * kzalloc_nofail - infinitely loop until kzalloc() succeeds.
+> + * @size: how many bytes of memory are required.
+> + * @flags: the type of memory to allocate (see kzalloc).
+> + */
+> +static inline void *kzalloc_nofail(size_t size, gfp_t flags)
+> +{
+> +	return kmalloc_nofail(size, flags | __GFP_ZERO);
+> +}
+> +
+>  void __init kmem_cache_init_late(void);
+>  
+>  #endif	/* _LINUX_SLAB_H */
+-- 
+Jan Kara <jack@suse.cz>
+SUSE Labs, CR

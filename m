@@ -1,20 +1,39 @@
-From: Julia Lawall <julia@diku.dk>
-Subject: Re: [PATCH 3/5] fs/btrfs: Eliminate memory leak
-Date: Wed, 25 Aug 2010 23:57:24 +0200 (CEST)
-Message-ID: <Pine.LNX.4.64.1008252357120.4620@ask.diku.dk>
-References: <1282776100-21671-1-git-send-email-julia@diku.dk>
- <1282776100-21671-4-git-send-email-julia@diku.dk>
+From: David Rientjes <rientjes@google.com>
+Subject: Re: [patch 1/5] mm: add nofail variants of kmalloc kcalloc and
+ kzalloc
+Date: Wed, 25 Aug 2010 16:05:47 -0700 (PDT)
+Message-ID: <alpine.DEB.2.00.1008251604540.31521@chino.kir.corp.google.com>
+References: <alpine.DEB.2.00.1008240340010.18908@chino.kir.corp.google.com> <1282656558.2605.2742.camel@laptop> <4C73CA24.3060707@fusionio.com> <alpine.DEB.2.00.1008241309170.21242@chino.kir.corp.google.com> <20100825112433.GB4453@thunk.org>
+ <1282736132.2605.3563.camel@laptop> <20100825115709.GD4453@thunk.org> <1282740516.2605.3644.camel@laptop> <20100825132417.GQ31488@dastard> <1282743342.2605.3707.camel@laptop> <alpine.DEB.2.00.1008251347550.16484@chino.kir.corp.google.com>
+ <alpine.DEB.2.00.1008251604120.24931@router.home> <alpine.DEB.2.00.1008251418590.20253@chino.kir.corp.google.com> <alpine.DEB.2.00.1008251630270.25660@router.home>
 Mime-Version: 1.0
 Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1282776100-21671-4-git-send-email-julia@diku.dk>
+Cc: Peter Zijlstra <peterz@infradead.org>,
+	Dave Chinner <david@fromorbit.com>, "Ted Ts'o" <tytso@mit.edu>,
+	Jens Axboe <jaxboe@fusionio.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Neil Brown <neilb@suse.de>, Alasdair G Kergon <agk@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Steven Whitehouse <swhiteho@redhat.com>,
+	Jan Kara <jack@suse.cz>,
+	Frederic Weisbecker <fweisbec@gmail.com>,
+	"linux-raid@vger.kernel.org" <linux-raid@vger.kernel.org>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"cluster-devel@redhat.com" <cluster-devel@redhat.com>,
+	"linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
+	"reiserfs-devel@vger.kernel.org" <reiserfs-devel@vger.kernel.org>,
+	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: Christoph Lameter <cl@linux.com>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <alpine.DEB.2.00.1008251630270.25660@router.home>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+On Wed, 25 Aug 2010, Christoph Lameter wrote:
 
-I'm really sorry to have spammed your mailbox with my send-email
-experiments...
+> If the higher order fails in slub then an order 0 alloc is attempted
+> without __GFP_NORETRY. In both cases the nofail behavior of the page
+> allocator determines the outcode.
+> 
 
-julia
+Right, I thought you said the slab layer passes __GFP_NOFAIL when there's 
+no objects available.

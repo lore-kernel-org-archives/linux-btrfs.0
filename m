@@ -1,118 +1,98 @@
-From: Felix Blanke <felixblanke@gmail.com>
-Subject: Re: Set/change label
-Date: Tue, 24 Aug 2010 23:57:57 +0200
-Message-ID: <20100824215757.GB3393@scooter>
-References: <20100824091841.GC24929@scooter>
- <201008241839.38446.kreijack@libero.it>
- <20100824205023.GA3393@scooter>
- <201008242335.23429.kreijack@libero.it>
+From: Ted Ts'o <tytso@mit.edu>
+Subject: Re: [patch 1/5] mm: add nofail variants of kmalloc kcalloc and
+ kzalloc
+Date: Wed, 25 Aug 2010 07:24:33 -0400
+Message-ID: <20100825112433.GB4453@thunk.org>
+References: <alpine.DEB.2.00.1008240340010.18908@chino.kir.corp.google.com>
+ <1282656558.2605.2742.camel@laptop>
+ <4C73CA24.3060707@fusionio.com>
+ <alpine.DEB.2.00.1008241309170.21242@chino.kir.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: kreijack@libero.it
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201008242335.23429.kreijack@libero.it>
+Cc: Jens Axboe <jaxboe@fusionio.com>,
+	Peter Zijlstra <peterz@infradead.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Neil Brown <neilb@suse.de>, Alasdair G Kergon <agk@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Steven Whitehouse <swhiteho@redhat.com>,
+	Jan Kara <jack@suse.cz>,
+	Frederic Weisbecker <fweisbec@gmail.com>,
+	"linux-raid@vger.kernel.org" <linux-raid@vger.kernel.org>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"cluster-devel@redhat.com" <cluster-devel@redhat.com>,
+	"linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
+	"reiserfs-devel@vger.kernel.org" <reiserfs-devel@vger.kernel.org>,
+	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: David Rientjes <rientjes@google.com>
+Return-path: <reiserfs-devel-owner@vger.kernel.org>
+In-Reply-To: <alpine.DEB.2.00.1008241309170.21242@chino.kir.corp.google.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-
-ah ok :) I thought there is a way without the patch to change the label of unmounted
-fs.
-
-I am interested! If it is not to mutch work for you it would be great to have that
-feature.
-It's kind of strange that it is not possible to do that with the default btrfs
-utilities, because it's such an elementary thing.
-
-Thanks again for your help!
-
-
-Regards,
-Felix
-
-
-On 24. August 2010 - 23:35, Goffredo Baroncelli wrote:
-> Date: Tue, 24 Aug 2010 23:35:23 +0200
-> From: Goffredo Baroncelli <kreijack@gmail.com>
-> To: Felix Blanke <felixblanke@gmail.com>
-> Cc: linux-btrfs@vger.kernel.org
-> Subject: Re: Set/change label
+On Tue, Aug 24, 2010 at 01:11:26PM -0700, David Rientjes wrote:
+> On Tue, 24 Aug 2010, Jens Axboe wrote:
 > 
-> On Tuesday, 24 August, 2010, you (Felix Blanke) wrote:
-> > Hi,
-> > 
-> > thanks for your reply.
-> > 
-> > You mentioned that it should be possible to change the label of an 
-> unmounted
-> > filesystem, but you didn't mentioned how. :( I can't find a command that 
-> does that.
-> 
-> 
-> True, I have to admit that my reply was not very clear.
-> The patches of which I posted the link, contains the command btrfslabel which 
-> is able to change a label.
-> Unfortunately the patches were never accepted.
-> 
-> If you are interested I can update and repost the patches.
-> 
-> Regards
-> G.Baroncelli
-> 
-> > 
-> > Regards,
-> > Felix
-> > 
-> > On 24. August 2010 - 18:39, Goffredo Baroncelli wrote:
-> > > Date:	Tue, 24 Aug 2010 18:39:38 +0200
-> > > From: Goffredo Baroncelli <kreijack@gmail.com>
-> > > To: linux-btrfs@vger.kernel.org
-> > > Subject: Re: Set/change label
-> > > 
-> > > On Tuesday, 24 August, 2010, Felix Blanke wrote:
-> > > > Hi,
-> > > > 
-> > > > is there any way to set/change the label after the filesystem has been 
-> > > created?
-> > > 
-> > > There was a patch to do that. But AFAICT this patch was never merged.
-> > > If you are interested look at
-> > > 
-> > > [Repost] btrfslabel - kernel space
-> > > 
-> > > https://kerneltrap.org/mailarchive/linux-btrfs/2010/1/4/6683133/thread
-> > > 
-> > > IIRC the user space utility, in case of a *unmounted* filesystem, is able 
-> to 
-> > > change a LABEL without patching the kernel.
-> > > 
-> > > Goffredo
-> > > 
-> > > > 
-> > > > 
-> > > > Best regards,
-> > > > Felix
-> > > > --
-> > > > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" 
-> in
-> > > > the body of a message to majordomo@vger.kernel.org
-> > > > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > > > 
-> > > 
-> > > 
-> > > -- 
-> > > gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) 
-> <kreijack@inwind.it>
-> > > Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
-> > > --
-> > > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > > the body of a message to majordomo@vger.kernel.org
-> > > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > ---end quoted text---
+> > Should be possible to warn at build time for anyone using __GFP_NOFAIL
+> > without wrapping it in a function.
 > > 
 > 
-> 
-> -- 
-> gpg key@ keyserver.linux.it: Goffredo Baroncelli(ghigo) <kreijackATinwind.it>
-> Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
----end quoted text---
+> We could make this __deprecated functions as Peter suggested if you think 
+> build time warnings for existing users would be helpful.
+
+Let me take a few steps backwards and look at the problem from a
+somewhat higher level.
+
+Part of the problem is that we have a few places in the kernel where
+failure is really not an option --- or rather, if we're going to fail
+while we're in the middle of doing a commit, our choices really are
+(a) retry the loop in the jbd layer (which Andrew really doesn't
+like), (b) keep our own private cache of free memory so we don't fail
+and/or loop, (c) fail the file system and mark it read-only, or (d)
+panic.
+
+There are other places where we can fail safely (for example, in jbd's
+start_this_handle, although that just pushes the layer up the stack,
+and ultimately, to userspace where most userspace programs don't
+really expect ENOMEM to get returned by a random disk write --- how
+much do _you_ trust a random GNOME or KDE developer to do correct
+error checking and do something sane at the application?)
+
+So we can mark the retry loop helper function as deprecated, and that
+will make some of these cases go away, but ultimately if we're going
+to fail the memory allocation, something bad is going to happen, and
+the only question is whether we want to have something bad happen by
+looping in the memory allocator, or to force the file system to
+panic/oops the system, or have random application die and/or lose user
+data because they don't expect write() to return ENOMEM.
+
+So at some level it would be nice if we had a few different levels of
+"we *really* need this memory".  Level 0 might be, "if we can't get
+it, no biggie, we'll figure out some other way around it.  I doubt
+there is much at level 0, but in theory, we could have some good
+citizens that fall in that camp and who simply will bypass some
+optimization if they can't get the memory.  Level 1 might be, if you
+can't get the memory, we will propagate a failure up to userspace, but
+it's probably a relatively "safe" place to fail (i.e., when the user
+is opening a file).  Level 2 might be, "if you can't get the memory,
+we will propgate a failure up to userspace, but it's at a space where
+most applications are lazy f*ckers, and this may lead to serious
+application errors" (example: close(2), and this is a file system that
+only pushes the file to the server at close time, e.g. AFS).  Level 3
+might be, "if you can't get the memory, I'm going to fail the file
+system, or some other global subsystem, that will probably result in
+the system crashing or needing to be rebooted".
+
+We can ignore this problem and pretend it doesn't exist at the memory
+allocator level, but that means the callers are going to be doing
+their own thing to try to avoid having really bad things happening at
+really-low-memory occasions.  And this may mean looping, whether we
+mark the function as deprecated or not.
+
+This is becoming even more of an issue now given that with
+containerization, we have jokers who are forcing tasks to run in very
+small memory containers, which means that failures can happen far more
+frequently --- and in some cases, just because the process running the
+task happens to be in an extremely constrained memory cgroup, doesn't
+mean that failing the entire system is really such a great idea.  Or
+maybe that means memory cgroups are kinda busted.  :-)
+
+      	   	 		    	  	   - Ted

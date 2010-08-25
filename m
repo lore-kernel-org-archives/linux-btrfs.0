@@ -1,15 +1,10 @@
-From: Peter Zijlstra <peterz@infradead.org>
-Subject: Re: [patch 1/5] mm: add nofail variants of kmalloc kcalloc and
- kzalloc
-Date: Wed, 25 Aug 2010 14:52:58 +0200
-Message-ID: <1282740778.2605.3652.camel@laptop>
-References: <alpine.DEB.2.00.1008240340010.18908@chino.kir.corp.google.com>
-	 <1282656558.2605.2742.camel@laptop> <4C73CA24.3060707@fusionio.com>
-	 <alpine.DEB.2.00.1008241309170.21242@chino.kir.corp.google.com>
-	 <20100825112433.GB4453@thunk.org> <1282736132.2605.3563.camel@laptop>
-	 <20100825115709.GD4453@thunk.org>  <1282740516.2605.3644.camel@laptop>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+From: Theodore Tso <tytso@MIT.EDU>
+Subject: Re: [patch 1/5] mm: add nofail variants of kmalloc kcalloc and kzalloc
+Date: Wed, 25 Aug 2010 09:20:37 -0400
+Message-ID: <E25A6DCB-3188-4CF9-9DC4-631192B2F0E2@mit.edu>
+References: <alpine.DEB.2.00.1008240340010.18908@chino.kir.corp.google.com> <1282656558.2605.2742.camel@laptop> <4C73CA24.3060707@fusionio.com> <alpine.DEB.2.00.1008241309170.21242@chino.kir.corp.google.com> <20100825112433.GB4453@thunk.org> <1282736132.2605.3563.camel@laptop> <20100825115709.GD4453@thunk.org>  <1282740516.2605.3644.camel@laptop> <1282740778.2605.3652.camel@laptop>
+Mime-Version: 1.0 (Apple Message framework v1081)
+Content-Type: text/plain; charset=us-ascii
 Cc: David Rientjes <rientjes@google.com>,
 	Jens Axboe <jaxboe@fusionio.com>,
 	Andrew Morton <akpm@linux-foundation.org>,
@@ -24,28 +19,23 @@ Cc: David Rientjes <rientjes@google.com>,
 	"linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
 	"reiserfs-devel@vger.kernel.org" <reiserfs-devel@vger.kernel.org>,
 	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-To: Ted Ts'o <tytso@mit.edu>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1282740516.2605.3644.camel@laptop>
+To: Peter Zijlstra <peterz@infradead.org>
+Return-path: <reiserfs-devel-owner@vger.kernel.org>
+In-Reply-To: <1282740778.2605.3652.camel@laptop>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2010-08-25 at 14:48 +0200, Peter Zijlstra wrote:
 
-> > > On Wed, 2010-08-25 at 07:24 -0400, Ted Ts'o wrote:
+On Aug 25, 2010, at 8:52 AM, Peter Zijlstra wrote:
+> Also, there's a good reason for disliking (a), its a deadlock scenario,
+> suppose we need to write out data to get free pages, but the writing out
+> is blocked on requiring free pages.
+> 
+> There's really nothing the page allocator can do to help you there, its
+> a situation you have to avoid getting into.
 
-> > > > (a) retry the loop in the jbd layer (which Andrew really doesn't
-> > > > like), (b) keep our own private cache of free memory so we don't fail
-> > > > and/or loop, 
+Well, if all of these users start having their own private pools of emergency memory, I'm not sure that's such a great idea either.
 
-> Well (b) sounds a lot saner than either of those. Simply revert to a
-> state that is sub-optimal but has bounded memory use and reserve that
-> memory up-front. That way you can always get out of a tight memory spot.
+And in some cases, there *is* extra memory.  For example, if the reason why the page allocator failed is because there isn't enough memory in the current process's cgroup, maybe it's important enough that the kernel code might decide to say, "violate the cgroup constraints --- it's more important that we not bring down the entire system" than to honor whatever yahoo decided that a particular cgroup has been set down to something ridiculous like 512mb, when there's plenty of free physical memory --- but not in that cgroup.
 
-Also, there's a good reason for disliking (a), its a deadlock scenario,
-suppose we need to write out data to get free pages, but the writing out
-is blocked on requiring free pages.
-
-There's really nothing the page allocator can do to help you there, its
-a situation you have to avoid getting into.
-
+-- Ted
 

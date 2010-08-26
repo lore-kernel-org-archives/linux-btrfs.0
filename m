@@ -1,62 +1,43 @@
-From: Ted Ts'o <tytso@mit.edu>
-Subject: Re: [patch 1/5] mm: add nofail variants of kmalloc kcalloc and
- kzalloc
-Date: Wed, 25 Aug 2010 21:48:47 -0400
-Message-ID: <20100826014847.GQ4453@thunk.org>
-References: <1282740778.2605.3652.camel@laptop>
- <E25A6DCB-3188-4CF9-9DC4-631192B2F0E2@mit.edu>
- <1282743090.2605.3696.camel@laptop>
- <alpine.DEB.2.00.1008251340420.16484@chino.kir.corp.google.com>
- <1282769729.1975.96.camel@laptop>
- <alpine.DEB.2.00.1008251406260.20253@chino.kir.corp.google.com>
- <1282771677.1975.138.camel@laptop>
- <alpine.DEB.2.00.1008251606450.31521@chino.kir.corp.google.com>
- <20100826001901.GL4453@thunk.org>
- <alpine.DEB.2.00.1008251724360.25783@chino.kir.corp.google.com>
+From: Shaohua Li <shaohua.li@intel.com>
+Subject: Re: [RFC v2 PATCH 0/6] Btrfs: Add hot data relocation functionality
+Date: Thu, 26 Aug 2010 10:13:43 +0800
+Message-ID: <20100826021343.GA452@sli10-conroe.sh.intel.com>
+References: <1281651726-23501-1-git-send-email-bchociej@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Peter Zijlstra <peterz@infradead.org>,
-	Jens Axboe <jaxboe@fusionio.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Neil Brown <neilb@suse.de>, Alasdair G Kergon <agk@redhat.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Steven Whitehouse <swhiteho@redhat.com>,
-	Jan Kara <jack@suse.cz>,
-	Frederic Weisbecker <fweisbec@gmail.com>,
-	"linux-raid@vger.kernel.org" <linux-raid@vger.kernel.org>,
+Cc: "chris.mason@oracle.com" <chris.mason@oracle.com>,
 	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	"cluster-devel@redhat.com" <cluster-devel@redhat.com>,
-	"linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
-	"reiserfs-devel@vger.kernel.org" <reiserfs-devel@vger.kernel.org>,
-	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-To: David Rientjes <rientjes@google.com>
+	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+	"cmm@us.ibm.com" <cmm@us.ibm.com>,
+	"bcchocie@us.ibm.com" <bcchocie@us.ibm.com>,
+	"mrlupfer@us.ibm.com" <mrlupfer@us.ibm.com>,
+	"crscott@us.ibm.com" <crscott@us.ibm.com>,
+	"mlupfer@gmail.com" <mlupfer@gmail.com>,
+	"conscott@vt.edu" <conscott@vt.edu>
+To: "bchociej@gmail.com" <bchociej@gmail.com>
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <alpine.DEB.2.00.1008251724360.25783@chino.kir.corp.google.com>
+In-Reply-To: <1281651726-23501-1-git-send-email-bchociej@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 25, 2010 at 05:30:42PM -0700, David Rientjes wrote:
+On Fri, Aug 13, 2010 at 06:22:00AM +0800, bchociej@gmail.com wrote:
 > 
-> We certainly hope that nobody will reimplement the same function without 
-> the __deprecated warning, especially for order < PAGE_ALLOC_COSTLY_ORDER 
-> where there's no looping at a higher level.  So perhaps the best 
-> alternative is to implement the same _nofail() functions but do a 
-> WARN_ON(get_order(size) > PAGE_ALLOC_COSTLY_ORDER) instead?
+> - Hooks in existing Btrfs functions to track data access frequency
+>   (btrfs_direct_IO, btrfs_readpages, and extent_write_cache_pages)
+> 
+> - New rbtrees for tracking access frequency of inodes and sub-file
+>   ranges (hotdata_map.c)
+> 
+> - A hash list for indexing data by its temperature (hotdata_hash.c)
+> 
+> - A debugfs interface for dumping data from the rbtrees (debugfs.c)
+> 
+> - A background kthread for relocating data to faster media based on
+>   temperature
+Hi,
+I'm wondering if the temperature info can be exported to userspace, and
+let a daemon to do the relocation (by ioctl). A userspace daemon is more
+flexible.
 
-Yeah, that sounds better.
-
-> I think it's really sad that the caller can't know what the upper bounds 
-> of its memory requirement are ahead of time or at least be able to 
-> implement a memory freeing function when kmalloc() returns NULL.
-
-Oh, we can determine an upper bound.  You might just not like it.
-Actually ext3/ext4 shouldn't be as bad as XFS, which Dave estimated to
-be around 400k for a transaction.  My guess is that the worst case for
-ext3/ext4 is probably around 256k or so; like XFS, most of the time,
-it would be a lot less.  (At least, if data != journalled; if we are
-doing data journalling and every single data block begins with
-0xc03b3998U, we'll need to allocate a 4k page for every single data
-block written.)  We could dynamically calculate an upper bound if we
-had to.  Of course, if ext3/ext4 is attached to a network block
-device, then it could get a lot worse than 256k, of course.
-
-	      	      	      	    	- Ted
+Thanks,
+Shaohua

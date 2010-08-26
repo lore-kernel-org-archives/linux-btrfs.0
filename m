@@ -1,33 +1,33 @@
 From: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
 Subject: Re: 2.6.36-rc1 btrfs still unstable
-Date: Fri, 27 Aug 2010 00:45:51 +0200 (CEST)
-Message-ID: <31081717.109.1282862751167.JavaMail.root@zimbra>
-References: <201008170025.47510.diegocg@gmail.com>
+Date: Fri, 27 Aug 2010 00:48:00 +0200 (CEST)
+Message-ID: <12380554.111.1282862880731.JavaMail.root@zimbra>
+References: <20100826085801.GQ1344@jeru.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=utf-8
-Cc: "Morten P.D. Stevens" <mstevens@imt-systems.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs@vger.kernel.org, Chris Ball <cjb@laptop.org>
-To: diegocg@gmail.com
+Cc: linux-btrfs@vger.kernel.org
+To: nicollet@jeru.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201008170025.47510.diegocg@gmail.com>
+In-Reply-To: <20100826085801.GQ1344@jeru.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> On Lunes, 16 de Agosto de 2010 17:45:29 Chris Ball escribi=C3=B3:
-> >    Note that Btrfs does not yet have a fsck tool that can fix
-> >    errors.
-> >    While Btrfs is stable on a stable machine, it is currently
-> >    possible
-> >    to corrupt a filesystem irrecoverably if your machine crashes or
-> >    loses power. This will be fixed when the fsck tool is ready.
+> Le 25 ao=C3=BBt 2010 =C3=A0 18:57, Johannes Hirte a =C3=A9crit:
+> > > the other big question is:
+> > > Is btrfs with 2.6.36 really rockstable and ready to use in
+> > > productive environments?
+> >
+> > I don't think so. There is at least one checksum bug and ENOSPC
+> > problems are also still present.
 >=20
-> But doesn't this happen only with cheap disks that don't honour
-> barriers
-> correctly?
+> I am planning to put 2 dedicated web hosting servers in production
+> (backuped every day), with 2.6.34.5 vanilla kernel.
+>=20
+> I also use btrfs on a 2.6.34 kernel on the backup server (rsync) for
+> some time.
 
-Even with cheap drives, a filesystem shouldn't die. With stuff like ZFS=
-, you can use all sorts of crap and still live with it. Btrfs should fo=
-llow that track.
+IMHO using btrfs in production is like playing Russian roulette - it mi=
+ght work and can be benifitable, but then, there's another side of the =
+coin...
 
 Vennlige hilsener / Best regards
 

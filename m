@@ -1,77 +1,40 @@
-From: Andreas Philipp <philipp.andreas@gmail.com>
-Subject: Re: machine gets unresponsive during btrfs balance
-Date: Thu, 26 Aug 2010 15:39:25 +0200
-Message-ID: <4C766E8D.7000103@gmail.com>
-References: <4C639F42.3050206@gmail.com> <AANLkTi=B2dr45WmeJop_Te5t55d0trfHP+ZKLE3tBxTg@mail.gmail.com> <4C65C32B.1060109@gmail.com> <201008261527.54056.johannes.hirte@fem.tu-ilmenau.de>
+From: Christoph Lameter <cl@linux.com>
+Subject: Re: [patch 1/5] mm: add nofail variants of kmalloc kcalloc and
+ kzalloc
+Date: Thu, 26 Aug 2010 09:16:19 -0500 (CDT)
+Message-ID: <alpine.DEB.2.00.1008260914420.15852@router.home>
+References: <alpine.DEB.2.00.1008240340010.18908@chino.kir.corp.google.com> <1282656558.2605.2742.camel@laptop> <4C73CA24.3060707@fusionio.com> <alpine.DEB.2.00.1008241309170.21242@chino.kir.corp.google.com> <20100825112433.GB4453@thunk.org>
+ <1282736132.2605.3563.camel@laptop> <20100825115709.GD4453@thunk.org> <1282740516.2605.3644.camel@laptop> <20100825132417.GQ31488@dastard> <1282743342.2605.3707.camel@laptop> <alpine.DEB.2.00.1008251347550.16484@chino.kir.corp.google.com>
+ <alpine.DEB.2.00.1008251604120.24931@router.home> <alpine.DEB.2.00.1008251418590.20253@chino.kir.corp.google.com> <alpine.DEB.2.00.1008251630270.25660@router.home> <alpine.DEB.2.00.1008251604540.31521@chino.kir.corp.google.com> <alpine.DEB.2.00.1008252028030.32421@router.home>
+ <alpine.DEB.2.00.1008252010260.10986@chino.kir.corp.google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-15
-Cc: "Yan, Zheng " <yanzheng@21cn.com>, linux-btrfs@vger.kernel.org
-To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201008261527.54056.johannes.hirte@fem.tu-ilmenau.de>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: Peter Zijlstra <peterz@infradead.org>,
+	Dave Chinner <david@fromorbit.com>, Ted Ts'o <tytso@mit.edu>,
+	Jens Axboe <jaxboe@fusionio.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Neil Brown <neilb@suse.de>, Alasdair G Kergon <agk@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Steven Whitehouse <swhiteho@redhat.com>,
+	Jan Kara <jack@suse.cz>,
+	Frederic Weisbecker <fweisbec@gmail.com>,
+	"linux-raid@vger.kernel.org" <linux-raid@vger.kernel.org>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"cluster-devel@redhat.com" <cluster-devel@redhat.com>,
+	"linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
+	"reiserfs-devel@vger.kernel.org" <reiserfs-devel@vger.kernel.org>,
+	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: David Rientjes <rientjes@google.com>
+Return-path: <reiserfs-devel-owner@vger.kernel.org>
+In-Reply-To: <alpine.DEB.2.00.1008252010260.10986@chino.kir.corp.google.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+On Wed, 25 Aug 2010, David Rientjes wrote:
 
-On 26.08.2010 15:27, Johannes Hirte wrote:
-> On Saturday 14 August 2010 00:11:55 Andreas Philipp wrote:
->> On 12.08.2010 10:04, Yan, Zheng wrote:
->>> On Thu, Aug 12, 2010 at 3:14 PM, Andreas Philipp
->>> <philipp.andreas@gmail.com> wrote:
->>>   
->>>> Hi,
->>>>
->>>> I am using a btrfs filesystem created with raid0 for data and metadata
->>>> for (temporary) storage of tv recordings from my vdr. The filesystem was
->>>> created under kernel version 2.6.34. An initial btrfs balance command
->>>> succeeded. Since I upgraded to 2.6.35-rcX and 2.6.35 btrfs balance no
->>>> longer finishes but puts the machine in some unresponsive state.
->>>> Unfortunately, I do not see any kernel oops or other debug information
->>>> because even the display freezes. The last thing that happens are that
->>>> those two lines are written to /var/log/messages:
->>>> Aug 11 21:42:23 thor kernel: btrfs: found 62911 extents
->>>> Aug 11 21:42:24 thor kernel: btrfs: relocating block group 1723913469952
->>>> flags 9
->>>> After that the machine becomes immediately unresponsive.
->>>>
->>>> As I did not see anything that might be related to my problem in the
->>>> changelog for 2.6.35.1 I did not try again with this version.
->>>>
->>>>     
->>> Do you have more than one machines? would you please setup netconsole
->>> to see what happen.
->>>   
->> I have reproduced the error on v2.6.35.1 and recorded all kernel output
->> with netconsole. The interesting point is that this time the machine did
->> not crash but the btrfs balance segfaulted at exact the same position
->> where the previous crashes had happened.
-> 
-> Looks like another manifestation of the csum bug. Are you able to read all 
-> files from the affected volume? Did you tried a balance with an 2.6.34 kernel 
-> after the test with 2.6.35?
-> 
-Till now I did not see any unreadable files but I did not do a
-complete test. No, I did not try to balance with an 2.6.34 kernel. If
-it helps I can switch back and try.
+> Because we can remove the flag, remove branches from the page allocator
+> slowpath, and none of these allocations actually are dependent on
+> __GFP_NOFAIL since they are all under PAGE_ALLOC_COSTLY_ORDER.
 
-Yours,
-Andreas
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (MingW32)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+Then we can simply remove __GFP_NOFAIL? Functions are only needed for
+higher order allocs that can fail?
 
-iQIcBAEBAgAGBQJMdm6MAAoJEJIcBJ3+Xkgi9vUQALX7V6fOs+DJR9NGRr21uY1a
-/tFj5e1r71Mryn6uFcnb2Iukf6oNirxc3n4XcSgfel/GppTPAt+s8a3jS048SNa1
-XpPhpuA5j9vtPns46ZR5Bg9rTtAIa7oDO8Ko2lewnHcrZN9qoGyroTz+eIzqv/U/
-N8BmGTKTE1TwKfETE8jVXXHvsQuV6vYeOJqtWzPkETw9gldHThTSvr3pl7+46yFT
-iCv5n/IHsdAyeZpSJm1Jp3xxAGZJsrkhoKiyNcHHt7+UshcKpFYky4lOCAlDgpPO
-quZhEHiYKUeHGYb8vueaebCgy2panrYcnEgwoGkI7XLPvTlWY/5uUgV/54rlUdwi
-jqo+zgyNaBnEwUkqTAPzqZQBYb7XA5uJS7UchFhf5rpgFZeEX+gUnNYtEtUkkYLk
-9vAAeXl8OyNJnBAH97/FBpRw0nVYpXeuE8/dvc1TfbHDjkOQLlgEYg3T4PW+NgsV
-IwVOChoFPEmyFndAvONphTmUQjzGMJu2Y+3p9D7ZDRQOo8AHjGrErWPY+zGkZkd1
-MtFCIKeTyOoR+13U4xAxi+2alGf7UE0jdxoGMQPnh7COjOYpUgMt1zFnksxn6yY+
-RcFEWJSoBkOPMePxzJUTOCVb/Qr4V6HCJNEylBxF1VsECAOkjTSxl4XTAXrLKYVu
-pllFS2PYozhZMoKrDKQE
-=ldPn
------END PGP SIGNATURE-----

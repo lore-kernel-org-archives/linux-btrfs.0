@@ -1,46 +1,68 @@
-From: David Rientjes <rientjes@google.com>
+From: Dave Chinner <david@fromorbit.com>
 Subject: Re: [patch 1/5] mm: add nofail variants of kmalloc kcalloc and
  kzalloc
-Date: Wed, 25 Aug 2010 20:12:04 -0700 (PDT)
-Message-ID: <alpine.DEB.2.00.1008252010260.10986@chino.kir.corp.google.com>
-References: <alpine.DEB.2.00.1008240340010.18908@chino.kir.corp.google.com> <1282656558.2605.2742.camel@laptop> <4C73CA24.3060707@fusionio.com> <alpine.DEB.2.00.1008241309170.21242@chino.kir.corp.google.com> <20100825112433.GB4453@thunk.org>
- <1282736132.2605.3563.camel@laptop> <20100825115709.GD4453@thunk.org> <1282740516.2605.3644.camel@laptop> <20100825132417.GQ31488@dastard> <1282743342.2605.3707.camel@laptop> <alpine.DEB.2.00.1008251347550.16484@chino.kir.corp.google.com>
- <alpine.DEB.2.00.1008251604120.24931@router.home> <alpine.DEB.2.00.1008251418590.20253@chino.kir.corp.google.com> <alpine.DEB.2.00.1008251630270.25660@router.home> <alpine.DEB.2.00.1008251604540.31521@chino.kir.corp.google.com>
- <alpine.DEB.2.00.1008252028030.32421@router.home>
+Date: Thu, 26 Aug 2010 16:38:00 +1000
+Message-ID: <20100826063759.GB705__36521.4325291619$1282804721$gmane$org@dastard>
+References: <E25A6DCB-3188-4CF9-9DC4-631192B2F0E2@mit.edu>
+ <1282743090.2605.3696.camel@laptop>
+ <alpine.DEB.2.00.1008251340420.16484@chino.kir.corp.google.com>
+ <1282769729.1975.96.camel@laptop>
+ <alpine.DEB.2.00.1008251406260.20253@chino.kir.corp.google.com>
+ <1282771677.1975.138.camel@laptop>
+ <alpine.DEB.2.00.1008251606450.31521@chino.kir.corp.google.com>
+ <20100826001901.GL4453@thunk.org>
+ <alpine.DEB.2.00.1008251724360.25783@chino.kir.corp.google.com>
+ <20100826014847.GQ4453@thunk.org>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Peter Zijlstra <peterz@infradead.org>,
-	Dave Chinner <david@fromorbit.com>, "Ted Ts'o" <tytso@mit.edu>,
+Content-Type: text/plain; charset=us-ascii
+To: Ted Ts'o <tytso@mit.edu>, David Rientjes <rientjes@google.com>,
+	Peter Zijlstra <peterz@infradead.org>,
 	Jens Axboe <jaxboe@fusionio.com>,
 	Andrew Morton <akpm@linux-foundation.org>,
-	Neil Brown <neilb@suse.de>, Alasdair G Kergon <agk@redhat.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Steven Whitehouse <swhiteho@redhat.com>,
-	Jan Kara <jack@suse.cz>,
-	Frederic Weisbecker <fweisbec@gmail.com>,
-	"linux-raid@vger.kernel.org" <linux-raid@vger.kernel.org>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	"cluster-devel@redhat.com" <cluster-devel@redhat.com>,
-	"linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
-	"reiserfs-devel@vger.kernel.org" <reiserfs-devel@vger.kernel.org>,
-	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-To: Christoph Lameter <cl@linux.com>
-Return-path: <reiserfs-devel-owner@vger.kernel.org>
-In-Reply-To: <alpine.DEB.2.00.1008252028030.32421@router.home>
+	Ne
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100826014847.GQ4453@thunk.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 25 Aug 2010, Christoph Lameter wrote:
+On Wed, Aug 25, 2010 at 09:48:47PM -0400, Ted Ts'o wrote:
+> On Wed, Aug 25, 2010 at 05:30:42PM -0700, David Rientjes wrote:
+> > 
+> > We certainly hope that nobody will reimplement the same function without 
+> > the __deprecated warning, especially for order < PAGE_ALLOC_COSTLY_ORDER 
+> > where there's no looping at a higher level.  So perhaps the best 
+> > alternative is to implement the same _nofail() functions but do a 
+> > WARN_ON(get_order(size) > PAGE_ALLOC_COSTLY_ORDER) instead?
+> 
+> Yeah, that sounds better.
+> 
+> > I think it's really sad that the caller can't know what the upper bounds 
+> > of its memory requirement are ahead of time or at least be able to 
+> > implement a memory freeing function when kmalloc() returns NULL.
+> 
+> Oh, we can determine an upper bound.  You might just not like it.
+> Actually ext3/ext4 shouldn't be as bad as XFS, which Dave estimated to
+> be around 400k for a transaction.
 
-> > Right, I thought you said the slab layer passes __GFP_NOFAIL when there's
-> > no objects available.
-> 
-> Yes, the slab layer calls the page allocator when there are no objects
-> available and passes the __GFP_NOFAIL that the user may have set in the
-> call to the page allocator.
-> 
-> Why then add new functions that do the same?
-> 
+For a 4k block size filesystem.
 
-Because we can remove the flag, remove branches from the page allocator 
-slowpath, and none of these allocations actually are dependent on 
-__GFP_NOFAIL since they are all under PAGE_ALLOC_COSTLY_ORDER.
+If I use 64k block size directories (which XFS can even on 4k page
+size machines), the maximum transaction reservation goes up to at
+around 3MB, and that's just for blocks being _modified_. It's not
+the limit on the amount of memory that may need to be allocated
+during a transaction....
+
+> My guess is that the worst case for
+> ext3/ext4 is probably around 256k or so; like XFS, most of the time,
+> it would be a lot less. 
+
+Right, it usually is a lot less, but one of the big problems is that
+during low memory situations memory reclaim of the metadata page
+cache actually causes _more_ memory allocation during tranactions
+than otherwise would occur.......
+
+Cheers,
+
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

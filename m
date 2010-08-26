@@ -1,22 +1,34 @@
-From: Chester <somethingsome2000@gmail.com>
-Subject: The "The status of btrfsck" thread
-Date: Thu, 26 Aug 2010 03:43:52 -0500
-Message-ID: <AANLkTikU0YAzvemezrjvhszACPcLUPiiqSO2o=eVP06A@mail.gmail.com>
-References: <AANLkTim3LUO8BqC61LLFh8CuBOVLkEdCU_p=StqBFQpG@mail.gmail.com>
+From: Xavier Nicollet <nicollet@jeru.org>
+Subject: Re: 2.6.36-rc1 btrfs still unstable
+Date: Thu, 26 Aug 2010 10:58:01 +0200
+Message-ID: <20100826085801.GQ1344@jeru.org>
+References: <1281948382.1888.7.camel@chotu> <20100816121658.GT3315@think> <7222A6B8ACA37D4AA1AC37810C43E8A80F5FC5BC@mail.corp.imt-systems.com> <201008251857.39585.johannes.hirte@fem.tu-ilmenau.de>
+Reply-To: nicollet@jeru.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=iso-8859-15
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTim3LUO8BqC61LLFh8CuBOVLkEdCU_p=StqBFQpG@mail.gmail.com>
+In-Reply-To: <201008251857.39585.johannes.hirte@fem.tu-ilmenau.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, I'm aware that btrfs doesn't have a functioning fsck tool that
-fixes errors.
-I was just wondering (I'm sure many are, also) if there is a working
-btrfsck somewhere in the pipeline.
-If there is some sort of rough estimate to when it'll be available,
-please state it here.
+Le 25 ao=FBt 2010 =E0 18:57, Johannes Hirte a =E9crit:
+> > the other big question is:
+> > Is btrfs with 2.6.36 really rockstable and ready to use in producti=
+ve environments?
+>=20
+> I don't think so. There is at least one checksum bug and ENOSPC probl=
+ems are also still present.
 
-If you're not confident about any release date, it's no big deal. I
-just want an organized place
-to sift through things regarding btrfsck (since it's pretty crucial)
+I am planning to put 2 dedicated web hosting servers in production
+(backuped every day), with 2.6.34.5 vanilla kernel.
+
+I also use btrfs on a 2.6.34 kernel on the backup server (rsync) for
+some time.
+
+--=20
+Xavier Nicollet
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

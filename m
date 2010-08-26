@@ -1,40 +1,49 @@
-From: Lubos Kolouch <lubos.kolouch@gmail.com>
-Subject: Re: machine gets unresponsive during btrfs balance
-Date: Thu, 26 Aug 2010 18:11:24 +0000 (UTC)
-Message-ID: <i56aoc$i20$1@dough.gmane.org>
-References: <4C639F42.3050206@gmail.com>
-	<201008261527.54056.johannes.hirte@fem.tu-ilmenau.de>
-	<4C766E8D.7000103@gmail.com>
-	<201008261838.30509.johannes.hirte@fem.tu-ilmenau.de>
+From: David Rientjes <rientjes@google.com>
+Subject: Re: [patch 1/5] mm: add nofail variants of kmalloc kcalloc and
+ kzalloc
+Date: Thu, 26 Aug 2010 15:31:22 -0700 (PDT)
+Message-ID: <alpine.DEB.2.00.1008261528160.5445@chino.kir.corp.google.com>
+References: <alpine.DEB.2.00.1008240340010.18908@chino.kir.corp.google.com> <1282656558.2605.2742.camel@laptop> <4C73CA24.3060707@fusionio.com> <alpine.DEB.2.00.1008241309170.21242@chino.kir.corp.google.com> <20100825112433.GB4453@thunk.org>
+ <1282736132.2605.3563.camel@laptop> <20100825115709.GD4453@thunk.org> <1282740516.2605.3644.camel@laptop> <20100825132417.GQ31488@dastard> <1282743342.2605.3707.camel@laptop> <alpine.DEB.2.00.1008251347550.16484@chino.kir.corp.google.com>
+ <alpine.DEB.2.00.1008251604120.24931@router.home> <alpine.DEB.2.00.1008251418590.20253@chino.kir.corp.google.com> <alpine.DEB.2.00.1008251630270.25660@router.home> <alpine.DEB.2.00.1008251604540.31521@chino.kir.corp.google.com> <alpine.DEB.2.00.1008252028030.32421@router.home>
+ <alpine.DEB.2.00.1008252010260.10986@chino.kir.corp.google.com> <alpine.DEB.2.00.1008260914420.15852@router.home>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: Peter Zijlstra <peterz@infradead.org>,
+	Dave Chinner <david@fromorbit.com>, "Ted Ts'o" <tytso@mit.edu>,
+	Jens Axboe <jaxboe@fusionio.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Neil Brown <neilb@suse.de>, Alasdair G Kergon <agk@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Steven Whitehouse <swhiteho@redhat.com>,
+	Jan Kara <jack@suse.cz>,
+	Frederic Weisbecker <fweisbec@gmail.com>,
+	"linux-raid@vger.kernel.org" <linux-raid@vger.kernel.org>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"cluster-devel@redhat.com" <cluster-devel@redhat.com>,
+	"linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
+	"reiserfs-devel@vger.kernel.org" <reiserfs-devel@vger.kernel.org>,
+	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: Christoph Lameter <cl@linux.com>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <alpine.DEB.2.00.1008260914420.15852@router.home>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Johannes Hirte, Thu, 26 Aug 2010 18:38:30 +0200:
+On Thu, 26 Aug 2010, Christoph Lameter wrote:
 
-> On Thursday 26 August 2010 15:39:25 Andreas Philipp wrote:
->> On 26.08.2010 15:27, Johannes Hirte wrote:
->> > Looks like another manifestation of the csum bug. Are you able to
->> > read all files from the affected volume? Did you tried a balance with
->> > an 2.6.34 kernel after the test with 2.6.35?
->> >
->> Till now I did not see any unreadable files but I did not do a complete
->> test. No, I did not try to balance with an 2.6.34 kernel. If it helps I
->> can switch back and try.
+> > Because we can remove the flag, remove branches from the page allocator
+> > slowpath, and none of these allocations actually are dependent on
+> > __GFP_NOFAIL since they are all under PAGE_ALLOC_COSTLY_ORDER.
 > 
-> I hope it helps to localize the error. It's still not clear where this
-> starts an what kernels are affected.
+> Then we can simply remove __GFP_NOFAIL? Functions are only needed for
+> higher order allocs that can fail?
 > 
-> regards,
->   Johannes
 
-I have now as well a volume that shows the csum bug and no, I cannot read 
-all files. Please let me know if I can test something. Kernel 2.6.35-
-gentoo-r4
-
-Regards
-
-Lubos
-
+Yes, that's the intent.  We'd like to add the 
+WARN_ON_ONCE(get_order(size) >= PAGE_ALLOC_COSTLY_ORDER) warning, though, 
+so we're ensured that redefinition of that #define doesn't cause 
+allocations to fail to that don't have appropriate error handling or 
+future callers use higher order allocs.  The _nofail() functions help that 
+and do some due diligence in ensuring that we aren't changing gfp flags 
+based only on the current page allocator implementation which may later 
+change with very specialized corner cases.

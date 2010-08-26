@@ -1,40 +1,29 @@
-From: Christoph Lameter <cl@linux.com>
-Subject: Re: [patch 1/5] mm: add nofail variants of kmalloc kcalloc and
- kzalloc
-Date: Thu, 26 Aug 2010 09:16:19 -0500 (CDT)
-Message-ID: <alpine.DEB.2.00.1008260914420.15852@router.home>
-References: <alpine.DEB.2.00.1008240340010.18908@chino.kir.corp.google.com> <1282656558.2605.2742.camel@laptop> <4C73CA24.3060707@fusionio.com> <alpine.DEB.2.00.1008241309170.21242@chino.kir.corp.google.com> <20100825112433.GB4453@thunk.org>
- <1282736132.2605.3563.camel@laptop> <20100825115709.GD4453@thunk.org> <1282740516.2605.3644.camel@laptop> <20100825132417.GQ31488@dastard> <1282743342.2605.3707.camel@laptop> <alpine.DEB.2.00.1008251347550.16484@chino.kir.corp.google.com>
- <alpine.DEB.2.00.1008251604120.24931@router.home> <alpine.DEB.2.00.1008251418590.20253@chino.kir.corp.google.com> <alpine.DEB.2.00.1008251630270.25660@router.home> <alpine.DEB.2.00.1008251604540.31521@chino.kir.corp.google.com> <alpine.DEB.2.00.1008252028030.32421@router.home>
- <alpine.DEB.2.00.1008252010260.10986@chino.kir.corp.google.com>
+From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Subject: Re: machine gets unresponsive during btrfs balance
+Date: Thu, 26 Aug 2010 18:38:30 +0200
+Message-ID: <201008261838.30509.johannes.hirte@fem.tu-ilmenau.de>
+References: <4C639F42.3050206@gmail.com> <201008261527.54056.johannes.hirte@fem.tu-ilmenau.de> <4C766E8D.7000103@gmail.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Peter Zijlstra <peterz@infradead.org>,
-	Dave Chinner <david@fromorbit.com>, Ted Ts'o <tytso@mit.edu>,
-	Jens Axboe <jaxboe@fusionio.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Neil Brown <neilb@suse.de>, Alasdair G Kergon <agk@redhat.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Steven Whitehouse <swhiteho@redhat.com>,
-	Jan Kara <jack@suse.cz>,
-	Frederic Weisbecker <fweisbec@gmail.com>,
-	"linux-raid@vger.kernel.org" <linux-raid@vger.kernel.org>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	"cluster-devel@redhat.com" <cluster-devel@redhat.com>,
-	"linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
-	"reiserfs-devel@vger.kernel.org" <reiserfs-devel@vger.kernel.org>,
-	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-To: David Rientjes <rientjes@google.com>
-Return-path: <reiserfs-devel-owner@vger.kernel.org>
-In-Reply-To: <alpine.DEB.2.00.1008252010260.10986@chino.kir.corp.google.com>
+Content-Type: Text/Plain;
+  charset="iso-8859-15"
+Cc: "Yan, Zheng " <yanzheng@21cn.com>, linux-btrfs@vger.kernel.org
+To: Andreas Philipp <philipp.andreas@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4C766E8D.7000103@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 25 Aug 2010, David Rientjes wrote:
+On Thursday 26 August 2010 15:39:25 Andreas Philipp wrote:
+> On 26.08.2010 15:27, Johannes Hirte wrote:
+> > Looks like another manifestation of the csum bug. Are you able to read all
+> > files from the affected volume? Did you tried a balance with an 2.6.34 kernel
+> > after the test with 2.6.35?
+> >
+> Till now I did not see any unreadable files but I did not do a
+> complete test. No, I did not try to balance with an 2.6.34 kernel. If
+> it helps I can switch back and try.
 
-> Because we can remove the flag, remove branches from the page allocator
-> slowpath, and none of these allocations actually are dependent on
-> __GFP_NOFAIL since they are all under PAGE_ALLOC_COSTLY_ORDER.
+I hope it helps to localize the error. It's still not clear where this starts 
+an what kernels are affected.
 
-Then we can simply remove __GFP_NOFAIL? Functions are only needed for
-higher order allocs that can fail?
-
+regards,
+  Johannes

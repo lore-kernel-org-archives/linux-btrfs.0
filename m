@@ -1,64 +1,30 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: Poor creat/delete files performance
-Date: Thu, 26 Aug 2010 18:07:55 +0800
-Message-ID: <4C763CFB.6010600@cn.fujitsu.com>
-References: <4C6BB21E.3000809@cn.fujitsu.com> <20100818120941.GM5854@think> <4C6C7C46.2000202@cn.fujitsu.com> <20100819005743.GH5854@think>
-Reply-To: miaox@cn.fujitsu.com
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [2.6.35.3] BUG: unable to handle kernel NULL pointer
+ dereference at (null)
+Date: Thu, 26 Aug 2010 07:53:36 -0400
+Message-ID: <20100826115336.GW14190@think>
+References: <20100826095357.GA7202@Pilar.aei.mpg.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: Chris Mason <chris.mason@oracle.com>,
-	Yan Zheng <zheng.yan@oracle.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+To: "Carlos R. Mafra" <crmafra2@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100819005743.GH5854@think>
+In-Reply-To: <20100826095357.GA7202@Pilar.aei.mpg.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 18 Aug 2010 20:57:43 -0400, Chris Mason wrote:
-> Since the files are empty, and we aren't doing enough files to trigger
-> IO, it is really benchmarking the cost of the btree insertions/removals
-> in comparison with ext4.  I do expect this to be higher because btrfs is
-> indexing the directories twice (once by name and once by sequence number
-> for faster backups).
->
-> On my machine:
->
-> Btrfs defaults:
->
-> Create files:
-> 	Total files: 50000
-> 	Total time: 0.916680
-> 	Average time: 0.000018
-> Delete files:
-> 	Total files: 50000
-> 	Total time: 1.329892
-> 	Average time: 0.000027
->
-> Ext4:
->
-> creat_unlink 50000
-> Create files:
-> 	Total files: 50000
-> 	Total time: 0.718190
-> 	Average time: 0.000014
-> Delete files:
-> 	Total files: 50000
-> 	Total time: 0.308815
-> 	Average time: 0.000006
->
-> We're definitely slower than ext4, but as Ric's benchmarks show things
-> tend to tilt in our favor once IO is actually done.
->
-> There are two big things that would help fix this performance gap:
-> Switching the extent buffer rbtree into a radix tree (esp a lockless
-> radix tree), and delaying insertion of the inode so that we can do more
-> in btree operations in bulk.
->
-> The radix tree is a much easier and more contained project.
+On Thu, Aug 26, 2010 at 11:53:57AM +0200, Carlos R. Mafra wrote:
+> Hi,
+> 
+> I've just got this BUG: message in dmesg which I think is btrfs related.
+> 
+> I have a btrfs filesystem in a memory card which I use to contain the 
+> cache and config of chromium (to avoid writing to much in the SSD):
+> 
+> /dev/mmcblk0p1 on /home/mafra/mmc type btrfs (rw,noexec,nosuid,nodev,noatime,noacl,compress)
+> 
+> and the last message before the bug is about the memory card.
 
-The type of the radix tree's key is "unsigned long", but the type of the
-extent buffer's key is "u64". That is we can't use the radix tree instead of
-rbtree on the 32-bits boxs. So we can't switching the extent buffer rbtree
-into a radix tree.
+Hmmm it is definitely btrfs related.  Do you continue to get it after
+rebooting?
 
-Thanks
-Miao Xie
+-chris

@@ -1,36 +1,48 @@
-From: Zhu Yanhai <yanhai.zhu@linux.intel.com>
-Subject: Re: What is the status of versioned builds for btrfs-progs
-Date: Fri, 27 Aug 2010 11:15:18 +0800
-Message-ID: <4C772DC6.3000805@linux.intel.com>
-References: <AANLkTimxW0aBRi8zL1f5dyA73aO5KhJVLu5PaxBB=vy+@mail.gmail.com>
+From: Chester <somethingsome2000@gmail.com>
+Subject: Re: The "The status of btrfsck" thread
+Date: Thu, 26 Aug 2010 22:25:34 -0500
+Message-ID: <AANLkTi=t8sNM-QoYTewbtObGTNBH69nogAXTzBSmC7Aq@mail.gmail.com>
+References: <AANLkTim3LUO8BqC61LLFh8CuBOVLkEdCU_p=StqBFQpG@mail.gmail.com>
+	<AANLkTikU0YAzvemezrjvhszACPcLUPiiqSO2o=eVP06A@mail.gmail.com>
+	<20100827005724.GD14190@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Joe Peterson <lavajoe@gentoo.org>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>,
+	Chester <somethingsome2000@gmail.com>,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimxW0aBRi8zL1f5dyA73aO5KhJVLu5PaxBB=vy+@mail.gmail.com>
+In-Reply-To: <20100827005724.GD14190@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/07/2010 05:48 AM, Joe Peterson wrote:
-> I just had a bug reported (assigned to me) in the Gentoo Linux distro
-> about a missing option ("-D") in btrfscrl.  Looking into it, it
-> appears this feature is post the 0.19 tag of btrfs-progs.  I would
-> like to get a more up-to-date btrfs-progs into Gentoo, but I would
-> like to follow the upstream versioning (well, we can do "live" builds,
-> but those do not give a predictable/persistent source snapshot).  0.19
-> was tagged 13 months ago, according to the git tree.  Are there plans
-> to release newer versions?
+Thanks chris, and that's wonderful!
+Lemme just hope silent corruption won't kill me by then (I had to
+force my computer to turn off a couple of times (but that was so long
+ago))
+Looking forward to the releases.
+
+On Thu, Aug 26, 2010 at 7:57 PM, Chris Mason <chris.mason@oracle.com> w=
+rote:
+> On Thu, Aug 26, 2010 at 03:43:52AM -0500, Chester wrote:
+>> Hi, I'm aware that btrfs doesn't have a functioning fsck tool that
+>> fixes errors.
+>> I was just wondering (I'm sure many are, also) if there is a working
+>> btrfsck somewhere in the pipeline.
+>> If there is some sort of rough estimate to when it'll be available,
+>> please state it here.
+>>
+>> If you're not confident about any release date, it's no big deal. I
+>> just want an organized place
+>> to sift through things regarding btrfsck (since it's pretty crucial)
 >
-> Thanks!  Joe
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> We're still actively developing it. =A0I don't have a release date pl=
+anned
+> yet but we should have betas coming out over the next few months.
 >
-
-I just had a similar assigned bug in MeeGo distro too. I have to use a 
-GIT snapshot as an upgrade.
-
-Regards,
-Zhu Yanhai
-
+> -chris
+>
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

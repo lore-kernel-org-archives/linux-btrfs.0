@@ -1,26 +1,31 @@
-From: Diego Calleja <diegocg@gmail.com>
-Subject: Re: 2.6.36-rc1 btrfs still unstable
-Date: Fri, 27 Aug 2010 01:17:06 +0200
-Message-ID: <201008270117.06249.diegocg@gmail.com>
-References: <31081717.109.1282862751167.JavaMail.root@zimbra>
-Reply-To: diegocg@gmail.com
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: The "The status of btrfsck" thread
+Date: Thu, 26 Aug 2010 20:57:24 -0400
+Message-ID: <20100827005724.GD14190@think>
+References: <AANLkTim3LUO8BqC61LLFh8CuBOVLkEdCU_p=StqBFQpG@mail.gmail.com>
+ <AANLkTikU0YAzvemezrjvhszACPcLUPiiqSO2o=eVP06A@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Cc: "Morten P.D. Stevens" <mstevens@imt-systems.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs@vger.kernel.org, Chris Ball <cjb@laptop.org>
-To: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Chester <somethingsome2000@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <31081717.109.1282862751167.JavaMail.root@zimbra>
+In-Reply-To: <AANLkTikU0YAzvemezrjvhszACPcLUPiiqSO2o=eVP06A@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Even with cheap drives, a filesystem shouldn't die. With stuff like ZFS, you can use all sorts of crap and still live with it. Btrfs should follow that track.
+On Thu, Aug 26, 2010 at 03:43:52AM -0500, Chester wrote:
+> Hi, I'm aware that btrfs doesn't have a functioning fsck tool that
+> fixes errors.
+> I was just wondering (I'm sure many are, also) if there is a working
+> btrfsck somewhere in the pipeline.
+> If there is some sort of rough estimate to when it'll be available,
+> please state it here.
+> 
+> If you're not confident about any release date, it's no big deal. I
+> just want an organized place
+> to sift through things regarding btrfsck (since it's pretty crucial)
 
+We're still actively developing it.  I don't have a release date planned
+yet but we should have betas coming out over the next few months.
 
-Sadly that's not true, a bit of cooperation of the hardware is needed.
-Both Btrfs and ZFS need to be sure that certain operations i.e. writting
-a modified superblock need to be physically on the disk. Some disks lie
-(or fail) when they are asked to write data to the disk, and both filesystems
-have faced filesystem inconsistencies due to this. AFAIK there is nothing
-the filesystem can do to avoid that.
+-chris
+

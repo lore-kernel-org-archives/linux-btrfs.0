@@ -1,42 +1,69 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: BTRFS: Unbelievably slow with kvm/qemu
-Date: Sun, 29 Aug 2010 20:14:41 -0400
-Message-ID: <20100830001441.GA838@dhcp231-156.rdu.redhat.com>
-References: <4C7AB645.5090804@wpkg.org>
+From: Hubert Kario <hka@qbs.com.pl>
+Subject: Re: [RFC v2 PATCH 0/6] Btrfs: Add hot data relocation functionality
+Date: Mon, 30 Aug 2010 02:42:26 +0200
+Message-ID: <201008300242.27331.hka@qbs.com.pl>
+References: <1281651726-23501-1-git-send-email-bchociej@gmail.com> <20100826021343.GA452@sli10-conroe.sh.intel.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	hch@infradead.org, gg.mariotti@gmail.com,
-	"Justin P. Mattock" <justinmattock@gmail.com>, mjt@tls.msk.ru,
-	josef@redhat.com, tytso@mit.edu
-To: Tomasz Chmielewski <mangoo@wpkg.org>
+Content-Type: Text/Plain; charset=iso-8859-1
+Cc: "bchociej@gmail.com" <bchociej@gmail.com>,
+	"chris.mason@oracle.com" <chris.mason@oracle.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+	"cmm@us.ibm.com" <cmm@us.ibm.com>,
+	"bcchocie@us.ibm.com" <bcchocie@us.ibm.com>,
+	"mrlupfer@us.ibm.com" <mrlupfer@us.ibm.com>,
+	"crscott@us.ibm.com" <crscott@us.ibm.com>,
+	"mlupfer@gmail.com" <mlupfer@gmail.com>,
+	"conscott@vt.edu" <conscott@vt.edu>
+To: Shaohua Li <shaohua.li@intel.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4C7AB645.5090804@wpkg.org>
+In-Reply-To: <20100826021343.GA452@sli10-conroe.sh.intel.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Aug 29, 2010 at 09:34:29PM +0200, Tomasz Chmielewski wrote:
-> Christoph Hellwig wrote:
->
->> There are a lot of variables when using qemu.
->>
->> The most important one are:
->>
->>  - the cache mode on the device.  The default is cache=writethrough,
->>    which is not quite optimal.  You generally do want to use cache=none
->>    which uses O_DIRECT in qemu.
->>  - if the backing image is sparse or not.
->>  - if you use barrier - both in the host and the guest.
->
-> I noticed that when btrfs is mounted with default options, when writing  
-> i.e. 10 GB on the KVM guest using qcow2 image, 20 GB are written on the  
-> host (as measured with "iostat -m -p").
->
->
-> With ext4 (or btrfs mounted with nodatacow), 10 GB write on a guest  
-> produces 10 GB write on the host.
->
+On Thursday 26 of August 2010 04:13:43 Shaohua Li wrote:
+> On Fri, Aug 13, 2010 at 06:22:00AM +0800, bchociej@gmail.com wrote:
+> > - Hooks in existing Btrfs functions to track data access frequency
+> >=20
+> >   (btrfs_direct_IO, btrfs_readpages, and extent_write_cache_pages)
+> >=20
+> > - New rbtrees for tracking access frequency of inodes and sub-file
+> >=20
+> >   ranges (hotdata_map.c)
+> >=20
+> > - A hash list for indexing data by its temperature (hotdata_hash.c)
+> >=20
+> > - A debugfs interface for dumping data from the rbtrees (debugfs.c)
+> >=20
+> > - A background kthread for relocating data to faster media based on
+> >=20
+> >   temperature
+>=20
+> Hi,
+> I'm wondering if the temperature info can be exported to userspace, a=
+nd
+> let a daemon to do the relocation (by ioctl). A userspace daemon is m=
+ore
+> flexible.
 
-Whoa 20gb?  That doesn't sound right, COW should just mean we get quite a bit of
-fragmentation, not write everything twice.  What exactly is qemu doing?  Thanks,
+=46lexibility of userspace daemon is one thing, the ability to let the =
+admin=20
+precisely control on which drive data is placed could be really benefic=
+ial in=20
+some scenarios is another thing.
 
-Josef
+This would also allow online defragmentation, together with access to=20
+statistics, one that (for quick runs) has really good time/performance =
+benefit=20
+ratio.
+--=20
+Hubert Kario
+QBS - Quality Business Software
+02-656 Warszawa, ul. Ksawer=F3w 30/85
+tel. +48 (22) 646-61-51, 646-74-24
+www.qbs.com.pl
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

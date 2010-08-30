@@ -1,67 +1,72 @@
-From: Jeremy Fitzhardinge <jeremy@goop.org>
-Subject: Re: [PATCH V4 5/8] Cleancache: ext3 hook for cleancache
-Date: Mon, 30 Aug 2010 15:53:26 -0700
-Message-ID: <4C7C3666.2080601@goop.org>
-References: <20100830223233.GA1317@ca-server1.us.oracle.com>
+From: "K. Richard Pixley" <rich@noir.com>
+Subject: Re: remote mirroring in the works?
+Date: Mon, 30 Aug 2010 15:56:14 -0700
+Message-ID: <4C7C370E.1080901@noir.com>
+References: <AANLkTinmSdHwXXq3s64sM39GjacafgwgTjPadZGHuway@mail.gmail.com>	<AANLkTimBVG3eGHvNUHFGYri+JyOXrOW91GKWeM_GVOYM@mail.gmail.com>	<4C7BF087.6060400@noir.com> <AANLkTimWJoYVf2nqoi7KkOKSFz2F7wp0gcV=XKvo5uzj@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: chris.mason@oracle.com, viro@zeniv.linux.org.uk,
- akpm@linux-foundation.org, adilger@sun.com, tytso@mit.edu,
- mfasheh@suse.com, joel.becker@oracle.com, matthew@wil.cx,
- linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
- linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
- ocfs2-devel@oss.oracle.com, linux-mm@kvack.org, ngupta@vflare.org,
- JBeulich@novell.com, kurt.hackel@oracle.com, npiggin@kernel.dk,
- dave.mccracken@oracle.com, riel@redhat.com, avi@redhat.com,
- konrad.wilk@oracle.com, mel@csn.ul.ie, yinghan@google.com,
- gthelen@google.com
-To: Dan Magenheimer <dan.magenheimer@oracle.com>
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20100830223233.GA1317@ca-server1.us.oracle.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: linux-btrfs@vger.kernel.org
+To: Fred van Zwieten <fvzwieten@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTimWJoYVf2nqoi7KkOKSFz2F7wp0gcV=XKvo5uzj@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- On 08/30/2010 03:32 PM, Dan Magenheimer wrote:
-> [PATCH V4 5/8] Cleancache: ext3 hook for cleancache
->
-> Filesystems must explicitly enable cleancache by calling
-> cleancache_init_fs anytime a instance of the filesystem
-> is mounted and must save the returned poolid.  For ext3,
-> all other cleancache hooks are in the VFS layer including
-> the matching cleancache_flush_fs hook which must be
-> called on unmount.
->
-> Signed-off-by: Dan Magenheimer <dan.magenheimer@oracle.com>
-> Acked-by: Andreas Dilger <adilger@sun.com>
->
-> Diffstat:
->  super.c                                  |    2 ++
->  1 file changed, 2 insertions(+)
->
-> --- linux-2.6.36-rc3/fs/ext3/super.c	2010-08-29 09:36:04.000000000 -0600
-> +++ linux-2.6.36-rc3-cleancache/fs/ext3/super.c	2010-08-30 09:20:42.000000000 -0600
-> @@ -37,6 +37,7 @@
->  #include <linux/quotaops.h>
->  #include <linux/seq_file.h>
->  #include <linux/log2.h>
-> +#include <linux/cleancache.h>
->  
->  #include <asm/uaccess.h>
->  
-> @@ -1349,6 +1350,7 @@ static int ext3_setup_super(struct super
->  	} else {
->  		ext3_msg(sb, KERN_INFO, "using internal journal");
->  	}
-> +	sb->cleancache_poolid = cleancache_init_fs(PAGE_SIZE);
+  If you can put the db into a consistent state, then rsync will do 
+this.  Rsync does changed block transfers.
 
-Do you really need to pass in the page size?  What about just
-"cleancache_init_fs(sb)" rather than exposing the
-"sb->cleancache_poolid"?  In other words, what if you want to do
-more/other per-filesystem init at some point?
+--rich
 
-    J
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+On 8/30/10 14:15 , Fred van Zwieten wrote:
+> I just glanced over the DRBD/LVM combi, but I don't see it being
+> functionally equal to SnapMirror. Let me (try to) explain how
+> snapmirror works:
+>
+> On system A there is a volume (vol1). We let this vol1(A) replicate
+> thru SnapMirror to vol1(B). This is done by creating a snap vol1sx(A)
+> and replicate all changed blocks between this snapshot (x) and the
+> previous snapshot (x-1). The first time, there is no x-1 and the whole
+> volume will be replicated, but after this initial "full copy", only
+> the changed blocks between the two snapshot's are being replicated to
+> system B. This is also called snap based replication. Why we want
+> this? Easy. To support consistent DB snap's. The proces works by first
+> putting the DB in a consistent mode (depends on DB implementation),
+> create a snapshot, let the DB continue, replicate the changes. This
+> way a DB consistent state will be replicated. The cool thing about the
+> NetApp implementation is that on system B the snap's (x, x-1, x-2,
+> etc) are also available. When there is trouble, you can choose to
+> online the DB on system B on any of the snap's, or, even cooler, to
+> replicate one of those snap's back to system A, doing a block based
+> rollback at the filesystem level.
+>
+> Fred
+>
+> On Mon, Aug 30, 2010 at 7:55 PM, K. Richard Pixley<rich@noir.com>  wrote:
+>>   On 20100830 10:07, Fred van Zwieten wrote:
+>>> Hi there,
+>>>
+>>> I would like to know if there is something functionally equivalent to
+>>> NetApp's SnapMirror in the works or planning? It would require block
+>>> level access to a snap and the ability to rebuild (subvolumes
+>>> including it's) snap's on another machine.
+>>>
+>>> If not, what would be the best way to build something more or less
+>>> equivalent using existing tools? rsync-ing a snap seems the same, but
+>>> it isn't. First of all it 's file based, not very nice for DB's, and
+>>> you don't get the snap's on "the other side" the same.
+>>>
+>>> Fred
+>> I think drbd does precisely what you want.
+>>
+>> It's not useful for fault tolerance, nor for load balancing, but it will
+>> produce a remote block copy that can be used as a sort of "hot backup".
+>>
+>> You can also do something very similar by combining LVM, (the logical volume
+>> manager), with LVM snapshots and NBD, (the network block device) by
+>> mirroring to an NBD device.
+>>
+>> Neither of these approaches can tolerate the remote file system being "live"
+>> until and unless it takes over for the primary.  But either can maintain a
+>> dynamic remote block device.
+>>
+>> --rich
+>>

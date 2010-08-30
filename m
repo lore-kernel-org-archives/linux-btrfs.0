@@ -1,50 +1,47 @@
 From: Dan Magenheimer <dan.magenheimer@oracle.com>
-Subject: [PATCH V4 8/8] Cleancache: ocfs2 hook for cleancache
-Date: Mon, 30 Aug 2010 15:34:04 -0700
-Message-ID: <20100830223404.GA1381__5127.89262361384$1283207812$gmane$org@ca-server1.us.oracle.com>
+Subject: [PATCH V4 7/8] Cleancache: ext4 hook for cleancache
+Date: Mon, 30 Aug 2010 15:33:34 -0700
+Message-ID: <20100830223334.GA1361__18787.0439411656$1283207848$gmane$org@ca-server1.us.oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: chris.mason@oracle.com, viro@zeniv.linux.org.uk,
-	akpm@linux-foundation.org, adilger@sun.com, tytso@mit.edu,
+	akpm@linux-foundation.org, adilger@Sun.COM, tytso@mit.edu,
 	mfasheh@suse.com, joel.becker@oracle.com, matthew@wil.cx,
 	linux-btrfs@vger.
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[PATCH V4 8/8] Cleancache: ocfs2 hook for cleancache
+[PATCH V4 7/8] Cleancache: ext4 hook for cleancache
 
 Filesystems must explicitly enable cleancache by calling
 cleancache_init_fs anytime a instance of the filesystem
-is mounted and must save the returned poolid.  Ocfs2 is
-currently the only user of the clustered filesystem
-interface but nevertheless, the cleancache hooks in the
-VFS layer are sufficient for ocfs2 including
+is mounted and must save the returned poolid.  For ext4,
+all other cleancache hooks are in the VFS layer including
 the matching cleancache_flush_fs hook which must be
 called on unmount.
 
 Signed-off-by: Dan Magenheimer <dan.magenheimer@oracle.com>
-Acked-by: Joel Becker <joel.becker@oracle.com>
+Acked-by: Andreas Dilger <adilger@sun.com>
 
 Diffstat:
- super.c                                  |    3 +++
- 1 file changed, 3 insertions(+)
+ super.c                                  |    2 ++
+ 1 file changed, 2 insertions(+)
 
---- linux-2.6.36-rc3/fs/ocfs2/super.c	2010-08-29 09:36:04.000000000 -0600
-+++ linux-2.6.36-rc3-cleancache/fs/ocfs2/super.c	2010-08-30 09:20:43.000000000 -0600
-@@ -42,6 +42,7 @@
- #include <linux/seq_file.h>
- #include <linux/quotaops.h>
- #include <linux/smp_lock.h>
+--- linux-2.6.36-rc3/fs/ext4/super.c	2010-08-29 09:36:04.000000000 -0600
++++ linux-2.6.36-rc3-cleancache/fs/ext4/super.c	2010-08-30 09:20:43.000000000 -0600
+@@ -39,6 +39,7 @@
+ #include <linux/ctype.h>
+ #include <linux/log2.h>
+ #include <linux/crc16.h>
 +#include <linux/cleancache.h>
+ #include <asm/uaccess.h>
  
- #define MLOG_MASK_PREFIX ML_SUPER
- #include <cluster/masklog.h>
-@@ -2284,6 +2285,8 @@ static int ocfs2_initialize_super(struct
- 		mlog_errno(status);
- 		goto bail;
- 	}
-+	sb->cleancache_poolid =
-+		cleancache_init_shared_fs((char *)&uuid_net_key, PAGE_SIZE);
+ #include "ext4.h"
+@@ -1849,6 +1850,7 @@ static int ext4_setup_super(struct super
+ 			EXT4_INODES_PER_GROUP(sb),
+ 			sbi->s_mount_opt);
  
- bail:
- 	mlog_exit(status);
++	sb->cleancache_poolid = cleancache_init_fs(PAGE_SIZE);
+ 	return res;
+ }
+ 

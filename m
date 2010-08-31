@@ -1,39 +1,51 @@
-From: Tomasz Torcz <tomek@pipebreaker.pl>
-Subject: Re: Question about specific patch (eMMC)
-Date: Tue, 31 Aug 2010 19:27:15 +0200
-Message-ID: <20100831172715.GA14509@mother.pipebreaker.pl>
-References: <1283255825.3347.4.camel@calladain.research.nokia.com>
+From: Goffredo Baroncelli <kreijack@gmail.com>
+Subject: Re: remote mirroring in the works?
+Date: Tue, 31 Aug 2010 20:29:06 +0200
+Message-ID: <201008312029.06424.kreijack@libero.it>
+References: <AANLkTinmSdHwXXq3s64sM39GjacafgwgTjPadZGHuway@mail.gmail.com> <AANLkTimNOqfQHwPmJk4mQUsFOwORHtZvyZ_8QZ5om=wT@mail.gmail.com> <20100831063841.GF29552@hostway.ca>
+Reply-To: kreijack@libero.it
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-2
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1283255825.3347.4.camel@calladain.research.nokia.com>
+In-Reply-To: <20100831063841.GF29552@hostway.ca>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 31, 2010 at 02:57:05PM +0300, Alexander Vdovichev wrote:
-> Hello all,
-> Is there any patches for btrfs to use enhanced area in eMMC (it will
-> allow to boost performance i.e. it very useful to keep metadata withi=
-n
-> this area) ?
->=20
-> If it's exist let me know how to find it and use it.
+On Tuesday, 31 August, 2010, Simon Kirby wrote:
+[...]
+> Anyway, there _is_ this interface:
+> 
+> 	btrfs subvolume find-new <path> <last_gen>
+> 		List the recently modified files in a filesystem.
+> 
+> Eg:
+> 
+> 	btrfs sub find-new /mnt 0
+> 
+> This should print all files on the file system, and the last transaction
+> ID marker.  This can be used to call the interface again, which lists
+> only new changed things since that ID.
+  ^^^^
 
-  I'm not aware of this at the moment.  However, there are data-tempera=
-ture
-tracking patches.  Their point is to move hot data into faster storage.
-I believe they can grow into generic infrastructure to inform filesyste=
-ms
-about non-homogenous nature of underlaying storage.
+It is not fully correct. In fact Chris Mason says
 
---=20
-Tomasz Torcz                        To co nierealne -- tutaj jest norma=
-lne.
-xmpp: zdzichubg@chrome.pl          Ziomale na =BFycie maj=B1 tu patenty=
- specjalne.
+(from http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg04620.html)
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+Chris> When we find an inode in the output, it doesn't mean that inode has
+Chris> changed.  It just means the btree block holding that inode has 
+changed.
+Chris> So we'll want to add limiting based on the ctime/mtime of the inode as
+Chris> well.
+
+So even tough this command definitely helps, false positives may happen. 
+And moreover an empty file is not detected (I think because the file doesn't 
+have associated data). But I think that this may be easily corrected.
+
+Regards
+G.Baroncelli
+
+-- 
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

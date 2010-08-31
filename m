@@ -1,84 +1,65 @@
-From: Fred van Zwieten <fvzwieten@gmail.com>
-Subject: Re: remote mirroring in the works?
-Date: Tue, 31 Aug 2010 20:44:13 +0200
-Message-ID: <AANLkTimXSUqsOVj_UQEut4E1w3Nj-3vgoHKs-7JUHxaT@mail.gmail.com>
-References: <29385727.6.1283191163871.JavaMail.root@zimbra>
-	<4C7BF51B.2070201@noir.com>
-	<20100831063031.GE29552@hostway.ca>
+From: Mike Fedyk <mfedyk@mikefedyk.com>
+Subject: Re: BTRFS: Unbelievably slow with kvm/qemu
+Date: Tue, 31 Aug 2010 14:46:49 -0700
+Message-ID: <AANLkTin-BZvqCChXEmsDfjhVmRmJLaoaudnuFL6EXZQx@mail.gmail.com>
+References: <4C7AB645.5090804@wpkg.org>
+	<20100830001441.GA838@dhcp231-156.rdu.redhat.com>
+	<4C7BD569.9000702@noir.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: "K. Richard Pixley" <rich@noir.com>,
-	Roy Sigurd Karlsbakk <roy@karlsbakk.net>,
-	linux-btrfs@vger.kernel.org
-To: Simon Kirby <sim@hostway.ca>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100831063031.GE29552@hostway.ca>
+Cc: Josef Bacik <josef@redhat.com>,
+	Tomasz Chmielewski <mangoo@wpkg.org>,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	hch@infradead.org, gg.mariotti@gmail.com,
+	"Justin P. Mattock" <justinmattock@gmail.com>, mjt@tls.msk.ru,
+	tytso@mit.edu
+To: "K. Richard Pixley" <rich@noir.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4C7BD569.9000702@noir.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thinking about this a bit more, would a setup with btrfs on top of
-DRBD be a setup that comes in the neighboorhood of what SnapMirror
-provides? DRBD does replication at the blocklevel, without any notion
-of a filesystem on top of it (as I understand this). So, if I make a
-snapshot on a DRBD'ed btrfs filesystem, this snapshot would also get
-replicated at the DRBD level. Provided I put the DB in a consisted
-state before making the snap, I have a remote consistent copy of this
-DB. This copy can be used as a failover target or as a basis for
-restore.
-
-Am I correct?
-
-
-On Tue, Aug 31, 2010 at 8:30 AM, Simon Kirby <sim@hostway.ca> wrote:
-> On Mon, Aug 30, 2010 at 11:14:51AM -0700, K. Richard Pixley wrote:
->
->> =C2=A0On 20100830 10:59, Roy Sigurd Karlsbakk wrote:
->>>> I think drbd does precisely what you want.
->>>>
->>>> It's not useful for fault tolerance, nor for load balancing, but i=
-t
->>>> will
->>>> produce a remote block copy that can be used as a sort of "hot
->>>> backup".
->>> drbd with heartbeat/pacemaker can provide fault tolerance...
->> I think that's a matter of semantics.
+On Mon, Aug 30, 2010 at 8:59 AM, K. Richard Pixley <rich@noir.com> wrot=
+e:
+> =C2=A0On 8/29/10 17:14 , Josef Bacik wrote:
 >>
->> Once you've failed over from the primary system to the secondary,
->> changes to your block device are terminal. =C2=A0It's not easy to pr=
-oduce a
->> system which can manage those changes and "heal" in the sense of
->> allowing the primary system to return to service. =C2=A0In effect, r=
-eturning
->> the primary system to service requires taking both systems down and
->> copying the block device from the secondary back to the first.
+>> On Sun, Aug 29, 2010 at 09:34:29PM +0200, Tomasz Chmielewski wrote:
+>>>
+>>> Christoph Hellwig wrote:
+>>>>
+>>>> There are a lot of variables when using qemu.
+>>>>
+>>>> The most important one are:
+>>>>
+>>>> =C2=A0- the cache mode on the device. =C2=A0The default is cache=3D=
+writethrough,
+>>>> =C2=A0 =C2=A0which is not quite optimal. =C2=A0You generally do wa=
+nt to use cache=3Dnone
+>>>> =C2=A0 =C2=A0which uses O_DIRECT in qemu.
+>>>> =C2=A0- if the backing image is sparse or not.
+>>>> =C2=A0- if you use barrier - both in the host and the guest.
+>>>
+>>> I noticed that when btrfs is mounted with default options, when wri=
+ting
+>>> i.e. 10 GB on the KVM guest using qcow2 image, 20 GB are written on=
+ the
+>>> host (as measured with "iostat -m -p").
+>>>
+>>> With ext4 (or btrfs mounted with nodatacow), 10 GB write on a guest
+>>> produces 10 GB write on the host
+>>
+>> Whoa 20gb? =C2=A0That doesn't sound right, COW should just mean we g=
+et quite a
+>> bit of
+>> fragmentation, not write everything twice. =C2=A0What exactly is qem=
+u doing?
+>> =C2=A0Thanks,
 >
-> This is totally incorrect. =C2=A0DRBD replicates in both directions q=
-uite
-> well, in fact. =C2=A0I've been using it on about 60 machines for many=
- years,
-> and I have never had to do what you mention.
+> Make sure you build your file system with "mkfs.btrfs -m single -d si=
+ngle
+> /dev/whatever". =C2=A0You may well be writing duplicate copies of eve=
+rything.
 >
-> What it does not help with is avoiding corruption that occurs above t=
-he
-> block layer; eg, if your file system or your database on top of it ba=
-rfs,
-> there is no other "good copy". =C2=A0fsck or repair is still required=
- in these
-> cases. =C2=A0It is just like local RAID 1 in this respect -- you stil=
-l need a
-> backup and/or copy at the file level, which is closer to what is need=
-ed
-> here.
->
-> Simon-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =C2=A0http://vger.kernel.org/majordomo-info.ht=
-ml
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+There is little reason not to use duplicate metadata.  Only small
+files (less than 2kb) get stored in the tree, so there should be no
+worries about images being duplicated without data duplication set at
+mkfs time.

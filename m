@@ -1,50 +1,55 @@
-From: Simon Kirby <sim@hostway.ca>
-Subject: Re: remote mirroring in the works?
-Date: Mon, 30 Aug 2010 23:38:41 -0700
-Message-ID: <20100831063841.GF29552@hostway.ca>
-References: <AANLkTinmSdHwXXq3s64sM39GjacafgwgTjPadZGHuway@mail.gmail.com> <AANLkTimBVG3eGHvNUHFGYri+JyOXrOW91GKWeM_GVOYM@mail.gmail.com> <4C7BF087.6060400@noir.com> <AANLkTimWJoYVf2nqoi7KkOKSFz2F7wp0gcV=XKvo5uzj@mail.gmail.com> <4C7C370E.1080901@noir.com> <AANLkTimNOqfQHwPmJk4mQUsFOwORHtZvyZ_8QZ5om=wT@mail.gmail.com>
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Subject: [RFC][PATCH] make file's timestamp more accurate
+Date: Tue, 31 Aug 2010 17:42:50 +0900
+Message-ID: <4C7CC08A.9010302@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: "K. Richard Pixley" <rich@noir.com>, linux-btrfs@vger.kernel.org
-To: Fred van Zwieten <fvzwieten@gmail.com>
+Content-Type: text/plain; charset=ISO-2022-JP
+To: Andreas Dilger <adilger@sun.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Jiri Olsa <jolsa@redhat.com>,
+	John Stultz <johnstul@us.ibm.com>, "Ted Ts'o" <tytso@mit.edu>,
+	Thomas Gleixner <
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimNOqfQHwPmJk4mQUsFOwORHtZvyZ_8QZ5om=wT@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 31, 2010 at 07:07:29AM +0200, Fred van Zwieten wrote:
+Hi,
 
-> Hmmm, maybe, but rsync would take a lot of time to find the changes.
-> the actual blocks of a snap _are_ the changes, that's why SnapMirror
-> is very efficient. And, I don't see how rsync will retain the snap's
-> between both sites. It would be great if a tool like rsync could have
-> access to the changed blocks in a snap. Don't know if btrfs exposes
-> these somehow.
+linux has supported nanosecond order file's timestamp since 2.5.48.
+However current file timestamp is got by current_fs_time() and
+is only updated once a tick. It can't say true nanosecond accuracy.
+In addition, gettimeofday() before a file operation updating
+{a,c,m}time would outstrip file's timestamp because of the difference
+about time source between gettimeofday() and file's timestamp.
+A certain kind of application would corrupted by this problem.
 
-rsync doesn't have the hinting required to do this efficiently.  It has
-to scan the whole thing every time it is run, and isn't anything like a
-continuous replication in this respect.  Also, We've had problems in the
-past with very large file systems causing rsync to run out of memory,
-because it builds a file list in memory.  This lead us to build a "cpbk"
-tool that basically did the same thing without file listsm, which turned
-out to be a piece of crap, so some other guy kindly rewrote it, but he
-unfortunately missed the original point entirely and rewrote it using
-file lists.  Sigh.
+I attached a most simple patch fixing this problem here. However
+it has several problems and I don't say it can be applied as is.
+The most big two problems is the following:
 
-Anyway, there _is_ this interface:
+ - It would cause performance regression, especially in
+   not TSC capable system.
+ - Is gettimeofday()'s monotonicity reliable on all systems?
 
-	btrfs subvolume find-new <path> <last_gen>
-		List the recently modified files in a filesystem.
+The relative discussion:
+http://lkml.org/lkml/2010/7/13/443
 
-Eg:
+Does anybody have good idea? Should it be tunable, for example?
 
-	btrfs sub find-new /mnt 0
+Thanks,
+Satoru
 
-This should print all files on the file system, and the last transaction
-ID marker.  This can be used to call the interface again, which lists
-only new changed things since that ID.
+Index: linux-2.6.36-rc3/kernel/time.c
+===================================================================
+--- linux-2.6.36-rc3.orig/kernel/time.c 2010-08-31 16:07:43.000000000 +0900
++++ linux-2.6.36-rc3/kernel/time.c      2010-08-31 16:08:11.000000000 +0900
+@@ -227,7 +227,8 @@ SYSCALL_DEFINE1(adjtimex, struct timex _
+  */
+ struct timespec current_fs_time(struct super_block *sb)
+ {
+-       struct timespec now = current_kernel_time();
++       struct timespec now;
++       getnstimeofday(&now);
+        return timespec_trunc(now, sb->s_time_gran);
+ }
+ EXPORT_SYMBOL(current_fs_time);
 
-So, it might be pretty easy to glue these tools together, for now, until
-something does this automatically and/or in some more efficient or
-low-level way.
-
-Simon-

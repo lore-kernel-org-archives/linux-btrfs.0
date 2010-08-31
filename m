@@ -1,9 +1,9 @@
 From: Dan Magenheimer <dan.magenheimer@oracle.com>
-Subject: RE: [PATCH V4 4/8] Cleancache: VFS hooks for cleancache
-Date: Mon, 30 Aug 2010 17:48:17 -0700 (PDT)
-Message-ID: <37115137-2233-4b7f-b4d7-6d8ee07210e0@default>
-References: <20100830223203.GA1296@ca-server1.us.oracle.com
- 4C7C35F5.6040508@goop.org>
+Subject: RE: [PATCH V4 5/8] Cleancache: ext3 hook for cleancache
+Date: Mon, 30 Aug 2010 17:57:04 -0700 (PDT)
+Message-ID: <91408f0c-0135-427f-b148-446f54b232eb@default>
+References: <20100830223233.GA1317@ca-server1.us.oracle.com
+ 4C7C3666.2080601@goop.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: Chris Mason <chris.mason@oracle.com>, viro@zeniv.linux.org.uk,
@@ -18,38 +18,27 @@ Cc: Chris Mason <chris.mason@oracle.com>, viro@zeniv.linux.org.uk,
         mel@csn.ul.ie, yinghan@google.com, gthelen@google.com
 To: Jeremy Fitzhardinge <jeremy@goop.org>
 Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <4C7C35F5.6040508@goop.org>
+In-Reply-To: <4C7C3666.2080601@goop.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> > +=09=09if (s->cleancache_poolid >=3D 0) {
-> > +=09=09=09int cleancache_poolid =3D s->cleancache_poolid;
+> > @@ -1349,6 +1350,7 @@ static int ext3_setup_super(struct super
+> >  =09} else {
+> >  =09=09ext3_msg(sb, KERN_INFO, "using internal journal");
+> >  =09}
+> > +=09sb->cleancache_poolid =3D cleancache_init_fs(PAGE_SIZE);
 >=20
-> That's a lot of characters for a local in a 3-line scope.
+> Do you really need to pass in the page size?  What about just
+> "cleancache_init_fs(sb)" rather than exposing the
+> "sb->cleancache_poolid"?  In other words, what if you want to do
+> more/other per-filesystem init at some point?
 
-:-) OK.
-=20
-> > +=09=09=09s->cleancache_poolid =3D -1; /* avoid races */
->=20
-> Races with what?  Something else sneaking something into the pool after
-> the flush?  Is the filesystem dead at this stage or not?
+IIRC, I think I was trying to stay away from including
+fs.h in cleancache.h (or one of its predecessors).  I
+agree that that no longer makes sense and it is cleaner
+as you suggest.  Will change.
 
-If there are any inodes in the page cache that point to
-this superblock, a cleancache_put_page may happen asynchronously
-that grabs from page->...->i_sb->cleancache_poolid.
-If the cleancache_flush_fs races with it and another
-cleancache_init_fs happens after the cleancache_put_page
-gets the poolid, the poolid could be stale.
-
-Highly unlikely, but I thought it best to be safe.
-
-> > +=09/* 99% of the time, we don't need to flush the cleancache on the
-> bdev.
-> > +=09 * But, for the strange corners, lets be cautious
-> > +=09 */
->=20
-> This comment-style is... unconventional for the kernel.
-
-Yeah, I decided to defer to Chris Mason's wisdom and left it. :-)
+Thanks,
+Dan
 
 --
 To unsubscribe, send a message with 'unsubscribe linux-mm' in

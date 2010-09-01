@@ -1,48 +1,40 @@
-From: "K. Richard Pixley" <rich@noir.com>
-Subject: Re: BTRFS: Unbelievably slow with kvm/qemu
-Date: Tue, 31 Aug 2010 15:01:09 -0700
-Message-ID: <4C7D7BA5.6080607@noir.com>
-References: <4C7AB645.5090804@wpkg.org>	<20100830001441.GA838@dhcp231-156.rdu.redhat.com>	<4C7BD569.9000702@noir.com> <AANLkTin-BZvqCChXEmsDfjhVmRmJLaoaudnuFL6EXZQx@mail.gmail.com>
+From: Alexander Vdovichev <ext-alexander.vdovichev@nokia.com>
+Subject: Re: Question about specific patch (eMMC)
+Date: Wed, 01 Sep 2010 11:31:59 +0300
+Message-ID: <1283329919.3347.17.camel@calladain.research.nokia.com>
+References: <1283255825.3347.4.camel@calladain.research.nokia.com>
+	 <20100831172715.GA14509@mother.pipebreaker.pl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: Josef Bacik <josef@redhat.com>,
-	Tomasz Chmielewski <mangoo@wpkg.org>,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	hch@infradead.org, gg.mariotti@gmail.com,
-	"Justin P. Mattock" <justinmattock@gmail.com>, mjt@tls.msk.ru,
-	tytso@mit.edu
-To: Mike Fedyk <mfedyk@mikefedyk.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <AANLkTin-BZvqCChXEmsDfjhVmRmJLaoaudnuFL6EXZQx@mail.gmail.com>
+Content-Type: text/plain
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: ext Tomasz Torcz <tomek@pipebreaker.pl>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100831172715.GA14509@mother.pipebreaker.pl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 20100831 14:46, Mike Fedyk wrote:
- > There is little reason not to use duplicate metadata.  Only small
- > files (less than 2kb) get stored in the tree, so there should be no
- > worries about images being duplicated without data duplication set at
- > mkfs time.
+Hi,
+On Tue, 2010-08-31 at 19:27 +0200, ext Tomasz Torcz wrote:
+> On Tue, Aug 31, 2010 at 02:57:05PM +0300, Alexander Vdovichev wrote:
+> > Hello all,
+> > Is there any patches for btrfs to use enhanced area in eMMC (it will
+> > allow to boost performance i.e. it very useful to keep metadata within
+> > this area) ?
+> > 
+> > If it's exist let me know how to find it and use it.
+> 
+>   I'm not aware of this at the moment.  However, there are data-temperature
+> tracking patches.  Their point is to move hot data into faster storage.
+Could you point me where I can find it ?
+> I believe they can grow into generic infrastructure to inform filesystems
+> about non-homogenous nature of underlaying storage.
+I guess that it will require specific patches to the filesystem.
+Each filesystem has a specific policy to locate metadata, but most
+manufacturers believe that the device will use fat filesystem and they
+creates special areas to keep fat metadata (allocation table).
+If btrfs will has an option to use this area it will be a good advantage
+to use it in embedded area.
 
-My benchmarks show that for my kinds of data, btrfs is somewhat slower 
-than ext4, (which is slightly slower than ext3 which is somewhat slower 
-than ext2), when using the defaults, (ie, duplicate metadata).
+Thanks,
 
-It's a hair faster than ext2, (the fastest of the ext family), when 
-using singleton metadata.  And ext2 isn't even crash resistant while 
-btrfs has snapshots.
 
-I'm using hardware raid for striping speed.  (Tried btrfs striping, it 
-was close, but not as fast on my hardware).  I want speed, speed, speed. 
-  My data is only vaguely important, (continuous builders), but speed is 
-everything.
 
-While the reason to use singleton metadata may be "little", it dominates 
-my application.  If I were forced to use duplicate metadata then I'd 
-still be arguing with my coworkers about whether the speed costs were 
-worth it to buy snapshot functionality.  But the fact that btrfs is 
-faster AND provides snapshots, (and less metadata overhead and bigger 
-file systems and etc), makes for an easy sale.
-
-Note that nilfs2 has similar performance, but somewhat different 
-snapshot characteristics that aren't as useful in my current application.
-
---rich

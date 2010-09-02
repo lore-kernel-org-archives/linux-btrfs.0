@@ -1,98 +1,34 @@
-From: David Rientjes <rientjes@google.com>
-Subject: [patch v2 4/5] btrfs: add nofail variant of set_extent_dirty
-Date: Wed, 1 Sep 2010 18:03:17 -0700 (PDT)
-Message-ID: <alpine.DEB.2.00.1009011800110.24694@chino.kir.corp.google.com>
-References: <alpine.DEB.2.00.1008240340010.18908@chino.kir.corp.google.com> <alpine.DEB.2.00.1009011757360.24694@chino.kir.corp.google.com>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: Re: [PATCH 1/3] lib: introduce some memory copy macros and functions
+Date: Thu, 02 Sep 2010 13:44:19 +0800
+Message-ID: <4C7F39B3.4000901@cn.fujitsu.com>
+References: <4C7E2CA9.9060702@cn.fujitsu.com> <1283354736.2059.1206.camel@laptop>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <alpine.DEB.2.00.1009011757360.24694@chino.kir.corp.google.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: Ingo Molnar <mingo@redhat.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	"Theodore Ts'o" <tytso@mit.edu>,
+	Andreas Dilger <adilger.kernel@dilger.ca>,
+	Linux Kernel <linux-kernel@vger.kernel.org>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Linux Ext4 <linux-ext4@vger.kernel.org>
+To: Peter Zijlstra <peterz@infradead.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <1283354736.2059.1206.camel@laptop>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add set_extent_dirty_nofail().  This function is equivalent to
-set_extent_dirty(), except that it will never fail because of allocation
-failure and instead loop forever trying to allocate memory.
+On Wed, 01 Sep 2010 17:25:36 +0200, Peter Zijlstra wrote:
+> On Wed, 2010-09-01 at 18:36 +0800, Miao Xie wrote:
+>> + * This program is free software; you can redistribute it and/or modify it
+>> + * under the terms of the GNU General Public License as published by the Free
+>> + * Software Foundation; either version 2.1 of the License, or (at your option)
+>> + * any later version.
+>
+> The kernel is GPL v2, see COPYING. GPL v2.1 is not a suitable license.
 
-If the first allocation attempt fails because the page allocator doesn't
-implicitly loop, a warning will be emitted, including a call trace.
-Subsequent failures will suppress this warning.
+Ok, I will change it.
 
-This was added as a helper function for documentation and auditability.
-No future callers should be added.
-
-Signed-off-by: David Rientjes <rientjes@google.com>
----
- fs/btrfs/extent-tree.c |    8 ++++----
- fs/btrfs/extent_io.c   |   18 ++++++++++++++++++
- fs/btrfs/extent_io.h   |    2 ++
- 3 files changed, 24 insertions(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3831,9 +3831,9 @@ static int update_block_group(struct btrfs_trans_handle *trans,
- 			spin_unlock(&cache->lock);
- 			spin_unlock(&cache->space_info->lock);
- 
--			set_extent_dirty(info->pinned_extents,
-+			set_extent_dirty_nofail(info->pinned_extents,
- 					 bytenr, bytenr + num_bytes - 1,
--					 GFP_NOFS | __GFP_NOFAIL);
-+					 GFP_NOFS);
- 		}
- 		btrfs_put_block_group(cache);
- 		total -= num_bytes;
-@@ -3872,8 +3872,8 @@ static int pin_down_extent(struct btrfs_root *root,
- 	spin_unlock(&cache->lock);
- 	spin_unlock(&cache->space_info->lock);
- 
--	set_extent_dirty(root->fs_info->pinned_extents, bytenr,
--			 bytenr + num_bytes - 1, GFP_NOFS | __GFP_NOFAIL);
-+	set_extent_dirty_nofail(root->fs_info->pinned_extents, bytenr,
-+			 bytenr + num_bytes - 1, GFP_NOFS);
- 	return 0;
- }
- 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -940,6 +940,24 @@ int set_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
- 			      NULL, mask);
- }
- 
-+/*
-+ * NOTE: no new callers of this function should be implemented!
-+ * All memory allocations should be failable whenever possible.
-+ */
-+int set_extent_dirty_nofail(struct extent_io_tree *tree, u64 start, u64 end,
-+		     gfp_t mask)
-+{
-+	int ret;
-+
-+	for (;;) {
-+		ret = set_extent_dirty(tree, start, end, mask);
-+		if (ret != -ENOMEM)
-+			return ret;
-+		WARN_ON_ONCE(get_order(sizeof(struct extent_state)) >
-+						PAGE_ALLOC_COSTLY_ORDER);
-+	}
-+}
-+
- int set_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
- 		    int bits, gfp_t mask)
- {
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -197,6 +197,8 @@ int set_extent_new(struct extent_io_tree *tree, u64 start, u64 end,
- 		   gfp_t mask);
- int set_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
- 		     gfp_t mask);
-+int set_extent_dirty_nofail(struct extent_io_tree *tree, u64 start, u64 end,
-+		     gfp_t mask);
- int clear_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
- 		       gfp_t mask);
- int clear_extent_ordered(struct extent_io_tree *tree, u64 start, u64 end,
+Thanks
+Miao

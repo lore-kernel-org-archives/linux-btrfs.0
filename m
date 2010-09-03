@@ -1,42 +1,38 @@
-From: Andreas Dilger <adilger.kernel@dilger.ca>
-Subject: Re: [PATCH 2/3] lib: improve the performance of memcpy and memmove of the general version
-Date: Fri, 3 Sep 2010 12:16:57 -0600
-Message-ID: <B1BAFDD8-BA1F-4C03-A19E-09DF91CD98FF@dilger.ca>
-References: <4C7E2CAC.6080102@cn.fujitsu.com> <82mxrzrsvq.fsf@mid.bfk.de>
-Mime-Version: 1.0 (Apple Message framework v1081)
+From: Dan Magenheimer <dan.magenheimer@oracle.com>
+Subject: [PATCH V5 2/8] Cleancache: cleancache_poolid in superblock
+Date: Fri, 3 Sep 2010 13:02:13 -0700
+Message-ID: <20100903200212.GA4581__13753.4018526368$1283544273$gmane$org@ca-server1.us.oracle.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: miaox@cn.fujitsu.com, Ingo Molnar <mingo@redhat.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	Theodore Ts'o <tytso@mit.edu>,
-	Linux Kernel <linux-kernel@vger.kernel.org>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Linux Ext4 <linux-ext4@vger.kernel.org>
-To: Florian Weimer <fweimer@bfk.de>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <82mxrzrsvq.fsf@mid.bfk.de>
+To: chris.mason@oracle.com, viro@zeniv.linux.org.uk,
+	akpm@linux-foundation.org, adilger@sun.com, tytso@mit.edu,
+	mfasheh@suse.com, joel.becker@oracle.com, matthew@wil.cx,
+	linux-btrfs@vger.
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2010-09-03, at 05:03, Florian Weimer wrote:
+[PATCH V5 2/8] Cleancache: cleancache_poolid in superblock
 
-> * Miao Xie:
-> 
->> EXPORT_SYMBOL(memcpy);
-> 
-> I think you need to change that to EXPORT_SYMBOL_GPL, because the code
-> is now licensed under the GPL, and not the GPL plus kernel exceptions
-> (whatever they are, but they undoubtly exist), unlike the original
-> implementation.
+Add cleancache_poolid to superblock structure... not tied
+to CONFIG_CLEANCACHE so as to avoid unnecessary clutter.
 
-Ouch.  That would basically make it impossible to implement a non-GPL module.  Also, this should only apply to the "lib" version of the memcpy() routine, not the arch-specific ones that are written in assembly (maybe that already is true, I'm not sure).
+Signed-off-by: Dan Magenheimer <dan.magenheimer@oracle.com>
 
-Lustre is GPL, so it isn't fatal for us, but it definitely seems draconian, and almost a reason not to include this patch into the kernel.  Also, given that the original code is LGPL (which allows linking to non-GPL code) this seems counter to the intent of the original authors.
+Diffstat:
+ fs.h                                     |    5 +++++
+ 1 file changed, 5 insertions(+)
 
-I suspect there isn't anything so brilliant in the glibc memcpy() that it couldn't be re-implemented without copying the code.  "implement memcpy with aligned machine-word-sized chunks" would be enough for anyone to reimplement it without ever having come close to the glibc code.
-
-Cheers, Andreas
-
-
-
-
-
+--- linux-2.6.36-rc3/include/linux/fs.h	2010-08-29 09:36:04.000000000 -0600
++++ linux-2.6.36-rc3-cleancache/include/linux/fs.h	2010-08-30 09:20:43.000000000 -0600
+@@ -1381,6 +1381,11 @@ struct super_block {
+ 	 * generic_show_options()
+ 	 */
+ 	char *s_options;
++
++	/*
++	 * Saved pool identifier for cleancache (-1 means none)
++	 */
++	int cleancache_poolid;
+ };
+ 
+ extern struct timespec current_fs_time(struct super_block *sb);

@@ -1,57 +1,45 @@
-From: Francis Galiegue <fgaliegue@gmail.com>
-Subject: [PATCH] btrfsck.c: #include <sys/stat.h> to avoid compile failures with glibc >= 2.12
-Date: Sat,  4 Sep 2010 12:16:18 +0200
-Message-ID: <1283595378-28405-1-git-send-email-fgaliegue@gmail.com>
+From: Calvin Walton <calvin.walton@gmail.com>
+Subject: Re: [PATCH 2/3] lib: improve the performance of memcpy and memmove
+ of the general version
+Date: Sat, 04 Sep 2010 08:59:02 -0400
+Message-ID: <1283605142.9039.4.camel@ayu>
+References: <4C7E2CAC.6080102@cn.fujitsu.com>  <82mxrzrsvq.fsf@mid.bfk.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Francis Galiegue <fgaliegue@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Cc: miaox@cn.fujitsu.com, Ingo Molnar <mingo@redhat.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	Theodore Ts'o <tytso@mit.edu>,
+	Andreas Dilger <adilger.kernel@dilger.ca>,
+	Linux Kernel <linux-kernel@vger.kernel.org>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Linux Ext4 <linux-ext4@vger.kernel.org>
+To: Florian Weimer <fweimer@bfk.de>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <82mxrzrsvq.fsf@mid.bfk.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Avoid these warnings during compile:
+On Fri, 2010-09-03 at 11:03 +0000, Florian Weimer wrote:
+> * Miao Xie:
+> 
+> >  EXPORT_SYMBOL(memcpy);
+> 
+> I think you need to change that to EXPORT_SYMBOL_GPL, because the code
+> is now licensed under the GPL, and not the GPL plus kernel exceptions
+> (whatever they are, but they undoubtly exist), unlike the original
+> implementation.
 
-----
-btrfsck.c: In function =E2=80=98maybe_free_inode_rec=E2=80=99:
-btrfsck.c:323: warning: implicit declaration of function =E2=80=98S_ISD=
-IR=E2=80=99
-btrfsck.c:328: warning: implicit declaration of function =E2=80=98S_ISR=
-EG=E2=80=99
-btrfsck.c:328: warning: implicit declaration of function =E2=80=98S_ISL=
-NK=E2=80=99
-----
+I wouldn't think so - the intent of EXPORT_SYMBOL_GPL is to mark symbols
+that make it obvious that a module was derived from the Linux kernel, as
+opposed to some sort of generic driver that was just ported to a new
+interface. (It's not foolproof, it's more of a warning to developers.)
 
-leading to a link failure:
+If you think of it this way, memcpy is a function defined in the C
+standard, there's absolutely nothing Linux-specific about using it.
 
-----
-btrfsck.o: In function `maybe_free_inode_rec':
-btrfsck.c:(.text+0x110e): undefined reference to `S_ISDIR'
-btrfsck.c:(.text+0x113b): undefined reference to `S_ISREG'
-btrfsck.c:(.text+0x11eb): undefined reference to `S_ISREG'
-btrfsck.c:(.text+0x1252): undefined reference to `S_ISLNK'
-btrfsck.c:(.text+0x1289): undefined reference to `S_ISLNK'
-----
----
- btrfsck.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+Of course, IANAL; and you should probably grab some more opinions on the
+matter.
 
-diff --git a/btrfsck.c b/btrfsck.c
-index 73f1836..c1f47a1 100644
---- a/btrfsck.c
-+++ b/btrfsck.c
-@@ -21,6 +21,7 @@
- #include <stdio.h>
- #include <stdlib.h>
- #include <fcntl.h>
-+#include <sys/stat.h>
- #include "kerncompat.h"
- #include "ctree.h"
- #include "disk-io.h"
---=20
-1.7.2.2
+-- 
+Calvin Walton <calvin.walton@gmail.com>
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

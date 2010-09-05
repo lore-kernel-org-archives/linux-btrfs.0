@@ -1,51 +1,59 @@
-From: Alan Cox <alan@lxorguk.ukuu.org.uk>
-Subject: Re: [PATCH 2/3] lib: improve the performance of memcpy and memmove
- of the general version
-Date: Sat, 4 Sep 2010 15:41:14 +0100
-Message-ID: <20100904154114.19501d6e@lxorguk.ukuu.org.uk>
-References: <4C7E2CAC.6080102@cn.fujitsu.com>
-	<82mxrzrsvq.fsf@mid.bfk.de>
-	<1283605142.9039.4.camel@ayu>
+From: Chris Samuel <chris@csamuel.org>
+Subject: Re: [Btrfs-devel] [patch] O_DIRECT: fix the splitting up of contiguous I/O
+Date: Sun, 5 Sep 2010 22:56:08 +1000
+Message-ID: <201009052256.12386.chris@csamuel.org>
+References: <x49vd7f368c.fsf@segfault.boston.devel.redhat.com> <20100902142501.GA14932@infradead.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: Florian Weimer <fweimer@bfk.de>, miaox@cn.fujitsu.com,
-	Ingo Molnar <mingo@redhat.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	"Theodore Ts'o" <tytso@mit.edu>,
-	Andreas Dilger <adilger.kernel@dilger.ca>,
-	Linux Kernel <linux-kernel@vger.kernel.org>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Linux Ext4 <linux-ext4@vger.kernel.org>
-To: Calvin Walton <calvin.walton@gmail.com>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <1283605142.9039.4.camel@ayu>
+Content-Type: multipart/signed;
+  boundary="nextPart3814862.Uf0HDgYkgA";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+Cc: Christoph Hellwig <hch@infradead.org>,
+	Jeff Moyer <jmoyer@redhat.com>,
+	"btrfs-devel" <btrfs-devel@oss.oracle.com>,
+	Andrew Morton <akpm@linuxfoundation.org>,
+	linux-kernel@vger.kernel.org, Josef Bacik <josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100902142501.GA14932@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, 04 Sep 2010 08:59:02 -0400
-Calvin Walton <calvin.walton@gmail.com> wrote:
+--nextPart3814862.Uf0HDgYkgA
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 
-> On Fri, 2010-09-03 at 11:03 +0000, Florian Weimer wrote:
-> > * Miao Xie:
-> > 
-> > >  EXPORT_SYMBOL(memcpy);
-> > 
-> > I think you need to change that to EXPORT_SYMBOL_GPL, because the code
-> > is now licensed under the GPL, and not the GPL plus kernel exceptions
-> > (whatever they are, but they undoubtly exist), unlike the original
-> > implementation.
-> 
-> I wouldn't think so - the intent of EXPORT_SYMBOL_GPL is to mark symbols
-> that make it obvious that a module was derived from the Linux kernel, as
-> opposed to some sort of generic driver that was just ported to a new
-> interface. (It's not foolproof, it's more of a warning to developers.)
+On Fri, 3 Sep 2010 12:25:01 am Christoph Hellwig wrote:
 
-EXPORT_SYMBOL_GPL was meant for symbols that were clearly internal
-workings. EXPORT_SYMBOL() doesn't in any way imply or excuse GPL
-compliance for any derivative work.
+> Andrew, can you please send this on to Linus and -stable ASAP?
+> It's causing massive problems for our users.
 
-Using the FSF memcpy seems a good technical idea, and it'll no doubt
-liven up the proprietary module makers lawyers as it'll make the FSF a
-party to any infringement disputes 8)
+Did this patch get dropped ?   I don't see it in Linus's git..
 
-Alan
+https://patchwork.kernel.org/patch/119333/
+
+cheers,
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+
+This email may come with a PGP signature as a file. Do not panic.
+=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
+
+--nextPart3814862.Uf0HDgYkgA
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iQEVAwUATIOTaY1yjaOTJg85AQIdWAf+PyOtvyZrLrZ2dWaI4/gRgKeadsxp6Mb6
+Gc3wUhwUTeb/ZrVtrRQsAashDHYyLK/BNj5b+v36Z5vBMqqNps/0/+bqK+1uqpHz
+rIdqJU5OdL16b8vKKu8MKhTsGzJckec7j302houg9s+xSRBVX8B+urP4ygcHHBhU
+FonKoqMpwybtFeyJxRetOsOT3SC69LrqWP0zrd91XiwCuAoehHhn9aiyajveGn0I
+mHg+hOx236Bkmw77vp7f+XFQwaoFuZMzxH+fuf0PzLwlmGYTINlBJy5RxCLY4QQt
+mnoGj6G4Nc9wlcPwTMLRAtaHG0xD7jrYA0oXdtQnBV7z/0T8SpV3EA==
+=sTOa
+-----END PGP SIGNATURE-----
+
+--nextPart3814862.Uf0HDgYkgA--

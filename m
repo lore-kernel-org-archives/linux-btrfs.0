@@ -1,35 +1,36 @@
-From: David Rientjes <rientjes@google.com>
-Subject: Re: [patch v2 1/5] mm: add nofail variants of kmalloc kcalloc and
- kzalloc
-Date: Sun, 5 Sep 2010 16:03:52 -0700 (PDT)
-Message-ID: <alpine.DEB.2.00.1009051602130.5003@chino.kir.corp.google.com>
-References: <alpine.DEB.2.00.1008240340010.18908@chino.kir.corp.google.com> <alpine.DEB.2.00.1009011757360.24694@chino.kir.corp.google.com> <4C7F5951.6040809@gmail.com> <20100902145141.GA3273@quack.suse.cz> <20100903071506.6e6b4d63@notabene>
+From: Chris Samuel <chris@csamuel.org>
+Subject: Re: [Btrfs-devel] [patch] O_DIRECT: fix the splitting up of contiguous
+ I/O
+Date: Mon, 06 Sep 2010 16:29:34 +1000
+Message-ID: <4C848A4E.9040103@csamuel.org>
+References: <x49vd7f368c.fsf@segfault.boston.devel.redhat.com>	<20100902142501.GA14932@infradead.org>	<201009052256.12386.chris@csamuel.org> <20100905093620.d2eeb539.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Jan Kara <jack@suse.cz>, Jiri Slaby <jirislaby@gmail.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Alasdair G Kergon <agk@redhat.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Steven Whitehouse <swhiteho@redhat.com>,
-	Jens Axboe <jaxboe@fusionio.com>,
-	Frederic Weisbecker <fweisbec@gmail.com>,
-	linux-raid@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	cluster-devel@redhat.com, linux-ext4@vger.kernel.org,
-	reiserfs-devel@vger.kernel.org, linux-kernel@vger.kernel.org
-To: Neil Brown <neilb@suse.de>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <20100903071506.6e6b4d63@notabene>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org, Christoph Hellwig <hch@infradead.org>,
+	Jeff Moyer <jmoyer@redhat.com>,
+	btrfs-devel <btrfs-devel@oss.oracle.com>,
+	Andrew Morton <akpm@linuxfoundation.org>,
+	linux-kernel@vger.kernel.org, Josef Bacik <josef@redhat.com>
+To: Andrew Morton <akpm@linux-foundation.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20100905093620.d2eeb539.akpm@linux-foundation.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 3 Sep 2010, Neil Brown wrote:
+On 06/09/10 02:36, Andrew Morton wrote:
 
-> I'm actually a bit confused about this too.
-> I thought David said he was removing a branch on the *slow* path - which make
-> sense as you wouldn't even test NOFAIL until you had a failure.
-> Why are branches on the slow-path an issue??
+> On Sun, 5 Sep 2010 22:56:08 +1000 Chris Samuel <chris@csamuel.org> wrote:
+> 
+>> > Did this patch get dropped ? 
+>
+> Nope.  I have it queued for 2.6.36 and -stable, will send it in soon. 
+> Everything is a bit lagged at present due to conferences, summer,
+> encroaching senility, etc.
 
-They aren't necessarily an issue in the performance sense, this is a 
-cleanup series since all converted callers to using these new functions 
-(and the eventual removal of __GFP_NOFAIL entirely) are using the bit 
-unnecessarily since they all have orders that implicitly loop in the page 
-allocator forever already, with or without the flag.
+Mea culpa - I mixed up the date of the original email with the
+date of Christoph's email and so thought he'd sent that back
+in August.  Looks like I'm the one with senility issues.. ;-)
+
+cheers,
+Chris
+-- 
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC

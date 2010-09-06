@@ -1,42 +1,67 @@
-From: David Rientjes <rientjes@google.com>
-Subject: Re: [patch v2 1/5] mm: add nofail variants of kmalloc kcalloc and
- kzalloc
-Date: Mon, 6 Sep 2010 02:05:27 -0700 (PDT)
-Message-ID: <alpine.DEB.2.00.1009060204001.10552@chino.kir.corp.google.com>
-References: <alpine.DEB.2.00.1008240340010.18908@chino.kir.corp.google.com> <alpine.DEB.2.00.1009011757360.24694@chino.kir.corp.google.com>
+From: Andre Nogueira <andre.neo.net@gmail.com>
+Subject: Re: [PATCH] Function btree_get_extent: Incorrect if-else if statement
+Date: Mon, 6 Sep 2010 14:51:11 +0100
+Message-ID: <AANLkTi=fTMp+PthyKam-QHmJYfTC68LBEU_XKWhah4-O@mail.gmail.com>
+References: <AANLkTimCtN1hten5v+tdwG9yiKsFmSMPcQU-eLefDQkc@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Neil Brown <neilb@suse.de>, Alasdair G Kergon <agk@redhat.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Steven Whitehouse <swhiteho@redhat.com>,
-	Jens Axboe <jaxboe@fusionio.com>, Jan Kara <jack@suse.cz>,
-	Frederic Weisbecker <fweisbec@gmail.com>,
-	linux-raid@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	cluster-devel@redhat.com, linux-ext4@vger.kernel.org,
-	reiserfs-devel@vger.kernel.org, linux-kernel@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <alpine.DEB.2.00.1009011757360.24694@chino.kir.corp.google.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+To: chris.mason@oracle.com
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTimCtN1hten5v+tdwG9yiKsFmSMPcQU-eLefDQkc@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 1 Sep 2010, David Rientjes wrote:
+Hi.
 
-> Add kmalloc_nofail(), kcalloc_nofail(), and kzalloc_nofail().  These
-> functions are equivalent to kmalloc(), kcalloc(), and kzalloc(),
-> respectively, except that they will never return NULL and instead loop
-> forever trying to allocate memory.
-> 
-> If the first allocation attempt fails because the page allocator doesn't 
-> implicitly loop, a warning will be emitted, including a call trace.
-> Subsequent failures will suppress this warning.
-> 
-> These were added as helper functions for documentation and auditability.
-> No future callers should be added.
-> 
+I sent this patch weeks ago. I would like to have some feedback about i=
+t.
 
-Are there any objections to merging this series through -mm with the 
-exception of the fifth patch for ntfs?  That particular patch needs to 
-have its WARN_ON_ONCE() condition rewritten since it fallbacks to 
-vmalloc for high order allocs.
+Thanks in advance.
 
-Thanks.
+2010/8/9 Andr=E9 Nogueira <andre.neo.net@gmail.com>:
+> The btree_get_extent function (in file disk-io.c) calls the
+> add_extent_mapping (in file extent_map.c). The add_extent_mapping
+> function can return two values: 0 or -EEXIST.
+>
+> After the call, it is used an if-else if statement. If the result is
+> -EEXIST, the if statement is executed. If the result is 0, the else i=
+f
+> statement will not be executed because it is false.
+>
+> Thank you.
+>
+> Signed-off-by: Andre Nogueira <andre.neo.net@gmail.com>
+>
+> ---
+> =A0fs/btrfs/disk-io.c | =A0 =A02 +-
+> =A01 files changed, 1 insertions(+), 1 deletions(-)
+>
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 34f7c37..76eb161 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -164,7 +164,7 @@ static struct extent_map *btree_get_extent(struct
+> inode *inode,
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
+ =A0 =A0 =A0 =A0 =A0 =A0 =A0 failed_len);
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0ret =3D -EIO;
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0}
+> - =A0 =A0 =A0 } else if (ret) {
+> + =A0 =A0 =A0 } else {
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0free_extent_map(em);
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0em =3D NULL;
+> =A0 =A0 =A0 =A0}
+> --
+> 1.6.3.3
+>
+
+
+
+--=20
+Andr=E9 Nogueira
+http://sites.google.com/site/andrenogueirasite/
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

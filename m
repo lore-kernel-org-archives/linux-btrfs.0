@@ -1,36 +1,42 @@
-From: Chris Samuel <chris@csamuel.org>
-Subject: Re: [Btrfs-devel] [patch] O_DIRECT: fix the splitting up of contiguous
- I/O
-Date: Mon, 06 Sep 2010 16:29:34 +1000
-Message-ID: <4C848A4E.9040103@csamuel.org>
-References: <x49vd7f368c.fsf@segfault.boston.devel.redhat.com>	<20100902142501.GA14932@infradead.org>	<201009052256.12386.chris@csamuel.org> <20100905093620.d2eeb539.akpm@linux-foundation.org>
+From: David Rientjes <rientjes@google.com>
+Subject: Re: [patch v2 1/5] mm: add nofail variants of kmalloc kcalloc and
+ kzalloc
+Date: Mon, 6 Sep 2010 02:05:27 -0700 (PDT)
+Message-ID: <alpine.DEB.2.00.1009060204001.10552@chino.kir.corp.google.com>
+References: <alpine.DEB.2.00.1008240340010.18908@chino.kir.corp.google.com> <alpine.DEB.2.00.1009011757360.24694@chino.kir.corp.google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org, Christoph Hellwig <hch@infradead.org>,
-	Jeff Moyer <jmoyer@redhat.com>,
-	btrfs-devel <btrfs-devel@oss.oracle.com>,
-	Andrew Morton <akpm@linuxfoundation.org>,
-	linux-kernel@vger.kernel.org, Josef Bacik <josef@redhat.com>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: Neil Brown <neilb@suse.de>, Alasdair G Kergon <agk@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Steven Whitehouse <swhiteho@redhat.com>,
+	Jens Axboe <jaxboe@fusionio.com>, Jan Kara <jack@suse.cz>,
+	Frederic Weisbecker <fweisbec@gmail.com>,
+	linux-raid@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	cluster-devel@redhat.com, linux-ext4@vger.kernel.org,
+	reiserfs-devel@vger.kernel.org, linux-kernel@vger.kernel.org
 To: Andrew Morton <akpm@linux-foundation.org>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20100905093620.d2eeb539.akpm@linux-foundation.org>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <alpine.DEB.2.00.1009011757360.24694@chino.kir.corp.google.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/09/10 02:36, Andrew Morton wrote:
+On Wed, 1 Sep 2010, David Rientjes wrote:
 
-> On Sun, 5 Sep 2010 22:56:08 +1000 Chris Samuel <chris@csamuel.org> wrote:
+> Add kmalloc_nofail(), kcalloc_nofail(), and kzalloc_nofail().  These
+> functions are equivalent to kmalloc(), kcalloc(), and kzalloc(),
+> respectively, except that they will never return NULL and instead loop
+> forever trying to allocate memory.
 > 
->> > Did this patch get dropped ? 
->
-> Nope.  I have it queued for 2.6.36 and -stable, will send it in soon. 
-> Everything is a bit lagged at present due to conferences, summer,
-> encroaching senility, etc.
+> If the first allocation attempt fails because the page allocator doesn't 
+> implicitly loop, a warning will be emitted, including a call trace.
+> Subsequent failures will suppress this warning.
+> 
+> These were added as helper functions for documentation and auditability.
+> No future callers should be added.
+> 
 
-Mea culpa - I mixed up the date of the original email with the
-date of Christoph's email and so thought he'd sent that back
-in August.  Looks like I'm the one with senility issues.. ;-)
+Are there any objections to merging this series through -mm with the 
+exception of the fifth patch for ntfs?  That particular patch needs to 
+have its WARN_ON_ONCE() condition rewritten since it fallbacks to 
+vmalloc for high order allocs.
 
-cheers,
-Chris
--- 
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+Thanks.

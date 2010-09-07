@@ -1,89 +1,103 @@
-From: Daniel Kozlowski <dan.kozlowski@gmail.com>
-Subject: Re: mkfs or wait?
-Date: Tue, 7 Sep 2010 09:48:29 -0400
-Message-ID: <AANLkTinCkFctLELtMNRR9=1PyvBQvKmBt-n-pXg1czMA@mail.gmail.com>
-References: <i64k40$ur1$1@dough.gmane.org>
-	<i65flv$6tn$1@dough.gmane.org>
+From: Daniel J Blueman <daniel.blueman@gmail.com>
+Subject: [2.6.35-rc6 patch] direct I/O submission fixes v2
+Date: Tue, 7 Sep 2010 15:18:28 +0100
+Message-ID: <AANLkTi=AKr3PORx7e3_fC9yStsZh1GCG7YDJ++LegZ-m@mail.gmail.com>
+References: <AANLkTinvEBT26BaxR3Z1ZZXmzuvq91pMQSd1PbqYTyJM@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Lubos Kolouch <lubos.kolouch@gmail.com>
+Cc: Linux BTRFS <linux-btrfs@vger.kernel.org>,
+	Josef Bacik <josef@redhat.com>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <i65flv$6tn$1@dough.gmane.org>
+In-Reply-To: <AANLkTinvEBT26BaxR3Z1ZZXmzuvq91pMQSd1PbqYTyJM@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I had a similar issue There was a Segmenation fault showing up in
-dmesg that wasen't showing up in /var/log/messages. In my case
-upgrading to the git tree let me read and write to the filesystem.
+Hi Chris,
 
-On Tue, Sep 7, 2010 at 9:45 AM, Lubos Kolouch <lubos.kolouch@gmail.com>=
- wrote:
-> Lubos Kolouch, Tue, 07 Sep 2010 05:55:12 +0000:
+On 25 July 2010 15:42, Josef Bacik <josef@redhat.com> wrote:
+> On Sat, Jul 24, 2010 at 12:01:59AM +0100, Daniel J Blueman wrote:
+>> Hi Chris,
+>>
+>> This fixes some issues relating to direct I/O submission, however a
+>> further patch will be needed to handle the case where allocation of
+>> 'dip' fails, which is always dereferenced when finding the ordered
+>> extent.
+>>
 >
->> Hello,
->>
->> I have on one computer damaged btrfs filesystem... it was a strange
->> crash, it showed about 30% free space, however then the volume crash=
-ed
->> with 'no space left' messages and after reboot it is unusable.
->>
->> I can mount it, I can df it but when I try for example ls, ls gets s=
-tuck
->> (does not display anything) and I get - in the syslog
->> verify_parent_transid: 22336 callbacks suppressed parent transid ver=
-ify
->> failed on 1066975232 wanted 125077 found 125075 parent transid verif=
-y
->> failed on 974635008 wanted 125077 found 125075 parent transid verify
->> failed on 1066975232 wanted 125077 found 125075 parent transid verif=
-y
->> failed on 974635008 wanted 125077 found 125075 parent transid verify
->> failed on 1066975232 wanted 125077 found 125075 parent transid verif=
-y
->> failed on 974635008 wanted 125077 found 125075 parent transid verify
->> failed on 1066975232 wanted 125077 found 125075 parent transid verif=
-y
->> failed on 974635008 wanted 125077 found 125075 parent transid verify
->> failed on 1066975232 wanted 125077 found 125075 parent transid verif=
-y
->> failed on 974635008 wanted 125077 found 125075
->>
->> - top shows
->> ls
->> [btrfs-endio-met]
->> [btrfs-cache-293]
->>
->> - btrfs segfaults
->>
->> It is like this over a day. Should I just mkfs it or is there anythi=
-ng
->> sensible I could try?
->>
->> kernel 2.6.35-gentoo-r5, latest git btrfs-progs
->>
->> Thank you for your advice.
->>
->> Lubos
+> Hi,
 >
-> Funny thing - under 2.6.34-r1 it works, ie. I can mount it and view f=
-iles
-> (even though the errors in log are still there).
+> There's an easier way to do this. =A0This patch should fix the proble=
+m,
 >
-> Regression in 2.6.35?
+> Signed-off-by: Josef Bacik <josef@redhat.com>
 >
-> Lubos
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 3232945..7259ef9 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -5815,7 +5815,7 @@ free_ordered:
+> =A0 =A0 =A0 =A0if (write) {
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0struct btrfs_ordered_extent *ordered;
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0ordered =3D btrfs_lookup_ordered_exten=
+t(inode,
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
+ =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 dip->logical_offset);
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
+ =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 file_offset);
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0if (!test_bit(BTRFS_ORDERED_PREALLOC, =
+&ordered->flags) &&
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0!test_bit(BTRFS_ORDERED_NOCOW,=
+ &ordered->flags))
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0btrfs_free_reserved_ex=
+tent(root, ordered->start,
 >
 
+Good move!
+
+With your patch applied, mine (now not priority) then becomes:
+
+=46ix leak of 'dip' on error path and double assignment.
+
+Signed-off-by: Daniel J Blueman <daniel.blueman@gmail.com>
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 1bff92a..bd7f940 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5652,15 +5652,15 @@ static void btrfs_submit_direct(int rw, struct
+bio *bio, struct inode *inode,
+=A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0ret =3D -ENOMEM;
+=A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0goto free_ordered;
+=A0 =A0 =A0 =A0}
+- =A0 =A0 =A0 dip->csums =3D NULL;
+
+=A0 =A0 =A0 =A0if (!skip_sum) {
+=A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0dip->csums =3D kmalloc(sizeof(u32) * bio=
+->bi_vcnt, GFP_NOFS);
+=A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0if (!dip->csums) {
+=A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0ret =3D -ENOMEM;
+- =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 goto free_ordered;
++ =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 goto out_err;
+=A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0}
+- =A0 =A0 =A0 }
++ =A0 =A0 =A0 } else
++ =A0 =A0 =A0 =A0 =A0 =A0 =A0 dip->csums =3D NULL;
+
+=A0 =A0 =A0 =A0dip->private =3D bio->bi_private;
+=A0 =A0 =A0 =A0dip->inode =3D inode;
 
 
+I didn't see Josef and my patches at
+http://git.kernel.org/?p=3Dlinux/kernel/git/mason/btrfs-unstable.git
+yet.
+
+They still appear relevant; let me know if you'd like it rediffed
+against your tree.
+
+Thanks,
+  Daniel
 --=20
-S.D.G.
+Daniel J Blueman
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

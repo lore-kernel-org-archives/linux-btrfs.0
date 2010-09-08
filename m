@@ -1,42 +1,38 @@
-From: Marcel Lohmann <marcel.lohmann@googlemail.com>
-Subject: btrfs on LVM: Out of space
-Date: Wed, 8 Sep 2010 13:18:51 +0200
-Message-ID: <AANLkTinyfVH7DkOTNW-iSJjKExh5eS9Ea-HX0TY+XJ7b@mail.gmail.com>
+From: "Andi Kleen" <andi@firstfloor.org>
+Subject: Re: [PATCH V2 1/3] lib: introduce some memory copy macros and
+     functions
+Date: Wed, 8 Sep 2010 14:19:25 +0200 (CEST)
+Message-ID: <46238.91.60.152.217.1283948365.squirrel@www.firstfloor.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=US-ASCII
+Cc: "Andi Kleen" <andi@firstfloor.org>,
+	"Peter Zijlstra" <peterz@infradead.org>,
+	"Ingo Molnar" <mingo@redhat.com>,
+	"Andrew Morton" <akpm@linux-foundation.org>,
+	"Theodore Ts'o" <tytso@mit.edu>,
+	"Linux Kernel" <linux-kernel@vger.kernel.org>,
+	"Linux Ext4" <linux-ext4@vger.kernel.org>,
+	"Linux Btrfs" <linux-btrfs@vger.kernel.org>
+To: miaox@cn.fujitsu.com
+Return-path: <linux-ext4-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
 
-I'm really new to btrfs and wanted to give it a try. But now I have
-some strange behavior with a "full disk". My setup is currently as
-follows:
-An LVM volume group that is configured as RAID1. In that there is a
-logical volume of 130 GB in size. So physically 2x130 GB as of RAID 1,
-but logically you can use 130 GB.
-In that complete logical volume I created a btrfs partition. And
-btrfs-show displays 130GB space. Fine.
-Then I started to fill that volume with thousands of files until it
-was unexpectedly "full". But I am sure that there is far less than
-130GB in files! Now btrfs-show says that I used 130GB of 130GB, while
-df -h shows 38GB of free space. And as I know, df -h has problems to
-determine the real space. So I used "btrfs filesystem df /mountpoint"
-to give me the actual numbers. And that tells me:
-Data: total=23.97GB, used=23.97GB
-Metadata: total=53.01GB, used=33.98GB
-System: total=12.00MB, used=16.00KB
-So what does that mean? I have 130GB disk capacity and I can only use
-1/5 of that for real data? That can't be true. Even if there is a
-problem with the RAID recognition (but RAID should be invisible for
-btrfs) then I would have 65GB of "available" space, but btrfs
-currently uses 77GB already.
+> According to the data, the length of the most copies is >=128.
 
-What did I do wrong, or how can I solve that? The kernel is the
-"official" 2.6.35-20-server that ships with Ubuntu 10.10 beta. With
-Ubuntu 10.04 I had the same problem, but there was no "btrfs" command
-and the buggy "df -h" so I thought the new kernel would solve the
-problem. But it does not solve it.
+Thanks for the data. Large is easier to optimize than small, that's good.
 
-Marcel
+Could you also measure how many memsets need the backwards copy?
+(should be easy to add)
+
+If the number is small that needs backwards then the easiest fix
+would be to simply call the normal memcpy in the forward case.
+
+That is for backward could also use a string instruction copy
+of course, just have to set the direction flag.
+
+That would be a very small code change.
+
+-Andi
+
+

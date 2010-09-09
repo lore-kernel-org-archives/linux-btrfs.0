@@ -1,7 +1,7 @@
-From: =?UTF-8?B?VGFtw6FzIEd1bMOhY3Np?= <gt-dev@gthomas.homelinux.org>
+From: Zhu Yanhai <zhu.yanhai@gmail.com>
 Subject: Re: btrfs on LVM: Out of space
-Date: Thu, 9 Sep 2010 11:37:08 +0200
-Message-ID: <AANLkTimjz0Bo_Vz7aapSfZXFJCsz7Ynm0uhykHhMrBdw@mail.gmail.com>
+Date: Thu, 9 Sep 2010 17:52:23 +0800
+Message-ID: <AANLkTi=EyKFr_QCAoWtM=wZ8EnijcDuDfjgiyaE+dnuc@mail.gmail.com>
 References: <AANLkTinyfVH7DkOTNW-iSJjKExh5eS9Ea-HX0TY+XJ7b@mail.gmail.com>
  <AANLkTimLFf-GezTk07NCQjNKkB5RyVge81kzhs27=jAb@mail.gmail.com>
  <AANLkTini5k0cOwCW5WrZuw3M0ynDy8v9MbSyzPGMRmZy@mail.gmail.com>
@@ -13,11 +13,6 @@ To: Marcel Lohmann <marcel.lohmann@googlemail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <AANLkTikujoMMHiwhgBns7W462pPYSsTywY6uHCw2vUCD@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
-
-You can try "-l" option of mkfs.btrfs to have all the small files
-packed in the metadata, not extents.
-
-GThomas
 
 2010/9/9 Marcel Lohmann <marcel.lohmann@googlemail.com>:
 > 2010/9/9 Zhu Yanhai <zhu.yanhai@gmail.com>:
@@ -51,9 +46,25 @@ a
 s
 > to 2000Bytes). On the other hand there is only twice the size reserve=
 d
+
+200B ~ 2000B is really too small to the modern hard disks (some of them
+already have 4KB-sectors instead of 512B).
+Besides, currectly Btrfs doesn't play quite well with such small files,=
+ you may
+need to read this thread:
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg05263.html
+=46ortunately Chris found this is caused by a plain old bug in Btrfs,
+and he already
+had a patch for it, IIRC. Here it is:
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg05292.html
+I don't know whether it has been in the kernel you are using.
+
 > and actually used a bit more that the real data.
 >
 > Many thanks for make that clear to me.
+
+You're welcome!
+
 >
 > Marcel
 > --
@@ -63,6 +74,8 @@ d
 > More majordomo info at =C2=A0http://vger.kernel.org/majordomo-info.ht=
 ml
 >
+
+-zyh
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

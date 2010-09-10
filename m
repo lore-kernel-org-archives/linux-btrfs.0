@@ -1,36 +1,44 @@
-From: Zhu Yanhai <zhu.yanhai@gmail.com>
-Subject: Re: kernel BUG at fs/btrfs/inode.c:2642!
-Date: Fri, 10 Sep 2010 16:37:26 +0800
-Message-ID: <AANLkTik9k3Er1P408Kzqte9WaW7_HMf=26Yk8jP5bBrY@mail.gmail.com>
-References: <20100909223331.362dd906.kitayama@cl.bb4u.ne.jp>
- <AANLkTi=QQdBkvhUamuKrM=vhkYc6=9Eu6_d14M3PciJF@mail.gmail.com> <20100910160713.ef663160.kitayama@cl.bb4u.ne.jp>
+From: Frank Morales II <altf2o@gmail.com>
+Subject: [PATCH] fs/btrfs/ordered-data.c: fixed compiler warnings for using
+ uninitialized variable
+Date: Fri, 10 Sep 2010 07:42:04 -0700
+Message-ID: <1284129724.23418.27.camel@ubuntu1004pl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
-To: Itaru Kitayama <kitayama@cl.bb4u.ne.jp>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100910160713.ef663160.kitayama@cl.bb4u.ne.jp>
+Content-Type: text/plain; charset="UTF-8"
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+To: chris.mason@oracle.com, josef@redhat.com, zheng.yan@oracle.com,
+	jens.axboe@oracle.com, tj@kernel.org
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Please feel free to forward it, as I don't know the addr for -mm tree.
+>From 1c304defc543738f82ccb18fe10b558dd2098d74 Mon Sep 17 00:00:00 2001
+From: Frank Morales II <altf2o@gmail.com>
+Date: Fri, 10 Sep 2010 07:34:23 -0700
+Subject: [PATCH] fs/btrfs/ordered-data.c: fixed compiler warnings for using uninitialized variable
 
--zyh
+In the function tree_search, the variable prev was used without first
+being initialized, causing compiler warning messages. Initializing
+prev to NULL resolved the issue.
 
-2010/9/10 Itaru Kitayama <kitayama@cl.bb4u.ne.jp>:
->
-> Thank you, Zhu. Would you send the patch to Andrew or should I pass it on to him?
->
-> Itaru
->
-> On Thu, 9 Sep 2010 23:30:52 +0800
-> Zhu Yanhai <zhu.yanhai@gmail.com> wrote:
->
->> Hi,
->> That's because btrfs_del_dir_entries_in_log() will return the real
->> errno after Andi's
->> commit, so btrfs_unlink_inode() has to check the return value more seriously.
->> A patch for this has been sent out.
->>
->> Regards,
->> Zhu Yanhai
->
+Kernal patched against: 2.6.36-rc3 (df423dc7)
+
+Signed-off-by: Frank Morales II <altf2o@gmail.com>
+---
+ fs/btrfs/ordered-data.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index e56c72b..fad2616 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -141,7 +141,7 @@ static inline struct rb_node *tree_search(struct btrfs_ordered_inode_tree *tree,
+ 					  u64 file_offset)
+ {
+ 	struct rb_root *root = &tree->tree;
+-	struct rb_node *prev;
++	struct rb_node *prev = NULL;
+ 	struct rb_node *ret;
+ 	struct btrfs_ordered_extent *entry;
+ 
+-- 
+1.7.0.4

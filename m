@@ -1,44 +1,35 @@
-From: Frank Morales II <altf2o@gmail.com>
-Subject: [PATCH] fs/btrfs/ordered-data.c: fixed compiler warnings for using
- uninitialized variable
-Date: Fri, 10 Sep 2010 07:42:04 -0700
-Message-ID: <1284129724.23418.27.camel@ubuntu1004pl>
+From: Simon Kirby <sim@hostway.ca>
+Subject: Re: 2.6.35.4 fumble-spolision
+Date: Fri, 10 Sep 2010 09:50:32 -0700
+Message-ID: <20100910165032.GA8590@hostway.ca>
+References: <20100910001703.GF26862@hostway.ca> <20100910004909.GX3227@think> <20100910075417.GA28151@hostway.ca> <AANLkTinDu0Rw+E+0-D1u3ZCXtUtd=G0Y0R3Aa=UCg_8W@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-To: chris.mason@oracle.com, josef@redhat.com, zheng.yan@oracle.com,
-	jens.axboe@oracle.com, tj@kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+To: "Yan, Zheng " <yanzheng@21cn.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTinDu0Rw+E+0-D1u3ZCXtUtd=G0Y0R3Aa=UCg_8W@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
->From 1c304defc543738f82ccb18fe10b558dd2098d74 Mon Sep 17 00:00:00 2001
-From: Frank Morales II <altf2o@gmail.com>
-Date: Fri, 10 Sep 2010 07:34:23 -0700
-Subject: [PATCH] fs/btrfs/ordered-data.c: fixed compiler warnings for using uninitialized variable
+On Fri, Sep 10, 2010 at 04:21:16PM +0800, Yan, Zheng  wrote:
 
-In the function tree_search, the variable prev was used without first
-being initialized, causing compiler warning messages. Initializing
-prev to NULL resolved the issue.
+> > ? ? ? ? ? ? ? ?tree block key (5643880 60 602) level 0
+> > ? ? ? ? ? ? ? ?tree block backref root 853
+> > failed to find block number 1923814297600
+> > Abort
+> 
+> How large is the FS ? Is it possible to run btrfs-image and send the
+> output file to us?
 
-Kernal patched against: 2.6.36-rc3 (df423dc7)
+It's 3 TB.  I was running btrfs-image since last night but my ssh got
+disconnected before it finished.  I'm running it again in screen now, but
+the image it made before was 3.8 GB.  Would this be useful to you?
 
-Signed-off-by: Frank Morales II <altf2o@gmail.com>
----
- fs/btrfs/ordered-data.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+We have a number of file systems of this size, and they normally look
+something like this (note compress-force is being used also):
 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index e56c72b..fad2616 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -141,7 +141,7 @@ static inline struct rb_node *tree_search(struct btrfs_ordered_inode_tree *tree,
- 					  u64 file_offset)
- {
- 	struct rb_root *root = &tree->tree;
--	struct rb_node *prev;
-+	struct rb_node *prev = NULL;
- 	struct rb_node *ret;
- 	struct btrfs_ordered_extent *entry;
- 
--- 
-1.7.0.4
+Data: total=2.87TB, used=2.09TB
+Metadata: total=44.13GB, used=27.04GB
+System: total=12.00MB, used=368.00KB
+
+Simon-

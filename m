@@ -1,79 +1,40 @@
-From: Felipe Contreras <felipe.contreras@gmail.com>
-Subject: Re: [PATCH] fs/btrfs/ordered-data.c: fixed compiler warnings for
- using uninitialized variable
-Date: Sun, 12 Sep 2010 13:36:21 +0300
-Message-ID: <AANLkTimU2k6=GPgMsabqpv+uwTVWtSoOoUmwOBbSAT4K@mail.gmail.com>
-References: <1284129724.23418.27.camel@ubuntu1004pl>
+From: Jaswinder Singh Rajput <jaswinder@infradead.org>
+Subject: [PATCH] Btrfs: Remove useless condition
+Date: Sun, 12 Sep 2010 16:32:20 +0530
+Message-ID: <1284289340.2650.2.camel@ht.satnam>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: chris.mason@oracle.com, josef@redhat.com, zheng.yan@oracle.com,
-	jens.axboe@oracle.com, tj@kernel.org, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-To: Frank Morales II <altf2o@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
+	LKML <linux-kernel@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1284129724.23418.27.camel@ubuntu1004pl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 10, 2010 at 5:42 PM, Frank Morales II <altf2o@gmail.com> wr=
-ote:
-> >From 1c304defc543738f82ccb18fe10b558dd2098d74 Mon Sep 17 00:00:00 20=
-01
-> From: Frank Morales II <altf2o@gmail.com>
-> Date: Fri, 10 Sep 2010 07:34:23 -0700
-> Subject: [PATCH] fs/btrfs/ordered-data.c: fixed compiler warnings for=
- using uninitialized variable
->
-> In the function tree_search, the variable prev was used without first
-> being initialized, causing compiler warning messages. Initializing
-> prev to NULL resolved the issue.
->
-> Kernal patched against: 2.6.36-rc3 (df423dc7)
 
-Signed-of-by: Felipe Contreras <felipe.contreras@gmail.com>
+if (ret) is useless as it will be never NULL as in previous statement
+we are setting ret = prev for !ret
 
-I came up with exactly this patch, but this is my commit message:
+Signed-off-by: Jaswinder Singh Rajput <jaswinderrajput@gmail.com>
+Cc: Chris Mason <chris.mason@oracle.com>
+---
+ fs/btrfs/ordered-data.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
 
-    Btrfs: fix compilation warning
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index e56c72b..7b04008 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -154,8 +154,7 @@ static inline struct rb_node *tree_search(struct btrfs_ordered_inode_tree *tree,
+ 	ret = __tree_search(root, file_offset, &prev);
+ 	if (!ret)
+ 		ret = prev;
+-	if (ret)
+-		tree->last = ret;
++	tree->last = ret;
+ 	return ret;
+ }
+ 
+-- 
+1.7.2.2
 
-    fs/btrfs/ordered-data.c: In function =E2=80=98tree_search=E2=80=99:
-    fs/btrfs/ordered-data.c:144: warning: =E2=80=98prev=E2=80=99 may be=
- used
-uninitialized in this function
-    fs/btrfs/ordered-data.c: In function =E2=80=98btrfs_lookup_first_or=
-dered_extent=E2=80=99:
-    fs/btrfs/ordered-data.c:144: warning: =E2=80=98prev=E2=80=99 may be=
- used
-uninitialized in this function
-    fs/btrfs/ordered-data.c:144: note: =E2=80=98prev=E2=80=99 was decla=
-red here
-    fs/btrfs/ordered-data.c: In function =E2=80=98btrfs_lookup_ordered_=
-extent=E2=80=99:
-    fs/btrfs/ordered-data.c:144: warning: =E2=80=98prev=E2=80=99 may be=
- used
-uninitialized in this function
-    fs/btrfs/ordered-data.c:144: note: =E2=80=98prev=E2=80=99 was decla=
-red here
-    fs/btrfs/ordered-data.c: In function =E2=80=98btrfs_lookup_ordered_=
-range=E2=80=99:
-    fs/btrfs/ordered-data.c:144: warning: =E2=80=98prev=E2=80=99 may be=
- used
-uninitialized in this function
-    fs/btrfs/ordered-data.c:144: note: =E2=80=98prev=E2=80=99 was decla=
-red here
-    fs/btrfs/ordered-data.c: In function =E2=80=98btrfs_dec_test_ordere=
-d_pending=E2=80=99:
-    fs/btrfs/ordered-data.c:144: warning: =E2=80=98prev=E2=80=99 may be=
- used
-uninitialized in this function
-    fs/btrfs/ordered-data.c:144: note: =E2=80=98prev=E2=80=99 was decla=
-red here
 
-    __tree_search() might not set &prev.
 
---=20
-=46elipe Contreras
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

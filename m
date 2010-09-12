@@ -1,29 +1,30 @@
 From: David Nicol <davidnicol@gmail.com>
-Subject: reserving an IOCTL number; other details
-Date: Sun, 12 Sep 2010 14:40:44 -0500
-Message-ID: <AANLkTi=GzqHy5h2gAmkQSSMQOCaYza=yTtWZrcyd8RSC@mail.gmail.com>
+Subject: Re: reserving an IOCTL number; other details
+Date: Sun, 12 Sep 2010 17:08:07 -0500
+Message-ID: <AANLkTinWg7o3KwDS9vHKpZV0mUyk6xKsuFvwVUjiynPk@mail.gmail.com>
+References: <AANLkTi=GzqHy5h2gAmkQSSMQOCaYza=yTtWZrcyd8RSC@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 To: BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTi=GzqHy5h2gAmkQSSMQOCaYza=yTtWZrcyd8RSC@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have written and am currently testing a patch that provides a new
-ioctl that waits for snapshot deletion to finish before returning; The
-work is being sponsored, and I can't distribute it until the
-sponsorship details are more solid, but I'd like to reserve ioctl #21
-for this purpose (the next one from btrfs-unstable) or receive advice
-on what ioctl number to use instead.
+this I can release, the user-facing API.
 
-Also, if you would like to test this function on a trade-secret basis
-(until the sponsorship comes through) please contact me off-list.
 
-David Nicol
-
---=20
-l'=C3=A9galit=C3=A9 des droits pour les ambidextres
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/man/btrfsctl.8.in b/man/btrfsctl.8.in
+index c2d4488..94403a4 100644
+--- a/man/btrfsctl.8.in
++++ b/man/btrfsctl.8.in
+@@ -35,6 +35,10 @@ Scans all devices present in the system for btrfs filesystem.
+ .TP
+ \fB\-c\fR
+ Forces a filesystem sync.
++.TP
++\fB\-C\fR \fIdirectory [ms]\fR
++Wait until all the space from all deleted snapshots have been recovered.
++The optional timeout parameter is in milliseconds.
+ .SH AVAILABILITY
+ .B btrfsctl
+ is part of btrfs-progs. Btrfs is currently under heavy development,

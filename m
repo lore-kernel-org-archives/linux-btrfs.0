@@ -1,23 +1,39 @@
-From: David Nicol <davidnicol@gmail.com>
-Subject: Re: reserving an IOCTL number; other details
-Date: Mon, 13 Sep 2010 15:19:14 -0500
-Message-ID: <AANLkTi=dyCt3z7gaqb2gJc+OODBx7DRyt0RdU_k_1o-_@mail.gmail.com>
-References: <AANLkTi=GzqHy5h2gAmkQSSMQOCaYza=yTtWZrcyd8RSC@mail.gmail.com>
-	<AANLkTinWg7o3KwDS9vHKpZV0mUyk6xKsuFvwVUjiynPk@mail.gmail.com>
-	<201009131923.53227.kreijack@libero.it>
-	<AANLkTi=RFO1kQEQ3FJYJ2XBYh4++TDYakrLxhoQDwA3k@mail.gmail.com>
+From: Goffredo Baroncelli <kreijack@gmail.com>
+Subject: Updating the wiki pages adding btrfs command [Was Re: reserving an IOCTL number; other details]
+Date: Tue, 14 Sep 2010 21:25:56 +0200
+Message-ID: <201009142125.56710.kreijack@libero.it>
+References: <AANLkTi=GzqHy5h2gAmkQSSMQOCaYza=yTtWZrcyd8RSC@mail.gmail.com> <201009131923.53227.kreijack@libero.it> <AANLkTi=RFO1kQEQ3FJYJ2XBYh4++TDYakrLxhoQDwA3k@mail.gmail.com>
+Reply-To: kreijack@libero.it
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: kreijack <kreijack@libero.it>
+Content-Type: Text/Plain;
+  charset="utf-8"
+Cc: David Nicol <davidnicol@gmail.com>, chris.mason@oracle.com
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <AANLkTi=RFO1kQEQ3FJYJ2XBYh4++TDYakrLxhoQDwA3k@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I see btrfs utility appears here:
+Hi all,
 
-http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-progs-unstable.git;a=commit;h=6d2cf042471cc728b5399b2beae54603739bc66a
+On Monday, 13 September, 2010, David Nicol wrote:
+> https://btrfs.wiki.kernel.org/index.php/Category:Documentation does
+> not mention any btrfs command. 
+[...]
 
+I updated the wiki, inserting the btrfs command. For now I left the old 
+commands in the examples (some distros have the old version of the btrfs-
+progs); I put a "notice" saying:
 
-I shall be patching it, too, with the new ioctl which I made this
-thread to reserve.
+	"the new command btrfs is replacing the old one btrfsctl."
+
+I think to remove the old commands from the wiki when the next generation of 
+linux distros will appear.
+
+Thoughts ?
+
+Regards
+G.Baroncelli
+
+-- 
+gpg key@ keyserver.linux.it:Goffredo Baroncelli (ghigo) <kreijackATinwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

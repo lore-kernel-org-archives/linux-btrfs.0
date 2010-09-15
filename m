@@ -1,50 +1,51 @@
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Subject: Re: Updating the wiki pages adding btrfs command [Was Re: reserving an IOCTL number; other details]
-Date: Wed, 15 Sep 2010 21:29:06 +0200
-Message-ID: <201009152129.07222.kreijack@libero.it>
-References: <AANLkTi=GzqHy5h2gAmkQSSMQOCaYza=yTtWZrcyd8RSC@mail.gmail.com> <201009151951.04870.kreijack@libero.it> <AANLkTink+VTm9boFmF8kUqqfJ+nL3Z0xC8MQmhDh7KtM@mail.gmail.com>
-Reply-To: kreijack@libero.it
+From: David Nicol <davidnicol@gmail.com>
+Subject: Re: Updating the wiki pages adding btrfs command [Was Re: reserving
+ an IOCTL number; other details]
+Date: Wed, 15 Sep 2010 15:54:40 -0500
+Message-ID: <AANLkTinmWrr5AH_dG9U+AGbFzsTyjzCNk3XugGKseYCj@mail.gmail.com>
+References: <AANLkTi=GzqHy5h2gAmkQSSMQOCaYza=yTtWZrcyd8RSC@mail.gmail.com>
+ <201009131923.53227.kreijack@libero.it> <AANLkTi=RFO1kQEQ3FJYJ2XBYh4++TDYakrLxhoQDwA3k@mail.gmail.com>
+ <201009142125.56710.kreijack@libero.it> <AANLkTimB-tHAL8U8-_=9QsKisQgO-QPt4=X89QOsiPaK@mail.gmail.com>
+ <AANLkTimtpNcszRh2-jqnixuKK2uydp6Bf=H-zHS0di0W@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Cc: linux-btrfs@vger.kernel.org
-To: David Nicol <davidnicol@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: kreijack <kreijack@libero.it>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Josh Berry <des@condordes.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTink+VTm9boFmF8kUqqfJ+nL3Z0xC8MQmhDh7KtM@mail.gmail.com>
+In-Reply-To: <AANLkTimtpNcszRh2-jqnixuKK2uydp6Bf=H-zHS0di0W@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wednesday, 15 September, 2010, David Nicol wrote:
-> btrfs s ... is imprecise, as the operation isn't on a subvolume, but
-> on the fi where the s used to be but isn't any more.
+On Wed, Sep 15, 2010 at 1:41 PM, Josh Berry <des@condordes.net> wrote:
+> Personally, I like "gc" or "clean". =C2=A0"wait-subvolume-deletion",
+> "garbage-collect" or similar is too verbose for my taste.
+>
+> -- Josh
 
-ok 
-> 
-> With your approval I'll go with "filesystem garbage-collection" which
-> can be abbrevd to
-> 
->    btrfs fi g /butter 30000 || echo there should be some more space now \
->    but it would have taken more than 30 sec to clean it all
-> 
-> and in some imaginary future might trigger something instead of simply
-> waiting for something.
+the question IMO is how much implementation details to saddle the user
+with. Anything with the word "garbage" in it is just yucky; anything
+with "wait" is revealing an implementation detail that hopefully will
+change eventually.
 
-I don't like too much "garbage-collector". It seems that you can start a 
-"garbage collector". Instead we wait the finish of the garbage collector 
-activity.
+adding a --wait or --sync switch to the delete command is certainly
+possible, you'd want to add it to the last in a series of deletes.
 
-I would like also to have the option to wait in "btrfs subvolume delete"
+I don't like "clean" for end-user API because it seems to imply
+erasing data, like it's going to get overwritten with zeroes or
+something like that to hide it from forensic analysis.
 
-# btrfs subvolume delete --wait /path/to/subvolume
+among the listings at http://thesaurus.com/browse/recycle "reclaim"
+seems best: "salvage" connotes that the thing being salvaged is
+damaged.
 
-(instead of "--wait", we can use "--sync"...)
+Is everyone happy with
 
-In any case could you highlight the behavior of your ioctl when two snapshot 
-deletions are performed. Does the ioctl wait the end of both the snapshot 
-deletion ? 
+  btrfs filesystem reclaim <path> [ms]
 
-Regards
-G.Baroncelli
-
--- 
-gpg key@ keyserver.linux.it:Goffredo Baroncelli (ghigo) <kreijackATinwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+then? (I'm pleasantly surprised that I'm not having to defend milliseco=
+nds.)
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

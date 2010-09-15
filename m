@@ -1,7 +1,7 @@
-From: Chris Ball <cjb@laptop.org>
+From: Josh Berry <des@condordes.net>
 Subject: Re: Updating the wiki pages adding btrfs command
-Date: Wed, 15 Sep 2010 17:52:19 -0400
-Message-ID: <m31v8un08c.fsf@pullcord.laptop.org>
+Date: Wed, 15 Sep 2010 15:19:14 -0700
+Message-ID: <AANLkTimvPVqMTr1Dbp_ATGHLduajHJA0KdkjF5ry7JuT@mail.gmail.com>
 References: <AANLkTi=GzqHy5h2gAmkQSSMQOCaYza=yTtWZrcyd8RSC@mail.gmail.com>
 	<201009131923.53227.kreijack@libero.it>
 	<AANLkTi=RFO1kQEQ3FJYJ2XBYh4++TDYakrLxhoQDwA3k@mail.gmail.com>
@@ -11,29 +11,43 @@ References: <AANLkTi=GzqHy5h2gAmkQSSMQOCaYza=yTtWZrcyd8RSC@mail.gmail.com>
 	<AANLkTinmWrr5AH_dG9U+AGbFzsTyjzCNk3XugGKseYCj@mail.gmail.com>
 	<m362y6n2ae.fsf@pullcord.laptop.org>
 	<AANLkTinGTyujDgTqwO6R729_djEWa-aUwiJ-W0vknXgE@mail.gmail.com>
+	<m31v8un08c.fsf@pullcord.laptop.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=UTF-8
 Cc: David Nicol <davidnicol@gmail.com>, kreijack <kreijack@libero.it>,
 	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Josh Berry <des@condordes.net>
+To: Chris Ball <cjb@laptop.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTinGTyujDgTqwO6R729_djEWa-aUwiJ-W0vknXgE@mail.gmail.com>
-	(Josh Berry's message of "Wed, 15 Sep 2010 14:46:46 -0700")
+In-Reply-To: <m31v8un08c.fsf@pullcord.laptop.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Wed, Sep 15, 2010 at 14:52, Chris Ball <cjb@laptop.org> wrote:
+> Hi,
+>
+> =C2=A0 > Or make --sync the default behavior. =C2=A0This is probably =
+what most
+> =C2=A0 > people are expecting anyway (similar to how standard filesys=
+tem
+> =C2=A0 > commands like "rm" work). =C2=A0Add an --aysnc option for th=
+ose that
+> =C2=A0 > only care about knowing when the subvolume is taken out of t=
+he
+> =C2=A0 > tree.
+>
+> Yeah. =C2=A0We've also talked about making snapshot _creation_ perfor=
+m an
+> FS sync first by default, since otherwise you get a snapshot with sta=
+le
+> files, or without files that existed (not yet on disk) at creation-ti=
+me.
 
-   > Or make --sync the default behavior.  This is probably what most
-   > people are expecting anyway (similar to how standard filesystem
-   > commands like "rm" work).  Add an --aysnc option for those that
-   > only care about knowing when the subvolume is taken out of the
-   > tree.
+Oh wow, I didn't know this.  Yes, sync-before-create would be nice.
 
-Yeah.  We've also talked about making snapshot _creation_ perform an
-FS sync first by default, since otherwise you get a snapshot with stale
-files, or without files that existed (not yet on disk) at creation-time.
+*runs off to update his snapshot script*
 
-- Chris.
--- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+-- Josh
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

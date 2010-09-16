@@ -1,48 +1,32 @@
-From: liubo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: fix memory leak on free root
-Date: Thu, 16 Sep 2010 11:23:46 +0800
-Message-ID: <4C918DC2.7080701@cn.fujitsu.com>
+From: cwillu <cwillu@cwillu.com>
+Subject: Re: [PATCH] Add the "btrfs filesystem label" command
+Date: Wed, 15 Sep 2010 21:56:53 -0600
+Message-ID: <AANLkTim9Os3KL4jmmiapzHB5m9wJmz6JpcBKzb2CHhvm@mail.gmail.com>
+References: <201009132124.14402.kreijack@inwind.it>
+	<AANLkTik85y4fbyhqw0DqV9x7TsVwo5uZZhLBHiy-oPsC@mail.gmail.com>
+	<m3pqwelchr.fsf@pullcord.laptop.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>,
-	"Yan, Zheng" <zheng.yan@oracle.com>
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Mike Fedyk <mfedyk@mikefedyk.com>, kreijack@inwind.it,
+	chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
+	Felix Blanke <felixblanke@gmail.com>
+To: Chris Ball <cjb@laptop.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <m3pqwelchr.fsf@pullcord.laptop.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On free root, name field should be freed too.
+On Wed, Sep 15, 2010 at 7:10 PM, Chris Ball <cjb@laptop.org> wrote:
+> Hi,
+>
+> =A0 > How can one char equal two chars?
+> =A0 >
+> =A0 > input[i] =3D=3D '\\'
+>
+> If the first char is the C escape sequence for string literals. =A0:)
 
-
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
----
- fs/btrfs/disk-io.c     |    1 +
- fs/btrfs/extent-tree.c |    1 +
- 2 files changed, 2 insertions(+), 0 deletions(-)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 280de15..fe20248 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2335,6 +2335,7 @@ static int del_fs_roots(struct btrfs_fs_info *fs_info)
- 		} else {
- 			free_extent_buffer(gang[0]->node);
- 			free_extent_buffer(gang[0]->commit_root);
-+			kfree(gang[0]->name);
- 			kfree(gang[0]);
- 		}
- 	}
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index f631910..83c422c 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -6019,6 +6019,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
- 	} else {
- 		free_extent_buffer(root->node);
- 		free_extent_buffer(root->commit_root);
-+		kfree(root->name);
- 		kfree(root);
- 	}
- out:
--- 
-1.6.2.5
+ Why are those characters forbidden in a label?
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

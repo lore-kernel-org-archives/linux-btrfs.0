@@ -1,62 +1,141 @@
-From: Josh Berry <des@condordes.net>
-Subject: Re: Updating the wiki pages adding btrfs command
-Date: Wed, 15 Sep 2010 16:46:14 -0700
-Message-ID: <AANLkTimySR7R9tkwQNDKxJ9gb_+6XK7VK_Chys0r_Bec@mail.gmail.com>
-References: <AANLkTi=GzqHy5h2gAmkQSSMQOCaYza=yTtWZrcyd8RSC@mail.gmail.com>
-	<201009131923.53227.kreijack@libero.it>
-	<AANLkTi=RFO1kQEQ3FJYJ2XBYh4++TDYakrLxhoQDwA3k@mail.gmail.com>
-	<201009142125.56710.kreijack@libero.it>
-	<AANLkTimB-tHAL8U8-_=9QsKisQgO-QPt4=X89QOsiPaK@mail.gmail.com>
-	<AANLkTimtpNcszRh2-jqnixuKK2uydp6Bf=H-zHS0di0W@mail.gmail.com>
-	<AANLkTinmWrr5AH_dG9U+AGbFzsTyjzCNk3XugGKseYCj@mail.gmail.com>
-	<m362y6n2ae.fsf@pullcord.laptop.org>
-	<AANLkTinGTyujDgTqwO6R729_djEWa-aUwiJ-W0vknXgE@mail.gmail.com>
-	<m31v8un08c.fsf@pullcord.laptop.org>
-	<Pine.LNX.4.64.1009151527090.3434@cobra.newdream.net>
-	<m3wrqmljkr.fsf@pullcord.laptop.org>
+From: Mike Fedyk <mfedyk@mikefedyk.com>
+Subject: Re: [PATCH] Add the "btrfs filesystem label" command
+Date: Wed, 15 Sep 2010 17:31:44 -0700
+Message-ID: <AANLkTik85y4fbyhqw0DqV9x7TsVwo5uZZhLBHiy-oPsC@mail.gmail.com>
+References: <201009132124.14402.kreijack@inwind.it>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: Sage Weil <sage@newdream.net>, David Nicol <davidnicol@gmail.com>,
-	kreijack <kreijack@libero.it>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Ball <cjb@laptop.org>
+Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
+	Felix Blanke <felixblanke@gmail.com>
+To: kreijack@inwind.it
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <m3wrqmljkr.fsf@pullcord.laptop.org>
+In-Reply-To: <201009132124.14402.kreijack@inwind.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 15, 2010 at 15:37, Chris Ball <cjb@laptop.org> wrote:
-=2E..
-> =C2=A0 > Why not just do:
-> =C2=A0 > # btrfs subvolume delete /path/to/subvolume1
-> =C2=A0 > # btrfs subvolume delete /path/to/subvolume2
-> =C2=A0 > # sync
+On Mon, Sep 13, 2010 at 12:24 PM, Goffredo Baroncelli
+<kreijack@gmail.com> wrote:
+> +int get_label(char *btrfs_dev)
+> +{
+> +
+> + =C2=A0 =C2=A0 =C2=A0 int ret;
+> + =C2=A0 =C2=A0 =C2=A0 ret =3D check_mounted(btrfs_dev);
+> + =C2=A0 =C2=A0 =C2=A0 if (ret < 0)
+> + =C2=A0 =C2=A0 =C2=A0 {
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0fprintf(stderr, "FA=
+TAL: error checking %s mount status\n",
+> btrfs_dev);
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0return -1;
+> + =C2=A0 =C2=A0 =C2=A0 }
+> +
+> + =C2=A0 =C2=A0 =C2=A0 if(ret !=3D 0)
+> + =C2=A0 =C2=A0 =C2=A0 {
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0fprintf(stderr, "FA=
+TAL: the filesystem has to be
+> unmounted\n");
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0return -2;
+> + =C2=A0 =C2=A0 =C2=A0 }
+> + =C2=A0 =C2=A0 =C2=A0 get_label_unmounted(btrfs_dev);
+> + =C2=A0 =C2=A0 =C2=A0 return 0;
+> +}
+> +
+> +
+
+Why can't the label be read while the fs is mounted?  It shouldn't
+hurt anything.  I can read the superblock on my ext3 fs while it's
+mounted...  This is what people have come to expect.
+
+> --- a/utils.c
+> +++ b/utils.c
+> @@ -638,6 +638,39 @@ int check_mounted(char *file)
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0return ret;
+> =C2=A0}
 >
-> Or even better, "btrfs filesystem sync <path>".
+> +/* Gets the mount point of btrfs filesystem that is using the specif=
+ied
+> device.
+> + * Returns 0 is everything is good, <0 if we have an error.
+> + * TODO: Fix this fucntion and check_mounted to work with multiple d=
+rive
+> BTRFS
+> + * setups.
+> + */
+
+Typo: s/fucntion/function/g
+
+
+> +int get_mountpt(char *dev, char *mntpt, size_t size)
+> +{
+> + =C2=A0 =C2=A0 =C2=A0 struct mntent *mnt;
+> + =C2=A0 =C2=A0 =C2=A0 FILE *f;
+> + =C2=A0 =C2=A0 =C2=A0 int ret =3D 0;
+> +
+> + =C2=A0 =C2=A0 =C2=A0 f =3D setmntent("/proc/mounts", "r");
+> + =C2=A0 =C2=A0 =C2=A0 if (f =3D=3D NULL)
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 return -errno;
+> +
+> + =C2=A0 =C2=A0 =C2=A0 while ((mnt =3D getmntent(f)) !=3D NULL )
+> + =C2=A0 =C2=A0 =C2=A0 {
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 if (strcmp(dev, mn=
+t->mnt_fsname) =3D=3D 0)
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 {
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 strncpy(mntpt, mnt->mnt_dir, size);
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 break;
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 }
+> + =C2=A0 =C2=A0 =C2=A0 }
+> +
+> + =C2=A0 =C2=A0 =C2=A0 if (mnt =3D=3D NULL)
+> + =C2=A0 =C2=A0 =C2=A0 {
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 /* We didn't find =
+an entry so lets report an error */
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 ret =3D -1;
+> + =C2=A0 =C2=A0 =C2=A0 }
+> +
+> + =C2=A0 =C2=A0 =C2=A0 return ret;
+> +}
+> +
+> =C2=A0struct pending_dir {
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0struct list_head list;
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0char name[256];
+> @@ -820,3 +853,27 @@ char *pretty_sizes(u64 size)
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0return pretty;
+> =C2=A0}
 >
-> I'm assuming that the caller wants to wait until the subvol delete
-> has happened, but is unwilling to wait until all other writes to the
-> FS have finished, and is even more unwilling to wait for all writes
-> on the rest of the system to finish.
->
-> I don't know whether that's actually a reasonable/plausible use case,
-> though.
+> +/*
+> + * Checks to make sure that the label matches our requirements.
+> + * Returns:
+> + =C2=A0 =C2=A0 =C2=A0 0 =C2=A0 =C2=A0if everything is safe and usabl=
+e
+> + =C2=A0 =C2=A0 =C2=A0-1 =C2=A0 =C2=A0if the label is too long
+> + =C2=A0 =C2=A0 =C2=A0-2 =C2=A0 =C2=A0if the label contains an invali=
+d character
+> + */
+> +int check_label(char *input)
+> +{
+> + =C2=A0 =C2=A0 =C2=A0 int i;
+> + =C2=A0 =C2=A0 =C2=A0 int len =3D strlen(input);
+> +
+> + =C2=A0 =C2=A0 =C2=A0 if (len > BTRFS_LABEL_SIZE) {
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 return -1;
+> + =C2=A0 =C2=A0 =C2=A0 }
+> +
+> + =C2=A0 =C2=A0 =C2=A0 for (i =3D 0; i < len; i++) {
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 if (input[i] =3D=3D=
+ '/' || input[i] =3D=3D '\\') {
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 return -2;
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 }
+> + =C2=A0 =C2=A0 =C2=A0 }
+> +
+> + =C2=A0 =C2=A0 =C2=A0 return 0;
+> +}
 
-I think so, because I have that use case (sorta).  I have a home
-fileserver with btrfs, and a cron job on that machine runs hourly,
-taking snapshots.  However, once the disk fills up, I want to delete
-the oldest snapshots:
+How can one char equal two chars?
 
-while [[ disk > xx% full ]]; do
-    btrfs subvol delete /the/oldest/snapshot
-    wait for space to free up
-done
+input[i] =3D=3D '\\'
 
-If delete does not wait to free space, I'll delete too many snapshots.
- But if I force a filesystem-wide sync after every delete, the loop
-may take longer, which on a system busier than mine could take more
-than the hour to complete.
-
--- Josh
+This should never be able to happen.  Right?
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

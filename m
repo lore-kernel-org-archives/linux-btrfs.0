@@ -1,45 +1,27 @@
-From: Yehuda Sadeh <yehuda@hq.newdream.net>
-Subject: [PATCH] Btrfs: fix delalloc checks in clone ioctl
-Date: Fri, 17 Sep 2010 15:42:05 -0700
-Message-ID: <812cd3a0ede2021247239945ffeb49e2fa421f22.1284763172.git.yehuda@hq.newdream.net>
-Cc: sage@newdream.net, Yehuda Sadeh <yehuda@hq.newdream.net>
+From: Bostjan Skufca <bostjan@a2o.si>
+Subject: Current state of hot data relocation functionality
+Date: Sat, 18 Sep 2010 01:33:17 +0200
+Message-ID: <AANLkTi=k-ya8X4JU+=XGeK594AYHhye7_=knO_5eRHJS@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The lookup_first_ordered_extent() was done on the wrong inode, and the
-->delalloc_bytes test was wrong, as the following btrfs_wait_ordered_range()
-would only invoke a range write and wouldn't write the entire file data range.
-Also, a bad parameter was passed to btrfs_wait_ordered_range().
+Hi all!
 
-Signed-off-by: Yehuda Sadeh <yehuda@hq.newdream.net>
----
- fs/btrfs/ioctl.c |    8 +++++---
- 1 files changed, 5 insertions(+), 3 deletions(-)
+I was looking into some custom fileserver options and noticed two
+facts about ZFS - support for L2ARC (albeit not persistant across
+reboots, which is a downer) and OpenSolaris being a dead meat. Then I
+found out that some patches were already floating around linux
+mailinglists, patches about hot data relocation, but unfortunately
+nothing definitive. So I would like to ask here: what is the status of
+hot data relocation functionality?
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 9254b3d..e09d6f0 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1530,13 +1530,15 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 	while (1) {
- 		struct btrfs_ordered_extent *ordered;
- 		lock_extent(&BTRFS_I(src)->io_tree, off, off+len, GFP_NOFS);
--		ordered = btrfs_lookup_first_ordered_extent(inode, off+len);
--		if (BTRFS_I(src)->delalloc_bytes == 0 && !ordered)
-+		ordered = btrfs_lookup_first_ordered_extent(src, off+len);
-+		if (!ordered &&
-+		    test_range_bit(&BTRFS_I(src)->io_tree, off, off+len,
-+				   EXTENT_DELALLOC, 0, NULL))
- 			break;
- 		unlock_extent(&BTRFS_I(src)->io_tree, off, off+len, GFP_NOFS);
- 		if (ordered)
- 			btrfs_put_ordered_extent(ordered);
--		btrfs_wait_ordered_range(src, off, off+len);
-+		btrfs_wait_ordered_range(src, off, len);
- 	}
- 
- 	/* clone data */
--- 
-1.5.6.5
+I haven't had a chance to try out btrfs myself, but from what I see it
+sure looks promising and seems like an option worth waiting on (I mean
+this from fileserver with SSD cache point of view). So keep up the
+good work, and thanks for an answer, if there will be one :)
 
+Take care,
+b.

@@ -1,24 +1,45 @@
-From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
-Subject: Re: btrfs on LVM: Out of space
-Date: Fri, 17 Sep 2010 17:29:03 +0200
-Message-ID: <201009171729.03854.johannes.hirte@fem.tu-ilmenau.de>
-References: <AANLkTinyfVH7DkOTNW-iSJjKExh5eS9Ea-HX0TY+XJ7b@mail.gmail.com> <AANLkTim2y=nV7eeKBGKJ1ynz1OTwo-q6BtF+BuEvX0c=@mail.gmail.com> <AANLkTinNr4-6ONKiHehRKZVTZfa47jAby-X0NR3mGroj@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: linux-btrfs@vger.kernel.org
-To: Marcel Lohmann <marcel.lohmann@googlemail.com>
+From: Yehuda Sadeh <yehuda@hq.newdream.net>
+Subject: [PATCH] Btrfs: fix delalloc checks in clone ioctl
+Date: Fri, 17 Sep 2010 15:42:05 -0700
+Message-ID: <812cd3a0ede2021247239945ffeb49e2fa421f22.1284763172.git.yehuda@hq.newdream.net>
+Cc: sage@newdream.net, Yehuda Sadeh <yehuda@hq.newdream.net>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTinNr4-6ONKiHehRKZVTZfa47jAby-X0NR3mGroj@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Friday 10 September 2010 21:46:49 Marcel Lohmann wrote:
-> Trying to use "-l 2048" during mkfs was rejected as being invalid. But
-> who cares...?
-> 
-> Marcel
+The lookup_first_ordered_extent() was done on the wrong inode, and the
+->delalloc_bytes test was wrong, as the following btrfs_wait_ordered_range()
+would only invoke a range write and wouldn't write the entire file data range.
+Also, a bad parameter was passed to btrfs_wait_ordered_range().
 
-That's because btrfs supports only leafsize equal to pagesize for now.
+Signed-off-by: Yehuda Sadeh <yehuda@hq.newdream.net>
+---
+ fs/btrfs/ioctl.c |    8 +++++---
+ 1 files changed, 5 insertions(+), 3 deletions(-)
 
-regards,
-  Johannes
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 9254b3d..e09d6f0 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1530,13 +1530,15 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 	while (1) {
+ 		struct btrfs_ordered_extent *ordered;
+ 		lock_extent(&BTRFS_I(src)->io_tree, off, off+len, GFP_NOFS);
+-		ordered = btrfs_lookup_first_ordered_extent(inode, off+len);
+-		if (BTRFS_I(src)->delalloc_bytes == 0 && !ordered)
++		ordered = btrfs_lookup_first_ordered_extent(src, off+len);
++		if (!ordered &&
++		    test_range_bit(&BTRFS_I(src)->io_tree, off, off+len,
++				   EXTENT_DELALLOC, 0, NULL))
+ 			break;
+ 		unlock_extent(&BTRFS_I(src)->io_tree, off, off+len, GFP_NOFS);
+ 		if (ordered)
+ 			btrfs_put_ordered_extent(ordered);
+-		btrfs_wait_ordered_range(src, off, off+len);
++		btrfs_wait_ordered_range(src, off, len);
+ 	}
+ 
+ 	/* clone data */
+-- 
+1.5.6.5
+

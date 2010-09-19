@@ -1,65 +1,100 @@
-From: C Anthony Risinger <anthony@extof.me>
+From: Hugo Mills <hugo-lkml@carfax.org.uk>
 Subject: Re: Question of stability
-Date: Sat, 18 Sep 2010 23:50:52 -0500
-Message-ID: <AANLkTi=-b6hQz+6xBPqKvSv+8uaKz2maURi_LH7hLV2T@mail.gmail.com>
-References: <-2391411343414296963@unknownmsgid>
-	<19323412.131.1284861637528.JavaMail.root@zimbra>
+Date: Sun, 19 Sep 2010 10:51:15 +0100
+Message-ID: <20100919095115.GA2356@selene>
+References: <AANLkTi=2yBAg=w88irVvd0rZP05vDFRQwjMxTZsXvYU4@mail.gmail.com>
+ <4391908.129.1284854134163.JavaMail.root@zimbra>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: linux-btrfs@vger.kernel.org
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="mP3DRpeJDSE+ciuQ"
+Cc: Hendrik Fabelje <hendrik@fabelje.de>, linux-btrfs@vger.kernel.org
 To: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <19323412.131.1284861637528.JavaMail.root@zimbra>
+In-Reply-To: <4391908.129.1284854134163.JavaMail.root@zimbra>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Sep 18, 2010 at 9:00 PM, Roy Sigurd Karlsbakk <roy@karlsbakk.net> wrote:
->> Stable is a pretty subjective term; many don't even think ext4 is
->> stable. I've used it on my personal machine since .30-31-ish without
->> problems, and on a server w/raid 1 for about a year (btrfs + lxc is
->> niiice, for VMs) also free of problems.
->>
->> However, if you've been on the list you know that some do encounter
->> seemingly catastrophic problems, though the list is helpful in
->> recovering data. So, it's really going to depends on your workload
->> and integrity needs. I remeber someone recently using it for
->> continuous build servers successfully
->
-> The term stable may be subjective at times, but for btrfs to be stable, it needs a working filesystem, with offline or online fsck abilities, and allowing for what's in the idea of btrfs, that is, checksumming everything, allowing snapshots and rollbacks et cetera. If btrfs is only stable as in ext4, well, why not just use ext4? The whole reason for btrfs to exist is to bring something new into the Linux world, and if those features aren't stable, then btrfs isn't. It's as simple as that. Would you buy a Subaru (or something) 4wd with a 2wd working?
 
-whoa, relax; that's a terrible analogy ;-)
+--mP3DRpeJDSE+ciuQ
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-) the term stability is _always_ subjective
-) fsck has nothing to do with the filesystem itself, and does not
-contribute to it's operational stability
-) checksums work fine
-) snapshots work fine
-) rollbacks are an implementation detail using snapshots; has nothing
-to do w/filesystem, afiak
-) ehm, i suppose you would use btrfs over ext4 because you need it's
-features? beats me; you decide :-)
-) ^^^^ have proper backup/failover options and it won't matter which you choose
-) i'm sure that's not a reason ;-)
-) ^^^^ btrfs has several pending/potential features/patches/branches
-floating around such as raid5/6, hot data awareness, etc. -- these
-unimplemented features (likely) do not detract from the stability of
-what's implemented now
+On Sun, Sep 19, 2010 at 01:55:34AM +0200, Roy Sigurd Karlsbakk wrote:
+> ----- Original Message -----
+> > On Sat, Sep 18, 2010 at 11:37 PM, Roy Sigurd Karlsbakk
+> > <roy@karlsbakk.net> wrote:
+> > > Hi all
+> > >
+> > > I've been on this list for a year or so, and I have been following
+> > > progress for some more. Are there any chances of btrfs >stabilizing,
+> > > as in terms of usability in production? If so, how far are we from
+> > > this?
+> > Hi,
+> >=20
+> > I am using btrfs as my root filesystem on my Debian squeeze machine
+> > for a few month now and so far I haven't experienced any problems.
+> > It seems quite stable for me. I am not using raid functions, but am
+> > also very interested in the progress in raid5/6.
+>=20
+> I was more interested in large setups than a general install.
+>=20
+> Question remains, when is btrfs supposed to be stable, as in usable for l=
+arge server setups?
 
-i apologize for the terseness, but i'm not sure what you're after
-exactly -- you said you have been on the list for a year, and thus
-should already have a pretty good idea of the current state, and what
-you can/cannot do?  this (vague and _subjective_) question pops up
-from time to time, along with questions about raid5/6, etc., and they
-pretty much receive the same response i gave you:
+   As has been pointed out by Anthony, there's no means of determining
+when something is "stable" -- not just for filesystems, but for any
+piece of software. All you can do is take a Bayesian approach: sum up
+the number (and type) of failures, and compare it to the number of
+user-hours that the software has been in use for, across all
+installations. When that failure rate (and recovery rate) reaches the
+point at which you're happy to use it in your situation -- whether
+that's on your bleeding-edge desktop test box, or for running your
+robotic heart surgeon -- you can call it stable. However, that point
+has to be your decision for your particular use case.
 
-) not everything possible/interesting is planned
-) not everything planned is implemented
-) some people run into big problems
-) the majority likely does not
-) use at your own risk
-) many, including myself and the previous responder, are currently
-using it for a wide range of capacities, successfully, and
-collectively believe the minds responsible for btrfs must be rather
-competent folk, because for the most part... things are pretty quiet
-around here :-)
+   If you're now thinking, "but where do I get that information
+=66rom?", congratulations -- you now know nearly as much about the user
+base as the btrfs developers. :) Your best bet is to keep an eye on
+this mailing list, and take a look at the number and type of reported
+failures. When that drops to the point that you feel safe, go ahead
+and use it.
 
-C Anthony
+   An alternative approach is to install a btrfs set-up on your
+internal development or test machines (you *do* have a test
+infrastructure for your mission critical systems, right?), and hammer
+it with the closest you can get to a real workload, and see what
+happens. Again, this is a statistical approach. It's the best we've
+got.
+
+   At some point, we(*) hope, btrfs will have millions upon millions
+of users, doing all kinds of bad things to it, and tiny fractions of
+them will have problems. When that happens, someone will probably
+start calling it stable, and the name will stick. Until then, many
+people are happy with it for their uses, but nobody can (or will)
+magically stick a label on a piece of code of this complexity and say
+"it's stable now!"
+
+   Hugo.
+
+(*) Speaking as an interested nobody, rather than a developer.
+
+--=20
+=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
+ =3D=3D=3D
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+                  --- Be pure. Be vigilant. Behave. ---                 =20
+
+--mP3DRpeJDSE+ciuQ
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iD8DBQFMld0TIKyzvlFcI40RAqb1AJ91tOdE5AE5Wg11wgacASbcoQy2kACgqZFj
+fbiedPmTzwbR1AbTYqSZDBY=
+=P8LC
+-----END PGP SIGNATURE-----
+
+--mP3DRpeJDSE+ciuQ--

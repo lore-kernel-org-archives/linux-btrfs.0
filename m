@@ -1,25 +1,34 @@
-From: "K. Richard Pixley" <rich@noir.com>
-Subject: Re: Question of stability
-Date: Mon, 20 Sep 2010 08:12:55 -0700
-Message-ID: <4C9779F7.2040508@noir.com>
-References: <4391908.129.1284854134163.JavaMail.root@zimbra> <-2391411343414296963@unknownmsgid>
+From: Dave Cundiff <syshackmin@gmail.com>
+Subject: Performance degradation
+Date: Mon, 20 Sep 2010 17:24:58 -0400
+Message-ID: <AANLkTimhpg22M0UUcfksh1H9oGMweVhwpDvqeu0nfOP0@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Roy Sigurd Karlsbakk <roy@karlsbakk.net>,
-	Hendrik Fabelje <hendrik@fabelje.de>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: C Anthony Risinger <anthony@extof.me>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <-2391411343414296963@unknownmsgid>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-  On 9/18/10 17:43 , C Anthony Risinger wrote:
-> I remeber someone recently using it for
-> continuous build servers successfully
-That's probably me and I wouldn't call the effort "successful" yet.  
-There are at least several outstanding problems including the limit on 
-the number of links to a file.
+Hi,
 
-More on all of these when I return from vacation next week.
+I have a btrfs backup system that has been running great. Its been
+backing up 6 systems with 500-750 gigs of data using Rsync and
+snapshots. Every night I snapshot the backup and overwrite it.
+Recently it has been unable to complete the backups. Its running soooo
+slow that it can barely finish 1 backup a day. When I first started
+backing up the systems they would all complete in at the most 8 hours.
+I noticed it started happening after I deleted a large number of
+snapshots. This caused the cleaner process to run for a few days.
+After it finished the filesystem has still been to slow to use.
 
---rich
+I'm running kernel 2.6.36-rc4.
+
+Filesystem was built with -m single -d single and using the compress
+mount option.
+
+Block device is an Areca RAID5 with 4 Western Digital 2TB drives.
+
+-- 
+Dave Cundiff
+System Administrator
+A2Hosting, Inc
+http://www.a2hosting.com

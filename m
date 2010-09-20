@@ -1,54 +1,49 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: C Anthony Risinger <anthony@extof.me>
 Subject: Re: Question of stability
-Date: Mon, 20 Sep 2010 08:27:45 -0400
-Message-ID: <20100920122745.GF27633@think>
-References: <7280394.123.1284845879623.JavaMail.root@zimbra>
- <4C96B682.5080900@csamuel.org>
- <i77ero$lja$1@dough.gmane.org>
- <20100920113057.GC27633@think>
- <20100920142115.d05ac284.skraw@ithnet.com>
+Date: Mon, 20 Sep 2010 10:27:47 -0500
+Message-ID: <AANLkTin_Dydj+rrK4pKXuPgBvnox+2GabizWKsQuvCxZ@mail.gmail.com>
+References: <4391908.129.1284854134163.JavaMail.root@zimbra>
+	<-2391411343414296963@unknownmsgid>
+	<4C9779F7.2040508@noir.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Lubos Kolouch <lubos.kolouch@gmail.com>,
-	linux-btrfs@vger.kernel.org
-To: Stephan von Krawczynski <skraw@ithnet.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Roy Sigurd Karlsbakk <roy@karlsbakk.net>,
+	Hendrik Fabelje <hendrik@fabelje.de>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: "K. Richard Pixley" <rich@noir.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100920142115.d05ac284.skraw@ithnet.com>
+In-Reply-To: <4C9779F7.2040508@noir.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 20, 2010 at 02:21:15PM +0200, Stephan von Krawczynski wrote:
-> On Mon, 20 Sep 2010 07:30:57 -0400
-> Chris Mason <chris.mason@oracle.com> wrote:
-> 
-> > On Mon, Sep 20, 2010 at 11:00:08AM +0000, Lubos Kolouch wrote:
-> > > No, not stable!
-> > > 
-> > > Again, after powerloss, I have *two* damaged btrfs filesystems.
-> > 
-> > Please tell me more about your system.  I do extensive power fail
-> > testing here without problems, and corruptions after powerloss are very
-> > often caused by the actual hardware.
-> > 
-> > So, what kind of drives do you have, do they have writeback caching on,
-> > and what are you layering on top of the drive between btrfs and the
-> > kernel?
-> > 
-> > -chris
-> 
-> Chris, the actual way how a fs was damaged must not be relevant. From a new fs
-> design one should expect the tree can be mounted no matter what corruption took
-> place up to the case where the fs is indeed empty after mounting because it
-> was completely corrupted. If parts were corrupt then the fs should either be
-> able to assist the user in correcting the damages _online_ or at least simply
-> exclude the damaged fs parts from the actual mounted fs tree. The basic
-> thought must be "show me what you have" and not "shit, how do I get access to
-> the working but not mountable fs parts again?".
-> Would you buy a car that refuses to drive if the ash tray is broken?
+On Mon, Sep 20, 2010 at 10:12 AM, K. Richard Pixley <rich@noir.com> wro=
+te:
+> =A0On 9/18/10 17:43 , C Anthony Risinger wrote:
+>>
+>> I remeber someone recently using it for
+>> continuous build servers successfully
+>
+> That's probably me and I wouldn't call the effort "successful" yet. =A0=
+There
+> are at least several outstanding problems including the limit on the =
+number
+> of links to a file.
+>
+> More on all of these when I return from vacation next week.
 
-Definitely, this has always been one of our goals.  Step one is a better
-btrfsck, which is in progress now.
+yes i think you're right; i actually was going to add that, but i
+accidentally hit 'send' on my mobile right after typing 'successfully'
+and never bothered to follow up with the last 2 or 3 sentences i had
+planned :-), meh.
 
-Step two is being able to do more of this online.
+at any rate, while there is no doubt some issues (esp. with more
+aggressive/non-typical setups), i still think there are many who are
+using it successfully; at least this is the impression i get from my
+statistically irrelevant sampling of the various forums, lists, etc. i
+frequent.
 
--chris
-
+C Anthony
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

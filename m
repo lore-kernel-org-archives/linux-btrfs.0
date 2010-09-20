@@ -1,28 +1,34 @@
-From: Lubos Kolouch <lubos.kolouch@gmail.com>
-Subject: Re: Question of stability
-Date: Mon, 20 Sep 2010 11:00:08 +0000 (UTC)
-Message-ID: <i77ero$lja$1@dough.gmane.org>
-References: <7280394.123.1284845879623.JavaMail.root@zimbra>
-	<4C96B682.5080900@csamuel.org>
+From: Sander <sander@humilis.net>
+Subject: Re: [PATCH 0/3] Btrfs: save free space cache to the disk
+Date: Mon, 20 Sep 2010 13:24:46 +0200
+Message-ID: <20100920112446.GA10866@attic.humilis.net>
+References: <1284577734-3161-1-git-send-email-josef@redhat.com>
+Reply-To: sander@humilis.net
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1284577734-3161-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-No, not stable!
+Josef Bacik wrote (ao):
+> This patch series introduces the ability for btrfs to store the free space cache
+> ondisk to make the caching of a block group much quicker.  Previously we had to
+> search the entire extent-tree to look for gaps everytime we wanted to allocate
+> in a block group.  This approach instead dumps all of the free space cache to
+> disk for every dirtied block group each time we commit the transaction.  This is
+> a disk format change, but in order to use the feature you will have to mount
+> with -o space_cache, and then from then on you won't be able to use old kernels
+> with your filesystem.
 
-Again, after powerloss, I have *two* damaged btrfs filesystems.
+Will this go into a future version of btrfs?
 
-/home and also the backup volume, as the backup was running :(
+If so, would it make sense to include other changes that would require a
+format change?
 
-Both show
-parent transid verify failed on .... wanted ..... found ....
+	Sander
 
-and the volumes cannot be mounted.
-
-So until there is a way to somehow recover from this type of failures,
-speaking about stability is a joke
-
-Lubos Kolouch
-
+-- 
+Humilis IT Services and Solutions
+http://www.humilis.net

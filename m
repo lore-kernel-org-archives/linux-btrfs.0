@@ -1,60 +1,91 @@
-From: Francis Galiegue <fgaliegue@gmail.com>
-Subject: "parent transid verify failed", continued
-Date: Thu, 23 Sep 2010 08:24:42 +0200
-Message-ID: <AANLkTinw8zLRo=RPdxHciwt-UtUZcwHBQxJBY8SBFk6G@mail.gmail.com>
+From: David Flynn <davidf@rd.bbc.co.uk>
+Subject: Btrfs, NFS (v3) and ESTALE
+Date: Thu, 23 Sep 2010 11:02:47 +0000
+Message-ID: <20100923110247.GD11225@rd.bbc.co.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+Cc: davidf@rd.bbc.co.uk
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello list,
+Dear all;
 
-I've been using btrfs for nearly 6 months now, on three machines, with
-no problems but for _one_ filesystem on one machine. The problem is
-the message in $subject.
+On a cluster of ~35 machines used for batch processing, which all mount
+via NFS (v3) a BTRFS export, I am experiencing issues that are causing
+NFS clients to occasionally produce Stale NFS handle errors on accessing
+this file system.  I would be interested to know if this is possibly
+related to use of BTRFS, or is mere coincidence.
 
-=46or this particular filesystem, which contains qemu-kvm disk images i=
-n
-raw mode with caching mode set to "writeback", the symptoms is that:
+Background:
+  - The NFS server is running 2.6.33, with a btrfs file system created
+    under the same kernel.
 
-* in 2.6.34 and lower, I could mount the filesystem, with the "parent
-transid verify failed" message appearing once;
-* with 2.6.35+ and upper, however, not anymore: I mount it and the
-same "parent transid very failed" message now floods dmesg, and I
-cannot kill -9 any program trying to access that filesystem.
+  - The file system is mounted as:
+    /dev/md2 /work btrfs rw,noatime,nodiratime 0 0
 
-I sent a mail to the list at the time: I bisected that to
-5bdd3536cbbe2ecd94ecc14410c6b1b31da16381. The problem is still there.
+  - The file system is exported as:
+    /work           <world>(rw,wdelay,root_squash,no_subtree_check)
 
-And this morning, while doing a btrfs filesystem defragment on the /
-of one of my machines (the one I'm writing this mail from, in fact), I
-saw this message four times again (kernel 2.6.36-rc5):
+  - Clients are mostly 2.6.35, however, problems have also been
+    seen with 2.6.32.
 
-----
-Sep 23 07:42:11 erwin kernel: [  148.689191] parent transid verify
-failed on 14077947904 wanted 316581 found 316247
-Sep 23 07:42:11 erwin kernel: [  148.689529] parent transid verify
-failed on 14077947904 wanted 316581 found 316247
-Sep 23 07:42:13 erwin kernel: [  151.059728] parent transid verify
-failed on 14084829184 wanted 316581 found 316247
-Sep 23 07:42:13 erwin kernel: [  151.060036] parent transid verify
-failed on 14084829184 wanted 316581 found 316247
-----
+  - Clients mount (from /proc/mounts)
+    vc-fs0:/work /work nfs rw,relatime,vers=3,rsize=1048576,wsize=1048576,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=172.29.146.16,mountvers=3,mountport=51102,mountproto=udp,addr=172.29.146.16 0 0
 
-Does that mean that there is corruption on the filesystem, somewhere?
-I just fear that I get into the situation of the hosed filesystem
-which I cannot mount anymore...
+The problem manifests itself when issuing a job to the cluster, of ~120
+tasks on 30 nodes.  We will occasionally find that a machine reports
+NFS stale filehandle errors when trying to stat a directory.  The
+directory will not have been deleted during the lifetime of the job,
+however some (eg 30) sub-directories will have been created.
 
---=20
-=46rancis Galiegue, fgaliegue@gmail.com
-"It seems obvious [...] that at least some 'business intelligence'
-tools invest so much intelligence on the business side that they have
-nothing left for generating SQL queries" (St=C3=A9phane Faroult, in "Th=
-e
-Art of SQL", ISBN 0-596-00894-5)
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+The erros are Usually seen from a machine that has not done any work.
+
+For example:
+
+(2.6.35:)
+vcfe0:~$ ls -l /work >/dev/null
+--launch job (doesn't do anything on vcfe, uses different nodes)--
+... time passes (unknown how long) ...
+
+vcfe0:~$ ls -l /work >/dev/null
+ls: cannot access /work/marta-cip-test: Stale NFS file handle
+ls: cannot access /work/andrea-test-ais: Stale NFS file handle
+
+(2.6.35:)
+vc-r210-0:~$ ls -l /work >/dev/null
+vc-r210-0:~$
+
+(2.6.32:)
+b36048:~$ ls -l /work/ >/dev/null
+ls: cannot access /work/marta-cip-test: Stale NFS file handle
+ls: cannot access /work/andrea-test-ais: Stale NFS file handle
+
+Two separate machines are seeing the same stale file handles.  b36048
+hadn't even touched /work for some considerable time before doing that
+ls.
+
+performing `touch /work/andrea-test-ais' on the client will allow the
+client machine to stat the directory again, however, doing it on the
+file server does not.
+
+performing `echo 2 > /proc/sys/vm/drop_caches' on the client will
+sometimes solve the problem for that client [but not always].
+
+I've not yet found a reliable way to reproduce the problem, other than
+running large jobs (we aren't running small ones at the moment, so can't
+say if it is related to size)
+
+I would be interested to know if anyone believes this may be related to
+the use of btrfs, (or even a configuration / nfs cache coherency problem).
+
+Some extra anecdotal evidence:
+  I don't recall this being an issue before we upgraded all the compute
+  nodes to 2.6.35.  Previously they used 2.6.33, but an upgrade was
+  forced due to an nfs bug under high write loads.  However, it may be
+  that the nature of the jobs that we are running now has changed
+  slightly too.
+
+Kind regards,
+
+..david

@@ -1,113 +1,60 @@
-From: Cesar Eduardo Barros <cesarb@cesarb.net>
-Subject: Dirtiable inode bdi default != sb bdi btrfs
-Date: Wed, 22 Sep 2010 21:54:30 -0300
-Message-ID: <4C9AA546.6050201@cesarb.net>
+From: Francis Galiegue <fgaliegue@gmail.com>
+Subject: "parent transid verify failed", continued
+Date: Thu, 23 Sep 2010 08:24:42 +0200
+Message-ID: <AANLkTinw8zLRo=RPdxHciwt-UtUZcwHBQxJBY8SBFk6G@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: Jan Kara <jack@suse.cz>, Jens Axboe <jaxboe@fusionio.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs@vger.kernel.org,
-	Alexander Viro <viro@zeniv.linux.org.uk>,
-	linux-fsdevel@vger.kernel.org
-To: linux-kernel@vger.kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This started appearing for me on v2.6.36-rc5-49-gc79bd89; it did not 
-happen on v2.6.36-rc5-33-g1ce1e41, probably because it does not have 
-commit 692ebd17c2905313fff3c504c249c6a0faad16ec which introduces the 
-warning.
+Hello list,
 
-[...]
-device fsid 44d595920ddedfa-3ece6b56e80f689e devid 1 transid 22342 
-/dev/mapper/vg_cesarbinspiro-lv_home
-SELinux: initialized (dev dm-3, type btrfs), uses xattr
-------------[ cut here ]------------
-WARNING: at fs/fs-writeback.c:87 inode_to_bdi+0x62/0x6d()
-Hardware name: Inspiron N4010
-Dirtiable inode bdi default != sb bdi btrfs
-Modules linked in: ipv6 kvm_intel kvm uinput arc4 ecb 
-snd_hda_codec_intelhdmi snd_hda_codec_realtek iwlagn snd_hda_intel 
-iwlcore snd_hda_codec uvcvideo snd_hwdep mac80211 videodev snd_seq 
-snd_seq_device v4l1_compat snd_pcm atl1c v4l2_compat_ioctl32 btusb 
-cfg80211 snd_timer i2c_i801 bluetooth iTCO_wdt dell_wmi dell_laptop snd 
-pcspkr wmi dcdbas shpchp iTCO_vendor_support soundcore snd_page_alloc 
-rfkill joydev microcode btrfs zlib_deflate libcrc32c cryptd aes_x86_64 
-aes_generic xts gf128mul dm_crypt usb_storage i915 drm_kms_helper drm 
-i2c_algo_bit i2c_core video output [last unloaded: scsi_wait_scan]
-Pid: 1073, comm: find Not tainted 2.6.36-rc5+ #8
-Call Trace:
-  [<ffffffff8104d0e4>] warn_slowpath_common+0x85/0x9d
-  [<ffffffff8104d19f>] warn_slowpath_fmt+0x46/0x48
-  [<ffffffff811308b7>] inode_to_bdi+0x62/0x6d
-  [<ffffffff81131b48>] __mark_inode_dirty+0xd0/0x177
-  [<ffffffff81127168>] touch_atime+0x107/0x12a
-  [<ffffffff81122384>] ? filldir+0x0/0xd0
-  [<ffffffff8112259b>] vfs_readdir+0x8d/0xb4
-  [<ffffffff8112270b>] sys_getdents+0x81/0xd1
-  [<ffffffff81009c72>] system_call_fastpath+0x16/0x1b
----[ end trace 8907b335812c497b ]---
-------------[ cut here ]------------
-WARNING: at fs/fs-writeback.c:87 inode_to_bdi+0x62/0x6d()
-Hardware name: Inspiron N4010
-Dirtiable inode bdi default != sb bdi btrfs
-Modules linked in: ipv6 kvm_intel kvm uinput arc4 ecb 
-snd_hda_codec_intelhdmi snd_hda_codec_realtek iwlagn snd_hda_intel 
-iwlcore snd_hda_codec uvcvideo snd_hwdep mac80211 videodev snd_seq 
-snd_seq_device v4l1_compat snd_pcm atl1c v4l2_compat_ioctl32 btusb 
-cfg80211 snd_timer i2c_i801 bluetooth iTCO_wdt dell_wmi dell_laptop snd 
-pcspkr wmi dcdbas shpchp iTCO_vendor_support soundcore snd_page_alloc 
-rfkill joydev microcode btrfs zlib_deflate libcrc32c cryptd aes_x86_64 
-aes_generic xts gf128mul dm_crypt usb_storage i915 drm_kms_helper drm 
-i2c_algo_bit i2c_core video output [last unloaded: scsi_wait_scan]
-Pid: 1073, comm: find Tainted: G        W   2.6.36-rc5+ #8
-Call Trace:
-  [<ffffffff8104d0e4>] warn_slowpath_common+0x85/0x9d
-  [<ffffffff8104d19f>] warn_slowpath_fmt+0x46/0x48
-  [<ffffffff811308b7>] inode_to_bdi+0x62/0x6d
-  [<ffffffff81131b48>] __mark_inode_dirty+0xd0/0x177
-  [<ffffffff81127168>] touch_atime+0x107/0x12a
-  [<ffffffff81122384>] ? filldir+0x0/0xd0
-  [<ffffffff8112259b>] vfs_readdir+0x8d/0xb4
-  [<ffffffff8112270b>] sys_getdents+0x81/0xd1
-  [<ffffffff81009c72>] system_call_fastpath+0x16/0x1b
----[ end trace 8907b335812c497c ]---
-[...]
+I've been using btrfs for nearly 6 months now, on three machines, with
+no problems but for _one_ filesystem on one machine. The problem is
+the message in $subject.
 
-These are only the first two; they keep happening, with several 
-different processes (it is not only find), but always btrfs (I have / 
-and /home on btrfs and /boot on ext4). In case it makes any difference, 
-/dev seems to be on devtmpfs, and everything uses relatime.
+=46or this particular filesystem, which contains qemu-kvm disk images i=
+n
+raw mode with caching mode set to "writeback", the symptoms is that:
 
-There is also the following one which is not on vfs_readdir:
+* in 2.6.34 and lower, I could mount the filesystem, with the "parent
+transid verify failed" message appearing once;
+* with 2.6.35+ and upper, however, not anymore: I mount it and the
+same "parent transid very failed" message now floods dmesg, and I
+cannot kill -9 any program trying to access that filesystem.
 
-------------[ cut here ]------------
-WARNING: at fs/fs-writeback.c:87 inode_to_bdi+0x62/0x6d()
-Hardware name: Inspiron N4010
-Dirtiable inode bdi default != sb bdi btrfs
-Modules linked in: ipv6 kvm_intel kvm uinput arc4 ecb 
-snd_hda_codec_intelhdmi snd_hda_codec_realtek iwlagn snd_hda_intel 
-iwlcore snd_hda_codec uvcvideo snd_hwdep mac80211 videodev snd_seq 
-snd_seq_device v4l1_compat snd_pcm atl1c v4l2_compat_ioctl32 btusb 
-cfg80211 snd_timer i2c_i801 bluetooth iTCO_wdt dell_wmi dell_laptop snd 
-pcspkr wmi dcdbas shpchp iTCO_vendor_support soundcore snd_page_alloc 
-rfkill joydev microcode btrfs zlib_deflate libcrc32c cryptd aes_x86_64 
-aes_generic xts gf128mul dm_crypt usb_storage i915 drm_kms_helper drm 
-i2c_algo_bit i2c_core video output [last unloaded: scsi_wait_scan]
-Pid: 1104, comm: mkdir Tainted: G        W   2.6.36-rc5+ #8
-Call Trace:
-  [<ffffffff8104d0e4>] warn_slowpath_common+0x85/0x9d
-  [<ffffffff8104d19f>] warn_slowpath_fmt+0x46/0x48
-  [<ffffffff811308b7>] inode_to_bdi+0x62/0x6d
-  [<ffffffff81131b48>] __mark_inode_dirty+0xd0/0x177
-  [<ffffffffa01408c6>] btrfs_setattr+0x210/0x23a [btrfs]
-  [<ffffffff8112865e>] notify_change+0x1a2/0x29d
-  [<ffffffff81113794>] sys_fchmod+0xac/0xfd
-  [<ffffffff811188e2>] ? sys_newfstat+0x2e/0x39
-  [<ffffffff81009c72>] system_call_fastpath+0x16/0x1b
----[ end trace 8907b335812c498d ]---
+I sent a mail to the list at the time: I bisected that to
+5bdd3536cbbe2ecd94ecc14410c6b1b31da16381. The problem is still there.
 
--- 
-Cesar Eduardo Barros
-cesarb@cesarb.net
-cesar.barros@gmail.com
+And this morning, while doing a btrfs filesystem defragment on the /
+of one of my machines (the one I'm writing this mail from, in fact), I
+saw this message four times again (kernel 2.6.36-rc5):
+
+----
+Sep 23 07:42:11 erwin kernel: [  148.689191] parent transid verify
+failed on 14077947904 wanted 316581 found 316247
+Sep 23 07:42:11 erwin kernel: [  148.689529] parent transid verify
+failed on 14077947904 wanted 316581 found 316247
+Sep 23 07:42:13 erwin kernel: [  151.059728] parent transid verify
+failed on 14084829184 wanted 316581 found 316247
+Sep 23 07:42:13 erwin kernel: [  151.060036] parent transid verify
+failed on 14084829184 wanted 316581 found 316247
+----
+
+Does that mean that there is corruption on the filesystem, somewhere?
+I just fear that I get into the situation of the hosed filesystem
+which I cannot mount anymore...
+
+--=20
+=46rancis Galiegue, fgaliegue@gmail.com
+"It seems obvious [...] that at least some 'business intelligence'
+tools invest so much intelligence on the business side that they have
+nothing left for generating SQL queries" (St=C3=A9phane Faroult, in "Th=
+e
+Art of SQL", ISBN 0-596-00894-5)
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

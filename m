@@ -1,36 +1,46 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Dirtiable inode bdi default != sb bdi btrfs
-Date: Thu, 23 Sep 2010 15:40:01 -0400
-Message-ID: <20100923194001.GG25023@think>
-References: <4C9AA546.6050201@cesarb.net>
- <20100923123849.8975fe47.akpm@linux-foundation.org>
+From: Francis Galiegue <fgaliegue@gmail.com>
+Subject: Any btrfsck to try out? [was: "parent transid verify failed", continued]
+Date: Thu, 23 Sep 2010 22:17:08 +0200
+Message-ID: <AANLkTikNVUXdCXz7bquPV=wYHBN-y1Pbhvv1hb9hzNpu@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Cesar Eduardo Barros <cesarb@cesarb.net>,
-	linux-kernel@vger.kernel.org, Jan Kara <jack@suse.cz>,
-	Jens Axboe <jaxboe@fusionio.com>, linux-btrfs@vger.kernel.org,
-	Alexander Viro <viro@zeniv.linux.org.uk>,
-	linux-fsdevel@vger.kernel.org, stable@kernel.org,
-	Jens Axboe <axboe@kernel.dk>
-To: Andrew Morton <akpm@linux-foundation.org>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20100923123849.8975fe47.akpm@linux-foundation.org>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 23, 2010 at 12:38:49PM -0700, Andrew Morton wrote:
-> 
-> (Cc stable@kernel.org)
-> 
-> On Wed, 22 Sep 2010 21:54:30 -0300
-> Cesar Eduardo Barros <cesarb@cesarb.net> wrote:
-> 
-> > This started appearing for me on v2.6.36-rc5-49-gc79bd89; it did not 
-> > happen on v2.6.36-rc5-33-g1ce1e41, probably because it does not have 
-> > commit 692ebd17c2905313fff3c504c249c6a0faad16ec which introduces the 
-> > warning.
+On Thu, Sep 23, 2010 at 08:24, Francis Galiegue <fgaliegue@gmail.com> w=
+rote:
+[...]
+>
+> For this particular filesystem, which contains qemu-kvm disk images i=
+n
+> raw mode with caching mode set to "writeback", the symptoms is that:
+>
+> * in 2.6.34 and lower, I could mount the filesystem, with the "parent
+> transid verify failed" message appearing once;
+> * with 2.6.35+ and upper, however, not anymore: I mount it and the
+> same "parent transid very failed" message now floods dmesg, and I
+> cannot kill -9 any program trying to access that filesystem.
+>
+[...]
 
-The problem is that btrfs isn't setting the inode bdi on the directory
-inode.  I'm digging now to see if this code is right for
-blockdevice/special inodes as well.
+Another thing: as I can afford to recreate the hosed filesystem if
+need be, I'm also ready to try any offline (of course) repairing
+btrfsck on this filesystem and see if I can mount it again safely.
 
--chris
+Any btrfs-progs tree that I might try out? I have the possibility to
+boot from a USB key with a sufficiently recent kernel and test that,
+and attempt to mount the fs again...
+
+--=20
+=46rancis Galiegue, fgaliegue@gmail.com
+"It seems obvious [...] that at least some 'business intelligence'
+tools invest so much intelligence on the business side that they have
+nothing left for generating SQL queries" (St=C3=A9phane Faroult, in "Th=
+e
+Art of SQL", ISBN 0-596-00894-5)
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

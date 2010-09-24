@@ -1,84 +1,196 @@
-From: Jens Axboe <jaxboe@fusionio.com>
-Subject: Re: [stable] Dirtiable inode bdi default != sb bdi btrfs
-Date: Fri, 24 Sep 2010 20:39:41 +0200
-Message-ID: <4C9CF06D.2050201@fusionio.com>
-References: <4C9AA546.6050201@cesarb.net> <20100923123849.8975fe47.akpm@linux-foundation.org> <4C9BAD1E.2030007@fusionio.com> <20100923205300.GA6853@kroah.com>
+From: Dave Cundiff <syshackmin@gmail.com>
+Subject: Re: Performance degradation
+Date: Fri, 24 Sep 2010 15:39:19 -0400
+Message-ID: <AANLkTin9kzby9Xgr0Ns1bFyK=igKNWMRZq7S3=2mzPJi@mail.gmail.com>
+References: <AANLkTimhpg22M0UUcfksh1H9oGMweVhwpDvqeu0nfOP0@mail.gmail.com>
+	<D1A263E5-C03A-4D6B-BC4D-6085F10714E1@noir.com>
+	<AANLkTi=569wzOheD_eeai6O7uaWBxMhRv5_YuUE1dJZb@mail.gmail.com>
+	<20100922000217.GP27633@think>
+	<AANLkTikLcyQr7Ooi5jxMMHOq9Y1OaH58GMjucGhfUQUH@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-	Jens Axboe <axboe@kernel.dk>, Jan Kara <jack@suse.cz>,
-	<linux-kernel@vger.kernel.org>,
-	Alexander Viro <viro@zeniv.linux.org.uk>,
-	Chris Mason <chris.mason@oracle.com>,
-	<linux-fsdevel@vger.kernel.org>, <stable@kernel.org>,
-	<linux-btrfs@vger.kernel.org>,
-	Cesar Eduardo Barros <cesarb@cesarb.net>
-To: Greg KH <greg@kroah.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20100923205300.GA6853@kroah.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Chris Mason <chris.mason@oracle.com>,
+	"K. Richard Pixley" <rich@noir.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Daniel J Blueman <daniel.blueman@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTikLcyQr7Ooi5jxMMHOq9Y1OaH58GMjucGhfUQUH@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2010-09-23 22:53, Greg KH wrote:
-> On Thu, Sep 23, 2010 at 09:40:14PM +0200, Jens Axboe wrote:
->> On 2010-09-23 21:38, Andrew Morton wrote:
->>>
->>> (Cc stable@kernel.org)
->>>
->>> On Wed, 22 Sep 2010 21:54:30 -0300
->>> Cesar Eduardo Barros <cesarb@cesarb.net> wrote:
->>>
->>>> This started appearing for me on v2.6.36-rc5-49-gc79bd89; it did not 
->>>> happen on v2.6.36-rc5-33-g1ce1e41, probably because it does not have 
->>>> commit 692ebd17c2905313fff3c504c249c6a0faad16ec which introduces the 
->>>> warning.
->>>>
->>>> [...]
->>>> device fsid 44d595920ddedfa-3ece6b56e80f689e devid 1 transid 22342 
->>>> /dev/mapper/vg_cesarbinspiro-lv_home
->>>> SELinux: initialized (dev dm-3, type btrfs), uses xattr
->>>> ------------[ cut here ]------------
->>>> WARNING: at fs/fs-writeback.c:87 inode_to_bdi+0x62/0x6d()
->>>> Hardware name: Inspiron N4010
->>>> Dirtiable inode bdi default != sb bdi btrfs
->>>> Modules linked in: ipv6 kvm_intel kvm uinput arc4 ecb 
->>>> snd_hda_codec_intelhdmi snd_hda_codec_realtek iwlagn snd_hda_intel 
->>>> iwlcore snd_hda_codec uvcvideo snd_hwdep mac80211 videodev snd_seq 
->>>> snd_seq_device v4l1_compat snd_pcm atl1c v4l2_compat_ioctl32 btusb 
->>>> cfg80211 snd_timer i2c_i801 bluetooth iTCO_wdt dell_wmi dell_laptop snd 
->>>> pcspkr wmi dcdbas shpchp iTCO_vendor_support soundcore snd_page_alloc 
->>>> rfkill joydev microcode btrfs zlib_deflate libcrc32c cryptd aes_x86_64 
->>>> aes_generic xts gf128mul dm_crypt usb_storage i915 drm_kms_helper drm 
->>>> i2c_algo_bit i2c_core video output [last unloaded: scsi_wait_scan]
->>>> Pid: 1073, comm: find Not tainted 2.6.36-rc5+ #8
->>>> Call Trace:
->>>>   [<ffffffff8104d0e4>] warn_slowpath_common+0x85/0x9d
->>>>   [<ffffffff8104d19f>] warn_slowpath_fmt+0x46/0x48
->>>>   [<ffffffff811308b7>] inode_to_bdi+0x62/0x6d
->>>>   [<ffffffff81131b48>] __mark_inode_dirty+0xd0/0x177
->>>>   [<ffffffff81127168>] touch_atime+0x107/0x12a
->>>>   [<ffffffff81122384>] ? filldir+0x0/0xd0
->>>>   [<ffffffff8112259b>] vfs_readdir+0x8d/0xb4
->>>>   [<ffffffff8112270b>] sys_getdents+0x81/0xd1
->>>>   [<ffffffff81009c72>] system_call_fastpath+0x16/0x1b
->>>
->>> Thanks.  692ebd17c2905313fff3c504c249c6a0faad16ec had a cc:stable in
->>> the changelog.  I'd suggest it not be merged into -stable until this
->>> regression is sorted out!
->>
->> It was just added, I'm discussing this with Chris on irc as I type this.
->> But yes, lets not replace a regression with a new regression :-). So
->> Greg, please hold off on these for a little while.
-> 
-> Ok, so which ones should I take out of the -stable tree?  Just this one:
-> 	692ebd17c2905313fff3c504c249c6a0faad16ec
-> or it and something else?
+>> It shouldn't but it depends on how much metadata we have to read in =
+to
+>> process the snapshots. =A0Could you do a few sysrq-w? =A0We'll see w=
+here you
+>> are spending your time based on the traces.
+>
+> Also, using 'perf' may give a good picture of where the time is spent=
+, eg:
+>
+> $ sudo perf record -a sleep 20
+> $ sudo perf report | tee profile.txt
+> --
+> Daniel J Blueman
+>
 
-You can keep 1/2, just hold off on the one labeled:
+The cleaner finished before I was able to get any debug, however,
+here's sysrq's and perf data from my very slow running backups. I also
+did a test on the same box with rsync between the ext3 and btrfs
+filesystem with 1 large file. rsync can pretty much saturate the
+100mbit port writing to the ext3 filesystem. The ext3 and btrfs
+filesystems are on the same RAID5 container. Just different
+partitions.
 
-bdi: Fix warnings in __mark_inode_dirty for /dev/zero and friends
+btrfs filesystem:
+rsync --progress -v -e 'ssh' a2s55:/var/log/exim_mainlog .
+exim_mainlog
+    64019026 100%    1.76MB/s    0:00:34 (xfer#1, to-check=3D0/1)
 
-for now. I'm off to Japan in the morning, perhaps Jan can comment
-if he's available.
+Ext3:
+rsync --progress -v -e 'ssh' a2s55:/var/log/exim_mainlog .
+exim_mainlog
+    64032337 100%    8.40MB/s    0:00:07 (xfer#1, to-check=3D0/1)
 
--- 
-Jens Axboe
+Here's an iostat across 20 seconds while the backups were running and
+actively trying to copy a 10gig file:
+sdb               0.00     0.00  0.25 27.45     2.00  4000.80   144.51
+    0.01    0.28   0.22   0.60
+
+The sysrq and perf data is also from the backup trying to copy a 10gig
+file. Its not gonna complete for almost 2 hours... :(
+
+home/dmportal/public_html/data3m7_data_wiki.tgz
+1782775808  15%    1.57MB/s    1:40:45
+
+The only process I could get to show blocked in the sysrq was ssh
+which is how rsync is transmitting its data.
+
+[336155.004946]   task                        PC stack   pid father
+[336155.005018] ssh           D 00000001140c8669  4424 20748  20747 0x0=
+0000080
+[336155.005024]  ffff880402421628 0000000000000086 ffff8804024215d8
+0000000000004000
+[336155.008563]  0000000000013140 ffff8801cd458378 ffff8801cd458000
+ffff880236dd16b0
+[336155.008567]  ffffffff02421678 ffffffff810e23d8 000000000000000a
+0000000000000001
+[336155.008572] Call Trace:
+[336155.008581]  [<ffffffff810e23d8>] ? free_page_list+0xe8/0x100
+[336155.008589]  [<ffffffff815cde98>] schedule_timeout+0x138/0x2b0
+[336155.008595]  [<ffffffff81058920>] ? process_timeout+0x0/0x10
+[336155.008599]  [<ffffffff815ccee0>] io_schedule_timeout+0x80/0xe0
+[336155.008606]  [<ffffffff810ed9a1>] congestion_wait+0x71/0x90
+[336155.008610]  [<ffffffff8106a280>] ? autoremove_wake_function+0x0/0x=
+40
+[336155.008614]  [<ffffffff810e4171>] shrink_inactive_list+0x2e1/0x310
+[336155.008619]  [<ffffffff810e449f>] shrink_zone+0x2ff/0x4e0
+[336155.008625]  [<ffffffff810e16b9>] ? shrink_slab+0x149/0x180
+[336155.008628]  [<ffffffff810e486e>] zone_reclaim+0x1ee/0x290
+[336155.008632]  [<ffffffff810d926a>] ? zone_watermark_ok+0x2a/0x100
+[336155.008637]  [<ffffffff810db55a>] get_page_from_freelist+0x5fa/0x7b=
+0
+[336155.008642]  [<ffffffff81130956>] ? free_poll_entry+0x26/0x30
+[336155.008647]  [<ffffffff81037f6e>] ? select_idle_sibling+0x9e/0x120
+[336155.008652]  [<ffffffff810dc860>] __alloc_pages_nodemask+0x130/0x7e=
+0
+[336155.008658]  [<ffffffff8103f7cf>] ? enqueue_task_fair+0x4f/0x60
+[336155.008661]  [<ffffffff8103d8f8>] ? enqueue_task+0x68/0xa0
+[336155.008665]  [<ffffffff814bd8f1>] ? __alloc_skb+0x51/0x180
+[336155.008671]  [<ffffffff8110f02c>] kmalloc_large_node+0x5c/0xb0
+[336155.008676]  [<ffffffff81112166>] __kmalloc_node_track_caller+0xf6/=
+0x1f0
+[336155.008682]  [<ffffffff814ba2f0>] ? sock_alloc_send_pskb+0x1a0/0x2f=
+0
+[336155.008685]  [<ffffffff814bd920>] __alloc_skb+0x80/0x180
+[336155.008689]  [<ffffffff814ba2f0>] sock_alloc_send_pskb+0x1a0/0x2f0
+[336155.008693]  [<ffffffff81037a6e>] ? __wake_up_sync_key+0x5e/0x80
+[336155.008697]  [<ffffffff814ba455>] sock_alloc_send_skb+0x15/0x20
+[336155.008704]  [<ffffffff81567c22>] unix_stream_sendmsg+0x282/0x3c0
+[336155.008709]  [<ffffffff814b6b20>] sock_aio_write+0x170/0x180
+[336155.008715]  [<ffffffff8111ff95>] do_sync_write+0xd5/0x120
+[336155.008720]  [<ffffffff812204af>] ? security_file_permission+0x1f/0=
+x70
+[336155.008724]  [<ffffffff8112034e>] vfs_write+0x17e/0x190
+[336155.008727]  [<ffffffff81120d25>] sys_write+0x55/0x90
+[336155.008733]  [<ffffffff81002e1b>] system_call_fastpath+0x16/0x1b
+
+
+and 60 seconds of perf data while the 10gig file was languishing. I
+trimmed it just to the top entries. Lemme know if you need the entire
+thing.
+
+# Samples: 140516
+#
+# Overhead          Command                   Shared Object  Symbol
+# ........  ...............  ..............................  ......
+#
+    25.92%              ssh  /lib64/libcrypto.so.0.9.8e      [.]
+0x000000000e0bb8
+     5.19%            rsync  /usr/bin/rsync                  [.] md5_pr=
+ocess
+     5.18%           [idle]  [kernel]                        [k] intel_=
+idle
+     4.35%              ssh  /usr/bin/ssh                    [.]
+0x000000000254ae
+     4.00%           [idle]  [kernel]                        [k] read_h=
+pet
+     3.67%              ssh  /lib64/libcrypto.so.0.9.8e      [.]
+md5_block_asm_data_order
+     2.64%            rsync  [kernel]                        [k]
+__etree_search [btrfs]
+     2.47%            rsync  [kernel]                        [k]
+buffer_search  [btrfs]
+     2.40%            rsync  [kernel]                        [k] read_h=
+pet
+     1.30%  btrfs-endio-wri  [kernel]                        [k]
+buffer_search  [btrfs]
+     1.16%              ssh  /lib64/libcrypto.so.0.9.8e      [.] AES_en=
+crypt
+     1.02%  btrfs-endio-wri  [kernel]                        [k]
+__etree_search [btrfs]
+     0.89%              ssh  [kernel]                        [k]
+copy_user_generic_string
+     0.76%            rsync  [kernel]                        [k] _raw_s=
+pin_lock
+     0.53%            rsync  /usr/bin/rsync                  [.] read_t=
+imeout
+     0.50%            rsync  [kernel]                        [k]
+generic_bin_search     [btrfs]
+     0.48%            rsync  [kernel]                        [k]
+copy_user_generic_string
+     0.48%   btrfs-worker-0  [kernel]                        [k]
+crc32c_intel_le_hw     [crc32c_intel]
+     0.42%            rsync  [kernel]                        [k]
+btrfs_search_slot      [btrfs]
+     0.38%            rsync  [kernel]                        [k]
+map_private_extent_buffer      [btrfs]
+     0.34%            rsync  [kernel]                        [k]
+comp_keys      [btrfs]
+     0.34%            rsync  [kernel]                        [k]
+kmem_cache_alloc
+     0.34%              ssh  /lib64/libc-2.5.so              [.] __GI_m=
+emcpy
+     0.31%            rsync  [kernel]                        [k]
+btrfs_comp_cpu_keys    [btrfs]
+
+
+ and lastly, the same giant file writing to the ext3 partition on the
+same RAID container while the btrfs transfer was still trying to copy
+it. It was able to saturate the 100mbit port.
+
+rsync --progress -v -e'ssh'
+a2s55:/home/dmportal/public_html/data3m7_data_wiki.tgz .
+data3m7_data_wiki.tgz 8.10MB/s    0:22:19
+
+
+Thanks for any input!
+
+--=20
+Dave Cundiff
+System Administrator
+A2Hosting, Inc
+http://www.a2hosting.com
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

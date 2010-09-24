@@ -1,129 +1,84 @@
-From: Lubos Kolouch <lubos.kolouch@gmail.com>
-Subject: Re: cannot resize (grow) fs
-Date: Fri, 24 Sep 2010 17:12:37 +0000 (UTC)
-Message-ID: <i7im65$fdg$1@dough.gmane.org>
-References: <i7hdlm$13j$1@dough.gmane.org>
-	<AANLkTiksuBxGMGuzgpx4eFeajhDRoGxwoodCdhCPr4q2@mail.gmail.com>
-	<i7hlne$13j$2@dough.gmane.org> <201009241908.50351.kreijack@libero.it>
+From: Jens Axboe <jaxboe@fusionio.com>
+Subject: Re: [stable] Dirtiable inode bdi default != sb bdi btrfs
+Date: Fri, 24 Sep 2010 20:39:41 +0200
+Message-ID: <4C9CF06D.2050201@fusionio.com>
+References: <4C9AA546.6050201@cesarb.net> <20100923123849.8975fe47.akpm@linux-foundation.org> <4C9BAD1E.2030007@fusionio.com> <20100923205300.GA6853@kroah.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset="ISO-8859-1"
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+	Jens Axboe <axboe@kernel.dk>, Jan Kara <jack@suse.cz>,
+	<linux-kernel@vger.kernel.org>,
+	Alexander Viro <viro@zeniv.linux.org.uk>,
+	Chris Mason <chris.mason@oracle.com>,
+	<linux-fsdevel@vger.kernel.org>, <stable@kernel.org>,
+	<linux-btrfs@vger.kernel.org>,
+	Cesar Eduardo Barros <cesarb@cesarb.net>
+To: Greg KH <greg@kroah.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20100923205300.GA6853@kroah.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Goffredo Baroncelli, Fri, 24 Sep 2010 19:08:50 +0200:
+On 2010-09-23 22:53, Greg KH wrote:
+> On Thu, Sep 23, 2010 at 09:40:14PM +0200, Jens Axboe wrote:
+>> On 2010-09-23 21:38, Andrew Morton wrote:
+>>>
+>>> (Cc stable@kernel.org)
+>>>
+>>> On Wed, 22 Sep 2010 21:54:30 -0300
+>>> Cesar Eduardo Barros <cesarb@cesarb.net> wrote:
+>>>
+>>>> This started appearing for me on v2.6.36-rc5-49-gc79bd89; it did not 
+>>>> happen on v2.6.36-rc5-33-g1ce1e41, probably because it does not have 
+>>>> commit 692ebd17c2905313fff3c504c249c6a0faad16ec which introduces the 
+>>>> warning.
+>>>>
+>>>> [...]
+>>>> device fsid 44d595920ddedfa-3ece6b56e80f689e devid 1 transid 22342 
+>>>> /dev/mapper/vg_cesarbinspiro-lv_home
+>>>> SELinux: initialized (dev dm-3, type btrfs), uses xattr
+>>>> ------------[ cut here ]------------
+>>>> WARNING: at fs/fs-writeback.c:87 inode_to_bdi+0x62/0x6d()
+>>>> Hardware name: Inspiron N4010
+>>>> Dirtiable inode bdi default != sb bdi btrfs
+>>>> Modules linked in: ipv6 kvm_intel kvm uinput arc4 ecb 
+>>>> snd_hda_codec_intelhdmi snd_hda_codec_realtek iwlagn snd_hda_intel 
+>>>> iwlcore snd_hda_codec uvcvideo snd_hwdep mac80211 videodev snd_seq 
+>>>> snd_seq_device v4l1_compat snd_pcm atl1c v4l2_compat_ioctl32 btusb 
+>>>> cfg80211 snd_timer i2c_i801 bluetooth iTCO_wdt dell_wmi dell_laptop snd 
+>>>> pcspkr wmi dcdbas shpchp iTCO_vendor_support soundcore snd_page_alloc 
+>>>> rfkill joydev microcode btrfs zlib_deflate libcrc32c cryptd aes_x86_64 
+>>>> aes_generic xts gf128mul dm_crypt usb_storage i915 drm_kms_helper drm 
+>>>> i2c_algo_bit i2c_core video output [last unloaded: scsi_wait_scan]
+>>>> Pid: 1073, comm: find Not tainted 2.6.36-rc5+ #8
+>>>> Call Trace:
+>>>>   [<ffffffff8104d0e4>] warn_slowpath_common+0x85/0x9d
+>>>>   [<ffffffff8104d19f>] warn_slowpath_fmt+0x46/0x48
+>>>>   [<ffffffff811308b7>] inode_to_bdi+0x62/0x6d
+>>>>   [<ffffffff81131b48>] __mark_inode_dirty+0xd0/0x177
+>>>>   [<ffffffff81127168>] touch_atime+0x107/0x12a
+>>>>   [<ffffffff81122384>] ? filldir+0x0/0xd0
+>>>>   [<ffffffff8112259b>] vfs_readdir+0x8d/0xb4
+>>>>   [<ffffffff8112270b>] sys_getdents+0x81/0xd1
+>>>>   [<ffffffff81009c72>] system_call_fastpath+0x16/0x1b
+>>>
+>>> Thanks.  692ebd17c2905313fff3c504c249c6a0faad16ec had a cc:stable in
+>>> the changelog.  I'd suggest it not be merged into -stable until this
+>>> regression is sorted out!
+>>
+>> It was just added, I'm discussing this with Chris on irc as I type this.
+>> But yes, lets not replace a regression with a new regression :-). So
+>> Greg, please hold off on these for a little while.
+> 
+> Ok, so which ones should I take out of the -stable tree?  Just this one:
+> 	692ebd17c2905313fff3c504c249c6a0faad16ec
+> or it and something else?
 
-> On Friday, 24 September, 2010, Lubos Kolouch wrote:
->> Sebastian 'gonX' Jensen, Fri, 24 Sep 2010 09:37:02 +0200:
->> 
->> > On 24 September 2010 07:41, Lubos Kolouch <lubos.kolouch@gmail.com>
->> > wrote:
->> >> Hello,
->> >>
->> >> I added disk to raid5 array on one of the backup hosts, running
->> >> btrfs.
->> >>
->> >> So on /dev/md2 I have plenty of space now.
->> >>
->> >> However when I run
->> >>
->> >> btrfs filesystem resize max  /dev/md2
->> >>
->> >> I get
->> >>
->> >> Resize '/dev/md2' of 'max'
->> >> ERROR: unable to resize '/dev/md2'
->> >>
->> >> The same result when I try resize +1g.
->> >>
->> >> strace gives me http://paste.pocoo.org/show/266523/
->> >>
->> >> Any ideas why and how can I extend the filesystem to fill the whole
->> >> volume?
->> >>
->> >> Thank you
->> >>
->> >> Lubos
->> >>
->> >> --
->> >> To unsubscribe from this list: send the line "unsubscribe
->> >> linux-btrfs" in the body of a message to majordomo@vger.kernel.org
->> >> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->> >>
->> >>
->> > Hi Lubos,
->> > 
->> > Firstly if I understood the documentation right, you have to specify
->> > the mount point rather than the drive itself. Secondly, I posted
->> > about this issue a while ago. It seems that it will only extend the
->> > filesystem on the hard drive that has devid 1. If you do not have any
->> > drives with devid 1 (e.g because you removed it), you can't resize
->> > your drive.
->> > 
->> > I hope this is something that the btrfs developers will look into
->> > ASAP, because as it is now, resizing the FS on RAID arrays is
->> > impossible.
->> > 
->> > Regards,
->> > Sebastian J.
->> 
->> Hi Sebastian
->> 
->> Thank you - unfortunately when I specify the mount point, the result is
->> the same.
->> 
->> The drive has devid 3, I was (forced by failure) playing with the
->> drives quite a lot.
->> 
->> Seems like I am hitting all the nice issues with btrfs :)
->> 
->> Lubos
->> 
->> Lubos
-> 
-> Try
-> 
-> # btrfs filesystem resize <devid>:max
-> 
-> where <devid> is the devid to be resized as show by the command btrfs
-> filesystem show.
-> 
-> In my test machine the device which was grows was /dev/ubdf (devid ==
-> 4):
-> 
-> $ sudo bin/btrfs filesystem show
-> Label: none  uuid: 4b241855-8d98-4fa9-a548-e502786a96fe
->         Total devices 3 FS bytes used 28.00KB devid    3 size 600.00MB
->         used 167.00MB path /dev/ubde devid    2 size 600.00MB used
->         167.00MB path /dev/ubdd devid    4 size 700.00MB used 64.00MB
->         path /dev/ubdf
-> 
-> $ cat /proc/partitions
-> major minor  #blocks  name
-> [..]
->   98       48     614400 ubdd
->   98       64     614400 ubde
->   98       80     819200 ubdf
-> 
-> $ sudo bin/btrfs files res 4:max /mnt/test/ Resize '/mnt/test/' of
-> '4:max'
-> 
-> $ sudo bin/btrfs filesystem show
-> Label: none  uuid: 4b241855-8d98-4fa9-a548-e502786a96fe
->         Total devices 3 FS bytes used 28.00KB devid    3 size 600.00MB
->         used 167.00MB path /dev/ubde devid    2 size 600.00MB used
->         167.00MB path /dev/ubdd devid    4 size 800.00MB used 64.00MB
->         path /dev/ubdf
-> 
-> 
-> BTW there is a bug: if no <devid> is passed, the kernel has to grow the
-> first available devid and not the devid==1.
-> 
-> regards
-> G.Baroncelli
-> 
+You can keep 1/2, just hold off on the one labeled:
 
-Wonderful, thank you :)
+bdi: Fix warnings in __mark_inode_dirty for /dev/zero and friends
 
-Lubos
+for now. I'm off to Japan in the morning, perhaps Jan can comment
+if he's available.
 
+-- 
+Jens Axboe

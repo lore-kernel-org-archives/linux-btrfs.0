@@ -1,292 +1,244 @@
-From: Markus Suvanto <markus.suvanto@gmail.com>
-Subject: Re: kernel BUG at fs/btrfs/volumes.c:3017!
-Date: Sun, 26 Sep 2010 13:25:51 +0300
-Message-ID: <AANLkTi=MFLT37cPTKe_SdYpNJsDvm5s7iYLKo+OF0=Sa@mail.gmail.com>
-References: <AANLkTi=5uu+3_shYv9UGoJr7BQafBjZu48f8=_QNUCod@mail.gmail.com>
-	<AANLkTimOAKdHv5mpzH6kw-8_BvyViK_94EAXVPbWH-QG@mail.gmail.com>
+From: Daniel J Blueman <daniel.blueman@gmail.com>
+Subject: Re: Performance degradation
+Date: Sun, 26 Sep 2010 15:05:37 +0100
+Message-ID: <AANLkTinb2a=Lu-f6W_vNPG_AyOAQNfUiGVakBU-Jwg14@mail.gmail.com>
+References: <AANLkTimhpg22M0UUcfksh1H9oGMweVhwpDvqeu0nfOP0@mail.gmail.com>
+	<D1A263E5-C03A-4D6B-BC4D-6085F10714E1@noir.com>
+	<AANLkTi=569wzOheD_eeai6O7uaWBxMhRv5_YuUE1dJZb@mail.gmail.com>
+	<20100922000217.GP27633@think>
+	<AANLkTikLcyQr7Ooi5jxMMHOq9Y1OaH58GMjucGhfUQUH@mail.gmail.com>
+	<AANLkTin9kzby9Xgr0Ns1bFyK=igKNWMRZq7S3=2mzPJi@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Chris Mason <chris.mason@oracle.com>,
+	"K. Richard Pixley" <rich@noir.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Dave Cundiff <syshackmin@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimOAKdHv5mpzH6kw-8_BvyViK_94EAXVPbWH-QG@mail.gmail.com>
+In-Reply-To: <AANLkTin9kzby9Xgr0Ns1bFyK=igKNWMRZq7S3=2mzPJi@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This time kernel is  2.6.36-rc5-00151-g32163f4
-no reverted commits no openafs module and
-hopefully  enough debug information....
+Hi Dave,
 
-There are multiple warning:
-
----[ end trace bbbba72eccec168b ]---
-------------[ cut here ]------------
-WARNING: at fs/fs-writeback.c:87 __mark_inode_dirty+0x1da/0x220()
-Hardware name: Ultra20 M2
-Dirtiable inode bdi default !=3D sb bdi btrfs
-Modules linked in: dm_mod tun bitrev crc32 kvm_amd kvm cn cfq_iosched
-blk_cgroup sr_mod cdrom ata_generic radeon ttm d
-rm_kms_helper drm snd_hda_codec_realtek firmware_class usbhid usbkbd
-pata_acpi radeonfb fb fbdev fb_ddc snd_hda_intel
-firewire_ohci backlight snd_hda_codec firewire_core rtc_cmos ehci_hcd
-ohci_hcd atkbd i2c_algo_bit rtc_core cfbcopyarea
- usbcore i2c_nforce2 rtc_lib crc_itu_t cfbimgblt snd_pcm i2c_core
-pata_amd sym53c8xx cfbfillrect serio_raw processor o
-hci1394 ieee1394 container thermal sg scsi_transport_spi snd_timer
-pcspkr evdev thermal_sys 8250_pnp tpm_tis snd 8250
-k8temp serial_core tpm button soundcore tpm_bios snd_page_alloc
-nls_base forcedeth hwmon unix btrfs libcrc32c crc32c c
-rypto_hash crypto_algapi zlib_deflate raid1 md_mod sata_nv libata
-sd_mod scsi_mod
-Pid: 2300, comm: touch Tainted: G        W   2.6.36-rc5-00151-g32163f4 =
-#2
-Call Trace:
- [<ffffffff810421fa>] warn_slowpath_common+0x7a/0xb0
- [<ffffffff810422d1>] warn_slowpath_fmt+0x41/0x50
- [<ffffffffa0156416>] ? btrfs_dirty_inode+0x76/0x110 [btrfs]
- [<ffffffff810ff2ea>] __mark_inode_dirty+0x1da/0x220
- [<ffffffffa015aed0>] btrfs_setattr+0x80/0x2a0 [btrfs]
- [<ffffffff810f59b1>] notify_change+0x111/0x2f0
- [<ffffffff81103770>] utimes_common+0xd0/0x1a0
- [<ffffffff811038d0>] do_utimes+0x90/0xf0
- [<ffffffff81103a51>] sys_utimensat+0x31/0xb0
- [<ffffffff8129b45f>] ? page_fault+0x1f/0x30
- [<ffffffff810023eb>] system_call_fastpath+0x16/0x1b
----[ end trace bbbba72eccec168c ]---
-------------[ cut here ]------------
-
-
-And oops right after using kvm cache=3Dnone
-
-
-mapping failed logical 223936823296 bio len 28672 len 16384
-------------[ cut here ]------------
-kernel BUG at fs/btrfs/volumes.c:3017!
-invalid opcode: 0000 [#1] SMP
-last sysfs file: /sys/devices/pci0000:00/0000:00:02.1/usb2/2-10/speed
-CPU 0
-Modules linked in: vhost_net macvtap macvlan option usb_wwan usbserial
-usb_storage ipv6 af_packet bridge stp llc dm_mo
-d tun bitrev crc32 kvm_amd kvm cn cfq_iosched blk_cgroup sr_mod cdrom
-ata_generic radeon ttm drm_kms_helper drm snd_hd
-a_codec_realtek firmware_class usbhid usbkbd pata_acpi radeonfb fb
-fbdev fb_ddc snd_hda_intel firewire_ohci backlight
-snd_hda_codec firewire_core rtc_cmos ehci_hcd ohci_hcd atkbd
-i2c_algo_bit rtc_core cfbcopyarea usbcore i2c_nforce2 rtc
-_lib crc_itu_t cfbimgblt snd_pcm i2c_core pata_amd sym53c8xx
-cfbfillrect serio_raw processor ohci1394 ieee1394 contain
-er thermal sg scsi_transport_spi snd_timer pcspkr evdev thermal_sys
-8250_pnp tpm_tis snd 8250 k8temp serial_core tpm b
-utton soundcore tpm_bios snd_page_alloc nls_base forcedeth hwmon unix
-btrfs libcrc32c crc32c crypto_hash crypto_algapi
- zlib_deflate raid1 md_mod sata_nv libata sd_mod scsi_mod
-
-Pid: 4371, comm: qemu-system-x86 Tainted: G        W
-2.6.36-rc5-00151-g32163f4 #2 Ultra20 M2/Ultra20 M2
-RIP: 0010:[<ffffffffa0175a7e>]  [<ffffffffa0175a7e>]
-btrfs_map_bio+0x1fe/0x210 [btrfs]
-RSP: 0018:ffff8800d14a9918  EFLAGS: 00010292
-RAX: 0000000000000042 RBX: 0000000000000000 RCX: 0000000000007fff
-RDX: 0000000000000000 RSI: 0000000000000046 RDI: ffffffff816d4eb4
-RBP: ffff8800d14a9978 R08: 000000000002413f R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000000 R12: 0000003423acc000
-R13: 0000000000007000 R14: 0000000000000001 R15: ffff8800e2113000
-=46S:  00007f76494b2710(0000) GS:ffff880001800000(0000) knlGS:000000000=
-0000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-CR2: 0000000000505060 CR3: 00000000e2053000 CR4: 00000000000006f0
-DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-Process qemu-system-x86 (pid: 4371, threadinfo ffff8800d14a8000, task
-ffff880103f40d60)
-Stack:
- fffffffffffffff6 00003423acb00080 ffff880110517000 0000000100000000
-<0> ffff8800e38cd940 0000000000004000 ffff8800e38cd900 ffff8800e2113000
-<0> ffff8800e38cd900 ffff8800e7a61e88 ffff880110517000 0000000000000000
-Call Trace:
- [<ffffffffa015411c>] btrfs_submit_direct+0x12c/0x270 [btrfs]
- [<ffffffff8110cfac>] dio_bio_submit+0x6c/0xc0
- [<ffffffff8110d033>] dio_send_cur_page+0x33/0xc0
- [<ffffffff8110d120>] submit_page_section+0x60/0x160
- [<ffffffff8110d8b6>] __blockdev_direct_IO+0x506/0xaf0
- [<ffffffffa016b071>] ? btrfs_lookup_ordered_range+0x31/0x2c0 [btrfs]
- [<ffffffffa0153ea9>] btrfs_direct_IO+0x249/0x390 [btrfs]
- [<ffffffffa0157440>] ? btrfs_get_blocks_direct+0x0/0x490 [btrfs]
- [<ffffffffa0153ff0>] ? btrfs_submit_direct+0x0/0x270 [btrfs]
- [<ffffffffa01569b2>] ? btrfs_writepages+0x22/0x30 [btrfs]
- [<ffffffff8109af53>] generic_file_aio_read+0x693/0x700
- [<ffffffff8106ba00>] ? futex_wait+0x200/0x330
- [<ffffffff8109a8c0>] ? generic_file_aio_read+0x0/0x700
- [<ffffffff810dec0b>] do_sync_readv_writev+0xcb/0x110
- [<ffffffff810dea6e>] ? rw_copy_check_uvector+0xae/0x130
- [<ffffffff810df31f>] do_readv_writev+0xcf/0x1e0
- [<ffffffff81052b0b>] ? group_send_sig_info+0x3b/0x50
- [<ffffffff81052b5a>] ? kill_pid_info+0x3a/0x60
- [<ffffffff810df62b>] vfs_readv+0x3b/0x60
- [<ffffffff810df6ea>] sys_preadv+0x9a/0xb0
- [<ffffffff81047ade>] ? sys_gettimeofday+0x4e/0xb0
- [<ffffffff810023eb>] system_call_fastpath+0x16/0x1b
-Code: c8 f5 e0 eb 8f 83 7e 64 00 0f 1f 40 00 0f 85 48 ff ff ff 0f 0b
-eb fe 4c 89 ea 4c 89 e6 48 c7 c7 18 57 19 a0 31 c
-0 e8 e3 29 12 e1 <0f> 0b eb fe 0f 0b eb fe 66 2e 0f 1f 84 00 00 00 00
-00 55 48 89
-RIP  [<ffffffffa0175a7e>] btrfs_map_bio+0x1fe/0x210 [btrfs]
- RSP <ffff8800d14a9918>
----[ end trace bbbba72eccec1699 ]---
-
-
--Markus
-
-
-
-
-2010/9/25 J=C3=A9r=C3=B4me Poulin <jeromepoulin@gmail.com>:
-> For your information, I guess this OOPS is useless without frame poin=
-ters /
-> debugging information.
->
-> On Sat, Sep 25, 2010 at 3:26 PM, Markus Suvanto <markus.suvanto@gmail=
-=2Ecom>
-> wrote:
+On 24 September 2010 20:39, Dave Cundiff <syshackmin@gmail.com> wrote:
+>>> It shouldn't but it depends on how much metadata we have to read in=
+ to
+>>> process the snapshots. =A0Could you do a few sysrq-w? =A0We'll see =
+where you
+>>> are spending your time based on the traces.
 >>
->> Hi
+>> Also, using 'perf' may give a good picture of where the time is spen=
+t, eg:
 >>
->> I get following oops when try to use kvm cache=3Dnone
->>
->> qemu-system-x86_64 ... -drive file=3Dimage.raw,cache=3Dnone,if=3Dvir=
-tio,boot=3Don
->>
->>
->>
->> mapping failed logical 223936823296 bio len 28672 len 16384
->> ------------[ cut here ]------------
->> kernel BUG at fs/btrfs/volumes.c:3017!
->> invalid opcode: 0000 [#1] SMP
->> last sysfs file: /sys/kernel/mm/ksm/pages_shared
->> CPU 1
->> Modules linked in: vhost_net macvtap macvlan libafs(P) ipv6 af_packe=
-t
->> bridge stp llc dm_mod
->> tun bitrev crc32 kvm_amd kvm cn cfq_iosched blk_cgroup ata_generic
->> sr_mod cdrom snd_hda_code
->> c_realtek usbhid usbkbd radeon ttm drm_kms_helper drm firmware_class
->> option usb_wwan usbseri
->> al usb_storage pata_acpi radeonfb snd_hda_intel fb snd_hda_codec fbd=
-ev
->> firewire_ohci firewir
->> e_core fb_ddc crc_itu_t atkbd backlight snd_pcm sym53c8xx serio_raw
->> rtc_cmos rtc_core evdev
->> ohci_hcd ehci_hcd ohci1394 i2c_algo_bit scsi_transport_spi pata_amd =
-sg
->> rtc_lib pcspkr therma
->> l snd_timer i2c_nforce2 usbcore cfbcopyarea snd ieee1394 cfbimgblt
->> processor cfbfillrect the
->> rmal_sys forcedeth soundcore container 8250_pnp tpm_tis k8temp 8250
->> i2c_core snd_page_alloc
->> tpm nls_base serial_core tpm_bios button hwmon unix btrfs libcrc32c
->> crc32c crypto_hash crypt
->> o_algapi zlib_deflate raid1 md_mod sata_nv libata sd_mod scsi_mod
->>
->> Pid: 18081, comm: qemu-system-x86 Tainted: P =C2=A0 M =C2=A0 =C2=A0W
->> 2.6.36-rc5-00087-gd7e7d7e #1 Ultra20
->> =C2=A0M2/Ultra20 M2
->> RIP: 0010:[<ffffffffa014050e>] =C2=A0[<ffffffffa014050e>] 0xffffffff=
-a014050e
->> RSP: 0018:ffff8800b18d3998 =C2=A0EFLAGS: 00010296
->> RAX: 0000000000000042 RBX: 0000000000000000 RCX: 0000000000007fff
->> RDX: 0000000000000000 RSI: 0000000000000046 RDI: ffffffff813ffe54
->> RBP: ffff880110fcc3c0 R08: 000000000001d5f5 R09: 0000000000000000
->> R10: 0000000000000000 R11: 000000000000000d R12: 0000003423acc000
->> R13: 0000000000007000 R14: 0000000000000001 R15: 0000000000000001
->> FS: =C2=A000007f58cc83a710(0000) GS:ffff880001700000(0000)
->> knlGS:0000000000000000
->> CS: =C2=A00010 DS: 0000 ES: 0000 CR0: 000000008005003b
->> CR2: 0000000000505060 CR3: 000000010ca4f000 CR4: 00000000000006e0
->> DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
->> DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
->> Process qemu-system-x86 (pid: 18081, threadinfo ffff8800b18d2000, ta=
-sk
->> ffff8801131471b0)
->> Stack:
->> =C2=A0ffff88010f1edd00 ffff88010f1edd30 ffff880108af1000 00003423acb=
-00080
->> <0> ffff88002702a240 0000000000004000 ffff88010c994000 ffff880110fcc=
-3c0
->> <0> ffff88002702a5c0 ffff88010f1ede88 ffff880108af1000 0000000000000=
-000
->> Call Trace:
->> =C2=A0[<ffffffffa011e1e9>] ? 0xffffffffa011e1e9
->> =C2=A0[<ffffffff811031a9>] ? 0xffffffff811031a9
->> =C2=A0[<ffffffff8110322b>] ? 0xffffffff8110322b
->> =C2=A0[<ffffffff81103311>] ? 0xffffffff81103311
->> =C2=A0[<ffffffff81103abf>] ? 0xffffffff81103abf
->> =C2=A0[<ffffffffa013a81a>] ? 0xffffffffa013a81a
->> =C2=A0[<ffffffffa011df85>] ? 0xffffffffa011df85
->> =C2=A0[<ffffffffa0121570>] ? 0xffffffffa0121570
->> =C2=A0[<ffffffffa011e0c0>] ? 0xffffffffa011e0c0
->> =C2=A0[<ffffffffa0120ce0>] ? 0xffffffffa0120ce0
->> =C2=A0[<ffffffff8109319d>] ? 0xffffffff8109319d
->> =C2=A0[<ffffffff81092b60>] ? 0xffffffff81092b60
->> =C2=A0[<ffffffff810d5d69>] ? 0xffffffff810d5d69
->> =C2=A0[<ffffffff8106711b>] ? 0xffffffff8106711b
->> =C2=A0[<ffffffff81068dd3>] ? 0xffffffff81068dd3
->> =C2=A0[<ffffffff810d5baf>] ? 0xffffffff810d5baf
->> =C2=A0[<ffffffff810d644f>] ? 0xffffffff810d644f
->> =C2=A0[<ffffffff8104eb08>] ? 0xffffffff8104eb08
->> =C2=A0[<ffffffff8104ed84>] ? 0xffffffff8104ed84
->> =C2=A0[<ffffffff810d6843>] ? 0xffffffff810d6843
->> =C2=A0[<ffffffff810023eb>] ? 0xffffffff810023eb
->> Code: 20 e8 a7 90 f8 e0 eb 87 83 7e 64 00 90 0f 85 45 ff ff ff 0f 0b
->> eb fe 4c 89 ea 4c 89 e6
->> =C2=A048 c7 c7 38 fd 15 a0 31 c0 e8 72 65 14 e1 <0f> 0b eb fe 0f 0b =
-eb fe
->> 66 2e 0f 1f 84 00 00 00
->> =C2=A000 00 41 54 55
->> RIP =C2=A0[<ffffffffa014050e>] 0xffffffffa014050e
->> =C2=A0RSP <ffff8800b18d3998>
->> ---[ end trace 33dc5bb4824a0127 ]---
->>
->> Kernel is 2.6.36-rc5-00087-gd7e7d7e
->>
->> -Markus Suvanto
->>
->>
->>
->> commit d7e7d7eb1c61772662d17f6636e48a87baf7eb56
->> Author: root <root@masu.station.com>
->> Date: =C2=A0 Fri Sep 24 19:09:17 2010 +0300
->>
->> =C2=A0 =C2=A0Revert "bdi: Fix warnings in __mark_inode_dirty for /de=
-v/zero and
->> friends"
->>
->> =C2=A0 =C2=A0This reverts commit 692ebd17c2905313fff3c504c249c6a0faa=
-d16ec.
->>
->> commit a850ea30374ebed32a0724742601861853fde869
->> Author: Naoya Horiguchi <n-horiguchi@ah.jp.nec.com>
->> Date: =C2=A0 Fri Sep 10 13:23:06 2010 +0900
->>
->> =C2=A0 =C2=A0hugetlb, rmap: add BUG_ON(!PageLocked) in hugetlb_add_a=
-non_rmap()
->>
->> =C2=A0 =C2=A0Confirming page lock is held in hugetlb_add_anon_rmap()=
- may be useful
->> =C2=A0 =C2=A0to detect possible future problems.
->>
->> =C2=A0 =C2=A0Signed-off-by: Naoya Horiguchi <n-horiguchi@ah.jp.nec.c=
-om>
->> =C2=A0 =C2=A0Acked-by: Rik van Riel <riel@redhat.com>
->> =C2=A0 =C2=A0Acked-by: Andrea Arcangeli <aarcange@redhat.com>
->> =C2=A0 =C2=A0Signed-off-by: Linus Torvalds <torvalds@linux-foundatio=
-n.org>
+>> $ sudo perf record -a sleep 20
+>> $ sudo perf report | tee profile.txt
 >> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrf=
-s" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at =C2=A0http://vger.kernel.org/majordomo-info.h=
-tml
+>> Daniel J Blueman
+>>
+>
+> The cleaner finished before I was able to get any debug, however,
+> here's sysrq's and perf data from my very slow running backups. I als=
+o
+> did a test on the same box with rsync between the ext3 and btrfs
+> filesystem with 1 large file. rsync can pretty much saturate the
+> 100mbit port writing to the ext3 filesystem. The ext3 and btrfs
+> filesystems are on the same RAID5 container. Just different
+> partitions.
+>
+> btrfs filesystem:
+> rsync --progress -v -e 'ssh' a2s55:/var/log/exim_mainlog .
+> exim_mainlog
+> =A0 =A064019026 100% =A0 =A01.76MB/s =A0 =A00:00:34 (xfer#1, to-check=
+=3D0/1)
+>
+> Ext3:
+> rsync --progress -v -e 'ssh' a2s55:/var/log/exim_mainlog .
+> exim_mainlog
+> =A0 =A064032337 100% =A0 =A08.40MB/s =A0 =A00:00:07 (xfer#1, to-check=
+=3D0/1)
+>
+> Here's an iostat across 20 seconds while the backups were running and
+> actively trying to copy a 10gig file:
+> sdb =A0 =A0 =A0 =A0 =A0 =A0 =A0 0.00 =A0 =A0 0.00 =A00.25 27.45 =A0 =A0=
+ 2.00 =A04000.80 =A0 144.51
+> =A0 =A00.01 =A0 =A00.28 =A0 0.22 =A0 0.60
+>
+> The sysrq and perf data is also from the backup trying to copy a 10gi=
+g
+> file. Its not gonna complete for almost 2 hours... :(
+>
+> home/dmportal/public_html/data3m7_data_wiki.tgz
+> 1782775808 =A015% =A0 =A01.57MB/s =A0 =A01:40:45
+>
+> The only process I could get to show blocked in the sysrq was ssh
+> which is how rsync is transmitting its data.
+>
+> [336155.004946] =A0 task =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
+=A0PC stack =A0 pid father
+> [336155.005018] ssh =A0 =A0 =A0 =A0 =A0 D 00000001140c8669 =A04424 20=
+748 =A020747 0x00000080
+> [336155.005024] =A0ffff880402421628 0000000000000086 ffff8804024215d8
+> 0000000000004000
+> [336155.008563] =A00000000000013140 ffff8801cd458378 ffff8801cd458000
+> ffff880236dd16b0
+> [336155.008567] =A0ffffffff02421678 ffffffff810e23d8 000000000000000a
+> 0000000000000001
+> [336155.008572] Call Trace:
+> [336155.008581] =A0[<ffffffff810e23d8>] ? free_page_list+0xe8/0x100
+> [336155.008589] =A0[<ffffffff815cde98>] schedule_timeout+0x138/0x2b0
+> [336155.008595] =A0[<ffffffff81058920>] ? process_timeout+0x0/0x10
+> [336155.008599] =A0[<ffffffff815ccee0>] io_schedule_timeout+0x80/0xe0
+> [336155.008606] =A0[<ffffffff810ed9a1>] congestion_wait+0x71/0x90
+> [336155.008610] =A0[<ffffffff8106a280>] ? autoremove_wake_function+0x=
+0/0x40
+> [336155.008614] =A0[<ffffffff810e4171>] shrink_inactive_list+0x2e1/0x=
+310
+> [336155.008619] =A0[<ffffffff810e449f>] shrink_zone+0x2ff/0x4e0
+> [336155.008625] =A0[<ffffffff810e16b9>] ? shrink_slab+0x149/0x180
+> [336155.008628] =A0[<ffffffff810e486e>] zone_reclaim+0x1ee/0x290
+> [336155.008632] =A0[<ffffffff810d926a>] ? zone_watermark_ok+0x2a/0x10=
+0
+> [336155.008637] =A0[<ffffffff810db55a>] get_page_from_freelist+0x5fa/=
+0x7b0
+> [336155.008642] =A0[<ffffffff81130956>] ? free_poll_entry+0x26/0x30
+> [336155.008647] =A0[<ffffffff81037f6e>] ? select_idle_sibling+0x9e/0x=
+120
+> [336155.008652] =A0[<ffffffff810dc860>] __alloc_pages_nodemask+0x130/=
+0x7e0
+> [336155.008658] =A0[<ffffffff8103f7cf>] ? enqueue_task_fair+0x4f/0x60
+> [336155.008661] =A0[<ffffffff8103d8f8>] ? enqueue_task+0x68/0xa0
+> [336155.008665] =A0[<ffffffff814bd8f1>] ? __alloc_skb+0x51/0x180
+> [336155.008671] =A0[<ffffffff8110f02c>] kmalloc_large_node+0x5c/0xb0
+> [336155.008676] =A0[<ffffffff81112166>] __kmalloc_node_track_caller+0=
+xf6/0x1f0
+> [336155.008682] =A0[<ffffffff814ba2f0>] ? sock_alloc_send_pskb+0x1a0/=
+0x2f0
+> [336155.008685] =A0[<ffffffff814bd920>] __alloc_skb+0x80/0x180
+> [336155.008689] =A0[<ffffffff814ba2f0>] sock_alloc_send_pskb+0x1a0/0x=
+2f0
+> [336155.008693] =A0[<ffffffff81037a6e>] ? __wake_up_sync_key+0x5e/0x8=
+0
+> [336155.008697] =A0[<ffffffff814ba455>] sock_alloc_send_skb+0x15/0x20
+> [336155.008704] =A0[<ffffffff81567c22>] unix_stream_sendmsg+0x282/0x3=
+c0
+> [336155.008709] =A0[<ffffffff814b6b20>] sock_aio_write+0x170/0x180
+> [336155.008715] =A0[<ffffffff8111ff95>] do_sync_write+0xd5/0x120
+> [336155.008720] =A0[<ffffffff812204af>] ? security_file_permission+0x=
+1f/0x70
+> [336155.008724] =A0[<ffffffff8112034e>] vfs_write+0x17e/0x190
+> [336155.008727] =A0[<ffffffff81120d25>] sys_write+0x55/0x90
+> [336155.008733] =A0[<ffffffff81002e1b>] system_call_fastpath+0x16/0x1=
+b
 >
 >
+> and 60 seconds of perf data while the 10gig file was languishing. I
+> trimmed it just to the top entries. Lemme know if you need the entire
+> thing.
+>
+> # Samples: 140516
+> #
+> # Overhead =A0 =A0 =A0 =A0 =A0Command =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
+ =A0 Shared Object =A0Symbol
+> # ........ =A0............... =A0.............................. =A0..=
+=2E...
+> #
+> =A0 =A025.92% =A0 =A0 =A0 =A0 =A0 =A0 =A0ssh =A0/lib64/libcrypto.so.0=
+=2E9.8e =A0 =A0 =A0[.]
+> 0x000000000e0bb8
+> =A0 =A0 5.19% =A0 =A0 =A0 =A0 =A0 =A0rsync =A0/usr/bin/rsync =A0 =A0 =
+=A0 =A0 =A0 =A0 =A0 =A0 =A0[.] md5_process
+> =A0 =A0 5.18% =A0 =A0 =A0 =A0 =A0 [idle] =A0[kernel] =A0 =A0 =A0 =A0 =
+=A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0[k] intel_idle
+> =A0 =A0 4.35% =A0 =A0 =A0 =A0 =A0 =A0 =A0ssh =A0/usr/bin/ssh =A0 =A0 =
+=A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0[.]
+> 0x000000000254ae
+> =A0 =A0 4.00% =A0 =A0 =A0 =A0 =A0 [idle] =A0[kernel] =A0 =A0 =A0 =A0 =
+=A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0[k] read_hpet
+> =A0 =A0 3.67% =A0 =A0 =A0 =A0 =A0 =A0 =A0ssh =A0/lib64/libcrypto.so.0=
+=2E9.8e =A0 =A0 =A0[.]
+> md5_block_asm_data_order
+> =A0 =A0 2.64% =A0 =A0 =A0 =A0 =A0 =A0rsync =A0[kernel] =A0 =A0 =A0 =A0=
+ =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0[k]
+> __etree_search [btrfs]
+> =A0 =A0 2.47% =A0 =A0 =A0 =A0 =A0 =A0rsync =A0[kernel] =A0 =A0 =A0 =A0=
+ =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0[k]
+> buffer_search =A0[btrfs]
+> =A0 =A0 2.40% =A0 =A0 =A0 =A0 =A0 =A0rsync =A0[kernel] =A0 =A0 =A0 =A0=
+ =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0[k] read_hpet
+> =A0 =A0 1.30% =A0btrfs-endio-wri =A0[kernel] =A0 =A0 =A0 =A0 =A0 =A0 =
+=A0 =A0 =A0 =A0 =A0 =A0[k]
+> buffer_search =A0[btrfs]
+> =A0 =A0 1.16% =A0 =A0 =A0 =A0 =A0 =A0 =A0ssh =A0/lib64/libcrypto.so.0=
+=2E9.8e =A0 =A0 =A0[.] AES_encrypt
+> =A0 =A0 1.02% =A0btrfs-endio-wri =A0[kernel] =A0 =A0 =A0 =A0 =A0 =A0 =
+=A0 =A0 =A0 =A0 =A0 =A0[k]
+> __etree_search [btrfs]
+> =A0 =A0 0.89% =A0 =A0 =A0 =A0 =A0 =A0 =A0ssh =A0[kernel] =A0 =A0 =A0 =
+=A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0[k]
+> copy_user_generic_string
+> =A0 =A0 0.76% =A0 =A0 =A0 =A0 =A0 =A0rsync =A0[kernel] =A0 =A0 =A0 =A0=
+ =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0[k] _raw_spin_lock
+> =A0 =A0 0.53% =A0 =A0 =A0 =A0 =A0 =A0rsync =A0/usr/bin/rsync =A0 =A0 =
+=A0 =A0 =A0 =A0 =A0 =A0 =A0[.] read_timeout
+> =A0 =A0 0.50% =A0 =A0 =A0 =A0 =A0 =A0rsync =A0[kernel] =A0 =A0 =A0 =A0=
+ =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0[k]
+> generic_bin_search =A0 =A0 [btrfs]
+> =A0 =A0 0.48% =A0 =A0 =A0 =A0 =A0 =A0rsync =A0[kernel] =A0 =A0 =A0 =A0=
+ =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0[k]
+> copy_user_generic_string
+> =A0 =A0 0.48% =A0 btrfs-worker-0 =A0[kernel] =A0 =A0 =A0 =A0 =A0 =A0 =
+=A0 =A0 =A0 =A0 =A0 =A0[k]
+> crc32c_intel_le_hw =A0 =A0 [crc32c_intel]
+> =A0 =A0 0.42% =A0 =A0 =A0 =A0 =A0 =A0rsync =A0[kernel] =A0 =A0 =A0 =A0=
+ =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0[k]
+> btrfs_search_slot =A0 =A0 =A0[btrfs]
+> =A0 =A0 0.38% =A0 =A0 =A0 =A0 =A0 =A0rsync =A0[kernel] =A0 =A0 =A0 =A0=
+ =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0[k]
+> map_private_extent_buffer =A0 =A0 =A0[btrfs]
+> =A0 =A0 0.34% =A0 =A0 =A0 =A0 =A0 =A0rsync =A0[kernel] =A0 =A0 =A0 =A0=
+ =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0[k]
+> comp_keys =A0 =A0 =A0[btrfs]
+> =A0 =A0 0.34% =A0 =A0 =A0 =A0 =A0 =A0rsync =A0[kernel] =A0 =A0 =A0 =A0=
+ =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0[k]
+> kmem_cache_alloc
+> =A0 =A0 0.34% =A0 =A0 =A0 =A0 =A0 =A0 =A0ssh =A0/lib64/libc-2.5.so =A0=
+ =A0 =A0 =A0 =A0 =A0 =A0[.] __GI_memcpy
+> =A0 =A0 0.31% =A0 =A0 =A0 =A0 =A0 =A0rsync =A0[kernel] =A0 =A0 =A0 =A0=
+ =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0[k]
+> btrfs_comp_cpu_keys =A0 =A0[btrfs]
+>
+>
+> =A0and lastly, the same giant file writing to the ext3 partition on t=
+he
+> same RAID container while the btrfs transfer was still trying to copy
+> it. It was able to saturate the 100mbit port.
+>
+> rsync --progress -v -e'ssh'
+> a2s55:/home/dmportal/public_html/data3m7_data_wiki.tgz .
+> data3m7_data_wiki.tgz 8.10MB/s =A0 =A00:22:19
+
+The profile here shows relatively little time spent in BTRFS, thus
+most likely the high system-load is due to processes waiting for disk
+(which is counted as busy, even though the process isn't scheduled).
+
+The 25% in libcrypto is saturating one core I guess, thus the limiting
+factor here. I would suggest to use:
+
+$ rsync --progress -v -e'ssh -o ciphers=3Darcfour -o compression=3Dno'
+a2s55:/home/dmportal/public_html/data3m7_data_wiki.tgz .
+
+SSH compression destroys throughput, and arcfour is really much faster
+than AES (until you get Intel Westmere + OS support). I was finding
+that BTRFS compression was really hurting writeback, due to a known
+regression.
+
+Are you using it here on your backup system? Anyway, I guess you need
+to grab profile information when you are getting the slow snapshot
+deletion...
+
+Dan
+--=20
+Daniel J Blueman
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

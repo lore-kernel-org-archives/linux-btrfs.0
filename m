@@ -1,72 +1,37 @@
-From: Francis Galiegue <fgaliegue@gmail.com>
-Subject: btrfs user survey?
-Date: Tue, 28 Sep 2010 00:31:23 +0200
-Message-ID: <AANLkTikcYTyxQ2NT_CJi4OEvnsGti8rq=tQ+=HxNrMxJ@mail.gmail.com>
+From: Chris Ball <cjb@laptop.org>
+Subject: Re: btrfs user survey?
+Date: Mon, 27 Sep 2010 18:44:10 -0400
+Message-ID: <m3vd5qq01x.fsf@pullcord.laptop.org>
+References: <AANLkTikcYTyxQ2NT_CJi4OEvnsGti8rq=tQ+=HxNrMxJ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Francis Galiegue <fgaliegue@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTikcYTyxQ2NT_CJi4OEvnsGti8rq=tQ+=HxNrMxJ@mail.gmail.com>
+	(Francis Galiegue's message of "Tue, 28 Sep 2010 00:31:23 +0200")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello list,
+Hi Francis,
 
-At this point in time, btrfs has gained a lot of interest, and not
-only a passing one. So, it is, imho, the ideal time to build up a
-survey to monitor how btrfs is used today (or _was_ used - I have
-knowledge of people that started to use it but dropped for various
-reasons).
+   > Well, all in all, you get the idea, and I'm probably not the guy
+   > to craft questions for such a survey. But having input from as
+   > large a panel of users as possible would be a nice thing to have.
 
-Of course, I'm only one user among many, but here is a sample of
-questions for this survey in case anyone is interested:
+Your questions are fine -- I might add:
 
-* Do you use btrfs currently?
-[ ] yes, but not as a root filesystem
-[ ] yes, as a root filesystem
-[ ] no
+* Rank the following future features in importance, 4 == most important
+[ ] working fsck
+[ ] GUIs for userspace actions e.g. snapshots
+[ ] data deduplication
+[ ] hot data relocation
 
-* If not, what prevents you from using them?
-[ ] lack of a full blown fsck
-[ ] horror stories from other users
-[ ] lack of support from my favorite distribution
-[ ] other
+Please use something like Google Spreadsheets (which has a forms
+option) if you're going to run such a survey, rather than having
+everyone reply on-list -- we shouldn't bother this list with any
+results other than the final summary.
 
-* If yes, how long have you used it?
-[ put answers here related to milestones in btrfs design - I don't know=
- them ]
-
-* Do you use the following features of btrfs:
-[ ] defragment
-[ ] online shrink
-[ ] online expand
-[ ] snapshots
-[ ] RAID
-[ ] [others - I only mention the ones I know]
-
-* How many btrfs filesystems do you currently have?
-[ ] 1 only
-[ ] 2-5
-[ ] More than 5
-
-* How many btrfs filesystems have failed upon you?
-[ ] None!
-[ ] [etc etc]
-
-Well, all in all, you get the idea, and I'm probably not the guy to
-craft questions for such a survey. But having input from as large a
-panel of users as possible would be a nice thing to have.
-
-Comments?
-
-
---=20
-=46rancis Galiegue, fgaliegue@gmail.com
-"It seems obvious [...] that at least some 'business intelligence'
-tools invest so much intelligence on the business side that they have
-nothing left for generating SQL queries" (St=C3=A9phane Faroult, in "Th=
-e
-Art of SQL", ISBN 0-596-00894-5)
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+- Chris.
+-- 
+Chris Ball   <cjb@laptop.org>
+One Laptop Per Child

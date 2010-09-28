@@ -1,109 +1,173 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: add a disk info ioctl to get the disks attached to a filesystem
-Date: Tue, 28 Sep 2010 16:53:16 -0400
-Message-ID: <1285707196-16268-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs-progs: add btrfs filesystem disk-info command
+Date: Tue, 28 Sep 2010 16:53:39 -0400
+Message-ID: <1285707219-16304-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This was a request from the systemd guys.  They need a quick and easy way to get
-all devices attached to a Btrfs filesystem in order to check if any of the disks
-are SSD for...something, I didn't ask :).   I've tested this with the
-btrfs-progs patch that accompanies this patch.  Thanks,
+This command just implements the BTRFS_IOC_DISK_INFO ioctl.  It gets all the
+devices for a filesystem, reads /proc/partitions for the right dev info and
+spits out pretty names.
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/ioctl.c |   64 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/ioctl.h |    7 ++++++
- 2 files changed, 71 insertions(+), 0 deletions(-)
+ btrfs.c      |    4 ++
+ btrfs_cmds.c |  101 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ btrfs_cmds.h |    1 +
+ ioctl.h      |    8 ++++
+ 4 files changed, 114 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 9254b3d..f59b0bc 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1957,6 +1957,68 @@ out:
- 	return ret;
+diff --git a/btrfs.c b/btrfs.c
+index ab5e57f..22b241b 100644
+--- a/btrfs.c
++++ b/btrfs.c
+@@ -91,6 +91,10 @@ static struct Command commands[] = {
+ 	  "filesystem df", "<path>\n"
+ 		"Show space usage information for a mount point\n."
+ 	},
++	{ do_disk_info, 1,
++	  "filesystem disk-info", "<path>\n"
++		"Show disks contained within this filesysten."
++	},
+ 	{ do_balance, 1,
+ 	  "filesystem balance", "<path>\n"
+ 		"Balance the chunks across the device."
+diff --git a/btrfs_cmds.c b/btrfs_cmds.c
+index 683aec0..b1a4d8d 100644
+--- a/btrfs_cmds.c
++++ b/btrfs_cmds.c
+@@ -835,6 +835,107 @@ int do_set_default_subvol(int nargs, char **argv)
+ 	return 0;
  }
  
-+static noinline long btrfs_ioctl_disk_info(struct btrfs_root *root,
-+					   void __user *arg)
++int do_disk_info(int nargs, char **argv)
 +{
-+	struct btrfs_ioctl_disk_info_args di_args;
-+	u64 *user_dest;
-+	u64 *dest = NULL;
-+	struct btrfs_device *device;
-+	struct list_head *devices;
-+	int alloc_size = 0;
-+	int ret = 0;
++	struct btrfs_ioctl_disk_info_args *args;
++	char *path = argv[1];
++	int devs;
++	int fd;
++	int ret;
++	int i;
 +
-+	if (copy_from_user(&di_args,
-+			   (struct btrfs_ioctl_disk_info_args __user *)arg,
-+			   sizeof(di_args)))
-+		return -EFAULT;
-+
-+	mutex_lock(&root->fs_info->fs_devices->device_list_mutex);
-+	if (!di_args.num_devices) {
-+		di_args.num_devices = root->fs_info->fs_devices->num_devices;
-+		goto out;
-+	}
-+	alloc_size = sizeof(u64) * di_args.num_devices;
-+
-+	di_args.num_devices = 0;
-+
-+	/*
-+	 * If we have more than 4k worth of space to hold a bunch of u64's,
-+	 * somebody is misbehaving.
-+	 */
-+	if (alloc_size > PAGE_CACHE_SIZE) {
-+		ret = -ENOMEM;
-+		goto out;
++	fd = open_file_or_dir(path);
++	if (fd < 0) {
++		fprintf(stderr, "Error: can't access '%s'\n", path);
++		return 12;
 +	}
 +
-+	dest = kzalloc(alloc_size, GFP_NOFS);
-+	if (!dest) {
-+		ret = -ENOMEM;
-+		goto out;
++	args = malloc(sizeof(*args));
++	if (!args)
++		return -ENOMEM;
++
++	args->num_devices = 0;
++
++	ret = ioctl(fd, BTRFS_IOC_DISK_INFO, args);
++	if (ret) {
++		printf("failed ioctl\n");
++		free(args);
++		return ret;
 +	}
 +
-+	devices = &root->fs_info->fs_devices->devices;
-+
-+	list_for_each_entry(device, devices, dev_list) {
-+		dest[di_args.num_devices] =
-+			huge_encode_dev(device->bdev->bd_dev);
-+		di_args.num_devices++;
++	if (!args->num_devices) {
++		printf("no devs\n");
++		free(args);
++		return 0;
 +	}
 +
-+	user_dest = (u64 *)
-+		(arg + sizeof(struct btrfs_ioctl_disk_info_args));
++	devs = args->num_devices;
++	args = realloc(args, sizeof(*args) + (devs * sizeof(dev_t)));
++	if (!args) {
++		printf("enomem\n");
++		return -ENOMEM;
++	}
++	args->num_devices = devs;
 +
-+	if (copy_to_user(user_dest, dest, alloc_size))
-+		ret = -EFAULT;
-+out:
-+	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
-+	if (ret == 0 && copy_to_user(arg, &di_args, sizeof(di_args)))
-+		ret = -EFAULT;
-+	kfree(dest);
++	ret = ioctl(fd, BTRFS_IOC_DISK_INFO, args);
++	if (ret) {
++		printf("ioctl failed second time\n");
++		free(args);
++		return -ENOMEM;
++	}
++	close(fd);
 +
-+	return ret;
++	fd = open_file_or_dir("/proc/partitions");
++	if (fd < 0) {
++print:
++		printf("Devices in %s\n", path);
++		for (i = 0; i < args->num_devices; i++)
++			printf("\t%d:%d\n", major(args->devices[i]),
++			       minor(args->devices[i]));
++		close(fd);
++	} else {
++		int major, minor;
++		unsigned long long blocks;
++		char buf[128];
++		char name[32];
++		FILE *f;
++		int found_devices = 0;
++
++		f = fdopen(fd, "r");
++		if (!f)
++			goto print;
++
++		printf("Devices in %s\n", path);
++		while (!feof(f)) {
++			char *blah;
++
++			memset(name, 0, 32);
++			memset(buf, 0, 128);
++
++			blah = fgets(buf, 128, f);
++
++			ret = sscanf(buf, "%d %d %llu %32s", &major, &minor, &blocks, name);
++			if (!ret)
++				continue;
++
++			for (i = 0; i < args->num_devices; i++) {
++				if (major(args->devices[i]) != major)
++					continue;
++				if (minor(args->devices[i]) != minor)
++					continue;
++				found_devices++;
++				printf("\t/dev/%s\n", name);
++				break;
++			}
++			if (found_devices == args->num_devices)
++				break;
++		}
++		fclose(f);
++	}
++	free(args);
++	return 0;
 +}
 +
- /*
-  * there are many ways the trans_start and trans_end ioctls can lead
-  * to deadlocks.  They should only be used by applications that
-@@ -2031,6 +2093,8 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_ino_lookup(file, argp);
- 	case BTRFS_IOC_SPACE_INFO:
- 		return btrfs_ioctl_space_info(root, argp);
-+	case BTRFS_IOC_DISK_INFO:
-+		return btrfs_ioctl_disk_info(root, argp);
- 	case BTRFS_IOC_SYNC:
- 		btrfs_sync_fs(file->f_dentry->d_sb, 1);
- 		return 0;
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 424694a..294e8c3 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -138,6 +138,11 @@ struct btrfs_ioctl_space_args {
+ int do_df_filesystem(int nargs, char **argv)
+ {
+ 	struct btrfs_ioctl_space_args *sargs;
+diff --git a/btrfs_cmds.h b/btrfs_cmds.h
+index 7bde191..0b5038a 100644
+--- a/btrfs_cmds.h
++++ b/btrfs_cmds.h
+@@ -31,4 +31,5 @@ int do_set_default_subvol(int nargs, char **argv);
+ int list_subvols(int fd);
+ int do_df_filesystem(int nargs, char **argv);
+ int find_updated_files(int fd, u64 root_id, u64 oldest_gen);
++int do_disk_info(int nargs, char **argv);
+ int do_find_newer(int argc, char **argv);
+diff --git a/ioctl.h b/ioctl.h
+index 776d7a9..4ace64f 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -19,6 +19,7 @@
+ #ifndef __IOCTL_
+ #define __IOCTL_
+ #include <asm/types.h>
++#include <sys/types.h>
+ #include <linux/ioctl.h>
+ 
+ #define BTRFS_IOCTL_MAGIC 0x94
+@@ -132,6 +133,11 @@ struct btrfs_ioctl_space_args {
  	struct btrfs_ioctl_space_info spaces[0];
  };
  
@@ -115,7 +179,7 @@ index 424694a..294e8c3 100644
  #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
  				   struct btrfs_ioctl_vol_args)
  #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
-@@ -178,4 +183,6 @@ struct btrfs_ioctl_space_args {
+@@ -169,4 +175,6 @@ struct btrfs_ioctl_space_args {
  #define BTRFS_IOC_DEFAULT_SUBVOL _IOW(BTRFS_IOCTL_MAGIC, 19, u64)
  #define BTRFS_IOC_SPACE_INFO _IOWR(BTRFS_IOCTL_MAGIC, 20, \
  				    struct btrfs_ioctl_space_args)

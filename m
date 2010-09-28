@@ -1,104 +1,69 @@
-From: Stephen Hemminger <shemminger@vyatta.com>
-Subject: namespace routines that could be static
-Date: Tue, 28 Sep 2010 17:53:21 +0900
-Message-ID: <20100928175321.3a39280e@s6510>
+From: Martin Walter <mawa@uni-freiburg.de>
+Subject: Re: btrfs user survey?
+Date: Tue, 28 Sep 2010 11:46:05 +0200
+Message-ID: <20100928094605.GB12479@uni-freiburg.de>
+References: <AANLkTikcYTyxQ2NT_CJi4OEvnsGti8rq=tQ+=HxNrMxJ@mail.gmail.com>
+ <m3vd5qq01x.fsf@pullcord.laptop.org>
+ <AANLkTikQr2LPY=HWBxoQpC3j1eUCQa_JOuNpyAMTZU6v@mail.gmail.com>
+ <AANLkTi=6qmFPKk_vjpBS0YRi8PdDEzKRaP5CkMZ6_2Bd@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=utf-8
 Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+To: Francis Galiegue <fgaliegue@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTi=6qmFPKk_vjpBS0YRi8PdDEzKRaP5CkMZ6_2Bd@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I got namespace.pl working again, and it showed the following
-routines could be declared static.
+On Tue, Sep 28, 2010 at 10:07:02AM +0200, Francis Galiegue wrote:
+> On Tue, Sep 28, 2010 at 01:00, Freddie Cash <fjwcash@gmail.com> wrote=
+:
+> [...]
+> >
+> > Something like SurveyMonkey (http://www.surveymonkey.com) or
+> > SurveyGizmo (http://www.surveygizmo.com) or similar would be better=
+,
+> > as it does all the reporting for you, builds the nice survey interf=
+ace
+> > with checkboxes, radio buttons, text fields, etc. =C2=A0And they're=
+ still
+> > free (as in beer).
+> >
+>=20
+> OK, SurveyGizmo it will be.
+>=20
+> I'll cook up a first version and give access to the account to whoeve=
+r
+> wants to review it before it is officially on air.
 
-  fs/btrfs/ctree
-    btrfs_clear_path_blocking
-    btrfs_insert_some_items
-    btrfs_prev_leaf
-  fs/btrfs/delayed-ref
-    btrfs_delayed_ref_pending
-  fs/btrfs/dir-item
-    btrfs_match_dir_item_name
-  fs/btrfs/disk-io
-    btrfs_congested_async
-    btrfs_lookup_fs_root
-    btrfs_read_fs_root
-    write_all_supers
-  fs/btrfs/extent-tree
-    block_rsv_release_bytes
-    btrfs_get_block_group
-    btrfs_init_new_buffer
-  fs/btrfs/extent_io
-    extent_bmap
-    extent_commit_write
-    extent_prepare_write
-    set_range_dirty
-    wait_extent_bit
-    wait_on_extent_buffer_writeback
-    wait_on_extent_writeback
-  fs/btrfs/file-item
-    btrfs_lookup_csum
-  fs/btrfs/free-space-cache
-    btrfs_block_group_free_space
-  fs/btrfs/inode
-    btrfs_orphan_del
-    btrfs_writepages
-  fs/btrfs/inode-map
-    btrfs_find_highest_inode
-  fs/btrfs/ioctl
-    btrfs_ioctl_space_info
-  fs/btrfs/locking
-    btrfs_try_tree_lock
-  fs/btrfs/print-tree
-    btrfs_print_tree
-  fs/btrfs/root-tree
-    btrfs_search_root
-  fs/btrfs/struct-funcs
-    btrfs_device_bandwidth
-    btrfs_device_group
-    btrfs_device_seek_speed
-    btrfs_device_start_offset
-    btrfs_dir_transid
-    btrfs_disk_block_group_chunk_objectid
-    btrfs_disk_block_group_flags
-    btrfs_disk_root_generation
-    btrfs_disk_root_level
-    btrfs_file_extent_generation
-    btrfs_inode_transid
-    btrfs_set_chunk_io_align
-    btrfs_set_chunk_io_width
-    btrfs_set_chunk_length
-    btrfs_set_chunk_num_stripes
-    btrfs_set_chunk_owner
-    btrfs_set_chunk_sector_size
-    btrfs_set_chunk_stripe_len
-    btrfs_set_chunk_sub_stripes
-    btrfs_set_chunk_type
-    btrfs_set_disk_block_group_chunk_objectid
-    btrfs_set_disk_block_group_flags
-    btrfs_set_disk_block_group_used
-    btrfs_set_disk_root_bytenr
-    btrfs_set_disk_root_generation
-    btrfs_set_disk_root_level
-    btrfs_set_disk_root_refs
-    btrfs_set_extent_refs_v0
-    btrfs_set_ref_generation_v0
-    btrfs_set_ref_objectid_v0
-    btrfs_set_ref_root_v0
-    btrfs_set_stripe_devid
-    btrfs_set_stripe_offset
-  fs/btrfs/sysfs
-    btrfs_sysfs_add_root
-    btrfs_sysfs_add_super
-    btrfs_sysfs_del_root
-    btrfs_sysfs_del_super
-  fs/btrfs/tree-log
-    btrfs_log_inode_parent
-  fs/btrfs/volumes
-    btrfs_add_device
-    btrfs_alloc_dev_extent
-    btrfs_lock_volumes
-    btrfs_read_super_device
-    btrfs_unlock_volumes
-    btrfs_unplug_page
+Hi,
+
+please add:
+
+[ ] user quotas
+[ ] subvolume quotas
+[ ] delta backup (like zfs send)
+[ ] raid5 (raidz1)
+[ ] raid6 (raidz2)
+[ ] raid7 (raidz3)
+[ ] nfs4 acls
+[ ] readonly snapshots
+[ ] .snapshot gate in every directory to all snapshots (like netapps wa=
+fl)
+
+Yes, I would like to substitute some opensolaris servers and netapps wi=
+th linux+btrfs :-)
+
+Thanx,
+Martin
+
+--
+Martin Walter
+University of Freiburg i.Br. --- Germany --- Fon/Fax: +49 761 203-4651/=
+-4643
+Rechenzentrum der Universitaet, Hermann-Herder-Str.10, D-79104 Freiburg=
+ i.Br.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

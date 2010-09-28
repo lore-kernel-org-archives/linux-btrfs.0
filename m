@@ -1,20 +1,42 @@
 From: Francis Galiegue <fgaliegue@gmail.com>
-Subject: Francis Galiegue would like your help testing a survey
-Date: Tue, 28 Sep 2010 10:27:57 -0400
-Message-ID: <201009281427.o8SERvXj025316@84872-app3.sgizmo.com>
-To: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs user survey?
+Date: Tue, 28 Sep 2010 16:40:08 +0200
+Message-ID: <AANLkTikmGzHtZay5ZUSSurWMEwYLUZUN7ARdmEYR+nN8@mail.gmail.com>
+References: <AANLkTikcYTyxQ2NT_CJi4OEvnsGti8rq=tQ+=HxNrMxJ@mail.gmail.com>
+	<AANLkTi=iEiQrk7vHaz0uRzJW0reFhgch1rr9iPuYRVB0@mail.gmail.com>
+	<AANLkTi=byuR78uow79q=nRNO1TShSJeTR5AQvuJMJvRt@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: Benjamin Griese <der.darude@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTi=byuR78uow79q=nRNO1TShSJeTR5AQvuJMJvRt@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Here is a preview of the survey.
+On Tue, Sep 28, 2010 at 16:35, Benjamin Griese <der.darude@gmail.com> w=
+rote:
+> Hi Francis,
+>
+> have you posted the URL yet?
+> I can't see it, does anybody else can see the link? :)
+>
+> Thanks.
+>
 
-I have not included *all* feature requests yet, otherwise it wouldn't fit on a screen :), but I think I have chosen the most important ones.
+Gah. User error...
 
-Please comment!
+http://appv3.sgizmo.com/testsurvey/survey?id=3D376617&crc=3D98980edfce5=
+8a795c966488276754ddb
 
-Click on the following link to test this survey:
-http://appv3.sgizmo.com/testsurvey/survey?id=376617&crc=98980edfce58a795c966488276754ddb
-
---------------------------
-Powered by SurveyGizmo - http://www.surveygizmo.com
-This message was sent to you at the request of fgaliegue@gmail.com for the sole purpose of testing a survey.  You have not been added to a mailing list.
+--=20
+=46rancis Galiegue, fgaliegue@gmail.com
+"It seems obvious [...] that at least some 'business intelligence'
+tools invest so much intelligence on the business side that they have
+nothing left for generating SQL queries" (St=C3=A9phane Faroult, in "Th=
+e
+Art of SQL", ISBN 0-596-00894-5)
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

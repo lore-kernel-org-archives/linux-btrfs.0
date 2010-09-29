@@ -1,88 +1,27 @@
-From: Jan Kara <jack@suse.cz>
-Subject: Re: Dirtiable inode bdi default != sb bdi btrfs
-Date: Wed, 29 Sep 2010 15:00:56 +0200
-Message-ID: <20100929130056.GG3290@quack.suse.cz>
-References: <4C9AA546.6050201@cesarb.net>
- <20100923123849.8975fe47.akpm@linux-foundation.org>
- <20100927222548.GG3610@quack.suse.cz>
- <20100927225452.GG4270@think>
- <1285657549.2437.28.camel@localhost>
+From: cwillu <cwillu@cwillu.com>
+Subject: Re: Another checksum error bugreport
+Date: Wed, 29 Sep 2010 07:15:30 -0600
+Message-ID: <AANLkTi=HmRxNnoDwSL_V=Kyo8X92+1+29O8o4+RXNE8f@mail.gmail.com>
+References: <AANLkTi=vHyE+epYixXgu5ju_JfjWdU+xghL-PLo60ktu@mail.gmail.com>
+	<AANLkTinqsjRZ8uGpz_xmVHCLLaqC1rO_uE=KFcfMMaW0@mail.gmail.com>
+	<AANLkTi=UNd1=_q+n6m0vmf_YvDP1PBWZftCF=dUnNTYx@mail.gmail.com>
+	<AANLkTimAk-svytPk-rQFXAZkrKdT5pU35GYfV7W33hi0@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>, Jan Kara <jack@suse.cz>,
-	Cesar Eduardo Barros <cesarb@cesarb.net>,
-	Andrew Morton <akpm@linux-foundation.org>, hch@lst.de,
-	linux-kernel@vger.kernel.org, Jens Axboe <jaxboe@fusionio.com>,
-	linux-btrfs@vger.kernel.org,
-	Alexander Viro <viro@zeniv.linux.org.uk>,
-	linux-fsdevel@vger.kernel.org, stable@kernel.org,
-	Jens Axboe <axboe@kernel.dk>,
-	=?utf-8?Q?Micha=C5=82?= Piotrowski <mkkp4x4@gmail.com>,
-	Chuck Ebbert <cebbert@redhat.com>,
-	kernel@lists.fedoraproject.org
-To: Artem Bityutskiy <dedekind1@gmail.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <1285657549.2437.28.camel@localhost>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: "Sebastian 'gonX' Jensen" <gonx@overclocked.net>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Francis Galiegue <fgaliegue@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTimAk-svytPk-rQFXAZkrKdT5pU35GYfV7W33hi0@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue 28-09-10 10:05:49, Artem Bityutskiy wrote:
-> On Mon, 2010-09-27 at 18:54 -0400, Chris Mason wrote:
-> > On Tue, Sep 28, 2010 at 12:25:48AM +0200, Jan Kara wrote:
-> > > [Added CCs for similar ecryptfs warning]
-> > > On Thu 23-09-10 12:38:49, Andrew Morton wrote:
-> > > > > This started appearing for me on v2.6.36-rc5-49-gc79bd89; it did not 
-> > > > > happen on v2.6.36-rc5-33-g1ce1e41, probably because it does not have 
-> > > > > commit 692ebd17c2905313fff3c504c249c6a0faad16ec which introduces the 
-> > > > > warning.
-> > > > > [...]
-> > > > > device fsid 44d595920ddedfa-3ece6b56e80f689e devid 1 transid 22342 
-> > > > > /dev/mapper/vg_cesarbinspiro-lv_home
-> > > > > SELinux: initialized (dev dm-3, type btrfs), uses xattr
-> > > > > ------------[ cut here ]------------
-> > > > > WARNING: at fs/fs-writeback.c:87 inode_to_bdi+0x62/0x6d()
-> > > > > Hardware name: Inspiron N4010
-> > > > > Dirtiable inode bdi default != sb bdi btrfs
-> > > > > Modules linked in: ipv6 kvm_intel kvm uinput arc4 ecb 
-> > > > > snd_hda_codec_intelhdmi snd_hda_codec_realtek iwlagn snd_hda_intel 
-> > > > > iwlcore snd_hda_codec uvcvideo snd_hwdep mac80211 videodev snd_seq 
-> > > > > snd_seq_device v4l1_compat snd_pcm atl1c v4l2_compat_ioctl32 btusb 
-> > > > > cfg80211 snd_timer i2c_i801 bluetooth iTCO_wdt dell_wmi dell_laptop snd 
-> > > > > pcspkr wmi dcdbas shpchp iTCO_vendor_support soundcore snd_page_alloc 
-> > > > > rfkill joydev microcode btrfs zlib_deflate libcrc32c cryptd aes_x86_64 
-> > > > > aes_generic xts gf128mul dm_crypt usb_storage i915 drm_kms_helper drm 
-> > > > > i2c_algo_bit i2c_core video output [last unloaded: scsi_wait_scan]
-> > > > > Pid: 1073, comm: find Not tainted 2.6.36-rc5+ #8
-> > > > > Call Trace:
-> > > > >   [<ffffffff8104d0e4>] warn_slowpath_common+0x85/0x9d
-> > > > >   [<ffffffff8104d19f>] warn_slowpath_fmt+0x46/0x48
-> > > > >   [<ffffffff811308b7>] inode_to_bdi+0x62/0x6d
-> > > > >   [<ffffffff81131b48>] __mark_inode_dirty+0xd0/0x177
-> > > > >   [<ffffffff81127168>] touch_atime+0x107/0x12a
-> > > > >   [<ffffffff81122384>] ? filldir+0x0/0xd0
-> > > > >   [<ffffffff8112259b>] vfs_readdir+0x8d/0xb4
-> > > > >   [<ffffffff8112270b>] sys_getdents+0x81/0xd1
-> > > > >   [<ffffffff81009c72>] system_call_fastpath+0x16/0x1b
-> > >   Thanks for the report. These bdi pointers are a mess. As Chris pointed
-> > > out, btrfs forgets to properly initialize inode->i_mapping.backing_dev_info
-> > > for directories and special inodes and thus these were previously attached
-> > > to default_backing_dev_info which probably isn't what Chris would like to
-> > > see.
-> > 
-> > There's no actual writeback for these, so it works fine for btrfs either
-> > way.
-> 
-> Side note: every time inode is marked as dirty, we wake up a bdi thread
-> or the default bdi thread. So if we have inodes which do not need
-> write-back, we should never mark them as dirty.
-  Are you sure? I think we wake up the thread only when it's the first
-dirty inode for the bdi...
-  And a side side note ;): It's harder not to dirty the inode than it seems.
-E.g. btrfs (or similarly ext3) add the new inode data to the journal already
-at inode dirty time but still they need to track that the transaction
-carrying the inode is still uncommitted. Thus the inode *is* dirty in some
-sense. Only it does not need any writeout to happen...
+>>> Which kernel is that?
+>> It was one of the 2.6.35 versions from the Ubuntu repository. I'm
+>> running Ubuntu 10.04 Server.
+>>
+>
+> Since 2.6.32 works, you should report that bug to Ubuntu.
 
-								Honza
--- 
-Jan Kara <jack@suse.cz>
-SUSE Labs, CR
+Alternatively, retest using ubuntu's mainline kernel ppa
+(http://kernel.ubuntu.com/~kernel-ppa/mainline/), which doesn't
+include any ubuntu patches.

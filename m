@@ -1,63 +1,73 @@
-From: Yuehai Xu <yuehaixu@gmail.com>
-Subject: Re: BTRFS && SSD
-Date: Wed, 29 Sep 2010 17:31:52 -0400
-Message-ID: <AANLkTinzhHOv4L0cPR+tiw=3b7koHGe7svX223FNSxxS@mail.gmail.com>
-References: <AANLkTik9qiqtePxAhaJTyM7Q-g1nTgw9krTZFf_DaYxn@mail.gmail.com>
-	<20100929170855.GA4635@lelouch.nomadic.ncsu.edu>
-	<AANLkTind3szR8RjBLPbKb2yMH-s8q2ti+28N38z1BeTj@mail.gmail.com>
-	<20100929195929.GA5588@lelouch.nomadic.ncsu.edu>
+From: Jan Kara <jack@suse.cz>
+Subject: Re: Dirtiable inode bdi default != sb bdi btrfs
+Date: Thu, 30 Sep 2010 01:38:07 +0200
+Message-ID: <20100929233806.GB12707@quack.suse.cz>
+References: <4C9AA546.6050201@cesarb.net>
+ <20100923123849.8975fe47.akpm@linux-foundation.org>
+ <20100927222548.GG3610@quack.suse.cz>
+ <20100927225452.GG4270@think>
+ <20100929081936.GA23322@lst.de>
+ <20100929121808.GB3290@quack.suse.cz>
+ <20100929141006.GB7439@lst.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Yuehai Xu <yuehaixu@gmail.com>, linux-btrfs@vger.kernel.org,
-	yhxu@wayne.edu, chris.mason@oracle.com, wingedtachikoma@gmail.com
+Content-Type: text/plain; charset=us-ascii
+Cc: Jan Kara <jack@suse.cz>, Chris Mason <chris.mason@oracle.com>,
+	Cesar Eduardo Barros <cesarb@cesarb.net>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	linux-kernel@vger.kernel.org, Jens Axboe <jaxboe@fusionio.com>,
+	linux-btrfs@vger.kernel.org,
+	Alexander Viro <viro@zeniv.linux.org.uk>,
+	linux-fsdevel@vger.kernel.org, stable@kernel.org,
+	Jens Axboe <axboe@kernel.dk>,
+	Micha?? Piotrowski <mkkp4x4@gmail.com>,
+	Chuck Ebbert <cebbert@redhat.com>,
+	kernel@lists.fedoraproject.org, linux-mtd@lists.infradead.org,
+	David Woodhouse <dwmw2@infradead.org>
+To: Christoph Hellwig <hch@lst.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100929195929.GA5588@lelouch.nomadic.ncsu.edu>
+In-Reply-To: <20100929141006.GB7439@lst.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 29, 2010 at 3:59 PM, Sean Bartell <wingedtachikoma@gmail.com> wrote:
-> On Wed, Sep 29, 2010 at 02:45:29PM -0400, Yuehai Xu wrote:
->> On Wed, Sep 29, 2010 at 1:08 PM, Sean Bartell <wingedtachikoma@gmail.com> wrote:
->> > On Wed, Sep 29, 2010 at 11:30:14AM -0400, Yuehai Xu wrote:
->> >> I know BTRFS is a kind of Log-structured File System, which doesn't do
->> >> overwrite. Here is my question, suppose file A is overwritten by A',
->> >> instead of writing A' to the original place of A, a new place is
->> >> selected to store it. However, we know that the address of a file
->> >> should be recorded in its inode. In such case, the corresponding part
->> >> in inode of A should update from the original place A to the new place
->> >> A', is this a kind of overwrite actually? I think no matter what
->> >> design it is for Log-Structured FS, a mapping table is always needed,
->> >> such as inode map, DAT, etc. When a update operation happens for this
->> >> mapping table, is it actually a kind of over-write? If it is, is it a
->> >> bottleneck for the performance of write for SSD?
->> >
->> > In btrfs, this is solved by doing the same thing for the inode--a new
->> > place for the leaf holding the inode is chosen. Then the parent of the
->> > leaf must point to the new position of the leaf, so the parent is moved,
->> > and the parent's parent, etc. This goes all the way up to the
->> > superblocks, which are actually overwritten one at a time.
->>
->> You mean that there is no over-write for inode too, once the inode
->> need to be updated, this inode is actually written to a new place
->> while the only thing to do is to change the point of its parent to
->> this new place. However, for the last parent, or the superblock, does
->> it need to be overwritten?
->
-> Yes. The idea of copy-on-write, as used by btrfs, is that whenever
-> *anything* is changed, it is simply written to a new location. This
-> applies to data, inodes, and all of the B-trees used by the filesystem.
-> However, it's necessary to have *something* in a fixed place on disk
-> pointing to everything else. So the superblocks can't move, and they are
-> overwritten instead.
->
+On Wed 29-09-10 16:10:06, Christoph Hellwig wrote:
+> On Wed, Sep 29, 2010 at 02:18:08PM +0200, Jan Kara wrote:
+> > On Wed 29-09-10 10:19:36, Christoph Hellwig wrote:
+> > > ---
+> > > From: Christoph Hellwig <hch@lst.de>
+> > > Subject: [PATCH] writeback: always use sb->s_bdi for writeback purposes
+> > > 
+> > ...
+> > > The one exception for now is the block device filesystem which really
+> > > wants different writeback contexts for it's different (internal) inodes
+> > > to handle the writeout more efficiently.  For now we do this with
+> > > a hack in fs-writeback.c because we're so late in the cycle, but in
+> > > the future I plan to replace this with a superblock method that allows
+> > > for multiple writeback contexts per filesystem.
+> >   Another exception I know about is mtd_inodefs filesystem
+> > (drivers/mtd/mtdchar.c).
+> 
+> No, it's not.  MTD only has three different backing_dev_info instances
+> which have different flags in the mapping-relevant portion of the
+> backing_dev. 
+  In the end I agree I was probably wrong but it's not that simple ;)
 
-So, is it a bottleneck in the case of SSD since the cost for over
-write is very high? For every write, I think the superblocks should be
-overwritten, it might be much more frequent than other common blocks
-in SSD, even though SSD will do wear leveling inside by its FTL.
+> >   So at least here you'd need also add a similar exception for
+> > "mtd_inodefs".
+> 
+> No.  For one thing we don't need any exception for correctnes alone -
+> even the block device variant would work fine with the default case.
+Here I don't agree. If you don't have some kind of exception, sb->s_bdi
+for both "block" and "mtd_inodefs" filesystems points to
+noop_backing_dev_info and you get no writeback for that one. So it isn't
+just a performance issue but also a correctness one.
 
-What I current know is that for Intel x25-V SSD, the write throughput
-of BTRFS is almost 80% less than the one of EXT3 in the case of
-PostMark. This really confuses me.
-
-Thanks,
-Yuehai
+Regarding mtd_inodefs I now looked in more detail what MTD actually does
+and it seems to me that MTD device inodes do not seem to carry any
+cached state that flusher threads could write back. So returning
+noop_backing_dev_info might be the right thing for them after all...
+(added David Woodhouse and MTD list to CC so that they can shout if it's
+not the case). Coming to this conclusion, I'm happy with your patch going
+in as is...
+								Honza
+-- 
+Jan Kara <jack@suse.cz>
+SUSE Labs, CR

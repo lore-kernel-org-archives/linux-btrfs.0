@@ -1,41 +1,68 @@
-From: Kay Sievers <kay.sievers@vrfy.org>
-Subject: Re: [PATCH] Btrfs: add a disk info ioctl to get the disks attached to
- a filesystem
-Date: Wed, 29 Sep 2010 14:19:14 +0200
-Message-ID: <AANLkTi=yb0_y2=-TkgQMptxeg=9WkdAu2W78Escw=JfZ@mail.gmail.com>
-References: <1285707196-16268-1-git-send-email-josef@redhat.com> <20100928232513.GA20629@infradead.org>
+From: Francis Galiegue <fgaliegue@gmail.com>
+Subject: Re: Another checksum error bugreport
+Date: Wed, 29 Sep 2010 14:50:36 +0200
+Message-ID: <AANLkTimAk-svytPk-rQFXAZkrKdT5pU35GYfV7W33hi0@mail.gmail.com>
+References: <AANLkTi=vHyE+epYixXgu5ju_JfjWdU+xghL-PLo60ktu@mail.gmail.com>
+	<AANLkTinqsjRZ8uGpz_xmVHCLLaqC1rO_uE=KFcfMMaW0@mail.gmail.com>
+	<AANLkTi=UNd1=_q+n6m0vmf_YvDP1PBWZftCF=dUnNTYx@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
-To: Christoph Hellwig <hch@infradead.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: "Sebastian 'gonX' Jensen" <gonx@overclocked.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100928232513.GA20629@infradead.org>
+In-Reply-To: <AANLkTi=UNd1=_q+n6m0vmf_YvDP1PBWZftCF=dUnNTYx@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 29, 2010 at 01:25, Christoph Hellwig <hch@infradead.org> wr=
-ote:
-> On Tue, Sep 28, 2010 at 04:53:16PM -0400, Josef Bacik wrote:
->> This was a request from the systemd guys. =C2=A0They need a quick an=
-d easy way to get
->> all devices attached to a Btrfs filesystem in order to check if any =
-of the disks
->> are SSD for...something, I didn't ask :). =C2=A0 I've tested this wi=
-th the
->> btrfs-progs patch that accompanies this patch. =C2=A0Thanks,
+On Wed, Sep 29, 2010 at 13:37, Sebastian 'gonX' Jensen
+<gonx@overclocked.net> wrote:
+[...]
+>>
+>> Which kernel is that?
+> It was one of the 2.6.35 versions from the Ubuntu repository. I'm
+> running Ubuntu 10.04 Server.
 >
-> So please tell the "systemd guys" to explain what the fuck they're do=
-ing
-> to linux-fsdevel and fiend a proper interface. =C2=A0Chance is they w=
-ill fuck
-> up as much as just about ever other lowlevel userspace tool are very
-> high.
 
-=46uck like these comments make it incredibly hard to find the few
-statements where you are right, in all the fucking noise you are
-creating.
+Since 2.6.32 works, you should report that bug to Ubuntu.
 
-Thanks,
-Kay
+The upstream commit is f281fb5fe54e15a7ab802945e42f8e24fceb56b2,
+pasted below, merged Sep 25:
+
+----
+commit f281fb5fe54e15a7ab802945e42f8e24fceb56b2
+Author: Adrian Hunter <adrian.hunter@nokia.com>
+Date:   Sat Sep 25 12:42:55 2010 +0200
+
+    block: prevent merges of discard and write requests
+
+    Add logic to prevent two I/O requests being merged if
+    only one of them is a discard.  Ditto secure discard.
+
+    Without this fix, it is possible for write requests
+    to transform into discard requests.  For example:
+
+      Submit bio 1 to discard 8 sectors from sector n
+      Submit bio 2 to write 8 sectors from sector n + 16
+      Submit bio 3 to write 8 sectors from sector n + 8
+
+    Bio 1 becomes request 1.  Bio 2 becomes request 2.
+    Bio 3 is merged with request 2, and then subsequently
+    request 2 is merged with request 1 resulting in just
+    one I/O request which discards all 24 sectors.
+
+    Signed-off-by: Adrian Hunter <adrian.hunter@nokia.com>
+
+    (Moved the checks above the position checks /Jens)
+
+    Signed-off-by: Jens Axboe <jaxboe@fusionio.com>
+----
+
+--=20
+=46rancis Galiegue, fgaliegue@gmail.com
+"It seems obvious [...] that at least some 'business intelligence'
+tools invest so much intelligence on the business side that they have
+nothing left for generating SQL queries" (St=C3=A9phane Faroult, in "Th=
+e
+Art of SQL", ISBN 0-596-00894-5)
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

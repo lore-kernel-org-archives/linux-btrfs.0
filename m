@@ -1,35 +1,63 @@
-From: Roel Kluin <roel.kluin@gmail.com>
-Subject: [PATCH] Btrfs: Don't dereference extent_mapping if NULL
-Date: Thu, 30 Sep 2010 00:20:29 +0200
-Message-ID: <4CA3BBAD.8080207@gmail.com>
+From: Yuehai Xu <yuehaixu@gmail.com>
+Subject: Re: BTRFS && SSD
+Date: Wed, 29 Sep 2010 17:31:52 -0400
+Message-ID: <AANLkTinzhHOv4L0cPR+tiw=3b7koHGe7svX223FNSxxS@mail.gmail.com>
+References: <AANLkTik9qiqtePxAhaJTyM7Q-g1nTgw9krTZFf_DaYxn@mail.gmail.com>
+	<20100929170855.GA4635@lelouch.nomadic.ncsu.edu>
+	<AANLkTind3szR8RjBLPbKb2yMH-s8q2ti+28N38z1BeTj@mail.gmail.com>
+	<20100929195929.GA5588@lelouch.nomadic.ncsu.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
-	Andrew Morton <akpm@linux-foundation.org>,
-	LKML <linux-kernel@vger.kernel.org>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+To: Yuehai Xu <yuehaixu@gmail.com>, linux-btrfs@vger.kernel.org,
+	yhxu@wayne.edu, chris.mason@oracle.com, wingedtachikoma@gmail.com
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20100929195929.GA5588@lelouch.nomadic.ncsu.edu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Don't dereference em if it's NULL or an error pointer.
+On Wed, Sep 29, 2010 at 3:59 PM, Sean Bartell <wingedtachikoma@gmail.com> wrote:
+> On Wed, Sep 29, 2010 at 02:45:29PM -0400, Yuehai Xu wrote:
+>> On Wed, Sep 29, 2010 at 1:08 PM, Sean Bartell <wingedtachikoma@gmail.com> wrote:
+>> > On Wed, Sep 29, 2010 at 11:30:14AM -0400, Yuehai Xu wrote:
+>> >> I know BTRFS is a kind of Log-structured File System, which doesn't do
+>> >> overwrite. Here is my question, suppose file A is overwritten by A',
+>> >> instead of writing A' to the original place of A, a new place is
+>> >> selected to store it. However, we know that the address of a file
+>> >> should be recorded in its inode. In such case, the corresponding part
+>> >> in inode of A should update from the original place A to the new place
+>> >> A', is this a kind of overwrite actually? I think no matter what
+>> >> design it is for Log-Structured FS, a mapping table is always needed,
+>> >> such as inode map, DAT, etc. When a update operation happens for this
+>> >> mapping table, is it actually a kind of over-write? If it is, is it a
+>> >> bottleneck for the performance of write for SSD?
+>> >
+>> > In btrfs, this is solved by doing the same thing for the inode--a new
+>> > place for the leaf holding the inode is chosen. Then the parent of the
+>> > leaf must point to the new position of the leaf, so the parent is moved,
+>> > and the parent's parent, etc. This goes all the way up to the
+>> > superblocks, which are actually overwritten one at a time.
+>>
+>> You mean that there is no over-write for inode too, once the inode
+>> need to be updated, this inode is actually written to a new place
+>> while the only thing to do is to change the point of its parent to
+>> this new place. However, for the last parent, or the superblock, does
+>> it need to be overwritten?
+>
+> Yes. The idea of copy-on-write, as used by btrfs, is that whenever
+> *anything* is changed, it is simply written to a new location. This
+> applies to data, inodes, and all of the B-trees used by the filesystem.
+> However, it's necessary to have *something* in a fixed place on disk
+> pointing to everything else. So the superblocks can't move, and they are
+> overwritten instead.
+>
 
-Signed-off-by: Roel Kluin <roel.kluin@gmail.com>
----
-I just noticed this by code analysis. It wasn't tested in any way.
+So, is it a bottleneck in the case of SSD since the cost for over
+write is very high? For every write, I think the superblocks should be
+overwritten, it might be much more frequent than other common blocks
+in SSD, even though SSD will do wear leveling inside by its FTL.
 
- fs/btrfs/inode.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+What I current know is that for Intel x25-V SSD, the write throughput
+of BTRFS is almost 80% less than the one of EXT3 in the case of
+PostMark. This really confuses me.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index c038644..d4a37f8 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1787,7 +1787,8 @@ static int btrfs_io_failed_hook(struct bio *failed_bio,
- 
- 		read_lock(&em_tree->lock);
- 		em = lookup_extent_mapping(em_tree, start, failrec->len);
--		if (em->start > start || em->start + em->len < start) {
-+		if (em && !IS_ERR(em) && (em->start > start ||
-+					em->start + em->len < start)) {
- 			free_extent_map(em);
- 			em = NULL;
- 		}
+Thanks,
+Yuehai

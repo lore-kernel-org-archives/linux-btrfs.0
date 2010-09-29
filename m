@@ -1,73 +1,51 @@
-From: Jan Kara <jack@suse.cz>
-Subject: Re: Dirtiable inode bdi default != sb bdi btrfs
-Date: Thu, 30 Sep 2010 01:38:07 +0200
-Message-ID: <20100929233806.GB12707@quack.suse.cz>
-References: <4C9AA546.6050201@cesarb.net>
- <20100923123849.8975fe47.akpm@linux-foundation.org>
- <20100927222548.GG3610@quack.suse.cz>
- <20100927225452.GG4270@think>
- <20100929081936.GA23322@lst.de>
- <20100929121808.GB3290@quack.suse.cz>
- <20100929141006.GB7439@lst.de>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: [PATCH] Btrfs: add a disk info ioctl to get the disks attached
+ to a filesystem
+Date: Wed, 29 Sep 2010 19:43:27 -0400
+Message-ID: <20100929234327.GA8401@infradead.org>
+References: <1285707196-16268-1-git-send-email-josef@redhat.com>
+ <20100928232513.GA20629@infradead.org>
+ <20100929000809.GC32420@dhcp231-156.rdu.redhat.com>
+ <20100929001954.GA9182@tango.0pointer.de>
+ <4CA2E9CD.5090700@redhat.com>
+ <AANLkTimHmbVbScgDHsb8f=ts0QKr-+pwNm=YY4sG+bz1@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Jan Kara <jack@suse.cz>, Chris Mason <chris.mason@oracle.com>,
-	Cesar Eduardo Barros <cesarb@cesarb.net>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	linux-kernel@vger.kernel.org, Jens Axboe <jaxboe@fusionio.com>,
-	linux-btrfs@vger.kernel.org,
-	Alexander Viro <viro@zeniv.linux.org.uk>,
-	linux-fsdevel@vger.kernel.org, stable@kernel.org,
-	Jens Axboe <axboe@kernel.dk>,
-	Micha?? Piotrowski <mkkp4x4@gmail.com>,
-	Chuck Ebbert <cebbert@redhat.com>,
-	kernel@lists.fedoraproject.org, linux-mtd@lists.infradead.org,
-	David Woodhouse <dwmw2@infradead.org>
-To: Christoph Hellwig <hch@lst.de>
+Cc: Ric Wheeler <rwheeler@redhat.com>,
+	Lennart Poettering <lennart@poettering.net>,
+	Josef Bacik <josef@redhat.com>,
+	Christoph Hellwig <hch@infradead.org>,
+	linux-btrfs@vger.kernel.org
+To: Kay Sievers <kay.sievers@vrfy.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100929141006.GB7439@lst.de>
+In-Reply-To: <AANLkTimHmbVbScgDHsb8f=ts0QKr-+pwNm=YY4sG+bz1@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed 29-09-10 16:10:06, Christoph Hellwig wrote:
-> On Wed, Sep 29, 2010 at 02:18:08PM +0200, Jan Kara wrote:
-> > On Wed 29-09-10 10:19:36, Christoph Hellwig wrote:
-> > > ---
-> > > From: Christoph Hellwig <hch@lst.de>
-> > > Subject: [PATCH] writeback: always use sb->s_bdi for writeback purposes
-> > > 
-> > ...
-> > > The one exception for now is the block device filesystem which really
-> > > wants different writeback contexts for it's different (internal) inodes
-> > > to handle the writeout more efficiently.  For now we do this with
-> > > a hack in fs-writeback.c because we're so late in the cycle, but in
-> > > the future I plan to replace this with a superblock method that allows
-> > > for multiple writeback contexts per filesystem.
-> >   Another exception I know about is mtd_inodefs filesystem
-> > (drivers/mtd/mtdchar.c).
+On Wed, Sep 29, 2010 at 10:04:31AM +0200, Kay Sievers wrote:
+> On Wed, Sep 29, 2010 at 09:25, Ric Wheeler <rwheeler@redhat.com> wrote:
 > 
-> No, it's not.  MTD only has three different backing_dev_info instances
-> which have different flags in the mapping-relevant portion of the
-> backing_dev. 
-  In the end I agree I was probably wrong but it's not that simple ;)
-
-> >   So at least here you'd need also add a similar exception for
-> > "mtd_inodefs".
+> > Second question is why is checking in /sys a big deal, would ??you prefer an
+> > interface like we did for alignment in libblkid?
 > 
-> No.  For one thing we don't need any exception for correctnes alone -
-> even the block device variant would work fine with the default case.
-Here I don't agree. If you don't have some kind of exception, sb->s_bdi
-for both "block" and "mtd_inodefs" filesystems points to
-noop_backing_dev_info and you get no writeback for that one. So it isn't
-just a performance issue but also a correctness one.
+> It's about knowing what's behind the 'nodev' major == 0 of a btrfs
+> mount. There is no way to get that from /sys or anywhere else at the
+> moment.
+> 
+> Usually filesystems backed by a disk have the dev_t of the device, or
+> the fake block devices like md/dm/raid have their own major and the
+> slaves/ directory pointing to the devices.
+> 
+> This is not only about readahead, it's every other tool, that needs to
+> know what kind of disks are behind a btrfs 'nodev' major == 0 mount.
 
-Regarding mtd_inodefs I now looked in more detail what MTD actually does
-and it seems to me that MTD device inodes do not seem to carry any
-cached state that flusher threads could write back. So returning
-noop_backing_dev_info might be the right thing for them after all...
-(added David Woodhouse and MTD list to CC so that they can shout if it's
-not the case). Coming to this conclusion, I'm happy with your patch going
-in as is...
-								Honza
--- 
-Jan Kara <jack@suse.cz>
-SUSE Labs, CR
+Thanks for explaining the problem.  It's one that affects everything
+with more than one underlying block device, so adding a
+filesystem-specific ioctl hack is not a good idea.  As mentioned in this
+mail we already have a solution for that - the block device slaves
+links used for raid and volume managers.  The most logical fix is to
+re-use that for btrfs as well and stop it from abusing the anonymous
+block major that was never intended for block based filesystems (and
+already has caused trouble in other areas).  One way to to this might
+be to allocate a block major for btrfs that only gets used for
+representing these links.
+

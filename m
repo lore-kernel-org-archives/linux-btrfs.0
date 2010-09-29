@@ -1,91 +1,65 @@
-From: "Sebastian 'gonX' Jensen" <gonx@overclocked.net>
-Subject: Re: Another checksum error bugreport
-Date: Wed, 29 Sep 2010 20:36:45 +0200
-Message-ID: <AANLkTinrPbxrqRCwnEc-xJBAs1Dz-Yt_UqeAhEqotzvs@mail.gmail.com>
-References: <AANLkTi=vHyE+epYixXgu5ju_JfjWdU+xghL-PLo60ktu@mail.gmail.com>
-	<i7vtdq$ctc$1@dough.gmane.org>
+From: Yuehai Xu <yuehaixu@gmail.com>
+Subject: Re: BTRFS && SSD
+Date: Wed, 29 Sep 2010 14:38:56 -0400
+Message-ID: <AANLkTik61cvrvVedcYKtePx89aE1CoACS1NGNBsGXsK8@mail.gmail.com>
+References: <AANLkTik9qiqtePxAhaJTyM7Q-g1nTgw9krTZFf_DaYxn@mail.gmail.com>
+	<20100929173757.7cf18c0d@simplux>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Lubos Kolouch <lubos.kolouch@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org, yhxu@wayne.edu
+To: "Dipl.-Ing. Michael Niederle" <mniederle@gmx.at>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <i7vtdq$ctc$1@dough.gmane.org>
+In-Reply-To: <20100929173757.7cf18c0d@simplux>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 29 September 2010 19:35, Lubos Kolouch <lubos.kolouch@gmail.com> wro=
-te:
-> Sebastian 'gonX' Jensen, Wed, 29 Sep 2010 12:48:56 +0200:
+Hi,
+
+On Wed, Sep 29, 2010 at 11:37 AM, Dipl.-Ing. Michael Niederle
+<mniederle@gmx.at> wrote:
+> Hi Yuehai!
 >
->> Hey guys,
->>
->> Today I experienced my first checksum error just out of the blue - a=
-nd
->> it's not just the 'csum + 1 =3D private' issue, it's a completely
->> different one. Because of this, I am unable to retrieve the data off=
- the
->> drive, even with nodatasum enabled - I simply get an I/O error. Here=
-'s
->> the dmesg output:
->>
->> [149423.845177] btrfs: setting nodatasum [149423.850339] Btrfs detec=
-ted
->> SSD devices, enabling SSD mode [149432.094728] btrfs csum failed ino=
- 259
->> off 26701824 csum 3875867041 private 371726550
->> [149432.117938] btrfs csum failed ino 259 off 26701824 csum 38758670=
-41
->> private 371726550
->> [149432.118340] btrfs csum failed ino 259 off 26701824 csum 38758670=
-41
->> private 371726550
->> [149432.125671] btrfs csum failed ino 259 off 26701824 csum 38758670=
-41
->> private 371726550
->> [149432.126075] btrfs csum failed ino 259 off 26701824 csum 38758670=
-41
->> private 371726550
->> [149432.135671] btrfs csum failed ino 259 off 26701824 csum 38758670=
-41
->> private 371726550
->>
->> I would really like to have the files on the drive retrieved in thei=
-r
->> entirety, but if that is not possible then that is also OK. Consider
->> this a bugreport and a question on how to retrieve the data now.
->>
->> Thanks,
->> Sebastian J.
+> I tested nilfs2 and btrfs for the use with flash based pen drives.
 >
-> I have seen this now too, on a usb flash drive (yes, with LUKS on it)=
- that
-> has been always correctly unmounted and luksClosed. In facts I create=
-d
-> the fs on it couple of days ago and now I cannot read one file with t=
-he
-> same error.
+> nilfs2 performed incredibly well as long as there were enough free blocks. But
+> the garbage collector of nilfs used too much IO-bandwidth to be useable (with
+> slow-write flash devices).
+
+I also tested the performance of write for INTEL X25-V SSD by
+postmark, the results are totally different from the results of INTEL
+X25-M(http://www.usenix.org/event/lsf08/tech/shin_SSD.pdf). In his
+test, the performance of NILFS2 is the best over all, however, in my
+test, ext3 is the best while NILFS2 is the worst, almost 10 times less
+than ext3 for the throughput of write.
+
+So, what's the role of file system to handle these tricky storage?
+Different throughput might be gotten by different file system.
+
+The question is why nilfs2 and btrfs perform so well compared with
+ext3 without considering my results, here I just talk about SSD, since
+the FTL internal should always do the same thing as the file system,
+that redirects the write to a new place instead of writing to the
+original place. The throughput for different file system should be
+more or less the same.
+
+
+
 >
-> I do not need to recover the file, it's just that you are not the onl=
-y
-> with this error.
->
-> Lubos
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =C2=A0http://vger.kernel.org/majordomo-info.ht=
-ml
+> btrfs on the other side performed very well - a lot better than conventional
+> file systems like ext2/3 or reiserfs. After switching the mount-options to
+> "noatime" I was able to run a complete Linux system from a (quite slow) pen
+> drive without (much) problems. Performance on a fast pen drive is great. I'm
+> using btrfs as the root file system on a daily basis since last Christmas
+> without running into any problems.
 >
 
-Good to hear I am not alone with this. It seemed more like a fluke
-than an actual issue since I have no issues reading the drive in
-2.6.32
+The performance of file system is determined by the internal structure
+of SSD? or by the structure of file system? or by the coordination of
+both file system and SSD?
 
-Regards,
-Sebastian J.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Thanks very much for replying.
+
+> Greetings, Michael
+>
+
+Thanks,
+Yuehai

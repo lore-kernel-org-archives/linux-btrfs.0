@@ -1,65 +1,55 @@
 From: Yuehai Xu <yuehaixu@gmail.com>
 Subject: Re: BTRFS && SSD
-Date: Wed, 29 Sep 2010 14:38:56 -0400
-Message-ID: <AANLkTik61cvrvVedcYKtePx89aE1CoACS1NGNBsGXsK8@mail.gmail.com>
+Date: Wed, 29 Sep 2010 14:45:29 -0400
+Message-ID: <AANLkTind3szR8RjBLPbKb2yMH-s8q2ti+28N38z1BeTj@mail.gmail.com>
 References: <AANLkTik9qiqtePxAhaJTyM7Q-g1nTgw9krTZFf_DaYxn@mail.gmail.com>
-	<20100929173757.7cf18c0d@simplux>
+	<20100929170855.GA4635@lelouch.nomadic.ncsu.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org, yhxu@wayne.edu
-To: "Dipl.-Ing. Michael Niederle" <mniederle@gmx.at>
+To: Yuehai Xu <yuehaixu@gmail.com>, linux-btrfs@vger.kernel.org,
+	yhxu@wayne.edu, chris.mason@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100929173757.7cf18c0d@simplux>
+In-Reply-To: <20100929170855.GA4635@lelouch.nomadic.ncsu.edu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-
-On Wed, Sep 29, 2010 at 11:37 AM, Dipl.-Ing. Michael Niederle
-<mniederle@gmx.at> wrote:
-> Hi Yuehai!
+On Wed, Sep 29, 2010 at 1:08 PM, Sean Bartell <wingedtachikoma@gmail.com> wrote:
+> On Wed, Sep 29, 2010 at 11:30:14AM -0400, Yuehai Xu wrote:
+>> I know BTRFS is a kind of Log-structured File System, which doesn't do
+>> overwrite. Here is my question, suppose file A is overwritten by A',
+>> instead of writing A' to the original place of A, a new place is
+>> selected to store it. However, we know that the address of a file
+>> should be recorded in its inode. In such case, the corresponding part
+>> in inode of A should update from the original place A to the new place
+>> A', is this a kind of overwrite actually? I think no matter what
+>> design it is for Log-Structured FS, a mapping table is always needed,
+>> such as inode map, DAT, etc. When a update operation happens for this
+>> mapping table, is it actually a kind of over-write? If it is, is it a
+>> bottleneck for the performance of write for SSD?
 >
-> I tested nilfs2 and btrfs for the use with flash based pen drives.
->
-> nilfs2 performed incredibly well as long as there were enough free blocks. But
-> the garbage collector of nilfs used too much IO-bandwidth to be useable (with
-> slow-write flash devices).
+> In btrfs, this is solved by doing the same thing for the inode--a new
+> place for the leaf holding the inode is chosen. Then the parent of the
+> leaf must point to the new position of the leaf, so the parent is moved,
+> and the parent's parent, etc. This goes all the way up to the
+> superblocks, which are actually overwritten one at a time.
 
-I also tested the performance of write for INTEL X25-V SSD by
-postmark, the results are totally different from the results of INTEL
-X25-M(http://www.usenix.org/event/lsf08/tech/shin_SSD.pdf). In his
-test, the performance of NILFS2 is the best over all, however, in my
-test, ext3 is the best while NILFS2 is the worst, almost 10 times less
-than ext3 for the throughput of write.
+You mean that there is no over-write for inode too, once the inode
+need to be updated, this inode is actually written to a new place
+while the only thing to do is to change the point of its parent to
+this new place. However, for the last parent, or the superblock, does
+it need to be overwritten?
 
-So, what's the role of file system to handle these tricky storage?
-Different throughput might be gotten by different file system.
+I am afraid I don't quite understand the meaning of your last sentence.
 
-The question is why nilfs2 and btrfs perform so well compared with
-ext3 without considering my results, here I just talk about SSD, since
-the FTL internal should always do the same thing as the file system,
-that redirects the write to a new place instead of writing to the
-original place. The throughput for different file system should be
-more or less the same.
-
-
-
->
-> btrfs on the other side performed very well - a lot better than conventional
-> file systems like ext2/3 or reiserfs. After switching the mount-options to
-> "noatime" I was able to run a complete Linux system from a (quite slow) pen
-> drive without (much) problems. Performance on a fast pen drive is great. I'm
-> using btrfs as the root file system on a daily basis since last Christmas
-> without running into any problems.
->
-
-The performance of file system is determined by the internal structure
-of SSD? or by the structure of file system? or by the coordination of
-both file system and SSD?
-
-Thanks very much for replying.
-
-> Greetings, Michael
->
-
-Thanks,
+Thanks for replying,
 Yuehai
+
+
+>
+>> What do you think the major work that BTRFS can do to improve the
+>> performance for SSD? I know FTL has becomes smarter and smarter, the
+>> idea of log-structured file system is always implemented inside the
+>> SSD by FTL, in that case, it sounds all the issues have been solved no
+>> matter what the FS it is in upper stack. But at least, from the
+>> results of benchmarks on the internet show that the performance from
+>> different FS are quite different, such as NILFS2 and BTRFS.
+>

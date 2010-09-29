@@ -1,41 +1,66 @@
-From: cwillu <cwillu@cwillu.com>
-Subject: Re: Another checksum error bugreport
-Date: Wed, 29 Sep 2010 09:05:42 -0600
-Message-ID: <AANLkTi=BFpyN_sTzzdboCMVoFEmU_pz3T2ezuHMh=5Ok@mail.gmail.com>
-References: <AANLkTi=vHyE+epYixXgu5ju_JfjWdU+xghL-PLo60ktu@mail.gmail.com>
-	<AANLkTinqsjRZ8uGpz_xmVHCLLaqC1rO_uE=KFcfMMaW0@mail.gmail.com>
-	<AANLkTi=UNd1=_q+n6m0vmf_YvDP1PBWZftCF=dUnNTYx@mail.gmail.com>
-	<AANLkTimAk-svytPk-rQFXAZkrKdT5pU35GYfV7W33hi0@mail.gmail.com>
-	<AANLkTi=HmRxNnoDwSL_V=Kyo8X92+1+29O8o4+RXNE8f@mail.gmail.com>
-	<AANLkTi=b-BXPzYS2H0H6v1Nvj--Q+0Czb0CLmwSusEYR@mail.gmail.com>
+From: "K. Richard Pixley" <rich@noir.com>
+Subject: Re: Francis Galiegue would like your help testing a survey
+Date: Wed, 29 Sep 2010 08:11:48 -0700
+Message-ID: <4CA35734.8080300@noir.com>
+References: <201009281427.o8SERvXj025316@84872-app3.sgizmo.com>	<4CA2092A.8020207@noir.com> <AANLkTikoYwSkVyTqX1LLLzCDp_nELVxm7WqJa1ffqkZb@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Francis Galiegue <fgaliegue@gmail.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: "Sebastian 'gonX' Jensen" <gonx@overclocked.net>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: linux-btrfs@vger.kernel.org
+To: Francis Galiegue <fgaliegue@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=b-BXPzYS2H0H6v1Nvj--Q+0Czb0CLmwSusEYR@mail.gmail.com>
+In-Reply-To: <AANLkTikoYwSkVyTqX1LLLzCDp_nELVxm7WqJa1ffqkZb@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 29, 2010 at 8:31 AM, Sebastian 'gonX' Jensen
-<gonx@overclocked.net> wrote:
-> On 29 September 2010 15:15, cwillu <cwillu@cwillu.com> wrote:
->>>>> Which kernel is that?
->>>> It was one of the 2.6.35 versions from the Ubuntu repository. I'm
->>>> running Ubuntu 10.04 Server.
->>>>
->>>
->>> Since 2.6.32 works, you should report that bug to Ubuntu.
->>
->> Alternatively, retest using ubuntu's mainline kernel ppa
->> (http://kernel.ubuntu.com/~kernel-ppa/mainline/), which doesn't
->> include any ubuntu patches.
->
-> I used the mainline ppa when I used 2.6.35. That is where I had the
-> issue. Forgive me for saying it was in the repository, but I did not
-> realize they were not the same thing.
+  On 9/28/10 11:47 , Francis Galiegue wrote:
+> As to file system hardening, what do you mean apart from checksums?
+> Fundamental filesystem design?
+I specifically mean the intended ability to survive a power failure.
 
-Well, it is a repository, but that one specifically doesn't include
-ubuntu patches, as opposed to whats in the default repositories.
-Given that you used the mainline kernels, it's unlikely to be an
-ubuntu bug.
+Historically, unix file systems lived in the disk cache such that a 
+power failure would result in a polluted file system.  This would 
+require an fsck pass to clear out the errors and "recover" the file 
+system although data lost was still data lost.
+
+A while back, (some time in the 90's), most unix file systems were 
+"hardened" such that a power failure would generally _not_ result in a 
+file system pollution.  Ext2 is not hardened.  Ext3 has an optional 
+journal which provides file system hardening.
+
+Ext2 is faster than ext3 but also suffers from smaller file system size 
+limits.  Btrfs, in "-m single -d single" mode is hardened and competes 
+favorably against ext2 for speed.  All other linux file systems are 
+either not hardened, slower, or both.  (Although nilfs2 is also hardened 
+and somewhere between ext2 and ext3 speeds.)
+>> #15 presupposes it's own answer.  While I've had no filesystems fail, every
+>> machine I use with btrfs file systems has failed numerous times -
+>> pathological behavior, kernel crashes, etc.  In the absence of a btrfsck I
+>> can't be sure that the file system has actually failed although rebuilding
+>> the file system seems to alleviate the symptoms temporarily.
+> I don't really see your point here. Can you elaborate? And yes, I _do_
+> mean filesystem failures, not machine failure. I made that explicit.
+It's simple.  I can't tell if I've had file system pollution because we 
+don't have a functional btrfsck.  I only know that I have file systems 
+which have reached a state where the kernel was unable to use them 
+constructively.  I can't tell whether this state was due to a data error 
+in the file system or a coding error in the file system driver which 
+couldn't cope with a valid state of the file system.
+>> #16 presupposes a failure mode. Again, my issues have more to do with
+>> stability than with clear cases of file system pollution
+> Point taken, but again, this is on purpose, I talk here about hosed
+> filesystems indeed.
+Then I think you need to ask the same question again with respect to 
+system failures due to btrfs which aren't necessarily file system failures.
+
+Imagine this for a moment - pretend that any time btrfs were in your 
+kernel your kernel were only capable of network speeds of 1Mbps.  Data 
+was correct both in your btrfs file systems and in your network 
+interfaces - but you were horribly restricted in your network 
+interfaces.  This would not represent a polluted btrfs file system and 
+yet it would clearly represent a "broken" system by most people's 
+definitions.  It's these cases I'm looking to see represented in the 
+questionnaire because these are the types of failures I've been seeing.  
+And in the absence of a reliable btrfsck, we can't really determine the 
+existence of file system pollution anyway - we can only guess that we 
+might have polluted file systems.
+
+--rich

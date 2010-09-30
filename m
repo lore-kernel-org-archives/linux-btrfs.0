@@ -1,33 +1,41 @@
-From: Simon Kirby <sim@hostway.ca>
-Subject: ring btrfs
-Date: Wed, 29 Sep 2010 18:19:20 -0700
-Message-ID: <20100930011920.GA14974@hostway.ca>
+From: Sander <sander@humilis.net>
+Subject: Re: BTRFS && SSD
+Date: Thu, 30 Sep 2010 09:15:30 +0200
+Message-ID: <20100930071530.GA964@attic.humilis.net>
+References: <AANLkTik9qiqtePxAhaJTyM7Q-g1nTgw9krTZFf_DaYxn@mail.gmail.com>
+ <20100929170855.GA4635@lelouch.nomadic.ncsu.edu>
+ <AANLkTind3szR8RjBLPbKb2yMH-s8q2ti+28N38z1BeTj@mail.gmail.com>
+ <20100929195929.GA5588@lelouch.nomadic.ncsu.edu>
+ <AANLkTinzhHOv4L0cPR+tiw=3b7koHGe7svX223FNSxxS@mail.gmail.com>
+Reply-To: sander@humilis.net
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, yhxu@wayne.edu,
+	chris.mason@oracle.com, wingedtachikoma@gmail.com
+To: Yuehai Xu <yuehaixu@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTinzhHOv4L0cPR+tiw=3b7koHGe7svX223FNSxxS@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just curious...
+Yuehai Xu wrote (ao):
+> So, is it a bottleneck in the case of SSD since the cost for over
+> write is very high? For every write, I think the superblocks should be
+> overwritten, it might be much more frequent than other common blocks
+> in SSD, even though SSD will do wear leveling inside by its FTL.
 
-I've been wondering if it would possible/useful to make a btrfs mode
-where it _always_ writes in a ring on the entire disk.  Since it can
-write "anywhere" already, it could just write sequentially always.
+The FTL will make sure the write cycles are evenly divided among the
+physical blocks, regardless of how often you overwrite a single spot on
+the fs.
 
-The write process would have to be changed to read a blob, throw away
-the garbage, and fit in the new stuff in the gaps, then write the blob.
-Write performance would degrade to half once the disk is half full of
-stuff that can't be thrown away, but then almost all file I/O patterns
-should be about the same speed, because disk writes are only sequential.
+> What I current know is that for Intel x25-V SSD, the write throughput
+> of BTRFS is almost 80% less than the one of EXT3 in the case of
+> PostMark. This really confuses me.
 
-Or is it that it's pretty much always like this until space is tight
-anyway?  I suspect that eventually free space will be pretty fragmented,
-and it'll have to seek a lot just to write in available space.  Perhaps
-the performance is similar or worse to sequential read+write versus just
-writing in the gaps in many/all cases?
+Can you show the script you use to test this, provide some info
+regarding your setup, and show the numbers you see?
 
-Maybe this what nilfs2, etc., are all about, in which case maybe it would
-be neat to have a mount option or even realtime heuristic-based switching
-if load patterns fit better to a particular mode...
+	Sander
 
-Simon-
+-- 
+Humilis IT Services and Solutions
+http://www.humilis.net

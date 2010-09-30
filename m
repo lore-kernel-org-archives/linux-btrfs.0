@@ -1,50 +1,33 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] Btrfs: add a disk info ioctl to get the disks attached
-	to a filesystem
-Date: Wed, 29 Sep 2010 20:32:12 -0400
-Message-ID: <20100930003211.GF32420@dhcp231-156.rdu.redhat.com>
-References: <1285707196-16268-1-git-send-email-josef@redhat.com> <20100928232513.GA20629@infradead.org> <20100929000809.GC32420@dhcp231-156.rdu.redhat.com> <20100929001954.GA9182@tango.0pointer.de> <4CA2E9CD.5090700@redhat.com> <AANLkTimHmbVbScgDHsb8f=ts0QKr-+pwNm=YY4sG+bz1@mail.gmail.com> <20100929234327.GA8401@infradead.org>
+From: Simon Kirby <sim@hostway.ca>
+Subject: ring btrfs
+Date: Wed, 29 Sep 2010 18:19:20 -0700
+Message-ID: <20100930011920.GA14974@hostway.ca>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Kay Sievers <kay.sievers@vrfy.org>,
-	Ric Wheeler <rwheeler@redhat.com>,
-	Lennart Poettering <lennart@poettering.net>,
-	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
-To: Christoph Hellwig <hch@infradead.org>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20100929234327.GA8401@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 29, 2010 at 07:43:27PM -0400, Christoph Hellwig wrote:
-> On Wed, Sep 29, 2010 at 10:04:31AM +0200, Kay Sievers wrote:
-> > On Wed, Sep 29, 2010 at 09:25, Ric Wheeler <rwheeler@redhat.com> wrote:
-> > 
-> > > Second question is why is checking in /sys a big deal, would ??you prefer an
-> > > interface like we did for alignment in libblkid?
-> > 
-> > It's about knowing what's behind the 'nodev' major == 0 of a btrfs
-> > mount. There is no way to get that from /sys or anywhere else at the
-> > moment.
-> > 
-> > Usually filesystems backed by a disk have the dev_t of the device, or
-> > the fake block devices like md/dm/raid have their own major and the
-> > slaves/ directory pointing to the devices.
-> > 
-> > This is not only about readahead, it's every other tool, that needs to
-> > know what kind of disks are behind a btrfs 'nodev' major == 0 mount.
-> 
-> Thanks for explaining the problem.  It's one that affects everything
-> with more than one underlying block device, so adding a
-> filesystem-specific ioctl hack is not a good idea.  As mentioned in this
-> mail we already have a solution for that - the block device slaves
-> links used for raid and volume managers.  The most logical fix is to
-> re-use that for btrfs as well and stop it from abusing the anonymous
-> block major that was never intended for block based filesystems (and
-> already has caused trouble in other areas).  One way to to this might
-> be to allocate a block major for btrfs that only gets used for
-> representing these links.
->
+Just curious...
 
-Fair enough, I will look into this next week sometime.  Thanks,
+I've been wondering if it would possible/useful to make a btrfs mode
+where it _always_ writes in a ring on the entire disk.  Since it can
+write "anywhere" already, it could just write sequentially always.
 
-Josef 
+The write process would have to be changed to read a blob, throw away
+the garbage, and fit in the new stuff in the gaps, then write the blob.
+Write performance would degrade to half once the disk is half full of
+stuff that can't be thrown away, but then almost all file I/O patterns
+should be about the same speed, because disk writes are only sequential.
+
+Or is it that it's pretty much always like this until space is tight
+anyway?  I suspect that eventually free space will be pretty fragmented,
+and it'll have to seek a lot just to write in available space.  Perhaps
+the performance is similar or worse to sequential read+write versus just
+writing in the gaps in many/all cases?
+
+Maybe this what nilfs2, etc., are all about, in which case maybe it would
+be neat to have a mount option or even realtime heuristic-based switching
+if load patterns fit better to a particular mode...
+
+Simon-

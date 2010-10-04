@@ -1,26 +1,32 @@
-From: Tomasz Chmielewski <mangoo@wpkg.org>
-Subject: Re: flood of btrfs WARNINGs in dmesg
-Date: Mon, 04 Oct 2010 16:32:44 +0200
-Message-ID: <4CA9E58C.4030804@wpkg.org>
-References: <4CA9D46D.6060309@wpkg.org> <20101004142424.GA2870@scooter>
+From: "Jason J. W. Williams" <jasonjwwilliams@gmail.com>
+Subject: MySQL on BTRFS Experiences
+Date: Mon, 4 Oct 2010 12:17:21 -0600
+Message-ID: <AANLkTi=7PDWuRb6J8cma-E7qGbFU=ounrzwZB681moZG@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Felix Blanke <felixblanke@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101004142424.GA2870@scooter>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04.10.2010 16:24, Felix Blanke wrote:
-> Hi,
->
-> that issue is allready reported to this mailinglist and there is a longer
-> conversation about it.
+Hi,
 
-Indeed:
+My shop is a long time (~2006) ZFS user, considering moving off OpenSolaris
+due to a number of non-technical issues. We use ZFS for all of our MySQL
+databases. It's cheap/fast snapshots are critical to our backup strategy,
+and we rely on the L2ARC and dedicated log device (i.e. NVRAM) features to
+accelerate our pools with SSDs.
 
-http://thread.gmane.org/gmane.linux.kernel/1039525
+I've read through the archives for comments on stability, but they seem to
+be generic "is it stable" questions. Is there anyone who is running a
+critical MySQL operation on BTRFS that could comment on their experience
+with it? "critical" to me means a 24x7 operation with 3-4 nines uptime
+requirement.
 
--- 
-Tomasz Chmielewski
-http://wpkg.org
+Also, as BTRFS doesn't seem to have SSD acceleration features yet, is anyone
+using BTRFS in combination with flashcache?
+
+Anybody who's come to BTRFS from ZFS would be very helpful too.
+
+Thank you in advance.
+
+-J

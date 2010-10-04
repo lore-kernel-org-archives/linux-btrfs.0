@@ -1,47 +1,45 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: how can I copy files bigger than ~32 GB when using
- compress-force?
-Date: Mon, 4 Oct 2010 18:28:37 -0400
-Message-ID: <20101004222837.GD9759@think>
-References: <4CAA4A34.80701@wpkg.org>
+From: Fabio <tux@ilbello.com>
+Subject: Re: MySQL on BTRFS Experiences
+Date: Tue, 05 Oct 2010 01:27:07 +0200
+Message-ID: <4CAA62CB.9010307@ilbello.com>
+References: <AANLkTi=7PDWuRb6J8cma-E7qGbFU=ounrzwZB681moZG@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Cc: linux-btrfs@vger.kernel.org
-To: Tomasz Chmielewski <mangoo@wpkg.org>
+To: "Jason J. W. Williams" <jasonjwwilliams@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4CAA4A34.80701@wpkg.org>
+In-Reply-To: <AANLkTi=7PDWuRb6J8cma-E7qGbFU=ounrzwZB681moZG@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 04, 2010 at 11:42:12PM +0200, Tomasz Chmielewski wrote:
-> >I'm assuming this works without compress-force?  I can make a guess at
-> >what is happening, the compression forces a relatively small extent
-> >size, and this is making our worst case metadata reservations get upset.
-> 
-> Yes, it works without compress-force.
-> 
-> Interesting is that cp or rsync sometimes just exit quite fast with
-> "no space left".
-> 
-> Sometimes, they just "hang" (waited up to about an hour) - file size
-> does not grow anymore, last modified time is not updated, iostat
+Jason J. W. Williams ha scritto:
+> Hi,
+>
+> My shop is a long time (~2006) ZFS user, considering moving off OpenSolaris
+> due to a number of non-technical issues. We use ZFS for all of our MySQL
+> databases. It's cheap/fast snapshots are critical to our backup strategy,
+> and we rely on the L2ARC and dedicated log device (i.e. NVRAM) features to
+> accelerate our pools with SSDs.
+>
+> I've read through the archives for comments on stability, but they seem to
+> be generic "is it stable" questions. Is there anyone who is running a
+> critical MySQL operation on BTRFS that could comment on their experience
+> with it? "critical" to me means a 24x7 operation with 3-4 nines uptime
+> requirement.
+>   
+As already discussed, the main concern against BTRFS is not stability, 
+but the lack of a functional fsck utility.
 
-Sorry is this hang/fast exit with or without compress-force.
+> Also, as BTRFS doesn't seem to have SSD acceleration features yet, is anyone
+> using BTRFS in combination with flashcache?
+>
+> Anybody who's come to BTRFS from ZFS would be very helpful too.
+>
+> Thank you in advance.
+>
+> -J
+>   
 
-> does not show any bytes read/written, there are no btrfs or any
-> other processes taking too much CPU, cp/rsync is not in "D" state
-> (although it gets to "D" state and uses 100% CPU as I try to kill
-> it).
-> 
-> Could it be we're hitting two different bugs here?
-> 
-> 
-> >Does it happen with any 32gb file that doesn't compress well?
-> 
-> The 220 GB qcow2 file was basically uncompressible (backuppc archive
-> full of bzip2-compressed files).
 
-Ok, I think I know what is happening here, they all lead to the same
-chunk of code.  I'll be able to reproduce this locally.
-
--chris
+-- 
+Fabio
 

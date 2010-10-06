@@ -1,46 +1,63 @@
-From: "Ken D'Ambrosio" <ken@jots.org>
-Subject: du reporting odd file sizes during copy.
-Date: Wed, 6 Oct 2010 08:52:02 -0400 (EDT)
-Message-ID: <23ef6090f815f34d606450a5a34f57a0.squirrel@webmail.jots.org>
+From: Grzegorz Kabala <gk@lublin.info>
+Subject: mysql (with InnoDB) on btrfs doensn't run
+Date: Wed, 06 Oct 2010 15:04:23 +0200
+Message-ID: <8bffff1f914a0793773dce3d5d4b94b6@taurus.advatec.info>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+To: <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, all.  I was copying two 6-GB DVD images yesterday, and while
-monitoring the copy progress, noticed that du would show a trend that
-*generally* headed toward the final files' sizes, but on occasion would
-hop backward, thusly:
+Hello
 
+Actually I have problem with run mysql (InnoDB db backend) on btrfs fil=
+e
+system.
+MySql daemon doesn=E2=80=99t run and log file contains:
 
-root@hal-9000:/shared/ISOs# while true; do du * ; sleep 10; echo;done
-1151808	SolidWorks_2008_32-bit.iso
-1928784	SolidWorks_2008_64-bit.iso
+101006 13:36:39 mysqld started
+InnoDB: Error: tried to read 16384 bytes at offset 0 0.
+InnoDB: Was only able to read -1.
+101006 13:36:40 InnoDB: Operating system error number 22 in a file
+operation.
+InnoDB: Error number 22 means =E2=80=98Invalid argument=E2=80=99.
+InnoDB: Some operating system error numbers are described at
+InnoDB:
+http://dev.mysql.com/doc/refman/5.0/en/operating-system-error-codes.htm=
+l
+InnoDB: File operation call: =E2=80=98read=E2=80=99.
+InnoDB: Cannot continue operation.
+101006 13:36:40 mysqld ended
 
-1072032	SolidWorks_2008_32-bit.iso
-1763280	SolidWorks_2008_64-bit.iso
+101006 13:45:16 mysqld started
+101006 13:45:17 InnoDB: Started; log sequence number 0 3084915
+101006 13:45:17 [Note] /opt/zimbra/mysql/libexec/mysqld: ready for
+connections.
+Version: =E2=80=985.0.90-log=E2=80=99 socket: =E2=80=98/opt/zimbra/db/m=
+ysql.sock=E2=80=99 port:
+7306 Source distribution
+101006 13:48:35 [Note] /opt/zimbra/mysql/libexec/mysqld: Normal shutdow=
+n
 
-1044384	SolidWorks_2008_32-bit.iso
-2097152	SolidWorks_2008_64-bit.iso
+101006 13:48:35 InnoDB: Starting shutdown=E2=80=A6
+101006 13:48:36 InnoDB: Shutdown completed; log sequence number 0 30849=
+25
+101006 13:48:36 [Note] /opt/zimbra/mysql/libexec/mysqld: Shutdown compl=
+ete
 
-1481248	SolidWorks_2008_32-bit.iso
-2183184	SolidWorks_2008_64-bit.iso
+101006 13:48:36 mysqld ended
 
-The images did copy, but I'm just curious as to what the mechanics were
-behind du's seemingly non-linear reporting.  (If it makes any difference,
-one copy was coming in via an ssh pipe from a different machine; the other
-was being copied from the local CD drive.  Both were using "cat" to write
-the files.)
+Used software:
+CentOS 5.5 x86_64 with 2.6.32-100.0.19.el5 (from Oracle)
+Btrfs tools from git tree (downloaded and compiling 10/06/2010)
+MySQL v5.0.90 (from Zimbra Collaboration Suite Community)
 
-Thanks,
+Regards
 
--Ken
+Grzesiek
 
-
-
--- 
-This message has been scanned for viruses and
-dangerous content by MailScanner, and is
-believed to be clean.
-
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

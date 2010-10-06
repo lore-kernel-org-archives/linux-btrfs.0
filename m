@@ -1,30 +1,46 @@
-From: Tomasz Chmielewski <mangoo@wpkg.org>
-Subject: Re: find subvolume (used) size?
-Date: Wed, 06 Oct 2010 14:08:12 +0200
-Message-ID: <4CAC66AC.60903@wpkg.org>
-References: <4CAB0B6C.3050908@wpkg.org> <4CAB4556.7070205@cfl.rr.com>
+From: "Ken D'Ambrosio" <ken@jots.org>
+Subject: du reporting odd file sizes during copy.
+Date: Wed, 6 Oct 2010 08:52:02 -0400 (EDT)
+Message-ID: <23ef6090f815f34d606450a5a34f57a0.squirrel@webmail.jots.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: unlisted-recipients:; (no To-header on input)
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4CAB4556.7070205@cfl.rr.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
->>> Maybe you mean du?  df takes almost no time at all and does not care
->>> how many files there are.
->>
->> Yep, I certainly meant du there.
->>
->
-> Just be carefull, because for example if you use -o compress, the space
-> the files are actually using can be different...
+Hi, all.  I was copying two 6-GB DVD images yesterday, and while
+monitoring the copy progress, noticed that du would show a trend that
+*generally* headed toward the final files' sizes, but on occasion would
+hop backward, thusly:
 
-Certainly, one more reason why btrfs reporting subvolume size usage 
-would be useful ;)
+
+root@hal-9000:/shared/ISOs# while true; do du * ; sleep 10; echo;done
+1151808	SolidWorks_2008_32-bit.iso
+1928784	SolidWorks_2008_64-bit.iso
+
+1072032	SolidWorks_2008_32-bit.iso
+1763280	SolidWorks_2008_64-bit.iso
+
+1044384	SolidWorks_2008_32-bit.iso
+2097152	SolidWorks_2008_64-bit.iso
+
+1481248	SolidWorks_2008_32-bit.iso
+2183184	SolidWorks_2008_64-bit.iso
+
+The images did copy, but I'm just curious as to what the mechanics were
+behind du's seemingly non-linear reporting.  (If it makes any difference,
+one copy was coming in via an ssh pipe from a different machine; the other
+was being copied from the local CD drive.  Both were using "cat" to write
+the files.)
+
+Thanks,
+
+-Ken
+
 
 
 -- 
-Tomasz Chmielewski
-http://wpkg.org
+This message has been scanned for viruses and
+dangerous content by MailScanner, and is
+believed to be clean.
 

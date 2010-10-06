@@ -1,63 +1,108 @@
-From: Grzegorz Kabala <gk@lublin.info>
-Subject: mysql (with InnoDB) on btrfs doensn't run
-Date: Wed, 06 Oct 2010 15:04:23 +0200
-Message-ID: <8bffff1f914a0793773dce3d5d4b94b6@taurus.advatec.info>
+From: David Nicol <davidnicol@gmail.com>
+Subject: patch intoducing IOctl #21 allowing for waiting for completion of
+ deleted subvol recovery
+Date: Wed, 6 Oct 2010 10:05:17 -0500
+Message-ID: <AANLkTim2eGMuc=_v9046G-C21OWq8oKDhc2rL8LAvx+_@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: <linux-btrfs@vger.kernel.org>
+Content-Type: multipart/mixed; boundary=0016367d6c4a3ebb8b0491f41c6b
+To: BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello
+--0016367d6c4a3ebb8b0491f41c6b
+Content-Type: text/plain; charset=UTF-8
 
-Actually I have problem with run mysql (InnoDB db backend) on btrfs fil=
-e
-system.
-MySql daemon doesn=E2=80=99t run and log file contains:
+Written against the btrfs-unstable git tree, the attached patch
+installs cleanly against the latest kernel (as of two weeks ago.)
 
-101006 13:36:39 mysqld started
-InnoDB: Error: tried to read 16384 bytes at offset 0 0.
-InnoDB: Was only able to read -1.
-101006 13:36:40 InnoDB: Operating system error number 22 in a file
-operation.
-InnoDB: Error number 22 means =E2=80=98Invalid argument=E2=80=99.
-InnoDB: Some operating system error numbers are described at
-InnoDB:
-http://dev.mysql.com/doc/refman/5.0/en/operating-system-error-codes.htm=
-l
-InnoDB: File operation call: =E2=80=98read=E2=80=99.
-InnoDB: Cannot continue operation.
-101006 13:36:40 mysqld ended
+The patches for btrfsctl and btrfs programs will be coming soon; I'm
+adding support for ISO8061 duration strings instead of (or in addition
+to) milliseconds and thinking about switching the order of the two
+args to btrfsctl -C from (path(default=.), ms(default=0)) to timeout
+then path, to keep it consistent with the other btrfsctl commands.
+Currently -C is special-cased in the bottom half of my btrfsctl.c
+because the path isn't the last argument.
 
-101006 13:45:16 mysqld started
-101006 13:45:17 InnoDB: Started; log sequence number 0 3084915
-101006 13:45:17 [Note] /opt/zimbra/mysql/libexec/mysqld: ready for
-connections.
-Version: =E2=80=985.0.90-log=E2=80=99 socket: =E2=80=98/opt/zimbra/db/m=
-ysql.sock=E2=80=99 port:
-7306 Source distribution
-101006 13:48:35 [Note] /opt/zimbra/mysql/libexec/mysqld: Normal shutdow=
-n
+Btrfsctl apparently allows several operations to be presented as one
+set of command line arguments, sort of like find(1) does; would
+someone who does that a lot please respond off-list to discuss the
+ideal semantics of new commands?
 
-101006 13:48:35 InnoDB: Starting shutdown=E2=80=A6
-101006 13:48:36 InnoDB: Shutdown completed; log sequence number 0 30849=
-25
-101006 13:48:36 [Note] /opt/zimbra/mysql/libexec/mysqld: Shutdown compl=
-ete
+Also, I can now privately send the progs patch to anyone who wants to
+test it as-is, but I don't want to "publish" it until the interface
+(what format the optional timeout is in) is frozen.
 
-101006 13:48:36 mysqld ended
+--0016367d6c4a3ebb8b0491f41c6b
+Content-Type: text/x-diff; charset=us-ascii; name="kernel_patch.diff"
+Content-Disposition: attachment; filename="kernel_patch.diff"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: bc3710c00016e008_0.1
 
-Used software:
-CentOS 5.5 x86_64 with 2.6.32-100.0.19.el5 (from Oracle)
-Btrfs tools from git tree (downloaded and compiling 10/06/2010)
-MySQL v5.0.90 (from Zimbra Collaboration Suite Community)
-
-Regards
-
-Grzesiek
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+ZGlmZiAtLWdpdCBhL2ZzL2J0cmZzL2N0cmVlLmggYi9mcy9idHJmcy9jdHJlZS5oCmluZGV4IGU5
+YmY4NjQuLmEzNTBiNzUgMTAwNjQ0Ci0tLSBhL2ZzL2J0cmZzL2N0cmVlLmgKKysrIGIvZnMvYnRy
+ZnMvY3RyZWUuaApAQCAtODk1LDYgKzg5NSw3IEBAIHN0cnVjdCBidHJmc19mc19pbmZvIHsKIAlz
+dHJ1Y3QgbGlzdF9oZWFkIHRyYW5zX2xpc3Q7CiAJc3RydWN0IGxpc3RfaGVhZCBoYXNoZXJzOwog
+CXN0cnVjdCBsaXN0X2hlYWQgZGVhZF9yb290czsKKwl3YWl0X3F1ZXVlX2hlYWRfdCBjbGVhbmVy
+X25vdGlmaWNhdGlvbl9yZWdpc3RyYXRpb247CiAJc3RydWN0IGxpc3RfaGVhZCBjYWNoaW5nX2Js
+b2NrX2dyb3VwczsKIAogCXNwaW5sb2NrX3QgZGVsYXllZF9pcHV0X2xvY2s7CmRpZmYgLS1naXQg
+YS9mcy9idHJmcy9kaXNrLWlvLmMgYi9mcy9idHJmcy9kaXNrLWlvLmMKaW5kZXggMzRmN2MzNy4u
+NmEzNTI1NyAxMDA2NDQKLS0tIGEvZnMvYnRyZnMvZGlzay1pby5jCisrKyBiL2ZzL2J0cmZzL2Rp
+c2staW8uYwpAQCAtMTQ1MSw2ICsxNDUxLDcgQEAgc3RhdGljIGludCBjbGVhbmVyX2t0aHJlYWQo
+dm9pZCAqYXJnKQogCQkgICAgbXV0ZXhfdHJ5bG9jaygmcm9vdC0+ZnNfaW5mby0+Y2xlYW5lcl9t
+dXRleCkpIHsKIAkJCWJ0cmZzX3J1bl9kZWxheWVkX2lwdXRzKHJvb3QpOwogCQkJYnRyZnNfY2xl
+YW5fb2xkX3NuYXBzaG90cyhyb290KTsKKwkJCXdha2VfdXBfYWxsKCZyb290LT5mc19pbmZvLT5j
+bGVhbmVyX25vdGlmaWNhdGlvbl9yZWdpc3RyYXRpb24pOwogCQkJbXV0ZXhfdW5sb2NrKCZyb290
+LT5mc19pbmZvLT5jbGVhbmVyX211dGV4KTsKIAkJfQogCkBAIC0xNTgxLDYgKzE1ODIsNyBAQCBz
+dHJ1Y3QgYnRyZnNfcm9vdCAqb3Blbl9jdHJlZShzdHJ1Y3Qgc3VwZXJfYmxvY2sgKnNiLAogCUlO
+SVRfUkFESVhfVFJFRSgmZnNfaW5mby0+ZnNfcm9vdHNfcmFkaXgsIEdGUF9BVE9NSUMpOwogCUlO
+SVRfTElTVF9IRUFEKCZmc19pbmZvLT50cmFuc19saXN0KTsKIAlJTklUX0xJU1RfSEVBRCgmZnNf
+aW5mby0+ZGVhZF9yb290cyk7CisJaW5pdF93YWl0cXVldWVfaGVhZCgmZnNfaW5mby0+Y2xlYW5l
+cl9ub3RpZmljYXRpb25fcmVnaXN0cmF0aW9uKTsKIAlJTklUX0xJU1RfSEVBRCgmZnNfaW5mby0+
+ZGVsYXllZF9pcHV0cyk7CiAJSU5JVF9MSVNUX0hFQUQoJmZzX2luZm8tPmhhc2hlcnMpOwogCUlO
+SVRfTElTVF9IRUFEKCZmc19pbmZvLT5kZWxhbGxvY19pbm9kZXMpOwpkaWZmIC0tZ2l0IGEvZnMv
+YnRyZnMvaW9jdGwuYyBiL2ZzL2J0cmZzL2lvY3RsLmMKaW5kZXggOTI1NGIzZC4uOWY1YTUyNSAx
+MDA2NDQKLS0tIGEvZnMvYnRyZnMvaW9jdGwuYworKysgYi9mcy9idHJmcy9pb2N0bC5jCkBAIC0x
+MjEyLDYgKzEyMTIsNDYgQEAgc3RhdGljIG5vaW5saW5lIGludCBidHJmc19pb2N0bF9pbm9fbG9v
+a3VwKHN0cnVjdCBmaWxlICpmaWxlLAogCXJldHVybiByZXQ7CiB9CiAKK3N0YXRpYyBpbnQgYnRy
+ZnNfaW9jdGxfY2xlYW5lcl93YWl0KHN0cnVjdCBidHJmc19yb290ICpyb290LCB2b2lkIF9fdXNl
+ciAqYXJnKQoreworICAgICAgICBzdHJ1Y3QgYnRyZnNfaW9jdGxfY2xlYW5lcl93YWl0X2FyZ3Mg
+KmJpY3dhOworICAgICAgICBsb25nIHJlbWFpbmluZ2ppZmZpZXM7CisgICAgICAgIGludCBlcnI7
+CisKKwliaWN3YSA9IG1lbWR1cF91c2VyKGFyZywgc2l6ZW9mKCpiaWN3YSkpOworCWlmIChJU19F
+UlIoYmljd2EpKQorCQlyZXR1cm4gUFRSX0VSUihiaWN3YSk7CisKKyAgICAgICAgZXJyID0gLUVJ
+TlZBTDsKKworICAgICAgICBpZiAoYmljd2EtPm1zID4gMCkKKwl7CisgICAgICAgICAgICByZW1h
+aW5pbmdqaWZmaWVzID0gd2FpdF9ldmVudF9pbnRlcnJ1cHRpYmxlX3RpbWVvdXQoCisgICAgICAg
+ICAgICAgICAgIHJvb3QtPmZzX2luZm8tPmNsZWFuZXJfbm90aWZpY2F0aW9uX3JlZ2lzdHJhdGlv
+biwKKyAgICAgICAgICAgICAgICAgbGlzdF9lbXB0eSgmcm9vdC0+ZnNfaW5mby0+ZGVhZF9yb290
+cyksCisgICAgICAgICAgICAgICAgIG1zZWNzX3RvX2ppZmZpZXMoYmljd2EtPm1zKQorICAgICAg
+ICAgICAgKTsKKyAgICAgICAgICAgIGlmIChyZW1haW5pbmdqaWZmaWVzID4gMCkKKyAgICAgICAg
+ICAgICAgICAgIGVyciA9IDA7CisgICAgICAgICAgICBlbHNlIGlmIChyZW1haW5pbmdqaWZmaWVz
+IDwgMCApCisgICAgICAgICAgICAgICAgICBlcnIgPSAtRUFHQUlOOworICAgICAgICAgICAgZWxz
+ZQorICAgICAgICAgICAgICAgICAgZXJyID0gLUVUSU1FOworICAgICAgICB9CisJZWxzZQorCXsK
+KyAgICAgICAgICAgIGVyciA9IHdhaXRfZXZlbnRfaW50ZXJydXB0aWJsZSgKKyAgICAgICAgICAg
+ICAgICAgcm9vdC0+ZnNfaW5mby0+Y2xlYW5lcl9ub3RpZmljYXRpb25fcmVnaXN0cmF0aW9uLAor
+ICAgICAgICAgICAgICAgICBsaXN0X2VtcHR5KCZyb290LT5mc19pbmZvLT5kZWFkX3Jvb3RzKQor
+ICAgICAgICAgICAgKTsKKyAgICAgICAgfTsKKworCWtmcmVlKGJpY3dhKTsKKyAgICAgICAgcmV0
+dXJuIGVycjsKKworfQorCisKIHN0YXRpYyBub2lubGluZSBpbnQgYnRyZnNfaW9jdGxfc25hcF9k
+ZXN0cm95KHN0cnVjdCBmaWxlICpmaWxlLAogCQkJCQkgICAgIHZvaWQgX191c2VyICphcmcpCiB7
+CkBAIC0yMDAzLDYgKzIwNDMsOCBAQCBsb25nIGJ0cmZzX2lvY3RsKHN0cnVjdCBmaWxlICpmaWxl
+LCB1bnNpZ25lZCBpbnQKIAkJcmV0dXJuIGJ0cmZzX2lvY3RsX3NuYXBfY3JlYXRlKGZpbGUsIGFy
+Z3AsIDEpOwogCWNhc2UgQlRSRlNfSU9DX1NOQVBfREVTVFJPWToKIAkJcmV0dXJuIGJ0cmZzX2lv
+Y3RsX3NuYXBfZGVzdHJveShmaWxlLCBhcmdwKTsKKwljYXNlIEJUUkZTX0lPQ19DTEVBTkVSX1dB
+SVQ6CisJCXJldHVybiBidHJmc19pb2N0bF9jbGVhbmVyX3dhaXQocm9vdCwgYXJncCk7CiAJY2Fz
+ZSBCVFJGU19JT0NfREVGQVVMVF9TVUJWT0w6CiAJCXJldHVybiBidHJmc19pb2N0bF9kZWZhdWx0
+X3N1YnZvbChmaWxlLCBhcmdwKTsKIAljYXNlIEJUUkZTX0lPQ19ERUZSQUc6CmRpZmYgLS1naXQg
+YS9mcy9idHJmcy9pb2N0bC5oIGIvZnMvYnRyZnMvaW9jdGwuaAppbmRleCA0MjQ2OTRhLi5jZDE1
+YTUwIDEwMDY0NAotLS0gYS9mcy9idHJmcy9pb2N0bC5oCisrKyBiL2ZzL2J0cmZzL2lvY3RsLmgK
+QEAgLTEzOCw2ICsxMzgsMTAgQEAgc3RydWN0IGJ0cmZzX2lvY3RsX3NwYWNlX2FyZ3MgewogCXN0
+cnVjdCBidHJmc19pb2N0bF9zcGFjZV9pbmZvIHNwYWNlc1swXTsKIH07CiAKK3N0cnVjdCBidHJm
+c19pb2N0bF9jbGVhbmVyX3dhaXRfYXJnc3sKKyAgICAgICAgdW5zaWduZWQgbG9uZyBtczsKK307
+CisKICNkZWZpbmUgQlRSRlNfSU9DX1NOQVBfQ1JFQVRFIF9JT1coQlRSRlNfSU9DVExfTUFHSUMs
+IDEsIFwKIAkJCQkgICBzdHJ1Y3QgYnRyZnNfaW9jdGxfdm9sX2FyZ3MpCiAjZGVmaW5lIEJUUkZT
+X0lPQ19ERUZSQUcgX0lPVyhCVFJGU19JT0NUTF9NQUdJQywgMiwgXApAQCAtMTc4LDQgKzE4Miw2
+IEBAIHN0cnVjdCBidHJmc19pb2N0bF9zcGFjZV9hcmdzIHsKICNkZWZpbmUgQlRSRlNfSU9DX0RF
+RkFVTFRfU1VCVk9MIF9JT1coQlRSRlNfSU9DVExfTUFHSUMsIDE5LCB1NjQpCiAjZGVmaW5lIEJU
+UkZTX0lPQ19TUEFDRV9JTkZPIF9JT1dSKEJUUkZTX0lPQ1RMX01BR0lDLCAyMCwgXAogCQkJCSAg
+ICBzdHJ1Y3QgYnRyZnNfaW9jdGxfc3BhY2VfYXJncykKKyNkZWZpbmUgQlRSRlNfSU9DX0NMRUFO
+RVJfV0FJVCBfSU9XKEJUUkZTX0lPQ1RMX01BR0lDLCAyMSwgXAorCQkJCSAgICBzdHJ1Y3QgYnRy
+ZnNfaW9jdGxfY2xlYW5lcl93YWl0X2FyZ3MpCiAjZW5kaWYK
+--0016367d6c4a3ebb8b0491f41c6b--

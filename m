@@ -1,119 +1,100 @@
-From: David Nicol <davidnicol@gmail.com>
-Subject: Re: IOCTL #21 part two: btrfs progs patch, including iso 8601 timeout support
-Date: Thu, 7 Oct 2010 12:38:36 -0500
-Message-ID: <AANLkTinv9+9-4Q22a=10A8OYDLTr6o0EYTi_uH=hwHHd@mail.gmail.com>
-References: <AANLkTim0NC5QRs_z=tA8R5R4J07aQ7LS-Ls17t2Qvd7p@mail.gmail.com> <201010070810.42505.kreijack@libero.it>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: Re: Can you please define "snapshot" and "subvolume"?
+Date: Thu, 7 Oct 2010 20:08:23 +0200
+Message-ID: <201010072008.23715.kreijack@libero.it>
+References: <AANLkTimBsVGS=eJvpdf2Sq_Dg76zQRgy=E+3089zQ9D4@mail.gmail.com>
+Reply-To: kreijack@libero.it
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: unlisted-recipients:; (no To-header on input)
+Content-Type: Text/Plain; charset=utf-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201010070810.42505.kreijack@libero.it>
+In-Reply-To: <AANLkTimBsVGS=eJvpdf2Sq_Dg76zQRgy=E+3089zQ9D4@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 7, 2010 at 1:10 AM, Goffredo Baroncelli <kreijack@libero.it> wrote:
-> Please the next time put your patch inline or it is more difficult to
-> highlight a suggestion.
+On Thursday, 07 October, 2010, Francis Galiegue wrote:
+> I have difficulties grabbing these two concepts.
+>=20
+> As far as I can tell, a snapshot is an instant, synchronized,
+> photography of the filesystem at a given point in time; a subvolume i=
+s
+> a "subroot" to a btrfs filesystem.
+>=20
+> While I fully understand (and use) the purpose of snapshots, I don't
+> quite fathom the use case for subvolumes, apart from btrfs-convert...
+> Why has btrfs grown such a feature in the first place? Can someone
+> give me a use case for them?
 
-* drop support for years and months, except as identified usage errors
+By design in btrfs a snapshot is "a instant, synchronized, photography =
+of" a=20
+subvolume.
+In fact you can snapshot only a subvolume [*].=20
 
-* lower-case 'm' now minutes
+Moreover the subvolumes have the following properties:
 
-* escalate syntax warnings to fatal exits
+1) it is possible to mount a subvolume of a filesystem: if you execute =
+the=20
+following commands:
+
+# mount -o subvol=3Dname-of-subvol /dev/sdxx /mn/test
+
+the kernel will use the subvolume "name-of-subvol" of the btrfs filesys=
+tem of=20
+the partition /dev/sdxx. Pay attention: this work *only* if the subvolu=
+me=20
+"name-of-subvol" is under the root of the filesystem.
+
+2) a subvolume may be deleted asynchronously by the command "btrfs subv=
+ol=20
+delete <path>". Pay attention that the deletion is performed not instan=
+taneous=20
+but in background. In fact even though the subvolume disappear instanta=
+neous=20
+the space is freed during the background removing.
+
+3) If you have a subvolume into another one, and you snapshot the latte=
+r, in=20
+the snapshot you cannot see the nested subvolume.=20
+=46or example you have the root ('/') under a subvolume and the /home u=
+nder=20
+another subvolume. If you snapshot the root, this snapshot will not con=
+tain=20
+the subvolume /home. This may be useful if you want restore an old snap=
+shot of=20
+the root filesystem without affecting the users homes directories.
+
+In the future some attributes (raid mode, compression) may be set per-
+subvolume basis.
+
+Regards
+G.Baroncelli
 
 
-diff --git a/iso8601toms.c b/iso8601toms.c
-index a1ee9bd..f982d34 100644
---- a/iso8601toms.c
-+++ b/iso8601toms.c
-@@ -25,6 +25,8 @@
-
-     accept a non-integer as the last numeric component
-
-+    always treats "m" as minutes
-+
-  it silently accepts:
-
-     out of order duration type letters
-@@ -35,10 +37,12 @@
-
-     non-integers in any position
-
-- it warns on:
-+ it halts and catches fire on:
-
-     P or p appearing somewhere besides the beginning of the string
-
-+    Attempts to use Years or Months
-+
-     unrecognized characters
+[*] The btrfsctl utility doesn't return an error when you snapshot a=20
+directory. But instead of snapshotting the directory you get a snapshot=
+ of the=20
+subvolume which contain the directory.
+>=20
+> --=20
+> Francis Galiegue, fgaliegue@gmail.com
+> "It seems obvious [...] that at least some 'business intelligence'
+> tools invest so much intelligence on the business side that they have
+> nothing left for generating SQL queries" (St=C3=A9phane Faroult, in "=
+The
+> Art of SQL", ISBN 0-596-00894-5)
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
 
 
-@@ -53,7 +57,6 @@ unsigned long iso8601toms(char *P){
-     char *ptr;
-     char *endptr;
-     short M_min = 0;
--
-     ms = 0UL;
-     ptr = P;
-     for(;;){
-@@ -62,18 +65,13 @@ unsigned long iso8601toms(char *P){
-        {
-           case 'P': /* anchor */ case 'p':
-              if (ptr > P)
--                fprintf(stderr, "ignoring non-initial P "
--                         "in ISO8601 duration string %s\n", P);
--             break;
--          case 'Y': /* years */ case 'y':
--             component *= 12;
--          BIGM:
--             /* average days in a gregorian month */
--             component *= (365.2425 / 12.0);
--             /* ms in a day */
--             component *= ( 24 * 3600 * 1000 );
--             ms += component;
--             break;
-+                fprintf(stderr, "non-initial P "
-+                         "in duration string %s\n", P);
-+                 exit (-1);
-+          case 'Y': /* year */ case 'y':
-+                fprintf(stderr, "Years are not supported "
-+                         "in duration string %s\n", P);
-+                 exit (-1);
-           case 'T': /* Time (not date) anchor */ case 't':
-              M_min = 1;
-              break;
-@@ -84,9 +82,15 @@ unsigned long iso8601toms(char *P){
-           case 'H': /* hour */ case 'h':
-              component *= 60;
-              M_min = 1;
--          case 'M': /* month, or minute */ case 'm':
--             if (!M_min++)
--                 goto BIGM;
-+          case 'M': /* month, or minute */
-+             if (M_min == 0 ){
-+                fprintf(stderr, "Months are not supported "
-+                         "in duration string %s\n"
-+                         "use 'm' instead or prefix a 'T'\n"
-+                         , P);
-+                 exit (-1);
-+             };
-+          case 'm': /* minute */
-              component *= 60;
-           case 'S': /* second */ case 's':
-           case '\0': /* default to second */
-@@ -96,10 +100,11 @@ unsigned long iso8601toms(char *P){
-
-           default:
-             fprintf(stderr,
--                "ignoring unexpected char [%c] "
--                "in iso8601 duration string %s\n",
-+                "unexpected char [%c] in duration string %s\n"
-+                "valid designators are [WwDdHhMmSs] with implied
-trailing S.\n",
-                 *endptr, P
-              );
-+             exit (-1);
-        };
-        if (!*endptr)
-           return (ms);
+--=20
+gpg key@ keyserver.linux.it:Goffredo Baroncelli (ghigo) <kreijackATinwi=
+nd.it>
+Key fingerprint =3D 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,137 +1,107 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: IOCTL #21 part two: btrfs progs patch, including iso 8601 timeout support
-Date: Thu, 7 Oct 2010 08:10:42 +0200
-Message-ID: <201010070810.42505.kreijack@libero.it>
-References: <AANLkTim0NC5QRs_z=tA8R5R4J07aQ7LS-Ls17t2Qvd7p@mail.gmail.com>
-Reply-To: kreijack@libero.it
+From: Ian Kent <raven@themaw.net>
+Subject: Re: [PATCH] Btrfs: add support for mixed data+metadata block
+ groups V2
+Date: Thu, 07 Oct 2010 16:10:50 +0800
+Message-ID: <1286439050.3341.34.camel@localhost>
+References: <1286396497-30027-1-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-15"
-Cc: David Nicol <davidnicol@gmail.com>
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTim0NC5QRs_z=tA8R5R4J07aQ7LS-Ls17t2Qvd7p@mail.gmail.com>
+In-Reply-To: <1286396497-30027-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wednesday, 06 October, 2010, David Nicol wrote:
-> the ISO 8601 duration support is very loose, but I believe it is
-> accurate for valid
-> input. Without any non-numeric designators, the timeout is interpreted
-> as seconds,
-> so
->     btrfs fi reclaim 10.3321 /my_btrfs_mount ||  echo timed out
-> will wait 10332 ms before echoing, if the pending subvolume deletions
-> take longer than that.
+On Wed, 2010-10-06 at 16:21 -0400, Josef Bacik wrote:
+> There are just a few things that need to be fixed in the kernel to support mixed
+> data+metadata block groups.  Mostly we just need to make sure that if we are
+> using mixed block groups that we continue to allocate mixed block groups as we
+> need them.  Also we need to make sure __find_space_info will find our space info
+> if we search for DATA or METADATA only.  Tested this with xfstests and it works
+> nicely.  Thanks,
 > 
-> Timeout defaults to 0, and path defaults to current directory.
+> Signed-off-by: Josef Bacik <josef@redhat.com>
+> ---
+> V1->V2: In do_chunk_alloc I was changing flags to == space_info->flags, which
+> isn't right since space_info doesn't carry the RAID profiles anymore, so instead
+> check to see if the space info has DATA and METADATA set and if so set that in
+> the flags as well.
 > 
+>  fs/btrfs/extent-tree.c |   26 +++++++++++++++++++++++---
+>  1 files changed, 23 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 91a0a41..27eddb3 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -547,7 +547,7 @@ static struct btrfs_space_info *__find_space_info(struct btrfs_fs_info *info,
+>  
+>  	rcu_read_lock();
+>  	list_for_each_entry_rcu(found, head, list) {
+> -		if (found->flags == flags) {
+> +		if (found->flags & flags) {
+>  			rcu_read_unlock();
+>  			return found;
+>  		}
+> @@ -3267,6 +3267,15 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
+>  	spin_unlock(&space_info->lock);
+>  
+>  	/*
+> +	 * If we have mixed data/metadata chunks we want to make sure we keep
+> +	 * allocating mixed chunks instead of individual chunks.
+> +	 */
+> +	if ((space_info->flags & (BTRFS_BLOCK_GROUP_DATA |
+> +				  BTRFS_BLOCK_GROUP_METADATA)) ==
+> +	    (BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA))
+> +		flags |= (BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA);
 
-Please the next time put your patch inline or it is more difficult to 
-highlight a suggestion.
+This sort of construct appears a few times.
+Personally, I prefer a macroish (read 'inline function') construct,
+perhaps with a longish name if needed, than multiple line breaks within
+a logical expression. IMHO, having multiple line breaks makes the code
+somewhat harder to read.
 
-Any way:
-
-1)
-[...]
-+	{ do_wait4clean, 1002, /* require at most two args */
-+	  "filesystem reclaim", "<path> [timeout]\n"
-+		"Wait for cleanup of deleted subvolumes in the filesystem 
-<path>.\n"
-+		"Optional timeout in whole or partial seconds, or ISO8601 
-string.\n"
-+	},
-[...]
-+int do_wait4clean(int argc, char **argv)
-+{
-+	int fd, res;
-+        struct btrfs_ioctl_cleaner_wait_args w4c_arg;
-+
-+	char	*path = ".";
-+        w4c_arg.ms = 0UL;
-+
-+        if (argc > 1) 
-+	     path = argv[1];
-+        if (argc > 2) 
-+             w4c_arg.ms = iso8601toms(argv[2]);
- 
-In the man page and in the help the syntax is reported as:
-
- btrfs filesystem reclaim <path> [<timeout>]
-
-instead it should be
-
- btrfs filesystem reclaim [<path> [<timeout>]]
-
-and it has to be reported that path is optional and if it is omitted the 
-current CWD is taken.
-
-2) I think that it is more reasonable avoid a "strict" iso 8601 syntax for the 
-time. I suggest to use a simple syntax like
-
-0.xxxx -> subsecond 
-s or nothing -> seconds
-m -> minutes
-h -> hour
-d -> day
-M -> month (but make sense to wait up to a month ?)
-[...]
-
-3) As minor issue I have to point out that "reclaim" seems (to me) that the 
-user has to start this command in order to obtain more space, like if this 
-command starts a garbage collector. In any case the help/man page explain 
-clearly the behavior of the command.
-
-4)
-[...]
-+unsigned long iso8601toms(char *P){
-+    unsigned long ms;
-+    double component;
-+    char *ptr;
-+    char *endptr;
-+    short M_min = 0;
-+
-+    ms = 0UL;
-+    ptr = P;
-+    for(;;){
-+       component=strtod(ptr, &endptr);
-+       switch (*endptr)
-+       {
-+          case 'P': /* anchor */ case 'p':
-+             if (ptr > P)
-+	         fprintf(stderr, "ignoring non-initial P "
-+                         "in ISO8601 duration string %s\n", P);
-+             break;
-+          case 'Y': /* years */ case 'y':
-+             component *= 12;
-+          BIGM:
-+             /* average days in a gregorian month */
-+             component *= (365.2425 / 12.0);
-+             /* ms in a day */
-+             component *= ( 24 * 3600 * 1000 );
-+             ms += component;
-+             break;
-+          case 'T': /* Time (not date) anchor */ case 't':
-+             M_min = 1;
-+             break;
-+          case 'W': /* week */ case 'w':
-+             component *= 7;
-+          case 'D': /* day */ case 'd':
-+             component *=  24 ;
-+          case 'H': /* hour */ case 'h':
-+             component *= 60;
-+             M_min = 1;
-+          case 'M': /* month, or minute */ case 'm':
-+             if (!M_min++)
-+                 goto BIGM;
-+             component *= 60;
-[...]
-In the function  I suggest to avoid if possible a goto in a switch case. I 
-think that it is more clear to repeat few lines instead of doing a goto.
-
-Reagrds
-G.Baroncelli
+> +
+> +	/*
+>  	 * if we're doing a data chunk, go ahead and make sure that
+>  	 * we keep a reasonable number of metadata chunks allocated in the
+>  	 * FS as well.
+> @@ -4793,6 +4802,7 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
+>  	bool found_uncached_bg = false;
+>  	bool failed_cluster_refill = false;
+>  	bool failed_alloc = false;
+> +	bool use_cluster = true;
+>  	u64 ideal_cache_percent = 0;
+>  	u64 ideal_cache_offset = 0;
+>  
+> @@ -4807,16 +4817,26 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
+>  		return -ENOSPC;
+>  	}
+>  
+> +	/*
+> +	 * If the space info is for both data and metadata it means we have a
+> +	 * small filesystem and we can't use the clustering stuff.
+> +	 */
+> +	if ((space_info->flags & (BTRFS_BLOCK_GROUP_METADATA |
+> +				  BTRFS_BLOCK_GROUP_DATA)) ==
+> +	   ((BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_DATA)))
+> +		use_cluster = false;
+> +
+>  	if (orig_root->ref_cows || empty_size)
+>  		allowed_chunk_alloc = 1;
+>  
+> -	if (data & BTRFS_BLOCK_GROUP_METADATA) {
+> +	if (data & BTRFS_BLOCK_GROUP_METADATA && use_cluster) {
+>  		last_ptr = &root->fs_info->meta_alloc_cluster;
+>  		if (!btrfs_test_opt(root, SSD))
+>  			empty_cluster = 64 * 1024;
+>  	}
+>  
+> -	if ((data & BTRFS_BLOCK_GROUP_DATA) && btrfs_test_opt(root, SSD)) {
+> +	if ((data & BTRFS_BLOCK_GROUP_DATA) && use_cluster &&
+> +	    btrfs_test_opt(root, SSD)) {
+>  		last_ptr = &root->fs_info->data_alloc_cluster;
+>  	}
+>  
 
 
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

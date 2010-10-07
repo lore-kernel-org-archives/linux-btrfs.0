@@ -1,35 +1,26 @@
-From: "Jan Beulich" <JBeulich@novell.com>
-Subject: [PATCH] fix (latent?) memory corruption in btrfs_encode_fh()
-Date: Thu, 07 Oct 2010 10:28:44 +0100
-Message-ID: <4CADAEEC020000780001B32C@vpn.id2.novell.com>
+From: Roman Kapusta <roman.kapusta@gmail.com>
+Subject: performance of cp and mv between subvolumes
+Date: Thu, 7 Oct 2010 11:57:02 +0200
+Message-ID: <AANLkTi=yk9zZuF-tTOgGj1Vt2=WHOOH5BYyzX+3sBdTZ@mail.gmail.com>
+References: <AANLkTikwYXktHD7-H7LF+cn7zBpY8ZdDw+z=Zze1-C+w@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: <linux-btrfs@vger.kernel.org>
-To: "Chris Mason" <chris.mason@oracle.com>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTikwYXktHD7-H7LF+cn7zBpY8ZdDw+z=Zze1-C+w@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The earlier checks only cover the two smaller cases, and hence if the
-caller specified size is less than what's needed to fit
-parent_root_objectid unrelated memory may get overwritten.
+Shouldn't be possible to move or copy (COW) big files between two
+subvolumes of one btrfs filesystem instantly - without real data
+movement?
 
-Signed-off-by: Jan Beulich <jbeulich@novell.com>
+cp --reflink between subvolumes is returning error: cp: failed to
+clone `...': Invalid cross-device link
+mv between subvolumes is really slow - looks like it is moving all data
 
----
- fs/btrfs/export.c |    2 ++
- 1 file changed, 2 insertions(+)
+To circumvent this I can create new snapshot and then remove
+everything except files I want to copy/move to this new subvolume and
+I gained the same effect quite fast, but indirectly, is there some way
+how to do it directly when subvolume already exists?
 
---- linux-2.6.36-rc7/fs/btrfs/export.c
-+++ 2.6.36-rc7-btrfs-encode-fh/fs/btrfs/export.c
-@@ -46,6 +46,8 @@ static int btrfs_encode_fh(struct dentry
- 		spin_unlock(&dentry->d_lock);
- 
- 		if (parent_root_id != fid->root_objectid) {
-+			if (*max_len < BTRFS_FID_SIZE_CONNECTABLE_ROOT)
-+				return 255;
- 			fid->parent_root_objectid = parent_root_id;
- 			len = BTRFS_FID_SIZE_CONNECTABLE_ROOT;
- 			type = FILEID_BTRFS_WITH_PARENT_ROOT;
-
-
-
+Roman Kapusta

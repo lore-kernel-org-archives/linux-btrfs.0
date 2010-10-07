@@ -1,34 +1,35 @@
-From: liubo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: fix memory leak in free_log_tree
-Date: Thu, 07 Oct 2010 16:22:13 +0800
-Message-ID: <4CAD8335.8040707@cn.fujitsu.com>
+From: "Jan Beulich" <JBeulich@novell.com>
+Subject: [PATCH] fix (latent?) memory corruption in btrfs_encode_fh()
+Date: Thu, 07 Oct 2010 10:28:44 +0100
+Message-ID: <4CADAEEC020000780001B32C@vpn.id2.novell.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=US-ASCII
+Cc: <linux-btrfs@vger.kernel.org>
+To: "Chris Mason" <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-To avoid memory leak, log->commit_root should be free, too.
+The earlier checks only cover the two smaller cases, and hence if the
+caller specified size is less than what's needed to fit
+parent_root_objectid unrelated memory may get overwritten.
 
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+Signed-off-by: Jan Beulich <jbeulich@novell.com>
+
 ---
- fs/btrfs/tree-log.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+ fs/btrfs/export.c |    2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 2c3ed40..f2465f1 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -2124,6 +2124,7 @@ static void free_log_tree(struct btrfs_trans_handle *trans,
- 	}
+--- linux-2.6.36-rc7/fs/btrfs/export.c
++++ 2.6.36-rc7-btrfs-encode-fh/fs/btrfs/export.c
+@@ -46,6 +46,8 @@ static int btrfs_encode_fh(struct dentry
+ 		spin_unlock(&dentry->d_lock);
  
- 	free_extent_buffer(log->node);
-+	free_extent_buffer(log->commit_root);
- 	kfree(log);
- }
- 
--- 
-1.6.2.5
+ 		if (parent_root_id != fid->root_objectid) {
++			if (*max_len < BTRFS_FID_SIZE_CONNECTABLE_ROOT)
++				return 255;
+ 			fid->parent_root_objectid = parent_root_id;
+ 			len = BTRFS_FID_SIZE_CONNECTABLE_ROOT;
+ 			type = FILEID_BTRFS_WITH_PARENT_ROOT;
 
 
 

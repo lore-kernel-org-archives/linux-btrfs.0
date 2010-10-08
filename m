@@ -1,40 +1,65 @@
-From: <remi.urbillac@orange-ftgroup.com>
-Subject: Parity RAIDs in btrfs / RAID5 or RAID6
-Date: Fri, 8 Oct 2010 15:11:13 +0200
-Message-ID: <32648_1286543473_4CAF1871_32648_227736_1_EABF98D1E9AEBB48A74724A0F1D9E8C71D279D68F1@PUEXCB2A.nanterre.francetelecom.fr>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Slow link/Capacity changed + Kernel OOPS... possible hardware
+ issues, ideas?
+Date: Fri, 8 Oct 2010 10:53:19 -0400
+Message-ID: <20101008145319.GK4804@think>
+References: <AANLkTikcaAFvosjpnZpG9Rp8C1Q+nqb1=Uaftyzh5fXp@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=iso-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: C Anthony Risinger <anthony@extof.me>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTikcaAFvosjpnZpG9Rp8C1Q+nqb1=Uaftyzh5fXp@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all, 
+On Thu, Oct 07, 2010 at 10:07:47PM -0500, C Anthony Risinger wrote:
+> well after recently talking about how i haven't had any problems with
+> btrfs on several machines for ~1.5yrs...
+>=20
+> it happens :-(
+>=20
+> ) 2.6.35 kernel
+> ) btrfs on partition 2 of sda
+> ) no special mkfs or mount options used (except ssd)
+>=20
+> my fianc=E9's EEE S101 netbook, w/SSD, is failing hard.  when booting
+> normally (subvol=3D__active), no special boot options, it hangs at
+> udev... it all started today, when it suddenly froze during normal
+> use, and i was forced to hard power off.  it hasn't started up
+> correctly since.  using an Archlinux rescue usb disk (archboot), i
+> tried to tar + ssh backup the system to another machine (i can still
+> mount the btrfs disk); i tried a couple times, and it always transfer=
+s
+> ~1.3MB then pukes.  the last time i managed to get the kernel log
+> somehow, as it didn't lockup...
+>=20
+> can anyone point me in the right direction?  it looks like maybe the
+> SSD is failing to me (all the "slow link" and "capacity changed to 0"
+> stuff), but i really don't know.  i knew there was a reason they were
+> selling these things cheap on Newegg!!!
+>=20
+> i have backups of important data, but i'd rather not have to set the
+> damn thing up again; you know how it is :-), should have backed up th=
+e
+> whole system, whoopsie, next time.
+>=20
+> the mayhem starts with:
+>=20
+> "Oct  8 02:38:26 (none) kernel: btrfs bad tree block start 2463035801=
+6
+> 24630292480"
 
-I had a technical question about implementation of parity raid levels in btrfs, like RAID5 and or RAID6. 
+Ok, so the drive has decided to jumble up our blocks a little bit.  Thi=
+s
+message means we're finding the wrong data at a given offset.
 
-Considering WAFL, the NetApp filesystem, each block is 4Kb. 
-When we read 1 block, we have one 4Kb I/O on only one disk of the raid group.
-So the raid group has a "random read I/O power" of all the disks it is made from.
-Of course, WAFL was made form the beginning in order to use a NVRAM, which helps a lot. 
+I can help you copy things off but I don't think this FS is going to be
+good any longer.  Are you interested in copying the latest bits off or
+do you just want to cut your losses?
 
-ZFS, with raidz1/2/3, uses a different idea. One block can have different size, and, in order to prevent the "write hole" issue, it was decided to spread the block in all disks of the raid group. 
-Pros : we never have raid inconsistencies, even without NVRAM. 
-Cons: in random read I/O, raidz1/2/3 are very pool performer. One raid group has the "I/O power" of one disk. 
-Today, for a production storage solution, this can be a real issue. 
-
-My question was about the direction btrfs had/will choose.
-Of course, a solution like WAFL would be the best choice, in term of performance.  
-
-If someone knows something about this ... 
-
-Regards, 
-
-Remi Urbillac
-*********************************
-This message and any attachments (the "message") are confidential and intended solely for the addressees. 
-Any unauthorised use or dissemination is prohibited.
-Messages are susceptible to alteration. 
-France Telecom Group shall not be liable for the message if altered, changed or falsified.
-If you are not the intended addressee of this message, please cancel it immediately and inform the sender.
-********************************
-
+-chris
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

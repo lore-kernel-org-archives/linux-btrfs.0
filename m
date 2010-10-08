@@ -1,32 +1,40 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH 09/18] fs: rework icount to be a locked variable
-Date: Fri, 8 Oct 2010 09:16:54 -0400
-Message-ID: <20101008131654.GJ4804@think>
-References: <1286515292-15882-1-git-send-email-david@fromorbit.com>
- <1286515292-15882-10-git-send-email-david@fromorbit.com>
- <20101008072749.GB7831@lst.de>
- <20101008075001.GT4681@dastard>
- <20101008081714.GB1728@lst.de>
+From: <remi.urbillac@orange-ftgroup.com>
+Subject: Parity RAIDs in btrfs / RAID5 or RAID6
+Date: Fri, 8 Oct 2010 15:11:13 +0200
+Message-ID: <32648_1286543473_4CAF1871_32648_227736_1_EABF98D1E9AEBB48A74724A0F1D9E8C71D279D68F1@PUEXCB2A.nanterre.francetelecom.fr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Dave Chinner <david@fromorbit.com>, linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: Christoph Hellwig <hch@lst.de>
+Content-Type: text/plain; charset=US-ASCII
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101008081714.GB1728@lst.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 08, 2010 at 10:17:14AM +0200, Christoph Hellwig wrote:
-> On Fri, Oct 08, 2010 at 06:50:01PM +1100, Dave Chinner wrote:
-> > > There's no need to lock a normal 32-bit variable for readers.
-> > 
-> > Ok, but will need a memory barrier instead?
-> 
-> Isn't spin_unlock supposed to be one?  I'll need some of the locking
-> experts to shime in.
+Hi all, 
 
-Not really a locking expert, but the locking operations are supposed to
-have an implicit barrier.
+I had a technical question about implementation of parity raid levels in btrfs, like RAID5 and or RAID6. 
 
--chris
+Considering WAFL, the NetApp filesystem, each block is 4Kb. 
+When we read 1 block, we have one 4Kb I/O on only one disk of the raid group.
+So the raid group has a "random read I/O power" of all the disks it is made from.
+Of course, WAFL was made form the beginning in order to use a NVRAM, which helps a lot. 
+
+ZFS, with raidz1/2/3, uses a different idea. One block can have different size, and, in order to prevent the "write hole" issue, it was decided to spread the block in all disks of the raid group. 
+Pros : we never have raid inconsistencies, even without NVRAM. 
+Cons: in random read I/O, raidz1/2/3 are very pool performer. One raid group has the "I/O power" of one disk. 
+Today, for a production storage solution, this can be a real issue. 
+
+My question was about the direction btrfs had/will choose.
+Of course, a solution like WAFL would be the best choice, in term of performance.  
+
+If someone knows something about this ... 
+
+Regards, 
+
+Remi Urbillac
+*********************************
+This message and any attachments (the "message") are confidential and intended solely for the addressees. 
+Any unauthorised use or dissemination is prohibited.
+Messages are susceptible to alteration. 
+France Telecom Group shall not be liable for the message if altered, changed or falsified.
+If you are not the intended addressee of this message, please cancel it immediately and inform the sender.
+********************************
 

@@ -1,45 +1,56 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: system crash at mounting of btrfs
-Date: Fri, 8 Oct 2010 13:16:35 -0400
-Message-ID: <20101008171635.GS4804@think>
-References: <loom.20101007T155351-932@post.gmane.org>
+From: C Anthony Risinger <anthony@extof.me>
+Subject: Re: Slow link/Capacity changed + Kernel OOPS... possible hardware
+ issues, ideas?
+Date: Fri, 8 Oct 2010 18:28:32 -0500
+Message-ID: <AANLkTi=iq1Qovx99K7zjfKxPbrXtMoVBGExr3SuJnWD=@mail.gmail.com>
+References: <AANLkTikcaAFvosjpnZpG9Rp8C1Q+nqb1=Uaftyzh5fXp@mail.gmail.com>
+	<20101008145319.GK4804@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Gerhard Kulzer <gerhard@kulzer.net>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>,
+	C Anthony Risinger <anthony@extof.me>,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <loom.20101007T155351-932@post.gmane.org>
+In-Reply-To: <20101008145319.GK4804@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 07, 2010 at 02:12:33PM +0000, Gerhard Kulzer wrote:
-> I have a weird problem concerning 5 btrfs partitions on 3 different disks:
-> My system became slow and started to hang and go, so I shut it down and it 
-> hang totally whilst shutting down. With the sysrq shortcut I could kill it 
-> and restart.
-> 
-> Booting didn't work any more throwing me into a shell at initramfs.
+On Fri, Oct 8, 2010 at 9:53 AM, Chris Mason <chris.mason@oracle.com> wr=
+ote:
+> On Thu, Oct 07, 2010 at 10:07:47PM -0500, C Anthony Risinger wrote:
+>>
+>> the mayhem starts with:
+>>
+>> "Oct =A08 02:38:26 (none) kernel: btrfs bad tree block start 2463035=
+8016
+>> 24630292480"
+>
+> Ok, so the drive has decided to jumble up our blocks a little bit. =A0=
+This
+> message means we're finding the wrong data at a given offset.
+>
+> I can help you copy things off but I don't think this FS is going to =
+be
+> good any longer. =A0Are you interested in copying the latest bits off=
+ or
+> do you just want to cut your losses?
 
-Ok, I'd like to go through each of these btrfs partitions one at a time.
+yeah i thought about it a bit today... i _really_ appreciate the offer
+but i don't want to waste your time; there wasn't anything on it that
+i needed, no worries, i can just set up again, and this time i'll make
+sure i actually backup the whole system.
 
-> Here is a dmesg trace during booting from the CD, it not the crash yet.
-> 
-> [    7.782823] Btrfs loaded
-> [    7.786081] xor: automatically using best checksumming function: pIII_sse
-> [    7.804000]    pIII_sse  : 11626.000 MB/sec
-> [    7.804001] xor: using function: pIII_sse (11626.000 MB/sec)
-> [    7.805746] device-mapper: dm-raid45: initialized v0.2594b
-> [    7.851186] device fsid 3a4b4bc6c07de70b-2b32b3df70d2459f devid 1 transid
-> 407064 /dev/sda2
-> [    7.881078] Btrfs detected SSD devices, enabling SSD mode
-> [    7.923553] ------------[ cut here ]------------
-> [    7.923556] kernel BUG at /build/buildd/linux-2.6.35/fs/btrfs/tree-log.c:813!
-> [    7.923558] invalid opcode: 0000 [#1] SMP 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+however, do you think my SSD drive is bad (especially from the later
+errors)?  i copied /boot off the disk just fine ~20+ times; i thought
+if it was bad it would have randomly failed but it didn't.
 
-Once you see kernel BUG() that's the crash ;)
+how would you recommend that i test to see if the SSD is still good?
+since if it's not, i can probably get ASUS to replace it.
 
-This isn't from the btrfs scan, this is from mounting the FS.  Could you
-please mount the filesystems one at a time and see if they all fail or
-of it is just this one.
+thanks,
 
--chris
+C Anthony
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

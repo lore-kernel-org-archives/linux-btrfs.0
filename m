@@ -1,56 +1,37 @@
-From: C Anthony Risinger <anthony@extof.me>
-Subject: Re: Slow link/Capacity changed + Kernel OOPS... possible hardware
- issues, ideas?
-Date: Fri, 8 Oct 2010 18:28:32 -0500
-Message-ID: <AANLkTi=iq1Qovx99K7zjfKxPbrXtMoVBGExr3SuJnWD=@mail.gmail.com>
-References: <AANLkTikcaAFvosjpnZpG9Rp8C1Q+nqb1=Uaftyzh5fXp@mail.gmail.com>
-	<20101008145319.GK4804@think>
+From: Gerhard Kulzer <gerhard@kulzer.net>
+Subject: Re: system crash at mounting of btrfs
+Date: Sat, 9 Oct 2010 05:37:14 +0000 (UTC)
+Message-ID: <loom.20101009T073143-310@post.gmane.org>
+References: <loom.20101007T155351-932@post.gmane.org> <20101008171635.GS4804@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>,
-	C Anthony Risinger <anthony@extof.me>,
-	linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101008145319.GK4804@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 8, 2010 at 9:53 AM, Chris Mason <chris.mason@oracle.com> wr=
-ote:
-> On Thu, Oct 07, 2010 at 10:07:47PM -0500, C Anthony Risinger wrote:
->>
->> the mayhem starts with:
->>
->> "Oct =A08 02:38:26 (none) kernel: btrfs bad tree block start 2463035=
-8016
->> 24630292480"
->
-> Ok, so the drive has decided to jumble up our blocks a little bit. =A0=
-This
-> message means we're finding the wrong data at a given offset.
->
-> I can help you copy things off but I don't think this FS is going to =
-be
-> good any longer. =A0Are you interested in copying the latest bits off=
- or
-> do you just want to cut your losses?
+Chris Mason <chris.mason <at> oracle.com> writes:
 
-yeah i thought about it a bit today... i _really_ appreciate the offer
-but i don't want to waste your time; there wasn't anything on it that
-i needed, no worries, i can just set up again, and this time i'll make
-sure i actually backup the whole system.
+> > [    7.881078] Btrfs detected SSD devices, enabling SSD mode
+> > [    7.923553] ------------[ cut here ]------------
+> > [    7.923556] kernel BUG at /build/buildd/linux-2.6.35/fs/btrfs
+/tree-log.c:813!
+> > [    7.923558] invalid opcode: 0000 [#1] SMP 
+> ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 
+> Once you see kernel BUG() that's the crash ;)
+> 
+> This isn't from the btrfs scan, this is from mounting the FS.  Could you
+> please mount the filesystems one at a time and see if they all fail or
+> of it is just this one.
+> 
+> -chris
+> --
+Ahh big surprise, I can mount my other btrfs partitions (4 on 2 HDD) all of a
+sudden. 
+I wonder why, because I tried before and I got a crash with all of them. 
+The only difference now is that I took the SSD with the 5th partition out.
+I have a boot partition as ext4 on that same SSD drive which I can mount
+w/o problems. So I think it's not the SSD itself that is buggy.
 
-however, do you think my SSD drive is bad (especially from the later
-errors)?  i copied /boot off the disk just fine ~20+ times; i thought
-if it was bad it would have randomly failed but it didn't.
 
-how would you recommend that i test to see if the SSD is still good?
-since if it's not, i can probably get ASUS to replace it.
 
-thanks,
-
-C Anthony
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

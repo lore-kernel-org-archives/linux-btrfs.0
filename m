@@ -1,33 +1,45 @@
-From: Mike Hommey <mh@glandium.org>
-Subject: Re: Can you please define "snapshot" and "subvolume"?
-Date: Sat, 9 Oct 2010 10:15:37 +0200
-Message-ID: <20101009081537.GA4418@glandium.org>
-References: <AANLkTimBsVGS=eJvpdf2Sq_Dg76zQRgy=E+3089zQ9D4@mail.gmail.com>
- <20101007131823.GB1536@glandium.org>
- <AANLkTinG8EN8x0=GxXq2x4W1uy6cZS078QQ5zDPFeDW2@mail.gmail.com>
- <201010072313.18647.kreijack@libero.it>
+From: C Anthony Risinger <anthony@extof.me>
+Subject: Re: Slow link/Capacity changed + Kernel OOPS... possible hardware
+ issues, ideas?
+Date: Sat, 9 Oct 2010 05:30:59 -0500
+Message-ID: <AANLkTinx6bYPxRFP5eoT37igWJuyFMAiUMUqoVFRzVB+@mail.gmail.com>
+References: <AANLkTikcaAFvosjpnZpG9Rp8C1Q+nqb1=Uaftyzh5fXp@mail.gmail.com>
+	<20101008145319.GK4804@think>
+	<AANLkTi=iq1Qovx99K7zjfKxPbrXtMoVBGExr3SuJnWD=@mail.gmail.com>
+	<AANLkTimC140L6Wv23NTNHcffSmeqeHKcM0DH0D-fUMz8@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: Goffredo Baroncelli <kreijack@libero.it>
+To: Evert Vorster <evorster@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201010072313.18647.kreijack@libero.it>
+In-Reply-To: <AANLkTimC140L6Wv23NTNHcffSmeqeHKcM0DH0D-fUMz8@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 07, 2010 at 11:13:18PM +0200, Goffredo Baroncelli wrote:
-> On Thursday, 07 October, 2010, David Nicol wrote:
-> > On Thu, Oct 7, 2010 at 8:18 AM, Mike Hommey <mh@glandium.org> wrote:
-> > > BTW, it would be very useful to be able to turn existing directories
-> > > into subvolumes.
-> > 
-> > does a (link,unlink) move work across subvolumes?
-> 
-> The link across subvolumes is not allowable.  In the beginning it was 
-> possible, but that was source of bugs. See the thread "Hard link across 
-> subvolumes"
-> 
-> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg03286.html
+On Fri, Oct 8, 2010 at 11:00 PM, Evert Vorster <evorster@gmail.com> wro=
+te:
+> Hi there...
+>
+> I'm not an expert..... however, since you don't care about the data o=
+n
+> the SSD anymore, reformat it, and fill it up, then verify what you
+> have written.
+>
+> However, if the capacity has changed, would that not be enough reason
+> to have ASUS replace it?
 
-But couldn't cp --reflink be made to work?
+yeah, i suppose i could :-)
 
-Mike
+so i tried throwing ubuntu 10.10 on it (had archlinux previously), as
+i made a live USB disk so my fianc=E9 could use it to write a paper
+today/tomorrow, and sure enough it worked, no problems whatsoever.
+
+been running several hours now after install...  so i'm fairly
+convinced the SSD is still good enough, and i have no idea at this
+point what went wrong.  oh well.
+
+C Anthony
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

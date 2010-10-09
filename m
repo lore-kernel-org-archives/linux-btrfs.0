@@ -1,30 +1,33 @@
-From: David Nicol <davidnicol@gmail.com>
-Subject: revisiting "Hard link across subvolumes"
-Date: Sat, 9 Oct 2010 02:52:07 -0500
-Message-ID: <AANLkTim28O+6b86Cuoxgt5sht6KK2Xq=iwMNp46X1ceL@mail.gmail.com>
+From: Mike Hommey <mh@glandium.org>
+Subject: Re: Can you please define "snapshot" and "subvolume"?
+Date: Sat, 9 Oct 2010 10:15:37 +0200
+Message-ID: <20101009081537.GA4418@glandium.org>
+References: <AANLkTimBsVGS=eJvpdf2Sq_Dg76zQRgy=E+3089zQ9D4@mail.gmail.com>
+ <20101007131823.GB1536@glandium.org>
+ <AANLkTinG8EN8x0=GxXq2x4W1uy6cZS078QQ5zDPFeDW2@mail.gmail.com>
+ <201010072313.18647.kreijack@libero.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: kreijack@libero.it
+To: Goffredo Baroncelli <kreijack@libero.it>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201010072313.18647.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-could i-node numbers be made unique on a whole device, or somehow
-adjusted to avoid collisions, instead of simply disallowing this
-useful operation?
-
-On Thu, Oct 7, 2010 at 4:13 PM, Goffredo Baroncelli <kreijack@libero.it=
-> wrote:
-
-> The link across subvolumes is not allowable. =C2=A0In the beginning i=
-t was
-> possible, but that was source of bugs. See the thread "Hard link acro=
-ss
+On Thu, Oct 07, 2010 at 11:13:18PM +0200, Goffredo Baroncelli wrote:
+> On Thursday, 07 October, 2010, David Nicol wrote:
+> > On Thu, Oct 7, 2010 at 8:18 AM, Mike Hommey <mh@glandium.org> wrote:
+> > > BTW, it would be very useful to be able to turn existing directories
+> > > into subvolumes.
+> > 
+> > does a (link,unlink) move work across subvolumes?
+> 
+> The link across subvolumes is not allowable.  In the beginning it was 
+> possible, but that was source of bugs. See the thread "Hard link across 
 > subvolumes"
->
+> 
 > http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg03286.html
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+But couldn't cp --reflink be made to work?
+
+Mike

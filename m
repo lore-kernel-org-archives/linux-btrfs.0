@@ -1,30 +1,33 @@
-From: =?ISO-8859-1?Q?J=E9r=F4me_Poulin?= <jeromepoulin@gmail.com>
-Subject: Re: [PATCH][btrfs progs] Update/clean up btrfs help and man page
-Date: Sat, 9 Oct 2010 12:41:36 -0400
-Message-ID: <AANLkTin_Onxqeu2cnj7zCk879hEBTxAe-4eh-i1DvsB9@mail.gmail.com>
-References: <201009132124.09118.kreijack@libero.it> <4CB07234.1080102@gmail.com>
+From: David Nicol <davidnicol@gmail.com>
+Subject: Re: revisiting "Hard link across subvolumes"
+Date: Sat, 9 Oct 2010 14:26:47 -0500
+Message-ID: <AANLkTinmZPV=D8y_L0Tyj2XF-ysn8+xcLXOb3DRrbWm7@mail.gmail.com>
+References: <AANLkTim28O+6b86Cuoxgt5sht6KK2Xq=iwMNp46X1ceL@mail.gmail.com> <201010091544.19468.kreijack@libero.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=UTF-8
 Cc: linux-btrfs@vger.kernel.org
-To: kreijack@libero.it
+To: unlisted-recipients:; (no To-header on input)
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4CB07234.1080102@gmail.com>
+In-Reply-To: <201010091544.19468.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 13.09.2010 21:23, Goffredo Baroncelli wrote:
-> Hi all,
->
-> enclose you can find a patch which improve the help of the btrfs
-> commands and its man page. Regarding the help of the btrfs
-> command: - moved the "subvolume set-default" command in the
-> "subvolume" commands group - removed a wrong new line
->
-> Regarding the btrfs command man page: - renaming the command
-> "device balance" in "filesystem balance" (thanks to Andrea Phillipp
-> to highlight that) - adding the entry "subvolume find-new"
->
+when i have some time to work on this I will figure out a way to pull
+inodes from a larger pool or include the subvolume id at creation time
+in them or something so that the collisions go away. Surely it must be
+possible to prefix or suffix the inode number with a few bits that are
+per-subvolume unique.
 
-Could you also document the defragment switches? At the moment, they
-are only documented in the code, -c to compress, -f to force and -v
-for verbose (even if verbose does not add any output other than the
-version).
+On Sat, Oct 9, 2010 at 8:44 AM, Goffredo Baroncelli <kreijack@libero.it=
+> wrote:
+>
+> In case of a snapshot make sense to preserve the inode number.
+
+
+
+--=20
+l'=C3=A9galit=C3=A9 des droits pour les ambidextres
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

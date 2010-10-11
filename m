@@ -1,26 +1,61 @@
-From: Tomasz Chmielewski <mangoo@wpkg.org>
-Subject: Re: revisiting "Hard link across subvolumes"
-Date: Sun, 10 Oct 2010 21:53:59 +0200
-Message-ID: <4CB219D7.4080908@wpkg.org>
+From: Felipe Contreras <felipe.contreras@gmail.com>
+Subject: Horrible btrfs performance on cold cache
+Date: Mon, 11 Oct 2010 03:30:25 +0300
+Message-ID: <AANLkTin8mAaHz_PypS9j4vQ35WozgD==U493e3OW_sy2@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: Chris Mason <chris.mason@oracle.com>
+To: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> The link across subvolumes is not allowable.  In the beginning it was
->> possible, but that was source of bugs. See the thread "Hard link across
->> subvolumes"
->>
->> http://www.mail-archive.com/linux-btrfs <at> vger.kernel.org/msg03286.html
+Hi,
 
-Similar for cp --reflink across subvolumes - also won't work.
+I use btrfs on most of my volumes on my laptop, and I've always felt
+booting was very slow, but definitely sure is slow, is starting up
+Google Chrome:
 
-If btrfs is to support deduplication one day, it has to work across 
-subvolumes - otherwise, it won't be very useful.
+encrypted ext4: ~20s
+btrfs: ~2:11s
 
+I have tried different things to find out exactly what is the issue,
+but haven't quite found it yet.
+
+Here's some stuff I got from latencytop, not sure if would be helpful:
+
+4969.1ms
+sys_mmap_pgoff
+syscall_call
+(chrome)
+
+1139.9ms
+sync_page
+sync_page_killable
+__lock_page_killable
+generic_file_aio_read
+do_sync_read
+vfs_read
+sys_read
+sysenter_do_call
+(chrome)
+
+431.9ms
+sync_page
+wait_on_page_bit
+read_extent_buffer_pages
+btree_read_extent_buffer_pages
+read_tree_block
+read_block_for_search
+btrfs_search_slot
+lookup_inline_extent_backref
+__btrfs_free_extent
+run_clustered_refs
+btrfs_run_delayed_refs
+btrfs_commit_transaction
+(btrfs)
+
+Cheers.
 
 -- 
-Tomasz Chmielewski
-http://wpkg.org
-
+Felipe Contreras

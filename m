@@ -1,18 +1,38 @@
-From: Nathan Caza <mastercactapus@gmail.com>
-Subject: crc32c
-Date: Mon, 11 Oct 2010 03:47:58 -0500
-Message-ID: <AANLkTi=8xYEQ=pwo5faCMqD7gV=OLJxXTmfKvcDvp5i-@mail.gmail.com>
+From: Tomasz Chmielewski <mangoo@wpkg.org>
+Subject: converting one-disk btrfs into RAID-1?
+Date: Mon, 11 Oct 2010 14:11:47 +0200
+Message-ID: <4CB2FF03.8090608@wpkg.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I think I'm on the verge of getting all my data back; the only missing
-piece is to recalculate the crc checksum of my altered superblock and
-I'm having trouble finding the correct function/method; the data I am
-checksumming is (based on the sheet) 0x20 (directly after the
-checksum) to 0x32b + n (226 bytes); if im doing something wrong let me
-know; or if theres a quick/dirty way to get the right checksum
+Some Linux distributions started adding btrfs support in their 
+installers. Unfortunately, you can't specify your own mkfs.btrfs 
+parameters, so the best an installer can produce is a btrfs filesystem 
+made on one partition.
 
-..soo close...
+Is it possible to turn a 1-disk (partition) btrfs filesystem into RAID-1?
+
+Suppose you have your / btrfs filesystem on /dev/vda3, and there is a 
+free /dev/vdb3 partition which you would like to use to have btrfs 
+RAID-1 - what are the options to set it up like this?
+
+
+A command like:
+
+	btrfs device add /dev/vdb3 /
+
+will, I suppose, simply make RAID-0 and double your available storage - 
+are there any options to make it RAID-1?
+
+Or, will it be RAID-1 after I do:
+
+	btrfs filesystem balance /
+
+?
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org

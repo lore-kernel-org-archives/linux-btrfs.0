@@ -1,45 +1,34 @@
-From: Tomasz Torcz <tomek@pipebreaker.pl>
-Subject: Re: converting one-disk btrfs into RAID-1?
-Date: Tue, 12 Oct 2010 11:59:10 +0200
-Message-ID: <20101012095910.GA18076@mother.pipebreaker.pl>
-References: <4CB2FF03.8090608@wpkg.org>
- <m3ocb0irqj.fsf@pullcord.laptop.org>
- <i919v8$n91$1@dough.gmane.org>
- <20101012093431.GC30730@mother.pipebreaker.pl>
- <20101012094935.GA2338@selene>
+From: Leonidas Spyropoulos <artafinde@gmail.com>
+Subject: btrfs filesystem df not working
+Date: Tue, 12 Oct 2010 11:12:01 +0100
+Message-ID: <AANLkTik-414saDjSZFtEKWn4h7zSbbLBqa_0S+uf4SQR@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Hugo Mills <hugo-lkml@carfax.org.uk>
+Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101012094935.GA2338@selene>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 12, 2010 at 10:49:35AM +0100, Hugo Mills wrote:
-> On Tue, Oct 12, 2010 at 11:34:31AM +0200, Tomasz Torcz wrote:
-> > On Tue, Oct 12, 2010 at 11:32:07AM +0200, David Brown wrote:
-> > > Is it possible to view the raid levels of data and meta data for an
-> > > existing btrfs filesystem?  It's easy to pick them when creating the
-> > > system, but I couldn't find any way to view them afterwards.
-> > 
-> >   "btrfs f df" will show them, except for few kernel releases when the ioctl()
-> > was broken.
-> 
->    Umm...
-> 
-> hrm@vlad:~ $ sudo btrfs fi df /mnt/
-> [sudo] password for hrm: 
-> Data: total=303.01GB, used=302.16GB
-> Metadata: total=3.01GB, used=476.77MB
-> System: total=11.88MB, used=36.00KB
-> 
->    This is the latest btrfs git kernel and tools. What should I be
-> seeing here?
+The above command is not working on my system.
+Information:
+btrfs f df /media/data
 
- Do you have this patch applied?
-http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg06239.html
+Btrfs v0.19-35-g1b444cd
+
+Linux woofy 2.6.32-5-amd64 #1 SMP Fri Sep 17 21:50:19 UTC 2010 x86_64 GNU/Linux
+
+mount info:
+/dev/sdd2 on /media/data type btrfs (rw,noexec,nosuid,nodev)
+/media/data is a raid 0 filesystem
+
+$ btrfs filesystem show
+failed to read /dev/sr0
+Label: none  uuid: 1882b025-58e4-4287-98a3-9b772af0ad76
+	Total devices 2 FS bytes used 72.56GB
+	devid    2 size 74.53GB used 54.01GB path /dev/sdd2
+	devid    3 size 74.53GB used 54.01GB path /dev/sde2
+
+Any ideas?
+This is on an testing/unstable Debian system.
 
 -- 
-Tomasz Torcz                                                       72->|   80->|
-xmpp: zdzichubg@chrome.pl                                          72->|   80->|
-
+Caution: breathing may be hazardous to your health.

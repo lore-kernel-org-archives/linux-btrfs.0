@@ -1,36 +1,34 @@
-From: David Brown <david@westcontrol.com>
-Subject: Re: converting one-disk btrfs into RAID-1?
-Date: Tue, 12 Oct 2010 14:19:21 +0200
-Message-ID: <i91jor$2gs$1@dough.gmane.org>
-References: <4CB2FF03.8090608@wpkg.org> <m3ocb0irqj.fsf@pullcord.laptop.org> <i919v8$n91$1@dough.gmane.org> <20101012093431.GC30730@mother.pipebreaker.pl>
+From: Leonidas Spyropoulos <artafinde@gmail.com>
+Subject: Re: btrfs filesystem df not working
+Date: Tue, 12 Oct 2010 14:45:19 +0100
+Message-ID: <AANLkTinYN+b=5qU_+pC_O6OK96JXez8QQeifdzC8dkCK@mail.gmail.com>
+References: <AANLkTik-414saDjSZFtEKWn4h7zSbbLBqa_0S+uf4SQR@mail.gmail.com>
+	<AANLkTi=1VgjsZoJqzkp-zto3vAMUThh7TN054xQ1mpEu@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: cwillu <cwillu@cwillu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101012093431.GC30730@mother.pipebreaker.pl>
+In-Reply-To: <AANLkTi=1VgjsZoJqzkp-zto3vAMUThh7TN054xQ1mpEu@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/10/2010 11:34, Tomasz Torcz wrote:
-> On Tue, Oct 12, 2010 at 11:32:07AM +0200, David Brown wrote:
->> On 11/10/2010 19:06, Chris Ball wrote:
->>> Hi,
->>>
->>>     >   Is it possible to turn a 1-disk (partition) btrfs filesystem into
->>>     >   RAID-1?
->>>
->>> Not yet, but I'm pretty sure it's on the roadmap.
->>>
->>> - Chris.
->>
->> Is it possible to view the raid levels of data and meta data for an
->> existing btrfs filesystem?  It's easy to pick them when creating the
->> system, but I couldn't find any way to view them afterwards.
+On Tue, Oct 12, 2010 at 2:43 PM, cwillu <cwillu@cwillu.com> wrote:
+> On Tue, Oct 12, 2010 at 4:12 AM, Leonidas Spyropoulos
+> <artafinde@gmail.com> wrote:
+>> The above command is not working on my system.
+>> Information:
+>> btrfs f df /media/data
 >
->    "btrfs f df" will show them, except for few kernel releases when the ioctl()
-> was broken.
+> btrfs f isn't unique; =A0fi is the minimum to specify "filesystem"
 >
+I tried even with btrfs filesystem df /media/data
+and same results.
 
-I guess it's time to update my System Rescue CD to a version with the 
-btrfs command rather than just btrfsctl etc.  Thanks!
 
-
+--=20
+Caution: breathing may be hazardous to your health.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

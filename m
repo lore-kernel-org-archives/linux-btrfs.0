@@ -1,25 +1,27 @@
-From: Gerhard Kulzer <gerhard@kulzer.net>
-Subject: Re: system crash at mounting of btrfs
-Date: Tue, 12 Oct 2010 06:44:13 +0000 (UTC)
-Message-ID: <loom.20101012T083638-169@post.gmane.org>
-References: <loom.20101007T155351-932@post.gmane.org> <20101008171635.GS4804@think> <loom.20101009T073143-310@post.gmane.org> <loom.20101009T150327-437@post.gmane.org> <20101011235525.GK22691@think>
+From: David Brown <david@westcontrol.com>
+Subject: Re: converting one-disk btrfs into RAID-1?
+Date: Tue, 12 Oct 2010 11:32:07 +0200
+Message-ID: <i919v8$n91$1@dough.gmane.org>
+References: <4CB2FF03.8090608@wpkg.org> <m3ocb0irqj.fsf@pullcord.laptop.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <m3ocb0irqj.fsf@pullcord.laptop.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason <chris.mason <at> oracle.com> writes:
+On 11/10/2010 19:06, Chris Ball wrote:
+> Hi,
+>
+>     >  Is it possible to turn a 1-disk (partition) btrfs filesystem into
+>     >  RAID-1?
+>
+> Not yet, but I'm pretty sure it's on the roadmap.
+>
+> - Chris.
 
-
-> 
-> Ok, so tell me more about the SSD with the btrfs-of-death.  Is it a
-> multi-device SSD?
-> 
-> -chris
-> 
-Its a single device Intel X25-M G2 Postville 80GB
-
--Gerhard
+Is it possible to view the raid levels of data and meta data for an 
+existing btrfs filesystem?  It's easy to pick them when creating the 
+system, but I couldn't find any way to view them afterwards.
 
 

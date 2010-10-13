@@ -1,50 +1,26 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: btrfs filesystem df not working
-Date: Wed, 13 Oct 2010 11:08:10 -0400
-Message-ID: <20101013150237.GU22691@think>
-References: <AANLkTik-414saDjSZFtEKWn4h7zSbbLBqa_0S+uf4SQR@mail.gmail.com>
- <AANLkTi=1VgjsZoJqzkp-zto3vAMUThh7TN054xQ1mpEu@mail.gmail.com>
- <AANLkTinYN+b=5qU_+pC_O6OK96JXez8QQeifdzC8dkCK@mail.gmail.com>
- <20101013004332.GK22691@think>
- <AANLkTinta=KNbF2Poync8oSTCQSsjvFErBsmGUrkpGSg@mail.gmail.com>
+From: David Nicol <davidnicol@gmail.com>
+Subject: Re: the idea for improving the performance of b-tree search
+Date: Wed, 13 Oct 2010 10:22:30 -0500
+Message-ID: <AANLkTimC=HXPBMxcCL5dx0edN-Z+XzcHpe+G5Bi1hqoX@mail.gmail.com>
+References: <4CB57548.7000304@cn.fujitsu.com> <20101013112445.GP22691@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: cwillu <cwillu@cwillu.com>, linux-btrfs@vger.kernel.org
-To: Leonidas Spyropoulos <artafinde@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTinta=KNbF2Poync8oSTCQSsjvFErBsmGUrkpGSg@mail.gmail.com>
+In-Reply-To: <20101013112445.GP22691@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 13, 2010 at 10:52:57AM +0100, Leonidas Spyropoulos wrote:
-> On Wed, Oct 13, 2010 at 1:43 AM, Chris Mason <chris.mason@oracle.com>=
- wrote:
-> > On Tue, Oct 12, 2010 at 02:45:19PM +0100, Leonidas Spyropoulos wrot=
-e:
-> >> On Tue, Oct 12, 2010 at 2:43 PM, cwillu <cwillu@cwillu.com> wrote:
-> >> > On Tue, Oct 12, 2010 at 4:12 AM, Leonidas Spyropoulos
-> >> > <artafinde@gmail.com> wrote:
-> >> >> The above command is not working on my system.
-> >> >> Information:
-> >> >> btrfs f df /media/data
-> >> >
-> >> > btrfs f isn't unique; =A0fi is the minimum to specify "filesyste=
-m"
-> >> >
-> >> I tried even with btrfs filesystem df /media/data
-> >> and same results.
-> >
-> > Does strace give us any clues?
-> >
-> According to strace there is inappropriate ioctl for the device.
-> Here is the log
+On Wed, Oct 13, 2010 at 6:24 AM, Chris Mason <chris.mason@oracle.com> w=
+rote:
 
-I missed this before:
+> 3) Do delayed inode deletion. =C2=A0See above, but change the word in=
+sert
+> with delete ;)
 
-2.6.32-5-amd64
-
-The df ioctl was added after 2.6.32 (2.6.33 I think).
-
--chris
+And the reserved-for-the-future-but-not-used-yet flags field in the
+ioctl#21 control structure gets a use: bits to indicate for the
+completion of which of the potential delayed things the caller is
+waiting.
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

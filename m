@@ -1,37 +1,39 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: btrfs filesystem df not working
-Date: Tue, 12 Oct 2010 20:43:32 -0400
-Message-ID: <20101013004332.GK22691@think>
-References: <AANLkTik-414saDjSZFtEKWn4h7zSbbLBqa_0S+uf4SQR@mail.gmail.com>
- <AANLkTi=1VgjsZoJqzkp-zto3vAMUThh7TN054xQ1mpEu@mail.gmail.com>
- <AANLkTinYN+b=5qU_+pC_O6OK96JXez8QQeifdzC8dkCK@mail.gmail.com>
+Subject: Re: system crash at mounting of btrfs
+Date: Tue, 12 Oct 2010 20:49:15 -0400
+Message-ID: <20101013004915.GM22691@think>
+References: <loom.20101007T155351-932@post.gmane.org>
+ <20101008171635.GS4804@think>
+ <loom.20101009T073143-310@post.gmane.org>
+ <loom.20101009T150327-437@post.gmane.org>
+ <20101011235525.GK22691@think>
+ <loom.20101012T083638-169@post.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: cwillu <cwillu@cwillu.com>, linux-btrfs@vger.kernel.org
-To: Leonidas Spyropoulos <artafinde@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Gerhard Kulzer <gerhard@kulzer.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTinYN+b=5qU_+pC_O6OK96JXez8QQeifdzC8dkCK@mail.gmail.com>
+In-Reply-To: <loom.20101012T083638-169@post.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 12, 2010 at 02:45:19PM +0100, Leonidas Spyropoulos wrote:
-> On Tue, Oct 12, 2010 at 2:43 PM, cwillu <cwillu@cwillu.com> wrote:
-> > On Tue, Oct 12, 2010 at 4:12 AM, Leonidas Spyropoulos
-> > <artafinde@gmail.com> wrote:
-> >> The above command is not working on my system.
-> >> Information:
-> >> btrfs f df /media/data
-> >
-> > btrfs f isn't unique; =A0fi is the minimum to specify "filesystem"
-> >
-> I tried even with btrfs filesystem df /media/data
-> and same results.
+On Tue, Oct 12, 2010 at 06:44:13AM +0000, Gerhard Kulzer wrote:
+> Chris Mason <chris.mason <at> oracle.com> writes:
+> 
+> 
+> > 
+> > Ok, so tell me more about the SSD with the btrfs-of-death.  Is it a
+> > multi-device SSD?
+> > 
+> > -chris
+> > 
+> Its a single device Intel X25-M G2 Postville 80GB
 
-Does strace give us any clues?
+Ok, if you can confirm this is the very first oops you see:
+
+[    7.923556] kernel BUG at /build/buildd/linux-2.6.35/fs/btrfs/tree-log.c:813!
+
+I've got a utility that will wipe the log and get you mountable again.
+The intel drive should definitely support barriers, are you doing
+anything with LVM or raid or dm-crypt on top of it?
 
 -chris
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

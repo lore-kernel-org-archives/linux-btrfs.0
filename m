@@ -1,51 +1,36 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: the idea for improving the performance of b-tree search
-Date: Wed, 13 Oct 2010 07:24:45 -0400
-Message-ID: <20101013112445.GP22691@think>
-References: <4CB57548.7000304@cn.fujitsu.com>
+From: Erik Hoppe <amiga600dev@yahoo.de>
+Subject: Re: system crash at mounting of btrfs
+Date: Wed, 13 Oct 2010 12:33:12 +0000 (UTC)
+Message-ID: <loom.20101013T143053-455@post.gmane.org>
+References: <loom.20101007T155351-932@post.gmane.org> <20101008171635.GS4804@think> <loom.20101009T073143-310@post.gmane.org> <loom.20101009T150327-437@post.gmane.org> <20101011235525.GK22691@think> <loom.20101012T083638-169@post.gmane.org> <20101013004915.GM22691@think>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Miao Xie <miaox@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4CB57548.7000304@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 13, 2010 at 05:00:56PM +0800, Miao Xie wrote:
-> Hi, Chris
-> 
-> When I investigated the performance problem of file creation/deletion, I found
-> btrfs spends lots of time in the b-tree search, so I consider whether we can use
-> the latest search result in the same transaction or not.
-> 
-> My idea follows:
-> we can add mask or time stamp into b-tree's node and leaf, then we know whether
-> the node/leaf is COWed by the other task. If not, we check if the node/leaf of
-> the latest search result contains the key that we want to search. By this way,
-> we can reuse the latest search result in the same transaction and reduce the CPU
-> time spent in the b-tree search.
-> 
-> Chris, how do you think about it?
+Hi There,
 
-Do your results show which btree searches are happening most often?  My
-impression is that we are usually searching for inodes, and I see 3
-different optimizations that are likely to help:
+I got the same problem (freezing kernel while mounting btfs disk). My block 
+device is a 8gb sdcard, it should be physical intact cause 
+i can dd the card into a file without problems.
+Here is what i did so far:
+mount mmcblk0 under 2.6.35 (freeze)
+mount the diskdumped image as a loop device on another system using 2.6.35
+and current git kernel (freeze)
 
-1) cache the block number of the leaf where the inode lives in the
-inode, or perhaps the whole path down from the root.
+so i'm pretty much lost a.t.m.
 
-2) Do delayed insertion.  Each time we create a file we do a
-number of btree insertions.  One for the inode+name backrefs,
-one for any xattrs, two for the directory entries, one for the directory
-inode update.
+I'm willing to send the metadata image (instructions please) and Chris
+could you please send me your wipe-log tool
+so i can maybee restore my data files ;)
+ 
 
-The directory name index is especially CPU intensive because it goes in
-hash order, which will mean a lot of btree balances.
+greetings
 
-Batching these insertions, even in groups of 4 or 8 will make a big
-difference.
+erik
 
-3) Do delayed inode deletion.  See above, but change the word insert
-with delete ;)
 
--chris
+
+
+

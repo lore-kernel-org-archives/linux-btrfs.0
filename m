@@ -1,25 +1,37 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH 2/2] btrfs: Switching the extent buffer rbtree into a
- unlock radix tree
-Date: Tue, 12 Oct 2010 14:43:23 -0400
-Message-ID: <20101012184323.GU22691@think>
-References: <4CB42DB2.5080906@cn.fujitsu.com>
+Subject: Re: btrfs filesystem df not working
+Date: Tue, 12 Oct 2010 20:43:32 -0400
+Message-ID: <20101013004332.GK22691@think>
+References: <AANLkTik-414saDjSZFtEKWn4h7zSbbLBqa_0S+uf4SQR@mail.gmail.com>
+ <AANLkTi=1VgjsZoJqzkp-zto3vAMUThh7TN054xQ1mpEu@mail.gmail.com>
+ <AANLkTinYN+b=5qU_+pC_O6OK96JXez8QQeifdzC8dkCK@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Miao Xie <miaox@cn.fujitsu.com>
+Content-Type: text/plain; charset=iso-8859-1
+Cc: cwillu <cwillu@cwillu.com>, linux-btrfs@vger.kernel.org
+To: Leonidas Spyropoulos <artafinde@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4CB42DB2.5080906@cn.fujitsu.com>
+In-Reply-To: <AANLkTinYN+b=5qU_+pC_O6OK96JXez8QQeifdzC8dkCK@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 12, 2010 at 05:43:14PM +0800, Miao Xie wrote:
-> This patch reduces the CPU time spent in the extent buffer search by using the
-> radix tree instead of the rbtree and using the rcu lock instead of the spin
-> lock.
-> 
-> I did a quick test by the benchmark tool[1] and found the patch improve the
-> file creation/deletion performance problem that I have reported[2].
+On Tue, Oct 12, 2010 at 02:45:19PM +0100, Leonidas Spyropoulos wrote:
+> On Tue, Oct 12, 2010 at 2:43 PM, cwillu <cwillu@cwillu.com> wrote:
+> > On Tue, Oct 12, 2010 at 4:12 AM, Leonidas Spyropoulos
+> > <artafinde@gmail.com> wrote:
+> >> The above command is not working on my system.
+> >> Information:
+> >> btrfs f df /media/data
+> >
+> > btrfs f isn't unique; =A0fi is the minimum to specify "filesystem"
+> >
+> I tried even with btrfs filesystem df /media/data
+> and same results.
 
-Thanks, this is much smaller than I expected.  I'll hammer on it here.
+Does strace give us any clues?
 
 -chris
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

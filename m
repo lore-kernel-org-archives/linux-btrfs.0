@@ -1,32 +1,36 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: [PATCH 2/2] btrfs: Switching the extent buffer rbtree into a
- unlock radix tree
-Date: Wed, 13 Oct 2010 10:17:22 +0800
-Message-ID: <4CB516B2.10809@cn.fujitsu.com>
-References: <4CB42DB2.5080906@cn.fujitsu.com> <20101012184323.GU22691@think>
-Reply-To: miaox@cn.fujitsu.com
+From: Nikko <nikko.he@oracle.com>
+Subject: Re: One question about btrfs
+Date: Wed, 13 Oct 2010 10:56:43 +0800
+Message-ID: <4CB51FEB.8070006@oracle.com>
+References: <4CB2CAE1.2030807@oracle.com> <yq17hhnpclc.fsf@sermon.lab.mkp.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: Chris Mason <chris.mason@oracle.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
+Cc: linux-btrfs@vger.kernel.org
+To: "Martin K. Petersen" <martin.petersen@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101012184323.GU22691@think>
+In-Reply-To: <yq17hhnpclc.fsf@sermon.lab.mkp.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 12 Oct 2010 14:43:23 -0400, Chris Mason wrote:
-> On Tue, Oct 12, 2010 at 05:43:14PM +0800, Miao Xie wrote:
->> This patch reduces the CPU time spent in the extent buffer search by using the
->> radix tree instead of the rbtree and using the rcu lock instead of the spin
->> lock.
->>
->> I did a quick test by the benchmark tool[1] and found the patch improve the
->> file creation/deletion performance problem that I have reported[2].
+On 10/13/10 01:03 AM, Martin K. Petersen wrote:
+>>>>>> "Nikko" == Nikko<nikko.he@oracle.com>  writes:
+>>>>>>              
+> Nikko>  I have a question about btrfs, have you people integrated Oracle
+> Nikko>  DIX/T10 DIF into btrfs?
 >
-> Thanks, this is much smaller than I expected.  I'll hammer on it here.
+> Not yet.  Right now btrfs relies on the block layer to add the integrity
+> metadata.
+>
+>
+> Nikko>  If no, do you plan to do that? And what's the reason?
+>
+> Yes, the reason being that we want applications to be able to pass the
+> integrity metadata down from userland.
+>
+>    
+Hi Martin,
 
-By the way, I found we had 16T limit on 32-bits machines, because the page cache
-of 32-bits machines can only manage 16T data, and the btrfs metadata is cached
-in the page cache.
+Thanks for the guide!
 
-Regards
-Miao
+Regards,
+Nikko
+

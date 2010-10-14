@@ -1,70 +1,27 @@
-From: Leonidas Spyropoulos <artafinde@gmail.com>
-Subject: Re: btrfs filesystem df not working
-Date: Thu, 14 Oct 2010 12:45:59 +0100
-Message-ID: <AANLkTimRTycuHq6aWir=ZJUAHKc1rb6QXteLG7sMN6ge@mail.gmail.com>
-References: <AANLkTik-414saDjSZFtEKWn4h7zSbbLBqa_0S+uf4SQR@mail.gmail.com>
-	<AANLkTi=1VgjsZoJqzkp-zto3vAMUThh7TN054xQ1mpEu@mail.gmail.com>
-	<AANLkTinYN+b=5qU_+pC_O6OK96JXez8QQeifdzC8dkCK@mail.gmail.com>
-	<20101013004332.GK22691@think>
-	<AANLkTinta=KNbF2Poync8oSTCQSsjvFErBsmGUrkpGSg@mail.gmail.com>
-	<20101013150237.GU22691@think>
+From: Xavier Nicollet <nicollet@jeru.org>
+Subject: Re: Metadata size
+Date: Thu, 14 Oct 2010 15:42:21 +0200
+Message-ID: <20101014134220.GC13205@jeru.org>
+References: <20101014112058.GA2315@selene> <20101014113239.GB2315@selene>
+Reply-To: nicollet@jeru.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>,
-	Leonidas Spyropoulos <artafinde@gmail.com>,
-	cwillu <cwillu@cwillu.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=iso-8859-15
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101013150237.GU22691@think>
+In-Reply-To: <20101014113239.GB2315@selene>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 13, 2010 at 4:08 PM, Chris Mason <chris.mason@oracle.com> w=
-rote:
-> On Wed, Oct 13, 2010 at 10:52:57AM +0100, Leonidas Spyropoulos wrote:
->> On Wed, Oct 13, 2010 at 1:43 AM, Chris Mason <chris.mason@oracle.com=
-> wrote:
->> > On Tue, Oct 12, 2010 at 02:45:19PM +0100, Leonidas Spyropoulos wro=
-te:
->> >> On Tue, Oct 12, 2010 at 2:43 PM, cwillu <cwillu@cwillu.com> wrote=
-:
->> >> > On Tue, Oct 12, 2010 at 4:12 AM, Leonidas Spyropoulos
->> >> > <artafinde@gmail.com> wrote:
->> >> >> The above command is not working on my system.
->> >> >> Information:
->> >> >> btrfs f df /media/data
->> >> >
->> >> > btrfs f isn't unique; =A0fi is the minimum to specify "filesyst=
-em"
->> >> >
->> >> I tried even with btrfs filesystem df /media/data
->> >> and same results.
->> >
->> > Does strace give us any clues?
->> >
->> According to strace there is inappropriate ioctl for the device.
->> Here is the log
->
-> I missed this before:
->
-> 2.6.32-5-amd64
->
-> The df ioctl was added after 2.6.32 (2.6.33 I think).
+Le 14 octobre 2010 =E0 12:32, Hugo Mills a =E9crit:
+>    cwillu on IRC just answered this for me: it's mostly checksums.
+>=20
+>    Also, it seems that this isn't representative. It's considerably
+> lower than normal. :)
 
-So in debian squeeze/unstable which is currently on 2.6.32 (and won't
-change any sooner) I cannot use btrfs. All I can do is try
-experimental kernels?
-My question though is, if I use experimental kernels can I then load
-an "old" kernel and still use the btrfs filesystem?
-Or the newer kernels write anything specials on ionodes which the old
-ones cannot read?
-
->
-> -chris
->
-
-
+Your metadata might be stored twice depending on the options you used
+when doing mkfs.
 
 --=20
-Caution: breathing may be hazardous to your health.
+Xavier Nicollet
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

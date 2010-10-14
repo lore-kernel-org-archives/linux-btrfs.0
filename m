@@ -1,73 +1,99 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: btrfs filesystem df not working
-Date: Thu, 14 Oct 2010 12:42:30 -0400
-Message-ID: <20101014164230.GX22691@think>
-References: <AANLkTik-414saDjSZFtEKWn4h7zSbbLBqa_0S+uf4SQR@mail.gmail.com>
- <AANLkTi=1VgjsZoJqzkp-zto3vAMUThh7TN054xQ1mpEu@mail.gmail.com>
- <AANLkTinYN+b=5qU_+pC_O6OK96JXez8QQeifdzC8dkCK@mail.gmail.com>
- <20101013004332.GK22691@think>
- <AANLkTinta=KNbF2Poync8oSTCQSsjvFErBsmGUrkpGSg@mail.gmail.com>
- <20101013150237.GU22691@think>
- <AANLkTimRTycuHq6aWir=ZJUAHKc1rb6QXteLG7sMN6ge@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: cwillu <cwillu@cwillu.com>, linux-btrfs@vger.kernel.org
-To: Leonidas Spyropoulos <artafinde@gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: fix df regression
+Date: Thu, 14 Oct 2010 14:54:03 -0400
+Message-ID: <1287082443-6484-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimRTycuHq6aWir=ZJUAHKc1rb6QXteLG7sMN6ge@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 14, 2010 at 12:45:59PM +0100, Leonidas Spyropoulos wrote:
-> On Wed, Oct 13, 2010 at 4:08 PM, Chris Mason <chris.mason@oracle.com>=
- wrote:
-> > On Wed, Oct 13, 2010 at 10:52:57AM +0100, Leonidas Spyropoulos wrot=
-e:
-> >> On Wed, Oct 13, 2010 at 1:43 AM, Chris Mason <chris.mason@oracle.c=
-om> wrote:
-> >> > On Tue, Oct 12, 2010 at 02:45:19PM +0100, Leonidas Spyropoulos w=
-rote:
-> >> >> On Tue, Oct 12, 2010 at 2:43 PM, cwillu <cwillu@cwillu.com> wro=
-te:
-> >> >> > On Tue, Oct 12, 2010 at 4:12 AM, Leonidas Spyropoulos
-> >> >> > <artafinde@gmail.com> wrote:
-> >> >> >> The above command is not working on my system.
-> >> >> >> Information:
-> >> >> >> btrfs f df /media/data
-> >> >> >
-> >> >> > btrfs f isn't unique; =A0fi is the minimum to specify "filesy=
-stem"
-> >> >> >
-> >> >> I tried even with btrfs filesystem df /media/data
-> >> >> and same results.
-> >> >
-> >> > Does strace give us any clues?
-> >> >
-> >> According to strace there is inappropriate ioctl for the device.
-> >> Here is the log
-> >
-> > I missed this before:
-> >
-> > 2.6.32-5-amd64
-> >
-> > The df ioctl was added after 2.6.32 (2.6.33 I think).
->=20
-> So in debian squeeze/unstable which is currently on 2.6.32 (and won't
-> change any sooner) I cannot use btrfs. All I can do is try
-> experimental kernels?
+The new ENOSPC stuff breaks out the raid types which breaks the way we were
+reporting df to the system.  This fixes it back so that Available is the total
+space available to data and used is the actual bytes used by the filesystem.
+This means that Available is Total - data used - all of the metadata space.
+Thanks,
 
-Or backport the changes, yes.
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/ctree.h       |    5 ++++-
+ fs/btrfs/extent-tree.c |    2 ++
+ fs/btrfs/super.c       |   11 +++++++++--
+ 3 files changed, 15 insertions(+), 3 deletions(-)
 
-> My question though is, if I use experimental kernels can I then load
-> an "old" kernel and still use the btrfs filesystem?
-> Or the newer kernels write anything specials on ionodes which the old
-> ones cannot read?
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index e25e96e..4833a01 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -696,7 +696,8 @@ struct btrfs_block_group_item {
+ struct btrfs_space_info {
+ 	u64 flags;
+ 
+-	u64 total_bytes;	/* total bytes in the space */
++	u64 total_bytes;	/* total bytes in the space,
++				   this doesn't take mirrors into account */
+ 	u64 bytes_used;		/* total bytes used,
+ 				   this does't take mirrors into account */
+ 	u64 bytes_pinned;	/* total bytes pinned, will be freed when the
+@@ -708,6 +709,8 @@ struct btrfs_space_info {
+ 	u64 bytes_may_use;	/* number of bytes that may be used for
+ 				   delalloc/allocations */
+ 	u64 disk_used;		/* total bytes used on disk */
++	u64 disk_total;		/* total bytes on disk, takes mirrors into
++				   account */
+ 
+ 	int full;		/* indicates that we cannot allocate any more
+ 				   chunks for this space */
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 3f8aee5..72c3d5f 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2982,6 +2982,7 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
+ 	if (found) {
+ 		spin_lock(&found->lock);
+ 		found->total_bytes += total_bytes;
++		found->disk_total += total_bytes * factor;
+ 		found->bytes_used += bytes_used;
+ 		found->disk_used += bytes_used * factor;
+ 		found->full = 0;
+@@ -3001,6 +3002,7 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
+ 				BTRFS_BLOCK_GROUP_SYSTEM |
+ 				BTRFS_BLOCK_GROUP_METADATA);
+ 	found->total_bytes = total_bytes;
++	found->disk_total = total_bytes * factor;
+ 	found->bytes_used = bytes_used;
+ 	found->disk_used = bytes_used * factor;
+ 	found->bytes_pinned = 0;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 1b92f57..0570211 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -729,18 +729,25 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+ 	struct list_head *head = &root->fs_info->space_info;
+ 	struct btrfs_space_info *found;
+ 	u64 total_used = 0;
++	u64 total_used_data = 0;
+ 	int bits = dentry->d_sb->s_blocksize_bits;
+ 	__be32 *fsid = (__be32 *)root->fs_info->fsid;
+ 
+ 	rcu_read_lock();
+-	list_for_each_entry_rcu(found, head, list)
++	list_for_each_entry_rcu(found, head, list) {
++		if (found->flags & (BTRFS_BLOCK_GROUP_METADATA |
++				    BTRFS_BLOCK_GROUP_SYSTEM))
++			total_used_data += found->disk_total;
++		else
++			total_used_data += found->disk_used;
+ 		total_used += found->disk_used;
++	}
+ 	rcu_read_unlock();
+ 
+ 	buf->f_namelen = BTRFS_NAME_LEN;
+ 	buf->f_blocks = btrfs_super_total_bytes(disk_super) >> bits;
+ 	buf->f_bfree = buf->f_blocks - (total_used >> bits);
+-	buf->f_bavail = buf->f_bfree;
++	buf->f_bavail = buf->f_blocks - (total_used_data >> bits);
+ 	buf->f_bsize = dentry->d_sb->s_blocksize;
+ 	buf->f_type = BTRFS_SUPER_MAGIC;
+ 
+-- 
+1.6.6.1
 
-We haven't made any of those changes, you'll be fine going back and
-forth.
-
--chris
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

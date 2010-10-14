@@ -1,56 +1,72 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: Re: Metadata size
-Date: Thu, 14 Oct 2010 12:32:39 +0100
-Message-ID: <20101014113239.GB2315@selene>
-References: <20101014112058.GA2315@selene>
+From: Leonidas Spyropoulos <artafinde@gmail.com>
+Subject: Re: btrfs filesystem df not working
+Date: Thu, 14 Oct 2010 12:45:59 +0100
+Message-ID: <AANLkTimRTycuHq6aWir=ZJUAHKc1rb6QXteLG7sMN6ge@mail.gmail.com>
+References: <AANLkTik-414saDjSZFtEKWn4h7zSbbLBqa_0S+uf4SQR@mail.gmail.com>
+	<AANLkTi=1VgjsZoJqzkp-zto3vAMUThh7TN054xQ1mpEu@mail.gmail.com>
+	<AANLkTinYN+b=5qU_+pC_O6OK96JXez8QQeifdzC8dkCK@mail.gmail.com>
+	<20101013004332.GK22691@think>
+	<AANLkTinta=KNbF2Poync8oSTCQSsjvFErBsmGUrkpGSg@mail.gmail.com>
+	<20101013150237.GU22691@think>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="NMuMz9nt05w80d4+"
-To: Hugo Mills <hugo-lkml@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>,
+	Leonidas Spyropoulos <artafinde@gmail.com>,
+	cwillu <cwillu@cwillu.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101014112058.GA2315@selene>
+In-Reply-To: <20101013150237.GU22691@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, Oct 13, 2010 at 4:08 PM, Chris Mason <chris.mason@oracle.com> w=
+rote:
+> On Wed, Oct 13, 2010 at 10:52:57AM +0100, Leonidas Spyropoulos wrote:
+>> On Wed, Oct 13, 2010 at 1:43 AM, Chris Mason <chris.mason@oracle.com=
+> wrote:
+>> > On Tue, Oct 12, 2010 at 02:45:19PM +0100, Leonidas Spyropoulos wro=
+te:
+>> >> On Tue, Oct 12, 2010 at 2:43 PM, cwillu <cwillu@cwillu.com> wrote=
+:
+>> >> > On Tue, Oct 12, 2010 at 4:12 AM, Leonidas Spyropoulos
+>> >> > <artafinde@gmail.com> wrote:
+>> >> >> The above command is not working on my system.
+>> >> >> Information:
+>> >> >> btrfs f df /media/data
+>> >> >
+>> >> > btrfs f isn't unique; =A0fi is the minimum to specify "filesyst=
+em"
+>> >> >
+>> >> I tried even with btrfs filesystem df /media/data
+>> >> and same results.
+>> >
+>> > Does strace give us any clues?
+>> >
+>> According to strace there is inappropriate ioctl for the device.
+>> Here is the log
+>
+> I missed this before:
+>
+> 2.6.32-5-amd64
+>
+> The df ioctl was added after 2.6.32 (2.6.33 I think).
 
---NMuMz9nt05w80d4+
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+So in debian squeeze/unstable which is currently on 2.6.32 (and won't
+change any sooner) I cannot use btrfs. All I can do is try
+experimental kernels?
+My question though is, if I use experimental kernels can I then load
+an "old" kernel and still use the btrfs filesystem?
+Or the newer kernels write anything specials on ionodes which the old
+ones cannot read?
 
-On Thu, Oct 14, 2010 at 12:20:58PM +0100, Hugo Mills wrote:
->    By my calculations, that's something on the order of 17.5K per
-> filesystem object. This is mostly media files, plus some small
-> metadata files. 17.5K on average seems very large to me. I have quite
-> a bit of space on this system, so I'm not too concerned, but I wasn't
-> sure if this kind of figure was representative or not.
+>
+> -chris
+>
 
-   cwillu on IRC just answered this for me: it's mostly checksums.
 
-   Also, it seems that this isn't representative. It's considerably
-lower than normal. :)
 
-   Question answered, all makes sense again.
-
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-   --- Trouble rather the tiger in his lair than the sage amongst ---    
-        his books for to you kingdoms and their armies are mighty        
-        and enduring,  but to him they are but toys of the moment        
-              to be overturned by the flicking of a finger.              
-
---NMuMz9nt05w80d4+
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFMtupXIKyzvlFcI40RAgdkAJ0Xpkpg64art4l+4IxaJIVTgl2VCwCdEHnk
-46FjHEmi3OgmHZpATGUPqyk=
-=us4z
------END PGP SIGNATURE-----
-
---NMuMz9nt05w80d4+--
+--=20
+Caution: breathing may be hazardous to your health.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

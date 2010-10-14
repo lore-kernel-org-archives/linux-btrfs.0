@@ -1,39 +1,48 @@
 From: David Nicol <davidnicol@gmail.com>
-Subject: PATCH zeroing ioctl21 flags progs-side
-Date: Thu, 14 Oct 2010 11:17:04 -0500
-Message-ID: <AANLkTikJVZ+a78tDumtZOTD-i_r9Ge8EgjEjta_Ja5tD@mail.gmail.com>
+Subject: PATCH added flags to cleaner-wait structure kernel-side
+Date: Thu, 14 Oct 2010 11:34:54 -0500
+Message-ID: <AANLkTinP7BK_x_4cep5=yZamXgmiaadBuNBe5Y4gEBj_@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 To: BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is once again the whole patch starting from
-075587c96c2f39e227847d13ca0ef305b13cd7d3
-(Chris Mason, April 06 2010)
+This is once again based on
+2ebc3464781ad24474abcbd2274e6254689853b5
+(Dan Rosenberg July 19 2010)
 
-The difference between this one and yesterday's is:
-1: the file descriptor leak is corrected
-2: the ioctl21 flags field is explicitly zeroed, for forwards compatibi=
-lity.
+The delta between this and the previous ioctl#21 kernel patch I posted =
+is that
+this one defines the flags field in the arguments structure, and has a
+comment about the intended semantics of it, and tests for the low bit
+to the effect that if the flags field is set to 1 the ioctl returns
+immediately; also if it is set >1 that is an EINVAL because this
+version of the kernel doesn't know that flag, and it is better to
+safely full-stop instead of ignoring what might be an important flag.
 
-The intended semantics of the flags field is, zeroes mean, wait for
-everthing we know how to wait for using ioctl#21 -- a 1 will mean,
-ignore completion of
-that set of deferred tasks, when there are other deferred tasks
-ioctl#21 can be used to wait for.
+Or is it a better practice to ignore unexpected fields in such things?
+I think the proposed flag semantics as described in the introduction
+to the latest revision of the prog-side code might make it okay to
+ignore unexpected fields instead of refusing.
 
-Also a 1 in a position associated with a reprioritization directive
-would mean to do something, and a zero would mean, do nothing
+The scenario where it matters is, running a newer, future ioctl21
+invoker that knows about some future flag, against an old (such as
+current, after applying this patch) kernel that doesn't.
 
-so all-zeroes is supposed to mean, into a possible future where
-ioctl#21 does more, wait for completion of everything we know about,
-and don't do any other optional anything.
+=46ail or ignore? Or, do I revise it again to have two flags, one to
+ignore the one defined completion test, and the other to specify
+ignore (0) or fail (1) semantics for unrecognized flag bits? Then I'd
+have to add a command line arg for that, possibly
+"--no-forward-compat" which would set the
+fail-on-unrecognized-flag-bit flag.
+
+My crystal ball might need a little adjustment, I don't know.
 
 
 ---------- Forwarded message ----------
-Date: Thu, Oct 14, 2010 at 9:32 AM
-Subject: zeroing ioctl21 flags  progs-side
+Date: Thu, Oct 14, 2010 at 8:58 AM
+Subject: added flags to cleaner-wait structure kernel-side
 To: davidnicol@gmail.com
 
 

@@ -1,57 +1,34 @@
 From: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: Metadata size
-Date: Thu, 14 Oct 2010 12:20:58 +0100
-Message-ID: <20101014112058.GA2315@selene>
+Subject: Re: Metadata size
+Date: Thu, 14 Oct 2010 12:32:39 +0100
+Message-ID: <20101014113239.GB2315@selene>
+References: <20101014112058.GA2315@selene>
 Mime-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="XsQoSWH+UP9D9v3l"
-To: linux-btrfs@vger.kernel.org
+	protocol="application/pgp-signature"; boundary="NMuMz9nt05w80d4+"
+To: Hugo Mills <hugo-lkml@carfax.org.uk>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20101014112058.GA2315@selene>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---XsQoSWH+UP9D9v3l
+--NMuMz9nt05w80d4+
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 
-   I'm a little concerned about the size of my metadata. I'm doing
-raid10 on both data and metadata, and:
+On Thu, Oct 14, 2010 at 12:20:58PM +0100, Hugo Mills wrote:
+>    By my calculations, that's something on the order of 17.5K per
+> filesystem object. This is mostly media files, plus some small
+> metadata files. 17.5K on average seems very large to me. I have quite
+> a bit of space on this system, so I'm not too concerned, but I wasn't
+> sure if this kind of figure was representative or not.
 
-hrm@vlad:mnt $ sudo btrfs fi df /mnt
-Data: total=488.01GB, used=487.23GB
-Metadata: total=3.01GB, used=677.73MB
-System: total=11.88MB, used=52.00KB
+   cwillu on IRC just answered this for me: it's mostly checksums.
 
-hrm@vlad:mnt $ find /mnt | wc -l
-20137
+   Also, it seems that this isn't representative. It's considerably
+lower than normal. :)
 
-   By my calculations, that's something on the order of 17.5K per
-filesystem object. This is mostly media files, plus some small
-metadata files. 17.5K on average seems very large to me. I have quite
-a bit of space on this system, so I'm not too concerned, but I wasn't
-sure if this kind of figure was representative or not.
-
-   Overall file count by size:
-
-0-10        21
-10-100     153
-100-1K     778
-1K-10K     279
-10K-100K    96
-100K-1M    238
-1M-10M   12556
-10M-100M  3452
-100M-1G    332
-1G-10G     171
-
-0-1K	   952
-1K-1M      613
-1M-1G    16340
-1G+        171
-
-   Interestingly, the metadata value was closer to 15K/object until my
-last batch of writing, which was the 171 1G+ files (and a few in the
-100M-1G range), plus an equal number of small (<2K) files.
+   Question answered, all makes sense again.
 
    Hugo.
 
@@ -63,7 +40,7 @@ last batch of writing, which was the 171 1G+ files (and a few in the
         and enduring,  but to him they are but toys of the moment        
               to be overturned by the flicking of a finger.              
 
---XsQoSWH+UP9D9v3l
+--NMuMz9nt05w80d4+
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 Content-Disposition: inline
@@ -71,9 +48,9 @@ Content-Disposition: inline
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.10 (GNU/Linux)
 
-iD8DBQFMtueaIKyzvlFcI40RAqjlAKCfs8AD5Lpg+nhB6NtvHJYgjP7d/ACfRPHR
-lrn6IGTsSCYvqNu2Qs2bM3k=
-=QfiF
+iD8DBQFMtupXIKyzvlFcI40RAgdkAJ0Xpkpg64art4l+4IxaJIVTgl2VCwCdEHnk
+46FjHEmi3OgmHZpATGUPqyk=
+=us4z
 -----END PGP SIGNATURE-----
 
---XsQoSWH+UP9D9v3l--
+--NMuMz9nt05w80d4+--

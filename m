@@ -1,99 +1,35 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: fix df regression
-Date: Thu, 14 Oct 2010 14:54:03 -0400
-Message-ID: <1287082443-6484-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: Backporting Recent Btrfs Patches to 2.6.32
+Date: Fri, 15 Oct 2010 14:23:00 -0500
+Message-ID: <AANLkTin0HMr2N_hRBu_um+Rf9o+Agjis4E6HLdxkebqv@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The new ENOSPC stuff breaks out the raid types which breaks the way we were
-reporting df to the system.  This fixes it back so that Available is the total
-space available to data and used is the actual bytes used by the filesystem.
-This means that Available is Total - data used - all of the metadata space.
-Thanks,
+Since the 2.6.32 kernel is one of the long-term stable kernels, and
+since a few projects (such as OpenVZ) and distros (such as Debian) are
+using the 2.6.32 kernel, I've put together an experimental git branch
+to backport later btrfs patches to the 2.6.32 kernel.
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/ctree.h       |    5 ++++-
- fs/btrfs/extent-tree.c |    2 ++
- fs/btrfs/super.c       |   11 +++++++++--
- 3 files changed, 15 insertions(+), 3 deletions(-)
+Let me know if there's any interest in this experiment, and I'll try
+to keep it maintained.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index e25e96e..4833a01 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -696,7 +696,8 @@ struct btrfs_block_group_item {
- struct btrfs_space_info {
- 	u64 flags;
- 
--	u64 total_bytes;	/* total bytes in the space */
-+	u64 total_bytes;	/* total bytes in the space,
-+				   this doesn't take mirrors into account */
- 	u64 bytes_used;		/* total bytes used,
- 				   this does't take mirrors into account */
- 	u64 bytes_pinned;	/* total bytes pinned, will be freed when the
-@@ -708,6 +709,8 @@ struct btrfs_space_info {
- 	u64 bytes_may_use;	/* number of bytes that may be used for
- 				   delalloc/allocations */
- 	u64 disk_used;		/* total bytes used on disk */
-+	u64 disk_total;		/* total bytes on disk, takes mirrors into
-+				   account */
- 
- 	int full;		/* indicates that we cannot allocate any more
- 				   chunks for this space */
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 3f8aee5..72c3d5f 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2982,6 +2982,7 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
- 	if (found) {
- 		spin_lock(&found->lock);
- 		found->total_bytes += total_bytes;
-+		found->disk_total += total_bytes * factor;
- 		found->bytes_used += bytes_used;
- 		found->disk_used += bytes_used * factor;
- 		found->full = 0;
-@@ -3001,6 +3002,7 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
- 				BTRFS_BLOCK_GROUP_SYSTEM |
- 				BTRFS_BLOCK_GROUP_METADATA);
- 	found->total_bytes = total_bytes;
-+	found->disk_total = total_bytes * factor;
- 	found->bytes_used = bytes_used;
- 	found->disk_used = bytes_used * factor;
- 	found->bytes_pinned = 0;
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 1b92f57..0570211 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -729,18 +729,25 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 	struct list_head *head = &root->fs_info->space_info;
- 	struct btrfs_space_info *found;
- 	u64 total_used = 0;
-+	u64 total_used_data = 0;
- 	int bits = dentry->d_sb->s_blocksize_bits;
- 	__be32 *fsid = (__be32 *)root->fs_info->fsid;
- 
- 	rcu_read_lock();
--	list_for_each_entry_rcu(found, head, list)
-+	list_for_each_entry_rcu(found, head, list) {
-+		if (found->flags & (BTRFS_BLOCK_GROUP_METADATA |
-+				    BTRFS_BLOCK_GROUP_SYSTEM))
-+			total_used_data += found->disk_total;
-+		else
-+			total_used_data += found->disk_used;
- 		total_used += found->disk_used;
-+	}
- 	rcu_read_unlock();
- 
- 	buf->f_namelen = BTRFS_NAME_LEN;
- 	buf->f_blocks = btrfs_super_total_bytes(disk_super) >> bits;
- 	buf->f_bfree = buf->f_blocks - (total_used >> bits);
--	buf->f_bavail = buf->f_bfree;
-+	buf->f_bavail = buf->f_blocks - (total_used_data >> bits);
- 	buf->f_bsize = dentry->d_sb->s_blocksize;
- 	buf->f_type = BTRFS_SUPER_MAGIC;
- 
--- 
-1.6.6.1
+I've placed a git repository containing this work here:
 
+http://gitweb.sabayon.org/?p=linux/kernel/btrfs-backport.git;a=summary
+
+The backport is currently in "works-for-me" status, and I have been
+using it for about a week without crashes.
+
+I did not attempt to backport every patch that has touched
+linux/fs/btrfs compared to the 2.6.32 kernel.  Some patches were part
+of larger kernel updates that would be outside the scope of a
+backport.
+
+I was able to backport the DIO patches and the improvements to ENOSPC
+handling, as well as most of the other patches in the btrfs-unstable
+repository.
+
+Let me know if you have any feedback.

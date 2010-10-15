@@ -1,35 +1,24 @@
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: Backporting Recent Btrfs Patches to 2.6.32
-Date: Fri, 15 Oct 2010 14:23:00 -0500
-Message-ID: <AANLkTin0HMr2N_hRBu_um+Rf9o+Agjis4E6HLdxkebqv@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH 0/4] Btrfs: fix ENOSPC regressions
+Date: Fri, 15 Oct 2010 17:28:31 -0400
+Message-ID: <1287178115-18229-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since the 2.6.32 kernel is one of the long-term stable kernels, and
-since a few projects (such as OpenVZ) and distros (such as Debian) are
-using the 2.6.32 kernel, I've put together an experimental git branch
-to backport later btrfs patches to the 2.6.32 kernel.
+This patchset fixes some problems with the ENOSPC code for block groups, but
+more importantly it fixes a huge ENOSPC regression that's occured.  With my
+fs_mark test
 
-Let me know if there's any interest in this experiment, and I'll try
-to keep it maintained.
+fs_mark -d /mnt/btrfs-test -D 512 -t 16 -n 4096 -F -S0
 
-I've placed a git repository containing this work here:
+on a 2gb fs without these patches fs_mark would exit out with ENOSPC after
+writing around 50mb.  With these patches I can now fill up the disk.  Also the
+new ENOSPC code is super aggressive about allocating metadata chunks, to the
+point that even with the multi-writer regression fixed I was still only able to
+fill about 900mb with data on a 2gb fs.  With all of these patches I can fill up
+the 2gb fs with about 1.9gb of data.  This is much more reasonable.  There
+doesn't appear to be any performance regression, but I would appreciate testing
+to make sure this is actually the case.  Thanks,
 
-http://gitweb.sabayon.org/?p=linux/kernel/btrfs-backport.git;a=summary
-
-The backport is currently in "works-for-me" status, and I have been
-using it for about a week without crashes.
-
-I did not attempt to backport every patch that has touched
-linux/fs/btrfs compared to the 2.6.32 kernel.  Some patches were part
-of larger kernel updates that would be outside the scope of a
-backport.
-
-I was able to backport the DIO patches and the improvements to ENOSPC
-handling, as well as most of the other patches in the btrfs-unstable
-repository.
-
-Let me know if you have any feedback.
+Josef

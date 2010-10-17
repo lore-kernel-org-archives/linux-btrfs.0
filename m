@@ -1,26 +1,93 @@
 From: hugo-lkml@carfax.org.uk
-Subject: [patch 0/4] Size reporting of btrfs tool
-Date: Sun, 17 Oct 2010 19:26:43 +0100
-Message-ID: <20101017182643.297900488@carfax.org.uk>
+Subject: [patch 2/4] Add an option to show ISO, binary or raw bytes counts using df.
+Date: Sun, 17 Oct 2010 19:26:45 +0100
+Message-ID: <20101017182706.430006857@carfax.org.uk>
+References: <20101017182643.297900488@carfax.org.uk>
+Cc: Hugo Mills <hugo@carfax.org.uk>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-   While playing around with resizing volumes recently, I realised
-that I didn't know whether btrfs fi show and btrfs fi df reported
-sizes in ISO (e.g. powers of 10^3) units, as they appear to from the
-labels they use, or in binary (powers of 2^10) units. Also, a mere
-three significant figures is somewhat less than I'm comfortable with
-if I'm about to resize the containing block device downwards.
+Change btrfs filesystem df to allow the user to control the scales
+used for sizes in the output.
 
-   This patch series adds the ability to pick which scale is used for
-show and df, and labels the amounts properly (e.g. MB for ISO, MiB for
-binary units).
+Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
+---
+ btrfs.c      |    5 +++--
+ btrfs_cmds.c |   37 ++++++++++++++++++++++++++++++++-----
+ 2 files changed, 35 insertions(+), 7 deletions(-)
 
-   Hugo.
+Index: btrfs-progs-unstable/btrfs.c
+===================================================================
+--- btrfs-progs-unstable.orig/btrfs.c	2010-10-17 18:43:57.000000000 +0100
++++ btrfs-progs-unstable/btrfs.c	2010-10-17 18:47:36.000000000 +0100
+@@ -87,9 +87,10 @@
+ 		"Show the info of a btrfs filesystem. If no <uuid> or <label>\n"
+ 		"is passed, info of all the btrfs filesystem are shown."
+ 	},
+-	{ do_df_filesystem, 1,
+-	  "filesystem df", "<path>\n"
++	{ do_df_filesystem, -1,
++	  "filesystem df", "[-r|-b|-i] <path>\n"
+ 		"Show space usage information for a mount point\n."
++		"-r, -b, -i for raw (bytes), binary or ISO sizes."
+ 	},
+ 	{ do_balance, 1,
+ 	  "filesystem balance", "<path>\n"
+Index: btrfs-progs-unstable/btrfs_cmds.c
+===================================================================
+--- btrfs-progs-unstable.orig/btrfs_cmds.c	2010-10-17 18:43:57.000000000 +0100
++++ btrfs-progs-unstable/btrfs_cmds.c	2010-10-17 18:47:36.000000000 +0100
+@@ -841,7 +841,36 @@
+ 	u64 count = 0, i;
+ 	int ret;
+ 	int fd;
+-	char *path = argv[1];
++	char *path;
++	int format = PRETTY_SIZE_BINARY;
++
++	optind = 1;
++	while(1) {
++		int c = getopt(nargs, argv, "rbi");
++		if (c < 0)
++			break;
++		switch(c) {
++		case 'r':
++			format = PRETTY_SIZE_RAW;
++			break;
++		case 'b':
++			format = PRETTY_SIZE_BINARY;
++			break;
++		case 'i':
++			format = PRETTY_SIZE_ISO;
++			break;
++		default:
++			fprintf(stderr, "Invalid arguments for df\n");
++			free(argv);
++			return 1;
++		}
++	}
++	if (nargs - optind != 1) {
++		fprintf(stderr, "No path given for df\n");
++		free(argv);
++		return 1;
++	}
++	path = argv[optind];
+ 
+ 	fd = open_file_or_dir(path);
+ 	if (fd < 0) {
+@@ -914,10 +943,8 @@
+ 			written += 8;
+ 		}
+ 
+-		total_bytes = pretty_sizes(sargs->spaces[i].total_bytes,
+-									PRETTY_SIZE_BINARY);
+-		used_bytes = pretty_sizes(sargs->spaces[i].used_bytes,
+-									PRETTY_SIZE_BINARY);
++		total_bytes = pretty_sizes(sargs->spaces[i].total_bytes, format);
++		used_bytes = pretty_sizes(sargs->spaces[i].used_bytes, format);
+ 		printf("%s: total=%s, used=%s\n", description, total_bytes,
+ 		       used_bytes);
+ 	}
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-        --- emacs:  Eighty Megabytes And Constantly Swapping. ---        
 

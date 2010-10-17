@@ -1,91 +1,205 @@
 From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: How can I recover data from little overwritten missing raid0 device?
-Date: Sun, 17 Oct 2010 18:04:58 +0200
-Message-ID: <201010171804.59034.kreijack@libero.it>
-References: <AANLkTinbmFFNySV=_vmWZzQWeLxL3wgBUmsuKch7Mn6j@mail.gmail.com> <AANLkTi=SLr_6E=Dwt5SmLp7_b4BGRMka0uXo=8qQp6Kf@mail.gmail.com>
+Subject: [PATCH V3] Removing a subvolume with a simple "rm -rf"
+Date: Sun, 17 Oct 2010 18:09:50 +0200
+Message-ID: <201010171809.58152.kreijack@libero.it>
 Reply-To: kreijack@libero.it
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Cc: linux-btrfs@vger.kernel.org
-To: Chalet16 <chalet16@gmail.com>
+Content-Type: multipart/signed;
+  boundary="nextPart1417182.XgMMnMG3a8";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+Cc: Chris Mason <chris.mason@oracle.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=SLr_6E=Dwt5SmLp7_b4BGRMka0uXo=8qQp6Kf@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-After a reboot you need to do
+--nextPart1417182.XgMMnMG3a8
+Content-Type: text/plain;
+  charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
 
-# btrfs device scan
+Hi all,
 
-in order to search all devices which may be involved in a multi devices setup 
-(like RAID).
+enclosed you can find a new version of the patch which permits to remove a=
+=20
+volume via the rmdir(2) syscall by a non-root user. The goal of this patch=
+=20
+is to permits to remove a subvolume with a simple "rm -rf" command.
 
+The rules for a subvolume removal are the same ones of a directory:
+=2D the user must have the write permission on the parent directory
+=2D the subvolume must be empty
+
+The mains differences between calling rmdir(2) on a subvolume and calling t=
+he=20
+BTRFS_IOC_SNAP_DESTROY ioctl are:
+
+=2D rmdir(2) requires the subvolume to be empty (the user has to empty the=
+=20
+subvolume before removing it, like the rm -rf command does)
+=2D rmdir(2) is a synchronous operation (instead BTRFS_IOC_SNAP_DESTROY wor=
+ks=20
+in background)
+
+The previous statements have the following (nice) consequences:
+
+=2D the CAP_ADMIN capability is not mandatory anymore to remove a subvolume=
+=2E=20
+BTRFS_IOC_SNAP_DESTROY requires CAP_ADMIN because the subvolume removal is
+performed in background so it would not be possible to return an error if=20
+the user has not the privilege of removing a file. This explain why this io=
+ctl
+may be executed only by root.
+
+=2D When the rmdir(2) syscall returns, the space is really freed.
+
+The only advantage of the BTRFS_IOC_SNAP_DESTROY ioctl is its greater speed
+in removing a not empty subvolume.
+
+I simplify the code respect my previous post, removing a un-needed call to =
+the
+function may_destroy_subvol(). Moreover I added a call to the d_invalidate()
+ function, which was missed in my previous version.
+
+You can pull the code from the branch named "rmdir-subvolume" of the follow=
+ing
+repository:
+
+	http://cassiopea.homelinux.net/git/btrfs-unstable.git =20
+
+As usual, comments are welcome
+
+Regards
 G.Baroncelli
 
 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index f08427c..f732ddf 100644
+=2D-- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2944,6 +2944,88 @@ int btrfs_unlink_subvol(struct btrfs_trans_handle *t=
+rans,
+ 	return 0;
+ }
+=20
++static noinline int btrfs_snap_destroy(struct inode *dir,
++				       struct dentry *dentry)
++{
++
++	struct inode *inode;
++	struct btrfs_root *root =3D BTRFS_I(dir)->root;
++	struct btrfs_root *dest =3D NULL;
++	struct btrfs_trans_handle *trans;
++	int ret;
++	int err =3D 0;
++
++	if (IS_ERR(dentry)) {
++		err =3D PTR_ERR(dentry);
++		goto out;
++	}
++
++	if (!dentry->d_inode) {
++		err =3D -ENOENT;
++		goto out;
++	}
++
++	inode =3D dentry->d_inode;
++	if (inode->i_ino !=3D BTRFS_FIRST_FREE_OBJECTID) {
++		err =3D -EINVAL;
++		goto out;
++	}
++
++	dest =3D BTRFS_I(inode)->root;
++=09
++	err =3D d_invalidate(dentry);
++	if (err)
++		goto out;
++
++	down_write(&root->fs_info->subvol_sem);
++
++	/* remove this check because the directory is empty.
++	 * err =3D may_destroy_subvol(dest);
++	 * if (err)
++	 *	goto out_up_write;
++	 */
++
++	trans =3D btrfs_start_transaction(root, 0);
++	if (IS_ERR(trans)) {
++		err =3D PTR_ERR(trans);
++		goto out_up_write;
++	}
++	trans->block_rsv =3D &root->fs_info->global_block_rsv;
++
++	ret =3D btrfs_unlink_subvol(trans, root, dir,
++				dest->root_key.objectid,
++				dentry->d_name.name,
++				dentry->d_name.len);
++	BUG_ON(ret);
++
++	btrfs_record_root_in_trans(trans, dest);
++
++	memset(&dest->root_item.drop_progress, 0,
++		sizeof(dest->root_item.drop_progress));
++	dest->root_item.drop_level =3D 0;
++	btrfs_set_root_refs(&dest->root_item, 0);
++
++	if (!xchg(&dest->orphan_item_inserted, 1)) {
++		ret =3D btrfs_insert_orphan_item(trans,
++					root->fs_info->tree_root,
++					dest->root_key.objectid);
++		BUG_ON(ret);
++	}
++
++	ret =3D btrfs_commit_transaction(trans, root);
++	BUG_ON(ret);
++	inode->i_flags |=3D S_DEAD;
++out_up_write:
++	up_write(&root->fs_info->subvol_sem);
++	if (!err) {
++		shrink_dcache_sb(root->fs_info->sb);
++		btrfs_invalidate_inodes(dest);
++		/*d_delete(dentry);*/
++	}
++out:
++	return err;
++}
++
+ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
+ {
+ 	struct inode *inode =3D dentry->d_inode;
+@@ -2952,10 +3034,12 @@ static int btrfs_rmdir(struct inode *dir, struct de=
+ntry *dentry)
+ 	struct btrfs_trans_handle *trans;
+ 	unsigned long nr =3D 0;
+=20
+=2D	if (inode->i_size > BTRFS_EMPTY_DIR_SIZE ||
+=2D	    inode->i_ino =3D=3D BTRFS_FIRST_FREE_OBJECTID)
++	if (inode->i_size > BTRFS_EMPTY_DIR_SIZE)
+ 		return -ENOTEMPTY;
+=20
++	if (inode->i_ino =3D=3D BTRFS_FIRST_FREE_OBJECTID)
++		return btrfs_snap_destroy(dir, dentry);
++
+ 	trans =3D __unlink_start_trans(dir, dentry);
+ 	if (IS_ERR(trans))
+ 		return PTR_ERR(trans);
 
 
-On Sunday, 17 October, 2010, Chalet16 wrote:
-> UPDATE: I'm currently  able to see and read/write some file in degraded mode
-> but there're many file i can't read with input/output error too.
-> 
-> 
-> On Sun, Oct 17, 2010 at 9:57 PM, Chalet16 <chalet16@gmail.com> wrote:
-> > I had set up btrfs with 2 devices by using command this command sequence.
-> > "mkfs.btrfs -m raid1 /dev/sda1
-> > mount /dev/sda1 /mnt/data
-> > btrfs-vol -a /dev/sdb1 /mnt/data
-> > btrfs-vol -b /mnt/data"
-> >
-> > (I was think that it will do raid1 for both data and metadata but I 
-currently
-> > realised that it will do raid1 for metadata but raid0 for data.)
-> >
-> > But I forgot that I have mount /dev/sdb1 with TrueCrypt. After I restarted 
-my
-> > PC and try to mount both devices array again there was a message in dmesg 
-said
-> > "chalet16@server:~$ sudo mount /dev/sda1 /mnt/data
-> > [ 2828.921406] device label btr2902 devid 1 transid 8829 
-/dev/mapper/truecrypt1
-> > [ 2828.931780] btrfs: failed to read the system array on dm-1
-> > [ 2828.961330] btrfs: open_ctree failed"
-> >
-> > And when I ran btrfs-show it show that
-> > "chalet16@server:~$ sudo btrfs-show
-> > failed to read /dev/sr0
-> > Label: btr2902  uuid: 5673597c-ff57-4a42-8fe3-ff793f476809
-> >        Total devices 2 FS bytes used 706.75GB
-> >        devid    1 size 930.00GB used 717.26GB path /dev/sda1
-> >        *** Some devices missing
-> > Btrfs Btrfs v0.19"
-> > And when I run btrfsck on missing device
-> > "chalet16@server:~$ sudo btrfsck /dev/sde1
-> > No valid Btrfs found on /dev/sde1"
-> >
-> > So I would like to ask for help to recover data from this btrfs raid 
-array. In
-> > my opinion I think that TrueCrypt only overwrite a little location in 
-device
-> > because I haven't done anything with TrueCrypt device after that.
-> >
-> > Thanks
-> > Chalet16
-> >
-> >
-> > PS. I have recently known that TrueCrypt is in "Forbidden items" list in 
-Fedora
-> > wiki, but this is not really related to TrueCrypt so please don't ban me 
-because
-> > I had used TrueCrypt.
-> >
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+=2D-=20
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijackATinwind.=
+it>
+Key fingerprint =3D 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
 
+--nextPart1417182.XgMMnMG3a8
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
 
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iD8DBQBMux/OvwTxYT3FBRIRAqYaAJ40yZ6xq8Y7LcQRTsHLSjY+F/WCsQCfaQ4Y
+FjwodBVsjJSdTYVH/ioXCw4=
+=CrQH
+-----END PGP SIGNATURE-----
+
+--nextPart1417182.XgMMnMG3a8--

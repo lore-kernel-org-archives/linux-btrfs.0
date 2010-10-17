@@ -1,73 +1,49 @@
-From: Andreas Philipp <philipp.andreas@gmail.com>
-Subject: dkms build problem
-Date: Sun, 17 Oct 2010 16:48:39 +0200
-Message-ID: <4CBB0CC7.7000307@gmail.com>
+From: Chalet16 <chalet16@gmail.com>
+Subject: How can I recover data from little overwritten missing raid0 device?
+Date: Sun, 17 Oct 2010 21:57:31 +0700
+Message-ID: <AANLkTinbmFFNySV=_vmWZzQWeLxL3wgBUmsuKch7Mn6j@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I had set up btrfs with 2 devices by using command this command sequence.
+"mkfs.btrfs -m raid1 /dev/sda1
+mount /dev/sda1 /mnt/data
+btrfs-vol -a /dev/sdb1 /mnt/data
+btrfs-vol -b /mnt/data"
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
- 
-Hi,
+(I was think that it will do raid1 for both data and metadata but I currently
+realised that it will do raid1 for metadata but raid0 for data.)
 
-I tried to follow this howto
-https://btrfs.wiki.kernel.org/index.php/Btrfs_source_repositories#Building_latest_btrfs_against_a_recent_kernel_with_DKMS
-from the btrfs wiki to build my own btrfs module using dkms  on my
-gentoo running kernel version 2.6.35.7.
-But when trying to build the dkms module I have run into the following
-compile error; see my make.log below. If you have any suggestions on
-what I should try to fix this, i.e., other kernel version(s), patches
-to kernel/btrfs-unstable, other compiler version(s), and so on, I am
-willing to try out everything in order to help fix this. If this is a
-known error, and the decision is to not fix it, as btrfs compiles well
-within the regular kernel sources from kernel.org, then I would add a
-comment about that in the corresponding section of the btrfs wiki.
+But I forgot that I have mount /dev/sdb1 with TrueCrypt. After I restarted my
+PC and try to mount both devices array again there was a message in dmesg said
+"chalet16@server:~$ sudo mount /dev/sda1 /mnt/data
+[ 2828.921406] device label btr2902 devid 1 transid 8829 /dev/mapper/truecrypt1
+[ 2828.931780] btrfs: failed to read the system array on dm-1
+[ 2828.961330] btrfs: open_ctree failed"
 
-Kind regards,
-Andreas Philipp
+And when I ran btrfs-show it show that
+"chalet16@server:~$ sudo btrfs-show
+failed to read /dev/sr0
+Label: btr2902  uuid: 5673597c-ff57-4a42-8fe3-ff793f476809
+	Total devices 2 FS bytes used 706.75GB
+	devid    1 size 930.00GB used 717.26GB path /dev/sda1
+	*** Some devices missing
+Btrfs Btrfs v0.19"
+And when I run btrfsck on missing device
+"chalet16@server:~$ sudo btrfsck /dev/sde1
+No valid Btrfs found on /dev/sde1"
 
-make.log:
-DKMS make.log for btrfs-git for kernel 2.6.35.7 (x86_64)
-Sun Oct 17 16:35:28 CEST 2010
-make: Entering directory `/usr/src/linux-2.6.35.7'
-  LD      /var/lib/dkms/btrfs/git/build/built-in.o
-  CC [M]  /var/lib/dkms/btrfs/git/build/super.o
-/var/lib/dkms/btrfs/git/build/super.c: In function ?btrfs_fill_super?:
-/var/lib/dkms/btrfs/git/build/super.c:448: warning: assignment from
-incompatible pointer type
-  CC [M]  /var/lib/dkms/btrfs/git/build/ctree.o
-  CC [M]  /var/lib/dkms/btrfs/git/build/extent-tree.o
-/var/lib/dkms/btrfs/git/build/extent-tree.c: In function
-?btrfs_issue_discard?:
-/var/lib/dkms/btrfs/git/build/extent-tree.c:1699: error:
-?DISCARD_FL_BARRIER? undeclared (first use in this function)
-/var/lib/dkms/btrfs/git/build/extent-tree.c:1699: error: (Each
-undeclared identifier is reported only once
-/var/lib/dkms/btrfs/git/build/extent-tree.c:1699: error: for each
-function it appears in.)
-make[1]: *** [/var/lib/dkms/btrfs/git/build/extent-tree.o] Error 1
-make: *** [_module_/var/lib/dkms/btrfs/git/build] Error 2
-make: Leaving directory `/usr/src/linux-2.6.35.7'
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (MingW32)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
- 
-iQIcBAEBAgAGBQJMuwzFAAoJEJIcBJ3+Xkgims8P/1rX9HpYUyVBAD/wfzFaDqKH
-Jq9GnI1bW9hXJMoo2l9CtVt1rSvuTFiTkK4bxuBXyt1A4eoSZ8M4exVZsYLH1+ef
-+9BoJmXENnI4gDaga0N6wobjocBpvlBHYm+b2h6pP7AJFEKMXgrOra5khUc7wd3N
-/Izr3Cewb9CQIr040PDOMoZCEV0iQOoSQf4ECOE3qcizq8VUqeCIiBLcH3cwTpxW
-BD4AMCe/ArgirmhtPwHv2zn1RR6+vsen7oPT7tWLW86y7S4UeWGxJHRK1eTOaXlY
-givWYxcHX9UvVcvCoBVvrOz2d9B5ZQM+XgTe5DztTh58cZApt7SJe4Z3Icrq4dpb
-7BMmXcUwPbWRbc0/LhiCtq7J88pcDthmrNIyoengIwCoBVJu0AxTkm3s+wDh8zTy
-4okNEfvl0n5l97X19hp77qeaK+ObnENAqgY2VI/yoNPnM/TbCRGyHyF9l6O3O8i/
-C3QDb4U7ECPtjG8mpk1yQARqJ2hReRNslfhrMAK4BL/6cCwYx9MdslfgfwDqt+5o
-VyB0E5g6+6SK7p3uuLpS92B4bDYT9Wt02YdXrbAFc5R61YUYGdSb+tr73L8a845f
-Ups/FAblLSZ5TSgrBF8fmY5AJqWQl4suXNZCl8wMzeMBT5jv8adjR5dBEEtDLeSC
-tHD1ignOphVos7+32ZRV
-=4doD
------END PGP SIGNATURE-----
+So I would like to ask for help to recover data from this btrfs raid array. In
+my opinion I think that TrueCrypt only overwrite a little location in device
+because I haven't done anything with TrueCrypt device after that.
 
+Thanks
+Chalet16
+
+
+PS. I have recently known that TrueCrypt is in "Forbidden items" list in Fedora
+wiki, but this is not really related to TrueCrypt so please don't ban me because
+I had used TrueCrypt.

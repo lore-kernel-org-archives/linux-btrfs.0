@@ -1,22 +1,17 @@
 From: David Nicol <davidnicol@gmail.com>
-Subject: newbie question about struct btrfs_dir_item *btrfs_match_dir_item_name
-Date: Mon, 18 Oct 2010 09:14:19 -0500
-Message-ID: <AANLkTikQ94sEbBr8zg7RW5PPRKARFEEhENhXquS=e_Ad@mail.gmail.com>
+Subject: IOCTL #21 could also wait for btrfs_run_delayed_iputs
+Date: Mon, 18 Oct 2010 12:32:15 -0500
+Message-ID: <AANLkTinoaCGVbhfv+LtqwRi4_nXZTaFNcFxaaqsknKf5@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 To: BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-reading, in dir-item.c, the code in
-struct btrfs_dir_item *btrfs_match_dir_item_name (...)
-I am a little surprised to see an O(n) iterative name comparison check
-instead of something that would
-efficiently support directories with lots of items in them. Is this
-function a fall-back if a O(1) table lookup
-somewhere else misses, perhaps?
+That's the other thing the cleaner_kthread does; conceivably some new
+delayed iputs could get queued during snapshot deletions.
 
-
+Thoughts?
 
 -- 
 "In one instance, a rai being transported by canoe was accidentally

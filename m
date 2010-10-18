@@ -1,120 +1,32 @@
-From: hugo-lkml@carfax.org.uk
-Subject: [patch 3/4] Add an option to show ISO, binary or raw bytes counts using show.
-Date: Sun, 17 Oct 2010 19:26:46 +0100
-Message-ID: <20101017182706.657478461@carfax.org.uk>
-References: <20101017182643.297900488@carfax.org.uk>
-Cc: Hugo Mills <hugo@carfax.org.uk>
-To: linux-btrfs@vger.kernel.org
+From: Shaohua Li <shaohua.li@intel.com>
+Subject: Re: the idea for improving the performance of b-tree search
+Date: Mon, 18 Oct 2010 10:41:41 +0800
+Message-ID: <20101018024141.GA5416@sli10-conroe.sh.intel.com>
+References: <4CB57548.7000304@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Miao Xie <miaox@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4CB57548.7000304@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Change btrfs filesystem show to allow the user to control the scales
-used for sizes in the output.
+Hi Miao & Chris,
+On Wed, Oct 13, 2010 at 05:00:56PM +0800, Miao Xie wrote:
+> When I investigated the performance problem of file creation/deletion, I found
+> btrfs spends lots of time in the b-tree search, so I consider whether we can use
+> the latest search result in the same transaction or not.
+> 
+> My idea follows:
+> we can add mask or time stamp into b-tree's node and leaf, then we know whether
+> the node/leaf is COWed by the other task. If not, we check if the node/leaf of
+> the latest search result contains the key that we want to search. By this way,
+> we can reuse the latest search result in the same transaction and reduce the CPU
+> time spent in the b-tree search.
+Does this patch help a little for the tree search?
+http://marc.info/?l=linux-btrfs&m=127175532803943&w=2
+It doesn't solve all the issues, but in my test, it does help.
 
-Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
----
- btrfs.c      |    5 +++--
- btrfs_cmds.c |   42 +++++++++++++++++++++++++++++++++++-------
- 2 files changed, 38 insertions(+), 9 deletions(-)
-
-Index: btrfs-progs-unstable/btrfs.c
-===================================================================
---- btrfs-progs-unstable.orig/btrfs.c	2010-10-17 18:47:36.000000000 +0100
-+++ btrfs-progs-unstable/btrfs.c	2010-10-17 18:48:38.000000000 +0100
-@@ -83,9 +83,10 @@
- 		"will occupe all available space on the device."
- 	},
- 	{ do_show_filesystem, 999,
--	  "filesystem show", "[<uuid>|<label>]\n"
-+	  "filesystem show", "[-r|-b|-i] [<uuid>|<label>]\n"
- 		"Show the info of a btrfs filesystem. If no <uuid> or <label>\n"
--		"is passed, info of all the btrfs filesystem are shown."
-+		"is passed, info of all the btrfs filesystem are shown.\n"
-+		"-r, -b, -i for raw (bytes), binary or ISO sizes."
- 	},
- 	{ do_df_filesystem, -1,
- 	  "filesystem df", "[-r|-b|-i] <path>\n"
-Index: btrfs-progs-unstable/btrfs_cmds.c
-===================================================================
---- btrfs-progs-unstable.orig/btrfs_cmds.c	2010-10-17 18:47:36.000000000 +0100
-+++ btrfs-progs-unstable/btrfs_cmds.c	2010-10-17 18:48:38.000000000 +0100
-@@ -617,7 +617,7 @@
- 	return 0;
- }
- 
--static void print_one_uuid(struct btrfs_fs_devices *fs_devices)
-+static void print_one_uuid(struct btrfs_fs_devices *fs_devices, int format)
- {
- 	char uuidbuf[37];
- 	struct list_head *cur;
-@@ -634,8 +634,7 @@
- 	else
- 		printf("Label: none ");
- 
--	super_bytes_used = pretty_sizes(device->super_bytes_used,
--									PRETTY_SIZE_BINARY);
-+	super_bytes_used = pretty_sizes(device->super_bytes_used, format);
- 
- 	total = device->total_devs;
- 	printf(" uuid: %s\n\tTotal devices %llu FS bytes used %s\n", uuidbuf,
-@@ -647,8 +646,8 @@
- 		char *total_bytes;
- 		char *bytes_used;
- 		device = list_entry(cur, struct btrfs_device, dev_list);
--		total_bytes = pretty_sizes(device->total_bytes, PRETTY_SIZE_BINARY);
--		bytes_used = pretty_sizes(device->bytes_used, PRETTY_SIZE_BINARY);
-+		total_bytes = pretty_sizes(device->total_bytes, format);
-+		bytes_used = pretty_sizes(device->bytes_used, format);
- 		printf("\tdevid %4llu size %s used %s path %s\n",
- 		       (unsigned long long)device->devid,
- 		       total_bytes, bytes_used, device->name);
-@@ -667,8 +666,37 @@
- 	struct list_head *all_uuids;
- 	struct btrfs_fs_devices *fs_devices;
- 	struct list_head *cur_uuid;
--	char *search = argv[1];
-+	char *search;
- 	int ret;
-+	int format = PRETTY_SIZE_BINARY;
-+
-+	optind = 1;
-+	while(1) {
-+		int c = getopt(argc, argv, "rbi");
-+		if (c < 0)
-+			break;
-+		switch(c) {
-+		case 'r':
-+			format = PRETTY_SIZE_RAW;
-+			break;
-+		case 'b':
-+			format = PRETTY_SIZE_BINARY;
-+			break;
-+		case 'i':
-+			format = PRETTY_SIZE_ISO;
-+			break;
-+		default:
-+			fprintf(stderr, "Invalid arguments for show\n");
-+			free(argv);
-+			return 1;
-+		}
-+	}
-+	if (argc - optind > 1) {
-+		fprintf(stderr, "Too many arguments for show\n");
-+		free(argv);
-+		return 1;
-+	}
-+	search = argv[optind];
- 
- 	ret = btrfs_scan_one_dir("/dev", 0);
- 	if (ret){
-@@ -682,7 +710,7 @@
- 					list);
- 		if (search && uuid_search(fs_devices, search) == 0)
- 			continue;
--		print_one_uuid(fs_devices);
-+		print_one_uuid(fs_devices, format);
- 	}
- 	printf("%s\n", BTRFS_BUILD_VERSION);
- 	return 0;
-
-
+Thanks,
+Shaohua

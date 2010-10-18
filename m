@@ -1,58 +1,39 @@
-From: Frank Kingswood <frank@kingswood-consulting.co.uk>
-Subject: Re: [patch 2/4] Add an option to show ISO, binary or raw bytes counts
- using df.
-Date: Mon, 18 Oct 2010 09:21:56 +0100
-Message-ID: <4CBC03A4.4080600@kingswood-consulting.co.uk>
-References: <20101017182643.297900488@carfax.org.uk> <20101017182706.430006857@carfax.org.uk>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: Re: the idea for improving the performance of b-tree search
+Date: Mon, 18 Oct 2010 17:36:30 +0800
+Message-ID: <4CBC151E.3070705@cn.fujitsu.com>
+References: <4CB57548.7000304@cn.fujitsu.com> <20101018024141.GA5416@sli10-conroe.sh.intel.com>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org, Hugo Mills <hugo@carfax.org.uk>
-To: linux-btrfs@vger.kernel.org
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Shaohua Li <shaohua.li@intel.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101017182706.430006857@carfax.org.uk>
+In-Reply-To: <20101018024141.GA5416@sli10-conroe.sh.intel.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 17/10/10 19:26, hugo-lkml@carfax.org.uk wrote:
-> Change btrfs filesystem df to allow the user to control the scales
-> used for sizes in the output.
->
-> Index: btrfs-progs-unstable/btrfs.c
-> ===================================================================
-> --- btrfs-progs-unstable.orig/btrfs.c	2010-10-17 18:43:57.000000000 +0100
-> +++ btrfs-progs-unstable/btrfs.c	2010-10-17 18:47:36.000000000 +0100
-> @@ -87,9 +87,10 @@
->   		"Show the info of a btrfs filesystem. If no<uuid>  or<label>\n"
->   		"is passed, info of all the btrfs filesystem are shown."
->   	},
-> -	{ do_df_filesystem, 1,
-> -	  "filesystem df", "<path>\n"
-> +	{ do_df_filesystem, -1,
-> +	  "filesystem df", "[-r|-b|-i]<path>\n"
->   		"Show space usage information for a mount point\n."
-> +		"-r, -b, -i for raw (bytes), binary or ISO sizes."
->   	},
+On Mon, 18 Oct 2010 10:41:41 +0800, Shaohua Li wrote:
+> Hi Miao&  Chris,
+> On Wed, Oct 13, 2010 at 05:00:56PM +0800, Miao Xie wrote:
+>> When I investigated the performance problem of file creation/deletion, I found
+>> btrfs spends lots of time in the b-tree search, so I consider whether we can use
+>> the latest search result in the same transaction or not.
+>>
+>> My idea follows:
+>> we can add mask or time stamp into b-tree's node and leaf, then we know whether
+>> the node/leaf is COWed by the other task. If not, we check if the node/leaf of
+>> the latest search result contains the key that we want to search. By this way,
+>> we can reuse the latest search result in the same transaction and reduce the CPU
+>> time spent in the b-tree search.
+> Does this patch help a little for the tree search?
+> http://marc.info/?l=linux-btrfs&m=127175532803943&w=2
+> It doesn't solve all the issues, but in my test, it does help.
 
-This seems to eat up the short option namespace a bit quickly.
-Fileutils uses different names as well, it may be convenient for users to 
-match its names:
-	-h --human-readable   powers of 2**10
-	-H --si   powers of 1000
+Thanks for your patch, but according to my test result, the time of b-tree search
+has not been reduced. I think the reason is that extent-state is used when btrfs writes
+data into the disk, so your patch is helpful when the disk I/O happens, but my test just
+measures the cost of the b-tree searchs/insertions/removals, the disk I/O doesn't happen.
 
->   	{ do_balance, 1,
->   	  "filesystem balance", "<path>\n"
-> Index: btrfs-progs-unstable/btrfs_cmds.c
-> ===================================================================
-> --- btrfs-progs-unstable.orig/btrfs_cmds.c	2010-10-17 18:43:57.000000000 +0100
-> +++ btrfs-progs-unstable/btrfs_cmds.c	2010-10-17 18:47:36.000000000 +0100
-> @@ -841,7 +841,36 @@
->   	u64 count = 0, i;
->   	int ret;
->   	int fd;
-> -	char *path = argv[1];
-> +	char *path;
-> +	int format = PRETTY_SIZE_BINARY;
-
-Should the default not be to show sizes in bytes ("RAW")?
-
-Frank
-
+Regards
+Miao

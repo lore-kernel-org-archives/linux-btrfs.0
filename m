@@ -1,28 +1,43 @@
-From: Chris Samuel <chris@csamuel.org>
-Subject: Re: FS consistency while snapshoting
-Date: Mon, 18 Oct 2010 13:50:41 +1100
-Message-ID: <4CBBB601.3060102@csamuel.org>
-References: <AANLkTin6V=R0UZWfymTKGwwKBwb+tXBsHkbMEo3mcY_L@mail.gmail.com> <AANLkTimx1ZyVhX-_jy3i6uQxTPHtm-XEpVZKv7ZxB+0T@mail.gmail.com>
+From: Ian Kent <raven@themaw.net>
+Subject: Re: [PATCH V2] Removing a subvolume by an ordinary user
+Date: Mon, 18 Oct 2010 14:02:15 +0800
+Message-ID: <1287381735.3114.13.camel@localhost>
+References: <201010112008.31736.kreijack@libero.it>
+	 <1286859944.3013.10.camel@localhost>
+	 <201010171753.45661.kreijack@libero.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Cc: linux-btrfs@vger.kernel.org
+To: kreijack@libero.it
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimx1ZyVhX-_jy3i6uQxTPHtm-XEpVZKv7ZxB+0T@mail.gmail.com>
+In-Reply-To: <201010171753.45661.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 18/10/10 13:47, Fabr=EDcio dos Anjos Silva wrote:
+On Sun, 2010-10-17 at 17:53 +0200, Goffredo Baroncelli wrote:
+> On Tuesday, 12 October, 2010, Ian Kent wrote:
+> > On Mon, 2010-10-11 at 20:08 +0200, Goffredo Baroncelli wrote:
+> [...]
+> > > +	ret = btrfs_unlink_subvol(trans, root, dir,
+> > > +				dest->root_key.objectid,
+> > > +				dentry->d_name.name,
+> > > +				dentry->d_name.len);
+> > > +	BUG_ON(ret);
+> > 
+> > Is it really a good idea to add even more dead end BUG_ON() calls
+> > instead of handling errors when they happen?
+> > 
+> 
+> I agree with your comment, I copied these lines from the ioctl DESTROY_SUBVOL.
+> Unfortunately I don't have the know-how to handle an error at this level. So I 
+> can only leave the code as the original one.
 
-> If there is any difference betweens kernel 2.6.21 and 2.6.35,
-> please point it out.
+Right, sadly someone is going to have to go through and reconcile all
+these things at some point.
 
-btrfs wasn't merged into the mainline kernel until 2.6.29.
+I picked a function and started analyzing what would be needed
+(including dependent functions) to handle the error return instead of
+BUG_ON()ing and it's not trivial at all.
 
-http://lwn.net/Articles/314325/
+Ian
 
---=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+

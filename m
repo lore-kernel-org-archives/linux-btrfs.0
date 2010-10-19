@@ -1,55 +1,30 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: don't allocate chunks as aggressively V2
-Date: Mon, 18 Oct 2010 21:02:57 -0400
-Message-ID: <1287450177-4081-1-git-send-email-josef@redhat.com>
-References: <20101018211313.GA2539@localhost.localdomain>
+From: Sage Weil <sage@newdream.net>
+Subject: [PATCH 0/3] clone ioctl fixes
+Date: Tue, 19 Oct 2010 15:22:09 -0700
+Message-ID: <1287526932-28369-1-git-send-email-sage@newdream.net>
+Cc: Sage Weil <sage@newdream.net>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101018211313.GA2539@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Because the ENOSPC code over reserves super aggressively we end up allocating
-chunks way more often than we should.  For example with my fs_mark tests on a
-2gb fs I can end up reserved 1gb just for metadata, when only 34mb of that is
-being used.  So instead check to see if the amount of space actually used is
-less than 30% of the total space, and if so don't allocate a chunk, but only if
-we have at least 256mb of free space to make sure we don't put too much pressure
-on free space.
+Hi Chris,
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
-V1-V2: Cleanup should_alloc_chunk so it doesnt take fs_info, I was using it
-before for something different, forgot to clean it up.  Also added 256mb free
-floor at Chris's suggestion to help with the -m single case.
+These are a few critical bug fixes for the clone ioctl.  We've been 
+hitting these on a number of different systems, so getting these into 
+2.6.37 would be much appreciated.
 
- fs/btrfs/extent-tree.c |    7 +++++--
- 1 files changed, 5 insertions(+), 2 deletions(-)
+Thanks!
+sage
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 14a52dd..eac11b1 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3224,8 +3224,7 @@ static void force_metadata_allocation(struct btrfs_fs_info *info)
- 	rcu_read_unlock();
- }
- 
--static int should_alloc_chunk(struct btrfs_space_info *sinfo,
--			      u64 alloc_bytes)
-+static int should_alloc_chunk(struct btrfs_space_info *sinfo, u64 alloc_bytes)
- {
- 	u64 num_bytes = sinfo->total_bytes - sinfo->bytes_readonly;
- 
-@@ -3237,6 +3236,10 @@ static int should_alloc_chunk(struct btrfs_space_info *sinfo,
- 	    alloc_bytes < div_factor(num_bytes, 8))
- 		return 0;
- 
-+	if (num_bytes > 256 * 1024 * 1024 &&
-+	    sinfo->bytes_used < div_factor(num_bytes, 3))
-+		return 0;
-+
- 	return 1;
- }
- 
--- 
-1.6.6.1
+--
+
+Sage Weil (1):
+  Btrfs: fix lockdep warning on clone ioctl
+
+Yehuda Sadeh (2):
+  Btrfs: fix delalloc checks in clone ioctl
+  Btrfs: fix clone ioctl where range is adjacent to extent
+
+ fs/btrfs/ioctl.c |   18 ++++++++++--------
+ 1 files changed, 10 insertions(+), 8 deletions(-)
 

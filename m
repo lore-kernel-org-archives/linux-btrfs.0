@@ -1,92 +1,55 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: Re: [patch 2/4] Add an option to show ISO, binary or raw bytes
-	counts using df.
-Date: Mon, 18 Oct 2010 21:46:54 +0100
-Message-ID: <20101018204654.GA7986@vlad.carfax.org.uk>
-References: <20101017182643.297900488@carfax.org.uk> <20101017182706.430006857@carfax.org.uk> <4CBC03A4.4080600@kingswood-consulting.co.uk>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="G4iJoqBmSsgzjUCe"
-Cc: linux-btrfs@vger.kernel.org
-To: Frank Kingswood <frank@kingswood-consulting.co.uk>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: don't allocate chunks as aggressively V2
+Date: Mon, 18 Oct 2010 21:02:57 -0400
+Message-ID: <1287450177-4081-1-git-send-email-josef@redhat.com>
+References: <20101018211313.GA2539@localhost.localdomain>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4CBC03A4.4080600@kingswood-consulting.co.uk>
+In-Reply-To: <20101018211313.GA2539@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Because the ENOSPC code over reserves super aggressively we end up allocating
+chunks way more often than we should.  For example with my fs_mark tests on a
+2gb fs I can end up reserved 1gb just for metadata, when only 34mb of that is
+being used.  So instead check to see if the amount of space actually used is
+less than 30% of the total space, and if so don't allocate a chunk, but only if
+we have at least 256mb of free space to make sure we don't put too much pressure
+on free space.
 
---G4iJoqBmSsgzjUCe
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+V1-V2: Cleanup should_alloc_chunk so it doesnt take fs_info, I was using it
+before for something different, forgot to clean it up.  Also added 256mb free
+floor at Chris's suggestion to help with the -m single case.
 
-On Mon, Oct 18, 2010 at 09:21:56AM +0100, Frank Kingswood wrote:
-> On 17/10/10 19:26, hugo-lkml@carfax.org.uk wrote:
->> Change btrfs filesystem df to allow the user to control the scales
->> used for sizes in the output.
->>
->> Index: btrfs-progs-unstable/btrfs.c
->> ===================================================================
->> --- btrfs-progs-unstable.orig/btrfs.c	2010-10-17 18:43:57.000000000 +0100
->> +++ btrfs-progs-unstable/btrfs.c	2010-10-17 18:47:36.000000000 +0100
->> @@ -87,9 +87,10 @@
->>   		"Show the info of a btrfs filesystem. If no<uuid>  or<label>\n"
->>   		"is passed, info of all the btrfs filesystem are shown."
->>   	},
->> -	{ do_df_filesystem, 1,
->> -	  "filesystem df", "<path>\n"
->> +	{ do_df_filesystem, -1,
->> +	  "filesystem df", "[-r|-b|-i]<path>\n"
->>   		"Show space usage information for a mount point\n."
->> +		"-r, -b, -i for raw (bytes), binary or ISO sizes."
->>   	},
->
-> This seems to eat up the short option namespace a bit quickly.
-> Fileutils uses different names as well, it may be convenient for users to 
-> match its names:
-> 	-h --human-readable   powers of 2**10
-> 	-H --si   powers of 1000
+ fs/btrfs/extent-tree.c |    7 +++++--
+ 1 files changed, 5 insertions(+), 2 deletions(-)
 
-   Matching fileutils is probably a good idea. I'm happy to use -h and
--H.
-
->>   	{ do_balance, 1,
->>   	  "filesystem balance", "<path>\n"
->> Index: btrfs-progs-unstable/btrfs_cmds.c
->> ===================================================================
->> --- btrfs-progs-unstable.orig/btrfs_cmds.c	2010-10-17 18:43:57.000000000 +0100
->> +++ btrfs-progs-unstable/btrfs_cmds.c	2010-10-17 18:47:36.000000000 +0100
->> @@ -841,7 +841,36 @@
->>   	u64 count = 0, i;
->>   	int ret;
->>   	int fd;
->> -	char *path = argv[1];
->> +	char *path;
->> +	int format = PRETTY_SIZE_BINARY;
->
-> Should the default not be to show sizes in bytes ("RAW")?
-
-   I was trying not to change the default behaviour at all, but with
--h/-H (and no switch for --raw), that would make sense. I'll re-roll
-the patches. (And update the man pages, as Goffredo asked).
-
-   Hugo.
-
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 14a52dd..eac11b1 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3224,8 +3224,7 @@ static void force_metadata_allocation(struct btrfs_fs_info *info)
+ 	rcu_read_unlock();
+ }
+ 
+-static int should_alloc_chunk(struct btrfs_space_info *sinfo,
+-			      u64 alloc_bytes)
++static int should_alloc_chunk(struct btrfs_space_info *sinfo, u64 alloc_bytes)
+ {
+ 	u64 num_bytes = sinfo->total_bytes - sinfo->bytes_readonly;
+ 
+@@ -3237,6 +3236,10 @@ static int should_alloc_chunk(struct btrfs_space_info *sinfo,
+ 	    alloc_bytes < div_factor(num_bytes, 8))
+ 		return 0;
+ 
++	if (num_bytes > 256 * 1024 * 1024 &&
++	    sinfo->bytes_used < div_factor(num_bytes, 3))
++		return 0;
++
+ 	return 1;
+ }
+ 
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-     --- "I don't like the look of it,  I tell you." "Well, stop ---     
-                          looking at it, then."                          
+1.6.6.1
 
---G4iJoqBmSsgzjUCe
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iD8DBQFMvLI+IKyzvlFcI40RAqs8AJ9rA9lBMjquqSPHmkeaVBWx46vm4wCggiBn
-HXexlJkO0RR0RHhG/T70kRM=
-=ezzh
------END PGP SIGNATURE-----
-
---G4iJoqBmSsgzjUCe--

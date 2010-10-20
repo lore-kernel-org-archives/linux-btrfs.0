@@ -1,26 +1,43 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Inode to bdi  issue?
-Date: Wed, 20 Oct 2010 09:59:38 -0400
-Message-ID: <20101020135938.GH3400@think>
-References: <14C7F4F06DB5814AB0DE29716C4F6D670EB36236@FRMRSSXCHMBSB1.dc-m.alcatel-lucent.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: "Smets, Jan (Jan)" <jan.smets@alcatel-lucent.com>
+From: Jiri Slaby <jslaby@suse.cz>
+Subject: [PATCH -repost#3 1/1] FS: btrfs, use helpers for rlimits
+Date: Wed, 20 Oct 2010 17:00:04 +0200
+Message-ID: <1287586804-17498-1-git-send-email-jslaby@suse.cz>
+Cc: akpm@linux-foundation.org, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org, jirislaby@gmail.com
+To: chris.mason@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <14C7F4F06DB5814AB0DE29716C4F6D670EB36236@FRMRSSXCHMBSB1.dc-m.alcatel-lucent.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 20, 2010 at 03:03:00PM +0200, Smets, Jan (Jan) wrote:
-> Hi list
-> 
-> Just a quick cut 'n paste report from my dmesg. Let me know if I can help any furter.
-> 
-> 2.6.36~rc6
-> 
-> PS: I think this is identical to the problem reported on 23/09 "Dirtiable inode bdi default != sb bdi btrfs", and might already be fixed in rc6+ , but there are some other traces in here, so I just want to make sure it's all covered :-)
+Make sure compiler won't do weird things with limits. E.g. fetching
+them twice may return 2 different values after writable limits are
+implemented.
 
-Correct, this one is already fixed.  Just do a git pull from Linus' tree
-and you'll get the fix.
+I.e. either use rlimit helpers added in
+3e10e716abf3c71bdb5d86b8f507f9e72236c9cd
+or ACCESS_ONCE if not applicable.
 
--chris
+Signed-off-by: Jiri Slaby <jslaby@suse.cz>
+Cc: Chris Mason <chris.mason@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+---
+ fs/btrfs/inode.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index a21625d..323c6ca 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3564,8 +3564,7 @@ static int btrfs_setattr_size(struct inode *inode, struct iattr *attr)
+ 		return 0;
+ 
+ 	if (attr->ia_size > inode->i_size) {
+-		unsigned long limit;
+-		limit = current->signal->rlim[RLIMIT_FSIZE].rlim_cur;
++		unsigned long limit = rlimit(RLIMIT_FSIZE);
+ 		if (attr->ia_size > inode->i_sb->s_maxbytes)
+ 			return -EFBIG;
+ 		if (limit != RLIM_INFINITY && attr->ia_size > limit) {
+-- 
+1.7.3.1
+
+

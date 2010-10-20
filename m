@@ -1,43 +1,26 @@
-From: Jiri Slaby <jslaby@suse.cz>
-Subject: [PATCH -repost#3 1/1] FS: btrfs, use helpers for rlimits
-Date: Wed, 20 Oct 2010 17:00:04 +0200
-Message-ID: <1287586804-17498-1-git-send-email-jslaby@suse.cz>
-Cc: akpm@linux-foundation.org, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org, jirislaby@gmail.com
-To: chris.mason@oracle.com
+From: Tomasz Chmielewski <mangoo@wpkg.org>
+Subject: Re: Inode to bdi issue?
+Date: Wed, 20 Oct 2010 19:20:57 +0200
+Message-ID: <4CBF24F9.5010709@wpkg.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Make sure compiler won't do weird things with limits. E.g. fetching
-them twice may return 2 different values after writable limits are
-implemented.
+> Correct, this one is already fixed.  Just do a git pull from Linus' tree
+> and you'll get the fix.
 
-I.e. either use rlimit helpers added in
-3e10e716abf3c71bdb5d86b8f507f9e72236c9cd
-or ACCESS_ONCE if not applicable.
+BTW, is there a separate btrfs tree? Or, everything gets to Linus' tree straight away?
 
-Signed-off-by: Jiri Slaby <jslaby@suse.cz>
-Cc: Chris Mason <chris.mason@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
----
- fs/btrfs/inode.c |    3 +--
- 1 files changed, 1 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index a21625d..323c6ca 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3564,8 +3564,7 @@ static int btrfs_setattr_size(struct inode *inode, struct iattr *attr)
- 		return 0;
- 
- 	if (attr->ia_size > inode->i_size) {
--		unsigned long limit;
--		limit = current->signal->rlim[RLIMIT_FSIZE].rlim_cur;
-+		unsigned long limit = rlimit(RLIMIT_FSIZE);
- 		if (attr->ia_size > inode->i_sb->s_maxbytes)
- 			return -EFBIG;
- 		if (limit != RLIM_INFINITY && attr->ia_size > limit) {
+The https://btrfs.wiki.kernel.org/index.php/Btrfs_source_repositories points to:
+
+http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=summary
+
+which seems quite old (Mon, 19 Jul 2010 20:58:20 +0000).
+
+
 -- 
-1.7.3.1
-
-
+Tomasz Chmielewski
+http://wpkg.org

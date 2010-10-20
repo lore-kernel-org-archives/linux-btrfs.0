@@ -1,57 +1,60 @@
-From: Erik Jensen <eriksjunk@rkjnsn.net>
-Subject: kernel BUG when removing missing drive (Take 2)
-Date: Tue, 19 Oct 2010 19:17:16 -0700
-Message-ID: <AANLkTimECim-kSVfuZkAS2pfNJi1rtA-voC98YR3iYoT@mail.gmail.com>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: Re: [RFC] Allow to exec "btrfs subvolume delete" by a non root user
+Date: Wed, 20 Oct 2010 05:00:47 +0200
+Message-ID: <201010200500.47793.kreijack@libero.it>
+References: <201010182004.59352.kreijack@libero.it> <Pine.LNX.4.64.1010191653550.26790@cobra.newdream.net>
+Reply-To: kreijack@libero.it
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <Pine.LNX.4.64.1010191653550.26790@cobra.newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-One of my drives on my six drive btrfs setup recently died.  I
-initially wasn't too worried about it, since both my data and metadata
-are raid1.  However, I have so far not been able to remove the missing
-drive after several attempts.
+On Wednesday, 20 October, 2010, Sage Weil wrote:
+> On Mon, 18 Oct 2010, Goffredo Baroncelli wrote:
+> 
+> > Hi all
+> > 
+> > like my previous patch, this one allow to remove a subvolume by an 
+ordinary
+> >  user. Instead of adding this capability to the rmdir(2) syscall, I update 
+the
+> > BTRFS_IOC_SNAP_DESTROY ioctl, relaxing the rules to be execute.
+> > The checks are the ones performed by the rmdir(2) syscall. So a 
+> > subvolume must be empty to be removed by a non-root user. I think that 
+this
+> >  increases a lot the usefulness of the snapshot/subvolume.
+> > 
+> > It is possible to pull the code from the branch named "rm-subvolume-not-
+root" 
+> > of the following repository:
+> > 
+> >       http://cassiopea.homelinux.net/git/btrfs-unstable.git  
+> > 
+> > Comments are welcome.
+> 
+> This looks okay to me.  I posted a similar patch a while back[1], but 
+> didn't want to duplicate the check_sticky and may_delete code and 
+> implemented a simpler set of checks instead.  The full checks are probably 
+> a better route, although it would be nice if we could avoid duplicating 
+> the VFS checks in the process.  Whether those helpers should be exported 
+> is someone else's call, though.  (The only other may_ functions that are 
+> exported are may_umount and may_umount_tree.)
 
-After discussing my problem on IRC, Chris Mason asked me to list
-everything I've tried on the mailing list, so here goes:
+I agree about the may_* function. But also there is the case of the 
+may_create..
+Anyway I want to highlight that the main differences between our patches is 
+the fact that may patches needed the subvolume to be empty. So I skip all the 
+problem related to removing a "not owned directory - not empty directory"
 
-1. I was attempting to cut commercials out of a TV recording when
-things seemed to stall.  A look a dmesg told me that one of my drives
-was having many read failures.
-2. I shut down my computer and removed the failed drive.
-3. I booted back up and mounted the array in degraded mode.  A quick
-ls showed all my files.
-4. I checked my filesystem usage and concluded that I should have
-enough free space to build back up to full redundancy on the remaining
-drives, so I would be protected until my replacement arrived.
-5. I executed "btrfs-vol -r missing", which churned the hard drives
-for a little bit and then stalled.  dmesg showed this kernel BUG:
-http://pastebin.com/KgjUUBq0
-6. The system wouldn't reboot normally at this point, so I had to use SysRq
-7. I temporarily booted a 2.6.35 kernel (I'm currently running 2.6.34)
-and tried to remove the missing drive again, with the same result.
-8. [back on 2.6.34] My replacement drive arrived, so I installed it
-and added it to the btrfs pool.
-9. I tried "btrfs-vol -r missing" again, and received the same kernel
-BUG once again.
-10. After using SysRq to reboot, I tried doing a "btrfs-vol -b", which
-moved some data around and halted with the same BUG.
-11. I checked the kernel source to find why the bug was being thrown.
-The offending line was "BUG_ON(rw == WRITE && !dev->writeable);" in
-btrfs_map_bio in volumes.c
-12. I used "badblocks -nsv" to make sure of all my hard drives were
-writeable, which they were.
+> 
+> sage
+> 
+> [1] http://marc.info/?l=linux-btrfs&m=128086492512628&w=2
 
-A paste of all of the logged kernel messages from 8 and 9 is at
-http://pastebin.org/322902
 
-I would like to get this figured out as quickly as possible, since my
-data is currently spread across 6 drives with (effectively) no
-redundancy.
-
-I do have C programming experience, so if there is a way that I can
-help track down the problem, please let me know.
-
-Thanks,
-Erik
+-- 
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

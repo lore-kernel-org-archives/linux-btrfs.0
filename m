@@ -1,30 +1,26 @@
-From: Felix Blanke <felixblanke@gmail.com>
-Subject: Re: newbie question about inode numbers
-Date: Wed, 20 Oct 2010 15:55:32 +0200
-Message-ID: <4CBEF4D4.7000805@gmail.com>
-References: <AANLkTinE03sBL=K3xfL41VZyFLhafNxHooheTv1PSQTD@mail.gmail.com> <AANLkTimHQfszXJs9wEff-j9L4+kcOaG385qACK0wzkLs@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Inode to bdi  issue?
+Date: Wed, 20 Oct 2010 09:59:38 -0400
+Message-ID: <20101020135938.GH3400@think>
+References: <14C7F4F06DB5814AB0DE29716C4F6D670EB36236@FRMRSSXCHMBSB1.dc-m.alcatel-lucent.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
-To: David Nicol <davidnicol@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: "Smets, Jan (Jan)" <jan.smets@alcatel-lucent.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimHQfszXJs9wEff-j9L4+kcOaG385qACK0wzkLs@mail.gmail.com>
+In-Reply-To: <14C7F4F06DB5814AB0DE29716C4F6D670EB36236@FRMRSSXCHMBSB1.dc-m.alcatel-lucent.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Which is a really good thing!
-
-HTML e-mails are useless and nobody should use them! I'm sure they came 
-directly from hell.
-
-
-David Nicol schrieb:
-> Wow, vger categorically refuses HTML e-mail!
+On Wed, Oct 20, 2010 at 03:03:00PM +0200, Smets, Jan (Jan) wrote:
+> Hi list
 > 
-> On Tue, Oct 19, 2010 at 4:41 PM, David Nicol <davidnicol@gmail.com> wrote:
->> the inode number is an "unsigned long" which on a 32 bit system may be merely 32 bits, yet btrfs allows a full 64 bits of files in a file system (which is impossible; but ZFS allows 128 bits of files, which is just silly.)
->> My question is, how are inode number collisions prevented on a 32-bit system, with a fs with five billion files?
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Just a quick cut 'n paste report from my dmesg. Let me know if I can help any furter.
+> 
+> 2.6.36~rc6
+> 
+> PS: I think this is identical to the problem reported on 23/09 "Dirtiable inode bdi default != sb bdi btrfs", and might already be fixed in rc6+ , but there are some other traces in here, so I just want to make sure it's all covered :-)
 
+Correct, this one is already fixed.  Just do a git pull from Linus' tree
+and you'll get the fix.
+
+-chris

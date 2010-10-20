@@ -1,115 +1,118 @@
-From: cwillu <cwillu@cwillu.com>
-Subject: [PATCH] Make df report effective sizes, not physical sizes
-Date: Wed, 20 Oct 2010 05:19:42 -0600
-Message-ID: <AANLkTikE0b8h9H=DPPXGGYhQAd8kSzvQud8DJSFm0-Cx@mail.gmail.com>
+From: "Smets, Jan (Jan)" <jan.smets@alcatel-lucent.com>
+Subject: Inode to bdi  issue?
+Date: Wed, 20 Oct 2010 15:03:00 +0200
+Message-ID: <14C7F4F06DB5814AB0DE29716C4F6D670EB36236@FRMRSSXCHMBSB1.dc-m.alcatel-lucent.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This currently applies on top of Josef's df patches.
+Hi list
 
-----
+Just a quick cut 'n paste report from my dmesg. Let me know if I can help any furter.
 
-Currently, a series of utilities are necessary to get an approximate answer to
-the question "How much disk space do I have free?".  Previously, df returned
-numbers which, while accurate, weren't useful:  the physical disk size isn't
-interesting when you just want to know if you have room to fit that 20g backup.
+2.6.36~rc6
 
-Basically what we want is good estimate of sizes in terms of how much data we
-can fit in our files (as we still have btrfs fi df and show if we need the
-details).
+PS: I think this is identical to the problem reported on 23/09 "Dirtiable inode bdi default != sb bdi btrfs", and might already be fixed in rc6+ , but there are some other traces in here, so I just want to make sure it's all covered :-)
 
-The reported size is the total size of all data block groups, plus free space
-in all metadata block groups, plus the unallocated space (factored by the data
-profile, and less 3% for metadata).  This means that the total size will bounce
-around a little depending on metadata overhead, but avoids giving an incorrect
-idea of how much space is in principle available to the user.
+Thanks !
 
-The free disk space calculation is the same as the total size, but we replace
-the total space allocated to data groups with the total space free in those
-groups.  Note: as this includes the free space in metadata groups, btrfs
-currently has a difficult time actually using up that space.  This is expected
-to be addressed in the future.
+- Jan
 
-The used space that regular df utility reports will be very close to (say) the
-amount of removable media required for all the data on the filesystem (rather
-than off by a factor depending on the raid level), and likewise with
-the reported
-free space.
 
-Signed-off-by: Carey Underwood <cwillu@cwillu.com>
----
- fs/btrfs/super.c |   45 +++++++++++++++++++++++++++++++++++----------
- 1 files changed, 35 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index ea06877..81d5285 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -728,26 +728,51 @@ static int btrfs_statfs(struct dentry *dentry,
-struct kstatfs *buf)
- 	struct btrfs_super_block *disk_super = &root->fs_info->super_copy;
- 	struct list_head *head = &root->fs_info->space_info;
- 	struct btrfs_space_info *found;
--	u64 total_used = 0;
--	u64 total_used_data = 0;
-+	int factor = 1;
-+	u64 metadata_fuzz;
-+	u64 pool_free = 0;
-+	u64 data_avail = 0;
-+	u64 data_used = 0;
- 	int bits = dentry->d_sb->s_blocksize_bits;
- 	__be32 *fsid = (__be32 *)root->fs_info->fsid;
+[    8.928947] device fsid a147a59b79cb5a8a-a2dba068dd650bbc devid 1 transid 391 /dev/sda6
+[    8.943753] device fsid 5c492fd3ca1ab13b-dafe2a63335708b1 devid 1 transid 285 /dev/sdb2
+[    8.946699] device fsid 5c492fd3ca1ab13b-dafe2a63335708b1 devid 1 transid 285 /dev/sdb2
+[  571.226110] device fsid 43491c1040626f7c-ba5c18b574ff238a devid 1 transid 7 /dev/sda6
+[  571.238467] device fsid 5c492fd3ca1ab13b-dafe2a63335708b1 devid 1 transid 291 /dev/sdb2
+[  571.252287] device fsid 43491c1040626f7c-ba5c18b574ff238a devid 1 transid 7 /dev/sda6
+[  571.265261] ------------[ cut here ]------------
+[  571.265267] WARNING: at /build/buildd-linux-2.6_2.6.36~rc6-1~experimental.1-amd64-GyrsOW/linux-2.6-2.6.36~rc6/debian/build/source_amd64_none/fs/fs-writeback.c:87 inode_to_bdi+0x55/0x5e()
+[  571.265270] Hardware name: X7SBi-LN4
+[  571.265271] Dirtiable inode bdi default != sb bdi btrfs
+[  571.265272] Modules linked in: fuse bonding loop radeon ttm e1000e it8213 drm_kms_helper snd_pcm snd_timer ide_core drm i2c_algo_bit i2c_i801 shpchp tpm_tis tpm snd soundcore snd_page_alloc pci_hotplug tpm_bios i3200_edac edac_core i2c_core parport_pc video parport output ghes pcspkr hed evdev container processor button serio_raw ext4 mbcache jbd2 crc16 btrfs zlib_deflate crc32c libcrc32c sd_mod crc_t10dif ata_generic ata_piix libata scsi_mod thermal thermal_sys
+[  571.265304] Pid: 2873, comm: chown Not tainted 2.6.36-rc6-amd64 #1
+[  571.265306] Call Trace:
+[  571.265310]  [<ffffffff810444a0>] ? warn_slowpath_common+0x78/0x8c
+[  571.265313]  [<ffffffff81044553>] ? warn_slowpath_fmt+0x45/0x4a
+[  571.265326]  [<ffffffffa015db5a>] ? __btrfs_end_transaction+0x18d/0x1a8 [btrfs]
+[  571.265329]  [<ffffffff81106a51>] ? inode_to_bdi+0x55/0x5e
+[  571.265331]  [<ffffffff81107c56>] ? __mark_inode_dirty+0xc0/0x185
+[  571.265341]  [<ffffffffa016789d>] ? btrfs_setattr+0x1fb/0x230 [btrfs]
+[  571.265344]  [<ffffffff81048a86>] ? current_fs_time+0x1e/0x24
+[  571.265347]  [<ffffffff810ff1a5>] ? notify_change+0x195/0x27e
+[  571.265350]  [<ffffffff810eb7b8>] ? chown_common+0x8a/0xa1
+[  571.265352]  [<ffffffff810eb918>] ? sys_fchownat+0x51/0x80
+[  571.265356]  [<ffffffff8130c915>] ? page_fault+0x25/0x30
+[  571.265358]  [<ffffffff81008a02>] ? system_call_fastpath+0x16/0x1b
+[  571.265360] ---[ end trace d70c205a10708c10 ]---
+[  571.315394] ------------[ cut here ]------------
 
- 	rcu_read_lock();
- 	list_for_each_entry_rcu(found, head, list) {
- 		if (found->flags & (BTRFS_BLOCK_GROUP_METADATA |
--				    BTRFS_BLOCK_GROUP_SYSTEM))
--			total_used_data += found->disk_total;
--		else
--			total_used_data += found->disk_used;
--		total_used += found->disk_used;
-+				    BTRFS_BLOCK_GROUP_SYSTEM)) {
-+			/* This is space that could be used for data in a pinch,
-+			   report it as such. */
-+			data_avail += found->total_bytes - found->bytes_used;
-+		} else {
-+			data_avail += found->total_bytes;
-+			data_used += found->bytes_used;
-+
-+			if (found->flags & (BTRFS_BLOCK_GROUP_DUP |
-+					    BTRFS_BLOCK_GROUP_RAID1 |
-+					    BTRFS_BLOCK_GROUP_RAID10))
-+				factor = 2;
-+		}
-+		
-+		pool_free += found->disk_total;
- 	}
- 	rcu_read_unlock();
+[  571.315394] ------------[ cut here ]------------
+[  571.315400] WARNING: at /build/buildd-linux-2.6_2.6.36~rc6-1~experimental.1-amd64-GyrsOW/linux-2.6-2.6.36~rc6/debian/build/source_amd64_none/fs/fs-writeback.c:87 inode_to_bdi+0x55/0x5e()
+[  571.315403] Hardware name: X7SBi-LN4
+[  571.315404] Dirtiable inode bdi default != sb bdi btrfs
+[  571.315406] Modules linked in: fuse bonding loop radeon ttm e1000e it8213 drm_kms_helper snd_pcm snd_timer ide_core drm i2c_algo_bit i2c_i801 shpchp tpm_tis tpm snd soundcore snd_page_alloc pci_hotplug tpm_bios i3200_edac edac_core i2c_core parport_pc video parport output ghes pcspkr hed evdev container processor button serio_raw ext4 mbcache jbd2 crc16 btrfs zlib_deflate crc32c libcrc32c sd_mod crc_t10dif ata_generic ata_piix libata scsi_mod thermal thermal_sys
+[  571.315437] Pid: 2877, comm: cosd Tainted: G        W   2.6.36-rc6-amd64 #1
+[  571.315438] Call Trace:
+[  571.315443]  [<ffffffff810444a0>] ? warn_slowpath_common+0x78/0x8c
+[  571.315446]  [<ffffffff81044553>] ? warn_slowpath_fmt+0x45/0x4a
+[  571.315458]  [<ffffffffa015db5a>] ? __btrfs_end_transaction+0x18d/0x1a8 [btrfs]
+[  571.315461]  [<ffffffff81106a51>] ? inode_to_bdi+0x55/0x5e
+[  571.315464]  [<ffffffff81107c56>] ? __mark_inode_dirty+0xc0/0x185
+[  571.315474]  [<ffffffffa016789d>] ? btrfs_setattr+0x1fb/0x230 [btrfs]
+[  571.315477]  [<ffffffff81048a86>] ? current_fs_time+0x1e/0x24
+[  571.315479]  [<ffffffff810ff1a5>] ? notify_change+0x195/0x27e
+[  571.315483]  [<ffffffff810eba52>] ? sys_fchmodat+0x96/0xcd
+[  571.315485]  [<ffffffff81008a02>] ? system_call_fastpath+0x16/0x1b
+[  571.315487] ---[ end trace d70c205a10708c11 ]---
+[  571.564353] device fsid 43491c1040626f7c-ba5c18b574ff238a devid 1 transid 11 /dev/sda6
+[  571.634595] device fsid 1b46d5b4fb269fde-1596a386ec6aceac devid 1 transid 7 /dev/sdb2
+[  571.674567] device fsid 1b46d5b4fb269fde-1596a386ec6aceac devid 1 transid 7 /dev/sdb2
 
-+	pool_free = btrfs_super_total_bytes(disk_super) - pool_free;
-+	do_div(pool_free, factor);
-+	
-+	/* Estimate ~3% of the free pool will go to metadata */
-+	metadata_fuzz = pool_free;	
-+	do_div(metadata_fuzz, 32);
-+
-+	/* Reported sizes in terms of how much data can fit in files. Metadata
-+	   size is reflected by the difference between the reported size and
-+	   the actual size of the partition.  We're interested directly useful
-+	   numbers, even if they don't reflect the particulars: that's what
-+	   the df ioctl is for. */
- 	buf->f_namelen = BTRFS_NAME_LEN;
--	buf->f_blocks = btrfs_super_total_bytes(disk_super) >> bits;
--	buf->f_bfree = buf->f_blocks - (total_used >> bits);
--	buf->f_bavail = buf->f_blocks - (total_used_data >> bits);
-+	buf->f_blocks = (pool_free + data_avail - metadata_fuzz) >> bits;
-+	buf->f_bfree = buf->f_blocks - (data_used >> bits);
-+	buf->f_bavail = buf->f_bfree;
- 	buf->f_bsize = dentry->d_sb->s_blocksize;
- 	buf->f_type = BTRFS_SUPER_MAGIC;
-
--- 
-1.7.0.4
+[  571.677483] ------------[ cut here ]------------
+[  571.677490] WARNING: at /build/buildd-linux-2.6_2.6.36~rc6-1~experimental.1-amd64-GyrsOW/linux-2.6-2.6.36~rc6/debian/build/source_amd64_none/fs/fs-writeback.c:87 inode_to_bdi+0x55/0x5e()
+[  571.677492] Hardware name: X7SBi-LN4
+[  571.677494] Dirtiable inode bdi default != sb bdi btrfs
+[  571.677495] Modules linked in: fuse bonding loop radeon ttm e1000e it8213 drm_kms_helper snd_pcm snd_timer ide_core drm i2c_algo_bit i2c_i801 shpchp tpm_tis tpm snd soundcore snd_page_alloc pci_hotplug tpm_bios i3200_edac edac_core i2c_core parport_pc video parport output ghes pcspkr hed evdev container processor button serio_raw ext4 mbcache jbd2 crc16 btrfs zlib_deflate crc32c libcrc32c sd_mod crc_t10dif ata_generic ata_piix libata scsi_mod thermal thermal_sys
+[  571.677526] Pid: 2938, comm: chown Tainted: G        W   2.6.36-rc6-amd64 #1
+[  571.677528] Call Trace:
+[  571.677533]  [<ffffffff810444a0>] ? warn_slowpath_common+0x78/0x8c
+[  571.677535]  [<ffffffff81044553>] ? warn_slowpath_fmt+0x45/0x4a
+[  571.677547]  [<ffffffffa015db5a>] ? __btrfs_end_transaction+0x18d/0x1a8 [btrfs]
+[  571.677551]  [<ffffffff81106a51>] ? inode_to_bdi+0x55/0x5e
+[  571.677553]  [<ffffffff81107c56>] ? __mark_inode_dirty+0xc0/0x185
+[  571.677563]  [<ffffffffa016789d>] ? btrfs_setattr+0x1fb/0x230 [btrfs]
+[  571.677566]  [<ffffffff81048a86>] ? current_fs_time+0x1e/0x24
+[  571.677569]  [<ffffffff810ff1a5>] ? notify_change+0x195/0x27e
+[  571.677572]  [<ffffffff810eb7b8>] ? chown_common+0x8a/0xa1
+[  571.677574]  [<ffffffff810eb918>] ? sys_fchownat+0x51/0x80
+[  571.677578]  [<ffffffff8130c915>] ? page_fault+0x25/0x30
+[  571.677580]  [<ffffffff81008a02>] ? system_call_fastpath+0x16/0x1b
+[  571.677582] ---[ end trace d70c205a10708c12 ]---
+[  571.762510] ------------[ cut here ]------------
+[  571.762517] WARNING: at /build/buildd-linux-2.6_2.6.36~rc6-1~experimental.1-amd64-GyrsOW/linux-2.6-2.6.36~rc6/debian/build/source_amd64_none/fs/fs-writeback.c:87 inode_to_bdi+0x55/0x5e()
+[  571.762519] Hardware name: X7SBi-LN4
+[  571.762521] Dirtiable inode bdi default != sb bdi btrfs
+[  571.762522] Modules linked in: fuse bonding loop radeon ttm e1000e it8213 drm_kms_helper snd_pcm snd_timer ide_core drm i2c_algo_bit i2c_i801 shpchp tpm_tis tpm snd soundcore snd_page_alloc pci_hotplug tpm_bios i3200_edac edac_core i2c_core parport_pc video parport output ghes pcspkr hed evdev container processor button serio_raw ext4 mbcache jbd2 crc16 btrfs zlib_deflate crc32c libcrc32c sd_mod crc_t10dif ata_generic ata_piix libata scsi_mod thermal thermal_sys
+[  571.762553] Pid: 2942, comm: cosd Tainted: G        W   2.6.36-rc6-amd64 #1
+[  571.762555] Call Trace:
+[  571.762560]  [<ffffffff810444a0>] ? warn_slowpath_common+0x78/0x8c
+[  571.762562]  [<ffffffff81044553>] ? warn_slowpath_fmt+0x45/0x4a
+[  571.762574]  [<ffffffffa015db5a>] ? __btrfs_end_transaction+0x18d/0x1a8 [btrfs]
+[  571.762577]  [<ffffffff81106a51>] ? inode_to_bdi+0x55/0x5e
+[  571.762580]  [<ffffffff81107c56>] ? __mark_inode_dirty+0xc0/0x185
+[  571.762590]  [<ffffffffa016789d>] ? btrfs_setattr+0x1fb/0x230 [btrfs]
+[  571.762593]  [<ffffffff81048a86>] ? current_fs_time+0x1e/0x24
+[  571.762596]  [<ffffffff810ff1a5>] ? notify_change+0x195/0x27e
+[  571.762599]  [<ffffffff810eba52>] ? sys_fchmodat+0x96/0xcd
+[  571.762602]  [<ffffffff81008a02>] ? system_call_fastpath+0x16/0x1b
+[  571.762603] ---[ end trace d70c205a10708c13 ]---
+[  591.944084] device fsid 43491c1040626f7c-ba5c18b574ff238a devid 1 transid 14 /dev/sda6
+[  591.944989] device fsid 1b46d5b4fb269fde-1596a386ec6aceac devid 1 transid 14 /dev/sdb2
+[  591.955426] device fsid 43491c1040626f7c-ba5c18b574ff238a devid 1 transid 14 /dev/sda6
+[  592.031036] device fsid 43491c1040626f7c-ba5c18b574ff238a devid 1 transid 16 /dev/sda6
+[  592.052607] device fsid 1b46d5b4fb269fde-1596a386ec6aceac devid 1 transid 14 /dev/sdb2
+[  592.055689] device fsid 1b46d5b4fb269fde-1596a386ec6aceac devid 1 transid 14 /dev/sdb2

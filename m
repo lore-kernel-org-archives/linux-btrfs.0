@@ -1,134 +1,194 @@
 From: Hugo Mills <hugo@carfax.org.uk>
-Subject: [patch v2 4/4] Add an option to show ISO, binary or raw bytes counts using btrfs-show.
-Date: Thu, 21 Oct 2010 20:01:39 +0100
-Message-ID: <20101021190203.471102162@carfax.org.uk>
+Subject: [patch v2 1/4] Update pretty-printer for different systems of counting multiples.
+Date: Thu, 21 Oct 2010 20:01:36 +0100
+Message-ID: <20101021190202.711591083@carfax.org.uk>
 References: <20101021190135.757086134@carfax.org.uk>
 Cc: Hugo Mills <hugo@carfax.org.uk>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Change btrfs-show to allow the user to control the scales used for
-sizes in the output.
+Make the pretty-printer for data sizes capable of printing in ISO
+(powers of 10^3), binary (powers of 2^10) or raw (a simple byte
+count).
 
 Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
 ---
- btrfs-show.c        |   27 +++++++++++++++++++--------
- man/btrfs-show.8.in |   10 ++++++++--
- 2 files changed, 27 insertions(+), 10 deletions(-)
+ btrfs-show.c |    7 ++++---
+ btrfs_cmds.c |   13 ++++++++-----
+ mkfs.c       |    3 ++-
+ utils.c      |   48 +++++++++++++++++++++++++++++++++---------------
+ utils.h      |    7 ++++++-
+ 5 files changed, 53 insertions(+), 25 deletions(-)
 
 Index: btrfs-progs-unstable/btrfs-show.c
 ===================================================================
---- btrfs-progs-unstable.orig/btrfs-show.c	2010-10-20 19:48:33.000000000 +0100
-+++ btrfs-progs-unstable/btrfs-show.c	2010-10-20 20:18:11.000000000 +0100
-@@ -52,7 +52,7 @@
- 	return 0;
- }
- 
--static void print_one_uuid(struct btrfs_fs_devices *fs_devices)
-+static void print_one_uuid(struct btrfs_fs_devices *fs_devices, int format)
- {
- 	char uuidbuf[37];
- 	struct list_head *cur;
-@@ -69,8 +69,7 @@
+--- btrfs-progs-unstable.orig/btrfs-show.c	2010-10-09 15:39:09.000000000 +0100
++++ btrfs-progs-unstable/btrfs-show.c	2010-10-20 19:20:02.000000000 +0100
+@@ -69,7 +69,8 @@
  	else
  		printf("Label: none ");
  
--	super_bytes_used = pretty_sizes(device->super_bytes_used,
--									PRETTY_SIZE_RAW);
-+	super_bytes_used = pretty_sizes(device->super_bytes_used, format);
+-	super_bytes_used = pretty_sizes(device->super_bytes_used);
++	super_bytes_used = pretty_sizes(device->super_bytes_used,
++									PRETTY_SIZE_RAW);
  
  	total = device->total_devs;
  	printf(" uuid: %s\n\tTotal devices %llu FS bytes used %s\n", uuidbuf,
-@@ -82,8 +81,8 @@
+@@ -81,8 +82,8 @@
  		char *total_bytes;
  		char *bytes_used;
  		device = list_entry(cur, struct btrfs_device, dev_list);
--		total_bytes = pretty_sizes(device->total_bytes, PRETTY_SIZE_RAW);
--		bytes_used = pretty_sizes(device->bytes_used, PRETTY_SIZE_RAW);
-+		total_bytes = pretty_sizes(device->total_bytes, format);
-+		bytes_used = pretty_sizes(device->bytes_used, format);
+-		total_bytes = pretty_sizes(device->total_bytes);
+-		bytes_used = pretty_sizes(device->bytes_used);
++		total_bytes = pretty_sizes(device->total_bytes, PRETTY_SIZE_RAW);
++		bytes_used = pretty_sizes(device->bytes_used, PRETTY_SIZE_RAW);
  		printf("\tdevid %4llu size %s used %s path %s\n",
  		       (unsigned long long)device->devid,
  		       total_bytes, bytes_used, device->name);
-@@ -99,13 +98,18 @@
+Index: btrfs-progs-unstable/btrfs_cmds.c
+===================================================================
+--- btrfs-progs-unstable.orig/btrfs_cmds.c	2010-10-09 15:39:09.000000000 +0100
++++ btrfs-progs-unstable/btrfs_cmds.c	2010-10-20 19:19:20.000000000 +0100
+@@ -634,7 +634,8 @@
+ 	else
+ 		printf("Label: none ");
  
- static void print_usage(void)
- {
--	fprintf(stderr, "usage: btrfs-show [search label or device]\n");
-+	fprintf(stderr, "usage: btrfs-show [options] [search label or device]\n");
-+	fprintf(stderr, "Options:\n");
-+	fprintf(stderr, "\t-h, --human-readable\tShow sizes in powers of 2^10.\n");
-+	fprintf(stderr, "\t-s, --si\t\tShow sizes in powers of 10^3 (SI multiples).\n");
- 	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
- 	exit(1);
+-	super_bytes_used = pretty_sizes(device->super_bytes_used);
++	super_bytes_used = pretty_sizes(device->super_bytes_used,
++									PRETTY_SIZE_RAW);
+ 
+ 	total = device->total_devs;
+ 	printf(" uuid: %s\n\tTotal devices %llu FS bytes used %s\n", uuidbuf,
+@@ -646,8 +647,8 @@
+ 		char *total_bytes;
+ 		char *bytes_used;
+ 		device = list_entry(cur, struct btrfs_device, dev_list);
+-		total_bytes = pretty_sizes(device->total_bytes);
+-		bytes_used = pretty_sizes(device->bytes_used);
++		total_bytes = pretty_sizes(device->total_bytes, PRETTY_SIZE_RAW);
++		bytes_used = pretty_sizes(device->bytes_used, PRETTY_SIZE_RAW);
+ 		printf("\tdevid %4llu size %s used %s path %s\n",
+ 		       (unsigned long long)device->devid,
+ 		       total_bytes, bytes_used, device->name);
+@@ -913,8 +914,10 @@
+ 			written += 8;
+ 		}
+ 
+-		total_bytes = pretty_sizes(sargs->spaces[i].total_bytes);
+-		used_bytes = pretty_sizes(sargs->spaces[i].used_bytes);
++		total_bytes = pretty_sizes(sargs->spaces[i].total_bytes,
++									PRETTY_SIZE_RAW);
++		used_bytes = pretty_sizes(sargs->spaces[i].used_bytes,
++									PRETTY_SIZE_RAW);
+ 		printf("%s: total=%s, used=%s\n", description, total_bytes,
+ 		       used_bytes);
+ 	}
+Index: btrfs-progs-unstable/mkfs.c
+===================================================================
+--- btrfs-progs-unstable.orig/mkfs.c	2010-10-09 15:39:09.000000000 +0100
++++ btrfs-progs-unstable/mkfs.c	2010-10-17 19:35:08.000000000 +0100
+@@ -524,7 +524,8 @@
+ 	printf("fs created label %s on %s\n\tnodesize %u leafsize %u "
+ 	    "sectorsize %u size %s\n",
+ 	    label, first_file, nodesize, leafsize, sectorsize,
+-	    pretty_sizes(btrfs_super_total_bytes(&root->fs_info->super_copy)));
++		pretty_sizes(btrfs_super_total_bytes(&root->fs_info->super_copy),
++			PRETTY_SIZE_BINARY));
+ 
+ 	printf("%s\n", BTRFS_BUILD_VERSION);
+ 	btrfs_commit_transaction(trans, root);
+Index: btrfs-progs-unstable/utils.c
+===================================================================
+--- btrfs-progs-unstable.orig/utils.c	2010-10-09 15:39:09.000000000 +0100
++++ btrfs-progs-unstable/utils.c	2010-10-17 19:35:08.000000000 +0100
+@@ -966,30 +966,48 @@
+ 	return ret;
  }
  
- static struct option long_options[] = {
- 	/* { "byte-count", 1, NULL, 'b' }, */
-+	{ "human-readable", 0, NULL, 'h' },
-+	{ "si", 0, NULL, 'H' },
- 	{ 0, 0, 0, 0}
- };
+-static char *size_strs[] = { "", "KB", "MB", "GB", "TB",
++static char *bin_size_strs[] = { "", "KiB", "MiB", "GiB", "TiB",
++			    "PiB", "EiB", "ZiB", "YiB"};
++static char *iso_size_strs[] = { "", "kB", "MB", "GB", "TB",
+ 			    "PB", "EB", "ZB", "YB"};
+-char *pretty_sizes(u64 size)
++char *pretty_sizes(u64 size, int format)
+ {
+ 	int num_divs = 0;
+ 	u64 last_size = size;
+ 	u64 fract_size = size;
+ 	float fraction;
+ 	char *pretty;
++	int divisor = 1024;
++	char** size_strs = bin_size_strs;
  
-@@ -117,14 +121,21 @@
- 	char *search = NULL;
- 	int ret;
- 	int option_index = 0;
-+	int format = PRETTY_SIZE_RAW;
- 
- 	while(1) {
- 		int c;
--		c = getopt_long(ac, av, "", long_options,
-+		c = getopt_long(ac, av, "hH", long_options,
- 				&option_index);
- 		if (c < 0)
- 			break;
- 		switch(c) {
-+			case 'H':
-+				format = PRETTY_SIZE_ISO;
-+				break;
-+			case 'h':
-+				format = PRETTY_SIZE_BINARY;
-+				break;
- 			default:
- 				print_usage();
- 		}
-@@ -144,7 +155,7 @@
- 					list);
- 		if (search && uuid_search(fs_devices, search) == 0)
- 			continue;
--		print_one_uuid(fs_devices);
-+		print_one_uuid(fs_devices, format);
- 	}
- 	printf("%s\n", BTRFS_BUILD_VERSION);
- 	return 0;
-Index: btrfs-progs-unstable/man/btrfs-show.8.in
-===================================================================
---- btrfs-progs-unstable.orig/man/btrfs-show.8.in	2010-10-20 20:15:29.000000000 +0100
-+++ btrfs-progs-unstable/man/btrfs-show.8.in	2010-10-20 20:17:30.000000000 +0100
-@@ -2,13 +2,19 @@
- .SH NAME
- btrfs-show \- scan the /dev directory for btrfs partitions and print results.
- .SH SYNOPSIS
--.B btrfs-show
-+.B btrfs-show [options]
- .SH DESCRIPTION
- .B btrfs-show
- is used to scan the /dev directory for btrfs partitions and display brief
- information such as lable, uuid, etc of each btrfs partition.
- .SH OPTIONS
--none
-+.TP
-+\fB\-h\fR, \fB\-\-human\-readable\fR
-+Show values in multiples of 2^10.
-+.TP
-+\fB\-H\fR, \fB\-\-si\fR
-+Show values in multiples of 10^3 (SI multiples).
+-	while(size > 0) {
+-		fract_size = last_size;
+-		last_size = size;
+-		size /= 1024;
+-		num_divs++;
++	if(format == PRETTY_SIZE_RAW) {
++		pretty = malloc(21);
++		sprintf(pretty, "%llu", size);
++	} else {
++		if(format == PRETTY_SIZE_ISO) {
++			divisor = 1000;
++			size_strs = iso_size_strs;
++		} else if(format == PRETTY_SIZE_BINARY) {
++			divisor = 1024;
++			size_strs = bin_size_strs;
++		}
 +
- .SH AVAILABILITY
- .B btrfs-show
- is part of btrfs-progs. Btrfs is currently under heavy development,
++		while(size > 0) {
++			fract_size = last_size;
++			last_size = size;
++			size /= divisor;
++			num_divs++;
++		}
++		if (num_divs == 0)
++			num_divs = 1;
++		if (num_divs > ARRAY_SIZE(bin_size_strs))
++			return NULL;
++
++		fraction = (float)fract_size / divisor;
++		pretty = malloc(16);
++		sprintf(pretty, "%.2f%s", fraction, size_strs[num_divs-1]);
+ 	}
+-	if (num_divs == 0)
+-		num_divs = 1;
+-	if (num_divs > ARRAY_SIZE(size_strs))
+-		return NULL;
+-
+-	fraction = (float)fract_size / 1024;
+-	pretty = malloc(16);
+-	sprintf(pretty, "%.2f%s", fraction, size_strs[num_divs-1]);
++
+ 	return pretty;
+ }
+ 
+Index: btrfs-progs-unstable/utils.h
+===================================================================
+--- btrfs-progs-unstable.orig/utils.h	2010-10-09 15:39:09.000000000 +0100
++++ btrfs-progs-unstable/utils.h	2010-10-17 19:35:08.000000000 +0100
+@@ -21,6 +21,11 @@
+ 
+ #define BTRFS_MKFS_SYSTEM_GROUP_SIZE (4 * 1024 * 1024)
+ 
++/* Constants for pretty_size() format parameter */
++#define PRETTY_SIZE_RAW 0
++#define PRETTY_SIZE_ISO 1
++#define PRETTY_SIZE_BINARY 2
++
+ int make_btrfs(int fd, const char *device, const char *label,
+ 	       u64 blocks[6], u64 num_bytes, u32 nodesize,
+ 	       u32 leafsize, u32 sectorsize, u32 stripesize);
+@@ -39,5 +44,5 @@
+ int check_mounted(const char *devicename);
+ int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
+ 				 int super_offset);
+-char *pretty_sizes(u64 size);
++char *pretty_sizes(u64 size, int format);
+ #endif
 
 -- 
 === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===

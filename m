@@ -1,41 +1,27 @@
 From: Hugo Mills <hugo@carfax.org.uk>
-Subject: [patch v2 3/4] Add an option to show ISO, binary or raw bytes counts using show.
-Date: Thu, 21 Oct 2010 20:01:38 +0100
-Message-ID: <20101021190203.205680210@carfax.org.uk>
+Subject: [patch v2 4/4] Add an option to show ISO, binary or raw bytes counts using btrfs-show.
+Date: Thu, 21 Oct 2010 20:01:39 +0100
+Message-ID: <20101021190203.471102162@carfax.org.uk>
 References: <20101021190135.757086134@carfax.org.uk>
 Cc: Hugo Mills <hugo@carfax.org.uk>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Change btrfs filesystem show to allow the user to control the scales
-used for sizes in the output.
+Change btrfs-show to allow the user to control the scales used for
+sizes in the output.
 
 Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
 ---
- btrfs.c        |    2 +-
- btrfs_cmds.c   |   45 ++++++++++++++++++++++++++++++++++++++-------
- man/btrfs.8.in |   10 ++++++++++
- 3 files changed, 49 insertions(+), 8 deletions(-)
+ btrfs-show.c        |   27 +++++++++++++++++++--------
+ man/btrfs-show.8.in |   10 ++++++++--
+ 2 files changed, 27 insertions(+), 10 deletions(-)
 
-Index: btrfs-progs-unstable/btrfs.c
+Index: btrfs-progs-unstable/btrfs-show.c
 ===================================================================
---- btrfs-progs-unstable.orig/btrfs.c	2010-10-20 20:03:37.000000000 +0100
-+++ btrfs-progs-unstable/btrfs.c	2010-10-20 20:11:03.000000000 +0100
-@@ -83,7 +83,7 @@
- 		"will occupe all available space on the device."
- 	},
- 	{ do_show_filesystem, 999,
--	  "filesystem show", "[<uuid>|<label>]\n"
-+	  "filesystem show", "[options] [<uuid>|<label>]\n"
- 		"Show the info of a btrfs filesystem. If no <uuid> or <label>\n"
- 		"is passed, info of all the btrfs filesystem are shown."
- 	},
-Index: btrfs-progs-unstable/btrfs_cmds.c
-===================================================================
---- btrfs-progs-unstable.orig/btrfs_cmds.c	2010-10-20 20:03:37.000000000 +0100
-+++ btrfs-progs-unstable/btrfs_cmds.c	2010-10-20 20:08:00.000000000 +0100
-@@ -617,7 +617,7 @@
+--- btrfs-progs-unstable.orig/btrfs-show.c	2010-10-20 19:48:33.000000000 +0100
++++ btrfs-progs-unstable/btrfs-show.c	2010-10-20 20:18:11.000000000 +0100
+@@ -52,7 +52,7 @@
  	return 0;
  }
  
@@ -44,7 +30,7 @@ Index: btrfs-progs-unstable/btrfs_cmds.c
  {
  	char uuidbuf[37];
  	struct list_head *cur;
-@@ -634,8 +634,7 @@
+@@ -69,8 +69,7 @@
  	else
  		printf("Label: none ");
  
@@ -54,7 +40,7 @@ Index: btrfs-progs-unstable/btrfs_cmds.c
  
  	total = device->total_devs;
  	printf(" uuid: %s\n\tTotal devices %llu FS bytes used %s\n", uuidbuf,
-@@ -647,8 +646,8 @@
+@@ -82,8 +81,8 @@
  		char *total_bytes;
  		char *bytes_used;
  		device = list_entry(cur, struct btrfs_device, dev_list);
@@ -65,54 +51,50 @@ Index: btrfs-progs-unstable/btrfs_cmds.c
  		printf("\tdevid %4llu size %s used %s path %s\n",
  		       (unsigned long long)device->devid,
  		       total_bytes, bytes_used, device->name);
-@@ -662,13 +661,45 @@
- 	printf("\n");
+@@ -99,13 +98,18 @@
+ 
+ static void print_usage(void)
+ {
+-	fprintf(stderr, "usage: btrfs-show [search label or device]\n");
++	fprintf(stderr, "usage: btrfs-show [options] [search label or device]\n");
++	fprintf(stderr, "Options:\n");
++	fprintf(stderr, "\t-h, --human-readable\tShow sizes in powers of 2^10.\n");
++	fprintf(stderr, "\t-s, --si\t\tShow sizes in powers of 10^3 (SI multiples).\n");
+ 	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
+ 	exit(1);
  }
  
-+const struct option show_options[] = {
+ static struct option long_options[] = {
+ 	/* { "byte-count", 1, NULL, 'b' }, */
 +	{ "human-readable", 0, NULL, 'h' },
 +	{ "si", 0, NULL, 'H' },
-+	{ NULL, 0, NULL, 0 }
-+};
-+
- int do_show_filesystem(int argc, char **argv)
- {
- 	struct list_head *all_uuids;
- 	struct btrfs_fs_devices *fs_devices;
- 	struct list_head *cur_uuid;
--	char *search = argv[1];
-+	char *search;
- 	int ret;
-+	int format = PRETTY_SIZE_RAW;
-+
-+	optind = 1;
-+	while(1) {
-+		int c = getopt_long(argc, argv, "hH", show_options, NULL);
-+		if (c < 0)
-+			break;
-+		switch(c) {
-+		case 'h':
-+			format = PRETTY_SIZE_BINARY;
-+			break;
-+		case 'H':
-+			format = PRETTY_SIZE_ISO;
-+			break;
-+		default:
-+			fprintf(stderr, "Invalid arguments for show\n");
-+			free(argv);
-+			return 1;
-+		}
-+	}
-+	if (argc - optind > 1) {
-+		fprintf(stderr, "Too many arguments for show\n");
-+		free(argv);
-+		return 1;
-+	}
-+	search = argv[optind];
+ 	{ 0, 0, 0, 0}
+ };
  
- 	ret = btrfs_scan_one_dir("/dev", 0);
- 	if (ret){
-@@ -682,7 +713,7 @@
+@@ -117,14 +121,21 @@
+ 	char *search = NULL;
+ 	int ret;
+ 	int option_index = 0;
++	int format = PRETTY_SIZE_RAW;
+ 
+ 	while(1) {
+ 		int c;
+-		c = getopt_long(ac, av, "", long_options,
++		c = getopt_long(ac, av, "hH", long_options,
+ 				&option_index);
+ 		if (c < 0)
+ 			break;
+ 		switch(c) {
++			case 'H':
++				format = PRETTY_SIZE_ISO;
++				break;
++			case 'h':
++				format = PRETTY_SIZE_BINARY;
++				break;
+ 			default:
+ 				print_usage();
+ 		}
+@@ -144,7 +155,7 @@
  					list);
  		if (search && uuid_search(fs_devices, search) == 0)
  			continue;
@@ -121,34 +103,32 @@ Index: btrfs-progs-unstable/btrfs_cmds.c
  	}
  	printf("%s\n", BTRFS_BUILD_VERSION);
  	return 0;
-Index: btrfs-progs-unstable/man/btrfs.8.in
+Index: btrfs-progs-unstable/man/btrfs-show.8.in
 ===================================================================
---- btrfs-progs-unstable.orig/man/btrfs.8.in	2010-10-20 20:03:53.000000000 +0100
-+++ btrfs-progs-unstable/man/btrfs.8.in	2010-10-20 20:08:15.000000000 +0100
-@@ -23,6 +23,8 @@
- .PP
- \fBbtrfs\fP \fBfilesystem df\fP\fI [options] <path>\fP
- .PP
-+\fBbtrfs\fP \fBfilesystem show\fP\fI [options] [<uuid>|<label>]\fP
-+.PP
- \fBbtrfs\fP \fBdevice scan\fP\fI [<device> [<device>..]]\fP
- .PP
- \fBbtrfs\fP \fBdevice show\fP\fI <dev>|<label> [<dev>|<label>...]\fP
-@@ -151,6 +153,14 @@
- -H, --si Use powers of 10^3 (1000) to report sizes, in SI multiples.
- .TP
- 
-+\fBfilesystem show\fR [options] [<uuid>|<label>]\fR
-+Show the usage of each device in the btrfs filesystem with the given
-+uuid or label, or all filesystems if no uuid or label is provided.
-+Options:
-+-h, --human-readable Use powers of 2^10 (1024) to report sizes.
-+-H, --si Use powers of 10^3 (1000) to report sizes, in SI multiples.
+--- btrfs-progs-unstable.orig/man/btrfs-show.8.in	2010-10-20 20:15:29.000000000 +0100
++++ btrfs-progs-unstable/man/btrfs-show.8.in	2010-10-20 20:17:30.000000000 +0100
+@@ -2,13 +2,19 @@
+ .SH NAME
+ btrfs-show \- scan the /dev directory for btrfs partitions and print results.
+ .SH SYNOPSIS
+-.B btrfs-show
++.B btrfs-show [options]
+ .SH DESCRIPTION
+ .B btrfs-show
+ is used to scan the /dev directory for btrfs partitions and display brief
+ information such as lable, uuid, etc of each btrfs partition.
+ .SH OPTIONS
+-none
 +.TP
++\fB\-h\fR, \fB\-\-human\-readable\fR
++Show values in multiples of 2^10.
++.TP
++\fB\-H\fR, \fB\-\-si\fR
++Show values in multiples of 10^3 (SI multiples).
 +
- \fBdevice balance\fR \fI<path>\fR
- Balance the chunks of the filesystem identified by \fI<path>\fR
- across the devices.
+ .SH AVAILABILITY
+ .B btrfs-show
+ is part of btrfs-progs. Btrfs is currently under heavy development,
 
 -- 
 === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===

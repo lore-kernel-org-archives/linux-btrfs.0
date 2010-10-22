@@ -1,130 +1,159 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: fix df regression V2
-Date: Fri, 22 Oct 2010 14:41:37 -0400
-Message-ID: <1287772897-5944-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: re-work delalloc flushing V2
+Date: Fri, 22 Oct 2010 14:45:54 -0400
+Message-ID: <1287773154-7004-1-git-send-email-josef@redhat.com>
+References: <1287178115-18229-3-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1287178115-18229-3-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The new ENOSPC stuff breaks out the raid types which breaks the way we were
-reporting df to the system.  This fixes it back so that Available is the total
-space available to data and used is the actual bytes used by the filesystem.
-This means that Available is Total - data used - all of the metadata space.
-Thanks,
+Currently we try and flush delalloc, but we only do that in a sort of weak way,
+which works fine in most cases but if we're under heavy pressure we need to be
+able to wait for flushing to happen.  Also instead of checking the bytes
+reserved in the block_rsv, check the space info since it is more accurate.  The
+sync option will be used in a future patch.
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
-V1->V2: Forgot to properly update disk_total when removing block groups.
- fs/btrfs/ctree.h       |    5 ++++-
- fs/btrfs/extent-tree.c |   11 +++++++++++
- fs/btrfs/super.c       |   11 +++++++++--
- 3 files changed, 24 insertions(+), 3 deletions(-)
+V1->V2: fix how we counted reclaimed, and do btrfs_wait_ordered_range if we're
+syncing the file since compression does weird things with writeback.
+
+ fs/btrfs/ctree.h       |    3 ++-
+ fs/btrfs/extent-tree.c |   26 ++++++++++++++------------
+ fs/btrfs/inode.c       |   24 ++++++++++++++++++++++--
+ 3 files changed, 38 insertions(+), 15 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index e25e96e..4833a01 100644
+index 4833a01..72f5e1a 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -696,7 +696,8 @@ struct btrfs_block_group_item {
- struct btrfs_space_info {
- 	u64 flags;
+@@ -2439,7 +2439,8 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+ 			       u32 min_type);
  
--	u64 total_bytes;	/* total bytes in the space */
-+	u64 total_bytes;	/* total bytes in the space,
-+				   this doesn't take mirrors into account */
- 	u64 bytes_used;		/* total bytes used,
- 				   this does't take mirrors into account */
- 	u64 bytes_pinned;	/* total bytes pinned, will be freed when the
-@@ -708,6 +709,8 @@ struct btrfs_space_info {
- 	u64 bytes_may_use;	/* number of bytes that may be used for
- 				   delalloc/allocations */
- 	u64 disk_used;		/* total bytes used on disk */
-+	u64 disk_total;		/* total bytes on disk, takes mirrors into
-+				   account */
- 
- 	int full;		/* indicates that we cannot allocate any more
- 				   chunks for this space */
+ int btrfs_start_delalloc_inodes(struct btrfs_root *root, int delay_iput);
+-int btrfs_start_one_delalloc_inode(struct btrfs_root *root, int delay_iput);
++int btrfs_start_one_delalloc_inode(struct btrfs_root *root, int delay_iput,
++				   int sync);
+ int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
+ 			      struct extent_state **cached_state);
+ int btrfs_writepages(struct address_space *mapping,
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 3f8aee5..1de2a67 100644
+index 080be22..e25525f 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -2982,6 +2982,7 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
- 	if (found) {
- 		spin_lock(&found->lock);
- 		found->total_bytes += total_bytes;
-+		found->disk_total += total_bytes * factor;
- 		found->bytes_used += bytes_used;
- 		found->disk_used += bytes_used * factor;
- 		found->full = 0;
-@@ -3001,6 +3002,7 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
- 				BTRFS_BLOCK_GROUP_SYSTEM |
- 				BTRFS_BLOCK_GROUP_METADATA);
- 	found->total_bytes = total_bytes;
-+	found->disk_total = total_bytes * factor;
- 	found->bytes_used = bytes_used;
- 	found->disk_used = bytes_used * factor;
- 	found->bytes_pinned = 0;
-@@ -8393,6 +8395,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 	struct btrfs_key key;
- 	struct inode *inode;
+@@ -3342,9 +3342,10 @@ static int maybe_allocate_chunk(struct btrfs_trans_handle *trans,
+  * shrink metadata reservation for delalloc
+  */
+ static int shrink_delalloc(struct btrfs_trans_handle *trans,
+-			   struct btrfs_root *root, u64 to_reclaim)
++			   struct btrfs_root *root, u64 to_reclaim, int sync)
+ {
+ 	struct btrfs_block_rsv *block_rsv;
++	struct btrfs_space_info *space_info;
+ 	u64 reserved;
+ 	u64 max_reclaim;
+ 	u64 reclaimed = 0;
+@@ -3353,9 +3354,10 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
  	int ret;
-+	int factor;
  
- 	root = root->fs_info->extent_root;
+ 	block_rsv = &root->fs_info->delalloc_block_rsv;
+-	spin_lock(&block_rsv->lock);
+-	reserved = block_rsv->reserved;
+-	spin_unlock(&block_rsv->lock);
++	space_info = block_rsv->space_info;
++	spin_lock(&space_info->lock);
++	reserved = space_info->bytes_reserved;
++	spin_unlock(&space_info->lock);
  
-@@ -8400,6 +8403,13 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 	BUG_ON(!block_group);
- 	BUG_ON(!block_group->ro);
+ 	if (reserved == 0)
+ 		return 0;
+@@ -3363,7 +3365,7 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
+ 	max_reclaim = min(reserved, to_reclaim);
  
-+	if (block_group->flags & (BTRFS_BLOCK_GROUP_DUP |
-+				  BTRFS_BLOCK_GROUP_RAID1 |
-+				  BTRFS_BLOCK_GROUP_RAID10))
-+		factor = 2;
-+	else
-+		factor = 1;
-+
- 	/* make sure this block group isn't part of an allocation cluster */
- 	cluster = &root->fs_info->data_alloc_cluster;
- 	spin_lock(&cluster->refill_lock);
-@@ -8472,6 +8482,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 	spin_lock(&block_group->space_info->lock);
- 	block_group->space_info->total_bytes -= block_group->key.offset;
- 	block_group->space_info->bytes_readonly -= block_group->key.offset;
-+	block_group->space_info->disk_total -= block_group->key.offset * factor;
- 	spin_unlock(&block_group->space_info->lock);
+ 	while (1) {
+-		ret = btrfs_start_one_delalloc_inode(root, trans ? 1 : 0);
++		ret = btrfs_start_one_delalloc_inode(root, trans ? 1 : 0, sync);
+ 		if (!ret) {
+ 			if (no_reclaim > 2)
+ 				break;
+@@ -3378,11 +3380,11 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
+ 			pause = 1;
+ 		}
  
- 	memcpy(&key, &block_group->key, sizeof(key));
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 1b92f57..0570211 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -729,18 +729,25 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 	struct list_head *head = &root->fs_info->space_info;
- 	struct btrfs_space_info *found;
- 	u64 total_used = 0;
-+	u64 total_used_data = 0;
- 	int bits = dentry->d_sb->s_blocksize_bits;
- 	__be32 *fsid = (__be32 *)root->fs_info->fsid;
+-		spin_lock(&block_rsv->lock);
+-		if (reserved > block_rsv->reserved)
+-			reclaimed = reserved - block_rsv->reserved;
+-		reserved = block_rsv->reserved;
+-		spin_unlock(&block_rsv->lock);
++		spin_lock(&space_info->lock);
++		if (reserved > space_info->bytes_reserved)
++			reclaimed += reserved - space_info->bytes_reserved;
++		reserved = space_info->bytes_reserved;
++		spin_unlock(&space_info->lock);
  
- 	rcu_read_lock();
--	list_for_each_entry_rcu(found, head, list)
-+	list_for_each_entry_rcu(found, head, list) {
-+		if (found->flags & (BTRFS_BLOCK_GROUP_METADATA |
-+				    BTRFS_BLOCK_GROUP_SYSTEM))
-+			total_used_data += found->disk_total;
-+		else
-+			total_used_data += found->disk_used;
- 		total_used += found->disk_used;
-+	}
- 	rcu_read_unlock();
+ 		if (reserved == 0 || reclaimed >= max_reclaim)
+ 			break;
+@@ -3411,7 +3413,7 @@ static int should_retry_reserve(struct btrfs_trans_handle *trans,
+ 	if (trans && trans->transaction->in_commit)
+ 		return -ENOSPC;
  
- 	buf->f_namelen = BTRFS_NAME_LEN;
- 	buf->f_blocks = btrfs_super_total_bytes(disk_super) >> bits;
- 	buf->f_bfree = buf->f_blocks - (total_used >> bits);
--	buf->f_bavail = buf->f_bfree;
-+	buf->f_bavail = buf->f_blocks - (total_used_data >> bits);
- 	buf->f_bsize = dentry->d_sb->s_blocksize;
- 	buf->f_type = BTRFS_SUPER_MAGIC;
+-	ret = shrink_delalloc(trans, root, num_bytes);
++	ret = shrink_delalloc(trans, root, num_bytes, 0);
+ 	if (ret)
+ 		return ret;
  
+@@ -3960,7 +3962,7 @@ again:
+ 	block_rsv_add_bytes(block_rsv, to_reserve, 1);
+ 
+ 	if (block_rsv->size > 512 * 1024 * 1024)
+-		shrink_delalloc(NULL, root, to_reserve);
++		shrink_delalloc(NULL, root, to_reserve, 0);
+ 
+ 	return 0;
+ }
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 1d17518..ce78cf9 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6683,7 +6683,8 @@ int btrfs_start_delalloc_inodes(struct btrfs_root *root, int delay_iput)
+ 	return 0;
+ }
+ 
+-int btrfs_start_one_delalloc_inode(struct btrfs_root *root, int delay_iput)
++int btrfs_start_one_delalloc_inode(struct btrfs_root *root, int delay_iput,
++				   int sync)
+ {
+ 	struct btrfs_inode *binode;
+ 	struct inode *inode = NULL;
+@@ -6705,7 +6706,26 @@ int btrfs_start_one_delalloc_inode(struct btrfs_root *root, int delay_iput)
+ 	spin_unlock(&root->fs_info->delalloc_lock);
+ 
+ 	if (inode) {
+-		write_inode_now(inode, 0);
++		if (sync) {
++			filemap_write_and_wait(inode->i_mapping);
++			/*
++			 * We have to do this because compression doesn't
++			 * actually set PG_writeback until it submits the pages
++			 * for IO, which happens in an async thread, so we could
++			 * race and not actually wait for any writeback pages
++			 * because they've not been submitted yet.  Technically
++			 * this could still be the case for the ordered stuff
++			 * since the async thread may not have started to do its
++			 * work yet.  If this becomes the case then we need to
++			 * figure out a way to make sure that in writepage we
++			 * wait for any async pages to be submitted before
++			 * returning so that fdatawait does what its supposed to
++			 * do.
++			 */
++			btrfs_wait_ordered_range(inode, 0, (u64)-1);
++		} else {
++			filemap_flush(inode->i_mapping);
++		}
+ 		if (delay_iput)
+ 			btrfs_add_delayed_iput(inode);
+ 		else
 -- 
 1.6.6.1
 

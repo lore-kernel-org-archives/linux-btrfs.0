@@ -1,24 +1,23 @@
-From: Wilhelm <wilhelm.meier@fh-kl.de>
-Subject: find modified files / directory in snapshots (btrfs backup tool)
-Date: Sun, 24 Oct 2010 17:37:06 +0200
-Message-ID: <4CC452A2.9050107@fh-kl.de>
-Reply-To: wilhelm.meier@fh-kl.de
+From: Felix Blanke <felixblanke@gmail.com>
+Subject: Determine if a given fs is a btrfs fs
+Date: Sun, 24 Oct 2010 22:24:10 +0200
+Message-ID: <20101024202410.GA2830@scooter>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-15
+Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
 
-some time ago I saw discussion about finding modified files (or directories) in a
-snapshot. There was a proposition for a new command "find-modified" or
-for "diff <snap01> <snap02>".
+I've some btrfs fs which are encrypted with loopaes.
 
-Is there any progress in this respect?
-
-
--- 
-Wilhelm
+I decrypt them in a script during bootup. Now I want to determine if the decrypted fs
+is a btrfs fs. If not I missspelled the password and I can handle that error in my
+script.
 
 
+Thanks for any help!
+
+
+Felix

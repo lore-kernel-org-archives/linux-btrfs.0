@@ -1,97 +1,80 @@
-From: Sage Weil <sage@newdream.net>
-Subject: [PATCH 6/6] Btrfs: allow subvol deletion by owner
-Date: Mon, 25 Oct 2010 12:07:42 -0700
-Message-ID: <1288033662-21464-7-git-send-email-sage@newdream.net>
-References: <1288033662-21464-1-git-send-email-sage@newdream.net>
- <1288033662-21464-2-git-send-email-sage@newdream.net>
- <1288033662-21464-3-git-send-email-sage@newdream.net>
- <1288033662-21464-4-git-send-email-sage@newdream.net>
- <1288033662-21464-5-git-send-email-sage@newdream.net>
- <1288033662-21464-6-git-send-email-sage@newdream.net>
-Cc: Sage Weil <sage@newdream.net>
-To: linux-btrfs@vger.kernel.org
+From: Felix Blanke <felixblanke@gmail.com>
+Subject: Re: Determine if a given fs is a btrfs fs
+Date: Mon, 25 Oct 2010 21:27:30 +0200
+Message-ID: <20101025192730.GA2839@scooter>
+References: <20101024202410.GA2830@scooter>
+ <AANLkTikB06jNR-QmkXjWWFE6fO=cTZvEDFbY5V98Pu6g@mail.gmail.com>
+ <AANLkTina9g610_FLHHsOG3KSn5pgeiHCgaNtE7NnvH7g@mail.gmail.com>
+ <AANLkTimdQPmn_VPzs6H_HT_+m9uM2PCno1W_D0mib8Yx@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+Cc: =?iso-8859-1?B?Suly9G1l?= Poulin <jeromepoulin@gmail.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: C Anthony Risinger <anthony@extof.me>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1288033662-21464-6-git-send-email-sage@newdream.net>
+In-Reply-To: <AANLkTimdQPmn_VPzs6H_HT_+m9uM2PCno1W_D0mib8Yx@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Allow users to delete the snapshots/subvols they own.  When CAP_SYS_ADMIN
-is not present, require that
+Hi,
 
- - the user has write and exec permission on the parent directory
- - security_inode_rmdir() doesn't object
- - the user has write and exec permission on the subvol directory
- - the user owns the subvol directory
- - the directory and subvol append flags are not set
+that was a good hint, thanks a lot!
 
-This is a bit more strict than the requirements for 'rm -f subvol/*',
-which is allowed with just 'wx' on non-owned non-sticky dirs.  It is less
-strict than 'rmdir subvol', which has additional requirements if the parent
-directory is sticky.  It is less strict than 'rm -rf subvol', which would
-require scanning the entire subvol to ensure all content is deletable.
+The best at that solution is that it works for all filesystems: Just te=
+st if the
+output of $type (type=3D`blkid -s TYPE -o value $loopdev`) is empty (''=
+), then it is no
+filesystem and the loopaes password was wrong or the device/fs is broke=
+n.
 
-Signed-off-by: Sage Weil <sage@newdream.net>
----
- fs/btrfs/ioctl.c    |   27 ++++++++++++++++++++++++---
- security/security.c |    1 +
- 2 files changed, 25 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 9cbda86..90d2871 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1288,9 +1288,6 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
- 	int ret;
- 	int err = 0;
- 
--	if (!capable(CAP_SYS_ADMIN))
--		return -EPERM;
--
- 	vol_args = memdup_user(arg, sizeof(*vol_args));
- 	if (IS_ERR(vol_args))
- 		return PTR_ERR(vol_args);
-@@ -1325,6 +1322,30 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
- 		goto out_dput;
- 	}
- 
-+	/*
-+	 * Allow subvol deletion if we own the subvol and we would
-+	 * (approximately) be allowed to rmdir it.  Strictly speaking,
-+	 * we could possibly delete everything with fewer permissions,
-+	 * or might require more permissions to remove all files
-+	 * contained by the subvol, but we aren't trying to mimic
-+	 * directory semantics perfectly.
-+	 */
-+	if (!capable(CAP_SYS_ADMIN)) {
-+		err = inode_permission(dir, MAY_WRITE | MAY_EXEC);
-+		if (err)
-+			goto out_dput;
-+		err = security_inode_rmdir(dir, dentry);
-+		if (err)
-+			goto out_dput;
-+		err = inode_permission(inode, MAY_WRITE | MAY_EXEC);
-+		if (err)
-+			goto out_dput;
-+		err = -EPERM;
-+		if (inode->i_uid != current_fsuid() || IS_APPEND(dir) ||
-+		    IS_APPEND(inode))
-+			goto out_dput;
-+	}
-+
- 	dest = BTRFS_I(inode)->root;
- 
- 	mutex_lock(&inode->i_mutex);
-diff --git a/security/security.c b/security/security.c
-index c53949f..1c980ee 100644
---- a/security/security.c
-+++ b/security/security.c
-@@ -490,6 +490,7 @@ int security_inode_rmdir(struct inode *dir, struct dentry *dentry)
- 		return 0;
- 	return security_ops->inode_rmdir(dir, dentry);
- }
-+EXPORT_SYMBOL_GPL(security_inode_rmdir);
- 
- int security_inode_mknod(struct inode *dir, struct dentry *dentry, int mode, dev_t dev)
- {
--- 
-1.6.6.1
 
+=46elix
+
+
+On 25. October 2010 - 08:29, C Anthony Risinger wrote:
+> Date:	Mon, 25 Oct 2010 08:29:58 -0500
+> From: C Anthony Risinger <anthony@extof.me>
+> To: J=E9r=F4me Poulin <jeromepoulin@gmail.com>
+> Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+> Subject: Re: Determine if a given fs is a btrfs fs
+>=20
+> On Mon, Oct 25, 2010 at 6:31 AM, J=E9r=F4me Poulin <jeromepoulin@gmai=
+l.com> wrote:
+> > On Sun, Oct 24, 2010 at 5:32 PM, J=E9r=F4me Poulin <jeromepoulin@gm=
+ail.com> wrote:
+> > ...
+> >> p4 jerome # btrfs device scan /dev/dm-22
+> >> Scanning for Btrfs filesystems in '/dev/dm-22'
+> >> p4 jerome # echo $?
+> >> 0
+> > This is OK.
+> >
+> >> p4 jerome # btrfs device scan /dev/sda
+> >> Scanning for Btrfs filesystems in '/dev/sda'
+> >> ERROR: unable to scan the device '/dev/sda'
+> >> p4 jerome # echo $?
+> >> 11
+> > ...
+> > But isn't that error misleading, btrfs scan was succesfully able to
+> > scan /dev/sda, but, it doesn't contain btrfs, right?
+>=20
+> imo, the best way is:
+>=20
+> # root must be btrfs else silent return
+> [ "$(blkid -s TYPE -o value ${root})" =3D btrfs ] || return 0
+>=20
+> at least that the way i do it in my initramfs hook; seems to be relia=
+ble.
+>=20
+> C Anthony
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+---end quoted text---
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

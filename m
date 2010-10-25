@@ -1,64 +1,48 @@
-From: Sage Weil <sage@newdream.net>
-Subject: Re: [PATCH 0/6] Btrfs commit fixes, async subvol operations
-Date: Mon, 25 Oct 2010 14:27:16 -0700 (PDT)
-Message-ID: <Pine.LNX.4.64.1010251343060.7660@cobra.newdream.net>
-References: <1288033662-21464-1-git-send-email-sage@newdream.net>
- <20101025192932.GG18818@think> <Pine.LNX.4.64.1010251239080.7660@cobra.newdream.net>
- <20101025195842.GI18818@think>
+From: David Nicol <davidnicol@gmail.com>
+Subject: Re: Mark btrfsctl deprecated
+Date: Mon, 25 Oct 2010 16:29:32 -0500
+Message-ID: <AANLkTimiuTM02Dnue_3NdC+uLbCMP9hEjfrp_4efFbGe@mail.gmail.com>
+References: <22986774.2784821287748969875.JavaMail.defaultUser@defaultHost>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=UTF-8
+To: BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101025195842.GI18818@think>
+In-Reply-To: <22986774.2784821287748969875.JavaMail.defaultUser@defaultHost>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 25 Oct 2010, Chris Mason wrote:
-> Yes, lets duplicate the vfs checks.  Christoph just sat bolt upright in
-> whatever ski lift he's currently riding.
+I am certainly not in a position to answer for Chris Mason, but I am
+happy to share my response to the question, coming from a perspective
+of being somewhat obsessive about not breaking back-compat.
 
-:)
+Let's not. As I am certainly within the "lot of people" in question,
+having just done exactly that, I found the two programs -- with very
+different styles -- to not be much of a block, and providing two
+examples instead of one of code that invokes an ioctl seems fine.
 
-This version is based on Goffredo's patch, but requires the 
-user_subvol_rm_allowed mount option, and will proceed even if the subvol 
-is nonempty.  (I suspect we also want his other rmdir(2) patch at some 
-point as well so that users can rmdir an empty subvol and/or 'rm -r'.)
+Ideally, everyone who needs to use an ioctl will simply write and
+compile a C program that does what they need -- ha ha.
 
-> We should also make sure they do the subvol rm against the root of the
-> subvol (if that check isn't already done), none of the magic to resolve
-> the subvol based on any file inside it.  I don't want people to
-> accidentally think they are deleting a subdir and have it go higher up
-> into the directory tree.
-> 
-> Oh, and it shouldn't work on the root of the FS either ;)
+I see no reason to break legacy code (such as it is) that uses
+btrfsctl instead of btrfs for a user-space tool to invoke ioctls.
+Calling the tool "btrfs" is actually a little confusing.
 
-Since the ioctl is based on a name lookup, I added a check that the parent 
-inode's root isn't the same as the target root.  That implies the ioctl is 
-called the dentry referencing the subvol, and presumably the root doesn't 
-have one of those.  Does that cover it?  It isn't possible to have the 
-subvol bound to multiple locations in the namespace, right?
 
-$ whoami
-sage
-$ btrfs sub create a
-Create subvolume './a'
-$ btrfs sub create a/b
-Create subvolume 'a/b'
-$ btrfs sub snap a asnap
-Create a snapshot of 'a' in './asnap'
-$ btrfs sub del asnap/b 
-ERROR: 'asnap/b' is not a subvolume
-$ btrfs sub del a
-Delete subvolume '/mnt/osd27/a/a'
-ERROR: cannot delete '/mnt/osd27/a/a'
-$ btrfs sub del a/b
-Delete subvolume '/mnt/osd27/a/a/b'
-$ btrfs sub del a  
-Delete subvolume '/mnt/osd27/a/a'
-$ btrfs sub del asnap
-Delete subvolume '/mnt/osd27/a/asnap'
 
-Sending the patch separately.
-
-Thanks!
-sage
+On Fri, Oct 22, 2010 at 7:02 AM, Goffredo Baroncelli
+<kreijack@libero.it> <kreijack@libero.it> wrote:
+> Hi Chris,
+>
+> what do you think about marking deprecate the "btrfsctl" program ?
+>
+> A lot of people make patch involving both btrfs command and btrfsctl command,
+> spending a lot of effort.
+>
+> Initially we can put a warning in the btrfctl command which suggest to use the
+> btrfs command. and after XX month (six ?) we could remouve the command at all.
+> The same for the other utilities like btrfs-show, btrfs-vol....
+>
+> Of course this is applicable if there is no evidence of regression of btrfs vs
+> btrfsctl.
+>
+> Regards
+> G.Baroncelli

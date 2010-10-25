@@ -1,49 +1,80 @@
-From: C Anthony Risinger <anthony@extof.me>
-Subject: Re: Determine if a given fs is a btrfs fs
-Date: Mon, 25 Oct 2010 08:29:58 -0500
-Message-ID: <AANLkTimdQPmn_VPzs6H_HT_+m9uM2PCno1W_D0mib8Yx@mail.gmail.com>
-References: <20101024202410.GA2830@scooter>
-	<AANLkTikB06jNR-QmkXjWWFE6fO=cTZvEDFbY5V98Pu6g@mail.gmail.com>
-	<AANLkTina9g610_FLHHsOG3KSn5pgeiHCgaNtE7NnvH7g@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: =?ISO-8859-1?Q?J=E9r=F4me_Poulin?= <jeromepoulin@gmail.com>
+From: Sage Weil <sage@newdream.net>
+Subject: [PATCH 0/6] Btrfs commit fixes, async subvol operations
+Date: Mon, 25 Oct 2010 12:07:36 -0700
+Message-ID: <1288033662-21464-1-git-send-email-sage@newdream.net>
+Cc: Sage Weil <sage@newdream.net>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTina9g610_FLHHsOG3KSn5pgeiHCgaNtE7NnvH7g@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 25, 2010 at 6:31 AM, J=E9r=F4me Poulin <jeromepoulin@gmail.=
-com> wrote:
-> On Sun, Oct 24, 2010 at 5:32 PM, J=E9r=F4me Poulin <jeromepoulin@gmai=
-l.com> wrote:
-> ...
->> p4 jerome # btrfs device scan /dev/dm-22
->> Scanning for Btrfs filesystems in '/dev/dm-22'
->> p4 jerome # echo $?
->> 0
-> This is OK.
->
->> p4 jerome # btrfs device scan /dev/sda
->> Scanning for Btrfs filesystems in '/dev/sda'
->> ERROR: unable to scan the device '/dev/sda'
->> p4 jerome # echo $?
->> 11
-> ...
-> But isn't that error misleading, btrfs scan was succesfully able to
-> scan /dev/sda, but, it doesn't contain btrfs, right?
+Hi Chris,
 
-imo, the best way is:
+This is the extent of my current queue of Btrfs snapshot/subvol/commit 
+stuff. Most of these were posted several months ago.  Can be sent 
+upstream during this merge window?  Not having this functionality is 
+becoming a bit of a roadblock for our efforts to keep the Ceph data in a 
+consistent state.
 
-# root must be btrfs else silent return
-[ "$(blkid -s TYPE -o value ${root})" =3D btrfs ] || return 0
+These patches are also available from
 
-at least that the way i do it in my initramfs hook; seems to be reliabl=
-e.
+	git://git.kernel.org/pub/scm/linux/kernel/git/sage/btrfs.git snap_ioctls
 
-C Anthony
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+The first patch is strictly a bug fix for a deadlock in 
+btrfs_commit_transaction().
+
+The next few patches are a repost (with a few minor revisions) of the 
+async snapshot/subvolume ioctls I originally posted last spring.  They 
+include:
+
+ - Some async commit helper functions
+ - Start and wait sync ioctls, for initiating and waiting for a sync
+ - An ioctl to start a snapshot creation asynchronously, such that you 
+   don't have to wait for the full commit to disk.  The interface is cleaned
+   up a bit from the original version.
+
+There is also a patch that changes the SNAP_DESTROY ioctl to not do a 
+commit before returning.  The rationale here is there is no obvious 
+reason (to me at least) why the snapshot removal should be on disk 
+before returning; rm(2) and unlink(2) certainly don't do that.  If the 
+user disagrees, they can call sync(2).  If you would prefer, I also have 
+a patch that introduces a new SNAP_DESTROY_ASYNC ioctl that doesn't 
+change any existing behavior.
+
+The last item is a change to SNAP_DESTROY to allow deletion of a 
+snapshot when the user owns the subvol's root inode and the parent 
+directory permissions are such that we would have allowed an rmdir(2).  
+Goffredo Baroncelli posted a similar patch that replicates the rmdir(2) 
+semantics completely (except for the empty directory check) by 
+duplicating some VFS code.  Whether we want weaker semantics, duplicated 
+code, or some new EXPORT_SYMBOLS is up to you I think.  Note that this 
+is distinct from a similar patch (also from Goffredo) that allows 
+rmdir(2) to remove an empty subvol; my goal is to allow a non-empty 
+subvol to be deleted by a non-root user.  As long as I can do that, my 
+daemon doesn't have to run as root and I'm a happy camper.  :)
+
+If anybody has any questions or issues with any of this, please let me 
+know so I can revise the patches accordingly.
+
+Thanks!
+sage
+
+---
+
+
+Sage Weil (6):
+  Btrfs: fix deadlock in btrfs_commit_transaction
+  Btrfs: async transaction commit
+  Btrfs: add START_SYNC, WAIT_SYNC ioctls
+  Btrfs: add SNAP_CREATE_ASYNC ioctl
+  Btrfs: make SNAP_DESTROY async
+  Btrfs: allow subvol deletion by owner
+
+ fs/btrfs/ctree.h       |    1 +
+ fs/btrfs/disk-io.c     |    1 +
+ fs/btrfs/ioctl.c       |  152 +++++++++++++++++++++++++++++++++++-----
+ fs/btrfs/ioctl.h       |    9 +++
+ fs/btrfs/transaction.c |  183 +++++++++++++++++++++++++++++++++++++++++++++--
+ fs/btrfs/transaction.h |    4 +
+ security/security.c    |    1 +
+ 7 files changed, 326 insertions(+), 25 deletions(-)
+

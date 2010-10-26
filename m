@@ -1,76 +1,217 @@
 From: Sage Weil <sage@newdream.net>
-Subject: [PATCH v2] Btrfs: fix deadlock in btrfs_commit_transaction
-Date: Tue, 26 Oct 2010 12:16:29 -0700
-Message-ID: <1288120589-31868-1-git-send-email-sage@newdream.net>
+Subject: [PATCH v2] Btrfs: allow subvol deletion by unprivileged user with -o user_subvol_rm_allowed
+Date: Tue, 26 Oct 2010 12:20:49 -0700
+Message-ID: <1288120849-32029-1-git-send-email-sage@newdream.net>
 Cc: Sage Weil <sage@newdream.net>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We calculate timeout (either 1 or MAX_SCHEDULE_TIMEOUT) based on whether
-num_writers > 1 or should_grow at the top of the loop.  Then, much much
-later, we wait for that timeout if either num_writers or should_grow is
-true.  However, it's possible for a racing process (calling
-btrfs_end_transaction()) to decrement num_writers such that we wait
-forever instead of for 1.
-
-Fix this by deciding how long to wait when we wait.  Include a smp_mb()
-before checking if the waitqueue is active to ensure the num_writers
-is visible.
+Add a mount option user_subvol_rm_allowed that allows users to delete a
+(potentially non-empty!) subvol when they would otherwise we allowed to do
+an rmdir(2).  We duplicate the may_delete() checks from the core VFS code
+to implement identical security checks (minus the directory size check).
+We additionally require that the user has write+exec permission on the
+subvol root inode.
 
 Signed-off-by: Sage Weil <sage@newdream.net>
 ---
 v2:
- - add smp_mb() before waitqueue_active() check to clone another possible race
+ - add write+exec check on subvol root inode
 
- fs/btrfs/transaction.c |   13 +++++--------
- 1 files changed, 5 insertions(+), 8 deletions(-)
+ fs/btrfs/ctree.h |    1 +
+ fs/btrfs/ioctl.c |  115 +++++++++++++++++++++++++++++++++++++++++++++++++++--
+ fs/btrfs/super.c |    6 ++-
+ 3 files changed, 116 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 66e4c66..b461fe3 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -392,6 +392,7 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 	WARN_ON(cur_trans->num_writers < 1);
- 	cur_trans->num_writers--;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 4c3c20b..f1f4155 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1193,6 +1193,7 @@ struct btrfs_root {
+ #define BTRFS_MOUNT_NOSSD		(1 << 9)
+ #define BTRFS_MOUNT_DISCARD		(1 << 10)
+ #define BTRFS_MOUNT_FORCE_COMPRESS      (1 << 11)
++#define BTRFS_MOUNT_USER_SUBVOL_RM_ALLOWED (1 << 12)
  
-+	smp_mb();
- 	if (waitqueue_active(&cur_trans->writer_wait))
- 		wake_up(&cur_trans->writer_wait);
- 	put_transaction(cur_trans);
-@@ -992,7 +993,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *root)
+ #define btrfs_clear_opt(o, opt)		((o) &= ~BTRFS_MOUNT_##opt)
+ #define btrfs_set_opt(o, opt)		((o) |= BTRFS_MOUNT_##opt)
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 9cbda86..7c5e858 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -409,6 +409,76 @@ fail:
+ 	return ret;
+ }
+ 
++/*  copy of check_sticky in fs/namei.c() 
++* It's inline, so penalty for filesystems that don't use sticky bit is
++* minimal.
++*/
++static inline int btrfs_check_sticky(struct inode *dir, struct inode *inode)
++{
++	uid_t fsuid = current_fsuid();
++
++	if (!(dir->i_mode & S_ISVTX))
++		return 0;
++	if (inode->i_uid == fsuid)
++		return 0;
++	if (dir->i_uid == fsuid)
++		return 0;
++	return !capable(CAP_FOWNER);
++}
++
++/*  copy of may_delete in fs/namei.c() 
++ *	Check whether we can remove a link victim from directory dir, check
++ *  whether the type of victim is right.
++ *  1. We can't do it if dir is read-only (done in permission())
++ *  2. We should have write and exec permissions on dir
++ *  3. We can't remove anything from append-only dir
++ *  4. We can't do anything with immutable dir (done in permission())
++ *  5. If the sticky bit on dir is set we should either
++ *	a. be owner of dir, or
++ *	b. be owner of victim, or
++ *	c. have CAP_FOWNER capability
++ *  6. If the victim is append-only or immutable we can't do antyhing with
++ *     links pointing to it.
++ *  7. If we were asked to remove a directory and victim isn't one - ENOTDIR.
++ *  8. If we were asked to remove a non-directory and victim isn't one - EISDIR.
++ *  9. We can't remove a root or mountpoint.
++ * 10. We don't allow removal of NFS sillyrenamed files; it's handled by
++ *     nfs_async_unlink().
++ */
++
++static int btrfs_may_delete(struct inode *dir,struct dentry *victim,int isdir)
++{
++	int error;
++
++	if (!victim->d_inode)
++		return -ENOENT;
++
++	BUG_ON(victim->d_parent->d_inode != dir);
++	audit_inode_child(victim, dir);
++
++	error = inode_permission(dir, MAY_WRITE | MAY_EXEC);
++	if (error)
++		return error;
++	if (IS_APPEND(dir))
++		return -EPERM;
++	if (btrfs_check_sticky(dir, victim->d_inode)||
++		IS_APPEND(victim->d_inode)||
++	    IS_IMMUTABLE(victim->d_inode) || IS_SWAPFILE(victim->d_inode))
++		return -EPERM;
++	if (isdir) {
++		if (!S_ISDIR(victim->d_inode->i_mode))
++			return -ENOTDIR;
++		if (IS_ROOT(victim))
++			return -EBUSY;
++	} else if (S_ISDIR(victim->d_inode->i_mode))
++		return -EISDIR;
++	if (IS_DEADDIR(dir))
++		return -ENOENT;
++	if (victim->d_flags & DCACHE_NFSFS_RENAMED)
++		return -EBUSY;
++	return 0;
++}
++
+ /* copy of may_create in fs/namei.c() */
+ static inline int btrfs_may_create(struct inode *dir, struct dentry *child)
  {
- 	unsigned long joined = 0;
--	unsigned long timeout = 1;
- 	struct btrfs_transaction *cur_trans;
- 	struct btrfs_transaction *prev_trans = NULL;
- 	DEFINE_WAIT(wait);
-@@ -1063,11 +1063,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 			snap_pending = 1;
+@@ -1288,9 +1358,6 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
+ 	int ret;
+ 	int err = 0;
  
- 		WARN_ON(cur_trans != trans->transaction);
--		if (cur_trans->num_writers > 1)
--			timeout = MAX_SCHEDULE_TIMEOUT;
--		else if (should_grow)
--			timeout = 1;
+-	if (!capable(CAP_SYS_ADMIN))
+-		return -EPERM;
 -
- 		mutex_unlock(&root->fs_info->trans_mutex);
+ 	vol_args = memdup_user(arg, sizeof(*vol_args));
+ 	if (IS_ERR(vol_args))
+ 		return PTR_ERR(vol_args);
+@@ -1320,13 +1387,51 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
+ 	}
  
- 		if (flush_on_commit || snap_pending) {
-@@ -1089,8 +1084,10 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 				TASK_UNINTERRUPTIBLE);
+ 	inode = dentry->d_inode;
++	dest = BTRFS_I(inode)->root;
++	if (!capable(CAP_SYS_ADMIN)){
++		/*
++		 * Regular user.  Only allow this with a special mount
++		 * option, when the user has write+exec access to the
++		 * subvol root, and when rmdir(2) would have been
++		 * allowed.
++		 *
++		 * Note that this is _not_ check that the subvol is
++		 * empty or doesn't contain data that we wouldn't
++		 * otherwise be able to delete.
++		 *
++		 * Users who want to delete empty subvols should try
++		 * rmdir(2).
++		 */
++		err = -EPERM;
++		if (!btrfs_test_opt(root, USER_SUBVOL_RM_ALLOWED))
++			goto out_dput;
++
++		/*
++		 * Do not allow deletion if the parent dir is the same
++		 * as the dir to be deleted.  That means the ioctl
++		 * must be called on the dentry referencing the root
++		 * of the subvol, not a random directory contained
++		 * within it.
++		 */
++		err = -EINVAL;
++		if (root == dest)
++			goto out_dput;
++
++		err = inode_permission(inode, MAY_WRITE | MAY_EXEC);
++		if (err)
++			goto out_dput;
++
++		/* check if subvolume may be deleted by a non-root user */	
++		err = btrfs_may_delete(dir, dentry, 1);
++		if (err)
++			goto out_dput;
++	}
++
+ 	if (inode->i_ino != BTRFS_FIRST_FREE_OBJECTID) {
+ 		err = -EINVAL;
+ 		goto out_dput;
+ 	}
  
- 		smp_mb();
--		if (cur_trans->num_writers > 1 || should_grow)
--			schedule_timeout(timeout);
-+		if (cur_trans->num_writers > 1)
-+			schedule_timeout(MAX_SCHEDULE_TIMEOUT);
-+		else if (should_grow)
-+			schedule_timeout(1);
+-	dest = BTRFS_I(inode)->root;
+-
+ 	mutex_lock(&inode->i_mutex);
+ 	err = d_invalidate(dentry);
+ 	if (err)
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 1776dbd..253c5af 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -68,7 +68,7 @@ enum {
+ 	Opt_nodatacow, Opt_max_inline, Opt_alloc_start, Opt_nobarrier, Opt_ssd,
+ 	Opt_nossd, Opt_ssd_spread, Opt_thread_pool, Opt_noacl, Opt_compress,
+ 	Opt_compress_force, Opt_notreelog, Opt_ratio, Opt_flushoncommit,
+-	Opt_discard, Opt_err,
++	Opt_discard, Opt_user_subvol_rm_allowed, Opt_err,
+ };
  
- 		mutex_lock(&root->fs_info->trans_mutex);
- 		finish_wait(&cur_trans->writer_wait, &wait);
+ static match_table_t tokens = {
+@@ -92,6 +92,7 @@ static match_table_t tokens = {
+ 	{Opt_flushoncommit, "flushoncommit"},
+ 	{Opt_ratio, "metadata_ratio=%d"},
+ 	{Opt_discard, "discard"},
++	{Opt_user_subvol_rm_allowed, "user_subvol_rm_allowed"},
+ 	{Opt_err, NULL},
+ };
+ 
+@@ -235,6 +236,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 		case Opt_discard:
+ 			btrfs_set_opt(info->mount_opt, DISCARD);
+ 			break;
++		case Opt_user_subvol_rm_allowed:
++			btrfs_set_opt(info->mount_opt, USER_SUBVOL_RM_ALLOWED);
++			break;
+ 		case Opt_err:
+ 			printk(KERN_INFO "btrfs: unrecognized mount option "
+ 			       "'%s'\n", p);
 -- 
 1.6.6.1
 

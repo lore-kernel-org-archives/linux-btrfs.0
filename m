@@ -1,135 +1,158 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: [patch v3 4/4] Add an option to show ISO, binary or raw bytes counts using btrfs-show.
-Date: Tue, 26 Oct 2010 13:23:48 +0100
-Message-ID: <20101026122401.372798693@carfax.org.uk>
-References: <20101026122344.934075672@carfax.org.uk>
-Cc: Goffredo Baroncelli <kreijack@libero.it>,
-	Frank Kingswood <frank@kingswood-consulting.co.uk>,
-	Hugo Mills <hugo@carfax.org.uk>
-To: linux-btrfs@vger.kernel.org
+From: Sage Weil <sage@newdream.net>
+Subject: Re: [PATCH 1/6] Btrfs: fix deadlock in btrfs_commit_transaction
+Date: Tue, 26 Oct 2010 09:36:26 -0700 (PDT)
+Message-ID: <Pine.LNX.4.64.1010260931310.7660@cobra.newdream.net>
+References: <1288033662-21464-1-git-send-email-sage@newdream.net>
+ <1288033662-21464-2-git-send-email-sage@newdream.net> <4CC67930.4030406@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: liubo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4CC67930.4030406@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Change btrfs-show to allow the user to control the scales used for
-sizes in the output.
+On Tue, 26 Oct 2010, liubo wrote:
+> On 10/26/2010 03:07 AM, Sage Weil wrote:
+> > We calculate timeout (either 1 or MAX_SCHEDULE_TIMEOUT) based on whether
+> > num_writers > 1 or should_grow at the top of the loop.  Then, much much
+> > later, we wait for that timeout if either num_writers or should_grow is
+> > true.  However, it's possible for a racing process (calling
+> > btrfs_end_transaction()) to decrement num_writers such that we wait
+> > forever instead of for 1.
+> > 
+> 
+> IMO, there still exists a deadlock with your patch.
+> ===
+> with your patch:
+> 
+> thread 1:                          thread 2:                       
+> 
+> btrfs_commit_transaction()
+>   if (num_writers > 1)
+>     timeout = MAX_TIMEOUT;
+(This bit goes away, btw.)
+> 	                --------->
+>                                    __btrfs_end_transaction()
+>                                      num_writers--;
+> 				     if (wq)  
+>                                        wake_up();
+> 			<---------
+>   smp_mb();
+>   prepare_wait();
+>   if (num_writers > 1)
+>     schedule_timeout(MAX);
+>   else if (should_grow)
+>     schedule_timeout(1);
+> ===
 
-Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
----
- btrfs-show.c        |   27 +++++++++++++++++++--------
- man/btrfs-show.8.in |   10 ++++++++--
- 2 files changed, 27 insertions(+), 10 deletions(-)
+What's the problem above?  The wake_up() doesn't get called, and thread1 
+doesn't sleep.
 
-Index: btrfs-progs-unstable/btrfs-show.c
-===================================================================
---- btrfs-progs-unstable.orig/btrfs-show.c	2010-10-26 12:56:54.179226836 +0100
-+++ btrfs-progs-unstable/btrfs-show.c	2010-10-26 13:05:48.626702902 +0100
-@@ -52,7 +52,7 @@
- 	return 0;
- }
- 
--static void print_one_uuid(struct btrfs_fs_devices *fs_devices)
-+static void print_one_uuid(struct btrfs_fs_devices *fs_devices, int format)
- {
- 	char uuidbuf[37];
- 	struct list_head *cur;
-@@ -69,8 +69,7 @@
- 	else
- 		printf("Label: none ");
- 
--	super_bytes_used = pretty_sizes(device->super_bytes_used,
--									PRETTY_SIZE_RAW);
-+	super_bytes_used = pretty_sizes(device->super_bytes_used, format);
- 
- 	total = device->total_devs;
- 	printf(" uuid: %s\n\tTotal devices %llu FS bytes used %s\n", uuidbuf,
-@@ -82,8 +81,8 @@
- 		char *total_bytes;
- 		char *bytes_used;
- 		device = list_entry(cur, struct btrfs_device, dev_list);
--		total_bytes = pretty_sizes(device->total_bytes, PRETTY_SIZE_RAW);
--		bytes_used = pretty_sizes(device->bytes_used, PRETTY_SIZE_RAW);
-+		total_bytes = pretty_sizes(device->total_bytes, format);
-+		bytes_used = pretty_sizes(device->bytes_used, format);
- 		printf("\tdevid %4llu size %s used %s path %s\n",
- 		       (unsigned long long)device->devid,
- 		       total_bytes, bytes_used, device->name);
-@@ -99,13 +98,18 @@
- 
- static void print_usage(void)
- {
--	fprintf(stderr, "usage: btrfs-show [search label or device]\n");
-+	fprintf(stderr, "usage: btrfs-show [options] [search label or device]\n");
-+	fprintf(stderr, "Options:\n");
-+	fprintf(stderr, "\t-h, --human-readable\tShow sizes in powers of 2^10.\n");
-+	fprintf(stderr, "\t-s, --si\t\tShow sizes in powers of 10^3 (SI multiples).\n");
- 	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
- 	exit(1);
- }
- 
- static struct option long_options[] = {
- 	/* { "byte-count", 1, NULL, 'b' }, */
-+	{ "human-readable", 0, NULL, 'h' },
-+	{ "si", 0, NULL, 'H' },
- 	{ 0, 0, 0, 0}
- };
- 
-@@ -117,14 +121,21 @@
- 	char *search = NULL;
- 	int ret;
- 	int option_index = 0;
-+	int format = PRETTY_SIZE_RAW;
- 
- 	while(1) {
- 		int c;
--		c = getopt_long(ac, av, "", long_options,
-+		c = getopt_long(ac, av, "hH", long_options,
- 				&option_index);
- 		if (c < 0)
- 			break;
- 		switch(c) {
-+			case 'H':
-+				format = PRETTY_SIZE_ISO;
-+				break;
-+			case 'h':
-+				format = PRETTY_SIZE_BINARY;
-+				break;
- 			default:
- 				print_usage();
- 		}
-@@ -144,7 +155,7 @@
- 					list);
- 		if (search && uuid_search(fs_devices, search) == 0)
- 			continue;
--		print_one_uuid(fs_devices);
-+		print_one_uuid(fs_devices, format);
- 	}
- 	printf("%s\n", BTRFS_BUILD_VERSION);
- 	return 0;
-Index: btrfs-progs-unstable/man/btrfs-show.8.in
-===================================================================
---- btrfs-progs-unstable.orig/man/btrfs-show.8.in	2010-10-26 12:56:54.189226427 +0100
-+++ btrfs-progs-unstable/man/btrfs-show.8.in	2010-10-26 13:06:51.074147050 +0100
-@@ -2,13 +2,19 @@
- .SH NAME
- btrfs-show \- scan the /dev directory for btrfs partitions and print results.
- .SH SYNOPSIS
--.B btrfs-show
-+.B btrfs-show [-h|-H|--human-readable|--si]
- .SH DESCRIPTION
- .B btrfs-show
- is used to scan the /dev directory for btrfs partitions and display brief
- information such as lable, uuid, etc of each btrfs partition.
- .SH OPTIONS
--none
-+.TP
-+\fB\-h\fR, \fB\-\-human\-readable\fR
-+Show values in multiples of 2^10.
-+.TP
-+\fB\-H\fR, \fB\-\-si\fR
-+Show values in multiples of 10^3 (SI multiples).
-+
- .SH AVAILABILITY
- .B btrfs-show
- is part of btrfs-progs. Btrfs is currently under heavy development,
+> thread2 also needs a memory_barrier, for without memory_barrier, 
+> on some CPUs, "if (wq)" may be executed before num_writers--, like
+> ===
+> thread 1:                          thread 2:                       
+> 
+> btrfs_commit_transaction()
+>   if (num_writers > 1)
+>     timeout = MAX_TIMEOUT;
+(This bit is gone)
+
+> 	                --------->
+>                                    __btrfs_end_transaction()
+>                                      if (wq)  
+>                                        wake_up();
+> 			<---------
+>   smp_mb();
+>   prepare_wait();
+>   if (num_writers > 1)
+>     schedule_timeout(MAX);
+>   else if (should_grow)
+>     schedule_timeout(1); 
+> 			---------->
+> 				      num_writers--;
+> ===
+> then, thread1 may wait forever.
+> 
+> Since wake_up() itself provides a implied wmb, and a wq active check, 
+> it is better to drop "if (wq)" in __btrfs_end_transaction().
+
+I see.  It could also be
+
+        smb_mb();
+        if (wq)
+                wake_up();
+
+but just calling wake_up() unconditionally is simpler, and fewer barriers 
+in the wake_up case.  I'm not attached to the if (wq); I just kept it 
+because it was there already.
+
+Chris?
+
+Thanks!
+sage
 
 
+
+
+
+> 
+> 
+> thanks,
+> liubo
+> 
+> > Fix this by deciding how long to wait when we wait.
+> > 
+> > Signed-off-by: Sage Weil <sage@newdream.net>
+> > ---
+> >  fs/btrfs/transaction.c |   12 ++++--------
+> >  1 files changed, 4 insertions(+), 8 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> > index 66e4c66..bf399ea 100644
+> > --- a/fs/btrfs/transaction.c
+> > +++ b/fs/btrfs/transaction.c
+> > @@ -992,7 +992,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+> >  			     struct btrfs_root *root)
+> >  {
+> >  	unsigned long joined = 0;
+> > -	unsigned long timeout = 1;
+> >  	struct btrfs_transaction *cur_trans;
+> >  	struct btrfs_transaction *prev_trans = NULL;
+> >  	DEFINE_WAIT(wait);
+> > @@ -1063,11 +1062,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+> >  			snap_pending = 1;
+> >  
+> >  		WARN_ON(cur_trans != trans->transaction);
+> > -		if (cur_trans->num_writers > 1)
+> > -			timeout = MAX_SCHEDULE_TIMEOUT;
+> > -		else if (should_grow)
+> > -			timeout = 1;
+> > -
+> >  		mutex_unlock(&root->fs_info->trans_mutex);
+> >  
+> >  		if (flush_on_commit || snap_pending) {
+> > @@ -1089,8 +1083,10 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+> >  				TASK_UNINTERRUPTIBLE);
+> >  
+> >  		smp_mb();
+> > -		if (cur_trans->num_writers > 1 || should_grow)
+> > -			schedule_timeout(timeout);
+> > +		if (cur_trans->num_writers > 1)
+> > +			schedule_timeout(MAX_SCHEDULE_TIMEOUT);
+> > +		else if (should_grow)
+> > +			schedule_timeout(1);
+> >  
+> >  		mutex_lock(&root->fs_info->trans_mutex);
+> >  		finish_wait(&cur_trans->writer_wait, &wait);
+> 
+> 
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 

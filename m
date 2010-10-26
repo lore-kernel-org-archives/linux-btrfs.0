@@ -1,130 +1,76 @@
 From: Sage Weil <sage@newdream.net>
-Subject: Re: [PATCH] Btrfs: allow subvol deletion by unprivileged user with
- -o user_subvol_rm_allowed
-Date: Tue, 26 Oct 2010 11:32:01 -0700 (PDT)
-Message-ID: <Pine.LNX.4.64.1010261130510.20055@cobra.newdream.net>
-References: <1288041840-28431-1-git-send-email-sage@newdream.net>
- <201010261951.01368.kreijack@libero.it>
-Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: linux-btrfs@vger.kernel.org
-To: Goffredo Baroncelli <kreijack@libero.it>
+Subject: [PATCH v2] Btrfs: fix deadlock in btrfs_commit_transaction
+Date: Tue, 26 Oct 2010 12:16:29 -0700
+Message-ID: <1288120589-31868-1-git-send-email-sage@newdream.net>
+Cc: Sage Weil <sage@newdream.net>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201010261951.01368.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 26 Oct 2010, Goffredo Baroncelli wrote:
-> >  	inode = dentry->d_inode;
-> > +	dest = BTRFS_I(inode)->root;
-> > +	if (!capable(CAP_SYS_ADMIN)){
-> > +		/*
-> > +		 * Regular user.  Only allow this with a special mount
-> > +		 * option, and when rmdir(2) would have been allowed.
-> > +		 *
-> > +		 * Note that this is _not_ check that the subvol is
-> > +		 * empty or doesn't contain data that we wouldn't
-> > +		 * otherwise be able to delete.
-> > +		 *
-> > +		 * Users who want to delete empty subvols should try
-> > +		 * rmdir(2).
-> > +		 */
-> > +		err = -EPERM;
-> > +		if (!btrfs_test_opt(root, USER_SUBVOL_RM_ALLOWED))
-> > +			goto out_dput;
-> > +
-> > +		/*
-> > +		 * Do not allow deletion if the parent dir is the same
-> > +		 * as the dir to be deleted.  That means the ioctl
-> > +		 * must be called on the dentry referencing the root
-> > +		 * of the subvol, not a random directory contained
-> > +		 * within it.
-> > +		 */
-> > +		err = -EINVAL;
-> > +		if (root == dest)
-> > +			goto out_dput;
-> > +
-> > +		/* check if subvolume may be deleted by a non-root user */	
-> > +		err = btrfs_may_delete(dir, dentry, 1);
-> > +		if (err)
-> > +			goto out_dput;
-> 
-> If I read correctly, an user now is capable to remove a "not owned" subvolume. 
-> Is this the intended behavior ?
-> I am not arguing against, but I want to highlight this fact.
+We calculate timeout (either 1 or MAX_SCHEDULE_TIMEOUT) based on whether
+num_writers > 1 or should_grow at the top of the loop.  Then, much much
+later, we wait for that timeout if either num_writers or should_grow is
+true.  However, it's possible for a racing process (calling
+btrfs_end_transaction()) to decrement num_writers such that we wait
+forever instead of for 1.
 
-Good point.  This was mirroring the rmdir(2) checks, but given that we can 
-remove a non-empty subvol, we should add
+Fix this by deciding how long to wait when we wait.  Include a smp_mb()
+before checking if the waitqueue is active to ensure the num_writers
+is visible.
 
-+		err = inode_permission(inode, MAY_WRITE | MAY_EXEC);
-+		if (err)
-+			goto out_dput;
+Signed-off-by: Sage Weil <sage@newdream.net>
+---
+v2:
+ - add smp_mb() before waitqueue_active() check to clone another possible race
 
-as well.  I'll resend.
+ fs/btrfs/transaction.c |   13 +++++--------
+ 1 files changed, 5 insertions(+), 8 deletions(-)
 
-Thanks!
-sage
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 66e4c66..b461fe3 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -392,6 +392,7 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+ 	WARN_ON(cur_trans->num_writers < 1);
+ 	cur_trans->num_writers--;
+ 
++	smp_mb();
+ 	if (waitqueue_active(&cur_trans->writer_wait))
+ 		wake_up(&cur_trans->writer_wait);
+ 	put_transaction(cur_trans);
+@@ -992,7 +993,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root)
+ {
+ 	unsigned long joined = 0;
+-	unsigned long timeout = 1;
+ 	struct btrfs_transaction *cur_trans;
+ 	struct btrfs_transaction *prev_trans = NULL;
+ 	DEFINE_WAIT(wait);
+@@ -1063,11 +1063,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 			snap_pending = 1;
+ 
+ 		WARN_ON(cur_trans != trans->transaction);
+-		if (cur_trans->num_writers > 1)
+-			timeout = MAX_SCHEDULE_TIMEOUT;
+-		else if (should_grow)
+-			timeout = 1;
+-
+ 		mutex_unlock(&root->fs_info->trans_mutex);
+ 
+ 		if (flush_on_commit || snap_pending) {
+@@ -1089,8 +1084,10 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 				TASK_UNINTERRUPTIBLE);
+ 
+ 		smp_mb();
+-		if (cur_trans->num_writers > 1 || should_grow)
+-			schedule_timeout(timeout);
++		if (cur_trans->num_writers > 1)
++			schedule_timeout(MAX_SCHEDULE_TIMEOUT);
++		else if (should_grow)
++			schedule_timeout(1);
+ 
+ 		mutex_lock(&root->fs_info->trans_mutex);
+ 		finish_wait(&cur_trans->writer_wait, &wait);
+-- 
+1.6.6.1
 
-
-> 
-> 
-> > +	}
-> > +
-> >  	if (inode->i_ino != BTRFS_FIRST_FREE_OBJECTID) {
-> >  		err = -EINVAL;
-> >  		goto out_dput;
-> >  	}
-> >  
-> > -	dest = BTRFS_I(inode)->root;
-> > -
-> >  	mutex_lock(&inode->i_mutex);
-> >  	err = d_invalidate(dentry);
-> >  	if (err)
-> > diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> > index 4da2680..8ff5a3a 100644
-> > --- a/fs/btrfs/super.c
-> > +++ b/fs/btrfs/super.c
-> > @@ -68,7 +68,7 @@ enum {
-> >  	Opt_nodatacow, Opt_max_inline, Opt_alloc_start, Opt_nobarrier, 
-> Opt_ssd,
-> >  	Opt_nossd, Opt_ssd_spread, Opt_thread_pool, Opt_noacl, Opt_compress,
-> >  	Opt_compress_force, Opt_notreelog, Opt_ratio, Opt_flushoncommit,
-> > -	Opt_discard, Opt_err,
-> > +	Opt_discard, Opt_user_subvol_rm_allowed, Opt_err,
-> >  };
-> >  
-> >  static match_table_t tokens = {
-> > @@ -92,6 +92,7 @@ static match_table_t tokens = {
-> >  	{Opt_flushoncommit, "flushoncommit"},
-> >  	{Opt_ratio, "metadata_ratio=%d"},
-> >  	{Opt_discard, "discard"},
-> > +	{Opt_user_subvol_rm_allowed, "user_subvol_rm_allowed"},
-> >  	{Opt_err, NULL},
-> >  };
-> >  
-> > @@ -235,6 +236,9 @@ int btrfs_parse_options(struct btrfs_root *root, char 
-> *options)
-> >  		case Opt_discard:
-> >  			btrfs_set_opt(info->mount_opt, DISCARD);
-> >  			break;
-> > +		case Opt_user_subvol_rm_allowed:
-> > +			btrfs_set_opt(info->mount_opt, 
-> USER_SUBVOL_RM_ALLOWED);
-> > +			break;
-> >  		case Opt_err:
-> >  			printk(KERN_INFO "btrfs: unrecognized mount option "
-> >  			       "'%s'\n", p);
-> > -- 
-> > 1.6.6.1
-> > 
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > 
-> 
-> 
-> -- 
-> gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-> Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
-> 
-> 

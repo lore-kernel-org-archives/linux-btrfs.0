@@ -1,31 +1,32 @@
-From: Pat Regan <thehead@patshead.com>
-Subject: Re: some issues with lots of snapshots
-Date: Tue, 26 Oct 2010 15:15:28 -0400
-Message-ID: <20101026151528.555ccee9@zaphod>
-References: <20101026102853.GX13205@jeru.org>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Mark btrfsctl deprecated
+Date: Tue, 26 Oct 2010 15:53:57 -0400
+Message-ID: <20101026195357.GH13254@think>
+References: <22986774.2784821287748969875.JavaMail.defaultUser@defaultHost>
+ <AANLkTimiuTM02Dnue_3NdC+uLbCMP9hEjfrp_4efFbGe@mail.gmail.com>
+ <201010261932.15023.kreijack@libero.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Goffredo Baroncelli <kreijack@libero.it>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101026102853.GX13205@jeru.org>
+In-Reply-To: <201010261932.15023.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 26 Oct 2010 12:28:53 +0200
-Xavier Nicollet <nicollet@jeru.org> wrote:
-
-> I can't reproduce this right know, but it seems that creating lots of
-> snapshots, one per minute (keeping only a dozens of them) may block
-> the system. Every btrfs snap processes stay idle and the load
-> skyrockets to 900.
+On Tue, Oct 26, 2010 at 07:32:14PM +0200, Goffredo Baroncelli wrote:
 > 
-> I use an old version: 2.6.34.5 kernel, and the system is still very
-> responsive (web and mysql server).
+> The package btrfs-tools needs a lot of care:
+> - the INSTALL file still reports that is not possible to remove a subvolume
+> - a lot of program are not documented (what is the meaning of btrfs-zero-log 
+> ?)
+> - "btrfs dev scan" and "btrfs -a" try to read CDROM and Floppy looking for a 
+> btrfs filesystem: only waste of time
+> - [...]
+> 
+> I think that is better to improve the btrfs-progs and not to update btrfsctl.
 
-I had the same thing happen with a 2.6.36-rc6 kernel on my laptop.  My
-cron jobs were creating snapshots and 5 minute intervals and keeping 12
-of them active.
+I'd agree, the btrfsctl command is more than a little awkward, and the
+btrfs command is pretty much better in every way.
 
-I turned off the 5-minute snapshots and I'm now just keeping 4 weekly, 7
-daily, and 24 hourly snapshots alive.
+-chris
 
-Pat

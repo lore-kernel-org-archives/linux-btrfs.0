@@ -1,407 +1,247 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs-progs: add support for mixed data+metadata block groups V3
-Date: Wed, 27 Oct 2010 14:37:34 -0400
-Message-ID: <1288204654-2127-1-git-send-email-josef@redhat.com>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: [RFC PATCH] Deprecate btrfsctl, btrfs-show, btrfs-vol
+Date: Wed, 27 Oct 2010 20:49:26 +0200
+Message-ID: <201010272049.40904.kreijack@libero.it>
+References: <22986774.2784821287748969875.JavaMail.defaultUser@defaultHost> <201010261932.15023.kreijack@libero.it> <20101026195357.GH13254@think>
+Reply-To: kreijack@libero.it
+Mime-Version: 1.0
+Content-Type: multipart/signed;
+  boundary="nextPart1316851.Mdea0sT4DR";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+Cc: Chris Mason <chris.mason@oracle.com>,
+	David Nicol <davidnicol@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20101026195357.GH13254@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So alot of crazy people (I'm looking at you Meego) want to use btrfs on phones
-and such with small devices.  Unfortunately the way we split out metadata/data
-chunks it makes space usage inefficient for volumes that are smaller than
-1gigabyte.  So add a -M option for mixing metadata+data, and default to this
-mixed mode if the filesystem is less than or equal to 1 gigabyte.  I've tested
-this with xfstests on a 100mb filesystem and everything is a-ok.
+--nextPart1316851.Mdea0sT4DR
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
-V2->V3: Add an incompat flag since the kernel will panic with mixed block groups
-unless its had a few key fixes.
+Hi all,
 
-V1->V2: My original patch was screwing up if you specified the data or metadata
-profile.  This update fixes that problem.
+the patch below deprecates the following programs
 
- btrfs-vol.c  |    4 +-
- btrfs_cmds.c |   13 +++++-
- ctree.h      |    4 +-
- mkfs.c       |  122 +++++++++++++++++++++++++++++++++++++++++-----------------
- utils.c      |   10 ++--
- utils.h      |    2 +-
- 6 files changed, 109 insertions(+), 46 deletions(-)
+* btrfsctl
+* btrfs-vol
+* btrfs-show
 
-diff --git a/btrfs-vol.c b/btrfs-vol.c
-index 8069778..7200bbc 100644
---- a/btrfs-vol.c
-+++ b/btrfs-vol.c
-@@ -129,7 +129,9 @@ int main(int ac, char **av)
- 		exit(1);
- 	}
- 	if (cmd == BTRFS_IOC_ADD_DEV) {
--		ret = btrfs_prepare_device(devfd, device, 1, &dev_block_count);
-+		int mixed = 0;
+the reason is simple, these programs are superseded by the btrfs utility,
+both in terms of documentation, usability and bug. The goal is to avoid=20
+to duplicate codes and avoid update two programs.
+
+What I am asking here is a comment about the WARNINGs and suggestions about=
+=20
+the policy to adopt in deprecating these programs.
+My suggestions are:
+=2D put a warning in the documentation and in the program (see below)
+=2D "freeze" the programs avoiding to add new functionality to the=20
+  "old utilities".=20
+=2D after six month remove the old utilities programs from the btrfs-progs=
+=20
+  package
+
+The aim is to support the old systems but discourage to use the old tools.
+
+If btrfs would show regression respect the old tools, I am happy to know an=
+d=20
+I will work to solve the issues.
+
+The patch adds a warning in the man pages, in the INSTALL file and in the=20
+programs.
+
+$ ./btrfsctl=20
+**
+** WARNING: this program is considered deprecated
+** Please consider to switch to the btrfs utility
+**
+no valid commands given
+usage: btrfsctl [ -d file|dir] [ -s snap_name subvol|tree ]
+                [-r size] [-A device] [-a] [-c] [-D dir .]
+        -d filename: defragments one file
+        -d directory: defragments the entire Btree
+        -s snap_name dir: creates a new snapshot of dir
+        -S subvol_name dir: creates a new subvolume
+        -r [+-]size[gkm]: resize the FS by size amount
+        -A device: scans the device file for a Btrfs filesystem
+        -a: scans all devices for Btrfs filesystems
+        -c: forces a single FS sync
+        -D: delete snapshot
+        -m [tree id] directory: set the default mounted subvolume to the [t=
+ree id] or the=20
+directory
+
+
+Below the patch, but it is possible to pull the changes from:
+
+ 	http://cassiopea.homelinux.net/git/btrfs-progs-unstable-all.git
+
+branch
+
+	btrfs-deprecated
+
+Comments are welcome.
+
+G.Baroncelli
+
+ INSTALL             |    5 +++++
+ btrfs-show.c        |    5 +++++
+ btrfs-vol.c         |    5 +++++
+ btrfsctl.c          |    5 +++++
+ man/btrfs-show.8.in |    3 +++
+ man/btrfsctl.8.in   |    3 +++
+ 6 files changed, 26 insertions(+)
+
+
+diff --git a/INSTALL b/INSTALL
+index 16b45a5..cbde78f 100644
+
+=2D-- a/INSTALL
++++ b/INSTALL
+@@ -24,10 +24,15 @@ e2fsprogs-devel from various distros.
+ Building the utilities is just make ; make install.  The programs go
+ into /usr/local/bin.  The commands available are:
+=20
++btrfs: control program to manage the filesystem.
 +
-+		ret = btrfs_prepare_device(devfd, device, 1, &dev_block_count, &mixed);
- 		if (ret) {
- 			fprintf(stderr, "Unable to init %s\n", device);
- 			exit(1);
-diff --git a/btrfs_cmds.c b/btrfs_cmds.c
-index 8031c58..683aec0 100644
---- a/btrfs_cmds.c
-+++ b/btrfs_cmds.c
-@@ -705,6 +705,7 @@ int do_add_volume(int nargs, char **args)
- 		int	devfd, res;
- 		u64 dev_block_count = 0;
- 		struct stat st;
-+		int mixed = 0;
- 
- 		devfd = open(args[i], O_RDWR);
- 		if (!devfd) {
-@@ -727,7 +728,7 @@ int do_add_volume(int nargs, char **args)
- 			continue;
- 		}
- 
--		res = btrfs_prepare_device(devfd, args[i], 1, &dev_block_count);
-+		res = btrfs_prepare_device(devfd, args[i], 1, &dev_block_count, &mixed);
- 		if (res) {
- 			fprintf(stderr, "ERROR: Unable to init '%s'\n", args[i]);
- 			close(devfd);
-@@ -889,8 +890,14 @@ int do_df_filesystem(int nargs, char **argv)
- 		memset(description, 0, 80);
- 
- 		if (flags & BTRFS_BLOCK_GROUP_DATA) {
--			snprintf(description, 5, "%s", "Data");
--			written += 4;
-+			if (flags & BTRFS_BLOCK_GROUP_METADATA) {
-+				snprintf(description, 15, "%s",
-+					 "Data+Metadata");
-+				written += 14;
-+			} else {
-+				snprintf(description, 5, "%s", "Data");
-+				written += 4;
-+			}
- 		} else if (flags & BTRFS_BLOCK_GROUP_SYSTEM) {
- 			snprintf(description, 7, "%s", "System");
- 			written += 6;
-diff --git a/ctree.h b/ctree.h
-index 4d0e1e2..8276e5e 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -352,13 +352,15 @@ struct btrfs_super_block {
- #define BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF	(1ULL << 0)
- #define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(1ULL << 1)
- #define BTRFS_FEATURE_INCOMPAT_SPACE_CACHE	(1ULL << 2)
-+#define BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS	(1ULL << 3)
- 
- #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
- #define BTRFS_FEATURE_COMPAT_RO_SUPP		0ULL
- #define BTRFS_FEATURE_INCOMPAT_SUPP			\
- 	(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF |		\
- 	 BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL |	\
--	 BTRFS_FEATURE_INCOMPAT_SPACE_CACHE)
-+	 BTRFS_FEATURE_INCOMPAT_SPACE_CACHE |		\
-+	 BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS)
- 
- /*
-  * A leaf is full of items. offset and size tell us where to find
-diff --git a/mkfs.c b/mkfs.c
-index 2e99b95..04de93a 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -69,7 +69,7 @@ static u64 parse_size(char *s)
- 	return atol(s) * mult;
- }
- 
--static int make_root_dir(struct btrfs_root *root)
-+static int make_root_dir(struct btrfs_root *root, int mixed)
- {
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_key location;
-@@ -88,30 +88,47 @@ static int make_root_dir(struct btrfs_root *root)
- 				     0, BTRFS_MKFS_SYSTEM_GROUP_SIZE);
- 	BUG_ON(ret);
- 
--	ret = btrfs_alloc_chunk(trans, root->fs_info->extent_root,
--				&chunk_start, &chunk_size,
--				BTRFS_BLOCK_GROUP_METADATA);
--	BUG_ON(ret);
--	ret = btrfs_make_block_group(trans, root, 0,
--				     BTRFS_BLOCK_GROUP_METADATA,
--				     BTRFS_FIRST_CHUNK_TREE_OBJECTID,
--				     chunk_start, chunk_size);
--	BUG_ON(ret);
-+	if (mixed) {
-+		ret = btrfs_alloc_chunk(trans, root->fs_info->extent_root,
-+					&chunk_start, &chunk_size,
-+					BTRFS_BLOCK_GROUP_METADATA |
-+					BTRFS_BLOCK_GROUP_DATA);
-+		BUG_ON(ret);
-+		ret = btrfs_make_block_group(trans, root, 0,
-+					     BTRFS_BLOCK_GROUP_METADATA |
-+					     BTRFS_BLOCK_GROUP_DATA,
-+					     BTRFS_FIRST_CHUNK_TREE_OBJECTID,
-+					     chunk_start, chunk_size);
-+		BUG_ON(ret);
-+		printf("Created a data/metadata chunk of size %llu\n", chunk_size);
-+	} else {
-+		ret = btrfs_alloc_chunk(trans, root->fs_info->extent_root,
-+					&chunk_start, &chunk_size,
-+					BTRFS_BLOCK_GROUP_METADATA);
-+		BUG_ON(ret);
-+		ret = btrfs_make_block_group(trans, root, 0,
-+					     BTRFS_BLOCK_GROUP_METADATA,
-+					     BTRFS_FIRST_CHUNK_TREE_OBJECTID,
-+					     chunk_start, chunk_size);
-+		BUG_ON(ret);
-+	}
- 
- 	root->fs_info->system_allocs = 0;
- 	btrfs_commit_transaction(trans, root);
- 	trans = btrfs_start_transaction(root, 1);
- 	BUG_ON(!trans);
- 
--	ret = btrfs_alloc_chunk(trans, root->fs_info->extent_root,
--				&chunk_start, &chunk_size,
--				BTRFS_BLOCK_GROUP_DATA);
--	BUG_ON(ret);
--	ret = btrfs_make_block_group(trans, root, 0,
--				     BTRFS_BLOCK_GROUP_DATA,
--				     BTRFS_FIRST_CHUNK_TREE_OBJECTID,
--				     chunk_start, chunk_size);
--	BUG_ON(ret);
-+	if (!mixed) {
-+		ret = btrfs_alloc_chunk(trans, root->fs_info->extent_root,
-+					&chunk_start, &chunk_size,
-+					BTRFS_BLOCK_GROUP_DATA);
-+		BUG_ON(ret);
-+		ret = btrfs_make_block_group(trans, root, 0,
-+					     BTRFS_BLOCK_GROUP_DATA,
-+					     BTRFS_FIRST_CHUNK_TREE_OBJECTID,
-+					     chunk_start, chunk_size);
-+		BUG_ON(ret);
-+	}
- 
- 	ret = btrfs_make_root_dir(trans, root->fs_info->tree_root,
- 			      BTRFS_ROOT_TREE_DIR_OBJECTID);
-@@ -200,7 +217,7 @@ static int create_one_raid_group(struct btrfs_trans_handle *trans,
- 
- static int create_raid_groups(struct btrfs_trans_handle *trans,
- 			      struct btrfs_root *root, u64 data_profile,
--			      u64 metadata_profile)
-+			      u64 metadata_profile, int mixed)
- {
- 	u64 num_devices = btrfs_super_num_devices(&root->fs_info->super_copy);
- 	u64 allowed;
-@@ -215,20 +232,24 @@ static int create_raid_groups(struct btrfs_trans_handle *trans,
- 		allowed = BTRFS_BLOCK_GROUP_RAID0 | BTRFS_BLOCK_GROUP_RAID1;
- 
- 	if (allowed & metadata_profile) {
-+		u64 meta_flags = BTRFS_BLOCK_GROUP_METADATA;
+ mkfs.btrfs: create a filesystem
+=20
+ btrfsctl: control program to create snapshots and subvolumes:
+=20
++	NOTE: this utility is deprecated. Please consider to switch
++	to the btrfs utility (see above)
 +
- 		ret = create_one_raid_group(trans, root,
- 					    BTRFS_BLOCK_GROUP_SYSTEM |
- 					    (allowed & metadata_profile));
- 		BUG_ON(ret);
- 
--		ret = create_one_raid_group(trans, root,
--					    BTRFS_BLOCK_GROUP_METADATA |
-+		if (mixed)
-+			meta_flags |= BTRFS_BLOCK_GROUP_DATA;
-+
-+		ret = create_one_raid_group(trans, root, meta_flags |
- 					    (allowed & metadata_profile));
- 		BUG_ON(ret);
- 
- 		ret = recow_roots(trans, root);
- 		BUG_ON(ret);
- 	}
--	if (num_devices > 1 && (allowed & data_profile)) {
-+	if (!mixed && num_devices > 1 && (allowed & data_profile)) {
- 		ret = create_one_raid_group(trans, root,
- 					    BTRFS_BLOCK_GROUP_DATA |
- 					    (allowed & data_profile));
-@@ -274,6 +295,7 @@ static void print_usage(void)
- 	fprintf(stderr, "\t -l --leafsize size of btree leaves\n");
- 	fprintf(stderr, "\t -L --label set a label\n");
- 	fprintf(stderr, "\t -m --metadata metadata profile, values like data profile\n");
-+	fprintf(stderr, "\t -M --mixed mix metadata and data together\n");
- 	fprintf(stderr, "\t -n --nodesize size of btree nodes\n");
- 	fprintf(stderr, "\t -s --sectorsize min block allocation\n");
- 	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
-@@ -328,6 +350,7 @@ static struct option long_options[] = {
- 	{ "leafsize", 1, NULL, 'l' },
- 	{ "label", 1, NULL, 'L'},
- 	{ "metadata", 1, NULL, 'm' },
-+	{ "mixed", 0, NULL, 'M' },
- 	{ "nodesize", 1, NULL, 'n' },
- 	{ "sectorsize", 1, NULL, 's' },
- 	{ "data", 1, NULL, 'd' },
-@@ -358,10 +381,13 @@ int main(int ac, char **av)
- 	int first_fd;
+ 	mount /dev/sda2 /mnt
+ 	btrfsctl -s new_subvol_name /mnt
+ 	btrfsctl -s snapshot_of_default /mnt/default
+diff --git a/btrfs-show.c b/btrfs-show.c
+index c49626c..8210fd2 100644
+=2D-- a/btrfs-show.c
++++ b/btrfs-show.c
+@@ -117,6 +117,11 @@ int main(int ac, char **av)
  	int ret;
- 	int i;
-+	int mixed = 0;
-+	int data_profile_opt = 0;
-+	int metadata_profile_opt = 0;
- 
+ 	int option_index =3D 0;
+=20
++	printf( "**\n"
++		"** WARNING: this program is considered deprecated\n"
++		"** Please consider to switch to the btrfs utility\n"
++		"**\n");
++
  	while(1) {
  		int c;
--		c = getopt_long(ac, av, "A:b:l:n:s:m:d:L:V", long_options,
-+		c = getopt_long(ac, av, "A:b:l:n:s:m:d:L:VM", long_options,
- 				&option_index);
- 		if (c < 0)
- 			break;
-@@ -371,6 +397,7 @@ int main(int ac, char **av)
- 				break;
- 			case 'd':
- 				data_profile = parse_profile(optarg);
-+				data_profile_opt = 1;
- 				break;
- 			case 'l':
- 				leafsize = parse_size(optarg);
-@@ -380,6 +407,10 @@ int main(int ac, char **av)
- 				break;
- 			case 'm':
- 				metadata_profile = parse_profile(optarg);
-+				metadata_profile_opt = 1;
-+				break;
-+			case 'M':
-+				mixed = 1;
- 				break;
- 			case 'n':
- 				nodesize = parse_size(optarg);
-@@ -389,12 +420,10 @@ int main(int ac, char **av)
- 				break;
- 			case 'b':
- 				block_count = parse_size(optarg);
--				if (block_count < 256*1024*1024) {
--					fprintf(stderr, "File system size "
--						"%llu bytes is too small, "
--						"256M is required at least\n",
--						(unsigned long long)block_count);
--					exit(1);
-+				if (block_count <= 1024*1024*1024) {
-+					printf("SMALL VOLUME: forcing mixed "
-+					       "metadata/data groups\n");
-+					mixed = 1;
- 				}
- 				zero_end = 0;
- 				break;
-@@ -439,9 +468,22 @@ int main(int ac, char **av)
- 	}
- 	first_fd = fd;
- 	first_file = file;
--	ret = btrfs_prepare_device(fd, file, zero_end, &dev_block_count);
-+	ret = btrfs_prepare_device(fd, file, zero_end, &dev_block_count,
-+				   &mixed);
- 	if (block_count == 0)
- 		block_count = dev_block_count;
-+	if (mixed) {
-+		if (!metadata_profile_opt)
-+			metadata_profile = 0;
-+		if (!data_profile_opt)
-+			data_profile = 0;
+ 		c =3D getopt_long(ac, av, "", long_options,
+diff --git a/btrfs-vol.c b/btrfs-vol.c
+index 4ed799d..fe6f240 100644
+=2D-- a/btrfs-vol.c
++++ b/btrfs-vol.c
+@@ -78,6 +78,11 @@ int main(int ac, char **av)
+ 	struct btrfs_ioctl_vol_args args;
+ 	u64 dev_block_count =3D 0;
+=20
++	printf( "**\n"
++		"** WARNING: this program is considered deprecated\n"
++		"** Please consider to switch to the btrfs utility\n"
++		"**\n");
 +
-+		if (metadata_profile != data_profile) {
-+			fprintf(stderr, "With mixed block groups data and metadata "
-+				"profiles must be the same\n");
-+			exit(1);
-+		}
-+	}
- 
- 	blocks[0] = BTRFS_SUPER_INFO_OFFSET;
- 	for (i = 1; i < 7; i++) {
-@@ -459,7 +501,7 @@ int main(int ac, char **av)
- 	root = open_ctree(file, 0, O_RDWR);
- 	root->fs_info->alloc_start = alloc_start;
- 
--	ret = make_root_dir(root);
-+	ret = make_root_dir(root, mixed);
- 	if (ret) {
- 		fprintf(stderr, "failed to setup the root directory\n");
- 		exit(1);
-@@ -478,6 +520,8 @@ int main(int ac, char **av)
- 
- 	zero_end = 1;
- 	while(ac-- > 0) {
-+		int old_mixed = mixed;
-+
- 		file = av[optind++];
- 		ret = check_mounted(file);
- 		if (ret < 0) {
-@@ -503,8 +547,8 @@ int main(int ac, char **av)
- 			continue;
- 		}
- 		ret = btrfs_prepare_device(fd, file, zero_end,
--					   &dev_block_count);
--
-+					   &dev_block_count, &mixed);
-+		mixed = old_mixed;
- 		BUG_ON(ret);
- 
- 		ret = btrfs_add_to_fsid(trans, root, fd, file, dev_block_count,
-@@ -515,12 +559,20 @@ int main(int ac, char **av)
- 
- raid_groups:
- 	ret = create_raid_groups(trans, root, data_profile,
--				 metadata_profile);
-+				 metadata_profile, mixed);
- 	BUG_ON(ret);
- 
- 	ret = create_data_reloc_tree(trans, root);
- 	BUG_ON(ret);
- 
-+	if (mixed) {
-+		struct btrfs_super_block *super = &root->fs_info->super_copy;
-+		u64 flags = btrfs_super_incompat_flags(super);
-+
-+		flags |= BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS;
-+		btrfs_set_super_incompat_flags(super, flags);
-+	}
-+
- 	printf("fs created label %s on %s\n\tnodesize %u leafsize %u "
- 	    "sectorsize %u size %s\n",
- 	    label, first_file, nodesize, leafsize, sectorsize,
-diff --git a/utils.c b/utils.c
-index 2f4c6e1..0de43df 100644
---- a/utils.c
-+++ b/utils.c
-@@ -507,7 +507,8 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
- 	return 0;
- }
- 
--int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret)
-+int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret,
-+			 int *mixed)
- {
- 	u64 block_count;
- 	u64 bytenr;
-@@ -527,10 +528,9 @@ int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret)
- 	}
- 	zero_end = 1;
- 
--	if (block_count < 256 * 1024 * 1024) {
--		fprintf(stderr, "device %s is too small "
--		        "(must be at least 256 MB)\n", file);
--		exit(1);
-+	if (block_count < 1024 * 1024 * 1024 && !(*mixed)) {
-+		printf("SMALL VOLUME: forcing mixed metadata/data groups\n");
-+		*mixed = 1;
- 	}
- 	ret = zero_dev_start(fd);
- 	if (ret) {
-diff --git a/utils.h b/utils.h
-index 7ff542b..b91140e 100644
---- a/utils.h
-+++ b/utils.h
-@@ -27,7 +27,7 @@ int make_btrfs(int fd, const char *device, const char *label,
- int btrfs_make_root_dir(struct btrfs_trans_handle *trans,
- 			struct btrfs_root *root, u64 objectid);
- int btrfs_prepare_device(int fd, char *file, int zero_end,
--			 u64 *block_count_ret);
-+			 u64 *block_count_ret, int *mixed);
- int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
- 		      struct btrfs_root *root, int fd, char *path,
- 		      u64 block_count, u32 io_width, u32 io_align,
--- 
-1.6.6.1
+ 	while(1) {
+ 		int c;
+ 		c =3D getopt_long(ac, av, "a:br:", long_options,
+diff --git a/btrfsctl.c b/btrfsctl.c
+index 92bdf39..d20c96a 100644
+=2D-- a/btrfsctl.c
++++ b/btrfsctl.c
+@@ -107,6 +107,11 @@ int main(int ac, char **av)
+ 	char *fullpath;
+ 	u64 objectid =3D 0;
+=20
++	printf( "**\n"
++		"** WARNING: this program is considered deprecated\n"
++		"** Please consider to switch to the btrfs utility\n"
++		"**\n");
++=09
+ 	if (ac =3D=3D 2 && strcmp(av[1], "-a") =3D=3D 0) {
+ 		fprintf(stderr, "Scanning for Btrfs filesystems\n");
+ 		btrfs_scan_one_dir("/dev", 1);
+diff --git a/man/btrfs-show.8.in b/man/btrfs-show.8.in
+index dd0b147..cb98b68 100644
+=2D-- a/man/btrfs-show.8.in
++++ b/man/btrfs-show.8.in
+@@ -3,6 +3,9 @@
+ btrfs-show \- scan the /dev directory for btrfs partitions and print resul=
+ts.
+ .SH SYNOPSIS
+ .B btrfs-show
++.SH NOTE
++.B btrfs-show
++is deprecated. Please consider to switch to the btrfs utility.=09
+ .SH DESCRIPTION
+ .B btrfs-show
+ is used to scan the /dev directory for btrfs partitions and display brief
+diff --git a/man/btrfsctl.8.in b/man/btrfsctl.8.in
+index c2d4488..558b484 100644
+=2D-- a/man/btrfsctl.8.in
++++ b/man/btrfsctl.8.in
+@@ -10,6 +10,9 @@ btrfsctl \- control a btrfs filesystem
+ [ \fB \-A\fP\fI device\fP ]
+ [ \fB \-a\fP ]
+ [ \fB \-c\fP ]
++.SH NOTE
++.B btrfs-show
++is deprecated. Please consider to switch to the btrfs utility.
+ .SH DESCRIPTION
+ .B btrfsctl
+ is used to control the filesystem and the files and directories stored. It=
+ is the tool to=20
+create a new snapshot for the filesystem.
 
+
+On Tuesday, 26 October, 2010, Chris Mason wrote:
+> On Tue, Oct 26, 2010 at 07:32:14PM +0200, Goffredo Baroncelli wrote:
+> >=20
+> > The package btrfs-tools needs a lot of care:
+> > - the INSTALL file still reports that is not possible to remove a subvo=
+lume
+> > - a lot of program are not documented (what is the meaning of btrfs-zer=
+o-log=20
+> > ?)
+> > - "btrfs dev scan" and "btrfs -a" try to read CDROM and Floppy looking =
+for a=20
+> > btrfs filesystem: only waste of time
+> > - [...]
+> >=20
+> > I think that is better to improve the btrfs-progs and not to update btr=
+fsctl.
+>=20
+> I'd agree, the btrfsctl command is more than a little awkward, and the
+> btrfs command is pretty much better in every way.
+>=20
+> -chris
+>=20
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
+
+
+=2D-=20
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.i=
+t>
+Key fingerprint =3D 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+
+--nextPart1316851.Mdea0sT4DR
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iD8DBQBMyHQ3vwTxYT3FBRIRAuMSAJ0SG0Heic52hwCWNlVE2ZRD0a2RZQCfYIcm
+TWKwYbMieGnHf6nDKz5O0h8=
+=d0DH
+-----END PGP SIGNATURE-----
+
+--nextPart1316851.Mdea0sT4DR--

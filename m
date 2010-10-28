@@ -1,45 +1,40 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [GIT PULL] space cache and mixed block groups
-Date: Thu, 28 Oct 2010 17:06:31 -0400
-Message-ID: <20101028210631.GB11684@dhcp231-156.rdu.redhat.com>
+From: Pat Regan <thehead@patshead.com>
+Subject: Re: some issues with lots of snapshots
+Date: Thu, 28 Oct 2010 18:03:41 -0400
+Message-ID: <20101028180341.7dd5ad12@zaphod>
+References: <20101026102853.GX13205@jeru.org>
+	<20101026151528.555ccee9@zaphod>
+	<20101027083948.GA13205@jeru.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: chris.mason@oracle.com
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20101027083948.GA13205@jeru.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Wed, 27 Oct 2010 10:39:48 +0200
+Xavier Nicollet <nicollet@jeru.org> wrote:
 
-Here is part 2 of my outstanding patches, they are in 
+> Le 26 octobre 2010 =E0 15:15, Pat Regan a =E9crit:
+> > I turned off the 5-minute snapshots and I'm now just keeping 4
+> > weekly, 7 daily, and 24 hourly snapshots alive.
+>=20
+> I have just rebooted and I am going with /15 minutes interval.
+>=20
 
-git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-work.git for-chris
+I'm just replying so this is documented somewhere.
 
-and have just the disk space caching stuff and the mixed block groups patches.
-It should apply cleanly onto the bug-fixes branch.  I would have combined them
-but I screwed up my tree again somehow.  Below is the shortlog and diffstat,
-thanks
+After I read your message I decided to turn on snaphots at 15 minute
+intervals yesterday.  This morning I had snapshot processing filling up
+my process list again.
 
+My laptop is a quad core i7 and the btrfs file system is on an Intel
+X25-M 80 gig.  I don't know if a fast drives increases or decreases the
+likelihood of having this problem or not.
 
-Josef Bacik (7):
-      Btrfs: create special free space cache inode
-      Btrfs: write out free space cache
-      Btrfs: load free space cache if it exists
-      Btrfs: check cache->caching_ctl before returning if caching has started
-      Btrfs: add support for mixed data+metadata block groups
-      Btrfs: Add a clear_cache mount option
-      Btrfs: let the user know space caching is enabled
-
- fs/btrfs/ctree.h            |   86 +++++-
- fs/btrfs/disk-io.c          |   20 +-
- fs/btrfs/extent-tree.c      |  361 ++++++++++++++++++++-
- fs/btrfs/free-space-cache.c |  750 +++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/free-space-cache.h |   18 +
- fs/btrfs/inode.c            |  155 ++++++++--
- fs/btrfs/relocation.c       |   91 +++++-
- fs/btrfs/super.c            |   11 +-
- fs/btrfs/transaction.c      |   43 ++-
- fs/btrfs/transaction.h      |    4 +
- 10 files changed, 1473 insertions(+), 66 deletions(-)
-
-Josef
+Pat
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

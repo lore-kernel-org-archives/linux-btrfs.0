@@ -1,345 +1,141 @@
-From: Ian Kent <raven@themaw.net>
-Subject: Re: [PATCH] Btrfs: fix dentry->d_parent abuses
-Date: Thu, 28 Oct 2010 11:42:04 +0800
-Message-ID: <1288237324.3151.17.camel@localhost>
-References: <1288190373-21381-1-git-send-email-josef@redhat.com>
+From: Tomasz Chmielewski <mangoo@wpkg.org>
+Subject: Re: btrfs hang (deadlock?) when trying to create a ext4 filesystem
+ in KVM guest
+Date: Thu, 28 Oct 2010 08:29:27 +0200
+Message-ID: <4CC91847.6020205@wpkg.org>
+References: <4CC82942.1020101@wpkg.org> <20101027225541.GT27796@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1288190373-21381-1-git-send-email-josef@redhat.com>
+In-Reply-To: <20101027225541.GT27796@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2010-10-27 at 10:39 -0400, Josef Bacik wrote:
-> There are lots of places where we do dentry->d_parent->d_inode without holding
-> the dentry->d_lock.  This could cause problems with rename.  So instead use
-> dget_parent where we can, or in some cases we don't even need to use
-> dentry->d_parent->d_inode since we get the inode of the dir passed to us from
-> VFS.  I tested this with xfstests and my no space tests and everything turned
-> out fine.  Thanks,
+On 28.10.2010 00:55, Chris Mason wrote:
+> On Wed, Oct 27, 2010 at 03:29:38PM +0200, Tomasz Chmielewski wrote:
+>> There are a couple of problems when running KVM guests with images stored on btrfs filesystem.
+>>
+>> One of them is inability to create a filesystem (i.e. ext4) in the guest:
+>>
+>> - btrfs filesystem on the host was mounted with noatime,compress-force
+>> - guest was using a 50 GB sparse file,
+>> - attempt to create a ext4 filesystem within the guest does not succeed (hangs); host prints below messages in dmesg - some deadlock in btrfs?
+>>
+>> kernel: 2.6.36
+>> qemu-kvm: 0.13.0
 > 
-> Signed-off-by: Josef Bacik <josef@redhat.com>
-> ---
->  fs/btrfs/file.c        |    2 ++
->  fs/btrfs/inode.c       |   48 ++++++++++++++++++++++++------------------------
->  fs/btrfs/ioctl.c       |   11 +++++++++--
->  fs/btrfs/transaction.c |    5 ++++-
->  fs/btrfs/tree-log.c    |   22 ++++++++++++++++++----
->  5 files changed, 57 insertions(+), 31 deletions(-)
-> 
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index e354c33..6a4daa0 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -1047,8 +1047,10 @@ out:
->  
->  		if ((file->f_flags & O_DSYNC) || IS_SYNC(inode)) {
->  			trans = btrfs_start_transaction(root, 0);
+> Is this the full dmesg output?  I think there are other messages hiding
+> in there.
 
-If btrfs_start_transaction() fails now the inode mutex will be held as
-well. I guess the resulting oops makes this irrelevant, ;)
-
-Looking through the dead end BUG_ON()s in the transaction code, and
-callers, one thing I've found difficult is working out how to recover
-from IS_ERR() returns from btrfs_start_transaction() in situations like
-this.
-
-Any chance of a patch to handle this to give me an example (well one
-case anyway) of how to do it?
-
-> +			mutex_lock(&inode->i_mutex);
->  			ret = btrfs_log_dentry_safe(trans, root,
->  						    file->f_dentry);
-> +			mutex_unlock(&inode->i_mutex);
->  			if (ret == 0) {
->  				ret = btrfs_sync_log(trans, root);
->  				if (ret == 0)
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 7146971..e77ee56 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -4144,6 +4144,7 @@ static int btrfs_dentry_delete(struct dentry *dentry)
->  		if (btrfs_root_refs(&root->root_item) == 0)
->  			return 1;
->  	}
-> +
->  	return 0;
->  }
->  
-> @@ -4627,12 +4628,12 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
->  }
->  
->  static int btrfs_add_nondir(struct btrfs_trans_handle *trans,
-> -			    struct dentry *dentry, struct inode *inode,
-> -			    int backref, u64 index)
-> +			    struct inode *dir, struct dentry *dentry,
-> +			    struct inode *inode, int backref, u64 index)
->  {
-> -	int err = btrfs_add_link(trans, dentry->d_parent->d_inode,
-> -				 inode, dentry->d_name.name,
-> -				 dentry->d_name.len, backref, index);
-> +	int err = btrfs_add_link(trans, dir, inode,
-> +				 dentry->d_name.name, dentry->d_name.len,
-> +				 backref, index);
->  	if (!err) {
->  		d_instantiate(dentry, inode);
->  		return 0;
-> @@ -4673,8 +4674,7 @@ static int btrfs_mknod(struct inode *dir, struct dentry *dentry,
->  	btrfs_set_trans_block_group(trans, dir);
->  
->  	inode = btrfs_new_inode(trans, root, dir, dentry->d_name.name,
-> -				dentry->d_name.len,
-> -				dentry->d_parent->d_inode->i_ino, objectid,
-> +				dentry->d_name.len, dir->i_ino, objectid,
->  				BTRFS_I(dir)->block_group, mode, &index);
->  	err = PTR_ERR(inode);
->  	if (IS_ERR(inode))
-> @@ -4687,7 +4687,7 @@ static int btrfs_mknod(struct inode *dir, struct dentry *dentry,
->  	}
->  
->  	btrfs_set_trans_block_group(trans, inode);
-> -	err = btrfs_add_nondir(trans, dentry, inode, 0, index);
-> +	err = btrfs_add_nondir(trans, dir, dentry, inode, 0, index);
->  	if (err)
->  		drop_inode = 1;
->  	else {
-> @@ -4735,10 +4735,8 @@ static int btrfs_create(struct inode *dir, struct dentry *dentry,
->  	btrfs_set_trans_block_group(trans, dir);
->  
->  	inode = btrfs_new_inode(trans, root, dir, dentry->d_name.name,
-> -				dentry->d_name.len,
-> -				dentry->d_parent->d_inode->i_ino,
-> -				objectid, BTRFS_I(dir)->block_group, mode,
-> -				&index);
-> +				dentry->d_name.len, dir->i_ino, objectid,
-> +				BTRFS_I(dir)->block_group, mode, &index);
->  	err = PTR_ERR(inode);
->  	if (IS_ERR(inode))
->  		goto out_unlock;
-> @@ -4750,7 +4748,7 @@ static int btrfs_create(struct inode *dir, struct dentry *dentry,
->  	}
->  
->  	btrfs_set_trans_block_group(trans, inode);
-> -	err = btrfs_add_nondir(trans, dentry, inode, 0, index);
-> +	err = btrfs_add_nondir(trans, dir, dentry, inode, 0, index);
->  	if (err)
->  		drop_inode = 1;
->  	else {
-> @@ -4810,15 +4808,17 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
->  	btrfs_set_trans_block_group(trans, dir);
->  	atomic_inc(&inode->i_count);
->  
-> -	err = btrfs_add_nondir(trans, dentry, inode, 1, index);
-> +	err = btrfs_add_nondir(trans, dir, dentry, inode, 1, index);
->  
->  	if (err) {
->  		drop_inode = 1;
->  	} else {
-> +		struct dentry *parent = dget_parent(dentry);
->  		btrfs_update_inode_block_group(trans, dir);
->  		err = btrfs_update_inode(trans, root, inode);
->  		BUG_ON(err);
-> -		btrfs_log_new_name(trans, inode, NULL, dentry->d_parent);
-> +		btrfs_log_new_name(trans, inode, NULL, parent);
-> +		dput(parent);
->  	}
->  
->  	nr = trans->blocks_used;
-> @@ -4858,8 +4858,7 @@ static int btrfs_mkdir(struct inode *dir, struct dentry *dentry, int mode)
->  	btrfs_set_trans_block_group(trans, dir);
->  
->  	inode = btrfs_new_inode(trans, root, dir, dentry->d_name.name,
-> -				dentry->d_name.len,
-> -				dentry->d_parent->d_inode->i_ino, objectid,
-> +				dentry->d_name.len, dir->i_ino, objectid,
->  				BTRFS_I(dir)->block_group, S_IFDIR | mode,
->  				&index);
->  	if (IS_ERR(inode)) {
-> @@ -4882,9 +4881,8 @@ static int btrfs_mkdir(struct inode *dir, struct dentry *dentry, int mode)
->  	if (err)
->  		goto out_fail;
->  
-> -	err = btrfs_add_link(trans, dentry->d_parent->d_inode,
-> -				 inode, dentry->d_name.name,
-> -				 dentry->d_name.len, 0, index);
-> +	err = btrfs_add_link(trans, dir, inode, dentry->d_name.name,
-> +			     dentry->d_name.len, 0, index);
->  	if (err)
->  		goto out_fail;
->  
-> @@ -6613,8 +6611,11 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
->  	BUG_ON(ret);
->  
->  	if (old_inode->i_ino != BTRFS_FIRST_FREE_OBJECTID) {
-> +		struct dentry *parent = dget_parent(new_dentry);
-> +
->  		btrfs_log_new_name(trans, old_inode, old_dir,
-> -				   new_dentry->d_parent);
-> +				   parent);
-> +		dput(parent);
->  		btrfs_end_log_trans(root);
->  	}
->  out_fail:
-> @@ -6764,8 +6765,7 @@ static int btrfs_symlink(struct inode *dir, struct dentry *dentry,
->  	btrfs_set_trans_block_group(trans, dir);
->  
->  	inode = btrfs_new_inode(trans, root, dir, dentry->d_name.name,
-> -				dentry->d_name.len,
-> -				dentry->d_parent->d_inode->i_ino, objectid,
-> +				dentry->d_name.len, dir->i_ino, objectid,
->  				BTRFS_I(dir)->block_group, S_IFLNK|S_IRWXUGO,
->  				&index);
->  	err = PTR_ERR(inode);
-> @@ -6779,7 +6779,7 @@ static int btrfs_symlink(struct inode *dir, struct dentry *dentry,
->  	}
->  
->  	btrfs_set_trans_block_group(trans, inode);
-> -	err = btrfs_add_nondir(trans, dentry, inode, 0, index);
-> +	err = btrfs_add_nondir(trans, dir, dentry, inode, 0, index);
->  	if (err)
->  		drop_inode = 1;
->  	else {
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index e264072..396ccd1 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -232,13 +232,17 @@ static noinline int create_subvol(struct btrfs_root *root,
->  	struct btrfs_inode_item *inode_item;
->  	struct extent_buffer *leaf;
->  	struct btrfs_root *new_root;
-> -	struct inode *dir = dentry->d_parent->d_inode;
-> +	struct dentry *parent = dget_parent(dentry);
-> +	struct inode *dir;
->  	int ret;
->  	int err;
->  	u64 objectid;
->  	u64 new_dirid = BTRFS_FIRST_FREE_OBJECTID;
->  	u64 index = 0;
->  
-> +	dir = parent->d_inode;
-> +	dput(parent);
-
-I get that parent is, well, the parent so the child were using will hold
-a reference to it and so the dput() should be safe. But, since we have
-the reference why not hold it while we use the inode to make certain the
-inode cannot go away?
-
-> +
->  	ret = btrfs_find_free_objectid(NULL, root->fs_info->tree_root,
->  				       0, &objectid);
->  	if (ret)
-> @@ -347,6 +351,7 @@ fail:
->  static int create_snapshot(struct btrfs_root *root, struct dentry *dentry)
->  {
->  	struct inode *inode;
-> +	struct dentry *parent;
->  	struct btrfs_pending_snapshot *pending_snapshot;
->  	struct btrfs_trans_handle *trans;
->  	int ret;
-> @@ -382,7 +387,9 @@ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry)
->  
->  	btrfs_orphan_cleanup(pending_snapshot->snap);
->  
-> -	inode = btrfs_lookup_dentry(dentry->d_parent->d_inode, dentry);
-> +	parent = dget_parent(dentry);
-> +	inode = btrfs_lookup_dentry(parent->d_inode, dentry);
-> +	dput(parent);
->  	if (IS_ERR(inode)) {
->  		ret = PTR_ERR(inode);
->  		goto fail;
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 0af647c..076729e 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -849,6 +849,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
->  	struct btrfs_root *root = pending->root;
->  	struct btrfs_root *parent_root;
->  	struct inode *parent_inode;
-> +	struct dentry *parent_dentry;
->  	struct dentry *dentry;
->  	struct extent_buffer *tmp;
->  	struct extent_buffer *old;
-> @@ -888,7 +889,9 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
->  	trans->block_rsv = &pending->block_rsv;
->  
->  	dentry = pending->dentry;
-> -	parent_inode = dentry->d_parent->d_inode;
-> +	parent_dentry = dget_parent(dentry);
-> +	parent_inode = parent_dentry->d_inode;
-> +	dput(parent_dentry);
-
-And again.
-
->  	parent_root = BTRFS_I(parent_inode)->root;
->  	record_root_in_trans(trans, parent_root);
->  
-> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-> index fb102a9..bf01bdb 100644
-> --- a/fs/btrfs/tree-log.c
-> +++ b/fs/btrfs/tree-log.c
-> @@ -2884,6 +2884,7 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
->  {
->  	int ret = 0;
->  	struct btrfs_root *root;
-> +	struct dentry *old_parent = NULL;
->  
->  	/*
->  	 * for regular files, if its inode is already on disk, we don't
-> @@ -2925,10 +2926,13 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
->  		if (IS_ROOT(parent))
->  			break;
->  
-> -		parent = parent->d_parent;
-> +		parent = dget_parent(parent);
-> +		dput(old_parent);
-> +		old_parent = parent;
->  		inode = parent->d_inode;
->  
->  	}
-> +	dput(old_parent);
->  out:
->  	return ret;
->  }
-> @@ -2960,6 +2964,7 @@ int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
->  {
->  	int inode_only = exists_only ? LOG_INODE_EXISTS : LOG_INODE_ALL;
->  	struct super_block *sb;
-> +	struct dentry *old_parent = NULL;
->  	int ret = 0;
->  	u64 last_committed = root->fs_info->last_trans_committed;
->  
-> @@ -3031,10 +3036,13 @@ int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
->  		if (IS_ROOT(parent))
->  			break;
->  
-> -		parent = parent->d_parent;
-> +		parent = dget_parent(parent);
-> +		dput(old_parent);
-> +		old_parent = parent;
->  	}
->  	ret = 0;
->  end_trans:
-> +	dput(old_parent);
->  	if (ret < 0) {
->  		BUG_ON(ret != -ENOSPC);
->  		root->fs_info->last_trans_log_full_commit = trans->transid;
-> @@ -3054,8 +3062,14 @@ end_no_trans:
->  int btrfs_log_dentry_safe(struct btrfs_trans_handle *trans,
->  			  struct btrfs_root *root, struct dentry *dentry)
->  {
-> -	return btrfs_log_inode_parent(trans, root, dentry->d_inode,
-> -				      dentry->d_parent, 0);
-> +	struct dentry *parent = dget_parent(dentry);
-> +	int ret;
-> +
-> +	ret = btrfs_log_inode_parent(trans, root, dentry->d_inode, parent, 0);
-> +
-> +	dput(parent);
-> +
-> +	return ret;
->  }
->  
->  /*
+There were indeed "bad ordered accounting left" (see below), I think they are coming from btrfs?
 
 
+> Is this a single disk btrfs?
+
+Yes.
+
+
+
+[ 8072.773053] device fsid 1142843480ad2d13-4bdc742fd9b1f7b0 devid 1 transid 1508 /dev/sdb4
+[ 8072.773674] btrfs: forcing compression
+[ 8122.052221] device tap0 entered promiscuous mode
+[ 8122.052245] br0: port 2(tap0) entering learning state
+[ 8122.052248] br0: port 2(tap0) entering learning state
+[ 8122.451587] br0: port 2(tap0) entering learning state
+[ 8122.543477] br0: port 2(tap0) entering disabled state
+[ 8122.609645] device tap0 left promiscuous mode
+[ 8122.609650] br0: port 2(tap0) entering disabled state
+[ 8131.325647] EXT4-fs (md4): recovery complete
+[ 8131.325809] EXT4-fs (md4): mounted filesystem with ordered data mode. Opts: (null)
+[ 8133.392100] device tap0 entered promiscuous mode
+[ 8133.392127] br0: port 2(tap0) entering learning state
+[ 8133.392131] br0: port 2(tap0) entering learning state
+[ 8134.106594] kvm: 5004: cpu0 unhandled wrmsr: 0x198 data 0
+[ 8134.106618] kvm: 5004: cpu1 unhandled wrmsr: 0x198 data 0
+[ 8143.460927] tap0: no IPv6 routers present
+[ 8148.359485] br0: port 2(tap0) entering forwarding state
+[ 8309.103502] bad ordered accounting left 65536 size 385024
+[ 8309.106206] bad ordered accounting left 65536 size 385024
+[ 8309.108915] bad ordered accounting left 65536 size 385024
+[ 8309.111630] bad ordered accounting left 36864 size 385024
+[ 8501.965625] INFO: task qemu-system-x86:5148 blocked for more than 120 seconds.
+[ 8501.965629] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[ 8501.965632] qemu-system-x D ffff880001e14cc0     0  5148   4924 0x00000000
+[ 8501.965638]  ffff880223bc3b38 0000000000000086 ffff880223bc3fd8 0000000000014cc0
+[ 8501.965642]  0000000000014cc0 ffff880223bc3fd8 0000000000014cc0 ffff880223bc3fd8
+[ 8501.965647]  0000000000014cc0 ffff880221965f18 ffff880221965f20 ffff880221965b80
+[ 8501.965651] Call Trace:
+[ 8501.965678]  [<ffffffffa024c52c>] btrfs_start_ordered_extent+0x6c/0xb0 [btrfs]
+[ 8501.965685]  [<ffffffff81083200>] ? autoremove_wake_function+0x0/0x40
+[ 8501.965701]  [<ffffffffa024d1c2>] btrfs_wait_ordered_range+0xd2/0x160 [btrfs]
+[ 8501.965716]  [<ffffffffa0240059>] btrfs_file_aio_write+0x269/0x990 [btrfs]
+[ 8501.965721]  [<ffffffff8105ca94>] ? try_to_wake_up+0xf4/0x3f0
+[ 8501.965726]  [<ffffffff81168119>] ? __pollwake+0x49/0x50
+[ 8501.965730]  [<ffffffff8105cd90>] ? default_wake_function+0x0/0x20
+[ 8501.965733]  [<ffffffff8105ca94>] ? try_to_wake_up+0xf4/0x3f0
+[ 8501.965737]  [<ffffffff8116813b>] ? pollwake+0x1b/0x20
+[ 8501.965752]  [<ffffffffa023fdf0>] ? btrfs_file_aio_write+0x0/0x990 [btrfs]
+[ 8501.965761]  [<ffffffff8115664b>] do_sync_readv_writev+0xcb/0x110
+[ 8501.965769]  [<ffffffff81294d98>] ? apparmor_file_permission+0x18/0x20
+[ 8501.965776]  [<ffffffff8126356e>] ? security_file_permission+0x1e/0x80
+[ 8501.965781]  [<ffffffff811576e0>] do_readv_writev+0xd0/0x1d0
+[ 8501.965787]  [<ffffffff81076d72>] ? kill_something_info+0x42/0x130
+[ 8501.965793]  [<ffffffff81076ee0>] ? sys_kill+0x80/0x90
+[ 8501.965798]  [<ffffffff8115781e>] vfs_writev+0x3e/0x60
+[ 8501.965802]  [<ffffffff811578e7>] sys_pwritev+0xa7/0xc0
+[ 8501.965806]  [<ffffffff8100b0f2>] system_call_fastpath+0x16/0x1b
+[ 8501.965810] INFO: task qemu-system-x86:5150 blocked for more than 120 seconds.
+[ 8501.965812] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[ 8501.965814] qemu-system-x D ffff880001e94cc0     0  5150   4924 0x00000000
+[ 8501.965819]  ffff8801aba4bb38 0000000000000086 ffff8801aba4bfd8 0000000000014cc0
+[ 8501.965823]  0000000000014cc0 ffff8801aba4bfd8 0000000000014cc0 ffff8801aba4bfd8
+[ 8501.965827]  0000000000014cc0 ffff880226d14838 ffff880226d14840 ffff880226d144a0
+[ 8501.965832] Call Trace:
+[ 8501.965847]  [<ffffffffa024c52c>] btrfs_start_ordered_extent+0x6c/0xb0 [btrfs]
+[ 8501.965852]  [<ffffffff81083200>] ? autoremove_wake_function+0x0/0x40
+[ 8501.965867]  [<ffffffffa024d1c2>] btrfs_wait_ordered_range+0xd2/0x160 [btrfs]
+[ 8501.965883]  [<ffffffffa0240059>] btrfs_file_aio_write+0x269/0x990 [btrfs]
+[ 8501.965887]  [<ffffffff8105ca94>] ? try_to_wake_up+0xf4/0x3f0
+[ 8501.965891]  [<ffffffff81168119>] ? __pollwake+0x49/0x50
+[ 8501.965894]  [<ffffffff8105cd90>] ? default_wake_function+0x0/0x20
+[ 8501.965897]  [<ffffffff8105ca94>] ? try_to_wake_up+0xf4/0x3f0
+[ 8501.965901]  [<ffffffff8116813b>] ? pollwake+0x1b/0x20
+[ 8501.965916]  [<ffffffffa023fdf0>] ? btrfs_file_aio_write+0x0/0x990 [btrfs]
+[ 8501.965920]  [<ffffffff8115664b>] do_sync_readv_writev+0xcb/0x110
+[ 8501.965924]  [<ffffffff81076736>] ? send_signal+0x56/0xa0
+[ 8501.965928]  [<ffffffff81294d98>] ? apparmor_file_permission+0x18/0x20
+[ 8501.965932]  [<ffffffff8126356e>] ? security_file_permission+0x1e/0x80
+[ 8501.965936]  [<ffffffff811576e0>] do_readv_writev+0xd0/0x1d0
+[ 8501.965940]  [<ffffffff8115781e>] vfs_writev+0x3e/0x60
+[ 8501.965943]  [<ffffffff811578e7>] sys_pwritev+0xa7/0xc0
+[ 8501.965946]  [<ffffffff8100b0f2>] system_call_fastpath+0x16/0x1b
+[ 8501.965950] INFO: task qemu-system-x86:5151 blocked for more than 120 seconds.
+[ 8501.965952] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[ 8501.965954] qemu-system-x D ffff880001e94cc0     0  5151   4924 0x00000000
+[ 8501.965958]  ffff88021923fb38 0000000000000086 ffff88021923ffd8 0000000000014cc0
+[ 8501.965963]  0000000000014cc0 ffff88021923ffd8 0000000000014cc0 ffff88021923ffd8
+[ 8501.965967]  0000000000014cc0 ffff880226d13158 ffff880226d13160 ffff880226d12dc0
+[ 8501.965971] Call Trace:
+[ 8501.965986]  [<ffffffffa024c52c>] btrfs_start_ordered_extent+0x6c/0xb0 [btrfs]
+[ 8501.965990]  [<ffffffff81083200>] ? autoremove_wake_function+0x0/0x40
+[ 8501.966005]  [<ffffffffa024d1c2>] btrfs_wait_ordered_range+0xd2/0x160 [btrfs]
+[ 8501.966021]  [<ffffffffa0240059>] btrfs_file_aio_write+0x269/0x990 [btrfs]
+[ 8501.966025]  [<ffffffff8105ca94>] ? try_to_wake_up+0xf4/0x3f0
+[ 8501.966029]  [<ffffffff81168119>] ? __pollwake+0x49/0x50
+[ 8501.966032]  [<ffffffff8105cd90>] ? default_wake_function+0x0/0x20
+[ 8501.966036]  [<ffffffff8105ca94>] ? try_to_wake_up+0xf4/0x3f0
+[ 8501.966039]  [<ffffffff8116813b>] ? pollwake+0x1b/0x20
+[ 8501.966054]  [<ffffffffa023fdf0>] ? btrfs_file_aio_write+0x0/0x990 [btrfs]
+[ 8501.966058]  [<ffffffff8115664b>] do_sync_readv_writev+0xcb/0x110
+[ 8501.966062]  [<ffffffff81076736>] ? send_signal+0x56/0xa0
+[ 8501.966066]  [<ffffffff81294d98>] ? apparmor_file_permission+0x18/0x20
+[ 8501.966070]  [<ffffffff8126356e>] ? security_file_permission+0x1e/0x80
+[ 8501.966074]  [<ffffffff811576e0>] do_readv_writev+0xd0/0x1d0
+[ 8501.966078]  [<ffffffff8115781e>] vfs_writev+0x3e/0x60
+[ 8501.966081]  [<ffffffff811578e7>] sys_pwritev+0xa7/0xc0
+[ 8501.966084]  [<ffffffff8100b0f2>] system_call_fastpath+0x16/0x1b
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org

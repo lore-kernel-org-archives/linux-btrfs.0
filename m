@@ -1,42 +1,71 @@
-From: Brian Rogers <brian@xyzw.org>
-Subject: RAID0 limiting disk utilization
-Date: Wed, 27 Oct 2010 23:55:22 -0700
-Message-ID: <4CC91E5A.7080503@xyzw.org>
+From: Ian Kent <raven@themaw.net>
+Subject: Re: [PATCH] Btrfs: fix dentry->d_parent abuses
+Date: Thu, 28 Oct 2010 18:08:19 +0800
+Message-ID: <1288260499.3151.28.camel@localhost>
+References: <1288190373-21381-1-git-send-email-josef@redhat.com>
+	 <1288237324.3151.17.camel@localhost>
+	 <20101028064332.GA8899@dhcp231-156.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: The development of BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20101028064332.GA8899@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I noticed that if I have single-device allocation for data in a 
-multi-device btrfs filesystem, a balance operation will convert the data 
-to RAID0. This is true even if '-d single' is specified explicitly when 
-creating the filesystem. Then it wants to continue using RAID0 for 
-future data allocations, and I run out of space once there's no longer 
-two drives with space available.
+On Thu, 2010-10-28 at 02:43 -0400, Josef Bacik wrote:
+> On Thu, Oct 28, 2010 at 11:42:04AM +0800, Ian Kent wrote:
+> > On Wed, 2010-10-27 at 10:39 -0400, Josef Bacik wrote:
+> > > There are lots of places where we do dentry->d_parent->d_inode without holding
+> > > the dentry->d_lock.  This could cause problems with rename.  So instead use
+> > > dget_parent where we can, or in some cases we don't even need to use
+> > > dentry->d_parent->d_inode since we get the inode of the dir passed to us from
+> > > VFS.  I tested this with xfstests and my no space tests and everything turned
+> > > out fine.  Thanks,
+> > > 
+> > > Signed-off-by: Josef Bacik <josef@redhat.com>
+> > > ---
+> > >  fs/btrfs/file.c        |    2 ++
+> > >  fs/btrfs/inode.c       |   48 ++++++++++++++++++++++++------------------------
+> > >  fs/btrfs/ioctl.c       |   11 +++++++++--
+> > >  fs/btrfs/transaction.c |    5 ++++-
+> > >  fs/btrfs/tree-log.c    |   22 ++++++++++++++++++----
+> > >  5 files changed, 57 insertions(+), 31 deletions(-)
+> > > 
+> > > diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> > > index e354c33..6a4daa0 100644
+> > > --- a/fs/btrfs/file.c
+> > > +++ b/fs/btrfs/file.c
+> > > @@ -1047,8 +1047,10 @@ out:
+> > >  
+> > >  		if ((file->f_flags & O_DSYNC) || IS_SYNC(inode)) {
+> > >  			trans = btrfs_start_transaction(root, 0);
+> > 
+> > If btrfs_start_transaction() fails now the inode mutex will be held as
+> > well. I guess the resulting oops makes this irrelevant, ;)
+> > 
+> > Looking through the dead end BUG_ON()s in the transaction code, and
+> > callers, one thing I've found difficult is working out how to recover
+> > from IS_ERR() returns from btrfs_start_transaction() in situations like
+> > this.
+> > 
+> > Any chance of a patch to handle this to give me an example (well one
+> > case anyway) of how to do it?
+> >
+> 
+> Yup I can do that.  Recovering from some of these errors is going to be tricky,
+> if you are going to work on that what I had in mind was doing alot of
 
-I hit this problem when adding to an existing single-device filesystem. 
-I ran a balance to mirror my metadata on multiple drives, and that had 
-the side-effect of not letting me use all my space, since one device is 
-considerably bigger than the other two combined.
+Yep, looks downright difficult to me, but it has to be done sometime.
 
-$ sudo btrfs f show
-Label: 'Aux'  uuid: 35a08a97-4f96-4549-b7c0-18380bbf00e0
-         Total devices 3 FS bytes used 510.78GB
-         devid    3 size 133.09GB used 131.01GB path /dev/sda4
-         devid    1 size 465.76GB used 310.01GB path /dev/sdb1
-         devid    2 size 74.52GB used 73.00GB path /dev/sdc1
+I've looked at a few functions in relation to eliminating dead end
+BUG_ON()s (loosely related to this), some at the bottom of the call tree
+upward and others at the top of the call tree downward, and it doesn't
+take much to realize why no-one has tackled it already.
 
-Btrfs Btrfs v0.19
+The bigger issue is that the problem is self perpetuating in that, in
+order to fix things, often one has to continue to not handle some of the
+error cases because of possible side effects, ouch!
 
-$ btrfs f df /aux
-Data, RAID0: total=357.00GB, used=357.00GB
-Data: total=153.00GB, used=152.91GB
-System, RAID1: total=8.00MB, used=56.00KB
-System: total=4.00MB, used=0.00
-Metadata, RAID1: total=2.00GB, used=896.57MB
-
-I think btrfs should fall back to single-device allocation when striped 
-allocation fails. Does that sound like a reasonable policy? Without such 
-a change, there can be a lot of reported free space that can't be used.
+Ian
 

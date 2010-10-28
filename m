@@ -1,39 +1,53 @@
-From: David Nicol <davidnicol@gmail.com>
-Subject: Re: [PATCH v2] Btrfs: allow subvol deletion by unprivileged user with
- -o user_subvol_rm_allowed
-Date: Thu, 28 Oct 2010 12:11:27 -0500
-Message-ID: <AANLkTimtvMe6UxWG2NTHB3eW3VT=72nv_62f8DxAiO4j@mail.gmail.com>
-References: <1288120849-32029-1-git-send-email-sage@newdream.net>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH] Btrfs-progs: add incompat flag for space cache inode
+Date: Thu, 28 Oct 2010 14:16:30 -0400
+Message-ID: <20101028181629.GA11684@dhcp231-156.rdu.redhat.com>
+References: <1288204179-1764-1-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: unlisted-recipients:; (no To-header on input)
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1288120849-32029-1-git-send-email-sage@newdream.net>
+In-Reply-To: <1288204179-1764-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-do the resulting semantics match (or resemble) the semantics provided
-by other facilities that allow non-superusers to mount and unmount
-file systems?
+On Wed, Oct 27, 2010 at 02:29:39PM -0400, Josef Bacik wrote:
+> This patch adds the incompat flag for the space cache inode stuff.  Eventually
+> we'll want to turn this feature on at mkfs time, but for now lets let it settle
+> a bit first.  Thanks,
+> 
+> Signed-off-by: Josef Bacik <josef@redhat.com>
+> ---
+>  ctree.h |   10 ++++++----
+>  1 files changed, 6 insertions(+), 4 deletions(-)
+> 
+> diff --git a/ctree.h b/ctree.h
+> index b79e238..4d0e1e2 100644
+> --- a/ctree.h
+> +++ b/ctree.h
+> @@ -350,13 +350,15 @@ struct btrfs_super_block {
+>   * ones specified below then we will fail to mount
+>   */
+>  #define BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF	(1ULL << 0)
+> -#define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(2ULL << 0)
+> +#define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(1ULL << 1)
+> +#define BTRFS_FEATURE_INCOMPAT_SPACE_CACHE	(1ULL << 2)
+>  
+>  #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
+>  #define BTRFS_FEATURE_COMPAT_RO_SUPP		0ULL
+> -#define BTRFS_FEATURE_INCOMPAT_SUPP		\
+> -	(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF |	\
+> -	 BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL)
+> +#define BTRFS_FEATURE_INCOMPAT_SUPP			\
+> +	(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF |		\
+> +	 BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL |	\
+> +	 BTRFS_FEATURE_INCOMPAT_SPACE_CACHE)
+>  
+>  /*
+>   * A leaf is full of items. offset and size tell us where to find
 
-If all "user mountable file systems" are provided either by the FUSE
-layer (but that is concerned with providing the FS, not mounting it)
-or by setuid tools, this question may be safe to ignore.
+NACK, Chris suggested a way to do the space caching without an incompat flag so
+I'm going to do it that way.  I'll send a new mixed block group patch shortly.
+Thanks,
 
-On Tue, Oct 26, 2010 at 2:20 PM, Sage Weil <sage@newdream.net> wrote:
-> Add a mount option user_subvol_rm_allowed that allows users to delete=
- a
-> (potentially non-empty!) subvol when they would otherwise we allowed =
-to do
-> an rmdir(2). =C2=A0We duplicate the may_delete() checks from the core=
- VFS code
-> to implement identical security checks (minus the directory size chec=
-k).
-> We additionally require that the user has write+exec permission on th=
-e
-> subvol root inode.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Josef

@@ -1,60 +1,39 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [fnst-kernel 10816] Found several problems while reading btrfs
- code
-Date: Thu, 28 Oct 2010 09:03:16 -0400
-Message-ID: <20101028130316.GX27796@think>
-References: <4CC7D75D.3050806@cn.fujitsu.com>
+From: David Nicol <davidnicol@gmail.com>
+Subject: Re: [PATCH v2] Btrfs: allow subvol deletion by unprivileged user with
+ -o user_subvol_rm_allowed
+Date: Thu, 28 Oct 2010 12:11:27 -0500
+Message-ID: <AANLkTimtvMe6UxWG2NTHB3eW3VT=72nv_62f8DxAiO4j@mail.gmail.com>
+References: <1288120849-32029-1-git-send-email-sage@newdream.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: liubo <liubo2009@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: unlisted-recipients:; (no To-header on input)
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4CC7D75D.3050806@cn.fujitsu.com>
+In-Reply-To: <1288120849-32029-1-git-send-email-sage@newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 27, 2010 at 03:40:13PM +0800, liubo wrote:
-> Hi, Chris,
-> 
-> We've found several tiny problems while reading btrfs code.
-> 
-> These problems are mainly about uncheck return value or BUG_ON check. 
-> They really have an impact on codes' quality, though they will not be 
-> hit in normal cases.
-> 
-> Here comes some examples:
-> 
-> 1. memory allocation check
-> May cause -ENOMEM, btrfs BUG_ON().
-> 
-> static int alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
-> ...
->         path = btrfs_alloc_path();
->         BUG_ON(!path);
+do the resulting semantics match (or resemble) the semantics provided
+by other facilities that allow non-superusers to mount and unmount
+file systems?
 
-Yes we should either use GFP_NOFAIL or we should deal with the error
-nicely.
+If all "user mountable file systems" are provided either by the FUSE
+layer (but that is concerned with providing the FS, not mounting it)
+or by setuid tools, this question may be safe to ignore.
 
-> 
-> 2. return value's BUG_ON() check
-> 
-> static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
-> ...
->         if (btrfs_block_can_be_shared(root, buf)) {
->                 ret = btrfs_lookup_extent_info(trans, root, buf->start,
->                                                buf->len, &refs, &flags);
->                 BUG_ON(ret);
->                 BUG_ON(refs == 0);
-> 
-> 
-> 
-> Is there a plan to improve the above? 
-> We are helpful on this:)
-
-Definitely.  The first step is to find the errors that can just be
-dealt with.  After that we need to make a way to force the FS into a
-readonly state for the really impossible ones.
-
-Both are very good projects ;)
-
--chris
-
+On Tue, Oct 26, 2010 at 2:20 PM, Sage Weil <sage@newdream.net> wrote:
+> Add a mount option user_subvol_rm_allowed that allows users to delete=
+ a
+> (potentially non-empty!) subvol when they would otherwise we allowed =
+to do
+> an rmdir(2). =C2=A0We duplicate the may_delete() checks from the core=
+ VFS code
+> to implement identical security checks (minus the directory size chec=
+k).
+> We additionally require that the user has write+exec permission on th=
+e
+> subvol root inode.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

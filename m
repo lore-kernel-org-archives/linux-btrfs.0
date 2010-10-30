@@ -1,122 +1,241 @@
 From: Hugo Mills <hugo@carfax.org.uk>
-Subject: [patch 2/2] Cancel filesystem balance.
-Date: Sat, 30 Oct 2010 01:07:28 +0100
-Message-ID: <20101030000741.915844791@carfax.org.uk>
+Subject: [patch 1/2] Balance progress monitoring.
+Date: Sat, 30 Oct 2010 01:07:27 +0100
+Message-ID: <20101030000741.689283553@carfax.org.uk>
 References: <20101030000726.286517546@carfax.org.uk>
 Cc: Hugo Mills <hugo@carfax.org.uk>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch adds an ioctl for cancelling a btrfs balance operation
-mid-flight. The ioctl simply sets a flag, and the operation terminates
-after the current block group move has completed.
+This patch introduces a basic form of progress monitoring for balance
+operations, by counting the number of block groups remaining. The
+information is exposed to userspace by an ioctl.
 
 Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
 
 ---
- fs/btrfs/ctree.h   |    1 +
- fs/btrfs/ioctl.c   |   25 +++++++++++++++++++++++++
- fs/btrfs/ioctl.h   |    1 +
- fs/btrfs/volumes.c |    7 ++++++-
- 4 files changed, 33 insertions(+), 1 deletion(-)
+ fs/btrfs/ctree.h   |    9 ++++++++
+ fs/btrfs/disk-io.c |    2 +
+ fs/btrfs/ioctl.c   |   34 ++++++++++++++++++++++++++++++++
+ fs/btrfs/ioctl.h   |    7 ++++++
+ fs/btrfs/volumes.c |   55 +++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 5 files changed, 105 insertions(+), 2 deletions(-)
 
 Index: linux-mainline/fs/btrfs/ctree.h
 ===================================================================
---- linux-mainline.orig/fs/btrfs/ctree.h	2010-10-29 17:20:43.860460761 +0100
-+++ linux-mainline/fs/btrfs/ctree.h	2010-10-29 17:24:06.622214467 +0100
-@@ -806,6 +806,7 @@
- struct btrfs_balance_info {
- 	u64 expected;
- 	u64 completed;
-+	int cancel_pending;
+--- linux-mainline.orig/fs/btrfs/ctree.h	2010-10-26 18:03:38.000000000 +0100
++++ linux-mainline/fs/btrfs/ctree.h	2010-10-29 17:20:43.860460761 +0100
+@@ -803,6 +803,11 @@
+ 	struct list_head cluster_list;
  };
  
++struct btrfs_balance_info {
++	u64 expected;
++	u64 completed;
++};
++
  struct reloc_control;
+ struct btrfs_device;
+ struct btrfs_fs_devices;
+@@ -1010,6 +1015,10 @@
+ 	unsigned metadata_ratio;
+ 
+ 	void *bdev_holder;
++
++	/* Keep track of any rebalance operations on this FS */
++	spinlock_t balance_info_lock;
++	struct btrfs_balance_info *balance_info;
+ };
+ 
+ /*
 Index: linux-mainline/fs/btrfs/ioctl.c
 ===================================================================
---- linux-mainline.orig/fs/btrfs/ioctl.c	2010-10-29 17:21:26.128742389 +0100
-+++ linux-mainline/fs/btrfs/ioctl.c	2010-10-29 17:27:51.933043374 +0100
-@@ -2016,6 +2016,29 @@
- 	return ret;
+--- linux-mainline.orig/fs/btrfs/ioctl.c	2010-10-26 18:03:38.000000000 +0100
++++ linux-mainline/fs/btrfs/ioctl.c	2010-10-29 17:21:26.128742389 +0100
+@@ -1984,6 +1984,38 @@
+ 	return 0;
  }
  
 +/*
-+ * Cancel a running balance operation
++ * Return the current status of any balance operation
 + */
-+long btrfs_ioctl_balance_cancel(struct btrfs_fs_info *fs_info)
++long btrfs_ioctl_balance_progress(
++	struct btrfs_fs_info *fs_info,
++	struct btrfs_ioctl_balance_progress __user *user_dest)
 +{
-+	int err = 0;
++	int ret = 0;
++	struct btrfs_ioctl_balance_progress dest;
 +
 +	spin_lock(&fs_info->balance_info_lock);
-+	if(!fs_info->balance_info) {
-+		err = -EINVAL;
++	if (!fs_info->balance_info) {
++		ret = -EINVAL;
 +		goto error;
 +	}
-+	if(fs_info->balance_info->cancel_pending) {
-+		err = -ECANCELED;
-+		goto error;
-+	}
-+	fs_info->balance_info->cancel_pending = 1;
++
++	dest.expected = fs_info->balance_info->expected;
++	dest.completed = fs_info->balance_info->completed;
++
++	spin_unlock(&fs_info->balance_info_lock);
++
++	if (copy_to_user(user_dest, &dest,
++			 sizeof(struct btrfs_ioctl_balance_progress)))
++		return -EFAULT;
++
++	return 0;
 +
 +error:
 +	spin_unlock(&fs_info->balance_info_lock);
-+	return err;
++	return ret;
 +}
 +
  long btrfs_ioctl(struct file *file, unsigned int
  		cmd, unsigned long arg)
  {
-@@ -2051,6 +2074,8 @@
+@@ -2017,6 +2049,8 @@
+ 		return btrfs_ioctl_rm_dev(root, argp);
+ 	case BTRFS_IOC_BALANCE:
  		return btrfs_balance(root->fs_info->dev_root);
- 	case BTRFS_IOC_BALANCE_PROGRESS:
- 		return btrfs_ioctl_balance_progress(root->fs_info, argp);
-+	case BTRFS_IOC_BALANCE_CANCEL:
-+		return btrfs_ioctl_balance_cancel(root->fs_info);
++	case BTRFS_IOC_BALANCE_PROGRESS:
++		return btrfs_ioctl_balance_progress(root->fs_info, argp);
  	case BTRFS_IOC_CLONE:
  		return btrfs_ioctl_clone(file, arg, 0, 0, 0);
  	case BTRFS_IOC_CLONE_RANGE:
 Index: linux-mainline/fs/btrfs/ioctl.h
 ===================================================================
---- linux-mainline.orig/fs/btrfs/ioctl.h	2010-10-29 17:05:44.447028825 +0100
-+++ linux-mainline/fs/btrfs/ioctl.h	2010-10-29 17:24:06.642213653 +0100
-@@ -185,4 +185,5 @@
+--- linux-mainline.orig/fs/btrfs/ioctl.h	2010-10-26 18:03:38.000000000 +0100
++++ linux-mainline/fs/btrfs/ioctl.h	2010-10-29 17:05:44.447028825 +0100
+@@ -138,6 +138,11 @@
+ 	struct btrfs_ioctl_space_info spaces[0];
+ };
+ 
++struct btrfs_ioctl_balance_progress {
++	__u64 expected;
++	__u64 completed;
++};
++
+ #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
+ 				   struct btrfs_ioctl_vol_args)
+ #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
+@@ -178,4 +183,6 @@
+ #define BTRFS_IOC_DEFAULT_SUBVOL _IOW(BTRFS_IOCTL_MAGIC, 19, u64)
+ #define BTRFS_IOC_SPACE_INFO _IOWR(BTRFS_IOCTL_MAGIC, 20, \
  				    struct btrfs_ioctl_space_args)
- #define BTRFS_IOC_BALANCE_PROGRESS _IOR(BTRFS_IOCTL_MAGIC, 21, \
- 					struct btrfs_ioctl_balance_progress)
-+#define BTRFS_IOC_BALANCE_CANCEL _IO(BTRFS_IOCTL_MAGIC, 22)
++#define BTRFS_IOC_BALANCE_PROGRESS _IOR(BTRFS_IOCTL_MAGIC, 21, \
++					struct btrfs_ioctl_balance_progress)
  #endif
 Index: linux-mainline/fs/btrfs/volumes.c
 ===================================================================
---- linux-mainline.orig/fs/btrfs/volumes.c	2010-10-29 17:23:40.463279287 +0100
-+++ linux-mainline/fs/btrfs/volumes.c	2010-10-29 17:24:06.652213246 +0100
-@@ -1921,6 +1921,7 @@
- 	bal_info->expected = -1; /* One less than actually counted,
- 				    because chunk 0 is special */
- 	bal_info->completed = 0;
-+	bal_info->cancel_pending = 0;
+--- linux-mainline.orig/fs/btrfs/volumes.c	2010-10-26 18:03:38.000000000 +0100
++++ linux-mainline/fs/btrfs/volumes.c	2010-10-29 17:23:40.463279287 +0100
+@@ -1902,6 +1902,7 @@
+ 	struct btrfs_root *chunk_root = dev_root->fs_info->chunk_root;
+ 	struct btrfs_trans_handle *trans;
+ 	struct btrfs_key found_key;
++	struct btrfs_balance_status *bal_info;
  
+ 	if (dev_root->fs_info->sb->s_flags & MS_RDONLY)
+ 		return -EROFS;
+@@ -1909,6 +1910,18 @@
+ 	mutex_lock(&dev_root->fs_info->volume_mutex);
+ 	dev_root = dev_root->fs_info->dev_root;
+ 
++	dev_root->fs_info->balance_info = kmalloc(
++		sizeof(struct btrfs_balance_info),
++		GFP_NOFS);
++	if (!dev_root->fs_info->balance_info) {
++		ret = -ENOSPC;
++		goto error_no_status;
++	}
++	bal_info = dev_root->fs_info->balance_info;
++	bal_info->expected = -1; /* One less than actually counted,
++				    because chunk 0 is special */
++	bal_info->completed = 0;
++
  	/* step one make some room on all the devices */
  	list_for_each_entry(device, devices, dev_list) {
-@@ -1983,7 +1984,7 @@
+ 		old_size = device->total_bytes;
+@@ -1932,10 +1945,40 @@
+ 		btrfs_end_transaction(trans, dev_root);
+ 	}
+ 
+-	/* step two, relocate all the chunks */
++	/* step two, count the chunks */
+ 	path = btrfs_alloc_path();
+-	BUG_ON(!path);
++	if (!path) {
++		ret = -ENOSPC;
++		goto error;
++	}
++
++	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
++	key.offset = (u64)-1;
++	key.type = BTRFS_CHUNK_ITEM_KEY;
++
++	ret = btrfs_search_slot(NULL, chunk_root, &key, path, 0, 0);
++	if (ret <= 0) {
++		printk(KERN_ERR "btrfs: Failed to find the last chunk.\n");
++		BUG();
++	}
++
++	while (1) {
++		ret = btrfs_previous_item(chunk_root, path, 0,
++					  BTRFS_CHUNK_ITEM_KEY);
++		if (ret)
++			break;
++
++		bal_info->expected++;
++	}
++
++	btrfs_free_path(path);
++	path = btrfs_alloc_path();
++	if (!path) {
++		ret = -ENOSPC;
++		goto error;
++	}
+ 
++	/* step three, relocate all the chunks */
+ 	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
  	key.offset = (u64)-1;
  	key.type = BTRFS_CHUNK_ITEM_KEY;
- 
--	while (1) {
-+	while (!bal_info->cancel_pending) {
- 		ret = btrfs_search_slot(NULL, chunk_root, &key, path, 0, 0);
- 		if (ret < 0)
- 			goto error;
-@@ -2024,6 +2025,10 @@
- 		       bal_info->completed, bal_info->expected);
+@@ -1976,10 +2019,18 @@
+ 					   found_key.offset);
+ 		BUG_ON(ret && ret != -ENOSPC);
+ 		key.offset = found_key.offset - 1;
++		bal_info->completed++;
++		printk(KERN_INFO "btrfs: balance: %llu/%llu block groups completed\n",
++		       bal_info->completed, bal_info->expected);
  	}
  	ret = 0;
-+	if(bal_info->cancel_pending) {
-+		printk(KERN_INFO "btrfs: balance cancelled\n");
-+		ret = -EINTR;
-+	}
  error:
  	btrfs_free_path(path);
- 	spin_lock(&dev_root->fs_info->balance_info_lock);
++	spin_lock(&dev_root->fs_info->balance_info_lock);
++	kfree(dev_root->fs_info->balance_info);
++	dev_root->fs_info->balance_info = NULL;
++	spin_unlock(&dev_root->fs_info->balance_info_lock);
++error_no_status:
+ 	mutex_unlock(&dev_root->fs_info->volume_mutex);
+ 	return ret;
+ }
+Index: linux-mainline/fs/btrfs/disk-io.c
+===================================================================
+--- linux-mainline.orig/fs/btrfs/disk-io.c	2010-10-29 17:19:12.404178865 +0100
++++ linux-mainline/fs/btrfs/disk-io.c	2010-10-29 17:20:02.022161666 +0100
+@@ -1591,6 +1591,7 @@
+ 	spin_lock_init(&fs_info->ref_cache_lock);
+ 	spin_lock_init(&fs_info->fs_roots_radix_lock);
+ 	spin_lock_init(&fs_info->delayed_iput_lock);
++	spin_lock_init(&fs_info->balance_info_lock);
+ 
+ 	init_completion(&fs_info->kobj_unregister);
+ 	fs_info->tree_root = tree_root;
+@@ -1616,6 +1617,7 @@
+ 	fs_info->sb = sb;
+ 	fs_info->max_inline = 8192 * 1024;
+ 	fs_info->metadata_ratio = 0;
++	fs_info->balance_info = NULL;
+ 
+ 	fs_info->thread_pool_size = min_t(unsigned long,
+ 					  num_online_cpus() + 2, 8);
 
 

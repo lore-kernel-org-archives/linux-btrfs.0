@@ -1,47 +1,74 @@
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Subject: Re: [GIT PULL] Btrfs updates for 2.6.37
-Date: Sat, 30 Oct 2010 09:21:08 -0700
-Message-ID: <AANLkTim+JMLE4fbg7gkoA+g9JfQzy6edUfiHh87mMSa7@mail.gmail.com>
-References: <20101030135111.GA2918@think>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: Re: [patch 0/2] Control filesystem balances (kernel side)
+Date: Sat, 30 Oct 2010 19:44:35 +0200
+Message-ID: <201010301944.35962.kreijack@libero.it>
+References: <20101030000726.286517546@carfax.org.uk>
+Reply-To: kreijack@libero.it
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>, linux-kernel@vger.kernel.og,
-	linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain;
+  charset="iso-8859-15"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101030135111.GA2918@think>
+In-Reply-To: <20101030000726.286517546@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Oct 30, 2010 at 6:51 AM, Chris Mason <chris.mason@oracle.com> wrote:
->
-> There were some minor conflicts with Linus' current tree, so my branch
-> is merged with Linus' tree as of this morning.
+On Saturday, 30 October, 2010, Hugo Mills wrote:
+>    These two patches give a degree of control over balance operations.
+> The first makes it possible to get an idea of how much work remains to
+> do, by tracking the number of block groups (chunks) that need to be
+> moved/rewritten. The second patch allows a running balance operation
+> to be cancelled when the current block group has been moved.
+> 
+>    One fundamental question, though -- is the progress monitor
+> function best implemented as an ioctl, as I've done here, or should it
+> be two or three sysfs files? I'm thinking of /proc/mdstat...
+> Obviously, /proc/mdstat would never get into /sys, but exposing the
+> "expected" and "remaining" values as files has an attractive
+> simplicity to it.
 
-Gaah. Please don't do this. Unless it's a _really_ messy merge, I
-really do want to do the merge. It's fine to have an alternate
-pre-merged branch for me to compare against, but please do that
-separately.
 
-So what I did was to just instead merge the state before your merge,
-and in the process I:
+I like the idea that these info should be put under sysfs. Something like
 
- (a) noticed that your merge was incorrect (you had left around a
-unused "error:" label in btrfs_mount()), since I did use your merge as
-something to compare against (see above). That label had been removed
-in your branch by  commit 0e78340f3c1f, but your merge resurrected it.
+/sys/btrfs/<filesystem-uuid>/
+                             balance	-> info on balancing
+                             devices	-> list of device (a directory of
+                                           links or a file which contains 
+                                           the list of devices)
+                             subvolumes/ -> info on subvolume(s)
+                             label       -> label of the filesystem
+                             <other btrfs filesystem related knoba>
 
- (b) saw just how horribly nasty your writeback_inodes_sb() end result
-was, and decided to clean up the estimation of dirty pages in order to
-not end up with the function call argument from hell.
+                                           
 
-Now, it's obviously totally possible that I screwed things up entirely
-in the process, but as mentioned elsewhere, I do feel that actually
-seeing the merge conflicts really does help me get a feel for what I'm
-merging, and what the points of conflict are.
 
-And yes, maybe it's just me showing my insecurities again. I have
-various mental hangups, and liking to feel like I know roughly what is
-going on is one of them. Doing the merges and looking at the code that
-clashes makes me feel like I have some kind of awareness of how things
-are interacting in the development process.
+Obviously we need another btrfs command to extract an uuid from a btrfs 
+filesystem like:
 
-                   Linus
+# btrfs filesystem get-uuid /path/to/a/btrfs/filesystem
+f9b9c413-0dc8-4e3f-94f2-86faa702f519
+
+> 
+>    The user-space side of things are in a separate patch series, to
+> follow.
+> 
+>    Please be gentle with me, this is my first (serious, non-trivial)
+> kernel patch. :)
+> 
+>    Hugo.
+> 
+> 
+> -- 
+> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+>   PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+>    --- "No!  My collection of rare, incurable diseases! Violated!" ---   
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
+
+-- 
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

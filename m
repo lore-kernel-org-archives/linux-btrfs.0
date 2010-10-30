@@ -1,102 +1,126 @@
 From: Sage Weil <sage@newdream.net>
-Subject: [PATCH 1/3] update ioctl.h from 2.6.37-rc1
-Date: Sat, 30 Oct 2010 10:56:04 -0700
-Message-ID: <1288461366-26914-1-git-send-email-sage@newdream.net>
+Subject: [PATCH 2/3] btrfs: implement 'async-snapshot' command
+Date: Sat, 30 Oct 2010 10:56:05 -0700
+Message-ID: <1288461366-26914-2-git-send-email-sage@newdream.net>
+References: <1288461366-26914-1-git-send-email-sage@newdream.net>
 Cc: Sage Weil <sage@newdream.net>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1288461366-26914-1-git-send-email-sage@newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
+
+This is identical to 'snapshot', but uses the new async snapshot creation
+ioctl, and prints out the transid the new snapshot will be committed
+with.
 
 Signed-off-by: Sage Weil <sage@newdream.net>
 ---
- ioctl.h |   39 ++++++++++++++++++++++++++++++---------
- 1 files changed, 30 insertions(+), 9 deletions(-)
+ btrfs.c      |    8 +++++++-
+ btrfs_cmds.c |   32 +++++++++++++++++++++++++++-----
+ btrfs_cmds.h |    3 ++-
+ 3 files changed, 36 insertions(+), 7 deletions(-)
 
-diff --git a/ioctl.h b/ioctl.h
-index 776d7a9..5a03317 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -23,13 +23,28 @@
+diff --git a/btrfs.c b/btrfs.c
+index 46314cf..c4b9a31 100644
+--- a/btrfs.c
++++ b/btrfs.c
+@@ -44,11 +44,17 @@ static struct Command commands[] = {
+ 	/*
+ 		avoid short commands different for the case only
+ 	*/
+-	{ do_clone, 2,
++	{ do_create_snap, 2,
+ 	  "subvolume snapshot", "<source> [<dest>/]<name>\n"
+ 		"Create a writable snapshot of the subvolume <source> with\n"
+ 		"the name <name> in the <dest> directory."
+ 	},
++	{ do_create_snap_async, 2,
++	  "subvolume async-snapshot", "<source> [<dest>/]<name>\n"
++		"Create a writable snapshot of the subvolume <source> with\n"
++		"the name <name> in the <dest> directory.  Do not wait for\n"
++	        "the snapshot creation to commit to disk before returning."
++	},
+ 	{ do_delete_subvolume, 1,
+ 	  "subvolume delete", "<subvolume>\n"
+ 		"Delete the subvolume <subvolume>."
+diff --git a/btrfs_cmds.c b/btrfs_cmds.c
+index 8031c58..6da5862 100644
+--- a/btrfs_cmds.c
++++ b/btrfs_cmds.c
+@@ -307,7 +307,7 @@ int do_subvol_list(int argc, char **argv)
+ 	return 0;
+ }
  
- #define BTRFS_IOCTL_MAGIC 0x94
- #define BTRFS_VOL_NAME_MAX 255
--#define BTRFS_PATH_NAME_MAX 4087
+-int do_clone(int argc, char **argv)
++static int create_snap(int argc, char **argv, int async)
+ {
+ 	char	*subvol, *dst;
+ 	int	res, fd, fddst, len;
+@@ -316,7 +316,6 @@ int do_clone(int argc, char **argv)
  
-+/* this should be 4k */
-+#define BTRFS_PATH_NAME_MAX 4087
- struct btrfs_ioctl_vol_args {
- 	__s64 fd;
- 	char name[BTRFS_PATH_NAME_MAX + 1];
- };
+ 	subvol = argv[1];
+ 	dst = argv[2];
+-	struct btrfs_ioctl_vol_args	args;
  
-+#define BTRFS_SNAPSHOT_NAME_MAX 4079
-+struct btrfs_ioctl_async_vol_args {
-+	__s64 fd;
-+	__u64 transid;
-+	char name[BTRFS_SNAPSHOT_NAME_MAX + 1];
-+};
+ 	res = test_issubvolume(subvol);
+ 	if(res<0){
+@@ -374,9 +373,22 @@ int do_clone(int argc, char **argv)
+ 
+ 	printf("Create a snapshot of '%s' in '%s/%s'\n",
+ 	       subvol, dstdir, newname);
+-	args.fd = fd;
+-	strcpy(args.name, newname);
+-	res = ioctl(fddst, BTRFS_IOC_SNAP_CREATE, &args);
++	if (async) {
++		struct btrfs_ioctl_async_vol_args	async_args;
++		async_args.fd = fd;
++		async_args.transid = 0;
++		strcpy(async_args.name, newname);
++		res = ioctl(fddst, BTRFS_IOC_SNAP_CREATE_ASYNC, &async_args);
++		if (res == 0)
++			printf("transid %llu\n",
++			       (unsigned long long)async_args.transid);
++	} else {
++		struct btrfs_ioctl_vol_args	args;
 +
-+#define BTRFS_INO_LOOKUP_PATH_MAX 4080
-+struct btrfs_ioctl_ino_lookup_args {
-+	__u64 treeid;
-+	__u64 objectid;
-+	char name[BTRFS_INO_LOOKUP_PATH_MAX];
-+};
-+
- struct btrfs_ioctl_search_key {
- 	/* which root are we searching.  0 is the tree of tree roots */
- 	__u64 tree_id;
-@@ -72,7 +87,7 @@ struct btrfs_ioctl_search_header {
- 	__u64 offset;
- 	__u32 type;
- 	__u32 len;
--} __attribute__((may_alias));
-+};
++		args.fd = fd;
++		strcpy(args.name, newname);
++		res = ioctl(fddst, BTRFS_IOC_SNAP_CREATE, &args);
++	}
  
- #define BTRFS_SEARCH_ARGS_BUFSIZE (4096 - sizeof(struct btrfs_ioctl_search_key))
- /*
-@@ -85,11 +100,10 @@ struct btrfs_ioctl_search_args {
- 	char buf[BTRFS_SEARCH_ARGS_BUFSIZE];
- };
+ 	close(fd);
+ 	close(fddst);
+@@ -390,6 +402,16 @@ int do_clone(int argc, char **argv)
  
--#define BTRFS_INO_LOOKUP_PATH_MAX 4080
--struct btrfs_ioctl_ino_lookup_args {
--	__u64 treeid;
--	__u64 objectid;
--	char name[BTRFS_INO_LOOKUP_PATH_MAX];
-+struct btrfs_ioctl_clone_range_args {
-+  __s64 src_fd;
-+  __u64 src_offset, src_length;
-+  __u64 dest_offset;
- };
+ }
  
- /* flags for the defrag range ioctl */
-@@ -155,11 +169,14 @@ struct btrfs_ioctl_space_args {
- 				   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_BALANCE _IOW(BTRFS_IOCTL_MAGIC, 12, \
- 				   struct btrfs_ioctl_vol_args)
--/* 13 is for CLONE_RANGE */
++int do_create_snap_async(int argc, char **argv)
++{
++	return create_snap(argc, argv, 1);
++}
 +
-+#define BTRFS_IOC_CLONE_RANGE _IOW(BTRFS_IOCTL_MAGIC, 13, \
-+				  struct btrfs_ioctl_clone_range_args)
++int do_create_snap(int argc, char **argv)
++{
++	return create_snap(argc, argv, 0);
++}
 +
- #define BTRFS_IOC_SUBVOL_CREATE _IOW(BTRFS_IOCTL_MAGIC, 14, \
- 				   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_SNAP_DESTROY _IOW(BTRFS_IOCTL_MAGIC, 15, \
--				   struct btrfs_ioctl_vol_args)
-+				struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_DEFRAG_RANGE _IOW(BTRFS_IOCTL_MAGIC, 16, \
- 				struct btrfs_ioctl_defrag_range_args)
- #define BTRFS_IOC_TREE_SEARCH _IOWR(BTRFS_IOCTL_MAGIC, 17, \
-@@ -169,4 +186,8 @@ struct btrfs_ioctl_space_args {
- #define BTRFS_IOC_DEFAULT_SUBVOL _IOW(BTRFS_IOCTL_MAGIC, 19, u64)
- #define BTRFS_IOC_SPACE_INFO _IOWR(BTRFS_IOCTL_MAGIC, 20, \
- 				    struct btrfs_ioctl_space_args)
-+#define BTRFS_IOC_START_SYNC _IOR(BTRFS_IOCTL_MAGIC, 24, __u64)
-+#define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
-+#define BTRFS_IOC_SNAP_CREATE_ASYNC _IOW(BTRFS_IOCTL_MAGIC, 23, \
-+				   struct btrfs_ioctl_async_vol_args)
- #endif
+ int do_delete_subvolume(int argc, char **argv)
+ {
+ 	int	res, fd, len;
+diff --git a/btrfs_cmds.h b/btrfs_cmds.h
+index 7bde191..c44dc79 100644
+--- a/btrfs_cmds.h
++++ b/btrfs_cmds.h
+@@ -15,7 +15,8 @@
+  */
+ 
+ /* btrfs_cmds.c*/
+-int do_clone(int nargs, char **argv);
++int do_create_snap(int nargs, char **argv);
++int do_create_snap_async(int nargs, char **argv);
+ int do_delete_subvolume(int nargs, char **argv);
+ int do_create_subvol(int nargs, char **argv);
+ int do_fssync(int nargs, char **argv);
 -- 
 1.7.1
 

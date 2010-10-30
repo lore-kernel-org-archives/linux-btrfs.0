@@ -1,59 +1,102 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: [patch 0/2] Control filesystem balances (userspace)
-Date: Sat, 30 Oct 2010 19:49:12 +0200
-Message-ID: <201010301949.12516.kreijack@libero.it>
-References: <20101030001022.247934404@carfax.org.uk>
-Reply-To: kreijack@libero.it
-Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-15"
+From: Sage Weil <sage@newdream.net>
+Subject: [PATCH 1/3] update ioctl.h from 2.6.37-rc1
+Date: Sat, 30 Oct 2010 10:56:04 -0700
+Message-ID: <1288461366-26914-1-git-send-email-sage@newdream.net>
+Cc: Sage Weil <sage@newdream.net>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101030001022.247934404@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Saturday, 30 October, 2010, Hugo Mills wrote:
->    These two patches complement the previous two kernel-side
-> patches. The first implements a way of displaying the current progress
-> of any running balance process. The second patch allows a running
-> balance to be cancelled.
-> 
->    I'm a bit uncertain about the best name for these commands. Several
-> options:
-> 
-[...]
-> 
-> 4)
-> btrfs balance progress <path>
-> btrfs balance cancel <path>
-> 
->    My current favourite, although we introduce a new namespace
-> ("balance") for commands. We could add "btrfs balance start <path>" as
-> a synonym for "btrfs filesystem balance <path>", for some degree of
-> consistency.
+Signed-off-by: Sage Weil <sage@newdream.net>
+---
+ ioctl.h |   39 ++++++++++++++++++++++++++++++---------
+ 1 files changed, 30 insertions(+), 9 deletions(-)
 
-I like this.
-
-Regards
-G.Baroncelli
-> 
->    At some point, I'll add a "monitor" function, which will poll at 1s
-> intervals for progress updates, and print out progress when it changes.
-> 
->    Hugo.
-> 
-> -- 
-> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
->   PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
->    --- "No!  My collection of rare, incurable diseases! Violated!" ---   
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
-
+diff --git a/ioctl.h b/ioctl.h
+index 776d7a9..5a03317 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -23,13 +23,28 @@
+ 
+ #define BTRFS_IOCTL_MAGIC 0x94
+ #define BTRFS_VOL_NAME_MAX 255
+-#define BTRFS_PATH_NAME_MAX 4087
+ 
++/* this should be 4k */
++#define BTRFS_PATH_NAME_MAX 4087
+ struct btrfs_ioctl_vol_args {
+ 	__s64 fd;
+ 	char name[BTRFS_PATH_NAME_MAX + 1];
+ };
+ 
++#define BTRFS_SNAPSHOT_NAME_MAX 4079
++struct btrfs_ioctl_async_vol_args {
++	__s64 fd;
++	__u64 transid;
++	char name[BTRFS_SNAPSHOT_NAME_MAX + 1];
++};
++
++#define BTRFS_INO_LOOKUP_PATH_MAX 4080
++struct btrfs_ioctl_ino_lookup_args {
++	__u64 treeid;
++	__u64 objectid;
++	char name[BTRFS_INO_LOOKUP_PATH_MAX];
++};
++
+ struct btrfs_ioctl_search_key {
+ 	/* which root are we searching.  0 is the tree of tree roots */
+ 	__u64 tree_id;
+@@ -72,7 +87,7 @@ struct btrfs_ioctl_search_header {
+ 	__u64 offset;
+ 	__u32 type;
+ 	__u32 len;
+-} __attribute__((may_alias));
++};
+ 
+ #define BTRFS_SEARCH_ARGS_BUFSIZE (4096 - sizeof(struct btrfs_ioctl_search_key))
+ /*
+@@ -85,11 +100,10 @@ struct btrfs_ioctl_search_args {
+ 	char buf[BTRFS_SEARCH_ARGS_BUFSIZE];
+ };
+ 
+-#define BTRFS_INO_LOOKUP_PATH_MAX 4080
+-struct btrfs_ioctl_ino_lookup_args {
+-	__u64 treeid;
+-	__u64 objectid;
+-	char name[BTRFS_INO_LOOKUP_PATH_MAX];
++struct btrfs_ioctl_clone_range_args {
++  __s64 src_fd;
++  __u64 src_offset, src_length;
++  __u64 dest_offset;
+ };
+ 
+ /* flags for the defrag range ioctl */
+@@ -155,11 +169,14 @@ struct btrfs_ioctl_space_args {
+ 				   struct btrfs_ioctl_vol_args)
+ #define BTRFS_IOC_BALANCE _IOW(BTRFS_IOCTL_MAGIC, 12, \
+ 				   struct btrfs_ioctl_vol_args)
+-/* 13 is for CLONE_RANGE */
++
++#define BTRFS_IOC_CLONE_RANGE _IOW(BTRFS_IOCTL_MAGIC, 13, \
++				  struct btrfs_ioctl_clone_range_args)
++
+ #define BTRFS_IOC_SUBVOL_CREATE _IOW(BTRFS_IOCTL_MAGIC, 14, \
+ 				   struct btrfs_ioctl_vol_args)
+ #define BTRFS_IOC_SNAP_DESTROY _IOW(BTRFS_IOCTL_MAGIC, 15, \
+-				   struct btrfs_ioctl_vol_args)
++				struct btrfs_ioctl_vol_args)
+ #define BTRFS_IOC_DEFRAG_RANGE _IOW(BTRFS_IOCTL_MAGIC, 16, \
+ 				struct btrfs_ioctl_defrag_range_args)
+ #define BTRFS_IOC_TREE_SEARCH _IOWR(BTRFS_IOCTL_MAGIC, 17, \
+@@ -169,4 +186,8 @@ struct btrfs_ioctl_space_args {
+ #define BTRFS_IOC_DEFAULT_SUBVOL _IOW(BTRFS_IOCTL_MAGIC, 19, u64)
+ #define BTRFS_IOC_SPACE_INFO _IOWR(BTRFS_IOCTL_MAGIC, 20, \
+ 				    struct btrfs_ioctl_space_args)
++#define BTRFS_IOC_START_SYNC _IOR(BTRFS_IOCTL_MAGIC, 24, __u64)
++#define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
++#define BTRFS_IOC_SNAP_CREATE_ASYNC _IOW(BTRFS_IOCTL_MAGIC, 23, \
++				   struct btrfs_ioctl_async_vol_args)
+ #endif
 -- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+1.7.1
+

@@ -1,68 +1,43 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: btrfs raid1 degraded does not mount or fsck
-Date: Sat, 30 Oct 2010 08:55:48 +0200
-Message-ID: <201010300855.48938.kreijack@libero.it>
-References: <20101029205340.GA10326@gypsyops.denof.sin>
-Reply-To: kreijack@libero.it
-Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
+From: William Uther <willu.mailingLists@cse.unsw.edu.au>
+Subject: Can't remove missing drive
+Date: Sat, 30 Oct 2010 18:37:06 +1100
+Message-ID: <096423C3-E94C-4969-95C8-42557AA41D0D@cse.unsw.edu.au>
+Mime-Version: 1.0 (Apple Message framework v1081)
+Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101029205340.GA10326@gypsyops.denof.sin>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Friday, 29 October, 2010, Vladi Gergov wrote:
-> kernel: scratch git repo from today 10.29.10 @ 14:30 PST
-> Btrfs v0.19-35-g1b444cd-dirty
-> 
-> >>> gypsyops @ /mnt > sudo btrfs filesystem show
-> Label: 'das4'  uuid: d0e5137f-e5e7-49da-91f6-a9c4e4e72c6f
->     Total devices 3 FS bytes used 1.38TB
->     devid    3 size 1.82TB used 0.00 path /dev/sdb
->     devid    2 size 1.82TB used 1.38TB path /dev/sdc
->     *** Some devices missing
-> 
-> Btrfs v0.19-35-g1b444cd-dirty
-> 
-> >>> gypsyops @ /mnt > sudo mount -o degraded /dev/sdc das3/
-> Password: 
-> mount: wrong fs type, bad option, bad superblock on /dev/sdc,
->        missing codepage or helper program, or other error
->        In some cases useful info is found in syslog - try
->        dmesg | tail  or so
-> 
-> [  684.577540] device label das4 devid 2 transid 107954 /dev/sdc
-> [  684.595150] btrfs: allowing degraded mounts
-> [  684.595594] btrfs: failed to read chunk root on sdb
-> [  684.604110] btrfs: open_ctree failed
-> 
-> >>> gypsyops @ /mnt > sudo btrfsck /dev/sdc
-> btrfsck: volumes.c:1367: btrfs_read_sys_array: Assertion `!(ret)' failed.
-> 
-> any help please?
+Hi,
+  I have a raid1 setup with a missing device.  I have added a new device and everything seems to be working fine, except I cannot remove the old, missing, device.  There is no error - but the 'some devices missing' tag doesn't go away.
 
-did you execute 
+root@willvo:~# btrfs filesystem show
+failed to read /dev/sr0
+Label: none  uuid: f929c413-01c8-443f-b4f2-86f36702f519
+    Total devices 3 FS bytes used 578.39GB
+    devid    1 size 931.51GB used 604.00GB path /dev/sdb1
+    devid    2 size 931.51GB used 604.00GB path /dev/sdc1
+    *** Some devices missing
 
-	btrfs dev scan
+Btrfs Btrfs v0.19
+root@willvo:~# btrfs device delete missing /data
+root@willvo:~# btrfs filesystem show
+failed to read /dev/sr0
+Label: none  uuid: f929c413-01c8-443f-b4f2-86f36702f519
+    Total devices 3 FS bytes used 578.39GB
+    devid    1 size 931.51GB used 604.00GB path /dev/sdb1
+    devid    2 size 931.51GB used 604.00GB path /dev/sdc1
+    *** Some devices missing
 
-before trying to mount the filesystem ?
+Btrfs Btrfs v0.19
 
-> -- 
-> 
-> ,-| Vladi
-> `-| Gergov
-> 
-> !DSPAM:4ccb39a9191821603519226!
-> 
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+There are a number of sub-volumes of /data that are mounted in other locations.  I'm using kernel 2.6.36 (the lucid backport of the natty kernel) and similar btrfs-tools (lucid backport of natty tools).  Interestingly looking at the output of `dh -h`, it appears that the 'missing' devices are no longer being counted in the filesystem size - there is just a phantom 'missing' tag in btrfs-show.
 
+Is this actually a problem, or can I just keep running as is?  It seems to mount fine without -odegraded.
 
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+Any ideas how I can list the missing devices?  Any ideas on how I can remove the missing devices?
+
+Be well,
+
+Will        :-}
+

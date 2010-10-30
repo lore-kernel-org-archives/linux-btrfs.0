@@ -1,271 +1,122 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: [patch 1/2] Balance progress monitoring (updated)
-Date: Sat, 30 Oct 2010 14:39:34 +0100
-Message-ID: <20101030133934.GD9369@selene>
-References: <20101030000726.286517546@carfax.org.uk>
- <20101030000741.689283553@carfax.org.uk>
+From: Chris Mason <chris.mason@ORACLE.COM>
+Subject: [GIT PULL] Btrfs updates for 2.6.37
+Date: Sat, 30 Oct 2010 09:51:11 -0400
+Message-ID: <20101030135111.GA2918@think>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="OaZoDhBhXzo6bW1J"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-kernel@vger.kernel.og, linux-btrfs@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101030000741.689283553@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi everyone,
 
---OaZoDhBhXzo6bW1J
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+There were some minor conflicts with Linus' current tree, so my branch 
+is merged with Linus' tree as of this morning.
 
-This patch introduces a basic form of progress monitoring for balance
-operations, by counting the number of block groups remaining. The
-information is exposed to userspace by an ioctl.
+It includes some new writeback helpers so that btrfs can kick off IO to
+reclaim delalloc space.  I bounced a few different interfaces off
+Christoph before this one.  It isn't quite perfect for what btrfs is
+doing but it just adds a new func that limits the number of pages we'll
+send down to writeback_inodes_sb
 
-Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
+Otherwise these are all btrfs commits.  The big focus of the work this
+time around is performance around ENOSPC and bug fixes.  Josef also has
+some block group caching code which writes out the free space cache with
+each commit.  This is disabled by default, but you get it with mount -o
+space_cache.
 
----
-This patch replaces the one previously posted, correcting a minor error.
+After a fresh mount, his new code makes us dramatically faster because
+we don't have to scan the btree for free blocks.
 
- fs/btrfs/ctree.h   |    9 ++++++++
- fs/btrfs/disk-io.c |    2 +
- fs/btrfs/ioctl.c   |   34 ++++++++++++++++++++++++++++++++
- fs/btrfs/ioctl.h   |    7 ++++++
- fs/btrfs/volumes.c |   55 +++++++++++++++++++++++++++++++++++++++++++++++++++--
- 5 files changed, 105 insertions(+), 2 deletions(-)
+Sage has a collection of new ioctls that ceph will be using.  They make
+is possible for ceph to stop using the transaction start/top ioctls, so
+it's a big cleanup.
 
-Index: linux-mainline/fs/btrfs/ctree.h
-===================================================================
---- linux-mainline.orig/fs/btrfs/ctree.h	2010-10-26 18:03:38.000000000 +0100
-+++ linux-mainline/fs/btrfs/ctree.h	2010-10-30 14:35:25.306450922 +0100
-@@ -803,6 +803,11 @@
- 	struct list_head cluster_list;
- };
- 
-+struct btrfs_balance_info {
-+	u64 expected;
-+	u64 completed;
-+};
-+
- struct reloc_control;
- struct btrfs_device;
- struct btrfs_fs_devices;
-@@ -1010,6 +1015,10 @@
- 	unsigned metadata_ratio;
- 
- 	void *bdev_holder;
-+
-+	/* Keep track of any rebalance operations on this FS */
-+	spinlock_t balance_info_lock;
-+	struct btrfs_balance_info *balance_info;
- };
- 
- /*
-Index: linux-mainline/fs/btrfs/ioctl.c
-===================================================================
---- linux-mainline.orig/fs/btrfs/ioctl.c	2010-10-26 18:03:38.000000000 +0100
-+++ linux-mainline/fs/btrfs/ioctl.c	2010-10-30 14:35:25.396447198 +0100
-@@ -1984,6 +1984,38 @@
- 	return 0;
- }
- 
-+/*
-+ * Return the current status of any balance operation
-+ */
-+long btrfs_ioctl_balance_progress(
-+	struct btrfs_fs_info *fs_info,
-+	struct btrfs_ioctl_balance_progress __user *user_dest)
-+{
-+	int ret = 0;
-+	struct btrfs_ioctl_balance_progress dest;
-+
-+	spin_lock(&fs_info->balance_info_lock);
-+	if (!fs_info->balance_info) {
-+		ret = -EINVAL;
-+		goto error;
-+	}
-+
-+	dest.expected = fs_info->balance_info->expected;
-+	dest.completed = fs_info->balance_info->completed;
-+
-+	spin_unlock(&fs_info->balance_info_lock);
-+
-+	if (copy_to_user(user_dest, &dest,
-+			 sizeof(struct btrfs_ioctl_balance_progress)))
-+		return -EFAULT;
-+
-+	return 0;
-+
-+error:
-+	spin_unlock(&fs_info->balance_info_lock);
-+	return ret;
-+}
-+
- long btrfs_ioctl(struct file *file, unsigned int
- 		cmd, unsigned long arg)
- {
-@@ -2017,6 +2049,8 @@
- 		return btrfs_ioctl_rm_dev(root, argp);
- 	case BTRFS_IOC_BALANCE:
- 		return btrfs_balance(root->fs_info->dev_root);
-+	case BTRFS_IOC_BALANCE_PROGRESS:
-+		return btrfs_ioctl_balance_progress(root->fs_info, argp);
- 	case BTRFS_IOC_CLONE:
- 		return btrfs_ioctl_clone(file, arg, 0, 0, 0);
- 	case BTRFS_IOC_CLONE_RANGE:
-Index: linux-mainline/fs/btrfs/ioctl.h
-===================================================================
---- linux-mainline.orig/fs/btrfs/ioctl.h	2010-10-26 18:03:38.000000000 +0100
-+++ linux-mainline/fs/btrfs/ioctl.h	2010-10-30 14:35:25.316450509 +0100
-@@ -138,6 +138,11 @@
- 	struct btrfs_ioctl_space_info spaces[0];
- };
- 
-+struct btrfs_ioctl_balance_progress {
-+	__u64 expected;
-+	__u64 completed;
-+};
-+
- #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
- 				   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
-@@ -178,4 +183,6 @@
- #define BTRFS_IOC_DEFAULT_SUBVOL _IOW(BTRFS_IOCTL_MAGIC, 19, u64)
- #define BTRFS_IOC_SPACE_INFO _IOWR(BTRFS_IOCTL_MAGIC, 20, \
- 				    struct btrfs_ioctl_space_args)
-+#define BTRFS_IOC_BALANCE_PROGRESS _IOR(BTRFS_IOCTL_MAGIC, 21, \
-+					struct btrfs_ioctl_balance_progress)
- #endif
-Index: linux-mainline/fs/btrfs/volumes.c
-===================================================================
---- linux-mainline.orig/fs/btrfs/volumes.c	2010-10-26 18:03:38.000000000 +0100
-+++ linux-mainline/fs/btrfs/volumes.c	2010-10-30 14:35:25.326450096 +0100
-@@ -1902,6 +1902,7 @@
- 	struct btrfs_root *chunk_root = dev_root->fs_info->chunk_root;
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_key found_key;
-+	struct btrfs_balance_info *bal_info;
- 
- 	if (dev_root->fs_info->sb->s_flags & MS_RDONLY)
- 		return -EROFS;
-@@ -1909,6 +1910,18 @@
- 	mutex_lock(&dev_root->fs_info->volume_mutex);
- 	dev_root = dev_root->fs_info->dev_root;
- 
-+	dev_root->fs_info->balance_info = kmalloc(
-+		sizeof(struct btrfs_balance_info),
-+		GFP_NOFS);
-+	if (!dev_root->fs_info->balance_info) {
-+		ret = -ENOSPC;
-+		goto error_no_status;
-+	}
-+	bal_info = dev_root->fs_info->balance_info;
-+	bal_info->expected = -1; /* One less than actually counted,
-+				    because chunk 0 is special */
-+	bal_info->completed = 0;
-+
- 	/* step one make some room on all the devices */
- 	list_for_each_entry(device, devices, dev_list) {
- 		old_size = device->total_bytes;
-@@ -1932,10 +1945,40 @@
- 		btrfs_end_transaction(trans, dev_root);
- 	}
- 
--	/* step two, relocate all the chunks */
-+	/* step two, count the chunks */
- 	path = btrfs_alloc_path();
--	BUG_ON(!path);
-+	if (!path) {
-+		ret = -ENOSPC;
-+		goto error;
-+	}
-+
-+	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
-+	key.offset = (u64)-1;
-+	key.type = BTRFS_CHUNK_ITEM_KEY;
-+
-+	ret = btrfs_search_slot(NULL, chunk_root, &key, path, 0, 0);
-+	if (ret <= 0) {
-+		printk(KERN_ERR "btrfs: Failed to find the last chunk.\n");
-+		BUG();
-+	}
-+
-+	while (1) {
-+		ret = btrfs_previous_item(chunk_root, path, 0,
-+					  BTRFS_CHUNK_ITEM_KEY);
-+		if (ret)
-+			break;
-+
-+		bal_info->expected++;
-+	}
-+
-+	btrfs_free_path(path);
-+	path = btrfs_alloc_path();
-+	if (!path) {
-+		ret = -ENOSPC;
-+		goto error;
-+	}
- 
-+	/* step three, relocate all the chunks */
- 	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
- 	key.offset = (u64)-1;
- 	key.type = BTRFS_CHUNK_ITEM_KEY;
-@@ -1976,10 +2019,18 @@
- 					   found_key.offset);
- 		BUG_ON(ret && ret != -ENOSPC);
- 		key.offset = found_key.offset - 1;
-+		bal_info->completed++;
-+		printk(KERN_INFO "btrfs: balance: %llu/%llu block groups completed\n",
-+		       bal_info->completed, bal_info->expected);
- 	}
- 	ret = 0;
- error:
- 	btrfs_free_path(path);
-+	spin_lock(&dev_root->fs_info->balance_info_lock);
-+	kfree(dev_root->fs_info->balance_info);
-+	dev_root->fs_info->balance_info = NULL;
-+	spin_unlock(&dev_root->fs_info->balance_info_lock);
-+error_no_status:
- 	mutex_unlock(&dev_root->fs_info->volume_mutex);
- 	return ret;
- }
-Index: linux-mainline/fs/btrfs/disk-io.c
-===================================================================
---- linux-mainline.orig/fs/btrfs/disk-io.c	2010-10-29 17:19:12.000000000 +0100
-+++ linux-mainline/fs/btrfs/disk-io.c	2010-10-29 17:20:02.022161666 +0100
-@@ -1591,6 +1591,7 @@
- 	spin_lock_init(&fs_info->ref_cache_lock);
- 	spin_lock_init(&fs_info->fs_roots_radix_lock);
- 	spin_lock_init(&fs_info->delayed_iput_lock);
-+	spin_lock_init(&fs_info->balance_info_lock);
- 
- 	init_completion(&fs_info->kobj_unregister);
- 	fs_info->tree_root = tree_root;
-@@ -1616,6 +1617,7 @@
- 	fs_info->sb = sb;
- 	fs_info->max_inline = 8192 * 1024;
- 	fs_info->metadata_ratio = 0;
-+	fs_info->balance_info = NULL;
- 
- 	fs_info->thread_pool_size = min_t(unsigned long,
- 					  num_online_cpus() + 2, 8);
+Linus, please pull the for-linus branch of the btrfs unstable tree:
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-      --- <dragon> A linked list is still a binary tree. Just a ---      
-                          very unbalanced one.                           
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git for-linus
 
---OaZoDhBhXzo6bW1J
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
+The master branch has all of these changes against 2.6.36
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
+Josef Bacik (17) commits (+1775/-254):
+    Btrfs: set trans to null in reserve_metadata_bytes if we commit the transaction (+6/-3)
+    Btrfs: check cache->caching_ctl before returning if caching has started (+6/-0)
+    Btrfs: stop trying to shrink delalloc if there are no inodes to reclaim (+5/-0)
+    Btrfs: add support for mixed data+metadata block groups (+28/-4)
+    Btrfs: fix reservation code for mixed block groups (+6/-2)
+    Btrfs: let the user know space caching is enabled (+2/-0)
+    Btrfs: create special free space cache inode (+668/-46)
+    Btrfs: rework how we reserve metadata bytes (+136/-127)
+    Btrfs: fix the df ioctl to report raid types (+76/-24)
+    Btrfs: don't allocate chunks as aggressively (+5/-2)
+    Btrfs: load free space cache if it exists (+345/-3)
+    Btrfs: fix error handling in btrfs_get_sb (+3/-4)
+    Btrfs: remove warn_on from use_block_rsv (+0/-5)
+    Btrfs: Add a clear_cache mount option (+8/-3)
+    Btrfs: write out free space cache (+420/-13)
+    Btrfs: re-work delalloc flushing (+38/-15)
+    Btrfs: fix df regression (+23/-3)
 
-iD8DBQFMzCAWIKyzvlFcI40RAjplAKCOk3bycvZ6rVe5I/PiY8s6hDW/jACggGbb
-Mui87Ri94lsSTLXq6G51bZ8=
-=ixwh
------END PGP SIGNATURE-----
+Sage Weil (9) commits (+438/-47):
+    Btrfs: allow subvol deletion by unprivileged user with -o user_subvol_rm_allowed (+116/-5)
+    Btrfs: fix clone ioctl where range is adjacent to extent (+1/-1)
+    Btrfs: fix deadlock in btrfs_commit_transaction (+5/-8)
+    Btrfs: fix lockdep warning on clone ioctl (+4/-4)
+    Btrfs: fix delalloc checks in clone ioctl (+5/-3)
+    Btrfs: add START_SYNC, WAIT_SYNC ioctls (+89/-0)
+    Btrfs: add SNAP_CREATE_ASYNC ioctl (+93/-25)
+    Btrfs: async transaction commit (+124/-0)
+    Btrfs: make SNAP_DESTROY async (+1/-1)
 
---OaZoDhBhXzo6bW1J--
+Chris Mason (7) commits (+108/-48):
+    Btrfs: tune the chunk allocation to 5% of the FS as metadata (+18/-4)
+    Btrfs: use the flusher threads for delalloc throttling (+15/-18)
+    Btrfs: deal with errors from updating the tree log (+2/-1)
+    Add new functions for triggering inode writeback (+44/-10)
+    Btrfs: fix raid code for removing missing drives (+1/-2)
+    Btrfs: drop unused variable in block_alloc_rsv (+0/-4)
+    Btrfs: don't loop forever on bad btree blocks (+28/-9)
+
+Julia Lawall (2) commits (+9/-17):
+    Btrfs: use memdup_user helpers (+6/-14)
+    Btrfs: Use ERR_CAST helpers (+3/-3)
+
+Andi Kleen (2) commits (+14/-100):
+    Btrfs: Fix variables set but not read (bugs found by gcc 4.6) (+10/-6)
+    Btrfs: cleanup warnings from gcc 4.6 (nonbugs) (+4/-94)
+
+Miao Xie (2) commits (+86/-80):
+    Btrfs: Switch the extent buffer rbtree into a radix tree (+49/-69)
+    Btrfs: restructure try_release_extent_buffer() (+37/-11)
+
+Total: (39) commits (+2430/-546)
+
+ fs/btrfs/compression.c      |    2 -
+ fs/btrfs/ctree.c            |   57 ++--
+ fs/btrfs/ctree.h            |  100 +++++-
+ fs/btrfs/dir-item.c         |    2 +-
+ fs/btrfs/disk-io.c          |   32 ++-
+ fs/btrfs/extent-tree.c      |  694 +++++++++++++++++++++++++++++++---------
+ fs/btrfs/extent_io.c        |  168 +++++-----
+ fs/btrfs/extent_io.h        |    4 +-
+ fs/btrfs/extent_map.c       |    4 +-
+ fs/btrfs/free-space-cache.c |  751 +++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/free-space-cache.h |   18 +
+ fs/btrfs/inode.c            |  202 +++++++++---
+ fs/btrfs/ioctl.c            |  398 ++++++++++++++++++-----
+ fs/btrfs/ioctl.h            |   13 +-
+ fs/btrfs/ordered-data.c     |    2 -
+ fs/btrfs/relocation.c       |  109 ++++++-
+ fs/btrfs/root-tree.c        |    2 -
+ fs/btrfs/super.c            |   41 ++-
+ fs/btrfs/transaction.c      |  234 ++++++++++++--
+ fs/btrfs/transaction.h      |    8 +
+ fs/btrfs/tree-defrag.c      |    2 -
+ fs/btrfs/tree-log.c         |   17 +-
+ fs/btrfs/volumes.c          |    7 +-
+ fs/btrfs/xattr.c            |    2 -
+ fs/btrfs/zlib.c             |    5 -
+ fs/fs-writeback.c           |   54 +++-
+ include/linux/writeback.h   |    2 +
+ 27 files changed, 2411 insertions(+), 519 deletions(-)

@@ -1,76 +1,31 @@
-From: =?ISO-8859-1?Q?J=E9r=F4me_Poulin?= <jeromepoulin@gmail.com>
-Subject: Re: [patch 0/2] Control filesystem balances (userspace)
-Date: Fri, 29 Oct 2010 20:30:50 -0400
-Message-ID: <7786692913512733804@unknownmsgid>
-References: <20101030001022.247934404@carfax.org.uk>
-Mime-Version: 1.0 (iPhone Mail 8B117)
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Hugo Mills <hugo@carfax.org.uk>
+From: Chris Ball <cjb@laptop.org>
+Subject: Re: Blog: "BTRFS is effectively stable"
+Date: Fri, 29 Oct 2010 22:04:57 -0400
+Message-ID: <m3hbg48mgm.fsf@pullcord.laptop.org>
+References: <201010301038.28038.chris@csamuel.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Chris Samuel <chris@csamuel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101030001022.247934404@carfax.org.uk>
+In-Reply-To: <201010301038.28038.chris@csamuel.org> (Chris Samuel's message of
+	"Sat, 30 Oct 2010 10:38:23 +1100")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-You could always use btrfs filesystem balance progress which would not
-introduce a new root level option and still be short to type. That
-would mean balance should have a "start" option or default to start
-when no sub options are used.
+Hi,
 
-Sent from my mobile device.
+   > A friend of mine who builds storage systems designed for HPC use
+   > has been keeping an eye on btrfs and has just done some testing
+   > of it with 2.6.36 and seems to like what he sees in terms of
+   > stability.
+   > 
+   > http://scalability.org/?p=2711
 
-On 2010-10-29, at 20:11, Hugo Mills <hugo@carfax.org.uk> wrote:
+This is nice to see, but we should be clearer about what stability
+means.  This was just fio testing; it doesn't say anything about
+resilience to crashes, power offs, or the presence of corruption.
 
->   These two patches complement the previous two kernel-side
-> patches. The first implements a way of displaying the current progress
-> of any running balance process. The second patch allows a running
-> balance to be cancelled.
->
->   I'm a bit uncertain about the best name for these commands. Several
-> options:
->
-> 1)
-> # btrfs filesystem progress <path>
-> # btrfs filesystem cancel <path>
->
->   Way too vague (cancel *what*?)
->
->
-> 2)
-> # btrfs filesystem balance-progress <path>
-> # btrfs filesystem balance-cancel <path>
->
->   Clashes horribly with "filesystem balance" -- no abbreviations
-> possible.
->
->
-> 3)
-> btrfs filesystem balance -p <path>
-> btrfs filesystem balance -c <path>
->
->   Changes behaviour significantly on a switch, in contrast to the
-> behaviour of the rest of the btrfs tool.
->
->
-> 4)
-> btrfs balance progress <path>
-> btrfs balance cancel <path>
->
->   My current favourite, although we introduce a new namespace
-> ("balance") for commands. We could add "btrfs balance start <path>" as
-> a synonym for "btrfs filesystem balance <path>", for some degree of
-> consistency.
->
->   At some point, I'll add a "monitor" function, which will poll at 1s
-> intervals for progress updates, and print out progress when it changes.
->
->   Hugo.
->
-> --
-> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
->  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
->   --- "No!  My collection of rare, incurable diseases! Violated!" ---
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+- Chris.
+-- 
+Chris Ball   <cjb@laptop.org>
+One Laptop Per Child

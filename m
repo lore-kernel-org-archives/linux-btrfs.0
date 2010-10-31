@@ -1,37 +1,35 @@
-From: =?windows-1252?Q?Andreas_Bauer?= <ab@voltage.de>
-Subject: Kernel 2.6.36 btrfs csum bugreport
-Date: Sun, 31 Oct 2010 13:55:28 +0100
-Message-ID: <vmime.4ccd6740.445d.4b0252c0586bb40@mail.voltage.de>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: database for device scan
+Date: 31 Oct 2010 15:18:00 +0100
+Message-ID: <BZur8RLD1uB@helmut.hullen.de>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=windows-1252
+Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi everybody,
+Hallo, linux-btrfs,
 
-Today while playing around with btrfs I uncovered what must be a bug in the btrfs checksum code. My kernel log received a couple of these messages with various ino and off numbers:
+I've used for some days btrfs-progs-20100717, now I'm using "btrfs- 
+progs-201030" (built with the "SlackBuild" script for slackware).
 
-btrfs csum failed ino 5098 off 524288 csum 2981133980 private 959545494
-[..]
+Works fine, but the actual version works in another way than the  
+previous when I say
 
-This happens on reading from the btrfs filesystem.
+        mkfs.btrfs /dev/sdb1
 
-The funny thing is that the files are read correct, as verified by md5sum. I have cross-checked this on another machine (with same kernel and btrfs utils): same result. A full filesystem md5sum check showed no errors. The md5sums obviously were computed before the data was copied to the btrfs.
+(or how the device may be named).
+The previous version finished its work within some seconds, the actual  
+version first tests all block devices in "/dev".
 
-So I conclude that these messages are faulty because data is read correctly. In addition, when you have more than one btrfs you cannot see from the message which fs it is refering to.
+If I'd run "udev" that may be no big problem. But I prefer not using  
+"udev", I prefer working with static device entries, and that leads to  
+many entries for devices which really don't exist. And "scan" scans all  
+of them.
 
-Here is my setup, maybe it has something to do with the (nowadays) unusual kernel target:
+Maybe it's a better idea not to use "/dev" as database, using "proc/ 
+partitions" may be the better way.
 
-- unmodified upstream 2.6.36 kernel
-- Debian Squeeze
-- Standard Debian gcc 4.3.5 with target i486
-- CPU AMD Geode LX800 on ALIX board
-- btrfs on USB-ATA connected IDE drive Seagate Barracuda 7200.8 ST3400832A
-- btrs utils v0.19
-- about 300GB of data of all sorts in 50000+ files on the fs
-- data gets rsynced to another btrfs volume of 1TB when on read the csum errors occur
-
-Hope that some of this informations rings a bell on someones mind. If so, please let me know ;)
-
-bye, Andreas
+Viele Gruesse!
+Helmut

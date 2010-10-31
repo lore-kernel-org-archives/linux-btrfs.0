@@ -1,44 +1,25 @@
-From: Brian Rogers <brian@xyzw.org>
-Subject: Re: Can't remove missing drive
-Date: Sat, 30 Oct 2010 22:55:57 -0700
-Message-ID: <4CCD04ED.1020009@xyzw.org>
-References: <096423C3-E94C-4969-95C8-42557AA41D0D@cse.unsw.edu.au>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: kernel BUG when removing missing drive (Take 2)
+Date: Sun, 31 Oct 2010 07:58:32 -0400
+Message-ID: <20101031115832.GC2918@think>
+References: <AANLkTimECim-kSVfuZkAS2pfNJi1rtA-voC98YR3iYoT@mail.gmail.com>
+ <20101028205705.GE27796@think>
+ <AANLkTi=D8uB-yuH3BUY0uPwEzwVxBPrghN7P-LRJUXq=@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: William Uther <willu.mailingLists@cse.unsw.edu.au>
+To: Erik Jensen <eriksjunk@rkjnsn.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <096423C3-E94C-4969-95C8-42557AA41D0D@cse.unsw.edu.au>
+In-Reply-To: <AANLkTi=D8uB-yuH3BUY0uPwEzwVxBPrghN7P-LRJUXq=@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/30/2010 12:37 AM, William Uther wrote:
-> Hi,
->    I have a raid1 setup with a missing device.  I have added a new device and everything seems to be working fine, except I cannot remove the old, missing, device.  There is no error - but the 'some devices missing' tag doesn't go away.
->
-> root@willvo:~# btrfs filesystem show
-> failed to read /dev/sr0
-> Label: none  uuid: f929c413-01c8-443f-b4f2-86f36702f519
->      Total devices 3 FS bytes used 578.39GB
->      devid    1 size 931.51GB used 604.00GB path /dev/sdb1
->      devid    2 size 931.51GB used 604.00GB path /dev/sdc1
->      *** Some devices missing
->
-> Btrfs Btrfs v0.19
-> root@willvo:~# btrfs device delete missing /data
-> root@willvo:~# btrfs filesystem show
-> failed to read /dev/sr0
-> Label: none  uuid: f929c413-01c8-443f-b4f2-86f36702f519
->      Total devices 3 FS bytes used 578.39GB
->      devid    1 size 931.51GB used 604.00GB path /dev/sdb1
->      devid    2 size 931.51GB used 604.00GB path /dev/sdc1
->      *** Some devices missing
->
-> Btrfs Btrfs v0.19
+On Fri, Oct 29, 2010 at 11:55:49AM -0700, Erik Jensen wrote:
+> So, I ended up just applying the relevant commit to my existing source
+> tree, which did allow me to successfully remove the missing drive, so
+> I seem to be back up and running.
+> 
+> Thank you very much!
 
-The lack of a message on the delete operation indicates success. What 
-you see is the expected behavior, since 'btrfs filesystem show' is 
-reading the partitions directly. Therefore, it won't see any changes 
-that haven't been committed to disk yet. The 'some devices missing' 
-message should go away after running 'sync', or rebooting, or 
-un-mounting the file system.
+Fantastic, thanks for letting us know.
 
+-chris

@@ -1,25 +1,41 @@
-From: cwillu <cwillu@cwillu.com>
-Subject: Re: How to see raid level?!
-Date: Mon, 1 Nov 2010 06:24:26 -0600
-Message-ID: <AANLkTinc84hYYrVY2tp7X_EpebZMc335KoqFX3b+4KGn@mail.gmail.com>
-References: <20101101101755.GA2814@scooter>
-	<AANLkTinc0zL1hmLOD0YpHShu5Jg8eiZwZtJdcVZaG5QO@mail.gmail.com>
-	<20101101121408.GA2837@scooter>
+From: Xavier Nicollet <nicollet@jeru.org>
+Subject: Re: [patch 0/2] Control filesystem balances (kernel side)
+Date: Mon, 1 Nov 2010 13:58:21 +0100
+Message-ID: <20101101125821.GH13149@jeru.org>
+References: <20101030000726.286517546@carfax.org.uk> <201010301944.35962.kreijack@libero.it>
+Reply-To: nicollet@jeru.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=iso-8859-15
 Cc: linux-btrfs@vger.kernel.org
-To: Felix Blanke <felixblanke@gmail.com>
+To: Goffredo Baroncelli <kreijack@libero.it>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101101121408.GA2837@scooter>
+In-Reply-To: <201010301944.35962.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 1, 2010 at 6:14 AM, Felix Blanke <felixblanke@gmail.com> wrote:
-> Ah, the magic one :)
->
-> Is that a patch for the kernel or the btrfs progs?
->
->
-> If you know where to get that patch it would be nice. It isn't an important issue but it
-> would be nice to see if my home really uses raid1 for data :)
+Le 30 octobre 2010 =E0 19:44, Goffredo Baroncelli a =E9crit:
+> I like the idea that these info should be put under sysfs. Something =
+like
+>=20
+> /sys/btrfs/<filesystem-uuid>/
+>                              balance	-> info on balancing
+>                              devices	-> list of device (a directory o=
+f
+>                                            links or a file which cont=
+ains=20
+>                                            the list of devices)
+>                              subvolumes/ -> info on subvolume(s)
+>                              label       -> label of the filesystem
+>                              <other btrfs filesystem related knoba>
 
-Kernel patch;  c9996a22 Btrfs: fix the df ioctl to report raid types
+Well, mdstat stats are under /proc/mdstat.
+Is sysfs the ideal place ?
+
+Just asking.
+
+--=20
+Xavier Nicollet
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

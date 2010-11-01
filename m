@@ -1,56 +1,56 @@
-From: Felix Blanke <felixblanke@gmail.com>
-Subject: Re: How to see raid level?!
-Date: Mon, 1 Nov 2010 13:14:08 +0100
-Message-ID: <20101101121408.GA2837@scooter>
-References: <20101101101755.GA2814@scooter>
- <AANLkTinc0zL1hmLOD0YpHShu5Jg8eiZwZtJdcVZaG5QO@mail.gmail.com>
+From: cwillu <cwillu@cwillu.com>
+Subject: Re: btrfs-convert fails
+Date: Mon, 1 Nov 2010 06:20:04 -0600
+Message-ID: <AANLkTi=qwtEwBTxsqEBzQ78QA852wh9RDG-HNmABpj22@mail.gmail.com>
+References: <20101101104943.00007ff9@unknown>
+	<B$1ssrji1uB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: cwillu <cwillu@cwillu.com>
+To: helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTinc0zL1hmLOD0YpHShu5Jg8eiZwZtJdcVZaG5QO@mail.gmail.com>
+In-Reply-To: <B$1ssrji1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ah, the magic one :)
+On Mon, Nov 1, 2010 at 5:55 AM, Helmut Hullen <Hullen@t-online.de> wrot=
+e:
+> Hallo, Felix,
+>
+> Du meintest am 01.11.10:
+>
+>>>>> =A0btrfs-convert: extent-tree.c:2529: btrfs_reserve_extent:
+>>>>> Assertion =A0 =A0 `!(ret)' failed
+>>>>> =A0Abgebrochen
+>
+>>>> Try btrfs-convert -r /dev/xxx, hopefully it will recover your ext2=
+=2E
+>
+>>> Restoring is (now) no problem, I'm still testing. But in some days
+>>> (or weeks) I want to convert a partition with 1,5 TByte (which has
+>>> no backup) ...
+>
+>> don't use btrfs for important files if you got no backup yet. It's
+>> quite stable and a lot of ppl don't have problem with it, but there
+>> are some cases where it could be very ugly, like a powerloss while
+>> writing etc.
+>
+> In these special cases: no big problem. The 1.5 TByte partition conta=
+ins
+> my videos (at least most of them), and there is a kind of backup on
+> another machine in the family (some kilometers away).
+>
+> And my machine works behind an UPS. But what about a shutdown initiat=
+ed
+> by this UPS after (p.e.) 3 minutes powerloss?
 
-Is that a patch for the kernel or the btrfs progs?
-
-
-If you know where to get that patch it would be nice. It isn't an important issue but it
-would be nice to see if my home really uses raid1 for data :)
-
-
-Regards,
-FElix
-
-
-On 01. November 2010 - 04:33, cwillu wrote:
-> Date: Mon, 1 Nov 2010 04:33:30 -0600
-> From: cwillu <cwillu@cwillu.com>
-> To: Felix Blanke <felixblanke@gmail.com>
-> Cc: linux-btrfs@vger.kernel.org
-> Subject: Re: How to see raid level?!
-> 
-> On Mon, Nov 1, 2010 at 4:17 AM, Felix Blanke <felixblanke@gmail.com> wrote:
-> > Hi,
-> >
-> > I saw some reports of ppl in this list who did a "btrfs fi df /path" and saw the
-> > raidlevel of the data, metadata etc.
-> >
-> > How? :)
-> >
-> > I'm using the git version of the btrfs progs and 2.6.36, but I don't see those
-> > informations.
-> >
-> > Btrfs v0.19-35-g1b444cd-dirty
-> >
-> >
-> > What am I doing wrong? :(
-> 
-> You didn't include the magic patch.  :p
-> 
-> Raid level reporting was broken for a while, josef sent some patches
-> recently that fixed it, which I saw in cmason's pull request for
-> 2.6.37.
----end quoted text---
+Problems resulting from powerloss should be limited to faulty hardware
+(in which case you're screwed regardless of the filesystem) and lack
+of barrier support (which should show up in dmesg soon after the first
+write goes to disk).  I'm told that the devs do quite a bit of crash
+testing, and I have yet to lose a btrfs filesystem to a powerloss on a
+variety of crappy hardware.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

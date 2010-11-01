@@ -1,86 +1,47 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: Re: [patch 0/2] Control filesystem balances (kernel side)
-Date: Mon, 1 Nov 2010 13:05:58 +0000
-Message-ID: <20101101130558.GB4709@vlad.carfax.org.uk>
-References: <20101030000726.286517546@carfax.org.uk>
- <201010301944.35962.kreijack@libero.it>
+From: "Morten P.D. Stevens" <mstevens@imt-systems.com>
+Subject: btrfs benchmark with 2.6.37-rc1
+Date: Mon, 1 Nov 2010 15:30:05 +0100
+Message-ID: <AANLkTinp=wsayqczkpDB-75MedEpC0Z49FqM2dyFGG4x@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="eJnRUKwClWJh1Khz"
-Cc: linux-btrfs@vger.kernel.org
-To: Goffredo Baroncelli <kreijack@libero.it>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201010301944.35962.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Here is a small btrfs vs. ext4 benchmark with kernel 2.6.37-rc1.
 
---eJnRUKwClWJh1Khz
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+compilebench with options -i 10 -r 30 on 2.6.37-rc1
 
-On Sat, Oct 30, 2010 at 07:44:35PM +0200, Goffredo Baroncelli wrote:
-> On Saturday, 30 October, 2010, Hugo Mills wrote:
-> >    One fundamental question, though -- is the progress monitor
-> > function best implemented as an ioctl, as I've done here, or should it
-> > be two or three sysfs files? I'm thinking of /proc/mdstat...
-> > Obviously, /proc/mdstat would never get into /sys, but exposing the
-> > "expected" and "remaining" values as files has an attractive
-> > simplicity to it.
-> 
-> I like the idea that these info should be put under sysfs. Something like
-> 
-> /sys/btrfs/<filesystem-uuid>/
+btrfs
 
-/sys/fs/btrfs/<uuid> I think. Also:
-/sys/fs/btrfs/<label> as a symlink to the <uuid> directory.
+==========================================================================
+intial create total runs 10 avg 73.11 MB/s (user 0.34s sys 1.96s)
+create total runs 5 avg 49.53 MB/s (user 0.41s sys 1.62s)
+patch total runs 4 avg 22.13 MB/s (user 0.09s sys 1.79s)
+compile total runs 7 avg 104.55 MB/s (user 0.08s sys 1.02s)
+clean total runs 4 avg 564.00 MB/s (user 0.01s sys 0.28s)
+read tree total runs 2 avg 29.62 MB/s (user 0.00s sys 2.77s)
+read compiled tree total runs 1 avg 31.85 MB/s (user 0.00s sys 5.03s)
+delete tree total runs 2 avg 4.06 seconds (user 0.11s sys 1.92s)
+no runs for delete compiled tree
+stat tree total runs 4 avg 2.79 seconds (user 0.07s sys 0.79s)
+stat compiled tree total runs 1 avg 2.50 seconds (user 0.10s sys 0.80s)
 
->                              balance	-> info on balancing
+ext4
 
-For the one-value-per-file rule of sysfs, this should probably be
-balance_expected and balance_completed, each holding a count of block
-groups.
+==========================================================================
+intial create total runs 10 avg 120.03 MB/s (user 0.34s sys 1.31s)
+create total runs 5 avg 69.70 MB/s (user 0.44s sys 1.09s)
+patch total runs 4 avg 30.45 MB/s (user 0.05s sys 1.43s)
+compile total runs 7 avg 120.22 MB/s (user 0.07s sys 1.03s)
+clean total runs 4 avg 1199.56 MB/s (user 0.01s sys 0.10s)
+read tree total runs 2 avg 49.29 MB/s (user 0.03s sys 2.29s)
+read compiled tree total runs 1 avg 51.73 MB/s (user 0.04s sys 4.74s)
+delete tree total runs 2 avg 1.13 seconds (user 0.06s sys 0.68s)
+no runs for delete compiled tree
+stat tree total runs 4 avg 0.83 seconds (user 0.05s sys 0.44s)
+stat compiled tree total runs 1 avg 0.82 seconds (user 0.06s sys 0.45s)
 
->                              devices	-> list of device (a directory of
->                                            links or a file which contains 
->                                            the list of devices)
->                              subvolumes/ -> info on subvolume(s)
->                              label       -> label of the filesystem
->                              <other btrfs filesystem related knoba>
+Best regards,
 
-   The other one that struck me earlier today as being useful was
-tracking the progress of a dev delete operation. But that'll come
-later.
-
-> Obviously we need another btrfs command to extract an uuid from a btrfs 
-> filesystem like:
-> 
-> # btrfs filesystem get-uuid /path/to/a/btrfs/filesystem
-> f9b9c413-0dc8-4e3f-94f2-86faa702f519
-
-   Possibly a slightly more general "fi metadata" with switches for
-UUID and label?
-
-# btrfs fi metadata [-u|--uuid] /path
-# btrfs fi metadata [-l|--label] /path
-
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-          --- Is a diversity twice as good as a university? ---          
-
---eJnRUKwClWJh1Khz
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFMzrs2IKyzvlFcI40RAgwKAJ49tegu6ODpsYSBduCpndMi+5tcgQCg0kxB
-NB+Rr8H3xoHGEY4NeflZbXY=
-=foV4
------END PGP SIGNATURE-----
-
---eJnRUKwClWJh1Khz--
+Morten

@@ -1,87 +1,35 @@
-From: Felipe Contreras <felipe.contreras@gmail.com>
+From: Gregory Maxwell <gmaxwell@gmail.com>
 Subject: Re: Horrible btrfs performance due to fragmentation
-Date: Mon, 1 Nov 2010 17:58:52 +0200
-Message-ID: <AANLkTingbRtFQUoQNZmQubL0LNhVF2hvkdma6j7VDTEU@mail.gmail.com>
+Date: Mon, 1 Nov 2010 12:09:43 -0400
+Message-ID: <AANLkTimMCw8p+YJRzCg7_cEn4UEDTC6vxs6ByUjJYMnL@mail.gmail.com>
 References: <AANLkTinWT9OyicLfdeY+AvWs=5vb5z8skZ3t6keYjk9j@mail.gmail.com>
 	<AANLkTikNywvthaU-+s5HXvh3RX=HxiFWmADW--Ln_Gga@mail.gmail.com>
 	<AANLkTimgCU1tM9VJv8RJ-dim+bRsT7cbZ9ZidbT5sco-@mail.gmail.com>
 	<20101031224757.GA2430@selene>
+	<AANLkTingbRtFQUoQNZmQubL0LNhVF2hvkdma6j7VDTEU@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-To: Hugo Mills <hugo-lkml@carfax.org.uk>,
-	Felipe Contreras <felipe.contreras@gmail.com>,
-	cwillu <cwillu@cwillu.com>,
+Cc: Hugo Mills <hugo-lkml@carfax.org.uk>, cwillu <cwillu@cwillu.com>,
 	Calvin Walton <calvin.walton@gmail.com>,
-	Linux Kernel Mailing List <l
+	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+	linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+To: Felipe Contreras <felipe.contreras@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101031224757.GA2430@selene>
+In-Reply-To: <AANLkTingbRtFQUoQNZmQubL0LNhVF2hvkdma6j7VDTEU@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 1, 2010 at 12:47 AM, Hugo Mills <hugo-lkml@carfax.org.uk> w=
-rote:
-> On Mon, Nov 01, 2010 at 12:36:58AM +0200, Felipe Contreras wrote:
->> On Mon, Nov 1, 2010 at 12:25 AM, cwillu <cwillu@cwillu.com> wrote:
->> > btrfs fi defrag isn't recursive. =C2=A0"btrfs filesystem defrag /h=
-ome" will
->> > defragment the space used to store the folder, without touching th=
-e
->> > space used to store files in that folder.
->>
->> Yes, that came up on the IRC, but:
->>
->> 1) It doesn't make sense: "btrfs filesystem" doesn't allow a fileyst=
-em
->> as argument? Why would anyone want it to be _non_ recursive?
->
-> =C2=A0 You missed the subsequent discussion on IRC about the interact=
-ion
-> of COW with defrag. Essentially, if you've got two files that are COW
-> copies of each other, and one has had something written to it since,
-> it's *impossible* for both files to be defragmented, without making a
-> full copy of both:
->
-> Start with a file (A, etc are data blocks on the disk):
->
-> file1 =3D ABCDEF
->
-> Cow copy it:
->
-> file1 =3D ABCDEF
-> file2 =3D ABCDEF
->
-> Now write to one of them:
->
-> file1 =3D ABCDEF
-> file2 =3D ABCDxF
->
-> =C2=A0 So, either file1 is contiguous, and file2 is fragmented (with =
-the
-> block x somewhere else on disk), or file2 is contiguous, and file1 is
-> fragmented (with E somewhere else on disk). In fact, we've determined
-> by experiment that when you defrag a file that's sharing blocks with
-> another one, the file gets copied in its entirety, thus separating th=
-e
-> blocks of the file and its COW duplicate.
+On Mon, Nov 1, 2010 at 11:58 AM, Felipe Contreras
+<felipe.contreras@gmail.com> wrote:
+> Or when going through all the fragments of a file, have a counter, an=
+d
+> if it exceeds certain limit mark it somehow, so that it gets
+> defragmented at least to a certain extent.
 
-Ok, but the fragmentation would not be an issue in this case.
-
->> 2) The filesystem should not degrade performance so horribly no matt=
-er
->> how long the it has been used. Even git has automatic garbage
->> collection.
->
-> =C2=A0 Since, I believe, btrfs uses COW very heavily internally for
-> ensuring consistency, you can end up with fragmenting files and
-> directories very easily. You probably need some kind of scrubber that
-> goes looking for non-COW files that are fragmented, and defrags them
-> in the background.
-
-Or when going through all the fragments of a file, have a counter, and
-if it exceeds certain limit mark it somehow, so that it gets
-defragmented at least to a certain extent.
-
---=20
-=46elipe Contreras
+Thats elegant, =E2=80=94 then resources are only spent on defragmenting=
+ files
+which are actually in use and which actually need it... but I don't
+see how it deals with the partial mutual exclusivity of defragmenting
+and COWed files.
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

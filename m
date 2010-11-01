@@ -1,21 +1,30 @@
-From: David Nicol <davidnicol@gmail.com>
-Subject: Re: [PATCH v2] btrfs-progs: btrfs: implement async option for
- snapshot command
-Date: Mon, 1 Nov 2010 13:51:59 -0500
-Message-ID: <AANLkTi=to2vd65nfz_G4awQ3=KS0HmesaSjt36bZsK6U@mail.gmail.com>
-References: <1288629262-5405-1-git-send-email-sage@newdream.net> <1288629262-5405-3-git-send-email-sage@newdream.net>
+From: Giangiacomo Mariotti <gg.mariotti@gmail.com>
+Subject: btrfs debug messages useless?
+Date: Mon, 1 Nov 2010 22:45:33 +0100
+Message-ID: <AANLkTinhT-g4-Fe6PvqDhy-KpNtROaBY2KdvoF_01Axd@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: unlisted-recipients:; (no To-header on input)
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1288629262-5405-3-git-send-email-sage@newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-this would be yet another thing that ioctl#21 could have a flag to wait for.
+I have some partitions on my pc formatted with btrfs and every time I
+get errors about one of them I can never identify it. I mean, today I
+got this:
 
-On Mon, Nov 1, 2010 at 11:34 AM, Sage Weil <sage@newdream.net> wrote:
-> Add an 'async' option to the snapshot creating command, that will let you
-> avoid waiting for a new snapshot to commit to disk.
->
-> Signed-off-by: Sage Weil <sage@newdream.net>
+[58817.942531] btrfs bad tree block start 4294967297 23652478976
+[58817.942899] btrfs bad tree block start 4294967297 23652478976
+
+What am I supposed to get from this? How do I identify the partition
+that has this problem?
+
+All the other fs, while reporting problems, print the partition
+they're talking about. btrfs doesn't. Why?
+
+I didn't want to report this because I thought it was just a matter of
+time before this would have been solved, but in the end I decided to
+post here, at least to try to understand if it's just me who's unable
+to understand how to solve this.
+
+-- 
+Giangiacomo

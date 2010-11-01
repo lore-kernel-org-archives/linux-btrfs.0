@@ -1,28 +1,44 @@
-From: Mike Hommey <mh@glandium.org>
-Subject: Re: btrfs and apt package manager in ubuntu
-Date: Mon, 1 Nov 2010 09:10:59 +0100
-Message-ID: <20101101081059.GA4014@glandium.org>
-References: <1288531046.3486.2.camel@home>
- <1288542096.16108.34.camel@ceedasus>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: Re: btrfs-convert fails
+Date: 01 Nov 2010 09:02:00 +0100
+Message-ID: <B$1sRYTD1uB@helmut.hullen.de>
+References: <AANLkTimFGe1PSbns4ps_wGSpSVMNhWehd=zoA8XnAu5_@mail.gmail.com>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Christian <gmane.20.ceed@spamgourmet.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1288542096.16108.34.camel@ceedasus>
+In-Reply-To: <AANLkTimFGe1PSbns4ps_wGSpSVMNhWehd=zoA8XnAu5_@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Oct 31, 2010 at 11:21:36AM -0500, Christian wrote:
-> On Sun, 2010-10-31 at 16:17 +0300, Abdullah Ansari wrote:
-> > it's very slow in installtion with apt in ubuntu
-> 
-> I'm seeing the same thing. When installing using apt the disk grinds
-> "forever" before the installation completes. I have two identical
-> laptops running Linux Mint 10 (rc) with similar disk layout except that
-> one has two btrfs partitions while the other only has ext4. The one with
-> btrfs takes at least 10 times longer to install updates on than the ext4
-> one.
+Hallo, Yan,
 
-That's because dpkg uses sync when unpacking each package.
+Du meintest am 01.11.10:
 
-Mike
+>> I've tried to convert a 12 GByte ext2 partition (nearly full, 280
+>> MByte free) with btrfs-convert.
+>>
+>> After about 15 minutes (700-MHz-CPU) the system tells
+>>
+>> =A0...
+>> =A0creating ext2fs image file
+>> =A0cleaning up system chunk
+>> =A0btrfs-convert: extent-tree.c:2529: btrfs_reserve_extent: Assertio=
+n
+>> =A0 =A0 `!(ret)' failed
+>> =A0Abgebrochen
+
+> Try btrfs-convert -r /dev/xxx, hopefully it will recover your ext2.
+
+Restoring is (now) no problem, I'm still testing. But in some days (or =
+=20
+weeks) I want to convert a partition with 1,5 TByte (which has no =20
+backup) ...
+
+Viele Gruesse!
+Helmut
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

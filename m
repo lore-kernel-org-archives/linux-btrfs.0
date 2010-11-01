@@ -1,34 +1,17 @@
-From: cwillu <cwillu@cwillu.com>
-Subject: Re: How to see raid level?!
-Date: Mon, 1 Nov 2010 04:33:30 -0600
-Message-ID: <AANLkTinc0zL1hmLOD0YpHShu5Jg8eiZwZtJdcVZaG5QO@mail.gmail.com>
-References: <20101101101755.GA2814@scooter>
+From: =?windows-1252?Q?Andreas_Bauer?= <ab@voltage.de>
+Subject: RE: Kernel 2.6.36 btrfs csum bugreport
+Date: Mon, 1 Nov 2010 11:39:33 +0100
+Message-ID: <vmime.4cce98e5.53be.3dea104351d19eb5@mail.voltage.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Felix Blanke <felixblanke@gmail.com>
+Content-Type: text/plain; charset=windows-1252
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101101101755.GA2814@scooter>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 1, 2010 at 4:17 AM, Felix Blanke <felixblanke@gmail.com> wrote:
-> Hi,
->
-> I saw some reports of ppl in this list who did a "btrfs fi df /path" and saw the
-> raidlevel of the data, metadata etc.
->
-> How? :)
->
-> I'm using the git version of the btrfs progs and 2.6.36, but I don't see those
-> informations.
->
-> Btrfs v0.19-35-g1b444cd-dirty
->
->
-> What am I doing wrong? :(
+To follow up on this matter, I have created another two btrfs volumes (also plain - no options - also on two external USB-SATA disks), and am at the moment copying heaps of data between these two. No errors as of yet. All copies are verified by md5sum after the deed.
 
-You didn't include the magic patch.  :p
+The volume in question can still "reliably" reproduce the csum errors on read, though. Aprox. 30 csum errors occur when the whole fs is read. The data is still fine. I can put it aside for further debugging until at most Wednesday morning.
 
-Raid level reporting was broken for a while, josef sent some patches
-recently that fixed it, which I saw in cmason's pull request for
-2.6.37.
+If someone wants me to run diagnostics on it, please let me know. I am glad to be of help (until Wednesday morning).
+
+Andreas

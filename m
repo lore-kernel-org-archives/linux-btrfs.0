@@ -1,81 +1,203 @@
-From: Leonidas Spyropoulos <artafinde@gmail.com>
-Subject: Re: Backporting Recent Btrfs Patches to 2.6.32
-Date: Tue, 2 Nov 2010 19:36:55 +0000
-Message-ID: <AANLkTikr88K5Yt6ewyDvA08UjKuAn5d8BEKq0_V6k34w@mail.gmail.com>
-References: <AANLkTin0HMr2N_hRBu_um+Rf9o+Agjis4E6HLdxkebqv@mail.gmail.com>
+From: Sage Weil <sage@newdream.net>
+Subject: Re: [PATCH v2] btrfs-progs: btrfs: implement 'start-sync' and
+ 'wait-sync' commands
+Date: Tue, 2 Nov 2010 14:56:16 -0700 (PDT)
+Message-ID: <Pine.LNX.4.64.1011021448050.9901@cobra.newdream.net>
+References: <1288629262-5405-1-git-send-email-sage@newdream.net>
+ <1288629262-5405-2-git-send-email-sage@newdream.net> <201011021958.27578.kreijack@libero.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Cc: linux-btrfs@vger.kernel.org
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
+To: Goffredo Baroncelli <kreijack@libero.it>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTin0HMr2N_hRBu_um+Rf9o+Agjis4E6HLdxkebqv@mail.gmail.com>
+In-Reply-To: <201011021958.27578.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 15, 2010 at 8:23 PM, Mitch Harder
-<mitch.harder@sabayonlinux.org> wrote:
-> Since the 2.6.32 kernel is one of the long-term stable kernels, and
-> since a few projects (such as OpenVZ) and distros (such as Debian) ar=
-e
-> using the 2.6.32 kernel, I've put together an experimental git branch
-> to backport later btrfs patches to the 2.6.32 kernel.
->
-> Let me know if there's any interest in this experiment, and I'll try
-> to keep it maintained.
->
-> I've placed a git repository containing this work here:
->
-> http://gitweb.sabayon.org/?p=3Dlinux/kernel/btrfs-backport.git;a=3Dsu=
-mmary
->
-> The backport is currently in "works-for-me" status, and I have been
-> using it for about a week without crashes.
->
-> I did not attempt to backport every patch that has touched
-> linux/fs/btrfs compared to the 2.6.32 kernel. =A0Some patches were pa=
-rt
-> of larger kernel updates that would be outside the scope of a
-> backport.
->
-> I was able to backport the DIO patches and the improvements to ENOSPC
-> handling, as well as most of the other patches in the btrfs-unstable
-> repository.
->
-> Let me know if you have any feedback.
+On Tue, 2 Nov 2010, Goffredo Baroncelli wrote:
+> Like the command "btrfs subvol snapshot", I think that it is better to add a 
+> modifier instead of a new command.
+> 
+>  btrfs filesystem sync [--async]
+> 
+> Sorry if I noticed this too late. But I don't see a valid reason to add 
+> another command. From a UI point of view the meaning of the command is the 
+> same, change only slight the behavior.
+> 
+> Even tough I have to admint that "sync --async" sound strange. May be flush is 
+> better ?
+> > +	{ do_wait_sync, 2,
+> > +	  "filesystem wait-sync", "<path> <transid>\n"
+> > +	        "Wait for the transaction <transid> on the filesystem at 
+> <path> to commit."
+> > +	},
+> 
+> If I understood correctly this command may be used to wait the execution of 
+> several commands: snapshot, subvolume removal, sync...
+> I can suggest a more general name like:
+> 
+> # btrfs filesystem wait-transaction <path> <transid>.
+> 
+> (which may be shortened as "btrfs filesystem wait ..."). 
+
+How about start-transaction and wait-transaction?  Or start-commit and 
+wait-commit?  ('transaction' is a heavily overloaded term.)  IMO both 
+would be less weird than sync --async.
+
+> Another suggestion: instead of checking if the <transid> is 0, leave the 
+> <transid> optional. If <transid> is omitted, then the function waits all the 
+> running transaction.
+
+Definitely.
+
+> Finally I suggest to put a little note about the command behvior when a 
+> transaction is started after the command execution: is there a risk of DOS ?
+
+Okay.  There's no DOS risk (at least no more so than with while true ; do 
+sync ; done).  It'll return immediately if transid has committed.  If 
+transid is 0, it'll find the most recent committing or committed transid 
+and wait for that.  If nothing is currently committing, it'll return 
+immediately.
+
+sage
+
+
+
+> 
+> Anyway great work.
+> 
+> Goffredo
+> 
+> 
+> >  	{ do_resize, 2,
+> >  	  "filesystem resize", "[+/-]<newsize>[gkm]|max <filesystem>\n"
+> >  		"Resize the file system. If 'max' is passed, the filesystem\n"
+> > diff --git a/btrfs_cmds.c b/btrfs_cmds.c
+> > index 8031c58..736437d 100644
+> > --- a/btrfs_cmds.c
+> > +++ b/btrfs_cmds.c
+> > @@ -526,6 +526,55 @@ int do_fssync(int argc, char **argv)
+> >  	return 0;
+> >  }
+> >  
+> > +int do_start_sync(int argc, char **argv)
+> > +{
+> > +	int fd, res;
+> > +	char	*path = argv[1];
+> > +	__u64 transid;
+> > +
+> > +	fd = open_file_or_dir(path);
+> > +	if (fd < 0) {
+> > +		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
+> > +		return 12;
+> > +	}
+> > +
+> > +	printf("StartSync '%s'\n", path);
+> > +	res = ioctl(fd, BTRFS_IOC_START_SYNC, &transid);
+> > +	close(fd);
+> > +	if( res < 0 ){
+> > +		fprintf(stderr, "ERROR: unable to fs-syncing '%s'\n", path);
+> > +		return 16;
+> > +	} else {
+> > +		printf("transid %llu\n", (unsigned long long)transid);
+> > +	}
+> > +
+> > +	return 0;
+> > +}
+> > +
+> > +int do_wait_sync(int argc, char **argv)
+> > +{
+> > +	int fd, res;
+> > +	char	*path = argv[1];
+> > +	__u64 transid = atoll(argv[2]);
+> > +
+> > +	fd = open_file_or_dir(path);
+> > +	if (fd < 0) {
+> > +		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
+> > +		return 12;
+> > +	}
+> > +
+> > +	printf("WaitSync '%s' transid %llu\n", path, (unsigned long 
+> long)transid);
+> > +	res = ioctl(fd, BTRFS_IOC_WAIT_SYNC, &transid);
+> > +	close(fd);
+> > +	if( res < 0 ){
+> > +		fprintf(stderr, "ERROR: unable to wait-sync on '%s' transid 
+> %llu: %s\n", path,
+> > +			(unsigned long long)transid, strerror(errno));
+> > +		return 16;
+> > +	}
+> > +
+> > +	return 0;
+> > +}
+> > +
+> >  int do_scan(int argc, char **argv)
+> >  {
+> >  	int	i, fd;
+> > diff --git a/btrfs_cmds.h b/btrfs_cmds.h
+> > index 7bde191..84c489f 100644
+> > --- a/btrfs_cmds.h
+> > +++ b/btrfs_cmds.h
+> > @@ -19,6 +19,8 @@ int do_clone(int nargs, char **argv);
+> >  int do_delete_subvolume(int nargs, char **argv);
+> >  int do_create_subvol(int nargs, char **argv);
+> >  int do_fssync(int nargs, char **argv);
+> > +int do_start_sync(int nargs, char **argv);
+> > +int do_wait_sync(int nargs, char **argv);
+> >  int do_defrag(int argc, char **argv);
+> >  int do_show_filesystem(int nargs, char **argv);
+> >  int do_add_volume(int nargs, char **args);
+> > diff --git a/man/btrfs.8.in b/man/btrfs.8.in
+> > index 26ef982..e87b5fe 100644
+> > --- a/man/btrfs.8.in
+> > +++ b/man/btrfs.8.in
+> > @@ -19,6 +19,10 @@ btrfs \- control a btrfs filesystem
+> >  .PP
+> >  \fBbtrfs\fP \fBfilesystem sync\fP\fI <path> \fP
+> >  .PP
+> > +\fBbtrfs\fP \fBfilesystem start-sync\fP\fI <path> \fP
+> > +.PP
+> > +\fBbtrfs\fP \fBfilesystem wait-sync\fP\fI <path> <transid>\fP
+> > +.PP
+> >  \fBbtrfs\fP \fBfilesystem resize\fP\fI [+/\-]<size>[gkm]|max 
+> <filesystem>\fP
+> >  .PP
+> >  \fBbtrfs\fP \fBdevice scan\fP\fI [<device> [<device>..]]\fP
+> > @@ -115,6 +119,16 @@ all the block devices.
+> >  Force a sync for the filesystem identified by \fI<path>\fR.
+> >  .TP
+> >  
+> > +\fBfilesystem start-sync\fR\fI <path> \fR
+> > +Start a sync operation for the filesystem identified by \fI<path>\fR.  A 
+> transaction id
+> > +is printed that can be waited on using the \fBfilesystem wait-sync\fR 
+> command.
+> > +.TP
+> > +
+> > +\fBfilesystem wait-sync\fR\fI <path> <transid>\fR
+> > +Wait for a the transaction \fI<transid>\fR to commit to disk.  If 
+> \fI<transid>\fR is zero,
+> > +wait for any currently committing transaction to commit.
+> > +.TP
+> > +
+> >  .\"
+> >  .\" Some wording are extracted by the resize2fs man page
+> >  .\"
+> > -- 
+> > 1.7.0
+> > 
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> > 
+> 
+> 
+> -- 
+> gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
+> Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
 > --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->
-Hi there,
-
-I've been trying to install your kernel into my debian squezze/sid
-system for test the new features of btrfs with failure so far.
-My problem is that I have a 2.6.32 kernel and recent changes affecting
-the btrfs system is not implemented so your repo seems like a
-life-savior.
-
-The only thing is that I am not able to fetch it.
-I always stuck to
-fatal: The remote end hung up unexpectedly
-
-Also I wouldn't mind updating the kernel to newer ones although I am
-not able to find any repositories with .deb files for 2.6.32 and
-above. The only choise so far is experimental 2.6.36 repo which seems
-to work but I don't have the linux-kbuild for installing the headers.
-Thus the idea of building one myself.
-Any suggestion of how to get the new changes of btrfs on my linux-box
-would be welcome.
-
-Thanks
-Leonidas
-
-PS: sorry if this is kinda out of the mailing-list topics.
-
---=20
-Caution: breathing may be hazardous to your health.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 

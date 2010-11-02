@@ -1,41 +1,41 @@
-From: Chris Samuel <chris@csamuel.org>
-Subject: Re: btrfs-convert fails
-Date: Tue, 02 Nov 2010 11:43:11 +1100
-Message-ID: <4CCF5E9F.1040001@csamuel.org>
-References: <20101101104943.00007ff9@unknown>	<B$1ssrji1uB@helmut.hullen.de> <AANLkTi=qwtEwBTxsqEBzQ78QA852wh9RDG-HNmABpj22@mail.gmail.com>
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: Re: [patch 1/2] Balance progress monitoring (updated)
+Date: Tue, 02 Nov 2010 08:51:25 +0800
+Message-ID: <4CCF608D.8030706@cn.fujitsu.com>
+References: <20101030000726.286517546@carfax.org.uk> <20101030000741.689283553@carfax.org.uk> <20101030133934.GD9369@selene> <4CCE751D.6030204@cn.fujitsu.com> <20101101125510.GA4709@vlad.carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+To: Hugo Mills <hugo-lkml@carfax.org.uk>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=qwtEwBTxsqEBzQ78QA852wh9RDG-HNmABpj22@mail.gmail.com>
+In-Reply-To: <20101101125510.GA4709@vlad.carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/11/10 23:20, cwillu wrote:
+On 11/01/2010 08:55 PM, Hugo Mills wrote:
+> On Mon, Nov 01, 2010 at 04:06:53PM +0800, liubo wrote:
+>> On 10/30/2010 09:39 PM, Hugo Mills wrote:
+>>> This patch introduces a basic form of progress monitoring for balance
+>>> operations, by counting the number of block groups remaining. The
+>>> information is exposed to userspace by an ioctl.
+>>>
+>> IMO, tracking the information of blocks which are balancing also makes sense. 
+>> For example, the block information's blocknr. 
+>> It can help us monitor better.
+> 
+>    I don't see how that will help. The block group IDs (which is all
+> that we get at this level) are effectively arbitrary 64-bit numbers,
+> and are what appear in the kernel logs. How could that information be
+> used to improve monitoring?
 
-> Problems resulting from powerloss should be limited to faulty hardware
-> (in which case you're screwed regardless of the filesystem) and lack
-> of barrier support (which should show up in dmesg soon after the first
-> write goes to disk).
+64-bit numbers are also shown in btrfs-debug-tree.
+With btrfs-debug-tree, it would be helpful to track balanced extent buffers.
 
-Note that for until 2.6.31 the DM layer didn't support barrier
-operations fully, according to this email:
+thanks,
+liubo
 
-http://www.spinics.net/lists/linux-ext4/msg15789.html
+> 
+>    I'm not ruling out the idea completely -- I just can't see at the
+> moment how it would be used.
+> 
+>    Hugo.
+> 
 
-# Barrier infrastructure started to get added to the DM
-# core in 2.6.30, see: http://git.kernel.org/linus/af7e466a1ace
-#
-# But barriers were not enabled for all DM targets (_except_
-# dm-multipath) until 2.6.31.  So 2.6.31's dm-crypt does support
-# barriers, see: http://git.kernel.org/linus/647c7db14ef9
-#
-# If the underlying device(s) support barriers DM should
-# faithfully pass them on (again except for dm-multipath).
-# Also, requests with barriers that result in -EOPNOTSUPP
-# are retried without the barrier, see:
-# http://git.kernel.org/linus/51aa32284958
-
-cheers,
-Chris
--- 
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC

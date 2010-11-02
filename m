@@ -1,30 +1,41 @@
-From: Giangiacomo Mariotti <gg.mariotti@gmail.com>
-Subject: btrfs debug messages useless?
-Date: Mon, 1 Nov 2010 22:45:33 +0100
-Message-ID: <AANLkTinhT-g4-Fe6PvqDhy-KpNtROaBY2KdvoF_01Axd@mail.gmail.com>
+From: Chris Samuel <chris@csamuel.org>
+Subject: Re: btrfs-convert fails
+Date: Tue, 02 Nov 2010 11:43:11 +1100
+Message-ID: <4CCF5E9F.1040001@csamuel.org>
+References: <20101101104943.00007ff9@unknown>	<B$1ssrji1uB@helmut.hullen.de> <AANLkTi=qwtEwBTxsqEBzQ78QA852wh9RDG-HNmABpj22@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTi=qwtEwBTxsqEBzQ78QA852wh9RDG-HNmABpj22@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have some partitions on my pc formatted with btrfs and every time I
-get errors about one of them I can never identify it. I mean, today I
-got this:
+On 01/11/10 23:20, cwillu wrote:
 
-[58817.942531] btrfs bad tree block start 4294967297 23652478976
-[58817.942899] btrfs bad tree block start 4294967297 23652478976
+> Problems resulting from powerloss should be limited to faulty hardware
+> (in which case you're screwed regardless of the filesystem) and lack
+> of barrier support (which should show up in dmesg soon after the first
+> write goes to disk).
 
-What am I supposed to get from this? How do I identify the partition
-that has this problem?
+Note that for until 2.6.31 the DM layer didn't support barrier
+operations fully, according to this email:
 
-All the other fs, while reporting problems, print the partition
-they're talking about. btrfs doesn't. Why?
+http://www.spinics.net/lists/linux-ext4/msg15789.html
 
-I didn't want to report this because I thought it was just a matter of
-time before this would have been solved, but in the end I decided to
-post here, at least to try to understand if it's just me who's unable
-to understand how to solve this.
+# Barrier infrastructure started to get added to the DM
+# core in 2.6.30, see: http://git.kernel.org/linus/af7e466a1ace
+#
+# But barriers were not enabled for all DM targets (_except_
+# dm-multipath) until 2.6.31.  So 2.6.31's dm-crypt does support
+# barriers, see: http://git.kernel.org/linus/647c7db14ef9
+#
+# If the underlying device(s) support barriers DM should
+# faithfully pass them on (again except for dm-multipath).
+# Also, requests with barriers that result in -EOPNOTSUPP
+# are retried without the barrier, see:
+# http://git.kernel.org/linus/51aa32284958
 
+cheers,
+Chris
 -- 
-Giangiacomo
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC

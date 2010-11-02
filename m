@@ -1,59 +1,38 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Horrible btrfs performance due to fragmentation
-Date: Mon, 1 Nov 2010 20:55:11 -0400
-Message-ID: <20101102005511.GA7188@think>
-References: <AANLkTinWT9OyicLfdeY+AvWs=5vb5z8skZ3t6keYjk9j@mail.gmail.com>
+From: Christopher Tracey <cptracey1980@warpmail.net>
+Subject: raid0 corruption, how to restore?
+Date: Tue, 02 Nov 2010 04:14:01 -0400
+Message-ID: <4CCFC849.6040407@warpmail.net>
+Reply-To: cptracey1980@warpmail.net
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Calvin Walton <calvin.walton@gmail.com>,
-	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-	linux-btrfs@vger.kernel.org
-To: Felipe Contreras <felipe.contreras@gmail.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <AANLkTinWT9OyicLfdeY+AvWs=5vb5z8skZ3t6keYjk9j@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[ resend, sorry if anyone sees this twice ]
+I have two disks that I formatted as btrfs RAID0 on opensuse 11.3.  The 
+raid worked well several days until there was a power surge.  The system 
+successfully rebooted and the btrfs raid reappeared, but the kernel 
+occasionally threw oops.  That was my first experience with oops.  After 
+two days, the btrfs raid failed to mount via fstab and when I manually 
+tried to mount it, there was a kernel panic.
 
-On Sun, Oct 31, 2010 at 09:58:18PM +0200, Felipe Contreras wrote:
-> On Mon, Oct 11, 2010 at 6:46 PM, Calvin Walton <calvin.walton@gmail.com> wrote:
-> > On Mon, 2010-10-11 at 03:30 +0300, Felipe Contreras wrote:
-> >> I use btrfs on most of my volumes on my laptop, and I've always felt
-> >> booting was very slow, but definitely sure is slow, is starting up
-> >> Google Chrome:
-> >>
-> >> encrypted ext4: ~20s
-> >> btrfs: ~2:11s
-> >>
-> >> I have tried different things to find out exactly what is the issue,
-> >> but haven't quite found it yet.
-> >
-> > If you've been using this volume for a while, it could just have become
-> > badly fragmented. You could try btrfs's fancy online defragmentation
-> > abilities to see if that'll give you an improvement:
-> >
-> > # btrfs filesystem defragment /mountpoint/of/volume
-> >
-> > Let us know if that helps, of course :)
-> 
-> I finally managed to track down this issue. Indeed the fragmentation
-> is horrible, and 'btrfs filesystem defragment' doesn't help:
+I would like to recover the data from the btrfs raid.  If I issue the 
+command:  btrfs-show, I receive:
 
-So there are two different issues, and you'll need sysrq-w to see which
-one you're really hitting.  The first is fragmentation, where you'll
-want to defrag a given file with btrfs filesystem defrag <filename>
+Label: HD103SJ_btrfs  uuid: 2ff6e89d-b790-425b-837b-475d1504be69
+         Total devices 2 FS bytes used 733.80GB
+         devid    1 size 931.51GB used 369.53GB path /dev/sdd
+         devid    2 size 931.51GB used 369.51GB path /dev/sde
+Btrfs Btrfs v0.19
 
-The second is that when we first mount a filesystem, we have to spend a
-long time building up the index of which blocks are free.  Josef has
-fixed this for the 2.6.37-rc1, and Linus' current tree has his changes.
+Obviously the RAID and the filesystems are still there.  I then try to 
+fsck the drives:
 
-You can also pull from the btrfs-unstable master branch and get his
-changes against 2.6.36.
+btrfsck /dev/sde
+btrfsck: disk-io.c:416: find_and_setup_root: Assertion `!(!root->node)' 
+failed.
 
-To use the new code, mount -o space_cache.  You only need to do this
-once.
+I do not understand the error message that is provided.  Can someone 
+shed a little light on that message?
 
-The first mount will be slow, but once we've read in the block groups
-for the first mount, later mounts will be much faster.
-
--chris
+Thank you.

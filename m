@@ -1,130 +1,91 @@
-From: Sean Reifschneider <jafo@tummy.com>
-Subject: Re: Patch to provide "btrfs subvolume last-gen".
-Date: Wed, 03 Nov 2010 05:04:58 -0600
-Message-ID: <4CD141DA.8050709@tummy.com>
+From: Hugo Mills <hugo-lkml@carfax.org.uk>
+Subject: Re: [PATCH v2] btrfs-progs: btrfs: implement 'start-sync' and
+ 'wait-sync' commands
+Date: Wed, 3 Nov 2010 11:49:09 +0000
+Message-ID: <20101103114909.GA8137@vlad.carfax.org.uk>
+References: <1288629262-5405-1-git-send-email-sage@newdream.net>
+ <1288629262-5405-2-git-send-email-sage@newdream.net>
+ <201011021958.27578.kreijack@libero.it>
 Mime-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="------------enig1E65A02E545695F172220921"
-To: linux-btrfs@vger.kernel.org
+	protocol="application/pgp-signature"; boundary="ibTvN161/egqYuK8"
+Cc: linux-btrfs@vger.kernel.org, Sage Weil <sage@newdream.net>
+To: Goffredo Baroncelli <kreijack@libero.it>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201011021958.27578.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
---------------enig1E65A02E545695F172220921
-Content-Type: multipart/mixed;
- boundary="------------080908000005050907090002"
 
-This is a multi-part message in MIME format.
---------------080908000005050907090002
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
+--ibTvN161/egqYuK8
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Thanks for the feedback Goffredo.  I've given it some thought and in the
-spirit of "small programs cooperating", it seems like just having it writ=
-e
-out the generation id without the surrounding text makes sense.  The text=
+On Tue, Nov 02, 2010 at 07:58:27PM +0100, Goffredo Baroncelli wrote:
+> On Monday, 01 November, 2010, Sage Weil wrote:
+> > The 'start-sync' command initiates a sync, but does not wait for it to
+> > complete.  A transaction is printed that can be fed to 'wait-sync', which
+> > will wait for it to commit.
+> > 
+> > 'wait-sync' can also be used in combination with 'async-snapshot' to wait
+> > for an async snapshot creation to commit.
+> > 
+> > Updates the man page too.
+> > 
+> > Signed-off-by: Sage Weil <sage@newdream.net>
+> > ---
+> >  btrfs.c        |    9 +++++++++
+> >  btrfs_cmds.c   |   49 +++++++++++++++++++++++++++++++++++++++++++++++++
+> >  btrfs_cmds.h   |    2 ++
+> >  man/btrfs.8.in |   14 ++++++++++++++
+> >  4 files changed, 74 insertions(+), 0 deletions(-)
+> > 
+> > diff --git a/btrfs.c b/btrfs.c
+> > index 46314cf..c871f4a 100644
+> > --- a/btrfs.c
+> > +++ b/btrfs.c
+> > @@ -77,6 +77,15 @@ static struct Command commands[] = {
+> >  	  "filesystem sync", "<path>\n"
+> >  		"Force a sync on the filesystem <path>."
+> >  	},
+> > +	{ do_start_sync, 1,
+> > +	  "filesystem start-sync", "<path>\n"
+> > +	        "Start a sync on the filesystem <path>, and print the 
+> resulting\n"
+> > +	        "transaction id."
+> > +	},
+> 
+> Like the command "btrfs subvol snapshot", I think that it is better to add a 
+> modifier instead of a new command.
+> 
+>  btrfs filesystem sync [--async]
+> 
+> Sorry if I noticed this too late. But I don't see a valid reason to add 
+> another command. From a UI point of view the meaning of the command is the 
+> same, change only slight the behavior.
+> 
+> Even tough I have to admint that "sync --async" sound strange. May be flush is 
+> better ?
 
-I pulled from the find-new sub-command, where it makes sense (to
-differentiate it from the other changes).
+   How about "btrfs filesystem sync --background"?
 
-The patch here makes that change and also adds the man page entries for
-last-gen and find-new (since last-gen refers to it, but there isn't any
-documentation for it).
+   Hugo.
 
-Thanks,
-Sean
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+            --- You're never alone with a rubber duck... ---             
 
---------------080908000005050907090002
-Content-Type: text/plain;
- name="0002-Updating-man-page-and-removing-transid-text.patch"
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: attachment;
- filename*0="0002-Updating-man-page-and-removing-transid-text.patch"
-
-=46rom 17459dcc8cc9d54963cbfd844006340315b73e86 Mon Sep 17 00:00:00 2001
-From: Sean Reifschneider <jafo@tummy.com>
-Date: Wed, 3 Nov 2010 04:59:20 -0600
-Subject: [PATCH 2/2] Updating man page and removing transid text.
-
----
- btrfs_cmds.c   |    2 +-
- man/btrfs.8.in |   19 +++++++++++++++++++
- 2 files changed, 20 insertions(+), 1 deletions(-)
-
-diff --git a/btrfs_cmds.c b/btrfs_cmds.c
-index 25eafb8..9439457 100644
---- a/btrfs_cmds.c
-+++ b/btrfs_cmds.c
-@@ -272,7 +272,7 @@ int do_get_latest_gen(int argc, char **argv)
- 		return 12;
- 	}
- 	max_found =3D find_root_gen(fd);
--	printf("transid marker was %llu\n", (unsigned long long)max_found);
-+	printf("%llu\n", (unsigned long long)max_found);
- 	return 0;
- }
-=20
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index 26ef982..23ba7d2 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -15,6 +15,10 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBsubvolume set-default\fP\fI <id> <path>\fP
- .PP
-+\fBbtrfs\fP \fBsubvolume last-gen\fP\fI <path>\fP
-+.PP
-+\fBbtrfs\fP \fBsubvolume find-new\fP\fI <path> <last_gen>\fP
-+.PP
- \fBbtrfs\fP \fBfilesystem defrag\fP\fI <file>|<dir> [<file>|<dir>...]\fP=
-
- .PP
- \fBbtrfs\fP \fBfilesystem sync\fP\fI <path> \fP
-@@ -96,6 +100,21 @@ These <ID> may be used by the \fBsubvolume set-defaul=
-t\fR command, or at
- mount time via the \fIsubvol=3D\fR option.
- .TP
-=20
-+\fBsubvolume last-gen\fR\fI <path>\fR
-+Return the most current generation id of \fI<path>\fR.  This number is
-+suitable for use with the \fBsubvolume find-new\fR command, for example.=
-
-+A single number is sent to stdout, representing the most recent generati=
-on
-+within a subvolume/snapshot.
-+
-+\fBsubvolume find-new\fR\fI <path> <last_gen>\fR
-+Display changes to the subvolume \fI<path>\fR since the generation id
-+\fI<last_gen>\fR.  The resulting information includes filenames, offset
-+within the file, length, and more.  The last line output displays the mo=
-st
-+recent generation id represented by the output.  For example, one could
-+feed this id back in to get an ongoing report of changes to the
-+subvolume.
-+.TP
-+
- \fBsubvolume set-default\fR\fI <id> <path>\fR
- Set the subvolume of the filesystem \fI<path>\fR which is mounted as=20
- \fIdefault\fR. The subvolume is identified by \fB<id>\fR, which=20
---=20
-1.7.3.1
-
-
---------------080908000005050907090002--
-
---------------enig1E65A02E545695F172220921
+--ibTvN161/egqYuK8
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.10 (GNU/Linux)
-Comment: Using GnuPG with Fedora - http://enigmail.mozdev.org/
 
-iD8DBQFM0UHaxUhyMYEjVX0RAjtMAJ9V/29ublm7g3l1vzpG44H4TVTKVQCgnXpd
-UZY/1c8u1cCU5RII5QY2KRs=
-=DZpy
+iD8DBQFM0Uw0IKyzvlFcI40RAmhpAJ9AgkGGUObuknBs2pwE1nh4E6s/zACdEXlS
+nFoAHHyF0XzIeilRHq2cDaQ=
+=Z2c1
 -----END PGP SIGNATURE-----
 
---------------enig1E65A02E545695F172220921--
+--ibTvN161/egqYuK8--

@@ -1,35 +1,36 @@
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: Finding Fragmentation on a Btrfs Volume
-Date: Thu, 4 Nov 2010 23:34:16 -0500
-Message-ID: <AANLkTik9f5XsbVDCaOyYHLRHhWEUZz+kEmvVoM4cH-cg@mail.gmail.com>
+From: Tomasz Chmielewski <mangoo@wpkg.org>
+Subject: Re: btrfs and apt package manager in ubuntu
+Date: Fri, 05 Nov 2010 12:25:03 +0100
+Message-ID: <4CD3E98F.7070505@wpkg.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I was Googling around for ways to check fragmentation on Btrfs, and I
-came across the 'filefrag' command.
+> On Sun, Oct 31, 2010 at 11:21:36AM -0500, Christian wrote:
+>> On Sun, 2010-10-31 at 16:17 +0300, Abdullah Ansari wrote:
+>> > it's very slow in installtion with apt in ubuntu
+>>
+>> I'm seeing the same thing. When installing using apt the disk grinds
+>> "forever" before the installation completes. I have two identical
+>> laptops running Linux Mint 10 (rc) with similar disk layout except that
+>> one has two btrfs partitions while the other only has ext4. The one with
+>> btrfs takes at least 10 times longer to install updates on than the ext4
+>> one.
+>
+> That's because dpkg uses sync when unpacking each package.
 
-Even though it is a ext2/3 command, it seems to work on Btrfs files
-since it uses the FIEMAP ioctl to determine the number of extents.
+It's also quite painful when one runs a virtual machine (KVM) which has 
+a btrfs filesystem (the virtual machine disk being itself on host's ext4).
 
->From a bash prompt, I found I could examine large sections with something like:
+While updating or installing a large number of packages (i.e. 50-100 MB) 
+on a guest with btrfs filesystem, you can _really_ feel it on the host 
+(system load - 10-20 or more) and other virtual machines (i.e. SSH times 
+out when trying to log in to other virtual machines).
 
-# for file in $(find <PATH/TO/BTRFS/VOL/> -type f); do filefrag
-${file}; done | sort -n -k 2 | less
 
-You may want to start with smaller, more discrete portions of a Btrfs
-volume, since I ran into stalls running on more populated Btrfs
-volumes.
+-- 
+Tomasz Chmielewski
+http://wpkg.org
 
-Also, I haven't tested this on any RAID devices.
-
-I was wondering if the people on the M/L could tell if the approach
-was garbage, or should it work?
-
-You can use the results to defrag targeted files.  However, I
-discovered that defraging files on a Volume that has snapshots may be
-counter-productive.  You end up duplicating the files you are
-defragging, since Btrfs now needs to create different copies for the
-snapshot and the original (or at least portions of the file).

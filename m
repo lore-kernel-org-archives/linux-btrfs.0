@@ -1,31 +1,44 @@
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: Re: [PATCH] Btrfs-progs: add support for mixed data+metadata block
- groups V3
-Date: Sat, 6 Nov 2010 16:10:54 -0500
-Message-ID: <AANLkTikC+JFSGeb585oO2AdMSBtFqgSPXbHoePmPtDvC@mail.gmail.com>
-References: <1288204654-2127-1-git-send-email-josef@redhat.com>
-	<20101029012013.68a18b8a.ctpm@ist.utl.pt>
-	<20101029010308.GC11684@dhcp231-156.rdu.redhat.com>
+From: Brian Neu <proclivity76@yahoo.com>
+Subject: postgresql activity causes crash, 2.6.36.1
+Date: Sat, 6 Nov 2010 18:08:59 -0700 (PDT)
+Message-ID: <225116.26295.qm@web51906.mail.re2.yahoo.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Josef Bacik <josef@redhat.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101029010308.GC11684@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-My apologies if I missed it, but this looks like the most recent
-version of this patch ([PATCH] Btrfs-progs: add support for mixed
-data+metadata block groups V3), and this version needs updating to
-take into account that BTRFS_FEATURE_INCOMPAT_SPACE_CACHE is no longer
-needed.
+After a successful db startup, this crash was reproducible every time with db 
+activity, or possibly just time.  The filesystem is a raid1 and even after a 
+reformat and restore from backup, the crash remains:
 
-The kernel btrfs code expects:
+Label: slash  uuid: a9730db3-a475-45bb-af94-a873e235114b
+        Total devices 2 FS bytes used 39.04GB
+        devid    2 size 97.66GB used 48.51GB path /dev/sdb2
+        devid    1 size 97.66GB used 48.53GB path /dev/sda2
 
-#define BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS    (1ULL << 2)
+mounted as:
+# mount |grep sdb2
+/dev/sdb2 on / type btrfs (rw,noatime)
 
-But this version of the patch gives:
 
-#define BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS    (1ULL << 3)
 
-with (1ULL << 2) being occupied by the space_cache incompat flag.
+This is transcribed from the screen, so forgive type-o's and "<blah>"  .    Let 
+me know if I skipped something important.
+(every line starts with [27163.079010] )
+
+Call trace:
+__btrfs_submit_bio_done+0x1b/0x1d [btrfs]
+run_one_async_done+0x94/0x98 [btrfs]
+run_ordered_completions++0x78/0xaa [btrfs]
+worker_loop+0x199/0x4ec [btrfs]
+kthread+0x0d/0xa5
+kernel_thread_helper+0x4/0x10
+? restore_args+0x0/0x30
+? kthread+0x0/0xa5
+? kernel_thread_helper+0x0/0x10
+Code: 74 04 <blah blah>
+RIP [<ffff<blah> 7>] btrfs_map_bio+0x88/0x1c9
+RSP <ffb<blah>>
+---[ end trace f8<blah> ]---
+

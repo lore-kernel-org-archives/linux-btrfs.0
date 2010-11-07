@@ -1,45 +1,97 @@
-From: =?windows-1252?Q?Andreas_Bauer?= <ab@voltage.de>
-Subject: RE: Kernel 2.6.36 btrfs csum bugreport
-Date: Sun, 7 Nov 2010 16:37:09 +0100
-Message-ID: <vmime.4cd6c7a5.d26.30bad7833a9ad975@mail.voltage.de>
+From: Jesper Juhl <jj@chaosbits.net>
+Subject: btrfs: potential null derefs
+Date: Sun, 7 Nov 2010 22:30:39 +0100 (CET)
+Message-ID: <alpine.LNX.2.00.1011062302390.24801@swampdragon.chaosbits.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=windows-1252
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: Chris Mason <chris.mason@oracle.com>, linux-kernel@vger.kernel.org
 To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 01, 2010 at 12:02:10PM CET, cwillu wrote:
+Hi,
 
- Ahhhhhhh, and that makes this make sense:
- 
- Andreas, have you checked which file(s) are giving the errors?  if
- not, you can use "find /whatever/mountpoint -xdev -inum 5098 -print"
- to get the filename.  And I would bet that it's small enough that it's
- being inlined into the metadata block group, and therefore covered
- under the default "dup" profile of that block group, which is why
- you're getting the actual file data back.
+There are a number of potential NULL pointer dereferences in BTRFS - see 
+below.
 
-Sorry to disappoint, the files hit are from big (8 GB) to small. I took 
-the  opportunity to compare the syslog from both machines I tested on,
-and the csum ino and off counters are completely different in each case.
+Unfortunately I don't know what the best way to deal with these are in 
+BTRFS, so I'll leave the bug fixing to others and stick to just reporting 
+them.
 
-The filesystem which showed this behaviour has now been destoyed, and
-in further testing I wasn't able to reproduce the bug.
 
-To summarize:
+In fs/btrfs/file.c::btrfs_file_aio_write() we do this:
+...
+	pages = kmalloc(nrptrs * sizeof(struct page *), GFP_KERNEL);
+...[skip lots of lines that don't touch 'pages']...
+		memset(pages, 0, sizeof(struct page *) * nrptrs);
 
-- a btrfs about 400GB in size showed several csum errors
-on reading while the data read was correct. The same thing happened
-when the filesystem was mounted on another machine (same kernel).
+		ret = btrfs_delalloc_reserve_space(inode, write_bytes);
+		if (ret)
+			goto out;
 
-- the errors could be consistently reproduced by reading enough data. 
+		ret = prepare_pages(root, file, pages, num_pages,
+				    pos, first_index, last_index,
+				    write_bytes);
+...
 
-- about 60 - 120 csum happened on reading about 250 GB of data.
+since kmalloc() may fail and return a NULL pointer this could potentially 
+go bad.
 
-- the csum error happened to different inodes each time (and each run)
+Also in fs/btrfs/compression.c::btrfs_submit_compressed_write() there's 
+this:
+...
+	cb = kmalloc(compressed_bio_size(root, compressed_len), GFP_NOFS);
+	atomic_set(&cb->pending_bios, 0);
+	cb->errors = 0;
+...
 
-As I don't have enough time at the moment to familiarize myself with
-the btrfs code, I have to let go of this issue at this point. Thank 
-you for your work.
+Which will also dereference a NULL pointer when kmalloc() fails.
 
--- A.B.
+and in the same function:
+...
+ 	bio = compressed_bio_alloc(bdev, first_byte, GFP_NOFS);
+	bio->bi_private = cb;
+...
+			bio = compressed_bio_alloc(bdev, first_byte, GFP_NOFS);
+			bio->bi_private = cb;
+...
+
+Which are also potential NULL derefs since (at least as far as I can 
+tell) compressed_bio_alloc() can also fail and return NULL.
+
+And then in btrfs_submit_compressed_read() :
+...
+	cb = kmalloc(compressed_bio_size(root, compressed_len), GFP_NOFS);
+	atomic_set(&cb->pending_bios, 0);
+	cb->errors = 0;
+...
+	cb->compressed_pages = kmalloc(sizeof(struct page *) * nr_pages,
+				       GFP_NOFS);
+	bdev = BTRFS_I(inode)->root->fs_info->fs_devices->latest_bdev;
+
+	for (page_index = 0; page_index < nr_pages; page_index++) {
+		cb->compressed_pages[page_index] = alloc_page(GFP_NOFS |
+				      			      __GFP_HIGHMEM);
+	}
+...
+			comp_bio = compressed_bio_alloc(bdev, cur_disk_byte,
+							GFP_NOFS);
+			comp_bio->bi_private = cb;
+...
+
+All 3 risk dereferencing a NULL pointer when the allocations fail.
+
+
+Enjoy ;-)
+
+
+
+PS.
+  Please CC me on replies.
+
+
+
+-- 
+Jesper Juhl <jj@chaosbits.net>             http://www.chaosbits.net/
+Plain text mails only, please      http://www.expita.com/nomime.html
+Don't top-post  http://www.catb.org/~esr/jargon/html/T/top-post.html

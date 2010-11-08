@@ -1,133 +1,146 @@
 From: Hugo Mills <hugo@carfax.org.uk>
-Subject: [PATCH v2 1/2] Balance progress monitoring.
-Date: Tue, 9 Nov 2010 22:43:15 +0000
-Message-ID: <0435dceee4613994f662ac4e3f423bf4274136a4.1289522188.git.hugo@carfax.org.uk>
-References: <cover.1289522188.git.hugo@carfax.org.uk>
+Subject: [PATCH v2 1/3] Balance progress monitoring.
+Date: Mon, 8 Nov 2010 20:03:49 +0000
+Message-ID: <1a77871a7e41984b5f153862ae4f61a3f59f4cc3.1289521433.git.hugo@carfax.org.uk>
+References: <cover.1289521433.git.hugo@carfax.org.uk>
 To: linux-btrfs@vger.kernel.org,
 	Goffredo Baroncelli <kreijack@libero.it>,
-	Chris Mason <chris.mason@oracle.com>,
-	liubo <liubo2009@cn.fujitsu.com>
+	Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <cover.1289522188.git.hugo@carfax.org.uk>
+In-Reply-To: <cover.1289521433.git.hugo@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This patch introduces a basic form of progress monitoring for balance
 operations, by counting the number of block groups remaining. The
 information is exposed to userspace by an ioctl.
 
+We also add "btrfs balance start" as an alias for "btrfs filesystem
+balance", so that all balance-related functions are available under
+one prefix.
+
 Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
 ---
- fs/btrfs/ctree.h   |    9 +++++++
- fs/btrfs/disk-io.c |    2 +
- fs/btrfs/ioctl.c   |   34 +++++++++++++++++++++++++++++
- fs/btrfs/ioctl.h   |    7 ++++++
- fs/btrfs/volumes.c |   61 ++++++++++++++++++++++++++++++++++++++++++++++++++-
- 5 files changed, 111 insertions(+), 2 deletions(-)
+ btrfs.c        |    8 +++++++
+ btrfs_cmds.c   |   60 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ btrfs_cmds.h   |    1 +
+ ioctl.h        |    7 ++++++
+ man/btrfs.8.in |    7 ++++++
+ 5 files changed, 83 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 8db9234..67fb603 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -841,6 +841,11 @@ struct btrfs_block_group_cache {
- 	struct list_head cluster_list;
- };
+diff --git a/btrfs.c b/btrfs.c
+index 46314cf..0b6186c 100644
+--- a/btrfs.c
++++ b/btrfs.c
+@@ -95,6 +95,14 @@ static struct Command commands[] = {
+ 	  "filesystem balance", "<path>\n"
+ 		"Balance the chunks across the device."
+ 	},
++	{ do_balance, 1,
++	  "balance start", "<path>\n"
++		"Synonym for \"btrfs filesystem balance\"."
++	},
++	{ do_balance_progress, -1,
++	  "balance progress", "[-m|--monitor] <path>\n"
++		"Show progress of the balance operation running on <path>."
++	},
+ 	{ do_scan,
+ 	  999, "device scan", "[<device> [<device>..]\n"
+ 		"Scan all device for or the passed device for a btrfs\n"
+diff --git a/btrfs_cmds.c b/btrfs_cmds.c
+index 8031c58..2745d64 100644
+--- a/btrfs_cmds.c
++++ b/btrfs_cmds.c
+@@ -28,6 +28,7 @@
+ #include <limits.h>
+ #include <uuid/uuid.h>
+ #include <ctype.h>
++#include <getopt.h>
  
-+struct btrfs_balance_info {
-+	u64 expected;
-+	u64 completed;
-+};
-+
- struct reloc_control;
- struct btrfs_device;
- struct btrfs_fs_devices;
-@@ -1050,6 +1055,10 @@ struct btrfs_fs_info {
- 	unsigned metadata_ratio;
+ #undef ULONG_MAX
  
- 	void *bdev_holder;
-+
-+	/* Keep track of any rebalance operations on this FS */
-+	spinlock_t balance_info_lock;
-+	struct btrfs_balance_info *balance_info;
- };
- 
- /*
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index b40dfe4..87d9315 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1590,6 +1590,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 	spin_lock_init(&fs_info->ref_cache_lock);
- 	spin_lock_init(&fs_info->fs_roots_radix_lock);
- 	spin_lock_init(&fs_info->delayed_iput_lock);
-+	spin_lock_init(&fs_info->balance_info_lock);
- 
- 	init_completion(&fs_info->kobj_unregister);
- 	fs_info->tree_root = tree_root;
-@@ -1615,6 +1616,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 	fs_info->sb = sb;
- 	fs_info->max_inline = 8192 * 1024;
- 	fs_info->metadata_ratio = 0;
-+	fs_info->balance_info = NULL;
- 
- 	fs_info->thread_pool_size = min_t(unsigned long,
- 					  num_online_cpus() + 2, 8);
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 463d91b..c247985 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2220,6 +2220,38 @@ static noinline long btrfs_ioctl_wait_sync(struct file *file, void __user *argp)
- 	return btrfs_wait_for_commit(root, transid);
+@@ -776,6 +777,65 @@ int do_balance(int argc, char **argv)
+ 	}
+ 	return 0;
  }
- 
-+/*
-+ * Return the current status of any balance operation
-+ */
-+long btrfs_ioctl_balance_progress(
-+	struct btrfs_fs_info *fs_info,
-+	struct btrfs_ioctl_balance_progress __user *user_dest)
-+{
-+	int ret = 0;
-+	struct btrfs_ioctl_balance_progress dest;
 +
-+	spin_lock(&fs_info->balance_info_lock);
-+	if (!fs_info->balance_info) {
-+		ret = -EINVAL;
-+		goto error;
++int get_balance_progress(char *path, struct btrfs_ioctl_balance_progress *bal)
++{
++	int fdmnt;
++	int ret = 0;
++	int err = 0;
++
++	fdmnt = open_file_or_dir(path);
++	if(fdmnt < 0) {
++		return -1;
 +	}
 +
-+	dest.expected = fs_info->balance_info->expected;
-+	dest.completed = fs_info->balance_info->completed;
++	ret = ioctl(fdmnt, BTRFS_IOC_BALANCE_PROGRESS, bal);
++	if(ret)
++		err = errno;
++	close(fdmnt);
 +
-+	spin_unlock(&fs_info->balance_info_lock);
-+
-+	if (copy_to_user(user_dest, &dest,
-+			 sizeof(struct btrfs_ioctl_balance_progress)))
-+		return -EFAULT;
-+
-+	return 0;
-+
-+error:
-+	spin_unlock(&fs_info->balance_info_lock);
-+	return ret;
++	return err;
 +}
 +
- long btrfs_ioctl(struct file *file, unsigned int
- 		cmd, unsigned long arg)
++int do_balance_progress(int argc, char **argv)
++{
++	char *path;
++	int ret = 0;
++	int err = 0;
++	struct btrfs_ioctl_balance_progress bal;
++
++	path = argv[1];
++
++	ret = get_balance_progress(path, &bal);
++	if (!ret)
++		printf("\r%llu/%llu block groups moved, "
++		       "%0.2f%% complete.\n",
++		       bal.completed,
++		       bal.expected,
++		       (float)bal.completed/bal.expected*100.0);
++
++	switch(ret) {
++	case 0:
++		break;
++	case -1:
++		fprintf(stderr, "ERROR: can't access '%s'\n", path);
++		return 13;
++	case EINVAL:
++		if (!monitor) {
++			fprintf(stderr,
++				"No balance operation running on '%s'.\n",
++				path);
++			return 20;
++		}
++		break;
++	default:
++		fprintf(stderr, "ERROR: ioctl returned error %d.", err);
++		return 21;
++	}
++
++	return 0;
++}
++
+ int do_remove_volume(int nargs, char **args)
  {
-@@ -2255,6 +2287,8 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_rm_dev(root, argp);
- 	case BTRFS_IOC_BALANCE:
- 		return btrfs_balance(root->fs_info->dev_root);
-+	case BTRFS_IOC_BALANCE_PROGRESS:
-+		return btrfs_ioctl_balance_progress(root->fs_info, argp);
- 	case BTRFS_IOC_CLONE:
- 		return btrfs_ioctl_clone(file, arg, 0, 0, 0);
- 	case BTRFS_IOC_CLONE_RANGE:
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 17c99eb..b2103b2 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -145,6 +145,11 @@ struct btrfs_ioctl_space_args {
+ 
+diff --git a/btrfs_cmds.h b/btrfs_cmds.h
+index 7bde191..47b0a27 100644
+--- a/btrfs_cmds.h
++++ b/btrfs_cmds.h
+@@ -23,6 +23,7 @@ int do_defrag(int argc, char **argv);
+ int do_show_filesystem(int nargs, char **argv);
+ int do_add_volume(int nargs, char **args);
+ int do_balance(int nargs, char **argv);
++int do_balance_progress(int nargs, char **argv);
+ int do_remove_volume(int nargs, char **args);
+ int do_scan(int nargs, char **argv);
+ int do_resize(int nargs, char **argv);
+diff --git a/ioctl.h b/ioctl.h
+index 776d7a9..888ceb9 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -132,6 +132,11 @@ struct btrfs_ioctl_space_args {
  	struct btrfs_ioctl_space_info spaces[0];
  };
  
@@ -139,112 +152,38 @@ index 17c99eb..b2103b2 100644
  #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
  				   struct btrfs_ioctl_vol_args)
  #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
-@@ -189,4 +194,6 @@ struct btrfs_ioctl_space_args {
- #define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
- #define BTRFS_IOC_SNAP_CREATE_ASYNC _IOW(BTRFS_IOCTL_MAGIC, 23, \
- 				   struct btrfs_ioctl_async_vol_args)
+@@ -169,4 +174,6 @@ struct btrfs_ioctl_space_args {
+ #define BTRFS_IOC_DEFAULT_SUBVOL _IOW(BTRFS_IOCTL_MAGIC, 19, u64)
+ #define BTRFS_IOC_SPACE_INFO _IOWR(BTRFS_IOCTL_MAGIC, 20, \
+ 				    struct btrfs_ioctl_space_args)
 +#define BTRFS_IOC_BALANCE_PROGRESS _IOR(BTRFS_IOCTL_MAGIC, 25, \
-+				  struct btrfs_ioctl_balance_progress)
++					struct btrfs_ioctl_balance_progress)
  #endif
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 91851b5..f00edc1 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1904,6 +1904,7 @@ int btrfs_balance(struct btrfs_root *dev_root)
- 	struct btrfs_root *chunk_root = dev_root->fs_info->chunk_root;
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_key found_key;
-+	struct btrfs_balance_info *bal_info;
+diff --git a/man/btrfs.8.in b/man/btrfs.8.in
+index 26ef982..69d8613 100644
+--- a/man/btrfs.8.in
++++ b/man/btrfs.8.in
+@@ -21,6 +21,8 @@ btrfs \- control a btrfs filesystem
+ .PP
+ \fBbtrfs\fP \fBfilesystem resize\fP\fI [+/\-]<size>[gkm]|max <filesystem>\fP
+ .PP
++\fBbtrfs\fP \fBbalance progress\fP \fI<path>\fP
++.PP
+ \fBbtrfs\fP \fBdevice scan\fP\fI [<device> [<device>..]]\fP
+ .PP
+ \fBbtrfs\fP \fBdevice show\fP\fI <dev>|<label> [<dev>|<label>...]\fP
+@@ -148,6 +150,11 @@ Balance the chunks of the filesystem identified by \fI<path>\fR
+ across the devices.
+ .TP
  
- 	if (dev_root->fs_info->sb->s_flags & MS_RDONLY)
- 		return -EROFS;
-@@ -1911,6 +1912,20 @@ int btrfs_balance(struct btrfs_root *dev_root)
- 	mutex_lock(&dev_root->fs_info->volume_mutex);
- 	dev_root = dev_root->fs_info->dev_root;
- 
-+	bal_info = kmalloc(
-+		sizeof(struct btrfs_balance_info),
-+		GFP_NOFS);
-+	if (!bal_info) {
-+		ret = -ENOSPC;
-+		goto error_no_status;
-+	}
-+	spin_lock(&dev_root->fs_info->balance_info_lock);
-+	dev_root->fs_info->balance_info = bal_info;
-+	bal_info->expected = -1; /* One less than actually counted,
-+				    because chunk 0 is special */
-+	bal_info->completed = 0;
-+	spin_unlock(&dev_root->fs_info->balance_info_lock);
++\fBbalance progress\fP \fI<path>\fP
++Report progress on the currently-running balance operation on
++\fI<path>\fP.
++.TP
 +
- 	/* step one make some room on all the devices */
- 	list_for_each_entry(device, devices, dev_list) {
- 		old_size = device->total_bytes;
-@@ -1934,10 +1949,42 @@ int btrfs_balance(struct btrfs_root *dev_root)
- 		btrfs_end_transaction(trans, dev_root);
- 	}
- 
--	/* step two, relocate all the chunks */
-+	/* step two, count the chunks */
- 	path = btrfs_alloc_path();
--	BUG_ON(!path);
-+	if (!path) {
-+		ret = -ENOSPC;
-+		goto error;
-+	}
-+
-+	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
-+	key.offset = (u64)-1;
-+	key.type = BTRFS_CHUNK_ITEM_KEY;
-+
-+	ret = btrfs_search_slot(NULL, chunk_root, &key, path, 0, 0);
-+	if (ret <= 0) {
-+		printk(KERN_ERR "btrfs: Failed to find the last chunk.\n");
-+		BUG();
-+	}
-+
-+	while (1) {
-+		ret = btrfs_previous_item(chunk_root, path, 0,
-+					  BTRFS_CHUNK_ITEM_KEY);
-+		if (ret)
-+			break;
-+
-+		spin_lock(&dev_root->fs_info->balance_info_lock);
-+		bal_info->expected++;
-+		spin_unlock(&dev_root->fs_info->balance_info_lock);
-+	}
-+
-+	btrfs_free_path(path);
-+	path = btrfs_alloc_path();
-+	if (!path) {
-+		ret = -ENOSPC;
-+		goto error;
-+	}
- 
-+	/* step three, relocate all the chunks */
- 	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
- 	key.offset = (u64)-1;
- 	key.type = BTRFS_CHUNK_ITEM_KEY;
-@@ -1975,10 +2022,20 @@ int btrfs_balance(struct btrfs_root *dev_root)
- 					   found_key.offset);
- 		BUG_ON(ret && ret != -ENOSPC);
- 		key.offset = found_key.offset - 1;
-+		spin_lock(&dev_root->fs_info->balance_info_lock);
-+		bal_info->completed++;
-+		spin_unlock(&dev_root->fs_info->balance_info_lock);
-+		printk(KERN_INFO "btrfs: balance: %llu/%llu block groups completed\n",
-+		       bal_info->completed, bal_info->expected);
- 	}
- 	ret = 0;
- error:
- 	btrfs_free_path(path);
-+	spin_lock(&dev_root->fs_info->balance_info_lock);
-+	kfree(dev_root->fs_info->balance_info);
-+	dev_root->fs_info->balance_info = NULL;
-+	spin_unlock(&dev_root->fs_info->balance_info_lock);
-+error_no_status:
- 	mutex_unlock(&dev_root->fs_info->volume_mutex);
- 	return ret;
- }
+ \fBdevice add\fR\fI <dev> [<dev>..] <path>\fR
+ Add device(s) to the filesystem identified by \fI<path>\fR.
+ .TP
 -- 
 1.7.1
 

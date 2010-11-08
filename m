@@ -1,37 +1,51 @@
-From: Shane Shrybman <shrybman@teksavvy.com>
-Subject: Re: Oops while rebalancing, now unmountable.
-Date: Mon, 08 Nov 2010 15:39:25 -0500
-Message-ID: <1289248765.3611.6.camel@mars>
-References: <1289236257.3611.3.camel@mars>  <1289238847-sup-3860@think>
-Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1289238847-sup-3860@think>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH 1/6] fs: add hole punching to fallocate
+Date: Mon,  8 Nov 2010 15:32:02 -0500
+Message-ID: <1289248327-16308-1-git-send-email-josef@redhat.com>
+To: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	linux-ext4@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	xfs@oss.sgi.com, joel.becker@oracle.com, cmm@us.ibm.com,
+	cluster-
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2010-11-08 at 12:55 -0500, Chris Mason wrote:
-> Excerpts from Shane Shrybman's message of 2010-11-08 12:10:57 -0500:
-> > Hi,
-> > 
-> > Got an oops last week while rebalancing that seems to have left me with
-> > a corrupted btrfs. Kernel was ~2.6.36 + Transparent hugetlb patchset +
-> > small misc. patchs.
-> 
-> Have you tried the 2.6.36 + the btrfs unstable git tree?  It may be able
-> to help here.
+Hole punching has already been implemented by XFS and OCFS2, and has the
+potential to be implemented on both BTRFS and EXT4 so we need a generic way to
+get to this feature.  The simplest way in my mind is to add FALLOC_FL_PUNCH_HOLE
+to fallocate() since it already looks like the normal fallocate() operation.
+I've tested this patch with XFS and BTRFS to make sure XFS did what it's
+supposed to do and that BTRFS failed like it was supposed to.  Thank you,
 
-Ok, I have built and booted the 2.6.36 + the btrfs unstable git tree
-kernel and ran btrfsck with the same results.
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/open.c              |    2 +-
+ include/linux/falloc.h |    1 +
+ 2 files changed, 2 insertions(+), 1 deletions(-)
 
-# btrfsck /dev/sdc1
-checksum verify failed on 625055924224 wanted C3DFFE41 found 9F99998
-checksum verify failed on 625055924224 wanted C3DFFE41 found 9F99998
-checksum verify failed on 625055924224 wanted C3DFFE41 found 9F99998
-Segmentation fault
-
-Thanks,
-
-Shane
-
+diff --git a/fs/open.c b/fs/open.c
+index 4197b9e..ab8dedf 100644
+--- a/fs/open.c
++++ b/fs/open.c
+@@ -223,7 +223,7 @@ int do_fallocate(struct file *file, int mode, loff_t offset, loff_t len)
+ 		return -EINVAL;
+ 
+ 	/* Return error if mode is not supported */
+-	if (mode && !(mode & FALLOC_FL_KEEP_SIZE))
++	if (mode && (mode & ~(FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE)))
+ 		return -EOPNOTSUPP;
+ 
+ 	if (!(file->f_mode & FMODE_WRITE))
+diff --git a/include/linux/falloc.h b/include/linux/falloc.h
+index 3c15510..851cba2 100644
+--- a/include/linux/falloc.h
++++ b/include/linux/falloc.h
+@@ -2,6 +2,7 @@
+ #define _FALLOC_H_
+ 
+ #define FALLOC_FL_KEEP_SIZE	0x01 /* default is extend size */
++#define FALLOC_FL_PUNCH_HOLE	0X02 /* de-allocates range */
+ 
+ #ifdef __KERNEL__
+ 
+-- 
+1.6.6.1

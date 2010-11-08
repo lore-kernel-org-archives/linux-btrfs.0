@@ -1,24 +1,37 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: postgresql activity causes crash, 2.6.36.1
-Date: Mon, 08 Nov 2010 15:37:38 -0500
-Message-ID: <1289248602-sup-5744@think>
-References: <225116.26295.qm@web51906.mail.re2.yahoo.com> <1289224688-sup-3338@think> <303125.91065.qm@web51903.mail.re2.yahoo.com>
-Content-Type: text/plain; charset=UTF-8
+From: Shane Shrybman <shrybman@teksavvy.com>
+Subject: Re: Oops while rebalancing, now unmountable.
+Date: Mon, 08 Nov 2010 15:39:25 -0500
+Message-ID: <1289248765.3611.6.camel@mars>
+References: <1289236257.3611.3.camel@mars>  <1289238847-sup-3860@think>
+Mime-Version: 1.0
+Content-Type: text/plain
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Brian Neu <proclivity76@yahoo.com>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <303125.91065.qm@web51903.mail.re2.yahoo.com>
+In-Reply-To: <1289238847-sup-3860@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Brian Neu's message of 2010-11-08 12:52:21 -0500:
+On Mon, 2010-11-08 at 12:55 -0500, Chris Mason wrote:
+> Excerpts from Shane Shrybman's message of 2010-11-08 12:10:57 -0500:
+> > Hi,
+> > 
+> > Got an oops last week while rebalancing that seems to have left me with
+> > a corrupted btrfs. Kernel was ~2.6.36 + Transparent hugetlb patchset +
+> > small misc. patchs.
 > 
-> > Ok, could you please take a picture of the crash?  We'll need all the lines.
-> I really hope you mean "picture" as in photo of the screen, and I'm not 
-> committing an egregious list faux pas by attaching this.
+> Have you tried the 2.6.36 + the btrfs unstable git tree?  It may be able
+> to help here.
 
-No, this is perfect ;) The only problem is that we're missing the stuff
-at the very top of the oops.  That's the part that explains why it
-oopsed.  The stuff in this png is great, but it only shows where it
-oopsed.
+Ok, I have built and booted the 2.6.36 + the btrfs unstable git tree
+kernel and ran btrfsck with the same results.
 
--chris
+# btrfsck /dev/sdc1
+checksum verify failed on 625055924224 wanted C3DFFE41 found 9F99998
+checksum verify failed on 625055924224 wanted C3DFFE41 found 9F99998
+checksum verify failed on 625055924224 wanted C3DFFE41 found 9F99998
+Segmentation fault
+
+Thanks,
+
+Shane
+

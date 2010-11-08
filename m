@@ -1,80 +1,45 @@
-From: =?iso-8859-1?Q?Jo=E3o_Eduardo_Lu=EDs?= <jecluis@gmail.com>
-Subject: Questions regarding COW-related behaviors
-Date: Mon, 8 Nov 2010 14:23:13 +0000
-Message-ID: <71EA287F-BE05-4BD8-A474-58A68B0FC6A3@gmail.com>
-Mime-Version: 1.0 (Apple Message framework v1081)
-Content-Type: text/plain; charset=iso-8859-1
-To: linux-btrfs@vger.kernel.org
+From: Itaru Kitayama <kitayama@cl.bb4u.ne.jp>
+Subject: Re: [PATCH] Log parent inode if it is newer than the last commit
+Date: Mon, 8 Nov 2010 23:27:51 +0900
+Message-ID: <20101108232751.3a6cecd0.kitayama@cl.bb4u.ne.jp>
+References: <20101106200305.5d9eb7e0.kitayama@cl.bb4u.ne.jp>
+	<1289224052-sup-1226@think>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1289224052-sup-1226@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello list.
 
+I've been puzzled why I see a flood of ENOENT returned upon rename during Fedora 13 and 14's GDM session. 
 
-I've been working on my MSc thesis and I believe such a time came when =
-it will cross paths with BTRFS.
+The case is of course handled by your recent patch which is in upstream and btrfs-unstable, but I thought 
+doing a log look-up always fail is inefficient so I checked the code path that set inode's logged_trans field.   
 
-However, I have a couple of standing questions I haven't been able do a=
-nswer, even though having read Ohad Rodeh's paper, most of the wiki's d=
-ocumentation, after looking to BTRFS' code and after testing it myself =
---- I'm not putting aside missing some information, somewhere, though.
+Itaru
 
-Basically, I need to be aware how the COW works in BTRFS, and what it m=
-ay allow one to achieve. Questions follow.
+On Mon, 08 Nov 2010 08:50:21 -0500
+Chris Mason <chris.mason@oracle.com> wrote:
 
-1) Is COW only used when creating or updating a file? While testing BTR=
-=46S, using 'btrfs subvolume find-new', I got the idea that neither cre=
-ation of directories, nor any kind of deletion are covered by COW. Is t=
-his right?
+> Excerpts from Itaru Kitayama's message of 2010-11-06 07:03:05 -0400:
+> > 
+> > In the file sync path, file's parent inode is logged if it is newer than the last
+> > commit. This patch checks also the last_trans field as well as generation.
+> > 
+> > As btrfs_log_inode updates the logged_trans field of parent dir's inode, tree-log
+> > lookup operations are suppressed upon unlink.
+> 
+> Is there a specific test case you're working on for this?  The idea
+> behind the logging code is that we use the backrefs in the inode to
+> recreate the inode in the directory if we crash.
+> 
+> This doesn't work if the directory doesn't exist when we come back, so
+> the code logs the directory if it is newer than the last commit.
+> 
+> As long as the directory exists in the tree, we should be able to safely
+> continue replay without logging it again.
+> 
+> -chris
 
-2) Each time a COW happens, is there any kind implicit 'snapshotting' t=
-hat may keep track of changes around the filesystem for each COW?=20
-By Rodeh's paper and some info on the wiki, I gather that a new root is=
- created for each COW, due to shadowing, but will the previous tree be =
-kept? The wiki, at "BTRFS Design", states that "after the commit finish=
-es, the older subvolume root items may be removed". This would make imp=
-ossible to track changes to files, but 'btrfs subvolume find-new' still=
- manages to output file generations, so there must be some info left be=
-hind.=20
-
-3) Following (2), is there any way to access this informations and, let=
-'s say, recover an older version of a given file? Or an entire previous=
- tree?
-
-4) From Rodeh's paper I got the idea that BTRFS uses periodic checkpoin=
-ting, in order to assign generations to operations. Using 'btrfs subvol=
-ume find-new' I confirmed my suspicions. After copying two different di=
-rectories into the same subvolume at the same time, all files got assig=
-ned the same generation and it took a while until they all showed up. T=
-his raises the question: what triggers a new checkpoint? Is it based on=
- elapsed time since last checkpoint? Is it triggered by a COW and then,=
- all COWs happening at the same time will be put together and create a =
-big new generation?
-
-5) If we have multiple jobs updating the same file at the same time, I =
-assume the system will shadow their updates; when the time for committi=
-ng comes, will there be any kind of 'conflict' between concurrent updat=
-es, or will they be applied by order of commit, ignoring whether there =
-were previous commits or not? Regarding checkpointing, will all the cha=
-nges be shown as part of the generation, or will they be considered as =
-only one?
-
-
-I would greatly appreciate any answer regarding any of this topics, inc=
-luding any pointers to additional documentation that I may have missed.
-
-
-Regards.
-
-
----
-Jo=E3o Eduardo Lu=EDs
-
-
-
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

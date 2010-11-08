@@ -1,39 +1,43 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH 4/6] Ext4: fail if we try to use hole punch
-Date: Mon,  8 Nov 2010 15:32:05 -0500
-Message-ID: <1289248327-16308-4-git-send-email-josef@redhat.com>
-References: <1289248327-16308-1-git-send-email-josef@redhat.com>
-To: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-ext4@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	xfs@oss.sgi.com, joel.becker@oracle.com, cmm@us.ibm.com,
-	cluster-
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <1289248327-16308-1-git-send-email-josef@redhat.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Oops while rebalancing, now unmountable.
+Date: Mon, 08 Nov 2010 16:04:28 -0500
+Message-ID: <1289250095-sup-1814@think>
+References: <1289236257.3611.3.camel@mars> <1289238847-sup-3860@think> <1289248765.3611.6.camel@mars>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Shane Shrybman <shrybman@teksavvy.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <1289248765.3611.6.camel@mars>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ext4 doesn't have the ability to punch holes yet, so make sure we return
-EOPNOTSUPP if we try to use hole punching through fallocate.  This support can
-be added later.  Thanks,
+Excerpts from Shane Shrybman's message of 2010-11-08 15:39:25 -0500:
+> On Mon, 2010-11-08 at 12:55 -0500, Chris Mason wrote:
+> > Excerpts from Shane Shrybman's message of 2010-11-08 12:10:57 -0500:
+> > > Hi,
+> > > 
+> > > Got an oops last week while rebalancing that seems to have left me with
+> > > a corrupted btrfs. Kernel was ~2.6.36 + Transparent hugetlb patchset +
+> > > small misc. patchs.
+> > 
+> > Have you tried the 2.6.36 + the btrfs unstable git tree?  It may be able
+> > to help here.
+> 
+> Ok, I have built and booted the 2.6.36 + the btrfs unstable git tree
+> kernel and ran btrfsck with the same results.
+> 
+> # btrfsck /dev/sdc1
+> checksum verify failed on 625055924224 wanted C3DFFE41 found 9F99998
+> checksum verify failed on 625055924224 wanted C3DFFE41 found 9F99998
+> checksum verify failed on 625055924224 wanted C3DFFE41 found 9F99998
+> Segmentation fault
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/ext4/extents.c |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
+Ok, if you pull down the latest btrfs-progs from git, you'll find a new
+option to btrfsck, which tries alternate copies of the super block.
 
-diff --git a/fs/ext4/extents.c b/fs/ext4/extents.c
-index 0554c48..9bff6bd 100644
---- a/fs/ext4/extents.c
-+++ b/fs/ext4/extents.c
-@@ -3622,6 +3622,10 @@ long ext4_fallocate(struct inode *inode, int mode, loff_t offset, loff_t len)
- 	struct ext4_map_blocks map;
- 	unsigned int credits, blkbits = inode->i_blkbits;
- 
-+	/* We only support the FALLOC_FL_KEEP_SIZE mode */
-+	if (mode && (mode & FALLOC_FL_KEEP_SIZE))
-+		return -EOPNOTSUPP;
-+
- 	/*
- 	 * currently supporting (pre)allocate mode for extent-based
- 	 * files _only_
--- 
-1.6.6.1
+btrfsck -s 1 /dev/sdc1
+btrfsck -s 2 /dev/sdc1
+btrfsck -s 3 /dev/sdc1
+
+If we're really lucky, one of these will work.
+
+-chris

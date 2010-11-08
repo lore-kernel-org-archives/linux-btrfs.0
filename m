@@ -1,27 +1,32 @@
-From: Chris Samuel <chris@csamuel.org>
-Subject: Re: Questions regarding COW-related behaviors
-Date: Tue, 09 Nov 2010 10:05:51 +1100
-Message-ID: <4CD8824F.6020206@csamuel.org>
-References: <71EA287F-BE05-4BD8-A474-58A68B0FC6A3@gmail.com> <20101108224537.GA8950@flcl.lan>
+From: Leonidas Spyropoulos <artafinde@gmail.com>
+Subject: btrfs filesystem defragment error
+Date: Mon, 8 Nov 2010 23:33:39 +0000
+Message-ID: <AANLkTikjgmNmuEz2k-vm-f-O2roaC0+z1p7tNZT-poea@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: The development of BTRFS <linux-btrfs@vger.kernel.org>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101108224537.GA8950@flcl.lan>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/11/10 09:45, Sean Bartell wrote:
+While on Ubuntu 10.10 I cannot get defragment working.
 
-> No, unless the user request a snapshot. I'm assuming you're not talking
-> about tools like PhotoRec, that try to reassemble files from whatever
-> disk data looks valid.
+inglor@selene:~$ btrfs filesystem defragment /media/Data/
+ioctl failed on /media/Data/ ret -1 errno 1
+total 1 failures
+inglor@selene:~$ uname -a
+Linux selene 2.6.35-23-generic #36-Ubuntu SMP Tue Oct 26 17:03:18 UTC
+2010 i686 GNU/Linux
+inglor@selene:~$ sudo btrfs filesystem show
+[sudo] password for inglor:
+failed to read /dev/sr0
+Label: 'Data'  uuid: 3946b7c3-44c8-430e-b737-0c0c965e16c4
+	Total devices 1 FS bytes used 12.32GB
+	devid    1 size 29.08GB used 28.75GB path /dev/sda7
 
-It may be that he has confused it with nilfs which does have
-automatic periodic checkpointing (and expiry thereof) based on
-a user configurable policy.  These can be converted to persistent
-snapshots from the command line.
+Btrfs v0.19-35-g1b444cd
 
-cheers,
-Chris
+Is it implemented on kernel 2.6.36 and above only?
+
+
 -- 
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+Caution: breathing may be hazardous to your health.

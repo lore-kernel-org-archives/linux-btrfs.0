@@ -1,32 +1,35 @@
-From: Leonidas Spyropoulos <artafinde@gmail.com>
-Subject: btrfs filesystem defragment error
-Date: Mon, 8 Nov 2010 23:33:39 +0000
-Message-ID: <AANLkTikjgmNmuEz2k-vm-f-O2roaC0+z1p7tNZT-poea@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: postgresql activity causes crash, 2.6.36.1
+Date: Mon, 08 Nov 2010 18:49:54 -0500
+Message-ID: <1289260107-sup-5774@think>
+References: <225116.26295.qm@web51906.mail.re2.yahoo.com> <1289224688-sup-3338@think> <303125.91065.qm@web51903.mail.re2.yahoo.com> <1289248602-sup-5744@think> <39229.10625.qm@web51905.mail.re2.yahoo.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Brian Neu <proclivity76@yahoo.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <39229.10625.qm@web51905.mail.re2.yahoo.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While on Ubuntu 10.10 I cannot get defragment working.
+Great, this is a known bug in the O_DIRECT code.  I'll fix it up
+tomorrow morning.
 
-inglor@selene:~$ btrfs filesystem defragment /media/Data/
-ioctl failed on /media/Data/ ret -1 errno 1
-total 1 failures
-inglor@selene:~$ uname -a
-Linux selene 2.6.35-23-generic #36-Ubuntu SMP Tue Oct 26 17:03:18 UTC
-2010 i686 GNU/Linux
-inglor@selene:~$ sudo btrfs filesystem show
-[sudo] password for inglor:
-failed to read /dev/sr0
-Label: 'Data'  uuid: 3946b7c3-44c8-430e-b737-0c0c965e16c4
-	Total devices 1 FS bytes used 12.32GB
-	devid    1 size 29.08GB used 28.75GB path /dev/sda7
+The problem is that we're allowing bios that are too large for btrfs to
+deal with.  It doesn't show any corruption in the FS.
 
-Btrfs v0.19-35-g1b444cd
+-chris
 
-Is it implemented on kernel 2.6.36 and above only?
-
-
--- 
-Caution: breathing may be hazardous to your health.
+Excerpts from Brian Neu's message of 2010-11-08 17:50:17 -0500:
+> > No, this is perfect ;) The only problem is that we're missing the  stuff
+> 
+> > at the very top of the oops.  That's the part that explains why  it
+> > oopsed.  The stuff in this png is great, but it only shows where  it
+> > oopsed.
+> > 
+> > -chris
+> 
+> 
+> I changed the kernel line in grub.conf for 1280x1024, rebooted, and  
+> orchestrated another crash for you.  This time I noted that db activity  was 
+> necessary to cause the crash.
+> 
+> not my steadiest camera work, but still legible

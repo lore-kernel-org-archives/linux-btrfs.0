@@ -1,370 +1,126 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: fix dentry->d_parent abuses V2
-Date: Mon,  8 Nov 2010 10:01:48 -0500
-Message-ID: <1289228508-20741-1-git-send-email-josef@redhat.com>
+From: Shane Shrybman <shrybman@teksavvy.com>
+Subject: Oops while rebalancing, now unmountable.
+Date: Mon, 08 Nov 2010 12:10:57 -0500
+Message-ID: <1289236257.3611.3.camel@mars>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are lots of places where we do dentry->d_parent->d_inode without holding
-the dentry->d_lock.  This could cause problems with rename.  So instead use
-dget_parent where we can, or in some cases we don't even need to use
-dentry->d_parent->d_inode since we get the inode of the dir passed to us from
-VFS.  I tested this with xfstests and my no space tests and everything turned
-out fine.  Thanks,
+Hi,
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
-Cc: raven@themaw.net
----
-V1->V2: return an error if btrfs_start_transaction fails in aio_write
--hold the dentry->d_parent ref while using its inode in create_subvol and
-create_pending_snapshots
+Got an oops last week while rebalancing that seems to have left me with
+a corrupted btrfs. Kernel was ~2.6.36 + Transparent hugetlb patchset +
+small misc. patchs.
 
- fs/btrfs/file.c        |    7 +++++++
- fs/btrfs/inode.c       |   48 ++++++++++++++++++++++++------------------------
- fs/btrfs/ioctl.c       |   20 ++++++++++++++++----
- fs/btrfs/transaction.c |    5 ++++-
- fs/btrfs/tree-log.c    |   22 ++++++++++++++++++----
- 5 files changed, 69 insertions(+), 33 deletions(-)
+=EF=BB=BFI tried my last reliable 2.6.35 based kernel without the trans=
+parent
+hugetlb patchset and the btrfs was not mountable there either.
+=EF=BB=BF
+There has been a few unclean shutdowns lately due to power issues. But
+things seemed fine after several days of use.
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index e354c33..c1faded 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1047,8 +1047,14 @@ out:
- 
- 		if ((file->f_flags & O_DSYNC) || IS_SYNC(inode)) {
- 			trans = btrfs_start_transaction(root, 0);
-+			if (IS_ERR(trans)) {
-+				num_written = PTR_ERR(trans);
-+				goto done;
-+			}
-+			mutex_lock(&inode->i_mutex);
- 			ret = btrfs_log_dentry_safe(trans, root,
- 						    file->f_dentry);
-+			mutex_unlock(&inode->i_mutex);
- 			if (ret == 0) {
- 				ret = btrfs_sync_log(trans, root);
- 				if (ret == 0)
-@@ -1067,6 +1073,7 @@ out:
- 			     (start_pos + num_written - 1) >> PAGE_CACHE_SHIFT);
- 		}
- 	}
-+done:
- 	current->backing_dev_info = NULL;
- 	return num_written ? num_written : err;
- }
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 558cac2..78877d7 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4139,6 +4139,7 @@ static int btrfs_dentry_delete(struct dentry *dentry)
- 		if (btrfs_root_refs(&root->root_item) == 0)
- 			return 1;
- 	}
-+
- 	return 0;
- }
- 
-@@ -4622,12 +4623,12 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
- }
- 
- static int btrfs_add_nondir(struct btrfs_trans_handle *trans,
--			    struct dentry *dentry, struct inode *inode,
--			    int backref, u64 index)
-+			    struct inode *dir, struct dentry *dentry,
-+			    struct inode *inode, int backref, u64 index)
- {
--	int err = btrfs_add_link(trans, dentry->d_parent->d_inode,
--				 inode, dentry->d_name.name,
--				 dentry->d_name.len, backref, index);
-+	int err = btrfs_add_link(trans, dir, inode,
-+				 dentry->d_name.name, dentry->d_name.len,
-+				 backref, index);
- 	if (!err) {
- 		d_instantiate(dentry, inode);
- 		return 0;
-@@ -4668,8 +4669,7 @@ static int btrfs_mknod(struct inode *dir, struct dentry *dentry,
- 	btrfs_set_trans_block_group(trans, dir);
- 
- 	inode = btrfs_new_inode(trans, root, dir, dentry->d_name.name,
--				dentry->d_name.len,
--				dentry->d_parent->d_inode->i_ino, objectid,
-+				dentry->d_name.len, dir->i_ino, objectid,
- 				BTRFS_I(dir)->block_group, mode, &index);
- 	err = PTR_ERR(inode);
- 	if (IS_ERR(inode))
-@@ -4682,7 +4682,7 @@ static int btrfs_mknod(struct inode *dir, struct dentry *dentry,
- 	}
- 
- 	btrfs_set_trans_block_group(trans, inode);
--	err = btrfs_add_nondir(trans, dentry, inode, 0, index);
-+	err = btrfs_add_nondir(trans, dir, dentry, inode, 0, index);
- 	if (err)
- 		drop_inode = 1;
- 	else {
-@@ -4730,10 +4730,8 @@ static int btrfs_create(struct inode *dir, struct dentry *dentry,
- 	btrfs_set_trans_block_group(trans, dir);
- 
- 	inode = btrfs_new_inode(trans, root, dir, dentry->d_name.name,
--				dentry->d_name.len,
--				dentry->d_parent->d_inode->i_ino,
--				objectid, BTRFS_I(dir)->block_group, mode,
--				&index);
-+				dentry->d_name.len, dir->i_ino, objectid,
-+				BTRFS_I(dir)->block_group, mode, &index);
- 	err = PTR_ERR(inode);
- 	if (IS_ERR(inode))
- 		goto out_unlock;
-@@ -4745,7 +4743,7 @@ static int btrfs_create(struct inode *dir, struct dentry *dentry,
- 	}
- 
- 	btrfs_set_trans_block_group(trans, inode);
--	err = btrfs_add_nondir(trans, dentry, inode, 0, index);
-+	err = btrfs_add_nondir(trans, dir, dentry, inode, 0, index);
- 	if (err)
- 		drop_inode = 1;
- 	else {
-@@ -4805,15 +4803,17 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
- 	btrfs_set_trans_block_group(trans, dir);
- 	ihold(inode);
- 
--	err = btrfs_add_nondir(trans, dentry, inode, 1, index);
-+	err = btrfs_add_nondir(trans, dir, dentry, inode, 1, index);
- 
- 	if (err) {
- 		drop_inode = 1;
- 	} else {
-+		struct dentry *parent = dget_parent(dentry);
- 		btrfs_update_inode_block_group(trans, dir);
- 		err = btrfs_update_inode(trans, root, inode);
- 		BUG_ON(err);
--		btrfs_log_new_name(trans, inode, NULL, dentry->d_parent);
-+		btrfs_log_new_name(trans, inode, NULL, parent);
-+		dput(parent);
- 	}
- 
- 	nr = trans->blocks_used;
-@@ -4853,8 +4853,7 @@ static int btrfs_mkdir(struct inode *dir, struct dentry *dentry, int mode)
- 	btrfs_set_trans_block_group(trans, dir);
- 
- 	inode = btrfs_new_inode(trans, root, dir, dentry->d_name.name,
--				dentry->d_name.len,
--				dentry->d_parent->d_inode->i_ino, objectid,
-+				dentry->d_name.len, dir->i_ino, objectid,
- 				BTRFS_I(dir)->block_group, S_IFDIR | mode,
- 				&index);
- 	if (IS_ERR(inode)) {
-@@ -4877,9 +4876,8 @@ static int btrfs_mkdir(struct inode *dir, struct dentry *dentry, int mode)
- 	if (err)
- 		goto out_fail;
- 
--	err = btrfs_add_link(trans, dentry->d_parent->d_inode,
--				 inode, dentry->d_name.name,
--				 dentry->d_name.len, 0, index);
-+	err = btrfs_add_link(trans, dir, inode, dentry->d_name.name,
-+			     dentry->d_name.len, 0, index);
- 	if (err)
- 		goto out_fail;
- 
-@@ -6607,8 +6605,11 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
- 	BUG_ON(ret);
- 
- 	if (old_inode->i_ino != BTRFS_FIRST_FREE_OBJECTID) {
-+		struct dentry *parent = dget_parent(new_dentry);
-+
- 		btrfs_log_new_name(trans, old_inode, old_dir,
--				   new_dentry->d_parent);
-+				   parent);
-+		dput(parent);
- 		btrfs_end_log_trans(root);
- 	}
- out_fail:
-@@ -6758,8 +6759,7 @@ static int btrfs_symlink(struct inode *dir, struct dentry *dentry,
- 	btrfs_set_trans_block_group(trans, dir);
- 
- 	inode = btrfs_new_inode(trans, root, dir, dentry->d_name.name,
--				dentry->d_name.len,
--				dentry->d_parent->d_inode->i_ino, objectid,
-+				dentry->d_name.len, dir->i_ino, objectid,
- 				BTRFS_I(dir)->block_group, S_IFLNK|S_IRWXUGO,
- 				&index);
- 	err = PTR_ERR(inode);
-@@ -6773,7 +6773,7 @@ static int btrfs_symlink(struct inode *dir, struct dentry *dentry,
- 	}
- 
- 	btrfs_set_trans_block_group(trans, inode);
--	err = btrfs_add_nondir(trans, dentry, inode, 0, index);
-+	err = btrfs_add_nondir(trans, dir, dentry, inode, 0, index);
- 	if (err)
- 		drop_inode = 1;
- 	else {
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 463d91b..e82925b 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -233,17 +233,23 @@ static noinline int create_subvol(struct btrfs_root *root,
- 	struct btrfs_inode_item *inode_item;
- 	struct extent_buffer *leaf;
- 	struct btrfs_root *new_root;
--	struct inode *dir = dentry->d_parent->d_inode;
-+	struct dentry *parent = dget_parent(dentry);
-+	struct inode *dir;
- 	int ret;
- 	int err;
- 	u64 objectid;
- 	u64 new_dirid = BTRFS_FIRST_FREE_OBJECTID;
- 	u64 index = 0;
- 
-+	dir = parent->d_inode;
-+
- 	ret = btrfs_find_free_objectid(NULL, root->fs_info->tree_root,
- 				       0, &objectid);
--	if (ret)
-+	if (ret) {
-+		dput(parent);
- 		return ret;
-+	}
-+
- 	/*
- 	 * 1 - inode item
- 	 * 2 - refs
-@@ -251,8 +257,10 @@ static noinline int create_subvol(struct btrfs_root *root,
- 	 * 2 - dir items
- 	 */
- 	trans = btrfs_start_transaction(root, 6);
--	if (IS_ERR(trans))
-+	if (IS_ERR(trans)) {
-+		dput(parent);
- 		return PTR_ERR(trans);
-+	}
- 
- 	leaf = btrfs_alloc_free_block(trans, root, root->leafsize,
- 				      0, objectid, NULL, 0, 0, 0);
-@@ -339,6 +347,7 @@ static noinline int create_subvol(struct btrfs_root *root,
- 
- 	d_instantiate(dentry, btrfs_lookup_dentry(dir, dentry));
- fail:
-+	dput(parent);
- 	if (async_transid) {
- 		*async_transid = trans->transid;
- 		err = btrfs_commit_transaction_async(trans, root, 1);
-@@ -354,6 +363,7 @@ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
- 			   char *name, int namelen, u64 *async_transid)
- {
- 	struct inode *inode;
-+	struct dentry *parent;
- 	struct btrfs_pending_snapshot *pending_snapshot;
- 	struct btrfs_trans_handle *trans;
- 	int ret;
-@@ -396,7 +406,9 @@ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
- 
- 	btrfs_orphan_cleanup(pending_snapshot->snap);
- 
--	inode = btrfs_lookup_dentry(dentry->d_parent->d_inode, dentry);
-+	parent = dget_parent(dentry);
-+	inode = btrfs_lookup_dentry(parent->d_inode, dentry);
-+	dput(parent);
- 	if (IS_ERR(inode)) {
- 		ret = PTR_ERR(inode);
- 		goto fail;
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 1fffbc0..f37ab80 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -902,6 +902,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	struct btrfs_root *root = pending->root;
- 	struct btrfs_root *parent_root;
- 	struct inode *parent_inode;
-+	struct dentry *parent_dentry;
- 	struct dentry *dentry;
- 	struct extent_buffer *tmp;
- 	struct extent_buffer *old;
-@@ -941,7 +942,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	trans->block_rsv = &pending->block_rsv;
- 
- 	dentry = pending->dentry;
--	parent_inode = dentry->d_parent->d_inode;
-+	parent_dentry = dget_parent(dentry);
-+	parent_inode = parent_dentry->d_inode;
- 	parent_root = BTRFS_I(parent_inode)->root;
- 	record_root_in_trans(trans, parent_root);
- 
-@@ -989,6 +991,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 				 parent_inode->i_ino, index,
- 				 dentry->d_name.name, dentry->d_name.len);
- 	BUG_ON(ret);
-+	dput(parent_dentry);
- 
- 	key.offset = (u64)-1;
- 	pending->snap = btrfs_read_fs_root_no_name(root->fs_info, &key);
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index a29f193..0d74c0a 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -2869,6 +2869,7 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
- {
- 	int ret = 0;
- 	struct btrfs_root *root;
-+	struct dentry *old_parent = NULL;
- 
- 	/*
- 	 * for regular files, if its inode is already on disk, we don't
-@@ -2910,10 +2911,13 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
- 		if (IS_ROOT(parent))
- 			break;
- 
--		parent = parent->d_parent;
-+		parent = dget_parent(parent);
-+		dput(old_parent);
-+		old_parent = parent;
- 		inode = parent->d_inode;
- 
- 	}
-+	dput(old_parent);
- out:
- 	return ret;
- }
-@@ -2945,6 +2949,7 @@ int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- {
- 	int inode_only = exists_only ? LOG_INODE_EXISTS : LOG_INODE_ALL;
- 	struct super_block *sb;
-+	struct dentry *old_parent = NULL;
- 	int ret = 0;
- 	u64 last_committed = root->fs_info->last_trans_committed;
- 
-@@ -3016,10 +3021,13 @@ int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- 		if (IS_ROOT(parent))
- 			break;
- 
--		parent = parent->d_parent;
-+		parent = dget_parent(parent);
-+		dput(old_parent);
-+		old_parent = parent;
- 	}
- 	ret = 0;
- end_trans:
-+	dput(old_parent);
- 	if (ret < 0) {
- 		BUG_ON(ret != -ENOSPC);
- 		root->fs_info->last_trans_log_full_commit = trans->transid;
-@@ -3039,8 +3047,14 @@ end_no_trans:
- int btrfs_log_dentry_safe(struct btrfs_trans_handle *trans,
- 			  struct btrfs_root *root, struct dentry *dentry)
- {
--	return btrfs_log_inode_parent(trans, root, dentry->d_inode,
--				      dentry->d_parent, 0);
-+	struct dentry *parent = dget_parent(dentry);
-+	int ret;
-+
-+	ret = btrfs_log_inode_parent(trans, root, dentry->d_inode, parent, 0);
-+
-+	dput(parent);
-+
-+	return ret;
- }
- 
- /*
--- 
-1.6.6.1
+Label: none  uuid: b8a1b5a4-dce4-405f-89f4-903c13e92174
+        Total devices 1 FS bytes used 1.25TB
+        devid    1 size 1.36TB used 1.30TB path /dev/sdc1
 
+Btrfs v0.19
+
+Here's the oops I dug out of the log.
+
+btrfs: found 97 extents
+btrfs: sdc1 checksum verify failed on 624993189888 wanted 57EC7EA0 foun=
+d 872AA969 level 0
+message repeated 2 times
+BUG: unable to handle kernel NULL pointer dereference at 0000001c
+IP: [<791338e4>] btrfs_print_leaf+0x14/0xb00
+*pde =3D 00000000=20
+Oops: 0000 [#1] SMP=20
+last sysfs file: /sys/block/sdd/removable
+Modules linked in: loop nvidia(P) agpgart acpi_cpufreq mperf nfsd expor=
+tfs nfs lockd fscache auth_rpcgss sunrpc coretemp netconsole usbhid tda=
+7432 tuner tea5767 tda8290 tda18271 tuner_xc2028 xc5000 snd_cmipci game=
+port snd_opl3_lib snd_hwdep snd_mpu401_uart tda9887 tuner_simple tuner_=
+types mt20xx tea5761 msp3400 snd_hda_codec_realtek snd_hda_intel snd_hd=
+a_codec snd_pcm_oss snd_mixer_oss snd_pcm saa7115 snd_seq_dummy snd_seq=
+_oss snd_seq_midi snd_seq_midi_event snd_seq r8169 bttv uhci_hcd ivtv v=
+ideobuf_dma_sg videobuf_core btcx_risc snd_rawmidi cx2341x i2c_algo_bit=
+ snd_timer tveeprom mii rtc_cmos rtc_core rtc_lib snd_seq_device ehci_h=
+cd snd usbcore soundcore snd_page_alloc [last unloaded: tvaudio]
+
+Pid: 26877, comm: btrfs Tainted: P            2.6.36-aa1 #5 P35-S3G/P35=
+-S3G
+EIP: 0060:[<791338e4>] EFLAGS: 00010296 CPU: 1
+EIP is at btrfs_print_leaf+0x14/0xb00
+EAX: f2374000 EBX: 00000000 ECX: 091847f5 EDX: 00000000
+ESI: f2374000 EDI: 00000065 EBP: 82d73abc ESP: 82d73988
+ DS: 007b ES: 007b FS: 00d8 GS: 0033 SS: 0068
+Process btrfs (pid: 26877, ti=3D82d72000 task=3D79527120 task.ti=3D82d7=
+2000)
+Stack:
+ f2374000 847f4000 00000091 00001000 000001af 00000000 00000021 0000100=
+0
+<0> 0000002b 00000000 00000000 847f4000 00000091 8ac1a000 00000091 0000=
+0037
+<0> e329489c 82d739ec 7912145f 00000002 00000001 e329489c 82d73a9f 82d7=
+3a9f
+Call Trace:
+ [<7912145f>] ? unlock_up+0xcf/0xe0
+ [<79126767>] ? btrfs_search_slot+0x537/0x630
+ [<791316f0>] ? lookup_inline_extent_backref+0xd0/0x4f0
+ [<79129fc8>] ? update_block_group+0xe8/0x2c0
+ [<7913263c>] ? __btrfs_free_extent+0x60c/0x7d0
+ [<791a8e18>] ? rb_erase+0x208/0x280
+ [<79132d74>] ? run_clustered_refs+0x224/0x9d0
+ [<79159ba9>] ? map_extent_buffer+0xb9/0xc0
+ [<791335bd>] ? btrfs_run_delayed_refs+0x9d/0x170
+ [<7913d590>] ? btrfs_commit_transaction+0x80/0x640
+ [<791756bd>] ? tree_insert+0x6d/0x80
+ [<79176f28>] ? btrfs_update_reloc_root+0x108/0x180
+ [<79045840>] ? autoremove_wake_function+0x0/0x50
+ [<79178315>] ? prepare_to_merge+0x215/0x230
+ [<7917bfdb>] ? relocate_block_group+0x4db/0x5a0
+ [<7917c181>] ? btrfs_relocate_block_group+0xe1/0x270
+ [<791649c6>] ? btrfs_relocate_chunk+0x56/0x520
+ [<791597cc>] ? unmap_extent_buffer+0xc/0x10
+ [<7914f96d>] ? btrfs_item_offset+0xbd/0xc0
+ [<791665ce>] ? btrfs_balance+0x21e/0x2b0
+ [<7916aa32>] ? btrfs_ioctl+0x3f2/0x8f0
+ [<79076d26>] ? lru_cache_add_lru+0x26/0x40
+ [<7908232f>] ? handle_pte_fault+0x39f/0x600
+ [<79083438>] ? __pte_alloc+0x78/0xd0
+ [<7916a640>] ? btrfs_ioctl+0x0/0x8f0
+ [<790aa833>] ? vfs_ioctl+0x33/0x50
+ [<790aa9c5>] ? do_vfs_ioctl+0x85/0x530
+ [<7901efec>] ? do_page_fault+0x14c/0x3e0
+ [<790945fd>] ? follow_hugetlb_page+0x8d/0x260
+ [<790aaed0>] ? sys_ioctl+0x60/0x70
+ [<79002b50>] ? sysenter_do_call+0x12/0x26
+Code: 75 f8 8b 7d fc 89 ec 5d c3 8d b4 26 00 00 00 00 8d bc 27 00 00 00=
+ 00 55 89 e5 57 56 89 c6 53 81 ec 28 01 00 00 89 95 f0 fe ff ff <8b> 42=
+ 1c ba 03 00 00 00 e8 3f 03 ef ff 8b 50 60 89 95 3c ff ff=20
+EIP: [<791338e4>] btrfs_print_leaf+0x14/0xb00 SS:ESP 0068:82d73988
+CR2: 000000000000001c
+---[ end trace 11a6d62f12dc6118 ]---
+
+
+# btrfsck  /dev/sdc1
+checksum verify failed on 625055924224 wanted C3DFFE41 found 9F99998
+checksum verify failed on 625055924224 wanted C3DFFE41 found 9F99998
+checksum verify failed on 625055924224 wanted C3DFFE41 found 9F99998
+Segmentation fault
+
+Is it a total write off or can a repair be made? I don't care about the
+data,  as long as I can mount it and delete the corrupted files.
+
+Regards,
+
+Shane
+
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

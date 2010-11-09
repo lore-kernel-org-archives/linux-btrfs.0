@@ -1,170 +1,138 @@
-From: Ian Kent <raven@themaw.net>
-Subject: Re: mkfs.btrfs on 24 disks in parallel crashes kernel
-Date: Tue, 09 Nov 2010 12:10:00 +0800
-Message-ID: <1289275800.9102.16.camel@localhost>
-References: <AANLkTi=zjPYJ1rbb0GbYVEFQsL+cEb4NZufmL4tTxBet@mail.gmail.com>
+From: Dave Chinner <david@fromorbit.com>
+Subject: Re: [PATCH 2/6] XFS: handle hole punching via fallocate properly
+Date: Tue, 9 Nov 2010 15:21:56 +1100
+Message-ID: <20101109042156.GG2715@dastard>
+References: <1289248327-16308-1-git-send-email-josef@redhat.com>
+ <1289248327-16308-2-git-send-email-josef@redhat.com>
+ <20101109012254.GE2715@dastard>
+ <20101109020509.GB27816@dhcp231-156.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Cc: linux-btrfs@vger.kernel.org
-To: Albert Strasheim <fullung@gmail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=zjPYJ1rbb0GbYVEFQsL+cEb4NZufmL4tTxBet@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	linux-ext4@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	xfs@oss.sgi.com, joel.becker@oracle.com, cmm@us.ibm.com,
+	cluster-devel@redhat.com
+To: Josef Bacik <josef@redhat.com>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <20101109020509.GB27816@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2010-11-08 at 09:22 +0200, Albert Strasheim wrote:
-> Hello all
+On Mon, Nov 08, 2010 at 09:05:09PM -0500, Josef Bacik wrote:
+> On Tue, Nov 09, 2010 at 12:22:54PM +1100, Dave Chinner wrote:
+> > On Mon, Nov 08, 2010 at 03:32:03PM -0500, Josef Bacik wrote:
+> > > This patch simply allows XFS to handle the hole punching flag in fallocate
+> > > properly.  I've tested this with a little program that does a bunch of random
+> > > hole punching with FL_KEEP_SIZE and without it to make sure it does the right
+> > > thing.  Thanks,
+> > > 
+> > > Signed-off-by: Josef Bacik <josef@redhat.com>
+> > > ---
+> > >  fs/xfs/linux-2.6/xfs_iops.c |   12 +++++++++---
+> > >  1 files changed, 9 insertions(+), 3 deletions(-)
+> > > 
+> > > diff --git a/fs/xfs/linux-2.6/xfs_iops.c b/fs/xfs/linux-2.6/xfs_iops.c
+> > > index 96107ef..99df347 100644
+> > > --- a/fs/xfs/linux-2.6/xfs_iops.c
+> > > +++ b/fs/xfs/linux-2.6/xfs_iops.c
+> > > @@ -516,6 +516,7 @@ xfs_vn_fallocate(
+> > >  	loff_t		new_size = 0;
+> > >  	xfs_flock64_t	bf;
+> > >  	xfs_inode_t	*ip = XFS_I(inode);
+> > > +	int		cmd = XFS_IOC_RESVSP;
+> > >  
+> > >  	/* preallocation on directories not yet supported */
+> > >  	error = -ENODEV;
+> > > @@ -528,17 +529,22 @@ xfs_vn_fallocate(
+> > >  
+> > >  	xfs_ilock(ip, XFS_IOLOCK_EXCL);
+> > >  
+> > > +	if (mode & FALLOC_FL_PUNCH_HOLE)
+> > > +		cmd = XFS_IOC_UNRESVSP;
+> > > +
+> > >  	/* check the new inode size is valid before allocating */
+> > >  	if (!(mode & FALLOC_FL_KEEP_SIZE) &&
+> > >  	    offset + len > i_size_read(inode)) {
+> > > -		new_size = offset + len;
+> > > +		if (cmd == XFS_IOC_UNRESVSP)
+> > > +			new_size = offset;
+> > > +		else
+> > > +			new_size = offset + len;
+> > 
+> > What semantic is FALLOC_FL_KEEP_SIZE supposed to convey during a
+> > hole punch? Doesn't this just turn the hole punch operation into
+> > a truncate? If so, what's the point of punching the hole when you
+> > can just call ftruncate() to get the same result?
+> >
 > 
-> I did some experiments on Fedora 14 with 2.6.35.6, running mkfs.btrfs
-> followed by a mount in parallel on 24 disks.
+> Well your UNRESVSP can do the same thing as a ftruncate
+
+Actually, it can't because it leaves the file size unchanged.  Like
+XFS_IOC_RESVSP, the use case is to allow punching out pre-allocated
+blocks beyond EOF (that were put there by XFS_IOC_RESVSP). e.g:
+
+# xfs_io -f \
+> -c "truncate 20k" \
+> -c "resvsp 16k 16k" \
+> -c "unresvsp 24k 4k" \
+> -c "bmap -v" \
+> -c "stat" \
+> test.out
+test.out:
+ EXT: FILE-OFFSET      BLOCK-RANGE      AG AG-OFFSET        TOTAL FLAGS
+   0: [0..31]:         hole                                    32
+   1: [32..47]:        136..151          0 (136..151)          16 10000
+   2: [48..55]:        hole                                     8
+   3: [56..63]:        160..167          0 (160..167)           8 10000
+fd.path = "test.out"
+fd.flags = non-sync,non-direct,read-write
+stat.ino = 134
+stat.type = regular file
+stat.size = 20480
+stat.blocks = 24
+fsxattr.xflags = 0x2 [prealloc]
+fsxattr.projid = 0
+fsxattr.extsize = 0
+fsxattr.nextents = 2
+fsxattr.naextents = 0
+dioattr.mem = 0x200
+dioattr.miniosz = 512
+dioattr.maxiosz = 2147483136
+#
+
+Which leaves us witha file size of 20k and two unwritten extents
+from 16-24k and 28-32k.
+
+
+> so I figured it was ok
+> to just go ahead and use it rather than add complexity, especially since I don't
+> understand this crazy fs of yours ;).
+
+Ask, and ye shall receive enlightenment. :)
+
+> > I'd suggest that FALLOC_FL_PUNCH_HOLE should, by definition, not
+> > change the file size, and have no option to be able to change it.
+> > This needs to be defined and documented - can you include a man
+> > page update in this series that defines the expected behaviour
+> > of FALLOC_FL_PUNCH_HOLE?
 > 
-> This seems to crash reliably.
-> 
-> I reported the bug to Fedora here:
-> 
-> https://bugzilla.redhat.com/show_bug.cgi?id=650261
-> 
-> The bug report has some stacktraces and stuff attached.
-> 
-> I saw stuff like this:
-> 
-> [  203.861368] Btrfs loaded
-> [  203.871418] device label myvol-12b0f8ba-e1ef-4d00-aae4-578d59d955e4
-> devid 1 transid 7 /dev/sdv
-> [  203.981371] device label myvol-fe7fdbcd-8f2f-4b34-aa6b-0d3bb7582ebc
-> devid 1 transid 7 /dev/sdl
-> [  203.990234] BUG: unable to handle kernel NULL pointer dereference
-> at 0000000000000128
-> [  204.001153] IP: [<ffffffffa019a010>] btrfs_test_super+0x10/0x26 [btrfs]
-> [  204.016840] PGD 0
-> [  204.018696] Oops: 0000 [#1] SMP
-> [  204.021264] last sysfs file:
-> /sys/devices/pci0000:00/0000:00:05.0/0000:0d:00.0/host7/port-7:0/expander-7:0/port-7:0:9/end_device-7:0:9/target7:0:9/7:0:9:0/uevent
-> [  204.045966] CPU 0
-> [  204.055933] Modules linked in: btrfs zlib_deflate libcrc32c ipv6
-> mlx4_ib ib_mad ib_core mlx4_en igb mlx4_core ses iTCO_wdt ioatdma dca
-> iTCO_vendor_support i7core_edac edac_core enclosure i2c_i801 i2c_core
-> microcode joydev serio_raw mptsas mptscsih mptbase scsi_transport_sas
-> [last unloaded: scsi_wait_scan]
-> [  204.100672]
-> [  204.103025] Pid: 2166, comm: mount Not tainted
-> 2.6.35.6-48.fc14.x86_64 #1 ASSY,BLADE,X6270      /SUN BLADE X6270
-> SERVER MODULE
-> [  204.121895] RIP: 0010:[<ffffffffa019a010>]  [<ffffffffa019a010>]
-> btrfs_test_super+0x10/0x26 [btrfs]
-> [  204.139279] RSP: 0018:ffff8803768ddcd8  EFLAGS: 00010287
-> [  204.144675] RAX: 0000000000000000 RBX: ffff8803772df800 RCX: ffff8801f7d34480
-> [  204.160885] RDX: 0000000000000120 RSI: ffff8801f7d34480 RDI: ffff8803772df800
-> [  204.179473] RBP: ffff8803768ddcd8 R08: ffff8801f7d344f8 R09: ffff880375c78760
-> [  204.185673] R10: ffff8803768ddb68 R11: ffff8801f7d34480 R12: ffffffffa01f13d0
-> [  204.200174] R13: ffffffffa019a000 R14: ffff8801f7d34480 R15: ffffffffa01f1400
-> [  204.221347] FS:  00007f766050d800(0000) GS:ffff880022200000(0000)
-> knlGS:0000000000000000
-> [  204.226597] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-> [  204.238144] CR2: 0000000000000128 CR3: 00000001f7504000 CR4: 00000000000006f0
-> [  204.256446] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-> [  204.263975] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-> [  204.280097] Process mount (pid: 2166, threadinfo ffff8803768dc000,
-> task ffff880376ab8000)
-> [  204.296529] Stack:
-> [  204.298975]  ffff8803768ddd38 ffffffff81118df6 ffffffffa01f13d0
-> 0000000000000000
-> [  204.305955] <0> ffffffff811184a7 0000000000000000 ffff8803768ddd38
-> 0000000000000003
-> [  204.320999] <0> ffffffffa01f13d0 0000000000000000 ffff880375c78680
-> ffff8801f4f59d00
-> [  204.338658] Call Trace:
-> [  204.341138]  [<ffffffff81118df6>] sget+0x54/0x367
-> [  204.355474]  [<ffffffff811184a7>] ? set_anon_super+0x0/0xe7
-> [  204.360487]  [<ffffffffa019a821>] btrfs_get_sb+0x108/0x3eb [btrfs]
-> [  204.375799]  [<ffffffff81118b99>] vfs_kern_mount+0xad/0x1ac
-> [  204.379952]  [<ffffffff81118d00>] do_kern_mount+0x4d/0xef
-> [  204.395757]  [<ffffffff8112e45a>] do_mount+0x700/0x75d
-> [  204.400676]  [<ffffffff810e5aec>] ? strndup_user+0x54/0x85
-> [  204.417219]  [<ffffffff8112e6e7>] sys_mount+0x88/0xc2
-> [  204.420399]  [<ffffffff81009cf2>] system_call_fastpath+0x16/0x1b
-> [  204.435716] Code: <48> 8b 80 28 01 00 00 48 39 b0 28 22 00 00 c9 0f
-> 94 c0 0f b6 c0 c3
-> [  204.447369] RIP  [<ffffffffa019a010>] btrfs_test_super+0x10/0x26 [btrfs]
-> [  204.458280]  RSP <ffff8803768ddcd8>
-> [  204.462330] CR2: 0000000000000128
-> [  204.466479] ---[ end trace c8bb842fa664d021 ]---
-> [  204.498273] device label myvol-11d50321-7482-4ee2-8da5-5ee5f623ae17
-> devid 1 transid 7 /dev/sdk
+> Oh I see you mean don't allow hole punch to change the size at all.
 
-This looks like a fairly obvious race.
-How about some comments on the suitability of this totally untested
-patch?
+Exactly. If you can preallocate beyond EOF, then you need to be able
+to punch beyond EOF, too. The only other way to remove persistent
+preallocation beyond EOF is to truncate, but that doesn't allow you
+to only punch specific ranges beyond EOF...
 
-I thought about trying to merge the tests following sget() (those
-surrounded by the mutex) into btrfs_fill_super() but that seemed a bit
-too hard. Maybe someone can advise on how that should be done if this
-approach is not OK.
+> I was thinking of doing this originally, but like I said above I
+> figured that there was no harm in doing the equivalent of an
+> ftruncate.  But you are right, theres no sense in duplicating
+> functionality, I'll change it to keep PUNCH_HOLE from changin the
+> size.  Now I just need to figure out where that man page is...
 
-btrfs - fix race in btrfs_get_sb()
+>From the man page: http://www.kernel.org/doc/man-pages/
 
-From: Ian Kent <raven@themaw.net>
+Cheers,
 
-When mounting a btrfs file system btrfs_test_super() may attempt to
-use sb->s_fs_info before it is set. This is because it isn't set until
-btrfs_fill_super() is called but the super block creation locks are
-dropped earlier during sget().
-
-Also, for the same reason, it looks like there is a possible race
-with the s->s_root check which should also be dealt with by this
-patch.
----
-
- fs/btrfs/super.c |    7 +++++++
- 1 files changed, 7 insertions(+), 0 deletions(-)
-
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 718b10d..9b463b9 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -565,6 +565,8 @@ static int btrfs_test_super(struct super_block *s, void *data)
- 	struct btrfs_fs_devices *test_fs_devices = data;
- 	struct btrfs_root *root = btrfs_sb(s);
- 
-+	if (!root)
-+		return 0;
- 	return root->fs_info->fs_devices == test_fs_devices;
- }
- 
-@@ -585,6 +587,7 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
- 	char *subvol_name = NULL;
- 	u64 subvol_objectid = 0;
- 	int error = 0;
-+	DEFINE_MUTEX(super_mutex);
- 
- 	if (!(flags & MS_RDONLY))
- 		mode |= FMODE_WRITE;
-@@ -613,8 +616,10 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
- 	if (IS_ERR(s))
- 		goto error_s;
- 
-+	mutex_lock(&super_mutex);
- 	if (s->s_root) {
- 		if ((flags ^ s->s_flags) & MS_RDONLY) {
-+			mutex_unlock(&super_mutex);
- 			deactivate_locked_super(s);
- 			error = -EBUSY;
- 			goto error_close_devices;
-@@ -629,6 +634,7 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
- 		error = btrfs_fill_super(s, fs_devices, data,
- 					 flags & MS_SILENT ? 1 : 0);
- 		if (error) {
-+			mutex_unlock(&super_mutex);
- 			deactivate_locked_super(s);
- 			goto error_free_subvol_name;
- 		}
-@@ -636,6 +642,7 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
- 		btrfs_sb(s)->fs_info->bdev_holder = fs_type;
- 		s->s_flags |= MS_ACTIVE;
- 	}
-+	mutex_unlock(&super_mutex);
- 
- 	root = get_default_root(s, subvol_objectid);
- 	if (IS_ERR(root)) {
-
-
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

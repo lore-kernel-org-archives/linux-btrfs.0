@@ -1,35 +1,89 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: postgresql activity causes crash, 2.6.36.1
-Date: Mon, 08 Nov 2010 18:49:54 -0500
-Message-ID: <1289260107-sup-5774@think>
-References: <225116.26295.qm@web51906.mail.re2.yahoo.com> <1289224688-sup-3338@think> <303125.91065.qm@web51903.mail.re2.yahoo.com> <1289248602-sup-5744@think> <39229.10625.qm@web51905.mail.re2.yahoo.com>
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Brian Neu <proclivity76@yahoo.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <39229.10625.qm@web51905.mail.re2.yahoo.com>
+From: Dave Chinner <david@fromorbit.com>
+Subject: Re: [PATCH 1/6] fs: add hole punching to fallocate
+Date: Tue, 9 Nov 2010 12:12:22 +1100
+Message-ID: <20101109011222.GD2715@dastard>
+References: <1289248327-16308-1-git-send-email-josef@redhat.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	linux-ext4@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	xfs@oss.sgi.com, joel.becker@oracle.com, cmm@us.ibm.com,
+	cluster-devel@redhat.com
+To: Josef Bacik <josef@redhat.com>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <1289248327-16308-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Great, this is a known bug in the O_DIRECT code.  I'll fix it up
-tomorrow morning.
+On Mon, Nov 08, 2010 at 03:32:02PM -0500, Josef Bacik wrote:
+> Hole punching has already been implemented by XFS and OCFS2, and has the
+> potential to be implemented on both BTRFS and EXT4 so we need a generic way to
+> get to this feature.  The simplest way in my mind is to add FALLOC_FL_PUNCH_HOLE
+> to fallocate() since it already looks like the normal fallocate() operation.
+> I've tested this patch with XFS and BTRFS to make sure XFS did what it's
+> supposed to do and that BTRFS failed like it was supposed to.  Thank you,
+> 
+> Signed-off-by: Josef Bacik <josef@redhat.com>
+> ---
+>  fs/open.c              |    2 +-
+>  include/linux/falloc.h |    1 +
+>  2 files changed, 2 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/open.c b/fs/open.c
+> index 4197b9e..ab8dedf 100644
+> --- a/fs/open.c
+> +++ b/fs/open.c
+> @@ -223,7 +223,7 @@ int do_fallocate(struct file *file, int mode, loff_t offset, loff_t len)
+>  		return -EINVAL;
+>  
+>  	/* Return error if mode is not supported */
+> -	if (mode && !(mode & FALLOC_FL_KEEP_SIZE))
+> +	if (mode && (mode & ~(FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE)))
+>  		return -EOPNOTSUPP;
+>  
+>  	if (!(file->f_mode & FMODE_WRITE))
+> diff --git a/include/linux/falloc.h b/include/linux/falloc.h
+> index 3c15510..851cba2 100644
+> --- a/include/linux/falloc.h
+> +++ b/include/linux/falloc.h
+> @@ -2,6 +2,7 @@
+>  #define _FALLOC_H_
+>  
+>  #define FALLOC_FL_KEEP_SIZE	0x01 /* default is extend size */
+> +#define FALLOC_FL_PUNCH_HOLE	0X02 /* de-allocates range */
 
-The problem is that we're allowing bios that are too large for btrfs to
-deal with.  It doesn't show any corruption in the FS.
+Hole punching was not included originally in fallocate() for a
+variety of reasons. IIRC, they were along the lines of:
 
--chris
+	1 de-allocating of blocks in an allocation syscall is wrong.
+	  People wanted a new syscall for this functionality.
+	2 no glibc interface needs it
+	3 at the time, only XFS supported punching holes, so there
+	  is not need to support it in a generic interface
+	4 the use cases presented were not considered compelling
+	  enough to justify the additional complexity (!)
 
-Excerpts from Brian Neu's message of 2010-11-08 17:50:17 -0500:
-> > No, this is perfect ;) The only problem is that we're missing the  stuff
-> 
-> > at the very top of the oops.  That's the part that explains why  it
-> > oopsed.  The stuff in this png is great, but it only shows where  it
-> > oopsed.
-> > 
-> > -chris
-> 
-> 
-> I changed the kernel line in grub.conf for 1280x1024, rebooted, and  
-> orchestrated another crash for you.  This time I noted that db activity  was 
-> necessary to cause the crash.
-> 
-> not my steadiest camera work, but still legible
+In the end, I gave up arguing for it to be included because just
+getting the FALLOC_FL_KEEP_SIZE functionality was a hard enough
+battle.
+
+Anyway, #3 isn't the case any more, #4 was just an excuse not to
+support anything ext4 couldn't do and lots of apps are calling
+fallocate directly (because glibc can't use FALLOC_FL_KEEP_SIZE) so
+#2 isn't an issue, either. I guess that leaves #1 to be debated;
+I don't think there is any problem with doing what you propose.
+
+What I will suggest is that this requires a generic xfstest to be
+written and support added to xfs_io to enable that test (and others)
+to issue hole punches. Something along the lines of test 242 which I
+wrote for testing all the edge case of XFS_IOC_ZERO_RANGE (*) would be
+good.
+
+Cheers,
+
+Dave.
+
+(*) fallocate() version:
+http://git.kernel.org/?p=linux/kernel/git/dgc/xfsdev.git;a=commitdiff;h=45f3e1831e3abc8bd12ec1e6c548f73a8dd9e36d
+-- 
+Dave Chinner
+david@fromorbit.com

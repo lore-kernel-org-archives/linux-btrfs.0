@@ -1,34 +1,79 @@
-From: cwillu <cwillu@cwillu.com>
-Subject: Re: btrfs filesystem defragment error
-Date: Mon, 8 Nov 2010 19:44:29 -0600
-Message-ID: <AANLkTi=WgPRafvAUUsrNydLPuz4JEjW3DNLNHYSAbAj5@mail.gmail.com>
-References: <AANLkTikjgmNmuEz2k-vm-f-O2roaC0+z1p7tNZT-poea@mail.gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH 2/6] XFS: handle hole punching via fallocate properly
+Date: Mon, 8 Nov 2010 21:05:09 -0500
+Message-ID: <20101109020509.GB27816@dhcp231-156.rdu.redhat.com>
+References: <1289248327-16308-1-git-send-email-josef@redhat.com> <1289248327-16308-2-git-send-email-josef@redhat.com> <20101109012254.GE2715@dastard>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Leonidas Spyropoulos <artafinde@gmail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTikjgmNmuEz2k-vm-f-O2roaC0+z1p7tNZT-poea@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Josef Bacik <josef@redhat.com>, linux-kernel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, xfs@oss.sgi.com,
+	joel.becker@oracle.com, cmm@us.ibm.com, cluster-devel@redhat.com
+To: Dave Chinner <david@fromorbit.com>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <20101109012254.GE2715@dastard>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 8, 2010 at 5:33 PM, Leonidas Spyropoulos
-<artafinde@gmail.com> wrote:
-> While on Ubuntu 10.10 I cannot get defragment working.
+On Tue, Nov 09, 2010 at 12:22:54PM +1100, Dave Chinner wrote:
+> On Mon, Nov 08, 2010 at 03:32:03PM -0500, Josef Bacik wrote:
+> > This patch simply allows XFS to handle the hole punching flag in fallocate
+> > properly.  I've tested this with a little program that does a bunch of random
+> > hole punching with FL_KEEP_SIZE and without it to make sure it does the right
+> > thing.  Thanks,
+> > 
+> > Signed-off-by: Josef Bacik <josef@redhat.com>
+> > ---
+> >  fs/xfs/linux-2.6/xfs_iops.c |   12 +++++++++---
+> >  1 files changed, 9 insertions(+), 3 deletions(-)
+> > 
+> > diff --git a/fs/xfs/linux-2.6/xfs_iops.c b/fs/xfs/linux-2.6/xfs_iops.c
+> > index 96107ef..99df347 100644
+> > --- a/fs/xfs/linux-2.6/xfs_iops.c
+> > +++ b/fs/xfs/linux-2.6/xfs_iops.c
+> > @@ -516,6 +516,7 @@ xfs_vn_fallocate(
+> >  	loff_t		new_size = 0;
+> >  	xfs_flock64_t	bf;
+> >  	xfs_inode_t	*ip = XFS_I(inode);
+> > +	int		cmd = XFS_IOC_RESVSP;
+> >  
+> >  	/* preallocation on directories not yet supported */
+> >  	error = -ENODEV;
+> > @@ -528,17 +529,22 @@ xfs_vn_fallocate(
+> >  
+> >  	xfs_ilock(ip, XFS_IOLOCK_EXCL);
+> >  
+> > +	if (mode & FALLOC_FL_PUNCH_HOLE)
+> > +		cmd = XFS_IOC_UNRESVSP;
+> > +
+> >  	/* check the new inode size is valid before allocating */
+> >  	if (!(mode & FALLOC_FL_KEEP_SIZE) &&
+> >  	    offset + len > i_size_read(inode)) {
+> > -		new_size = offset + len;
+> > +		if (cmd == XFS_IOC_UNRESVSP)
+> > +			new_size = offset;
+> > +		else
+> > +			new_size = offset + len;
+> 
+> What semantic is FALLOC_FL_KEEP_SIZE supposed to convey during a
+> hole punch? Doesn't this just turn the hole punch operation into
+> a truncate? If so, what's the point of punching the hole when you
+> can just call ftruncate() to get the same result?
 >
-> inglor@selene:~$ btrfs filesystem defragment /media/Data/
-> ioctl failed on /media/Data/ ret -1 errno 1
-> total 1 failures
-> ...
-> Is it implemented on kernel 2.6.36 and above only?
 
-You need to run it as root (via sudo or whatever).  On the other hand,
-it probably doesn't work like you think it does, and you probably
-don't want to defrag anyway :p
+Well your UNRESVSP can do the same thing as a ftruncate so I figured it was ok
+to just go ahead and use it rather than add complexity, especially since I don't
+understand this crazy fs of yours ;).
+ 
+> I'd suggest that FALLOC_FL_PUNCH_HOLE should, by definition, not
+> change the file size, and have no option to be able to change it.
+> This needs to be defined and documented - can you include a man
+> page update in this series that defines the expected behaviour
+> of FALLOC_FL_PUNCH_HOLE?
 
-btrfs fi defrag takes a file or folder, and defrags just that file or
-folder (i.e., no recursion).  If you wanted to defrag an entire tree,
-you'd have to do something like "find /whatever | xargs -I{} btrfs fi
-defrag {}" or some such.  This would have the effect of unlinking any
-cow'd files, which isn't necessarily useful.
+Oh I see you mean don't allow hole punch to change the size at all.  I was
+thinking of doing this originally, but like I said above I figured that there
+was no harm in doing the equivalent of an ftruncate.  But you are right, theres
+no sense in duplicating functionality, I'll change it to keep PUNCH_HOLE from
+changin the size.  Now I just need to figure out where that man page is...
 
---Carey
+Josef

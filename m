@@ -1,61 +1,40 @@
-From: Shane Shrybman <shrybman@teksavvy.com>
-Subject: Re: Oops while rebalancing, now unmountable.
-Date: Tue, 09 Nov 2010 13:21:32 -0500
-Message-ID: <1289326892.4231.2.camel@mars>
-References: <1289236257.3611.3.camel@mars>  <1289310046-sup-839@think>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: Re: Btrfs-progs: add support for mixed data+metadata block groups V4
+Date: Tue, 9 Nov 2010 19:45:50 +0100
+Message-ID: <201011091945.50379.kreijack@libero.it>
+References: <1289324502-7387-1-git-send-email-mitch.harder@sabayonlinux.org>
+Reply-To: kreijack@libero.it
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: Text/Plain;
+  charset="iso-8859-15"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1289310046-sup-839@think>
+In-Reply-To: <1289324502-7387-1-git-send-email-mitch.harder@sabayonlinux.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2010-11-09 at 08:42 -0500, Chris Mason wrote:
-> Excerpts from Shane Shrybman's message of 2010-11-08 12:10:57 -0500:
-> > Hi,
-> > 
-> > Got an oops last week while rebalancing that seems to have left me with
-> > a corrupted btrfs. Kernel was ~2.6.36 + Transparent hugetlb patchset +
-> > small misc. patchs.
-> 
-> We have a confirmed and reproducible case where the transparent
-> hugepages are corrupting btrfs (and only btrfs).  I'll work with Andrea
-> on figuring out the cause.
-> 
-> So, the first step to trying to fix it is to grab the latest btrfsck and
-> see if some old copies of the super are working:
-> 
-> btrfsck -s 1 /dev/xxx
-> btrfsck -s 2 /dev/xxx
-> 
+On Tuesday, 09 November, 2010, Mitch Harder wrote:
+> So alot of crazy people (I'm looking at you Meego) want to use btrfs
+> on phones and such with small devices.  Unfortunately the way we split
+> out metadata/data chunks it makes space usage inefficient for volumes
+> that are smaller than 1gigabyte.  So add a -M option for mixing
+> metadata+data, and default to this mixed mode if the filesystem is less
+> than or equal to 1 gigabyte.  I've tested this with xfstests on a 100mb
+> filesystem and everything is a-ok.
+[...]
+> @@ -274,6 +295,7 @@ static void print_usage(void)
+>  	fprintf(stderr, "\t -l --leafsize size of btree leaves\n");
+>  	fprintf(stderr, "\t -L --label set a label\n");
+>  	fprintf(stderr, "\t -m --metadata metadata profile, values like data 
+profile\n");
+> +	fprintf(stderr, "\t -M --mixed mix metadata and data together\n");
+>  	fprintf(stderr, "\t -n --nodesize size of btree nodes\n");
+>  	fprintf(stderr, "\t -s --sectorsize min block allocation\n");
+>  	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
 
-Yeah, I tried that with the latest btrfsck (last commit was:
-btrfs-debug-tree: add -d option ...)
+Please, update the man page (mkfs.btrfs) page too with the new switch.
 
-# ./btrfsck  -s 1 /dev/sdc1
-using SB copy 1, bytenr 67108864
-checksum verify failed on 625055924224 wanted C3DFFE41 found FFFFFF88
-checksum verify failed on 625055924224 wanted C3DFFE41 found FFFFFF88
-checksum verify failed on 625055924224 wanted C3DFFE41 found FFFFFF88
-Segmentation fault
-# ./btrfsck  -s 0 /dev/sdc1
-using SB copy 0, bytenr 65536
-checksum verify failed on 625055924224 wanted C3DFFE41 found FFFFFF88
-checksum verify failed on 625055924224 wanted C3DFFE41 found FFFFFF88
-checksum verify failed on 625055924224 wanted C3DFFE41 found FFFFFF88
-Segmentation fault
-# ./btrfsck  -s 2 /dev/sdc1
-using SB copy 2, bytenr 274877906944
-checksum verify failed on 625055924224 wanted C3DFFE41 found FFFFFF88
-checksum verify failed on 625055924224 wanted C3DFFE41 found FFFFFF88
-checksum verify failed on 625055924224 wanted C3DFFE41 found FFFFFF88
-Segmentation fault
-# ./btrfsck  -s 3 /dev/sdc1
-using SB copy 3, bytenr 1125899906842624
-No valid Btrfs found on /dev/sdc1
-
-Hmm, odd that btrfsck -s 0 /dev/sdc1 finds a different checksum than
-before.
-
-
+Regards
+G.Baroncelli
+-- 
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

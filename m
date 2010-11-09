@@ -1,73 +1,98 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: Questions regarding COW-related behaviors
-Date: Tue, 9 Nov 2010 20:37:06 +0100
-Message-ID: <201011092037.06382.kreijack@libero.it>
-References: <71EA287F-BE05-4BD8-A474-58A68B0FC6A3@gmail.com> <20101108224537.GA8950@flcl.lan> <1FAB8D40-6A0E-4E90-A9D9-3FB2D1656377@gmail.com>
-Reply-To: kreijack@libero.it
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH 1/6] fs: add hole punching to fallocate
+Date: Tue, 9 Nov 2010 15:51:38 -0500
+Message-ID: <20101109205138.GA4465@localhost.localdomain>
+References: <1289248327-16308-1-git-send-email-josef@redhat.com> <20101109011222.GD2715@dastard>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=iso-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: =?iso-8859-1?q?Jo=E3o_Eduardo_Lu=EDs?= <jecluis@gmail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1FAB8D40-6A0E-4E90-A9D9-3FB2D1656377@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Josef Bacik <josef@redhat.com>, linux-kernel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, xfs@oss.sgi.com,
+	joel.becker@oracle.com, cmm@us.ibm.com, cluster-devel@redhat.com
+To: Dave Chinner <david@fromorbit.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20101109011222.GD2715@dastard>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tuesday, 09 November, 2010, Jo=E3o Eduardo Lu=EDs wrote:
-> > The old tree is discarded unless the user requested a snapshot of i=
-t.
-> >=20
-> > Every time btrfs updates the roots is a new generation. Some data
-> > structures have "generation" fields, indicating the generation in w=
-hich
-> > they were most recently changed. This is mostly used to verify the
-> > filesystem is correct, but it's also possible to scan the generatio=
-n
-> > fields and find out which files have changed.
->=20
-> As Goffredo Baroncelli explained in a previous reply to my questions,=
- the=20
-"find-new" command will search through keys with type BTRFS_EXTENT_DATA=
-_TYPE.=20
-This command does print several changes to the same files throughout hi=
-story=20
-since a given generation. My new question to this is rather simple: doe=
-s BTRFS=20
-actually keep the data from this generations to which "find-new" has ac=
-cess,=20
-or is it only able to access information that records this changes?
->=20
+On Tue, Nov 09, 2010 at 12:12:22PM +1100, Dave Chinner wrote:
+> On Mon, Nov 08, 2010 at 03:32:02PM -0500, Josef Bacik wrote:
+> > Hole punching has already been implemented by XFS and OCFS2, and has the
+> > potential to be implemented on both BTRFS and EXT4 so we need a generic way to
+> > get to this feature.  The simplest way in my mind is to add FALLOC_FL_PUNCH_HOLE
+> > to fallocate() since it already looks like the normal fallocate() operation.
+> > I've tested this patch with XFS and BTRFS to make sure XFS did what it's
+> > supposed to do and that BTRFS failed like it was supposed to.  Thank you,
+> > 
+> > Signed-off-by: Josef Bacik <josef@redhat.com>
+> > ---
+> >  fs/open.c              |    2 +-
+> >  include/linux/falloc.h |    1 +
+> >  2 files changed, 2 insertions(+), 1 deletions(-)
+> > 
+> > diff --git a/fs/open.c b/fs/open.c
+> > index 4197b9e..ab8dedf 100644
+> > --- a/fs/open.c
+> > +++ b/fs/open.c
+> > @@ -223,7 +223,7 @@ int do_fallocate(struct file *file, int mode, loff_t offset, loff_t len)
+> >  		return -EINVAL;
+> >  
+> >  	/* Return error if mode is not supported */
+> > -	if (mode && !(mode & FALLOC_FL_KEEP_SIZE))
+> > +	if (mode && (mode & ~(FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE)))
+> >  		return -EOPNOTSUPP;
+> >  
+> >  	if (!(file->f_mode & FMODE_WRITE))
+> > diff --git a/include/linux/falloc.h b/include/linux/falloc.h
+> > index 3c15510..851cba2 100644
+> > --- a/include/linux/falloc.h
+> > +++ b/include/linux/falloc.h
+> > @@ -2,6 +2,7 @@
+> >  #define _FALLOC_H_
+> >  
+> >  #define FALLOC_FL_KEEP_SIZE	0x01 /* default is extend size */
+> > +#define FALLOC_FL_PUNCH_HOLE	0X02 /* de-allocates range */
+> 
+> Hole punching was not included originally in fallocate() for a
+> variety of reasons. IIRC, they were along the lines of:
+> 
+> 	1 de-allocating of blocks in an allocation syscall is wrong.
+> 	  People wanted a new syscall for this functionality.
+> 	2 no glibc interface needs it
+> 	3 at the time, only XFS supported punching holes, so there
+> 	  is not need to support it in a generic interface
+> 	4 the use cases presented were not considered compelling
+> 	  enough to justify the additional complexity (!)
+> 
+> In the end, I gave up arguing for it to be included because just
+> getting the FALLOC_FL_KEEP_SIZE functionality was a hard enough
+> battle.
+> 
+> Anyway, #3 isn't the case any more, #4 was just an excuse not to
+> support anything ext4 couldn't do and lots of apps are calling
+> fallocate directly (because glibc can't use FALLOC_FL_KEEP_SIZE) so
+> #2 isn't an issue, either. I guess that leaves #1 to be debated;
+> I don't think there is any problem with doing what you propose.
+> 
+> What I will suggest is that this requires a generic xfstest to be
+> written and support added to xfs_io to enable that test (and others)
+> to issue hole punches. Something along the lines of test 242 which I
+> wrote for testing all the edge case of XFS_IOC_ZERO_RANGE (*) would be
+> good.
+> 
 
-Btrfs stores the info in a btree. With the exception of the leaf, every=
- block=20
-of the tree contains a list of a pair of key, pointer defined by the st=
-ruct=20
-btrfs_key_ptr:
+So this was relatively simple, adding a flag to falloc for xfs_io and such.  Got
+a test going and it worked great on XFS.  Then I went to make sure it worked on
+non-XFS, and thats where I've run into pain.  Turns out xfs_io -c "bmap" only
+works on XFS.  So I thought to myself "well how hard could it be to make this
+thing use fiemap?", hahaha I'm an idiot.  So I've been adding a xfs_io -c
+"fiemap" that spits things out similar to bmap, and it will probably be tomorrow
+when I finish it.
 
-struct btrfs_disk_key {
-        __le64 objectid;
-        u8 type;
-        __le64 offset;
-} __attribute__ ((__packed__));
+So good news is my simple patches seem to work just fine for hole-punch, bad
+news is its going to take me another day to have all the infrastructure to test
+it on non-XFS filesystems.
 
-struct btrfs_key_ptr {
-        struct btrfs_disk_key key;
-        __le64 blockptr;
-        __le64 generation;
-} __attribute__ ((__packed__));
+Also did you want me to rebase my patches on your fallocate() version of
+ZERO_RANGE?  Thanks,
 
-The generation field, contains the info in which you are interested.
-
-So I think that the correct answer of your question is the second one.
-
-Regards
-G.Baroncelli
-
---=20
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwi=
-nd.it>
-Key fingerprint =3D 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Josef

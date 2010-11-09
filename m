@@ -1,185 +1,53 @@
-From: Ian Kent <raven@themaw.net>
-Subject: Re: mkfs.btrfs on 24 disks in parallel crashes kernel
-Date: Tue, 09 Nov 2010 15:52:27 +0800
-Message-ID: <1289289147.9102.21.camel@localhost>
-References: <AANLkTi=zjPYJ1rbb0GbYVEFQsL+cEb4NZufmL4tTxBet@mail.gmail.com>
-	 <1289275800.9102.16.camel@localhost>
+From: Oystein Viggen <oysteivi@tihlde.org>
+Subject: Re: btrfs: unlinked 34 orphans
+Date: Tue, 09 Nov 2010 09:36:23 +0100
+Message-ID: <03iq063nco.fsf@msgid.viggen.net>
+References: <4CD8DB2E.1090600@prnet.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Cc: linux-btrfs@vger.kernel.org
-To: Albert Strasheim <fullung@gmail.com>
+Content-Type: text/plain; charset=iso-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1289275800.9102.16.camel@localhost>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2010-11-09 at 12:10 +0800, Ian Kent wrote:
-> On Mon, 2010-11-08 at 09:22 +0200, Albert Strasheim wrote:
-> > Hello all
-> > 
-> > I did some experiments on Fedora 14 with 2.6.35.6, running mkfs.btrfs
-> > followed by a mount in parallel on 24 disks.
-> > 
-> > This seems to crash reliably.
-> > 
-> > I reported the bug to Fedora here:
-> > 
-> > https://bugzilla.redhat.com/show_bug.cgi?id=650261
-> > 
-> > The bug report has some stacktraces and stuff attached.
-> > 
-> > I saw stuff like this:
-> > 
-> > [  203.861368] Btrfs loaded
-> > [  203.871418] device label myvol-12b0f8ba-e1ef-4d00-aae4-578d59d955e4
-> > devid 1 transid 7 /dev/sdv
-> > [  203.981371] device label myvol-fe7fdbcd-8f2f-4b34-aa6b-0d3bb7582ebc
-> > devid 1 transid 7 /dev/sdl
-> > [  203.990234] BUG: unable to handle kernel NULL pointer dereference
-> > at 0000000000000128
-> > [  204.001153] IP: [<ffffffffa019a010>] btrfs_test_super+0x10/0x26 [btrfs]
-> > [  204.016840] PGD 0
-> > [  204.018696] Oops: 0000 [#1] SMP
-> > [  204.021264] last sysfs file:
-> > /sys/devices/pci0000:00/0000:00:05.0/0000:0d:00.0/host7/port-7:0/expander-7:0/port-7:0:9/end_device-7:0:9/target7:0:9/7:0:9:0/uevent
-> > [  204.045966] CPU 0
-> > [  204.055933] Modules linked in: btrfs zlib_deflate libcrc32c ipv6
-> > mlx4_ib ib_mad ib_core mlx4_en igb mlx4_core ses iTCO_wdt ioatdma dca
-> > iTCO_vendor_support i7core_edac edac_core enclosure i2c_i801 i2c_core
-> > microcode joydev serio_raw mptsas mptscsih mptbase scsi_transport_sas
-> > [last unloaded: scsi_wait_scan]
-> > [  204.100672]
-> > [  204.103025] Pid: 2166, comm: mount Not tainted
-> > 2.6.35.6-48.fc14.x86_64 #1 ASSY,BLADE,X6270      /SUN BLADE X6270
-> > SERVER MODULE
-> > [  204.121895] RIP: 0010:[<ffffffffa019a010>]  [<ffffffffa019a010>]
-> > btrfs_test_super+0x10/0x26 [btrfs]
-> > [  204.139279] RSP: 0018:ffff8803768ddcd8  EFLAGS: 00010287
-> > [  204.144675] RAX: 0000000000000000 RBX: ffff8803772df800 RCX: ffff8801f7d34480
-> > [  204.160885] RDX: 0000000000000120 RSI: ffff8801f7d34480 RDI: ffff8803772df800
-> > [  204.179473] RBP: ffff8803768ddcd8 R08: ffff8801f7d344f8 R09: ffff880375c78760
-> > [  204.185673] R10: ffff8803768ddb68 R11: ffff8801f7d34480 R12: ffffffffa01f13d0
-> > [  204.200174] R13: ffffffffa019a000 R14: ffff8801f7d34480 R15: ffffffffa01f1400
-> > [  204.221347] FS:  00007f766050d800(0000) GS:ffff880022200000(0000)
-> > knlGS:0000000000000000
-> > [  204.226597] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-> > [  204.238144] CR2: 0000000000000128 CR3: 00000001f7504000 CR4: 00000000000006f0
-> > [  204.256446] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-> > [  204.263975] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-> > [  204.280097] Process mount (pid: 2166, threadinfo ffff8803768dc000,
-> > task ffff880376ab8000)
-> > [  204.296529] Stack:
-> > [  204.298975]  ffff8803768ddd38 ffffffff81118df6 ffffffffa01f13d0
-> > 0000000000000000
-> > [  204.305955] <0> ffffffff811184a7 0000000000000000 ffff8803768ddd38
-> > 0000000000000003
-> > [  204.320999] <0> ffffffffa01f13d0 0000000000000000 ffff880375c78680
-> > ffff8801f4f59d00
-> > [  204.338658] Call Trace:
-> > [  204.341138]  [<ffffffff81118df6>] sget+0x54/0x367
-> > [  204.355474]  [<ffffffff811184a7>] ? set_anon_super+0x0/0xe7
-> > [  204.360487]  [<ffffffffa019a821>] btrfs_get_sb+0x108/0x3eb [btrfs]
-> > [  204.375799]  [<ffffffff81118b99>] vfs_kern_mount+0xad/0x1ac
-> > [  204.379952]  [<ffffffff81118d00>] do_kern_mount+0x4d/0xef
-> > [  204.395757]  [<ffffffff8112e45a>] do_mount+0x700/0x75d
-> > [  204.400676]  [<ffffffff810e5aec>] ? strndup_user+0x54/0x85
-> > [  204.417219]  [<ffffffff8112e6e7>] sys_mount+0x88/0xc2
-> > [  204.420399]  [<ffffffff81009cf2>] system_call_fastpath+0x16/0x1b
-> > [  204.435716] Code: <48> 8b 80 28 01 00 00 48 39 b0 28 22 00 00 c9 0f
-> > 94 c0 0f b6 c0 c3
-> > [  204.447369] RIP  [<ffffffffa019a010>] btrfs_test_super+0x10/0x26 [btrfs]
-> > [  204.458280]  RSP <ffff8803768ddcd8>
-> > [  204.462330] CR2: 0000000000000128
-> > [  204.466479] ---[ end trace c8bb842fa664d021 ]---
-> > [  204.498273] device label myvol-11d50321-7482-4ee2-8da5-5ee5f623ae17
-> > devid 1 transid 7 /dev/sdk
-> 
-> This looks like a fairly obvious race.
-> How about some comments on the suitability of this totally untested
-> patch?
-> 
-> I thought about trying to merge the tests following sget() (those
-> surrounded by the mutex) into btrfs_fill_super() but that seemed a bit
-> too hard. Maybe someone can advise on how that should be done if this
-> approach is not OK.
+* [David Arendt]=20
 
-Hahaha, excuse me, of course this is not ok!
-A function local mutex won't do anything to resolve this.
+> I received the message: btrfs: unlinked 34 orphans
+>
+> Just out of couriosity: what does it mean ?
 
-For the sake of discussion let's just assume that it has been defined as
-a static global in fs/btrfs/super.c instead.
+Ooh, ooh!  I think I know this one :)
 
-> 
-> btrfs - fix race in btrfs_get_sb()
-> 
-> From: Ian Kent <raven@themaw.net>
-> 
-> When mounting a btrfs file system btrfs_test_super() may attempt to
-> use sb->s_fs_info before it is set. This is because it isn't set until
-> btrfs_fill_super() is called but the super block creation locks are
-> dropped earlier during sget().
-> 
-> Also, for the same reason, it looks like there is a possible race
-> with the s->s_root check which should also be dealt with by this
-> patch.
-> ---
-> 
->  fs/btrfs/super.c |    7 +++++++
->  1 files changed, 7 insertions(+), 0 deletions(-)
-> 
-> 
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index 718b10d..9b463b9 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -565,6 +565,8 @@ static int btrfs_test_super(struct super_block *s, void *data)
->  	struct btrfs_fs_devices *test_fs_devices = data;
->  	struct btrfs_root *root = btrfs_sb(s);
->  
-> +	if (!root)
-> +		return 0;
->  	return root->fs_info->fs_devices == test_fs_devices;
->  }
->  
-> @@ -585,6 +587,7 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
->  	char *subvol_name = NULL;
->  	u64 subvol_objectid = 0;
->  	int error = 0;
-> +	DEFINE_MUTEX(super_mutex);
->  
->  	if (!(flags & MS_RDONLY))
->  		mode |= FMODE_WRITE;
-> @@ -613,8 +616,10 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
->  	if (IS_ERR(s))
->  		goto error_s;
->  
-> +	mutex_lock(&super_mutex);
->  	if (s->s_root) {
->  		if ((flags ^ s->s_flags) & MS_RDONLY) {
-> +			mutex_unlock(&super_mutex);
->  			deactivate_locked_super(s);
->  			error = -EBUSY;
->  			goto error_close_devices;
-> @@ -629,6 +634,7 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
->  		error = btrfs_fill_super(s, fs_devices, data,
->  					 flags & MS_SILENT ? 1 : 0);
->  		if (error) {
-> +			mutex_unlock(&super_mutex);
->  			deactivate_locked_super(s);
->  			goto error_free_subvol_name;
->  		}
-> @@ -636,6 +642,7 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
->  		btrfs_sb(s)->fs_info->bdev_holder = fs_type;
->  		s->s_flags |= MS_ACTIVE;
->  	}
-> +	mutex_unlock(&super_mutex);
->  
->  	root = get_default_root(s, subvol_objectid);
->  	if (IS_ERR(root)) {
-> 
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+When a file is unlinked/deleted while an application has it open, it is
+kept around allocated on disk so that the app has access to the data in
+the file.  When the file is closed or the app exits, it is deallocated
+(disk space is freed).  This is a quite normal way of handling temporar=
+y
+files.
 
+Now, if there is an unclean shutdown while a file is in this "deleted,
+but not freed" state, you get an orphaned file or inode -- that is,
+allocated data with no directory entry pointing to it.  When btrfs
+unlinks these orphans during mount, it's just completing what would hav=
+e
+happened once the unlinked files were closed.  If this happened after a=
+n
+unclean shutdown (crash or power loss), the message is just btrfs
+bragging about working properly.
 
+None of this is actually specific to btrfs.  I believe posix filesystem=
+s
+are more or less required (or at least expected) to behave like this.
+
+(interestingly, Microsoft Windows has a different take on this issue by
+simply not letting you delete open files).
+
+=D8ystein
+--=20
+This message was generated by a horde of attack elephants armed with PR=
+NGs.
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

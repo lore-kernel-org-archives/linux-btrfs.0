@@ -1,59 +1,170 @@
-From: Ted Ts'o <tytso@mit.edu>
-Subject: Re: [PATCH 1/6] fs: add hole punching to fallocate
-Date: Mon, 8 Nov 2010 22:30:38 -0500
-Message-ID: <20101109033038.GF3099@thunk.org>
-References: <1289248327-16308-1-git-send-email-josef@redhat.com>
- <20101109011222.GD2715@dastard>
+From: Ian Kent <raven@themaw.net>
+Subject: Re: mkfs.btrfs on 24 disks in parallel crashes kernel
+Date: Tue, 09 Nov 2010 12:10:00 +0800
+Message-ID: <1289275800.9102.16.camel@localhost>
+References: <AANLkTi=zjPYJ1rbb0GbYVEFQsL+cEb4NZufmL4tTxBet@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>, linux-kernel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, xfs@oss.sgi.com,
-	joel.becker@oracle.com, cmm@us.ibm.com, cluster-devel@redhat.com
-To: Dave Chinner <david@fromorbit.com>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <20101109011222.GD2715@dastard>
+Content-Type: text/plain; charset="UTF-8"
+Cc: linux-btrfs@vger.kernel.org
+To: Albert Strasheim <fullung@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTi=zjPYJ1rbb0GbYVEFQsL+cEb4NZufmL4tTxBet@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 09, 2010 at 12:12:22PM +1100, Dave Chinner wrote:
-> Hole punching was not included originally in fallocate() for a
-> variety of reasons. IIRC, they were along the lines of:
+On Mon, 2010-11-08 at 09:22 +0200, Albert Strasheim wrote:
+> Hello all
 > 
-> 	1 de-allocating of blocks in an allocation syscall is wrong.
-> 	  People wanted a new syscall for this functionality.
-> 	2 no glibc interface needs it
-> 	3 at the time, only XFS supported punching holes, so there
-> 	  is not need to support it in a generic interface
-> 	4 the use cases presented were not considered compelling
-> 	  enough to justify the additional complexity (!)
+> I did some experiments on Fedora 14 with 2.6.35.6, running mkfs.btrfs
+> followed by a mount in parallel on 24 disks.
 > 
-> In the end, I gave up arguing for it to be included because just
-> getting the FALLOC_FL_KEEP_SIZE functionality was a hard enough
-> battle.
+> This seems to crash reliably.
 > 
-> Anyway, #3 isn't the case any more, #4 was just an excuse not to
-> support anything ext4 couldn't do and lots of apps are calling
-> fallocate directly (because glibc can't use FALLOC_FL_KEEP_SIZE) so
-> #2 isn't an issue, either.
+> I reported the bug to Fedora here:
+> 
+> https://bugzilla.redhat.com/show_bug.cgi?id=650261
+> 
+> The bug report has some stacktraces and stuff attached.
+> 
+> I saw stuff like this:
+> 
+> [  203.861368] Btrfs loaded
+> [  203.871418] device label myvol-12b0f8ba-e1ef-4d00-aae4-578d59d955e4
+> devid 1 transid 7 /dev/sdv
+> [  203.981371] device label myvol-fe7fdbcd-8f2f-4b34-aa6b-0d3bb7582ebc
+> devid 1 transid 7 /dev/sdl
+> [  203.990234] BUG: unable to handle kernel NULL pointer dereference
+> at 0000000000000128
+> [  204.001153] IP: [<ffffffffa019a010>] btrfs_test_super+0x10/0x26 [btrfs]
+> [  204.016840] PGD 0
+> [  204.018696] Oops: 0000 [#1] SMP
+> [  204.021264] last sysfs file:
+> /sys/devices/pci0000:00/0000:00:05.0/0000:0d:00.0/host7/port-7:0/expander-7:0/port-7:0:9/end_device-7:0:9/target7:0:9/7:0:9:0/uevent
+> [  204.045966] CPU 0
+> [  204.055933] Modules linked in: btrfs zlib_deflate libcrc32c ipv6
+> mlx4_ib ib_mad ib_core mlx4_en igb mlx4_core ses iTCO_wdt ioatdma dca
+> iTCO_vendor_support i7core_edac edac_core enclosure i2c_i801 i2c_core
+> microcode joydev serio_raw mptsas mptscsih mptbase scsi_transport_sas
+> [last unloaded: scsi_wait_scan]
+> [  204.100672]
+> [  204.103025] Pid: 2166, comm: mount Not tainted
+> 2.6.35.6-48.fc14.x86_64 #1 ASSY,BLADE,X6270      /SUN BLADE X6270
+> SERVER MODULE
+> [  204.121895] RIP: 0010:[<ffffffffa019a010>]  [<ffffffffa019a010>]
+> btrfs_test_super+0x10/0x26 [btrfs]
+> [  204.139279] RSP: 0018:ffff8803768ddcd8  EFLAGS: 00010287
+> [  204.144675] RAX: 0000000000000000 RBX: ffff8803772df800 RCX: ffff8801f7d34480
+> [  204.160885] RDX: 0000000000000120 RSI: ffff8801f7d34480 RDI: ffff8803772df800
+> [  204.179473] RBP: ffff8803768ddcd8 R08: ffff8801f7d344f8 R09: ffff880375c78760
+> [  204.185673] R10: ffff8803768ddb68 R11: ffff8801f7d34480 R12: ffffffffa01f13d0
+> [  204.200174] R13: ffffffffa019a000 R14: ffff8801f7d34480 R15: ffffffffa01f1400
+> [  204.221347] FS:  00007f766050d800(0000) GS:ffff880022200000(0000)
+> knlGS:0000000000000000
+> [  204.226597] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+> [  204.238144] CR2: 0000000000000128 CR3: 00000001f7504000 CR4: 00000000000006f0
+> [  204.256446] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+> [  204.263975] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+> [  204.280097] Process mount (pid: 2166, threadinfo ffff8803768dc000,
+> task ffff880376ab8000)
+> [  204.296529] Stack:
+> [  204.298975]  ffff8803768ddd38 ffffffff81118df6 ffffffffa01f13d0
+> 0000000000000000
+> [  204.305955] <0> ffffffff811184a7 0000000000000000 ffff8803768ddd38
+> 0000000000000003
+> [  204.320999] <0> ffffffffa01f13d0 0000000000000000 ffff880375c78680
+> ffff8801f4f59d00
+> [  204.338658] Call Trace:
+> [  204.341138]  [<ffffffff81118df6>] sget+0x54/0x367
+> [  204.355474]  [<ffffffff811184a7>] ? set_anon_super+0x0/0xe7
+> [  204.360487]  [<ffffffffa019a821>] btrfs_get_sb+0x108/0x3eb [btrfs]
+> [  204.375799]  [<ffffffff81118b99>] vfs_kern_mount+0xad/0x1ac
+> [  204.379952]  [<ffffffff81118d00>] do_kern_mount+0x4d/0xef
+> [  204.395757]  [<ffffffff8112e45a>] do_mount+0x700/0x75d
+> [  204.400676]  [<ffffffff810e5aec>] ? strndup_user+0x54/0x85
+> [  204.417219]  [<ffffffff8112e6e7>] sys_mount+0x88/0xc2
+> [  204.420399]  [<ffffffff81009cf2>] system_call_fastpath+0x16/0x1b
+> [  204.435716] Code: <48> 8b 80 28 01 00 00 48 39 b0 28 22 00 00 c9 0f
+> 94 c0 0f b6 c0 c3
+> [  204.447369] RIP  [<ffffffffa019a010>] btrfs_test_super+0x10/0x26 [btrfs]
+> [  204.458280]  RSP <ffff8803768ddcd8>
+> [  204.462330] CR2: 0000000000000128
+> [  204.466479] ---[ end trace c8bb842fa664d021 ]---
+> [  204.498273] device label myvol-11d50321-7482-4ee2-8da5-5ee5f623ae17
+> devid 1 transid 7 /dev/sdk
 
-I don't recall anyone arguing #4 because of ext4, but I get very tired
-of the linux-fsdevel bike-shed painting parties, so I often will
-concede whatever is necessary just to get the !@#! interface in,
-assuming we could add more flags later....
+This looks like a fairly obvious race.
+How about some comments on the suitability of this totally untested
+patch?
 
-glibc does support fallocate(), BTW; it's just posix_fallocate() that
-doesn't use FALLOC_FL_KEEP_SIZE.
+I thought about trying to merge the tests following sget() (those
+surrounded by the mutex) into btrfs_fill_super() but that seemed a bit
+too hard. Maybe someone can advise on how that should be done if this
+approach is not OK.
 
-> I guess that leaves #1 to be debated;
-> I don't think there is any problem with doing what you propose.
+btrfs - fix race in btrfs_get_sb()
 
-I don't have a problem either.
+From: Ian Kent <raven@themaw.net>
 
-As a completely separate proposal, what do people think about an
-FALLOCATE_FL_ZEROIZE after which time the blocks are allocated, but
-reading from them returns zero.  This could be done either by (a)
-sending a discard in the case of devices where discard_zeros_data is
-true and discard_granularty is less than the fs block size, or (b) by
-setting the uninitialized flag in the extent tree.
+When mounting a btrfs file system btrfs_test_super() may attempt to
+use sb->s_fs_info before it is set. This is because it isn't set until
+btrfs_fill_super() is called but the super block creation locks are
+dropped earlier during sget().
 
-						- Ted
+Also, for the same reason, it looks like there is a possible race
+with the s->s_root check which should also be dealt with by this
+patch.
+---
+
+ fs/btrfs/super.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 718b10d..9b463b9 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -565,6 +565,8 @@ static int btrfs_test_super(struct super_block *s, void *data)
+ 	struct btrfs_fs_devices *test_fs_devices = data;
+ 	struct btrfs_root *root = btrfs_sb(s);
+ 
++	if (!root)
++		return 0;
+ 	return root->fs_info->fs_devices == test_fs_devices;
+ }
+ 
+@@ -585,6 +587,7 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
+ 	char *subvol_name = NULL;
+ 	u64 subvol_objectid = 0;
+ 	int error = 0;
++	DEFINE_MUTEX(super_mutex);
+ 
+ 	if (!(flags & MS_RDONLY))
+ 		mode |= FMODE_WRITE;
+@@ -613,8 +616,10 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
+ 	if (IS_ERR(s))
+ 		goto error_s;
+ 
++	mutex_lock(&super_mutex);
+ 	if (s->s_root) {
+ 		if ((flags ^ s->s_flags) & MS_RDONLY) {
++			mutex_unlock(&super_mutex);
+ 			deactivate_locked_super(s);
+ 			error = -EBUSY;
+ 			goto error_close_devices;
+@@ -629,6 +634,7 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
+ 		error = btrfs_fill_super(s, fs_devices, data,
+ 					 flags & MS_SILENT ? 1 : 0);
+ 		if (error) {
++			mutex_unlock(&super_mutex);
+ 			deactivate_locked_super(s);
+ 			goto error_free_subvol_name;
+ 		}
+@@ -636,6 +642,7 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
+ 		btrfs_sb(s)->fs_info->bdev_holder = fs_type;
+ 		s->s_flags |= MS_ACTIVE;
+ 	}
++	mutex_unlock(&super_mutex);
+ 
+ 	root = get_default_root(s, subvol_objectid);
+ 	if (IS_ERR(root)) {
+
+

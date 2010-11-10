@@ -1,73 +1,24 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: labelling
-Date: 10 Nov 2010 08:40:00 +0100
-Message-ID: <B$bGt2my1uB@helmut.hullen.de>
-Reply-To: helmut@hullen.de
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: NFS support
+Date: Wed, 10 Nov 2010 03:08:06 -0500
+Message-ID: <20101110080806.GC3495@dhcp231-156.rdu.redhat.com>
+References: <AANLkTinty-ZyAEFL7ov5cBN9yex+xde4rBevz+VbMV8i@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Wenyi Liu <qingshenlwy@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTinty-ZyAEFL7ov5cBN9yex+xde4rBevz+VbMV8i@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, linux-btrfs,
+On Wed, Nov 10, 2010 at 12:53:59PM +0800, Wenyi Liu wrote:
+> Hi All:
+> 
+>     I found the project ideas about NFS support in btrfs wiki. But, I
+> have long time to disconnect to the btrfs mail list. Can you give me
+> the process of the support? Thanks!!
+>
 
-I have problems with btrfs labels.
+NFS support already is there.  Thanks,
 
-My way:
-
-2-TByte-disk:
-
-        mkfs.btrs LABEL=MM2 /dev/sdd2
-
-worked.
-Mounting "mount LABEL=MM2 /srv/MM" worked.
-
-Additional 1.5-TByte-Disk:
-
-        btrfs add device /dev/sdc3 /srv/MM
-        ... balance ...
-
-worked.
-
-        findfs LABEL=MM2
-
-shows "/dev/sdd2" (the first partition)
-
-        file -s /dev/sdd2
-        file -s /dev/sdc3
-
-shows "LABEL=MM2" for both partitions (that's not good).
-
-Unmounting "/srv/MM" and
-
-        mount LABEL=MM2 /srv/MM
-
-doesn't work now, it tries to mount /dev/sdd2 and mourns.
-
-        mount /dev/sdd2 /srv/MM
-
-shows the same error message,
-
-        mount /dev/sdc3 /srv/MM
-
-(mounting the added partition) works fine, the whole space is available.
-
-But what can I do with the 2 identical labels? How can I delete (or  
-change) the label of the first btrfs partition?
-
-----------------------------
-
-By the way:
-
-"df" shows about 3.4 TByte usable space (2 TByte and 1.5 TByte), but
-
-        btrfs filesystem df /srv/MM
-
-tells
-
-        Data: total=2.70TB, used=1.64TB
-
-I'm missing about 0.7 TByte!
-
-Viele Gruesse!
-Helmut
+Josef 

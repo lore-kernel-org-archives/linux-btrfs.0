@@ -1,71 +1,61 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: Re: labelling
-Date: 10 Nov 2010 12:44:00 +0100
-Message-ID: <B$bHXtjT1uB@helmut.hullen.de>
-References: <20101110111811.GA15973@vlad.carfax.org.uk>
-Reply-To: helmut@hullen.de
+From: Oliver =?UTF-8?Q?Ve=C4=8Dernik?= <ov@vecernik.at>
+Subject: Re: migrating drives (device delete)
+Date: Wed, 10 Nov 2010 13:15:51 +0100
+Message-ID: <1289391351.20690.46.camel@jeezo>
+References: <B$bHV4Xy1uB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Cc: linux-btrfs@vger.kernel.org
+To: helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101110111811.GA15973@vlad.carfax.org.uk>
+In-Reply-To: <B$bHV4Xy1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Hugo,
+Hallo Helmut,
 
-Du meintest am 10.11.10:
+> What tells "df": about 300 GByte in use?
 
->>         findfs LABEL=MM2
->>
->> shows "/dev/sdd2" (the first partition)
->>
->>         file -s /dev/sdd2
->>         file -s /dev/sdc3
->>
->> shows "LABEL=MM2" for both partitions (that's not good).
+# df -h | head -n 2 
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/sda2             844G  293G  552G  35% /
+# btrfs filesystem df /
+Metadata: total=896.00MB, used=484.77MB
+Data: total=291.50GB, used=291.15GB
+System: total=12.00MB, used=28.00KB
 
->    No, this is both good and correct. You've got a single filesystem
-> spanning multiple block devices. The *filesystem* possesses the
-> label, and with btrfs you can mount the filesystem using *any* of the
-> block devices that compose it, so both block devices should indeed
-> show the FS label, which is what's happening here.
+> And I haven't told the system to make a "raid0". I've created the first  
+> btrfs partition only with
+> 
+>         mkfs.btrfs /dev/sdxn
 
->> Unmounting "/srv/MM" and
->>
->>         mount LABEL=MM2 /srv/MM
->>
->> doesn't work now, it tries to mount /dev/sdd2 and mourns.
->>
->>         mount /dev/sdd2 /srv/MM
->>
->> shows the same error message,
+I also just started with:
 
->    What's the error message? What do you get in your kernel logs when
-> you do this? This should work, so there's something wrong, but it's
-> (probably) not to do with disk labels.
+# mkfs.btrfs /dev/sda2
 
-I'll tell tomorrow; the system is just copying more than 1 TByte ...
+> And I haven't used "degraded" after balancing the 2 partitions.
 
->> ----------------------------
->>
->> By the way:
->>
->> "df" shows about 3.4 TByte usable space (2 TByte and 1.5 TByte), but
->>
->>         btrfs filesystem df /srv/MM
->>
->> tells
->>
->>         Data: total=2.70TB, used=1.64TB
->>
->> I'm missing about 0.7 TByte!
+# mount -o remount /dev/sdb2 /
+# df -h 
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/sda2             844G  293G  552G  35% /
+none                  429M  200K  429M   1% /dev
+none                  435M     0  435M   0% /dev/shm
+none                  435M   48K  435M   1% /var/run
+none                  435M     0  435M   0% /var/lock
+/dev/sdc1             2.0G   26M  1.9G   2% /boot
+# btrfs device delete /dev/sda2 /
+ERROR: error removing the device '/dev/sda2'
 
->    In "btrfs filesystem df", the "total" field is the space that has
-> been allocated to block groups. As more space is needed on the
-> filesystem, the "total" field will increase to use up the additional
-> raw storage
+> The "balance" command may take a long time; I've just seen about 2 days  
+> for 1.5 TByte.
 
-Ok - and many thanks! I'll see tomorrow ...
+I balanced immediately after installing the server.  It was less than
+1GB and took just a couple of seconds.
 
-Viele Gruesse!
-Helmut
+The only idea I have now is to copy everthing to a new fs, chroot into
+it and update-grub.  Is this the best way to go?
+
+-- 
+Regards,
+Oliver
+

@@ -1,46 +1,120 @@
-From: Oliver =?UTF-8?Q?Ve=C4=8Dernik?= <ov@vecernik.at>
-Subject: migrating drives (device delete)
-Date: Wed, 10 Nov 2010 12:04:36 +0100
-Message-ID: <1289387076.20690.28.camel@jeezo>
+From: Hugo Mills <hugo-lkml@carfax.org.uk>
+Subject: Re: labelling
+Date: Wed, 10 Nov 2010 11:18:11 +0000
+Message-ID: <20101110111811.GA15973@vlad.carfax.org.uk>
+References: <B$bGt2my1uB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-To: linux-btrfs@vger.kernel.org
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="/04w6evG8XlLl3ft"
+Cc: linux-btrfs@vger.kernel.org
+To: helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <B$bGt2my1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
 
-running on Ubuntu server 10.10 (2.6.35-22-server) I've got a 160GB disk
-for / (/boot is on another partition with ext2).  I added another 750GB
-drive with the following command:
+--/04w6evG8XlLl3ft
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-# btrfs device add /dev/sdb2 /
-# btrfs device balance /
+On Wed, Nov 10, 2010 at 08:40:00AM +0100, Helmut Hullen wrote:
+> Hallo, linux-btrfs,
+> 
+> I have problems with btrfs labels.
+> 
+> My way:
+> 
+> 2-TByte-disk:
+> 
+>         mkfs.btrs LABEL=MM2 /dev/sdd2
+> 
+> worked.
+> Mounting "mount LABEL=MM2 /srv/MM" worked.
+> 
+> Additional 1.5-TByte-Disk:
+> 
+>         btrfs add device /dev/sdc3 /srv/MM
+>         ... balance ...
+> 
+> worked.
+> 
+>         findfs LABEL=MM2
+> 
+> shows "/dev/sdd2" (the first partition)
+> 
+>         file -s /dev/sdd2
+>         file -s /dev/sdc3
+> 
+> shows "LABEL=MM2" for both partitions (that's not good).
 
-As far as I can see it is a RAID 0 and now full:
+   No, this is both good and correct. You've got a single filesystem
+spanning multiple block devices. The *filesystem* possesses the label,
+and with btrfs you can mount the filesystem using *any* of the block
+devices that compose it, so both block devices should indeed show the
+FS label, which is what's happening here.
 
-# sudo btrfs filesystem show 
-Label: none  uuid: cd4fd4c1-0632-4cbe-bf3b-ba7a9acda1e0
-        Total devices 2 FS bytes used 291.62GB
-        devid    2 size 696.77GB used 146.63GB path /dev/sdb2
-        devid    1 size 147.19GB used 146.64GB path /dev/sda2
+> Unmounting "/srv/MM" and
+> 
+>         mount LABEL=MM2 /srv/MM
+> 
+> doesn't work now, it tries to mount /dev/sdd2 and mourns.
+> 
+>         mount /dev/sdd2 /srv/MM
+> 
+> shows the same error message,
 
-Now I want to remove the smaller drive:
+   What's the error message? What do you get in your kernel logs when
+you do this? This should work, so there's something wrong, but it's
+(probably) not to do with disk labels.
 
-# mount -t btrfs -o remount,degraded /dev/sda2 /
-# mount | grep /dev/sda2
-/dev/sda2 on / type btrfs (rw,degraded)
-# btrfs device delete /dev/sda2 /
-ERROR: error removing the device '/dev/sda2'
+>         mount /dev/sdc3 /srv/MM
+> 
+> (mounting the added partition) works fine, the whole space is available.
+> 
+> But what can I do with the 2 identical labels? How can I delete (or  
+> change) the label of the first btrfs partition?
 
-Do I have to move the data first to /dev/sdb2 (how?) and then
-delete /dev/sda2? Is there a better way to handle a situation like this?
+   You can't, as I explained above.
 
-Thanks!
+> ----------------------------
+> 
+> By the way:
+> 
+> "df" shows about 3.4 TByte usable space (2 TByte and 1.5 TByte), but
+> 
+>         btrfs filesystem df /srv/MM
+> 
+> tells
+> 
+>         Data: total=2.70TB, used=1.64TB
+> 
+> I'm missing about 0.7 TByte!
+
+   In "btrfs filesystem df", the "total" field is the space that has
+been allocated to block groups. As more space is needed on the
+filesystem, the "total" field will increase to use up the additional
+raw storage (if you're using RAID1 or RAID10, this will be at a ratio
+of 2:1; with RAID0 or simple allocation, the ratio is 1:1).
+
+   Hugo.
 
 -- 
-Regards,
-Oliver
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+      --- In event of Last Trump,  please form an orderly queue ---      
+                          and await judgement.                           
 
+--/04w6evG8XlLl3ft
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
 
+iD8DBQFM2n9zIKyzvlFcI40RAo6QAJ9rbF5qDD0jnd5PyGeTpQ1wyIuVhwCglnP/
+t0kNvw6tbuFuPSkTm9yeczA=
+=NMZi
+-----END PGP SIGNATURE-----
+
+--/04w6evG8XlLl3ft--

@@ -1,7 +1,7 @@
 From: "Helmut Hullen" <Hullen@t-online.de>
 Subject: Re: labelling
-Date: 11 Nov 2010 10:01:00 +0100
-Message-ID: <B$fK9snT1uB@helmut.hullen.de>
+Date: 11 Nov 2010 11:53:00 +0100
+Message-ID: <B$fKVvMD1uB@helmut.hullen.de>
 References: <4CDBAB52.60903@jp.fujitsu.com>
 Reply-To: helmut@hullen.de
 Mime-Version: 1.0
@@ -15,34 +15,25 @@ Hallo, Tsutomu,
 
 Du meintest am 11.11.10:
 
-[cold start]
+>>>>          mount LABEL=MM2 /srv/MM
+>>>>
+>>>> doesn't work now, it tries to mount /dev/sdd2 and mourns.
+>>>>
+>>>>          mount /dev/sdd2 /srv/MM
+>>>>
+>>>> shows the same error message,
 
->> # mount LABEL=MM2
->> mount: wrong fs type, bad option, bad superblock on /dev/sdd2,
->>         missing codepage or helper program, or other error
->>         In some cases useful info is found in syslog - try
->>         dmesg | tail  or so
 
 > I encountered the same problem, too.
 > Please try 'btrfsctl -a' before mounting.
 
-It works - thank you!
+This command (or "/sbin/btrfs device scan 2>/dev/null") has to be put  
+into the "init" procedure; it may be needed in runlevel 1 too, it may be  
+needed if the root partition is a btrfs partition.
 
-Another problem (I had mentioned it some days before):
-
-        btrfsctl -a
-
-tests every block device in "/dev". And as I don't use "udev" there are  
-many device entries without an existing devices (p.e. hda1 to hda31).  
-"btrfsctl" should use something like "/proc/partitions" to test only  
-existing devices.
-
-I have to call
-
-        /sbin/btrfsctl -a 2>/dev/null
-
-to make the output readable, and suppressing error messages is no good  
-style.
+In my homemade slackware/sysv installation I have put this command into  
+"/etc/init.d/boot", maybe for slackware it has to be put into "/etc/ 
+rc.d/rc.S".
 
 Viele Gruesse!
 Helmut

@@ -1,29 +1,67 @@
-From: Wenyi Liu <qingshenlwy@gmail.com>
-Subject: Re: NFS support
-Date: Thu, 11 Nov 2010 13:12:23 +0800
-Message-ID: <AANLkTinnaMs0MAGXfcKSTRpfiKq-0z4kbogxt1OVu3KW@mail.gmail.com>
-References: <AANLkTinty-ZyAEFL7ov5cBN9yex+xde4rBevz+VbMV8i@mail.gmail.com>
-	<20101110080806.GC3495@dhcp231-156.rdu.redhat.com>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: Re: labelling
+Date: 11 Nov 2010 08:48:00 +0100
+Message-ID: <B$fJyztT1uB@helmut.hullen.de>
+References: <20101110111811.GA15973@vlad.carfax.org.uk>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101110080806.GC3495@dhcp231-156.rdu.redhat.com>
+In-Reply-To: <20101110111811.GA15973@vlad.carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thank you, I will choose another one.
+Hallo, Hugo,
 
-2010/11/10, Josef Bacik <josef@redhat.com>:
-> On Wed, Nov 10, 2010 at 12:53:59PM +0800, Wenyi Liu wrote:
->> Hi All:
+Du meintest am 10.11.10:
+
+>>         findfs LABEL=MM2
 >>
->>     I found the project ideas about NFS support in btrfs wiki. But, I
->> have long time to disconnect to the btrfs mail list. Can you give me
->> the process of the support? Thanks!!
+>> shows "/dev/sdd2" (the first partition)
 >>
->
-> NFS support already is there.  Thanks,
->
-> Josef
->
+>>         file -s /dev/sdd2
+>>         file -s /dev/sdc3
+>>
+>> shows "LABEL=MM2" for both partitions
+
+>>         mount LABEL=MM2 /srv/MM
+>>
+>> doesn't work now, it tries to mount /dev/sdd2 and mourns.
+>>
+>>         mount /dev/sdd2 /srv/MM
+>>
+>> shows the same error message,
+
+# mount LABEL=MM2
+mount: wrong fs type, bad option, bad superblock on /dev/sdd2,
+       missing codepage or helper program, or other error
+       In some cases useful info is found in syslog - try
+       dmesg | tail  or so
+
+# mount /dev/sdd2
+mount: wrong fs type, bad option, bad superblock on /dev/sdd2,
+       missing codepage or helper program, or other error
+       In some cases useful info is found in syslog - try
+       dmesg | tail  or so
+
+>    What's the error message? What do you get in your kernel logs when
+> you do this? This should work, so there's something wrong, but it's
+> (probably) not to do with disk labels.
+
+>>         mount /dev/sdc3 /srv/MM
+>>
+>> (mounting the added partition) works fine, the whole space is
+>> available.
+
+That's the behaviour after a cold boot.
+
+        umount /srv/MM
+        mount LABEL=MM2 /srv/MM
+
+then works.
+Only the first try with LABEL or with "the other" device seems to fail.
+
+I don't like testing via reboot ...
+
+Viele Gruesse!
+Helmut

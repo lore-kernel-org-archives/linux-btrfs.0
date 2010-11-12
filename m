@@ -1,37 +1,41 @@
-From: Gordan Bobic <gordan@bobich.net>
-Subject: Linear (JBOD) Array Mode
-Date: Fri, 12 Nov 2010 10:59:55 +0000
-Message-ID: <4CDD1E2B.1000505@bobich.net>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: Re: [PATCH v2 2/2] Cancel filesystem balance.
+Date: 12 Nov 2010 12:25:00 +0100
+Message-ID: <B$jNZIPD1uB@helmut.hullen.de>
+References: <20101112090755.GA16221@attic.humilis.net>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20101112090755.GA16221@attic.humilis.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Is there an option in btrfs for this mode of RAID? I know it supports
-the equivalent of RAID10, but what I am after is JBOD of mirrors. The
-reason I want this is for making a really low power home NAS, typically
-for home theater/media use. I believe this would yield better power
-savings in the average case.
+Hallo, Sander,
 
-Here is my reasoning. This sort of a setup would be idle most of the
-time, and the disks can safely be spun down. When a request comes to
-read a file (typically a multi-MB or multi-GB sequentially read file),
-in RAID0 all the disks would wake up because each chunk would come off
-as different disk. In JBOD, only the disk that has the file on it would
-need to be awake to serve that file while the rest can go to sleep.
+Du meintest am 12.11.10:
 
-Of course JBOD yields relatively poor performance, but since an average
-SATA disk will saturate a Gb ethernet link with a linear read (the sort
-that I envisage my storage box doing most of the time), performance
-isn't really an issue.
+>> Given that there's been at least 1 report of it taking 12 hours
+>> to balance a non-trivial amount of data I suspect putting this
+>> operation into the background by default and having the cancel
+>> option might be a better plan.
+>>
+>> Thoughts ?
 
-I know I can create two RAID0 stripes and create a BTRFS mirror on top
-of that, but if I were to do that, then a disk failure would mean
-re-mirroring the entire stripe instead of just one disk, which is not a
-sane solution on a big multi-TB array.
+> My humble opinion: I very much like the way mdadm works, with the
+> progress bar in /proc/mdstat if an array is rebuilding for example.
 
-Is there a way to do this with BTRFS?
+Hmmm - it blocks the console for a long time.
 
-Gordan
+I prefer running those long time jobs via "at"; all messages go into a  
+mail to root (or whoever has started the job).
 
+"balance" seems to produce a logfile entry every 40 seconds, that may be  
+about 1500 lines for a 1 TByte job.
+A progress bar produces similar messages, but they aren't as good  
+readable in an e-mail ...
+
+I know those long and nearly unreadable mails p.e. from "squidGuard" ...
+
+Viele Gruesse!
+Helmut

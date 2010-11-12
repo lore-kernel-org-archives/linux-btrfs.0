@@ -1,30 +1,33 @@
 From: Chris Samuel <chris@csamuel.org>
-Subject: Re: [PATCH v2 2/2] Cancel filesystem balance.
-Date: Fri, 12 Nov 2010 15:28:08 +1100
-Message-ID: <4CDCC258.1050402@csamuel.org>
-References: <cover.1289522188.git.hugo@carfax.org.uk> <9b18b334410714aba2867f96e949f19243536ddc.1289522188.git.hugo@carfax.org.uk> <4CDC9971.6080903@cn.fujitsu.com>
+Subject: Re: Btrfs-progs: Update man page for mixed data+metadata option.
+Date: Fri, 12 Nov 2010 17:47:14 +1100
+Message-ID: <4CDCE2F2.5020500@csamuel.org>
+References: <1289412138-8049-1-git-send-email-mitch.harder@sabayonlinux.org> <20101111021034.GA6911@dhcp231-156.rdu.redhat.com> <AANLkTimmhCYFtq1y3Lda8O7CRTJOF4OLU-jkJ+yF965X@mail.gmail.com> <20101111125229.GA10179@dhcp231-156.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org,
-	Goffredo Baroncelli <kreijack@libero.it>,
-	Chris Mason <chris.mason@oracle.com>,
-	liubo <liubo2009@cn.fujitsu.com>
-To: Li Zefan <lizf@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Mitch Harder <mitch.harder@sabayonlinux.org>,
+	linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4CDC9971.6080903@cn.fujitsu.com>
+In-Reply-To: <20101111125229.GA10179@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/11/10 12:33, Li Zefan wrote:
+On 11/11/10 23:52, Josef Bacik wrote:
 
-> Is there any blocker that prevents us from canceling balance
-> by just Ctrl+C ?
+> This feature incurs a performance penalty in larger filesystems, it is
+> recommended for use with filesystems of 1 GiB or smaller.
 
-Given that there's been at least 1 report of it taking 12 hours
-to balance a non-trivial amount of data I suspect putting this
-operation into the background by default and having the cancel
-option might be a better plan.
+Maybe slightly stronger, for example:
 
-Thoughts ?
+This feature incurs a performance penalty for larger filesystems and it
+is ONLY recommended for use with filesystems of 1 GiB or smaller.
 
+Is it worth having a check and a warning printed if a user does
+try and make a filesystem larger than 1GiB with this option ?
+
+Just in case they don't RTFM...
+
+cheers,
+Chris
 -- 
  Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC

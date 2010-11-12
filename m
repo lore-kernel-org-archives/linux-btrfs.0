@@ -1,41 +1,30 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
+From: Sander <sander@humilis.net>
 Subject: Re: [PATCH v2 2/2] Cancel filesystem balance.
-Date: 12 Nov 2010 12:25:00 +0100
-Message-ID: <B$jNZIPD1uB@helmut.hullen.de>
+Date: Fri, 12 Nov 2010 13:04:01 +0100
+Message-ID: <20101112120401.GA9003@attic.humilis.net>
 References: <20101112090755.GA16221@attic.humilis.net>
-Reply-To: helmut@hullen.de
+ <B$jNZIPD1uB@helmut.hullen.de>
+Reply-To: sander@humilis.net
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Helmut Hullen <Hullen@t-online.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101112090755.GA16221@attic.humilis.net>
+In-Reply-To: <B$jNZIPD1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Sander,
+Helmut Hullen wrote (ao):
+> Du meintest am 12.11.10:
+> > My humble opinion: I very much like the way mdadm works, with the
+> > progress bar in /proc/mdstat if an array is rebuilding for example.
+> 
+> Hmmm - it blocks the console for a long time.
 
-Du meintest am 12.11.10:
+Actually, mdadm doesn't block the console as it returns the prompt
+immediately :-)
 
->> Given that there's been at least 1 report of it taking 12 hours
->> to balance a non-trivial amount of data I suspect putting this
->> operation into the background by default and having the cancel
->> option might be a better plan.
->>
->> Thoughts ?
+	Sander
 
-> My humble opinion: I very much like the way mdadm works, with the
-> progress bar in /proc/mdstat if an array is rebuilding for example.
-
-Hmmm - it blocks the console for a long time.
-
-I prefer running those long time jobs via "at"; all messages go into a  
-mail to root (or whoever has started the job).
-
-"balance" seems to produce a logfile entry every 40 seconds, that may be  
-about 1500 lines for a 1 TByte job.
-A progress bar produces similar messages, but they aren't as good  
-readable in an e-mail ...
-
-I know those long and nearly unreadable mails p.e. from "squidGuard" ...
-
-Viele Gruesse!
-Helmut
+-- 
+Humilis IT Services and Solutions
+http://www.humilis.net

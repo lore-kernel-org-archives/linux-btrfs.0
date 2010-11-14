@@ -1,30 +1,45 @@
-From: Milan Broz <mbroz@redhat.com>
-Subject: Re: dm-crypt barrier support is effective
-Date: Sun, 14 Nov 2010 22:54:38 +0100
-Message-ID: <4CE05A9E.9090204@redhat.com>
-References: <AANLkTim6WTCChWGbTb-PUGd2AERGibeRtgan-WDznf2s@mail.gmail.com>	<4CD6B7FA.3050005@redhat.com>	<AANLkTikbsU+SGAaoq_oek=7tfDdjg+0wFoydhA+K9ZU+@mail.gmail.com>	<AANLkTinna7BiGHogXnn1iEG6ccUAjFM3p3S3aHpv=h-E@mail.gmail.com>	<20101107194547.GA12521@basil.fritz.box>	<4CD71C8B.1050604@redhat.com>	<20101107230508.GB17592@basil.fritz.box>	<20101108145809.GD29714@redhat.com>	<1289238930-sup-9765@think>	<20101114205925.GA20451@redhat.com> <AANLkTi=rVyozmvqCJD1kGqnV3uEn-0ak6B12-O_9XOKJ@mail.gmail.com>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: Oops while rebalancing, now unmountable.
+Date: Sun, 14 Nov 2010 17:00:18 -0500
+Message-ID: <20101114220018.GA4512@infradead.org>
+References: <1289236257.3611.3.camel@mars>
+ <1289310046-sup-839@think>
+ <1289326892.4231.2.camel@mars>
+ <1289764507.4303.9.camel@mars>
+ <20101114204206.GV6809@random.random>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Mike Snitzer <snitzer@redhat.com>,
-	Andi Kleen <andi@firstfloor.org>,
+Content-Type: text/plain; charset=us-ascii
+Cc: Shane Shrybman <shrybman@teksavvy.com>,
 	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	dm-devel <dm-devel@redhat.com>,
-	Linux Kernel <linux-kernel@vger.kernel.org>,
-	htd <htd@fancy-poultry.org>, Chris Mason <chris.mason@oracle.com>
-To: Matt <jackdachef@gmail.com>
+	Chris Mason <chris.mason@oracle.com>, linux-mm@kvack.org,
+	linux-fsdevel@vger.kernel.org
+To: Andrea Arcangeli <aarcange@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=rVyozmvqCJD1kGqnV3uEn-0ak6B12-O_9XOKJ@mail.gmail.com>
+In-Reply-To: <20101114204206.GV6809@random.random>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/14/2010 10:49 PM, Matt wrote:
-> only with the dm-crypt scaling patch I could observe the data-corruption
+On Sun, Nov 14, 2010 at 09:42:06PM +0100, Andrea Arcangeli wrote:
+> btrfs misses this:
+> 
+> +       .migratepage    = btree_migratepage,
+> 
+> It's a bug that can trigger upstream too (not only with THP) if there
+> are hugepage allocations (like while incrasing nr_hugepages). Chris
+> already fixed it with an experimental patch.
 
-even with v5 I sent on Friday?
+If the lack of an obscure method causes data corruption something
+is seriously wrong with THP.  At least from the 10.000 foot view
+I can't quite figure what the exact issue is, though.
+fallback_migrate_page seems to do the right thing to me for that
+case.
 
-Are you sure that it is not related to some fs problem in 2.6.37-rc1?
+Btw, there's also another issue with the page migration code when used
+for filesystem pages.  If directly calls into ->writepage instead
+of using the flusher threads.  On most filesystems this will
+"only" cause nasty I/O patterns, but on ext4 for example it will
+be more nasty as ext3 doesn't do conversions from delayed allocations to
+real ones.  So unless you're doing a lot of overwrites it will be
+hard to make any progress in writeout().
 
-If it works on 2.6.36 without problems, it is probably problems somewhere
-else (flush/fua conversion was trivial here - DM is still doing full flush
-and there are no other changes in code IMHO.)
-
-Milan
+Btw, what codepath does THP call migrate_pages from?  If you don't
+use an explicit thread writeout will be a no-op on btrfs and XFS, too.

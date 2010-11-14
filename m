@@ -1,81 +1,65 @@
-From: Andrea Arcangeli <aarcange@redhat.com>
-Subject: Re: Oops while rebalancing, now unmountable.
-Date: Sun, 14 Nov 2010 23:12:22 +0100
-Message-ID: <20101114221222.GX6809@random.random>
-References: <1289236257.3611.3.camel@mars>
- <1289310046-sup-839@think>
- <1289326892.4231.2.camel@mars>
- <1289764507.4303.9.camel@mars>
- <20101114204206.GV6809@random.random>
- <20101114220018.GA4512@infradead.org>
+From: Matt <jackdachef@gmail.com>
+Subject: Re: dm-crypt barrier support is effective
+Date: Mon, 15 Nov 2010 00:24:08 +0100
+Message-ID: <AANLkTimT0t3xqgKdAn7MBPD7ED-9uPS+WJE0z+K8tciu@mail.gmail.com>
+References: <AANLkTim6WTCChWGbTb-PUGd2AERGibeRtgan-WDznf2s@mail.gmail.com>
+	<4CD6B7FA.3050005@redhat.com>
+	<AANLkTikbsU+SGAaoq_oek=7tfDdjg+0wFoydhA+K9ZU+@mail.gmail.com>
+	<AANLkTinna7BiGHogXnn1iEG6ccUAjFM3p3S3aHpv=h-E@mail.gmail.com>
+	<20101107194547.GA12521@basil.fritz.box>
+	<4CD71C8B.1050604@redhat.com>
+	<20101107230508.GB17592@basil.fritz.box>
+	<20101108145809.GD29714@redhat.com>
+	<1289238930-sup-9765@think>
+	<20101114205925.GA20451@redhat.com>
+	<AANLkTi=rVyozmvqCJD1kGqnV3uEn-0ak6B12-O_9XOKJ@mail.gmail.com>
+	<4CE05A9E.9090204@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Shane Shrybman <shrybman@teksavvy.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Chris Mason <chris.mason@oracle.com>, linux-mm@kvack.org,
-        linux-fsdevel@vger.kernel.org
-To: Christoph Hellwig <hch@infradead.org>
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20101114220018.GA4512@infradead.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Mike Snitzer <snitzer@redhat.com>,
+	Andi Kleen <andi@firstfloor.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	dm-devel <dm-devel@redhat.com>,
+	Linux Kernel <linux-kernel@vger.kernel.org>,
+	htd <htd@fancy-poultry.org>, Chris Mason <chris.mason@oracle.com>
+To: Milan Broz <mbroz@redhat.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4CE05A9E.9090204@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Nov 14, 2010 at 05:00:18PM -0500, Christoph Hellwig wrote:
-> On Sun, Nov 14, 2010 at 09:42:06PM +0100, Andrea Arcangeli wrote:
-> > btrfs misses this:
-> > 
-> > +       .migratepage    = btree_migratepage,
-> > 
-> > It's a bug that can trigger upstream too (not only with THP) if there
-> > are hugepage allocations (like while incrasing nr_hugepages). Chris
-> > already fixed it with an experimental patch.
-> 
-> If the lack of an obscure method causes data corruption something
-> is seriously wrong with THP.  At least from the 10.000 foot view
+On Sun, Nov 14, 2010 at 10:54 PM, Milan Broz <mbroz@redhat.com> wrote:
+> On 11/14/2010 10:49 PM, Matt wrote:
+>> only with the dm-crypt scaling patch I could observe the data-corruption
+>
+> even with v5 I sent on Friday?
+>
+> Are you sure that it is not related to some fs problem in 2.6.37-rc1?
+>
+> If it works on 2.6.36 without problems, it is probably problems somewhere
+> else (flush/fua conversion was trivial here - DM is still doing full flush
+> and there are no other changes in code IMHO.)
+>
+> Milan
+>
 
-I just wrote above that it can happen upstream without THP. It's not
-THP related at all. THP is the consumer, this is a problem in migrate
-that will trigger as well with migrate_pages or all other possible
-migration APIs.
+Hi Milan,
 
-If more people would be using hugetlbfs they would have noticed
-without THP.
+I'm aware of your new v5 patch (which should include several
+improvements (or potential fixes in my case) over the v3 patch)
 
-> I can't quite figure what the exact issue is, though.
-> fallback_migrate_page seems to do the right thing to me for that
-> case.
-> 
-> Btw, there's also another issue with the page migration code when used
-> for filesystem pages.  If directly calls into ->writepage instead
-> of using the flusher threads.  On most filesystems this will
-> "only" cause nasty I/O patterns, but on ext4 for example it will
-> be more nasty as ext3 doesn't do conversions from delayed allocations to
-> real ones.  So unless you're doing a lot of overwrites it will be
-> hard to make any progress in writeout().
+as I already wrote my schedule unfortunately currently doesn't allow
+me to test it
 
-+static int btree_migratepage(struct address_space *mapping,
-+                       struct page *newpage, struct page *page)
-+{
-+       /*
-+        * we can't safely write a btree page from here,
-+        * we haven't done the locking hook
-+        */
-+       if (PageDirty(page))
-+               return -EAGAIN;
+* in the case of no corruption it would be nice to have 2.6.37-rc* running :)
 
-fallback_migrate_page would call writeout() which is apparently not
-ok in btrfs for locking issues leading to corruption.
+* in the case of data corruption that would mean restoring my system -
+since it's my production box and right now I don't have a fallback at
+reach
+at earliest I could give it a shot at the beginning of December. Then
+I could also test reiserfs and ext4 as a system partition to rule out
+that it's
+a ext4-specific thing (currently I'm running reiserfs on my system-partition).
 
-> Btw, what codepath does THP call migrate_pages from?  If you don't
-> use an explicit thread writeout will be a no-op on btrfs and XFS, too.
+Thanks !
 
-THP never calls migrate_pages, it's memory compaction that calls it
-from inside alloc_pages(order=9). It got noticed only with THP because
-it makes more frequent hugepage allocations than nr_hugepages in
-hugetlbfs (and maybe there are more THP users already).
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom policy in Canada: sign http://dissolvethecrtc.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+Matt

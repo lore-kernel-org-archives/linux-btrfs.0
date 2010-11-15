@@ -1,73 +1,87 @@
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: Re: [PATCH 0/5] btrfs: Add lzo compression support
-Date: Mon, 15 Nov 2010 12:55:29 -0600
-Message-ID: <AANLkTi=pRg5eFz+KS7+2k94FraofwYJitY74TVdbCOzs@mail.gmail.com>
-References: <4CC52D9A.3030709@cn.fujitsu.com>
-	<20101026021341.GW18818@think>
-	<4CC63E36.8050105@cn.fujitsu.com>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: Oops while rebalancing, now unmountable.
+Date: Mon, 15 Nov 2010 14:03:35 -0500
+Message-ID: <20101115190335.GA11374@infradead.org>
+References: <1289236257.3611.3.camel@mars>
+ <1289310046-sup-839@think>
+ <1289326892.4231.2.camel@mars>
+ <1289764507.4303.9.camel@mars>
+ <20101114204206.GV6809@random.random>
+ <20101114220018.GA4512@infradead.org>
+ <20101114221222.GX6809@random.random>
+ <20101115182314.GA2493@infradead.org>
+ <1289845457-sup-9432@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
-To: Li Zefan <lizf@cn.fujitsu.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Christoph Hellwig <hch@infradead.org>,
+	Andrea Arcangeli <aarcange@redhat.com>,
+	Shane Shrybman <shrybman@teksavvy.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	linux-mm <linux-mm@kvack.org>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4CC63E36.8050105@cn.fujitsu.com>
+In-Reply-To: <1289845457-sup-9432@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 25, 2010 at 9:34 PM, Li Zefan <lizf@cn.fujitsu.com> wrote:
-> Chris Mason wrote:
->> On Mon, Oct 25, 2010 at 03:11:22PM +0800, Li Zefan wrote:
->>> Lzo is a much faster compression algorithm than gzib, so would allo=
-w
->>> more users to enable transparent compression, and some users can
->>> choose from compression ratio and compression speed.
->>
->> This is also much smaller than I expected, really nice. =A0It looks =
-like
->> older kernels won't properly deal (nicely give EIO) with lzo compres=
-sed
->> files?
->>
->> We can add compatbits to deal with that if it is the case.
->>
+On Mon, Nov 15, 2010 at 01:46:02PM -0500, Chris Mason wrote:
+> For the metadata blocks, btrfs gets into a problematic lock inversion
+> where it needs to record that a block has been written so that it will
+> be properly recowed when someone tries to change it again.
+> 
+> Basically the rule for btree_writepage:
+> 
+> 1) lock the extent buffer (different from the page)
+> 2) mark the metadata block as written
+> 3) lock the page
+> 4) call writepage
+> 
+> Btrfs does this correctly everywhere it uses writepage, and everyone
+> else either uses writepages or is PF_MEMALLOC, except for the page
+> migration code, which just jumps to step 4.
 >
-> I forgot compatibility issue with older kernels..
+> So, my current fix adds a migrate page hook and adds a warning into the
+> code to make sure we protest loudly when the block isn't marked as
+> written.  Since this shakedown worked well, I'm changing the warning to
+> a BUG().
+> 
+
+This sounds to me like you shouldn't bother to use ->writepage
+for the case that adheres to your locking protocol, but just call into
+extent_write_full_page directly.  ->writepage is supposed to directly
+callable from the VM, and not require filesystems specific calling
+conventions.  Just calling extent_write_full_page directly and
+making btree_writepage do the PF_MEMALLOC unconditionally should
+also fix the page migration corruption.  And at the same time
+making btree_writepage future proof.
+
+Btw, magic like the one there currently does need at least a long
+describing comment.
+
+> The check for kupdate in btree_writepages is different.  Once we write
+> something, we have to do a good amount of work in order to modify it
+> again.  The btrfs log commits make sure that we write metadata from time
+> to time, so we don't really need help from the flusher threads unless.
 >
-> Though I didn't test older kernels, I don't think they can deal with =
-lzo
-> compressed files properly, at least not for inlined extents, in which
-> case I think btrfs will just show compressed data to the users.
->
-> So yes, an incompat flag is needed.
+> We also don't want to waste time writing metadata from
+> balance_dirty_pages.  It'll just make more allocations later as we
+> wander around and recow things, and it is much more likely to be seeky
+> than the file IO.  So we setup a threshold where we don't bother doing
+> metadata IO unless there is a good amount pending.
+> 
+> I'm fine with removing the metadata writepage entirely, it didn't use to
+> have this many rules and it seems like a better idea to have it not
+> there at all.
 
-I've been testing this set of patches on a 2.6.36 kernel with the
-latest btrfs-unstable patches, and I wanted to provide my positive
-feedback.
+for_kupdate only covers a tiny subset of the flusher threads, as it's
+only set for the older_than_this still writeback.  It doesn't cover
+regular percentage background reclaim not other asynchronous activity
+from the flusher threads, like wakeup_flusher_threads or the laptop-mode
+I/O completion.
 
-The lzo compression patches worked as expected, and I did not
-encounter any stability problems in my testing (which mainly consisted
-of decompressing a root partition archive and doing some compiling
-chores in a chroot environment on that drive).
+At the very least it should check for_kupdate || for_background to cover
+all background writeback, which is what the few other uses of
+for_kupdate already do, but I suspect you simply want to not mark
+the btree inode as hashed in the inode hash and skip background
+writeback completely.
 
-I did some crude benchmarking on decompressing an archived root
-partition to an empty btrfs drive, and my results were similar to the
-results posted by Li Zefan in the original post.  The lzo compression
-did not compress quite as well as zlib, but was much faster.
-
-I did some test mounting of a lzo-compressed partition with an older
-non-lzo-patched kernel, and as expected, the contents of the files
-were garbled.  But I did not encounter kernel oops or other issues
-when trying to read the garbled files.
-
-I also wanted to confirm that my other zlib-compressed partitions did
-not encounter any issues when bouncing back and forth between a
-lzo-patched kernel and older kernels.  As expected, I did not see any
-issues in the partitions that had only been mounted with zlib
-compression.
-
-You'll want an incompat flag as indicated in previous posts, but I
-look forward to seeing lzo compression in the future.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,7 +1,7 @@
-From: Christoph Hellwig <hch@infradead.org>
+From: Andrea Arcangeli <aarcange@redhat.com>
 Subject: Re: Oops while rebalancing, now unmountable.
-Date: Mon, 15 Nov 2010 14:12:04 -0500
-Message-ID: <20101115191204.GB11374@infradead.org>
+Date: Mon, 15 Nov 2010 20:16:02 +0100
+Message-ID: <20101115191602.GK6809@random.random>
 References: <1289236257.3611.3.camel@mars>
  <1289310046-sup-839@think>
  <1289326892.4231.2.camel@mars>
@@ -11,54 +11,36 @@ References: <1289236257.3611.3.camel@mars>
  <20101114221222.GX6809@random.random>
  <20101115182314.GA2493@infradead.org>
  <20101115184657.GJ6809@random.random>
+ <1289847339-sup-4591@think>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: Christoph Hellwig <hch@infradead.org>,
-	Shane Shrybman <shrybman@teksavvy.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>, linux-mm@kvack.org,
-	linux-fsdevel@vger.kernel.org
-To: Andrea Arcangeli <aarcange@redhat.com>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20101115184657.GJ6809@random.random>
+        Shane Shrybman <shrybman@teksavvy.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-mm <linux-mm@kvack.org>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <1289847339-sup-4591@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 15, 2010 at 07:46:57PM +0100, Andrea Arcangeli wrote:
-> I've been reading the writeout() in mm/migrate.c and I wonder if maybe
-> that should have been WB_SYNC_ALL or if we miss a
-> wait_on_page_writeback in after ->writepage() returns? Can you have a
-> look there? We check the PG_writeback bit when the page is not dirty
-> (well before fallback_migrate_page is called), but after calling
-> writeout() we don't return to wait on PG_writeback. We make sure to
-> hold the page lock after ->writepage returns but that doesn't mean
-> PG_writeback isn't still set.
+On Mon, Nov 15, 2010 at 02:03:55PM -0500, Chris Mason wrote:
+> It always returns either -EIO or -EAGAIN, so the caller will try again
+> and then end up waiting on PageWriteback?
 
-I didn't even notice that, but the WB_SYNC_NONE does indeed seem
-buggy to me.  If we set the sync_mode to WB_SYNC_NONE filesystem
-can and frequently do trylock operations and might just skip to
-write it out completely.
+Returning any error from ->writepage will make writeout return -EIO so
+aborting the migration for that page. If no error is returned from
+->writepage, writeout will return -EAGAIN the caller will try again
+after wait_on_page_writeback. I think I misread the code when in prev
+mail I worried about not waiting on PG_writeback after writeout()... :)
 
-So we defintively do need to change writeout to do a WB_SYNC_ALL
-writeback.  In addition to that we'll also need the
-wait_on_page_writeback call to make sure we actually wait for I/O
-to finish.
+So the ideal would be not to return errors when ->writepage submitted
+the writeback I/O successfully but if it returns -EIO/-EAGAIN there's
+no risk whatsoever (except compaction will be less effective).
 
-Also what protects us from updating the page while we write it out?
-PG_writeback on many filesystems doesn't protect writes from modifying
-the in-flight buffer, and just locking the page after ->writepage
-is racy without a check that nothing changed.
-
-> Compaction practically only happens in the context of the task
-> allocating memory (in my tree it is also used by kswapd). Not
-> immediate to ask a separate daemon to invoke it. Not sure why this
-> should screw delalloc. Compaction isn't freeing any memory at all,
-> it's not reclaim. It just defragments and moves stuff around and it
-> may have to write dirty pages to do so.
-
-kswapd is fine.  Other task allocation memory are direct reclaimers.
-Direct reclaim through the filesystem delalloc conversion and the I/O
-stack guarantees you stack overflows, that's why filesystems refuse
-to do anything in ->writepage for this case.  btrfs and XFS have
-explicit checks for PF_MEMALLOC (with a carve out for kswapd in XFS),
-and ext4 only writes already allocated blocks in ->writepage but never
-does delalloc conversions.
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom policy in Canada: sign http://dissolvethecrtc.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>

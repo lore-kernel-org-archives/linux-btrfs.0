@@ -1,93 +1,64 @@
-From: Andrea Arcangeli <aarcange@redhat.com>
-Subject: Re: Oops while rebalancing, now unmountable.
-Date: Mon, 15 Nov 2010 20:29:14 +0100
-Message-ID: <20101115192914.GL6809@random.random>
-References: <1289236257.3611.3.camel@mars>
- <1289310046-sup-839@think>
- <1289326892.4231.2.camel@mars>
- <1289764507.4303.9.camel@mars>
- <20101114204206.GV6809@random.random>
- <20101114220018.GA4512@infradead.org>
- <20101114221222.GX6809@random.random>
- <20101115182314.GA2493@infradead.org>
- <20101115184657.GJ6809@random.random>
- <20101115191204.GB11374@infradead.org>
+From: Stephen Hemminger <shemminger@vyatta.com>
+Subject: lockdep warnings
+Date: Mon, 15 Nov 2010 12:51:29 -0800
+Message-ID: <20101115125129.07f3882d@nehalam>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Shane Shrybman <shrybman@teksavvy.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Chris Mason <chris.mason@oracle.com>, linux-mm@kvack.org,
-        linux-fsdevel@vger.kernel.org
-To: Christoph Hellwig <hch@infradead.org>
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20101115191204.GB11374@infradead.org>
+Content-Type: text/plain; charset=US-ASCII
+Cc: linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 15, 2010 at 02:12:04PM -0500, Christoph Hellwig wrote:
-> I didn't even notice that, but the WB_SYNC_NONE does indeed seem
-> buggy to me.  If we set the sync_mode to WB_SYNC_NONE filesystem
-> can and frequently do trylock operations and might just skip to
-> write it out completely.
+Running with lockdep I see these warnings (running 2.6.37-rc1)
 
-Scary stuff, so WB_SYNC_NONE wouldn't submit the dirty part of the
-page down for I/O, so that it's all clean after wait_on_page_writeback
-returns? (well of course unless the dirty bit was set again)
+It occurred during the time when rsync is running backup.
 
-> So we defintively do need to change writeout to do a WB_SYNC_ALL
-> writeback.  In addition to that we'll also need the
-> wait_on_page_writeback call to make sure we actually wait for I/O
-> to finish.
 
-Ok that is ok... I misread it sorry. But the writeback must be started
-by WB_SYNC_NONE (or _ALL) for wait_on_page_writeback to be effective.
-
-migration will abort if ->writepage returns error, that's safe
-though. It will retry calling on wait_on_page_writeback only if
-->writepage returns 0.
-
-> Also what protects us from updating the page while we write it out?
-> PG_writeback on many filesystems doesn't protect writes from modifying
-> the in-flight buffer, and just locking the page after ->writepage
-> is racy without a check that nothing changed.
-
-migrate established migration ptes already so nobody can write to the
-page through pagetables. The only thing left is O_DIRECT which is also
-taken care by the page count check in migrate_page_move_mapping,
-before migrate_page called by fallback_migrate_page can succeed. So
-nothing can be modifying the page if we go ahead with migrate_page
-(and no pte dirty bit can happen either). The page is also locked down
-for the whole migration so all writes syscalls should be stopped.
-
-> kswapd is fine.  Other task allocation memory are direct reclaimers.
-> Direct reclaim through the filesystem delalloc conversion and the I/O
-> stack guarantees you stack overflows, that's why filesystems refuse
-> to do anything in ->writepage for this case.  btrfs and XFS have
-> explicit checks for PF_MEMALLOC (with a carve out for kswapd in XFS),
-> and ext4 only writes already allocated blocks in ->writepage but never
-> does delalloc conversions.
-
-I didn't realize the stack overflow issue was specific to delalloc. I
-think it's ok here to skip ->writepage for delalloc, it's not
-mandatory, memory compaction isn't supposed to do much I/O anyway,
-it's supposed to copy ram instead. Sure it'd be more reliable to
-submit I/O but it's going to work pretty well, plus compaction will be
-retried again later by khugepaged once every 10 sec. kswapd actually
-with THP will not do anything because THP allocations are run with
-__GFP_NO_KSWAPD to avoid kswapd to waste cpu by trying in the
-background hard to create hugepages if 90% of ram goes in anonymous
-memory (and there are background anon allocations that would wakeup
-kswapd) but only 80% can be allocated as 2M contiguous beacuse 20% was
-at some point allocated in slab caches.
-
-In short with THP it's khugepaged that is supposed to run the
-->writepage in migrate.c and it will run it once every 10 sec even
-when it fails (and not in a 100% cpu wasting loop like kswapd), so if
-you did something magic for kswapd in XFS you should do for khugepaged
-too.
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom policy in Canada: sign http://dissolvethecrtc.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+Nov 14 12:03:31 nehalam kernel: [ 5527.284541] =============================================
+Nov 14 12:03:31 nehalam kernel: [ 5527.284544] [ INFO: possible recursive locking detected ]
+Nov 14 12:03:31 nehalam kernel: [ 5527.284546] 2.6.37-rc1+ #67
+Nov 14 12:03:31 nehalam kernel: [ 5527.284547] ---------------------------------------------
+Nov 14 12:03:31 nehalam kernel: [ 5527.284549] rsync/2782 is trying to acquire lock:
+Nov 14 12:03:31 nehalam kernel: [ 5527.284551]  (&(&eb->lock)->rlock){+.+...}, at: [<ffffffffa005f026>] btrfs_try_spin_lock+0x53/0xd1 [btrfs]
+Nov 14 12:03:31 nehalam kernel: [ 5527.284567] 
+Nov 14 12:03:31 nehalam kernel: [ 5527.284567] but task is already holding lock:
+Nov 14 12:03:31 nehalam kernel: [ 5527.284569]  (&(&eb->lock)->rlock){+.+...}, at: [<ffffffffa005f0c6>] btrfs_clear_lock_blocking+0x22/0x2c [btrfs]
+Nov 14 12:03:31 nehalam kernel: [ 5527.284581] 
+Nov 14 12:03:31 nehalam kernel: [ 5527.284581] other info that might help us debug this:
+Nov 14 12:03:31 nehalam kernel: [ 5527.284583] 2 locks held by rsync/2782:
+Nov 14 12:03:31 nehalam kernel: [ 5527.284585]  #0:  (&sb->s_type->i_mutex_key#13){+.+.+.}, at: [<ffffffff810f98be>] do_lookup+0x9d/0x10d
+Nov 14 12:03:31 nehalam kernel: [ 5527.284592]  #1:  (&(&eb->lock)->rlock){+.+...}, at: [<ffffffffa005f0c6>] btrfs_clear_lock_blocking+0x22/0x2c [btrfs]
+Nov 14 12:03:31 nehalam kernel: [ 5527.284605] 
+Nov 14 12:03:31 nehalam kernel: [ 5527.284605] stack backtrace:
+Nov 14 12:03:31 nehalam kernel: [ 5527.284607] Pid: 2782, comm: rsync Not tainted 2.6.37-rc1+ #67
+Nov 14 12:03:31 nehalam kernel: [ 5527.284609] Call Trace:
+Nov 14 12:03:31 nehalam kernel: [ 5527.284615]  [<ffffffff8106b651>] __lock_acquire+0xc7a/0xcf1
+Nov 14 12:03:31 nehalam kernel: [ 5527.284619]  [<ffffffff810ba186>] ? activate_page+0x130/0x13f
+Nov 14 12:03:31 nehalam kernel: [ 5527.284622]  [<ffffffff8106b799>] lock_acquire+0xd1/0xf7
+Nov 14 12:03:31 nehalam kernel: [ 5527.284633]  [<ffffffffa005f026>] ? btrfs_try_spin_lock+0x53/0xd1 [btrfs]
+Nov 14 12:03:31 nehalam kernel: [ 5527.284638]  [<ffffffff813b31c7>] _raw_spin_lock+0x31/0x40
+Nov 14 12:03:31 nehalam kernel: [ 5527.284648]  [<ffffffffa005f026>] ? btrfs_try_spin_lock+0x53/0xd1 [btrfs]
+Nov 14 12:03:31 nehalam kernel: [ 5527.284659]  [<ffffffffa005f0c6>] ? btrfs_clear_lock_blocking+0x22/0x2c [btrfs]
+Nov 14 12:03:31 nehalam kernel: [ 5527.284669]  [<ffffffffa005f026>] btrfs_try_spin_lock+0x53/0xd1 [btrfs]
+Nov 14 12:03:31 nehalam kernel: [ 5527.284677]  [<ffffffffa0022714>] btrfs_search_slot+0x3e6/0x513 [btrfs]
+Nov 14 12:03:31 nehalam kernel: [ 5527.284687]  [<ffffffffa003121f>] btrfs_lookup_inode+0x2f/0x8f [btrfs]
+Nov 14 12:03:31 nehalam kernel: [ 5527.284698]  [<ffffffffa003ac58>] ? btrfs_init_locked_inode+0x0/0x2e [btrfs]
+Nov 14 12:03:31 nehalam kernel: [ 5527.284709]  [<ffffffffa003e2a7>] btrfs_iget+0xc3/0x415 [btrfs]
+Nov 14 12:03:31 nehalam kernel: [ 5527.284721]  [<ffffffffa00419b9>] btrfs_lookup_dentry+0x105/0x3c4 [btrfs]
+Nov 14 12:03:31 nehalam kernel: [ 5527.284724]  [<ffffffff81069db5>] ? trace_hardirqs_on+0xd/0xf
+Nov 14 12:03:31 nehalam kernel: [ 5527.284735]  [<ffffffffa0041c8e>] btrfs_lookup+0x16/0x2e [btrfs]
+Nov 14 12:03:31 nehalam kernel: [ 5527.284738]  [<ffffffff810f97b5>] d_alloc_and_lookup+0x55/0x74
+Nov 14 12:03:31 nehalam kernel: [ 5527.284741]  [<ffffffff810f98dc>] do_lookup+0xbb/0x10d
+Nov 14 12:03:31 nehalam kernel: [ 5527.284744]  [<ffffffff810fb6a1>] link_path_walk+0x2a6/0x3fc
+Nov 14 12:03:31 nehalam kernel: [ 5527.284746]  [<ffffffff810fb8f3>] path_walk+0x69/0xd9
+Nov 14 12:03:31 nehalam kernel: [ 5527.284750]  [<ffffffff811e23c2>] ? strncpy_from_user+0x48/0x76
+Nov 14 12:03:31 nehalam kernel: [ 5527.284753]  [<ffffffff810fba35>] do_path_lookup+0x2a/0x4f
+Nov 14 12:03:31 nehalam kernel: [ 5527.284756]  [<ffffffff810fc52f>] user_path_at+0x56/0x9a
+Nov 14 12:03:31 nehalam kernel: [ 5527.284760]  [<ffffffff810caa14>] ? might_fault+0x5c/0xac
+Nov 14 12:03:31 nehalam kernel: [ 5527.284764]  [<ffffffff810f4701>] ? cp_new_stat+0xf7/0x10d
+Nov 14 12:03:31 nehalam kernel: [ 5527.284767]  [<ffffffff810f45a2>] vfs_fstatat+0x37/0x62
+Nov 14 12:03:31 nehalam kernel: [ 5527.284770]  [<ffffffff810f45eb>] vfs_lstat+0x1e/0x20
+Nov 14 12:03:31 nehalam kernel: [ 5527.284772]  [<ffffffff810f4773>] sys_newlstat+0x1f/0x3d
+Nov 14 12:03:31 nehalam kernel: [ 5527.284776]  [<ffffffff81069d84>] ? trace_hardirqs_on_caller+0x118/0x13c
+Nov 14 12:03:31 nehalam kernel: [ 5527.284779]  [<ffffffff813b2fe0>] ? trace_hardirqs_on_thunk+0x3a/0x3f
+Nov 14 12:03:31 nehalam kernel: [ 5527.284783]  [<ffffffff8100245b>] system_call_fastpath+0x16/0x1b

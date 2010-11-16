@@ -1,79 +1,48 @@
-From: Greg Freemyer <greg.freemyer@gmail.com>
-Subject: Re: [PATCH 4/6] Ext4: fail if we try to use hole punch
-Date: Tue, 16 Nov 2010 12:47:20 -0800
-Message-ID: <AANLkTikz07C_=aZudup7xSpLnrEYi5No4QhL5WD9xxTx@mail.gmail.com>
-References: <1289840723-3056-1-git-send-email-josef@redhat.com>
- <1289840723-3056-5-git-send-email-josef@redhat.com> <4CE2783F.1020004@redhat.com>
- <20101116125016.GA31957@dhcp231-156.rdu.redhat.com> <4CE28211.6060204@redhat.com>
- <20101116160545.GA2524@localhost.localdomain>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: Re: [Btrfs-Progs] Update for lzo support
+Date: Tue, 16 Nov 2010 22:15:57 +0100
+Message-ID: <201011162215.58385.kreijack@libero.it>
+References: <4CE226CF.70907@cn.fujitsu.com>
+Reply-To: kreijack@libero.it
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Avi Kivity <avi@redhat.com>, david@fromorbit.com,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-ext4@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	xfs@oss.sgi.com, cmm@us.ibm.com, cluster-devel@redhat.com,
-	ocfs2-devel@oss.oracle.com
-To: Josef Bacik <josef@redhat.com>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <20101116160545.GA2524@localhost.localdomain>
+Content-Type: Text/Plain;
+  charset="utf-8"
+Cc: linux-btrfs@vger.kernel.org
+To: Li Zefan <lizf@cn.fujitsu.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4CE226CF.70907@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 16, 2010 at 8:05 AM, Josef Bacik <josef@redhat.com> wrote:
-> On Tue, Nov 16, 2010 at 03:07:29PM +0200, Avi Kivity wrote:
->> On 11/16/2010 02:50 PM, Josef Bacik wrote:
->>> On Tue, Nov 16, 2010 at 02:25:35PM +0200, Avi Kivity wrote:
->>> > =A0On 11/15/2010 07:05 PM, Josef Bacik wrote:
->>> >> =A0Ext4 doesn't have the ability to punch holes yet, so make sur=
-e we return
->>> >> =A0EOPNOTSUPP if we try to use hole punching through fallocate. =
-=A0This support can
->>> >> =A0be added later. =A0Thanks,
->>> >>
->>> >
->>> > =A0Instead of teaching filesystems to fail if they don't support =
-the
->>> > =A0capability, why don't supporting filesystems say so, allowing =
-the fail
->>> > =A0code to be in common code?
->>> >
->>>
->>> There is no simple way to test if a filesystem supports hole punchi=
-ng or not so
->>> the check has to be done per fs. =A0Thanks,
->>
->> Could put a flag word in superblock_operations. =A0Filesystems which
->> support punching (or other features) can enable it there.
->>
->> Or even have its own callback.
->>
->
-> Sure but then you have to do the same thing for every other flag you =
-add to
-> fallocate and then you have this huge mess of random flags just so yo=
-u don't
-> call into the filesystem. =A0This way is a lesser of two evils I thin=
-k. =A0Thanks,
->
-> Josef
 
-I'm not a true kernel hacker, so my opinion is not critical but I find
-it hard to read / expand as
+On Tuesday, 16 November, 2010, Li Zefan wrote:
+> - Add incompat flag, otherwise btrfs-progs will report error
+>   when operating on btrfs filesystems mounted with lzo option.
+> 
+> - Allow to turn on lzo compression for defrag operation:
+> 
+>   # btrfs filesystem defragment -c[zlib, lzo] <file>
+> 
+>   Note: "-c zlib" will fail, because that's how getopt() works
+>   for optional arguments.
+> 
+> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+> ---
+> 
+> The lzo patchset for kernel code can be found here:
+> 
+> http://marc.info/?l=linux-btrfs&m=128799063215123&w=2
+> 
+> ---
+>  btrfs.c      |    2 +-
+>  btrfs_cmds.c |   24 ++++++++++++++++++++----
+>  ctree.h      |   18 +++++++++++-------
+>  ioctl.h      |    9 ++++++++-
+>  4 files changed, 40 insertions(+), 13 deletions(-)
 
-> +     /* We only support the FALLOC_FL_KEEP_SIZE mode */
-> +     if (mode && (mode !=3D FALLOC_FL_KEEP_SIZE))
-> +             return -EOPNOTSUPP;
+Please update the man page too.
+Rehgards
+G.Baroncelli
 
-How about:
-
-#define EXT4_FALLOC_MODES_SUPPORTED (FALLOC_FL_KEEP_SIZE)
-
-if (modes & ~EXT4_FALLOC_MODES_SUPPORTED)
-             return -EOPNOTSUPP;
-
-
-Greg
---
-To unsubscribe from this list: send the line "unsubscribe linux-ext4" i=
-n
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-- 
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

@@ -1,65 +1,79 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Subject: Re: [patch] fix up lock order reversal in writeback
-Date: Tue, 16 Nov 2010 12:32:52 -0800
-Message-ID: <20101116123252.4cc66f13.akpm@linux-foundation.org>
-References: <20101116110058.GA4298@amd>
+From: Greg Freemyer <greg.freemyer@gmail.com>
+Subject: Re: [PATCH 4/6] Ext4: fail if we try to use hole punch
+Date: Tue, 16 Nov 2010 12:47:20 -0800
+Message-ID: <AANLkTikz07C_=aZudup7xSpLnrEYi5No4QhL5WD9xxTx@mail.gmail.com>
+References: <1289840723-3056-1-git-send-email-josef@redhat.com>
+ <1289840723-3056-5-git-send-email-josef@redhat.com> <4CE2783F.1020004@redhat.com>
+ <20101116125016.GA31957@dhcp231-156.rdu.redhat.com> <4CE28211.6060204@redhat.com>
+ <20101116160545.GA2524@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-	linux-btrfs@vger.kernel.org
-To: Nick Piggin <npiggin@kernel.dk>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Avi Kivity <avi@redhat.com>, david@fromorbit.com,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	linux-ext4@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	xfs@oss.sgi.com, cmm@us.ibm.com, cluster-devel@redhat.com,
+	ocfs2-devel@oss.oracle.com
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <20101116110058.GA4298@amd>
+In-Reply-To: <20101116160545.GA2524@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 16 Nov 2010 22:00:58 +1100
-Nick Piggin <npiggin@kernel.dk> wrote:
+On Tue, Nov 16, 2010 at 8:05 AM, Josef Bacik <josef@redhat.com> wrote:
+> On Tue, Nov 16, 2010 at 03:07:29PM +0200, Avi Kivity wrote:
+>> On 11/16/2010 02:50 PM, Josef Bacik wrote:
+>>> On Tue, Nov 16, 2010 at 02:25:35PM +0200, Avi Kivity wrote:
+>>> > =A0On 11/15/2010 07:05 PM, Josef Bacik wrote:
+>>> >> =A0Ext4 doesn't have the ability to punch holes yet, so make sur=
+e we return
+>>> >> =A0EOPNOTSUPP if we try to use hole punching through fallocate. =
+=A0This support can
+>>> >> =A0be added later. =A0Thanks,
+>>> >>
+>>> >
+>>> > =A0Instead of teaching filesystems to fail if they don't support =
+the
+>>> > =A0capability, why don't supporting filesystems say so, allowing =
+the fail
+>>> > =A0code to be in common code?
+>>> >
+>>>
+>>> There is no simple way to test if a filesystem supports hole punchi=
+ng or not so
+>>> the check has to be done per fs. =A0Thanks,
+>>
+>> Could put a flag word in superblock_operations. =A0Filesystems which
+>> support punching (or other features) can enable it there.
+>>
+>> Or even have its own callback.
+>>
+>
+> Sure but then you have to do the same thing for every other flag you =
+add to
+> fallocate and then you have this huge mess of random flags just so yo=
+u don't
+> call into the filesystem. =A0This way is a lesser of two evils I thin=
+k. =A0Thanks,
+>
+> Josef
 
-> I saw a lock order warning on ext4 trigger. This should solve it.
+I'm not a true kernel hacker, so my opinion is not critical but I find
+it hard to read / expand as
 
-Send us the trace, please.
+> +     /* We only support the FALLOC_FL_KEEP_SIZE mode */
+> +     if (mode && (mode !=3D FALLOC_FL_KEEP_SIZE))
+> +             return -EOPNOTSUPP;
 
-The code comment implies that someone is calling down_read() under
-i_lock?  That would be bad, and I'd expect it to have produced a
-might_sleep() warning, not a lockdep trace.  
+How about:
 
-And I don't see how we can call writeback_inodes_sb() under i_lock
-anyway, so I don't really have a clue what's going on here!
+#define EXT4_FALLOC_MODES_SUPPORTED (FALLOC_FL_KEEP_SIZE)
 
-> Raciness shouldn't matter much, because writeback can stop just
-> after we make the test and return anyway (so the API is racy anyway).
-> 
-> Signed-off-by: Nick Piggin <npiggin@kernel.dk>
-> 
-> Index: linux-2.6/fs/fs-writeback.c
-> ===================================================================
-> --- linux-2.6.orig/fs/fs-writeback.c	2010-11-16 21:44:32.000000000 +1100
-> +++ linux-2.6/fs/fs-writeback.c	2010-11-16 21:49:37.000000000 +1100
-> @@ -1125,16 +1125,20 @@ EXPORT_SYMBOL(writeback_inodes_sb);
->   *
->   * Invoke writeback_inodes_sb if no writeback is currently underway.
->   * Returns 1 if writeback was started, 0 if not.
-> + *
-> + * May be called inside i_lock. May not start writeback if locks cannot
-> + * be acquired.
->   */
->  int writeback_inodes_sb_if_idle(struct super_block *sb)
->  {
->  	if (!writeback_in_progress(sb->s_bdi)) {
-> -		down_read(&sb->s_umount);
-> -		writeback_inodes_sb(sb);
-> -		up_read(&sb->s_umount);
-> -		return 1;
-> -	} else
-> -		return 0;
-> +		if (down_read_trylock(&sb->s_umount)) {
-> +			writeback_inodes_sb(sb);
-> +			up_read(&sb->s_umount);
-> +			return 1;
-> +		}
-> +	}
-> +	return 0;
+if (modes & ~EXT4_FALLOC_MODES_SUPPORTED)
+             return -EOPNOTSUPP;
 
-And it's pretty generous to describe a s/down_read/down_read_trylock/
-as a "fix".  Terms like "bandaid" and "workaround" come to mind.
 
+Greg
+--
+To unsubscribe from this list: send the line "unsubscribe linux-ext4" i=
+n
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

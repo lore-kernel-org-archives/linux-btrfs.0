@@ -1,58 +1,110 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH 4/6] Ext4: fail if we try to use hole punch
-Date: Tue, 16 Nov 2010 11:33:21 -0500
-Message-ID: <20101116163320.GB2524@localhost.localdomain>
-References: <1289840723-3056-1-git-send-email-josef@redhat.com> <1289840723-3056-5-git-send-email-josef@redhat.com> <4CE2AF5B.7020500@draigBrady.com>
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: Re: [PATCH 0/5] btrfs: Add lzo compression support
+Date: Tue, 16 Nov 2010 12:51:35 -0600
+Message-ID: <AANLkTimc3MjT2GEmvZ02q028zX5v1hKBYZwseA=qS-VA@mail.gmail.com>
+References: <4CC52D9A.3030709@cn.fujitsu.com>
+	<20101026021341.GW18818@think>
+	<4CC63E36.8050105@cn.fujitsu.com>
+	<AANLkTi=pRg5eFz+KS7+2k94FraofwYJitY74TVdbCOzs@mail.gmail.com>
+	<4CE1D6EF.4070205@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: Josef Bacik <josef@redhat.com>, david@fromorbit.com,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-ext4@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	xfs@oss.sgi.com, cmm@us.ibm.com, cluster-devel@redhat.com,
-	ocfs2-devel@oss.oracle.com
-To: =?iso-8859-1?Q?P=E1draig?= Brady <P@draigBrady.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4CE2AF5B.7020500@draigBrady.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+To: Li Zefan <lizf@cn.fujitsu.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4CE1D6EF.4070205@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 16, 2010 at 04:20:43PM +0000, P=E1draig Brady wrote:
-> On 15/11/10 17:05, Josef Bacik wrote:
-> > Ext4 doesn't have the ability to punch holes yet, so make sure we r=
-eturn
-> > EOPNOTSUPP if we try to use hole punching through fallocate.  This =
-support can
-> > be added later.  Thanks,
-> >=20
-> > Signed-off-by: Josef Bacik <josef@redhat.com>
-> > ---
-> >  fs/ext4/extents.c |    4 ++++
-> >  1 files changed, 4 insertions(+), 0 deletions(-)
-> >=20
-> > diff --git a/fs/ext4/extents.c b/fs/ext4/extents.c
-> > index 0554c48..35bca73 100644
-> > --- a/fs/ext4/extents.c
-> > +++ b/fs/ext4/extents.c
-> > @@ -3622,6 +3622,10 @@ long ext4_fallocate(struct inode *inode, int=
- mode, loff_t offset, loff_t len)
-> >  	struct ext4_map_blocks map;
-> >  	unsigned int credits, blkbits =3D inode->i_blkbits;
-> > =20
-> > +	/* We only support the FALLOC_FL_KEEP_SIZE mode */
-> > +	if (mode && (mode !=3D FALLOC_FL_KEEP_SIZE))
-> > +		return -EOPNOTSUPP;
-> > +
-> >  	/*
-> >  	 * currently supporting (pre)allocate mode for extent-based
-> >  	 * files _only_
->=20
-> So for older versions of ext4 or other filesystems, how do we know
-> that fallocate(...,FALLOC_FL_PUNCH_HOLE) is not supported.
-> I.E. how do we detect at runtime that the call succeeded
-> and didn't just do a normal fallocate()?
+On Mon, Nov 15, 2010 at 6:57 PM, Li Zefan <lizf@cn.fujitsu.com> wrote:
+> Mitch Harder wrote:
+>> On Mon, Oct 25, 2010 at 9:34 PM, Li Zefan <lizf@cn.fujitsu.com> wrot=
+e:
+>>> Chris Mason wrote:
+>>>> On Mon, Oct 25, 2010 at 03:11:22PM +0800, Li Zefan wrote:
+>>>>> Lzo is a much faster compression algorithm than gzib, so would al=
+low
+>>>>> more users to enable transparent compression, and some users can
+>>>>> choose from compression ratio and compression speed.
+>>>> This is also much smaller than I expected, really nice. =A0It look=
+s like
+>>>> older kernels won't properly deal (nicely give EIO) with lzo compr=
+essed
+>>>> files?
+>>>>
+>>>> We can add compatbits to deal with that if it is the case.
+>>>>
+>>> I forgot compatibility issue with older kernels..
+>>>
+>>> Though I didn't test older kernels, I don't think they can deal wit=
+h lzo
+>>> compressed files properly, at least not for inlined extents, in whi=
+ch
+>>> case I think btrfs will just show compressed data to the users.
+>>>
+>>> So yes, an incompat flag is needed.
+>>
+>> I've been testing this set of patches on a 2.6.36 kernel with the
+>> latest btrfs-unstable patches, and I wanted to provide my positive
+>> feedback.
+>>
+>> The lzo compression patches worked as expected, and I did not
+>> encounter any stability problems in my testing (which mainly consist=
+ed
+>> of decompressing a root partition archive and doing some compiling
+>> chores in a chroot environment on that drive).
+>>
+>> I did some crude benchmarking on decompressing an archived root
+>> partition to an empty btrfs drive, and my results were similar to th=
+e
+>> results posted by Li Zefan in the original post. =A0The lzo compress=
+ion
+>> did not compress quite as well as zlib, but was much faster.
+>>
+>> I did some test mounting of a lzo-compressed partition with an older
+>> non-lzo-patched kernel, and as expected, the contents of the files
+>> were garbled. =A0But I did not encounter kernel oops or other issues
+>> when trying to read the garbled files.
+>>
+>> I also wanted to confirm that my other zlib-compressed partitions di=
+d
+>> not encounter any issues when bouncing back and forth between a
+>> lzo-patched kernel and older kernels. =A0As expected, I did not see =
+any
+>> issues in the partitions that had only been mounted with zlib
+>> compression.
+>>
+>> You'll want an incompat flag as indicated in previous posts, but I
+>> look forward to seeing lzo compression in the future.
+>>
+>
+> Thanks for testing!
+>
+> I had been occupied by other things, so have been silent on this.
+> Actually I've added the incompat flag, but haven't done userspace
+> programs.
+>
+> I'm setting up a git tree, and will send out a pull request to
+> Chris this week. (probabaly)
+>
+> And I think I can add your Tested-by in the whole patchset? Except
+> for the ioctl change, which I guess you didn't test.
+>
+> We really need more review and test for btrfs patches, so what
+> you've done is really appreciatated. :)
 >
 
-Older kernels won't accept FALLOC_FL_PUNCH_HOLE, so you'll get an error=
-=2E
-Thanks,
+Glad to help.  Feel free to add "Tested-by Mitch Harder
+<mitch.harder@sabayonlinux.org>"
 
-Josef=20
+Regarding the "ioctl change", I tested the five patches submitted to
+the M/L on Oct. 25, 2010.  Some minor merging changes were required on
+patch 2/5 for the enum containing the new lzo options in super.c (due
+to some other recent modifications to that enum for space_cache
+option).
+
+So if there was an additional "ioctl change", I did not test it.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

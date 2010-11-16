@@ -1,37 +1,45 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: btrfs crash
-Date: Tue, 16 Nov 2010 09:46:38 -0500
-Message-ID: <1289918733-sup-3634@think>
-References: <AANLkTikAPcS3aeUp14hDJY8RTh_HnSg6sSR1Eyj+RNzM@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Ravi Pinjala <pstatic@gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH 4/6] Ext4: fail if we try to use hole punch
+Date: Tue, 16 Nov 2010 11:05:46 -0500
+Message-ID: <20101116160545.GA2524@localhost.localdomain>
+References: <1289840723-3056-1-git-send-email-josef@redhat.com> <1289840723-3056-5-git-send-email-josef@redhat.com> <4CE2783F.1020004@redhat.com> <20101116125016.GA31957@dhcp231-156.rdu.redhat.com> <4CE28211.6060204@redhat.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: Josef Bacik <josef@redhat.com>, david@fromorbit.com,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	linux-ext4@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	xfs@oss.sgi.com, cmm@us.ibm.com, cluster-devel@redhat.com,
+	ocfs2-devel@oss.oracle.com
+To: Avi Kivity <avi@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <AANLkTikAPcS3aeUp14hDJY8RTh_HnSg6sSR1Eyj+RNzM@mail.gmail.com>
+In-Reply-To: <4CE28211.6060204@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Ravi Pinjala's message of 2010-11-14 12:31:35 -0500:
-> I got the following crash on one of my Ceph nodes this morning. I
-> don't know how to reproduce it yet; I was just wondering if it was a
-> known issue. This is with the latest kernel for Ubuntu 10.10.
-> 
-> Nov 13 19:21:21 alpha kernel: [19432.396679] ------------[ cut here
-> ]------------
-> Nov 13 19:21:22 alpha kernel: [19432.396732] WARNING: at
-> /build/buildd/linux-2.6.35/fs/btrfs/extent-tree.c:5322
+On Tue, Nov 16, 2010 at 03:07:29PM +0200, Avi Kivity wrote:
+> On 11/16/2010 02:50 PM, Josef Bacik wrote:
+>> On Tue, Nov 16, 2010 at 02:25:35PM +0200, Avi Kivity wrote:
+>> >  On 11/15/2010 07:05 PM, Josef Bacik wrote:
+>> >>  Ext4 doesn't have the ability to punch holes yet, so make sure we return
+>> >>  EOPNOTSUPP if we try to use hole punching through fallocate.  This support can
+>> >>  be added later.  Thanks,
+>> >>
+>> >
+>> >  Instead of teaching filesystems to fail if they don't support the
+>> >  capability, why don't supporting filesystems say so, allowing the fail
+>> >  code to be in common code?
+>> >
+>>
+>> There is no simple way to test if a filesystem supports hole punching or not so
+>> the check has to be done per fs.  Thanks,
+>
+> Could put a flag word in superblock_operations.  Filesystems which  
+> support punching (or other features) can enable it there.
+>
+> Or even have its own callback.
+>
 
-This warning should have been followed by a printk:
+Sure but then you have to do the same thing for every other flag you add to
+fallocate and then you have this huge mess of random flags just so you don't
+call into the filesystem.  This way is a lesser of two evils I think.  Thanks,
 
-        WARN_ON(1);
-        printk(KERN_INFO"block_rsv size %llu reserved %llu freed %llu %llu\n",
-                block_rsv->size, block_rsv->reserved,
-                block_rsv->freed[0], block_rsv->freed[1]);
-
-        return ERR_PTR(-ENOSPC);
-
-Do you have the printk?
-
-Josef did some work here, so we have a number of related fixes in the
-current git tree.
-
--chris
+Josef

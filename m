@@ -1,77 +1,47 @@
-From: Nick Piggin <npiggin@kernel.dk>
-Subject: [patch] fix up lock order reversal in writeback
-Date: Tue, 16 Nov 2010 22:00:58 +1100
-Message-ID: <20101116110058.GA4298@amd>
+From: Jan Kara <jack@suse.cz>
+Subject: Re: [PATCH 1/6] fs: add hole punching to fallocate
+Date: Tue, 16 Nov 2010 12:16:11 +0100
+Message-ID: <20101116111611.GA4757@quack.suse.cz>
+References: <1289840723-3056-1-git-send-email-josef@redhat.com>
+ <1289840723-3056-2-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: Andrew Morton <akpm@linux-foundation.org>,
-	linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-	linux-btrfs@vger.kernel.org
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
+Cc: david@fromorbit.com, linux-kernel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, xfs@oss.sgi.com, cmm@us.ibm.com,
+	cluster-devel@redhat.com, ocfs2-devel@oss.oracle.com
+To: Josef Bacik <josef@redhat.com>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <1289840723-3056-2-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I saw a lock order warning on ext4 trigger. This should solve it.
-Raciness shouldn't matter much, because writeback can stop just
-after we make the test and return anyway (so the API is racy anyway).
+On Mon 15-11-10 12:05:18, Josef Bacik wrote:
+> diff --git a/fs/open.c b/fs/open.c
+> index 4197b9e..ab8dedf 100644
+> --- a/fs/open.c
+> +++ b/fs/open.c
+> @@ -223,7 +223,7 @@ int do_fallocate(struct file *file, int mode, loff_t offset, loff_t len)
+>  		return -EINVAL;
+>  
+>  	/* Return error if mode is not supported */
+> -	if (mode && !(mode & FALLOC_FL_KEEP_SIZE))
+> +	if (mode && (mode & ~(FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE)))
+  Why not just:
+if (mode & ~(FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE)) ?
 
-Signed-off-by: Nick Piggin <npiggin@kernel.dk>
+> diff --git a/include/linux/falloc.h b/include/linux/falloc.h
+> index 3c15510..851cba2 100644
+> --- a/include/linux/falloc.h
+> +++ b/include/linux/falloc.h
+> @@ -2,6 +2,7 @@
+>  #define _FALLOC_H_
+>  
+>  #define FALLOC_FL_KEEP_SIZE	0x01 /* default is extend size */
+> +#define FALLOC_FL_PUNCH_HOLE	0X02 /* de-allocates range */
+                                 ^ use lowercase 'x' please...
 
-Index: linux-2.6/fs/fs-writeback.c
-===================================================================
---- linux-2.6.orig/fs/fs-writeback.c	2010-11-16 21:44:32.000000000 +1100
-+++ linux-2.6/fs/fs-writeback.c	2010-11-16 21:49:37.000000000 +1100
-@@ -1125,16 +1125,20 @@ EXPORT_SYMBOL(writeback_inodes_sb);
-  *
-  * Invoke writeback_inodes_sb if no writeback is currently underway.
-  * Returns 1 if writeback was started, 0 if not.
-+ *
-+ * May be called inside i_lock. May not start writeback if locks cannot
-+ * be acquired.
-  */
- int writeback_inodes_sb_if_idle(struct super_block *sb)
- {
- 	if (!writeback_in_progress(sb->s_bdi)) {
--		down_read(&sb->s_umount);
--		writeback_inodes_sb(sb);
--		up_read(&sb->s_umount);
--		return 1;
--	} else
--		return 0;
-+		if (down_read_trylock(&sb->s_umount)) {
-+			writeback_inodes_sb(sb);
-+			up_read(&sb->s_umount);
-+			return 1;
-+		}
-+	}
-+	return 0;
- }
- EXPORT_SYMBOL(writeback_inodes_sb_if_idle);
- 
-@@ -1145,17 +1149,21 @@ EXPORT_SYMBOL(writeback_inodes_sb_if_idl
-  *
-  * Invoke writeback_inodes_sb if no writeback is currently underway.
-  * Returns 1 if writeback was started, 0 if not.
-+ *
-+ * May be called inside i_lock. May not start writeback if locks cannot
-+ * be acquired.
-  */
- int writeback_inodes_sb_nr_if_idle(struct super_block *sb,
- 				   unsigned long nr)
- {
- 	if (!writeback_in_progress(sb->s_bdi)) {
--		down_read(&sb->s_umount);
--		writeback_inodes_sb_nr(sb, nr);
--		up_read(&sb->s_umount);
--		return 1;
--	} else
--		return 0;
-+		if (down_read_trylock(&sb->s_umount)) {
-+			writeback_inodes_sb_nr(sb, nr);
-+			up_read(&sb->s_umount);
-+			return 1;
-+		}
-+	}
-+	return 0;
- }
- EXPORT_SYMBOL(writeback_inodes_sb_nr_if_idle);
- 
+
+								Honza
+-- 
+Jan Kara <jack@suse.cz>
+SUSE Labs, CR

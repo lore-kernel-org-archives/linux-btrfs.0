@@ -1,56 +1,41 @@
-From: Christoph Hellwig <hch@infradead.org>
-Subject: Re: Oops while rebalancing, now unmountable.
-Date: Mon, 15 Nov 2010 15:54:51 -0500
-Message-ID: <20101115205451.GA644@infradead.org>
-References: <1289310046-sup-839@think>
- <1289326892.4231.2.camel@mars>
- <1289764507.4303.9.camel@mars>
- <20101114204206.GV6809@random.random>
- <20101114220018.GA4512@infradead.org>
- <20101114221222.GX6809@random.random>
- <20101115182314.GA2493@infradead.org>
- <20101115184657.GJ6809@random.random>
- <20101115191204.GB11374@infradead.org>
- <20101115192914.GL6809@random.random>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: mkfs.btrfs on 24 disks in parallel crashes kernel
+Date: Tue, 16 Nov 2010 08:52:27 +0800
+Message-ID: <4CE1D5CB.1020909@cn.fujitsu.com>
+References: <AANLkTi=zjPYJ1rbb0GbYVEFQsL+cEb4NZufmL4tTxBet@mail.gmail.com> <1289275800.9102.16.camel@localhost> <1289289147.9102.21.camel@localhost> <1289830902.3248.85.camel@localhost> <20101115164834.GA2597@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Christoph Hellwig <hch@infradead.org>,
-	Shane Shrybman <shrybman@teksavvy.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>, linux-mm@kvack.org,
-	linux-fsdevel@vger.kernel.org
-To: Andrea Arcangeli <aarcange@redhat.com>
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20101115192914.GL6809@random.random>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Ian Kent <raven@themaw.net>, Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs@vger.kernel.org, Albert Strasheim <fullung@gmail.com>
+To: Josef Bacik <josef@redhat.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20101115164834.GA2597@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 15, 2010 at 08:29:14PM +0100, Andrea Arcangeli wrote:
-> Scary stuff, so WB_SYNC_NONE wouldn't submit the dirty part of the
-> page down for I/O, so that it's all clean after wait_on_page_writeback
-> returns? (well of course unless the dirty bit was set again)
+> So I think we're on the same page for this problem, I've posted a test patch to
+> the bugzilla
+> 
+> https://bugzilla.redhat.com/show_bug.cgi?id=650261
+> 
+> Basically we just need to setup a blank root/fs_info so it can be set in
+> set_super, and then we use those blank structs in open_ctree.  Hopefully this
+> works, if it does I'll post it to the list for wider review.
+> 
 
-It might not if we have lock contention or other resource starvation.
-That's the reason why WB_SYNC_NONE was added - to not block the flusher
-threads.
+You can reproduce the bug easily by this simple script:
 
-> I didn't realize the stack overflow issue was specific to delalloc.
+# cat test.sh
+#! /bin/sh
 
-It's not.  It's specific to direct reclaim.  Only ext4 special cases
-delalloc, but I'm not sure if that's intentional or just an accidental
-side effect of the mess that the ext4 writeback code is.
+for ((; ;))
+{
+    mount $1 $2
+    umount $2
+}
 
-> In short with THP it's khugepaged that is supposed to run the
-> ->writepage in migrate.c and it will run it once every 10 sec even
-> when it fails (and not in a 100% cpu wasting loop like kswapd), so if
-> you did something magic for kswapd in XFS you should do for khugepaged
-> too.
+Now run the test (I was using loop devices):
 
-If you have a PF_ flag for it that's easy to add once it goes into
-mainline.
+# ./test.sh /dev/loop1 /mnt1 &
+# ./test.sh /dev/loop2 /mnt2
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom policy in Canada: sign http://dissolvethecrtc.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+(You'll get exactly the same crash)

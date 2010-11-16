@@ -1,71 +1,45 @@
-From: Shane Shrybman <shrybman@teksavvy.com>
-Subject: Re: Oops while rebalancing, now unmountable.
-Date: Tue, 16 Nov 2010 16:48:48 -0500
-Message-ID: <1289944128.4118.3.camel@mars>
-References: <1289236257.3611.3.camel@mars> <1289310046-sup-839@think>
-	 <1289326892.4231.2.camel@mars> <1289764507.4303.9.camel@mars>
-	 <20101114204206.GV6809@random.random> <20101114220018.GA4512@infradead.org>
-	 <20101114221222.GX6809@random.random> <20101115182314.GA2493@infradead.org>
-	 <1289845457-sup-9432@think>
-Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Christoph Hellwig <hch@infradead.org>,
-	Andrea Arcangeli <aarcange@redhat.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	linux-mm <linux-mm@kvack.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: btrfs raid1 degraded does not mount or fsck
+Date: Tue, 16 Nov 2010 16:50:58 -0500
+Message-ID: <1289943080-sup-1244@think>
+References: <20101029205340.GA10326@gypsyops.denof.sin>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Vladi Gergov <vgergov@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1289845457-sup-9432@think>
+In-reply-to: <20101029205340.GA10326@gypsyops.denof.sin>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2010-11-15 at 13:46 -0500, Chris Mason wrote:
-> Excerpts from Christoph Hellwig's message of 2010-11-15 13:23:14 -0500:
-> > On Sun, Nov 14, 2010 at 11:12:22PM +0100, Andrea Arcangeli wrote:
-> > > I just wrote above that it can happen upstream without THP. It's not
-> > > THP related at all. THP is the consumer, this is a problem in migrate
-> > > that will trigger as well with migrate_pages or all other possible
-> > > migration APIs.
-> > > 
-> > > If more people would be using hugetlbfs they would have noticed
-> > > without THP.
-> > 
-> > Okay, it seems THP is really just the messenger for bad VM practices
-> > here.
-> > 
-> > > +static int btree_migratepage(struct address_space *mapping,
-> > > +                       struct page *newpage, struct page *page)
-> > > +{
-> > > +       /*
-> > > +        * we can't safely write a btree page from here,
-> > > +        * we haven't done the locking hook
-> > > +        */
-> > > +       if (PageDirty(page))
-> > > +               return -EAGAIN;
-> > > 
-> > > fallback_migrate_page would call writeout() which is apparently not
-> > > ok in btrfs for locking issues leading to corruption.
-> > 
-> > Hmm, it seems the issue for that particular problem is indeedin btrfs.
-> > If it needs external locking for writing out data it should not
-> > implement ->writepage to start with.  Chris, can you explain what's
-> > going on with the btree code? It's pretty funny both in the
-> > btree_writepage which goes directly into extent_write_full_page
-> > if PF_MEMALLOC is not set, but otherwise does much more complicated
-> > work, and also in btree_writepages which skips various WB_SYNC_NONE,
-> > including the very weird check for for_kupdate.
+Excerpts from Vladi Gergov's message of 2010-10-29 16:53:42 -0400:
+> >>> gypsyops @ /mnt > sudo mount -o degraded /dev/sdc das3/
+> Password: 
+> mount: wrong fs type, bad option, bad superblock on /dev/sdc,
+>        missing codepage or helper program, or other error
+>        In some cases useful info is found in syslog - try
+>        dmesg | tail  or so
 > 
-> So, I had THP + a patched btrfs running all weekend and I can safely say
-> I've fixed this one now. 
+> [  684.577540] device label das4 devid 2 transid 107954 /dev/sdc
+> [  684.595150] btrfs: allowing degraded mounts
+> [  684.595594] btrfs: failed to read chunk root on sdb
+> [  684.604110] btrfs: open_ctree failed
 > 
+> >>> gypsyops @ /mnt > sudo btrfsck /dev/sdc
+> btrfsck: volumes.c:1367: btrfs_read_sys_array: Assertion `!(ret)' failed.
 
-That seems like good news!
+Ok, I dug through this and found the bug responsible for your
+unmountable FS.  When we're mounted in degraded mode, and we don't have
+enough drives available to do raid1,10, we're can use the wrong raid
+level for new allocations.
 
-Is that btrfs patch available somewhere?
+I'm fixing the kernel side so this doesn't happen anymore, but I'll need
+to rebuild the chunk tree (and probably a few others) off your good disk to
+fix things.
 
-Where does this leave the existing corrupted btrfs'?
+I've got it reproduced here though, so I'll make an fsck that can scan
+for the correct trees and fix it for you.
 
-Thanks guys,
+Since you're basically going to be my first external fsck customer, is
+there anyway you can do a raw device based backup of the blocks?  This
+way if I do mess things up we can repeat the experiment.
 
-Shane
-
+-chris

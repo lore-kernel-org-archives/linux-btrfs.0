@@ -1,90 +1,71 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: do not loop through raid types when looking for free extent
-Date: Tue, 16 Nov 2010 16:22:04 -0500
-Message-ID: <1289942524-29637-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: Shane Shrybman <shrybman@teksavvy.com>
+Subject: Re: Oops while rebalancing, now unmountable.
+Date: Tue, 16 Nov 2010 16:48:48 -0500
+Message-ID: <1289944128.4118.3.camel@mars>
+References: <1289236257.3611.3.camel@mars> <1289310046-sup-839@think>
+	 <1289326892.4231.2.camel@mars> <1289764507.4303.9.camel@mars>
+	 <20101114204206.GV6809@random.random> <20101114220018.GA4512@infradead.org>
+	 <20101114221222.GX6809@random.random> <20101115182314.GA2493@infradead.org>
+	 <1289845457-sup-9432@think>
+Mime-Version: 1.0
+Content-Type: text/plain
+Cc: Christoph Hellwig <hch@infradead.org>,
+	Andrea Arcangeli <aarcange@redhat.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	linux-mm <linux-mm@kvack.org>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1289845457-sup-9432@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There is a bug in find_free_extent where if we don't find a free extent in the
-raid type we are looking for, we loop through to the next raid type.  This is
-not ok since we need to make sure we honor the raid types we are given.  So
-instead kill this check and get the proper index for the raid type we want from
-the allocator.  Thanks,
+On Mon, 2010-11-15 at 13:46 -0500, Chris Mason wrote:
+> Excerpts from Christoph Hellwig's message of 2010-11-15 13:23:14 -0500:
+> > On Sun, Nov 14, 2010 at 11:12:22PM +0100, Andrea Arcangeli wrote:
+> > > I just wrote above that it can happen upstream without THP. It's not
+> > > THP related at all. THP is the consumer, this is a problem in migrate
+> > > that will trigger as well with migrate_pages or all other possible
+> > > migration APIs.
+> > > 
+> > > If more people would be using hugetlbfs they would have noticed
+> > > without THP.
+> > 
+> > Okay, it seems THP is really just the messenger for bad VM practices
+> > here.
+> > 
+> > > +static int btree_migratepage(struct address_space *mapping,
+> > > +                       struct page *newpage, struct page *page)
+> > > +{
+> > > +       /*
+> > > +        * we can't safely write a btree page from here,
+> > > +        * we haven't done the locking hook
+> > > +        */
+> > > +       if (PageDirty(page))
+> > > +               return -EAGAIN;
+> > > 
+> > > fallback_migrate_page would call writeout() which is apparently not
+> > > ok in btrfs for locking issues leading to corruption.
+> > 
+> > Hmm, it seems the issue for that particular problem is indeedin btrfs.
+> > If it needs external locking for writing out data it should not
+> > implement ->writepage to start with.  Chris, can you explain what's
+> > going on with the btree code? It's pretty funny both in the
+> > btree_writepage which goes directly into extent_write_full_page
+> > if PF_MEMALLOC is not set, but otherwise does much more complicated
+> > work, and also in btree_writepages which skips various WB_SYNC_NONE,
+> > including the very weird check for for_kupdate.
+> 
+> So, I had THP + a patched btrfs running all weekend and I can safely say
+> I've fixed this one now. 
+> 
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/extent-tree.c |   20 ++++++++------------
- 1 files changed, 8 insertions(+), 12 deletions(-)
+That seems like good news!
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 0c097f3..a917e3c 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4785,16 +4785,16 @@ wait_block_group_cache_done(struct btrfs_block_group_cache *cache)
- 	return 0;
- }
- 
--static int get_block_group_index(struct btrfs_block_group_cache *cache)
-+static int get_block_group_index(u64 flags)
- {
- 	int index;
--	if (cache->flags & BTRFS_BLOCK_GROUP_RAID10)
-+	if (flags & BTRFS_BLOCK_GROUP_RAID10)
- 		index = 0;
--	else if (cache->flags & BTRFS_BLOCK_GROUP_RAID1)
-+	else if (flags & BTRFS_BLOCK_GROUP_RAID1)
- 		index = 1;
--	else if (cache->flags & BTRFS_BLOCK_GROUP_DUP)
-+	else if (flags & BTRFS_BLOCK_GROUP_DUP)
- 		index = 2;
--	else if (cache->flags & BTRFS_BLOCK_GROUP_RAID0)
-+	else if (flags & BTRFS_BLOCK_GROUP_RAID0)
- 		index = 3;
- 	else
- 		index = 4;
-@@ -4834,7 +4834,7 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
- 	struct btrfs_space_info *space_info;
- 	int last_ptr_loop = 0;
- 	int loop = 0;
--	int index = 0;
-+	int index = get_block_group_index(data);
- 	bool found_uncached_bg = false;
- 	bool failed_cluster_refill = false;
- 	bool failed_alloc = false;
-@@ -4913,7 +4913,6 @@ ideal_cache:
- 				btrfs_put_block_group(block_group);
- 				up_read(&space_info->groups_sem);
- 			} else {
--				index = get_block_group_index(block_group);
- 				goto have_block_group;
- 			}
- 		} else if (block_group) {
-@@ -5145,14 +5144,11 @@ checks:
- loop:
- 		failed_cluster_refill = false;
- 		failed_alloc = false;
--		BUG_ON(index != get_block_group_index(block_group));
-+		BUG_ON(index != get_block_group_index(block_group->flags));
- 		btrfs_put_block_group(block_group);
- 	}
- 	up_read(&space_info->groups_sem);
- 
--	if (!ins->objectid && ++index < BTRFS_NR_RAID_TYPES)
--		goto search;
--
- 	/* LOOP_FIND_IDEAL, only search caching/cached bg's, and don't wait for
- 	 *			for them to make caching progress.  Also
- 	 *			determine the best possible bg to cache
-@@ -8204,7 +8200,7 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
- static void __link_block_group(struct btrfs_space_info *space_info,
- 			       struct btrfs_block_group_cache *cache)
- {
--	int index = get_block_group_index(cache);
-+	int index = get_block_group_index(cache->flags);
- 
- 	down_write(&space_info->groups_sem);
- 	list_add_tail(&cache->list, &space_info->block_groups[index]);
--- 
-1.6.6.1
+Is that btrfs patch available somewhere?
+
+Where does this leave the existing corrupted btrfs'?
+
+Thanks guys,
+
+Shane
 

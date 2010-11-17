@@ -1,66 +1,36 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: [PATCH] btrfs-progs: setting of time to the root directory
-Date: Wed, 17 Nov 2010 10:07:52 +0900
-Message-ID: <201011170107.AA00002@T-ITOH1.jp.fujitsu.com>
+From: "Yan, Zheng " <yanzheng@21cn.com>
+Subject: Re: [PATCH] Btrfs: do not loop through raid types when looking for
+ free extent
+Date: Wed, 17 Nov 2010 09:37:29 +0800
+Message-ID: <AANLkTincj9E6z2fqrc_V5GPXHw+tjgdMa1Wc4-9q+=X8@mail.gmail.com>
+References: <1289942524-29637-1-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: chris.mason@oracle.com
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1289942524-29637-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, Nov 17, 2010 at 5:22 AM, Josef Bacik <josef@redhat.com> wrote:
+> There is a bug in find_free_extent where if we don't find a free exte=
+nt in the
+> raid type we are looking for, we loop through to the next raid type. =
+=A0This is
+> not ok since we need to make sure we honor the raid types we are give=
+n. =A0So
+> instead kill this check and get the proper index for the raid type we=
+ want from
+> the allocator. =A0Thanks,
+>
 
-This patch adds the setting of time to the root directory to the
-mkfs.btrfs command.
-As a result, the time of the mount point not correctly displayed
-comes to be displayed correctly. 
+Loop through raid types is for handling failure in the middle of raid t=
+ype
+conversion.
 
-[before]
- # mkfs.btrfs /dev/sdd10
- # mount /dev/sdd10 /test1
- # ls -ld /test1
- dr-xr-xr-x 1 root root 0 Jan  1  1970 /test1
-
-[after]
- # date
- Tue Nov 16 18:06:05 JST 2010
- # mkfs.btrfs /dev/sdd10
- # mount /dev/sdd10 /test1
- # ls -ld /test1
- dr-xr-xr-x 1 root root 0 Nov 16 18:06 /test1
-
-Thanks,
-Tsutomu
-
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- utils.c |    9 +++++++++
- 1 file changed, 9 insertions(+)
-
-diff -urNp btrfs-progs-unstable/utils.c btrfs-progs-unstable-new/utils.c
---- btrfs-progs-unstable/utils.c	2010-11-09 11:46:23.000000000 +0900
-+++ btrfs-progs-unstable-new/utils.c	2010-11-16 17:24:08.000000000 +0900
-@@ -565,6 +565,7 @@ int btrfs_make_root_dir(struct btrfs_tra
- {
- 	int ret;
- 	struct btrfs_inode_item inode_item;
-+	time_t now = time(NULL);
- 
- 	memset(&inode_item, 0, sizeof(inode_item));
- 	btrfs_set_stack_inode_generation(&inode_item, trans->transid);
-@@ -572,6 +573,14 @@ int btrfs_make_root_dir(struct btrfs_tra
- 	btrfs_set_stack_inode_nlink(&inode_item, 1);
- 	btrfs_set_stack_inode_nbytes(&inode_item, root->leafsize);
- 	btrfs_set_stack_inode_mode(&inode_item, S_IFDIR | 0555);
-+	btrfs_set_stack_timespec_sec(&inode_item.atime, now);
-+	btrfs_set_stack_timespec_nsec(&inode_item.atime, 0);
-+	btrfs_set_stack_timespec_sec(&inode_item.ctime, now);
-+	btrfs_set_stack_timespec_nsec(&inode_item.ctime, 0);
-+	btrfs_set_stack_timespec_sec(&inode_item.mtime, now);
-+	btrfs_set_stack_timespec_nsec(&inode_item.mtime, 0);
-+	btrfs_set_stack_timespec_sec(&inode_item.otime, 0);
-+	btrfs_set_stack_timespec_nsec(&inode_item.otime, 0);
- 
- 	if (root->fs_info->tree_root == root)
- 		btrfs_set_super_root_dir(&root->fs_info->super_copy, objectid);
-
+Yan, Zheng
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

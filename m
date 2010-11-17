@@ -1,63 +1,79 @@
-From: Bron Gondwana <brong@fastmail.fm>
-Subject: Re: Poor performance unlinking hard-linked files (repost)
-Date: Wed, 17 Nov 2010 15:11:48 +1100
-Message-ID: <20101117041148.GA10048@brong.net>
-References: <1289618724.28645.1405062363@webmail.messagingengine.com>
- <20101116125445.GA3229@brong.net>
- <1289914577-sup-8535@think>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: [PATCH 2/3] btrfs: restructure btrfs_merge_bio_hook()
+Date: Wed, 17 Nov 2010 12:23:31 +0800
+Message-ID: <4CE358C3.7070903@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Bron Gondwana <brong@fastmail.fm>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1289914577-sup-8535@think>
+Content-Type: text/plain; charset=GB2312
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Linux Kernel <linux-kernel@vger.kernel.org>,
+	Linux Fsdevel <linux-fsdevel@vger.kernel.org>,
+	Ito <t-itoh@jp.fujitsu.com>,
+	Andrew Morton <akpm@linux-foundation.org>
+To: Josef Bacik <josef@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 16, 2010 at 08:38:13AM -0500, Chris Mason wrote:
-> Excerpts from Bron Gondwana's message of 2010-11-16 07:54:45 -0500:
-> > Just posting this again more neatly formatted and just the
-> > 'meat':
-> > 
-> > a) program creates piles of small temporary files, hard
-> >    links them out to different directories, unlinks the
-> >    originals.
-> > 
-> > b) filesystem size: ~ 300Gb (backed by hardware RAID5)
-> > 
-> > c) as the filesystem grows (currently about 30% full) 
-> >    the unlink performance becomes horrible.  Watching
-> >    iostat, there's a lot of reading going on as well.
-> > 
-> > Is this expected?  Is there anything we can do about it?
-> > (short of rewrite Cyrus replication)
-> 
-> Hi,
-> 
-> It sounds like the unlink speed is limited by the reading, and the reads
-> are coming from one of two places.  We're either reading to cache cold
-> block groups or we're reading to find the directory entries.
+We restructured btrfs_merge_bio_hook(). And the new function will be used to
+fix a panic problem that caused by direct IO.
 
-All the unlinks for a single process will be happening in the same
-directory (though the hard linked copies will be all over)
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/inode.c |   29 +++++++++++++++++------------
+ 1 files changed, 17 insertions(+), 12 deletions(-)
 
-> Could you sysrq-w while the performance is bad?  That would narrow it
-> down.
-
-Here's one:
-
-http://pastebin.com/Tg7agv42
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 3906e48..32b68fa 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1353,6 +1353,22 @@ static int btrfs_clear_bit_hook(struct inode *inode,
+ 	return 0;
+ }
  
-> Josef has the reads for caching block groups fixed, but we'll have to
-> look hard at the reads for the rest of unlink.
-
-I suspect you may want a couple more before you have enough data.  I
-could set up a job to run one every 10 minutes for a couple of hours
-or something.  There will be at least two, possibly three threads of
-"sync_server" running on this particular server instance.  It has two
-btrfs partitions - a 15Gb partition on RAID1 and a 300Gb partition
-on RAID5.  All the unlinks will be happening to the RAID5 one.
-
-Bron ( our usual fully loaded server might have up to 40 of these pairs
-       over 12 separate RAID sets, so anything that doesn't scale out
-       to lots of filesystems would make us pretty sad too )
++static int __btrfs_can_merge_page_to_bio(struct btrfs_mapping_tree *map_tree,
++					 size_t size, struct bio *bio)
++{
++	u64 logical = (u64)bio->bi_sector << 9;
++	u64 map_length;
++	int ret;
++
++	map_length = bio->bi_size;
++	ret = btrfs_map_block(map_tree, READ, logical,
++			      &map_length, NULL, 0);
++
++	if (map_length < bio->bi_size + size)
++		return 1;
++	return ret;
++}
++
+ /*
+  * extent_io.c merge_bio_hook, this must check the chunk tree to make sure
+  * we don't create bios that span stripes or chunks
+@@ -1363,23 +1379,12 @@ int btrfs_merge_bio_hook(struct page *page, unsigned long offset,
+ {
+ 	struct btrfs_root *root = BTRFS_I(page->mapping->host)->root;
+ 	struct btrfs_mapping_tree *map_tree;
+-	u64 logical = (u64)bio->bi_sector << 9;
+-	u64 length = 0;
+-	u64 map_length;
+-	int ret;
+ 
+ 	if (bio_flags & EXTENT_BIO_COMPRESSED)
+ 		return 0;
+ 
+-	length = bio->bi_size;
+ 	map_tree = &root->fs_info->mapping_tree;
+-	map_length = length;
+-	ret = btrfs_map_block(map_tree, READ, logical,
+-			      &map_length, NULL, 0);
+-
+-	if (map_length < length + size)
+-		return 1;
+-	return ret;
++	return __btrfs_can_merge_page_to_bio(map_tree, size, bio);
+ }
+ 
+ /*
+-- 
+1.7.0.1

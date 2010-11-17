@@ -1,40 +1,56 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH 4/6] Ext4: fail if we try to use hole punch
-Date: Wed, 17 Nov 2010 01:31:26 -0500
-Message-ID: <20101117063125.GE5618@dhcp231-156.rdu.redhat.com>
-References: <1289840723-3056-1-git-send-email-josef@redhat.com> <1289840723-3056-5-git-send-email-josef@redhat.com> <4CE2783F.1020004@redhat.com> <20101116125016.GA31957@dhcp231-156.rdu.redhat.com> <4CE28211.6060204@redhat.com> <20101117030640.GD3290@thunk.org>
+Subject: Re: [PATCH 1/3] direct-io: add a hook for the fs to provide its
+	own bio merging check function
+Date: Wed, 17 Nov 2010 02:06:59 -0500
+Message-ID: <20101117070658.GF5618@dhcp231-156.rdu.redhat.com>
+References: <4CE3579B.1000301@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: "Ted Ts'o" <tytso@mit.edu>, Avi Kivity <avi@redhat.com>,
-	Josef Bacik <josef@redhat.com>, david@fromorbit.com,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-ext4@vge
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <20101117030640.GD3290@thunk.org>
+Cc: viro@zeniv.linux.org.uk, Josef Bacik <josef@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Linux Fsdevel <linux-fsdevel@vger.kernel.org>,
+	Linux Kernel <linux-kernel@vger.kernel.org>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Ito <t-itoh@jp.fujitsu.com>
+To: Miao Xie <miaox@cn.fujitsu.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4CE3579B.1000301@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 16, 2010 at 10:06:40PM -0500, Ted Ts'o wrote:
-> > >There is no simple way to test if a filesystem supports hole punching or not so
-> > >the check has to be done per fs.  Thanks,
-> > 
-> > Could put a flag word in superblock_operations.  Filesystems which
-> > support punching (or other features) can enable it there.
+On Wed, Nov 17, 2010 at 12:18:35PM +0800, Miao Xie wrote:
+> BTRFS can not submit bios that span its chunks or stripes, so it needs a
+> function to check it when we want to add a page into the bios. So we add a
+> can_merge_io hook to do it.
 > 
-> No, it couldn't be in super_operations.  It may vary on a per-inode
-> basis for some file systems, such as ext4 (depending on whether the
-> inode is extent-mapped or indirect-block mapped).
-> 
-> So at least for ext4 we'd need to call into fallocate() function
-> anyway, once we add support.  I suppose if other file systems really
-> want it, we could add a flag to the super block ops structure, so they
-> don't have do the "do we support the punch" operation.  I can go
-> either way on that; although if we think the majority of file systems
-> are going support punch in the long-term, then it might not be worth
-> it to add such a flag.
->
 
-Yeah thats alot of extra code just for one part of fallocate.  Calling into
-->fallocate is perfectly reasonable, especially since ext4 works the way it
-does, I'm going to leave things as they are.  Thanks,
+Heh so I was going to fix this after the hole punching stuff.  The fact is btrfs
+maps everything that is ok to do in one IO via get_blocks().  So all we need to
+do is add another DIO_ flag to tell us to treat each get_blocks() call as
+discrete.  I wanted to use buffer_boundary for this, but I think it's too
+drastic of a change for people who already use buffer_boundary();
 
-Josef 
+What happens today is that say we map 4k, we do submit_page_section, but if this
+is our first bit of IO we just set dio->cur_page and such and then loop again.
+Say there is 4k-hole-4k, we do the next mapping and set buffer_boundary again,
+and come into submit_page_section and because cur_page is set, we do
+dio_send_cur_page.  Because there is no dio->bio we setup a new bio, but when we
+do that we clear dio->boundary, and leave the bio all setup.  So the next time
+we loop around the tail 4k gets added to our previously setup bio and boom we
+hit this problem with btrfs.
+
+If we can add a DIO_GET_BLOCKS_DISCRETE or some other such non-sense then we can
+easily kill all the logical offset code I had and just make some simple changes
+to make the DIO stuff work for us.  All we do is in get_more_blocks we do
+
+if ((dio->flags & DIO_GET_BLOCKS_DISCRETE) && dio->bio)
+	dio_submit_bio(dio);
+
+before we do anything else and that way btrfs is satisfied since we won't merge
+non logically contiguous requests.
+
+So thats a long-winded way of saying NACK, lets not add even more complicated
+special crap for dealing with btrfs when we can just do something like the
+above.  Thanks,
+
+Josef

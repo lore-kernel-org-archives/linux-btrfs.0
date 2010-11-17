@@ -1,78 +1,86 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: Re: A little confused about what remains to make a stable release
-Date: Wed, 17 Nov 2010 22:59:01 +0000
-Message-ID: <20101117225901.GA5367@vlad.carfax.org.uk>
-References: <AANLkTi=q4bKVGfD-QoF68NecL4e4d5dfcvMrgv5NHtb3@mail.gmail.com>
+From: Joel Becker <Joel.Becker@oracle.com>
+Subject: Re: [PATCH 3/6] Ocfs2: handle hole punching via fallocate properly
+Date: Wed, 17 Nov 2010 15:27:45 -0800
+Message-ID: <20101117232745.GG25677@mail.oracle.com>
+References: <1289840723-3056-1-git-send-email-josef@redhat.com>
+ <1289840723-3056-4-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="GvXjxJ+pjyke8COw"
-Cc: linux-btrfs@vger.kernel.org
-To: Daniel Farina <drfarina@acm.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=q4bKVGfD-QoF68NecL4e4d5dfcvMrgv5NHtb3@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: david@fromorbit.com, linux-kernel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, xfs@oss.sgi.com, cmm@us.ibm.com,
+	cluster-devel@redhat.com, ocfs2-devel@oss.oracle.com
+To: Josef Bacik <josef@redhat.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <1289840723-3056-4-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---GvXjxJ+pjyke8COw
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Wed, Nov 17, 2010 at 02:27:39PM -0800, Daniel Farina wrote:
-> I have been tracking the development of btrfs for some time, as the
-> built-in support for snapshotting would be of great convenience for
-> relational database use cases. I have been crawling the wiki
-> (especially the FAQ), but I still don't have a clear sense of "what's
-> left" *besides* the need for a 'fsck' utility that can be called
-> absolutely vital.
+On Mon, Nov 15, 2010 at 12:05:20PM -0500, Josef Bacik wrote:
+> This patch just makes ocfs2 use its UNRESERVP ioctl when we get the hole punch
+> flag in fallocate.  I didn't test it, but it seems simple enough.  Thanks,
 > 
-> That, and testing and bug reports.
+> Signed-off-by: Josef Bacik <josef@redhat.com>
 
-   This question (and answer) should probably go in the FAQ...
+Seems reasonable to me.
+Acked-by: Joel Becker <joel.becker@oracle.com>
 
-   Nobody is going to magically stick a label on btrfs and say "it's
-stable now!" Software -- particularly something as complex as this --
-just doesn't work that way.
+Joel
 
-   It's stable *for you* when it functions with the workloads *you*
-expect of it, with a failure rate that is acceptable *to you*.
-
-   For what I'm using it for right now, it's already stable by that
-definition, *for me*.
-
-> From the materials I've been able to find, it's hard for me to get a
-> sense of how one could assist the project towards being recommended
-> for general use; do the denizens of this list has a sense of what
-> those things might be? (Or a link?)
-
-   The primary things you can do: Use it, test it, file bug reports.
-Do this with, as close as you can, the use-cases (IOPs/s, feature
-uses, data sizes) that you want to use it for.
-
-   Beyond that: Fix bugs. Add the features that you think are
-important. Add features that other people think are important (see the
-"Project Ideas" page on the wiki for the latter).
-
-   Hugo.
-
-</2-penn'orth>
+> ---
+>  fs/ocfs2/file.c |   10 ++++++++--
+>  1 files changed, 8 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/ocfs2/file.c b/fs/ocfs2/file.c
+> index 77b4c04..181ae52 100644
+> --- a/fs/ocfs2/file.c
+> +++ b/fs/ocfs2/file.c
+> @@ -1992,6 +1992,7 @@ static long ocfs2_fallocate(struct inode *inode, int mode, loff_t offset,
+>  	struct ocfs2_super *osb = OCFS2_SB(inode->i_sb);
+>  	struct ocfs2_space_resv sr;
+>  	int change_size = 1;
+> +	int cmd = OCFS2_IOC_RESVSP64;
+>  
+>  	if (!ocfs2_writes_unwritten_extents(osb))
+>  		return -EOPNOTSUPP;
+> @@ -2002,12 +2003,17 @@ static long ocfs2_fallocate(struct inode *inode, int mode, loff_t offset,
+>  	if (mode & FALLOC_FL_KEEP_SIZE)
+>  		change_size = 0;
+>  
+> +	if (mode & FALLOC_FL_PUNCH_HOLE) {
+> +		cmd = OCFS2_IOC_UNRESVSP64;
+> +		change_size = 0;
+> +	}
+> +
+>  	sr.l_whence = 0;
+>  	sr.l_start = (s64)offset;
+>  	sr.l_len = (s64)len;
+>  
+> -	return __ocfs2_change_file_space(NULL, inode, offset,
+> -					 OCFS2_IOC_RESVSP64, &sr, change_size);
+> +	return __ocfs2_change_file_space(NULL, inode, offset, cmd, &sr,
+> +					 change_size);
+>  }
+>  
+>  int ocfs2_check_range_for_refcount(struct inode *inode, loff_t pos,
+> -- 
+> 1.6.6.1
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at  http://www.tux.org/lkml/
+> 
 
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-  --- The trouble with you, Ibid, is you think you know everything. ---  
-                                                                         
 
---GvXjxJ+pjyke8COw
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
+"Born under a bad sign.
+ I been down since I began to crawl.
+ If it wasn't for bad luck,
+ I wouldn't have no luck at all."
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFM5F41IKyzvlFcI40RAnbWAKCouJAYObMH5eIl0Vu9DPNcf0wY6gCggZ91
-tHI2S0NRSAL76BduLLoMPRM=
-=7dZv
------END PGP SIGNATURE-----
-
---GvXjxJ+pjyke8COw--
+Joel Becker
+Senior Development Manager
+Oracle
+E-mail: joel.becker@oracle.com
+Phone: (650) 506-8127

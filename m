@@ -1,158 +1,81 @@
-From: Chris Ball <cjb@laptop.org>
-Subject: Update to Project_ideas wiki page
-Date: Tue, 16 Nov 2010 22:19:45 -0500
-Message-ID: <m3hbfg3acu.fsf@pullcord.laptop.org>
+From: Nick Piggin <npiggin@kernel.dk>
+Subject: Re: [patch] fix up lock order reversal in writeback
+Date: Wed, 17 Nov 2010 14:56:52 +1100
+Message-ID: <20101117035652.GC3302@amd>
+References: <20101116110058.GA4298@amd>
+ <20101116123252.4cc66f13.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Cc: Nick Piggin <npiggin@kernel.dk>, linux-fsdevel@vger.kernel.org,
+	linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20101116123252.4cc66f13.akpm@linux-foundation.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Tue, Nov 16, 2010 at 12:32:52PM -0800, Andrew Morton wrote:
+> On Tue, 16 Nov 2010 22:00:58 +1100
+> Nick Piggin <npiggin@kernel.dk> wrote:
+> 
+> > I saw a lock order warning on ext4 trigger. This should solve it.
+> 
+> Send us the trace, please.
 
-Chris Mason has posted a bunch of interesting updates to the
-Project_ideas wiki page.  If you're interested in working on any
-of these, feel free to speak up and ask for more information if
-you need it.  Here are the new sections, for the curious:
+I lost it, sorry.
 
-== Block group reclaim ==
+ 
+> The code comment implies that someone is calling down_read() under
+> i_lock?  That would be bad, and I'd expect it to have produced a
+> might_sleep() warning, not a lockdep trace.  
 
-The split between data and metadata block groups means that we
-sometimes have mostly empty block groups dedicated to only data or
-metadata.  As files are deleted, we should be able to reclaim these
-and put the space back into the free space pool.
+Sorry not i_lock, i_mutex. writeback_inodes_sb_if_idle is called by
+ext4's write_begin function which is called with i_mutex held from
+generic_file_buffered_write, I believe is the trace.
 
-We also need rebalancing ioctls that focus only on specific raid
-levels.
+ 
+> And I don't see how we can call writeback_inodes_sb() under i_lock
+> anyway, so I don't really have a clue what's going on here!
+> 
+> > Raciness shouldn't matter much, because writeback can stop just
+> > after we make the test and return anyway (so the API is racy anyway).
 
-== RBtree lock contention ==
+> > 
+> > Signed-off-by: Nick Piggin <npiggin@kernel.dk>
+> > 
+> > Index: linux-2.6/fs/fs-writeback.c
+> > ===================================================================
+> > --- linux-2.6.orig/fs/fs-writeback.c	2010-11-16 21:44:32.000000000 +1100
+> > +++ linux-2.6/fs/fs-writeback.c	2010-11-16 21:49:37.000000000 +1100
+> > @@ -1125,16 +1125,20 @@ EXPORT_SYMBOL(writeback_inodes_sb);
+> >   *
+> >   * Invoke writeback_inodes_sb if no writeback is currently underway.
+> >   * Returns 1 if writeback was started, 0 if not.
+> > + *
+> > + * May be called inside i_lock. May not start writeback if locks cannot
+> > + * be acquired.
+> >   */
+> >  int writeback_inodes_sb_if_idle(struct super_block *sb)
+> >  {
+> >  	if (!writeback_in_progress(sb->s_bdi)) {
+> > -		down_read(&sb->s_umount);
+> > -		writeback_inodes_sb(sb);
+> > -		up_read(&sb->s_umount);
+> > -		return 1;
+> > -	} else
+> > -		return 0;
+> > +		if (down_read_trylock(&sb->s_umount)) {
+> > +			writeback_inodes_sb(sb);
+> > +			up_read(&sb->s_umount);
+> > +			return 1;
+> > +		}
+> > +	}
+> > +	return 0;
+> 
+> And it's pretty generous to describe a s/down_read/down_read_trylock/
+> as a "fix".  Terms like "bandaid" and "workaround" come to mind.
 
-Btrfs uses a number of rbtrees to index in-memory data structures.
-Some of these are dominated by reads, and the lock contention from
-searching them is showing up in profiles.  We need to look into an RCU
-and sequence counter combination to allow lockless reads.
+As much as the writeback_inodes_sb_if_idle API itself is a bandaid,
+I suppose. (it doesn't do any rate limiting of the dirtier, it's racy,
+it doesn't specify how much to writeback, it's synchronous, etc).
 
-== Forced readonly mounts on errors ==
-
-The sources have a number of BUG() statements that could easily be
-replaced with code to force the filesystem readonly.  This is the
-first step in being more fault tolerant of disk corruptions.  The
-first step is to add a framework for generating errors that should
-result in filesystems going readonly, and the conversion from BUG()
-to that framework can happen incrementally.
-
-== Dedicated metadata drives ==
-
-We're able to split data and metadata IO very easily.  Metadata tends
-to be dominated by seeks and for many applications it makes sense to
-put the metadata onto faster SSDs.
-
-== Readonly snapshots ==
-
-The Btrfs snapshots are read/write by default.  A small number of
-checks would allow us to make readonly snapshots instead.
-
-== Per file / directory controls for COW and compression ==
-
-Data compression and data cow are controlled across the entire FS by
-mount options right now.  ioctls are needed to set this on a per file
-or per directory basis.  This has been proposed previously, but VFS
-developers wanted us to use generic ioctls rather than btrfs-specific
-ones.  Can we use some of the same ioctls that ext4 uses?  This task
-is mostly organizational rather than technical.
-
-== Chunk tree backups ==
-
-The chunk tree is critical to mapping logical block numbers to
-physical locations on the drive.  We need to make the mappings
-discoverable via a block device scan so that we can recover from
-corrupted chunk trees.
-
-== Rsync integration ==
-
-Now that we have code to efficiently find newly updated files, we need
-to tie it into tools such as rsync and dirvish.  (For bonus points, we
-can even tell rsync _which blocks_ inside a file have changed.  Would
-need to work with the rsync developers on that one.)
-
-== Atomic write API ==
-
-The Btrfs implementation of data=ordered only updates metadata to
-point to new data blocks when the data IO is finished.  This makes it
-easy for us to implement atomic writes of an arbitrary size.  Some
-hardware is coming out that can support this down in the block layer
-as well.
-
-== Backref walking utilities ==
-
-Given a block number on a disk, the Btrfs metadata can find all the
-files and directories that use or care about that block.  Some
-utilities to walk these back refs and print the results would help
-debug corruptions.
-
-Given an inode, the Btrfs metadata can find all the directories that
-point to the inode.  We should have utils to walk these back refs as
-well.
-
-== Scrubbing ==
-
-We need a periodic daemon that can walk the filesystem and verify
-the contents of all copies of all allocated blocks are correct.
-This is mostly equivalent to "find | xargs cat >/dev/null", but
-with the constraint that we don't want to thrash the page cache,
-so direct I/O should be used instead.
-
-If we find a bad copy during this process, and we're using RAID,
-we should queue up an overwrite of the bad copy with a good one.
-The overwrite can happen in-place.
-
-== Drive swapping ==
-
-Right now when we replace a drive, we do so with a full FS balance.
-If we are inserting a new drive to remove an old one, we can do a
-much less expensive operation where we just put valid copies of all
-the blocks onto the new drive.
-
-== IO error tracking ==
-
-As we get bad csums or IO errors from drives, we should track the
-failures and kick out the drive if it is clearly going bad.
-
-== Random write performance ==
-
-Random writes introduce small extents and fragmentation.  We need new
-file layout code to improve this and defrag the files as they are
-being changed.
-
-== Free inode number cache ==
-
-As the filesystem fills up, finding a free inode number will become
-expensive.  This should be cached the same way we do free blocks.
-
-== Snapshot aware defrag ==
-
-As we defragment files, we break any sharing from other snapshots.
-The balancing code will preserve the sharing, and defrag needs to grow
-this as well.
-
-== Btree lock contention ==
-
-The btree locks, especially on the root block can be very hot.
-We need to improve this, especially in read mostly workloads.
-
-== Changing RAID levels ==
-
-We need ioctls to change between different raid levels.  Some of these
-are quite easy -- e.g. for RAID0 to RAID1, we just halve the available
-bytes on the fs, then queue a rebalance.
-
-== DISCARD utilities ==
-
-For SSDs with discard support, we could use a scrubber that goes
-through the fs and performs discard on anything that is unused.  You
-could first use the balance operation to compact data to the front of
-the drive, then discard the rest.
-
--- 
-Chris Ball   <cjb@laptop.org>
-One Laptop Per Child
+Anyway, I don't know, there's not much other option for 2.6.37 AFAIKS.

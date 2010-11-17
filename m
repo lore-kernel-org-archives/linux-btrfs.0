@@ -1,32 +1,66 @@
-From: Andreas Dilger <adilger@dilger.ca>
-Subject: Re: [PATCH 1/6] fs: add hole punching to fallocate
-Date: Wed, 17 Nov 2010 03:30:40 -0600
-Message-ID: <23A45B17-C23C-45DA-8C51-1CF315C851E2@dilger.ca>
-References: <1289840723-3056-1-git-send-email-josef@redhat.com> <1289840723-3056-2-git-send-email-josef@redhat.com> <20101116111611.GA4757@quack.suse.cz> <20101116114346.GB4757@quack.suse.cz> <20101116125249.GB31957@dhcp231-156.rdu.redhat.com> <20101116131451.GH4757@quack.suse.cz> <18ACAA85-8847-4B12-9839-F99FB6C7B3E4@dilger.ca> <20101117021150.GL22876@dastard> <20101117022814.GB5618@dhcp231-156.rdu.redhat.com> <20101117023456.GD5618@dhcp231-156.rdu.redhat.com>
-Mime-Version: 1.0 (Apple Message framework v1081)
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH 1/3] direct-io: add a hook for the fs to provide its
+	own bio merging check function
+Date: Wed, 17 Nov 2010 04:37:21 -0500
+Message-ID: <20101117093720.GG5618@dhcp231-156.rdu.redhat.com>
+References: <4CE3579B.1000301@cn.fujitsu.com> <20101117070658.GF5618@dhcp231-156.rdu.redhat.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Dave Chinner <david@fromorbit.com>, Jan Kara <jack@suse.cz>,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-ext4@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	xfs@oss.sgi.com, cmm@us.ibm.com, cluster-devel@redhat.com,
-	ocfs2-devel@oss.oracle.com
+Cc: Miao Xie <miaox@cn.fujitsu.com>, viro@zeniv.linux.org.uk,
+	Chris Mason <chris.mason@oracle.com>,
+	Linux Fsdevel <linux-fsdevel@vger.kernel.org>,
+	Linux Kernel <linux-kernel@vger.kernel.org>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Ito <t-itoh@jp.fujitsu.com>
 To: Josef Bacik <josef@redhat.com>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <20101117023456.GD5618@dhcp231-156.rdu.redhat.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20101117070658.GF5618@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2010-11-16, at 20:34, Josef Bacik wrote:
-> FWIW I agree with Dave, the only question at this point is do we force users to specify KEEP_SIZE with PUNCH_HOLE?  On one hand it makes the interface a bit more consistent, on the other hand it makes the documentation a little weird
+On Wed, Nov 17, 2010 at 02:06:59AM -0500, Josef Bacik wrote:
+> On Wed, Nov 17, 2010 at 12:18:35PM +0800, Miao Xie wrote:
+> > BTRFS can not submit bios that span its chunks or stripes, so it needs a
+> > function to check it when we want to add a page into the bios. So we add a
+> > can_merge_io hook to do it.
+> > 
 > 
-> "We have mode here, but if you want to use PUNCH_HOLE you also have to specify KEEP_SIZE, so really it's like a flags field it's just named poorly"
+> Heh so I was going to fix this after the hole punching stuff.  The fact is btrfs
+> maps everything that is ok to do in one IO via get_blocks().  So all we need to
+> do is add another DIO_ flag to tell us to treat each get_blocks() call as
+> discrete.  I wanted to use buffer_boundary for this, but I think it's too
+> drastic of a change for people who already use buffer_boundary();
+> 
+> What happens today is that say we map 4k, we do submit_page_section, but if this
+> is our first bit of IO we just set dio->cur_page and such and then loop again.
+> Say there is 4k-hole-4k, we do the next mapping and set buffer_boundary again,
+> and come into submit_page_section and because cur_page is set, we do
+> dio_send_cur_page.  Because there is no dio->bio we setup a new bio, but when we
+> do that we clear dio->boundary, and leave the bio all setup.  So the next time
+> we loop around the tail 4k gets added to our previously setup bio and boom we
+> hit this problem with btrfs.
+> 
+> If we can add a DIO_GET_BLOCKS_DISCRETE or some other such non-sense then we can
+> easily kill all the logical offset code I had and just make some simple changes
+> to make the DIO stuff work for us.  All we do is in get_more_blocks we do
+> 
+> if ((dio->flags & DIO_GET_BLOCKS_DISCRETE) && dio->bio)
+> 	dio_submit_bio(dio);
+>
 
-Even if this is the case, and we decide today that PUNCH_HOLE without KEEP_SIZE is not desirable to implement, it would be better to just return -EOPNOTSUPP if both flags are not set than assume one or the other is what the user wanted.  That allows the ability to implement this in the future without breaking every application, while if it is assumed that KEEP_SIZE is always implicit there will never be a way to add that functionality without something awful like a separate CHANGE_SIZE flag for PUNCH_HOLE.
+Right after I went to bed I realized this should be
 
-One option is to define FALLOC_FL_PUNCH_HOLE as 0x3 (so that KEEP_SIZE is always passed) and in the future we can define some new flag name like TRUNCATE_HOLE (or whatever) that is 0x2 only.
+if (dio->flags & DIO_GET_BLOCKS_DISCRETE) {
+	if (dio->cur_page) {
+		dio_send_cur_page(dio);
+		page_cache_release(dio->cur_page);
+		dio->cur_page = NULL;
+	}
 
-Cheers, Andreas
+	if (dio->bio)
+		dio_submit_bio(dio);
+ }
 
+Thanks,
 
-
-
-
+Josef

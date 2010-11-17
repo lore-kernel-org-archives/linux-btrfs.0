@@ -1,70 +1,139 @@
-From: Bart Kus <me@bartk.us>
-Subject: Re: Update to Project_ideas wiki page
-Date: Wed, 17 Nov 2010 10:41:01 -0800
-Message-ID: <4CE421BD.7040105@bartk.us>
-References: <m3hbfg3acu.fsf@pullcord.laptop.org>	<20101117143103.GA2401@selene>	<AANLkTi=YcVE44g9waRBHQPido4_xf1o5hE4zmTPqVBxN@mail.gmail.com> <20101117175657.GB2401@selene> <4CE419ED.3020209@bobich.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Gordan Bobic <gordan@bobich.net>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: handle NFS lookups properly
+Date: Wed, 17 Nov 2010 13:54:54 -0500
+Message-ID: <1290020094-2441-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4CE419ED.3020209@bobich.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/17/2010 10:07 AM, Gordan Bobic wrote:
-> On 11/17/2010 05:56 PM, Hugo Mills wrote:
->> On Wed, Nov 17, 2010 at 04:12:29PM +0100, Bart Noordervliet wrote:
->>> Can I suggest we combine this new RAID level management with a
->>> modernisation of the terminology for storage redundancy, as has been
->>> discussed previously in the "Raid1 with 3 drives" thread of March this
->>> year? I.e. abandon the burdened raid* terminology in favour of
->>> something that makes more sense for a filesystem.
->>
->>     Well, our current RAID modes are:
->>
->>   * 1 Copy ("SINGLE")
->>   * 2 Copies ("DUP")
->>   * 2 Copies, different spindles ("RAID1")
->>   * 1 Copy, 2 Stripes ("RAID0")
->>   * 2 Copies, 2 Stripes [each] ("RAID10")
->>
->>     The forthcoming RAID5/6 code will expand on that, with
->>
->>   * 1 Copy, n Stripes + 1 Parity ("RAID5")
->>   * 1 Copy, n Stripes + 2 Parity ("RAID6")
->>
->>     (I'm not certain how "n" will be selected -- it could be a config
->> option, or simply selected on the basis of the number of
->> spindles/devices currently in the FS).
->>
->>     We could further postulate a RAID50/RAID60 mode, which would be
->>
->>   * 2 Copies, n Stripes + 1 Parity
->>   * 2 Copies, n Stripes + 2 Parity
->
-> Since BTRFS is already doing some relatively radical things, I would 
-> like to suggest that RAID5 and RAID6 be deemed obsolete. RAID5 isn't 
-> safely usable for arrays bigger than about 5TB with disks that have a 
-> specified error rate of 10^-14. RAID6 pushes that problem a little 
-> further away, but in the longer term, I would argue that RAID (n+m) 
-> would work best. We specify that of (n+m) disks in the array, we want 
-> n data disks and m redundancy disks. If this is implemented in a 
-> generic way, then there won't be a need to implement additional RAID 
-> modes later.
+People kept reporting NFS issues, specifically getting ESTALE alot.  I figured
+out how to reproduce the problem
 
-Not to throw a wrench in the works, but has anyone given any thought as 
-to how to best deal with SSD-based RAIDs?  Normal RAID algorithms will 
-maximize synchronized failures of those devices.  Perhaps there's a 
-chance here to fix that issue?
+SERVER
+mkfs.btrfs /dev/sda1
+mount /dev/sda1 /mnt/btrfs-test
+<add /mnt/btrfs-test to /etc/exports>
+btrfs subvol create /mnt/btrfs-test/foo
+service nfs start
 
-I like the RAID n+m mode of thinking though.  It'd also be nice to have 
-spares which are spun-down until needed.
+CLIENT
+mount server:/mnt/btrfs /mnt/test
+cd /mnt/test/foo
+ls
 
-Lastly, perhaps there's also a chance here to employ SSD-based caching 
-when doing RAID, as is done in the most recent RAID controllers?  
-Exposure to media failures in the SSD does make me nervous about that 
-though.  Does anyone know if those controllers write some sort of extra 
-data to the SSD for redundancy/error recovery purposes?
+SERVER
+echo 3 > /proc/sys/vm/drop_caches
 
---Bart
+CLIENT
+ls			<-- get an ESTALE here
+
+This is because the standard way to lookup a name in nfsd is to use readdir, and
+what it does is do a readdir on the parent directory looking for the inode of
+the child.  So in this case the parent being / and the child being foo.  Well
+subvols all have the same inode number, so doing a readdir of / looking for
+inode 256 will return '.', which obviously doesn't match foo.  So instead we
+need to have our own .get_name so that we can find the right name.
+
+Our .get_name will either lookup the inode backref or the root backref,
+whichever we're looking for, and return the name we find.  Running the above
+reproducer with this patch results in everything acting the way its supposed to.
+Thanks,
+
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/export.c |   76 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 76 insertions(+), 0 deletions(-)
+
+diff --git a/fs/btrfs/export.c b/fs/btrfs/export.c
+index 951ef09..6f04444 100644
+--- a/fs/btrfs/export.c
++++ b/fs/btrfs/export.c
+@@ -232,9 +232,85 @@ fail:
+ 	return ERR_PTR(ret);
+ }
+ 
++static int btrfs_get_name(struct dentry *parent, char *name,
++			  struct dentry *child)
++{
++	struct inode *inode = child->d_inode;
++	struct inode *dir = parent->d_inode;
++	struct btrfs_path *path;
++	struct btrfs_root *root = BTRFS_I(dir)->root;
++	struct btrfs_inode_ref *iref;
++	struct btrfs_root_ref *rref;
++	struct extent_buffer *leaf;
++	unsigned long name_ptr;
++	struct btrfs_key key;
++	int name_len;
++	int ret;
++
++	if (!dir || !inode)
++		return -EINVAL;
++
++	if (!S_ISDIR(dir->i_mode))
++		return -EINVAL;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++	path->leave_spinning = 1;
++
++	if (inode->i_ino == BTRFS_FIRST_FREE_OBJECTID) {
++		key.objectid = BTRFS_I(inode)->root->root_key.objectid;
++		key.type = BTRFS_ROOT_BACKREF_KEY;
++		key.offset = (u64)-1;
++		root = root->fs_info->tree_root;
++	} else {
++		key.objectid = inode->i_ino;
++		key.offset = dir->i_ino;
++		key.type = BTRFS_INODE_REF_KEY;
++	}
++
++	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
++	if (ret < 0) {
++		btrfs_free_path(path);
++		return ret;
++	} else if (ret > 0) {
++		if (inode->i_ino == BTRFS_FIRST_FREE_OBJECTID) {
++			path->slots[0]--;
++		} else {
++			btrfs_free_path(path);
++			return -ENOENT;
++		}
++	}
++	leaf = path->nodes[0];
++
++	if (inode->i_ino == BTRFS_FIRST_FREE_OBJECTID) {
++	       rref = btrfs_item_ptr(leaf, path->slots[0],
++				     struct btrfs_root_ref);
++	       name_ptr = (unsigned long)(rref + 1);
++	       name_len = btrfs_root_ref_name_len(leaf, rref);
++	} else {
++		iref = btrfs_item_ptr(leaf, path->slots[0],
++				      struct btrfs_inode_ref);
++		name_ptr = (unsigned long)(iref + 1);
++		name_len = btrfs_inode_ref_name_len(leaf, iref);
++	}
++
++	read_extent_buffer(leaf, name, name_ptr, name_len);
++	btrfs_free_path(path);
++
++	/*
++	 * have to add the null termination to make sure that reconnect_path
++	 * gets the right len for strlen
++	 */
++	name[name_len] = '\0';
++
++	return 0;
++}
++
+ const struct export_operations btrfs_export_ops = {
+ 	.encode_fh	= btrfs_encode_fh,
+ 	.fh_to_dentry	= btrfs_fh_to_dentry,
+ 	.fh_to_parent	= btrfs_fh_to_parent,
+ 	.get_parent	= btrfs_get_parent,
++	.get_name	= btrfs_get_name,
+ };
+-- 
+1.6.6.1
 

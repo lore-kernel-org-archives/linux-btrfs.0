@@ -1,50 +1,47 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Poor performance unlinking hard-linked files (repost)
-Date: Thu, 18 Nov 2010 10:30:47 -0500
-Message-ID: <1290094104-sup-8656@think>
-References: <1289618724.28645.1405062363@webmail.messagingengine.com> <20101116125445.GA3229@brong.net> <1289914577-sup-8535@think> <20101117041148.GA10048@brong.net>
-Content-Type: text/plain; charset=UTF-8
+From: Tomasz Chmielewski <mangoo@wpkg.org>
+Subject: Re: Interesting problem with write data.
+Date: Thu, 18 Nov 2010 16:39:05 +0100
+Message-ID: <4CE54899.9010600@wpkg.org>
+References: <4CE51613.8060609@wpkg.org> <1290090160-sup-1717@think> <4CE53EDE.0@wpkg.org> <1290092740-sup-9020@think>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Bron Gondwana <brong@fastmail.fm>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <20101117041148.GA10048@brong.net>
+In-Reply-To: <1290092740-sup-9020@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Bron Gondwana's message of 2010-11-16 23:11:48 -0500:
-> On Tue, Nov 16, 2010 at 08:38:13AM -0500, Chris Mason wrote:
-> > Excerpts from Bron Gondwana's message of 2010-11-16 07:54:45 -0500:
-> > > Just posting this again more neatly formatted and just the
-> > > 'meat':
-> > > 
-> > > a) program creates piles of small temporary files, hard
-> > >    links them out to different directories, unlinks the
-> > >    originals.
-> > > 
-> > > b) filesystem size: ~ 300Gb (backed by hardware RAID5)
-> > > 
-> > > c) as the filesystem grows (currently about 30% full) 
-> > >    the unlink performance becomes horrible.  Watching
-> > >    iostat, there's a lot of reading going on as well.
-> > > 
-> > > Is this expected?  Is there anything we can do about it?
-> > > (short of rewrite Cyrus replication)
-> > 
-> > Hi,
-> > 
-> > It sounds like the unlink speed is limited by the reading, and the reads
-> > are coming from one of two places.  We're either reading to cache cold
-> > block groups or we're reading to find the directory entries.
-> 
-> All the unlinks for a single process will be happening in the same
-> directory (though the hard linked copies will be all over)
-> 
-> > Could you sysrq-w while the performance is bad?  That would narrow it
-> > down.
-> 
-> Here's one:
-> 
-> http://pastebin.com/Tg7agv42
+On 18.11.2010 16:07, Chris Mason wrote:
 
-Ok, we're mixing unlinks and fsyncs.  If it fsyncing directories too?
+(...)
 
--chris
+>> [27821.906513] btrfs-cache-8 D ffff88050c5fde98     0  8089      2 0x00000000
+>> [27821.906517]  ffff88051c3a9b60 0000000000000046 ffff88051c3a9b00 ffff88051c3a9fd8
+>> [27821.906522]  00000000000139c0 00000000000139c0 ffff88051c3a9fd8 ffff88051c3a9fd8
+>> [27821.906526]  00000000000139c0 ffff88050c5fde98 ffff88050c5fdea0 ffff88050c5fdb00
+>> [27821.906530] Call Trace:
+>> [27821.906534]  [<ffffffff8159fc4e>] io_schedule+0x5e/0xa0
+>> [27821.906538]  [<ffffffff81109f15>] sync_page+0x45/0x60
+>
+> So, you're caching block groups.  What you want to do is use Josef's new
+> block group caching code.
+>
+> mount -o space_cache /dev/xxx
+>
+> Do the test and let the caching threads finish, then unmount and then
+> your next run should be fast.
+
+# mount -o space_cache /dev/sdb4 /mnt/btrfs/
+[29720.305741] btrfs: enabling disk space caching
+[29720.305743] btrfs: force clearing of disk cache
+
+
+I don't see any difference in behaviour with this mount option; it still 
+"hangs" for quite a bit at around ~1.8 GB (and reading with ~500 kB/s 
+when the hangs happens) on a subsequent dd run (several runs, 
+unmounts/mounts).
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org

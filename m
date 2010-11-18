@@ -1,53 +1,43 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Interesting problem with write data.
-Date: Thu, 18 Nov 2010 11:07:30 -0500
-Message-ID: <1290096420-sup-9964@think>
-References: <4CE51613.8060609@wpkg.org> <1290090160-sup-1717@think> <4CE53EDE.0@wpkg.org> <1290092740-sup-9020@think> <4CE54899.9010600@wpkg.org> <1290095654-sup-1115@think> <4CE54D90.10005@wpkg.org>
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Tomasz Chmielewski <mangoo@wpkg.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <4CE54D90.10005@wpkg.org>
+From: Andrew Morton <akpm@linux-foundation.org>
+Subject: Re: [patch] fix up lock order reversal in writeback
+Date: Thu, 18 Nov 2010 09:10:53 -0800
+Message-ID: <20101118091053.c275e1f2.akpm@linux-foundation.org>
+References: <20101116110058.GA4298@amd>
+	<20101116130146.GG4757@quack.suse.cz>
+	<4CE35A6D.2040906@redhat.com>
+	<20101117043845.GA3586@amd>
+	<4CE362B0.6040607@redhat.com>
+	<20101117061057.GA3989@amd>
+	<20101118030613.GQ3290@thunk.org>
+	<20101117192900.da859ac7.akpm@linux-foundation.org>
+	<20101118060000.GA3509@amd>
+	<20101117222834.2bb36ee1.akpm@linux-foundation.org>
+	<4CE53E56.4090501@redhat.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Cc: Nick Piggin <npiggin@kernel.dk>, "Ted Ts'o" <tytso@mit.edu>,
+	Jan Kara <jack@suse.cz>, linux-fsdevel@vger.kernel.org,
+	linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org
+To: Eric Sandeen <sandeen@redhat.com>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <4CE53E56.4090501@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Tomasz Chmielewski's message of 2010-11-18 11:00:16 -0500:
-> On 18.11.2010 16:54, Chris Mason wrote:
-> > Excerpts from Tomasz Chmielewski's message of 2010-11-18 10:39:05 -0500:
-> >> On 18.11.2010 16:07, Chris Mason wrote:
-> >>
-> >> (...)
-> >>
-> >>>> [27821.906513] btrfs-cache-8 D ffff88050c5fde98     0  8089      2 0x00000000
-> >>>> [27821.906517]  ffff88051c3a9b60 0000000000000046 ffff88051c3a9b00 ffff88051c3a9fd8
-> >>>> [27821.906522]  00000000000139c0 00000000000139c0 ffff88051c3a9fd8 ffff88051c3a9fd8
-> >>>> [27821.906526]  00000000000139c0 ffff88050c5fde98 ffff88050c5fdea0 ffff88050c5fdb00
-> >>>> [27821.906530] Call Trace:
-> >>>> [27821.906534]  [<ffffffff8159fc4e>] io_schedule+0x5e/0xa0
-> >>>> [27821.906538]  [<ffffffff81109f15>] sync_page+0x45/0x60
-> >>>
-> >>> So, you're caching block groups.  What you want to do is use Josef's new
-> >>> block group caching code.
-> >>>
-> >>> mount -o space_cache /dev/xxx
-> >>>
-> >>> Do the test and let the caching threads finish, then unmount and then
-> >>> your next run should be fast.
-> >>
-> >> # mount -o space_cache /dev/sdb4 /mnt/btrfs/
-> >> [29720.305741] btrfs: enabling disk space caching
-> >> [29720.305743] btrfs: force clearing of disk cache
-> >>
-> >>
-> >> I don't see any difference in behaviour with this mount option; it still
-> >> "hangs" for quite a bit at around ~1.8 GB (and reading with ~500 kB/s
-> >> when the hangs happens) on a subsequent dd run (several runs,
-> >> unmounts/mounts).
-> >
-> > Right, you have to wait for all the caching threads to finish before you
-> > unmount.
+On Thu, 18 Nov 2010 08:55:18 -0600 Eric Sandeen <sandeen@redhat.com> wrote:
+
+> > Can we just delete writeback_inodes_sb_nr_if_idle() and
+> > writeback_inodes_sb_if_idle()?  The changelog for 17bd55d037a02 is
+> > pretty handwavy - do we know that deleting these things would make a
+> > jot of difference?
 > 
-> How do I find out? Is non changing reads/writes enough?
+> Really?  I thought it was pretty decent ;)
+> 
+> Anyway, xfstests 204, "Test out ENOSPC flushing on small filesystems."
+> shows the problem clearly, IIRC.  I should have included that in the
+> changelog, I suppose, sorry.
 
-Look for whose name starts with btrfs-cache
+Your email didn't really impart any information :(
 
--chris
+I suppose I could accidentally delete those nasty little functions in a
+drivers/parport patch then wait and see if anyone notices.
+

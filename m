@@ -1,29 +1,35 @@
-From: Theodore Tso <tytso@MIT.EDU>
-Subject: Re: [patch] fix up lock order reversal in writeback
-Date: Thu, 18 Nov 2010 05:51:49 -0500
-Message-ID: <CAD89104-98EE-4205-8C5B-3F0F60514A0B@mit.edu>
-References: <20101116110058.GA4298@amd> <20101116130146.GG4757@quack.suse.cz> <4CE35A6D.2040906@redhat.com> <20101117043845.GA3586@amd> <4CE362B0.6040607@redhat.com> <20101117061057.GA3989@amd> <20101118030613.GQ3290@thunk.org> <20101117192900.da859ac7.akpm@linux-foundation.org> <20101118060000.GA3509@amd> <20101117222834.2bb36ee1.akpm@linux-foundation.org> <20101118081822.GA9186@amd>
+From: Wout Mertens <wmertens@cisco.com>
+Subject: Re: Interesting problem with write data.
+Date: Thu, 18 Nov 2010 11:36:34 +0100
+Message-ID: <70DF2C9D-0157-4FCB-B1AF-8A84E017249C@cisco.com>
+References: <AANLkTinTtvN6T6Ykjs6-UzHi3XYgimM92Pa5wSPrF3sZ@mail.gmail.com>
 Mime-Version: 1.0 (Apple Message framework v1082)
 Content-Type: text/plain; charset=us-ascii
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-	Eric Sandeen <sandeen@redhat.com>, Jan Kara <jack@suse.cz>,
-	linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-	linux-btrfs@vger.kernel.org
-To: Nick Piggin <npiggin@kernel.dk>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <20101118081822.GA9186@amd>
+Cc: linux-btrfs@vger.kernel.org
+To: Magicloud Magiclouds <magicloud.magiclouds@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTinTtvN6T6Ykjs6-UzHi3XYgimM92Pa5wSPrF3sZ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I think test 2 actually makes dd allocate 1GB of memory and then write it to disk. So if you don't have 1GB free you may be testing your swap.
 
-On Nov 18, 2010, at 3:18 AM, Nick Piggin wrote:
+Also, what kernel/btrfs version are you using? In what situations are you experiencing slowness?
 
-> s_count just prevents it from going away, but s_umount is still needed
-> to keep umount, remount,ro, freezing etc activity away. I don't think
-> there is an easy way to do it.
+Wout.
 
-Hmm.... what about encoding the fact that we are in the process of unmounting the file system as a flag to keep remount, freeing, etc. away?    The equivalent of the inode's I_FREEING flag?
+On Nov 18, 2010, at 7:19 , Magicloud Magiclouds wrote:
 
-After all, it's not like we want freeze to wait until the umount is finished, and then continue on its merry way with the remount operation.  We want it to fail, because we're unmounting the file system.   So maybe the real problem is a mutex really isn't the right abstraction?
-
--- Ted
+> Hi,
+>  Recently, I made a btrfs to use. And I met slowness problem. Trying
+> to diag it. I found this:
+> 1. dd if=/dev/zero of=test count=1024 bs=1MB
+> This is fast, at about 25MB/s, and reasonable iowait.
+> 2. dd if=/dev/zero of=test count=1 bs=1GB
+> This is pretty slow, at about 1.5MB/s, and 90%+ iowait, constantly.
+>  May I know why it works like this? Thanks.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 

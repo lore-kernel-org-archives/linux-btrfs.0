@@ -1,44 +1,51 @@
-From: Gordan Bobic <gordan@bobich.net>
-Subject: Re: Update to Project_ideas wiki page
-Date: Thu, 18 Nov 2010 15:06:30 +0000
-Message-ID: <4CE540F6.7060701@bobich.net>
-References: <m3hbfg3acu.fsf@pullcord.laptop.org>	<20101117143103.GA2401@selene>	<AANLkTi=YcVE44g9waRBHQPido4_xf1o5hE4zmTPqVBxN@mail.gmail.com>	<20101117175657.GB2401@selene> <4CE419ED.3020209@bobich.net> <AANLkTinKX6uULbK88WdkXhH-XjUboUDf2FV8qopjZPcC@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-To: linux-btrfs@vger.kernel.org
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Interesting problem with write data.
+Date: Thu, 18 Nov 2010 10:07:11 -0500
+Message-ID: <1290092740-sup-9020@think>
+References: <4CE51613.8060609@wpkg.org> <1290090160-sup-1717@think> <4CE53EDE.0@wpkg.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Tomasz Chmielewski <mangoo@wpkg.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTinKX6uULbK88WdkXhH-XjUboUDf2FV8qopjZPcC@mail.gmail.com>
+In-reply-to: <4CE53EDE.0@wpkg.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Bart Noordervliet wrote:
-> On Wed, Nov 17, 2010 at 19:07, Gordan Bobic <gordan@bobich.net> wrote:
->> Since BTRFS is already doing some relatively radical things, I would like to
->> suggest that RAID5 and RAID6 be deemed obsolete. RAID5 isn't safely usable
->> for arrays bigger than about 5TB with disks that have a specified error rate
->> of 10^-14. RAID6 pushes that problem a little further away, but in the
->> longer term, I would argue that RAID (n+m) would work best. We specify that
->> of (n+m) disks in the array, we want n data disks and m redundancy disks. If
->> this is implemented in a generic way, then there won't be a need to
->> implement additional RAID modes later.
+Excerpts from Tomasz Chmielewski's message of 2010-11-18 09:57:34 -0500:
+> On 18.11.2010 15:23, Chris Mason wrote:
+> > Excerpts from Tomasz Chmielewski's message of 2010-11-18 07:03:31 -0500:
+> >>>    Recently, I made a btrfs to use. And I met slowness problem. Trying
+> >>> to diag it. I found this:
+> >>> 1. dd if=/dev/zero of=test count=1024 bs=1MB
+> >>> This is fast, at about 25MB/s, and reasonable iowait.
+> >>> 2. dd if=/dev/zero of=test count=1 bs=1GB
+> >>> This is pretty slow, at about 1.5MB/s, and 90%+ iowait, constantly.
+> >>>    May I know why it works like this? Thanks.
+> >>
+> >> Reproducible here to some extent with 2.6.37-rc2.
+> >>
+> >> Interesting is, it only happens for me when I mount the filesystem, dd a smaller file, then a bigger one, in that order.
+> >>
+> >> Any subsequent dd / sync / rm usage doesn't seem to trigger it anymore (have to umount / mount again to trigger this).
+> > 
+> > I'm going to guess this is the flushing threads, could you please run
+> > vmstat and see if there is a stream of reads?
 > 
-> I presume you're talking about the uncaught read errors that makes
-> many people avoid RAID5. Btrfs actually enables us to use it with
-> confidence again, since using checksums it's able to detect these
-> errors and prevent corruption of the array. So to the contrary, I see
-> a lot of potential for parity-based redundancy in combination with
-> btrfs.
+> I guess you meant this during the second dd run:
+> 
+> [27821.906513] btrfs-cache-8 D ffff88050c5fde98     0  8089      2 0x00000000
+> [27821.906517]  ffff88051c3a9b60 0000000000000046 ffff88051c3a9b00 ffff88051c3a9fd8
+> [27821.906522]  00000000000139c0 00000000000139c0 ffff88051c3a9fd8 ffff88051c3a9fd8
+> [27821.906526]  00000000000139c0 ffff88050c5fde98 ffff88050c5fdea0 ffff88050c5fdb00
+> [27821.906530] Call Trace:
+> [27821.906534]  [<ffffffff8159fc4e>] io_schedule+0x5e/0xa0
+> [27821.906538]  [<ffffffff81109f15>] sync_page+0x45/0x60
 
-No. What I'm talking about the the probability of finding an error 
-during the process of rebuilding a degraded array. With a 6TB (usable) 
-array and disks with 10^-14 error rate, the probability of getting an 
-unrecoverable read error exceeds 50%. n+1 RAID isn't fit for use with 
-the current generation of drives where n > 1-5TB depending on how 
-important your data and downtime are and how good your backups are.
+So, you're caching block groups.  What you want to do is use Josef's new
+block group caching code.
 
-And I don't put much stock in the manufacturer figures, either, so 
-assume that 10^-14 is optimistic of it is reported. On high capacity 
-drives (especially 1TB Seagates, both 3 and 4 platter variants) I am 
-certainly seeing a higher error rate than that on a significant fraction 
-of the disks.
+mount -o space_cache /dev/xxx
 
-Gordan
+Do the test and let the caching threads finish, then unmount and then
+your next run should be fast.
+
+-chris

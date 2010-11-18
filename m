@@ -1,62 +1,70 @@
-From: Bron Gondwana <brong@fastmail.fm>
-Subject: Re: Poor performance unlinking hard-linked files (repost)
-Date: Fri, 19 Nov 2010 08:46:31 +1100
-Message-ID: <20101118214631.GC2401@brong.net>
-References: <1289618724.28645.1405062363@webmail.messagingengine.com>
- <20101116125445.GA3229@brong.net>
- <1289914577-sup-8535@think>
- <20101117041148.GA10048@brong.net>
- <1290094104-sup-8656@think>
+From: Jan Kara <jack@suse.cz>
+Subject: Re: [PATCH 1/6] fs: add hole punching to fallocate
+Date: Fri, 19 Nov 2010 00:43:31 +0100
+Message-ID: <20101118234331.GD5004@quack.suse.cz>
+References: <1290044780-2902-1-git-send-email-josef@redhat.com>
+ <1290044780-2902-2-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Bron Gondwana <brong@fastmail.fm>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1290094104-sup-8656@think>
+Cc: david@fromorbit.com, linux-kernel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, xfs@oss.sgi.com, cmm@us.ibm.com,
+	cluster-devel@redhat.com, joel.becker@oracle.com, jack@suse.cz
+To: Josef Bacik <josef@redhat.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <1290044780-2902-2-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 18, 2010 at 10:30:47AM -0500, Chris Mason wrote:
-> Excerpts from Bron Gondwana's message of 2010-11-16 23:11:48 -0500:
-> > > > a) program creates piles of small temporary files, hard
-> > > >    links them out to different directories, unlinks the
-> > > >    originals.
-> > > > 
-> > > > b) filesystem size: ~ 300Gb (backed by hardware RAID5)
-> > > > 
-> > > > c) as the filesystem grows (currently about 30% full) 
-> > > >    the unlink performance becomes horrible.  Watching
-> > > >    iostat, there's a lot of reading going on as well.
-> > > 
-> > > It sounds like the unlink speed is limited by the reading, and the reads
-> > > are coming from one of two places.  We're either reading to cache cold
-> > > block groups or we're reading to find the directory entries.
-> > 
-> > All the unlinks for a single process will be happening in the same
-> > directory (though the hard linked copies will be all over)
-> > 
-> > > Could you sysrq-w while the performance is bad?  That would narrow it
-> > > down.
-> > 
-> > Here's one:
-> > 
-> > http://pastebin.com/Tg7agv42
+On Wed 17-11-10 20:46:15, Josef Bacik wrote:
+> Hole punching has already been implemented by XFS and OCFS2, and has the
+> potential to be implemented on both BTRFS and EXT4 so we need a generic way to
+> get to this feature.  The simplest way in my mind is to add FALLOC_FL_PUNCH_HOLE
+> to fallocate() since it already looks like the normal fallocate() operation.
+> I've tested this patch with XFS and BTRFS to make sure XFS did what it's
+> supposed to do and that BTRFS failed like it was supposed to.  Thank you,
+  Looks nice now. Acked-by: Jan Kara <jack@suse.cz>
+
+									Honza
 > 
-> Ok, we're mixing unlinks and fsyncs.  If it fsyncing directories too?
-
-Nup.  I'm pretty sure it doesn't, just files.  Yes - there will certainly
-be fsyncs going on as well - Cyrus is very careful to fsync everything it
-cares about at the file level, but all it does with directories is mkdir
-them if they don't exist.
-
-This just a single "sync_server" process on an experimental server.  A 
-real server under full load is going to have multiple processes doing
-fsyncs and unlinks.
-
-A significant portion of unlinks are of files that have another link on
-the filesystem.  Every mailbox "move" is implemented as a copy (hardlink)
-plus expunge (delayed unlink).  The "delay" works by marking the message
-to be deleted in the cyrus.index metadata file, and then deleting later
-(tunable: 7 to 14 days in our case depending when the next weekend is)
-
-Bron.
+> Signed-off-by: Josef Bacik <josef@redhat.com>
+> ---
+>  fs/open.c              |    7 ++++++-
+>  include/linux/falloc.h |    1 +
+>  2 files changed, 7 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/open.c b/fs/open.c
+> index 4197b9e..5b6ef7e 100644
+> --- a/fs/open.c
+> +++ b/fs/open.c
+> @@ -223,7 +223,12 @@ int do_fallocate(struct file *file, int mode, loff_t offset, loff_t len)
+>  		return -EINVAL;
+>  
+>  	/* Return error if mode is not supported */
+> -	if (mode && !(mode & FALLOC_FL_KEEP_SIZE))
+> +	if (mode & ~(FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE))
+> +		return -EOPNOTSUPP;
+> +
+> +	/* Punch hole must have keep size set */
+> +	if ((mode & FALLOC_FL_PUNCH_HOLE) &&
+> +	    !(mode & FALLOC_FL_KEEP_SIZE))
+>  		return -EOPNOTSUPP;
+>  
+>  	if (!(file->f_mode & FMODE_WRITE))
+> diff --git a/include/linux/falloc.h b/include/linux/falloc.h
+> index 3c15510..73e0b62 100644
+> --- a/include/linux/falloc.h
+> +++ b/include/linux/falloc.h
+> @@ -2,6 +2,7 @@
+>  #define _FALLOC_H_
+>  
+>  #define FALLOC_FL_KEEP_SIZE	0x01 /* default is extend size */
+> +#define FALLOC_FL_PUNCH_HOLE	0x02 /* de-allocates range */
+>  
+>  #ifdef __KERNEL__
+>  
+> -- 
+> 1.6.6.1
+> 
+-- 
+Jan Kara <jack@suse.cz>
+SUSE Labs, CR

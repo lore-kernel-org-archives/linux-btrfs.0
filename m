@@ -1,69 +1,71 @@
-From: Jan Kara <jack@suse.cz>
-Subject: Re: [patch] fix up lock order reversal in writeback
-Date: Fri, 19 Nov 2010 00:58:37 +0100
-Message-ID: <20101118235837.GE5004@quack.suse.cz>
-References: <20101116130146.GG4757@quack.suse.cz>
- <4CE35A6D.2040906@redhat.com>
- <20101117043845.GA3586@amd>
- <4CE362B0.6040607@redhat.com>
- <20101117061057.GA3989@amd>
- <20101118030613.GQ3290@thunk.org>
- <20101117192900.da859ac7.akpm@linux-foundation.org>
- <20101118060000.GA3509@amd>
- <20101117222834.2bb36ee1.akpm@linux-foundation.org>
- <1290104468-sup-7908@think>
+From: Toke =?iso-8859-1?Q?H=F8iland-J=F8rgensen?= <toke@toke.dk>
+Subject: Symlinks' device numbers differ from regular files'
+Date: Fri, 19 Nov 2010 00:54:23 +0100
+Message-ID: <20101118235423.GC12925@toke.dk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-	Nick Piggin <npiggin@kernel.dk>, Ted Ts'o <tytso@mit.edu>,
-	Eric Sandeen <sandeen@redhat.com>, Jan Kara <jack@suse.cz>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	linux-ext4 <linux-ext4@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+	protocol="application/pgp-signature"; boundary="QV9egoCq9O4JbpTr"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1290104468-sup-7908@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu 18-11-10 13:33:54, Chris Mason wrote:
-> > Can we just delete writeback_inodes_sb_nr_if_idle() and
-> > writeback_inodes_sb_if_idle()?  The changelog for 17bd55d037a02 is
-> > pretty handwavy - do we know that deleting these things would make a
-> > jot of difference?
-> > 
-> > And why _do_ we need to hold s_umount during the bdi_queue_work()
-> > handover?  Would simply bumping s_count suffice?
-> > 
-> 
-> We don't need to keep the super in ram, we need to keep the FS mounted
-> so that writepage and friends continue to do useful things.  s_count
-> isn't enough for that...but when the bdi stuff is passed an SB from
-> something that has the SB explicitly pinned, we should be able to safely
-> skip the locking.
-> 
-> Since these functions are only used in that context it makes good sense
-> to try_lock them or drop the lock completely.
-> 
-> I think the only reason we need the lock:
-> 
-> void writeback_inodes_sb_nr(struct super_block *sb, unsigned long nr)
-> {
-> ...
->         WARN_ON(!rwsem_is_locked(&sb->s_umount));
-  The above is the only reason why we need the lock in the call from
-->write_begin(). Yes. But:
 
-> We're not going to go from rw to ro with dirty pages unless something
-> horrible has gone wrong (eios all around in the FS), so I'm not sure why
-> we need the lock at all?
-  One of the nasty cases is for example: Writeback thread decides inode
-needs writeout, so the thread gets inode reference. Then someone calls
-umount and gets EBUSY because writeback thread is working. Kind of
-unexpected... So generally we *do* need a serialization of writeback thread
-and umount / remount. Just in that particular case where we call the
-function from ->write_begin(), s_umount is overkill...
+--QV9egoCq9O4JbpTr
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-								Honza
--- 
-Jan Kara <jack@suse.cz>
-SUSE Labs, CR
+Hi
+
+I am having a problem with my btrfs partitions: symlinks are reported to=20
+have different device numbers than directories and regular files, even=20
+though they are on the same partition. This causes my backup software to=20
+mess up backing up the symlinks.
+
+An illustrative example:
+
+$ touch tmp; ln -s tmp tmp2; stat tmp tmp2
+  File: `tmp'
+  Size: 0         	Blocks: 0          IO Block: 4096   regular empty file
+Device: 15h/21d	Inode: 984027      Links: 1
+--- snip ---
+  File: `tmp2' -> `tmp'
+  Size: 3         	Blocks: 0          IO Block: 4096   symbolic link
+Device: 13h/19d	Inode: 984028      Links: 1
+--- snip ---
+
+$ uname -r
+2.6.35-ck
+
+I'm not using subvolumes, or any fancy features of btrfs, really. I'm=20
+running Arch Linux.
+
+Is this normal? And if not, how do I fix it?
+
+Any help would be greatly appreciated.  Thanks in advance.
+
+Regards,
+-Toke H=F8iland-J=F8rgensen
+
+--QV9egoCq9O4JbpTr
+Content-Type: application/pgp-signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iQIcBAEBCAAGBQJM5byvAAoJEEpVxJf3RPcFozkP/23kObtEvIkhSDzf4HO8pHLQ
+MFx/+NMCKDIMpAMDOoDKzGisb+zfP8LEwW3FNE2VehrXoYsAO59LIcb/t2523Ocq
+gIq5T1BlGCGAxgiwmTftqv2IagCkLj2tnyuNzwSUIVZErZABHwD3nzGm2602VU/G
+Q/usj+m3oQ7yYZvOxzJB0JEQUL3l+EDkCQtTHGsFSX35qjAhwjCOkhWHfkHOphRe
+WxzP0qk7hsM0yAQZEl6BxEkEHeq+m5t+suPllQuubaqJGAKSRe+R3JiYk9ucuarf
+pLHCDzAcNIs7gZquKxRcM7ilj1WOkmLP7MfCerckkDd7GPftXndnqC7+aW7twx4W
+G9aS7oj/nGwpsJZOqaT2UQT1XihAEsPzZAZReVrxWFjTMHbibmloAU2NVD7f2VCT
+X02xpwWRHLiTeUNNy22AluoL/bJKpES8quPbliE2lNXHv9r/1Q5A3LAkL6xE6hLr
+1NMS2GlznfPeLPST48mG6HroipWuTSm07Lh3maxl4AVnqtO4Ey7VLySpxWmuIhMx
+7p8F8l5aX/FHx8VBa5ZL6vJGF2EkToiA//vITGhzjioHZn0aH7r+BJzFgNQdzgi0
+NlyCbWItd/iWtD52xnH8QhDsul0LQzWbPuQ0Q4VuRRq3XNIvjL+BvMK8n8yQNPbR
+JdFwnomA1Z9w2Ybzf9d2
+=4d3p
+-----END PGP SIGNATURE-----
+
+--QV9egoCq9O4JbpTr--

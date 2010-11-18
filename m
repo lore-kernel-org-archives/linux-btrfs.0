@@ -1,41 +1,55 @@
-From: Eric Sandeen <sandeen@redhat.com>
-Subject: Re: [patch] fix up lock order reversal in writeback
-Date: Thu, 18 Nov 2010 12:04:21 -0600
-Message-ID: <4CE56AA5.4030705@redhat.com>
-References: <20101116110058.GA4298@amd>	<20101116130146.GG4757@quack.suse.cz>	<4CE35A6D.2040906@redhat.com>	<20101117043845.GA3586@amd>	<4CE362B0.6040607@redhat.com>	<20101117061057.GA3989@amd>	<20101118030613.GQ3290@thunk.org>	<20101117192900.da859ac7.akpm@linux-foundation.org>	<20101118060000.GA3509@amd>	<20101117222834.2bb36ee1.akpm@linux-foundation.org>	<4CE53E56.4090501@redhat.com> <20101118091053.c275e1f2.akpm@linux-foundation.org>
+From: Anthony Roberts <btrfs-devel@arbitraryconstant.com>
+Subject: Re: A little confused about what remains to make a stable release
+Date: Thu, 18 Nov 2010 11:22:41 -0700
+Message-ID: <f1eed9c79f5f1343569363140f0c06e7@arbitraryconstant.com>
+References: <AANLkTi=q4bKVGfD-QoF68NecL4e4d5dfcvMrgv5NHtb3@mail.gmail.com>
+ <20101117225901.GA5367@vlad.carfax.org.uk>
+ <230760eab83b95c53c2ec6e618360a01@arbitraryconstant.com>
+ <20101118093907.GE2401@selene>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Nick Piggin <npiggin@kernel.dk>, "Ted Ts'o" <tytso@mit.edu>,
-	Jan Kara <jack@suse.cz>, linux-fsdevel@vger.kernel.org,
-	linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <20101118091053.c275e1f2.akpm@linux-foundation.org>
+Content-Type: text/plain;
+ charset=UTF-8;
+ format=flowed
+Cc: <linux-btrfs@vger.kernel.org>
+To: Hugo Mills <hugo-lkml@carfax.org.uk>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20101118093907.GE2401@selene>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/18/10 11:10 AM, Andrew Morton wrote:
-> On Thu, 18 Nov 2010 08:55:18 -0600 Eric Sandeen <sandeen@redhat.com> wrote:
-> 
->>> Can we just delete writeback_inodes_sb_nr_if_idle() and
->>> writeback_inodes_sb_if_idle()?  The changelog for 17bd55d037a02 is
->>> pretty handwavy - do we know that deleting these things would make a
->>> jot of difference?
->>
->> Really?  I thought it was pretty decent ;)
->>
->> Anyway, xfstests 204, "Test out ENOSPC flushing on small filesystems."
->> shows the problem clearly, IIRC.  I should have included that in the
->> changelog, I suppose, sorry.
-> 
-> Your email didn't really impart any information :(
-> 
-> I suppose I could accidentally delete those nasty little functions in a
-> drivers/parport patch then wait and see if anyone notices.
-> 
+>> Beyond that, the management capabilities at this point don't look
+>> ready for long term use in a production environment. By this I
+>> mean adding/removing disks,
+>
+>    That much is already there and working.
 
-Um, ok, then, to answer the question directly :
+ Only for the basics though, yes? Disks can be added, but IIRC you can't 
+ really control RAID levels for new disks. To do something like start out 
+ with a RAID1 mirror and add a 4 drive RAID5 with disks of different size 
+ to it, you'll have to be doing it on top of another RAID layer.
 
-No, please don't delete those functions, it will break ENOSPC handling
-in ext4 as shown by xfstests regression test #204 ...
+ BTRFS hopes to replace MD and LVM, but for that to happen it will 
+ ultimately be necessary to be able to manage sets of disks just like you 
+ can with separate MD devices, or hardware RAID, or SANs.
 
--Eric
+ I mean, there might be a few cases where you don't have quite as much 
+ granularity because it gets weird when you cross layers like this, but 
+ broadly speaking btrfs I think it makes sense for a volume manager to 
+ know about and be able to manage sets of disks.
+
+>    What do you think is missing? Could you create and maintain a
+> wishlist page on the wiki[1], and populate it with all the things 
+> that
+> people need for production use?
+
+ I'd be happy to contribute my thoughts, but isn't there already a 
+ project ideas page? Actually I think much of what I've mentioned is 
+ already covered under the "changing raid levels" entry.
+
+ For sets of disks, I'd be happy to add an entry, but before I take it 
+ upon myself to edit the wiki it probably makes sense to give Chris or 
+ someone an opportunity to disagree that it's a good idea in the first 
+ place.
+
+ Regards,
+
+ -Anthony

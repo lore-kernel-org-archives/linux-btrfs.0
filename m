@@ -1,48 +1,89 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH 2/2] btrfs: Set file size correctly in file clone
-Date: Fri, 19 Nov 2010 09:36:34 +0800
-Message-ID: <4CE5D4A2.2050205@cn.fujitsu.com>
-References: <4CE5D48A.6090009@cn.fujitsu.com>
+Subject: Re: Symlinks' device numbers differ from regular files'
+Date: Fri, 19 Nov 2010 10:05:24 +0800
+Message-ID: <4CE5DB64.3010102@cn.fujitsu.com>
+References: <20101118235423.GC12925@toke.dk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: sage@newdream.net
-To: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+To: =?UTF-8?B?VG9rZSBIw7hpbGFuZC1Kw7hyZ2Vuc2Vu?= <toke@toke.dk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4CE5D48A.6090009@cn.fujitsu.com>
+In-Reply-To: <20101118235423.GC12925@toke.dk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Set src_offset = 0, src_length = 20K, dest_offset = 20K. And the
-original filesize of the dest file 'file2' is 30K:
+Toke H=C3=B8iland-J=C3=B8rgensen wrote:
+> Hi
+>=20
+> I am having a problem with my btrfs partitions: symlinks are reported=
+ to=20
+> have different device numbers than directories and regular files, eve=
+n=20
+> though they are on the same partition. This causes my backup software=
+ to=20
+> mess up backing up the symlinks.
+>=20
+> An illustrative example:
+>=20
+> $ touch tmp; ln -s tmp tmp2; stat tmp tmp2
+>   File: `tmp'
+>   Size: 0         	Blocks: 0          IO Block: 4096   regular empty =
+file
+> Device: 15h/21d	Inode: 984027      Links: 1
+> --- snip ---
+>   File: `tmp2' -> `tmp'
+>   Size: 3         	Blocks: 0          IO Block: 4096   symbolic link
+> Device: 13h/19d	Inode: 984028      Links: 1
+> --- snip ---
+>=20
+> $ uname -r
+> 2.6.35-ck
+>=20
+> I'm not using subvolumes, or any fancy features of btrfs, really. I'm=
+=20
+> running Arch Linux.
+>=20
+> Is this normal? And if not, how do I fix it?
+>=20
+> Any help would be greatly appreciated.  Thanks in advance.
+>=20
 
-  # ls -l /mnt/file2
-  -rw-r--r-- 1 root root 30720 Nov 18 16:42 /mnt/file2
+This should fix it:
 
-Now clone file1 to file2, the dest file should be 40K, but it
-still shows 30K:
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
 
-  # ls -l /mnt/file2
-  -rw-r--r-- 1 root root 30720 Nov 18 16:42 /mnt/file2
+[PATCH] btrfs: Show device attr correctly for symlinks
 
+Symlinks and files of other types show different device numbers, though
+they are on the same partition:
+
+ $ touch tmp; ln -s tmp tmp2; stat tmp tmp2
+   File: `tmp'
+   Size: 0         	Blocks: 0          IO Block: 4096   regular empty f=
+ile
+ Device: 15h/21d	Inode: 984027      Links: 1
+ --- snip ---
+   File: `tmp2' -> `tmp'
+   Size: 3         	Blocks: 0          IO Block: 4096   symbolic link
+ Device: 13h/19d	Inode: 984028      Links: 1
+
+Reported-by: Toke H=C3=B8iland-J=C3=B8rgensen <toke@toke.dk>
 Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 ---
- fs/btrfs/ioctl.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 81b47bd..6b4bfa7 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1873,8 +1873,8 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 			 * but shouldn't round up the file size
- 			 */
- 			endoff = new_key.offset + datal;
--			if (endoff > off+olen)
--				endoff = off+olen;
-+			if (endoff > destoff+olen)
-+				endoff = destoff+olen;
- 			if (endoff > inode->i_size)
- 				btrfs_i_size_write(inode, endoff);
- 
--- 
-1.6.3
-
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 5132c9a..d10b6d4 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7139,6 +7139,7 @@ static const struct inode_operations btrfs_symlin=
+k_inode_operations =3D {
+ 	.readlink	=3D generic_readlink,
+ 	.follow_link	=3D page_follow_link_light,
+ 	.put_link	=3D page_put_link,
++	.getattr	=3D btrfs_getattr,
+ 	.permission	=3D btrfs_permission,
+ 	.setxattr	=3D btrfs_setxattr,
+ 	.getxattr	=3D btrfs_getxattr,
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,71 +1,116 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH] mkfs should initialize unused fields properly
-Date: Fri, 19 Nov 2010 16:05:27 +0100
-Message-ID: <1290179127-28139-1-git-send-email-list.btrfs@jan-o-sch.net>
-To: linux-btrfs@vger.kernel.org
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: setup blank root and fs_info for mount time
+Date: Fri, 19 Nov 2010 14:59:15 -0500
+Message-ID: <1290196755-19607-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org, raven@themaw.net
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-we discovered speed setting is (probably unintentionally) initialized to 1 in make_btrfs(), while being initialized to 0 in btrfs_add_to_fsid(). initialization in make_btrfs() is due to reuse of buf after pwrite() without clearing it. consequently, code like
+There is a problem with how we use sget, it searches through the list of supers
+attached to the fs_type looking for a super with the same fs_devices as what
+we're trying to mount.  This depends on sb->s_fs_info being filled, but we don't
+fill that in until we get to btrfs_fill_super, so we could hit supers on the
+fs_type super list that have a null s_fs_info.  In order to fix that we need to
+go ahead and setup a blank root with a blank fs_info to hold fs_devices, that
+way our test will work out right and then we can set s_fs_info in
+btrfs_set_super, and then open_ctree will simply use our pre-allocated root and
+fs_info when setting everything up.  Thanks,
 
- 	btrfs_set_extent_generation(buf, extent_item, 1);
-
-writes to the same location in buf where speed will be placed, later. It may be a good idea to clear buf after each pwrite(), though leaving the struct btrfs_header intact.
-
-Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- utils.c |   10 ++++++++++
- 1 files changed, 10 insertions(+), 0 deletions(-)
+ fs/btrfs/disk-io.c |    6 ++----
+ fs/btrfs/super.c   |   35 ++++++++++++++++++++++++++++++++---
+ 2 files changed, 34 insertions(+), 7 deletions(-)
 
-diff --git a/utils.c b/utils.c
-index fd894f3..815b967 100644
---- a/utils.c
-+++ b/utils.c
-@@ -197,6 +197,8 @@ int make_btrfs(int fd, const char *device, const char *label,
- 	BUG_ON(ret != leafsize);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index fb827d0..f0aa204 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1538,10 +1538,8 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 						 GFP_NOFS);
+ 	struct btrfs_root *csum_root = kzalloc(sizeof(struct btrfs_root),
+ 						 GFP_NOFS);
+-	struct btrfs_root *tree_root = kzalloc(sizeof(struct btrfs_root),
+-					       GFP_NOFS);
+-	struct btrfs_fs_info *fs_info = kzalloc(sizeof(*fs_info),
+-						GFP_NOFS);
++	struct btrfs_root *tree_root = btrfs_sb(sb);
++	struct btrfs_fs_info *fs_info = tree_root->fs_info;
+ 	struct btrfs_root *chunk_root = kzalloc(sizeof(struct btrfs_root),
+ 						GFP_NOFS);
+ 	struct btrfs_root *dev_root = kzalloc(sizeof(struct btrfs_root),
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 8299a25..9145551 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -562,12 +562,20 @@ static int btrfs_show_options(struct seq_file *seq, struct vfsmount *vfs)
  
- 	/* create the items for the extent tree */
-+	memset(buf->data+sizeof(struct btrfs_header), 0,
-+		leafsize-sizeof(struct btrfs_header));
- 	nritems = 0;
- 	itemoff = __BTRFS_LEAF_DATA_SIZE(leafsize);
- 	for (i = 1; i < 7; i++) {
-@@ -242,6 +244,8 @@ int make_btrfs(int fd, const char *device, const char *label,
- 	BUG_ON(ret != leafsize);
+ static int btrfs_test_super(struct super_block *s, void *data)
+ {
+-	struct btrfs_fs_devices *test_fs_devices = data;
++	struct btrfs_root *test_root = data;
+ 	struct btrfs_root *root = btrfs_sb(s);
  
- 	/* create the chunk tree */
-+	memset(buf->data+sizeof(struct btrfs_header), 0,
-+		leafsize-sizeof(struct btrfs_header));
- 	nritems = 0;
- 	item_size = sizeof(*dev_item);
- 	itemoff = __BTRFS_LEAF_DATA_SIZE(leafsize) - item_size;
-@@ -323,6 +327,8 @@ int make_btrfs(int fd, const char *device, const char *label,
- 	ret = pwrite(fd, buf->data, leafsize, blocks[3]);
+-	return root->fs_info->fs_devices == test_fs_devices;
++	return root->fs_info->fs_devices == test_root->fs_info->fs_devices;
+ }
  
- 	/* create the device tree */
-+	memset(buf->data+sizeof(struct btrfs_header), 0,
-+		leafsize-sizeof(struct btrfs_header));
- 	nritems = 0;
- 	itemoff = __BTRFS_LEAF_DATA_SIZE(leafsize) -
- 		sizeof(struct btrfs_dev_extent);
-@@ -356,6 +362,8 @@ int make_btrfs(int fd, const char *device, const char *label,
- 	ret = pwrite(fd, buf->data, leafsize, blocks[4]);
++static int btrfs_set_super(struct super_block *s, void *data)
++{
++	s->s_fs_info = data;
++
++	return set_anon_super(s, data);
++}
++
++
+ /*
+  * Find a superblock for the given device / mount point.
+  *
+@@ -581,6 +589,8 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+ 	struct super_block *s;
+ 	struct dentry *root;
+ 	struct btrfs_fs_devices *fs_devices = NULL;
++	struct btrfs_root *tree_root = NULL;
++	struct btrfs_fs_info *fs_info = NULL;
+ 	fmode_t mode = FMODE_READ;
+ 	char *subvol_name = NULL;
+ 	u64 subvol_objectid = 0;
+@@ -608,8 +618,25 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+ 		goto error_close_devices;
+ 	}
  
- 	/* create the FS root */
-+	memset(buf->data+sizeof(struct btrfs_header), 0,
-+		leafsize-sizeof(struct btrfs_header));
- 	btrfs_set_header_bytenr(buf, blocks[5]);
- 	btrfs_set_header_owner(buf, BTRFS_FS_TREE_OBJECTID);
- 	btrfs_set_header_nritems(buf, 0);
-@@ -364,6 +372,8 @@ int make_btrfs(int fd, const char *device, const char *label,
- 	BUG_ON(ret != leafsize);
++	/*
++	 * Setup a dummy root and fs_info for test/set super.  This is because
++	 * we don't actually fill this stuff out until open_ctree, but we need
++	 * it for searching for existing supers, so this lets us do that and
++	 * then open_ctree will properly initialize everything later.
++	 */
++	fs_info = kzalloc(sizeof(struct btrfs_fs_info), GFP_NOFS);
++	tree_root = kzalloc(sizeof(struct btrfs_root), GFP_NOFS);
++	if (!fs_info || !tree_root) {
++		kfree(fs_info);
++		kfree(tree_root);
++		goto error_close_devices;
++	}
++	fs_info->tree_root = tree_root;
++	fs_info->fs_devices = fs_devices;
++	tree_root->fs_info = fs_info;
++
+ 	bdev = fs_devices->latest_bdev;
+-	s = sget(fs_type, btrfs_test_super, set_anon_super, fs_devices);
++	s = sget(fs_type, btrfs_test_super, btrfs_set_super, tree_root);
+ 	if (IS_ERR(s))
+ 		goto error_s;
  
- 	/* finally create the csum root */
-+	memset(buf->data+sizeof(struct btrfs_header), 0,
-+		leafsize-sizeof(struct btrfs_header));
- 	btrfs_set_header_bytenr(buf, blocks[6]);
- 	btrfs_set_header_owner(buf, BTRFS_CSUM_TREE_OBJECTID);
- 	btrfs_set_header_nritems(buf, 0);
+@@ -675,6 +702,8 @@ error_s:
+ 	error = PTR_ERR(s);
+ error_close_devices:
+ 	btrfs_close_devices(fs_devices);
++	kfree(fs_info);
++	kfree(tree_root);
+ error_free_subvol_name:
+ 	kfree(subvol_name);
+ 	return ERR_PTR(error);
 -- 
-1.7.2.2
+1.6.6.1
 

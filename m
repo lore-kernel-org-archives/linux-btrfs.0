@@ -1,87 +1,48 @@
-From: Jan Kara <jack@suse.cz>
-Subject: Re: [patch] fix up lock order reversal in writeback
-Date: Fri, 19 Nov 2010 01:45:52 +0100
-Message-ID: <20101119004552.GF5004@quack.suse.cz>
-References: <20101116110058.GA4298@amd>
- <20101116130146.GG4757@quack.suse.cz>
- <4CE35A6D.2040906@redhat.com>
- <20101117043845.GA3586@amd>
- <4CE362B0.6040607@redhat.com>
- <20101117061057.GA3989@amd>
- <20101118030613.GQ3290@thunk.org>
- <20101117192900.da859ac7.akpm@linux-foundation.org>
- <20101118060000.GA3509@amd>
- <20101117222834.2bb36ee1.akpm@linux-foundation.org>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: [PATCH 1/2] btrfs: Check if dest_offset is block-size aligned before
+ cloning file
+Date: Fri, 19 Nov 2010 09:36:10 +0800
+Message-ID: <4CE5D48A.6090009@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Nick Piggin <npiggin@kernel.dk>, Ted Ts'o <tytso@mit.edu>,
-	Eric Sandeen <sandeen@redhat.com>, Jan Kara <jack@suse.cz>,
-	linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-	linux-btrfs@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <20101117222834.2bb36ee1.akpm@linux-foundation.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: sage@newdream.net
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed 17-11-10 22:28:34, Andrew Morton wrote:
-> I'm not sure that s_umount versus i_mutex has come up before.
-> 
-> Logically I'd expect i_mutex to nest inside s_umount.  Because s_umount
-> is a per-superblock thing, and i_mutex is a per-file thing, and files
-> live under superblocks.  Nesting s_umount outside i_mutex creates
-> complex deadlock graphs between the various i_mutexes, I think.
-> 
-> Someone tell me if btrfs has the same bug, via its call to
-> writeback_inodes_sb_nr_if_idle()?
-> 
-> I don't see why these functions need s_umount at all, if they're called
-> from within ->write_begin against an inode on that superblock.  If the
-> superblock can get itself disappeared while we're running ->write_begin
-> on it, we have problems, no?
-  As I wrote to Chris, the function just needs exclusion from umount /
-remount happening (and want to stop umount from returning EBUSY when
-writeback thread is writing something out). When the function is called
-from ->write_begin this is no issue as you properly noted so s_umount is
-not needed in that particular case.
+We've done the check for src_offset and src_length, and We should
+also check dest_offset, otherwise we'll corrupt the destination
+file:
 
-> In which case I'd suggest just removing the down_read(s_umount) and
-> specifying that the caller must pin the superblock via some means.
-  Possibly, but currently the advantage is that we can have WARN_ON in the
-writeback code that complains if someone starts writeback without properly
-pinned superblock and we cannot easily do that with your general rule. I'm
-not saying that should stop us from changing the rule but it was kind of
-nice.
+  (After cloning file1 to file2 with unaligned dest_offset)
+  # cat /mnt/file2
+  cat: /mnt/file2: Input/output error
 
-> Only we can't do that because we need to hold s_umount until the
-> bdi_queue_work() worker has done its work.
-> 
-> The fact that a call to ->write_begin can randomly return with s_umount
-> held, to be randomly released at some random time in the future is a
-> bit ugly, isn't it?  write_begin is a pretty low-level, per-inode
-> thing.
-  I guess you missed that writeback_inodes_sb_nr() (called from _if_idle
-variants) does:
-        bdi_queue_work(sb->s_bdi, &work);
-        wait_for_completion(&done);
-  So we return only after all the IO has been submitted and unlock s_umount
-in writeback_inodes_sb_if_idle(). And we cannot really submit the IO ourselves
-because we are holding i_mutex and we need to get and put references
-to other inodes while doing writeback (those would be really horrible lock
-dependencies - writeback thread can put the last reference to an unlinked
-inode...).
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+---
+ fs/btrfs/ioctl.c |    7 +++----
+ 1 files changed, 3 insertions(+), 4 deletions(-)
 
-In fact, as I'm speaking about it, pushing things to writeback thread and
-waiting on the work does not help a bit with the locking issues (we didn't
-wait for the work previously but that had other issues). Bug, sigh.
-
-What might be better interface for usecases like above is to allow
-filesystem to kick flusher thread to start doing background writeback
-(regardless of dirty limits). Then the caller can wait for some delayed
-allocation reservations to get freed (easy enough to check in
-->writepage() and wake the waiters) - possibly with a reasonable timeout
-so that we don't stall forever.
-
-								Honza
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 463d91b..81b47bd 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1669,12 +1669,11 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 		olen = len = src->i_size - off;
+ 	/* if we extend to eof, continue to block boundary */
+ 	if (off + len == src->i_size)
+-		len = ((src->i_size + bs-1) & ~(bs-1))
+-			- off;
++		len = ALIGN(src->i_size, bs) - off;
+ 
+ 	/* verify the end result is block aligned */
+-	if ((off & (bs-1)) ||
+-	    ((off + len) & (bs-1)))
++	if (!IS_ALIGNED(off, bs) || !IS_ALIGNED(off + len, bs) ||
++	    !IS_ALIGNED(destoff, bs))
+ 		goto out_unlock;
+ 
+ 	/* do any pending delalloc/csum calc on src, one way or
 -- 
-Jan Kara <jack@suse.cz>
-SUSE Labs, CR
+1.6.3
+

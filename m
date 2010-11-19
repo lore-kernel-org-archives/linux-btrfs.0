@@ -1,116 +1,44 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: setup blank root and fs_info for mount time
-Date: Fri, 19 Nov 2010 14:59:15 -0500
-Message-ID: <1290196755-19607-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org, raven@themaw.net
+From: Brian Sullivan <bexamous@gmail.com>
+Subject: Re: ls & flush-btrfs-1 sit at 100% sys
+Date: Fri, 19 Nov 2010 12:09:15 -0800
+Message-ID: <AANLkTi=QOzU6Y3JGsiCfkhQCB28DLnOKn8h-iuaNo2-r@mail.gmail.com>
+References: <AANLkTim-esHsiRYTYxAA2WtpOj=XHvZDc6y2+5b0TB0x@mail.gmail.com>
+ <m3r5ejyzz4.fsf@pullcord.laptop.org> <AANLkTinKm-6H60V2EivQuKF079yS0W-nS=r5dgw_ZcGm@mail.gmail.com>
+ <AANLkTimRtgFy2LwJqsSszOFYSxk9T+qfJ9=snFFGzysf@mail.gmail.com>
+ <AANLkTinfcAZrO+UzioG=DtN7KA=aWBB2-BtfZgggqpEm@mail.gmail.com>
+ <1290177036-sup-2385@think> <20101119144625.GB2579@localhost.localdomain>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Daniel J Blueman <daniel.blueman@gmail.com>,
+	Chris Ball <cjb@laptop.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20101119144625.GB2579@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There is a problem with how we use sget, it searches through the list of supers
-attached to the fs_type looking for a super with the same fs_devices as what
-we're trying to mount.  This depends on sb->s_fs_info being filled, but we don't
-fill that in until we get to btrfs_fill_super, so we could hit supers on the
-fs_type super list that have a null s_fs_info.  In order to fix that we need to
-go ahead and setup a blank root with a blank fs_info to hold fs_devices, that
-way our test will work out right and then we can set s_fs_info in
-btrfs_set_super, and then open_ctree will simply use our pre-allocated root and
-fs_info when setting everything up.  Thanks,
+On Fri, Nov 19, 2010 at 6:46 AM, Josef Bacik <josef@redhat.com> wrote:
+> On Fri, Nov 19, 2010 at 09:32:46AM -0500, Chris Mason wrote:
+>>
+>> I just wanted to confirm, you're seeing this with 2.6.37-rc? =A0I th=
+ought
+>> I had fixed up this delalloc hammering.
+>>
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/disk-io.c |    6 ++----
- fs/btrfs/super.c   |   35 ++++++++++++++++++++++++++++++++---
- 2 files changed, 34 insertions(+), 7 deletions(-)
+I installed 2.6.37-rc2 from an Ubuntu PPA.
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index fb827d0..f0aa204 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1538,10 +1538,8 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 						 GFP_NOFS);
- 	struct btrfs_root *csum_root = kzalloc(sizeof(struct btrfs_root),
- 						 GFP_NOFS);
--	struct btrfs_root *tree_root = kzalloc(sizeof(struct btrfs_root),
--					       GFP_NOFS);
--	struct btrfs_fs_info *fs_info = kzalloc(sizeof(*fs_info),
--						GFP_NOFS);
-+	struct btrfs_root *tree_root = btrfs_sb(sb);
-+	struct btrfs_fs_info *fs_info = tree_root->fs_info;
- 	struct btrfs_root *chunk_root = kzalloc(sizeof(struct btrfs_root),
- 						GFP_NOFS);
- 	struct btrfs_root *dev_root = kzalloc(sizeof(struct btrfs_root),
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 8299a25..9145551 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -562,12 +562,20 @@ static int btrfs_show_options(struct seq_file *seq, struct vfsmount *vfs)
- 
- static int btrfs_test_super(struct super_block *s, void *data)
- {
--	struct btrfs_fs_devices *test_fs_devices = data;
-+	struct btrfs_root *test_root = data;
- 	struct btrfs_root *root = btrfs_sb(s);
- 
--	return root->fs_info->fs_devices == test_fs_devices;
-+	return root->fs_info->fs_devices == test_root->fs_info->fs_devices;
- }
- 
-+static int btrfs_set_super(struct super_block *s, void *data)
-+{
-+	s->s_fs_info = data;
-+
-+	return set_anon_super(s, data);
-+}
-+
-+
- /*
-  * Find a superblock for the given device / mount point.
-  *
-@@ -581,6 +589,8 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- 	struct super_block *s;
- 	struct dentry *root;
- 	struct btrfs_fs_devices *fs_devices = NULL;
-+	struct btrfs_root *tree_root = NULL;
-+	struct btrfs_fs_info *fs_info = NULL;
- 	fmode_t mode = FMODE_READ;
- 	char *subvol_name = NULL;
- 	u64 subvol_objectid = 0;
-@@ -608,8 +618,25 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- 		goto error_close_devices;
- 	}
- 
-+	/*
-+	 * Setup a dummy root and fs_info for test/set super.  This is because
-+	 * we don't actually fill this stuff out until open_ctree, but we need
-+	 * it for searching for existing supers, so this lets us do that and
-+	 * then open_ctree will properly initialize everything later.
-+	 */
-+	fs_info = kzalloc(sizeof(struct btrfs_fs_info), GFP_NOFS);
-+	tree_root = kzalloc(sizeof(struct btrfs_root), GFP_NOFS);
-+	if (!fs_info || !tree_root) {
-+		kfree(fs_info);
-+		kfree(tree_root);
-+		goto error_close_devices;
-+	}
-+	fs_info->tree_root = tree_root;
-+	fs_info->fs_devices = fs_devices;
-+	tree_root->fs_info = fs_info;
-+
- 	bdev = fs_devices->latest_bdev;
--	s = sget(fs_type, btrfs_test_super, set_anon_super, fs_devices);
-+	s = sget(fs_type, btrfs_test_super, btrfs_set_super, tree_root);
- 	if (IS_ERR(s))
- 		goto error_s;
- 
-@@ -675,6 +702,8 @@ error_s:
- 	error = PTR_ERR(s);
- error_close_devices:
- 	btrfs_close_devices(fs_devices);
-+	kfree(fs_info);
-+	kfree(tree_root);
- error_free_subvol_name:
- 	kfree(subvol_name);
- 	return ERR_PTR(error);
--- 
-1.6.6.1
+>
+> Also can you run with this patch
+>
+> http://www.spinics.net/lists/linux-btrfs/msg06890.html
+>
 
+Will try tonight.
+
+-Brian
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

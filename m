@@ -1,29 +1,24 @@
-From: Evert Vorster <evorster@gmail.com>
-Subject: tiny btrfs bug.....
-Date: Thu, 18 Nov 2010 21:34:12 -0700
-Message-ID: <AANLkTim=XFBrra=gTu_+D_iQqVeJyyKdexf0qGAQPdsD@mail.gmail.com>
+From: Chris Ball <cjb@laptop.org>
+Subject: Re: tiny btrfs bug.....
+Date: Thu, 18 Nov 2010 23:43:14 -0500
+Message-ID: <m3k4k9x6sd.fsf@pullcord.laptop.org>
+References: <AANLkTim=XFBrra=gTu_+D_iQqVeJyyKdexf0qGAQPdsD@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Evert Vorster <evorster@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTim=XFBrra=gTu_+D_iQqVeJyyKdexf0qGAQPdsD@mail.gmail.com>
+	(Evert Vorster's message of "Thu, 18 Nov 2010 21:34:12 -0700")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi there.
+Hi,
 
-I'm running my root on a raid1 btrfs partition stretching over two
-partitions on two separate disks.
+   > In stead, df reports the size of the partition to be about
+   > 60GB. For each GB written to the partition, 2GB gets used.
 
-Each partition is 30GB, so I would expect the raid to be 30GB big,
-being a mirror and all.
-
-In stead, df reports the size of the partition to be about 60GB. For
-each GB written to the partition, 2GB gets used.
-
-Is this intentional?
-
-I'm running kernel 2.6.36
-
--Evert-
+https://btrfs.wiki.kernel.org/index.php/FAQ#Why_does_df_show_incorrect_free_space_for_my_RAID_volume.3F
 
 -- 
-http://magnatune.com - Music shared the way it should be.
+Chris Ball   <cjb@laptop.org>
+One Laptop Per Child

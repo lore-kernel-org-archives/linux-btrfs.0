@@ -1,71 +1,87 @@
-From: Toke =?iso-8859-1?Q?H=F8iland-J=F8rgensen?= <toke@toke.dk>
-Subject: Symlinks' device numbers differ from regular files'
-Date: Fri, 19 Nov 2010 00:54:23 +0100
-Message-ID: <20101118235423.GC12925@toke.dk>
+From: Jan Kara <jack@suse.cz>
+Subject: Re: [patch] fix up lock order reversal in writeback
+Date: Fri, 19 Nov 2010 01:45:52 +0100
+Message-ID: <20101119004552.GF5004@quack.suse.cz>
+References: <20101116110058.GA4298@amd>
+ <20101116130146.GG4757@quack.suse.cz>
+ <4CE35A6D.2040906@redhat.com>
+ <20101117043845.GA3586@amd>
+ <4CE362B0.6040607@redhat.com>
+ <20101117061057.GA3989@amd>
+ <20101118030613.GQ3290@thunk.org>
+ <20101117192900.da859ac7.akpm@linux-foundation.org>
+ <20101118060000.GA3509@amd>
+ <20101117222834.2bb36ee1.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha256;
-	protocol="application/pgp-signature"; boundary="QV9egoCq9O4JbpTr"
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: Nick Piggin <npiggin@kernel.dk>, Ted Ts'o <tytso@mit.edu>,
+	Eric Sandeen <sandeen@redhat.com>, Jan Kara <jack@suse.cz>,
+	linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <20101117222834.2bb36ee1.akpm@linux-foundation.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed 17-11-10 22:28:34, Andrew Morton wrote:
+> I'm not sure that s_umount versus i_mutex has come up before.
+> 
+> Logically I'd expect i_mutex to nest inside s_umount.  Because s_umount
+> is a per-superblock thing, and i_mutex is a per-file thing, and files
+> live under superblocks.  Nesting s_umount outside i_mutex creates
+> complex deadlock graphs between the various i_mutexes, I think.
+> 
+> Someone tell me if btrfs has the same bug, via its call to
+> writeback_inodes_sb_nr_if_idle()?
+> 
+> I don't see why these functions need s_umount at all, if they're called
+> from within ->write_begin against an inode on that superblock.  If the
+> superblock can get itself disappeared while we're running ->write_begin
+> on it, we have problems, no?
+  As I wrote to Chris, the function just needs exclusion from umount /
+remount happening (and want to stop umount from returning EBUSY when
+writeback thread is writing something out). When the function is called
+from ->write_begin this is no issue as you properly noted so s_umount is
+not needed in that particular case.
 
---QV9egoCq9O4JbpTr
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+> In which case I'd suggest just removing the down_read(s_umount) and
+> specifying that the caller must pin the superblock via some means.
+  Possibly, but currently the advantage is that we can have WARN_ON in the
+writeback code that complains if someone starts writeback without properly
+pinned superblock and we cannot easily do that with your general rule. I'm
+not saying that should stop us from changing the rule but it was kind of
+nice.
 
-Hi
+> Only we can't do that because we need to hold s_umount until the
+> bdi_queue_work() worker has done its work.
+> 
+> The fact that a call to ->write_begin can randomly return with s_umount
+> held, to be randomly released at some random time in the future is a
+> bit ugly, isn't it?  write_begin is a pretty low-level, per-inode
+> thing.
+  I guess you missed that writeback_inodes_sb_nr() (called from _if_idle
+variants) does:
+        bdi_queue_work(sb->s_bdi, &work);
+        wait_for_completion(&done);
+  So we return only after all the IO has been submitted and unlock s_umount
+in writeback_inodes_sb_if_idle(). And we cannot really submit the IO ourselves
+because we are holding i_mutex and we need to get and put references
+to other inodes while doing writeback (those would be really horrible lock
+dependencies - writeback thread can put the last reference to an unlinked
+inode...).
 
-I am having a problem with my btrfs partitions: symlinks are reported to=20
-have different device numbers than directories and regular files, even=20
-though they are on the same partition. This causes my backup software to=20
-mess up backing up the symlinks.
+In fact, as I'm speaking about it, pushing things to writeback thread and
+waiting on the work does not help a bit with the locking issues (we didn't
+wait for the work previously but that had other issues). Bug, sigh.
 
-An illustrative example:
+What might be better interface for usecases like above is to allow
+filesystem to kick flusher thread to start doing background writeback
+(regardless of dirty limits). Then the caller can wait for some delayed
+allocation reservations to get freed (easy enough to check in
+->writepage() and wake the waiters) - possibly with a reasonable timeout
+so that we don't stall forever.
 
-$ touch tmp; ln -s tmp tmp2; stat tmp tmp2
-  File: `tmp'
-  Size: 0         	Blocks: 0          IO Block: 4096   regular empty file
-Device: 15h/21d	Inode: 984027      Links: 1
---- snip ---
-  File: `tmp2' -> `tmp'
-  Size: 3         	Blocks: 0          IO Block: 4096   symbolic link
-Device: 13h/19d	Inode: 984028      Links: 1
---- snip ---
-
-$ uname -r
-2.6.35-ck
-
-I'm not using subvolumes, or any fancy features of btrfs, really. I'm=20
-running Arch Linux.
-
-Is this normal? And if not, how do I fix it?
-
-Any help would be greatly appreciated.  Thanks in advance.
-
-Regards,
--Toke H=F8iland-J=F8rgensen
-
---QV9egoCq9O4JbpTr
-Content-Type: application/pgp-signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iQIcBAEBCAAGBQJM5byvAAoJEEpVxJf3RPcFozkP/23kObtEvIkhSDzf4HO8pHLQ
-MFx/+NMCKDIMpAMDOoDKzGisb+zfP8LEwW3FNE2VehrXoYsAO59LIcb/t2523Ocq
-gIq5T1BlGCGAxgiwmTftqv2IagCkLj2tnyuNzwSUIVZErZABHwD3nzGm2602VU/G
-Q/usj+m3oQ7yYZvOxzJB0JEQUL3l+EDkCQtTHGsFSX35qjAhwjCOkhWHfkHOphRe
-WxzP0qk7hsM0yAQZEl6BxEkEHeq+m5t+suPllQuubaqJGAKSRe+R3JiYk9ucuarf
-pLHCDzAcNIs7gZquKxRcM7ilj1WOkmLP7MfCerckkDd7GPftXndnqC7+aW7twx4W
-G9aS7oj/nGwpsJZOqaT2UQT1XihAEsPzZAZReVrxWFjTMHbibmloAU2NVD7f2VCT
-X02xpwWRHLiTeUNNy22AluoL/bJKpES8quPbliE2lNXHv9r/1Q5A3LAkL6xE6hLr
-1NMS2GlznfPeLPST48mG6HroipWuTSm07Lh3maxl4AVnqtO4Ey7VLySpxWmuIhMx
-7p8F8l5aX/FHx8VBa5ZL6vJGF2EkToiA//vITGhzjioHZn0aH7r+BJzFgNQdzgi0
-NlyCbWItd/iWtD52xnH8QhDsul0LQzWbPuQ0Q4VuRRq3XNIvjL+BvMK8n8yQNPbR
-JdFwnomA1Z9w2Ybzf9d2
-=4d3p
------END PGP SIGNATURE-----
-
---QV9egoCq9O4JbpTr--
+								Honza
+-- 
+Jan Kara <jack@suse.cz>
+SUSE Labs, CR

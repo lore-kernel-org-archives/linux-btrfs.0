@@ -1,211 +1,223 @@
-From: Bron Gondwana <brong@fastmail.fm>
-Subject: Re: Poor performance unlinking hard-linked files (repost)
-Date: Sat, 20 Nov 2010 08:58:10 +1100
-Message-ID: <20101119215810.GF12386@brong.net>
-References: <1289618724.28645.1405062363@webmail.messagingengine.com>
- <20101116125445.GA3229@brong.net>
- <1289914577-sup-8535@think>
- <20101117041148.GA10048@brong.net>
- <1290094104-sup-8656@think>
- <20101118214631.GC2401@brong.net>
- <1290175586-sup-2461@think>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Bron Gondwana <brong@fastmail.fm>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: use dget_parent where we can UPDATED
+Date: Sat, 20 Nov 2010 04:48:00 -0500
+Message-ID: <1290246480-26141-1-git-send-email-josef@redhat.com>
+References: <1290198971-21663-2-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1290175586-sup-2461@think>
+In-Reply-To: <1290198971-21663-2-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 19, 2010 at 09:10:08AM -0500, Chris Mason wrote:
-> Excerpts from Bron Gondwana's message of 2010-11-18 16:46:31 -0500:
-> > On Thu, Nov 18, 2010 at 10:30:47AM -0500, Chris Mason wrote:
-> > > > http://pastebin.com/Tg7agv42
-> > > 
-> > > Ok, we're mixing unlinks and fsyncs.  If it fsyncing directories too?
-> > 
-> > Nup.  I'm pretty sure it doesn't, just files.  Yes - there will certainly
-> > be fsyncs going on as well - Cyrus is very careful to fsync everything it
-> > cares about at the file level, but all it does with directories is mkdir
-> > them if they don't exist.
-> 
-> Could you double check this one please?  fsyncing the directory is a ton
-> more expensive, I just want to make sure it isn't part of the workload.
-> 
-> Otherwise it looks like we're seeking to read in the inode and unlink
-> it.  One possibility is that we're not giving the elevator enough clues
-> about the IO being synchronous.
-> 
-> Are you using cfq or deadline?  I bet we can improve the latencies using
-> READ_SYNC.
+There are lots of places where we do dentry->d_parent->d_inode without holding
+the dentry->d_lock.  This could cause problems with rename.  So instead we need
+to use dget_parent() and hold the reference to the parent as long as we are
+going to use it's inode and then dput it at the end.
 
-I'm using deadline.
+Signed-off-by: Josef Bacik <josef@redhat.com>
+Cc: raven@themaw.net
+---
+-screwed up and used dget() instead of dget_parent() in one place
 
-Here's a redacted strace of a single message upload:  (those gettimeofday
-calls are actually caused by "trickle" being used to bandwidth limit these
-things from nuking our internal network if they call go crazy at one)
+ fs/btrfs/inode.c       |    9 ++++++---
+ fs/btrfs/ioctl.c       |   20 ++++++++++++++++----
+ fs/btrfs/transaction.c |    5 ++++-
+ fs/btrfs/tree-log.c    |   21 +++++++++++++++++----
+ 4 files changed, 43 insertions(+), 12 deletions(-)
 
-All I'm seeing is the fsyncs on the files.  And some unnecessary mkdir
-calls that I can probably remove, and an unneccary truncate on the
-quota file.
-
-Bron.
-
-gettimeofday({1290202884, 848919}, NULL) = 0
-gettimeofday({1290202884, 849006}, NULL) = 0
-mkdir("/mnt", 0755)                     = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4", 0755)          = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4/slots96b1p4", 0755) = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4/slots96b1p4/store23", 0755) = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4/slots96b1p4/store23/data", 0755) = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4/slots96b1p4/store23/data/sync.", 0755) = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4/slots96b1p4/store23/data/sync./11284", 0755) = -1 EEXIST (File exists)
-open("/mnt/sata96b1d4/slots96b1p4/store23/data/sync./11284/9be294a24866fc162e5a2d48925d57642ff20a71", O_RDWR|O_CREAT|O_TRUNC, 0666) = 11
-fstat64(11, {st_mode=S_IFREG|0600, st_size=0, ...}) = 0
-mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xf4cb2000
-time(NULL)                              = 1290202884
-read(0, "<CENSORED>"..., 4096) = 4096
-fcntl64(0, F_GETFL)                     = 0x2 (flags O_RDWR)
-gettimeofday({1290202884, 851014}, NULL) = 0
-gettimeofday({1290202884, 851101}, NULL) = 0
-write(11, "MIME-Version: 1.0\r\nContent-Transf"..., 4096) = 4096
-time(NULL)                              = 1290202884
-read(0, "<CENSORED>"..., 4096) = 4096
-fcntl64(0, F_GETFL)                     = 0x2 (flags O_RDWR)
-gettimeofday({1290202884, 851952}, NULL) = 0
-gettimeofday({1290202884, 852038}, NULL) = 0
-write(11, "<CENSORED>"..., 4096) = 4096
-time(NULL)                              = 1290202884
-read(0, "<CENSORED>"..., 4096) = 4096
-fcntl64(0, F_GETFL)                     = 0x2 (flags O_RDWR)
-gettimeofday({1290202884, 852644}, NULL) = 0
-gettimeofday({1290202884, 852729}, NULL) = 0
-write(11, "family: Arial; font-size: medium="..., 4096) = 4096
-time(NULL)                              = 1290202884
-read(0, "<CENSORED>"..., 4096) = 4096
-fcntl64(0, F_GETFL)                     = 0x2 (flags O_RDWR)
-gettimeofday({1290202884, 853303}, NULL) = 0
-gettimeofday({1290202884, 853389}, NULL) = 0
-write(11, "<CENSORED>"..., 4096) = 4096
-time(NULL)                              = 1290202884
-read(0, "<CENSORED>"..., 4096) = 4096
-fcntl64(0, F_GETFL)                     = 0x2 (flags O_RDWR)
-gettimeofday({1290202884, 853960}, NULL) = 0
-gettimeofday({1290202884, 854045}, NULL) = 0
-write(11, "<CENSORED>"..., 4096) = 4096
-time(NULL)                              = 1290202884
-read(0, "<CENSORED>"..., 4096) = 4096
-fcntl64(0, F_GETFL)                     = 0x2 (flags O_RDWR)
-gettimeofday({1290202884, 854617}, NULL) = 0
-gettimeofday({1290202884, 854703}, NULL) = 0
-write(11, "<CENSORED>"..., 4096) = 4096
-time(NULL)                              = 1290202884
-read(0, "<CENSORED>"..., 4096) = 910
-fcntl64(0, F_GETFL)                     = 0x2 (flags O_RDWR)
-gettimeofday({1290202884, 855431}, NULL) = 0
-gettimeofday({1290202884, 855552}, NULL) = 0
-write(11, "<CENSORED>"..., 4096) = 4096
-write(11, "<CENSORED>"..., 668) = 668
-fsync(11)                               = 0
-close(11)                               = 0
-munmap(0xf4cb2000, 4096)                = 0
-write(1, "<CENSORED>"..., 32) = 32
-time(NULL)                              = 1290202884
-read(0, "<CENSORED>"..., 4096) = 731
-fcntl64(0, F_GETFL)                     = 0x2 (flags O_RDWR)
-gettimeofday({1290202884, 858721}, NULL) = 0
-gettimeofday({1290202884, 858809}, NULL) = 0
-open("/mnt/sata96b1m4/slots96b1p4/store23/conf/lock/domain/a/airpost.net/p/user/<CENSORED>/Drafts.lock", O_RDWR|O_CREAT|O_TRUNC, 0666) = 11
-fcntl64(11, F_SETLKW, {type=F_RDLCK, whence=SEEK_SET, start=0, len=0}) = 0
-fcntl64(6, F_SETLKW, {type=F_RDLCK, whence=SEEK_SET, start=0, len=0}) = 0
-fstat64(6, {st_mode=S_IFREG|0600, st_size=809668, ...}) = 0
-stat64("/mnt/sata96b1m4/slots96b1p4/store23/conf/mailboxes.db", {st_mode=S_IFREG|0600, st_size=809668, ...}) = 0
-fcntl64(6, F_SETLKW, {type=F_UNLCK, whence=SEEK_SET, start=0, len=0}) = 0
-open("/mnt/sata96b1m4/slots96b1p4/store23/meta/domain/a/airpost.net/p/user/<CENSORED>/Drafts/cyrus.index", O_RDWR) = 13
-fstat64(13, {st_mode=S_IFREG|0600, st_size=9536, ...}) = 0
-mmap2(NULL, 24576, PROT_READ, MAP_SHARED, 13, 0) = 0xf4cad000
-fcntl64(13, F_SETLKW, {type=F_WRLCK, whence=SEEK_SET, start=0, len=0}) = 0
-stat64("/mnt/sata96b1m4/slots96b1p4/store23/meta/domain/a/airpost.net/p/user/<CENSORED>/Drafts/cyrus.header", {st_mode=S_IFREG|0600, st_size=241, ...}) = 0
-open("/mnt/sata96b1m4/slots96b1p4/store23/meta/domain/a/airpost.net/p/user/<CENSORED>/Drafts/cyrus.header", O_RDONLY) = 14
-fstat64(14, {st_mode=S_IFREG|0600, st_size=241, ...}) = 0
-mmap2(NULL, 241, PROT_READ, MAP_SHARED, 14, 0) = 0xf4cac000
-munmap(0xf4cac000, 241)                 = 0
-lseek(13, 9440, SEEK_SET)               = 9440
-write(13, "<REWRITE INDEX RECORD (unrelated)>"..., 96) = 96
-time(NULL)                              = 1290202884
-stat64("/etc/localtime", {st_mode=S_IFREG|0644, st_size=3519, ...}) = 0
-send(5, "<181>Nov 19 16:41:24 slots96b1p4/"..., 238, MSG_NOSIGNAL) = 238
-mkdir("/mnt", 0755)                     = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4", 0755)          = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4/slots96b1p4", 0755) = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4/slots96b1p4/store23", 0755) = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4/slots96b1p4/store23/data", 0755) = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4/slots96b1p4/store23/data/sync.", 0755) = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4/slots96b1p4/store23/data/sync./11284", 0755) = -1 EEXIST (File exists)
-open("/mnt/sata96b1d4/slots96b1p4/store23/data/sync./11284/9be294a24866fc162e5a2d48925d57642ff20a71", O_RDONLY) = 15
-fstat64(15, {st_mode=S_IFREG|0600, st_size=29340, ...}) = 0
-mmap2(NULL, 29340, PROT_READ, MAP_SHARED, 15, 0) = 0xf4ca5000
-munmap(0xf4ca5000, 29340)               = 0
-stat64("/etc/localtime", {st_mode=S_IFREG|0644, st_size=3519, ...}) = 0
-close(15)                               = 0
-mkdir("/mnt", 0755)                     = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4", 0755)          = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4/slots96b1p4", 0755) = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4/slots96b1p4/store23", 0755) = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4/slots96b1p4/store23/data", 0755) = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4/slots96b1p4/store23/data/domain", 0755) = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4/slots96b1p4/store23/data/domain/a", 0755) = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4/slots96b1p4/store23/data/domain/a/airpost.net", 0755) = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4/slots96b1p4/store23/data/domain/a/airpost.net/p", 0755) = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4/slots96b1p4/store23/data/domain/a/airpost.net/p/user", 0755) = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4/slots96b1p4/store23/data/domain/a/airpost.net/p/user/<CENSORED>", 0755) = -1 EEXIST (File exists)
-mkdir("/mnt/sata96b1d4/slots96b1p4/store23/data/domain/a/airpost.net/p/user/<CENSORED>/Drafts", 0755) = -1 EEXIST (File exists)
-link("/mnt/sata96b1d4/slots96b1p4/store23/data/sync./11284/9be294a24866fc162e5a2d48925d57642ff20a71", "/mnt/sata96b1d4/slots96b1p4/store23/data/domain/a/airpost.net/p/user/<CENSORED>/Drafts/4907.") = 0
-utime("/mnt/sata96b1d4/slots96b1p4/store23/data/domain/a/airpost.net/p/user/<CENSORED>/Drafts/4907.", [2010/11/19-16:41:24, 2010/11/19-16:41:24]) = 0
-open("/mnt/sata96b1m4/slots96b1p4/store23/meta/domain/a/airpost.net/p/user/<CENSORED>/Drafts/cyrus.cache", O_RDWR) = 15
-fstat64(15, {st_mode=S_IFREG|0600, st_size=105488, ...}) = 0
-mmap2(NULL, 114688, PROT_READ, MAP_SHARED, 15, 0) = 0xf4c91000
-lseek(15, 0, SEEK_END)                  = 105488
-write(15, "<CACHE ENTRY>"..., 1200) = 1200
-lseek(13, 9536, SEEK_SET)               = 9536
-write(13, "<INDEX RECORD FOR THIS UPLOAD>"..., 96) = 96
-time(NULL)                              = 1290202884
-stat64("/etc/localtime", {st_mode=S_IFREG|0644, st_size=3519, ...}) = 0
-send(5, "<181>Nov 19 16:41:24 slots96b1p4/"..., 237, MSG_NOSIGNAL) = 237
-time(NULL)                              = 1290202884
-fsync(15)                               = 0
-open("/mnt/sata96b1m4/slots96b1p4/store23/conf/domain/a/airpost.net/quota/p/user.<CENSORED>", O_RDWR) = 16
-fcntl64(16, F_SETLKW, {type=F_WRLCK, whence=SEEK_SET, start=0, len=0}) = 0
-fstat64(16, {st_mode=S_IFREG|0600, st_size=18, ...}) = 0
-stat64("/mnt/sata96b1m4/slots96b1p4/store23/conf/domain/a/airpost.net/quota/p/user.<CENSORED>", {st_mode=S_IFREG|0600, st_size=18, ...}) = 0
-fstat64(16, {st_mode=S_IFREG|0600, st_size=18, ...}) = 0
-mmap2(NULL, 18, PROT_READ, MAP_SHARED, 16, 0) = 0xf4c90000
-munmap(0xf4c90000, 18)                  = 0
-unlink("/mnt/sata96b1m4/slots96b1p4/store23/conf/domain/a/airpost.net/quota/p/user.<CENSORED>.NEW") = -1 ENOENT (No such file or directory)
-open("/mnt/sata96b1m4/slots96b1p4/store23/conf/domain/a/airpost.net/quota/p/user.<CENSORED>.NEW", O_RDWR|O_CREAT|O_TRUNC, 0666) = 17
-fcntl64(17, F_SETLKW, {type=F_WRLCK, whence=SEEK_SET, start=0, len=0}) = 0
-lseek(17, 0, SEEK_SET)                  = 0
-write(17, "<CENSORED>"..., 18) = 18
-ftruncate(17, 18)                       = 0
-fsync(17)                               = 0
-fstat64(17, {st_mode=S_IFREG|0600, st_size=18, ...}) = 0
-rename("/mnt/sata96b1m4/slots96b1p4/store23/conf/domain/a/airpost.net/quota/p/user.<CENSORED>.NEW", "/mnt/sata96b1m4/slots96b1p4/store23/conf/domain/a/airpost.net/quota/p/user.<CENSORED>") = 0
-fcntl64(17, F_SETLKW, {type=F_UNLCK, whence=SEEK_SET, start=0, len=0}) = 0
-close(17)                               = 0
-fcntl64(16, F_SETLKW, {type=F_UNLCK, whence=SEEK_SET, start=0, len=0}) = 0
-close(16)                               = 0
-lseek(13, 0, SEEK_SET)                  = 0
-write(13, "<UPDATED INDEX HEADER>"..., 128) = 128
-fsync(13)                               = 0
-fcntl64(8, F_SETLKW, {type=F_WRLCK, whence=SEEK_SET, start=0, len=0}) = 0
-fstat64(8, {st_mode=S_IFREG|0600, st_size=144, ...}) = 0
-stat64("/mnt/sata96b1m4/slots96b1p4/store23/conf/statuscache.db", {st_mode=S_IFREG|0600, st_size=144, ...}) = 0
-fcntl64(8, F_SETLKW, {type=F_UNLCK, whence=SEEK_SET, start=0, len=0}) = 0
-fcntl64(13, F_SETLKW, {type=F_UNLCK, whence=SEEK_SET, start=0, len=0}) = 0
-munmap(0xf4cad000, 24576)               = 0
-munmap(0xf4c91000, 114688)              = 0
-close(13)                               = 0
-
-
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 558cac2..821ec73 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4810,10 +4810,12 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
+ 	if (err) {
+ 		drop_inode = 1;
+ 	} else {
++		struct dentry *parent = dget_parent(dentry);
+ 		btrfs_update_inode_block_group(trans, dir);
+ 		err = btrfs_update_inode(trans, root, inode);
+ 		BUG_ON(err);
+-		btrfs_log_new_name(trans, inode, NULL, dentry->d_parent);
++		btrfs_log_new_name(trans, inode, NULL, parent);
++		dput(parent);
+ 	}
+ 
+ 	nr = trans->blocks_used;
+@@ -6607,8 +6609,9 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 	BUG_ON(ret);
+ 
+ 	if (old_inode->i_ino != BTRFS_FIRST_FREE_OBJECTID) {
+-		btrfs_log_new_name(trans, old_inode, old_dir,
+-				   new_dentry->d_parent);
++		struct dentry *parent = dget_parent(new_dentry);
++		btrfs_log_new_name(trans, old_inode, old_dir, parent);
++		dput(parent);
+ 		btrfs_end_log_trans(root);
+ 	}
+ out_fail:
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 463d91b..5dba458 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -233,7 +233,8 @@ static noinline int create_subvol(struct btrfs_root *root,
+ 	struct btrfs_inode_item *inode_item;
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_root *new_root;
+-	struct inode *dir = dentry->d_parent->d_inode;
++	struct dentry *parent = dget_parent(dentry);
++	struct inode *dir;
+ 	int ret;
+ 	int err;
+ 	u64 objectid;
+@@ -242,8 +243,13 @@ static noinline int create_subvol(struct btrfs_root *root,
+ 
+ 	ret = btrfs_find_free_objectid(NULL, root->fs_info->tree_root,
+ 				       0, &objectid);
+-	if (ret)
++	if (ret) {
++		dput(parent);
+ 		return ret;
++	}
++
++	dir = parent->d_inode;
++
+ 	/*
+ 	 * 1 - inode item
+ 	 * 2 - refs
+@@ -251,8 +257,10 @@ static noinline int create_subvol(struct btrfs_root *root,
+ 	 * 2 - dir items
+ 	 */
+ 	trans = btrfs_start_transaction(root, 6);
+-	if (IS_ERR(trans))
++	if (IS_ERR(trans)) {
++		dput(parent);
+ 		return PTR_ERR(trans);
++	}
+ 
+ 	leaf = btrfs_alloc_free_block(trans, root, root->leafsize,
+ 				      0, objectid, NULL, 0, 0, 0);
+@@ -339,6 +347,7 @@ static noinline int create_subvol(struct btrfs_root *root,
+ 
+ 	d_instantiate(dentry, btrfs_lookup_dentry(dir, dentry));
+ fail:
++	dput(parent);
+ 	if (async_transid) {
+ 		*async_transid = trans->transid;
+ 		err = btrfs_commit_transaction_async(trans, root, 1);
+@@ -354,6 +363,7 @@ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
+ 			   char *name, int namelen, u64 *async_transid)
+ {
+ 	struct inode *inode;
++	struct dentry *parent;
+ 	struct btrfs_pending_snapshot *pending_snapshot;
+ 	struct btrfs_trans_handle *trans;
+ 	int ret;
+@@ -396,7 +406,9 @@ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
+ 
+ 	btrfs_orphan_cleanup(pending_snapshot->snap);
+ 
+-	inode = btrfs_lookup_dentry(dentry->d_parent->d_inode, dentry);
++	parent = dget_parent(dentry);
++	inode = btrfs_lookup_dentry(parent->d_inode, dentry);
++	dput(parent);
+ 	if (IS_ERR(inode)) {
+ 		ret = PTR_ERR(inode);
+ 		goto fail;
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 1fffbc0..f50e931 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -902,6 +902,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	struct btrfs_root *root = pending->root;
+ 	struct btrfs_root *parent_root;
+ 	struct inode *parent_inode;
++	struct dentry *parent;
+ 	struct dentry *dentry;
+ 	struct extent_buffer *tmp;
+ 	struct extent_buffer *old;
+@@ -941,7 +942,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	trans->block_rsv = &pending->block_rsv;
+ 
+ 	dentry = pending->dentry;
+-	parent_inode = dentry->d_parent->d_inode;
++	parent = dget_parent(dentry);
++	parent_inode = parent->d_inode;
+ 	parent_root = BTRFS_I(parent_inode)->root;
+ 	record_root_in_trans(trans, parent_root);
+ 
+@@ -989,6 +991,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 				 parent_inode->i_ino, index,
+ 				 dentry->d_name.name, dentry->d_name.len);
+ 	BUG_ON(ret);
++	dput(parent);
+ 
+ 	key.offset = (u64)-1;
+ 	pending->snap = btrfs_read_fs_root_no_name(root->fs_info, &key);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index a29f193..054744a 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2869,6 +2869,7 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
+ {
+ 	int ret = 0;
+ 	struct btrfs_root *root;
++	struct dentry *old_parent = NULL;
+ 
+ 	/*
+ 	 * for regular files, if its inode is already on disk, we don't
+@@ -2910,10 +2911,13 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
+ 		if (IS_ROOT(parent))
+ 			break;
+ 
+-		parent = parent->d_parent;
++		parent = dget_parent(parent);
++		dput(old_parent);
++		old_parent = parent;
+ 		inode = parent->d_inode;
+ 
+ 	}
++	dput(old_parent);
+ out:
+ 	return ret;
+ }
+@@ -2945,6 +2949,7 @@ int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ {
+ 	int inode_only = exists_only ? LOG_INODE_EXISTS : LOG_INODE_ALL;
+ 	struct super_block *sb;
++	struct dentry *old_parent = NULL;
+ 	int ret = 0;
+ 	u64 last_committed = root->fs_info->last_trans_committed;
+ 
+@@ -3016,10 +3021,13 @@ int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 		if (IS_ROOT(parent))
+ 			break;
+ 
+-		parent = parent->d_parent;
++		parent = dget_parent(parent);
++		dput(old_parent);
++		old_parent = parent;
+ 	}
+ 	ret = 0;
+ end_trans:
++	dput(old_parent);
+ 	if (ret < 0) {
+ 		BUG_ON(ret != -ENOSPC);
+ 		root->fs_info->last_trans_log_full_commit = trans->transid;
+@@ -3039,8 +3047,13 @@ end_no_trans:
+ int btrfs_log_dentry_safe(struct btrfs_trans_handle *trans,
+ 			  struct btrfs_root *root, struct dentry *dentry)
+ {
+-	return btrfs_log_inode_parent(trans, root, dentry->d_inode,
+-				      dentry->d_parent, 0);
++	struct dentry *parent = dget_parent(dentry);
++	int ret;
++
++	ret = btrfs_log_inode_parent(trans, root, dentry->d_inode, parent, 0);
++	dput(parent);
++
++	return ret;
+ }
+ 
+ /*
+-- 
+1.6.6.1
 

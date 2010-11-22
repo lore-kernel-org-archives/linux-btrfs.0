@@ -1,70 +1,58 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: Re: btrfs problems and fedora 14
-Date: Mon, 22 Nov 2010 23:28:05 +0000
-Message-ID: <20101122232805.GA22542@carfax.org.uk>
-References: <1290467983.24502.66.camel@main-wireless>
+From: Brian Sullivan <bexamous@gmail.com>
+Subject: Re: ls & flush-btrfs-1 sit at 100% sys
+Date: Mon, 22 Nov 2010 15:29:42 -0800
+Message-ID: <AANLkTi=dBcc4aEYDbKtLjjY9dXzaQEqF1tUo5A5W5pmP@mail.gmail.com>
+References: <AANLkTim-esHsiRYTYxAA2WtpOj=XHvZDc6y2+5b0TB0x@mail.gmail.com>
+ <m3r5ejyzz4.fsf@pullcord.laptop.org> <AANLkTinKm-6H60V2EivQuKF079yS0W-nS=r5dgw_ZcGm@mail.gmail.com>
+ <AANLkTimRtgFy2LwJqsSszOFYSxk9T+qfJ9=snFFGzysf@mail.gmail.com>
+ <AANLkTinfcAZrO+UzioG=DtN7KA=aWBB2-BtfZgggqpEm@mail.gmail.com>
+ <1290177036-sup-2385@think> <20101119144625.GB2579@localhost.localdomain> <AANLkTi=QOzU6Y3JGsiCfkhQCB28DLnOKn8h-iuaNo2-r@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="EeQfGwPcQSOJBaQU"
-Cc: linux-btrfs@vger.kernel.org
-To: david grant <dg@david-grant.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Daniel J Blueman <daniel.blueman@gmail.com>,
+	Chris Ball <cjb@laptop.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1290467983.24502.66.camel@main-wireless>
+In-Reply-To: <AANLkTi=QOzU6Y3JGsiCfkhQCB28DLnOKn8h-iuaNo2-r@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, Nov 19, 2010 at 12:09 PM, Brian Sullivan <bexamous@gmail.com> w=
+rote:
+> On Fri, Nov 19, 2010 at 6:46 AM, Josef Bacik <josef@redhat.com> wrote=
+:
+>> On Fri, Nov 19, 2010 at 09:32:46AM -0500, Chris Mason wrote:
+>>>
+>>> I just wanted to confirm, you're seeing this with 2.6.37-rc? =A0I t=
+hought
+>>> I had fixed up this delalloc hammering.
+>>>
+>
+> I installed 2.6.37-rc2 from an Ubuntu PPA.
+>
+>>
+>> Also can you run with this patch
+>>
+>> http://www.spinics.net/lists/linux-btrfs/msg06890.html
+>>
+>
+> Will try tonight.
+>
 
---EeQfGwPcQSOJBaQU
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Got 2.6.37-rc2 from kernel.org, applied this patch, and still not able
+to write to the filesystem.
 
-   Hi,
+I hooked up another array (md raid w/btfs on top) and it this one
+works fine.  Should I just wipe out of the broken fs and recreate it?
+Or is there anything else I should try?
 
-On Tue, Nov 23, 2010 at 10:19:43AM +1100, david grant wrote:
-> I thought I would try btrfs on a new installation of f14. yes, I know
-> its experimental but stable so it seemed to be a good time to try it.
-> I am not sure if I have missed something out of all my searching but am
-> I correct in thinking that currently: 
->      I. it is not possible to boot from a snapshot of the operating
->         system and, in particular, the yum snapshots cannot be used for
->         that purpose 
+-Brian
 
-   You can use btrfs subvolume set-default to set the default
-subvolume that is mounted if no "subvol=" or "subvolid=" parameter is
-given to mount. (And you can then subsequently access the original
-root of the filesystem using mount -o subvolid=0).
-
->     II. it is so easy to create raid arrays of btrfs partitions but they
->         cannot be read by f13 or f14 
-
-   There's no particular reason that this should be the case. How do
-you come to this conclusion? What did you try, what did you expect to
-happen, and what actually happened?
-
->    III. it is not possible to copy btrfs partitions with snapshots
->         except possibly by the use of dd.
-
-   Again, I can't see a reason that this shouldn't work. What are you
-trying to do, exactly, and how is it failing?
-
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-           --- I believe that it's closely correlated with ---           
-                       the aeroswine coefficient.                        
-
---EeQfGwPcQSOJBaQU
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFM6vyFIKyzvlFcI40RAgwzAJ4+FnCtSktCFw5sa+2zkrKHs4oMKACeMLGX
-jBSYdvNx8eZfqXwaZSAXX+w=
-=2hPD
------END PGP SIGNATURE-----
-
---EeQfGwPcQSOJBaQU--
+> -Brian
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

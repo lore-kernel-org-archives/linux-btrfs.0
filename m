@@ -1,71 +1,59 @@
-From: Ian Kent <raven@themaw.net>
-Subject: Re: [PATCH] Btrfs: setup blank root and fs_info for mount time
-Date: Mon, 22 Nov 2010 10:22:53 +0800
-Message-ID: <1290392573.2602.22.camel@perseus.themaw.net>
-References: <1290196755-19607-1-git-send-email-josef@redhat.com>
-	 <4CE9C677.9050007@cn.fujitsu.com>
-	 <1290390573.2602.5.camel@perseus.themaw.net>
-	 <4CE9CEE5.5030606@cn.fujitsu.com>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: [PATCH -V2 1/3] btrfs: fix free dip and dip->csums twice
+Date: Mon, 22 Nov 2010 11:01:39 +0800
+Message-ID: <4CE9DD13.3090205@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
-To: Li Zefan <lizf@cn.fujitsu.com>
+Content-Type: text/plain; charset=GB2312
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Ito <t-itoh@jp.fujitsu.com>
+To: Josef Bacik <josef@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4CE9CEE5.5030606@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2010-11-22 at 10:01 +0800, Li Zefan wrote:
-> =E4=BA=8E 2010=E5=B9=B411=E6=9C=8822=E6=97=A5 09:49, Ian Kent =E5=86=99=
-=E9=81=93:
-> > On Mon, 2010-11-22 at 09:25 +0800, Li Zefan wrote:
-> >>> +	/*
-> >>> +	 * Setup a dummy root and fs_info for test/set super.  This is =
-because
-> >>> +	 * we don't actually fill this stuff out until open_ctree, but =
-we need
-> >>> +	 * it for searching for existing supers, so this lets us do tha=
-t and
-> >>> +	 * then open_ctree will properly initialize everything later.
-> >>> +	 */
-> >>> +	fs_info =3D kzalloc(sizeof(struct btrfs_fs_info), GFP_NOFS);
-> >>> +	tree_root =3D kzalloc(sizeof(struct btrfs_root), GFP_NOFS);
-> >>> +	if (!fs_info || !tree_root) {
-> >>> +		kfree(fs_info);
-> >>> +		kfree(tree_root);
-> >> The above 2 kfree() calls are redundant.
-> >=20
-> > That's what I thought when I first looked at it but what happens wh=
-en
-> > fs_info !=3D NULL and tree_root =3D=3D NULL.
-> >=20
->=20
-> Nothing bad happens in that case. ;)
->=20
-> We'll do the cleanup after "goto error_close_devices", and kfree(NULL=
-)
-> is Ok. Did I miss something?
+bio_endio() will free dip and dip->csums, so dip and dip->csums twice will
+be freed twice. Fix it.
 
-No, you were correct, Josef also pointed that out, oops!
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/inode.c |    9 +++------
+ 1 files changed, 3 insertions(+), 6 deletions(-)
 
->=20
-> > Although I do wonder if doing two successive allocation requests an=
-d
-> > then checking both is a good idea. If memory is low there may be a =
-bunch
-> > of page scanning to try and free memory and if it eventually fails =
-that
-> > same process probably would happen all over again on the second cal=
-l.
-> > I'm not sure though.
-> >=20
-> >> And error should be set to -ENOMEM.
-> >=20
-> > Ah, yes .. I missed that.
-> >=20
-
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 558cac2..5a5edc7 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5731,7 +5731,7 @@ static void btrfs_submit_direct(int rw, struct bio *bio, struct inode *inode,
+ 
+ 	ret = btrfs_bio_wq_end_io(root->fs_info, bio, 0);
+ 	if (ret)
+-		goto out_err;
++		goto free_ordered;
+ 
+ 	if (write && !skip_sum) {
+ 		ret = btrfs_wq_submit_bio(BTRFS_I(inode)->root->fs_info,
+@@ -5740,7 +5740,7 @@ static void btrfs_submit_direct(int rw, struct bio *bio, struct inode *inode,
+ 				   __btrfs_submit_bio_start_direct_io,
+ 				   __btrfs_submit_bio_done);
+ 		if (ret)
+-			goto out_err;
++			goto free_ordered;
+ 		return;
+ 	} else if (!skip_sum)
+ 		btrfs_lookup_bio_sums_dio(root, inode, bio,
+@@ -5748,11 +5748,8 @@ static void btrfs_submit_direct(int rw, struct bio *bio, struct inode *inode,
+ 
+ 	ret = btrfs_map_bio(root, rw, bio, 0, 1);
+ 	if (ret)
+-		goto out_err;
++		goto free_ordered;
+ 	return;
+-out_err:
+-	kfree(dip->csums);
+-	kfree(dip);
+ free_ordered:
+ 	/*
+ 	 * If this is a write, we need to clean up the reserved space and kill
+-- 
+1.7.0.1

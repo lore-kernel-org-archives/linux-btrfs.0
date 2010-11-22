@@ -1,7 +1,7 @@
 From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH -V2 1/3] btrfs: fix free dip and dip->csums twice
-Date: Mon, 22 Nov 2010 11:01:39 +0800
-Message-ID: <4CE9DD13.3090205@cn.fujitsu.com>
+Subject: [PATCH -V2 2/3] btrfs: cleanup similar source code
+Date: Mon, 22 Nov 2010 11:02:55 +0800
+Message-ID: <4CE9DD5F.1000302@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=GB2312
@@ -12,48 +12,82 @@ To: Josef Bacik <josef@redhat.com>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-bio_endio() will free dip and dip->csums, so dip and dip->csums twice will
-be freed twice. Fix it.
+extent_bio_alloc() and compressed_bio_alloc() are similar, cleanup
+similar source code.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/inode.c |    9 +++------
- 1 files changed, 3 insertions(+), 6 deletions(-)
+ fs/btrfs/compression.c |   15 +--------------
+ fs/btrfs/extent_io.c   |    8 ++++----
+ fs/btrfs/extent_io.h   |    3 +++
+ 3 files changed, 8 insertions(+), 18 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 558cac2..5a5edc7 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5731,7 +5731,7 @@ static void btrfs_submit_direct(int rw, struct bio *bio, struct inode *inode,
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 7845d1f..b50bc4b 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -91,23 +91,10 @@ static inline int compressed_bio_size(struct btrfs_root *root,
+ static struct bio *compressed_bio_alloc(struct block_device *bdev,
+ 					u64 first_byte, gfp_t gfp_flags)
+ {
+-	struct bio *bio;
+ 	int nr_vecs;
  
- 	ret = btrfs_bio_wq_end_io(root->fs_info, bio, 0);
- 	if (ret)
--		goto out_err;
-+		goto free_ordered;
+ 	nr_vecs = bio_get_nr_vecs(bdev);
+-	bio = bio_alloc(gfp_flags, nr_vecs);
+-
+-	if (bio == NULL && (current->flags & PF_MEMALLOC)) {
+-		while (!bio && (nr_vecs /= 2))
+-			bio = bio_alloc(gfp_flags, nr_vecs);
+-	}
+-
+-	if (bio) {
+-		bio->bi_size = 0;
+-		bio->bi_bdev = bdev;
+-		bio->bi_sector = first_byte >> 9;
+-	}
+-	return bio;
++	return btrfs_bio_alloc(bdev, first_byte >> 9, nr_vecs, gfp_flags);
+ }
  
- 	if (write && !skip_sum) {
- 		ret = btrfs_wq_submit_bio(BTRFS_I(inode)->root->fs_info,
-@@ -5740,7 +5740,7 @@ static void btrfs_submit_direct(int rw, struct bio *bio, struct inode *inode,
- 				   __btrfs_submit_bio_start_direct_io,
- 				   __btrfs_submit_bio_done);
- 		if (ret)
--			goto out_err;
-+			goto free_ordered;
- 		return;
- 	} else if (!skip_sum)
- 		btrfs_lookup_bio_sums_dio(root, inode, bio,
-@@ -5748,11 +5748,8 @@ static void btrfs_submit_direct(int rw, struct bio *bio, struct inode *inode,
+ static int check_compressed_csum(struct inode *inode,
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index eac10e3..b6543d7 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1828,9 +1828,9 @@ static void end_bio_extent_preparewrite(struct bio *bio, int err)
+ 	bio_put(bio);
+ }
  
- 	ret = btrfs_map_bio(root, rw, bio, 0, 1);
- 	if (ret)
--		goto out_err;
-+		goto free_ordered;
- 	return;
--out_err:
--	kfree(dip->csums);
--	kfree(dip);
- free_ordered:
- 	/*
- 	 * If this is a write, we need to clean up the reserved space and kill
+-static struct bio *
+-extent_bio_alloc(struct block_device *bdev, u64 first_sector, int nr_vecs,
+-		 gfp_t gfp_flags)
++struct bio *
++btrfs_bio_alloc(struct block_device *bdev, u64 first_sector, int nr_vecs,
++		gfp_t gfp_flags)
+ {
+ 	struct bio *bio;
+ 
+@@ -1919,7 +1919,7 @@ static int submit_extent_page(int rw, struct extent_io_tree *tree,
+ 	else
+ 		nr = bio_get_nr_vecs(bdev);
+ 
+-	bio = extent_bio_alloc(bdev, sector, nr, GFP_NOFS | __GFP_HIGH);
++	bio = btrfs_bio_alloc(bdev, sector, nr, GFP_NOFS | __GFP_HIGH);
+ 
+ 	bio_add_page(bio, page, page_size, offset);
+ 	bio->bi_end_io = end_io_func;
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 1c6d4f3..4183c81 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -310,4 +310,7 @@ int extent_clear_unlock_delalloc(struct inode *inode,
+ 				struct extent_io_tree *tree,
+ 				u64 start, u64 end, struct page *locked_page,
+ 				unsigned long op);
++struct bio *
++btrfs_bio_alloc(struct block_device *bdev, u64 first_sector, int nr_vecs,
++		gfp_t gfp_flags);
+ #endif
 -- 
 1.7.0.1

@@ -1,7 +1,7 @@
 From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH -V2 2/3] btrfs: cleanup similar source code
-Date: Mon, 22 Nov 2010 11:02:55 +0800
-Message-ID: <4CE9DD5F.1000302@cn.fujitsu.com>
+Subject: [PATCH -V2 3/3] btrfs: fix panic caused by direct IO
+Date: Mon, 22 Nov 2010 11:04:43 +0800
+Message-ID: <4CE9DDCB.7060706@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=GB2312
@@ -12,82 +12,288 @@ To: Josef Bacik <josef@redhat.com>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-extent_bio_alloc() and compressed_bio_alloc() are similar, cleanup
-similar source code.
+V1->V2 Changes:
+change the fix method. we split bios in btrfs_submit_direct() to fix this
+problem now.
 
+btrfs paniced when we write >64KB data by direct IO at one time.
+
+Reproduce steps:
+ # mkfs.btrfs /dev/sda5 /dev/sda6
+ # mount /dev/sda5 /mnt
+ # dd if=/dev/zero of=/mnt/tmpfile bs=100K count=1 oflag=direct
+
+Then btrfs paniced:
+mapping failed logical 1103155200 bio len 69632 len 12288
+------------[ cut here ]------------
+kernel BUG at fs/btrfs/volumes.c:3010!
+[SNIP]
+Pid: 1992, comm: btrfs-worker-0 Not tainted 2.6.37-rc1 #1 D2399/PRIMERGY
+RIP: 0010:[<ffffffffa03d1462>]  [<ffffffffa03d1462>] btrfs_map_bio+0x202/0x210 [btrfs]
+[SNIP]
+Call Trace:
+ [<ffffffffa03ab3eb>] __btrfs_submit_bio_done+0x1b/0x20 [btrfs]
+ [<ffffffffa03a35ff>] run_one_async_done+0x9f/0xb0 [btrfs]
+ [<ffffffffa03d3d20>] run_ordered_completions+0x80/0xc0 [btrfs]
+ [<ffffffffa03d45a4>] worker_loop+0x154/0x5f0 [btrfs]
+ [<ffffffffa03d4450>] ? worker_loop+0x0/0x5f0 [btrfs]
+ [<ffffffffa03d4450>] ? worker_loop+0x0/0x5f0 [btrfs]
+ [<ffffffff81083216>] kthread+0x96/0xa0
+ [<ffffffff8100cec4>] kernel_thread_helper+0x4/0x10
+ [<ffffffff81083180>] ? kthread+0x0/0xa0
+ [<ffffffff8100cec0>] ? kernel_thread_helper+0x0/0x10
+
+We fix this problem by splitting bios when we submit bios.
+
+Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+Tested-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 ---
- fs/btrfs/compression.c |   15 +--------------
- fs/btrfs/extent_io.c   |    8 ++++----
- fs/btrfs/extent_io.h   |    3 +++
- 3 files changed, 8 insertions(+), 18 deletions(-)
+ fs/btrfs/inode.c |  205 ++++++++++++++++++++++++++++++++++++++++++++++++------
+ 1 files changed, 184 insertions(+), 21 deletions(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 7845d1f..b50bc4b 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -91,23 +91,10 @@ static inline int compressed_bio_size(struct btrfs_root *root,
- static struct bio *compressed_bio_alloc(struct block_device *bdev,
- 					u64 first_byte, gfp_t gfp_flags)
- {
--	struct bio *bio;
- 	int nr_vecs;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 5a5edc7..c91d0e3 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5535,13 +5535,21 @@ struct btrfs_dio_private {
+ 	u64 bytes;
+ 	u32 *csums;
+ 	void *private;
++
++	/* number of bios pending for this dio */
++	atomic_t pending_bios;
++
++	/* IO errors */
++	int errors;
++
++	struct bio *orig_bio;
+ };
  
- 	nr_vecs = bio_get_nr_vecs(bdev);
--	bio = bio_alloc(gfp_flags, nr_vecs);
--
--	if (bio == NULL && (current->flags & PF_MEMALLOC)) {
--		while (!bio && (nr_vecs /= 2))
--			bio = bio_alloc(gfp_flags, nr_vecs);
--	}
--
--	if (bio) {
--		bio->bi_size = 0;
--		bio->bi_bdev = bdev;
--		bio->bi_sector = first_byte >> 9;
--	}
--	return bio;
-+	return btrfs_bio_alloc(bdev, first_byte >> 9, nr_vecs, gfp_flags);
+ static void btrfs_endio_direct_read(struct bio *bio, int err)
+ {
++	struct btrfs_dio_private *dip = bio->bi_private;
+ 	struct bio_vec *bvec_end = bio->bi_io_vec + bio->bi_vcnt - 1;
+ 	struct bio_vec *bvec = bio->bi_io_vec;
+-	struct btrfs_dio_private *dip = bio->bi_private;
+ 	struct inode *inode = dip->inode;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	u64 start;
+@@ -5684,6 +5692,176 @@ static int __btrfs_submit_bio_start_direct_io(struct inode *inode, int rw,
+ 	return 0;
  }
  
- static int check_compressed_csum(struct inode *inode,
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index eac10e3..b6543d7 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1828,9 +1828,9 @@ static void end_bio_extent_preparewrite(struct bio *bio, int err)
- 	bio_put(bio);
- }
- 
--static struct bio *
--extent_bio_alloc(struct block_device *bdev, u64 first_sector, int nr_vecs,
--		 gfp_t gfp_flags)
-+struct bio *
-+btrfs_bio_alloc(struct block_device *bdev, u64 first_sector, int nr_vecs,
-+		gfp_t gfp_flags)
++static void btrfs_end_dio_bio(struct bio *bio, int err)
++{
++	struct btrfs_dio_private *dip = bio->bi_private;
++
++	if (err) {
++		printk(KERN_ERR "btrfs direct IO failed ino %lu rw %lu "
++		      "disk_bytenr %lu len %u err no %d\n",
++		      dip->inode->i_ino, bio->bi_rw, bio->bi_sector,
++		      bio->bi_size, err);
++		dip->errors = 1;
++
++		/*
++		 * before atomic variable goto zero, we must make sure
++		 * dip->errors is perceived to be set.
++		 */
++		smp_mb__before_atomic_dec();
++	}
++
++	/* if there are more bios still pending for this dio, just exit */
++	if (!atomic_dec_and_test(&dip->pending_bios))
++		goto out;
++
++	if (dip->errors)
++		bio_io_error(dip->orig_bio);
++	else {
++		set_bit(BIO_UPTODATE, &dip->orig_bio->bi_flags);
++		bio_endio(dip->orig_bio, 0);
++	}
++out:
++	bio_put(bio);
++}
++
++static struct bio *btrfs_dio_bio_alloc(struct block_device *bdev,
++				       u64 first_sector, gfp_t gfp_flags)
++{
++	int nr_vecs = bio_get_nr_vecs(bdev);
++	return btrfs_bio_alloc(bdev, first_sector, nr_vecs, gfp_flags);
++}
++
++static inline int __btrfs_submit_dio_bio(struct bio *bio, struct inode *inode,
++					 int rw, u64 file_offset, int skip_sum,
++					 u32 *csums)
++{
++	int write = rw & REQ_WRITE;
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	int ret;
++
++	bio_get(bio);
++	ret = btrfs_bio_wq_end_io(root->fs_info, bio, 0);
++	if (ret)
++		goto err;
++
++	if (write && !skip_sum) {
++		ret = btrfs_wq_submit_bio(root->fs_info,
++				   inode, rw, bio, 0, 0,
++				   file_offset,
++				   __btrfs_submit_bio_start_direct_io,
++				   __btrfs_submit_bio_done);
++		goto err;
++	} else if (!skip_sum)
++		btrfs_lookup_bio_sums_dio(root, inode, bio,
++					  file_offset, csums);
++
++	ret = btrfs_map_bio(root, rw, bio, 0, 1);
++err:
++	bio_put(bio);
++	return ret;
++}
++
++static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
++				    int skip_sum)
++{
++	struct inode *inode = dip->inode;
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	struct btrfs_mapping_tree *map_tree = &root->fs_info->mapping_tree;
++	struct bio *bio;
++	struct bio *orig_bio = dip->orig_bio;
++	struct bio_vec *bvec = orig_bio->bi_io_vec;
++	u64 start_sector = orig_bio->bi_sector;
++	u64 file_offset = dip->logical_offset;
++	u64 submit_len = 0;
++	u64 map_length;
++	int nr_pages = 0;
++	u32 *csums = dip->csums;
++	int ret = 0;
++
++	bio = btrfs_dio_bio_alloc(orig_bio->bi_bdev, start_sector, GFP_NOFS);
++	if (!bio)
++		return -ENOMEM;
++	bio->bi_private = dip;
++	bio->bi_end_io = btrfs_end_dio_bio;
++	atomic_inc(&dip->pending_bios);
++
++	map_length = orig_bio->bi_size;
++	ret = btrfs_map_block(map_tree, READ, start_sector << 9,
++			      &map_length, NULL, 0);
++	if (ret) {
++		bio_put(bio);
++		return -EIO;
++	}
++
++	while (bvec <= (orig_bio->bi_io_vec + orig_bio->bi_vcnt - 1)) {
++		if (unlikely(map_length < submit_len + bvec->bv_len ||
++		    bio_add_page(bio, bvec->bv_page, bvec->bv_len,
++				 bvec->bv_offset) < bvec->bv_len)) {
++			/*
++			 * inc the count before we submit the bio so
++			 * we know the end IO handler won't happen before
++			 * we inc the count. Otherwise, the dip might get freed
++			 * before we're done setting it up
++			 */
++			atomic_inc(&dip->pending_bios);
++			ret = __btrfs_submit_dio_bio(bio, inode, rw,
++						     file_offset, skip_sum,
++						     csums);
++			if (ret) {
++				bio_put(bio);
++				atomic_dec(&dip->pending_bios);
++				goto out_err;
++			}
++
++			if (!skip_sum)
++				csums = csums + nr_pages;
++			start_sector += submit_len >> 9;
++			file_offset += submit_len;
++
++			submit_len = 0;
++			nr_pages = 0;
++
++			bio = btrfs_dio_bio_alloc(orig_bio->bi_bdev,
++						  start_sector, GFP_NOFS);
++			if (!bio)
++				goto out_err;
++			bio->bi_private = dip;
++			bio->bi_end_io = btrfs_end_dio_bio;
++
++			map_length = orig_bio->bi_size;
++			ret = btrfs_map_block(map_tree, READ, start_sector << 9,
++					      &map_length, NULL, 0);
++			if (ret) {
++				bio_put(bio);
++				goto out_err;
++			}
++		} else {
++			submit_len += bvec->bv_len;
++			nr_pages ++;
++			bvec++;
++		}
++	}
++
++	ret = __btrfs_submit_dio_bio(bio, inode, rw, file_offset, skip_sum,
++				     csums);
++	if (!ret)
++		return 0;
++
++	bio_put(bio);
++out_err:
++	dip->errors = 1;
++	/*
++	 * before atomic variable goto zero, we must
++	 * make sure dip->errors is perceived to be set.
++	 */
++	smp_mb__before_atomic_dec();
++	if (atomic_dec_and_test(&dip->pending_bios))
++		bio_io_error(dip->orig_bio);
++
++	/* bio_end_io() will handle error, so we needn't return it */
++	return 0;
++}
++
+ static void btrfs_submit_direct(int rw, struct bio *bio, struct inode *inode,
+ 				loff_t file_offset)
  {
- 	struct bio *bio;
+@@ -5723,33 +5901,18 @@ static void btrfs_submit_direct(int rw, struct bio *bio, struct inode *inode,
  
-@@ -1919,7 +1919,7 @@ static int submit_extent_page(int rw, struct extent_io_tree *tree,
+ 	dip->disk_bytenr = (u64)bio->bi_sector << 9;
+ 	bio->bi_private = dip;
++	dip->errors = 0;
++	dip->orig_bio = bio;
++	atomic_set(&dip->pending_bios, 0);
+ 
+ 	if (write)
+ 		bio->bi_end_io = btrfs_endio_direct_write;
  	else
- 		nr = bio_get_nr_vecs(bdev);
+ 		bio->bi_end_io = btrfs_endio_direct_read;
  
--	bio = extent_bio_alloc(bdev, sector, nr, GFP_NOFS | __GFP_HIGH);
-+	bio = btrfs_bio_alloc(bdev, sector, nr, GFP_NOFS | __GFP_HIGH);
- 
- 	bio_add_page(bio, page, page_size, offset);
- 	bio->bi_end_io = end_io_func;
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 1c6d4f3..4183c81 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -310,4 +310,7 @@ int extent_clear_unlock_delalloc(struct inode *inode,
- 				struct extent_io_tree *tree,
- 				u64 start, u64 end, struct page *locked_page,
- 				unsigned long op);
-+struct bio *
-+btrfs_bio_alloc(struct block_device *bdev, u64 first_sector, int nr_vecs,
-+		gfp_t gfp_flags);
- #endif
+-	ret = btrfs_bio_wq_end_io(root->fs_info, bio, 0);
+-	if (ret)
+-		goto free_ordered;
+-
+-	if (write && !skip_sum) {
+-		ret = btrfs_wq_submit_bio(BTRFS_I(inode)->root->fs_info,
+-				   inode, rw, bio, 0, 0,
+-				   dip->logical_offset,
+-				   __btrfs_submit_bio_start_direct_io,
+-				   __btrfs_submit_bio_done);
+-		if (ret)
+-			goto free_ordered;
++	ret = btrfs_submit_direct_hook(rw, dip, skip_sum);
++	if (!ret)
+ 		return;
+-	} else if (!skip_sum)
+-		btrfs_lookup_bio_sums_dio(root, inode, bio,
+-					  dip->logical_offset, dip->csums);
+-
+-	ret = btrfs_map_bio(root, rw, bio, 0, 1);
+-	if (ret)
+-		goto free_ordered;
+-	return;
+ free_ordered:
+ 	/*
+ 	 * If this is a write, we need to clean up the reserved space and kill
 -- 
 1.7.0.1

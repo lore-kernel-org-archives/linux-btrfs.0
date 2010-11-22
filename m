@@ -1,36 +1,53 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: make sure new inode size is ok in fallocate
-Date: Mon, 22 Nov 2010 13:55:39 -0500
-Message-ID: <1290452139-8606-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: Sage Weil <sage@newdream.net>
+Subject: Re: [PATCH 1/2] btrfs: Check if dest_offset is block-size aligned
+ before cloning file
+Date: Mon, 22 Nov 2010 11:09:34 -0800 (PST)
+Message-ID: <Pine.LNX.4.64.1011221108170.2462@cobra.newdream.net>
+References: <4CE5D48A.6090009@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: linux-btrfs@vger.kernel.org
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4CE5D48A.6090009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We have been failing xfstest 228 forever, because we don't check to make sure
-the new inode size is acceptable as far as RLIMIT is concerned.  Just check to
-make sure it's ok to create a inode with this new size and error out if not.
-With this patch we now pass 228.  Thanks,
+On Fri, 19 Nov 2010, Li Zefan wrote:
+> We've done the check for src_offset and src_length, and We should
+> also check dest_offset, otherwise we'll corrupt the destination
+> file:
+> 
+>   (After cloning file1 to file2 with unaligned dest_offset)
+>   # cat /mnt/file2
+>   cat: /mnt/file2: Input/output error
+> 
+> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+> ---
+>  fs/btrfs/ioctl.c |    7 +++----
+>  1 files changed, 3 insertions(+), 4 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 463d91b..81b47bd 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -1669,12 +1669,11 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+>  		olen = len = src->i_size - off;
+>  	/* if we extend to eof, continue to block boundary */
+>  	if (off + len == src->i_size)
+> -		len = ((src->i_size + bs-1) & ~(bs-1))
+> -			- off;
+> +		len = ALIGN(src->i_size, bs) - off;
+>  
+>  	/* verify the end result is block aligned */
+> -	if ((off & (bs-1)) ||
+> -	    ((off + len) & (bs-1)))
+> +	if (!IS_ALIGNED(off, bs) || !IS_ALIGNED(off + len, bs) ||
+> +	    !IS_ALIGNED(destoff, bs))
+>  		goto out_unlock;
+>  
+>  	/* do any pending delalloc/csum calc on src, one way or
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/inode.c |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
+Looks good.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d83f288..25a8fa2 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6945,6 +6945,10 @@ static long btrfs_fallocate(struct inode *inode, int mode,
- 	btrfs_wait_ordered_range(inode, alloc_start, alloc_end - alloc_start);
- 
- 	mutex_lock(&inode->i_mutex);
-+	ret = inode_newsize_ok(inode, alloc_end);
-+	if (ret)
-+		goto out;
-+
- 	if (alloc_start > inode->i_size) {
- 		ret = btrfs_cont_expand(inode, alloc_start);
- 		if (ret)
--- 
-1.6.6.1
+Reviewed-by: Sage Weil <sage@newdream.net>
 

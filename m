@@ -1,67 +1,50 @@
-From: Alexander Kolesen <kolesen.a@gmail.com>
-Subject: [JFS] Kernel oops when tried to access mounted but unplugged storage
-Date: Sun, 21 Nov 2010 14:24:25 +0200
-Message-ID: <20101121122423.GF4024@localhost>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: setup blank root and fs_info for mount time
+Date: Mon, 22 Nov 2010 09:25:11 +0800
+Message-ID: <4CE9C677.9050007@cn.fujitsu.com>
+References: <1290196755-19607-1-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: jfs-discussion@lists.sourceforge.net
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org, raven@themaw.net
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1290196755-19607-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello.
-I've built a kernel from
-git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux-2.6.git
-(Date: Fri Nov 19 19:46:45 2010 -0800)
-and got a kernel oops when tried to access to unplugged,
-but mounted external usb storage formatted with JFS.
- 
-Steps to reproduce:
-  mkfs.jfs /dev/sdb1 (unpluggable USB hard drive)
-  mount /dev/sdb1 /mnt/drive
-  cd /mnt/drive
-  touch test
-  sync
-  ..unplug a drive
-  ls
-  
-   
-Result:
-  BUG: unable to handle kernel NULL pointer dereference at
-  0000000000000020
-  IP: __mark_inode_dirty
-    
-Then I got a kernel coredump. Here is a stack trace:
-     
-  (gdb) bt
-  #0 __mark_inode_dirty (inode=0xffff880078fc1490, flags=<value
-  optimized out>) at fs/fs-writeback.c:990
-  #1 0xffffffff810e4990 in mark_inode_dirty_sync
-  (mnt=0xffff88007862fd00, dentry=<value optimized out>) at
-  include/linux/fs.h:1687
-  #2 touch_atime (mnt=0xffff88007862fd00, dentry=<value optimized
-  out>) at fs/inode.c:1505
-  #3 0xffffffff810dfeb4 in file_accessed (file=0xffff88006afed600,
-  filler=0xffffffff810dfcf8 <filldir>, buf=0xffff88007762bf38) at
-  include/linux/fs.h:1763
-  #4 vfs_readdir (file=0xffff88006afed600, filler=0xffffffff810dfcf8
-  <filldir>, buf=0xffff88007762bf38) at fs/readdir.c:41
-  #5 0xffffffff810e001a in sys_getdents (fd=<value optimized out>,
-  dirent=0x1f61468, count=32768) at fs/readdir.c:214
-  #6 0xffffffff810279ab in ?? () at arch/x86/kernel/entry_64.S:479
-  #7 0x00007f8b23d1a4c5 in ?? ()
-  #8 0x00000000000002bb in ?? ()
-  #9 0x0000000000000000 in ?? ()
-      
-  (gdb) p bdi
-  $1 = (struct backing_dev_info *) 0x0
-       
-  (gdb) p inode->i_mapping->backing_dev_info
-  $15 = (struct backing_dev_info *) 0xffff880078878d48
-        
-  (gdb) p inode->i_sb->s_bdi
-  $16 = (struct backing_dev_info *) 0x0
-	 
-	  
-I can't do git bisect because on n'th step my system became
-unbootable. But 2.6.35 doesn't fall.
+> +	/*
+> +	 * Setup a dummy root and fs_info for test/set super.  This is because
+> +	 * we don't actually fill this stuff out until open_ctree, but we need
+> +	 * it for searching for existing supers, so this lets us do that and
+> +	 * then open_ctree will properly initialize everything later.
+> +	 */
+> +	fs_info = kzalloc(sizeof(struct btrfs_fs_info), GFP_NOFS);
+> +	tree_root = kzalloc(sizeof(struct btrfs_root), GFP_NOFS);
+> +	if (!fs_info || !tree_root) {
+> +		kfree(fs_info);
+> +		kfree(tree_root);
+
+The above 2 kfree() calls are redundant.
+
+And error should be set to -ENOMEM.
+
+> +		goto error_close_devices;
+> +	}
+> +	fs_info->tree_root = tree_root;
+> +	fs_info->fs_devices = fs_devices;
+> +	tree_root->fs_info = fs_info;
+> +
+>  	bdev = fs_devices->latest_bdev;
+> -	s = sget(fs_type, btrfs_test_super, set_anon_super, fs_devices);
+> +	s = sget(fs_type, btrfs_test_super, btrfs_set_super, tree_root);
+>  	if (IS_ERR(s))
+>  		goto error_s;
+>  
+> @@ -675,6 +702,8 @@ error_s:
+>  	error = PTR_ERR(s);
+>  error_close_devices:
+>  	btrfs_close_devices(fs_devices);
+> +	kfree(fs_info);
+> +	kfree(tree_root);
+>  error_free_subvol_name:
+>  	kfree(subvol_name);
+>  	return ERR_PTR(error);

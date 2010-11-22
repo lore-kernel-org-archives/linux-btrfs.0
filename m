@@ -1,47 +1,26 @@
-From: Sage Weil <sage@newdream.net>
-Subject: Re: [PATCH 2/2] btrfs: Set file size correctly in file clone
-Date: Mon, 22 Nov 2010 11:10:01 -0800 (PST)
-Message-ID: <Pine.LNX.4.64.1011221109360.2462@cobra.newdream.net>
-References: <4CE5D48A.6090009@cn.fujitsu.com> <4CE5D4A2.2050205@cn.fujitsu.com>
+From: david grant <dg@david-grant.com>
+Subject: btrfs problems and fedora 14
+Date: Tue, 23 Nov 2010 10:19:43 +1100
+Message-ID: <1290467983.24502.66.camel@main-wireless>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: linux-btrfs@vger.kernel.org
-To: Li Zefan <lizf@cn.fujitsu.com>
+Content-Type: text/plain; charset="UTF-8"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4CE5D4A2.2050205@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 19 Nov 2010, Li Zefan wrote:
-> Set src_offset = 0, src_length = 20K, dest_offset = 20K. And the
-> original filesize of the dest file 'file2' is 30K:
-> 
->   # ls -l /mnt/file2
->   -rw-r--r-- 1 root root 30720 Nov 18 16:42 /mnt/file2
-> 
-> Now clone file1 to file2, the dest file should be 40K, but it
-> still shows 30K:
-> 
->   # ls -l /mnt/file2
->   -rw-r--r-- 1 root root 30720 Nov 18 16:42 /mnt/file2
-> 
-> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
-> ---
->  fs/btrfs/ioctl.c |    4 ++--
->  1 files changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 81b47bd..6b4bfa7 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -1873,8 +1873,8 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
->  			 * but shouldn't round up the file size
->  			 */
->  			endoff = new_key.offset + datal;
-> -			if (endoff > off+olen)
-> -				endoff = off+olen;
-> +			if (endoff > destoff+olen)
-> +				endoff = destoff+olen;
->  			if (endoff > inode->i_size)
->  				btrfs_i_size_write(inode, endoff);
+I thought I would try btrfs on a new installation of f14. yes, I know
+its experimental but stable so it seemed to be a good time to try it.
+I am not sure if I have missed something out of all my searching but am
+I correct in thinking that currently: 
+     I. it is not possible to boot from a snapshot of the operating
+        system and, in particular, the yum snapshots cannot be used for
+        that purpose 
+    II. it is so easy to create raid arrays of btrfs partitions but they
+        cannot be read by f13 or f14 
+   III. it is not possible to copy btrfs partitions with snapshots
+        except possibly by the use of dd.
+This is not meant to be a put down of btrfs but a plea to have some
+clarification and in particular the ability to boot snapshots.
 
-Reviewed-by: Sage Weil <sage@newdream.net>
+Hope I can get a response 
+

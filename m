@@ -1,50 +1,51 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Subject: Re: [patch] fix up lock order reversal in writeback
-Date: Mon, 22 Nov 2010 15:43:04 -0800
-Message-ID: <20101122154304.5f78f907.akpm@linux-foundation.org>
-References: <20101116110058.GA4298@amd>
-	<20101116130146.GG4757@quack.suse.cz>
-	<4CE35A6D.2040906@redhat.com>
-	<20101117043845.GA3586@amd>
-	<4CE362B0.6040607@redhat.com>
-	<20101117061057.GA3989@amd>
-	<4CE49AF5.1080104@redhat.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: ls & flush-btrfs-1 sit at 100% sys
+Date: Mon, 22 Nov 2010 19:54:01 -0500
+Message-ID: <1290473619-sup-3248@think>
+References: <AANLkTim-esHsiRYTYxAA2WtpOj=XHvZDc6y2+5b0TB0x@mail.gmail.com> <m3r5ejyzz4.fsf@pullcord.laptop.org> <AANLkTinKm-6H60V2EivQuKF079yS0W-nS=r5dgw_ZcGm@mail.gmail.com> <AANLkTimRtgFy2LwJqsSszOFYSxk9T+qfJ9=snFFGzysf@mail.gmail.com> <AANLkTinfcAZrO+UzioG=DtN7KA=aWBB2-BtfZgggqpEm@mail.gmail.com> <1290177036-sup-2385@think> <20101119144625.GB2579@localhost.localdomain> <AANLkTi=QOzU6Y3JGsiCfkhQCB28DLnOKn8h-iuaNo2-r@mail.gmail.com> <AANLkTi=dBcc4aEYDbKtLjjY9dXzaQEqF1tUo5A5W5pmP@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: Nick Piggin <npiggin@kernel.dk>, Jan Kara <jack@suse.cz>,
-	linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-	linux-btrfs@vger.kernel.org
-To: Eric Sandeen <sandeen@redhat.com>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <4CE49AF5.1080104@redhat.com>
+Content-Type: TEXT/PLAIN; charset=ISO-8859-1
+Cc: Josef Bacik <josef@redhat.com>,
+	Daniel J Blueman <daniel.blueman@gmail.com>,
+	Chris Ball <cjb@laptop.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Brian Sullivan <bexamous@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <AANLkTi=dBcc4aEYDbKtLjjY9dXzaQEqF1tUo5A5W5pmP@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 17 Nov 2010 21:18:13 -0600
-Eric Sandeen <sandeen@redhat.com> wrote:
-
-> On 11/17/10 12:10 AM, Nick Piggin wrote:
-> > On Tue, Nov 16, 2010 at 11:05:52PM -0600, Eric Sandeen wrote:
-> >> On 11/16/10 10:38 PM, Nick Piggin wrote:
-> >>>> as for the locking problems ... sorry about that!
+Excerpts from Brian Sullivan's message of 2010-11-22 18:29:42 -0500:
+> On Fri, Nov 19, 2010 at 12:09 PM, Brian Sullivan <bexamous@gmail.com>=
+ wrote:
+> > On Fri, Nov 19, 2010 at 6:46 AM, Josef Bacik <josef@redhat.com> wro=
+te:
+> >> On Fri, Nov 19, 2010 at 09:32:46AM -0500, Chris Mason wrote:
 > >>>
-> >>> That's no problem. So is that an ack? :)
+> >>> I just wanted to confirm, you're seeing this with 2.6.37-rc? =C2=A0=
+I thought
+> >>> I had fixed up this delalloc hammering.
 > >>>
+> >
+> > I installed 2.6.37-rc2 from an Ubuntu PPA.
+> >
 > >>
-> >> I'd like to test it with the original case it was supposed to solve; will
-> >> do that tomorrow.
-> > 
-> > OK, but it shouldn't make much difference, unless there is a lot of
-> > strange activity happening on the sb (like mount / umount / remount /
-> > freeze / etc).
-> > 
-> 
-> Ok, good point.  And since I failed in my promise anyway, I won't
-> hold you up;
-> 
-> Acked-by: Eric Sandeen <sandeen@redhat.com>
+> >> Also can you run with this patch
+> >>
+> >> http://www.spinics.net/lists/linux-btrfs/msg06890.html
+> >>
+> >
+> > Will try tonight.
+> >
+>=20
+> Got 2.6.37-rc2 from kernel.org, applied this patch, and still not abl=
+e
+> to write to the filesystem.
 
-That patch still sucks!
+So with the patch are you still seeing the 100% system time?
 
-We all breathlessly await v2, which will have a complete changelog and
-approximately correct comments.
-
+-chris
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

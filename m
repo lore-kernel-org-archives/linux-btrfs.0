@@ -1,100 +1,159 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [patch] fs: fix deadlocks in writeback_if_idle
-Date: Tue, 23 Nov 2010 13:58:24 -0500
-Message-ID: <1290538347-sup-7669@think>
-References: <20101123100239.GA4232@amd> <1290515274-sup-3895@think> <20101123125223.GA4946@amd>
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Al Viro <viro@zeniv.linux.org.uk>,
-	linux-ext4 <linux-ext4@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Jan Kara <jack@suse.cz>, Eric Sandeen <sandeen@redhat.com>,
-	"Theodore Ts'o" <tytso@mit.edu>
-To: Nick Piggin <npiggin@kernel.dk>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-reply-to: <20101123125223.GA4946@amd>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: fix fiemap
+Date: Tue, 23 Nov 2010 14:36:57 -0500
+Message-ID: <1290541017-32638-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Nick Piggin's message of 2010-11-23 07:52:23 -0500:
-> On Tue, Nov 23, 2010 at 07:34:07AM -0500, Chris Mason wrote:
-> > Excerpts from Nick Piggin's message of 2010-11-23 05:02:39 -0500:
-> > 
-> > [ ... ]
-> > 
-> > > 
-> > > Avoid both these issues by issuing completely asynchronous writeback request in
-> > > writeback_inodes_sb_if_idle. Don't let that fool you into thinking these
-> > > functions don't suck any more.
-> > > 
-> > > ext4 now passes extensive stress testing with xfstests, fs_mark, dbench,
-> > > with a writeback_inodes_if_idle call added directly into ext4_da_write_begin
-> > > to trigger the path frequently. Previously it would spew lockdep stuff and
-> > > hang in a number of ways very quickly.
-> > > 
-> > > Signed-off-by: Nick Piggin <npiggin@kernel.dk>
-> > > 
-> > > ---
-> > >  fs/fs-writeback.c |   32 ++++++++++++++++++++------------
-> > >  1 file changed, 20 insertions(+), 12 deletions(-)
-> > > 
-> > > Index: linux-2.6/fs/fs-writeback.c
-> > > ===================================================================
-> > > --- linux-2.6.orig/fs/fs-writeback.c    2010-11-23 20:57:23.000000000 +1100
-> > > +++ linux-2.6/fs/fs-writeback.c    2010-11-23 20:59:10.000000000 +1100
-> > > @@ -1152,16 +1152,17 @@ EXPORT_SYMBOL(writeback_inodes_sb);
-> > >   *
-> > >   * Invoke writeback_inodes_sb if no writeback is currently underway.
-> > >   * Returns 1 if writeback was started, 0 if not.
-> > > + *
-> > > + * Even if 1 is returned, writeback may not be started if memory allocation
-> > > + * fails. This function makes no guarantees about anything.
-> > >   */
-> > >  int writeback_inodes_sb_if_idle(struct super_block *sb)
-> > >  {
-> > >      if (!writeback_in_progress(sb->s_bdi)) {
-> > > -        down_read(&sb->s_umount);
-> > > -        writeback_inodes_sb(sb);
-> > > -        up_read(&sb->s_umount);
-> > > +        bdi_start_writeback(sb->s_bdi, get_nr_dirty_pages());
-> > 
-> > I'll put on my skis and channel Christoph for a minute.  This isn't
-> > quite the same as the original.  writeback_inodes_sb() writes inodes on a
-> > specific super block, while bdi_start_writeback() writes them for any SB
-> > on that bdi.
-> 
-> Right.
-> 
-> > For btrfs there's only one bdi per SB, but for most everyone else a disk
-> > with a bunch of partitions is going to have multiple filesystems on the
-> > same bdi.
-> > 
-> > My original btrfs patch just exported the bdi_ funcs so that btrfs could
-> > do the above internally.  But Christoph objected, and I think he's
-> > right.  We should either give everyone a bdi or make sure the writeback
-> > func kicks only one filesystem.
-> 
-> Well it's just kicking the writeback thread, and it will writeback
-> from that particular sb.
+There are two big problems currently with FIEMAP
 
-Hmmm?  It will writeback for all the SBs on that bdi.  In the current
-form that ext4 uses, that gets pretty expensive if you have a bunch of
-large partitions and you're only running out of space on one of them.
+1) We return extents for holes.  This isn't supposed to happen, we just don't
+return extents for holes and then userspace interprets the lack of an extent as
+a hole.
 
-For the _nr variant that btrfs uses, it's worse for the filesystems
-that don't have a 1:1 bdi<->sb mapping.  It might not actually write any
-of the pages from the SB that is out of space.
+2) We sometimes don't set FIEMAP_EXTENT_LAST properly.  This is because we wait
+to see a EXTENT_FLAG_VACANCY flag on the em, but this won't happen if say we ask
+fiemap to map up to the last extent in a file, and there is nothing but holes up
+to the i_size.  To fix this we need to lookup the last extent in this file and
+save the logical offset, so if we happen to try and map that extent we can be
+sure to set FIEMAP_EXTENT_LAST.
 
-> It makes no further guarantees, and anyway
-> the sb has to compete for normal writeback within this bdi.
+With this patch we now pass xfstest 225, which we never have before.  Thanks,
 
-> 
-> I think Christoph is right because filesystems should not really
-> know about how bdi writeback queueing works. But I don't know if it's
-> worth doing anything more complex for this functionality?
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/extent_io.c |   63 ++++++++++++++++++++++++++++++++++++++++++-------
+ 1 files changed, 54 insertions(+), 9 deletions(-)
 
-I think we should make a writeback_inodes_sb_unlocked() that doesn't
-warn when the semaphore isn't held.  That should be enough given where
-btrfs and ext4 are calling it from.
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index eac10e3..10e579d 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2901,21 +2901,53 @@ out:
+ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		__u64 start, __u64 len, get_extent_t *get_extent)
+ {
+-	int ret;
++	int ret = 0;
+ 	u64 off = start;
+ 	u64 max = start + len;
+ 	u32 flags = 0;
++	u32 found_type;
++	u64 last;
+ 	u64 disko = 0;
++	struct btrfs_key found_key;
+ 	struct extent_map *em = NULL;
+ 	struct extent_state *cached_state = NULL;
++	struct btrfs_path *path;
++	struct btrfs_file_extent_item *item;
+ 	int end = 0;
+ 	u64 em_start = 0, em_len = 0;
+ 	unsigned long emflags;
+-	ret = 0;
++	int hole = 0;
+ 
+ 	if (len == 0)
+ 		return -EINVAL;
+ 
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++	path->leave_spinning = 1;
++
++	ret = btrfs_lookup_file_extent(NULL, BTRFS_I(inode)->root,
++				       path, inode->i_ino, -1, 0);
++	if (ret < 0) {
++		btrfs_free_path(path);
++		return ret;
++	}
++	WARN_ON(!ret);
++	path->slots[0]--;
++	item = btrfs_item_ptr(path->nodes[0], path->slots[0],
++			      struct btrfs_file_extent_item);
++	btrfs_item_key_to_cpu(path->nodes[0], &found_key, path->slots[0]);
++	found_type = btrfs_key_type(&found_key);
++
++	/* No extents, just return */
++	if (found_key.objectid != inode->i_ino ||
++	    found_type != BTRFS_EXTENT_DATA_KEY) {
++		btrfs_free_path(path);
++		return 0;
++	}
++	last = found_key.offset;
++	btrfs_free_path(path);
++
+ 	lock_extent_bits(&BTRFS_I(inode)->io_tree, start, start + len, 0,
+ 			 &cached_state, GFP_NOFS);
+ 	em = get_extent(inode, NULL, 0, off, max - off, 0);
+@@ -2925,11 +2957,18 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		ret = PTR_ERR(em);
+ 		goto out;
+ 	}
++
+ 	while (!end) {
++		hole = 0;
+ 		off = em->start + em->len;
+ 		if (off >= max)
+ 			end = 1;
+ 
++		if (em->block_start == EXTENT_MAP_HOLE) {
++			hole = 1;
++			goto next;
++		}
++
+ 		em_start = em->start;
+ 		em_len = em->len;
+ 
+@@ -2939,8 +2978,6 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		if (em->block_start == EXTENT_MAP_LAST_BYTE) {
+ 			end = 1;
+ 			flags |= FIEMAP_EXTENT_LAST;
+-		} else if (em->block_start == EXTENT_MAP_HOLE) {
+-			flags |= FIEMAP_EXTENT_UNWRITTEN;
+ 		} else if (em->block_start == EXTENT_MAP_INLINE) {
+ 			flags |= (FIEMAP_EXTENT_DATA_INLINE |
+ 				  FIEMAP_EXTENT_NOT_ALIGNED);
+@@ -2953,10 +2990,10 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags))
+ 			flags |= FIEMAP_EXTENT_ENCODED;
+ 
++next:
+ 		emflags = em->flags;
+ 		free_extent_map(em);
+ 		em = NULL;
+-
+ 		if (!end) {
+ 			em = get_extent(inode, NULL, 0, off, max - off, 0);
+ 			if (!em)
+@@ -2967,15 +3004,23 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 			}
+ 			emflags = em->flags;
+ 		}
++
+ 		if (test_bit(EXTENT_FLAG_VACANCY, &emflags)) {
+ 			flags |= FIEMAP_EXTENT_LAST;
+ 			end = 1;
+ 		}
+ 
+-		ret = fiemap_fill_next_extent(fieinfo, em_start, disko,
+-					em_len, flags);
+-		if (ret)
+-			goto out_free;
++		if (em_start == last) {
++			flags |= FIEMAP_EXTENT_LAST;
++			end = 1;
++		}
++
++		if (!hole) {
++			ret = fiemap_fill_next_extent(fieinfo, em_start, disko,
++						em_len, flags);
++			if (ret)
++				goto out_free;
++		}
+ 	}
+ out_free:
+ 	free_extent_map(em);
+-- 
+1.6.6.1
 
--chris

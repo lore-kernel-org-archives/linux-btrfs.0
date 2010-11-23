@@ -1,51 +1,43 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: ls & flush-btrfs-1 sit at 100% sys
-Date: Mon, 22 Nov 2010 19:54:01 -0500
-Message-ID: <1290473619-sup-3248@think>
-References: <AANLkTim-esHsiRYTYxAA2WtpOj=XHvZDc6y2+5b0TB0x@mail.gmail.com> <m3r5ejyzz4.fsf@pullcord.laptop.org> <AANLkTinKm-6H60V2EivQuKF079yS0W-nS=r5dgw_ZcGm@mail.gmail.com> <AANLkTimRtgFy2LwJqsSszOFYSxk9T+qfJ9=snFFGzysf@mail.gmail.com> <AANLkTinfcAZrO+UzioG=DtN7KA=aWBB2-BtfZgggqpEm@mail.gmail.com> <1290177036-sup-2385@think> <20101119144625.GB2579@localhost.localdomain> <AANLkTi=QOzU6Y3JGsiCfkhQCB28DLnOKn8h-iuaNo2-r@mail.gmail.com> <AANLkTi=dBcc4aEYDbKtLjjY9dXzaQEqF1tUo5A5W5pmP@mail.gmail.com>
+From: Wenyi Liu <qingshenlwy@gmail.com>
+Subject: Re: btrfs problems and fedora 14
+Date: Tue, 23 Nov 2010 12:47:43 +0800
+Message-ID: <AANLkTinuQU46BCL6WLM4hEc+ocXsbOGHoF3ppGbTOc8y@mail.gmail.com>
+References: <1290467983.24502.66.camel@main-wireless>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=ISO-8859-1
-Cc: Josef Bacik <josef@redhat.com>,
-	Daniel J Blueman <daniel.blueman@gmail.com>,
-	Chris Ball <cjb@laptop.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Brian Sullivan <bexamous@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: david grant <dg@david-grant.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <AANLkTi=dBcc4aEYDbKtLjjY9dXzaQEqF1tUo5A5W5pmP@mail.gmail.com>
+In-Reply-To: <1290467983.24502.66.camel@main-wireless>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Brian Sullivan's message of 2010-11-22 18:29:42 -0500:
-> On Fri, Nov 19, 2010 at 12:09 PM, Brian Sullivan <bexamous@gmail.com>=
- wrote:
-> > On Fri, Nov 19, 2010 at 6:46 AM, Josef Bacik <josef@redhat.com> wro=
-te:
-> >> On Fri, Nov 19, 2010 at 09:32:46AM -0500, Chris Mason wrote:
-> >>>
-> >>> I just wanted to confirm, you're seeing this with 2.6.37-rc? =C2=A0=
-I thought
-> >>> I had fixed up this delalloc hammering.
-> >>>
-> >
-> > I installed 2.6.37-rc2 from an Ubuntu PPA.
-> >
-> >>
-> >> Also can you run with this patch
-> >>
-> >> http://www.spinics.net/lists/linux-btrfs/msg06890.html
-> >>
-> >
-> > Will try tonight.
-> >
->=20
-> Got 2.6.37-rc2 from kernel.org, applied this patch, and still not abl=
-e
-> to write to the filesystem.
+2010/11/23, david grant <dg@david-grant.com>:
+> I thought I would try btrfs on a new installation of f14. yes, I know
+> its experimental but stable so it seemed to be a good time to try it.
+> I am not sure if I have missed something out of all my searching but am
+> I correct in thinking that currently:
+>      I. it is not possible to boot from a snapshot of the operating
+>         system and, in particular, the yum snapshots cannot be used for
+>         that purpose
 
-So with the patch are you still seeing the 100% system time?
+Is the Fedora grub support btrfs now?
+In this page http://fedoraproject.org/wiki/Features/SystemRollbackWithBtrfs
+I got the following information:
+(deferred) a patch to grub1 -- on top of the already existing patch to
+support btrfs in grub1 -- to allow selecting between snapshots of the
+boot partition.
 
--chris
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>     II. it is so easy to create raid arrays of btrfs partitions but they
+>         cannot be read by f13 or f14
+>    III. it is not possible to copy btrfs partitions with snapshots
+>         except possibly by the use of dd.
+> This is not meant to be a put down of btrfs but a plea to have some
+> clarification and in particular the ability to boot snapshots.
+>
+> Hope I can get a response
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

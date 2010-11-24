@@ -1,50 +1,35 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Subject: Re: [patch] fs: fix deadlocks in writeback_if_idle
-Date: Wed, 24 Nov 2010 14:51:57 -0800
-Message-ID: <20101124145157.c999b1e8.akpm@linux-foundation.org>
-References: <20101123100239.GA4232@amd>
-	<1290515274-sup-3895@think>
-	<20101123125223.GA4946@amd>
-	<1290538347-sup-7669@think>
-	<20101124010343.GD3168@amd>
+From: Erik Logtenberg <erik@logtenberg.eu>
+Subject: Re: hard links across snapshots/subvolumes are actually a bad idea.
+Date: Wed, 24 Nov 2010 23:47:18 +0100
+Message-ID: <4CED95F6.3030901@logtenberg.eu>
+References: <AANLkTinMrCMQhnmrG6P_Xro+dFob=-gsatPTR2oiRXqr@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: Chris Mason <chris.mason@oracle.com>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	Al Viro <viro@zeniv.linux.org.uk>,
-	linux-ext4 <linux-ext4@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Jan Kara <jack@suse.cz>, Eric Sandeen <sandeen@redhat.com>,
-	"Theodore Ts'o" <tytso@mit.edu>
-To: Nick Piggin <npiggin@kernel.dk>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <20101124010343.GD3168@amd>
+Content-Type: text/plain; charset=UTF-8
+Cc: BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
+To: unlisted-recipients:; (no To-header on input)
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTinMrCMQhnmrG6P_Xro+dFob=-gsatPTR2oiRXqr@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 24 Nov 2010 12:03:43 +1100
-Nick Piggin <npiggin@kernel.dk> wrote:
+Hi David,
 
-> On Tue, Nov 23, 2010 at 01:58:24PM -0500, Chris Mason wrote:
-> > > > My original btrfs patch just exported the bdi_ funcs so that btrfs could
-> > > > do the above internally.  But Christoph objected, and I think he's
-> > > > right.  We should either give everyone a bdi or make sure the writeback
-> > > > func kicks only one filesystem.
-> > > 
-> > > Well it's just kicking the writeback thread, and it will writeback
-> > > from that particular sb.
-> > 
-> > Hmmm?  It will writeback for all the SBs on that bdi.  In the current
-> > form that ext4 uses, that gets pretty expensive if you have a bunch of
-> > large partitions and you're only running out of space on one of them.
+It's not that i disagree per se, but I'd appreciate if you would explain
+this statement a little. Personally, I was hoping for cross-subvolumes
+hardlinks, so I'd like to know why this hope was apparently a bad idea.
+
+Kind regards,
+
+Erik.
+
+
+On 11/24/2010 11:07 PM, David Nicol wrote:
+> I've been thinking about this for a while, from a perspective of how
+> to make it work by allocating i-node numbers from a global pool, but
+> yesterday I realized that offering the feature would be a bad idea
+> because it violates the semantics of file systems.
 > 
-> Right. But if the bdi has writeback in progress (which would be most
-> of the time, on a busy filesystem), writeback_if_idle doesn't do
-> anything, and it is happy just for the background writeback to
-> eventually get around to writing out for us.
+> I will be happy to expand on that point if anyone disagrees with it.
+> 
+> dln
+> 
 
-That doesn't work if you're running btfs (apparently short for
-"busticated filesystem") because the bdi-per-sb thing carefully hid the
-information which you're looking for.
-
-
-We still don't have a fix for this bug yet, it appears, btw.

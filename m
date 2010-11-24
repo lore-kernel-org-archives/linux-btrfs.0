@@ -1,41 +1,21 @@
-From: "Mina Sims" <mina.sims.s@gmail.com>
-Subject: Link exchange request with  kernelplanet.org
-Date: Wed, 24 Nov 2010 13:45:06 -0500
-Message-ID: <26883860582163248421385@CapybaraSEO19>
-Reply-To: mina.sims.s@gmail.com
+From: David Nicol <davidnicol@gmail.com>
+Subject: hard links across snapshots/subvolumes are actually a bad idea.
+Date: Wed, 24 Nov 2010 16:07:28 -0600
+Message-ID: <AANLkTinMrCMQhnmrG6P_Xro+dFob=-gsatPTR2oiRXqr@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+To: BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello!
+I've been thinking about this for a while, from a perspective of how
+to make it work by allocating i-node numbers from a global pool, but
+yesterday I realized that offering the feature would be a bad idea
+because it violates the semantics of file systems.
 
-My name is Mina Sims and I'm webmaster of the websites of art. Through =
-the web I found your site and I wonder if you would like to exchange li=
-nks with some of my sites. Currently I have webs of paint and I'm looki=
-ng for related sites to link to my websites.
+I will be happy to expand on that point if anyone disagrees with it.
 
-I can offer you links on any of these sites:
+dln
 
-toucanart(dot)com/en/partner_sites
-
-painting-palac(dot)com/en/partner_sites
-
-
-If you are interested, please let me know to send you my link=B4s detai=
-ls . Then let me know when is up to add yours inmediately.
-
-I await your response.
-
-Best Regards
-Mina Sims
-Webmaster
-
-PS - If you. not to receive such requests, please fill in the following=
-  form: emailsnomore(dot)com
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-- 
+"It is merely a matter of persistence." -- Albert Camus

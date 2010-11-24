@@ -1,39 +1,33 @@
-From: Gordan Bobic <gordan@bobich.net>
+From: cwillu <cwillu@cwillu.com>
 Subject: Re: hard links across snapshots/subvolumes are actually a bad idea.
-Date: Wed, 24 Nov 2010 23:29:16 +0000
-Message-ID: <4CED9FCC.9080804@bobich.net>
+Date: Wed, 24 Nov 2010 17:57:26 -0600
+Message-ID: <AANLkTik7u_eexi++vDCsRh0oa74Q4F1Jjzt_mNn+=MZC@mail.gmail.com>
 References: <AANLkTinMrCMQhnmrG6P_Xro+dFob=-gsatPTR2oiRXqr@mail.gmail.com>
+	<4CED9FCC.9080804@bobich.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-To: BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
+To: unlisted-recipients:; (no To-header on input)
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTinMrCMQhnmrG6P_Xro+dFob=-gsatPTR2oiRXqr@mail.gmail.com>
+In-Reply-To: <4CED9FCC.9080804@bobich.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/24/2010 10:07 PM, David Nicol wrote:
-> I've been thinking about this for a while, from a perspective of how
-> to make it work by allocating i-node numbers from a global pool, but
-> yesterday I realized that offering the feature would be a bad idea
-> because it violates the semantics of file systems.
+On Wed, Nov 24, 2010 at 5:29 PM, Gordan Bobic <gordan@bobich.net> wrote:
+> On 11/24/2010 10:07 PM, David Nicol wrote:
+>>
+>> I've been thinking about this for a while, from a perspective of how
+>> to make it work by allocating i-node numbers from a global pool, but
+>> yesterday I realized that offering the feature would be a bad idea
+>> because it violates the semantics of file systems.
+>>
+>> I will be happy to expand on that point if anyone disagrees with it.
 >
-> I will be happy to expand on that point if anyone disagrees with it.
+> One thing I would like to see is copy-on-write hard-links. The hard-links
+> that span snapshots should be possible, but they should be copy-on-write,
+> i.e. as soon as hard-linked file that spans snapshots is written, the
+> snapshot that wrote it should have it's own forked copy henceforth.
 
-One thing I would like to see is copy-on-write hard-links. The 
-hard-links that span snapshots should be possible, but they should be 
-copy-on-write, i.e. as soon as hard-linked file that spans snapshots is 
-written, the snapshot that wrote it should have it's own forked copy 
-henceforth.
-
-This would be immensely useful for things like virtualization and memory 
-saving. Not only would it save memory in the caches, but if multiple 
-instances of the same OS are used in LXC containers cloned using 
-snapshots, then two DLLs with the same inode number would mmap into the 
-same memory segment. That means that no matter how many VMs you run, if 
-they have the same DLLs, the memory requirement for all those would be 
-the same as if there was only one VM running.
-
-Linux Vserver does exactly this (it patches several of the FS drivers to 
-add this feature. This is pretty much the only reason why I use it 
-instead of the already merged LXC.
-
-Gordan
+There are sym-links, hard-links, and ref-links.  Cross device symlinks
+are trivial.  Cross device hardlinks are evil.  Cross device ref-links
+are just plain smart (and are at least partitially implemented in
+btrfs;  does bcp work across subvolumes?).  :)

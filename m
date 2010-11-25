@@ -1,39 +1,53 @@
-From: =?ISO-8859-1?Q?P=E1draig_Brady?= <P@draigBrady.com>
-Subject: Re: VFS support for fast copy on deduplicating FSes
-Date: Thu, 25 Nov 2010 10:50:31 +0000
-Message-ID: <4CEE3F77.4020206@draigBrady.com>
-References: <AANLkTinz17SePZCCixBCA_WoW3rFWAsB7mRghL9uN17h@mail.gmail.com> <20101125103258.GA16562@mother.pipebreaker.pl>
+From: Wenyi Liu <qingshenlwy@gmail.com>
+Subject: Re: [RFC PATCH 0/4] Add readonly support to replace BUG_ON phrase
+Date: Thu, 25 Nov 2010 18:57:05 +0800
+Message-ID: <AANLkTindPNpp3qWjiBu7qG=YR3oM93SV17RUfeOFwDXC@mail.gmail.com>
+References: <4CEE31EF.1020102@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-	BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Liu Bo <liubo2009@cn.fujitsu.com>
+To: miaox@cn.fujitsu.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101125103258.GA16562@mother.pipebreaker.pl>
+In-Reply-To: <4CEE31EF.1020102@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 25/11/10 10:32, Tomasz Torcz wrote:
-> On Thu, Nov 25, 2010 at 04:19:17AM -0600, David Nicol wrote:
->> unresearched question/suggestion:
->>
->> Is there general support for a "fast copy" ioctl in the VFS layer,
->> which would be hooked by file systems that support COW or other form=
-s
->> of deduplication and can provide copy semantics by manipulating
->> metadata only?
->>
->=20
->   Yes, see reflink(2) syscall (http://lwn.net/Articles/331576/).
->=20
-
-Yep and this: http://lwn.net/Articles/335380/
-Note that cp --reflink has been supported for a while,
-but it's BTRFS specific at the moment.
-We'll need to change to the more generic interface.
-
-cheers,
-P=E1draig.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+2010/11/25, Miao Xie <miaox@cn.fujitsu.com>:
+> Btrfs has a number of BUG_ON()s, which may lead btrfs to unpleasant panic.
+> Meanwhile, they are very ugly and should be handled more propriately.
+>
+> There are mainly two ways to deal with these BUG_ON()s.
+Yes, I agree.
+>
+> 1. For those errors which can be handled well by callers, we just return
+> their
+> error number to callers.
+It's a good idea.
+>
+> 2. For others, We can force the filesystem readonly when it hits errors,
+> which
+>  is what this patchset has done. Replaced BUG_ON() with the interface
+> provided
+>  in this patchset, we will get error infomation via dmesg. Since btrfs is
+> now
+> readonly, we can save our data safely and umount it, then a btrfsck is
+> recommended.
+>
+> By these ways, we can protect our filesystem from panic caused by those
+> BUG_ONs.
+>
+> ---
+>  fs/btrfs/ctree.h       |   21 ++++++++++
+>  fs/btrfs/disk-io.c     |   23 +++++++++++
+>  fs/btrfs/super.c       |  100
+> ++++++++++++++++++++++++++++++++++++++++++++++-
+>  fs/btrfs/transaction.c |    7 +++
+>  4 files changed, 148 insertions(+), 3 deletions(-)
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

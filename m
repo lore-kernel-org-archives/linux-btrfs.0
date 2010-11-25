@@ -1,28 +1,45 @@
-From: Tomasz Torcz <tomek@pipebreaker.pl>
+From: Gordan Bobic <gordan@bobich.net>
 Subject: Re: VFS support for fast copy on deduplicating FSes
-Date: Thu, 25 Nov 2010 11:32:59 +0100
-Message-ID: <20101125103258.GA16562@mother.pipebreaker.pl>
+Date: Thu, 25 Nov 2010 10:36:11 +0000
+Message-ID: <4CEE3C1B.9030009@bobich.net>
 References: <AANLkTinz17SePZCCixBCA_WoW3rFWAsB7mRghL9uN17h@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
 	BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
+To: David Nicol <davidnicol@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <AANLkTinz17SePZCCixBCA_WoW3rFWAsB7mRghL9uN17h@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 25, 2010 at 04:19:17AM -0600, David Nicol wrote:
+David Nicol wrote:
 > unresearched question/suggestion:
 > 
 > Is there general support for a "fast copy" ioctl in the VFS layer,
 > which would be hooked by file systems that support COW or other forms
 > of deduplication and can provide copy semantics by manipulating
 > metadata only?
-> 
 
-  Yes, see reflink(2) syscall (http://lwn.net/Articles/331576/).
+What would be nice to have is something that provides functionality like 
+this:
+http://www.xmailserver.org/flcow.html
 
--- 
-Tomasz Torcz                "Funeral in the morning, IDE hacking
-xmpp: zdzichubg@chrome.pl    in the afternoon and evening." - Alan Cox
+My use case is to do with chroot-type virtualization, to save DLL memory 
+and disk space, but the author's use case is clearly different.
 
+Vserver does something similar transparently within the combined 
+guest-spaces (i.e. once you hashify the files, you no longer have 10 
+instances of the identical glibc for 10 guests, and they are no longer 
+using 10x the RAM and disk space), and when the file is touched for 
+writing it COWs a new copy.
+
+It would be nice to have something like this exist on FS level without 
+need for patching by the likes of vserver, by simply applying a flag to 
+files we want to be COW-ed (chattr?).
+
+Having this work across snapshots is potentially a bit dubious. I can 
+see why it might be a bad idea, so perhaps a better way might be to have 
+something that works semantically and syntactically similar to snapshots 
+for duplicating directory subtrees into COW copies?
+
+Gordan

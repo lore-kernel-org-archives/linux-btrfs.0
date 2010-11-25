@@ -1,45 +1,39 @@
-From: Gordan Bobic <gordan@bobich.net>
+From: =?ISO-8859-1?Q?P=E1draig_Brady?= <P@draigBrady.com>
 Subject: Re: VFS support for fast copy on deduplicating FSes
-Date: Thu, 25 Nov 2010 10:36:11 +0000
-Message-ID: <4CEE3C1B.9030009@bobich.net>
-References: <AANLkTinz17SePZCCixBCA_WoW3rFWAsB7mRghL9uN17h@mail.gmail.com>
+Date: Thu, 25 Nov 2010 10:50:31 +0000
+Message-ID: <4CEE3F77.4020206@draigBrady.com>
+References: <AANLkTinz17SePZCCixBCA_WoW3rFWAsB7mRghL9uN17h@mail.gmail.com> <20101125103258.GA16562@mother.pipebreaker.pl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+Content-Type: text/plain; charset=ISO-8859-1
+To: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
 	BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
-To: David Nicol <davidnicol@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTinz17SePZCCixBCA_WoW3rFWAsB7mRghL9uN17h@mail.gmail.com>
+In-Reply-To: <20101125103258.GA16562@mother.pipebreaker.pl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-David Nicol wrote:
-> unresearched question/suggestion:
-> 
-> Is there general support for a "fast copy" ioctl in the VFS layer,
-> which would be hooked by file systems that support COW or other forms
-> of deduplication and can provide copy semantics by manipulating
-> metadata only?
+On 25/11/10 10:32, Tomasz Torcz wrote:
+> On Thu, Nov 25, 2010 at 04:19:17AM -0600, David Nicol wrote:
+>> unresearched question/suggestion:
+>>
+>> Is there general support for a "fast copy" ioctl in the VFS layer,
+>> which would be hooked by file systems that support COW or other form=
+s
+>> of deduplication and can provide copy semantics by manipulating
+>> metadata only?
+>>
+>=20
+>   Yes, see reflink(2) syscall (http://lwn.net/Articles/331576/).
+>=20
 
-What would be nice to have is something that provides functionality like 
-this:
-http://www.xmailserver.org/flcow.html
+Yep and this: http://lwn.net/Articles/335380/
+Note that cp --reflink has been supported for a while,
+but it's BTRFS specific at the moment.
+We'll need to change to the more generic interface.
 
-My use case is to do with chroot-type virtualization, to save DLL memory 
-and disk space, but the author's use case is clearly different.
-
-Vserver does something similar transparently within the combined 
-guest-spaces (i.e. once you hashify the files, you no longer have 10 
-instances of the identical glibc for 10 guests, and they are no longer 
-using 10x the RAM and disk space), and when the file is touched for 
-writing it COWs a new copy.
-
-It would be nice to have something like this exist on FS level without 
-need for patching by the likes of vserver, by simply applying a flag to 
-files we want to be COW-ed (chattr?).
-
-Having this work across snapshots is potentially a bit dubious. I can 
-see why it might be a bad idea, so perhaps a better way might be to have 
-something that works semantically and syntactically similar to snapshots 
-for duplicating directory subtrees into COW copies?
-
-Gordan
+cheers,
+P=E1draig.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

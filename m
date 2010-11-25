@@ -1,52 +1,57 @@
-From: cwillu <cwillu@cwillu.com>
-Subject: Re: hard links across snapshots/subvolumes are actually a bad idea.
-Date: Wed, 24 Nov 2010 18:31:06 -0600
-Message-ID: <AANLkTikW65-Bozsog1exV2G=96DcGR0thSok1NJP4pN9@mail.gmail.com>
-References: <AANLkTinMrCMQhnmrG6P_Xro+dFob=-gsatPTR2oiRXqr@mail.gmail.com>
-	<4CED9FCC.9080804@bobich.net>
-	<AANLkTik7u_eexi++vDCsRh0oa74Q4F1Jjzt_mNn+=MZC@mail.gmail.com>
-	<4CEDAB6D.6090409@bobich.net>
+From: Nick Piggin <npiggin@kernel.dk>
+Subject: Re: [patch] fs: fix deadlocks in writeback_if_idle
+Date: Thu, 25 Nov 2010 14:52:45 +1100
+Message-ID: <20101125035245.GB3359@amd>
+References: <20101123100239.GA4232@amd>
+ <20101123101149.GB4232@amd>
+ <20101123131857.GG6113@quack.suse.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
-To: Gordan Bobic <gordan@bobich.net>
+Content-Type: text/plain; charset=us-ascii
+Cc: Nick Piggin <npiggin@kernel.dk>, linux-fsdevel@vger.kernel.org,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Al Viro <viro@ZenIV.linux.org.uk>, linux-ext4@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, Eric Sandeen <sandeen@redhat.com>,
+	Theodore Ts'o <tytso@mit.edu>
+To: Jan Kara <jack@suse.cz>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4CEDAB6D.6090409@bobich.net>
+In-Reply-To: <20101123131857.GG6113@quack.suse.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
->>> One thing I would like to see is copy-on-write hard-links. The hard=
--links
->>> that span snapshots should be possible, but they should be copy-on-=
-write,
->>> i.e. as soon as hard-linked file that spans snapshots is written, t=
-he
->>> snapshot that wrote it should have it's own forked copy henceforth.
->>
->> There are sym-links, hard-links, and ref-links. =A0Cross device syml=
-inks
->> are trivial. =A0Cross device hardlinks are evil. =A0Cross device ref=
--links
->> are just plain smart (and are at least partitially implemented in
->> btrfs; =A0does bcp work across subvolumes?). =A0:)
->
-> Last time I asked a similar question, there was no equivalent thing t=
-o COW
-> hard-links, across snapshots or otherwise. Hard-links spanning physic=
-al
-> devices don't make sense. Hard-links spanning snapshots, however, do.=
- In
-> fact, I would intuitively expect that a snapshot contains only COW
-> hard-links which would get COW-ed from both the head and the snapshot=
-=2E
+On Tue, Nov 23, 2010 at 02:18:57PM +0100, Jan Kara wrote:
+> On Tue 23-11-10 21:11:49, Nick Piggin wrote:
+> > The issue of writeback_inodes_sb being synchronous so far as it has to
+> > wait until the work has been dequeued is another subtlety. That is a
+> > funny interface though, really. It has 3 callers, sync, quota, and
+> > ubifs. From a quick look, quota and ubifs seem to think it is some kind
+> > of synchronous writeout API.
+>   Yes, they expect it and it used to be the case before per-bdi flusher
+> threads existed (because the function submitted IO on its own). Then it
+> was changed to an async interface in per-bdi flusher thread patches and
+> then back again to a synchronous one... Sad history...
+> 
+> > It also really sucks that it can get deadlocked behind an unrelated item
+> > in a workqueue. I think it should just get converted over to the
+> > async-submission style as well.
+>   Here I don't quite agree. After my patches (currently in -mm tree) all
+> work items have reasonably well defined lifetime so no livelocks should
+> occur.
 
-"COW hardlinks" are ref-links (as far as I'm concerned).  I said
-partially implemented, because that's exactly what a snapshot is.  I'm
-just not certain whether bcp works across subvolumes or not.  An
-actual hardlink (i.e., all writes appear in all hardlinks) across any
-file-system-like-structure (including subvolumes and snapshots) is
-insane, for the reasons that I'm sure David offered to explain.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+It was actually a deadlock, and it was due to workqueue item for
+writeback submission being held up behind item for completion, where
+former is holding i_mutex and latter trying to acquire.
+
+I haven't studied the patches in -mm, do they solve this problem?
+
+> After all writeback thread is doing its best to do as much IO as
+> possible (and hopefully saturates the storage) so given all the IO work
+> items we cannot do much better. Where I see a room for improvement is
+> that work items usually try to achieve a common goal - for example when we
+> get two items "write all dirty pages", we have mostly fulfilled the second
+> one after finishing the first one but we start from the beginning when
+> processing the second request. But it seems non-trivial to do this request
+> merging especially for different types of requests...
+
+Well the request is still going via normal writeback submission. The
+difference in my patch is that we just dynamically allocate it and don't
+pass a pointer to sb, so we don't have to wait.
+

@@ -1,64 +1,41 @@
-From: David Nicol <davidnicol@gmail.com>
-Subject: Re: hard links across snapshots/subvolumes are actually a bad idea.
-Date: Thu, 25 Nov 2010 03:36:10 -0600
-Message-ID: <AANLkTi=sH_m_DMxQnnRu1THP5iaKz7Z-H=8w9fNyFJht@mail.gmail.com>
-References: <AANLkTinMrCMQhnmrG6P_Xro+dFob=-gsatPTR2oiRXqr@mail.gmail.com>
- <4CED9FCC.9080804@bobich.net> <AANLkTik7u_eexi++vDCsRh0oa74Q4F1Jjzt_mNn+=MZC@mail.gmail.com>
- <4CEDAB6D.6090409@bobich.net> <AANLkTikW65-Bozsog1exV2G=96DcGR0thSok1NJP4pN9@mail.gmail.com>
- <4CEE178F.6090902@bobich.net>
+From: Boaz Harrosh <bharrosh@panasas.com>
+Subject: Re: [patch] fs: fix deadlocks in writeback_if_idle
+Date: Thu, 25 Nov 2010 11:41:50 +0200
+Message-ID: <4CEE2F5E.4070608@panasas.com>
+References: <20101123100239.GA4232@amd>	<1290515274-sup-3895@think> <20101124144740.bffb2716.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
-To: unlisted-recipients:; (no To-header on input)
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4CEE178F.6090902@bobich.net>
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Nick Piggin <npiggin@kernel.dk>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+	Al Viro <viro@zeniv.linux.org.uk>,
+	linux-ext4 <linux-ext4@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Jan Kara <jack@suse.cz>, Eric Sandeen <sandeen@redhat.com>,
+	Theodore Ts'o <tytso@mit.edu>
+To: Andrew Morton <akpm@linux-foundation.org>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <20101124144740.bffb2716.akpm@linux-foundation.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> "COW hardlinks" are ref-links (as far as I'm concerned). =C2=A0I sai=
-d
->> partially implemented, because that's exactly what a snapshot is. =C2=
-=A0I'm
->> just not certain whether bcp works across subvolumes or not. =C2=A0A=
-n
->> actual hardlink (i.e., all writes appear in all hardlinks) across an=
-y
->> file-system-like-structure (including subvolumes and snapshots) is
->> insane, for the reasons that I'm sure David offered to explain.
+On 11/25/2010 12:47 AM, Andrew Morton wrote:
+> On Tue, 23 Nov 2010 07:34:07 -0500
+> Chris Mason <chris.mason@oracle.com> wrote:
+> 
+>> For btrfs there's only one bdi per SB, but for most everyone else a disk
+>> with a bunch of partitions is going to have multiple filesystems on the
+>> same bdi.
+> 
+> um, please explain why that wasn't idiotic?  The BDI is a
+> representation of a backing device and it's *supposed* to provide
+> visibility into what's happening against other partitions on the same
+> device.  Creating a BDI per SB (it didn't even occur to me to think
+> that a filesystem was even able to do this) breaks that.
+> 
 
-Yes. Which side owns the definitive copy? The file system boundary
-should stay respected; a symlink will work fine to clearly indicate
-where the file is and is not. Applications needing hardlinks can use
-mirrored directories. I had gotten the idea that the facility to
-create them had been removed due to engineering rather than semantic
-causes. Regardless of the history, it makes sense going forward to
-respond to the question the next time it comes up with a semantic
-answer rather than "we used to have them, but we took them out because
-they cause instability due to i-node collisions." Such a semantic
-answer would look like "Hard links across file-system-like structures
-violate the separation of the volumes: if you really need that, use a
-directory instead of a subvolume. (suggest metadata-only copy tool.)
-Also, the inode numbers in a snapshot are the same as the inode
-numbers in the volume snapshotted, which is a good thing, and they
-stay the same even after the files diverge in content."  of course,
-edited for precise accuracy.
+In btrfs an SB my span multiple partitions. How else can it be solved?
 
+(I know... You didn't like that from the begging ;-))
 
-> My understanding is that inode numbers on the "same" files are differ=
-ent
-> between snapshots. If that is the case then it is not good enough for=
- the
-> use-case I was talking bout. Hard-links share inode numbers. Do ref-l=
-inks?
-
-the idea of a btrfs-specific "copy" that simply copies the metadata,
-reusing the data blocks -- that's cool -- I'm guessing that's what
-"bcp" is, and semantics-wise it should be identical to a
-read-and-write-everything copy, and faster than the equivalent on a
-deduplicating FS because the reading can get skipped too as well as
-the writing. I will look up what "bcp" is and does before the next
-time I write to this list.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Boaz
+> 

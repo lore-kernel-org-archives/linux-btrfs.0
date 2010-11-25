@@ -1,41 +1,38 @@
-From: Boaz Harrosh <bharrosh@panasas.com>
-Subject: Re: [patch] fs: fix deadlocks in writeback_if_idle
-Date: Thu, 25 Nov 2010 11:41:50 +0200
-Message-ID: <4CEE2F5E.4070608@panasas.com>
-References: <20101123100239.GA4232@amd>	<1290515274-sup-3895@think> <20101124144740.bffb2716.akpm@linux-foundation.org>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: [RFC PATCH 0/4] Add readonly support to replace BUG_ON phrase
+Date: Thu, 25 Nov 2010 17:52:47 +0800
+Message-ID: <4CEE31EF.1020102@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Nick Piggin <npiggin@kernel.dk>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	Al Viro <viro@zeniv.linux.org.uk>,
-	linux-ext4 <linux-ext4@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Jan Kara <jack@suse.cz>, Eric Sandeen <sandeen@redhat.com>,
-	Theodore Ts'o <tytso@mit.edu>
-To: Andrew Morton <akpm@linux-foundation.org>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <20101124144740.bffb2716.akpm@linux-foundation.org>
+Content-Type: text/plain; charset=GB2312
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Liu Bo <liubo2009@cn.fujitsu.com>
+To: Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/25/2010 12:47 AM, Andrew Morton wrote:
-> On Tue, 23 Nov 2010 07:34:07 -0500
-> Chris Mason <chris.mason@oracle.com> wrote:
-> 
->> For btrfs there's only one bdi per SB, but for most everyone else a disk
->> with a bunch of partitions is going to have multiple filesystems on the
->> same bdi.
-> 
-> um, please explain why that wasn't idiotic?  The BDI is a
-> representation of a backing device and it's *supposed* to provide
-> visibility into what's happening against other partitions on the same
-> device.  Creating a BDI per SB (it didn't even occur to me to think
-> that a filesystem was even able to do this) breaks that.
-> 
+Btrfs has a number of BUG_ON()s, which may lead btrfs to unpleasant panic.
+Meanwhile, they are very ugly and should be handled more propriately.
 
-In btrfs an SB my span multiple partitions. How else can it be solved?
+There are mainly two ways to deal with these BUG_ON()s.
 
-(I know... You didn't like that from the begging ;-))
+1. For those errors which can be handled well by callers, we just return their
+error number to callers.
 
-Boaz
-> 
+2. For others, We can force the filesystem readonly when it hits errors, which
+ is what this patchset has done. Replaced BUG_ON() with the interface provided
+ in this patchset, we will get error infomation via dmesg. Since btrfs is now 
+readonly, we can save our data safely and umount it, then a btrfsck is 
+recommended.
+
+By these ways, we can protect our filesystem from panic caused by those 
+BUG_ONs.
+
+---
+ fs/btrfs/ctree.h       |   21 ++++++++++
+ fs/btrfs/disk-io.c     |   23 +++++++++++
+ fs/btrfs/super.c       |  100 ++++++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/transaction.c |    7 +++
+ 4 files changed, 148 insertions(+), 3 deletions(-)
+

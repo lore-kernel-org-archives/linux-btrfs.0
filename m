@@ -1,137 +1,99 @@
-From: Calvin Walton <calvin.walton@gmail.com>
-Subject: [RFC-PATCH] Re: mounting arbitrary directories
-Date: Sat, 27 Nov 2010 23:22:13 -0500
-Message-ID: <1290918133.14274.20.camel@nayuki>
+From: C Anthony Risinger <anthony@extof.me>
+Subject: Re: [RFC-PATCH] Re: mounting arbitrary directories
+Date: Sun, 28 Nov 2010 03:41:40 -0600
+Message-ID: <AANLkTinMbZuE64QgZFxWHm69zyixwZEiuMVuF9tztHJ9@mail.gmail.com>
 References: <AANLkTi=7LY6y3BvGgkyYBTLwu=SYJjZZhL8kHusCn_vs@mail.gmail.com>
+	<1290918133.14274.20.camel@nayuki>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: C Anthony Risinger <anthony@extof.me>
+To: Calvin Walton <calvin.walton@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=7LY6y3BvGgkyYBTLwu=SYJjZZhL8kHusCn_vs@mail.gmail.com>
+In-Reply-To: <1290918133.14274.20.camel@nayuki>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, 2010-11-27 at 21:19 -0600, C Anthony Risinger wrote:
-> i have read just recently and in the past that btrfs supports COW for
-> _any_ file/directory (this is reflinks, yes?), and today i
-> accidentally noticed that i can mount a directory as well (if it's in
-> the top level volume at least).
-> 
-> eg. if i have a "regular" directory (not a subvolume) in the top-level:
-> 
-> /__boot
-> 
-> i can mount it with:
-> 
-> mount -o subvol=__boot /dev/sda /mnt
+On Sat, Nov 27, 2010 at 10:22 PM, Calvin Walton <calvin.walton@gmail.co=
+m> wrote:
+> On Sat, 2010-11-27 at 21:19 -0600, C Anthony Risinger wrote:
+>> i have read just recently and in the past that btrfs supports COW fo=
+r
+>> _any_ file/directory (this is reflinks, yes?), and today i
+>> accidentally noticed that i can mount a directory as well (if it's i=
+n
+>> the top level volume at least).
+>>
+>> eg. if i have a "regular" directory (not a subvolume) in the top-lev=
+el:
+>>
+>> /__boot
+>>
+>> i can mount it with:
+>>
+>> mount -o subvol=3D__boot /dev/sda /mnt
+>
+> The 'subvol' option actually works using the same mechanism as a bind
+> mount. The fact that it works using a directory is purely a coinciden=
+ce
+> - I would not expect it to be officially supported, and you shouldn't
+> rely on it.
 
-The 'subvol' option actually works using the same mechanism as a bind
-mount. The fact that it works using a directory is purely a coincidence
-- I would not expect it to be officially supported, and you shouldn't
-rely on it.
+ok, good to know.
 
-> i am working on an update to my initramfs hook that will utilize
-> extlinux, and this property to provide seamless kernel level system
-> rollbacks, and i want to make sure it's safe to do this.
+>> i am working on an update to my initramfs hook that will utilize
+>> extlinux, and this property to provide seamless kernel level system
+>> rollbacks, and i want to make sure it's safe to do this.
+>
+> To handle system rollbacks, you really should be using subvolumes and
+> snapshots, not regular directories.
 
-To handle system rollbacks, you really should be using subvolumes and
-snapshots, not regular directories.
+i do use snapshots, but the kernels cannot be read from them by
+extlinux.  i must manually sync to either the top level btrfs root or
+separate boot partition(s); this is required to handle kernel
+upgrades... else you end up running a kernel against modules/etc.
+built against an older/newer version.  the only other way i could
+think of was to use a permanent intermediary kernel with the sole
+purpose of mounting the btrfs device, and kexec'ing the correct kernel
+within a snapshot.
 
-> also, is there a way to target an arbitrary directory?  does "subvol"
-> support paths yet, or maybe via "subvolid" somehow?  essentially i
+>> also, is there a way to target an arbitrary directory? =A0does "subv=
+ol"
+>> support paths yet, or maybe via "subvolid" somehow? =A0essentially i
+>
+> I don't think that it would be very hard to make subvol=3D support a =
+path
+> instead of only one level deep. Actually, I think I could make a patc=
+h
+> for that myself... I've included it here. Mildly tested, but I'm not
+> really a kernel programmer and might have missed something -
+> particularly with regards to the locking.
 
-I don't think that it would be very hard to make subvol= support a path
-instead of only one level deep. Actually, I think I could make a patch
-for that myself... I've included it here. Mildly tested, but I'm not
-really a kernel programmer and might have missed something -
-particularly with regards to the locking.
+nice, something like this is a good addition!  if it's really that
+simple it should definitely be included.
 
-> just want to mount a directory inside a snapshot at /boot, so when
-> users upgrade there kernels, the images are visible to extlinux (which
-> cannot yet peek inside or use subvolumes, so it has to be a regular
-> directory in the top-level volume)
+>> just want to mount a directory inside a snapshot at /boot, so when
+>> users upgrade there kernels, the images are visible to extlinux (whi=
+ch
+>> cannot yet peek inside or use subvolumes, so it has to be a regular
+>> directory in the top-level volume)
+>
+> Ah, this is the first I've heard that extlinux doesn't support readin=
+g
+> files in subvolumes. That's an unfortunate limitation :/
 
-Ah, this is the first I've heard that extlinux doesn't support reading
-files in subvolumes. That's an unfortunate limitation :/
+well i actually thought it was working... but i ended up wasting
+several hours only to learn that extlinux could "kind of" see them.
+basically, usually the first snapshot appeared correct, but it was
+really a recursive link back on itself.  sometimes snapshots would be
+missing pieces -- seems to be related to COW; i think extlinux could
+only see the chunks in snapshots that were still shared with the
+top-level volume... but that's a observational guess.
 
-------------------------8<----------8<---------------------
+needless to say, it really tripped me up for awhile until i remembered
+the "rosh.c32" module and manually peeked around a bit :-)
 
-From: Calvin Walton <calvin.walton@gmail.com>
-Date: Sat, 27 Nov 2010 23:17:55 -0500
-Subject: [PATCH] Btrfs: Allow mounting sub-sub(-sub...)-volumes using subvol=a/b/c
-
-Currently you can only mount subvolumes which are direct children of the
-'default' root. I.e. with
-
-	ID 258 top level 5 path a
-	ID 259 top level 5 path a/b
-
-you could mount with "-o subvol=a" but not "-o subvol=a/b"
-
-This patch fixes that by recursively following the path to the subvolume.
-
-Signed-off-by: Calvin Walton <calvin.walton@gmail.com>
----
- fs/btrfs/super.c |   41 +++++++++++++++++++++++------------------
- 1 files changed, 23 insertions(+), 18 deletions(-)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 8299a25..5e78c86 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -646,26 +646,31 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- 	/* if they gave us a subvolume name bind mount into that */
- 	if (strcmp(subvol_name, ".")) {
- 		struct dentry *new_root;
--		mutex_lock(&root->d_inode->i_mutex);
--		new_root = lookup_one_len(subvol_name, root,
--				      strlen(subvol_name));
--		mutex_unlock(&root->d_inode->i_mutex);
--
--		if (IS_ERR(new_root)) {
--			deactivate_locked_super(s);
--			error = PTR_ERR(new_root);
--			dput(root);
--			goto error_free_subvol_name;
--		}
--		if (!new_root->d_inode) {
-+		char *subvol_name_next = subvol_name;
-+		char *subvol_name_part;
-+
-+		while ((subvol_name_part = strsep(&subvol_name_next, "/"))) {
-+			mutex_lock(&root->d_inode->i_mutex);
-+			new_root = lookup_one_len(subvol_name, root,
-+						strlen(subvol_name));
-+			mutex_unlock(&root->d_inode->i_mutex);
-+
-+			if (IS_ERR(new_root)) {
-+				deactivate_locked_super(s);
-+				error = PTR_ERR(new_root);
-+				dput(root);
-+				goto error_free_subvol_name;
-+			}
-+			if (!new_root->d_inode) {
-+				dput(root);
-+				dput(new_root);
-+				deactivate_locked_super(s);
-+				error = -ENXIO;
-+				goto error_free_subvol_name;
-+			}
- 			dput(root);
--			dput(new_root);
--			deactivate_locked_super(s);
--			error = -ENXIO;
--			goto error_free_subvol_name;
-+			root = new_root;
- 		}
--		dput(root);
--		root = new_root;
- 	}
- 
- 	kfree(subvol_name);
--- 
-1.7.3.2
-
--- 
-Calvin Walton <calvin.walton@gmail.com>
-
+C Anthony
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,78 +1,43 @@
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: [next-rc] Compile Error fs/btrfs/diskio.c
-Date: Sat, 27 Nov 2010 16:53:23 -0600
-Message-ID: <AANLkTi=GVdSTacEVPRqQJu0Fktm8H4aDYfF5wuDDnrH4@mail.gmail.com>
+From: C Anthony Risinger <anthony@extof.me>
+Subject: mounting arbitrary directories
+Date: Sat, 27 Nov 2010 21:19:17 -0600
+Message-ID: <AANLkTi=7LY6y3BvGgkyYBTLwu=SYJjZZhL8kHusCn_vs@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=windows-1252
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've been getting a compile error when building the 'next-rc' branch
-of btrfs-unstable.
+i have read just recently and in the past that btrfs supports COW for
+_any_ file/directory (this is reflinks, yes?), and today i
+accidentally noticed that i can mount a directory as well (if it's in
+the top level volume at least).
 
-  CC      fs/btrfs/disk-io.o
-fs/btrfs/disk-io.c: In function =91btree_migratepage=92:
-fs/btrfs/disk-io.c:716: error: called object =910u=92 is not a function
-make[2]: *** [fs/btrfs/disk-io.o] Error 1
-make[1]: *** [fs/btrfs] Error 2
-make: *** [fs] Error 2
+eg. if i have a "regular" directory (not a subvolume) in the top-level:
 
-Line 716 of fs/btrfs/disk-io.c is:
+/__boot
 
-        return migrate_page(mapping, newpage, page);
+i can mount it with:
 
-This is related to the "Btrfs: add migrate page for metadata inode"
-patch (the first patch in the set of patches added to the next-rc
-branch).
+mount -o subvol=__boot /dev/sda /mnt
 
-When I configure my kernel with CONFIG_MEMORY_HOTPLUG=3Dn, this
-automatically unconfigures CONFIG_MIGRATION.
+is this supposed to be supported via the "subvol" mount option?
+though it sounds like i've answered my own question, i ask because
+playing around with this caused my kernel to oops for the first time
+in a long, long time (on .35 but just about to upgrade to .36 in about
+10 min).
 
-In include/linux/migrate.h, when CONFIG_MIGRATION is not set,
-migrate_page is defined as NULL:
+i am working on an update to my initramfs hook that will utilize
+extlinux, and this property to provide seamless kernel level system
+rollbacks, and i want to make sure it's safe to do this.
 
-/* Possible settings for the migrate_page() method in address_operation=
-s */
-#define migrate_page NULL
+also, is there a way to target an arbitrary directory?  does "subvol"
+support paths yet, or maybe via "subvolid" somehow?  essentially i
+just want to mount a directory inside a snapshot at /boot, so when
+users upgrade there kernels, the images are visible to extlinux (which
+cannot yet peek inside or use subvolumes, so it has to be a regular
+directory in the top-level volume)
 
-So in this case, migrate_page is defined as NULL instead of as a
-function (hence, the "called object is not a function" error).
+any insight is much appreciated.
 
-I've confirmed that setting CONFIG_MEMORY_HOTPLUG=3Dy and
-CONFIG_MIGRATION=3Dy is a workaround to clear the error.
-
-As a possible fix, I've wrapped a "#ifdef CONFIG_MIGRATION" statement
-around part of the patch, and it seems to be working OK for me.  Let
-me know if you want this patch submitted as a git patch, although it
-might make more sense to fix the original patch since it's still early
-in 'next-rc' review period.
-
-$ diff -Nau fs/btrfs/disk-io.c /usr/src/linux/fs/btrfs/disk-io.c
---- fs/btrfs/disk-io.c	2010-11-27 15:59:22.896666675 -0600
-+++ /usr/src/linux/fs/btrfs/disk-io.c	2010-11-27 16:08:15.643333349 -06=
-00
-@@ -696,6 +696,7 @@
- 				   __btree_submit_bio_done);
- }
-
-+#ifdef CONFIG_MIGRATION
- static int btree_migratepage(struct address_space *mapping,
- 			struct page *newpage, struct page *page)
- {
-@@ -715,6 +716,9 @@
-
- 	return migrate_page(mapping, newpage, page);
- }
-+#else
-+#define btree_migratepage NULL
-+#endif
-
- static int btree_writepage(struct page *page, struct writeback_control=
- *wbc)
- {
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+C Anthony

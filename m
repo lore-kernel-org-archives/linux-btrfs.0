@@ -1,7 +1,7 @@
 From: Miao Xie <miaox@cn.fujitsu.com>
 Subject: Re: [PATCH -V2 3/3] btrfs: fix panic caused by direct IO
-Date: Mon, 29 Nov 2010 10:08:19 +0800
-Message-ID: <4CF30B13.9040301@cn.fujitsu.com>
+Date: Mon, 29 Nov 2010 11:58:57 +0800
+Message-ID: <4CF32501.2070100@cn.fujitsu.com>
 References: <4CE9DDCB.7060706@cn.fujitsu.com> <1290395921-sup-5232@think> <1290995089-sup-4112@think>
 Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
@@ -13,6 +13,8 @@ To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1290995089-sup-4112@think>
 List-ID: <linux-btrfs.vger.kernel.org>
+
+Hi, Chris
 
 On Sun, 28 Nov 2010 20:55:28 -0500, Chris Mason wrote:
 > Excerpts from Chris Mason's message of 2010-11-21 22:18:54 -0500:
@@ -48,7 +50,12 @@ On Sun, 28 Nov 2010 20:55:28 -0500, Chris Mason wrote:
 >
 > http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=commit;h=163cf09c2a0ee5cac6285f9347975bd1e97725da
 
-OK, I will do it soon.
+I have tested it, and It works well.
 
 Thanks
 Miao
+
+>
+> -chris
+>
+

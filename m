@@ -1,55 +1,52 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [RFC PATCH 0/4] Add readonly support to replace BUG_ON phrase
-Date: Mon, 29 Nov 2010 15:10:18 -0500
-Message-ID: <20101129201017.GB2618@localhost.localdomain>
-References: <4CEE31EF.1020102@cn.fujitsu.com>
+From: David Arendt <admin@prnet.org>
+Subject: Re: Default to read-only on snapshot creation and have a flag if
+ snapshot should be writable (was: [PATCH 0/5] btrfs: Readonly snapshots)
+Date: Mon, 29 Nov 2010 21:41:08 +0100
+Message-ID: <4CF40FE4.2030801@prnet.org>
+References: <AANLkTikbmUQA7JtkjV4177jmj9WDVe1V3NvbX3ts6TNd@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Liu Bo <liubo2009@cn.fujitsu.com>
-To: Miao Xie <miaox@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: linux-btrfs@vger.kernel.org
+To: Mike Fedyk <mfedyk@mikefedyk.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4CEE31EF.1020102@cn.fujitsu.com>
+In-Reply-To: <AANLkTikbmUQA7JtkjV4177jmj9WDVe1V3NvbX3ts6TNd@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 25, 2010 at 05:52:47PM +0800, Miao Xie wrote:
-> Btrfs has a number of BUG_ON()s, which may lead btrfs to unpleasant panic.
-> Meanwhile, they are very ugly and should be handled more propriately.
-> 
-> There are mainly two ways to deal with these BUG_ON()s.
-> 
-> 1. For those errors which can be handled well by callers, we just return their
-> error number to callers.
-> 
-> 2. For others, We can force the filesystem readonly when it hits errors, which
->  is what this patchset has done. Replaced BUG_ON() with the interface provided
->  in this patchset, we will get error infomation via dmesg. Since btrfs is now 
-> readonly, we can save our data safely and umount it, then a btrfsck is 
-> recommended.
-> 
-> By these ways, we can protect our filesystem from panic caused by those 
-> BUG_ONs.
-> 
-> ---
->  fs/btrfs/ctree.h       |   21 ++++++++++
->  fs/btrfs/disk-io.c     |   23 +++++++++++
->  fs/btrfs/super.c       |  100 ++++++++++++++++++++++++++++++++++++++++++++++-
->  fs/btrfs/transaction.c |    7 +++
->  4 files changed, 148 insertions(+), 3 deletions(-)
-> 
+On 11/29/10 21:02, Mike Fedyk wrote:
+> On Mon, Nov 29, 2010 at 12:02 AM, Li Zefan<lizf@cn.fujitsu.com>  wrote:
+>> (Cc: Sage Weil<sage@newdream.net>  for changes in async snapshots)
+>>
+>> This patchset adds readonly-snapshots support. You can create a
+>> readonly snapshot, and you can also set a snapshot readonly/writable
+>> on the fly.
+>>
+>> A few readonly checks are added in setattr, permission, remove_xattr
+>> and set_xattr callbacks, as well as in some ioctls.
+>>
+> Great work!
+>
+> I have a suggestion on defaults when snapshots are created.  I think
+> they should default to being read-only and if they are meant to be
+> read-write a flag can be set at creation time (and changable at a
+> later time as well of course).
+>
+> This way user/admin preconceptions of a snapshot being read-only can
+> be enforced by default, and the exception when you want a read-write
+> snapshot can be available with a switch at the cli level (and probably
+> a flag at the ioctl level).
+>
+> It gives one more natural distinction between a snapshot and a
+> subvolume at the user conceptual level.
+>
+> What do you think?
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Hi,
 
-Overall seems sane, but what about kernels that don't make these checks?  I'm ok
-with "well sucks for them" as an answer, just want to make sure we've at least
-though about it.
+I completely agree with you. I think lots of people use snapshots for 
+backup purposes and these ones shouldn't be writable.
 
-Also I'm not sure marking the fs as broken is the right move here.  Ext3/4 don't
-do this, they just mount read-only, as long as you can still unmount the
-filesystem everything comes out ok.  Think of the case where we just get a
-spurious EIO, the fs should be fine the next time around, there's reason to
-force the user to run fsck in this case.
-
-Thanks,
-
-Josef
+Bye,
+David Arendt

@@ -1,73 +1,86 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: Re: Errors during defragmentation
-Date: Mon, 29 Nov 2010 21:25:46 +0000
-Message-ID: <20101129212546.GA3733@carfax.org.uk>
-References: <4CF41500.8000804@podzimek.org>
+From: Andrey Kuzmin <andrey.v.kuzmin@gmail.com>
+Subject: Re: Default to read-only on snapshot creation and have a flag if
+ snapshot should be writable (was: [PATCH 0/5] btrfs: Readonly snapshots)
+Date: Tue, 30 Nov 2010 00:31:33 +0300
+Message-ID: <AANLkTi=VP4jStt41sYAD=6g8FwRfGrhqZB2pGcZjNbiN@mail.gmail.com>
+References: <AANLkTikbmUQA7JtkjV4177jmj9WDVe1V3NvbX3ts6TNd@mail.gmail.com>
+ <4CF40FE4.2030801@prnet.org> <AANLkTimfSTq4h0eq_hjY6aEdXgM7Gq382m1FMAXy-z=P@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="FL5UXtIhxfXey3p5"
-Cc: linux-btrfs@vger.kernel.org
-To: Andrej Podzimek <andrej@podzimek.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: David Arendt <admin@prnet.org>, linux-btrfs@vger.kernel.org
+To: Mike Fedyk <mfedyk@mikefedyk.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4CF41500.8000804@podzimek.org>
+In-Reply-To: <AANLkTimfSTq4h0eq_hjY6aEdXgM7Gq382m1FMAXy-z=P@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This may sound excessive as any new concept introduction that late in
+development, but readonly/writable snapshots could be further
+differentiated by naming the latter clones. This way end-user would
+naturally perceive snapsot as read-only PIT fs image, while clone
+would naturally refer to (writable) head fork.
 
---FL5UXtIhxfXey3p5
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Regards,
+Andrey
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
 
-On Mon, Nov 29, 2010 at 10:02:56PM +0100, Andrej Podzimek wrote:
-> Hello,
-> 
-> I decided to test the 'defragment' feature on my system (after a huge number of system updates and prelinking):
-> 
-> 	find /bin /sbin /lib /usr/lib /usr/bin /usr/sbin -type d -exec btrfs filesystem defragment '{}' '+'
-> 
-> I have already defragmented a couple of (very large) directories with no errors at all, so this was expected to work somehow. Surprisingly, this time there were thousands of messages like this:
-> 
-> 	ioctl failed on <directory name> ret -1 errno 28
 
-   errno 28 is ENOSPC
 
-   You've run out of disk space. (Or at least, btrfs thinks so).
-
-> Most of the reported directories had zero files/subdirectories. However, *most* of them were *not* empty...
-
-> What does this error message mean? Could someone shed more light on
-> this, please? Should I get ready for a bad crash? ;-) (There seems
-> to be no data loss so far. No new messages in dmesg, no unexpected
-> system behavior.)
-
-   Hugo.
-
-- -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-           --- I believe that it's closely correlated with ---           
-                       the aeroswine coefficient.                        
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFM9BoxIKyzvlFcI40RAv5SAJkB13ClPuTeRElrN1ARFhvDJ2C76gCghC/d
-zFczJesxQGbd2jC2ildNNI0=
-=i+tI
------END PGP SIGNATURE-----
-
---FL5UXtIhxfXey3p5
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD4DBQFM9BpaIKyzvlFcI40RArcoAJdvvhAAyAmGSbUjSUU7YnhNzft4AKDKkjyE
-XnwYNEMl6LoCjcON72mjFA==
-=qk1T
------END PGP SIGNATURE-----
-
---FL5UXtIhxfXey3p5--
+On Tue, Nov 30, 2010 at 12:08 AM, Mike Fedyk <mfedyk@mikefedyk.com> wro=
+te:
+> On Mon, Nov 29, 2010 at 12:41 PM, David Arendt <admin@prnet.org> wrot=
+e:
+>> On 11/29/10 21:02, Mike Fedyk wrote:
+>>>
+>>> On Mon, Nov 29, 2010 at 12:02 AM, Li Zefan<lizf@cn.fujitsu.com> =C2=
+=A0wrote:
+>>>>
+>>>> (Cc: Sage Weil<sage@newdream.net> =C2=A0for changes in async snaps=
+hots)
+>>>>
+>>>> This patchset adds readonly-snapshots support. You can create a
+>>>> readonly snapshot, and you can also set a snapshot readonly/writab=
+le
+>>>> on the fly.
+>>>>
+>>>> A few readonly checks are added in setattr, permission, remove_xat=
+tr
+>>>> and set_xattr callbacks, as well as in some ioctls.
+>>>>
+>>> Great work!
+>>>
+>>> I have a suggestion on defaults when snapshots are created. =C2=A0I=
+ think
+>>> they should default to being read-only and if they are meant to be
+>>> read-write a flag can be set at creation time (and changable at a
+>>> later time as well of course).
+>>>
+>>> This way user/admin preconceptions of a snapshot being read-only ca=
+n
+>>> be enforced by default, and the exception when you want a read-writ=
+e
+>>> snapshot can be available with a switch at the cli level (and proba=
+bly
+>>> a flag at the ioctl level).
+>>>
+>>> It gives one more natural distinction between a snapshot and a
+>>> subvolume at the user conceptual level.
+>>>
+>>> What do you think?
+>>>
+>> I completely agree with you. I think lots of people use snapshots fo=
+r backup
+>> purposes and these ones shouldn't be writable.
+>>
+> .... by default.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =C2=A0http://vger.kernel.org/majordomo-info.ht=
+ml
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

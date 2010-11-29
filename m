@@ -1,120 +1,82 @@
-From: C Anthony Risinger <anthony@extof.me>
-Subject: Re: [GIT PULL][PATCH v2 0/6] btrfs: Add lzo compression support
-Date: Mon, 29 Nov 2010 11:54:14 -0600
-Message-ID: <AANLkTin4VPOXBOU9fM5CVqSSnwMMrUCoDqoYu5mKWXLL@mail.gmail.com>
-References: <4CE48ABB.5070302@cn.fujitsu.com>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: Re: Root fs on raid1
+Date: Mon, 29 Nov 2010 19:02:44 +0100
+Message-ID: <201011291902.45064.kreijack@libero.it>
+References: <GM8zfnmgV9SK.SwXVG4nX@mail.prnet.org> <201011180759.36779.kreijack@libero.it> <AANLkTi=hSJkDBQz6pg=a9Wdm28NpJBgBB4snu1XEAQsZ@mail.gmail.com>
+Reply-To: kreijack@libero.it
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Mitch Harder <mitch.harder@sabayonlinux.org>,
-	linux-btrfs@vger.kernel.org
-To: Li Zefan <lizf@cn.fujitsu.com>
+Content-Type: Text/Plain;
+  charset="iso-8859-15"
+Cc: linux-btrfs@vger.kernel.org
+To: Erik Jensen <eriksjunk@rkjnsn.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4CE48ABB.5070302@cn.fujitsu.com>
+In-Reply-To: <AANLkTi=hSJkDBQz6pg=a9Wdm28NpJBgBB4snu1XEAQsZ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 17, 2010 at 8:08 PM, Li Zefan <lizf@cn.fujitsu.com> wrote:
-> Hi Chris,
+On Monday, 29 November, 2010, you (Erik Jensen) wrote:
+> I have a similar setup on one of my computers.  I set it up a while ago
+> using an initramfs, but I could not get the device scan to work properly,
+> for whatever reason.  I ended up having it just trying to mount every device
+> in the array in turn.  When it gets to the last device, the array mounts
+> since btrfs now knows about all of the other ones.  Really ugly, I know, but
+> it works.
 >
-> Here's the updated patchset. As I still haven't got a kernel.org
-> account, I have set up a git tree in another public git repository,
-> and I'll use it for now.
->
-> You can pull from:
->
-> =A0 =A0 =A0 =A0git://repo.or.cz/linux-btrfs-devel.git lzo-support
->
->
-> Lzo is a much faster compression algorithm than gzib, so would allow
-> more users to enable transparent compression, and some users can
-> choose from compression ratio and compression speed.
->
-> Usage:
->
-> # mount -t btrfs -o compress[=3D<zlib,lzo>] dev /mnt
-> or
-> # mount -t btrfs -o compress-force[=3D<zlib,lzo>] dev /mnt
->
-> "-o compress" without argument is still allowed for compatability.
->
-> Compatibility:
->
-> If we mount a filesystem with lzo compression, it will not be able be
-> mounted in old kernels. One reason is, otherwise btrfs will directly
-> dump compressed data, which sits in inline extent, to user.
->
-> Performance:
->
-> The test copied a linux source tarball (~400M) from an ext4 partition
-> to the btrfs partition, and then extracted the tarball.
->
-> (time in second)
-> =A0 =A0 =A0 =A0 =A0 lzo =A0 =A0 =A0 =A0zlib =A0 =A0 =A0 =A0nocompress
-> copy: =A0 =A0 =A010.6 =A0 =A0 =A0 21.7 =A0 =A0 =A0 =A014.9
-> extract: =A0 70.1 =A0 =A0 =A0 94.4 =A0 =A0 =A0 =A066.6
->
-> (data size in MB)
-> =A0 =A0 =A0 =A0 =A0 lzo =A0 =A0 =A0 =A0zlib =A0 =A0 =A0 =A0nocompress
-> copy: =A0 =A0 =A0185.87 =A0 =A0 108.69 =A0 =A0 =A0394.49
-> extract: =A0 193.80 =A0 =A0 132.36 =A0 =A0 =A0381.21
->
-> Test:
->
-> Mitch has tested the patchset, and provided some positive feedback.
-> According to him, the patchset works as expected and nothing bad
-> has he experienced.
->
-> Other:
->
-> The defrag ioctl is also updated, so one can choose lzo or zlib when
-> turning on compression in defrag operation.
->
-> Main change from v1:
->
-> - Add incompat flag.
-> - Fix build issue by selecting kernel lzo module.
-> - Check compression type in defrag ioctl.
->
-> ---------------->
-> Li Zefan (6):
-> =A0 =A0 =A0btrfs: Fix bugs in zlib workspace
-> =A0 =A0 =A0btrfs: Fix error handling in zlib
-> =A0 =A0 =A0btrfs: Allow to add new compression algorithm
-> =A0 =A0 =A0btrfs: Add lzo compression support
-> =A0 =A0 =A0btrfs: Allow to specify compress method when defrag
-> =A0 =A0 =A0btrfs: Extract duplicate decompress code
->
-> =A0fs/btrfs/Makefile =A0 =A0 =A0 | =A0 =A02 +-
-> =A0fs/btrfs/btrfs_inode.h =A0| =A0 =A02 +-
-> =A0fs/btrfs/compression.c =A0| =A0329 +++++++++++++++++++++++++++++++=
-++++++-
-> =A0fs/btrfs/compression.h =A0| =A0 72 ++++++--
-> =A0fs/btrfs/ctree.h =A0 =A0 =A0 =A0| =A0 11 +-
-> =A0fs/btrfs/extent_io.c =A0 =A0| =A0 =A05 +-
-> =A0fs/btrfs/extent_io.h =A0 =A0| =A0 17 ++-
-> =A0fs/btrfs/extent_map.c =A0 | =A0 =A02 +
-> =A0fs/btrfs/extent_map.h =A0 | =A0 =A03 +-
-> =A0fs/btrfs/file.c =A0 =A0 =A0 =A0 | =A0 =A02 +
-> =A0fs/btrfs/inode.c =A0 =A0 =A0 =A0| =A0 82 ++++++----
-> =A0fs/btrfs/ioctl.c =A0 =A0 =A0 =A0| =A0 10 +-
-> =A0fs/btrfs/ioctl.h =A0 =A0 =A0 =A0| =A0 =A09 +-
-> =A0fs/btrfs/lzo.c =A0 =A0 =A0 =A0 =A0| =A0409 +++++++++++++++++++++++=
-++++++++++++++++++++++++
-> =A0fs/btrfs/ordered-data.c | =A0 18 ++-
-> =A0fs/btrfs/ordered-data.h | =A0 =A08 +-
-> =A0fs/btrfs/super.c =A0 =A0 =A0 =A0| =A0 47 +++++-
-> =A0fs/btrfs/zlib.c =A0 =A0 =A0 =A0 | =A0361 +++++++------------------=
-----------------
-> =A018 files changed, 1013 insertions(+), 376 deletions(-)
 
-is this in a branch somewhere?  or for inclusion in .37/.38?  this is
-a very attractive feature.
+I also had a lot of problem to get a btrfs-aware initramfs working properly. 
+One of the biggest proble was to find the right list of modules. Btrfs depends 
+by crc32c, and I need a lot of retries to discover it.
 
-what's the proper place (repo/branch) to see what is pending?
+The main problem was that if the module is not available (it is the case of a 
+initramfs) btrfs doesn't start...
 
-C Anthony
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+When you say " it just trying to mount every device in the array in turn", do 
+you mean in the initarmfs ?
+
+
+
+> -- Erik Jensen
+> 
+> On Wed, Nov 17, 2010 at 10:59 PM, Goffredo Baroncelli 
+<kreijack@libero.it>wrote:
+> 
+> > On Thursday, 18 November, 2010, admin@prnet.org wrote:
+> > > Hi,
+> > >
+> > > I have read that for using raid1 btrfs device scan must be run before
+> > mounting the fs. How do I proceed if root filesystem is mounted from btrfs
+> > ?
+> > >
+> >
+> >
+> > See a my previous post
+> >
+> > http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg04709.html
+> >
+> >
+> > > Thanks in advance
+> > > Bye,
+> > > David Arendt
+> > >
+> > > --
+> > > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" 
 in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> > > the body of a message to majordomo@vger.kernel.org
+> > > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> > >
+> >
+> >
+> > --
+> > gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <
+> > kreijack@inwind.it>
+> > Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> >
+> 
+
+
+-- 
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

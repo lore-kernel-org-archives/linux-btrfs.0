@@ -1,84 +1,76 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: [GIT PULL] Btrfs updates for 2.6.37-rc
-Date: Mon, 29 Nov 2010 11:00:57 -0500
-Message-ID: <1291045745-sup-8236@think>
-Content-Type: text/plain; charset=UTF-8
-To: "Linus Torvalds" <torvalds@linux-foundation.org>,
-	"linux-kernel" <linux-kernel@vger.kernel.org>,
-	"linux-btrfs" <linux-btrfs@vger.kernel.org>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+From: C Anthony Risinger <anthony@extof.me>
+Subject: Re: [RFC-PATCH] Re: mounting arbitrary directories
+Date: Mon, 29 Nov 2010 11:42:52 -0600
+Message-ID: <AANLkTikvt1_kuJjF7w7toK-Mwu0kDNWm2p4yrfERZ3P3@mail.gmail.com>
+References: <AANLkTi=7LY6y3BvGgkyYBTLwu=SYJjZZhL8kHusCn_vs@mail.gmail.com>
+	<1290918133.14274.20.camel@nayuki>
+	<-3532760747667207688@unknownmsgid>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Calvin Walton <calvin.walton@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <-3532760747667207688@unknownmsgid>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi everyone,
+On Sun, Nov 28, 2010 at 4:07 AM, C Anthony Risinger <anthony@extof.me> =
+wrote:
+> On Nov 27, 2010, at 10:22 PM, Calvin Walton <calvin.walton@gmail.com>
+> wrote:
+>> On Sat, 2010-11-27 at 21:19 -0600, C Anthony Risinger wrote:
+>>
+>>> eg. if i have a "regular" directory (not a subvolume) in the top-
+>>> level:
+>>>
+>>> /__boot
+>>>
+>>> i can mount it with:
+>>>
+>>> mount -o subvol=3D__boot /dev/sda /mnt
+>>
+>> The 'subvol' option actually works using the same mechanism as a bin=
+d
+>> mount. The fact that it works using a directory is purely a
+>> coincidence
+>> - I would not expect it to be officially supported, and you shouldn'=
+t
+>> rely on it.
+>
+> Hrrrm... Well I thought I'd be clever and use this little trick one
+> time to update my kernel... Anyways I oops out like 3 times in a row
+> (last func was <something>.clone in each IIRC) and now I'm stuck with
+> only my mobile since my server isn't set up yet and my =A0SSD just
+> failed on my netbook yesterday :-(
+>
+> Sooooo, if anyone can help me recover this partition long enough to
+> grab a few things... I would be most grateful :-) I think I have
+> everything critical, but I'd rather take another look :-) Right now I
+> can't mount; mount is failing w/bad superblock.
+>
+> /me promises to never recklessly sabotage himself after being warned =
+<
+> 6 hrs earlier
 
-The master branch of the btrfs unstable tree:
+any suggestions for me?  i dd'ed the corrupt partition to an external
+disk because i need the machine back up and running, but if possible
+i'd like to get the image running again.  i mounted it via loopback
+and as expected got the same errors:
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
+(will post the dmesg output next message -- left at home)
+open_ctree_fd failed....
+wanted XXXX found YYYY instead
 
-Has a collection of btrfs bug fixes.
+the mount command itself fails with "bad superblock or ..."
 
-The three most important fixes here address crashes in the btrfs
-O_DIRECT code, add a migrate_page operation to avoid metadata corruption
-as btree pages go through migration, and fix up our NFS support.
+i have seen others withe similar crash reports and IIRC correctly were
+able to recover it (seems like something just didn't get updated right
+before it locked...)
 
-Otherwise we have assorted correctness fixes, many of which were kicked
-out by xfsqa.
+any ideas?
 
--chris
-
-Josef Bacik (11) commits (+241/-54):
-    Btrfs: make btrfs_add_nondir take parent inode as an argument (+16/-22)
-    Btrfs: fix typo in fallocate to make it honor actual size (+5/-4)
-    Btrfs: hold i_mutex when calling btrfs_log_dentry_safe (+7/-0)
-    Btrfs: setup blank root and fs_info for mount time (+33/-7)
-    Btrfs: make sure new inode size is ok in fallocate (+4/-0)
-    Btrfs: use dget_parent where we can UPDATED (+43/-12)
-    Btrfs: handle the space_cache option properly (+1/-0)
-    Btrfs: update inode ctime when using links (+1/-0)
-    Btrfs: fix more ESTALE problems with NFS (+1/-0)
-    Btrfs: handle NFS lookups properly (+76/-0)
-    Btrfs: fix fiemap (+54/-9)
-
-Chris Mason (4) commits (+124/-9):
-    Btrfs: deal with DIO bios that span more than one ordered extent (+89/-4)
-    Btrfs: avoid NULL pointer deref in try_release_extent_buffer (+4/-2)
-    Btrfs: don't use migrate page without CONFIG_MIGRATION (+6/-1)
-    Btrfs: add migrate page for metadata inode (+25/-2)
-
-Li Zefan (3) commits (+6/-6):
-    btrfs: Check if dest_offset is block-size aligned before cloning file (+3/-4)
-    btrfs: Show device attr correctly for symlinks (+1/-0)
-    btrfs: Set file size correctly in file clone (+2/-2)
-
-Miao Xie (3) commits (+195/-45):
-    btrfs: cleanup duplicate bio allocating functions (+8/-18)
-    btrfs: fix free dip and dip->csums twice (+3/-6)
-    btrfs: fix panic caused by direct IO (+184/-21)
-
-Mariusz Kozlowski (1) commits (+3/-3):
-    btrfs: make 1-bit signed fileds unsigned
-
-Arne Jansen (1) commits (+1/-1):
-    btrfs: Fix early enospc because 'unused' calculated with wrong sign.
-
-Ian Kent (1) commits (+6/-0):
-    Btrfs - fix race between btrfs_get_sb() and umount
-
-Total: (24) commits (+576/-118)
-
- fs/btrfs/compression.c  |   15 +---
- fs/btrfs/ctree.h        |    6 +-
- fs/btrfs/disk-io.c      |   38 +++++-
- fs/btrfs/export.c       |   76 ++++++++++++
- fs/btrfs/extent-tree.c  |    2 +-
- fs/btrfs/extent_io.c    |   77 ++++++++++---
- fs/btrfs/extent_io.h    |    3 +
- fs/btrfs/file.c         |    7 +
- fs/btrfs/inode.c        |  294 ++++++++++++++++++++++++++++++++++++++---------
- fs/btrfs/ioctl.c        |   31 ++++--
- fs/btrfs/ordered-data.c |   67 +++++++++++
- fs/btrfs/ordered-data.h |    3 +
- fs/btrfs/super.c        |   41 ++++++-
- fs/btrfs/transaction.c  |    5 +-
- fs/btrfs/tree-log.c     |   21 +++-
- 15 files changed, 572 insertions(+), 114 deletions(-)
+C Anthony
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

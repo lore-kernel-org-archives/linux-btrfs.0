@@ -1,78 +1,48 @@
-From: C Anthony Risinger <anthony@extof.me>
-Subject: Re: [RFC-PATCH] Re: mounting arbitrary directories
-Date: Sun, 28 Nov 2010 04:07:18 -0600
-Message-ID: <-3532760747667207688@unknownmsgid>
-References: <AANLkTi=7LY6y3BvGgkyYBTLwu=SYJjZZhL8kHusCn_vs@mail.gmail.com> <1290918133.14274.20.camel@nayuki>
-Mime-Version: 1.0 (iPhone Mail 7D11)
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Calvin Walton <calvin.walton@gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH -V2 3/3] btrfs: fix panic caused by direct IO
+Date: Sun, 28 Nov 2010 20:55:28 -0500
+Message-ID: <1290995089-sup-4112@think>
+References: <4CE9DDCB.7060706@cn.fujitsu.com> <1290395921-sup-5232@think>
+Content-Type: text/plain; charset=UTF-8
+Cc: Miao Xie <miaox@cn.fujitsu.com>, Josef Bacik <josef@redhat.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Ito <t-itoh@jp.fujitsu.com>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1290918133.14274.20.camel@nayuki>
+In-reply-to: <1290395921-sup-5232@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Nov 27, 2010, at 10:22 PM, Calvin Walton <calvin.walton@gmail.com>
-wrote:
+Excerpts from Chris Mason's message of 2010-11-21 22:18:54 -0500:
+> Great, I'll test this and the others overnight.  Thanks!
+> 
+> -chris
+> 
+> Excerpts from Miao Xie's message of 2010-11-21 22:04:43 -0500:
+> > V1->V2 Changes:
+> > change the fix method. we split bios in btrfs_submit_direct() to fix this
+> > problem now.
+> > 
+> > btrfs paniced when we write >64KB data by direct IO at one time.
+> > 
+> > Reproduce steps:
+> >  # mkfs.btrfs /dev/sda5 /dev/sda6
+> >  # mount /dev/sda5 /mnt
+> >  # dd if=/dev/zero of=/mnt/tmpfile bs=100K count=1 oflag=direct
 
-> On Sat, 2010-11-27 at 21:19 -0600, C Anthony Risinger wrote:
->> i have read just recently and in the past that btrfs supports COW for
->> _any_ file/directory (this is reflinks, yes?), and today i
->> accidentally noticed that i can mount a directory as well (if it's in
->> the top level volume at least).
->>
->> eg. if i have a "regular" directory (not a subvolume) in the top-
->> level:
->>
->> /__boot
->>
->> i can mount it with:
->>
->> mount -o subvol=__boot /dev/sda /mnt
->
-> The 'subvol' option actually works using the same mechanism as a bind
-> mount. The fact that it works using a directory is purely a
-> coincidence
-> - I would not expect it to be officially supported, and you shouldn't
-> rely on it.
->
->> i am working on an update to my initramfs hook that will utilize
->> extlinux, and this property to provide seamless kernel level system
->> rollbacks, and i want to make sure it's safe to do this.
->
-> To handle system rollbacks, you really should be using subvolumes and
-> snapshots, not regular directories.
->
->> also, is there a way to target an arbitrary directory?  does "subvol"
->> support paths yet, or maybe via "subvolid" somehow?  essentially i
->
-> I don't think that it would be very hard to make subvol= support a
-> path
-> instead of only one level deep. Actually, I think I could make a patch
-> for that myself... I've included it here. Mildly tested, but I'm not
-> really a kernel programmer and might have missed something -
-> particularly with regards to the locking.
->
->> just want to mount a directory inside a snapshot at /boot, so when
->> users upgrade there kernels, the images are visible to extlinux
->> (which
->> cannot yet peek inside or use subvolumes, so it has to be a regular
->> directory in the top-level volume)
->
-> Ah, this is the first I've heard that extlinux doesn't support reading
-> files in subvolumes. That's an unfortunate limitation :/
+Thanks again for coding this up, the implementation looks good to me.
 
-Hrrrm... Well I thought I'd be clever and use this little trick one
-time to update my kernel... Anyways I oops out like 3 times in a row
-(last func was <something>.clone in each IIRC) and now I'm stuck with
-only my mobile since my server isn't set up yet and my  SSD just
-failed on my netbook yesterday :-(
+This easily passed the basic tests, but I ran into trouble when I tried
+using it to server my virtual machines.  The problem is that we create
+ordered extents in the DIO get_blocks call, but the generic DIO code
+may create a single bio to span more than one ordered extent by merging
+adjacent ranges.  I've fixed it here by walking forward through the
+ordered extents in the end_io processing.
 
-Sooooo, if anyone can help me recover this partition long enough to
-grab a few things... I would be most grateful :-) I think I have
-everything critical, but I'd rather take another look :-) Right now I
-can't mount; mount is failing w/bad superblock.
+I've pushed these changes out to the next-rc branch of the btrfs
+unstable tree, and the last commit is here:
 
-/me promises to never recklessly sabotage himself after being warned <
-6 hrs earlier
+Could you please take a look and verify it still works with your tests?
 
-C Anthony [mobile]
+http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=commit;h=163cf09c2a0ee5cac6285f9347975bd1e97725da
+
+-chris

@@ -1,52 +1,158 @@
-From: David Arendt <admin@prnet.org>
-Subject: Re: Default to read-only on snapshot creation and have a flag if
- snapshot should be writable (was: [PATCH 0/5] btrfs: Readonly snapshots)
-Date: Mon, 29 Nov 2010 21:41:08 +0100
-Message-ID: <4CF40FE4.2030801@prnet.org>
-References: <AANLkTikbmUQA7JtkjV4177jmj9WDVe1V3NvbX3ts6TNd@mail.gmail.com>
+From: Andrej Podzimek <andrej@podzimek.org>
+Subject: Errors during defragmentation
+Date: Mon, 29 Nov 2010 22:02:56 +0100
+Message-ID: <4CF41500.8000804@podzimek.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Mike Fedyk <mfedyk@mikefedyk.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="=_charon-7567-1291064577-0001-2"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTikbmUQA7JtkjV4177jmj9WDVe1V3NvbX3ts6TNd@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/29/10 21:02, Mike Fedyk wrote:
-> On Mon, Nov 29, 2010 at 12:02 AM, Li Zefan<lizf@cn.fujitsu.com>  wrote:
->> (Cc: Sage Weil<sage@newdream.net>  for changes in async snapshots)
->>
->> This patchset adds readonly-snapshots support. You can create a
->> readonly snapshot, and you can also set a snapshot readonly/writable
->> on the fly.
->>
->> A few readonly checks are added in setattr, permission, remove_xattr
->> and set_xattr callbacks, as well as in some ioctls.
->>
-> Great work!
->
-> I have a suggestion on defaults when snapshots are created.  I think
-> they should default to being read-only and if they are meant to be
-> read-write a flag can be set at creation time (and changable at a
-> later time as well of course).
->
-> This way user/admin preconceptions of a snapshot being read-only can
-> be enforced by default, and the exception when you want a read-write
-> snapshot can be available with a switch at the cli level (and probably
-> a flag at the ioctl level).
->
-> It gives one more natural distinction between a snapshot and a
-> subvolume at the user conceptual level.
->
-> What do you think?
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-Hi,
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-I completely agree with you. I think lots of people use snapshots for 
-backup purposes and these ones shouldn't be writable.
+--=_charon-7567-1291064577-0001-2
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
 
-Bye,
-David Arendt
+Hello,
+
+I decided to test the 'defragment' feature on my system (after a huge num=
+ber of system updates and prelinking):
+
+	find /bin /sbin /lib /usr/lib /usr/bin /usr/sbin -type d -exec btrfs fil=
+esystem defragment '{}' '+'
+
+I have already defragmented a couple of (very large) directories with no =
+errors at all, so this was expected to work somehow. Surprisingly, this t=
+ime there were thousands of messages like this:
+
+	ioctl failed on <directory name> ret -1 errno 28
+
+Most of the reported directories had zero files/subdirectories. However, =
+*most* of them were *not* empty...
+
+What does this error message mean? Could someone shed more light on this,=
+ please? Should I get ready for a bad crash? ;-) (There seems to be no da=
+ta loss so far. No new messages in dmesg, no unexpected system behavior.)=
+
+
+Andrej
+
+
+
+--=_charon-7567-1291064577-0001-2
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIISszCC
+BakwggSRoAMCAQICATQwDQYJKoZIhvcNAQEFBQAwgYQxFDASBgNVBAMMC1BvZHppbWVrIENB
+MQswCQYDVQQGEwJDWjEOMAwGA1UEBwwFWmzDrW4xFTATBgNVBAoMDHBvZHppbWVrLm9yZzEV
+MBMGA1UECwwMcG9kemltZWsub3JnMSEwHwYJKoZIhvcNAQkBFhJhZG1pbkBwb2R6aW1lay5v
+cmcwHhcNMTAwMzMxMTkxMzQ0WhcNMTEwMzMxMTkxMzQ0WjCBiTELMAkGA1UEBhMCQ1oxDjAM
+BgNVBAcMBVpsw61uMRUwEwYDVQQKDAxwb2R6aW1lay5vcmcxFTATBgNVBAsMDHBvZHppbWVr
+Lm9yZzEYMBYGA1UEAwwPQW5kcmVqIFBvZHppbWVrMSIwIAYJKoZIhvcNAQkBFhNhbmRyZWpA
+cG9kemltZWsub3JnMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAvLPy9s1OWxpb
+PkH+e8Akw/F5Qp+CTSGAq/XmZuURUOhUFmxPZVp1rV45esz6dsiXK0CXWoHVjeSlr0LRmWUH
+hGlsPa+qpvV/EWad3OF05Lz5T6fJQGkQIvh3xSQYi8/s3k9/4uKUHtU/Lm1KqdFjyAY1pZxv
+OP05b6qCfgkYcB2xk6FeZH38bbA/6h+nURiqotfkfB4a4N+roTxf9Bi0QsNZZ7W8FhKQBdEB
+6ID3IYwhQbJsTQR8yh561E4yYf+9J/BkL7AZpnkEKsNgZawtfWwya/r7dJPE9PCkB9jmrawN
+GiE8ta3/nrPuKgulImjjtzwWSrkFWWIhRuvA6kjJvDIDNX9mT7bdZP5FfOkprAaIuSJ93BsM
+OtQm3Qy6RF/+4EzLdEqcy79nzIY84kQGCdBnd45MUG61iMnyVX2WalG1fgZ9uoKsvYUVIkkj
+N+dwuKg3vR+o/JrBlYiAtBTpBsGiWB8YhHzCTTOkQA/m8dXl9JaV+bOSktwWibFMVrWxCxbW
+sAugsEONFoYlCOBGJrq3Gy2+QkDugQhGTJlIXEe5joJHELadahFp/cWf9A0yz0vujob9GLvf
+TZpmPcmuvK2HhHWfgzc1kyOOPNQoAUK+tG4yUG4/mYIhNkD4b49KGi7wfpYViWwNlQFKlPFV
+F+udgSfFgYZO365SOykEsMkCAwEAAaOCAR0wggEZMAkGA1UdEwQCMAAwHQYDVR0OBBYEFFEH
+1s0Xse0CZ217pElE8DdjZxYtMIG5BgNVHSMEgbEwga6AFE6juEwI0K5X6Rv/eMJTk7Q8cg65
+oYGKpIGHMIGEMRQwEgYDVQQDDAtQb2R6aW1layBDQTELMAkGA1UEBhMCQ1oxDjAMBgNVBAcM
+BVpsw61uMRUwEwYDVQQKDAxwb2R6aW1lay5vcmcxFTATBgNVBAsMDHBvZHppbWVrLm9yZzEh
+MB8GCSqGSIb3DQEJARYSYWRtaW5AcG9kemltZWsub3JnggkAkctHSQfLqowwMQYJYIZIAYb4
+QgEEBCQWImh0dHBzOi8vY2EucG9kemltZWsub3JnL2NhLWNybC5wZW0wDQYJKoZIhvcNAQEF
+BQADggEBAKUoyTBti808LZw5SH7hX6ewB9baj0GDjR6s0t4kSXiEf1nr+VBPfftM9RLS8vaj
+L3v9tZ7lKWgRoJDUhYR6CKrUw+t8MTAAI9wYHTgEq10yHdfIGcWdGn0mRgGljOp4YZACzX1y
+791HN+hBmjPKYjLc/2cmVdtOeHMAGn1cyeuyb8drYovtxu/P6MJaCE9533HRYfzOvd2u7D0B
+6oy9Nrn8t5IgRoGENk8wwRYa5jrukXIvTtQNK7In7SAb5DNSHp8kwzQmJtgFqvELVZ593phM
+yLiZuJg5AMU60tXtPIZBvjvkQdyspvp1n0ZLdKrAcZYo752DzOCT2U6KCclbSrcwggY0MIIE
+HKADAgECAgEgMA0GCSqGSIb3DQEBBQUAMH0xCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFy
+dENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5n
+MSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0wNzEwMjQy
+MTAyNTVaFw0xNzEwMjQyMTAyNTVaMIGMMQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRD
+b20gTHRkLjErMCkGA1UECxMiU2VjdXJlIERpZ2l0YWwgQ2VydGlmaWNhdGUgU2lnbmluZzE4
+MDYGA1UEAxMvU3RhcnRDb20gQ2xhc3MgMiBQcmltYXJ5IEludGVybWVkaWF0ZSBDbGllbnQg
+Q0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDLKIVFnAEs+xnyq6UzjCqgDcvQ
+Ve1dIoFnRsQPCFO+y92k8RK0Pn3MbQ2Gd+mehh9GBZ+36uUQA7Xj9AGM6wgPhEE34vKtfpAN
+5tJ8LcFxveDObCKrL7O5UT9WsnAZHv7OYPYSR68mdmnEnJ83M4wQgKO19b+Rt8sPDAz9ptkQ
+sntCn4GeJzg3q2SVc4QJTg/WHo7wF2ah5LMOeh8xJVSKGEmd6uPkSbj113yKMm8vmNptRPmM
+1+YgmVwcdOYJOjCgFtb2sOP79jji8uhWR91xx7TpM1K3hv/wrBZwffrmmEpUeuXHRs07JqCC
+vFh9coKF4UQZvfEg+x3/69xRCzb1AgMBAAGjggGtMIIBqTAPBgNVHRMBAf8EBTADAQH/MA4G
+A1UdDwEB/wQEAwIBBjAdBgNVHQ4EFgQUrlWDb+wxyrn3HfqvazHzyB3jrLswHwYDVR0jBBgw
+FoAUTgvvGqRAW6UXaYcwyjRoQ9BBrvIwZgYIKwYBBQUHAQEEWjBYMCcGCCsGAQUFBzABhhto
+dHRwOi8vb2NzcC5zdGFydHNzbC5jb20vY2EwLQYIKwYBBQUHMAKGIWh0dHA6Ly93d3cuc3Rh
+cnRzc2wuY29tL3Nmc2NhLmNydDBbBgNVHR8EVDBSMCegJaAjhiFodHRwOi8vd3d3LnN0YXJ0
+c3NsLmNvbS9zZnNjYS5jcmwwJ6AloCOGIWh0dHA6Ly9jcmwuc3RhcnRzc2wuY29tL3Nmc2Nh
+LmNybDCBgAYDVR0gBHkwdzB1BgsrBgEEAYG1NwECATBmMC4GCCsGAQUFBwIBFiJodHRwOi8v
+d3d3LnN0YXJ0c3NsLmNvbS9wb2xpY3kucGRmMDQGCCsGAQUFBwIBFihodHRwOi8vd3d3LnN0
+YXJ0c3NsLmNvbS9pbnRlcm1lZGlhdGUucGRmMA0GCSqGSIb3DQEBBQUAA4ICAQA6qScNyNO0
+FpHvaZTQacVMXH33O51KyEKSRw3IvdQxRu31YR0ZDGdSfgSoOVDVMSBSdmfQfdDInHPzV3LO
+5DwUXZ+lxjv7z3PO2OkfnFkvTXPfn6dxJ5rJveDsTsCPcJ/Kp6/+qN5g+J6D/SaYcFD018B6
+L42r0Z4VEBy36P4tjRtF14Ex10tl5tJFVKM16qWKQHbpjIgf73s49UB0CQ5lHT2DHKfq3oPf
+dNc5Mk93w1v4ryVb+qVrZIej8NsrWU+5r4O2IV91edDb/OtHFddZqHFFXKgS79IHE/hwQ2LW
+7r3sTX7cDUCg+dfdwO8zeLxuwk2JF8crUoyrl66RGrRIhT8VoG/OJ1Y9uUlOav69V4cG8upi
+4ZG2l7JZFbcBFk91Wp+Payo5SuF61CmGFrZ386umkmpObtFacXda2O/bVoQ9xHQrzoTc/0KZ
+TWvlZCLK3Ke/vGYT9ZdW9lOjGsSFbXrlTA919L84iMK+48WGnvRWY28ZaVHpql43AtEGhXze
+6iNCbEDACy+4hkQYOytAqDgcxAnQ937mYpeZFPyz/XK9QSt9VNFMuudWxZwDDDJKoQAoSG59
+Hou9lZ26UrK60nRdAQBmEPL8h2nuWgoPh++XVQld9yuhbsWa39Pck8/lcfz5HUVGJF5mc/zk
+38iV7FDlF68puiryNq2KXHEpOTCCBsowggWyoAMCAQICAgtGMA0GCSqGSIb3DQEBBQUAMIGM
+MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjErMCkGA1UECxMiU2VjdXJl
+IERpZ2l0YWwgQ2VydGlmaWNhdGUgU2lnbmluZzE4MDYGA1UEAxMvU3RhcnRDb20gQ2xhc3Mg
+MiBQcmltYXJ5IEludGVybWVkaWF0ZSBDbGllbnQgQ0EwHhcNMTAwOTI3MDA0ODU2WhcNMTIw
+OTI3MDk1NjI4WjCBwjEgMB4GA1UEDRMXMjY0MzU2LVV6cDI4MnFISHRiQ2I1ZDMxCzAJBgNV
+BAYTAkNaMRUwEwYDVQQIEwxabGluc2t5IEtyYWoxDTALBgNVBAcTBFpsaW4xLTArBgNVBAsT
+JFN0YXJ0Q29tIFZlcmlmaWVkIENlcnRpZmljYXRlIE1lbWJlcjEYMBYGA1UEAxMPQW5kcmVq
+IFBvZHppbWVrMSIwIAYJKoZIhvcNAQkBFhNhbmRyZWpAcG9kemltZWsub3JnMIIBIjANBgkq
+hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArldROEvlaSy4OX9PPg22Xl7GCivziuBcbrkH+St9
+vIAyefDb3kfdtHT/J1NRlQDYTrDFQ3cZM2J7vicm4/uu67KzdAF/14mdml1b1prWRiUT3IRw
+Cwbt8wuNhZfa6dGkQ374EuOWDVX+5YCEufr5GMHrkkZy5RYtO9r3avglOI1ZB2F9Z56Zb42k
+S7N2ebEE7Oj+pFeQwaj2pz/B4d3gu6wX+c7GwDiy26iN/33Cl+spa5uFWITb8XD6P6aob9Ep
+yDxn90KEr5+9ug1tmh833Kdll4mmjzAv5ZK0iVFnxsBq+V1TN/2NW6oiIvOLxTIHCfC1MdYi
+88HMC1PaQZF4ywIDAQABo4IC/DCCAvgwCQYDVR0TBAIwADALBgNVHQ8EBAMCBLAwHQYDVR0l
+BBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMB0GA1UdDgQWBBT3GSEvnmmKZPBGzpElp7HtmoV7
+FzAfBgNVHSMEGDAWgBSuVYNv7DHKufcd+q9rMfPIHeOsuzAeBgNVHREEFzAVgRNhbmRyZWpA
+cG9kemltZWsub3JnMIIBQgYDVR0gBIIBOTCCATUwggExBgsrBgEEAYG1NwECAjCCASAwLgYI
+KwYBBQUHAgEWImh0dHA6Ly93d3cuc3RhcnRzc2wuY29tL3BvbGljeS5wZGYwNAYIKwYBBQUH
+AgEWKGh0dHA6Ly93d3cuc3RhcnRzc2wuY29tL2ludGVybWVkaWF0ZS5wZGYwgbcGCCsGAQUF
+BwICMIGqMBQWDVN0YXJ0Q29tIEx0ZC4wAwIBARqBkUxpbWl0ZWQgTGlhYmlsaXR5LCBzZWUg
+c2VjdGlvbiAqTGVnYWwgTGltaXRhdGlvbnMqIG9mIHRoZSBTdGFydENvbSBDZXJ0aWZpY2F0
+aW9uIEF1dGhvcml0eSBQb2xpY3kgYXZhaWxhYmxlIGF0IGh0dHA6Ly93d3cuc3RhcnRzc2wu
+Y29tL3BvbGljeS5wZGYwYwYDVR0fBFwwWjAroCmgJ4YlaHR0cDovL3d3dy5zdGFydHNzbC5j
+b20vY3J0dTItY3JsLmNybDAroCmgJ4YlaHR0cDovL2NybC5zdGFydHNzbC5jb20vY3J0dTIt
+Y3JsLmNybDCBjgYIKwYBBQUHAQEEgYEwfzA5BggrBgEFBQcwAYYtaHR0cDovL29jc3Auc3Rh
+cnRzc2wuY29tL3N1Yi9jbGFzczIvY2xpZW50L2NhMEIGCCsGAQUFBzAChjZodHRwOi8vd3d3
+LnN0YXJ0c3NsLmNvbS9jZXJ0cy9zdWIuY2xhc3MyLmNsaWVudC5jYS5jcnQwIwYDVR0SBBww
+GoYYaHR0cDovL3d3dy5zdGFydHNzbC5jb20vMA0GCSqGSIb3DQEBBQUAA4IBAQCEI21EOM71
+hKXRNFHbWFaemV86fxAs1yMl6SohZhNRea/Pc5hMpoFoUZBf0qJ3AvFy2PzsyspTsqZhBOwo
+I3rVJlgZapKi4x4k7FXM43xFmU/koQLdQPDS1Jfbr8zFTVBx+K6xD+L9y+M1M7JX+EcQgTIu
+CZn80YjSxEpAGND09NUPrgwJ/v9Nn5zqbEraf5MRSAun11fhkqIORlqkAi393N+kvXEsAtRJ
+A0CizQzFfmLFNY4xWtWtRYJGatOIzDO8s8gA8kfC99CcygpRQbrMBaBZ3fzMgoNXhP7A6801
+XYg+flS0kxPSubBbEfEUCVOHNcm4TAdyKwYehI9N8PD+MYIDuzCCA7cCAQEwgZMwgYwxCzAJ
+BgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGln
+aXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5nMTgwNgYDVQQDEy9TdGFydENvbSBDbGFzcyAyIFBy
+aW1hcnkgSW50ZXJtZWRpYXRlIENsaWVudCBDQQICC0YwCQYFKw4DAhoFAKCCAfwwGAYJKoZI
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTAxMTI5MjEwMjU2WjAjBgkq
+hkiG9w0BCQQxFgQUXly04Xrw08w0/q8geuqbm/gyfOYwXwYJKoZIhvcNAQkPMVIwUDALBglg
+hkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFAMAcG
+BSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGbBgkrBgEEAYI3EAQxgY0wgYowgYQxFDASBgNVBAMM
+C1BvZHppbWVrIENBMQswCQYDVQQGEwJDWjEOMAwGA1UEBwwFWmzDrW4xFTATBgNVBAoMDHBv
+ZHppbWVrLm9yZzEVMBMGA1UECwwMcG9kemltZWsub3JnMSEwHwYJKoZIhvcNAQkBFhJhZG1p
+bkBwb2R6aW1lay5vcmcCATQwgZ0GCyqGSIb3DQEJEAILMYGNoIGKMIGEMRQwEgYDVQQDDAtQ
+b2R6aW1layBDQTELMAkGA1UEBhMCQ1oxDjAMBgNVBAcMBVpsw61uMRUwEwYDVQQKDAxwb2R6
+aW1lay5vcmcxFTATBgNVBAsMDHBvZHppbWVrLm9yZzEhMB8GCSqGSIb3DQEJARYSYWRtaW5A
+cG9kemltZWsub3JnAgE0MA0GCSqGSIb3DQEBAQUABIIBAB3NKsOxNLpZpMgWNKhKqOLdhHt5
+EM853qHbPNc4B3I7yUxY8DcG9/YC+REUYwQq/K7QHC3KkM1eLWQwbDFtl9RYJ5TToDF2zSk0
+HuCGlpZEn3GmiSq0eDW6gdryV9owLd5EB67CvU/6dmumpsQC8SR+J+iVgLUC//XPgHRLZv96
+1NKeUhoC8yh9UyeGTwYoG7DDK/VjSFsAcO2FJ3Fod9Q76xUqVoHQm5BPZoGI0s9Vxn/7k1R7
+y5fmN95CWAUvmcejWotmEq93jrMrAALY7dfWFiAeYx8+auPqaZ+KLsEFQHlSA8gkYOZRmKFJ
+8wCSySNAfhZ/C/B2HDoImN08hREAAAAAAAA=
+--=_charon-7567-1291064577-0001-2--

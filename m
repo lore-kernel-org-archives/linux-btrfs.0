@@ -1,186 +1,82 @@
-From: Andrej Podzimek <andrej@podzimek.org>
-Subject: Re: Errors during defragmentation
-Date: Mon, 29 Nov 2010 23:00:51 +0100
-Message-ID: <4CF42293.6040200@podzimek.org>
-References: <4CF41500.8000804@podzimek.org> <20101129212546.GA3733@carfax.org.uk>
+From: Andrew Morton <akpm@linux-foundation.org>
+Subject: Re: [patch] fs: fix deadlocks in writeback_if_idle
+Date: Mon, 29 Nov 2010 14:26:03 -0800
+Message-ID: <20101129142603.ebbcbc7e.akpm@linux-foundation.org>
+References: <20101123100239.GA4232@amd>
+	<1290515274-sup-3895@think>
+	<20101123125223.GA4946@amd>
+	<1290538347-sup-7669@think>
+	<20101124010343.GD3168@amd>
+	<20101124131028.GQ6113@quack.suse.cz>
+	<20101125035356.GC3359@amd>
 Mime-Version: 1.0
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="=_charon-8971-1291068054-0001-2"
-To: Hugo Mills <hugo-lkml@carfax.org.uk>, linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101129212546.GA3733@carfax.org.uk>
+Content-Type: text/plain; charset=US-ASCII
+Cc: Jan Kara <jack@suse.cz>, Chris Mason <chris.mason@oracle.com>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+	Al Viro <viro@zeniv.linux.org.uk>,
+	linux-ext4 <linux-ext4@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Eric Sandeen <sandeen@redhat.com>,
+	"Theodore Ts'o" <tytso@mit.edu>
+To: Nick Piggin <npiggin@kernel.dk>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <20101125035356.GC3359@amd>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+	On Thu, 25 Nov 2010 14:53:56 +1100
+Nick Piggin <npiggin@kernel.dk> wrote:
 
---=_charon-8971-1291068054-0001-2
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
+> On Wed, Nov 24, 2010 at 02:10:28PM +0100, Jan Kara wrote:
+> > On Wed 24-11-10 12:03:43, Nick Piggin wrote:
+> > > > For the _nr variant that btrfs uses, it's worse for the filesystems
+> > > > that don't have a 1:1 bdi<->sb mapping.  It might not actually write any
+> > > > of the pages from the SB that is out of space.
+> > > 
+> > > That's true, but it might not write anything anyway (and after we
+> > > check whether writeout is in progress, the writeout thread could go
+> > > to sleep and not do anything anyway).
+> > > 
+> > > So it's a pretty hacky interface anyway. If you want to do anything
+> > > deterministic, you obviously need real coupling between producer and
+> > > consumer. This should only be a performance tweak (or a workaround
+> > > hack in worst case).
+> >   Yes, the current interface is a band aid for the problem and better
+> > interface is welcome. But it's not trivial to do better...
+> > 
+> > > > > It makes no further guarantees, and anyway
+> > > > > the sb has to compete for normal writeback within this bdi.
+> > > > 
+> > > > > 
+> > > > > I think Christoph is right because filesystems should not really
+> > > > > know about how bdi writeback queueing works. But I don't know if it's
+> > > > > worth doing anything more complex for this functionality?
+> > > > 
+> > > > I think we should make a writeback_inodes_sb_unlocked() that doesn't
+> > > > warn when the semaphore isn't held.  That should be enough given where
+> > > > btrfs and ext4 are calling it from.
+> > > 
+> > > It doesn't solve the bugs -- calling and waiting for writeback is
+> > > still broken because completion requires i_mutex and it is called
+> > > from under i_mutex.
+> >   Well, as I wrote in my previous email, only ext4 has the problem with
+> > i_mutex and I personally view it as a bug. But ultimately it's Ted's call
+> > to decide.
+> 
+> Well, for now, the easiest and simplest fix is my patch, I think. The
+> objection is that we may not write out anything for the specified sb,
+> but the current implementation provides no such guarantees at all
+> anyway, so I don't think it's a big issue.
 
->> Hello,
->>
->> I decided to test the 'defragment' feature on my system (after a huge =
-number of system updates and prelinking):
->>
->> 	find /bin /sbin /lib /usr/lib /usr/bin /usr/sbin -type d -exec btrfs =
-filesystem defragment '{}' '+'
->>
->> I have already defragmented a couple of (very large) directories with =
-no errors at all, so this was expected to work somehow. Surprisingly, thi=
-s time there were thousands of messages like this:
->>
->> 	ioctl failed on<directory name>  ret -1 errno 28
->
->     errno 28 is ENOSPC
->
->     You've run out of disk space. (Or at least, btrfs thinks so).
+Well yes.  We take something which will fail occasionally and with your
+patch replace it with something which will fail a bit more often.  Why
+don't we go all the way and do something which will fail *even more
+often*.  Namely, just delete the damn function in the hope that the
+resulting failures will provoke the ext4 crew into doing something sane
+this time?
 
-Pleased to hear that this is not a fatal error. :-)
+Guys, this delalloc thing *sucks*.  And here we are just sticking new
+bandaids on top of the old bandaids.  And the btrfs approach isn't
+exactly a thing of glory, either.
 
-The filesystem still has quite a lot of free space. New files can be crea=
-ted. I have just tried to add about 10 GB of data, which worked fine. The=
- output from 'df' indicates that only 71% of the partition (177 GB out of=
- 250 GB) is used.
-
-The "built-in" df shows similar numbers -- if I understand it well, there=
- is plenty of free space left.
-
-	# btrfs filesystem df /
-	Data: total=3D175.01GB, used=3D169.57GB
-	Metadata: total=3D6.51GB, used=3D3.64GB
-	System: total=3D12.00MB, used=3D32.00KB
-
-	# btrfs filesystem show octopus
-	failed to read /dev/sdb
-	failed to read /dev/sr0
-	Label: 'octopus'  uuid: 8576b57b-b934-424e-9a8a-04abc780c963
-	        Total devices 1 FS bytes used 173.21GB
-	        devid    1 size 249.50GB used 188.04GB path /dev/dm-2
-
-	Btrfs Btrfs v0.19
-
-Does defragmentation have any unexpected (and not yet documented) free sp=
-ace requirements? (Most of the files I was attempting to defragment were =
-smaller than 10 MB, as the directory names suggest.)
-
-Is there a workaround for this issue? Or should I just leave the defragme=
-ntation feature alone for the time being?
-
-Andrej
-
-
---=_charon-8971-1291068054-0001-2
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
-
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIISszCC
-BakwggSRoAMCAQICATQwDQYJKoZIhvcNAQEFBQAwgYQxFDASBgNVBAMMC1BvZHppbWVrIENB
-MQswCQYDVQQGEwJDWjEOMAwGA1UEBwwFWmzDrW4xFTATBgNVBAoMDHBvZHppbWVrLm9yZzEV
-MBMGA1UECwwMcG9kemltZWsub3JnMSEwHwYJKoZIhvcNAQkBFhJhZG1pbkBwb2R6aW1lay5v
-cmcwHhcNMTAwMzMxMTkxMzQ0WhcNMTEwMzMxMTkxMzQ0WjCBiTELMAkGA1UEBhMCQ1oxDjAM
-BgNVBAcMBVpsw61uMRUwEwYDVQQKDAxwb2R6aW1lay5vcmcxFTATBgNVBAsMDHBvZHppbWVr
-Lm9yZzEYMBYGA1UEAwwPQW5kcmVqIFBvZHppbWVrMSIwIAYJKoZIhvcNAQkBFhNhbmRyZWpA
-cG9kemltZWsub3JnMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAvLPy9s1OWxpb
-PkH+e8Akw/F5Qp+CTSGAq/XmZuURUOhUFmxPZVp1rV45esz6dsiXK0CXWoHVjeSlr0LRmWUH
-hGlsPa+qpvV/EWad3OF05Lz5T6fJQGkQIvh3xSQYi8/s3k9/4uKUHtU/Lm1KqdFjyAY1pZxv
-OP05b6qCfgkYcB2xk6FeZH38bbA/6h+nURiqotfkfB4a4N+roTxf9Bi0QsNZZ7W8FhKQBdEB
-6ID3IYwhQbJsTQR8yh561E4yYf+9J/BkL7AZpnkEKsNgZawtfWwya/r7dJPE9PCkB9jmrawN
-GiE8ta3/nrPuKgulImjjtzwWSrkFWWIhRuvA6kjJvDIDNX9mT7bdZP5FfOkprAaIuSJ93BsM
-OtQm3Qy6RF/+4EzLdEqcy79nzIY84kQGCdBnd45MUG61iMnyVX2WalG1fgZ9uoKsvYUVIkkj
-N+dwuKg3vR+o/JrBlYiAtBTpBsGiWB8YhHzCTTOkQA/m8dXl9JaV+bOSktwWibFMVrWxCxbW
-sAugsEONFoYlCOBGJrq3Gy2+QkDugQhGTJlIXEe5joJHELadahFp/cWf9A0yz0vujob9GLvf
-TZpmPcmuvK2HhHWfgzc1kyOOPNQoAUK+tG4yUG4/mYIhNkD4b49KGi7wfpYViWwNlQFKlPFV
-F+udgSfFgYZO365SOykEsMkCAwEAAaOCAR0wggEZMAkGA1UdEwQCMAAwHQYDVR0OBBYEFFEH
-1s0Xse0CZ217pElE8DdjZxYtMIG5BgNVHSMEgbEwga6AFE6juEwI0K5X6Rv/eMJTk7Q8cg65
-oYGKpIGHMIGEMRQwEgYDVQQDDAtQb2R6aW1layBDQTELMAkGA1UEBhMCQ1oxDjAMBgNVBAcM
-BVpsw61uMRUwEwYDVQQKDAxwb2R6aW1lay5vcmcxFTATBgNVBAsMDHBvZHppbWVrLm9yZzEh
-MB8GCSqGSIb3DQEJARYSYWRtaW5AcG9kemltZWsub3JnggkAkctHSQfLqowwMQYJYIZIAYb4
-QgEEBCQWImh0dHBzOi8vY2EucG9kemltZWsub3JnL2NhLWNybC5wZW0wDQYJKoZIhvcNAQEF
-BQADggEBAKUoyTBti808LZw5SH7hX6ewB9baj0GDjR6s0t4kSXiEf1nr+VBPfftM9RLS8vaj
-L3v9tZ7lKWgRoJDUhYR6CKrUw+t8MTAAI9wYHTgEq10yHdfIGcWdGn0mRgGljOp4YZACzX1y
-791HN+hBmjPKYjLc/2cmVdtOeHMAGn1cyeuyb8drYovtxu/P6MJaCE9533HRYfzOvd2u7D0B
-6oy9Nrn8t5IgRoGENk8wwRYa5jrukXIvTtQNK7In7SAb5DNSHp8kwzQmJtgFqvELVZ593phM
-yLiZuJg5AMU60tXtPIZBvjvkQdyspvp1n0ZLdKrAcZYo752DzOCT2U6KCclbSrcwggY0MIIE
-HKADAgECAgEgMA0GCSqGSIb3DQEBBQUAMH0xCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFy
-dENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5n
-MSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0wNzEwMjQy
-MTAyNTVaFw0xNzEwMjQyMTAyNTVaMIGMMQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRD
-b20gTHRkLjErMCkGA1UECxMiU2VjdXJlIERpZ2l0YWwgQ2VydGlmaWNhdGUgU2lnbmluZzE4
-MDYGA1UEAxMvU3RhcnRDb20gQ2xhc3MgMiBQcmltYXJ5IEludGVybWVkaWF0ZSBDbGllbnQg
-Q0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDLKIVFnAEs+xnyq6UzjCqgDcvQ
-Ve1dIoFnRsQPCFO+y92k8RK0Pn3MbQ2Gd+mehh9GBZ+36uUQA7Xj9AGM6wgPhEE34vKtfpAN
-5tJ8LcFxveDObCKrL7O5UT9WsnAZHv7OYPYSR68mdmnEnJ83M4wQgKO19b+Rt8sPDAz9ptkQ
-sntCn4GeJzg3q2SVc4QJTg/WHo7wF2ah5LMOeh8xJVSKGEmd6uPkSbj113yKMm8vmNptRPmM
-1+YgmVwcdOYJOjCgFtb2sOP79jji8uhWR91xx7TpM1K3hv/wrBZwffrmmEpUeuXHRs07JqCC
-vFh9coKF4UQZvfEg+x3/69xRCzb1AgMBAAGjggGtMIIBqTAPBgNVHRMBAf8EBTADAQH/MA4G
-A1UdDwEB/wQEAwIBBjAdBgNVHQ4EFgQUrlWDb+wxyrn3HfqvazHzyB3jrLswHwYDVR0jBBgw
-FoAUTgvvGqRAW6UXaYcwyjRoQ9BBrvIwZgYIKwYBBQUHAQEEWjBYMCcGCCsGAQUFBzABhhto
-dHRwOi8vb2NzcC5zdGFydHNzbC5jb20vY2EwLQYIKwYBBQUHMAKGIWh0dHA6Ly93d3cuc3Rh
-cnRzc2wuY29tL3Nmc2NhLmNydDBbBgNVHR8EVDBSMCegJaAjhiFodHRwOi8vd3d3LnN0YXJ0
-c3NsLmNvbS9zZnNjYS5jcmwwJ6AloCOGIWh0dHA6Ly9jcmwuc3RhcnRzc2wuY29tL3Nmc2Nh
-LmNybDCBgAYDVR0gBHkwdzB1BgsrBgEEAYG1NwECATBmMC4GCCsGAQUFBwIBFiJodHRwOi8v
-d3d3LnN0YXJ0c3NsLmNvbS9wb2xpY3kucGRmMDQGCCsGAQUFBwIBFihodHRwOi8vd3d3LnN0
-YXJ0c3NsLmNvbS9pbnRlcm1lZGlhdGUucGRmMA0GCSqGSIb3DQEBBQUAA4ICAQA6qScNyNO0
-FpHvaZTQacVMXH33O51KyEKSRw3IvdQxRu31YR0ZDGdSfgSoOVDVMSBSdmfQfdDInHPzV3LO
-5DwUXZ+lxjv7z3PO2OkfnFkvTXPfn6dxJ5rJveDsTsCPcJ/Kp6/+qN5g+J6D/SaYcFD018B6
-L42r0Z4VEBy36P4tjRtF14Ex10tl5tJFVKM16qWKQHbpjIgf73s49UB0CQ5lHT2DHKfq3oPf
-dNc5Mk93w1v4ryVb+qVrZIej8NsrWU+5r4O2IV91edDb/OtHFddZqHFFXKgS79IHE/hwQ2LW
-7r3sTX7cDUCg+dfdwO8zeLxuwk2JF8crUoyrl66RGrRIhT8VoG/OJ1Y9uUlOav69V4cG8upi
-4ZG2l7JZFbcBFk91Wp+Payo5SuF61CmGFrZ386umkmpObtFacXda2O/bVoQ9xHQrzoTc/0KZ
-TWvlZCLK3Ke/vGYT9ZdW9lOjGsSFbXrlTA919L84iMK+48WGnvRWY28ZaVHpql43AtEGhXze
-6iNCbEDACy+4hkQYOytAqDgcxAnQ937mYpeZFPyz/XK9QSt9VNFMuudWxZwDDDJKoQAoSG59
-Hou9lZ26UrK60nRdAQBmEPL8h2nuWgoPh++XVQld9yuhbsWa39Pck8/lcfz5HUVGJF5mc/zk
-38iV7FDlF68puiryNq2KXHEpOTCCBsowggWyoAMCAQICAgtGMA0GCSqGSIb3DQEBBQUAMIGM
-MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjErMCkGA1UECxMiU2VjdXJl
-IERpZ2l0YWwgQ2VydGlmaWNhdGUgU2lnbmluZzE4MDYGA1UEAxMvU3RhcnRDb20gQ2xhc3Mg
-MiBQcmltYXJ5IEludGVybWVkaWF0ZSBDbGllbnQgQ0EwHhcNMTAwOTI3MDA0ODU2WhcNMTIw
-OTI3MDk1NjI4WjCBwjEgMB4GA1UEDRMXMjY0MzU2LVV6cDI4MnFISHRiQ2I1ZDMxCzAJBgNV
-BAYTAkNaMRUwEwYDVQQIEwxabGluc2t5IEtyYWoxDTALBgNVBAcTBFpsaW4xLTArBgNVBAsT
-JFN0YXJ0Q29tIFZlcmlmaWVkIENlcnRpZmljYXRlIE1lbWJlcjEYMBYGA1UEAxMPQW5kcmVq
-IFBvZHppbWVrMSIwIAYJKoZIhvcNAQkBFhNhbmRyZWpAcG9kemltZWsub3JnMIIBIjANBgkq
-hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArldROEvlaSy4OX9PPg22Xl7GCivziuBcbrkH+St9
-vIAyefDb3kfdtHT/J1NRlQDYTrDFQ3cZM2J7vicm4/uu67KzdAF/14mdml1b1prWRiUT3IRw
-Cwbt8wuNhZfa6dGkQ374EuOWDVX+5YCEufr5GMHrkkZy5RYtO9r3avglOI1ZB2F9Z56Zb42k
-S7N2ebEE7Oj+pFeQwaj2pz/B4d3gu6wX+c7GwDiy26iN/33Cl+spa5uFWITb8XD6P6aob9Ep
-yDxn90KEr5+9ug1tmh833Kdll4mmjzAv5ZK0iVFnxsBq+V1TN/2NW6oiIvOLxTIHCfC1MdYi
-88HMC1PaQZF4ywIDAQABo4IC/DCCAvgwCQYDVR0TBAIwADALBgNVHQ8EBAMCBLAwHQYDVR0l
-BBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMB0GA1UdDgQWBBT3GSEvnmmKZPBGzpElp7HtmoV7
-FzAfBgNVHSMEGDAWgBSuVYNv7DHKufcd+q9rMfPIHeOsuzAeBgNVHREEFzAVgRNhbmRyZWpA
-cG9kemltZWsub3JnMIIBQgYDVR0gBIIBOTCCATUwggExBgsrBgEEAYG1NwECAjCCASAwLgYI
-KwYBBQUHAgEWImh0dHA6Ly93d3cuc3RhcnRzc2wuY29tL3BvbGljeS5wZGYwNAYIKwYBBQUH
-AgEWKGh0dHA6Ly93d3cuc3RhcnRzc2wuY29tL2ludGVybWVkaWF0ZS5wZGYwgbcGCCsGAQUF
-BwICMIGqMBQWDVN0YXJ0Q29tIEx0ZC4wAwIBARqBkUxpbWl0ZWQgTGlhYmlsaXR5LCBzZWUg
-c2VjdGlvbiAqTGVnYWwgTGltaXRhdGlvbnMqIG9mIHRoZSBTdGFydENvbSBDZXJ0aWZpY2F0
-aW9uIEF1dGhvcml0eSBQb2xpY3kgYXZhaWxhYmxlIGF0IGh0dHA6Ly93d3cuc3RhcnRzc2wu
-Y29tL3BvbGljeS5wZGYwYwYDVR0fBFwwWjAroCmgJ4YlaHR0cDovL3d3dy5zdGFydHNzbC5j
-b20vY3J0dTItY3JsLmNybDAroCmgJ4YlaHR0cDovL2NybC5zdGFydHNzbC5jb20vY3J0dTIt
-Y3JsLmNybDCBjgYIKwYBBQUHAQEEgYEwfzA5BggrBgEFBQcwAYYtaHR0cDovL29jc3Auc3Rh
-cnRzc2wuY29tL3N1Yi9jbGFzczIvY2xpZW50L2NhMEIGCCsGAQUFBzAChjZodHRwOi8vd3d3
-LnN0YXJ0c3NsLmNvbS9jZXJ0cy9zdWIuY2xhc3MyLmNsaWVudC5jYS5jcnQwIwYDVR0SBBww
-GoYYaHR0cDovL3d3dy5zdGFydHNzbC5jb20vMA0GCSqGSIb3DQEBBQUAA4IBAQCEI21EOM71
-hKXRNFHbWFaemV86fxAs1yMl6SohZhNRea/Pc5hMpoFoUZBf0qJ3AvFy2PzsyspTsqZhBOwo
-I3rVJlgZapKi4x4k7FXM43xFmU/koQLdQPDS1Jfbr8zFTVBx+K6xD+L9y+M1M7JX+EcQgTIu
-CZn80YjSxEpAGND09NUPrgwJ/v9Nn5zqbEraf5MRSAun11fhkqIORlqkAi393N+kvXEsAtRJ
-A0CizQzFfmLFNY4xWtWtRYJGatOIzDO8s8gA8kfC99CcygpRQbrMBaBZ3fzMgoNXhP7A6801
-XYg+flS0kxPSubBbEfEUCVOHNcm4TAdyKwYehI9N8PD+MYIDuzCCA7cCAQEwgZMwgYwxCzAJ
-BgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGln
-aXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5nMTgwNgYDVQQDEy9TdGFydENvbSBDbGFzcyAyIFBy
-aW1hcnkgSW50ZXJtZWRpYXRlIENsaWVudCBDQQICC0YwCQYFKw4DAhoFAKCCAfwwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTAxMTI5MjIwMDUxWjAjBgkq
-hkiG9w0BCQQxFgQUU0Oc/Qv0Cq1BGEei36iRnsWOMgcwXwYJKoZIhvcNAQkPMVIwUDALBglg
-hkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFAMAcG
-BSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGbBgkrBgEEAYI3EAQxgY0wgYowgYQxFDASBgNVBAMM
-C1BvZHppbWVrIENBMQswCQYDVQQGEwJDWjEOMAwGA1UEBwwFWmzDrW4xFTATBgNVBAoMDHBv
-ZHppbWVrLm9yZzEVMBMGA1UECwwMcG9kemltZWsub3JnMSEwHwYJKoZIhvcNAQkBFhJhZG1p
-bkBwb2R6aW1lay5vcmcCATQwgZ0GCyqGSIb3DQEJEAILMYGNoIGKMIGEMRQwEgYDVQQDDAtQ
-b2R6aW1layBDQTELMAkGA1UEBhMCQ1oxDjAMBgNVBAcMBVpsw61uMRUwEwYDVQQKDAxwb2R6
-aW1lay5vcmcxFTATBgNVBAsMDHBvZHppbWVrLm9yZzEhMB8GCSqGSIb3DQEJARYSYWRtaW5A
-cG9kemltZWsub3JnAgE0MA0GCSqGSIb3DQEBAQUABIIBAFnmFGkzVVUkoDjvd7uWp9iOdNXE
-4k6E1sCG8xCFOjxc8rlQuScKAbNomSUFm4E16GmP75zLdPVacN3ZtvV8F3YGAFyo/cZfYwOl
-aeS/6KQmliKb01NFJsA7/Mgc8DvGfrmiT0BRC5hgbwvNVOg3GSVFqEEtg6liHsRSRDstBvhz
-3aYUZaGp/vGvvWBpfCYeXh97B/DL5TUcQHYIbHUK5J0M5D6m3W3Vf9szcxyN77gBJ5zIFXla
-qt8aKEW97tWMKmkbahJezOFnDUpFzdinNrJ/mqpvV8osa/GwF/V54VDSHw58WYH9A7r38oH8
-n6PtOxRuaqFQ/HJ0pYEH4ZVl6+cAAAAAAAA=
---=_charon-8971-1291068054-0001-2--
+So...  nope.  I won't be applying Nick's patch.  Please fix this thing
+properly - you have a whole month!

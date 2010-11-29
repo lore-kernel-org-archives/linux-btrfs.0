@@ -1,79 +1,220 @@
 From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: Root fs on raid1
-Date: Mon, 29 Nov 2010 19:02:44 +0100
-Message-ID: <201011291902.45064.kreijack@libero.it>
-References: <GM8zfnmgV9SK.SwXVG4nX@mail.prnet.org> <201011180759.36779.kreijack@libero.it> <AANLkTi=hSJkDBQz6pg=a9Wdm28NpJBgBB4snu1XEAQsZ@mail.gmail.com>
+Subject: Re: [PATCH 1/5] btrfs: Make async snapshot ioctl more generic
+Date: Mon, 29 Nov 2010 19:52:10 +0100
+Message-ID: <201011291952.11297.kreijack@libero.it>
+References: <4CF35E17.6050705@cn.fujitsu.com> <4CF35E28.4070206@cn.fujitsu.com>
 Reply-To: kreijack@libero.it
 Mime-Version: 1.0
 Content-Type: Text/Plain;
-  charset="iso-8859-15"
-Cc: linux-btrfs@vger.kernel.org
-To: Erik Jensen <eriksjunk@rkjnsn.net>
+  charset="utf-8"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=hSJkDBQz6pg=a9Wdm28NpJBgBB4snu1XEAQsZ@mail.gmail.com>
+In-Reply-To: <4CF35E28.4070206@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday, 29 November, 2010, you (Erik Jensen) wrote:
-> I have a similar setup on one of my computers.  I set it up a while ago
-> using an initramfs, but I could not get the device scan to work properly,
-> for whatever reason.  I ended up having it just trying to mount every device
-> in the array in turn.  When it gets to the last device, the array mounts
-> since btrfs now knows about all of the other ones.  Really ugly, I know, but
-> it works.
->
+Hi Li,
 
-I also had a lot of problem to get a btrfs-aware initramfs working properly. 
-One of the biggest proble was to find the right list of modules. Btrfs depends 
-by crc32c, and I need a lot of retries to discover it.
+great work, but I have some suggestions:
 
-The main problem was that if the module is not available (it is the case of a 
-initramfs) btrfs doesn't start...
-
-When you say " it just trying to mount every device in the array in turn", do 
-you mean in the initarmfs ?
-
-
-
-> -- Erik Jensen
+On Monday, 29 November, 2010, Li Zefan wrote:
+> So we don't have to add new structures as we create more ioctls
+> for snapshots.
 > 
-> On Wed, Nov 17, 2010 at 10:59 PM, Goffredo Baroncelli 
-<kreijack@libero.it>wrote:
+> Now to create async snapshot, set BTRFS_SNAPSHOT_CREATE_ASYNC bit of
+> vol_arg_v2->flags, and then call ioctl(BTRFS_IOCT_SNAP_CREATE_V2).
 > 
-> > On Thursday, 18 November, 2010, admin@prnet.org wrote:
-> > > Hi,
-> > >
-> > > I have read that for using raid1 btrfs device scan must be run before
-> > mounting the fs. How do I proceed if root filesystem is mounted from btrfs
-> > ?
-> > >
-> >
-> >
-> > See a my previous post
-> >
-> > http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg04709.html
-> >
-> >
-> > > Thanks in advance
-> > > Bye,
-> > > David Arendt
-> > >
-> > > --
-> > > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" 
-in
-> > > the body of a message to majordomo@vger.kernel.org
-> > > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > >
-> >
-> >
-> > --
-> > gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <
-> > kreijack@inwind.it>
-> > Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >
+> Note: this changes the async snapshot ioctl ABI, which was merged
+> in .37 merge window, so we have to make this change into .37.
+> 
+> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+> ---
+>  fs/btrfs/ioctl.c |   34 +++++++++++++++++++++-------------
+>  fs/btrfs/ioctl.h |   12 ++++++++----
+>  2 files changed, 29 insertions(+), 17 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 463d91b..d3f1a60 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -935,23 +935,31 @@ out:
+>  
+>  static noinline int btrfs_ioctl_snap_create(struct file *file,
+>  					    void __user *arg, int subvol,
+> -					    int async)
+> +					    bool v2)
+
+This is a aesthetic suggestion: instead of passing a flag called v2 I suggest 
+to add two wrapper functions, which extract the parameters and passes all 
+available parameter to the "generic" function. Something like:
+
+static inline btrfs_ioctl_snap_create_v1(struct file *file, 
+						void __user *arg, int subvol)
+{
+                vol_args = memdup_user(arg, sizeof(*vol_args));
+                if (IS_ERR(vol_args))
+                        return PTR_ERR(vol_args);
+                name = vol_args->name;
+                fd = vol_args->fd;
+                vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
+
+		btrfs_ioctl_snap_create_generic(file, subvol, name, fd, 0, 0);
+
+}
+
+static inline btrfs_ioctl_snap_create_v2(struct file *file, 
+						void __user *arg, int subvol,
+						)
+{
+                vol_args_v2 = memdup_user(arg, sizeof(*vol_args_v2));
+                if (IS_ERR(vol_args_v2))
+                        return PTR_ERR(vol_args_v2);
+
+                ret = snap_check_flags(vol_args_v2->flags, true);
+                if (ret)
+                        goto out;
+
+                name = vol_args_v2->name;
+                fd = vol_args_v2->fd;
+                vol_args_v2->name[BTRFS_SNAPSHOT_NAME_MAX] = '\0';
+                if (vol_args_v2->flags & BTRFS_SNAPSHOT_CREATE_ASYNC)
+                        async = true;
+                if (vol_args_v2->flags & BTRFS_SNAPSHOT_RDONLY)
+                        readonly = true;
+
+		btrfs_ioctl_snap_create_generic(file, subvol, name, fd, async,
+			 readonly);
+
+}
+
+and 
+
+  	case BTRFS_IOC_SNAP_CREATE:
+  		return btrfs_ioctl_snap_create_v1(file, argp, 0);
+	case BTRFS_IOC_SNAP_CREATE_V2:
+  		return btrfs_ioctl_snap_create_v2(file, argp, 0);
+
+
+Frankly speaking, we could get rid of the subvol parameter adding another 
+wrapper function like "btrfs_ioctl_subvol_create( )", but this would be 
+another story :)
+
+>  {
+>  	struct btrfs_ioctl_vol_args *vol_args = NULL;
+> -	struct btrfs_ioctl_async_vol_args *async_vol_args = NULL;
+> +	struct btrfs_ioctl_vol_args_v2 *vol_args_v2 = NULL;
+>  	char *name;
+>  	u64 fd;
+>  	u64 transid = 0;
+> +	bool async = false;
+>  	int ret;
+>  
+> -	if (async) {
+> -		async_vol_args = memdup_user(arg, sizeof(*async_vol_args));
+> -		if (IS_ERR(async_vol_args))
+> -			return PTR_ERR(async_vol_args);
+> +	if (v2) {
+> +		vol_args_v2 = memdup_user(arg, sizeof(*vol_args_v2));
+> +		if (IS_ERR(vol_args_v2))
+> +			return PTR_ERR(vol_args_v2);
+>  
+> -		name = async_vol_args->name;
+> -		fd = async_vol_args->fd;
+> -		async_vol_args->name[BTRFS_SNAPSHOT_NAME_MAX] = '\0';
+> +		if (vol_args_v2->flags & ~BTRFS_SNAPSHOT_CREATE_ASYNC) {
+> +			ret = -EINVAL;
+> +			goto out;
+> +		}
+> +
+> +		name = vol_args_v2->name;
+> +		fd = vol_args_v2->fd;
+> +		vol_args_v2->name[BTRFS_SNAPSHOT_NAME_MAX] = '\0';
+> +		if (vol_args_v2->flags & BTRFS_SNAPSHOT_CREATE_ASYNC)
+> +			async = true;
+>  	} else {
+>  		vol_args = memdup_user(arg, sizeof(*vol_args));
+>  		if (IS_ERR(vol_args))
+> @@ -966,13 +974,13 @@ static noinline int btrfs_ioctl_snap_create(struct 
+file *file,
+>  
+>  	if (!ret && async) {
+>  		if (copy_to_user(arg +
+> -				offsetof(struct btrfs_ioctl_async_vol_args,
+> +				offsetof(struct btrfs_ioctl_vol_args_v2,
+>  				transid), &transid, sizeof(transid)))
+>  			return -EFAULT;
+>  	}
+> -
+> +out:
+>  	kfree(vol_args);
+> -	kfree(async_vol_args);
+> +	kfree(vol_args_v2);
+>  
+>  	return ret;
+>  }
+> @@ -2235,7 +2243,7 @@ long btrfs_ioctl(struct file *file, unsigned int
+>  		return btrfs_ioctl_getversion(file, argp);
+>  	case BTRFS_IOC_SNAP_CREATE:
+>  		return btrfs_ioctl_snap_create(file, argp, 0, 0);
+> -	case BTRFS_IOC_SNAP_CREATE_ASYNC:
+> +	case BTRFS_IOC_SNAP_CREATE_V2:
+>  		return btrfs_ioctl_snap_create(file, argp, 0, 1);
+>  	case BTRFS_IOC_SUBVOL_CREATE:
+>  		return btrfs_ioctl_snap_create(file, argp, 1, 0);
+> diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+> index 17c99eb..bc70584 100644
+> --- a/fs/btrfs/ioctl.h
+> +++ b/fs/btrfs/ioctl.h
+> @@ -30,10 +30,14 @@ struct btrfs_ioctl_vol_args {
+>  	char name[BTRFS_PATH_NAME_MAX + 1];
+>  };
+>  
+> -#define BTRFS_SNAPSHOT_NAME_MAX 4079
+> -struct btrfs_ioctl_async_vol_args {
+> +#define BTRFS_SNAPSHOT_CREATE_ASYNC	(1ULL << 0)
+> +
+> +#define BTRFS_SNAPSHOT_NAME_MAX 4039
+> +struct btrfs_ioctl_vol_args_v2 {
+>  	__s64 fd;
+>  	__u64 transid;
+> +	__u64 flags;
+> +	__u64 unused[4];
+>  	char name[BTRFS_SNAPSHOT_NAME_MAX + 1];
+>  };
+
+Why the unused fields ? What happens if you use a more recent btrfs-tools 
+which take advantage of these fields but the kernel is an old one ? At the 
+minimum please check the flags so
+	(flags^(BTRFS_SNAPSHOT_CREATE_ASYNC|BTRFS_SNAPSHOT_RDONLY)) == 0
+and
+	unused[0..3] == 0
+
+For future expansion I suggest to use a different ioctl. To me it seems a more 
+robust API.
+
+>  
+> @@ -187,6 +191,6 @@ struct btrfs_ioctl_space_args {
+>  				    struct btrfs_ioctl_space_args)
+>  #define BTRFS_IOC_START_SYNC _IOR(BTRFS_IOCTL_MAGIC, 24, __u64)
+>  #define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
+> -#define BTRFS_IOC_SNAP_CREATE_ASYNC _IOW(BTRFS_IOCTL_MAGIC, 23, \
+> -				   struct btrfs_ioctl_async_vol_args)
+> +#define BTRFS_IOC_SNAP_CREATE_V2 _IOW(BTRFS_IOCTL_MAGIC, 23, \
+> +				   struct btrfs_ioctl_vol_args_v2)
+
+I repeat: great work, please take my comments only a suggestion to improve 
+instead of an empty criticism.
+
+Regards
+G.Baroncelli
+
+>  #endif
+> -- 
+> 1.6.3
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
 
 

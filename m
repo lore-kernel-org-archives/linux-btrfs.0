@@ -1,57 +1,85 @@
-From: Nick Piggin <npiggin@kernel.dk>
-Subject: Re: [patch] fs: fix deadlocks in writeback_if_idle
-Date: Tue, 30 Nov 2010 11:01:18 +1100
-Message-ID: <20101130000118.GA3255@amd>
-References: <20101123100239.GA4232@amd>
- <1290515274-sup-3895@think>
- <20101123125223.GA4946@amd>
- <1290538347-sup-7669@think>
- <20101124010343.GD3168@amd>
- <20101124131028.GQ6113@quack.suse.cz>
- <20101125035356.GC3359@amd>
- <20101129142603.ebbcbc7e.akpm@linux-foundation.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Nick Piggin <npiggin@kernel.dk>, Jan Kara <jack@suse.cz>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	Al Viro <viro@zeniv.linux.org.uk>,
-	linux-ext4 <linux-ext4@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Eric Sandeen <sandeen@redhat.com>,
-	Theodore Ts'o <tytso@mit.edu>
-To: Andrew Morton <akpm@linux-foundation.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20101129142603.ebbcbc7e.akpm@linux-foundation.org>
+From: C Anthony Risinger <anthony@extof.me>
+Subject: Re: Default to read-only on snapshot creation and have a flag if
+ snapshot should be writable (was: [PATCH 0/5] btrfs: Readonly snapshots)
+Date: Mon, 29 Nov 2010 18:33:09 -0600
+Message-ID: <6742321336526268697@unknownmsgid>
+References: <AANLkTikbmUQA7JtkjV4177jmj9WDVe1V3NvbX3ts6TNd@mail.gmail.com>
+ <4CF40FE4.2030801@prnet.org> <AANLkTimfSTq4h0eq_hjY6aEdXgM7Gq382m1FMAXy-z=P@mail.gmail.com>
+ <AANLkTi=VP4jStt41sYAD=6g8FwRfGrhqZB2pGcZjNbiN@mail.gmail.com>
+ <AANLkTikK0OEJneHWqABnOA+c9e1-QirctS34mV0bOFCv@mail.gmail.com> <AANLkTimb=-v4b-fHqRpW-7Q2gyzHp=8e3Ouff3ShoQJr@mail.gmail.com>
+Mime-Version: 1.0 (iPhone Mail 7D11)
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Mike Fedyk <mfedyk@mikefedyk.com>, David Arendt <admin@prnet.org>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Andrey Kuzmin <andrey.v.kuzmin@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTimb=-v4b-fHqRpW-7Q2gyzHp=8e3Ouff3ShoQJr@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 29, 2010 at 02:26:03PM -0800, Andrew Morton wrote:
-> 	On Thu, 25 Nov 2010 14:53:56 +1100
-> Nick Piggin <npiggin@kernel.dk> wrote:
-> > On Wed, Nov 24, 2010 at 02:10:28PM +0100, Jan Kara wrote:
-> > Well, for now, the easiest and simplest fix is my patch, I think. The
-> > objection is that we may not write out anything for the specified sb,
-> > but the current implementation provides no such guarantees at all
-> > anyway, so I don't think it's a big issue.
-> 
-> Well yes.  We take something which will fail occasionally and with your
-> patch replace it with something which will fail a bit more often.  Why
-> don't we go all the way and do something which will fail *even more
-> often*.  Namely, just delete the damn function in the hope that the
-> resulting failures will provoke the ext4 crew into doing something sane
-> this time?
+On Nov 29, 2010, at 3:48 PM, Andrey Kuzmin <andrey.v.kuzmin@gmail.com>
+wrote:
 
-I just need it fixed because the deadlocks are constantly hanging my
-tests and/or switching off lockdep.
+> I'm not sure why zfs came up, they don't own the term :). As to
+> zfs/overhead topic, I doubt there's any difference between clone and
+> writable shapshot (there should be none, of course, it's just two
+> different names for the same concept).
+>
+> Regards,
+> Andrey
+>
+>
+>
+>
+> On Tue, Nov 30, 2010 at 12:43 AM, Mike Fedyk <mfedyk@mikefedyk.com>
+> wrote:
+>> On Mon, Nov 29, 2010 at 1:31 PM, Andrey Kuzmin
+>> <andrey.v.kuzmin@gmail.com> wrote:
+>>> This may sound excessive as any new concept introduction that late
+>>> in
+>>> development, but readonly/writable snapshots could be further
+>>> differentiated by naming the latter clones. This way end-user would
+>>> naturally perceive snapsot as read-only PIT fs image, while clone
+>>> would naturally refer to (writable) head fork.
+>>>
+>>
+>> I'm not sure we want to take all of the terminology that zfs uses as
+>> it may also bring the percieved drawbacks as well.  Isn't there some
+>> additional overhead for a zfs clone compared to a snapshot?  I'm not
+>> very familiar with zfs so that's why I ask.
+>>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-
+> btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
- 
-> Guys, this delalloc thing *sucks*.  And here we are just sticking new
-> bandaids on top of the old bandaids.  And the btrfs approach isn't
-> exactly a thing of glory, either.
-> 
-> So...  nope.  I won't be applying Nick's patch.  Please fix this thing
-> properly - you have a whole month!
+I don't like the idea of readonly by default, or further changes to
+terminology, for several reasons:
 
-Testers have less. It would be better to fix it now and rip it out at
-the start of the next merge window if you're that way inclined :)
+) readonly by default offers no real enhancement whatsoever other than
+breaking _anything_ that's written right now
+) btrfs readonly is not even really readonly; as superuser could
+simply flip a flag to enable writes, readonly merely prevents
+accidental writes or misbehaving apps... ie. protecting you from
+yourself
+) backups are the simple/obvious use case; I personally use btrfs
+heavily for LXC containers, in which case nearly every single snapshot
+is intended to be writable -- usually cloning a template into a new
+domain
+) I also use an initramfs hook to provide system rollbacks, also
+writable; the hook also provides multiple versions of the "branch"...
+all writable
+) adding new terms is not a good idea imo; I've already spewed out
+many sentences explaining the difference between subvolumes and
+snapshots, ie. that there is none... adding another term only adds to
+this problem; they each describe the same thing, but differentiate
+based on origin or current state, neither of which actually describe
+what it _is_-- a new named pointer to a tree, like a git branch -- a
+subvolume.
 
+I think a better solution/compromise would be to leave snapshots
+writeable by default, since that's more true to what's happening
+internally anyway, but maybe introduce a mount option controlling the
+default action for that mount point.
+
+C Anthony [mobile]

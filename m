@@ -1,240 +1,80 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: [PATCH 1/5] btrfs: Make async snapshot ioctl more generic
-Date: Tue, 30 Nov 2010 09:13:18 +0800
-Message-ID: <4CF44FAE.1010603@cn.fujitsu.com>
-References: <4CF35E17.6050705@cn.fujitsu.com> <4CF35E28.4070206@cn.fujitsu.com> <201011291952.11297.kreijack@libero.it>
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: Re: [RFC PATCH 0/4] Add readonly support to replace BUG_ON phrase
+Date: Tue, 30 Nov 2010 10:03:58 +0800
+Message-ID: <4CF45B8E.3070100@cn.fujitsu.com>
+References: <4CEE31EF.1020102@cn.fujitsu.com> <20101129201017.GB2618@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: kreijack@libero.it
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Miao Xie <miaox@cn.fujitsu.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	liubo <liubo2009@cn.fujitsu.com>
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201011291952.11297.kreijack@libero.it>
+In-Reply-To: <20101129201017.GB2618@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Goffredo Baroncelli wrote:
-> Hi Li,
-> 
-> great work, but I have some suggestions:
-> 
-> On Monday, 29 November, 2010, Li Zefan wrote:
->> So we don't have to add new structures as we create more ioctls
->> for snapshots.
+On 11/30/2010 04:10 AM, Josef Bacik wrote:
+> On Thu, Nov 25, 2010 at 05:52:47PM +0800, Miao Xie wrote:
+>> Btrfs has a number of BUG_ON()s, which may lead btrfs to unpleasant panic.
+>> Meanwhile, they are very ugly and should be handled more propriately.
 >>
->> Now to create async snapshot, set BTRFS_SNAPSHOT_CREATE_ASYNC bit of
->> vol_arg_v2->flags, and then call ioctl(BTRFS_IOCT_SNAP_CREATE_V2).
+>> There are mainly two ways to deal with these BUG_ON()s.
 >>
->> Note: this changes the async snapshot ioctl ABI, which was merged
->> in .37 merge window, so we have to make this change into .37.
+>> 1. For those errors which can be handled well by callers, we just return their
+>> error number to callers.
 >>
->> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+>> 2. For others, We can force the filesystem readonly when it hits errors, which
+>>  is what this patchset has done. Replaced BUG_ON() with the interface provided
+>>  in this patchset, we will get error infomation via dmesg. Since btrfs is now 
+>> readonly, we can save our data safely and umount it, then a btrfsck is 
+>> recommended.
+>>
+>> By these ways, we can protect our filesystem from panic caused by those 
+>> BUG_ONs.
+>>
 >> ---
->>  fs/btrfs/ioctl.c |   34 +++++++++++++++++++++-------------
->>  fs/btrfs/ioctl.h |   12 ++++++++----
->>  2 files changed, 29 insertions(+), 17 deletions(-)
+>>  fs/btrfs/ctree.h       |   21 ++++++++++
+>>  fs/btrfs/disk-io.c     |   23 +++++++++++
+>>  fs/btrfs/super.c       |  100 ++++++++++++++++++++++++++++++++++++++++++++++-
+>>  fs/btrfs/transaction.c |    7 +++
+>>  4 files changed, 148 insertions(+), 3 deletions(-)
 >>
->> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->> index 463d91b..d3f1a60 100644
->> --- a/fs/btrfs/ioctl.c
->> +++ b/fs/btrfs/ioctl.c
->> @@ -935,23 +935,31 @@ out:
->>  
->>  static noinline int btrfs_ioctl_snap_create(struct file *file,
->>  					    void __user *arg, int subvol,
->> -					    int async)
->> +					    bool v2)
 > 
-> This is a aesthetic suggestion: instead of passing a flag called v2 I suggest 
-> to add two wrapper functions, which extract the parameters and passes all 
-> available parameter to the "generic" function. Something like:
-> 
+> Overall seems sane, but what about kernels that don't make these checks?  I'm ok
+> with "well sucks for them" as an answer, just want to make sure we've at least
+> though about it.
 
-Sure, as long as it won't result in code duplication and can
-improve readability.
+You mean those code that does nothing on ret-checks?
 
-> static inline btrfs_ioctl_snap_create_v1(struct file *file, 
-> 						void __user *arg, int subvol)
-> {
->                 vol_args = memdup_user(arg, sizeof(*vol_args));
->                 if (IS_ERR(vol_args))
->                         return PTR_ERR(vol_args);
->                 name = vol_args->name;
->                 fd = vol_args->fd;
->                 vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
-> 
-> 		btrfs_ioctl_snap_create_generic(file, subvol, name, fd, 0, 0);
-> 
-> }
-> 
-> static inline btrfs_ioctl_snap_create_v2(struct file *file, 
-> 						void __user *arg, int subvol,
-> 						)
-> {
->                 vol_args_v2 = memdup_user(arg, sizeof(*vol_args_v2));
->                 if (IS_ERR(vol_args_v2))
->                         return PTR_ERR(vol_args_v2);
-> 
->                 ret = snap_check_flags(vol_args_v2->flags, true);
->                 if (ret)
->                         goto out;
-> 
->                 name = vol_args_v2->name;
->                 fd = vol_args_v2->fd;
->                 vol_args_v2->name[BTRFS_SNAPSHOT_NAME_MAX] = '\0';
->                 if (vol_args_v2->flags & BTRFS_SNAPSHOT_CREATE_ASYNC)
->                         async = true;
->                 if (vol_args_v2->flags & BTRFS_SNAPSHOT_RDONLY)
->                         readonly = true;
-> 
-> 		btrfs_ioctl_snap_create_generic(file, subvol, name, fd, async,
-> 			 readonly);
-> 
-> }
-> 
-> and 
-> 
->   	case BTRFS_IOC_SNAP_CREATE:
->   		return btrfs_ioctl_snap_create_v1(file, argp, 0);
-> 	case BTRFS_IOC_SNAP_CREATE_V2:
->   		return btrfs_ioctl_snap_create_v2(file, argp, 0);
-> 
-> 
-> Frankly speaking, we could get rid of the subvol parameter adding another 
-> wrapper function like "btrfs_ioctl_subvol_create( )", but this would be 
-> another story :)
-> 
-
-I thought about that too.
-
->>  {
->>  	struct btrfs_ioctl_vol_args *vol_args = NULL;
->> -	struct btrfs_ioctl_async_vol_args *async_vol_args = NULL;
->> +	struct btrfs_ioctl_vol_args_v2 *vol_args_v2 = NULL;
->>  	char *name;
->>  	u64 fd;
->>  	u64 transid = 0;
->> +	bool async = false;
->>  	int ret;
->>  
->> -	if (async) {
->> -		async_vol_args = memdup_user(arg, sizeof(*async_vol_args));
->> -		if (IS_ERR(async_vol_args))
->> -			return PTR_ERR(async_vol_args);
->> +	if (v2) {
->> +		vol_args_v2 = memdup_user(arg, sizeof(*vol_args_v2));
->> +		if (IS_ERR(vol_args_v2))
->> +			return PTR_ERR(vol_args_v2);
->>  
->> -		name = async_vol_args->name;
->> -		fd = async_vol_args->fd;
->> -		async_vol_args->name[BTRFS_SNAPSHOT_NAME_MAX] = '\0';
->> +		if (vol_args_v2->flags & ~BTRFS_SNAPSHOT_CREATE_ASYNC) {
->> +			ret = -EINVAL;
->> +			goto out;
->> +		}
->> +
->> +		name = vol_args_v2->name;
->> +		fd = vol_args_v2->fd;
->> +		vol_args_v2->name[BTRFS_SNAPSHOT_NAME_MAX] = '\0';
->> +		if (vol_args_v2->flags & BTRFS_SNAPSHOT_CREATE_ASYNC)
->> +			async = true;
->>  	} else {
->>  		vol_args = memdup_user(arg, sizeof(*vol_args));
->>  		if (IS_ERR(vol_args))
->> @@ -966,13 +974,13 @@ static noinline int btrfs_ioctl_snap_create(struct 
-> file *file,
->>  
->>  	if (!ret && async) {
->>  		if (copy_to_user(arg +
->> -				offsetof(struct btrfs_ioctl_async_vol_args,
->> +				offsetof(struct btrfs_ioctl_vol_args_v2,
->>  				transid), &transid, sizeof(transid)))
->>  			return -EFAULT;
->>  	}
->> -
->> +out:
->>  	kfree(vol_args);
->> -	kfree(async_vol_args);
->> +	kfree(vol_args_v2);
->>  
->>  	return ret;
->>  }
->> @@ -2235,7 +2243,7 @@ long btrfs_ioctl(struct file *file, unsigned int
->>  		return btrfs_ioctl_getversion(file, argp);
->>  	case BTRFS_IOC_SNAP_CREATE:
->>  		return btrfs_ioctl_snap_create(file, argp, 0, 0);
->> -	case BTRFS_IOC_SNAP_CREATE_ASYNC:
->> +	case BTRFS_IOC_SNAP_CREATE_V2:
->>  		return btrfs_ioctl_snap_create(file, argp, 0, 1);
->>  	case BTRFS_IOC_SUBVOL_CREATE:
->>  		return btrfs_ioctl_snap_create(file, argp, 1, 0);
->> diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
->> index 17c99eb..bc70584 100644
->> --- a/fs/btrfs/ioctl.h
->> +++ b/fs/btrfs/ioctl.h
->> @@ -30,10 +30,14 @@ struct btrfs_ioctl_vol_args {
->>  	char name[BTRFS_PATH_NAME_MAX + 1];
->>  };
->>  
->> -#define BTRFS_SNAPSHOT_NAME_MAX 4079
->> -struct btrfs_ioctl_async_vol_args {
->> +#define BTRFS_SNAPSHOT_CREATE_ASYNC	(1ULL << 0)
->> +
->> +#define BTRFS_SNAPSHOT_NAME_MAX 4039
->> +struct btrfs_ioctl_vol_args_v2 {
->>  	__s64 fd;
->>  	__u64 transid;
->> +	__u64 flags;
->> +	__u64 unused[4];
->>  	char name[BTRFS_SNAPSHOT_NAME_MAX + 1];
->>  };
-> 
-> Why the unused fields ? What happens if you use a more recent btrfs-tools 
-> which take advantage of these fields but the kernel is an old one ? At the 
-
-It's common that we reserve some place in an ABI for future expansion.
-If later those unused bytes are used, it should make sure it won't
-break old kernels.
-
-> minimum please check the flags so
-> 	(flags^(BTRFS_SNAPSHOT_CREATE_ASYNC|BTRFS_SNAPSHOT_RDONLY)) == 0
-
-This is checked.
-
-> and
-> 	unused[0..3] == 0
-
-No, we don't need to check this. I don't think other ioctls that have
-reserved bytes check this.
+IMO, if the code really needs ret-check, we should deal with them seriously, or just
+leave it alone. And this is a step-by-step job.
 
 > 
-> For future expansion I suggest to use a different ioctl. To me it seems a more 
-> robust API.
-
-I'd like to avoid new ioctls if possible. If we had had some reserved
-bytes in struct btrfs_ioctl_vol_args, we wouldn't need to create
-a v2 ioctl.
-
-> 
->>  
->> @@ -187,6 +191,6 @@ struct btrfs_ioctl_space_args {
->>  				    struct btrfs_ioctl_space_args)
->>  #define BTRFS_IOC_START_SYNC _IOR(BTRFS_IOCTL_MAGIC, 24, __u64)
->>  #define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
->> -#define BTRFS_IOC_SNAP_CREATE_ASYNC _IOW(BTRFS_IOCTL_MAGIC, 23, \
->> -				   struct btrfs_ioctl_async_vol_args)
->> +#define BTRFS_IOC_SNAP_CREATE_V2 _IOW(BTRFS_IOCTL_MAGIC, 23, \
->> +				   struct btrfs_ioctl_vol_args_v2)
-> 
-> I repeat: great work, please take my comments only a suggestion to improve 
-> instead of an empty criticism.
+> Also I'm not sure marking the fs as broken is the right move here.  Ext3/4 don't
+> do this, they just mount read-only, as long as you can still unmount the
+> filesystem everything comes out ok.  Think of the case where we just get a
+> spurious EIO, the fs should be fine the next time around, there's reason to
+> force the user to run fsck in this case.
 > 
 
-Thanks!
+Yes, I agree on this.
+For spurious EIO, it mainly depends on coders, returning the errno to caller may work on 
+bypassing fsck.
 
-> Regards
-> G.Baroncelli
+While I'm working on this readonly stuff, it is difficult to solve the potential 
+deadlock when we write the super block to disk. 
+Since btrfs supports multi-device, before write-super, we must get the device lock 
+"device_list_mutex" first, and this has puzzled me a lot.
+
+BTW, I've tried another way to bypass deadlock. I made the write-super stuff into umount, 
+which can make us free from deadlock, however, while testing this, it seemes that umount 
+cannot work due to a ext3/4 jbd oops, I'm digging on this oops...
+
+So, any ideas about free from deadlock?
+
+> Thanks,
 > 
->>  #endif
->> -- 
->> 1.6.3
->>
+> Josef
+> 
+

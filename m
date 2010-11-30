@@ -1,85 +1,46 @@
-From: C Anthony Risinger <anthony@extof.me>
-Subject: Re: Default to read-only on snapshot creation and have a flag if
- snapshot should be writable (was: [PATCH 0/5] btrfs: Readonly snapshots)
-Date: Mon, 29 Nov 2010 18:33:09 -0600
-Message-ID: <6742321336526268697@unknownmsgid>
-References: <AANLkTikbmUQA7JtkjV4177jmj9WDVe1V3NvbX3ts6TNd@mail.gmail.com>
- <4CF40FE4.2030801@prnet.org> <AANLkTimfSTq4h0eq_hjY6aEdXgM7Gq382m1FMAXy-z=P@mail.gmail.com>
- <AANLkTi=VP4jStt41sYAD=6g8FwRfGrhqZB2pGcZjNbiN@mail.gmail.com>
- <AANLkTikK0OEJneHWqABnOA+c9e1-QirctS34mV0bOFCv@mail.gmail.com> <AANLkTimb=-v4b-fHqRpW-7Q2gyzHp=8e3Ouff3ShoQJr@mail.gmail.com>
-Mime-Version: 1.0 (iPhone Mail 7D11)
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Mike Fedyk <mfedyk@mikefedyk.com>, David Arendt <admin@prnet.org>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Andrey Kuzmin <andrey.v.kuzmin@gmail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimb=-v4b-fHqRpW-7Q2gyzHp=8e3Ouff3ShoQJr@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [patch] fs: fix deadlocks in writeback_if_idle
+Date: Mon, 29 Nov 2010 19:50:46 -0500
+Message-ID: <1291075500-sup-6320@think>
+References: <20101123100239.GA4232@amd> <1290515274-sup-3895@think> <20101124144740.bffb2716.akpm@linux-foundation.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: Nick Piggin <npiggin@kernel.dk>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+	Al Viro <viro@zeniv.linux.org.uk>,
+	linux-ext4 <linux-ext4@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Jan Kara <jack@suse.cz>, Eric Sandeen <sandeen@redhat.com>,
+	"Theodore Ts'o" <tytso@mit.edu>
+To: Andrew Morton <akpm@linux-foundation.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-reply-to: <20101124144740.bffb2716.akpm@linux-foundation.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Nov 29, 2010, at 3:48 PM, Andrey Kuzmin <andrey.v.kuzmin@gmail.com>
-wrote:
+Excerpts from Andrew Morton's message of 2010-11-24 17:47:40 -0500:
+> On Tue, 23 Nov 2010 07:34:07 -0500
+> Chris Mason <chris.mason@oracle.com> wrote:
+> 
+> > For btrfs there's only one bdi per SB, but for most everyone else a disk
+> > with a bunch of partitions is going to have multiple filesystems on the
+> > same bdi.
+> 
+> um, please explain why that wasn't idiotic?  The BDI is a
+> representation of a backing device and it's *supposed* to provide
+> visibility into what's happening against other partitions on the same
+> device.  Creating a BDI per SB (it didn't even occur to me to think
+> that a filesystem was even able to do this) breaks that.
+> 
 
-> I'm not sure why zfs came up, they don't own the term :). As to
-> zfs/overhead topic, I doubt there's any difference between clone and
-> writable shapshot (there should be none, of course, it's just two
-> different names for the same concept).
->
-> Regards,
-> Andrey
->
->
->
->
-> On Tue, Nov 30, 2010 at 12:43 AM, Mike Fedyk <mfedyk@mikefedyk.com>
-> wrote:
->> On Mon, Nov 29, 2010 at 1:31 PM, Andrey Kuzmin
->> <andrey.v.kuzmin@gmail.com> wrote:
->>> This may sound excessive as any new concept introduction that late
->>> in
->>> development, but readonly/writable snapshots could be further
->>> differentiated by naming the latter clones. This way end-user would
->>> naturally perceive snapsot as read-only PIT fs image, while clone
->>> would naturally refer to (writable) head fork.
->>>
->>
->> I'm not sure we want to take all of the terminology that zfs uses as
->> it may also bring the percieved drawbacks as well.  Isn't there some
->> additional overhead for a zfs clone compared to a snapshot?  I'm not
->> very familiar with zfs so that's why I ask.
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-
-> btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+We don't really have visibility into the other partitions, we all just
+pretend they aren't there (this patch being the most recent example).
+Yes, it does help prevent N flushers seeking around on the drive but it
+does cause problems too.
 
-I don't like the idea of readonly by default, or further changes to
-terminology, for several reasons:
+How is the btrfs one-bdi-per-super different from device mapper's one
+bdi per logical volume?  We're all idiots together I suppose.
 
-) readonly by default offers no real enhancement whatsoever other than
-breaking _anything_ that's written right now
-) btrfs readonly is not even really readonly; as superuser could
-simply flip a flag to enable writes, readonly merely prevents
-accidental writes or misbehaving apps... ie. protecting you from
-yourself
-) backups are the simple/obvious use case; I personally use btrfs
-heavily for LXC containers, in which case nearly every single snapshot
-is intended to be writable -- usually cloning a template into a new
-domain
-) I also use an initramfs hook to provide system rollbacks, also
-writable; the hook also provides multiple versions of the "branch"...
-all writable
-) adding new terms is not a good idea imo; I've already spewed out
-many sentences explaining the difference between subvolumes and
-snapshots, ie. that there is none... adding another term only adds to
-this problem; they each describe the same thing, but differentiate
-based on origin or current state, neither of which actually describe
-what it _is_-- a new named pointer to a tree, like a git branch -- a
-subvolume.
+As for having multiple bdis per FS, that was always a long term goal of
+mine when Jens was setting up the new flushers.  I didn't want to
+confuse the initial implementation with it though.
 
-I think a better solution/compromise would be to leave snapshots
-writeable by default, since that's more true to what's happening
-internally anyway, but maybe introduce a mount option controlling the
-default action for that mount point.
-
-C Anthony [mobile]
+-chris

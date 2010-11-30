@@ -1,108 +1,55 @@
-From: "Goffredo Baroncelli <kreijack@libero.it>" <kreijack@libero.it>
-Subject: R: Re: [PATCH 5/5] btrfs: Add ioctl to set snapshot
- readonly/writable
-Date: Tue, 30 Nov 2010 08:52:53 +0100 (CET)
-Message-ID: <13025594.9851291103573101.JavaMail.defaultUser@defaultHost>
-Reply-To: "Goffredo Baroncelli <kreijack@libero.it>" <kreijack@libero.it>
+From: Bron Gondwana <brong@fastmail.fm>
+Subject: Re: Poor performance unlinking hard-linked files (repost)
+Date: Tue, 30 Nov 2010 20:35:10 +1100
+Message-ID: <20101130093510.GB3622@brong.net>
+References: <1289618724.28645.1405062363@webmail.messagingengine.com>
+ <20101116125445.GA3229@brong.net>
+ <1289914577-sup-8535@think>
+ <20101117041148.GA10048@brong.net>
+ <1290094104-sup-8656@think>
+ <20101118214631.GC2401@brong.net>
+ <1290175586-sup-2461@think>
+ <20101119215810.GF12386@brong.net>
 Mime-Version: 1.0
-Content-Type: text/plain;charset="UTF-8"
-Cc: <linux-btrfs@vger.kernel.org>
-To: <lizf@cn.fujitsu.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Bron Gondwana <brong@fastmail.fm>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20101119215810.GF12386@brong.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Li,
+On Sat, Nov 20, 2010 at 08:58:10AM +1100, Bron Gondwana wrote:
+> On Fri, Nov 19, 2010 at 09:10:08AM -0500, Chris Mason wrote:
+> > Excerpts from Bron Gondwana's message of 2010-11-18 16:46:31 -0500:
+> > > On Thu, Nov 18, 2010 at 10:30:47AM -0500, Chris Mason wrote:
+> > > > Ok, we're mixing unlinks and fsyncs.  If it fsyncing directories too?
+> > > 
+> > > Nup.  I'm pretty sure it doesn't, just files.  Yes - there will certainly
+> > > be fsyncs going on as well - Cyrus is very careful to fsync everything it
+> > > cares about at the file level, but all it does with directories is mkdir
+> > > them if they don't exist.
+> > 
+> > Could you double check this one please?  fsyncing the directory is a ton
+> > more expensive, I just want to make sure it isn't part of the workload.
+> > 
+> > Otherwise it looks like we're seeking to read in the inode and unlink
+> > it.  One possibility is that we're not giving the elevator enough clues
+> > about the IO being synchronous.
+> > 
+> > Are you using cfq or deadline?  I bet we can improve the latencies using
+> > READ_SYNC.
+> 
+> I'm using deadline.
+> 
+> All I'm seeing is the fsyncs on the files.  And some unnecessary mkdir
+> calls that I can probably remove, and an unneccary truncate on the
+> quota file.
 
->----Messaggio originale----
->Da: lizf@cn.fujitsu.com
->Data: 30/11/2010 8.03
->A: <kreijack@libero.it>
->Cc: <linux-btrfs@vger.kernel.org>
->Ogg: Re: [PATCH 5/5] btrfs: Add ioctl to set snapshot readonly/writable
->
->Goffredo Baroncelli wrote:
->> Hi Li,
->> 
->> On Monday, 29 November, 2010, Li Zefan wrote:
->>> This allows us to set a snapshot readonly or writable on the fly.
->>>
->>> Usage:
->>>
->>> Set BTRFS_SNAPSHOT_RDONLY/WRITABLE of btrfs_ioctl_vol_arg_v2->flags,
->>> and then call ioctl(BTRFS_IOCTL_SNAP_SETFLAGS);
->> 
->> I really appreciate your work, but I have some doubt about this interface. 
-In 
->> particolar:
->
->It's the interface that I would like to be discussed. Thanks!
->
->> - how get the flags of a subvolume ? I suggest to implement a pair of 
-ioctls:
->> 	- subvolume_setflags  -> get the flags
->> 	- subvolume_getflags  -> set the flags
->> These ioctls would be more generic (there are a lot of flags which may be 
->> interested to put in the "root" of a subvolume: think about 
->> compress/nocompress, (no)datasum...)
->> - For the reason abowe, I suggest to replace SNAPSHOT with SUBVOLUME
->> - Finally, with a pair of  get/set_flags functions we can avoid the use of 
-the 
->> flags BTRFS_SNAPSHOT_WRITABLE.
->> 
->
->There are some reasons that I created this interface:
->
->- set/getflags should set/get root flags which reflect in struct
->btrfs_root_item->flags.
->
->- btrfs_root_item->flags was not used at all before this patch, so
->(no)compress and (no)datasum is not reflect in ->flags.
->
->- _CREATE_ASYNC flag is to create snapshot asynchronously, so it's not
->a flag of tree root.
+Do you have any suggestsions for what I could try?  You mentioned READ_SYNC
+above.  We now have one working partition on this machine, but it took longer
+to set up than most, and I'm not sure how it will cope with 7 more of them 
+(which is my next project - compare to the historical performance of this
+box first with reiserfs and then with ext4!)
 
-Of course I never mind about  _CREATE_ASYNC to be set in btrfs_root_item-
->flags. 
-_CREATE_ASYNC is not a snapshot properties but a way of creating a subvolume.
-But other flags may make sense to live in btrfs_root_item->flags.
- So I am suggesting to develop a more general 
-interface for future improvement. These pair of functions (*_set/get) should 
-be use to 
-set the subvolume/snapshot properties. And the RDONLY is one of them.
-
-In the detail to set an attributue an user should be:
-
-- get the subvolume flags (ioctl(fd, BTRFS_IOC_SNAP_GETFLAGS....) )
-- compute the new flags ( flags |= BTRFS_FLAGS_XXXX or flags &= 
-~BTRFS_FLAG_XXXX)
-- set the subvolume flags (ioctl(fd, BTRFS_IOC_SNAP_SGETFLAGS....) )
-
->
->- It seems to me there's no user requirement for getflags ioctl to
->return _RDONLY/_WRITABLE flags of a tree root?
-
-And how an user/admin can understand that a snapshot/subvolume is readonly ? 
-How 
-
->
->- By suggesting BTRFS_SUBVOL_RDONLY, does it impliy not only snapshot
->but also a subvolume can be made readonly?
-
-IIRC a snapshot is a subvolume already filled from the beginning. Why doesn't 
-share 
-the capability of make a subvolume RO ?
-
-Finally I have another suggestion: make sense to check that the file 
-descriptor is referring 
-to the root of a subvolume instead of a the tree. I highlight that because the 
-other ioctls
-suffer  the same problem and confused the user sometime. For example a lot of
-people tough that was possible to snapshot a directory, because the ioctl 
-doesn't return
-any error. But instead of the directory the snapshot was of the full 
-subvolume.
-
-Goffredo
-
-[...]
-
+Bron.

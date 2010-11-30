@@ -1,137 +1,224 @@
-From: liubo <liubo2009@cn.fujitsu.com>
-Subject: Re: [RFC PATCH 0/4] Add readonly support to replace BUG_ON phrase
-Date: Tue, 30 Nov 2010 13:28:03 +0800
-Message-ID: <4CF48B63.5040303@cn.fujitsu.com>
-References: <4CEE31EF.1020102@cn.fujitsu.com> <20101129201017.GB2618@localhost.localdomain> <4CF45B8E.3070100@cn.fujitsu.com> <20101130023030.GA427@dhcp231-156.rdu.redhat.com>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [PATCH 5/5] btrfs: Add ioctl to set snapshot readonly/writable
+Date: Tue, 30 Nov 2010 15:03:31 +0800
+Message-ID: <4CF4A1C3.5030608@cn.fujitsu.com>
+References: <4CF35E17.6050705@cn.fujitsu.com> <4CF35E6B.2030307@cn.fujitsu.com> <201011291952.13358.kreijack@libero.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Miao Xie <miaox@cn.fujitsu.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: kreijack@libero.it
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101130023030.GA427@dhcp231-156.rdu.redhat.com>
+In-Reply-To: <201011291952.13358.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/30/2010 10:30 AM, Josef Bacik wrote:
-> On Tue, Nov 30, 2010 at 10:03:58AM +0800, liubo wrote:
->> On 11/30/2010 04:10 AM, Josef Bacik wrote:
->>> On Thu, Nov 25, 2010 at 05:52:47PM +0800, Miao Xie wrote:
->>>> Btrfs has a number of BUG_ON()s, which may lead btrfs to unpleasant panic.
->>>> Meanwhile, they are very ugly and should be handled more propriately.
->>>>
->>>> There are mainly two ways to deal with these BUG_ON()s.
->>>>
->>>> 1. For those errors which can be handled well by callers, we just return their
->>>> error number to callers.
->>>>
->>>> 2. For others, We can force the filesystem readonly when it hits errors, which
->>>>  is what this patchset has done. Replaced BUG_ON() with the interface provided
->>>>  in this patchset, we will get error infomation via dmesg. Since btrfs is now 
->>>> readonly, we can save our data safely and umount it, then a btrfsck is 
->>>> recommended.
->>>>
->>>> By these ways, we can protect our filesystem from panic caused by those 
->>>> BUG_ONs.
->>>>
->>>> ---
->>>>  fs/btrfs/ctree.h       |   21 ++++++++++
->>>>  fs/btrfs/disk-io.c     |   23 +++++++++++
->>>>  fs/btrfs/super.c       |  100 ++++++++++++++++++++++++++++++++++++++++++++++-
->>>>  fs/btrfs/transaction.c |    7 +++
->>>>  4 files changed, 148 insertions(+), 3 deletions(-)
->>>>
->>> Overall seems sane, but what about kernels that don't make these checks?  I'm ok
->>> with "well sucks for them" as an answer, just want to make sure we've at least
->>> though about it.
->> You mean those code that does nothing on ret-checks?
+Goffredo Baroncelli wrote:
+> Hi Li,
+> 
+> On Monday, 29 November, 2010, Li Zefan wrote:
+>> This allows us to set a snapshot readonly or writable on the fly.
 >>
->> IMO, if the code really needs ret-check, we should deal with them seriously, or just
->> leave it alone. And this is a step-by-step job.
+>> Usage:
+>>
+>> Set BTRFS_SNAPSHOT_RDONLY/WRITABLE of btrfs_ioctl_vol_arg_v2->flags,
+>> and then call ioctl(BTRFS_IOCTL_SNAP_SETFLAGS);
+> 
+> I really appreciate your work, but I have some doubt about this interface. In 
+> particolar:
+
+It's the interface that I would like to be discussed. Thanks!
+
+> - how get the flags of a subvolume ? I suggest to implement a pair of ioctls:
+> 	- subvolume_setflags  -> get the flags
+> 	- subvolume_getflags  -> set the flags
+> These ioctls would be more generic (there are a lot of flags which may be 
+> interested to put in the "root" of a subvolume: think about 
+> compress/nocompress, (no)datasum...)
+> - For the reason abowe, I suggest to replace SNAPSHOT with SUBVOLUME
+> - Finally, with a pair of  get/set_flags functions we can avoid the use of the 
+> flags BTRFS_SNAPSHOT_WRITABLE.
+> 
+
+There are some reasons that I created this interface:
+
+- set/getflags should set/get root flags which reflect in struct
+btrfs_root_item->flags.
+
+- btrfs_root_item->flags was not used at all before this patch, so
+(no)compress and (no)datasum is not reflect in ->flags.
+
+- _CREATE_ASYNC flag is to create snapshot asynchronously, so it's not
+a flag of tree root.
+
+- It seems to me there's no user requirement for getflags ioctl to
+return _RDONLY/_WRITABLE flags of a tree root?
+
+- By suggesting BTRFS_SUBVOL_RDONLY, does it impliy not only snapshot
+but also a subvolume can be made readonly?
+
+> 
+>> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+>> ---
+>>  fs/btrfs/ioctl.c |   88 
+> +++++++++++++++++++++++++++++++++++++++++++++++++++--
+>>  fs/btrfs/ioctl.h |    3 ++
+>>  2 files changed, 87 insertions(+), 4 deletions(-)
+>>
+>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+>> index 7f9c571..34d8683 100644
+>> --- a/fs/btrfs/ioctl.c
+>> +++ b/fs/btrfs/ioctl.c
+>> @@ -939,6 +939,24 @@ out:
+>>  	return ret;
+>>  }
+>>  
+>> +static int snap_check_flags(u64 flags, bool create)
+>> +{
+>> +	u64 valid_flags = BTRFS_SNAPSHOT_RDONLY | BTRFS_SNAPSHOT_WRITABLE;
+>> +
+>> +	if (create)
+>> +		valid_flags |= BTRFS_SNAPSHOT_CREATE_ASYNC;
+>> +
+>> +	if (flags & valid_flags)
+>> +		return -EINVAL;
+>> +
+>> +	/* readonly and writable are mutually exclusive */
+>> +	if ((flags & BTRFS_SNAPSHOT_RDONLY) &&
+>> +	    (flags & BTRFS_SNAPSHOT_WRITABLE))
+>> +		return -EINVAL;
+>> +
+>> +	return 0;
+>> +}
+>> +
+>>  static noinline int btrfs_ioctl_snap_create(struct file *file,
+>>  					    void __user *arg, int subvol,
+>>  					    bool v2)
+>> @@ -957,11 +975,9 @@ static noinline int btrfs_ioctl_snap_create(struct file 
+> *file,
+>>  		if (IS_ERR(vol_args_v2))
+>>  			return PTR_ERR(vol_args_v2);
+>>  
+>> -		if (vol_args_v2->flags &
+>> -		    ~(BTRFS_SNAPSHOT_CREATE_ASYNC | BTRFS_SNAPSHOT_RDONLY)) {
+>> -			ret = -EINVAL;
+>> +		ret = snap_check_flags(vol_args_v2->flags, true);
+>> +		if (ret)
+>>  			goto out;
+>> -		}
+>>  
+>>  		name = vol_args_v2->name;
+>>  		fd = vol_args_v2->fd;
+>> @@ -995,6 +1011,65 @@ out:
+>>  	return ret;
+>>  }
+>>  
+>> +static noinline int btrfs_ioctl_snap_setflags(struct file *file,
+>> +					      void __user *arg)
+>> +{
+>> +	struct inode *inode = fdentry(file)->d_inode;
+>> +	struct btrfs_root *root = BTRFS_I(inode)->root;
+>> +	struct btrfs_trans_handle *trans;
+>> +	struct btrfs_ioctl_vol_args_v2 *vol_args_v2;
+>> +	u64 root_flags;
+>> +	u64 flags;
+>> +	int err;
+>> +
+>> +	if (root->fs_info->sb->s_flags & MS_RDONLY)
+>> +		return -EROFS;
+>> +
+>> +	vol_args_v2 = memdup_user(arg, sizeof(*vol_args_v2));
+>> +	if (IS_ERR(vol_args_v2))
+>> +		return PTR_ERR(vol_args_v2);
+>> +	flags = vol_args_v2->flags;
+>> +
+>> +	err = snap_check_flags(flags, false);
+>> +	if (err)
+>> +		goto out;
+>> +
+>> +	down_write(&root->fs_info->subvol_sem);
+>> +
+>> +	/* nothing to do */
+>> +	if ((BTRFS_SNAPSHOT_RDONLY && root->readonly) ||
+>> +	    (BTRFS_SNAPSHOT_WRITABLE && !root->readonly))
+>> +		goto out_unlock;
+>> +
+>> +	root_flags = btrfs_root_flags(&root->root_item);
+>> +	if (flags & BTRFS_SNAPSHOT_RDONLY) {
+>> +		btrfs_set_root_flags(&root->root_item,
+>> +				     root_flags | BTRFS_ROOT_SNAP_RDONLY);
+>> +		root->readonly = true;
+>> +	}
+>> +	if (flags & BTRFS_SNAPSHOT_WRITABLE) {
+>> +		btrfs_set_root_flags(&root->root_item,
+>> +				     root_flags & ~BTRFS_ROOT_SNAP_RDONLY);
+>> +		root->readonly = false;
+>> +	}
+>> +
+>> +	trans = btrfs_start_transaction(root, 1);
+>> +	if (IS_ERR(trans)) {
+>> +		err = PTR_ERR(trans);
+>> +		goto out_unlock;
+>> +	}
+>> +
+>> +	err = btrfs_update_root(trans, root,
+>> +				&root->root_key, &root->root_item);
+>> +
+>> +	btrfs_commit_transaction(trans, root);
+>> +out_unlock:
+>> +	up_write(&root->fs_info->subvol_sem);
+>> +out:
+>> +	kfree(vol_args_v2);
+>> +	return err;
+>> +}
+>> +
+>>  /*
+>>   * helper to check if the subvolume references other subvolumes
+>>   */
+>> @@ -1503,6 +1578,9 @@ static int btrfs_ioctl_defrag(struct file *file, void 
+> __user *argp)
+>>  	struct btrfs_ioctl_defrag_range_args *range;
+>>  	int ret;
+>>  
+>> +	if (root->readonly)
+>> +		return -EROFS;
+>> +
+>>  	ret = mnt_want_write(file->f_path.mnt);
+>>  	if (ret)
+>>  		return ret;
+>> @@ -2266,6 +2344,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+>>  		return btrfs_ioctl_snap_create(file, argp, 1, 0);
+>>  	case BTRFS_IOC_SNAP_DESTROY:
+>>  		return btrfs_ioctl_snap_destroy(file, argp);
+>> +	case BTRFS_IOC_SNAP_SETFLAGS:
+>> +		return btrfs_ioctl_snap_setflags(file, argp);
+>>  	case BTRFS_IOC_DEFAULT_SUBVOL:
+>>  		return btrfs_ioctl_default_subvol(file, argp);
+>>  	case BTRFS_IOC_DEFRAG:
+>> diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+>> index ff15fb2..559fd27 100644
+>> --- a/fs/btrfs/ioctl.h
+>> +++ b/fs/btrfs/ioctl.h
+>> @@ -32,6 +32,7 @@ struct btrfs_ioctl_vol_args {
+>>  
+>>  #define BTRFS_SNAPSHOT_CREATE_ASYNC	(1ULL << 0)
+>>  #define BTRFS_SNAPSHOT_RDONLY		(1ULL << 1)
+>> +#define BTRFS_SNAPSHOT_WRITABLE		(1ULL << 2)
+>>  
+>>  #define BTRFS_SNAPSHOT_NAME_MAX 4039
+>>  struct btrfs_ioctl_vol_args_v2 {
+>> @@ -194,4 +195,6 @@ struct btrfs_ioctl_space_args {
+>>  #define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
+>>  #define BTRFS_IOC_SNAP_CREATE_V2 _IOW(BTRFS_IOCTL_MAGIC, 23, \
+>>  				   struct btrfs_ioctl_vol_args_v2)
+>> +#define BTRFS_IOC_SNAP_SETFLAGS _IOW(BTRFS_IOCTL_MAGIC, 24, \
+>> +				   struct btrfs_ioctl_vol_args_v2)
+>>  #endif
+>> -- 
+>> 1.6.3
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >>
 > 
-> Sorry I mean for older kernels that don't know about these "hey your fs is
-> screwed" flags.  It seems like they'll just get ignored, are we sure thats what
-> we want to happen?  I'm fine with that, but if we don't want that to happen it
-> may be good to have a incompat flag.
 > 
-
-Ohh, got it, thanks for pointing it out. Will do it later.
-
->>> Also I'm not sure marking the fs as broken is the right move here.  Ext3/4 don't
->>> do this, they just mount read-only, as long as you can still unmount the
->>> filesystem everything comes out ok.  Think of the case where we just get a
->>> spurious EIO, the fs should be fine the next time around, there's reason to
->>> force the user to run fsck in this case.
->>>
->> Yes, I agree on this.
->> For spurious EIO, it mainly depends on coders, returning the errno to caller may work on 
->> bypassing fsck.
->>
-> 
-> Right I'm worried about the flipping read only stuff being kicked by EIO, which
-> happens with ext* and could happen with btrfs in the right cases.  I'm not
-> saying thats wrong, its what should happen, I'm just saying we need to be able
-> to unmount the filesystem and mount it back up without needing to run an fsck in
-> between.
-> 
-
-hm, this really makes sense. 
-
-Since it is difficult to tell whether a fake corruption it is, what about just 
-implementing readonly stuff like this and making it more friendly to EIO in future?
-
->> While I'm working on this readonly stuff, it is difficult to solve the potential 
->> deadlock when we write the super block to disk. 
->> Since btrfs supports multi-device, before write-super, we must get the device lock 
->> "device_list_mutex" first, and this has puzzled me a lot.
->>
->> BTW, I've tried another way to bypass deadlock. I made the write-super stuff into umount, 
->> which can make us free from deadlock, however, while testing this, it seemes that umount 
->> cannot work due to a ext3/4 jbd oops, I'm digging on this oops...
->>
->> So, any ideas about free from deadlock?
->>
-> 
-> None :).  The best thing I can think of is do like we're doing with the read
-> only stuff and only write out the super right before we flip read only, and then
-> make umount make sure that if we're mounted read only to not do anything.
-> 
-> Truth be told I hate this "mark the fs as broken" idea.  We don't know if the
-> error we got means the filesystem is broken (for example the EIO case).  If we
-> do hit actual corruption maybe it would be good, and in that case we should
-> write out the super at the point we find that corruption and then flip read only
-> and have that be the only time we have to worry about writing out the super.
-> 
-> So I guess that's 2 options
-> 
-> 1) Ditch the "the fs is broken" flag.  This makes things nice and simple since
-> on-disk is already consistent, all we have to do is drop anything thats dirty
-> and we're home free.
-> 
-> 2) Keep the flag, but only worry about writing it out on a case by case basis.
-> So we have a btrfs_corrupt_fs() function that writes out the super with the
-> appropriate flag, and then flips the fs read only.  Then we don't have to do
-> anything special in the common paths, just the normal "hey is this fs read
-> only?" things, so for all other cases we can just flip the fs read only and
-> everything works.
-> 
-
-The 2) is what I have just done. :)
-
-> I hope that makes sense, if not feel free to ignore me and just keep doing what
-> you've been doing :).  Thanks,
-> 
-
-They are very helpful.
-
-Thanks,
-Liu Bo
-
-> Josef
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-

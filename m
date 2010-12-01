@@ -1,37 +1,78 @@
-From: Heinz Diehl <htd@fritha.org>
-Subject: Re: dm-crypt barrier support is effective
-Date: Wed, 1 Dec 2010 20:59:39 +0100
-Message-ID: <20101201195939.GA6491@fritha.org>
-References: <20101108145809.GD29714@redhat.com>
- <1289238930-sup-9765@think>
- <20101114205925.GA20451@redhat.com>
- <AANLkTi=rVyozmvqCJD1kGqnV3uEn-0ak6B12-O_9XOKJ@mail.gmail.com>
- <4CE05A9E.9090204@redhat.com>
- <AANLkTimT0t3xqgKdAn7MBPD7ED-9uPS+WJE0z+K8tciu@mail.gmail.com>
- <AANLkTik_p0yxQBQ3ehHWYPLfiqxGbSNUT5XUk9dC5-x6@mail.gmail.com>
- <20101201165229.GC13415@redhat.com>
- <AANLkTinG209iRAXgpNC0vNpn1C02wkYmVfveXRBqsKV-@mail.gmail.com>
- <4CF692D1.1010906@redhat.com>
+From: "J. Bruce Fields" <bfields@fieldses.org>
+Subject: Re: What to do about subvolumes?
+Date: Wed, 1 Dec 2010 15:00:08 -0500
+Message-ID: <20101201200007.GH17142@fieldses.org>
+References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com>
+ <20101201194404.GE17142@fieldses.org>
+ <20101201195433.GE7021@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Matt <jackdachef@gmail.com>, Mike Snitzer <snitzer@redhat.com>,
-	Andi Kleen <andi@firstfloor.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	dm-devel <dm-devel@redhat.com>,
-	Linux Kernel <linux-kernel@vger.kernel.org>,
-	htd <htd@fancy-poultry.org>,
-	Chris Mason <chris.mason@oracle.com>, htejun@gmail.com
-To: Milan Broz <mbroz@redhat.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4CF692D1.1010906@redhat.com>
+Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	chris.mason@oracle.com, hch@lst.de, ssorce@redhat.com
+To: Josef Bacik <josef@redhat.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20101201195433.GE7021@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01.12.2010, Milan Broz wrote: 
+On Wed, Dec 01, 2010 at 02:54:33PM -0500, Josef Bacik wrote:
+> Oh well crud, I was hoping that I could leave the inode numbers as 256 for
+> everything, but I forgot about readdir.  So the inode item in the parent would
+> have to have a unique inode number that would get spit out in readdir, but then
+> if we stat'ed the directory we'd get 256 for the inode number.  Oh well,
+> incompat flag it is then.
 
-> Anyway, I run several tests on 2.6.37-rc3+ and see no integrity
-> problems (using xfs,ext3 and ext4 over dmcrypt).
+I think you're already fine:
 
-Not that this might help, but just for testing purposes, I have run all 
-the -rcX from 2.6.36 on with Milan's patch (XFS filesystem) under heavy 
-load and disk i/o, and have not encountered a single problem or corruption.
+	# mkdir TMP
+	# dd if=/dev/zero of=TMP-image bs=1M count=512
+	# mkfs.btrfs TMP-image
+	# mount -oloop TMP-image TMP/
+	# btrfs subvolume create sub-a
+	# btrfs subvolume create sub-b
+	../readdir-inos .
+	. 256 256
+	.. 256 4130609
+	sub-a 256 256
+	sub-b 257 256
+
+Where readdir-inos is my silly test program below, and the first number is from
+readdir, the second from stat.
+
+?
+
+--b.
+
+#include <stdio.h>
+#include <err.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <dirent.h>
+
+/* demonstrate that for mountpoints, readdir ino of mounted-on
+ * directory, stat returns ino of mounted directory. */
+
+int main(int argc, char *argv[])
+{
+	struct dirent *de;
+	int ret;
+	DIR *d;
+
+	if (argc != 2)
+		errx(1, "usage: %s <directory>", argv[0]);
+	ret = chdir(argv[1]);
+	if (ret)
+		errx(1, "chdir /");
+	d = opendir(".");
+	if (!d)
+		errx(1, "opendir .");
+	while (de = readdir(d)) {
+		struct stat st;
+
+		ret = stat(de->d_name, &st);
+		if (ret)
+			errx(1, "stat %s", de->d_name);
+		printf("%s %d %d\n", de->d_name, de->d_ino, st.st_ino);
+	}
+}
 

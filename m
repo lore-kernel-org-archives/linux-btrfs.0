@@ -1,108 +1,260 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: Re: What to do about subvolumes?
-Date: Wed, 1 Dec 2010 21:28:22 +0000
-Message-ID: <20101201212822.GC4087@carfax.org.uk>
-References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com>
- <20101201163800.GA4087@carfax.org.uk>
- <20101201173830.GA7021@localhost.localdomain>
- <20101201193512.GB4087@carfax.org.uk>
- <AANLkTink81Mcc9yEUF2cw3TZg=7F6=H52A-tfbtb8E39@mail.gmail.com>
+From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Subject: Re: disk space caching generation missmatch
+Date: Wed, 1 Dec 2010 22:40:29 +0100
+Message-ID: <201012012240.29525.johannes.hirte@fem.tu-ilmenau.de>
+References: <201012011746.14458.johannes.hirte@fem.tu-ilmenau.de> <20101201200312.GF7021@localhost.localdomain> <201012012222.45471.johannes.hirte@fem.tu-ilmenau.de>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="XWOWbaMNXpFDWE00"
-Cc: Hugo Mills <hugo-lkml@carfax.org.uk>,
-	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, chris.mason@oracle.com, hch@lst.de,
-	ssorce@redhat.com
-To: Freddie Cash <fjwcash@gmail.com>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <AANLkTink81Mcc9yEUF2cw3TZg=7F6=H52A-tfbtb8E39@mail.gmail.com>
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201012012222.45471.johannes.hirte@fem.tu-ilmenau.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wednesday 01 December 2010 22:22:45 Johannes Hirte wrote:
+> On Wednesday 01 December 2010 21:03:13 Josef Bacik wrote:
+> > On Wed, Dec 01, 2010 at 08:56:14PM +0100, Johannes Hirte wrote:
+> > > On Wednesday 01 December 2010 18:40:18 Josef Bacik wrote:
+> > > > On Wed, Dec 01, 2010 at 05:46:14PM +0100, Johannes Hirte wrote:
+> > > > > After enabling disk space caching I've observed several log entries like this:
+> > > > > 
+> > > > > btrfs: free space inode generation (0) did not match free space cache generation (169594) for block group 15464398848
+> > > > > 
+> > > > > I'm not sure, but it seems this happens on every reboot. Is this something to
+> > > > > worry about?
+> > > > > 
+> > > > 
+> > > > So that usually means 1 of a couple of things
+> > > > 
+> > > > 1) You didn't have space for us to save the free space cache
+> > > > 2) When trying to write out the cache we hit one of those cases where we would
+> > > > deadlock so we couldn't write the cache out
+> > > > 
+> > > > It's nothing to worry about, it's doing what it is supposed to.  However I'd
+> > > > like to know why we're not able to write out the cache.  Are you running close
+> > > > to full?  Thanks,
+> > > > 
+> > > > Josef
+> > > >
+> > > 
+> > > I think there should be enough free space:
+> > > 
+> > 
+> > Hmm well then we're hitting one of the other corner cases.  Can you run with
+> > this debug thread and reboot.  Hopefully it will tell me why we're not saving
+> > the free space cache. Thanks,
+> > 
+> > Josef
+> > 
+> > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> > index 87aae66..4fd5659 100644
+> > --- a/fs/btrfs/extent-tree.c
+> > +++ b/fs/btrfs/extent-tree.c
+> > @@ -2794,13 +2794,17 @@ again:
+> >  	if (i_size_read(inode) > 0) {
+> >  		ret = btrfs_truncate_free_space_cache(root, trans, path,
+> >  						      inode);
+> > -		if (ret)
+> > +		if (ret) {
+> > +			printk(KERN_ERR "truncate free space cache failed for %llu, %d\n",
+> > +			       block_group->key.objectid, ret);
+> >  			goto out_put;
+> > +		}
+> >  	}
+> >  
+> >  	spin_lock(&block_group->lock);
+> >  	if (block_group->cached != BTRFS_CACHE_FINISHED) {
+> >  		spin_unlock(&block_group->lock);
+> > +		printk(KERN_ERR "block group %llu not cached\n", block_group->key.objectid);
+> >  		goto out_put;
+> >  	}
+> >  	spin_unlock(&block_group->lock);
+> > @@ -2820,8 +2824,10 @@ again:
+> >  	num_pages *= PAGE_CACHE_SIZE;
+> >  
+> >  	ret = btrfs_check_data_free_space(inode, num_pages);
+> > -	if (ret)
+> > +	if (ret) {
+> > +		printk(KERN_ERR "not enough free space for cache %llu\n", block_group->key.objectid);
+> >  		goto out_put;
+> > +	}
+> >  
+> >  	ret = btrfs_prealloc_file_range_trans(inode, trans, 0, 0, num_pages,
+> >  					      num_pages, num_pages,
+> > diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+> > index 22ee0dc..0078172 100644
+> > --- a/fs/btrfs/free-space-cache.c
+> > +++ b/fs/btrfs/free-space-cache.c
+> > @@ -511,6 +511,8 @@ int btrfs_write_out_cache(struct btrfs_root *root,
+> >  	spin_lock(&block_group->lock);
+> >  	if (block_group->disk_cache_state < BTRFS_DC_SETUP) {
+> >  		spin_unlock(&block_group->lock);
+> > +		printk(KERN_ERR "block group %llu, wrong dcs %d\n", block_group->key.objectid,
+> > +		       block_group->disk_cache_state);
+> >  		return 0;
+> >  	}
+> >  	spin_unlock(&block_group->lock);
+> > @@ -520,6 +522,7 @@ int btrfs_write_out_cache(struct btrfs_root *root,
+> >  		return 0;
+> >  
+> >  	if (!i_size_read(inode)) {
+> > +		printk(KERN_ERR "no allocated space for block group %llu\n", block_group->key.objectid);
+> >  		iput(inode);
+> >  		return 0;
+> >  	}
+> > @@ -771,6 +774,7 @@ out_free:
+> >  		block_group->disk_cache_state = BTRFS_DC_ERROR;
+> >  		spin_unlock(&block_group->lock);
+> >  		BTRFS_I(inode)->generation = 0;
+> > +		printk(KERN_ERR "problem writing out block group cache for %llu\n", block_group->key.objectid);
+> >  	}
+> >  	kfree(checksums);
+> >  	btrfs_update_inode(trans, root, inode);
+> > 
+> 
+> This is from dmesg shortly after reboot with the debug patch:
+> 
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (177986) for block group 5398069248
+> btrfs: free space inode generation (0) did not match free space cache generation (177986) for block group 5398069248
+> block group 5398069248 not cached
+> block group 19893583872 not cached
+> no allocated space for block group 5398069248
+> no allocated space for block group 19893583872
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+> block group 14256439296 not cached
+> no allocated space for block group 14256439296
+> btrfs: free space inode generation (0) did not match free space cache generation (169594) for block group 15464398848
+> block group 19893583872 not cached
+> no allocated space for block group 19893583872
+> block group 14256439296 not cached
+> block group 37341888512 not cached
+> no allocated space for block group 14256439296
+> no allocated space for block group 37341888512
+> block group 14256439296 not cached
+> no allocated space for block group 14256439296
+> block group 5398069248 not cached
+> block group 19893583872 not cached
+> block group 88881496064 not cached
+> no allocated space for block group 5398069248
+> no allocated space for block group 19893583872
+> no allocated space for block group 88881496064
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
---XWOWbaMNXpFDWE00
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Ok, now there are some "problem writing out block group cache" too. Here is all
+btrfs related dmesg output again (after 23min uptime):
 
-On Wed, Dec 01, 2010 at 12:24:28PM -0800, Freddie Cash wrote:
-> On Wed, Dec 1, 2010 at 11:35 AM, Hugo Mills <hugo-lkml@carfax.org.uk> wro=
-te:
-> >> =A0The idea is you are only charged for what blocks
-> >> you have on the disk. =A0Thanks,
-> >
-> > =A0 My point was that it's perfectly possible to have blocks on the
-> > disk that are effectively owned by two people, and that the person to
-> > charge for those blocks is, to me, far from clear. You either end up
-> > charging twice for a single set of blocks on the disk, or you end up
-> > in a situation where one person's actions can cause another person's
-> > quota to fill up. Neither of these is particularly obvious behaviour.
->=20
-> As a sysadmin and as a user, quotas shouldn't be about "physical
-> blocks of storage used" but should be about "logical storage used".
->=20
-> IOW, if the filesystem is compressed, using 1 GB of physical space to
-> store 10 GB of data, my "quota used" should be 10 GB.
->=20
-> Similar for deduplication.  The quota is based on the storage *before*
-> the file is deduped.  Not after.
->=20
-> Similar for snapshots.  If UserA has 10 GB of quota used, I snapshot
-> their filesystem, then my "quota used" would be 10 GB as well.  As
-> data in my snapshot changes, my "quota used" is updated to reflect
-> that (change 1 GB of data compared to snapshot, use 1 GB of quota).
-
-   So if I've got 10G of data, and I snapshot it, I've just used
-another 10G of quota?
-
-> You have to (or at least should) keep two sets of stats for storage usage:
->   - logical amount used ("real" file size, before compression, before
-> de-dupe, before snapshots, etc)
->   - physical amount used (what's actually written to disk)
->=20
-> User-level quotas are based on the logical storage used.
-> Admin-level quotas (if you want to implement them) would be based on
-> physical storage used.
->=20
-> Thus, the output of things like df, du, ls would show the "logical"
-> storage used and file sizes.  And you would either have an additional
-> option to those apps (--real or something) to show the "actual"
-> storage used and file sizes as stored on disk.
->=20
-> Trying to make quotas and disk usage utilities to work based on what's
-> physically on disk is just backwards, imo.  And prone to a lot of
-> confusion.
-
-   Trying to make quotas work based on what's physically on the disk
-appears to have serious issues on the semantics of "using up space",
-so I agree with you on this point (and, indeed, it was the point I was
-trying to make).
-
-   However, doing it that way also effectively penalises users and
-prevents (or severely discourages) them from using the advanced
-functions of the filesystem. There's no benefit (in disk usage terms)
-to the user in using a snapshot -- they might as well use plain cp.
-
-   Hugo.
-
---=20
-=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
- =3D=3D=3D
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-           --- I believe that it's closely correlated with ---          =20
-                       the aeroswine coefficient.                       =20
-
---XWOWbaMNXpFDWE00
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFM9r32IKyzvlFcI40RAngsAKCqb9oGVVHvCBiDV6SWK3/+6NQiuwCgjpW9
-p9ImxhkvxlLO6qtTwKRcqic=
-=69HP
------END PGP SIGNATURE-----
-
---XWOWbaMNXpFDWE00--
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (177986) for block group 5398069248
+btrfs: free space inode generation (0) did not match free space cache generation (177986) for block group 5398069248
+block group 5398069248 not cached
+block group 19893583872 not cached
+no allocated space for block group 5398069248
+no allocated space for block group 19893583872
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (116974) for block group 14256439296
+block group 14256439296 not cached
+no allocated space for block group 14256439296
+btrfs: free space inode generation (0) did not match free space cache generation (169594) for block group 15464398848
+block group 19893583872 not cached
+no allocated space for block group 19893583872
+block group 14256439296 not cached
+block group 37341888512 not cached
+no allocated space for block group 14256439296
+no allocated space for block group 37341888512
+block group 14256439296 not cached
+no allocated space for block group 14256439296
+block group 5398069248 not cached
+block group 19893583872 not cached
+block group 88881496064 not cached
+no allocated space for block group 5398069248
+no allocated space for block group 19893583872
+no allocated space for block group 88881496064
+btrfs: free space inode generation (0) did not match free space cache generation (169594) for block group 15464398848
+block group 86331359232 not cached
+block group 88747278336 not cached
+block group 88881496064 not cached
+block group 19893583872 not cached
+problem writing out block group cache for 3250585600
+no allocated space for block group 19893583872
+no allocated space for block group 86331359232
+no allocated space for block group 88747278336
+no allocated space for block group 88881496064
+problem writing out block group cache for 3250585600
+block group 37341888512 not cached
+no allocated space for block group 37341888512
+btrfs: free space inode generation (0) did not match free space cache generation (169594) for block group 15464398848
+block group 88881496064 not cached
+no allocated space for block group 88881496064
+block group 5398069248 not cached
+no allocated space for block group 5398069248
+btrfs: free space inode generation (0) did not match free space cache generation (169594) for block group 15464398848
+block group 88747278336 not cached
+no allocated space for block group 88747278336
+btrfs: free space inode generation (0) did not match free space cache generation (169594) for block group 15464398848
+block group 19893583872 not cached
+no allocated space for block group 19893583872
+block group 88881496064 not cached
+no allocated space for block group 88881496064
+block group 2176843776 not cached
+no allocated space for block group 2176843776
+btrfs: free space inode generation (0) did not match free space cache generation (169594) for block group 15464398848
+block group 88881496064 not cached
+problem writing out block group cache for 6471811072
+no allocated space for block group 88881496064
+btrfs: free space inode generation (0) did not match free space cache generation (169594) for block group 15464398848
+btrfs: free space inode generation (0) did not match free space cache generation (169594) for block group 15464398848
+btrfs: free space inode generation (0) did not match free space cache generation (169594) for block group 15464398848
+block group 19893583872 not cached
+block group 88747278336 not cached
+block group 88881496064 not cached
+problem writing out block group cache for 3250585600
+no allocated space for block group 19893583872
+no allocated space for block group 88747278336
+no allocated space for block group 88881496064

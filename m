@@ -1,110 +1,70 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: disk space caching generation missmatch
-Date: Wed, 1 Dec 2010 15:03:13 -0500
-Message-ID: <20101201200312.GF7021@localhost.localdomain>
-References: <201012011746.14458.johannes.hirte@fem.tu-ilmenau.de> <20101201174018.GB7021@localhost.localdomain> <201012012056.14517.johannes.hirte@fem.tu-ilmenau.de>
+From: Jeff Layton <jlayton@redhat.com>
+Subject: Re: What to do about subvolumes?
+Date: Wed, 1 Dec 2010 15:03:52 -0500
+Message-ID: <20101201150352.164007ed@tlielax.poochiereds.net>
+References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
-To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201012012056.14517.johannes.hirte@fem.tu-ilmenau.de>
+Content-Type: text/plain; charset=US-ASCII
+Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	chris.mason@oracle.com, hch@lst.de, ssorce@redhat.com
+To: Josef Bacik <josef@redhat.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20101201142136.GD427@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 01, 2010 at 08:56:14PM +0100, Johannes Hirte wrote:
-> On Wednesday 01 December 2010 18:40:18 Josef Bacik wrote:
-> > On Wed, Dec 01, 2010 at 05:46:14PM +0100, Johannes Hirte wrote:
-> > > After enabling disk space caching I've observed several log entries like this:
-> > > 
-> > > btrfs: free space inode generation (0) did not match free space cache generation (169594) for block group 15464398848
-> > > 
-> > > I'm not sure, but it seems this happens on every reboot. Is this something to
-> > > worry about?
-> > > 
-> > 
-> > So that usually means 1 of a couple of things
-> > 
-> > 1) You didn't have space for us to save the free space cache
-> > 2) When trying to write out the cache we hit one of those cases where we would
-> > deadlock so we couldn't write the cache out
-> > 
-> > It's nothing to worry about, it's doing what it is supposed to.  However I'd
-> > like to know why we're not able to write out the cache.  Are you running close
-> > to full?  Thanks,
-> > 
-> > Josef
-> >
+On Wed, 1 Dec 2010 09:21:36 -0500
+Josef Bacik <josef@redhat.com> wrote:
+
+> There is one tricky thing.  When you create a subvolume, the directory inode
+> that is created in the parent subvolume has the inode number of 256.  So if you
+> have a bunch of subvolumes in the same parent subvolume, you are going to have a
+> bunch of directories with the inode number of 256.  This is so when users cd
+> into a subvolume we can know its a subvolume and do all the normal voodoo to
+> start looking in the subvolumes tree instead of the parent subvolumes tree.
 > 
-> I think there should be enough free space:
+> This is where things go a bit sideways.  We had serious problems with NFS, but
+> thankfully NFS gives us a bunch of hooks to get around these problems.
+> CIFS/Samba do not, so we will have problems there, not to mention any other
+> userspace application that looks at inode numbers.
+
+A more common use case than CIFS or samba is going to be things like
+backup programs. They commonly look at inode numbers in order to
+identify hardlinks and may be horribly confused when there files that
+have a link count >1 and inode number collisions with other files.
+
+That probably qualifies as an "enterprise-ready" show stopper...
+
+> === What do we do? ===
+> 
+> This is where I expect to see the most discussion.  Here is what I want to do
+> 
+> 1) Scrap the 256 inode number thing.  Instead we'll just put a flag in the inode
+> to say "Hey, I'm a subvolume" and then we can do all of the appropriate magic
+> that way.  This unfortunately will be an incompatible format change, but the
+> sooner we get this adressed the easier it will be in the long run.  Obviously
+> when I say format change I mean via the incompat bits we have, so old fs's won't
+> be broken and such.
+> 
+> 2) Do something like NFS's referral mounts when we cd into a subvolume.  Now we
+> just do dentry trickery, but that doesn't make the boundary between subvolumes
+> clear, so it will confuse people (and samba) when they walk into a subvolume and
+> all of a sudden the inode numbers are the same as in the directory behind them.
+> With doing the referral mount thing, each subvolume appears to be its own mount
+> and that way things like NFS and samba will work properly.
 > 
 
-Hmm well then we're hitting one of the other corner cases.  Can you run with
-this debug thread and reboot.  Hopefully it will tell me why we're not saving
-the free space cache. Thanks,
+Sounds like you're on the right track.
 
-Josef
+The key concept is really that an inode number should be unique within
+the scope of the st_dev. The simplest solution for you here is simply to
+give each subvol its own st_dev and mount it up via a shrinkable mount
+automagically when someone walks into the directory. In addition to the
+examples of this in NFS, CIFS does this for DFS referrals.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 87aae66..4fd5659 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2794,13 +2794,17 @@ again:
- 	if (i_size_read(inode) > 0) {
- 		ret = btrfs_truncate_free_space_cache(root, trans, path,
- 						      inode);
--		if (ret)
-+		if (ret) {
-+			printk(KERN_ERR "truncate free space cache failed for %llu, %d\n",
-+			       block_group->key.objectid, ret);
- 			goto out_put;
-+		}
- 	}
- 
- 	spin_lock(&block_group->lock);
- 	if (block_group->cached != BTRFS_CACHE_FINISHED) {
- 		spin_unlock(&block_group->lock);
-+		printk(KERN_ERR "block group %llu not cached\n", block_group->key.objectid);
- 		goto out_put;
- 	}
- 	spin_unlock(&block_group->lock);
-@@ -2820,8 +2824,10 @@ again:
- 	num_pages *= PAGE_CACHE_SIZE;
- 
- 	ret = btrfs_check_data_free_space(inode, num_pages);
--	if (ret)
-+	if (ret) {
-+		printk(KERN_ERR "not enough free space for cache %llu\n", block_group->key.objectid);
- 		goto out_put;
-+	}
- 
- 	ret = btrfs_prealloc_file_range_trans(inode, trans, 0, 0, num_pages,
- 					      num_pages, num_pages,
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 22ee0dc..0078172 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -511,6 +511,8 @@ int btrfs_write_out_cache(struct btrfs_root *root,
- 	spin_lock(&block_group->lock);
- 	if (block_group->disk_cache_state < BTRFS_DC_SETUP) {
- 		spin_unlock(&block_group->lock);
-+		printk(KERN_ERR "block group %llu, wrong dcs %d\n", block_group->key.objectid,
-+		       block_group->disk_cache_state);
- 		return 0;
- 	}
- 	spin_unlock(&block_group->lock);
-@@ -520,6 +522,7 @@ int btrfs_write_out_cache(struct btrfs_root *root,
- 		return 0;
- 
- 	if (!i_size_read(inode)) {
-+		printk(KERN_ERR "no allocated space for block group %llu\n", block_group->key.objectid);
- 		iput(inode);
- 		return 0;
- 	}
-@@ -771,6 +774,7 @@ out_free:
- 		block_group->disk_cache_state = BTRFS_DC_ERROR;
- 		spin_unlock(&block_group->lock);
- 		BTRFS_I(inode)->generation = 0;
-+		printk(KERN_ERR "problem writing out block group cache for %llu\n", block_group->key.objectid);
- 	}
- 	kfree(checksums);
- 	btrfs_update_inode(trans, root, inode);
+Today, this is mostly done by hijacking the follow_link operation, but
+David Howells proposed some patches a while back to do this via a more
+formalized interface. It may be reasonable to target this work on top
+of that, depending on the state of those changes...
+
+-- 
+Jeff Layton <jlayton@redhat.com>

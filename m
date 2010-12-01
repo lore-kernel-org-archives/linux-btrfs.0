@@ -1,78 +1,33 @@
-From: C Anthony Risinger <anthony@extof.me>
-Subject: Re: What to do about subvolumes?
-Date: Wed, 1 Dec 2010 12:48:19 -0600
-Message-ID: <AANLkTi=2z9RwiiD+ohhqB-WDf9uFXYoko3VhjOjmiY=5@mail.gmail.com>
-References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com>
-	<201012011933.40169.kreijack@libero.it>
-	<20101201183656.GD7021@localhost.localdomain>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: disk space caching generation missmatch
+Date: Wed, 1 Dec 2010 12:40:18 -0500
+Message-ID: <20101201174018.GB7021@localhost.localdomain>
+References: <201012011746.14458.johannes.hirte@fem.tu-ilmenau.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Goffredo Baroncelli <kreijack@libero.it>, ssorce@redhat.com,
-	linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	chris.mason@oracle.com
-To: Josef Bacik <josef@redhat.com>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20101201183656.GD7021@localhost.localdomain>
+Content-Type: text/plain; charset=us-ascii
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201012011746.14458.johannes.hirte@fem.tu-ilmenau.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 1, 2010 at 12:36 PM, Josef Bacik <josef@redhat.com> wrote:
-> On Wed, Dec 01, 2010 at 07:33:39PM +0100, Goffredo Baroncelli wrote:
->
->> Another point that I want like to discuss is how manage the "pivotin=
-g" between
->> the subvolumes. One of the most beautiful feature of btrfs is the sn=
-apshot
->> capability. In fact it is possible to make a snapshot of the root of=
- the
->> filesystem and to mount it in a subsequent reboot.
->> But is very complicated to manage the pivoting of a snapshot of a ro=
-ot
->> filesystem, because I cannot delete the "old root" due to the fact t=
-hat the
->> "new root" is placed in the "old root".
->>
->> A possible solution is not to put the root of the filesystem (where =
-are placed
->> /usr, /etc....) in the root of the btrfs filesystem; but it should b=
-e accepted
->> from the beginning the idea that the root of a filesystem should be =
-placed in
->> a subvolume which int turn is placed in the root of a btrfs filesyst=
-em...
->>
->> I am open to other opinions.
->>
->
-> Agreed, one of the things that Chris and I have discussed is the poss=
-iblity of
-> just having dangling roots, since really the directories are just an =
-easy way to
-> get to the subvolumes. =A0This would let you delete the original volu=
-me and use
-> the snapshot from then on out. =A0Something to do in the future for s=
-ure.
+On Wed, Dec 01, 2010 at 05:46:14PM +0100, Johannes Hirte wrote:
+> After enabling disk space caching I've observed several log entries like this:
+> 
+> btrfs: free space inode generation (0) did not match free space cache generation (169594) for block group 15464398848
+> 
+> I'm not sure, but it seems this happens on every reboot. Is this something to
+> worry about?
+> 
 
-i would really like to see a solution to this particular issue.  i may
-be missing something, but the dangling subvol roots doesn't seem to
-address the management of the root volume itself.
+So that usually means 1 of a couple of things
 
-for example... most people will install their whole system into the
-real root (id=3D5), but this renders the system unmanageable, because
-there is no way to ever empty it without manually issuing an `rm -rf`.
+1) You didn't have space for us to save the free space cache
+2) When trying to write out the cache we hit one of those cases where we would
+deadlock so we couldn't write the cache out
 
-i'm having a really hard time controlling this with the initramfs hook
-i provide for archlinux users.  the hook requires a specific structure
-"underneath" what the user perceives as /, but i can only accomplish
-this for new installs -- for existing installs i can setup the proper
-"subroot" structure, and snapshot their current root... but i cannot
-remove the stagnant files in the real root (id=3D5) that well never,
-ever be accessed again.
+It's nothing to worry about, it's doing what it is supposed to.  However I'd
+like to know why we're not able to write out the cache.  Are you running close
+to full?  Thanks,
 
-=2E.. or does dangling roots address this?
-
-C Anthony
---
-To unsubscribe from this list: send the line "unsubscribe linux-fsdevel=
-" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Josef

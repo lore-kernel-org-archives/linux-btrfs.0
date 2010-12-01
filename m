@@ -1,122 +1,37 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: What to do about subvolumes?
-Date: Wed, 1 Dec 2010 14:54:33 -0500
-Message-ID: <20101201195433.GE7021@localhost.localdomain>
-References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com> <20101201194404.GE17142@fieldses.org>
+From: Heinz Diehl <htd@fritha.org>
+Subject: Re: dm-crypt barrier support is effective
+Date: Wed, 1 Dec 2010 20:59:39 +0100
+Message-ID: <20101201195939.GA6491@fritha.org>
+References: <20101108145809.GD29714@redhat.com>
+ <1289238930-sup-9765@think>
+ <20101114205925.GA20451@redhat.com>
+ <AANLkTi=rVyozmvqCJD1kGqnV3uEn-0ak6B12-O_9XOKJ@mail.gmail.com>
+ <4CE05A9E.9090204@redhat.com>
+ <AANLkTimT0t3xqgKdAn7MBPD7ED-9uPS+WJE0z+K8tciu@mail.gmail.com>
+ <AANLkTik_p0yxQBQ3ehHWYPLfiqxGbSNUT5XUk9dC5-x6@mail.gmail.com>
+ <20101201165229.GC13415@redhat.com>
+ <AANLkTinG209iRAXgpNC0vNpn1C02wkYmVfveXRBqsKV-@mail.gmail.com>
+ <4CF692D1.1010906@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, chris.mason@oracle.com, hch@lst.de,
-	ssorce@redhat.com
-To: "J. Bruce Fields" <bfields@fieldses.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20101201194404.GE17142@fieldses.org>
+Cc: Matt <jackdachef@gmail.com>, Mike Snitzer <snitzer@redhat.com>,
+	Andi Kleen <andi@firstfloor.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	dm-devel <dm-devel@redhat.com>,
+	Linux Kernel <linux-kernel@vger.kernel.org>,
+	htd <htd@fancy-poultry.org>,
+	Chris Mason <chris.mason@oracle.com>, htejun@gmail.com
+To: Milan Broz <mbroz@redhat.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4CF692D1.1010906@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 01, 2010 at 02:44:04PM -0500, J. Bruce Fields wrote:
-> On Wed, Dec 01, 2010 at 09:21:36AM -0500, Josef Bacik wrote:
-> > Hello,
-> > 
-> > Various people have complained about how BTRFS deals with subvolumes recently,
-> > specifically the fact that they all have the same inode number, and there's no
-> > discrete seperation from one subvolume to another.  Christoph asked that I lay
-> > out a basic design document of how we want subvolumes to work so we can hash
-> > everything out now, fix what is broken, and then move forward with a design that
-> > everybody is more or less happy with.  I apologize in advance for how freaking
-> > long this email is going to be.  I assume that most people are generally
-> > familiar with how BTRFS works, so I'm not going to bother explaining in great
-> > detail some stuff.
-> > 
-> > === What are subvolumes? ===
-> > 
-> > They are just another tree.  In BTRFS we have various b-trees to describe the
-> > filesystem.  A few of them are filesystem wide, such as the extent tree, chunk
-> > tree, root tree etc.  The tree's that hold the actual filesystem data, that is
-> > inodes and such, are kept in their own b-tree.  This is how subvolumes and
-> > snapshots appear on disk, they are simply new b-trees with all of the file data
-> > contained within them.
-> > 
-> > === What do subvolumes look like? ===
-> > 
-> > All the user sees are directories.  They act like any other directory acts, with
-> > a few exceptions
-> > 
-> > 1) You cannot hardlink between subvolumes.  This is because subvolumes have
-> > their own inode numbers and such, think of them as seperate mounts in this case,
-> > you cannot hardlink between two mounts because the link needs to point to the
-> > same on disk inode, which is impossible between two different filesystems.  The
-> > same is true for subvolumes, they have their own trees with their own inodes and
-> > inode numbers, so it's impossible to hardlink between them.
-> 
-> OK, so I'm unclear: would it be possible for nfsd to export subvolumes
-> independently?
-> 
+On 01.12.2010, Milan Broz wrote: 
 
-Yeah.
+> Anyway, I run several tests on 2.6.37-rc3+ and see no integrity
+> problems (using xfs,ext3 and ext4 over dmcrypt).
 
-> For that to work, we need to be able to take an inode that we just
-> looked up by filehandle, and see which subvolume it belongs in.  So if
-> two subvolumes can point to the same inode, it doesn't work, but if
-> st_dev is different between them, e.g., that'd be fine.  Sounds like
-> you're seeing the latter is possible, good!
-> 
+Not that this might help, but just for testing purposes, I have run all 
+the -rcX from 2.6.36 on with Milan's patch (XFS filesystem) under heavy 
+load and disk i/o, and have not encountered a single problem or corruption.
 
-So you can't have the same inode in two subvolumes, since they are different
-trees.  You can have the same inode numbers between two subvolumes, because they
-are different trees.
-
-> > 
-> > 1a) In case it wasn't clear from above, each subvolume has their own inode
-> > numbers, so you can have the same inode numbers used between two different
-> > subvolumes, since they are two different trees.
-> > 
-> > 2) Obviously you can't just rm -rf subvolumes.  Because they are roots there's
-> > extra metadata to keep track of them, so you have to use one of our ioctls to
-> > delete subvolumes/snapshots.
-> > 
-> > But permissions and everything else they are the same.
-> > 
-> > There is one tricky thing.  When you create a subvolume, the directory inode
-> > that is created in the parent subvolume has the inode number of 256.
-> 
-> Is that the right way to say this?  Doing a quick test, the inode
-> numbers that a readdir of the parent directory returns *are* distinct.
-> It's just the inode number that you get when you stat that is different.
-> 
-> Which is all fine and normal, *if* you treat this as a real mountpoint
-> with its own vfsmount, st_dev, etc.
-> 
-
-Oh well crud, I was hoping that I could leave the inode numbers as 256 for
-everything, but I forgot about readdir.  So the inode item in the parent would
-have to have a unique inode number that would get spit out in readdir, but then
-if we stat'ed the directory we'd get 256 for the inode number.  Oh well,
-incompat flag it is then.
-
-> > === How do we want subvolumes to work from a user perspective? ===
-> > 
-> > 1) Users need to be able to create their own subvolumes.  The permission
-> > semantics will be absolutely the same as creating directories, so I don't think
-> > this is too tricky.  We want this because you can only take snapshots of
-> > subvolumes, and so it is important that users be able to create their own
-> > discrete snapshottable targets.
-> > 
-> > 2) Users need to be able to snapshot their subvolumes.  This is basically the
-> > same as #1, but it bears repeating.
-> > 
-> > 3) Subvolumes shouldn't need to be specifically mounted.  This is also
-> > important, we don't want users to have to go around mounting their subvolumes up
-> > manually one-by-one.  Today users just cd into subvolumes and it works, just
-> > like cd'ing into a directory.
-> 
-> And the separate nfsd exports is another thing I'd really love to see
-> work: currently you can export a subtree of a filesystem if you want,
-> but it's trivial to escape the subtree by guessing filehandles.  So this
-> gives us an easy way for administrators to create secure separate
-> exports without having to manage entirely separate volumes.
-> 
-> If subvolumes got real mountpoints and so on, this would be easy.
-
-Thats the idea, we'll see how well it works out ;).  Thanks,
-
-Josef

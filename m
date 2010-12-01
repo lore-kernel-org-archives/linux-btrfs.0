@@ -1,37 +1,59 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: What to do about subvolumes?
-Date: Wed, 1 Dec 2010 20:08:49 +0100
-Message-ID: <201012012008.49386.kreijack@libero.it>
-References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com> <AANLkTi=2z9RwiiD+ohhqB-WDf9uFXYoko3VhjOjmiY=5@mail.gmail.com> <AANLkTimPx+u-bJH+beEP4kr6Bb3qJh1EryriHxeLDsj_@mail.gmail.com>
-Reply-To: kreijack@libero.it
+From: Jon Nelson <jnelson@jamponi.net>
+Subject: Re: dm-crypt barrier support is effective
+Date: Wed, 1 Dec 2010 13:34:05 -0600
+Message-ID: <AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com>
+References: <20101107194547.GA12521@basil.fritz.box> <4CD71C8B.1050604@redhat.com>
+ <20101107230508.GB17592@basil.fritz.box> <20101108145809.GD29714@redhat.com>
+ <1289238930-sup-9765@think> <20101114205925.GA20451@redhat.com>
+ <AANLkTi=rVyozmvqCJD1kGqnV3uEn-0ak6B12-O_9XOKJ@mail.gmail.com>
+ <4CE05A9E.9090204@redhat.com> <AANLkTimT0t3xqgKdAn7MBPD7ED-9uPS+WJE0z+K8tciu@mail.gmail.com>
+ <AANLkTik_p0yxQBQ3ehHWYPLfiqxGbSNUT5XUk9dC5-x6@mail.gmail.com>
+ <20101201165229.GC13415@redhat.com> <AANLkTinG209iRAXgpNC0vNpn1C02wkYmVfveXRBqsKV-@mail.gmail.com>
+ <4CF692D1.1010906@redhat.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: chris.mason@oracle.com, ssorce@redhat.com,
-	linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	Josef Bacik <josef@redhat.com>
-To: C Anthony Risinger <anthony@extof.me>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimPx+u-bJH+beEP4kr6Bb3qJh1EryriHxeLDsj_@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Matt <jackdachef@gmail.com>, Mike Snitzer <snitzer@redhat.com>,
+	Andi Kleen <andi@firstfloor.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	dm-devel <dm-devel@redhat.com>,
+	Linux Kernel <linux-kernel@vger.kernel.org>,
+	htd <htd@fancy-poultry.org>,
+	Chris Mason <chris.mason@oracle.com>, htejun@gmail.com
+To: Milan Broz <mbroz@redhat.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4CF692D1.1010906@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wednesday, 01 December, 2010, you (C Anthony Risinger) wrote:
-[...]
-> i forgot to mention, but a quick 'n dirty solution would be to simply
-> not enable users to do this by accident.  mkfs.btrfs could create a
-> new subvol, then mark it as default... this way the user has to
-> manually mount with id=0, or remark 0 as the default.
-> 
-> effectively, users would be unknowingly be installing into a
-> subvolume, rather then the top-level root (apologies if my terminology
-> is incorrect).
+On Wed, Dec 1, 2010 at 12:24 PM, Milan Broz <mbroz@redhat.com> wrote:
+> On 12/01/2010 06:35 PM, Matt wrote:
+>> Thanks for pointing to v6 ! I hadn't noticed that there was a new one :)
+>>
+>> Well, so I'll restore my box to a working/productive state and will
+>> try out v6 (I'm pretty confident that it'll work without problems).
+>
+> It's the same as previous, just with fixed header (to track it properly
+> in patchwork) , second patch adds some read optimisation, nothing what
+> should help here.
+>
+> Anyway, I run several tests on 2.6.37-rc3+ and see no integrity
+> problems (using xfs,ext3 and ext4 over dmcrypt).
+>
+> So please try to check which change causes these problems for you,
+> it can be something completely unrelated to these patches.
+>
+> (If if anyone know how to trigger some corruption with btrfs/dmcrypt,
+> let me know I am not able to reproduce it either.)
 
-I fully agree: it fulfill the KISS principle :-)
+Perhaps this is useful: for myself, I found that when I started using
+2.6.37rc3 that postgresql starting having a *lot* of problems with
+corruption. Specifically, I noted zeroed pages, corruption in headers,
+all sorts of stuff on /newly created/ tables, especially during index
+creation. I had a fairly high hit rate of failure. I backed off to
+2.6.34.7 and have *zero* problems (in fact, prior to 2.6.37rc3, I had
+never had a corruption issue with postgresql). I ran on 2.6.36 for a
+few weeks as well, without issue.
 
-> C Anthony
-> 
-
+I am using kcrypt with lvm on top of that, and ext4 on top of that.
 
 -- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+Jon

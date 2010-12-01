@@ -1,228 +1,130 @@
-From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
-Subject: kernel BUG at fs/btrfs/inode.c:806
-Date: Wed, 1 Dec 2010 14:11:01 +0100
-Message-ID: <201012011411.02352.johannes.hirte@fem.tu-ilmenau.de>
+From: Josef Bacik <josef@redhat.com>
+Subject: What to do about subvolumes?
+Date: Wed, 1 Dec 2010 09:21:36 -0500
+Message-ID: <20101201142136.GD427@dhcp231-156.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="us-ascii"
-Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-fsdevel@vger.kernel.org, chris.mason@oracle.com, hch@lst.de,
+	ssorce@redhat.com
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On one of my machines with btrfs I got this bug:
+Hello,
 
-entry offset 29085974528, bytes 4096, bitmap no
-entry offset 29162995712, bytes 20480, bitmap yes
-entry offset 29171744768, bytes 4096, bitmap no
-block group has cluster?: no
-0 blocks of free space at or bigger than bytes is
-block group 29834084352 has 1073741824 bytes, 1072648192 used 0 pinned 0 reserved
-entry offset 29834084352, bytes 376832, bitmap yes
-entry offset 29890392064, bytes 4096, bitmap no
-entry offset 29895069696, bytes 4096, bitmap no
-entry offset 29896048640, bytes 4096, bitmap no
-entry offset 29896364032, bytes 4096, bitmap no
-entry offset 29896482816, bytes 4096, bitmap no
-entry offset 29905817600, bytes 4096, bitmap no
-entry offset 29906878464, bytes 4096, bitmap no
-entry offset 29908029440, bytes 4096, bitmap no
-entry offset 29908418560, bytes 4096, bitmap no
-entry offset 29910061056, bytes 4096, bitmap no
-entry offset 29911105536, bytes 4096, bitmap no
-entry offset 29912371200, bytes 4096, bitmap no
-entry offset 29912748032, bytes 4096, bitmap no
-entry offset 29914660864, bytes 4096, bitmap no
-entry offset 29914755072, bytes 4096, bitmap no
-entry offset 29915865088, bytes 4096, bitmap no
-entry offset 29915914240, bytes 4096, bitmap no
-entry offset 29916409856, bytes 4096, bitmap no
-entry offset 29916471296, bytes 4096, bitmap no
-entry offset 29924597760, bytes 4096, bitmap no
-entry offset 29931642880, bytes 4096, bitmap no
-entry offset 29931925504, bytes 4096, bitmap no
-entry offset 29932732416, bytes 4096, bitmap no
-entry offset 29933383680, bytes 4096, bitmap no
-entry offset 29933412352, bytes 4096, bitmap no
-entry offset 29933596672, bytes 4096, bitmap no
-entry offset 29935316992, bytes 4096, bitmap no
-entry offset 29938610176, bytes 4096, bitmap no
-entry offset 29939154944, bytes 4096, bitmap no
-entry offset 29944033280, bytes 4096, bitmap no
-entry offset 29946318848, bytes 4096, bitmap no
-entry offset 29964181504, bytes 4096, bitmap no
-entry offset 29964828672, bytes 4096, bitmap no
-entry offset 29966233600, bytes 4096, bitmap no
-entry offset 29968302080, bytes 98304, bitmap yes
-entry offset 29983170560, bytes 4096, bitmap no
-entry offset 29984059392, bytes 4096, bitmap no
-entry offset 29992976384, bytes 4096, bitmap no
-entry offset 30008422400, bytes 4096, bitmap no
-entry offset 30025895936, bytes 4096, bitmap no
-entry offset 30034280448, bytes 4096, bitmap no
-entry offset 30055174144, bytes 4096, bitmap no
-entry offset 30067208192, bytes 4096, bitmap no
-entry offset 30094012416, bytes 4096, bitmap no
-entry offset 30098358272, bytes 4096, bitmap no
-entry offset 30098722816, bytes 4096, bitmap no
-entry offset 30102491136, bytes 4096, bitmap no
-entry offset 30102519808, bytes 143360, bitmap yes
-entry offset 30103207936, bytes 4096, bitmap no
-entry offset 30103601152, bytes 4096, bitmap no
-entry offset 30105415680, bytes 4096, bitmap no
-entry offset 30112169984, bytes 4096, bitmap no
-entry offset 30139326464, bytes 4096, bitmap no
-entry offset 30173143040, bytes 4096, bitmap no
-entry offset 30176014336, bytes 4096, bitmap no
-entry offset 30202048512, bytes 4096, bitmap no
-entry offset 30229487616, bytes 4096, bitmap no
-entry offset 30230700032, bytes 4096, bitmap no
-entry offset 30230777856, bytes 4096, bitmap no
-entry offset 30232813568, bytes 4096, bitmap no
-entry offset 30235348992, bytes 4096, bitmap no
-entry offset 30236737536, bytes 49152, bitmap yes
-entry offset 30241488896, bytes 4096, bitmap no
-entry offset 30252662784, bytes 4096, bitmap no
-entry offset 30370955264, bytes 49152, bitmap yes
-entry offset 30425870336, bytes 4096, bitmap no
-entry offset 30505172992, bytes 61440, bitmap yes
-entry offset 30507831296, bytes 4096, bitmap no
-entry offset 30639390720, bytes 8192, bitmap yes
-entry offset 30760058880, bytes 4096, bitmap no
-entry offset 30773608448, bytes 45056, bitmap yes
-block group has cluster?: no
-3 blocks of free space at or bigger than bytes is
-block group 30907826176 has 536870912 bytes, 533860352 used 0 pinned 0 reserved
-entry offset 30907826176, bytes 1441792, bitmap yes
-entry offset 31042043904, bytes 995328, bitmap yes
-entry offset 31176261632, bytes 212992, bitmap yes
-entry offset 31310479360, bytes 8192, bitmap yes
-block group has cluster?: no
-3 blocks of free space at or bigger than bytes is
-block group 31444697088 has 268435456 bytes, 266985472 used 0 pinned 0 reserved
-entry offset 31444697088, bytes 1298432, bitmap yes
-entry offset 31578914816, bytes 151552, bitmap yes
-block group has cluster?: no
-2 blocks of free space at or bigger than bytes is
-block group 31713132544 has 268435456 bytes, 267300864 used 0 pinned 0 reserved
-entry offset 31713132544, bytes 1093632, bitmap yes
-entry offset 31847350272, bytes 40960, bitmap yes
-block group has cluster?: no
-1 blocks of free space at or bigger than bytes is
-block group 31981568000 has 268435456 bytes, 268029952 used 0 pinned 0 reserved
-entry offset 31981568000, bytes 360448, bitmap yes
-entry offset 32115785728, bytes 45056, bitmap yes
-block group has cluster?: no
-1 blocks of free space at or bigger than bytes is
-block group 32250003456 has 268435456 bytes, 268263424 used 0 pinned 0 reserved
-entry offset 32250003456, bytes 172032, bitmap yes
-block group has cluster?: no
-1 blocks of free space at or bigger than bytes is
-btrfs allocation failed flags 1, wanted 4096
-space_info has 1138688 free, is full
-space_info total=14495514624, used=14483705856, pinned=0, reserved=10670080, may_use=1118208, readonly=0
-block group 15195963392 has 1073741824 bytes, 1073741824 used 0 pinned 0 reserved
-block group has cluster?: no
-0 blocks of free space at or bigger than bytes is
-block group 16269705216 has 1073741824 bytes, 1073741824 used 0 pinned 0 reserved
-block group has cluster?: no
-0 blocks of free space at or bigger than bytes is
-block group 17343447040 has 1073741824 bytes, 1073741824 used 0 pinned 0 reserved
-block group has cluster?: no
-0 blocks of free space at or bigger than bytes is
-block group 18417188864 has 1073741824 bytes, 1073741824 used 0 pinned 0 reserved
-block group has cluster?: no
-0 blocks of free space at or bigger than bytes is
-block group 19490930688 has 1073741824 bytes, 1073741824 used 0 pinned 0 reserved
-block group has cluster?: no
-0 blocks of free space at or bigger than bytes is
-block group 20564672512 has 1073741824 bytes, 1073741824 used 0 pinned 0 reserved
-block group has cluster?: no
-0 blocks of free space at or bigger than bytes is
-block group 22577938432 has 1073741824 bytes, 1073741824 used 0 pinned 0 reserved
-block group has cluster?: no
-0 blocks of free space at or bigger than bytes is
-block group 23651680256 has 1073741824 bytes, 1073741824 used 0 pinned 0 reserved
-block group has cluster?: no
-0 blocks of free space at or bigger than bytes is
-block group 24725422080 has 1073741824 bytes, 1073094656 used 0 pinned 647168 reserved
-block group has cluster?: no
-0 blocks of free space at or bigger than bytes is
-block group 27015512064 has 1073741824 bytes, 1069514752 used 0 pinned 4227072 reserved
-block group has cluster?: no
-0 blocks of free space at or bigger than bytes is
-block group 28357689344 has 1073741824 bytes, 1072664576 used 0 pinned 290816 reserved
-block group has cluster?: no
-0 blocks of free space at or bigger than bytes is
-block group 29834084352 has 1073741824 bytes, 1073577984 used 0 pinned 163840 reserved
-block group has cluster?: no
-0 blocks of free space at or bigger than bytes is
-block group 30907826176 has 536870912 bytes, 534175744 used 0 pinned 2342912 reserved
-block group has cluster?: no
-0 blocks of free space at or bigger than bytes is
-block group 31444697088 has 268435456 bytes, 266985472 used 0 pinned 1449984 reserved
-block group has cluster?: no
-0 blocks of free space at or bigger than bytes is
-block group 31713132544 has 268435456 bytes, 267292672 used 0 pinned 1142784 reserved
-block group has cluster?: no
-0 blocks of free space at or bigger than bytes is
-block group 31981568000 has 268435456 bytes, 268029952 used 0 pinned 405504 reserved
-block group has cluster?: no
-0 blocks of free space at or bigger than bytes is
-block group 32250003456 has 268435456 bytes, 268435456 used 0 pinned 0 reserved
-block group has cluster?: no
-0 blocks of free space at or bigger than bytes is
-------------[ cut here ]------------
-kernel BUG at fs/btrfs/inode.c:806!
-invalid opcode: 0000 [#1] PREEMPT SMP 
-last sysfs file: /sys/devices/virtual/vtconsole/vtcon1/uevent
-Modules linked in: snd_seq_oss snd_seq_midi_event snd_seq snd_seq_device snd_pcm_oss snd_mixer_oss fuse dm_crypt dm_mod usbhid fschmd snd_intel8x0 snd_ac97_codec ac97_bus snd_pcm snd_timer e1000 snd uhci_hcd sr_mod cdrom snd_page_alloc sg i2c_i801 [last unloaded: microcode]
+Various people have complained about how BTRFS deals with subvolumes recently,
+specifically the fact that they all have the same inode number, and there's no
+discrete seperation from one subvolume to another.  Christoph asked that I lay
+out a basic design document of how we want subvolumes to work so we can hash
+everything out now, fix what is broken, and then move forward with a design that
+everybody is more or less happy with.  I apologize in advance for how freaking
+long this email is going to be.  I assume that most people are generally
+familiar with how BTRFS works, so I'm not going to bother explaining in great
+detail some stuff.
 
-Pid: 1902, comm: flush-btrfs-1 Not tainted 2.6.37-rc3 #2 D1561/SCENIC P / SCENICO P
-EIP: 0060:[<c1160a5a>] EFLAGS: 00010286 CPU: 1
-EIP is at cow_file_range+0x23d/0x406
-EAX: ffffffe4 EBX: 00854000 ECX: f5abbbc8 EDX: 00000001
-ESI: 00000000 EDI: f5862800 EBP: 00000000 ESP: f5abbc98
- DS: 007b ES: 007b FS: 00d8 GS: 0000 SS: 0068
- Process flush-btrfs-1 (pid: 1902, ti=f5aba000 task=f5b7a1c0 task.ti=f5aba000)
- Stack:
-  0005ffff 00000000 0000c000 00000000 f5862800 ddb8038c 00001000 00000000
-  00001000 f62f5210 ddb80284 ddb80280 ddb80288 f7944360 00000001 00000000
-  a8000000 00000000 00000000 00801000 00000000 f5abbddc f5862800 c116149f
-  Call Trace:
-  [<c116149f>] ? run_delalloc_range+0xab/0x343
-  [<c1179a34>] ? __extent_writepage+0x1fb/0x6e2
-  [<c105ef65>] ? find_get_pages_tag+0xac/0xc8
-  [<c117a187>] ? T.970+0x111/0x1d2
-  [<c117a33c>] ? extent_writepages+0x3a/0x4c
-  [<c1162799>] ? btrfs_get_extent+0x0/0x940
-  [<c11626aa>] ? btrfs_writepages+0x18/0x1b
-  [<c106479c>] ? do_writepages+0x14/0x20
-  [<c109b80f>] ? writeback_single_inode+0x8b/0x186
-  [<c109bc63>] ? writeback_sb_inodes+0x97/0xf5
-  [<c109c13d>] ? writeback_inodes_wb+0xd6/0xe6
-  [<c109c2b4>] ? wb_writeback+0x167/0x1d0
-  [<c10942b4>] ? get_nr_dirty_inodes+0x1f/0x68
-  [<c109c426>] ? wb_do_writeback+0x109/0x11f
-  [<c109c4a2>] ? bdi_writeback_thread+0x66/0x108
-  [<c109c43c>] ? bdi_writeback_thread+0x0/0x108
-  [<c1039301>] ? kthread+0x63/0x68
-  [<c103929e>] ? kthread+0x0/0x68
-  [<c1002c36>] ? kernel_thread_helper+0x6/0x10
-Code: 00 6a 00 8b 7c 24 34 8b 87 f8 01 00 00 31 d2 52 50 ff 74 24 38 ff 74 24 38 89 fa 8b 44 24 58 e8 7d e7 fe ff 83 c4 34 85 c0 74 04 <0f> 0b eb fe b8 50 00 00 00 e8 f0 a6 00 00 89 c7 89 58 0c 89 70 
-EIP: [<c1160a5a>] cow_file_range+0x23d/0x406 SS:ESP 0068:f5abbc98
----[ end trace 442296bce7954a93 ]---
+=== What are subvolumes? ===
 
-The "block group" messages where way more, too much for the dmesg log buffer.
-Kernel is a 2.6.37-rc3+ without the latest btrfs-fixes. The bug occurred when
-compiling openoffice.org. After the bug a 'df -h' showed:
+They are just another tree.  In BTRFS we have various b-trees to describe the
+filesystem.  A few of them are filesystem wide, such as the extent tree, chunk
+tree, root tree etc.  The tree's that hold the actual filesystem data, that is
+inodes and such, are kept in their own b-tree.  This is how subvolumes and
+snapshots appear on disk, they are simply new b-trees with all of the file data
+contained within them.
 
-df -h:
-Filesystem            Size  Used Avail Use% Mounted on
-rootfs                 21G   17G  770M  96% /
-/dev/root              21G   17G  770M  96% /
-rc-svcdir             1.0M  108K  916K  11% /lib/rc/init.d
-udev                   10M  116K  9.9M   2% /dev
-shm                  1013M     0 1013M   0% /dev/shm
-/dev/sda2              66G   46G   20G  71% /home
-/dev/sdb1              75G   56G   19G  75% /mnt/windows
+=== What do subvolumes look like? ===
+
+All the user sees are directories.  They act like any other directory acts, with
+a few exceptions
+
+1) You cannot hardlink between subvolumes.  This is because subvolumes have
+their own inode numbers and such, think of them as seperate mounts in this case,
+you cannot hardlink between two mounts because the link needs to point to the
+same on disk inode, which is impossible between two different filesystems.  The
+same is true for subvolumes, they have their own trees with their own inodes and
+inode numbers, so it's impossible to hardlink between them.
+
+1a) In case it wasn't clear from above, each subvolume has their own inode
+numbers, so you can have the same inode numbers used between two different
+subvolumes, since they are two different trees.
+
+2) Obviously you can't just rm -rf subvolumes.  Because they are roots there's
+extra metadata to keep track of them, so you have to use one of our ioctls to
+delete subvolumes/snapshots.
+
+But permissions and everything else they are the same.
+
+There is one tricky thing.  When you create a subvolume, the directory inode
+that is created in the parent subvolume has the inode number of 256.  So if you
+have a bunch of subvolumes in the same parent subvolume, you are going to have a
+bunch of directories with the inode number of 256.  This is so when users cd
+into a subvolume we can know its a subvolume and do all the normal voodoo to
+start looking in the subvolumes tree instead of the parent subvolumes tree.
+
+This is where things go a bit sideways.  We had serious problems with NFS, but
+thankfully NFS gives us a bunch of hooks to get around these problems.
+CIFS/Samba do not, so we will have problems there, not to mention any other
+userspace application that looks at inode numbers.
+
+=== How do we want subvolumes to work from a user perspective? ===
+
+1) Users need to be able to create their own subvolumes.  The permission
+semantics will be absolutely the same as creating directories, so I don't think
+this is too tricky.  We want this because you can only take snapshots of
+subvolumes, and so it is important that users be able to create their own
+discrete snapshottable targets.
+
+2) Users need to be able to snapshot their subvolumes.  This is basically the
+same as #1, but it bears repeating.
+
+3) Subvolumes shouldn't need to be specifically mounted.  This is also
+important, we don't want users to have to go around mounting their subvolumes up
+manually one-by-one.  Today users just cd into subvolumes and it works, just
+like cd'ing into a directory.
+
+=== Quotas ===
+
+This is a huge topic in and of itself, but Christoph mentioned wanting to have
+an idea of what we wanted to do with it, so I'm putting it here.  There are
+really 2 things here
+
+1) Limiting the size of subvolumes.  This is really easy for us, just create a
+subvolume and at creation time set a maximum size it can grow to and not let it
+go farther than that.  Nice, simple and straightforward.
+
+2) Normal quotas, via the quota tools.  This just comes down to how do we want
+to charge users, do we want to do it per subvolume, or per filesystem.  My vote
+is per filesystem.  Obviously this will make it tricky with snapshots, but I
+think if we're just charging the diff's between the original volume and the
+snapshot to the user then that will be the easiest for people to understand,
+rather than making a snapshot all of a sudden count the users currently used
+quota * 2.
+
+=== What do we do? ===
+
+This is where I expect to see the most discussion.  Here is what I want to do
+
+1) Scrap the 256 inode number thing.  Instead we'll just put a flag in the inode
+to say "Hey, I'm a subvolume" and then we can do all of the appropriate magic
+that way.  This unfortunately will be an incompatible format change, but the
+sooner we get this adressed the easier it will be in the long run.  Obviously
+when I say format change I mean via the incompat bits we have, so old fs's won't
+be broken and such.
+
+2) Do something like NFS's referral mounts when we cd into a subvolume.  Now we
+just do dentry trickery, but that doesn't make the boundary between subvolumes
+clear, so it will confuse people (and samba) when they walk into a subvolume and
+all of a sudden the inode numbers are the same as in the directory behind them.
+With doing the referral mount thing, each subvolume appears to be its own mount
+and that way things like NFS and samba will work properly.
+
+I feel like I'm forgetting something here, hopefully somebody will point it out.
+
+=== Conclusion ===
+
+There are definitely some wonky things with subvolumes, but I don't think they
+are things that cannot be fixed now.  Some of these changes will require
+incompat format changes, but it's either we fix it now, or later on down the
+road when BTRFS starts getting used in production really find out how many
+things our current scheme breaks and then have to do the changes then.  Thanks,
+
+Josef

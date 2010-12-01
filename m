@@ -1,111 +1,60 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: R: Re: [PATCH 5/5] btrfs: Add ioctl to set snapshot readonly/writable
-Date: Wed, 01 Dec 2010 08:55:31 +0800
-Message-ID: <4CF59D03.3010206@cn.fujitsu.com>
-References: <13025594.9851291103573101.JavaMail.defaultUser@defaultHost>
+Subject: Re: [GIT PULL][PATCH v2 0/6] btrfs: Add lzo compression support
+Date: Wed, 01 Dec 2010 09:02:55 +0800
+Message-ID: <4CF59EBF.1020606@cn.fujitsu.com>
+References: <4CE48ABB.5070302@cn.fujitsu.com>	<AANLkTin4VPOXBOU9fM5CVqSSnwMMrUCoDqoYu5mKWXLL@mail.gmail.com>	<4CF44C95.6020908@cn.fujitsu.com> <AANLkTimcGV1GdPZcuya3MwFbkkhwRyj5MdEvY1fAmCWu@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: "Goffredo Baroncelli <kreijack@libero.it>" <kreijack@libero.it>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Mitch Harder <mitch.harder@sabayonlinux.org>,
+	linux-btrfs@vger.kernel.org
+To: C Anthony Risinger <anthony@extof.me>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <13025594.9851291103573101.JavaMail.defaultUser@defaultHost>
+In-Reply-To: <AANLkTimcGV1GdPZcuya3MwFbkkhwRyj5MdEvY1fAmCWu@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Goffredo Baroncelli <kreijack@libero.it> wrote:
-> Hi Li,
-> 
->> ----Messaggio originale----
->> Da: lizf@cn.fujitsu.com
->> Data: 30/11/2010 8.03
->> A: <kreijack@libero.it>
->> Cc: <linux-btrfs@vger.kernel.org>
->> Ogg: Re: [PATCH 5/5] btrfs: Add ioctl to set snapshot readonly/writable
->>
->> Goffredo Baroncelli wrote:
->>> Hi Li,
->>>
->>> On Monday, 29 November, 2010, Li Zefan wrote:
->>>> This allows us to set a snapshot readonly or writable on the fly.
+C Anthony Risinger wrote:
+> On Mon, Nov 29, 2010 at 7:00 PM, Li Zefan <lizf@cn.fujitsu.com> wrote:
+>> C Anthony Risinger wrote:
+>>> On Wed, Nov 17, 2010 at 8:08 PM, Li Zefan <lizf@cn.fujitsu.com> wrote:
+>>>> You can pull from:
 >>>>
->>>> Usage:
+>>>>        git://repo.or.cz/linux-btrfs-devel.git lzo-support
 >>>>
->>>> Set BTRFS_SNAPSHOT_RDONLY/WRITABLE of btrfs_ioctl_vol_arg_v2->flags,
->>>> and then call ioctl(BTRFS_IOCTL_SNAP_SETFLAGS);
->>> I really appreciate your work, but I have some doubt about this interface. 
-> In 
->>> particolar:
->> It's the interface that I would like to be discussed. Thanks!
->>
->>> - how get the flags of a subvolume ? I suggest to implement a pair of 
-> ioctls:
->>> 	- subvolume_setflags  -> get the flags
->>> 	- subvolume_getflags  -> set the flags
->>> These ioctls would be more generic (there are a lot of flags which may be 
->>> interested to put in the "root" of a subvolume: think about 
->>> compress/nocompress, (no)datasum...)
->>> - For the reason abowe, I suggest to replace SNAPSHOT with SUBVOLUME
->>> - Finally, with a pair of  get/set_flags functions we can avoid the use of 
-> the 
->>> flags BTRFS_SNAPSHOT_WRITABLE.
+>>>>
+>>>> Lzo is a much faster compression algorithm than gzib, so would allow
+>>>> more users to enable transparent compression, and some users can
+>>>> choose from compression ratio and compression speed.
+>>> is this in a branch somewhere?  or for inclusion in .37/.38?  this is
+>>> a very attractive feature.
 >>>
->> There are some reasons that I created this interface:
->>
->> - set/getflags should set/get root flags which reflect in struct
->> btrfs_root_item->flags.
->>
->> - btrfs_root_item->flags was not used at all before this patch, so
->> (no)compress and (no)datasum is not reflect in ->flags.
->>
->> - _CREATE_ASYNC flag is to create snapshot asynchronously, so it's not
->> a flag of tree root.
+>>> what's the proper place (repo/branch) to see what is pending?
+>> As a new feature, it's too late for .37. Hope to see it merged in .38
+>> merge window.
 > 
-> Of course I never mind about  _CREATE_ASYNC to be set in btrfs_root_item-
->> flags. 
-> _CREATE_ASYNC is not a snapshot properties but a way of creating a subvolume.
-> But other flags may make sense to live in btrfs_root_item->flags.
->  So I am suggesting to develop a more general 
-> interface for future improvement. These pair of functions (*_set/get) should 
-> be use to 
-> set the subvolume/snapshot properties. And the RDONLY is one of them.
+> :-(
 > 
-> In the detail to set an attributue an user should be:
+> yeah i thought it was already too late for .37, but i'd love to see
+> this for .38... should add even more kick to my eee s101 netbook.
 > 
-> - get the subvolume flags (ioctl(fd, BTRFS_IOC_SNAP_GETFLAGS....) )
-> - compute the new flags ( flags |= BTRFS_FLAGS_XXXX or flags &= 
-> ~BTRFS_FLAG_XXXX)
-> - set the subvolume flags (ioctl(fd, BTRFS_IOC_SNAP_SGETFLAGS....) )
+>> Chris' btrfs-unstable git tree is the "official" place to see what is
+>> pending, but just he hasn't picked up those patches, so for now it
+>> only sits in my own tree.
+> 
+> i knew about Chris' tree, i probably should have been more clear;
+> instead of "pending" i should have said "awaiting review", ie. is
+> there a repo Chris or someone else keeps with all the potential
+> patches (such as this, or the recent readonly ones, etc.)?
 > 
 
-Yep, this style can be seen in some other places.
+Unfortunately no..
 
->> - It seems to me there's no user requirement for getflags ioctl to
->> return _RDONLY/_WRITABLE flags of a tree root?
-> 
-> And how an user/admin can understand that a snapshot/subvolume is readonly ? 
-> How 
-> 
->> - By suggesting BTRFS_SUBVOL_RDONLY, does it impliy not only snapshot
->> but also a subvolume can be made readonly?
-> 
-> IIRC a snapshot is a subvolume already filled from the beginning. Why doesn't 
-> share 
-> the capability of make a subvolume RO ?
+> i keep a pretty good eye on the list, but i thought maybe someone
+> already had a nice central point to see these "up and coming" patches
+> that aren't necessarily "pending" for mainline yet.
 > 
 
-I'm not against it, but make sure we're on the same page.
-
-> Finally I have another suggestion: make sense to check that the file 
-> descriptor is referring 
-> to the root of a subvolume instead of a the tree. I highlight that because the 
-
-Will fix.
-
-> other ioctls
-> suffer  the same problem and confused the user sometime. For example a lot of
-> people tough that was possible to snapshot a directory, because the ioctl 
-> doesn't return
-> any error. But instead of the directory the snapshot was of the full 
-> subvolume.
-> 
-
-Sounds like a bug to me.
+But btrfs-unstable tree should have acted as this role. We put those patches
+that are ready for next release in different branches in that tree,
+and merge them into master branch later. And add that tree into linux-next
+for wider testing..

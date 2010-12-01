@@ -1,139 +1,103 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
+From: "J. Bruce Fields" <bfields@fieldses.org>
 Subject: Re: What to do about subvolumes?
-Date: Wed, 1 Dec 2010 19:35:12 +0000
-Message-ID: <20101201193512.GB4087@carfax.org.uk>
+Date: Wed, 1 Dec 2010 14:44:04 -0500
+Message-ID: <20101201194404.GE17142@fieldses.org>
 References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com>
- <20101201163800.GA4087@carfax.org.uk>
- <20101201173830.GA7021@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="/WwmFnJnmDyWGHa4"
-Cc: Hugo Mills <hugo-lkml@carfax.org.uk>, linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, chris.mason@oracle.com, hch@lst.de,
-	ssorce@redhat.com
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	chris.mason@oracle.com, hch@lst.de, ssorce@redhat.com
 To: Josef Bacik <josef@redhat.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101201173830.GA7021@localhost.localdomain>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20101201142136.GD427@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---/WwmFnJnmDyWGHa4
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Wed, Dec 01, 2010 at 12:38:30PM -0500, Josef Bacik wrote:
-> On Wed, Dec 01, 2010 at 04:38:00PM +0000, Hugo Mills wrote:
-> > On Wed, Dec 01, 2010 at 09:21:36AM -0500, Josef Bacik wrote:
-> > > === Quotas ===
-> > > 
-> > > This is a huge topic in and of itself, but Christoph mentioned wanting to have
-> > > an idea of what we wanted to do with it, so I'm putting it here.  There are
-> > > really 2 things here
-> > > 
-> > > 1) Limiting the size of subvolumes.  This is really easy for us, just create a
-> > > subvolume and at creation time set a maximum size it can grow to and not let it
-> > > go farther than that.  Nice, simple and straightforward.
-> > > 
-> > > 2) Normal quotas, via the quota tools.  This just comes down to how do we want
-> > > to charge users, do we want to do it per subvolume, or per filesystem.  My vote
-> > > is per filesystem.  Obviously this will make it tricky with snapshots, but I
-> > > think if we're just charging the diff's between the original volume and the
-> > > snapshot to the user then that will be the easiest for people to understand,
-> > > rather than making a snapshot all of a sudden count the users currently used
-> > > quota * 2.
-> > 
-> >    This is going to be tricky to get the semantics right, I suspect.
-> > 
-> >    Say you've created a subvolume, A, containing 10G of Useful Stuff
-> > (say, a base image for VMs). This counts 10G against your quota. Now,
-> > I come along and snapshot that subvolume (as a writable subvolume) --
-> > call it B. This is essentially free for me, because I've got a COW
-> > copy of your subvolume (and the original counts against your quota).
-> > 
-> >    If I now modify a file in subvolume B, the full modified section
-> > goes onto my quota. This is all well and good. But what happens if you
-> > delete your subvolume, A? Suddenly, I get lumbered with 10G of extra
-> > files.  Worse, what happens if someone else had made a snapshot of A,
-> > too? Who gets the 10G added to their quota, me or them? What if I'd
-> > filled up my quota? Would that stop you from deleting your copy,
-> > because my copy can't be charged against my quota? Would I just end up
-> > unexpectedly 10G over quota?
-> > 
+On Wed, Dec 01, 2010 at 09:21:36AM -0500, Josef Bacik wrote:
+> Hello,
 > 
-> If you delete your subvolume A, like use the btrfs tool to delete it, you will
-> only be stuck with what you changed in snapshot B.  So if you only changed 5gig
-> worth of information, and you deleted the original subvolume, you would have
-> 5gig charged to your quota.
+> Various people have complained about how BTRFS deals with subvolumes recently,
+> specifically the fact that they all have the same inode number, and there's no
+> discrete seperation from one subvolume to another.  Christoph asked that I lay
+> out a basic design document of how we want subvolumes to work so we can hash
+> everything out now, fix what is broken, and then move forward with a design that
+> everybody is more or less happy with.  I apologize in advance for how freaking
+> long this email is going to be.  I assume that most people are generally
+> familiar with how BTRFS works, so I'm not going to bother explaining in great
+> detail some stuff.
+> 
+> === What are subvolumes? ===
+> 
+> They are just another tree.  In BTRFS we have various b-trees to describe the
+> filesystem.  A few of them are filesystem wide, such as the extent tree, chunk
+> tree, root tree etc.  The tree's that hold the actual filesystem data, that is
+> inodes and such, are kept in their own b-tree.  This is how subvolumes and
+> snapshots appear on disk, they are simply new b-trees with all of the file data
+> contained within them.
+> 
+> === What do subvolumes look like? ===
+> 
+> All the user sees are directories.  They act like any other directory acts, with
+> a few exceptions
+> 
+> 1) You cannot hardlink between subvolumes.  This is because subvolumes have
+> their own inode numbers and such, think of them as seperate mounts in this case,
+> you cannot hardlink between two mounts because the link needs to point to the
+> same on disk inode, which is impossible between two different filesystems.  The
+> same is true for subvolumes, they have their own trees with their own inodes and
+> inode numbers, so it's impossible to hardlink between them.
 
-   This doesn't work, though, if the owners of the "original" and
-"new" subvolume are different:
+OK, so I'm unclear: would it be possible for nfsd to export subvolumes
+independently?
 
-Case 1:
+For that to work, we need to be able to take an inode that we just
+looked up by filehandle, and see which subvolume it belongs in.  So if
+two subvolumes can point to the same inode, it doesn't work, but if
+st_dev is different between them, e.g., that'd be fine.  Sounds like
+you're seeing the latter is possible, good!
 
- * Porthos creates 10G data.
- * Athos makes a snapshot of Porthos's data.
- * A sysadmin (Richelieu) changes the ownership on Athos's snapshot of
-   Porthos's data to Athos.
- * Porthos deletes his copy of the data.
+> 
+> 1a) In case it wasn't clear from above, each subvolume has their own inode
+> numbers, so you can have the same inode numbers used between two different
+> subvolumes, since they are two different trees.
+> 
+> 2) Obviously you can't just rm -rf subvolumes.  Because they are roots there's
+> extra metadata to keep track of them, so you have to use one of our ioctls to
+> delete subvolumes/snapshots.
+> 
+> But permissions and everything else they are the same.
+> 
+> There is one tricky thing.  When you create a subvolume, the directory inode
+> that is created in the parent subvolume has the inode number of 256.
 
-Case 2:
+Is that the right way to say this?  Doing a quick test, the inode
+numbers that a readdir of the parent directory returns *are* distinct.
+It's just the inode number that you get when you stat that is different.
 
- * Porthos creates 10G of data.
- * Athos makes a snapshot of Porthos's data.
- * Porthos deletes his copy of the data.
- * A sysadmin (Richelieu) changes the ownership on Athos's snapshot of
-   Porthos's data to Athos.
+Which is all fine and normal, *if* you treat this as a real mountpoint
+with its own vfsmount, st_dev, etc.
 
-Case 3:
+> === How do we want subvolumes to work from a user perspective? ===
+> 
+> 1) Users need to be able to create their own subvolumes.  The permission
+> semantics will be absolutely the same as creating directories, so I don't think
+> this is too tricky.  We want this because you can only take snapshots of
+> subvolumes, and so it is important that users be able to create their own
+> discrete snapshottable targets.
+> 
+> 2) Users need to be able to snapshot their subvolumes.  This is basically the
+> same as #1, but it bears repeating.
+> 
+> 3) Subvolumes shouldn't need to be specifically mounted.  This is also
+> important, we don't want users to have to go around mounting their subvolumes up
+> manually one-by-one.  Today users just cd into subvolumes and it works, just
+> like cd'ing into a directory.
 
- * Porthos creates 10G data.
- * Athos makes a snapshot of Porthos's data.
- * Aramis makes a snapshot of Porthos's data.
- * A sysadmin (Richelieu) changes the ownership on Athos's snapshot of
-   Porthos's data to Athos.
- * Porthos deletes his copy of the data.
+And the separate nfsd exports is another thing I'd really love to see
+work: currently you can export a subtree of a filesystem if you want,
+but it's trivial to escape the subtree by guessing filehandles.  So this
+gives us an easy way for administrators to create secure separate
+exports without having to manage entirely separate volumes.
 
-Case 4:
+If subvolumes got real mountpoints and so on, this would be easy.
 
- * Porthos creates 10G data.
- * Athos makes a snapshot of Porthos's data.
- * Aramis makes a snapshot of Athos's data.
- * Porthos deletes his copy of the data.
-   [Consider also Richelieu changing ownerships of Athos's and Aramis's
-   data at alternative points in this sequence]
-
-   In each of these, who gets charged (and how much) for their copy of
-the data?
-
->  The idea is you are only charged for what blocks
-> you have on the disk.  Thanks,
-
-   My point was that it's perfectly possible to have blocks on the
-disk that are effectively owned by two people, and that the person to
-charge for those blocks is, to me, far from clear. You either end up
-charging twice for a single set of blocks on the disk, or you end up
-in a situation where one person's actions can cause another person's
-quota to fill up. Neither of these is particularly obvious behaviour.
-
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-           --- I believe that it's closely correlated with ---           
-                       the aeroswine coefficient.                        
-
---/WwmFnJnmDyWGHa4
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFM9qNwIKyzvlFcI40RAnL1AJ9u3GvoRAuUMBJnwVWqi8NJVjEyFQCffveR
-jfx+Pl+EFi+JZFuVo8AYTKo=
-=mxht
------END PGP SIGNATURE-----
-
---/WwmFnJnmDyWGHa4--
+--b.

@@ -1,59 +1,139 @@
-From: Jon Nelson <jnelson@jamponi.net>
-Subject: Re: dm-crypt barrier support is effective
-Date: Wed, 1 Dec 2010 13:34:05 -0600
-Message-ID: <AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com>
-References: <20101107194547.GA12521@basil.fritz.box> <4CD71C8B.1050604@redhat.com>
- <20101107230508.GB17592@basil.fritz.box> <20101108145809.GD29714@redhat.com>
- <1289238930-sup-9765@think> <20101114205925.GA20451@redhat.com>
- <AANLkTi=rVyozmvqCJD1kGqnV3uEn-0ak6B12-O_9XOKJ@mail.gmail.com>
- <4CE05A9E.9090204@redhat.com> <AANLkTimT0t3xqgKdAn7MBPD7ED-9uPS+WJE0z+K8tciu@mail.gmail.com>
- <AANLkTik_p0yxQBQ3ehHWYPLfiqxGbSNUT5XUk9dC5-x6@mail.gmail.com>
- <20101201165229.GC13415@redhat.com> <AANLkTinG209iRAXgpNC0vNpn1C02wkYmVfveXRBqsKV-@mail.gmail.com>
- <4CF692D1.1010906@redhat.com>
+From: Hugo Mills <hugo-lkml@carfax.org.uk>
+Subject: Re: What to do about subvolumes?
+Date: Wed, 1 Dec 2010 19:35:12 +0000
+Message-ID: <20101201193512.GB4087@carfax.org.uk>
+References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com>
+ <20101201163800.GA4087@carfax.org.uk>
+ <20101201173830.GA7021@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Matt <jackdachef@gmail.com>, Mike Snitzer <snitzer@redhat.com>,
-	Andi Kleen <andi@firstfloor.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	dm-devel <dm-devel@redhat.com>,
-	Linux Kernel <linux-kernel@vger.kernel.org>,
-	htd <htd@fancy-poultry.org>,
-	Chris Mason <chris.mason@oracle.com>, htejun@gmail.com
-To: Milan Broz <mbroz@redhat.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4CF692D1.1010906@redhat.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="/WwmFnJnmDyWGHa4"
+Cc: Hugo Mills <hugo-lkml@carfax.org.uk>, linux-btrfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, chris.mason@oracle.com, hch@lst.de,
+	ssorce@redhat.com
+To: Josef Bacik <josef@redhat.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20101201173830.GA7021@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 1, 2010 at 12:24 PM, Milan Broz <mbroz@redhat.com> wrote:
-> On 12/01/2010 06:35 PM, Matt wrote:
->> Thanks for pointing to v6 ! I hadn't noticed that there was a new one :)
->>
->> Well, so I'll restore my box to a working/productive state and will
->> try out v6 (I'm pretty confident that it'll work without problems).
->
-> It's the same as previous, just with fixed header (to track it properly
-> in patchwork) , second patch adds some read optimisation, nothing what
-> should help here.
->
-> Anyway, I run several tests on 2.6.37-rc3+ and see no integrity
-> problems (using xfs,ext3 and ext4 over dmcrypt).
->
-> So please try to check which change causes these problems for you,
-> it can be something completely unrelated to these patches.
->
-> (If if anyone know how to trigger some corruption with btrfs/dmcrypt,
-> let me know I am not able to reproduce it either.)
 
-Perhaps this is useful: for myself, I found that when I started using
-2.6.37rc3 that postgresql starting having a *lot* of problems with
-corruption. Specifically, I noted zeroed pages, corruption in headers,
-all sorts of stuff on /newly created/ tables, especially during index
-creation. I had a fairly high hit rate of failure. I backed off to
-2.6.34.7 and have *zero* problems (in fact, prior to 2.6.37rc3, I had
-never had a corruption issue with postgresql). I ran on 2.6.36 for a
-few weeks as well, without issue.
+--/WwmFnJnmDyWGHa4
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-I am using kcrypt with lvm on top of that, and ext4 on top of that.
+On Wed, Dec 01, 2010 at 12:38:30PM -0500, Josef Bacik wrote:
+> On Wed, Dec 01, 2010 at 04:38:00PM +0000, Hugo Mills wrote:
+> > On Wed, Dec 01, 2010 at 09:21:36AM -0500, Josef Bacik wrote:
+> > > === Quotas ===
+> > > 
+> > > This is a huge topic in and of itself, but Christoph mentioned wanting to have
+> > > an idea of what we wanted to do with it, so I'm putting it here.  There are
+> > > really 2 things here
+> > > 
+> > > 1) Limiting the size of subvolumes.  This is really easy for us, just create a
+> > > subvolume and at creation time set a maximum size it can grow to and not let it
+> > > go farther than that.  Nice, simple and straightforward.
+> > > 
+> > > 2) Normal quotas, via the quota tools.  This just comes down to how do we want
+> > > to charge users, do we want to do it per subvolume, or per filesystem.  My vote
+> > > is per filesystem.  Obviously this will make it tricky with snapshots, but I
+> > > think if we're just charging the diff's between the original volume and the
+> > > snapshot to the user then that will be the easiest for people to understand,
+> > > rather than making a snapshot all of a sudden count the users currently used
+> > > quota * 2.
+> > 
+> >    This is going to be tricky to get the semantics right, I suspect.
+> > 
+> >    Say you've created a subvolume, A, containing 10G of Useful Stuff
+> > (say, a base image for VMs). This counts 10G against your quota. Now,
+> > I come along and snapshot that subvolume (as a writable subvolume) --
+> > call it B. This is essentially free for me, because I've got a COW
+> > copy of your subvolume (and the original counts against your quota).
+> > 
+> >    If I now modify a file in subvolume B, the full modified section
+> > goes onto my quota. This is all well and good. But what happens if you
+> > delete your subvolume, A? Suddenly, I get lumbered with 10G of extra
+> > files.  Worse, what happens if someone else had made a snapshot of A,
+> > too? Who gets the 10G added to their quota, me or them? What if I'd
+> > filled up my quota? Would that stop you from deleting your copy,
+> > because my copy can't be charged against my quota? Would I just end up
+> > unexpectedly 10G over quota?
+> > 
+> 
+> If you delete your subvolume A, like use the btrfs tool to delete it, you will
+> only be stuck with what you changed in snapshot B.  So if you only changed 5gig
+> worth of information, and you deleted the original subvolume, you would have
+> 5gig charged to your quota.
+
+   This doesn't work, though, if the owners of the "original" and
+"new" subvolume are different:
+
+Case 1:
+
+ * Porthos creates 10G data.
+ * Athos makes a snapshot of Porthos's data.
+ * A sysadmin (Richelieu) changes the ownership on Athos's snapshot of
+   Porthos's data to Athos.
+ * Porthos deletes his copy of the data.
+
+Case 2:
+
+ * Porthos creates 10G of data.
+ * Athos makes a snapshot of Porthos's data.
+ * Porthos deletes his copy of the data.
+ * A sysadmin (Richelieu) changes the ownership on Athos's snapshot of
+   Porthos's data to Athos.
+
+Case 3:
+
+ * Porthos creates 10G data.
+ * Athos makes a snapshot of Porthos's data.
+ * Aramis makes a snapshot of Porthos's data.
+ * A sysadmin (Richelieu) changes the ownership on Athos's snapshot of
+   Porthos's data to Athos.
+ * Porthos deletes his copy of the data.
+
+Case 4:
+
+ * Porthos creates 10G data.
+ * Athos makes a snapshot of Porthos's data.
+ * Aramis makes a snapshot of Athos's data.
+ * Porthos deletes his copy of the data.
+   [Consider also Richelieu changing ownerships of Athos's and Aramis's
+   data at alternative points in this sequence]
+
+   In each of these, who gets charged (and how much) for their copy of
+the data?
+
+>  The idea is you are only charged for what blocks
+> you have on the disk.  Thanks,
+
+   My point was that it's perfectly possible to have blocks on the
+disk that are effectively owned by two people, and that the person to
+charge for those blocks is, to me, far from clear. You either end up
+charging twice for a single set of blocks on the disk, or you end up
+in a situation where one person's actions can cause another person's
+quota to fill up. Neither of these is particularly obvious behaviour.
+
+   Hugo.
 
 -- 
-Jon
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+           --- I believe that it's closely correlated with ---           
+                       the aeroswine coefficient.                        
+
+--/WwmFnJnmDyWGHa4
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iD8DBQFM9qNwIKyzvlFcI40RAnL1AJ9u3GvoRAuUMBJnwVWqi8NJVjEyFQCffveR
+jfx+Pl+EFi+JZFuVo8AYTKo=
+=mxht
+-----END PGP SIGNATURE-----
+
+--/WwmFnJnmDyWGHa4--

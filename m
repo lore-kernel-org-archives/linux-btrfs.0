@@ -1,38 +1,69 @@
-From: Milan Broz <mbroz@redhat.com>
-Subject: Re: dm-crypt barrier support is effective
-Date: Wed, 01 Dec 2010 21:45:28 +0100
-Message-ID: <4CF6B3E8.2000406@redhat.com>
-References: <20101107194547.GA12521@basil.fritz.box> <4CD71C8B.1050604@redhat.com> <20101107230508.GB17592@basil.fritz.box> <20101108145809.GD29714@redhat.com> <1289238930-sup-9765@think> <20101114205925.GA20451@redhat.com> <AANLkTi=rVyozmvqCJD1kGqnV3uEn-0ak6B12-O_9XOKJ@mail.gmail.com> <4CE05A9E.9090204@redhat.com> <AANLkTimT0t3xqgKdAn7MBPD7ED-9uPS+WJE0z+K8tciu@mail.gmail.com> <AANLkTik_p0yxQBQ3ehHWYPLfiqxGbSNUT5XUk9dC5-x6@mail.gmail.com> <20101201165229.GC13415@redhat.com> <AANLkTinG209iRAXgpNC0vNpn1C02wkYmVfveXRBqsKV-@mail.gmail.com> <4CF692D1.1010906@redhat.com> <AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com>
+From: Jeff Layton <jlayton@redhat.com>
+Subject: Re: What to do about subvolumes?
+Date: Wed, 1 Dec 2010 16:06:07 -0500
+Message-ID: <20101201160607.0219ce33@tlielax.poochiereds.net>
+References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com>
+	<20101201150352.164007ed@tlielax.poochiereds.net>
+	<201012012146.03433.kreijack@libero.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Matt <jackdachef@gmail.com>, Mike Snitzer <snitzer@redhat.com>,
-	Andi Kleen <andi@firstfloor.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	dm-devel <dm-devel@redhat.com>,
-	Linux Kernel <linux-kernel@vger.kernel.org>,
-	htd <htd@fancy-poultry.org>,
-	Chris Mason <chris.mason@oracle.com>, htejun@gmail.com
-To: Jon Nelson <jnelson@jamponi.net>
+Content-Type: text/plain; charset=US-ASCII
+Cc: linux-btrfs@vger.kernel.org, Josef Bacik <josef@redhat.com>,
+	linux-fsdevel@vger.kernel.org, chris.mason@oracle.com, hch@lst.de,
+	ssorce@redhat.com
+To: kreijack@libero.it
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com>
+In-Reply-To: <201012012146.03433.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, 1 Dec 2010 21:46:03 +0100
+Goffredo Baroncelli <kreijack@libero.it> wrote:
 
-On 12/01/2010 08:34 PM, Jon Nelson wrote:
-> Perhaps this is useful: for myself, I found that when I started using
-> 2.6.37rc3 that postgresql starting having a *lot* of problems with
-> corruption. Specifically, I noted zeroed pages, corruption in headers,
-> all sorts of stuff on /newly created/ tables, especially during index
-> creation. I had a fairly high hit rate of failure. I backed off to
-> 2.6.34.7 and have *zero* problems (in fact, prior to 2.6.37rc3, I had
-> never had a corruption issue with postgresql). I ran on 2.6.36 for a
-> few weeks as well, without issue.
+> On Wednesday, 01 December, 2010, Jeff Layton wrote:
+> > A more common use case than CIFS or samba is going to be things like
+> > backup programs. They commonly look at inode numbers in order to
+> > identify hardlinks and may be horribly confused when there files that
+> > have a link count >1 and inode number collisions with other files.
+> > 
+> > That probably qualifies as an "enterprise-ready" show stopper...
 > 
-> I am using kcrypt with lvm on top of that, and ext4 on top of that.
+> I hope that a backup program, uses the pair (inode,fsid) to identify if two 
+> file are hardlinked... otherwise a backup of two filesystem mounted can be 
+> quite danguerous...
+> 
+> 
+> From the statfs(2) man page:
+> [..]
+> The f_fsid field
+> [...]
+> The general idea is that f_fsid contains some random stuff such that the pair 
+> (f_fsid,ino) uniquely determines a file.  Some operating systems use (a 
+> variation on) the device number, or the device number combined  with  the  
+> file-system  type.   Several  OSes restrict giving out the f_fsid field to the 
+> superuser only (and zero it for unprivileged users), because this field is 
+> used in the filehandle of the file system when NFS-exported, and giving it out 
+> is a security concern.
+> 
+> 
+> And the btrfs_statfs function returns a different fsid for every subvolume.
+> 
 
-With unpatched dmcrypt (IOW with Linus' git)? Then it must be ext4 or
-dm-core problem because there were no patches for dm-crypt...
+Ahh, interesting. I've never read that blurb on f_fsid...
 
-Anyway, thanks for hint how to reproduce it.
+Unfortunately, it looks like not all filesystems fill that field out.
+NFS and CIFS leave it conspicuously blank. Those are probably bugs...
 
-Milan
+OTOH, the GLibc docs say this:
+
+dev_t st_dev
+    Identifies the device containing the file. The st_ino and st_dev,
+    taken together, uniquely identify the file. The st_dev value is not
+    necessarily consistent across reboots or system crashes, however. 
+
+...and it's always been my understanding that a st_dev/st_ino
+combination should be unique.
+
+Is there some definitive POSIX statement on why one should prefer to
+use f_fsid over st_dev in this situation?
+
+-- 
+Jeff Layton <jlayton@redhat.com>

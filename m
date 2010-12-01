@@ -1,7 +1,7 @@
 From: liubo <liubo2009@cn.fujitsu.com>
-Subject: [RFC PATCH 3/4 v2] Btrfs: add readonly support for error handle
-Date: Wed, 01 Dec 2010 18:21:19 +0800
-Message-ID: <4CF6219F.4020105@cn.fujitsu.com>
+Subject: [RFC PATCH 4/4 v2] Btrfs: deal with filesystem state at mount, umount
+Date: Wed, 01 Dec 2010 18:21:50 +0800
+Message-ID: <4CF621BE.2080201@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Cc: Josef Bacik <josef@redhat.com>, liubo <liubo2009@cn.fujitsu.com>
@@ -9,141 +9,108 @@ To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch provide a new error handle interface for those errors that handled
- by current BUG_ONs.
+Since there is a filesystem state, we should deal with it carefully at mount,
+ umount and remount.
 
-In order to protect btrfs from panic, when it comes to those BUG_ON errors, 
-the interface forces btrfs readonly and saves the FS state to disk. And the 
-filesystem can be umounted, although mabye with some warning in kernel dmesg.
-Then btrfsck is helpful to recover btrfs.
-
-v1->v2:
-move write super stuff from error handle path to unmount in order to avoid
-deadlock.
+- At mount, the FS state should be checked if there is error on these FS.
+  If it does have, btrfsck is recommended.
+- At umount, the FS state should be saved into disk for consistency.
 
 Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h |    8 +++++
- fs/btrfs/super.c |   88 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 96 insertions(+), 0 deletions(-)
+ fs/btrfs/disk-io.c |   47 ++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 files changed, 46 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 92b5ca2..fc9b6a0 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2552,6 +2552,14 @@ ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size);
- /* super.c */
- int btrfs_parse_options(struct btrfs_root *root, char *options);
- int btrfs_sync_fs(struct super_block *sb, int wait);
-+void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
-+		     unsigned int line, int errno);
-+
-+#define btrfs_std_error(fs_info, errno)				\
-+do {								\
-+	if ((errno))						\
-+		__btrfs_std_error((fs_info), __func__, __LINE__, (errno));\
-+} while (0)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index b40dfe4..663d360 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -43,6 +43,8 @@
+ static struct extent_io_ops btree_extent_io_ops;
+ static void end_workqueue_fn(struct btrfs_work *work);
+ static void free_fs_root(struct btrfs_root *root);
++static void btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
++				     int read_only);
  
- /* acl.c */
- #ifdef CONFIG_BTRFS_FS_POSIX_ACL
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 718b10d..07c58f9 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -54,6 +54,94 @@
+ /*
+  * end_io_wq structs are used to do processing in task context when an IO is
+@@ -1700,6 +1702,11 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 	if (!btrfs_super_root(disk_super))
+ 		goto fail_iput;
  
- static const struct super_operations btrfs_super_ops;
++	/* check filesystem state */
++	fs_info->fs_state |= btrfs_super_flags(disk_super);
++
++	btrfs_check_super_valid(fs_info, sb->s_flags & MS_RDONLY);
++
+ 	ret = btrfs_parse_options(tree_root, options);
+ 	if (ret) {
+ 		err = ret;
+@@ -2405,10 +2412,17 @@ int btrfs_commit_super(struct btrfs_root *root)
+ 	up_write(&root->fs_info->cleanup_work_sem);
  
-+static const char *btrfs_decode_error(struct btrfs_fs_info *fs_info, int errno,
-+				      char nbuf[16])
-+{
-+	char *errstr = NULL;
+ 	trans = btrfs_join_transaction(root, 1);
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
 +
-+	switch (errno) {
-+	case -EIO:
-+		errstr = "IO failure";
-+		break;
-+	case -ENOMEM:
-+		errstr = "Out of memory";
-+		break;
-+	case -EROFS:
-+		errstr = "Readonly filesystem";
-+		break;
-+	default:
-+		if (nbuf) {
-+			if (snprintf(nbuf, 16, "error %d", -errno) >= 0)
-+				errstr = nbuf;
-+		}
-+		break;
-+	}
+ 	ret = btrfs_commit_transaction(trans, root);
+ 	BUG_ON(ret);
 +
-+	return errstr;
-+}
+ 	/* run commit again to drop the original snapshot */
+ 	trans = btrfs_join_transaction(root, 1);
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
 +
-+static void __save_error_info(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_super_block *disk_super = &fs_info->super_copy;
-+
-+	fs_info->fs_state = BTRFS_SUPER_FLAG_ERROR;
-+	disk_super->flags |= cpu_to_le64(BTRFS_SUPER_FLAG_ERROR);
-+
-+	mutex_lock(&fs_info->trans_mutex);
-+	memcpy(&fs_info->super_for_commit, disk_super,
-+	       sizeof(fs_info->super_for_commit));
-+	mutex_unlock(&fs_info->trans_mutex);
-+}
-+
-+/* NOTE:
-+ *	We move write_super stuff at umount in order to avoid deadlock
-+ *	for umount hold all lock.
-+ */
-+static void save_error_info(struct btrfs_fs_info *fs_info)
-+{
-+	__save_error_info(fs_info);
-+}
-+
-+/* btrfs handle error by forcing the filesystem readonly */
-+static void btrfs_handle_error(struct btrfs_fs_info *fs_info)
-+{
-+	struct super_block *sb = fs_info->sb;
-+
-+	if (sb->s_flags & MS_RDONLY)
-+		return;
-+
-+	if (fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR) {
-+		sb->s_flags |= MS_RDONLY;
-+		printk(KERN_INFO "btrfs is forced readonly\n");
-+	}
-+}
-+
-+/*
-+ * __btrfs_std_error decodes expected errors from the caller and
-+ * invokes the approciate error response.
-+ */
-+void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
-+		     unsigned int line, int errno)
-+{
-+	struct super_block *sb = fs_info->sb;
-+	char nbuf[16];
-+	const char *errstr;
+ 	btrfs_commit_transaction(trans, root);
+ 	ret = btrfs_write_and_wait_transaction(NULL, root);
+ 	BUG_ON(ret);
+@@ -2426,8 +2440,28 @@ int close_ctree(struct btrfs_root *root)
+ 	smp_mb();
+ 
+ 	btrfs_put_block_group_cache(fs_info);
 +
 +	/*
-+	 * Special case: if the error is EROFS, and we're already
-+	 * under MS_RDONLY, then it is safe here.
++	 * Here come 2 situations when btrfs flips readonly:
++	 *
++	 * 1. when btrfs flips readonly somewhere else before
++	 * btrfs_commit_super, sb->s_flags has MS_RDONLY flag,
++	 * and btrfs will skip to write sb directly to keep
++	 * ERROR state on disk.
++	 *
++	 * 2. when btrfs flips readonly just in btrfs_commit_super,
++	 * and in such case, btrfs cannnot write sb via btrfs_commit_super,
++	 * and since fs_state has been set BTRFS_SUPER_FLAG_ERROR flag,
++	 * btrfs will directly write sb.
 +	 */
-+	if (errno == -EROFS && (sb->s_flags & MS_RDONLY))
+ 	if (!(fs_info->sb->s_flags & MS_RDONLY)) {
+-		ret =  btrfs_commit_super(root);
++		ret = btrfs_commit_super(root);
++		if (ret)
++			printk(KERN_ERR "btrfs: commit super ret %d\n", ret);
++	}
++
++	if (fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR) {
++		ret = write_ctree_super(NULL, root, 0);
+ 		if (ret)
+ 			printk(KERN_ERR "btrfs: commit super ret %d\n", ret);
+ 	}
+@@ -2603,6 +2637,17 @@ out:
+ 	return 0;
+ }
+ 
++static void btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
++			      int read_only)
++{
++	if (read_only)
 +		return;
 +
-+	errstr = btrfs_decode_error(fs_info, errno, nbuf);
-+	printk(KERN_CRIT "BTRFS error (device %s) in %s:%d: %s\n",
-+		sb->s_id, function, line, errstr);
-+	save_error_info(fs_info);
-+
-+	btrfs_handle_error(fs_info);
++	if (fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR)
++		printk(KERN_WARNING "warning: mount fs with errors, "
++		       "running btfsck is recommended\n");
 +}
 +
- static void btrfs_put_super(struct super_block *sb)
- {
- 	struct btrfs_root *root = btrfs_sb(sb);
+ static struct extent_io_ops btree_extent_io_ops = {
+ 	.write_cache_pages_lock_hook = btree_lock_page_hook,
+ 	.readpage_end_io_hook = btree_readpage_end_io_hook,
 -- 
 1.7.1

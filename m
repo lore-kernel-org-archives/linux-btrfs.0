@@ -1,60 +1,39 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: What to do about subvolumes?
-Date: Wed, 1 Dec 2010 12:38:30 -0500
-Message-ID: <20101201173830.GA7021@localhost.localdomain>
-References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com> <20101201163800.GA4087@carfax.org.uk>
+From: Milan Broz <mbroz@redhat.com>
+Subject: Re: dm-crypt barrier support is effective
+Date: Wed, 01 Dec 2010 19:24:17 +0100
+Message-ID: <4CF692D1.1010906@redhat.com>
+References: <20101107194547.GA12521@basil.fritz.box>	<4CD71C8B.1050604@redhat.com>	<20101107230508.GB17592@basil.fritz.box>	<20101108145809.GD29714@redhat.com>	<1289238930-sup-9765@think>	<20101114205925.GA20451@redhat.com>	<AANLkTi=rVyozmvqCJD1kGqnV3uEn-0ak6B12-O_9XOKJ@mail.gmail.com>	<4CE05A9E.9090204@redhat.com>	<AANLkTimT0t3xqgKdAn7MBPD7ED-9uPS+WJE0z+K8tciu@mail.gmail.com>	<AANLkTik_p0yxQBQ3ehHWYPLfiqxGbSNUT5XUk9dC5-x6@mail.gmail.com>	<20101201165229.GC13415@redhat.com> <AANLkTinG209iRAXgpNC0vNpn1C02wkYmVfveXRBqsKV-@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Hugo Mills <hugo-lkml@carfax.org.uk>,
-	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, chris.mason@oracle.com, hch@lst.de,
-	ssorce@redhat.com
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20101201163800.GA4087@carfax.org.uk>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Mike Snitzer <snitzer@redhat.com>,
+	Andi Kleen <andi@firstfloor.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	dm-devel <dm-devel@redhat.com>,
+	Linux Kernel <linux-kernel@vger.kernel.org>,
+	htd <htd@fancy-poultry.org>,
+	Chris Mason <chris.mason@oracle.com>, htejun@gmail.com
+To: Matt <jackdachef@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTinG209iRAXgpNC0vNpn1C02wkYmVfveXRBqsKV-@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 01, 2010 at 04:38:00PM +0000, Hugo Mills wrote:
-> On Wed, Dec 01, 2010 at 09:21:36AM -0500, Josef Bacik wrote:
-> > === Quotas ===
-> > 
-> > This is a huge topic in and of itself, but Christoph mentioned wanting to have
-> > an idea of what we wanted to do with it, so I'm putting it here.  There are
-> > really 2 things here
-> > 
-> > 1) Limiting the size of subvolumes.  This is really easy for us, just create a
-> > subvolume and at creation time set a maximum size it can grow to and not let it
-> > go farther than that.  Nice, simple and straightforward.
-> > 
-> > 2) Normal quotas, via the quota tools.  This just comes down to how do we want
-> > to charge users, do we want to do it per subvolume, or per filesystem.  My vote
-> > is per filesystem.  Obviously this will make it tricky with snapshots, but I
-> > think if we're just charging the diff's between the original volume and the
-> > snapshot to the user then that will be the easiest for people to understand,
-> > rather than making a snapshot all of a sudden count the users currently used
-> > quota * 2.
+On 12/01/2010 06:35 PM, Matt wrote:
+> Thanks for pointing to v6 ! I hadn't noticed that there was a new one :)
 > 
->    This is going to be tricky to get the semantics right, I suspect.
-> 
->    Say you've created a subvolume, A, containing 10G of Useful Stuff
-> (say, a base image for VMs). This counts 10G against your quota. Now,
-> I come along and snapshot that subvolume (as a writable subvolume) --
-> call it B. This is essentially free for me, because I've got a COW
-> copy of your subvolume (and the original counts against your quota).
-> 
->    If I now modify a file in subvolume B, the full modified section
-> goes onto my quota. This is all well and good. But what happens if you
-> delete your subvolume, A? Suddenly, I get lumbered with 10G of extra
-> files.  Worse, what happens if someone else had made a snapshot of A,
-> too? Who gets the 10G added to their quota, me or them? What if I'd
-> filled up my quota? Would that stop you from deleting your copy,
-> because my copy can't be charged against my quota? Would I just end up
-> unexpectedly 10G over quota?
-> 
+> Well, so I'll restore my box to a working/productive state and will
+> try out v6 (I'm pretty confident that it'll work without problems).
 
-If you delete your subvolume A, like use the btrfs tool to delete it, you will
-only be stuck with what you changed in snapshot B.  So if you only changed 5gig
-worth of information, and you deleted the original subvolume, you would have
-5gig charged to your quota.  The idea is you are only charged for what blocks
-you have on the disk.  Thanks,
+It's the same as previous, just with fixed header (to track it properly
+in patchwork) , second patch adds some read optimisation, nothing what
+should help here.
 
-Josef
+Anyway, I run several tests on 2.6.37-rc3+ and see no integrity
+problems (using xfs,ext3 and ext4 over dmcrypt).
+
+So please try to check which change causes these problems for you,
+it can be something completely unrelated to these patches.
+
+(If if anyone know how to trigger some corruption with btrfs/dmcrypt,
+let me know I am not able to reproduce it either.)
+
+Milan

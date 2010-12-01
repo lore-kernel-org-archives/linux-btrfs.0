@@ -1,88 +1,47 @@
-From: Randy Dunlap <randy.dunlap@oracle.com>
-Subject: Re: [PATCH] btrfs: Correct printing of sector_t
-Date: Tue, 30 Nov 2010 12:33:09 -0800
-Message-ID: <20101130123309.d84cc69c.randy.dunlap@oracle.com>
-References: <alpine.DEB.2.00.1011302128450.6502@ayla.of.borg>
+From: Anthony Roberts <btrfs-devel@arbitraryconstant.com>
+Subject: Re: [PATCH] Btrfs: dynamically remove unused block groups
+Date: Tue, 30 Nov 2010 21:53:41 -0700
+Message-ID: <970f54e0098c313a4b780b2356734592@arbitraryconstant.com>
+References: <1291135590-26775-1-git-send-email-josef@redhat.com>
+ <AANLkTikkU_2SbtVzRuUJbTGO3dQGQc9Jd8FgpGFPF7uE@mail.gmail.com>
+ <20101130190100.GA2577@localhost.localdomain>
+ <AANLkTik7ypX9Ed+pngnjHB8CrKDMJK-F+HXhbK3MrhZ0@mail.gmail.com>
+ <20101130193512.GB2577@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Miao Xie <miaox@cn.fujitsu.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs@vger.kernel.org,
-	Linux Kernel Development <linux-kernel@vger.kernel.org>,
-	Andrew Morton <akpm@linux-foundation.org>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <alpine.DEB.2.00.1011302128450.6502@ayla.of.borg>
+Content-Type: text/plain;
+ charset=UTF-8;
+ format=flowed
+Cc: <linux-btrfs@vger.kernel.org>
+To: Josef Bacik <josef@redhat.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20101130193512.GB2577@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 30 Nov 2010 21:30:01 +0100 (CET) Geert Uytterhoeven wrote:
+ Hello,
 
-> If CONFIG_LBDAF=3Dy, `sector_t' becomes `u64' instead of `unsigned lo=
-ng':
->=20
-> fs/btrfs/inode.c: In function =E2=80=98btrfs_end_dio_bio=E2=80=99:
-> fs/btrfs/inode.c:5717: warning: format =E2=80=98%lu=E2=80=99 expects =
-type =E2=80=98long unsigned int=E2=80=99, but argument 4 has type =E2=80=
-=98sector_t=E2=80=99
->=20
-> Hence always cast it to `unsigned long long' for printing.
->=20
-> Introduced by commit e65e1535542931e51189832264cd282e5899e4b9 ("btrfs=
-: fix
-> panic caused by direct IO")
->=20
-> Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
+ What happens in the event the filesystem has mostly been cleared out, 
+ but there's a few things left? For example, several of the chunks might 
+ be at very low usage, but not zero. Would the user be able to defragment 
+ the filesystem to cause these chunks to be consolidated?
 
-Acked-by: Randy Dunlap <randy.dunlap@oracle.com>
+ Regards,
 
+ -Anthony
 
-> ---
->  fs/btrfs/inode.c |    6 +++---
->  1 files changed, 3 insertions(+), 3 deletions(-)
->=20
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 8039390..fbffe5f 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -5712,9 +5712,9 @@ static void btrfs_end_dio_bio(struct bio *bio, =
-int err)
-> =20
->  	if (err) {
->  		printk(KERN_ERR "btrfs direct IO failed ino %lu rw %lu "
-> -		      "disk_bytenr %lu len %u err no %d\n",
-> -		      dip->inode->i_ino, bio->bi_rw, bio->bi_sector,
-> -		      bio->bi_size, err);
-> +		      "disk_bytenr %llu len %u err no %d\n",
-> +		      dip->inode->i_ino, bio->bi_rw,
-> +		      (unsigned long long)bio->bi_sector, bio->bi_size, err);
->  		dip->errors =3D 1;
-> =20
->  		/*
-> --=20
-> 1.7.0.4
->=20
-> Gr{oetje,eeting}s,
->=20
-> 						Geert
->=20
+> Yeah 2 things to keep in mind, 1 if you have snapshots you are likely
+> to not see
+> data free'd up the way you expect it.  The other thing is that 
+> because
+> everything is COW we can't allocate the newly free'd space until the
+> transaction
+> commits, so you may have to wait ~30 seconds or run sync to force the
+> transaction to commit before you see your space actually free'd up.  
+> Thanks,
+>
+> Josef
 > --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linu=
-x-m68k.org
->=20
-> In personal conversations with technical people, I call myself a hack=
-er. But
-> when I'm talking to journalists I just say "programmer" or something =
-like that.
-> 							    -- Linus Torvalds
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kerne=
-l" in
+> To unsubscribe from this list: send the line "unsubscribe 
+> linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
 
-
----
-~Randy
-*** Remember to use Documentation/SubmitChecklist when testing your cod=
-e ***

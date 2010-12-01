@@ -1,44 +1,111 @@
-From: Bron Gondwana <brong@fastmail.fm>
-Subject: Re: Poor performance unlinking hard-linked files (repost)
-Date: Wed, 1 Dec 2010 10:24:53 +1100
-Message-ID: <20101130232453.GB15817@brong.net>
-References: <1289618724.28645.1405062363@webmail.messagingengine.com>
- <20101116125445.GA3229@brong.net>
- <1289914577-sup-8535@think>
- <20101117041148.GA10048@brong.net>
- <1290094104-sup-8656@think>
- <20101118214631.GC2401@brong.net>
- <1290175586-sup-2461@think>
- <20101119215810.GF12386@brong.net>
- <20101130093510.GB3622@brong.net>
- <1291121299-sup-9081@think>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: R: Re: [PATCH 5/5] btrfs: Add ioctl to set snapshot readonly/writable
+Date: Wed, 01 Dec 2010 08:55:31 +0800
+Message-ID: <4CF59D03.3010206@cn.fujitsu.com>
+References: <13025594.9851291103573101.JavaMail.defaultUser@defaultHost>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Bron Gondwana <brong@fastmail.fm>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: "Goffredo Baroncelli <kreijack@libero.it>" <kreijack@libero.it>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1291121299-sup-9081@think>
+In-Reply-To: <13025594.9851291103573101.JavaMail.defaultUser@defaultHost>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 30, 2010 at 07:49:26AM -0500, Chris Mason wrote:
-> Excerpts from Bron Gondwana's message of 2010-11-30 04:35:10 -0500:
-> > Do you have any suggestsions for what I could try?  You mentioned READ_SYNC
-> > above.  We now have one working partition on this machine, but it took longer
-> > to set up than most, and I'm not sure how it will cope with 7 more of them 
-> > (which is my next project - compare to the historical performance of this
-> > box first with reiserfs and then with ext4!)
+Goffredo Baroncelli <kreijack@libero.it> wrote:
+> Hi Li,
 > 
-> Let me work up a patch that does READ_SYNC calls for the metadata reads,
-> and I'll try to model this here a little.  We should be able to improve
-> things.
+>> ----Messaggio originale----
+>> Da: lizf@cn.fujitsu.com
+>> Data: 30/11/2010 8.03
+>> A: <kreijack@libero.it>
+>> Cc: <linux-btrfs@vger.kernel.org>
+>> Ogg: Re: [PATCH 5/5] btrfs: Add ioctl to set snapshot readonly/writable
+>>
+>> Goffredo Baroncelli wrote:
+>>> Hi Li,
+>>>
+>>> On Monday, 29 November, 2010, Li Zefan wrote:
+>>>> This allows us to set a snapshot readonly or writable on the fly.
+>>>>
+>>>> Usage:
+>>>>
+>>>> Set BTRFS_SNAPSHOT_RDONLY/WRITABLE of btrfs_ioctl_vol_arg_v2->flags,
+>>>> and then call ioctl(BTRFS_IOCTL_SNAP_SETFLAGS);
+>>> I really appreciate your work, but I have some doubt about this interface. 
+> In 
+>>> particolar:
+>> It's the interface that I would like to be discussed. Thanks!
+>>
+>>> - how get the flags of a subvolume ? I suggest to implement a pair of 
+> ioctls:
+>>> 	- subvolume_setflags  -> get the flags
+>>> 	- subvolume_getflags  -> set the flags
+>>> These ioctls would be more generic (there are a lot of flags which may be 
+>>> interested to put in the "root" of a subvolume: think about 
+>>> compress/nocompress, (no)datasum...)
+>>> - For the reason abowe, I suggest to replace SNAPSHOT with SUBVOLUME
+>>> - Finally, with a pair of  get/set_flags functions we can avoid the use of 
+> the 
+>>> flags BTRFS_SNAPSHOT_WRITABLE.
+>>>
+>> There are some reasons that I created this interface:
+>>
+>> - set/getflags should set/get root flags which reflect in struct
+>> btrfs_root_item->flags.
+>>
+>> - btrfs_root_item->flags was not used at all before this patch, so
+>> (no)compress and (no)datasum is not reflect in ->flags.
+>>
+>> - _CREATE_ASYNC flag is to create snapshot asynchronously, so it's not
+>> a flag of tree root.
+> 
+> Of course I never mind about  _CREATE_ASYNC to be set in btrfs_root_item-
+>> flags. 
+> _CREATE_ASYNC is not a snapshot properties but a way of creating a subvolume.
+> But other flags may make sense to live in btrfs_root_item->flags.
+>  So I am suggesting to develop a more general 
+> interface for future improvement. These pair of functions (*_set/get) should 
+> be use to 
+> set the subvolume/snapshot properties. And the RDONLY is one of them.
+> 
+> In the detail to set an attributue an user should be:
+> 
+> - get the subvolume flags (ioctl(fd, BTRFS_IOC_SNAP_GETFLAGS....) )
+> - compute the new flags ( flags |= BTRFS_FLAGS_XXXX or flags &= 
+> ~BTRFS_FLAG_XXXX)
+> - set the subvolume flags (ioctl(fd, BTRFS_IOC_SNAP_SGETFLAGS....) )
+> 
 
-Is there any reason why the read is going back down to the disk?  The
-machine has 8Gb of RAM, and should easily have been able to cache all
-the metadata under the workload it had.
+Yep, this style can be seen in some other places.
 
-I look forward to trying the patch :)
+>> - It seems to me there's no user requirement for getflags ioctl to
+>> return _RDONLY/_WRITABLE flags of a tree root?
+> 
+> And how an user/admin can understand that a snapshot/subvolume is readonly ? 
+> How 
+> 
+>> - By suggesting BTRFS_SUBVOL_RDONLY, does it impliy not only snapshot
+>> but also a subvolume can be made readonly?
+> 
+> IIRC a snapshot is a subvolume already filled from the beginning. Why doesn't 
+> share 
+> the capability of make a subvolume RO ?
+> 
 
-Thanks,
+I'm not against it, but make sure we're on the same page.
 
-Bron.
+> Finally I have another suggestion: make sense to check that the file 
+> descriptor is referring 
+> to the root of a subvolume instead of a the tree. I highlight that because the 
+
+Will fix.
+
+> other ioctls
+> suffer  the same problem and confused the user sometime. For example a lot of
+> people tough that was possible to snapshot a directory, because the ioctl 
+> doesn't return
+> any error. But instead of the directory the snapshot was of the full 
+> subvolume.
+> 
+
+Sounds like a bug to me.

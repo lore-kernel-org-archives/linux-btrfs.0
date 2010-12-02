@@ -1,57 +1,129 @@
-From: Michael Vrable <mvrable@cs.ucsd.edu>
-Subject: Re: What to do about subvolumes?
-Date: Wed, 1 Dec 2010 17:52:07 -0800
-Message-ID: <20101202015207.GC2304@vrable.net>
-References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com>
- <20101201194404.GE17142@fieldses.org>
- <20101201195433.GE7021@localhost.localdomain>
- <20101201200007.GH17142@fieldses.org>
- <20101201200949.GG7021@localhost.localdomain>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Subject: Re: [RFC PATCH 4/4 v2] Btrfs: deal with filesystem state at mount,
+ umount
+Date: Thu, 02 Dec 2010 11:29:47 +0900
+Message-ID: <4CF7049B.1050301@jp.fujitsu.com>
+References: <4CF621BE.2080201@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
-Cc: "J. Bruce Fields" <bfields@fieldses.org>,
-	linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	chris.mason@oracle.com, hch@lst.de, ssorce@redhat.com
-To: Josef Bacik <josef@redhat.com>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20101201200949.GG7021@localhost.localdomain>
+Content-Type: text/plain; charset=UTF-8
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: liubo <liubo2009@cn.fujitsu.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4CF621BE.2080201@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 01, 2010 at 03:09:52PM -0500, Josef Bacik wrote:
-> On Wed, Dec 01, 2010 at 03:00:08PM -0500, J. Bruce Fields wrote:
->> I think you're already fine:
->> 
->> 	# mkdir TMP
->> 	# dd if=/dev/zero of=TMP-image bs=1M count=512
->> 	# mkfs.btrfs TMP-image
->> 	# mount -oloop TMP-image TMP/
->> 	# btrfs subvolume create sub-a
->> 	# btrfs subvolume create sub-b
->> 	../readdir-inos .
->> 	. 256 256
->> 	.. 256 4130609
->> 	sub-a 256 256
->> 	sub-b 257 256
->> 
->> Where readdir-inos is my silly test program below, and the first 
->> number is from readdir, the second from stat.
->> 
+Hi,
+
+I found 1 typo.
+
+(2010/12/01 19:21), liubo wrote:
+> Since there is a filesystem state, we should deal with it carefully at mount,
+>  umount and remount.
 > 
-> Heh as soon as I typed my email I went and actually looked at the 
-> code, looks like for readdir we fill in the root id, which will be 
-> unique, so hotdamn we are good and I don't have to use a stupid 
-> incompat flag.  Thanks for checking that :),
+> - At mount, the FS state should be checked if there is error on these FS.
+>   If it does have, btrfsck is recommended.
+> - At umount, the FS state should be saved into disk for consistency.
+> 
+> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+> ---
+>  fs/btrfs/disk-io.c |   47 ++++++++++++++++++++++++++++++++++++++++++++++-
+>  1 files changed, 46 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index b40dfe4..663d360 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -43,6 +43,8 @@
+>  static struct extent_io_ops btree_extent_io_ops;
+>  static void end_workqueue_fn(struct btrfs_work *work);
+>  static void free_fs_root(struct btrfs_root *root);
+> +static void btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
+> +				     int read_only);
+>  
+>  /*
+>   * end_io_wq structs are used to do processing in task context when an IO is
+> @@ -1700,6 +1702,11 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+>  	if (!btrfs_super_root(disk_super))
+>  		goto fail_iput;
+>  
+> +	/* check filesystem state */
+> +	fs_info->fs_state |= btrfs_super_flags(disk_super);
+> +
+> +	btrfs_check_super_valid(fs_info, sb->s_flags & MS_RDONLY);
+> +
+>  	ret = btrfs_parse_options(tree_root, options);
+>  	if (ret) {
+>  		err = ret;
+> @@ -2405,10 +2412,17 @@ int btrfs_commit_super(struct btrfs_root *root)
+>  	up_write(&root->fs_info->cleanup_work_sem);
+>  
+>  	trans = btrfs_join_transaction(root, 1);
+> +	if (IS_ERR(trans))
+> +		return PTR_ERR(trans);
+> +
+>  	ret = btrfs_commit_transaction(trans, root);
+>  	BUG_ON(ret);
+> +
+>  	/* run commit again to drop the original snapshot */
+>  	trans = btrfs_join_transaction(root, 1);
+> +	if (IS_ERR(trans))
+> +		return PTR_ERR(trans);
+> +
+>  	btrfs_commit_transaction(trans, root);
+>  	ret = btrfs_write_and_wait_transaction(NULL, root);
+>  	BUG_ON(ret);
+> @@ -2426,8 +2440,28 @@ int close_ctree(struct btrfs_root *root)
+>  	smp_mb();
+>  
+>  	btrfs_put_block_group_cache(fs_info);
+> +
+> +	/*
+> +	 * Here come 2 situations when btrfs flips readonly:
+> +	 *
+> +	 * 1. when btrfs flips readonly somewhere else before
+> +	 * btrfs_commit_super, sb->s_flags has MS_RDONLY flag,
+> +	 * and btrfs will skip to write sb directly to keep
+> +	 * ERROR state on disk.
+> +	 *
+> +	 * 2. when btrfs flips readonly just in btrfs_commit_super,
+> +	 * and in such case, btrfs cannnot write sb via btrfs_commit_super,
+> +	 * and since fs_state has been set BTRFS_SUPER_FLAG_ERROR flag,
+> +	 * btrfs will directly write sb.
+> +	 */
+>  	if (!(fs_info->sb->s_flags & MS_RDONLY)) {
+> -		ret =  btrfs_commit_super(root);
+> +		ret = btrfs_commit_super(root);
+> +		if (ret)
+> +			printk(KERN_ERR "btrfs: commit super ret %d\n", ret);
+> +	}
+> +
+> +	if (fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR) {
+> +		ret = write_ctree_super(NULL, root, 0);
+>  		if (ret)
+>  			printk(KERN_ERR "btrfs: commit super ret %d\n", ret);
+>  	}
+> @@ -2603,6 +2637,17 @@ out:
+>  	return 0;
+>  }
+>  
+> +static void btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
+> +			      int read_only)
+> +{
+> +	if (read_only)
+> +		return;
+> +
+> +	if (fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR)
+> +		printk(KERN_WARNING "warning: mount fs with errors, "
+> +		       "running btfsck is recommended\n");
 
-Except, aren't the inode numbers within a filesystem and the sunbvolume 
-tree IDs allocated out of separate namespaces?  I don't think there's 
-anything preventing a file/directory from having an inode number that 
-clashes with one of the snapshots.
+btfsck -> btrfsck
 
-In fact, this already happens in the example above: "." (inode 256 in 
-the root subvolume) and "sub-a" (subvolume ID 256).
+> +}
+> +
+>  static struct extent_io_ops btree_extent_io_ops = {
+>  	.write_cache_pages_lock_hook = btree_lock_page_hook,
+>  	.readpage_end_io_hook = btree_readpage_end_io_hook,
 
-(Though I still don't understand the semantics well enough to say 
-whether we need all the inode numbers returned by readdir to be 
-distinct.)
+Regards,
+Itoh
 
---Michael Vrable

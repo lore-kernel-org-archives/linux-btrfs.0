@@ -1,51 +1,32 @@
-From: Sankar P <sankar.curiosity@gmail.com>
-Subject: [PATCH] fs: btrfs: Shuffle preprocessor macros
-Date: Thu,  2 Dec 2010 21:49:39 +0530
-Message-ID: <1291306779-16186-1-git-send-email-sankar.curiosity@gmail.com>
-Cc: Sankar P <sankar.curiosity@gmail.com>
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Fsck, parent transid verify failed
+Date: Thu, 02 Dec 2010 11:21:23 -0500
+Message-ID: <1291306826-sup-7837@think>
+References: <003501cb9147$09197540$1b4c5fc0$@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Tommy Jonsson <quazzie@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <003501cb9147$09197540$1b4c5fc0$@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The function btree_migratepage will be extended from the baseclass
-only when CONFIG_MIGRATION option is enabled. So, it's useful to
-define/build this function only when that config option is enabled.
+Excerpts from Tommy Jonsson's message of 2010-12-01 06:00:56 -0500:
+> Hi folks!
+> 
+> Been using btrfs for quite a while now, worked great until now. 
+> Got power-loss on my machine and now i have the "parent transid verify
+> failed on X wanted X found X" problem.
+> So I can't get it to mount.
+> 
+> My btrfs is spread over sda (2tb), sdc(2tb), sdd(1tb).
+> 
+> Is this something that an offline fsck could fix ? 
+> If so is the fsck-util being developed ?
+> Is there a way to mount the FS in a read-only mode or something to rescue
+> the data ?
 
-Fixes an "unused function"  compiler warning when CONFIG_MIGRATION
-is not enabled and also removes an return -ENOSYS statement,
-whose scenario will not happen.
+Which kernel are you on?  Unless you formatted with -m raid0, the
+current git tree should be able to read this FS by using the second copy
+of the metadata.
 
-Signed-off-by: Sankar P <sankar.curiosity@gmail.com>
----
- fs/btrfs/disk-io.c |    6 ++----
- 1 files changed, 2 insertions(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index c547cca..7199239 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -696,6 +696,7 @@ static int btree_submit_bio_hook(struct inode *inode, int rw, struct bio *bio,
- 				   __btree_submit_bio_done);
- }
- 
-+#ifdef CONFIG_MIGRATION
- static int btree_migratepage(struct address_space *mapping,
- 			struct page *newpage, struct page *page)
- {
-@@ -712,12 +713,9 @@ static int btree_migratepage(struct address_space *mapping,
- 	if (page_has_private(page) &&
- 	    !try_to_release_page(page, GFP_KERNEL))
- 		return -EAGAIN;
--#ifdef CONFIG_MIGRATION
- 	return migrate_page(mapping, newpage, page);
--#else
--	return -ENOSYS;
--#endif
- }
-+#endif
- 
- static int btree_writepage(struct page *page, struct writeback_control *wbc)
- {
--- 
-1.7.1
+-chris

@@ -1,32 +1,42 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Fsck, parent transid verify failed
-Date: Thu, 02 Dec 2010 11:21:23 -0500
-Message-ID: <1291306826-sup-7837@think>
-References: <003501cb9147$09197540$1b4c5fc0$@gmail.com>
+Subject: Re: [RFC PATCH 4/4] btrfs: implement delayed dir index insertion and deletion
+Date: Thu, 02 Dec 2010 11:33:40 -0500
+Message-ID: <1291307496-sup-6170@think>
+References: <4CF602BF.7010805@cn.fujitsu.com>
 Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Tommy Jonsson <quazzie@gmail.com>
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Miao Xie <miaox@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <003501cb9147$09197540$1b4c5fc0$@gmail.com>
+In-reply-to: <4CF602BF.7010805@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Tommy Jonsson's message of 2010-12-01 06:00:56 -0500:
-> Hi folks!
+Excerpts from Miao Xie's message of 2010-12-01 03:09:35 -0500:
+> Compare with Ext3/4, the performance of file creation and deletion on btrfs
+> is very poor. the reason is that btrfs must do a lot of b+ tree insertions,
+> such as inode item, directory name item, directory name index and so on.
 > 
-> Been using btrfs for quite a while now, worked great until now. 
-> Got power-loss on my machine and now i have the "parent transid verify
-> failed on X wanted X found X" problem.
-> So I can't get it to mount.
-> 
-> My btrfs is spread over sda (2tb), sdc(2tb), sdd(1tb).
-> 
-> Is this something that an offline fsck could fix ? 
-> If so is the fsck-util being developed ?
-> Is there a way to mount the FS in a read-only mode or something to rescue
-> the data ?
+> If we can do some delayed b+ tree insertion or deletion, we can improve the
+> performance, so we made this patch which implemented delayed directory name
+> index insertion and deletion.
 
-Which kernel are you on?  Unless you formatted with -m raid0, the
-current git tree should be able to read this FS by using the second copy
-of the metadata.
+Many thanks for working on this.  It's a difficult problem and these
+patches look very clean.
+
+I think you can get more improvement if you also do this delayed scheme
+for the inode items themselves.
+
+The hard part of these delayed implementations is always the throttling,
+
++    if (delayed_root->count >= root->leafsize / sizeof(*dir_item))
++        btrfs_run_delayed_dir_index(trans, root, NULL,
++                        BTRFS_DELAYED_INSERT_ITEM, 0);
++ 
+
+Have you experimented with other values here?
+
+I need to take a hard look at the locking and do some benchmarking on
+larger machines.  I'm a little worried about increased lock contention,
+but I think we can get around it by breaking up the rbtrees a little
+later on if we need to.
 
 -chris

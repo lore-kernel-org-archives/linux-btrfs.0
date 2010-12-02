@@ -1,53 +1,174 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: kernel BUG at fs/btrfs/inode.c:806
-Date: Thu, 02 Dec 2010 14:21:30 -0500
-Message-ID: <1291317664-sup-8117@think>
-References: <201012011411.02352.johannes.hirte@fem.tu-ilmenau.de> <1291306746-sup-1916@think> <201012021752.51622.johannes.hirte@fem.tu-ilmenau.de> <201012021802.17198.johannes.hirte@fem.tu-ilmenau.de>
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: disk space caching generation missmatch
+Date: Thu, 2 Dec 2010 15:34:10 -0500
+Message-ID: <20101202203410.GC8805@dhcp231-156.rdu.redhat.com>
+References: <201012011746.14458.johannes.hirte@fem.tu-ilmenau.de> <20101201200312.GF7021@localhost.localdomain> <201012012222.45471.johannes.hirte@fem.tu-ilmenau.de> <201012012240.29525.johannes.hirte@fem.tu-ilmenau.de>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
 To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <201012021802.17198.johannes.hirte@fem.tu-ilmenau.de>
+In-Reply-To: <201012012240.29525.johannes.hirte@fem.tu-ilmenau.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Johannes Hirte's message of 2010-12-02 12:02:16 -0500:
-> On Thursday 02 December 2010 17:52:50 Johannes Hirte wrote:
-> > On Thursday 02 December 2010 17:19:56 Chris Mason wrote:
-> > > Excerpts from Johannes Hirte's message of 2010-12-01 08:11:01 -0500:
-> > > > On one of my machines with btrfs I got this bug:
+On Wed, Dec 01, 2010 at 10:40:29PM +0100, Johannes Hirte wrote:
+> On Wednesday 01 December 2010 22:22:45 Johannes Hirte wrote:
+> > On Wednesday 01 December 2010 21:03:13 Josef Bacik wrote:
+> > > On Wed, Dec 01, 2010 at 08:56:14PM +0100, Johannes Hirte wrote:
+> > > > On Wednesday 01 December 2010 18:40:18 Josef Bacik wrote:
+> > > > > On Wed, Dec 01, 2010 at 05:46:14PM +0100, Johannes Hirte wrote:
+> > > > > > After enabling disk space caching I've observed several log entries like this:
+> > > > > > 
+> > > > > > btrfs: free space inode generation (0) did not match free space cache generation (169594) for block group 15464398848
+> > > > > > 
+> > > > > > I'm not sure, but it seems this happens on every reboot. Is this something to
+> > > > > > worry about?
+> > > > > > 
+> > > > > 
+> > > > > So that usually means 1 of a couple of things
+> > > > > 
+> > > > > 1) You didn't have space for us to save the free space cache
+> > > > > 2) When trying to write out the cache we hit one of those cases where we would
+> > > > > deadlock so we couldn't write the cache out
+> > > > > 
+> > > > > It's nothing to worry about, it's doing what it is supposed to.  However I'd
+> > > > > like to know why we're not able to write out the cache.  Are you running close
+> > > > > to full?  Thanks,
+> > > > > 
+> > > > > Josef
+> > > > >
 > > > > 
-> > > > entry offset 29085974528, bytes 4096, bitmap no
-> > > > entry offset 29162995712, bytes 20480, bitmap yes
-> > > > entry offset 29171744768, bytes 4096, bitmap no
-> > > > block group has cluster?: no
-> > > > 0 blocks of free space at or bigger than bytes is
-> > > > block group 29834084352 has 1073741824 bytes, 1072648192 used 0 pinned 0 reserved
-> > > 
-> > > Well, you've had an ENOSPC explosion.
-> > > 
+> > > > I think there should be enough free space:
 > > > > 
-> > > > The "block group" messages where way more, too much for the dmesg log buffer.
-> > > > Kernel is a 2.6.37-rc3+ without the latest btrfs-fixes. The bug occurred when
-> > > > compiling openoffice.org. After the bug a 'df -h' showed:
-> > > > 
-> > > > df -h:
-> > > > Filesystem            Size  Used Avail Use% Mounted on
-> > > > rootfs                 21G   17G  770M  96% /
-> > > > /dev/root              21G   17G  770M  96% /
-> > > > rc-svcdir             1.0M  108K  916K  11% /lib/rc/init.d
-> > > > udev                   10M  116K  9.9M   2% /dev
-> > > > shm                  1013M     0 1013M   0% /dev/shm
-> > > > /dev/sda2              66G   46G   20G  71% /home
-> > > > /dev/sdb1              75G   56G   19G  75% /mnt/windows
 > > > 
-> > > Which of these filesystems were you compiling on?
-> > 
-> > On /. It's a gentoo system and the bug happened during an 'emerge openoffice'.
-> > The compilation ist usually done under /var/tmp/portage.
-> 
-> Btw, I was able to reproduce this with a second try to emerge openoffice.
 
-Ok, there is one related fix in the git tree right now that you don't
-have.  I'm not 100% sure it'll fix this, but it can't hurt.
+Ok it doesn't look like theres an actual problem, we're just being sub-optimal.
+Take out the other patch and apply this one, boot into that kernel and then
+reboot and then give me the dmesg.  The thing is we are marking non-cached block
+groups as being setup, but they really aren't, so we error out when we try to
+write out the block group.  This isn't wrong, it's just crappy since we know we
+wont be able to write the things out anyway.  So just mark the thing as written
+so we dont even try.  The other cases appear to be where the block group is
+empty, so we dont need to write anything out, but because of where I have the
+check it makes it seem like an error, so I just moved the check up to make it
+simpler.  I also thing the "free space inode generation did not match" messages
+should only happen once, but are getting kicked out everytime something gets
+removed, which is because the block group is not marked as cleared, so we just
+need to go to free_cache so it gets marked to be cleared so we don't get the
+same message over and over again.  Let me know how this works out for you,
+thanks,
 
--chris
+Josef
+
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 87aae66..5ee883b 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2794,13 +2794,19 @@ again:
+ 	if (i_size_read(inode) > 0) {
+ 		ret = btrfs_truncate_free_space_cache(root, trans, path,
+ 						      inode);
+-		if (ret)
++		if (ret) {
++			printk(KERN_ERR "truncate free space cache failed for %llu, %d\n",
++			       block_group->key.objectid, ret);
+ 			goto out_put;
++		}
+ 	}
+ 
+ 	spin_lock(&block_group->lock);
+ 	if (block_group->cached != BTRFS_CACHE_FINISHED) {
++		/* Not cached, don't bother trying to write something out */
++		block_group->disk_cache_state = BTRFS_DC_WRITTEN;
+ 		spin_unlock(&block_group->lock);
++		printk(KERN_ERR "block group %llu not cached\n", block_group->key.objectid);
+ 		goto out_put;
+ 	}
+ 	spin_unlock(&block_group->lock);
+@@ -2820,13 +2826,20 @@ again:
+ 	num_pages *= PAGE_CACHE_SIZE;
+ 
+ 	ret = btrfs_check_data_free_space(inode, num_pages);
+-	if (ret)
++	if (ret) {
++		printk(KERN_ERR "not enough free space for cache %llu\n", block_group->key.objectid);
+ 		goto out_put;
++	}
+ 
+ 	ret = btrfs_prealloc_file_range_trans(inode, trans, 0, 0, num_pages,
+ 					      num_pages, num_pages,
+ 					      &alloc_hint);
+ 	btrfs_free_reserved_data_space(inode, num_pages);
++	if (!ret) {
++		spin_lock(&block_gruop->lock);
++		block_group->disk_cache_state = BTRFS_DC_SETUP;
++		spin_unlock(&block_group->lock);
++	}
+ out_put:
+ 	iput(inode);
+ out_free:
+@@ -2835,8 +2848,6 @@ out:
+ 	spin_lock(&block_group->lock);
+ 	if (ret)
+ 		block_group->disk_cache_state = BTRFS_DC_ERROR;
+-	else
+-		block_group->disk_cache_state = BTRFS_DC_SETUP;
+ 	spin_unlock(&block_group->lock);
+ 
+ 	return ret;
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 22ee0dc..029cc42 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -290,7 +290,7 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
+ 		       (unsigned long long)BTRFS_I(inode)->generation,
+ 		       (unsigned long long)generation,
+ 		       (unsigned long long)block_group->key.objectid);
+-		goto out;
++		goto free_cache;
+ 	}
+ 
+ 	if (!num_entries)
+@@ -511,6 +511,8 @@ int btrfs_write_out_cache(struct btrfs_root *root,
+ 	spin_lock(&block_group->lock);
+ 	if (block_group->disk_cache_state < BTRFS_DC_SETUP) {
+ 		spin_unlock(&block_group->lock);
++		printk(KERN_ERR "block group %llu, wrong dcs %d\n", block_group->key.objectid,
++		       block_group->disk_cache_state);
+ 		return 0;
+ 	}
+ 	spin_unlock(&block_group->lock);
+@@ -520,6 +522,13 @@ int btrfs_write_out_cache(struct btrfs_root *root,
+ 		return 0;
+ 
+ 	if (!i_size_read(inode)) {
++		printk(KERN_ERR "no allocated space for block group %llu\n", block_group->key.objectid);
++		iput(inode);
++		return 0;
++	}
++
++	node = rb_first(&block_group->free_space_offset);
++	if (!node) {
+ 		iput(inode);
+ 		return 0;
+ 	}
+@@ -543,10 +552,6 @@ int btrfs_write_out_cache(struct btrfs_root *root,
+ 	 */
+ 	first_page_offset = (sizeof(u32) * num_checksums) + sizeof(u64);
+ 
+-	node = rb_first(&block_group->free_space_offset);
+-	if (!node)
+-		goto out_free;
+-
+ 	/*
+ 	 * Lock all pages first so we can lock the extent safely.
+ 	 *
+@@ -771,6 +776,7 @@ out_free:
+ 		block_group->disk_cache_state = BTRFS_DC_ERROR;
+ 		spin_unlock(&block_group->lock);
+ 		BTRFS_I(inode)->generation = 0;
++		printk(KERN_ERR "problem writing out block group cache for %llu\n", block_group->key.objectid);
+ 	}
+ 	kfree(checksums);
+ 	btrfs_update_inode(trans, root, inode);

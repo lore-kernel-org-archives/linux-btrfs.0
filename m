@@ -1,42 +1,49 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [RFC PATCH 4/4] btrfs: implement delayed dir index insertion and deletion
-Date: Thu, 02 Dec 2010 11:33:40 -0500
-Message-ID: <1291307496-sup-6170@think>
-References: <4CF602BF.7010805@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Miao Xie <miaox@cn.fujitsu.com>
+From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Subject: Re: kernel BUG at fs/btrfs/inode.c:806
+Date: Thu, 2 Dec 2010 17:52:50 +0100
+Message-ID: <201012021752.51622.johannes.hirte@fem.tu-ilmenau.de>
+References: <201012011411.02352.johannes.hirte@fem.tu-ilmenau.de> <1291306746-sup-1916@think>
+Mime-Version: 1.0
+Content-Type: Text/Plain;
+  charset="utf-8"
+Cc: "linux-btrfs" <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <4CF602BF.7010805@cn.fujitsu.com>
+In-Reply-To: <1291306746-sup-1916@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Miao Xie's message of 2010-12-01 03:09:35 -0500:
-> Compare with Ext3/4, the performance of file creation and deletion on btrfs
-> is very poor. the reason is that btrfs must do a lot of b+ tree insertions,
-> such as inode item, directory name item, directory name index and so on.
+On Thursday 02 December 2010 17:19:56 Chris Mason wrote:
+> Excerpts from Johannes Hirte's message of 2010-12-01 08:11:01 -0500:
+> > On one of my machines with btrfs I got this bug:
+> > 
+> > entry offset 29085974528, bytes 4096, bitmap no
+> > entry offset 29162995712, bytes 20480, bitmap yes
+> > entry offset 29171744768, bytes 4096, bitmap no
+> > block group has cluster?: no
+> > 0 blocks of free space at or bigger than bytes is
+> > block group 29834084352 has 1073741824 bytes, 1072648192 used 0 pinned 0 reserved
 > 
-> If we can do some delayed b+ tree insertion or deletion, we can improve the
-> performance, so we made this patch which implemented delayed directory name
-> index insertion and deletion.
+> Well, you've had an ENOSPC explosion.
+> 
+> > 
+> > The "block group" messages where way more, too much for the dmesg log buffer.
+> > Kernel is a 2.6.37-rc3+ without the latest btrfs-fixes. The bug occurred when
+> > compiling openoffice.org. After the bug a 'df -h' showed:
+> > 
+> > df -h:
+> > Filesystem            Size  Used Avail Use% Mounted on
+> > rootfs                 21G   17G  770M  96% /
+> > /dev/root              21G   17G  770M  96% /
+> > rc-svcdir             1.0M  108K  916K  11% /lib/rc/init.d
+> > udev                   10M  116K  9.9M   2% /dev
+> > shm                  1013M     0 1013M   0% /dev/shm
+> > /dev/sda2              66G   46G   20G  71% /home
+> > /dev/sdb1              75G   56G   19G  75% /mnt/windows
+> 
+> Which of these filesystems were you compiling on?
 
-Many thanks for working on this.  It's a difficult problem and these
-patches look very clean.
+On /. It's a gentoo system and the bug happened during an 'emerge openoffice'.
+The compilation ist usually done under /var/tmp/portage.
 
-I think you can get more improvement if you also do this delayed scheme
-for the inode items themselves.
-
-The hard part of these delayed implementations is always the throttling,
-
-+    if (delayed_root->count >= root->leafsize / sizeof(*dir_item))
-+        btrfs_run_delayed_dir_index(trans, root, NULL,
-+                        BTRFS_DELAYED_INSERT_ITEM, 0);
-+ 
-
-Have you experimented with other values here?
-
-I need to take a hard look at the locking and do some benchmarking on
-larger machines.  I'm a little worried about increased lock contention,
-but I think we can get around it by breaking up the rbtrees a little
-later on if we need to.
-
--chris
+regards,
+  Johannes

@@ -1,28 +1,22 @@
-From: Phillip Susi <psusi@cfl.rr.com>
-Subject: Re: What to do about subvolumes?
-Date: Thu, 02 Dec 2010 21:43:08 -0500
-Message-ID: <4CF8593C.3080100@cfl.rr.com>
-References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com> <4CF76BB3.3020705@gmx.net>
+From: Ravi Pinjala <ravi@p-static.net>
+Subject: Replacing corrupted files/directories
+Date: Thu, 2 Dec 2010 19:25:09 -0800
+Message-ID: <AANLkTimKQ17g7hZrS0-AVxCyhyaLumWCa11Aq1vf+c9_@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, chris.mason@oracle.com, hch@lst.de,
-	ssorce@redhat.com
-To: Arne Jansen <sensille@gmx.net>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4CF76BB3.3020705@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/02/2010 04:49 AM, Arne Jansen wrote:
-> What about the alternative and allocating inode numbers globally? The only
-> problem would be with snapshots as they share the inum with the source, but
-> one could just remap inode numbers in snapshots by sparing some bits at the
-> top of this 64 bit field.
+Is there a recommended way to replace a corrupted file or directory on
+btrfs? The use case I'm thinking of is handling filesystem corruption
+by restoring only the corrupted files from backup. For a corrupted
+file, it seems like deleting the file and replacing it with the copy
+from the backup works, but I don't know if this is necessarily the
+best way - the nature of copy-on-write means that there's still
+corrupt data lying around on the filesystem, right? And for
+directories, it's tricky, because (afaik) there's no way to delete a
+directory without first walking it; not good if it's corrupted.
 
-I was wondering this as well.  Why give each subvol its own inode number 
-space?  To avoid breaking assumptions of various programs, if they each 
-have their own inode space, they must each have a unique st_dev.  How 
-are inode numbers currently allocated, and why wouldn't it be simple to 
-just have a single pool of inode numbers for all subvols?  It seems 
-obvious to me that snapshots start out inheriting the inode numbers of 
-the original subvol, but must be given a new st_dev.
+I think this is probably also relevant to something like Ceph or CRFS,
+where redundancy exists, but isn't managed by btrfs directly.

@@ -1,65 +1,65 @@
 From: "J. Bruce Fields" <bfields@fieldses.org>
 Subject: Re: What to do about subvolumes?
-Date: Fri, 3 Dec 2010 15:53:34 -0500
-Message-ID: <20101203205334.GA25980@fieldses.org>
+Date: Fri, 3 Dec 2010 15:56:31 -0500
+Message-ID: <20101203205631.GB25980@fieldses.org>
 References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com>
- <20101201194404.GE17142@fieldses.org>
- <20101201195433.GE7021@localhost.localdomain>
- <20101201200007.GH17142@fieldses.org>
- <20101201200949.GG7021@localhost.localdomain>
- <20101202015207.GC2304@vrable.net>
+ <4CF76BB3.3020705@gmx.net>
+ <1291306150-sup-7861@think>
+ <4CF7D40D.508@electric-spoon.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, chris.mason@oracle.com, hch@lst.de,
-	ssorce@redhat.com
-To: Michael Vrable <mvrable@cs.ucsd.edu>
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Arne Jansen <sensille@gmx.net>, Josef Bacik <josef@redhat.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>, hch <hch@lst.de>,
+	ssorce <ssorce@redhat.com>
+To: David Pottage <david@electric-spoon.com>
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20101202015207.GC2304@vrable.net>
+In-Reply-To: <4CF7D40D.508@electric-spoon.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 01, 2010 at 05:52:07PM -0800, Michael Vrable wrote:
-> On Wed, Dec 01, 2010 at 03:09:52PM -0500, Josef Bacik wrote:
-> >On Wed, Dec 01, 2010 at 03:00:08PM -0500, J. Bruce Fields wrote:
-> >>I think you're already fine:
-> >>
-> >>	# mkdir TMP
-> >>	# dd if=/dev/zero of=TMP-image bs=1M count=512
-> >>	# mkfs.btrfs TMP-image
-> >>	# mount -oloop TMP-image TMP/
-> >>	# btrfs subvolume create sub-a
-> >>	# btrfs subvolume create sub-b
-> >>	../readdir-inos .
-> >>	. 256 256
-> >>	.. 256 4130609
-> >>	sub-a 256 256
-> >>	sub-b 257 256
-> >>
-> >>Where readdir-inos is my silly test program below, and the first
-> >>number is from readdir, the second from stat.
-> >>
-> >
-> >Heh as soon as I typed my email I went and actually looked at the
-> >code, looks like for readdir we fill in the root id, which will be
-> >unique, so hotdamn we are good and I don't have to use a stupid
-> >incompat flag.  Thanks for checking that :),
+On Thu, Dec 02, 2010 at 05:14:53PM +0000, David Pottage wrote:
+> A couple of years ago I was suffering from the problem of different
+> files having the same inode number on Netapp servers. On a Netapp
+> device if you snapshot a volume then the files in the snapshot have
+> the same inode number as the original, even if the original changes.
+> (Netapp snapshots are read only).
 > 
-> Except, aren't the inode numbers within a filesystem and the
-> sunbvolume tree IDs allocated out of separate namespaces?  I don't
-> think there's anything preventing a file/directory from having an
-> inode number that clashes with one of the snapshots.
+> This means that if you attempt to see what has changed since your
+> last snapshot using a command line such as:
 > 
-> In fact, this already happens in the example above: "." (inode 256
-> in the root subvolume) and "sub-a" (subvolume ID 256).
+> diff src/file.c .snapshots/hourly.12/src.file.c
+> 
+> Then the diff tool will tell you that the files are the same even if
+> they are different, because it is assuming that files with the same
+> inode number will have identical contents.
 
-Oof, yes, I overlooked that.
-
-> (Though I still don't understand the semantics well enough to say
-> whether we need all the inode numbers returned by readdir to be
-> distinct.)
-
-On normal mounts they're the number of the inode that was mounted over,
-so normally they'd be unique across the parent filesystem.....  I don't
-know if anything depends on that.
+diff should also recognize when they're on different filesystem, so this
+should also be fixable if subvolumes are treated as different filesystem
+(in the sense that they have different vfsmounts and fsid's).
 
 --b.
+
+> 
+> Therefore I think it is a bad idea if potentially different files on
+> btrfs can have the same inode number. It will break all sorts of
+> tools.
+> 
+> Instead of maintaining a big complicated reference count of used
+> inode numbers, could btrfs use bit masks to create a the userland
+> visible inode number from the subvolume id and the real internal
+> inode number. Something like:
+> 
+> userland_inode = ( volume_id << 48 ) & internal_inode;
+> 
+> Please forgive me if this is impossible, or if that C snippet is
+> syntactically incorrect. I am not a filesystem or kernel developer,
+> and I have not coded in C for many years.
+> 
+> -- 
+> David Pottage
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

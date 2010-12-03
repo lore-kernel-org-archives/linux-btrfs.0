@@ -1,106 +1,65 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: deal with space cache errors better
-Date: Fri,  3 Dec 2010 13:21:07 -0500
-Message-ID: <1291400467-29472-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: "J. Bruce Fields" <bfields@fieldses.org>
+Subject: Re: What to do about subvolumes?
+Date: Fri, 3 Dec 2010 15:53:34 -0500
+Message-ID: <20101203205334.GA25980@fieldses.org>
+References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com>
+ <20101201194404.GE17142@fieldses.org>
+ <20101201195433.GE7021@localhost.localdomain>
+ <20101201200007.GH17142@fieldses.org>
+ <20101201200949.GG7021@localhost.localdomain>
+ <20101202015207.GC2304@vrable.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, chris.mason@oracle.com, hch@lst.de,
+	ssorce@redhat.com
+To: Michael Vrable <mvrable@cs.ucsd.edu>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20101202015207.GC2304@vrable.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently if the space cache inode generation number doesn't match the
-generation number in the space cache header we will just fail to load the space
-cache, but we won't mark the space cache as an error, so we'll keep getting that
-error each time somebody tries to cache that block group until we actually clear
-the thing.  Fix this by marking the space cache as having an error so we only
-get the message once.  This patch also makes it so that we don't try and setup
-space cache for a block group that isn't cached, since we won't be able to write
-it out anyway.  None of these problems are actual problems, they are just
-annoying and sub-optimal.  Thanks,
+On Wed, Dec 01, 2010 at 05:52:07PM -0800, Michael Vrable wrote:
+> On Wed, Dec 01, 2010 at 03:09:52PM -0500, Josef Bacik wrote:
+> >On Wed, Dec 01, 2010 at 03:00:08PM -0500, J. Bruce Fields wrote:
+> >>I think you're already fine:
+> >>
+> >>	# mkdir TMP
+> >>	# dd if=/dev/zero of=TMP-image bs=1M count=512
+> >>	# mkfs.btrfs TMP-image
+> >>	# mount -oloop TMP-image TMP/
+> >>	# btrfs subvolume create sub-a
+> >>	# btrfs subvolume create sub-b
+> >>	../readdir-inos .
+> >>	. 256 256
+> >>	.. 256 4130609
+> >>	sub-a 256 256
+> >>	sub-b 257 256
+> >>
+> >>Where readdir-inos is my silly test program below, and the first
+> >>number is from readdir, the second from stat.
+> >>
+> >
+> >Heh as soon as I typed my email I went and actually looked at the
+> >code, looks like for readdir we fill in the root id, which will be
+> >unique, so hotdamn we are good and I don't have to use a stupid
+> >incompat flag.  Thanks for checking that :),
+> 
+> Except, aren't the inode numbers within a filesystem and the
+> sunbvolume tree IDs allocated out of separate namespaces?  I don't
+> think there's anything preventing a file/directory from having an
+> inode number that clashes with one of the snapshots.
+> 
+> In fact, this already happens in the example above: "." (inode 256
+> in the root subvolume) and "sub-a" (subvolume ID 256).
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/extent-tree.c      |   10 ++++++----
- fs/btrfs/free-space-cache.c |   12 +++++++-----
- 2 files changed, 13 insertions(+), 9 deletions(-)
+Oof, yes, I overlooked that.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 87aae66..03f4738 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2746,6 +2746,7 @@ static int cache_save_setup(struct btrfs_block_group_cache *block_group,
- 	struct btrfs_root *root = block_group->fs_info->tree_root;
- 	struct inode *inode = NULL;
- 	u64 alloc_hint = 0;
-+	int dcs = BTRFS_DC_ERROR;
- 	int num_pages = 0;
- 	int retries = 0;
- 	int ret = 0;
-@@ -2800,6 +2801,8 @@ again:
- 
- 	spin_lock(&block_group->lock);
- 	if (block_group->cached != BTRFS_CACHE_FINISHED) {
-+		/* We're not cached, don't bother trying to write stuff out */
-+		dcs = BTRFS_DC_WRITTEN;
- 		spin_unlock(&block_group->lock);
- 		goto out_put;
- 	}
-@@ -2826,6 +2829,8 @@ again:
- 	ret = btrfs_prealloc_file_range_trans(inode, trans, 0, 0, num_pages,
- 					      num_pages, num_pages,
- 					      &alloc_hint);
-+	if (!ret)
-+		dcs = BTRFS_DC_SETUP;
- 	btrfs_free_reserved_data_space(inode, num_pages);
- out_put:
- 	iput(inode);
-@@ -2833,10 +2838,7 @@ out_free:
- 	btrfs_release_path(root, path);
- out:
- 	spin_lock(&block_group->lock);
--	if (ret)
--		block_group->disk_cache_state = BTRFS_DC_ERROR;
--	else
--		block_group->disk_cache_state = BTRFS_DC_SETUP;
-+	block_group->disk_cache_state = dcs;
- 	spin_unlock(&block_group->lock);
- 
- 	return ret;
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 22ee0dc..60d6842 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -290,7 +290,7 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
- 		       (unsigned long long)BTRFS_I(inode)->generation,
- 		       (unsigned long long)generation,
- 		       (unsigned long long)block_group->key.objectid);
--		goto out;
-+		goto free_cache;
- 	}
- 
- 	if (!num_entries)
-@@ -524,6 +524,12 @@ int btrfs_write_out_cache(struct btrfs_root *root,
- 		return 0;
- 	}
- 
-+	node = rb_first(&block_group->free_space_offset);
-+	if (!node) {
-+		iput(inode);
-+		return 0;
-+	}
-+
- 	last_index = (i_size_read(inode) - 1) >> PAGE_CACHE_SHIFT;
- 	filemap_write_and_wait(inode->i_mapping);
- 	btrfs_wait_ordered_range(inode, inode->i_size &
-@@ -543,10 +549,6 @@ int btrfs_write_out_cache(struct btrfs_root *root,
- 	 */
- 	first_page_offset = (sizeof(u32) * num_checksums) + sizeof(u64);
- 
--	node = rb_first(&block_group->free_space_offset);
--	if (!node)
--		goto out_free;
--
- 	/*
- 	 * Lock all pages first so we can lock the extent safely.
- 	 *
--- 
-1.6.6.1
+> (Though I still don't understand the semantics well enough to say
+> whether we need all the inode numbers returned by readdir to be
+> distinct.)
 
+On normal mounts they're the number of the inode that was mounted over,
+so normally they'd be unique across the parent filesystem.....  I don't
+know if anything depends on that.
+
+--b.

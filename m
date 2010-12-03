@@ -1,36 +1,31 @@
-From: Chris Ball <cjb@laptop.org>
-Subject: Re: What to do about subvolumes?
-Date: Thu, 02 Dec 2010 23:25:01 -0500
-Message-ID: <m339qfo542.fsf@pullcord.laptop.org>
-References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: Re: 800 GByte free, but "no space left"
+Date: 03 Dec 2010 07:47:00 +0100
+Message-ID: <BbBJsoLT1uB@helmut.hullen.de>
+References: <AANLkTikWfn-=T==MjcbiZiURy_nY1+RpBfpXyOHLLfUO@mail.gmail.com>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	chris.mason@oracle.com, hch@lst.de, ssorce@redhat.com
-To: Josef Bacik <josef@redhat.com>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20101201142136.GD427@dhcp231-156.rdu.redhat.com> (Josef Bacik's
-	message of "Wed, 1 Dec 2010 09:21:36 -0500")
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTikWfn-=T==MjcbiZiURy_nY1+RpBfpXyOHLLfUO@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Josef,
+Hallo, Mike,
 
-   > 1) Scrap the 256 inode number thing.  Instead we'll just put a
-   > flag in the inode to say "Hey, I'm a subvolume" and then we can
-   > do all of the appropriate magic that way.  This unfortunately
-   > will be an incompatible format change, but the sooner we get this
-   > adressed the easier it will be in the long run.  Obviously when I
-   > say format change I mean via the incompat bits we have, so old
-   > fs's won't be broken and such.
+Du meintest am 02.12.10:
 
-Sorry if I've missed this elsewhere in the thread -- will we still
-have an efficient operation for enumerating subvolumes and snapshots,
-and how will that work?  We're going to want tools like plymouth and
-grub to be able to list all snapshots without running a large scan.
+>> Btrfs Btrfs v0.19
 
-Thanks,
+> "btrfs" in the kernel has been version 0.19 for a *long* time.  The
+> version number there may never change.  How do you encode a feature
+> mask in a version number?  Some features may be in one tree but not
+> upstreamed all together and other such minutiae.
 
-- Chris.
--- 
-Chris Ball   <cjb@laptop.org>
-One Laptop Per Child
+Sorry - I forgot:
+
+Kernel 2.6.35.8
+btrfs-git from 20101117
+
+Viele Gruesse!
+Helmut

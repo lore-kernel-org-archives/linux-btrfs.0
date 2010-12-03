@@ -1,65 +1,176 @@
-From: "J. Bruce Fields" <bfields@fieldses.org>
+From: Josef Bacik <josef@redhat.com>
 Subject: Re: What to do about subvolumes?
-Date: Fri, 3 Dec 2010 15:56:31 -0500
-Message-ID: <20101203205631.GB25980@fieldses.org>
+Date: Fri, 3 Dec 2010 16:45:27 -0500
+Message-ID: <20101203214526.GA4508@localhost.localdomain>
 References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com>
- <4CF76BB3.3020705@gmx.net>
- <1291306150-sup-7861@think>
- <4CF7D40D.508@electric-spoon.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Arne Jansen <sensille@gmx.net>, Josef Bacik <josef@redhat.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>, hch <hch@lst.de>,
-	ssorce <ssorce@redhat.com>
-To: David Pottage <david@electric-spoon.com>
+Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	chris.mason@oracle.com, hch@lst.de, ssorce@redhat.com,
+	bfields@redhat.com
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <4CF7D40D.508@electric-spoon.com>
+In-Reply-To: <20101201142136.GD427@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 02, 2010 at 05:14:53PM +0000, David Pottage wrote:
-> A couple of years ago I was suffering from the problem of different
-> files having the same inode number on Netapp servers. On a Netapp
-> device if you snapshot a volume then the files in the snapshot have
-> the same inode number as the original, even if the original changes.
-> (Netapp snapshots are read only).
+On Wed, Dec 01, 2010 at 09:21:36AM -0500, Josef Bacik wrote:
+> Hello,
 > 
-> This means that if you attempt to see what has changed since your
-> last snapshot using a command line such as:
+> Various people have complained about how BTRFS deals with subvolumes recently,
+> specifically the fact that they all have the same inode number, and there's no
+> discrete seperation from one subvolume to another.  Christoph asked that I lay
+> out a basic design document of how we want subvolumes to work so we can hash
+> everything out now, fix what is broken, and then move forward with a design that
+> everybody is more or less happy with.  I apologize in advance for how freaking
+> long this email is going to be.  I assume that most people are generally
+> familiar with how BTRFS works, so I'm not going to bother explaining in great
+> detail some stuff.
 > 
-> diff src/file.c .snapshots/hourly.12/src.file.c
+> === What are subvolumes? ===
 > 
-> Then the diff tool will tell you that the files are the same even if
-> they are different, because it is assuming that files with the same
-> inode number will have identical contents.
+> They are just another tree.  In BTRFS we have various b-trees to describe the
+> filesystem.  A few of them are filesystem wide, such as the extent tree, chunk
+> tree, root tree etc.  The tree's that hold the actual filesystem data, that is
+> inodes and such, are kept in their own b-tree.  This is how subvolumes and
+> snapshots appear on disk, they are simply new b-trees with all of the file data
+> contained within them.
+> 
+> === What do subvolumes look like? ===
+> 
+> All the user sees are directories.  They act like any other directory acts, with
+> a few exceptions
+> 
+> 1) You cannot hardlink between subvolumes.  This is because subvolumes have
+> their own inode numbers and such, think of them as seperate mounts in this case,
+> you cannot hardlink between two mounts because the link needs to point to the
+> same on disk inode, which is impossible between two different filesystems.  The
+> same is true for subvolumes, they have their own trees with their own inodes and
+> inode numbers, so it's impossible to hardlink between them.
+> 
+> 1a) In case it wasn't clear from above, each subvolume has their own inode
+> numbers, so you can have the same inode numbers used between two different
+> subvolumes, since they are two different trees.
+> 
+> 2) Obviously you can't just rm -rf subvolumes.  Because they are roots there's
+> extra metadata to keep track of them, so you have to use one of our ioctls to
+> delete subvolumes/snapshots.
+> 
+> But permissions and everything else they are the same.
+> 
+> There is one tricky thing.  When you create a subvolume, the directory inode
+> that is created in the parent subvolume has the inode number of 256.  So if you
+> have a bunch of subvolumes in the same parent subvolume, you are going to have a
+> bunch of directories with the inode number of 256.  This is so when users cd
+> into a subvolume we can know its a subvolume and do all the normal voodoo to
+> start looking in the subvolumes tree instead of the parent subvolumes tree.
+> 
+> This is where things go a bit sideways.  We had serious problems with NFS, but
+> thankfully NFS gives us a bunch of hooks to get around these problems.
+> CIFS/Samba do not, so we will have problems there, not to mention any other
+> userspace application that looks at inode numbers.
+> 
+> === How do we want subvolumes to work from a user perspective? ===
+> 
+> 1) Users need to be able to create their own subvolumes.  The permission
+> semantics will be absolutely the same as creating directories, so I don't think
+> this is too tricky.  We want this because you can only take snapshots of
+> subvolumes, and so it is important that users be able to create their own
+> discrete snapshottable targets.
+> 
+> 2) Users need to be able to snapshot their subvolumes.  This is basically the
+> same as #1, but it bears repeating.
+> 
+> 3) Subvolumes shouldn't need to be specifically mounted.  This is also
+> important, we don't want users to have to go around mounting their subvolumes up
+> manually one-by-one.  Today users just cd into subvolumes and it works, just
+> like cd'ing into a directory.
+> 
+> === Quotas ===
+> 
+> This is a huge topic in and of itself, but Christoph mentioned wanting to have
+> an idea of what we wanted to do with it, so I'm putting it here.  There are
+> really 2 things here
+> 
+> 1) Limiting the size of subvolumes.  This is really easy for us, just create a
+> subvolume and at creation time set a maximum size it can grow to and not let it
+> go farther than that.  Nice, simple and straightforward.
+> 
+> 2) Normal quotas, via the quota tools.  This just comes down to how do we want
+> to charge users, do we want to do it per subvolume, or per filesystem.  My vote
+> is per filesystem.  Obviously this will make it tricky with snapshots, but I
+> think if we're just charging the diff's between the original volume and the
+> snapshot to the user then that will be the easiest for people to understand,
+> rather than making a snapshot all of a sudden count the users currently used
+> quota * 2.
+> 
+> === What do we do? ===
+> 
+> This is where I expect to see the most discussion.  Here is what I want to do
+> 
+> 1) Scrap the 256 inode number thing.  Instead we'll just put a flag in the inode
+> to say "Hey, I'm a subvolume" and then we can do all of the appropriate magic
+> that way.  This unfortunately will be an incompatible format change, but the
+> sooner we get this adressed the easier it will be in the long run.  Obviously
+> when I say format change I mean via the incompat bits we have, so old fs's won't
+> be broken and such.
+> 
+> 2) Do something like NFS's referral mounts when we cd into a subvolume.  Now we
+> just do dentry trickery, but that doesn't make the boundary between subvolumes
+> clear, so it will confuse people (and samba) when they walk into a subvolume and
+> all of a sudden the inode numbers are the same as in the directory behind them.
+> With doing the referral mount thing, each subvolume appears to be its own mount
+> and that way things like NFS and samba will work properly.
+> 
+> I feel like I'm forgetting something here, hopefully somebody will point it out.
+> 
+> === Conclusion ===
+> 
+> There are definitely some wonky things with subvolumes, but I don't think they
+> are things that cannot be fixed now.  Some of these changes will require
+> incompat format changes, but it's either we fix it now, or later on down the
+> road when BTRFS starts getting used in production really find out how many
+> things our current scheme breaks and then have to do the changes then.  Thanks,
+> 
 
-diff should also recognize when they're on different filesystem, so this
-should also be fixable if subvolumes are treated as different filesystem
-(in the sense that they have different vfsmounts and fsid's).
+So now that I've actually looked at everything, it looks like the semantics are
+all right for subvolumes
 
---b.
+1) readdir - we return the root id in d_ino, which is unique across the fs
+2) stat - we return 256 for all subvolumes, because that is their inode number
+3) dev_t - we setup an anon super for all volumes, so they all get their own
+dev_t, which is set properly for all of their children, see below
 
-> 
-> Therefore I think it is a bad idea if potentially different files on
-> btrfs can have the same inode number. It will break all sorts of
-> tools.
-> 
-> Instead of maintaining a big complicated reference count of used
-> inode numbers, could btrfs use bit masks to create a the userland
-> visible inode number from the subvolume id and the real internal
-> inode number. Something like:
-> 
-> userland_inode = ( volume_id << 48 ) & internal_inode;
-> 
-> Please forgive me if this is impossible, or if that C snippet is
-> syntactically incorrect. I am not a filesystem or kernel developer,
-> and I have not coded in C for many years.
-> 
-> -- 
-> David Pottage
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+[root@test1244 btrfs-test]# stat .
+  File: `.'
+  Size: 20              Blocks: 8          IO Block: 4096   directory
+Device: 15h/21d Inode: 256         Links: 1
+Access: (0555/dr-xr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2010-12-03 15:35:41.931679393 -0500
+Modify: 2010-12-03 15:35:20.405679493 -0500
+Change: 2010-12-03 15:35:20.405679493 -0500
+
+[root@test1244 btrfs-test]# stat foo
+  File: `foo'
+  Size: 12              Blocks: 0          IO Block: 4096   directory
+Device: 19h/25d Inode: 256         Links: 1
+Access: (0700/drwx------)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2010-12-03 15:35:17.501679393 -0500
+Modify: 2010-12-03 15:35:59.150680051 -0500
+Change: 2010-12-03 15:35:59.150680051 -0500
+
+[root@test1244 btrfs-test]# stat foo/foobar 
+  File: `foo/foobar'
+  Size: 0               Blocks: 0          IO Block: 4096   regular empty file
+Device: 19h/25d Inode: 257         Links: 1
+Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2010-12-03 15:35:59.150680051 -0500
+Modify: 2010-12-03 15:35:59.150680051 -0500
+Change: 2010-12-03 15:35:59.150680051 -0500
+
+So as far as the user is concerned, everything should come out right.  Obviously
+we had to do the NFS trickery still because as far as VFS is concerned the
+subvolumes are all on the same mount.  So the question is this (and really this
+is directed at Christoph and Bruce and anybody else who may care), is this good
+enough, or do we want to have a seperate vfsmount for each subvolume?  Thanks,
+
+Josef

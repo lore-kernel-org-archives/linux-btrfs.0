@@ -1,56 +1,106 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: disk space caching generation missmatch
-Date: Fri, 3 Dec 2010 13:14:49 -0500
-Message-ID: <20101203181449.GB3173@localhost.localdomain>
-References: <201012011746.14458.johannes.hirte@fem.tu-ilmenau.de> <201012012240.29525.johannes.hirte@fem.tu-ilmenau.de> <20101202203410.GC8805@dhcp231-156.rdu.redhat.com> <201012030107.54983.johannes.hirte@fem.tu-ilmenau.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
-To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Subject: [PATCH] Btrfs: deal with space cache errors better
+Date: Fri,  3 Dec 2010 13:21:07 -0500
+Message-ID: <1291400467-29472-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201012030107.54983.johannes.hirte@fem.tu-ilmenau.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 03, 2010 at 01:07:53AM +0100, Johannes Hirte wrote:
-> On Thursday 02 December 2010 21:34:10 Josef Bacik wrote:
-> > On Wed, Dec 01, 2010 at 10:40:29PM +0100, Johannes Hirte wrote:
-> > > On Wednesday 01 December 2010 22:22:45 Johannes Hirte wrote:
-> > > > On Wednesday 01 December 2010 21:03:13 Josef Bacik wrote:
-> > > > > On Wed, Dec 01, 2010 at 08:56:14PM +0100, Johannes Hirte wrote:
-> > > > > > On Wednesday 01 December 2010 18:40:18 Josef Bacik wrote:
-> > > > > > > On Wed, Dec 01, 2010 at 05:46:14PM +0100, Johannes Hirte wrote:
-> > > > > > > > After enabling disk space caching I've observed several log entries like this:
-> > > > > > > > 
-> > > > > > > > btrfs: free space inode generation (0) did not match free space cache generation (169594) for block group 15464398848
-> > > > > > > > 
-> > > > > > > > I'm not sure, but it seems this happens on every reboot. Is this something to
-> > > > > > > > worry about?
-> > > > > > > > 
-> > > > > > > 
-> > > > > > > So that usually means 1 of a couple of things
-> > > > > > > 
-> > > > > > > 1) You didn't have space for us to save the free space cache
-> > > > > > > 2) When trying to write out the cache we hit one of those cases where we would
-> > > > > > > deadlock so we couldn't write the cache out
-> > > > > > > 
-> > > > > > > It's nothing to worry about, it's doing what it is supposed to.  However I'd
-> > > > > > > like to know why we're not able to write out the cache.  Are you running close
-> > > > > > > to full?  Thanks,
-> > > > > > > 
-> > > > > > > Josef
-> > > > > > >
-> > > > > > 
-> > > > > > I think there should be enough free space:
-> > > > > > 
-> > > > > 
-> > 
-> > Ok it doesn't look like theres an actual problem, we're just being sub-optimal.
-> > Take out the other patch and apply this one, boot into that kernel and then
-> > reboot and then give me the dmesg. 
-> 
-> Here it comes:
-> 
+Currently if the space cache inode generation number doesn't match the
+generation number in the space cache header we will just fail to load the space
+cache, but we won't mark the space cache as an error, so we'll keep getting that
+error each time somebody tries to cache that block group until we actually clear
+the thing.  Fix this by marking the space cache as having an error so we only
+get the message once.  This patch also makes it so that we don't try and setup
+space cache for a block group that isn't cached, since we won't be able to write
+it out anyway.  None of these problems are actual problems, they are just
+annoying and sub-optimal.  Thanks,
 
-Perfect, thats much better.  Thanks for bringing this up.
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/extent-tree.c      |   10 ++++++----
+ fs/btrfs/free-space-cache.c |   12 +++++++-----
+ 2 files changed, 13 insertions(+), 9 deletions(-)
 
-Josef
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 87aae66..03f4738 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2746,6 +2746,7 @@ static int cache_save_setup(struct btrfs_block_group_cache *block_group,
+ 	struct btrfs_root *root = block_group->fs_info->tree_root;
+ 	struct inode *inode = NULL;
+ 	u64 alloc_hint = 0;
++	int dcs = BTRFS_DC_ERROR;
+ 	int num_pages = 0;
+ 	int retries = 0;
+ 	int ret = 0;
+@@ -2800,6 +2801,8 @@ again:
+ 
+ 	spin_lock(&block_group->lock);
+ 	if (block_group->cached != BTRFS_CACHE_FINISHED) {
++		/* We're not cached, don't bother trying to write stuff out */
++		dcs = BTRFS_DC_WRITTEN;
+ 		spin_unlock(&block_group->lock);
+ 		goto out_put;
+ 	}
+@@ -2826,6 +2829,8 @@ again:
+ 	ret = btrfs_prealloc_file_range_trans(inode, trans, 0, 0, num_pages,
+ 					      num_pages, num_pages,
+ 					      &alloc_hint);
++	if (!ret)
++		dcs = BTRFS_DC_SETUP;
+ 	btrfs_free_reserved_data_space(inode, num_pages);
+ out_put:
+ 	iput(inode);
+@@ -2833,10 +2838,7 @@ out_free:
+ 	btrfs_release_path(root, path);
+ out:
+ 	spin_lock(&block_group->lock);
+-	if (ret)
+-		block_group->disk_cache_state = BTRFS_DC_ERROR;
+-	else
+-		block_group->disk_cache_state = BTRFS_DC_SETUP;
++	block_group->disk_cache_state = dcs;
+ 	spin_unlock(&block_group->lock);
+ 
+ 	return ret;
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 22ee0dc..60d6842 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -290,7 +290,7 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
+ 		       (unsigned long long)BTRFS_I(inode)->generation,
+ 		       (unsigned long long)generation,
+ 		       (unsigned long long)block_group->key.objectid);
+-		goto out;
++		goto free_cache;
+ 	}
+ 
+ 	if (!num_entries)
+@@ -524,6 +524,12 @@ int btrfs_write_out_cache(struct btrfs_root *root,
+ 		return 0;
+ 	}
+ 
++	node = rb_first(&block_group->free_space_offset);
++	if (!node) {
++		iput(inode);
++		return 0;
++	}
++
+ 	last_index = (i_size_read(inode) - 1) >> PAGE_CACHE_SHIFT;
+ 	filemap_write_and_wait(inode->i_mapping);
+ 	btrfs_wait_ordered_range(inode, inode->i_size &
+@@ -543,10 +549,6 @@ int btrfs_write_out_cache(struct btrfs_root *root,
+ 	 */
+ 	first_page_offset = (sizeof(u32) * num_checksums) + sizeof(u64);
+ 
+-	node = rb_first(&block_group->free_space_offset);
+-	if (!node)
+-		goto out_free;
+-
+ 	/*
+ 	 * Lock all pages first so we can lock the extent safely.
+ 	 *
+-- 
+1.6.6.1
+

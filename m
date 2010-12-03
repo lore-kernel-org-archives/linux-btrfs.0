@@ -1,25 +1,62 @@
 From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
-Subject: Re: disk space caching generation missmatch
-Date: Fri, 3 Dec 2010 01:57:01 +0100
-Message-ID: <201012030157.02187.johannes.hirte@fem.tu-ilmenau.de>
-References: <201012011746.14458.johannes.hirte@fem.tu-ilmenau.de> <201012030107.54983.johannes.hirte@fem.tu-ilmenau.de> <-8250243552832740456@unknownmsgid>
+Subject: Re: kernel BUG at fs/btrfs/inode.c:806
+Date: Fri, 3 Dec 2010 03:01:21 +0100
+Message-ID: <201012030301.21768.johannes.hirte@fem.tu-ilmenau.de>
+References: <201012011411.02352.johannes.hirte@fem.tu-ilmenau.de> <201012021802.17198.johannes.hirte@fem.tu-ilmenau.de> <1291317664-sup-8117@think>
 Mime-Version: 1.0
 Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: Josef Bacik <josef@redhat.com>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: C Anthony Risinger <anthony@extof.me>
+  charset="utf-8"
+Cc: "linux-btrfs" <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <-8250243552832740456@unknownmsgid>
+In-Reply-To: <1291317664-sup-8117@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Friday 03 December 2010 01:44:49 C Anthony Risinger wrote:
-> Did you fix that typo I posted?
+On Thursday 02 December 2010 20:21:30 Chris Mason wrote:
+> Excerpts from Johannes Hirte's message of 2010-12-02 12:02:16 -0500:
+> > On Thursday 02 December 2010 17:52:50 Johannes Hirte wrote:
+> > > On Thursday 02 December 2010 17:19:56 Chris Mason wrote:
+> > > > Excerpts from Johannes Hirte's message of 2010-12-01 08:11:01 -0500:
+> > > > > On one of my machines with btrfs I got this bug:
+> > > > > 
+> > > > > entry offset 29085974528, bytes 4096, bitmap no
+> > > > > entry offset 29162995712, bytes 20480, bitmap yes
+> > > > > entry offset 29171744768, bytes 4096, bitmap no
+> > > > > block group has cluster?: no
+> > > > > 0 blocks of free space at or bigger than bytes is
+> > > > > block group 29834084352 has 1073741824 bytes, 1072648192 used 0 pinned 0 reserved
+> > > > 
+> > > > Well, you've had an ENOSPC explosion.
+> > > > 
+> > > > > 
+> > > > > The "block group" messages where way more, too much for the dmesg log buffer.
+> > > > > Kernel is a 2.6.37-rc3+ without the latest btrfs-fixes. The bug occurred when
+> > > > > compiling openoffice.org. After the bug a 'df -h' showed:
+> > > > > 
+> > > > > df -h:
+> > > > > Filesystem            Size  Used Avail Use% Mounted on
+> > > > > rootfs                 21G   17G  770M  96% /
+> > > > > /dev/root              21G   17G  770M  96% /
+> > > > > rc-svcdir             1.0M  108K  916K  11% /lib/rc/init.d
+> > > > > udev                   10M  116K  9.9M   2% /dev
+> > > > > shm                  1013M     0 1013M   0% /dev/shm
+> > > > > /dev/sda2              66G   46G   20G  71% /home
+> > > > > /dev/sdb1              75G   56G   19G  75% /mnt/windows
+> > > > 
+> > > > Which of these filesystems were you compiling on?
+> > > 
+> > > On /. It's a gentoo system and the bug happened during an 'emerge openoffice'.
+> > > The compilation ist usually done under /var/tmp/portage.
+> > 
+> > Btw, I was able to reproduce this with a second try to emerge openoffice.
 > 
-> C Anthony [mobile]
+> Ok, there is one related fix in the git tree right now that you don't
+> have.  I'm not 100% sure it'll fix this, but it can't hurt.
 > 
-
-Yes, without fix it wouldn't compile.
+> -chris
+> 
+Unfortunately it didn't fixed the bug. The system crashed again on emerging
+openoffice.
 
 regards,
   Johannes

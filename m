@@ -1,59 +1,37 @@
-From: =?UTF-8?Q?Pawe=C5=82_Brodacki?= <pawel.brodacki@googlemail.com>
-Subject: Fwd: What to do about subvolumes?
-Date: Fri, 3 Dec 2010 14:47:44 +0100
-Message-ID: <AANLkTi=5vyGqdoFPC=c5yf-g_A8uLvi4txvWm4iq65bK@mail.gmail.com>
-References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com>
-	<4CF76BB3.3020705@gmx.net>
-	<1291306150-sup-7861@think>
-	<4CF7D40D.508@electric-spoon.com>
-	<AANLkTinBzpoCnci+1a=0pjXbAdQ7mzpdr2k8GOo7HUc8@mail.gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: What to do about subvolumes?
+Date: Fri, 3 Dec 2010 09:00:20 -0500
+Message-ID: <20101203140019.GD8805@dhcp231-156.rdu.redhat.com>
+References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com> <m339qfo542.fsf@pullcord.laptop.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, chris.mason@oracle.com, hch@lst.de,
+	ssorce@redhat.com
+To: Chris Ball <cjb@laptop.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTinBzpoCnci+1a=0pjXbAdQ7mzpdr2k8GOo7HUc8@mail.gmail.com>
+In-Reply-To: <m339qfo542.fsf@pullcord.laptop.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2010/12/2 David Pottage <david@electric-spoon.com>:
->
-> Therefore I think it is a bad idea if potentially different files on =
-btrfs
-> can have the same inode number. It will break all sorts of tools.
->
-> Instead of maintaining a big complicated reference count of used inod=
-e
-> numbers, could btrfs use bit masks to create a the userland visible i=
-node
-> number from the subvolume id and the real internal inode number. Some=
-thing
-> like:
->
-> userland_inode =3D ( volume_id << 48 ) & internal_inode;
->
-> Please forgive me if this is impossible, or if that C snippet is
-> syntactically incorrect. I am not a filesystem or kernel developer, a=
-nd I
-> have not coded in C for many years.
->
-> --
-> David Pottage
+On Thu, Dec 02, 2010 at 11:25:01PM -0500, Chris Ball wrote:
+> Hi Josef,
+> 
+>    > 1) Scrap the 256 inode number thing.  Instead we'll just put a
+>    > flag in the inode to say "Hey, I'm a subvolume" and then we can
+>    > do all of the appropriate magic that way.  This unfortunately
+>    > will be an incompatible format change, but the sooner we get this
+>    > adressed the easier it will be in the long run.  Obviously when I
+>    > say format change I mean via the incompat bits we have, so old
+>    > fs's won't be broken and such.
+> 
+> Sorry if I've missed this elsewhere in the thread -- will we still
+> have an efficient operation for enumerating subvolumes and snapshots,
+> and how will that work?  We're going to want tools like plymouth and
+> grub to be able to list all snapshots without running a large scan.
 >
 
-Expanding on the idea: what about a pool of IDs for subvolumes and
-inode numbers inside a subvolume having the subvolume ID as a prefix?
-It gives each inode a unique number, doesn't require cheating the
-userland and is less costly than keeping reference count for each
-inode. The obvious downside that I can see is limitation on number of
-subvolumes that it would be possible to create. It also lowers the
-maximum number of inodes in a filesystem (because of bits taken up by
-subvolume ID). I expect there are also less-than obvious downsides.
+Yeah the idea is we want to fix the problems with the design without breaking
+anything that currently works.  So all the changes I want to make are going to
+be invisible for the user.  Thanks,
 
-Just an idea by a kernel and FS ignorant.
-
---
-Pawe=C5=82 Brodacki
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Josef 

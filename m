@@ -1,38 +1,44 @@
-From: Andreas Dilger <adilger.kernel@dilger.ca>
-Subject: Re: What to do about subvolumes?
-Date: Fri, 3 Dec 2010 16:01:44 -0700
-Message-ID: <26801711-6DF9-4122-BCDF-033A1781C3E4@dilger.ca>
-References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com> <20101203214526.GA4508@localhost.localdomain> <20101203222756.GF23339@dastard> <1291415351-sup-4820@think> <20101203224525.GC12491@pad.home.fieldses.org>
+From: =?iso-8859-1?Q?Jo=E3o_Eduardo_Lu=EDs?= <jecluis@gmail.com>
+Subject: Development Environment
+Date: Sat, 4 Dec 2010 16:58:24 +0000
+Message-ID: <D0E478CE-A8B8-4CD3-ADA6-17CE41AC4A51@gmail.com>
 Mime-Version: 1.0 (Apple Message framework v1082)
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Dave Chinner <david@fromorbit.com>,
-	Josef Bacik <josef@redhat.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>, hch <hch@lst.de>,
-	ssorce <ssorce@redhat.com>
-To: "J. Bruce Fields" <bfields@redhat.com>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20101203224525.GC12491@pad.home.fieldses.org>
+Content-Type: text/plain; charset=iso-8859-1
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2010-12-03, at 15:45, J. Bruce Fields wrote:
-> We're using statfs64.fs_fsid for this; I believe that's both stable
-> across reboots and distinguishes between subvolumes, so that's OK.
-> 
-> (That said, since fs_fsid doesn't work for other filesystems, we depend
-> on an explicit check for a filesystem type of "btrfs", which is
-> awful--btrfs won't always be the only filesystem that wants to do this
-> kind of thing, etc.)
+Hello all.
 
-Sigh, I wanted to be able to specify the NFS FSID directly from within the kernel for Lustre many years already.  Glad to see that this is moving forward.
+I know this is completely tangential to BTRFS per se, but, since the wh=
+ole purpose of my question is to develop over BTRFS itself, I thought I=
+ could at least try the ML.
 
-Any chance we can add a ->get_fsid(sb, inode) method to export_operations
-(or something simiar), that allows the filesystem to generate an FSID based on the volume and inode that is being exported?
+Basically I'm on Mac OS X and been adventuring myself into btrfs using =
+Eclipse to code, and a VM to compile and deploy the kernel.
 
-Cheers, Andreas
+However, currently this is being a real pain to do: eclipse is totally =
+oblivious to keywords such as 'noinline', '__exit' or '__init' --- my g=
+uess lies with the native GCC. Therefore, any hopes of using eclipse's =
+indexing went down the drain for most code.
+
+My question: is anyone in the ML actively developing using Mac OS X? If=
+ so, any thoughts on how to ease one's life?
+
+Of course, if unable to find a solution, my next move will be to instal=
+l a Linux distribution and start developing in Linux. :-)
+
+
+Cheers.
+
+---
+Jo=E3o Eduardo Lu=EDs
 
 
 
 
-
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

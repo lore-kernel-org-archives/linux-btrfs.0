@@ -1,53 +1,44 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: Re: 800 GByte free, but "no space left"
-Date: 05 Dec 2010 15:33:00 +0100
-Message-ID: <BbJP6kxy1uB@helmut.hullen.de>
-References: <AANLkTinA81Zb102g4rmzp-+tR3Y_+1hrGh2EXW=xeCn4@mail.gmail.com>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: [PATCH 0/5][REPOST][BTRFS-PROGS] Repost of some patches
+Date: Sun, 5 Dec 2010 18:46:41 +0100
+Message-ID: <201012051846.42073.kreijack@libero.it>
+Reply-To: kreijack@libero.it
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain;
+  charset="us-ascii"
+Cc: linux-btrfs@vger.kernel.org
+To: chris.mason@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTinA81Zb102g4rmzp-+tR3Y_+1hrGh2EXW=xeCn4@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Evert,
+Hi all,
 
-Du meintest am 05.12.10 zum Thema Re: 800 GByte free, but "no space lef=
-t":
+in the next emails, I will repost some patches which never were merged in the 
+btrfs-progs repository. 
+Two patches are document only and not add new functions, in particular:
 
->>>>>> =A0 =A0 =A0 devid =A0 =A02 size 1.35TB used 1.35TB path /dev/sdc=
-3
->>>>>> =A0 =A0 =A0 devid =A0 =A01 size 1.81TB used 1.35TB path /dev/sdf=
-2
+patch-1) this patch correct some little problem in the help page
+patch-2) this patch makes the error more verbose
 
->>> Here devid 2 is at 100%, and hence you are getting the no more
->>> space left errors. So, the 300 TB is on the bigger disk, and not
->>> usable for you right now.
+The next patch (#3) doesn't add a new functionality, but declare as deprecated 
+the old programs like btrfs-show, btrfs-vol, btrfsctl; this because these 
+utilities are superseded by the "btrfs" command.
 
->> =A0 I _think_ that a balance is all that's needed at this point. It
->> can't hurt, anyway (other than taking quite a long time).
+The last two patches (#4 and #5) add a new function to the btrfs command:
+patch-4) this patch avoids to scan device like cdrom and/or floppy when a 
+automatic volume discovery is performed.
+patch-5) this patch adds a "filesystem label" command to change a label for an 
+unmounted volume. 
 
-> I am under the impression that as soon as one of the devices in a
-> btrfs is out of space, and write to that file system returns ENOSPACE
-> This certainly does look like it from this example, and from what I
-> have read elsewhere.
+Chris all these patches were already posted in the past. Some are very trivial 
+(like the #1 and #2). Regarding the #3 I know that you agreed that btrfs is 
+better that btrfsctl, so I hope that this patch may be accepted quickly. 
+Finally regarding the last two, they adedded new functionality; so if you 
+complain and/or suggestion I am open to improve it.
 
-Maybe - I don't know the code.
+Regards
+Goffredo
 
-But in my case "ENOSPACE" is returned too early.
-
-"btrfs-show" tells 2*1.35 TiByte used, but "no space left" is told when=
- =20
-2.4 TiByte are used (2.38 TiByte is ok). That's 300 GiByte too early (o=
-r =20
-about 10% too early).
-
-Or am I wrong in interpreting the messages?
-
-Viele Gruesse!
-Helmut
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-- 
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

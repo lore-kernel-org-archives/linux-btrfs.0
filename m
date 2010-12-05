@@ -1,84 +1,44 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: Re: 800 GByte free, but "no space left"
-Date: 05 Dec 2010 10:51:00 +0100
-Message-ID: <BbJON$Fi1uB@helmut.hullen.de>
-References: <AANLkTimza7z64TB43BkFoVgtf2SNkks_6dfy+iXafqHf@mail.gmail.com>
-Reply-To: helmut@hullen.de
+From: Heinz Diehl <htd@fritha.org>
+Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
+ barrier support is effective)
+Date: Sun, 5 Dec 2010 11:09:54 +0100
+Message-ID: <20101205100954.GA6564@fritha.org>
+References: <AANLkTik_p0yxQBQ3ehHWYPLfiqxGbSNUT5XUk9dC5-x6@mail.gmail.com>
+ <20101201165229.GC13415@redhat.com>
+ <AANLkTinG209iRAXgpNC0vNpn1C02wkYmVfveXRBqsKV-@mail.gmail.com>
+ <4CF692D1.1010906@redhat.com>
+ <AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com>
+ <4CF6B3E8.2000406@redhat.com>
+ <20101201212310.GA15648@redhat.com>
+ <AANLkTimQtMvPVafWG_DffF-zXXpz1vBPXdCCwxRnzSGr@mail.gmail.com>
+ <20101204193828.GB13871@redhat.com>
+ <AANLkTinX_av7A-xT6hD-Df=tHxOOWhi7QkVezAUO3pW5@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimza7z64TB43BkFoVgtf2SNkks_6dfy+iXafqHf@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Mike Snitzer <snitzer@redhat.com>, Milan Broz <mbroz@redhat.com>,
+	Andi Kleen <andi@firstfloor.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	dm-devel <dm-devel@redhat.com>,
+	Linux Kernel <linux-kernel@vger.kernel.org>,
+	htd <htd@fancy-poultry.org>,
+	Chris Mason <chris.mason@oracle.com>, htejun@gmail.com,
+	linux-ext4@vger.kernel.org, Jon Nelson <jnelson@jamponi.net>
+To: Matt <jackdachef@gmail.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <AANLkTinX_av7A-xT6hD-Df=tHxOOWhi7QkVezAUO3pW5@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, cwillu,
+On 05.12.2010, Matt wrote: 
 
-Du meintest am 05.12.10:
+> I should have made it clear that the results I get are observed when
+> using the kernels/checkouts *with* the dm-crypt multi-cpu patch,
+> without the patch I didn't see that kind of problems (hardlocks, files
+> missing, etc.)
 
->>> I am not an expert on this by a long shot, but it looks like you
->>> added these two disks in raid0.
+I have to take back my other two emails, stating that no corruption
+happened with the dm-crypt multi-cpu patch. Today, I encountered
+filesystem corruption on one, and a complete hardlock on another machine.
+No logfile entries, no m-sysrq, a complete deadlock. Filesystem was
+corrupted here too, had to reboot from CD.
 
->> I won't hope that this error is related to RAID0, I haven't
->> installed (as far as I know) RAID0.
->>
->> My installation way:
->>
->> (2-TByte-Disk)
->>
->> =A0 =A0 =A0 =A0mkfs.btrfs /dev/sdf2
->> =A0 =A0 =A0 =A0mount /dev/sdf2 /srv/MM
->>
->> (1.5-TByte-Disk)
->> =A0 =A0 =A0 =A0btrfs device add /dev/sdc3 /srv/MM
->> =A0 =A0 =A0 =A0btrfs filesystem balance /srv/MM
->>
->> (and then waiting about 1 day ...)
->> Especially: no RAID definition.
-
-[...]
-
-> If it's not a raid1, and there's multiple devices, it's a raid0 (and
-> so available space is the sum of all drives).  Your problem however
-> is that metadata is raid1 by default (where everything is duplicated
-> on separate drives).
-
-Maybe you're right. But if you're right then I have got the worst of tw=
-o =20
-worlds. I don't want neither RAID0 nor RAID1, I want a bundle of =20
-different disks (at least partititions) which seem to be one large disk=
-=2E =20
-And I've hoped btrfs does this job.
-
-> Adding another device will probably work around this, as will simply
-> running a balance operation (possibly, and you may need to free up
-> some space first anyway).
-
-That could lead to the following steps:
-
-Buy a 3 GByte disk =A0 =A0 =A0 =A0
-
-        btrfs device add /dev/sdxy /srv/MM
-   =A0 =A0 =A0btrfs filesystem balance /srv/MM
-
-1.5 TByte disk:
-        btrfs device delete /dev/sdc3 /srv/MM
-   =A0 =A0 =A0btrfs filesystem balance /srv/MM
-
-and then disconnect the 1.5 TByte disk (and hope that now the 2 TByte =20
-disk sets the limits).
-No nice way ...
-
---------------------------
-
-Is there a way to avoid this (presumably) RAID mismatch?
-
-By the way: working with TByte disks includes (for home users) that =20
-there's no backup ...
-
-Viele Gruesse!
-Helmut
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+The machines with plain 2.6.37-rc4 are up and running...

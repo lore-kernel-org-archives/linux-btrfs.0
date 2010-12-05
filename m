@@ -1,327 +1,446 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: [PATCH 1/5][REPOST][BTRFS-PROGS] Update/clean up btrfs help and man page V2
-Date: Sun, 5 Dec 2010 18:47:45 +0100
-Message-ID: <201012051847.45520.kreijack@libero.it>
-Reply-To: kreijack@libero.it
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Subject: [PATCH 5/5][REPOST][BTRFS-PROGS] Add the "btrfs filesystem label" command
+Date: Sun, 5 Dec 2010 18:46:44 +0100
+Message-ID: <201012051846.51124.kreijack@inwind.it>
+Reply-To: kreijack@inwind.it
 Mime-Version: 1.0
 Content-Type: multipart/signed;
-  boundary="nextPart1465095.aAIM7pfx1D";
+  boundary="nextPart2750410.uZi2po8Ins";
   protocol="application/pgp-signature";
   micalg=pgp-sha1
-Cc: =?iso-8859-1?q?J=E9r=F4me_Poulin?= <jeromepoulin@gmail.com>,
-	Andreas Philipp <philipp.andreas@gmail.com>
-To: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, Felix Blanke <felixblanke@gmail.com>
+To: chris.mason@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart1465095.aAIM7pfx1D
+--nextPart2750410.uZi2po8Ins
 Content-Type: text/plain;
-  charset="iso-8859-1"
+  charset="us-ascii"
 Content-Transfer-Encoding: quoted-printable
 
 Hi all,
 
-enclose you can find a patch which improves the help of the btrfs commands,
- updates the INSTALL file  and  the btrfs (command) man page.
-
-Regarding the help of the btrfs command:
-=2D moved the "subvolume set-default" command in the "subvolume" commands g=
-roup
-=2D removed a wrong new line
-=2D small tweak on the basis of Andreas suggestion
-
-Regarding the btrfs command man page:
-=2D renaming the command "device balance" in "filesystem balance" (thanks t=
-o=20
-Andreas Phillipp to highlight that)
-=2D adding the entry "subvolume find-new"
-=2D document the switches of the command "filesystem defrag"
-=2D document the <devid> facility of the command "filesystem resize"
-=2D small tweak on the basis of Andreas suggestion
-
-Regarding the INSTALL file, which was very old, I removed the reference of =
-the=20
-old btrfsctl utility and changed the examples using the btrfs command.
-I removed the old (and now wrong) statement about the inability to delete a=
+this patch adds the command "btrfs filesystem label" to change (or show) th=
+e=20
+label of a filesystem.
+This patch is a subset of the one written previously by Morey Roof. I=20
+included the user space part only. So it is possible only to change/show a=
 =20
-subvolume/snapshot
+label of a *single device* and *unounted* filesystem.
 
-Chris, you can pull the patch from the branch "help_cleanup" of the followi=
-ng=20
-repository.=20
+The reason of excluding the kernel space part, is to simplify the patch in=
+=20
+order to speed the check and then the merging of the patch itself. In fact =
+I=20
+have to point out that in the past there was almost three attempts to propo=
+se=20
+this patch, without success neither complaints.
 
+Chris, let me know how you want to proceed. I know that you are very busy,=
+=20
+and you prefer to work to stabilize btrfs instead adding new feature. But I=
+=20
+think that changing a label is a *essential* feature for a filesystem=20
+managing tool. Think about a mount by LABEL.
+
+
+To show a label
+
+$ btrfs filesystem label <device>
+
+To set a label
+
+$ btrfs filesystem label <device> <newlabel>
+
+Please guys, give a look to the source.=20
+Comments are welcome.
+
+You can pull the source from the branch "label" of the repository=20
 http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
-
-(or you can browse the changes at
-http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git/?p=3Dbtrfs-
-progs-unstable-all.git;a=3Dsummary)
-
-The patch is very simple: only updates the man page, the INSTALL file and
- moves/updates some lines in the help of btrfs command. Comments are welcom=
-e.
 
 Regards
 G.Baroncelli
 
- INSTALL        |   29 ++++++++++++++++++++---------
- btrfs.c        |   24 ++++++++++++------------
- man/btrfs.8.in |   45 +++++++++++++++++++++++++--------------------
- 3 files changed, 57 insertions(+), 41 deletions(-)
-
-
-diff --git a/INSTALL b/INSTALL
-index 16b45a5..3840148 100644
-=2D-- a/INSTALL
-+++ b/INSTALL
-@@ -22,23 +22,32 @@ in the e2fsprogs sources, and is usually available as=20
-libuuid or
- e2fsprogs-devel from various distros.
+diff --git a/Makefile b/Makefile
+index 525676e..c06e512 100644
+=2D-- a/Makefile
++++ b/Makefile
+@@ -4,7 +4,7 @@ CFLAGS =3D -g -Werror -Os
+ objects =3D ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
+ 	  root-tree.o dir-item.o file-item.o inode-item.o \
+ 	  inode-map.o crc32c.o rbtree.o extent-cache.o extent_io.o \
+=2D	  volumes.o utils.o btrfs-list.o
++	  volumes.o utils.o btrfs-list.o btrfslabel.o
 =20
- Building the utilities is just make ; make install.  The programs go
-=2Dinto /usr/local/bin.  The commands available are:
-+into /usr/local/bin.  The mains commands available are:
-=20
- mkfs.btrfs: create a filesystem
-=20
-=2Dbtrfsctl: control program to create snapshots and subvolumes:
-=2D
-+btrfs: control program to create snapshots and subvolumes:
-+	# mount a btrfs filesystem
- 	mount /dev/sda2 /mnt
-=2D	btrfsctl -s new_subvol_name /mnt
-=2D	btrfsctl -s snapshot_of_default /mnt/default
-=2D	btrfsctl -s snapshot_of_new_subvol /mnt/new_subvol_name
-=2D	btrfsctl -s snapshot_of_a_snapshot /mnt/snapshot_of_new_subvol
-+
-+	# create a subvolume
-+	btrfs subvolume create /mnt/new_subvol_name
-+
-+	# snapshot of a subvolume
-+	btrfs subvolume snapshot /mnt/default /mnt/snapshot_of_default=20
-+	btrfs subvolume snapshot /mnt/snapshot_of_default \
-+		/mnt/snapshot_of_a_snapshot
-+
-+	# list of the subvolumes
- 	ls /mnt
- 	default snapshot_of_a_snapshot snapshot_of_new_subvol
- 	new_subvol_name snapshot_of_default
-=20
-=2D	Snapshots and subvolumes cannot be deleted right now, but you can
-=2D	rm -rf all the files and directories inside them.
-+	# removal of a subvolume or a snapshot
-+	btrfs subvolume delete /mn/snapshot_of_a_snapshot
-+
-+	# look a the btrfs man page for further information
-+	man btrfs
-=20
- btrfsck: do a limited check of the FS extent trees.</li>
-=20
-@@ -46,3 +55,5 @@ debug-tree: print all of the FS metadata in text form. =20
-Example:
-=20
- 	debug-tree /dev/sda2 >& big_output_file
-=20
-+
-+
+ #
+ CHECKFLAGS=3D-D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ -Wbitwise \
 diff --git a/btrfs.c b/btrfs.c
-index 46314cf..8b3716a 100644
+index ab5e57f..ab0a9da 100644
 =2D-- a/btrfs.c
 +++ b/btrfs.c
-@@ -61,6 +61,11 @@ static struct Command commands[] =3D {
- 	{ do_subvol_list, 1, "subvolume list", "<path>\n"
- 		"List the snapshot/subvolume of a filesystem."
- 	},
-+	{ do_set_default_subvol, 2,
-+	  "subvolume set-default", "<id> <path>\n"
-+		"Set the subvolume of the filesystem <path> which will be=20
-mounted\n"
-+		"as default."
-+	},
- 	{ do_find_newer, 2, "subvolume find-new", "<path> <last_gen>\n"
- 		"List the recently modified files in a filesystem."
- 	},
-@@ -68,11 +73,6 @@ static struct Command commands[] =3D {
- 	  "filesystem defragment", "[-vcf] [-s start] [-l len] [-t size]=20
-<file>|<dir> [<file>|<dir>...]\n"
- 		"Defragment a file or a directory."
- 	},
-=2D	{ do_set_default_subvol, 2,
-=2D	  "subvolume set-default", "<id> <path>\n"
-=2D		"Set the subvolume of the filesystem <path> which will be=20
-mounted\n"
-=2D		"as default."
-=2D	},
- 	{ do_fssync, 1,
- 	  "filesystem sync", "<path>\n"
- 		"Force a sync on the filesystem <path>."
-@@ -83,29 +83,29 @@ static struct Command commands[] =3D {
- 		"will occupe all available space on the device."
- 	},
- 	{ do_show_filesystem, 999,
-=2D	  "filesystem show", "[<uuid>|<label>]\n"
-=2D		"Show the info of a btrfs filesystem. If no <uuid> or=20
-<label>\n"
-+	  "filesystem show", "[<device>|<uuid>|<label>]\n"
-+		"Show the info of a btrfs filesystem. If no argument\n"
- 		"is passed, info of all the btrfs filesystem are shown."
- 	},
- 	{ do_df_filesystem, 1,
- 	  "filesystem df", "<path>\n"
-=2D		"Show space usage information for a mount point\n."
-+		"Show space usage information for a mount point."
- 	},
- 	{ do_balance, 1,
+@@ -95,6 +95,10 @@ static struct Command commands[] =3D {
  	  "filesystem balance", "<path>\n"
  		"Balance the chunks across the device."
  	},
-=2D	{ do_scan,
-=2D	  999, "device scan", "[<device> [<device>..]\n"
-+	{ do_scan, 999,=20
-+	  "device scan", "[<device>...]\n"
++	{ do_change_label, -1,
++	  "filesystem label", "<device> [<label>]\n"
++		"Get or set a label of a filesystem."
++	},
+ 	{ do_scan,
+ 	  999, "device scan", "[<device> [<device>..]\n"
  		"Scan all device for or the passed device for a btrfs\n"
- 		"filesystem."
- 	},
- 	{ do_add_volume, -2,
-=2D	  "device add", "<dev> [<dev>..] <path>\n"
-+	  "device add", "<device> [<device>...] <path>\n"
- 		"Add a device to a filesystem."
- 	},
- 	{ do_remove_volume, -2,
-=2D	  "device delete", "<dev> [<dev>..] <path>\n"
-+	  "device delete", "<device> [<device>...] <path>\n"
+@@ -108,11 +112,6 @@ static struct Command commands[] =3D {
+ 	  "device delete", "<dev> [<dev>..] <path>\n"
  		"Remove a device from a filesystem."
  	},
- 	/* coming soon
+=2D	/* coming soon
+=2D	{ 2, "filesystem label", "<label> <path>\n"
+=2D		"Set the label of a filesystem"
+=2D	}
+=2D	*/
+ 	{ 0, 0 , 0 }
+ };
+=20
+diff --git a/btrfs_cmds.c b/btrfs_cmds.c
+index 8031c58..3f632c8 100644
+=2D-- a/btrfs_cmds.c
++++ b/btrfs_cmds.c
+@@ -40,6 +40,7 @@
+ #include "volumes.h"
+=20
+ #include "btrfs_cmds.h"
++#include "btrfslabel.h"
+=20
+ #ifdef __CHECKER__
+ #define BLKGETSIZE64 0
+@@ -834,6 +835,21 @@ int do_set_default_subvol(int nargs, char **argv)
+ 	return 0;
+ }
+=20
++int do_change_label(int nargs, char **argv)
++{
++	/* check the number of argument */
++	if ( nargs > 3 ){
++		fprintf(stderr, "ERROR: '%s' requires maximum 2 args\n",
++			argv[0]);
++		return -2;
++	}else if (nargs =3D=3D 2){
++		return get_label(argv[1]);
++	} else {	/* nargs =3D=3D 0 */
++		return set_label(argv[1], argv[2]);
++	}
++}
++
++
+ int do_df_filesystem(int nargs, char **argv)
+ {
+ 	struct btrfs_ioctl_space_args *sargs;
+diff --git a/btrfs_cmds.h b/btrfs_cmds.h
+index 7bde191..ab722d4 100644
+=2D-- a/btrfs_cmds.h
++++ b/btrfs_cmds.h
+@@ -32,3 +32,4 @@ int list_subvols(int fd);
+ int do_df_filesystem(int nargs, char **argv);
+ int find_updated_files(int fd, u64 root_id, u64 oldest_gen);
+ int do_find_newer(int argc, char **argv);
++int do_change_label(int argc, char **argv);
+diff --git a/btrfslabel.c b/btrfslabel.c
+new file mode 100644
+index 0000000..c9f4684
+=2D-- /dev/null
++++ b/btrfslabel.c
+@@ -0,0 +1,121 @@
++/*
++ * Copyright (C) 2008 Morey Roof.   All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#define _GNU_SOURCE
++
++#ifndef __CHECKER__
++#include <sys/ioctl.h>
++#include <sys/mount.h>
++#include "ioctl.h"
++#endif /* __CHECKER__ */
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <dirent.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <linux/fs.h>
++#include <linux/limits.h>
++#include <ctype.h>
++#include "kerncompat.h"
++#include "ctree.h"
++#include "utils.h"
++#include "version.h"
++#include "disk-io.h"
++#include "transaction.h"
++
++#define MOUNTED                        1
++#define UNMOUNTED                      2
++#define GET_LABEL                      3
++#define SET_LABEL                      4
++
++static void change_label_unmounted(char *dev, char *nLabel)
++{
++       struct btrfs_root *root;
++       struct btrfs_trans_handle *trans;
++
++       /* Open the super_block at the default location
++        * and as read-write.
++        */
++       root =3D open_ctree(dev, 0, 1);
++
++       trans =3D btrfs_start_transaction(root, 1);
++       strncpy(root->fs_info->super_copy.label, nLabel, BTRFS_LABEL_SIZE);
++       btrfs_commit_transaction(trans, root);
++
++       /* Now we close it since we are done. */
++       close_ctree(root);
++}
++
++static void get_label_unmounted(char *dev)
++{
++       struct btrfs_root *root;
++
++       /* Open the super_block at the default location
++        * and as read-only.
++        */
++       root =3D open_ctree(dev, 0, 0);
++
++       fprintf(stdout, "%s\n", root->fs_info->super_copy.label);
++
++       /* Now we close it since we are done. */
++       close_ctree(root);
++}
++
++int get_label(char *btrfs_dev)
++{
++
++	int ret;
++	ret =3D check_mounted(btrfs_dev);
++	if (ret < 0)
++	{
++	       fprintf(stderr, "FATAL: error checking %s mount status\n",=20
+btrfs_dev);
++	       return -1;
++	}
++
++	if(ret !=3D 0)
++	{
++	       fprintf(stderr, "FATAL: the filesystem has to be=20
+unmounted\n");
++	       return -2;
++	}
++	get_label_unmounted(btrfs_dev);
++	return 0;
++}
++
++
++int set_label(char *btrfs_dev, char *nLabel)
++{
++
++	int ret;
++	ret =3D check_mounted(btrfs_dev);
++	if (ret < 0)
++	{
++	       fprintf(stderr, "FATAL: error checking %s mount status\n",=20
+btrfs_dev);
++	       return -1;
++	}
++
++	if(ret !=3D 0)
++	{
++	       fprintf(stderr, "FATAL: the filesystem has to be=20
+unmounted\n");
++	       return -2;
++	}
++	change_label_unmounted(btrfs_dev, nLabel);
++	return 0;
++}
+diff --git a/btrfslabel.h b/btrfslabel.h
+new file mode 100644
+index 0000000..abf43ad
+=2D-- /dev/null
++++ b/btrfslabel.h
+@@ -0,0 +1,5 @@
++/* btrflabel.h */
++
++
++int get_label(char *btrfs_dev);
++int set_label(char *btrfs_dev, char *nLabel);
+\ No newline at end of file
 diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index 26ef982..5ec1a8d 100644
+index 26ef982..c1a8a42 100644
 =2D-- a/man/btrfs.8.in
 +++ b/man/btrfs.8.in
-@@ -15,21 +15,23 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBsubvolume set-default\fP\fI <id> <path>\fP
- .PP
-=2D\fBbtrfs\fP \fBfilesystem defrag\fP\fI <file>|<dir> [<file>|<dir>...]\fP
-+\fBbtrfs\fP \fBsubvolume find-new\fP\fI <subvolume> <last_gen>\fP
-+.PP
-+\fBbtrfs\fP \fBfilesystem balance\fP\fI <path> \fP
-+.PP
-+\fBbtrfs\fP \fBfilesystem defragment\fP\fI <file>|<dir> [<file>|<dir>...]\=
-fP
- .PP
- \fBbtrfs\fP \fBfilesystem sync\fP\fI <path> \fP
+@@ -21,6 +21,8 @@ btrfs \- control a btrfs filesystem
  .PP
  \fBbtrfs\fP \fBfilesystem resize\fP\fI [+/\-]<size>[gkm]|max <filesystem>\=
 fP
  .PP
-=2D\fBbtrfs\fP \fBdevice scan\fP\fI [<device> [<device>..]]\fP
-=2D.PP
-=2D\fBbtrfs\fP \fBdevice show\fP\fI <dev>|<label> [<dev>|<label>...]\fP
-+\fBbtrfs\fP \fBdevice scan\fP\fI [<device>...]\fP
++\fBbtrfs\fP \fBfilesystem label\fP\fI <dev> [newlabel]\fP
++.PP
+ \fBbtrfs\fP \fBdevice scan\fP\fI [<device> [<device>..]]\fP
  .PP
-=2D\fBbtrfs\fP \fBdevice balance\fP\fI <path> \fP
-+\fBbtrfs\fP \fBdevice show\fP\fI [<device>|<uuid>|<label>]\fP
- .PP
-=2D\fBbtrfs\fP \fBdevice add\fP\fI <dev> [<dev>..] <path> \fP
-+\fBbtrfs\fP \fBdevice add\fP\fI <device> [<device>...] <path> \fP
- .PP
-=2D\fBbtrfs\fP \fBdevice delete\fP\fI <dev> [<dev>..] <path> \fP]
-+\fBbtrfs\fP \fBdevice delete\fP\fI <device> [<device>...] <path> \fP]
-=20
- .PP
- \fBbtrfs\fP \fBhelp|\-\-help|\-h \fP\fI\fP
-@@ -47,17 +49,16 @@ For example: it is possible to run
- instead of
- .I btrfs subvolume snapshot.
- But
-=2D.I btrfs dev s
-+.I btrfs file s
- is not allowed, because
-=2D.I dev s
-+.I file s
- may be interpreted both as
-=2D.I device show
-+.I filesystem show
- and as
-=2D.I device scan.
-+.I filesystem sync.
- In this case
- .I btrfs
-=2Dreturns an error.
-=2D
-+returnsfilesystem sync
- If a command is terminated by
- .I --help
- , the relevant help is showed. If the passed command matches more commands,
-@@ -102,11 +103,15 @@ Set the subvolume of the filesystem \fI<path>\fR whic=
-h=20
-is mounted as
- is returned by the \fBsubvolume list\fR command.
- .TP
-=20
-+\fBsubvolume find-new\fR\fI <subvolume> <last_gen>\fR
-+List the recently modified files in a subvolume, after \fI<last_gen>\fR ID.
-+.TP
-+
- \fBfilesystem defragment\fP\fI <file>|<dir> [<file>|<dir>...]\fR
- Defragment files and/or directories.
- .TP
-=20
-=2D\fBdevice scan\fR \fI[<device> [<device>..]]\fR
-+\fBdevice scan\fR \fI[<device>...]\fR
- Scan devices for a btrfs filesystem. If no devices are passed, \fBbtrfs\fR=
-=20
-scans
- all the block devices.
- .TP
-@@ -138,21 +143,21 @@ can expand the partition before enlarging the filesys=
-tem=20
+ \fBbtrfs\fP \fBdevice show\fP\fI <dev>|<label> [<dev>|<label>...]\fP
+@@ -138,6 +140,23 @@ can expand the partition before enlarging the filesyst=
+em=20
 and shrink the
  partition after reducing the size of the filesystem.
  .TP
 =20
-=2D\fBfilesystem show\fR [<uuid>|<label>]\fR
-=2DShow the btrfs filesystem with some additional info. If no UUID or label=
- is
-=2Dpassed, \fBbtrfs\fR show info of all the btrfs filesystem.
-+\fBfilesystem show\fR [<device>|<uuid>|<label>]\fR
-+Show the btrfs filesystem with some additional info. If no argument is
-+passed, \fBbtrfs\fR shows info of all the btrfs filesystems.
- .TP
++\fBbtrfs\fP \fBfilesystem label\fP\fI <dev> [newlabel]\fP
++Show or update the label of a filesystem. \fI<dev>\fR is used to identify=
 =20
-=2D\fBdevice balance\fR \fI<path>\fR
-+\fBfilesystem balance\fR \fI<path>\fR
- Balance the chunks of the filesystem identified by \fI<path>\fR
- across the devices.
- .TP
+the
++filesystem.=20
++If a \fInewlabel\fR optional argument is passed, the label is changed. The
++following costraints exist for a label:
++.IP
++- the maximum allowable lenght shall be less or equal than 256 chars
++.IP
++- the label shall not  contain the '/' or '\\' characters.
++
++NOTE: Currently there are the following limitations:
++.IP
++- the filesystem has to be unmounted
++.IP
++- the filesystem should not have more than one device.
++.TP
++
+ \fBfilesystem show\fR [<uuid>|<label>]\fR
+ Show the btrfs filesystem with some additional info. If no UUID or label is
+ passed, \fBbtrfs\fR show info of all the btrfs filesystem.
+diff --git a/utils.c b/utils.c
+index 2f4c6e1..ea8e5b7 100644
+=2D-- a/utils.c
++++ b/utils.c
+@@ -587,7 +587,7 @@ error:
+ }
 =20
-=2D\fBdevice add\fR\fI <dev> [<dev>..] <path>\fR
-+\fBdevice add\fR\fI <device> [<device>...] <path>\fR
- Add device(s) to the filesystem identified by \fI<path>\fR.
- .TP
+ /*
+=2D * returns 1 if the device was mounted, < 0 on error or 0 if everything
++ * returns 1 if the device is mounted, < 0 on error or 0 if everything
+  * is safe to continue.  TODO, this should also scan multi-device=20
+filesystems
+  */
+ int check_mounted(char *file)
+@@ -638,6 +638,39 @@ int check_mounted(char *file)
+ 	return ret;
+ }
 =20
-=2D\fBdevice delete\fR\fI <dev> [<dev>..] <path>\fR
-+\fBdevice delete\fR\fI <device> [<device>...] <path>\fR
- Remove device(s) from a filesystem identified by \fI<path>\fR.
- .PP
++/* Gets the mount point of btrfs filesystem that is using the specified=20
+device.
++ * Returns 0 is everything is good, <0 if we have an error.
++ * TODO: Fix this fucntion and check_mounted to work with multiple drive=20
+BTRFS
++ * setups.
++ */
++int get_mountpt(char *dev, char *mntpt, size_t size)
++{
++       struct mntent *mnt;
++       FILE *f;
++       int ret =3D 0;
++
++       f =3D setmntent("/proc/mounts", "r");
++       if (f =3D=3D NULL)
++               return -errno;
++
++       while ((mnt =3D getmntent(f)) !=3D NULL )
++       {
++               if (strcmp(dev, mnt->mnt_fsname) =3D=3D 0)
++               {
++                       strncpy(mntpt, mnt->mnt_dir, size);
++                       break;
++               }
++       }
++
++       if (mnt =3D=3D NULL)
++       {
++               /* We didn't find an entry so lets report an error */
++               ret =3D -1;
++       }
++
++       return ret;
++}
++
+ struct pending_dir {
+ 	struct list_head list;
+ 	char name[256];
+@@ -820,3 +853,27 @@ char *pretty_sizes(u64 size)
+ 	return pretty;
+ }
 =20
-
++/*
++ * Checks to make sure that the label matches our requirements.
++ * Returns:
++       0    if everything is safe and usable
++      -1    if the label is too long
++      -2    if the label contains an invalid character
++ */
++int check_label(char *input)
++{
++       int i;
++       int len =3D strlen(input);
++
++       if (len > BTRFS_LABEL_SIZE) {
++               return -1;
++       }
++
++       for (i =3D 0; i < len; i++) {
++               if (input[i] =3D=3D '/' || input[i] =3D=3D '\\') {
++                       return -2;
++               }
++       }
++
++       return 0;
++}
+diff --git a/utils.h b/utils.h
+index 7ff542b..838b65e 100644
+=2D-- a/utils.h
++++ b/utils.h
+@@ -40,4 +40,6 @@ int check_mounted(char *devicename);
+ int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
+ 				 int super_offset);
+ char *pretty_sizes(u64 size);
++int check_label(char *input);
++int get_mountpt(char *dev, char *mntpt, size_t size);
+ #endif
 
 
 =2D-=20
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.i=
+gpg key@ keyserver.linux.it:Goffredo Baroncelli (ghigo) <kreijackATinwind.i=
 t>
 Key fingerprint =3D 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
 
---nextPart1465095.aAIM7pfx1D
+--nextPart2750410.uZi2po8Ins
 Content-Type: application/pgp-signature; name=signature.asc 
 Content-Description: This is a digitally signed message part.
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.10 (GNU/Linux)
 
-iD8DBQBM+9BBvwTxYT3FBRIRAlEcAJ90huPqWryDbcO1cVIFtOC85Irf1ACfdCSa
-ozqO2wNTa9FfeUrzlYPKlrU=
-=Cd17
+iD8DBQBM+9AEvwTxYT3FBRIRAmvRAJ4uQ16iHtrVMH5U7/uApSiF72EziACfRpjO
+hMtzDR/Go11EusdUDF0eejo=
+=OUas
 -----END PGP SIGNATURE-----
 
---nextPart1465095.aAIM7pfx1D--
+--nextPart2750410.uZi2po8Ins--

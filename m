@@ -1,117 +1,135 @@
-From: cwillu <cwillu@cwillu.com>
+From: Evert Vorster <evorster@gmail.com>
 Subject: Re: 800 GByte free, but "no space left"
-Date: Sun, 5 Dec 2010 04:36:29 -0600
-Message-ID: <AANLkTiktNawUi95WjtceJ6RfW_FG1S=brWtMY9ut=pJ9@mail.gmail.com>
-References: <AANLkTimza7z64TB43BkFoVgtf2SNkks_6dfy+iXafqHf@mail.gmail.com>
-	<BbJON$Fi1uB@helmut.hullen.de>
+Date: Sun, 5 Dec 2010 04:08:26 -0700
+Message-ID: <AANLkTim9nJrfHeFqLp4d+KYs4jX3hQBV_JTuSBCzFmu3@mail.gmail.com>
+References: <AANLkTimJ3dDdOFiQb8G=rrjCk2h68Y59oWdKEGH-80jN@mail.gmail.com>
+	<BbJOCYcD1uB@helmut.hullen.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: helmut@hullen.de
+To: Helmut Hullen <Hullen@t-online.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BbJON$Fi1uB@helmut.hullen.de>
+In-Reply-To: <BbJOCYcD1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Dec 5, 2010 at 3:51 AM, Helmut Hullen <Hullen@t-online.de> wrot=
-e:
-> Hallo, cwillu,
+On Sun, Dec 5, 2010 at 12:48 AM, Helmut Hullen <Hullen@t-online.de> wro=
+te:
+> Hallo, Evert,
 >
-> Du meintest am 05.12.10:
+> Du meintest am 04.12.10 zum Thema Re: 800 GByte free, but "no space l=
+eft":
 >
->>>> I am not an expert on this by a long shot, but it looks like you
->>>> added these two disks in raid0.
->
->>> I won't hope that this error is related to RAID0, I haven't
->>> installed (as far as I know) RAID0.
+>> On Sat, Dec 4, 2010 at 10:17 AM, Helmut Hullen <Hullen@t-online.de>
+>> wrote:
+>>> Hallo,
 >>>
->>> My installation way:
+>>> I wrote am 02.12.10:
 >>>
->>> (2-TByte-Disk)
+>>>> I use 2 disks (1.5 Tbyte and 2.0 TByte) under 1 LABEL (for my vide=
+o
+>>>> collection, nearly alle files have more than 1 GByte):
 >>>
->>> =A0 =A0 =A0 =A0mkfs.btrfs /dev/sdf2
->>> =A0 =A0 =A0 =A0mount /dev/sdf2 /srv/MM
+>>>> Label: MM2 =A0uuid: ad7c0668-316c-4a79-ba00-3b505b9d99b4
+>>>> =A0 =A0 =A0 Total devices 2 FS bytes used 2.38TB
+>>>> =A0 =A0 =A0 devid =A0 =A02 size 1.35TB used 1.35TB path /dev/sdc3
+>>>> =A0 =A0 =A0 devid =A0 =A01 size 1.81TB used 1.35TB path /dev/sdf2
 >>>
->>> (1.5-TByte-Disk)
->>> =A0 =A0 =A0 =A0btrfs device add /dev/sdc3 /srv/MM
->>> =A0 =A0 =A0 =A0btrfs filesystem balance /srv/MM
+>>>> ("btrfs-show" uses TiByte, it's 10% less than TByte)
 >>>
->>> (and then waiting about 1 day ...)
->>> Especially: no RAID definition.
+>>>> Btrfs Btrfs v0.19
+>>>
+>>>> Filesystem =A0 =A0 =A0 =A0 =A0 1K-blocks =A0 =A0 =A0Used Available=
+ Use% Mounted on
+>>>> /dev/sdc3 =A0 =A0 =A0 =A0 =A0 =A03400799848 2559596740 841203108 =A0=
+76% /srv/MM
+>>>
+>>>> --------------------------------
+>>>
+>>>> When I add some more videos, writing gets slower and slower, and
+>>>> then the system refuses with "no space left ..."
+>>>
+>>> [...]
 >
-> [...]
+>>> No help?
 >
->> If it's not a raid1, and there's multiple devices, it's a raid0 (and
->> so available space is the sum of all drives). =A0Your problem howeve=
-r
->> is that metadata is raid1 by default (where everything is duplicated
->> on separate drives).
+>> I am not an expert on this by a long shot, but it looks like you
+>> added these two disks in raid0.
 >
-> Maybe you're right. But if you're right then I have got the worst of =
-two
-> worlds. I don't want neither RAID0 nor RAID1, I want a bundle of
-> different disks (at least partititions) which seem to be one large di=
-sk.
-> And I've hoped btrfs does this job.
-
-That's what raid0 is, and it's actually the best of both worlds:  your
-metadata (which will be less than 5% of the data) is safely
-duplicated, such that you always have the checksums even with a disk
-gone, so you can verify that the data that you still have is good,
-while not wasting space duplicating every little bit of file data,
-which you may not care about that much, and which you have backed up
-anyway (right? right?).
-
-Larger files will be striped though, which is more incidental to how
-data is allocated to block groups, but even so, it's generally not as
-simple as saying "I don't want raid0, I just want a single big disk";
-you have to figure out how to do that, and it'll generally result in
-some raid0-like properties.
-
-This will almost certainly become much more tunable in the future, but
-not every feature that people want is done yet.  In fact, most of the
-really cool user-visible features aren't done yet.  Btrfs is still
-pretty young.
-
->> Adding another device will probably work around this, as will simply
->> running a balance operation (possibly, and you may need to free up
->> some space first anyway).
+>> This means that the total space cannot exceed the space of the
+>> smallest disk.
 >
-> That could lead to the following steps:
+>> ie: 1.35TB is the max you can use on any of your disks, as that is
+>> the size of the smallest disk. In other words, once any of the disks
+>> in a btrfs array runs out of space, the whole array is out of space.
 >
-> Buy a 3 GByte disk
+>> I don't know if this is intended, but it certainly would appear so.
 >
-> =A0 =A0 =A0 =A0btrfs device add /dev/sdxy /srv/MM
+> I won't hope that this error is related to RAID0, I haven't installed
+> (as far as I know) RAID0.
+>
+> My installation way:
+>
+> (2-TByte-Disk)
+>
+> =A0 =A0 =A0 =A0mkfs.btrfs /dev/sdf2
+> =A0 =A0 =A0 =A0mount /dev/sdf2 /srv/MM
+>
+> (1.5-TByte-Disk)
+> =A0 =A0 =A0 =A0btrfs device add /dev/sdc3 /srv/MM
 > =A0 =A0 =A0 =A0btrfs filesystem balance /srv/MM
 >
-> 1.5 TByte disk:
-> =A0 =A0 =A0 =A0btrfs device delete /dev/sdc3 /srv/MM
-> =A0 =A0 =A0 =A0btrfs filesystem balance /srv/MM
+> (and then waiting about 1 day ...)
+> Especially: no RAID definition.
 >
-> and then disconnect the 1.5 TByte disk (and hope that now the 2 TByte
-> disk sets the limits).
-> No nice way ...
+> If the smallest device defines the capacity then I should use 2*1.35
+> TiByte, but my system tells "no space left" at about 2.4 TiByte - whe=
+re
+> are (at least) 300 GiByte hidden?
 
-No, just run the balance without adding another disk.  That will
-probably work (although it _will_ take a while on a large filesystem).
+>>>       devid    2 size 1.35TB used 1.35TB path /dev/sdc3
+>>>       devid    1 size 1.81TB used 1.35TB path /dev/sdf2
 
-I'm not sure that you understand how this all works though;  you might
-want to re-read the wiki articles (which I believe have been freshened
-up recently).
+Here devid 2 is at 100%, and hence you are getting the no more space
+left errors. So, the 300 TB is on the bigger disk, and not usable for
+you right now.
 
-> Is there a way to avoid this (presumably) RAID mismatch?
+I know of the disk mode you speak.. an old raid card of mine called it
+"Just a bunch of disks" and it literally filled up the first disk
+before carrying on to the second one until that was full under
+windows... under UNIX it had the effect of just adding all the sectors
+to each other, and stretching the file system over the disks in a
+linear fashion. Most UNIX file systems writes files in the middle of
+the largest contiguous free space, which meant that some files got
+written on the first disk, and some on the second. As far as I know,
+btrfs does not support this raid mode.
 
-Yes, you can specify the raid level for each when you make the
-filesystem (and will eventually be able to do it with existing
-filesystems).  However, as I described above, you really want metadata
-to be duplicated.  Your problem is more of an unfortunate case of
-everything not being tuned quite right yet.
+Another thing to keep in mind is that as far as I know you cannot
+remove devid 1 from a btrfs volume. This is due to be fixed, but I
+have no idea on the status of that.
 
-> By the way: working with TByte disks includes (for home users) that
-> there's no backup ...
+Lastly, external USB disks are not too expensive, and together with
+rsync makes a good off-line backup solution.
 
-Not sure why you'd think that.  It can't be the bandwidth, and if you
-can't afford a second drive, there's a good case to be made that you
-can't afford the data you can't afford to lose.
+You could, if you really wanted to use all of two differently sized
+disks in a btrfs, subdivide the disks in equal sized partitions, and
+just put all of those partitions in a btrfs raid0...
+
+ie:
+
+Say you have a 1TB disk and 2TB disk... make 1TB partition on first
+disk, and two 1TB partitions on second disk, then add all three
+partitions to btrfs raid0 to make one volume of 3TB which will be
+fully usable.
+
+In your case:
+1.81 Tb and 1.3 Tb your best use of space would probably be 0.6Tb
+partitions.ie: 3x0.6Tb partitions on the first disk, and 2x0.6TB
+partitions on the second. Then add all five partitions to a btrfs
+raid. This would leave 0.1Tb of wasted space on the smaller device,
+but at least you can use this partition separately.
+
+Kind regards,
+-Evert Vorster-
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

@@ -1,51 +1,53 @@
-From: Heinz Diehl <htd@fritha.org>
-Subject: Re: [dm-devel] hunt for 2.6.37 dm-crypt+ext4 corruption?
-Date: Sun, 5 Dec 2010 15:33:16 +0100
-Message-ID: <20101205143316.GA9559@fritha.org>
-References: <4CF692D1.1010906@redhat.com>
- <AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com>
- <4CF6B3E8.2000406@redhat.com>
- <20101201212310.GA15648@redhat.com>
- <AANLkTimQtMvPVafWG_DffF-zXXpz1vBPXdCCwxRnzSGr@mail.gmail.com>
- <20101204193828.GB13871@redhat.com>
- <AANLkTinX_av7A-xT6hD-Df=tHxOOWhi7QkVezAUO3pW5@mail.gmail.com>
- <20101205100954.GA6564@fritha.org>
- <4CFB679D.5030900@redhat.com>
- <1B43E57B-8DA5-4B34-A8D4-18A710CC8BA7@mit.edu>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: Re: 800 GByte free, but "no space left"
+Date: 05 Dec 2010 15:33:00 +0100
+Message-ID: <BbJP6kxy1uB@helmut.hullen.de>
+References: <AANLkTinA81Zb102g4rmzp-+tR3Y_+1hrGh2EXW=xeCn4@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: device-mapper development <dm-devel@redhat.com>,
-	Jon Nelson <jnelson@jamponi.net>, htejun@gmail.com,
-	Matt <jackdachef@gmail.com>, Mike Snitzer <snitzer@redhat.com>,
-	Linux Kernel <linux-kernel@vger.kernel.org>,
-	Andi Kleen <andi@firstfloor.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	htd <htd@fancy-poultry.org>, linux-ext4@vger.kernel.org,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Theodore Tso <tytso@MIT.EDU>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <1B43E57B-8DA5-4B34-A8D4-18A710CC8BA7@mit.edu>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTinA81Zb102g4rmzp-+tR3Y_+1hrGh2EXW=xeCn4@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05.12.2010, Theodore Tso wrote: 
+Hallo, Evert,
 
-> As another thought, what version of GCC are people using who 
-> are having difficulty? Could this perhaps be a compiler-related issue?
+Du meintest am 05.12.10 zum Thema Re: 800 GByte free, but "no space lef=
+t":
 
-htd@liesel:~> gcc -v
-Using built-in specs.
-Target: x86_64-suse-linux
-Configured with: ../configure --prefix=/usr --infodir=/usr/share/info
---mandir=/usr/share/man --libdir=/usr/lib64 --libexecdir=/usr/lib64
---enable-languages=c,c++,objc,fortran,obj-c++,java,ada
---enable-checking=release --with-gxx-include-dir=/usr/include/c++/4.3
---enable-ssp --disable-libssp --with-bugurl=http://bugs.opensuse.org/
---with-pkgversion='SUSE Linux' --disable-libgcj --disable-libmudflap
---with-slibdir=/lib64 --with-system-zlib --enable-__cxa_atexit
---enable-libstdcxx-allocator=new --disable-libstdcxx-pch
---enable-version-specific-runtime-libs --program-suffix=-4.3
---enable-linux-futex --without-system-libunwind --with-cpu=generic
---build=x86_64-suse-linux
-Thread model: posix
-gcc version 4.3.2 [gcc-4_3-branch revision 141291] (SUSE Linux) 
+>>>>>> =A0 =A0 =A0 devid =A0 =A02 size 1.35TB used 1.35TB path /dev/sdc=
+3
+>>>>>> =A0 =A0 =A0 devid =A0 =A01 size 1.81TB used 1.35TB path /dev/sdf=
+2
 
+>>> Here devid 2 is at 100%, and hence you are getting the no more
+>>> space left errors. So, the 300 TB is on the bigger disk, and not
+>>> usable for you right now.
+
+>> =A0 I _think_ that a balance is all that's needed at this point. It
+>> can't hurt, anyway (other than taking quite a long time).
+
+> I am under the impression that as soon as one of the devices in a
+> btrfs is out of space, and write to that file system returns ENOSPACE
+> This certainly does look like it from this example, and from what I
+> have read elsewhere.
+
+Maybe - I don't know the code.
+
+But in my case "ENOSPACE" is returned too early.
+
+"btrfs-show" tells 2*1.35 TiByte used, but "no space left" is told when=
+ =20
+2.4 TiByte are used (2.38 TiByte is ok). That's 300 GiByte too early (o=
+r =20
+about 10% too early).
+
+Or am I wrong in interpreting the messages?
+
+Viele Gruesse!
+Helmut
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

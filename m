@@ -1,164 +1,95 @@
-From: Matt <jackdachef@gmail.com>
-Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
- barrier support is effective)
-Date: Sun, 5 Dec 2010 01:57:09 +0100
-Message-ID: <AANLkTimaRsW-+8828V1csF9ie4eVG-EyOBauEXeDfFY3@mail.gmail.com>
-References: <4CE05A9E.9090204@redhat.com>
-	<AANLkTimT0t3xqgKdAn7MBPD7ED-9uPS+WJE0z+K8tciu@mail.gmail.com>
-	<AANLkTik_p0yxQBQ3ehHWYPLfiqxGbSNUT5XUk9dC5-x6@mail.gmail.com>
-	<20101201165229.GC13415@redhat.com>
-	<AANLkTinG209iRAXgpNC0vNpn1C02wkYmVfveXRBqsKV-@mail.gmail.com>
-	<4CF692D1.1010906@redhat.com>
-	<AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com>
-	<4CF6B3E8.2000406@redhat.com>
-	<20101201212310.GA15648@redhat.com>
-	<AANLkTimQtMvPVafWG_DffF-zXXpz1vBPXdCCwxRnzSGr@mail.gmail.com>
-	<20101204193828.GB13871@redhat.com>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: Re: 800 GByte free, but "no space left"
+Date: 05 Dec 2010 08:48:00 +0100
+Message-ID: <BbJOCYcD1uB@helmut.hullen.de>
+References: <AANLkTimJ3dDdOFiQb8G=rrjCk2h68Y59oWdKEGH-80jN@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Milan Broz <mbroz@redhat.com>, Andi Kleen <andi@firstfloor.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	dm-devel <dm-devel@redhat.com>,
-	Linux Kernel <linux-kernel@vger.kernel.org>,
-	htd <htd@fancy-poultry.org>,
-	Chris Mason <chris.mason@oracle.com>, htejun@gmail.com,
-	linux-ext4@vger.kernel.org, Jon Nelson <jnelson@jamponi.net>
-To: Mike Snitzer <snitzer@redhat.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20101204193828.GB13871@redhat.com>
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTimJ3dDdOFiQb8G=rrjCk2h68Y59oWdKEGH-80jN@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Dec 4, 2010 at 8:38 PM, Mike Snitzer <snitzer@redhat.com> wrote=
-:
-> On Sat, Dec 04 2010 at =A02:18pm -0500,
-> Matt <jackdachef@gmail.com> wrote:
->
->> On Wed, Dec 1, 2010 at 10:23 PM, Mike Snitzer <snitzer@redhat.com> w=
-rote:
->> > Matt and Jon,
->> >
->> > If you'd be up to it: could you try testing your dm-crypt+ext4
->> > corruption reproducers against the following two 2.6.37-rc commits=
-:
->> >
->> > 1) 1de3e3df917459422cb2aecac440febc8879d410
->> > then
->> > 2) bd2d0210cf22f2bd0cef72eb97cf94fc7d31d8cc
->> >
->> > Then, depending on results of no corruption for those commits, bon=
-us
->> > points for testing the same commits but with Andi and Milan's late=
-st
->> > dm-crypt cpu scalability patch applied too:
->> > https://patchwork.kernel.org/patch/365542/
->> >
->> > Thanks!
->> > Mike
->> >
+Hallo, Evert,
+
+Du meintest am 04.12.10 zum Thema Re: 800 GByte free, but "no space lef=
+t":
+
+> On Sat, Dec 4, 2010 at 10:17 AM, Helmut Hullen <Hullen@t-online.de>
+> wrote:
+>> Hallo,
 >>
->> Hi Mike,
+>> I wrote am 02.12.10:
 >>
->> it seems like there isn't even much testing to do:
+>>> I use 2 disks (1.5 Tbyte and 2.0 TByte) under 1 LABEL (for my video
+>>> collection, nearly alle files have more than 1 GByte):
 >>
->> I tested all 3 commits / checkouts by re-compiling gcc which was/is
->> the 2nd easy way to trigger this "corruption", compiling google's
->> chromium (v9) and looking at the output/existance of gcc, g++ and
->> eselect opengl list
->
-> Can you be a bit more precise about what you're doing to reproduce?
-> What sequence? =A0What (if any) builds are going in parallel? =A0Etc.
->
->> so far everything went fine
+>>> Label: MM2 =A0uuid: ad7c0668-316c-4a79-ba00-3b505b9d99b4
+>>> =A0 =A0 =A0 Total devices 2 FS bytes used 2.38TB
+>>> =A0 =A0 =A0 devid =A0 =A02 size 1.35TB used 1.35TB path /dev/sdc3
+>>> =A0 =A0 =A0 devid =A0 =A01 size 1.81TB used 1.35TB path /dev/sdf2
 >>
->> After that I used the new patch (v6 or pre-v6), before that I had to
+>>> ("btrfs-show" uses TiByte, it's 10% less than TByte)
 >>
->> replace WQ_MEM_RECLAIM with WQ_RESCUER
+>>> Btrfs Btrfs v0.19
 >>
->> and, re-compiled the kernels
+>>> Filesystem =A0 =A0 =A0 =A0 =A0 1K-blocks =A0 =A0 =A0Used Available =
+Use% Mounted on
+>>> /dev/sdc3 =A0 =A0 =A0 =A0 =A0 =A03400799848 2559596740 841203108 =A0=
+76% /srv/MM
 >>
->> shortly after I had booted up the system with the first kernel
->> (http://git.eu.kernel.org/?p=3Dlinux/kernel/git/torvalds/linux-2.6.g=
-it;a=3Dcommit;h=3D5a87b7a5da250c9be6d757758425dfeaf8ed3179)
->> the output of 'eselect opengl list' did show no opengl backend
->> selected
+>>> --------------------------------
 >>
->> so it seems to manifest itself even earlier (ext4: call
->> mpage_da_submit_io() from mpage_da_map_blocks()) even if only subtly
->> and over time -
->> I'm still currently running that kernel and posting from it & having=
- tests run
->
-> OK.
->
->> I'm not sure if it's even a problem with ext4 - I haven't had the ti=
-me
->> to test with XFS yet - maybe it's also happening with that so it mor=
-e
->> likely would be dm-core, like Milan suspected
->> (http://marc.info/?l=3Dlinux-kernel&m=3D129123636223477&w=3D2) :(
->
-> It'd be interesting to try to reproduce with that same kernel but usi=
-ng
-> XFS. =A0I'll check with Milan on what he thinks would be the best nex=
-t
-> steps. =A0Ideally we'll be able to reproduce your results to aid in
-> pinpointing the issue. =A0I think Milan will be trying to do so short=
-ly
-> (if he hasn't started already -- using gentoo emerge, etc).
->
->> even though most of the time it's compiling I don't need to do much =
--
->> I need the box for work so if my time allows next tests would be nex=
-t
->> weekend and I'm back to my other partition
+>>> When I add some more videos, writing gets slower and slower, and
+>>> then the system refuses with "no space left ..."
 >>
->> I really do hope that this bugger can be nailed down ASAP - I like t=
-he
->> improvements made in 2.6.37 but without the dm-crypt multi-cpu patch
->> it's only half the "fun" ;)
->
-> Sure, we'll need to get to the bottom of this before we can have
-> confidence sending the dm-crypt cpu scalability patch upstream.
->
-> Thanks for your testing,
-> Mike
->
+>> [...]
 
-OK, before bed time I found some kind of corruption:
+>> No help?
 
-running kernel is from commit: bd2d0210cf22f2bd0cef72eb97cf94fc7d31d8cc
+> I am not an expert on this by a long shot, but it looks like you
+> added these two disks in raid0.
 
-the messages might be overseen - so they're difficult to notice:
+> This means that the total space cannot exceed the space of the
+> smallest disk.
 
-steps:
-1) bootup
-2) (might need to re-install graphics driver due to driver switch, in
-this case magic properties [or what's its name] didn't change so the
-kernel module still worked)
-3) firing up 2 xterms, xload, xclock, gksu -> terminal -> firefox,
-nautilus --no-desktop, gnome-mplayer (playing mp3)
-4) emerge -1 sys-devel/gcc (from one of the xterms)
+> ie: 1.35TB is the max you can use on any of your disks, as that is
+> the size of the smallest disk. In other words, once any of the disks
+> in a btrfs array runs out of space, the whole array is out of space.
 
-after emerge -1 sys-devel/gcc
-finished it displayed:
+> I don't know if this is intended, but it certainly would appear so.
 
->>> Auto-cleaning packages...
-portage: COUNTER for sys-devel/patch-2.6.1 was corrupted; resetting to
-value of 0
-portage: COUNTER for sys-devel/patch-2.6.1 was corrupted; resetting to
-value of 0
+I won't hope that this error is related to RAID0, I haven't installed =20
+(as far as I know) RAID0.
 
-(the COUNTER file normally should have a value, e.g.:
-cat /var/db/pkg/sys-devel/gcc-4.5.1-r1/COUNTER
-20560)
+My installation way:
 
-in this case it's empty:
-cat /var/db/pkg/sys-devel/patch-2.6.1/COUNTER
+(2-TByte-Disk)
 
-(shows nothing)
+        mkfs.btrfs /dev/sdf2
+        mount /dev/sdf2 /srv/MM
 
-reference thread: http://forums.gentoo.org/viewtopic-t-836605-start-0.h=
-tml
+(1.5-TByte-Disk)
+        btrfs device add /dev/sdc3 /srv/MM
+        btrfs filesystem balance /srv/MM
 
-it's solvable by re-install but in case of not-recoverable files (e.g.
-personal files) it would be critical
+(and then waiting about 1 day ...)
+Especially: no RAID definition.
+
+If the smallest device defines the capacity then I should use 2*1.35 =20
+TiByte, but my system tells "no space left" at about 2.4 TiByte - where=
+ =20
+are (at least) 300 GiByte hidden?
+
+---------------------------------------
+
+Kernel 2.6.35.8
+btrfs-git from 20101117
+
+Viele Gruesse!
+Helmut
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

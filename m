@@ -1,44 +1,52 @@
-From: "J. Bruce Fields" <bfields@redhat.com>
-Subject: Re: What to do about subvolumes?
-Date: Mon, 6 Dec 2010 11:48:45 -0500
-Message-ID: <20101206164844.GA22447@pad.home.fieldses.org>
-References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com>
- <20101203214526.GA4508@localhost.localdomain>
- <20101203222756.GF23339@dastard>
- <1291415351-sup-4820@think>
- <20101203224525.GC12491@pad.home.fieldses.org>
- <26801711-6DF9-4122-BCDF-033A1781C3E4@dilger.ca>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: Re: 800 GByte free, but "no space left"
+Date: 06 Dec 2010 18:13:00 +0100
+Message-ID: <BbNS4yay1uB@helmut.hullen.de>
+References: <20101206151804.GE4273@carfax.org.uk>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Dave Chinner <david@fromorbit.com>,
-	Josef Bacik <josef@redhat.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>, hch <hch@lst.de>,
-	ssorce <ssorce@redhat.com>
-To: Andreas Dilger <adilger.kernel@dilger.ca>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <26801711-6DF9-4122-BCDF-033A1781C3E4@dilger.ca>
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20101206151804.GE4273@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 03, 2010 at 04:01:44PM -0700, Andreas Dilger wrote:
-> On 2010-12-03, at 15:45, J. Bruce Fields wrote:
-> > We're using statfs64.fs_fsid for this; I believe that's both stable
-> > across reboots and distinguishes between subvolumes, so that's OK.
-> > 
-> > (That said, since fs_fsid doesn't work for other filesystems, we depend
-> > on an explicit check for a filesystem type of "btrfs", which is
-> > awful--btrfs won't always be the only filesystem that wants to do this
-> > kind of thing, etc.)
-> 
-> Sigh, I wanted to be able to specify the NFS FSID directly from within the kernel for Lustre many years already.  Glad to see that this is moving forward.
-> 
-> Any chance we can add a ->get_fsid(sb, inode) method to export_operations
-> (or something simiar), that allows the filesystem to generate an FSID based on the volume and inode that is being exported?
+Hallo, Hugo,
 
-No objection from here.
+Du meintest am 06.12.10:
 
-(Though I don't understand the inode argument--aren't "subvolumes"
-usually expected to have separate superblocks?)
+>> How can I see that changing the kernel makes things better? It's
+>> more and more difficult to externalize (?) btrfs directories to
+>> other disks ...
 
---b.
+>    Updating the kernel won't fix the problem I'm thinking of (sorry).
+> It will, however, fix the bug that stops the btrfs tool from
+> reporting what RAID levels you've got.
+
+>    The problem I suspect you may have (because your symptoms seem to
+> be the same as mine) is that there are some circumstances where the
+> filesystem can change RAID levels pretty much arbitrarily. Running
+> "btrfs fi df" with a kernel that reports RAID levels will show
+> whether that's the case, as you'll have more than one RAID level
+> listed.
+
+Kernel 2.6.35.8:
+
+# btrfs filesystem df /srv/MM
+Data: total=2.39TB, used=2.37TB
+Metadata: total=5.25GB, used=3.51GB
+System: total=12.00MB, used=188.00KB
+
+Kernel 2.6.37-rc4:
+
+# btrfs filesystem df /srv/MM
+Data, RAID0: total=2.39TB, used=2.37TB
+System, RAID1: total=8.00MB, used=188.00KB
+System: total=4.00MB, used=0.00
+Metadata, RAID1: total=4.25GB, used=3.51GB
+Metadata, DUP: total=1.00GB, used=2.33MB
+
+Hope it helps!
+
+Viele Gruesse!
+Helmut

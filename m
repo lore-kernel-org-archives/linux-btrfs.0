@@ -1,51 +1,65 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
+From: Hugo Mills <hugo-lkml@carfax.org.uk>
 Subject: Re: 800 GByte free, but "no space left"
-Date: 06 Dec 2010 15:45:00 +0100
-Message-ID: <BbNRoIAi1uB@helmut.hullen.de>
+Date: Mon, 6 Dec 2010 15:18:04 +0000
+Message-ID: <20101206151804.GE4273@carfax.org.uk>
 References: <20101206132817.GD4273@carfax.org.uk>
-Reply-To: helmut@hullen.de
+ <BbNRoIAi1uB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="9crTWz/Z+Zyzu20v"
+Cc: linux-btrfs@vger.kernel.org
+To: helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101206132817.GD4273@carfax.org.uk>
+In-Reply-To: <BbNRoIAi1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Hugo,
 
-Du meintest am 06.12.10:
+--9crTWz/Z+Zyzu20v
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
->>>    Can you try that again with either the latest 2.6.37-rc, or with
->>> the btrfs-unstable kernel? There's a bug in earlier versions that
->>> breaks the reporting of RAID types, which is what I wanted to see
->>> here.
+   Helmut - 
 
->> Compiling 2.6.37-rc is no big problem, it only needs som time.
+On Mon, Dec 06, 2010 at 03:45:00PM +0100, Helmut Hullen wrote:
+> If/when I install 2.6.37-rc4: should I update btrfs (from the 20101117  
+> version)?
 
-Compiling runs ..
+   I think that's the latest version.
 
->>>> And I don't dare running "balance" again - maybe it reduces the
->>>> available space again and again.
+> How can I see that changing the kernel makes things better? It's more  
+> and more difficult to externalize (?) btrfs directories to other disks  
+> ...
 
->>>    If you've hit the bug I think you have, then yes, it will.
+   Updating the kernel won't fix the problem I'm thinking of (sorry).
+It will, however, fix the bug that stops the btrfs tool from reporting
+what RAID levels you've got.
 
->> Hmm - it can't get worse ...
->> If the error is related to the kernel or to the btrfs version and I
->> try a newer one: can that lead to more free space?
+   The problem I suspect you may have (because your symptoms seem to
+be the same as mine) is that there are some circumstances where the
+filesystem can change RAID levels pretty much arbitrarily. Running
+"btrfs fi df" with a kernel that reports RAID levels will show whether
+that's the case, as you'll have more than one RAID level listed.
 
->    Not yet. I've taken the whole of December off work (using up my
-> leave allocation for last year), and my plan is to get myself to the
-> point where I can understand enough of the code to fix this
-> particular problem.
+   Hugo.
 
-I love such vacancies planning ...
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+  --- But people have always eaten people,  / what else is there to ---  
+         eat?  / If the Juju had meant us not to eat people / he         
+                     wouldn't have made us of meat.                      
 
-If/when I install 2.6.37-rc4: should I update btrfs (from the 20101117  
-version)?
+--9crTWz/Z+Zyzu20v
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
 
-How can I see that changing the kernel makes things better? It's more  
-and more difficult to externalize (?) btrfs directories to other disks  
-...
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
 
-Viele Gruesse!
-Helmut
+iD8DBQFM/P6sIKyzvlFcI40RAmh7AKCyvU4q17gh+ebyNjUZKZW8C75UXwCfST5G
+E0BwCb+9AdgoIZr1WUMgEbo=
+=2MCl
+-----END PGP SIGNATURE-----
+
+--9crTWz/Z+Zyzu20v--

@@ -1,78 +1,86 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: Re: 800 GByte free, but "no space left"
-Date: Mon, 6 Dec 2010 18:29:17 +0000
-Message-ID: <20101206182917.GF4273@carfax.org.uk>
-References: <20101206151804.GE4273@carfax.org.uk>
- <BbNS4yay1uB@helmut.hullen.de>
+From: Nirbheek Chauhan <nirbheek.chauhan@gmail.com>
+Subject: Re: "Appending" data to the middle of a file using btrfs-specific features
+Date: Tue, 7 Dec 2010 00:44:59 +0530
+Message-ID: <AANLkTi=1z3kPVyYxW1njwMfXyxoBPqHSZ2NQUG4X8uXN@mail.gmail.com>
+References: <AANLkTinXfbKmXYy52JF-QuJr0WTzgvbMXHAw-tYK4i5X@mail.gmail.com> <1291651254-sup-4263@think>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="hUH5gZbnpyIv7Mn4"
-Cc: linux-btrfs@vger.kernel.org
-To: helmut@hullen.de
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BbNS4yay1uB@helmut.hullen.de>
+In-Reply-To: <1291651254-sup-4263@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, Dec 6, 2010 at 9:35 PM, Chris Mason <chris.mason@oracle.com> wr=
+ote:
+> Excerpts from Nirbheek Chauhan's message of 2010-12-06 07:41:16 -0500=
+:
+[snip]
+>> Some possible use-cases of such a feature would be:
+>>
+>> (a) Databases (currently hack around this by allocating sparse files=
+)
+>> (b) Delta-patching (rsync, patch, xdelta, etc)
+>> (c) Video editors (especially if combined with reflink copies)
+>>
+>> Besides I/O savings, it would also have significant space savings if
+>> the current subvolume being written to has been snapshotted (a commo=
+n
+>> use-case for incremental backups).
+>>
+[snip]
+>> A hack I can think of is to do a BTRFS_IOC_CLONE_RANGE into a new fi=
+le
+>> (upto the offset), writing whatever data is required, and then doing
+>> another BTRFS_IOC_CLONE_RANGE with an offset for the rest of the
+>> original file. This can be followed by a rename() over the original
+>> file. Similarly for removing data from the middle of a file. Would
+>> this work? Would it be cleaner to implement something equivalent
+>> internally?
+>
+> It would work yes. =C2=A0The operation has three cases:
+>
+> 1) file size doesn't change
+> 2) extend the file with new bytes in the middle
+> 3) make the file smaller removing bytes in the middle
+>
+> #1 is the easiest case, you can just use the clone range ioctl direct=
+ly
+>
+> For #2 and #3, all of the file pointers past the bytes you want to ad=
+d
+> or remove need to be updated with a new file offset. =C2=A0I'd say fo=
+r an
+> initial implementation to use the IOC_CLONE_RANGE code, and after
+> everything is working we can look at optimizing it with a shift ioctl=
+ if
+> it makes sense.
+>
 
---hUH5gZbnpyIv7Mn4
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Alrighty, I'll try this and report back any bugs and/or suggestions.
 
-On Mon, Dec 06, 2010 at 06:13:00PM +0100, Helmut Hullen wrote:
-> Hallo, Hugo,
-> 
-> Du meintest am 06.12.10:
-> 
-> >> How can I see that changing the kernel makes things better? It's
-> >> more and more difficult to externalize (?) btrfs directories to
-> >> other disks ...
-> 
-> >    Updating the kernel won't fix the problem I'm thinking of (sorry).
-> > It will, however, fix the bug that stops the btrfs tool from
-> > reporting what RAID levels you've got.
-> 
-> >    The problem I suspect you may have (because your symptoms seem to
-> > be the same as mine) is that there are some circumstances where the
-> > filesystem can change RAID levels pretty much arbitrarily. Running
-> > "btrfs fi df" with a kernel that reports RAID levels will show
-> > whether that's the case, as you'll have more than one RAID level
-> > listed.
+> Of the use cases you list, video editors seems the most useful.
+> Databases already have things pretty much under control, and delta
+> patching wants to go to a new file anyway. =C2=A0Video editing softwa=
+re has
+> long been looking for ways to do this.
+>
 
-> Kernel 2.6.37-rc4:
-> 
-> # btrfs filesystem df /srv/MM
-> Data, RAID0: total=2.39TB, used=2.37TB
-> System, RAID1: total=8.00MB, used=188.00KB
-> System: total=4.00MB, used=0.00
-> Metadata, RAID1: total=4.25GB, used=3.51GB
-> Metadata, DUP: total=1.00GB, used=2.33MB
-> 
-> Hope it helps!
+As an aside, my primary motivation for this was that doing an
+incremental backup of things like git bare repositories and databases
+using btrfs subvolume snapshots is expensive w.r.t. disk space. Even
+though rsync calculates a binary delta before transferring data, it
+has to write everything out (except if just appending). So in that
+case, each "incremental" backup is hardly so.
 
-   Yup. You've got what I've got(*). You have two different RAID types
-for metadata, which shouldn't happen (but does, due to a bug).
+Thanks for your help! :)
 
-   Hugo.
+--=20
+~Nirbheek Chauhan
 
-(*) My .sig fairy is clearly working overtime for appropriate
-quotations. :)
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-   --- Charting the inexorable advance of Western syphilisation... ---   
-
---hUH5gZbnpyIv7Mn4
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFM/St9IKyzvlFcI40RAqM7AKCWrekHEEmMFeidJMyoN99r2XgOagCgzakK
-Abb+ipImO2BL2010AM+VFz4=
-=ohMF
------END PGP SIGNATURE-----
-
---hUH5gZbnpyIv7Mn4--
+Gentoo GNOME+Mozilla Team
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

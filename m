@@ -1,65 +1,64 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: Re: 800 GByte free, but "no space left"
-Date: Mon, 6 Dec 2010 15:18:04 +0000
-Message-ID: <20101206151804.GE4273@carfax.org.uk>
-References: <20101206132817.GD4273@carfax.org.uk>
- <BbNRoIAi1uB@helmut.hullen.de>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="9crTWz/Z+Zyzu20v"
-Cc: linux-btrfs@vger.kernel.org
-To: helmut@hullen.de
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: "Appending" data to the middle of a file using btrfs-specific features
+Date: Mon, 06 Dec 2010 11:05:02 -0500
+Message-ID: <1291651254-sup-4263@think>
+References: <AANLkTinXfbKmXYy52JF-QuJr0WTzgvbMXHAw-tYK4i5X@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Nirbheek Chauhan <nirbheek.chauhan@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BbNRoIAi1uB@helmut.hullen.de>
+In-reply-to: <AANLkTinXfbKmXYy52JF-QuJr0WTzgvbMXHAw-tYK4i5X@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Excerpts from Nirbheek Chauhan's message of 2010-12-06 07:41:16 -0500:
+> Hello,
+> 
+> I'd like to know if there has been any discussion about adding a new
+> feature to write (add) data at an offset, but without overwriting
+> existing data, or re-writing the existing data. Essentially, in-place
+> addition/removal of data to a file at a place other than the end of
+> the file.
+> 
+> Some possible use-cases of such a feature would be:
+> 
+> (a) Databases (currently hack around this by allocating sparse files)
+> (b) Delta-patching (rsync, patch, xdelta, etc)
+> (c) Video editors (especially if combined with reflink copies)
+> 
+> Besides I/O savings, it would also have significant space savings if
+> the current subvolume being written to has been snapshotted (a common
+> use-case for incremental backups).
+> 
+> I've been told that the problem is somewhat difficult to solve
+> properly under block-based representation of data, but I was hoping
+> that btrfs' reflink mechanism and its space-efficient packing of small
+> files might make it doable.
+> 
+> A hack I can think of is to do a BTRFS_IOC_CLONE_RANGE into a new file
+> (upto the offset), writing whatever data is required, and then doing
+> another BTRFS_IOC_CLONE_RANGE with an offset for the rest of the
+> original file. This can be followed by a rename() over the original
+> file. Similarly for removing data from the middle of a file. Would
+> this work? Would it be cleaner to implement something equivalent
+> internally?
 
---9crTWz/Z+Zyzu20v
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+It would work yes.  The operation has three cases:
 
-   Helmut - 
+1) file size doesn't change
+2) extend the file with new bytes in the middle
+3) make the file smaller removing bytes in the middle
 
-On Mon, Dec 06, 2010 at 03:45:00PM +0100, Helmut Hullen wrote:
-> If/when I install 2.6.37-rc4: should I update btrfs (from the 20101117  
-> version)?
+#1 is the easiest case, you can just use the clone range ioctl directly
 
-   I think that's the latest version.
+For #2 and #3, all of the file pointers past the bytes you want to add
+or remove need to be updated with a new file offset.  I'd say for an
+initial implementation to use the IOC_CLONE_RANGE code, and after
+everything is working we can look at optimizing it with a shift ioctl if
+it makes sense.
 
-> How can I see that changing the kernel makes things better? It's more  
-> and more difficult to externalize (?) btrfs directories to other disks  
-> ...
+Of the use cases you list, video editors seems the most useful.
+Databases already have things pretty much under control, and delta
+patching wants to go to a new file anyway.  Video editing software has
+long been looking for ways to do this.
 
-   Updating the kernel won't fix the problem I'm thinking of (sorry).
-It will, however, fix the bug that stops the btrfs tool from reporting
-what RAID levels you've got.
-
-   The problem I suspect you may have (because your symptoms seem to
-be the same as mine) is that there are some circumstances where the
-filesystem can change RAID levels pretty much arbitrarily. Running
-"btrfs fi df" with a kernel that reports RAID levels will show whether
-that's the case, as you'll have more than one RAID level listed.
-
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-  --- But people have always eaten people,  / what else is there to ---  
-         eat?  / If the Juju had meant us not to eat people / he         
-                     wouldn't have made us of meat.                      
-
---9crTWz/Z+Zyzu20v
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFM/P6sIKyzvlFcI40RAmh7AKCyvU4q17gh+ebyNjUZKZW8C75UXwCfST5G
-E0BwCb+9AdgoIZr1WUMgEbo=
-=2MCl
------END PGP SIGNATURE-----
-
---9crTWz/Z+Zyzu20v--
+-chris

@@ -1,46 +1,46 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
+From: Brian Rogers <brian@xyzw.org>
 Subject: Re: 800 GByte free, but "no space left"
-Date: 06 Dec 2010 08:43:00 +0100
-Message-ID: <BbNQohPi1uB@helmut.hullen.de>
-References: <BbJQ3vED1uB@helmut.hullen.de>
-Reply-To: helmut@hullen.de
+Date: Mon, 06 Dec 2010 01:56:31 -0800
+Message-ID: <4CFCB34F.1090504@xyzw.org>
+References: <BbJPrrUD1uB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Helmut Hullen <Hullen@t-online.de>, linux-btrfs@vger.kernel.org
+To: helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BbJQ3vED1uB@helmut.hullen.de>
+In-Reply-To: <BbJPrrUD1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo,
+On 12/05/2010 10:26 AM, Helmut Hullen wrote:
+>> So, by far the simplest solution would be to re-create your file
+>> system with "single" mode,
+> Can I add or delete hard disks/partitions to the two devices/partitions
+> in your example?
 
-I wrote am 05.12.10:
+You can add, but you'll want to avoid deleting, balancing, and 
+shrinking. From my testing, any of these operations will convert the 
+chunks they relocate to raid0. Then, once you have any raid0 data, btrfs 
+will want to allocate all new chunks as raid0 and you'll have the 
+unusable space problem again.
 
->>>>>>       devid    2 size 1.35TB used 1.35TB path /dev/sdc3
->>>>>>       devid    1 size 1.81TB used 1.35TB path /dev/sdf2
+> I've studied the man page and the Wiki but didn't find any help.
+>
+> And in my special case I have to add at least yearly new disks and from
+> time to time remove the smallest disks from this bundle.
 
->>> Here devid 2 is at 100%, and hence you are getting the no more
->>> space left errors. So, the 300 TB is on the bigger disk, and not
->>> usable for you right now.
+With the current state of btrfs, you could do this as long as you never 
+reduce the total number of disks. When you want to replace an old disk 
+with a new one, just go around btrfs: take the filesystem offline and 
+copy the old disk's partition into a full-sized partition on the new 
+disk. Then remove the old disk and bring the filesystem online again.
 
->>    I _think_ that a balance is all that's needed at this point. It
->> can't hurt, anyway (other than taking quite a long time).
+It will remember the old size at first, but that can be fixed with
 
-> After running "balance" it looks better:
+btrfs filesystem resize <devid>:max <path>
 
-> Label: 'MM2'  uuid: ad7c0668-316c-4a79-ba00-3b505b9d99b4
-> 	Total devices 2 FS bytes used 2.39TB
-> 	devid    2 size 1.35TB used 1.20TB path /dev/sdc3
-> 	devid    1 size 1.81TB used 1.20TB path /dev/sdf2
+Also, if you want metadata redundancy, you have to start your new 
+filesystem with two or more disks. Otherwise, the only way to change 
+metadata to raid1 is btrfs balance, which must be avoided.
 
-And now:
+Brian
 
-Filesystem           1K-blocks      Used Available Use% Mounted on
-/dev/sdc3            3400799848 2569770888 831028960  76% /srv/MM
-
-But after copying about 300 MByte (part of a 1.5-GByte *.mpg) I got "no  
-space left on device". Looks like balancing has stolen about 300 GByte.
-
-Time to buy a 3-TByte disk ...
-
-Viele Gruesse!
-Helmut

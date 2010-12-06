@@ -1,40 +1,35 @@
-From: Milan Broz <mbroz@redhat.com>
-Subject: Re: [dm-devel] hunt for 2.6.37 dm-crypt+ext4 corruption?
-Date: Sun, 05 Dec 2010 22:42:07 +0100
-Message-ID: <4CFC072F.8090302@redhat.com>
-References: <4CF692D1.1010906@redhat.com>	<AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com>	<4CF6B3E8.2000406@redhat.com> <20101201212310.GA15648@redhat.com>	<AANLkTimQtMvPVafWG_DffF-zXXpz1vBPXdCCwxRnzSGr@mail.gmail.com>	<20101204193828.GB13871@redhat.com>	<AANLkTinX_av7A-xT6hD-Df=tHxOOWhi7QkVezAUO3pW5@mail.gmail.com>	<20101205100954.GA6564@fritha.org> <4CFB679D.5030900@redhat.com>	<1B43E57B-8DA5-4B34-A8D4-18A710CC8BA7@mit.edu> <20101205202855.GA7668@basil.fritz.box>
-Mime-Version: 1.0
+From: =?ISO-8859-1?Q?J=E9r=F4me_Poulin?= <jeromepoulin@gmail.com>
+Subject: Re: [PATCH 5/5][REPOST][BTRFS-PROGS] Add the "btrfs filesystem label" command
+Date: Sun, 5 Dec 2010 19:48:24 -0500
+Message-ID: <-2756013869289248669@unknownmsgid>
+References: <201012051846.51124.kreijack@inwind.it>
+Mime-Version: 1.0 (iPhone Mail 8B117)
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Andi Kleen <andi@firstfloor.org>, Theodore Tso <tytso@MIT.EDU>,
-	Jon Nelson <jnelson@jamponi.net>, htejun@gmail.com,
-	Mike Snitzer <snitzer@redhat.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Linux Kernel <linux-kernel@vger.kernel.org>,
-	Matt <jackdachef@gmail.com>, htd <htd@fancy-poultry.org>,
-	Heinz Diehl <htd@fritha.org>, linux-ext4@vger.kernel.org,
-	Chris Mason <chris.mason@oracle.com>
-To: device-mapper development <dm-devel@redhat.com>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <20101205202855.GA7668@basil.fritz.box>
+Cc: "chris.mason@oracle.com" <chris.mason@oracle.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	Felix Blanke <felixblanke@gmail.com>
+To: "kreijack@inwind.it" <kreijack@inwind.it>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201012051846.51124.kreijack@inwind.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/05/2010 09:28 PM, Andi Kleen wrote:
->> I've been using a kernel which is between 2.6.37-rc2 and -rc3 with
->> a LUKS / dm-crypt / LVM / ext4 setup for my primary file systems,
->> and I haven't observed any corruption for the last two weeks or so.
->> It's on my todo list to upgrade to top of Linus's tree, but perhaps
->> this is a useful data point.
-> 
-> The reported corruptions are with a .37 forward port someone did of
-> my parallel kcryptd patch.  The 2.6.36 (and earlier) versions are
-> rock solid with many users.
+On 2010-12-05, at 12:47, Goffredo Baroncelli <kreijack@inwind.it> wrote:
 
-ok, to not confuse which patch version people are testing,
-let's use the version in Alasdair's DM repo now (upstream queue):
-http://www.kernel.org/pub/linux/kernel/people/agk/patches/2.6/editing/dm-crypt-scale-to-multiple-CPUs.patch
-(it should be the same as v5/v6 here on dm-devel -
-Andi's patch + my changes for device stacking deadlock)
+> Hi all,
+>
+> this patch adds the command "btrfs filesystem label" to change (or show) the
+> label of a filesystem.
+> This patch is a subset of the one written previously by Morey Roof. I
+> included the user space part only. So it is possible only to change/show a
 
-The same patch (just with minor define fix) is reported rock solid for 2.6.36.
+label of a *single device* and *umounted* filesystem.
 
-Milan
+
+Personally I really don't understand why changing the label of a
+mounted filesystem would cause any problem at all. Could someone
+explain that to me?
+
+Or at least the applet could include some force option for filesystem
+that can't be umounted, for example, root.
+
+Jerome

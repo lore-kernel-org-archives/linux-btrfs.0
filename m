@@ -1,59 +1,106 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: [RFC PATCH 4/4] btrfs: implement delayed dir index insertion
- and deletion
-Date: Mon, 06 Dec 2010 15:25:03 +0800
-Message-ID: <4CFC8FCF.5090807@cn.fujitsu.com>
-References: <4CF602BF.7010805@cn.fujitsu.com> <1291307496-sup-6170@think>
-Reply-To: miaox@cn.fujitsu.com
+From: "Goffredo Baroncelli <kreijack@libero.it>" <kreijack@libero.it>
+Subject: R: Re: [PATCH 5/5][REPOST][BTRFS-PROGS] Add the "btrfs filesystem
+ label" command
+Date: Mon, 6 Dec 2010 08:42:40 +0100 (CET)
+Message-ID: <33090918.1114211291621360513.JavaMail.defaultUser@defaultHost>
+Reply-To: "Goffredo Baroncelli <kreijack@libero.it>" <kreijack@libero.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain;charset="UTF-8"
+Cc: "chris.mason@oracle.com" <chris.mason@oracle.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	Felix Blanke <felixblanke@gmail.com>
+To: <jeromepoulin@gmail.com>, "kreijack@inwind.it" <kreijack@inwind.it>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1291307496-sup-6170@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On thu, 02 Dec 2010 11:33:40 -0500, Chris Mason wrote:
-> Excerpts from Miao Xie's message of 2010-12-01 03:09:35 -0500:
->> Compare with Ext3/4, the performance of file creation and deletion on btrfs
->> is very poor. the reason is that btrfs must do a lot of b+ tree insertions,
->> such as inode item, directory name item, directory name index and so on.
+
+>Da: jeromepoulin@gmail.com
+>Data: 06/12/2010 1.48
+>A: "kreijack@inwind.it"<kreijack@inwind.it>
+>Cc: "chris.mason@oracle.com"<chris.mason@oracle.com>, "linux-btrfs@vger.
+kernel.org"<linux-btrfs@vger.kernel.org>, "Felix Blanke"<felixblanke@gmail.
+com>
+>Ogg: Re: [PATCH 5/5][REPOST][BTRFS-PROGS] Add the &quot;btrfs filesystem 
+label&quot; command
+>
+>On 2010-12-05, at 12:47, Goffredo Baroncelli <kreijack@inwind.it> wrote:
+>
+>> Hi all,
 >>
->> If we can do some delayed b+ tree insertion or deletion, we can improve the
->> performance, so we made this patch which implemented delayed directory name
->> index insertion and deletion.
+>> this patch adds the command "btrfs filesystem label" to change (or show) 
+the
+>> label of a filesystem.
+>> This patch is a subset of the one written previously by Morey Roof. I
+>> included the user space part only. So it is possible only to change/show a
 >
-> Many thanks for working on this.  It's a difficult problem and these
-> patches look very clean.
->
-> I think you can get more improvement if you also do this delayed scheme
-> for the inode items themselves.
+>label of a *single device* and *umounted* filesystem.
 
-I think I can try to do it later.
+The label is changed on  *every devices*. I tested it (on a machine without 
+btrfs) 
+and I confirm that. 
 
-> The hard part of these delayed implementations is always the throttling,
->
-> +    if (delayed_root->count>= root->leafsize / sizeof(*dir_item))
-> +        btrfs_run_delayed_dir_index(trans, root, NULL,
-> +                        BTRFS_DELAYED_INSERT_ITEM, 0);
-> +
->
-> Have you experimented with other values here?
+$ for i in 1 2 ; do dd if=/dev/zero of=img$i bs=1M count=520; done
+$ sudo losetup -f img1
+$ sudo losetup -f img2
+$ sudo losetup -a 
+/dev/loop0: [0801]:3965895 (img1)
+/dev/loop1: [0801]:3965896 (img2)
+$ sudo mkfs.btrfs -L test1 /dev/loop[01]
+< removed some messages>
+$ sudo blkid /dev/loop[01]
+/dev/loop0: LABEL="test1" UUID="764ac2d3-dd37-4a64-8cfe-db118da8f09f" 
+UUID_SUB="da978017-61c4-488c-9a79-b58271f2b615" TYPE="btrfs"
+/dev/loop1: LABEL="test1" UUID="764ac2d3-dd37-4a64-8cfe-db118da8f09f" 
+UUID_SUB="83ea15d5-db8f-4605-96ec-77807502627b" TYPE="btrfs"
+$ sudo btrfs-progs-unstable/btrfs file labe /dev/loop0
+failed to open /dev/btrfs-control skipping device registration
+failed to open /dev/btrfs-control skipping device registration
+failed to open /dev/btrfs-control skipping device registration
+failed to open /dev/btrfs-control skipping device registration
+test1
+$ sudo btrfs-progs-unstable/btrfs file labe /dev/loop0 test2
+failed to open /dev/btrfs-control skipping device registration
+failed to open /dev/btrfs-control skipping device registration
+failed to open /dev/btrfs-control skipping device registration
+failed to open /dev/btrfs-control skipping device registration
+$ sudo btrfs file labe /dev/loop1
+failed to open /dev/btrfs-control skipping device registration
+failed to open /dev/btrfs-control skipping device registration
+failed to open /dev/btrfs-control skipping device registration
+failed to open /dev/btrfs-control skipping device registration
+test2
+$ sudo blkid /dev/loop[01]
+/dev/loop0: LABEL="test2" UUID="764ac2d3-dd37-4a64-8cfe-db118da8f09f" 
+UUID_SUB="da978017-61c4-488c-9a79-b58271f2b615" TYPE="btrfs"
+/dev/loop1: LABEL="test2" UUID="764ac2d3-dd37-4a64-8cfe-db118da8f09f" 
+UUID_SUB="83ea15d5-db8f-4605-96ec-77807502627b" TYPE="btrfs"
 
-Yes, I have tried to set it to other values(such as 40, 100), or remove this check.
-Though the performance becomes better as the number increases, the reserved space
-that fs needs become larger, if the fs space is not enough, btrfs will call
-shrink_delalloc(), the performance drops rapidly.
 
-Maybe we can use a background work thread to do b+ tree insertion and deletion,
-and implement it just like dirty page write back mechanism.
+On the basis of which test your results are different ? 
 
-> I need to take a hard look at the locking and do some benchmarking on
-> larger machines.  I'm a little worried about increased lock contention,
-> but I think we can get around it by breaking up the rbtrees a little
-> later on if we need to.
+>Personally I really don't understand why changing the label of a
+>mounted filesystem would cause any problem at all. Could someone
+>explain that to me?
 
-Yes, we can create rb-tree for every directory.
+Because btrfs rewrite the superblock quite often. So if you change the 
+superblock from the user space when a btrfs filesystem is mounted, it is likely 
+that your change is over-written. Or, worse, the changing of  the superblock 
+from the user space may lead to a corruption of the filesystem.
 
-Thanks
-Miao
+>Or at least the applet could include some force option for filesystem
+>that can't be umounted, for example, root.
+
+This request (changing the label of the root filesystem) requires a changing 
+in the kernel side. 
+
+>Jerome
+
+Goffredo
+
+>--
+>To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>the body of a message to majordomo@vger.kernel.org
+>More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+

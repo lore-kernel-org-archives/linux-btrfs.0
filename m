@@ -1,150 +1,82 @@
-From: Sage Weil <sage@newdream.net>
-Subject: Re: [PATCH 1/5] btrfs: Make async snapshot ioctl more generic
-Date: Tue, 7 Dec 2010 11:04:36 -0800 (PST)
-Message-ID: <Pine.LNX.4.64.1012071057230.29827@cobra.newdream.net>
-References: <4CF35E17.6050705@cn.fujitsu.com> <4CF35E28.4070206@cn.fujitsu.com>
+From: Chris Mason <chris.mason@ORACLE.COM>
+Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt barrier support is effective)
+Date: Tue, 07 Dec 2010 13:52:33 -0500
+Message-ID: <1291747731-sup-3099@think>
+References: <AANLkTinG209iRAXgpNC0vNpn1C02wkYmVfveXRBqsKV-@mail.gmail.com> <4CF692D1.1010906@redhat.com> <AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com> <4CF6B3E8.2000406@redhat.com> <20101201212310.GA15648@redhat.com> <AANLkTimQtMvPVafWG_DffF-zXXpz1vBPXdCCwxRnzSGr@mail.gmail.com> <20101204193828.GB13871@redhat.com> <AANLkTin3A_ySn_sZQPqZMn-NORnteQZwTVVSiW_=r3sO@mail.gmail.com> <20101207142145.GA27861@think> <AANLkTikJt-ZOmzj68Jw92rjGHzu0EP-uCVD+eNSO=vGd@mail.gmail.com> <20101207182243.GB21112@redhat.com> <AANLkTikOXjh+D25=7Mzwn7bFN+a9xQSimPHs22q4o2TK@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Li Zefan <lizf@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-To: chris.mason@oracle.com
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4CF35E28.4070206@cn.fujitsu.com>
+Content-Type: TEXT/PLAIN; charset=ISO-8859-1
+Cc: Mike Snitzer <snitzer@redhat.com>, Matt <jackdachef@gmail.com>,
+	Milan Broz <mbroz@redhat.com>,
+	Andi Kleen <andi@firstfloor.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	dm-devel <dm-devel@redhat.com>,
+	Linux Kernel <linux-kernel@vger.kernel.org>,
+	htd <htd@fancy-poultry.org>, htejun <htejun@gmail.com>,
+	linux-ext4 <linux-ext4@vger.kernel.org>
+To: Jon Nelson <jnelson@jamponi.net>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-reply-to: <AANLkTikOXjh+D25=7Mzwn7bFN+a9xQSimPHs22q4o2TK@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+Excerpts from Jon Nelson's message of 2010-12-07 13:45:14 -0500:
+> On Tue, Dec 7, 2010 at 12:22 PM, Mike Snitzer <snitzer@redhat.com> wr=
+ote:
+> > On Tue, Dec 07 2010 at =C2=A01:10pm -0500,
+> > Jon Nelson <jnelson@jamponi.net> wrote:
+> >
+> >> I finally found some time to test this out. With 2.6.37-rc4 (openS=
+USE
+> >> KOTD kernel) I easily encounter the issue.
+> >>
+> >> Using a virtual machine, I created a stock, minimal openSUSE 11.3 =
+x86_64
+> >> install, installed all updates, installed postgresql and the 'KOTD=
+'
+> >> (Kernel of the Day)
+> >> kernel, and ran the following tests (as postgres user because I'm
+> >> lazy).
+> >>
+> >> 1. create a database (from bash):
+> >>
+> >> createdb test
+> >>
+> >> 2. place the following contents in a file (I used 't.sql'):
+> >>
+> >> begin;
+> >> create temporary table foo as select x as a, ARRAY[x] as b FROM
+> >> generate_series(1, 10000000 ) AS x;
+> >> create index foo_a_idx on foo (a);
+> >> create index foo_b_idx on foo USING GIN (b);
+> >> rollback;
+> >>
+> >> 3. execute that sql:
+> >>
+> >> psql -f t.sql --echo-all test
+> >>
+> >>
+> >> With 2.6.34.7 I can re-run [3] all day long, as many times as I wa=
+nt,
+> >> without issue.
+> >>
+> >> With 2.6.37-rc4-13 (the currently-installed KOTD kernel) if tails
+> >> pretty frequently.
+> >
+> > How does it fail? =C2=A0postgres errors? =C2=A0kernel errors?
+>=20
+> postgresql errors. Typically, header corruption but from the limited
+> visibility I've had into this via strace, what I see is zeroed pages
+> where there shouldn't be.
 
-Is this ioctl change destined for 2.6.37?  If it (or something similar) 
-looks good it should probably be merged (independent of the rest of the 
-series) this time around before we're stuck with the current version.
+This sounds a lot like a bug higher up than dm-crypt.  Zeros tend to
+come from some piece of code explicitly filling a page with zeros, and
+that often happens in the corner cases for O_DIRECT and a few other
+places in the filesystem.
 
-Thanks-
-sage
+Have you tried triggering this with a regular block device?
 
-
-On Mon, 29 Nov 2010, Li Zefan wrote:
-
-> So we don't have to add new structures as we create more ioctls
-> for snapshots.
-> 
-> Now to create async snapshot, set BTRFS_SNAPSHOT_CREATE_ASYNC bit of
-> vol_arg_v2->flags, and then call ioctl(BTRFS_IOCT_SNAP_CREATE_V2).
-> 
-> Note: this changes the async snapshot ioctl ABI, which was merged
-> in .37 merge window, so we have to make this change into .37.
-> 
-> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
-> ---
->  fs/btrfs/ioctl.c |   34 +++++++++++++++++++++-------------
->  fs/btrfs/ioctl.h |   12 ++++++++----
->  2 files changed, 29 insertions(+), 17 deletions(-)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 463d91b..d3f1a60 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -935,23 +935,31 @@ out:
->  
->  static noinline int btrfs_ioctl_snap_create(struct file *file,
->  					    void __user *arg, int subvol,
-> -					    int async)
-> +					    bool v2)
->  {
->  	struct btrfs_ioctl_vol_args *vol_args = NULL;
-> -	struct btrfs_ioctl_async_vol_args *async_vol_args = NULL;
-> +	struct btrfs_ioctl_vol_args_v2 *vol_args_v2 = NULL;
->  	char *name;
->  	u64 fd;
->  	u64 transid = 0;
-> +	bool async = false;
->  	int ret;
->  
-> -	if (async) {
-> -		async_vol_args = memdup_user(arg, sizeof(*async_vol_args));
-> -		if (IS_ERR(async_vol_args))
-> -			return PTR_ERR(async_vol_args);
-> +	if (v2) {
-> +		vol_args_v2 = memdup_user(arg, sizeof(*vol_args_v2));
-> +		if (IS_ERR(vol_args_v2))
-> +			return PTR_ERR(vol_args_v2);
->  
-> -		name = async_vol_args->name;
-> -		fd = async_vol_args->fd;
-> -		async_vol_args->name[BTRFS_SNAPSHOT_NAME_MAX] = '\0';
-> +		if (vol_args_v2->flags & ~BTRFS_SNAPSHOT_CREATE_ASYNC) {
-> +			ret = -EINVAL;
-> +			goto out;
-> +		}
-> +
-> +		name = vol_args_v2->name;
-> +		fd = vol_args_v2->fd;
-> +		vol_args_v2->name[BTRFS_SNAPSHOT_NAME_MAX] = '\0';
-> +		if (vol_args_v2->flags & BTRFS_SNAPSHOT_CREATE_ASYNC)
-> +			async = true;
->  	} else {
->  		vol_args = memdup_user(arg, sizeof(*vol_args));
->  		if (IS_ERR(vol_args))
-> @@ -966,13 +974,13 @@ static noinline int btrfs_ioctl_snap_create(struct file *file,
->  
->  	if (!ret && async) {
->  		if (copy_to_user(arg +
-> -				offsetof(struct btrfs_ioctl_async_vol_args,
-> +				offsetof(struct btrfs_ioctl_vol_args_v2,
->  				transid), &transid, sizeof(transid)))
->  			return -EFAULT;
->  	}
-> -
-> +out:
->  	kfree(vol_args);
-> -	kfree(async_vol_args);
-> +	kfree(vol_args_v2);
->  
->  	return ret;
->  }
-> @@ -2235,7 +2243,7 @@ long btrfs_ioctl(struct file *file, unsigned int
->  		return btrfs_ioctl_getversion(file, argp);
->  	case BTRFS_IOC_SNAP_CREATE:
->  		return btrfs_ioctl_snap_create(file, argp, 0, 0);
-> -	case BTRFS_IOC_SNAP_CREATE_ASYNC:
-> +	case BTRFS_IOC_SNAP_CREATE_V2:
->  		return btrfs_ioctl_snap_create(file, argp, 0, 1);
->  	case BTRFS_IOC_SUBVOL_CREATE:
->  		return btrfs_ioctl_snap_create(file, argp, 1, 0);
-> diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-> index 17c99eb..bc70584 100644
-> --- a/fs/btrfs/ioctl.h
-> +++ b/fs/btrfs/ioctl.h
-> @@ -30,10 +30,14 @@ struct btrfs_ioctl_vol_args {
->  	char name[BTRFS_PATH_NAME_MAX + 1];
->  };
->  
-> -#define BTRFS_SNAPSHOT_NAME_MAX 4079
-> -struct btrfs_ioctl_async_vol_args {
-> +#define BTRFS_SNAPSHOT_CREATE_ASYNC	(1ULL << 0)
-> +
-> +#define BTRFS_SNAPSHOT_NAME_MAX 4039
-> +struct btrfs_ioctl_vol_args_v2 {
->  	__s64 fd;
->  	__u64 transid;
-> +	__u64 flags;
-> +	__u64 unused[4];
->  	char name[BTRFS_SNAPSHOT_NAME_MAX + 1];
->  };
->  
-> @@ -187,6 +191,6 @@ struct btrfs_ioctl_space_args {
->  				    struct btrfs_ioctl_space_args)
->  #define BTRFS_IOC_START_SYNC _IOR(BTRFS_IOCTL_MAGIC, 24, __u64)
->  #define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
-> -#define BTRFS_IOC_SNAP_CREATE_ASYNC _IOW(BTRFS_IOCTL_MAGIC, 23, \
-> -				   struct btrfs_ioctl_async_vol_args)
-> +#define BTRFS_IOC_SNAP_CREATE_V2 _IOW(BTRFS_IOCTL_MAGIC, 23, \
-> +				   struct btrfs_ioctl_vol_args_v2)
->  #endif
-> -- 
-> 1.6.3
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
+-chris
+--
+To unsubscribe from this list: send the line "unsubscribe linux-ext4" i=
+n
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

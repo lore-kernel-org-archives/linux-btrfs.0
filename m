@@ -1,31 +1,26 @@
-From: Christoph Hellwig <hch@lst.de>
+From: hch <hch@lst.de>
 Subject: Re: What to do about subvolumes?
-Date: Tue, 7 Dec 2010 17:51:28 +0100
-Message-ID: <20101207165128.GB21375@lst.de>
-References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com> <20101203214526.GA4508@localhost.localdomain> <20101203222756.GF23339@dastard>
+Date: Tue, 7 Dec 2010 17:52:13 +0100
+Message-ID: <20101207165212.GC21375@lst.de>
+References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com> <20101203214526.GA4508@localhost.localdomain> <20101203222756.GF23339@dastard> <1291415351-sup-4820@think> <20101203224525.GC12491@pad.home.fieldses.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, chris.mason@oracle.com, hch@lst.de,
-	ssorce@redhat.com, bfields@redhat.com
-To: Dave Chinner <david@fromorbit.com>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20101203222756.GF23339@dastard>
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Dave Chinner <david@fromorbit.com>,
+	Josef Bacik <josef@redhat.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>, hch <hch@lst.de>,
+	ssorce <ssorce@redhat.com>
+To: "J. Bruce Fields" <bfields@redhat.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20101203224525.GC12491@pad.home.fieldses.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Dec 04, 2010 at 09:27:56AM +1100, Dave Chinner wrote:
-> A property of NFS fileshandles is that they must be stable across
-> server reboots. Is this anon dev_t used as part of the NFS
-> filehandle and if so how can you guarantee that it is stable?
+On Fri, Dec 03, 2010 at 05:45:26PM -0500, J. Bruce Fields wrote:
+> We're using statfs64.fs_fsid for this; I believe that's both stable
+> across reboots and distinguishes between subvolumes, so that's OK.
 
-It's just as stable as a real dev_t in the times of hotplug and udev.
-As long as you don't touch anything including not upgrading the kernel
-it's remain stable, otherwise it will break.  That's why modern
-nfs-utils default to using the uuid-based filehandle schemes instead of
-the dev_t based ones.  At least that's what I told - I really hope it's
-using the real UUIDs from the filesystem and not the horrible fsid hack
-that was once added - for some filesystems like XFS that field does not
-actually have any relation to the UUID historically.  And while we could
-have changed that it's too late now that nfs was hacked into abusing
-that field.
+It's a field that doesn't have any useful specification and basically
+contains random garbage that a filesystem put into it.  Using it is a
+very bad idea.
 

@@ -1,64 +1,105 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: The value displayed by 'ls -s' command is strange.
-Date: Tue, 07 Dec 2010 14:29:26 -0500
-Message-ID: <1291750008-sup-1758@think>
-References: <4CFDE978.9050407@jp.fujitsu.com> <1291743093-sup-2051@think> <AANLkTi=yQGxx7P=EoAP1sOg5rakmSmb-y+5OTeGbJnyx@mail.gmail.com>
+From: Jon Nelson <jnelson@jamponi.net>
+Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
+ barrier support is effective)
+Date: Tue, 7 Dec 2010 13:34:40 -0600
+Message-ID: <AANLkTin-Bvq9bNgarZGZhbK_2EONdu8x-qaLCLFcc1F_@mail.gmail.com>
+References: <AANLkTinG209iRAXgpNC0vNpn1C02wkYmVfveXRBqsKV-@mail.gmail.com>
+ <4CF692D1.1010906@redhat.com> <AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com>
+ <4CF6B3E8.2000406@redhat.com> <20101201212310.GA15648@redhat.com>
+ <AANLkTimQtMvPVafWG_DffF-zXXpz1vBPXdCCwxRnzSGr@mail.gmail.com>
+ <20101204193828.GB13871@redhat.com> <AANLkTin3A_ySn_sZQPqZMn-NORnteQZwTVVSiW_=r3sO@mail.gmail.com>
+ <20101207142145.GA27861@think> <AANLkTikJt-ZOmzj68Jw92rjGHzu0EP-uCVD+eNSO=vGd@mail.gmail.com>
+ <20101207182243.GB21112@redhat.com> <AANLkTikOXjh+D25=7Mzwn7bFN+a9xQSimPHs22q4o2TK@mail.gmail.com>
+ <1291747731-sup-3099@think>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=ISO-8859-1
-Cc: Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Mike Fedyk <mfedyk@mikefedyk.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <AANLkTi=yQGxx7P=EoAP1sOg5rakmSmb-y+5OTeGbJnyx@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Mike Snitzer <snitzer@redhat.com>, Matt <jackdachef@gmail.com>,
+	Milan Broz <mbroz@redhat.com>,
+	Andi Kleen <andi@firstfloor.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	dm-devel <dm-devel@redhat.com>,
+	Linux Kernel <linux-kernel@vger.kernel.org>,
+	htd <htd@fancy-poultry.org>, htejun <htejun@gmail.com>,
+	linux-ext4 <linux-ext4@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <1291747731-sup-3099@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Mike Fedyk's message of 2010-12-07 14:16:55 -0500:
-> On Tue, Dec 7, 2010 at 10:44 AM, Chris Mason <chris.mason@oracle.com>=
- wrote:
-> > Excerpts from Tsutomu Itoh's message of 2010-12-07 02:59:52 -0500:
-> >> Hi,
-> >>
-> >> I think that the disk allocation size of each file becomes a monot=
-one increase
-> >> when the file is made.
-> >> But, it sometimes return to 0. =C2=A0Is it correct?
-> >
-> > Well, there's a window during the processing of delayed allocation =
-where
-> > we don't have the bytes recorded as delalloc and we don't have the =
-bytes
-> > recorded in the inode yet. =C2=A0That's why they are showing up as =
-zero.
-> >
-> > We don't call inode_add_bytes() until after we insert the extent, b=
-ut we
-> > drop the delalloc byte count on the file before the IO is done.
-> >
-> > Fixing it will be a little tricky because all the extent accounting
-> > assumes the inode_add_bytes happens at extent insertion time.
-> >
->=20
-> How does opening the inode with O_APPEND during this window know wher=
-e
-> to write the bytes?  If it's a pointer/cursor to the EOF then that
-> size could be used during the window.  Is that right?
+On Tue, Dec 7, 2010 at 12:52 PM, Chris Mason <chris.mason@oracle.com> w=
+rote:
+> Excerpts from Jon Nelson's message of 2010-12-07 13:45:14 -0500:
+>> On Tue, Dec 7, 2010 at 12:22 PM, Mike Snitzer <snitzer@redhat.com> w=
+rote:
+>> > On Tue, Dec 07 2010 at =C2=A01:10pm -0500,
+>> > Jon Nelson <jnelson@jamponi.net> wrote:
+>> >
+>> >> I finally found some time to test this out. With 2.6.37-rc4 (open=
+SUSE
+>> >> KOTD kernel) I easily encounter the issue.
+>> >>
+>> >> Using a virtual machine, I created a stock, minimal openSUSE 11.3=
+ x86_64
+>> >> install, installed all updates, installed postgresql and the 'KOT=
+D'
+>> >> (Kernel of the Day)
+>> >> kernel, and ran the following tests (as postgres user because I'm
+>> >> lazy).
+>> >>
+>> >> 1. create a database (from bash):
+>> >>
+>> >> createdb test
+>> >>
+>> >> 2. place the following contents in a file (I used 't.sql'):
+>> >>
+>> >> begin;
+>> >> create temporary table foo as select x as a, ARRAY[x] as b FROM
+>> >> generate_series(1, 10000000 ) AS x;
+>> >> create index foo_a_idx on foo (a);
+>> >> create index foo_b_idx on foo USING GIN (b);
+>> >> rollback;
+>> >>
+>> >> 3. execute that sql:
+>> >>
+>> >> psql -f t.sql --echo-all test
+>> >>
+>> >>
+>> >> With 2.6.34.7 I can re-run [3] all day long, as many times as I w=
+ant,
+>> >> without issue.
+>> >>
+>> >> With 2.6.37-rc4-13 (the currently-installed KOTD kernel) if tails
+>> >> pretty frequently.
+>> >
+>> > How does it fail? =C2=A0postgres errors? =C2=A0kernel errors?
+>>
+>> postgresql errors. Typically, header corruption but from the limited
+>> visibility I've had into this via strace, what I see is zeroed pages
+>> where there shouldn't be.
+>
+> This sounds a lot like a bug higher up than dm-crypt. =C2=A0Zeros ten=
+d to
+> come from some piece of code explicitly filling a page with zeros, an=
+d
+> that often happens in the corner cases for O_DIRECT and a few other
+> places in the filesystem.
+>
+> Have you tried triggering this with a regular block device?
 
-This counter records the number of blocks allocated to the file, and
-reading it with ls -l or stat is somewhat racey by nature.  Most of the
-time its fine, btrfs just has a really big window where the results fro=
-m
-ls -l seem wrong.
+I just tried the whole set of tests, but with /dev/sdb directly (as
+ext4) without any crypt-y bits.
+It takes more iterations but out of 6 tests I had one failure: same
+type of thing, 'invalid page header in block ....'.
 
-But, the counter really means nothing to the btrfs internals.  When we
-do file operations we go based on the extent pointers we find in the
-tree and i_size (i_size is strictly maintained).
+I can't guarantee that it is a full-page of zeroes, just what I saw
+from the (limited) stracing I did.
 
-The incorrect results are confusing but they don't hurt the metadata
-itself.
 
--chris
+
+--=20
+Jon
 --
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
+To unsubscribe from this list: send the line "unsubscribe linux-ext4" i=
+n
 the body of a message to majordomo@vger.kernel.org
 More majordomo info at  http://vger.kernel.org/majordomo-info.html

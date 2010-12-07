@@ -1,81 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bw0-f45.google.com ([209.85.214.45]:40264 "EHLO
-	mail-bw0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751090Ab0LGSLL (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Dec 2010 13:11:11 -0500
+Received: from mail-bw0-f66.google.com ([209.85.214.66]:58922 "EHLO
+	mail-bw0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754792Ab0LGVB1 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Dec 2010 16:01:27 -0500
 MIME-Version: 1.0
-In-Reply-To: <20101207142145.GA27861@think>
-References: <AANLkTik_p0yxQBQ3ehHWYPLfiqxGbSNUT5XUk9dC5-x6@mail.gmail.com>
- <20101201165229.GC13415@redhat.com> <AANLkTinG209iRAXgpNC0vNpn1C02wkYmVfveXRBqsKV-@mail.gmail.com>
- <4CF692D1.1010906@redhat.com> <AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com>
+In-Reply-To: <20101207193514.GA2921@thunk.org>
+References: <4CF692D1.1010906@redhat.com> <AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com>
  <4CF6B3E8.2000406@redhat.com> <20101201212310.GA15648@redhat.com>
  <AANLkTimQtMvPVafWG_DffF-zXXpz1vBPXdCCwxRnzSGr@mail.gmail.com>
  <20101204193828.GB13871@redhat.com> <AANLkTin3A_ySn_sZQPqZMn-NORnteQZwTVVSiW_=r3sO@mail.gmail.com>
- <20101207142145.GA27861@think>
+ <20101207142145.GA27861@think> <AANLkTikJt-ZOmzj68Jw92rjGHzu0EP-uCVD+eNSO=vGd@mail.gmail.com>
+ <20101207182243.GB21112@redhat.com> <20101207193514.GA2921@thunk.org>
 From: Jon Nelson <jnelson@jamponi.net>
-Date: Tue, 7 Dec 2010 12:10:49 -0600
-Message-ID: <AANLkTikJt-ZOmzj68Jw92rjGHzu0EP-uCVD+eNSO=vGd@mail.gmail.com>
+Date: Tue, 7 Dec 2010 15:01:05 -0600
+Message-ID: <AANLkTi=4K=qXm1kqKZ=z7W0jnLKQzzh6h0QVGD0YFmYx@mail.gmail.com>
 Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
  barrier support is effective)
-To: Chris Mason <chris.mason@oracle.com>, Matt <jackdachef@gmail.com>,
-        Mike Snitzer <snitzer@redhat.com>, Milan Broz <mbroz@redhat.com>,
+To: "Ted Ts'o" <tytso@mit.edu>, Mike Snitzer <snitzer@redhat.com>,
+        Jon Nelson <jnelson@jamponi.net>, Chris Mason <chris.mason@oracle.com>,
+        Matt <jackdachef@gmail.com>, Milan Broz <mbroz@redhat.com>,
         Andi Kleen <andi@firstfloor.org>,
         linux-btrfs <linux-btrfs@vger.kernel.org>,
         dm-devel <dm-devel@redhat.com>,
         Linux Kernel <linux-kernel@vger.kernel.org>,
         htd <htd@fancy-poultry.org>, htejun@gmail.com,
-        linux-ext4@vger.kernel.org, Jon Nelson <jnelson@jamponi.net>
+        linux-ext4@vger.kernel.org
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I finally found some time to test this out. With 2.6.37-rc4 (openSUSE
-KOTD kernel) I easily encounter the issue.
+On Tue, Dec 7, 2010 at 1:35 PM, Ted Ts'o <tytso@mit.edu> wrote:
+> On Tue, Dec 07, 2010 at 01:22:43PM -0500, Mike Snitzer wrote:
+>> > 1. create a database (from bash):
+>> >
+>> > createdb test
+>> >
+>> > 2. place the following contents in a file (I used 't.sql'):
+>> >
+>> > begin;
+>> > create temporary table foo as select x as a, ARRAY[x] as b FROM
+>> > generate_series(1, 10000000 ) AS x;
+>> > create index foo_a_idx on foo (a);
+>> > create index foo_b_idx on foo USING GIN (b);
+>> > rollback;
+>> >
+>> > 3. execute that sql:
+>> >
+>> > psql -f t.sql --echo-all test
+>> >
+>> > With 2.6.34.7 I can re-run [3] all day long, as many times as I want,
+>> > without issue.
+>> >
+>> > With 2.6.37-rc4-13 (the currently-installed KOTD kernel) if tails
+>> > pretty frequently.
+>
+> So I just tried to reproduce this on an Ubuntu 10.04 system running
+> 2.6.37-rc5 (completely stock except for a few apparmor patches that I
+> needed to keep the apparmor userspace from complaining).  I'm using
+> Postgres 8.4.5-0ubuntu10.04.
+>
+> Using the above procedure, I wasn't able to reproduce.  Then I
+> realized this might have been because I was using an SSD root file
+> system (which is secured using LUKS/dm-crypt, with LVM on top of
+> dm-crypt).  So I mounted a file system on a 5400 rpm SSD disk, which
+> is also protected using LUKS/dm-crypt with LVM on top.  I then
+> executed the PostgresQL commands:
+>
+> CREATE TABLESPACE test LOCATION '/kbuild/postgres';
+> SET default_tablespace = test;
+> COMMIT
+> \quit
+>
+> I then re-ran the above proceduing, and verified that all of the I/O
+> was going to the 5400rpm laptop disk.
+>
+> I then ran the above procedure a half-dozen times, and I still haven't
+> been able to reproduce any Postgresql errors or kernel errors.
+>
+> Jon, can you help me identify what might be different with your run
+> and mine?  What version of Postgres are you using?
 
-Using a virtual machine, I created a stock, minimal openSUSE 11.3 x86_64
-install, installed all updates, installed postgresql and the 'KOTD'
-(Kernel of the Day)
-kernel, and ran the following tests (as postgres user because I'm
-lazy).
-
-1. create a database (from bash):
-
-createdb test
-
-2. place the following contents in a file (I used 't.sql'):
-
-begin;
-create temporary table foo as select x as a, ARRAY[x] as b FROM
-generate_series(1, 10000000 ) AS x;
-create index foo_a_idx on foo (a);
-create index foo_b_idx on foo USING GIN (b);
-rollback;
-
-3. execute that sql:
-
-psql -f t.sql --echo-all test
-
-
-With 2.6.34.7 I can re-run [3] all day long, as many times as I want,
-without issue.
-
-With 2.6.37-rc4-13 (the currently-installed KOTD kernel) if tails
-pretty frequently.
-
-Then I tested with the 'vanilla' kernel available here:
-
-http://download.opensuse.org/repositories/Kernel:/vanilla/standard/
-
-The 'vanilla' kernel exhibited the same problems.
-The version I tested:  2.6.37-rc4-219-g771f8bc-vanilla.
-
-Incidentally, quick tests of jfs, xfs, and ext3 do _not_ show the same
-problems, although I will note that I usually saw failure at least 1
-in 3, but sometimes had to re-run the sql test 4 or 5 times before I
-saw failure.
-
-I will continue to do some testing, but I will hold off on testing the
-commits above until I receive further testing suggestions.
+I am using postgres 8.4.5 on openSUSE 11.3 x86_64.
+The problems were observed on both "real" hardware (thinkpad T61p) and
+in virtualbox, where all current testing is taking place. The current
+kernel is a "vanilla" (unpatched) kernel. I *did* set wal_sync_method
+to fdatasync, however, if that is relevant. Otherwise, the pg config
+is stock. With no crypt involved, I did have to iterate the tests to
+observe the issue - a half-dozen times or more were necessary.
+Typically, when crypt was involved, the issue would manifest much more
+rapidly.
 
 -- 
 Jon

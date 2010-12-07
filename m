@@ -1,102 +1,99 @@
-From: Nirbheek Chauhan <nirbheek.chauhan@gmail.com>
-Subject: Re: "Appending" data to the middle of a file using btrfs-specific features
-Date: Tue, 7 Dec 2010 16:59:44 +0530
-Message-ID: <AANLkTim6AJbZPwjU-M6-M2NU8DxsqdSmo9hdUnxCezoy@mail.gmail.com>
-References: <AANLkTinXfbKmXYy52JF-QuJr0WTzgvbMXHAw-tYK4i5X@mail.gmail.com> <4CFE0A81.9040102@electric-spoon.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
+ barrier support is effective)
+Date: Tue, 7 Dec 2010 09:21:45 -0500
+Message-ID: <20101207142145.GA27861@think>
+References: <AANLkTik_p0yxQBQ3ehHWYPLfiqxGbSNUT5XUk9dC5-x6@mail.gmail.com>
+ <20101201165229.GC13415@redhat.com>
+ <AANLkTinG209iRAXgpNC0vNpn1C02wkYmVfveXRBqsKV-@mail.gmail.com>
+ <4CF692D1.1010906@redhat.com>
+ <AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com>
+ <4CF6B3E8.2000406@redhat.com>
+ <20101201212310.GA15648@redhat.com>
+ <AANLkTimQtMvPVafWG_DffF-zXXpz1vBPXdCCwxRnzSGr@mail.gmail.com>
+ <20101204193828.GB13871@redhat.com>
+ <AANLkTin3A_ySn_sZQPqZMn-NORnteQZwTVVSiW_=r3sO@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: David Pottage <david@electric-spoon.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4CFE0A81.9040102@electric-spoon.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Mike Snitzer <snitzer@redhat.com>, Milan Broz <mbroz@redhat.com>,
+	Andi Kleen <andi@firstfloor.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	dm-devel <dm-devel@redhat.com>,
+	Linux Kernel <linux-kernel@vger.kernel.org>,
+	htd <htd@fancy-poultry.org>, htejun@gmail.com,
+	linux-ext4@vger.kernel.org, Jon Nelson <jnelson@jamponi.net>
+To: Matt <jackdachef@gmail.com>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <AANLkTin3A_ySn_sZQPqZMn-NORnteQZwTVVSiW_=r3sO@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[I think the mail was sent to just me due to a reply-accident, I've
-re-added the mailing list for this reply]
-
-On Tue, Dec 7, 2010 at 3:50 PM, David Pottage <david@electric-spoon.com=
-> wrote:
-> On 06/12/10 12:41, Nirbheek Chauhan wrote:
->>
->> I'd like to know if there has been any discussion about adding a new
->> feature to write (add) data at an offset, but without overwriting
->> existing data, or re-writing the existing data. Essentially, in-plac=
-e
->> addition/removal of data to a file at a place other than the end of
->> the file.
->>
->> Some possible use-cases of such a feature would be:
->>
->> (a) Databases (currently hack around this by allocating sparse files=
-)
->> (b) Delta-patching (rsync, patch, xdelta, etc)
->> (c) Video editors (especially if combined with reflink copies)
->>
->> Besides I/O savings, it would also have significant space savings if
->> the current subvolume being written to has been snapshotted (a commo=
-n
->> use-case for incremental backups).
->>
+On Sun, Dec 05, 2010 at 12:47:11AM +0100, Matt wrote:
+> > OK.
+> 
+> meanwhile I think I got some interesting news:
+> 
+> after some time of running (around 1 to 1.5 hours) I noticed the
+> following BUG with ext4:
+> 
+> [ 4421.503477] ------------[ cut here ]------------
+> [ 4421.503482] kernel BUG at fs/ext4/inode.c:2714!
 >
-> This idea was discussed back in June. (Search the archives for "Compl=
-ex
-> filesystem operations: split and join"
->
-> Back then the idea was to achieve insertion and removal of data by sp=
-litting
-> and joining existing files, so to insert data in the middle of a file=
-, you
-> would cut it in two, append data to the first file and then re-join i=
-t.
->
+> kernel compiled was from sources checked out at
+> 1de3e3df917459422cb2aecac440febc8879d410
 
-Aha, I searched the archives and I found the thread in question[1],
-thanks! The original thread seems to have gone for a split/join
-implementation that would work with vfat along with a new syscall.
+Looking at 1de3e3df917459422cb2aecac440febc8879d410:
 
-> I think that direct insertion and removal of data is a cleaner idea, =
-though
-> it may result in a more complex API. You could still achieve cutting =
-files
-> into two by creating a COW copy of the file and truncating one, and r=
-emoving
-> a block of bytes from the start of the other.
->
+Line 2714 in fs/ext4/inode.c is this:
 
-I agree, being able to manipulate file stream in a way similar to
-inserting/deleting in linked lists would introduce new possibilities
-(and challenges, I'm sure). As you mentioned in the original thread,
-it's quite strange that there's no way to do this with current file
-API.
+       /*
+         * If the page does not have buffers (for whatever reason),
+         * try to create them using block_prepare_write.  If this
+         * fails, redirty the page and move on.
+         */
+        if (!page_buffers(page)) {
+	^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                if (block_prepare_write(page, 0, len,
+                                        noalloc_get_block_write)) {
+                redirty_page:
+                        redirty_page_for_writepage(wbc, page);
+                        unlock_page(page);
+                        return 0;
+                }
+                commit_write = 1;
+        }
 
-> I still think it would be a good idea to be able to join files togeth=
-er with
-> a file system API call, so the equivalent of:
->
-> =C2=A0 =C2=A0cat track1.mp3 track2.mp3 track3.mp3 > mix_tape.mp3
->
-> Could be done as a filesystem call to create mix_tape.mp3 as a de-dup=
-licated
-> copy of the contents of the three source files, without many megabyte=
-s of
-> I/O.
->
+Which means we're really hitting this:
 
-Ah, this is relatively straightforward with the clone_range ioctl.
-There was some talk about a reflink() or clone() syscall a while
-ago[2], perhaps that could be extended as reflink_range() so that it
-could be used with other filesystems which support reflinks as well.
+/* If we *know* page->private refers to buffer_heads */
+#define page_buffers(page)                                      \
+        ({                                                      \
+                BUG_ON(!PagePrivate(page));                     \
+		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                ((struct buffer_head *)page_private(page));     \
+        })
+#define page_has_buffers(page)  PagePrivate(page)
 
-1. http://thread.gmane.org/gmane.linux.kernel/996835
-2. http://lwn.net/Articles/333783/
+Looks like Ted fixed it here:
 
---=20
-~Nirbheek Chauhan
+commit b1142e8fec6a594723e5054055a7b53379b90490
+Author: Theodore Ts'o <tytso@mit.edu>
+Date:   Thu Oct 28 17:33:57 2010 -0400
 
-Gentoo GNOME+Mozilla Team
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+    ext4: BUG_ON fix: check if page has buffers before calling page_buffers()
+
+
+Basically, once you hit this oops, ext4 is done.  No files you created
+after the oops will be there when you reboot, and the rest of your
+lockups etc are because the jbd process had some locks held when it
+crashed.
+
+Was there also a report of corruption w/dm-crypt and XFS?
+
+Last night I ran dm-crypt + the cpu scalability patch + ext4 +
+2.6.37-rc3 in a long stress, and it passed without any problems.  If
+dm-crypt were not doing the IO properly, this test probably would have
+found it (+/- strange block sizes, races with O_DIRECT and other exotic
+fun).
+
+-chris
+

@@ -1,69 +1,94 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: [PATCH] Btrfs: Fix a crash when mounting a subvolume
-Date: Tue, 07 Dec 2010 12:32:03 +0800
-Message-ID: <4CFDB8C3.2040003@cn.fujitsu.com>
-References: <4CFD931E.6050503@cn.fujitsu.com> <AANLkTi=anwAyvYcBK8sKxcUrHL9wpcoDZc3tQNO1Ubif@mail.gmail.com>
+From: Nirbheek Chauhan <nirbheek.chauhan@gmail.com>
+Subject: Re: "Appending" data to the middle of a file using btrfs-specific features
+Date: Tue, 7 Dec 2010 13:08:42 +0530
+Message-ID: <AANLkTin52snLRzh3fcnk6v1BYn1h=Lc6Aa=T+np0b8As@mail.gmail.com>
+References: <AANLkTinXfbKmXYy52JF-QuJr0WTzgvbMXHAw-tYK4i5X@mail.gmail.com>
+ <1291651254-sup-4263@think> <AANLkTi=1z3kPVyYxW1njwMfXyxoBPqHSZ2NQUG4X8uXN@mail.gmail.com>
+ <AANLkTinxioDVnbSB1p8wg2z1WP4Hhk0oMqqFJg6DGAgR@mail.gmail.com>
+ <AANLkTikst-_dbPT7GLaEq8R7X7xjAgVGezpQEisEhFNp@mail.gmail.com> <AANLkTin2RxN_Jw8aCgAX3GzdHtb=WBf+_LTD99T5My12@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	Michael Niederle <mniederle@gmx.at>
-To: C Anthony Risinger <anthony@extof.me>
+Content-Type: text/plain; charset=UTF-8
+Cc: Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Freddie Cash <fjwcash@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=anwAyvYcBK8sKxcUrHL9wpcoDZc3tQNO1Ubif@mail.gmail.com>
+In-Reply-To: <AANLkTin2RxN_Jw8aCgAX3GzdHtb=WBf+_LTD99T5My12@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-C Anthony Risinger wrote:
-> On Mon, Dec 6, 2010 at 7:51 PM, Li Zefan <lizf@cn.fujitsu.com> wrote:
->> We should drop dentry before deactivating the superblock, otherwise
->> we can hit this bug:
+On Tue, Dec 7, 2010 at 2:12 AM, Freddie Cash <fjwcash@gmail.com> wrote:
+> On Mon, Dec 6, 2010 at 12:30 PM, Nirbheek Chauhan
+> <nirbheek.chauhan@gmail.com> wrote:
+>> But the behaviour of --inplace is not entirely to write out *only* t=
+he
+>> blocks that have changed. From what I could make out, it does the
+>> following:
 >>
->> BUG: Dentry f349a690{i=100,n=/} still in use (1) [unmount of btrfs loop1]
->> ...
+>> (1) Calculate a delta b/w the src and trg files
+>> (2) Seek to the first difference in the target file
+>> (3) Start writing data
+>
+> That may be true, I've never looked into the actual algorithm(s) that
+> rsync uses. =C2=A0Just played around with CLI options until we found =
+the
+> set that works best in our situation (--inplace --delete-during
+> --no-whole-file --numeric-ids --hard-links --archive, over SSH with
+> HPN patches).
+>
+>> I'm glossing over the final step because I didn't look deeper, but I
+>> think you can safely assume that after the first difference, all dat=
+a
+>> is rewritten. So this is halfway between "rewrite the whole file" an=
+d
+>> "write only the changed bits into the file". It doesn't actually use
+>> any CoW features from what I can see. There is lots of room for btrf=
+s
+>> reflinking magic. :)
 >>
->> Steps to reproduce the bug:
->>
->>  # mount /dev/loop1 /mnt
->>  # mkdir save
->>  # btrfs subvolume snapshot /mnt save/snap1
->>  # umount /mnt
->>  # mount -o subvol=save/snap1 /dev/loop1 /mnt
->>  (crash)
->>
->> Reported-by: Michael Niederle <mniederle@gmx.at>
->> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
->> ---
->>  fs/btrfs/super.c |    2 +-
->>  1 files changed, 1 insertions(+), 1 deletions(-)
->>
->> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
->> index 47bf67c..61bd79a 100644
->> --- a/fs/btrfs/super.c
->> +++ b/fs/btrfs/super.c
->> @@ -685,9 +685,9 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
->>                mutex_unlock(&root->d_inode->i_mutex);
->>
->>                if (IS_ERR(new_root)) {
->> +                       dput(root);
->>                        deactivate_locked_super(s);
->>                        error = PTR_ERR(new_root);
->> -                       dput(root);
->>                        goto error_free_subvol_name;
->>                }
->>                if (!new_root->d_inode) {
->> --
-> 
-> this seems very reasonable to me... more than once i have wanted to be
-> able to mount in this way (while working out system rollback schemes
-> in particular; mount by name doesn't care what the ID is).  what's the
-> possibility of a patch to mount an arbitrarily nested subvol?
-> 
+>> Note that I tested this behaviour on a btrfs partition with a vanill=
+a
+>> rsync-3.0.7 tarball; the copy you use with ZFS might be doing some C=
+oW
+>> magic.
+>
+> All the CoW "magic" is handled by the filesystem, and not the tools o=
+n
+> top. =C2=A0If the tool only updates X bytes, which fit into 1 block o=
+n the
+> fs, then only that 1 block gets updated via CoW.
+>
 
-I guess it's just because not many people cared much about this, and
-no one coded it up?
+I'm quite sure that's what happens in btrfs too, but the thing about
+updating in-place is that if you have
 
-> btw, patch posted regarding the above:
-> 
-> http://www.spinics.net/lists/linux-btrfs/msg07191.html
-> 
-> though as author noted, needs overview by more experienced eyes.
-> 
+ABCDXXXEFGH
+
+which needs to change to
+
+ABCDZZZEFGH
+
+You're all good. Only the blocks corresponding to XXX will be updated.
+But if the change is
+
+ABCDZZZZEFGH
+
+You'll need to start rewriting EFGH since there's no way to insert
+data in the middle (afaik) of a file with standard syscalls. Maybe
+later you get a set of changes which sync you up with the file's
+contents again, but the chances of that happening in a large file are
+quite remote. That's why I said that it can be safely assumed that
+after the first difference, all data is rewritten.
+
+The only way to get around this on the filesystem level that I can
+think of is data de-duplication; the filesystem doesn't let go of the
+blocks for a while, and does reflinking if the same data is written
+again. Perhaps that's what ZFS is doing, I have no idea :)
+
+--=20
+~Nirbheek Chauhan
+
+Gentoo GNOME+Mozilla Team
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

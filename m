@@ -1,8 +1,8 @@
 From: "Zhong, Xin" <xin.zhong@intel.com>
 Subject: RE: [PATCH] Btrfs: pwrite blocked when writing from the mmaped
  buffer of the same page
-Date: Tue, 7 Dec 2010 17:34:09 +0800
-Message-ID: <1865303E0DED764181A9D882DEF65FB682F3F80FDD@shsmsx502.ccr.corp.intel.com>
+Date: Tue, 7 Dec 2010 17:34:56 +0800
+Message-ID: <1865303E0DED764181A9D882DEF65FB682F3F80FDF@shsmsx502.ccr.corp.intel.com>
 References: <1291713902-5149-1-git-send-email-xin.zhong@intel.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -12,7 +12,11 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1291713902-5149-1-git-send-email-xin.zhong@intel.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The previous patch is not ok (http://www.spinics.net/lists/linux-btrfs/msg07447.html).  Please ignore it. Thanks!
+The other filesystems such as ext3 do not have this problem since they are using generic_file_buffered_write(). And this problem is fixed back in 2007 for generic_file_buffered_write():
+http://lkml.org/lkml/2007/2/4/26
+
+I am very new to btrfs. I am wondering why btrfs has it's own write routine?
+Thanks!
 
 -----Original Message-----
 From: Zhong, Xin 

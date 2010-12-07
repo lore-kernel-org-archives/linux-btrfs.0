@@ -1,15 +1,25 @@
 From: "Zhong, Xin" <xin.zhong@intel.com>
 Subject: RE: [PATCH] Btrfs: pwrite blocked when writing from the mmaped
  buffer of the same page
-Date: Tue, 7 Dec 2010 16:46:06 +0800
-Message-ID: <1865303E0DED764181A9D882DEF65FB682F3F80F97@shsmsx502.ccr.corp.intel.com>
+Date: Tue, 7 Dec 2010 17:23:35 +0800
+Message-ID: <1865303E0DED764181A9D882DEF65FB682F3F80FCB@shsmsx502.ccr.corp.intel.com>
 References: <1291708775-4484-1-git-send-email-xin.zhong@intel.com>
+ <1865303E0DED764181A9D882DEF65FB682F3F80F97@shsmsx502.ccr.corp.intel.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: "Zhong, Xin" <xin.zhong@intel.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1291708775-4484-1-git-send-email-xin.zhong@intel.com>
+In-Reply-To: <1865303E0DED764181A9D882DEF65FB682F3F80F97@shsmsx502.ccr.corp.intel.com>
 List-ID: <linux-btrfs.vger.kernel.org>
+
+Sorry, the format of the patch is not correct. I will submit again.
+
+-----Original Message-----
+From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-owner@vger.kernel.org] On Behalf Of Zhong, Xin
+Sent: Tuesday, December 07, 2010 4:46 PM
+To: linux-btrfs@vger.kernel.org
+Subject: RE: [PATCH] Btrfs: pwrite blocked when writing from the mmaped buffer of the same page
 
 The other filesystems such as ext3 do not have this problem since they are using generic_file_buffered_write(). And this problem is fixed back in 2007 for generic_file_buffered_write():
 http://lkml.org/lkml/2007/2/4/26
@@ -82,3 +92,7 @@ index dfe15dc..c1faded 100644
 -- 
 1.6.2.2
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

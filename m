@@ -1,110 +1,80 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: The value displayed by 'ls -s' command is strange.
-Date: Tue, 07 Dec 2010 15:15:27 -0500
-Message-ID: <1291752549-sup-5932@think>
-References: <4CFDE978.9050407@jp.fujitsu.com> <1291743093-sup-2051@think> <AANLkTi=yQGxx7P=EoAP1sOg5rakmSmb-y+5OTeGbJnyx@mail.gmail.com> <1291750008-sup-1758@think> <AANLkTinwa=H3ge_bb0r5JgV=wPf0viCDXZGwNYftoqu4@mail.gmail.com>
+From: Jon Nelson <jnelson@jamponi.net>
+Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
+ barrier support is effective)
+Date: Tue, 7 Dec 2010 14:25:47 -0600
+Message-ID: <AANLkTin79GzUbfuZNKyTtqcyoUSO9AJimO77_ZOvqggH@mail.gmail.com>
+References: <AANLkTinG209iRAXgpNC0vNpn1C02wkYmVfveXRBqsKV-@mail.gmail.com>
+ <4CF692D1.1010906@redhat.com> <AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com>
+ <4CF6B3E8.2000406@redhat.com> <20101201212310.GA15648@redhat.com>
+ <AANLkTimQtMvPVafWG_DffF-zXXpz1vBPXdCCwxRnzSGr@mail.gmail.com>
+ <20101204193828.GB13871@redhat.com> <AANLkTin3A_ySn_sZQPqZMn-NORnteQZwTVVSiW_=r3sO@mail.gmail.com>
+ <20101207142145.GA27861@think> <AANLkTikJt-ZOmzj68Jw92rjGHzu0EP-uCVD+eNSO=vGd@mail.gmail.com>
+ <20101207182243.GB21112@redhat.com> <AANLkTikOXjh+D25=7Mzwn7bFN+a9xQSimPHs22q4o2TK@mail.gmail.com>
+ <1291747731-sup-3099@think> <AANLkTin-Bvq9bNgarZGZhbK_2EONdu8x-qaLCLFcc1F_@mail.gmail.com>
+ <1291751698-sup-9297@think>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=ISO-8859-1
-Cc: Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Mike Fedyk <mfedyk@mikefedyk.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <AANLkTinwa=H3ge_bb0r5JgV=wPf0viCDXZGwNYftoqu4@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Mike Snitzer <snitzer@redhat.com>, Matt <jackdachef@gmail.com>,
+	Milan Broz <mbroz@redhat.com>,
+	Andi Kleen <andi@firstfloor.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	dm-devel <dm-devel@redhat.com>,
+	Linux Kernel <linux-kernel@vger.kernel.org>,
+	htd <htd@fancy-poultry.org>, htejun <htejun@gmail.com>,
+	linux-ext4 <linux-ext4@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <1291751698-sup-9297@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Mike Fedyk's message of 2010-12-07 15:07:08 -0500:
-> On Tue, Dec 7, 2010 at 11:29 AM, Chris Mason <chris.mason@oracle.com>=
- wrote:
-> > Excerpts from Mike Fedyk's message of 2010-12-07 14:16:55 -0500:
-> >> On Tue, Dec 7, 2010 at 10:44 AM, Chris Mason <chris.mason@oracle.c=
-om> wrote:
-> >> > Excerpts from Tsutomu Itoh's message of 2010-12-07 02:59:52 -050=
-0:
-> >> >> Hi,
-> >> >>
-> >> >> I think that the disk allocation size of each file becomes a mo=
-notone increase
-> >> >> when the file is made.
-> >> >> But, it sometimes return to 0. =C2=A0Is it correct?
-> >> >
-> >> > Well, there's a window during the processing of delayed allocati=
-on where
-> >> > we don't have the bytes recorded as delalloc and we don't have t=
-he bytes
-> >> > recorded in the inode yet. =C2=A0That's why they are showing up =
-as zero.
-> >> >
-> >> > We don't call inode_add_bytes() until after we insert the extent=
-, but we
-> >> > drop the delalloc byte count on the file before the IO is done.
-> >> >
-> >> > Fixing it will be a little tricky because all the extent account=
-ing
-> >> > assumes the inode_add_bytes happens at extent insertion time.
-> >> >
-> >>
-> >> How does opening the inode with O_APPEND during this window know w=
-here
-> >> to write the bytes? =C2=A0If it's a pointer/cursor to the EOF then=
- that
-> >> size could be used during the window. =C2=A0Is that right?
-> >
-> > This counter records the number of blocks allocated to the file, an=
-d
-> > reading it with ls -l or stat is somewhat racey by nature. =C2=A0Mo=
-st of the
-> > time its fine, btrfs just has a really big window where the results=
- from
-> > ls -l seem wrong.
-> >
->=20
-> I see.  Is it using per-cpu vars or something similar?
+On Tue, Dec 7, 2010 at 2:02 PM, Chris Mason <chris.mason@oracle.com> wr=
+ote:
+> Excerpts from Jon Nelson's message of 2010-12-07 14:34:40 -0500:
+>> On Tue, Dec 7, 2010 at 12:52 PM, Chris Mason <chris.mason@oracle.com=
+> wrote:
+>> >> postgresql errors. Typically, header corruption but from the limi=
+ted
+>> >> visibility I've had into this via strace, what I see is zeroed pa=
+ges
+>> >> where there shouldn't be.
+>> >
+>> > This sounds a lot like a bug higher up than dm-crypt. =C2=A0Zeros =
+tend to
+>> > come from some piece of code explicitly filling a page with zeros,=
+ and
+>> > that often happens in the corner cases for O_DIRECT and a few othe=
+r
+>> > places in the filesystem.
+>> >
+>> > Have you tried triggering this with a regular block device?
+>>
+>> I just tried the whole set of tests, but with /dev/sdb directly (as
+>> ext4) without any crypt-y bits.
+>> It takes more iterations but out of 6 tests I had one failure: same
+>> type of thing, 'invalid page header in block ....'.
+>>
+>> I can't guarantee that it is a full-page of zeroes, just what I saw
+>> from the (limited) stracing I did.
+>
+> Fantastic. Now for our usual suspects:
+>
+> 1) Is postgres using O_DIRECT? =C2=A0If yes, please turn it off
 
-Our stat function returns the block count in the inode plus the number
-of bytes we have accounted as delayed allocation.
+According to strace, O_DIRECT didn't show up once during the test.
 
-As we do writes to the file, the delayed allocation count goes up and
-then eventually we decide we need to do some IO.
+> 2) Is postgres allocating sparse files? =C2=A0If yes, please have it =
+fully
+> allocate the file instead.
 
-Before we do the IO, we have to decide where on the disk to write the
-extents.  Once that is decided, we decrement the count of delayed
-allocation bytes.
+That's a tough one. I don't think postgresql does that, but I'm not an
+expert here.
 
-This is when stat starts returning the wrong answer.
+> 3) Is postgres using preallocation (fallocate)? =C2=A0If yes, please =
+have it
+> fully allocate the file instead
 
-Then we do the IO, and when the IO is done we actually insert the file
-extents into the file metadata.  This is when stat starts returning the
-right answer again.
+As far as strace is concerned, postgreql is not using fallocate in
+this version.
 
-The whole setup sounds strange, but this is how btrfs implements the
-semantics from data=3Dordered.  We don't update the file to point to
-the new blocks until after the IO is done, so we never have to wait on
-the data IO before we can do a transaction commit.  It avoids all kinds
-of latencies with fsync and other problems.
-
-One easy solution is to just add another counter in the in-memory inode
-for the number of bytes in flight that aren't accounted for in other
-places.  But I'd rather not make the inode any bigger, so I'll have to
-think if we can solve this another way.
-
->=20
-> > But, the counter really means nothing to the btrfs internals. =C2=A0=
-When we
-> > do file operations we go based on the extent pointers we find in th=
-e
-> > tree and i_size (i_size is strictly maintained).
-> >
->=20
-> Would it be too heavy of an operation to have stat walk the btrfs tre=
-e
-> to get its data?
->=20
-
-I'm afraid so, stat is fairly performance critical.
-
--chris
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--=20
+Jon

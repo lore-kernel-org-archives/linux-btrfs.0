@@ -1,11 +1,25 @@
-From: Xin Zhong <xin.zhong@intel.com>
-Subject: [PATCH] Btrfs: pwrite blocked when writing from the mmaped buffer of the same page
-Date: Tue,  7 Dec 2010 17:25:02 +0800
-Message-ID: <1291713902-5149-1-git-send-email-xin.zhong@intel.com>
-Cc: xin.zhong@intel.com
-To: linux-btrfs@vger.kernel.org
+From: "Zhong, Xin" <xin.zhong@intel.com>
+Subject: RE: [PATCH] Btrfs: pwrite blocked when writing from the mmaped
+ buffer of the same page
+Date: Tue, 7 Dec 2010 17:34:09 +0800
+Message-ID: <1865303E0DED764181A9D882DEF65FB682F3F80FDD@shsmsx502.ccr.corp.intel.com>
+References: <1291713902-5149-1-git-send-email-xin.zhong@intel.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+To: "Zhong, Xin" <xin.zhong@intel.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1291713902-5149-1-git-send-email-xin.zhong@intel.com>
 List-ID: <linux-btrfs.vger.kernel.org>
+
+The previous patch is not ok (http://www.spinics.net/lists/linux-btrfs/msg07447.html).  Please ignore it. Thanks!
+
+-----Original Message-----
+From: Zhong, Xin 
+Sent: Tuesday, December 07, 2010 5:25 PM
+To: linux-btrfs@vger.kernel.org
+Cc: Zhong, Xin
+Subject: [PATCH] Btrfs: pwrite blocked when writing from the mmaped buffer of the same page
 
 This problem is found in meego testing:
 http://bugs.meego.com/show_bug.cgi?id=6672

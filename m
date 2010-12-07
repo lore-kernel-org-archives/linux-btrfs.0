@@ -1,34 +1,81 @@
-From: "Ken D'Ambrosio" <ken@jots.org>
-Subject: "Failed to read block groups" -- is this a problem?
-Date: Fri, 31 Dec 2010 12:01:19 -0500 (EST)
-Message-ID: <30d9d219de101068ecd3dd993a9b0620.squirrel@webmail.jots.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: "Linux Btrfs" <linux-btrfs@vger.kernel.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Return-Path: <linux-btrfs-owner@vger.kernel.org>
+Received: from mail-bw0-f45.google.com ([209.85.214.45]:40264 "EHLO
+	mail-bw0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751090Ab0LGSLL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Dec 2010 13:11:11 -0500
+MIME-Version: 1.0
+In-Reply-To: <20101207142145.GA27861@think>
+References: <AANLkTik_p0yxQBQ3ehHWYPLfiqxGbSNUT5XUk9dC5-x6@mail.gmail.com>
+ <20101201165229.GC13415@redhat.com> <AANLkTinG209iRAXgpNC0vNpn1C02wkYmVfveXRBqsKV-@mail.gmail.com>
+ <4CF692D1.1010906@redhat.com> <AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com>
+ <4CF6B3E8.2000406@redhat.com> <20101201212310.GA15648@redhat.com>
+ <AANLkTimQtMvPVafWG_DffF-zXXpz1vBPXdCCwxRnzSGr@mail.gmail.com>
+ <20101204193828.GB13871@redhat.com> <AANLkTin3A_ySn_sZQPqZMn-NORnteQZwTVVSiW_=r3sO@mail.gmail.com>
+ <20101207142145.GA27861@think>
+From: Jon Nelson <jnelson@jamponi.net>
+Date: Tue, 7 Dec 2010 12:10:49 -0600
+Message-ID: <AANLkTikJt-ZOmzj68Jw92rjGHzu0EP-uCVD+eNSO=vGd@mail.gmail.com>
+Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
+ barrier support is effective)
+To: Chris Mason <chris.mason@oracle.com>, Matt <jackdachef@gmail.com>,
+        Mike Snitzer <snitzer@redhat.com>, Milan Broz <mbroz@redhat.com>,
+        Andi Kleen <andi@firstfloor.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        dm-devel <dm-devel@redhat.com>,
+        Linux Kernel <linux-kernel@vger.kernel.org>,
+        htd <htd@fancy-poultry.org>, htejun@gmail.com,
+        linux-ext4@vger.kernel.org, Jon Nelson <jnelson@jamponi.net>
+Content-Type: text/plain; charset=UTF-8
+Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hey, all.  I'm dealing with a potentially flaky 3Ware controller.  Got
-seven 2 TB disks in a RAID-6.  The BTRFS partition is a 9 TB partition. 
-I've had to do a couple hard shutdowns on the system, and now I'm getting
-sporadic "Failed to read block groups" errors in dmesg:
+I finally found some time to test this out. With 2.6.37-rc4 (openSUSE
+KOTD kernel) I easily encounter the issue.
 
-root@parsley:~# dmesg | egrep "Failed to read block groups:|btrfs"
-[   27.184179] Failed to read block groups: -5
-[   27.295231] btrfs: open_ctree failed
-[ 2758.862565] Failed to read block groups: -5
-[ 2758.896175] btrfs: open_ctree failed
-[ 3292.539509] Failed to read block groups: -5
-[ 3292.591306] btrfs: open_ctree failed
+Using a virtual machine, I created a stock, minimal openSUSE 11.3 x86_64
+install, installed all updates, installed postgresql and the 'KOTD'
+(Kernel of the Day)
+kernel, and ran the following tests (as postgres user because I'm
+lazy).
+
+1. create a database (from bash):
+
+createdb test
+
+2. place the following contents in a file (I used 't.sql'):
+
+begin;
+create temporary table foo as select x as a, ARRAY[x] as b FROM
+generate_series(1, 10000000 ) AS x;
+create index foo_a_idx on foo (a);
+create index foo_b_idx on foo USING GIN (b);
+rollback;
+
+3. execute that sql:
+
+psql -f t.sql --echo-all test
 
 
-Is this a Bad Thing?  Is there something I should do to try to rectify
-this?  Running Ubuntu with its 2.6.37-11-server kernel (64-bit).
+With 2.6.34.7 I can re-run [3] all day long, as many times as I want,
+without issue.
 
-Thanks!
+With 2.6.37-rc4-13 (the currently-installed KOTD kernel) if tails
+pretty frequently.
 
--Ken
+Then I tested with the 'vanilla' kernel available here:
 
+http://download.opensuse.org/repositories/Kernel:/vanilla/standard/
 
+The 'vanilla' kernel exhibited the same problems.
+The version I tested:  2.6.37-rc4-219-g771f8bc-vanilla.
 
+Incidentally, quick tests of jfs, xfs, and ext3 do _not_ show the same
+problems, although I will note that I usually saw failure at least 1
+in 3, but sometimes had to re-run the sql test 4 or 5 times before I
+saw failure.
 
+I will continue to do some testing, but I will hold off on testing the
+commits above until I receive further testing suggestions.
+
+-- 
+Jon

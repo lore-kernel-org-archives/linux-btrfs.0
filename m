@@ -1,82 +1,146 @@
-From: Chris Mason <chris.mason@ORACLE.COM>
-Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt barrier support is effective)
-Date: Tue, 07 Dec 2010 13:52:33 -0500
-Message-ID: <1291747731-sup-3099@think>
-References: <AANLkTinG209iRAXgpNC0vNpn1C02wkYmVfveXRBqsKV-@mail.gmail.com> <4CF692D1.1010906@redhat.com> <AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com> <4CF6B3E8.2000406@redhat.com> <20101201212310.GA15648@redhat.com> <AANLkTimQtMvPVafWG_DffF-zXXpz1vBPXdCCwxRnzSGr@mail.gmail.com> <20101204193828.GB13871@redhat.com> <AANLkTin3A_ySn_sZQPqZMn-NORnteQZwTVVSiW_=r3sO@mail.gmail.com> <20101207142145.GA27861@think> <AANLkTikJt-ZOmzj68Jw92rjGHzu0EP-uCVD+eNSO=vGd@mail.gmail.com> <20101207182243.GB21112@redhat.com> <AANLkTikOXjh+D25=7Mzwn7bFN+a9xQSimPHs22q4o2TK@mail.gmail.com>
+From: Mike Fedyk <mfedyk@mikefedyk.com>
+Subject: Re: The value displayed by 'ls -s' command is strange.
+Date: Tue, 7 Dec 2010 11:16:55 -0800
+Message-ID: <AANLkTi=yQGxx7P=EoAP1sOg5rakmSmb-y+5OTeGbJnyx@mail.gmail.com>
+References: <4CFDE978.9050407@jp.fujitsu.com>
+	<1291743093-sup-2051@think>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=ISO-8859-1
-Cc: Mike Snitzer <snitzer@redhat.com>, Matt <jackdachef@gmail.com>,
-	Milan Broz <mbroz@redhat.com>,
-	Andi Kleen <andi@firstfloor.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	dm-devel <dm-devel@redhat.com>,
-	Linux Kernel <linux-kernel@vger.kernel.org>,
-	htd <htd@fancy-poultry.org>, htejun <htejun@gmail.com>,
-	linux-ext4 <linux-ext4@vger.kernel.org>
-To: Jon Nelson <jnelson@jamponi.net>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-reply-to: <AANLkTikOXjh+D25=7Mzwn7bFN+a9xQSimPHs22q4o2TK@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1291743093-sup-2051@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Jon Nelson's message of 2010-12-07 13:45:14 -0500:
-> On Tue, Dec 7, 2010 at 12:22 PM, Mike Snitzer <snitzer@redhat.com> wr=
-ote:
-> > On Tue, Dec 07 2010 at =C2=A01:10pm -0500,
-> > Jon Nelson <jnelson@jamponi.net> wrote:
-> >
-> >> I finally found some time to test this out. With 2.6.37-rc4 (openS=
-USE
-> >> KOTD kernel) I easily encounter the issue.
-> >>
-> >> Using a virtual machine, I created a stock, minimal openSUSE 11.3 =
-x86_64
-> >> install, installed all updates, installed postgresql and the 'KOTD=
-'
-> >> (Kernel of the Day)
-> >> kernel, and ran the following tests (as postgres user because I'm
-> >> lazy).
-> >>
-> >> 1. create a database (from bash):
-> >>
-> >> createdb test
-> >>
-> >> 2. place the following contents in a file (I used 't.sql'):
-> >>
-> >> begin;
-> >> create temporary table foo as select x as a, ARRAY[x] as b FROM
-> >> generate_series(1, 10000000 ) AS x;
-> >> create index foo_a_idx on foo (a);
-> >> create index foo_b_idx on foo USING GIN (b);
-> >> rollback;
-> >>
-> >> 3. execute that sql:
-> >>
-> >> psql -f t.sql --echo-all test
-> >>
-> >>
-> >> With 2.6.34.7 I can re-run [3] all day long, as many times as I wa=
-nt,
-> >> without issue.
-> >>
-> >> With 2.6.37-rc4-13 (the currently-installed KOTD kernel) if tails
-> >> pretty frequently.
-> >
-> > How does it fail? =C2=A0postgres errors? =C2=A0kernel errors?
->=20
-> postgresql errors. Typically, header corruption but from the limited
-> visibility I've had into this via strace, what I see is zeroed pages
-> where there shouldn't be.
+On Tue, Dec 7, 2010 at 10:44 AM, Chris Mason <chris.mason@oracle.com> w=
+rote:
+> Excerpts from Tsutomu Itoh's message of 2010-12-07 02:59:52 -0500:
+>> Hi,
+>>
+>> I think that the disk allocation size of each file becomes a monoton=
+e increase
+>> when the file is made.
+>> But, it sometimes return to 0. =C2=A0Is it correct?
+>
+> Well, there's a window during the processing of delayed allocation wh=
+ere
+> we don't have the bytes recorded as delalloc and we don't have the by=
+tes
+> recorded in the inode yet. =C2=A0That's why they are showing up as ze=
+ro.
+>
+> We don't call inode_add_bytes() until after we insert the extent, but=
+ we
+> drop the delalloc byte count on the file before the IO is done.
+>
+> Fixing it will be a little tricky because all the extent accounting
+> assumes the inode_add_bytes happens at extent insertion time.
+>
 
-This sounds a lot like a bug higher up than dm-crypt.  Zeros tend to
-come from some piece of code explicitly filling a page with zeros, and
-that often happens in the corner cases for O_DIRECT and a few other
-places in the filesystem.
+How does opening the inode with O_APPEND during this window know where
+to write the bytes?  If it's a pointer/cursor to the EOF then that
+size could be used during the window.  Is that right?
 
-Have you tried triggering this with a regular block device?
-
--chris
+>>
+>>
+>> The result of the test at 2.6.37-rc4 is shown below.
+>> (see inode no. 291)
+>>
+>> =C2=A0 =C2=A0 # df -T /test14
+>> =C2=A0 =C2=A0 Filesystem =C2=A0 =C2=A0Type =C2=A0 1K-blocks =C2=A0 =C2=
+=A0 =C2=A0Used Available Use% Mounted on
+>> =C2=A0 =C2=A0 /dev/sdd14 =C2=A0 btrfs =C2=A0 =C2=A0 4162560 =C2=A0 =C2=
+=A0 =C2=A08736 =C2=A0 3709440 =C2=A0 1% /test14
+>> =C2=A0 =C2=A0 # dd if=3D/dev/zero of=3D/test14/dir/as001.26603 bs=3D=
+1M count=3D100
+>> =C2=A0 =C2=A0 # dd if=3D/dev/zero of=3D/test14/dir/as002.26603 bs=3D=
+1M count=3D200
+>> =C2=A0 =C2=A0 # dd if=3D/dev/zero of=3D/test14/dir/sy001.26603 bs=3D=
+1M count=3D300 oflag=3Ddirect
+>> =C2=A0 =C2=A0 # dd if=3D/dev/zero of=3D/test14/dir/as003.26603 bs=3D=
+1M count=3D400
+>> =C2=A0 =C2=A0 # ls -lis /test14/dir
+>> =C2=A0 =C2=A0 total 406528
+>> =C2=A0 =C2=A0 288 =C2=A0 =C2=A0 =C2=A00 -rw-r--r-- 1 root root 10485=
+7600 Dec =C2=A07 15:07 as001.26603
+>> =C2=A0 =C2=A0 289 =C2=A0 =C2=A0 =C2=A00 -rw-r--r-- 1 root root 20971=
+5200 Dec =C2=A07 15:07 as002.26603
+>> =C2=A0-> 291 =C2=A099328 -rw-r--r-- 1 root root 419430400 Dec =C2=A0=
+7 15:08 as003.26603
+>> =C2=A0 =C2=A0 290 307200 -rw-r--r-- 1 root root 314572800 Dec =C2=A0=
+7 15:08 sy001.26603
+>> =C2=A0 =C2=A0 # sleep 3
+>> =C2=A0 =C2=A0 # ls -lis /test14/dir
+>> =C2=A0 =C2=A0 total 406528
+>> =C2=A0 =C2=A0 288 =C2=A0 =C2=A0 =C2=A00 -rw-r--r-- 1 root root 10485=
+7600 Dec =C2=A07 15:07 as001.26603
+>> =C2=A0 =C2=A0 289 =C2=A0 =C2=A0 =C2=A00 -rw-r--r-- 1 root root 20971=
+5200 Dec =C2=A07 15:07 as002.26603
+>> =C2=A0-> 291 =C2=A099328 -rw-r--r-- 1 root root 419430400 Dec =C2=A0=
+7 15:08 as003.26603
+>> =C2=A0 =C2=A0 290 307200 -rw-r--r-- 1 root root 314572800 Dec =C2=A0=
+7 15:08 sy001.26603
+>> =C2=A0 =C2=A0 # sleep 3
+>> =C2=A0 =C2=A0 # ls -lis /test14/dir
+>> =C2=A0 =C2=A0 total 307200
+>> =C2=A0 =C2=A0 288 =C2=A0 =C2=A0 =C2=A00 -rw-r--r-- 1 root root 10485=
+7600 Dec =C2=A07 15:07 as001.26603
+>> =C2=A0 =C2=A0 289 =C2=A0 =C2=A0 =C2=A00 -rw-r--r-- 1 root root 20971=
+5200 Dec =C2=A07 15:07 as002.26603
+>> =C2=A0-> 291 =C2=A0 =C2=A0 =C2=A00 -rw-r--r-- 1 root root 419430400 =
+Dec =C2=A07 15:08 as003.26603
+>> =C2=A0 =C2=A0 290 307200 -rw-r--r-- 1 root root 314572800 Dec =C2=A0=
+7 15:08 sy001.26603
+>> =C2=A0 =C2=A0 # sleep 3
+>> =C2=A0 =C2=A0 # ls -lis /test14/dir
+>> =C2=A0 =C2=A0 total 409600
+>> =C2=A0 =C2=A0 288 102400 -rw-r--r-- 1 root root 104857600 Dec =C2=A0=
+7 15:07 as001.26603
+>> =C2=A0 =C2=A0 289 =C2=A0 =C2=A0 =C2=A00 -rw-r--r-- 1 root root 20971=
+5200 Dec =C2=A07 15:07 as002.26603
+>> =C2=A0-> 291 =C2=A0 =C2=A0 =C2=A00 -rw-r--r-- 1 root root 419430400 =
+Dec =C2=A07 15:08 as003.26603
+>> =C2=A0 =C2=A0 290 307200 -rw-r--r-- 1 root root 314572800 Dec =C2=A0=
+7 15:08 sy001.26603
+>> =C2=A0 =C2=A0 # sync
+>> =C2=A0 =C2=A0 # ls -lis /test14/dir
+>> =C2=A0 =C2=A0 total 1024000
+>> =C2=A0 =C2=A0 288 102400 -rw-r--r-- 1 root root 104857600 Dec =C2=A0=
+7 15:07 as001.26603
+>> =C2=A0 =C2=A0 289 204800 -rw-r--r-- 1 root root 209715200 Dec =C2=A0=
+7 15:07 as002.26603
+>> =C2=A0-> 291 409600 -rw-r--r-- 1 root root 419430400 Dec =C2=A07 15:=
+08 as003.26603
+>> =C2=A0 =C2=A0 290 307200 -rw-r--r-- 1 root root 314572800 Dec =C2=A0=
+7 15:08 sy001.26603
+>>
+>> The trace result of btrfs_getattr() is shown below.
+>>
+>> =C2=A0Dec =C2=A07 15:08:03 luna kernel: ino:291 blocks:198656 i_bloc=
+ks:0 i_bytes:0 delalloc_bytes:101711872
+>> =C2=A0Dec =C2=A07 15:08:06 luna kernel: ino:291 blocks:198656 i_bloc=
+ks:0 i_bytes:0 delalloc_bytes:101711872
+>> =C2=A0Dec =C2=A07 15:08:09 luna kernel: ino:291 blocks:0 i_blocks:0 =
+i_bytes:0 delalloc_bytes:0
+>> =C2=A0Dec =C2=A07 15:08:12 luna kernel: ino:291 blocks:0 i_blocks:0 =
+i_bytes:0 delalloc_bytes:0
+>> =C2=A0Dec =C2=A07 15:08:18 luna kernel: ino:291 blocks:819200 i_bloc=
+ks:819200 i_bytes:0 delalloc_bytes:0
+>>
+>>
+>> Regards,
+>> Itoh
+>>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =C2=A0http://vger.kernel.org/majordomo-info.ht=
+ml
+>
 --
-To unsubscribe from this list: send the line "unsubscribe linux-ext4" i=
-n
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
 the body of a message to majordomo@vger.kernel.org
 More majordomo info at  http://vger.kernel.org/majordomo-info.html

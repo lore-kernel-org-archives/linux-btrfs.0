@@ -1,97 +1,55 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt barrier support is effective)
-Date: Wed, 08 Dec 2010 07:20:24 -0500
-Message-ID: <1291810586-sup-8211@think>
-References: <AANLkTinG209iRAXgpNC0vNpn1C02wkYmVfveXRBqsKV-@mail.gmail.com> <4CF692D1.1010906@redhat.com> <AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com> <4CF6B3E8.2000406@redhat.com> <20101201212310.GA15648@redhat.com> <AANLkTimQtMvPVafWG_DffF-zXXpz1vBPXdCCwxRnzSGr@mail.gmail.com> <20101204193828.GB13871@redhat.com> <AANLkTin3A_ySn_sZQPqZMn-NORnteQZwTVVSiW_=r3sO@mail.gmail.com> <20101207142145.GA27861@think> <AANLkTikJt-ZOmzj68Jw92rjGHzu0EP-uCVD+eNSO=vGd@mail.gmail.com> <20101207182243.GB21112@redhat.com> <AANLkTikOXjh+D25=7Mzwn7bFN+a9xQSimPHs22q4o2TK@mail.gmail.com> <1291747731-sup-3099@think> <AANLkTin-Bvq9bNgarZGZhbK_2EONdu8x-qaLCLFcc1F_@mail.gmail.com> <1291751698-sup-9297@think> <AANLkTin79GzUbfuZNKyTtqcyoUSO9AJimO77_ZOvqggH@mail.gmail.com> <1291754340-sup-1631@think> <
- AANLkTim8uCmFK=LjkMmq_1O0KE3AiN_7g41AO0woxMv7@mail.gmail.com> <1291755258-sup-8760@think> <AANLkTi=OC9Z68U-j8s6vfU-_-6tkg5W7aUz9HEupidX9@mail.gmail.com>
+From: "Ian! D. Allen" <idallen@idallen.ca>
+Subject: btrfs subvolume snapshot hung in btrfs_commit_transaction
+Date: Wed, 8 Dec 2010 09:01:03 -0500
+Message-ID: <20101208140102.GA30686@idallen.ca>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=ISO-8859-1
-Cc: Mike Snitzer <snitzer@redhat.com>, Matt <jackdachef@gmail.com>,
-	Milan Broz <mbroz@redhat.com>,
-	Andi Kleen <andi@firstfloor.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	dm-devel <dm-devel@redhat.com>,
-	Linux Kernel <linux-kernel@vger.kernel.org>,
-	htd <htd@fancy-poultry.org>, htejun <htejun@gmail.com>,
-	linux-ext4 <linux-ext4@vger.kernel.org>
-To: Jon Nelson <jnelson@jamponi.net>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-reply-to: <AANLkTi=OC9Z68U-j8s6vfU-_-6tkg5W7aUz9HEupidX9@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Jon Nelson's message of 2010-12-07 22:29:26 -0500:
-> On Tue, Dec 7, 2010 at 3:02 PM, Chris Mason <chris.mason@oracle.com> =
-wrote:
-> > Excerpts from Jon Nelson's message of 2010-12-07 15:48:58 -0500:
-> >> On Tue, Dec 7, 2010 at 2:41 PM, Chris Mason <chris.mason@oracle.co=
-m> wrote:
-> >> > Excerpts from Jon Nelson's message of 2010-12-07 15:25:47 -0500:
-> >> >> On Tue, Dec 7, 2010 at 2:02 PM, Chris Mason <chris.mason@oracle=
-=2Ecom> wrote:
-> >> >> > Excerpts from Jon Nelson's message of 2010-12-07 14:34:40 -05=
-00:
-> >> >> >> On Tue, Dec 7, 2010 at 12:52 PM, Chris Mason <chris.mason@or=
-acle.com> wrote:
-> >> >> >> >> postgresql errors. Typically, header corruption but from =
-the limited
-> >> >> >> >> visibility I've had into this via strace, what I see is z=
-eroed pages
-> >> >> >> >> where there shouldn't be.
-> >> >> >> >
-> >> >> >> > This sounds a lot like a bug higher up than dm-crypt. =C2=A0=
-Zeros tend to
-> >> >> >> > come from some piece of code explicitly filling a page wit=
-h zeros, and
-> >> >> >> > that often happens in the corner cases for O_DIRECT and a =
-few other
-> >> >> >> > places in the filesystem.
-> >> >> >> >
-> >> >> >> > Have you tried triggering this with a regular block device=
-?
-> >> >> >>
-> >> >> >> I just tried the whole set of tests, but with /dev/sdb direc=
-tly (as
-> >> >> >> ext4) without any crypt-y bits.
-> >> >> >> It takes more iterations but out of 6 tests I had one failur=
-e: same
-> >> >> >> type of thing, 'invalid page header in block ....'.
-> >> >> >>
-> >> >> >> I can't guarantee that it is a full-page of zeroes, just wha=
-t I saw
-> >> >> >> from the (limited) stracing I did.
-> >> >> >
-> >> >> > Fantastic. Now for our usual suspects:
->=20
-> Maybe not so fantastic. I kept testing and had no more failures. At
-> all. After 40+ iterations I gave up.
-> I went back to trying ext4 on a LUKS volume. The 'hit' ratio went to
-> something like 1 in 3, or better.
->=20
-> I will continue to do testing with and without LUKS. I did /not/
-> reboot between tests, but I do start with a fresh postgres database.
->=20
+I've been exercising btrfs doing a continuous loop of:
 
-Once we trigger once without dm-crypt, dm-crypt is off the hook.  Just
-to verify, when you say without luks, you mean without any crypto bits
-in use at all on the filesystems postgres uses?
+    - delete an old snapshot to keep disk space about the same
+    - create snapshot from previous snapshot
+    - rsync root into new snapshot
 
-Usually the trick to reproducing filesystem corruptions is adding memor=
-y
-pressure.  The corruption is probably a bad interaction between reads
-and writes, and we need to make sure the reads actually happen.
+I have room for 150 snapshots on disk.  I delete the oldest, create
+the newest, do the rsync into the newest, repeat.  It hung today on
+snapshot 564:
 
-http://oss.oracle.com/~mason/pin_ram.c
+$ ps uww 24575
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root     24575  0.0  0.0   6224   332 pts/10   DN   07:35   0:00 btrfs subvolume snapshot /mnt/sde1/snap564 /mnt/sde1/snap565
 
-gcc -Wall -o pin_ram pin_ram.c
+$ ps lww 24575
+F   UID   PID  PPID PRI  NI    VSZ   RSS WCHAN  STAT TTY        TIME COMMAND
+4     0 24575 27716  35   -   6224   332 btrfs_ DN   pts/10     0:00 btrfs subvolume snapshot /mnt/sde1/snap564 /mnt/sde1/snap565
 
-pin_ram -m 80%-of-your-ram-in-mb
+$ ps -o wchan 24575
+WCHAN
+btrfs_commit_transaction
 
-The idea is to trigger constant reads without having to swap heavily.
-80% might be too much.
+No messages in "dmesg" or kernel log.  Anyone want me to run some other
+debug tests to find out what is wrong?  Anything that tries to access
+anything inside the btrfs file system /dev/sde1 hangs uninterruptably:
 
--chris
---
-To unsubscribe from this list: send the line "unsubscribe linux-ext4" i=
-n
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+1     0  1863     2  20   0      0     0 wait_f D    ?          0:29 [btrfs-transacti]
+4     0  4933  4925  20   0  26524  2864 lookup D+   pts/10     0:02 /bin/bash
+1   777 27995  7318  20   0  26576  1784 vfs_re D+   pts/52     0:00 bash
+0   777 29395  7284  20   0  21856   688 vfs_re D    pts/51     0:00 ls -abp --color=auto /mnt/sde1
+0   777 29510  7284  20   0  21856   692 vfs_re D    pts/51     0:00 /bin/ls /mnt/sde1
+
+$ ps -o wchan 1863
+WCHAN
+wait_for_commit
+
+$ ps -o wchan 27995
+WCHAN
+vfs_readdir
+
+-- 
+| Ian! D. Allen  -  idallen@idallen.ca  -  Ottawa, Ontario, Canada
+| Home Page: http://idallen.com/   Contact Improv: http://contactimprov.ca/
+| College professor (Free/Libre GNU+Linux) at: http://teaching.idallen.com/
+| Defend digital freedom:  http://eff.org/  and have fun:  http://fools.ca/

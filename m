@@ -1,54 +1,39 @@
-From: Tommy Jonsson <quazzie@gmail.com>
-Subject: Re: Fsck, parent transid verify failed
-Date: Wed, 8 Dec 2010 21:07:58 +0100
-Message-ID: <AANLkTi=mfw7V8QSZ2=t04+d9kvZ3F5zgtinQ4E3uY8uc@mail.gmail.com>
-References: <003501cb9147$09197540$1b4c5fc0$@gmail.com>
-	<1291306826-sup-7837@think>
-	<AANLkTim5-5KQ3_sEb9WY+O1Uj36=3M3i_yQKeuSb7Qe5@mail.gmail.com>
-	<1291326502-sup-1726@think>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1291326502-sup-1726@think>
+From: Andreas Dilger <adilger.kernel@dilger.ca>
+Subject: Re: What to do about subvolumes?
+Date: Wed, 8 Dec 2010 14:18:02 -0700
+Message-ID: <C327E227-24A5-4DAC-A1FC-90B1B00031FE@dilger.ca>
+References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com> <20101203214526.GA4508@localhost.localdomain> <20101203222756.GF23339@dastard> <20101207165128.GB21375@lst.de> <1291741327.3049.7.camel@heimdal.trondhjem.org> <1994A21A-98DF-4D6A-BDDE-5E40AF6F53AD@dilger.ca> <20101208172732.GD2677@pad.home.fieldses.org>
+Mime-Version: 1.0 (Apple Message framework v1082)
+Content-Type: text/plain; charset=us-ascii
+Cc: Trond Myklebust <Trond.Myklebust@netapp.com>,
+	Christoph Hellwig <hch@lst.de>,
+	Dave Chinner <david@fromorbit.com>,
+	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, chris.mason@oracle.com,
+	ssorce@redhat.com
+To: "J. Bruce Fields" <bfields@redhat.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20101208172732.GD2677@pad.home.fieldses.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> Build the latest tools, then:
->>
->> btrfsck -s 1 /dev/xxx
->> btrfsck -s 2 /dev/xxx
->>
->> If either of these work we have an easy way to get it mounted.  Just let
->> me know.
->>
->> -chris
->>
+On 2010-12-08, at 10:27, J. Bruce Fields wrote:
+> On Wed, Dec 08, 2010 at 10:16:29AM -0700, Andreas Dilger wrote:
+>> It looks like mk_fsid() is only actually using the UUID if it is specified in the /etc/exports file (AFAICS, this depends on ex_uuid being set from a uuid="..." option).
+> 
+> No, if you look at the nfs-utils source you'll find mountd sets a uuid
+> by default (in utils/mountd/cache.c:uuid_by_path()).
 
-> $ btrfsck -s 1 /dev/sda
-> using SB copy 1, bytenr 67108864
-> parent transid verify failed on 2721514774528 wanted 39651 found 39649
-> btrfsck: disk-io.c:739: open_ctree_fd: Assertion `!(!tree_root->node)' failed.
-> Aborted
->
-> $ btrfsck -s 2 /dev/sda
-> using SB copy 2, bytenr 274877906944
-> parent transid verify failed on 2721514774528 wanted 39651 found 39649
-> btrfsck: disk-io.c:739: open_ctree_fd: Assertion `!(!tree_root->node)' failed.
-> Aborted
->
-> Tried "btrfs-debug-tree /dev/sda" and "btrfs-debug-tree -e /dev/sda" :
-> parent transid verify failed on 2721514774528 wanted 39651 found 39649
-> btrfs-debug-tree: disk-io.c:739: open_ctree_fd: Assertion
-> `!(!tree_root->node)' failed.
->
-> dmesg said:
-> [268375.903581] device fsid 734a485d12c77872-9b0b5aa408670db4 devid 2 transid 39650 /dev/sdd
-> [268375.904241] device fsid 734a485d12c77872-9b0b5aa408670db4 devid 1 transid 39651 /dev/sdc
-> [268375.904526] device fsid 734a485d12c77872-9b0b5aa408670db4 devid 3 transid 39651 /dev/sda
+Unfortunately, this only works for block devices, not network filesystems.
 
-Sorry to be a bother, but do you have any other suggestions ?
+>> There was a patch in the open_by_handle() patch series that added an s_uuid field to the superblock, that could be used if no uuid= option is specified in the /etc/exports file.
+> 
+> Agreed that doing this in the kernel would probably be simpler.
 
-Thanks!
+Agreed.
 
--tommy
+Cheers, Andreas
+
+
+
+
+

@@ -1,71 +1,76 @@
-From: Neil Brown <neilb@suse.de>
-Subject: Re: What to do about subvolumes?
-Date: Thu, 9 Dec 2010 10:07:11 +1100
-Message-ID: <20101209100711.6e6541e1@notabene.brown>
-References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com>
-	<20101203214526.GA4508@localhost.localdomain>
-	<20101203222756.GF23339@dastard>
-	<1291415351-sup-4820@think>
-	<20101203224525.GC12491@pad.home.fieldses.org>
-	<26801711-6DF9-4122-BCDF-033A1781C3E4@dilger.ca>
-	<20101206164844.GA22447@pad.home.fieldses.org>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: fix compile warning in fs/btrfs/inode.c
+Date: Thu, 09 Dec 2010 08:59:09 +0900
+Message-ID: <4D001BCD.9010608@jp.fujitsu.com>
+References: <4CFF576E.8030505@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: Andreas Dilger <adilger.kernel@dilger.ca>,
-	Chris Mason <chris.mason@oracle.com>,
-	Dave Chinner <david@fromorbit.com>,
-	Josef Bacik <josef@redhat.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>, hch <hch@lst.de>,
-	ssorce <ssorce@redhat.com>
-To: "J. Bruce Fields" <bfields@redhat.com>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20101206164844.GA22447@pad.home.fieldses.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: liubo <liubo2009@cn.fujitsu.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4CFF576E.8030505@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 6 Dec 2010 11:48:45 -0500 "J. Bruce Fields" <bfields@redhat.com>
-wrote:
+(2010/12/08 19:01), liubo wrote:
+> While compiling btrfs, I got belows:
+>=20
+>   CC [M]  fs/btrfs/inode.o
+> fs/btrfs/inode.c: In function =E2=80=98btrfs_end_dio_bio=E2=80=99:
+> fs/btrfs/inode.c:5720: warning: format =E2=80=98%lu=E2=80=99 expects =
+type =E2=80=98long unsigned int=E2=80=99, but argument 4 has type =E2=80=
+=98sector_t=E2=80=99
+>   LD [M]  fs/btrfs/btrfs.o
+>   Building modules, stage 2.
+>   MODPOST 1 modules
+>   LD [M]  fs/btrfs/btrfs.ko
+>=20
+> This fixes the compile warning.
+>=20
+> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+> ---
+>  fs/btrfs/inode.c |    4 ++--
+>  1 files changed, 2 insertions(+), 2 deletions(-)
+>=20
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 0f34cae..eff5aef 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -5713,8 +5713,8 @@ static void btrfs_end_dio_bio(struct bio *bio, =
+int err)
+>  	if (err) {
+>  		printk(KERN_ERR "btrfs direct IO failed ino %lu rw %lu "
+>  		      "disk_bytenr %lu len %u err no %d\n",
+> -		      dip->inode->i_ino, bio->bi_rw, bio->bi_sector,
+> -		      bio->bi_size, err);
+> +		      dip->inode->i_ino, bio->bi_rw,
+> +		      (unsigned long)bio->bi_sector, bio->bi_size, err);
 
-> On Fri, Dec 03, 2010 at 04:01:44PM -0700, Andreas Dilger wrote:
-> > On 2010-12-03, at 15:45, J. Bruce Fields wrote:
-> > > We're using statfs64.fs_fsid for this; I believe that's both stable
-> > > across reboots and distinguishes between subvolumes, so that's OK.
-> > > 
-> > > (That said, since fs_fsid doesn't work for other filesystems, we depend
-> > > on an explicit check for a filesystem type of "btrfs", which is
-> > > awful--btrfs won't always be the only filesystem that wants to do this
-> > > kind of thing, etc.)
-> > 
-> > Sigh, I wanted to be able to specify the NFS FSID directly from within the kernel for Lustre many years already.  Glad to see that this is moving forward.
-> > 
-> > Any chance we can add a ->get_fsid(sb, inode) method to export_operations
-> > (or something simiar), that allows the filesystem to generate an FSID based on the volume and inode that is being exported?
-> 
-> No objection from here.
+sector_t is defined by include/linux/types.h as follows.
 
-My standard objection here is that you cannot guarantee that the fsid is 100%
-guarantied to be unique across all filesystems in the system (including
-filesystems mounted from dm snapshots of filesystems that are currently
-mounted).  NFSd needs this uniqueness.
+  #ifdef CONFIG_LBDAF
+  typedef u64 sector_t;
+  typedef u64 blkcnt_t;
+  #else
+  typedef unsigned long sector_t;
+  typedef unsigned long blkcnt_t;
+  #endif
 
-This is only really an objection if user-space cannot over-ride the fsid
-provided by the filesystem.
+Therefore, I think that you should change the code as follows.=20
+=20
+		printk(KERN_ERR "btrfs direct IO failed ino %lu rw %lu "
+		      "disk_bytenr %llu len %u err no %d\n",
+		      dip->inode->i_ino, bio->bi_rw,
+		      (u64)bio->bi_sector, bio->bi_size, err);
 
-I'd be very happy to see an interface to user-space whereby user-space can
-get a reasonably unique fsid for a given filesystem.  Whether this is an
-export_operations method or some field in the 'struct super' which gets
-copied out doesn't matter to me.
+>  		dip->errors =3D 1;
+> =20
+>  		/*
 
-NeilBrown
+Regards,
+Itoh
 
-
-> 
-> (Though I don't understand the inode argument--aren't "subvolumes"
-> usually expected to have separate superblocks?)
-> 
-> --b.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

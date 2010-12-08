@@ -1,55 +1,86 @@
-From: "Ian! D. Allen" <idallen@idallen.ca>
-Subject: btrfs subvolume snapshot hung in btrfs_commit_transaction
-Date: Wed, 8 Dec 2010 09:01:03 -0500
-Message-ID: <20101208140102.GA30686@idallen.ca>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: do not do fast caching if we are allocating blocks for tree_root
+Date: Wed,  8 Dec 2010 09:18:07 -0500
+Message-ID: <1291817887-16217-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org, sage@newdream.net
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've been exercising btrfs doing a continuous loop of:
+Since the fast caching uses normal tree locking, we can possibly deadlock if we
+get to the caching via a btrfs_search_slot() on the tree_root.  So just check to
+see if the root we are on is the tree root, and just don't do the fast caching.
 
-    - delete an old snapshot to keep disk space about the same
-    - create snapshot from previous snapshot
-    - rsync root into new snapshot
+Reported-by: Sage Weil <sage@newdream.net>
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/extent-tree.c |   18 ++++++++++++------
+ 1 files changed, 12 insertions(+), 6 deletions(-)
 
-I have room for 150 snapshots on disk.  I delete the oldest, create
-the newest, do the rsync into the newest, repeat.  It hung today on
-snapshot 564:
-
-$ ps uww 24575
-USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
-root     24575  0.0  0.0   6224   332 pts/10   DN   07:35   0:00 btrfs subvolume snapshot /mnt/sde1/snap564 /mnt/sde1/snap565
-
-$ ps lww 24575
-F   UID   PID  PPID PRI  NI    VSZ   RSS WCHAN  STAT TTY        TIME COMMAND
-4     0 24575 27716  35   -   6224   332 btrfs_ DN   pts/10     0:00 btrfs subvolume snapshot /mnt/sde1/snap564 /mnt/sde1/snap565
-
-$ ps -o wchan 24575
-WCHAN
-btrfs_commit_transaction
-
-No messages in "dmesg" or kernel log.  Anyone want me to run some other
-debug tests to find out what is wrong?  Anything that tries to access
-anything inside the btrfs file system /dev/sde1 hangs uninterruptably:
-
-1     0  1863     2  20   0      0     0 wait_f D    ?          0:29 [btrfs-transacti]
-4     0  4933  4925  20   0  26524  2864 lookup D+   pts/10     0:02 /bin/bash
-1   777 27995  7318  20   0  26576  1784 vfs_re D+   pts/52     0:00 bash
-0   777 29395  7284  20   0  21856   688 vfs_re D    pts/51     0:00 ls -abp --color=auto /mnt/sde1
-0   777 29510  7284  20   0  21856   692 vfs_re D    pts/51     0:00 /bin/ls /mnt/sde1
-
-$ ps -o wchan 1863
-WCHAN
-wait_for_commit
-
-$ ps -o wchan 27995
-WCHAN
-vfs_readdir
-
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 03f4738..8aed05e 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -434,6 +434,7 @@ err:
+ 
+ static int cache_block_group(struct btrfs_block_group_cache *cache,
+ 			     struct btrfs_trans_handle *trans,
++			     struct btrfs_root *root,
+ 			     int load_cache_only)
+ {
+ 	struct btrfs_fs_info *fs_info = cache->fs_info;
+@@ -447,9 +448,12 @@ static int cache_block_group(struct btrfs_block_group_cache *cache,
+ 
+ 	/*
+ 	 * We can't do the read from on-disk cache during a commit since we need
+-	 * to have the normal tree locking.
++	 * to have the normal tree locking.  Also if we are currently trying to
++	 * allocate blocks for the tree root we can't do the fast caching since
++	 * we likely hold important locks.
+ 	 */
+-	if (!trans->transaction->in_commit) {
++	if (!trans->transaction->in_commit &&
++	    (root && root != root->fs_info->tree_root)) {
+ 		spin_lock(&cache->lock);
+ 		if (cache->cached != BTRFS_CACHE_NO) {
+ 			spin_unlock(&cache->lock);
+@@ -4089,7 +4093,7 @@ static int update_block_group(struct btrfs_trans_handle *trans,
+ 		 * space back to the block group, otherwise we will leak space.
+ 		 */
+ 		if (!alloc && cache->cached == BTRFS_CACHE_NO)
+-			cache_block_group(cache, trans, 1);
++			cache_block_group(cache, trans, NULL, 1);
+ 
+ 		byte_in_group = bytenr - cache->key.objectid;
+ 		WARN_ON(byte_in_group > cache->key.offset);
+@@ -4984,7 +4988,8 @@ have_block_group:
+ 		if (unlikely(block_group->cached == BTRFS_CACHE_NO)) {
+ 			u64 free_percent;
+ 
+-			ret = cache_block_group(block_group, trans, 1);
++			ret = cache_block_group(block_group, trans,
++						orig_root, 1);
+ 			if (block_group->cached == BTRFS_CACHE_FINISHED)
+ 				goto have_block_group;
+ 
+@@ -5008,7 +5013,8 @@ have_block_group:
+ 			if (loop > LOOP_CACHING_NOWAIT ||
+ 			    (loop > LOOP_FIND_IDEAL &&
+ 			     atomic_read(&space_info->caching_threads) < 2)) {
+-				ret = cache_block_group(block_group, trans, 0);
++				ret = cache_block_group(block_group, trans,
++							orig_root, 0);
+ 				BUG_ON(ret);
+ 			}
+ 			found_uncached_bg = true;
+@@ -5561,7 +5567,7 @@ int btrfs_alloc_logged_file_extent(struct btrfs_trans_handle *trans,
+ 	u64 num_bytes = ins->offset;
+ 
+ 	block_group = btrfs_lookup_block_group(root->fs_info, ins->objectid);
+-	cache_block_group(block_group, trans, 0);
++	cache_block_group(block_group, trans, NULL, 0);
+ 	caching_ctl = get_caching_control(block_group);
+ 
+ 	if (!caching_ctl) {
 -- 
-| Ian! D. Allen  -  idallen@idallen.ca  -  Ottawa, Ontario, Canada
-| Home Page: http://idallen.com/   Contact Improv: http://contactimprov.ca/
-| College professor (Free/Libre GNU+Linux) at: http://teaching.idallen.com/
-| Defend digital freedom:  http://eff.org/  and have fun:  http://fools.ca/
+1.6.6.1
+

@@ -1,86 +1,101 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: do not do fast caching if we are allocating blocks for tree_root
-Date: Wed,  8 Dec 2010 09:18:07 -0500
-Message-ID: <1291817887-16217-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org, sage@newdream.net
+From: Jon Nelson <jnelson@jamponi.net>
+Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
+ barrier support is effective)
+Date: Wed, 8 Dec 2010 09:26:25 -0600
+Message-ID: <AANLkTinQw6DZuTiKzmJFo10snbSX9r6+eWuTA8tt3J95__564.927122514014$1291822027$gmane$org@mail.gmail.com>
+References: <4CF692D1.1010906@redhat.com> <AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com>
+ <4CF6B3E8.2000406@redhat.com> <20101201212310.GA15648@redhat.com>
+ <AANLkTimQtMvPVafWG_DffF-zXXpz1vBPXdCCwxRnzSGr@mail.gmail.com>
+ <20101204193828.GB13871@redhat.com> <AANLkTin3A_ySn_sZQPqZMn-NORnteQZwTVVSiW_=r3sO@mail.gmail.com>
+ <20101207142145.GA27861@think> <AANLkTikJt-ZOmzj68Jw92rjGHzu0EP-uCVD+eNSO=vGd@mail.gmail.com>
+ <20101207182243.GB21112@redhat.com> <20101207193514.GA2921@thunk.org> <AANLkTim8UTkfxXV0AkEfjNq3tcmnrXdh6BQ1ibY5iYPy@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+To: "Ted Ts'o" <tytso@mit.edu>, Mike Snitzer <snitzer@redhat.com>,
+	Jon Nelson <jnelson@jamponi.net>,
+	Chris Mason <chris.mason@oracle.com>,
+	Matt <jackdachef@gmail.com>, Milan Broz <mbroz@r
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTim8UTkfxXV0AkEfjNq3tcmnrXdh6BQ1ibY5iYPy@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since the fast caching uses normal tree locking, we can possibly deadlock if we
-get to the caching via a btrfs_search_slot() on the tree_root.  So just check to
-see if the root we are on is the tree root, and just don't do the fast caching.
+On Tue, Dec 7, 2010 at 9:37 PM, Jon Nelson <jnelson@jamponi.net> wrote:
+> On Tue, Dec 7, 2010 at 1:35 PM, Ted Ts'o <tytso@mit.edu> wrote:
+>> On Tue, Dec 07, 2010 at 01:22:43PM -0500, Mike Snitzer wrote:
+>>> > 1. create a database (from bash):
+>>> >
+>>> > createdb test
+>>> >
+>>> > 2. place the following contents in a file (I used 't.sql'):
+>>> >
+>>> > begin;
+>>> > create temporary table foo as select x as a, ARRAY[x] as b FROM
+>>> > generate_series(1, 10000000 ) AS x;
+>>> > create index foo_a_idx on foo (a);
+>>> > create index foo_b_idx on foo USING GIN (b);
+>>> > rollback;
+>>> >
+>>> > 3. execute that sql:
+>>> >
+>>> > psql -f t.sql --echo-all test
+>>> >
+>>> > With 2.6.34.7 I can re-run [3] all day long, as many times as I w=
+ant,
+>>> > without issue.
+>>> >
+>>> > With 2.6.37-rc4-13 (the currently-installed KOTD kernel) if tails
+>>> > pretty frequently.
+>>
+>> So I just tried to reproduce this on an Ubuntu 10.04 system running
+>> 2.6.37-rc5 (completely stock except for a few apparmor patches that =
+I
+>> needed to keep the apparmor userspace from complaining). =C2=A0I'm u=
+sing
+>> Postgres 8.4.5-0ubuntu10.04.
+>>
+>> Using the above procedure, I wasn't able to reproduce. =C2=A0Then I
+>> realized this might have been because I was using an SSD root file
+>> system (which is secured using LUKS/dm-crypt, with LVM on top of
+>> dm-crypt). =C2=A0So I mounted a file system on a 5400 rpm SSD disk, =
+which
+>> is also protected using LUKS/dm-crypt with LVM on top. =C2=A0I then
+>> executed the PostgresQL commands:
+>>
+>> CREATE TABLESPACE test LOCATION '/kbuild/postgres';
+>> SET default_tablespace =3D test;
+>> COMMIT
+>> \quit
+>>
+>> I then re-ran the above proceduing, and verified that all of the I/O
+>> was going to the 5400rpm laptop disk.
+>>
+>> I then ran the above procedure a half-dozen times, and I still haven=
+'t
+>> been able to reproduce any Postgresql errors or kernel errors.
+>>
+>> Jon, can you help me identify what might be different with your run
+>> and mine? =C2=A0What version of Postgres are you using?
+>
+> One difference is the location of the transaction logs (pg_xlog). In
+> my case, /var/lib/pgsql/data *is* mountpoint for the test volume
+> (actually, it's a symlink to the mount point). In your case, that is
+> not so. Perhaps that makes a difference? =C2=A0pgsql_tmp might also b=
+e on
+> two different volumes in your case (I can't be sure).
 
-Reported-by: Sage Weil <sage@newdream.net>
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/extent-tree.c |   18 ++++++++++++------
- 1 files changed, 12 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 03f4738..8aed05e 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -434,6 +434,7 @@ err:
- 
- static int cache_block_group(struct btrfs_block_group_cache *cache,
- 			     struct btrfs_trans_handle *trans,
-+			     struct btrfs_root *root,
- 			     int load_cache_only)
- {
- 	struct btrfs_fs_info *fs_info = cache->fs_info;
-@@ -447,9 +448,12 @@ static int cache_block_group(struct btrfs_block_group_cache *cache,
- 
- 	/*
- 	 * We can't do the read from on-disk cache during a commit since we need
--	 * to have the normal tree locking.
-+	 * to have the normal tree locking.  Also if we are currently trying to
-+	 * allocate blocks for the tree root we can't do the fast caching since
-+	 * we likely hold important locks.
- 	 */
--	if (!trans->transaction->in_commit) {
-+	if (!trans->transaction->in_commit &&
-+	    (root && root != root->fs_info->tree_root)) {
- 		spin_lock(&cache->lock);
- 		if (cache->cached != BTRFS_CACHE_NO) {
- 			spin_unlock(&cache->lock);
-@@ -4089,7 +4093,7 @@ static int update_block_group(struct btrfs_trans_handle *trans,
- 		 * space back to the block group, otherwise we will leak space.
- 		 */
- 		if (!alloc && cache->cached == BTRFS_CACHE_NO)
--			cache_block_group(cache, trans, 1);
-+			cache_block_group(cache, trans, NULL, 1);
- 
- 		byte_in_group = bytenr - cache->key.objectid;
- 		WARN_ON(byte_in_group > cache->key.offset);
-@@ -4984,7 +4988,8 @@ have_block_group:
- 		if (unlikely(block_group->cached == BTRFS_CACHE_NO)) {
- 			u64 free_percent;
- 
--			ret = cache_block_group(block_group, trans, 1);
-+			ret = cache_block_group(block_group, trans,
-+						orig_root, 1);
- 			if (block_group->cached == BTRFS_CACHE_FINISHED)
- 				goto have_block_group;
- 
-@@ -5008,7 +5013,8 @@ have_block_group:
- 			if (loop > LOOP_CACHING_NOWAIT ||
- 			    (loop > LOOP_FIND_IDEAL &&
- 			     atomic_read(&space_info->caching_threads) < 2)) {
--				ret = cache_block_group(block_group, trans, 0);
-+				ret = cache_block_group(block_group, trans,
-+							orig_root, 0);
- 				BUG_ON(ret);
- 			}
- 			found_uncached_bg = true;
-@@ -5561,7 +5567,7 @@ int btrfs_alloc_logged_file_extent(struct btrfs_trans_handle *trans,
- 	u64 num_bytes = ins->offset;
- 
- 	block_group = btrfs_lookup_block_group(root->fs_info, ins->objectid);
--	cache_block_group(block_group, trans, 0);
-+	cache_block_group(block_group, trans, NULL, 0);
- 	caching_ctl = get_caching_control(block_group);
- 
- 	if (!caching_ctl) {
--- 
-1.6.6.1
+I grabbed a Kubuntu iso and installed Kubuntu 10.10, and then upgraded
+to 'natty', and eventually to 2.6.37-8-generic.
 
+With that install, and postgresql's "data" (/var/lib/postgresql/data)
+being located on a LUKS+ext4 volume, I easily observe the behavior.
+
+Does this help?
+
+--=20
+Jon
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,101 +1,46 @@
-From: Jon Nelson <jnelson@jamponi.net>
-Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
- barrier support is effective)
-Date: Wed, 8 Dec 2010 09:26:25 -0600
-Message-ID: <AANLkTinQw6DZuTiKzmJFo10snbSX9r6+eWuTA8tt3J95__564.927122514014$1291822027$gmane$org@mail.gmail.com>
-References: <4CF692D1.1010906@redhat.com> <AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com>
- <4CF6B3E8.2000406@redhat.com> <20101201212310.GA15648@redhat.com>
- <AANLkTimQtMvPVafWG_DffF-zXXpz1vBPXdCCwxRnzSGr@mail.gmail.com>
- <20101204193828.GB13871@redhat.com> <AANLkTin3A_ySn_sZQPqZMn-NORnteQZwTVVSiW_=r3sO@mail.gmail.com>
- <20101207142145.GA27861@think> <AANLkTikJt-ZOmzj68Jw92rjGHzu0EP-uCVD+eNSO=vGd@mail.gmail.com>
- <20101207182243.GB21112@redhat.com> <20101207193514.GA2921@thunk.org> <AANLkTim8UTkfxXV0AkEfjNq3tcmnrXdh6BQ1ibY5iYPy@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: "Ted Ts'o" <tytso@mit.edu>, Mike Snitzer <snitzer@redhat.com>,
-	Jon Nelson <jnelson@jamponi.net>,
-	Chris Mason <chris.mason@oracle.com>,
-	Matt <jackdachef@gmail.com>, Milan Broz <mbroz@r
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTim8UTkfxXV0AkEfjNq3tcmnrXdh6BQ1ibY5iYPy@mail.gmail.com>
+From: Andreas Dilger <adilger@dilger.ca>
+Subject: Re: What to do about subvolumes?
+Date: Wed, 8 Dec 2010 10:16:29 -0700
+Message-ID: <1994A21A-98DF-4D6A-BDDE-5E40AF6F53AD@dilger.ca>
+References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com> <20101203214526.GA4508@localhost.localdomain> <20101203222756.GF23339@dastard> <20101207165128.GB21375@lst.de> <1291741327.3049.7.camel@heimdal.trondhjem.org>
+Mime-Version: 1.0 (Apple Message framework v1082)
+Content-Type: text/plain; charset=us-ascii
+Cc: Christoph Hellwig <hch@lst.de>, Dave Chinner <david@fromorbit.com>,
+	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, chris.mason@oracle.com,
+	ssorce@redhat.com, bfields@redhat.com
+To: Trond Myklebust <Trond.Myklebust@netapp.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <1291741327.3049.7.camel@heimdal.trondhjem.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 7, 2010 at 9:37 PM, Jon Nelson <jnelson@jamponi.net> wrote:
-> On Tue, Dec 7, 2010 at 1:35 PM, Ted Ts'o <tytso@mit.edu> wrote:
->> On Tue, Dec 07, 2010 at 01:22:43PM -0500, Mike Snitzer wrote:
->>> > 1. create a database (from bash):
->>> >
->>> > createdb test
->>> >
->>> > 2. place the following contents in a file (I used 't.sql'):
->>> >
->>> > begin;
->>> > create temporary table foo as select x as a, ARRAY[x] as b FROM
->>> > generate_series(1, 10000000 ) AS x;
->>> > create index foo_a_idx on foo (a);
->>> > create index foo_b_idx on foo USING GIN (b);
->>> > rollback;
->>> >
->>> > 3. execute that sql:
->>> >
->>> > psql -f t.sql --echo-all test
->>> >
->>> > With 2.6.34.7 I can re-run [3] all day long, as many times as I w=
-ant,
->>> > without issue.
->>> >
->>> > With 2.6.37-rc4-13 (the currently-installed KOTD kernel) if tails
->>> > pretty frequently.
->>
->> So I just tried to reproduce this on an Ubuntu 10.04 system running
->> 2.6.37-rc5 (completely stock except for a few apparmor patches that =
-I
->> needed to keep the apparmor userspace from complaining). =C2=A0I'm u=
-sing
->> Postgres 8.4.5-0ubuntu10.04.
->>
->> Using the above procedure, I wasn't able to reproduce. =C2=A0Then I
->> realized this might have been because I was using an SSD root file
->> system (which is secured using LUKS/dm-crypt, with LVM on top of
->> dm-crypt). =C2=A0So I mounted a file system on a 5400 rpm SSD disk, =
-which
->> is also protected using LUKS/dm-crypt with LVM on top. =C2=A0I then
->> executed the PostgresQL commands:
->>
->> CREATE TABLESPACE test LOCATION '/kbuild/postgres';
->> SET default_tablespace =3D test;
->> COMMIT
->> \quit
->>
->> I then re-ran the above proceduing, and verified that all of the I/O
->> was going to the 5400rpm laptop disk.
->>
->> I then ran the above procedure a half-dozen times, and I still haven=
-'t
->> been able to reproduce any Postgresql errors or kernel errors.
->>
->> Jon, can you help me identify what might be different with your run
->> and mine? =C2=A0What version of Postgres are you using?
->
-> One difference is the location of the transaction logs (pg_xlog). In
-> my case, /var/lib/pgsql/data *is* mountpoint for the test volume
-> (actually, it's a symlink to the mount point). In your case, that is
-> not so. Perhaps that makes a difference? =C2=A0pgsql_tmp might also b=
-e on
-> two different volumes in your case (I can't be sure).
+On 2010-12-07, at 10:02, Trond Myklebust wrote:
+
+> On Tue, 2010-12-07 at 17:51 +0100, Christoph Hellwig wrote:
+>> It's just as stable as a real dev_t in the times of hotplug and udev.
+>> As long as you don't touch anything including not upgrading the kernel
+>> it's remain stable, otherwise it will break.  That's why modern
+>> nfs-utils default to using the uuid-based filehandle schemes instead of
+>> the dev_t based ones.  At least that's what I told - I really hope it's
+>> using the real UUIDs from the filesystem and not the horrible fsid hack
+>> that was once added - for some filesystems like XFS that field does not
+>> actually have any relation to the UUID historically.  And while we
+>> could have changed that it's too late now that nfs was hacked into
+>> abusing that field.
+> 
+> IIRC, NFS uses the full true uuid for NFSv3 and NFSv4 filehandles, but
+> they won't fit into the NFSv2 32-byte filehandles, so there is an
+> '8-byte fsid' and '4-byte fsid + inode number' workaround for that...
+> 
+> See the mk_fsid() helper in fs/nfsd/nfsfh.h
+
+It looks like mk_fsid() is only actually using the UUID if it is specified in the /etc/exports file (AFAICS, this depends on ex_uuid being set from a uuid="..." option).
+
+There was a patch in the open_by_handle() patch series that added an s_uuid field to the superblock, that could be used if no uuid= option is specified in the /etc/exports file.
+
+Cheers, Andreas
 
 
-I grabbed a Kubuntu iso and installed Kubuntu 10.10, and then upgraded
-to 'natty', and eventually to 2.6.37-8-generic.
 
-With that install, and postgresql's "data" (/var/lib/postgresql/data)
-being located on a LUKS+ext4 volume, I easily observe the behavior.
 
-Does this help?
 
---=20
-Jon
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

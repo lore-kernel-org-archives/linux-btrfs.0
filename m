@@ -1,35 +1,33 @@
 From: Andreas Dilger <adilger.kernel@dilger.ca>
 Subject: Re: What to do about subvolumes?
-Date: Wed, 8 Dec 2010 14:18:02 -0700
-Message-ID: <C327E227-24A5-4DAC-A1FC-90B1B00031FE@dilger.ca>
-References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com> <20101203214526.GA4508@localhost.localdomain> <20101203222756.GF23339@dastard> <20101207165128.GB21375@lst.de> <1291741327.3049.7.camel@heimdal.trondhjem.org> <1994A21A-98DF-4D6A-BDDE-5E40AF6F53AD@dilger.ca> <20101208172732.GD2677@pad.home.fieldses.org>
+Date: Tue, 7 Dec 2010 23:39:35 -0700
+Message-ID: <FA094332-A4D7-4EF6-BB28-ECB3C36ECD01@dilger.ca>
+References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com> <20101203214526.GA4508@localhost.localdomain> <20101203222756.GF23339@dastard> <1291415351-sup-4820@think> <20101203224525.GC12491@pad.home.fieldses.org> <26801711-6DF9-4122-BCDF-033A1781C3E4@dilger.ca> <20101206164844.GA22447@pad.home.fieldses.org>
 Mime-Version: 1.0 (Apple Message framework v1082)
 Content-Type: text/plain; charset=us-ascii
-Cc: Trond Myklebust <Trond.Myklebust@netapp.com>,
-	Christoph Hellwig <hch@lst.de>,
+Cc: Chris Mason <chris.mason@oracle.com>,
 	Dave Chinner <david@fromorbit.com>,
-	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, chris.mason@oracle.com,
-	ssorce@redhat.com
+	Josef Bacik <josef@redhat.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>, hch <hch@lst.de>,
+	ssorce <ssorce@redhat.com>
 To: "J. Bruce Fields" <bfields@redhat.com>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20101208172732.GD2677@pad.home.fieldses.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20101206164844.GA22447@pad.home.fieldses.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2010-12-08, at 10:27, J. Bruce Fields wrote:
-> On Wed, Dec 08, 2010 at 10:16:29AM -0700, Andreas Dilger wrote:
->> It looks like mk_fsid() is only actually using the UUID if it is specified in the /etc/exports file (AFAICS, this depends on ex_uuid being set from a uuid="..." option).
+On 2010-12-06, at 09:48, J. Bruce Fields wrote:
+On Fri, Dec 03, 2010 at 04:01:44PM -0700, Andreas Dilger wrote:
+>> Any chance we can add a ->get_fsid(sb, inode) method to
+>> export_operations (or something simiar), that allows the filesystem to
+>> generate an FSID based on the volume and inode that is being exported?
 > 
-> No, if you look at the nfs-utils source you'll find mountd sets a uuid
-> by default (in utils/mountd/cache.c:uuid_by_path()).
-
-Unfortunately, this only works for block devices, not network filesystems.
-
->> There was a patch in the open_by_handle() patch series that added an s_uuid field to the superblock, that could be used if no uuid= option is specified in the /etc/exports file.
+> No objection from here.
 > 
-> Agreed that doing this in the kernel would probably be simpler.
+> (Though I don't understand the inode argument--aren't "subvolumes"
+> usually expected to have separate superblocks?)
 
-Agreed.
+I thought that if two directories from the same filesystem are both being exported at the same time that they would need to have different FSID values, hence the inode parameter to allow generating an FSID that is a function of both the filesystem (sb) and the directory being exported (inode)?
 
 Cheers, Andreas
 

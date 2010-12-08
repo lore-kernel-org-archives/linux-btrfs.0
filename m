@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bw0-f66.google.com ([209.85.214.66]:58922 "EHLO
+Received: from mail-bw0-f66.google.com ([209.85.214.66]:57230 "EHLO
 	mail-bw0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754792Ab0LGVB1 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Dec 2010 16:01:27 -0500
+	with ESMTP id S1753467Ab0LHDhm convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Dec 2010 22:37:42 -0500
 MIME-Version: 1.0
 In-Reply-To: <20101207193514.GA2921@thunk.org>
 References: <4CF692D1.1010906@redhat.com> <AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com>
@@ -12,8 +12,8 @@ References: <4CF692D1.1010906@redhat.com> <AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MY
  <20101207142145.GA27861@think> <AANLkTikJt-ZOmzj68Jw92rjGHzu0EP-uCVD+eNSO=vGd@mail.gmail.com>
  <20101207182243.GB21112@redhat.com> <20101207193514.GA2921@thunk.org>
 From: Jon Nelson <jnelson@jamponi.net>
-Date: Tue, 7 Dec 2010 15:01:05 -0600
-Message-ID: <AANLkTi=4K=qXm1kqKZ=z7W0jnLKQzzh6h0QVGD0YFmYx@mail.gmail.com>
+Date: Tue, 7 Dec 2010 21:37:20 -0600
+Message-ID: <AANLkTim8UTkfxXV0AkEfjNq3tcmnrXdh6BQ1ibY5iYPy@mail.gmail.com>
 Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
  barrier support is effective)
 To: "Ted Ts'o" <tytso@mit.edu>, Mike Snitzer <snitzer@redhat.com>,
@@ -80,15 +80,12 @@ On Tue, Dec 7, 2010 at 1:35 PM, Ted Ts'o <tytso@mit.edu> wrote:
 > Jon, can you help me identify what might be different with your run
 > and mine?  What version of Postgres are you using?
 
-I am using postgres 8.4.5 on openSUSE 11.3 x86_64.
-The problems were observed on both "real" hardware (thinkpad T61p) and
-in virtualbox, where all current testing is taking place. The current
-kernel is a "vanilla" (unpatched) kernel. I *did* set wal_sync_method
-to fdatasync, however, if that is relevant. Otherwise, the pg config
-is stock. With no crypt involved, I did have to iterate the tests to
-observe the issue - a half-dozen times or more were necessary.
-Typically, when crypt was involved, the issue would manifest much more
-rapidly.
+One difference is the location of the transaction logs (pg_xlog). In
+my case, /var/lib/pgsql/data *is* mountpoint for the test volume
+(actually, it's a symlink to the mount point). In your case, that is
+not so. Perhaps that makes a difference?  pgsql_tmp might also be on
+two different volumes in your case (I can't be sure).
+
 
 -- 
 Jon

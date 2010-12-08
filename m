@@ -1,96 +1,158 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: Re: The value displayed by 'ls -s' command is strange.
-Date: Wed, 08 Dec 2010 09:15:34 +0900
-Message-ID: <4CFECE26.1050403@jp.fujitsu.com>
-References: <4CFDE978.9050407@jp.fujitsu.com> <1291743093-sup-2051@think> <AANLkTi=yQGxx7P=EoAP1sOg5rakmSmb-y+5OTeGbJnyx@mail.gmail.com> <1291750008-sup-1758@think> <AANLkTinwa=H3ge_bb0r5JgV=wPf0viCDXZGwNYftoqu4@mail.gmail.com> <1291752549-sup-5932@think>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [PATCH 1/5] btrfs: Make async snapshot ioctl more generic
+Date: Wed, 08 Dec 2010 09:09:12 +0800
+Message-ID: <4CFEDAB8.6040109@cn.fujitsu.com>
+References: <4CF35E17.6050705@cn.fujitsu.com> <4CF35E28.4070206@cn.fujitsu.com> <Pine.LNX.4.64.1012071057230.29827@cobra.newdream.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Mike Fedyk <mfedyk@mikefedyk.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+To: Sage Weil <sage@newdream.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1291752549-sup-5932@think>
+In-Reply-To: <Pine.LNX.4.64.1012071057230.29827@cobra.newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+03:04, Sage Weil wrote:
+> Hi Chris,
+> 
+> Is this ioctl change destined for 2.6.37?  If it (or something similar) 
+> looks good it should probably be merged (independent of the rest of the 
+> series) this time around before we're stuck with the current version.
+> 
 
-(2010/12/08 5:15), Chris Mason wrote:
-> Excerpts from Mike Fedyk's message of 2010-12-07 15:07:08 -0500:
->> On Tue, Dec 7, 2010 at 11:29 AM, Chris Mason <chris.mason@oracle.com> wrote:
->>> Excerpts from Mike Fedyk's message of 2010-12-07 14:16:55 -0500:
->>>> On Tue, Dec 7, 2010 at 10:44 AM, Chris Mason <chris.mason@oracle.com> wrote:
->>>>> Excerpts from Tsutomu Itoh's message of 2010-12-07 02:59:52 -0500:
->>>>>> Hi,
->>>>>>
->>>>>> I think that the disk allocation size of each file becomes a monotone increase
->>>>>> when the file is made.
->>>>>> But, it sometimes return to 0.  Is it correct?
->>>>>
->>>>> Well, there's a window during the processing of delayed allocation where
->>>>> we don't have the bytes recorded as delalloc and we don't have the bytes
->>>>> recorded in the inode yet.  That's why they are showing up as zero.
->>>>>
->>>>> We don't call inode_add_bytes() until after we insert the extent, but we
->>>>> drop the delalloc byte count on the file before the IO is done.
->>>>>
->>>>> Fixing it will be a little tricky because all the extent accounting
->>>>> assumes the inode_add_bytes happens at extent insertion time.
->>>>>
->>>>
->>>> How does opening the inode with O_APPEND during this window know where
->>>> to write the bytes?  If it's a pointer/cursor to the EOF then that
->>>> size could be used during the window.  Is that right?
->>>
->>> This counter records the number of blocks allocated to the file, and
->>> reading it with ls -l or stat is somewhat racey by nature.  Most of the
->>> time its fine, btrfs just has a really big window where the results from
->>> ls -l seem wrong.
->>>
->>
->> I see.  Is it using per-cpu vars or something similar?
-> 
-> Our stat function returns the block count in the inode plus the number
-> of bytes we have accounted as delayed allocation.
-> 
-> As we do writes to the file, the delayed allocation count goes up and
-> then eventually we decide we need to do some IO.
-> 
-> Before we do the IO, we have to decide where on the disk to write the
-> extents.  Once that is decided, we decrement the count of delayed
-> allocation bytes.
-> 
-> This is when stat starts returning the wrong answer.
-> 
-> Then we do the IO, and when the IO is done we actually insert the file
-> extents into the file metadata.  This is when stat starts returning the
-> right answer again.
+I'm going to post a revised patchset today or tomorrow. Thanks!
 
-I understood. 
-However, I worry that the user is confused because the wrong condition
-is too long. 
+btw, is there a typo?
 
-> 
-> The whole setup sounds strange, but this is how btrfs implements the
-> semantics from data=ordered.  We don't update the file to point to
-> the new blocks until after the IO is done, so we never have to wait on
-> the data IO before we can do a transaction commit.  It avoids all kinds
-> of latencies with fsync and other problems.
-> 
-> One easy solution is to just add another counter in the in-memory inode
-> for the number of bytes in flight that aren't accounted for in other
-> places.  But I'd rather not make the inode any bigger, so I'll have to
-> think if we can solve this another way.
-> 
->>
->>> But, the counter really means nothing to the btrfs internals.  When we
->>> do file operations we go based on the extent pointers we find in the
->>> tree and i_size (i_size is strictly maintained).
->>>
->>
->> Would it be too heavy of an operation to have stat walk the btrfs tree
->> to get its data?
->>
-> 
-> I'm afraid so, stat is fairly performance critical.
-> 
-> -chris
+#define BTRFS_IOC_SPACE_INFO _IOWR(BTRFS_IOCTL_MAGIC, 20, \
+                                    struct btrfs_ioctl_space_args)
+#define BTRFS_IOC_START_SYNC _IOR(BTRFS_IOCTL_MAGIC, 24, __u64)
+#define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
 
+It seems we should have given 21 to START_SYNC ioctl.
+
+> Thanks-
+> sage
+> 
+> 
+> On Mon, 29 Nov 2010, Li Zefan wrote:
+> 
+>> So we don't have to add new structures as we create more ioctls
+>> for snapshots.
+>>
+>> Now to create async snapshot, set BTRFS_SNAPSHOT_CREATE_ASYNC bit of
+>> vol_arg_v2->flags, and then call ioctl(BTRFS_IOCT_SNAP_CREATE_V2).
+>>
+>> Note: this changes the async snapshot ioctl ABI, which was merged
+>> in .37 merge window, so we have to make this change into .37.
+>>
+>> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+>> ---
+>>  fs/btrfs/ioctl.c |   34 +++++++++++++++++++++-------------
+>>  fs/btrfs/ioctl.h |   12 ++++++++----
+>>  2 files changed, 29 insertions(+), 17 deletions(-)
+>>
+>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+>> index 463d91b..d3f1a60 100644
+>> --- a/fs/btrfs/ioctl.c
+>> +++ b/fs/btrfs/ioctl.c
+>> @@ -935,23 +935,31 @@ out:
+>>  
+>>  static noinline int btrfs_ioctl_snap_create(struct file *file,
+>>  					    void __user *arg, int subvol,
+>> -					    int async)
+>> +					    bool v2)
+>>  {
+>>  	struct btrfs_ioctl_vol_args *vol_args = NULL;
+>> -	struct btrfs_ioctl_async_vol_args *async_vol_args = NULL;
+>> +	struct btrfs_ioctl_vol_args_v2 *vol_args_v2 = NULL;
+>>  	char *name;
+>>  	u64 fd;
+>>  	u64 transid = 0;
+>> +	bool async = false;
+>>  	int ret;
+>>  
+>> -	if (async) {
+>> -		async_vol_args = memdup_user(arg, sizeof(*async_vol_args));
+>> -		if (IS_ERR(async_vol_args))
+>> -			return PTR_ERR(async_vol_args);
+>> +	if (v2) {
+>> +		vol_args_v2 = memdup_user(arg, sizeof(*vol_args_v2));
+>> +		if (IS_ERR(vol_args_v2))
+>> +			return PTR_ERR(vol_args_v2);
+>>  
+>> -		name = async_vol_args->name;
+>> -		fd = async_vol_args->fd;
+>> -		async_vol_args->name[BTRFS_SNAPSHOT_NAME_MAX] = '\0';
+>> +		if (vol_args_v2->flags & ~BTRFS_SNAPSHOT_CREATE_ASYNC) {
+>> +			ret = -EINVAL;
+>> +			goto out;
+>> +		}
+>> +
+>> +		name = vol_args_v2->name;
+>> +		fd = vol_args_v2->fd;
+>> +		vol_args_v2->name[BTRFS_SNAPSHOT_NAME_MAX] = '\0';
+>> +		if (vol_args_v2->flags & BTRFS_SNAPSHOT_CREATE_ASYNC)
+>> +			async = true;
+>>  	} else {
+>>  		vol_args = memdup_user(arg, sizeof(*vol_args));
+>>  		if (IS_ERR(vol_args))
+>> @@ -966,13 +974,13 @@ static noinline int btrfs_ioctl_snap_create(struct file *file,
+>>  
+>>  	if (!ret && async) {
+>>  		if (copy_to_user(arg +
+>> -				offsetof(struct btrfs_ioctl_async_vol_args,
+>> +				offsetof(struct btrfs_ioctl_vol_args_v2,
+>>  				transid), &transid, sizeof(transid)))
+>>  			return -EFAULT;
+>>  	}
+>> -
+>> +out:
+>>  	kfree(vol_args);
+>> -	kfree(async_vol_args);
+>> +	kfree(vol_args_v2);
+>>  
+>>  	return ret;
+>>  }
+>> @@ -2235,7 +2243,7 @@ long btrfs_ioctl(struct file *file, unsigned int
+>>  		return btrfs_ioctl_getversion(file, argp);
+>>  	case BTRFS_IOC_SNAP_CREATE:
+>>  		return btrfs_ioctl_snap_create(file, argp, 0, 0);
+>> -	case BTRFS_IOC_SNAP_CREATE_ASYNC:
+>> +	case BTRFS_IOC_SNAP_CREATE_V2:
+>>  		return btrfs_ioctl_snap_create(file, argp, 0, 1);
+>>  	case BTRFS_IOC_SUBVOL_CREATE:
+>>  		return btrfs_ioctl_snap_create(file, argp, 1, 0);
+>> diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+>> index 17c99eb..bc70584 100644
+>> --- a/fs/btrfs/ioctl.h
+>> +++ b/fs/btrfs/ioctl.h
+>> @@ -30,10 +30,14 @@ struct btrfs_ioctl_vol_args {
+>>  	char name[BTRFS_PATH_NAME_MAX + 1];
+>>  };
+>>  
+>> -#define BTRFS_SNAPSHOT_NAME_MAX 4079
+>> -struct btrfs_ioctl_async_vol_args {
+>> +#define BTRFS_SNAPSHOT_CREATE_ASYNC	(1ULL << 0)
+>> +
+>> +#define BTRFS_SNAPSHOT_NAME_MAX 4039
+>> +struct btrfs_ioctl_vol_args_v2 {
+>>  	__s64 fd;
+>>  	__u64 transid;
+>> +	__u64 flags;
+>> +	__u64 unused[4];
+>>  	char name[BTRFS_SNAPSHOT_NAME_MAX + 1];
+>>  };
+>>  
+>> @@ -187,6 +191,6 @@ struct btrfs_ioctl_space_args {
+>>  				    struct btrfs_ioctl_space_args)
+>>  #define BTRFS_IOC_START_SYNC _IOR(BTRFS_IOCTL_MAGIC, 24, __u64)
+>>  #define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
+>> -#define BTRFS_IOC_SNAP_CREATE_ASYNC _IOW(BTRFS_IOCTL_MAGIC, 23, \
+>> -				   struct btrfs_ioctl_async_vol_args)
+>> +#define BTRFS_IOC_SNAP_CREATE_V2 _IOW(BTRFS_IOCTL_MAGIC, 23, \
+>> +				   struct btrfs_ioctl_vol_args_v2)
+>>  #endif
+>> -- 
+>> 1.6.3
+>>
+>> --

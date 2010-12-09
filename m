@@ -1,31 +1,33 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: Purpose of block reserves
-Date: Thu, 09 Dec 2010 09:34:52 +0100
-Message-ID: <4D0094AC.6090101@gmx.net>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: [PATCH v2 0/5] Btrfs: Readonly snapshots
+Date: Thu, 09 Dec 2010 17:09:38 +0800
+Message-ID: <4D009CD2.3060805@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: yanzheng@21cn.com
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+This patchset adds readonly-snapshots support. You can create a
+readonly snapshot, and you can also set a snapshot (subvolume also)
+readonly/writable on the fly.
 
-while reading btrfs source code, I try to make sense of the various uses
-of block reserves. The working theory is as follows:
+A few readonly checks are added in setattr, permission, remove_xattr
+and set_xattr callbacks, as well as in some ioctls.
 
-1. Every operation has to reserve upfront every single byte it needs to
-   complete its operation fully.
-2. If an operation cannot determine how much space it will need, it has
-   to be able to cope with running out of space. Normally it does it by
-   inserting an orphan item, doing its work in multiple transactions and
-   removing the orphan item. The commits in between normally free up enough
-   space to continue the operation.
-3. All other enospc situations are errors in program logic and should result
-   in BUG_ON.
+The patchset is also available in:
+	git://repo.or.cz/linux-btrfs-devel.git readonly-snapshots
 
-It would be great of someone with a deeper knowledge could correct, expand
-or just confirm this.
+Note: I've changed the async snapshot ABI. So if the patchset is acceptable,
+the first patch has to be merged into .37 to avoid ABI breakage.
 
-Thanks,
-Arne
+---
+ fs/btrfs/ctree.h       |    3 +
+ fs/btrfs/disk-io.c     |   36 +++++----
+ fs/btrfs/inode.c       |    8 ++
+ fs/btrfs/ioctl.c       |  193 +++++++++++++++++++++++++++++++++++++++---------
+ fs/btrfs/ioctl.h       |   19 ++++-
+ fs/btrfs/transaction.c |    8 ++
+ fs/btrfs/transaction.h |    1 +
+ fs/btrfs/xattr.c       |   18 +++++
+ 8 files changed, 230 insertions(+), 56 deletions(-)

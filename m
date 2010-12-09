@@ -1,111 +1,136 @@
-From: Martin Steigerwald <Martin@lichtvoll.de>
-Subject: Re: What to do about subvolumes?
-Date: Thu, 9 Dec 2010 20:53:29 +0100
-Message-ID: <201012092053.40494.Martin@lichtvoll.de>
-References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com> <1291219269-sup-8392@think> <20101201163157.GB30236@glandium.org> (sfid-20101201_182451_942865_0E7E9AAE)
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: Re: [PATCH v2 5/5] Btrfs: Add BTRFS_IOC_SUBVOL_GETFLAGS/SETFLAGS ioctl
+Date: Thu, 9 Dec 2010 21:09:05 +0100
+Message-ID: <201012092109.05720.kreijack@libero.it>
+References: <4D009CD2.3060805@cn.fujitsu.com> <4D009D42.1020002@cn.fujitsu.com>
+Reply-To: kreijack@libero.it
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart2226717.64kRsN8YSO";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
-Cc: Chris Mason <chris.mason@oracle.com>,
-	C Anthony Risinger <anthony@extof.me>,
-	Josef Bacik <josef@redhat.com>,
-	"linux-btrfs" <linux-btrfs@vger.kernel.org>,
-	"linux-fsdevel" <linux-fsdevel@vger.kernel.org>,
-	Christoph Hellwig <hch@lst.de>, ssorce <ssorce@redhat.com>
-To: Mike Hommey <mh@glandium.org>
+Content-Type: Text/Plain;
+  charset="utf-8"
+Cc: linux-btrfs@vger.kernel.org
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101201163157.GB30236@glandium.org>
+In-Reply-To: <4D009D42.1020002@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart2226717.64kRsN8YSO
-Content-Type: Text/Plain;
-  charset="iso-8859-15"
-Content-Transfer-Encoding: quoted-printable
+Hi Li,
 
-Am Mittwoch 01 Dezember 2010 schrieb Mike Hommey:
-> On Wed, Dec 01, 2010 at 11:01:37AM -0500, Chris Mason wrote:
-> > Excerpts from C Anthony Risinger's message of 2010-12-01 09:51:55=20
-=2D0500:
-> > > On Wed, Dec 1, 2010 at 8:21 AM, Josef Bacik <josef@redhat.com>=20
-wrote:
-> > > > =3D=3D=3D How do we want subvolumes to work from a user perspective?
-> > > > =3D=3D=3D
-> > > >=20
-> > > > 1) Users need to be able to create their own subvolumes. =C2 The
-> > > > permission semantics will be absolutely the same as creating
-> > > > directories, so I don't think this is too tricky. =C2 We want this
-> > > > because you can only take snapshots of subvolumes, and so it is
-> > > > important that users be able to create their own discrete
-> > > > snapshottable targets.
-> > > >=20
-> > > > 2) Users need to be able to snapshot their subvolumes. =C2 This is
-> > > > basically the same as #1, but it bears repeating.
-> > >=20
-> > > could it be possible to convert a directory into a volume?  or at
-> > > least base a snapshot off it?
-> >=20
-> > I'm afraid this turns into the same complexity as creating a new
-> > volume and copying all the files/dirs in by hand.
->=20
-> Except you wouldn't have to copy data, only metadata.
+On Thursday, 09 December, 2010, Li Zefan wrote:
+> This allows us to set a snapshot or a subvolume readonly or writable
+> on the fly.
+> 
+> Usage:
+> 
+> Set BTRFS_SUBVOL_RDONLY of btrfs_ioctl_vol_arg_v2->flags, and then
+> call ioctl(BTRFS_IOCTL_SUBVOL_SETFLAGS);
+> 
+> Changelog for v2:
+> - Add _GETFLAGS ioctl.
+> - Check if the passed fd is the root of a subvolume.
+> - Change the name from _SNAP_SETFLAGS to _SUBVOL_SETFLAGS.
+> 
+> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+> ---
+>  fs/btrfs/ioctl.c |   92 
+++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  fs/btrfs/ioctl.h |    4 ++
+>  2 files changed, 96 insertions(+), 0 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index db2b231..29304c7 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -1010,6 +1010,94 @@ out:
+[...]
+> +	struct btrfs_ioctl_vol_args_v2 *vol_args;
+> +	int ret = 0;
+> +	u64 flags = 0;
+> +
+> +	if (inode->i_ino != BTRFS_FIRST_FREE_OBJECTID)
+> +		return -EINVAL;
+> +
+> +	vol_args = memdup_user(arg, sizeof(*vol_args));
 
-And it could probably be race-free. If I'd  cp -reflink or rsync stuff from=
-=20
-a real directory to a subvolume and then rename the old directory to an=20
-other name and the subvolume to the directory name then I might be missing=
-=20
-files that have been created during the copy process and missing changes to=
-=20
-files that have been already copied.
+Would be better to avoid a dynamic allocation for a so small struct ? 
+And as more general comment: what is the reason to pass a so complex struct 
+only for setting/getting the flags ?
+Would be it better to pass directly a u64 variable.
 
-What I would like is an easy way to make ~/.kde or whatever a subvolume to=
-=20
-be able to snapshot it independently while KDE applications or whatever is=
-=20
-using and writing to it, *without* any userland even noticing it and=20
-without - except for metadata for managing the subvolume - any additional=20
-space consumption.
+[..]
+> +
+> +static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
+> +					      void __user *arg)
+> +{
+> +	struct inode *inode = fdentry(file)->d_inode;
+> +	struct btrfs_root *root = BTRFS_I(inode)->root;
+> +	struct btrfs_trans_handle *trans;
+> +	struct btrfs_ioctl_vol_args_v2 *vol_args;
+> +	u64 root_flags;
+> +	u64 flags;
+> +	int ret = 0;
+> +
+> +	if (root->fs_info->sb->s_flags & MS_RDONLY)
+> +		return -EROFS;
+> +
+> +	if (inode->i_ino != BTRFS_FIRST_FREE_OBJECTID)
+> +		return -EINVAL;
+> +
+> +	vol_args = memdup_user(arg, sizeof(*vol_args));
 
-So
+Same as before.
 
-deepdance:/#12> btrfs subvolume create /home/martin/.kde
-ERROR: '/home/martin/.kde' exists
+> +	if (IS_ERR(vol_args))
+> +		return PTR_ERR(vol_args);
+> +	flags = vol_args->flags;
+> +
+> +	if (flags & ~BTRFS_SUBVOL_RDONLY) {
+> +		ret = -EINVAL;
+> +		goto out;
+> +	}
+> +
+> +	down_write(&root->fs_info->subvol_sem);
+> +
+> +	/* nothing to do */
+> +	if (!!(flags & BTRFS_SUBVOL_RDONLY) == root->readonly)
+> +		goto out_unlock;
 
-would just make a subvolume out of ~/.kde even if it needs splitting out=20
-the tree or even copying the tree data into a new tree.
+This is only an aesthetic comment: I prefer a simpler style like
 
-There are other filesystem operations like btrfs filesystem balance that ca=
-n=20
-be expensive as well.
+	if ((flags & BTRFS_SUBVOL_RDONLY) && root->readonly)
+		goto out_unlock;
 
-All that said from a user point of view. Maybe technical its not feasible.=
-=20
-But it would be nice if it can be made feasible without loosing existing=20
-advantages.
+But I know that every body has its style :-)
 
-And maybe
+> +
+> +	root_flags = btrfs_root_flags(&root->root_item);
+> +	if (flags & BTRFS_SUBVOL_RDONLY)
+> +		btrfs_set_root_flags(&root->root_item,
+> +				     root_flags | BTRFS_ROOT_SNAP_RDONLY);
+> +	else
+> +		btrfs_set_root_flags(&root->root_item,
+> +				     root_flags & ~BTRFS_ROOT_SNAP_RDONLY);
+> +	root->readonly = !root->readonly;
 
-deepdance:/> btrfs subvolume create .  =20
-ERROR: '.' exists
+I double checked this line. But if I read the code correctly I think that the 
+line above is wrong: the field "root->readonly" is flipped regardless the 
+value of the flags passed by the user.
 
-should really remain this way ;).
+Moreover I have another question: why internally the flags is 
+BTRFS_ROOT_SNAP_RDONLY, instead in user space the flag is BTRFS_SUBVOL_RDONLY 
+? 
 
-=2D-=20
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+I suggest to 
+- rename BTRFS_SUBVOL_RDONLY in BTRFS_SUBVOL_CREATE_SNAP_RDONLY (like 
+BTRFS_SUBVOL_CREATE_SNAP_ASYNC)
+- rename BTRFS_ROOT_SNAP_RDONLY in BTRFS_ROOT_FLAGS_RDONLY and use both in 
+userspace and in kernel space this flag. I suggested to remove SNAP because 
+the flag make sense also for a "standard" subvolume.
 
---nextPart2226717.64kRsN8YSO
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
+Gegards 
+G.Baroncelli
 
-iEYEABECAAYFAk0BM7oACgkQmRvqrKWZhMcL3ACfS/uMzC3cYkmoRhzLhgrt8FJD
-TqwAoLYbKLXuzsY/8FQhXQ3t4TJom5y2
-=3G5w
------END PGP SIGNATURE-----
 
---nextPart2226717.64kRsN8YSO--
+-- 
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

@@ -1,57 +1,58 @@
-From: Jon Nelson <jnelson@jamponi.net>
-Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
- barrier support is effective)
-Date: Thu, 9 Dec 2010 12:10:58 -0600
-Message-ID: <AANLkTimAUB5L5Ptm4Fv=sQUmL9_P5azPRCKQnmU89xs8__33913.6907867671$1291918319$gmane$org@mail.gmail.com>
-References: <4CF6B3E8.2000406@redhat.com> <20101201212310.GA15648@redhat.com>
- <AANLkTimQtMvPVafWG_DffF-zXXpz1vBPXdCCwxRnzSGr@mail.gmail.com>
- <20101204193828.GB13871@redhat.com> <AANLkTin3A_ySn_sZQPqZMn-NORnteQZwTVVSiW_=r3sO@mail.gmail.com>
- <20101207142145.GA27861@think> <AANLkTikJt-ZOmzj68Jw92rjGHzu0EP-uCVD+eNSO=vGd@mail.gmail.com>
- <20101207182243.GB21112@redhat.com> <20101207193514.GA2921@thunk.org>
- <AANLkTim8UTkfxXV0AkEfjNq3tcmnrXdh6BQ1ibY5iYPy@mail.gmail.com> <20101209180111.GF2921@thunk.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: "Ted Ts'o" <tytso@mit.edu>, Jon Nelson <jnelson@jamponi.net>,
-	Mike Snitzer <snitzer@redhat.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Matt <jackdachef@gmail.com>, Milan Broz <mbroz@r
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs-progs: update super fields for space cache
+Date: Thu,  9 Dec 2010 13:27:03 -0500
+Message-ID: <1291919223-17489-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101209180111.GF2921@thunk.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 9, 2010 at 12:01 PM, Ted Ts'o <tytso@mit.edu> wrote:
-> On Tue, Dec 07, 2010 at 09:37:20PM -0600, Jon Nelson wrote:
->> One difference is the location of the transaction logs (pg_xlog). In
->> my case, /var/lib/pgsql/data *is* mountpoint for the test volume
->> (actually, it's a symlink to the mount point). In your case, that is
->> not so. Perhaps that makes a difference? =C2=A0pgsql_tmp might also =
-be on
->> two different volumes in your case (I can't be sure).
->
-> I just tried tried to run t.sql five times with /var/lib/postgres as =
-a
-> mountpoint for a 5400 rpm disk, and I still haven't been able to
-> replicate it.
+This patch updates the super field to add the cache_generation member.  It also
+makes us set it to -1 on mkfs so any new filesystem will get the space cache
+stuff turned on.  Thanks,
 
-You should be OK, there. Are you using encryption or no?
-I had difficulty replicating the issue without encryption.
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ ctree.h |    6 +++++-
+ utils.c |    1 +
+ 2 files changed, 6 insertions(+), 1 deletions(-)
 
-> If you can point out how to query pgsql_tmp (I'm using a completely
-> default postgres install), that would be helpful, but I don't think i=
-t
-> would be going anywhere else.
+diff --git a/ctree.h b/ctree.h
+index b79e238..962c510 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -340,8 +340,10 @@ struct btrfs_super_block {
+ 
+ 	char label[BTRFS_LABEL_SIZE];
+ 
++	__le64 cache_generation;
++
+ 	/* future expansion */
+-	__le64 reserved[32];
++	__le64 reserved[31];
+ 	u8 sys_chunk_array[BTRFS_SYSTEM_CHUNK_ARRAY_SIZE];
+ } __attribute__ ((__packed__));
+ 
+@@ -1564,6 +1566,8 @@ BTRFS_SETGET_STACK_FUNCS(super_incompat_flags, struct btrfs_super_block,
+ 			 incompat_flags, 64);
+ BTRFS_SETGET_STACK_FUNCS(super_csum_type, struct btrfs_super_block,
+ 			 csum_type, 16);
++BTRFS_SETGET_STACK_FUNCS(super_cache_generation, struct btrfs_super_block,
++			 cache_generation, 64);
+ 
+ static inline int btrfs_super_csum_size(struct btrfs_super_block *s)
+ {
+diff --git a/utils.c b/utils.c
+index 2f4c6e1..b890728 100644
+--- a/utils.c
++++ b/utils.c
+@@ -103,6 +103,7 @@ int make_btrfs(int fd, const char *device, const char *label,
+ 	btrfs_set_super_stripesize(&super, stripesize);
+ 	btrfs_set_super_csum_type(&super, BTRFS_CSUM_TYPE_CRC32);
+ 	btrfs_set_super_chunk_root_generation(&super, 1);
++	btrfs_set_super_cache_generation(&super, -1);
+ 	if (label)
+ 		strcpy(super.label, label);
+ 
+-- 
+1.6.6.1
 
-Normally it's /var/lib/pgsql/data/pgsql_tmp (or
-/var/lib/postgres/data/pgsql_tmp in your case). By placing
-/var/lib/{postgresql,pgsql}/data on the LUKS + ext4 volume, on both
-openSUSE 11.3 and Kubuntu, I was able to replicate the problem easily,
-in VirtualBox. I can give qemu a try. In both cases I was using a
-2.6.37x kernel.
-
---=20
-Jon
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,7 +1,7 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH v2 4/5] Btrfs: Add readonly snapshots support
-Date: Thu, 09 Dec 2010 17:11:04 +0800
-Message-ID: <4D009D28.3060509@cn.fujitsu.com>
+Subject: [PATCH v2 5/5] Btrfs: Add BTRFS_IOC_SUBVOL_GETFLAGS/SETFLAGS ioctl
+Date: Thu, 09 Dec 2010 17:11:30 +0800
+Message-ID: <4D009D42.1020002@cn.fujitsu.com>
 References: <4D009CD2.3060805@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -10,339 +10,148 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <4D009CD2.3060805@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This allows us to set a snapshot or a subvolume readonly or writable
+on the fly.
+
 Usage:
 
-Set BTRFS_SUBVOL_RDONLY of btrfs_ioctl_vol_arg_v2->flags, and call
-ioctl(BTRFS_I0CTL_SNAP_CREATE_V2).
+Set BTRFS_SUBVOL_RDONLY of btrfs_ioctl_vol_arg_v2->flags, and then
+call ioctl(BTRFS_IOCTL_SUBVOL_SETFLAGS);
 
-Implementation:
-
-- In disk set readonly bit of btrfs_root_item->flags, and in memory
-set btrfs_root->readonly.
-
-- Add readonly checks in btrfs_permission (inode_permission),
-btrfs_setattr, btrfs_set/remove_xattr and some ioctls.
+Changelog for v2:
+- Add _GETFLAGS ioctl.
+- Check if the passed fd is the root of a subvolume.
+- Change the name from _SNAP_SETFLAGS to _SUBVOL_SETFLAGS.
 
 Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h       |    3 +++
- fs/btrfs/disk-io.c     |    5 +++++
- fs/btrfs/inode.c       |    8 ++++++++
- fs/btrfs/ioctl.c       |   40 +++++++++++++++++++++++++++++++---------
- fs/btrfs/ioctl.h       |    1 +
- fs/btrfs/transaction.c |    8 ++++++++
- fs/btrfs/transaction.h |    1 +
- fs/btrfs/xattr.c       |   18 ++++++++++++++++++
- 8 files changed, 75 insertions(+), 9 deletions(-)
+ fs/btrfs/ioctl.c |   92 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/ioctl.h |    4 ++
+ 2 files changed, 96 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index af52f6d..ad37c78 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -597,6 +597,8 @@ struct btrfs_dir_item {
- 	u8 type;
- } __attribute__ ((__packed__));
- 
-+#define BTRFS_ROOT_SNAP_RDONLY	(1ULL << 0)
-+
- struct btrfs_root_item {
- 	struct btrfs_inode_item inode;
- 	__le64 generation;
-@@ -1116,6 +1118,7 @@ struct btrfs_root {
- 	int defrag_running;
- 	char *name;
- 	int in_sysfs;
-+	bool readonly;
- 
- 	/* the dirty list is only used by non-reference counted roots */
- 	struct list_head dirty_list;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index ca20c6d..74748df 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -991,6 +991,7 @@ static void __setup_root_post(struct btrfs_root *root)
- {
- 	u32 blocksize;
- 	u64 generation;
-+	u64 flags;
- 
- 	generation = btrfs_root_generation(&root->root_item);
- 	blocksize = btrfs_level_size(root, btrfs_root_level(&root->root_item));
-@@ -998,6 +999,10 @@ static void __setup_root_post(struct btrfs_root *root)
- 				     blocksize, generation);
- 	BUG_ON(!root->node);
- 	root->commit_root = btrfs_root_node(root);
-+
-+	flags = btrfs_root_flags(&root->root_item);
-+	if (flags & BTRFS_ROOT_SNAP_RDONLY)
-+		root->readonly = true;
- }
- 
- static int find_and_setup_root(struct btrfs_root *tree_root,
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 0f34cae..e99676d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3671,8 +3671,12 @@ static int btrfs_setattr_size(struct inode *inode, struct iattr *attr)
- static int btrfs_setattr(struct dentry *dentry, struct iattr *attr)
- {
- 	struct inode *inode = dentry->d_inode;
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	int err;
- 
-+	if (root->readonly)
-+		return -EROFS;
-+
- 	err = inode_change_ok(inode, attr);
- 	if (err)
- 		return err;
-@@ -7207,6 +7211,10 @@ static int btrfs_set_page_dirty(struct page *page)
- 
- static int btrfs_permission(struct inode *inode, int mask)
- {
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+
-+	if (root->readonly && (mask & MAY_WRITE))
-+		return -EROFS;
- 	if ((BTRFS_I(inode)->flags & BTRFS_INODE_READONLY) && (mask & MAY_WRITE))
- 		return -EACCES;
- 	return generic_permission(inode, mask, btrfs_check_acl);
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 5ecd532..db2b231 100644
+index db2b231..29304c7 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -147,6 +147,9 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 	unsigned int flags, oldflags;
- 	int ret;
- 
-+	if (root->readonly)
-+		return -EROFS;
-+
- 	if (copy_from_user(&flags, arg, sizeof(flags)))
- 		return -EFAULT;
- 
-@@ -360,7 +363,8 @@ fail:
+@@ -1010,6 +1010,94 @@ out:
+ 	return ret;
  }
  
- static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
--			   char *name, int namelen, u64 *async_transid)
-+			   char *name, int namelen, u64 *async_transid,
-+			   bool readonly)
- {
- 	struct inode *inode;
- 	struct dentry *parent;
-@@ -378,6 +382,7 @@ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
- 	btrfs_init_block_rsv(&pending_snapshot->block_rsv);
- 	pending_snapshot->dentry = dentry;
- 	pending_snapshot->root = root;
-+	pending_snapshot->readonly = readonly;
- 
- 	trans = btrfs_start_transaction(root->fs_info->extent_root, 5);
- 	if (IS_ERR(trans)) {
-@@ -509,7 +514,7 @@ static inline int btrfs_may_create(struct inode *dir, struct dentry *child)
- static noinline int btrfs_mksubvol(struct path *parent,
- 				   char *name, int namelen,
- 				   struct btrfs_root *snap_src,
--				   u64 *async_transid)
-+				   u64 *async_transid, bool readonly)
- {
- 	struct inode *dir  = parent->dentry->d_inode;
- 	struct dentry *dentry;
-@@ -541,7 +546,7 @@ static noinline int btrfs_mksubvol(struct path *parent,
- 
- 	if (snap_src) {
- 		error = create_snapshot(snap_src, dentry,
--					name, namelen, async_transid);
-+					name, namelen, async_transid, readonly);
- 	} else {
- 		error = create_subvol(BTRFS_I(dir)->root, dentry,
- 				      name, namelen, async_transid);
-@@ -901,7 +906,8 @@ static noinline int btrfs_ioctl_snap_create_transid(struct file *file,
- 						    char *name,
- 						    unsigned long fd,
- 						    int subvol,
--						    u64 *transid)
-+						    u64 *transid,
-+						    bool readonly)
- {
- 	struct btrfs_root *root = BTRFS_I(fdentry(file)->d_inode)->root;
- 	struct file *src_file;
-@@ -919,7 +925,7 @@ static noinline int btrfs_ioctl_snap_create_transid(struct file *file,
- 
- 	if (subvol) {
- 		ret = btrfs_mksubvol(&file->f_path, name, namelen,
--				     NULL, transid);
-+				     NULL, transid, readonly);
- 	} else {
- 		struct inode *src_inode;
- 		src_file = fget(fd);
-@@ -938,7 +944,7 @@ static noinline int btrfs_ioctl_snap_create_transid(struct file *file,
- 		}
- 		ret = btrfs_mksubvol(&file->f_path, name, namelen,
- 				     BTRFS_I(src_inode)->root,
--				     transid);
-+				     transid, readonly);
- 		fput(src_file);
- 	}
- out:
-@@ -957,7 +963,8 @@ static noinline int btrfs_ioctl_snap_create(struct file *file,
- 	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
- 
- 	ret = btrfs_ioctl_snap_create_transid(file, vol_args->name,
--					      vol_args->fd, subvol, NULL);
-+					      vol_args->fd, subvol,
-+					      NULL, false);
- 
- 	kfree(vol_args);
- 	return ret;
-@@ -969,13 +976,15 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
- 	struct btrfs_ioctl_vol_args_v2 *vol_args;
- 	u64 transid = 0;
- 	bool async = false;
-+	bool readonly = false;
- 	int ret;
- 
- 	vol_args = memdup_user(arg, sizeof(*vol_args));
- 	if (IS_ERR(vol_args))
- 		return PTR_ERR(vol_args);
- 
--	if (vol_args->flags & ~BTRFS_SUBVOL_CREATE_SNAP_ASYNC) {
-+	if (vol_args->flags &
-+	    ~(BTRFS_SUBVOL_CREATE_SNAP_ASYNC | BTRFS_SUBVOL_RDONLY)) {
- 		ret = -EINVAL;
- 		goto out;
- 	}
-@@ -983,9 +992,12 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
- 	vol_args->name[BTRFS_SUBVOL_NAME_MAX] = '\0';
- 	if (vol_args->flags & BTRFS_SUBVOL_CREATE_SNAP_ASYNC)
- 		async = true;
-+	if (vol_args->flags & BTRFS_SUBVOL_RDONLY)
-+		readonly = true;
- 
- 	ret = btrfs_ioctl_snap_create_transid(file, vol_args->name,
--					      vol_args->fd, subvol, &transid);
-+					      vol_args->fd, subvol,
-+					      &transid, readonly);
- 
- 	if (!ret && async) {
- 		if (copy_to_user(arg +
-@@ -1506,6 +1518,9 @@ static int btrfs_ioctl_defrag(struct file *file, void __user *argp)
- 	struct btrfs_ioctl_defrag_range_args *range;
- 	int ret;
- 
++static noinline int btrfs_ioctl_subvol_getflags(struct file *file,
++						void __user *arg)
++{
++	struct inode *inode = fdentry(file)->d_inode;
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	struct btrfs_ioctl_vol_args_v2 *vol_args;
++	int ret = 0;
++	u64 flags = 0;
++
++	if (inode->i_ino != BTRFS_FIRST_FREE_OBJECTID)
++		return -EINVAL;
++
++	vol_args = memdup_user(arg, sizeof(*vol_args));
++	if (IS_ERR(vol_args))
++		return PTR_ERR(vol_args);
++
++	down_read(&root->fs_info->subvol_sem);
 +	if (root->readonly)
++		flags |= BTRFS_SUBVOL_RDONLY;
++	up_read(&root->fs_info->subvol_sem);
++
++	if (copy_to_user(arg + offsetof(struct btrfs_ioctl_vol_args_v2, flags),
++			 &flags, sizeof(flags)))
++		ret = -EFAULT;
++
++	kfree(vol_args);
++	return ret;
++}
++
++static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
++					      void __user *arg)
++{
++	struct inode *inode = fdentry(file)->d_inode;
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	struct btrfs_trans_handle *trans;
++	struct btrfs_ioctl_vol_args_v2 *vol_args;
++	u64 root_flags;
++	u64 flags;
++	int ret = 0;
++
++	if (root->fs_info->sb->s_flags & MS_RDONLY)
 +		return -EROFS;
 +
- 	ret = mnt_want_write(file->f_path.mnt);
- 	if (ret)
- 		return ret;
-@@ -1634,6 +1649,9 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 	if (!(file->f_mode & FMODE_WRITE) || (file->f_flags & O_APPEND))
- 		return -EINVAL;
- 
-+	if (root->readonly)
-+		return -EROFS;
++	if (inode->i_ino != BTRFS_FIRST_FREE_OBJECTID)
++		return -EINVAL;
 +
- 	ret = mnt_want_write(file->f_path.mnt);
- 	if (ret)
- 		return ret;
-@@ -1955,6 +1973,10 @@ static long btrfs_ioctl_trans_start(struct file *file)
- 	if (file->private_data)
- 		goto out;
- 
-+	ret = -EROFS;
-+	if (root->readonly)
++	vol_args = memdup_user(arg, sizeof(*vol_args));
++	if (IS_ERR(vol_args))
++		return PTR_ERR(vol_args);
++	flags = vol_args->flags;
++
++	if (flags & ~BTRFS_SUBVOL_RDONLY) {
++		ret = -EINVAL;
 +		goto out;
++	}
 +
- 	ret = mnt_want_write(file->f_path.mnt);
- 	if (ret)
- 		goto out;
++	down_write(&root->fs_info->subvol_sem);
++
++	/* nothing to do */
++	if (!!(flags & BTRFS_SUBVOL_RDONLY) == root->readonly)
++		goto out_unlock;
++
++	root_flags = btrfs_root_flags(&root->root_item);
++	if (flags & BTRFS_SUBVOL_RDONLY)
++		btrfs_set_root_flags(&root->root_item,
++				     root_flags | BTRFS_ROOT_SNAP_RDONLY);
++	else
++		btrfs_set_root_flags(&root->root_item,
++				     root_flags & ~BTRFS_ROOT_SNAP_RDONLY);
++	root->readonly = !root->readonly;
++
++	trans = btrfs_start_transaction(root, 1);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		goto out_unlock;
++	}
++
++	ret = btrfs_update_root(trans, root,
++				&root->root_key, &root->root_item);
++
++	btrfs_commit_transaction(trans, root);
++out_unlock:
++	up_write(&root->fs_info->subvol_sem);
++out:
++	kfree(vol_args);
++	return ret;
++}
++
+ /*
+  * helper to check if the subvolume references other subvolumes
+  */
+@@ -2283,6 +2371,10 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		return btrfs_ioctl_snap_create(file, argp, 1);
+ 	case BTRFS_IOC_SNAP_DESTROY:
+ 		return btrfs_ioctl_snap_destroy(file, argp);
++	case BTRFS_IOC_SUBVOL_GETFLAGS:
++		return btrfs_ioctl_subvol_getflags(file, argp);
++	case BTRFS_IOC_SUBVOL_SETFLAGS:
++		return btrfs_ioctl_subvol_setflags(file, argp);
+ 	case BTRFS_IOC_DEFAULT_SUBVOL:
+ 		return btrfs_ioctl_default_subvol(file, argp);
+ 	case BTRFS_IOC_DEFRAG:
 diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 9affc49..192fa99 100644
+index 192fa99..19f7259 100644
 --- a/fs/btrfs/ioctl.h
 +++ b/fs/btrfs/ioctl.h
-@@ -31,6 +31,7 @@ struct btrfs_ioctl_vol_args {
- };
- 
- #define BTRFS_SUBVOL_CREATE_SNAP_ASYNC	(1ULL << 0)
-+#define BTRFS_SUBVOL_RDONLY		(1ULL << 1)
- 
- #define BTRFS_SUBVOL_NAME_MAX 4039
- struct btrfs_ioctl_vol_args_v2 {
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index f50e931..30ee54c 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -910,6 +910,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	u64 to_reserve = 0;
- 	u64 index = 0;
- 	u64 objectid;
-+	u64 root_flags;
- 
- 	new_root_item = kmalloc(sizeof(*new_root_item), GFP_NOFS);
- 	if (!new_root_item) {
-@@ -967,6 +968,13 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	btrfs_set_root_last_snapshot(&root->root_item, trans->transid);
- 	memcpy(new_root_item, &root->root_item, sizeof(*new_root_item));
- 
-+	root_flags = btrfs_root_flags(new_root_item);
-+	if (pending->readonly)
-+		root_flags |= BTRFS_ROOT_SNAP_RDONLY;
-+	else
-+		root_flags &= ~BTRFS_ROOT_SNAP_RDONLY;
-+	btrfs_set_root_flags(new_root_item, root_flags);
-+
- 	old = btrfs_lock_root_node(root);
- 	btrfs_cow_block(trans, root, old, NULL, 0, &old);
- 	btrfs_set_lock_blocking(old);
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index f104b57..229a594 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -62,6 +62,7 @@ struct btrfs_pending_snapshot {
- 	struct btrfs_block_rsv block_rsv;
- 	/* extra metadata reseration for relocation */
- 	int error;
-+	bool readonly;
- 	struct list_head list;
- };
- 
-diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
-index 698fdd2..858ad4a 100644
---- a/fs/btrfs/xattr.c
-+++ b/fs/btrfs/xattr.c
-@@ -316,6 +316,15 @@ ssize_t btrfs_getxattr(struct dentry *dentry, const char *name,
- int btrfs_setxattr(struct dentry *dentry, const char *name, const void *value,
- 		   size_t size, int flags)
- {
-+	struct btrfs_root *root = BTRFS_I(dentry->d_inode)->root;
-+
-+	/*
-+	 * The permission on security.* and system.* is not checked
-+	 * in permission().
-+	 */
-+	if (root->readonly)
-+		return -EROFS;
-+
- 	/*
- 	 * If this is a request for a synthetic attribute in the system.*
- 	 * namespace use the generic infrastructure to resolve a handler
-@@ -336,6 +345,15 @@ int btrfs_setxattr(struct dentry *dentry, const char *name, const void *value,
- 
- int btrfs_removexattr(struct dentry *dentry, const char *name)
- {
-+	struct btrfs_root *root = BTRFS_I(dentry->d_inode)->root;
-+
-+	/*
-+	 * The permission on security.* and system.* is not checked
-+	 * in permission().
-+	 */
-+	if (root->readonly)
-+		return -EROFS;
-+
- 	/*
- 	 * If this is a request for a synthetic attribute in the system.*
- 	 * namespace use the generic infrastructure to resolve a handler
+@@ -194,4 +194,8 @@ struct btrfs_ioctl_space_args {
+ #define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
+ #define BTRFS_IOC_SNAP_CREATE_V2 _IOW(BTRFS_IOCTL_MAGIC, 23, \
+ 				   struct btrfs_ioctl_vol_args_v2)
++#define BTRFS_IOC_SUBVOL_GETFLAGS _IOW(BTRFS_IOCTL_MAGIC, 25, \
++				   struct btrfs_ioctl_vol_args_v2)
++#define BTRFS_IOC_SUBVOL_SETFLAGS _IOW(BTRFS_IOCTL_MAGIC, 26, \
++				   struct btrfs_ioctl_vol_args_v2)
+ #endif
 -- 
 1.6.3
 

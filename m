@@ -1,25 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bw0-f66.google.com ([209.85.214.66]:43745 "EHLO
-	mail-bw0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755794Ab0LHP0s convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Dec 2010 10:26:48 -0500
+Received: from mail-bw0-f45.google.com ([209.85.214.45]:37075 "EHLO
+	mail-bw0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756283Ab0LISLU convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Dec 2010 13:11:20 -0500
 MIME-Version: 1.0
-In-Reply-To: <AANLkTim8UTkfxXV0AkEfjNq3tcmnrXdh6BQ1ibY5iYPy@mail.gmail.com>
-References: <4CF692D1.1010906@redhat.com> <AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com>
- <4CF6B3E8.2000406@redhat.com> <20101201212310.GA15648@redhat.com>
+In-Reply-To: <20101209180111.GF2921@thunk.org>
+References: <4CF6B3E8.2000406@redhat.com> <20101201212310.GA15648@redhat.com>
  <AANLkTimQtMvPVafWG_DffF-zXXpz1vBPXdCCwxRnzSGr@mail.gmail.com>
  <20101204193828.GB13871@redhat.com> <AANLkTin3A_ySn_sZQPqZMn-NORnteQZwTVVSiW_=r3sO@mail.gmail.com>
  <20101207142145.GA27861@think> <AANLkTikJt-ZOmzj68Jw92rjGHzu0EP-uCVD+eNSO=vGd@mail.gmail.com>
- <20101207182243.GB21112@redhat.com> <20101207193514.GA2921@thunk.org> <AANLkTim8UTkfxXV0AkEfjNq3tcmnrXdh6BQ1ibY5iYPy@mail.gmail.com>
+ <20101207182243.GB21112@redhat.com> <20101207193514.GA2921@thunk.org>
+ <AANLkTim8UTkfxXV0AkEfjNq3tcmnrXdh6BQ1ibY5iYPy@mail.gmail.com> <20101209180111.GF2921@thunk.org>
 From: Jon Nelson <jnelson@jamponi.net>
-Date: Wed, 8 Dec 2010 09:26:25 -0600
-Message-ID: <AANLkTinQw6DZuTiKzmJFo10snbSX9r6+eWuTA8tt3J95@mail.gmail.com>
+Date: Thu, 9 Dec 2010 12:10:58 -0600
+Message-ID: <AANLkTimAUB5L5Ptm4Fv=sQUmL9_P5azPRCKQnmU89xs8@mail.gmail.com>
 Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
  barrier support is effective)
-To: "Ted Ts'o" <tytso@mit.edu>, Mike Snitzer <snitzer@redhat.com>,
-        Jon Nelson <jnelson@jamponi.net>, Chris Mason <chris.mason@oracle.com>,
-        Matt <jackdachef@gmail.com>, Milan Broz <mbroz@redhat.com>,
-        Andi Kleen <andi@firstfloor.org>,
+To: "Ted Ts'o" <tytso@mit.edu>, Jon Nelson <jnelson@jamponi.net>,
+        Mike Snitzer <snitzer@redhat.com>,
+        Chris Mason <chris.mason@oracle.com>, Matt <jackdachef@gmail.com>,
+        Milan Broz <mbroz@redhat.com>, Andi Kleen <andi@firstfloor.org>,
         linux-btrfs <linux-btrfs@vger.kernel.org>,
         dm-devel <dm-devel@redhat.com>,
         Linux Kernel <linux-kernel@vger.kernel.org>,
@@ -29,72 +29,31 @@ Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 7, 2010 at 9:37 PM, Jon Nelson <jnelson@jamponi.net> wrote:
-> On Tue, Dec 7, 2010 at 1:35 PM, Ted Ts'o <tytso@mit.edu> wrote:
->> On Tue, Dec 07, 2010 at 01:22:43PM -0500, Mike Snitzer wrote:
->>> > 1. create a database (from bash):
->>> >
->>> > createdb test
->>> >
->>> > 2. place the following contents in a file (I used 't.sql'):
->>> >
->>> > begin;
->>> > create temporary table foo as select x as a, ARRAY[x] as b FROM
->>> > generate_series(1, 10000000 ) AS x;
->>> > create index foo_a_idx on foo (a);
->>> > create index foo_b_idx on foo USING GIN (b);
->>> > rollback;
->>> >
->>> > 3. execute that sql:
->>> >
->>> > psql -f t.sql --echo-all test
->>> >
->>> > With 2.6.34.7 I can re-run [3] all day long, as many times as I want,
->>> > without issue.
->>> >
->>> > With 2.6.37-rc4-13 (the currently-installed KOTD kernel) if tails
->>> > pretty frequently.
->>
->> So I just tried to reproduce this on an Ubuntu 10.04 system running
->> 2.6.37-rc5 (completely stock except for a few apparmor patches that I
->> needed to keep the apparmor userspace from complaining).  I'm using
->> Postgres 8.4.5-0ubuntu10.04.
->>
->> Using the above procedure, I wasn't able to reproduce.  Then I
->> realized this might have been because I was using an SSD root file
->> system (which is secured using LUKS/dm-crypt, with LVM on top of
->> dm-crypt).  So I mounted a file system on a 5400 rpm SSD disk, which
->> is also protected using LUKS/dm-crypt with LVM on top.  I then
->> executed the PostgresQL commands:
->>
->> CREATE TABLESPACE test LOCATION '/kbuild/postgres';
->> SET default_tablespace = test;
->> COMMIT
->> \quit
->>
->> I then re-ran the above proceduing, and verified that all of the I/O
->> was going to the 5400rpm laptop disk.
->>
->> I then ran the above procedure a half-dozen times, and I still haven't
->> been able to reproduce any Postgresql errors or kernel errors.
->>
->> Jon, can you help me identify what might be different with your run
->> and mine?  What version of Postgres are you using?
+On Thu, Dec 9, 2010 at 12:01 PM, Ted Ts'o <tytso@mit.edu> wrote:
+> On Tue, Dec 07, 2010 at 09:37:20PM -0600, Jon Nelson wrote:
+>> One difference is the location of the transaction logs (pg_xlog). In
+>> my case, /var/lib/pgsql/data *is* mountpoint for the test volume
+>> (actually, it's a symlink to the mount point). In your case, that is
+>> not so. Perhaps that makes a difference?  pgsql_tmp might also be on
+>> two different volumes in your case (I can't be sure).
 >
-> One difference is the location of the transaction logs (pg_xlog). In
-> my case, /var/lib/pgsql/data *is* mountpoint for the test volume
-> (actually, it's a symlink to the mount point). In your case, that is
-> not so. Perhaps that makes a difference?  pgsql_tmp might also be on
-> two different volumes in your case (I can't be sure).
+> I just tried tried to run t.sql five times with /var/lib/postgres as a
+> mountpoint for a 5400 rpm disk, and I still haven't been able to
+> replicate it.
 
+You should be OK, there. Are you using encryption or no?
+I had difficulty replicating the issue without encryption.
 
-I grabbed a Kubuntu iso and installed Kubuntu 10.10, and then upgraded
-to 'natty', and eventually to 2.6.37-8-generic.
+> If you can point out how to query pgsql_tmp (I'm using a completely
+> default postgres install), that would be helpful, but I don't think it
+> would be going anywhere else.
 
-With that install, and postgresql's "data" (/var/lib/postgresql/data)
-being located on a LUKS+ext4 volume, I easily observe the behavior.
-
-Does this help?
+Normally it's /var/lib/pgsql/data/pgsql_tmp (or
+/var/lib/postgres/data/pgsql_tmp in your case). By placing
+/var/lib/{postgresql,pgsql}/data on the LUKS + ext4 volume, on both
+openSUSE 11.3 and Kubuntu, I was able to replicate the problem easily,
+in VirtualBox. I can give qemu a try. In both cases I was using a
+2.6.37x kernel.
 
 -- 
 Jon

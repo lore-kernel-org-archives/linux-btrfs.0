@@ -1,136 +1,56 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: [PATCH v2 5/5] Btrfs: Add BTRFS_IOC_SUBVOL_GETFLAGS/SETFLAGS ioctl
-Date: Thu, 9 Dec 2010 21:09:05 +0100
-Message-ID: <201012092109.05720.kreijack@libero.it>
-References: <4D009CD2.3060805@cn.fujitsu.com> <4D009D42.1020002@cn.fujitsu.com>
-Reply-To: kreijack@libero.it
+From: Ted Ts'o <tytso@mit.edu>
+Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
+ barrier support is effective)
+Date: Thu, 9 Dec 2010 15:13:59 -0500
+Message-ID: <20101209201359.GG2921@thunk.org>
+References: <AANLkTimQtMvPVafWG_DffF-zXXpz1vBPXdCCwxRnzSGr@mail.gmail.com>
+ <20101204193828.GB13871@redhat.com>
+ <AANLkTin3A_ySn_sZQPqZMn-NORnteQZwTVVSiW_=r3sO@mail.gmail.com>
+ <20101207142145.GA27861@think>
+ <AANLkTikJt-ZOmzj68Jw92rjGHzu0EP-uCVD+eNSO=vGd@mail.gmail.com>
+ <20101207182243.GB21112@redhat.com>
+ <20101207193514.GA2921@thunk.org>
+ <AANLkTim8UTkfxXV0AkEfjNq3tcmnrXdh6BQ1ibY5iYPy@mail.gmail.com>
+ <20101209180111.GF2921@thunk.org>
+ <AANLkTimAUB5L5Ptm4Fv=sQUmL9_P5azPRCKQnmU89xs8@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Cc: linux-btrfs@vger.kernel.org
-To: Li Zefan <lizf@cn.fujitsu.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D009D42.1020002@cn.fujitsu.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Mike Snitzer <snitzer@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Matt <jackdachef@gmail.com>, Milan Broz <mbroz@redhat.com>,
+	Andi Kleen <andi@firstfloor.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	dm-devel <dm-devel@redhat.com>,
+	Linux Kernel <linux-kernel@vger.kernel.org>,
+	htd <htd@fancy-poultry.org>, htejun@gmail.com,
+	linux-ext4@vger.kernel.org
+To: Jon Nelson <jnelson@jamponi.net>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <AANLkTimAUB5L5Ptm4Fv=sQUmL9_P5azPRCKQnmU89xs8@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Li,
-
-On Thursday, 09 December, 2010, Li Zefan wrote:
-> This allows us to set a snapshot or a subvolume readonly or writable
-> on the fly.
+On Thu, Dec 09, 2010 at 12:10:58PM -0600, Jon Nelson wrote:
 > 
-> Usage:
+> You should be OK, there. Are you using encryption or no?
+> I had difficulty replicating the issue without encryption.
+
+Yes, I'm using encryption.  LUKS with aes-xts-plain-sha256, and then
+LVM on top of LUKS.
+
+> > If you can point out how to query pgsql_tmp (I'm using a completely
+> > default postgres install), that would be helpful, but I don't think it
+> > would be going anywhere else.
 > 
-> Set BTRFS_SUBVOL_RDONLY of btrfs_ioctl_vol_arg_v2->flags, and then
-> call ioctl(BTRFS_IOCTL_SUBVOL_SETFLAGS);
-> 
-> Changelog for v2:
-> - Add _GETFLAGS ioctl.
-> - Check if the passed fd is the root of a subvolume.
-> - Change the name from _SNAP_SETFLAGS to _SUBVOL_SETFLAGS.
-> 
-> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
-> ---
->  fs/btrfs/ioctl.c |   92 
-++++++++++++++++++++++++++++++++++++++++++++++++++++++
->  fs/btrfs/ioctl.h |    4 ++
->  2 files changed, 96 insertions(+), 0 deletions(-)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index db2b231..29304c7 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -1010,6 +1010,94 @@ out:
-[...]
-> +	struct btrfs_ioctl_vol_args_v2 *vol_args;
-> +	int ret = 0;
-> +	u64 flags = 0;
-> +
-> +	if (inode->i_ino != BTRFS_FIRST_FREE_OBJECTID)
-> +		return -EINVAL;
-> +
-> +	vol_args = memdup_user(arg, sizeof(*vol_args));
+> Normally it's /var/lib/pgsql/data/pgsql_tmp (or
+> /var/lib/postgres/data/pgsql_tmp in your case). By placing
+> /var/lib/{postgresql,pgsql}/data on the LUKS + ext4 volume, on both
+> openSUSE 11.3 and Kubuntu, I was able to replicate the problem easily,
+> in VirtualBox. I can give qemu a try. In both cases I was using a
+> 2.6.37x kernel.
 
-Would be better to avoid a dynamic allocation for a so small struct ? 
-And as more general comment: what is the reason to pass a so complex struct 
-only for setting/getting the flags ?
-Would be it better to pass directly a u64 variable.
+Ah, I'm not using virtualization.  I'm running on a X410 laptop, on
+raw hardware.  Perhaps virtualization slows things down enough that it
+triggers?  Or maybe you're running with a more constrained memory than
+I?  How much memory do you have configured in your VM?
 
-[..]
-> +
-> +static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
-> +					      void __user *arg)
-> +{
-> +	struct inode *inode = fdentry(file)->d_inode;
-> +	struct btrfs_root *root = BTRFS_I(inode)->root;
-> +	struct btrfs_trans_handle *trans;
-> +	struct btrfs_ioctl_vol_args_v2 *vol_args;
-> +	u64 root_flags;
-> +	u64 flags;
-> +	int ret = 0;
-> +
-> +	if (root->fs_info->sb->s_flags & MS_RDONLY)
-> +		return -EROFS;
-> +
-> +	if (inode->i_ino != BTRFS_FIRST_FREE_OBJECTID)
-> +		return -EINVAL;
-> +
-> +	vol_args = memdup_user(arg, sizeof(*vol_args));
-
-Same as before.
-
-> +	if (IS_ERR(vol_args))
-> +		return PTR_ERR(vol_args);
-> +	flags = vol_args->flags;
-> +
-> +	if (flags & ~BTRFS_SUBVOL_RDONLY) {
-> +		ret = -EINVAL;
-> +		goto out;
-> +	}
-> +
-> +	down_write(&root->fs_info->subvol_sem);
-> +
-> +	/* nothing to do */
-> +	if (!!(flags & BTRFS_SUBVOL_RDONLY) == root->readonly)
-> +		goto out_unlock;
-
-This is only an aesthetic comment: I prefer a simpler style like
-
-	if ((flags & BTRFS_SUBVOL_RDONLY) && root->readonly)
-		goto out_unlock;
-
-But I know that every body has its style :-)
-
-> +
-> +	root_flags = btrfs_root_flags(&root->root_item);
-> +	if (flags & BTRFS_SUBVOL_RDONLY)
-> +		btrfs_set_root_flags(&root->root_item,
-> +				     root_flags | BTRFS_ROOT_SNAP_RDONLY);
-> +	else
-> +		btrfs_set_root_flags(&root->root_item,
-> +				     root_flags & ~BTRFS_ROOT_SNAP_RDONLY);
-> +	root->readonly = !root->readonly;
-
-I double checked this line. But if I read the code correctly I think that the 
-line above is wrong: the field "root->readonly" is flipped regardless the 
-value of the flags passed by the user.
-
-Moreover I have another question: why internally the flags is 
-BTRFS_ROOT_SNAP_RDONLY, instead in user space the flag is BTRFS_SUBVOL_RDONLY 
-? 
-
-I suggest to 
-- rename BTRFS_SUBVOL_RDONLY in BTRFS_SUBVOL_CREATE_SNAP_RDONLY (like 
-BTRFS_SUBVOL_CREATE_SNAP_ASYNC)
-- rename BTRFS_ROOT_SNAP_RDONLY in BTRFS_ROOT_FLAGS_RDONLY and use both in 
-userspace and in kernel space this flag. I suggested to remove SNAP because 
-the flag make sense also for a "standard" subvolume.
-
-
-Gegards 
-G.Baroncelli
-
-
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+    	     	       	   		      - Ted

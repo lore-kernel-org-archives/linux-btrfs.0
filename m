@@ -1,49 +1,27 @@
-From: Ted Ts'o <tytso@mit.edu>
-Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
- barrier support is effective)
-Date: Thu, 9 Dec 2010 13:01:11 -0500
-Message-ID: <20101209180111.GF2921@thunk.org>
-References: <4CF6B3E8.2000406@redhat.com>
- <20101201212310.GA15648@redhat.com>
- <AANLkTimQtMvPVafWG_DffF-zXXpz1vBPXdCCwxRnzSGr@mail.gmail.com>
- <20101204193828.GB13871@redhat.com>
- <AANLkTin3A_ySn_sZQPqZMn-NORnteQZwTVVSiW_=r3sO@mail.gmail.com>
- <20101207142145.GA27861@think>
- <AANLkTikJt-ZOmzj68Jw92rjGHzu0EP-uCVD+eNSO=vGd@mail.gmail.com>
- <20101207182243.GB21112@redhat.com>
- <20101207193514.GA2921@thunk.org>
- <AANLkTim8UTkfxXV0AkEfjNq3tcmnrXdh6BQ1ibY5iYPy@mail.gmail.com>
+From: Sean Bartell <wingedtachikoma@gmail.com>
+Subject: Re: Permissions model for btrfs?
+Date: Thu, 9 Dec 2010 13:02:33 -0500
+Message-ID: <20101209180233.GA3153@flcl.lan>
+References: <4D011367.70501@acm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Mike Snitzer <snitzer@redhat.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Matt <jackdachef@gmail.com>, Milan Broz <mbroz@redhat.com>,
-	Andi Kleen <andi@firstfloor.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	dm-devel <dm-devel@redhat.com>,
-	Linux Kernel <linux-kernel@vger.kernel.org>,
-	htd <htd@fancy-poultry.org>, htejun@gmail.com,
-	linux-ext4@vger.kernel.org
-To: Jon Nelson <jnelson@jamponi.net>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <AANLkTim8UTkfxXV0AkEfjNq3tcmnrXdh6BQ1ibY5iYPy@mail.gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+To: Wayne Pollock <pollock@acm.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4D011367.70501@acm.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 07, 2010 at 09:37:20PM -0600, Jon Nelson wrote:
-> One difference is the location of the transaction logs (pg_xlog). In
-> my case, /var/lib/pgsql/data *is* mountpoint for the test volume
-> (actually, it's a symlink to the mount point). In your case, that is
-> not so. Perhaps that makes a difference?  pgsql_tmp might also be on
-> two different volumes in your case (I can't be sure).
+On Thu, Dec 09, 2010 at 12:35:35PM -0500, Wayne Pollock wrote:
+> I looked though the wiki (and "searched" the archives) but
+> don't see an answer.  Will btrfs support old POSIX-style ACLs
+> and permissions, or the new NFS/NT style ACLs like ZFS?  From
+> the patch I saw, it seems old POSIX ACLs and permissions, but
+> I'd like to know for sure.  (And maybe the FAQ on the wiki could
+> address this?)  If it is the older POSIC ACLs, is there any plan
+> to support NFSv4 ACLs in the future?
 
-I just tried tried to run t.sql five times with /var/lib/postgres as a
-mountpoint for a 5400 rpm disk, and I still haven't been able to
-replicate it.
+Right now it supports POSIX ACLs. I don't know about future plans.
 
-If you can point out how to query pgsql_tmp (I'm using a completely
-default postgres install), that would be helpful, but I don't think it
-would be going anywhere else.
+> On a related note, will btrfs support any ext4 attributes (via chattr)?
 
-Still trying....
-
-						- Ted
+It currently supports AaDdiS.

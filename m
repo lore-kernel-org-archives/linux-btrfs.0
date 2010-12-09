@@ -1,62 +1,50 @@
-From: Serge Hallyn <serge.hallyn@canonical.com>
-Subject: Re: [PATCH] fs/vfs/security: pass last path component to LSM on
- inode creation
-Date: Thu, 9 Dec 2010 10:05:49 -0600
-Message-ID: <20101209160549.GA2315@peq>
-References: <20101208194527.13537.77202.stgit@paris.rdu.redhat.com>
- <19712.61515.201226.938553@quad.stoffel.home>
+From: Tom Kuther <kuther@gmx.de>
+Subject: Re: Fsck, parent transid verify failed
+Date: Thu, 9 Dec 2010 16:21:03 +0000 (UTC)
+Message-ID: <loom.20101209T171330-48@post.gmane.org>
+References: <003501cb9147$09197540$1b4c5fc0$@gmail.com> <1291306826-sup-7837@think> <AANLkTim5-5KQ3_sEb9WY+O1Uj36=3M3i_yQKeuSb7Qe5@mail.gmail.com> <1291326502-sup-1726@think>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Eric Paris <eparis@redhat.com>, xfs-masters@oss.sgi.com,
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-	linux-ext4@vger.kernel.org, cluster-devel@redhat.com,
-	linux-mtd@lists.infradead.org,
-	jfs-discussion@lists.sourceforge.net, ocfs2-devel@oss.oracle.com,
-	reiserfs-devel@vger.kernel.org, xfs@oss.sgi.com,
-	linux-mm@kvack.org, linux-security-module@vger.kernel.org,
-	chris.mason@oracle.com, jack@suse.cz, akpm@linux-foundation.org,
-	adilger.kernel@dilger.ca, tytso@mit.edu, swhiteho@redhat.com,
-	dwmw2@infradead.org, shaggy@linux.vnet.ibm.com, mfasheh@suse.com,
-	joel.becker@oracle.com, aelder@sgi.com, hughd@google.com,
-	jmorris@namei.org, sds@tycho.nsa.gov, eparis@parisplace.org,
-	hch@lst.de, dchinner@redhat.com, viro@zeniv.linux.org.uk,
-	tao.ma@oracle.com, shemminger@vyatta.com, jeffm@suse.com,
-	serue@us.ibm.com, paul.moore@hp.com,
-	penguin-kernel@I-love.SAKURA.ne.jp, casey
-To: John Stoffel <john@stoffel.org>
-Return-path: <reiserfs-devel-owner@vger.kernel.org>
-In-Reply-To: <19712.61515.201226.938553@quad.stoffel.home>
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quoting John Stoffel (john@stoffel.org):
-> >>>>> "Eric" == Eric Paris <eparis@redhat.com> writes:
-> 
-> Eric> SELinux would like to implement a new labeling behavior of newly
-> Eric> created inodes.  We currently label new inodes based on the
-> Eric> parent and the creating process.  This new behavior would also
-> Eric> take into account the name of the new object when deciding the
-> Eric> new label.  This is not the (supposed) full path, just the last
-> Eric> component of the path.
-> 
-> Eric> This is very useful because creating /etc/shadow is different
-> Eric> than creating /etc/passwd but the kernel hooks are unable to
-> Eric> differentiate these operations.  We currently require that
-> Eric> userspace realize it is doing some difficult operation like that
-> Eric> and than userspace jumps through SELinux hoops to get things set
-> Eric> up correctly.  This patch does not implement new behavior, that
-> Eric> is obviously contained in a seperate SELinux patch, but it does
-> Eric> pass the needed name down to the correct LSM hook.  If no such
-> Eric> name exists it is fine to pass NULL.
-> 
-> I've looked this patch over, and maybe I'm missing something, but how
-> does knowing the name of the file really tell you anything, esp when
-> you only get the filename, not the path?  What threat are you
-> addressing with this change?  
+Chris Mason <chris.mason <at> oracle.com> writes:
 
-Like you, I keep thinking back to this patch and going back and forth.
-But to answer your question:  in some cases, the name of the file
-(plus the context of the directory in which it is created) can tell
-you what assumptions userspace will make about it.  And userspace most
-definately is a part of the TCB, i.e. /bin/passwd and /bin/login.
+> [...]
+> Build the latest tools, then:
+> 
+> btrfsck -s 1 /dev/xxx
+> btrfsck -s 2 /dev/xxx
+> 
+> If either of these work we have an easy way to get it mounted.  Just let
+> me know.
+> 
 
--serge
+Hello,
+
+I get those "parent transid verify failed" errors too after a system failure.
+
+# btrfsck -s 1 /dev/md0 
+using SB copy 1, bytenr 67108864
+found 1954912653312 bytes used err is 0
+total csum bytes: 1892054684
+total tree bytes: 3455627264
+total fs tree bytes: 1082691584
+btree space waste bytes: 584155173
+file data blocks allocated: 12808940421120
+ referenced 1933520879616
+Btrfs v0.19-35-g1b444cd-dirty
+# btrfsck -s 2 /dev/md0 
+using SB copy 2, bytenr 274877906944
+found 1954912653312 bytes used err is 0
+-snip-
+
+Both seem to work.
+What would be the steps to get it mounted?
+
+Thanks in advance.
+
+~thomas
+
+

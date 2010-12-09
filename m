@@ -1,64 +1,80 @@
-From: "John Stoffel" <john@stoffel.org>
-Subject: Re: [PATCH] fs/vfs/security: pass last path component to LSM on inode
- creation
-Date: Thu, 9 Dec 2010 10:05:47 -0500
-Message-ID: <19712.61515.201226.938553@quad.stoffel.home>
-References: <20101208194527.13537.77202.stgit@paris.rdu.redhat.com>
+From: "J. Bruce Fields" <bfields@redhat.com>
+Subject: Re: What to do about subvolumes?
+Date: Thu, 9 Dec 2010 10:19:11 -0500
+Message-ID: <20101209151910.GA10010@pad.home.fieldses.org>
+References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com>
+ <20101203214526.GA4508@localhost.localdomain>
+ <20101203222756.GF23339@dastard>
+ <1291415351-sup-4820@think>
+ <20101203224525.GC12491@pad.home.fieldses.org>
+ <26801711-6DF9-4122-BCDF-033A1781C3E4@dilger.ca>
+ <20101206164844.GA22447@pad.home.fieldses.org>
+ <20101209100711.6e6541e1@notabene.brown>
+ <FBF72E13-C120-44FF-AFB0-1B4F9B06DFBE@dilger.ca>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: xfs-masters@oss.sgi.com, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-ext4@vger.kernel.org,
-	cluster-devel@redhat.com, linux-mtd@lists.infradead.org,
-	jfs-discussion@lists.sourceforge.net, ocfs2-devel@oss.oracle.com,
-	reiserfs-devel@vger.kernel.org, xfs@oss.sgi.com,
-	linux-mm@kvack.org, linux-security-module@vger.kernel.org,
-	chris.mason@oracle.com, jack@suse.cz, akpm@linux-foundation.org,
-	adilger.kernel@dilger.ca, tytso@mit.edu, swhiteho@redhat.com,
-	dwmw2@infradead.org, shaggy@linux.vnet.ibm.com, mfasheh@suse.com,
-	joel.becker@oracle.com, aelder@sgi.com, hughd@google.com,
-	jmorris@namei.org, sds@tycho.nsa.gov, eparis@parisplace.org,
-	hch@lst.de, dchinner@redhat.com, viro@zeniv.linux.org.uk,
-	tao.ma@oracle.com, shemminger@vyatta.com, jeffm@suse.com,
-	serue@us.ibm.com, paul.moore@hp.com,
-	penguin-kernel@I-love.SAKURA.ne.jp, casey@schaufler-ca.com,
-	kees.cook@can
-To: Eric Paris <eparis@redhat.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20101208194527.13537.77202.stgit@paris.rdu.redhat.com>
+Cc: Neil Brown <neilb@suse.de>, Chris Mason <chris.mason@oracle.com>,
+	Dave Chinner <david@fromorbit.com>,
+	Josef Bacik <josef@redhat.com>,
+	linux-btrfs Btrfs <linux-btrfs@vger.kernel.org>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>, hch <hch@lst.de>,
+	ssorce <ssorce@redhat.com>,
+	"K. V K.V" <aneesh.kumar@linux.vnet.ibm.com>
+To: Andreas Dilger <adilger.kernel@dilger.ca>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <FBF72E13-C120-44FF-AFB0-1B4F9B06DFBE@dilger.ca>
 List-ID: <linux-btrfs.vger.kernel.org>
 
->>>>> "Eric" == Eric Paris <eparis@redhat.com> writes:
+On Wed, Dec 08, 2010 at 09:41:33PM -0700, Andreas Dilger wrote:
+> On 2010-12-08, at 16:07, Neil Brown wrote:
+> > On Mon, 6 Dec 2010 11:48:45 -0500 "J. Bruce Fields" <bfields@redhat.com>
+> > wrote:
+> > 
+> >> On Fri, Dec 03, 2010 at 04:01:44PM -0700, Andreas Dilger wrote:
+> >>> Any chance we can add a ->get_fsid(sb, inode) method to
+> >>> export_operations (or something simiar), that allows the
+> >>> filesystem to generate an FSID based on the volume and
+> >>> inode that is being exported?
+> >> 
+> >> No objection from here.
+> > 
+> > My standard objection here is that you cannot guarantee that the
+> > fsid is 100% guarantied to be unique across all filesystems in
+> > the system (including filesystems mounted from dm snapshots of
+> > filesystems that are currently mounted).  NFSd needs this uniqueness.
+> 
+> Sure, but you also cannot guarantee that the devno is constant across reboots, yet NFS continues to use this much-less-constant value...
+> 
+> > This is only really an objection if user-space cannot over-ride
+> > the fsid provided by the filesystem.
+> 
+> Agreed.  It definitely makes sense to allow this, for whatever strange circumstances might arise.  However, defaulting to using the filesystem UUID definitely makes the most sense, and looking at the nfs-utils mountd code, it seems that this is already standard behaviour for local block devices (excluding "btrfs" filesystems).
+> 
+> > I'd be very happy to see an interface to user-space whereby
+> > user-space can get a reasonably unique fsid for a given
+> > filesystem.
+> 
+> Hmm, maybe I'm missing something, but why does userspace need to be able to get this value?  I would think that nfsd gets it from the filesystem directly in the kernel, but if a "uuid=" option is present in the exports file that is preferentially used over the value from the filesystem.
 
-Eric> SELinux would like to implement a new labeling behavior of newly
-Eric> created inodes.  We currently label new inodes based on the
-Eric> parent and the creating process.  This new behavior would also
-Eric> take into account the name of the new object when deciding the
-Eric> new label.  This is not the (supposed) full path, just the last
-Eric> component of the path.
+Well, the kernel can't distinguish the case of an explicit "uuid="
+option in /etc/exports from one that was (as is the normal default)
+generated automatically by mountd.  Maybe not a big deal.
 
-Eric> This is very useful because creating /etc/shadow is different
-Eric> than creating /etc/passwd but the kernel hooks are unable to
-Eric> differentiate these operations.  We currently require that
-Eric> userspace realize it is doing some difficult operation like that
-Eric> and than userspace jumps through SELinux hoops to get things set
-Eric> up correctly.  This patch does not implement new behavior, that
-Eric> is obviously contained in a seperate SELinux patch, but it does
-Eric> pass the needed name down to the correct LSM hook.  If no such
-Eric> name exists it is fine to pass NULL.
+The uuid seems like a useful thing to have access to from userspace
+anyway, for userspace nfs servers if for no other reason:
 
-I've looked this patch over, and maybe I'm missing something, but how
-does knowing the name of the file really tell you anything, esp when
-you only get the filename, not the path?  What threat are you
-addressing with this change?  
+> That said, I think Aneesh's open_by_handle patchset also made the UUID visible in /proc/<pid>/mountinfo, after the filesystems stored it in
+> sb->s_uuid at mount time.  That _should_ make it visible for non-block mountpoints as well, assuming they fill in s_uuid.
+> 
+> > Whether this is an export_operations method or some field in the
+> > 'struct super' which gets copied out doesn't matter to me.
+> 
+> Since Aneesh has already developed patches, is there any objection to using those (last sent to linux-fsdevel on 2010-10-29):
+> 
+> [PATCH -V22 12/14] vfs: Export file system uuid via /proc/<pid>/mountinfo
+> [PATCH -V22 13/14] ext3: Copy fs UUID to superblock.
+> [PATCH -V22 14/14] ext4: Copy fs UUID to superblock
 
-So what happens when I create a file /home/john/shadow, does selinux
-(or LSM in general) then run extra checks because the filename is
-'shadow' in your model?  
+I can't see anything wrong with that.
 
-I *think* the overhead shouldn't be there if SELINUX is disabled, but
-have you confirmed this?  How you run performance tests before/after
-this change when doing lots of creations of inodes to see what sort of
-performance changes might be there?
-
-Thanks,
-John
+--b.

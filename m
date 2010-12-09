@@ -1,29 +1,64 @@
-From: "Dipl.-Ing. Michael Niederle" <mniederle@gmx.at>
-Subject: Re: mount snapshot by object-id
-Date: Thu, 9 Dec 2010 15:53:56 +0100
-Message-ID: <20101209155356.37cb8dba@simplux>
-References: <20101209145114.07f55914@simplux>
-	<1291905104.15070.6.camel@ayu>
+From: "John Stoffel" <john@stoffel.org>
+Subject: Re: [PATCH] fs/vfs/security: pass last path component to LSM on inode
+ creation
+Date: Thu, 9 Dec 2010 10:05:47 -0500
+Message-ID: <19712.61515.201226.938553@quad.stoffel.home>
+References: <20101208194527.13537.77202.stgit@paris.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: Calvin Walton <calvin.walton@gmail.com>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1291905104.15070.6.camel@ayu>
+Content-Type: text/plain; charset=us-ascii
+Cc: xfs-masters@oss.sgi.com, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-ext4@vger.kernel.org,
+	cluster-devel@redhat.com, linux-mtd@lists.infradead.org,
+	jfs-discussion@lists.sourceforge.net, ocfs2-devel@oss.oracle.com,
+	reiserfs-devel@vger.kernel.org, xfs@oss.sgi.com,
+	linux-mm@kvack.org, linux-security-module@vger.kernel.org,
+	chris.mason@oracle.com, jack@suse.cz, akpm@linux-foundation.org,
+	adilger.kernel@dilger.ca, tytso@mit.edu, swhiteho@redhat.com,
+	dwmw2@infradead.org, shaggy@linux.vnet.ibm.com, mfasheh@suse.com,
+	joel.becker@oracle.com, aelder@sgi.com, hughd@google.com,
+	jmorris@namei.org, sds@tycho.nsa.gov, eparis@parisplace.org,
+	hch@lst.de, dchinner@redhat.com, viro@zeniv.linux.org.uk,
+	tao.ma@oracle.com, shemminger@vyatta.com, jeffm@suse.com,
+	serue@us.ibm.com, paul.moore@hp.com,
+	penguin-kernel@I-love.SAKURA.ne.jp, casey@schaufler-ca.com,
+	kees.cook@can
+To: Eric Paris <eparis@redhat.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20101208194527.13537.77202.stgit@paris.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Calvin!
+>>>>> "Eric" == Eric Paris <eparis@redhat.com> writes:
 
-Thanks a lot for this information and for updating the wiki!
+Eric> SELinux would like to implement a new labeling behavior of newly
+Eric> created inodes.  We currently label new inodes based on the
+Eric> parent and the creating process.  This new behavior would also
+Eric> take into account the name of the new object when deciding the
+Eric> new label.  This is not the (supposed) full path, just the last
+Eric> component of the path.
 
-The option works - on healthy disks ...
+Eric> This is very useful because creating /etc/shadow is different
+Eric> than creating /etc/passwd but the kernel hooks are unable to
+Eric> differentiate these operations.  We currently require that
+Eric> userspace realize it is doing some difficult operation like that
+Eric> and than userspace jumps through SELinux hoops to get things set
+Eric> up correctly.  This patch does not implement new behavior, that
+Eric> is obviously contained in a seperate SELinux patch, but it does
+Eric> pass the needed name down to the correct LSM hook.  If no such
+Eric> name exists it is fine to pass NULL.
 
-I will continue writing my rescue-tool. I also wrote a btrfs_subvolumes command
-that displays all subvolumes of an unmounted filesystem. This helps a lot if
-mounting the filesystem leads to a crash!
+I've looked this patch over, and maybe I'm missing something, but how
+does knowing the name of the file really tell you anything, esp when
+you only get the filename, not the path?  What threat are you
+addressing with this change?  
 
-Greetings, Michael
+So what happens when I create a file /home/john/shadow, does selinux
+(or LSM in general) then run extra checks because the filename is
+'shadow' in your model?  
 
+I *think* the overhead shouldn't be there if SELINUX is disabled, but
+have you confirmed this?  How you run performance tests before/after
+this change when doing lots of creations of inodes to see what sort of
+performance changes might be there?
 
-
-
+Thanks,
+John

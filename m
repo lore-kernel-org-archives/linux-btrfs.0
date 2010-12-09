@@ -1,92 +1,78 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: [PATCH v2 4/5] Btrfs: Add readonly snapshots support
-Date: Thu, 9 Dec 2010 20:34:10 +0100
-Message-ID: <201012092034.11019.kreijack@libero.it>
-References: <4D009CD2.3060805@cn.fujitsu.com> <4D009D28.3060509@cn.fujitsu.com>
-Reply-To: kreijack@libero.it
+From: "Ian! D. Allen" <idallen@idallen.ca>
+Subject: Re: btrfs subvolume snapshot hung in btrfs_commit_transaction
+Date: Thu, 9 Dec 2010 14:46:39 -0500
+Message-ID: <20101209194639.GA10171@idallen.ca>
+References: <20101208140102.GA30686@idallen.ca>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Cc: linux-btrfs@vger.kernel.org
-To: Li Zefan <lizf@cn.fujitsu.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D009D28.3060509@cn.fujitsu.com>
+In-Reply-To: <20101208140102.GA30686@idallen.ca>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Li,
+Hello developers - Last chance to get more details on this btrfs hang
+(below) before I reboot the machine.  Anything I can do to gather
+more data?
 
-On Thursday, 09 December, 2010, Li Zefan wrote:
-> Usage:
+Linux linux 2.6.35-23-generic #40-Ubuntu SMP Wed Nov 17 22:14:33 UTC 2010 x86_64 GNU/Linux
+
+Description: Ubuntu 10.10
+
+Package: btrfs-tools
+Status: install ok installed
+Priority: optional
+Section: admin
+Installed-Size: 1408
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Architecture: amd64
+Version: 0.19+20100601-3
+Depends: e2fslibs (>= 1.37), libc6 (>= 2.7), libcomerr2 (>= 1.01), libuuid1 (>= 2.16), zlib1g (>= 1:1.2.0)
+Original-Maintainer: Daniel Baumann <daniel@lists.debian-maintainers.org>
+Homepage: http://btrfs.wiki.kernel.org/
+
+On Wed, Dec 08, 2010 at 09:01:02AM -0500, Ian! D. Allen wrote:
+> I've been exercising btrfs doing a continuous loop of:
 > 
-> Set BTRFS_SUBVOL_RDONLY of btrfs_ioctl_vol_arg_v2->flags, and call
-> ioctl(BTRFS_I0CTL_SNAP_CREATE_V2).
+>     - delete an old snapshot to keep disk space about the same
+>     - create snapshot from previous snapshot
+>     - rsync root into new snapshot
 > 
-> Implementation:
+> I have room for 150 snapshots on disk.  I delete the oldest, create
+> the newest, do the rsync into the newest, repeat.  It hung today on
+> snapshot 564:
 > 
-> - In disk set readonly bit of btrfs_root_item->flags, and in memory
-> set btrfs_root->readonly.
+> $ ps uww 24575
+> USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+> root     24575  0.0  0.0   6224   332 pts/10   DN   07:35   0:00 btrfs subvolume snapshot /mnt/sde1/snap564 /mnt/sde1/snap565
 > 
-> - Add readonly checks in btrfs_permission (inode_permission),
-> btrfs_setattr, btrfs_set/remove_xattr and some ioctls.
+> $ ps lww 24575
+> F   UID   PID  PPID PRI  NI    VSZ   RSS WCHAN  STAT TTY        TIME COMMAND
+> 4     0 24575 27716  35   -   6224   332 btrfs_ DN   pts/10     0:00 btrfs subvolume snapshot /mnt/sde1/snap564 /mnt/sde1/snap565
 > 
-> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
-> ---
->  fs/btrfs/ctree.h       |    3 +++
->  fs/btrfs/disk-io.c     |    5 +++++
->  fs/btrfs/inode.c       |    8 ++++++++
->  fs/btrfs/ioctl.c       |   40 +++++++++++++++++++++++++++++++---------
->  fs/btrfs/ioctl.h       |    1 +
->  fs/btrfs/transaction.c |    8 ++++++++
->  fs/btrfs/transaction.h |    1 +
->  fs/btrfs/xattr.c       |   18 ++++++++++++++++++
->  8 files changed, 75 insertions(+), 9 deletions(-)
+> $ ps -o wchan 24575
+> WCHAN
+> btrfs_commit_transaction
 > 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index af52f6d..ad37c78 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -597,6 +597,8 @@ struct btrfs_dir_item {
->  	u8 type;
->  } __attribute__ ((__packed__));
->  
-> +#define BTRFS_ROOT_SNAP_RDONLY	(1ULL << 0)
-> +
->  struct btrfs_root_item {
->  	struct btrfs_inode_item inode;
->  	__le64 generation;
-> @@ -1116,6 +1118,7 @@ struct btrfs_root {
->  	int defrag_running;
->  	char *name;
->  	int in_sysfs;
-> +	bool readonly;
+> No messages in "dmesg" or kernel log.  Anyone want me to run some other
+> debug tests to find out what is wrong?  Anything that tries to access
+> anything inside the btrfs file system /dev/sde1 hangs uninterruptably:
+> 
+> 1     0  1863     2  20   0      0     0 wait_f D    ?          0:29 [btrfs-transacti]
+> 4     0  4933  4925  20   0  26524  2864 lookup D+   pts/10     0:02 /bin/bash
+> 1   777 27995  7318  20   0  26576  1784 vfs_re D+   pts/52     0:00 bash
+> 0   777 29395  7284  20   0  21856   688 vfs_re D    pts/51     0:00 ls -abp --color=auto /mnt/sde1
+> 0   777 29510  7284  20   0  21856   692 vfs_re D    pts/51     0:00 /bin/ls /mnt/sde1
+> 
+> $ ps -o wchan 1863
+> WCHAN
+> wait_for_commit
+> 
+> $ ps -o wchan 27995
+> WCHAN
+> vfs_readdir
 
-Does make sense to store the same information in two places ?
-If we have access to root->readonly, we have also access to "root-
->root_item.flags". Because we need the latter, we can get rid of the former.
-
-
-We can replace a test like
-
-	if(root->readonly) 
-
-with
-
-	if(root->root_item.flags & BTRFS_ROOT_SNAP_RDONLY)
-
-Or better we can create a two macros like:
-
-#define btrfs_root_readonly(x) ((x)->root_item.flags & BTRFS_ROOT_SNAP_RDONLY)
-#define btrfs_root_set_readonly(x, ro) 					    \
-	do{ 	(x)->root_item.flags = 					    \
-			((x)->root_item.flags & ~BTRFS_ROOT_SNAP_RDONLY) |  \
-			(ro ? BTRFS_ROOT_SNAP_RDONLY : 0 ); 		    \
-	}while(0)
-
-
-Sorry for to be too late for this kind of suggestion. But I think that this 
-optimization may help to avoid misalignment between the two variables (see my 
-reply in the next patch).
-[...]
 -- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+| Ian! D. Allen  -  idallen@idallen.ca  -  Ottawa, Ontario, Canada
+| Home Page: http://idallen.com/   Contact Improv: http://contactimprov.ca/
+| College professor (Free/Libre GNU+Linux) at: http://teaching.idallen.com/
+| Defend digital freedom:  http://eff.org/  and have fun:  http://fools.ca/

@@ -1,78 +1,111 @@
-From: "Ian! D. Allen" <idallen@idallen.ca>
-Subject: Re: btrfs subvolume snapshot hung in btrfs_commit_transaction
-Date: Thu, 9 Dec 2010 14:46:39 -0500
-Message-ID: <20101209194639.GA10171@idallen.ca>
-References: <20101208140102.GA30686@idallen.ca>
+From: Martin Steigerwald <Martin@lichtvoll.de>
+Subject: Re: What to do about subvolumes?
+Date: Thu, 9 Dec 2010 20:53:29 +0100
+Message-ID: <201012092053.40494.Martin@lichtvoll.de>
+References: <20101201142136.GD427@dhcp231-156.rdu.redhat.com> <1291219269-sup-8392@think> <20101201163157.GB30236@glandium.org> (sfid-20101201_182451_942865_0E7E9AAE)
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: multipart/signed;
+  boundary="nextPart2226717.64kRsN8YSO";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+Cc: Chris Mason <chris.mason@oracle.com>,
+	C Anthony Risinger <anthony@extof.me>,
+	Josef Bacik <josef@redhat.com>,
+	"linux-btrfs" <linux-btrfs@vger.kernel.org>,
+	"linux-fsdevel" <linux-fsdevel@vger.kernel.org>,
+	Christoph Hellwig <hch@lst.de>, ssorce <ssorce@redhat.com>
+To: Mike Hommey <mh@glandium.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101208140102.GA30686@idallen.ca>
+In-Reply-To: <20101201163157.GB30236@glandium.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello developers - Last chance to get more details on this btrfs hang
-(below) before I reboot the machine.  Anything I can do to gather
-more data?
+--nextPart2226717.64kRsN8YSO
+Content-Type: Text/Plain;
+  charset="iso-8859-15"
+Content-Transfer-Encoding: quoted-printable
 
-Linux linux 2.6.35-23-generic #40-Ubuntu SMP Wed Nov 17 22:14:33 UTC 2010 x86_64 GNU/Linux
+Am Mittwoch 01 Dezember 2010 schrieb Mike Hommey:
+> On Wed, Dec 01, 2010 at 11:01:37AM -0500, Chris Mason wrote:
+> > Excerpts from C Anthony Risinger's message of 2010-12-01 09:51:55=20
+=2D0500:
+> > > On Wed, Dec 1, 2010 at 8:21 AM, Josef Bacik <josef@redhat.com>=20
+wrote:
+> > > > =3D=3D=3D How do we want subvolumes to work from a user perspective?
+> > > > =3D=3D=3D
+> > > >=20
+> > > > 1) Users need to be able to create their own subvolumes. =C2 The
+> > > > permission semantics will be absolutely the same as creating
+> > > > directories, so I don't think this is too tricky. =C2 We want this
+> > > > because you can only take snapshots of subvolumes, and so it is
+> > > > important that users be able to create their own discrete
+> > > > snapshottable targets.
+> > > >=20
+> > > > 2) Users need to be able to snapshot their subvolumes. =C2 This is
+> > > > basically the same as #1, but it bears repeating.
+> > >=20
+> > > could it be possible to convert a directory into a volume?  or at
+> > > least base a snapshot off it?
+> >=20
+> > I'm afraid this turns into the same complexity as creating a new
+> > volume and copying all the files/dirs in by hand.
+>=20
+> Except you wouldn't have to copy data, only metadata.
 
-Description: Ubuntu 10.10
+And it could probably be race-free. If I'd  cp -reflink or rsync stuff from=
+=20
+a real directory to a subvolume and then rename the old directory to an=20
+other name and the subvolume to the directory name then I might be missing=
+=20
+files that have been created during the copy process and missing changes to=
+=20
+files that have been already copied.
 
-Package: btrfs-tools
-Status: install ok installed
-Priority: optional
-Section: admin
-Installed-Size: 1408
-Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
-Architecture: amd64
-Version: 0.19+20100601-3
-Depends: e2fslibs (>= 1.37), libc6 (>= 2.7), libcomerr2 (>= 1.01), libuuid1 (>= 2.16), zlib1g (>= 1:1.2.0)
-Original-Maintainer: Daniel Baumann <daniel@lists.debian-maintainers.org>
-Homepage: http://btrfs.wiki.kernel.org/
+What I would like is an easy way to make ~/.kde or whatever a subvolume to=
+=20
+be able to snapshot it independently while KDE applications or whatever is=
+=20
+using and writing to it, *without* any userland even noticing it and=20
+without - except for metadata for managing the subvolume - any additional=20
+space consumption.
 
-On Wed, Dec 08, 2010 at 09:01:02AM -0500, Ian! D. Allen wrote:
-> I've been exercising btrfs doing a continuous loop of:
-> 
->     - delete an old snapshot to keep disk space about the same
->     - create snapshot from previous snapshot
->     - rsync root into new snapshot
-> 
-> I have room for 150 snapshots on disk.  I delete the oldest, create
-> the newest, do the rsync into the newest, repeat.  It hung today on
-> snapshot 564:
-> 
-> $ ps uww 24575
-> USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
-> root     24575  0.0  0.0   6224   332 pts/10   DN   07:35   0:00 btrfs subvolume snapshot /mnt/sde1/snap564 /mnt/sde1/snap565
-> 
-> $ ps lww 24575
-> F   UID   PID  PPID PRI  NI    VSZ   RSS WCHAN  STAT TTY        TIME COMMAND
-> 4     0 24575 27716  35   -   6224   332 btrfs_ DN   pts/10     0:00 btrfs subvolume snapshot /mnt/sde1/snap564 /mnt/sde1/snap565
-> 
-> $ ps -o wchan 24575
-> WCHAN
-> btrfs_commit_transaction
-> 
-> No messages in "dmesg" or kernel log.  Anyone want me to run some other
-> debug tests to find out what is wrong?  Anything that tries to access
-> anything inside the btrfs file system /dev/sde1 hangs uninterruptably:
-> 
-> 1     0  1863     2  20   0      0     0 wait_f D    ?          0:29 [btrfs-transacti]
-> 4     0  4933  4925  20   0  26524  2864 lookup D+   pts/10     0:02 /bin/bash
-> 1   777 27995  7318  20   0  26576  1784 vfs_re D+   pts/52     0:00 bash
-> 0   777 29395  7284  20   0  21856   688 vfs_re D    pts/51     0:00 ls -abp --color=auto /mnt/sde1
-> 0   777 29510  7284  20   0  21856   692 vfs_re D    pts/51     0:00 /bin/ls /mnt/sde1
-> 
-> $ ps -o wchan 1863
-> WCHAN
-> wait_for_commit
-> 
-> $ ps -o wchan 27995
-> WCHAN
-> vfs_readdir
+So
 
--- 
-| Ian! D. Allen  -  idallen@idallen.ca  -  Ottawa, Ontario, Canada
-| Home Page: http://idallen.com/   Contact Improv: http://contactimprov.ca/
-| College professor (Free/Libre GNU+Linux) at: http://teaching.idallen.com/
-| Defend digital freedom:  http://eff.org/  and have fun:  http://fools.ca/
+deepdance:/#12> btrfs subvolume create /home/martin/.kde
+ERROR: '/home/martin/.kde' exists
+
+would just make a subvolume out of ~/.kde even if it needs splitting out=20
+the tree or even copying the tree data into a new tree.
+
+There are other filesystem operations like btrfs filesystem balance that ca=
+n=20
+be expensive as well.
+
+All that said from a user point of view. Maybe technical its not feasible.=
+=20
+But it would be nice if it can be made feasible without loosing existing=20
+advantages.
+
+And maybe
+
+deepdance:/> btrfs subvolume create .  =20
+ERROR: '.' exists
+
+should really remain this way ;).
+
+=2D-=20
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+
+--nextPart2226717.64kRsN8YSO
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iEYEABECAAYFAk0BM7oACgkQmRvqrKWZhMcL3ACfS/uMzC3cYkmoRhzLhgrt8FJD
+TqwAoLYbKLXuzsY/8FQhXQ3t4TJom5y2
+=3G5w
+-----END PGP SIGNATURE-----
+
+--nextPart2226717.64kRsN8YSO--

@@ -1,7 +1,7 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH v2 3/5] Btrfs: Add helper __setup_root_post()
-Date: Thu, 09 Dec 2010 17:10:32 +0800
-Message-ID: <4D009D08.3090904@cn.fujitsu.com>
+Subject: [PATCH v2 2/5] Btrfs: Refactor btrfs_ioctl_snap_create()
+Date: Thu, 09 Dec 2010 17:10:17 +0800
+Message-ID: <4D009CF9.1070208@cn.fujitsu.com>
 References: <4D009CD2.3060805@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -10,85 +10,123 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <4D009CD2.3060805@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Eliminate duplicate code in btrfs_read_fs_root_no_radix() and
-find_and_setup_root().
+Split it into two functions for two different ioctls, since they
+share no common code.
 
-Also prepare for the next patch.
+Also fix a memory leak in a failure path.
 
 Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 ---
- fs/btrfs/disk-io.c |   31 +++++++++++++++----------------
- 1 files changed, 15 insertions(+), 16 deletions(-)
+ fs/btrfs/ioctl.c |   71 +++++++++++++++++++++++++++--------------------------
+ 1 files changed, 36 insertions(+), 35 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 33b6d45..ca20c6d 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -987,14 +987,25 @@ static int __setup_root(u32 nodesize, u32 leafsize, u32 sectorsize,
- 	return 0;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index dc953bc..5ecd532 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -946,54 +946,55 @@ out:
  }
  
-+static void __setup_root_post(struct btrfs_root *root)
-+{
-+	u32 blocksize;
-+	u64 generation;
+ static noinline int btrfs_ioctl_snap_create(struct file *file,
+-					    void __user *arg, int subvol,
+-					    bool v2)
++					    void __user *arg, int subvol)
+ {
+-	struct btrfs_ioctl_vol_args *vol_args = NULL;
+-	struct btrfs_ioctl_vol_args_v2 *vol_args_v2 = NULL;
+-	char *name;
+-	u64 fd;
++	struct btrfs_ioctl_vol_args *vol_args;
++	int ret;
 +
-+	generation = btrfs_root_generation(&root->root_item);
-+	blocksize = btrfs_level_size(root, btrfs_root_level(&root->root_item));
-+	root->node = read_tree_block(root, btrfs_root_bytenr(&root->root_item),
-+				     blocksize, generation);
-+	BUG_ON(!root->node);
-+	root->commit_root = btrfs_root_node(root);
++	vol_args = memdup_user(arg, sizeof(*vol_args));
++	if (IS_ERR(vol_args))
++		return PTR_ERR(vol_args);
++	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
++
++	ret = btrfs_ioctl_snap_create_transid(file, vol_args->name,
++					      vol_args->fd, subvol, NULL);
++
++	kfree(vol_args);
++	return ret;
 +}
 +
- static int find_and_setup_root(struct btrfs_root *tree_root,
- 			       struct btrfs_fs_info *fs_info,
- 			       u64 objectid,
- 			       struct btrfs_root *root)
- {
++static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
++					       void __user *arg, int subvol)
++{
++	struct btrfs_ioctl_vol_args_v2 *vol_args;
+ 	u64 transid = 0;
+ 	bool async = false;
  	int ret;
--	u32 blocksize;
--	u64 generation;
  
- 	__setup_root(tree_root->nodesize, tree_root->leafsize,
- 		     tree_root->sectorsize, tree_root->stripesize,
-@@ -1005,12 +1016,7 @@ static int find_and_setup_root(struct btrfs_root *tree_root,
- 		return -ENOENT;
- 	BUG_ON(ret);
+-	if (v2) {
+-		vol_args_v2 = memdup_user(arg, sizeof(*vol_args_v2));
+-		if (IS_ERR(vol_args_v2))
+-			return PTR_ERR(vol_args_v2);
+-
+-		if (vol_args_v2->flags & ~BTRFS_SUBVOL_CREATE_SNAP_ASYNC) {
+-			ret = -EINVAL;
+-			goto out;
+-		}
++	vol_args = memdup_user(arg, sizeof(*vol_args));
++	if (IS_ERR(vol_args))
++		return PTR_ERR(vol_args);
  
--	generation = btrfs_root_generation(&root->root_item);
--	blocksize = btrfs_level_size(root, btrfs_root_level(&root->root_item));
--	root->node = read_tree_block(root, btrfs_root_bytenr(&root->root_item),
--				     blocksize, generation);
--	BUG_ON(!root->node);
--	root->commit_root = btrfs_root_node(root);
-+	__setup_root_post(root);
- 	return 0;
- }
- 
-@@ -1111,8 +1117,6 @@ struct btrfs_root *btrfs_read_fs_root_no_radix(struct btrfs_root *tree_root,
- 	struct btrfs_fs_info *fs_info = tree_root->fs_info;
- 	struct btrfs_path *path;
- 	struct extent_buffer *l;
--	u64 generation;
--	u32 blocksize;
- 	int ret = 0;
- 
- 	root = kzalloc(sizeof(*root), GFP_NOFS);
-@@ -1149,12 +1153,7 @@ struct btrfs_root *btrfs_read_fs_root_no_radix(struct btrfs_root *tree_root,
- 		return ERR_PTR(ret);
+-		name = vol_args_v2->name;
+-		fd = vol_args_v2->fd;
+-		vol_args_v2->name[BTRFS_SUBVOL_NAME_MAX] = '\0';
+-		if (vol_args_v2->flags & BTRFS_SUBVOL_CREATE_SNAP_ASYNC)
+-			async = true;
+-	} else {
+-		vol_args = memdup_user(arg, sizeof(*vol_args));
+-		if (IS_ERR(vol_args))
+-			return PTR_ERR(vol_args);
+-		name = vol_args->name;
+-		fd = vol_args->fd;
+-		vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
++	if (vol_args->flags & ~BTRFS_SUBVOL_CREATE_SNAP_ASYNC) {
++		ret = -EINVAL;
++		goto out;
  	}
  
--	generation = btrfs_root_generation(&root->root_item);
--	blocksize = btrfs_level_size(root, btrfs_root_level(&root->root_item));
--	root->node = read_tree_block(root, btrfs_root_bytenr(&root->root_item),
--				     blocksize, generation);
--	root->commit_root = btrfs_root_node(root);
--	BUG_ON(!root->node);
-+	__setup_root_post(root);
+-	ret = btrfs_ioctl_snap_create_transid(file, name, fd,
+-					      subvol, &transid);
++	vol_args->name[BTRFS_SUBVOL_NAME_MAX] = '\0';
++	if (vol_args->flags & BTRFS_SUBVOL_CREATE_SNAP_ASYNC)
++		async = true;
++
++	ret = btrfs_ioctl_snap_create_transid(file, vol_args->name,
++					      vol_args->fd, subvol, &transid);
+ 
+ 	if (!ret && async) {
+ 		if (copy_to_user(arg +
+ 				offsetof(struct btrfs_ioctl_vol_args_v2,
+ 				transid), &transid, sizeof(transid)))
+-			return -EFAULT;
++			ret = -EFAULT;
+ 	}
  out:
- 	if (location->objectid != BTRFS_TREE_LOG_OBJECTID)
- 		root->ref_cows = 1;
+ 	kfree(vol_args);
+-	kfree(vol_args_v2);
+-
+ 	return ret;
+ }
+ 
+@@ -2253,11 +2254,11 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 	case FS_IOC_GETVERSION:
+ 		return btrfs_ioctl_getversion(file, argp);
+ 	case BTRFS_IOC_SNAP_CREATE:
+-		return btrfs_ioctl_snap_create(file, argp, 0, 0);
++		return btrfs_ioctl_snap_create(file, argp, 0);
+ 	case BTRFS_IOC_SNAP_CREATE_V2:
+-		return btrfs_ioctl_snap_create(file, argp, 0, 1);
++		return btrfs_ioctl_snap_create_v2(file, argp, 0);
+ 	case BTRFS_IOC_SUBVOL_CREATE:
+-		return btrfs_ioctl_snap_create(file, argp, 1, 0);
++		return btrfs_ioctl_snap_create(file, argp, 1);
+ 	case BTRFS_IOC_SNAP_DESTROY:
+ 		return btrfs_ioctl_snap_destroy(file, argp);
+ 	case BTRFS_IOC_DEFAULT_SUBVOL:
 -- 
 1.6.3
 

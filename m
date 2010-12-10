@@ -1,57 +1,146 @@
-From: Ted Ts'o <tytso@mit.edu>
-Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
- barrier support is effective)
-Date: Thu, 9 Dec 2010 21:38:52 -0500
-Message-ID: <20101210023852.GB3059@thunk.org>
-References: <20101207182243.GB21112@redhat.com>
- <20101207193514.GA2921@thunk.org>
- <AANLkTim8UTkfxXV0AkEfjNq3tcmnrXdh6BQ1ibY5iYPy@mail.gmail.com>
- <20101209180111.GF2921@thunk.org>
- <AANLkTimAUB5L5Ptm4Fv=sQUmL9_P5azPRCKQnmU89xs8@mail.gmail.com>
- <20101209201359.GG2921@thunk.org>
- <AANLkTik=ivDrBEzg1wQAp5AFzNtRRq1=NpvnowggU=_0@mail.gmail.com>
- <20101209231616.GA12515@basil.fritz.box>
- <1291945065-sup-1838@think>
- <AANLkTi=SgzVcOwqJfAHBe5U+1CuhPnm0eKet4hRM2JKz@mail.gmail.com>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: [PATCH v3] Btrfs: Make async snapshot ioctl more generic
+Date: Fri, 10 Dec 2010 14:41:56 +0800
+Message-ID: <4D01CBB4.9060800@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Andi Kleen <andi@firstfloor.org>,
-	Jon Nelson <jnelson@jamponi.net>,
-	Mike Snitzer <snitzer@redhat.com>,
-	Milan Broz <mbroz@redhat.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	dm-devel <dm-devel@redhat.com>,
-	Linux Kernel <linux-kernel@vger.kernel.org>,
-	htd <htd@fancy-poultry.org>, htejun <htejun@gmail.com>,
-	linux-ext4 <linux-ext4@vger.kernel.org>
-To: Matt <jackdachef@gmail.com>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=SgzVcOwqJfAHBe5U+1CuhPnm0eKet4hRM2JKz@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Sage Weil <sage@newdream.net>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 10, 2010 at 02:53:30AM +0100, Matt wrote:
-> 
-> Try a kernel before 5a87b7a5da250c9be6d757758425dfeaf8ed3179
-> 
-> from the tests I've done that one showed the least or no corruption if
-> you count the empty /etc/env.d/03opengl as an artefact
+If we had reserved some bytes in struct btrfs_ioctl_vol_args, we
+wouldn't have to create a new structure for async snapshot creation.
 
-Yes, that's a good test.  Also try commit bd2d0210cf.  The patch
-series that is most likely to be at fault if there is a regression in
-between 5a87b7a5d and bd2d0210cf inclusive.
+Here we convert async snapshot ioctl to use a more generic ABI, as
+we'll add more ioctls for snapshots/subvolumes in the future, readonly
+snapshots for example.
 
-I did a lot of testing before submitting it, but that wa a tricky
-rewrite.  If you can reproduce the problem reliably, it might be good
-to try commit 16828088f9 (the commit before 5a87b7a5d) and commit
-bd2d0210cf.  If it reliably reproduces on bd2d0210cf, but is clean on
-16828088f9, then it's my ext4 block i/o submission patches, and we'll
-need to either figure out what's going on or back out that set of
-changes.
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+---
 
-If that's the case, a bisect of those changes (it's only 6 commits, so
-it shouldn't take long) would be most appreciated.
+I rebased the patch on Sage's fix, so you don't have to rebase it
+by yourself.
 
-Regards,
+---
+ fs/btrfs/ioctl.c |   44 +++++++++++++++++++++++++++-----------------
+ fs/btrfs/ioctl.h |   14 +++++++++-----
+ 2 files changed, 36 insertions(+), 22 deletions(-)
 
-						- Ted
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 7cc2e8e..f87552a 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -947,31 +947,41 @@ out:
+ 
+ static noinline int btrfs_ioctl_snap_create(struct file *file,
+ 					    void __user *arg, int subvol,
+-					    int async)
++					    int v2)
+ {
+ 	struct btrfs_ioctl_vol_args *vol_args = NULL;
+-	struct btrfs_ioctl_async_vol_args *async_vol_args = NULL;
++	struct btrfs_ioctl_vol_args_v2 *vol_args_v2 = NULL;
+ 	char *name;
+ 	u64 fd;
+-	u64 transid = 0;
+ 	int ret;
+ 
+-	if (async) {
+-		async_vol_args = memdup_user(arg, sizeof(*async_vol_args));
+-		if (IS_ERR(async_vol_args))
+-			return PTR_ERR(async_vol_args);
++	if (v2) {
++		u64 transid = 0;
++		u64 *ptr = NULL;
+ 
+-		name = async_vol_args->name;
+-		fd = async_vol_args->fd;
+-		async_vol_args->name[BTRFS_SNAPSHOT_NAME_MAX] = '\0';
++		vol_args_v2 = memdup_user(arg, sizeof(*vol_args_v2));
++		if (IS_ERR(vol_args_v2))
++			return PTR_ERR(vol_args_v2);
++
++		if (vol_args_v2->flags & ~BTRFS_SUBVOL_CREATE_ASYNC) {
++			ret = -EINVAL;
++			goto out;
++		}
++
++		name = vol_args_v2->name;
++		fd = vol_args_v2->fd;
++		vol_args_v2->name[BTRFS_SUBVOL_NAME_MAX] = '\0';
++
++		if (vol_args_v2->flags & BTRFS_SUBVOL_CREATE_ASYNC)
++			ptr = &transid;
+ 
+ 		ret = btrfs_ioctl_snap_create_transid(file, name, fd,
+-						      subvol, &transid);
++						      subvol, ptr);
+ 
+-		if (ret == 0 &&
++		if (ret == 0 && ptr &&
+ 		    copy_to_user(arg +
+-				 offsetof(struct btrfs_ioctl_async_vol_args,
+-					  transid), &transid, sizeof(transid)))
++				 offsetof(struct btrfs_ioctl_vol_args_v2,
++					  transid), ptr, sizeof(*ptr)))
+ 			ret = -EFAULT;
+ 	} else {
+ 		vol_args = memdup_user(arg, sizeof(*vol_args));
+@@ -984,9 +994,9 @@ static noinline int btrfs_ioctl_snap_create(struct file *file,
+ 		ret = btrfs_ioctl_snap_create_transid(file, name, fd,
+ 						      subvol, NULL);
+ 	}
+-
++out:
+ 	kfree(vol_args);
+-	kfree(async_vol_args);
++	kfree(vol_args_v2);
+ 
+ 	return ret;
+ }
+@@ -2248,7 +2258,7 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		return btrfs_ioctl_getversion(file, argp);
+ 	case BTRFS_IOC_SNAP_CREATE:
+ 		return btrfs_ioctl_snap_create(file, argp, 0, 0);
+-	case BTRFS_IOC_SNAP_CREATE_ASYNC:
++	case BTRFS_IOC_SNAP_CREATE_V2:
+ 		return btrfs_ioctl_snap_create(file, argp, 0, 1);
+ 	case BTRFS_IOC_SUBVOL_CREATE:
+ 		return btrfs_ioctl_snap_create(file, argp, 1, 0);
+diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+index 17c99eb..c344d12 100644
+--- a/fs/btrfs/ioctl.h
++++ b/fs/btrfs/ioctl.h
+@@ -30,11 +30,15 @@ struct btrfs_ioctl_vol_args {
+ 	char name[BTRFS_PATH_NAME_MAX + 1];
+ };
+ 
+-#define BTRFS_SNAPSHOT_NAME_MAX 4079
+-struct btrfs_ioctl_async_vol_args {
++#define BTRFS_SUBVOL_CREATE_ASYNC	(1ULL << 0)
++
++#define BTRFS_SUBVOL_NAME_MAX 4039
++struct btrfs_ioctl_vol_args_v2 {
+ 	__s64 fd;
+ 	__u64 transid;
+-	char name[BTRFS_SNAPSHOT_NAME_MAX + 1];
++	__u64 flags;
++	__u64 unused[4];
++	char name[BTRFS_SUBVOL_NAME_MAX + 1];
+ };
+ 
+ #define BTRFS_INO_LOOKUP_PATH_MAX 4080
+@@ -187,6 +191,6 @@ struct btrfs_ioctl_space_args {
+ 				    struct btrfs_ioctl_space_args)
+ #define BTRFS_IOC_START_SYNC _IOR(BTRFS_IOCTL_MAGIC, 24, __u64)
+ #define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
+-#define BTRFS_IOC_SNAP_CREATE_ASYNC _IOW(BTRFS_IOCTL_MAGIC, 23, \
+-				   struct btrfs_ioctl_async_vol_args)
++#define BTRFS_IOC_SNAP_CREATE_V2 _IOW(BTRFS_IOCTL_MAGIC, 23, \
++				   struct btrfs_ioctl_vol_args_v2)
+ #endif
+-- 
+1.6.3
+

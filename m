@@ -1,146 +1,56 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH v3] Btrfs: Make async snapshot ioctl more generic
-Date: Fri, 10 Dec 2010 14:41:56 +0800
-Message-ID: <4D01CBB4.9060800@cn.fujitsu.com>
+Subject: Re: [PATCH v2 4/5] Btrfs: Add readonly snapshots support
+Date: Fri, 10 Dec 2010 14:43:56 +0800
+Message-ID: <4D01CC2C.8030602@cn.fujitsu.com>
+References: <4D009CD2.3060805@cn.fujitsu.com> <4D009D28.3060509@cn.fujitsu.com> <201012092034.11019.kreijack@libero.it>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: Sage Weil <sage@newdream.net>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+To: kreijack@libero.it
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201012092034.11019.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we had reserved some bytes in struct btrfs_ioctl_vol_args, we
-wouldn't have to create a new structure for async snapshot creation.
+>> +#define BTRFS_ROOT_SNAP_RDONLY	(1ULL << 0)
+>> +
+>>  struct btrfs_root_item {
+>>  	struct btrfs_inode_item inode;
+>>  	__le64 generation;
+>> @@ -1116,6 +1118,7 @@ struct btrfs_root {
+>>  	int defrag_running;
+>>  	char *name;
+>>  	int in_sysfs;
+>> +	bool readonly;
+> 
+> Does make sense to store the same information in two places ?
+> If we have access to root->readonly, we have also access to "root-
+>> root_item.flags". Because we need the latter, we can get rid of the former.
+> 
+> 
+> We can replace a test like
+> 
+> 	if(root->readonly) 
+> 
+> with
+> 
+> 	if(root->root_item.flags & BTRFS_ROOT_SNAP_RDONLY)
+> 
+> Or better we can create a two macros like:
+> 
+> #define btrfs_root_readonly(x) ((x)->root_item.flags & BTRFS_ROOT_SNAP_RDONLY)
+> #define btrfs_root_set_readonly(x, ro) 					    \
+> 	do{ 	(x)->root_item.flags = 					    \
+> 			((x)->root_item.flags & ~BTRFS_ROOT_SNAP_RDONLY) |  \
+> 			(ro ? BTRFS_ROOT_SNAP_RDONLY : 0 ); 		    \
+> 	}while(0)
+> 
+> 
 
-Here we convert async snapshot ioctl to use a more generic ABI, as
-we'll add more ioctls for snapshots/subvolumes in the future, readonly
-snapshots for example.
+Makes sense.
 
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
+(except that inline functions are preferable)
 
-I rebased the patch on Sage's fix, so you don't have to rebase it
-by yourself.
-
----
- fs/btrfs/ioctl.c |   44 +++++++++++++++++++++++++++-----------------
- fs/btrfs/ioctl.h |   14 +++++++++-----
- 2 files changed, 36 insertions(+), 22 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 7cc2e8e..f87552a 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -947,31 +947,41 @@ out:
- 
- static noinline int btrfs_ioctl_snap_create(struct file *file,
- 					    void __user *arg, int subvol,
--					    int async)
-+					    int v2)
- {
- 	struct btrfs_ioctl_vol_args *vol_args = NULL;
--	struct btrfs_ioctl_async_vol_args *async_vol_args = NULL;
-+	struct btrfs_ioctl_vol_args_v2 *vol_args_v2 = NULL;
- 	char *name;
- 	u64 fd;
--	u64 transid = 0;
- 	int ret;
- 
--	if (async) {
--		async_vol_args = memdup_user(arg, sizeof(*async_vol_args));
--		if (IS_ERR(async_vol_args))
--			return PTR_ERR(async_vol_args);
-+	if (v2) {
-+		u64 transid = 0;
-+		u64 *ptr = NULL;
- 
--		name = async_vol_args->name;
--		fd = async_vol_args->fd;
--		async_vol_args->name[BTRFS_SNAPSHOT_NAME_MAX] = '\0';
-+		vol_args_v2 = memdup_user(arg, sizeof(*vol_args_v2));
-+		if (IS_ERR(vol_args_v2))
-+			return PTR_ERR(vol_args_v2);
-+
-+		if (vol_args_v2->flags & ~BTRFS_SUBVOL_CREATE_ASYNC) {
-+			ret = -EINVAL;
-+			goto out;
-+		}
-+
-+		name = vol_args_v2->name;
-+		fd = vol_args_v2->fd;
-+		vol_args_v2->name[BTRFS_SUBVOL_NAME_MAX] = '\0';
-+
-+		if (vol_args_v2->flags & BTRFS_SUBVOL_CREATE_ASYNC)
-+			ptr = &transid;
- 
- 		ret = btrfs_ioctl_snap_create_transid(file, name, fd,
--						      subvol, &transid);
-+						      subvol, ptr);
- 
--		if (ret == 0 &&
-+		if (ret == 0 && ptr &&
- 		    copy_to_user(arg +
--				 offsetof(struct btrfs_ioctl_async_vol_args,
--					  transid), &transid, sizeof(transid)))
-+				 offsetof(struct btrfs_ioctl_vol_args_v2,
-+					  transid), ptr, sizeof(*ptr)))
- 			ret = -EFAULT;
- 	} else {
- 		vol_args = memdup_user(arg, sizeof(*vol_args));
-@@ -984,9 +994,9 @@ static noinline int btrfs_ioctl_snap_create(struct file *file,
- 		ret = btrfs_ioctl_snap_create_transid(file, name, fd,
- 						      subvol, NULL);
- 	}
--
-+out:
- 	kfree(vol_args);
--	kfree(async_vol_args);
-+	kfree(vol_args_v2);
- 
- 	return ret;
- }
-@@ -2248,7 +2258,7 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_getversion(file, argp);
- 	case BTRFS_IOC_SNAP_CREATE:
- 		return btrfs_ioctl_snap_create(file, argp, 0, 0);
--	case BTRFS_IOC_SNAP_CREATE_ASYNC:
-+	case BTRFS_IOC_SNAP_CREATE_V2:
- 		return btrfs_ioctl_snap_create(file, argp, 0, 1);
- 	case BTRFS_IOC_SUBVOL_CREATE:
- 		return btrfs_ioctl_snap_create(file, argp, 1, 0);
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 17c99eb..c344d12 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -30,11 +30,15 @@ struct btrfs_ioctl_vol_args {
- 	char name[BTRFS_PATH_NAME_MAX + 1];
- };
- 
--#define BTRFS_SNAPSHOT_NAME_MAX 4079
--struct btrfs_ioctl_async_vol_args {
-+#define BTRFS_SUBVOL_CREATE_ASYNC	(1ULL << 0)
-+
-+#define BTRFS_SUBVOL_NAME_MAX 4039
-+struct btrfs_ioctl_vol_args_v2 {
- 	__s64 fd;
- 	__u64 transid;
--	char name[BTRFS_SNAPSHOT_NAME_MAX + 1];
-+	__u64 flags;
-+	__u64 unused[4];
-+	char name[BTRFS_SUBVOL_NAME_MAX + 1];
- };
- 
- #define BTRFS_INO_LOOKUP_PATH_MAX 4080
-@@ -187,6 +191,6 @@ struct btrfs_ioctl_space_args {
- 				    struct btrfs_ioctl_space_args)
- #define BTRFS_IOC_START_SYNC _IOR(BTRFS_IOCTL_MAGIC, 24, __u64)
- #define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
--#define BTRFS_IOC_SNAP_CREATE_ASYNC _IOW(BTRFS_IOCTL_MAGIC, 23, \
--				   struct btrfs_ioctl_async_vol_args)
-+#define BTRFS_IOC_SNAP_CREATE_V2 _IOW(BTRFS_IOCTL_MAGIC, 23, \
-+				   struct btrfs_ioctl_vol_args_v2)
- #endif
--- 
-1.6.3
-
+> Sorry for to be too late for this kind of suggestion. But I think that this 
+> optimization may help to avoid misalignment between the two variables (see my 
+> reply in the next patch).
+> [...]

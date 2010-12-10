@@ -1,44 +1,61 @@
-From: Andi Kleen <andi@firstfloor.org>
-Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
- barrier support is effective)
-Date: Fri, 10 Dec 2010 00:16:16 +0100
-Message-ID: <20101209231616.GA12515@basil.fritz.box>
-References: <AANLkTin3A_ySn_sZQPqZMn-NORnteQZwTVVSiW_=r3sO@mail.gmail.com>
- <20101207142145.GA27861@think>
- <AANLkTikJt-ZOmzj68Jw92rjGHzu0EP-uCVD+eNSO=vGd@mail.gmail.com>
- <20101207182243.GB21112@redhat.com>
- <20101207193514.GA2921@thunk.org>
- <AANLkTim8UTkfxXV0AkEfjNq3tcmnrXdh6BQ1ibY5iYPy@mail.gmail.com>
- <20101209180111.GF2921@thunk.org>
- <AANLkTimAUB5L5Ptm4Fv=sQUmL9_P5azPRCKQnmU89xs8@mail.gmail.com>
- <20101209201359.GG2921@thunk.org>
- <AANLkTik=ivDrBEzg1wQAp5AFzNtRRq1=NpvnowggU=_0@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Ted Ts'o <tytso@mit.edu>, Mike Snitzer <snitzer@redhat.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Matt <jackdachef@gmail.com>, Milan Broz <mbroz@redhat.com>,
-	Andi Kleen <andi@firstfloor.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	dm-devel <dm-devel@redhat.com>,
-	Linux Kernel <linux-kernel@vger.kernel.org>,
-	htd <htd@fancy-poultry.org>, htejun@gmail.com,
-	linux-ext4@vger.kernel.org
-To: Jon Nelson <jnelson@jamponi.net>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <AANLkTik=ivDrBEzg1wQAp5AFzNtRRq1=NpvnowggU=_0@mail.gmail.com>
+From: Sage Weil <sage@newdream.net>
+Subject: [PATCH] Btrfs: fix sync subvol/snapshot creation
+Date: Thu,  9 Dec 2010 16:36:28 -0800
+Message-ID: <1291941388-17050-1-git-send-email-sage@newdream.net>
+Cc: Sage Weil <sage@newdream.net>
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> 512MB.
-> 
-> 'free' reports 75MB, 419MB free.
-> 
-> I originally noticed the problem on really real hardware (thinkpad
-> T61p), however.
+We were incorrectly taking the async path even for the sync ioctls by
+passing in &transid unconditionally.
 
-If you can easily reproduce it could you try a git bisect?
+There's ample room for further cleanup here, but this keeps the fix simple.
 
--Andi
+Signed-off-by: Sage Weil <sage@newdream.net>
+---
+ fs/btrfs/ioctl.c |   20 +++++++++++---------
+ 1 files changed, 11 insertions(+), 9 deletions(-)
 
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 41614c3..4c2d7c4 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -970,6 +970,15 @@ static noinline int btrfs_ioctl_snap_create(struct file *file,
+ 		name = async_vol_args->name;
+ 		fd = async_vol_args->fd;
+ 		async_vol_args->name[BTRFS_SNAPSHOT_NAME_MAX] = '\0';
++
++		ret = btrfs_ioctl_snap_create_transid(file, name, fd,
++						      subvol, &transid);
++
++		if (ret == 0 &&
++		    copy_to_user(arg +
++				 offsetof(struct btrfs_ioctl_async_vol_args,
++					  transid), &transid, sizeof(transid)))
++			ret = -EFAULT;
+ 	} else {
+ 		vol_args = memdup_user(arg, sizeof(*vol_args));
+ 		if (IS_ERR(vol_args))
+@@ -977,16 +986,9 @@ static noinline int btrfs_ioctl_snap_create(struct file *file,
+ 		name = vol_args->name;
+ 		fd = vol_args->fd;
+ 		vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
+-	}
+-
+-	ret = btrfs_ioctl_snap_create_transid(file, name, fd,
+-					      subvol, &transid);
+ 
+-	if (!ret && async) {
+-		if (copy_to_user(arg +
+-				offsetof(struct btrfs_ioctl_async_vol_args,
+-				transid), &transid, sizeof(transid)))
+-			return -EFAULT;
++		ret = btrfs_ioctl_snap_create_transid(file, name, fd,
++						      subvol, NULL);
+ 	}
+ 
+ 	kfree(vol_args);
 -- 
-ak@linux.intel.com -- Speaking for myself only.
+1.6.6.1
+

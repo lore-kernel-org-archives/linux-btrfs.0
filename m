@@ -1,69 +1,151 @@
-From: Jon Nelson <jnelson@jamponi.net>
-Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
- barrier support is effective)
-Date: Fri, 10 Dec 2010 00:52:01 -0600
-Message-ID: <AANLkTikJ1Q=L15wcMLn=U8-Qx9PbppY-AX=LpmjDkk2V__6438.96322367272$1291963965$gmane$org@mail.gmail.com>
-References: <20101207182243.GB21112@redhat.com> <20101207193514.GA2921@thunk.org>
- <AANLkTim8UTkfxXV0AkEfjNq3tcmnrXdh6BQ1ibY5iYPy@mail.gmail.com>
- <20101209180111.GF2921@thunk.org> <AANLkTimAUB5L5Ptm4Fv=sQUmL9_P5azPRCKQnmU89xs8@mail.gmail.com>
- <20101209201359.GG2921@thunk.org> <AANLkTik=ivDrBEzg1wQAp5AFzNtRRq1=NpvnowggU=_0@mail.gmail.com>
- <20101209231616.GA12515@basil.fritz.box> <1291945065-sup-1838@think>
- <AANLkTi=SgzVcOwqJfAHBe5U+1CuhPnm0eKet4hRM2JKz@mail.gmail.com> <20101210023852.GB3059@thunk.org>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [PATCH v2 5/5] Btrfs: Add BTRFS_IOC_SUBVOL_GETFLAGS/SETFLAGS
+ ioctl
+Date: Fri, 10 Dec 2010 15:12:41 +0800
+Message-ID: <4D01D2E9.9000007@cn.fujitsu.com>
+References: <4D009CD2.3060805@cn.fujitsu.com> <4D009D42.1020002@cn.fujitsu.com> <201012092109.05720.kreijack@libero.it>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-To: "Ted Ts'o" <tytso@mit.edu>, Matt <jackdachef@gmail.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Andi Kleen <andi@firstfloor.org>,
-	Jon Nelson <jnelson@jamponi.net>,
-	Mike Snitzer <snitz
+Cc: linux-btrfs@vger.kernel.org
+To: kreijack@libero.it
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101210023852.GB3059@thunk.org>
+In-Reply-To: <201012092109.05720.kreijack@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 9, 2010 at 8:38 PM, Ted Ts'o <tytso@mit.edu> wrote:
-> On Fri, Dec 10, 2010 at 02:53:30AM +0100, Matt wrote:
+Goffredo Baroncelli wrote:
+> Hi Li,
+> 
+> On Thursday, 09 December, 2010, Li Zefan wrote:
+>> This allows us to set a snapshot or a subvolume readonly or writable
+>> on the fly.
 >>
->> Try a kernel before 5a87b7a5da250c9be6d757758425dfeaf8ed3179
+>> Usage:
 >>
->> from the tests I've done that one showed the least or no corruption =
-if
->> you count the empty /etc/env.d/03opengl as an artefact
->
-> Yes, that's a good test. =C2=A0Also try commit bd2d0210cf. =C2=A0The =
-patch
-> series that is most likely to be at fault if there is a regression in
-> between 5a87b7a5d and bd2d0210cf inclusive.
->
-> I did a lot of testing before submitting it, but that wa a tricky
-> rewrite. =C2=A0If you can reproduce the problem reliably, it might be=
- good
-> to try commit 16828088f9 (the commit before 5a87b7a5d) and commit
-> bd2d0210cf. =C2=A0If it reliably reproduces on bd2d0210cf, but is cle=
-an on
-> 16828088f9, then it's my ext4 block i/o submission patches, and we'll
-> need to either figure out what's going on or back out that set of
-> changes.
->
-> If that's the case, a bisect of those changes (it's only 6 commits, s=
-o
-> it shouldn't take long) would be most appreciated.
+>> Set BTRFS_SUBVOL_RDONLY of btrfs_ioctl_vol_arg_v2->flags, and then
+>> call ioctl(BTRFS_IOCTL_SUBVOL_SETFLAGS);
+>>
+>> Changelog for v2:
+>> - Add _GETFLAGS ioctl.
+>> - Check if the passed fd is the root of a subvolume.
+>> - Change the name from _SNAP_SETFLAGS to _SUBVOL_SETFLAGS.
+>>
+>> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+>> ---
+>>  fs/btrfs/ioctl.c |   92 
+> ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>>  fs/btrfs/ioctl.h |    4 ++
+>>  2 files changed, 96 insertions(+), 0 deletions(-)
+>>
+>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+>> index db2b231..29304c7 100644
+>> --- a/fs/btrfs/ioctl.c
+>> +++ b/fs/btrfs/ioctl.c
+>> @@ -1010,6 +1010,94 @@ out:
+> [...]
+>> +	struct btrfs_ioctl_vol_args_v2 *vol_args;
+>> +	int ret = 0;
+>> +	u64 flags = 0;
+>> +
+>> +	if (inode->i_ino != BTRFS_FIRST_FREE_OBJECTID)
+>> +		return -EINVAL;
+>> +
+>> +	vol_args = memdup_user(arg, sizeof(*vol_args));
+> 
+> Would be better to avoid a dynamic allocation for a so small struct ? 
+> And as more general comment: what is the reason to pass a so complex struct 
+> only for setting/getting the flags ?
+> Would be it better to pass directly a u64 variable.
+> 
 
-I observed the behavior on bd2d0210cf in a qemu-kvm install of
-openSUSE 11.3 (x86_64) on *totally* different host - an AMD quad-core.
+I was considering using the same structure for all subvolume ioctls,
+but here seems it's overkill..
 
-I did /not/ observe the behavior on 16828088f9 (yet). I'll run the
-test a few more times on 1682..
+> [..]
+>> +
+>> +static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
+>> +					      void __user *arg)
+>> +{
+>> +	struct inode *inode = fdentry(file)->d_inode;
+>> +	struct btrfs_root *root = BTRFS_I(inode)->root;
+>> +	struct btrfs_trans_handle *trans;
+>> +	struct btrfs_ioctl_vol_args_v2 *vol_args;
+>> +	u64 root_flags;
+>> +	u64 flags;
+>> +	int ret = 0;
+>> +
+>> +	if (root->fs_info->sb->s_flags & MS_RDONLY)
+>> +		return -EROFS;
+>> +
+>> +	if (inode->i_ino != BTRFS_FIRST_FREE_OBJECTID)
+>> +		return -EINVAL;
+>> +
+>> +	vol_args = memdup_user(arg, sizeof(*vol_args));
+> 
+> Same as before.
+> 
+>> +	if (IS_ERR(vol_args))
+>> +		return PTR_ERR(vol_args);
+>> +	flags = vol_args->flags;
+>> +
+>> +	if (flags & ~BTRFS_SUBVOL_RDONLY) {
+>> +		ret = -EINVAL;
+>> +		goto out;
+>> +	}
+>> +
+>> +	down_write(&root->fs_info->subvol_sem);
+>> +
+>> +	/* nothing to do */
+>> +	if (!!(flags & BTRFS_SUBVOL_RDONLY) == root->readonly)
+>> +		goto out_unlock;
+> 
+> This is only an aesthetic comment: I prefer a simpler style like
+> 
+> 	if ((flags & BTRFS_SUBVOL_RDONLY) && root->readonly)
+> 		goto out_unlock;
+> 
 
-Additionally, I am building a bisected kernel now (
-cb20d5188366f04d96d2e07b1240cc92170ade40 ), but won't be able to get
-back at it for a while.
+They are not equivalent. The former checks if the flags and the
+root both have readonly bit set or cleared.
 
-I hope this helps.
+> But I know that every body has its style :-)
+> 
+>> +
+>> +	root_flags = btrfs_root_flags(&root->root_item);
+>> +	if (flags & BTRFS_SUBVOL_RDONLY)
+>> +		btrfs_set_root_flags(&root->root_item,
+>> +				     root_flags | BTRFS_ROOT_SNAP_RDONLY);
+>> +	else
+>> +		btrfs_set_root_flags(&root->root_item,
+>> +				     root_flags & ~BTRFS_ROOT_SNAP_RDONLY);
+>> +	root->readonly = !root->readonly;
+> 
+> I double checked this line. But if I read the code correctly I think that the 
+> line above is wrong: the field "root->readonly" is flipped regardless the 
+> value of the flags passed by the user.
+> 
 
---=20
-Jon
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Yep, that's because if we don't need to flip it, we've already exited early.
+
+Note, there's only one flag.
+
+> Moreover I have another question: why internally the flags is 
+> BTRFS_ROOT_SNAP_RDONLY, instead in user space the flag is BTRFS_SUBVOL_RDONLY 
+> ? 
+> 
+
+That's my carelessness..
+
+> I suggest to 
+> - rename BTRFS_SUBVOL_RDONLY in BTRFS_SUBVOL_CREATE_SNAP_RDONLY (like 
+> BTRFS_SUBVOL_CREATE_SNAP_ASYNC)
+> - rename BTRFS_ROOT_SNAP_RDONLY in BTRFS_ROOT_FLAGS_RDONLY and use both in 
+> userspace and in kernel space this flag. I suggested to remove SNAP because 
+> the flag make sense also for a "standard" subvolume.
+> 
+
+I'd prefer not to mix flags for root_item flags and vol ioctl flags.
+
+And CREATE_RDONLY and CREATE_ASYNC can also be valid for subvolumes too.
+Support for async subvolume creation is already there, just lack of an
+user interface. So I've changed _CREATE_SNAP_ASYNC to _CREATE_ASYNC
+in the patch I sent just now.

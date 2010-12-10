@@ -1,25 +1,27 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: [PATCH] Btrfs: fix sync subvol/snapshot creation
-Date: Fri, 10 Dec 2010 10:11:25 +0800
-Message-ID: <4D018C4D.6060408@cn.fujitsu.com>
-References: <1291941388-17050-1-git-send-email-sage@newdream.net>
-Mime-Version: 1.0
+Date: Thu, 09 Dec 2010 21:11:29 -0500
+Message-ID: <1291947062-sup-3515@think>
+References: <1291941388-17050-1-git-send-email-sage@newdream.net> <4D018C4D.6060408@cn.fujitsu.com>
 Content-Type: text/plain; charset=UTF-8
-Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
-To: Sage Weil <sage@newdream.net>
+Cc: Sage Weil <sage@newdream.net>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1291941388-17050-1-git-send-email-sage@newdream.net>
+In-reply-to: <4D018C4D.6060408@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sage Weil wrote:
-> We were incorrectly taking the async path even for the sync ioctls by
-> passing in &transid unconditionally.
+Excerpts from Li Zefan's message of 2010-12-09 21:11:25 -0500:
+> Sage Weil wrote:
+> > We were incorrectly taking the async path even for the sync ioctls by
+> > passing in &transid unconditionally.
+> > 
 > 
+> Ha, I fixed this accidentally in my patchset. :)
 
-Ha, I fixed this accidentally in my patchset. :)
+Thanks guys,
 
-> There's ample room for further cleanup here, but this keeps the fix simple.
-> 
-> Signed-off-by: Sage Weil <sage@newdream.net>
+Unless either of you object, I'll take this and the snapshot ABI change
+for the next rc.
 
-Reviewed-by: Li Zefan <lizf@cn.fujitsu.com>
+-chris

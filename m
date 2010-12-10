@@ -1,56 +1,64 @@
-From: Marcin Kuk <marcin.kuk@gmail.com>
-Subject: compress-force option problem
-Date: Fri, 10 Dec 2010 18:05:08 +0100
-Message-ID: <AANLkTinTWFt=yD8u_w-Ex20BMDXQs+kVZjXs4FJmZmOY@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Fsck, parent transid verify failed
+Date: Fri, 10 Dec 2010 15:11:17 -0500
+Message-ID: <1292011722-sup-5780@think>
+References: <003501cb9147$09197540$1b4c5fc0$@gmail.com> <1291306826-sup-7837@think> <AANLkTim5-5KQ3_sEb9WY+O1Uj36=3M3i_yQKeuSb7Qe5@mail.gmail.com> <1291326502-sup-1726@think> <loom.20101209T171330-48@post.gmane.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Tom Kuther <kuther@gmx.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <loom.20101209T171330-48@post.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Excerpts from Tom Kuther's message of 2010-12-09 11:21:03 -0500:
+> Chris Mason <chris.mason <at> oracle.com> writes:
+> 
+> > [...]
+> > Build the latest tools, then:
+> > 
+> > btrfsck -s 1 /dev/xxx
+> > btrfsck -s 2 /dev/xxx
+> > 
+> > If either of these work we have an easy way to get it mounted.  Just let
+> > me know.
+> > 
+> 
+> Hello,
+> 
+> I get those "parent transid verify failed" errors too after a system failure.
+> 
+> # btrfsck -s 1 /dev/md0 
+> using SB copy 1, bytenr 67108864
+> found 1954912653312 bytes used err is 0
+> total csum bytes: 1892054684
+> total tree bytes: 3455627264
+> total fs tree bytes: 1082691584
+> btree space waste bytes: 584155173
+> file data blocks allocated: 12808940421120
+>  referenced 1933520879616
+> Btrfs v0.19-35-g1b444cd-dirty
+> # btrfsck -s 2 /dev/md0 
+> using SB copy 2, bytenr 274877906944
+> found 1954912653312 bytes used err is 0
+> -snip-
+> 
+> Both seem to work.
+> What would be the steps to get it mounted?
 
-I have problem with options passed during mounting btrfs filesystem.
+If btrfsck -s is able to find a good super, I've setup a tool that will
+copy the good super over into the default super.  It is currently
+sitting in the next branch of the btrfs-progs-unstable repo.
 
-Distro: Debian Squeeze with XEN
-# uname -a
-Linux terminator 2.6.32-5-xen-686 #1 SMP Thu Nov 25 23:23:08 UTC 2010
-i686 GNU/Linux
+git clone git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs-unstable.git next
 
-If I am trying mount with -o compress - it work perfectly:
+(or git pull into your existing checkout)
 
-# mount -o compress /dev/vg0_terminator/test /mnt/backup/
+Then
 
-# dmesg |tail
-[509543.214592] btrfs: use compression
-[509619.841842] device fsid d44c18f154fc7778-4f5d69fd40c5a1ba devid 1
-transid 450 /dev/mapper/vg0_terminator-test
+make btrfs-select-super
+./btrfs-selects-super -s 1 /dev/xxx
 
-But -o compress-force or -o compress=lzo or -o compress-zlib didn't work:
+After this you'll want to do a full backup and make sure things are
+working properly.
 
-# mount -o compress-force /dev/vg0_terminator/test /mnt/backup/
-mount: wrong fs type, bad option, bad superblock on
-/dev/mapper/vg0_terminator-test,
-       missing codepage or helper program, or other error
-       In some cases useful info is found in syslog - try
-       dmesg | tail  or so
-
-# dmesg |tail
-
-[509234.944346] btrfs: unrecognized mount option 'compress=zlib'
-[509234.944762] btrfs: open_ctree failed
-[509295.321244] device fsid d44c18f154fc7778-4f5d69fd40c5a1ba devid 1
-transid 446 /dev/mapper/vg0_terminator-test
-[509295.322282] btrfs: unrecognized mount option 'compress=lzo'
-[509295.322681] btrfs: open_ctree failed
-[509543.213575] device fsid d44c18f154fc7778-4f5d69fd40c5a1ba devid 1
-transid 446 /dev/mapper/vg0_terminator-test
-[509619.842888] btrfs: unrecognized mount option 'compress-force'
-[509619.843280] btrfs: open_ctree failed
-
-The same is on my laptop with Ubuntu 10.10 without XEN installed.
-
-Any suggestion?
-
-Best regards,
-Marcin Kuk
+-chris

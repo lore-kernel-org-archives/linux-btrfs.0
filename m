@@ -1,41 +1,28 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: Re: Purpose of block reserves
-Date: Fri, 10 Dec 2010 09:37:44 +0100
-Message-ID: <4D01E6D8.3020105@gmx.net>
-References: <4D0094AC.6090101@gmx.net>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH] Btrfs: do not BUG if we fail to remove the orphan item
+	for dead snapshots
+Date: Fri, 10 Dec 2010 08:30:36 -0500
+Message-ID: <20101210133035.GC1226@dhcp231-156.rdu.redhat.com>
+References: <1291829142-22255-1-git-send-email-josef@redhat.com> <4D01D3BF.2010702@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: yanzheng@21cn.com
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D0094AC.6090101@gmx.net>
+In-Reply-To: <4D01D3BF.2010702@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Arne Jansen wrote:
+On Fri, Dec 10, 2010 at 03:16:15PM +0800, Li Zefan wrote:
+> 01:25, Josef Bacik wrote:
+> > Not being able to delete an orphan item isn't a horrible thing.  The worst that
+> > happens is the next time around we try and do the orphan cleanup and we can't
+> > find the referenced object and just delete the item and move on.  Thanks,
+> > 
 > 
-> while reading btrfs source code, I try to make sense of the various uses
-> of block reserves. The working theory is as follows:
+> Would be better to add code comment? Otherwise later people may wonder why
+> the return value is not checked and see it as a bug.
+>
 
-Since there have been no protests, I added this information to the wiki, section
-"Code documentation".
+Comments are against Btrfs' coding style guidlines.
 
---
-Arne
-
-> 
-> 1. Every operation has to reserve upfront every single byte it needs to
->    complete its operation fully.
-> 2. If an operation cannot determine how much space it will need, it has
->    to be able to cope with running out of space. Normally it does it by
->    inserting an orphan item, doing its work in multiple transactions and
->    removing the orphan item. The commits in between normally free up enough
->    space to continue the operation.
-> 3. All other enospc situations are errors in program logic and should result
->    in BUG_ON.
-> 
-> It would be great of someone with a deeper knowledge could correct, expand
-> or just confirm this.
-> 
-> Thanks,
-> Arne
-> --
+Josef 

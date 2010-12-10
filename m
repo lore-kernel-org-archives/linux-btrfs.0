@@ -1,30 +1,77 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] Btrfs: do not BUG if we fail to remove the orphan item for dead snapshots
-Date: Fri, 10 Dec 2010 09:22:41 -0500
-Message-ID: <1291990942-sup-2969@think>
-References: <1291829142-22255-1-git-send-email-josef@redhat.com> <4D01D3BF.2010702@cn.fujitsu.com> <20101210133035.GC1226@dhcp231-156.rdu.redhat.com>
+From: Jon Nelson <jnelson@jamponi.net>
+Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
+ barrier support is effective)
+Date: Fri, 10 Dec 2010 08:58:25 -0600
+Message-ID: <AANLkTikeiv2jQM5hhghs1Zd2d=5CbRLKMgYvqHqpm76m__22234.9971453243$1291993161$gmane$org@mail.gmail.com>
+References: <20101207182243.GB21112@redhat.com> <20101207193514.GA2921@thunk.org>
+ <AANLkTim8UTkfxXV0AkEfjNq3tcmnrXdh6BQ1ibY5iYPy@mail.gmail.com>
+ <20101209180111.GF2921@thunk.org> <AANLkTimAUB5L5Ptm4Fv=sQUmL9_P5azPRCKQnmU89xs8@mail.gmail.com>
+ <20101209201359.GG2921@thunk.org> <AANLkTik=ivDrBEzg1wQAp5AFzNtRRq1=NpvnowggU=_0@mail.gmail.com>
+ <20101209231616.GA12515@basil.fritz.box> <1291945065-sup-1838@think>
+ <AANLkTi=SgzVcOwqJfAHBe5U+1CuhPnm0eKet4hRM2JKz@mail.gmail.com>
+ <20101210023852.GB3059@thunk.org> <AANLkTikJ1Q=L15wcMLn=U8-Qx9PbppY-AX=LpmjDkk2V@mail.gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: Li Zefan <lizf@cn.fujitsu.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Josef Bacik <josef@redhat.com>
+To: "Ted Ts'o" <tytso@mit.edu>, Matt <jackdachef@gmail.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Andi Kleen <andi@firstfloor.org>,
+	Jon Nelson <jnelson@jamponi.net>,
+	Mike Snitzer <snitz
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <20101210133035.GC1226@dhcp231-156.rdu.redhat.com>
+In-Reply-To: <AANLkTikJ1Q=L15wcMLn=U8-Qx9PbppY-AX=LpmjDkk2V@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Josef Bacik's message of 2010-12-10 08:30:36 -0500:
-> On Fri, Dec 10, 2010 at 03:16:15PM +0800, Li Zefan wrote:
-> > 01:25, Josef Bacik wrote:
-> > > Not being able to delete an orphan item isn't a horrible thing.  The worst that
-> > > happens is the next time around we try and do the orphan cleanup and we can't
-> > > find the referenced object and just delete the item and move on.  Thanks,
-> > > 
-> > 
-> > Would be better to add code comment? Otherwise later people may wonder why
-> > the return value is not checked and see it as a bug.
-> >
-> 
-> Comments are against Btrfs' coding style guidlines.
+On Fri, Dec 10, 2010 at 12:52 AM, Jon Nelson <jnelson@jamponi.net> wrot=
+e:
+> On Thu, Dec 9, 2010 at 8:38 PM, Ted Ts'o <tytso@mit.edu> wrote:
+>> On Fri, Dec 10, 2010 at 02:53:30AM +0100, Matt wrote:
+>>>
+>>> Try a kernel before 5a87b7a5da250c9be6d757758425dfeaf8ed3179
+>>>
+>>> from the tests I've done that one showed the least or no corruption=
+ if
+>>> you count the empty /etc/env.d/03opengl as an artefact
+>>
+>> Yes, that's a good test. =C2=A0Also try commit bd2d0210cf. =C2=A0The=
+ patch
+>> series that is most likely to be at fault if there is a regression i=
+n
+>> between 5a87b7a5d and bd2d0210cf inclusive.
+>>
+>> I did a lot of testing before submitting it, but that wa a tricky
+>> rewrite. =C2=A0If you can reproduce the problem reliably, it might b=
+e good
+>> to try commit 16828088f9 (the commit before 5a87b7a5d) and commit
+>> bd2d0210cf. =C2=A0If it reliably reproduces on bd2d0210cf, but is cl=
+ean on
+>> 16828088f9, then it's my ext4 block i/o submission patches, and we'l=
+l
+>> need to either figure out what's going on or back out that set of
+>> changes.
+>>
+>> If that's the case, a bisect of those changes (it's only 6 commits, =
+so
+>> it shouldn't take long) would be most appreciated.
+>
+> I observed the behavior on bd2d0210cf in a qemu-kvm install of
+> openSUSE 11.3 (x86_64) on *totally* different host - an AMD quad-core=
+=2E
+>
+> I did /not/ observe the behavior on 16828088f9 (yet). I'll run the
+> test a few more times on 1682..
+>
+> Additionally, I am building a bisected kernel now (
+> cb20d5188366f04d96d2e07b1240cc92170ade40 ), but won't be able to get
+> back at it for a while.
 
-But not the new and improved coding style guidelines ;)
+cb20d5188366f04d96d2e07b1240cc92170ade40 seems OK so far. I'm going to
+try 1de3e3df917459422cb2aecac440febc8879d410 soon.
 
--chris
+
+--=20
+Jon
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

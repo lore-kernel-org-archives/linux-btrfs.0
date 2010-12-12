@@ -1,72 +1,55 @@
-From: Jon Nelson <jnelson@jamponi.net>
-Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
- barrier support is effective)
-Date: Sat, 11 Dec 2010 21:16:18 -0600
-Message-ID: <AANLkTim=i8wDnML+K4uGK_neNDCiWxtKGDx01O+3joaE__11382.4253007353$1292123849$gmane$org@mail.gmail.com>
-References: <20101209201359.GG2921@thunk.org> <AANLkTik=ivDrBEzg1wQAp5AFzNtRRq1=NpvnowggU=_0@mail.gmail.com>
- <20101209231616.GA12515@basil.fritz.box> <1291945065-sup-1838@think>
- <AANLkTi=SgzVcOwqJfAHBe5U+1CuhPnm0eKet4hRM2JKz@mail.gmail.com>
- <20101210023852.GB3059@thunk.org> <AANLkTikJ1Q=L15wcMLn=U8-Qx9PbppY-AX=LpmjDkk2V@mail.gmail.com>
- <AANLkTikeiv2jQM5hhghs1Zd2d=5CbRLKMgYvqHqpm76m@mail.gmail.com>
- <AANLkTinMt6saGeeX3MbwAzZ-+f6AL5BegeFqyPgGwiDo@mail.gmail.com>
- <AANLkTi=cn04WZGMnVX6ie5PSM+9v0tJSSg0kD8_W5N11@mail.gmail.com> <20101212023415.GG3059@thunk.org>
+From: "Ian! D. Allen" <idallen@idallen.ca>
+Subject: Re: btrfs subvolume snapshot hung in btrfs_commit_transaction
+Date: Sat, 11 Dec 2010 22:43:39 -0500
+Message-ID: <20101212034339.GA26170@idallen.ca>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: "Ted Ts'o" <tytso@mit.edu>, Jon Nelson <jnelson@jamponi.net>,
-	Matt <jackdachef@gmail.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Andi Kleen <andi@firstfloor.org>,
-	Mike Snitzer <snitz
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101212023415.GG3059@thunk.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Dec 11, 2010 at 7:40 PM, Ted Ts'o <tytso@mit.edu> wrote:
-> Yes, indeed.  Is this in the virtualized environment or on real
-> hardware at this point?  And how many CPU's do you have configured in
-> your virtualized environment, and how memory memory?  Is having a
-> certain number of CPU's critical for reproducing the problem?  Is
-> constricting the amount of memory important?
+This is a second try to post this follow-up, with the dmesg log info
+deleted.  What is the size/length limit on this mailing list?
 
-Originally, I observed the behavior on really real hardware.
+On Thu, Dec 09, 2010 at 02:46:39PM -0500, Ian! D. Allen wrote:
+> Hello developers - Last chance to get more details on this btrfs hang
+> (below) before I reboot the machine.  Anything I can do to gather
+> more data?
 
-Since then, I have been able to reproduce it in VirtualBox and
-qemu-kvm, with openSUSE 11.3 and KUbuntu. All of the more recent tests
-have been with qemu-kvm.
+Too late.  The machine eventually hung and had to be rebooted.  I've saved
+that hung btrfs disk partition (185GB) if anyone wants to contact me to
+examine it further.
 
-I have one CPU configured in the environment, 512MB of memory.
-I have not done any memory-constriction tests whatsoever.
+I put in a larger disk (250GB), set up a partition for btrfs, and ran
+the same continuous snapshotting test.  It got up to creating snapshot
+150 and then btrfs hung again.  So the bug is repeatable and makes btrfs
+0.19 on Ubuntu 10.10 unusable.
 
-> It'll be a lot easier if I can reproduce it locally, which is why I'm
-> asking all of these questions.
+# ps laxgww | awk '$10 ~ /D/ {print }'
+0     0  3723 28355  35   -   6224   332 btrfs_ DN+  pts/7      0:00 btrfs subvolume snapshot /mnt/sdb1/snap000150 /mnt/sdb1/snap000151
+1     0 27334     2  20   0      0     0 wait_f D    ?          0:02 [btrfs-transacti]
 
-On Sat, Dec 11, 2010 at 8:34 PM, Ted Ts'o <tytso@mit.edu> wrote:
-> One experiment --- can you try this with the file system mounted with
-> data=3Dwriteback, and see if the problem reproduces in that journalli=
-ng
-> mode?
+I ran an "ls" on the root of the btrfs partition and it hung, too,
+as does anything trying to access anything in that partition:
 
-That test is running now, first with encryption. I will report if it
-shows problems. If it does, I will wait until I have been able to see
-that a few times, and move to a no-encryption test. Typically, I have
-to run quite a few more iterations of that test before problems show
-up (if they will at all).
+0   777 10005  3732  20   0  21856   692 vfs_re D    pts/11     0:00 ls -abp --color=auto /mnt/sdb1
 
-> I want to rule out (if possible) journal_submit_inode_data_buffers()
-> racing with mpage_da_submit_io(). =C2=A0I don't think that's the issu=
-e, but
-> I'd prefer to do the experiment to make sure. =C2=A0So if you can use=
- a
-> kernel and system configuration which triggers the problem, and then
-> try changing the mount options to include data=3Dwriteback, and then
-> rerun the test, and let me know if the problem still reproduces, I'd
-> be really grateful.
+Here are the blocked process WCHANs:
 
+# ps -o wchan 3723 27334 10005 
+WCHAN
+btrfs_commit_transaction
+wait_for_commit
+vfs_readdir
 
---=20
-Jon
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Here is what appeared in /var/log/kernel.log regarding the above processes:
+
+2010-12-11T10:47:32.583745-05:00 linux kernel: [43201.070404] INFO: task btrfs-transacti:27334 blocked for more than 120 seconds.
+
+[... 175 more related dmesg lines deleted ... ]
+
+-- 
+| Ian! D. Allen  -  idallen@idallen.ca  -  Ottawa, Ontario, Canada
+| Home Page: http://idallen.com/   Contact Improv: http://contactimprov.ca/
+| College professor (Free/Libre GNU+Linux) at: http://teaching.idallen.com/
+| Defend digital freedom:  http://eff.org/  and have fun:  http://fools.ca/

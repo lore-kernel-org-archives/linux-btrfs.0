@@ -1,52 +1,44 @@
-From: Itaru Kitayama <kitayama@cl.bb4u.ne.jp>
-Subject: [PATCH] Btrfs: pick the correct metadata allocation size on small
- devices
-Date: Sun, 12 Dec 2010 23:33:08 +0900
-Message-ID: <20101212233308.4b2aff4a.kitayama@cl.bb4u.ne.jp>
+From: cwillu <cwillu@cwillu.com>
+Subject: Re: ENOSPC on heterogeneous raid 0
+Date: Sun, 12 Dec 2010 09:01:53 -0600
+Message-ID: <AANLkTik6q0errBWt81tMb_kpQMO6vJi5qvPJ1NS=fu-v@mail.gmail.com>
+References: <AANLkTikWrcJ+hWr0WS+1eeXdGKce3Xf-aH9k5Fg4x8Z3@mail.gmail.com>
+	<201012121524.59737.hka@qbs.com.pl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: William Sheffler <will@sheffler.me>, linux-btrfs@vger.kernel.org
+To: Hubert Kario <hka@qbs.com.pl>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201012121524.59737.hka@qbs.com.pl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sun, Dec 12, 2010 at 8:24 AM, Hubert Kario <hka@qbs.com.pl> wrote:
+> On Wednesday 08 of December 2010 22:53:25 William Sheffler wrote:
+>> Hello btrfs community.
+>>
+>> First off, thanks for all your hard work... I have been following
+>> btrfs with interest for several years now and very much look forward
+>> to the day it replaces ext4. The real killer feature (of btrfs
+>> specifically) for me is the ability to add *and remove* devices from a
+>> filesystem, as this allows rolling upgrades of my server's disks. I
+>> have a 16 port 3ware 1650SE on which I have a number of small raid
+>> units and it will be fantastic to be able to remove the oldest,
+>> upgrade, and add the new storage back. I had previously been using
+>> ZFS, but since ZFS doesn't allow removal of devices, this rolling
+>> upgrade strategy doesn't work.
+>>
+>> My question is this: can btrfs handle striping (raid 0) across
+>> heterogeneous devices? I seem to be losing any capacity on the larger
+>> disk beyond what is available on the smaller disk. I really hope there
+>> is some simple fix!
+>
+> Yes, it can handle stripping over devices of different size, unfortunately
+> you're still limited to <size of smallest device>*<number of devices>
+>
+> if you want to use all the available space use "-d single" when creating
+> volume
+>
+> for details, read the recent thread "800GB free, but no space left"
 
-Josef's fs_mark test
-
-fs_mark -d /mnt/btrfs-test -D 512 -t 16 -n 4096 -F -S0
-
-on a 2GB single metadata fs leaves about 400Mb of metadata almost unused.
-
-This patch reduces metadata chunk allocations by considering the proper
-metadata chunk size of 200MB in should_alloc_chunk(), not the default 256MB 
-which is set in __btrfs_alloc_chunk().
-
-Signed-off-by: Itaru Kitayama <kitayama@cl.bb4.ne.jp>
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 8c26441..54ab490 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3241,6 +3241,8 @@ static int should_alloc_chunk(struct btrfs_root *root,
-                              struct btrfs_space_info *sinfo, u64 alloc_bytes)
- {
-        u64 num_bytes = sinfo->total_bytes - sinfo->bytes_readonly;
-+       u64 total_rw_bytes = root->fs_info->fs_devices->total_rw_bytes; 
-+       u64 max_chunk_size;
-        u64 thresh;
- 
-        if (sinfo->bytes_used + sinfo->bytes_reserved +
-@@ -3251,8 +3253,9 @@ static int should_alloc_chunk(struct btrfs_root *root,
-            alloc_bytes < div_factor(num_bytes, 8))
-                return 0;
- 
-+       max_chunk_size = min(256 * 1024 * 1024, div_factor(total_rw_bytes, 1));
-        thresh = btrfs_super_total_bytes(&root->fs_info->super_copy);
--       thresh = max_t(u64, 256 * 1024 * 1024, div_factor_fine(thresh, 5));
-+       thresh = max_t(u64, max_chunk_size, div_factor_fine(thresh, 5));
- 
-        if (num_bytes > thresh && sinfo->bytes_used < div_factor(num_bytes, 3))
-                return 0;
-
-
--- 
-Itaru Kitayama <kitayama@cl.bb4.ne.jp>
+If I'm not mistaken, -d single doesn't mean anything yet on a
+multi-device system:  you'll still get raid0.

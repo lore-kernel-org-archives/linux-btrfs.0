@@ -1,55 +1,52 @@
-From: Hubert Kario <hka@qbs.com.pl>
-Subject: Re: ENOSPC on heterogeneous raid 0
-Date: Sun, 12 Dec 2010 15:24:59 +0100
-Message-ID: <201012121524.59737.hka@qbs.com.pl>
-References: <AANLkTikWrcJ+hWr0WS+1eeXdGKce3Xf-aH9k5Fg4x8Z3@mail.gmail.com>
+From: Itaru Kitayama <kitayama@cl.bb4u.ne.jp>
+Subject: [PATCH] Btrfs: pick the correct metadata allocation size on small
+ devices
+Date: Sun, 12 Dec 2010 23:33:08 +0900
+Message-ID: <20101212233308.4b2aff4a.kitayama@cl.bb4u.ne.jp>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=iso-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: William Sheffler <will@sheffler.me>
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTikWrcJ+hWr0WS+1eeXdGKce3Xf-aH9k5Fg4x8Z3@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wednesday 08 of December 2010 22:53:25 William Sheffler wrote:
-> Hello btrfs community.
->=20
-> First off, thanks for all your hard work... I have been following
-> btrfs with interest for several years now and very much look forward
-> to the day it replaces ext4. The real killer feature (of btrfs
-> specifically) for me is the ability to add *and remove* devices from =
-a
-> filesystem, as this allows rolling upgrades of my server's disks. I
-> have a 16 port 3ware 1650SE on which I have a number of small raid
-> units and it will be fantastic to be able to remove the oldest,
-> upgrade, and add the new storage back. I had previously been using
-> ZFS, but since ZFS doesn't allow removal of devices, this rolling
-> upgrade strategy doesn't work.
->=20
-> My question is this: can btrfs handle striping (raid 0) across
-> heterogeneous devices? I seem to be losing any capacity on the larger
-> disk beyond what is available on the smaller disk. I really hope ther=
-e
-> is some simple fix!
 
-Yes, it can handle stripping over devices of different size, unfortunat=
-ely=20
-you're still limited to <size of smallest device>*<number of devices>
+Josef's fs_mark test
 
-if you want to use all the available space use "-d single" when creatin=
-g=20
-volume
+fs_mark -d /mnt/btrfs-test -D 512 -t 16 -n 4096 -F -S0
 
-for details, read the recent thread "800GB free, but no space left"
+on a 2GB single metadata fs leaves about 400Mb of metadata almost unused.
 
---=20
-Hubert Kario
-QBS - Quality Business Software
-02-656 Warszawa, ul. Ksawer=F3w 30/85
-tel. +48 (22) 646-61-51, 646-74-24
-www.qbs.com.pl
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+This patch reduces metadata chunk allocations by considering the proper
+metadata chunk size of 200MB in should_alloc_chunk(), not the default 256MB 
+which is set in __btrfs_alloc_chunk().
+
+Signed-off-by: Itaru Kitayama <kitayama@cl.bb4.ne.jp>
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 8c26441..54ab490 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3241,6 +3241,8 @@ static int should_alloc_chunk(struct btrfs_root *root,
+                              struct btrfs_space_info *sinfo, u64 alloc_bytes)
+ {
+        u64 num_bytes = sinfo->total_bytes - sinfo->bytes_readonly;
++       u64 total_rw_bytes = root->fs_info->fs_devices->total_rw_bytes; 
++       u64 max_chunk_size;
+        u64 thresh;
+ 
+        if (sinfo->bytes_used + sinfo->bytes_reserved +
+@@ -3251,8 +3253,9 @@ static int should_alloc_chunk(struct btrfs_root *root,
+            alloc_bytes < div_factor(num_bytes, 8))
+                return 0;
+ 
++       max_chunk_size = min(256 * 1024 * 1024, div_factor(total_rw_bytes, 1));
+        thresh = btrfs_super_total_bytes(&root->fs_info->super_copy);
+-       thresh = max_t(u64, 256 * 1024 * 1024, div_factor_fine(thresh, 5));
++       thresh = max_t(u64, max_chunk_size, div_factor_fine(thresh, 5));
+ 
+        if (num_bytes > thresh && sinfo->bytes_used < div_factor(num_bytes, 3))
+                return 0;
+
+
+-- 
+Itaru Kitayama <kitayama@cl.bb4.ne.jp>

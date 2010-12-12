@@ -1,113 +1,83 @@
-From: "Ian! D. Allen" <idallen@idallen.ca>
-Subject: btrfs subvolume list fails to show all snapshots
-Date: Sun, 12 Dec 2010 04:45:17 -0500
-Message-ID: <20101212094517.GA19181@idallen.ca>
-References: <20101212034339.GA26170@idallen.ca>
- <20101212081359.GA7389@idallen.ca>
+From: Jon Nelson <jnelson@jamponi.net>
+Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
+ barrier support is effective)
+Date: Sun, 12 Dec 2010 04:18:29 -0600
+Message-ID: <AANLkTinhHTqqpP=pQ8Foyc9xeaZi65GHGHGY51OyZtvF__8833.31898735396$1292149166$gmane$org@mail.gmail.com>
+References: <20101209201359.GG2921@thunk.org> <AANLkTik=ivDrBEzg1wQAp5AFzNtRRq1=NpvnowggU=_0@mail.gmail.com>
+ <20101209231616.GA12515@basil.fritz.box> <1291945065-sup-1838@think>
+ <AANLkTi=SgzVcOwqJfAHBe5U+1CuhPnm0eKet4hRM2JKz@mail.gmail.com>
+ <20101210023852.GB3059@thunk.org> <AANLkTikJ1Q=L15wcMLn=U8-Qx9PbppY-AX=LpmjDkk2V@mail.gmail.com>
+ <AANLkTikeiv2jQM5hhghs1Zd2d=5CbRLKMgYvqHqpm76m@mail.gmail.com>
+ <AANLkTinMt6saGeeX3MbwAzZ-+f6AL5BegeFqyPgGwiDo@mail.gmail.com>
+ <AANLkTi=cn04WZGMnVX6ie5PSM+9v0tJSSg0kD8_W5N11@mail.gmail.com>
+ <20101212023415.GG3059@thunk.org> <AANLkTim=i8wDnML+K4uGK_neNDCiWxtKGDx01O+3joaE@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+To: "Ted Ts'o" <tytso@mit.edu>, Jon Nelson <jnelson@jamponi.net>,
+	Matt <jackdachef@gmail.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Andi Kleen <andi@firstfloor.org>,
+	Mike Snitzer <snitz
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101212081359.GA7389@idallen.ca>
+In-Reply-To: <AANLkTim=i8wDnML+K4uGK_neNDCiWxtKGDx01O+3joaE@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Creating new snapshots from previous snapshots eventually causes "btrfs
-subvolume list" to omit some of the created snapshots.  The set of
-omitted snapshots changes as one creates new snapshots.
+On Sat, Dec 11, 2010 at 9:16 PM, Jon Nelson <jnelson@jamponi.net> wrote=
+:
+> On Sat, Dec 11, 2010 at 7:40 PM, Ted Ts'o <tytso@mit.edu> wrote:
+>> Yes, indeed. =C2=A0Is this in the virtualized environment or on real
+>> hardware at this point? =C2=A0And how many CPU's do you have configu=
+red in
+>> your virtualized environment, and how memory memory? =C2=A0Is having=
+ a
+>> certain number of CPU's critical for reproducing the problem? =C2=A0=
+Is
+>> constricting the amount of memory important?
+>
+> Originally, I observed the behavior on really real hardware.
+>
+> Since then, I have been able to reproduce it in VirtualBox and
+> qemu-kvm, with openSUSE 11.3 and KUbuntu. All of the more recent test=
+s
+> have been with qemu-kvm.
+>
+> I have one CPU configured in the environment, 512MB of memory.
+> I have not done any memory-constriction tests whatsoever.
+>
+>> It'll be a lot easier if I can reproduce it locally, which is why I'=
+m
+>> asking all of these questions.
+>
+> On Sat, Dec 11, 2010 at 8:34 PM, Ted Ts'o <tytso@mit.edu> wrote:
+>> One experiment --- can you try this with the file system mounted wit=
+h
+>> data=3Dwriteback, and see if the problem reproduces in that journall=
+ing
+>> mode?
+>
+> That test is running now, first with encryption. I will report if it
+> shows problems. If it does, I will wait until I have been able to see
+> that a few times, and move to a no-encryption test. Typically, I have
+> to run quite a few more iterations of that test before problems show
+> up (if they will at all).
+>
+>> I want to rule out (if possible) journal_submit_inode_data_buffers()
+>> racing with mpage_da_submit_io(). =C2=A0I don't think that's the iss=
+ue, but
+>> I'd prefer to do the experiment to make sure. =C2=A0So if you can us=
+e a
+>> kernel and system configuration which triggers the problem, and then
+>> try changing the mount options to include data=3Dwriteback, and then
+>> rerun the test, and let me know if the problem still reproduces, I'd
+>> be really grateful.
 
-(This different bug thread was found while exploring this previous thread:
-Subject: btrfs subvolume snapshot hung in btrfs_commit_transaction)
+Using 2.6.37-rc5 and data=3Dwriteback,noatime and LUKS encryption I hit
+the problem 71 times out of 173.
 
-What I did:
-
-    - take one SATA disk of size 200GB
-    - create one partition (/dev/sdf1) with fdisk
-
-    # mkfs.btrfs /dev/sdf1
-    WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
-    WARNING! - see http://btrfs.wiki.kernel.org before using
-    fs created label (null) on /dev/sdf1
-	    nodesize 4096 leafsize 4096 sectorsize 4096 size 186.31GB
-    Btrfs Btrfs v0.19
-    
-    # mount -o noatime /dev/sdf1 /mnt/sdf1
-
-    - set <previous> = /mnt/sdf1
-    - set <current> = /mnt/sdf1/snap000001
-loop: 
-    # btrfs subvolume snapshot <previous> <current>
-    - check to make sure "btrfs subvolume list" shows all snapshots
-    - set <previous> = <current>
-    - set <current> = <current>+1
-    GOTO loop
-      
-After creating snapshot 10 from snapshot 9, snapshot 6 vanished from
-the output of "btrfs subvolume list /dev/sdf1":
-
-    # btrfs subv list /mnt/sdf1
-    ID 256 top level 5 path snap000001
-    ID 257 top level 5 path snap000002
-    ID 258 top level 5 path snap000003
-    ID 259 top level 5 path snap000004
-    ID 260 top level 5 path snap000005
-    ID 262 top level 5 path snap000007
-    ID 263 top level 5 path snap000008
-    ID 264 top level 5 path snap000009
-    ID 265 top level 5 path snap000010
-
-All the snapshots, including the missing snap 6, are still on disk:
-
-    # ls -la /mnt/sdf1/
-    total 48
-    dr-xr-xr-x  1 root root  208 Dec 12 03:54 ./
-    drwxr-xr-x 20 root root 4096 Dec 12 03:50 ../
-    drwxr-xr-x  1 root root 3666 Dec 12 03:55 ROOT/
-    dr-xr-xr-x  1 root root   28 Dec 12 03:54 snap000001/
-    dr-xr-xr-x  1 root root   28 Dec 12 03:54 snap000002/
-    dr-xr-xr-x  1 root root   28 Dec 12 03:54 snap000003/
-    dr-xr-xr-x  1 root root   28 Dec 12 03:54 snap000004/
-    dr-xr-xr-x  1 root root   28 Dec 12 03:54 snap000005/
-    dr-xr-xr-x  1 root root   28 Dec 12 03:54 snap000006/
-    dr-xr-xr-x  1 root root   28 Dec 12 03:54 snap000007/
-    dr-xr-xr-x  1 root root   28 Dec 12 03:54 snap000008/
-    dr-xr-xr-x  1 root root   28 Dec 12 03:54 snap000009/
-    dr-xr-xr-x  1 root root   28 Dec 12 03:54 snap000010/
-
-    # du -sh /mnt/sdf1/snap0000*
-    1.6G	/mnt/sdf1/snap000001
-    1.6G	/mnt/sdf1/snap000002
-    1.6G	/mnt/sdf1/snap000003
-    1.6G	/mnt/sdf1/snap000004
-    1.6G	/mnt/sdf1/snap000005
-    1.6G	/mnt/sdf1/snap000006
-    1.6G	/mnt/sdf1/snap000007
-    1.6G	/mnt/sdf1/snap000008
-    1.6G	/mnt/sdf1/snap000009
-    1.6G	/mnt/sdf1/snap000010
-
-The on-disk snapshot appears to be intact and working; it just doesn't
-show up in the output of "btrfs subvolume list".
-
-If I keep creating snapshots in the above manner, the list of missing
-snapshots changes:
-
-- after creating snap 11, no snapshots are missing from the output (!)
-- after creating snap 18, snap 17 goes missing
-- after creating snap 21, snaps 4 and 17 are missing
-- after creating snap 22, only snap 16 is missing
-- after creating snap 27, snaps 3 and 16 are missing
-- after creating snap 28, only snap 15 is missing
-- after creating snap 29, snaps 15 and 28 are missing
-- after creating snap 32, snaps 2, 15, and 28 are missing
-- after creating snap 33, snaps 14 and 27 are missing
-- after creating snap 39, snaps 25 and 38 are missing
-- after creating snap 49, snaps 24 and 37 are missing
-...etc...
-
-Surely something is wrong here?
-
--- 
-| Ian! D. Allen  -  idallen@idallen.ca  -  Ottawa, Ontario, Canada
-| Home Page: http://idallen.com/   Contact Improv: http://contactimprov.ca/
-| College professor (Free/Libre GNU+Linux) at: http://teaching.idallen.com/
-| Defend digital freedom:  http://eff.org/  and have fun:  http://fools.ca/
+--=20
+Jon
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

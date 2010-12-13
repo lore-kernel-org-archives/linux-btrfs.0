@@ -1,27 +1,35 @@
-From: "Zhong, Xin" <xin.zhong@intel.com>
-Subject: RE: [PATCH] Btrfs: pwrite blocked when writing from the mmaped
- buffer of the same page
-Date: Mon, 13 Dec 2010 16:26:04 +0800
-Message-ID: <1865303E0DED764181A9D882DEF65FB68594D08540@shsmsx502.ccr.corp.intel.com>
-References: <1291708775-4484-1-git-send-email-xin.zhong@intel.com>
- <20101207165433.GA976@infradead.org>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: btrfs subvolume list fails to show all snapshots
+Date: Mon, 13 Dec 2010 16:47:22 +0800
+Message-ID: <4D05DD9A.2060206@cn.fujitsu.com>
+References: <20101212034339.GA26170@idallen.ca> <20101212081359.GA7389@idallen.ca> <20101212094517.GA19181@idallen.ca>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Christoph Hellwig <hch@infradead.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: "Ian! D. Allen" <idallen@idallen.ca>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101207165433.GA976@infradead.org>
+In-Reply-To: <20101212094517.GA19181@idallen.ca>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have sent my test case to xfs mailing list (No. 248). 
-Please help to review it. Thanks!
+> After creating snapshot 10 from snapshot 9, snapshot 6 vanished from
+> the output of "btrfs subvolume list /dev/sdf1":
+> 
+>     # btrfs subv list /mnt/sdf1
+>     ID 256 top level 5 path snap000001
+>     ID 257 top level 5 path snap000002
+>     ID 258 top level 5 path snap000003
+>     ID 259 top level 5 path snap000004
+>     ID 260 top level 5 path snap000005
+>     ID 262 top level 5 path snap000007
+>     ID 263 top level 5 path snap000008
+>     ID 264 top level 5 path snap000009
+>     ID 265 top level 5 path snap000010
+> 
+...
+> Surely something is wrong here?
+> 
 
------Original Message-----
-From: Christoph Hellwig [mailto:hch@infradead.org] 
-Sent: Wednesday, December 08, 2010 12:55 AM
-To: Zhong, Xin
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: pwrite blocked when writing from the mmaped buffer of the same page
+Right, there's something wrong and I've figured it out.
+Will send out a fix soon.
 
-Care to write a xfstests test for this behaviour?
-
+Thanks for the report!

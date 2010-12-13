@@ -1,35 +1,45 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: btrfs subvolume list fails to show all snapshots
-Date: Mon, 13 Dec 2010 16:47:22 +0800
-Message-ID: <4D05DD9A.2060206@cn.fujitsu.com>
-References: <20101212034339.GA26170@idallen.ca> <20101212081359.GA7389@idallen.ca> <20101212094517.GA19181@idallen.ca>
+From: Gordan Bobic <gordan@bobich.net>
+Subject: Re: SSD optimizations
+Date: Mon, 13 Dec 2010 09:25:21 +0000
+Message-ID: <4D05E681.5090004@bobich.net>
+References: <1292174654.11248.10.camel@paddy-desktop>	<4D05630E.7070809@bobich.net> <20101213051157.GA19543@attic.humilis.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: "Ian! D. Allen" <idallen@idallen.ca>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: jarktasaa@gmail.com, linux-btrfs@vger.kernel.org
+To: sander@humilis.net
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101212094517.GA19181@idallen.ca>
+In-Reply-To: <20101213051157.GA19543@attic.humilis.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> After creating snapshot 10 from snapshot 9, snapshot 6 vanished from
-> the output of "btrfs subvolume list /dev/sdf1":
-> 
->     # btrfs subv list /mnt/sdf1
->     ID 256 top level 5 path snap000001
->     ID 257 top level 5 path snap000002
->     ID 258 top level 5 path snap000003
->     ID 259 top level 5 path snap000004
->     ID 260 top level 5 path snap000005
->     ID 262 top level 5 path snap000007
->     ID 263 top level 5 path snap000008
->     ID 264 top level 5 path snap000009
->     ID 265 top level 5 path snap000010
-> 
-...
-> Surely something is wrong here?
-> 
+On 12/13/2010 05:11 AM, Sander wrote:
+> Gordan Bobic wrote (ao):
+>> On 12/12/2010 17:24, Paddy Steed wrote:
+>>> In a few weeks parts for my new computer will be arriving. The storage
+>>> will be a 128GB SSD. A few weeks after that I will order three large
+>>> disks for a RAID array. I understand that BTRFS RAID 5 support will be
+>>> available shortly. What is the best possible way for me to get the
+>>> highest performance out of this setup. I know of the option to optimize
+>>> for SSD's
+>>
+>> BTRFS is hardly the best option for SSDs. I typically use ext4
+>> without a journal on SSDs, or ext2 if that is not available.
+>> Journalling causes more writes to hit the disk, which wears out
+>> flash faster. Plus, SSDs typically have much slower writes than
+>> reads, so avoiding writes is a good thing.
+>
+> Gordan, this you wrote is so wrong I don't even know where to begin.
+>
+> You'd better google a bit on the subject (ssd, and btrfs on ssd) as much
+> is written about it already.
 
-Right, there's something wrong and I've figured it out.
-Will send out a fix soon.
+I suggest you back your opinion up with some hard data before making 
+such statements. Here's a quick test - make an ext2 fs and a btrfs on 
+two similar disk partitions (any disk, for the sake of the experiment it 
+doesn't have to be an ssd), then check vmstat -d to get a base line. 
+Then put the kernel sources on each it, do a full build, then make clean 
+and check vmstat -d again. Check the vmstat -d output again. See how 
+many writes (sectors) hit the disk with ext2 and how many with btrfs. 
+You'll find that there were many more writes with BTRFS. You can't go 
+faster when doing more. Journaling is expensive.
 
-Thanks for the report!
+Gordan

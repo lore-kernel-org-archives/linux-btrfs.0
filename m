@@ -1,77 +1,37 @@
-From: Paul Komkoff <i@stingr.net>
-Subject: Re: btrfs: unable to remove the only writeable device
-Date: Mon, 13 Dec 2010 14:23:50 +0000
-Message-ID: <AANLkTim0ZU_b68dvYrEy2rWctUhVWLND1+9XZT76LCCt@mail.gmail.com>
-References: <Pine.LNX.4.64.1009081954310.11139@claw.oc9.org>
+From: Peter Harris <git@peter.is-a-geek.org>
+Subject: Re: SSD optimizations
+Date: Mon, 13 Dec 2010 09:33:56 -0500
+Message-ID: <AANLkTikEpDp6ky-J3V7Aa2oNEg-mF8ZUU7qfaDdxdrKo@mail.gmail.com>
+References: <1292174654.11248.10.camel@paddy-desktop>
+	<4D05630E.7070809@bobich.net>
+	<20101213051157.GA19543@attic.humilis.net>
+	<4D05E681.5090004@bobich.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Roy Keene <btrfs@rkeene.org>
+Cc: sander@humilis.net, jarktasaa@gmail.com,
+	linux-btrfs@vger.kernel.org
+To: Gordan Bobic <gordan@bobich.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <Pine.LNX.4.64.1009081954310.11139@claw.oc9.org>
+In-Reply-To: <4D05E681.5090004@bobich.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello.
+On Mon, Dec 13, 2010 at 4:25 AM, Gordan Bobic wrote:
+> I suggest you back your opinion up with some hard data before making such
+> statements. Here's a quick test - make an ext2 fs and a btrfs on two similar
+> disk partitions (any disk, for the sake of the experiment it doesn't have to
+> be an ssd)
 
-Sorry if it's already fixed, but with 2.6.35.6-48.fc14.x86_64, when I
-do btrfs device delete /dev/blabla /btrfs kernel moves everything
-except 1 gigabyte off the device, but then fails to remove it, saying
-"btrfs: unable to remove the only writeable device" to dmesg.
+Okay, here's some hard data.
 
-What's even more interesting, it does that with all 3 of my devices,
-and I clearly have enough free space to eject one drive.
+Acer Aspire One ZG5 with an SSDPAMM0008G1 (cheap/slow) SSD, Fedora 13.
 
-What am I doing wrong?
-Thanks.
+Doing a standard yum update, measuring the yum cleanup phase while
+browsing with Firefox:
 
-P.S. For reference - what seems to be the same bug but from september.
+Default extN: machine becomes completely unusable for minutes.
+btrfs with ssd_spread: machine functions normally, cleanup finishes in
+(often much) under 15 seconds.
 
-On Thu, Sep 9, 2010 at 2:04 AM, Roy Keene <btrfs@rkeene.org> wrote:
-> All,
->
-> =A0 =A0 =A0 =A0I am using BtrFS at home for testing on my /home files=
-ystem. =A0I
-> started out with one disk (mkfs.btrfs /dev/sdb1) and then added anoth=
-er disk
-> (btrfs device add /dev/sda2 /home; btrfs filesystem balance /home).
->
-> I then wanted to remove my second disk, but was unable to do so, I go=
-t:
-> =A0 =A0 =A0 =A0btrfs: unable to go below two devices on raid1
->
-> I was told by the members of the BtrFS IRC channel that this was beca=
-use my
-> metadata was RAID1'd.
->
-> To resolve this situation, I added an 8GB flash drive (my metadata wa=
-s
-> 5.99GB) and attempted to remove the drive again. =A0It ran for a whil=
-e (a long
-> while) and eventually returned me to the prompt. =A0It did not remove=
- the disk
-> -- so I ran it again... and again... and again...
->
-> I am to the point where "btrfs device delete <blah> /home" returns
-> instantly, but has no effect. =A0The following is written to my kerne=
-l message
-> buffer whenever I try to remove ANY device from /home:
-> =A0 =A0 =A0 =A0btrfs: unable to remove the only writeable device
->
-> More information can be found in the attachement.
->
-> I am still on my quest to remove a device from my BtrFS pool. =A0Does=
- anyone
-> have any advice ?
->
-> Thanks,
-> =A0 =A0 =A0 =A0Roy Keene
+Regardless of what vmstat says, btrfs is clearly faster on this hardware.
 
-
-
---=20
-This message represents the official view of the voices in my head
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Peter Harris

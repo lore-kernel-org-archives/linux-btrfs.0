@@ -1,159 +1,137 @@
-From: Ted Ts'o <tytso@mit.edu>
-Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
- barrier support is effective)
-Date: Sun, 12 Dec 2010 21:06:57 -0500
-Message-ID: <20101213020657.GB4513@thunk.org>
-References: <20101210023852.GB3059@thunk.org>
- <AANLkTikJ1Q=L15wcMLn=U8-Qx9PbppY-AX=LpmjDkk2V@mail.gmail.com>
- <AANLkTikeiv2jQM5hhghs1Zd2d=5CbRLKMgYvqHqpm76m@mail.gmail.com>
- <AANLkTinMt6saGeeX3MbwAzZ-+f6AL5BegeFqyPgGwiDo@mail.gmail.com>
- <AANLkTi=cn04WZGMnVX6ie5PSM+9v0tJSSg0kD8_W5N11@mail.gmail.com>
- <20101212023415.GG3059@thunk.org>
- <AANLkTim=i8wDnML+K4uGK_neNDCiWxtKGDx01O+3joaE@mail.gmail.com>
- <AANLkTinhHTqqpP=pQ8Foyc9xeaZi65GHGHGY51OyZtvF@mail.gmail.com>
- <20101212124354.GA4513@thunk.org>
- <AANLkTikZkCs7Wee2=uhe3bw96Pggcv0jsCkZ+nkWEQ+=@mail.gmail.com>
+From: David Nicol <davidnicol@gmail.com>
+Subject: PATCH: btrfs ioctl for waiting for kernel cleaner thread task
+ completions kernel code
+Date: Sun, 12 Dec 2010 20:51:28 -0600
+Message-ID: <AANLkTi=ahowr16L7NLuFX-KhCcZCc130UFwZtZpPwyfd@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Matt <jackdachef@gmail.com>, Chris Mason <chris.mason@oracle.com>,
-	Andi Kleen <andi@firstfloor.org>,
-	Mike Snitzer <snitzer@redhat.com>,
-	Milan Broz <mbroz@redhat.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	dm-devel <dm-devel@redhat.com>,
-	Linux Kernel <linux-kernel@vger.kernel.org>,
-	htd <htd@fancy-poultry.org>, htejun <htejun@gmail.com>,
-	linux-ext4 <linux-ext4@vger.kernel.org>
-To: Jon Nelson <jnelson@jamponi.net>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <AANLkTikZkCs7Wee2=uhe3bw96Pggcv0jsCkZ+nkWEQ+=@mail.gmail.com>
+Content-Type: multipart/mixed; boundary=20cf30549b91117f60049741c905
+To: BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Dec 12, 2010 at 07:11:28AM -0600, Jon Nelson wrote:
-> I'm glad you've been able to reproduce the problem! If you should need
-> any further assistance, please do not hesitate to ask.
+--20cf30549b91117f60049741c905
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 
-This patch seems to fix the problem for me.  (Unless the partition is
-mounted with mblk_io_submit.)
+the attached patch is against ubuntu maverick latest git, and I
+believe it is final. It is forward-compatible, as there is space in it
+to define 29 more deferred things to wait for, if needed, as well as a
+flag bit reserved for strict versioning. Calling it with a flags field
+of 0xFFFFFFFA will wait for everything it knows how to wait for,
+including things it doesn't know how to wait for now.
 
-Could you confirm that it fixes it for you as well?
+It is also architecture-safe, using u32 in the interface arg structure
+instead of unisgned long.
 
-Thanks!
+A revised btrfs-progs patch (that uses __u32 instead of unsigned long
+in the interface object) will be forthcoming soon, to the btrfs list.
 
-					- Ted
+Question: is it safe to examine list_empty(fs->delayed_iputs) without
+taking the spinlock that protects that list in inode.c?
 
-commit a8649d85bd0ab3be6014918bd9eae319a0ffc691
-Author: Theodore Ts'o <tytso@mit.edu>
-Date:   Sun Dec 12 20:57:19 2010 -0500
 
-    ext4: Turn off multiple page-io submission by default
-    
-    Jon Nelson has found a test case which causes postgresql to fail with
-    the error:
-    
-    psql:t.sql:4: ERROR: invalid page header in block 38269 of relation base/16384/16581
-    
-    Under memory pressure, it looks like part of a file can end up getting
-    replaced by zero's.  Until we can figure out the cause, we'll roll
-    back the change and use block_write_full_page() instead of
-    ext4_bio_write_page().  The new, more efficient writing function can
-    be used via the mount option mblk_io_submit, so we can test and fix
-    the new page I/O code.
-    
-    To reproduce the problem, install postgres 8.4 or 9.0, and pin enough
-    memory such that the system just at the end of triggering writeback
-    before running the following sql script:
-    
-    begin;
-    create temporary table foo as select x as a, ARRAY[x] as b FROM
-    generate_series(1, 10000000 ) AS x;
-    create index foo_a_idx on foo (a);
-    create index foo_b_idx on foo USING GIN (b);
-    rollback;
-    
-    If the temporary table is created on a hard drive partition which is
-    encrypted using dm_crypt, then under memory pressure, approximately
-    30-40% of the time, pgsql will issue the above failure.
-    
-    This patch should fix this problem, and the problem will come back if
-    the file system is mounted with the mblk_io_submit mount option.
-    
-    Reported-by: Jon Nelson <jnelson@jamponi.net>
-    Signed-off-by: "Theodore Ts'o" <tytso@mit.edu>
+--=20
+=E2=80=9CThe aeroplane is fatally defective. It is merely a toy=E2=80=94a s=
+porting
+play-thing. =C2=A0It can never become commercially practical." -- Nikola
+Tesla
 
-diff --git a/fs/ext4/ext4.h b/fs/ext4/ext4.h
-index 6a5edea..6eb598b 100644
---- a/fs/ext4/ext4.h
-+++ b/fs/ext4/ext4.h
-@@ -910,6 +910,7 @@ struct ext4_inode_info {
- #define EXT4_MOUNT_JOURNAL_CHECKSUM	0x800000 /* Journal checksums */
- #define EXT4_MOUNT_JOURNAL_ASYNC_COMMIT	0x1000000 /* Journal Async Commit */
- #define EXT4_MOUNT_I_VERSION            0x2000000 /* i_version support */
-+#define EXT4_MOUNT_MBLK_IO_SUBMIT	0x4000000
- #define EXT4_MOUNT_DELALLOC		0x8000000 /* Delalloc support */
- #define EXT4_MOUNT_DATA_ERR_ABORT	0x10000000 /* Abort on file data write */
- #define EXT4_MOUNT_BLOCK_VALIDITY	0x20000000 /* Block validity checking */
-diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
-index bdbe699..e659597 100644
---- a/fs/ext4/inode.c
-+++ b/fs/ext4/inode.c
-@@ -2125,9 +2125,12 @@ static int mpage_da_submit_io(struct mpage_da_data *mpd,
- 			 */
- 			if (unlikely(journal_data && PageChecked(page)))
- 				err = __ext4_journalled_writepage(page, len);
--			else
-+			else if (test_opt(inode->i_sb, MBLK_IO_SUBMIT))
- 				err = ext4_bio_write_page(&io_submit, page,
- 							  len, mpd->wbc);
-+			else
-+				err = block_write_full_page(page,
-+					noalloc_get_block_write, mpd->wbc);
- 
- 			if (!err)
- 				mpd->pages_written++;
-diff --git a/fs/ext4/super.c b/fs/ext4/super.c
-index e32195d..fb15c9c 100644
---- a/fs/ext4/super.c
-+++ b/fs/ext4/super.c
-@@ -1026,6 +1026,8 @@ static int ext4_show_options(struct seq_file *seq, struct vfsmount *vfs)
- 	    !(def_mount_opts & EXT4_DEFM_NODELALLOC))
- 		seq_puts(seq, ",nodelalloc");
- 
-+	if (test_opt(sb, MBLK_IO_SUBMIT))
-+		seq_puts(seq, ",mblk_io_submit");
- 	if (sbi->s_stripe)
- 		seq_printf(seq, ",stripe=%lu", sbi->s_stripe);
- 	/*
-@@ -1239,8 +1241,8 @@ enum {
- 	Opt_jqfmt_vfsold, Opt_jqfmt_vfsv0, Opt_jqfmt_vfsv1, Opt_quota,
- 	Opt_noquota, Opt_ignore, Opt_barrier, Opt_nobarrier, Opt_err,
- 	Opt_resize, Opt_usrquota, Opt_grpquota, Opt_i_version,
--	Opt_stripe, Opt_delalloc, Opt_nodelalloc,
--	Opt_block_validity, Opt_noblock_validity,
-+	Opt_stripe, Opt_delalloc, Opt_nodelalloc, Opt_mblk_io_submit,
-+	Opt_nomblk_io_submit, Opt_block_validity, Opt_noblock_validity,
- 	Opt_inode_readahead_blks, Opt_journal_ioprio,
- 	Opt_dioread_nolock, Opt_dioread_lock,
- 	Opt_discard, Opt_nodiscard,
-@@ -1304,6 +1306,8 @@ static const match_table_t tokens = {
- 	{Opt_resize, "resize"},
- 	{Opt_delalloc, "delalloc"},
- 	{Opt_nodelalloc, "nodelalloc"},
-+	{Opt_mblk_io_submit, "mblk_io_submit"},
-+	{Opt_nomblk_io_submit, "nomblk_io_submit"},
- 	{Opt_block_validity, "block_validity"},
- 	{Opt_noblock_validity, "noblock_validity"},
- 	{Opt_inode_readahead_blks, "inode_readahead_blks=%u"},
-@@ -1725,6 +1729,12 @@ set_qf_format:
- 		case Opt_nodelalloc:
- 			clear_opt(sbi->s_mount_opt, DELALLOC);
- 			break;
-+		case Opt_mblk_io_submit:
-+			set_opt(sbi->s_mount_opt, MBLK_IO_SUBMIT);
-+			break;
-+		case Opt_nomblk_io_submit:
-+			clear_opt(sbi->s_mount_opt, MBLK_IO_SUBMIT);
-+			break;
- 		case Opt_stripe:
- 			if (match_int(&args[0], &option))
- 				return 0;
+--20cf30549b91117f60049741c905
+Content-Type: text/x-diff; charset=US-ASCII; name="KERNEL_PATCH.diff"
+Content-Disposition: attachment; filename="KERNEL_PATCH.diff"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_ghmrbwmn0
+
+ZGlmZiAtLWdpdCBhL2ZzL2J0cmZzL2N0cmVlLmggYi9mcy9idHJmcy9jdHJlZS5oCmluZGV4IDI5
+YzIwMDkuLjExNGE0YWYgMTAwNjQ0Ci0tLSBhL2ZzL2J0cmZzL2N0cmVlLmgKKysrIGIvZnMvYnRy
+ZnMvY3RyZWUuaApAQCAtODk1LDYgKzg5NSw3IEBAIHN0cnVjdCBidHJmc19mc19pbmZvIHsKIAlz
+dHJ1Y3QgbGlzdF9oZWFkIHRyYW5zX2xpc3Q7CiAJc3RydWN0IGxpc3RfaGVhZCBoYXNoZXJzOwog
+CXN0cnVjdCBsaXN0X2hlYWQgZGVhZF9yb290czsKKwl3YWl0X3F1ZXVlX2hlYWRfdCBjbGVhbmVy
+X25vdGlmaWNhdGlvbl9yZWdpc3RyYXRpb247CiAJc3RydWN0IGxpc3RfaGVhZCBjYWNoaW5nX2Js
+b2NrX2dyb3VwczsKIAogCXNwaW5sb2NrX3QgZGVsYXllZF9pcHV0X2xvY2s7CmRpZmYgLS1naXQg
+YS9mcy9idHJmcy9kaXNrLWlvLmMgYi9mcy9idHJmcy9kaXNrLWlvLmMKaW5kZXggMzRmN2MzNy4u
+MWNjYzFlNyAxMDA2NDQKLS0tIGEvZnMvYnRyZnMvZGlzay1pby5jCisrKyBiL2ZzL2J0cmZzL2Rp
+c2staW8uYwpAQCAtMTQ1MCw3ICsxNDUwLDkgQEAgc3RhdGljIGludCBjbGVhbmVyX2t0aHJlYWQo
+dm9pZCAqYXJnKQogCQlpZiAoIShyb290LT5mc19pbmZvLT5zYi0+c19mbGFncyAmIE1TX1JET05M
+WSkgJiYKIAkJICAgIG11dGV4X3RyeWxvY2soJnJvb3QtPmZzX2luZm8tPmNsZWFuZXJfbXV0ZXgp
+KSB7CiAJCQlidHJmc19ydW5fZGVsYXllZF9pcHV0cyhyb290KTsKKwkJCXdha2VfdXBfYWxsKCZy
+b290LT5mc19pbmZvLT5jbGVhbmVyX25vdGlmaWNhdGlvbl9yZWdpc3RyYXRpb24pOwogCQkJYnRy
+ZnNfY2xlYW5fb2xkX3NuYXBzaG90cyhyb290KTsKKwkJCXdha2VfdXBfYWxsKCZyb290LT5mc19p
+bmZvLT5jbGVhbmVyX25vdGlmaWNhdGlvbl9yZWdpc3RyYXRpb24pOwogCQkJbXV0ZXhfdW5sb2Nr
+KCZyb290LT5mc19pbmZvLT5jbGVhbmVyX211dGV4KTsKIAkJfQogCkBAIC0xNTgxLDYgKzE1ODMs
+NyBAQCBzdHJ1Y3QgYnRyZnNfcm9vdCAqb3Blbl9jdHJlZShzdHJ1Y3Qgc3VwZXJfYmxvY2sgKnNi
+LAogCUlOSVRfUkFESVhfVFJFRSgmZnNfaW5mby0+ZnNfcm9vdHNfcmFkaXgsIEdGUF9BVE9NSUMp
+OwogCUlOSVRfTElTVF9IRUFEKCZmc19pbmZvLT50cmFuc19saXN0KTsKIAlJTklUX0xJU1RfSEVB
+RCgmZnNfaW5mby0+ZGVhZF9yb290cyk7CisJaW5pdF93YWl0cXVldWVfaGVhZCgmZnNfaW5mby0+
+Y2xlYW5lcl9ub3RpZmljYXRpb25fcmVnaXN0cmF0aW9uKTsKIAlJTklUX0xJU1RfSEVBRCgmZnNf
+aW5mby0+ZGVsYXllZF9pcHV0cyk7CiAJSU5JVF9MSVNUX0hFQUQoJmZzX2luZm8tPmhhc2hlcnMp
+OwogCUlOSVRfTElTVF9IRUFEKCZmc19pbmZvLT5kZWxhbGxvY19pbm9kZXMpOwpAQCAtMjM5Myw3
+ICsyMzk2LDkgQEAgaW50IGJ0cmZzX2NvbW1pdF9zdXBlcihzdHJ1Y3QgYnRyZnNfcm9vdCAqcm9v
+dCkKIAogCW11dGV4X2xvY2soJnJvb3QtPmZzX2luZm8tPmNsZWFuZXJfbXV0ZXgpOwogCWJ0cmZz
+X3J1bl9kZWxheWVkX2lwdXRzKHJvb3QpOworCXdha2VfdXBfYWxsKCZyb290LT5mc19pbmZvLT5j
+bGVhbmVyX25vdGlmaWNhdGlvbl9yZWdpc3RyYXRpb24pOwogCWJ0cmZzX2NsZWFuX29sZF9zbmFw
+c2hvdHMocm9vdCk7CisJd2FrZV91cF9hbGwoJnJvb3QtPmZzX2luZm8tPmNsZWFuZXJfbm90aWZp
+Y2F0aW9uX3JlZ2lzdHJhdGlvbik7CiAJbXV0ZXhfdW5sb2NrKCZyb290LT5mc19pbmZvLT5jbGVh
+bmVyX211dGV4KTsKIAogCS8qIHdhaXQgdW50aWwgb25nb2luZyBjbGVhbnVwIHdvcmsgZG9uZSAq
+LwpkaWZmIC0tZ2l0IGEvZnMvYnRyZnMvaW9jdGwuYyBiL2ZzL2J0cmZzL2lvY3RsLmMKaW5kZXgg
+OTI1NGIzZC4uY2M3MzlhZCAxMDA2NDQKLS0tIGEvZnMvYnRyZnMvaW9jdGwuYworKysgYi9mcy9i
+dHJmcy9pb2N0bC5jCkBAIC0xMjEyLDYgKzEyMTIsNjUgQEAgc3RhdGljIG5vaW5saW5lIGludCBi
+dHJmc19pb2N0bF9pbm9fbG9va3VwKHN0cnVjdCBmaWxlICpmaWxlLAogCXJldHVybiByZXQ7CiB9
+CiAKK3N0YXRpYyBpbnQgYnRyZnNfaW9jdGxfY2xlYW5lcl93YWl0KHN0cnVjdCBidHJmc19yb290
+ICpyb290LCB2b2lkIF9fdXNlciAqYXJnKQoreworICAgICAgICBzdHJ1Y3QgYnRyZnNfaW9jdGxf
+Y2xlYW5lcl93YWl0X2FyZ3MgKmJpY3dhOworICAgICAgICBsb25nIHJlbWFpbmluZ2ppZmZpZXM7
+CisgICAgICAgIGludCBlcnI7CisKKwliaWN3YSA9IG1lbWR1cF91c2VyKGFyZywgc2l6ZW9mKCpi
+aWN3YSkpOworCWlmIChJU19FUlIoYmljd2EpKQorCQlyZXR1cm4gUFRSX0VSUihiaWN3YSk7CisK
+KyAgICAgICAgZXJyID0gLUVJTlZBTDsKKworICAgICAgICAvKiBmbGFnIGJpdCAweDA0IG1lYW5z
+LCBlcnJvciBvbiB1bmtub3duIGZsYWcuCisgICAgICAgICAgIHRoZSBoaWdoZXN0IHBvc3NpYmxl
+IHZhbGlkIGZsYWcgdmFsdWUgYXQgdGhpcyByZXYgaXMgMHgwNy4gKi8KKyAgICAgICAgaWYgKGJp
+Y3dhLT5mbGFncyAmIDQgPT0gNCAmJiBiaWN3YS0+ZmxhZ3MgPiA3ICl7CisJICAgIGtmcmVlKGJp
+Y3dhKTsKKyAgICAgICAgICAgIHJldHVybiBlcnI7CisgICAgICAgIH07CisKKyNkZWZpbmUgQklD
+V19URVNUICggXAorICAgICAgIC8qIGZsYWcgYml0IDB4MDE6IHN1cHByZXNzIHdhaXQgZm9yIGRl
+YWRfcm9vdHMgKi8gICAgICAgICAgICAgICAgICAgIFwKKyAgICAgICAoYmljd2EtPmZsYWdzICYg
+MSA9PSAxIHx8IGxpc3RfZW1wdHkoJnJvb3QtPmZzX2luZm8tPmRlYWRfcm9vdHMpKSAgICBcCisg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgXAorICAgICAgIC8qIGZsYWcgYml0IDB4MDI6IHdhaXQgZm9yIGRl
+bGF5ZWQgaXB1dHMgKi8gICAgICAgICAgICAgICAgICAgICAgICAgIFwKKyAgJiYgICAoYmljd2Et
+PmZsYWdzICYgMiA9PSAwIHx8IGxpc3RfZW1wdHkoJnJvb3QtPmZzX2luZm8tPmRlbGF5ZWRfaXB1
+dHMpKSBcCisgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgXAorICAgICAgIC8qIDB4MDQgaXMgY29uc3VtZWQg
+ZWFybGllciAqLyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFwKKyAgICAg
+ICAvKiBhZGQgdGhlIG5leHQgb25lIGF0IDB4MDggKi8gICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICBcCispCisKKyAgICAgICAgaWYgKGJpY3dhLT5tcyA+IDApCisJeworICAg
+ICAgICAgICAgdW5zaWduZWQgbG9uZyBtaWxsaXNlY3MgPSBiaWN3YS0+bXM7CisgICAgICAgICAg
+ICByZW1haW5pbmdqaWZmaWVzID0gd2FpdF9ldmVudF9pbnRlcnJ1cHRpYmxlX3RpbWVvdXQoCisg
+ICAgICAgICAgICAgICAgIHJvb3QtPmZzX2luZm8tPmNsZWFuZXJfbm90aWZpY2F0aW9uX3JlZ2lz
+dHJhdGlvbiwKKyAgICAgICAgICAgICAgICAgQklDV19URVNULCBtc2Vjc190b19qaWZmaWVzKG1p
+bGxpc2VjcykKKyAgICAgICAgICAgICk7CisgICAgICAgICAgICBpZiAocmVtYWluaW5namlmZmll
+cyA+IDApCisgICAgICAgICAgICAgICAgICBlcnIgPSAwOworICAgICAgICAgICAgZWxzZSBpZiAo
+cmVtYWluaW5namlmZmllcyA8IDAgKQorICAgICAgICAgICAgICAgICAgZXJyID0gLUVBR0FJTjsK
+KyAgICAgICAgICAgIGVsc2UKKyAgICAgICAgICAgICAgICAgIGVyciA9IC1FVElNRTsKKyAgICAg
+ICAgfQorCWVsc2UKKwl7CisgICAgICAgICAgICBlcnIgPSB3YWl0X2V2ZW50X2ludGVycnVwdGli
+bGUoCisgICAgICAgICAgICAgICAgIHJvb3QtPmZzX2luZm8tPmNsZWFuZXJfbm90aWZpY2F0aW9u
+X3JlZ2lzdHJhdGlvbiwKKyAgICAgICAgICAgICAgICAgQklDV19URVNUCisgICAgICAgICAgICAp
+OworICAgICAgICB9OworCisJa2ZyZWUoYmljd2EpOworICAgICAgICByZXR1cm4gZXJyOworCisj
+dW5kZWYgQklDV0FURVNUCit9CisKKwogc3RhdGljIG5vaW5saW5lIGludCBidHJmc19pb2N0bF9z
+bmFwX2Rlc3Ryb3koc3RydWN0IGZpbGUgKmZpbGUsCiAJCQkJCSAgICAgdm9pZCBfX3VzZXIgKmFy
+ZykKIHsKQEAgLTIwMDMsNiArMjA2Miw4IEBAIGxvbmcgYnRyZnNfaW9jdGwoc3RydWN0IGZpbGUg
+KmZpbGUsIHVuc2lnbmVkIGludAogCQlyZXR1cm4gYnRyZnNfaW9jdGxfc25hcF9jcmVhdGUoZmls
+ZSwgYXJncCwgMSk7CiAJY2FzZSBCVFJGU19JT0NfU05BUF9ERVNUUk9ZOgogCQlyZXR1cm4gYnRy
+ZnNfaW9jdGxfc25hcF9kZXN0cm95KGZpbGUsIGFyZ3ApOworCWNhc2UgQlRSRlNfSU9DX0NMRUFO
+RVJfV0FJVDoKKwkJcmV0dXJuIGJ0cmZzX2lvY3RsX2NsZWFuZXJfd2FpdChyb290LCBhcmdwKTsK
+IAljYXNlIEJUUkZTX0lPQ19ERUZBVUxUX1NVQlZPTDoKIAkJcmV0dXJuIGJ0cmZzX2lvY3RsX2Rl
+ZmF1bHRfc3Vidm9sKGZpbGUsIGFyZ3ApOwogCWNhc2UgQlRSRlNfSU9DX0RFRlJBRzoKZGlmZiAt
+LWdpdCBhL2ZzL2J0cmZzL2lvY3RsLmggYi9mcy9idHJmcy9pb2N0bC5oCmluZGV4IDQyNDY5NGEu
+LjlhZjg1MzAgMTAwNjQ0Ci0tLSBhL2ZzL2J0cmZzL2lvY3RsLmgKKysrIGIvZnMvYnRyZnMvaW9j
+dGwuaApAQCAtMTM4LDYgKzEzOCwxMSBAQCBzdHJ1Y3QgYnRyZnNfaW9jdGxfc3BhY2VfYXJncyB7
+CiAJc3RydWN0IGJ0cmZzX2lvY3RsX3NwYWNlX2luZm8gc3BhY2VzWzBdOwogfTsKIAorc3RydWN0
+IGJ0cmZzX2lvY3RsX2NsZWFuZXJfd2FpdF9hcmdzeworICAgICAgICBfX3UzMiBtczsKKyAgICAg
+ICAgX191MzIgZmxhZ3M7Cit9OworCiAjZGVmaW5lIEJUUkZTX0lPQ19TTkFQX0NSRUFURSBfSU9X
+KEJUUkZTX0lPQ1RMX01BR0lDLCAxLCBcCiAJCQkJICAgc3RydWN0IGJ0cmZzX2lvY3RsX3ZvbF9h
+cmdzKQogI2RlZmluZSBCVFJGU19JT0NfREVGUkFHIF9JT1coQlRSRlNfSU9DVExfTUFHSUMsIDIs
+IFwKQEAgLTE3OCw0ICsxODMsNiBAQCBzdHJ1Y3QgYnRyZnNfaW9jdGxfc3BhY2VfYXJncyB7CiAj
+ZGVmaW5lIEJUUkZTX0lPQ19ERUZBVUxUX1NVQlZPTCBfSU9XKEJUUkZTX0lPQ1RMX01BR0lDLCAx
+OSwgdTY0KQogI2RlZmluZSBCVFJGU19JT0NfU1BBQ0VfSU5GTyBfSU9XUihCVFJGU19JT0NUTF9N
+QUdJQywgMjAsIFwKIAkJCQkgICAgc3RydWN0IGJ0cmZzX2lvY3RsX3NwYWNlX2FyZ3MpCisjZGVm
+aW5lIEJUUkZTX0lPQ19DTEVBTkVSX1dBSVQgX0lPVyhCVFJGU19JT0NUTF9NQUdJQywgMjEsIFwK
+KwkJCQkgICAgc3RydWN0IGJ0cmZzX2lvY3RsX2NsZWFuZXJfd2FpdF9hcmdzKQogI2VuZGlmCg==
+--20cf30549b91117f60049741c905--

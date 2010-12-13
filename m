@@ -1,46 +1,48 @@
-From: Jon Nelson <jnelson@jamponi.net>
-Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
- barrier support is effective)
-Date: Mon, 13 Dec 2010 12:56:59 -0600
-Message-ID: <AANLkTinMWS-yyzWJ3oBo_KS9jXt4p4pveo+SPTLiWnCt__23559.3124678873$1292266681$gmane$org@mail.gmail.com>
-References: <20101210023852.GB3059@thunk.org> <AANLkTikJ1Q=L15wcMLn=U8-Qx9PbppY-AX=LpmjDkk2V@mail.gmail.com>
- <AANLkTikeiv2jQM5hhghs1Zd2d=5CbRLKMgYvqHqpm76m@mail.gmail.com>
- <AANLkTinMt6saGeeX3MbwAzZ-+f6AL5BegeFqyPgGwiDo@mail.gmail.com>
- <AANLkTi=cn04WZGMnVX6ie5PSM+9v0tJSSg0kD8_W5N11@mail.gmail.com>
- <20101212023415.GG3059@thunk.org> <AANLkTim=i8wDnML+K4uGK_neNDCiWxtKGDx01O+3joaE@mail.gmail.com>
- <AANLkTinhHTqqpP=pQ8Foyc9xeaZi65GHGHGY51OyZtvF@mail.gmail.com>
- <20101212124354.GA4513@thunk.org> <AANLkTikZkCs7Wee2=uhe3bw96Pggcv0jsCkZ+nkWEQ+=@mail.gmail.com>
- <20101213020657.GB4513@thunk.org>
+From: Ric Wheeler <ricwheeler@gmail.com>
+Subject: Re: SSD optimizations
+Date: Mon, 13 Dec 2010 14:34:38 -0500
+Message-ID: <4D06754E.5010100@gmail.com>
+References: <1292174654.11248.10.camel@paddy-desktop> <4D05630E.7070809@bobich.net> <1292260671.11248.609.camel@paddy-desktop> <20101213182008.GB17928@mother>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: "Ted Ts'o" <tytso@mit.edu>, Jon Nelson <jnelson@jamponi.net>,
-	Matt <jackdachef@gmail.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Andi Kleen <andi@firstfloor.org>,
-	Mike Snitzer <snitz
+Content-Type: text/plain; charset=UTF-8;
+	format=flowed
+To: Tomasz Torcz <tomek@pipebreaker.pl>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101213020657.GB4513@thunk.org>
+In-Reply-To: <20101213182008.GB17928@mother>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Dec 12, 2010 at 8:06 PM, Ted Ts'o <tytso@mit.edu> wrote:
-> On Sun, Dec 12, 2010 at 07:11:28AM -0600, Jon Nelson wrote:
->> I'm glad you've been able to reproduce the problem! If you should ne=
-ed
->> any further assistance, please do not hesitate to ask.
+On 12/13/2010 01:20 PM, Tomasz Torcz wrote:
+> On Mon, Dec 13, 2010 at 05:17:51PM +0000, Paddy Steed wrote:
+>> So, no-one has any idea's on how to implement the cache. Would makin=
+g it
+>> all swap work, does to OS cache files in swap?
+>    Quite the opposite.  Too many people have ideas for SSD-as-cache i=
+n Linux,
+> in non particular order:
+> =E2=80=94 bcache
+> =E2=80=94 cleancache
+> =E2=80=94 btrfs temperature tracking
+> =E2=80=94 dm-hstore
+> =E2=80=94 dm-cache / flashcache
 >
-> This patch seems to fix the problem for me. =C2=A0(Unless the partiti=
-on is
-> mounted with mblk_io_submit.)
+>    Patches are in various states of implementation, some with explici=
+t btrfs
+> support.  There's no clear winner at this time, but some of above sol=
+utions
+> are shipped in distro kernels.
 >
-> Could you confirm that it fixes it for you as well?
 
-I believe I have applied the (relevant) inode.c changes to
-bd2d0210cf22f2bd0cef72eb97cf94fc7d31d8cc, rebuilt and begun testing.
-Now at 28 passes without error, I think I can say that the patch
-appears to resolve the issue.
+People are working on quite a few ways that btrfs can leverage SSD devi=
+ces. One=20
+technique would be to use the SSD as a block level cache, another would=
+ be to=20
+steer all metadata to the SSD (leaving your bulk data on normal drives)=
+=2E
 
---=20
-Jon
+ric
+
+
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

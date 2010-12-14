@@ -1,70 +1,74 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: [GIT PULL] Btrfs updates
-Date: Mon, 13 Dec 2010 20:54:04 -0500
-Message-ID: <1292291131-sup-859@think>
-Content-Type: text/plain; charset=UTF-8
-To: "Linus Torvalds" <torvalds@linux-foundation.org>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	"linux-kernel" <linux-kernel@vger.kernel.org>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: do not loop through raid types when looking for free extent
+Date: Mon, 13 Dec 2010 20:59:51 -0500
+Message-ID: <1292291723-sup-2491@think>
+References: <1289942524-29637-1-git-send-email-josef@redhat.com> <AANLkTikXh1di6qoN5EgCdbH+20ZCzSdOD8UcXja-Sn_c@mail.gmail.com> <1292290233-sup-3270@think> <AANLkTimObyLj=f7W9jdqxd1f7tQ9HVeUpsKRRgKKkLwn@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=ISO-8859-1
+Cc: Josef Bacik <josef@redhat.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: "Yan, Zheng" <yanzheng@21cn.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <AANLkTimObyLj=f7W9jdqxd1f7tQ9HVeUpsKRRgKKkLwn@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi everyone,
+Excerpts from Yan, Zheng's message of 2010-12-13 20:54:12 -0500:
+> On Tue, Dec 14, 2010 at 9:33 AM, Chris Mason <chris.mason@oracle.com>=
+ wrote:
+> > Excerpts from Yan, Zheng's message of 2010-11-16 20:38:23 -0500:
+> >> On Wed, Nov 17, 2010 at 5:22 AM, Josef Bacik <josef@redhat.com> wr=
+ote:
+> >> > There is a bug in find_free_extent where if we don't find a free=
+ extent in the
+> >> > raid type we are looking for, we loop through to the next raid t=
+ype. =C2=A0This is
+> >> > not ok since we need to make sure we honor the raid types we are=
+ given. =C2=A0So
+> >> > instead kill this check and get the proper index for the raid ty=
+pe we want from
+> >> > the allocator. =C2=A0Thanks,
+> >> >
+> >>
+> >> Loop through raid types is for handling failure in the middle of r=
+aid type
+> >> conversion.
+> >
+> > The problem is that nothing prevents it from looping back to a raid=
+0
+> > chunk when we really want raid1 or raid10. =C2=A0And mkfs leaves be=
+hind a
+> > small raid0 chunk (4MB) that is uses as it assembles all the device=
+s.
+>=20
+> check code at end of btrfs_read_block_groups, it prevents allocating
+> from raid0 when there are mirrored block groups.
 
-The master branch of the btrfs unstable tree:
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
+We're still allocating from them though.  It's a big problem when we
+mount degraded.
 
-Has an assortment of bug fixes.  It includes some corruption fixes when
-mounting the filesystem in degraded mode, and related oopsen as we try
-to mount damaged filesystems.
+-chris
 
-The async snapshot ioctl added in rc1 is fixed to properly do
-synchronous snapshots unless the new async ioctl is used.  It is also
-updated to be ready for the readonly snapshot feature we'll add in
-2.6.38.
-
-Xin Zhong from Intel pitched in a deadlock during copy_from_user and
-Josef has fixes for the new fast caching code and a few other bugs.
-
-Josef Bacik (5) commits (+38/-21):
-    Btrfs: do not BUG if we fail to remove the orphan item for dead snapshots (+7/-3)
-    Btrfs: do not do fast caching if we are allocating blocks for tree_root (+12/-6)
-    Btrfs: fixup return code for btrfs_del_orphan_item (+5/-1)
-    Btrfs: deal with space cache errors better (+13/-9)
-    Btrfs: fix use after free in O_DIRECT (+1/-2)
-
-Chris Mason (3) commits (+59/-5):
-    Btrfs: account for missing devices in RAID allocation profiles (+36/-3)
-    Btrfs: prevent RAID level downgrades when space is low (+19/-1)
-    Btrfs: EIO when we fail to read tree roots (+4/-1)
-
-Li Zefan (2) commits (+37/-23):
-    Btrfs: Make async snapshot ioctl more generic (+36/-22)
-    Btrfs: Fix a crash when mounting a subvolume (+1/-1)
-
-Zheng Yan (1) commits (+1/-1):
-    Btrfs: Fix page leak in compressed writeback path
-
-Xin Zhong (1) commits (+60/-32):
-    Btrfs: pwrite blocked when writing from the mmaped buffer of the same page
-
-Sage Weil (1) commits (+11/-9):
-    Btrfs: fix sync subvol/snapshot creation
-
-Jan Beulich (1) commits (+5/-7):
-    Btrfs: fix compiler warnings
-
-Total: (14) commits (+211/-98)
-
- fs/btrfs/disk-io.c          |   11 +++--
- fs/btrfs/extent-tree.c      |   75 +++++++++++++++++++++++++++-------
- fs/btrfs/file.c             |   92 ++++++++++++++++++++++++++++---------------
- fs/btrfs/free-space-cache.c |   12 +++--
- fs/btrfs/inode.c            |   11 ++---
- fs/btrfs/ioctl.c            |   56 ++++++++++++++++----------
- fs/btrfs/ioctl.h            |   14 ++++--
- fs/btrfs/orphan.c           |    6 ++-
- fs/btrfs/super.c            |    2 +-
- fs/btrfs/volumes.c          |   20 +++++++++-
- fs/btrfs/volumes.h          |    2 +
- 11 files changed, 207 insertions(+), 94 deletions(-)
+>=20
+> >
+> > I confirmed that we often use the small raid0 chunk even in raid1 o=
+r
+> > raid10.
+> >
+> > Please take a look at this commit:
+> >
+> > http://git.kernel.org/?p=3Dlinux/kernel/git/mason/btrfs-unstable.gi=
+t;a=3Dcommit;h=3D83a50de97fe96aca82389e061862ed760ece2283
+> >
+> > -chris
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btr=
+fs" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at =C2=A0http://vger.kernel.org/majordomo-info.=
+html
+> >
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

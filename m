@@ -1,113 +1,50 @@
-From: Shaohua Li <shaohua.li@intel.com>
-Subject: Re: [RFC 4/5] implement metadata_ra in btrfs
-Date: Tue, 14 Dec 2010 09:14:24 +0800
-Message-ID: <1292289264.2323.462.camel@sli10-conroe>
-References: <1292224936.2323.453.camel@sli10-conroe>
-	 <AANLkTin8oHMaEVE_=-pfExrm8K4Nh0mtRDxmLcE4Rhcq@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH] Btrfs: do not loop through raid types when looking for free extent
+Date: Mon, 13 Dec 2010 20:33:40 -0500
+Message-ID: <1292290233-sup-3270@think>
+References: <1289942524-29637-1-git-send-email-josef@redhat.com> <AANLkTikXh1di6qoN5EgCdbH+20ZCzSdOD8UcXja-Sn_c@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	Christoph Hellwig <hch@infradead.org>,
-	Arjan van de Ven <arjan@infradead.org>,
-	Andrew Morton <akpm@linux-foundation.org>
-To: "Yan, Zheng" <zheng.z.yan@linux.intel.com>
+Content-Type: TEXT/PLAIN; charset=ISO-8859-1
+Cc: Josef Bacik <josef@redhat.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: "Yan, Zheng" <yanzheng@21cn.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTin8oHMaEVE_=-pfExrm8K4Nh0mtRDxmLcE4Rhcq@mail.gmail.com>
+In-reply-to: <AANLkTikXh1di6qoN5EgCdbH+20ZCzSdOD8UcXja-Sn_c@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2010-12-14 at 09:06 +0800, Yan, Zheng wrote:
-> On Mon, Dec 13, 2010 at 3:22 PM, Shaohua Li <shaohua.li@intel.com> wrote:
-> > Implementation btrfs .metadata_readahead. In btrfs, all metadata pages are in a
-> > special btree_inode. We do readahead in it.
+Excerpts from Yan, Zheng's message of 2010-11-16 20:38:23 -0500:
+> On Wed, Nov 17, 2010 at 5:22 AM, Josef Bacik <josef@redhat.com> wrote=
+:
+> > There is a bug in find_free_extent where if we don't find a free ex=
+tent in the
+> > raid type we are looking for, we loop through to the next raid type=
+=2E =C2=A0This is
+> > not ok since we need to make sure we honor the raid types we are gi=
+ven. =C2=A0So
+> > instead kill this check and get the proper index for the raid type =
+we want from
+> > the allocator. =C2=A0Thanks,
 > >
-> > Signed-off-by: Shaohua Li <shaohua.li@intel.com>
-> >
-> > ---
-> >  fs/btrfs/disk-io.c |   10 ++++++++++
-> >  fs/btrfs/super.c   |   13 +++++++++++++
-> >  mm/readahead.c     |    1 +
-> >  3 files changed, 24 insertions(+)
-> >
-> > Index: linux/fs/btrfs/disk-io.c
-> > ===================================================================
-> > --- linux.orig/fs/btrfs/disk-io.c       2010-12-07 13:32:24.000000000 +0800
-> > +++ linux/fs/btrfs/disk-io.c    2010-12-07 13:33:08.000000000 +0800
-> > @@ -776,6 +776,15 @@ static int btree_readpage(struct file *f
-> >        return extent_read_full_page(tree, page, btree_get_extent);
-> >  }
-> >
-> > +static int btree_readpages(struct file *file, struct address_space *mapping,
-> > +               struct list_head *pages, unsigned nr_pages)
-> > +{
-> > +       struct extent_io_tree *tree;
-> > +       tree = &BTRFS_I(mapping->host)->io_tree;
-> > +       return extent_readpages(tree, mapping, pages, nr_pages,
-> > +                       btree_get_extent);
-> > +}
-> > +
-> >  static int btree_releasepage(struct page *page, gfp_t gfp_flags)
-> >  {
-> >        struct extent_io_tree *tree;
-> > @@ -819,6 +828,7 @@ static void btree_invalidatepage(struct
-> >
-> >  static const struct address_space_operations btree_aops = {
-> >        .readpage       = btree_readpage,
-> > +       .readpages      = btree_readpages,
-> >        .writepage      = btree_writepage,
-> >        .writepages     = btree_writepages,
-> >        .releasepage    = btree_releasepage,
-> > Index: linux/fs/btrfs/super.c
-> > ===================================================================
-> > --- linux.orig/fs/btrfs/super.c 2010-12-07 13:32:24.000000000 +0800
-> > +++ linux/fs/btrfs/super.c      2010-12-07 13:33:08.000000000 +0800
-> > @@ -892,6 +892,18 @@ out:
-> >                return -ENOENT;
-> >  }
-> >
-> > +static int btrfs_metadata_readahead(struct super_block *sb, loff_t offset,
-> > +       ssize_t size)
-> > +{
-> > +       struct btrfs_root *tree_root = btrfs_sb(sb);
-> > +       struct inode *btree_inode = tree_root->fs_info->btree_inode;
-> > +       struct address_space *mapping = btree_inode->i_mapping;
-> > +
-> > +       force_page_cache_readahead(mapping, NULL, offset >> PAGE_CACHE_SHIFT,
-> > +               size >> PAGE_CACHE_SHIFT);
-> > +       return 0;
-> > +}
-> > +
-> >  static const struct super_operations btrfs_super_ops = {
-> >        .drop_inode     = btrfs_drop_inode,
-> >        .evict_inode    = btrfs_evict_inode,
-> > @@ -907,6 +919,7 @@ static const struct super_operations btr
-> >        .freeze_fs      = btrfs_freeze,
-> >        .unfreeze_fs    = btrfs_unfreeze,
-> >        .metadata_incore = btrfs_metadata_incore,
-> > +       .metadata_readahead = btrfs_metadata_readahead,
-> >  };
-> >
-> >  static const struct file_operations btrfs_ctl_fops = {
-> > Index: linux/mm/readahead.c
-> > ===================================================================
-> > --- linux.orig/mm/readahead.c   2010-12-07 13:32:24.000000000 +0800
-> > +++ linux/mm/readahead.c        2010-12-07 13:33:08.000000000 +0800
-> > @@ -228,6 +228,7 @@ int force_page_cache_readahead(struct ad
-> >        }
-> >        return ret;
-> >  }
-> > +EXPORT_SYMBOL_GPL(force_page_cache_readahead);
-> >
-> >  /*
-> >  * Given a desired number of PAGE_CACHE_SIZE readahead pages, return a
-> >
-> >
-> 
-> btrfs will crash If the read-ahead range falls into unallocated chunk.
-> need code to check validity of the user input.
-didn't hit this, maybe I'm lucky. I'll double check this.
+>=20
+> Loop through raid types is for handling failure in the middle of raid=
+ type
+> conversion.
 
-Thanks,
-Shaohua
+The problem is that nothing prevents it from looping back to a raid0
+chunk when we really want raid1 or raid10.  And mkfs leaves behind a
+small raid0 chunk (4MB) that is uses as it assembles all the devices.
 
+I confirmed that we often use the small raid0 chunk even in raid1 or
+raid10.
+
+Please take a look at this commit:
+
+http://git.kernel.org/?p=3Dlinux/kernel/git/mason/btrfs-unstable.git;a=3D=
+commit;h=3D83a50de97fe96aca82389e061862ed760ece2283
+
+-chris
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

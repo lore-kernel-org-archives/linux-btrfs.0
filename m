@@ -1,8 +1,8 @@
 From: Andrew Morton <akpm@linux-foundation.org>
-Subject: Re: [RFC 1/5] add metadata_incore ioctl in vfs
-Date: Mon, 13 Dec 2010 16:40:36 -0800
-Message-ID: <20101213164036.020be83d.akpm@linux-foundation.org>
-References: <1292224930.2323.450.camel@sli10-conroe>
+Subject: Re: [RFC 2/5] implement metadata_incore in btrfs
+Date: Mon, 13 Dec 2010 16:45:31 -0800
+Message-ID: <20101213164531.6da1a081.akpm@linux-foundation.org>
+References: <1292224931.2323.451.camel@sli10-conroe>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
@@ -11,120 +11,116 @@ Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
 	Christoph Hellwig <hch@infradead.org>,
 	Arjan van de Ven <arjan@infradead.org>
 To: Shaohua Li <shaohua.li@intel.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1292224930.2323.450.camel@sli10-conroe>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <1292224931.2323.451.camel@sli10-conroe>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 13 Dec 2010 15:22:10 +0800
+On Mon, 13 Dec 2010 15:22:11 +0800
 Shaohua Li <shaohua.li@intel.com> wrote:
 
-> Add an ioctl to dump filesystem's metadata in memory in vfs. Userspace collects
-> such info and uses it to do metadata readahead.
-> Filesystem can hook to super_operations.metadata_incore to get metadata in
-> specific approach. Next patch will give an example how to implement
-> .metadata_incore in btrfs.
+> Implement btrfs specific .metadata_incore.
+> In btrfs, all metadata pages are in a special btree_inode, we take pages from it.
+> we only account updated and referenced pages here. Say we collect metadata info
+> in one boot, do metadata readahead in next boot and we might collect metadata
+> again. The readahead could read garbage data in as metadata could be changed
+> from first run. If we only account updated pages, the metadata info collected
+> by userspace will increase every run. Btrfs alloc_extent_buffer will do
+> mark_page_accessed() for pages which will be used soon, so we could use
+> referenced bit to filter some garbage pages.
 > 
-
-Please cc Michael Kerrisk <mtk.manpages@gmail.com> and
-linux-api@vger.kernel.org.  I'm sure that assistance writing the
-manpage would be appreciated.
-
->
-> ...
->
->  /*
-> + * Copy info about metadata in memory to userspace
-> + * Returns:
-> + * > 0, number of metadata_incore_ent entries copied to userspace
-> + * = 0, no more metadata
-> + * < 0, error
-> + */
-> +static int ioctl_metadata_incore(struct file *filp, void __user *argp)
+> Signed-off-by: Shaohua Li <shaohua.li@intel.com>
+> 
+> ---
+>  fs/btrfs/super.c |   48 ++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 48 insertions(+)
+> 
+> Index: linux/fs/btrfs/super.c
+> ===================================================================
+> --- linux.orig/fs/btrfs/super.c	2010-12-07 10:10:20.000000000 +0800
+> +++ linux/fs/btrfs/super.c	2010-12-07 13:25:20.000000000 +0800
+> @@ -39,6 +39,7 @@
+>  #include <linux/miscdevice.h>
+>  #include <linux/magic.h>
+>  #include <linux/slab.h>
+> +#include <linux/pagevec.h>
+>  #include "compat.h"
+>  #include "ctree.h"
+>  #include "disk-io.h"
+> @@ -845,6 +846,52 @@ static int btrfs_unfreeze(struct super_b
+>  	return 0;
+>  }
+>  
+> +static int btrfs_metadata_incore(struct super_block *sb, loff_t *offset,
+> +	ssize_t *size)
 > +{
-> +	struct super_block *sb = filp->f_path.dentry->d_inode->i_sb;
-> +	struct metadata_incore_args args;
-> +	struct metadata_incore_ent ent;
-> +	loff_t offset, last_offset = 0;
-> +	ssize_t size, last_size = 0;
-> +	__u64 __user vec_addr;
-> +	int entries = 0;
-> +
-> +	if (!sb->s_op->metadata_incore)
-> +		return -EOPNOTSUPP;
+> +	struct btrfs_root *tree_root = btrfs_sb(sb);
+> +	struct inode *btree_inode = tree_root->fs_info->btree_inode;
+> +	struct pagevec pvec;
+> +	loff_t index = (*offset) >> PAGE_CACHE_SHIFT;
 
-EOPNOTSUPP is a networking errno - it doesn't seem appropriate for an
-fs ioctl.
+pgoff_t would be a more appropriate type.
 
-> +	if (copy_from_user(&args, (struct metadata_incore_args __user *)argp,
+> +	int i, nr_pages;
+> +
+> +	*size = 0;
+> +retry:
+> +	pagevec_init(&pvec, 0);
+> +	nr_pages = pagevec_lookup(&pvec, btree_inode->i_mapping, index,
+> +		PAGEVEC_SIZE);
+> +	if (nr_pages == 0)
+> +		goto out;
+> +	for (i = 0; i < nr_pages; i++) {
+> +		struct page *page = pvec.pages[i];
+> +
+> +		/* Only take pages with 'referenced' bit set */
 
-Unneeded typecast.
+The comment describes the utterly obvious and doesn't explain the
+utterly unobvious: "why?".
 
-> +			sizeof(args)))
-> +		return -EFAULT;
-> +
-> +	/* Check the start address: needs to be page-aligned.. */
-
-Why?  The comment should tell me this.
-
-> +	if (args.offset & ~PAGE_CACHE_MASK)
-> +		return -EINVAL;
-> +
-> +	if ((args.vec_size % sizeof(struct metadata_incore_ent)) != 0)
-> +		return -EINVAL;
-> +
-> +	if (!access_ok(VERIFY_WRITE, args.vec_addr, args.vec_size))
-
-Seems unneccessary - copy_to_user() checks this.
-
-> +		return -EFAULT;
-> +
-> +	offset = args.offset;
-> +
-> +	ent.unused = 0;
-> +	vec_addr = args.vec_addr;
-> +
-> +	while (vec_addr < args.vec_addr + args.vec_size) {
-> +		if (signal_pending(current))
-> +			return -EINTR;
-> +		cond_resched();
-> +
-> +		if (sb->s_op->metadata_incore(sb, &offset, &size) < 0)
+> +		if (PageUptodate(page) && PageReferenced(page)) {
+> +			if (*size == 0) {
+> +				*size += PAGE_CACHE_SIZE;
+> +				*offset = page->index << PAGE_CACHE_SHIFT;
+> +				continue;
+> +			}
+> +			if (page->index !=
+> +			    (*offset + *size) >> PAGE_CACHE_SHIFT)
+> +				break;
+> +			*size += PAGE_CACHE_SIZE;
+> +		} else if (*size > 0)
 > +			break;
-> +		/* A merge or offset == 0 */
-> +		if (offset == last_offset + last_size) {
-> +			last_size += size;
-> +			offset = offset + size;
-> +			continue;
-> +		}
-> +		ent.offset = last_offset;
-> +		ent.size = last_size;
-> +		if (copy_to_user((void *)(long)vec_addr, &ent, sizeof(ent)))
-> +			return -EFAULT;
-> +		vec_addr += sizeof(ent);
-> +		entries++;
-> +
-> +		last_offset = offset;
-> +		last_size = size;
-> +		ent.unused = 0;
-> +		offset = offset + size;
+> +		else
+> +			index = page->index + 1;
 > +	}
+> +	pagevec_release(&pvec);
 > +
-> +	if (last_size > 0 && vec_addr < args.vec_addr + args.vec_size) {
-> +		ent.offset = last_offset;
-> +		ent.size = last_size;
-> +		if (copy_to_user((void *)(long)vec_addr, &ent, sizeof(ent)))
-> +			return -EFAULT;
-> +		entries++;
-> +	}
-> +
-> +	return entries;
+> +	if (nr_pages > 0 && *size == 0)
+> +		goto retry;
+
+I don't think I know why this retry loop exists.  A comment would be
+nice.
+
+> +out:
+> +	if (*size > 0)
+> +		return 0;
+> +	else
+> +		return -ENOENT;
 > +}
 > +
-> +/*
->   * When you add any new common ioctls to the switches above and below
->   * please update compat_sys_ioctl() too.
->   *
->
-> ...
->
-
+>  static const struct super_operations btrfs_super_ops = {
+>  	.drop_inode	= btrfs_drop_inode,
+>  	.evict_inode	= btrfs_evict_inode,
+> @@ -859,6 +906,7 @@ static const struct super_operations btr
+>  	.remount_fs	= btrfs_remount,
+>  	.freeze_fs	= btrfs_freeze,
+>  	.unfreeze_fs	= btrfs_unfreeze,
+> +	.metadata_incore = btrfs_metadata_incore,
+>  };
+>  
+>  static const struct file_operations btrfs_ctl_fops = {
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

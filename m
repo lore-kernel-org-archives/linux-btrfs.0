@@ -1,63 +1,48 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [RFC PATCH 2/5 v3] Btrfs: avoid transaction stuff when btrfs
-	is readonly
-Date: Wed, 15 Dec 2010 11:05:51 -0500
-Message-ID: <20101215160550.GB2603@localhost.localdomain>
-References: <4CF8A74F.2010306@cn.fujitsu.com> <AANLkTikgAj1sFPr==ruot50Bq3oJ_v0ZG8Wy_QLdL+aG@mail.gmail.com> <4D08866E.6080501@cn.fujitsu.com> <1292428972-sup-3194@think>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: liubo <liubo2009@cn.fujitsu.com>,
-	"Yan, Zheng" <zheng.z.yan@linux.intel.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Josef Bacik <josef@redhat.com>,
-	Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
-	"Yan, Zheng" <zheng.yan@oracle.com>,
-	Wenyi Liu <qingshenlwy@gmail.com>,
-	Mike Fedyk <mfedyk@mikefedyk.com>
-To: Chris Mason <chris.mason@oracle.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Bug in the design of the tree search ioctl API ? [was Re: [PATCH 1/3] Btrfs: Really return keys within specified range]
+Date: Wed, 15 Dec 2010 11:14:17 -0500
+Message-ID: <1292429359-sup-8458@think>
+References: <4D05EBC9.6020908@cn.fujitsu.com> <201012131913.02276.kreijack@libero.it> <4D07027D.1000500@cn.fujitsu.com> <201012141916.41682.kreijack@libero.it> <4D08370D.6020705@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: kreijack <kreijack@libero.it>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1292428972-sup-3194@think>
+In-reply-to: <4D08370D.6020705@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 15, 2010 at 11:03:46AM -0500, Chris Mason wrote:
-> Excerpts from liubo's message of 2010-12-15 04:12:14 -0500:
-> > On 12/15/2010 04:45 PM, Yan, Zheng wrote:
-> > > On Fri, Dec 3, 2010 at 4:16 PM, liubo <liubo2009@cn.fujitsu.com> wrote:
-> > >> When the filesystem is readonly, avoid transaction stuff by checking MS_RDONLY
-> > >> at start transaction time.
-> > >>
-> > >> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
-> > >> ---
-> > >>  fs/btrfs/transaction.c |    3 +++
-> > >>  1 files changed, 3 insertions(+), 0 deletions(-)
-> > >>
-> > >> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> > >> index 1fffbc0..14a597d 100644
-> > >> --- a/fs/btrfs/transaction.c
-> > >> +++ b/fs/btrfs/transaction.c
-> > >> @@ -181,6 +181,9 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
-> > >>        struct btrfs_trans_handle *h;
-> > >>        struct btrfs_transaction *cur_trans;
-> > >>        int ret;
-> > >> +
-> > >> +       if (root->fs_info->sb->s_flags & MS_RDONLY)
-> > >> +               return ERR_PTR(-EROFS);
-> > >>  again:
-> > >>        h = kmem_cache_alloc(btrfs_trans_handle_cachep, GFP_NOFS);
-> > >>        if (!h)
-> > > 
-> > > There are cases that we need to start transaction when MS_RDONLY flag is set.
-> > > For example, remount FS into read-only mode and log replay.
+Excerpts from Li Zefan's message of 2010-12-14 22:33:33 -0500:
+> > Suppose to have the following sequence keys  [objectid, type, offset]:
 > > 
-> > However, is it weird to make changes to disk as fs is in readonly state?
-> > IMO, btrfs needs to limit the use of these "disk-change while readonly" cases,
-> > as it is not what readonly means.
+> > [...]
+> > 1)    [300, BTRFS_EXTENT_DATA_KEY, xx]
+> > 2)    [300, BTRFS_INODE_ITEM_KEY, xx]
+> > 3)    [300, BTRFS_XATTR_ITEM_KEY, xx]
+> > 4)    [301, BTRFS_EXTENT_DATA_KEY, xx]
+> > 5)    [301, BTRFS_INODE_ITEM_KEY, xx]
+> > 7)    [30200, BTRFS_EXTENT_DATA_KEY, xx]
+> > 8)    [30200, BTRFS_INODE_ITEM_KEY, xx]
+> > 9)    [30200, BTRFS_XATTR_ITEM_KEY, xx]
+> > [...]
+> > 
+> > 
+> > Suppose that the buffer is filled between the item 2 and 3. We should restart 
+> > the search, but how set the min_* key ? Try the following hypothesis
+> > 
+> > h1) objectid++, type = 0 -> In the next search the key 3 would be skipped
+> > h2) objectid asis, type ++, -> in the next search the key 4 would be skipped
+> > h3) objectid asis, type = 0 -> in the next search the key 1,2,3 would be 
 > 
-> reiserfs and ext3 at least have always done this.  Log replay is
-> required even when the FS is readonly.
->
+> h4) objectid asis, type asis, offset++ -> we should get the correct result.
 
-Just make sure the underlying disk isn't read only, we had problems with this on
-ext3 a bit ago.  Thanks,
+This is the right answer ;).  The problem is that even though our key has
+3 distinct parts, and the API makes it look like you have very fine
+grained control over those three parts, you have to remember to reset
+them as you iterate between objectids.  It isn't a obvious as it should
+be.
 
-Josef 
+The current API is a very raw export of how we do the searches in the
+kernel too.  You can do pretty much anything with it, but we pay with
+complexity.
+
+-chris

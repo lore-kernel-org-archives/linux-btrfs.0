@@ -1,37 +1,53 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: What do the arguments of btrfs filesystem defragment do?
-Date: Wed, 15 Dec 2010 14:20:06 -0500
-Message-ID: <1292440771-sup-9278@think>
-References: <4D08E76B.40400@logtenberg.eu> <1292439708-sup-2951@think> <4D091387.9050905@logtenberg.eu>
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Erik Logtenberg <erik@logtenberg.eu>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <4D091387.9050905@logtenberg.eu>
+From: Matt <jackdachef@gmail.com>
+Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
+ barrier support is effective)
+Date: Wed, 15 Dec 2010 20:25:14 +0100
+Message-ID: <AANLkTi=9fbou9YF2bXzrWbBM37F4_Xyi-KgWquq0PrBL@mail.gmail.com>
+References: <AANLkTinMt6saGeeX3MbwAzZ-+f6AL5BegeFqyPgGwiDo@mail.gmail.com>
+	<AANLkTi=cn04WZGMnVX6ie5PSM+9v0tJSSg0kD8_W5N11@mail.gmail.com>
+	<20101212023415.GG3059@thunk.org>
+	<AANLkTim=i8wDnML+K4uGK_neNDCiWxtKGDx01O+3joaE@mail.gmail.com>
+	<AANLkTinhHTqqpP=pQ8Foyc9xeaZi65GHGHGY51OyZtvF@mail.gmail.com>
+	<20101212124354.GA4513@thunk.org>
+	<AANLkTikZkCs7Wee2=uhe3bw96Pggcv0jsCkZ+nkWEQ+=@mail.gmail.com>
+	<20101213020657.GB4513@thunk.org>
+	<AANLkTinMWS-yyzWJ3oBo_KS9jXt4p4pveo+SPTLiWnCt@mail.gmail.com>
+	<AANLkTimjM_HptLaCSuQivxruWpoc7todyMe0wnszrSYU@mail.gmail.com>
+	<20101215191655.GA6163@basil.fritz.box>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: "Ted Ts'o" <tytso@mit.edu>, Jon Nelson <jnelson@jamponi.net>,
+	Chris Mason <chris.mason@oracle.com>,
+	Mike Snitzer <snitzer@redhat.com>,
+	Milan Broz <mbroz@redhat.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	dm-devel <dm-devel@redhat.com>,
+	Linux Kernel <linux-kernel@vger.kernel.org>,
+	htd <htd@fancy-poultry.org>, htejun <htejun@gmail.com>,
+	linux-ext4 <linux-ext4@vger.kernel.org>
+To: Andi Kleen <andi@firstfloor.org>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <20101215191655.GA6163@basil.fritz.box>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Erik Logtenberg's message of 2010-12-15 14:14:15 -0500:
-> Chris, thank you very much for your explanation. Indeed this clears
-> things up a bit.
-> 
-> >>> Caveat: Defragmenting a file which has a COW copy (either a snapshot
-> >>> copy or one made with bcp or cp --reflinks) will produce two unrelated
-> >>> files. If you defragment a subvolume that has a snapshot, you will
-> >>> roughly double the disk usage, as the snapshot files are no longer COW
-> >>> images of the originals.
-> >>
-> >> [2] https://btrfs.wiki.kernel.org/index.php/Problem_FAQ
-> >>
-> >> >From what I've heard on IRC this is still the case in current versions,
-> >> but the Btrfs(command) documentation contains no mention of this.
-> > 
-> > This is still true.
-> 
-> Is there a decent way to have btrfs compress already existing files
-> (that were written before compression was enabled) without hurting any
-> of the internal structures such as snapshots?
+On Wed, Dec 15, 2010 at 8:16 PM, Andi Kleen <andi@firstfloor.org> wrote:
+>> I have a question though: the deactivation of multiple page-io
+>> submission support most likely only would affect bigger systems or
+>> also desktop systems (like mine) ?
+>
+> I think this is not a final fix, just a workaround.
+> The problem with the other path still really needs to be tracked down.
+>
+> -Andi
+>
+> --
+> ak@linux.intel.com -- Speaking for myself only.
+>
 
-I'm afraid not yet.  There is code for this in the btrfs balance
-routines, but we haven't yet adapted it to the defragment command.
+ok,
 
--chris
+thanks for the clarification
+
+Regards
+
+Matt

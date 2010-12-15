@@ -1,36 +1,68 @@
-From: Erik Logtenberg <erik@logtenberg.eu>
-Subject: Re: What do the arguments of btrfs filesystem defragment do?
-Date: Wed, 15 Dec 2010 20:26:49 +0100
-Message-ID: <4D091679.80706@logtenberg.eu>
-References: <4D08E76B.40400@logtenberg.eu> <1292439708-sup-2951@think> <4D091387.9050905@logtenberg.eu> <1292440771-sup-9278@think>
+From: Matt <jackdachef@gmail.com>
+Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
+ barrier support is effective)
+Date: Wed, 15 Dec 2010 20:28:03 +0100
+Message-ID: <AANLkTimjnfAQv5J5LRsgtKBb5Ho=M2ZJ=qvDHnkpBwN4@mail.gmail.com>
+References: <AANLkTinMt6saGeeX3MbwAzZ-+f6AL5BegeFqyPgGwiDo@mail.gmail.com>
+	<AANLkTi=cn04WZGMnVX6ie5PSM+9v0tJSSg0kD8_W5N11@mail.gmail.com>
+	<20101212023415.GG3059@thunk.org>
+	<AANLkTim=i8wDnML+K4uGK_neNDCiWxtKGDx01O+3joaE@mail.gmail.com>
+	<AANLkTinhHTqqpP=pQ8Foyc9xeaZi65GHGHGY51OyZtvF@mail.gmail.com>
+	<20101212124354.GA4513@thunk.org>
+	<AANLkTikZkCs7Wee2=uhe3bw96Pggcv0jsCkZ+nkWEQ+=@mail.gmail.com>
+	<20101213020657.GB4513@thunk.org>
+	<AANLkTinMWS-yyzWJ3oBo_KS9jXt4p4pveo+SPTLiWnCt@mail.gmail.com>
+	<AANLkTimjM_HptLaCSuQivxruWpoc7todyMe0wnszrSYU@mail.gmail.com>
+	<20101215191655.GA6163@basil.fritz.box>
+	<AANLkTi=9fbou9YF2bXzrWbBM37F4_Xyi-KgWquq0PrBL@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1292440771-sup-9278@think>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Jon Nelson <jnelson@jamponi.net>,
+	Chris Mason <chris.mason@oracle.com>,
+	Andi Kleen <andi@firstfloor.org>,
+	Mike Snitzer <snitzer@redhat.com>,
+	Milan Broz <mbroz@redhat.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	dm-devel <dm-devel@redhat.com>,
+	Linux Kernel <linux-kernel@vger.kernel.org>,
+	htd <htd@fancy-poultry.org>, htejun <htejun@gmail.com>,
+	linux-ext4 <linux-ext4@vger.kernel.org>
+To: "Ted Ts'o" <tytso@mit.edu>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <AANLkTi=9fbou9YF2bXzrWbBM37F4_Xyi-KgWquq0PrBL@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> Is there a decent way to have btrfs compress already existing files
->> (that were written before compression was enabled) without hurting any
->> of the internal structures such as snapshots?
-> 
-> I'm afraid not yet.  There is code for this in the btrfs balance
-> routines, but we haven't yet adapted it to the defragment command.
+On Wed, Dec 15, 2010 at 8:25 PM, Matt <jackdachef@gmail.com> wrote:
+> On Wed, Dec 15, 2010 at 8:16 PM, Andi Kleen <andi@firstfloor.org> wrote:
+>>> I have a question though: the deactivation of multiple page-io
+>>> submission support most likely only would affect bigger systems or
+>>> also desktop systems (like mine) ?
+>>
+>> I think this is not a final fix, just a workaround.
+>> The problem with the other path still really needs to be tracked down.
+>>
+>> -Andi
+>>
+>> --
+>> ak@linux.intel.com -- Speaking for myself only.
+>>
+>
+> ok,
+>
+> thanks for the clarification
+>
+> Regards
+>
+> Matt
+>
 
-Okay, just to be 100% sure, if I add -o compress to the mount options,
-this will cause btrfs to (try to) compress newly written files, right?
-Is this fully compatible with existing snapshots, or will compressing
-files always (have a chance to) hurt COW relations?
+Sorry to spam the mailing lists again
 
-The use case is a filesystem used for backups, which are rsynced
-nightly, after which a new snapshot is made. After something like 45
-days, the old snapshots are removed. I am assuming that this way, after
-45 days all files will be compressed naturally, but this is only
-beneficial if snapshots still fully work. If instead it results in
-storing the compressed form of every file 45 times on disk, then it
-won't help much.
+make that a
+Reported-and-Tested-by: Matthias Bayer <jackdachef@gmail.com>
 
-Kind regards,
+(hope that's the correct way to write it)
 
-Erik.
+Regards
+
+Matt

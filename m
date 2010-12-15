@@ -1,83 +1,21 @@
-From: Tommy Jonsson <quazzie@gmail.com>
-Subject: Re: Fsck, parent transid verify failed
-Date: Wed, 15 Dec 2010 13:39:54 +0100
-Message-ID: <AANLkTik5SQeH1ZZcbiPbYLL9Dghsp93-zvciiVCGCkVM@mail.gmail.com>
-References: <003501cb9147$09197540$1b4c5fc0$@gmail.com>
-	<1291306826-sup-7837@think>
-	<AANLkTim5-5KQ3_sEb9WY+O1Uj36=3M3i_yQKeuSb7Qe5@mail.gmail.com>
-	<1291326502-sup-1726@think>
-	<AANLkTi=mfw7V8QSZ2=t04+d9kvZ3F5zgtinQ4E3uY8uc@mail.gmail.com>
-	<1291914789-sup-96@think>
+From: gao bo <yohoro1025@gmail.com>
+Subject: How to invoke the "discard" operation over btrfs
+Date: Wed, 15 Dec 2010 21:24:34 +0800
+Message-ID: <AANLkTiko-0A4sDEK8TOOeJWq+BGZKt49raq+=krHMu4x@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1291914789-sup-96@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Excerpts from Tommy Jonsson's message of 2010-12-08 15:07:58 -0500:
->> >> Build the latest tools, then:
->> >>
->> >> btrfsck -s 1 /dev/xxx
->> >> btrfsck -s 2 /dev/xxx
->> >>
->> >> If either of these work we have an easy way to get it mounted. =A0=
-Just let
->> >> me know.
->> >>
->> >> -chris
->> >>
->>
->> > $ btrfsck -s 1 /dev/sda
->> > using SB copy 1, bytenr 67108864
->> > parent transid verify failed on 2721514774528 wanted 39651 found 3=
-9649
->> > btrfsck: disk-io.c:739: open_ctree_fd: Assertion `!(!tree_root->no=
-de)' failed.
->> > Aborted
->> >
->> > $ btrfsck -s 2 /dev/sda
->> > using SB copy 2, bytenr 274877906944
->> > parent transid verify failed on 2721514774528 wanted 39651 found 3=
-9649
->> > btrfsck: disk-io.c:739: open_ctree_fd: Assertion `!(!tree_root->no=
-de)' failed.
->> > Aborted
->> >
->> > Tried "btrfs-debug-tree /dev/sda" and "btrfs-debug-tree -e /dev/sd=
-a" :
->> > parent transid verify failed on 2721514774528 wanted 39651 found 3=
-9649
->> > btrfs-debug-tree: disk-io.c:739: open_ctree_fd: Assertion
->> > `!(!tree_root->node)' failed.
->> >
->> > dmesg said:
->> > [268375.903581] device fsid 734a485d12c77872-9b0b5aa408670db4 devi=
-d 2 transid 39650 /dev/sdd
->> > [268375.904241] device fsid 734a485d12c77872-9b0b5aa408670db4 devi=
-d 1 transid 39651 /dev/sdc
->> > [268375.904526] device fsid 734a485d12c77872-9b0b5aa408670db4 devi=
-d 3 transid 39651 /dev/sda
->>
->> Sorry to be a bother, but do you have any other suggestions ?
->
-> Not a bother at all, I'm polishing off a version of fsck that I hope
-> will be able to construct a good tree for you. =A0It's my main priori=
-ty
-> right now and I hope to have something ready early Monday.
->
-> -chris
->
+Hi all,
+Is there anybody know how to invoke the "discard" operation over btrfs
+filesystem?  Does delete a file by "rm" will trigger the "discard"
+operation?
+If I want to trigger "discard" operation,how should i do? if there any
+pre-requires? such as the device must be ssd, btrfs should be mounted
+with "-o discard".
 
-Hi Chris.
-Thanks for all your help. Any progress on the fsck ?
-I pulled the latest btrfs-progs-unstable and recompiled, same output
-from all the commands (btrfsck -s / btrfs-debug-tree).
+Any suggestion is appreciated.
 
--tommy
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Thanks a lot!

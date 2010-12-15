@@ -1,72 +1,83 @@
-From: liubo <liubo2009@cn.fujitsu.com>
-Subject: Re: [RFC PATCH 2/5 v3] Btrfs: avoid transaction stuff when btrfs
- is readonly
-Date: Wed, 15 Dec 2010 17:12:14 +0800
-Message-ID: <4D08866E.6080501@cn.fujitsu.com>
-References: <4CF8A74F.2010306@cn.fujitsu.com> <AANLkTikgAj1sFPr==ruot50Bq3oJ_v0ZG8Wy_QLdL+aG@mail.gmail.com>
+From: Tommy Jonsson <quazzie@gmail.com>
+Subject: Re: Fsck, parent transid verify failed
+Date: Wed, 15 Dec 2010 13:39:54 +0100
+Message-ID: <AANLkTik5SQeH1ZZcbiPbYLL9Dghsp93-zvciiVCGCkVM@mail.gmail.com>
+References: <003501cb9147$09197540$1b4c5fc0$@gmail.com>
+	<1291306826-sup-7837@think>
+	<AANLkTim5-5KQ3_sEb9WY+O1Uj36=3M3i_yQKeuSb7Qe5@mail.gmail.com>
+	<1291326502-sup-1726@think>
+	<AANLkTi=mfw7V8QSZ2=t04+d9kvZ3F5zgtinQ4E3uY8uc@mail.gmail.com>
+	<1291914789-sup-96@think>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Josef Bacik <josef@redhat.com>,
-	Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
-	"Yan, Zheng" <zheng.yan@oracle.com>,
-	Wenyi Liu <qingshenlwy@gmail.com>,
-	Mike Fedyk <mfedyk@mikefedyk.com>
-To: "Yan, Zheng" <zheng.z.yan@linux.intel.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTikgAj1sFPr==ruot50Bq3oJ_v0ZG8Wy_QLdL+aG@mail.gmail.com>
+In-Reply-To: <1291914789-sup-96@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/15/2010 04:45 PM, Yan, Zheng wrote:
-> On Fri, Dec 3, 2010 at 4:16 PM, liubo <liubo2009@cn.fujitsu.com> wrote:
->> When the filesystem is readonly, avoid transaction stuff by checking MS_RDONLY
->> at start transaction time.
+> Excerpts from Tommy Jonsson's message of 2010-12-08 15:07:58 -0500:
+>> >> Build the latest tools, then:
+>> >>
+>> >> btrfsck -s 1 /dev/xxx
+>> >> btrfsck -s 2 /dev/xxx
+>> >>
+>> >> If either of these work we have an easy way to get it mounted. =A0=
+Just let
+>> >> me know.
+>> >>
+>> >> -chris
+>> >>
 >>
->> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
->> ---
->>  fs/btrfs/transaction.c |    3 +++
->>  1 files changed, 3 insertions(+), 0 deletions(-)
+>> > $ btrfsck -s 1 /dev/sda
+>> > using SB copy 1, bytenr 67108864
+>> > parent transid verify failed on 2721514774528 wanted 39651 found 3=
+9649
+>> > btrfsck: disk-io.c:739: open_ctree_fd: Assertion `!(!tree_root->no=
+de)' failed.
+>> > Aborted
+>> >
+>> > $ btrfsck -s 2 /dev/sda
+>> > using SB copy 2, bytenr 274877906944
+>> > parent transid verify failed on 2721514774528 wanted 39651 found 3=
+9649
+>> > btrfsck: disk-io.c:739: open_ctree_fd: Assertion `!(!tree_root->no=
+de)' failed.
+>> > Aborted
+>> >
+>> > Tried "btrfs-debug-tree /dev/sda" and "btrfs-debug-tree -e /dev/sd=
+a" :
+>> > parent transid verify failed on 2721514774528 wanted 39651 found 3=
+9649
+>> > btrfs-debug-tree: disk-io.c:739: open_ctree_fd: Assertion
+>> > `!(!tree_root->node)' failed.
+>> >
+>> > dmesg said:
+>> > [268375.903581] device fsid 734a485d12c77872-9b0b5aa408670db4 devi=
+d 2 transid 39650 /dev/sdd
+>> > [268375.904241] device fsid 734a485d12c77872-9b0b5aa408670db4 devi=
+d 1 transid 39651 /dev/sdc
+>> > [268375.904526] device fsid 734a485d12c77872-9b0b5aa408670db4 devi=
+d 3 transid 39651 /dev/sda
 >>
->> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
->> index 1fffbc0..14a597d 100644
->> --- a/fs/btrfs/transaction.c
->> +++ b/fs/btrfs/transaction.c
->> @@ -181,6 +181,9 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
->>        struct btrfs_trans_handle *h;
->>        struct btrfs_transaction *cur_trans;
->>        int ret;
->> +
->> +       if (root->fs_info->sb->s_flags & MS_RDONLY)
->> +               return ERR_PTR(-EROFS);
->>  again:
->>        h = kmem_cache_alloc(btrfs_trans_handle_cachep, GFP_NOFS);
->>        if (!h)
-> 
-> There are cases that we need to start transaction when MS_RDONLY flag is set.
-> For example, remount FS into read-only mode and log replay.
+>> Sorry to be a bother, but do you have any other suggestions ?
+>
+> Not a bother at all, I'm polishing off a version of fsck that I hope
+> will be able to construct a good tree for you. =A0It's my main priori=
+ty
+> right now and I hope to have something ready early Monday.
+>
+> -chris
+>
 
-However, is it weird to make changes to disk as fs is in readonly state?
-IMO, btrfs needs to limit the use of these "disk-change while readonly" cases,
-as it is not what readonly means.
+Hi Chris.
+Thanks for all your help. Any progress on the fsck ?
+I pulled the latest btrfs-progs-unstable and recompiled, same output
+from all the commands (btrfsck -s / btrfs-debug-tree).
 
-Since it has been here, we can bypass readonly in those cases(as I did in the 5th patch):
-
-...
-flags = sb->s_flags;
-if (sb->s_flags & MS_RDONLY)
-	sb->s_flags &= ~MS_RDONLY
-
-remount()
-
-sb->s_flags = flags;
-...
-
-thanks,
-Liu Bo
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+-tommy
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

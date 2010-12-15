@@ -1,49 +1,31 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: What do the arguments of btrfs filesystem defragment do?
-Date: Wed, 15 Dec 2010 14:57:01 -0500
-Message-ID: <1292441925-sup-1105@think>
-References: <4D08E76B.40400@logtenberg.eu> <1292439708-sup-2951@think> <4D091387.9050905@logtenberg.eu> <1292440771-sup-9278@think> <4D091679.80706@logtenberg.eu>
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Erik Logtenberg <erik@logtenberg.eu>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <4D091679.80706@logtenberg.eu>
+From: Mariusz Kozlowski <mk@lab.zgora.pl>
+Subject: [PATCH] btrfs: fix memory leak on error path in btrfs_get_acl()
+Date: Wed, 15 Dec 2010 22:57:36 +0100
+Message-ID: <1292450256-4544-1-git-send-email-mk@lab.zgora.pl>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+	Mariusz Kozlowski <mk@lab.zgora.pl>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Erik Logtenberg's message of 2010-12-15 14:26:49 -0500:
-> >> Is there a decent way to have btrfs compress already existing files
-> >> (that were written before compression was enabled) without hurting any
-> >> of the internal structures such as snapshots?
-> > 
-> > I'm afraid not yet.  There is code for this in the btrfs balance
-> > routines, but we haven't yet adapted it to the defragment command.
-> 
-> Okay, just to be 100% sure, if I add -o compress to the mount options,
-> this will cause btrfs to (try to) compress newly written files, right?
+If posix_acl_from_xattr() fails we leak memory stored in 'value'.
 
-Yes
+Signed-off-by: Mariusz Kozlowski <mk@lab.zgora.pl>
+---
+ fs/btrfs/acl.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-> Is this fully compatible with existing snapshots, or will compressing
-> files always (have a chance to) hurt COW relations?
-
-COW references (both via snapshotting and cp --reflink) are broken when
-you change the file in either copy.  While the
-files are the same, they are shared and the parts that change are
-private to each copy.  If you have a reflink copy of a 1TB file and
-change only 4K in the middle, the other 1TB-4KB are still shared.
-
-This is true for both the default and with compression on.
-
-> 
-> The use case is a filesystem used for backups, which are rsynced
-> nightly, after which a new snapshot is made. After something like 45
-> days, the old snapshots are removed. I am assuming that this way, after
-> 45 days all files will be compressed naturally, but this is only
-> beneficial if snapshots still fully work. If instead it results in
-> storing the compressed form of every file 45 times on disk, then it
-> won't help much.
-
-Yes, you'll end up with a fully compressed and fully shared setup after
-45 days.
-
--chris
+diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+index 2222d16..11c9561 100644
+--- a/fs/btrfs/acl.c
++++ b/fs/btrfs/acl.c
+@@ -61,6 +61,7 @@ static struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
+ 		if (size > 0) {
+ 			acl = posix_acl_from_xattr(value, size);
+ 			if (IS_ERR(acl))
++				kfree(value);
+ 				return acl;
+ 			set_cached_acl(inode, type, acl);
+ 		}
+-- 
+1.7.0.4

@@ -1,16 +1,18 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: Goffredo Baroncelli <kreijack@libero.it>
 Subject: Re: What do the arguments of btrfs filesystem defragment do?
-Date: Wed, 15 Dec 2010 14:08:32 -0500
-Message-ID: <1292439708-sup-2951@think>
+Date: Wed, 15 Dec 2010 20:18:51 +0100
+Message-ID: <201012152018.51388.kreijack@libero.it>
 References: <4D08E76B.40400@logtenberg.eu>
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Erik Logtenberg <erik@logtenberg.eu>
+Reply-To: kreijack@libero.it
+Mime-Version: 1.0
+Content-Type: Text/Plain;
+  charset="utf-8"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <4D08E76B.40400@logtenberg.eu>
+In-Reply-To: <4D08E76B.40400@logtenberg.eu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Erik Logtenberg's message of 2010-12-15 11:06:03 -0500:
+On Wednesday, 15 December, 2010, Erik Logtenberg wrote:
 > Hi,
 > 
 > I would like to know that the arguments of "btrfs filesystem defragment"
@@ -23,48 +25,22 @@ Excerpts from Erik Logtenberg's message of 2010-12-15 11:06:03 -0500:
 > Unfortunately I can't find any documentation on the meaning of these
 > arguments. The man page doesn't list these arguments:
 
--v is verbose.  It just prints the file name as it defrags
--c forces compression, even if you are mounted without compression on
+I loked at the code and I try to explain. But what I write below may be 
+affected by error.
 
--s is the starting byte you want to defrag in the file.  This is useful
-for very large files that are only compressed in a particular spot
+If the parameter is a directory, the subvolume where the dir is placed is 
+defragged.
 
--l is the number of bytes you want to compress, would be paired with -s
+Instead if the parameter is a file, the switches have the following meaning:
 
--t is a threshold.  If the extent is bigger than this threshold, we
-consider it defragged already.
+-f -> flush after defrag
+-s -> start point of defrag
+-l -> length of defrag range (if len is <= 0, the rest of file is considered)
+-c -> force compress
+-t -> threshold for compression (if the size of file is bigger, compress the 
+file ?)
 
--f starts the IO right away.
 
-> 
-> >       filesystem defragment <file>|<dir> [<file>|<dir>...]
-> >              Defragment files and/or directories.
-> 
-> Also the online documentation [1] is identical to the man page.
-> 
-> [1] https://btrfs.wiki.kernel.org/index.php/Btrfs(command)
-> 
-> On a somewhat related note I did find another page on the wiki [2] that
-> explains a bit on the defragmenting subject, more specifically it
-> mentions this rather important caveat:
-> 
-> > Caveat: Defragmenting a file which has a COW copy (either a snapshot
-> > copy or one made with bcp or cp --reflinks) will produce two unrelated
-> > files. If you defragment a subvolume that has a snapshot, you will
-> > roughly double the disk usage, as the snapshot files are no longer COW
-> > images of the originals.
-> 
-> [2] https://btrfs.wiki.kernel.org/index.php/Problem_FAQ
-> 
-> >From what I've heard on IRC this is still the case in current versions,
-> but the Btrfs(command) documentation contains no mention of this.
-
-This is still true.
-
-> 
-> I hope someone can shed some light on these subjects.
-> 
-
-Hope this makes sense ;)
-
--chris
+-- 
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

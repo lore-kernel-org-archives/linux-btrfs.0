@@ -1,46 +1,39 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
+From: Erik Logtenberg <erik@logtenberg.eu>
 Subject: Re: What do the arguments of btrfs filesystem defragment do?
-Date: Wed, 15 Dec 2010 20:18:51 +0100
-Message-ID: <201012152018.51388.kreijack@libero.it>
-References: <4D08E76B.40400@logtenberg.eu>
-Reply-To: kreijack@libero.it
+Date: Wed, 15 Dec 2010 20:14:15 +0100
+Message-ID: <4D091387.9050905@logtenberg.eu>
+References: <4D08E76B.40400@logtenberg.eu> <1292439708-sup-2951@think>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D08E76B.40400@logtenberg.eu>
+In-Reply-To: <1292439708-sup-2951@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wednesday, 15 December, 2010, Erik Logtenberg wrote:
-> Hi,
+Chris, thank you very much for your explanation. Indeed this clears
+things up a bit.
+
+>>> Caveat: Defragmenting a file which has a COW copy (either a snapshot
+>>> copy or one made with bcp or cp --reflinks) will produce two unrelated
+>>> files. If you defragment a subvolume that has a snapshot, you will
+>>> roughly double the disk usage, as the snapshot files are no longer COW
+>>> images of the originals.
+>>
+>> [2] https://btrfs.wiki.kernel.org/index.php/Problem_FAQ
+>>
+>> >From what I've heard on IRC this is still the case in current versions,
+>> but the Btrfs(command) documentation contains no mention of this.
 > 
-> I would like to know that the arguments of "btrfs filesystem defragment"
-> do. According to the built-in help page, the invocation is as follows:
-> 
-> >         btrfs filesystem defragment [-vcf] [-s start] [-l len] [-t
-> >                 size] <file>|<dir> [<file>|<dir>...]
-> >                 Defragment a file or a directory.
-> 
-> Unfortunately I can't find any documentation on the meaning of these
-> arguments. The man page doesn't list these arguments:
+> This is still true.
 
-I loked at the code and I try to explain. But what I write below may be 
-affected by error.
+Is there a decent way to have btrfs compress already existing files
+(that were written before compression was enabled) without hurting any
+of the internal structures such as snapshots?
+The goal is to increase free disk space and possibly performance, not to
+expload disk usage by breaking COW relations. So given your reply, I
+assume that defragmenting all files is not the right way (?)
 
-If the parameter is a directory, the subvolume where the dir is placed is 
-defragged.
+Kind regards,
 
-Instead if the parameter is a file, the switches have the following meaning:
-
--f -> flush after defrag
--s -> start point of defrag
--l -> length of defrag range (if len is <= 0, the rest of file is considered)
--c -> force compress
--t -> threshold for compression (if the size of file is bigger, compress the 
-file ?)
-
-
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+Erik.

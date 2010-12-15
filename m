@@ -1,21 +1,66 @@
-From: gao bo <yohoro1025@gmail.com>
-Subject: How to invoke the "discard" operation over btrfs
-Date: Wed, 15 Dec 2010 21:24:34 +0800
-Message-ID: <AANLkTiko-0A4sDEK8TOOeJWq+BGZKt49raq+=krHMu4x@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [RFC PATCH 2/5 v3] Btrfs: avoid transaction stuff when btrfs is readonly
+Date: Wed, 15 Dec 2010 11:03:46 -0500
+Message-ID: <1292428972-sup-3194@think>
+References: <4CF8A74F.2010306@cn.fujitsu.com> <AANLkTikgAj1sFPr==ruot50Bq3oJ_v0ZG8Wy_QLdL+aG@mail.gmail.com> <4D08866E.6080501@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: "Yan, Zheng" <zheng.z.yan@linux.intel.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Josef Bacik <josef@redhat.com>,
+	Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
+	"Yan, Zheng" <zheng.yan@oracle.com>,
+	Wenyi Liu <qingshenlwy@gmail.com>,
+	Mike Fedyk <mfedyk@mikefedyk.com>
+To: liubo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <4D08866E.6080501@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
-Is there anybody know how to invoke the "discard" operation over btrfs
-filesystem?  Does delete a file by "rm" will trigger the "discard"
-operation?
-If I want to trigger "discard" operation,how should i do? if there any
-pre-requires? such as the device must be ssd, btrfs should be mounted
-with "-o discard".
+Excerpts from liubo's message of 2010-12-15 04:12:14 -0500:
+> On 12/15/2010 04:45 PM, Yan, Zheng wrote:
+> > On Fri, Dec 3, 2010 at 4:16 PM, liubo <liubo2009@cn.fujitsu.com> wrote:
+> >> When the filesystem is readonly, avoid transaction stuff by checking MS_RDONLY
+> >> at start transaction time.
+> >>
+> >> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+> >> ---
+> >>  fs/btrfs/transaction.c |    3 +++
+> >>  1 files changed, 3 insertions(+), 0 deletions(-)
+> >>
+> >> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> >> index 1fffbc0..14a597d 100644
+> >> --- a/fs/btrfs/transaction.c
+> >> +++ b/fs/btrfs/transaction.c
+> >> @@ -181,6 +181,9 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
+> >>        struct btrfs_trans_handle *h;
+> >>        struct btrfs_transaction *cur_trans;
+> >>        int ret;
+> >> +
+> >> +       if (root->fs_info->sb->s_flags & MS_RDONLY)
+> >> +               return ERR_PTR(-EROFS);
+> >>  again:
+> >>        h = kmem_cache_alloc(btrfs_trans_handle_cachep, GFP_NOFS);
+> >>        if (!h)
+> > 
+> > There are cases that we need to start transaction when MS_RDONLY flag is set.
+> > For example, remount FS into read-only mode and log replay.
+> 
+> However, is it weird to make changes to disk as fs is in readonly state?
+> IMO, btrfs needs to limit the use of these "disk-change while readonly" cases,
+> as it is not what readonly means.
 
-Any suggestion is appreciated.
+reiserfs and ext3 at least have always done this.  Log replay is
+required even when the FS is readonly.
 
-Thanks a lot!
+> 
+> Since it has been here, we can bypass readonly in those cases(as I did in the 5th patch):
+> 
+> ...
+> flags = sb->s_flags;
+> if (sb->s_flags & MS_RDONLY)
+>     sb->s_flags &= ~MS_RDONLY
+
+I think we should have a dedicated flag to reflect a filesystem that is
+forced readonly, and check that flag instead.
+
+-chris

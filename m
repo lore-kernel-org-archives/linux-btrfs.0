@@ -1,122 +1,64 @@
-From: Dave Chinner <david@fromorbit.com>
-Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt
- barrier support is effective)
-Date: Thu, 16 Dec 2010 14:37:18 +1100
-Message-ID: <20101216033718.GM9925@dastard>
-References: <AANLkTikOXjh+D25=7Mzwn7bFN+a9xQSimPHs22q4o2TK@mail.gmail.com>
- <1291747731-sup-3099@think>
- <AANLkTin-Bvq9bNgarZGZhbK_2EONdu8x-qaLCLFcc1F_@mail.gmail.com>
- <1291751698-sup-9297@think>
- <AANLkTin79GzUbfuZNKyTtqcyoUSO9AJimO77_ZOvqggH@mail.gmail.com>
- <1291754340-sup-1631@think>
- <AANLkTim8uCmFK=LjkMmq_1O0KE3AiN_7g41AO0woxMv7@mail.gmail.com>
- <1291755258-sup-8760@think>
- <AANLkTi=OC9Z68U-j8s6vfU-_-6tkg5W7aUz9HEupidX9@mail.gmail.com>
- <1291810586-sup-8211@think>
+From: Mariusz Kozlowski <mk@lab.zgora.pl>
+Subject: Re: [PATCH] btrfs: fix memory leak on error path in btrfs_get_acl()
+Date: Thu, 16 Dec 2010 06:56:37 +0100
+Message-ID: <20101216055637.GA4826@mako-laptop>
+References: <1292450256-4544-1-git-send-email-mk@lab.zgora.pl>
+ <AANLkTi=Zz8eQTS+ja59eB9-F1aE2QP5DEVCwqBP50j8K@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=iso-8859-1
-Cc: Jon Nelson <jnelson@jamponi.net>,
-	Mike Snitzer <snitzer@redhat.com>, Matt <jackdachef@gmail.com>,
-	Milan Broz <mbroz@redhat.com>,
-	Andi Kleen <andi@firstfloor.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	dm-devel <dm-devel@redhat.com>,
-	Linux Kernel <linux-kernel@vger.kernel.org>,
-	htd <htd@fancy-poultry.org>, htejun <htejun@gmail.com>,
-	linux-ext4 <linux-ext4@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <1291810586-sup-8211@think>
+Cc: Mariusz Kozlowski <mk@lab.zgora.pl>,
+	Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Miguel Ojeda <miguel.ojeda.sandonis@gmail.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <AANLkTi=Zz8eQTS+ja59eB9-F1aE2QP5DEVCwqBP50j8K@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 08, 2010 at 07:20:24AM -0500, Chris Mason wrote:
-> Excerpts from Jon Nelson's message of 2010-12-07 22:29:26 -0500:
-> > On Tue, Dec 7, 2010 at 3:02 PM, Chris Mason <chris.mason@oracle.com=
-> wrote:
-> > > Excerpts from Jon Nelson's message of 2010-12-07 15:48:58 -0500:
-> > >> On Tue, Dec 7, 2010 at 2:41 PM, Chris Mason <chris.mason@oracle.=
-com> wrote:
-> > >> > Excerpts from Jon Nelson's message of 2010-12-07 15:25:47 -050=
-0:
-> > >> >> On Tue, Dec 7, 2010 at 2:02 PM, Chris Mason <chris.mason@orac=
-le.com> wrote:
-> > >> >> > Excerpts from Jon Nelson's message of 2010-12-07 14:34:40 -=
-0500:
-> > >> >> >> On Tue, Dec 7, 2010 at 12:52 PM, Chris Mason <chris.mason@=
-oracle.com> wrote:
-> > >> >> >> >> postgresql errors. Typically, header corruption but fro=
-m the limited
-> > >> >> >> >> visibility I've had into this via strace, what I see is=
- zeroed pages
-> > >> >> >> >> where there shouldn't be.
-> > >> >> >> >
-> > >> >> >> > This sounds a lot like a bug higher up than dm-crypt. =A0=
-Zeros tend to
-> > >> >> >> > come from some piece of code explicitly filling a page w=
-ith zeros, and
-> > >> >> >> > that often happens in the corner cases for O_DIRECT and =
-a few other
-> > >> >> >> > places in the filesystem.
-> > >> >> >> >
-> > >> >> >> > Have you tried triggering this with a regular block devi=
-ce?
-> > >> >> >>
-> > >> >> >> I just tried the whole set of tests, but with /dev/sdb dir=
-ectly (as
-> > >> >> >> ext4) without any crypt-y bits.
-> > >> >> >> It takes more iterations but out of 6 tests I had one fail=
-ure: same
-> > >> >> >> type of thing, 'invalid page header in block ....'.
-> > >> >> >>
-> > >> >> >> I can't guarantee that it is a full-page of zeroes, just w=
-hat I saw
-> > >> >> >> from the (limited) stracing I did.
-> > >> >> >
-> > >> >> > Fantastic. Now for our usual suspects:
-> >=20
-> > Maybe not so fantastic. I kept testing and had no more failures. At
-> > all. After 40+ iterations I gave up.
-> > I went back to trying ext4 on a LUKS volume. The 'hit' ratio went t=
-o
-> > something like 1 in 3, or better.
-> >=20
-> > I will continue to do testing with and without LUKS. I did /not/
-> > reboot between tests, but I do start with a fresh postgres database=
-=2E
-> >=20
+On Wed, Dec 15, 2010 at 11:49:39PM +0100, Miguel Ojeda wrote:
+> On Wed, Dec 15, 2010 at 10:57 PM, Mariusz Kozlowski <mk@lab.zgora.pl>=
+ wrote:
+> > If posix_acl_from_xattr() fails we leak memory stored in 'value'.
+> >
+> > Signed-off-by: Mariusz Kozlowski <mk@lab.zgora.pl>
+> > ---
+> > =A0fs/btrfs/acl.c | =A0 =A01 +
+> > =A01 files changed, 1 insertions(+), 0 deletions(-)
+> >
+> > diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+> > index 2222d16..11c9561 100644
+> > --- a/fs/btrfs/acl.c
+> > +++ b/fs/btrfs/acl.c
+> > @@ -61,6 +61,7 @@ static struct posix_acl *btrfs_get_acl(struct ino=
+de *inode, int type)
+> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0if (size > 0) {
+> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0acl =3D posix_acl_fr=
+om_xattr(value, size);
+> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0if (IS_ERR(acl))
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 kfree=
+(value);
 >=20
-> Once we trigger once without dm-crypt, dm-crypt is off the hook.  Jus=
-t
-> to verify, when you say without luks, you mean without any crypto bit=
-s
-> in use at all on the filesystems postgres uses?
->=20
-> Usually the trick to reproducing filesystem corruptions is adding mem=
-ory
-> pressure.  The corruption is probably a bad interaction between reads
-> and writes, and we need to make sure the reads actually happen.
->=20
-> http://oss.oracle.com/~mason/pin_ram.c
->=20
-> gcc -Wall -o pin_ram pin_ram.c
->=20
-> pin_ram -m 80%-of-your-ram-in-mb
+> Be careful with the evil { }
 
-Implemented in xfstests about 10 years ago:
+Dang. Too much python recently i guess. Will send v2 shortly.
 
-http://git.kernel.org/?p=3Dfs/xfs/xfstests-dev.git;a=3Dblob;f=3Dsrc/use=
-mem.c;h=3Db8794a6b209cebf8dbf312a8ef131e2e54b18d29;hb=3DHEAD
+Thanks.
 
-:P
+> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0retu=
+rn acl;
+> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0set_cached_acl(inode=
+, type, acl);
+> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0}
+> > --
+> > 1.7.0.4
+> >
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-ker=
+nel" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at =A0http://vger.kernel.org/majordomo-info.htm=
+l
+> > Please read the FAQ at =A0http://www.tux.org/lkml/
+> >
 
-Cheers,
-
-Dave.
 --=20
-Dave Chinner
-david@fromorbit.com
---
-To unsubscribe from this list: send the line "unsubscribe linux-ext4" i=
-n
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Mariusz Kozlowski

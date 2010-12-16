@@ -1,48 +1,42 @@
-From: Oystein Viggen <oysteivi@tihlde.org>
-Subject: Re: What do the arguments of btrfs filesystem defragment do?
-Date: Thu, 16 Dec 2010 09:41:50 +0100
-Message-ID: <037hfaxg6p.fsf@msgid.viggen.net>
-References: <4D08E76B.40400@logtenberg.eu> <1292439708-sup-2951@think>
-	<4D091387.9050905@logtenberg.eu> <1292440771-sup-9278@think>
-	<4D091679.80706@logtenberg.eu> <1292441925-sup-1105@think>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption? (was: Re: dm-crypt barrier support is effective)
+Date: Thu, 16 Dec 2010 07:29:58 -0500
+Message-ID: <1292502095-sup-3835@think>
+References: <AANLkTikOXjh+D25=7Mzwn7bFN+a9xQSimPHs22q4o2TK@mail.gmail.com> <1291747731-sup-3099@think> <AANLkTin-Bvq9bNgarZGZhbK_2EONdu8x-qaLCLFcc1F_@mail.gmail.com> <1291751698-sup-9297@think> <AANLkTin79GzUbfuZNKyTtqcyoUSO9AJimO77_ZOvqggH@mail.gmail.com> <1291754340-sup-1631@think> <AANLkTim8uCmFK=LjkMmq_1O0KE3AiN_7g41AO0woxMv7@mail.gmail.com> <1291755258-sup-8760@think> <AANLkTi=OC9Z68U-j8s6vfU-_-6tkg5W7aUz9HEupidX9@mail.gmail.com> <1291810586-sup-8211@think> <20101216033718.GM9925@dastard>
+Content-Type: text/plain; charset=UTF-8
+Cc: Jon Nelson <jnelson@jamponi.net>,
+	Mike Snitzer <snitzer@redhat.com>, Matt <jackdachef@gmail.com>,
+	Milan Broz <mbroz@redhat.com>,
+	Andi Kleen <andi@firstfloor.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	dm-devel <dm-devel@redhat.com>,
+	Linux Kernel <linux-kernel@vger.kernel.org>,
+	htd <htd@fancy-poultry.org>, htejun <htejun@gmail.com>,
+	linux-ext4 <linux-ext4@vger.kernel.org>
+To: Dave Chinner <david@fromorbit.com>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-reply-to: <20101216033718.GM9925@dastard>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-* [Chris Mason]=20
+Excerpts from Dave Chinner's message of 2010-12-15 22:37:18 -0500:
+> On Wed, Dec 08, 2010 at 07:20:24AM -0500, Chris Mason wrote:
+> > 
+> > Usually the trick to reproducing filesystem corruptions is adding memory
+> > pressure.  The corruption is probably a bad interaction between reads
+> > and writes, and we need to make sure the reads actually happen.
+> > 
+> > http://oss.oracle.com/~mason/pin_ram.c
+> > 
+> > gcc -Wall -o pin_ram pin_ram.c
+> > 
+> > pin_ram -m 80%-of-your-ram-in-mb
+> 
+> Implemented in xfstests about 10 years ago:
+> 
+> http://git.kernel.org/?p=fs/xfs/xfstests-dev.git;a=blob;f=src/usemem.c;h=b8794a6b209cebf8dbf312a8ef131e2e54b18d29;hb=HEAD
 
-> Excerpts from Erik Logtenberg's message of 2010-12-15 14:26:49 -0500:
->>=20
->> The use case is a filesystem used for backups, which are rsynced
->> nightly, after which a new snapshot is made. After something like 45
->> days, the old snapshots are removed. I am assuming that this way, af=
-ter
->> 45 days all files will be compressed naturally, but this is only
->> beneficial if snapshots still fully work. If instead it results in
->> storing the compressed form of every file 45 times on disk, then it
->> won't help much.
->
-> Yes, you'll end up with a fully compressed and fully shared setup aft=
-er
-> 45 days.
+But mine can use shm! I don't remember adding it, so it must have grown
+there while it sat on the oracle servers.  Our own special Christmas
+magic.
 
-How would that happen?  Rsync only rewrites files if they have changed.
-If compression happens only when a file is written to, any files that
-were written uncompressed will remain uncompressed until they change on
-the source filesystem (triggering a rewrite on the backup drive).
-
-Unless there's some magic I'm missing, expiring the old snapshots from
-before -o compress won't really affect anything.
-
-=D8ystein
---=20
-Outgoing mail is certified Virus Free.
-=2E.of course, the virus would tell you the same thing..
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-chris

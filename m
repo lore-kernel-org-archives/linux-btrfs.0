@@ -1,110 +1,48 @@
-From: gao bo <yohoro1025@gmail.com>
-Subject: BTRFS is broken with discard request?
-Date: Thu, 16 Dec 2010 15:39:51 +0800
-Message-ID: <AANLkTinXM16itUkUS4SN8-RTbF0jcHJreCejCOJJ+tki@mail.gmail.com>
+From: Oystein Viggen <oysteivi@tihlde.org>
+Subject: Re: What do the arguments of btrfs filesystem defragment do?
+Date: Thu, 16 Dec 2010 09:41:50 +0100
+Message-ID: <037hfaxg6p.fsf@msgid.viggen.net>
+References: <4D08E76B.40400@logtenberg.eu> <1292439708-sup-2951@think>
+	<4D091387.9050905@logtenberg.eu> <1292440771-sup-9278@think>
+	<4D091679.80706@logtenberg.eu> <1292441925-sup-1105@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: kmpark@infradead.org
+Content-Type: text/plain; charset=iso-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Kyungmin,
-Do you get some updates about your "BTRFS is broken with discard request" issue?
+* [Chris Mason]=20
 
-Do you know how to explicitly trigger discard operation over filesystem?
+> Excerpts from Erik Logtenberg's message of 2010-12-15 14:26:49 -0500:
+>>=20
+>> The use case is a filesystem used for backups, which are rsynced
+>> nightly, after which a new snapshot is made. After something like 45
+>> days, the old snapshots are removed. I am assuming that this way, af=
+ter
+>> 45 days all files will be compressed naturally, but this is only
+>> beneficial if snapshots still fully work. If instead it results in
+>> storing the compressed form of every file 45 times on disk, then it
+>> won't help much.
+>
+> Yes, you'll end up with a fully compressed and fully shared setup aft=
+er
+> 45 days.
 
-Thanks.
+How would that happen?  Rsync only rewrites files if they have changed.
+If compression happens only when a file is written to, any files that
+were written uncompressed will remain uncompressed until they change on
+the source filesystem (triggering a rewrite on the backup drive).
 
->From: Kyungmin Park <kmpark <at> infradead.org>
->Subject: BTRFS is broken with discard request?
->Newsgroups: gmane.comp.file-systems.btrfs, gmane.linux.kernel.mmc
->Date: 2010-06-15 23:17:49 GMT (26 weeks, 1 day, 3 hours and 51 minutes ago)
+Unless there's some magic I'm missing, expiring the old snapshots from
+before -o compress won't really affect anything.
 
->Deal all,
+=D8ystein
+--=20
+Outgoing mail is certified Virus Free.
+=2E.of course, the virus would tell you the same thing..
 
-Now I got test the btrfs with discard option on MMC (implemented
-discard request).
-but I can't test the iozone benchmark test program with I/O error.
-
-Of course I disabled the discard option. it works well. and discard
-handling is tested with VFAT well.
-So I think BTRFS discard request seems to broken.
-
-Test kernel is commit 7e27d6e778cd87b6f2415515d7127eba53fe5d02
-Author: Linus Torvalds <torvalds <at> linux-foundation.org>
-Date:   Fri Jun 11 19:14:04 2010 -0700
-
-    Linux 2.6.35-rc3
-
-scenarios are below.
-
-Any clues?
-
-Thank you,
-Kyungmin Park
-
-# mkfs.btrfs /dev/mmcblk0p1 -L mmc
-
-WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
-
-fs created label mmc on /dev/mmcblk0p1
-        nodesize 4096 leafsize 4096 sectorsize 4096 size 7.40GB
-Btrfs Btrfs v0.19
-
-# mount -t btrfs -o ssd,discard /dev/mmcblk0p1 /mnt/mmc
-[39310.465000] device label mmc devid 1 transid 7 /dev/mmcblk0p1
-[39310.470000] btrfs: use ssd allocation scheme
-
-# iozone -A -s 10m -U /mnt/mmc -f /mnt/mmc/test -e
-        Iozone: Performance Test of File I/O
-                Version $Revision: 3.326 $
-                Compiled for 32 bit mode.
-                Build: linux-arm
-
-        Contributors:William Norcott, Don Capps, Isom Crawford, Kirby Collins
-                     Al Slater, Scott Rhine, Mike Wisner, Ken Goss
-                     Steve Landherr, Brad Smith, Mark Kelly, Dr. Alain CYR,
-                     Randy Dunlap, Mark Montague, Dan Million, Gavin Brebner,
-                     Jean-Marc Zucconi, Jeff Blomberg, Benny Halevy,
-                     Erik Habbinga, Kris Strecker, Walter Wong, Joshua Root.
-
-        Run began: Thu Jan  1 10:55:35 1970
-
-        Auto Mode 2. This option is obsolete. Use -az -i0 -i1
-        File size set to 10240 KB
-        Include fsync in write timing
-        Command line used: iozone -A -s 10m -U /mnt/mmc -f /mnt/mmc/test -e
-        Output is in Kbytes/sec
-        Time Resolution = 0.000001 seconds.
-        Processor cache size set to 1024 Kbytes.
-
-        Processor cache line size set to 32 bytes.
-        File stride size set to 17 * record size.
-
-              KB  reclen   write rewrite    read    reread
-
-           10240       4
-[39337.095000] device label mmc devid 1 transid 12 /dev/mmcblk0p1
-[39337.100000] btree_readpage_end_io_hook: 4 callbacks suppressed
-[39337.105000] btrfs bad tree block start 0 29421568
-[39337.110000] btrfs bad tree block start 0 29421568
-[39337.115000] btrfs bad tree block start 0 29425664
-[39337.120000] btrfs bad tree block start 0 29425664
-[39337.125000] btrfs bad tree block start 0 29372416
-[39337.130000] btrfs bad tree block start 0 29372416
-[39337.135000] btrfs bad tree block start 0 29376512
-[39337.140000] btrfs bad tree block start 0 29376512
-[39337.145000] Btrfs detected SSD devices, enabling SSD mode
-[39337.150000] btrfs bad tree block start 0 29380608
-[39337.155000] btrfs bad tree block start 0 29380608
-[39338.880000] device label mmc devid 1 transid 17 /dev/mmcblk0p1
-[39338.895000] Btrfs detected SSD devices, enabling SSD mode
-    7494    8721
-[39340.830000] device label mmc devid 1 transid 21 /dev/mmcblk0p1
-[39340.845000] Btrfs detected SSD devices, enabling SSD mode
-
-Error reading block 0 40200000
-read: Input/output error
-#
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

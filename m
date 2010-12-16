@@ -1,68 +1,82 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: Bug in the design of the tree search ioctl API ? [was Re: [PATCH
- 1/3] Btrfs: Really return keys within specified range]
-Date: Thu, 16 Dec 2010 09:03:45 +0800
-Message-ID: <4D096571.5000204@cn.fujitsu.com>
-References: <4D05EBC9.6020908@cn.fujitsu.com> <201012150753.37204.kreijack@libero.it> <4D086A80.6020904@cn.fujitsu.com> <201012151948.44152.kreijack@libero.it>
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: Re: [RFC PATCH 2/5 v3] Btrfs: avoid transaction stuff when btrfs
+ is readonly
+Date: Thu, 16 Dec 2010 09:35:21 +0800
+Message-ID: <4D096CD9.5090903@cn.fujitsu.com>
+References: <4CF8A74F.2010306@cn.fujitsu.com> <AANLkTikgAj1sFPr==ruot50Bq3oJ_v0ZG8Wy_QLdL+aG@mail.gmail.com> <4D08866E.6080501@cn.fujitsu.com> <1292428972-sup-3194@think>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
-To: kreijack@libero.it
+Cc: "Yan, Zheng" <zheng.z.yan@linux.intel.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Josef Bacik <josef@redhat.com>,
+	Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
+	"Yan, Zheng" <zheng.yan@oracle.com>,
+	Wenyi Liu <qingshenlwy@gmail.com>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201012151948.44152.kreijack@libero.it>
+In-Reply-To: <1292428972-sup-3194@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-02:48, Goffredo Baroncelli wrote:
-> On Wednesday, 15 December, 2010, Li Zefan wrote:
->> Goffredo Baroncelli wrote:
->>> On Wednesday, 15 December, 2010, Li Zefan wrote:
->>>> h4) objectid asis, type asis, offset++ -> we should get the correct 
-> result.
->>> This fix the problem of the "missing subvolume". But for the other case 
->>> (searching for more than one type) the problem still here.
->>>
->> I don't think so. And the above "h4" has showed how we search for more
->> than one type.
+On 12/16/2010 12:03 AM, Chris Mason wrote:
+> Excerpts from liubo's message of 2010-12-15 04:12:14 -0500:
+>> On 12/15/2010 04:45 PM, Yan, Zheng wrote:
+>>> On Fri, Dec 3, 2010 at 4:16 PM, liubo <liubo2009@cn.fujitsu.com> wrote:
+>>>> When the filesystem is readonly, avoid transaction stuff by checking MS_RDONLY
+>>>> at start transaction time.
+>>>>
+>>>> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+>>>> ---
+>>>>  fs/btrfs/transaction.c |    3 +++
+>>>>  1 files changed, 3 insertions(+), 0 deletions(-)
+>>>>
+>>>> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+>>>> index 1fffbc0..14a597d 100644
+>>>> --- a/fs/btrfs/transaction.c
+>>>> +++ b/fs/btrfs/transaction.c
+>>>> @@ -181,6 +181,9 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
+>>>>        struct btrfs_trans_handle *h;
+>>>>        struct btrfs_transaction *cur_trans;
+>>>>        int ret;
+>>>> +
+>>>> +       if (root->fs_info->sb->s_flags & MS_RDONLY)
+>>>> +               return ERR_PTR(-EROFS);
+>>>>  again:
+>>>>        h = kmem_cache_alloc(btrfs_trans_handle_cachep, GFP_NOFS);
+>>>>        if (!h)
+>>> There are cases that we need to start transaction when MS_RDONLY flag is set.
+>>> For example, remount FS into read-only mode and log replay.
+>> However, is it weird to make changes to disk as fs is in readonly state?
+>> IMO, btrfs needs to limit the use of these "disk-change while readonly" cases,
+>> as it is not what readonly means.
+> 
+> reiserfs and ext3 at least have always done this.  Log replay is
+> required even when the FS is readonly.
+> 
+
+My concern is:
+now we have a forced readonly FS, which is already broken, if we still write something to
+disk, would it become more broken?
+
+>> Since it has been here, we can bypass readonly in those cases(as I did in the 5th patch):
 >>
->> The generic userland code for next search is:
->>
->> /* this is in essence the same as how we advance key in kernel code */
->> if (sk->min_offset < (u64)-1 && sk->min_offset < sk->max_offset)
->> 	sk->min_offset++;
->> else if (sk->min_type < (u8)-1 && sk->min_type < sk->max_type) {
->> 	sk->min_offset = 0;
->> 	sk->min_type++;
->> } else if (sk->min_objectid < (u64)-1 && sk->min_objectid < sk-
->> max_objectid){
->> 	sk->min_offset = 0;
->> 	sk->min_type = 0;
+>> ...
+>> flags = sb->s_flags;
+>> if (sb->s_flags & MS_RDONLY)
+>>     sb->s_flags &= ~MS_RDONLY
 > 
-> Sorry but if you reset the sk->min_type to 0, this means that the min_type 
-> lost its purpose (act as lover bound of the acceptance criteria).
-> 
+> I think we should have a dedicated flag to reflect a filesystem that is
+> forced readonly, and check that flag instead.
 
-Yep, the changelog of Chris' commit has said that userland has to do this.
+OK, we did have fs_state, a dedicated flag.
 
->> 	sk->min_objectid++;
->> } else
->> 	break;
->>
->> ioctl(...);
->>
->> for (i = 0; i < nr_items; i++) {
->> 	if (!filter(items[i]))
->> 		continue;
+thanks,
+Liu Bo
+
 > 
-> So you are suggesting: "Move all tree items from kernel to user space and 
-> filter it in userspace ?". This mean a lot of un-needed kernel-space <-> 
-> userspace transition...
+> -chris
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
 
-Right, but it's fine so far. I'm not suggesting anything, but explaining
-how the ioctl is working.
-
-> Sorry I don't understand if we are talking about a workaround or a solution.
-> 
-
-As Chris said, it's not perfect but we can just live along with it, until
-we find some killer app that requests us to improve/expand this ioctl.

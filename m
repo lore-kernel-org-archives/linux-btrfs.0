@@ -1,161 +1,132 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syscomptechweb.com ([72.55.168.116]:46119 "EHLO
-	cl-t085-170cl.privatedns.com" rhost-flags-OK-FAIL-OK-OK)
-	by vger.kernel.org with ESMTP id S1753534Ab0K2XmE (ORCPT
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:48079 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751201Ab0LPIpf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Nov 2010 18:42:04 -0500
-Message-ID: <003e935f5ffe0e39307a3a55b8ad99d4.squirrel@72.55.168.116>
-Date: Tue, 30 Nov 2010 03:12:21 +0400
-Subject: Interesting deal
-From: "A.M.Yassin" <a.m.yassin@g.pl>
-Reply-To: a.myassin@g.pl
+	Thu, 16 Dec 2010 03:45:35 -0500
+Received: from m3.gw.fujitsu.co.jp ([10.0.50.73])
+	by fgwmail6.fujitsu.co.jp (Fujitsu Gateway) with ESMTP id oBG8jW8V020131
+	for <linux-btrfs@vger.kernel.org> (envelope-from t-itoh@jp.fujitsu.com);
+	Thu, 16 Dec 2010 17:45:33 +0900
+Received: from smail (m3 [127.0.0.1])
+	by outgoing.m3.gw.fujitsu.co.jp (Postfix) with ESMTP id 9A60445DE56
+	for <linux-btrfs@vger.kernel.org>; Thu, 16 Dec 2010 17:45:32 +0900 (JST)
+Received: from s3.gw.fujitsu.co.jp (s3.gw.fujitsu.co.jp [10.0.50.93])
+	by m3.gw.fujitsu.co.jp (Postfix) with ESMTP id 15F6B45DE63
+	for <linux-btrfs@vger.kernel.org>; Thu, 16 Dec 2010 17:45:32 +0900 (JST)
+Received: from s3.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
+	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id 0231A1DB803C
+	for <linux-btrfs@vger.kernel.org>; Thu, 16 Dec 2010 17:45:32 +0900 (JST)
+Received: from m108.s.css.fujitsu.com (m108.s.css.fujitsu.com [10.249.87.108])
+	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id 8BBBDE18005
+	for <linux-btrfs@vger.kernel.org>; Thu, 16 Dec 2010 17:45:31 +0900 (JST)
+Message-ID: <4D09D153.1060208@jp.fujitsu.com>
+Date: Thu, 16 Dec 2010 17:44:03 +0900
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: multipart/mixed;boundary="----=_20101130031221_61191"
-To: unlisted-recipients:; (no To-header on input)
+To: Chris Mason <chris.mason@oracle.com>
+CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: [BUG?] There is a possibility that 'i_ino' overflows
+Content-Type: text/plain; charset=ISO-2022-JP
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-------=_20101130031221_61191
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: 8bit
+Hi,
+
+In btrfs, inode number is increased each time a new file or directory
+is made.
+Therefore, if the making deletion of the file is repeated, value of
+'i_ino' increases rapidly.
+
+For example, inode number changes as follows. 
+
+  $ touch foo
+  $ ls -i foo
+  266 foo
+  $ rm foo
+  $ touch bar
+  $ ls -i bar
+  267 bar
+  $
+
+And then, length of 'i_ino' and 'objectid' is as follows on the x86
+system. 
+
+  unsigned long i_ino == 32bits
+  u64 objectid        == 64bits
+
+Therefore, in the operation to substitute 'objectid' to 'i_ino',
+'i_ino' overflows when 'objectid' 4294967296 is substituted to 'i_ino'. 
+Then, the file with inode number 0 is made.
+
+As a result, ls command has looped infinitely, and btrfsck detected the
+error.
+Please see below.
+
+  $ uname -a
+  Linux luna 2.6.37-rc5 #1 SMP Thu Dec 9 13:02:41 JST 2010 i686 i686 i386 GNU/Linux
+  $ df -T /test1
+  Filesystem    Type   1K-blocks      Used Available Use% Mounted on
+  /dev/sdd14   btrfs     4162560        56   3717632   1% /test1
+  $ strace -FfTttx ls /test1
+  14:03:10.115440 execve("/bin/ls", ["ls", "/test1"], [/* 28 vars */]) = 0 <0.000181>
+  ...
+  ...
+  14:03:10.123431 stat("/test1", {st_mode=S_IFDIR|0777, st_size=8, ...}) = 0 <0.000017>
+  14:03:10.123521 open("/test1", O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC) = 3 <0.000018>
+  14:03:10.123578 fcntl(3, F_GETFD)       = 0x1 (flags FD_CLOEXEC) <0.000013>
+  14:03:10.123637 getdents(3, /* 3 entries */, 32768) = 72 <0.000025>
+  14:03:10.123712 getdents(3, /* 1 entries */, 32768) = 24 <0.000016>
+  14:03:10.123768 getdents(3, /* 1 entries */, 32768) = 24 <0.000015>
+  14:03:10.123824 getdents(3, /* 1 entries */, 32768) = 24 <0.000015>
+  14:03:10.123880 getdents(3, /* 1 entries */, 32768) = 24 <0.000015>
+  14:03:10.123936 getdents(3, /* 1 entries */, 32768) = 24 <0.000014>
+  14:03:10.123992 getdents(3, /* 1 entries */, 32768) = 24 <0.000015>
+  14:03:10.124047 getdents(3, /* 1 entries */, 32768) = 24 <0.000015>
+  14:03:10.124103 getdents(3, /* 1 entries */, 32768) = 24 <0.000015>
+  14:03:10.124261 getdents(3, /* 1 entries */, 32768) = 24 <0.000016>
+  14:03:10.124320 getdents(3, /* 1 entries */, 32768) = 24 <0.000015>
+  14:03:10.124381 getdents(3, /* 1 entries */, 32768) = 24 <0.000015>
+  14:03:10.124437 getdents(3, /* 1 entries */, 32768) = 24 <0.000014>
+  14:03:10.124493 getdents(3, /* 1 entries */, 32768) = 24 <0.000014>
+  14:03:10.124549 getdents(3, /* 1 entries */, 32768) = 24 <0.000014>
+  14:03:10.124605 getdents(3, /* 1 entries */, 32768) = 24 <0.000014>
+  14:03:10.124661 getdents(3, /* 1 entries */, 32768) = 24 <0.000014>
+  14:03:10.124717 getdents(3, /* 1 entries */, 32768) = 24 <0.000014>
+  14:03:10.124773 getdents(3, /* 1 entries */, 32768) = 24 <0.000014>
+  14:03:10.124840 getdents(3, /* 1 entries */, 32768) = 24 <0.000014>
+  14:03:10.124896 getdents(3, /* 1 entries */, 32768) = 24 <0.000014>
+  ...
+  ...
+  $ cd /test1
+  $ ls -i A123
+  ls: cannot access A123: No such file or directory
+  $ touch aaaa
+  $ ls -i aaaa
+  1 aaaa
+  $
+
+  # umount /test1
+  # btrfsck /dev/sdd14
+  root 5 inode 0 errors 2001
+          unresolved ref dir 256 index 4294967041 namelen 4 name A123 filetype 1 error 4
+  root 5 inode 1 errors 2001
+          unresolved ref dir 256 index 4294967042 namelen 4 name aaaa filetype 1 error 4
+  root 5 inode 4294967296 errors 2000
+          unresolved ref dir 256 index 4294967041 namelen 4 name A123 filetype 0 error 3
+  root 5 inode 4294967297 errors 2000
+          unresolved ref dir 256 index 4294967042 namelen 4 name aaaa filetype 0 error 3
+  found 28672 bytes used err is 1
+  total csum bytes: 0
+  total tree bytes: 28672
+  total fs tree bytes: 8192
+  btree space waste bytes: 23191
+  file data blocks allocated: 0
+   referenced 0
+  Btrfs v0.19-36-g70c6c10
+  #
 
 
-
-Greeting,
-
-My name is Mr. A. M. Yassin, I live and work in Abu Dhabi UAE.
-I have an urgent business which I believe will interest you.
-Find the enclose for details.
-
-For any reason you cannot open that attachment, please let me
-know so that I can resend it in the body of the mail, thank you.
-
-I wait for your response, Thank you.
-
-Regards
-
-A. M. Yassin
-------=_20101130031221_61191
-Content-Type: application/pdf; name="Interesting deal.pdf"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="Interesting deal.pdf"
-
-JVBERi0xLjUNCiW1tbW1DQoxIDAgb2JqDQo8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFIvTGFu
-Zyhlbi1VUykgPj4NCmVuZG9iag0KMiAwIG9iag0KPDwvVHlwZS9QYWdlcy9Db3VudCAxL0tpZHNb
-IDMgMCBSXSA+Pg0KZW5kb2JqDQozIDAgb2JqDQo8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL1Jl
-c291cmNlczw8L0ZvbnQ8PC9GMSA1IDAgUi9GMiA3IDAgUj4+L1Byb2NTZXRbL1BERi9UZXh0L0lt
-YWdlQi9JbWFnZUMvSW1hZ2VJXSA+Pi9NZWRpYUJveFsgMCAwIDYxMiA3OTJdIC9Db250ZW50cyA0
-IDAgUi9Hcm91cDw8L1R5cGUvR3JvdXAvUy9UcmFuc3BhcmVuY3kvQ1MvRGV2aWNlUkdCPj4vVGFi
-cy9TPj4NCmVuZG9iag0KNCAwIG9iag0KPDwvRmlsdGVyL0ZsYXRlRGVjb2RlL0xlbmd0aCAzNzM5
-Pj4NCnN0cmVhbQ0KeJytW1uP28YVfjfg/zAPLSoB2jHvFNEnu3HcJHYSxFsUQdIHSuQuhV2T9HLp
-df59z2WulGaloEVgrUTO9Vy+850zkzfXL1+8+jYWcSyjTFzfvHwRiwj+i0WZyCjJRJkmMtuK608v
-X0TiFj/evXzx2+rdOl89rK/SVduur5LV47pYHdZX2aq/Xcfxatqs/yOuv3/54i0M/+baDhrHpczd
-MX9biUBTPX9cyW1xYduolIlu+9063q5Evb6Kk9WndVwGO1eZzIpF51q8qfu7NXQVMEC0+gm2e4Pb
-pQ/a6b5db1kEosM9t/A9X7ViXSlJ4EPxGjruZvEN/Onq3QGbbEILSTLYauUvpINhadRAlzKWRex3
-cWb/F/TtD6CbR3zWNri411pz9U68/YRCog786BEnm/CrFEqA0CRfiSfdixrTcHYe0rng34Kt4hZm
-qkkizYSzUo8B1FFBk+e1WIBC8kxtZhjH4WFdcv+ZZrMr+MOdl3TMT4ZjVV2hJuEd9SN9wV6v1MZQ
-Qvf4gj6o3a5F00mUHGmUT9CKJml7klArdq1p0sLG1IRK2kJtmUYbeF76wasTMzkKiRmW0dVfYAQ9
-ZNsLMpVeTPiUVoJS2Hdi0BOJaSDVtEOvtve8VLexrDLPREI9tqnMlj1IsMPM9r4fZtQjOj09YKnT
-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
-uIqnYQgkY9SJxBkhJ6UsdPKg7kVpdliLW1Mob+3AQsXkiaIMXYGCb8d3O6eZftxyvcum0a7sWDX0
-rlOorW9sunXRG3wKxJDzN1K8QnnSKLMAi/jTRuQwQkTxOY/w5V8NjxzEzrmAJEZTETcoRExi40a4
-MzKMcxlpGU5dzb6GZwpPBx0UGGaotm+u3U1UJfBvGdEzuxNVQ9DZvuK8+8GKeVSeTKxTG0WHQUS7
-SNu7W2kcQ6EBpHiPZNLed7oDAoh4lhmGZxMOQLehd/j48ydPWj5RIjNjYzDESPBPS2Ay0QzOCa8G
-pMeFQ7vzVYZMnDnVU8cpa3WvB2+N/Cw+rtPV23/QzYZs9faar8HgIP9mMkK1BnsIzJWGQbhnda7X
-IxmnYrlqT8496Jo9O4ZGAcyW9epVDv0HFTYuuXeTbCtzcYk7sG+pOEc2R740qlIH6T9YDcwyvHnh
-Dnpu/rKUFxbPE4wN+n4AppNulin65R3gpjYJybuhQVLBYKvO/6V43eOBhV8RPjwTaMvSX8LI4cA/
-l/DSmP9doBgIq9yf95yY8theozjXNq3wLN7WKtxrmDYNcq95B+/8JxWQXm/Ac5MnBd7OuqxtnNr/
-PwATEvlB/hq8+pDiJVevC5PnyTh5cBOQvPk9g6bOmZLXNnxcDtYTbvpfWOkCRQ0KZW5kc3RyZWFt
-DQplbmRvYmoNCjUgMCBvYmoNCjw8L1R5cGUvRm9udC9TdWJ0eXBlL1RydWVUeXBlL05hbWUvRjEv
-QmFzZUZvbnQvVGltZXMjMjBOZXcjMjBSb21hbi9FbmNvZGluZy9XaW5BbnNpRW5jb2RpbmcvRm9u
-dERlc2NyaXB0b3IgNiAwIFIvRmlyc3RDaGFyIDMyL0xhc3RDaGFyIDEyMS9XaWR0aHMgMTAgMCBS
-Pj4NCmVuZG9iag0KNiAwIG9iag0KPDwvVHlwZS9Gb250RGVzY3JpcHRvci9Gb250TmFtZS9UaW1l
-cyMyME5ldyMyMFJvbWFuL0ZsYWdzIDMyL0l0YWxpY0FuZ2xlIDAvQXNjZW50IDg5MS9EZXNjZW50
-IC0yMTYvQ2FwSGVpZ2h0IDY5My9BdmdXaWR0aCA0MDEvTWF4V2lkdGggMjU2OC9Gb250V2VpZ2h0
-IDQwMC9YSGVpZ2h0IDI1MC9MZWFkaW5nIDQyL1N0ZW1WIDQwL0ZvbnRCQm94WyAtNTY4IC0yMTYg
-MjAwMCA2OTNdID4+DQplbmRvYmoNCjcgMCBvYmoNCjw8L1R5cGUvRm9udC9TdWJ0eXBlL1RydWVU
-eXBlL05hbWUvRjIvQmFzZUZvbnQvVGltZXMjMjBOZXcjMjBSb21hbixCb2xkL0VuY29kaW5nL1dp
-bkFuc2lFbmNvZGluZy9Gb250RGVzY3JpcHRvciA4IDAgUi9GaXJzdENoYXIgMzIvTGFzdENoYXIg
-ODkvV2lkdGhzIDExIDAgUj4+DQplbmRvYmoNCjggMCBvYmoNCjw8L1R5cGUvRm9udERlc2NyaXB0
-b3IvRm9udE5hbWUvVGltZXMjMjBOZXcjMjBSb21hbixCb2xkL0ZsYWdzIDMyL0l0YWxpY0FuZ2xl
-IDAvQXNjZW50IDg5MS9EZXNjZW50IC0yMTYvQ2FwSGVpZ2h0IDY3Ny9BdmdXaWR0aCA0MjcvTWF4
-V2lkdGggMjU1OC9Gb250V2VpZ2h0IDcwMC9YSGVpZ2h0IDI1MC9MZWFkaW5nIDQyL1N0ZW1WIDQy
-L0ZvbnRCQm94WyAtNTU4IC0yMTYgMjAwMCA2NzddID4+DQplbmRvYmoNCjkgMCBvYmoNCjw8L0F1
-dGhvcihQZXRlcikvQ3JlYXRvcij+/wBNAGkAYwByAG8AcwBvAGYAdACuACAATwBmAGYAaQBjAGUA
-IABXAG8AcgBkACAAMgAwADAANykvQ3JlYXRpb25EYXRlKEQ6MjAxMDExMjcxMzMxNDMpIC9Nb2RE
-YXRlKEQ6MjAxMDExMjcxMzMxNDMpIC9Qcm9kdWNlcij+/wBNAGkAYwByAG8AcwBvAGYAdACuACAA
-TwBmAGYAaQBjAGUAIABXAG8AcgBkACAAMgAwADAANyk+Pg0KZW5kb2JqDQoxMCAwIG9iag0KWyAy
-NTAgMCAwIDAgNTAwIDgzMyAwIDE4MCAzMzMgMzMzIDAgMCAyNTAgMzMzIDI1MCAyNzggNTAwIDAg
-NTAwIDAgNTAwIDUwMCA1MDAgNTAwIDAgMCAwIDI3OCAwIDAgMCAwIDAgNzIyIDY2NyA2NjcgNzIy
-IDYxMSA1NTYgNzIyIDcyMiAzMzMgMzg5IDcyMiA2MTEgODg5IDcyMiA3MjIgNTU2IDAgNjY3IDU1
-NiA2MTEgNzIyIDAgOTQ0IDAgNzIyIDAgMCAwIDAgMCAwIDAgNDQ0IDUwMCA0NDQgNTAwIDQ0NCAz
-MzMgNTAwIDUwMCAyNzggMCA1MDAgMjc4IDc3OCA1MDAgNTAwIDUwMCA1MDAgMzMzIDM4OSAyNzgg
-NTAwIDUwMCA3MjIgNTAwIDUwMF0gDQplbmRvYmoNCjExIDAgb2JqDQpbIDI1MCAwIDAgMCAwIDAg
-MCAwIDAgMCAwIDAgMjUwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCA3
-MjIgMCAwIDcyMiAwIDAgNzc4IDAgMzg5IDAgMCA2NjcgMCA3MjIgNzc4IDAgMCA3MjIgNTU2IDY2
-NyA3MjIgMCAwIDAgNzIyXSANCmVuZG9iag0KMTIgMCBvYmoNCjw8L1R5cGUvWFJlZi9TaXplIDEy
-L1dbIDEgNCAyXSAvUm9vdCAxIDAgUi9JbmZvIDkgMCBSL0lEWzwxQTkyQTNFMjlCQ0RFRDRCOERD
-MzhDMDQ1OUY4MzU4MT48MUE5MkEzRTI5QkNERUQ0QjhEQzM4QzA0NTlGODM1ODE+XSAvRmlsdGVy
-L0ZsYXRlRGVjb2RlL0xlbmd0aCA1NT4+DQpzdHJlYW0NCnicY2AAgv//GYGkIAMDiPKDUG1gijEV
-TAl4Q6gfYErwGZgSmg6mhLvAlEg+mBLdwcAAAGKFCEUNCmVuZHN0cmVhbQ0KZW5kb2JqDQp4cmVm
-DQowIDEzDQowMDAwMDAwMDAwIDY1NTM1IGYNCjAwMDAwMDAwMTcgMDAwMDAgbg0KMDAwMDAwMDA3
-OCAwMDAwMCBuDQowMDAwMDAwMTM0IDAwMDAwIG4NCjAwMDAwMDAzNTcgMDAwMDAgbg0KMDAwMDAw
-NDE3MSAwMDAwMCBuDQowMDAwMDA0MzQ0IDAwMDAwIG4NCjAwMDAwMDQ1ODIgMDAwMDAgbg0KMDAw
-MDAwNDc1OSAwMDAwMCBuDQowMDAwMDA1MDAyIDAwMDAwIG4NCjAwMDAwMDUyMzEgMDAwMDAgbg0K
-MDAwMDAwNTU2MCAwMDAwMCBuDQowMDAwMDA1NzI3IDAwMDAwIG4NCnRyYWlsZXINCjw8L1NpemUg
-MTMvUm9vdCAxIDAgUi9JbmZvIDkgMCBSL0lEWzwxQTkyQTNFMjlCQ0RFRDRCOERDMzhDMDQ1OUY4
-MzU4MT48MUE5MkEzRTI5QkNERUQ0QjhEQzM4QzA0NTlGODM1ODE+XSA+Pg0Kc3RhcnR4cmVmDQo1
-OTgxDQolJUVPRg0KeHJlZg0KMCAwDQp0cmFpbGVyDQo8PC9TaXplIDEzL1Jvb3QgMSAwIFIvSW5m
-byA5IDAgUi9JRFs8MUE5MkEzRTI5QkNERUQ0QjhEQzM4QzA0NTlGODM1ODE+PDFBOTJBM0UyOUJD
-REVENEI4REMzOEMwNDU5RjgzNTgxPl0gL1ByZXYgNTk4MS9YUmVmU3RtIDU3Mjc+Pg0Kc3RhcnR4
-cmVmDQo2Mzk2DQolJUVPRg==
-------=_20101130031221_61191--
-
+Regards,
+Itoh
 

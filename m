@@ -1,45 +1,57 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: A rescue tool for btrfs
-Date: Thu, 16 Dec 2010 19:39:42 -0500
-Message-ID: <1292546177-sup-2921@think>
-References: <20101217001849.1b5f4c28@simplux>
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Michael Niederle <mniederle@gmx.at>
+From: =?iso-8859-1?Q?J=F6rg?= Sommer <joerg@alea.gnuu.de>
+Subject: Re: btrfs reads only 4k blocks -- how to improve?
+Date: Fri, 17 Dec 2010 01:32:24 +0100
+Message-ID: <20101217003224.GA6615@alea.gnuu.de>
+References: <20101216123116.GA5073@alea.gnuu.de>
+ <4D0A0E2E.5010204@gmail.com>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="nFreZHaLTZJo0R7j"
+Cc: linux-btrfs@vger.kernel.org
+To: Andreas Philipp <philipp.andreas@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <20101217001849.1b5f4c28@simplux>
+In-Reply-To: <4D0A0E2E.5010204@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Michael Niederle's message of 2010-12-16 18:18:49 -0500:
-> Hi!
-> 
-> Last week I crashed a btrfs file system. I didn't lose a lot of data because I
-> had current backups of most data and a full backup from a month ago.
-> 
-> But I thought it would be a nice idea to have a rescue tool! Currently I have a
-> first release of this tool (surely buggy and runnning on little endian
-> architectures only).
-> 
-> The tool is written in C using the header files from the btrfs userland tools.
-> I use a wrapper (written in a script language) to restore whole directories.
-> Such a wrapper could also detect hard links and handle them correctly.
-> 
-> btrfs_rescue implements all disk accesses itself and tries to access only the
-> absolute minimum of necessary data structures to avoid the pitfalls that lurk
-> somewhere in the destroyed file system. So you can rescue parts of a destroyed
-> file system even if the file system driver cannot mount it anymore.
-> 
-> The source code is available under
-> 
-> http://simplux.org/downloads/btrfs_rescue.c
 
-A very good idea, its the same direction I'm going with the btrfsck code
-right now.  The basic idea is that it is much more reliable (and faster
-to implement) to pull data off the disk than it is to try and fix it in
-place.  I'm growing some in place fixes as well for the really common
-errors (especially power crashes w/o barriers)
+--nFreZHaLTZJo0R7j
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-If you're interested in doing more on this, I'll have my code up
-shortly.
+Andreas Philipp hat am Thu 16. Dec, 14:03 (+0100) geschrieben:
+> On 16.12.2010 13:31, J=C3=B6rg Sommer wrote:
+> > When running rm -r to remove an old backup or running rsync I see the
+> > average size of a read or a write request ist 4k. This leads to a very
+> > bad throughput of fewer than 2MByte/s. I'm using atop to watch these
+> > numbers.
 
--chris
+> Just one probably easy question. Are you sure your partition(s) are
+> aligned correctly with respect to the 4k blocks of your drive?
+
+Good idea, but I don't use partitions on this drive.
+
+# file -s /dev/sdb
+/dev/sdb: BTRFS Filesystem (label "Backup", sectorsize 4096, nodesize 4096,=
+ leafsize 4096)
+
+Bye, J=C3=B6rg.
+--=20
+Je planm=C3=A4=C3=9Figer ein Mensch vorgeht,
+desto st=C3=A4rker mag ihn der Zufall treffen.
+		    Erich Krunau =E2=80=9ADie Physiker=E2=80=98
+
+--nFreZHaLTZJo0R7j
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature http://en.wikipedia.org/wiki/OpenPGP
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iEYEARECAAYFAk0Kr5gACgkQwe0mZwH1VICm/wCdH4pnTcpVw4iOdXFxgDiQZYx5
+Y60An0jyvMcRJKevm+RprEk61oTffb/H
+=DF+S
+-----END PGP SIGNATURE-----
+
+--nFreZHaLTZJo0R7j--

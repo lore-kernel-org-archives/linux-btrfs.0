@@ -1,36 +1,30 @@
-From: "Ian! D. Allen" <idallen@idallen.ca>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: btrfs subvolume snapshot hung in btrfs_commit_transaction
-Date: Thu, 16 Dec 2010 23:45:12 -0500
-Message-ID: <20101217044511.GD9177@idallen.ca>
-References: <20101212034339.GA26170@idallen.ca>
- <20101212081359.GA7389@idallen.ca>
- <20101214022324.GA21001@idallen.ca>
- <1292550402-sup-6711@think>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Date: Fri, 17 Dec 2010 09:52:10 -0500
+Message-ID: <1292597464-sup-8595@think>
+References: <20101212034339.GA26170@idallen.ca> <20101212081359.GA7389@idallen.ca> <20101214022324.GA21001@idallen.ca> <1292550402-sup-6711@think> <20101217044511.GD9177@idallen.ca>
+Content-Type: text/plain; charset=UTF-8
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+To: "Ian! D. Allen" <idallen@idallen.ca>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1292550402-sup-6711@think>
+In-reply-to: <20101217044511.GD9177@idallen.ca>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 16, 2010 at 08:47:05PM -0500, Chris Mason wrote:
-> I think this hang is something that sage fixed.  Which kernel is this
-> ubuntu including?
+Excerpts from Ian! D. Allen's message of 2010-12-16 23:45:12 -0500:
+> On Thu, Dec 16, 2010 at 08:47:05PM -0500, Chris Mason wrote:
+> > I think this hang is something that sage fixed.  Which kernel is this
+> > ubuntu including?
+> 
+> All that detail is posted in the second message in the thread you quoted:
+> 
+> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg07448.html
 
-All that detail is posted in the second message in the thread you quoted:
+The 2.6.35 kernel didn't have Sage's fix.  I'd say the deadlock will be
+fixed in the current btrfs-unstable git tree (against 2.6.36).
 
-http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg07448.html
+> 
+> Is the btrfsck snapshot error (from Tuesday) fixed too?
 
-Is the btrfsck snapshot error (from Tuesday) fixed too?
+I'm looking into that one, I think it is a btrfsck bug.
 
-http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg07544.html
-
-I'd love to exercise btrfs, but I can't get even a single snapshot to
-pass btrfsck.
-
--- 
-| Ian! D. Allen  -  idallen@idallen.ca  -  Ottawa, Ontario, Canada
-| Home Page: http://idallen.com/   Contact Improv: http://contactimprov.ca/
-| College professor (Free/Libre GNU+Linux) at: http://teaching.idallen.com/
-| Defend digital freedom:  http://eff.org/  and have fun:  http://fools.ca/
+-chris

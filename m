@@ -1,22 +1,36 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: "Ian! D. Allen" <idallen@idallen.ca>
 Subject: Re: btrfs subvolume snapshot hung in btrfs_commit_transaction
-Date: Thu, 16 Dec 2010 20:47:05 -0500
-Message-ID: <1292550402-sup-6711@think>
-References: <20101212034339.GA26170@idallen.ca> <20101212081359.GA7389@idallen.ca> <20101214022324.GA21001@idallen.ca>
-Content-Type: text/plain; charset=UTF-8
+Date: Thu, 16 Dec 2010 23:45:12 -0500
+Message-ID: <20101217044511.GD9177@idallen.ca>
+References: <20101212034339.GA26170@idallen.ca>
+ <20101212081359.GA7389@idallen.ca>
+ <20101214022324.GA21001@idallen.ca>
+ <1292550402-sup-6711@think>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: "Ian! D. Allen" <idallen@idallen.ca>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <20101214022324.GA21001@idallen.ca>
+In-Reply-To: <1292550402-sup-6711@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Ian! D. Allen's message of 2010-12-13 21:23:24 -0500:
-> I can reliably get btrfs 0.19 to hang in btrfs_commit_transaction.
-> Below is another case where it hung after creating just 110 snapshots
-> of /var/log/.  Here is an excerpt from the script log file showing the
-> last good snapshot followed by the hang:
+On Thu, Dec 16, 2010 at 08:47:05PM -0500, Chris Mason wrote:
+> I think this hang is something that sage fixed.  Which kernel is this
+> ubuntu including?
 
-I think this hang is something that sage fixed.  Which kernel is this
-ubuntu including?
+All that detail is posted in the second message in the thread you quoted:
 
--chris
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg07448.html
+
+Is the btrfsck snapshot error (from Tuesday) fixed too?
+
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg07544.html
+
+I'd love to exercise btrfs, but I can't get even a single snapshot to
+pass btrfsck.
+
+-- 
+| Ian! D. Allen  -  idallen@idallen.ca  -  Ottawa, Ontario, Canada
+| Home Page: http://idallen.com/   Contact Improv: http://contactimprov.ca/
+| College professor (Free/Libre GNU+Linux) at: http://teaching.idallen.com/
+| Defend digital freedom:  http://eff.org/  and have fun:  http://fools.ca/

@@ -1,31 +1,53 @@
-From: Martin Eisenhardt <martin.eisenhardt@mneisen.org>
-Subject: Re: A start at RAID[56] support.
-Date: Mon, 20 Dec 2010 12:55:20 +0100
-Message-ID: <20101220115520.GA17852@samsumm>
-References: <1247323186.17045.15.camel@macbook.infradead.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+From: =?iso-8859-1?Q?Bryan_=D8stergaard?= <bryan.ostergaard@gmail.com>
+Subject: Re: A rescue tool for btrfs
+Date: Mon, 20 Dec 2010 13:18:21 +0100
+Message-ID: <E160A2D4-258B-41FC-8035-7D5637A6FB03@gmail.com>
+References: <20101217001849.1b5f4c28@simplux>
+Mime-Version: 1.0 (Apple Message framework v1082)
+Content-Type: text/plain; charset=iso-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Michael Niederle <mniederle@gmx.at>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1247323186.17045.15.camel@macbook.infradead.org>
+In-Reply-To: <20101217001849.1b5f4c28@simplux>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello list,
+On 17/12/2010, at 00.18, Michael Niederle wrote:
 
-for an internal demonstration system due in Q1/2011, I am very much interested
-in setting up a btrfs fs with RAID5; RAID1 just won't cut it.
+> Hi!
+>=20
+> Last week I crashed a btrfs file system. I didn't lose a lot of data =
+because I
+> had current backups of most data and a full backup from a month ago.
+>=20
+> But I thought it would be a nice idea to have a rescue tool! Currentl=
+y I have a
+> first release of this tool (surely buggy and runnning on little endia=
+n
+> architectures only).
+>=20
+Thank you for writing this tool. It was able to save some 80% of all da=
+ta from a=20
+very broken btrfs filesystem. I could mount the filesystem but it would=
+ hang after=20
+just a few accesses with thousands of parent transid verify failed mess=
+ages and
+btrfsck just exited immediately with some huge negative number as the o=
+nly=20
+indication of what was wrong. Using the btrfsck -s $number option also =
+didn't=20
+help but your tool seemed to do the job just fine.
 
-As can be read in the btrfs wiki [1], the 'magic' number for RAID5 support in
-btrfs is 2.6.37 which is just around the corner.
+I still have the broken filesystem as I'm interested to see what Chris =
+Masons new=20
+btrfsck code can do with it so if anybody is interested in further debu=
+gging I can=20
+probably help with that.
 
-So my question is: Is this still the roadmap for the introduction of RAID5 and
-RAID6, or has it been delayed somewhat? If so, what is the current target kernel
-release for btrfs RAID5 support?
+Regards,
+Bryan =D8stergaard
 
-Thanks for the information!
-
-Best regards
-Martin
-
-
-[1] https://btrfs.wiki.kernel.org/index.php/FAQ#Can_I_use_RAID.5B56.5D_on_my_Btrfs_filesystem.3F
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

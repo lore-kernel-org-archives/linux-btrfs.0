@@ -1,45 +1,79 @@
 From: C Anthony Risinger <anthony@extof.me>
 Subject: Re: Scary OOPS when playing with --bind, --move, and friends
-Date: Mon, 20 Dec 2010 22:25:02 -0600
-Message-ID: <AANLkTimpq2qEtRk54ni3uHtCtK+GL_t3wq8_rBEcf4GQ@mail.gmail.com>
+Date: Mon, 20 Dec 2010 22:44:24 -0600
+Message-ID: <AANLkTinWqRXMpH4_OBMRTiJoPF3R=LOcT4f5EFLQm2kH@mail.gmail.com>
 References: <AANLkTikwFUOUE4i3Whyh2_jfH+fPdK3GYL09vCqmuCod@mail.gmail.com>
 	<AANLkTimRGDPLW1Un0BubAsM7kF=vx9eYQOxK3EvHWx-V@mail.gmail.com>
 	<AANLkTi=pXkg1YV9z9GP7Q_vbNj5ZVOcfTfqYJW=QbSvC@mail.gmail.com>
+	<AANLkTimpq2qEtRk54ni3uHtCtK+GL_t3wq8_rBEcf4GQ@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org
 To: "Fajar A. Nugraha" <list@fajar.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=pXkg1YV9z9GP7Q_vbNj5ZVOcfTfqYJW=QbSvC@mail.gmail.com>
+In-Reply-To: <AANLkTimpq2qEtRk54ni3uHtCtK+GL_t3wq8_rBEcf4GQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 20, 2010 at 10:19 PM, Fajar A. Nugraha <list@fajar.net> wrote:
-> On Tue, Dec 21, 2010 at 11:16 AM, Fajar A. Nugraha <list@fajar.net> wrote:
->> On Tue, Dec 21, 2010 at 10:51 AM, C Anthony Risinger <anthony@extof.me> wrote:
->>> i'm on 2.6.36.2
+On Mon, Dec 20, 2010 at 10:25 PM, C Anthony Risinger <anthony@extof.me>=
+ wrote:
+> On Mon, Dec 20, 2010 at 10:19 PM, Fajar A. Nugraha <list@fajar.net> w=
+rote:
 >>
->> Try 2.6.35 or later. I tested something similar under ubuntu maverick
->> (2.6.35-24-generic) and it works just fine.
+>> Still curious about your test scenario though. Can you double check
+>> it? A write on the snapshot should not appear on the parent
+>> filesystem.
 >
-> Sorry, hit "send" to soon. I though you wrote "2.6.32" :P
+> sorry maybe i wasn't very clear; my current root is a subvol... the
+> directory i was --bind mounting corresponded to /home/anthony:
 >
-> Still curious about your test scenario though. Can you double check
-> it? A write on the snapshot should not appear on the parent
-> filesystem.
+> /
+>
+> and
+>
+> root/<subvol of my current root>
+>
+> are the same; so it should show up in my /home/anthony directory. =A0=
+if
+> mount the subvol by id, then --bind mount, it works as expected; only
+> when crossing the magic barrier doesn't things seem to freak out.
 
-sorry maybe i wasn't very clear; my current root is a subvol... the
-directory i was --bind mounting corresponded to /home/anthony:
+s/doesn't/do/g
 
-/
+to be exact, it looks like this:
 
-and
+-----------------------------------------
+(subvolid)
+        <source>
+        <mount>
+        [options]
 
-root/<subvol of my current root>
+(262)
+        /dev/sda
+        /
 
-are the same; so it should show up in my /home/anthony directory.  if
-mount the subvol by id, then --bind mount, it works as expected; only
-when crossing the magic barrier doesn't things seem to freak out.
+(__0)
+        /dev/sda
+        /home/anthony/sand/root
+        [subvolid=3D0]
 
-i actually reproduced it twice, but this time i didn't write to the files :-)
+(???)
+        /home/anthony/sand/root/vols/262/home/anthony
+        /home/anthony/sand/bind
+        [--bind]
+-----------------------------------------
+
+all my subvolumes are kept in a "vols" directory in the btrfs root, so
+my / and the --bind mount were suppose to be referencing the same
+location.  additionally, TEST showed up in both locations... it was
+the editing part that blew up.  NOTE however, that the subvol (id 262)
+itself was _never_ actually mounted, it was accessed thru the btrfs
+root mounted at `root`.  i think this is the crux of the problem;
+--bind doesn't seem to know that the directory it was binding isn't
+100% "within" the mount point it resides under.
 
 C Anthony
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

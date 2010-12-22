@@ -1,9 +1,8 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH 2/6] btrfs: try to reclaim some space when chunk
-	allocation fails
-Date: Wed, 22 Dec 2010 14:21:23 -0500
-Message-ID: <20101222192122.GA1669@dhcp231-156.rdu.redhat.com>
-References: <4D11D738.3000700@cn.fujitsu.com>
+Subject: Re: [PATCH 0/6] random bugfixes of the space management
+Date: Wed, 22 Dec 2010 14:22:54 -0500
+Message-ID: <20101222192254.GB1669@dhcp231-156.rdu.redhat.com>
+References: <4D11D72C.7010704@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: Chris Mason <chris.mason@oracle.com>,
@@ -11,35 +10,24 @@ Cc: Chris Mason <chris.mason@oracle.com>,
 	Linux Btrfs <linux-btrfs@vger.kernel.org>
 To: Miao Xie <miaox@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D11D738.3000700@cn.fujitsu.com>
+In-Reply-To: <4D11D72C.7010704@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 22, 2010 at 06:47:20PM +0800, Miao Xie wrote:
-> We cannot write data into files when when there is tiny space in the filesystem.
+On Wed, Dec 22, 2010 at 06:47:08PM +0800, Miao Xie wrote:
+> Hello,
 > 
-> Reproduce steps:
->  # mkfs.btrfs /dev/sda1
->  # mount /dev/sda1 /mnt
->  # dd if=/dev/zero of=/mnt/tmpfile0 bs=4K count=1
->  # dd if=/dev/zero of=/mnt/tmpfile1 bs=4K count=99999999999999
->    (fill the filesystem)
->  # umount /mnt
->  # mount /dev/sda1 /mnt
->  # rm -f /mnt/tmpfile0
->  # dd if=/dev/zero of=/mnt/tmpfile0 bs=4K count=1
->    (failed with nospec)
+> I have a bunch of random fixes of the space management in
 > 
-> But if we do the last step again, we can write data successfully. The reason of
-> the problem is that btrfs didn't try to commit the current transaction and
-> reclaim some space when chunk allocation failed.
+> git://repo.or.cz/linux-btrfs-devel.git space-manage
 > 
-> This patch fixes it by committing the current transaction to to reclaim some
-> space when chunk allocation fails.
-> 
-> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+> They are the ENOSPC fixes, as well as fixes for df command.
+> The first one and the last one fixed the wrong free space information reported
+> by df command. The second one fixed ENOSPC when there is tiny space in the
+> filesystem. And The third fixed wrong calculation of stripe size. And the 4th
+> and 5th patches fixed the chunk allocation problem when the block devices have
+> no enough space to allocate a default-size chunk.
+>
 
-Reviewed-by: Josef Bacik <josef@redhat.com>
+I'll review the rest of them when I have more time, thanks for these Miao.
 
-Thanks,
-
-Josef
+Josef 

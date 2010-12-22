@@ -1,36 +1,30 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH 0/6] random bugfixes of the space management
-Date: Wed, 22 Dec 2010 14:27:13 -0500
-Message-ID: <1293045976-sup-8544@think>
-References: <4D11D72C.7010704@cn.fujitsu.com> <20101222192254.GB1669@dhcp231-156.rdu.redhat.com>
-Content-Type: text/plain; charset=UTF-8
-Cc: Miao Xie <miaox@cn.fujitsu.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Josef Bacik <josef@redhat.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <20101222192254.GB1669@dhcp231-156.rdu.redhat.com>
+From: Andy Isaacson <adi@hexapodia.org>
+Subject: Re: btrfs: 21 minutes to read 1.2M file directory
+Date: Wed, 22 Dec 2010 12:39:15 -0800
+Message-ID: <20101222203915.GA9918@hexapodia.org>
+References: <20101220222446.GA8629@hexapodia.org> <AANLkTikjuoiCJvbBTLuyh3-d=QRyVVdatc4Ybcx5UOdf@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+To: Felipe Contreras <felipe.contreras@gmail.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <AANLkTikjuoiCJvbBTLuyh3-d=QRyVVdatc4Ybcx5UOdf@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Josef Bacik's message of 2010-12-22 14:22:54 -0500:
-> On Wed, Dec 22, 2010 at 06:47:08PM +0800, Miao Xie wrote:
-> > Hello,
-> > 
-> > I have a bunch of random fixes of the space management in
-> > 
-> > git://repo.or.cz/linux-btrfs-devel.git space-manage
-> > 
-> > They are the ENOSPC fixes, as well as fixes for df command.
-> > The first one and the last one fixed the wrong free space information reported
-> > by df command. The second one fixed ENOSPC when there is tiny space in the
-> > filesystem. And The third fixed wrong calculation of stripe size. And the 4th
-> > and 5th patches fixed the chunk allocation problem when the block devices have
-> > no enough space to allocate a default-size chunk.
-> >
+On Tue, Dec 21, 2010 at 03:07:33AM +0200, Felipe Contreras wrote:
+> On Tue, Dec 21, 2010 at 12:24 AM, Andy Isaacson <adi@hexapodia.org> wrote:
+> > I have a directory with 1.2M files in it, which makes readdir very slow
+> > on btrfs with cold caches (although it's reasonably fast with hot caches
+> > as in the first example below):
 > 
-> I'll review the rest of them when I have more time, thanks for these Miao.
+> Sounds like:
+> 
+> Bug 21562 - btrfs is dead slow due to fragmentation
+> https://bugzilla.kernel.org/show_bug.cgi?id=21562
 
-For now they are going with the new compression code into a new branch
-for 2.6.38 in my git tree.  I might have to rebase as patches are added
-and removed, but these will all go in.
+Hmmm, how do I look at the btree layout for a given inode?
 
--chris
+btrfs-image for this filesystem is 1.7GiB .bz2, so I'm afraid it's not
+reasonable to publish it.
+
+-andy

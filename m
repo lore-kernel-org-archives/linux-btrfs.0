@@ -1,32 +1,21 @@
-From: "Dr Mrs Luisa Estrada" <drmrisluisaesterda@yahoo.com.hk>
-Subject: re profiling funds
-Date: Thu, 23 Dec 2010 11:48:25 +0100 (CET)
-Message-ID: <966200e725a177540d020ffd1a4564f4.squirrel@indigo.mediattiva.it>
-Reply-To: estradamrsluisa76@yahoo.com.hk
+From: "Dipl.-Ing. Michael Niederle" <mniederle@gmx.at>
+Subject: kernel BUG
+Date: Thu, 23 Dec 2010 19:12:13 +0100
+Message-ID: <20101223191213.50848c09@simplux>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
-To: unlisted-recipients:; (no To-header on input)
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi!
 
+I got a kernel BUG at
 
+fs/btrfs/disk-io.c:2311
 
--- 
-Hello
-I am Dr Mrs Luisa Estrada,70 yrs old,wife of former head of state and
-President of Philippines) I have a sensitive, confidential brief and I am
-asking for your partnership in re- profiling funds($18,000,000.00USD).What
-I require from you is your honest co-operation and I guarantee that this
-will be executed under a legitimate arrangement that will protect you and
-I from any breach of the law. Please accept my apologies,keep my
-confidence and disregard this email if you do not appreciate this
-proposition I have offered you. All confirmable documents to back up this
-fund shall be made available to you by my son who you will be replying
-to,as soon as I receive your reply via (estradamrsluisa76@yahoo.com.hk) my
-son shall let you know what is required of you.
+when testing the 2.6.37-rc5 kernel today.
 
-Regards From
-Dr Mrs Luisa Estrada.
+The system crashed while doing really nothing for a few minutes.
 
-
+Greetings, Michael

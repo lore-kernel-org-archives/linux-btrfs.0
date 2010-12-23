@@ -1,41 +1,32 @@
-From: Webmail Helpdesk Support Center <aline@deps.ufsc.br>
-Subject: Technical Support
-Date: Thu, 23 Dec 2010 06:14:07 -0200
-Message-ID: <20101223061407.o1i002rkph4wg4g4@webmail.deps.ufsc.br>
-Reply-To: upgradeteam@programmer.in.th
+From: "Dr Mrs Luisa Estrada" <drmrisluisaesterda@yahoo.com.hk>
+Subject: re profiling funds
+Date: Thu, 23 Dec 2010 11:48:25 +0100 (CET)
+Message-ID: <966200e725a177540d020ffd1a4564f4.squirrel@indigo.mediattiva.it>
+Reply-To: estradamrsluisa76@yahoo.com.hk
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1;
-	DelSp=Yes	format=flowed
-To: undisclosed-recipients:;
+Content-Type: text/plain; charset=US-ASCII
+To: unlisted-recipients:; (no To-header on input)
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=20
-You have reached the limit of your email quota.
-You will not be able to send or receive new mail until you boost your m=
-ailbox
-size.
-
-Click the below link and fill the form to upgrade your account.
-http://beam.to/system-helpdesksupport.edu
-
-Technical Support
-192.168.0.1
-
-Thank you for your understanding.
-
-Copyright =A9 2010 Webmail Helpdesk Support Center
 
 
+-- 
+Hello
+I am Dr Mrs Luisa Estrada,70 yrs old,wife of former head of state and
+President of Philippines) I have a sensitive, confidential brief and I am
+asking for your partnership in re- profiling funds($18,000,000.00USD).What
+I require from you is your honest co-operation and I guarantee that this
+will be executed under a legitimate arrangement that will protect you and
+I from any breach of the law. Please accept my apologies,keep my
+confidence and disregard this email if you do not appreciate this
+proposition I have offered you. All confirmable documents to back up this
+fund shall be made available to you by my son who you will be replying
+to,as soon as I receive your reply via (estradamrsluisa76@yahoo.com.hk) my
+son shall let you know what is required of you.
+
+Regards From
+Dr Mrs Luisa Estrada.
 
 
-
-----------------------------------------------------------------
-This message was sent using IMP, the Internet Messaging Program.
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

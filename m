@@ -1,41 +1,54 @@
-From: "Michael Niederle" <mniederle@gmx.at>
+From: Chris Ball <cjb@laptop.org>
 Subject: Re: kernel BUG
-Date: Thu, 23 Dec 2010 21:55:00 +0100
-Message-ID: <20101223215500.4f177913@simplux>
+Date: Thu, 23 Dec 2010 19:19:32 -0500
+Message-ID: <m3d3os3tuz.fsf@pullcord.laptop.org>
 References: <20101223191213.50848c09@simplux>
-	<m3hbe446ms.fsf@pullcord.laptop.org>
+	<m3hbe446ms.fsf@pullcord.laptop.org> <20101223215500.4f177913@simplux>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: Chris Ball <cjb@laptop.org>
+To: "Michael Niederle" <mniederle@gmx.at>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <m3hbe446ms.fsf@pullcord.laptop.org>
+In-Reply-To: <20101223215500.4f177913@simplux> (Michael Niederle's message of
+	"Thu, 23 Dec 2010 21:55:00 +0100")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi!
+Hi Michael,
 
->    > Hi!  I got a kernel BUG at
->    > 
->    > fs/btrfs/disk-io.c:2311
->    > 
->    > when testing the 2.6.37-rc5 kernel today.  
-> 
-> It's good to mention which line this is, since the line numbers are
-> always changing.  This is:
-> 
->         if (total_errors > max_errors) {
->                 printk(KERN_ERR "btrfs: %d errors while writing supers\n",
->                        total_errors);
->                 BUG();
->         }
->                                                                        
-> in write_all_supers().  Does dmesg say anything about the nature of
-> the errors above the BUG() line?
+   >> in write_all_supers().  Does dmesg say anything about the nature
+   >> of the errors above the BUG() line?
 
-The message was output to the console of the crashed system - so I'm sorry I
-cannot supply further informations.
+   > The message was output to the console of the crashed system - so
+   > I'm sorry I cannot supply further informations.
 
-But exactly the same crash happened again some minutes ago. (I'm now back to my
-old kernel.)
+Ah, okay.  You could consider installing kgdb/kdb -- it will let you
+drop to the kdb shell after the crash and run dmesg through a pager.
 
-Greetings, Michael
+Just:
+
+CONFIG_HAVE_ARCH_KGDB=y
+CONFIG_KGDB=y
+CONFIG_KGDB_SERIAL_CONSOLE=y
+CONFIG_KGDB_TESTS=y
+# CONFIG_KGDB_TESTS_ON_BOOT is not set
+CONFIG_KGDB_LOW_LEVEL_TRAP=y
+CONFIG_KGDB_KDB=y
+CONFIG_KDB_KEYBOARD=y
+
+and then boot with "kgdboc=kms,kbd" added.
+
+   > But exactly the same crash happened again some minutes ago. (I'm
+   > now back to my old kernel.)
+
+Not sure I understand.  Do you mean that the same crash happens on
+your older kernel now, or that you've reverted to your older kernel
+because you had another -rc5 crash?  If the crash happens on -rc5 but
+not the older kernel (what revision is the older kernel?), that's
+extremely interesting.
+
+Josef/Chris, any knowledge about hitting this BUG() on -rc5?
+
+- Chris.
+-- 
+Chris Ball   <cjb@laptop.org>
+One Laptop Per Child

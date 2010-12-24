@@ -1,41 +1,43 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [GIT PULL][PATCH v2 0/6] btrfs: Add lzo compression support
-Date: Fri, 24 Dec 2010 15:45:02 -0500
-Message-ID: <1293223454-sup-13@think>
-References: <4CE48ABB.5070302@cn.fujitsu.com> <AANLkTi=jGNaV-Sm+GsCHtwGx1UkG8bUyvGgz+2KLPgUT@mail.gmail.com> <4D1443F9.4040001@cn.fujitsu.com> <1293193867-sup-1552@think>
-Content-Type: text/plain; charset=UTF-8
-Cc: Li Zefan <lizf@cn.fujitsu.com>, cwillu <cwillu@cwillu.com>,
-	Mitch Harder <mitch.harder@sabayonlinux.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+From: Jesper Juhl <jj@chaosbits.net>
+Subject: [PATCH] BTRFS: Don't leak memory in btrfs_get_acl()
+Date: Fri, 24 Dec 2010 23:45:21 +0100 (CET)
+Message-ID: <alpine.LNX.2.00.1012242342280.28973@swampdragon.chaosbits.net>
+Mime-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: Chris Mason <chris.mason@oracle.com>, linux-kernel@vger.kernel.org
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <1293193867-sup-1552@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Chris Mason's message of 2010-12-24 07:32:16 -0500:
-> Excerpts from Li Zefan's message of 2010-12-24 01:55:53 -0500:
-> > cwillu wrote:
-> > > On Wed, Nov 17, 2010 at 8:08 PM, Li Zefan <lizf@cn.fujitsu.com> wrote:
-> > >> Hi Chris,
-> > >>
-> > >> Here's the updated patchset. As I still haven't got a kernel.org
-> > >> account, I have set up a git tree in another public git repository,
-> > >> and I'll use it for now.
-> > >>
-> > >> You can pull from:
-> > >>
-> > >>        git://repo.or.cz/linux-btrfs-devel.git lzo-support
-> 
-> I pulled this in last night and an all night run completed without
-> troubles.  I'm trying a few more this morning, but it looks really good.
-> 
-> I think I'll also bump the compressed extent size up to 512KB, which
-> will cut down on the number of extents in files that compress well.
+Hi,
 
-The next branch of the btrfs unstable tree has lzo and the other fujitsu
-work so far.  This is going to be the building block for our 2.6.38 pull
-request to Linus.
+Currrently we leak memory in btrfs_get_acl::btrfs_get_acl() if 
+posix_acl_from_xattr() fails. With this patch we do not.
 
-It might get rebased, but it seems good so far.
+Signed-off-by: Jesper Juhl <jj@chaosbits.net>
+---
+ acl.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+index 2222d16..6d1410e 100644
+--- a/fs/btrfs/acl.c
++++ b/fs/btrfs/acl.c
+@@ -60,8 +60,10 @@ static struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
+ 		size = __btrfs_getxattr(inode, name, value, size);
+ 		if (size > 0) {
+ 			acl = posix_acl_from_xattr(value, size);
+-			if (IS_ERR(acl))
++			if (IS_ERR(acl)) {
++				kfree(value);
+ 				return acl;
++			}
+ 			set_cached_acl(inode, type, acl);
+ 		}
+ 		kfree(value);
 
--chris
+
+-- 
+Jesper Juhl <jj@chaosbits.net>            http://www.chaosbits.net/
+Don't top-post http://www.catb.org/~esr/jargon/html/T/top-post.html
+Plain text mails only, please.
+

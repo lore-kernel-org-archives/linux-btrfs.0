@@ -1,43 +1,26 @@
-From: Christian Thaeter <ct@pipapo.org>
-Subject: Re: kernel BUG
-Date: Sat, 25 Dec 2010 12:46:28 +0100
-Message-ID: <20101225124628.33c47ed0@pluto.pipapo.org>
-References: <20101223191213.50848c09@simplux>
-	<m3hbe446ms.fsf@pullcord.laptop.org>
-	<20101223215500.4f177913@simplux>
-	<m3d3os3tuz.fsf@pullcord.laptop.org>
-	<20101224013224.43c0f9b3@simplux>
-	<m38vzg3sd8.fsf@pullcord.laptop.org>
-	<20101225105028.7891342b@simplux>
+From: Mariusz Kozlowski <mk@lab.zgora.pl>
+Subject: Re: [PATCH] BTRFS: Don't leak memory in btrfs_get_acl()
+Date: Sat, 25 Dec 2010 16:02:40 +0100
+Message-ID: <20101225150240.GA7938@mako-laptop>
+References: <alpine.LNX.2.00.1012242342280.28973@swampdragon.chaosbits.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: linux-btrfs@vger.kernel.org, Chris Ball <cjb@laptop.org>,
-	Christian Kujau <lists@nerdbynature.de>
-To: "Michael Niederle" <mniederle@gmx.at>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20101225105028.7891342b@simplux>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>,
+	linux-kernel@vger.kernel.org
+To: Jesper Juhl <jj@chaosbits.net>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <alpine.LNX.2.00.1012242342280.28973@swampdragon.chaosbits.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Sat, 25 Dec 2010 10:50:28 +0100
-schrieb "Michael Niederle" <mniederle@gmx.at>:
-
-> Hi!
+On Fri, Dec 24, 2010 at 11:45:21PM +0100, Jesper Juhl wrote:
+> Hi,
 > 
-> It seems that in my case the bug (fs/btrfs/disk-io.c:2311) was caused
-> by a hardware problem.
-> 
-> I plugged by accident an usb-3.0-drive (that worked quite well for
-> several weeks) into an usb-2.0-port (which worked quite well for
-> several years). It seems that the two didn't like each other and
-> caused these crashes after some time of idling (it seems that the
-> idling is necessary for the crash, cause it never crashed while I was
-> actually working).
-> 
-> Greetings, Michael
+> Currrently we leak memory in btrfs_get_acl::btrfs_get_acl() if 
+> posix_acl_from_xattr() fails. With this patch we do not.
 
-yes looks the same case here too, I only wanted to point
-out that this has to be fixed *someday*, Retrying after a bus reset,
-mounting the filesystem readonly or block all IO on the filesystem, but
-not bring down the kernel.
+I sent similar patch some time ago but no reply from Chris so far.
 
-	Christian
+http://marc.info/?l=linux-kernel&m=129247984126414
+
+-- 
+Mariusz Kozlowski

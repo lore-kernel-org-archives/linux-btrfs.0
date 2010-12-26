@@ -1,60 +1,35 @@
-From: Jesper Juhl <jj@chaosbits.net>
-Subject: [PATCH] btrfs: Don't pass NULL ptr to func that may deref it.
-Date: Sat, 25 Dec 2010 22:22:30 +0100 (CET)
-Message-ID: <alpine.LNX.2.00.1012252214540.10759@swampdragon.chaosbits.net>
-Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: linux-kernel@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
+From: C Anthony Risinger <anthony@extof.me>
+Subject: Re: [GIT PULL][PATCH v2 0/6] btrfs: Add lzo compression support
+Date: Sat, 25 Dec 2010 21:31:04 -0600
+Message-ID: <-4475641296540375642@unknownmsgid>
+References: <4CE48ABB.5070302@cn.fujitsu.com> <AANLkTi=jGNaV-Sm+GsCHtwGx1UkG8bUyvGgz+2KLPgUT@mail.gmail.com>
+ <4D1443F9.4040001@cn.fujitsu.com> <1293193867-sup-1552@think> <1293223454-sup-13@think>
+Mime-Version: 1.0 (iPhone Mail 7D11)
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Li Zefan <lizf@cn.fujitsu.com>, cwillu <cwillu@cwillu.com>,
+	Mitch Harder <mitch.harder@sabayonlinux.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1293223454-sup-13@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Dec 24, 2010, at 2:46 PM, Chris Mason <chris.mason@oracle.com> wrote:
+ > This is going to be the building block > for our 2.6.38 pull
+request to Linus.
 
-In fs/btrfs/inode.c::fixup_tree_root_location() we have this code:
+hooray christmas came early this year! what a nice gift, thanks!
 
-...
- 		if (!path) {
- 			err = -ENOMEM;
- 			goto out;
- 		}
-...
- 	out:
- 		btrfs_free_path(path);
- 		return err;
+heh, thanks for all the great work guys.  I'm doing my best to spread
+the good btrfs word all over the net, correcting misconceptions,
+writing guides/hooks/scripts, and generally helping those that need
+it; the majority are most impressed, and looking forward to the onset.
 
-btrfs_free_path() passes its argument on to other functions and some of 
-them end up dereferencing the pointer.
-In the code above that pointer is clearly NULL, so btrfs_free_path() will 
-eventually cause a NULL dereference.
+Just thought I'd say that my travels have found many satisfied users,
+who are, including myself, very appreciative of the work being done
+here.
 
-There are many ways to cut this cake (fix the bug). The one I chose was to 
-make btrfs_free_path() deal gracefully with NULL pointers. If you 
-disagree, feel free to come up with an alternative patch.
+So thanks!  Happy holidays!  And to all a good night!
 
-
-Signed-off-by: Jesper Juhl <jj@chaosbits.net>
----
- ctree.c |    2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 9ac1715..99599f1 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -105,6 +105,8 @@ noinline void btrfs_clear_path_blocking(struct btrfs_path *p,
- /* this also releases the path */
- void btrfs_free_path(struct btrfs_path *p)
- {
-+	if (!p)
-+		return;
- 	btrfs_release_path(NULL, p);
- 	kmem_cache_free(btrfs_path_cachep, p);
- }
-
-
-
--- 
-Jesper Juhl <jj@chaosbits.net>            http://www.chaosbits.net/
-Don't top-post http://www.catb.org/~esr/jargon/html/T/top-post.html
-Plain text mails only, please.
+C Anthony [mobile]
+>

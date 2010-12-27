@@ -1,35 +1,31 @@
-From: C Anthony Risinger <anthony@extof.me>
-Subject: Re: [GIT PULL][PATCH v2 0/6] btrfs: Add lzo compression support
-Date: Sat, 25 Dec 2010 21:31:04 -0600
-Message-ID: <-4475641296540375642@unknownmsgid>
-References: <4CE48ABB.5070302@cn.fujitsu.com> <AANLkTi=jGNaV-Sm+GsCHtwGx1UkG8bUyvGgz+2KLPgUT@mail.gmail.com>
- <4D1443F9.4040001@cn.fujitsu.com> <1293193867-sup-1552@think> <1293223454-sup-13@think>
-Mime-Version: 1.0 (iPhone Mail 7D11)
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Li Zefan <lizf@cn.fujitsu.com>, cwillu <cwillu@cwillu.com>,
-	Mitch Harder <mitch.harder@sabayonlinux.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Subject: [PATCH] btrfs: Fix memory leak in btrfs_read_fs_root_no_radix()
+Date: Mon, 27 Dec 2010 15:53:10 +0900
+Message-ID: <4D1837D6.4080901@jp.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-2022-JP
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1293223454-sup-13@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Dec 24, 2010, at 2:46 PM, Chris Mason <chris.mason@oracle.com> wrote:
- > This is going to be the building block > for our 2.6.38 pull
-request to Linus.
+In btrfs_read_fs_root_no_radix(), 'root' is not freed if
+btrfs_search_slot() returns error.
 
-hooray christmas came early this year! what a nice gift, thanks!
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+---
+ disk-io.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-heh, thanks for all the great work guys.  I'm doing my best to spread
-the good btrfs word all over the net, correcting misconceptions,
-writing guides/hooks/scripts, and generally helping those that need
-it; the majority are most impressed, and looking forward to the onset.
+diff -urNp linux-2.6.37-rc7/fs/btrfs/disk-io.c linux-2.6.37-rc7.new/fs/btrfs/disk-io.c
+--- linux-2.6.37-rc7/fs/btrfs/disk-io.c 2010-12-22 04:26:40.000000000 +0900
++++ linux-2.6.37-rc7.new/fs/btrfs/disk-io.c     2010-12-27 15:21:19.000000000 +0900
+@@ -1145,6 +1145,7 @@ struct btrfs_root *btrfs_read_fs_root_no
+ 	}
+ 	btrfs_free_path(path);
+ 	if (ret) {
++		kfree(root);
+ 		if (ret > 0)
+ 			ret = -ENOENT;
+ 		return ERR_PTR(ret);
 
-Just thought I'd say that my travels have found many satisfied users,
-who are, including myself, very appreciative of the work being done
-here.
 
-So thanks!  Happy holidays!  And to all a good night!
-
-C Anthony [mobile]
->

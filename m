@@ -1,273 +1,33 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH V2 4/6] btrfs: restructure find_free_dev_extent()
-Date: Wed, 29 Dec 2010 18:22:25 +0800
-Message-ID: <4D1B0BE1.9090105@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+From: Lubos Kolouch <lubos.kolouch@gmail.com>
+Subject: list files on a device
+Date: Wed, 29 Dec 2010 13:50:41 +0000 (UTC)
+Message-ID: <iffebh$dlj$1@dough.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=GB2312
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-- make it return the start position and length of the max free space when it can
-  not find a suitable free space.
-- make it more readability
+Hello,
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
- fs/btrfs/extent-tree.c |    4 +-
- fs/btrfs/volumes.c     |  155 +++++++++++++++++++++++++++--------------------
- 2 files changed, 91 insertions(+), 68 deletions(-)
+After another power loss (I am fortune, am I not?) I have the following 
+situation :
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 4bcd875..7c1a053 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -8098,7 +8098,7 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
- 	mutex_lock(&root->fs_info->chunk_mutex);
- 	list_for_each_entry(device, &fs_devices->alloc_list, dev_alloc_list) {
- 		u64 min_free = btrfs_block_group_used(&block_group->item);
--		u64 dev_offset, max_avail;
-+		u64 dev_offset;
- 
- 		/*
- 		 * check to make sure we can actually find a chunk with enough
-@@ -8106,7 +8106,7 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
- 		 */
- 		if (device->total_bytes > device->bytes_used + min_free) {
- 			ret = find_free_dev_extent(NULL, device, min_free,
--						   &dev_offset, &max_avail);
-+						   &dev_offset, NULL);
- 			if (!ret)
- 				break;
- 			ret = -1;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index c50a85e..4838bd3 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -729,58 +729,82 @@ error:
- }
- 
- /*
-+ * find_free_dev_extent - find free space in the specified device
-+ * @trans:	transaction handler
-+ * @device:	the device which we search the free space in
-+ * @num_bytes:	the size of the free space that we need
-+ * @start:	store the start of the free space.
-+ * @len:	the size of the free space. that we find, or the size of the max
-+ * 		free space if we don't find suitable free space
-+ *
-  * this uses a pretty simple search, the expectation is that it is
-  * called very infrequently and that a given device has a small number
-  * of extents
-+ *
-+ * @start is used to store the start of the free space if we find. But if we
-+ * don't find suitable free space, it will be used to store the start position
-+ * of the max free space.
-+ *
-+ * @len is used to store the size of the free space that we find.
-+ * But if we don't find suitable free space, it is used to store the size of
-+ * the max free space.
-  */
- int find_free_dev_extent(struct btrfs_trans_handle *trans,
- 			 struct btrfs_device *device, u64 num_bytes,
--			 u64 *start, u64 *max_avail)
-+			 u64 *start, u64 *len)
- {
- 	struct btrfs_key key;
- 	struct btrfs_root *root = device->dev_root;
--	struct btrfs_dev_extent *dev_extent = NULL;
-+	struct btrfs_dev_extent *dev_extent;
- 	struct btrfs_path *path;
--	u64 hole_size = 0;
--	u64 last_byte = 0;
--	u64 search_start = 0;
-+	u64 hole_size;
-+	u64 max_hole_start;
-+	u64 max_hole_size;
-+	u64 extent_end;
-+	u64 search_start;
- 	u64 search_end = device->total_bytes;
- 	int ret;
--	int slot = 0;
--	int start_found;
-+	int slot;
- 	struct extent_buffer *l;
- 
--	path = btrfs_alloc_path();
--	if (!path)
--		return -ENOMEM;
--	path->reada = 2;
--	start_found = 0;
--
- 	/* FIXME use last free of some kind */
- 
- 	/* we don't want to overwrite the superblock on the drive,
- 	 * so we make sure to start at an offset of at least 1MB
- 	 */
--	search_start = max((u64)1024 * 1024, search_start);
-+	search_start = 1024 * 1024;
- 
--	if (root->fs_info->alloc_start + num_bytes <= device->total_bytes)
-+	if (root->fs_info->alloc_start + num_bytes <= search_end)
- 		search_start = max(root->fs_info->alloc_start, search_start);
- 
-+	max_hole_start = search_start;
-+	max_hole_size = 0;
-+
-+	if (search_start >= search_end) {
-+		ret = -ENOSPC;
-+		goto error;
-+	}
-+
-+	path = btrfs_alloc_path();
-+	if (!path) {
-+		ret = -ENOMEM;
-+		goto error;
-+	}
-+	path->reada = 2;
-+
- 	key.objectid = device->devid;
- 	key.offset = search_start;
- 	key.type = BTRFS_DEV_EXTENT_KEY;
-+
- 	ret = btrfs_search_slot(trans, root, &key, path, 0, 0);
- 	if (ret < 0)
--		goto error;
-+		goto out;
- 	if (ret > 0) {
- 		ret = btrfs_previous_item(root, path, key.objectid, key.type);
- 		if (ret < 0)
--			goto error;
--		if (ret > 0)
--			start_found = 1;
-+			goto out;
- 	}
--	l = path->nodes[0];
--	btrfs_item_key_to_cpu(l, &key, path->slots[0]);
-+
- 	while (1) {
- 		l = path->nodes[0];
- 		slot = path->slots[0];
-@@ -789,24 +813,9 @@ int find_free_dev_extent(struct btrfs_trans_handle *trans,
- 			if (ret == 0)
- 				continue;
- 			if (ret < 0)
--				goto error;
--no_more_items:
--			if (!start_found) {
--				if (search_start >= search_end) {
--					ret = -ENOSPC;
--					goto error;
--				}
--				*start = search_start;
--				start_found = 1;
--				goto check_pending;
--			}
--			*start = last_byte > search_start ?
--				last_byte : search_start;
--			if (search_end <= *start) {
--				ret = -ENOSPC;
--				goto error;
--			}
--			goto check_pending;
-+				goto out;
-+
-+			break;
- 		}
- 		btrfs_item_key_to_cpu(l, &key, slot);
- 
-@@ -814,48 +823,62 @@ no_more_items:
- 			goto next;
- 
- 		if (key.objectid > device->devid)
--			goto no_more_items;
-+			break;
- 
--		if (key.offset >= search_start && key.offset > last_byte &&
--		    start_found) {
--			if (last_byte < search_start)
--				last_byte = search_start;
--			hole_size = key.offset - last_byte;
-+		if (btrfs_key_type(&key) != BTRFS_DEV_EXTENT_KEY)
-+			goto next;
- 
--			if (hole_size > *max_avail)
--				*max_avail = hole_size;
-+		if (key.offset > search_start) {
-+			hole_size = key.offset - search_start;
- 
--			if (key.offset > last_byte &&
--			    hole_size >= num_bytes) {
--				*start = last_byte;
--				goto check_pending;
-+			if (hole_size > max_hole_size) {
-+				max_hole_start = search_start;
-+				max_hole_size = hole_size;
-+			}
-+
-+			/*
-+			 * If this free space is greater than which we need,
-+			 * it must be the max free space that we have found
-+			 * until now, so max_hole_start must point to the start
-+			 * of this free space and the length of this free space
-+			 * is stored in max_hole_size. Thus, we return
-+			 * max_hole_start and max_hole_size and go back to the
-+			 * caller.
-+			 */
-+			if (hole_size >= num_bytes) {
-+				ret = 0;
-+				goto out;
- 			}
- 		}
--		if (btrfs_key_type(&key) != BTRFS_DEV_EXTENT_KEY)
--			goto next;
- 
--		start_found = 1;
- 		dev_extent = btrfs_item_ptr(l, slot, struct btrfs_dev_extent);
--		last_byte = key.offset + btrfs_dev_extent_length(l, dev_extent);
-+		extent_end = key.offset + btrfs_dev_extent_length(l,
-+								  dev_extent);
-+		if (extent_end > search_start)
-+			search_start = extent_end;
- next:
- 		path->slots[0]++;
- 		cond_resched();
- 	}
--check_pending:
--	/* we have to make sure we didn't find an extent that has already
--	 * been allocated by the map tree or the original allocation
--	 */
--	BUG_ON(*start < search_start);
- 
--	if (*start + num_bytes > search_end) {
--		ret = -ENOSPC;
--		goto error;
-+	hole_size = search_end- search_start;
-+	if (hole_size > max_hole_size) {
-+		max_hole_start = search_start;
-+		max_hole_size = hole_size;
- 	}
--	/* check for pending inserts here */
--	ret = 0;
- 
--error:
-+	/* See above. */
-+	if (hole_size < num_bytes)
-+		ret = -ENOSPC;
-+	else
-+		ret = 0;
-+
-+out:
- 	btrfs_free_path(path);
-+error:
-+	*start = max_hole_start;
-+	if (len && max_hole_size > *len)
-+		*len = max_hole_size;
- 	return ret;
- }
- 
--- 
-1.7.0.1
+Label: none  uuid: ac155851-0e31-4aed-9ba4-ee712506368a
+	Total devices 3 FS bytes used 1.02TB
+	devid    1 size 931.51GB used 70.00GB path /dev/sdd1
+	devid    3 size 1.79TB used 66.52GB path /dev/md2
+	devid    2 size 914.70GB used 914.50GB path /dev/sda4
+
+btrfs device delete does not work on both md2 and sdd1
+(csum errors).
+
+So what I would like to do is to delete the files either on md2 or
+sdd1 and then try to remove the volume again (followed by rsync).
+
+Is there a way to find out what files are on each volume?
+
+Thank you
+
+Lubos
+

@@ -1,31 +1,45 @@
-From: Marco Stornelli <marco.stornelli@gmail.com>
-Subject: Re: Bug in ext4/btrfs fallocate?
-Date: Wed, 29 Dec 2010 10:02:27 +0100
-Message-ID: <4D1AF923.1090502@gmail.com>
-References: <4D1A0B1C.70406@gmail.com> <6A86E6B8-E14E-484B-BBF5-F3C580337661@dilger.ca>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: [PATCH V2 0/6] random bugfixes of the space management
+Date: Wed, 29 Dec 2010 18:18:31 +0800
+Message-ID: <4D1B0AF7.1000907@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	Linux Kernel <linux-kernel@vger.kernel.org>,
-	Linux FS Devel <linux-fsdevel@vger.kernel.org>,
-	tytso@mit.edu, chris.mason@oracle.com
-To: Andreas Dilger <adilger@dilger.ca>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <6A86E6B8-E14E-484B-BBF5-F3C580337661@dilger.ca>
+Content-Type: text/plain; charset=GB2312
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Il 29/12/2010 07:46, Andreas Dilger ha scritto:
-> On 2010-12-28, at 09:06, Marco Stornelli wrote:
->> it seems that ext4/btrfs code for fallocate doesn't check for
->> immutable/append inode flag.
-> 
-> fallocate() probably shouldn't be allowed for immutable files, but it makes a lot of sense to call fallocate() on append-only files to avoid fragmentation, though it should only be called with the KEEP_SIZE flag.
-> 
-> Cheers, Andreas
-> 
+Hello, Chris
 
-It seems that only ocfs2 does that check, however I think not checking
-for immutable flag is an error, for the append case maybe you're right,
-doing this operation on append-only files has got sense.
+I have a bunch of random fixes of the space management in
 
-Marco
+git://repo.or.cz/linux-btrfs-devel.git space-manage
+
+They are the ENOSPC fixes, as well as fixes for df command.
+The first one and the last one fixed the wrong free space information reported
+by df command. The second one fixed ENOSPC when there is tiny space in the
+filesystem. And The third fixed wrong calculation of stripe size. And the 4th
+and 5th patches fixed the chunk allocation problem when the block devices have
+no enough space to allocate a default-size chunk.
+
+Changelog V1 -> V2:
+- fix compiler errors on x86_32 machines.
+- fix some bugs when allocating dup chunks.
+- break the chunk allocation when errors happen.
+- just allocate min_stripes stripes when the free space is not enough.
+- cleanup redundant code
+
+You can merge this patchset to your "next" branch directly after dropping
+the top four patches of the "next" branch.
+
+Thanks
+Miao
+---
+ fs/btrfs/ctree.h       |    2 +
+ fs/btrfs/extent-tree.c |   71 +++++-
+ fs/btrfs/super.c       |  147 +++++++++++-
+ fs/btrfs/volumes.c     |  615 +++++++++++++++++++++++++++++++++++-------------
+ fs/btrfs/volumes.h     |   27 ++
+ 5 files changed, 686 insertions(+), 176 deletions(-)

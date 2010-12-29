@@ -1,48 +1,40 @@
-From: Ben Hutchings <ben@decadent.org.uk>
-Subject: [PATCH] btrfs: Require CAP_SYS_ADMIN for filesystem rebalance
-Date: Wed, 29 Dec 2010 14:55:03 +0000
-Message-ID: <1293634503.2928.132.camel@localhost>
+From: Lubos Kolouch <lubos.kolouch@gmail.com>
+Subject: Re: list files on a device
+Date: Wed, 29 Dec 2010 16:01:40 +0000 (UTC)
+Message-ID: <iffm14$so9$1@dough.gmane.org>
+References: <iffebh$dlj$1@dough.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Cc: linux-btrfs@vger.kernel.org, 608185@bugs.debian.org,
-	Aron Xu <happyaron.xu@gmail.com>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Filesystem rebalancing (BTRFS_IOC_BALANCE) affects the entire
-filesystem and may run uninterruptibly for a long time.  This does not
-seem to be something that an unprivileged user should be able to do.
+Lubos Kolouch, Wed, 29 Dec 2010 13:50:41 +0000:
 
-Reported-by: Aron Xu <happyaron.xu@gmail.com>
-Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
----
- fs/btrfs/volumes.c |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
+> Hello,
+> 
+> After another power loss (I am fortune, am I not?) I have the following
+> situation :
+> 
+> Label: none  uuid: ac155851-0e31-4aed-9ba4-ee712506368a
+> 	Total devices 3 FS bytes used 1.02TB
+> 	devid    1 size 931.51GB used 70.00GB path /dev/sdd1 devid    3 
+size
+> 	1.79TB used 66.52GB path /dev/md2 devid    2 size 914.70GB used
+> 	914.50GB path /dev/sda4
+> 
+> btrfs device delete does not work on both md2 and sdd1 (csum errors).
+> 
+> So what I would like to do is to delete the files either on md2 or sdd1
+> and then try to remove the volume again (followed by rsync).
+> 
+> Is there a way to find out what files are on each volume?
+> 
+> Thank you
+> 
+> Lubos
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index cc04dc1..2313e8b 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -22,6 +22,7 @@
- #include <linux/blkdev.h>
- #include <linux/random.h>
- #include <linux/iocontext.h>
-+#include <linux/capability.h>
- #include <asm/div64.h>
- #include "compat.h"
- #include "ctree.h"
-@@ -1905,6 +1906,9 @@ int btrfs_balance(struct btrfs_root *dev_root)
- 	if (dev_root->fs_info->sb->s_flags & MS_RDONLY)
- 		return -EROFS;
- 
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
- 	mutex_lock(&dev_root->fs_info->volume_mutex);
- 	dev_root = dev_root->fs_info->dev_root;
- 
--- 
-1.7.2.3
+Just FYI, I could "solve" it with a mount -o degraded
 
+Lubos
 

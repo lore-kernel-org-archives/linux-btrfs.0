@@ -1,7 +1,7 @@
 From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH V2 1/6] btrfs: fix wrong data space statistics
-Date: Wed, 29 Dec 2010 18:19:23 +0800
-Message-ID: <4D1B0B2B.5000001@cn.fujitsu.com>
+Subject: [PATCH V2 3/6] btrfs: fix wrong calculation of stripe size
+Date: Wed, 29 Dec 2010 18:21:38 +0800
+Message-ID: <4D1B0BB2.6070205@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=GB2312
@@ -11,32 +11,77 @@ To: Chris Mason <chris.mason@oracle.com>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Josef has implemented mixed data/metadata chunks, we must add those chunks'
-space just like data chunks.
+There are two tiny problem:
+- One is When we check the chunk size is greater than the max chunk size or not,
+  we should take mirrors into account, but the original code didn't.
+- The other is btrfs shouldn't use the size of the residual free space as the
+  length of of a dup chunk when doing chunk allocation. It is because the device
+  space that a dup chunk needs is twice as large as the chunk size, if we use
+  the size of the residual free space as the length of a dup chunk, we can not
+  get enough free space. Fix it.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/super.c |    7 +++----
- 1 files changed, 3 insertions(+), 4 deletions(-)
+Changelog V1 -> V2:
+- fix compiler errors x86_32 machines which were caused by u64 division.
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 61bd79a..1d21208 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -768,11 +768,10 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 
- 	rcu_read_lock();
- 	list_for_each_entry_rcu(found, head, list) {
--		if (found->flags & (BTRFS_BLOCK_GROUP_METADATA |
--				    BTRFS_BLOCK_GROUP_SYSTEM))
--			total_used_data += found->disk_total;
--		else
-+		if (found->flags & BTRFS_BLOCK_GROUP_DATA)
- 			total_used_data += found->disk_used;
-+		else
-+			total_used_data += found->disk_total;
- 		total_used += found->disk_used;
+ fs/btrfs/volumes.c |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 177b731..c50a85e 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2177,6 +2177,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 	int num_stripes = 1;
+ 	int min_stripes = 1;
+ 	int sub_stripes = 0;
++	int ncopies = 1;
+ 	int looped = 0;
+ 	int ret;
+ 	int index;
+@@ -2197,12 +2198,14 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 	if (type & (BTRFS_BLOCK_GROUP_DUP)) {
+ 		num_stripes = 2;
+ 		min_stripes = 2;
++		ncopies = 2;
  	}
- 	rcu_read_unlock();
+ 	if (type & (BTRFS_BLOCK_GROUP_RAID1)) {
+ 		if (fs_devices->rw_devices < 2)
+ 			return -ENOSPC;
+ 		num_stripes = 2;
+ 		min_stripes = 2;
++		ncopies = 2;
+ 	}
+ 	if (type & (BTRFS_BLOCK_GROUP_RAID10)) {
+ 		num_stripes = fs_devices->rw_devices;
+@@ -2210,6 +2213,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 			return -ENOSPC;
+ 		num_stripes &= ~(u32)1;
+ 		sub_stripes = 2;
++		ncopies = 2;
+ 		min_stripes = 4;
+ 	}
+ 
+@@ -2239,8 +2243,8 @@ again:
+ 		map->num_stripes = num_stripes;
+ 	}
+ 
+-	if (calc_size * num_stripes > max_chunk_size) {
+-		calc_size = max_chunk_size;
++	if (calc_size * num_stripes > max_chunk_size * ncopies) {
++		calc_size = max_chunk_size * ncopies;
+ 		do_div(calc_size, num_stripes);
+ 		do_div(calc_size, stripe_len);
+ 		calc_size *= stripe_len;
+@@ -2321,6 +2325,8 @@ again:
+ 		if (!looped && max_avail > 0) {
+ 			looped = 1;
+ 			calc_size = max_avail;
++			if (type & BTRFS_BLOCK_GROUP_DUP)
++				do_div(calc_size, 2);
+ 			goto again;
+ 		}
+ 		kfree(map);
 -- 
 1.7.0.1

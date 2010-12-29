@@ -1,71 +1,48 @@
-From: Dave Young <hidave.darkstar@gmail.com>
-Subject: [PATCH] fix return value when mount fail
-Date: Wed, 29 Dec 2010 22:12:44 +0800
-Message-ID: <20101229141244.GA11081@darkstar>
+From: Ben Hutchings <ben@decadent.org.uk>
+Subject: [PATCH] btrfs: Require CAP_SYS_ADMIN for filesystem rebalance
+Date: Wed, 29 Dec 2010 14:55:03 +0000
+Message-ID: <1293634503.2928.132.camel@localhost>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Cc: linux-btrfs@vger.kernel.org, 608185@bugs.debian.org,
+	Aron Xu <happyaron.xu@gmail.com>
 To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I happened to pass swap partition as root partition in cmdline,
-then kernel panic and tell me about "Cannot open root device".
-It is not correct, in fact it is a mount failer instead of 'no device'.
+Filesystem rebalancing (BTRFS_IOC_BALANCE) affects the entire
+filesystem and may run uninterruptibly for a long time.  This does not
+seem to be something that an unprivileged user should be able to do.
 
-Eventually I found btrfs mounting failed with -EIO, it should be -EINVAL.
-
-Here fix the return value as -EINVAL
-
-Signed-off-by: Dave Young <hidave.darkstar@gmail.com>
+Reported-by: Aron Xu <happyaron.xu@gmail.com>
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 ---
- fs/btrfs/disk-io.c |    4 +++-
- fs/btrfs/volumes.c |    8 +++++---
- 2 files changed, 8 insertions(+), 4 deletions(-)
+ fs/btrfs/volumes.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
 
---- linux-2.6.orig/fs/btrfs/disk-io.c	2010-12-29 21:53:17.473333338 +0800
-+++ linux-2.6/fs/btrfs/disk-io.c	2010-12-29 21:57:37.916666672 +0800
-@@ -1713,8 +1713,10 @@ struct btrfs_root *open_ctree(struct sup
- 		     fs_info, BTRFS_ROOT_TREE_OBJECTID);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index cc04dc1..2313e8b 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -22,6 +22,7 @@
+ #include <linux/blkdev.h>
+ #include <linux/random.h>
+ #include <linux/iocontext.h>
++#include <linux/capability.h>
+ #include <asm/div64.h>
+ #include "compat.h"
+ #include "ctree.h"
+@@ -1905,6 +1906,9 @@ int btrfs_balance(struct btrfs_root *dev_root)
+ 	if (dev_root->fs_info->sb->s_flags & MS_RDONLY)
+ 		return -EROFS;
  
- 	bh = btrfs_read_dev_super(fs_devices->latest_bdev);
--	if (!bh)
-+	if (!bh) {
-+		err = -EINVAL;
- 		goto fail_iput;
-+	}
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
+ 	mutex_lock(&dev_root->fs_info->volume_mutex);
+ 	dev_root = dev_root->fs_info->dev_root;
  
- 	memcpy(&fs_info->super_copy, bh->b_data, sizeof(fs_info->super_copy));
- 	memcpy(&fs_info->super_for_commit, &fs_info->super_copy,
---- linux-2.6.orig/fs/btrfs/volumes.c	2010-12-29 21:53:17.503333338 +0800
-+++ linux-2.6/fs/btrfs/volumes.c	2010-12-29 21:57:37.920000005 +0800
-@@ -598,8 +598,10 @@ static int __btrfs_open_devices(struct b
- 		set_blocksize(bdev, 4096);
- 
- 		bh = btrfs_read_dev_super(bdev);
--		if (!bh)
-+		if (!bh) {
-+			ret = -EINVAL;
- 			goto error_close;
-+		}
- 
- 		disk_super = (struct btrfs_super_block *)bh->b_data;
- 		devid = btrfs_stack_device_id(&disk_super->dev_item);
-@@ -700,7 +702,7 @@ int btrfs_scan_one_device(const char *pa
- 		goto error_close;
- 	bh = btrfs_read_dev_super(bdev);
- 	if (!bh) {
--		ret = -EIO;
-+		ret = -EINVAL;
- 		goto error_close;
- 	}
- 	disk_super = (struct btrfs_super_block *)bh->b_data;
-@@ -1193,7 +1195,7 @@ int btrfs_rm_device(struct btrfs_root *r
- 		set_blocksize(bdev, 4096);
- 		bh = btrfs_read_dev_super(bdev);
- 		if (!bh) {
--			ret = -EIO;
-+			ret = -EINVAL;
- 			goto error_close;
- 		}
- 		disk_super = (struct btrfs_super_block *)bh->b_data;
+-- 
+1.7.2.3
+
+

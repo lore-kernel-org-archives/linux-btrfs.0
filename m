@@ -1,96 +1,86 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: Odd mkbtrfs behavior inside of chroot
-Date: Mon, 03 Jan 2011 00:14:24 +0100
-Message-ID: <4D2106D0.80609@libero.it>
-References: <915110.93115.qm@web112501.mail.gq1.yahoo.com>
-Reply-To: kreijack@inwind.it
+From: Tommy Jonsson <quazzie@gmail.com>
+Subject: Re: Fsck, parent transid verify failed
+Date: Mon, 3 Jan 2011 16:27:36 +0100
+Message-ID: <AANLkTincjz+AoEwYBg-skwKezxX4B9KDOpMxjX+5NcwF@mail.gmail.com>
+References: <003501cb9147$09197540$1b4c5fc0$@gmail.com>
+	<1291306826-sup-7837@think>
+	<AANLkTim5-5KQ3_sEb9WY+O1Uj36=3M3i_yQKeuSb7Qe5@mail.gmail.com>
+	<1291326502-sup-1726@think>
+	<AANLkTi=mfw7V8QSZ2=t04+d9kvZ3F5zgtinQ4E3uY8uc@mail.gmail.com>
+	<1291914789-sup-96@think>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: J G <yoosty_cmn@yahoo.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <915110.93115.qm@web112501.mail.gq1.yahoo.com>
+In-Reply-To: <1291914789-sup-96@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/02/2011 08:52 PM, J G wrote:
-> I just encountered some odd behavior from mkbtrfs.
-> The end goal is to restore a backup to newly created BTRFS partitions while using the latest btrfs-tools. 
-> Here's the steps to what I did:
-> * Booted SystemRescueCD
-> * Partitioned the drives (two 750GB drives with 12 partitions each)
-> * Created an extra partition on sda as a temporary holding place for the backed up files and so I can update btrfs-tools
-> * Formatted/mounted/restored backup files to the temporary partition which I mounted on /mnt/backup
-> * mount -t proc none /mnt/backup/proc; mount -o bind /dev /mnt/backup/dev
-> * chroot /mnt/backup /bin/bash
-> * Updated btrfs-tools to the latest git pull from today (v0.19-35-g1b444cd-dirty).
-> * mkbtrfs /dev/sda5 /dev/sdb5 -L root
-> 
-> mkbtrfs returned with:
-> 
-> error checking /dev/sda5 mount status
-> 
-> So I used strace to find out how it was checking for the mount status. Now, I'm no expert here, but I'm confused as to just why it failed. The last thing of note:
-> 
-> lstat("/boot", {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
-> lstat("/boot/sysrcd.dat", 0x7fffb29681e0) = -1 ENOENT (No such file or directory)
-> close(3)                                = 0
-> munmap(0x7f11df372000, 4096)            = 0
-> write(2, "error checking /dev/sda5 mount s"..., 38error checking /dev/sda5 mount status
-> ) = 38
-> 
-> 
-> doesn't explain much. I see that it's checking /proc/mounts to see what's mounted, and then it fails on stating /boot/sysrcd.dat (which doesn't exist in the non-chrooted FS, btw).
-> 
-> To make this even weirder, if I format sda5/sdb5 using the SysRescCD version of mkbtrfs (v0.19) and then format sda5/sdb5 using the chroot version, it works fine.
-> 
-> Any ideas here? I would expect that mkbtrfs would work inside of a chroot without any assistance from the original root.
-> 
-> I have the full strace from the chrooted mkbtrfs failing and from it succeeding, if that's helpful.
+On Thu, Dec 9, 2010 at 6:14 PM, Chris Mason <chris.mason@oracle.com> wr=
+ote:
+> Excerpts from Tommy Jonsson's message of 2010-12-08 15:07:58 -0500:
+>> >> Build the latest tools, then:
+>> >>
+>> >> btrfsck -s 1 /dev/xxx
+>> >> btrfsck -s 2 /dev/xxx
+>> >>
+>> >> If either of these work we have an easy way to get it mounted. =A0=
+Just let
+>> >> me know.
+>> >>
+>> >> -chris
+>> >>
+>>
+>> > $ btrfsck -s 1 /dev/sda
+>> > using SB copy 1, bytenr 67108864
+>> > parent transid verify failed on 2721514774528 wanted 39651 found 3=
+9649
+>> > btrfsck: disk-io.c:739: open_ctree_fd: Assertion `!(!tree_root->no=
+de)' failed.
+>> > Aborted
+>> >
+>> > $ btrfsck -s 2 /dev/sda
+>> > using SB copy 2, bytenr 274877906944
+>> > parent transid verify failed on 2721514774528 wanted 39651 found 3=
+9649
+>> > btrfsck: disk-io.c:739: open_ctree_fd: Assertion `!(!tree_root->no=
+de)' failed.
+>> > Aborted
+>> >
+>> > Tried "btrfs-debug-tree /dev/sda" and "btrfs-debug-tree -e /dev/sd=
+a" :
+>> > parent transid verify failed on 2721514774528 wanted 39651 found 3=
+9649
+>> > btrfs-debug-tree: disk-io.c:739: open_ctree_fd: Assertion
+>> > `!(!tree_root->node)' failed.
+>> >
+>> > dmesg said:
+>> > [268375.903581] device fsid 734a485d12c77872-9b0b5aa408670db4 devi=
+d 2 transid 39650 /dev/sdd
+>> > [268375.904241] device fsid 734a485d12c77872-9b0b5aa408670db4 devi=
+d 1 transid 39651 /dev/sdc
+>> > [268375.904526] device fsid 734a485d12c77872-9b0b5aa408670db4 devi=
+d 3 transid 39651 /dev/sda
+>>
+>> Sorry to be a bother, but do you have any other suggestions ?
+>
+> Not a bother at all, I'm polishing off a version of fsck that I hope
+> will be able to construct a good tree for you. =A0It's my main priori=
+ty
+> right now and I hope to have something ready early Monday.
+>
+> -chris
+>
 
-On the basis of the provided information, and on the code it seems that
-mkfs.btrfs tries hard to check that the user is not formatting a mounted
-disk (or loop). So mkfs.btrfs scan the /proc/mount file and checks every
-devices. To do the check it needs to access the original file if this is
-a "loop backend". This is reasonable.
+Hi again Chris.
+Hope you survived Christmas and new year :]
 
-In this case in a chroot-ed environment the loop file is not accessible.
+Just wanted to check in and see how you are progressing on the btrfsck?
+Drop me a mail if you want me to test/debug anything.
 
-If you need a [dirty] "quick hack" to by-pass the problem (not tested):
-- unmount the proc filesystem
-- create an empty file /proc/mounts
-- run btrfs.fsck
-- mount the proc filesystem (removing the fake mounts file)
-- perform a "btrfs device scan"
-- mount the filesystem
-
-Of course the "right" solution is to add a "--force" switch which
-permits to by-pass these checks. Other mkfs.* tools have this switch.
-
->From the mkfs.ext4 man page:
-[...]
-       -F     Force mke2fs to create a filesystem,
-              even if the specified device is  not
-              a   partition  on  a  block  special
-              device, or if  other  parameters  do
-              not  make  sense.  In order to force
-              mke2fs to create a  filesystem  even
-              if  the  filesystem appears to be in
-              use or is mounted (a truly dangerous
-              thing  to  do),  this option must be
-              specified twice.
-
-[...]
-
-
-> 
-> .:Justin:.
-> 
-> 
->       
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> .
-> 
-
+-tommy
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

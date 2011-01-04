@@ -1,41 +1,47 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: Hole Punching V3
-Date: Mon, 3 Jan 2011 16:57:21 -0500
-Message-ID: <20110103215720.GA8392@localhost.localdomain>
-References: <1290044780-2902-1-git-send-email-josef@redhat.com>
+From: Shaohua Li <shaohua.li@intel.com>
+Subject: [PATCH v2 0/5] add new ioctls to do metadata readahead in btrfs
+Date: Tue, 04 Jan 2011 13:40:30 +0800
+Message-ID: <1294119630.1949.365.camel@sli10-conroe>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: david@fromorbit.com, linux-kernel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, xfs@oss.sgi.com, cmm@us.ibm.com,
-	cluster-devel@redhat.com, joel.becker@oracle.com, jack@suse.cz,
-	akpm@linux-foundation.org, torvalds@linux-foundation.org
-To: Josef Bacik <josef@redhat.com>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <1290044780-2902-1-git-send-email-josef@redhat.com>
+Content-Type: text/plain; charset="UTF-8"
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Christoph Hellwig <hch@infradead.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Arjan van de Ven <arjan@infradead.org>,
+	"Yan, Zheng" <zheng.z.yan@linux.intel.com>,
+	linux-api@vger.kernel.org, mtk.manpages@gmail.com
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 17, 2010 at 08:46:14PM -0500, Josef Bacik wrote:
-> This is version 3 of the hole punching series I've been posting.  Not much has
-> changed, the history is below
-> 
-> V2->V3
-> -FALLOC_FL_PUNCH_HOLE must also have FALLOC_FL_KEEP_SIZE in order to work
-> -formatting fixes
-> 
-> V1->V2
-> -Hole punching doesn't change file size
-> -Fixed the mode checks in ext4/btrfs/gfs2 so they do what they are supposed to
-> 
-> I've updated my local copies of the xfsprogs patches I have to test this to use
-> KEEP_SIZE and PUNCH_HOLE together, I'll post them after it looks like these
-> patches are good to go, including the manpage update.  The xfstest I wrote ran
-> fine both on xfs and btrfs (failing on btrfs obviously).  Thanks,
-> 
+Hi,
+  We have file readahead to do asyn file read, but has no metadata
+readahead. For a list of files, their metadata is stored in fragmented
+disk space and metadata read is a sync operation, which impacts the
+efficiency of readahead much. The patches try to add meatadata readahead
+for btrfs.
+  In btrfs, metadata is stored in btree_inode. Ideally, if we could hook
+the inode to a fd so we could use existing syscalls (readahead, mincore
+or upcoming fincore) to do readahead, but the inode is hidden, there is
+no easy way for this from my understanding. So we add two ioctls for
+this. One is like readahead syscall, the other is like micore/fincore
+syscall.
+  Under a harddisk based netbook with Meego, the metadata readahead
+reduced about 3.5s boot time in average from total 16s.
+  Last time I posted similar patches to btrfs maillist, which adds the
+new ioctls in btrfs specific ioctl code. But Christoph Hellwig asks we
+have a generic interface to do this so other filesystem can share some
+code, so I came up with the new one. Comments and suggestions are
+welcome!
 
-I'd like to try and get this into the next merge window, it seems everybody is
-happy with it so far, any other comments?  Provided everybody is ok with it, how
-would you like me to send it to you Linus?  Would you prefer a pull request or
-will you just pull the patches off the mailinglist?  Thanks,
+v1->v2:
+1. Added more comments and fix return values suggested by Andrew Morton
+2. fix a race condition pointed out by Yan Zheng
 
-Josef
+initial post:
+http://marc.info/?l=linux-fsdevel&m=129222493406353&w=2
+
+Thanks,
+Shaohua
+

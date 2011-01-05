@@ -1,85 +1,32 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: [PATCH] btrfs: check NULL or not
-Date: Wed, 05 Jan 2011 11:32:22 +0900
-Message-ID: <201101050232.AA00003@T-ITOH1.jp.fujitsu.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Subject: Re: [PATCH v2 3/5]add metadata_readahead ioctl in vfs
+Date: Wed, 5 Jan 2011 10:26:15 +0100
+Message-ID: <201101051026.15391.arnd@arndb.de>
+References: <1294119637.1949.368.camel@sli10-conroe> <1294193496.1949.378.camel@sli10-conroe> <201101051009.20591.arnd@arndb.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com
-To: linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain;
+  charset="utf-8"
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	Christoph Hellwig <hch@infradead.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Arjan van de Ven <arjan@infradead.org>,
+	"Yan, Zheng" <zheng.z.yan@linux.intel.com>,
+	"linux-api@vger.kernel.org" <linux-api@vger.kernel.org>,
+	"mtk.manpages@gmail.com" <mtk.manpages@gmail.com>
+To: Shaohua Li <shaohua.li@intel.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201101051009.20591.arnd@arndb.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Should check if functions returns NULL or not.
+On Wednesday 05 January 2011 10:09:20 Arnd Bergmann wrote:
+> > Thanks, fixed them.
+> 
+> The patch you posted still uses COMPATIBLE_IOCTL. Wrong patch?
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- fs/btrfs/ctree.c     |    6 ++++++
- fs/btrfs/disk-io.c   |    8 ++++++++
- fs/btrfs/extent_io.c |    2 ++
- 3 files changed, 16 insertions(+), 0 deletions(-)
+On a second look, I noticed that you now have both the COMPATIBLE_IOCTL
+and the case statement in compat_sys_ioctl. The former can be
+dropped.
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 9ac1715..f68c6ff 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -2514,6 +2514,9 @@ static int push_leaf_right(struct btrfs_trans_handle *trans, struct btrfs_root
- 	btrfs_assert_tree_locked(path->nodes[1]);
- 
- 	right = read_node_slot(root, upper, slot + 1);
-+	if (right == NULL)
-+		return 1;
-+
- 	btrfs_tree_lock(right);
- 	btrfs_set_lock_blocking(right);
- 
-@@ -2764,6 +2767,9 @@ static int push_leaf_left(struct btrfs_trans_handle *trans, struct btrfs_root
- 	btrfs_assert_tree_locked(path->nodes[1]);
- 
- 	left = read_node_slot(root, path->nodes[1], slot - 1);
-+	if (left == NULL)
-+		return 1;
-+
- 	btrfs_tree_lock(left);
- 	btrfs_set_lock_blocking(left);
- 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index a5d2249..5ede105 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -353,6 +353,10 @@ static int csum_dirty_buffer(struct btrfs_root *root, struct page *page)
- 	WARN_ON(len == 0);
- 
- 	eb = alloc_extent_buffer(tree, start, len, page, GFP_NOFS);
-+	if (eb == NULL) {
-+		WARN_ON(1);
-+		goto out;
-+	}
- 	ret = btree_read_extent_buffer_pages(root, eb, start + PAGE_CACHE_SIZE,
- 					     btrfs_header_generation(eb));
- 	BUG_ON(ret);
-@@ -427,6 +431,10 @@ static int btree_readpage_end_io_hook(struct page *page, u64 start, u64 end,
- 	WARN_ON(len == 0);
- 
- 	eb = alloc_extent_buffer(tree, start, len, page, GFP_NOFS);
-+	if (eb == NULL) {
-+		ret = -EIO;
-+		goto out;
-+	}
- 
- 	found_start = btrfs_header_bytenr(eb);
- 	if (found_start != start) {
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 5e7a94d..d05c5d2 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3072,6 +3072,8 @@ static struct extent_buffer *__alloc_extent_buffer(struct extent_io_tree *tree,
- #endif
- 
- 	eb = kmem_cache_zalloc(extent_buffer_cache, mask);
-+	if (eb == NULL)
-+		return NULL;
- 	eb->start = start;
- 	eb->len = len;
- 	spin_lock_init(&eb->lock);
-
-
+	Arnd

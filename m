@@ -1,44 +1,44 @@
-From: Ray Van Dolson <rayvd@bludgeon.org>
+From: Lars Wirzenius <liw@liw.fi>
 Subject: Re: Offline Deduplication for Btrfs
-Date: Wed, 5 Jan 2011 11:01:41 -0800
-Message-ID: <20110105190139.GA32671@bludgeon.org>
+Date: Wed, 05 Jan 2011 19:58:13 +0000
+Message-ID: <1294257493.2953.33.camel@havelock.lan>
 References: <1294245410-4739-1-git-send-email-josef@redhat.com>
- <4D24AD92.4070107@bobich.net>
- <201101051941.13268.diegocg@gmail.com>
+	 <4D24AD92.4070107@bobich.net> <20110105194645.GC2562@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
+Content-Type: text/plain; charset="UTF-8"
 Cc: Gordan Bobic <gordan@bobich.net>,
 	BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
-To: Diego Calleja <diegocg@gmail.com>
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201101051941.13268.diegocg@gmail.com>
+In-Reply-To: <20110105194645.GC2562@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 05, 2011 at 07:41:13PM +0100, Diego Calleja wrote:
-> On Mi=E9rcoles, 5 de Enero de 2011 18:42:42 Gordan Bobic escribi=F3:
-> > So by doing the hash indexing offline, the total amount of disk I/O=
-=20
-> > required effectively doubles, and the amount of CPU spent on doing =
-the=20
-> > hashing is in no way reduced.
->=20
-> But there are people who might want to avoid temporally the extra cos=
-t
-> of online dedup, and do it offline when the server load is smaller.
->=20
-> In my opinion, both online and offline dedup have valid use cases, an=
-d
-> the best choice is probably implement both.
+On ke, 2011-01-05 at 14:46 -0500, Josef Bacik wrote:
+> Blah blah blah, I'm not having an argument about which is better because I
+> simply do not care.  I think dedup is silly to begin with, and online dedup even
+> sillier.  The only reason I did offline dedup was because I was just toying
+> around with a simple userspace app to see exactly how much I would save if I did
+> dedup on my normal system, and with 107 gigabytes in use, I'd save 300
+> megabytes.  I'll say that again, with 107 gigabytes in use, I'd save 300
+> megabytes.  So in the normal user case dedup would have been wholey useless to
+> me.
 
-Question from an end-user.  When we say "offline" deduplication, are we
-talking about post-process deduplication (a la what Data ONTAP does
-with their SIS implementation) during which the underlying file system
-data continues to be available, or a process that needs exclusive
-access ot the blocks to do its job?
+I have been thinking a lot about de-duplication for a backup application
+I am writing. I wrote a little script to figure out how much it would
+save me. For my laptop home directory, about 100 GiB of data, it was a
+couple of percent, depending a bit on the size of the chunks. With 4 KiB
+chunks, I would save about two gigabytes. (That's assuming no MD5 hash
+collisions.) I don't have VM images, but I do have a fair bit of saved
+e-mail. So, for backups, I concluded it was worth it to provide an
+option to do this. I have no opinion on whether it is worthwhile to do
+in btrfs.
 
-Ray
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+(For my script, see find-duplicate-chunks in
+http://code.liw.fi/debian/pool/main/o/obnam/obnam_0.14.tar.gz or get the
+current code using "bzr get http://code.liw.fi/obnam/bzr/trunk/".
+http://braawi.org/obnam/ is the home page of the backup app.)
+
+-- 
+Blog/wiki/website hosting with ikiwiki (free for free software):
+http://www.branchable.com/
+

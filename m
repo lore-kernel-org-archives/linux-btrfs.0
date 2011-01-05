@@ -1,26 +1,42 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] Btrfs-progs: add dedup functionality
-Date: Wed, 5 Jan 2011 11:32:11 -0500
-Message-ID: <20110105163211.GA2562@localhost.localdomain>
-References: <1294244451-4558-1-git-send-email-josef@redhat.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Subject: Offline Deduplication for Btrfs
+Date: Wed,  5 Jan 2011 11:36:48 -0500
+Message-ID: <1294245410-4739-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1294244451-4558-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 05, 2011 at 11:20:51AM -0500, Josef Bacik wrote:
-> This program very basically does dedup.  It searches a directory recursively and
-> scans all of the files looking for 64k extents and hashing them to figure out if
-> there are any duplicates.  After that it calls the btrfs same extent ioctl for
-> all of the duplicates in order to dedup the space on disk.  There is alot more
-> that can be done with this, like changing the block size and so on, but for now
-> this will get us started.  Thanks,
-> 
+Here are patches to do offline deduplication for Btrfs.  It works well for the
+cases it's expected to, I'm looking for feedback on the ioctl interface and
+such, I'm well aware there are missing features for the userspace app (like
+being able to set a different blocksize).  If this interface is acceptable I
+will flesh out the userspace app a little more, but I believe the kernel side is
+ready to go.
 
-Argh crap ignore this, this is only part of the commit, I meant to send this out
-as a series.  Thanks,
+Basically I think online dedup is huge waste of time and completely useless.
+You are going to want to do different things with different data.  For example,
+for a mailserver you are going to want to have very small blocksizes, but for
+say a virtualization image store you are going to want much larger blocksizes.
+And lets not get into heterogeneous environments, those just get much too
+complicated.  So my solution is batched dedup, where a user just runs this
+command and it dedups everything at this point.  This avoids the very costly
+overhead of having to hash and lookup for duplicate extents online and lets us
+be _much_ more flexible about what we want to deduplicate and how we want to do
+it.
+
+For the userspace app it only does 64k blocks, or whatever the largest area it
+can read out of a file.  I'm going to extend this to do the following things in
+the near future
+
+1) Take the blocksize as an argument so we can have bigger/smaller blocks
+2) Have an option to _only_ honor the blocksize, don't try and dedup smaller
+blocks
+3) Use fiemap to try and dedup extents as a whole and just ignore specific
+blocksizes
+4) Use fiemap to determine what would be the most optimal blocksize for the data
+you want to dedup.
+
+I've tested this out on my setup and it seems to work well.  I appreciate any
+feedback you may have.  Thanks,
 
 Josef

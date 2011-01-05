@@ -1,117 +1,78 @@
-From: Gordan Bobic <gordan@bobich.net>
-Subject: Re: Offline Deduplication for Btrfs
-Date: Wed, 05 Jan 2011 17:42:42 +0000
-Message-ID: <4D24AD92.4070107@bobich.net>
-References: <1294245410-4739-1-git-send-email-josef@redhat.com>
+From: Simon Farnsworth <simon@farnz.org.uk>
+Subject: Re: [PATCH] Btrfs: add extent-same ioctl for dedup
+Date: Wed, 05 Jan 2011 17:50:42 +0000
+Message-ID: <ig2b1i$ph9$1@dough.gmane.org>
+References: <1294245410-4739-1-git-send-email-josef@redhat.com> <1294245410-4739-2-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="ISO-8859-1"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1294245410-4739-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Josef Bacik wrote:
 
-> Basically I think online dedup is huge waste of time and completely useless.
+> This adds the ability for userspace to tell btrfs which extents match
+> eachother. You pass in
+> 
+> -a logical offset
+> -a length
+> -a hash type (currently only sha256 is supported)
+> -the hash
+> -a list of file descriptors with their logical offset
+> 
+> and this ioctl will split up the extent on the target file and then link
+> all of
+> the files with the target files extent and free up their original extent. 
+> The hash is to make sure nothing has changed between the userspace app
+> running and we doing the actual linking, so we hash everything to make
+> sure it's all still
+> the same.  This doesn't work in a few key cases
+> 
+> 1) Any data transformation whatsoever.  This includes compression or any
+> encryption that happens later on.  This is just to make sure we're not
+> deduping things that don't turn out to be the same stuff on disk as it is
+> uncompressed/decrypted.
+> 
+> 2) Across subvolumes.  This can be fixed later, but this is just to keep
+> odd problems from happening, like oh say trying to dedup things that are
+> snapshots
+> of eachother already.  Nothing bad will happen, it's just needless work so
+> just don't allow it for the time being.
+> 
+> 3) If the target file's data is split across extents.  We need one extent
+> to point everybody at, so if the target file's data spans different
+> extents we
+> won't work.  In this case I return ERANGE so the userspace app can call
+> defrag and then try again, but currently I don't do that, so that will
+> have to be fixed at some point.
+> 
+> I think thats all of the special cases.  Thanks,
+> 
+I'm going to ask the stupid question: What happens if an attacker user can 
+race against the dedupe process?
 
-I couldn't disagree more. First, let's consider what is the 
-general-purpose use-case of data deduplication. What are the resource 
-requirements to perform it? How do these resource requirements differ 
-between online and offline?
+In particular, consider the following hypothetical scenario:
 
-The only sane way to keep track of hashes of existing blocks is using an 
-index. Searches through an index containing evenly distributed data 
-(such as hashes) is pretty fast (log(N)), and this has to be done 
-regardless of whether the dedupe is online or offline. It also goes 
-without saying that all the blocks being deduplicated need to be hashed, 
-and the cost of this is also the same whether the block is hashes online 
-or offline.
+Attacker has discovered a hash collision for some important data that they 
+can read but not write (e.g. /etc/passwd, /home/user/company-critical-
+data.ods). They copy the important data from its original location to 
+somewhere they can write to on the same filesystem.
 
-Let's look at the relative merits:
+Now for the evil bit; they wait, watching for the dedupe process to run. 
+When it's had time to verify hash and memcmp the data, but before it calls 
+the ioctl, Attacker swaps the copy of the data under their control for the 
+bad one with the hash collision.
 
-1a) Offline
-We have to copy the entire data set. This means we are using the full 
-amount of disk writes that the data set size dictates. Do we do the 
-hashing of current blocks at this point to create the indexes? Or do we 
-defer it until some later time?
+If I've understood the code correctly, if Attacker's version of the data is 
+the source from the perspective of the ioctl, the kernel will hash the data, 
+determine that the hash matches, not cross-check the entire extent with 
+memcmp or equivalent, and will then splice Attacker's version of data into 
+the original file. If the collision merely lets Attacker trash the original, 
+that's bad enough; if it lets them put other interesting content in place, 
+it's a really bad problem.
 
-Doing it at the point of writes is cheaper - we already have the data in 
-RAM and we can calculate the hashes as we are writing each block. 
-Performance implications of this are fairly analogous to the parity RAID 
-RMW performance issue - to achieve decent performance you have to write 
-the parity at the same time as the rest of the stripe, otherwise you 
-have to read the part of the stripe you didn't write, before calculating 
-the checksum.
+-- 
+Here's hoping I simply missed something,
 
-So by doing the hash indexing offline, the total amount of disk I/O 
-required effectively doubles, and the amount of CPU spent on doing the 
-hashing is in no way reduced.
+Simon Farnsworth
 
-How is this in any way advantageous?
-
-1b) Online
-As we are writing the data, we calculate the hashes for each block. (See 
-1a for argument of why I believe this is saner and cheaper than doing it 
-offline.) Since we already have these hashes, we can do a look-up in the 
-hash-index, and either write out the block as is (if that hash isn't 
-already in the index) or simply write the pointer to an existing 
-suitable block (if it already exists). This saves us writing out that 
-block - fewer writes to the disk, not to mention we don't later have to 
-re-read the block to dedupe it.
-
-So in this case, instead of write-read-relink of the offline scenario, 
-we simply do relink on duplicate blocks.
-
-There is another reason to favour the online option due to it's lower 
-write stress - SSDs. Why hammer the SSD with totally unnecessary writes?
-
-The _only_ reason to defer deduping is that hashing costs CPU time. But 
-the chances are that a modern CPU core can churn out MD5 and/or SHA256 
-hashes faster than a modern mechanical disk can keep up. A 15,000rpm 
-disk can theoretically handle 250 IOPS. A modern CPU can handle 
-considerably more than 250 block hashings per second. You could argue 
-that this changes in cases of sequential I/O on big files, but a 1.86GHz 
-GHz Core2 can churn through 111MB/s of SHA256, which even SSDs will 
-struggle to keep up with.
-
-I don't think that the realtime performance argument withstands scrutiny.
-
-> You are going to want to do different things with different data.  For example,
-> for a mailserver you are going to want to have very small blocksizes, but for
-> say a virtualization image store you are going to want much larger blocksizes.
-> And lets not get into heterogeneous environments, those just get much too
-> complicated.
-
-In terms of deduplication, IMO it should really all be uniform, 
-transparent, and block based. In terms of specifying which subtrees to 
-dedupe, that should really be a per subdirectory hereditary attribute, 
-kind of like compression was supposed to work with chattr +c in the past.
-
-> So my solution is batched dedup, where a user just runs this
-> command and it dedups everything at this point.  This avoids the very costly
-> overhead of having to hash and lookup for duplicate extents online and lets us
-> be _much_ more flexible about what we want to deduplicate and how we want to do
-> it.
-
-I don't see that it adds any flexibility compared to the hereditary 
-deduping attribute. I also don't see that it is any cheaper. It's 
-actually more expensive, according to the reasoning above.
-
-As an aside, zfs and lessfs both do online deduping, presumably for a 
-good reason.
-
-Then again, for a lot of use-cases there are perhaps better ways to 
-achieve the targed goal than deduping on FS level, e.g. snapshotting or 
-something like fl-cow:
-http://www.xmailserver.org/flcow.html
-
-Personally, I would still like to see a fl-cow like solution that 
-actually preserves the inode numbers of duplicate files while providing 
-COW functionality that breaks this unity (and inode number identity) 
-upon writes, specifically because it saves page cache (only have to 
-cache one copy) and in case of DLLs on chroot style virtualization 
-(OpenVZ, Vserver, LXC) means that identical DLLs in all the guests are 
-all mapped into the same memory, thus yielding massive memory savings on 
-machines with a lot of VMs.
-
-Gordan

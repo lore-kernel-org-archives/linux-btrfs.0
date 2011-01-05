@@ -1,78 +1,30 @@
-From: Simon Farnsworth <simon@farnz.org.uk>
-Subject: Re: [PATCH] Btrfs: add extent-same ioctl for dedup
-Date: Wed, 05 Jan 2011 17:50:42 +0000
-Message-ID: <ig2b1i$ph9$1@dough.gmane.org>
-References: <1294245410-4739-1-git-send-email-josef@redhat.com> <1294245410-4739-2-git-send-email-josef@redhat.com>
+From: Diego Calleja <diegocg@gmail.com>
+Subject: Re: Offline Deduplication for Btrfs
+Date: Wed, 5 Jan 2011 19:41:13 +0100
+Message-ID: <201101051941.13268.diegocg@gmail.com>
+References: <1294245410-4739-1-git-send-email-josef@redhat.com> <4D24AD92.4070107@bobich.net>
+Reply-To: diegocg@gmail.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
-To: linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain; charset=iso-8859-1
+Cc: BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
+To: Gordan Bobic <gordan@bobich.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4D24AD92.4070107@bobich.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Josef Bacik wrote:
+On Mi=E9rcoles, 5 de Enero de 2011 18:42:42 Gordan Bobic escribi=F3:
+> So by doing the hash indexing offline, the total amount of disk I/O=20
+> required effectively doubles, and the amount of CPU spent on doing th=
+e=20
+> hashing is in no way reduced.
 
-> This adds the ability for userspace to tell btrfs which extents match
-> eachother. You pass in
-> 
-> -a logical offset
-> -a length
-> -a hash type (currently only sha256 is supported)
-> -the hash
-> -a list of file descriptors with their logical offset
-> 
-> and this ioctl will split up the extent on the target file and then link
-> all of
-> the files with the target files extent and free up their original extent. 
-> The hash is to make sure nothing has changed between the userspace app
-> running and we doing the actual linking, so we hash everything to make
-> sure it's all still
-> the same.  This doesn't work in a few key cases
-> 
-> 1) Any data transformation whatsoever.  This includes compression or any
-> encryption that happens later on.  This is just to make sure we're not
-> deduping things that don't turn out to be the same stuff on disk as it is
-> uncompressed/decrypted.
-> 
-> 2) Across subvolumes.  This can be fixed later, but this is just to keep
-> odd problems from happening, like oh say trying to dedup things that are
-> snapshots
-> of eachother already.  Nothing bad will happen, it's just needless work so
-> just don't allow it for the time being.
-> 
-> 3) If the target file's data is split across extents.  We need one extent
-> to point everybody at, so if the target file's data spans different
-> extents we
-> won't work.  In this case I return ERANGE so the userspace app can call
-> defrag and then try again, but currently I don't do that, so that will
-> have to be fixed at some point.
-> 
-> I think thats all of the special cases.  Thanks,
-> 
-I'm going to ask the stupid question: What happens if an attacker user can 
-race against the dedupe process?
+But there are people who might want to avoid temporally the extra cost
+of online dedup, and do it offline when the server load is smaller.
 
-In particular, consider the following hypothetical scenario:
-
-Attacker has discovered a hash collision for some important data that they 
-can read but not write (e.g. /etc/passwd, /home/user/company-critical-
-data.ods). They copy the important data from its original location to 
-somewhere they can write to on the same filesystem.
-
-Now for the evil bit; they wait, watching for the dedupe process to run. 
-When it's had time to verify hash and memcmp the data, but before it calls 
-the ioctl, Attacker swaps the copy of the data under their control for the 
-bad one with the hash collision.
-
-If I've understood the code correctly, if Attacker's version of the data is 
-the source from the perspective of the ioctl, the kernel will hash the data, 
-determine that the hash matches, not cross-check the entire extent with 
-memcmp or equivalent, and will then splice Attacker's version of data into 
-the original file. If the collision merely lets Attacker trash the original, 
-that's bad enough; if it lets them put other interesting content in place, 
-it's a really bad problem.
-
--- 
-Here's hoping I simply missed something,
-
-Simon Farnsworth
-
+In my opinion, both online and offline dedup have valid use cases, and
+the best choice is probably implement both.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

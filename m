@@ -1,8 +1,7 @@
 From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH V3 5/6] btrfs: make the chunk allocator utilize the devices
- better
-Date: Wed, 05 Jan 2011 18:07:28 +0800
-Message-ID: <4D2442E0.1080803@cn.fujitsu.com>
+Subject: [PATCH V3 6/6] btrfs: fix wrong free space information of btrfs
+Date: Wed, 05 Jan 2011 18:07:31 +0800
+Message-ID: <4D2442E3.7070903@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=GB2312
@@ -13,569 +12,446 @@ To: Chris Mason <chris.mason@oracle.com>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-With this patch, we change the handling method when we can not get enough free
-extents with default size.
+When we store data by raid profile in btrfs with two or more different size
+disks, df command shows there is some free space in the filesystem, but the
+user can not write any data in fact, df command shows the wrong free space
+information of btrfs.
+
+ # mkfs.btrfs -d raid1 /dev/sda9 /dev/sda10
+ # btrfs-show
+ Label: none  uuid: a95cd49e-6e33-45b8-8741-a36153ce4b64
+ 	Total devices 2 FS bytes used 28.00KB
+ 	devid    1 size 5.01GB used 2.03GB path /dev/sda9
+ 	devid    2 size 10.00GB used 2.01GB path /dev/sda10
+ # btrfs device scan /dev/sda9 /dev/sda10
+ # mount /dev/sda9 /mnt
+ # dd if=/dev/zero of=tmpfile0 bs=4K count=9999999999
+   (fill the filesystem)
+ # sync
+ # df -TH
+ Filesystem	Type	Size	Used	Avail	Use%	Mounted on
+ /dev/sda9	btrfs	17G	8.6G	5.4G	62%	/mnt
+ # btrfs-show
+ Label: none  uuid: a95cd49e-6e33-45b8-8741-a36153ce4b64
+ 	Total devices 2 FS bytes used 3.99GB
+ 	devid    1 size 5.01GB used 5.01GB path /dev/sda9
+ 	devid    2 size 10.00GB used 4.99GB path /dev/sda10
+
+It is because btrfs cannot allocate chunks when one of the pairing disks has
+no space, the free space on the other disks can not be used for ever, and should
+be subtracted from the total space, but btrfs doesn't subtract this space from
+the total. It is strange to the user.
+
+This patch fixes it by calcing the free space that can be used to allocate
+chunks.
 
 Implementation:
-1. Look up the suitable free extent on each device and keep the search result.
-   If not find a suitable free extent, keep the max free extent
-2. If we get enough suitable free extents with default size, chunk allocation
-   succeeds.
-3. If we can not get enough free extents, but the number of the extent with
-   default size is >= min_stripes, we just change the mapping information
-   (reduce the number of stripes in the extent map), and chunk allocation
-   succeeds.
-4. If the number of the extent with default size is < min_stripes, sort the
-   devices by its max free extent's size descending
-5. Use the size of the max free extent on the (num_stripes - 1)th device as the
-   stripe size to allocate the device space
+1. get all the devices free space, and align them by stripe length.
+2. sort the devices by the free space.
+3. check the free space of the devices,
+   3.1. if it is not zero, and then check the number of the devices that has
+        more free space than this device,
+        if the number of the devices is beyond the min stripe number, the free
+        space can be used, and add into total free space.
+        if the number of the devices is below the min stripe number, we can not
+        use the free space, the check ends.
+   3.2. if the free space is zero, check the next devices, goto 3.1
 
-By this way, the chunk allocator can allocate chunks as large as possible when
-the devices' space is not enough and make full use of the devices.
+This implementation is just likely fake chunk allocation.
+
+After appling this patch, df can show correct space information:
+ # df -TH
+ Filesystem	Type	Size	Used	Avail	Use%	Mounted on
+ /dev/sda9	btrfs	17G	8.6G	0	100%	/mnt
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
-Changelog V2 -> V3:
-- fix panic caused by freeing a invalid memory address, which was pointed out by
-  Mitch Harder.
+ fs/btrfs/ctree.h       |    2 +
+ fs/btrfs/extent-tree.c |   58 +++++++++++++++++++-
+ fs/btrfs/super.c       |  146 ++++++++++++++++++++++++++++++++++++++++++++++--
+ fs/btrfs/volumes.c     |   84 +++++++++++++++++++++++++++
+ fs/btrfs/volumes.h     |    3 +
+ 5 files changed, 286 insertions(+), 7 deletions(-)
 
-Changelog V1 -> V2:
-- fix compiler errors x86_32 machines which were caused by u64 division.
-- fix wrong check of the min number of the devices when allocating dup chunks.
-- fix to assign map->stripes correctly for dup chunks in
-  __btrfs_alloc_tiny_space(), which was pointed out by Li Zefan.
-- break the chunk allocation when error happens(except nospc error).
-- just allocate min_stripes stripes when there is not enough device space.
-- cleanup redundant code.
-
- fs/btrfs/volumes.c |  379 ++++++++++++++++++++++++++++++++++++++--------------
- fs/btrfs/volumes.h |   24 ++++
- 2 files changed, 300 insertions(+), 103 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 4838bd3..c22784b 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -877,7 +877,7 @@ out:
- 	btrfs_free_path(path);
- error:
- 	*start = max_hole_start;
--	if (len && max_hole_size > *len)
-+	if (len)
- 		*len = max_hole_size;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index af52f6d..a068a5d 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2145,6 +2145,7 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
+ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root, u64 group_start);
+ u64 btrfs_reduce_alloc_profile(struct btrfs_root *root, u64 flags);
++u64 btrfs_get_alloc_profile(struct btrfs_root *root, int data);
+ void btrfs_set_inode_space_info(struct btrfs_root *root, struct inode *ionde);
+ void btrfs_clear_space_info_full(struct btrfs_fs_info *info);
+ int btrfs_check_data_free_space(struct inode *inode, u64 bytes);
+@@ -2188,6 +2189,7 @@ int btrfs_set_block_group_ro(struct btrfs_root *root,
+ int btrfs_set_block_group_rw(struct btrfs_root *root,
+ 			     struct btrfs_block_group_cache *cache);
+ void btrfs_put_block_group_cache(struct btrfs_fs_info *info);
++u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo);
+ /* ctree.c */
+ int btrfs_bin_search(struct extent_buffer *eb, struct btrfs_key *key,
+ 		     int level, int *slot);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 7c1a053..fd465e1 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3090,7 +3090,7 @@ static u64 get_alloc_profile(struct btrfs_root *root, u64 flags)
+ 	return btrfs_reduce_alloc_profile(root, flags);
+ }
+ 
+-static u64 btrfs_get_alloc_profile(struct btrfs_root *root, int data)
++u64 btrfs_get_alloc_profile(struct btrfs_root *root, int data)
+ {
+ 	u64 flags;
+ 
+@@ -8018,6 +8018,62 @@ out:
  	return ret;
  }
-@@ -2176,70 +2176,67 @@ static noinline u64 chunk_bytes_by_type(u64 type, u64 calc_size,
- 		return calc_size * num_stripes;
- }
  
--static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
--			       struct btrfs_root *extent_root,
--			       struct map_lookup **map_ret,
--			       u64 *num_bytes, u64 *stripe_size,
--			       u64 start, u64 type)
-+/* Used to sort the devices by max_avail(descending sort) */
-+int btrfs_cmp_device_free_bytes(const void *dev_info1, const void *dev_info2)
- {
--	struct btrfs_fs_info *info = extent_root->fs_info;
--	struct btrfs_device *device = NULL;
--	struct btrfs_fs_devices *fs_devices = info->fs_devices;
--	struct list_head *cur;
--	struct map_lookup *map = NULL;
--	struct extent_map_tree *em_tree;
--	struct extent_map *em;
--	struct list_head private_devs;
--	int min_stripe_size = 1 * 1024 * 1024;
--	u64 calc_size = 1024 * 1024 * 1024;
--	u64 max_chunk_size = calc_size;
--	u64 min_free;
--	u64 avail;
--	u64 max_avail = 0;
--	u64 dev_offset;
--	int num_stripes = 1;
--	int min_stripes = 1;
--	int sub_stripes = 0;
--	int ncopies = 1;
--	int looped = 0;
--	int ret;
--	int index;
--	int stripe_len = 64 * 1024;
-+	if (((struct btrfs_device_info *)dev_info1)->max_avail >
-+	    ((struct btrfs_device_info *)dev_info2)->max_avail)
-+		return -1;
-+	else if (((struct btrfs_device_info *)dev_info1)->max_avail <
-+		 ((struct btrfs_device_info *)dev_info2)->max_avail)
-+		return 1;
-+	else
-+		return 0;
-+}
- 
--	if ((type & BTRFS_BLOCK_GROUP_RAID1) &&
--	    (type & BTRFS_BLOCK_GROUP_DUP)) {
--		WARN_ON(1);
--		type &= ~BTRFS_BLOCK_GROUP_DUP;
--	}
--	if (list_empty(&fs_devices->alloc_list))
--		return -ENOSPC;
-+static int __btrfs_calc_nstripes(struct btrfs_fs_devices *fs_devices, u64 type,
-+				 int *num_stripes, int *min_stripes,
-+				 int *sub_stripes)
++/*
++ * helper to account the unused space of all the readonly block group in the
++ * list. takes mirrors into account.
++ */
++static u64 __btrfs_get_ro_block_group_free_space(struct list_head *groups_list)
 +{
-+	*num_stripes = 1;
-+	*min_stripes = 1;
-+	*sub_stripes = 0;
- 
- 	if (type & (BTRFS_BLOCK_GROUP_RAID0)) {
--		num_stripes = fs_devices->rw_devices;
--		min_stripes = 2;
-+		*num_stripes = fs_devices->rw_devices;
-+		*min_stripes = 2;
- 	}
- 	if (type & (BTRFS_BLOCK_GROUP_DUP)) {
--		num_stripes = 2;
--		min_stripes = 2;
--		ncopies = 2;
-+		*num_stripes = 2;
-+		*min_stripes = 2;
- 	}
- 	if (type & (BTRFS_BLOCK_GROUP_RAID1)) {
- 		if (fs_devices->rw_devices < 2)
- 			return -ENOSPC;
--		num_stripes = 2;
--		min_stripes = 2;
--		ncopies = 2;
-+		*num_stripes = 2;
-+		*min_stripes = 2;
- 	}
- 	if (type & (BTRFS_BLOCK_GROUP_RAID10)) {
--		num_stripes = fs_devices->rw_devices;
--		if (num_stripes < 4)
-+		*num_stripes = fs_devices->rw_devices;
-+		if (*num_stripes < 4)
- 			return -ENOSPC;
--		num_stripes &= ~(u32)1;
--		sub_stripes = 2;
--		ncopies = 2;
--		min_stripes = 4;
-+		*num_stripes &= ~(u32)1;
-+		*sub_stripes = 2;
-+		*min_stripes = 4;
- 	}
- 
-+	return 0;
-+}
++	struct btrfs_block_group_cache *block_group;
++	u64 free_bytes = 0;
++	int factor;
 +
-+static u64 __btrfs_calc_stripe_size(struct btrfs_fs_devices *fs_devices,
-+				    u64 proposed_size, u64 type,
-+				    int num_stripes, int small_stripe)
-+{
-+	int min_stripe_size = 1 * 1024 * 1024;
-+	u64 calc_size = proposed_size;
-+	u64 max_chunk_size = calc_size;
-+	int ncopies = 1;
++	list_for_each_entry(block_group, groups_list, list) {
++		spin_lock(&block_group->lock);
 +
-+	if (type & (BTRFS_BLOCK_GROUP_RAID1 |
-+		    BTRFS_BLOCK_GROUP_DUP |
-+		    BTRFS_BLOCK_GROUP_RAID10))
-+		ncopies = 2;
++		if (!block_group->ro) {
++			spin_unlock(&block_group->lock);
++			continue;
++		}
 +
- 	if (type & BTRFS_BLOCK_GROUP_DATA) {
- 		max_chunk_size = 10 * calc_size;
- 		min_stripe_size = 64 * 1024 * 1024;
-@@ -2256,51 +2253,209 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	max_chunk_size = min(div_factor(fs_devices->total_rw_bytes, 1),
- 			     max_chunk_size);
- 
--again:
--	max_avail = 0;
--	if (!map || map->num_stripes != num_stripes) {
--		kfree(map);
--		map = kmalloc(map_lookup_size(num_stripes), GFP_NOFS);
--		if (!map)
--			return -ENOMEM;
--		map->num_stripes = num_stripes;
--	}
--
- 	if (calc_size * num_stripes > max_chunk_size * ncopies) {
- 		calc_size = max_chunk_size * ncopies;
- 		do_div(calc_size, num_stripes);
--		do_div(calc_size, stripe_len);
--		calc_size *= stripe_len;
-+		do_div(calc_size, BTRFS_STRIPE_LEN);
-+		calc_size *= BTRFS_STRIPE_LEN;
- 	}
- 
- 	/* we don't want tiny stripes */
--	if (!looped)
-+	if (!small_stripe)
- 		calc_size = max_t(u64, min_stripe_size, calc_size);
- 
- 	/*
--	 * we're about to do_div by the stripe_len so lets make sure
-+	 * we're about to do_div by the BTRFS_STRIPE_LEN so lets make sure
- 	 * we end up with something bigger than a stripe
- 	 */
--	calc_size = max_t(u64, calc_size, stripe_len * 4);
-+	calc_size = max_t(u64, calc_size, BTRFS_STRIPE_LEN);
++		if (block_group->flags & (BTRFS_BLOCK_GROUP_RAID1 |
++					  BTRFS_BLOCK_GROUP_RAID10 |
++					  BTRFS_BLOCK_GROUP_DUP))
++			factor = 2;
++		else
++			factor = 1;
 +
-+	do_div(calc_size, BTRFS_STRIPE_LEN);
-+	calc_size *= BTRFS_STRIPE_LEN;
++		free_bytes += (block_group->key.offset -
++			       btrfs_block_group_used(&block_group->item)) *
++			       factor;
 +
-+	return calc_size;
-+}
-+
-+static struct map_lookup *__shrink_map_lookup_stripes(struct map_lookup *map,
-+						      int num_stripes)
-+{
-+	struct map_lookup *new;
-+	size_t len = map_lookup_size(num_stripes);
-+
-+	BUG_ON(map->num_stripes < num_stripes);
-+
-+	if (map->num_stripes == num_stripes)
-+		return map;
-+
-+	new = kmalloc(len, GFP_NOFS);
-+	if (!new) {
-+		/* just change map->num_stripes */
-+		map->num_stripes = num_stripes;
-+		return map;
++		spin_unlock(&block_group->lock);
 +	}
 +
-+	memcpy(new, map, len);
-+	new->num_stripes = num_stripes;
-+	kfree(map);
-+	return new;
++	return free_bytes;
 +}
 +
 +/*
-+ * helper to allocate device space from btrfs_device_info, in which we stored
-+ * max free space information of every device. It is used when we can not
-+ * allocate chunks by default size.
-+ *
-+ * By this helper, we can allocate a new chunk as larger as possible.
++ * helper to account the unused space of all the readonly block group in the
++ * space_info. takes mirrors into account.
 + */
-+static int __btrfs_alloc_tiny_space(struct btrfs_trans_handle *trans,
-+				    struct btrfs_fs_devices *fs_devices,
-+				    struct btrfs_device_info *devices,
-+				    int nr_device, u64 type,
-+				    struct map_lookup **map_lookup,
-+				    int min_stripes, u64 *stripe_size)
++u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo)
 +{
-+	int i, index, sort_again = 0;
-+	int min_devices = min_stripes;
-+	u64 max_avail, min_free;
-+	struct map_lookup *map = *map_lookup;
-+	int ret;
++	int i;
++	u64 free_bytes = 0;
 +
-+	if (nr_device < min_stripes)
-+		return -ENOSPC;
++	spin_lock(&sinfo->lock);
 +
-+	btrfs_descending_sort_devices(devices, nr_device);
++	for(i = 0; i < BTRFS_NR_RAID_TYPES; i++)
++		if (!list_empty(&sinfo->block_groups[i]))
++			free_bytes += __btrfs_get_ro_block_group_free_space(
++						&sinfo->block_groups[i]);
 +
-+	max_avail = devices[0].max_avail;
-+	if (!max_avail)
-+		return -ENOSPC;
++	spin_unlock(&sinfo->lock);
 +
-+	for (i = 0; i < nr_device; i++) {
-+		/*
-+		 * if dev_offset = 0, it means the free space of this device
-+		 * is less than what we need, and we didn't search max avail
-+		 * extent on this device, so do it now.
-+		 */
-+		if (!devices[i].dev_offset) {
-+			ret = find_free_dev_extent(trans, devices[i].dev,
-+						   max_avail,
-+						   &devices[i].dev_offset,
-+						   &devices[i].max_avail);
-+			if (ret != 0 && ret != -ENOSPC)
-+				return ret;
-+			sort_again = 1;
-+		}
-+	}
-+
-+	/* we update the max avail free extent of each devices, sort again */
-+	if (sort_again)
-+		btrfs_descending_sort_devices(devices, nr_device);
-+
-+	if (type & BTRFS_BLOCK_GROUP_DUP)
-+		min_devices = 1;
-+
-+	if (!devices[min_devices - 1].max_avail)
-+		return -ENOSPC;
-+
-+	max_avail = devices[min_devices - 1].max_avail;
-+	if (type & BTRFS_BLOCK_GROUP_DUP)
-+		do_div(max_avail, 2);
- 
--	do_div(calc_size, stripe_len);
--	calc_size *= stripe_len;
-+	max_avail = __btrfs_calc_stripe_size(fs_devices, max_avail, type,
-+					     min_stripes, 1);
-+	if (type & BTRFS_BLOCK_GROUP_DUP)
-+		min_free = max_avail * 2;
-+	else
-+		min_free = max_avail;
-+
-+	if (min_free > devices[min_devices - 1].max_avail)
-+		return -ENOSPC;
-+
-+	map = __shrink_map_lookup_stripes(map, min_stripes);
-+	*stripe_size = max_avail;
-+
-+	index = 0;
-+	for (i = 0; i < min_stripes; i++) {
-+		map->stripes[i].dev = devices[index].dev;
-+		map->stripes[i].physical = devices[index].dev_offset;
-+		if (type & BTRFS_BLOCK_GROUP_DUP) {
-+			i++;
-+			map->stripes[i].dev = devices[index].dev;
-+			map->stripes[i].physical = devices[index].dev_offset +
-+						   max_avail;
-+		}
-+		index++;
-+	}
-+	*map_lookup = map;
-+
-+	return 0;
++	return free_bytes;
 +}
 +
-+static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
-+			       struct btrfs_root *extent_root,
-+			       struct map_lookup **map_ret,
-+			       u64 *num_bytes, u64 *stripe_size,
-+			       u64 start, u64 type)
+ int btrfs_set_block_group_rw(struct btrfs_root *root,
+ 			      struct btrfs_block_group_cache *cache)
+ {
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 1d21208..61157ba 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -755,6 +755,127 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ 	return 0;
+ }
+ 
++/*
++ * The helper to calc the free space on the devices that can be used to store
++ * file data.
++ */
++static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
 +{
-+	struct btrfs_fs_info *info = extent_root->fs_info;
-+	struct btrfs_device *device = NULL;
-+	struct btrfs_fs_devices *fs_devices = info->fs_devices;
-+	struct list_head *cur;
-+	struct map_lookup *map;
-+	struct extent_map_tree *em_tree;
-+	struct extent_map *em;
++	struct btrfs_fs_info *fs_info = root->fs_info;
 +	struct btrfs_device_info *devices_info;
-+	struct list_head private_devs;
-+	u64 calc_size = 1024 * 1024 * 1024;
-+	u64 min_free;
-+	u64 avail;
-+	u64 dev_offset;
-+	int num_stripes;
-+	int min_stripes;
-+	int sub_stripes;
-+	int min_devices;	/* the min number of devices we need */
-+	int i;
++	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
++	struct btrfs_device *device;
++	u64 skip_space;
++	u64 type;
++	u64 avail_space;
++	u64 used_space;
++	u64 min_stripe_size;
++	int min_stripes = 1;
++	int i = 0, nr_devices;
 +	int ret;
-+	int index;
 +
-+	if ((type & BTRFS_BLOCK_GROUP_RAID1) &&
-+	    (type & BTRFS_BLOCK_GROUP_DUP)) {
-+		WARN_ON(1);
-+		type &= ~BTRFS_BLOCK_GROUP_DUP;
-+	}
-+	if (list_empty(&fs_devices->alloc_list))
-+		return -ENOSPC;
++	nr_devices = fs_info->fs_devices->rw_devices;
++	BUG_ON(!nr_devices);
 +
-+	ret = __btrfs_calc_nstripes(fs_devices, type, &num_stripes,
-+				    &min_stripes, &sub_stripes);
-+	if (ret)
-+		return ret;
-+
-+	devices_info = kzalloc(sizeof(*devices_info) * fs_devices->rw_devices,
++	devices_info = kmalloc(sizeof(*devices_info) * nr_devices,
 +			       GFP_NOFS);
 +	if (!devices_info)
 +		return -ENOMEM;
 +
-+	map = kmalloc(map_lookup_size(num_stripes), GFP_NOFS);
-+	if (!map) {
-+		ret = -ENOMEM;
-+		goto error;
-+	}
-+	map->num_stripes = num_stripes;
- 
- 	cur = fs_devices->alloc_list.next;
- 	index = 0;
-+	i = 0;
- 
--	if (type & BTRFS_BLOCK_GROUP_DUP)
-+	calc_size = __btrfs_calc_stripe_size(fs_devices, calc_size, type,
-+					     num_stripes, 0);
++	/* calc min stripe number for data space alloction */
++	type = btrfs_get_alloc_profile(root, 1);
++	if (type & BTRFS_BLOCK_GROUP_RAID0)
++		min_stripes = 2;
++	else if (type & BTRFS_BLOCK_GROUP_RAID1)
++		min_stripes = 2;
++	else if (type & BTRFS_BLOCK_GROUP_RAID10)
++		min_stripes = 4;
 +
-+	if (type & BTRFS_BLOCK_GROUP_DUP) {
- 		min_free = calc_size * 2;
--	else
-+		min_devices = 1;
-+	} else {
- 		min_free = calc_size;
--
--	/*
--	 * we add 1MB because we never use the first 1MB of the device, unless
--	 * we've looped, then we are likely allocating the maximum amount of
--	 * space left already
--	 */
--	if (!looped)
--		min_free += 1024 * 1024;
-+		min_devices = min_stripes;
-+	}
- 
- 	INIT_LIST_HEAD(&private_devs);
- 	while (index < num_stripes) {
-@@ -2313,27 +2468,39 @@ again:
- 		cur = cur->next;
- 
- 		if (device->in_fs_metadata && avail >= min_free) {
--			ret = find_free_dev_extent(trans, device,
--						   min_free, &dev_offset,
--						   &max_avail);
-+			ret = find_free_dev_extent(trans, device, min_free,
-+						   &devices_info[i].dev_offset,
-+						   &devices_info[i].max_avail);
- 			if (ret == 0) {
- 				list_move_tail(&device->dev_alloc_list,
- 					       &private_devs);
- 				map->stripes[index].dev = device;
--				map->stripes[index].physical = dev_offset;
-+				map->stripes[index].physical =
-+						devices_info[i].dev_offset;
- 				index++;
- 				if (type & BTRFS_BLOCK_GROUP_DUP) {
- 					map->stripes[index].dev = device;
- 					map->stripes[index].physical =
--						dev_offset + calc_size;
-+						devices_info[i].dev_offset +
-+						calc_size;
- 					index++;
- 				}
--			}
--		} else if (device->in_fs_metadata && avail > max_avail)
--			max_avail = avail;
-+			} else if (ret != -ENOSPC)
-+				goto error;
++	if (type & BTRFS_BLOCK_GROUP_DUP)
++		min_stripe_size = 2 * BTRFS_STRIPE_LEN;
++	else
++		min_stripe_size = BTRFS_STRIPE_LEN;
 +
-+			devices_info[i].dev = device;
-+			i++;
-+		} else if (device->in_fs_metadata &&
-+			   avail >= BTRFS_STRIPE_LEN) {
-+			devices_info[i].dev = device;
-+			devices_info[i].max_avail = avail;
-+			i++;
++	list_for_each_entry(device, &fs_devices->alloc_list, dev_alloc_list) {
++		if (!device->in_fs_metadata)
++			continue;
++
++		avail_space = device->total_bytes - device->bytes_used;
++
++		/* align with stripe_len */
++		do_div(avail_space, BTRFS_STRIPE_LEN);
++		avail_space *= BTRFS_STRIPE_LEN;
++
++		/*
++		 * In order to avoid overwritting the superblock on the drive,
++		 * btrfs starts at an offset of at least 1MB when doing chunk
++		 * allocation.
++		 */
++		skip_space = 1024 * 1024;
++
++		/* user can set the offset in fs_info->alloc_start. */
++		if (fs_info->alloc_start + BTRFS_STRIPE_LEN <=
++		    device->total_bytes)
++			skip_space = max(fs_info->alloc_start, skip_space);
++
++		/*
++		 * btrfs can not use the free space in [0, skip_space - 1],
++		 * we must subtract it from the total. In order to implement
++		 * it, we account the used space in this range first.
++		 */
++		ret = btrfs_account_dev_extents_size(device, 0, skip_space - 1,
++						     &used_space);
++		if (ret) {
++			kfree(devices_info);
++			return ret;
 +		}
 +
- 		if (cur == &fs_devices->alloc_list)
- 			break;
- 	}
++		/* calc the free space in [0, skip_space - 1] */
++		skip_space -= used_space;
 +
- 	list_splice(&private_devs, &fs_devices->alloc_list);
- 	if (index < num_stripes) {
- 		if (index >= min_stripes) {
-@@ -2342,36 +2509,36 @@ again:
- 				num_stripes /= sub_stripes;
- 				num_stripes *= sub_stripes;
- 			}
--			looped = 1;
--			goto again;
--		}
--		if (!looped && max_avail > 0) {
--			looped = 1;
--			calc_size = max_avail;
--			if (type & BTRFS_BLOCK_GROUP_DUP)
--				do_div(calc_size, 2);
--			goto again;
++		/*
++		 * we can use the free space in [0, skip_space - 1], subtract
++		 * it from the total.
++		 */
++		if (avail_space && avail_space >= skip_space)
++			avail_space -= skip_space;
++		else
++			avail_space = 0;
 +
-+			map = __shrink_map_lookup_stripes(map, num_stripes);
-+		} else if (i >= min_devices) {
-+			ret = __btrfs_alloc_tiny_space(trans, fs_devices,
-+						       devices_info, i, type,
-+						       &map, min_stripes,
-+						       &calc_size);
-+			if (ret)
-+				goto error;
-+		} else {
-+			ret = -ENOSPC;
-+			goto error;
- 		}
--		kfree(map);
--		return -ENOSPC;
- 	}
- 	map->sector_size = extent_root->sectorsize;
--	map->stripe_len = stripe_len;
--	map->io_align = stripe_len;
--	map->io_width = stripe_len;
-+	map->stripe_len = BTRFS_STRIPE_LEN;
-+	map->io_align = BTRFS_STRIPE_LEN;
-+	map->io_width = BTRFS_STRIPE_LEN;
- 	map->type = type;
--	map->num_stripes = num_stripes;
- 	map->sub_stripes = sub_stripes;
- 
- 	*map_ret = map;
- 	*stripe_size = calc_size;
- 	*num_bytes = chunk_bytes_by_type(type, calc_size,
--					 num_stripes, sub_stripes);
-+					 map->num_stripes, sub_stripes);
- 
- 	em = alloc_extent_map(GFP_NOFS);
- 	if (!em) {
--		kfree(map);
--		return -ENOMEM;
-+		ret = -ENOMEM;
-+		goto error;
- 	}
- 	em->bdev = (struct block_device *)map;
- 	em->start = start;
-@@ -2404,7 +2571,13 @@ again:
- 		index++;
- 	}
- 
++		if (avail_space < min_stripe_size)
++			continue;
++
++		devices_info[i].dev = device;
++		devices_info[i].max_avail = avail_space;
++
++		i++;
++	}
++
++	nr_devices = i;
++
++	btrfs_descending_sort_devices(devices_info, nr_devices);
++
++	i = nr_devices - 1;
++	avail_space = 0;
++	while (nr_devices >= min_stripes) {
++		if (devices_info[i].max_avail >= min_stripe_size) {
++			int j;
++			u64 alloc_size;
++
++			avail_space += devices_info[i].max_avail * min_stripes;
++			alloc_size = devices_info[i].max_avail;
++			for (j = i + 1 - min_stripes; j <= i; j++)
++				devices_info[j].max_avail -= alloc_size;
++		}
++		i--;
++		nr_devices--;
++	}
++
 +	kfree(devices_info);
- 	return 0;
++	*free_bytes = avail_space;
++	return 0;
++}
 +
-+error:
-+	kfree(map);
-+	kfree(devices_info);
-+	return ret;
+ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+ {
+ 	struct btrfs_root *root = btrfs_sb(dentry->d_sb);
+@@ -762,16 +883,21 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+ 	struct list_head *head = &root->fs_info->space_info;
+ 	struct btrfs_space_info *found;
+ 	u64 total_used = 0;
+-	u64 total_used_data = 0;
++	u64 total_free_data = 0;
+ 	int bits = dentry->d_sb->s_blocksize_bits;
+ 	__be32 *fsid = (__be32 *)root->fs_info->fsid;
++	int ret;
+ 
++	/* holding chunk_muext to avoid allocating new chunks */
++	mutex_lock(&root->fs_info->chunk_mutex);
+ 	rcu_read_lock();
+ 	list_for_each_entry_rcu(found, head, list) {
+-		if (found->flags & BTRFS_BLOCK_GROUP_DATA)
+-			total_used_data += found->disk_used;
+-		else
+-			total_used_data += found->disk_total;
++		if (found->flags & BTRFS_BLOCK_GROUP_DATA) {
++			total_free_data += found->disk_total - found->disk_used;
++			total_free_data -=
++				btrfs_account_ro_block_groups_free_space(found);
++		}
++
+ 		total_used += found->disk_used;
+ 	}
+ 	rcu_read_unlock();
+@@ -779,9 +905,17 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+ 	buf->f_namelen = BTRFS_NAME_LEN;
+ 	buf->f_blocks = btrfs_super_total_bytes(disk_super) >> bits;
+ 	buf->f_bfree = buf->f_blocks - (total_used >> bits);
+-	buf->f_bavail = buf->f_blocks - (total_used_data >> bits);
+ 	buf->f_bsize = dentry->d_sb->s_blocksize;
+ 	buf->f_type = BTRFS_SUPER_MAGIC;
++	buf->f_bavail = total_free_data;
++	ret = btrfs_calc_avail_data_space(root, &total_free_data);
++	if (ret) {
++		mutex_unlock(&root->fs_info->chunk_mutex);
++		return ret;
++	}
++	buf->f_bavail += total_free_data;
++	buf->f_bavail = buf->f_bavail >> bits;
++	mutex_unlock(&root->fs_info->chunk_mutex);
+ 
+ 	/* We treat it as constant endianness (it doesn't matter _which_)
+ 	   because we want the fsid to come out the same whether mounted
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index c22784b..0c7f478 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -728,6 +728,90 @@ error:
+ 	return ret;
  }
  
- static int __finish_chunk_alloc(struct btrfs_trans_handle *trans,
++/* helper to account the used device space in the range */
++int btrfs_account_dev_extents_size(struct btrfs_device *device, u64 start,
++				   u64 end, u64 *length)
++{
++	struct btrfs_key key;
++	struct btrfs_root *root = device->dev_root;
++	struct btrfs_dev_extent *dev_extent;
++	struct btrfs_path *path;
++	u64 extent_end;
++	int ret;
++	int slot;
++	struct extent_buffer *l;
++
++	*length = 0;
++
++	if (start >= device->total_bytes)
++		return 0;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++	path->reada = 2;
++
++	key.objectid = device->devid;
++	key.offset = start;
++	key.type = BTRFS_DEV_EXTENT_KEY;
++
++	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
++	if (ret < 0)
++		goto out;
++	if (ret > 0) {
++		ret = btrfs_previous_item(root, path, key.objectid, key.type);
++		if (ret < 0)
++			goto out;
++	}
++
++	while (1) {
++		l = path->nodes[0];
++		slot = path->slots[0];
++		if (slot >= btrfs_header_nritems(l)) {
++			ret = btrfs_next_leaf(root, path);
++			if (ret == 0)
++				continue;
++			if (ret < 0)
++				goto out;
++
++			break;
++		}
++		btrfs_item_key_to_cpu(l, &key, slot);
++
++		if (key.objectid < device->devid)
++			goto next;
++
++		if (key.objectid > device->devid)
++			break;
++
++		if (btrfs_key_type(&key) != BTRFS_DEV_EXTENT_KEY)
++			goto next;
++
++		dev_extent = btrfs_item_ptr(l, slot, struct btrfs_dev_extent);
++		extent_end = key.offset + btrfs_dev_extent_length(l,
++								  dev_extent);
++		if (key.offset <= start && extent_end > end) {
++			*length = end - start + 1;
++			break;
++		} else if (key.offset <= start && extent_end > start)
++			*length += extent_end - start;
++		else if (key.offset > start && extent_end <= end)
++			*length += extent_end - key.offset;
++		else if (key.offset > start && key.offset <= end) {
++			*length += end - key.offset + 1;
++			break;
++		} else if (key.offset > end)
++			break;
++
++next:
++		path->slots[0]++;
++	}
++	ret = 0;
++out:
++	btrfs_free_path(path);
++	return ret;
++}
++
+ /*
+  * find_free_dev_extent - find free space in the specified device
+  * @trans:	transaction handler
 diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index a668c01..a5cfedf 100644
+index a5cfedf..7af6144 100644
 --- a/fs/btrfs/volumes.h
 +++ b/fs/btrfs/volumes.h
-@@ -20,8 +20,11 @@
- #define __BTRFS_VOLUMES_
+@@ -161,6 +161,9 @@ static inline void btrfs_descending_sort_devices(
+ 	     btrfs_cmp_device_free_bytes, NULL);
+ }
  
- #include <linux/bio.h>
-+#include <linux/sort.h>
- #include "async-thread.h"
- 
-+#define BTRFS_STRIPE_LEN	(64 * 1024)
-+
- struct buffer_head;
- struct btrfs_pending_bios {
- 	struct bio *head;
-@@ -137,6 +140,27 @@ struct btrfs_multi_bio {
- 	struct btrfs_bio_stripe stripes[];
- };
- 
-+struct btrfs_device_info {
-+	struct btrfs_device *dev;
-+	u64 dev_offset;
-+	u64 max_avail;
-+};
-+
-+/* Used to sort the devices by max_avail(descending sort) */
-+int btrfs_cmp_device_free_bytes(const void *dev_info1, const void *dev_info2);
-+
-+/*
-+ * sort the devices by max_avail, in which max free extent size of each device
-+ * is stored.(Descending Sort)
-+ */
-+static inline void btrfs_descending_sort_devices(
-+					struct btrfs_device_info *devices,
-+					size_t nr_devices)
-+{
-+	sort(devices, nr_devices, sizeof(struct btrfs_device_info),
-+	     btrfs_cmp_device_free_bytes, NULL);
-+}
++int btrfs_account_dev_extents_size(struct btrfs_device *device, u64 start,
++				   u64 end, u64 *length);
 +
  #define btrfs_multi_bio_size(n) (sizeof(struct btrfs_multi_bio) + \
  			    (sizeof(struct btrfs_bio_stripe) * (n)))

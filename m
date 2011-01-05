@@ -1,7 +1,7 @@
 From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH V3 4/6] btrfs: restructure find_free_dev_extent()
-Date: Wed, 05 Jan 2011 18:07:26 +0800
-Message-ID: <4D2442DE.5020700@cn.fujitsu.com>
+Subject: [PATCH V3 3/6] btrfs: fix wrong calculation of stripe size
+Date: Wed, 05 Jan 2011 18:07:24 +0800
+Message-ID: <4D2442DC.1060109@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=GB2312
@@ -12,263 +12,77 @@ To: Chris Mason <chris.mason@oracle.com>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-- make it return the start position and length of the max free space when it can
-  not find a suitable free space.
-- make it more readability
+There are two tiny problem:
+- One is When we check the chunk size is greater than the max chunk size or not,
+  we should take mirrors into account, but the original code didn't.
+- The other is btrfs shouldn't use the size of the residual free space as the
+  length of of a dup chunk when doing chunk allocation. It is because the device
+  space that a dup chunk needs is twice as large as the chunk size, if we use
+  the size of the residual free space as the length of a dup chunk, we can not
+  get enough free space. Fix it.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c |    4 +-
- fs/btrfs/volumes.c     |  155 +++++++++++++++++++++++++++--------------------
- 2 files changed, 91 insertions(+), 68 deletions(-)
+Changelog V1 -> V2:
+- fix compiler errors x86_32 machines which were caused by u64 division.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 4bcd875..7c1a053 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -8098,7 +8098,7 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
- 	mutex_lock(&root->fs_info->chunk_mutex);
- 	list_for_each_entry(device, &fs_devices->alloc_list, dev_alloc_list) {
- 		u64 min_free = btrfs_block_group_used(&block_group->item);
--		u64 dev_offset, max_avail;
-+		u64 dev_offset;
- 
- 		/*
- 		 * check to make sure we can actually find a chunk with enough
-@@ -8106,7 +8106,7 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
- 		 */
- 		if (device->total_bytes > device->bytes_used + min_free) {
- 			ret = find_free_dev_extent(NULL, device, min_free,
--						   &dev_offset, &max_avail);
-+						   &dev_offset, NULL);
- 			if (!ret)
- 				break;
- 			ret = -1;
+ fs/btrfs/volumes.c |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
+
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index c50a85e..4838bd3 100644
+index 177b731..c50a85e 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -729,58 +729,82 @@ error:
- }
- 
- /*
-+ * find_free_dev_extent - find free space in the specified device
-+ * @trans:	transaction handler
-+ * @device:	the device which we search the free space in
-+ * @num_bytes:	the size of the free space that we need
-+ * @start:	store the start of the free space.
-+ * @len:	the size of the free space. that we find, or the size of the max
-+ * 		free space if we don't find suitable free space
-+ *
-  * this uses a pretty simple search, the expectation is that it is
-  * called very infrequently and that a given device has a small number
-  * of extents
-+ *
-+ * @start is used to store the start of the free space if we find. But if we
-+ * don't find suitable free space, it will be used to store the start position
-+ * of the max free space.
-+ *
-+ * @len is used to store the size of the free space that we find.
-+ * But if we don't find suitable free space, it is used to store the size of
-+ * the max free space.
-  */
- int find_free_dev_extent(struct btrfs_trans_handle *trans,
- 			 struct btrfs_device *device, u64 num_bytes,
--			 u64 *start, u64 *max_avail)
-+			 u64 *start, u64 *len)
- {
- 	struct btrfs_key key;
- 	struct btrfs_root *root = device->dev_root;
--	struct btrfs_dev_extent *dev_extent = NULL;
-+	struct btrfs_dev_extent *dev_extent;
- 	struct btrfs_path *path;
--	u64 hole_size = 0;
--	u64 last_byte = 0;
--	u64 search_start = 0;
-+	u64 hole_size;
-+	u64 max_hole_start;
-+	u64 max_hole_size;
-+	u64 extent_end;
-+	u64 search_start;
- 	u64 search_end = device->total_bytes;
+@@ -2177,6 +2177,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 	int num_stripes = 1;
+ 	int min_stripes = 1;
+ 	int sub_stripes = 0;
++	int ncopies = 1;
+ 	int looped = 0;
  	int ret;
--	int slot = 0;
--	int start_found;
-+	int slot;
- 	struct extent_buffer *l;
- 
--	path = btrfs_alloc_path();
--	if (!path)
--		return -ENOMEM;
--	path->reada = 2;
--	start_found = 0;
--
- 	/* FIXME use last free of some kind */
- 
- 	/* we don't want to overwrite the superblock on the drive,
- 	 * so we make sure to start at an offset of at least 1MB
- 	 */
--	search_start = max((u64)1024 * 1024, search_start);
-+	search_start = 1024 * 1024;
- 
--	if (root->fs_info->alloc_start + num_bytes <= device->total_bytes)
-+	if (root->fs_info->alloc_start + num_bytes <= search_end)
- 		search_start = max(root->fs_info->alloc_start, search_start);
- 
-+	max_hole_start = search_start;
-+	max_hole_size = 0;
-+
-+	if (search_start >= search_end) {
-+		ret = -ENOSPC;
-+		goto error;
-+	}
-+
-+	path = btrfs_alloc_path();
-+	if (!path) {
-+		ret = -ENOMEM;
-+		goto error;
-+	}
-+	path->reada = 2;
-+
- 	key.objectid = device->devid;
- 	key.offset = search_start;
- 	key.type = BTRFS_DEV_EXTENT_KEY;
-+
- 	ret = btrfs_search_slot(trans, root, &key, path, 0, 0);
- 	if (ret < 0)
--		goto error;
-+		goto out;
- 	if (ret > 0) {
- 		ret = btrfs_previous_item(root, path, key.objectid, key.type);
- 		if (ret < 0)
--			goto error;
--		if (ret > 0)
--			start_found = 1;
-+			goto out;
+ 	int index;
+@@ -2197,12 +2198,14 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 	if (type & (BTRFS_BLOCK_GROUP_DUP)) {
+ 		num_stripes = 2;
+ 		min_stripes = 2;
++		ncopies = 2;
  	}
--	l = path->nodes[0];
--	btrfs_item_key_to_cpu(l, &key, path->slots[0]);
-+
- 	while (1) {
- 		l = path->nodes[0];
- 		slot = path->slots[0];
-@@ -789,24 +813,9 @@ int find_free_dev_extent(struct btrfs_trans_handle *trans,
- 			if (ret == 0)
- 				continue;
- 			if (ret < 0)
--				goto error;
--no_more_items:
--			if (!start_found) {
--				if (search_start >= search_end) {
--					ret = -ENOSPC;
--					goto error;
--				}
--				*start = search_start;
--				start_found = 1;
--				goto check_pending;
--			}
--			*start = last_byte > search_start ?
--				last_byte : search_start;
--			if (search_end <= *start) {
--				ret = -ENOSPC;
--				goto error;
--			}
--			goto check_pending;
-+				goto out;
-+
-+			break;
+ 	if (type & (BTRFS_BLOCK_GROUP_RAID1)) {
+ 		if (fs_devices->rw_devices < 2)
+ 			return -ENOSPC;
+ 		num_stripes = 2;
+ 		min_stripes = 2;
++		ncopies = 2;
+ 	}
+ 	if (type & (BTRFS_BLOCK_GROUP_RAID10)) {
+ 		num_stripes = fs_devices->rw_devices;
+@@ -2210,6 +2213,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 			return -ENOSPC;
+ 		num_stripes &= ~(u32)1;
+ 		sub_stripes = 2;
++		ncopies = 2;
+ 		min_stripes = 4;
+ 	}
+ 
+@@ -2239,8 +2243,8 @@ again:
+ 		map->num_stripes = num_stripes;
+ 	}
+ 
+-	if (calc_size * num_stripes > max_chunk_size) {
+-		calc_size = max_chunk_size;
++	if (calc_size * num_stripes > max_chunk_size * ncopies) {
++		calc_size = max_chunk_size * ncopies;
+ 		do_div(calc_size, num_stripes);
+ 		do_div(calc_size, stripe_len);
+ 		calc_size *= stripe_len;
+@@ -2321,6 +2325,8 @@ again:
+ 		if (!looped && max_avail > 0) {
+ 			looped = 1;
+ 			calc_size = max_avail;
++			if (type & BTRFS_BLOCK_GROUP_DUP)
++				do_div(calc_size, 2);
+ 			goto again;
  		}
- 		btrfs_item_key_to_cpu(l, &key, slot);
- 
-@@ -814,48 +823,62 @@ no_more_items:
- 			goto next;
- 
- 		if (key.objectid > device->devid)
--			goto no_more_items;
-+			break;
- 
--		if (key.offset >= search_start && key.offset > last_byte &&
--		    start_found) {
--			if (last_byte < search_start)
--				last_byte = search_start;
--			hole_size = key.offset - last_byte;
-+		if (btrfs_key_type(&key) != BTRFS_DEV_EXTENT_KEY)
-+			goto next;
- 
--			if (hole_size > *max_avail)
--				*max_avail = hole_size;
-+		if (key.offset > search_start) {
-+			hole_size = key.offset - search_start;
- 
--			if (key.offset > last_byte &&
--			    hole_size >= num_bytes) {
--				*start = last_byte;
--				goto check_pending;
-+			if (hole_size > max_hole_size) {
-+				max_hole_start = search_start;
-+				max_hole_size = hole_size;
-+			}
-+
-+			/*
-+			 * If this free space is greater than which we need,
-+			 * it must be the max free space that we have found
-+			 * until now, so max_hole_start must point to the start
-+			 * of this free space and the length of this free space
-+			 * is stored in max_hole_size. Thus, we return
-+			 * max_hole_start and max_hole_size and go back to the
-+			 * caller.
-+			 */
-+			if (hole_size >= num_bytes) {
-+				ret = 0;
-+				goto out;
- 			}
- 		}
--		if (btrfs_key_type(&key) != BTRFS_DEV_EXTENT_KEY)
--			goto next;
- 
--		start_found = 1;
- 		dev_extent = btrfs_item_ptr(l, slot, struct btrfs_dev_extent);
--		last_byte = key.offset + btrfs_dev_extent_length(l, dev_extent);
-+		extent_end = key.offset + btrfs_dev_extent_length(l,
-+								  dev_extent);
-+		if (extent_end > search_start)
-+			search_start = extent_end;
- next:
- 		path->slots[0]++;
- 		cond_resched();
- 	}
--check_pending:
--	/* we have to make sure we didn't find an extent that has already
--	 * been allocated by the map tree or the original allocation
--	 */
--	BUG_ON(*start < search_start);
- 
--	if (*start + num_bytes > search_end) {
--		ret = -ENOSPC;
--		goto error;
-+	hole_size = search_end- search_start;
-+	if (hole_size > max_hole_size) {
-+		max_hole_start = search_start;
-+		max_hole_size = hole_size;
- 	}
--	/* check for pending inserts here */
--	ret = 0;
- 
--error:
-+	/* See above. */
-+	if (hole_size < num_bytes)
-+		ret = -ENOSPC;
-+	else
-+		ret = 0;
-+
-+out:
- 	btrfs_free_path(path);
-+error:
-+	*start = max_hole_start;
-+	if (len && max_hole_size > *len)
-+		*len = max_hole_size;
- 	return ret;
- }
- 
+ 		kfree(map);
 -- 
 1.7.2.3

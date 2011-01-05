@@ -1,49 +1,43 @@
 From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH V3 0/6] random bugfixes of the space management
-Date: Wed, 05 Jan 2011 18:07:11 +0800
-Message-ID: <4D2442CF.8060702@cn.fujitsu.com>
+Subject: [PATCH V3 1/6] btrfs: fix wrong data space statistics
+Date: Wed, 05 Jan 2011 18:07:15 +0800
+Message-ID: <4D2442D3.6050906@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=GB2312
 Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>,
+To: Josef Bacik <josef@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>,
 	Mitch Harder <mitch.harder@sabayonlinux.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello, Chris
+Josef has implemented mixed data/metadata chunks, we must add those chunks'
+space just like data chunks.
 
-I have a bunch of random fixes of the space management in
-
-git://repo.or.cz/linux-btrfs-devel.git space-manage
-
-They are the ENOSPC fixes, as well as fixes for df command.
-The first one and the last one fixed the wrong free space information reported
-by df command. The second one fixed ENOSPC when there is tiny space in the
-filesystem. And The third fixed wrong calculation of stripe size. And the 4th
-and 5th patches fixed the chunk allocation problem when the block devices have
-no enough space to allocate a default-size chunk.
-
-Changelog V2 -> V3:
-- fix panic caused by freeing a invalid memory address.
-
-Changelog V1 -> V2:
-- fix compiler errors on x86_32 machines.
-- fix some bugs when allocating dup chunks.
-- break the chunk allocation when errors happen.
-- just allocate min_stripes stripes when the free space is not enough.
-- cleanup redundant code.
-
-If you want to merge this patchset to your "next" branch for testing, you can merge it
-directly after dropping the top four patches of the "next" branch.
-
-Thanks
-Miao
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h       |    2 +
- fs/btrfs/extent-tree.c |   71 +++++-
- fs/btrfs/super.c       |  147 +++++++++++-
- fs/btrfs/volumes.c     |  614 +++++++++++++++++++++++++++++++++++-------------
- fs/btrfs/volumes.h     |   27 ++
- 5 files changed, 685 insertions(+), 176 deletions(-)
+ fs/btrfs/super.c |    7 +++----
+ 1 files changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 61bd79a..1d21208 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -768,11 +768,10 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+ 
+ 	rcu_read_lock();
+ 	list_for_each_entry_rcu(found, head, list) {
+-		if (found->flags & (BTRFS_BLOCK_GROUP_METADATA |
+-				    BTRFS_BLOCK_GROUP_SYSTEM))
+-			total_used_data += found->disk_total;
+-		else
++		if (found->flags & BTRFS_BLOCK_GROUP_DATA)
+ 			total_used_data += found->disk_used;
++		else
++			total_used_data += found->disk_total;
+ 		total_used += found->disk_used;
+ 	}
+ 	rcu_read_unlock();
+-- 
+1.7.2.3

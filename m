@@ -1,64 +1,33 @@
-From: Freddie Cash <fjwcash@gmail.com>
+From: Carl Cook <CACook@quantum-sci.com>
 Subject: Re: Synching a Backup Server
-Date: Thu, 6 Jan 2011 13:39:46 -0800
-Message-ID: <AANLkTim0PnMb4nzHxbpP-BVq_hRQYNWBpm9MYdmSv8jH@mail.gmail.com>
-References: <201101060935.14059.CACook@quantum-sci.com>
-	<AANLkTi=iWyKFOoaY6JjTuhg_0CyAtOh=s2gcBUuHGwau@mail.gmail.com>
-	<AANLkTik-rhXAHW18id4WMMtdqXkicvzTZ47+2r6YMuY0@mail.gmail.com>
-	<AANLkTi=8zq-=ZG2sJBaV4JJbd-SnPpV3BQHg7dZA6Yoo@mail.gmail.com>
-	<AANLkTimB8vLf3_apgFc1t=7xN5ab+Sw_u8Wp2NZL=xkd@mail.gmail.com>
-	<AANLkTimVFkAbnkd5BDavo6fDUJ1KcOVVC=6qA6nrkySx@mail.gmail.com>
-	<AANLkTinZXirXQtd_Fd+AN+GbWbs0Wco7dxhEz+Cg6TjO@mail.gmail.com>
-	<4D262EED.6030809@bobich.net>
+Date: Thu, 6 Jan 2011 13:42:23 -0800
+Message-ID: <201101061342.23991.CACook@quantum-sci.com>
+References: <201101060935.14059.CACook@quantum-sci.com> <AANLkTi=iWyKFOoaY6JjTuhg_0CyAtOh=s2gcBUuHGwau@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Gordan Bobic <gordan@bobich.net>
+Content-Type: Text/Plain;
+  charset="utf-8"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D262EED.6030809@bobich.net>
+In-Reply-To: <AANLkTi=iWyKFOoaY6JjTuhg_0CyAtOh=s2gcBUuHGwau@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 6, 2011 at 1:06 PM, Gordan Bobic <gordan@bobich.net> wrote:
->>> Unfortunately, we don't use btrfs or LVM on remote servers, so ther=
-e's
->>> no snapshotting available during the backup run. =C2=A0In a perfect=
- world,
->>> btrfs would be production-ready, ZFS would be available on Linux, a=
-nd
->>> we'd no longer need the abomination called LVM. =C2=A0:)
->
-> As a matter of fact, ZFS _IS_ available on Linux:
-> http://zfs.kqinfotech.com/
+On Thu 06 January 2011 11:16:49 Freddie Cash wrote:
+> Just run rsync on the backup server, tell it to connect via ssh to the
+> remote server, and rsync / (root filesystem) into /backups/htpc/ (or
+> whatever directory you want).  Use an exclude file to exclude the
+> directories you don't want backed up (like /proc, /sys, /dev).
 
-"Available", "usable", and "production-ready" are not synonymous.  :)
-ZFS on Linux is not even in the experimental/testing stage right now.
+> Then repeat the rsync process the next day, into the exact same
+> directory.  Only files that have changed will be transferred.  Then
+> snapshot the filesystem using the current date.
 
-ZFS-fuse is good for proof-of-concept stuff, but chokes on heavy
-usage, especially with dedupe enabled.  We tried it for a couple weeks
-to see what was available in ZFS versions above 14, but couldn't keep
-it running for more than a day or two at a time.  Supposedly, things
-are better now, but I wouldn't trust 15 TB of backups to it.  :)
+Kool.
 
-The Lawrence-Liverpool ZFS module for Linux doesn't support ZFS
-filesystems yet, only ZFS volumes.  It should be usable as an LVM
-replacement, though, or as an iSCSI target box.  Haven't tried it yet.
 
-The Middle-East (forget which country it's from) ZFS module for Linux
-is in the private beta stage, but only available for a few distros and
-kernel versions, and is significantly slower than ZFS on FreeBSD.
-Hopefully, it will enter public beta this year, it sounds promising.
-Don't think I'd trust 15 TB of backups to it for at least another
-year, though.
+> > Also with this system, I'm concerned that if there is corruption on the HTPC, it could be propagated to the backup server.  Is there some way to address this?  Longer intervals to sync, so I have a chance to discover?
+> 
+> Using snapshots on the backup server allows you to go back in time to
+> recover files that may have been accidentally deleted, or to recover
+> files that have been corrupted.
 
-If btrfs gets dedupe, "nicer" disk management (it's hard to use
-non-pooled storage now), a working fsck (or similar), and integration
-into Debian, then we may look at that as well.  :)
-
---=20
-=46reddie Cash
-fjwcash@gmail.com
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+How?  I can see that rsync will not transfer the files that have not changed, but I assume it transfers the changed ones.  How can you go back in time?  Is there like a snapshot file that records the state of all files there?

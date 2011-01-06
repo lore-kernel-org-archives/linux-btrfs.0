@@ -1,60 +1,44 @@
-From: Freddie Cash <fjwcash@gmail.com>
+From: Gordan Bobic <gordan@bobich.net>
 Subject: Re: Synching a Backup Server
-Date: Thu, 6 Jan 2011 13:52:25 -0800
-Message-ID: <AANLkTimOEsFiF7tiCzV-Y3NfGYHjK+uL_3O6PNDKum90@mail.gmail.com>
-References: <201101060935.14059.CACook@quantum-sci.com>
-	<AANLkTi=iWyKFOoaY6JjTuhg_0CyAtOh=s2gcBUuHGwau@mail.gmail.com>
-	<201101061342.23991.CACook@quantum-sci.com>
+Date: Thu, 06 Jan 2011 21:53:12 +0000
+Message-ID: <4D2639C8.3080706@bobich.net>
+References: <201101060935.14059.CACook@quantum-sci.com>	<AANLkTi=8zq-=ZG2sJBaV4JJbd-SnPpV3BQHg7dZA6Yoo@mail.gmail.com>	<AANLkTimB8vLf3_apgFc1t=7xN5ab+Sw_u8Wp2NZL=xkd@mail.gmail.com> <201101061344.55407.CACook@quantum-sci.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Carl Cook <CACook@quantum-sci.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201101061342.23991.CACook@quantum-sci.com>
+In-Reply-To: <201101061344.55407.CACook@quantum-sci.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 6, 2011 at 1:42 PM, Carl Cook <CACook@quantum-sci.com> wrot=
-e:
-> On Thu 06 January 2011 11:16:49 Freddie Cash wrote:
->> > Also with this system, I'm concerned that if there is corruption o=
-n the HTPC, it could be propagated to the backup server. =C2=A0Is there=
- some way to address this? =C2=A0Longer intervals to sync, so I have a =
-chance to discover?
+On 01/06/2011 09:44 PM, Carl Cook wrote:
+> On Thu 06 January 2011 12:07:17 C Anthony Risinger wrote:
+>> as for the DB stuff, you definitely need to snapshot _before_ rsync.  roughly:
 >>
->> Using snapshots on the backup server allows you to go back in time t=
-o
->> recover files that may have been accidentally deleted, or to recover
->> files that have been corrupted.
+>> ) read lock and flush tables
+>> ) snapshot
+>> ) unlock tables
+>> ) mount snapshot
+>> ) rsync from snapshot
+>>
+>> ie. the same as whats needed for LVM:
+>>
+>> http://blog.dbadojo.com/2007/09/mysql-backups-using-lvm-snapshots.html
+>>
+>> to get the DB file on disk consistent prior to archiving.
 >
-> How? =C2=A0I can see that rsync will not transfer the files that have=
- not changed, but I assume it transfers the changed ones. =C2=A0How can=
- you go back in time? =C2=A0Is there like a snapshot file that records =
-the state of all files there?
+> I'm a little alarmed by this.  Running a mysql server for MythTV database.   Do these operations need to somehow be done before rsync?  Or Else?
+>
+> I don't understand what you're saying.
 
-I don't know the specifics of how it works in btrfs, but it should be
-similar to how ZFS does it.  The gist of it is:
+If you take a snapshot and back that up, the consistency of the data 
+will be the same as you would expect it to be if you just yanked the 
+power plug on the machine. Some databases tolerate this better than 
+others, depending on how you have them configured. The date will be 
+recoverable, but you will likely use no more than the transactions that 
+were in-flight when it happend.
 
-Each snapshot gives you a point-in-time view of the entire filesystem.
- Each snapshot can be mounted (ZFS is read-only; btrfs is read-only or
-read-write).  So, you mount the snapshot for 2010-12-15 onto /mnt,
-then cd to the directory you want (/mnt/htpc/home/fcash/videos/) and
-copy the file out that you want to restore (cp coolvid.avi ~/).
+If you just rsync the data without taking a snapshot first, the data in 
+your backup will likely be completely hosed and unusable unless you're 
+lucky and the machine was idle at the time.
 
-With ZFS, things are nice and simple:
-  - each filesystem has a .zfs/snapshot directory
-  - in there are sub-directories, each named after the snapshot name
-  - cd into the snapshot name, the OS auto-mounts the snapshot, and off=
- you go
-
-Btrfs should be similar?  Don't know the specifics.
-
-How it works internally, is some of the magic and the beauty of
-Copy-on-Write filesystems.  :)
---=20
-=46reddie Cash
-fjwcash@gmail.com
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Gordan

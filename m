@@ -1,80 +1,45 @@
-From: =?utf-8?B?T25kxZllaiBCw61sa2E=?= <neleai@seznam.cz>
-Subject: Re: Offline Deduplication for Btrfs
-Date: Thu, 6 Jan 2011 16:37:57 +0100
-Message-ID: <20110106153757.GA14070@domone>
-References: <1294245410-4739-1-git-send-email-josef@redhat.com>
- <4D24AD92.4070107@bobich.net>
- <ig4bur$mns$1@dough.gmane.org>
- <20110106142059.GA13178@domone>
- <4D25D498.4050709@bobich.net>
+From: Heinz Diehl <htd@fancy-poultry.org>
+Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption?
+Date: Thu, 6 Jan 2011 16:56:41 +0100
+Message-ID: <20110106155641.GA12443@fancy-poultry.org>
+References: <AANLkTinG209iRAXgpNC0vNpn1C02wkYmVfveXRBqsKV-@mail.gmail.com>
+ <4CF692D1.1010906@redhat.com>
+ <AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com>
+ <4CF6B3E8.2000406@redhat.com>
+ <20101201212310.GA15648@redhat.com>
+ <AANLkTimQtMvPVafWG_DffF-zXXpz1vBPXdCCwxRnzSGr@mail.gmail.com>
+ <20101204193828.GB13871@redhat.com>
+ <AANLkTinX_av7A-xT6hD-Df=tHxOOWhi7QkVezAUO3pW5@mail.gmail.com>
+ <20101205100954.GA6564@fritha.org>
+ <4CFB679D.5030900@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Cc: linux-btrfs@vger.kernel.org
-To: Gordan Bobic <gordan@bobich.net>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D25D498.4050709@bobich.net>
+Content-Type: text/plain; charset=us-ascii
+Cc: Heinz Diehl <htd@fritha.org>, Matt <jackdachef@gmail.com>,
+	Mike Snitzer <snitzer@redhat.com>,
+	Andi Kleen <andi@firstfloor.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	dm-devel <dm-devel@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>, htejun@gmail.com,
+	linux-ext4@vger.kernel.org, Jon Nelson <jnelson@jamponi.net>
+To: linux-kernel@vger.kernel.org
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <4CFB679D.5030900@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 06, 2011 at 02:41:28PM +0000, Gordan Bobic wrote:
-> Ond=C5=99ej B=C3=ADlka wrote:
->=20
-> >>>Then again, for a lot of use-cases there are perhaps better ways t=
-o
-> >>>achieve the targed goal than deduping on FS level, e.g. snapshotti=
-ng or
-> >>>something like fl-cow:
-> >>>http://www.xmailserver.org/flcow.html
-> >>>
-> >As VM are concerned fl-cow is poor replacement of deduping.
->=20
-> Depends on your VM. If your VM uses monolithic images, then you're
-> right. For a better solution, take a look at vserver's hashify
-> feature for something that does this very well in it's own context.
->=20
-> >Upgrading packages? 1st vm upgrades and copies changed files.
-> >After while second upgrades and copies files too. More and more beco=
-mes duped again.
->=20
-> So you want online dedupe, then. :)
->=20
-> >If you host multiple distributions you need to translate
-> >that /usr/share/bin/foo in foonux is /us/bin/bar in barux
->=20
-> The chances of the binaries being the same between distros are
-> between slim and none. In the context of VMs where you have access
-> to raw files, as I said, look at vserver's hashify feature. It
-> doesn't care about file names, it will COW hard-link all files with
-> identical content. This doesn't even require an exhaustive check of
-> all the files' contents - you can start with file sizes. Files that
-> have different sizes can't have the same contents, so you can
-> discard most of the comparing before you even open the file, most of
-> the work gets done based on metadata alone.
->=20
-Yes I wrote this as quick example. On second thought files shared=20
-between distros are typicaly write-only(like manpages)
+On 05.12.2010, Milan Broz wrote: 
 
->
-> >And primary reason to dedupe is not to reduce space usage but to
-> >improve caching. Why should machine A read file if machine B read it=
- five minutes ago.
->=20
-> Couldn't agree more. This is what I was trying to explain earlier.
-> Even if deduping did cause more fragmentation (and I don't think
-> that is the case to any significant extent), the improved caching
-> efficiency would more than offset this.
->=20
-> Gordan
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> It still seems to like dmcrypt with its parallel processing is just
+> trigger to another bug in 37-rc.
 
---=20
+To come back to this: my 3 systems (XFS filesystem) running the latest 
+dm-crypt-scale-to-multiple-cpus patch from Andi Kleen/Milan Broz have 
+not showed a single problem since 2.6.37-rc6 and above. No corruption any 
+longer, no freezes, nothing. The patch applies cleanly to 2.6.37, too, 
+and runs just fine.
 
-Program load too heavy for processor to lift.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I blindly guess that my data corruption problem was related to something else in the
+2.6.37-rc series up to -rc4/5.
+
+Since this patch is a significant improvement: any chance that it finally gets 
+merged into mainline/stable?
+

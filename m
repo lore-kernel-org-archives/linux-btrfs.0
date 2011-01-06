@@ -1,20 +1,33 @@
 From: Carl Cook <CACook@quantum-sci.com>
 Subject: Re: Synching a Backup Server
-Date: Thu, 6 Jan 2011 13:43:17 -0800
-Message-ID: <201101061343.17236.CACook@quantum-sci.com>
-References: <201101060935.14059.CACook@quantum-sci.com> <AANLkTi=0vbAwvcde+7whp-3wYt7p_vmbsdZm27LcyT80@mail.gmail.com>
+Date: Thu, 6 Jan 2011 13:44:54 -0800
+Message-ID: <201101061344.55407.CACook@quantum-sci.com>
+References: <201101060935.14059.CACook@quantum-sci.com> <AANLkTi=8zq-=ZG2sJBaV4JJbd-SnPpV3BQHg7dZA6Yoo@mail.gmail.com> <AANLkTimB8vLf3_apgFc1t=7xN5ab+Sw_u8Wp2NZL=xkd@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: Text/Plain;
   charset="iso-8859-1"
-To: linux-btrfs@vger.kernel.org
+To: "linux-btrfs" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=0vbAwvcde+7whp-3wYt7p_vmbsdZm27LcyT80@mail.gmail.com>
+In-Reply-To: <AANLkTimB8vLf3_apgFc1t=7xN5ab+Sw_u8Wp2NZL=xkd@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu 06 January 2011 12:12:13 Fajar A. Nugraha wrote:
-> With other filesystems, something like rsync + LVM snapshot  is
-> probably your best bet, and it doesn't really care what filesystem you
-> use.
+On Thu 06 January 2011 12:07:17 C Anthony Risinger wrote:
+> as for the DB stuff, you definitely need to snapshot _before_ rsync.  roughly:
+> 
+> ) read lock and flush tables
+> ) snapshot
+> ) unlock tables
+> ) mount snapshot
+> ) rsync from snapshot
+> 
+> ie. the same as whats needed for LVM:
+> 
+> http://blog.dbadojo.com/2007/09/mysql-backups-using-lvm-snapshots.html
+> 
+> to get the DB file on disk consistent prior to archiving.
 
-I'm not running LVM though.  Is this where the snapshotting ability comes from?
+I'm a little alarmed by this.  Running a mysql server for MythTV database.   Do these operations need to somehow be done before rsync?  Or Else?
+
+I don't understand what you're saying.
+
 

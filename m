@@ -1,51 +1,92 @@
-From: Peter A <loony@loonybin.org>
+From: Hubert Kario <hka@qbs.com.pl>
 Subject: Re: Offline Deduplication for Btrfs
-Date: Thu, 6 Jan 2011 11:11:35 -0500
-Message-ID: <201101061111.35134.loony@loonybin.org>
-References: <1294245410-4739-1-git-send-email-josef@redhat.com> <201101060952.50500.loony@loonybin.org> <4D25DA97.9010705@bobich.net>
+Date: Thu, 6 Jan 2011 17:57:32 +0100
+Message-ID: <201101061757.32454.hka@qbs.com.pl>
+References: <4D258D6A.9010903@wpkg.org> <20110106095104.GA5787@glandium.org>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-To: linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain; charset=iso-8859-1
+Cc: Tomasz Chmielewski <mangoo@wpkg.org>,
+	"linux-btrfs" <linux-btrfs@vger.kernel.org>
+To: Mike Hommey <mh@glandium.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D25DA97.9010705@bobich.net>
+In-Reply-To: <20110106095104.GA5787@glandium.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thursday, January 06, 2011 10:07:03 am you wrote:
-> I'd be interested to see the evidence of the "variable length" argument.
-> I have a sneaky suspicion that it actually falls back to 512 byte
-> blocks, which are much more likely to align, when more sensibly sized
-> blocks fail. The downside is that you don't really want to store a 32
-> byte hash key with every 512 bytes of data, so you could peel off 512
-> byte blocks off the front in a hope that a bigger block that follows
-> will match.
-> 
-> Thinking about it, this might actually not be too expensive to do. If
-> the 4KB block doesn't match, check 512 byte sub-blocks, and try peeling
-> them, to make the next one line up. If it doesn't, store the mismatch as
-> a full 4KB block and resume. If you do find a match, save the peeled 512
-> byte blocks separately and dedupe the 4KB block.
-> 
-> In fact, it's rather like the loop peeling optimization on a compiler,
-> that allows you to align the data to the boundary suitable for vectorizing.
-I'm not sure about this but to be honest I can not see any other way. 
-Otherwise, how would you ever find a match? You can not store checksums of 
-random sub-sections hoping that eventually stuff will match up... 512 byte is 
-probably the best choice as its been a "known block size" since the dawn of 
-unix.
+On Thursday 06 of January 2011 10:51:04 Mike Hommey wrote:
+> On Thu, Jan 06, 2011 at 10:37:46AM +0100, Tomasz Chmielewski wrote:
+> > >I have been thinking a lot about de-duplication for a backup appli=
+cation
+> > >I am writing. I wrote a little script to figure out how much it wo=
+uld
+> > >save me. For my laptop home directory, about 100 GiB of data, it w=
+as a
+> > >couple of percent, depending a bit on the size of the chunks. With=
+ 4 KiB
+> > >chunks, I would save about two gigabytes. (That's assuming no MD5 =
+hash
+> > >collisions.) I don't have VM images, but I do have a fair bit of s=
+aved
+> > >e-mail. So, for backups, I concluded it was worth it to provide an
+> > >option to do this. I have no opinion on whether it is worthwhile t=
+o do
+> > >in btrfs.
+> >=20
+> > Online deduplication is very useful for backups of big,
+> > multi-gigabyte files which change constantly.
+> > Some mail servers store files this way; some MUA store the files
+> > like this; databases are also common to pack everything in big file=
+s
+> > which tend to change here and there almost all the time.
+> >=20
+> > Multi-gigabyte files which only have few megabytes changed can't be
+> > hardlinked; simple maths shows that even compressing multiple files
+> > which have few differences will lead to greater space usage than a
+> > few megabytes extra in each (because everything else is
+> > deduplicated).
+> >=20
+> > And I don't even want to think about IO needed to offline dedup a
+> > multi-terabyte storage (1 TB disks and bigger are becoming standard
+> > nowadays) i.e. daily, especially when the storage is already heavil=
+y
+> > used in IO terms.
+> >=20
+> >=20
+> > Now, one popular tool which can deal with small changes in files is
+> > rsync. It can be used to copy files over the network - so that if
+> > you want to copy/update a multi-gigabyte file which only has a few
+> > changes, rsync would need to transfer just a few megabytes.
+> >=20
+> > On disk however, rsync creates a "temporary copy" of the original
+> > file, where it packs unchanged contents together with any changes
+> > made. For example, while it copies/updates a file, we will have:
+> >=20
+> > original_file.bin
+> > .temporary_random_name
+> >=20
+> > Later, original_file.bin would be removed, and
+> > .temporary_random_name would be renamed to original_file.bin. Here
+> > goes away any deduplication we had so far, we have to start the IO
+> > over again.
+>=20
+> Sounds like all you need is cp --reflink=3Dalways and rsync --inplace=
+=2E
+>=20
+> Haven't tested is that works well, though.
 
+It works very well, btrfs with snapshots, compression and rsync --inpla=
+ce has=20
+better storage utilisation than lessfs at around 10-15 snapshots with a=
+round=20
+600GB of test data in small files.
 
-> Actually, see above - I believe I was wrong about how expensive
-> "variable length" block size is likely to be. It's more expensive, sure,
-> but not orders of magnitude more expensive, and as discussed earlier,
-> given the CPU isn't really the key bottleneck here, I think it'd be
-> quite workable.
-Hmm - from my work with DD systems, it seems to be the CPU that ends up being 
-the limiting factor on dedupe performance... But again, it seems that you have 
-much deeper insight into this topic and have already drawn up an algorithm in 
-your mind :)
-
-Peter.
-
--- 
-Censorship: noun, circa 1591. a: Relief of the burden of independent thinking.
+--=20
+Hubert Kario
+QBS - Quality Business Software
+02-656 Warszawa, ul. Ksawer=F3w 30/85
+tel. +48 (22) 646-61-51, 646-74-24
+www.qbs.com.pl
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

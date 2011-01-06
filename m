@@ -1,95 +1,49 @@
-From: Freddie Cash <fjwcash@gmail.com>
-Subject: Re: Synching a Backup Server
-Date: Thu, 6 Jan 2011 11:16:49 -0800
-Message-ID: <AANLkTi=iWyKFOoaY6JjTuhg_0CyAtOh=s2gcBUuHGwau@mail.gmail.com>
-References: <201101060935.14059.CACook@quantum-sci.com>
+From: =?UTF-8?B?SXZhbiBMYWLDoXRo?= <ilabath@gmail.com>
+Subject: Re: raw fs backup/copy
+Date: Thu, 06 Jan 2011 20:26:10 +0100
+Message-ID: <4D261752.9030800@gmail.com>
+References: <4D25EFA0.9010809@gmail.com> <20110106183507.GA19633@carfax.org.uk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Cc: linux-btrfs@vger.kernel.org
-To: Carl Cook <CACook@quantum-sci.com>
+To: Hugo Mills <hugo-lkml@carfax.org.uk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201101060935.14059.CACook@quantum-sci.com>
+In-Reply-To: <20110106183507.GA19633@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 6, 2011 at 9:35 AM, Carl Cook <CACook@quantum-sci.com> wrot=
-e:
->
-> I am setting up a backup server for the garage, to back up my HTPC in=
- case of theft or fire. =C2=A0The HTPC has a 4TB RAID10 array (mdadm, J=
-=46S), and will be connected to the backup server using GB ethernet. =C2=
-=A0The backup server will have a 4TB BTRFS RAID0 array. =C2=A0Debian Te=
-sting running on both.
->
-> I want to keep a duplicate copy of the HTPC data, on the backup serve=
-r, and I think a regular full file copy is not optimal and may take day=
-s to do. =C2=A0So I'm looking for a way to sync the arrays at some inte=
-rval. =C2=A0Ideally the sync would scan the HTPC with a CRC check to lo=
-ok for differences, copy over the differences, then email me on success=
-=2E
->
-> Is there a BTRFS tool that would do this?
+On 01/06/11 19:35, Hugo Mills wrote:
+> On Thu, Jan 06, 2011 at 05:36:48PM +0100, Ivan Lab=C3=A1th wrote:
+>> Is there a reason one can not mount a btrfs and it's byte-for-byte
+>> copy in parallel, or is the driver just acting silly?
+>=20
+>    Probably because both filesystems have identical UUIDs (and labels=
+)
+> and so will (I suspect) end up being identified as the same filesyste=
+m
+> by the btrfs code.
+>=20
+>    Hugo.
+>=20
 
-No, but there's a great tool called rsync that does exactly what you wa=
-nt.  :)
+The reason I ask is, that I had a mirror RAID (btrfs on LVM on LUKS on =
+RAID)
+across 2 disks. Then I snatched one to take with me when going away for
+holidays, copied some files on to it and when I came back, I wanted to =
+get
+to those files. The problem was, I couldn't mount the fs I took with me=
+,
+because a similar fs was already mounted. As it wasn't the root fs,
+I could unmount it and copy the files on some other fs
+(though one could use pivot_root, if it was the root fs).
 
-This is (basically) the same setup we use at work to backup all our
-remote Linux/FreeBSD systems to a central backups server (although our
-server runs FreeBSD+ZFS).
+It seems to me there are cases, where one would want to mount two copie=
+s of
+originally the same filesystem - think of RAID, VMs, distributing fs im=
+ages
+on a network, LVM snapshots, backups, etc.
 
-Just run rsync on the backup server, tell it to connect via ssh to the
-remote server, and rsync / (root filesystem) into /backups/htpc/ (or
-whatever directory you want).  Use an exclude file to exclude the
-directories you don't want backed up (like /proc, /sys, /dev).
-
-If you are comfortable compiling software, then you should look into
-adding the HPN patches to OpenSSH, and enabling the None cipher.  That
-will give you 30-40% network throughput increase.
-
-After the rsync completes, snapshot the filesystem on the backup
-server, using the current date for the name.
-
-Then repeat the rsync process the next day, into the exact same
-directory.  Only files that have changed will be transferred.  Then
-snapshot the filesystem using the current date.
-
-And repeat ad nauseum.  :)
-
-Some useful rsync options to read up on:
-  --hard-links
-  --numeric-ids
-  --delete-during
-  --delete-excluded
-  --archive
-
-The first time you run the rsync command, it will take awhile, as it
-transfers every file on the HTPC to the backups server.  However, you
-can stop and restart this process as many times as you like.  rsync
-will just pick up where it left off.
-
-> Also with this system, I'm concerned that if there is corruption on t=
-he HTPC, it could be propagated to the backup server. =C2=A0Is there so=
-me way to address this? =C2=A0Longer intervals to sync, so I have a cha=
-nce to discover?
-
-Using snapshots on the backup server allows you to go back in time to
-recover files that may have been accidentally deleted, or to recover
-files that have been corrupted.
-
-Be sure to use rsync 3.x, as that will start transferring data a *lot*
-sooner, shortening the overall time needed for the sync.  rsync 2.x
-scans the entire remote filesystem first, builds a list of files, then
-compares that list to the files on the backup server.  rsync 3.x scans
-a couple directories, then starts transferring data while scanning
-ahead.
-
-Once you have a working command-line for rsync, adding it to a script
-and then using cron to schedule it completes the setup.
-
-Works beautifully.  :)  Saved our bacon several times over the past 2 y=
-ears.
---=20
-=46reddie Cash
-fjwcash@gmail.com
+--
+ivan
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

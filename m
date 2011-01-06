@@ -1,76 +1,48 @@
-From: Freddie Cash <fjwcash@gmail.com>
+From: Peter A <loony@loonybin.org>
 Subject: Re: Offline Deduplication for Btrfs
-Date: Wed, 5 Jan 2011 19:33:59 -0800
-Message-ID: <AANLkTimWfxbBma+SA+kTMfpjU8ej0U8v+Oz3EiXbPBtA@mail.gmail.com>
-References: <1294245410-4739-1-git-send-email-josef@redhat.com>
-	<4D24AD92.4070107@bobich.net>
-	<20110105194645.GC2562@localhost.localdomain>
-	<4D24D8BC.90808@bobich.net>
-	<4D250B3C.6010708@shiftmail.org>
-	<4D2514DC.6060306@bobich.net>
+Date: Wed, 5 Jan 2011 22:58:36 -0500
+Message-ID: <201101052258.36457.loony@loonybin.org>
+References: <1294245410-4739-1-git-send-email-josef@redhat.com> <4D24D8BC.90808@bobich.net> <4D251888.7060508@shiftmail.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Gordan Bobic <gordan@bobich.net>
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D2514DC.6060306@bobich.net>
+In-Reply-To: <4D251888.7060508@shiftmail.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 5, 2011 at 5:03 PM, Gordan Bobic <gordan@bobich.net> wrote:
-> On 01/06/2011 12:22 AM, Spelic wrote:
-> Definitely agree that it should be a per-directory option, rather than per
-> mount.
+On Wednesday, January 05, 2011 08:19:04 pm Spelic wrote:
+> > I'd just make it always use the fs block size. No point in making it 
+> > variable.
+> 
+> Agreed. What is the reason for variable block size?
 
-JOOC, would the dedupe "table" be done per directory, per mount, per
-sub-volume, or per volume?  The larger the pool of data to check
-against, the better your dedupe ratios will be.
+First post on this list - I mostly was just reading so far to learn more on fs 
+design but this is one topic I (unfortunately) have experience with... 
 
-I'm not up-to-date on all the terminology that btrfs uses, and how it
-compares to ZFS (disks -> vdevs -> pool -> filesystem/volume), so the
-terms above may be incorrect.  :)
+You wouldn't believe the difference variable block size dedupe makes. For a 
+pure fileserver, its ok to dedupe on block level but for most other uses, 
+variable is king. One big example is backups. Netbackup and most others 
+produce one stream with all data even when backing up to disk. Imagine you 
+move a whole lot of data from one dir to another. Think a directory with huge 
+video files. As a filesystem it would be de-duped nicely. The backup stream 
+however may and may not have matching fs blocks. If the directory name before 
+and after has the same lengths and such - then yeah, dedupe works. Directory 
+name is a byte shorter? Everything in the stream will be offset by one byte - 
+and no dedupe will occur at all on the whole dataset. In real world just 
+compare the dedupe performance of an Oracle 7000 (zfs and therefore fs block 
+based) to a DataDomain (variable lenght) in this usage scenario. Among our 
+customers we see something like 3 to 17x dedupe ration on the DD, 1.02 - 1.05 
+in the 7000.
 
-In the ZFS world, dedupe is done pool-wide in that any block in the
-pool is a candidate for dedupe, but the dedupe property can be
-enabled/disabled on a per-filesystem basis.  Thus, only blocks in
-filesystems with the dedupe property enabled will be deduped.  But
-blocks from any filesystem can be compared against.
+There are many other examples and in the end it comes down to if you want 
+general purpose de-dupe (e.g. something useful when you serve iscsi luns, 
+serve as backup target, ...) or if you only care about a pure file store, 
+you're probably going to be ok with fixed block lengths... 
 
-> This is the point I was making - you end up paying double the cost in disk
-> I/O and the same cost in CPU terms if you do it offline. And I am not
-> convniced the overhead of calculating checksums is that great. There are
-> already similar overheads in checksums being calculated to enable smart data
-> recovery in case of silent disk corruption.
->
-> Now that I mentioned, that, it's an interesting point. Could these be
-> unified? If we crank up the checksums on files a bit, to something suitably
-> useful for deduping, it could make the deduping feature almost free.
+Hope that helps, 
 
-This is what ZFS does.  Every block in the pool has a checksum
-attached to it.  Originally, the default algorithm was fletcher2, with
-fletcher4 and sha256 as alternates.  When dedupe was enabled, the
-default was changed to fletcher4.  Dedupe also came with the option to
-enable/disable a byte-for-byte verify when the hashes match.
-
-By switching the checksum algorithm for the pool to sha256 ahead of
-time, you can enable dedupe, and get the dedupe checksumming for free.
- :)
-
->> Also, the OS is small even if identical on multiple virtual images, how
->> much is going to occupy anyway? Less than 5GB per disk image usually.
->> And that's the only thing that would be deduped because data likely to
->> be different on each instance. How many VMs running you have? 20? That's
->> at most 100GB saved one-time at the cost of a lot of fragmentation.
->
-> That's also 100GB fewer disk blocks in contention for page cache. If you're
-> hitting the disks, you're already going to slow down by several orders of
-> magnitude. Better to make the caching more effective.
-
-If you setup your VMs as diskless images, using NFS off a storage
-server running <whatever FS> using dedupe, you can get a lot more out
-of it than using disk image files (where you have all the block sizes
-and alignment to worry about).  And the you can use all the fancy
-snapshotting, cloning, etc features of <whatever FS> as well.
+Peter.
 
 -- 
-Freddie Cash
-fjwcash@gmail.com
+Censorship: noun, circa 1591. a: Relief of the burden of independent thinking.

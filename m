@@ -1,44 +1,22 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Offline Deduplication for Btrfs
-Date: Thu, 06 Jan 2011 13:35:15 -0500
-Message-ID: <1294338857-sup-1440@think>
-References: <1294245410-4739-1-git-send-email-josef@redhat.com> <4D24D8BC.90808@bobich.net> <4D251888.7060508@shiftmail.org> <201101052258.36457.loony@loonybin.org>
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Peter A <loony@loonybin.org>
+From: Carl Cook <CACook@quantum-sci.com>
+Subject: Synching a Backup Server
+Date: Thu, 6 Jan 2011 09:35:13 -0800
+Message-ID: <201101060935.14059.CACook@quantum-sci.com>
+Mime-Version: 1.0
+Content-Type: Text/Plain;
+  charset="us-ascii"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <201101052258.36457.loony@loonybin.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Peter A's message of 2011-01-05 22:58:36 -0500:
-> On Wednesday, January 05, 2011 08:19:04 pm Spelic wrote:
-> > > I'd just make it always use the fs block size. No point in making it 
-> > > variable.
-> > 
-> > Agreed. What is the reason for variable block size?
-> 
-> First post on this list - I mostly was just reading so far to learn more on fs 
-> design but this is one topic I (unfortunately) have experience with... 
-> 
-> You wouldn't believe the difference variable block size dedupe makes. For a 
-> pure fileserver, its ok to dedupe on block level but for most other uses, 
-> variable is king. One big example is backups. Netbackup and most others 
-> produce one stream with all data even when backing up to disk. Imagine you 
-> move a whole lot of data from one dir to another. Think a directory with huge 
-> video files. As a filesystem it would be de-duped nicely. The backup stream 
-> however may and may not have matching fs blocks. If the directory name before 
-> and after has the same lengths and such - then yeah, dedupe works. Directory 
-> name is a byte shorter? Everything in the stream will be offset by one byte - 
-> and no dedupe will occur at all on the whole dataset. In real world just 
-> compare the dedupe performance of an Oracle 7000 (zfs and therefore fs block 
-> based) to a DataDomain (variable lenght) in this usage scenario. Among our 
-> customers we see something like 3 to 17x dedupe ration on the DD, 1.02 - 1.05 
-> in the 7000.
 
-What is the smallest granularity that the datadomain searches for in
-terms of dedup?
+I am setting up a backup server for the garage, to back up my HTPC in case of theft or fire.  The HTPC has a 4TB RAID10 array (mdadm, JFS), and will be connected to the backup server using GB ethernet.  The backup server will have a 4TB BTRFS RAID0 array.  Debian Testing running on both.
 
-Josef's current setup isn't restricted to a specific block size, but
-there is a min match of 4k.
+I want to keep a duplicate copy of the HTPC data, on the backup server, and I think a regular full file copy is not optimal and may take days to do.  So I'm looking for a way to sync the arrays at some interval.  Ideally the sync would scan the HTPC with a CRC check to look for differences, copy over the differences, then email me on success.
 
--chris
+Is there a BTRFS tool that would do this?
+
+Also with this system, I'm concerned that if there is corruption on the HTPC, it could be propagated to the backup server.  Is there some way to address this?  Longer intervals to sync, so I have a chance to discover?
+
+How about migrating to -all- BTRFS?  Would going all BTRFS give any advantages as to synching over GB ethernet?  If I fail out one drive in my RAID10, add another and set up these two as a BTRFS RAID0 array, could I then copy over the data remaining on the mdadm array?  Any gotchas in setting up the BTRFS RAID0 array?
+

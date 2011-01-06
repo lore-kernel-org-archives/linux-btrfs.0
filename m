@@ -1,55 +1,46 @@
-From: Alan Chandler <alan.chandler@hartley-consultants.com>
-Subject: Raid1 degraded mode
-Date: Thu, 06 Jan 2011 16:41:53 +0000
-Message-ID: <4D25F0D1.1030009@hartley-consultants.com>
+From: Maria <maria@ponstudios.se>
+Subject: Re: btrfs using inside xen domU and online resizing
+Date: Thu, 06 Jan 2011 18:26:48 +0100
+Message-ID: <1294334808.9526.95.camel@mainframe>
+References: <1294276200.26566.14.camel@mobile>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="------------020300090202060003070208"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Cc: linux-btrfs@vger.kernel.org
+To: v.tolstov@selfip.ru
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1294276200.26566.14.camel@mobile>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multi-part message in MIME format.
---------------020300090202060003070208
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
-
-I am trying to understand how btrfs works with Raid1.
-
-Is it possible to create the filesystem with -m raid1 -d raid1 in which 
-there is only one device available when the filesystem is created.  Is 
-it possible to refer to a second device as "missing"
-
-The use case I am thinking of is converting an existing raid1 setup from 
-mdm + lvm + ext4 to btrfs with raid1 and subvolumes.
-
-I would like to fail half of my existing mdm devices and re-initialise 
-them as btrfs.  make subvolumes for each of my lvm logical volumes, copy 
-the data over, then remove mdm and lvm entirely and add back in the 
-devices that were supporting them as additional btrfs devices.
-
-The problem I see is that, according to the wiki, specifying -m raid1 
-and -d raid1 with a single device causes two copies to be made on the 
-same device, whereas I really want it to start off degraded with only 
-one copy until I add in the second device.  Trying to cram two copies on 
-the one device will make it run out of space.
+tor 2011-01-06 klockan 04:10 +0300 skrev Vasiliy G Tolstov:
+> Hello. I have two questions:
+> 
+> 1) When btrfs can be used in systems, that can be rebooted unexpectedly?
+> btrfs fsck is ready to use? does after power failure or hard reboot file
+> system can be damaged and can't be corrected?
+If you turn of the write-cache of the underlying disks, btrfs should
+survive it. I have btrfs on top of dm-crypt and no write-cache, and it
+has survived all crashes so far. But you never know, so I backupp
+regularly. Fsck is not ready yet.
 
 
+> 2) When i use xen domU virtual machine a can dynamically change capacity
+> of block device (/dev/xvda for example) it can be grows and shrinks.  Is
+> that possible to use one btrfs file system on all device without
+> partition table ? In current implementation (i'm use ext3). After block
+> device change it size, i need to recreate partition table and do
+> resize2fs.  But in case of root fs i need reboot to update partition
+> table, because file system is in use. If linux can boot from plain btrfs
+> device without partition table , as i think - i can resize block device
+> and do mount -o remount,maxsize /dev/xvda and btrfs resized
+> automatic... 
+> Is that possible?
+Why not use LVM?
+If you do not have a partition table (or only one partition) you can
+only have one file system on the disk, so why not use the entire disk in
+the first place?
 
---------------020300090202060003070208
-Content-Type: text/x-vcard; charset=utf-8;
- name="alan_chandler.vcf"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment;
- filename="alan_chandler.vcf"
+// Maria
 
-begin:vcard
-fn:Alan Chandler
-n:Chandler;Alan
-email;internet:alan.chandler@hartley-consultants.com
-tel;cell:+44 7540 419 854
-version:2.1
-end:vcard
+> Thank You for all suggestions and answers.
 
 
---------------020300090202060003070208--

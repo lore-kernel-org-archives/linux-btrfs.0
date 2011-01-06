@@ -1,78 +1,48 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: Spelic <spelic@shiftmail.org>
 Subject: Re: Offline Deduplication for Btrfs
-Date: Wed, 05 Jan 2011 20:29:30 -0500
-Message-ID: <1294276285-sup-9136@think>
-References: <1294245410-4739-1-git-send-email-josef@redhat.com> <4D24AD92.4070107@bobich.net>
-Content-Type: text/plain; charset=UTF-8
-Cc: BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
+Date: Thu, 06 Jan 2011 02:56:13 +0100
+Message-ID: <4D25213D.1080504@shiftmail.org>
+References: <1294245410-4739-1-git-send-email-josef@redhat.com>
+ <4D24AD92.4070107@bobich.net> <20110105194645.GC2562@localhost.localdomain>
+ <4D24D8BC.90808@bobich.net> <4D250B3C.6010708@shiftmail.org>
+ <4D2514DC.6060306@bobich.net>
+Mime-Version: 1.0
+Content-Type: text/plain; format=flowed; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
 To: Gordan Bobic <gordan@bobich.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <4D24AD92.4070107@bobich.net>
+In-reply-to: <4D2514DC.6060306@bobich.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Gordan Bobic's message of 2011-01-05 12:42:42 -0500:
-> Josef Bacik wrote:
-> 
-> > Basically I think online dedup is huge waste of time and completely useless.
-> 
-> I couldn't disagree more. First, let's consider what is the 
-> general-purpose use-case of data deduplication. What are the resource 
-> requirements to perform it? How do these resource requirements differ 
-> between online and offline?
+On 01/06/2011 02:03 AM, Gordan Bobic wrote:
+>
+> That's just alarmist. AES is being cryptanalyzed because everything 
+> uses it. And the news of it's insecurity are somewhat exaggerated (for 
+> now at least). 
 
-I don't really agree with Josef that dedup is dumb, but I do think his
-current approach is the most reasonable.  Dedup has a few very valid use
-cases, which I think break down to:
+Who cares... the fact of not being much used is a benefit for RIPEMD / 
+blowfish-twofish then.
+Nobody makes viruses for Linux because they target windows. Same thing...
+RIPEMD has still an advantage over SHA imho, and blowfish over AES.
 
-1) backups
-2) VM images.
 
-The backup farm use case is the best candidate for dedup in general
-because they are generally write once and hopefully read never.
-Fragmentation for reading doesn't matter at all and we're really very
-sure we're going to backup the same files over and over again.
+>
+>> If there is full blocks compare, a simpler/faster algorithm could be
+>> chosen, like md5. Or even a md-64bits which I don't think it exists, but
+>> you can take MD4 and then xor the first 8 bytes with the second 8 bytes
+>> so to reduce it to 8 bytes only. This is just because it saves 60% of
+>> the RAM occupation during dedup, which is expected to be large, and the
+>> collisions are still insignificant at 64bits. Clearly you need to do
+>> full blocks compare after that.
+>
+> I really don't think the cost in terms of a few bytes per file for the 
+> hashes is that significant.
 
-But, it's also something that will be dramatically more efficient when
-the backup server helps out.  The backup server knows two files have the
-same name, same size and can guess with very high accuracy that they
-will be the same.  So it is a very good candidate for Josef's offline
-dedup because it can just do the dedup right after writing the file.
-
-In the backup farm, whole files are very likely to be identical, which
-again is very easy to optimize with Josef's approach.
-
-Next is the VM images.  This is actually a much better workload for
-online dedup, except for the part where our poor storage server would be
-spending massive amounts of CPU deduping blocks for all the VMs on the
-machine.  In this case the storage server doesn't know the
-filenames, it just has bunches of blocks that are likely to be the same
-across VMs.
-
-So, it seems a bit silly to do this out of band, where we wander through
-the FS and read a bunch of blocks in hopes of finding ones with the same
-hash.
-
-But, one of the things on our features-to-implement page is to wander
-through the FS and read all the blocks from time to time.  We want to do
-this in the background to make sure the bits haven't rotted on disk.  By
-scrubbing from time to time we are able to make sure that when a disk
-does die, other disks in the FS are likely to have a good copy.
-
-So again, Josef's approach actually works very well.  His dedup util
-could be the scrubbing util and we'll get two projects for the price of
-one.
-
-As for the security of hashes, we're unlikely to find a collision on a
-sha256 that wasn't made maliciously.  If the system's data is
-controlled and you're not worried about evil people putting files on
-there, extra reads really aren't required.
-
-But then again, extra reads are a good thing (see above about
-scrubbing).  The complexity of the whole operation goes down
-dramatically when we do the verifications because hash index corruptions
-(this extent has this hash) will be found instead of blindly trusted.
-
-None of this means that online dedup is out of the question, I just
-think the offline stuff is a great way to start.
-
--chris
+20 to 8 = 12 bytes per *filesystem block* saved, I think
+Aren't we talking about block-level deduplication?
+For every TB of filesystem you occupy 2GB of RAM with hashes instead of 
+5.3GB (I am assuming 4K blocks, I don't remember how big are btrfs blocks)
+For a 24 * 2TB storage you occupy 96GB instead of 254GB of RAM. It might 
+be the edge between feasible and not feasible.
+Actually it might not be feasible anyway... an option to store hashes 
+into a ssd should be provided then...

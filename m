@@ -1,46 +1,27 @@
-From: Gordan Bobic <gordan@bobich.net>
+From: Carl Cook <CACook@quantum-sci.com>
 Subject: Re: Synching a Backup Server
-Date: Thu, 06 Jan 2011 22:29:40 +0000
-Message-ID: <4D264254.3030109@bobich.net>
-References: <201101060935.14059.CACook@quantum-sci.com>	<201101061344.55407.CACook@quantum-sci.com>	<AANLkTimvyZ-jNCk9FVav8kw8oYUzE1iYpb-5tsuzoz+B@mail.gmail.com> <201101061426.30791.CACook@quantum-sci.com>
+Date: Thu, 6 Jan 2011 15:07:37 -0800
+Message-ID: <201101061507.37698.CACook@quantum-sci.com>
+References: <201101060935.14059.CACook@quantum-sci.com> <AANLkTimvyZ-jNCk9FVav8kw8oYUzE1iYpb-5tsuzoz+B@mail.gmail.com> <201101061426.30791.CACook@quantum-sci.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: Text/Plain;
+  charset="utf-8"
+To: "linux-btrfs" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <201101061426.30791.CACook@quantum-sci.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/06/2011 10:26 PM, Carl Cook wrote:
-> On Thu 06 January 2011 13:58:41 Freddie Cash wrote:
->> Simplest solution is to write a script to create a mysqldump of all
->> databases into a directory, add that to cron so that it runs at the
->> same time everyday, 10-15 minutes before the rsync run is done.  That
->> way, rsync to the backup server picks up both the text dump of the
->> database(s), along with the binary files under /var/lib/mysql/* (the
->> actual running database).
->
-> I am sure glad you guys mentioned database backup in relation to rsync.  I would never have guessed.
->
-> When I do my regular backups I back up the export dump and binary of the database.
->
-> So overall I do the export dump of the database 15 minutes before rsync.
-> Then snapshot the destination array.
-> Then do the rsync.
-> Right?
+On Thu 06 January 2011 14:26:30 Carl Cook wrote:
+> According To Doyle...
 
-Yes, that should be fine. Not sure there's much point in backing up the 
-binary if you're backing up the dump. Note that you should be locking 
-all tables before doing a full dump. Otherwise, the dumped tables may be 
-inconsistent with each other (orphaned records).
+Er, Hoyle...
 
-> But how does merely backing up the database prevent it from being
-> hosed in the rsync?  Or does snapshot do that?  Or does snapshot
-> prevent other data on the disk from getting hosed?
+I am trying to create a multi-device BTRFS system using two identical drives.
+I want them to be raid 0 for no redunancy, and a total of 4TB.
+But in the wiki it says nothing about using fdisk to set up the drive first.  It just basically says for me to:
+mkfs.btrfs -m raid0 /dev/sdc /dev/sdd
 
-The data on the disk is only being read, it won't be damaged. The 
-snapshot ensure that the image you get of the DB is consistent with 
-itself (i.e. no records got written to table A while you were backing up 
-table B). As I said, the consistency with a snapshot is equivalent to 
-the degree of consistency you will get if you just yank the power.
+Seems to me that for mdadm I had to set each drive as a raid member, assemble the array, then format.  Is this not the case with BTRFS?
 
-Gordan
+Also in the wiki it says "After a reboot or reloading the btrfs module, you'll need to use btrfs device scan to discover all multi-device filesystems on the machine".  Is this not done automatically?  Do I have to set up some script to do this?
+

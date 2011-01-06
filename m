@@ -1,50 +1,49 @@
 From: Gordan Bobic <gordan@bobich.net>
 Subject: Re: Offline Deduplication for Btrfs
-Date: Thu, 06 Jan 2011 10:39:31 +0000
-Message-ID: <4D259BE3.5060705@bobich.net>
-References: <1294245410-4739-1-git-send-email-josef@redhat.com>	<4D24AD92.4070107@bobich.net> <20110105194645.GC2562@localhost.localdomain>	<4D24D8BC.90808@bobich.net> <4D250B3C.6010708@shiftmail.org>	<4D2514DC.6060306@bobich.net> <4D25213D.1080504@shiftmail.org>
+Date: Thu, 06 Jan 2011 10:48:18 +0000
+Message-ID: <4D259DF2.8090200@bobich.net>
+References: <1294245410-4739-1-git-send-email-josef@redhat.com>	<4D24D8BC.90808@bobich.net> <4D251888.7060508@shiftmail.org> <201101052258.36457.loony@loonybin.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D25213D.1080504@shiftmail.org>
+In-Reply-To: <201101052258.36457.loony@loonybin.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Spelic wrote:
-> On 01/06/2011 02:03 AM, Gordan Bobic wrote:
->>
->> That's just alarmist. AES is being cryptanalyzed because everything 
->> uses it. And the news of it's insecurity are somewhat exaggerated (for 
->> now at least). 
+Peter A wrote:
+> On Wednesday, January 05, 2011 08:19:04 pm Spelic wrote:
+>>> I'd just make it always use the fs block size. No point in making it 
+>>> variable.
+>> Agreed. What is the reason for variable block size?
 > 
-> Who cares... the fact of not being much used is a benefit for RIPEMD / 
-> blowfish-twofish then.
-> Nobody makes viruses for Linux because they target windows. Same thing...
-> RIPEMD has still an advantage over SHA imho, and blowfish over AES.
-
-Just because nobody attacked it yet doesn't justify complacency.
-
->>> If there is full blocks compare, a simpler/faster algorithm could be
->>> chosen, like md5. Or even a md-64bits which I don't think it exists, but
->>> you can take MD4 and then xor the first 8 bytes with the second 8 bytes
->>> so to reduce it to 8 bytes only. This is just because it saves 60% of
->>> the RAM occupation during dedup, which is expected to be large, and the
->>> collisions are still insignificant at 64bits. Clearly you need to do
->>> full blocks compare after that.
->>
->> I really don't think the cost in terms of a few bytes per file for the 
->> hashes is that significant.
+> First post on this list - I mostly was just reading so far to learn more on fs 
+> design but this is one topic I (unfortunately) have experience with... 
 > 
-> 20 to 8 = 12 bytes per *filesystem block* saved, I think
-> Aren't we talking about block-level deduplication?
-> For every TB of filesystem you occupy 2GB of RAM with hashes instead of 
-> 5.3GB (I am assuming 4K blocks, I don't remember how big are btrfs blocks)
-> For a 24 * 2TB storage you occupy 96GB instead of 254GB of RAM. It might 
-> be the edge between feasible and not feasible.
-> Actually it might not be feasible anyway... an option to store hashes 
-> into a ssd should be provided then...
+> You wouldn't believe the difference variable block size dedupe makes. For a 
+> pure fileserver, its ok to dedupe on block level but for most other uses, 
+> variable is king. One big example is backups. Netbackup and most others 
+> produce one stream with all data even when backing up to disk. Imagine you 
+> move a whole lot of data from one dir to another. Think a directory with huge 
+> video files. As a filesystem it would be de-duped nicely. The backup stream 
+> however may and may not have matching fs blocks. If the directory name before 
+> and after has the same lengths and such - then yeah, dedupe works. Directory 
+> name is a byte shorter? Everything in the stream will be offset by one byte - 
+> and no dedupe will occur at all on the whole dataset. In real world just 
+> compare the dedupe performance of an Oracle 7000 (zfs and therefore fs block 
+> based) to a DataDomain (variable lenght) in this usage scenario. Among our 
+> customers we see something like 3 to 17x dedupe ration on the DD, 1.02 - 1.05 
+> in the 7000.
 
-You wouldn't necessarily have to keep the whole index in RAM, but if you 
-don't you'd get hit for an extra O(log(n)) disk seeks.
+Can you elaborate what you're talking about here? How does the length of 
+a directory name affect alignment of file block contents? I don't see 
+how variability of length matters, other than to make things a lot more 
+complicated. Have you some real research/scientifically gathered data 
+(non-hearsay/non-anecdotal) on the underlying reasons for the 
+discrepancy in the deduping effectiveness you describe? 3-17x difference 
+doesn't plausibly come purely from fixed vs. variable length block sizes.
+
+The only case where I'd bother consider variable length deduping is in 
+file deduping (rather than block), in this case we can just make a COW 
+hard-link and it's _really_ cheap and effective.
 
 Gordan

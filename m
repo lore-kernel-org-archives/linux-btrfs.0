@@ -1,88 +1,702 @@
-From: "Smets, Jan (Jan)" <jan.smets@alcatel-lucent.com>
-Subject: Bug at inode.c and warning on btrfs_orphan_commit_root
-Date: Thu, 6 Jan 2011 19:38:05 +0100
-Message-ID: <14C7F4F06DB5814AB0DE29716C4F6D67177D4416@FRMRSSXCHMBSB1.dc-m.alcatel-lucent.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: add extent-same ioctl for dedup
+Date: Thu,  6 Jan 2011 13:51:30 -0500
+Message-ID: <1294339890-24854-1-git-send-email-josef@redhat.com>
+References: <1294338300-24259-2-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1294338300-24259-2-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi list
+This adds the ability for userspace to tell btrfs which extents match eachother.
+You pass in
 
-These traces appeared on my CEPH nodes (node 1 and 2) while running some iozone tests on the client.
+-a logical offset
+-a length
+-a list of file descriptors with their logical offset
 
-Let me know if you need any other details.
+and this ioctl will split up the extent on the target file and then link all of
+the files with the target files extent and free up their original extent.  We
+manually memcmp each file we're going to link with the original to make
+absolutely sure that the data is truly the same.  There are a few limitations
+currently
 
-- Jan
+1) Any data transformation whatsoever.  This includes compression or any
+encryption that happens later on.  This is just to make sure we're not deduping
+things that don't turn out to be the same stuff on disk as it is
+uncompressed/decrypted.
 
+2) Across subvolumes.  This can be fixed later, but this is just to keep odd
+problems from happening, like oh say trying to dedup things that are snapshots
+of eachother already.  Nothing bad will happen, it's just needless work so just
+don't allow it for the time being.
 
-[18565.087014] ------------[ cut here ]------------
-[18565.088005] kernel BUG at fs/btrfs/inode.c:6403!
-[18565.088005] invalid opcode: 0000 [#1] SMP
-[18565.088005] last sysfs file: /sys/module/btrfs/initstate
-[18565.088005] CPU 0
-[18565.088005] Modules linked in: nfs lockd fscache nfs_acl auth_rpcgss sunrpc loop evdev radeon ttm drm_kms_helper drm e1000e i3200_edac snd_pcm snd_timer snd soundcore snd_page_alloc i2c_i801 i2c_algo_bit shpchp pci_hotplug edac_core it8213 pcspkr i2c_core ide_core serio_raw ext4 mbcache jbd2 crc16 btrfs zlib_deflate sd_mod crc_t10dif ata_generic ata_piix libata scsi_mod
-[18565.088005]
-[18565.088005] Pid: 2004, comm: cosd Not tainted 2.6.37 #7 X7SBi-LN4/X7SBi-LN4
-[18565.088005] RIP: 0010:[<ffffffffa015d787>]  [<ffffffffa015d787>] btrfs_truncate+0x470/0x4a5 [btrfs]
-[18565.088005] RSP: 0018:ffff88011841dd68  EFLAGS: 00010286
-[18565.088005] RAX: 00000000ffffffe4 RBX: ffff8801171e9848 RCX: ffff88012bae0870
-[18565.088005] RDX: 0000000000000000 RSI: ffffea000418e100 RDI: 0000000000000206
-[18565.088005] RBP: ffff88011eac7000 R08: 0000000000000106 R09: ffff8801171e9848
-[18565.088005] R10: 000000000000002c R11: ffff880128f94800 R12: ffff880128f94800
-[18565.088005] R13: ffff8801171e9848 R14: 0000000000000000 R15: ffff8801171e9970
-[18565.088005] FS:  00007ff3d3fe5710(0000) GS:ffff8800cfc00000(0000) knlGS:0000000000000000
-[18565.088005] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[18565.088005] CR2: 00007ff3cad3d000 CR3: 000000011c2e3000 CR4: 00000000000406f0
-[18565.088005] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-[18565.088005] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-[18565.088005] Process cosd (pid: 2004, threadinfo ffff88011841c000, task ffff88012b6f71b0)
-[18565.088005] Stack:
-[18565.088005]  ffff88011eac7000 ffffffff810e9cfe ffff88011eac7000 ffffffff810ce096
-[18565.088005]  ffff8801171e96e0 0000000000000000 0000000000000000 0000000000000000
-[18565.088005]  ffff8801171e96b0 0000100000000000 0000000000000000 0000000000000000
-[18565.088005] Call Trace:
-[18565.088005]  [<ffffffff810e9cfe>] ? virt_to_head_page+0x9/0x2d
-[18565.088005]  [<ffffffff810ce096>] ? unmap_mapping_range+0x59/0xf5
-[18565.088005]  [<ffffffff810bdf72>] ? vmtruncate+0x36/0x3e
-[18565.088005]  [<ffffffffa015fdbb>] ? btrfs_setattr+0x1d5/0x230 [btrfs]
-[18565.088005]  [<ffffffff8104b332>] ? current_fs_time+0x1e/0x24
-[18565.088005]  [<ffffffff81104a61>] ? notify_change+0x195/0x27e
-[18565.088005]  [<ffffffff810f15cb>] ? do_truncate+0x68/0x86
-[18565.088005]  [<ffffffff810f9d92>] ? get_write_access+0x10/0x3a
-[18565.088005]  [<ffffffff810f16da>] ? sys_truncate+0xf1/0x125
-[18565.088005]  [<ffffffff810099d2>] ? system_call_fastpath+0x16/0x1b
-[18565.088005] Code: 83 7b 5c 00 74 13 48 89 de 48 89 ef e8 9e e3 ff ff 85 c0 74 04 0f 0b eb fe 48 89 da 4c 89 e6 48 89 ef e8 da ad ff ff 85 c0 74 04 <0f> 0b eb fe 4c 89 e6 48 89 ef 48 8b 5d 20 e8 bf 7f ff ff 85 c0
-[18565.088005] RIP  [<ffffffffa015d787>] btrfs_truncate+0x470/0x4a5 [btrfs]
-[18565.088005]  RSP <ffff88011841dd68>
+3) If the target file's data is split across extents.  We need one extent to
+point everybody at, so if the target file's data spans different extents we
+won't work.  In this case I return ERANGE so the userspace app can call defrag
+and then try again, but currently I don't do that, so that will have to be fixed
+at some point.
 
+I think thats all of the special cases.  Thanks,
 
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/ioctl.c |  603 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/ioctl.h |   15 ++
+ 2 files changed, 618 insertions(+), 0 deletions(-)
 
-
-
-
-[18196.051725] ------------[ cut here ]------------
-[18196.051746] WARNING: at fs/btrfs/inode.c:2143 btrfs_orphan_commit_root+0x7f/0x9b [btrfs]()
-[18196.051748] Hardware name: X7SBi-LN4
-[18196.051750] Modules linked in: nfs lockd fscache nfs_acl auth_rpcgss sunrpc loop snd_pcm snd_timer e1000e snd soundcore i2c_i801 snd_page_alloc parport_pc radeon ttm tpm_tis parport drm_kms_helper tpm video tpm_bios it8213 evdev drm i3200_edac i2c_algo_bit ghes i2c_core hed container output edac_core ide_core processor pcspkr button thermal_sys serio_raw shpchp pci_hotplug ext4 mbcache jbd2 crc16 btrfs zlib_deflate sd_mod crc_t10dif ata_piix ata_generic libata scsi_mod
-[18196.051780] Pid: 17053, comm: kworker/2:0 Not tainted 2.6.37 #7
-[18196.051781] Call Trace:
-[18196.051787]  [<ffffffff81046dac>] ? warn_slowpath_common+0x78/0x8c
-[18196.051798]  [<ffffffffa014fde3>] ? btrfs_orphan_commit_root+0x7f/0x9b [btrfs]
-[18196.051807]  [<ffffffffa014820c>] ? commit_fs_roots+0x8d/0xf4 [btrfs]
-[18196.051817]  [<ffffffffa0149289>] ? btrfs_commit_transaction+0x34b/0x61f [btrfs]
-[18196.051821]  [<ffffffff8105fd51>] ? autoremove_wake_function+0x0/0x2a
-[18196.051831]  [<ffffffffa0149780>] ? do_async_commit+0x0/0x1b [btrfs]
-[18196.051841]  [<ffffffffa0149792>] ? do_async_commit+0x12/0x1b [btrfs]
-[18196.051843]  [<ffffffff8105b06c>] ? process_one_work+0x1d1/0x2ee
-[18196.051846]  [<ffffffff8105ca83>] ? worker_thread+0x12d/0x247
-[18196.051848]  [<ffffffff8105c956>] ? worker_thread+0x0/0x247
-[18196.051851]  [<ffffffff8105c956>] ? worker_thread+0x0/0x247
-[18196.051853]  [<ffffffff8105f8ff>] ? kthread+0x7a/0x82
-[18196.051856]  [<ffffffff8100a7e4>] ? kernel_thread_helper+0x4/0x10
-[18196.051858]  [<ffffffff8105f885>] ? kthread+0x0/0x82
-[18196.051861]  [<ffffffff8100a7e0>] ? kernel_thread_helper+0x0/0x10
-[18196.051863] ---[ end trace 212766401439239a ]---
-
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index f1c9bb4..5d2769e 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2231,6 +2231,607 @@ static noinline long btrfs_ioctl_wait_sync(struct file *file, void __user *argp)
+ 	return btrfs_wait_for_commit(root, transid);
+ }
+ 
++static noinline int check_data(struct inode *inode,
++			       char *orig, u64 off, u64 len,
++			       char **cur_buffer)
++{
++	struct page *page;
++	void *addr;
++	char *buffer;
++	pgoff_t index;
++	pgoff_t last_index;
++	int ret = 0;
++	int bytes_copied = 0;
++
++	buffer = kmalloc(len, GFP_NOFS);
++	if (!buffer)
++		return -ENOMEM;
++
++	index = off >> PAGE_CACHE_SHIFT;
++	last_index = (off + len - 1) >> PAGE_CACHE_SHIFT;
++
++	while (index <= last_index) {
++		page = grab_cache_page(inode->i_mapping, index);
++		if (!page) {
++			ret = -EINVAL;
++			goto out;
++		}
++
++		if (!PageUptodate(page)) {
++			btrfs_readpage(NULL, page);
++			lock_page(page);
++			if (!PageUptodate(page)) {
++				unlock_page(page);
++				page_cache_release(page);
++				ret = -EINVAL;
++				goto out;
++			}
++		}
++
++		addr = kmap(page);
++		memcpy(buffer + bytes_copied, addr, PAGE_CACHE_SIZE);
++		kunmap(page);
++		unlock_page(page);
++		page_cache_release(page);
++		bytes_copied += PAGE_CACHE_SIZE;
++		index++;
++	}
++
++	if (cur_buffer) {
++		*cur_buffer = buffer;
++		return 0;
++	}
++
++	if (memcmp(orig, buffer, len))
++		ret = -EINVAL;
++
++out:
++	kfree(buffer);
++	return ret;
++}
++
++static noinline int split_extent(struct btrfs_trans_handle *trans,
++				 struct inode *inode, u64 start, u64 end,
++				 u64 *bytenr, u64 *bytes, u64 *offset)
++{
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	struct extent_buffer *leaf;
++	struct btrfs_file_extent_item *fi;
++	struct btrfs_path *path;
++	struct btrfs_key key;
++	u64 extent_start;
++	u64 extent_end;
++	u64 extent_offset;
++	u64 search_start = start;
++	u64 disk_bytenr;
++	u64 disk_bytes;
++	int ret;
++	int recow;
++	int extent_type;
++
++	btrfs_drop_extent_cache(inode, start, end - 1, 0);
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	while (1) {
++		recow = 0;
++		ret = btrfs_lookup_file_extent(trans, root, path,
++					       inode->i_ino, search_start, 1);
++		if (ret < 0)
++			break;
++		if (ret > 0 && path->slots[0] > 0) {
++			path->slots[0]--;
++		} else if (ret > 0 && path->slots[0] == 0) {
++			ret = btrfs_prev_leaf(root, path);
++			if (ret < 0)
++				break;
++			if (ret > 0) {
++				ret = 0;
++				break;
++			}
++		}
++
++next_slot:
++		leaf = path->nodes[0];
++		if (path->slots[0] >= btrfs_header_nritems(leaf)) {
++			ret = btrfs_next_leaf(root, path);
++			if (ret < 0)
++				break;
++			if (ret > 0) {
++				ret = 0;
++				break;
++			}
++			leaf = path->nodes[0];
++		}
++
++		btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
++		if (key.objectid > inode->i_ino ||
++		    key.type > BTRFS_EXTENT_DATA_KEY || key.offset >= end)
++			break;
++
++		fi = btrfs_item_ptr(leaf, path->slots[0],
++				    struct btrfs_file_extent_item);
++		extent_type = btrfs_file_extent_type(leaf, fi);
++		if (extent_type != BTRFS_FILE_EXTENT_REG) {
++			ret = -EINVAL;
++			break;
++		}
++
++		if (btrfs_file_extent_compression(leaf, fi) ||
++		    btrfs_file_extent_encryption(leaf, fi) ||
++		    btrfs_file_extent_other_encoding(leaf, fi)) {
++			printk(KERN_ERR "cannot dedup transformed extents\n");
++			ret = -EINVAL;
++			break;
++		}
++
++		extent_start = key.offset;
++		extent_end = extent_start +
++			btrfs_file_extent_num_bytes(leaf, fi);
++		extent_offset = btrfs_file_extent_offset(leaf, fi);
++		disk_bytenr = btrfs_file_extent_disk_bytenr(leaf, fi);
++		disk_bytes = btrfs_file_extent_disk_num_bytes(leaf, fi);
++
++		if (extent_end < search_start) {
++			path->slots[0]++;
++			goto next_slot;
++		}
++
++		search_start = max(key.offset, start);
++		if (recow) {
++			btrfs_release_path(root, path);
++			continue;
++		}
++
++		/*
++		 *     | - range to split - |
++		 *  | -------- extent -------- |
++		 */
++		if (start > key.offset && end < extent_end) {
++			struct btrfs_key new_key;
++
++			memcpy(&new_key, &key, sizeof(new_key));
++			new_key.offset = start;
++			ret = btrfs_duplicate_item(trans, root, path,
++						   &new_key);
++			if (ret == -EAGAIN) {
++				btrfs_release_path(root, path);
++				continue;
++			}
++			if (ret < 0)
++				break;
++
++			leaf = path->nodes[0];
++			fi = btrfs_item_ptr(leaf, path->slots[0] - 1,
++					    struct btrfs_file_extent_item);
++			btrfs_set_file_extent_num_bytes(leaf, fi, start -
++							key.offset);
++			fi = btrfs_item_ptr(leaf, path->slots[0],
++					    struct btrfs_file_extent_item);
++			extent_offset += start - key.offset;
++			btrfs_set_file_extent_offset(leaf, fi, extent_offset);
++			btrfs_set_file_extent_num_bytes(leaf, fi,
++							extent_end - start);
++			if (bytes)
++				*bytes = disk_bytes;
++			if (bytenr)
++				*bytenr = disk_bytenr;
++			if (offset)
++				*offset = extent_offset;
++
++			btrfs_mark_buffer_dirty(leaf);
++
++			ret = btrfs_inc_extent_ref(trans, root, disk_bytenr,
++						   disk_bytes, 0,
++						   root->root_key.objectid,
++						   inode->i_ino,
++						   extent_offset);
++			if (ret) {
++				int err;
++				WARN_ON(1);
++				fi = btrfs_item_ptr(leaf, path->slots[0] - 1,
++					struct btrfs_file_extent_item);
++				btrfs_set_file_extent_num_bytes(leaf, fi,
++					extent_end - extent_start);
++				err = btrfs_del_items(trans, root, path,
++						      path->slots[0], 1);
++				WARN_ON(err);
++				break;
++			}
++
++			new_key.offset = end;
++			ret = btrfs_duplicate_item(trans, root, path, &new_key);
++			if (ret == -EAGAIN) {
++				btrfs_release_path(root, path);
++				continue;
++			}
++			if (ret < 0)
++				break;
++
++			leaf = path->nodes[0];
++			fi = btrfs_item_ptr(leaf, path->slots[0] - 1,
++					    struct btrfs_file_extent_item);
++			btrfs_set_file_extent_num_bytes(leaf, fi,
++							end - start);
++
++			fi = btrfs_item_ptr(leaf, path->slots[0],
++					    struct btrfs_file_extent_item);
++			extent_offset += end - start;
++			btrfs_set_file_extent_offset(leaf, fi, extent_offset);
++			btrfs_set_file_extent_num_bytes(leaf, fi,
++							extent_end - end);
++
++			ret = btrfs_inc_extent_ref(trans, root, disk_bytenr,
++						   disk_bytes, 0,
++						   root->root_key.objectid,
++						   inode->i_ino, 0);
++			if (ret) {
++				int err;
++				WARN_ON(1);
++				fi = btrfs_item_ptr(leaf, path->slots[0] - 1,
++					struct btrfs_file_extent_item);
++				btrfs_set_file_extent_num_bytes(leaf, fi,
++						extent_end - start);
++				err = btrfs_del_items(trans, root, path,
++						      path->slots[0], 1);
++				WARN_ON(err);
++				break;
++			}
++			btrfs_mark_buffer_dirty(leaf);
++			ret = 0;
++			break;
++		}
++
++		/*
++		 * | - range to split -|
++		 * | ------ extent ------|
++		 */
++		if (start == key.offset && end < extent_end) {
++			struct btrfs_key new_key;
++
++			memcpy(&new_key, &key, sizeof(new_key));
++			new_key.offset = end;
++			ret = btrfs_duplicate_item(trans, root, path,
++						   &new_key);
++			if (ret == -EAGAIN) {
++				btrfs_release_path(root, path);
++				continue;
++			}
++			if (ret < 0)
++				break;
++
++			leaf = path->nodes[0];
++			fi = btrfs_item_ptr(leaf, path->slots[0] - 1,
++					    struct btrfs_file_extent_item);
++			btrfs_set_file_extent_num_bytes(leaf, fi,
++							end - start);
++
++			if (bytes)
++				*bytes = disk_bytes;
++			if (bytenr)
++				*bytenr = disk_bytenr;
++			if (offset)
++				*offset = extent_offset;
++
++			fi = btrfs_item_ptr(leaf, path->slots[0],
++					    struct btrfs_file_extent_item);
++			extent_offset += end - start;
++			btrfs_set_file_extent_offset(leaf, fi, extent_offset);
++			btrfs_set_file_extent_num_bytes(leaf, fi,
++							extent_end - end);
++			btrfs_mark_buffer_dirty(leaf);
++
++			ret = btrfs_inc_extent_ref(trans, root, disk_bytenr,
++						   disk_bytes, 0,
++						   root->root_key.objectid,
++						   inode->i_ino,
++						   extent_offset);
++			if (ret) {
++				int err;
++
++				WARN_ON(1);
++				fi = btrfs_item_ptr(leaf, path->slots[0] - 1,
++					struct btrfs_file_extent_item);
++				btrfs_set_file_extent_num_bytes(leaf, fi,
++						extent_end - start);
++				err = btrfs_del_items(trans, root, path,
++						      path->slots[0], 1);
++				WARN_ON(err);
++				break;
++			}
++			ret = 0;
++			break;
++		}
++
++		if (start == key.offset && end == extent_end) {
++			if (bytes)
++				*bytes = disk_bytes;
++			if (bytenr)
++				*bytenr = disk_bytenr;
++			if (offset)
++				*offset = extent_offset;
++			ret = 0;
++			break;
++		}
++
++		ret = -ERANGE;
++		break;
++	}
++
++	btrfs_free_path(path);
++	return ret;
++}
++
++static noinline int link_extent(struct btrfs_trans_handle *trans,
++				struct inode *inode, u64 disk_bytenr,
++				u64 disk_bytes, u64 extent_offset,
++				u64 offset, u64 len)
++{
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	struct btrfs_path *path;
++	struct extent_buffer *leaf;
++	struct btrfs_file_extent_item *fi;
++	struct btrfs_key key;
++	u64 hint;
++	int ret;
++	int err;
++
++	path = btrfs_alloc_path();
++	if (!path) {
++		err = -ENOMEM;
++		goto out;
++	}
++
++	ret = btrfs_inc_extent_ref(trans, root, disk_bytenr, disk_bytes, 0,
++				   root->root_key.objectid, inode->i_ino,
++				   extent_offset);
++	if (ret)
++		return ret;
++
++	ret = btrfs_drop_extents(trans, inode, offset, offset + len,
++				 &hint, 1);
++	if (ret) {
++		err = ret;
++		btrfs_free_path(path);
++		goto out;
++	}
++
++	key.objectid = inode->i_ino;
++	key.offset = offset;
++	key.type = BTRFS_EXTENT_DATA_KEY;
++	ret = btrfs_insert_empty_item(trans, root, path, &key, sizeof(*fi));
++
++	/*
++	 * Yes I know, it sucks, but if we don't do this we'll lose data, we
++	 * need to come up with a way to undo the drop_extents so that if this
++	 * part fails we can still at least have the old data.
++	 */
++	BUG_ON(ret);
++
++	leaf = path->nodes[0];
++	fi = btrfs_item_ptr(leaf, path->slots[0],
++			    struct btrfs_file_extent_item);
++
++	btrfs_set_file_extent_generation(leaf, fi, trans->transid);
++	btrfs_set_file_extent_type(leaf, fi, BTRFS_FILE_EXTENT_REG);
++	btrfs_set_file_extent_disk_bytenr(leaf, fi, disk_bytenr);
++	btrfs_set_file_extent_disk_num_bytes(leaf, fi, disk_bytes);
++	btrfs_set_file_extent_offset(leaf, fi, extent_offset);
++	btrfs_set_file_extent_num_bytes(leaf, fi, len);
++	btrfs_set_file_extent_ram_bytes(leaf, fi, len);
++	btrfs_set_file_extent_compression(leaf, fi, 0);
++	btrfs_set_file_extent_encryption(leaf, fi, 0);
++	btrfs_set_file_extent_other_encoding(leaf, fi, 0);
++
++	btrfs_mark_buffer_dirty(leaf);
++	inode_add_bytes(inode, len);
++	btrfs_free_path(path);
++
++	return 0;
++out:
++	ret = btrfs_free_extent(trans, root, disk_bytenr, disk_bytes, 0,
++				root->root_key.objectid, inode->i_ino,
++				extent_offset);
++	if (ret)
++		err = ret;
++	return err;
++}
++
++static inline void lock_extent_range(struct inode *inode, u64 off, u64 len)
++{
++	while (1) {
++		struct btrfs_ordered_extent *ordered;
++		lock_extent(&BTRFS_I(inode)->io_tree, off,
++			    off + len - 1, GFP_NOFS);
++		ordered = btrfs_lookup_first_ordered_extent(inode,
++							    off + len - 1);
++		if (!ordered &&
++		    !test_range_bit(&BTRFS_I(inode)->io_tree, off,
++				    off + len - 1, EXTENT_DELALLOC, 0, NULL))
++			break;
++		unlock_extent(&BTRFS_I(inode)->io_tree, off, off + len -1,
++			      GFP_NOFS);
++		if (ordered)
++			btrfs_put_ordered_extent(ordered);
++		btrfs_wait_ordered_range(inode, off, len);
++	}
++}
++
++static noinline long btrfs_ioctl_file_extent_same(struct file *file,
++						  void __user *argp)
++{
++	struct btrfs_ioctl_same_args *args;
++	struct btrfs_ioctl_same_args tmp;
++	struct inode *src = file->f_dentry->d_inode;
++	struct btrfs_root *root;
++	struct file *dst_file;
++	struct inode *dst_inode;
++	struct btrfs_trans_handle *trans;
++	char *orig_buffer;
++	u64 off;
++	u64 len;
++	u64 bytenr;
++	u64 bytes;
++	u64 extent_offset;
++	int args_size = 0;
++	int drop_ref = 0;
++	int i;
++	int ret;
++
++	if (copy_from_user(&tmp,
++			   (struct btrfs_ioctl_same_args __user *)argp,
++			   sizeof(tmp)))
++		return -EFAULT;
++
++	args_size = sizeof(tmp) + (tmp.total_files *
++			sizeof(struct btrfs_ioctl_file_extent_info));
++
++	/* lets not let this get out of hand */
++	if (args_size > PAGE_CACHE_SIZE)
++		return -ENOMEM;
++
++	args = kmalloc(args_size, GFP_NOFS);
++	if (!args)
++		return -ENOMEM;
++
++	if (copy_from_user(args,
++			   (struct btrfs_ioctl_same_args __user *)argp,
++			   args_size))
++		return -EFAULT;
++
++	/* Make sure args didn't change magically between copies. */
++	if (memcmp(&tmp, args, sizeof(tmp))) {
++		kfree(args);
++		return -EINVAL;
++	}
++
++	if (S_ISDIR(src->i_mode)) {
++		kfree(args);
++		return -EISDIR;
++	}
++
++	off = args->logical_offset;
++	len = args->length;
++	root = BTRFS_I(src)->root;
++
++	/*
++	 * Since we have to memcmp the data to make sure it does actually match
++	 * eachother we need to allocate 2 buffers to handle this.  So limit the
++	 * blocksize to 1 megabyte to make sure nobody abuses this.
++	 */
++	if (len > 1 * 1024 * 1024)
++		return -ENOMEM;
++
++	lock_extent_range(src, off, len);
++
++	ret = check_data(src, NULL, off, len, &orig_buffer);
++	if (ret) {
++		unlock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1,
++			      GFP_NOFS);
++		goto out;
++	}
++
++	trans = btrfs_start_transaction(root, args->total_files + 1);
++	if (IS_ERR(trans)) {
++		unlock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1,
++			      GFP_NOFS);
++		ret = PTR_ERR(trans);
++		goto out;
++	}
++
++	ret = split_extent(trans, src, off, off + len, &bytenr, &bytes,
++			   &extent_offset);
++	if (ret) {
++		unlock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1,
++			      GFP_NOFS);
++		goto out_trans;
++	}
++
++	ret = btrfs_inc_extent_ref(trans, root, bytenr, bytes, 0,
++				   root->root_key.objectid, src->i_ino,
++				   extent_offset);
++	unlock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1, GFP_NOFS);
++	if (ret)
++		goto out_trans;
++
++	drop_ref = 1;
++	for (i = 0; i < args->total_files; i++) {
++		struct btrfs_ioctl_file_extent_info *info;
++		info = &args->info[i];
++
++		dst_file = fget(info->fd);
++		if (!dst_file) {
++			printk(KERN_ERR "btrfs: invalid fd %lld\n", info->fd);
++			ret = -EINVAL;
++			break;
++		}
++		dst_inode = dst_file->f_dentry->d_inode;
++		if (S_ISDIR(dst_inode->i_mode)) {
++			fput(dst_file);
++			printk(KERN_ERR "btrfs: file is dir %lld\n", info->fd);
++			ret = -EINVAL;
++			break;
++		}
++
++		if (BTRFS_I(dst_inode)->root != root) {
++			fput(dst_file);
++			printk(KERN_ERR "btrfs: cannot dedup across subvolumes"
++			      " %lld\n", info->fd);
++			ret = -EINVAL;
++			break;
++		}
++
++		off = info->logical_offset;
++		lock_extent_range(dst_inode, off, len);
++		if (check_data(dst_inode, orig_buffer, off, len, NULL)) {
++			printk(KERN_ERR "btrfs: data for fd %lld does not "
++			       "match\n", info->fd);
++			unlock_extent(&BTRFS_I(dst_inode)->io_tree, off,
++				      off + len - 1, GFP_NOFS);
++			fput(dst_file);
++			continue;
++		}
++
++		ret = link_extent(trans, dst_inode, bytenr, bytes,
++				  extent_offset, off, len);
++		if (ret) {
++			unlock_extent(&BTRFS_I(dst_inode)->io_tree, off,
++				      off + len - 1, GFP_NOFS);
++			fput(dst_file);
++			break;
++		}
++
++		unlock_extent(&BTRFS_I(dst_inode)->io_tree, off, off + len - 1,
++			      GFP_NOFS);
++
++		fput(dst_file);
++
++		if (drop_ref) {
++			ret = btrfs_free_extent(trans, root, bytenr, bytes, 0,
++						root->root_key.objectid,
++						src->i_ino, extent_offset);
++			if (ret)
++				break;
++			drop_ref = 0;
++		}
++	}
++
++	if (drop_ref) {
++		btrfs_free_extent(trans, root, bytenr, bytes, 0,
++				  root->root_key.objectid, src->i_ino,
++				  extent_offset);
++	}
++
++out_trans:
++	btrfs_end_transaction(trans, root);
++out:
++	kfree(orig_buffer);
++	kfree(args);
++	return ret;
++}
++
+ long btrfs_ioctl(struct file *file, unsigned int
+ 		cmd, unsigned long arg)
+ {
+@@ -2287,6 +2888,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		return btrfs_ioctl_start_sync(file, argp);
+ 	case BTRFS_IOC_WAIT_SYNC:
+ 		return btrfs_ioctl_wait_sync(file, argp);
++	case BTRFS_IOC_FILE_EXTENT_SAME:
++		return btrfs_ioctl_file_extent_same(file, argp);
+ 	}
+ 
+ 	return -ENOTTY;
+diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+index 17c99eb..6f91b59 100644
+--- a/fs/btrfs/ioctl.h
++++ b/fs/btrfs/ioctl.h
+@@ -145,6 +145,19 @@ struct btrfs_ioctl_space_args {
+ 	struct btrfs_ioctl_space_info spaces[0];
+ };
+ 
++struct btrfs_ioctl_file_extent_info {
++	__s64 fd;
++	__u64 logical_offset;
++};
++
++struct btrfs_ioctl_same_args {
++	__u64 logical_offset;
++	__u64 length;
++	__u64 total_files;
++	__u64 unused[5];
++	struct btrfs_ioctl_file_extent_info info[0];
++};
++
+ #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
+ 				   struct btrfs_ioctl_vol_args)
+ #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
+@@ -189,4 +202,6 @@ struct btrfs_ioctl_space_args {
+ #define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
+ #define BTRFS_IOC_SNAP_CREATE_ASYNC _IOW(BTRFS_IOCTL_MAGIC, 23, \
+ 				   struct btrfs_ioctl_async_vol_args)
++#define BTRFS_IOC_FILE_EXTENT_SAME _IOW(BTRFS_IOCTL_MAGIC, 24, \
++					struct btrfs_ioctl_same_args)
+ #endif
+-- 
+1.6.6.1
 

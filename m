@@ -1,35 +1,46 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: Synching a Backup Server
-Date: Thu, 06 Jan 2011 22:43:16 +0100
-Message-ID: <4D263774.2020903@libero.it>
-References: <201101060935.14059.CACook@quantum-sci.com>
-Reply-To: kreijack@inwind.it
+From: Jesper Juhl <jj@chaosbits.net>
+Subject: [PATCH] btrfs: Mem leak in btrfs_get_acl()
+Date: Thu, 6 Jan 2011 22:45:21 +0100 (CET)
+Message-ID: <alpine.LNX.2.00.1101062242320.13988@swampdragon.chaosbits.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Carl Cook <CACook@quantum-sci.com>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: linux-kernel@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201101060935.14059.CACook@quantum-sci.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/06/2011 06:35 PM, Carl Cook wrote:
-> I want to keep a duplicate copy of the HTPC data, on the backup
-> server, and I think a regular full file copy is not optimal and may
-> take days to do.  So I'm looking for a way to sync the arrays at some
-> interval.  Ideally the sync would scan the HTPC with a CRC check to
-> look for differences, copy over the differences, then email me on
-> success.
-> 
-> Is there a BTRFS tool that would do this?
 
-There is the command
+It seems to me that we leak the memory allocated to 'value' in 
+btrfs_get_acl() if the call to posix_acl_from_xattr() fails.
+Here's a patch that attempts to correct that problem.
 
-	btrfs subvolume find-new
+Signed-off-by: Jesper Juhl <jj@chaosbits.net>
+---
+ acl.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-which lists the file which have the data (but not the metadata) changed.
-But it is a very low level tool.
-I tried to enhance this command ( see a my post titled "[RFC] Improve
-btrfs subvolume find-new command"), but I never finished this work.
+  compile tested only.
 
-Regards
-G.Baroncelli
+diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+index 2222d16..6d1410e 100644
+--- a/fs/btrfs/acl.c
++++ b/fs/btrfs/acl.c
+@@ -60,8 +60,10 @@ static struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
+ 		size = __btrfs_getxattr(inode, name, value, size);
+ 		if (size > 0) {
+ 			acl = posix_acl_from_xattr(value, size);
+-			if (IS_ERR(acl))
++			if (IS_ERR(acl)) {
++				kfree(value);
+ 				return acl;
++			}
+ 			set_cached_acl(inode, type, acl);
+ 		}
+ 		kfree(value);
+
+
+-- 
+Jesper Juhl <jj@chaosbits.net>            http://www.chaosbits.net/
+Don't top-post http://www.catb.org/~esr/jargon/html/T/top-post.html
+Plain text mails only, please.
+

@@ -1,62 +1,55 @@
-From: Gordan Bobic <gordan@bobich.net>
+From: Tomasz Torcz <tomek@pipebreaker.pl>
 Subject: Re: Offline Deduplication for Btrfs
-Date: Thu, 06 Jan 2011 14:00:47 +0000
-Message-ID: <4D25CB0F.2060002@bobich.net>
-References: <1294245410-4739-1-git-send-email-josef@redhat.com>	<201101052258.36457.loony@loonybin.org> <4D259DF2.8090200@bobich.net> <201101060833.15627.loony@loonybin.org>
+Date: Thu, 6 Jan 2011 15:30:20 +0100
+Message-ID: <20110106143019.GB14674@mother>
+References: <1294245410-4739-1-git-send-email-josef@redhat.com>
+ <4D24AD92.4070107@bobich.net>
+ <20110105194645.GC2562@localhost.localdomain>
+ <4D24D8BC.90808@bobich.net>
+ <4D251888.7060508@shiftmail.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=utf-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201101060833.15627.loony@loonybin.org>
+In-Reply-To: <4D251888.7060508@shiftmail.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Peter A wrote:
-> On Thursday, January 06, 2011 05:48:18 am you wrote:
->> Can you elaborate what you're talking about here? How does the length of
->> a directory name affect alignment of file block contents? I don't see
->> how variability of length matters, other than to make things a lot more
->> complicated.
- >
-> I'm saying in a filesystem it doesn't matter - if you bundle everything into a 
-> backup stream, it does. Think of tar. 512 byte allignment. I tar up a 
-> directory with 8TB total size. No big deal. Now I create a new, empty file in 
-> this dir with a name that just happens to be the first in the dir. This adds 
-> 512 bytes close to the beginning of the tar file the second time I run tar. Now 
-> the remainder of the is all offset by 512bytes and, if you do dedupe on fs-
-> block sized chunks larger than the 512bytes, not a single byte will be de-
-> duped. 
+On Thu, Jan 06, 2011 at 02:19:04AM +0100, Spelic wrote:
+> >CPU can handle considerably more than 250 block hashings per
+> >second. You could argue that this changes in cases of sequential
+> >I/O on big files, but a 1.86GHz GHz Core2 can churn through
+> >111MB/s of SHA256, which even SSDs will struggle to keep up with.
+>=20
+> A normal 1TB disk with platters can do 130MB/sec sequential, no probl=
+ems.
+> A SSD can do more like 200MB/sec write 280MB/sec read sequential or
+> random and is actually limited only by the SATA 3.0gbit/sec but soon
+> enough they will have SATA/SAS 6.0gbit/sec.
 
-OK, I get what you mean now. And I don't think this is something that 
-should be solved in the file system.
+  By =E2=80=9Csoon enough=E2=80=9D you really meant =E2=80=9Ca year ago=
+=E2=80=9D, I think:
+http://www.anandtech.com/show/3812/the-ssd-diaries-crucials-realssd-c30=
+0
+Current 6Gbps SSD are doing 415 MB/s sequential:
+http://www.anandtech.com/show/4086/microns-realssd-c400-uses-25nm-nand-=
+at-161gb-offers-415mbs-reads
+or even claim 550MB/s:
+http://www.anandtech.com/show/4100/ocz-vertex-pro-3-demo-worlds-first-s=
+andforce-sf2000
+(funny bit: Sandforce SSD controllers dedup internally).=20
 
-> I know its a stupid example but it matches the backup-target and database dump 
-> usage pattern really well. Files backing iSCSI shows similar dedupe behavior. 
-> Essentially every time you bundle mutliple files together into one you run into 
-> things like that.
+  Anyway, 6Gbps is not a future tale, but something long available.
+And not the fastest kids on the block:  currently build filesystems
+must deal storage providing many gigabytes per second.  Think
+of massive disk arrays or stuff like Oracle F5100, claiming
+12.8GB/sec read and ~10GB/s write (in one rack unit).
 
-I suspect a large part of the underlying cause of this is that most 
-things still operate on 512 byte sectors. Once that is replaced with 4KB 
-sectors, that will probably go away. And if this is the case, then 
-perhaps making the block size "variable" to 512, 1024, 2048 and 4096 
-bytes (probably in reverse order) will achieve most of that benefit.
+--=20
+Tomasz Torcz                 "God, root, what's the difference?"
+xmpp: zdzichubg@chrome.pl         "God is more forgiving."
 
-Whether than is a worthwhile thing to do for poorly designed backup 
-solutions, but I'm not convinced about the general use-case. It'd be 
-very expensive and complicated for seemingly very limited benefit.
-
->> Have you some real research/scientifically gathered data
->> (non-hearsay/non-anecdotal) on the underlying reasons for the
->> discrepancy in the deduping effectiveness you describe? 3-17x difference
->> doesn't plausibly come purely from fixed vs. variable length block sizes.
- >
-> Personal experience isn't hearsay :) Netapp publishes a whitepaper against the 
-> 7000 making this a big point but that isn't publicly available. Try search 
-> "zfs dedupe +netbackup" or "zfs dedupe +datadomain" and similar - you will 
-> hear of hundreds of people all complain about the same thing.
-
-Typical. And no doubt they complain that ZFS isn't doing what they want, 
-rather than netbackup not co-operating. The solution to one misdesign 
-isn't an expensive bodge. The solution to this particular problem is to 
-make netbackup work on per-file rather than per stream basis.
-
-Gordan
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

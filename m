@@ -1,677 +1,722 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: add extent-same ioctl for dedup
-Date: Thu,  6 Jan 2011 13:24:59 -0500
-Message-ID: <1294338300-24259-2-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs-progs: add dedup functionality
+Date: Thu,  6 Jan 2011 13:25:00 -0500
+Message-ID: <1294338300-24259-3-git-send-email-josef@redhat.com>
 References: <1294338300-24259-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1294338300-24259-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This adds the ability for userspace to tell btrfs which extents match eachother.
-You pass in
-
--a logical offset
--a length
--a list of file descriptors with their logical offset
-
-and this ioctl will split up the extent on the target file and then link all of
-the files with the target files extent and free up their original extent.  We
-manually memcmp each file we're going to link with the original to make
-absolutely sure that the data is truly the same.  There are a few limitations
-currently
-
-1) Any data transformation whatsoever.  This includes compression or any
-encryption that happens later on.  This is just to make sure we're not deduping
-things that don't turn out to be the same stuff on disk as it is
-uncompressed/decrypted.
-
-2) Across subvolumes.  This can be fixed later, but this is just to keep odd
-problems from happening, like oh say trying to dedup things that are snapshots
-of eachother already.  Nothing bad will happen, it's just needless work so just
-don't allow it for the time being.
-
-3) If the target file's data is split across extents.  We need one extent to
-point everybody at, so if the target file's data spans different extents we
-won't work.  In this case I return ERANGE so the userspace app can call defrag
-and then try again, but currently I don't do that, so that will have to be fixed
-at some point.
-
-I think thats all of the special cases.  Thanks,
+This program very basically does dedup.  It searches a directory recursively and
+scans all of the files looking for 64k extents and hashing them to figure out if
+there are any duplicates.  After that it calls the btrfs same extent ioctl for
+all of the duplicates in order to dedup the space on disk.  There is alot more
+that can be done with this, like changing the block size and so on, but for now
+this will get us started.  Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/ioctl.c |  603 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/ioctl.h |   16 ++
- 2 files changed, 619 insertions(+), 0 deletions(-)
+ Makefile |    8 +-
+ dedup.c  |  654 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ ioctl.h  |   16 ++
+ 3 files changed, 676 insertions(+), 2 deletions(-)
+ create mode 100644 dedup.c
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index f1c9bb4..5d2769e 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2231,6 +2231,607 @@ static noinline long btrfs_ioctl_wait_sync(struct file *file, void __user *argp)
- 	return btrfs_wait_for_commit(root, transid);
- }
+diff --git a/Makefile b/Makefile
+index 525676e..b9a51c4 100644
+--- a/Makefile
++++ b/Makefile
+@@ -15,10 +15,11 @@ INSTALL= install
+ prefix ?= /usr/local
+ bindir = $(prefix)/bin
+ LIBS=-luuid
++GCRYPT_LIBS=`libgcrypt-config --libs`
++GCRYPT_CFLAGS=`libgcrypt-config --cflags`
  
-+static noinline int check_data(struct inode *inode,
-+			       char *orig, u64 off, u64 len,
-+			       char **cur_buffer)
+ progs = btrfsctl mkfs.btrfs btrfs-debug-tree btrfs-show btrfs-vol btrfsck \
+-	btrfs \
+-	btrfs-map-logical
++	btrfs btrfs-map-logical btrfs-dedup
+ 
+ # make C=1 to enable sparse
+ ifdef C
+@@ -50,6 +51,9 @@ btrfs-vol: $(objects) btrfs-vol.o
+ btrfs-show: $(objects) btrfs-show.o
+ 	gcc $(CFLAGS) -o btrfs-show btrfs-show.o $(objects) $(LDFLAGS) $(LIBS)
+ 
++btrfs-dedup: $(objects) dedup.o
++	gcc $(CFLAGS) -o btrfs-dedup dedup.c $(objects) $(LDFLAGS) $(GCRYPT_LIBS) $(GCRYPT_CFLAGS) $(LIBS)
++
+ btrfsck: $(objects) btrfsck.o
+ 	gcc $(CFLAGS) -o btrfsck btrfsck.o $(objects) $(LDFLAGS) $(LIBS)
+ 
+diff --git a/dedup.c b/dedup.c
+new file mode 100644
+index 0000000..b752a6f
+--- /dev/null
++++ b/dedup.c
+@@ -0,0 +1,654 @@
++/*
++ * Copyright (C) 2011 Red Hat.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++#define _GNU_SOURCE 1
++#define X_OPEN_SOURCE 500
++
++#include <linux/fs.h>
++#include <linux/fiemap.h>
++#include <sys/ioctl.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <dirent.h>
++#include <errno.h>
++#include <fcntl.h>
++#include <gcrypt.h>
++#include <stdio.h>
++#include <string.h>
++#include <stdint.h>
++#include <unistd.h>
++#include "rbtree.h"
++#include "ioctl.h"
++
++struct file_entry {
++	ino_t ino;
++	unsigned long pos;
++	unsigned long len;
++	unsigned long physical;
++	char *hash;
++	int entries;
++	int fd;
++	struct file_entry *next;
++	struct rb_node n;
++};
++
++struct file {
++	char *name;
++	ino_t ino;
++	struct rb_node n;
++};
++
++static unsigned int digest_len;
++static char *digest;
++static struct rb_root hash_tree;
++static struct rb_root file_tree;
++unsigned int buffer_len = 65536;
++
++static void print_hash(uint64_t *hash)
 +{
-+	struct page *page;
-+	void *addr;
-+	char *buffer;
-+	pgoff_t index;
-+	pgoff_t last_index;
-+	int ret = 0;
-+	int bytes_copied = 0;
++	int i;
 +
-+	buffer = kmalloc(len, GFP_NOFS);
-+	if (!buffer)
-+		return -ENOMEM;
++	for (i = 0; i < 8; i++) {
++		printf("%llx", (unsigned long long)hash[i]);
++	}
++}
 +
-+	index = off >> PAGE_CACHE_SHIFT;
-+	last_index = (off + len - 1) >> PAGE_CACHE_SHIFT;
++static char *hash_buffer(void *buffer, int len)
++{
++	gcry_md_hash_buffer(GCRY_MD_SHA256, digest, buffer, len);
 +
-+	while (index <= last_index) {
-+		page = grab_cache_page(inode->i_mapping, index);
-+		if (!page) {
-+			ret = -EINVAL;
-+			goto out;
-+		}
++	return strndup(digest, digest_len);
++}
 +
-+		if (!PageUptodate(page)) {
-+			btrfs_readpage(NULL, page);
-+			lock_page(page);
-+			if (!PageUptodate(page)) {
-+				unlock_page(page);
-+				page_cache_release(page);
-+				ret = -EINVAL;
-+				goto out;
-+			}
-+		}
++static struct rb_node *hash_tree_insert(struct file_entry *fe)
++{
++	struct rb_node **p = &hash_tree.rb_node;
++	struct rb_node *parent = NULL;
++	struct file_entry *entry;
 +
-+		addr = kmap(page);
-+		memcpy(buffer + bytes_copied, addr, PAGE_CACHE_SIZE);
-+		kunmap(page);
-+		unlock_page(page);
-+		page_cache_release(page);
-+		bytes_copied += PAGE_CACHE_SIZE;
-+		index++;
++	while (*p) {
++		int cmp;
++
++		parent = *p;
++		entry = rb_entry(parent, struct file_entry, n);
++
++		cmp = memcmp(fe->hash, entry->hash, digest_len);
++
++		if (cmp < 0)
++			p = &(*p)->rb_left;
++		else if (cmp > 0)
++			p = &(*p)->rb_right;
++		else
++			return parent;
 +	}
 +
-+	if (cur_buffer) {
-+		*cur_buffer = buffer;
++	rb_link_node(&fe->n, parent, p);
++	rb_insert_color(&fe->n, &hash_tree);
++
++	return NULL;
++}
++
++#if 0
++static unsigned long logical_to_physical(int fd, unsigned long logical,
++					 unsigned long len)
++{
++	struct fiemap *map;
++	struct fiemap_extent *extent;
++	unsigned long physical = 0;
++	int size = sizeof(struct fiemap) + sizeof(struct fiemap_extent);
++	int ret;
++
++	map = malloc(sizeof(struct fiemap) + sizeof(struct fiemap_extent));
++	if (!map)
++		return 0;
++
++	memset(map, 0, size);
++	map->fm_start = logical;
++	map->fm_length = len;
++	map->fm_flags = FIEMAP_FLAG_SYNC;
++	map->fm_extent_count = 1;
++	ret = ioctl(fd, FS_IOC_FIEMAP, map);
++	if (ret) {
++		fprintf(stderr, "failed to do fiemap %d\n", errno);
++		return 0;
++	}
++	extent = &map->fm_extents[0];
++
++	physical = extent->fe_physical;
++	if (extent->fe_logical < logical)
++		physical +=  (logical - extent->fe_logical);
++	free(map);
++
++	return physical;
++}
++#endif
++
++static struct rb_node *file_tree_insert(struct file *file)
++{
++	struct rb_node **p = &file_tree.rb_node;
++	struct rb_node *parent = NULL;
++	struct file *entry;
++
++	while (*p) {
++		parent = *p;
++		entry = rb_entry(parent, struct file, n);
++
++		if (file->ino < entry->ino)
++			p = &(*p)->rb_left;
++		else if (file->ino > entry->ino)
++			p = &(*p)->rb_right;
++		else
++			return parent;
++	}
++
++	rb_link_node(&file->n, parent, p);
++	rb_insert_color(&file->n, &file_tree);
++
++	return NULL;
++}
++
++static struct file *file_tree_search(ino_t ino)
++{
++	struct rb_node *node = file_tree.rb_node;
++	struct file *entry;
++
++	while (node) {
++		entry = rb_entry(node, struct file, n);
++		if (ino < entry->ino)
++			node = node->rb_left;
++		else if (ino > entry->ino)
++			node = node->rb_right;
++		else
++			return entry;
++	}
++
++	return NULL;
++}
++
++static int hash_file(char *filename)
++{
++	char *buffer;
++	struct rb_node *node;
++	struct file *file;
++	int fd;
++	ssize_t bytes;
++	size_t pos = 0;
++	struct stat st;
++	ino_t ino;
++
++	buffer = malloc(buffer_len);
++	if (!buffer) {
++		fprintf(stderr, "failed to alloc buffer\n");
++		return 1;
++	}
++
++	file = malloc(sizeof(*file));
++	if (!file) {
++		free(buffer);
++		fprintf(stderr, "failed to alloc file thing\n");
++		return 1;
++	}
++
++	fd = open(filename, O_RDONLY);
++	if (fd < 0) {
++		free(buffer);
++		return 1;
++	}
++
++	if (fstat(fd, &st) < 0) {
++		fprintf(stderr, "failed to stat\n");
++		free(buffer);
++		return 1;
++	}
++
++	ino = st.st_ino;
++	file->ino = ino;
++
++	node = file_tree_insert(file);
++	if (node) {
++		printf("wtf?\n");
++		free(file);
++		free(buffer);
++		close(fd);
 +		return 0;
 +	}
 +
-+	if (memcmp(orig, buffer, len))
-+		ret = -EINVAL;
++	file->name = strdup(filename);
 +
-+out:
-+	kfree(buffer);
-+	return ret;
++	while ((bytes = read(fd, buffer, buffer_len)) > 0) {
++		struct file_entry *entry = malloc(sizeof(struct file_entry));
++
++		if (!entry) {
++			fprintf(stderr, "failed to allocate entry\n");
++			bytes = -1;
++			break;
++		}
++
++		entry->ino = ino;
++		entry->pos = pos;
++		entry->len = bytes;
++		entry->hash = hash_buffer(buffer, bytes);
++		if (!entry->hash) {
++			fprintf(stderr, "failed to allocate hash\n");
++			bytes = -1;
++			break;
++		}
++		entry->next = NULL;
++		entry->entries = 0;
++		node = hash_tree_insert(entry);
++		if (node) {
++			struct file_entry *existing;
++
++			existing = rb_entry(node, struct file_entry, n);
++			free(entry->hash);
++			entry->hash = NULL;
++			entry->next = existing->next;
++			existing->next = entry;
++			existing->entries++;
++		} else {
++//			entry->physical = logical_to_physical(fd, pos, bytes);
++		}
++		pos += bytes;
++	}
++
++	close(fd);
++	free(buffer);
++
++	if (bytes < 0)
++		printf("Bytes negative, error %d\n", errno);
++	return (bytes < 0);
 +}
 +
-+static noinline int split_extent(struct btrfs_trans_handle *trans,
-+				 struct inode *inode, u64 start, u64 end,
-+				 u64 *bytenr, u64 *bytes, u64 *offset)
++static void print_stats()
 +{
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct extent_buffer *leaf;
-+	struct btrfs_file_extent_item *fi;
-+	struct btrfs_path *path;
-+	struct btrfs_key key;
-+	u64 extent_start;
-+	u64 extent_end;
-+	u64 extent_offset;
-+	u64 search_start = start;
-+	u64 disk_bytenr;
-+	u64 disk_bytes;
-+	int ret;
-+	int recow;
-+	int extent_type;
++	struct rb_node *node;
++	int total_extents = 0;
++	int total_duplicates = 0;
 +
-+	btrfs_drop_extent_cache(inode, start, end - 1, 0);
++	for (node = rb_first(&hash_tree); node; node = rb_next(node)) {
++		struct file_entry *entry;
++		entry = rb_entry(node, struct file_entry, n);
++		total_extents++;
++		if (entry->entries)
++			total_duplicates += entry->entries;
++	}
 +
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
++	printf("Total extents hashed:\t%d\n", total_extents);
++	printf("Total duplicates:\t%d\n", total_duplicates);
++	printf("Total space saved:\t%d\n", total_duplicates * buffer_len);
 +
-+	while (1) {
-+		recow = 0;
-+		ret = btrfs_lookup_file_extent(trans, root, path,
-+					       inode->i_ino, search_start, 1);
-+		if (ret < 0)
-+			break;
-+		if (ret > 0 && path->slots[0] > 0) {
-+			path->slots[0]--;
-+		} else if (ret > 0 && path->slots[0] == 0) {
-+			ret = btrfs_prev_leaf(root, path);
-+			if (ret < 0)
++}
++
++static void free_hash_tree()
++{
++	struct rb_node *node;
++
++	while ((node = rb_first(&hash_tree))) {
++		struct file_entry *entry;
++		entry = rb_entry(node, struct file_entry, n);
++		rb_erase(node, &hash_tree);
++		do {
++			struct file_entry *temp;
++
++			if (entry->next == NULL)
 +				break;
-+			if (ret > 0) {
-+				ret = 0;
-+				break;
-+			}
-+		}
++			temp = entry->next;
++			free(entry->hash);
++			free(entry);
++			entry = temp;
++		} while (1);
 +
-+next_slot:
-+		leaf = path->nodes[0];
-+		if (path->slots[0] >= btrfs_header_nritems(leaf)) {
-+			ret = btrfs_next_leaf(root, path);
-+			if (ret < 0)
-+				break;
-+			if (ret > 0) {
-+				ret = 0;
-+				break;
-+			}
-+			leaf = path->nodes[0];
-+		}
++		free(entry->hash);
++		free(entry);
++	}
++}
 +
-+		btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
-+		if (key.objectid > inode->i_ino ||
-+		    key.type > BTRFS_EXTENT_DATA_KEY || key.offset >= end)
-+			break;
++static void free_file_tree()
++{
++	struct rb_node *node;
 +
-+		fi = btrfs_item_ptr(leaf, path->slots[0],
-+				    struct btrfs_file_extent_item);
-+		extent_type = btrfs_file_extent_type(leaf, fi);
-+		if (extent_type != BTRFS_FILE_EXTENT_REG) {
-+			ret = -EINVAL;
-+			break;
-+		}
++	while ((node = rb_first(&file_tree))) {
++		struct file *entry;
++		entry = rb_entry(node, struct file, n);
++		rb_erase(node, &file_tree);
++		free(entry->name);
++		free(entry);
++	}
++}
 +
-+		if (btrfs_file_extent_compression(leaf, fi) ||
-+		    btrfs_file_extent_encryption(leaf, fi) ||
-+		    btrfs_file_extent_other_encoding(leaf, fi)) {
-+			printk(KERN_ERR "cannot dedup transformed extents\n");
-+			ret = -EINVAL;
-+			break;
-+		}
++static void verify_match(struct file_entry *fe)
++{
++	struct file_entry *orig = fe;
++	struct file *file;
++	char *buffer;
++	char *temp;
++	ssize_t bytes;
++	int fd;
 +
-+		extent_start = key.offset;
-+		extent_end = extent_start +
-+			btrfs_file_extent_num_bytes(leaf, fi);
-+		extent_offset = btrfs_file_extent_offset(leaf, fi);
-+		disk_bytenr = btrfs_file_extent_disk_bytenr(leaf, fi);
-+		disk_bytes = btrfs_file_extent_disk_num_bytes(leaf, fi);
++	buffer = malloc(buffer_len);
++	if (!buffer)
++		return;
 +
-+		if (extent_end < search_start) {
-+			path->slots[0]++;
-+			goto next_slot;
-+		}
++	temp = malloc(buffer_len);
++	if (!temp) {
++		free(buffer);
++		return;
++	}
 +
-+		search_start = max(key.offset, start);
-+		if (recow) {
-+			btrfs_release_path(root, path);
++	file = file_tree_search(fe->ino);
++	if (!file) {
++		fprintf(stderr, "couldn't find file, weird %lu\n", fe->ino);
++		goto out;
++	}
++
++	fd = open(file->name, O_RDONLY);
++	if (fd < 0) {
++		fprintf(stderr, "failed to open%s\n", file->name);
++		goto out;
++	}
++
++	bytes = pread(fd, buffer, fe->len, fe->pos);
++	close(fd);
++	if (bytes < fe->len) {
++		fprintf(stderr, "short read\n");
++		goto out;
++	}
++
++	while (fe->next != NULL) {
++		struct file_entry *prev = fe;
++
++		fe = fe->next;
++		file = file_tree_search(fe->ino);
++		if (!file) {
++			fprintf(stderr, "couldn't find file, weird\n");
++			prev->next = fe->next;
++			free(fe->hash);
++			free(fe);
++			orig->entries--;
++			fe = prev;
 +			continue;
 +		}
 +
-+		/*
-+		 *     | - range to split - |
-+		 *  | -------- extent -------- |
-+		 */
-+		if (start > key.offset && end < extent_end) {
-+			struct btrfs_key new_key;
-+
-+			memcpy(&new_key, &key, sizeof(new_key));
-+			new_key.offset = start;
-+			ret = btrfs_duplicate_item(trans, root, path,
-+						   &new_key);
-+			if (ret == -EAGAIN) {
-+				btrfs_release_path(root, path);
-+				continue;
-+			}
-+			if (ret < 0)
-+				break;
-+
-+			leaf = path->nodes[0];
-+			fi = btrfs_item_ptr(leaf, path->slots[0] - 1,
-+					    struct btrfs_file_extent_item);
-+			btrfs_set_file_extent_num_bytes(leaf, fi, start -
-+							key.offset);
-+			fi = btrfs_item_ptr(leaf, path->slots[0],
-+					    struct btrfs_file_extent_item);
-+			extent_offset += start - key.offset;
-+			btrfs_set_file_extent_offset(leaf, fi, extent_offset);
-+			btrfs_set_file_extent_num_bytes(leaf, fi,
-+							extent_end - start);
-+			if (bytes)
-+				*bytes = disk_bytes;
-+			if (bytenr)
-+				*bytenr = disk_bytenr;
-+			if (offset)
-+				*offset = extent_offset;
-+
-+			btrfs_mark_buffer_dirty(leaf);
-+
-+			ret = btrfs_inc_extent_ref(trans, root, disk_bytenr,
-+						   disk_bytes, 0,
-+						   root->root_key.objectid,
-+						   inode->i_ino,
-+						   extent_offset);
-+			if (ret) {
-+				int err;
-+				WARN_ON(1);
-+				fi = btrfs_item_ptr(leaf, path->slots[0] - 1,
-+					struct btrfs_file_extent_item);
-+				btrfs_set_file_extent_num_bytes(leaf, fi,
-+					extent_end - extent_start);
-+				err = btrfs_del_items(trans, root, path,
-+						      path->slots[0], 1);
-+				WARN_ON(err);
-+				break;
-+			}
-+
-+			new_key.offset = end;
-+			ret = btrfs_duplicate_item(trans, root, path, &new_key);
-+			if (ret == -EAGAIN) {
-+				btrfs_release_path(root, path);
-+				continue;
-+			}
-+			if (ret < 0)
-+				break;
-+
-+			leaf = path->nodes[0];
-+			fi = btrfs_item_ptr(leaf, path->slots[0] - 1,
-+					    struct btrfs_file_extent_item);
-+			btrfs_set_file_extent_num_bytes(leaf, fi,
-+							end - start);
-+
-+			fi = btrfs_item_ptr(leaf, path->slots[0],
-+					    struct btrfs_file_extent_item);
-+			extent_offset += end - start;
-+			btrfs_set_file_extent_offset(leaf, fi, extent_offset);
-+			btrfs_set_file_extent_num_bytes(leaf, fi,
-+							extent_end - end);
-+
-+			ret = btrfs_inc_extent_ref(trans, root, disk_bytenr,
-+						   disk_bytes, 0,
-+						   root->root_key.objectid,
-+						   inode->i_ino, 0);
-+			if (ret) {
-+				int err;
-+				WARN_ON(1);
-+				fi = btrfs_item_ptr(leaf, path->slots[0] - 1,
-+					struct btrfs_file_extent_item);
-+				btrfs_set_file_extent_num_bytes(leaf, fi,
-+						extent_end - start);
-+				err = btrfs_del_items(trans, root, path,
-+						      path->slots[0], 1);
-+				WARN_ON(err);
-+				break;
-+			}
-+			btrfs_mark_buffer_dirty(leaf);
-+			ret = 0;
-+			break;
++		fd = open(file->name, O_RDONLY);
++		if (fd < 0) {
++			fprintf(stderr, "couldn't open %s\n", file->name);
++			prev->next = fe->next;
++			free(fe->hash);
++			free(fe);
++			orig->entries--;
++			fe = prev;
++			continue;
 +		}
 +
-+		/*
-+		 * | - range to split -|
-+		 * | ------ extent ------|
-+		 */
-+		if (start == key.offset && end < extent_end) {
-+			struct btrfs_key new_key;
-+
-+			memcpy(&new_key, &key, sizeof(new_key));
-+			new_key.offset = end;
-+			ret = btrfs_duplicate_item(trans, root, path,
-+						   &new_key);
-+			if (ret == -EAGAIN) {
-+				btrfs_release_path(root, path);
-+				continue;
-+			}
-+			if (ret < 0)
-+				break;
-+
-+			leaf = path->nodes[0];
-+			fi = btrfs_item_ptr(leaf, path->slots[0] - 1,
-+					    struct btrfs_file_extent_item);
-+			btrfs_set_file_extent_num_bytes(leaf, fi,
-+							end - start);
-+
-+			if (bytes)
-+				*bytes = disk_bytes;
-+			if (bytenr)
-+				*bytenr = disk_bytenr;
-+			if (offset)
-+				*offset = extent_offset;
-+
-+			fi = btrfs_item_ptr(leaf, path->slots[0],
-+					    struct btrfs_file_extent_item);
-+			extent_offset += end - start;
-+			btrfs_set_file_extent_offset(leaf, fi, extent_offset);
-+			btrfs_set_file_extent_num_bytes(leaf, fi,
-+							extent_end - end);
-+			btrfs_mark_buffer_dirty(leaf);
-+
-+			ret = btrfs_inc_extent_ref(trans, root, disk_bytenr,
-+						   disk_bytes, 0,
-+						   root->root_key.objectid,
-+						   inode->i_ino,
-+						   extent_offset);
-+			if (ret) {
-+				int err;
-+
-+				WARN_ON(1);
-+				fi = btrfs_item_ptr(leaf, path->slots[0] - 1,
-+					struct btrfs_file_extent_item);
-+				btrfs_set_file_extent_num_bytes(leaf, fi,
-+						extent_end - start);
-+				err = btrfs_del_items(trans, root, path,
-+						      path->slots[0], 1);
-+				WARN_ON(err);
-+				break;
-+			}
-+			ret = 0;
-+			break;
++		bytes = pread(fd, temp, fe->len, fe->pos);
++		close(fd);
++		if (bytes < fe->len) {
++			fprintf(stderr, "short read\n");
++			prev->next = fe->next;
++			free(fe->hash);
++			free(fe);
++			orig->entries--;
++			fe = prev;
++			continue;
 +		}
 +
-+		if (start == key.offset && end == extent_end) {
-+			if (bytes)
-+				*bytes = disk_bytes;
-+			if (bytenr)
-+				*bytenr = disk_bytenr;
-+			if (offset)
-+				*offset = extent_offset;
-+			ret = 0;
-+			break;
++		if (memcmp(buffer, temp, fe->len)) {
++			fprintf(stderr, "manual compare doesn't match: %s\n",
++				file->name);
++			prev->next = fe->next;
++			free(fe->hash);
++			free(fe);
++			orig->entries--;
++			fe = prev;
++			continue;
 +		}
-+
-+		ret = -ERANGE;
-+		break;
 +	}
 +
-+	btrfs_free_path(path);
-+	return ret;
++	if (!orig->entries) {
++		rb_erase(&orig->n, &hash_tree);
++		free(orig->hash);
++		free(orig);
++	}
++out:
++	free(buffer);
++	free(temp);
 +}
 +
-+static noinline int link_extent(struct btrfs_trans_handle *trans,
-+				struct inode *inode, u64 disk_bytenr,
-+				u64 disk_bytes, u64 extent_offset,
-+				u64 offset, u64 len)
++static void prune_entries()
 +{
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_path *path;
-+	struct extent_buffer *leaf;
-+	struct btrfs_file_extent_item *fi;
-+	struct btrfs_key key;
-+	u64 hint;
-+	int ret;
-+	int err;
++	struct rb_node *node;
 +
-+	path = btrfs_alloc_path();
-+	if (!path) {
-+		err = -ENOMEM;
-+		goto out;
++	node = rb_first(&hash_tree);
++	while (node) {
++		struct file_entry *entry;
++		entry = rb_entry(node, struct file_entry, n);
++		if (entry->entries) {
++			node = rb_next(node);
++			verify_match(entry);
++			continue;
++		}
++
++		node = rb_next(node);
++		rb_erase(&entry->n, &hash_tree);
++		free(entry->hash);
++		free(entry);
++	}
++}
++
++static void print_hashes()
++{
++	struct rb_node *hash_node;
++
++	for (hash_node = rb_first(&hash_tree); hash_node;
++	     hash_node = rb_next(hash_node)) {
++		struct file_entry *fe;
++		struct file *file;
++
++		fe = rb_entry(hash_node, struct file_entry, n);
++
++		file = file_tree_search(fe->ino);
++		if (!file) {
++			fprintf(stderr, "couldnt find file, weird %lu\n", fe->ino);
++			break;
++		}
++
++		print_hash((uint64_t *)fe->hash);
++		printf("\n");
++		printf("\t%s: pos=%lu, phys=%lu, len=%lu\n", file->name,
++		       fe->pos, fe->physical, fe->len);
++
++		while (fe->next != NULL) {
++			fe = fe->next;
++			file = file_tree_search(fe->ino);
++			if (!file) {
++				fprintf(stderr, "couldnt find file, weird\n");
++				continue;
++			}
++
++			printf("\t%s: pos=%lu, len=%lu\n", file->name,
++			       fe->pos, fe->len);
++		}
++	}
++}
++
++
++static void do_dedup()
++{
++	struct rb_node *node;
++	struct btrfs_ioctl_same_args *args;
++	struct btrfs_ioctl_file_extent_info *info;
++	size_t size;
++	int allocated_entries = 1;
++
++	size = sizeof(*args) + sizeof(*info);
++	args = malloc(size);
++	if (!args) {
++		fprintf(stderr, "error allocating ioctl arguments\n");
++		return;
 +	}
 +
-+	ret = btrfs_inc_extent_ref(trans, root, disk_bytenr, disk_bytes, 0,
-+				   root->root_key.objectid, inode->i_ino,
-+				   extent_offset);
-+	if (ret)
-+		return ret;
++	memset(args, 0, size);
 +
-+	ret = btrfs_drop_extents(trans, inode, offset, offset + len,
-+				 &hint, 1);
-+	if (ret) {
-+		err = ret;
-+		btrfs_free_path(path);
-+		goto out;
++	for (node = rb_first(&hash_tree); node; node = rb_next(node)) {
++		struct file_entry *fe, *orig;
++		struct file *file;
++		int fd;
++		int ret;
++
++		orig = fe = rb_entry(node, struct file_entry, n);
++
++		file = file_tree_search(fe->ino);
++		if (!file) {
++			fprintf(stderr, "couldnt find file, weird %lu\n", fe->ino);
++			break;
++		}
++
++		fd = open(file->name, O_WRONLY);
++		if (fd < 0) {
++			fprintf(stderr, "error opening file (%s) for dedup: %s\n",
++				file->name, strerror(errno));
++			continue;
++		}
++
++		if (fe->entries > allocated_entries) {
++			allocated_entries = fe->entries;
++			size = sizeof(*args) +
++				(sizeof(*info) * allocated_entries);
++			args = realloc(args, size);
++			if (!args) {
++				fprintf(stderr, "error allocating ioctl "
++					"arguments\n");
++				return;
++			}
++			memset(args, 0, size);
++		}
++
++		args->total_files = 0;
++		args->logical_offset = fe->pos;
++		args->length = fe->len;
++
++		info = &args->info[0];
++		while (fe->next != NULL) {
++			fe = fe->next;
++			file = file_tree_search(fe->ino);
++			if (!file) {
++				fprintf(stderr, "couldnt find file, weird\n");
++				continue;
++			}
++
++			fe->fd = info->fd = open(file->name, O_WRONLY);
++			if (info->fd < 0) {
++				fprintf(stderr, "error opening file (%s) for "
++					"dedup: %s\n", file->name,
++					strerror(errno));
++				continue;
++			}
++			info->logical_offset = fe->pos;
++			info++;
++			args->total_files++;
++		}
++
++		if (args->total_files == 0) {
++			close(fd);
++			continue;
++		}
++
++		ret = ioctl(fd, BTRFS_IOC_FILE_EXTENT_SAME, args);
++		if (ret)
++			fprintf(stderr, "failed to do extent same %d\n",
++				errno);
++
++		fe = orig;
++		while (fe->next != NULL) {
++			fe = fe->next;
++			if (fe->fd >= 0)
++				close(fe->fd);
++		}
++		close(fd);
++	}
++}
++
++static void scan_dir(char *dirname)
++{
++	DIR *dir;
++	struct dirent *dirent;
++
++	dir = opendir(dirname);
++	if (!dir) {
++		fprintf(stderr, "failed to open dir %s: %d\n", dirname, errno);
++		return;
 +	}
 +
-+	key.objectid = inode->i_ino;
-+	key.offset = offset;
-+	key.type = BTRFS_EXTENT_DATA_KEY;
-+	ret = btrfs_insert_empty_item(trans, root, path, &key, sizeof(*fi));
++	while (((dirent = readdir(dir)) != NULL)) {
++		char name[PATH_MAX];
++		if (dirent->d_type == DT_DIR) {
++			if (dirent->d_name[0] == '.')
++				continue;
++			snprintf(name, PATH_MAX, "%s/%s", dirname,
++				 dirent->d_name);
++			scan_dir(name);
++		} else if (dirent->d_type == DT_REG) {
++			snprintf(name, PATH_MAX, "%s/%s", dirname,
++				 dirent->d_name);
++			hash_file(name);
++		}
++	}
 +
-+	/*
-+	 * Yes I know, it sucks, but if we don't do this we'll lose data, we
-+	 * need to come up with a way to undo the drop_extents so that if this
-+	 * part fails we can still at least have the old data.
-+	 */
-+	BUG_ON(ret);
++	closedir(dir);
++}
 +
-+	leaf = path->nodes[0];
-+	fi = btrfs_item_ptr(leaf, path->slots[0],
-+			    struct btrfs_file_extent_item);
++int main(int argc, char **argv)
++{
++	if (argc < 2) {
++		fprintf(stderr, "dedup <directory>\n");
++		exit(1);
++	}
 +
-+	btrfs_set_file_extent_generation(leaf, fi, trans->transid);
-+	btrfs_set_file_extent_type(leaf, fi, BTRFS_FILE_EXTENT_REG);
-+	btrfs_set_file_extent_disk_bytenr(leaf, fi, disk_bytenr);
-+	btrfs_set_file_extent_disk_num_bytes(leaf, fi, disk_bytes);
-+	btrfs_set_file_extent_offset(leaf, fi, extent_offset);
-+	btrfs_set_file_extent_num_bytes(leaf, fi, len);
-+	btrfs_set_file_extent_ram_bytes(leaf, fi, len);
-+	btrfs_set_file_extent_compression(leaf, fi, 0);
-+	btrfs_set_file_extent_encryption(leaf, fi, 0);
-+	btrfs_set_file_extent_other_encoding(leaf, fi, 0);
++	if (!gcry_check_version(GCRYPT_VERSION)) {
++		fprintf(stderr, "libgcrypt version mismatch\n");
++		exit(1);
++	}
 +
-+	btrfs_mark_buffer_dirty(leaf);
-+	inode_add_bytes(inode, len);
-+	btrfs_free_path(path);
++	gcry_control(GCRYCTL_DISABLE_SECMEM, 0);
++	gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
++
++	digest_len = gcry_md_get_algo_dlen(GCRY_MD_SHA256);
++	digest = malloc(digest_len);
++	if (!digest) {
++		fprintf(stderr, "failed to alloc digest\n");
++		exit(1);
++	}
++
++	hash_tree = RB_ROOT;
++	file_tree = RB_ROOT;
++
++	scan_dir(argv[1]);
++
++	print_stats();
++
++	prune_entries();
++
++	print_hashes();
++
++	do_dedup();
++
++	free_hash_tree();
++	free_file_tree();
++	free(digest);
 +
 +	return 0;
-+out:
-+	ret = btrfs_free_extent(trans, root, disk_bytenr, disk_bytes, 0,
-+				root->root_key.objectid, inode->i_ino,
-+				extent_offset);
-+	if (ret)
-+		err = ret;
-+	return err;
 +}
-+
-+static inline void lock_extent_range(struct inode *inode, u64 off, u64 len)
-+{
-+	while (1) {
-+		struct btrfs_ordered_extent *ordered;
-+		lock_extent(&BTRFS_I(inode)->io_tree, off,
-+			    off + len - 1, GFP_NOFS);
-+		ordered = btrfs_lookup_first_ordered_extent(inode,
-+							    off + len - 1);
-+		if (!ordered &&
-+		    !test_range_bit(&BTRFS_I(inode)->io_tree, off,
-+				    off + len - 1, EXTENT_DELALLOC, 0, NULL))
-+			break;
-+		unlock_extent(&BTRFS_I(inode)->io_tree, off, off + len -1,
-+			      GFP_NOFS);
-+		if (ordered)
-+			btrfs_put_ordered_extent(ordered);
-+		btrfs_wait_ordered_range(inode, off, len);
-+	}
-+}
-+
-+static noinline long btrfs_ioctl_file_extent_same(struct file *file,
-+						  void __user *argp)
-+{
-+	struct btrfs_ioctl_same_args *args;
-+	struct btrfs_ioctl_same_args tmp;
-+	struct inode *src = file->f_dentry->d_inode;
-+	struct btrfs_root *root;
-+	struct file *dst_file;
-+	struct inode *dst_inode;
-+	struct btrfs_trans_handle *trans;
-+	char *orig_buffer;
-+	u64 off;
-+	u64 len;
-+	u64 bytenr;
-+	u64 bytes;
-+	u64 extent_offset;
-+	int args_size = 0;
-+	int drop_ref = 0;
-+	int i;
-+	int ret;
-+
-+	if (copy_from_user(&tmp,
-+			   (struct btrfs_ioctl_same_args __user *)argp,
-+			   sizeof(tmp)))
-+		return -EFAULT;
-+
-+	args_size = sizeof(tmp) + (tmp.total_files *
-+			sizeof(struct btrfs_ioctl_file_extent_info));
-+
-+	/* lets not let this get out of hand */
-+	if (args_size > PAGE_CACHE_SIZE)
-+		return -ENOMEM;
-+
-+	args = kmalloc(args_size, GFP_NOFS);
-+	if (!args)
-+		return -ENOMEM;
-+
-+	if (copy_from_user(args,
-+			   (struct btrfs_ioctl_same_args __user *)argp,
-+			   args_size))
-+		return -EFAULT;
-+
-+	/* Make sure args didn't change magically between copies. */
-+	if (memcmp(&tmp, args, sizeof(tmp))) {
-+		kfree(args);
-+		return -EINVAL;
-+	}
-+
-+	if (S_ISDIR(src->i_mode)) {
-+		kfree(args);
-+		return -EISDIR;
-+	}
-+
-+	off = args->logical_offset;
-+	len = args->length;
-+	root = BTRFS_I(src)->root;
-+
-+	/*
-+	 * Since we have to memcmp the data to make sure it does actually match
-+	 * eachother we need to allocate 2 buffers to handle this.  So limit the
-+	 * blocksize to 1 megabyte to make sure nobody abuses this.
-+	 */
-+	if (len > 1 * 1024 * 1024)
-+		return -ENOMEM;
-+
-+	lock_extent_range(src, off, len);
-+
-+	ret = check_data(src, NULL, off, len, &orig_buffer);
-+	if (ret) {
-+		unlock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1,
-+			      GFP_NOFS);
-+		goto out;
-+	}
-+
-+	trans = btrfs_start_transaction(root, args->total_files + 1);
-+	if (IS_ERR(trans)) {
-+		unlock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1,
-+			      GFP_NOFS);
-+		ret = PTR_ERR(trans);
-+		goto out;
-+	}
-+
-+	ret = split_extent(trans, src, off, off + len, &bytenr, &bytes,
-+			   &extent_offset);
-+	if (ret) {
-+		unlock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1,
-+			      GFP_NOFS);
-+		goto out_trans;
-+	}
-+
-+	ret = btrfs_inc_extent_ref(trans, root, bytenr, bytes, 0,
-+				   root->root_key.objectid, src->i_ino,
-+				   extent_offset);
-+	unlock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1, GFP_NOFS);
-+	if (ret)
-+		goto out_trans;
-+
-+	drop_ref = 1;
-+	for (i = 0; i < args->total_files; i++) {
-+		struct btrfs_ioctl_file_extent_info *info;
-+		info = &args->info[i];
-+
-+		dst_file = fget(info->fd);
-+		if (!dst_file) {
-+			printk(KERN_ERR "btrfs: invalid fd %lld\n", info->fd);
-+			ret = -EINVAL;
-+			break;
-+		}
-+		dst_inode = dst_file->f_dentry->d_inode;
-+		if (S_ISDIR(dst_inode->i_mode)) {
-+			fput(dst_file);
-+			printk(KERN_ERR "btrfs: file is dir %lld\n", info->fd);
-+			ret = -EINVAL;
-+			break;
-+		}
-+
-+		if (BTRFS_I(dst_inode)->root != root) {
-+			fput(dst_file);
-+			printk(KERN_ERR "btrfs: cannot dedup across subvolumes"
-+			      " %lld\n", info->fd);
-+			ret = -EINVAL;
-+			break;
-+		}
-+
-+		off = info->logical_offset;
-+		lock_extent_range(dst_inode, off, len);
-+		if (check_data(dst_inode, orig_buffer, off, len, NULL)) {
-+			printk(KERN_ERR "btrfs: data for fd %lld does not "
-+			       "match\n", info->fd);
-+			unlock_extent(&BTRFS_I(dst_inode)->io_tree, off,
-+				      off + len - 1, GFP_NOFS);
-+			fput(dst_file);
-+			continue;
-+		}
-+
-+		ret = link_extent(trans, dst_inode, bytenr, bytes,
-+				  extent_offset, off, len);
-+		if (ret) {
-+			unlock_extent(&BTRFS_I(dst_inode)->io_tree, off,
-+				      off + len - 1, GFP_NOFS);
-+			fput(dst_file);
-+			break;
-+		}
-+
-+		unlock_extent(&BTRFS_I(dst_inode)->io_tree, off, off + len - 1,
-+			      GFP_NOFS);
-+
-+		fput(dst_file);
-+
-+		if (drop_ref) {
-+			ret = btrfs_free_extent(trans, root, bytenr, bytes, 0,
-+						root->root_key.objectid,
-+						src->i_ino, extent_offset);
-+			if (ret)
-+				break;
-+			drop_ref = 0;
-+		}
-+	}
-+
-+	if (drop_ref) {
-+		btrfs_free_extent(trans, root, bytenr, bytes, 0,
-+				  root->root_key.objectid, src->i_ino,
-+				  extent_offset);
-+	}
-+
-+out_trans:
-+	btrfs_end_transaction(trans, root);
-+out:
-+	kfree(orig_buffer);
-+	kfree(args);
-+	return ret;
-+}
-+
- long btrfs_ioctl(struct file *file, unsigned int
- 		cmd, unsigned long arg)
- {
-@@ -2287,6 +2888,8 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_start_sync(file, argp);
- 	case BTRFS_IOC_WAIT_SYNC:
- 		return btrfs_ioctl_wait_sync(file, argp);
-+	case BTRFS_IOC_FILE_EXTENT_SAME:
-+		return btrfs_ioctl_file_extent_same(file, argp);
- 	}
- 
- 	return -ENOTTY;
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 17c99eb..dee097c 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -145,6 +145,20 @@ struct btrfs_ioctl_space_args {
- 	struct btrfs_ioctl_space_info spaces[0];
+diff --git a/ioctl.h b/ioctl.h
+index 4ace64f..c4c4858 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -138,6 +138,20 @@ struct btrfs_ioctl_disk_info_args {
+ 	__u64 devices[0];
  };
  
 +#define BTRFS_SAME_EXTENT_HASH_SHA256	1
@@ -691,10 +736,10 @@ index 17c99eb..dee097c 100644
  #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
  				   struct btrfs_ioctl_vol_args)
  #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
-@@ -189,4 +203,6 @@ struct btrfs_ioctl_space_args {
- #define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
- #define BTRFS_IOC_SNAP_CREATE_ASYNC _IOW(BTRFS_IOCTL_MAGIC, 23, \
- 				   struct btrfs_ioctl_async_vol_args)
+@@ -177,4 +191,6 @@ struct btrfs_ioctl_disk_info_args {
+ 				    struct btrfs_ioctl_space_args)
+ #define BTRFS_IOC_DISK_INFO _IOWR(BTRFS_IOCTL_MAGIC, 21, \
+ 				  struct btrfs_ioctl_disk_info_args)
 +#define BTRFS_IOC_FILE_EXTENT_SAME _IOW(BTRFS_IOCTL_MAGIC, 24, \
 +					struct btrfs_ioctl_same_args)
  #endif

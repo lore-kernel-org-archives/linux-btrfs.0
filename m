@@ -1,62 +1,63 @@
 From: Gordan Bobic <gordan@bobich.net>
 Subject: Re: Offline Deduplication for Btrfs
-Date: Thu, 06 Jan 2011 14:41:28 +0000
-Message-ID: <4D25D498.4050709@bobich.net>
-References: <1294245410-4739-1-git-send-email-josef@redhat.com>	<4D24AD92.4070107@bobich.net> <ig4bur$mns$1@dough.gmane.org> <20110106142059.GA13178@domone>
+Date: Thu, 06 Jan 2011 14:49:39 +0000
+Message-ID: <4D25D683.3050609@bobich.net>
+References: <1294245410-4739-1-git-send-email-josef@redhat.com>	<4D24AD92.4070107@bobich.net> <20110105194645.GC2562@localhost.localdomain>	<4D24D8BC.90808@bobich.net> <4D251888.7060508@shiftmail.org> <20110106143019.GB14674@mother>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8;
 	format=flowed
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110106142059.GA13178@domone>
+In-Reply-To: <20110106143019.GB14674@mother>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ond=C5=99ej B=C3=ADlka wrote:
+Tomasz Torcz wrote:
+> On Thu, Jan 06, 2011 at 02:19:04AM +0100, Spelic wrote:
+>>> CPU can handle considerably more than 250 block hashings per
+>>> second. You could argue that this changes in cases of sequential
+>>> I/O on big files, but a 1.86GHz GHz Core2 can churn through
+>>> 111MB/s of SHA256, which even SSDs will struggle to keep up with.
+>> A normal 1TB disk with platters can do 130MB/sec sequential, no prob=
+lems.
+>> A SSD can do more like 200MB/sec write 280MB/sec read sequential or
+>> random and is actually limited only by the SATA 3.0gbit/sec but soon
+>> enough they will have SATA/SAS 6.0gbit/sec.
+>=20
+>   By =E2=80=9Csoon enough=E2=80=9D you really meant =E2=80=9Ca year a=
+go=E2=80=9D, I think:
+> http://www.anandtech.com/show/3812/the-ssd-diaries-crucials-realssd-c=
+300
+> Current 6Gbps SSD are doing 415 MB/s sequential:
+> http://www.anandtech.com/show/4086/microns-realssd-c400-uses-25nm-nan=
+d-at-161gb-offers-415mbs-reads
+> or even claim 550MB/s:
+> http://www.anandtech.com/show/4100/ocz-vertex-pro-3-demo-worlds-first=
+-sandforce-sf2000
+> (funny bit: Sandforce SSD controllers dedup internally).=20
+>=20
+>   Anyway, 6Gbps is not a future tale, but something long available.
+> And not the fastest kids on the block:  currently build filesystems
+> must deal storage providing many gigabytes per second.  Think
+> of massive disk arrays or stuff like Oracle F5100, claiming
+> 12.8GB/sec read and ~10GB/s write (in one rack unit).
 
->>> Then again, for a lot of use-cases there are perhaps better ways to
->>> achieve the targed goal than deduping on FS level, e.g. snapshottin=
-g or
->>> something like fl-cow:
->>> http://www.xmailserver.org/flcow.html
->>>
-> As VM are concerned fl-cow is poor replacement of deduping.
-
-Depends on your VM. If your VM uses monolithic images, then you're=20
-right. For a better solution, take a look at vserver's hashify feature=20
-for something that does this very well in it's own context.
-
-> Upgrading packages? 1st vm upgrades and copies changed files.
-> After while second upgrades and copies files too. More and more becom=
-es duped again.
-
-So you want online dedupe, then. :)
-
-> If you host multiple distributions you need to translate
-> that /usr/share/bin/foo in foonux is /us/bin/bar in barux
-
-The chances of the binaries being the same between distros are between=20
-slim and none. In the context of VMs where you have access to raw files=
-,=20
-as I said, look at vserver's hashify feature. It doesn't care about fil=
+Sequential figures look nice and impressive but we all know they are=20
+meaningless for most real world workloads. IOPS are where it's at. And=20
+maybe you can get 100,000 IOPS out of an SSD. But that still means=20
+100,000 SHA256 hashes/second. That's 3.2MB/s of SHA256 hashes, or about=
+=20
+2% of what a modern x64 CPU will do, assuming it doesn't have a suitabl=
 e=20
-names, it will COW hard-link all files with identical content. This=20
-doesn't even require an exhaustive check of all the files' contents -=20
-you can start with file sizes. Files that have different sizes can't=20
-have the same contents, so you can discard most of the comparing before=
+hardware crypto accelerator for that algorithm. So on a reasonably=20
+recent quad core CPU you would probably be able to comfortably handle=20
+about 200x that before it starts becoming an issue. If you're that=20
+concerned about space requirements, doing LZO compression will still be=
 =20
-you even open the file, most of the work gets done based on metadata al=
-one.
+much more expensive.
 
-> And primary reason to dedupe is not to reduce space usage but to
-> improve caching. Why should machine A read file if machine B read it =
-five minutes ago.
-
-Couldn't agree more. This is what I was trying to explain earlier. Even=
-=20
-if deduping did cause more fragmentation (and I don't think that is the=
-=20
-case to any significant extent), the improved caching efficiency would=20
-more than offset this.
+And that's only for writes - on reads we don't need to do any hashing=20
+(although it's useful to do for the disk error checking reasons=20
+explained earlier).
 
 Gordan
 --

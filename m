@@ -1,87 +1,82 @@
 From: Hubert Kario <hka@qbs.com.pl>
-Subject: Re: Synching a Backup Server
-Date: Fri, 7 Jan 2011 17:20:08 +0100
-Message-ID: <201101071720.08298.hka@qbs.com.pl>
-References: <201101060935.14059.CACook@quantum-sci.com> <201101061342.23991.CACook@quantum-sci.com> <AANLkTimOEsFiF7tiCzV-Y3NfGYHjK+uL_3O6PNDKum90@mail.gmail.com>
+Subject: Re: Atomic file data replace API
+Date: Fri, 7 Jan 2011 17:26:02 +0100
+Message-ID: <201101071726.02958.hka@qbs.com.pl>
+References: <AANLkTi=paCEdAFZkHWTSwTCjYavMPOaGY8MsLknryk=_@mail.gmail.com> <AANLkTi=o4w9wDoh6f8iaJF=vPQ-Xs1XBnJMbym08cOa-@mail.gmail.com> <1294416073-sup-5254@think>
 Mime-Version: 1.0
 Content-Type: Text/Plain; charset=utf-8
-Cc: Carl Cook <CACook@quantum-sci.com>, linux-btrfs@vger.kernel.org
-To: Freddie Cash <fjwcash@gmail.com>
+Cc: Olaf van der Spek <olafvdspek@gmail.com>,
+	"linux-btrfs" <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimOEsFiF7tiCzV-Y3NfGYHjK+uL_3O6PNDKum90@mail.gmail.com>
+In-Reply-To: <1294416073-sup-5254@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thursday, January 06, 2011 22:52:25 Freddie Cash wrote:
-> On Thu, Jan 6, 2011 at 1:42 PM, Carl Cook <CACook@quantum-sci.com> wr=
-ote:
-> > On Thu 06 January 2011 11:16:49 Freddie Cash wrote:
-> >> > Also with this system, I'm concerned that if there is corruption=
- on
-> >> > the HTPC, it could be propagated to the backup server.  Is there=
- some
-> >> > way to address this?  Longer intervals to sync, so I have a chan=
-ce to
-> >> > discover?
-> >>=20
-> >> Using snapshots on the backup server allows you to go back in time=
- to
-> >> recover files that may have been accidentally deleted, or to recov=
-er
-> >> files that have been corrupted.
+On Friday, January 07, 2011 17:12:11 Chris Mason wrote:
+> Excerpts from Olaf van der Spek's message of 2011-01-07 10:17:31 -050=
+0:
+> > On Fri, Jan 7, 2011 at 4:13 PM, Chris Mason <chris.mason@oracle.com=
+>=20
+wrote:
+> > >> That's not what I asked. ;)
+> > >> I asked to wait until the first write (or close). That way, you =
+don't
+> > >> get unintentional empty files.
+> > >> One step further, you don't have to keep the data in memory, you=
+'re
+> > >> free to write them to disk. You just wouldn't update the meta-da=
+ta
+> > >> (yet).
+> > >=20
+> > > Sorry ;) Picture an application that truncates 1024 files without
+> > > closing any of them.  Basically any operation that includes the k=
+ernel
+> > > waiting for applications because they promise to do something soo=
+n is
+> > > a denial of service attack, or a really easy way to run out of me=
+mory
+> > > on the box.
 > >=20
-> > How?  I can see that rsync will not transfer the files that have no=
-t
-> > changed, but I assume it transfers the changed ones.  How can you g=
-o
-> > back in time?  Is there like a snapshot file that records the state=
- of
-> > all files there?
+> > I'm not sure why you would run out of memory in that case.
 >=20
-> I don't know the specifics of how it works in btrfs, but it should be
-> similar to how ZFS does it.  The gist of it is:
+> Well, lets make sure I've got a good handle on the proposed interface=
+:
 >=20
-> Each snapshot gives you a point-in-time view of the entire filesystem=
-=2E
->  Each snapshot can be mounted (ZFS is read-only; btrfs is read-only o=
-r
-> read-write).  So, you mount the snapshot for 2010-12-15 onto /mnt,
-> then cd to the directory you want (/mnt/htpc/home/fcash/videos/) and
-> copy the file out that you want to restore (cp coolvid.avi ~/).
+> 1) fd =3D open(some_file, O_ATOMIC)
+> 2) truncate(fd, 0)
+> 3) write(fd, new data)
 >=20
-> With ZFS, things are nice and simple:
->   - each filesystem has a .zfs/snapshot directory
->   - in there are sub-directories, each named after the snapshot name
->   - cd into the snapshot name, the OS auto-mounts the snapshot, and o=
-ff you
-> go
+> The semantics are that we promise not to let the truncate hit the dis=
+k
+> until the application does the write.
 >=20
-> Btrfs should be similar?  Don't know the specifics.
+> We have a few choices on how we do this:
 >=20
-> How it works internally, is some of the magic and the beauty of
-> Copy-on-Write filesystems.  :)
+> 1) Leave the disk untouched, but keep something in memory that says t=
+his
+> inode is really truncated
+>=20
+> 2) Record on disk that we've done our atomic truncate but it is still
+> pending.  We'd need some way to remove or invalidate this record afte=
+r a
+> crash.
+>=20
+> 3) Go ahead and do the operation but don't allow the transaction to
+> commit until the write is done.
+>=20
+> option #1: keep something in memory.  Well, any time we have a
+> requirement to pin something in memory until userland decides to do a
+> write, we risk oom.
 
-I usually create subvolumes in btrfs root volume:
+Userland has already a file descriptor allocated (which can fail anyway=
+=20
+because of OOM), I see no problem in increasing the size of kernel memo=
+ry=20
+usage by 4 bytes (if not less) just to note that the application wants =
+to see=20
+the file as truncated (1 bit) and the next write has to be atomic (2nd =
+bit?).
 
-/mnt/btrfs/
-        |- server-a
-        |- server-b
-        \- server-c
-
-then create snapshots of these directories:
-
-/mnt/btrfs/
-        |- server-a
-        |- server-b
-        |- server-c
-        |- snapshots-server-a
-                 |- @GMT-2010.12.21-16.48.09
-	            \- @GMT-2010.12.22-16.45.14
-        |- snapshots-server-b
-        \- snapshots-server-c
-
-This way I can use the shadow_copy module for samba to publish the snap=
-shots =20
-to windows clients.
 --=20
 Hubert Kario
 QBS - Quality Business Software

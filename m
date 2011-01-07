@@ -1,35 +1,33 @@
-From: Tomasz Chmielewski <mangoo@wpkg.org>
-Subject: Re: "open_ctree failed", unable to mount the fs
-Date: Fri, 07 Jan 2011 21:01:31 +0100
-Message-ID: <4D27711B.4090606@wpkg.org>
-References: <4D276899.7000702@wpkg.org> <AANLkTik3GZVTwco+4PNFriB0+t_U=e+dH0UOgK_3P9D5@mail.gmail.com>
+From: "Ken D'Ambrosio" <ken@jots.org>
+Subject: Re: 'open_ctree failed', unable to mount the fs
+Date: Fri, 7 Jan 2011 15:02:09 -0500 (EST)
+Message-ID: <84f68d319370863b2fed9181f93295b9.squirrel@webmail.jots.org>
+References: <4D27631B.9020700@wpkg.org>
+    <20110107190930.GA24059@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=US-ASCII
+To: "Hugo Mills" <hugo-lkml@carfax.org.uk>,
+	"Tomasz Chmielewski" <mangoo@wpkg.org>,
+	"linux-btrfs" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTik3GZVTwco+4PNFriB0+t_U=e+dH0UOgK_3P9D5@mail.gmail.com>
+In-Reply-To: <20110107190930.GA24059@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07.01.2011 20:46, cwillu wrote:
-
->> However, I don't see the tool when I clone the latest git - am I missing something?
+On Fri, January 7, 2011 2:09 pm, Hugo Mills wrote:
+> On Fri, Jan 07, 2011 at 08:01:47PM +0100, Tomasz Chmielewski wrote:
 >
-> It's not built by the makefile by default;  "make btrfs-select-super"
-> as stated above will make it.
+>> I got a "power cycle", after which I'm no longer able to mount btrfs
+>> filesystem:
+[...]
+> The forthcoming[1] btrfsck tool should handle that particular
+> error, I believe.
 
-$ grep select Makefile
-$ grep super Makefile
-$ grep -r select-super *
-$ grep -r selects-super *
+I tried it with the btrfsck in the git repo (last week), and wound up
+with... a brandy-new, blank btrfs partition.  Not *quite* what I was
+looking for.  But at least it mounted.
 
-
-I used:
-
-git clone 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs-unstable.git 
-next
+-K
 
 
--- 
-Tomasz Chmielewski
-http://wpkg.org
+
+

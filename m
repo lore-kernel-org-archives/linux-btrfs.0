@@ -1,76 +1,32 @@
-From: Arie Peterson <ariep@xs4all.nl>
-Subject: Bug report: parent transid failed after heavy load
-Date: Fri, 07 Jan 2011 11:59:31 +0100
-Message-ID: <169b07a128b787f7e18550d2d3884374@xs4all.nl>
+From: Mike Fleetwood <mike.fleetwood@googlemail.com>
+Subject: Re: Atomic file data replace API
+Date: Fri, 7 Jan 2011 13:55:07 +0000
+Message-ID: <AANLkTikE2Rr3KdGA5bN77o+BmkD6nsBvDasgx4085MiL@mail.gmail.com>
+References: <AANLkTi=paCEdAFZkHWTSwTCjYavMPOaGY8MsLknryk=_@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
- format=flowed
-To: <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: Olaf van der Spek <olafvdspek@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTi=paCEdAFZkHWTSwTCjYavMPOaGY8MsLknryk=_@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- Dear all,
+On 6 January 2011 20:01, Olaf van der Spek <olafvdspek@gmail.com> wrote:
+> Hi,
+>
+> Does btrfs support atomic file data replaces?
 
+Hi Olaf,
 
- During a move of some 60GB of data from an ext4 partition to a btrfs 
- partition, both on the same disk, the following happened:
+Yes btrfs does support atomic replace, since kernel 2.6.30 circa June 2009. [1]
 
- - my window manager froze;
- - the move suspended, i.e., no more data was written to the destination 
- or deleted from the source;
- - part of top output: (sorry for possible wrapping; sending this from 
- webmail)
+Special handling was added to ext3, ext4, btrfs (and probably other
+Linux FSs) for your replace-via-truncate and the alternative
+replace-via-rename application patterns.  Try reading "Delayed
+allocation and the zero-length file problem" article and comments by
+Ted Ts'o for further discussion. [2]
 
-   PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+ COMMAND
- 
- 13610 root      20   0     0    0    0 D   26  0.0 299:45.87 
- btrfs-cache-279
-  1566 root      20   0     0    0    0 S   22  0.0 218:30.86 
- btrfs-endio-met
-
- (there were also a firefox instance and an npviewer.bin process still 
- consuming CPU time, but I guess this was some flash movie happily 
- playing along during the freeze);
-
- - those two btrfs processes could not be terminated, not even by kill 
- -9;
- - "lsof 1566" output (similar for the other process):
-
- COMMAND    PID USER   FD      TYPE DEVICE SIZE/OFF NODE NAME
- btrfs-end 1566 root  cwd       DIR    8,6     4096    2 /
- btrfs-end 1566 root  rtd       DIR    8,6     4096    2 /
- btrfs-end 1566 root  txt   unknown                      /proc/1566/exe
-
- After a reboot, I am able to mount the btrfs filesystem, and read data 
- from it, but as soon as I try any write operation (even a simple touch), 
- that command hangs, and there are two btrfs processes hanging around, 
- just as above; dmesg gives lots of "parent transid failed" messages.
-
- My kernel is 2.6.36 (with gentoo patches).
-
- So, the questions:
-
- 1) Is this a known problem? If so, is it fixed in a newer version?
-
- In the archive of this list, I read about others with "parent transid 
- failed" errors, and a recovery operation (suggested by Chris Mason), 
- using btrfs-select-super 
- <http://www.spinics.net/lists/linux-btrfs/msg07572.html>.
-
- 2) Should I try this procedure to fix my filesystem? Is there any debug 
- information I should collect first? (I can recreate the two "spinning" 
- processes by rebooting and writing to the filesystem.)
-
-
- I am saddened by this failure, as this data move was actually part of 
- an operation to switch over to btrfs completely, after using it without 
- problems for quite a while.
-
-
- Thanks for any help. Keep up the good work.
-
-
- Regards,
-
- Arie Peterson
-
+Mike
+-- 
+[1] http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commit;h=5a3f23d515a2ebf0c750db80579ca57b28cbce6d
+[2] http://thunk.org/tytso/blog/2009/03/12/delayed-allocation-and-the-zero-length-file-problem/

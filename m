@@ -1,10 +1,11 @@
 From: "Zhong, Xin" <xin.zhong@intel.com>
 Subject: RE: [Bug 26242] New: BUG: unable to handle kernel NULL pointer
  dereference at   (null)
-Date: Fri, 7 Jan 2011 12:14:39 +0800
-Message-ID: <1865303E0DED764181A9D882DEF65FB685AF8B6D57@shsmsx502.ccr.corp.intel.com>
+Date: Fri, 7 Jan 2011 14:45:48 +0800
+Message-ID: <1865303E0DED764181A9D882DEF65FB685AF8B6E90@shsmsx502.ccr.corp.intel.com>
 References: <bug-26242-27@https.bugzilla.kernel.org/>
  <20110106131258.c4b262bf.akpm@linux-foundation.org>
+ <1865303E0DED764181A9D882DEF65FB685AF8B6D57@shsmsx502.ccr.corp.intel.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Cc: "bugzilla-daemon@bugzilla.kernel.org"
@@ -12,11 +13,21 @@ Cc: "bugzilla-daemon@bugzilla.kernel.org"
 	Peter Zijlstra <a.p.zijlstra@chello.nl>,
 	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
 	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Andrew Morton <akpm@linux-foundation.org>,
+To: "Zhong, Xin" <xin.zhong@intel.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
 	"StMichalke@web.de" <StMichalke@web.de>
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20110106131258.c4b262bf.akpm@linux-foundation.org>
+In-Reply-To: <1865303E0DED764181A9D882DEF65FB685AF8B6D57@shsmsx502.ccr.corp.intel.com>
 List-ID: <linux-btrfs.vger.kernel.org>
+
+I have checked latest mkfs code. If page size is 4k. sector size will be 4k too. So at least for x86 hardware, page size and sector size will always be the same.
+
+-----Original Message-----
+From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-owner@vger.kernel.org] On Behalf Of Zhong, Xin
+Sent: Friday, January 07, 2011 12:15 PM
+To: Andrew Morton; StMichalke@web.de
+Cc: bugzilla-daemon@bugzilla.kernel.org; Peter Zijlstra; linux-kernel@vger.kernel.org; linux-btrfs@vger.kernel.org
+Subject: RE: [Bug 26242] New: BUG: unable to handle kernel NULL pointer dereference at (null)
 
 A similar bug has been reported by Kenneth Lakin [kennethlakin@gmail.com] last week. It's related to my check-in (git commit 914ee295af418e936ec20a08c1663eaabe4cd07a). I am looking into it now.
 
@@ -162,3 +173,7 @@ around with a NULL page*.  I'd wager on the latter.
 Thanks, I'll ask Rafael and Maciej to track this as a 2.6.36->2.6.37
 regression.
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

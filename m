@@ -1,36 +1,42 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Subject: Re: [PATCH v2 1/5] add metadata_incore ioctl in vfs
-Date: Fri, 7 Jan 2011 15:15:13 +0100
-Message-ID: <201101071515.13901.arnd@arndb.de>
-References: <1294119632.1949.366.camel@sli10-conroe> <201101060838.49359.arnd@arndb.de> <1294299907.1949.582.camel@sli10-conroe>
-Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	Christoph Hellwig <hch@infradead.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Arjan van de Ven <arjan@infradead.org>,
-	"Yan, Zheng" <zheng.z.yan@linux.intel.com>,
-	"linux-api@vger.kernel.org" <linux-api@vger.kernel.org>,
-	"mtk.manpages@gmail.com" <mtk.manpages@gmail.com>
-To: Shaohua Li <shaohua.li@intel.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Atomic file data replace API
+Date: Fri, 07 Jan 2011 09:58:31 -0500
+Message-ID: <1294412141-sup-1734@think>
+References: <AANLkTi=paCEdAFZkHWTSwTCjYavMPOaGY8MsLknryk=_@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Olaf van der Spek <olafvdspek@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1294299907.1949.582.camel@sli10-conroe>
+In-reply-to: <AANLkTi=paCEdAFZkHWTSwTCjYavMPOaGY8MsLknryk=_@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thursday 06 January 2011, Shaohua Li wrote:
-> Subject: add metadata_incore ioctl in vfs
+Excerpts from Olaf van der Spek's message of 2011-01-06 15:01:15 -0500:
+> Hi,
 > 
-> Add an ioctl to dump filesystem's metadata in memory in vfs. Userspace collects
-> such info and uses it to do metadata readahead.
-> Filesystem can hook to super_operations.metadata_incore to get metadata in
-> specific approach. Next patch will give an example how to implement
-> .metadata_incore in btrfs.
-> 
-> Signed-off-by: Shaohua Li <shaohua.li@intel.com>
+> Does btrfs support atomic file data replaces? Basically, the atomic
+> variant of this:
+> // old stage
+> open(O_TRUNC)
+> write() // 0+ times
+> close()
+> // new state
 
-Looks great!
+Yes and no.  We have a best effort mechanism where we try to guess that
+since you've done this truncate and the write that you want the writes
+to show up quickly.  But its a guess.
 
-Reviewed-by: Arnd Bergmann <arnd@arndb.de>
+The problem is the write() // 0+ times.  The kernel has no idea what
+new result you want the file to contain because the application isn't
+telling us.
+
+What btrfs can do (but we haven't yet implemented) is make sure that the
+results of a single write file are on disk atomically, even if they are
+replacing existing bytes in the file.
+
+Because we cow and because we don't update metadata pointers until the
+IO is complete, we can wait until all the IO for a given write call is
+on disk before we update any of the metadata.
+
+This isn't hard, it's on my TODO list.
+
+-chris

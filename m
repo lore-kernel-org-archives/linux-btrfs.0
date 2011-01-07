@@ -1,49 +1,46 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: Olaf van der Spek <olafvdspek@gmail.com>
 Subject: Re: Atomic file data replace API
-Date: Fri, 07 Jan 2011 10:13:41 -0500
-Message-ID: <1294412980-sup-1924@think>
-References: <AANLkTi=paCEdAFZkHWTSwTCjYavMPOaGY8MsLknryk=_@mail.gmail.com> <1294412141-sup-1734@think> <AANLkTi=Z1RCwMKSMRzg4fwN55ZQs4F91nNjdEfv6veyb@mail.gmail.com> <1294412553-sup-9058@think> <AANLkTimB-gpHFJMXY3TRcfxGJjwo94ffEVZSPw6746bC@mail.gmail.com>
+Date: Fri, 7 Jan 2011 16:17:31 +0100
+Message-ID: <AANLkTi=o4w9wDoh6f8iaJF=vPQ-Xs1XBnJMbym08cOa-@mail.gmail.com>
+References: <AANLkTi=paCEdAFZkHWTSwTCjYavMPOaGY8MsLknryk=_@mail.gmail.com>
+	<1294412141-sup-1734@think>
+	<AANLkTi=Z1RCwMKSMRzg4fwN55ZQs4F91nNjdEfv6veyb@mail.gmail.com>
+	<1294412553-sup-9058@think>
+	<AANLkTimB-gpHFJMXY3TRcfxGJjwo94ffEVZSPw6746bC@mail.gmail.com>
+	<1294412980-sup-1924@think>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=ISO-8859-1
+Content-Type: text/plain; charset=UTF-8
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Olaf van der Spek <olafvdspek@gmail.com>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <AANLkTimB-gpHFJMXY3TRcfxGJjwo94ffEVZSPw6746bC@mail.gmail.com>
+In-Reply-To: <1294412980-sup-1924@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Olaf van der Spek's message of 2011-01-07 10:08:24 -0500:
-> On Fri, Jan 7, 2011 at 4:05 PM, Chris Mason <chris.mason@oracle.com> =
-wrote:
-> >> > The problem is the write() // 0+ times. =C2=A0The kernel has no =
-idea what
-> >> > new result you want the file to contain because the application =
-isn't
-> >> > telling us.
-> >>
-> >> Isn't it safe for the kernel to wait until the first write or clos=
-e
-> >> before writing anything to disk?
-> >
-> > I'm afraid not. =C2=A0Picture an application that opens a thousand =
-files and
-> > writes 1MB to each of them, and then didn't close any. =C2=A0If we =
-waited
-> > until close, you'd have 1GB of memory pinned or staged somehow.
->=20
-> That's not what I asked. ;)
-> I asked to wait until the first write (or close). That way, you don't
-> get unintentional empty files.
-> One step further, you don't have to keep the data in memory, you're
-> free to write them to disk. You just wouldn't update the meta-data
-> (yet).
+On Fri, Jan 7, 2011 at 4:13 PM, Chris Mason <chris.mason@oracle.com> wr=
+ote:
+>> That's not what I asked. ;)
+>> I asked to wait until the first write (or close). That way, you don'=
+t
+>> get unintentional empty files.
+>> One step further, you don't have to keep the data in memory, you're
+>> free to write them to disk. You just wouldn't update the meta-data
+>> (yet).
+>
+> Sorry ;) Picture an application that truncates 1024 files without clo=
+sing any
+> of them. =C2=A0Basically any operation that includes the kernel waiti=
+ng for
+> applications because they promise to do something soon is a denial of
+> service attack, or a really easy way to run out of memory on the box.
 
-Sorry ;) Picture an application that truncates 1024 files without closi=
-ng any
-of them.  Basically any operation that includes the kernel waiting for
-applications because they promise to do something soon is a denial of
-service attack, or a really easy way to run out of memory on the box.
+I'm not sure why you would run out of memory in that case.
 
--chris
+O_ATOMIC would be the solution for the rename workaround: write temp
+file, rename
+With advantages like a way simpler API, no issues with resetting
+meta-data, no issues with temp file and maybe better performance.
+
+Olaf
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

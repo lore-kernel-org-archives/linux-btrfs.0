@@ -1,54 +1,76 @@
-From: "Aneesh Kumar K. V" <aneesh.kumar@linux.vnet.ibm.com>
-Subject: Re: [PATCH] btrfs: Mem leak in btrfs_get_acl()
-Date: Fri, 07 Jan 2011 14:52:10 +0530
-Message-ID: <87vd21kr0d.fsf@linux.vnet.ibm.com>
-References: <alpine.LNX.2.00.1101062242320.13988@swampdragon.chaosbits.net>
+From: Arie Peterson <ariep@xs4all.nl>
+Subject: Bug report: parent transid failed after heavy load
+Date: Fri, 07 Jan 2011 11:59:31 +0100
+Message-ID: <169b07a128b787f7e18550d2d3884374@xs4all.nl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-kernel@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
-To: Jesper Juhl <jj@chaosbits.net>, linux-btrfs@vger.kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <alpine.LNX.2.00.1101062242320.13988@swampdragon.chaosbits.net>
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+To: <linux-btrfs@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 6 Jan 2011 22:45:21 +0100 (CET), Jesper Juhl <jj@chaosbits.net> wrote:
-> 
-> It seems to me that we leak the memory allocated to 'value' in 
-> btrfs_get_acl() if the call to posix_acl_from_xattr() fails.
-> Here's a patch that attempts to correct that problem.
-> 
-> Signed-off-by: Jesper Juhl <jj@chaosbits.net>
-
-I posted a similar patch long time back.  But never got picked up
-
-http://article.gmane.org/gmane.comp.file-systems.btrfs/6164
-
-Message-id:"1279547924-25141-1-git-send-email-aneesh.kumar@linux.vnet.ibm.com"
-
-> ---
->  acl.c |    4 +++-
->  1 file changed, 3 insertions(+), 1 deletion(-)
-> 
->   compile tested only.
-> 
-> diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-> index 2222d16..6d1410e 100644
-> --- a/fs/btrfs/acl.c
-> +++ b/fs/btrfs/acl.c
-> @@ -60,8 +60,10 @@ static struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
->  		size = __btrfs_getxattr(inode, name, value, size);
->  		if (size > 0) {
->  			acl = posix_acl_from_xattr(value, size);
-> -			if (IS_ERR(acl))
-> +			if (IS_ERR(acl)) {
-> +				kfree(value);
->  				return acl;
-> +			}
->  			set_cached_acl(inode, type, acl);
->  		}
->  		kfree(value);
-> 
-> 
+ Dear all,
 
 
--aneesh
+ During a move of some 60GB of data from an ext4 partition to a btrfs 
+ partition, both on the same disk, the following happened:
+
+ - my window manager froze;
+ - the move suspended, i.e., no more data was written to the destination 
+ or deleted from the source;
+ - part of top output: (sorry for possible wrapping; sending this from 
+ webmail)
+
+   PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+ COMMAND
+ 
+ 13610 root      20   0     0    0    0 D   26  0.0 299:45.87 
+ btrfs-cache-279
+  1566 root      20   0     0    0    0 S   22  0.0 218:30.86 
+ btrfs-endio-met
+
+ (there were also a firefox instance and an npviewer.bin process still 
+ consuming CPU time, but I guess this was some flash movie happily 
+ playing along during the freeze);
+
+ - those two btrfs processes could not be terminated, not even by kill 
+ -9;
+ - "lsof 1566" output (similar for the other process):
+
+ COMMAND    PID USER   FD      TYPE DEVICE SIZE/OFF NODE NAME
+ btrfs-end 1566 root  cwd       DIR    8,6     4096    2 /
+ btrfs-end 1566 root  rtd       DIR    8,6     4096    2 /
+ btrfs-end 1566 root  txt   unknown                      /proc/1566/exe
+
+ After a reboot, I am able to mount the btrfs filesystem, and read data 
+ from it, but as soon as I try any write operation (even a simple touch), 
+ that command hangs, and there are two btrfs processes hanging around, 
+ just as above; dmesg gives lots of "parent transid failed" messages.
+
+ My kernel is 2.6.36 (with gentoo patches).
+
+ So, the questions:
+
+ 1) Is this a known problem? If so, is it fixed in a newer version?
+
+ In the archive of this list, I read about others with "parent transid 
+ failed" errors, and a recovery operation (suggested by Chris Mason), 
+ using btrfs-select-super 
+ <http://www.spinics.net/lists/linux-btrfs/msg07572.html>.
+
+ 2) Should I try this procedure to fix my filesystem? Is there any debug 
+ information I should collect first? (I can recreate the two "spinning" 
+ processes by rebooting and writing to the filesystem.)
+
+
+ I am saddened by this failure, as this data move was actually part of 
+ an operation to switch over to btrfs completely, after using it without 
+ problems for quite a while.
+
+
+ Thanks for any help. Keep up the good work.
+
+
+ Regards,
+
+ Arie Peterson
+

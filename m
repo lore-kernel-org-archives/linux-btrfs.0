@@ -1,96 +1,93 @@
-From: Olaf van der Spek <olafvdspek@gmail.com>
-Subject: Re: Atomic file data replace API
-Date: Fri, 7 Jan 2011 17:19:50 +0100
-Message-ID: <AANLkTimCBZpu4QMcdFf51yUCTCH2+BqvcEXeVijrzRnZ@mail.gmail.com>
-References: <AANLkTi=paCEdAFZkHWTSwTCjYavMPOaGY8MsLknryk=_@mail.gmail.com>
-	<1294412141-sup-1734@think>
-	<AANLkTi=Z1RCwMKSMRzg4fwN55ZQs4F91nNjdEfv6veyb@mail.gmail.com>
-	<1294412553-sup-9058@think>
-	<AANLkTimB-gpHFJMXY3TRcfxGJjwo94ffEVZSPw6746bC@mail.gmail.com>
-	<1294412980-sup-1924@think>
-	<AANLkTi=o4w9wDoh6f8iaJF=vPQ-Xs1XBnJMbym08cOa-@mail.gmail.com>
-	<1294416073-sup-5254@think>
+From: Hubert Kario <hka@qbs.com.pl>
+Subject: Re: Synching a Backup Server
+Date: Fri, 7 Jan 2011 17:20:08 +0100
+Message-ID: <201101071720.08298.hka@qbs.com.pl>
+References: <201101060935.14059.CACook@quantum-sci.com> <201101061342.23991.CACook@quantum-sci.com> <AANLkTimOEsFiF7tiCzV-Y3NfGYHjK+uL_3O6PNDKum90@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: Text/Plain; charset=utf-8
+Cc: Carl Cook <CACook@quantum-sci.com>, linux-btrfs@vger.kernel.org
+To: Freddie Cash <fjwcash@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1294416073-sup-5254@think>
+In-Reply-To: <AANLkTimOEsFiF7tiCzV-Y3NfGYHjK+uL_3O6PNDKum90@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 7, 2011 at 5:12 PM, Chris Mason <chris.mason@oracle.com> wr=
+On Thursday, January 06, 2011 22:52:25 Freddie Cash wrote:
+> On Thu, Jan 6, 2011 at 1:42 PM, Carl Cook <CACook@quantum-sci.com> wr=
 ote:
->> I'm not sure why you would run out of memory in that case.
->
-> Well, lets make sure I've got a good handle on the proposed interface=
-:
->
-> 1) fd =3D open(some_file, O_ATOMIC)
-
-No, O_TRUNC should be used in open. Maybe it works with a separate trun=
-cate too.
-
-> 2) truncate(fd, 0)
-> 3) write(fd, new data)
->
-> The semantics are that we promise not to let the truncate hit the dis=
-k
-> until the application does the write.
->
-> We have a few choices on how we do this:
->
-> 1) Leave the disk untouched, but keep something in memory that says t=
-his
-> inode is really truncated
->
-> 2) Record on disk that we've done our atomic truncate but it is still
-> pending. =C2=A0We'd need some way to remove or invalidate this record=
- after a
-> crash.
->
-> 3) Go ahead and do the operation but don't allow the transaction to
-> commit until the write is done.
->
-> option #1: keep something in memory. =C2=A0Well, any time we have a
-> requirement to pin something in memory until userland decides to do a
-> write, we risk oom.
-
-Since the file is open, you have to keep something in memory anyway,
-right? Adding a bit (or bool) does not make a difference IMO.
-Isn't this comparable to opening a temp file?
-
-> option #2: disk format change. =C2=A0Actually somewhat complex becaus=
-e if we
-> haven't crashed, we need to be able to read the inode in again withou=
+> > On Thu 06 January 2011 11:16:49 Freddie Cash wrote:
+> >> > Also with this system, I'm concerned that if there is corruption=
+ on
+> >> > the HTPC, it could be propagated to the backup server.  Is there=
+ some
+> >> > way to address this?  Longer intervals to sync, so I have a chan=
+ce to
+> >> > discover?
+> >>=20
+> >> Using snapshots on the backup server allows you to go back in time=
+ to
+> >> recover files that may have been accidentally deleted, or to recov=
+er
+> >> files that have been corrupted.
+> >=20
+> > How?  I can see that rsync will not transfer the files that have no=
 t
-> invalidating the record but if we do crash, we have to invalidate the
-> record. =C2=A0Not impossible, but not trivial.
->
-> option #3: Pin the whole transaction. =C2=A0Depending on the FS this =
-may be
-> impossible. =C2=A0Certain operations require us to commit the transac=
-tion to
-> reclaim space, and we cannot allow userland to put that on hold witho=
-ut
-> deadlocking.
+> > changed, but I assume it transfers the changed ones.  How can you g=
+o
+> > back in time?  Is there like a snapshot file that records the state=
+ of
+> > all files there?
+>=20
+> I don't know the specifics of how it works in btrfs, but it should be
+> similar to how ZFS does it.  The gist of it is:
+>=20
+> Each snapshot gives you a point-in-time view of the entire filesystem=
+=2E
+>  Each snapshot can be mounted (ZFS is read-only; btrfs is read-only o=
+r
+> read-write).  So, you mount the snapshot for 2010-12-15 onto /mnt,
+> then cd to the directory you want (/mnt/htpc/home/fcash/videos/) and
+> copy the file out that you want to restore (cp coolvid.avi ~/).
+>=20
+> With ZFS, things are nice and simple:
+>   - each filesystem has a .zfs/snapshot directory
+>   - in there are sub-directories, each named after the snapshot name
+>   - cd into the snapshot name, the OS auto-mounts the snapshot, and o=
+ff you
+> go
+>=20
+> Btrfs should be similar?  Don't know the specifics.
+>=20
+> How it works internally, is some of the magic and the beauty of
+> Copy-on-Write filesystems.  :)
 
-#1 is the only one that makes sense.
+I usually create subvolumes in btrfs root volume:
 
-> What most people don't realize about the crash safe filesystems is th=
-ey
-> don't have fine grained transactions. =C2=A0There is one single trans=
-action
-> for all the operations done. =C2=A0This is mostly because it is less =
-complex
-> and much faster, but it also makes any 'pin the whole transaction' ty=
-pe
-> system unusable.
+/mnt/btrfs/
+        |- server-a
+        |- server-b
+        \- server-c
 
-AFAIK the cost is mostly more complex code / runtime. The cost is not
-disk performance.
+then create snapshots of these directories:
 
+/mnt/btrfs/
+        |- server-a
+        |- server-b
+        |- server-c
+        |- snapshots-server-a
+                 |- @GMT-2010.12.21-16.48.09
+	            \- @GMT-2010.12.22-16.45.14
+        |- snapshots-server-b
+        \- snapshots-server-c
+
+This way I can use the shadow_copy module for samba to publish the snap=
+shots =20
+to windows clients.
 --=20
-Olaf
+Hubert Kario
+QBS - Quality Business Software
+02-656 Warszawa, ul. Ksawer=C3=B3w 30/85
+tel. +48 (22) 646-61-51, 646-74-24
+www.qbs.com.pl
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

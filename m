@@ -1,61 +1,47 @@
-From: Matt <jackdachef@gmail.com>
-Subject: Re: hunt for 2.6.37 dm-crypt+ext4 corruption?
-Date: Fri, 7 Jan 2011 17:45:37 +0100
-Message-ID: <AANLkTinmHhF=p2vFTS4AxKoMpWN6BZsWyDbB+jBa=jN9@mail.gmail.com>
-References: <AANLkTinG209iRAXgpNC0vNpn1C02wkYmVfveXRBqsKV-@mail.gmail.com>
-	<4CF692D1.1010906@redhat.com>
-	<AANLkTimA2PPXZoOHYgeOEV2ocrojeuBby8MYDYJ1yjx1@mail.gmail.com>
-	<4CF6B3E8.2000406@redhat.com>
-	<20101201212310.GA15648@redhat.com>
-	<AANLkTimQtMvPVafWG_DffF-zXXpz1vBPXdCCwxRnzSGr@mail.gmail.com>
-	<20101204193828.GB13871@redhat.com>
-	<AANLkTinX_av7A-xT6hD-Df=tHxOOWhi7QkVezAUO3pW5@mail.gmail.com>
-	<20101205100954.GA6564@fritha.org>
-	<4CFB679D.5030900@redhat.com>
-	<20110106155641.GA12443@fancy-poultry.org>
+From: Carl Cook <CACook@quantum-sci.com>
+Subject: Various Questions
+Date: Fri, 7 Jan 2011 09:15:20 -0800
+Message-ID: <201101070915.20468.CACook@quantum-sci.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Mike Snitzer <snitzer@redhat.com>,
-	Andi Kleen <andi@firstfloor.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	dm-devel <dm-devel@redhat.com>,
-	Chris Mason <chris.mason@oracle.com>, htejun@gmail.com,
-	linux-ext4@vger.kernel.org, Jon Nelson <jnelson@jamponi.net>,
-	linux-kernel@vger.kernel.org
-To: Heinz Diehl <htd@fancy-poultry.org>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20110106155641.GA12443@fancy-poultry.org>
+Content-Type: Text/Plain;
+  charset="us-ascii"
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 6, 2011 at 4:56 PM, Heinz Diehl <htd@fancy-poultry.org> wrote:
-> On 05.12.2010, Milan Broz wrote:
->
->> It still seems to like dmcrypt with its parallel processing is just
->> trigger to another bug in 37-rc.
->
-> To come back to this: my 3 systems (XFS filesystem) running the latest
-> dm-crypt-scale-to-multiple-cpus patch from Andi Kleen/Milan Broz have
-> not showed a single problem since 2.6.37-rc6 and above. No corruption any
-> longer, no freezes, nothing. The patch applies cleanly to 2.6.37, too,
-> and runs just fine.
->
-> I blindly guess that my data corruption problem was related to something else in the
-> 2.6.37-rc series up to -rc4/5.
->
-> Since this patch is a significant improvement: any chance that it finally gets
-> merged into mainline/stable?
->
->
 
-Hi Heinz,
+On Fri 07 January 2011 08:14:17 Hubert Kario wrote:
+> I'd suggest at least 
+> mkfs.btrfs -m raid1 -d raid0 /dev/sdc /dev/sdd
+> if you really want raid0
 
-I've been using this patch since 2.6.37-rc6+ with ext4 and xfs
-filesystems and haven't seen any corruptions since then
-(ext4 got "fixed" since 2.6.37-rc6, xfs showed no problems from the start)
+I don't fully understand -m or -d.  Why would this make a truer raid0 that with no options?
 
-http://git.eu.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commit;h=1449032be17abb69116dbc393f67ceb8bd034f92
-(is the actual temporary fix for ext4)
 
-Regards
+Is it necessary to use fdisk on new drives in creating a BTRFS multi-drive array?  Or is this all that's needed:
+# mkfs.btrfs /dev/sdb /dev/sdc
+# btrfs filesystem show
 
-Matt
+Is this related to 'subvolumes'?  The FAQ implies that a subvolume is like a directory, but also like a partition.  What's the rationale for being able to create a subvolume under a subvolume, as Hubert says so he can "use the shadow_copy module for samba to publish the snapshots  to windows clients."  I don't have any windows clients, but what difference does his structure make?
+
+I know that if using SATA+LVM, turn off the writeback cache on the drive, as it doesn't do cash flushing, and ensure NCQ is on.  But does this also apply to a BTRFS array?  If so, is this done in rc.local with 
+hdparm -I /dev/sdb
+hdparm -I /dev/sdc
+
+
+How do you know what options to rsync are on by default?  I can't find this anywhere.  For example, it seems to me that --perms -ogE  --hard-links and --delete-excluded should be on by default, for a true sync?
+
+If using the  --numeric-ids switch for rsync, do you just have to manually make sure the IDs and usernames are the same on source and destination machines?
+
+For files that fail to transfer, wouldn't it be wise to use  --partial-dir=DIR to at least recover part of lost files?
+
+The rsync man page says that rsync uses ssh by default, but is that the case?  I think -e may be related to engaging ssh, but don't understand the explanation.
+
+So for my system where there is a backup server, I guess I run the rsync daemon on the backup server which presents a port, then when the other systems decide it's time for a backup (cron) they:
+- stop mysql, dump the database somewhere, start mysql;
+- connect to the backup server's rsync port and dump their data to (hopefully) some specific place there.
+Right?
+
+
+
+

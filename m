@@ -1,26 +1,40 @@
-From: Tomasz Chmielewski <mangoo@wpkg.org>
-Subject: Re: "open_ctree failed", unable to mount the fs
-Date: Fri, 07 Jan 2011 21:44:06 +0100
-Message-ID: <4D277B16.3070009@wpkg.org>
-References: <4D276899.7000702@wpkg.org>	<AANLkTik3GZVTwco+4PNFriB0+t_U=e+dH0UOgK_3P9D5@mail.gmail.com>	<4D27711B.4090606@wpkg.org> <AANLkTimpci_RHZ2p82DfKCP3n1DBtRVVj+yQzC7v4EWb@mail.gmail.com>
+From: Andrew Schretter <schrett@math.duke.edu>
+Subject: btrfsck segmentation fault
+Date: Fri, 07 Jan 2011 16:15:44 -0500
+Message-ID: <4D278280.4060907@math.duke.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: cwillu <cwillu@cwillu.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimpci_RHZ2p82DfKCP3n1DBtRVVj+yQzC7v4EWb@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07.01.2011 21:18, cwillu wrote:
+I have a 10TB btrfs filesystem over iSCSI that is currently unmountable.  I'm
+currently running Fedora 13 with a recent Fedora 14 kernel (2.6.35.9-64.fc14.i686.PAE)
+and the system hung with messages like :
 
-> You checked out the master branch into a folder called next.  "-b
-> next" is the option to checkout a specific branch.  From your existing
-> checkout, "git checkout -t origin/next" will switch to that branch.
+parent transid verify failed on 5937615339520 wanted 48547 found 48542
 
-Good catch - thanks for a hint.
+I've rebooted and and am attempting to recover with btrfsck from the btrfs-progs-unstable
+git tree, but it is segfaulting after finding a superblock and listing out 3 of the
+"parent transid" messages.  Anyone have any ideas?
 
-The filesystem mounted and was usable.
+I tried btrfsck /dev/sdb, btrfsck -s 1 /dev/sdb, and btrfsck -s 2 /dev/sdb with the
+same result for each.  The btrfsck binary I compiled does work on a small (800MB) test
+btrfs file system.  I suspect it may be due to the size of the filesystem I am trying
+to repair.
+
+Running btrfsck with gdb returns :
+#0  find_first_block_group (root=0x8067178, path=0x80677f8, key=0xbffff24b) at extent-tree.c:3028
+#1  0x08055603 in btrfs_read_block_groups (root=0x8067178) at extent-tree.c:3072
+#2  0x08053009 in open_ctree_fd (fp=7, path=0xbffff63a "/dev/sdb", sb_bytenr=<value optimized out>, writes=0) at disk-io.c:760
+#3  0x080530e8 in open_ctree (filename=0xbffff63a "/dev/sdb", sb_bytenr=0, writes=0) at disk-io.c:587
+#4  0x0804d3fc in main (ac=<value optimized out>, av=Cannot access memory at address 0x4
+
+In any event, recovering the data would be nice and any ideas to do so would be appreciated.
 
 -- 
-Tomasz Chmielewski
-http://wpkg.org
+
+Andrew Schretter
+Systems Programmer, Duke University
+Dept. of Mathematics (919) 660-2866
+

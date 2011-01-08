@@ -1,51 +1,52 @@
-From: Olaf van der Spek <olafvdspek@gmail.com>
-Subject: Re: Atomic file data replace API
-Date: Sat, 8 Jan 2011 15:40:39 +0100
-Message-ID: <AANLkTi=PT3+wiAjL7P0=bx7e8_VCXBGD2272PzLgJFu4@mail.gmail.com>
-References: <AANLkTi=paCEdAFZkHWTSwTCjYavMPOaGY8MsLknryk=_@mail.gmail.com>
-	<AANLkTi=o4w9wDoh6f8iaJF=vPQ-Xs1XBnJMbym08cOa-@mail.gmail.com>
-	<1294416073-sup-5254@think>
-	<201101071726.02958.hka@qbs.com.pl>
-	<1294428310-sup-9846@think>
+From: "Ian! D. Allen" <idallen@idallen.ca>
+Subject: Re: Various Questions
+Date: Sat, 8 Jan 2011 10:40:57 -0500
+Message-ID: <20110108154057.GG7447@idallen.ca>
+References: <201101070915.20468.CACook@quantum-sci.com>
+ <AANLkTinCSW-JpwYPYNNAaxHnvXqAy02fMr=Hd34CGxh3@mail.gmail.com>
+ <201101071055.44187.CACook@quantum-sci.com>
+ <201101080525.19792.CACook@quantum-sci.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Hubert Kario <hka@qbs.com.pl>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1294428310-sup-9846@think>
+In-Reply-To: <201101080525.19792.CACook@quantum-sci.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 7, 2011 at 8:29 PM, Chris Mason <chris.mason@oracle.com> wr=
-ote:
-> The exact amount of tracking is going to vary. =C2=A0The reason why i=
-s that
-> actually doing the truncate is an O(size of the file) operation and s=
-o
-> you can't just flip a switch when the write or the close comes in. =C2=
-=A0You
-> have to run through all the metadata of the file and do something
-> temporary with each part that is only completed when the file IO is
-> actually done.
+On Sat, Jan 08, 2011 at 05:25:19AM -0800, Carl Cook wrote:
+> In addition to the questions below, if anyone has a chance could you
+> advise on why my destination drive has more data than the source after
+> this command:
+> # rsync --hard-links --delete --inplace --archive --numeric-ids /media/disk/* /home
+> sending incremental file list
+> sent 658660 bytes  received 2433 bytes  1322186.00 bytes/sec
+> total size is 1355368091626  speedup is 2050192.77
+> 
+> # df /media/disk
+> Filesystem           1K-blocks      Used Available Use% Mounted on
+> /dev/md2             1868468340 1315408384 553059956  71% /media/disk
+> # df /home
+> Filesystem           1K-blocks      Used Available Use% Mounted on
+> /dev/sdb             3907029168 1325491836 2581537332  34% /home
 
-That's true. Maybe the proper way, via O_ATOMIC, is better.
+This has little to do with btrfs; it happens with many file systems due
+to file system infrastructure details such as directory sizes, sparse
+file handling, file fragmentation, etc.
 
-> Honestly, there many different ways to solve this in the application.
-> Requiring high speed atomic replacement of individual file contents i=
-s a
-> recipe for frustration.
+For example: If you have a directory with a huge number of file names
+in it, the actual directory disk space used will be large and will not
+be reclaimed when you delete all the file names from the directory.
+You would have to remove the directory itself and recreate it to reclaim
+that space.  Also, using rsync without --sparse (which can't work with
+--inplace), sparse files on the source may get expanded to take real
+disk blocks on the destination.
 
-Did you see message of Massimo? That'd be the ideal way from an app
-point of view.
-Not solving this properly in the FS moves the problem to userspace
-where it's even harder to solve and is not as performant.
+Unless you use "dd" to copy a partition exactly, including all the file
+system infrastructure details, any copy you make will be subject to the
+vagaries of how the file system decides to lay out the data.
 
-Replacing file data is a common operation that IMO the FS should
-support in a safe way.
---=20
-Olaf
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-- 
+| Ian! D. Allen  -  idallen@idallen.ca  -  Ottawa, Ontario, Canada
+| Home Page: http://idallen.com/   Contact Improv: http://contactimprov.ca/
+| College professor (Free/Libre GNU+Linux) at: http://teaching.idallen.com/
+| Defend digital freedom:  http://eff.org/  and have fun:  http://fools.ca/

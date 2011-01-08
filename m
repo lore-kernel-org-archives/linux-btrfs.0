@@ -1,52 +1,39 @@
-From: "Ian! D. Allen" <idallen@idallen.ca>
-Subject: Re: Various Questions
-Date: Sat, 8 Jan 2011 10:40:57 -0500
-Message-ID: <20110108154057.GG7447@idallen.ca>
-References: <201101070915.20468.CACook@quantum-sci.com>
- <AANLkTinCSW-JpwYPYNNAaxHnvXqAy02fMr=Hd34CGxh3@mail.gmail.com>
- <201101071055.44187.CACook@quantum-sci.com>
- <201101080525.19792.CACook@quantum-sci.com>
+From: Jesper Juhl <jj@chaosbits.net>
+Subject: Re: [PATCH] btrfs: Mem leak in btrfs_get_acl()
+Date: Sat, 8 Jan 2011 21:26:13 +0100 (CET)
+Message-ID: <alpine.LNX.2.00.1101082124410.17411@swampdragon.chaosbits.net>
+References: <alpine.LNX.2.00.1101062242320.13988@swampdragon.chaosbits.net> <87vd21kr0d.fsf@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201101080525.19792.CACook@quantum-sci.com>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+	Chris Mason <chris.mason@oracle.com>
+To: "Aneesh Kumar K. V" <aneesh.kumar@linux.vnet.ibm.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <87vd21kr0d.fsf@linux.vnet.ibm.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jan 08, 2011 at 05:25:19AM -0800, Carl Cook wrote:
-> In addition to the questions below, if anyone has a chance could you
-> advise on why my destination drive has more data than the source after
-> this command:
-> # rsync --hard-links --delete --inplace --archive --numeric-ids /media/disk/* /home
-> sending incremental file list
-> sent 658660 bytes  received 2433 bytes  1322186.00 bytes/sec
-> total size is 1355368091626  speedup is 2050192.77
+On Fri, 7 Jan 2011, Aneesh Kumar K. V wrote:
+
+> On Thu, 6 Jan 2011 22:45:21 +0100 (CET), Jesper Juhl <jj@chaosbits.net> wrote:
+> > 
+> > It seems to me that we leak the memory allocated to 'value' in 
+> > btrfs_get_acl() if the call to posix_acl_from_xattr() fails.
+> > Here's a patch that attempts to correct that problem.
+> > 
+> > Signed-off-by: Jesper Juhl <jj@chaosbits.net>
 > 
-> # df /media/disk
-> Filesystem           1K-blocks      Used Available Use% Mounted on
-> /dev/md2             1868468340 1315408384 553059956  71% /media/disk
-> # df /home
-> Filesystem           1K-blocks      Used Available Use% Mounted on
-> /dev/sdb             3907029168 1325491836 2581537332  34% /home
+> I posted a similar patch long time back.  But never got picked up
+> 
+> http://article.gmane.org/gmane.comp.file-systems.btrfs/6164
+> 
+> Message-id:"1279547924-25141-1-git-send-email-aneesh.kumar@linux.vnet.ibm.com"
+> 
 
-This has little to do with btrfs; it happens with many file systems due
-to file system infrastructure details such as directory sizes, sparse
-file handling, file fragmentation, etc.
-
-For example: If you have a directory with a huge number of file names
-in it, the actual directory disk space used will be large and will not
-be reclaimed when you delete all the file names from the directory.
-You would have to remove the directory itself and recreate it to reclaim
-that space.  Also, using rsync without --sparse (which can't work with
---inplace), sparse files on the source may get expanded to take real
-disk blocks on the destination.
-
-Unless you use "dd" to copy a partition exactly, including all the file
-system infrastructure details, any copy you make will be subject to the
-vagaries of how the file system decides to lay out the data.
+I see. Was not aware of that.
+Ok, since they are identical and yours was posted first, yours should be 
+the one merged (if any) I think.
 
 -- 
-| Ian! D. Allen  -  idallen@idallen.ca  -  Ottawa, Ontario, Canada
-| Home Page: http://idallen.com/   Contact Improv: http://contactimprov.ca/
-| College professor (Free/Libre GNU+Linux) at: http://teaching.idallen.com/
-| Defend digital freedom:  http://eff.org/  and have fun:  http://fools.ca/
+Jesper Juhl <jj@chaosbits.net>            http://www.chaosbits.net/
+Don't top-post http://www.catb.org/~esr/jargon/html/T/top-post.html
+Plain text mails only, please.

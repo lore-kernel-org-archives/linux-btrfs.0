@@ -1,45 +1,30 @@
-From: cwillu <cwillu@cwillu.com>
-Subject: Re: btrfsck segmentation fault
-Date: Fri, 7 Jan 2011 16:29:53 -0600
-Message-ID: <AANLkTi=0FwYG-O+7MiOhfPiJwdDNc5enxX7hijumMqd2@mail.gmail.com>
-References: <4D278280.4060907@math.duke.edu>
+From: Peter A <loony@loonybin.org>
+Subject: Re: Offline Deduplication for Btrfs
+Date: Fri, 7 Jan 2011 19:27:37 -0500
+Message-ID: <201101071927.38249.loony@loonybin.org>
+References: <1294245410-4739-1-git-send-email-josef@redhat.com> <201101052258.36457.loony@loonybin.org> <1294338857-sup-1440@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Andrew Schretter <schrett@math.duke.edu>
+Content-Type: Text/Plain;
+  charset="utf-8"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D278280.4060907@math.duke.edu>
+In-Reply-To: <1294338857-sup-1440@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 7, 2011 at 3:15 PM, Andrew Schretter <schrett@math.duke.edu=
-> wrote:
-> I have a 10TB btrfs filesystem over iSCSI that is currently unmountab=
-le. =A0I'm
-> currently running Fedora 13 with a recent Fedora 14 kernel (2.6.35.9-=
-64.fc14.i686.PAE)
-> and the system hung with messages like :
->
-> parent transid verify failed on 5937615339520 wanted 48547 found 4854=
-2
->
-> I've rebooted and and am attempting to recover with btrfsck from the =
-btrfs-progs-unstable
-> git tree, but it is segfaulting after finding a superblock and listin=
-g out 3 of the
-> "parent transid" messages. =A0Anyone have any ideas?
->
-> I tried btrfsck /dev/sdb, btrfsck -s 1 /dev/sdb, and btrfsck -s 2 /de=
-v/sdb with the
-> same result for each. =A0The btrfsck binary I compiled does work on a=
- small (800MB) test
-> btrfs file system. =A0I suspect it may be due to the size of the file=
-system I am trying
-> to repair.
+On Thursday, January 06, 2011 01:35:15 pm Chris Mason wrote:
+> What is the smallest granularity that the datadomain searches for in
+> terms of dedup?
+> 
+> Josef's current setup isn't restricted to a specific block size, but
+> there is a min match of 4k.
+I talked to a few people I know and didn't get a clear answer either... 
+However, 512 bytes came up more than once. 
 
-Segfaulting is what the current btrfsck does when it finds a problem;
-it doesn't try to fix anything yet.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I'm not really worried about the size of region to be used, but about 
+offsetting it... its so easy to create large tars, ... where the content is 
+offset by a few bytes, mutliples of 512 and such.
+
+Peter.
+
+-- 
+Censorship: noun, circa 1591. a: Relief of the burden of independent thinking.

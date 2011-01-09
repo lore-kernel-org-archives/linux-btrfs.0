@@ -1,54 +1,63 @@
-From: Alan Chandler <alan@chandlerfamily.org.uk>
-Subject: Re: Various Questions
-Date: Sun, 09 Jan 2011 13:58:55 +0000
-Message-ID: <4D29BF1F.5070705@chandlerfamily.org.uk>
-References: <201101070915.20468.CACook@quantum-sci.com>	<201101080525.19792.CACook@quantum-sci.com>	<AANLkTi=HPx1-e09kPg0c6_UQpTCOfPe6-Q4SOUxKLnE=@mail.gmail.com>	<201101090516.09255.CACook@quantum-sci.com> <AANLkTimVie3KOmAh0Ukd8ZoADaGSQHL2YoZVmtxo3cdq@mail.gmail.com>
+From: Olaf van der Spek <olafvdspek@gmail.com>
+Subject: Re: Atomic file data replace API
+Date: Sun, 9 Jan 2011 16:16:25 +0100
+Message-ID: <AANLkTi=yMdPS8EKPQJubo3vO3wJWd09EY0HVO7aW_cjA@mail.gmail.com>
+References: <AANLkTi=paCEdAFZkHWTSwTCjYavMPOaGY8MsLknryk=_@mail.gmail.com>
+	<1294412141-sup-1734@think>
+	<AANLkTi=Z1RCwMKSMRzg4fwN55ZQs4F91nNjdEfv6veyb@mail.gmail.com>
+	<1294412553-sup-9058@think>
+	<AANLkTimB-gpHFJMXY3TRcfxGJjwo94ffEVZSPw6746bC@mail.gmail.com>
+	<1294412980-sup-1924@think>
+	<AANLkTi=o4w9wDoh6f8iaJF=vPQ-Xs1XBnJMbym08cOa-@mail.gmail.com>
+	<4D274022.5070507@mmmm.it>
+	<AANLkTin=1LqF_qCu0SXM3sP0670HDSnCuw55A48hDJBd@mail.gmail.com>
+	<4D2769A7.8000803@nsc.liu.se>
+	<AANLkTin4BTH-1CfNtEt8CTspGJ9vJ_9mokP4hBM7c0Dw@mail.gmail.com>
+	<4D28DA67.6060404@nsc.liu.se>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: Massimo Maggi <massimo@mmmm.it>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Thomas Bellman <bellman@nsc.liu.se>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimVie3KOmAh0Ukd8ZoADaGSQHL2YoZVmtxo3cdq@mail.gmail.com>
+In-Reply-To: <4D28DA67.6060404@nsc.liu.se>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sat, Jan 8, 2011 at 10:43 PM, Thomas Bellman <bellman@nsc.liu.se> wr=
+ote:
+> So, basically database transactions with an isolation level of
+> "committed read", for file operations. =C2=A0That's something I have
+> wanted for a long time, especially if I also get a rollback()
+> operation, but have never heard of any Unix that implemented it.
 
+True, that's why this feature request is here.
+Note that it's (ATM) only about  single file data replace.
 
-On 09/01/11 13:37, Fajar A. Nugraha wrote:
-> On Sun, Jan 9, 2011 at 8:16 PM, Carl Cook<CACook@quantum-sci.com>  wrote:
->    
->> I'd rather not do the copy again unless necessary, as it took a day.
->>
->> Directories look identical, but who knows?  I'm going to try and figure out how to do a file-by-file crc check, for peace of mind.
->>      
-> try "du --apparent-size -slh"
-> It should rule out any differences caused by sparse files and hardlinks.
+> A separate commit() operation would be better than conflating it
+> with close(). =C2=A0And as I said, we want a rollback() as well. =C2=A0=
+And
+> a process that terminates without committing the transaction that
+> it is performing, should have the transaction automatically rolled
+> back.
+
+What could you do between commit and close?
+
+> I only have a very shallow knowledge about the internals of the
+> Linux kernel in regards to filesystems, but I suspect that this
+> could be implemented almost entirely within the VFS, and not need
+> to touch the actual filesystems, as long as you are satisfied
+> with a limited amount of transaction space (what fits in RAM +
+> swap).
 >
->    
->>
->> On Sat 08 January 2011 17:26:25 Freddie Cash wrote:
->>      
->>> On Sat, Jan 8, 2011 at 5:25 AM, Carl Cook<CACook@quantum-sci.com>  wrote:
->>>        
->>>> In addition to the questions below, if anyone has a chance could you advise on why my destination drive has more data  than the source after this command:
->>>> # rsync --hard-links --delete --inplace --archive --numeric-ids /media/disk/* /home
->>>>          
-> Are you SURE you don't get the command mixed up? The last argument to
-> rsync should be the destination. Your command looks like you're
-> copying things to /home.
->    
+> I'm looking forward to your implementation. :-) =C2=A0Even though I
+> suspect that it would be a rather large undertaking to implement...
 
-What is also important is that use of * - it means all the . files at 
-the top level are NOT being copied
+I have no plans to work on an implementation.
 
-rsync is clever enough to notice if you have the / at the end of the 
-source to know whether you want the directory to be put into the 
-destination or the contents of the directory.  The / at the end of the 
-source means copy the contents.
-
-This could be (I am not sure of the exact scope of --delete) the reason 
-why the destination has more data than the source.  If --delete is not 
-deleting /home/.* files (if there any there).
-
--- 
-Alan Chandler
-http://www.chandlerfamily.org.uk
-
+--=20
+Olaf
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

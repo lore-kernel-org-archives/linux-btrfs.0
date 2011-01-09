@@ -1,44 +1,35 @@
-From: Alan Chandler <alan@chandlerfamily.org.uk>
-Subject: Re: Synching a Backup Server
-Date: Sun, 09 Jan 2011 15:32:24 +0000
-Message-ID: <4D29D508.6080006@chandlerfamily.org.uk>
-References: <201101060935.14059.CACook@quantum-sci.com>	<201101061342.23991.CACook@quantum-sci.com>	<AANLkTimOEsFiF7tiCzV-Y3NfGYHjK+uL_3O6PNDKum90@mail.gmail.com>	<201101071720.08298.hka@qbs.com.pl>	<4D29A033.7000803@chandlerfamily.org.uk> <AANLkTi=KASX7pFO8dxJ1P=OhP3qj6qjTgtA6g1Fw-ou4@mail.gmail.com>
+From: Paul Richards <paul.richards@gmail.com>
+Subject: Swap file on btrfs fails ("swapfile has holes")
+Date: Sun, 9 Jan 2011 17:21:02 +0000
+Message-ID: <AANLkTimF8y+yBwcs3S0UQxDV=xWyTQRKxzKxR7ZHZnFL@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=UTF-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=KASX7pFO8dxJ1P=OhP3qj6qjTgtA6g1Fw-ou4@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
+I have just recently installed Debian squeeze with a root filesystem
+on btrfs [1].  I have noticed however that I cannot set up a swap file
+stored on the btrfs volume:
+
+dd if=/dev/zero of=/var/swap bs=16M count=4
+mkswap /var/swap
+chmod 0 /var/swap
+swapon /var/swap
+
+[ 01751.879759] swapon: swapfile has holes
+swapon: /var/swap: swapon failed: Invalid argument
+
+For now I've set up a swap file under /boot (ext4), but is swap on
+btrfs expected to work?  I'm using the stock Debian linux kernel
+2.6.32-5-amd64.
 
 
-On 09/01/11 13:54, Fajar A. Nugraha wrote:
->
-> By default, when you do something like
->
-> mount /dev/sdb1 /mnt/btrfs
->
-> the default subvolume will be mounted under /mnt/btrfs. Snapshots and
-> subvolumes will be visible as subdirectories under it, regardless
-> whether it's in the root or several directories under it. Most likely
-> this is enough for what you need, no need to mess with mounting
-> subvolumes.
->
-> Mounting subvolumes allows you to see a particular subvolume directly
-> WITHOUT having to see the default subvolume or other subvolumes. This
-> is particularly useful when you use btrfs as "/" or "/home" and want
-> to "rollback" to a previous snapshot. So assuming "snapshots-server-b"
-> above is a snapshot, you can run
->
->
->    
+1: This took a little bit of work -
+http://lists.debian.org/debian-user/2011/01/msg00217.html
 
-I think I start to get it now.  Its the fact that subvolumes can be 
-snapshotted etc without mounting them that is the difference.  I guess I 
-am too used to thinking like LVM and I was thinking subvolumes where 
-like an LV.  They are, but not quite the same.
 
 -- 
-Alan Chandler
-http://www.chandlerfamily.org.uk
-
+Paul Richards
+@pauldoo

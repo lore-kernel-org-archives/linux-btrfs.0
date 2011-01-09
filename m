@@ -1,63 +1,44 @@
-From: Olaf van der Spek <olafvdspek@gmail.com>
-Subject: Re: Atomic file data replace API
-Date: Sun, 9 Jan 2011 16:16:25 +0100
-Message-ID: <AANLkTi=yMdPS8EKPQJubo3vO3wJWd09EY0HVO7aW_cjA@mail.gmail.com>
-References: <AANLkTi=paCEdAFZkHWTSwTCjYavMPOaGY8MsLknryk=_@mail.gmail.com>
-	<1294412141-sup-1734@think>
-	<AANLkTi=Z1RCwMKSMRzg4fwN55ZQs4F91nNjdEfv6veyb@mail.gmail.com>
-	<1294412553-sup-9058@think>
-	<AANLkTimB-gpHFJMXY3TRcfxGJjwo94ffEVZSPw6746bC@mail.gmail.com>
-	<1294412980-sup-1924@think>
-	<AANLkTi=o4w9wDoh6f8iaJF=vPQ-Xs1XBnJMbym08cOa-@mail.gmail.com>
-	<4D274022.5070507@mmmm.it>
-	<AANLkTin=1LqF_qCu0SXM3sP0670HDSnCuw55A48hDJBd@mail.gmail.com>
-	<4D2769A7.8000803@nsc.liu.se>
-	<AANLkTin4BTH-1CfNtEt8CTspGJ9vJ_9mokP4hBM7c0Dw@mail.gmail.com>
-	<4D28DA67.6060404@nsc.liu.se>
+From: Alan Chandler <alan@chandlerfamily.org.uk>
+Subject: Re: Synching a Backup Server
+Date: Sun, 09 Jan 2011 15:32:24 +0000
+Message-ID: <4D29D508.6080006@chandlerfamily.org.uk>
+References: <201101060935.14059.CACook@quantum-sci.com>	<201101061342.23991.CACook@quantum-sci.com>	<AANLkTimOEsFiF7tiCzV-Y3NfGYHjK+uL_3O6PNDKum90@mail.gmail.com>	<201101071720.08298.hka@qbs.com.pl>	<4D29A033.7000803@chandlerfamily.org.uk> <AANLkTi=KASX7pFO8dxJ1P=OhP3qj6qjTgtA6g1Fw-ou4@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Massimo Maggi <massimo@mmmm.it>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Thomas Bellman <bellman@nsc.liu.se>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D28DA67.6060404@nsc.liu.se>
+In-Reply-To: <AANLkTi=KASX7pFO8dxJ1P=OhP3qj6qjTgtA6g1Fw-ou4@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jan 8, 2011 at 10:43 PM, Thomas Bellman <bellman@nsc.liu.se> wr=
-ote:
-> So, basically database transactions with an isolation level of
-> "committed read", for file operations. =C2=A0That's something I have
-> wanted for a long time, especially if I also get a rollback()
-> operation, but have never heard of any Unix that implemented it.
 
-True, that's why this feature request is here.
-Note that it's (ATM) only about  single file data replace.
 
-> A separate commit() operation would be better than conflating it
-> with close(). =C2=A0And as I said, we want a rollback() as well. =C2=A0=
-And
-> a process that terminates without committing the transaction that
-> it is performing, should have the transaction automatically rolled
-> back.
-
-What could you do between commit and close?
-
-> I only have a very shallow knowledge about the internals of the
-> Linux kernel in regards to filesystems, but I suspect that this
-> could be implemented almost entirely within the VFS, and not need
-> to touch the actual filesystems, as long as you are satisfied
-> with a limited amount of transaction space (what fits in RAM +
-> swap).
+On 09/01/11 13:54, Fajar A. Nugraha wrote:
 >
-> I'm looking forward to your implementation. :-) =C2=A0Even though I
-> suspect that it would be a rather large undertaking to implement...
+> By default, when you do something like
+>
+> mount /dev/sdb1 /mnt/btrfs
+>
+> the default subvolume will be mounted under /mnt/btrfs. Snapshots and
+> subvolumes will be visible as subdirectories under it, regardless
+> whether it's in the root or several directories under it. Most likely
+> this is enough for what you need, no need to mess with mounting
+> subvolumes.
+>
+> Mounting subvolumes allows you to see a particular subvolume directly
+> WITHOUT having to see the default subvolume or other subvolumes. This
+> is particularly useful when you use btrfs as "/" or "/home" and want
+> to "rollback" to a previous snapshot. So assuming "snapshots-server-b"
+> above is a snapshot, you can run
+>
+>
+>    
 
-I have no plans to work on an implementation.
+I think I start to get it now.  Its the fact that subvolumes can be 
+snapshotted etc without mounting them that is the difference.  I guess I 
+am too used to thinking like LVM and I was thinking subvolumes where 
+like an LV.  They are, but not quite the same.
 
---=20
-Olaf
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-- 
+Alan Chandler
+http://www.chandlerfamily.org.uk
+

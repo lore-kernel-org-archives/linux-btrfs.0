@@ -1,67 +1,41 @@
-From: Justin Chudgar <justin@justinzane.com>
-Subject: Re: btrfsck segmentation fault
-Date: Sat, 08 Jan 2011 17:11:48 -0800
-Message-ID: <4D290B54.3000204@justinzane.com>
-References: <4D278280.4060907@math.duke.edu>	<AANLkTi=0FwYG-O+7MiOhfPiJwdDNc5enxX7hijumMqd2@mail.gmail.com> <AANLkTinwUx6JZZ8mJLU1C=EYiu_RgBSNzoEucCyoWBWd@mail.gmail.com>
+From: Freddie Cash <fjwcash@gmail.com>
+Subject: Re: Various Questions
+Date: Sat, 8 Jan 2011 17:26:25 -0800
+Message-ID: <AANLkTi=HPx1-e09kPg0c6_UQpTCOfPe6-Q4SOUxKLnE=@mail.gmail.com>
+References: <201101070915.20468.CACook@quantum-sci.com>
+	<AANLkTinCSW-JpwYPYNNAaxHnvXqAy02fMr=Hd34CGxh3@mail.gmail.com>
+	<201101071055.44187.CACook@quantum-sci.com>
+	<201101080525.19792.CACook@quantum-sci.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: Carl Cook <CACook@quantum-sci.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTinwUx6JZZ8mJLU1C=EYiu_RgBSNzoEucCyoWBWd@mail.gmail.com>
+In-Reply-To: <201101080525.19792.CACook@quantum-sci.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-I've got the same problem. That is, I have a 2.6.35 btrfs volume that
-segfaults and causes a kernel oops upon attempts to mount it. There is
-some data on there that was not covered by the daily backup. Though it
-is not the end of the world, I'd like to recover it if possible. If
-there are absolutely no recovery options, a note on the wiki about
-which failures are nonrecoverable might be good.
-
-Thanks for the continuous improvements.
-
-*Justin Chudgar* - Weed, CA 96094
-
-On 01/08/2011 03:42 AM, Fajar A. Nugraha wrote:
-> On Sat, Jan 8, 2011 at 5:29 AM, cwillu <cwillu@cwillu.com> wrote:
->> On Fri, Jan 7, 2011 at 3:15 PM, Andrew Schretter
-<schrett@math.duke.edu> wrote:
->>> I have a 10TB btrfs filesystem over iSCSI that is currently
-unmountable. I'm
->>> currently running Fedora 13 with a recent Fedora 14 kernel
-(2.6.35.9-64.fc14.i686.PAE)
->>> and the system hung with messages like :
->>>
->>> parent transid verify failed on 5937615339520 wanted 48547 found 48542
->>>
->>> I've rebooted and and am attempting to recover with btrfsck from the
-btrfs-progs-unstable
->>> git tree, but it is segfaulting after finding a superblock and
-listing out 3 of the
->>> "parent transid" messages. Anyone have any ideas?
->>>
->>> I tried btrfsck /dev/sdb, btrfsck -s 1 /dev/sdb, and btrfsck -s 2
-/dev/sdb with the
->>> same result for each. The btrfsck binary I compiled does work on a
-small (800MB) test
->>> btrfs file system. I suspect it may be due to the size of the
-filesystem I am trying
->>> to repair.
->> Segfaulting is what the current btrfsck does when it finds a problem;
->> it doesn't try to fix anything yet.
-> Is there something we can do to fix this particular problem (e.g.
-> editing the metadata manually to use older transaction group), or is
-> this one of those forhet-in-you're-screwed kind of thing?
+On Sat, Jan 8, 2011 at 5:25 AM, Carl Cook <CACook@quantum-sci.com> wrot=
+e:
 >
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+> In addition to the questions below, if anyone has a chance could you =
+advise on why my destination drive has more data =C2=A0than the source =
+after this command:
+> # rsync --hard-links --delete --inplace --archive --numeric-ids /medi=
+a/disk/* /home
+> sending incremental file list
 
-iEYEARECAAYFAk0pC0kACgkQUl5UaPAPOwJrMACdFGRSKrw4H56mlG26Tys4hYL/
-iiYAn1YNOoUaUvSJz7TB+IwX17V9XfiX
-=8vhU
------END PGP SIGNATURE-----
+What happens if you delete /home, then run the command again, but
+without the *?  You generally don't use wildcards for the source or
+destination when using rsync.  You just tell it which directory to
+start in.
 
+If you do an "ls /home" and "ls /media/disk" are they different?
+
+--=20
+=46reddie Cash
+fjwcash@gmail.com
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

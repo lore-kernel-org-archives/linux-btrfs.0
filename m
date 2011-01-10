@@ -1,59 +1,67 @@
-From: Hubert Kario <hka@qbs.com.pl>
-Subject: Re: Backup Command
-Date: Mon, 10 Jan 2011 14:36:24 +0100
-Message-ID: <201101101436.24713.hka@qbs.com.pl>
-References: <201101100525.32427.CACook@quantum-sci.com>
+From: Wu Fengguang <fengguang.wu@intel.com>
+Subject: Re: [PATCH v2 0/5] add new ioctls to do metadata readahead in btrfs
+Date: Mon, 10 Jan 2011 22:26:06 +0800
+Message-ID: <20110110142606.GA8788@localhost>
+References: <1294119630.1949.365.camel@sli10-conroe>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=iso-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Carl Cook <CACook@quantum-sci.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201101100525.32427.CACook@quantum-sci.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	Christoph Hellwig <hch@infradead.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Arjan van de Ven <arjan@infradead.org>,
+	"Yan, Zheng" <zheng.z.yan@linux.intel.com>,
+	linux-api@vger.kernel.org, mtk.manpages@gmail.com
+To: Shaohua Li <shaohua.li@intel.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <1294119630.1949.365.camel@sli10-conroe>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday 10 of January 2011 14:25:32 Carl Cook wrote:
-> Here is my proposed cron:
->=20
-> btrfs subvolume snapshot hex:///home /media/backups/snapshots/hex-{DA=
-TE}
->=20
-> rsync --archive --hard-links --delete-during --delete-excluded --inpl=
-ace
-> --numeric-ids -e ssh --exclude-from=3D/media/backups/exclude-hex hex:=
-///home
-> /media/backups/hex
->=20
-> btrfs subvolume snapshot droog:///home
-> /media/backups/snapshots/droog-{DATE}
->=20
-> rsync --archive --hard-links --delete-during --delete-excluded --inpl=
-ace
-> --numeric-ids -e ssh --exclude-from=3D/media/backups/exclude-droog
-> droog:///home /media/backups/droog
->=20
-> Comments?  Criticisms?
+Shaohua,
 
-This will make the dates associated with snapshots offset by how often =
-cron is=20
-run.
+On Tue, Jan 04, 2011 at 01:40:30PM +0800, Li, Shaohua wrote:
+> Hi,
+>   We have file readahead to do asyn file read, but has no metadata
+> readahead. For a list of files, their metadata is stored in fragmented
+> disk space and metadata read is a sync operation, which impacts the
+> efficiency of readahead much. The patches try to add meatadata readahead
+> for btrfs.
+>   In btrfs, metadata is stored in btree_inode. Ideally, if we could hook
+> the inode to a fd so we could use existing syscalls (readahead, mincore
+> or upcoming fincore) to do readahead, but the inode is hidden, there is
+> no easy way for this from my understanding. So we add two ioctls for
 
-In other words, if you run above script daily you will have data from=20
-2011.01.01 in the hex-2011.01.02 directory.
+If that is the main obstacle, why not do straightforward fincore()/
+fadvise(), and add ioctls to btrfs to export/grab the hidden
+btree_inode in any form?  This will address btrfs' specific issue, and
+have the benefit of making the VFS part general enough. You know
+ext2/3/4 already have block_dev ready for metadata readahead.
 
-I do save the current date, do a LVM snapshot on the source, rsync --in=
-place=20
-data over and do a local snapshot naming the folder using the saved dat=
-e. This=20
-way the date in the name of backup directory is exact to about a second=
-=2E
---=20
-Hubert Kario
-QBS - Quality Business Software
-02-656 Warszawa, ul. Ksawer=F3w 30/85
-tel. +48 (22) 646-61-51, 646-74-24
-www.qbs.com.pl
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Thanks,
+Fengguang
+
+> this. One is like readahead syscall, the other is like micore/fincore
+> syscall.
+>   Under a harddisk based netbook with Meego, the metadata readahead
+> reduced about 3.5s boot time in average from total 16s.
+>   Last time I posted similar patches to btrfs maillist, which adds the
+> new ioctls in btrfs specific ioctl code. But Christoph Hellwig asks we
+> have a generic interface to do this so other filesystem can share some
+> code, so I came up with the new one. Comments and suggestions are
+> welcome!
+> 
+> v1->v2:
+> 1. Added more comments and fix return values suggested by Andrew Morton
+> 2. fix a race condition pointed out by Yan Zheng
+> 
+> initial post:
+> http://marc.info/?l=linux-fsdevel&m=129222493406353&w=2
+> 
+> Thanks,
+> Shaohua
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

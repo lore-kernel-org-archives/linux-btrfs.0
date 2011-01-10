@@ -1,45 +1,56 @@
-From: Alan Chandler <alan@chandlerfamily.org.uk>
+From: "Fajar A. Nugraha" <list@fajar.net>
 Subject: Re: Synching a Backup Server
-Date: Sun, 09 Jan 2011 23:32:20 +0000
-Message-ID: <4D2A4584.4020901@chandlerfamily.org.uk>
-References: <201101060935.14059.CACook@quantum-sci.com> <201101061342.23991.CACook@quantum-sci.com> <AANLkTimOEsFiF7tiCzV-Y3NfGYHjK+uL_3O6PNDKum90@mail.gmail.com> <201101071720.08298.hka@qbs.com.pl> <4D29A033.7000803@chandlerfamily.org.uk> <AANLkTi=KASX7pFO8dxJ1P=OhP3qj6qjTgtA6g1Fw-ou4@mail.gmail.com> <4D29D508.6080006@chandlerfamily.org.uk> <AANLkTim96P3ZD-WpDonsOHB7aicNBQX-wK6v347r1z8s@mail.gmail.com> <20110109183030.GA29572@carfax.org.uk> <4D2A2128.2060508@chandlerfamily.org.uk> <20110109220101.GB29572@carfax.org.uk>
+Date: Mon, 10 Jan 2011 09:22:49 +0700
+Message-ID: <AANLkTi=AmNOhK9+WdwoRTHi7HrFhOmGT8wV9N77yVH+s@mail.gmail.com>
+References: <201101060935.14059.CACook@quantum-sci.com>
+	<201101061342.23991.CACook@quantum-sci.com>
+	<AANLkTimOEsFiF7tiCzV-Y3NfGYHjK+uL_3O6PNDKum90@mail.gmail.com>
+	<201101071720.08298.hka@qbs.com.pl>
+	<4D29A033.7000803@chandlerfamily.org.uk>
+	<AANLkTi=KASX7pFO8dxJ1P=OhP3qj6qjTgtA6g1Fw-ou4@mail.gmail.com>
+	<4D29D508.6080006@chandlerfamily.org.uk>
+	<AANLkTim96P3ZD-WpDonsOHB7aicNBQX-wK6v347r1z8s@mail.gmail.com>
+	<20110109183030.GA29572@carfax.org.uk>
+	<4D2A2128.2060508@chandlerfamily.org.uk>
+	<20110109220101.GB29572@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Hugo Mills <hugo-lkml@carfax.org.uk>
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: Hugo Mills <hugo-lkml@carfax.org.uk>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <20110109220101.GB29572@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/01/11 22:01, Hugo Mills wrote:
->>   I find the wiki
->> also confusing because it talks about subvolumes having to be at the
->> first level of the filesystem, but again further up this thread
->> there is an example which is used for real of it not being at the
->> first level, but at one level down inside a directory.
+On Mon, Jan 10, 2011 at 5:01 AM, Hugo Mills <hugo-lkml@carfax.org.uk> w=
+rote:
+> =A0 There is a root subvolume namespace (subvolid=3D0), which may con=
+tain
+> files, directories, and other subvolumes. This root subvolume is what
+> you see when you mount a newly-created btrfs filesystem.
+
+Is there a detailed explanation in the wiki about subvolid=3D0? What
+does "top level 5" in the output of "btrfs subvolume list" mean (I
+thought "5" was subvolid for root subvolume)?
+
+# btrfs subvolume list /
+ID 256 top level 5 path maverick-base
+ID 257 top level 5 path kernel-2.6.37
+
 >
->     Try it, see what happens, and fix the wiki where it's wrong? :)
->
->     Or at least say what page this is on, and I can try the experiment
-> and fix it later...
-I don't have an account right now, but the page its on is here.
+> =A0 The default subvolume is simply what you get when you mount the
+> filesystem without a subvol or subvolid parameter to mount. Initially=
+,
+> the default subvolume is set to be the root subvolume. If another
+> subvolume is set to be the default, then the root subvolume can only
+> be mounted with the subvolid=3D0 mount option.
 
-https://btrfs.wiki.kernel.org/index.php/Getting_started#Basic_Filesystem_Commands
+=2E.. and mounting with either subvolid=3D5 and subvolid=3D0 gives the =
+same
+result in my case.
 
-...
->      From trying it a while ago, I don't think it is possible to create
-> a filesystem in degraded mode. Again, I'll try it again when I have
-> the time to do some experimentation and see what actually happens.
-
-As I wondered before it might be possible to fake it by using something 
-like a USB stick initially and then failing it, and replacing it with 
-the real device when ready.
-
-If thats possible, then perhaps functionality to do it without faking it 
-could be added to the "to do" list. It sure would be useful in migrating 
-from mdmadm/lvm setup.
-
-
--- 
-Alan Chandler
-http://www.chandlerfamily.org.uk
+--=20
+=46ajar
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

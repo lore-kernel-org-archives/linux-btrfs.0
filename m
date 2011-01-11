@@ -1,54 +1,112 @@
-From: Ted Ts'o <tytso@mit.edu>
-Subject: Re: [PATCH 1/6] fs: add hole punching to fallocate
-Date: Tue, 11 Jan 2011 16:30:07 -0500
-Message-ID: <20110111213007.GF2917@thunk.org>
-References: <1289248327-16308-1-git-send-email-josef@redhat.com>
- <20101109011222.GD2715@dastard>
- <20101109033038.GF3099@thunk.org>
- <20101109044242.GH2715@dastard>
- <20101109214147.GK3099@thunk.org>
- <20101109234049.GQ2715@dastard>
- <AANLkTimwmJ_ZoE9oAuA1WGhCgK585jDznqnc6k0=9Ntb@mail.gmail.com>
+From: Hugo Mills <hugo-lkml@carfax.org.uk>
+Subject: Re: Synching a Backup Server
+Date: Tue, 11 Jan 2011 22:25:10 +0000
+Message-ID: <20110111222510.GD29572@carfax.org.uk>
+References: <AANLkTimOEsFiF7tiCzV-Y3NfGYHjK+uL_3O6PNDKum90@mail.gmail.com>
+ <201101071720.08298.hka@qbs.com.pl>
+ <4D29A033.7000803@chandlerfamily.org.uk>
+ <AANLkTi=KASX7pFO8dxJ1P=OhP3qj6qjTgtA6g1Fw-ou4@mail.gmail.com>
+ <4D29D508.6080006@chandlerfamily.org.uk>
+ <AANLkTim96P3ZD-WpDonsOHB7aicNBQX-wK6v347r1z8s@mail.gmail.com>
+ <20110109183030.GA29572@carfax.org.uk>
+ <4D2A2128.2060508@chandlerfamily.org.uk>
+ <20110109220101.GB29572@carfax.org.uk>
+ <4D2A4584.4020901@chandlerfamily.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Dave Chinner <david@fromorbit.com>, Josef Bacik <josef@redhat.com>,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-ext4@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	xfs@oss.sgi.com, joel.becker@oracle.com, cmm@us.ibm.com,
-	cluster-devel@redhat.com
-To: Lawrence Greenfield <leg@google.com>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimwmJ_ZoE9oAuA1WGhCgK585jDznqnc6k0=9Ntb@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="oj4kGyHlBMXGt3Le"
+Cc: linux-btrfs@vger.kernel.org, Hugo Mills <hugo-lkml@carfax.org.uk>
+To: Alan Chandler <alan@chandlerfamily.org.uk>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4D2A4584.4020901@chandlerfamily.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 11, 2011 at 04:13:42PM -0500, Lawrence Greenfield wrote:
-> > IOWs, all they want to do is avoid the unwritten extent conversion
-> > overhead. Time has shown that a bad security/performance tradeoff
-> > decision was made 13 years ago in XFS, so I see little reason to
-> > repeat it for ext4 today....
 
-I suspect things may have changed somewhat; both in terms of
-requirements and nature of cluter file systems, and the performance of
-various storage systems (including PCIe-attached flash devices).  
+--oj4kGyHlBMXGt3Le
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-> I'd make use of FALLOC_FL_EXPOSE_OLD_DATA. It's not the CPU overhead
-> of extent conversion. It's that extent conversion causes more metadata
-> operations than what you'd have otherwise, which means systems that
-> want to use O_DIRECT and make sure the data doesn't go away either
-> have to write O_DIRECT|O_DSYNC or need to call fdatasync().
+On Sun, Jan 09, 2011 at 11:32:20PM +0000, Alan Chandler wrote:
+> On 09/01/11 22:01, Hugo Mills wrote:
+> >>  I find the wiki
+> >>also confusing because it talks about subvolumes having to be at the
+> >>first level of the filesystem, but again further up this thread
+> >>there is an example which is used for real of it not being at the
+> >>first level, but at one level down inside a directory.
+> >
+> >    Try it, see what happens, and fix the wiki where it's wrong? :)
+> >
+> >    Or at least say what page this is on, and I can try the experiment
+> >and fix it later...
+> I don't have an account right now, but the page its on is here.
 > 
-> cluster file system implementor,
+> https://btrfs.wiki.kernel.org/index.php/Getting_started#Basic_Filesystem_Commands
 
-One possibility might be to make it an optional feature which is only
-enabled via a mount option.  That way someone would have to explicit
-ask for this feature two ways (via a new flag to fallocate) and a
-mount option.
+   OK, I've just tried this. The page is actually accurate, but
+doesn't tell the whole story. You can *create* subvolumes and
+snapshots anywhere:
 
-It might not make sense for XFS, but for people who are using ext4 as
-the local storage file system back-end, and are doing all sorts of
-things to get the best performance, including disabling the journal, I
-suspect it really would make sense.  So it could always be an
-optional-to-implement flag, that not all file systems should feel
-obliged to implement.
+hrm@molinar:~ $ sudo btrfs sub list /mnt
+ID 256 top level 5 path snap1
+ID 257 top level 5 path foo/snap1
+ID 258 top level 5 path snap1/snap2
 
-					- Ted
+   However, you can't *mount* one by name unless it's at the top
+level:
+
+hrm@molinar:~ $ sudo mount /dev/vdb /media/btr1 -o subvol=snap1
+hrm@molinar:~ $ sudo mount /dev/vdb /media/btr2 -o subvol=foo/snap1
+mount: block device /dev/vdb is write-protected, mounting read-only
+mount: /dev/vdb already mounted or /media/btr2 busy
+mount: according to mtab, /dev/vdb is mounted on /mnt
+
+   Mounting by ID works, though:
+
+hrm@molinar:~ $ sudo mount /dev/vdb /media/btr2 -o subvolid=257
+hrm@molinar:~ $ ls /media/btr2/
+foo  linux-image.deb  snap1  subdir
+
+   This would seem to imply that the limitation is in mount, rather
+than in the btrfs kernel implementation.
+
+   I've clarified that particular piece of text on the wiki.
+
+> ...
+> >     From trying it a while ago, I don't think it is possible to create
+> >a filesystem in degraded mode. Again, I'll try it again when I have
+> >the time to do some experimentation and see what actually happens.
+> 
+> As I wondered before it might be possible to fake it by using
+> something like a USB stick initially and then failing it, and
+> replacing it with the real device when ready.
+> 
+> If thats possible, then perhaps functionality to do it without
+> faking it could be added to the "to do" list. It sure would be
+> useful in migrating from mdmadm/lvm setup.
+
+   I haven't got to this one yet -- someone on IRC just asked the same
+thing, though, so I'll probably have a stab at it tomorrow.
+
+   Hugo.
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+  --- But people have always eaten people,  / what else is there to ---  
+         eat?  / If the Juju had meant us not to eat people / he         
+                     wouldn't have made us of meat.                      
+
+--oj4kGyHlBMXGt3Le
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iD8DBQFNLNjGIKyzvlFcI40RAhdfAKChoR99/uBFMv1Zbxo7+9SvUw2y7wCdGzfG
+u+DPj4EX4OraT+pa2/LckDQ=
+=u77G
+-----END PGP SIGNATURE-----
+
+--oj4kGyHlBMXGt3Le--

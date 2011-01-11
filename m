@@ -1,7 +1,7 @@
 From: Hugo Mills <hugo-lkml@carfax.org.uk>
 Subject: Re: Synching a Backup Server
-Date: Tue, 11 Jan 2011 22:25:10 +0000
-Message-ID: <20110111222510.GD29572@carfax.org.uk>
+Date: Tue, 11 Jan 2011 22:41:33 +0000
+Message-ID: <20110111224133.GE29572@carfax.org.uk>
 References: <AANLkTimOEsFiF7tiCzV-Y3NfGYHjK+uL_3O6PNDKum90@mail.gmail.com>
  <201101071720.08298.hka@qbs.com.pl>
  <4D29A033.7000803@chandlerfamily.org.uk>
@@ -11,92 +11,66 @@ References: <AANLkTimOEsFiF7tiCzV-Y3NfGYHjK+uL_3O6PNDKum90@mail.gmail.com>
  <20110109183030.GA29572@carfax.org.uk>
  <4D2A2128.2060508@chandlerfamily.org.uk>
  <20110109220101.GB29572@carfax.org.uk>
- <4D2A4584.4020901@chandlerfamily.org.uk>
+ <AANLkTi=AmNOhK9+WdwoRTHi7HrFhOmGT8wV9N77yVH+s@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="oj4kGyHlBMXGt3Le"
-Cc: linux-btrfs@vger.kernel.org, Hugo Mills <hugo-lkml@carfax.org.uk>
-To: Alan Chandler <alan@chandlerfamily.org.uk>
+	protocol="application/pgp-signature"; boundary="3O1VwFp74L81IIeR"
+Cc: Hugo Mills <hugo-lkml@carfax.org.uk>, linux-btrfs@vger.kernel.org
+To: "Fajar A. Nugraha" <list@fajar.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D2A4584.4020901@chandlerfamily.org.uk>
+In-Reply-To: <AANLkTi=AmNOhK9+WdwoRTHi7HrFhOmGT8wV9N77yVH+s@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---oj4kGyHlBMXGt3Le
-Content-Type: text/plain; charset=us-ascii
+--3O1VwFp74L81IIeR
+Content-Type: text/plain; charset=iso-8859-1
 Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On Sun, Jan 09, 2011 at 11:32:20PM +0000, Alan Chandler wrote:
-> On 09/01/11 22:01, Hugo Mills wrote:
-> >>  I find the wiki
-> >>also confusing because it talks about subvolumes having to be at the
-> >>first level of the filesystem, but again further up this thread
-> >>there is an example which is used for real of it not being at the
-> >>first level, but at one level down inside a directory.
-> >
-> >    Try it, see what happens, and fix the wiki where it's wrong? :)
-> >
-> >    Or at least say what page this is on, and I can try the experiment
-> >and fix it later...
-> I don't have an account right now, but the page its on is here.
-> 
-> https://btrfs.wiki.kernel.org/index.php/Getting_started#Basic_Filesystem_Commands
+On Mon, Jan 10, 2011 at 09:22:49AM +0700, Fajar A. Nugraha wrote:
+> On Mon, Jan 10, 2011 at 5:01 AM, Hugo Mills <hugo-lkml@carfax.org.uk> wro=
+te:
+> > =A0 There is a root subvolume namespace (subvolid=3D0), which may conta=
+in
+> > files, directories, and other subvolumes. This root subvolume is what
+> > you see when you mount a newly-created btrfs filesystem.
+>=20
+> Is there a detailed explanation in the wiki about subvolid=3D0? What
+> does "top level 5" in the output of "btrfs subvolume list" mean (I
+> thought "5" was subvolid for root subvolume)?
+>=20
+> # btrfs subvolume list /
+> ID 256 top level 5 path maverick-base
+> ID 257 top level 5 path kernel-2.6.37
+>=20
+> > =A0 The default subvolume is simply what you get when you mount the
+> > filesystem without a subvol or subvolid parameter to mount. Initially,
+> > the default subvolume is set to be the root subvolume. If another
+> > subvolume is set to be the default, then the root subvolume can only
+> > be mounted with the subvolid=3D0 mount option.
+>=20
+> ... and mounting with either subvolid=3D5 and subvolid=3D0 gives the same
+> result in my case.
 
-   OK, I've just tried this. The page is actually accurate, but
-doesn't tell the whole story. You can *create* subvolumes and
-snapshots anywhere:
+   OK, having read through some of the code, it looks like the "5"
+comes from it being the root FS tree object ID. So, it's probably
+quite hard to change that number without making incompatible
+filesystems.
 
-hrm@molinar:~ $ sudo btrfs sub list /mnt
-ID 256 top level 5 path snap1
-ID 257 top level 5 path foo/snap1
-ID 258 top level 5 path snap1/snap2
-
-   However, you can't *mount* one by name unless it's at the top
-level:
-
-hrm@molinar:~ $ sudo mount /dev/vdb /media/btr1 -o subvol=snap1
-hrm@molinar:~ $ sudo mount /dev/vdb /media/btr2 -o subvol=foo/snap1
-mount: block device /dev/vdb is write-protected, mounting read-only
-mount: /dev/vdb already mounted or /media/btr2 busy
-mount: according to mtab, /dev/vdb is mounted on /mnt
-
-   Mounting by ID works, though:
-
-hrm@molinar:~ $ sudo mount /dev/vdb /media/btr2 -o subvolid=257
-hrm@molinar:~ $ ls /media/btr2/
-foo  linux-image.deb  snap1  subdir
-
-   This would seem to imply that the limitation is in mount, rather
-than in the btrfs kernel implementation.
-
-   I've clarified that particular piece of text on the wiki.
-
-> ...
-> >     From trying it a while ago, I don't think it is possible to create
-> >a filesystem in degraded mode. Again, I'll try it again when I have
-> >the time to do some experimentation and see what actually happens.
-> 
-> As I wondered before it might be possible to fake it by using
-> something like a USB stick initially and then failing it, and
-> replacing it with the real device when ready.
-> 
-> If thats possible, then perhaps functionality to do it without
-> faking it could be added to the "to do" list. It sure would be
-> useful in migrating from mdmadm/lvm setup.
-
-   I haven't got to this one yet -- someone on IRC just asked the same
-thing, though, so I'll probably have a stab at it tomorrow.
+   However, the _documented_ (and official) way to mount the root
+subvolume is to use subvolid=3D0... :)
 
    Hugo.
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+--=20
+=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
+ =3D=3D=3D
   PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-  --- But people have always eaten people,  / what else is there to ---  
-         eat?  / If the Juju had meant us not to eat people / he         
-                     wouldn't have made us of meat.                      
+  --- But people have always eaten people,  / what else is there to --- =20
+         eat?  / If the Juju had meant us not to eat people / he        =20
+                     wouldn't have made us of meat.                     =20
 
---oj4kGyHlBMXGt3Le
+--3O1VwFp74L81IIeR
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 Content-Disposition: inline
@@ -104,9 +78,9 @@ Content-Disposition: inline
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.10 (GNU/Linux)
 
-iD8DBQFNLNjGIKyzvlFcI40RAhdfAKChoR99/uBFMv1Zbxo7+9SvUw2y7wCdGzfG
-u+DPj4EX4OraT+pa2/LckDQ=
-=u77G
+iD8DBQFNLNydIKyzvlFcI40RAq++AKCDGkxAAJx8BR/YWPWRe4mDONmUKwCgoHyI
+GJvATdl/AdQQNpbyiSgc6hU=
+=mB2a
 -----END PGP SIGNATURE-----
 
---oj4kGyHlBMXGt3Le--
+--3O1VwFp74L81IIeR--

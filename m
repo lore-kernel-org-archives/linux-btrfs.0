@@ -1,47 +1,62 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: btrfs build failure in latest git
-Date: Wed, 12 Jan 2011 11:00:06 +0800
-Message-ID: <4D2D1936.2070201@cn.fujitsu.com>
-References: <4D2CE678.10607@garzik.org>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: Re: [PATCH V3 0/6] random bugfixes of the space management
+Date: Wed, 12 Jan 2011 11:59:27 +0800
+Message-ID: <4D2D271F.7030905@cn.fujitsu.com>
+References: <4D2442CF.8060702@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=windows-1252
-Cc: LKML <linux-kernel@vger.kernel.org>, linux-btrfs@vger.kernel.org,
-	Chris Mason <chris.mason@oracle.com>
-To: Jeff Garzik <jeff@garzik.org>
+Content-Type: text/plain; charset=GB2312
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>,
+	Mitch Harder <mitch.harder@sabayonlinux.org>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: miaox@cn.fujitsu.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D2CE678.10607@garzik.org>
+In-Reply-To: <4D2442CF.8060702@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jeff Garzik wrote:
->=20
-> Tree as of commit 7bc4a4ce68f8c6d064ea949446852e996526f692 dies durin=
-g btrfs build on x86-64:
->=20
->   CC [M]  fs/btrfs/ctree.o
-> In file included from fs/btrfs/ctree.c:21:0:
-> fs/btrfs/ctree.h:1003:17: error: field =91super_kobj=92 has incomplet=
-e type
-> fs/btrfs/ctree.h:1074:17: error: field =91root_kobj=92 has incomplete=
- type
-> make[2]: *** [fs/btrfs/ctree.o] Error 1
-> make[1]: *** [fs/btrfs] Error 2
-> make: *** [fs] Error 2
->=20
+Any comments for these patches?
 
-Should be caused by this commit:
+Thanks
+Miao
 
-commit 57cc7215b70856dc6bae8e55b00ecd7b1d7429b1
-Author: Alexey Dobriyan <adobriyan@gmail.com>
-Date:   Mon Jan 10 08:18:25 2011 +0200
+On wed, 05 Jan 2011 18:07:11 +0800, Miao Xie wrote:
+> I have a bunch of random fixes of the space management in
+> 
+> git://repo.or.cz/linux-btrfs-devel.git space-manage
+> 
+> They are the ENOSPC fixes, as well as fixes for df command.
+> The first one and the last one fixed the wrong free space information reported
+> by df command. The second one fixed ENOSPC when there is tiny space in the
+> filesystem. And The third fixed wrong calculation of stripe size. And the 4th
+> and 5th patches fixed the chunk allocation problem when the block devices have
+> no enough space to allocate a default-size chunk.
+> 
+> Changelog V2 ->  V3:
+> - fix panic caused by freeing a invalid memory address.
+> 
+> Changelog V1 ->  V2:
+> - fix compiler errors on x86_32 machines.
+> - fix some bugs when allocating dup chunks.
+> - break the chunk allocation when errors happen.
+> - just allocate min_stripes stripes when the free space is not enough.
+> - cleanup redundant code.
+> 
+> If you want to merge this patchset to your "next" branch for testing, you can merge it
+> directly after dropping the top four patches of the "next" branch.
+> 
+> Thanks
+> Miao
+> ---
+>   fs/btrfs/ctree.h       |    2 +
+>   fs/btrfs/extent-tree.c |   71 +++++-
+>   fs/btrfs/super.c       |  147 +++++++++++-
+>   fs/btrfs/volumes.c     |  614 +++++++++++++++++++++++++++++++++++-------------
+>   fs/btrfs/volumes.h     |   27 ++
+>   5 files changed, 685 insertions(+), 176 deletions(-)
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
-    headers: kobject.h redux
-   =20
-    Remove kobject.h from files which don't need it, notably,
-    sched.h and fs.h.
-
-So the fix is to include kobject.h explicitly in ctree.h.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

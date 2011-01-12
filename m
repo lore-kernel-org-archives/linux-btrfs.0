@@ -1,76 +1,57 @@
-From: Dave Chinner <david@fromorbit.com>
-Subject: Re: [PATCH 1/6] fs: add hole punching to fallocate
-Date: Wed, 12 Jan 2011 23:44:31 +1100
-Message-ID: <20110112124431.GP28803@dastard>
-References: <1289248327-16308-1-git-send-email-josef@redhat.com>
- <20101109011222.GD2715@dastard>
- <20101109033038.GF3099@thunk.org>
- <20101109044242.GH2715@dastard>
- <20101109214147.GK3099@thunk.org>
- <20101109234049.GQ2715@dastard>
- <AANLkTimwmJ_ZoE9oAuA1WGhCgK585jDznqnc6k0=9Ntb@mail.gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH V3 1/6] btrfs: fix wrong data space statistics
+Date: Wed, 12 Jan 2011 08:49:20 -0500
+Message-ID: <20110112134919.GB2645@localhost.localdomain>
+References: <4D2442D3.6050906@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Ted Ts'o <tytso@mit.edu>, Josef Bacik <josef@redhat.com>,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-ext4@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	xfs@oss.sgi.com, joel.becker@oracle.com, cmm@us.ibm.com,
-	cluster-devel@redhat.com
-To: Lawrence Greenfield <leg@google.com>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimwmJ_ZoE9oAuA1WGhCgK585jDznqnc6k0=9Ntb@mail.gmail.com>
+Cc: Josef Bacik <josef@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Mitch Harder <mitch.harder@sabayonlinux.org>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Miao Xie <miaox@cn.fujitsu.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4D2442D3.6050906@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 11, 2011 at 04:13:42PM -0500, Lawrence Greenfield wrote:
-> On Tue, Nov 9, 2010 at 6:40 PM, Dave Chinner <david@fromorbit.com> wrote:
-> > The historical reason for such behaviour existing in XFS was that in
-> > 1997 the CPU and IO latency cost of unwritten extent conversion was
-> > significant,
-
-.....
-
-> >> (Take for example a trusted cluster filesystem backend that checks the
-> >> object checksum before returning any data to the user; and if the
-> >> check fails the cluster file system will try to use some other replica
-> >> stored on some other server.)
-> >
-> > IOWs, all they want to do is avoid the unwritten extent conversion
-> > overhead. Time has shown that a bad security/performance tradeoff
-> > decision was made 13 years ago in XFS, so I see little reason to
-> > repeat it for ext4 today....
+On Wed, Jan 05, 2011 at 06:07:15PM +0800, Miao Xie wrote:
+> Josef has implemented mixed data/metadata chunks, we must add those chunks'
+> space just like data chunks.
 > 
-> I'd make use of FALLOC_FL_EXPOSE_OLD_DATA. It's not the CPU overhead
-> of extent conversion. It's that extent conversion causes more metadata
-> operations than what you'd have otherwise,
+> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 
-Yes, that's the "IO latency" part of the cost I mentioned above.
+Reviewed-by: Josef Bacik <josef@redhat.com>
 
-> which means systems that
-> want to use O_DIRECT and make sure the data doesn't go away either
-> have to write O_DIRECT|O_DSYNC or need to call fdatasync().
+Thanks,
 
-Seriously, we tell application writers _all the time_ that they
-*must* use fsync/fdatasync to guarantee their data is on stable
-storage and that they cannot rely on side-effects of filesystem or
-storage specific behaviours (like ext3 ordered mode) to do that job
-for them.
+Josef
 
-You're suggesting that by introducing FALLOC_FL_EXPOSE_OLD_DATA,
-applications can rely on filesystem/storage specific behaviour to
-guarantee data is on stable storage without the use of
-fdatasync/fsync. Wht you describe is definitely storage specific,
-because volatile write caches still needs the fdatasync to issue a
-cache flush.
-
-Do you see the same conflict here that I do?
-
-> cluster file system implementor
-
-Which one?
-
-Cheers,
-
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+> ---
+>  fs/btrfs/super.c |    7 +++----
+>  1 files changed, 3 insertions(+), 4 deletions(-)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 61bd79a..1d21208 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -768,11 +768,10 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+>  
+>  	rcu_read_lock();
+>  	list_for_each_entry_rcu(found, head, list) {
+> -		if (found->flags & (BTRFS_BLOCK_GROUP_METADATA |
+> -				    BTRFS_BLOCK_GROUP_SYSTEM))
+> -			total_used_data += found->disk_total;
+> -		else
+> +		if (found->flags & BTRFS_BLOCK_GROUP_DATA)
+>  			total_used_data += found->disk_used;
+> +		else
+> +			total_used_data += found->disk_total;
+>  		total_used += found->disk_used;
+>  	}
+>  	rcu_read_unlock();
+> -- 
+> 1.7.2.3
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,37 +1,54 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: don't warn if we get ENOSPC in btrfs_block_rsv_check
-Date: Wed, 12 Jan 2011 16:04:22 -0500
-Message-ID: <1294866262-16693-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: Brian Rogers <brian@xyzw.org>
+Subject: Re: 'ioctl:: Inappropriate ioctl for device' when trying to shrink
+ partition
+Date: Thu, 13 Jan 2011 03:33:45 -0800
+Message-ID: <4D2EE319.1010101@xyzw.org>
+References: <1294857915.7377.14.camel@develog-laptop> <AANLkTi=Jn8-7AD8fcX4cyJUC32YQP2-CE8J_cTxnOuOC@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Mikael Andersson <mikael@develog.se>, linux-btrfs@vger.kernel.org
+To: Leonidas Spyropoulos <artafinde@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTi=Jn8-7AD8fcX4cyJUC32YQP2-CE8J_cTxnOuOC@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we run low on space we could get a bunch of warnings out of
-btrfs_block_rsv_check, but this is mostly just called via the transaction code
-to see if we need to end the transaction, it expects to see failures, so let's
-not WARN and freak everybody out for no reason.  Thanks,
+On 01/12/2011 11:48 AM, Leonidas Spyropoulos wrote:
+> On 12 January 2011 18:45, Mikael Andersson<mikael@develog.se>  wrote:
+>> E.g. btrfsctl -r -4000m /dev/sda5
+>>
+> Hey Mikael,
+>
+> btrfsctl is deprecated, you should use btrfs
+> In the previous example:
+> btrfs filesystem resize -4000m /dev/sda5
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/extent-tree.c |    5 -----
- 1 files changed, 0 insertions(+), 5 deletions(-)
+The command isn't asking for the name of the device. It wants the path 
+to a mounted btrfs filesystem. So more like:
+btrfs filesystem resize -4000m /mnt
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index d2add51..c93293a 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3720,11 +3720,6 @@ int btrfs_block_rsv_check(struct btrfs_trans_handle *trans,
- 		return 0;
- 	}
- 
--	WARN_ON(1);
--	printk(KERN_INFO"block_rsv size %llu reserved %llu freed %llu %llu\n",
--		block_rsv->size, block_rsv->reserved,
--		block_rsv->freed[0], block_rsv->freed[1]);
--
- 	return -ENOSPC;
- }
- 
--- 
-1.6.6.1
+Also, the manpage doesn't say this, but you can specify which device to 
+resize. If you run 'btrfs filesystem show', it will show a device id for 
+each device. Then you can specify the devid to resize like this 
+(assuming you want to resize device 2):
+btrfs filesystem resize 2:-4000m /mnt
+
+To actually use this space for a new partition, you'll have to delete 
+and re-create (without reformatting!) the btrfs partition with the 
+smaller size. I don't know if there's a way to do this part on a live 
+system without unmounting.
+
+> Check the help of btrfs
+>
+> And also good to download latest btrfs-progs from git and compile them
+> yourself the version of btrfs-progs on LiveCD is old.
+>
+>
+> Latest version I use for example is: v0.19-35-g1b444cd
+>
+>
+>> results in:
+>> ioctl:: Inappropriate ioctl for device
+
+I believe you'll also get this same error message if there's not enough 
+space to do the shrinking, so be aware of that.
 

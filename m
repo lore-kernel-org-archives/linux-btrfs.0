@@ -1,133 +1,277 @@
-From: cwillu <cwillu@cwillu.com>
-Subject: Re: BUG while writing to USB btrfs filesystem
-Date: Tue, 18 Jan 2011 17:06:40 -0600
-Message-ID: <AANLkTim6a_xv7gf-OHbhtV75eJesCF4gLDB-aHxkM-PX@mail.gmail.com>
-References: <AANLkTimjuO=RcVciFCo5MKPnVArvXBLnhs2taS5cOw6f@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Hugo Mills <hugo@carfax.org.uk>
+Subject: [PATCH RFC] Add ioctl for balancing a subset of the full filesystem.
+Date: Sun, 16 Jan 2011 13:06:33 +0000
+Message-ID: <E1PfLAh-00035I-Oz@ruthven.carfax.org.uk>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimjuO=RcVciFCo5MKPnVArvXBLnhs2taS5cOw6f@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 18, 2011 at 4:28 PM, cwillu <cwillu@cwillu.com> wrote:
-> While untar'ing an image to an sd card via a reader, I got the
-> following bug. =A0The system also has a btrfs root, and a whole swath=
- of
-> processes went into uninterruptable sleep. =A0I was able to poke arou=
-nd
-> via ssh and sysrq, and already had netconsole set up to capture the
-> bug.
->
-> Root fs is on /dev/sdi1, and /dev/sdj2 is the card reader which was
-> the target of the untar.
->
-> [29571.448889] sd 11:0:0:0: [sdj] Assuming drive cache: write through
-> [29571.451153] =A0sdj: unknown partition table
-> [29572.047390] sd 11:0:0:0: [sdj] Assuming drive cache: write through
-> [29572.048149] =A0sdj: sdj1 sdj2
-> [29602.642175] device fsid 5648f85292725e76-72190c37da5211b6 devid 1
-> transid 7 /dev/sdj2
-> [29602.643256] btrfs: use spread ssd allocation scheme
-> [36852.550219] sd 11:0:0:0: [sdj] Assuming drive cache: write through
-> [36852.552958] =A0sdj: unknown partition table
-> [36852.571770] ------------[ cut here ]------------
-> [36852.580008] kernel BUG at fs/btrfs/inode.c:1629!
-> [36852.580008] invalid opcode: 0000 [#1] SMP [36852.580008] invalid
-> opcode: 0000 [#1] SMP
-> [36852.580008] last sysfs file:
-> /sys/devices/pci0000:00/0000:00:1a.7/usb1/1-2/1-2:1.0/uevent
-> [36852.580008] CPU 2
-> [36852.580008] Modules linked in: netconsole configfs nls_cp437 vfat
-> fat binfmt_misc ppdev configfs ipt_MASQUERADE iptable_nat
-> nls_iso8859_1 nf_nat nf_conntrack_ipv4 nls_cp437 nf_defrag_ipv4
-> ipt_REJECT aes_generic snd_rawmidi snd_rawmidi snd_seq_midi_event
-> snd_seq snd_timer snd_seq_device asus_atk0110 lp snd soundcore
-> snd_page_alloc shpchp parport raid10 raid456 snd_page_alloc async_pq
-> async_xor xor async_memcpy shpchp async_raid6_recov parport raid6_pq
-> async_tx raid10 raid1 raid0 multipath linear raid456 btrfs
-> zlib_deflate async_pq async_xor xor async_memcpy async_raid6_recov
-> raid6_pq async_tx raid1 raid0 multipath linear btrfs zlib_deflate
-> lzo_compress crc32c libcrc32c radeon ttm lzo_compress ohci1394
-> drm_kms_helper crc32c usb_storage ieee1394 r8169 libcrc32c drm
-> i2c_algo_bit mii radeon pata_jmicron ahci libahci intel_agp ttm
-> ohci1394 drm_kms_helper usb_storage ieee1394 r8169 drm i2c_algo_bit
-> mii pata_jmicron ahci libahci intel_agp
->
-> [36852.580008]
-> [36852.580008] Pid: 437, comm: btrfs-endio-wri Not tainted
-> 2.6.36-btrfs2 #1 P5Q3/System Product Name
-> [36852.580008] RIP: 0010:[<ffffffffa0224120>] [<ffffffffa0224120>]
-> T.1224+0x220/0x230 [btrfs]
-> [36852.580008] RSP: 0000:ffff880231c7dc30 =A0EFLAGS: 00010286
-> [36852.580008] RAX: 00000000ffffffe4 RBX: ffff88023363a7e0 RCX: ffff8=
-8023363ad80
-> [36852.580008] RDX: 0000000000000000 RSI: ffffea0007b3dcb0 RDI: 00000=
-00000000206
-> [36852.580008] RBP: ffff880231c7dcc0 R08: 0000000000000005 R09: 00000=
-000ffffffe4
-> [36852.940017] R10: 0000000000000000 R11: 6db6db6db6db6db7 R12: ffff8=
-8022ec8ea80
-> [36852.940017] R13: 000000000e19a000 R14: ffff88023173c000 R15: ffff8=
-802335fe900
-> [36852.940017] FS: =A00000000000000000(0000) GS:ffff880001f00000(0000=
-)
-> knlGS:0000000000000000
-> [36852.940017] CS: =A00010 DS: 0000 ES: 0000 CR0: 000000008005003b
-> [36852.940017] CR2: 00000000017ed2d8 CR3: 00000001d42ac000 CR4: 00000=
-000000006e0
-> [36852.940017] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 00000=
-00000000000
-> [36852.940017] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 00000=
-00000000400
-> [36852.940017] Process btrfs-endio-wri (pid: 437, threadinfo
-> ffff880231c7c000, task ffff880232738000)
-> [36852.940017] Stack:
-> [36852.940017] =A0000000000e19a000 0000000000001000 000000494189e000
-> 0000000000001000
-> [36852.940017] <0> ffff880231c7dc70 ffffffff81582fde ffff8802335fe900
-> ffff88023173c000
-> [36852.940017] <0> ffff880231c7dcb0 ffffffffa0220e1c 000000000e19a000
-> ffff88022ec8ea80
->
-> [36853.210013] Call Trace:
-> [36853.210013] =A0[<ffffffff81582fde>] ? mutex_lock+0x1e/0x50
-> [36853.210013] =A0[<ffffffffa0220e1c>] ? start_transaction+0x1cc/0x27=
-0 [btrfs]
-> [36853.210013] =A0[<ffffffffa022495b>] btrfs_finish_ordered_io+0x2eb/=
-0x330 [btrfs]
-> [36853.210013] =A0[<ffffffff81103157>] ? mempool_free_slab+0x17/0x20
-> [36853.210013] =A0[<ffffffffa02249ba>]
-> btrfs_writepage_end_io_hook+0x1a/0x20 [btrfs]
-> [36853.210013] =A0[<ffffffffa024217b>]
-> end_bio_extent_writepage+0x13b/0x180 [btrfs]
-> [36853.210013] =A0[<ffffffff815828bb>] ? schedule_timeout+0x19b/0x300
-> [36853.210013] =A0[<ffffffff8118212d>] bio_endio+0x1d/0x40
-> [36853.210013] =A0[<ffffffffa021a1b4>] end_workqueue_fn+0xf4/0x130 [b=
-trfs]
-> [36853.210013] =A0[<ffffffffa024d1cc>] worker_loop+0x15c/0x640 [btrfs=
-]
-> [36853.210013] =A0[<ffffffffa024d070>] ? worker_loop+0x0/0x640 [btrfs=
-]
-> [36853.210013] =A0[<ffffffff81080bf6>] kthread+0x96/0xa0
-> [36853.210013] =A0[<ffffffff8100bea4>] kernel_thread_helper+0x4/0x10
-> [36853.210013] =A0[<ffffffff81080b60>] ? kthread+0x0/0xa0
-> [36853.210013] =A0[<ffffffff8100bea0>] ? kernel_thread_helper+0x0/0x1=
-0
-> [36853.210013] Code: 68 31 c0 5b 41 5c 41 5d 41 5e 41 5f c9 c3 0f 0b
-> eb fe 66 0f 1f 84 00 00 00 00 00 0f 0b eb fe 0f 1f 40 00 0f 0b eb fe
-> 0f 1f 40 00 <0f> 0b eb fe 66 66 66 2e 0f 1f 84 00 00 00 00 00 55 48 8=
-9
-> e5 41
-> [36853.210013] RIP =A0[<ffffffffa0224120>] T.1224+0x220/0x230 [btrfs]
-> [36853.690010] =A0RSP <ffff880231c7dc30>
-> [36853.877226] ---[ end trace 101a91b31ae9f3ff ]---
->
+   This is a patch purely for comment. There's several things wrong
+with it that I need to fix (at minimum, it has too much debugging
+output, the __balance_chunk_filters function takes the wrong set of
+parameters to make it properly extensible, and the progress counter is
+broken).
 
-Grumble grumble...  this is a 2.6.36 kernel built from cmason's
-for-linus branch last night, commit: acce95
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+   I'm planning on adding at least two more filters, once this basic
+infrastructure is reasonably stable: one to filter on a range of
+(virtual) addresses, and one to work on device IDs (i.e. "was any part
+of this block group stored on device $n?").
+
+   With the additional filters written, you'll be able to specify any
+conjunctive set of filters. i.e. "This block group is RAID1, *and* was
+stored on devid 4". Disjunctions ("or") aren't supported, and probably
+won't be with this API. The filter data for additional filters will go
+at the end of struct btrfs_ioctl_balance_start, ensuring extensibility
+and backwards-compatibility (or at least, proper error reporting of
+unsupported features).
+
+   Questions for the panel:
+   
+ * Is the ioctl API reasonably sane, extensible, future-proof?
+ * What other block group filters could be useful for this API?
+
+   Hugo.
+
+There are situations, such as restarting an interrupted balance, where
+is not necessary or desired to balance all of the block groups in the
+filesystem. This patch adds the basic infrastructure for filtering
+block groups during a balance. It also adds a single filter method,
+allowing the caller to select block groups with specific usage and
+replication strategies.
+---
+ fs/btrfs/ioctl.c   |   44 +++++++++++++++++++++++++++++-
+ fs/btrfs/ioctl.h   |   15 ++++++++++
+ fs/btrfs/volumes.c |   76 +++++++++++++++++++++++++++++++++++++++++++--------
+ fs/btrfs/volumes.h |    3 +-
+ 4 files changed, 124 insertions(+), 14 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 6d50d24..a2dd60c 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2243,6 +2243,46 @@ static noinline long btrfs_ioctl_wait_sync(struct file *file, void __user *argp)
+ 	return btrfs_wait_for_commit(root, transid);
+ }
+ 
++/* Balance the filesystem unconditionally */
++long btrfs_ioctl_balance(struct btrfs_fs_info *fs_info)
++{
++	return btrfs_balance(fs_info->dev_root, NULL);
++}
++
++/* Balance particular chunks in the filesystem */
++long btrfs_ioctl_balance_filtered(
++	struct btrfs_fs_info *fs_info,
++	struct btrfs_ioctl_balance_start __user *user_filters)
++{
++	int ret = 0;
++	struct btrfs_ioctl_balance_start *dest;
++
++	dest = kmalloc(sizeof(struct btrfs_ioctl_balance_start), GFP_KERNEL);
++	if (!dest)
++		return -ENOMEM;
++
++	if (copy_from_user(dest, user_filters, sizeof(struct btrfs_ioctl_balance_start))) {
++		ret = -EFAULT;
++		goto error;
++	}
++
++	printk("Starting balance with filter: %llx %llx %llx\n",
++	       dest->flags, dest->chunk_type, dest->chunk_type_mask);
++
++	/* Basic sanity checking */
++	if (dest->flags & ~BTRFS_BALANCE_FILTER_MASK) {
++		ret = -ENOTSUPP;
++		goto error;
++	}
++
++	/* Do the balance */
++	ret = btrfs_balance(fs_info->dev_root, dest);
++
++error:
++	kfree(dest);
++	return ret;
++}
++
+ /*
+  * Return the current status of any balance operation
+  */
+@@ -2335,11 +2375,13 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 	case BTRFS_IOC_RM_DEV:
+ 		return btrfs_ioctl_rm_dev(root, argp);
+ 	case BTRFS_IOC_BALANCE:
+-		return btrfs_balance(root->fs_info->dev_root);
++		return btrfs_ioctl_balance(root->fs_info);
+ 	case BTRFS_IOC_BALANCE_PROGRESS:
+ 		return btrfs_ioctl_balance_progress(root->fs_info, argp);
+ 	case BTRFS_IOC_BALANCE_CANCEL:
+ 		return btrfs_ioctl_balance_cancel(root->fs_info);
++	case BTRFS_IOC_BALANCE_FILTERED:
++		return btrfs_ioctl_balance_filtered(root->fs_info, argp);
+ 	case BTRFS_IOC_CLONE:
+ 		return btrfs_ioctl_clone(file, arg, 0, 0, 0);
+ 	case BTRFS_IOC_CLONE_RANGE:
+diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+index 4f73d11..7c0c69c 100644
+--- a/fs/btrfs/ioctl.h
++++ b/fs/btrfs/ioctl.h
+@@ -154,6 +154,19 @@ struct btrfs_ioctl_balance_progress {
+ 	__u64 completed;
+ };
+ 
++/* Types of balance filter */
++#define BTRFS_BALANCE_FILTER_CHUNK_TYPE 0x1
++#define BTRFS_BALANCE_FILTER_MASK 0x1
++
++/* All the possible options for a filter */
++struct btrfs_ioctl_balance_start {
++	__u64 flags; /* Bit field indicating which fields of this struct are filled */
++
++	/* For FILTER_CHUNK_TYPE */
++	__u64 chunk_type;      /* Flag bits required */
++	__u64 chunk_type_mask; /* Mask of bits to examine */
++};
++
+ #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
+ 				   struct btrfs_ioctl_vol_args)
+ #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
+@@ -201,4 +214,6 @@ struct btrfs_ioctl_balance_progress {
+ #define BTRFS_IOC_BALANCE_PROGRESS _IOR(BTRFS_IOCTL_MAGIC, 25, \
+ 				struct btrfs_ioctl_balance_progress)
+ #define BTRFS_IOC_BALANCE_CANCEL _IO(BTRFS_IOCTL_MAGIC, 26)
++#define BTRFS_IOC_BALANCE_FILTERED _IOW(BTRFS_IOCTL_MAGIC, 27, \
++				struct btrfs_ioctl_balance_start)
+ #endif
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f81535e..b689219 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1899,7 +1899,38 @@ static u64 div_factor(u64 num, int factor)
+ 	return num;
+ }
+ 
+-int btrfs_balance(struct btrfs_root *dev_root)
++int __balance_chunk_filters(
++	struct btrfs_ioctl_balance_start *filter,
++	struct extent_buffer *eb,
++	struct btrfs_chunk *chunk,
++	struct btrfs_key *key)
++{
++	if (filter == NULL) {
++		printk("Filter was NULL: pass all chunks\n");
++		return 1;
++	}
++
++	if (filter->flags == 0) {
++		printk("Filter was empty: pass all chunks\n");
++		return 1;
++	}
++
++	if (filter->flags & BTRFS_BALANCE_FILTER_CHUNK_TYPE) {
++		printk(KERN_INFO "btrfs: balance: Filtering chunk at %llu\n", key->offset);
++		printk(KERN_INFO "btrfs: balance:    flags=%llx\n", btrfs_chunk_type(eb, chunk));
++		printk(KERN_INFO "btrfs: balance:    to match type %llx\n", filter->chunk_type);
++		printk(KERN_INFO "btrfs: balance:    mask %llx\n", filter->chunk_type_mask);
++		printk(KERN_INFO "btrfs: balance: not-mask %llx\n", ~filter->chunk_type_mask);
++		printk(KERN_INFO "btrfs: balance: masked flags %llx\n", (btrfs_chunk_type(eb, chunk) & filter->chunk_type_mask));
++		return (btrfs_chunk_type(eb, chunk) & filter->chunk_type_mask)
++			== filter->chunk_type;
++	}
++
++	return 0;
++}
++
++int btrfs_balance(struct btrfs_root *dev_root,
++		  struct btrfs_ioctl_balance_start *filter)
+ {
+ 	int ret;
+ 	struct list_head *devices = &dev_root->fs_info->fs_devices->devices;
+@@ -1912,6 +1943,9 @@ int btrfs_balance(struct btrfs_root *dev_root)
+ 	struct btrfs_trans_handle *trans;
+ 	struct btrfs_key found_key;
+ 	struct btrfs_balance_info *bal_info;
++	struct btrfs_chunk *chunk;
++
++	printk("Balance: filter pointer is %p\n", filter);
+ 
+ 	if (dev_root->fs_info->sb->s_flags & MS_RDONLY)
+ 		return -EROFS;
+@@ -1980,6 +2014,15 @@ int btrfs_balance(struct btrfs_root *dev_root)
+ 		if (ret)
+ 			break;
+ 
++		btrfs_item_key_to_cpu(path->nodes[0], &found_key,
++				      path->slots[0]);
++		chunk = btrfs_item_ptr(path->nodes[0], path->slots[0],
++				       struct btrfs_chunk);
++		if (!__balance_chunk_filters(filter, path->nodes[0], chunk, &found_key)) {
++			printk(KERN_INFO "btrfs: balance (count): Filtering out chunk at %llu\n", found_key.offset);
++			continue;
++		}
++
+ 		spin_lock(&dev_root->fs_info->balance_info_lock);
+ 		bal_info->expected++;
+ 		spin_unlock(&dev_root->fs_info->balance_info_lock);
+@@ -2023,18 +2066,27 @@ int btrfs_balance(struct btrfs_root *dev_root)
+ 		if (found_key.offset == 0)
+ 			break;
+ 
+-		btrfs_release_path(chunk_root, path);
+-		ret = btrfs_relocate_chunk(chunk_root,
+-					   chunk_root->root_key.objectid,
+-					   found_key.objectid,
+-					   found_key.offset);
+-		BUG_ON(ret && ret != -ENOSPC);
++		chunk = btrfs_item_ptr(path->nodes[0], path->slots[0],
++				       struct btrfs_chunk);
++		if (__balance_chunk_filters(filter, path->nodes[0], chunk, &found_key)) {
++			btrfs_release_path(chunk_root, path);
++			ret = btrfs_relocate_chunk(chunk_root,
++						   chunk_root->root_key.objectid,
++						   found_key.objectid,
++						   found_key.offset);
++			BUG_ON(ret && ret != -ENOSPC);
++
++			spin_lock(&dev_root->fs_info->balance_info_lock);
++			bal_info->completed++;
++			spin_unlock(&dev_root->fs_info->balance_info_lock);
++			printk(KERN_INFO "btrfs: balance: %llu/%llu block groups completed\n",
++			       bal_info->completed, bal_info->expected);
++		} else {
++			btrfs_release_path(chunk_root, path);
++			printk(KERN_INFO "btrfs: balance: Filtering out chunk at %llu\n", found_key.offset);
++		}
++
+ 		key.offset = found_key.offset - 1;
+-		spin_lock(&dev_root->fs_info->balance_info_lock);
+-		bal_info->completed++;
+-		spin_unlock(&dev_root->fs_info->balance_info_lock);
+-		printk(KERN_INFO "btrfs: balance: %llu/%llu block groups completed\n",
+-		       bal_info->completed, bal_info->expected);
+ 	}
+ 	ret = 0;
+ 	if(bal_info->cancel_pending) {
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index a668c01..cdbafe6 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -21,6 +21,7 @@
+ 
+ #include <linux/bio.h>
+ #include "async-thread.h"
++#include "ioctl.h"
+ 
+ struct buffer_head;
+ struct btrfs_pending_bios {
+@@ -179,7 +180,7 @@ struct btrfs_device *btrfs_find_device(struct btrfs_root *root, u64 devid,
+ 				       u8 *uuid, u8 *fsid);
+ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size);
+ int btrfs_init_new_device(struct btrfs_root *root, char *path);
+-int btrfs_balance(struct btrfs_root *dev_root);
++int btrfs_balance(struct btrfs_root *dev_root, struct btrfs_ioctl_balance_start *filters);
+ void btrfs_unlock_volumes(void);
+ void btrfs_lock_volumes(void);
+ int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset);
+-- 
+1.7.2.3
+

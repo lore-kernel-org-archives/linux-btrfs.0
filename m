@@ -1,57 +1,112 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] Btrfs: forced readonly mounts on errors
-Date: Mon, 17 Jan 2011 14:56:53 -0500
-Message-ID: <1295293927-sup-5879@think>
-References: <4D24160C.6070900@cn.fujitsu.com> <4D252E42.5060803@cn.fujitsu.com> <4D258BC7.8040105@cn.fujitsu.com> <4D25A7D1.7050602@cn.fujitsu.com>
+Subject: [GIT PULL] Btrfs updates
+Date: Mon, 17 Jan 2011 16:13:01 -0500
+Message-ID: <1295298216-sup-6206@think>
 Content-Type: text/plain; charset=UTF-8
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: liubo <liubo2009@cn.fujitsu.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <4D25A7D1.7050602@cn.fujitsu.com>
+To: "Linus Torvalds" <torvalds@linux-foundation.org>,
+	"Linux Btrfs" <linux-btrfs@vger.kernel.org>,
+	"linux-kernel" <linux-kernel@vger.kernel.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from liubo's message of 2011-01-06 06:30:25 -0500:
-> 
-> This patch comes from "Forced readonly mounts on errors" ideas.
-> 
-> As we know, this is the first step in being more fault tolerant of disk
-> corruptions instead of just using BUG() statements.
-> 
-> The major content:
-> - add a framework for generating errors that should result in filesystems
->   going readonly.
-> - keep FS state in disk super block.
-> - make sure that all of resource will be freed and released at umount time.
-> - make sure that after FS is forced readonly on error, there will be no more
->   disk change before FS is corrected. For this, we should stop write operation.
-> 
-> After this patch is applied, the conversion from BUG() to such a framework can
-> happen incrementally.
+Hi everyone,
 
-I think this is a good overall framework and it will meet our needs
-nicely as we scale up the error handling in the filesystem.
+The for-linus branch of the btrfs-unstable git tree:
 
-One concern I have is where we save the error state to disk:
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git for-linus
 
-> +static void __save_error_info(struct btrfs_fs_info *fs_info)
-> +{
-> +    struct btrfs_super_block *disk_super = &fs_info->super_copy;
-> +
-> +    fs_info->fs_state = BTRFS_SUPER_FLAG_ERROR;
-> +    disk_super->flags |= cpu_to_le64(BTRFS_SUPER_FLAG_ERROR);
-> +
-> +    mutex_lock(&fs_info->trans_mutex);
-> +    memcpy(&fs_info->super_for_commit, disk_super,
-> +           sizeof(fs_info->super_for_commit));
-> +    mutex_unlock(&fs_info->trans_mutex);
+Has our collection of features and fixes for 2.6.38-rc1.  The git tree
+is actually against 2.6.36 and these commits have been tested against
+.36, .37 and Linus' current git.  There's no particular reason for the
+.36 part, other than it's what one of my build boxes was running.
 
-The super_for_commit isn't changed until we have a fully consistent set
-of fields in the super block.  The super_copy is changed as the
-transaction progresses.
+The highlights this time around are LZO compression from Li Zefan and a
+large collection of multi-device fixes from Miao Xie.  Liubo kicked in
+the start of our forced-readonly support, which will be the building
+block for ripping out a big collection of BUG_ONs and replacing them
+with kinder gentler error messages.
 
-So, this memcpy isn't quite safe.  We should simply set the flag on the
-super_for_commit and the super_copy individually.
+Li Zefan also added readonly snapshot support, and I'll have the
+corresponding btrfs-progs changes integrated this week.
 
-I'll make this change and pull it in.  We can build from here.
+This pull does have a duplicate for the btrfs ctree.c build fix that
+Linus already has in his tree.  Git merge seems to do magic on this one,
+it applies without doing a duplicate #include.
 
--chris
+Li Zefan (9) commits (+1354/-542):
+    Btrfs: Add BTRFS_IOC_SUBVOL_GETFLAGS/SETFLAGS ioctls (+85/-0)
+    btrfs: Allow to specify compress method when defrag (+26/-2)
+    btrfs: Allow to add new compression algorithm (+473/-282)
+    btrfs: Extract duplicate decompress code (+115/-194)
+    Btrfs: Refactor btrfs_ioctl_snap_create() (+40/-44)
+    Btrfs: Add readonly snapshots support (+75/-10)
+    btrfs: Add lzo compression support (+527/-8)
+    btrfs: Fix error handling in zlib (+8/-0)
+    btrfs: Fix bugs in zlib workspace (+5/-2)
+
+Miao Xie (6) commits (+695/-186):
+    btrfs: make the chunk allocator utilize the devices better (+300/-103)
+    btrfs: try to reclaim some space when chunk allocation fails (+7/-2)
+    btrfs: fix wrong free space information of btrfs (+286/-7)
+    btrfs: restructure find_free_dev_extent() (+91/-68)
+    btrfs: fix wrong calculation of stripe size (+8/-2)
+    btrfs: fix wrong data space statistics (+3/-4)
+
+Jesper Juhl (2) commits (+5/-1):
+    btrfs: Don't pass NULL ptr to func that may deref it. (+2/-0)
+    btrfs: Mem leak in btrfs_get_acl() (+3/-1)
+
+Tsutomu Itoh (2) commits (+17/-0):
+    btrfs: Fix memory leak in btrfs_read_fs_root_no_radix() (+1/-0)
+    btrfs: check NULL or not (+16/-0)
+
+Stefan Schmidt (1) commits (+1/-0):
+    fs/btrfs: Fix build of ctree
+
+Ben Hutchings (1) commits (+4/-0):
+    btrfs: Require CAP_SYS_ADMIN for filesystem rebalance
+
+Chris Mason (1) commits (+2/-1):
+    Btrfs: fix off by one while setting block groups readonly
+
+Dave Young (1) commits (+8/-4):
+    btrfs: mount failure return value fix
+
+liubo (1) commits (+523/-2):
+    Btrfs: forced readonly mounts on errors
+
+Josef Bacik (1) commits (+0/-5):
+    Btrfs: don't warn if we get ENOSPC in btrfs_block_rsv_check
+
+Total: (25) commits (+2609/-741)
+
+ fs/btrfs/Kconfig        |    2 +
+ fs/btrfs/Makefile       |    2 +-
+ fs/btrfs/acl.c          |    4 +-
+ fs/btrfs/btrfs_inode.h  |    2 +-
+ fs/btrfs/compression.c  |  329 ++++++++++++++++++++++++-
+ fs/btrfs/compression.h  |   72 ++++--
+ fs/btrfs/ctree.c        |    8 +
+ fs/btrfs/ctree.h        |   49 ++++-
+ fs/btrfs/disk-io.c      |  412 ++++++++++++++++++++++++++++++-
+ fs/btrfs/disk-io.h      |    1 +
+ fs/btrfs/extent-tree.c  |   90 ++++++-
+ fs/btrfs/extent_io.c    |    7 +-
+ fs/btrfs/extent_io.h    |   17 ++-
+ fs/btrfs/extent_map.c   |    2 +
+ fs/btrfs/extent_map.h   |    3 +-
+ fs/btrfs/file.c         |   13 +
+ fs/btrfs/inode.c        |   90 +++++---
+ fs/btrfs/ioctl.c        |  220 +++++++++++++----
+ fs/btrfs/ioctl.h        |   12 +-
+ fs/btrfs/lzo.c          |  420 +++++++++++++++++++++++++++++++
+ fs/btrfs/ordered-data.c |   18 ++-
+ fs/btrfs/ordered-data.h |    8 +-
+ fs/btrfs/super.c        |  281 ++++++++++++++++++++--
+ fs/btrfs/transaction.c  |   11 +
+ fs/btrfs/transaction.h  |    1 +
+ fs/btrfs/volumes.c      |  626 ++++++++++++++++++++++++++++++++++-------------
+ fs/btrfs/volumes.h      |   27 ++
+ fs/btrfs/xattr.c        |   18 ++
+ fs/btrfs/zlib.c         |  369 ++++++----------------------
+ 29 files changed, 2491 insertions(+), 623 deletions(-)

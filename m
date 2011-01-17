@@ -1,31 +1,151 @@
 From: Erik Logtenberg <erik@logtenberg.eu>
-Subject: Kernel error during btrfs balance
-Date: Mon, 17 Jan 2011 15:14:19 +0100
-Message-ID: <4D344EBB.6030903@logtenberg.eu>
+Subject: Re: Kernel error during btrfs balance
+Date: Mon, 17 Jan 2011 15:31:37 +0100
+Message-ID: <4D3452C9.901@logtenberg.eu>
+References: <4D344EBB.6030903@logtenberg.eu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/mixed;
+ boundary="------------020402020202060408010902"
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4D344EBB.6030903@logtenberg.eu>
 List-ID: <linux-btrfs.vger.kernel.org>
+
+This is a multi-part message in MIME format.
+--------------020402020202060408010902
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
 Hi,
 
-btrfs balance results in:
+Please find attached the error log, for future reference.
 
-http://pastebin.com/v5j0809M
-
-My system: fully up-to-date Fedora 14 with rawhide kernel to make btrfs
-balance do useful stuff to my free space:
-
-kernel-2.6.37-2.fc15.x86_64
-btrfs-progs-0.19-12.fc14.x86_64
-
-Filesystem had 0 bytes free, should be 45G, so on darklings advice I ran
-btrfs balance on the fs, while doing heavy I/O (re-running 5 backup jobs
-that had failed due to ENOSP).
-Up until the crash, btrfs balance did retrieve a couple of Gigs free
-space though, so that part of the plan worked just fine.
+Forgot to mention:
+I could still use the system after this error, so it was not a complete
+fatal error in that regard. All active processes (mostly rsync) were
+hanging in state D though, so I couldn't kill them anymore. Also the FS
+was not umountable. So I still had to reboot.
 
 Thanks,
 
 Erik.
+
+
+On 01/17/2011 03:14 PM, Erik Logtenberg wrote:
+> Hi,
+> 
+> btrfs balance results in:
+> 
+> http://pastebin.com/v5j0809M
+> 
+> My system: fully up-to-date Fedora 14 with rawhide kernel to make btrfs
+> balance do useful stuff to my free space:
+> 
+> kernel-2.6.37-2.fc15.x86_64
+> btrfs-progs-0.19-12.fc14.x86_64
+> 
+> Filesystem had 0 bytes free, should be 45G, so on darklings advice I ran
+> btrfs balance on the fs, while doing heavy I/O (re-running 5 backup jobs
+> that had failed due to ENOSP).
+> Up until the crash, btrfs balance did retrieve a couple of Gigs free
+> space though, so that part of the plan worked just fine.
+> 
+> Thanks,
+> 
+> Erik.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+--------------020402020202060408010902
+Content-Type: text/plain;
+ name="2011-01-17_btrfs_balance.txt"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="2011-01-17_btrfs_balance.txt"
+
+WyA1MjI1LjIzNjA4N10gLS0tLS0tLS0tLS0tWyBjdXQgaGVyZSBdLS0tLS0tLS0tLS0tClsg
+NTIyNS4yMzYxMTJdIGtlcm5lbCBCVUcgYXQgZnMvYnRyZnMvcmVsb2NhdGlvbi5jOjgzNiEK
+WyA1MjI1LjIzNjEzMV0gaW52YWxpZCBvcGNvZGU6IDAwMDAgWyMxXSBTTVAgClsgNTIyNS4y
+MzYxNTFdIGxhc3Qgc3lzZnMgZmlsZTogL3N5cy9kZXZpY2VzL3N5c3RlbS9jcHUvY3B1MS9j
+YWNoZS9pbmRleDIvc2hhcmVkX2NwdV9tYXAKWyA1MjI1LjIzNjE3OF0gQ1BVIDAgClsgNTIy
+NS4yMzYxODZdIE1vZHVsZXMgbGlua2VkIGluOiBpcHRfTE9HIHh0X2xpbWl0IGJ0cmZzIHps
+aWJfZGVmbGF0ZSBsaWJjcmMzMmMgc2hhMjU2X2dlbmVyaWMgY3J5cHRkIGFlc194ODZfNjQg
+YWVzX2dlbmVyaWMgY2JjIGRtX2NyeXB0IHR1biBlYnRhYmxlX25hdCBlYnRhYmxlcyBpcHRf
+TUFTUVVFUkFERSBpcHRhYmxlX25hdCBuZl9uYXQgYnJpZGdlIHN0cCBsbGMgbmZzZCBsb2Nr
+ZCBuZnNfYWNsIGF1dGhfcnBjZ3NzIGV4cG9ydGZzIG5sc191dGY4IGNpZnMgZnNjYWNoZSBz
+dW5ycGMgY3B1ZnJlcV9vbmRlbWFuZCBhY3BpX2NwdWZyZXEgZnJlcV90YWJsZSBtcGVyZiBp
+cDZ0X1JFSkVDVCBuZl9jb25udHJhY2tfaXB2NiBuZl9kZWZyYWdfaXB2NiBpcDZ0YWJsZV9m
+aWx0ZXIgaXA2X3RhYmxlcyBpcHY2IGt2bV9pbnRlbCBrdm0gZHVtbXkgdWlucHV0IHNuZF9o
+ZGFfY29kZWNfYW5hbG9nIHNuZF9oZGFfaW50ZWwgc25kX2hkYV9jb2RlYyBzbmRfaHdkZXAg
+c25kX3NlcSBzbmRfc2VxX2RldmljZSBzbmRfcGNtIHNocGNocCBzbmRfdGltZXIgZGVsbF93
+bWkgc25kIHNvdW5kY29yZSBzcGFyc2Vfa2V5bWFwIHNuZF9wYWdlX2FsbG9jIGRjZGJhcyBp
+MmNfaTgwMSBlMTAwMGUgaVRDT193ZHQgaVRDT192ZW5kb3Jfc3VwcG9ydCBqb3lkZXYgd21p
+IHNlcmlvX3JhdyBtaWNyb2NvZGUgdXNiX3N0b3JhZ2UgdWFzIHJhaWQxIHBhdGFfYWNwaSBh
+dGFfZ2VuZXJpYyByYWRlb24gdHRtIGRybV9rbXNfaGVscGVyIGRybSBpMmNfYWxnb19iaXQg
+aTJjX2NvcmUgW2xhc3QgdW5sb2FkZWQ6IHNjc2lfd2FpdF9zY2FuXQpbIDUyMjUuMjM2NTgy
+XSAKWyA1MjI1LjIzNjU5MV0gUGlkOiAyOTM0LCBjb21tOiBidHJmcyBUYWludGVkOiBHICAg
+ICAgICAgIEkgMi42LjM3LTIuZmMxNS54ODZfNjQgIzEgICAgICAgICAgICAgICAgICAKWyA1
+MjI1LjIzNjYyN10gUklQOiAwMDEwOlsmbHQ7ZmZmZmZmZmZhMDU2NTIzNyZndDtdICBbJmx0
+O2ZmZmZmZmZmYTA1NjUyMzcmZ3Q7XSBidWlsZF9iYWNrcmVmX3RyZWUrMHg0NzMvMHhkNmQg
+W2J0cmZzXQpbIDUyMjUuMjM2Njc2XSBSU1A6IDAwMTg6ZmZmZjg4MDE5NzJhZjljOCAgRUZM
+QUdTOiAwMDAxMDI0NgpbIDUyMjUuMjM2Njk1XSBSQVg6IGZmZmY4ODAwYWE5YWI4ODAgUkJY
+OiBmZmZmODgwMGFjMzhlMzAwIFJDWDogMDAwMDAwMDAwMDAwMDA0MApbIDUyMjUuMjM2NzIw
+XSBSRFg6IDAwMDAwMDAwMDAwMDAwMzAgUlNJOiAwMDAwMDAyNTRlNjgwMDAwIFJESTogZmZm
+Zjg4MDE5Y2ZjMzAyMApbIDUyMjUuMjM2NzQ1XSBSQlA6IGZmZmY4ODAxOTcyYWZhZjggUjA4
+OiAwMDAwMDAwMDAwMDA4MDUwIFIwOTogZmZmZjg4MDE5NzJhZjk3MApbIDUyMjUuMjM2Nzcw
+XSBSMTA6IGZmZmY4ODAxOTcyYWY5MTggUjExOiBmZmZmODgwMTk3MmFmOTAwIFIxMjogZmZm
+Zjg4MDBhYTlhYjg4MApbIDUyMjUuMjM2Nzk0XSBSMTM6IGZmZmY4ODAxOGIxODYzNDAgUjE0
+OiBmZmZmODgwMjFmYTNiZWEwIFIxNTogZmZmZjg4MDIxZmEzYmI0MApbIDUyMjUuMjM2ODIw
+XSBGUzogIDAwMDA3Zjk4NDc2YmQ3NjAoMDAwMCkgR1M6ZmZmZjg4MDBiZmEwMDAwMCgwMDAw
+KSBrbmxHUzowMDAwMDAwMDAwMDAwMDAwClsgNTIyNS4yMzY4NDhdIENTOiAgMDAxMCBEUzog
+MDAwMCBFUzogMDAwMCBDUjA6IDAwMDAwMDAwODAwNTAwM2IKWyA1MjI1LjIzNjg2OV0gQ1Iy
+OiAwMDAwMDAwMDAwYTBlYjQ0IENSMzogMDAwMDAwMDE5NzJhYjAwMCBDUjQ6IDAwMDAwMDAw
+MDAwNDI2ZTAKWyA1MjI1LjIzNjg5NF0gRFIwOiAwMDAwMDAwMDAwMDAwMDAwIERSMTogMDAw
+MDAwMDAwMDAwMDAwMCBEUjI6IDAwMDAwMDAwMDAwMDAwMDAKWyA1MjI1LjIzNjkxOF0gRFIz
+OiAwMDAwMDAwMDAwMDAwMDAwIERSNjogMDAwMDAwMDBmZmZmMGZmMCBEUjc6IDAwMDAwMDAw
+MDAwMDA0MDAKWyA1MjI1LjIzNjk0M10gUHJvY2VzcyBidHJmcyAocGlkOiAyOTM0LCB0aHJl
+YWRpbmZvIGZmZmY4ODAxOTcyYWUwMDAsIHRhc2sgZmZmZjg4MDE5Y2U3YzU2MCkKWyA1MjI1
+LjIzNjk3MV0gU3RhY2s6ClsgNTIyNS4yMzY5ODBdICBmZmZmZWEwMDA1MDU2ZWUwIGZmZmZl
+YTAwMDAwMDAwMDAgZmZmZjg4MDE5NzJhZjlmOCBmZmZmODgwMTk3MmFmYWE4ClsgNTIyNS4y
+MzcwMDJdICAwMDAwMDAwMDAwMDAwMDAwIGZmZmY4ODAwN2IxZWFlNTggZmZmZjg4MDE5Y2Zj
+MzAwOCBmZmZmODgwMTljZmMzNTc4ClsgNTIyNS4yMzcwMDJdICBmZmZmODgwMWJkMTJmZmUw
+IGZmZmY4ODAxOWNmYzMwMjAgZmZmZjg4MDBhYzM4ZTM0MCBmZmZmODgwMTljZmMzNTgwClsg
+NTIyNS4yMzcwMDJdIENhbGwgVHJhY2U6ClsgNTIyNS4yMzcwMDJdICBbJmx0O2ZmZmZmZmZm
+YTA1NjVjOTEmZ3Q7XSByZWxvY2F0ZV90cmVlX2Jsb2NrcysweDE2MC8weDQ3OCBbYnRyZnNd
+ClsgNTIyNS4yMzcwMDJdICBbJmx0O2ZmZmZmZmZmYTA1NjQ2M2QmZ3Q7XSA/IGFkZF90cmVl
+X2Jsb2NrKzB4MTFlLzB4MTNlIFtidHJmc10KWyA1MjI1LjIzNzAwMl0gIFsmbHQ7ZmZmZmZm
+ZmZhMDU2NmI0NSZndDtdIHJlbG9jYXRlX2Jsb2NrX2dyb3VwKzB4MWUzLzB4NDkwIFtidHJm
+c10KWyA1MjI1LjIzNzAwMl0gIFsmbHQ7ZmZmZmZmZmY4MTAzZWRiOSZndDtdID8gc2hvdWxk
+X3Jlc2NoZWQrMHhlLzB4MmUKWyA1MjI1LjIzNzAwMl0gIFsmbHQ7ZmZmZmZmZmZhMDU2NmYz
+OSZndDtdIGJ0cmZzX3JlbG9jYXRlX2Jsb2NrX2dyb3VwKzB4MTQ3LzB4MjhhIFtidHJmc10K
+WyA1MjI1LjIzNzAwMl0gIFsmbHQ7ZmZmZmZmZmZhMDU0ZTUyYSZndDtdIGJ0cmZzX3JlbG9j
+YXRlX2NodW5rLmNsb25lLjQwKzB4NjEvMHg0YWIgW2J0cmZzXQpbIDUyMjUuMjM3MDAyXSAg
+WyZsdDtmZmZmZmZmZmEwNTE1MmQ0Jmd0O10gPyBidHJmc19pdGVtX2tleSsweDFlLzB4MjAg
+W2J0cmZzXQpbIDUyMjUuMjM3MDAyXSAgWyZsdDtmZmZmZmZmZmEwNTE1MmYwJmd0O10gPyBi
+dHJmc19pdGVtX2tleV90b19jcHUrMHgxYS8weDM2IFtidHJmc10KWyA1MjI1LjIzNzAwMl0g
+IFsmbHQ7ZmZmZmZmZmZhMDU0YzJhOCZndDtdID8gcmVhZF9leHRlbnRfYnVmZmVyKzB4YzMv
+MHhlMyBbYnRyZnNdClsgNTIyNS4yMzcwMDJdICBbJmx0O2ZmZmZmZmZmYTA1MTU0ZTYmZ3Q7
+XSA/IGJ0cmZzX2hlYWRlcl9ucml0ZW1zLmNsb25lLjEyKzB4MTcvMHgxYyBbYnRyZnNdClsg
+NTIyNS4yMzcwMDJdICBbJmx0O2ZmZmZmZmZmYTA1NGNmZjYmZ3Q7XSA/IGJ0cmZzX2l0ZW1f
+a2V5X3RvX2NwdSsweDJhLzB4NDYgW2J0cmZzXQpbIDUyMjUuMjM3MDAyXSAgWyZsdDtmZmZm
+ZmZmZmEwNTUwNDVlJmd0O10gYnRyZnNfYmFsYW5jZSsweDFhMy8weDFmMCBbYnRyZnNdClsg
+NTIyNS4yMzcwMDJdICBbJmx0O2ZmZmZmZmZmODExMmJjZTUmZ3Q7XSA/IGRvX2ZpbHBfb3Bl
+bisweDIyNi8weDVjOApbIDUyMjUuMjM3MDAyXSAgWyZsdDtmZmZmZmZmZmEwNTU2NzczJmd0
+O10gYnRyZnNfaW9jdGwrMHg2NDEvMHg4NDYgW2J0cmZzXQpbIDUyMjUuMjM3MDAyXSAgWyZs
+dDtmZmZmZmZmZjgxMWYzZWQxJmd0O10gPyBmaWxlX2hhc19wZXJtKzB4YTUvMHhjNwpbIDUy
+MjUuMjM3MDAyXSAgWyZsdDtmZmZmZmZmZjgxMTJlMDkxJmd0O10gZG9fdmZzX2lvY3RsKzB4
+NGIxLzB4NGYyClsgNTIyNS4yMzcwMDJdICBbJmx0O2ZmZmZmZmZmODExMmUxMjgmZ3Q7XSBz
+eXNfaW9jdGwrMHg1Ni8weDdhClsgNTIyNS4yMzcwMDJdICBbJmx0O2ZmZmZmZmZmODEwMGFj
+YzImZ3Q7XSBzeXN0ZW1fY2FsbF9mYXN0cGF0aCsweDE2LzB4MWIKWyA1MjI1LjIzNzAwMl0g
+Q29kZTogNDggOGIgNDUgODkgNDkgOGQgN2QgMTAgNDggOGQgNzUgYjAgNDkgODkgNDQgMjQg
+MTggOGEgNDMgNzAgZmYgYzAgNDEgODggNDQgMjQgNzAgZTggZjcgYzMgZmYgZmYgZWIgMTcg
+ZjYgNDAgNzEgMTAgNDkgODkgYzQgNzUgMDIgJmx0OzBmJmd0OyAwYiA0OSA4ZCA0NSAxMCA0
+OSA4OSA0NSAxMCA0OSA4OSA0NSAxOCA0OCA4YiBiNSAyMCBmZiBmZiBmZiAKWyA1MjI1LjIz
+NzAwMl0gUklQICBbJmx0O2ZmZmZmZmZmYTA1NjUyMzcmZ3Q7XSBidWlsZF9iYWNrcmVmX3Ry
+ZWUrMHg0NzMvMHhkNmQgW2J0cmZzXQpbIDUyMjUuMjM3MDAyXSAgUlNQICZsdDtmZmZmODgw
+MTk3MmFmOWM4Jmd0OwpbIDUyMjUuMjQ3MTg4XSAtLS1bIGVuZCB0cmFjZSBhNzkxOWU3ZjE3
+YzBhNzI3IF0tLS0K
+--------------020402020202060408010902--

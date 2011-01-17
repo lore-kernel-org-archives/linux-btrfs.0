@@ -1,52 +1,57 @@
-From: Ilya Dryomov <idryomov@gmail.com>
-Subject: [PATCH] Btrfs: fix memory leak in btrfs_parse_early_options()
-Date: Mon, 17 Jan 2011 21:39:10 +0200
-Message-ID: <20110117193910.GA26094@kwango.lan.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>, linux-kernel@vger.kernel.org
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH] Btrfs: forced readonly mounts on errors
+Date: Mon, 17 Jan 2011 14:56:53 -0500
+Message-ID: <1295293927-sup-5879@think>
+References: <4D24160C.6070900@cn.fujitsu.com> <4D252E42.5060803@cn.fujitsu.com> <4D258BC7.8040105@cn.fujitsu.com> <4D25A7D1.7050602@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: liubo <liubo2009@cn.fujitsu.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <4D25A7D1.7050602@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-strsep() modifies the string pointer, therefore freeing it instead of
-original one results in a small memory leak.  Fixes kmemleak warning.
+Excerpts from liubo's message of 2011-01-06 06:30:25 -0500:
+> 
+> This patch comes from "Forced readonly mounts on errors" ideas.
+> 
+> As we know, this is the first step in being more fault tolerant of disk
+> corruptions instead of just using BUG() statements.
+> 
+> The major content:
+> - add a framework for generating errors that should result in filesystems
+>   going readonly.
+> - keep FS state in disk super block.
+> - make sure that all of resource will be freed and released at umount time.
+> - make sure that after FS is forced readonly on error, there will be no more
+>   disk change before FS is corrected. For this, we should stop write operation.
+> 
+> After this patch is applied, the conversion from BUG() to such a framework can
+> happen incrementally.
 
-Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
----
- fs/btrfs/super.c |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
+I think this is a good overall framework and it will meet our needs
+nicely as we scale up the error handling in the filesystem.
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 883c6fa..291b630 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -277,7 +277,7 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
- 		struct btrfs_fs_devices **fs_devices)
- {
- 	substring_t args[MAX_OPT_ARGS];
--	char *opts, *p;
-+	char *opts, *opts_orig, *p;
- 	int error = 0;
- 	int intarg;
- 
-@@ -288,7 +288,7 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
- 	 * strsep changes the string, duplicate it because parse_options
- 	 * gets called twice
- 	 */
--	opts = kstrdup(options, GFP_KERNEL);
-+	opts = opts_orig = kstrdup(options, GFP_KERNEL);
- 	if (!opts)
- 		return -ENOMEM;
- 
-@@ -326,7 +326,7 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
- 	}
- 
-  out_free_opts:
--	kfree(opts);
-+	kfree(opts_orig);
-  out:
- 	/*
- 	 * If no subvolume name is specified we use the default one.  Allocate
--- 
-1.7.2.3
+One concern I have is where we save the error state to disk:
+
+> +static void __save_error_info(struct btrfs_fs_info *fs_info)
+> +{
+> +    struct btrfs_super_block *disk_super = &fs_info->super_copy;
+> +
+> +    fs_info->fs_state = BTRFS_SUPER_FLAG_ERROR;
+> +    disk_super->flags |= cpu_to_le64(BTRFS_SUPER_FLAG_ERROR);
+> +
+> +    mutex_lock(&fs_info->trans_mutex);
+> +    memcpy(&fs_info->super_for_commit, disk_super,
+> +           sizeof(fs_info->super_for_commit));
+> +    mutex_unlock(&fs_info->trans_mutex);
+
+The super_for_commit isn't changed until we have a fully consistent set
+of fields in the super block.  The super_copy is changed as the
+transaction progresses.
+
+So, this memcpy isn't quite safe.  We should simply set the flag on the
+super_for_commit and the super_copy individually.
+
+I'll make this change and pull it in.  We can build from here.
+
+-chris

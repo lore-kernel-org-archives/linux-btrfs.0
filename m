@@ -1,90 +1,52 @@
-From: Erik Logtenberg <erik@logtenberg.eu>
-Subject: Re: Kernel error during btrfs balance
-Date: Mon, 17 Jan 2011 15:39:42 +0100
-Message-ID: <4D3454AE.5060903@logtenberg.eu>
-References: <4D344EBB.6030903@logtenberg.eu> <4D3452C9.901@logtenberg.eu> <4D34543F.3050100@logtenberg.eu>
+From: Ilya Dryomov <idryomov@gmail.com>
+Subject: [PATCH] Btrfs: fix memory leak in btrfs_parse_early_options()
+Date: Mon, 17 Jan 2011 21:39:10 +0200
+Message-ID: <20110117193910.GA26094@kwango.lan.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>, linux-kernel@vger.kernel.org
 To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D34543F.3050100@logtenberg.eu>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+strsep() modifies the string pointer, therefore freeing it instead of
+original one results in a small memory leak.  Fixes kmemleak warning.
 
-Please disregard that last message, the filesystem did mount after a
-period of hanging in state D. Apparently something called an "orphan"
-was unlinked:
+Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
+---
+ fs/btrfs/super.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
 
-[  422.323116] btrfs: use compression
-[  761.778675] btrfs: unlinked 1 orphans
-[  761.841581] SELinux: initialized (dev dm-5, type btrfs), uses xattr
-
-Thanks,
-
-Erik.
-
-
-On 01/17/2011 03:37 PM, Erik Logtenberg wrote:
-> Hi,
-> 
-> Additionally, I cannot mount the filesystem anymore. mount gives no
-> error messages but hangs in state D.
-> dmesg shows:
-> [  422.323116] btrfs: use compression
-> Which is a good thing, but it doesn't do anything otherwise.
-> 
-> Thanks,
-> 
-> Erik.
-> 
-> 
-> On 01/17/2011 03:31 PM, Erik Logtenberg wrote:
->> Hi,
->>
->> Please find attached the error log, for future reference.
->>
->> Forgot to mention:
->> I could still use the system after this error, so it was not a complete
->> fatal error in that regard. All active processes (mostly rsync) were
->> hanging in state D though, so I couldn't kill them anymore. Also the FS
->> was not umountable. So I still had to reboot.
->>
->> Thanks,
->>
->> Erik.
->>
->>
->> On 01/17/2011 03:14 PM, Erik Logtenberg wrote:
->>> Hi,
->>>
->>> btrfs balance results in:
->>>
->>> http://pastebin.com/v5j0809M
->>>
->>> My system: fully up-to-date Fedora 14 with rawhide kernel to make btrfs
->>> balance do useful stuff to my free space:
->>>
->>> kernel-2.6.37-2.fc15.x86_64
->>> btrfs-progs-0.19-12.fc14.x86_64
->>>
->>> Filesystem had 0 bytes free, should be 45G, so on darklings advice I ran
->>> btrfs balance on the fs, while doing heavy I/O (re-running 5 backup jobs
->>> that had failed due to ENOSP).
->>> Up until the crash, btrfs balance did retrieve a couple of Gigs free
->>> space though, so that part of the plan worked just fine.
->>>
->>> Thanks,
->>>
->>> Erik.
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 883c6fa..291b630 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -277,7 +277,7 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
+ 		struct btrfs_fs_devices **fs_devices)
+ {
+ 	substring_t args[MAX_OPT_ARGS];
+-	char *opts, *p;
++	char *opts, *opts_orig, *p;
+ 	int error = 0;
+ 	int intarg;
+ 
+@@ -288,7 +288,7 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
+ 	 * strsep changes the string, duplicate it because parse_options
+ 	 * gets called twice
+ 	 */
+-	opts = kstrdup(options, GFP_KERNEL);
++	opts = opts_orig = kstrdup(options, GFP_KERNEL);
+ 	if (!opts)
+ 		return -ENOMEM;
+ 
+@@ -326,7 +326,7 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
+ 	}
+ 
+  out_free_opts:
+-	kfree(opts);
++	kfree(opts_orig);
+  out:
+ 	/*
+ 	 * If no subvolume name is specified we use the default one.  Allocate
+-- 
+1.7.2.3

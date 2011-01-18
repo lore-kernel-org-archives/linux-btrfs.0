@@ -1,160 +1,103 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: [GIT PULL] Btrfs updates
-Date: Tue, 18 Jan 2011 19:55:00 +0100
-Message-ID: <4D35E204.2070205@libero.it>
-References: <1295298216-sup-6206@think> <20110118101436.GA2652@scooter>
-Reply-To: kreijack@inwind.it
+From: cwillu <cwillu@cwillu.com>
+Subject: BUG while writing to USB btrfs filesystem
+Date: Tue, 18 Jan 2011 16:28:51 -0600
+Message-ID: <AANLkTimjuO=RcVciFCo5MKPnVArvXBLnhs2taS5cOw6f@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Felix Blanke <felixblanke@gmail.com>, linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110118101436.GA2652@scooter>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+While untar'ing an image to an sd card via a reader, I got the
+following bug.  The system also has a btrfs root, and a whole swath of
+processes went into uninterruptable sleep.  I was able to poke around
+via ssh and sysrq, and already had netconsole set up to capture the
+bug.
 
-there are a lot of patches related to the btrfs-progs[*]. Do you think
-that it is reasonable that you find a bit of time to care about that ?
+Root fs is on /dev/sdi1, and /dev/sdj2 is the card reader which was
+the target of the untar.
 
-Regards
-G.Baroncelli
+[29571.448889] sd 11:0:0:0: [sdj] Assuming drive cache: write through
+[29571.451153]  sdj: unknown partition table
+[29572.047390] sd 11:0:0:0: [sdj] Assuming drive cache: write through
+[29572.048149]  sdj: sdj1 sdj2
+[29602.642175] device fsid 5648f85292725e76-72190c37da5211b6 devid 1
+transid 7 /dev/sdj2
+[29602.643256] btrfs: use spread ssd allocation scheme
+[36852.550219] sd 11:0:0:0: [sdj] Assuming drive cache: write through
+[36852.552958]  sdj: unknown partition table
+[36852.571770] ------------[ cut here ]------------
+[36852.580008] kernel BUG at fs/btrfs/inode.c:1629!
+[36852.580008] invalid opcode: 0000 [#1] SMP [36852.580008] invalid
+opcode: 0000 [#1] SMP
+[36852.580008] last sysfs file:
+/sys/devices/pci0000:00/0000:00:1a.7/usb1/1-2/1-2:1.0/uevent
+[36852.580008] CPU 2
+[36852.580008] Modules linked in: netconsole configfs nls_cp437 vfat
+fat binfmt_misc ppdev configfs ipt_MASQUERADE iptable_nat
+nls_iso8859_1 nf_nat nf_conntrack_ipv4 nls_cp437 nf_defrag_ipv4
+ipt_REJECT aes_generic snd_rawmidi snd_rawmidi snd_seq_midi_event
+snd_seq snd_timer snd_seq_device asus_atk0110 lp snd soundcore
+snd_page_alloc shpchp parport raid10 raid456 snd_page_alloc async_pq
+async_xor xor async_memcpy shpchp async_raid6_recov parport raid6_pq
+async_tx raid10 raid1 raid0 multipath linear raid456 btrfs
+zlib_deflate async_pq async_xor xor async_memcpy async_raid6_recov
+raid6_pq async_tx raid1 raid0 multipath linear btrfs zlib_deflate
+lzo_compress crc32c libcrc32c radeon ttm lzo_compress ohci1394
+drm_kms_helper crc32c usb_storage ieee1394 r8169 libcrc32c drm
+i2c_algo_bit mii radeon pata_jmicron ahci libahci intel_agp ttm
+ohci1394 drm_kms_helper usb_storage ieee1394 r8169 drm i2c_algo_bit
+mii pata_jmicron ahci libahci intel_agp
 
-[*] For example see my email "[REPOST][BTRFS-PROGS] Repost of some
-patches" dated 2010-12-05.
+[36852.580008]
+[36852.580008] Pid: 437, comm: btrfs-endio-wri Not tainted
+2.6.36-btrfs2 #1 P5Q3/System Product Name
+[36852.580008] RIP: 0010:[<ffffffffa0224120>] [<ffffffffa0224120>]
+T.1224+0x220/0x230 [btrfs]
+[36852.580008] RSP: 0000:ffff880231c7dc30  EFLAGS: 00010286
+[36852.580008] RAX: 00000000ffffffe4 RBX: ffff88023363a7e0 RCX: ffff88023363ad80
+[36852.580008] RDX: 0000000000000000 RSI: ffffea0007b3dcb0 RDI: 0000000000000206
+[36852.580008] RBP: ffff880231c7dcc0 R08: 0000000000000005 R09: 00000000ffffffe4
+[36852.940017] R10: 0000000000000000 R11: 6db6db6db6db6db7 R12: ffff88022ec8ea80
+[36852.940017] R13: 000000000e19a000 R14: ffff88023173c000 R15: ffff8802335fe900
+[36852.940017] FS:  0000000000000000(0000) GS:ffff880001f00000(0000)
+knlGS:0000000000000000
+[36852.940017] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[36852.940017] CR2: 00000000017ed2d8 CR3: 00000001d42ac000 CR4: 00000000000006e0
+[36852.940017] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+[36852.940017] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+[36852.940017] Process btrfs-endio-wri (pid: 437, threadinfo
+ffff880231c7c000, task ffff880232738000)
+[36852.940017] Stack:
+[36852.940017]  000000000e19a000 0000000000001000 000000494189e000
+0000000000001000
+[36852.940017] <0> ffff880231c7dc70 ffffffff81582fde ffff8802335fe900
+ffff88023173c000
+[36852.940017] <0> ffff880231c7dcb0 ffffffffa0220e1c 000000000e19a000
+ffff88022ec8ea80
 
-On 01/18/2011 11:14 AM, Felix Blanke wrote:
-> Hi,
-> 
-> just slap me if the question is stupid, but when will all those new features be added
-> to the btrfs-progs?
-> 
-> The last commit is at 
-> "git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs-unstable.git"
-> is from oct. 2010?!?
-> 
-> 
-> Regards,
-> Felix
-> 
-> 
-> On 17. January 2011 - 16:13, Chris Mason wrote:
->> Date:	Mon, 17 Jan 2011 16:13:01 -0500
->> From: Chris Mason <chris.mason@oracle.com>
->> To: Linus Torvalds <torvalds@linux-foundation.org>, Linux Btrfs
->>  <linux-btrfs@vger.kernel.org>, linux-kernel <linux-kernel@vger.kernel.org>
->> Subject: [GIT PULL] Btrfs updates
->>
->> Hi everyone,
->>
->> The for-linus branch of the btrfs-unstable git tree:
->>
->> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git for-linus
->>
->> Has our collection of features and fixes for 2.6.38-rc1.  The git tree
->> is actually against 2.6.36 and these commits have been tested against
->> .36, .37 and Linus' current git.  There's no particular reason for the
->> .36 part, other than it's what one of my build boxes was running.
->>
->> The highlights this time around are LZO compression from Li Zefan and a
->> large collection of multi-device fixes from Miao Xie.  Liubo kicked in
->> the start of our forced-readonly support, which will be the building
->> block for ripping out a big collection of BUG_ONs and replacing them
->> with kinder gentler error messages.
->>
->> Li Zefan also added readonly snapshot support, and I'll have the
->> corresponding btrfs-progs changes integrated this week.
->>
->> This pull does have a duplicate for the btrfs ctree.c build fix that
->> Linus already has in his tree.  Git merge seems to do magic on this one,
->> it applies without doing a duplicate #include.
->>
->> Li Zefan (9) commits (+1354/-542):
->>     Btrfs: Add BTRFS_IOC_SUBVOL_GETFLAGS/SETFLAGS ioctls (+85/-0)
->>     btrfs: Allow to specify compress method when defrag (+26/-2)
->>     btrfs: Allow to add new compression algorithm (+473/-282)
->>     btrfs: Extract duplicate decompress code (+115/-194)
->>     Btrfs: Refactor btrfs_ioctl_snap_create() (+40/-44)
->>     Btrfs: Add readonly snapshots support (+75/-10)
->>     btrfs: Add lzo compression support (+527/-8)
->>     btrfs: Fix error handling in zlib (+8/-0)
->>     btrfs: Fix bugs in zlib workspace (+5/-2)
->>
->> Miao Xie (6) commits (+695/-186):
->>     btrfs: make the chunk allocator utilize the devices better (+300/-103)
->>     btrfs: try to reclaim some space when chunk allocation fails (+7/-2)
->>     btrfs: fix wrong free space information of btrfs (+286/-7)
->>     btrfs: restructure find_free_dev_extent() (+91/-68)
->>     btrfs: fix wrong calculation of stripe size (+8/-2)
->>     btrfs: fix wrong data space statistics (+3/-4)
->>
->> Jesper Juhl (2) commits (+5/-1):
->>     btrfs: Don't pass NULL ptr to func that may deref it. (+2/-0)
->>     btrfs: Mem leak in btrfs_get_acl() (+3/-1)
->>
->> Tsutomu Itoh (2) commits (+17/-0):
->>     btrfs: Fix memory leak in btrfs_read_fs_root_no_radix() (+1/-0)
->>     btrfs: check NULL or not (+16/-0)
->>
->> Stefan Schmidt (1) commits (+1/-0):
->>     fs/btrfs: Fix build of ctree
->>
->> Ben Hutchings (1) commits (+4/-0):
->>     btrfs: Require CAP_SYS_ADMIN for filesystem rebalance
->>
->> Chris Mason (1) commits (+2/-1):
->>     Btrfs: fix off by one while setting block groups readonly
->>
->> Dave Young (1) commits (+8/-4):
->>     btrfs: mount failure return value fix
->>
->> liubo (1) commits (+523/-2):
->>     Btrfs: forced readonly mounts on errors
->>
->> Josef Bacik (1) commits (+0/-5):
->>     Btrfs: don't warn if we get ENOSPC in btrfs_block_rsv_check
->>
->> Total: (25) commits (+2609/-741)
->>
->>  fs/btrfs/Kconfig        |    2 +
->>  fs/btrfs/Makefile       |    2 +-
->>  fs/btrfs/acl.c          |    4 +-
->>  fs/btrfs/btrfs_inode.h  |    2 +-
->>  fs/btrfs/compression.c  |  329 ++++++++++++++++++++++++-
->>  fs/btrfs/compression.h  |   72 ++++--
->>  fs/btrfs/ctree.c        |    8 +
->>  fs/btrfs/ctree.h        |   49 ++++-
->>  fs/btrfs/disk-io.c      |  412 ++++++++++++++++++++++++++++++-
->>  fs/btrfs/disk-io.h      |    1 +
->>  fs/btrfs/extent-tree.c  |   90 ++++++-
->>  fs/btrfs/extent_io.c    |    7 +-
->>  fs/btrfs/extent_io.h    |   17 ++-
->>  fs/btrfs/extent_map.c   |    2 +
->>  fs/btrfs/extent_map.h   |    3 +-
->>  fs/btrfs/file.c         |   13 +
->>  fs/btrfs/inode.c        |   90 +++++---
->>  fs/btrfs/ioctl.c        |  220 +++++++++++++----
->>  fs/btrfs/ioctl.h        |   12 +-
->>  fs/btrfs/lzo.c          |  420 +++++++++++++++++++++++++++++++
->>  fs/btrfs/ordered-data.c |   18 ++-
->>  fs/btrfs/ordered-data.h |    8 +-
->>  fs/btrfs/super.c        |  281 ++++++++++++++++++++--
->>  fs/btrfs/transaction.c  |   11 +
->>  fs/btrfs/transaction.h  |    1 +
->>  fs/btrfs/volumes.c      |  626 ++++++++++++++++++++++++++++++++++-------------
->>  fs/btrfs/volumes.h      |   27 ++
->>  fs/btrfs/xattr.c        |   18 ++
->>  fs/btrfs/zlib.c         |  369 ++++++----------------------
->>  29 files changed, 2491 insertions(+), 623 deletions(-)
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> ---end quoted text---
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> .
-> 
-
+[36853.210013] Call Trace:
+[36853.210013]  [<ffffffff81582fde>] ? mutex_lock+0x1e/0x50
+[36853.210013]  [<ffffffffa0220e1c>] ? start_transaction+0x1cc/0x270 [btrfs]
+[36853.210013]  [<ffffffffa022495b>] btrfs_finish_ordered_io+0x2eb/0x330 [btrfs]
+[36853.210013]  [<ffffffff81103157>] ? mempool_free_slab+0x17/0x20
+[36853.210013]  [<ffffffffa02249ba>]
+btrfs_writepage_end_io_hook+0x1a/0x20 [btrfs]
+[36853.210013]  [<ffffffffa024217b>]
+end_bio_extent_writepage+0x13b/0x180 [btrfs]
+[36853.210013]  [<ffffffff815828bb>] ? schedule_timeout+0x19b/0x300
+[36853.210013]  [<ffffffff8118212d>] bio_endio+0x1d/0x40
+[36853.210013]  [<ffffffffa021a1b4>] end_workqueue_fn+0xf4/0x130 [btrfs]
+[36853.210013]  [<ffffffffa024d1cc>] worker_loop+0x15c/0x640 [btrfs]
+[36853.210013]  [<ffffffffa024d070>] ? worker_loop+0x0/0x640 [btrfs]
+[36853.210013]  [<ffffffff81080bf6>] kthread+0x96/0xa0
+[36853.210013]  [<ffffffff8100bea4>] kernel_thread_helper+0x4/0x10
+[36853.210013]  [<ffffffff81080b60>] ? kthread+0x0/0xa0
+[36853.210013]  [<ffffffff8100bea0>] ? kernel_thread_helper+0x0/0x10
+[36853.210013] Code: 68 31 c0 5b 41 5c 41 5d 41 5e 41 5f c9 c3 0f 0b
+eb fe 66 0f 1f 84 00 00 00 00 00 0f 0b eb fe 0f 1f 40 00 0f 0b eb fe
+0f 1f 40 00 <0f> 0b eb fe 66 66 66 2e 0f 1f 84 00 00 00 00 00 55 48 89
+e5 41
+[36853.210013] RIP  [<ffffffffa0224120>] T.1224+0x220/0x230 [btrfs]
+[36853.690010]  RSP <ffff880231c7dc30>
+[36853.877226] ---[ end trace 101a91b31ae9f3ff ]---

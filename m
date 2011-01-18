@@ -1,34 +1,73 @@
-From: "Yan, Zheng " <yanzheng@21cn.com>
-Subject: Re: Kernel error during btrfs balance
-Date: Tue, 18 Jan 2011 08:54:11 +0800
-Message-ID: <AANLkTikhU0N+zTWmZ-og43fDGEsaxsAV7fAeAqutyF_t@mail.gmail.com>
-References: <4D344EBB.6030903@logtenberg.eu>
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: forced readonly mounts on errors
+Date: Tue, 18 Jan 2011 10:06:15 +0800
+Message-ID: <4D34F597.9020304@cn.fujitsu.com>
+References: <4D24160C.6070900@cn.fujitsu.com> <4D252E42.5060803@cn.fujitsu.com> <4D258BC7.8040105@cn.fujitsu.com> <4D25A7D1.7050602@cn.fujitsu.com> <1295293927-sup-5879@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Erik Logtenberg <erik@logtenberg.eu>
+Content-Type: text/plain; charset=UTF-8
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D344EBB.6030903@logtenberg.eu>
+In-Reply-To: <1295293927-sup-5879@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 17, 2011 at 10:14 PM, Erik Logtenberg <erik@logtenberg.eu> wrote:
-> Hi,
->
-> btrfs balance results in:
->
-> http://pastebin.com/v5j0809M
->
-> My system: fully up-to-date Fedora 14 with rawhide kernel to make btrfs
-> balance do useful stuff to my free space:
->
-> kernel-2.6.37-2.fc15.x86_64
-> btrfs-progs-0.19-12.fc14.x86_64
->
-> Filesystem had 0 bytes free, should be 45G, so on darklings advice I ran
-> btrfs balance on the fs, while doing heavy I/O (re-running 5 backup jobs
-> that had failed due to ENOSP).
-> Up until the crash, btrfs balance did retrieve a couple of Gigs free
-> space though, so that part of the plan worked just fine.
->
+On 01/18/2011 03:56 AM, Chris Mason wrote:
+> Excerpts from liubo's message of 2011-01-06 06:30:25 -0500:
+>> This patch comes from "Forced readonly mounts on errors" ideas.
+>>
+>> As we know, this is the first step in being more fault tolerant of disk
+>> corruptions instead of just using BUG() statements.
+>>
+>> The major content:
+>> - add a framework for generating errors that should result in filesystems
+>>   going readonly.
+>> - keep FS state in disk super block.
+>> - make sure that all of resource will be freed and released at umount time.
+>> - make sure that after FS is forced readonly on error, there will be no more
+>>   disk change before FS is corrected. For this, we should stop write operation.
+>>
+>> After this patch is applied, the conversion from BUG() to such a framework can
+>> happen incrementally.
+> 
+> I think this is a good overall framework and it will meet our needs
+> nicely as we scale up the error handling in the filesystem.
+> 
+> One concern I have is where we save the error state to disk:
+> 
+>> +static void __save_error_info(struct btrfs_fs_info *fs_info)
+>> +{
+>> +    struct btrfs_super_block *disk_super = &fs_info->super_copy;
+>> +
+>> +    fs_info->fs_state = BTRFS_SUPER_FLAG_ERROR;
+>> +    disk_super->flags |= cpu_to_le64(BTRFS_SUPER_FLAG_ERROR);
+>> +
+>> +    mutex_lock(&fs_info->trans_mutex);
+>> +    memcpy(&fs_info->super_for_commit, disk_super,
+>> +           sizeof(fs_info->super_for_commit));
+>> +    mutex_unlock(&fs_info->trans_mutex);
+> 
+> The super_for_commit isn't changed until we have a fully consistent set
+> of fields in the super block.  The super_copy is changed as the
+> transaction progresses.
+> 
+> So, this memcpy isn't quite safe.  We should simply set the flag on the
+> super_for_commit and the super_copy individually.
+> 
 
-Please try 2.6.36 kernel.
+Got it, thanks for pointing it out.
+
+> I'll make this change and pull it in.  We can build from here.
+> 
+
+Great!
+
+thanks,
+Liubo
+
+> -chris
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+

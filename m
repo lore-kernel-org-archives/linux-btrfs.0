@@ -1,195 +1,110 @@
-From: "Zhong, Xin" <xin.zhong@intel.com>
-Subject: RE: [Bug 26242] New: BUG: unable to handle kernel NULL pointer
- dereference at   (null)
-Date: Tue, 18 Jan 2011 13:46:17 +0800
-Message-ID: <1865303E0DED764181A9D882DEF65FB685B3BC9794@shsmsx502.ccr.corp.intel.com>
-References: <bug-26242-27@https.bugzilla.kernel.org/>
- <20110106131258.c4b262bf.akpm@linux-foundation.org>
- <1865303E0DED764181A9D882DEF65FB685AF8B6D57@shsmsx502.ccr.corp.intel.com>
- <1865303E0DED764181A9D882DEF65FB685AF8B6E90@shsmsx502.ccr.corp.intel.com>
+From: Shaohua Li <shaohua.li@intel.com>
+Subject: Re: [PATCH v2 0/5] add new ioctls to do metadata readahead in btrfs
+Date: Tue, 18 Jan 2011 14:35:35 +0800
+Message-ID: <1295332535.1949.810.camel@sli10-conroe>
+References: <20110111013813.GA10449@localhost>
+	 <1294711397.1949.613.camel@sli10-conroe> <20110111030723.GA12949@localhost>
+	 <1294716453.1949.625.camel@sli10-conroe> <20110111091353.GA13753@localhost>
+	 <20110112025516.GA11303@sli10-conroe.sh.intel.com>
+	 <20110116033800.GA15260@localhost> <1295227957.1949.646.camel@sli10-conroe>
+	 <20110118044135.GA6736@localhost> <1295327727.1949.730.camel@sli10-conroe>
+	 <20110118062253.GA7370@localhost>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Cc: "bugzilla-daemon@bugzilla.kernel.org"
-	<bugzilla-daemon@bugzilla.kernel.org>,
-	Peter Zijlstra <a.p.zijlstra@chello.nl>,
-	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: "Zhong, Xin" <xin.zhong@intel.com>,
+Content-Type: text/plain; charset="UTF-8"
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	Christoph Hellwig <hch@infradead.org>,
 	Andrew Morton <akpm@linux-foundation.org>,
-	"StMichalke@web.de" <StMichalke@web.de>
+	Arjan van de Ven <arjan@infradead.org>,
+	"Yan, Zheng" <zheng.z.yan@linux.intel.com>,
+	"linux-api@vger.kernel.org" <linux-api@vger.kernel.org>,
+	"mtk.manpages@gmail.com" <mtk.manpages@gmail.com>
+To: "Wu, Fengguang" <fengguang.wu@intel.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1865303E0DED764181A9D882DEF65FB685AF8B6E90@shsmsx502.ccr.corp.intel.com>
+In-Reply-To: <20110118062253.GA7370@localhost>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I believe below check-in will fix this problem. Thanks for Yan Zheng's help!
-
-http://www.spinics.net/lists/linux-btrfs/msg08051.html
-
------Original Message-----
-From: Zhong, Xin 
-Sent: Friday, January 07, 2011 2:46 PM
-To: Zhong, Xin; Andrew Morton; StMichalke@web.de
-Cc: bugzilla-daemon@bugzilla.kernel.org; Peter Zijlstra; linux-kernel@vger.kernel.org; linux-btrfs@vger.kernel.org
-Subject: RE: [Bug 26242] New: BUG: unable to handle kernel NULL pointer dereference at (null)
-
-I have checked latest mkfs code. If page size is 4k. sector size will be 4k too. So at least for x86 hardware, page size and sector size will always be the same.
-
------Original Message-----
-From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-owner@vger.kernel.org] On Behalf Of Zhong, Xin
-Sent: Friday, January 07, 2011 12:15 PM
-To: Andrew Morton; StMichalke@web.de
-Cc: bugzilla-daemon@bugzilla.kernel.org; Peter Zijlstra; linux-kernel@vger.kernel.org; linux-btrfs@vger.kernel.org
-Subject: RE: [Bug 26242] New: BUG: unable to handle kernel NULL pointer dereference at (null)
-
-A similar bug has been reported by Kenneth Lakin [kennethlakin@gmail.com] last week. It's related to my check-in (git commit 914ee295af418e936ec20a08c1663eaabe4cd07a). I am looking into it now.
-
-I found one suspicious code in prepage_pages (fs/btrfs/file.c):
-
-        start_pos = pos & ~((u64)root->sectorsize - 1);
-        last_pos = ((u64)index + num_pages) << PAGE_CACHE_SHIFT;
-
-root->sectorsize is used at first, but PAGE_SIZE is used after it. Do we assume these two values are always the same?
-
------Original Message-----
-From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-owner@vger.kernel.org] On Behalf Of Andrew Morton
-Sent: Friday, January 07, 2011 5:13 AM
-To: StMichalke@web.de
-Cc: bugzilla-daemon@bugzilla.kernel.org; Peter Zijlstra; linux-kernel@vger.kernel.org; linux-btrfs@vger.kernel.org
-Subject: Re: [Bug 26242] New: BUG: unable to handle kernel NULL pointer dereference at (null)
-
-
-(switched to email.  Please respond via emailed reply-to-all, not via the
-bugzilla web interface).
-
-On Thu, 6 Jan 2011 20:59:08 GMT
-bugzilla-daemon@bugzilla.kernel.org wrote:
-
-> https://bugzilla.kernel.org/show_bug.cgi?id=26242
+On Tue, 2011-01-18 at 14:22 +0800, Wu, Fengguang wrote:
+> On Tue, Jan 18, 2011 at 01:15:27PM +0800, Li, Shaohua wrote:
+> > On Tue, 2011-01-18 at 12:41 +0800, Wu, Fengguang wrote:
+> > > On Mon, Jan 17, 2011 at 09:32:37AM +0800, Li, Shaohua wrote:
+> > > > On Sun, 2011-01-16 at 11:38 +0800, Wu, Fengguang wrote:
+> > > > > On Wed, Jan 12, 2011 at 10:55:16AM +0800, Li, Shaohua wrote:
+> > > > > > On Tue, Jan 11, 2011 at 05:13:53PM +0800, Wu, Fengguang wrote:
+> > > > > > > On Tue, Jan 11, 2011 at 11:27:33AM +0800, Li, Shaohua wrote:
+> > > > > > > > On Tue, 2011-01-11 at 11:07 +0800, Wu, Fengguang wrote:
+> > > > > > > > > On Tue, Jan 11, 2011 at 10:03:16AM +0800, Li, Shaohua wrote:
+> > > 
+> > > > > > > > > > fincore can takes a parameter or it returns a bit to distinguish
+> > > > > > > > > > referenced pages, but I don't think it's a good API. This should be
+> > > > > > > > > > transparent to userspace.
+> > > > > > > > >
+> > > > > > > > > Users care about the "cached" status may well be interested in the
+> > > > > > > > > "active/referenced" status. They are co-related information. fincore()
+> > > > > > > > > won't be a simple replication of mincore() anyway. fincore() has to
+> > > > > > > > > deal with huge sparsely accessed files. The accessed bits of a file
+> > > > > > > > > page are normally more meaningful than the accessed bits of mapped
+> > > > > > > > > (anonymous) pages.
+> > > > > > > > if all filesystems have the bit set, I'll buy-in. Otherwise, this isn't generic enough.
+> > > > > > > 
+> > > > > > > It's a reasonable thing to set the accessed bits. So I believe the
+> > > > > > > various filesystems are calling mark_page_accessed() on their metadata
+> > > > > > > inode, or can be changed to do it.
+> > > > > > yes, we can, with a lot of pain. And filesystems must be smart to avoid marking the bit
+> > > > > > for pages which are readahead in but actually are invalid. The second patch in the series
+> > > > > 
+> > > > > "invalid" means !PG_uptodate? I wonder why there is a need to test
+> > > > > that bit at all. !PG_uptodate seems an unrelated transitional state.
+> > > > not PG_update, it's referenced bit. A readahead metadata page will have update bit set,
+> > > > but it might not have referenced bit if it's an obsolete page. btrfs
+> > > > doesn't use the buffer_head
+> > > 
+> > > I do see PageUptodate() tests in your patch, perhaps they be removed?
+> > uptodate bit isn't really needed, but I added it to make sure the page
+> > is valid.
 > 
->            Summary: BUG: unable to handle kernel NULL pointer dereference
->                     at   (null)
->            Product: Memory Management
->            Version: 2.5
->     Kernel Version: 2.6.37
->           Platform: All
->         OS/Version: Linux
->               Tree: Mainline
->             Status: NEW
->           Severity: low
->           Priority: P1
->          Component: Other
->         AssignedTo: akpm@linux-foundation.org
->         ReportedBy: StMichalke@web.de
->         Regression: No
-> 
-> 
-> My system crashed with the following output:
-> 
-> ___
-> Jan  6 20:06:22 eser kernel: [19365.562621] BUG: unable to handle kernel NULL
-> pointer dereference at   (null)
-> Jan  6 20:06:22 eser kernel: [19365.562675] IP: [<c022989b>]
-> kmap_atomic_prot+0x1b/0x100
-> Jan  6 20:06:22 eser kernel: [19365.562709] *pde = 00000000 
-> Jan  6 20:06:22 eser kernel: [19365.562726] Oops: 0000 [#1] PREEMPT SMP 
-> Jan  6 20:06:22 eser kernel: [19365.562752] last sysfs file:
-> /sys/devices/platform/coretemp.0/temp1_input
-> Jan  6 20:06:22 eser kernel: [19365.562777] Modules linked in: isofs usblp
-> usb_storage uas nls_utf8 udf crc_itu_t fuse ipt_MASQUERADE xt_pkttype xt_TCPMSS
-> xt_tcpudp ipt_LOG xt_limit iptable_nat nf_nat snd_pcm_oss snd_mixer_oss snd_seq
-> snd_seq_device xt_NOTRACK ipt_REJECT xt_state iptable_raw iptable_filter
-> nf_conntrack_netbios_ns nf_conntrack_ipv4 nf_conntrack nf_defrag_ipv4 ip_tables
-> cpufreq_conservative cpufreq_userspace cpufreq_powersave acpi_cpufreq mperf
-> speedstep_lib ip6_tables x_tables loop arc4 ecb b43 snd_hda_codec_si3054
-> mac80211 snd_hda_codec_realtek snd_hda_intel r8169 snd_hda_codec cfg80211
-> sdhci_pci mii snd_hwdep acer_wmi sdhci snd_pcm rfkill iTCO_wdt yenta_socket ssb
-> tifm_7xx1 iTCO_vendor_support sg sr_mod mmc_core snd_timer pcmcia_core
-> tifm_core cdrom pcspkr wmi pcmcia_rsrc psmouse snd i2c_i801 shpchp evdev
-> soundcore battery rng_core ac snd_page_alloc pci_hotplug dm_crypt usbhid hid
-> nouveau ttm drm_kms_helper drm uhci_hcd rtc_cmos ata_piix i2c_algo_bit i2c_core
-> rtc_core cfbcopyarea ehci_hcd usb
-> Jan  6 20:06:22 eser kernel: core video cfbimgblt cfbfillrect rtc_lib output
-> button nls_base dm_snapshot sha512_generic sha256_generic xts cbc aes_i586
-> aes_generic cfq_iosched blk_cgroup btrfs zlib_deflate libcrc32c reiserfs ahci
-> libahci libata coretemp hwmon fan thermal processor unix [last unloaded:
-> pktcdvd]
-> Jan  6 20:06:22 eser kernel: [19365.563014] 
-> Jan  6 20:06:22 eser kernel: [19365.563014] Pid: 15675, comm: gimp-2.6 Not
-> tainted 2.6.37 #1 Myall2                         /Aspire 9410
-> Jan  6 20:06:22 eser kernel: [19365.563014] EIP: 0060:[<c022989b>] EFLAGS:
-> 00010202 CPU: 0
-> Jan  6 20:06:22 eser kernel: [19365.563014] EIP is at
-> kmap_atomic_prot+0x1b/0x100
-> Jan  6 20:06:22 eser kernel: [19365.563014] EAX: 00000000 EBX: 00000600 ECX:
-> f3a82000 EDX: 00000163
-> Jan  6 20:06:23 eser kernel: [19365.563014] ESI: f3a83eac EDI: 00000000 EBP:
-> f3a83db8 ESP: f3a83da8
-> Jan  6 20:06:23 eser kernel: [19365.563014]  DS: 007b ES: 007b FS: 00d8 GS:
-> 0033 SS: 0068
-> Jan  6 20:06:23 eser kernel: [19365.563014] Process gimp-2.6 (pid: 15675,
-> ti=f3a82000 task=eaf28000 task.ti=f3a82000)
-> Jan  6 20:06:23 eser kernel: [19365.563014] Stack:
-> Jan  6 20:06:23 eser kernel: [19365.563014]  f3a83dc0 00000600 f3a83eac
-> 00000000 f3a83dc0 c022998e f3a83dd8 c0299c0c
-> Jan  6 20:06:23 eser kernel: [19365.563014]  e0359240 00000600 00001000
-> 00001000 f3a83dfc f828d6da 00000600 00001008
-> Jan  6 20:06:23 eser kernel: [19365.563014]  00000002 00000000 00000002
-> 00002000 00001608 f3a83ed0 f828e1ff 00001608
-> Jan  6 20:06:23 eser kernel: [19365.563014] Call Trace:
-> Jan  6 20:06:23 eser kernel: [19365.563014]  [<c022998e>] ?
-> __kmap_atomic+0xe/0x10
-> Jan  6 20:06:23 eser kernel: [19365.563014]  [<c0299c0c>] ?
-> iov_iter_copy_from_user_atomic+0x3c/0x90
-> Jan  6 20:06:23 eser kernel: [19365.563014]  [<f828d6da>] ?
-> btrfs_copy_from_user+0x5a/0xb0 [btrfs]
-> Jan  6 20:06:23 eser kernel: [19365.563014]  [<f828e1ff>] ?
-> btrfs_file_aio_write+0x52f/0x9c0 [btrfs]
-> Jan  6 20:06:23 eser kernel: [19365.563014]  [<c02d0810>] ?
-> __mem_cgroup_commit_charge+0x70/0xe0
-> Jan  6 20:06:23 eser kernel: [19365.563014]  [<c02d672c>] ?
-> do_sync_write+0x9c/0xd0
-> Jan  6 20:06:23 eser kernel: [19365.563014]  [<c02d6b15>] ?
-> rw_verify_area+0x65/0x100
-> Jan  6 20:06:23 eser kernel: [19365.563014]  [<c02d6e7a>] ?
-> vfs_write+0x9a/0x160
-> Jan  6 20:06:23 eser kernel: [19365.563014]  [<c02d8211>] ?
-> fget_light+0x91/0xb0
-> Jan  6 20:06:23 eser kernel: [19365.563014]  [<c02d6690>] ?
-> do_sync_write+0x0/0xd0
-> Jan  6 20:06:23 eser kernel: [19365.563014]  [<c02d714d>] ? sys_write+0x3d/0x70
-> Jan  6 20:06:23 eser kernel: [19365.563014]  [<c0202e18>] ?
-> sysenter_do_call+0x12/0x28
-> Jan  6 20:06:23 eser kernel: [19365.563014]  [<c04e0000>] ?
-> quirk_amd_ide_mode+0x40/0x95
-> Jan  6 20:06:23 eser kernel: [19365.563014] Code: 8b 15 4c 6a 6b c0 55 89 e5 e8
-> e2 f8 ff ff 5d c3 55 89 e5 83 ec 10 89 e1 81 e1 00 e0 ff ff 89 5d f4 89 75 f8
-> 89 7d fc 83 41 14 01 <8b> 08 c1 e9 1e 69 d9 40 03 00 00 8d 8b c0 42 64 c0 2b 8b
-> cc 45 
-> Jan  6 20:06:23 eser kernel: [19365.563014] EIP: [<c022989b>]
-> kmap_atomic_prot+0x1b/0x100 SS:ESP 0068:f3a83da8
-> Jan  6 20:06:23 eser kernel: [19365.563014] CR2: 0000000000000000
-> Jan  6 20:06:23 eser kernel: [19365.568714] ---[ end trace afc2be06c7d06a71
-> ]---
-> Jan  6 20:06:23 eser kernel: [19365.568724] note: gimp-2.6[15675] exited with
-> preempt_count 2
-> ___
-> 
-> The kernel is an unpatched v2.6.37. I have not seen something like this before.
+> It may be nit pick, but I always try to remove optional code.  The
+> PageUptodate() looks like an irrelevant test and a good candidate to
+> remove.
+ok, I can do this.
 
-Bugzilla's habit of wordwrapping oops traces is fantastically
-irritating.  Please use attachments to avoid this.
+> > > > > > has more detailed infomation about this issue. The problem is if this is really worthy
+> > > > > > for metadata readahead. Some filesystems might don't care about metadata readahead. If
+> > > > > > we make fincore check the bit, then fincore syscall will not work for such filesystems,
+> > > > > > which is bad.
+> > > > > 
+> > > > > fincore() will always work as is. If the filesystem don't care about
+> > > > > metadata readahead, then the metadata readahead that makes use of the
+> > > > > bits will naturally not work for them?
+> > > > yes, they don't care about readahead, but they do care about fincore
+> > > > output.
+> > > 
+> > > fincore() just reports the accessed bits as is. If the filesystem does
+> > > not use blockdev or export its internal metadata inode, the user won't
+> > > be able to run fincore() on the metadata inode at all.
+> > > 
+> > > > if fincore() checks the bits, it doesn't work even for normal file
+> > > > pages, if the pages get deactivated.
+> > > 
+> > > That's a problem independent of the interface. And for user space
+> > > readahead, it can be nicely fixed by collecting the pages-to-readahead
+> > > before the free pages drop low, ie. before any page reclaim actions.
+> > > It's "nice" because you don't want to readahead more data than
+> > > cache-able anyway and avoid thrashing for small memory systems.
+> > My point is fincore() isn't designed only for readahead. People will use
+> > it like mincore, which is its normal usage. Checking the bits will break
+> > its normal usage, because fincore just doesn't check if the fd means a
+> > metadata inode.
+> 
+> Sorry, you missed my point :) I mean to export the accessed bits as-is
+> via the fincore() interface, not to check the accessed bits and then
+> report "page not cached" to user space for !PG_referenced pages.
+I thought you said this before, and I think it's a bad API. userspace
+should not be aware of such bits, because they are kernel internal.
+Except the readahead usage, I can't imagine why userspace needs to know
+the bits.
 
-Either Peter's new kmap_atomic() stuff blew up or BTRFS is playing
-around with a NULL page*.  I'd wager on the latter.
+Thanks,
+Shaohua
 
-Thanks, I'll ask Rafael and Maciej to track this as a 2.6.36->2.6.37
-regression.
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

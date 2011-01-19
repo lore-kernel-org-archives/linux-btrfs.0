@@ -1,31 +1,32 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: btrfs defrag: how does it work?
-Date: Wed, 19 Jan 2011 16:25:12 -0500
-Message-ID: <1295471646-sup-7764@think>
-References: <AANLkTintJmDE7VVa5eTiepew68gztjh1j8Li1Fgq2iS6@mail.gmail.com>
+From: David Nicol <davidnicol@gmail.com>
+Subject: Re: [PATCH v3 0/5]add new ioctls to do metadata readahead in btrfs
+Date: Wed, 19 Jan 2011 15:33:28 -0600
+Message-ID: <AANLkTimJ8ufoaM2GMDkUU=cjz19QtpihrgLNjjZN8m=1@mail.gmail.com>
+References: <1295399715.1949.863.camel@sli10-conroe> <20110119123451.75bb3c76.akpm@linux-foundation.org>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Paul Komkoff <i@stingr.net>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <AANLkTintJmDE7VVa5eTiepew68gztjh1j8Li1Fgq2iS6@mail.gmail.com>
+Cc: Shaohua Li <shaohua.li@intel.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	Christoph Hellwig <hch@infradead.org>,
+	Arjan van de Ven <arjan@infradead.org>,
+	"Yan, Zheng" <zheng.z.yan@linux.intel.com>,
+	"Wu, Fengguang" <fengguang.wu@intel.com>,
+	linux-api <linux-api@vger.kernel.org>,
+	manpages <mtk.manpages@gmail.com>
+To: Andrew Morton <akpm@linux-foundation.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20110119123451.75bb3c76.akpm@linux-foundation.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Paul Komkoff's message of 2011-01-19 14:58:28 -0500:
-> Hello.
-> 
-> [root@botva incoming]# btrfs fi defrag file-350mb
-> [root@botva incoming]# filefrag file-350mb
-> file-350mb: 132 extents found
+On Wed, Jan 19, 2011 at 2:34 PM, Andrew Morton
+<akpm@linux-foundation.org> wrote:
 
-The defrag code doesn't actually defrag.  It opens up the file and
-recows all the extents and then the delayed allocation code jumps in and
-makes the biggest possible extent that it can.
+> It would be much more valuable if those 3.5 seconds were available to
+> devices which really really care about bootup times, but very few of
+> those devices use rotating disks nowadays, I expect?
 
-The reason why you're still seeing extents after running the defrag
-command is because the file hasn't been written yet, so the delayed
-allocation code hasn't kicked in.
-
-If you use btrfs fi defrag -f it'll trigger writeback on the file and
-you should see the results of the defrag sooner.
-
--chris
+And don't rotating disk modules read and buffer whole tracks, doing
+their own readahead, anymore, anyway? Isn't that part of what "on-disk
+cache" does?

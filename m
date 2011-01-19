@@ -1,48 +1,29 @@
-From: Liuwenyi <qingshenlwy@gmail.com>
-Subject: [PATCH] Avoid a NULL pointer in btrfs
-Date: Wed, 19 Jan 2011 22:08:13 +0800
-Message-ID: <4D36F04D.70505@gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH] Avoid a NULL pointer in btrfs
+Date: Wed, 19 Jan 2011 09:14:02 -0500
+Message-ID: <20110119141334.GA2544@localhost.localdomain>
+References: <4D36F04D.70505@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=GB2312
-To: strongzgy@gmail.com, onlyflyer@gmail.com,
+Content-Type: text/plain; charset=us-ascii
+Cc: strongzgy@gmail.com, onlyflyer@gmail.com,
 	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
 	ak@linux.intel.com, akpm@linux-foundation.org,
-	miaox@cn.fujitsu.com, josef@redhat.
+	miaox@cn.fujitsu.com, josef@redhat.com, chris.mason@oracle.com,
+	Yang Ruirui <ruirui.r.yang@tieto.com>, meego-kernel@meego.com
+To: Liuwenyi <qingshenlwy@gmail.com>
 Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4D36F04D.70505@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In Yang Ruirui's mail, the btrfs will create a oops. This is caused by a
-null pointer in test_range_bit() while lock the spinlock.
-
-So, It is necessary to add a pointer check into test_range_bit()
-
----
-Signed-off-by: Liu Wenyi <qingshenlwy@gmail.com>
-
----
-fs/btrfs/extent_io.c | 3 +++
-1 files changed, 3 insertions(+), 0 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 5e7a94d..0da42b5 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1553,6 +1553,9 @@ int test_range_bit(struct extent_io_tree *tree,
-u64 start, u64 end,
-struct rb_node *node;
-int bitset = 0;
-
-+ if (tree == NULL)
-+ return bitset;
-+
-spin_lock(&tree->lock);
-if (cached && cached->tree && cached->start == start)
-node = &cached->rb_node;
--- 
-1.7.3.3
+On Wed, Jan 19, 2011 at 10:08:13PM +0800, Liuwenyi wrote:
+> In Yang Ruirui's mail, the btrfs will create a oops. This is caused by a
+> null pointer in test_range_bit() while lock the spinlock.
+> 
+> So, It is necessary to add a pointer check into test_range_bit()
+> 
 
 
+NAK, the tree shouldn't be null coming into this function, something else is
+going wrong.  What oops is this?  Thanks,
 
----
-Best Regards,
-Liu Wenyi
+Josef

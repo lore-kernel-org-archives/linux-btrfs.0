@@ -1,39 +1,68 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH v2] Btrfs: remove unneeded allocation in
-	load_free_space_cache()
-Date: Wed, 19 Jan 2011 13:51:21 -0500
-Message-ID: <20110119185120.GA4050@localhost.localdomain>
-References: <20110119153436.GA1358@kwango.lan.net> <20110119165836.GB1358@kwango.lan.net>
+From: Ilya Dryomov <idryomov@gmail.com>
+Subject: [PATCH] Btrfs: use checksums_len instead of first_page_offset
+Date: Wed, 19 Jan 2011 21:19:24 +0200
+Message-ID: <20110119191924.GC1358@kwango.lan.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, Josef Bacik <josef@redhat.com>,
+Cc: Josef Bacik <josef@redhat.com>,
 	Chris Mason <chris.mason@oracle.com>,
 	linux-kernel@vger.kernel.org
-To: Ilya Dryomov <idryomov@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110119165836.GB1358@kwango.lan.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 19, 2011 at 06:58:37PM +0200, Ilya Dryomov wrote:
-> I messed up size argument of kzalloc() and consequently memcpy().  Here
-> is an updated version.
-> 
-> 
-> The checksums array is unused, remove it.  We only need disk_crcs array
-> to verify checksums.
-> 
-> There is no need to allocate first_page_offset bytes for disk_crcs
-> array.  It's enough to allocate (sizeof(u32) * num_checksums) bytes
-> because disk_crcs should only hold checksums.  gen is fetched
-> directly from the page.
-> 
-> cur_crc is initialized later in the code.  Don't initialize it in a
-> declaration.
-> 
-> Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
+Minimizes the number of (sizeof(u32) * num_checksums) we have to do,
+removes now useless first_page_offset variable.
 
-Reviewed-by: Josef Bacik <josef@redhat.com>
+Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
+---
+ fs/btrfs/free-space-cache.c |   12 ++++++------
+ 1 files changed, 6 insertions(+), 6 deletions(-)
 
-Thanks,
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index ee0af41..46f7541 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -224,7 +224,7 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
+ 	u64 generation;
+ 	u32 cur_crc;
+ 	pgoff_t index = 0;
+-	unsigned long first_page_offset;
++	unsigned long checksums_len;
+ 	int num_checksums;
+ 	int ret = 0;
+ 
+@@ -298,8 +298,8 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
+ 
+ 	/* Setup everything for doing checksumming */
+ 	num_checksums = i_size_read(inode) / PAGE_CACHE_SIZE;
+-	first_page_offset = (sizeof(u32) * num_checksums) + sizeof(u64);
+-	disk_crcs = kzalloc(sizeof(u32) * num_checksums, GFP_NOFS);
++	checksums_len = sizeof(u32) * num_checksums;
++	disk_crcs = kzalloc(checksums_len, GFP_NOFS);
+ 	if (!disk_crcs)
+ 		goto out;
+ 
+@@ -321,7 +321,7 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
+ 			break;
+ 
+ 		if (index == 0) {
+-			start_offset = first_page_offset;
++			start_offset = checksums_len + sizeof(u64);
+ 			offset = start_offset;
+ 		}
+ 
+@@ -349,8 +349,8 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
+ 		if (index == 0) {
+ 			u64 *gen;
+ 
+-			memcpy(disk_crcs, addr, sizeof(u32) * num_checksums);
+-			gen = addr + (sizeof(u32) * num_checksums);
++			memcpy(disk_crcs, addr, checksums_len);
++			gen = addr + checksums_len;
+ 			if (*gen != BTRFS_I(inode)->generation) {
+ 				printk(KERN_ERR "btrfs: space cache generation"
+ 				       " (%llu) does not match inode (%llu) "
+-- 
+1.7.2.3
 
-Josef

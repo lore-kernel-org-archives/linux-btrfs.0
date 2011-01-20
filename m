@@ -1,24 +1,21 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] btrfs: fix return value check of
-	btrfs_start_transaction()
-Date: Thu, 20 Jan 2011 11:09:59 -0500
-Message-ID: <20110120160959.GB6609@dhcp231-156.rdu.redhat.com>
-References: <201101200619.AA00004@T-ITOH1.jp.fujitsu.com>
+Subject: Re: Encryption
+Date: Thu, 20 Jan 2011 11:10:44 -0500
+Message-ID: <20110120161044.GC6609@dhcp231-156.rdu.redhat.com>
+References: <201101200705.52547.CACook@quantum-sci.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+To: Carl Cook <CACook@quantum-sci.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201101200619.AA00004@T-ITOH1.jp.fujitsu.com>
+In-Reply-To: <201101200705.52547.CACook@quantum-sci.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 20, 2011 at 03:19:37PM +0900, Tsutomu Itoh wrote:
-> The error check of btrfs_start_transaction() is added, and the mistake
-> of the error check on several places is corrected. 
+On Thu, Jan 20, 2011 at 07:05:52AM -0800, Carl Cook wrote:
+> 
+> Does BTRFS have subvolume encryption built in?  If not, why?
 > 
 
-I'd rather we go through and have these things return an error than do a
-BUG_ON().  We're moving towards a more stable BTRFS, not one that panics more
-often :).  Thanks,
+No, and because nobody has done it yet.  Thanks,
 
 Josef

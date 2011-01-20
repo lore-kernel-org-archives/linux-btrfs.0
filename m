@@ -1,42 +1,61 @@
-From: Andreas Philipp <philipp.andreas@gmail.com>
-Subject: Btrfs balance
-Date: Thu, 20 Jan 2011 14:07:23 +0100
-Message-ID: <4D38338B.3090903@gmail.com>
+From: Hugo Mills <hugo-lkml@carfax.org.uk>
+Subject: Re: Btrfs balance
+Date: Thu, 20 Jan 2011 13:39:57 +0000
+Message-ID: <20110120133957.GB1301@carfax.org.uk>
+References: <4D38338B.3090903@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="MW5yreqqjyrRcusr"
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Andreas Philipp <philipp.andreas@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4D38338B.3090903@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
- 
-Hi,
+--MW5yreqqjyrRcusr
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Maybe it is a very stupid question but I want to ask it anyway. In
-general, 'btrfs filesystem balance' takes very long to finish and
-produces lots of IO. So what are the classical usage scenarios, when
-it is (really) worth doing a balance?
+On Thu, Jan 20, 2011 at 02:07:23PM +0100, Andreas Philipp wrote:
+> Hi,
+> 
+> Maybe it is a very stupid question but I want to ask it anyway. In
+> general, 'btrfs filesystem balance' takes very long to finish and
+> produces lots of IO. So what are the classical usage scenarios, when
+> it is (really) worth doing a balance?
 
-Thanks,
-Andreas Philipp
+   The primary use-cases for balancing are to even out the filesystem
+after adding, removing or changing the size of one of the underlying
+volumes.
+
+   It will also be of use when we finally get around to allowing you
+to change RAID settings on the whole volume, to implement the
+requested changes to the RAID level.
+
+   I'm in the process of implementing balance filters, so that some
+other cases where balancing is useful (reclaiming unused block groups)
+can be run more efficiently by only balancing the bits that need
+doing.
+
+   Hugo.
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+               --- Prisoner unknown:  Return to Zenda. ---               
+
+--MW5yreqqjyrRcusr
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (MingW32)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
- 
-iQIcBAEBAgAGBQJNODOKAAoJEJIcBJ3+XkgiUisP/A6PywwxIBFj9NuiQ9UAA5vY
-QJRn/tXT+Ue2wqgZjhGaqD71Q36ALchSXonX9EXoHWRl0VtrX/2MKkPfEZvBXcDs
-yVLOj647HgFu6e51gmdgGvx3qtLsQlFpXBtqYXU8+aeMUUicUZsY8ym+7w6L3jKl
-0mKF7nRkdbF0JyBg4NqvbABtBrXEXIEz7hY0oQtFkjuu72iiAriLuKRRkiTnAck9
-gkQ1aqcCLLUq7TPQsCdto6s7uSoQPQnZ1zXQ1G1Ij0jUItkU9h9bIjkAcbAjHV4n
-cVVF5Zz2lk+z4eAHZwAKgyzzaYW5DT7+ZNrCDOls1CPQr0xka/giRa1dYjS2sas0
-GZhPKtCljfROFsOGRs//DcFyu6P3X9WUHM7JRl3v5m0O1EyKlFKMP5O++BNEiB+I
-9xUDnYqXzh64MiJBUk5WwGIJuHzZtlfq/PPznWoA2BpO/0/yODKyvd8MkXyEs3ht
-3aHi9nbLBe7KqF7CrwH1epchoGKQw/iWopLJMFT6YVL+fHu3CC1aclzekdUh7ktX
-ybdW+x575XixhCMrOw9xl0a2dRRIozBYWi5t56rpx8UMkwJwBmvwUOzS1ap9SZLx
-c3jSiph8VR8cxtDu/NNFs46iXD/5I7EYlgin3FxD2qrYJOJAcR4d5V08CwGxM+/s
-rnskJ6vWv4P71hvevI+R
-=XwNW
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iD8DBQFNODstIKyzvlFcI40RAsuNAJ9703z6QxVxQj0fA2NEJ1GZslTeXQCfUgDc
+tQKlqrf7kgYwV7799ZawuPo=
+=D8UL
 -----END PGP SIGNATURE-----
 
+--MW5yreqqjyrRcusr--

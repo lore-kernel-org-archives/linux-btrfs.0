@@ -1,49 +1,60 @@
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: Re: btrfs defrag: how does it work?
-Date: Wed, 19 Jan 2011 16:49:33 -0600
-Message-ID: <AANLkTik6-1DiqN7ktb5v-ybszJSWN3fb3p8+qY6t3JVL@mail.gmail.com>
-References: <AANLkTintJmDE7VVa5eTiepew68gztjh1j8Li1Fgq2iS6@mail.gmail.com>
-	<1295471646-sup-7764@think>
-	<AANLkTikcNy1FdRjLu=bDpE=A7krUysmV2uLwN9jh4AF2@mail.gmail.com>
+From: Shaohua Li <shaohua.li@intel.com>
+Subject: Re: [PATCH v3 1/5] add metadata_incore ioctl in vfs
+Date: Thu, 20 Jan 2011 10:48:33 +0800
+Message-ID: <1295491713.1949.898.camel@sli10-conroe>
+References: <1295399718.1949.864.camel@sli10-conroe>
+	 <20110119124158.b0348c44.akpm@linux-foundation.org>
+	 <1295490647.1949.890.camel@sli10-conroe>
+	 <20110119184240.b0a6a016.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Paul Komkoff <i@stingr.net>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTikcNy1FdRjLu=bDpE=A7krUysmV2uLwN9jh4AF2@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	Christoph Hellwig <hch@infradead.org>,
+	Arjan van de Ven <arjan@infradead.org>,
+	"Yan, Zheng" <zheng.z.yan@linux.intel.com>,
+	"Wu, Fengguang" <fengguang.wu@intel.com>,
+	linux-api <linux-api@vger.kernel.org>,
+	manpages <mtk.manpages@gmail.com>
+To: Andrew Morton <akpm@linux-foundation.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20110119184240.b0a6a016.akpm@linux-foundation.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 19, 2011 at 4:31 PM, Paul Komkoff <i@stingr.net> wrote:
-> On Wed, Jan 19, 2011 at 9:25 PM, Chris Mason <chris.mason@oracle.com>=
- wrote:
->> The defrag code doesn't actually defrag. =A0It opens up the file and
->> recows all the extents and then the delayed allocation code jumps in=
- and
->> makes the biggest possible extent that it can.
->>
->> The reason why you're still seeing extents after running the defrag
->> command is because the file hasn't been written yet, so the delayed
->> allocation code hasn't kicked in.
->>
->> If you use btrfs fi defrag -f it'll trigger writeback on the file an=
-d
->> you should see the results of the defrag sooner.
->
-> I tried, and just tried it again, with the same file. I even tried
-> doing btrfs fi sync in random order. No matter what I do, it's still
-> 132 extents :)
-> --
+On Thu, 2011-01-20 at 10:42 +0800, Andrew Morton wrote:
+> On Thu, 20 Jan 2011 10:30:47 +0800 Shaohua Li <shaohua.li@intel.com> wrote:
+> 
+> > > I don't know if this is worth addressing.  Perhaps require that the
+> > > filp refers to the root of the fs?
+> > I didn't see why this is needed, but I can limit the fip to the root of
+> > the fs.
+> 
+> I don't think it matters much either.  The only problem I can see is if
+> we were to later try to extend the ioctl into a per-file thing.
+since we return page range, a metadata page might be shared by several
+files, which makes the per-file thing doesn't work. For a fs using
+trees, it's even more hard to distinguish a file's metadata
 
-Is it possible that this patch is causing this behavior?:
+> > > Also, is this a privileged operation?  If not, then that might be a
+> > > problem - could it be used by unprivileged users to work out which
+> > > files have been opened recently or something like that?
+> > it's harmless even a unprivileged user uses it. I don't think
+> > unprivileged user can decode the data returned from the ioctl.
+> 
+> um.
+> 
+> Well, by doing a before-and-after thing I can use this ioctl to work
+> out what metadata blocks are used when someone reads
+> /my/super/secret-directory/foo.  Then I can write a program which sits
+> there waiting until someone else reads /my/super/secret-directory/foo. 
+> Then I can use that information to start WWIII or something.
+> 
+> I dunno, strange things happen.  Unless there's a good *need* to make
+> this available to unprivileged users then we should not do so.
+ok, looks interesting, I'll update the patch to limit unprivileged
+users.
 
-http://www.spinics.net/lists/linux-btrfs/msg03110.html
+Thanks,
+Shaohua
 
-It appears to me that when a relocation is performed (as is done with
-defragmentation), that this patch limits the extent size with the
-newly introduced "#define MAX_EXTENTS 128".
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,39 +1,48 @@
-From: Carl Cook <CACook@quantum-sci.com>
-Subject: Adding a disk fails
-Date: Thu, 20 Jan 2011 13:18:40 -0800
-Message-ID: <201101201318.40686.CACook@quantum-sci.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: btrfs, broken design?
+Date: Thu, 20 Jan 2011 16:20:30 -0500
+Message-ID: <1295558324-sup-1046@think>
+References: <EC13E050-AA91-4DCA-B171-9CA55D537DB7@gmail.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="us-ascii"
-To: linux-btrfs@vger.kernel.org
+Content-Type: TEXT/PLAIN; charset=ISO-8859-1
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: =?utf-8?q?Beno=C3=AEt_Thi=C3=A9bault?= <benoit.thiebault@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <EC13E050-AA91-4DCA-B171-9CA55D537DB7@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Excerpts from Beno=C3=AEt Thi=C3=A9bault's message of 2011-01-20 16:06:=
+21 -0500:
+> Hi everyone,
+>=20
+> I am very interested in the features provided by btrfs.
+>=20
+> I know it is still under active development and thus do not consider =
+using it yet "in production", but the Wikipedia page describing btrfs c=
+ontains a very frightening sentence:
+> "Edward Shiskin, one of the Reiser4 developers now working for Redhat=
+, got asked in Q2/2010 to look more detailled into Btrfs and judged tha=
+t it has a broken design. This design may lead in some cases to out of =
+space problems."
+>=20
+> I have read the linked mail exchange in the mailing list but it is ve=
+ry technical and I am not quite sure I understood everything. Could you=
+ please tell me if the problem has been fixed since?
 
-Well I've just tried to add a disk to another, but it fails.  I created the first (starting with no traditional partitions) with:
-# mkfs.btrfs /dev/sdb
+There was a bug fixed as part of that discussion, and I think I also
+better described the way the tree balancing works to Edward.
 
-Then I mounted it to /media/backups and put lots of files on it.  I shut down the system, added another disk.  Set it up with:
-# mkfs.btrfs /dev/sdc
-WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
-fs created label (null) on /dev/sdc
-        nodesize 4096 leafsize 4096 sectorsize 4096 size 1.82TB
-Btrfs Btrfs v0.19
-# btrfs device scan
-Scanning for Btrfs filesystems
-#
-(... Nothing?  Not even my known mounted sdb drive?)
-# btrfs device add /dev/sdc /media/backups
-ERROR: error adding the device '/dev/sdc'
+>=20
+> Is there a planned date for the final release of btrfs?
 
-It gives no clue as to what might possibly be the problem.  I want raid0.
+A final release?  We'll keep improving things for a long time.  The
+biggest missing feature today is btrfsck, which I'm working on full tim=
+e
+right now.
 
-Also I can not understand this:
-"Note: While subvolumes can be created anywhere in the filesystem tree, in order to be mounted by name a subvolume or snapshot must be in the root of the btrfs filesystem."
-
-I want to do this, but do not know what this means.  Tentatively I've created a BTRFS volume and mounted it on /media/backups.  I then created subvolumes as backup-hex, backup-droog, snaps-hex and snaps-droog.  When I created a snapshot it created a subdir under snaps-hex called hex-root.
-
-It won't allow me to remove snapshots. (Debian Testing)
-
-Also does anyone know how to create a shapshot with the current date in the name?
+-chris
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

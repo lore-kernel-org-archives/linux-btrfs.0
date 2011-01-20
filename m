@@ -1,68 +1,218 @@
-From: Dave Chinner <david@fromorbit.com>
-Subject: Re: [PATCH v3 1/5] add metadata_incore ioctl in vfs
-Date: Thu, 20 Jan 2011 15:41:27 +1100
-Message-ID: <20110120044127.GQ16267@dastard>
-References: <1295399718.1949.864.camel@sli10-conroe>
- <20110119124158.b0348c44.akpm@linux-foundation.org>
- <1295490647.1949.890.camel@sli10-conroe>
- <20110119184240.b0a6a016.akpm@linux-foundation.org>
- <1295491713.1949.898.camel@sli10-conroe>
- <20110119190548.e1f7f01f.akpm@linux-foundation.org>
- <1295493709.1949.910.camel@sli10-conroe>
- <20110119201014.adf02a78.akpm@linux-foundation.org>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Subject: [PATCH] btrfs: fix return value check of btrfs_start_transaction()
+Date: Thu, 20 Jan 2011 15:19:37 +0900
+Message-ID: <201101200619.AA00004@T-ITOH1.jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Shaohua Li <shaohua.li@intel.com>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	Christoph Hellwig <hch@infradead.org>,
-	Arjan van de Ven <arjan@infradead.org>,
-	"Yan, Zheng" <zheng.z.yan@linux.intel.com>,
-	"Wu, Fengguang" <fengguang.wu@intel.com>,
-	linux-api <linux-api@vger.kernel.org>,
-	manpages <mtk.manpages@gmail.com>
-To: Andrew Morton <akpm@linux-foundation.org>
+Cc: chris.mason@oracle.com
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110119201014.adf02a78.akpm@linux-foundation.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 19, 2011 at 08:10:14PM -0800, Andrew Morton wrote:
-> On Thu, 20 Jan 2011 11:21:49 +0800 Shaohua Li <shaohua.li@intel.com> wrote:
-> 
-> > > It seems to return a single offset/length tuple which refers to the
-> > > btrfs metadata "file", with the intent that this tuple later be fed
-> > > into a btrfs-specific readahead ioctl.
-> > > 
-> > > I can see how this might be used with say fatfs or ext3 where all
-> > > metadata resides within the blockdev address_space.  But how is a
-> > > filesytem which keeps its metadata in multiple address_spaces supposed
-> > > to use this interface?
-> > Oh, this looks like a big problem, thanks for letting me know such
-> > filesystems. is it possible specific filesystem mapping multiple
-> > address_space ranges to a virtual big ranges? the new ioctls handle the
-> > mapping.
-> 
-> I'm not sure what you mean by that.
-> 
-> ext2, minix and probably others create an address_space for each
-> directory.  Heaven knows what xfs does (for example).
+The error check of btrfs_start_transaction() is added, and the mistake
+of the error check on several places is corrected. 
 
-In 2.6.39 it won't even use address spaces for metadata caching.
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+---
+ fs/btrfs/extent-tree.c |    7 +++++--
+ fs/btrfs/inode.c       |    1 +
+ fs/btrfs/ioctl.c       |   10 ++++++++--
+ fs/btrfs/relocation.c  |    3 +++
+ fs/btrfs/super.c       |    2 ++
+ fs/btrfs/tree-log.c    |    1 +
+ fs/btrfs/volumes.c     |   19 +++++++++++++++++--
+ 7 files changed, 37 insertions(+), 6 deletions(-)
 
-Besides, XFS already has pretty sophisticated metadata readahead
-built in - it's one of the reasons why the XFS directory code scales
-so well on cold cache lookups of arge directories - so I don't see
-much need for such an interface for XFS.
+diff -urNp linux-2.6.38-rc1/fs/btrfs/extent-tree.c linux-2.6.38-rc1.new/fs/btrfs/extent-tree.c
+--- linux-2.6.38-rc1/fs/btrfs/extent-tree.c	2011-01-19 08:14:02.000000000 +0900
++++ linux-2.6.38-rc1.new/fs/btrfs/extent-tree.c	2011-01-20 11:35:49.000000000 +0900
+@@ -6221,6 +6221,8 @@ int btrfs_drop_snapshot(struct btrfs_roo
+ 	BUG_ON(!wc);
+ 
+ 	trans = btrfs_start_transaction(tree_root, 0);
++	BUG_ON(IS_ERR(trans));
++
+ 	if (block_rsv)
+ 		trans->block_rsv = block_rsv;
+ 
+@@ -6318,6 +6320,7 @@ int btrfs_drop_snapshot(struct btrfs_roo
+ 
+ 			btrfs_end_transaction_throttle(trans, tree_root);
+ 			trans = btrfs_start_transaction(tree_root, 0);
++			BUG_ON(IS_ERR(trans));
+ 			if (block_rsv)
+ 				trans->block_rsv = block_rsv;
+ 		}
+@@ -7535,7 +7538,7 @@ int btrfs_cleanup_reloc_trees(struct btr
+ 
+ 	if (found) {
+ 		trans = btrfs_start_transaction(root, 1);
+-		BUG_ON(!trans);
++		BUG_ON(IS_ERR(trans));
+ 		ret = btrfs_commit_transaction(trans, root);
+ 		BUG_ON(ret);
+ 	}
+@@ -7779,7 +7782,7 @@ static noinline int relocate_one_extent(
+ 
+ 
+ 	trans = btrfs_start_transaction(extent_root, 1);
+-	BUG_ON(!trans);
++	BUG_ON(IS_ERR(trans));
+ 
+ 	if (extent_key->objectid == 0) {
+ 		ret = del_extent_zero(trans, extent_root, path, extent_key);
+diff -urNp linux-2.6.38-rc1/fs/btrfs/inode.c linux-2.6.38-rc1.new/fs/btrfs/inode.c
+--- linux-2.6.38-rc1/fs/btrfs/inode.c	2011-01-19 08:14:02.000000000 +0900
++++ linux-2.6.38-rc1.new/fs/btrfs/inode.c	2011-01-20 11:35:49.000000000 +0900
+@@ -2354,6 +2354,7 @@ void btrfs_orphan_cleanup(struct btrfs_r
+ 		 */
+ 		if (is_bad_inode(inode)) {
+ 			trans = btrfs_start_transaction(root, 0);
++			BUG_ON(IS_ERR(trans));
+ 			btrfs_orphan_del(trans, inode);
+ 			btrfs_end_transaction(trans, root);
+ 			iput(inode);
+diff -urNp linux-2.6.38-rc1/fs/btrfs/ioctl.c linux-2.6.38-rc1.new/fs/btrfs/ioctl.c
+--- linux-2.6.38-rc1/fs/btrfs/ioctl.c	2011-01-19 08:14:02.000000000 +0900
++++ linux-2.6.38-rc1.new/fs/btrfs/ioctl.c	2011-01-20 11:35:49.000000000 +0900
+@@ -907,6 +907,10 @@ static noinline int btrfs_ioctl_resize(s
+ 
+ 	if (new_size > old_size) {
+ 		trans = btrfs_start_transaction(root, 0);
++		if (IS_ERR(trans)) {
++			ret = PTR_ERR(trans);
++			goto out_unlock;
++		}
+ 		ret = btrfs_grow_device(trans, device, new_size);
+ 		btrfs_commit_transaction(trans, root);
+ 	} else {
+@@ -2138,9 +2142,9 @@ static long btrfs_ioctl_default_subvol(s
+ 	path->leave_spinning = 1;
+ 
+ 	trans = btrfs_start_transaction(root, 1);
+-	if (!trans) {
++	if (IS_ERR(trans)) {
+ 		btrfs_free_path(path);
+-		return -ENOMEM;
++		return PTR_ERR(trans);
+ 	}
+ 
+ 	dir_id = btrfs_super_root_dir(&root->fs_info->super_copy);
+@@ -2334,6 +2338,8 @@ static noinline long btrfs_ioctl_start_s
+ 	u64 transid;
+ 
+ 	trans = btrfs_start_transaction(root, 0);
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
+ 	transid = trans->transid;
+ 	btrfs_commit_transaction_async(trans, root, 0);
+ 
+diff -urNp linux-2.6.38-rc1/fs/btrfs/relocation.c linux-2.6.38-rc1.new/fs/btrfs/relocation.c
+--- linux-2.6.38-rc1/fs/btrfs/relocation.c	2011-01-19 08:14:02.000000000 +0900
++++ linux-2.6.38-rc1.new/fs/btrfs/relocation.c	2011-01-20 11:35:49.000000000 +0900
+@@ -2028,6 +2028,7 @@ static noinline_for_stack int merge_relo
+ 
+ 	while (1) {
+ 		trans = btrfs_start_transaction(root, 0);
++		BUG_ON(IS_ERR(trans));
+ 		trans->block_rsv = rc->block_rsv;
+ 
+ 		ret = btrfs_block_rsv_check(trans, root, rc->block_rsv,
+@@ -3657,6 +3658,7 @@ static noinline_for_stack int relocate_b
+ 
+ 	while (1) {
+ 		trans = btrfs_start_transaction(rc->extent_root, 0);
++		BUG_ON(IS_ERR(trans));
+ 
+ 		if (update_backref_cache(trans, &rc->backref_cache)) {
+ 			btrfs_end_transaction(trans, rc->extent_root);
+@@ -4022,6 +4024,7 @@ static noinline_for_stack int mark_garba
+ 	int ret;
+ 
+ 	trans = btrfs_start_transaction(root->fs_info->tree_root, 0);
++	BUG_ON(IS_ERR(trans));
+ 
+ 	memset(&root->root_item.drop_progress, 0,
+ 		sizeof(root->root_item.drop_progress));
+diff -urNp linux-2.6.38-rc1/fs/btrfs/super.c linux-2.6.38-rc1.new/fs/btrfs/super.c
+--- linux-2.6.38-rc1/fs/btrfs/super.c	2011-01-19 08:14:02.000000000 +0900
++++ linux-2.6.38-rc1.new/fs/btrfs/super.c	2011-01-20 11:35:49.000000000 +0900
+@@ -623,6 +623,8 @@ int btrfs_sync_fs(struct super_block *sb
+ 	btrfs_wait_ordered_extents(root, 0, 0);
+ 
+ 	trans = btrfs_start_transaction(root, 0);
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
+ 	ret = btrfs_commit_transaction(trans, root);
+ 	return ret;
+ }
+diff -urNp linux-2.6.38-rc1/fs/btrfs/tree-log.c linux-2.6.38-rc1.new/fs/btrfs/tree-log.c
+--- linux-2.6.38-rc1/fs/btrfs/tree-log.c	2011-01-19 08:14:02.000000000 +0900
++++ linux-2.6.38-rc1.new/fs/btrfs/tree-log.c	2011-01-20 11:35:49.000000000 +0900
+@@ -3080,6 +3080,7 @@ int btrfs_recover_log_trees(struct btrfs
+ 	BUG_ON(!path);
+ 
+ 	trans = btrfs_start_transaction(fs_info->tree_root, 0);
++	BUG_ON(IS_ERR(trans));
+ 
+ 	wc.trans = trans;
+ 	wc.pin = 1;
+diff -urNp linux-2.6.38-rc1/fs/btrfs/volumes.c linux-2.6.38-rc1.new/fs/btrfs/volumes.c
+--- linux-2.6.38-rc1/fs/btrfs/volumes.c	2011-01-19 08:14:02.000000000 +0900
++++ linux-2.6.38-rc1.new/fs/btrfs/volumes.c	2011-01-20 11:35:49.000000000 +0900
+@@ -1213,6 +1213,10 @@ static int btrfs_rm_dev_item(struct btrf
+ 		return -ENOMEM;
+ 
+ 	trans = btrfs_start_transaction(root, 0);
++	if (IS_ERR(trans)) {
++		btrfs_free_path(path);
++		return PTR_ERR(trans);
++	}
+ 	key.objectid = BTRFS_DEV_ITEMS_OBJECTID;
+ 	key.type = BTRFS_DEV_ITEM_KEY;
+ 	key.offset = device->devid;
+@@ -1606,6 +1610,12 @@ int btrfs_init_new_device(struct btrfs_r
+ 	}
+ 
+ 	trans = btrfs_start_transaction(root, 0);
++	if (IS_ERR(trans)) {
++		kfree(device);
++		ret = PTR_ERR(trans);
++		goto error;
++	}
++
+ 	lock_chunks(root);
+ 
+ 	device->writeable = 1;
+@@ -1873,7 +1883,7 @@ static int btrfs_relocate_chunk(struct b
+ 		return ret;
+ 
+ 	trans = btrfs_start_transaction(root, 0);
+-	BUG_ON(!trans);
++	BUG_ON(IS_ERR(trans));
+ 
+ 	lock_chunks(root);
+ 
+@@ -2047,7 +2057,7 @@ int btrfs_balance(struct btrfs_root *dev
+ 		BUG_ON(ret);
+ 
+ 		trans = btrfs_start_transaction(dev_root, 0);
+-		BUG_ON(!trans);
++		BUG_ON(IS_ERR(trans));
+ 
+ 		ret = btrfs_grow_device(trans, device, old_size);
+ 		BUG_ON(ret);
+@@ -2213,6 +2223,11 @@ again:
+ 
+ 	/* Shrinking succeeded, else we would be at "done". */
+ 	trans = btrfs_start_transaction(root, 0);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		goto done;
++	}
++
+ 	lock_chunks(root);
+ 
+ 	device->disk_total_bytes = new_size;
 
-Perhaps btrfs would be better served by implementing speculative
-metadata readahead in the places where it makes sense (e.g. readdir)
-bcause it will improve cold-cache performance on a much wider range
-of workloads than at just boot-time....
 
-Cheers,
-
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com

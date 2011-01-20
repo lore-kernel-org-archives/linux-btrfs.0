@@ -1,61 +1,30 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
+From: "Helmut Hullen" <Hullen@t-online.de>
 Subject: Re: Btrfs balance
-Date: Thu, 20 Jan 2011 13:39:57 +0000
-Message-ID: <20110120133957.GB1301@carfax.org.uk>
+Date: 20 Jan 2011 14:40:00 +0100
+Message-ID: <BeD$lESD1uB@helmut.hullen.de>
 References: <4D38338B.3090903@gmail.com>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="MW5yreqqjyrRcusr"
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Andreas Philipp <philipp.andreas@gmail.com>
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <4D38338B.3090903@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hallo, Andreas,
 
---MW5yreqqjyrRcusr
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Du meintest am 20.01.11:
 
-On Thu, Jan 20, 2011 at 02:07:23PM +0100, Andreas Philipp wrote:
-> Hi,
-> 
 > Maybe it is a very stupid question but I want to ask it anyway. In
 > general, 'btrfs filesystem balance' takes very long to finish and
 > produces lots of IO. So what are the classical usage scenarios, when
 > it is (really) worth doing a balance?
 
-   The primary use-cases for balancing are to even out the filesystem
-after adding, removing or changing the size of one of the underlying
-volumes.
+Here (Kernel 2.6.37, btrfs git Nov. 2010): balancing two disks/ 
+partitions with 2 and 1.5 TByte needs about 24 hours (CPU 1.5 GHz).
 
-   It will also be of use when we finally get around to allowing you
-to change RAID settings on the whole volume, to implement the
-requested changes to the RAID level.
+What do you mean with "lots of IO"? the messages in "/var/log/messages"  
+and "/var/log/warn"?
 
-   I'm in the process of implementing balance filters, so that some
-other cases where balancing is useful (reclaiming unused block groups)
-can be run more efficiently by only balancing the bits that need
-doing.
-
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-               --- Prisoner unknown:  Return to Zenda. ---               
-
---MW5yreqqjyrRcusr
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFNODstIKyzvlFcI40RAsuNAJ9703z6QxVxQj0fA2NEJ1GZslTeXQCfUgDc
-tQKlqrf7kgYwV7799ZawuPo=
-=D8UL
------END PGP SIGNATURE-----
-
---MW5yreqqjyrRcusr--
+Viele Gruesse!
+Helmut

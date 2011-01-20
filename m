@@ -1,52 +1,57 @@
-From: Carl Cook <CACook@quantum-sci.com>
-Subject: Re: Adding a disk fails
-Date: Thu, 20 Jan 2011 14:31:36 -0800
-Message-ID: <201101201431.36716.CACook@quantum-sci.com>
-References: <201101201318.40686.CACook@quantum-sci.com>
+From: "Ian! D. Allen" <idallen@idallen.ca>
+Subject: v0.19-35-g1b444cd btrfsck says snapshots have errors
+Date: Thu, 20 Jan 2011 17:52:56 -0500
+Message-ID: <20110120225256.GA4161@idallen.ca>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
+Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201101201318.40686.CACook@quantum-sci.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Still getting btrfsck errors with this:
 
-I must have done something wrong because for the past week or so, almost none of my questions have been answered here.  I'm pretty much in trouble now because I have -no- backups, as I cannot get my backup server running, as I've put all my eggs in the btrfs basket.  Am I asking things wrong, or am I supposed to be asking somewhere else?
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs-unstable.git
 
+# ./btrfstest.sh 
+Using /mnt/sdb1 /dev/sdb1 on /dev/sdb
++ mkfs.btrfs -L BTRFStest /dev/sdb1
 
-On Thu 20 January 2011 13:18:40 Carl Cook wrote:
-> 
-> Well I've just tried to add a disk to another, but it fails.  I created the first (starting with no traditional partitions) with:
-> # mkfs.btrfs /dev/sdb
-> 
-> Then I mounted it to /media/backups and put lots of files on it.  I shut down the system, added another disk.  Set it up with:
-> # mkfs.btrfs /dev/sdc
-> WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
-> WARNING! - see http://btrfs.wiki.kernel.org before using
-> fs created label (null) on /dev/sdc
->         nodesize 4096 leafsize 4096 sectorsize 4096 size 1.82TB
-> Btrfs Btrfs v0.19
-> # btrfs device scan
-> Scanning for Btrfs filesystems
-> #
-> (... Nothing?  Not even my known mounted sdb drive?)
-> # btrfs device add /dev/sdc /media/backups
-> ERROR: error adding the device '/dev/sdc'
-> 
-> It gives no clue as to what might possibly be the problem.  I want raid0.
-> 
-> Also I can not understand this:
-> "Note: While subvolumes can be created anywhere in the filesystem tree, in order to be mounted by name a subvolume or snapshot must be in the root of the btrfs filesystem."
-> 
-> I want to do this, but do not know what this means.  Tentatively I've created a BTRFS volume and mounted it on /media/backups.  I then created subvolumes as backup-hex, backup-droog, snaps-hex and snaps-droog.  When I created a snapshot it created a subdir under snaps-hex called hex-root.
-> 
-> It won't allow me to remove snapshots. (Debian Testing)
-> 
-> Also does anyone know how to create a shapshot with the current date in the name?
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
+WARNING! - Btrfs v0.19-35-g1b444cd IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
+
+fs created label BTRFStest on /dev/sdb1
+	nodesize 4096 leafsize 4096 sectorsize 4096 size 2.00GB
+Btrfs v0.19-35-g1b444cd
++ mount -o noatime /dev/sdb1 /mnt/sdb1
++ btrfs subvolume snapshot /mnt/sdb1 /mnt/sdb1/snap1
+Create a snapshot of '/mnt/sdb1' in '/mnt/sdb1/snap1'
++ btrfs subvolume snapshot /mnt/sdb1/snap1 /mnt/sdb1/snap2
+Create a snapshot of '/mnt/sdb1/snap1' in '/mnt/sdb1/snap2'
++ btrfs subvolume snapshot /mnt/sdb1/snap2 /mnt/sdb1/snap3
+Create a snapshot of '/mnt/sdb1/snap2' in '/mnt/sdb1/snap3'
++ btrfs subvolume snapshot /mnt/sdb1/snap3 /mnt/sdb1/snap4
+Create a snapshot of '/mnt/sdb1/snap3' in '/mnt/sdb1/snap4'
++ btrfs subvolume snapshot /mnt/sdb1/snap4 /mnt/sdb1/snap5
+Create a snapshot of '/mnt/sdb1/snap4' in '/mnt/sdb1/snap5'
++ umount /dev/sdb1
++ btrfsck /dev/sdb1
+fs tree 256 refs 6 
+	unresolved ref root 256 dir 256 index 2 namelen 5 name snap1 error 600
+	unresolved ref root 257 dir 256 index 2 namelen 5 name snap1 error 600
+	unresolved ref root 258 dir 256 index 2 namelen 5 name snap1 error 600
+	unresolved ref root 259 dir 256 index 2 namelen 5 name snap1 error 600
+	unresolved ref root 260 dir 256 index 2 namelen 5 name snap1 error 600
+found 49152 bytes used err is 1
+total csum bytes: 0
+total tree bytes: 49152
+total fs tree bytes: 28672
+btree space waste bytes: 39360
+file data blocks allocated: 0
+ referenced 0
+Btrfs v0.19-35-g1b444cd
+
+-- 
+| Ian! D. Allen  -  idallen@idallen.ca  -  Ottawa, Ontario, Canada
+| Home Page: http://idallen.com/   Contact Improv: http://contactimprov.ca/
+| College professor (Free/Libre GNU+Linux) at: http://teaching.idallen.com/
+| Defend digital freedom:  http://eff.org/  and have fun:  http://fools.ca/

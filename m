@@ -1,58 +1,44 @@
-From: Carl Cook <CACook@quantum-sci.com>
-Subject: Re: Adding a disk fails
-Date: Thu, 20 Jan 2011 15:10:54 -0800
-Message-ID: <201101201510.54418.CACook@quantum-sci.com>
-References: <201101201318.40686.CACook@quantum-sci.com> <4D38B382.1050709@libero.it>
+From: Niklas Schnelle <niklas@komani.de>
+Subject: mv across subvolumes temporarily needs a lot of space
+Date: Fri, 21 Jan 2011 00:40:48 +0100
+Message-ID: <1295566848.7321.5.camel@mercury.localdomain>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
+Content-Type: multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature"; boundary="=-Izoef8v8csp2jbBolH3a"
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D38B382.1050709@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu 20 January 2011 14:13:22 Goffredo Baroncelli wrote:
-> To add another disk you don't have to run mkfs.btrfs. For example:
-> 
-> # add the first disk
-> mkfs.btrfs /dev/sdb
-> # mount the disk
-> mount /dev/sdb /media/backups
-> 
-> # add another disk to the first one
-> btrfs device add /dev/sdc /media/backup
 
-Thanks Goffredo but as I say, I did this and it responds with 
- "ERROR: error adding the device '/dev/sdc'"
-... it doesn't give a clue.
+--=-Izoef8v8csp2jbBolH3a
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
+I was just moving a 40 GB directory across subvolume boundaries, that is
+/mnt/extern/mac to /mnt/extern/backup/homes/mac backup being a
+subvolume.
+I noticed that df will start to show more used space (starting at 130 GB
+going slowly to 165 GB for the whole disk) then shortly after the
+operation is done it will show 130 GB again.
+So I was wondering will I always need as much as 80% of free space
+available to move some big directory or is it just wrong information by
+df?
+Greetings Niklas
 
-> Note1: the filesystem has to be mounted
-> Note2: the medatada will be in raid1, the data in raid0
-> If you shutdown the system, at the reboot you should "scan" all the
-> device in order to find the btrfs ones
-> 
-> # find the btrfs device
-> btrfs device scan
+--=-Izoef8v8csp2jbBolH3a
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
 
-This must be done at every boot?  If so, where is recommended, in rc.local? 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
 
+iQEcBAABAgAGBQJNOMf7AAoJEDAdc1vlpxWMv9wIAI3wPYYGvcMsdWcMC7E21W+X
+n4yk/EQ/ND3+yDlen5Lx+m5AeHmk3bXyoN6/Qn7rvCHHa73H6iKetSmZ7eDVl3Ur
+S+0hljfmQa6VzNsIewvmQtFB6D1vC99qDWbE3YL6sXvP6ivktaKru8BnUbN+q9DN
+qCtrXbIZK0OOWwljHY8yyVl5nKZfMGfdaNmUqV6N1+AbYC1aAep+wC9yJP6AYbHZ
+Om0f0PIF8UQGapgod+Mp3EV5Nf/djWmL9JXeGnl2AItdTrkpYxYHkL+Huf+YmD2D
+pumNWvq8ZUJMOVKsJ/Y+M1D8zHybBOmz9pUWAXfijQ+KXtfXKbu7TQ9rTlhLyvo=
+=TFN/
+-----END PGP SIGNATURE-----
 
-> # if you try to mount snapshot-3 directly, you fail because this
-> # snapshot is not under the root of the btrfs filesystem
-> mount -o subvol=dir-1/snapshot-3 /dev/sdb /media/backup	 # -> error
-
-This is how I'd understood it, but when creating a subvolume in the root and putting a snalshot into it, it seems to make a further subvolume (or directory) with a redundant name.  This would not be under the root, and may not be mountable?
-
-
-> Which kenel version debian testing uses ?
-
-2.6.32-5-amd64 with Debian patches.
-
-
-> btrfs filesystem snapshot / /snapshot-$(date +"%Y-%m-%d")
-
-Oh thank you.
-
-
+--=-Izoef8v8csp2jbBolH3a--
 

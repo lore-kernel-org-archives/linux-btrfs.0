@@ -1,90 +1,68 @@
-From: Daniel J Blueman <daniel.blueman@gmail.com>
-Subject: [2.6.38-rc1] btrfs potential false-positive lockdep report...
-Date: Thu, 20 Jan 2011 10:53:51 +0700
-Message-ID: <AANLkTinTkAtUkZApi-EMpTx-R7sBagLnd4uYnUTL5Lek@mail.gmail.com>
+From: Dave Chinner <david@fromorbit.com>
+Subject: Re: [PATCH v3 1/5] add metadata_incore ioctl in vfs
+Date: Thu, 20 Jan 2011 15:41:27 +1100
+Message-ID: <20110120044127.GQ16267@dastard>
+References: <1295399718.1949.864.camel@sli10-conroe>
+ <20110119124158.b0348c44.akpm@linux-foundation.org>
+ <1295490647.1949.890.camel@sli10-conroe>
+ <20110119184240.b0a6a016.akpm@linux-foundation.org>
+ <1295491713.1949.898.camel@sli10-conroe>
+ <20110119190548.e1f7f01f.akpm@linux-foundation.org>
+ <1295493709.1949.910.camel@sli10-conroe>
+ <20110119201014.adf02a78.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Linux Kernel <linux-kernel@vger.kernel.org>,
-	Linux BTRFS <linux-btrfs@vger.kernel.org>,
-	Josef Bacik <josef@redhat.com>
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: Shaohua Li <shaohua.li@intel.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	Christoph Hellwig <hch@infradead.org>,
+	Arjan van de Ven <arjan@infradead.org>,
+	"Yan, Zheng" <zheng.z.yan@linux.intel.com>,
+	"Wu, Fengguang" <fengguang.wu@intel.com>,
+	linux-api <linux-api@vger.kernel.org>,
+	manpages <mtk.manpages@gmail.com>
+To: Andrew Morton <akpm@linux-foundation.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110119201014.adf02a78.akpm@linux-foundation.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I saw a lockdep report with an instrumented 2.6.38-rc1 kernel [1].
+On Wed, Jan 19, 2011 at 08:10:14PM -0800, Andrew Morton wrote:
+> On Thu, 20 Jan 2011 11:21:49 +0800 Shaohua Li <shaohua.li@intel.com> wrote:
+> 
+> > > It seems to return a single offset/length tuple which refers to the
+> > > btrfs metadata "file", with the intent that this tuple later be fed
+> > > into a btrfs-specific readahead ioctl.
+> > > 
+> > > I can see how this might be used with say fatfs or ext3 where all
+> > > metadata resides within the blockdev address_space.  But how is a
+> > > filesytem which keeps its metadata in multiple address_spaces supposed
+> > > to use this interface?
+> > Oh, this looks like a big problem, thanks for letting me know such
+> > filesystems. is it possible specific filesystem mapping multiple
+> > address_space ranges to a virtual big ranges? the new ioctls handle the
+> > mapping.
+> 
+> I'm not sure what you mean by that.
+> 
+> ext2, minix and probably others create an address_space for each
+> directory.  Heaven knows what xfs does (for example).
 
-Checking the code, it looks more likely a false-positive due to the
-lock manipulation to satisfy lockdep, since CONFIG_DEBUG_LOCK_ALLOC is
-defined.
+In 2.6.39 it won't even use address spaces for metadata caching.
 
-Is this the case?
+Besides, XFS already has pretty sophisticated metadata readahead
+built in - it's one of the reasons why the XFS directory code scales
+so well on cold cache lookups of arge directories - so I don't see
+much need for such an interface for XFS.
 
-Thanks,
-  Daniel
+Perhaps btrfs would be better served by implementing speculative
+metadata readahead in the places where it makes sense (e.g. readdir)
+bcause it will improve cold-cache performance on a much wider range
+of workloads than at just boot-time....
 
---- [1]
+Cheers,
 
-=============================================
-[ INFO: possible recursive locking detected ]
-2.6.38-rc1-340cd+ #7
----------------------------------------------
-gnome-screensav/4276 is trying to acquire lock:
- (&(&eb->lock)->rlock){+.+...}, at: [<ffffffff81301078>]
-btrfs_try_spin_lock+0x58/0x100
-
-but task is already holding lock:
- (&(&eb->lock)->rlock){+.+...}, at: [<ffffffff8130113d>]
-btrfs_clear_lock_blocking+0x1d/0x30
-
-other info that might help us debug this:
-2 locks held by gnome-screensav/4276:
- #0:  (&sb->s_type->i_mutex_key#10){+.+.+.}, at: [<ffffffff81178fb1>]
-do_lookup+0x1c1/0x2c0
- #1:  (&(&eb->lock)->rlock){+.+...}, at: [<ffffffff8130113d>]
-btrfs_clear_lock_blocking+0x1d/0x30
-
-stack backtrace:
-Pid: 4276, comm: gnome-screensav Not tainted 2.6.38-rc1-340cd+ #7
-Call Trace:
- [<ffffffff810a7a10>] ? __lock_acquire+0x1040/0x1d10
- [<ffffffff810a42ed>] ? trace_hardirqs_on_caller+0x15d/0x1b0
- [<ffffffff8100bdfc>] ? native_sched_clock+0x2c/0x80
- [<ffffffff8100bc33>] ? sched_clock+0x13/0x20
- [<ffffffff810a87a6>] ? lock_acquire+0xc6/0x280
- [<ffffffff81301078>] ? btrfs_try_spin_lock+0x58/0x100
- [<ffffffff816d31cb>] ? _raw_spin_lock+0x3b/0x70
- [<ffffffff81301078>] ? btrfs_try_spin_lock+0x58/0x100
- [<ffffffff8130113d>] ? btrfs_clear_lock_blocking+0x1d/0x30
- [<ffffffff81301078>] ? btrfs_try_spin_lock+0x58/0x100
- [<ffffffff812b4c27>] ? btrfs_search_slot+0x917/0xa10
- [<ffffffff8100bc33>] ? sched_clock+0x13/0x20
- [<ffffffff812c520a>] ? btrfs_lookup_dir_item+0x7a/0x110
- [<ffffffff810a434d>] ? trace_hardirqs_on+0xd/0x10
- [<ffffffff811563d3>] ? kmem_cache_alloc+0x163/0x2f0
- [<ffffffff812db274>] ? btrfs_lookup_dentry+0xa4/0x480
- [<ffffffff810a2a4e>] ? put_lock_stats+0xe/0x40
- [<ffffffff810a2b2c>] ? lock_release_holdtime+0xac/0x150
- [<ffffffff81055ce1>] ? get_parent_ip+0x11/0x50
- [<ffffffff8105a1fd>] ? sub_preempt_count+0x9d/0xd0
- [<ffffffff812db661>] ? btrfs_lookup+0x11/0x30
- [<ffffffff81178b10>] ? d_alloc_and_lookup+0x40/0x80
- [<ffffffff81186420>] ? d_lookup+0x30/0x60
- [<ffffffff81178fd3>] ? do_lookup+0x1e3/0x2c0
- [<ffffffff8117832e>] ? generic_permission+0x1e/0xb0
- [<ffffffff8117b5a1>] ? link_path_walk+0x141/0xbd0
- [<ffffffff8117af68>] ? path_init_rcu+0x1b8/0x280
- [<ffffffff8117c326>] ? do_path_lookup+0x56/0x130
- [<ffffffff8117d022>] ? user_path_at+0x52/0xa0
- [<ffffffff8109375e>] ? up_read+0x1e/0x40
- [<ffffffff810335c8>] ? do_page_fault+0x1f8/0x510
- [<ffffffff8109543d>] ? sched_clock_cpu+0xdd/0x120
- [<ffffffff81171ff1>] ? vfs_fstatat+0x41/0x80
- [<ffffffff810a2a4e>] ? put_lock_stats+0xe/0x40
- [<ffffffff810a2b2c>] ? lock_release_holdtime+0xac/0x150
- [<ffffffff81172066>] ? vfs_stat+0x16/0x20
- [<ffffffff8117223f>] ? sys_newstat+0x1f/0x50
- [<ffffffff810a42ed>] ? trace_hardirqs_on_caller+0x15d/0x1b0
- [<ffffffff816d2f39>] ? trace_hardirqs_on_thunk+0x3a/0x3f
- [<ffffffff81003192>] ? system_call_fastpath+0x16/0x1b
+Dave.
 -- 
-Daniel J Blueman
+Dave Chinner
+david@fromorbit.com

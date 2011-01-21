@@ -1,53 +1,82 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: Re: Shrinking virtual disk with btrfs on it
-Date: Fri, 21 Jan 2011 17:34:19 +0000
-Message-ID: <20110121173419.GA5268@carfax.org.uk>
-References: <AANLkTimVGfP0UFgkTEtrqrc8RoPPoqgwu=x--KHa3Y9j@mail.gmail.com>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: Re: Adding a disk fails
+Date: Fri, 21 Jan 2011 19:42:39 +0100
+Message-ID: <4D39D39F.5040806@libero.it>
+References: <201101201318.40686.CACook@quantum-sci.com> <4D38B382.1050709@libero.it> <201101201510.54418.CACook@quantum-sci.com>
+Reply-To: kreijack@inwind.it
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="wac7ysb48OaltWcw"
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Rodney Beede <mailinglist@rodneybeede.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Carl Cook <CACook@quantum-sci.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimVGfP0UFgkTEtrqrc8RoPPoqgwu=x--KHa3Y9j@mail.gmail.com>
+In-Reply-To: <201101201510.54418.CACook@quantum-sci.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---wac7ysb48OaltWcw
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Fri, Jan 21, 2011 at 10:20:34AM -0700, Rodney Beede wrote:
-> Any tools to go about zeroing about the free space on a btrfs file
-> system so I can shrink the VMware vmdk virtual disk?
+On 01/21/2011 12:10 AM, Carl Cook wrote:
+> On Thu 20 January 2011 14:13:22 Goffredo Baroncelli wrote:
+>> To add another disk you don't have to run mkfs.btrfs. For example:
+>>
+>> # add the first disk
+>> mkfs.btrfs /dev/sdb
+>> # mount the disk
+>> mount /dev/sdb /media/backups
+>>
+>> # add another disk to the first one
+>> btrfs device add /dev/sdc /media/backup
 > 
-> I ran the VMware command, but the dynamic disk is still really big.  I
-> presume it is due to free space that isn't zeroed out.
+> Thanks Goffredo but as I say, I did this and it responds with 
+>  "ERROR: error adding the device '/dev/sdc'"
+> .. it doesn't give a clue.
 
-   One solution I've used before is to write a single very large file
-full of zeroes, filling the filesystem, then delete it.
+In your email you wrote that before adding the device you format it.
+Anyway I don't think that this is the problem.
 
-$ dd if=/dev/zero of=/mountpoint/foo.dat && rm /mountpoint/foo.dat
+Have you check which is reported in dmesg.
 
-   Hugo.
+> 
+>> Note1: the filesystem has to be mounted
+>> Note2: the medatada will be in raid1, the data in raid0
+>> If you shutdown the system, at the reboot you should "scan" all the
+>> device in order to find the btrfs ones
+>>
+>> # find the btrfs device
+>> btrfs device scan
+> 
+> This must be done at every boot?  If so, where is recommended, in rc.local? 
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-          --- ...  one ping(1) to rule them all, and in the ---          
-                         darkness bind(2) them.                          
+Look at this thread, where I wrote anout a possible solution
 
---wac7ysb48OaltWcw
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg04709.html
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
+> 
+> 
+>> # if you try to mount snapshot-3 directly, you fail because this
+>> # snapshot is not under the root of the btrfs filesystem
+>> mount -o subvol=dir-1/snapshot-3 /dev/sdb /media/backup	 # -> error
+> 
+> This is how I'd understood it, but when creating a subvolume in the root and putting a snalshot into it, it seems to make a further subvolume (or directory) with a redundant name.  This would not be under the root, and may not be mountable?
+> 
+> 
+>> Which kenel version debian testing uses ?
+> 
+> 2.6.32-5-amd64 with Debian patches.
 
-iD8DBQFNOcObIKyzvlFcI40RAodJAJ0VyXnvxNH2MxTZ08uT8WaywsA+0gCfQkV6
-7MRCSpCsPWGiXeS73ItqnWA=
-=ngld
------END PGP SIGNATURE-----
+>From a btrfs point of view, it is a very old kernel. IIRC in this kernel
+is not supported the snapshot removal. I suggest you to update the
+kernel with a recent one.
 
---wac7ysb48OaltWcw--
+> 
+> 
+>> btrfs filesystem snapshot / /snapshot-$(date +"%Y-%m-%d")
+> 
+> Oh thank you.
+> 
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> .
+> 
+

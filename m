@@ -1,33 +1,27 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: Re: version
-Date: 21 Jan 2011 15:10:00 +0100
-Message-ID: <BeHd5HVy1uB@helmut.hullen.de>
-References: <20110121122119.GA811@carfax.org.uk>
-Reply-To: helmut@hullen.de
+From: Diego Calleja <diegocg@gmail.com>
+Subject: Re: version (was: btrfs, broken design?)
+Date: Fri, 21 Jan 2011 15:32:56 +0100
+Message-ID: <201101211532.56140.diegocg@gmail.com>
+References: <BeHcMN1T1uB@helmut.hullen.de>
+Reply-To: diegocg@gmail.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain; charset=iso-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110121122119.GA811@carfax.org.uk>
+In-Reply-To: <BeHcMN1T1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Hugo,
+On Viernes, 21 de Enero de 2011 10:54:00 Helmut Hullen escribi=F3:
 
-Du meintest am 21.01.11:
+> And I never have seen somethin like "Changelog" - that would be fine =
+=20
+> too.
 
->> Could it be possible to tell somewhere the actual version?
->>
->> Sometimes I download via git,
->>
->>  <git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs-un
->>  stable.git>
-
->> and I never have found which version that is; "version.sh" tells
->> something wrong.
-
-> $ git log
-
-Ok - last changes from October 6, 2010
-
-Viele Gruesse!
-Helmut
+Check the wiki, I keep that updated: https://btrfs.wiki.kernel.org/inde=
+x.php/Main_Page#News
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

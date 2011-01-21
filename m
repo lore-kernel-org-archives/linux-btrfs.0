@@ -1,98 +1,78 @@
-From: Hubert Kario <hka@qbs.com.pl>
-Subject: btrfs RAID1 woes and tiered storage
-Date: Fri, 21 Jan 2011 09:07:54 +0100
-Message-ID: <201101210907.54944.hka@qbs.com.pl>
-Mime-Version: 1.0
-Content-Type: Text/Plain; charset=utf-8
-To: linux-btrfs@vger.kernel.org
+From: =?iso-8859-1?Q?Beno=EEt_Thi=E9bault?= <benoit.thiebault@gmail.com>
+Subject: Re: btrfs, broken design?
+Date: Fri, 21 Jan 2011 09:11:57 +0100
+Message-ID: <06598C10-801F-4969-83F9-9BB3B9149488@gmail.com>
+References: <EC13E050-AA91-4DCA-B171-9CA55D537DB7@gmail.com> <1295558324-sup-1046@think> <B3BEB66D-49FF-48B7-B40A-77A9B05F2B54@gmail.com> <AANLkTikGPRrdaj2SO5ZwjD8pZEVNj4pBM8X_iEAATu0G@mail.gmail.com>
+Mime-Version: 1.0 (Apple Message framework v1082)
+Content-Type: text/plain; charset=iso-8859-1
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chester <somethingsome2000@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTikGPRrdaj2SO5ZwjD8pZEVNj4pBM8X_iEAATu0G@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've been experimenting lately with btrfs RAID1 implementation and have=
- to say=20
-that it is performing quite well, but there are few problems:
+Ok, thanks, I will read the project wiki more carefully then :-)
+Beware however that Wikipedia is the first place to look for informatio=
+n for a lot of people (whether this is a good practice or not) and it c=
+urrently does not provide a very good advertisement to btrfs.
 
-* when I purposefully damage partitions on which btrfs stores data (for=
-=20
-  example, by changing the case of letters) it will read the other copy=
- and=20
-  return correct data. It doesn't report in dmesg this fact every time,=
- but it  =20
-  does correct the one with wrong checksum
-* when both copies are damaged it returns the damaged block as it is
-  written(!) and only adds a warning in the dmesg with exact same wordi=
-ng as=20
-  with the single block corruption(!!)
-* from what I could find, btrfs doesn't remember anywhere the number of=
-=20
-  detected and fixed corruptions
+Kind regards
 
-I don't know if it's the final design and while the first and last poin=
-ts are=20
-minor inconveniences the second one is quite major. At this time it doe=
-sn't=20
-prevent silent corruption from going unnoticed. I think that reading fr=
-om such=20
-blocks should return EIO (unless mounted nodatasum) or at least a broad=
-cast=20
-message noting that a corrupted block is being returned to userspace.
+Le 21 janv. 2011 =E0 07:46, Chester a =E9crit :
 
+> Btrfs has its own wiki page at https://btrfs.wiki.kernel.org which yo=
+u
+> may find more helpful than what is on wikipedia.
+>=20
+> 2011/1/20 Beno=EEt Thi=E9bault <benoit.thiebault@gmail.com>:
+>> Thanks for your answer
+>>=20
+>> Le 20 janv. 2011 =E0 22:20, Chris Mason a =E9crit :
+>>=20
+>>> There was a bug fixed as part of that discussion, and I think I als=
+o
+>>> better described the way the tree balancing works to Edward.
+>>=20
+>> Maybe the wikipedia article should be modified then, because it is n=
+ot very reinsuring :-)
+>>=20
+>>> A final release?  We'll keep improving things for a long time.  The
+>>> biggest missing feature today is btrfsck, which I'm working on full=
+ time
+>>> right now.
+>>>=20
+>>> -chris
+>>=20
+>> Still on the wikipedia page, it's written "Btrfs 1.0 (with finalized=
+ on-disk format) was originally slated for a late 2008 release,[5] but =
+a stable release has not been made as of January 2011.", which is also =
+very confusing.
+>>=20
+>> According to you, is the version of btrfs in 2.6.37 ready for produc=
+tion? I mean, are there still chances that I may loose all my data if I=
+ use btrfs?
+>>=20
+>> Last question, do you know when the RAID-5 like capabilities will be=
+ available?
+>>=20
+>> Sorry to ask so many questions, I fully understand you and your team=
+ are working very hard on the project, but I was very confused by the W=
+ikipedia article.
+>>=20
+>> Kind regards,
+>>=20
+>> Ben--
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrf=
+s" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>=20
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-
-I've also been thinking about tiered storage (meaning 2+, not only two-=
-tiered)=20
-and have some ideas about it.
-
-I think that there need to be 3 different mechanisms working together t=
-o=20
-achieve high performance:
-* ability to store all metadata on selected volumes (probably read opti=
-mised=20
-  SSDs)
-* ability to store all newly written data on selected volumes (write op=
-timised=20
-  SSDs)
-* ability to differentiate between often written, often read and infreq=
-uently=20
-  accessed data (and based on this information, ability to move this da=
-ta to=20
-  fast SSDs, slow SSDs, fast RAID, slow RAID or MAID)
-
-While the first two are rather straight-forward, the third one needs so=
-me=20
-explanation. I think that for this to work, we should save not only the=
- time=20
-of last access to file and last change time but also few past values (I=
- think=20
-that at least 8 to 16 ctimes and atimes are necessary but this will nee=
-d=20
-testing). I'm not sure about how and exactly when to move this data aro=
-und to=20
-keep the arrays balanced but a userspace daemon would be most flexible.
-
-This solution won't work well for file systems with few very large file=
-s of=20
-which very few parts change often, in other words it won't be doing blo=
-ck-
-level tiered storage. From what I know, databases would benefit most fr=
-om such=20
-configuration, but then most databases can already partition tables to=20
-different files based on access rate. As such, making its granularity o=
-n file=20
-level would make this mechanism easy to implement while still useful.
-
-On second thought: it won't make it exactly file-level granular, if we=20
-introduce snapshots in the mix, the new version can have the data regul=
-arly=20
-accessed while the old snapshot won't, this way the obsolete blocks can=
- be=20
-moved to slow storage.
---=20
-Hubert Kario
-QBS - Quality Business Software
-02-656 Warszawa, ul. Ksawer=C3=B3w 30/85
-tel. +48 (22) 646-61-51, 646-74-24
-www.qbs.com.pl
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

@@ -1,92 +1,64 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: Re: [PATCH] btrfs: fix return value check of btrfs_start_transaction()
-Date: Fri, 21 Jan 2011 15:06:29 +0900
-Message-ID: <4D392265.1020003@jp.fujitsu.com>
-References: <201101200619.AA00004@T-ITOH1.jp.fujitsu.com> <20110120160959.GB6609@dhcp231-156.rdu.redhat.com> <4D38C980.3020001@jp.fujitsu.com>
+From: Chester <somethingsome2000@gmail.com>
+Subject: Re: btrfs, broken design?
+Date: Fri, 21 Jan 2011 00:46:44 -0600
+Message-ID: <AANLkTikGPRrdaj2SO5ZwjD8pZEVNj4pBM8X_iEAATu0G@mail.gmail.com>
+References: <EC13E050-AA91-4DCA-B171-9CA55D537DB7@gmail.com>
+ <1295558324-sup-1046@think> <B3BEB66D-49FF-48B7-B40A-77A9B05F2B54@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D38C980.3020001@jp.fujitsu.com>
+In-Reply-To: <B3BEB66D-49FF-48B7-B40A-77A9B05F2B54@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(2011/01/21 8:47), Tsutomu Itoh wrote:
-> (2011/01/21 1:09), Josef Bacik wrote:
->> I'd rather we go through and have these things return an error than do a
->> BUG_ON().  We're moving towards a more stable BTRFS, not one that panics more
->> often :).
-> 
-> Yes, I also think so.
-> This patch is my first step.
-> 
-> My modification policy is as follows:
+Btrfs has its own wiki page at https://btrfs.wiki.kernel.org which you
+may find more helpful than what is on wikipedia.
+
+2011/1/20 Beno=EEt Thi=E9bault <benoit.thiebault@gmail.com>:
+> Thanks for your answer
 >
-> 1. short term
->  - To more stable BTRFS, the part that should be corrected is clarified. 
->  - The panic is not done by the NULL pointer reference etc.
-This means, even if temporary increase BUG_ON()...
-
-In addition, I think that an important memory allocation should retry several times. 
-So, I propose the following patches as this sample.
-
-> 
-> 2. long term
->  - BUG_ON() is decreased by using the forced-readonly framework(already posted by Liu Bo),
->    etc. 
-
-
-This patch retries kmem_cache_alloc() in start_transaction() several times. 
-
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- fs/btrfs/transaction.c |   22 +++++++++++++++++++++-
- 1 file changed, 21 insertions(+), 1 deletion(-)
-
-diff -urNp linux-2.6.38-rc1/fs/btrfs/transaction.c linux-2.6.38-rc1.new/fs/btrfs/transaction.c
---- linux-2.6.38-rc1/fs/btrfs/transaction.c	2011-01-19 08:14:02.000000000 +0900
-+++ linux-2.6.38-rc1.new/fs/btrfs/transaction.c	2011-01-21 14:08:02.000000000 +0900
-@@ -22,6 +22,7 @@
- #include <linux/writeback.h>
- #include <linux/pagemap.h>
- #include <linux/blkdev.h>
-+#include <linux/ratelimit.h>
- #include "ctree.h"
- #include "disk-io.h"
- #include "transaction.h"
-@@ -175,6 +176,25 @@ static int may_wait_transaction(struct b
- 	return 0;
- }
- 
-+#define MAX_ITERATIONS 10
-+
-+static struct btrfs_trans_handle *alloc_trans_handle(void)
-+{
-+	struct btrfs_trans_handle *ret;
-+	int i = 0;
-+
-+	ret = kmem_cache_alloc(btrfs_trans_handle_cachep, GFP_NOFS);
-+	if (!ret) {
-+		pr_notice_ratelimited("ENOMEM in %s, retrying.\n", __func__);
-+		do {
-+			yield();
-+			ret = kmem_cache_alloc(btrfs_trans_handle_cachep,
-+						GFP_NOFS);
-+		} while (!ret && i++ < MAX_ITERATIONS);
-+	}
-+	return ret;
-+}
-+
- static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
- 						    u64 num_items, int type)
- {
-@@ -185,7 +205,7 @@ static struct btrfs_trans_handle *start_
- 	if (root->fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR)
- 		return ERR_PTR(-EROFS);
- again:
--	h = kmem_cache_alloc(btrfs_trans_handle_cachep, GFP_NOFS);
-+	h = alloc_trans_handle();
- 	if (!h)
- 		return ERR_PTR(-ENOMEM);
- 
-
+> Le 20 janv. 2011 =E0 22:20, Chris Mason a =E9crit :
+>
+>> There was a bug fixed as part of that discussion, and I think I also
+>> better described the way the tree balancing works to Edward.
+>
+> Maybe the wikipedia article should be modified then, because it is no=
+t very reinsuring :-)
+>
+>> A final release? =A0We'll keep improving things for a long time. =A0=
+The
+>> biggest missing feature today is btrfsck, which I'm working on full =
+time
+>> right now.
+>>
+>> -chris
+>
+> Still on the wikipedia page, it's written "Btrfs 1.0 (with finalized =
+on-disk format) was originally slated for a late 2008 release,[5] but a=
+ stable release has not been made as of January 2011.", which is also v=
+ery confusing.
+>
+> According to you, is the version of btrfs in 2.6.37 ready for product=
+ion? I mean, are there still chances that I may loose all my data if I =
+use btrfs?
+>
+> Last question, do you know when the RAID-5 like capabilities will be =
+available?
+>
+> Sorry to ask so many questions, I fully understand you and your team =
+are working very hard on the project, but I was very confused by the Wi=
+kipedia article.
+>
+> Kind regards,
+>
+> Ben--
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

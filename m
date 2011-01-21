@@ -1,78 +1,128 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: make shrink_delalloc a little friendlier
-Date: Fri, 21 Jan 2011 16:10:01 -0500
-Message-ID: <1295644201-22093-1-git-send-email-josef@redhat.com>
+From: CACook@quantum-sci.com
+Subject: Re: Backup Command
+Date: Fri, 21 Jan 2011 13:54:57 -0800
+Message-ID: <201101211354.58138.CACook@quantum-sci.com>
+References: <201101211107.25039.CACook@quantum-sci.com> <AANLkTikpV70ktA4+m1gpKpArMQRTVRQEMPMB=POV5Pue@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: Text/Plain; charset=utf-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTikpV70ktA4+m1gpKpArMQRTVRQEMPMB=POV5Pue@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Xfstests 224 will just sit there and spin for ever until eventually we give up
-flushing delalloc and exit.  On my box this took several hours.  I could not
-interrupt this process either, even though we use INTERRUPTIBLE.  So do 2 things
+On Fri 21 January 2011 11:44:24 Freddie Cash wrote:
+> #!/bin/sh
+>=20
+> ssh someuser@mythtv.pc "/path/to/some/script stop"
+>=20
+> /path/to/your/rsync/script
+>=20
+> ssh someuser@mythtv.pc "/path/to/some/script start"
 
-1) Keep us from looping over and over again without reclaiming anything
-2) If we get interrupted exit the loop
+Ho-lee crap, this is fantastic.  Everything seems to work.  I find thou=
+gh that if I stop myth -and- mysql, I cannot export the database, so I =
+only stop Myth.  It's the only thing using the database anyway, in my c=
+ase.
 
-I tested this and the test now exits in a reasonable amount of time, and can be
-interrupted with ctrl+c.  Thanks,
+Well it's been 12 hours and I'm still doing my first HTPC data transfer=
+, so not all commands are tested (untested=3D=3D#), but I am confident =
+they will work.  I'm donating my (weekly) cron script here in case it h=
+elps someone. (below)
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/extent-tree.c |   17 ++++++++++++++---
- 1 files changed, 14 insertions(+), 3 deletions(-)
+I have four systems:
+hex - work laptop
+droog - HTPC with a 4TB btrfs raid0 array on /home and 500GB raptor on =
+/
+slepnir - backup server in a cube case out in the garage (in case of th=
+eft or fire) with a SuperMicro 5 disk hot-swap cage, 6TB so far. (WD Gr=
+een 2TB now $80 with rebate!)
+phone - Android Nexus One with 16GB SD
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index b552693..7ad7bf2 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3344,8 +3344,10 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
- 	u64 reserved;
- 	u64 max_reclaim;
- 	u64 reclaimed = 0;
-+	long time_left;
- 	int pause = 1;
- 	int nr_pages = (2 * 1024 * 1024) >> PAGE_CACHE_SHIFT;
-+	int loops = 0;
- 
- 	block_rsv = &root->fs_info->delalloc_block_rsv;
- 	space_info = block_rsv->space_info;
-@@ -3358,7 +3360,7 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
- 
- 	max_reclaim = min(reserved, to_reclaim);
- 
--	while (1) {
-+	while (loops < 3) {
- 		/* have the flusher threads jump in and do some IO */
- 		smp_mb();
- 		nr_pages = min_t(unsigned long, nr_pages,
-@@ -3366,8 +3368,12 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
- 		writeback_inodes_sb_nr_if_idle(root->fs_info->sb, nr_pages);
- 
- 		spin_lock(&space_info->lock);
--		if (reserved > space_info->bytes_reserved)
-+		if (reserved > space_info->bytes_reserved) {
-+			loops = 0;
- 			reclaimed += reserved - space_info->bytes_reserved;
-+		} else {
-+			loops++;
-+		}
- 		reserved = space_info->bytes_reserved;
- 		spin_unlock(&space_info->lock);
- 
-@@ -3378,7 +3384,12 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
- 			return -EAGAIN;
- 
- 		__set_current_state(TASK_INTERRUPTIBLE);
--		schedule_timeout(pause);
-+		time_left = schedule_timeout(pause);
-+
-+		/* We were interrupted, exit */
-+		if (time_left)
-+			break;
-+
- 		pause <<= 1;
- 		if (pause > HZ / 10)
- 			pause = HZ / 10;
--- 
-1.6.6.1
+The backup server has SSH credentials on the other systems, but only th=
+e work laptop can ssh to it (limited by Shorewall).  The backup server =
+will also handle security cameras and will presumably dnat a port to th=
+e HTPC, which will serve it to the WAN on SSH (reverse tunnel) so I can=
+ get motion notifications and video on my phone. (ZoneMinder)  The HTPC=
+ is the only system allowed to present anything to the WAN as it has no=
+thing sensitive, and -that- will be on a subnet.  Maybe I can limit it =
+to my phone's IP.
 
+I do have a (disused) WindowsXP partition, but unsure how to back that =
+up.  Maybe ssh with a dd command.
+
+Thanks for the help all.
+
+backups
+-----------------------------------------------------------------------=
+----------------------------------------------------------
+#!/bin/sh
+#
+# cron.weekly/backups -- schedules periodic backups of darkmatter syste=
+ms
+#
+# Copyleft =C2=A9 Carl Cook
+#
+#--archive is  equivalent  to  'recursive links perms times group owner=
+ DevicesSpecials'
+
+/bin/mount /media/backups
+
+#------------------------------------------------------
+# Hex
+
+#/sbin/btrfs subvolume snapshot /media/backups/hex-home/ /media/backups=
+/hex-home-snap-$(date +"%Y-%m-%d")
+/usr/bin/rsync --archive --checksum --compress --hard-links --delete-du=
+ring --delete-excluded --inplace --numeric-ids --log-file=3D/media/back=
+ups/hex-home-$(date +"%Y-%m-%d").log -e ssh root@hex:///home/ /media/ba=
+ckups/hex-home/
+
+#/sbin/btrfs subvolume snapshot /media/backups/hex-root/ /media/backups=
+/hex-root-snap-$(date +"%Y-%m-%d")
+#/usr/bin/rsync --archive --checksum --compress --hard-links --delete-d=
+uring --delete-excluded --inplace --numeric-ids --exclude-from=3D/media=
+/backups/exclude-root --log-file=3D/media/backups/hex-root-$(date +"%Y-=
+%m-%d").log -e ssh root@hex:/// /media/backups/hex-root/
+
+#------------------------------------------------------
+# Droog
+
+#/sbin/btrfs subvolume snapshot /media/backups/droog-home/ /media/backu=
+ps/droog-home-snap-$(date +"%Y-%m-%d")
+/usr/bin/rsync --archive --checksum --compress --hard-links --delete-du=
+ring --delete-excluded --inplace --numeric-ids --log-file=3D/media/back=
+ups/droog-home-$(date +"%Y-%m-%d").log -e ssh root@droog:///home/ /medi=
+a/backups/droog-home/
+
+/usr/bin/ssh root@droog "/etc/init.d/mythtv-backend stop"
+/usr/bin/ssh root@droog "/usr/bin/mysqldump -u mythtv -pmythtv mythconv=
+erg -c > /home/bill/.mythtv/mysql_backup-$(date +"%Y-%m-%d").sql"
+/usr/bin/ssh root@droog "/etc/init.d/mythtv-backend start"
+/sbin/btrfs subvolume snapshot /media/backups/droog-root/ /media/backup=
+s/droog-root-snap-$(date +"%Y-%m-%d")
+/usr/bin/rsync --archive --checksum --compress --hard-links --delete-du=
+ring --delete-excluded --inplace --numeric-ids --exclude-from=3D/media/=
+backups/exclude-root --log-file=3D/media/backups/droog-root-$(date +"%Y=
+-%m-%d").log -e ssh root@droog:/// /media/backups/droog-root/
+
+#------------------------------------------------------
+# Phone
+
+#/sbin/btrfs subvolume snapshot /media/backups/phone-sd/ /media/backups=
+/phone-sd-snap-$(date +"%Y-%m-%d")
+#/usr/bin/rsync --archive --checksum --compress --hard-links --delete-d=
+uring --delete-excluded --inplace --numeric-ids --log-file=3D/media/bac=
+kups/phone-sd-$(date +"%Y-%m-%d").log -e ssh root@hex:///media/disk-1/ =
+/media/backups/phone-sd/
+
+#------------------------------------------------------
+
+/bin/umount /media/backups
+
+-----------------------------------------------------------------------=
+----------------------------------------------------------
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,53 +1,38 @@
 From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: Re: Adding a disk fails
-Date: 21 Jan 2011 11:51:00 +0100
-Message-ID: <BeHcMpvT1uB@helmut.hullen.de>
-References: <4D38B382.1050709@libero.it>
+Subject: version (was: btrfs, broken design?)
+Date: 21 Jan 2011 10:54:00 +0100
+Message-ID: <BeHcMN1T1uB@helmut.hullen.de>
+References: <1295558324-sup-1046@think>
 Reply-To: helmut@hullen.de
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D38B382.1050709@libero.it>
+In-Reply-To: <1295558324-sup-1046@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Goffredo,
+Hallo, Chris,
 
 Du meintest am 20.01.11:
 
-> To add another disk you don't have to run mkfs.btrfs. For example:
+>> Is there a planned date for the final release of btrfs?
 
-> # add the first disk
-> mkfs.btrfs /dev/sdb
-> # mount the disk
-> mount /dev/sdb /media/backups
+> A final release?  We'll keep improving things for a long time.  The
+> biggest missing feature today is btrfsck, which I'm working on full
+> time right now.
 
-> # add another disk to the first one
-> btrfs device add /dev/sdc /media/backup
+Could it be possible to tell somewhere the actual version?
 
-> Note1: the filesystem has to be mounted
-> Note2: the medatada will be in raid1, the data in raid0
+Sometimes I download via git,
+
+ <git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs-unstable.git>
 
 
-Note 3: if the disk has been used (especially under btrfs) you should  
-first delete old partitioning data etc:
+and I never have found which version that is; "version.sh" tells  
+something wrong.
 
-        dd if=/dev/zero of=/dev/sdb count=1000
-        dd if=/dev/zero of=/dev/sdc count=1000
-
-I've just tried your recipe with two devices I had used for other btrfs  
-experiments:
-
-        btrfs filesystem show 2>/dev/null
-
-shows my new wishes, and it shows the old settings too.
-
-But writing 1000 blocks seems to be not enough - sometimes I'll try  
-bigger numbers. What happens with the old (and now unwanted) settings?
-
-By the way: I nee "2>/dev/null" because the actual git version always  
-tries to show all block devices which it finds in "/dev" (no: I don't  
-use "udev").
+And I never have seen somethin like "Changelog" - that would be fine  
+too.
 
 Viele Gruesse!
 Helmut

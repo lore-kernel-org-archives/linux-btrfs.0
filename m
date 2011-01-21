@@ -1,41 +1,35 @@
 From: "Helmut Hullen" <Hullen@t-online.de>
 Subject: Re: Adding a disk fails
-Date: 21 Jan 2011 07:57:00 +0100
-Message-ID: <BeHbtWOT1uB@helmut.hullen.de>
-References: <4D38B382.1050709@libero.it>
+Date: 21 Jan 2011 08:00:00 +0100
+Message-ID: <BeHbttGy1uB@helmut.hullen.de>
+References: <201101201510.54418.CACook@quantum-sci.com>
 Reply-To: helmut@hullen.de
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D38B382.1050709@libero.it>
+In-Reply-To: <201101201510.54418.CACook@quantum-sci.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Goffredo,
+Hallo, Carl,
 
 Du meintest am 20.01.11:
 
-> To add another disk you don't have to run mkfs.btrfs. For example:
+>> If you shutdown the system, at the reboot you should "scan" all the
+>> device in order to find the btrfs ones
+>>
+>> # find the btrfs device
+>> btrfs device scan
 
-> # add the first disk
-> mkfs.btrfs /dev/sdb
-> # mount the disk
-> mount /dev/sdb /media/backups
+> This must be done at every boot?
 
-> # add another disk to the first one
-> btrfs device add /dev/sdc /media/backup
+Yes - this advice is added in the Wiki (?).
 
-                                   ^backups
+> If so, where is recommended, in rc.local?
 
-> Note1: the filesystem has to be mounted
-> Note2: the medatada will be in raid1, the data in raid0
-
-And there seems to be an error; some options tell the sum of the sizes  
-of /dev/sdb and /dev/sdc as available size, but perhaps you can only use  
-the size of the smaller of the two devices - the system seems to work in  
-a kind of RAID1.
-
-The error is known but not yet fixed.
+That depends - it has to be done before mounting. And if the device is  
+part of the boot partition then you may put the "scan" command into an  
+init-ramdisk.
 
 Viele Gruesse!
 Helmut

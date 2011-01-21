@@ -1,34 +1,23 @@
-From: liubo <liubo2009@cn.fujitsu.com>
-Subject: Re: [PATCH] btrfs: fix return value check of	btrfs_start_transaction()
-Date: Fri, 21 Jan 2011 09:59:39 +0800
-Message-ID: <4D38E88B.7030100@cn.fujitsu.com>
-References: <201101200619.AA00004@T-ITOH1.jp.fujitsu.com> <20110120160959.GB6609@dhcp231-156.rdu.redhat.com>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: btrfs subvolume list fails to show all snapshots
+Date: Fri, 21 Jan 2011 10:03:55 +0800
+Message-ID: <4D38E98B.8090901@cn.fujitsu.com>
+References: <20101212034339.GA26170@idallen.ca> <20101212081359.GA7389@idallen.ca> <20101212094517.GA19181@idallen.ca> <4D05DD9A.2060206@cn.fujitsu.com> <20110120230127.GB4161@idallen.ca>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Tsutomu Itoh <t-itoh@jp.fujitsu.com>, linux-btrfs@vger.kernel.org,
-	chris.mason@oracle.com
-To: Josef Bacik <josef@redhat.com>
+Cc: linux-btrfs@vger.kernel.org
+To: "Ian! D. Allen" <idallen@idallen.ca>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110120160959.GB6609@dhcp231-156.rdu.redhat.com>
+In-Reply-To: <20110120230127.GB4161@idallen.ca>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/21/2011 12:09 AM, Josef Bacik wrote:
-> On Thu, Jan 20, 2011 at 03:19:37PM +0900, Tsutomu Itoh wrote:
->> The error check of btrfs_start_transaction() is added, and the mistake
->> of the error check on several places is corrected. 
->>
+07:01, Ian! D. Allen wrote:
+> Still getting "btrfs subvolume list" errors with this source:
 > 
-> I'd rather we go through and have these things return an error than do a
-> BUG_ON().  We're moving towards a more stable BTRFS, not one that panics more
-> often :).  Thanks,
-
-Great, seems that we all feel it is the time to focus on this. :)
-
-> 
-> Josef
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs-unstable.git
 > 
 
+Just because the fix hasn't been merged into the git tree..
+
+> I create ten snapshots, and after creating the tenth one, the sixth one
+> disappears from "btrfs subvolume list":

@@ -1,62 +1,62 @@
-From: Chester <somethingsome2000@gmail.com>
-Subject: Re: btrfs, broken design?
-Date: Fri, 21 Jan 2011 00:46:44 -0600
-Message-ID: <AANLkTikGPRrdaj2SO5ZwjD8pZEVNj4pBM8X_iEAATu0G@mail.gmail.com>
-References: <EC13E050-AA91-4DCA-B171-9CA55D537DB7@gmail.com>
- <1295558324-sup-1046@think> <B3BEB66D-49FF-48B7-B40A-77A9B05F2B54@gmail.com>
+From: Hubert Kario <hka@qbs.com.pl>
+Subject: Re: Adding a disk fails
+Date: Fri, 21 Jan 2011 07:55:54 +0100
+Message-ID: <201101210755.54750.hka@qbs.com.pl>
+References: <201101201318.40686.CACook@quantum-sci.com> <4D38B382.1050709@libero.it> <201101201510.54418.CACook@quantum-sci.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: Text/Plain; charset=iso-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Carl Cook <CACook@quantum-sci.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <B3BEB66D-49FF-48B7-B40A-77A9B05F2B54@gmail.com>
+In-Reply-To: <201101201510.54418.CACook@quantum-sci.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs has its own wiki page at https://btrfs.wiki.kernel.org which you
-may find more helpful than what is on wikipedia.
+On Friday 21 of January 2011 00:10:54 Carl Cook wrote:
+> On Thu 20 January 2011 14:13:22 Goffredo Baroncelli wrote:
+> > To add another disk you don't have to run mkfs.btrfs. For example:
+> >=20
+> > # add the first disk
+> > mkfs.btrfs /dev/sdb
+> > # mount the disk
+> > mount /dev/sdb /media/backups
+> >=20
+> > # add another disk to the first one
+> > btrfs device add /dev/sdc /media/backup
+>=20
+> Thanks Goffredo but as I say, I did this and it responds with
+>  "ERROR: error adding the device '/dev/sdc'"
+> ... it doesn't give a clue.
 
-2011/1/20 Beno=EEt Thi=E9bault <benoit.thiebault@gmail.com>:
-> Thanks for your answer
->
-> Le 20 janv. 2011 =E0 22:20, Chris Mason a =E9crit :
->
->> There was a bug fixed as part of that discussion, and I think I also
->> better described the way the tree balancing works to Edward.
->
-> Maybe the wikipedia article should be modified then, because it is no=
-t very reinsuring :-)
->
->> A final release? =A0We'll keep improving things for a long time. =A0=
-The
->> biggest missing feature today is btrfsck, which I'm working on full =
-time
->> right now.
->>
->> -chris
->
-> Still on the wikipedia page, it's written "Btrfs 1.0 (with finalized =
-on-disk format) was originally slated for a late 2008 release,[5] but a=
- stable release has not been made as of January 2011.", which is also v=
-ery confusing.
->
-> According to you, is the version of btrfs in 2.6.37 ready for product=
-ion? I mean, are there still chances that I may loose all my data if I =
-use btrfs?
->
-> Last question, do you know when the RAID-5 like capabilities will be =
-available?
->
-> Sorry to ask so many questions, I fully understand you and your team =
-are working very hard on the project, but I was very confused by the Wi=
-kipedia article.
->
-> Kind regards,
->
-> Ben--
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->
+You still have a btrfs on /dev/sdc, do a=20
+dd if=3D/dev/zero of=3D/dev/sdc bs=3D8192
+(overkill, but I don't remember which blocks have to be zeroed to destr=
+oy=20
+btrfs superblock)
+Then
+btrfs dev add /dev/sdc /media backup
+
+>=20
+> > Note1: the filesystem has to be mounted
+> > Note2: the medatada will be in raid1, the data in raid0
+> > If you shutdown the system, at the reboot you should "scan" all the
+> > device in order to find the btrfs ones
+> >=20
+> > # find the btrfs device
+> > btrfs device scan
+>=20
+> This must be done at every boot?  If so, where is recommended, in rc.=
+local?
+
+yes. rc.local is too late, unless you will also mount the volume from t=
+here=20
+and not using /etc/fstab
+
+--=20
+Hubert Kario
+QBS - Quality Business Software
+02-656 Warszawa, ul. Ksawer=F3w 30/85
+tel. +48 (22) 646-61-51, 646-74-24
+www.qbs.com.pl
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

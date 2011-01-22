@@ -1,78 +1,62 @@
 From: Hugo Mills <hugo-lkml@carfax.org.uk>
 Subject: Re: Bug in mkfs.btrfs?!
-Date: Sat, 22 Jan 2011 15:11:24 +0000
-Message-ID: <20110122151124.GC29985@carfax.org.uk>
+Date: Sat, 22 Jan 2011 15:45:03 +0000
+Message-ID: <20110122154502.GD29985@carfax.org.uk>
 References: <20110122144513.GA2539@scooter>
  <20110122145222.GB2539@scooter>
+ <20110122151124.GC29985@carfax.org.uk>
 Mime-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="96YOpH+ONegL0A3E"
-Cc: linux-btrfs@vger.kernel.org
-To: Felix Blanke <felixblanke@gmail.com>
+	protocol="application/pgp-signature"; boundary="d9ADC0YsG2v16Js0"
+To: Hugo Mills <hugo-lkml@carfax.org.uk>,
+	Felix Blanke <felixblanke@gmail.com>,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110122145222.GB2539@scooter>
+In-Reply-To: <20110122151124.GC29985@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---96YOpH+ONegL0A3E
+--d9ADC0YsG2v16Js0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 
-On Sat, Jan 22, 2011 at 03:52:22PM +0100, Felix Blanke wrote:
-> I was able to create the fs with the --force options. But that bug should be fixed,
-> too :)
+On Sat, Jan 22, 2011 at 03:11:24PM +0000, Hugo Mills wrote:
+> On Sat, Jan 22, 2011 at 03:52:22PM +0100, Felix Blanke wrote:
+> > I was able to create the fs with the --force options. But that bug should be fixed,
+> > too :)
+> > 
+> > Is that link maybe too long? It is created by udev, and there was never a problem
+> > using that link.
 > 
-> Is that link maybe too long? It is created by udev, and there was never a problem
-> using that link.
+>    Yes, it certainly looks like it. There's 63 characters in the name
+> in your strace report, so it looks like it's being truncated somewhere.
+> 
+>    What was the exact command line you used to get the error?
 
-   Yes, it certainly looks like it. There's 63 characters in the name
-in your strace report, so it looks like it's being truncated somewhere.
+   Also, can you post the full strace output? (Just so I can get a
+better idea of where it's getting to in the code).
 
-   What was the exact command line you used to get the error?
+   I've just tried it myself:
+
+$ sudo mkfs.btrfs /dev/disk/by-id/dm-uuid-LVM-XRQLHQNa0xEeIZL4ofuBGIcfkr1Dhry8YHhkjaw4bvZA4meDFQfEMy5elIsVNeWl 
+
+WARNING! - Btrfs v0.19-36-g70c6c10 IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
+
+fs created label (null) on /dev/disk/by-id/dm-uuid-LVM-XRQLHQNa0xEeIZL4ofuBGIcfkr1Dhry8YHhkjaw4bvZA4meDFQfEMy5elIsVNeWl
+	nodesize 4096 leafsize 4096 sectorsize 4096 size 1.00GB
+Btrfs v0.19-36-g70c6c10
+
+   Seems perfectly happy with a 92-character device name...
 
    Hugo.
-
-> Regards,
-> Felix
-> 
-> On 22. January 2011 - 15:45, Felix Blanke wrote:
-> > Date: Sat, 22 Jan 2011 15:45:13 +0100
-> > From: Felix Blanke <felixblanke@gmail.com>
-> > To: linux-btrfs@vger.kernel.org
-> > Subject: Bug in mkfs.btrfs?!
-> > 
-> > Hi,
-> > 
-> > I wanted to create a new btrfs fs for my backups.
-> > When trying to mkfs.btrfs for that  device, I'm getting
-> > 
-> > "error checking /dev/loop2 mount status"
-> > 
-> > 
-> > With strace I see where the problem is:
-> > 
-> > lstat("/dev/disk/by-id/ata-INTEL_SSDSA2M160G2GC_CVPO939201JX160AGN-par",
-> > 0x7fffa30b3cf0) = -1 ENOENT (No such file or directory)
-> > 
-> > 
-> > 
-> > The problem is there is something missing at the end of the link, should be
-> > something like "-part1", "-part2" etc.
-> > 
-> > 
-> > I'll try the patch with the --foce option.
-> > 
-> > Regards,
-> > Felix
-> > 
-> ---end quoted text---
 
 -- 
 === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
   PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
      --- Great oxymorons of the world, no. 9: Standard Deviation ---     
 
---96YOpH+ONegL0A3E
+--d9ADC0YsG2v16Js0
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 Content-Disposition: inline
@@ -80,9 +64,9 @@ Content-Disposition: inline
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.10 (GNU/Linux)
 
-iD8DBQFNOvOcIKyzvlFcI40RAvlQAJ9XapeMWZmVi/Hwb4odRtztG8dm8gCfTmay
-j0+oRYPtyUuPDF7MaevPdXI=
-=mFQm
+iD8DBQFNOvt+IKyzvlFcI40RAh9VAJ0T+dpg8cf2A0UR6+emrEzZfEMsXACgm7Xj
+sL96hJy+wxOiSpu3jdwYHTo=
+=rBFO
 -----END PGP SIGNATURE-----
 
---96YOpH+ONegL0A3E--
+--d9ADC0YsG2v16Js0--

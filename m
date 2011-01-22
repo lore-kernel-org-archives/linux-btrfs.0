@@ -1,29 +1,54 @@
-From: Tomasz Torcz <tomek@pipebreaker.pl>
-Subject: Re: Shrinking virtual disk with btrfs on it
-Date: Sat, 22 Jan 2011 09:28:51 +0100
-Message-ID: <20110122082850.GA2921@mother>
-References: <AANLkTimVGfP0UFgkTEtrqrc8RoPPoqgwu=x--KHa3Y9j@mail.gmail.com>
- <4D39E1F3.5070903@electric-spoon.com>
+From: Maximilian Mehnert <maximilian.mehnert@gmx.de>
+Subject: [PATCH] Add -v option to btrfsctl to control verbosity: Be quiet
+ unless requested.
+Date: Sat, 22 Jan 2011 12:59:22 +0100
+Message-ID: <4D3AC69A.2080302@gmx.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D39E1F3.5070903@electric-spoon.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 21, 2011 at 07:43:47PM +0000, David Pottage wrote:
-> On 21/01/11 17:20, Rodney Beede wrote:
-> > Any tools to go about zeroing about the free space on a btrfs file
-> > system so I can shrink the VMware vmdk virtual disk?
-> >
-> > I ran the VMware command, but the dynamic disk is still really big.  I
-> > presume it is due to free space that isn't zeroed out.
-> Does btrfs issue TRIM commands to the underlying (virtual) block device?
+---
+  btrfsctl.c |   10 ++++++++--
+  1 files changed, 8 insertions(+), 2 deletions(-)
 
-  It does when mounted with - o discard.  IIRC, btrfs also supports
-FITRIM ioctl (but I'm not 100% sure about this).
- 
--- 
-Tomasz Torcz               RIP is irrevelant. Spoofing is futile.
-xmpp: zdzichubg@chrome.pl     Your routes will be aggreggated. -- Alex Yuriev
+diff --git a/btrfsctl.c b/btrfsctl.c
+index 92bdf39..156ed62 100644
+--- a/btrfsctl.c
++++ b/btrfsctl.c
+@@ -106,6 +106,7 @@ int main(int ac, char **av)
+  	char *pos;
+  	char *fullpath;
+  	u64 objectid = 0;
++	int verbose = 0;
+   	if (ac == 2 && strcmp(av[1], "-a") == 0) {
+  		fprintf(stderr, "Scanning for Btrfs filesystems\n");
+@@ -217,6 +218,9 @@ int main(int ac, char **av)
+  				}
+  			}
+  		}
++		else if (strcmp(av[i], "-v") == 0) {
++			verbose = 1;
++		}
+  	}
+  	if (command == 0) {
+  		fprintf(stderr, "no valid commands given\n");
+@@ -254,11 +258,13 @@ int main(int ac, char **av)
+  		exit(1);
+  	}
+  	if (ret == 0) {
+-		printf("operation complete\n");
++		if (verbose) printf("operation complete\n");
+  	} else {
+  		printf("ioctl failed with error %d\n", ret);
+  	}
+-	printf("%s\n", BTRFS_BUILD_VERSION);
++	if (verbose) {
++		printf("%s\n", BTRFS_BUILD_VERSION);
++	}
+  	if (ret)
+  		exit(1);
+  -- 1.7.2.3
+
 

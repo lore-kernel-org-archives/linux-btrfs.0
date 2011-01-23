@@ -1,103 +1,64 @@
-From: Hubert Kario <kario@wit.edu.pl>
-Subject: [PATCH] update man page to new defragment command interface
-Date: Sun, 23 Jan 2011 16:31:07 +0100
-Message-ID: <201101231631.07631.kario@wit.edu.pl>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: Re: snapshot strange behaviour
+Date: Sun, 23 Jan 2011 19:02:11 +0100
+Message-ID: <4D3C6D23.106@libero.it>
+References: <ihgklr$s29$1@dough.gmane.org> <4D3C1C49.8040104@libero.it> <ihhg37$8qj$1@dough.gmane.org>
+Reply-To: kreijack@inwind.it
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="us-ascii"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: Lubos Kolouch <lubos.kolouch@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <ihhg37$8qj$1@dough.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Update
+On 01/23/2011 04:05 PM, Lubos Kolouch wrote:
+> Goffredo Baroncelli, Sun, 23 Jan 2011 13:17:13 +0100:
+> 
+>> Hi Lubos,
+>>
+>> On 01/23/2011 08:17 AM, Lubos Kolouch wrote:
+>>> Hello,
 
-        btrfs filesystem defragment
+>>> Is this a bug or intended behaviour and I am missing something
+>>> something? How to snapshot a subvolume, containing another subvolumes?
+>>
+>> It is the intended behavior. The snapshotting is not recursive about
+>> subvolumes. If you snapshot a subvolume which contains another one, you
+>> got only the content of the first subvolume. The directory "x/b" which
+>> you see, is not the subvolume "b" snapshotted, but only the
+>> "mount-point" of "b".
+>>
+> 
+> Hi Goffredo,
+> 
+> I understand. But then I think btrfs should refuse to do it or at least 
+> print a warning. Otherwise it is very inconvenient for the user, having to
+> search for any subvolumes down the tree...
 
-command explanation. Add explanation of advanced parameters and notes
-about general usage.
 
-Add few notes about the
+Sorry, but I can't agree. To me it seems a reasonable default. There are
+a lot of cases where I would not snapshot a sub-sub-subvolume: my rootfs
+is a subvolume, my home is in another one. I can snapshot, update the
+root fs, then if something goes wrong I can roolback to the old one,
+without affecting my home.
 
-        btrfs <command> --help
+This behavior is strictly related to the btrfs internal.
 
-usage, fix related grammar.
+Any way it is true that this behavior should be highlighted in the
+documentation.
 
-Signed-off-by: Hubert Kario <kario@wit.edu.pl>
----
- man/btrfs.8.in |   33 ++++++++++++++++++++++++++-------
- 1 files changed, 26 insertions(+), 7 deletions(-)
+And more, it is possible to add a "-R" flag to snapshot recursively a
+subvolume...
 
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index 26ef982..cba2de1 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -15,7 +15,7 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBsubvolume set-default\fP\fI <id> <path>\fP
- .PP
--\fBbtrfs\fP \fBfilesystem defrag\fP\fI <file>|<dir> [<file>|<dir>...]\fP
-+\fBbtrfs\fP \fBfilesystem defragment\fP\fI [-vcf] [-s start] [-l len] [-t size] <file>|<dir> [<file>|<dir>...]\fP
- .PP
- \fBbtrfs\fP \fBfilesystem sync\fP\fI <path> \fP
- .PP
-@@ -34,6 +34,8 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBhelp|\-\-help|\-h \fP\fI\fP
- .PP
-+\fBbtrfs\fP \fB<command> \-\-help \fP\fI\fP
-+.PP
- .SH DESCRIPTION
- .B btrfs
- is used to control the filesystem and the files and directories stored. It is
-@@ -60,12 +62,12 @@ returns an error.
- 
- If a command is terminated by
- .I --help
--, the relevant help is showed. If the passed command matches more commands,
--the help of all the matched commands are showed. For example
-+, the detailed help is showed. If the passed command matches more commands,
-+detailed help of all the matched commands is showed. For example
- .I btrfs dev --help
- shows the help of all
- .I device*
--command.
-+commands.
- 
- .SH COMMANDS
- .TP
-@@ -98,12 +100,29 @@ mount time via the \fIsubvol=\fR option.
- 
- \fBsubvolume set-default\fR\fI <id> <path>\fR
- Set the subvolume of the filesystem \fI<path>\fR which is mounted as 
--\fIdefault\fR. The subvolume is identified by \fB<id>\fR, which 
-+\fIdefault\fR. The subvolume is identified by \fI<id>\fR, which 
- is returned by the \fBsubvolume list\fR command.
- .TP
- 
--\fBfilesystem defragment\fP\fI <file>|<dir> [<file>|<dir>...]\fR
--Defragment files and/or directories.
-+\fBfilesystem defragment\fP\fI [-vcf] [-s start] [-l len] [-t size] <file>|<dir> [<file>|<dir>...]\fR
-+Defragment file data and/or directory metadata. To defragment all files in a
-+directory you have to specify each one on its own or use your shell wildcards.
-+
-+\fB-v\fP be verbose
-+
-+\fB-c\fP compress file contents while defragmenting
-+
-+\fB-f\fP flush filesystem after defragmenting
-+
-+\fB-s start\fP defragment only from byte \fIstart\fR onward
-+
-+\fB-l len\fP defragment only up to \fIlen\fR bytes
-+
-+\fB-t size\fP defragment only files at least \fIsize\fR bytes big
-+
-+NOTE: defragmenting with kernels up to 2.6.37 will unlink COW-ed copies of data, don't 
-+use it if you use snapshots, have de-duplicated your data or made copies with 
-+\fBcp --reflink\fP.
- .TP
- 
- \fBdevice scan\fR \fI[<device> [<device>..]]\fR
--- 
-1.7.3.5
+Goffredo
+
+> Lubos
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> .
+> 
 

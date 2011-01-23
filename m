@@ -1,68 +1,39 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: snapshot strange behaviour
-Date: Sun, 23 Jan 2011 13:17:13 +0100
-Message-ID: <4D3C1C49.8040104@libero.it>
-References: <ihgklr$s29$1@dough.gmane.org>
-Reply-To: kreijack@inwind.it
+From: Hubert Kario <kario@wit.edu.pl>
+Subject: [PATCH 1/2] add advanced use of --help to help message
+Date: Sun, 23 Jan 2011 13:39:36 +0100
+Message-ID: <201101231339.36599.kario@wit.edu.pl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Lubos Kolouch <lubos.kolouch@gmail.com>
+Content-Type: Text/Plain;
+  charset="us-ascii"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <ihgklr$s29$1@dough.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Lubos,
+explain how to use
 
-On 01/23/2011 08:17 AM, Lubos Kolouch wrote:
-> Hello,
-> 
-> During doing backups I found strange behaviour... 2.6.37, latest btrfs-
-> progs from git
-> 
-> nbgentoo ~ # btrfs subv crea a
-> Create subvolume './a'
-> nbgentoo ~ # cd a
-> nbgentoo a # btrfs subv crea b
-> Create subvolume './b'
-> nbgentoo a # touch b/file
-> nbgentoo a # ls -l b/
-> total 0
-> -rw-r--r-- 1 root root 0 Jan 23 08:14 file
-> nbgentoo a # cd ..
-> nbgentoo ~ # btrfs subv snap a x
-> Create a snapshot of 'a' in './x'
-> nbgentoo ~ # ls -l x/b/
-> total 0
-> 
-> and also
-> 
-> nbgentoo ~ # cd x/
-> nbgentoo x # btrfs subv dele b 
-> ERROR: 'b' is not a subvolume
-> 
-> Is this a bug or intended behaviour and I am missing something something?
-> How to snapshot a subvolume, containing another subvolumes?
+        btrfs <cmd> --help
 
-It is the intended behavior. The snapshotting is not recursive about
-subvolumes. If you snapshot a subvolume which contains another one, you
-got only the content of the first subvolume.
-The directory "x/b" which you see, is not the subvolume "b" snapshotted,
-but only the "mount-point" of "b".
+command in help message
 
+Signed-off-by: Hubert Kario <kario@wit.edu.pl>
+---
+ btrfs.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-> 
-> (I create subvolume backup, under this another subvolumes as not always I 
-> want to snapshot the whole backup subvolume).
-> 
-> Thank you
-> 
-> Lubos
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> .
-> 
+diff --git a/btrfs.c b/btrfs.c
+index 46314cf..b84607a 100644
+--- a/btrfs.c
++++ b/btrfs.c
+@@ -151,6 +151,8 @@ static void help(char *np)
+ 		print_help(np, cp);
+ 
+ 	printf("\n\t%s help|--help|-h\n\t\tShow the help.\n",np);
++	printf("\n\t%s <cmd> --help\n\t\tShow detailed help for a command 
+or\n\t\t"
++            "subset of commands.\n",np);
+ 	printf("\n%s\n", BTRFS_BUILD_VERSION);
+ }
+ 
+-- 
+1.7.3.5
 

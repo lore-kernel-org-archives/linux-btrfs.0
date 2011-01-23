@@ -1,25 +1,103 @@
 From: Hubert Kario <kario@wit.edu.pl>
-Subject: Re: [PATCH 2/2] add detailed help messages to btrfs command
-Date: Sun, 23 Jan 2011 16:06:00 +0100
-Message-ID: <201101231606.01177.kario@wit.edu.pl>
-References: <201101231339.36599.kario@wit.edu.pl> <201101231528.20678.kario@wit.edu.pl> <4D3C4114.1060004@inwind.it>
+Subject: [PATCH] update man page to new defragment command interface
+Date: Sun, 23 Jan 2011 16:31:07 +0100
+Message-ID: <201101231631.07631.kario@wit.edu.pl>
 Mime-Version: 1.0
 Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: linux-btrfs@vger.kernel.org
-To: kreijack@inwind.it
+  charset="us-ascii"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D3C4114.1060004@inwind.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sunday 23 of January 2011 15:54:12 Goffredo Baroncelli wrote:
-> There are a lot of patches regarding the btrfs-tool.
-> Unfortunately, the btrfs maintainer are very busy in other areas of the
-> project. I don't know when (if) these patches will be applied.
-> However I think that is better have a misaligned patch instead nothing.
+Update
 
-Just as I thought. I'll post it in a minute.
+        btrfs filesystem defragment
 
-Regards
-Hubert Kario
+command explanation. Add explanation of advanced parameters and notes
+about general usage.
+
+Add few notes about the
+
+        btrfs <command> --help
+
+usage, fix related grammar.
+
+Signed-off-by: Hubert Kario <kario@wit.edu.pl>
+---
+ man/btrfs.8.in |   33 ++++++++++++++++++++++++++-------
+ 1 files changed, 26 insertions(+), 7 deletions(-)
+
+diff --git a/man/btrfs.8.in b/man/btrfs.8.in
+index 26ef982..cba2de1 100644
+--- a/man/btrfs.8.in
++++ b/man/btrfs.8.in
+@@ -15,7 +15,7 @@ btrfs \- control a btrfs filesystem
+ .PP
+ \fBbtrfs\fP \fBsubvolume set-default\fP\fI <id> <path>\fP
+ .PP
+-\fBbtrfs\fP \fBfilesystem defrag\fP\fI <file>|<dir> [<file>|<dir>...]\fP
++\fBbtrfs\fP \fBfilesystem defragment\fP\fI [-vcf] [-s start] [-l len] [-t size] <file>|<dir> [<file>|<dir>...]\fP
+ .PP
+ \fBbtrfs\fP \fBfilesystem sync\fP\fI <path> \fP
+ .PP
+@@ -34,6 +34,8 @@ btrfs \- control a btrfs filesystem
+ .PP
+ \fBbtrfs\fP \fBhelp|\-\-help|\-h \fP\fI\fP
+ .PP
++\fBbtrfs\fP \fB<command> \-\-help \fP\fI\fP
++.PP
+ .SH DESCRIPTION
+ .B btrfs
+ is used to control the filesystem and the files and directories stored. It is
+@@ -60,12 +62,12 @@ returns an error.
+ 
+ If a command is terminated by
+ .I --help
+-, the relevant help is showed. If the passed command matches more commands,
+-the help of all the matched commands are showed. For example
++, the detailed help is showed. If the passed command matches more commands,
++detailed help of all the matched commands is showed. For example
+ .I btrfs dev --help
+ shows the help of all
+ .I device*
+-command.
++commands.
+ 
+ .SH COMMANDS
+ .TP
+@@ -98,12 +100,29 @@ mount time via the \fIsubvol=\fR option.
+ 
+ \fBsubvolume set-default\fR\fI <id> <path>\fR
+ Set the subvolume of the filesystem \fI<path>\fR which is mounted as 
+-\fIdefault\fR. The subvolume is identified by \fB<id>\fR, which 
++\fIdefault\fR. The subvolume is identified by \fI<id>\fR, which 
+ is returned by the \fBsubvolume list\fR command.
+ .TP
+ 
+-\fBfilesystem defragment\fP\fI <file>|<dir> [<file>|<dir>...]\fR
+-Defragment files and/or directories.
++\fBfilesystem defragment\fP\fI [-vcf] [-s start] [-l len] [-t size] <file>|<dir> [<file>|<dir>...]\fR
++Defragment file data and/or directory metadata. To defragment all files in a
++directory you have to specify each one on its own or use your shell wildcards.
++
++\fB-v\fP be verbose
++
++\fB-c\fP compress file contents while defragmenting
++
++\fB-f\fP flush filesystem after defragmenting
++
++\fB-s start\fP defragment only from byte \fIstart\fR onward
++
++\fB-l len\fP defragment only up to \fIlen\fR bytes
++
++\fB-t size\fP defragment only files at least \fIsize\fR bytes big
++
++NOTE: defragmenting with kernels up to 2.6.37 will unlink COW-ed copies of data, don't 
++use it if you use snapshots, have de-duplicated your data or made copies with 
++\fBcp --reflink\fP.
+ .TP
+ 
+ \fBdevice scan\fR \fI[<device> [<device>..]]\fR
+-- 
+1.7.3.5
 

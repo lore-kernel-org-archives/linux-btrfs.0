@@ -1,82 +1,254 @@
-From: Martin Steigerwald <Martin@lichtvoll.de>
-Subject: Re: [regression?] hang with 2.6.37 on a BTRFS test machine
-Date: Sun, 23 Jan 2011 14:44:03 +0100
-Message-ID: <201101231444.10680.Martin@lichtvoll.de>
-References: <BePhzVUT1uB@helmut.hullen.de> (sfid-20110123_143446_269000_092052A2)
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: Re: [PATCH 2/2] add detailed help messages to btrfs command
+Date: Sun, 23 Jan 2011 15:07:09 +0100
+Message-ID: <4D3C360D.3080400@libero.it>
+References: <201101231339.36599.kario@wit.edu.pl> <201101231342.43637.kario@wit.edu.pl>
+Reply-To: kreijack@inwind.it
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart1966746.u5WyidA4mI";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
+Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: helmut@hullen.de, linux-kernel@vger.kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <BePhzVUT1uB@helmut.hullen.de>
+To: Hubert Kario <kario@wit.edu.pl>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201101231342.43637.kario@wit.edu.pl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart1966746.u5WyidA4mI
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Hello Hubert,
 
-CCs restored. Its usual to keep CCs on Linux kernel related mailing lists.
+please update the man page too.
 
-Am Sunday 23 January 2011 schrieb Helmut Hullen:
-> Hallo, Martin,
->=20
-> Du meintest am 23.01.11:
-> > I have something I do not have the slightest clue on how to track
-> > down:
-> >=20
-> > Occasionally with 2.6.37 plain vanilla my ThinkPad T23 freezes in
-> > such a way, that when I type a command at the prompt, nothing will
-> > happen anymore. Same goes for login into a tty. Even dmesg is not
-> > executed anymore. My KDE session doesn't react to clicks anymore,
-> > except for window movement. Most of the time the mouse pointer is
-> > still movable, but sometimes it is frozen as well. But the latter
-> > might be a different problem with X.org.
->=20
-> Maybe it's the same problem ... I have (among my machines) a Thinkpad
-> T22 on which I have run btrfs with kernel 2.6.37-rc4. Sometimes it
-> hung, too. But it's an old machine, with old RAM, with some old disks.
+Regards
+G.Baroncelli
 
-Is the hung comparable to what I have seen? I.e. mouse pointer and stuff=20
-still works, but when entering a command the shell does hang?
+On 01/23/2011 01:42 PM, Hubert Kario wrote:
+> extend the
+> 
+>         btrfs <cmd> --help
+> 
+> command to print detailed help message if available but fallback to
+> basic help message if detailed is unavailable
+> 
+> add detailed help message for 'filesystem defragment' command
+> 
+> little tweaks in comments
+> 
+> Signed-off-by: Hubert Kario <kario@wit.edu.pl>
+> ---
+>  btrfs.c |  101 ++++++++++++++++++++++++++++++++++++++++++--------------------
+>  1 files changed, 68 insertions(+), 33 deletions(-)
+> 
+> diff --git a/btrfs.c b/btrfs.c
+> index b84607a..bd6f6f8 100644
+> --- a/btrfs.c
+> +++ b/btrfs.c
+> @@ -23,6 +23,9 @@
+>  #include "btrfs_cmds.h"
+>  #include "version.h"
+>  
+> +#define BASIC_HELP 0
+> +#define ADVANCED_HELP 1
+> +
+>  typedef int (*CommandFunction)(int argc, char **argv);
+>  
+>  struct Command {
+> @@ -31,8 +34,10 @@ struct Command {
+>  				   if >= 0, number of arguments,
+>  				   if < 0, _minimum_ number of arguments */
+>  	char	*verb;		/* verb */
+> -	char	*help;		/* help lines; form the 2nd onward they are
+> -				   indented */
+> +	char	*help;		/* help lines; from the 2nd line onward they 
+> +                                   are automatically indented */
+> +        char    *adv_help;      /* advanced help message; from the 2nd line 
+> +                                   onward they are automatically indented */
+>  
+>  	/* the following fields are run-time filled by the program */
+>  	char	**cmds;		/* array of subcommands */
+> @@ -47,73 +52,96 @@ static struct Command commands[] = {
+>  	{ do_clone, 2,
+>  	  "subvolume snapshot", "<source> [<dest>/]<name>\n"
+>  		"Create a writable snapshot of the subvolume <source> with\n"
+> -		"the name <name> in the <dest> directory."
+> +		"the name <name> in the <dest> directory.",
+> +          NULL
+>  	},
+>  	{ do_delete_subvolume, 1,
+>  	  "subvolume delete", "<subvolume>\n"
+> -		"Delete the subvolume <subvolume>."
+> +		"Delete the subvolume <subvolume>.",
+> +          NULL
+>  	},
+>  	{ do_create_subvol, 1,
+>  	  "subvolume create", "[<dest>/]<name>\n"
+>  		"Create a subvolume in <dest> (or the current directory if\n"
+> -		"not passed)."
+> +		"not passed).",
+> +          NULL
+>  	},
+>  	{ do_subvol_list, 1, "subvolume list", "<path>\n"
+> -		"List the snapshot/subvolume of a filesystem."
+> +		"List the snapshot/subvolume of a filesystem.",
+> +          NULL
+>  	},
+>  	{ do_find_newer, 2, "subvolume find-new", "<path> <last_gen>\n"
+> -		"List the recently modified files in a filesystem."
+> +		"List the recently modified files in a filesystem.",
+> +          NULL
+>  	},
+>  	{ do_defrag, -1,
+>  	  "filesystem defragment", "[-vcf] [-s start] [-l len] [-t size] <file>|<dir> [<file>|<dir>...]\n"
+> -		"Defragment a file or a directory."
+> +		"Defragment a file or a directory.",
+> +          "[-vcf] [-s start] [-l len] [-t size] <file>|<dir> [<file>|<dir>...]\n"
+> +          "Defragment file data or directory metadata.\n"
+> +                "-v         be verbose\n"
+> +                "-c         compress the file while defragmenting\n"
+> +                "-f         flush data to disk immediately after defragmenting\n"
+> +                "-s start   defragment only from byte onward\n"
+> +                "-l len     defragment only up to len bytes\n"
+> +                "-t size    minimal size of file to be considered for defragmenting\n"
+>  	},
+>  	{ do_set_default_subvol, 2,
+>  	  "subvolume set-default", "<id> <path>\n"
+>  		"Set the subvolume of the filesystem <path> which will be mounted\n"
+> -		"as default."
+> +		"as default.",
+> +          NULL
+>  	},
+>  	{ do_fssync, 1,
+>  	  "filesystem sync", "<path>\n"
+> -		"Force a sync on the filesystem <path>."
+> +		"Force a sync on the filesystem <path>.",
+> +          NULL
+>  	},
+>  	{ do_resize, 2,
+>  	  "filesystem resize", "[+/-]<newsize>[gkm]|max <filesystem>\n"
+>  		"Resize the file system. If 'max' is passed, the filesystem\n"
+> -		"will occupe all available space on the device."
+> +		"will occupe all available space on the device.",
+> +          NULL
+>  	},
+>  	{ do_show_filesystem, 999,
+>  	  "filesystem show", "[<uuid>|<label>]\n"
+>  		"Show the info of a btrfs filesystem. If no <uuid> or <label>\n"
+> -		"is passed, info of all the btrfs filesystem are shown."
+> +		"is passed, info of all the btrfs filesystem are shown.",
+> +          NULL
+>  	},
+>  	{ do_df_filesystem, 1,
+>  	  "filesystem df", "<path>\n"
+> -		"Show space usage information for a mount point\n."
+> +		"Show space usage information for a mount point.",
+> +          NULL
+>  	},
+>  	{ do_balance, 1,
+>  	  "filesystem balance", "<path>\n"
+> -		"Balance the chunks across the device."
+> +		"Balance the chunks across the device.",
+> +          NULL
+>  	},
+>  	{ do_scan,
+>  	  999, "device scan", "[<device> [<device>..]\n"
+>  		"Scan all device for or the passed device for a btrfs\n"
+> -		"filesystem."
+> +		"filesystem.",
+> +          NULL
+>  	},
+>  	{ do_add_volume, -2,
+>  	  "device add", "<dev> [<dev>..] <path>\n"
+> -		"Add a device to a filesystem."
+> +		"Add a device to a filesystem.",
+> +          NULL
+>  	},
+>  	{ do_remove_volume, -2,
+>  	  "device delete", "<dev> [<dev>..] <path>\n"
+> -		"Remove a device from a filesystem."
+> +		"Remove a device from a filesystem.",
+> +          NULL
+>  	},
+>  	/* coming soon
+>  	{ 2, "filesystem label", "<label> <path>\n"
+> -		"Set the label of a filesystem"
+> +		"Set the label of a filesystem",
+> +          NULL
+>  	}
+>  	*/
+> -	{ 0, 0 , 0 }
+> +	{ 0, 0, 0, 0 }
+>  };
+>  
+>  static char *get_prgname(char *programname)
+> @@ -128,17 +156,25 @@ static char *get_prgname(char *programname)
+>  	return np;
+>  }
+>  
+> -static void print_help(char *programname, struct Command *cmd)
+> +static void print_help(char *programname, struct Command *cmd, int helptype)
+>  {
+>  	char	*pc;
+>  
+>  	printf("\t%s %s ", programname, cmd->verb );
+>  
+> -	for(pc = cmd->help; *pc; pc++){
+> -		putchar(*pc);
+> -		if(*pc == '\n')
+> -			printf("\t\t");
+> -	}
+> +        if (helptype == ADVANCED_HELP && cmd->adv_help)
+> +                for(pc = cmd->adv_help; *pc; pc++){
+> +                        putchar(*pc);
+> +                        if(*pc == '\n')
+> +                                printf("\t\t");
+> +                }
+> +        else
+> +	        for(pc = cmd->help; *pc; pc++){
+> +		        putchar(*pc);
+> +		        if(*pc == '\n')
+> +			        printf("\t\t");
+> +	        }
+> +
+>  	putchar('\n');
+>  }
+>  
+> @@ -148,10 +184,10 @@ static void help(char *np)
+>  
+>  	printf("Usage:\n");
+>  	for( cp = commands; cp->verb; cp++ )
+> -		print_help(np, cp);
+> +		print_help(np, cp, BASIC_HELP);
+>  
+>  	printf("\n\t%s help|--help|-h\n\t\tShow the help.\n",np);
+> -	printf("\n\t%s <cmd> --help\n\t\tShow detailed help for a command or\n\t\t"
+> +	printf("\n\t%s <cmd> --help\n\t\tShow detailed help for a command or"
+>              "subset of commands.\n",np);
+>  	printf("\n%s\n", BTRFS_BUILD_VERSION);
+>  }
+> @@ -257,15 +293,14 @@ static int prepare_args(int *ac, char ***av, char *prgname, struct Command *cmd
+>  
+>  
+>  /*
+> -
+> -	This function perform the following jobs:
+> +	This function performs the following jobs:
+>  	- show the help if '--help' or 'help' or '-h' are passed
+>  	- verify that a command is not ambiguous, otherwise show which
+>  	  part of the command is ambiguous
+> -	- if after a (even partial) command there is '--help' show the help
+> +	- if after a (even partial) command there is '--help' show detailed help
+>  	  for all the matching commands
+> -	- if the command doesn't' match show an error
+> -	- finally, if a command match, they return which command is matched and
+> +	- if the command doesn't match show an error
+> +	- finally, if a command matches, they return which command matched and
+>  	  the arguments
+>  
+>  	The function return 0 in case of help is requested; <0 in case
+> @@ -319,7 +354,7 @@ static int parse_args(int argc, char **argv,
+>  		if(argc>i+1 && !strcmp(argv[i+1],"--help")){
+>  			if(!helprequested)
+>  				printf("Usage:\n");
+> -			print_help(prgname, cp);
+> +			print_help(prgname, cp, ADVANCED_HELP);
+>  			helprequested=1;
+>  			continue;
+>  		}
 
-I can't completely rule out a hardware related problem as well, but then=20
-with 2.6.36 the machine now just works again as if nothing happened - its=20
-mostly running at 733 MHz instead of 1.13 GHz and the fan still expels a=20
-steady stream of lukewarm air. I think I have to run it with 2.6.36 at=20
-least a week to see whether its stable with that one. Its not important to=
-=20
-run it with 2.6.37 so thats not a problem. Its just my Amarok machine.
-
-Maybe it would be a good idea when you compare with 2.6.36 as well...
-
-> It has hung some time ago also without any btrfs partition and with
-> older kernel(s).
->=20
-> But I'll test again.
-
-I will also continue to test with a 2.6.37 on a workstation at work, but=20
-there only some scratch partition uses BTRFS. My T23 has / and /home on=20
-it.
-
-Ciao,
-=2D-=20
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
-
---nextPart1966746.u5WyidA4mI
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iEYEABECAAYFAk08MKMACgkQmRvqrKWZhMcBdgCgrzacFG2D/XMD2DecbwKpFcqe
-BzMAoIIttYuMf5TMG10NlgPUcZFC5LgH
-=z9+z
------END PGP SIGNATURE-----
-
---nextPart1966746.u5WyidA4mI--

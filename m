@@ -1,46 +1,29 @@
-From: Lubos Kolouch <lubos.kolouch@gmail.com>
-Subject: snapshot strange behaviour
-Date: Sun, 23 Jan 2011 07:17:15 +0000 (UTC)
-Message-ID: <ihgklr$s29$1@dough.gmane.org>
+From: "Ian! D. Allen" <idallen@idallen.ca>
+Subject: Re: v0.19-35-g1b444cd btrfsck says snapshots have errors
+Date: Sun, 23 Jan 2011 05:44:34 -0500
+Message-ID: <20110123104434.GU22519@idallen.ca>
+References: <20110120225256.GA4161@idallen.ca>
+ <AANLkTi=7aDgTUtRB3nyLsVvdQzkYHA6iQueN9Dv-4wFm@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTi=7aDgTUtRB3nyLsVvdQzkYHA6iQueN9Dv-4wFm@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Fri, Jan 21, 2011 at 09:15:49AM +0800, Yan, Zheng  wrote:
+> On Fri, Jan 21, 2011 at 6:52 AM, Ian! D. Allen <idallen@idallen.ca> wrote:
+> > Still getting btrfsck errors with this:
+> > git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs-unstable.git
+> > unresolved ref root 256 dir 256 index 2 namelen 5 name snap1 error 600
+> > found 49152 bytes used err is 1
+> These is caused by a design flaw, you can safely ignore them.
 
-During doing backups I found strange behaviour... 2.6.37, latest btrfs-
-progs from git
+If it isn't an error, shouldn't btrfsck be ignoring it, not me?
+At minimum it could say "warning" and not "err is 1".
 
-nbgentoo ~ # btrfs subv crea a
-Create subvolume './a'
-nbgentoo ~ # cd a
-nbgentoo a # btrfs subv crea b
-Create subvolume './b'
-nbgentoo a # touch b/file
-nbgentoo a # ls -l b/
-total 0
--rw-r--r-- 1 root root 0 Jan 23 08:14 file
-nbgentoo a # cd ..
-nbgentoo ~ # btrfs subv snap a x
-Create a snapshot of 'a' in './x'
-nbgentoo ~ # ls -l x/b/
-total 0
-
-and also
-
-nbgentoo ~ # cd x/
-nbgentoo x # btrfs subv dele b 
-ERROR: 'b' is not a subvolume
-
-Is this a bug or intended behaviour and I am missing something something?
-How to snapshot a subvolume, containing another subvolumes?
-
-(I create subvolume backup, under this another subvolumes as not always I 
-want to snapshot the whole backup subvolume).
-
-Thank you
-
-Lubos
-
+-- 
+| Ian! D. Allen  -  idallen@idallen.ca  -  Ottawa, Ontario, Canada
+| Home Page: http://idallen.com/   Contact Improv: http://contactimprov.ca/
+| College professor (Free/Libre GNU+Linux) at: http://teaching.idallen.com/
+| Defend digital freedom:  http://eff.org/  and have fun:  http://fools.ca/

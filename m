@@ -1,106 +1,104 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: Re: Bug in mkfs.btrfs?!
-Date: Mon, 24 Jan 2011 17:00:24 +0000
-Message-ID: <20110124170023.GA7576@carfax.org.uk>
-References: <20110122155612.GA3664@scooter>
- <20110123181827.GF29985@carfax.org.uk>
- <4D3CA568.7050506@libero.it>
- <20110124130104.GA7354@scooter>
- <20110124131341.GA3403@carfax.org.uk>
- <20110124135305.GB7354@scooter>
- <20110124142936.GB3403@carfax.org.uk>
- <20110124143448.GC3403@carfax.org.uk>
- <20110124144414.GD7354@scooter>
- <20110124165258.GA2562@scooter>
+From: Freddie Cash <fjwcash@gmail.com>
+Subject: Re: Synching a Backup Server
+Date: Mon, 24 Jan 2011 09:45:37 -0800
+Message-ID: <AANLkTi=beCF0Wh1w095AE5P6XQoazz8tj7+Unt4XnX0f@mail.gmail.com>
+References: <201101060935.14059.CACook@quantum-sci.com>
+	<201101061342.23991.CACook@quantum-sci.com>
+	<AANLkTimOEsFiF7tiCzV-Y3NfGYHjK+uL_3O6PNDKum90@mail.gmail.com>
+	<201101071720.08298.hka@qbs.com.pl>
+	<4D29A033.7000803@chandlerfamily.org.uk>
+	<AANLkTi=KASX7pFO8dxJ1P=OhP3qj6qjTgtA6g1Fw-ou4@mail.gmail.com>
+	<4D29D508.6080006@chandlerfamily.org.uk>
+	<AANLkTim96P3ZD-WpDonsOHB7aicNBQX-wK6v347r1z8s@mail.gmail.com>
+	<20110109183030.GA29572@carfax.org.uk>
+	<AANLkTikgsBx7UUeh9Un7KSus-F4f_5=FY2uu8imMhv8M@mail.gmail.com>
+	<20110122134557.GB29985@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="liOOAslEiF7prFVr"
-Cc: linux-btrfs@vger.kernel.org
-To: Felix Blanke <felixblanke@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+To: Hugo Mills <hugo-lkml@carfax.org.uk>,
+	Freddie Cash <fjwcash@gmail.com>,
+	Alan Chandler <alan@chandlerfamily.org.uk>,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110124165258.GA2562@scooter>
+In-Reply-To: <20110122134557.GB29985@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sat, Jan 22, 2011 at 5:45 AM, Hugo Mills <hugo-lkml@carfax.org.uk> w=
+rote:
+> On Fri, Jan 21, 2011 at 11:28:19AM -0800, Freddie Cash wrote:
+>> So, is Btrfs pooled storage or not? =C2=A0Do you throw 24 disks into=
+ a
+>> single Btrfs filesystem, and then split that up into separate
+>> sub-volumes as needed?
+>
+> =C2=A0 Yes, except that the subvolumes aren't quite as separate as yo=
+u
+> seem to think that they are. There's no preallocation of storage to a
+> subvolume (in the way that LVM works), so you're only limited by the
+> amount of free space in the whole pool. Also, data stored in the pool
+> is actually free for use by any subvolume, and can be shared (see the
+> deeper explanation below).
 
---liOOAslEiF7prFVr
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Ah, perfect, that I understand.  :)  It's the same with ZFS:  you add
+storage to a pool, filesystems in the pool are free to use as much as
+there is available, you don't have to pre-allocate or partition or
+anything that.  ZFS supports quotas and reservations, though, so you
+can (if you want/need) allocate bytes to specific filesystems.
 
-On Mon, Jan 24, 2011 at 05:52:58PM +0100, Felix Blanke wrote:
-> util-linux-2.18-r1 and still no symlink following.
-> 
-> I'll ask for that at the kernel mailing list in the next days. If your (Hugo)
-> util-linux doesn't include any kind of patches that behaviour is really strange.
+>> =C2=A0From the looks of things, you don't have to
+>> partition disks or worry about sizes before formatting (if the space
+>> is available, Btrfs will use it). =C2=A0But it also looks like you s=
+till
+>> have to manage disks.
+>>
+>> Or, maybe it's just that the initial creation is done via mkfs (as i=
+n,
+>> formatting a partition with a filesystem) that's tripping me up afte=
+r
+>> using ZFS for so long (zpool creates the storage pool, manages the
+>> disks, sets up redundancy levels, etc; =C2=A0zfs creates filesystems=
+ and
+>> volumes, and sets properties; no newfs/mkfs involved).
+>
+> =C2=A0 So potentially zpool -> mkfs.btrfs, and zfs -> btrfs. However,=
+ I
+> don't know enough about ZFS internals to know whether this is a
+> reasonable analogy to make or not.
 
-   Just for reference:
+That's what I figured.  It's not a perfect analogue, but it's close
+enough.  Clears things up a bit.
 
-Package description page:
-http://packages.debian.org/squeeze/util-linux
+The big different is that ZFS separates storage management (the pool)
+from filesystem management; while btrfs "creates a pool" underneath
+one filesystem, and allows you to split it up via sub-volumes.
 
-Original upstream sources Debian are using:
-http://ftp.de.debian.org/debian/pool/main/u/util-linux/util-linux_2.17.2.orig.tar.gz
+I think I'm figuring this out.  :)
 
-Debian patches on top of that source (mostly to the build system):
-http://ftp.de.debian.org/debian/pool/main/u/util-linux/util-linux_2.17.2-5.diff.gz
+> =C2=A0 Note that the actual file data, and the management of its loca=
+tion
+> on the disk (and its replication), is completely shared across
+> subvolumes. The same extent may be used multiple times by different
+> files, and those files may be in any subvolumes on the filesystem. In
+> theory, the same extent could even appear several times in the same
+> file. This sharing is how snapshots and COW copies are implemented.
+> It's also the basis for Josef's dedup implementation.
 
-   Hugo.
+That's similar to how ZFS works, only they use "blocks" instead of
+"extents", but it works in a similar manner.
 
-> 
-> Felix
-> 
-> On 24. January 2011 - 15:44, Felix Blanke wrote:
-> > Date: Mon, 24 Jan 2011 15:44:14 +0100
-> > From: Felix Blanke <felixblanke@gmail.com>
-> > To: Hugo Mills <hugo-lkml@carfax.org.uk>
-> > Cc: kreijack@inwind.it, linux-btrfs@vger.kernel.org
-> > Subject: Re: Bug in mkfs.btrfs?!
-> > 
-> > > On Mon, Jan 24, 2011 at 02:29:36PM +0000, Hugo Mills wrote:
-> > > >    If, instead, the initial losetup call tracked the symlinks back to
-> > > > the original device node (i.e. something like "/dev/sdb3", or
-> > > > "/dev/mapper/ruthven-btest" in my example), then the name that's
-> > > > stored in the kernel would be shorter, and we'd be less likely to see
-> > > > the truncation. This is what my copy of losetup seems to be doing. I
-> > > > can't see any distribution-specific patches in the source for
-> > > > util-linux that would do this, though.
-> > > 
-> > >    Hmm... Just had a thought: is
-> > > /dev/disk/by-id/ata-INTEL_SSDSA2M160G2GC_CVPO939201JX160AGN-part3 on
-> > > your system a symlink or a device node? What does ls -l say?
-> > 
-> > It is a symlink created by udev:
-> > 
-> > ls -l /dev/disk/by-id/ata-INTEL_SSDSA2M160G2GC_CVPO939201JX160AGN-part3 
-> > lrwxrwxrwx 1 root root 10 Jan 23 23:39
-> > /dev/disk/by-id/ata-INTEL_SSDSA2M160G2GC_CVPO939201JX160AGN-part3 -> ../../sdb3
-> > 
-> > Following that link should work :)
-> > 
-> > 
-> > Felix
-> > 
-> > > 
-> > >    Hugo.
-> > > 
+I think I've got this mostly figured out.
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-    --- Turning,  pages turning in the widening bath, / The spine ---    
-        cannot bear the humidity. / Books fall apart; the binding        
-            cannot hold. / Page 129 is loosed upon the world.            
+Now, to just wait for multiple parity redundancy (RAID5/6/+) support
+to hit the tree, so I can start playing around with it.  :)
 
---liOOAslEiF7prFVr
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
+Thanks for taking the time to explain some things.  Sorry if I came
+across as being harsh or whatnot.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFNPbAnIKyzvlFcI40RAtPOAJ0dGMNB9I6Nbgy38Fmmvj3euWJ7DACdGWEi
-HsVmIZCflMXjFLHHk87FLUM=
-=icpF
------END PGP SIGNATURE-----
-
---liOOAslEiF7prFVr--
+--=20
+=46reddie Cash
+fjwcash@gmail.com
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

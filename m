@@ -1,88 +1,60 @@
-From: Hubert Kario <hka@qbs.com.pl>
-Subject: Re: Defragmentation Not Working with Directory as Argument
-Date: Mon, 24 Jan 2011 19:21:58 +0100
-Message-ID: <201101241921.59201.hka@qbs.com.pl>
-References: <AANLkTi=AtFgMoES1z7jXwwXkZynbBjYbPTJK_4_iULSF@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: Text/Plain; charset=iso-8859-1
-Cc: "linux-btrfs" <linux-btrfs@vger.kernel.org>
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=AtFgMoES1z7jXwwXkZynbBjYbPTJK_4_iULSF@mail.gmail.com>
+From: Julia Lawall <julia@diku.dk>
+Subject: [PATCH 1/4] fs/btrfs/inode.c: Add missing IS_ERR test
+Date: Mon, 24 Jan 2011 20:55:19 +0100
+Message-ID: <1295898922-18822-2-git-send-email-julia@diku.dk>
+References: <1295898922-18822-1-git-send-email-julia@diku.dk>
+Cc: kernel-janitors@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <1295898922-18822-1-git-send-email-julia@diku.dk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday, January 24, 2011 19:11:07 Mitch Harder wrote:
-> Defragmentation is not working when a directory is supplied as the
-> argument.  When a file name is supplied as the argument,
-> defragmentation works well.
->=20
-> This can be demonstrated as follows:
->=20
-> # mount /dev/sdb2 /mnt/btrfs
-> # cd /mnt/btrfs/
-> # cp /usr/src/linux/fs/btrfs/zlib.c  .    (any suitable file will do,
-> small text files seemed appropriate)
-> # cp zlib.c fragmented-zlib.c
-> # btrfs fi sync /mnt/btrfs
-> # cat zlib.c >> fragmented-zlib.c
-> # btrfs fi sync /mnt/btrfs
-> # filefrag zlib.c fragmented-zlib.c
-> zlib.c: 1 extent found
-> fragmented-zlib.c: 2 extents found
-> # btrfs filesystem defragment /mnt/btrfs/
-> # btrfs fi sync /mnt/btrfs
-> # filefrag zlib.c fragmented-zlib.c
-> zlib.c: 1 extent found
-> fragmented-zlib.c: 2 extents found
->=20
-> Now, supply a filename as the argument
->=20
-> # btrfs filesystem defragment /mnt/btrfs/fragmented-zlib.c
-> # btrfs fi sync /mnt/btrfs
-> # filefrag zlib.c fragmented-zlib.c
-> zlib.c: 1 extent found
-> fragmented-zlib.c: 1 extent found
->=20
-> I've also tested defragmentation on my normal btrfs filesystems, and
-> have seen the same results.  I've never seen a file defragmented when
-> using a directory as the argument.
+After the conditional that precedes the following code, inode may be an
+ERR_PTR value.  This can eg result from a memory allocation failure via the
+call to btrfs_iget, and thus does not imply that root is different than
+sub_root.  Thus, an IS_ERR check is added to ensure that there is no
+dereference of inode in this case.
 
-That's because this defragments only directory metadata.
+The semantic match that finds this problem is as follows:
+(http://coccinelle.lip6.fr/)
 
-> Also, I was wondering if one of the Btrfs developers could clarify th=
-e
-> intended scope of defragmentation when a directory is supplied as the
-> argument.
+// <smpl>
+@r@
+identifier f;
+@@
+f(...) { ... return ERR_PTR(...); }
 
-I submited apropriate patches few days back to update man and help mess=
-ages
+@@
+identifier r.f, fld;
+expression x;
+statement S1,S2;
+@@
+ x = f(...)
+ ... when != IS_ERR(x)
+(
+ if (IS_ERR(x) ||...) S1 else S2
+|
+*x->fld
+)
+// </smpl>
 
-> I have seen comments on the mailing list indicating that only the
-> directory supplied is intended to be defragmented, and defragmentatio=
-n
-> will not recurse to subdirectories below.
+Signed-off-by: Julia Lawall <julia@diku.dk>
 
-that's true
+---
+ fs/btrfs/inode.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> However, if I look at the code, and read the documentation for the
-> older btrfsctl command (which seems to be the basis for the current
-> btrfs command), it seems like the intention is to recursively
-> defragment the entire tree below the directory supplied in the
-> argument.
-
-Then it looks like the userspace part of implementation changed, don't =
-know=20
-why though.
-
-Regards,
---=20
-Hubert Kario
-QBS - Quality Business Software
-02-656 Warszawa, ul. Ksawer=F3w 30/85
-tel. +48 (22) 646-61-51, 646-74-24
-www.qbs.com.pl
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 160b55b..b322158 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4134,7 +4134,7 @@ struct inode *btrfs_lookup_dentry(struct inode *dir, struct dentry *dentry)
+ 	}
+ 	srcu_read_unlock(&root->fs_info->subvol_srcu, index);
+ 
+-	if (root != sub_root) {
++	if (!IS_ERR(inode) && root != sub_root) {
+ 		down_read(&root->fs_info->cleanup_work_sem);
+ 		if (!(inode->i_sb->s_flags & MS_RDONLY))
+ 			btrfs_orphan_cleanup(sub_root);

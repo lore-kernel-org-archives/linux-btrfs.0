@@ -1,124 +1,54 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: Re: version
-Date: 24 Jan 2011 22:39:00 +0100
-Message-ID: <BeTmYH9T1uB@helmut.hullen.de>
-References: <201101242214.19318.johannes.hirte@fem.tu-ilmenau.de>
-Reply-To: helmut@hullen.de
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH 2/3] Btrfs: do not release more reserved bytes to the global_block_rsv than we need
+Date: Mon, 24 Jan 2011 16:43:19 -0500
+Message-ID: <1295905400-1417-3-git-send-email-josef@redhat.com>
+References: <1295905400-1417-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201101242214.19318.johannes.hirte@fem.tu-ilmenau.de>
+In-Reply-To: <1295905400-1417-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Johannes,
+When we do btrfs_block_rsv_release, if global_block_rsv is not full we will
+release all the extra bytes to global_block_rsv, even if it's only a little
+short of the amount of space that we need to reserve.  This causes us to starve
+ourselves of reservable space during the transaction which will force us to
+shrink delalloc bytes and commit the transaction more often than we should.  So
+instead just add the amount of bytes we need to add to the global reserve so
+reserved == size, and then add the rest back into the space_info for general
+use.  Thanks,
 
-Du meintest am 24.01.11:
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/extent-tree.c |   16 ++++++++++++++--
+ 1 files changed, 14 insertions(+), 2 deletions(-)
 
->> My other problem: where has the ENOSPC problem be cured? Is it a
->> kernel problem?
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 7ad7bf2..7aed7bf 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3599,8 +3599,20 @@ void block_rsv_release_bytes(struct btrfs_block_rsv *block_rsv,
+ 
+ 	if (num_bytes > 0) {
+ 		if (dest) {
+-			block_rsv_add_bytes(dest, num_bytes, 0);
+-		} else {
++			spin_lock(&dest->lock);
++			if (!dest->full) {
++				u64 bytes_to_add;
++
++				bytes_to_add = dest->size - dest->reserved;
++				bytes_to_add = min(num_bytes, bytes_to_add);
++				dest->reserved += bytes_to_add;
++				if (dest->reserved >= dest->size)
++					dest->full = 1;
++				num_bytes -= bytes_to_add;
++			}
++			spin_unlock(&dest->lock);
++		}
++		if (num_bytes) {
+ 			spin_lock(&space_info->lock);
+ 			space_info->bytes_reserved -= num_bytes;
+ 			spin_unlock(&space_info->lock);
+-- 
+1.6.6.1
 
-> Which one? And yes, ENOSPC is kernel related.
-
-The problem:
-
-I create 1 btrfs device with 2 TByte
-I add another device with 40 GByte
-
-I fill the btrfs "device" with 30 GByte and then run "balance".
-
-That results in
-
-
-# btrfs filesystem show
-Label: none  uuid: 121ae2ed-f572-43e6-8855-cd66ad534401
-	Total devices 2 FS bytes used 94.68GB
-	devid    2 size 37.27GB used 37.00GB path /dev/sdf
-	devid    1 size 1.82TB used 63.04GB path /dev/sde
-
-Label: 'MM2'  uuid: ad7c0668-316c-4a79-ba00-3b505b9d99b4
-	Total devices 2 FS bytes used 1.15TB
-	devid    1 size 1.81TB used 591.14GB path /dev/sde2
-	*** Some devices missing
-
-Btrfs Btrfs v0.19
-
-# btrfs filesystem df /mnt/btr
-Data, RAID0: total=3D4.00GB, used=3D2.00GB
-Data: total=3D94.01GB, used=3D92.58GB
-System, DUP: total=3D8.00MB, used=3D16.00KB
-System: total=3D4.00MB, used=3D0.00
-Metadata, DUP: total=3D1.00GB, used=3D111.87MB
-Metadata: total=3D8.00MB, used=3D0.00
-
-# df -t btrfs
-=46ilesystem    Type   1K-blocks      Used Available Use% Mounted on
-/dev/sde     btrfs   1992597264  99396500 1891304076   5% /mnt/btr
-
-# fdisk -l
-
-# btrfs filesystem show
-Label: none  uuid: 121ae2ed-f572-43e6-8855-cd66ad534401
-	Total devices 2 FS bytes used 93.68GB
-	devid    2 size 37.27GB used 36.12GB path /dev/sdf
-	devid    1 size 1.82TB used 93.16GB path /dev/sde
-
-Label: 'MM2'  uuid: ad7c0668-316c-4a79-ba00-3b505b9d99b4
-	Total devices 2 FS bytes used 1.15TB
-	devid    1 size 1.81TB used 591.14GB path /dev/sde2
-	*** Some devices missing
-
-Btrfs Btrfs v0.19
-
-# btrfs filesystem df /mnt/btr
-Data, RAID0: total=3D64.00GB, used=3D31.90GB
-Data: total=3D63.01GB, used=3D61.67GB
-System, DUP: total=3D8.00MB, used=3D20.00KB
-System: total=3D4.00MB, used=3D0.00
-Metadata, RAID1: total=3D128.00MB, used=3D104.71MB
-Metadata, DUP: total=3D1.00GB, used=3D6.15MB
-Metadata: total=3D8.00MB, used=3D0.00
-
-# df -t btrfs
-=46ilesystem    Type   1K-blocks      Used Available Use% Mounted on
-/dev/sde     btrfs   1992597264  98348716 1892087652   5% /mnt/btr
-
-# ---------------------------------------------------
-
-Regard the difference between "df" and "btrfs filesystem df".
-
-When I copy some more files then the system tells "no space left on ...=
-"
-
-Yesterday I've run a similar experiment with 40 and 8 GByte - same bad =
-=20
-behaviour:
-
-
-# btrfs filesystem show
-Label: none  uuid: da2f178e-a364-4494-a9e5-a7762ed81d10
-	Total devices 2 FS bytes used 3.83GB
-	devid    1 size 7.51GB used 6.13GB path /dev/sdb
-	devid    2 size 37.27GB used 6.13GB path /dev/sdc
-
-Btrfs Btrfs v0.19
-
-# btrfs filesystem df /mnt/btr
-Data, RAID0: total=3D12.00GB, used=3D3.83GB
-System, RAID1: total=3D8.00MB, used=3D4.00KB
-System: total=3D4.00MB, used=3D0.00
-Metadata, RAID1: total=3D128.00MB, used=3D4.47MB
-
-# df -t btrfs
-Dateisystem   Typ    1K-Bl=F6cke   Benutzt Verf=FCgbar Ben% Eingeh=E4ng=
-t auf
-/dev/sdb     btrfs    46963224   4021964  42667804   9% /mnt/btr
-
-
-Viele Gruesse!
-Helmut
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,46 +1,25 @@
 From: "Fajar A. Nugraha" <list@fajar.net>
-Subject: Re: Bug in mkfs.btrfs?!
-Date: Mon, 24 Jan 2011 08:53:41 +0700
-Message-ID: <AANLkTimXNxakkozObyZCDK+sJqNU5edJrY4ywgERdELC@mail.gmail.com>
-References: <20110122144513.GA2539@scooter>
-	<20110122145222.GB2539@scooter>
-	<20110122151124.GC29985@carfax.org.uk>
-	<20110122155612.GA3664@scooter>
-	<20110123181827.GF29985@carfax.org.uk>
-	<4D3CA568.7050506@libero.it>
-	<20110123232720.GH29985@carfax.org.uk>
-	<20110123235848.GB2560@scooter>
+Subject: Re: snapshot strange behaviour
+Date: Mon, 24 Jan 2011 09:01:21 +0700
+Message-ID: <AANLkTimiaXb-dMgp6TrCuKyrpeKNs-mF_McnicDfA2as@mail.gmail.com>
+References: <ihgklr$s29$1@dough.gmane.org>
+	<4D3C1C49.8040104@libero.it>
+	<ihhg37$8qj$1@dough.gmane.org>
+	<4D3C6D23.106@libero.it>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Felix Blanke <felixblanke@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110123235848.GB2560@scooter>
+In-Reply-To: <4D3C6D23.106@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 24, 2011 at 6:58 AM, Felix Blanke <felixblanke@gmail.com> w=
-rote:
-> I tried the newest version 2.19-rc1. There seems to be some kind of "=
-fix":
->
-> scooter ~ # /home/fame/tmp/util-linux-2.19-rc1/mount/losetup -a
-> /dev/loop0: [0010]:3154
-> (/dev/disk/by-id/ata-INTEL_SSDSA2M160G2GC_CVPO939201JX160AGN-pa*), en=
-cryption =A0(type
-> 16)
+On Mon, Jan 24, 2011 at 1:02 AM, Goffredo Baroncelli <kreijack@libero.it> wrote:
 
-> If the path is to long they add a '*' :) Do you think that will solve=
- the problem?
+> And more, it is possible to add a "-R" flag to snapshot recursively a
+> subvolume...
 
-It shouldn't.
+Are you saying recursive snapshot creation is aready supportted in
+btrfs? Which version?
 
-However, since you're using loopback for encryption, why not use
-dm-crypt instead?
-
---=20
-=46ajar
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-- 
+Fajar

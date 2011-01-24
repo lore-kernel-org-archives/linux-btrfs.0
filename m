@@ -1,34 +1,26 @@
 From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: Re: version
-Date: 24 Jan 2011 09:33:00 +0100
-Message-ID: <BeTk3qCD1uB@helmut.hullen.de>
-References: <4D3CEFE3.3090905@csamuel.org>
+Subject: Re: Bug in mkfs.btrfs?!
+Date: 24 Jan 2011 08:42:00 +0100
+Message-ID: <BeTk1I7T1uB@helmut.hullen.de>
+References: <20110123231536.GA2560@scooter>
 Reply-To: helmut@hullen.de
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D3CEFE3.3090905@csamuel.org>
+In-Reply-To: <20110123231536.GA2560@scooter>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Chris,
+Hallo, Felix,
 
 Du meintest am 24.01.11:
 
->> Thank you - that's more simple for me than first cloning via
->> "git clone" and then running "git log".
+> Sorry that I didn't saw that earlier. If I would use /dev/sdxx
+> instead of /dev/disk/by-id/ for decrypting the devices it would be
+> working. But those ids didn't change if I remove/add a device, so it
+> would be nice to be able to use those ids.
 
-> Ah, but the repo you were asked to clone was for the user tools,
-> not for the kernel code that implements the filesystem itself
-> which is what that Wiki page is for.
-
-Yes - I've seen that small difference ... but I've installed 2.6.37.
-
-It includes btrfs changes (from the btrfs-unstable branch) until 2010- 
-12-14.
-
-My other problem: where has the ENOSPC problem be cured? Is it a kernel  
-problem?
+I prefer working with LABELs. They can be short and self explaining.
 
 Viele Gruesse!
 Helmut

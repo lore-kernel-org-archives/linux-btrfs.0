@@ -1,70 +1,52 @@
 From: Felix Blanke <felixblanke@gmail.com>
 Subject: Re: Bug in mkfs.btrfs?!
-Date: Mon, 24 Jan 2011 10:38:35 +0100
-Message-ID: <20110124093835.GA24477@scooter>
-References: <20110122144513.GA2539@scooter>
- <20110122145222.GB2539@scooter>
- <20110122151124.GC29985@carfax.org.uk>
- <20110122155612.GA3664@scooter>
- <20110123181827.GF29985@carfax.org.uk>
- <4D3CA568.7050506@libero.it>
- <20110123232720.GH29985@carfax.org.uk>
- <20110123235848.GB2560@scooter>
- <AANLkTimXNxakkozObyZCDK+sJqNU5edJrY4ywgERdELC@mail.gmail.com>
+Date: Mon, 24 Jan 2011 10:41:36 +0100
+Message-ID: <20110124094136.GB24477@scooter>
+References: <20110123231536.GA2560@scooter>
+ <BeTk1I7T1uB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
+Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: "Fajar A. Nugraha" <list@fajar.net>
+To: helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimXNxakkozObyZCDK+sJqNU5edJrY4ywgERdELC@mail.gmail.com>
+In-Reply-To: <BeTk1I7T1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Counter question: Why should I? :)
+Lol :)
+
+You can't use labels for the decryption, because an encrypted device has no label, it
+doesn't even have a filesystem and you can't say if there are any kind of data on it
+(in my case) :)
+
+You can use labels after you have decrypted the device. Then I'm using labels, too.
+But that doesn't help with  this problem :)
 
 
-I used dm-crypt with luks some time ago, but it is really slooow. So I =
-talked with
-the dm-crypt devs. and they gave me the hint to test loop-aes, for more=
- speed. It is
-about 4x faster for me :)
-
-And I don't see any advantages using dm-crypt instead of loop-aes.
+Regards,
+Felix
 
 
-
-=46elix
-
-On 24. January 2011 - 08:53, Fajar A. Nugraha wrote:
-> Date: Mon, 24 Jan 2011 08:53:41 +0700
-> From: "Fajar A. Nugraha" <list@fajar.net>
-> To: Felix Blanke <felixblanke@gmail.com>
-> Cc: linux-btrfs@vger.kernel.org
+On 24. January 2011 - 08:42, Helmut Hullen wrote:
+> Date:	24 Jan 2011 08:42:00 +0100
+> From: Helmut Hullen <Hullen@t-online.de>
+> To: linux-btrfs@vger.kernel.org
 > Subject: Re: Bug in mkfs.btrfs?!
->=20
-> On Mon, Jan 24, 2011 at 6:58 AM, Felix Blanke <felixblanke@gmail.com>=
- wrote:
-> > I tried the newest version 2.19-rc1. There seems to be some kind of=
- "fix":
-> >
-> > scooter ~ # /home/fame/tmp/util-linux-2.19-rc1/mount/losetup -a
-> > /dev/loop0: [0010]:3154
-> > (/dev/disk/by-id/ata-INTEL_SSDSA2M160G2GC_CVPO939201JX160AGN-pa*), =
-encryption =A0(type
-> > 16)
->=20
-> > If the path is to long they add a '*' :) Do you think that will sol=
-ve the problem?
->=20
-> It shouldn't.
->=20
-> However, since you're using loopback for encryption, why not use
-> dm-crypt instead?
->=20
-> --=20
-> Fajar
+> 
+> Hallo, Felix,
+> 
+> Du meintest am 24.01.11:
+> 
+> > Sorry that I didn't saw that earlier. If I would use /dev/sdxx
+> > instead of /dev/disk/by-id/ for decrypting the devices it would be
+> > working. But those ids didn't change if I remove/add a device, so it
+> > would be nice to be able to use those ids.
+> 
+> I prefer working with LABELs. They can be short and self explaining.
+> 
+> Viele Gruesse!
+> Helmut
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 ---end quoted text---
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

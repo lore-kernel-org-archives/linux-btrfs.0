@@ -1,25 +1,34 @@
-From: Chris Samuel <chris@csamuel.org>
+From: "Helmut Hullen" <Hullen@t-online.de>
 Subject: Re: version
-Date: Mon, 24 Jan 2011 14:20:03 +1100
-Message-ID: <4D3CEFE3.3090905@csamuel.org>
-References: <BeHdM73i1uB@helmut.hullen.de>
+Date: 24 Jan 2011 09:33:00 +0100
+Message-ID: <BeTk3qCD1uB@helmut.hullen.de>
+References: <4D3CEFE3.3090905@csamuel.org>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BeHdM73i1uB@helmut.hullen.de>
+In-Reply-To: <4D3CEFE3.3090905@csamuel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 22/01/11 01:55, Helmut Hullen wrote:
+Hallo, Chris,
 
-> Thank you - that's more simple for me than first cloning via
-> "git clone" and then running "git log".
+Du meintest am 24.01.11:
 
-Ah, but the repo you were asked to clone was for the user tools,
-not for the kernel code that implements the filesystem itself
-which is what that Wiki page is for.
+>> Thank you - that's more simple for me than first cloning via
+>> "git clone" and then running "git log".
 
-cheers!
-Chris
--- 
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+> Ah, but the repo you were asked to clone was for the user tools,
+> not for the kernel code that implements the filesystem itself
+> which is what that Wiki page is for.
+
+Yes - I've seen that small difference ... but I've installed 2.6.37.
+
+It includes btrfs changes (from the btrfs-unstable branch) until 2010- 
+12-14.
+
+My other problem: where has the ENOSPC problem be cured? Is it a kernel  
+problem?
+
+Viele Gruesse!
+Helmut

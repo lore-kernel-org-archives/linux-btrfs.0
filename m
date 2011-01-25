@@ -1,54 +1,47 @@
-From: Hubert Kario <hka@qbs.com.pl>
-Subject: Re: How to fasten btrfs?
-Date: Tue, 25 Jan 2011 15:56:51 +0100
-Message-ID: <201101251556.51806.hka@qbs.com.pl>
-References: <AANLkTikMucRF3e-w_x7HnfjPZ-8EmQyhSfcTCihQZmTg@mail.gmail.com> <201101251130.37051.hka@qbs.com.pl> <AANLkTik_mfFO+ciZbxuuqqRJDkOGoOW=pfjVv0au80TS@mail.gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: flush-btrfs-1 hangs when building openwrt
+Date: Tue, 25 Jan 2011 10:30:56 -0500
+Message-ID: <20110125153055.GA2598@localhost.localdomain>
+References: <4D3E8EF5.1050008@poelzi.org>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=utf-8
-Cc: "linux-btrfs" <linux-btrfs@vger.kernel.org>
-To: Magicloud Magiclouds <magicloud.magiclouds@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Daniel Poelzleithner <poelzi@poelzi.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTik_mfFO+ciZbxuuqqRJDkOGoOW=pfjVv0au80TS@mail.gmail.com>
+In-Reply-To: <4D3E8EF5.1050008@poelzi.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tuesday, January 25, 2011 15:28:11 Magicloud Magiclouds wrote:
-> So you were saying that, even an unlink operation, the system walks
-> through all file data blocks? I thought unlink wouldn't have to write
-> too much data.
+On Tue, Jan 25, 2011 at 09:51:01AM +0100, Daniel Poelzleithner wrote:
+> Hi,
+> 
+> Since update to 2.6.37 I can't build openwrt on my btrfs buildroot anymore.
+> I'm not sure if this is related to the other flush-btrfs-1 thread.
+> 
+> plenty of diskspace is free:
+> 
+> /dev/mapper/cruor-build
+>                        97G   68G   27G  73% /opt/build
+> 
+> It always hangs when openwrt builds the ext4 image and runs tune2fs on it.
+> 
+> /opt/build/fahrenheit/openwrt/staging_dir/host/bin/tune2fs -O
+> extents,uninit_bg,dir_index
+> /opt/build/fahrenheit/openwrt/build_dir/linux-x86_kvm_guest/root.ext4
+> tune2fs 1.41.13 (13-Dec-2010)
+> 
+> the processes can't be killed.
+> 
+> alt-sysctl-t does not show anything, nor is there a oops.
+> 
+> I put the the openwrt config I'm using at https://gist.github.com/794593
+> , maybe it is reproduceable.
+> 
+> Linux cruor 2.6.37 #2 SMP Thu Jan 20 02:09:59 CET 2011 x86_64 GNU/Linux
+> 
 
-No, but the amount of data to be changed if the number of extents is sm=
-all=20
-will be lower.
+How about sysrq+w when it's hanging.  Also could you give the exact steps to
+reproduce?  I went to the openwrt site to try and build, but it seems like
+theres alot of moving parts.  If you can just tell me what to download and what
+you run to reproduce I can try and reproduce locally.  Thanks,
 
->=20
-> On Tue, Jan 25, 2011 at 6:30 PM, Hubert Kario <hka@qbs.com.pl> wrote:
-> > On Tuesday 25 of January 2011 07:45:02 Magicloud Magiclouds wrote:
-> >> Hi,
-> >>   I am using 2.6.36.3 kernel with btrfs, 512MB memory and a very s=
-low
-> >> disk, no special options for mounting btrfs except noatime. Now I
-> >> found it very slow. When I rm a 5GB movie, it took 20 secs.
-> >=20
-> > try mounting with nodatacow and defragment the directory the file r=
-esides
-> > in
-> >=20
-> > Regards
-> > --
-> > Hubert Kario
-> > QBS - Quality Business Software
-> > 02-656 Warszawa, ul. Ksawer=C3=B3w 30/85
-> > tel. +48 (22) 646-61-51, 646-74-24
-> > www.qbs.com.pl
-
---=20
-Hubert Kario
-QBS - Quality Business Software
-02-656 Warszawa, ul. Ksawer=C3=B3w 30/85
-tel. +48 (22) 646-61-51, 646-74-24
-www.qbs.com.pl
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Josef

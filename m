@@ -1,109 +1,80 @@
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: Re: Defragmentation Not Working with Directory as Argument
-Date: Tue, 25 Jan 2011 14:54:40 -0600
-Message-ID: <AANLkTimR-RVDoOvyCyk1_uRYs8A+afJXzb=kdqouGTob@mail.gmail.com>
-References: <AANLkTi=AtFgMoES1z7jXwwXkZynbBjYbPTJK_4_iULSF@mail.gmail.com>
-	<201101241921.59201.hka@qbs.com.pl>
+From: Daniel Poelzleithner <poelzi@poelzi.org>
+Subject: Re: flush-btrfs-1 hangs when building openwrt
+Date: Tue, 25 Jan 2011 22:16:33 +0100
+Message-ID: <4D3F3DB1.8040803@poelzi.org>
+References: <4D3E8EF5.1050008@poelzi.org> <20110125153055.GA2598@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Hubert Kario <hka@qbs.com.pl>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="------------enig8E72E86742AFA77A6FFDDB22"
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201101241921.59201.hka@qbs.com.pl>
+In-Reply-To: <20110125153055.GA2598@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 24, 2011 at 12:21 PM, Hubert Kario <hka@qbs.com.pl> wrote:
-> On Monday, January 24, 2011 19:11:07 Mitch Harder wrote:
->> Defragmentation is not working when a directory is supplied as the
->> argument. =A0When a file name is supplied as the argument,
->> defragmentation works well.
->>
->> This can be demonstrated as follows:
->>
->> # mount /dev/sdb2 /mnt/btrfs
->> # cd /mnt/btrfs/
->> # cp /usr/src/linux/fs/btrfs/zlib.c =A0. =A0 =A0(any suitable file w=
-ill do,
->> small text files seemed appropriate)
->> # cp zlib.c fragmented-zlib.c
->> # btrfs fi sync /mnt/btrfs
->> # cat zlib.c >> fragmented-zlib.c
->> # btrfs fi sync /mnt/btrfs
->> # filefrag zlib.c fragmented-zlib.c
->> zlib.c: 1 extent found
->> fragmented-zlib.c: 2 extents found
->> # btrfs filesystem defragment /mnt/btrfs/
->> # btrfs fi sync /mnt/btrfs
->> # filefrag zlib.c fragmented-zlib.c
->> zlib.c: 1 extent found
->> fragmented-zlib.c: 2 extents found
->>
->> Now, supply a filename as the argument
->>
->> # btrfs filesystem defragment /mnt/btrfs/fragmented-zlib.c
->> # btrfs fi sync /mnt/btrfs
->> # filefrag zlib.c fragmented-zlib.c
->> zlib.c: 1 extent found
->> fragmented-zlib.c: 1 extent found
->>
->> I've also tested defragmentation on my normal btrfs filesystems, and
->> have seen the same results. =A0I've never seen a file defragmented w=
-hen
->> using a directory as the argument.
->
-> That's because this defragments only directory metadata.
->
->> Also, I was wondering if one of the Btrfs developers could clarify t=
-he
->> intended scope of defragmentation when a directory is supplied as th=
-e
->> argument.
->
-> I submited apropriate patches few days back to update man and help me=
-ssages
->
->> I have seen comments on the mailing list indicating that only the
->> directory supplied is intended to be defragmented, and defragmentati=
-on
->> will not recurse to subdirectories below.
->
-> that's true
->
->> However, if I look at the code, and read the documentation for the
->> older btrfsctl command (which seems to be the basis for the current
->> btrfs command), it seems like the intention is to recursively
->> defragment the entire tree below the directory supplied in the
->> argument.
->
-> Then it looks like the userspace part of implementation changed, don'=
-t know
-> why though.
->
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--------------enig8E72E86742AFA77A6FFDDB22
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
 
-Thanks!  I see where they've added some clarification on this issue to
-the wiki in the Problem FAQ.
+On 01/25/2011 04:30 PM, Josef Bacik wrote:
 
-https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#Defragmenting_a_dir=
-ectory_doesn.27t_work
+> How about sysrq+w when it's hanging. =20
 
-I understand now that the function performed when a directory is
-supplied as the argument is different than the function performed when
-a file or file wildcard is supplied as the argument.
+Shows nothing.
 
-I'm concerned that there will be a vast number of new btrfs users who
-have spent their computer life immersed in the command-line syntax
-convention where supplying a directory as an argument implies the
-files located in that directory.
+> Also could you give the exact steps to
+> reproduce?  I went to the openwrt site to try and build, but it seems l=
+ike
+> theres alot of moving parts.  If you can just tell me what to download =
+and what
+> you run to reproduce I can try and reproduce locally.  Thanks,
 
-It might make sense to break out the defragmentation of leaf metadata
-into a separate command so that it's clear to users what operation is
-being performed.
+mkdir /btrfs/with/lots/of/space
+cd /btrfs/with/lots/of/space
+git clone git://nbd.name/openwrt.git
+cd openwrt
+wget
+https://gist.github.com/raw/794593/b9e7e7b6dce71093a653953d7e39c94a6ffa45=
+28/gistfile1.txt
+-O .config
 
-It will save a lot of frustration from both the new users who are
-learning the new Btrfs concepts and the advanced users who have to
-field the questions.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+make
+# take a nap, will take quite some time on the first run
+If you prefere seeing output, which slows things down do
+
+make V=3D99
+
+instead. I skipped the packages repo here, because I don't think it will
+make a difference. It hanges in the final steps of creating the image.
+
+kind regards
+ Daniel
+
+
+--------------enig8E72E86742AFA77A6FFDDB22
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+
+iQIcBAEBAgAGBQJNPz22AAoJEFYpgV2Roepc310QAJuYFqNmqScKB8CU+q2HjWje
+DkMtSnJBBoPB9JSfsp3ZP1oNO57xBiCNidDZuut0ce9RN1WiBsBAJYNO0OM6Tv/8
+Sm+8r1LfwPD2j+o2fGez6K/BrJgHn9GDTbDzq3N/o7JQH78YJkd6lBYE2pqKh9VT
+T3QcuLH/xDViRsk37aLAal8V9L6k/KmbIjoVPtmqPpjUBwL+mMsbEfrWC1BrePYp
+MOTiBQ8+pbT1HoaXket1W8Ukq7UJkjsPCtPkl2QFWIPlK2EiJfIdiReQsxTldGOv
+nG9LoL6R0rYujAVzyEwNMv/q5iDF1i8LNULk45UFY0mpB0yzgtKtG0HYHzy8TiMO
+nY8f7YHHIDeqd6t7qn82dcUmQpZOa7bAi6t5xVyGWheb7Lr40ymg+rR1rQpRd2TT
+XbqO/qqkmYqnGGmtK3NQjcLgedR2c7tlBDsAkddVYwXpDxe3lYIbsC4rslcg0IYC
+3jlCqv9R3IZjNi0ucHU4tfirS+UW+mS+hwiL9uQVGifZUL7SPykHpZZ6XduyStuL
+dZ6ERFdPkNLEHEAvfVcwqfM1pou9yecsLp/ToPaiN+z0xPcBPDKIx8Pu8V4JSzCD
+J4Q+rAddlHwszUFa5V1yQMRTW8Q6Lditc8w82mJk1VCFqFAIp7h7vStGYdWv8nth
+yqBw7Fc3fMl2NVu3otFO
+=aaHO
+-----END PGP SIGNATURE-----
+
+--------------enig8E72E86742AFA77A6FFDDB22--

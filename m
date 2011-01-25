@@ -1,34 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-out6.netspace.net.au ([203.10.110.88]:58960 "EHLO
-	smtp.netspace.net.au" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752128Ab1AQQ7D (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Jan 2011 11:59:03 -0500
-Message-ID: <1295283202.4d3474028c89c@webmail.netspace.net.au>
-Date: Tue, 18 Jan 2011 03:53:22 +1100
-From: wumt-tf@netspace.net.au
+Received: from 3.ucam.marwan.ma ([196.200.176.3]:45297 "EHLO manar.ucam.ac.ma"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751504Ab1AYDbT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 24 Jan 2011 22:31:19 -0500
+Message-ID: <008309f8b2ab9cf1992458ae14b38020.squirrel@webmail.ucam.ac.ma>
+Date: Tue, 25 Jan 2011 04:28:59 +0100
+Subject: (((MTCN INFORMATION)))
+From: "UNITED NATIONS" <robin@mail.ranksitt.net>
+Reply-To: unitednations_organization02@rocketmail.com
 MIME-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
-To: undisclosed-recipients:;
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-Dear Friend,
 
-The first $5,000.00 was sent today. My working partner has helped me to send 
-the first $5,000.00 to you through western union. So contact our Western Union 
-claims Agent to pick up this $5,000 now: Contact person: Mr. Don C john, TEL: 
-+2348057764075. E-mail: (western-union2@nba2k.com.cn) Ask him to give you the 
-MTCN, Sender Name to pick the $5,000.00. I told him to keep sending you 
-$5,000.00 daily untill the payment of $1.500,000.00 is completed. Again forward 
-him your Full Name, Telephone number and adress so that he will be sure.
+Your Email ID has just been compensated with the sum of  $500,000.00 USD 
+by the United Nations Organization Of Nigeria and payment will be remitted
+to you via western union money transfer. Note that $5,000 USD has already
+be send to you since last week but we were unable to give you the
+information on phone for the past 7working days but due to bad network
+here, i was not able to get to you on phone.
 
-Thanks.
+Here is the western union information to pick up the USD5000.00.
 
+MTCN : 9402 727 310
+SENDER'S NAME: MARYLIN JOHNSON
+TEXT QUESTION: IN GOD
+ANSWER:WE TRUST
+AMOUNT SENT: $5000.00 USD
+COUNTRY:NIGERIA
 
+Thanks
+Mrs. Linda Hall
 
-------------------------------------------------------------
-This email was sent from Netspace Webmail: http://www.netspace.net.au
 

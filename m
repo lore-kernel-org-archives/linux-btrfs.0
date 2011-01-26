@@ -1,485 +1,242 @@
-From: Cyrille =?ISO-8859-1?Q?Ch=E9p=E9lov?= <cyrille@chepelov.org>
-Subject: Re: full btrfs partition, became unmountable (+ a solution that
- thankfully worked for me)
-Date: Wed, 26 Jan 2011 08:46:08 +0100
-Message-ID: <1296027969.29117.26.camel@hestia>
-References: <1295981200.29117.19.camel@hestia>
-	 <BC28BE23-1017-456E-9EAA-74A840809085@me.com>
+From: Erik Logtenberg <erik@logtenberg.eu>
+Subject: Re: Kernel error during btrfs balance
+Date: Wed, 26 Jan 2011 10:04:02 +0100
+Message-ID: <4D3FE382.6070000@logtenberg.eu>
+References: <4D344EBB.6030903@logtenberg.eu>	<4D3452C9.901@logtenberg.eu>	<4D3948CB.8090801@logtenberg.eu> <AANLkTinN7QYqwydzgidERhu46QTEE8bLwiRy4qjM2fyL@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="=-TovPMUBbcwNB5a+bSJwV"
+Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: Shawn Stricker <kb1ibt@me.com>
+To: "Yan, Zheng " <yanzheng@21cn.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BC28BE23-1017-456E-9EAA-74A840809085@me.com>
+In-Reply-To: <AANLkTinN7QYqwydzgidERhu46QTEE8bLwiRy4qjM2fyL@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
---=-TovPMUBbcwNB5a+bSJwV
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8bit
+It took me a couple of days, because I needed to patch my kernel first
+and then issue a rebalance, which ran for more than two days.
+Nevertheless, the rebalance succeeded without any "kernel BUG"-messages,
+so apparently your patch works!
 
-Le mardi 25 janvier 2011 à 23:38 -0500, Shawn Stricker a écrit :
-> Not sure where you pulled your source from but a fresh checkout of either master or next of git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs-unstable.git does not compile properly.
-> They both fail with 
+I noticed that at first, the messages were like this:
+
+[79329.526490] btrfs: found 1939 extents
+[79375.950834] btrfs: found 1939 extents
+[79376.083599] btrfs: relocating block group 352220872704 flags 1
+[80052.940435] btrfs: found 3786 extents
+[80108.439657] btrfs: found 3786 extents
+[80112.325548] btrfs: relocating block group 351147130880 flags 1
+
+Just like I saw during previous balance-runs. Then all of a sudden the
+messages changed to:
+
+[104178.827594] btrfs allocation failed flags 1, wanted 2013265920
+[104178.827599] space_info has 4271198208 free, is not full
+[104178.827602] space_info total=214748364800, used=210440957952,
+pinned=0, reserved=36208640, may_use=3168993280, readonly=0
+[104178.827606] block group 1107296256 has 5368709120 bytes, 5368582144
+used 0 pinned 0 reserved
+[104178.827610] entry offset 1778384896, bytes 86016, bitmap yes
+[104178.827612] entry offset 1855827968, bytes 20480, bitmap no
+[104178.827614] entry offset 1855852544, bytes 20480, bitmap no
+[104178.827617] block group has cluster?: no
+[104178.827618] 0 blocks of free space at or bigger than bytes is
+[104178.827621] block group 8623489024 has 5368709120 bytes, 5368705024
+used 0 pinned 0 reserved
+[104178.827624] entry offset 8891924480, bytes 4096, bitmap yes
+[104178.827626] block group has cluster?: no
+[104178.827628] 0 blocks of free space at or bigger than bytes is
+[104178.827631] block group 17213423616 has 5368709120 bytes, 5368709120
+used 0 pinned 0 reserved
+[104178.827634] block group has cluster?: no
+
+And so on.
+
+Does this indicate an error of any sort, or is this expected behaviour?
+
+Kind regards,
+
+Erik.
+
+
+On 01/21/2011 10:19 AM, Yan, Zheng wrote:
+> please try patch attached below, Thanks.
 > 
-> cc1: warnings being treated as errors
-> disk-io.c: In function ‘btrfs_read_dev_super’:
-> disk-io.c:937: error: format ‘%lu’ expects type ‘long unsigned int’, but argument 4 has type ‘unsigned int’
-> disk-io.c:957: error: implicit declaration of function ‘uuid_unparse’
+> ---
+> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+> index b37d723..49d6b13 100644
+> --- a/fs/btrfs/relocation.c
+> +++ b/fs/btrfs/relocation.c
+> @@ -1158,6 +1158,7 @@ static int clone_backref_node(struct
+> btrfs_trans_handle *trans,
+>  	new_node->bytenr = dest->node->start;
+>  	new_node->level = node->level;
+>  	new_node->lowest = node->lowest;
+> +	new_node->checked = 1;
+>  	new_node->root = dest;
 > 
-> am I patching/compiling from the wrong source or is there something I am missing?
-
-uh, I had been compiling with CFLAGS=-g, where the makefile specifies
-"-O2 -Werror"
-
--Werror causes warnings to be treated as errors, which is a good thing
-in a way (makes sure stuff as this gets caught :) )
-
-fixes are:
-	* line 937 (patched), should be %llu instead of %lu
-	* line 957, there should be a prototype for uuid_unparse(), most
-certainly by including <uuid/uuid.h>
-
-please try this patch instead.
-
-Thanks for the feedback!
-
-	-- Cyrille
-
-> On Jan 25, 2011, at 1:46 PM, Cyrille Chépélov wrote:
+>  	if (!node->lowest) {
+> ---
 > 
-> > Hello all,
-> > 
-> > Last Friday, the /var and /home partition on one of my appliances became
-> > full. This should normally not be much of a problem, except that after
-> > the incident, I had been unable to mount the partition back again.
-> > 
-> > The appliance runs 2.6.32 as provided by Debian during the last two
-> > months. 
-> > The rescue computer runs 2.6.37; both exhibited the same behaviour at
-> > mount: an infinite loop-and-abort cycle (I unfortunately did not write
-> > down the exact messages, but in a nutshell, there was not enough free
-> > space to replay the log, so it aborted).
-> > 
-> > After pulling the SD card (yes) to break the loop, I ended up with a
-> > corrupt file system. Any attempt to mount, debug or fsck (using
-> > btrfs-tools 0.19+20100601 as shipped by Debian, or compiled from git
-> > 1b444cd2e6ab8dcafdd) aborted with the following message:
-> >    btrfs-debug-tree: disk-io.c:741: open_ctree_fd: Assertion `!(!
-> > tree_root->node)' failed.
-> > 
-> > After much scavenging on the disk image, I finally managed to recover,
-> > using the (dirty) patch attached here. Since apparently other people had
-> > similar issues, I'm posting it in the hope it might be useful.
-> > 
-> >    -- Cyrille
-> > 
-> > PS: Chris, if btrfs-images of "before" and "after" my butcher fix would
-> > be useful to you, just let me know. 
-> > <scavenge.patch>
 > 
-
-
---=-TovPMUBbcwNB5a+bSJwV
-Content-Disposition: attachment; filename="scavenge-2.patch"
-Content-Type: text/x-patch; name="scavenge-2.patch"; charset="UTF-8"
-Content-Transfer-Encoding: 7bit
-
-diff --git a/btrfsck.c b/btrfsck.c
-index 63e44d1..1e6bc32 100644
---- a/btrfsck.c
-+++ b/btrfsck.c
-@@ -2823,13 +2823,17 @@ int main(int ac, char **av)
- 	u64 bytenr = 0;
- 	int ret;
- 	int num;
-+	int emergency_super = 0;
- 
- 	while(1) {
- 		int c;
--		c = getopt(ac, av, "s:");
-+		c = getopt(ac, av, "es:");
- 		if (c < 0)
- 			break;
- 		switch(c) {
-+			case 'e':
-+				emergency_super = 1;
-+				break;
- 			case 's':
- 				num = atol(optarg);
- 				bytenr = btrfs_sb_offset(num);
-@@ -2861,6 +2865,12 @@ int main(int ac, char **av)
- 	if (root == NULL)
- 		return 1;
- 
-+	if (root->fs_info->emergency_root_tree && (!emergency_super)) {
-+		printf("DANGEROUS: had to use a synthetic super. Please run with '-e' flag if you know why you do it.\n");
-+		printf("      ... and have perfect backups.\n");
-+		return 1;
-+	}
-+
- 	ret = check_extents(root);
- 	if (ret)
- 		goto out;
-@@ -2869,6 +2879,27 @@ int main(int ac, char **av)
- 		goto out;
- 
- 	ret = check_root_refs(root, &root_cache);
-+	if (ret)
-+		goto out;
-+
-+
-+	if (root->fs_info->emergency_root_tree) {
-+		printf("DANGEROUS: had to use a scavenged root. Apparently could figure out the primary trees ?\n" 
-+		       "   Now writing supers, knock wood.\n");
-+		free_root_recs(&root_cache);
-+		close_ctree(root);
-+		
-+		cache_tree_init(&root_cache);
-+		root = open_ctree(av[optind], bytenr, 1 /* WRITES! */);
-+
-+		ret = write_all_supers(root);
-+		if (ret) {
-+			printf("Error writing superblocks.\n");		
-+			goto out;			
-+		}
-+		printf("Wrote back superblocks.\n");
-+	}
-+
- out:
- 	free_root_recs(&root_cache);
- 	close_ctree(root);
-@@ -2897,6 +2928,7 @@ out:
- 	printf("file data blocks allocated: %llu\n referenced %llu\n",
- 		(unsigned long long)data_bytes_allocated,
- 		(unsigned long long)data_bytes_referenced);
-+
- 	printf("%s\n", BTRFS_BUILD_VERSION);
- 	return ret;
- }
-diff --git a/ctree.h b/ctree.h
-index b79e238..7439d87 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -728,6 +728,7 @@ struct btrfs_fs_info {
- 	struct list_head space_info;
- 	int system_allocs;
- 	int readonly;
-+	int emergency_root_tree;
- };
- 
- /*
-diff --git a/disk-io.c b/disk-io.c
-index a6e1000..0b4e7f9 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -23,6 +23,7 @@
- #include <stdlib.h>
- #include <sys/types.h>
- #include <sys/stat.h>
-+#include <uuid/uuid.h>
- #include <fcntl.h>
- #include <unistd.h>
- #include "kerncompat.h"
-@@ -41,8 +42,11 @@ static int check_tree_block(struct btrfs_root *root, struct extent_buffer *buf)
- 	struct btrfs_fs_devices *fs_devices;
- 	int ret = 1;
- 
--	if (buf->start != btrfs_header_bytenr(buf))
-+	if (buf->start != btrfs_header_bytenr(buf)) {
-+		fprintf(stderr, "start place mismatch, buf says %llu  btrfs_hdr says %llu\n",
-+			buf->start, btrfs_header_bytenr(buf));
- 		return ret;
-+	}
- 
- 	fs_devices = root->fs_info->fs_devices;
- 	while (fs_devices) {
-@@ -204,16 +208,26 @@ struct extent_buffer *read_tree_block(struct btrfs_root *root, u64 bytenr,
- 		eb->dev_bytenr = multi->stripes[0].physical;
- 		kfree(multi);
- 		ret = read_extent_from_disk(eb);
--		if (ret == 0 && check_tree_block(root, eb) == 0 &&
--		    csum_tree_block(root, eb, 1) == 0 &&
--		    verify_parent_transid(eb->tree, eb, parent_transid) == 0) {
--			btrfs_set_buffer_uptodate(eb);
--			return eb;
-+		if (ret == 0) {
-+			
-+		    if (check_tree_block(root, eb) == 0) {
-+			/* fprintf(stderr, "checked tree block %p for %p -- %llu \n", root, eb, eb->start);*/
-+			if (csum_tree_block(root, eb, 1) == 0) {
-+				/* fprintf(stderr, "tree block csum %p for %p--%llu is OK\n", root, eb, eb->start); */
-+				if (verify_parent_transid(eb->tree, eb, parent_transid) == 0) {
-+					/*fprintf(stderr, "tree block %p--%llu has correct transid, setting uptodate\n",  eb, eb->start);				*/
-+				
-+					btrfs_set_buffer_uptodate(eb);
-+					return eb;
-+				}
-+			}	
-+		   }
-+
- 		}
- 		num_copies = btrfs_num_copies(&root->fs_info->mapping_tree,
- 					      eb->start, eb->len);
- 		if (num_copies == 1) {
--			break;
-+			//break;
- 		}
- 		mirror_num++;
- 		if (mirror_num > num_copies) {
-@@ -581,7 +595,7 @@ struct btrfs_root *open_ctree(const char *filename, u64 sb_bytenr, int writes)
- 
- 	fp = open(filename, flags, 0600);
- 	if (fp < 0) {
--		fprintf (stderr, "Could not open %s\n", filename);
-+		fprintf (stderr, "Could not open %s: %s\n", filename, strerror(errno));
- 		return NULL;
- 	}
- 	root = open_ctree_fd(fp, filename, sb_bytenr, writes);
-@@ -590,6 +604,102 @@ struct btrfs_root *open_ctree(const char *filename, u64 sb_bytenr, int writes)
- 	return root;
- }
- 
-+#define MAX_EMERG_BUCKETS 30
-+static int try_emergency_tree_fixup(struct btrfs_super_block *disk_super, 
-+		struct btrfs_root *chunk_root, 
-+		struct btrfs_root *tree_root) 
-+{
-+	struct btrfs_header* buf;
-+	u64 ofs, oldofs;
-+	u32 blocksize;
-+	u64 generation;
-+	int ret, i;
-+
-+	u64 best_gen[MAX_EMERG_BUCKETS];
-+	u64 best_bytenr[MAX_EMERG_BUCKETS];
-+
-+	memset(&best_gen, 0, sizeof(best_gen));
-+	memset(&best_bytenr, 0, sizeof(best_bytenr));
-+
-+	blocksize = btrfs_level_size(tree_root,
-+				     btrfs_super_chunk_root_level(disk_super));
-+	generation = btrfs_super_chunk_root_generation(disk_super);
-+	buf = (struct btrfs_header*)malloc(blocksize);
-+
-+	oldofs = btrfs_super_bytenr(disk_super);
-+	for (ofs = oldofs; 
-+	     ofs < btrfs_super_total_bytes(disk_super);	
-+	     ofs += blocksize) {
-+	     
-+             ret = pread(chunk_root->node->fd, buf, blocksize, ofs);
-+	     if (ret == blocksize) {
-+		u64 blockofs = le64_to_cpu(buf->bytenr);
-+		if (blockofs != ofs) continue;
-+
-+		char* src = chunk_root->node->data + (long)btrfs_header_fsid(chunk_root->node); 
-+		char* dst = (char*) &(buf->fsid);
-+		if (memcmp(src, dst, sizeof(buf->fsid)) != 0) 
-+			continue;
-+
-+		u64 blockgen = le64_to_cpu(buf->generation);
-+		u64 blockowner = le64_to_cpu(buf->owner);
-+		u32 blocknritems = le32_to_cpu(buf->nritems); 
-+		u8  blocklevel = le8_to_cpu(buf->level);
-+
-+		/*
-+		fprintf(stderr,
-+			"     found valid header at %llu(+%llu) -- gen=%llu owner=%llu nritems=%u level=%u ",
-+			ofs, ofs-oldofs, blockgen, blockowner, blocknritems, blocklevel);
-+		*/
-+
-+		if ((blockowner < 0ull) && (blockowner > -11ull)) { blockowner += 30; /* hack */ }
-+
-+		if ((blockowner >= 0) && (blockowner < MAX_EMERG_BUCKETS)) {
-+			if (blockgen > best_gen[blockowner]) {
-+				best_gen[blockowner] = blockgen;
-+				best_bytenr[blockowner] = ofs;
-+
-+				fprintf(stderr,
-+					"     found valid header at %llu(+%llu) -- gen=%llu owner=%llu nritems=%u level=%u ",
-+					ofs, ofs-oldofs, blockgen, blockowner, blocknritems, blocklevel);
-+
-+				fprintf(stderr,
-+					" ... new best gen for ObjectID %llu  at %llu\n", blockowner, ofs);
-+			} else {
-+			}
-+		} else {
-+		}
-+
-+		oldofs = ofs;
-+	     }
-+	}
-+	fprintf(stderr,"*** done scanning, at offset %llu ***\n", ofs);
-+	for ( i = 0; i < MAX_EMERG_BUCKETS; ++i) {
-+		fprintf(stderr,"  for ObjectID: %d, max gen=%llu at %llu\n", i, best_gen[i], best_bytenr[i]);
-+	}
-+
-+
-+	free(buf);
-+
-+#if 1	
-+	if (best_gen[BTRFS_CSUM_TREE_OBJECTID] == best_gen[BTRFS_ROOT_TREE_OBJECTID]) {
-+		/* now we try to do the repair */
-+		fprintf(stderr,
-+			" ATTEMPTING DANGEROUS REPAIR with root gen=%llu bytenr=%llu\n",
-+			best_gen[BTRFS_ROOT_TREE_OBJECTID], best_bytenr[BTRFS_ROOT_TREE_OBJECTID]);
-+		btrfs_set_super_generation(disk_super, best_gen[BTRFS_ROOT_TREE_OBJECTID]);
-+		btrfs_set_super_root(disk_super, best_bytenr[BTRFS_ROOT_TREE_OBJECTID]);
-+		
-+		/* not actually changing the on-disk super. Debug should proceed, 
-+		   fsck should eventually rewrite the super ?*/
-+		tree_root->fs_info->emergency_root_tree = 1;
-+		return 0;				
-+	}
-+#endif
-+
-+	return 1; /* nothing done */
-+}
-+
- struct btrfs_root *open_ctree_fd(int fp, const char *path, u64 sb_bytenr,
- 				 int writes)
- {
-@@ -736,7 +846,26 @@ struct btrfs_root *open_ctree_fd(int fp, const char *path, u64 sb_bytenr,
- 	tree_root->node = read_tree_block(tree_root,
- 					  btrfs_super_root(disk_super),
- 					  blocksize, generation);
-+	if (!tree_root->node) {
-+		fprintf(stderr,"*** did not find a root, about to abort ***\n");
-+		fprintf(stderr,"*** will attempt to find useful trees before bailing out anyway: ***\n");
-+		ret = try_emergency_tree_fixup(disk_super, chunk_root, tree_root);
-+		if (!ret) {
-+			fprintf(stderr,"a repair happened, trying again (once):\n");
-+			
-+			generation = btrfs_super_generation(disk_super);
-+			tree_root->node = read_tree_block(tree_root,
-+							  btrfs_super_root(disk_super),
-+							  blocksize, generation);
-+			if (!tree_root->node) {
-+				fprintf(stderr,"*** again, did not find a root, about to abort, for good. ***\n");
-+			}
-+		}	
-+	}
- 	BUG_ON(!tree_root->node);
-+	if (!tree_root->node) {
-+		fprintf(stderr,"*** huh?  ***\n");
-+	}
- 	ret = find_and_setup_root(tree_root, fs_info,
- 				  BTRFS_EXTENT_TREE_OBJECTID, extent_root);
- 	BUG_ON(ret);
-@@ -774,12 +903,15 @@ struct btrfs_root *open_ctree_fd(int fp, const char *path, u64 sb_bytenr,
- int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr)
- {
- 	u8 fsid[BTRFS_FSID_SIZE];
-+	char up_fsid[37], up_ofsid[37];
- 	struct btrfs_super_block buf;
- 	int i;
- 	int ret;
- 	u64 transid = 0;
- 	u64 bytenr;
- 
-+
-+
- 	if (sb_bytenr != BTRFS_SUPER_INFO_OFFSET) {
- 		ret = pread64(fd, &buf, sizeof(buf), sb_bytenr);
- 		if (ret < sizeof(buf))
-@@ -796,24 +928,63 @@ int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr)
- 
- 	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
- 		bytenr = btrfs_sb_offset(i);
-+		fprintf(stderr, "trying potential super #%d at bytenr %llu \n",
-+			i, bytenr);
-+
-+
- 		ret = pread64(fd, &buf, sizeof(buf), bytenr);
--		if (ret < sizeof(buf))
-+		if (ret < sizeof(buf)) {
-+			fprintf(stderr, "    got only %d bytes instead of %lu\n",
-+				ret, sizeof(buf));
- 			break;
-+		}
- 
--		if (btrfs_super_bytenr(&buf) != bytenr ||
--		    strncmp((char *)(&buf.magic), BTRFS_MAGIC,
--			    sizeof(buf.magic)))
-+
-+		if (btrfs_super_bytenr(&buf) != bytenr) {
-+			fprintf(stderr, "    misplaced block thinks it's at %llu\n",
-+				btrfs_super_bytenr(&buf));
-+			continue;
-+		}
-+
-+		if (strncmp((char *)(&buf.magic), BTRFS_MAGIC,
-+			    sizeof(buf.magic))) {
-+			fprintf(stderr, "    invalid magic\n");
- 			continue;
-+		}
- 
- 		if (i == 0)
- 			memcpy(fsid, buf.fsid, sizeof(fsid));
--		else if (memcmp(fsid, buf.fsid, sizeof(fsid)))
-+		else if (memcmp(fsid, buf.fsid, sizeof(fsid))) {
-+			uuid_unparse(fsid, up_fsid);
-+			uuid_unparse(buf.fsid, up_ofsid);
-+			fprintf(stderr, "    wrong fsid %s expected %s \n", up_fsid, up_ofsid);
-+			
- 			continue;
-+		}
-+
-+		if (btrfs_super_generation(&buf) < transid) {		
-+			fprintf(stderr, "super #%d at bytenr %llu has older generation %llu than %llu, skipping\n",
-+				i, bytenr, btrfs_super_generation(&buf), transid);
-+			continue;
-+		}
-+
-+		if (btrfs_super_generation(&buf) == transid) {		
-+			fprintf(stderr, "super #%d at bytenr %llu has same generation %llu than %llu, skipping\n",
-+				i, bytenr, btrfs_super_generation(&buf), transid);
- 
--		if (btrfs_super_generation(&buf) > transid) {
--			memcpy(sb, &buf, sizeof(*sb));
--			transid = btrfs_super_generation(&buf);
-+			if (memcmp(sb, &buf, sizeof(*sb))) {
-+				fprintf(stderr, "   warning: super #%d at bytenr %llu has different contents!\n",
-+				i, bytenr);
-+			}
-+			continue;
- 		}
-+
-+		/* btrfs_super_generation(&buf) > transid */
-+		fprintf(stderr, "super #%d at bytenr %llu has better generation %llu than %llu, using that\n",
-+			i, bytenr, btrfs_super_generation(&buf), transid);
-+
-+		memcpy(sb, &buf, sizeof(*sb));
-+		transid = btrfs_super_generation(&buf);
- 	}
- 
- 	return transid > 0 ? 0 : -1;
-@@ -930,7 +1101,12 @@ static int close_all_devices(struct btrfs_fs_info *fs_info)
- 	struct list_head *next;
- 	struct btrfs_device *device;
- 
--	return 0;
-+	if (!fs_info->emergency_root_tree) {
-+		/* huh? there was a "return 0" sitting here. Yes we leaked fd's. 
-+		   Leaving it on when not doing funky desperate things. 
-+		*/
-+		return 0;
-+	}
- 
- 	list = &fs_info->fs_devices->devices;
- 	list_for_each(next, list) {
-diff --git a/disk-io.h b/disk-io.h
-index 49e5692..0af98b4 100644
---- a/disk-io.h
-+++ b/disk-io.h
-@@ -64,6 +64,7 @@ int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid);
- int btrfs_set_buffer_uptodate(struct extent_buffer *buf);
- int wait_on_tree_block_writeback(struct btrfs_root *root,
- 				 struct extent_buffer *buf);
-+int write_all_supers(struct btrfs_root *root);
- u32 btrfs_csum_data(struct btrfs_root *root, char *data, u32 seed, size_t len);
- void btrfs_csum_final(u32 crc, char *result);
- 
-
---=-TovPMUBbcwNB5a+bSJwV--
+> On Fri, Jan 21, 2011 at 4:50 PM, Erik Logtenberg <erik@logtenberg.eu> wrote:
+>> Hi,
+>>
+>> I hit the same bug again I think:
+>>
+>> [291835.724344] ------------[ cut here ]------------
+>> [291835.724376] kernel BUG at fs/btrfs/relocation.c:836!
+>> [291835.724401] invalid opcode: 0000 [#1] SMP
+>> [291835.724424] last sysfs file:
+>> /sys/devices/system/cpu/cpu1/cache/index2/shared_cpu_map
+>> [291835.724461] CPU 0
+>> [291835.724472] Modules linked in: uvcvideo snd_usb_audio
+>> snd_usbmidi_lib videodev v4l1_compat snd_rawmidi v4l2_compat_ioctl32
+>> btrfs zlib_deflate libcrc32c sha256_generic cryptd aes_x86_64
+>> aes_generic cbc dm_crypt tun ebtable_nat ebtables ipt_MASQUERADE
+>> iptable_nat nf_nat bridge stp llc nfsd lockd nfs_acl auth_rpcgss
+>> exportfs nls_utf8 cifs fscache sunrpc cpufreq_ondemand acpi_cpufreq
+>> freq_table mperf ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6
+>> ip6table_filter ip6_tables ipv6 kvm_intel kvm dummy uinput
+>> snd_hda_codec_analog snd_hda_intel snd_hda_codec snd_hwdep snd_seq
+>> snd_seq_device e1000e snd_pcm snd_timer i2c_i801 snd shpchp iTCO_wdt
+>> iTCO_vendor_support soundcore dell_wmi sparse_keymap snd_page_alloc
+>> serio_raw joydev wmi dcdbas microcode usb_storage uas raid1 pata_acpi
+>> ata_generic radeon ttm drm_kms_helper drm i2c_algo_bit i2c_core [last
+>> unloaded: scsi_wait_scan]
+>> [291835.725002]
+>> [291835.725013] Pid: 27386, comm: btrfs Tainted: G          I
+>> 2.6.37-2.fc15.x86_64 #1
+>> [291835.725062] RIP: 0010:[<ffffffffa0565237>]  [<ffffffffa0565237>]
+>> build_backref_tree+0x473/0xd6d [btrfs]
+>> [291835.725126] RSP: 0018:ffff8800373bf9c8  EFLAGS: 00010246
+>> [291835.725152] RAX: ffff8801367d5100 RBX: ffff88020b110880 RCX:
+>> 0000000000000040
+>> [291835.725186] RDX: 0000000000000030 RSI: 0000006dd08d3000 RDI:
+>> ffff880100069820
+>> [291835.725219] RBP: ffff8800373bfaf8 R08: 0000000000008050 R09:
+>> ffff8800373bf980
+>> [291835.725253] R10: ffff8800373bf918 R11: ffff88020b110880 R12:
+>> ffff8801367d5100
+>> [291835.725254] R13: ffff88012c0a24c0 R14: ffff88021e2013f0 R15:
+>> ffff88021e201cf0
+>> [291835.725254] FS:  00007fcb1a6cc760(0000) GS:ffff8800bfa00000(0000)
+>> knlGS:0000000000000000
+>> [291835.725254] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+>> [291835.725254] CR2: 0000000002feeeb8 CR3: 00000001c2943000 CR4:
+>> 00000000000426e0
+>> [291835.725254] DR0: 0000000000000000 DR1: 0000000000000000 DR2:
+>> 0000000000000000
+>> [291835.725254] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7:
+>> 0000000000000400
+>> [291835.725254] Process btrfs (pid: 27386, threadinfo ffff8800373be000,
+>> task ffff88022452ae40)
+>> [291835.725254] Stack:
+>> [291835.725254]  ffffea0004b5a470 ffffea0000000000 ffff8800373bf9f8
+>> ffff8800373bfaa8
+>> [291835.725254]  0000000000000000 ffff88005faafbb0 ffff880100069808
+>> ffff880100069d78
+>> [291835.725254]  ffff88012c0a2aa0 ffff880100069820 ffff88020b1108c0
+>> ffff880100069d80
+>> [291835.725254] Call Trace:
+>> [291835.725254]  [<ffffffffa0565c91>] relocate_tree_blocks+0x160/0x478
+>> [btrfs]
+>> [291835.725254]  [<ffffffffa056463d>] ? add_tree_block+0x11e/0x13e [btrfs]
+>> [291835.725254]  [<ffffffffa0566b45>] relocate_block_group+0x1e3/0x490
+>> [btrfs]
+>> [291835.725254]  [<ffffffff8103edb9>] ? should_resched+0xe/0x2e
+>> [291835.725254]  [<ffffffffa0566f39>]
+>> btrfs_relocate_block_group+0x147/0x28a [btrfs]
+>> [291835.725254]  [<ffffffffa054e52a>]
+>> btrfs_relocate_chunk.clone.40+0x61/0x4ab [btrfs]
+>> [291835.725254]  [<ffffffffa05152d4>] ? btrfs_item_key+0x1e/0x20 [btrfs]
+>> [291835.725254]  [<ffffffffa05152f0>] ? btrfs_item_key_to_cpu+0x1a/0x36
+>> [btrfs]
+>> [291835.725254]  [<ffffffffa054c2a8>] ? read_extent_buffer+0xc3/0xe3 [btrfs]
+>> [291835.725254]  [<ffffffffa05154e6>] ?
+>> btrfs_header_nritems.clone.12+0x17/0x1c [btrfs]
+>> [291835.725254]  [<ffffffffa054cff6>] ? btrfs_item_key_to_cpu+0x2a/0x46
+>> [btrfs]
+>> [291835.725254]  [<ffffffffa055045e>] btrfs_balance+0x1a3/0x1f0 [btrfs]
+>> [291835.725254]  [<ffffffff8112bce5>] ? do_filp_open+0x226/0x5c8
+>> [291835.725254]  [<ffffffffa0556773>] btrfs_ioctl+0x641/0x846 [btrfs]
+>> [291835.725254]  [<ffffffff811f3ed1>] ? file_has_perm+0xa5/0xc7
+>> [291835.725254]  [<ffffffff8112e091>] do_vfs_ioctl+0x4b1/0x4f2
+>> [291835.725254]  [<ffffffff8112e128>] sys_ioctl+0x56/0x7a
+>> [291835.725254]  [<ffffffff8100acc2>] system_call_fastpath+0x16/0x1b
+>> [291835.725254] Code: 48 8b 45 89 49 8d 7d 10 48 8d 75 b0 49 89 44 24 18
+>> 8a 43 70 ff c0 41 88 44 24 70 e8 f7 c3 ff ff eb 17 f6 40 71 10 49 89 c4
+>> 75 02 <0f> 0b 49 8d 45 10 49 89 45 10 49 89 45 18 48 8b b5 20 ff ff ff
+>> [291835.725254] RIP  [<ffffffffa0565237>] build_backref_tree+0x473/0xd6d
+>> [btrfs]
+>> [291835.725254]  RSP <ffff8800373bf9c8>
+>> [291835.738971] ---[ end trace a7919e7f17c0a727 ]---
+>>
+>>
+>> It is really difficult to reproduce this bug. This time, I was balancing
+>> a 300GB volume, which was almost finished by the time it crashed. It had
+>> been running for 2 days straight, and survived a complete backup run,
+>> with 5 simultaneous rsyncs running on it. Last night when the rsyncs
+>> kicked in, it crashed within half an hour though.
+>>
+>> I will now try downgrading to 2.6.36 as per Zheng Yan's suggestion.
+>>
+>> Thanks,
+>>
+>> Erik.
+>>
+>>
+>> Op 17-1-2011 15:31, Erik Logtenberg schreef:
+>>> Hi,
+>>>
+>>> Please find attached the error log, for future reference.
+>>>
+>>> Forgot to mention:
+>>> I could still use the system after this error, so it was not a complete
+>>> fatal error in that regard. All active processes (mostly rsync) were
+>>> hanging in state D though, so I couldn't kill them anymore. Also the FS
+>>> was not umountable. So I still had to reboot.
+>>>
+>>> Thanks,
+>>>
+>>> Erik.
+>>>
+>>>
+>>> On 01/17/2011 03:14 PM, Erik Logtenberg wrote:
+>>>> Hi,
+>>>>
+>>>> btrfs balance results in:
+>>>>
+>>>> http://pastebin.com/v5j0809M
+>>>>
+>>>> My system: fully up-to-date Fedora 14 with rawhide kernel to make btrfs
+>>>> balance do useful stuff to my free space:
+>>>>
+>>>> kernel-2.6.37-2.fc15.x86_64
+>>>> btrfs-progs-0.19-12.fc14.x86_64
+>>>>
+>>>> Filesystem had 0 bytes free, should be 45G, so on darklings advice I ran
+>>>> btrfs balance on the fs, while doing heavy I/O (re-running 5 backup jobs
+>>>> that had failed due to ENOSP).
+>>>> Up until the crash, btrfs balance did retrieve a couple of Gigs free
+>>>> space though, so that part of the plan worked just fine.
+>>>>
+>>>> Thanks,
+>>>>
+>>>> Erik.
+>>>> --
+>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>>> the body of a message to majordomo@vger.kernel.org
+>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 

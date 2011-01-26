@@ -1,37 +1,29 @@
 From: Erik Logtenberg <erik@logtenberg.eu>
 Subject: Re: Kernel error during btrfs balance
-Date: Wed, 26 Jan 2011 10:43:09 +0100
-Message-ID: <4D3FECAD.3080102@logtenberg.eu>
-References: <4D344EBB.6030903@logtenberg.eu> <4D3452C9.901@logtenberg.eu> <4D3948CB.8090801@logtenberg.eu> <AANLkTinN7QYqwydzgidERhu46QTEE8bLwiRy4qjM2fyL@mail.gmail.com> <4D3FE382.6070000@logtenberg.eu> <20110126092746.GJ29985@carfax.org.uk>
+Date: Wed, 26 Jan 2011 10:46:21 +0100
+Message-ID: <4D3FED6D.3040606@logtenberg.eu>
+References: <Bear5K9y1uB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: Hugo Mills <hugo-lkml@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110126092746.GJ29985@carfax.org.uk>
+In-Reply-To: <Bear5K9y1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
->> [104178.827624] entry offset 8891924480, bytes 4096, bitmap yes
->> [104178.827626] block group has cluster?: no
->> [104178.827628] 0 blocks of free space at or bigger than bytes is
->> [104178.827631] block group 17213423616 has 5368709120 bytes, 5368709120
->> used 0 pinned 0 reserved
->> [104178.827634] block group has cluster?: no
->>
->> And so on.
->>
->> Does this indicate an error of any sort, or is this expected behaviour?
+> Yesterday I reported a similar problem in this mailing list, in the  
+> thread "version".
 > 
->    As far as I know, it means that you've run out of space, and not
-> every block group has been rewritten by the balance process.
+> Running kernel 2.6.37 didn't show this error, but running kernel 2.6.38- 
+> rc2 ended with errors.
 > 
->    Hugo.
-> 
+> Viele Gruesse!
+> Helmut
 
-It is a 300GB volume with 79GB free. So hardly out of space. Moreover, I
-started the balance operation with the sole purpose of reclaiming some
-free space. The volume had like 40GB less free space when balance
-started, which was used by / reserved for Metadata.
+Ah, indeed, just like you I use 2.6.38-rc2. Or to be more precise:
+2.6.38-0.rc2.git0.1.fc14.x86_64, which is the latest rawhide kernel,
+with one additional patch, being the oneliner from Zheng Yan.
 
 Kind regards,
 

@@ -1,70 +1,117 @@
-From: Shawn Stricker <kb1ibt@me.com>
-Subject: Re: full btrfs partition,
- became unmountable (+ a solution that thankfully worked for me)
-Date: Tue, 25 Jan 2011 23:38:02 -0500
-Message-ID: <BC28BE23-1017-456E-9EAA-74A840809085@me.com>
-References: <1295981200.29117.19.camel@hestia>
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: [PATCH 1/3] btrfs: fix uncheck memory allocation in btrfs_submit_compressed_read
+Date: Wed, 26 Jan 2011 14:21:39 +0800
+Message-ID: <4D3FBD73.9070107@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=windows-1252
-Cc: =?iso-8859-1?Q?Cyrille_Ch=E9p=E9lov?= <cyrille@chepelov.org>
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <1295981200.29117.19.camel@hestia>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Not sure where you pulled your source from but a fresh checkout of eith=
-er master or next of git.kernel.org/pub/scm/linux/kernel/git/mason/btrf=
-s-progs-unstable.git does not compile properly.
-They both fail with=20
 
-cc1: warnings being treated as errors
-disk-io.c: In function =91btrfs_read_dev_super=92:
-disk-io.c:937: error: format =91%lu=92 expects type =91long unsigned in=
-t=92, but argument 4 has type =91unsigned int=92
-disk-io.c:957: error: implicit declaration of function =91uuid_unparse=92
+btrfs_submit_compressed_read() is lack of memory allocation checks and
+corresponding error route.
 
-am I patching/compiling from the wrong source or is there something I a=
-m missing?
-On Jan 25, 2011, at 1:46 PM, Cyrille Ch=E9p=E9lov wrote:
+After this fix, if it comes to "no memory" case, errno will be returned
+to userland step by step, and tell users this operation cannot go on.
 
-> Hello all,
->=20
-> Last Friday, the /var and /home partition on one of my appliances bec=
-ame
-> full. This should normally not be much of a problem, except that afte=
-r
-> the incident, I had been unable to mount the partition back again.
->=20
-> The appliance runs 2.6.32 as provided by Debian during the last two
-> months.=20
-> The rescue computer runs 2.6.37; both exhibited the same behaviour at
-> mount: an infinite loop-and-abort cycle (I unfortunately did not writ=
-e
-> down the exact messages, but in a nutshell, there was not enough free
-> space to replay the log, so it aborted).
->=20
-> After pulling the SD card (yes) to break the loop, I ended up with a
-> corrupt file system. Any attempt to mount, debug or fsck (using
-> btrfs-tools 0.19+20100601 as shipped by Debian, or compiled from git
-> 1b444cd2e6ab8dcafdd) aborted with the following message:
->    btrfs-debug-tree: disk-io.c:741: open_ctree_fd: Assertion `!(!
-> tree_root->node)' failed.
->=20
-> After much scavenging on the disk image, I finally managed to recover=
-,
-> using the (dirty) patch attached here. Since apparently other people =
-had
-> similar issues, I'm posting it in the hope it might be useful.
->=20
->    -- Cyrille
->=20
-> PS: Chris, if btrfs-images of "before" and "after" my butcher fix wou=
-ld
-> be useful to you, just let me know.=20
-> <scavenge.patch>
+Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+---
+ fs/btrfs/compression.c |   25 +++++++++++++++++++++++--
+ fs/btrfs/extent_io.c   |    4 ++--
+ 2 files changed, 25 insertions(+), 4 deletions(-)
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index f745287..3a932f1 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -562,7 +562,7 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 	u64 em_len;
+ 	u64 em_start;
+ 	struct extent_map *em;
+-	int ret;
++	int ret = -ENOMEM;
+ 	u32 *sums;
+ 
+ 	tree = &BTRFS_I(inode)->io_tree;
+@@ -577,6 +577,9 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 
+ 	compressed_len = em->block_len;
+ 	cb = kmalloc(compressed_bio_size(root, compressed_len), GFP_NOFS);
++	if (!cb)
++		goto out;
++
+ 	atomic_set(&cb->pending_bios, 0);
+ 	cb->errors = 0;
+ 	cb->inode = inode;
+@@ -597,13 +600,18 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 
+ 	nr_pages = (compressed_len + PAGE_CACHE_SIZE - 1) /
+ 				 PAGE_CACHE_SIZE;
+-	cb->compressed_pages = kmalloc(sizeof(struct page *) * nr_pages,
++	cb->compressed_pages = kzalloc(sizeof(struct page *) * nr_pages,
+ 				       GFP_NOFS);
++	if (!cb->compressed_pages)
++		goto fail1;
++
+ 	bdev = BTRFS_I(inode)->root->fs_info->fs_devices->latest_bdev;
+ 
+ 	for (page_index = 0; page_index < nr_pages; page_index++) {
+ 		cb->compressed_pages[page_index] = alloc_page(GFP_NOFS |
+ 							      __GFP_HIGHMEM);
++		if (!cb->compressed_pages[page_index])
++			goto fail2;
+ 	}
+ 	cb->nr_pages = nr_pages;
+ 
+@@ -614,6 +622,8 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 	cb->len = uncompressed_len;
+ 
+ 	comp_bio = compressed_bio_alloc(bdev, cur_disk_byte, GFP_NOFS);
++	if (!comp_bio)
++		goto fail2;
+ 	comp_bio->bi_private = cb;
+ 	comp_bio->bi_end_io = end_compressed_bio_read;
+ 	atomic_inc(&cb->pending_bios);
+@@ -681,6 +691,17 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 
+ 	bio_put(comp_bio);
+ 	return 0;
++
++fail2:
++	for (page_index = 0; page_index < nr_pages; page_index++)
++		free_page((unsigned long)cb->compressed_pages[page_index]);
++
++	kfree(cb->compressed_pages);
++fail1:
++	kfree(cb);
++out:
++	free_extent_map(em);
++	return ret;
+ }
+ 
+ static struct list_head comp_idle_workspace[BTRFS_COMPRESS_TYPES];
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 8b8d3d9..6411ed6 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1865,7 +1865,7 @@ static int submit_one_bio(int rw, struct bio *bio, int mirror_num,
+ 	bio_get(bio);
+ 
+ 	if (tree->ops && tree->ops->submit_bio_hook)
+-		tree->ops->submit_bio_hook(page->mapping->host, rw, bio,
++		ret = tree->ops->submit_bio_hook(page->mapping->host, rw, bio,
+ 					   mirror_num, bio_flags, start);
+ 	else
+ 		submit_bio(rw, bio);
+@@ -2126,7 +2126,7 @@ int extent_read_full_page(struct extent_io_tree *tree, struct page *page,
+ 	ret = __extent_read_full_page(tree, page, get_extent, &bio, 0,
+ 				      &bio_flags);
+ 	if (bio)
+-		submit_one_bio(READ, bio, 0, bio_flags);
++		ret = submit_one_bio(READ, bio, 0, bio_flags);
+ 	return ret;
+ }
+ 
+-- 
+1.6.5.2

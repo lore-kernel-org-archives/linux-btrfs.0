@@ -1,50 +1,59 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: [RFC][PATCH] Btrfs: New inode number allocator
-Date: Wed, 26 Jan 2011 19:30:01 +0100
-Message-ID: <4D406829.3040700@libero.it>
-References: <4D3F7E7C.6080903@cn.fujitsu.com>
-Reply-To: kreijack@inwind.it
+From: Olaf van der Spek <olafvdspek@gmail.com>
+Subject: Re: Atomic file data replace API
+Date: Wed, 26 Jan 2011 19:30:08 +0100
+Message-ID: <AANLkTim8wQuskQT1DsRX-1LY6yx91Ltd+hDz9OsYvjOP@mail.gmail.com>
+References: <AANLkTi=paCEdAFZkHWTSwTCjYavMPOaGY8MsLknryk=_@mail.gmail.com>
+	<AANLkTi=o4w9wDoh6f8iaJF=vPQ-Xs1XBnJMbym08cOa-@mail.gmail.com>
+	<1294416073-sup-5254@think>
+	<201101071726.02958.hka@qbs.com.pl>
+	<1294428310-sup-9846@think>
+	<AANLkTi=PT3+wiAjL7P0=bx7e8_VCXBGD2272PzLgJFu4@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-To: Li Zefan <lizf@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Cc: Hubert Kario <hka@qbs.com.pl>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D3F7E7C.6080903@cn.fujitsu.com>
+In-Reply-To: <AANLkTi=PT3+wiAjL7P0=bx7e8_VCXBGD2272PzLgJFu4@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/26/2011 02:53 AM, Li Zefan wrote:
-> Here comes the compatability issue. It's fine to mount old btrfs, because
-> we'll just use the original way to find free ino. But we can't mount new btrfs
-> in older kernels, because the OFFSET makes highest objectid overflow when it
-> is cast to unsigned long in 32bits system.
-> 
-> We can store ino extents to a seperate btree, and then the new btrfs can
-> be mounted in older kernels, but another problem will arise when remounting it
-> in new kernels - creating new files will probably fail (but not oops)
-> because the ino extent items are not consistent with inode items.
-> 
-> If the above behavior (failing to create files) is not acceptable, we'll
-> have to add an incompat flag.
+On Sat, Jan 8, 2011 at 3:40 PM, Olaf van der Spek <olafvdspek@gmail.com=
+> wrote:
+> On Fri, Jan 7, 2011 at 8:29 PM, Chris Mason <chris.mason@oracle.com> =
+wrote:
+>> The exact amount of tracking is going to vary. =C2=A0The reason why =
+is that
+>> actually doing the truncate is an O(size of the file) operation and =
+so
+>> you can't just flip a switch when the write or the close comes in. =C2=
+=A0You
+>> have to run through all the metadata of the file and do something
+>> temporary with each part that is only completed when the file IO is
+>> actually done.
+>
+> That's true. Maybe the proper way, via O_ATOMIC, is better.
+>
+>> Honestly, there many different ways to solve this in the application=
+=2E
+>> Requiring high speed atomic replacement of individual file contents =
+is a
+>> recipe for frustration.
+>
+> Did you see message of Massimo? That'd be the ideal way from an app
+> point of view.
+> Not solving this properly in the FS moves the problem to userspace
+> where it's even harder to solve and is not as performant.
+>
+> Replacing file data is a common operation that IMO the FS should
+> support in a safe way.
 
-I can't comment the patch from a technical point of view. However I want
-to add a my comment about the compatibility issues.
-
-I remember that Linus was not happy about a filesystem which is not
-compatible when the the kernel version decrease. IIRC during the switch
-from ext3 to ext4 there were some issues during a git bis-sect process.
-
-So my suggestions are:
-- don't allow that an automatic switch to the new inode allocation
-policy. It should be the user to force this switch ( via a mount option
-for example)
-- in case the performance regression are noticeable, allow the user to
-use the old policy, which, if I understood correctly, work fine on a 64
-bit system [*].
-
-Regards
-G.Baroncelli
+Chris?
 
 
-[*] Supposing to create continuously 1000 file per sec, it needs
-2^64/1000 sec = ~ 573.000.000 years to exhaust all the available inode
-numbers.
-
+--=20
+Olaf
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

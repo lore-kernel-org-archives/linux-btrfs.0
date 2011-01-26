@@ -1,52 +1,26 @@
-From: Erik Logtenberg <erik@logtenberg.eu>
-Subject: Re: version (was: btrfs, broken design?)
-Date: Wed, 26 Jan 2011 11:13:20 +0100
-Message-ID: <4D3FF3C0.5060505@logtenberg.eu>
-References: <BeHcMN1T1uB@helmut.hullen.de> <201101211532.56140.diegocg@gmail.com>
+From: "Yan, Zheng" <zheng.z.yan@linux.intel.com>
+Subject: [PATCH] Btrfs: Fix balance panic
+Date: Wed, 26 Jan 2011 18:38:43 +0800
+Message-ID: <4D3FF9B3.3030504@linux.intel.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: diegocg@gmail.com
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201101211532.56140.diegocg@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/21/2011 03:32 PM, Diego Calleja wrote:
-> On Viernes, 21 de Enero de 2011 10:54:00 Helmut Hullen escribi=F3:
->=20
->> And I never have seen somethin like "Changelog" - that would be fine=
- =20
->> too.
->=20
-> Check the wiki, I keep that updated: https://btrfs.wiki.kernel.org/in=
-dex.php/Main_Page#News
+Mark the cloned backref_node as checked in clone_backref_node()
 
-
-I like the Changelog on the wiki [1] very much, since it shows the most
-important changes in easily understandable language. Unfortunately, the
-most recent change is 2.6.35 (august 2010), while we are currently at
-2.6.37 (stable) and 2.6.38-rc2 (mainline). Especially 2.6.38(-rc2)
-contains many interesting new btrfs features and lots of important
-fixes. It would be very nice if the Changelog could list/explain those.
-
-[1] https://btrfs.wiki.kernel.org/index.php/Changelog
-
-The News [2] section on the Main page does mention one more version,
-2.6.37. But the news section is less elaborate than the Changelog and
-also I notice that 2.6.36 is not mentioned in the News section. Still,
-2.6.36 does contain all kinds of btrfs-related changes.
-
-[2] https://btrfs.wiki.kernel.org/index.php/Main_Page#News
-
-Diego, pls don't read anything negative in my comments, I enjoy and
-respect your work very much! If you could find time to add those latest
-changes to the wiki, it would be greatly appreciated.
-
-Kind regards,
-
-Erik.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Signed-off-by: Yan, Zheng <zheng.z.yan@intel.com>
+---
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 045c9c2..bef9c22 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -1157,6 +1157,7 @@ static int clone_backref_node(struct btrfs_trans_handle *trans,
+ 	new_node->bytenr = dest->node->start;
+ 	new_node->level = node->level;
+ 	new_node->lowest = node->lowest;
++	new_node->checked = 1;
+ 	new_node->root = dest;
+ 
+ 	if (!node->lowest) {

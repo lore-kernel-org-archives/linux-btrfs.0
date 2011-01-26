@@ -1,242 +1,92 @@
-From: Erik Logtenberg <erik@logtenberg.eu>
+From: Hugo Mills <hugo-lkml@carfax.org.uk>
 Subject: Re: Kernel error during btrfs balance
-Date: Wed, 26 Jan 2011 10:04:02 +0100
-Message-ID: <4D3FE382.6070000@logtenberg.eu>
-References: <4D344EBB.6030903@logtenberg.eu>	<4D3452C9.901@logtenberg.eu>	<4D3948CB.8090801@logtenberg.eu> <AANLkTinN7QYqwydzgidERhu46QTEE8bLwiRy4qjM2fyL@mail.gmail.com>
+Date: Wed, 26 Jan 2011 09:27:46 +0000
+Message-ID: <20110126092746.GJ29985@carfax.org.uk>
+References: <4D344EBB.6030903@logtenberg.eu>
+ <4D3452C9.901@logtenberg.eu>
+ <4D3948CB.8090801@logtenberg.eu>
+ <AANLkTinN7QYqwydzgidERhu46QTEE8bLwiRy4qjM2fyL@mail.gmail.com>
+ <4D3FE382.6070000@logtenberg.eu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: "Yan, Zheng " <yanzheng@21cn.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="W13SgbpmD6bhZUTM"
+Cc: "Yan, Zheng " <yanzheng@21cn.com>, linux-btrfs@vger.kernel.org
+To: Erik Logtenberg <erik@logtenberg.eu>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTinN7QYqwydzgidERhu46QTEE8bLwiRy4qjM2fyL@mail.gmail.com>
+In-Reply-To: <4D3FE382.6070000@logtenberg.eu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
 
-It took me a couple of days, because I needed to patch my kernel first
-and then issue a rebalance, which ran for more than two days.
-Nevertheless, the rebalance succeeded without any "kernel BUG"-messages,
-so apparently your patch works!
+--W13SgbpmD6bhZUTM
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-I noticed that at first, the messages were like this:
-
-[79329.526490] btrfs: found 1939 extents
-[79375.950834] btrfs: found 1939 extents
-[79376.083599] btrfs: relocating block group 352220872704 flags 1
-[80052.940435] btrfs: found 3786 extents
-[80108.439657] btrfs: found 3786 extents
-[80112.325548] btrfs: relocating block group 351147130880 flags 1
-
-Just like I saw during previous balance-runs. Then all of a sudden the
-messages changed to:
-
-[104178.827594] btrfs allocation failed flags 1, wanted 2013265920
-[104178.827599] space_info has 4271198208 free, is not full
-[104178.827602] space_info total=214748364800, used=210440957952,
-pinned=0, reserved=36208640, may_use=3168993280, readonly=0
-[104178.827606] block group 1107296256 has 5368709120 bytes, 5368582144
-used 0 pinned 0 reserved
-[104178.827610] entry offset 1778384896, bytes 86016, bitmap yes
-[104178.827612] entry offset 1855827968, bytes 20480, bitmap no
-[104178.827614] entry offset 1855852544, bytes 20480, bitmap no
-[104178.827617] block group has cluster?: no
-[104178.827618] 0 blocks of free space at or bigger than bytes is
-[104178.827621] block group 8623489024 has 5368709120 bytes, 5368705024
-used 0 pinned 0 reserved
-[104178.827624] entry offset 8891924480, bytes 4096, bitmap yes
-[104178.827626] block group has cluster?: no
-[104178.827628] 0 blocks of free space at or bigger than bytes is
-[104178.827631] block group 17213423616 has 5368709120 bytes, 5368709120
-used 0 pinned 0 reserved
-[104178.827634] block group has cluster?: no
-
-And so on.
-
-Does this indicate an error of any sort, or is this expected behaviour?
-
-Kind regards,
-
-Erik.
-
-
-On 01/21/2011 10:19 AM, Yan, Zheng wrote:
-> please try patch attached below, Thanks.
+On Wed, Jan 26, 2011 at 10:04:02AM +0100, Erik Logtenberg wrote:
+> Hi,
 > 
-> ---
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index b37d723..49d6b13 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -1158,6 +1158,7 @@ static int clone_backref_node(struct
-> btrfs_trans_handle *trans,
->  	new_node->bytenr = dest->node->start;
->  	new_node->level = node->level;
->  	new_node->lowest = node->lowest;
-> +	new_node->checked = 1;
->  	new_node->root = dest;
+> It took me a couple of days, because I needed to patch my kernel first
+> and then issue a rebalance, which ran for more than two days.
+> Nevertheless, the rebalance succeeded without any "kernel BUG"-messages,
+> so apparently your patch works!
 > 
->  	if (!node->lowest) {
-> ---
+> I noticed that at first, the messages were like this:
 > 
+> [79329.526490] btrfs: found 1939 extents
+> [79375.950834] btrfs: found 1939 extents
+> [79376.083599] btrfs: relocating block group 352220872704 flags 1
+> [80052.940435] btrfs: found 3786 extents
+> [80108.439657] btrfs: found 3786 extents
+> [80112.325548] btrfs: relocating block group 351147130880 flags 1
 > 
-> On Fri, Jan 21, 2011 at 4:50 PM, Erik Logtenberg <erik@logtenberg.eu> wrote:
->> Hi,
->>
->> I hit the same bug again I think:
->>
->> [291835.724344] ------------[ cut here ]------------
->> [291835.724376] kernel BUG at fs/btrfs/relocation.c:836!
->> [291835.724401] invalid opcode: 0000 [#1] SMP
->> [291835.724424] last sysfs file:
->> /sys/devices/system/cpu/cpu1/cache/index2/shared_cpu_map
->> [291835.724461] CPU 0
->> [291835.724472] Modules linked in: uvcvideo snd_usb_audio
->> snd_usbmidi_lib videodev v4l1_compat snd_rawmidi v4l2_compat_ioctl32
->> btrfs zlib_deflate libcrc32c sha256_generic cryptd aes_x86_64
->> aes_generic cbc dm_crypt tun ebtable_nat ebtables ipt_MASQUERADE
->> iptable_nat nf_nat bridge stp llc nfsd lockd nfs_acl auth_rpcgss
->> exportfs nls_utf8 cifs fscache sunrpc cpufreq_ondemand acpi_cpufreq
->> freq_table mperf ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6
->> ip6table_filter ip6_tables ipv6 kvm_intel kvm dummy uinput
->> snd_hda_codec_analog snd_hda_intel snd_hda_codec snd_hwdep snd_seq
->> snd_seq_device e1000e snd_pcm snd_timer i2c_i801 snd shpchp iTCO_wdt
->> iTCO_vendor_support soundcore dell_wmi sparse_keymap snd_page_alloc
->> serio_raw joydev wmi dcdbas microcode usb_storage uas raid1 pata_acpi
->> ata_generic radeon ttm drm_kms_helper drm i2c_algo_bit i2c_core [last
->> unloaded: scsi_wait_scan]
->> [291835.725002]
->> [291835.725013] Pid: 27386, comm: btrfs Tainted: G          I
->> 2.6.37-2.fc15.x86_64 #1
->> [291835.725062] RIP: 0010:[<ffffffffa0565237>]  [<ffffffffa0565237>]
->> build_backref_tree+0x473/0xd6d [btrfs]
->> [291835.725126] RSP: 0018:ffff8800373bf9c8  EFLAGS: 00010246
->> [291835.725152] RAX: ffff8801367d5100 RBX: ffff88020b110880 RCX:
->> 0000000000000040
->> [291835.725186] RDX: 0000000000000030 RSI: 0000006dd08d3000 RDI:
->> ffff880100069820
->> [291835.725219] RBP: ffff8800373bfaf8 R08: 0000000000008050 R09:
->> ffff8800373bf980
->> [291835.725253] R10: ffff8800373bf918 R11: ffff88020b110880 R12:
->> ffff8801367d5100
->> [291835.725254] R13: ffff88012c0a24c0 R14: ffff88021e2013f0 R15:
->> ffff88021e201cf0
->> [291835.725254] FS:  00007fcb1a6cc760(0000) GS:ffff8800bfa00000(0000)
->> knlGS:0000000000000000
->> [291835.725254] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
->> [291835.725254] CR2: 0000000002feeeb8 CR3: 00000001c2943000 CR4:
->> 00000000000426e0
->> [291835.725254] DR0: 0000000000000000 DR1: 0000000000000000 DR2:
->> 0000000000000000
->> [291835.725254] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7:
->> 0000000000000400
->> [291835.725254] Process btrfs (pid: 27386, threadinfo ffff8800373be000,
->> task ffff88022452ae40)
->> [291835.725254] Stack:
->> [291835.725254]  ffffea0004b5a470 ffffea0000000000 ffff8800373bf9f8
->> ffff8800373bfaa8
->> [291835.725254]  0000000000000000 ffff88005faafbb0 ffff880100069808
->> ffff880100069d78
->> [291835.725254]  ffff88012c0a2aa0 ffff880100069820 ffff88020b1108c0
->> ffff880100069d80
->> [291835.725254] Call Trace:
->> [291835.725254]  [<ffffffffa0565c91>] relocate_tree_blocks+0x160/0x478
->> [btrfs]
->> [291835.725254]  [<ffffffffa056463d>] ? add_tree_block+0x11e/0x13e [btrfs]
->> [291835.725254]  [<ffffffffa0566b45>] relocate_block_group+0x1e3/0x490
->> [btrfs]
->> [291835.725254]  [<ffffffff8103edb9>] ? should_resched+0xe/0x2e
->> [291835.725254]  [<ffffffffa0566f39>]
->> btrfs_relocate_block_group+0x147/0x28a [btrfs]
->> [291835.725254]  [<ffffffffa054e52a>]
->> btrfs_relocate_chunk.clone.40+0x61/0x4ab [btrfs]
->> [291835.725254]  [<ffffffffa05152d4>] ? btrfs_item_key+0x1e/0x20 [btrfs]
->> [291835.725254]  [<ffffffffa05152f0>] ? btrfs_item_key_to_cpu+0x1a/0x36
->> [btrfs]
->> [291835.725254]  [<ffffffffa054c2a8>] ? read_extent_buffer+0xc3/0xe3 [btrfs]
->> [291835.725254]  [<ffffffffa05154e6>] ?
->> btrfs_header_nritems.clone.12+0x17/0x1c [btrfs]
->> [291835.725254]  [<ffffffffa054cff6>] ? btrfs_item_key_to_cpu+0x2a/0x46
->> [btrfs]
->> [291835.725254]  [<ffffffffa055045e>] btrfs_balance+0x1a3/0x1f0 [btrfs]
->> [291835.725254]  [<ffffffff8112bce5>] ? do_filp_open+0x226/0x5c8
->> [291835.725254]  [<ffffffffa0556773>] btrfs_ioctl+0x641/0x846 [btrfs]
->> [291835.725254]  [<ffffffff811f3ed1>] ? file_has_perm+0xa5/0xc7
->> [291835.725254]  [<ffffffff8112e091>] do_vfs_ioctl+0x4b1/0x4f2
->> [291835.725254]  [<ffffffff8112e128>] sys_ioctl+0x56/0x7a
->> [291835.725254]  [<ffffffff8100acc2>] system_call_fastpath+0x16/0x1b
->> [291835.725254] Code: 48 8b 45 89 49 8d 7d 10 48 8d 75 b0 49 89 44 24 18
->> 8a 43 70 ff c0 41 88 44 24 70 e8 f7 c3 ff ff eb 17 f6 40 71 10 49 89 c4
->> 75 02 <0f> 0b 49 8d 45 10 49 89 45 10 49 89 45 18 48 8b b5 20 ff ff ff
->> [291835.725254] RIP  [<ffffffffa0565237>] build_backref_tree+0x473/0xd6d
->> [btrfs]
->> [291835.725254]  RSP <ffff8800373bf9c8>
->> [291835.738971] ---[ end trace a7919e7f17c0a727 ]---
->>
->>
->> It is really difficult to reproduce this bug. This time, I was balancing
->> a 300GB volume, which was almost finished by the time it crashed. It had
->> been running for 2 days straight, and survived a complete backup run,
->> with 5 simultaneous rsyncs running on it. Last night when the rsyncs
->> kicked in, it crashed within half an hour though.
->>
->> I will now try downgrading to 2.6.36 as per Zheng Yan's suggestion.
->>
->> Thanks,
->>
->> Erik.
->>
->>
->> Op 17-1-2011 15:31, Erik Logtenberg schreef:
->>> Hi,
->>>
->>> Please find attached the error log, for future reference.
->>>
->>> Forgot to mention:
->>> I could still use the system after this error, so it was not a complete
->>> fatal error in that regard. All active processes (mostly rsync) were
->>> hanging in state D though, so I couldn't kill them anymore. Also the FS
->>> was not umountable. So I still had to reboot.
->>>
->>> Thanks,
->>>
->>> Erik.
->>>
->>>
->>> On 01/17/2011 03:14 PM, Erik Logtenberg wrote:
->>>> Hi,
->>>>
->>>> btrfs balance results in:
->>>>
->>>> http://pastebin.com/v5j0809M
->>>>
->>>> My system: fully up-to-date Fedora 14 with rawhide kernel to make btrfs
->>>> balance do useful stuff to my free space:
->>>>
->>>> kernel-2.6.37-2.fc15.x86_64
->>>> btrfs-progs-0.19-12.fc14.x86_64
->>>>
->>>> Filesystem had 0 bytes free, should be 45G, so on darklings advice I ran
->>>> btrfs balance on the fs, while doing heavy I/O (re-running 5 backup jobs
->>>> that had failed due to ENOSP).
->>>> Up until the crash, btrfs balance did retrieve a couple of Gigs free
->>>> space though, so that part of the plan worked just fine.
->>>>
->>>> Thanks,
->>>>
->>>> Erik.
->>>> --
->>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>>> the body of a message to majordomo@vger.kernel.org
->>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Just like I saw during previous balance-runs. Then all of a sudden the
+> messages changed to:
+> 
+> [104178.827594] btrfs allocation failed flags 1, wanted 2013265920
+> [104178.827599] space_info has 4271198208 free, is not full
+> [104178.827602] space_info total=214748364800, used=210440957952,
+> pinned=0, reserved=36208640, may_use=3168993280, readonly=0
+> [104178.827606] block group 1107296256 has 5368709120 bytes, 5368582144
+> used 0 pinned 0 reserved
+> [104178.827610] entry offset 1778384896, bytes 86016, bitmap yes
+> [104178.827612] entry offset 1855827968, bytes 20480, bitmap no
+> [104178.827614] entry offset 1855852544, bytes 20480, bitmap no
+> [104178.827617] block group has cluster?: no
+> [104178.827618] 0 blocks of free space at or bigger than bytes is
+> [104178.827621] block group 8623489024 has 5368709120 bytes, 5368705024
+> used 0 pinned 0 reserved
+> [104178.827624] entry offset 8891924480, bytes 4096, bitmap yes
+> [104178.827626] block group has cluster?: no
+> [104178.827628] 0 blocks of free space at or bigger than bytes is
+> [104178.827631] block group 17213423616 has 5368709120 bytes, 5368709120
+> used 0 pinned 0 reserved
+> [104178.827634] block group has cluster?: no
+> 
+> And so on.
+> 
+> Does this indicate an error of any sort, or is this expected behaviour?
 
+   As far as I know, it means that you've run out of space, and not
+every block group has been rewritten by the balance process.
+
+   Hugo.
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+    --- In one respect at least, the Martians are a happy people: ---    
+                          they have no lawyers.                          
+
+--W13SgbpmD6bhZUTM
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iD8DBQFNP+kSIKyzvlFcI40RAvV1AJ9hixyMqsOt95PSm6iYjsJBdjiruQCgzX+Z
+2Kuv5upSkM+A1mvMbV++r/E=
+=afXz
+-----END PGP SIGNATURE-----
+
+--W13SgbpmD6bhZUTM--

@@ -1,26 +1,31 @@
-From: "Yan, Zheng" <zheng.z.yan@linux.intel.com>
-Subject: [PATCH] Btrfs: Fix balance panic
-Date: Wed, 26 Jan 2011 18:38:43 +0800
-Message-ID: <4D3FF9B3.3030504@linux.intel.com>
+From: Diego Calleja <diegocg@gmail.com>
+Subject: Re: version (was: btrfs, broken design?)
+Date: Wed, 26 Jan 2011 15:13:58 +0100
+Message-ID: <201101261513.58277.diegocg@gmail.com>
+References: <BeHcMN1T1uB@helmut.hullen.de> <201101211532.56140.diegocg@gmail.com> <4D3FF3C0.5060505@logtenberg.eu>
+Reply-To: diegocg@gmail.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain; charset=iso-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Erik Logtenberg <erik@logtenberg.eu>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4D3FF3C0.5060505@logtenberg.eu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Mark the cloned backref_node as checked in clone_backref_node()
+On Mi=E9rcoles, 26 de Enero de 2011 11:13:20 Erik Logtenberg escribi=F3=
+:
+> Diego, pls don't read anything negative in my comments, I enjoy and
+> respect your work very much! If you could find time to add those late=
+st
+> changes to the wiki, it would be greatly appreciated.
 
-Signed-off-by: Yan, Zheng <zheng.z.yan@intel.com>
----
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 045c9c2..bef9c22 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -1157,6 +1157,7 @@ static int clone_backref_node(struct btrfs_trans_handle *trans,
- 	new_node->bytenr = dest->node->start;
- 	new_node->level = node->level;
- 	new_node->lowest = node->lowest;
-+	new_node->checked = 1;
- 	new_node->root = dest;
- 
- 	if (!node->lowest) {
+Thanks for your suggestion, I've updated the Changelog and removed the =
+old
+items from the news section.
+
+2.6.36 didn't had many btrfs changes, there was no new features.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

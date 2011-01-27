@@ -1,57 +1,71 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH 09/12] Btrfs: Free correct pointer after using strsep
-Date: Thu, 27 Jan 2011 16:45:10 +0800
-Message-ID: <4D413096.30701@cn.fujitsu.com>
+Subject: [PATCH 10/12] Btrfs: Don't return acl info when mounting with noacl
+ option
+Date: Thu, 27 Jan 2011 16:45:29 +0800
+Message-ID: <4D4130A9.70701@cn.fujitsu.com>
 References: <4D412FE6.7050101@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	Tero Roponen <tero.roponen@gmail.com>
+	Miao Xie <miaox@cn.fujitsu.com>
 To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <4D412FE6.7050101@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Tero Roponen <tero.roponen@gmail.com>
+From: Miao Xie <miaox@cn.fujitsu.com>
 
-We must save and free the original kstrdup()'ed pointer
-because strsep() modifies its first argument.
+Steps to reproduce:
 
-Signed-off-by: Tero Roponen <tero.roponen@gmail.com>
+  # mkfs.btrfs /dev/sda2
+  # mount /dev/sda2 /mnt
+  # touch /mnt/file0
+  # setfacl -m 'u:root:x,g::x,o::x' /mnt/file0
+  # umount /mnt
+  # mount /dev/sda2 -o noacl /mnt
+  # getfacl /mnt/file0
+  ...
+  user::rw-
+  user:root:--x
+  group::--x
+  mask::--x
+  other::--x
+
+The output should be:
+
+  user::rw-
+  group::--x
+  other::--x
+
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 ---
- fs/btrfs/super.c |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
+ fs/btrfs/acl.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index f50253c..78ee681 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -277,7 +277,7 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
- 		struct btrfs_fs_devices **fs_devices)
- {
- 	substring_t args[MAX_OPT_ARGS];
--	char *opts, *p;
-+	char *opts, *orig, *p;
- 	int error = 0;
- 	int intarg;
+diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+index 2222d16..3c52fc8 100644
+--- a/fs/btrfs/acl.c
++++ b/fs/btrfs/acl.c
+@@ -37,6 +37,9 @@ static struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
+ 	char *value = NULL;
+ 	struct posix_acl *acl;
  
-@@ -291,6 +291,7 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
- 	opts = kstrdup(options, GFP_KERNEL);
- 	if (!opts)
- 		return -ENOMEM;
-+	orig = opts;
++	if (!IS_POSIXACL(inode))
++		return NULL;
++
+ 	acl = get_cached_acl(inode, type);
+ 	if (acl != ACL_NOT_CACHED)
+ 		return acl;
+@@ -82,6 +85,9 @@ static int btrfs_xattr_acl_get(struct dentry *dentry, const char *name,
+ 	struct posix_acl *acl;
+ 	int ret = 0;
  
- 	while ((p = strsep(&opts, ",")) != NULL) {
- 		int token;
-@@ -326,7 +327,7 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
- 	}
++	if (!IS_POSIXACL(dentry->d_inode))
++		return -EOPNOTSUPP;
++
+ 	acl = btrfs_get_acl(dentry->d_inode, type);
  
-  out_free_opts:
--	kfree(opts);
-+	kfree(orig);
-  out:
- 	/*
- 	 * If no subvolume name is specified we use the default one.  Allocate
+ 	if (IS_ERR(acl))
 -- 
 1.6.3

@@ -1,8 +1,7 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH 01/12] btrfs: Fix threshold calculation for block groups smaller
- than 1GB
-Date: Thu, 27 Jan 2011 16:42:37 +0800
-Message-ID: <4D412FFD.3090906@cn.fujitsu.com>
+Subject: [PATCH 02/12] btrfs: Add helper function free_bitmap()
+Date: Thu, 27 Jan 2011 16:42:56 +0800
+Message-ID: <4D413010.7060100@cn.fujitsu.com>
 References: <4D412FE6.7050101@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -13,44 +12,84 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <4D412FE6.7050101@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If a block group is smaller than 1GB, the extent entry threadhold
-calculation will always set the threshold to 0.
+Remove some duplicated code.
 
-So as free space gets fragmented, btrfs will switch to use bitmap
-to manage free space, but then will never switch back to extents
-due to this bug.
+This prepares for the next patch.
 
 Reviewed-by: Josef Bacik <josef@redhat.com>
 Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 ---
- fs/btrfs/free-space-cache.c |    8 ++++++--
- 1 files changed, 6 insertions(+), 2 deletions(-)
+ fs/btrfs/free-space-cache.c |   37 ++++++++++++++++---------------------
+ 1 files changed, 16 insertions(+), 21 deletions(-)
 
 diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 60d6842..42f4015 100644
+index 42f4015..850104f 100644
 --- a/fs/btrfs/free-space-cache.c
 +++ b/fs/btrfs/free-space-cache.c
-@@ -1016,14 +1016,18 @@ static void recalculate_thresholds(struct btrfs_block_group_cache *block_group)
- 	u64 max_bytes;
- 	u64 bitmap_bytes;
- 	u64 extent_bytes;
-+	u64 size = block_group->key.offset;
+@@ -1175,6 +1175,16 @@ static void add_new_bitmap(struct btrfs_block_group_cache *block_group,
+ 	recalculate_thresholds(block_group);
+ }
  
- 	/*
- 	 * The goal is to keep the total amount of memory used per 1gb of space
- 	 * at or below 32k, so we need to adjust how much memory we allow to be
- 	 * used by extent based free space tracking
- 	 */
--	max_bytes = MAX_CACHE_BYTES_PER_GIG *
--		(div64_u64(block_group->key.offset, 1024 * 1024 * 1024));
-+	if (size < 1024 * 1024 * 1024)
-+		max_bytes = MAX_CACHE_BYTES_PER_GIG;
-+	else
-+		max_bytes = MAX_CACHE_BYTES_PER_GIG *
-+			div64_u64(size, 1024 * 1024 * 1024);
++static void free_bitmap(struct btrfs_block_group_cache *block_group,
++			struct btrfs_free_space *bitmap_info)
++{
++	unlink_free_space(block_group, bitmap_info);
++	kfree(bitmap_info->bitmap);
++	kfree(bitmap_info);
++	block_group->total_bitmaps--;
++	recalculate_thresholds(block_group);
++}
++
+ static noinline int remove_from_bitmap(struct btrfs_block_group_cache *block_group,
+ 			      struct btrfs_free_space *bitmap_info,
+ 			      u64 *offset, u64 *bytes)
+@@ -1215,13 +1225,8 @@ again:
  
- 	/*
- 	 * we want to account for 1 more bitmap than what we have so we can make
+ 	if (*bytes) {
+ 		struct rb_node *next = rb_next(&bitmap_info->offset_index);
+-		if (!bitmap_info->bytes) {
+-			unlink_free_space(block_group, bitmap_info);
+-			kfree(bitmap_info->bitmap);
+-			kfree(bitmap_info);
+-			block_group->total_bitmaps--;
+-			recalculate_thresholds(block_group);
+-		}
++		if (!bitmap_info->bytes)
++			free_bitmap(block_group, bitmap_info);
+ 
+ 		/*
+ 		 * no entry after this bitmap, but we still have bytes to
+@@ -1254,13 +1259,8 @@ again:
+ 			return -EAGAIN;
+ 
+ 		goto again;
+-	} else if (!bitmap_info->bytes) {
+-		unlink_free_space(block_group, bitmap_info);
+-		kfree(bitmap_info->bitmap);
+-		kfree(bitmap_info);
+-		block_group->total_bitmaps--;
+-		recalculate_thresholds(block_group);
+-	}
++	} else if (!bitmap_info->bytes)
++		free_bitmap(block_group, bitmap_info);
+ 
+ 	return 0;
+ }
+@@ -1689,13 +1689,8 @@ u64 btrfs_find_space_for_alloc(struct btrfs_block_group_cache *block_group,
+ 	ret = offset;
+ 	if (entry->bitmap) {
+ 		bitmap_clear_bits(block_group, entry, offset, bytes);
+-		if (!entry->bytes) {
+-			unlink_free_space(block_group, entry);
+-			kfree(entry->bitmap);
+-			kfree(entry);
+-			block_group->total_bitmaps--;
+-			recalculate_thresholds(block_group);
+-		}
++		if (!entry->bytes)
++			free_bitmap(block_group, entry);
+ 	} else {
+ 		unlink_free_space(block_group, entry);
+ 		entry->offset += bytes;
 -- 
 1.6.3
-

@@ -1,41 +1,54 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: Re: version
-Date: 27 Jan 2011 09:16:00 +0100
-Message-ID: <BeetaMKT1uB@helmut.hullen.de>
-References: <1296114256-sup-4788@think>
-Reply-To: helmut@hullen.de
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: [PATCH 00/12] Btrfs: Some bug fixes
+Date: Thu, 27 Jan 2011 16:42:14 +0800
+Message-ID: <4D412FE6.7050101@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1296114256-sup-4788@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Chris,
+Hi Chris,
 
-Du meintest am 27.01.11:
+Those patches (except the last two) have been sent to the mailing list
+before, and they fix real bugs (but not critical bugs). Please consider
+queue them for 2.6.38.
 
->> crashes with the "dmesg" lines
->>
->> --------------------- dmesg -------------------
->>
->> bio too big device sdc (256 > 240)
->> bio too big device sdc (256 > 240)
->> bio too big device sdc (256 > 240)
->> bio too big device sdc (256 > 240)
->> ------------[ cut here ]------------
->> kernel BUG at fs/btrfs/volumes.c:2097!
+The free-space cache fixes were reviewed by Josef. Other patches fix
+some memory leaks, fix an acl bug, and fix the file clone ioctl.
 
-> Ugh, this one is an old friend I thought I had fixed up.  The two
-> devices have different limits on the max size of the bio, and we're
-> using one that is too large.
+Note: not all the patches are from Fujitsu.
 
-> I'll get it fixed for the next rc.
+Those patches can be pulled from:
 
-Thank you!
-The one device is a CF card with 8 GB, the other is a SSD with 40 GByte.  
-Maybe it's strange mixing them ... but I don't dare to test my 2 TByte  
-disks.
+	git://repo.or.cz/linux-btrfs-devel.git bug-fixes
 
-Viele Gruesse!
-Helmut
+
+Ian Kent (1):
+      Btrfs: Fix memory leak on finding existing super
+
+Li Zefan (8):
+      btrfs: Fix threshold calculation for block groups smaller than 1GB
+      btrfs: Add helper function free_bitmap()
+      btrfs: Free fully occupied bitmap in cluster
+      btrfs: Update stats when allocating from a cluster
+      btrfs: Add a helper try_merge_free_space()
+      btrfs: Check mergeable free space when removing a cluster
+      Btrfs: Fix memory leak at umount
+      Btrfs: Fix file clone when source offset is not 0
+
+Miao Xie (2):
+      Btrfs: Don't return acl info when mounting with noacl option
+      Btrfs: Fix memory leak in writepage fixup work
+
+Tero Roponen (1):
+      Btrfs: Free correct pointer after using strsep
+
+ fs/btrfs/acl.c              |    6 ++
+ fs/btrfs/disk-io.c          |    2 +
+ fs/btrfs/free-space-cache.c |  161 ++++++++++++++++++++++++++-----------------
+ fs/btrfs/inode.c            |    1 +
+ fs/btrfs/ioctl.c            |    5 +-
+ fs/btrfs/super.c            |    7 ++-
+ 6 files changed, 117 insertions(+), 65 deletions(-)

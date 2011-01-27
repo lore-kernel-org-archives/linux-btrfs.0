@@ -1,78 +1,250 @@
-From: "Jim Schutt" <jaschut@sandia.gov>
-Subject: btrfs BUG during Ceph cosd truncate() syscall
-Date: Thu, 27 Jan 2011 09:05:15 -0700
-Message-ID: <1296144315.23762.91.camel@sale659.sandia.gov>
-References: <1296057606.23762.56.camel@sale659.sandia.gov>
- <1296064793.23762.70.camel@sale659.sandia.gov>
- <1296067685.23762.74.camel@sale659.sandia.gov>
+From: Maria =?ISO-8859-1?Q?Wikstr=F6m?= <maria@ponstudios.se>
+Subject: Re: [PATCH v2]Btrfs: pwrite blocked when writing from the mmaped
+ buffer of the same page
+Date: Thu, 27 Jan 2011 23:12:25 +0100
+Message-ID: <1296166345.11397.16.camel@mainframe>
+References: <1291887014-18447-1-git-send-email-xin.zhong@intel.com>
+	 <201101271409.27877.johannes.hirte@fem.tu-ilmenau.de>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: "ceph-devel@vger.kernel.org" <ceph-devel@vger.kernel.org>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Cc: linux-btrfs@vger.kernel.org
+To: johannes.hirte@fem.tu-ilmenau.de, xin.zhong@intel.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1296067685.23762.74.camel@sale659.sandia.gov>
+In-Reply-To: <201101271409.27877.johannes.hirte@fem.tu-ilmenau.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+tor 2011-01-27 klockan 14:09 +0100 skrev Johannes Hirte: 
+> On Thursday 09 December 2010 10:30:14 Zhong, Xin wrote:
+> > This problem is found in meego testing:
+> > http://bugs.meego.com/show_bug.cgi?id=6672
+> > A file in btrfs is mmaped and the mmaped buffer is passed to pwrite to
+> > write to the same page of the same file. In btrfs_file_aio_write(), the
+> > pages is locked by prepare_pages(). So when btrfs_copy_from_user() is
+> > called, page fault happens and the same page needs to be locked again in
+> > filemap_fault(). The fix is to move iov_iter_fault_in_readable() before
+> > prepage_pages() to make page fault happen before pages are locked. And
+> > also disable page fault in critical region in btrfs_copy_from_user().
+> > 
+> > Reviewed-by: Yan, Zheng<zheng.z.yan@intel.com>
+> > Signed-off-by: Zhong, Xin <xin.zhong@intel.com>
+> > ---
+> >  fs/btrfs/file.c |   92
+> > ++++++++++++++++++++++++++++++++++++------------------- 1 files changed,
+> > 60 insertions(+), 32 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> > index c1faded..66836d8 100644
+> > --- a/fs/btrfs/file.c
+> > +++ b/fs/btrfs/file.c
+> > @@ -48,30 +48,34 @@ static noinline int btrfs_copy_from_user(loff_t pos,
+> > int num_pages, struct page **prepared_pages,
+> >  					 struct iov_iter *i)
+> >  {
+> > -	size_t copied;
+> > +	size_t copied = 0;
+> >  	int pg = 0;
+> >  	int offset = pos & (PAGE_CACHE_SIZE - 1);
+> > +	int total_copied = 0;
+> > 
+> >  	while (write_bytes > 0) {
+> >  		size_t count = min_t(size_t,
+> >  				     PAGE_CACHE_SIZE - offset, write_bytes);
+> >  		struct page *page = prepared_pages[pg];
+> > -again:
+> > -		if (unlikely(iov_iter_fault_in_readable(i, count)))
+> > -			return -EFAULT;
+> > -
+> > -		/* Copy data from userspace to the current page */
+> > -		copied = iov_iter_copy_from_user(page, i, offset, count);
+> > +		/*
+> > +		 * Copy data from userspace to the current page
+> > +		 *
+> > +		 * Disable pagefault to avoid recursive lock since
+> > +		 * the pages are already locked
+> > +		 */
+> > +		pagefault_disable();
+> > +		copied = iov_iter_copy_from_user_atomic(page, i, offset, count);
+> > +		pagefault_enable();
+> > 
+> >  		/* Flush processor's dcache for this page */
+> >  		flush_dcache_page(page);
+> >  		iov_iter_advance(i, copied);
+> >  		write_bytes -= copied;
+> > +		total_copied += copied;
+> > 
+> > +		/* Return to btrfs_file_aio_write to fault page */
+> >  		if (unlikely(copied == 0)) {
+> > -			count = min_t(size_t, PAGE_CACHE_SIZE - offset,
+> > -				      iov_iter_single_seg_count(i));
+> > -			goto again;
+> > +			break;
+> >  		}
+> > 
+> >  		if (unlikely(copied < PAGE_CACHE_SIZE - offset)) {
+> > @@ -81,7 +85,7 @@ again:
+> >  			offset = 0;
+> >  		}
+> >  	}
+> > -	return 0;
+> > +	return total_copied;
+> >  }
+> > 
+> >  /*
+> > @@ -854,6 +858,8 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+> >  	unsigned long last_index;
+> >  	int will_write;
+> >  	int buffered = 0;
+> > +	int copied = 0;
+> > +	int dirty_pages = 0;
+> > 
+> >  	will_write = ((file->f_flags & O_DSYNC) || IS_SYNC(inode) ||
+> >  		      (file->f_flags & O_DIRECT));
+> > @@ -970,7 +976,17 @@ static ssize_t btrfs_file_aio_write(struct kiocb
+> > *iocb, WARN_ON(num_pages > nrptrs);
+> >  		memset(pages, 0, sizeof(struct page *) * nrptrs);
+> > 
+> > -		ret = btrfs_delalloc_reserve_space(inode, write_bytes);
+> > +		/*
+> > +		 * Fault pages before locking them in prepare_pages
+> > +		 * to avoid recursive lock
+> > +		 */
+> > +		if (unlikely(iov_iter_fault_in_readable(&i, write_bytes))) {
+> > +			ret = -EFAULT;
+> > +			goto out;
+> > +		}
+> > +
+> > +		ret = btrfs_delalloc_reserve_space(inode,
+> > +					num_pages << PAGE_CACHE_SHIFT);
+> >  		if (ret)
+> >  			goto out;
+> > 
+> > @@ -978,37 +994,49 @@ static ssize_t btrfs_file_aio_write(struct kiocb
+> > *iocb, pos, first_index, last_index,
+> >  				    write_bytes);
+> >  		if (ret) {
+> > -			btrfs_delalloc_release_space(inode, write_bytes);
+> > +			btrfs_delalloc_release_space(inode,
+> > +					num_pages << PAGE_CACHE_SHIFT);
+> >  			goto out;
+> >  		}
+> > 
+> > -		ret = btrfs_copy_from_user(pos, num_pages,
+> > +		copied = btrfs_copy_from_user(pos, num_pages,
+> >  					   write_bytes, pages, &i);
+> > -		if (ret == 0) {
+> > +		dirty_pages = (copied + PAGE_CACHE_SIZE - 1) >>
+> > +					PAGE_CACHE_SHIFT;
+> > +
+> > +		if (num_pages > dirty_pages) {
+> > +			if (copied > 0)
+> > +				atomic_inc(
+> > +					&BTRFS_I(inode)->outstanding_extents);
+> > +			btrfs_delalloc_release_space(inode,
+> > +					(num_pages - dirty_pages) <<
+> > +					PAGE_CACHE_SHIFT);
+> > +		}
+> > +
+> > +		if (copied > 0) {
+> >  			dirty_and_release_pages(NULL, root, file, pages,
+> > -						num_pages, pos, write_bytes);
+> > +						dirty_pages, pos, copied);
+> >  		}
+> > 
+> >  		btrfs_drop_pages(pages, num_pages);
+> > -		if (ret) {
+> > -			btrfs_delalloc_release_space(inode, write_bytes);
+> > -			goto out;
+> > -		}
+> > 
+> > -		if (will_write) {
+> > -			filemap_fdatawrite_range(inode->i_mapping, pos,
+> > -						 pos + write_bytes - 1);
+> > -		} else {
+> > -			balance_dirty_pages_ratelimited_nr(inode->i_mapping,
+> > -							   num_pages);
+> > -			if (num_pages <
+> > -			    (root->leafsize >> PAGE_CACHE_SHIFT) + 1)
+> > -				btrfs_btree_balance_dirty(root, 1);
+> > -			btrfs_throttle(root);
+> > +		if (copied > 0) {
+> > +			if (will_write) {
+> > +				filemap_fdatawrite_range(inode->i_mapping, pos,
+> > +							 pos + copied - 1);
+> > +			} else {
+> > +				balance_dirty_pages_ratelimited_nr(
+> > +							inode->i_mapping,
+> > +							dirty_pages);
+> > +				if (dirty_pages <
+> > +				(root->leafsize >> PAGE_CACHE_SHIFT) + 1)
+> > +					btrfs_btree_balance_dirty(root, 1);
+> > +				btrfs_throttle(root);
+> > +			}
+> >  		}
+> > 
+> > -		pos += write_bytes;
+> > -		num_written += write_bytes;
+> > +		pos += copied;
+> > +		num_written += copied;
+> > 
+> >  		cond_resched();
+> >  	}
+> 
+> This patch breaks one of my Gentoo boxes. When I try to install/update via 
+> emerge, some packages hang. It seems that it's always a "svn info" process 
+> that is stuck in kernel eating 100% CPU. I don't know how svn is involved 
+> here, but reverting this patch makes the system work again. I'll try to get a 
+> simple testcase.
+> 
+> regards,
+>   Johannes
 
-I got this kernel BUG on a server running multiple Ceph
-cosd instances.  I'm not sure what was going on at the
-time, as I just noticed this on my serial console for
-this node.
+The same thing happens here. The only way to kill the process (svn info)
+is to restart the computer. Running vanilla 2.6.37 without patches.
 
-It looks like another example of the truncate issue in
-Matt Weil's report.
+#strace emerge libgcrypt
+-- cut -- 
+open("/var/tmp/portage/dev-libs/libgcrypt-1.4.6/temp/build.log",
+O_WRONLY|O_CREAT|O_APPEND|O_LARGEFILE, 0666) = 7
+fstat64(7, {st_mode=S_IFREG|0660, st_size=416, ...}) = 0
+mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1,
+0) = 0xb713a000
+fstat64(7, {st_mode=S_IFREG|0660, st_size=416, ...}) = 0
+_llseek(7, 416, [416], SEEK_SET)        = 0
+fstat64(7, {st_mode=S_IFREG|0660, st_size=416, ...}) = 0
+stat64("/var/tmp/portage/dev-libs/libgcrypt-1.4.6/temp/build.log",
+{st_mode=S_IFREG|0660, st_size=416, ...}) = 0
+dup(1)                                  = 8
+fcntl64(8, F_GETFL)                     = 0x2 (flags O_RDWR)
+fstat64(8, {st_mode=S_IFCHR|0620, st_rdev=makedev(136, 3), ...}) = 0
+mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1,
+0) = 0xb7005000
+_llseek(8, 0, 0xbff80cfc, SEEK_CUR)     = -1 ESPIPE (Illegal seek)
+fstat64(8, {st_mode=S_IFCHR|0620, st_rdev=makedev(136, 3), ...}) = 0
+stat64("/var/tmp/portage/dev-libs/libgcrypt-1.4.6/temp/environment",
+{st_mode=S_IFREG|0664, st_size=105970, ...}) = 0
+clone(child_stack=0, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|
+SIGCHLD, child_tidptr=0xb7430728) = 11665
+close(6)                                = 0
+gettimeofday({1296162836, 126192}, NULL) = 0
+poll([{fd=3, events=POLLIN|POLLERR|POLLHUP|POLLNVAL}, {fd=5,
+events=POLLIN|POLLERR|POLLHUP|POLLNVAL}], 2, 3000) = 1 ([{fd=5,
+revents=POLLIN}])
+read(5, ">>> Preparing source in /var/tmp"..., 4096) = 91
+read(5, 0xb713b000, 4096)               = -1 EAGAIN (Resource
+temporarily unavailable)
+write(8, ">>> Preparing source in /var/tmp"..., 91>>> Preparing source
+in /var/tmp/portage/dev-libs/libgcrypt-1.4.6/work/libgcrypt-1.4.6 ...
+) = 91
+write(7, ">>> Preparing source in /var/tmp"..., 91) = 91
+poll([{fd=3, events=POLLIN|POLLERR|POLLHUP|POLLNVAL}, {fd=5,
+events=POLLIN|POLLERR|POLLHUP|POLLNVAL}], 2, 3000) = 0 (Timeout)
+poll([{fd=3, events=POLLIN|POLLERR|POLLHUP|POLLNVAL}, {fd=5,
+events=POLLIN|POLLERR|POLLHUP|POLLNVAL}], 2, 3000) = 0 (Timeout)
+poll([{fd=3, events=POLLIN|POLLERR|POLLHUP|POLLNVAL}, {fd=5,
+events=POLLIN|POLLERR|POLLHUP|POLLNVAL}], 2, 3000) = 0 (Timeout)
 
-Please let me know what other information is needed to 
-make this report useful.
+The last line is repeated every 3sec.
 
-Thanks -- Jim
-
-an4 login: [62397.925080] ------------[ cut here ]------------
-[62397.926012] kernel BUG at fs/btrfs/inode.c:6403!
-[62397.926012] invalid opcode: 0000 [#1] SMP 
-[62397.926012] last sysfs file: /sys/devices/system/cpu/cpu3/cache/index2/shared_cpu_map
-[62397.926012] CPU 1 
-[62397.926012] Modules linked in: loop btrfs zlib_deflate ipt_MASQUERADE iptable_nat nf_nat nf_conntrack_ipv4 nf_defrag_ipv4 xt_state nf_conntrack ipt_REJECT xt_tcpudp iptable_filter ip_tables x_tables bridge ]
-[62397.994828] 
-[62397.994828] Pid: 10514, comm: cosd Not tainted 2.6.37-00017-ga3f5274 #4 0DT097/PowerEdge 1950
-[62397.994828] RIP: 0010:[<ffffffffa07834ff>]  [<ffffffffa07834ff>] btrfs_truncate+0x444/0x47a [btrfs]
-[62397.994828] RSP: 0018:ffff8801a2e61d48  EFLAGS: 00010286
-[62397.994828] RAX: 00000000ffffffe4 RBX: ffff88018c9c3a50 RCX: ffff8802136e9240
-[62397.994828] RDX: ffff8802136e97e0 RSI: ffffea00074402f8 RDI: 0000000000000090
-[62397.994828] RBP: ffff8801a2e61dd8 R08: ffffe8ffffc4ebe8 R09: 00000001e2a6a8c0
-[62397.994828] R10: 0000000000000008 R11: 0000000000000016 R12: ffff8801e2a6a8c0
-[62397.994828] R13: 0000000000000000 R14: ffff88018c9c3a50 R15: ffff880223b56800
-[62397.994828] FS:  00007f6122b2e940(0000) GS:ffff8800cfc40000(0000) knlGS:0000000000000000
-[62397.994828] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-[62397.994828] CR2: 00007f7c1c7580a0 CR3: 00000001fc864000 CR4: 00000000000006e0
-[62397.994828] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-[62397.994828] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-[62397.994828] Process cosd (pid: 10514, threadinfo ffff8801a2e60000, task ffff8801da311610)
-[62397.994828] Stack:
-[62397.994828]  0000000000000000 0000000000000000 0000000000000000 ffffffff00001000
-[62397.994828]  ffff88018c9c38b8 ffff88018c9c3a50 ffff88018c9c3b78 0000000000000000
-[62397.994828]  ffff88018c9c38e8 ffff88018c9c3b78 0000000000000000 ffffffff810b4960
-[62397.994828] Call Trace:
-[62397.994828]  [<ffffffff810b4960>] ? truncate_pagecache+0x52/0x5a
-[62397.994828]  [<ffffffff810b49ca>] vmtruncate+0x44/0x50
-[62397.994828]  [<ffffffffa078482c>] btrfs_setattr+0x205/0x24e [btrfs]
-[62397.994828]  [<ffffffff810fe7fc>] notify_change+0x194/0x285
-[62397.994828]  [<ffffffff810e9c0a>] do_truncate+0x71/0x90
-[62397.994828]  [<ffffffff810f34f1>] ? generic_permission+0x1c/0x91
-[62397.994828]  [<ffffffff810f3317>] ? get_write_access+0x1d/0x47
-[62397.994828]  [<ffffffff810e9df7>] sys_truncate+0x112/0x124
-[62397.994828]  [<ffffffff81002c2b>] system_call_fastpath+0x16/0x1b
-[62397.994828] Code: 83 7e 5c 00 74 13 4c 89 f6 4c 89 e7 e8 00 cd ff ff 85 c0 74 04 0f 0b eb fe 4c 89 f2 4c 89 fe 4c 89 e7 e8 22 f6 ff ff 85 c0 74 04 <0f> 0b eb fe 4c 89 fe 4c 89 e7 49 8b 5c 24 20 e8 47 9e ff  
-[62397.994828] RIP  [<ffffffffa07834ff>] btrfs_truncate+0x444/0x47a [btrfs]
-[62397.994828]  RSP <ffff8801a2e61d48>
-Jan 27 08:47:39 [62398.251586] ---[ end trace c4d86802177b259b ]---
-an4 [62397.925080] ------------[ cut here ]------------
-Jan 27 08:47:39 an4 [62397.926012] invalid opcode: 0000 [#1] SMP 
-Jan 27 08:47:39 an4 [62397.926012] last sysfs file: /sys/devices/system/cpu/cpu3/cache/index2/shared_cpu_map
-Jan 27 08:47:39 an4 [62397.994828] Stack:
-Jan 27 08:47:39 an4 [62397.994828] Call Trace:
-Jan 27 08:47:39 an4 [62397.994828] Code: 83 7e 5c 00 74 13 4c 89 f6 4c 89 e7 e8 00 cd ff ff 85 c0 74 04 0f 0b eb fe 4c 89 f2 4c 89 fe 4c 89 e7 e8 22 f6 ff ff 85 c0 74 04 <0f> 0b eb fe 4c 89 fe 4c 89 e7 49 8b 5 
-
+// Maria
 
 

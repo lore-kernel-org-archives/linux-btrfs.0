@@ -1,37 +1,49 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: btrfs: free space inode generation (0) did not match free
-	space cache generation
-Date: Fri, 28 Jan 2011 08:57:06 -0500
-Message-ID: <20110128135706.GC4884@dhcp231-156.rdu.redhat.com>
-References: <4D42939C.5020605@wpkg.org> <20110128134531.GB4884@dhcp231-156.rdu.redhat.com> <4D42CB08.5030904@wpkg.org>
+From: Maria =?ISO-8859-1?Q?Wikstr=F6m?= <maria@ponstudios.se>
+Subject: Re: [PATCH v2]Btrfs: pwrite blocked when writing from the mmaped
+ buffer of the same page
+Date: Fri, 28 Jan 2011 17:47:21 +0100
+Message-ID: <1296233241.11428.23.camel@mainframe>
+References: <1291887014-18447-1-git-send-email-xin.zhong@intel.com>
+	 <1296166345.11397.16.camel@mainframe>
+	 <1865303E0DED764181A9D882DEF65FB685DF7629F2@shsmsx502.ccr.corp.intel.com>
+	 <201101280354.36884.johannes.hirte@fem.tu-ilmenau.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Tomasz Chmielewski <mangoo@wpkg.org>
+Content-Type: text/plain; charset="UTF-8"
+Cc: linux-btrfs@vger.kernel.org, johannes.hirte@fem.tu-ilmenau.de
+To: xin.zhong@intel.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D42CB08.5030904@wpkg.org>
+In-Reply-To: <201101280354.36884.johannes.hirte@fem.tu-ilmenau.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 28, 2011 at 02:56:24PM +0100, Tomasz Chmielewski wrote:
-> On 28.01.2011 14:45, Josef Bacik wrote:
->> It's not a problem, it just means that the cache is being discarded, which is
->> what is supposed to happen.  You probably ran out of space or one of the other
->> corner cases where we can't write out the space cache.  Thanks,
->
-> FYI, there is plenty of free space (~150 GB).
->
-> It could be some corner case:
->
-> - filesystem is mounted with compress-force,
-> - one kvm process (the only writer to btrfs) writes to the btrfs  
-> filesystem, via the virtual guest using a 220 GB qcow2 image file (lots  
-> of writes) and a 7 GB qcow2 image file (very few writes).
->
+fre 2011-01-28 klockan 03:54 +0100 skrev Johannes Hirte: 
+> On Friday 28 January 2011 02:26:43 Zhong, Xin wrote:
+> > Please try the fix in below link:
+> > http://www.spinics.net/lists/linux-btrfs/msg08051.html
+> > 
+> > Thanks!
+> 
+> This doesn't fix it for me. At least there is a difference. Whereas the svn 
+> process started consuming 100% CPU without any further interaction before, the 
+> system just hang now. The svn process starts eating the CPU when I cancel the 
+> emerge via ctrl-c. Additional I see a flush-btrfs task now consuming CPU time.
+> 
+> regards,
+>   Johannes
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
-I'll try some tests with compress-force to make sure it's not getting overly
-screwed, but this is just one of the drawbacks with the space cache stuff,
-sometimes we just can't write it out without deadlocking, so we err on the side
-of caution.  Thanks,
+The patch makes the process exit cleanly but complains that there is no
+space left. It should be a few GB but it is only a few MB!? I delete 5GB
+and controls that the space is usable. Try again but this time it almost
+hangs the system, I can blink the leds and move the mouse but noting
+more. 
+I boot 2.6.36.1 and use a snapshot as root, "emerge libgcrypt" compiles
+and installs fine. Boots back into 2.6.37 and try again and the system
+hangs again.
 
-Josef
+// Maria
+
+

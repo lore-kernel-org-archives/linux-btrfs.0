@@ -1,66 +1,80 @@
-From: Ric Wheeler <rwheeler@redhat.com>
-Subject: Re: [PATCH 1/6] fs: add hole punching to fallocate
-Date: Fri, 28 Jan 2011 13:13:16 -0500
-Message-ID: <4D43073C.1040100@redhat.com>
-References: <1289248327-16308-1-git-send-email-josef@redhat.com> <20101109011222.GD2715@dastard> <20101109033038.GF3099@thunk.org> <20101109044242.GH2715@dastard> <20101109214147.GK3099@thunk.org> <20101109234049.GQ2715@dastard> <AANLkTimwmJ_ZoE9oAuA1WGhCgK585jDznqnc6k0=9Ntb@mail.gmail.com> <20110112124431.GP28803@dastard>
+From: Rui Miguel Silva <rmfrfs@gmail.com>
+Subject: Re: [PATCH v2]Btrfs: pwrite blocked when writing from the mmaped buffer of the same page
+Date: Fri, 28 Jan 2011 18:27:17 +0000
+Message-ID: <201101281827.17306.rmfrfs@gmail.com>
+References: <1291887014-18447-1-git-send-email-xin.zhong@intel.com> <201101280354.36884.johannes.hirte@fem.tu-ilmenau.de> <1296233241.11428.23.camel@mainframe>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Lawrence Greenfield <leg@google.com>, "Ted Ts'o" <tytso@mit.edu>,
-	Josef Bacik <josef@redhat.com>, linux-kernel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, xfs@oss.sgi.com,
-	joel.becker@oracle.com, cmm@us.ibm.com, cluster-devel@redhat.com
-To: Dave Chinner <david@fromorbit.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20110112124431.GP28803@dastard>
+Content-Type: Text/Plain; charset=utf-8
+Cc: xin.zhong@intel.com, linux-btrfs@vger.kernel.org,
+	johannes.hirte@fem.tu-ilmenau.de
+To: Maria =?utf-8?q?Wikstr=C3=B6m?= <maria@ponstudios.se>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1296233241.11428.23.camel@mainframe>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/12/2011 07:44 AM, Dave Chinner wrote:
-> On Tue, Jan 11, 2011 at 04:13:42PM -0500, Lawrence Greenfield wrote:
->> On Tue, Nov 9, 2010 at 6:40 PM, Dave Chinner<david@fromorbit.com>  wrote:
->>> The historical reason for such behaviour existing in XFS was that in
->>> 1997 the CPU and IO latency cost of unwritten extent conversion was
->>> significant,
-> .....
->
->>>> (Take for example a trusted cluster filesystem backend that checks the
->>>> object checksum before returning any data to the user; and if the
->>>> check fails the cluster file system will try to use some other replica
->>>> stored on some other server.)
->>> IOWs, all they want to do is avoid the unwritten extent conversion
->>> overhead. Time has shown that a bad security/performance tradeoff
->>> decision was made 13 years ago in XFS, so I see little reason to
->>> repeat it for ext4 today....
->> I'd make use of FALLOC_FL_EXPOSE_OLD_DATA. It's not the CPU overhead
->> of extent conversion. It's that extent conversion causes more metadata
->> operations than what you'd have otherwise,
-> Yes, that's the "IO latency" part of the cost I mentioned above.
->
->> which means systems that
->> want to use O_DIRECT and make sure the data doesn't go away either
->> have to write O_DIRECT|O_DSYNC or need to call fdatasync().
-> Seriously, we tell application writers _all the time_ that they
-> *must* use fsync/fdatasync to guarantee their data is on stable
-> storage and that they cannot rely on side-effects of filesystem or
-> storage specific behaviours (like ext3 ordered mode) to do that job
-> for them.
->
-> You're suggesting that by introducing FALLOC_FL_EXPOSE_OLD_DATA,
-> applications can rely on filesystem/storage specific behaviour to
-> guarantee data is on stable storage without the use of
-> fdatasync/fsync. Wht you describe is definitely storage specific,
-> because volatile write caches still needs the fdatasync to issue a
-> cache flush.
->
-> Do you see the same conflict here that I do?
->
 
-The very concept seems quite "non-enterprise".  I also agree that the cost of 
-maintaining extra mount options (and code) for something that no sane end user 
-would ever do seems to be a loss.
+On Friday, January 28, 2011 04:47:21 pm Maria Wikstr=C3=B6m wrote:
+> fre 2011-01-28 klockan 03:54 +0100 skrev Johannes Hirte:
+> > On Friday 28 January 2011 02:26:43 Zhong, Xin wrote:
+> > > Please try the fix in below link:
+> > > http://www.spinics.net/lists/linux-btrfs/msg08051.html
+> > >=20
+> > > Thanks!
+> >=20
+> > This doesn't fix it for me. At least there is a difference. Whereas=
+ the
+> > svn process started consuming 100% CPU without any further interact=
+ion
+> > before, the system just hang now. The svn process starts eating the=
+ CPU
+> > when I cancel the emerge via ctrl-c. Additional I see a flush-btrfs=
+ task
+> > now consuming CPU time.
+> >=20
+> > regards,
+> >=20
+> >   Johannes
+> >=20
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btr=
+fs" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
+> The patch makes the process exit cleanly but complains that there is =
+no
+> space left. It should be a few GB but it is only a few MB!? I delete =
+5GB
+> and controls that the space is usable. Try again but this time it alm=
+ost
+> hangs the system, I can blink the leds and move the mouse but noting
+> more.
+> I boot 2.6.36.1 and use a snapshot as root, "emerge libgcrypt" compil=
+es
+> and installs fine. Boots back into 2.6.37 and try again and the syste=
+m
+> hangs again.
+>=20
+> // Maria
+>=20
 
-Why wouldn't you want to convert the punched hole to an unwritten extent?
+Hi Maria,
+I had something similar with vanilla 2.6.37 just for running:
+cscope -R -b -q
 
-Thanks!
+allways hang complety the process, only solution reboot.
+I just applied the  btrfs patches that arrived in the main tree between=
+ the=20
+2.6.37 and 2.6.38-rc1 and they seem to fix the issue.
 
-Ric
+I did not have the time to try to found which patch fixed the problem.
+
+Hope this could help you.
+
+Cheers,
+  //Rui
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

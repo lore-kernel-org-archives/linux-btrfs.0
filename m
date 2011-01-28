@@ -1,250 +1,234 @@
-From: Maria =?ISO-8859-1?Q?Wikstr=F6m?= <maria@ponstudios.se>
-Subject: Re: [PATCH v2]Btrfs: pwrite blocked when writing from the mmaped
- buffer of the same page
-Date: Thu, 27 Jan 2011 23:12:25 +0100
-Message-ID: <1296166345.11397.16.camel@mainframe>
-References: <1291887014-18447-1-git-send-email-xin.zhong@intel.com>
-	 <201101271409.27877.johannes.hirte@fem.tu-ilmenau.de>
+From: Goldwyn Rodrigues <rgoldwyn@gmail.com>
+Subject: [PATCH] ctree code cleanups
+Date: Thu, 27 Jan 2011 19:01:53 -0600
+Message-ID: <AANLkTimAq9TstN3cqr43iG-tGD4kFtWJsAHOsvfrOjAA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Cc: linux-btrfs@vger.kernel.org
-To: johannes.hirte@fem.tu-ilmenau.de, xin.zhong@intel.com
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201101271409.27877.johannes.hirte@fem.tu-ilmenau.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-tor 2011-01-27 klockan 14:09 +0100 skrev Johannes Hirte: 
-> On Thursday 09 December 2010 10:30:14 Zhong, Xin wrote:
-> > This problem is found in meego testing:
-> > http://bugs.meego.com/show_bug.cgi?id=6672
-> > A file in btrfs is mmaped and the mmaped buffer is passed to pwrite to
-> > write to the same page of the same file. In btrfs_file_aio_write(), the
-> > pages is locked by prepare_pages(). So when btrfs_copy_from_user() is
-> > called, page fault happens and the same page needs to be locked again in
-> > filemap_fault(). The fix is to move iov_iter_fault_in_readable() before
-> > prepage_pages() to make page fault happen before pages are locked. And
-> > also disable page fault in critical region in btrfs_copy_from_user().
-> > 
-> > Reviewed-by: Yan, Zheng<zheng.z.yan@intel.com>
-> > Signed-off-by: Zhong, Xin <xin.zhong@intel.com>
-> > ---
-> >  fs/btrfs/file.c |   92
-> > ++++++++++++++++++++++++++++++++++++------------------- 1 files changed,
-> > 60 insertions(+), 32 deletions(-)
-> > 
-> > diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> > index c1faded..66836d8 100644
-> > --- a/fs/btrfs/file.c
-> > +++ b/fs/btrfs/file.c
-> > @@ -48,30 +48,34 @@ static noinline int btrfs_copy_from_user(loff_t pos,
-> > int num_pages, struct page **prepared_pages,
-> >  					 struct iov_iter *i)
-> >  {
-> > -	size_t copied;
-> > +	size_t copied = 0;
-> >  	int pg = 0;
-> >  	int offset = pos & (PAGE_CACHE_SIZE - 1);
-> > +	int total_copied = 0;
-> > 
-> >  	while (write_bytes > 0) {
-> >  		size_t count = min_t(size_t,
-> >  				     PAGE_CACHE_SIZE - offset, write_bytes);
-> >  		struct page *page = prepared_pages[pg];
-> > -again:
-> > -		if (unlikely(iov_iter_fault_in_readable(i, count)))
-> > -			return -EFAULT;
-> > -
-> > -		/* Copy data from userspace to the current page */
-> > -		copied = iov_iter_copy_from_user(page, i, offset, count);
-> > +		/*
-> > +		 * Copy data from userspace to the current page
-> > +		 *
-> > +		 * Disable pagefault to avoid recursive lock since
-> > +		 * the pages are already locked
-> > +		 */
-> > +		pagefault_disable();
-> > +		copied = iov_iter_copy_from_user_atomic(page, i, offset, count);
-> > +		pagefault_enable();
-> > 
-> >  		/* Flush processor's dcache for this page */
-> >  		flush_dcache_page(page);
-> >  		iov_iter_advance(i, copied);
-> >  		write_bytes -= copied;
-> > +		total_copied += copied;
-> > 
-> > +		/* Return to btrfs_file_aio_write to fault page */
-> >  		if (unlikely(copied == 0)) {
-> > -			count = min_t(size_t, PAGE_CACHE_SIZE - offset,
-> > -				      iov_iter_single_seg_count(i));
-> > -			goto again;
-> > +			break;
-> >  		}
-> > 
-> >  		if (unlikely(copied < PAGE_CACHE_SIZE - offset)) {
-> > @@ -81,7 +85,7 @@ again:
-> >  			offset = 0;
-> >  		}
-> >  	}
-> > -	return 0;
-> > +	return total_copied;
-> >  }
-> > 
-> >  /*
-> > @@ -854,6 +858,8 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
-> >  	unsigned long last_index;
-> >  	int will_write;
-> >  	int buffered = 0;
-> > +	int copied = 0;
-> > +	int dirty_pages = 0;
-> > 
-> >  	will_write = ((file->f_flags & O_DSYNC) || IS_SYNC(inode) ||
-> >  		      (file->f_flags & O_DIRECT));
-> > @@ -970,7 +976,17 @@ static ssize_t btrfs_file_aio_write(struct kiocb
-> > *iocb, WARN_ON(num_pages > nrptrs);
-> >  		memset(pages, 0, sizeof(struct page *) * nrptrs);
-> > 
-> > -		ret = btrfs_delalloc_reserve_space(inode, write_bytes);
-> > +		/*
-> > +		 * Fault pages before locking them in prepare_pages
-> > +		 * to avoid recursive lock
-> > +		 */
-> > +		if (unlikely(iov_iter_fault_in_readable(&i, write_bytes))) {
-> > +			ret = -EFAULT;
-> > +			goto out;
-> > +		}
-> > +
-> > +		ret = btrfs_delalloc_reserve_space(inode,
-> > +					num_pages << PAGE_CACHE_SHIFT);
-> >  		if (ret)
-> >  			goto out;
-> > 
-> > @@ -978,37 +994,49 @@ static ssize_t btrfs_file_aio_write(struct kiocb
-> > *iocb, pos, first_index, last_index,
-> >  				    write_bytes);
-> >  		if (ret) {
-> > -			btrfs_delalloc_release_space(inode, write_bytes);
-> > +			btrfs_delalloc_release_space(inode,
-> > +					num_pages << PAGE_CACHE_SHIFT);
-> >  			goto out;
-> >  		}
-> > 
-> > -		ret = btrfs_copy_from_user(pos, num_pages,
-> > +		copied = btrfs_copy_from_user(pos, num_pages,
-> >  					   write_bytes, pages, &i);
-> > -		if (ret == 0) {
-> > +		dirty_pages = (copied + PAGE_CACHE_SIZE - 1) >>
-> > +					PAGE_CACHE_SHIFT;
-> > +
-> > +		if (num_pages > dirty_pages) {
-> > +			if (copied > 0)
-> > +				atomic_inc(
-> > +					&BTRFS_I(inode)->outstanding_extents);
-> > +			btrfs_delalloc_release_space(inode,
-> > +					(num_pages - dirty_pages) <<
-> > +					PAGE_CACHE_SHIFT);
-> > +		}
-> > +
-> > +		if (copied > 0) {
-> >  			dirty_and_release_pages(NULL, root, file, pages,
-> > -						num_pages, pos, write_bytes);
-> > +						dirty_pages, pos, copied);
-> >  		}
-> > 
-> >  		btrfs_drop_pages(pages, num_pages);
-> > -		if (ret) {
-> > -			btrfs_delalloc_release_space(inode, write_bytes);
-> > -			goto out;
-> > -		}
-> > 
-> > -		if (will_write) {
-> > -			filemap_fdatawrite_range(inode->i_mapping, pos,
-> > -						 pos + write_bytes - 1);
-> > -		} else {
-> > -			balance_dirty_pages_ratelimited_nr(inode->i_mapping,
-> > -							   num_pages);
-> > -			if (num_pages <
-> > -			    (root->leafsize >> PAGE_CACHE_SHIFT) + 1)
-> > -				btrfs_btree_balance_dirty(root, 1);
-> > -			btrfs_throttle(root);
-> > +		if (copied > 0) {
-> > +			if (will_write) {
-> > +				filemap_fdatawrite_range(inode->i_mapping, pos,
-> > +							 pos + copied - 1);
-> > +			} else {
-> > +				balance_dirty_pages_ratelimited_nr(
-> > +							inode->i_mapping,
-> > +							dirty_pages);
-> > +				if (dirty_pages <
-> > +				(root->leafsize >> PAGE_CACHE_SHIFT) + 1)
-> > +					btrfs_btree_balance_dirty(root, 1);
-> > +				btrfs_throttle(root);
-> > +			}
-> >  		}
-> > 
-> > -		pos += write_bytes;
-> > -		num_written += write_bytes;
-> > +		pos += copied;
-> > +		num_written += copied;
-> > 
-> >  		cond_resched();
-> >  	}
-> 
-> This patch breaks one of my Gentoo boxes. When I try to install/update via 
-> emerge, some packages hang. It seems that it's always a "svn info" process 
-> that is stuck in kernel eating 100% CPU. I don't know how svn is involved 
-> here, but reverting this patch makes the system work again. I'll try to get a 
-> simple testcase.
-> 
-> regards,
->   Johannes
+The following has been done as a part of cleanup -
 
-The same thing happens here. The only way to kill the process (svn info)
-is to restart the computer. Running vanilla 2.6.37 without patches.
+o Eliminated bin_search() by replacing with btrfs_bin_search()
+o Eliminated unused return value in fixup_low_keys()
+o Eliminated additional variable (sret) in setup_nodes_for_search()
 
-#strace emerge libgcrypt
--- cut -- 
-open("/var/tmp/portage/dev-libs/libgcrypt-1.4.6/temp/build.log",
-O_WRONLY|O_CREAT|O_APPEND|O_LARGEFILE, 0666) = 7
-fstat64(7, {st_mode=S_IFREG|0660, st_size=416, ...}) = 0
-mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1,
-0) = 0xb713a000
-fstat64(7, {st_mode=S_IFREG|0660, st_size=416, ...}) = 0
-_llseek(7, 416, [416], SEEK_SET)        = 0
-fstat64(7, {st_mode=S_IFREG|0660, st_size=416, ...}) = 0
-stat64("/var/tmp/portage/dev-libs/libgcrypt-1.4.6/temp/build.log",
-{st_mode=S_IFREG|0660, st_size=416, ...}) = 0
-dup(1)                                  = 8
-fcntl64(8, F_GETFL)                     = 0x2 (flags O_RDWR)
-fstat64(8, {st_mode=S_IFCHR|0620, st_rdev=makedev(136, 3), ...}) = 0
-mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1,
-0) = 0xb7005000
-_llseek(8, 0, 0xbff80cfc, SEEK_CUR)     = -1 ESPIPE (Illegal seek)
-fstat64(8, {st_mode=S_IFCHR|0620, st_rdev=makedev(136, 3), ...}) = 0
-stat64("/var/tmp/portage/dev-libs/libgcrypt-1.4.6/temp/environment",
-{st_mode=S_IFREG|0664, st_size=105970, ...}) = 0
-clone(child_stack=0, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|
-SIGCHLD, child_tidptr=0xb7430728) = 11665
-close(6)                                = 0
-gettimeofday({1296162836, 126192}, NULL) = 0
-poll([{fd=3, events=POLLIN|POLLERR|POLLHUP|POLLNVAL}, {fd=5,
-events=POLLIN|POLLERR|POLLHUP|POLLNVAL}], 2, 3000) = 1 ([{fd=5,
-revents=POLLIN}])
-read(5, ">>> Preparing source in /var/tmp"..., 4096) = 91
-read(5, 0xb713b000, 4096)               = -1 EAGAIN (Resource
-temporarily unavailable)
-write(8, ">>> Preparing source in /var/tmp"..., 91>>> Preparing source
-in /var/tmp/portage/dev-libs/libgcrypt-1.4.6/work/libgcrypt-1.4.6 ...
-) = 91
-write(7, ">>> Preparing source in /var/tmp"..., 91) = 91
-poll([{fd=3, events=POLLIN|POLLERR|POLLHUP|POLLNVAL}, {fd=5,
-events=POLLIN|POLLERR|POLLHUP|POLLNVAL}], 2, 3000) = 0 (Timeout)
-poll([{fd=3, events=POLLIN|POLLERR|POLLHUP|POLLNVAL}, {fd=5,
-events=POLLIN|POLLERR|POLLHUP|POLLNVAL}], 2, 3000) = 0 (Timeout)
-poll([{fd=3, events=POLLIN|POLLERR|POLLHUP|POLLNVAL}, {fd=5,
-events=POLLIN|POLLERR|POLLHUP|POLLNVAL}], 2, 3000) = 0 (Timeout)
+Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.de>
+---
+ ctree.c |   71 ++++++++++++++++++----------------------------------------------
+ 1 file changed, 20 insertions(+), 51 deletions(-)
 
-The last line is repeated every 3sec.
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 9ac1715..69f71e8 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -928,7 +928,7 @@ static noinline int generic_bin_search(struct
+extent_buffer *eb,
+  * simple bin_search frontend that does the right thing for
+  * leaves vs nodes
+  */
+-static int bin_search(struct extent_buffer *eb, struct btrfs_key *key,
++int btrfs_bin_search(struct extent_buffer *eb, struct btrfs_key *key,
+ 		      int level, int *slot)
+ {
+ 	if (level == 0) {
+@@ -947,12 +947,6 @@ static int bin_search(struct extent_buffer *eb,
+struct btrfs_key *key,
+ 	return -1;
+ }
 
-// Maria
+-int btrfs_bin_search(struct extent_buffer *eb, struct btrfs_key *key,
+-		     int level, int *slot)
+-{
+-	return bin_search(eb, key, level, slot);
+-}
+-
+ static void root_add_used(struct btrfs_root *root, u32 size)
+ {
+ 	spin_lock(&root->accounting_lock);
+@@ -1648,38 +1642,29 @@ setup_nodes_for_search(struct btrfs_trans_handle *trans,
+ 	int ret;
+ 	if ((p->search_for_split || ins_len > 0) && btrfs_header_nritems(b) >=
+ 	    BTRFS_NODEPTRS_PER_BLOCK(root) - 3) {
+-		int sret;
+-
+-		sret = reada_for_balance(root, p, level);
+-		if (sret)
++		ret = reada_for_balance(root, p, level);
++		if (ret)
+ 			goto again;
 
+ 		btrfs_set_path_blocking(p);
+-		sret = split_node(trans, root, p, level);
++		ret = split_node(trans, root, p, level);
+ 		btrfs_clear_path_blocking(p, NULL);
 
+-		BUG_ON(sret > 0);
+-		if (sret) {
+-			ret = sret;
++		BUG_ON(ret > 0);
++		if (ret)
+ 			goto done;
+-		}
+ 		b = p->nodes[level];
+ 	} else if (ins_len < 0 && btrfs_header_nritems(b) <
+ 		   BTRFS_NODEPTRS_PER_BLOCK(root) / 2) {
+-		int sret;
+-
+-		sret = reada_for_balance(root, p, level);
+-		if (sret)
++		ret = reada_for_balance(root, p, level);
++		if (ret)
+ 			goto again;
+
+ 		btrfs_set_path_blocking(p);
+-		sret = balance_level(trans, root, p, level);
++		ret = balance_level(trans, root, p, level);
+ 		btrfs_clear_path_blocking(p, NULL);
+-
+-		if (sret) {
+-			ret = sret;
++		if (ret)
+ 			goto done;
+-		}
+ 		b = p->nodes[level];
+ 		if (!b) {
+ 			btrfs_release_path(NULL, p);
+@@ -1802,7 +1787,7 @@ cow_done:
+ 			goto done;
+ 		}
+
+-		ret = bin_search(b, key, level, &slot);
++		ret = btrfs_bin_search(b, key, level, &slot);
+
+ 		if (level != 0) {
+ 			int dec = 0;
+@@ -1888,16 +1873,12 @@ done:
+  * This is used after shifting pointers to the left, so it stops
+  * fixing up pointers when a given leaf/node is not in slot 0 of the
+  * higher levels
+- *
+- * If this fails to write a tree block, it returns -1, but continues
+- * fixing up the blocks in ram so the tree is consistent.
+  */
+-static int fixup_low_keys(struct btrfs_trans_handle *trans,
++static void fixup_low_keys(struct btrfs_trans_handle *trans,
+ 			  struct btrfs_root *root, struct btrfs_path *path,
+ 			  struct btrfs_disk_key *key, int level)
+ {
+ 	int i;
+-	int ret = 0;
+ 	struct extent_buffer *t;
+
+ 	for (i = level; i < BTRFS_MAX_LEVEL; i++) {
+@@ -1910,7 +1891,6 @@ static int fixup_low_keys(struct
+btrfs_trans_handle *trans,
+ 		if (tslot != 0)
+ 			break;
+ 	}
+-	return ret;
+ }
+
+ /*
+@@ -2567,7 +2547,6 @@ static noinline int __push_leaf_left(struct
+btrfs_trans_handle *trans,
+ 	u32 old_left_nritems;
+ 	u32 nr;
+ 	int ret = 0;
+-	int wret;
+ 	u32 this_item_size;
+ 	u32 old_left_item_size;
+
+@@ -2708,9 +2687,7 @@ static noinline int __push_leaf_left(struct
+btrfs_trans_handle *trans,
+ 		clean_tree_block(trans, root, right);
+
+ 	btrfs_item_key(right, &disk_key, 0);
+-	wret = fixup_low_keys(trans, root, path, &disk_key, 1);
+-	if (wret)
+-		ret = wret;
++	fixup_low_keys(trans, root, path, &disk_key, 1);
+
+ 	/* then fixup the leaf pointer in the path */
+ 	if (path->slots[0] < push_items) {
+@@ -3091,12 +3068,9 @@ again:
+ 			free_extent_buffer(path->nodes[0]);
+ 			path->nodes[0] = right;
+ 			path->slots[0] = 0;
+-			if (path->slots[1] == 0) {
+-				wret = fixup_low_keys(trans, root,
++			if (path->slots[1] == 0)
++				fixup_low_keys(trans, root,
+ 						path, &disk_key, 1);
+-				if (wret)
+-					ret = wret;
+-			}
+ 		}
+ 		btrfs_mark_buffer_dirty(right);
+ 		return ret;
+@@ -3662,7 +3636,7 @@ int btrfs_insert_some_items(struct
+btrfs_trans_handle *trans,
+ 	ret = 0;
+ 	if (slot == 0) {
+ 		btrfs_cpu_key_to_disk(&disk_key, cpu_key);
+-		ret = fixup_low_keys(trans, root, path, &disk_key, 1);
++		fixup_low_keys(trans, root, path, &disk_key, 1);
+ 	}
+
+ 	if (btrfs_leaf_free_space(root, leaf) < 0) {
+@@ -3770,7 +3744,7 @@ setup_items_for_insert(struct btrfs_trans_handle *trans,
+ 	if (slot == 0) {
+ 		struct btrfs_disk_key disk_key;
+ 		btrfs_cpu_key_to_disk(&disk_key, cpu_key);
+-		ret = fixup_low_keys(trans, root, path, &disk_key, 1);
++		fixup_low_keys(trans, root, path, &disk_key, 1);
+ 	}
+ 	btrfs_unlock_up_safe(path, 1);
+ 	btrfs_mark_buffer_dirty(leaf);
+@@ -3856,7 +3830,6 @@ static int del_ptr(struct btrfs_trans_handle
+*trans, struct btrfs_root *root,
+ 	struct extent_buffer *parent = path->nodes[level];
+ 	u32 nritems;
+ 	int ret = 0;
+-	int wret;
+
+ 	nritems = btrfs_header_nritems(parent);
+ 	if (slot != nritems - 1) {
+@@ -3876,9 +3849,7 @@ static int del_ptr(struct btrfs_trans_handle
+*trans, struct btrfs_root *root,
+ 		struct btrfs_disk_key disk_key;
+
+ 		btrfs_node_key(parent, &disk_key, 0);
+-		wret = fixup_low_keys(trans, root, path, &disk_key, level + 1);
+-		if (wret)
+-			ret = wret;
++		fixup_low_keys(trans, root, path, &disk_key, level + 1);
+ 	}
+ 	btrfs_mark_buffer_dirty(parent);
+ 	return ret;
+@@ -3993,10 +3964,8 @@ int btrfs_del_items(struct btrfs_trans_handle
+*trans, struct btrfs_root *root,
+ 			struct btrfs_disk_key disk_key;
+
+ 			btrfs_item_key(leaf, &disk_key, 0);
+-			wret = fixup_low_keys(trans, root, path,
++			fixup_low_keys(trans, root, path,
+ 					      &disk_key, 1);
+-			if (wret)
+-				ret = wret;
+ 		}
+
+ 		/* delete the leaf if it is mostly empty */
+@@ -4130,7 +4099,7 @@ again:
+ 	while (1) {
+ 		nritems = btrfs_header_nritems(cur);
+ 		level = btrfs_header_level(cur);
+-		sret = bin_search(cur, min_key, level, &slot);
++		sret = btrfs_bin_search(cur, min_key, level, &slot);
+
+ 		/* at the lowest level, we're done, setup the path and exit */
+ 		if (level == path->lowest_level) {
+
+-- 
+Goldwyn

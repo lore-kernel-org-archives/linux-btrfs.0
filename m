@@ -1,234 +1,183 @@
-From: Goldwyn Rodrigues <rgoldwyn@gmail.com>
-Subject: [PATCH] ctree code cleanups
-Date: Thu, 27 Jan 2011 19:01:53 -0600
-Message-ID: <AANLkTimAq9TstN3cqr43iG-tGD4kFtWJsAHOsvfrOjAA@mail.gmail.com>
+From: "Zhong, Xin" <xin.zhong@intel.com>
+Subject: RE: [PATCH v2]Btrfs: pwrite blocked when writing from the mmaped
+ buffer of the same page
+Date: Fri, 28 Jan 2011 09:26:43 +0800
+Message-ID: <1865303E0DED764181A9D882DEF65FB685DF7629F2@shsmsx502.ccr.corp.intel.com>
+References: <1291887014-18447-1-git-send-email-xin.zhong@intel.com>
+	 <201101271409.27877.johannes.hirte@fem.tu-ilmenau.de>
+ <1296166345.11397.16.camel@mainframe>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: =?utf-8?B?TWFyaWEgV2lrc3Ryw7Zt?= <maria@ponstudios.se>,
+	"johannes.hirte@fem.tu-ilmenau.de" <johannes.hirte@fem.tu-ilmenau.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1296166345.11397.16.camel@mainframe>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The following has been done as a part of cleanup -
-
-o Eliminated bin_search() by replacing with btrfs_bin_search()
-o Eliminated unused return value in fixup_low_keys()
-o Eliminated additional variable (sret) in setup_nodes_for_search()
-
-Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.de>
----
- ctree.c |   71 ++++++++++++++++++----------------------------------------------
- 1 file changed, 20 insertions(+), 51 deletions(-)
-
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 9ac1715..69f71e8 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -928,7 +928,7 @@ static noinline int generic_bin_search(struct
-extent_buffer *eb,
-  * simple bin_search frontend that does the right thing for
-  * leaves vs nodes
-  */
--static int bin_search(struct extent_buffer *eb, struct btrfs_key *key,
-+int btrfs_bin_search(struct extent_buffer *eb, struct btrfs_key *key,
- 		      int level, int *slot)
- {
- 	if (level == 0) {
-@@ -947,12 +947,6 @@ static int bin_search(struct extent_buffer *eb,
-struct btrfs_key *key,
- 	return -1;
- }
-
--int btrfs_bin_search(struct extent_buffer *eb, struct btrfs_key *key,
--		     int level, int *slot)
--{
--	return bin_search(eb, key, level, slot);
--}
--
- static void root_add_used(struct btrfs_root *root, u32 size)
- {
- 	spin_lock(&root->accounting_lock);
-@@ -1648,38 +1642,29 @@ setup_nodes_for_search(struct btrfs_trans_handle *trans,
- 	int ret;
- 	if ((p->search_for_split || ins_len > 0) && btrfs_header_nritems(b) >=
- 	    BTRFS_NODEPTRS_PER_BLOCK(root) - 3) {
--		int sret;
--
--		sret = reada_for_balance(root, p, level);
--		if (sret)
-+		ret = reada_for_balance(root, p, level);
-+		if (ret)
- 			goto again;
-
- 		btrfs_set_path_blocking(p);
--		sret = split_node(trans, root, p, level);
-+		ret = split_node(trans, root, p, level);
- 		btrfs_clear_path_blocking(p, NULL);
-
--		BUG_ON(sret > 0);
--		if (sret) {
--			ret = sret;
-+		BUG_ON(ret > 0);
-+		if (ret)
- 			goto done;
--		}
- 		b = p->nodes[level];
- 	} else if (ins_len < 0 && btrfs_header_nritems(b) <
- 		   BTRFS_NODEPTRS_PER_BLOCK(root) / 2) {
--		int sret;
--
--		sret = reada_for_balance(root, p, level);
--		if (sret)
-+		ret = reada_for_balance(root, p, level);
-+		if (ret)
- 			goto again;
-
- 		btrfs_set_path_blocking(p);
--		sret = balance_level(trans, root, p, level);
-+		ret = balance_level(trans, root, p, level);
- 		btrfs_clear_path_blocking(p, NULL);
--
--		if (sret) {
--			ret = sret;
-+		if (ret)
- 			goto done;
--		}
- 		b = p->nodes[level];
- 		if (!b) {
- 			btrfs_release_path(NULL, p);
-@@ -1802,7 +1787,7 @@ cow_done:
- 			goto done;
- 		}
-
--		ret = bin_search(b, key, level, &slot);
-+		ret = btrfs_bin_search(b, key, level, &slot);
-
- 		if (level != 0) {
- 			int dec = 0;
-@@ -1888,16 +1873,12 @@ done:
-  * This is used after shifting pointers to the left, so it stops
-  * fixing up pointers when a given leaf/node is not in slot 0 of the
-  * higher levels
-- *
-- * If this fails to write a tree block, it returns -1, but continues
-- * fixing up the blocks in ram so the tree is consistent.
-  */
--static int fixup_low_keys(struct btrfs_trans_handle *trans,
-+static void fixup_low_keys(struct btrfs_trans_handle *trans,
- 			  struct btrfs_root *root, struct btrfs_path *path,
- 			  struct btrfs_disk_key *key, int level)
- {
- 	int i;
--	int ret = 0;
- 	struct extent_buffer *t;
-
- 	for (i = level; i < BTRFS_MAX_LEVEL; i++) {
-@@ -1910,7 +1891,6 @@ static int fixup_low_keys(struct
-btrfs_trans_handle *trans,
- 		if (tslot != 0)
- 			break;
- 	}
--	return ret;
- }
-
- /*
-@@ -2567,7 +2547,6 @@ static noinline int __push_leaf_left(struct
-btrfs_trans_handle *trans,
- 	u32 old_left_nritems;
- 	u32 nr;
- 	int ret = 0;
--	int wret;
- 	u32 this_item_size;
- 	u32 old_left_item_size;
-
-@@ -2708,9 +2687,7 @@ static noinline int __push_leaf_left(struct
-btrfs_trans_handle *trans,
- 		clean_tree_block(trans, root, right);
-
- 	btrfs_item_key(right, &disk_key, 0);
--	wret = fixup_low_keys(trans, root, path, &disk_key, 1);
--	if (wret)
--		ret = wret;
-+	fixup_low_keys(trans, root, path, &disk_key, 1);
-
- 	/* then fixup the leaf pointer in the path */
- 	if (path->slots[0] < push_items) {
-@@ -3091,12 +3068,9 @@ again:
- 			free_extent_buffer(path->nodes[0]);
- 			path->nodes[0] = right;
- 			path->slots[0] = 0;
--			if (path->slots[1] == 0) {
--				wret = fixup_low_keys(trans, root,
-+			if (path->slots[1] == 0)
-+				fixup_low_keys(trans, root,
- 						path, &disk_key, 1);
--				if (wret)
--					ret = wret;
--			}
- 		}
- 		btrfs_mark_buffer_dirty(right);
- 		return ret;
-@@ -3662,7 +3636,7 @@ int btrfs_insert_some_items(struct
-btrfs_trans_handle *trans,
- 	ret = 0;
- 	if (slot == 0) {
- 		btrfs_cpu_key_to_disk(&disk_key, cpu_key);
--		ret = fixup_low_keys(trans, root, path, &disk_key, 1);
-+		fixup_low_keys(trans, root, path, &disk_key, 1);
- 	}
-
- 	if (btrfs_leaf_free_space(root, leaf) < 0) {
-@@ -3770,7 +3744,7 @@ setup_items_for_insert(struct btrfs_trans_handle *trans,
- 	if (slot == 0) {
- 		struct btrfs_disk_key disk_key;
- 		btrfs_cpu_key_to_disk(&disk_key, cpu_key);
--		ret = fixup_low_keys(trans, root, path, &disk_key, 1);
-+		fixup_low_keys(trans, root, path, &disk_key, 1);
- 	}
- 	btrfs_unlock_up_safe(path, 1);
- 	btrfs_mark_buffer_dirty(leaf);
-@@ -3856,7 +3830,6 @@ static int del_ptr(struct btrfs_trans_handle
-*trans, struct btrfs_root *root,
- 	struct extent_buffer *parent = path->nodes[level];
- 	u32 nritems;
- 	int ret = 0;
--	int wret;
-
- 	nritems = btrfs_header_nritems(parent);
- 	if (slot != nritems - 1) {
-@@ -3876,9 +3849,7 @@ static int del_ptr(struct btrfs_trans_handle
-*trans, struct btrfs_root *root,
- 		struct btrfs_disk_key disk_key;
-
- 		btrfs_node_key(parent, &disk_key, 0);
--		wret = fixup_low_keys(trans, root, path, &disk_key, level + 1);
--		if (wret)
--			ret = wret;
-+		fixup_low_keys(trans, root, path, &disk_key, level + 1);
- 	}
- 	btrfs_mark_buffer_dirty(parent);
- 	return ret;
-@@ -3993,10 +3964,8 @@ int btrfs_del_items(struct btrfs_trans_handle
-*trans, struct btrfs_root *root,
- 			struct btrfs_disk_key disk_key;
-
- 			btrfs_item_key(leaf, &disk_key, 0);
--			wret = fixup_low_keys(trans, root, path,
-+			fixup_low_keys(trans, root, path,
- 					      &disk_key, 1);
--			if (wret)
--				ret = wret;
- 		}
-
- 		/* delete the leaf if it is mostly empty */
-@@ -4130,7 +4099,7 @@ again:
- 	while (1) {
- 		nritems = btrfs_header_nritems(cur);
- 		level = btrfs_header_level(cur);
--		sret = bin_search(cur, min_key, level, &slot);
-+		sret = btrfs_bin_search(cur, min_key, level, &slot);
-
- 		/* at the lowest level, we're done, setup the path and exit */
- 		if (level == path->lowest_level) {
-
--- 
-Goldwyn
+UGxlYXNlIHRyeSB0aGUgZml4IGluIGJlbG93IGxpbms6DQpodHRwOi8vd3d3LnNwaW5pY3MubmV0
+L2xpc3RzL2xpbnV4LWJ0cmZzL21zZzA4MDUxLmh0bWwNCg0KVGhhbmtzIQ0KDQotLS0tLU9yaWdp
+bmFsIE1lc3NhZ2UtLS0tLQ0KRnJvbTogbGludXgtYnRyZnMtb3duZXJAdmdlci5rZXJuZWwub3Jn
+IFttYWlsdG86bGludXgtYnRyZnMtb3duZXJAdmdlci5rZXJuZWwub3JnXSBPbiBCZWhhbGYgT2Yg
+TWFyaWEgV2lrc3RyP20NClNlbnQ6IEZyaWRheSwgSmFudWFyeSAyOCwgMjAxMSA2OjEyIEFNDQpU
+bzogam9oYW5uZXMuaGlydGVAZmVtLnR1LWlsbWVuYXUuZGU7IFpob25nLCBYaW4NCkNjOiBsaW51
+eC1idHJmc0B2Z2VyLmtlcm5lbC5vcmcNClN1YmplY3Q6IFJlOiBbUEFUQ0ggdjJdQnRyZnM6IHB3
+cml0ZSBibG9ja2VkIHdoZW4gd3JpdGluZyBmcm9tIHRoZSBtbWFwZWQgYnVmZmVyIG9mIHRoZSBz
+YW1lIHBhZ2UNCg0KdG9yIDIwMTEtMDEtMjcga2xvY2thbiAxNDowOSArMDEwMCBza3JldiBKb2hh
+bm5lcyBIaXJ0ZTogDQo+IE9uIFRodXJzZGF5IDA5IERlY2VtYmVyIDIwMTAgMTA6MzA6MTQgWmhv
+bmcsIFhpbiB3cm90ZToNCj4gPiBUaGlzIHByb2JsZW0gaXMgZm91bmQgaW4gbWVlZ28gdGVzdGlu
+ZzoNCj4gPiBodHRwOi8vYnVncy5tZWVnby5jb20vc2hvd19idWcuY2dpP2lkPTY2NzINCj4gPiBB
+IGZpbGUgaW4gYnRyZnMgaXMgbW1hcGVkIGFuZCB0aGUgbW1hcGVkIGJ1ZmZlciBpcyBwYXNzZWQg
+dG8gcHdyaXRlIHRvDQo+ID4gd3JpdGUgdG8gdGhlIHNhbWUgcGFnZSBvZiB0aGUgc2FtZSBmaWxl
+LiBJbiBidHJmc19maWxlX2Fpb193cml0ZSgpLCB0aGUNCj4gPiBwYWdlcyBpcyBsb2NrZWQgYnkg
+cHJlcGFyZV9wYWdlcygpLiBTbyB3aGVuIGJ0cmZzX2NvcHlfZnJvbV91c2VyKCkgaXMNCj4gPiBj
+YWxsZWQsIHBhZ2UgZmF1bHQgaGFwcGVucyBhbmQgdGhlIHNhbWUgcGFnZSBuZWVkcyB0byBiZSBs
+b2NrZWQgYWdhaW4gaW4NCj4gPiBmaWxlbWFwX2ZhdWx0KCkuIFRoZSBmaXggaXMgdG8gbW92ZSBp
+b3ZfaXRlcl9mYXVsdF9pbl9yZWFkYWJsZSgpIGJlZm9yZQ0KPiA+IHByZXBhZ2VfcGFnZXMoKSB0
+byBtYWtlIHBhZ2UgZmF1bHQgaGFwcGVuIGJlZm9yZSBwYWdlcyBhcmUgbG9ja2VkLiBBbmQNCj4g
+PiBhbHNvIGRpc2FibGUgcGFnZSBmYXVsdCBpbiBjcml0aWNhbCByZWdpb24gaW4gYnRyZnNfY29w
+eV9mcm9tX3VzZXIoKS4NCj4gPiANCj4gPiBSZXZpZXdlZC1ieTogWWFuLCBaaGVuZzx6aGVuZy56
+LnlhbkBpbnRlbC5jb20+DQo+ID4gU2lnbmVkLW9mZi1ieTogWmhvbmcsIFhpbiA8eGluLnpob25n
+QGludGVsLmNvbT4NCj4gPiAtLS0NCj4gPiAgZnMvYnRyZnMvZmlsZS5jIHwgICA5Mg0KPiA+ICsr
+KysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKy0tLS0tLS0tLS0tLS0tLS0tLS0gMSBm
+aWxlcyBjaGFuZ2VkLA0KPiA+IDYwIGluc2VydGlvbnMoKyksIDMyIGRlbGV0aW9ucygtKQ0KPiA+
+IA0KPiA+IGRpZmYgLS1naXQgYS9mcy9idHJmcy9maWxlLmMgYi9mcy9idHJmcy9maWxlLmMNCj4g
+PiBpbmRleCBjMWZhZGVkLi42NjgzNmQ4IDEwMDY0NA0KPiA+IC0tLSBhL2ZzL2J0cmZzL2ZpbGUu
+Yw0KPiA+ICsrKyBiL2ZzL2J0cmZzL2ZpbGUuYw0KPiA+IEBAIC00OCwzMCArNDgsMzQgQEAgc3Rh
+dGljIG5vaW5saW5lIGludCBidHJmc19jb3B5X2Zyb21fdXNlcihsb2ZmX3QgcG9zLA0KPiA+IGlu
+dCBudW1fcGFnZXMsIHN0cnVjdCBwYWdlICoqcHJlcGFyZWRfcGFnZXMsDQo+ID4gIAkJCQkJIHN0
+cnVjdCBpb3ZfaXRlciAqaSkNCj4gPiAgew0KPiA+IC0Jc2l6ZV90IGNvcGllZDsNCj4gPiArCXNp
+emVfdCBjb3BpZWQgPSAwOw0KPiA+ICAJaW50IHBnID0gMDsNCj4gPiAgCWludCBvZmZzZXQgPSBw
+b3MgJiAoUEFHRV9DQUNIRV9TSVpFIC0gMSk7DQo+ID4gKwlpbnQgdG90YWxfY29waWVkID0gMDsN
+Cj4gPiANCj4gPiAgCXdoaWxlICh3cml0ZV9ieXRlcyA+IDApIHsNCj4gPiAgCQlzaXplX3QgY291
+bnQgPSBtaW5fdChzaXplX3QsDQo+ID4gIAkJCQkgICAgIFBBR0VfQ0FDSEVfU0laRSAtIG9mZnNl
+dCwgd3JpdGVfYnl0ZXMpOw0KPiA+ICAJCXN0cnVjdCBwYWdlICpwYWdlID0gcHJlcGFyZWRfcGFn
+ZXNbcGddOw0KPiA+IC1hZ2FpbjoNCj4gPiAtCQlpZiAodW5saWtlbHkoaW92X2l0ZXJfZmF1bHRf
+aW5fcmVhZGFibGUoaSwgY291bnQpKSkNCj4gPiAtCQkJcmV0dXJuIC1FRkFVTFQ7DQo+ID4gLQ0K
+PiA+IC0JCS8qIENvcHkgZGF0YSBmcm9tIHVzZXJzcGFjZSB0byB0aGUgY3VycmVudCBwYWdlICov
+DQo+ID4gLQkJY29waWVkID0gaW92X2l0ZXJfY29weV9mcm9tX3VzZXIocGFnZSwgaSwgb2Zmc2V0
+LCBjb3VudCk7DQo+ID4gKwkJLyoNCj4gPiArCQkgKiBDb3B5IGRhdGEgZnJvbSB1c2Vyc3BhY2Ug
+dG8gdGhlIGN1cnJlbnQgcGFnZQ0KPiA+ICsJCSAqDQo+ID4gKwkJICogRGlzYWJsZSBwYWdlZmF1
+bHQgdG8gYXZvaWQgcmVjdXJzaXZlIGxvY2sgc2luY2UNCj4gPiArCQkgKiB0aGUgcGFnZXMgYXJl
+IGFscmVhZHkgbG9ja2VkDQo+ID4gKwkJICovDQo+ID4gKwkJcGFnZWZhdWx0X2Rpc2FibGUoKTsN
+Cj4gPiArCQljb3BpZWQgPSBpb3ZfaXRlcl9jb3B5X2Zyb21fdXNlcl9hdG9taWMocGFnZSwgaSwg
+b2Zmc2V0LCBjb3VudCk7DQo+ID4gKwkJcGFnZWZhdWx0X2VuYWJsZSgpOw0KPiA+IA0KPiA+ICAJ
+CS8qIEZsdXNoIHByb2Nlc3NvcidzIGRjYWNoZSBmb3IgdGhpcyBwYWdlICovDQo+ID4gIAkJZmx1
+c2hfZGNhY2hlX3BhZ2UocGFnZSk7DQo+ID4gIAkJaW92X2l0ZXJfYWR2YW5jZShpLCBjb3BpZWQp
+Ow0KPiA+ICAJCXdyaXRlX2J5dGVzIC09IGNvcGllZDsNCj4gPiArCQl0b3RhbF9jb3BpZWQgKz0g
+Y29waWVkOw0KPiA+IA0KPiA+ICsJCS8qIFJldHVybiB0byBidHJmc19maWxlX2Fpb193cml0ZSB0
+byBmYXVsdCBwYWdlICovDQo+ID4gIAkJaWYgKHVubGlrZWx5KGNvcGllZCA9PSAwKSkgew0KPiA+
+IC0JCQljb3VudCA9IG1pbl90KHNpemVfdCwgUEFHRV9DQUNIRV9TSVpFIC0gb2Zmc2V0LA0KPiA+
+IC0JCQkJICAgICAgaW92X2l0ZXJfc2luZ2xlX3NlZ19jb3VudChpKSk7DQo+ID4gLQkJCWdvdG8g
+YWdhaW47DQo+ID4gKwkJCWJyZWFrOw0KPiA+ICAJCX0NCj4gPiANCj4gPiAgCQlpZiAodW5saWtl
+bHkoY29waWVkIDwgUEFHRV9DQUNIRV9TSVpFIC0gb2Zmc2V0KSkgew0KPiA+IEBAIC04MSw3ICs4
+NSw3IEBAIGFnYWluOg0KPiA+ICAJCQlvZmZzZXQgPSAwOw0KPiA+ICAJCX0NCj4gPiAgCX0NCj4g
+PiAtCXJldHVybiAwOw0KPiA+ICsJcmV0dXJuIHRvdGFsX2NvcGllZDsNCj4gPiAgfQ0KPiA+IA0K
+PiA+ICAvKg0KPiA+IEBAIC04NTQsNiArODU4LDggQEAgc3RhdGljIHNzaXplX3QgYnRyZnNfZmls
+ZV9haW9fd3JpdGUoc3RydWN0IGtpb2NiICppb2NiLA0KPiA+ICAJdW5zaWduZWQgbG9uZyBsYXN0
+X2luZGV4Ow0KPiA+ICAJaW50IHdpbGxfd3JpdGU7DQo+ID4gIAlpbnQgYnVmZmVyZWQgPSAwOw0K
+PiA+ICsJaW50IGNvcGllZCA9IDA7DQo+ID4gKwlpbnQgZGlydHlfcGFnZXMgPSAwOw0KPiA+IA0K
+PiA+ICAJd2lsbF93cml0ZSA9ICgoZmlsZS0+Zl9mbGFncyAmIE9fRFNZTkMpIHx8IElTX1NZTkMo
+aW5vZGUpIHx8DQo+ID4gIAkJICAgICAgKGZpbGUtPmZfZmxhZ3MgJiBPX0RJUkVDVCkpOw0KPiA+
+IEBAIC05NzAsNyArOTc2LDE3IEBAIHN0YXRpYyBzc2l6ZV90IGJ0cmZzX2ZpbGVfYWlvX3dyaXRl
+KHN0cnVjdCBraW9jYg0KPiA+ICppb2NiLCBXQVJOX09OKG51bV9wYWdlcyA+IG5ycHRycyk7DQo+
+ID4gIAkJbWVtc2V0KHBhZ2VzLCAwLCBzaXplb2Yoc3RydWN0IHBhZ2UgKikgKiBucnB0cnMpOw0K
+PiA+IA0KPiA+IC0JCXJldCA9IGJ0cmZzX2RlbGFsbG9jX3Jlc2VydmVfc3BhY2UoaW5vZGUsIHdy
+aXRlX2J5dGVzKTsNCj4gPiArCQkvKg0KPiA+ICsJCSAqIEZhdWx0IHBhZ2VzIGJlZm9yZSBsb2Nr
+aW5nIHRoZW0gaW4gcHJlcGFyZV9wYWdlcw0KPiA+ICsJCSAqIHRvIGF2b2lkIHJlY3Vyc2l2ZSBs
+b2NrDQo+ID4gKwkJICovDQo+ID4gKwkJaWYgKHVubGlrZWx5KGlvdl9pdGVyX2ZhdWx0X2luX3Jl
+YWRhYmxlKCZpLCB3cml0ZV9ieXRlcykpKSB7DQo+ID4gKwkJCXJldCA9IC1FRkFVTFQ7DQo+ID4g
+KwkJCWdvdG8gb3V0Ow0KPiA+ICsJCX0NCj4gPiArDQo+ID4gKwkJcmV0ID0gYnRyZnNfZGVsYWxs
+b2NfcmVzZXJ2ZV9zcGFjZShpbm9kZSwNCj4gPiArCQkJCQludW1fcGFnZXMgPDwgUEFHRV9DQUNI
+RV9TSElGVCk7DQo+ID4gIAkJaWYgKHJldCkNCj4gPiAgCQkJZ290byBvdXQ7DQo+ID4gDQo+ID4g
+QEAgLTk3OCwzNyArOTk0LDQ5IEBAIHN0YXRpYyBzc2l6ZV90IGJ0cmZzX2ZpbGVfYWlvX3dyaXRl
+KHN0cnVjdCBraW9jYg0KPiA+ICppb2NiLCBwb3MsIGZpcnN0X2luZGV4LCBsYXN0X2luZGV4LA0K
+PiA+ICAJCQkJICAgIHdyaXRlX2J5dGVzKTsNCj4gPiAgCQlpZiAocmV0KSB7DQo+ID4gLQkJCWJ0
+cmZzX2RlbGFsbG9jX3JlbGVhc2Vfc3BhY2UoaW5vZGUsIHdyaXRlX2J5dGVzKTsNCj4gPiArCQkJ
+YnRyZnNfZGVsYWxsb2NfcmVsZWFzZV9zcGFjZShpbm9kZSwNCj4gPiArCQkJCQludW1fcGFnZXMg
+PDwgUEFHRV9DQUNIRV9TSElGVCk7DQo+ID4gIAkJCWdvdG8gb3V0Ow0KPiA+ICAJCX0NCj4gPiAN
+Cj4gPiAtCQlyZXQgPSBidHJmc19jb3B5X2Zyb21fdXNlcihwb3MsIG51bV9wYWdlcywNCj4gPiAr
+CQljb3BpZWQgPSBidHJmc19jb3B5X2Zyb21fdXNlcihwb3MsIG51bV9wYWdlcywNCj4gPiAgCQkJ
+CQkgICB3cml0ZV9ieXRlcywgcGFnZXMsICZpKTsNCj4gPiAtCQlpZiAocmV0ID09IDApIHsNCj4g
+PiArCQlkaXJ0eV9wYWdlcyA9IChjb3BpZWQgKyBQQUdFX0NBQ0hFX1NJWkUgLSAxKSA+Pg0KPiA+
+ICsJCQkJCVBBR0VfQ0FDSEVfU0hJRlQ7DQo+ID4gKw0KPiA+ICsJCWlmIChudW1fcGFnZXMgPiBk
+aXJ0eV9wYWdlcykgew0KPiA+ICsJCQlpZiAoY29waWVkID4gMCkNCj4gPiArCQkJCWF0b21pY19p
+bmMoDQo+ID4gKwkJCQkJJkJUUkZTX0koaW5vZGUpLT5vdXRzdGFuZGluZ19leHRlbnRzKTsNCj4g
+PiArCQkJYnRyZnNfZGVsYWxsb2NfcmVsZWFzZV9zcGFjZShpbm9kZSwNCj4gPiArCQkJCQkobnVt
+X3BhZ2VzIC0gZGlydHlfcGFnZXMpIDw8DQo+ID4gKwkJCQkJUEFHRV9DQUNIRV9TSElGVCk7DQo+
+ID4gKwkJfQ0KPiA+ICsNCj4gPiArCQlpZiAoY29waWVkID4gMCkgew0KPiA+ICAJCQlkaXJ0eV9h
+bmRfcmVsZWFzZV9wYWdlcyhOVUxMLCByb290LCBmaWxlLCBwYWdlcywNCj4gPiAtCQkJCQkJbnVt
+X3BhZ2VzLCBwb3MsIHdyaXRlX2J5dGVzKTsNCj4gPiArCQkJCQkJZGlydHlfcGFnZXMsIHBvcywg
+Y29waWVkKTsNCj4gPiAgCQl9DQo+ID4gDQo+ID4gIAkJYnRyZnNfZHJvcF9wYWdlcyhwYWdlcywg
+bnVtX3BhZ2VzKTsNCj4gPiAtCQlpZiAocmV0KSB7DQo+ID4gLQkJCWJ0cmZzX2RlbGFsbG9jX3Jl
+bGVhc2Vfc3BhY2UoaW5vZGUsIHdyaXRlX2J5dGVzKTsNCj4gPiAtCQkJZ290byBvdXQ7DQo+ID4g
+LQkJfQ0KPiA+IA0KPiA+IC0JCWlmICh3aWxsX3dyaXRlKSB7DQo+ID4gLQkJCWZpbGVtYXBfZmRh
+dGF3cml0ZV9yYW5nZShpbm9kZS0+aV9tYXBwaW5nLCBwb3MsDQo+ID4gLQkJCQkJCSBwb3MgKyB3
+cml0ZV9ieXRlcyAtIDEpOw0KPiA+IC0JCX0gZWxzZSB7DQo+ID4gLQkJCWJhbGFuY2VfZGlydHlf
+cGFnZXNfcmF0ZWxpbWl0ZWRfbnIoaW5vZGUtPmlfbWFwcGluZywNCj4gPiAtCQkJCQkJCSAgIG51
+bV9wYWdlcyk7DQo+ID4gLQkJCWlmIChudW1fcGFnZXMgPA0KPiA+IC0JCQkgICAgKHJvb3QtPmxl
+YWZzaXplID4+IFBBR0VfQ0FDSEVfU0hJRlQpICsgMSkNCj4gPiAtCQkJCWJ0cmZzX2J0cmVlX2Jh
+bGFuY2VfZGlydHkocm9vdCwgMSk7DQo+ID4gLQkJCWJ0cmZzX3Rocm90dGxlKHJvb3QpOw0KPiA+
+ICsJCWlmIChjb3BpZWQgPiAwKSB7DQo+ID4gKwkJCWlmICh3aWxsX3dyaXRlKSB7DQo+ID4gKwkJ
+CQlmaWxlbWFwX2ZkYXRhd3JpdGVfcmFuZ2UoaW5vZGUtPmlfbWFwcGluZywgcG9zLA0KPiA+ICsJ
+CQkJCQkJIHBvcyArIGNvcGllZCAtIDEpOw0KPiA+ICsJCQl9IGVsc2Ugew0KPiA+ICsJCQkJYmFs
+YW5jZV9kaXJ0eV9wYWdlc19yYXRlbGltaXRlZF9ucigNCj4gPiArCQkJCQkJCWlub2RlLT5pX21h
+cHBpbmcsDQo+ID4gKwkJCQkJCQlkaXJ0eV9wYWdlcyk7DQo+ID4gKwkJCQlpZiAoZGlydHlfcGFn
+ZXMgPA0KPiA+ICsJCQkJKHJvb3QtPmxlYWZzaXplID4+IFBBR0VfQ0FDSEVfU0hJRlQpICsgMSkN
+Cj4gPiArCQkJCQlidHJmc19idHJlZV9iYWxhbmNlX2RpcnR5KHJvb3QsIDEpOw0KPiA+ICsJCQkJ
+YnRyZnNfdGhyb3R0bGUocm9vdCk7DQo+ID4gKwkJCX0NCj4gPiAgCQl9DQo+ID4gDQo+ID4gLQkJ
+cG9zICs9IHdyaXRlX2J5dGVzOw0KPiA+IC0JCW51bV93cml0dGVuICs9IHdyaXRlX2J5dGVzOw0K
+PiA+ICsJCXBvcyArPSBjb3BpZWQ7DQo+ID4gKwkJbnVtX3dyaXR0ZW4gKz0gY29waWVkOw0KPiA+
+IA0KPiA+ICAJCWNvbmRfcmVzY2hlZCgpOw0KPiA+ICAJfQ0KPiANCj4gVGhpcyBwYXRjaCBicmVh
+a3Mgb25lIG9mIG15IEdlbnRvbyBib3hlcy4gV2hlbiBJIHRyeSB0byBpbnN0YWxsL3VwZGF0ZSB2
+aWEgDQo+IGVtZXJnZSwgc29tZSBwYWNrYWdlcyBoYW5nLiBJdCBzZWVtcyB0aGF0IGl0J3MgYWx3
+YXlzIGEgInN2biBpbmZvIiBwcm9jZXNzIA0KPiB0aGF0IGlzIHN0dWNrIGluIGtlcm5lbCBlYXRp
+bmcgMTAwJSBDUFUuIEkgZG9uJ3Qga25vdyBob3cgc3ZuIGlzIGludm9sdmVkIA0KPiBoZXJlLCBi
+dXQgcmV2ZXJ0aW5nIHRoaXMgcGF0Y2ggbWFrZXMgdGhlIHN5c3RlbSB3b3JrIGFnYWluLiBJJ2xs
+IHRyeSB0byBnZXQgYSANCj4gc2ltcGxlIHRlc3RjYXNlLg0KPiANCj4gcmVnYXJkcywNCj4gICBK
+b2hhbm5lcw0KDQpUaGUgc2FtZSB0aGluZyBoYXBwZW5zIGhlcmUuIFRoZSBvbmx5IHdheSB0byBr
+aWxsIHRoZSBwcm9jZXNzIChzdm4gaW5mbykNCmlzIHRvIHJlc3RhcnQgdGhlIGNvbXB1dGVyLiBS
+dW5uaW5nIHZhbmlsbGEgMi42LjM3IHdpdGhvdXQgcGF0Y2hlcy4NCg0KI3N0cmFjZSBlbWVyZ2Ug
+bGliZ2NyeXB0DQotLSBjdXQgLS0gDQpvcGVuKCIvdmFyL3RtcC9wb3J0YWdlL2Rldi1saWJzL2xp
+YmdjcnlwdC0xLjQuNi90ZW1wL2J1aWxkLmxvZyIsDQpPX1dST05MWXxPX0NSRUFUfE9fQVBQRU5E
+fE9fTEFSR0VGSUxFLCAwNjY2KSA9IDcNCmZzdGF0NjQoNywge3N0X21vZGU9U19JRlJFR3wwNjYw
+LCBzdF9zaXplPTQxNiwgLi4ufSkgPSAwDQptbWFwMihOVUxMLCA0MDk2LCBQUk9UX1JFQUR8UFJP
+VF9XUklURSwgTUFQX1BSSVZBVEV8TUFQX0FOT05ZTU9VUywgLTEsDQowKSA9IDB4YjcxM2EwMDAN
+CmZzdGF0NjQoNywge3N0X21vZGU9U19JRlJFR3wwNjYwLCBzdF9zaXplPTQxNiwgLi4ufSkgPSAw
+DQpfbGxzZWVrKDcsIDQxNiwgWzQxNl0sIFNFRUtfU0VUKSAgICAgICAgPSAwDQpmc3RhdDY0KDcs
+IHtzdF9tb2RlPVNfSUZSRUd8MDY2MCwgc3Rfc2l6ZT00MTYsIC4uLn0pID0gMA0Kc3RhdDY0KCIv
+dmFyL3RtcC9wb3J0YWdlL2Rldi1saWJzL2xpYmdjcnlwdC0xLjQuNi90ZW1wL2J1aWxkLmxvZyIs
+DQp7c3RfbW9kZT1TX0lGUkVHfDA2NjAsIHN0X3NpemU9NDE2LCAuLi59KSA9IDANCmR1cCgxKSAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA9IDgNCmZjbnRsNjQoOCwgRl9HRVRGTCkg
+ICAgICAgICAgICAgICAgICAgICA9IDB4MiAoZmxhZ3MgT19SRFdSKQ0KZnN0YXQ2NCg4LCB7c3Rf
+bW9kZT1TX0lGQ0hSfDA2MjAsIHN0X3JkZXY9bWFrZWRldigxMzYsIDMpLCAuLi59KSA9IDANCm1t
+YXAyKE5VTEwsIDQwOTYsIFBST1RfUkVBRHxQUk9UX1dSSVRFLCBNQVBfUFJJVkFURXxNQVBfQU5P
+TllNT1VTLCAtMSwNCjApID0gMHhiNzAwNTAwMA0KX2xsc2Vlayg4LCAwLCAweGJmZjgwY2ZjLCBT
+RUVLX0NVUikgICAgID0gLTEgRVNQSVBFIChJbGxlZ2FsIHNlZWspDQpmc3RhdDY0KDgsIHtzdF9t
+b2RlPVNfSUZDSFJ8MDYyMCwgc3RfcmRldj1tYWtlZGV2KDEzNiwgMyksIC4uLn0pID0gMA0Kc3Rh
+dDY0KCIvdmFyL3RtcC9wb3J0YWdlL2Rldi1saWJzL2xpYmdjcnlwdC0xLjQuNi90ZW1wL2Vudmly
+b25tZW50IiwNCntzdF9tb2RlPVNfSUZSRUd8MDY2NCwgc3Rfc2l6ZT0xMDU5NzAsIC4uLn0pID0g
+MA0KY2xvbmUoY2hpbGRfc3RhY2s9MCwgZmxhZ3M9Q0xPTkVfQ0hJTERfQ0xFQVJUSUR8Q0xPTkVf
+Q0hJTERfU0VUVElEfA0KU0lHQ0hMRCwgY2hpbGRfdGlkcHRyPTB4Yjc0MzA3MjgpID0gMTE2NjUN
+CmNsb3NlKDYpICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA9IDANCmdldHRpbWVvZmRh
+eSh7MTI5NjE2MjgzNiwgMTI2MTkyfSwgTlVMTCkgPSAwDQpwb2xsKFt7ZmQ9MywgZXZlbnRzPVBP
+TExJTnxQT0xMRVJSfFBPTExIVVB8UE9MTE5WQUx9LCB7ZmQ9NSwNCmV2ZW50cz1QT0xMSU58UE9M
+TEVSUnxQT0xMSFVQfFBPTExOVkFMfV0sIDIsIDMwMDApID0gMSAoW3tmZD01LA0KcmV2ZW50cz1Q
+T0xMSU59XSkNCnJlYWQoNSwgIj4+PiBQcmVwYXJpbmcgc291cmNlIGluIC92YXIvdG1wIi4uLiwg
+NDA5NikgPSA5MQ0KcmVhZCg1LCAweGI3MTNiMDAwLCA0MDk2KSAgICAgICAgICAgICAgID0gLTEg
+RUFHQUlOIChSZXNvdXJjZQ0KdGVtcG9yYXJpbHkgdW5hdmFpbGFibGUpDQp3cml0ZSg4LCAiPj4+
+IFByZXBhcmluZyBzb3VyY2UgaW4gL3Zhci90bXAiLi4uLCA5MT4+PiBQcmVwYXJpbmcgc291cmNl
+DQppbiAvdmFyL3RtcC9wb3J0YWdlL2Rldi1saWJzL2xpYmdjcnlwdC0xLjQuNi93b3JrL2xpYmdj
+cnlwdC0xLjQuNiAuLi4NCikgPSA5MQ0Kd3JpdGUoNywgIj4+PiBQcmVwYXJpbmcgc291cmNlIGlu
+IC92YXIvdG1wIi4uLiwgOTEpID0gOTENCnBvbGwoW3tmZD0zLCBldmVudHM9UE9MTElOfFBPTExF
+UlJ8UE9MTEhVUHxQT0xMTlZBTH0sIHtmZD01LA0KZXZlbnRzPVBPTExJTnxQT0xMRVJSfFBPTExI
+VVB8UE9MTE5WQUx9XSwgMiwgMzAwMCkgPSAwIChUaW1lb3V0KQ0KcG9sbChbe2ZkPTMsIGV2ZW50
+cz1QT0xMSU58UE9MTEVSUnxQT0xMSFVQfFBPTExOVkFMfSwge2ZkPTUsDQpldmVudHM9UE9MTElO
+fFBPTExFUlJ8UE9MTEhVUHxQT0xMTlZBTH1dLCAyLCAzMDAwKSA9IDAgKFRpbWVvdXQpDQpwb2xs
+KFt7ZmQ9MywgZXZlbnRzPVBPTExJTnxQT0xMRVJSfFBPTExIVVB8UE9MTE5WQUx9LCB7ZmQ9NSwN
+CmV2ZW50cz1QT0xMSU58UE9MTEVSUnxQT0xMSFVQfFBPTExOVkFMfV0sIDIsIDMwMDApID0gMCAo
+VGltZW91dCkNCg0KVGhlIGxhc3QgbGluZSBpcyByZXBlYXRlZCBldmVyeSAzc2VjLg0KDQovLyBN
+YXJpYQ0KDQoNCi0tDQpUbyB1bnN1YnNjcmliZSBmcm9tIHRoaXMgbGlzdDogc2VuZCB0aGUgbGlu
+ZSAidW5zdWJzY3JpYmUgbGludXgtYnRyZnMiIGluDQp0aGUgYm9keSBvZiBhIG1lc3NhZ2UgdG8g
+bWFqb3Jkb21vQHZnZXIua2VybmVsLm9yZw0KTW9yZSBtYWpvcmRvbW8gaW5mbyBhdCAgaHR0cDov
+L3ZnZXIua2VybmVsLm9yZy9tYWpvcmRvbW8taW5mby5odG1sDQo=

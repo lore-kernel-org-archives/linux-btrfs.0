@@ -1,99 +1,70 @@
-From: Maria =?ISO-8859-1?Q?Wikstr=F6m?= <maria@ponstudios.se>
-Subject: Re: [PATCH v2]Btrfs: pwrite blocked when writing from the mmaped
- buffer of the same page
-Date: Sat, 29 Jan 2011 16:38:56 +0100
-Message-ID: <1296315536.11437.66.camel@mainframe>
-References: <1291887014-18447-1-git-send-email-xin.zhong@intel.com>
-	 <201101280354.36884.johannes.hirte@fem.tu-ilmenau.de>
-	 <1296233241.11428.23.camel@mainframe> <201101281827.17306.rmfrfs@gmail.com>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: btrfs crashes
+Date: 29 Jan 2011 20:30:00 +0100
+Message-ID: <BemzWR+y1uB@helmut.hullen.de>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: xin.zhong@intel.com, linux-btrfs@vger.kernel.org,
-	johannes.hirte@fem.tu-ilmenau.de
-To: Rui Miguel Silva <rmfrfs@gmail.com>
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201101281827.17306.rmfrfs@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-fre 2011-01-28 klockan 18:27 +0000 skrev Rui Miguel Silva:=20
-> On Friday, January 28, 2011 04:47:21 pm Maria Wikstr=C3=B6m wrote:
-> > fre 2011-01-28 klockan 03:54 +0100 skrev Johannes Hirte:
-> > > On Friday 28 January 2011 02:26:43 Zhong, Xin wrote:
-> > > > Please try the fix in below link:
-> > > > http://www.spinics.net/lists/linux-btrfs/msg08051.html
-> > > >=20
-> > > > Thanks!
-> > >=20
-> > > This doesn't fix it for me. At least there is a difference. Where=
-as the
-> > > svn process started consuming 100% CPU without any further intera=
-ction
-> > > before, the system just hang now. The svn process starts eating t=
-he CPU
-> > > when I cancel the emerge via ctrl-c. Additional I see a flush-btr=
-fs task
-> > > now consuming CPU time.
-> > >=20
-> > > regards,
-> > >=20
-> > >   Johannes
-> > >=20
-> > > --
-> > > To unsubscribe from this list: send the line "unsubscribe linux-b=
-trfs" in
-> > > the body of a message to majordomo@vger.kernel.org
-> > > More majordomo info at  http://vger.kernel.org/majordomo-info.htm=
-l
-> >=20
-> > The patch makes the process exit cleanly but complains that there i=
-s no
-> > space left. It should be a few GB but it is only a few MB!? I delet=
-e 5GB
-> > and controls that the space is usable. Try again but this time it a=
-lmost
-> > hangs the system, I can blink the leds and move the mouse but notin=
-g
-> > more.
-> > I boot 2.6.36.1 and use a snapshot as root, "emerge libgcrypt" comp=
-iles
-> > and installs fine. Boots back into 2.6.37 and try again and the sys=
-tem
-> > hangs again.
-> >=20
-> > // Maria
-> >=20
->=20
-> Hi Maria,
-> I had something similar with vanilla 2.6.37 just for running:
-> cscope -R -b -q
->=20
-> allways hang complety the process, only solution reboot.
-> I just applied the  btrfs patches that arrived in the main tree betwe=
-en the=20
-> 2.6.37 and 2.6.38-rc1 and they seem to fix the issue.
->=20
-> I did not have the time to try to found which patch fixed the problem=
-=2E
->=20
-> Hope this could help you.
->=20
-> Cheers,
->   //Rui
+Hallo, linux-btrfs,
 
-I have tried with both vanilla 2.6.38-rc2 and btrfs-unstable from git,
-both having the problem.=20
+for some hours I was happy ...
 
-Btrfs-unstable with the patch above behaves differently. The process ca=
-n
-be killed with Ctrl + C but then the terminal and gnome-pty-helper eats
-cpu instead. They can be killed with SysRq + i together with everything
-else.
+   mkfs.btrfs /dev/sde1
+   mount /dev/sde1 /mnt/btr
+   <copy about 1.5 TByte>
+   btrfs device add /dev/sdd1
+   <copy about 0.8 TByte>
 
-// Maria
+led to
 
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+# btrfs filesystem show
+Label: 'MM2'  uuid: 7400b83c-f3dd-477c-bbf4-7429863a7ef9
+	Total devices 2 FS bytes used 2.25TB
+	devid    1 size 1.81TB used 1.51TB path /dev/sde1
+	devid    2 size 1.82TB used 760.50GB path /dev/sdd1
+
+Btrfs Btrfs v0.19
+
+# btrfs filesystem df /srv/MM
+Data: total=2.25TB, used=2.24TB
+System, DUP: total=8.00MB, used=260.00KB
+System: total=4.00MB, used=0.00
+Metadata, DUP: total=5.00GB, used=3.53GB
+Metadata: total=8.00MB, used=0.00
+
+# df -t btrfs
+Filesystem    Type   1K-blocks      Used Available Use% Mounted on
+/dev/sde1    btrfs   3898172184 2416726548 1478325628  63% /srv/MM
+
+# fdisk -l
+/dev/sde1               1      242600  1948684468+  83  Linux
+/dev/sdd1               1      242700  1949487718+  83  Linux
+
+# --------------------------------------
+
+All seemed to work well. No "no space left ...".
+
+Then I shut down the machine and started it again the next day.
+
+        btrfs filesystem show
+
+showed the 2 devices.
+
+        mount LABEL=MM2 /mnt/btr
+
+and the system crashed with blinkenlights.
+
+What goes wrong?
+
+How can I restore the data?
+I have a backup, but I prefer reanimating the 2 btrfs partitions.
+
+Kernel 2.6.37
+
+Viele Gruesse!
+Helmut

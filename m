@@ -1,53 +1,99 @@
-From: Chris Samuel <chris@csamuel.org>
-Subject: Re: Kernel error during btrfs balance
-Date: Sat, 29 Jan 2011 21:56:04 +1100
-Message-ID: <201101292156.06695.chris@csamuel.org>
-References: <Bear5K9y1uB@helmut.hullen.de>
+From: Maria =?ISO-8859-1?Q?Wikstr=F6m?= <maria@ponstudios.se>
+Subject: Re: [PATCH v2]Btrfs: pwrite blocked when writing from the mmaped
+ buffer of the same page
+Date: Sat, 29 Jan 2011 16:38:56 +0100
+Message-ID: <1296315536.11437.66.camel@mainframe>
+References: <1291887014-18447-1-git-send-email-xin.zhong@intel.com>
+	 <201101280354.36884.johannes.hirte@fem.tu-ilmenau.de>
+	 <1296233241.11428.23.camel@mainframe> <201101281827.17306.rmfrfs@gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart7497575.9pTrNCH8Ub";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: xin.zhong@intel.com, linux-btrfs@vger.kernel.org,
+	johannes.hirte@fem.tu-ilmenau.de
+To: Rui Miguel Silva <rmfrfs@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <Bear5K9y1uB@helmut.hullen.de>
+In-Reply-To: <201101281827.17306.rmfrfs@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart7497575.9pTrNCH8Ub
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+fre 2011-01-28 klockan 18:27 +0000 skrev Rui Miguel Silva:=20
+> On Friday, January 28, 2011 04:47:21 pm Maria Wikstr=C3=B6m wrote:
+> > fre 2011-01-28 klockan 03:54 +0100 skrev Johannes Hirte:
+> > > On Friday 28 January 2011 02:26:43 Zhong, Xin wrote:
+> > > > Please try the fix in below link:
+> > > > http://www.spinics.net/lists/linux-btrfs/msg08051.html
+> > > >=20
+> > > > Thanks!
+> > >=20
+> > > This doesn't fix it for me. At least there is a difference. Where=
+as the
+> > > svn process started consuming 100% CPU without any further intera=
+ction
+> > > before, the system just hang now. The svn process starts eating t=
+he CPU
+> > > when I cancel the emerge via ctrl-c. Additional I see a flush-btr=
+fs task
+> > > now consuming CPU time.
+> > >=20
+> > > regards,
+> > >=20
+> > >   Johannes
+> > >=20
+> > > --
+> > > To unsubscribe from this list: send the line "unsubscribe linux-b=
+trfs" in
+> > > the body of a message to majordomo@vger.kernel.org
+> > > More majordomo info at  http://vger.kernel.org/majordomo-info.htm=
+l
+> >=20
+> > The patch makes the process exit cleanly but complains that there i=
+s no
+> > space left. It should be a few GB but it is only a few MB!? I delet=
+e 5GB
+> > and controls that the space is usable. Try again but this time it a=
+lmost
+> > hangs the system, I can blink the leds and move the mouse but notin=
+g
+> > more.
+> > I boot 2.6.36.1 and use a snapshot as root, "emerge libgcrypt" comp=
+iles
+> > and installs fine. Boots back into 2.6.37 and try again and the sys=
+tem
+> > hangs again.
+> >=20
+> > // Maria
+> >=20
+>=20
+> Hi Maria,
+> I had something similar with vanilla 2.6.37 just for running:
+> cscope -R -b -q
+>=20
+> allways hang complety the process, only solution reboot.
+> I just applied the  btrfs patches that arrived in the main tree betwe=
+en the=20
+> 2.6.37 and 2.6.38-rc1 and they seem to fix the issue.
+>=20
+> I did not have the time to try to found which patch fixed the problem=
+=2E
+>=20
+> Hope this could help you.
+>=20
+> Cheers,
+>   //Rui
 
-On Wed, 26 Jan 2011 08:40:00 PM Helmut Hullen wrote:
+I have tried with both vanilla 2.6.38-rc2 and btrfs-unstable from git,
+both having the problem.=20
 
-> Yesterday I reported a similar problem in this mailing list, in the =20
-> thread "version".
+Btrfs-unstable with the patch above behaves differently. The process ca=
+n
+be killed with Ctrl + C but then the terminal and gnome-pty-helper eats
+cpu instead. They can be killed with SysRq + i together with everything
+else.
 
-I think that might have been a slightly different issue, but
-I'd guess there would be no harm in trying Yan Zheng's patch!
+// Maria
 
-cheers,
-Chris
-=2D-=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
 
-This email may come with a PGP signature as a file. Do not panic.
-=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
-
---nextPart7497575.9pTrNCH8Ub
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iQEVAwUATUPyRI1yjaOTJg85AQIOtAf7B/5ozQN3QDEuaaMI8NnpSu7xoTPJagLM
-7ieXjUbmOin0ChaDloV2LAFZMsh+3irMp0sDiy9LItrzY2oGOm1hrO3mVVogrDsU
-8eiG/isMX/i934zAUf83jq5lCXDDS7Vcolmbp9RuD704u7FGew3oNROtmvLIsV4L
-4p3xEX+BPPn/DICsf4QWsT0h6F9LyBItsVBLi6VUPno3rJgh3xTZcatIfJGYD+K7
-E/5UnoR5ChswxV0pWKYotzQlwBVRc4L4MYopnj3JbY35yDGazdLVOHHcYYPOsN4s
-MR9LKTLazpu7Px764rhQXlDHCfWejtiaXKgQxIl4gBBFKrCu5gPX9g==
-=1k80
------END PGP SIGNATURE-----
-
---nextPart7497575.9pTrNCH8Ub--
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

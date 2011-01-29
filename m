@@ -1,55 +1,53 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: fix some memory leak issues
-Date: Fri, 28 Jan 2011 17:08:42 -0500
-Message-ID: <1296252522-3260-1-git-send-email-josef@redhat.com>
+From: Chris Samuel <chris@csamuel.org>
+Subject: Re: Kernel error during btrfs balance
+Date: Sat, 29 Jan 2011 21:56:04 +1100
+Message-ID: <201101292156.06695.chris@csamuel.org>
+References: <Bear5K9y1uB@helmut.hullen.de>
+Mime-Version: 1.0
+Content-Type: multipart/signed;
+  boundary="nextPart7497575.9pTrNCH8Ub";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <Bear5K9y1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-My reworking of file.c left a few memory leaks, this patch fixes these up.
-Really these are places where before the rework we just BUG()'ed anyway, so it's
-not that bad :).  Thanks,
+--nextPart7497575.9pTrNCH8Ub
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/file.c |    7 ++++++-
- 1 files changed, 6 insertions(+), 1 deletions(-)
+On Wed, 26 Jan 2011 08:40:00 PM Helmut Hullen wrote:
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 416eee8..8dba070 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -876,8 +876,10 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 		pinned[0] = grab_cache_page(inode->i_mapping, first_index);
- 		if (!PageUptodate(pinned[0])) {
- 			ret = btrfs_readpage(NULL, pinned[0]);
--			if (ret)
-+			if (ret) {
-+				kfree(pages);
- 				return ret;
-+			}
- 			wait_on_page_locked(pinned[0]);
- 		} else {
- 			unlock_page(pinned[0]);
-@@ -891,6 +893,7 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 			if (ret) {
- 				if (pinned[0])
- 					page_cache_release(pinned[0]);
-+				kfree(pages);
- 				return ret;
- 			}
- 			wait_on_page_locked(pinned[1]);
-@@ -965,8 +968,10 @@ again:
- 						      dirty_pages, pos,
- 						      copied);
- 			if (ret) {
-+				WARN_ON(1);
- 				btrfs_delalloc_release_space(inode,
- 					dirty_pages << PAGE_CACHE_SHIFT);
-+				btrfs_drop_pages(pages, num_pages);
- 				break;
- 			}
- 		}
--- 
-1.7.2.3
+> Yesterday I reported a similar problem in this mailing list, in the =20
+> thread "version".
 
+I think that might have been a slightly different issue, but
+I'd guess there would be no harm in trying Yan Zheng's patch!
+
+cheers,
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+
+This email may come with a PGP signature as a file. Do not panic.
+=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
+
+--nextPart7497575.9pTrNCH8Ub
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iQEVAwUATUPyRI1yjaOTJg85AQIOtAf7B/5ozQN3QDEuaaMI8NnpSu7xoTPJagLM
+7ieXjUbmOin0ChaDloV2LAFZMsh+3irMp0sDiy9LItrzY2oGOm1hrO3mVVogrDsU
+8eiG/isMX/i934zAUf83jq5lCXDDS7Vcolmbp9RuD704u7FGew3oNROtmvLIsV4L
+4p3xEX+BPPn/DICsf4QWsT0h6F9LyBItsVBLi6VUPno3rJgh3xTZcatIfJGYD+K7
+E/5UnoR5ChswxV0pWKYotzQlwBVRc4L4MYopnj3JbY35yDGazdLVOHHcYYPOsN4s
+MR9LKTLazpu7Px764rhQXlDHCfWejtiaXKgQxIl4gBBFKrCu5gPX9g==
+=1k80
+-----END PGP SIGNATURE-----
+
+--nextPart7497575.9pTrNCH8Ub--

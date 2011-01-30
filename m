@@ -1,70 +1,24 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: btrfs crashes
-Date: 29 Jan 2011 20:30:00 +0100
-Message-ID: <BemzWR+y1uB@helmut.hullen.de>
-Reply-To: helmut@hullen.de
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH 00/12] Btrfs: Some bug fixes
+Date: Sun, 30 Jan 2011 18:48:41 -0500
+Message-ID: <1296431275-sup-1246@think>
+References: <4D412FE6.7050101@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <4D412FE6.7050101@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, linux-btrfs,
+Excerpts from Li Zefan's message of 2011-01-27 03:42:14 -0500:
+> Hi Chris,
+> 
+> Those patches (except the last two) have been sent to the mailing list
+> before, and they fix real bugs (but not critical bugs). Please consider
+> queue them for 2.6.38.
 
-for some hours I was happy ...
+Thanks, I've got these along with more from Josef and some others from
+the list.  They have been running all weekend with good results, so I'll
+send out the pull request on Monday.
 
-   mkfs.btrfs /dev/sde1
-   mount /dev/sde1 /mnt/btr
-   <copy about 1.5 TByte>
-   btrfs device add /dev/sdd1
-   <copy about 0.8 TByte>
-
-led to
-
-
-# btrfs filesystem show
-Label: 'MM2'  uuid: 7400b83c-f3dd-477c-bbf4-7429863a7ef9
-	Total devices 2 FS bytes used 2.25TB
-	devid    1 size 1.81TB used 1.51TB path /dev/sde1
-	devid    2 size 1.82TB used 760.50GB path /dev/sdd1
-
-Btrfs Btrfs v0.19
-
-# btrfs filesystem df /srv/MM
-Data: total=2.25TB, used=2.24TB
-System, DUP: total=8.00MB, used=260.00KB
-System: total=4.00MB, used=0.00
-Metadata, DUP: total=5.00GB, used=3.53GB
-Metadata: total=8.00MB, used=0.00
-
-# df -t btrfs
-Filesystem    Type   1K-blocks      Used Available Use% Mounted on
-/dev/sde1    btrfs   3898172184 2416726548 1478325628  63% /srv/MM
-
-# fdisk -l
-/dev/sde1               1      242600  1948684468+  83  Linux
-/dev/sdd1               1      242700  1949487718+  83  Linux
-
-# --------------------------------------
-
-All seemed to work well. No "no space left ...".
-
-Then I shut down the machine and started it again the next day.
-
-        btrfs filesystem show
-
-showed the 2 devices.
-
-        mount LABEL=MM2 /mnt/btr
-
-and the system crashed with blinkenlights.
-
-What goes wrong?
-
-How can I restore the data?
-I have a backup, but I prefer reanimating the 2 btrfs partitions.
-
-Kernel 2.6.37
-
-Viele Gruesse!
-Helmut
+-chris

@@ -1,188 +1,169 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: convert to the new truncate sequence
-Date: Mon, 31 Jan 2011 15:50:26 -0500
-Message-ID: <1296507026-26230-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: cleanup error handling in the truncate path
+Date: Mon, 31 Jan 2011 16:04:23 -0500
+Message-ID: <1296507863-26583-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-->truncate() is going away, instead all of the work needs to be done in
-->setattr().  So this converts us over to do this.  It's fairly straightforward,
-just get rid of our .truncate inode operation and call btrfs_truncate() directly
-from btrfs_setsize.  This works out better for us since truncate can technically
-return ENOSPC, and before we had no way of letting anybody know.  Thanks,
+Now that we can handle having errors in the truncate path lets make sure we
+return errors instead of doing BUG_ON() and such.  Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/inode.c |   75 +++++++++++++++++++++++-------------------------------
- 1 files changed, 32 insertions(+), 43 deletions(-)
+ fs/btrfs/inode.c |   61 +++++++++++++++++++++++++++++++++++++----------------
+ 1 files changed, 42 insertions(+), 19 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 2808d0b..77645948 100644
+index 77645948..596bf64 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -84,7 +84,8 @@ static unsigned char btrfs_type_by_mode[S_IFMT >> S_SHIFT] = {
- 	[S_IFLNK >> S_SHIFT]	= BTRFS_FT_SYMLINK,
- };
+@@ -3586,13 +3586,15 @@ int btrfs_cont_expand(struct inode *inode, loff_t size)
+ 			err = btrfs_drop_extents(trans, inode, cur_offset,
+ 						 cur_offset + hole_size,
+ 						 &hint_byte, 1);
+-			BUG_ON(err);
++			if (err)
++				break;
  
--static void btrfs_truncate(struct inode *inode);
-+static int btrfs_setsize(struct inode *inode, loff_t newsize);
-+static int btrfs_truncate(struct inode *inode);
- static int btrfs_finish_ordered_io(struct inode *inode, u64 start, u64 end);
- static noinline int cow_file_range(struct inode *inode,
- 				   struct page *locked_page,
-@@ -2365,7 +2366,9 @@ void btrfs_orphan_cleanup(struct btrfs_root *root)
- 		/* if we have links, this was a truncate, lets do that */
- 		if (inode->i_nlink) {
- 			nr_truncate++;
--			btrfs_truncate(inode);
-+			mutex_lock(&inode->i_mutex);
-+			btrfs_setsize(inode, i_size_read(inode));
-+			mutex_unlock(&inode->i_mutex);
- 		} else {
- 			nr_unlink++;
- 		}
-@@ -3609,27 +3612,17 @@ int btrfs_cont_expand(struct inode *inode, loff_t size)
- 	return err;
- }
+ 			err = btrfs_insert_file_extent(trans, root,
+ 					inode->i_ino, cur_offset, 0,
+ 					0, hole_size, 0, hole_size,
+ 					0, 0, 0);
+-			BUG_ON(err);
++			if (err)
++				break;
  
--static int btrfs_setattr_size(struct inode *inode, struct iattr *attr)
-+static int btrfs_setsize(struct inode *inode, loff_t newsize)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_trans_handle *trans;
-+	loff_t oldsize = i_size_read(inode);
- 	unsigned long nr;
- 	int ret;
+ 			btrfs_drop_extent_cache(inode, hole_start,
+ 					last_byte - 1, 0);
+@@ -3630,7 +3632,10 @@ static int btrfs_setsize(struct inode *inode, loff_t newsize)
+ 	btrfs_set_trans_block_group(trans, inode);
  
--	if (attr->ia_size == inode->i_size)
-+	if (newsize == oldsize)
- 		return 0;
+ 	ret = btrfs_orphan_add(trans, inode);
+-	BUG_ON(ret);
++	if (ret) {
++		btrfs_end_transaction(trans, root);
++		return ret;
++	}
  
--	if (attr->ia_size > inode->i_size) {
--		unsigned long limit;
--		limit = current->signal->rlim[RLIMIT_FSIZE].rlim_cur;
--		if (attr->ia_size > inode->i_sb->s_maxbytes)
--			return -EFBIG;
--		if (limit != RLIM_INFINITY && attr->ia_size > limit) {
--			send_sig(SIGXFSZ, current, 0);
--			return -EFBIG;
--		}
--	}
--
- 	trans = btrfs_start_transaction(root, 5);
- 	if (IS_ERR(trans))
- 		return PTR_ERR(trans);
-@@ -3643,16 +3636,16 @@ static int btrfs_setattr_size(struct inode *inode, struct iattr *attr)
+ 	nr = trans->blocks_used;
  	btrfs_end_transaction(trans, root);
- 	btrfs_btree_balance_dirty(root, nr);
- 
--	if (attr->ia_size > inode->i_size) {
--		ret = btrfs_cont_expand(inode, attr->ia_size);
-+	if (newsize > oldsize) {
-+		i_size_write(inode, newsize);
-+		btrfs_ordered_update_i_size(inode, i_size_read(inode), NULL);
-+		truncate_pagecache(inode, oldsize, newsize);
-+		ret = btrfs_cont_expand(inode, newsize);
- 		if (ret) {
--			btrfs_truncate(inode);
-+			btrfs_setsize(inode, oldsize);
- 			return ret;
+@@ -3647,17 +3652,24 @@ static int btrfs_setsize(struct inode *inode, loff_t newsize)
  		}
  
--		i_size_write(inode, attr->ia_size);
--		btrfs_ordered_update_i_size(inode, inode->i_size, NULL);
--
  		trans = btrfs_start_transaction(root, 0);
- 		BUG_ON(IS_ERR(trans));
+-		BUG_ON(IS_ERR(trans));
++		if (IS_ERR(trans))
++			return PTR_ERR(trans);
++
  		btrfs_set_trans_block_group(trans, inode);
-@@ -3668,22 +3661,22 @@ static int btrfs_setattr_size(struct inode *inode, struct iattr *attr)
+ 		trans->block_rsv = root->orphan_block_rsv;
+ 		BUG_ON(!trans->block_rsv);
+ 
++		/*
++		 * If this fails just leave the orphan item so that it can get
++		 * cleaned up next time we mount.
++		 */
+ 		ret = btrfs_update_inode(trans, root, inode);
+-		BUG_ON(ret);
+-		if (inode->i_nlink > 0) {
+-			ret = btrfs_orphan_del(trans, inode);
+-			BUG_ON(ret);
++		if (ret) {
++			btrfs_end_transaction(trans, root);
++			return ret;
+ 		}
++		if (inode->i_nlink > 0)
++			ret = btrfs_orphan_del(trans, inode);
  		nr = trans->blocks_used;
  		btrfs_end_transaction(trans, root);
  		btrfs_btree_balance_dirty(root, nr);
--		return 0;
--	}
-+	} else {
- 
--	/*
--	 * We're truncating a file that used to have good data down to
--	 * zero. Make sure it gets into the ordered flush list so that
--	 * any new writes get down to disk quickly.
--	 */
--	if (attr->ia_size == 0)
--		BTRFS_I(inode)->ordered_data_close = 1;
-+		/*
-+		 * We're truncating a file that used to have good data down to
-+		 * zero. Make sure it gets into the ordered flush list so that
-+		 * any new writes get down to disk quickly.
-+		 */
-+		if (newsize == 0)
-+			BTRFS_I(inode)->ordered_data_close = 1;
- 
--	/* we don't support swapfiles, so vmtruncate shouldn't fail */
--	ret = vmtruncate(inode, attr->ia_size);
--	BUG_ON(ret);
-+		/* we don't support swapfiles, so vmtruncate shouldn't fail */
-+		truncate_setsize(inode, newsize);
-+		ret = btrfs_truncate(inode);
-+	}
- 
--	return 0;
-+	return ret;
- }
- 
- static int btrfs_setattr(struct dentry *dentry, struct iattr *attr)
-@@ -3700,7 +3693,7 @@ static int btrfs_setattr(struct dentry *dentry, struct iattr *attr)
- 		return err;
- 
- 	if (S_ISREG(inode->i_mode) && (attr->ia_valid & ATTR_SIZE)) {
--		err = btrfs_setattr_size(inode, attr);
-+		err = btrfs_setsize(inode, attr->ia_size);
- 		if (err)
- 			return err;
- 	}
-@@ -6341,7 +6334,7 @@ out:
- 	return ret;
- }
- 
--static void btrfs_truncate(struct inode *inode)
-+static int btrfs_truncate(struct inode *inode)
+@@ -6338,6 +6350,7 @@ static int btrfs_truncate(struct inode *inode)
  {
  	struct btrfs_root *root = BTRFS_I(inode)->root;
  	int ret;
-@@ -6349,14 +6342,9 @@ static void btrfs_truncate(struct inode *inode)
++	int err = 0;
+ 	struct btrfs_trans_handle *trans;
  	unsigned long nr;
  	u64 mask = root->sectorsize - 1;
- 
--	if (!S_ISREG(inode->i_mode)) {
--		WARN_ON(1);
--		return;
--	}
--
- 	ret = btrfs_truncate_page(inode->i_mapping, inode->i_size);
- 	if (ret)
--		return;
-+		return ret;
- 
- 	btrfs_wait_ordered_range(inode, inode->i_size & (~mask), (u64)-1);
+@@ -6350,7 +6363,8 @@ static int btrfs_truncate(struct inode *inode)
  	btrfs_ordered_update_i_size(inode, inode->i_size, NULL);
-@@ -6431,6 +6419,8 @@ static void btrfs_truncate(struct inode *inode)
+ 
+ 	trans = btrfs_start_transaction(root, 0);
+-	BUG_ON(IS_ERR(trans));
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
+ 	btrfs_set_trans_block_group(trans, inode);
+ 	trans->block_rsv = root->orphan_block_rsv;
+ 
+@@ -6377,17 +6391,18 @@ static int btrfs_truncate(struct inode *inode)
+ 	while (1) {
+ 		if (!trans) {
+ 			trans = btrfs_start_transaction(root, 0);
+-			BUG_ON(IS_ERR(trans));
++			if (IS_ERR(trans))
++				return PTR_ERR(trans);
+ 			btrfs_set_trans_block_group(trans, inode);
+ 			trans->block_rsv = root->orphan_block_rsv;
+ 		}
+ 
+ 		ret = btrfs_block_rsv_check(trans, root,
+ 					    root->orphan_block_rsv, 0, 5);
+-		if (ret) {
+-			BUG_ON(ret != -EAGAIN);
++		if (ret == -EAGAIN) {
+ 			ret = btrfs_commit_transaction(trans, root);
+-			BUG_ON(ret);
++			if (ret)
++				return ret;
+ 			trans = NULL;
+ 			continue;
+ 		}
+@@ -6395,11 +6410,16 @@ static int btrfs_truncate(struct inode *inode)
+ 		ret = btrfs_truncate_inode_items(trans, root, inode,
+ 						 inode->i_size,
+ 						 BTRFS_EXTENT_DATA_KEY);
+-		if (ret != -EAGAIN)
++		if (ret != -EAGAIN) {
++			err = ret;
+ 			break;
++		}
+ 
+ 		ret = btrfs_update_inode(trans, root, inode);
+-		BUG_ON(ret);
++		if (ret) {
++			err = ret;
++			break;
++		}
+ 
+ 		nr = trans->blocks_used;
+ 		btrfs_end_transaction(trans, root);
+@@ -6409,18 +6429,21 @@ static int btrfs_truncate(struct inode *inode)
+ 
+ 	if (ret == 0 && inode->i_nlink > 0) {
+ 		ret = btrfs_orphan_del(trans, inode);
+-		BUG_ON(ret);
++		if (ret)
++			err = ret;
+ 	}
+ 
+ 	ret = btrfs_update_inode(trans, root, inode);
+-	BUG_ON(ret);
++	if (ret && !err)
++		err = ret;
+ 
+ 	nr = trans->blocks_used;
  	ret = btrfs_end_transaction_throttle(trans, root);
- 	BUG_ON(ret);
+-	BUG_ON(ret);
++	if (ret && !err)
++		err = ret;
  	btrfs_btree_balance_dirty(root, nr);
-+
-+	return ret;
+ 
+-	return ret;
++	return err;
  }
  
  /*
-@@ -7230,7 +7220,6 @@ static const struct address_space_operations btrfs_symlink_aops = {
- };
- 
- static const struct inode_operations btrfs_file_inode_operations = {
--	.truncate	= btrfs_truncate,
- 	.getattr	= btrfs_getattr,
- 	.setattr	= btrfs_setattr,
- 	.setxattr	= btrfs_setxattr,
 -- 
 1.7.2.3
 

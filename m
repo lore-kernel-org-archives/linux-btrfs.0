@@ -1,129 +1,188 @@
-From: Sander <sander@humilis.net>
-Subject: Re: flush-btrfs-1 hangs when building openwrt
-Date: Mon, 31 Jan 2011 12:40:51 +0100
-Message-ID: <20110131114051.GA11121@attic.humilis.net>
-References: <4D3E8EF5.1050008@poelzi.org>
- <20110131105254.GA23422@attic.humilis.net>
- <AANLkTiku-tRxDd7qJZcUUjynvD0Vv7q6B8zZwpDmCRyC@mail.gmail.com>
- <20110131111818.GA4090@attic.humilis.net>
- <AANLkTi=e2+HEo7hSN9rudjCufV23UX9rsoGPe9HY=Mjz@mail.gmail.com>
-Reply-To: sander@humilis.net
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: sander@humilis.net, Daniel Poelzleithner <poelzi@poelzi.org>,
-	linux-btrfs@vger.kernel.org
-To: cwillu <cwillu@cwillu.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: convert to the new truncate sequence
+Date: Mon, 31 Jan 2011 15:50:26 -0500
+Message-ID: <1296507026-26230-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=e2+HEo7hSN9rudjCufV23UX9rsoGPe9HY=Mjz@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-cwillu wrote (ao):
-> On Mon, Jan 31, 2011 at 5:18 AM, Sander <sander@humilis.net> wrote:
-> > cwillu wrote (ao):
-> >> On Mon, Jan 31, 2011 at 4:52 AM, Sander <sander@humilis.net> wrote:
-> >> > It started with hanging jobs on the backup disk. I stopped cron and
-> >> > could kill most of the jobs. Some are still hanging though.
-> >> >
-> >> > Since then (uptime 12 days) I see hanging procmail processes, and an
-> >> > apt-get upgrade last week gave an unkillable dpkg process. All these have
-> >> > nothing to do with the backup disk. CPU is maxed out:
-> >> >
-> >> > top - 11:49:54 up 12 days, ?1:19, 31 users, ?load average: 13.54, 13.41, 13.36
-> >> > Tasks: 201 total, ?13 running, 187 sleeping, ? 0 stopped, ? 1 zombie
-> >> > Cpu(s): 41.5%us, 58.5%sy, ?0.0%ni, ?0.0%id, ?0.0%wa, ?0.0%hi, ?0.0%si, ?0.0%st
-> >> > Mem: ? ?515004k total, ? 400824k used, ? 114180k free, ? ? ? 28k buffers
-> >> > Swap: ?4302560k total, ? 173988k used, ?4128572k free, ? 202948k cached
-> >> >
-> >> > ?PID USER ? ? ?PR ?NI ?VIRT ?RES ?SHR S %CPU %MEM ? ?TIME+ ?COMMAND
-> >> > ?1592 ookhoi ? ?20 ? 0 ?2716 ?456 ?348 S ?1.9 ?0.1 ?25:17.42 showNewMail2
-> >> > ?6761 ookhoi ? ?20 ? 0 ?2736 1000 ?704 S ?1.3 ?0.2 ?61:21.93 top
-> >> > 27609 ookhoi ? ?20 ? 0 ?2736 1264 ?936 R ?1.3 ?0.2 ? 0:01.06 top
-> >> > 30678 ookhoi ? ?20 ? 0 ?2736 ?892 ?584 S ?1.3 ?0.2 ?91:37.75 top
-> >> > ?6036 ookhoi ? ?39 ?19 ?2692 ? 64 ? 52 R ?1.0 ?0.0 869:46.32 procmail
-> >> > 11373 ookhoi ? ?39 ?19 ?4800 ? 64 ? 52 R ?1.0 ?0.0 714:25.88 procmail
-> >> > 18871 root ? ? ?39 ?19 ?2540 ? 32 ? 20 R ?1.0 ?0.0 ? 1528:51 lzop
-> >> > 18894 ookhoi ? ?39 ?19 ?2692 ? 64 ? 52 R ?1.0 ?0.0 611:16.18 procmail
-> >> > 20305 ookhoi ? ?39 ?19 ?2692 ? 68 ? 56 R ?1.0 ?0.0 610:51.97 procmail
-> >> > 20378 ookhoi ? ?39 ?19 ?2692 ? 68 ? 56 R ?1.0 ?0.0 610:50.75 procmail
-> >> > 23661 ookhoi ? ?39 ?19 ?2692 ? 80 ? 68 R ?1.0 ?0.0 ? 1308:23 procmail
-> >> > 25091 root ? ? ?20 ? 0 ? ? 0 ? ?0 ? ?0 S ?1.0 ?0.0 ? 0:25.63 flush-btrfs-2
-> >> > 26409 root ? ? ?39 ?19 ?2264 ? 32 ? 28 R ?1.0 ?0.0 ? 1526:42 mv
-> >> > 27606 ookhoi ? ?39 ?19 ?9084 ? 40 ? 28 R ?1.0 ?0.0 ? 3637:39 procmail
-> >> > 27910 root ? ? ?39 ?19 15096 3756 ?304 R ?1.0 ?0.7 638:46.62 dpkg
-> >> > 11804 ookhoi ? ?39 ?19 ?4700 ? 64 ? 52 R ?0.6 ?0.0 714:08.67 procmail
-> >> > ? ?3 root ? ? ?20 ? 0 ? ? 0 ? ?0 ? ?0 R ?0.3 ?0.0 ? 9:39.76 ksoftirqd/0
-> >> >
-> >> >
-> >> > What can I do to provide more info?
-> >>
-> >> alt-sysrq-w, and then the dmesg output, which will contain then a
-> >> backtrace for every blocked process.
-> >
-> > Thanks cwillu.
-> >
-> > Seems only two processes. And these are related to the backup disk
-> > (which might or might not be broken: can't access it anymore).
-> >
-> > Nothing to do with the procmail and dpkg processes.
-> >
-> >
-> > [1042949.513831] SysRq : Show Blocked State
-> > [1042949.517776] ? task ? ? ? ? ? ? ? ?PC stack ? pid father
-> > [1042949.523247] cat ? ? ? ? ? D c0475dd0 ? ? 0 30063 ? ? ?1 0x00000001
-> > [1042949.529668] [<c0475dd0>] (schedule+0x344/0x398) from [<c04764ec>] (__mutex_lock_slowpath+0x64/0x88)
-> > [1042949.538943] [<c04764ec>] (__mutex_lock_slowpath+0x64/0x88) from [<c01af0e8>] (do_lookup+0x90/0x128)
-> > [1042949.548209] [<c01af0e8>] (do_lookup+0x90/0x128) from [<c01b03f4>] (do_last+0x198/0x5b8)
-> > [1042949.556432] [<c01b03f4>] (do_last+0x198/0x5b8) from [<c01b20f8>] (do_filp_open+0x168/0x49c)
-> > [1042949.565004] [<c01b20f8>] (do_filp_open+0x168/0x49c) from [<c01a555c>] (do_sys_open+0x58/0x11c)
-> > [1042949.573838] [<c01a555c>] (do_sys_open+0x58/0x11c) from [<c0136ee0>] (ret_fast_syscall+0x0/0x2c)
-> > [1042949.582750] cat ? ? ? ? ? D c0475dd0 ? ? 0 ?4591 ? ? ?1 0x00000001
-> > [1042949.589152] [<c0475dd0>] (schedule+0x344/0x398) from [<c04764ec>] (__mutex_lock_slowpath+0x64/0x88)
-> > [1042949.598418] [<c04764ec>] (__mutex_lock_slowpath+0x64/0x88) from [<c01af0e8>] (do_lookup+0x90/0x128)
-> > [1042949.607687] [<c01af0e8>] (do_lookup+0x90/0x128) from [<c01b03f4>] (do_last+0x198/0x5b8)
-> > [1042949.615910] [<c01b03f4>] (do_last+0x198/0x5b8) from [<c01b20f8>] (do_filp_open+0x168/0x49c)
-> > [1042949.624482] [<c01b20f8>] (do_filp_open+0x168/0x49c) from [<c01a555c>] (do_sys_open+0x58/0x11c)
-> > [1042949.633315] [<c01a555c>] (do_sys_open+0x58/0x11c) from [<c0136ee0>] (ret_fast_syscall+0x0/0x2c)
-> 
-> dpkg and procmail were just showing up for you in top because it was
-> sorting by memory usage, which isn't what we were looking for here.
+->truncate() is going away, instead all of the work needs to be done in
+->setattr().  So this converts us over to do this.  It's fairly straightforward,
+just get rid of our .truncate inode operation and call btrfs_truncate() directly
+from btrfs_setsize.  This works out better for us since truncate can technically
+return ENOSPC, and before we had no way of letting anybody know.  Thanks,
 
-It was not. The CPU numbers were low due to a 'find' which consumes a
-lot now and then. This one shows better:
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/inode.c |   75 +++++++++++++++++++++++-------------------------------
+ 1 files changed, 32 insertions(+), 43 deletions(-)
 
-top - 12:32:22 up 12 days,  2:01, 32 users,  load average: 13.48, 13.37, 13.39
-Tasks: 199 total,  12 running, 186 sleeping,   0 stopped,   1 zombie
-Cpu(s):  0.0%us, 75.4%sy,  0.0%ni, 24.6%id,  0.0%wa,  0.0%hi,  0.0%si,  0.0%st
-Mem:    515004k total,   366200k used,   148804k free,       28k buffers
-Swap:  4302560k total,   174188k used,  4128372k free,   170124k cached
-
-  PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
-11804 ookhoi    39  19  4700   64   52 R  8.8  0.0 717:10.30 procmail
- 6036 ookhoi    39  19  2692   64   52 R  8.5  0.0 872:47.95 procmail
-18871 root      39  19  2540   32   20 R  8.5  0.0   1531:53 lzop
-20305 ookhoi    39  19  2692   68   56 R  8.5  0.0 613:53.59 procmail
-20378 ookhoi    39  19  2692   68   56 R  8.5  0.0 613:52.37 procmail
-23661 ookhoi    39  19  2692   80   68 R  8.5  0.0   1311:24 procmail
-27910 root      39  19 15096 3748  304 R  8.5  0.7 641:48.25 dpkg
-11373 ookhoi    39  19  4800   64   52 R  8.2  0.0 717:27.50 procmail
-18894 ookhoi    39  19  2692   64   52 R  8.2  0.0 614:17.80 procmail
-26409 root      39  19  2264   32   28 R  8.2  0.0   1529:44 mv
-27606 ookhoi    39  19  9084   40   28 R  8.2  0.0   3640:41 procmail
-11120 root      20   0     0    0    0 S  5.6  0.0   0:02.94 flush-btrfs-2
-
-
-> In your case, the blocking is almost certainly due to your failing
-> disk.
-
-Also for procmail and dpkg? Which do not operate on the disk that seems
-to fail, and is located under /holding/ ?
-
-Anyway, I'll reboot the machine this afternoon with the suspect disk
-removed.
-
-Thanks again for your reply cwillu.
-
-	Sander
-
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 2808d0b..77645948 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -84,7 +84,8 @@ static unsigned char btrfs_type_by_mode[S_IFMT >> S_SHIFT] = {
+ 	[S_IFLNK >> S_SHIFT]	= BTRFS_FT_SYMLINK,
+ };
+ 
+-static void btrfs_truncate(struct inode *inode);
++static int btrfs_setsize(struct inode *inode, loff_t newsize);
++static int btrfs_truncate(struct inode *inode);
+ static int btrfs_finish_ordered_io(struct inode *inode, u64 start, u64 end);
+ static noinline int cow_file_range(struct inode *inode,
+ 				   struct page *locked_page,
+@@ -2365,7 +2366,9 @@ void btrfs_orphan_cleanup(struct btrfs_root *root)
+ 		/* if we have links, this was a truncate, lets do that */
+ 		if (inode->i_nlink) {
+ 			nr_truncate++;
+-			btrfs_truncate(inode);
++			mutex_lock(&inode->i_mutex);
++			btrfs_setsize(inode, i_size_read(inode));
++			mutex_unlock(&inode->i_mutex);
+ 		} else {
+ 			nr_unlink++;
+ 		}
+@@ -3609,27 +3612,17 @@ int btrfs_cont_expand(struct inode *inode, loff_t size)
+ 	return err;
+ }
+ 
+-static int btrfs_setattr_size(struct inode *inode, struct iattr *attr)
++static int btrfs_setsize(struct inode *inode, loff_t newsize)
+ {
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_trans_handle *trans;
++	loff_t oldsize = i_size_read(inode);
+ 	unsigned long nr;
+ 	int ret;
+ 
+-	if (attr->ia_size == inode->i_size)
++	if (newsize == oldsize)
+ 		return 0;
+ 
+-	if (attr->ia_size > inode->i_size) {
+-		unsigned long limit;
+-		limit = current->signal->rlim[RLIMIT_FSIZE].rlim_cur;
+-		if (attr->ia_size > inode->i_sb->s_maxbytes)
+-			return -EFBIG;
+-		if (limit != RLIM_INFINITY && attr->ia_size > limit) {
+-			send_sig(SIGXFSZ, current, 0);
+-			return -EFBIG;
+-		}
+-	}
+-
+ 	trans = btrfs_start_transaction(root, 5);
+ 	if (IS_ERR(trans))
+ 		return PTR_ERR(trans);
+@@ -3643,16 +3636,16 @@ static int btrfs_setattr_size(struct inode *inode, struct iattr *attr)
+ 	btrfs_end_transaction(trans, root);
+ 	btrfs_btree_balance_dirty(root, nr);
+ 
+-	if (attr->ia_size > inode->i_size) {
+-		ret = btrfs_cont_expand(inode, attr->ia_size);
++	if (newsize > oldsize) {
++		i_size_write(inode, newsize);
++		btrfs_ordered_update_i_size(inode, i_size_read(inode), NULL);
++		truncate_pagecache(inode, oldsize, newsize);
++		ret = btrfs_cont_expand(inode, newsize);
+ 		if (ret) {
+-			btrfs_truncate(inode);
++			btrfs_setsize(inode, oldsize);
+ 			return ret;
+ 		}
+ 
+-		i_size_write(inode, attr->ia_size);
+-		btrfs_ordered_update_i_size(inode, inode->i_size, NULL);
+-
+ 		trans = btrfs_start_transaction(root, 0);
+ 		BUG_ON(IS_ERR(trans));
+ 		btrfs_set_trans_block_group(trans, inode);
+@@ -3668,22 +3661,22 @@ static int btrfs_setattr_size(struct inode *inode, struct iattr *attr)
+ 		nr = trans->blocks_used;
+ 		btrfs_end_transaction(trans, root);
+ 		btrfs_btree_balance_dirty(root, nr);
+-		return 0;
+-	}
++	} else {
+ 
+-	/*
+-	 * We're truncating a file that used to have good data down to
+-	 * zero. Make sure it gets into the ordered flush list so that
+-	 * any new writes get down to disk quickly.
+-	 */
+-	if (attr->ia_size == 0)
+-		BTRFS_I(inode)->ordered_data_close = 1;
++		/*
++		 * We're truncating a file that used to have good data down to
++		 * zero. Make sure it gets into the ordered flush list so that
++		 * any new writes get down to disk quickly.
++		 */
++		if (newsize == 0)
++			BTRFS_I(inode)->ordered_data_close = 1;
+ 
+-	/* we don't support swapfiles, so vmtruncate shouldn't fail */
+-	ret = vmtruncate(inode, attr->ia_size);
+-	BUG_ON(ret);
++		/* we don't support swapfiles, so vmtruncate shouldn't fail */
++		truncate_setsize(inode, newsize);
++		ret = btrfs_truncate(inode);
++	}
+ 
+-	return 0;
++	return ret;
+ }
+ 
+ static int btrfs_setattr(struct dentry *dentry, struct iattr *attr)
+@@ -3700,7 +3693,7 @@ static int btrfs_setattr(struct dentry *dentry, struct iattr *attr)
+ 		return err;
+ 
+ 	if (S_ISREG(inode->i_mode) && (attr->ia_valid & ATTR_SIZE)) {
+-		err = btrfs_setattr_size(inode, attr);
++		err = btrfs_setsize(inode, attr->ia_size);
+ 		if (err)
+ 			return err;
+ 	}
+@@ -6341,7 +6334,7 @@ out:
+ 	return ret;
+ }
+ 
+-static void btrfs_truncate(struct inode *inode)
++static int btrfs_truncate(struct inode *inode)
+ {
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	int ret;
+@@ -6349,14 +6342,9 @@ static void btrfs_truncate(struct inode *inode)
+ 	unsigned long nr;
+ 	u64 mask = root->sectorsize - 1;
+ 
+-	if (!S_ISREG(inode->i_mode)) {
+-		WARN_ON(1);
+-		return;
+-	}
+-
+ 	ret = btrfs_truncate_page(inode->i_mapping, inode->i_size);
+ 	if (ret)
+-		return;
++		return ret;
+ 
+ 	btrfs_wait_ordered_range(inode, inode->i_size & (~mask), (u64)-1);
+ 	btrfs_ordered_update_i_size(inode, inode->i_size, NULL);
+@@ -6431,6 +6419,8 @@ static void btrfs_truncate(struct inode *inode)
+ 	ret = btrfs_end_transaction_throttle(trans, root);
+ 	BUG_ON(ret);
+ 	btrfs_btree_balance_dirty(root, nr);
++
++	return ret;
+ }
+ 
+ /*
+@@ -7230,7 +7220,6 @@ static const struct address_space_operations btrfs_symlink_aops = {
+ };
+ 
+ static const struct inode_operations btrfs_file_inode_operations = {
+-	.truncate	= btrfs_truncate,
+ 	.getattr	= btrfs_getattr,
+ 	.setattr	= btrfs_setattr,
+ 	.setxattr	= btrfs_setxattr,
 -- 
-Humilis IT Services and Solutions
-http://www.humilis.net
+1.7.2.3
+

@@ -1,74 +1,119 @@
 From: cwillu <cwillu@cwillu.com>
-Subject: BUG at inode.c:150 under 2.6.38rc2 + 9d4ba5: handle errors in btrfs_orphan_cleanup
-Date: Tue, 1 Feb 2011 23:37:46 -0600
-Message-ID: <AANLkTikhL0j5Hpq2sAN6qT30+KqWzeLB8g46NgxAfSWL@mail.gmail.com>
+Subject: Re: Intermittent ENOSPC in 2.6.38rc2 (BUG linux/fs/btrfs/inode.c:1759)
+Date: Tue, 1 Feb 2011 23:41:41 -0600
+Message-ID: <AANLkTimJA+cT7LvtwTuWBroQA5GVv8HvTcGO7g=PGsqw@mail.gmail.com>
+References: <AANLkTim5AK5ej9chxZu2TFFOEPL5S62+d+ABVOWucodx@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Samuel <chris@csamuel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTim5AK5ej9chxZu2TFFOEPL5S62+d+ABVOWucodx@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A couple hours after a build finished involving creating and deleting
-a couple snapshots, I got the following BUG.  The system locked up
-completely.
+On Mon, Jan 31, 2011 at 4:42 AM, cwillu <cwillu@cwillu.com> wrote:
+> On Sun, Jan 30, 2011 at 11:18 PM, cwillu <cwillu@cwillu.com> wrote:
+>> Another one, with the process running on a btrfs chroot instead of t=
+mpfs:
+>>
+>>
+>> [12350.410412] ------------[ cut here ]------------
+>> [12350.420001] kernel BUG at /home/kernel-ppa/COD/linux/fs/btrfs/ino=
+de.c:1759!
+>> [12350.420001] invalid opcode: 0000 [#1] SMP
+>> [12350.420001] last sysfs file:
+>> /sys/devices/pci0000:00/0000:00:1f.2/host2/target2:0:0/2:0:0:0/block=
+/sda/sda3/alignment_offset
+>> [12350.420001] CPU 3
+>> [12350.420001] Modules linked in: binfmt_misc ppdev ipt_MASQUERADE
+>> iptable_nat nf_nat nf_conntrack_ipv4 nf_defrag_ipv4 xt_state
+>> nf_conntrack ipt_REJECT xt_tcpudp iptable_filter ip_tables x_tables
+>> bridge stp aes_x86_64 snd_hda_codec_realtek aes_generic dm_crypt
+>> snd_hda_intel snd_hda_codec lp snd_hwdep snd_pcm snd_seq_midi
+>> snd_rawmidi snd_seq_midi_event snd_seq snd_timer snd_seq_device
+>> asus_atk0110 snd soundcore snd_page_alloc parport raid10 raid456
+>> async_raid6_recov async_pq raid6_pq async_xor xor async_memcpy
+>> async_tx raid1 raid0 multipath linear btrfs zlib_deflate libcrc32c
+>> radeon ttm drm_kms_helper drm usbhid usb_storage hid uas ahci
+>> i2c_algo_bit r8169 libahci pata_jmicron
+>> [12350.420001]
+>> [12350.420001] Pid: 8030, comm: btrfs-endio-wri Not tainted
+>> 2.6.38-020638rc2-generic #201101220905 P5Q3/System Product Name
+>> [12350.420001] RIP: 0010:[<ffffffffa021a22d>] =A0[<ffffffffa021a22d>=
+]
+>> btrfs_finish_ordered_io+0x22d/0x320 [btrfs]
+>> [12350.420001] RSP: 0000:ffff8801fc841d30 =A0EFLAGS: 00010286
+>> [12350.420001] RAX: 00000000ffffffe4 RBX: ffff8801fd4ec030 RCX: ffff=
+ffffa01f304f
+>> [12350.420001] RDX: ffff88022ca37c60 RSI: ffffea00079c3c08 RDI: 0000=
+000000000206
+>> [12350.420001] RBP: ffff8801fc841da0 R08: ffff8800bfd97cd0 R09: ffff=
+8801fc841b50
+>> [12350.420001] R10: 0000000000000001 R11: 0000000000000024 R12: ffff=
+8801fd4ec198
+>> [12350.420001] R13: ffff88022b15d800 R14: 0000000000000000 R15: ffff=
+880227c46b00
+>> [12350.420001] FS: =A00000000000000000(0000) GS:ffff8800bfd80000(000=
+0)
+>> knlGS:0000000000000000
+>> [12350.420001] CS: =A00010 DS: 0000 ES: 0000 CR0: 000000008005003b
+>> [12350.420001] CR2: 00007f4b565810c8 CR3: 00000001fbdb5000 CR4: 0000=
+0000000006e0
+>> [12350.420001] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000=
+000000000000
+>> [12350.420001] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000=
+000000000400
+>> [12350.420001] Process btrfs-endio-wri (pid: 8030, threadinfo
+>> ffff8801fc840000, task ffff8802007dc440)
+>> [12350.420001] Stack:
+>> [12350.420001] =A00000000000001000 ffffffff00000000 ffffffff00000000
+>> ffff880200000000
+>> [12350.420001] =A00000000000000001 ffff8801fc841db0 0000000000570000
+>> 0000000000000000
+>> [12350.420001] =A0ffff880204f13600 ffffea000541e840 ffff8800a85eb7f0
+>> 000000000001e000
+>> [12350.420001] Call Trace:
+>> [12350.420001] =A0[<ffffffffa021a4ea>]
+>> btrfs_writepage_end_io_hook+0x1a/0x20 [btrfs]
+>> [12350.420001] =A0[<ffffffffa0232f51>] end_bio_extent_writepage+0x51=
+/0x180 [btrfs]
+>> [12350.420001] =A0[<ffffffff8118cf2d>] bio_endio+0x1d/0x40
+>> [12350.420001] =A0[<ffffffffa020e998>] end_workqueue_fn+0x68/0xa0 [b=
+trfs]
+>> [12350.420001] =A0[<ffffffffa023f26c>] worker_loop+0xac/0x260 [btrfs=
+]
+>> [12350.420001] =A0[<ffffffffa023f1c0>] ? worker_loop+0x0/0x260 [btrf=
+s]
+>> [12350.420001] =A0[<ffffffff81085147>] kthread+0x97/0xa0
+>> [12350.420001] =A0[<ffffffff8100ce24>] kernel_thread_helper+0x4/0x10
+>> [12350.420001] =A0[<ffffffff810850b0>] ? kthread+0x0/0xa0
+>> [12350.420001] =A0[<ffffffff8100ce20>] ? kernel_thread_helper+0x0/0x=
+10
+>> [12350.420001] Code: 48 40 e8 b7 cf ff ff 48 8b 55 d0 31 f6 4c 89 e7
+>> e8 b9 67 01 00 4c 89 e2 4c 89 ee 4c 89 ff e8 bb ea ff ff 85 c0 0f 84
+>> d5 fe ff ff <0f> 0b eb fe be 01 00 00 00 4c 89 ef e8 d2 ad ff ff 49 =
+89
+>> c7 e9
+>> [12350.420001] RIP =A0[<ffffffffa021a22d>]
+>> btrfs_finish_ordered_io+0x22d/0x320 [btrfs]
+>> [12350.420001] =A0RSP <ffff8801fc841d30>
+>> [12351.594605] ---[ end trace f06f9985fbc265cd ]---
+>>
+>
+> If I'm reading the trace right, it's failing with ENOSPC: =A0RAX:
+> 00000000ffffffe4 will be the return value, which ctypes tells me is
+> -28 (ctypes.c_int(0xffffffe4) -> c_long(-28)).
+>
+> I can consistently hit this by running a rootfs image build a few
+> times until it dies, just a matter of a few hours. =A0The system larg=
+ely
+> locks up at that point, although I can still poke around a little in
+> ssh iff I already logged in.
 
-This is 2.6.38rc2 with btrfs from josef's master (9d4ba5:  Btrfs:
-handle errors in btrfs_orphan_cleanup).
-
-Original screenshot at http://imgur.com/sCinW
-Retyped from that:
-
-kernel BUG at /var/lib/dkms/btrfs/git/build/inode.c:150!
-invalid opcode: 0000 [#1] SMP
-last sysfs file:
-/sys/devices/pci0000:00/0000:00:1f.2/host3/target3:0:0/3:0:0:0/block/sdb/uevent
-CPU 1
-Modules linked in: binfmt_misc ppdev ipt_MASQUERADE iptable_nat nf_nat
-nf_conntrack_ipv4 nf_defrag_ipv4 xt_state nf_conntrack ipt_REJECT
-xt_tcpudd iptable_filter ip_tables x_tables bridge stp
-snd_hda_codec_realtek snd_hda_intel snd_hda_codec snd_hwdep snd_pcm
-snd_seq_midi snd_rawmidi snd_seq_midi_event snd_seq snd_timer
-snd_seq_device aes_x86_64 snd aes_generic soundcore dm_crypt
-asus_atk0110 lp snd_page_alloc parport raid10 raid456
-async_raid6_recov async_pq raid6_pq async_xor xor async_memcpy
-async_tx raid1 raid0 multipath linear btrfs zlib_deflate libcrc32c
-radeon ttm drm_kms_helper drm usbhid usb_storage hid uas ahci
-i2c_algo_bit r8169 libahci pata_jmicron
-
-Pid: 17930, comm: btrfs-delalloc- Not tainted 2.6.38-020638rc2-generic
-#201101220905 P5Q3/System Product Name
-RIP: 0010:[<ffffffffa0219cf8>] [<ffffffffa0219cf8>]
-insert_inline_extent+0x328/0x330 [btrfs]
-RSP: 0000:ffff88020a17bbf0  EFLAGS: 00010282
-RAX: 00000000ffffffef RBX: 000000000000003f RCX: ffff88020a17a000
-RDX: 0000000000000008 RSI: ffff880000000000 RDI: ffff880185a99c38
-RBP: ffff88020a17bc80 R08: 0000000000000000 R09: 0000000000000000
-R10: ffff88022a433800 R11: ffff88017b096a00 R12: ffff88021bfb7390
-R13: 0000000000000054 R14: 0000000000000200 R15: 0000000000000000
-FS:  0000000000000000(0000) GS:ffff8800bfc80000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-CR2: 00007f6b5afdfc68 CR3: 000000021697c000 CR4: 00000000000006e0
-DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-Process btrfs-delalloc- (pid: 17930, threadinfo ffff88020a17a000, task
-ffff88022b158000)
-Stack:
- 00000002005b09d8 0000000000000001 ffff88022a433800 0000000000000fd5
- ffff88017b096a00 0000000000000001 ffff88022cab3d80 0000000000000200
- 00000000005b09d5 000000000000006c ffff88020a17bc00 00000054a0253ff8
-Call Trace:
- [<ffffffffa0219e21>] cow_file_range_inline+0x121/0x190 [btrfs]
- [<ffffffff815a2ffe>] ? mutex_lock+0x1e/0x50
- [<ffffffffa021ffb3>] compress_file_range+0x483/0x5e0 [btrfs]
- [<ffffffffa0220145>] async_cow_start+0x35/0x50 [btrfs]
- [<ffffffffa02419bc>] worker_loop+0x15c/0x5b0 [btrfs]
- [<ffffffffa0241860>] ? worker_loop+0x0/0x5b0 [btrfs]
- [<ffffffff81085147>] kthread+0x97/0xa0
- [<ffffffff8100ce24>] kernel_thread_helper+0x4/0x10
- [<ffffffff810850b0>] ? kthread+0x0/0xa0
- [<ffffffff8100ce20>] ? kernel_thread_helper+0x0/0x10
-Code: f8 03 48 0f af c2 4c 89 ea 48 c1 e0 0c 48 01 f0 4a 8d 34 38 e8
-0a b4 01 00 83 6b 1c 01 48 8b 7d 98 e8 3d 9e ef e0 e9 fc fe ff ff <0f>
-0b eb fe 0f 1f 40 00 55 48 89 e5 48 83 ec 70 48 89 5d d8 4c
-RIP  [<ffffffffa0219cf8>] insert_inline_extent+0x328/0x330 [btrfs]
- RSP <ffff88020a17bbf0>
+Building btrfs from josef's tree seems to clear this up, I was able to
+build dozens of times without errors.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

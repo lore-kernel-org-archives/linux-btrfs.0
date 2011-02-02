@@ -1,52 +1,37 @@
-From: Akshat Aranya <aranya@nec-labs.com>
-Subject: Possible bug in btrfs_file_aio_write()
-Date: Wed, 02 Feb 2011 15:15:52 -0500
-Message-ID: <4D49BB78.2000906@nec-labs.com>
+From: Alexey Charkov <alchark@gmail.com>
+Subject: [PATCH] btrfs: Drop __exit attribute on btrfs_exit_compress
+Date: Thu, 3 Feb 2011 00:15:35 +0300
+Message-ID: <20110202211535.GA13028@alchark-u3s>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+As this function is called in some error paths while not
+removing the module, the __exit attribute prevents the kernel
+image from linking when btrfs is compiled in statically.
 
-I'm looking at the code for btrfs_file_aio_write().  Specifically, the 
-following lines:
+Signed-off-by: Alexey Charkov <alchark@gmail.com>
 
+---
+I am not completely sure whether this has already been reported,
+but googling around did not show any traces.
 
-	first_index = pos >> PAGE_CACHE_SHIFT;
-	last_index = (pos + iov_iter_count(&i)) >> PAGE_CACHE_SHIFT;
+Best regards,
+Alexey
 
-	/*
-	 * there are lots of better ways to do this, but this code
-	 * makes sure the first and last page in the file range are
-	 * up to date and ready for cow
-	 */
-	if ((pos & (PAGE_CACHE_SIZE - 1))) {
-		pinned[0] = grab_cache_page(inode->i_mapping, first_index);
-		if (!PageUptodate(pinned[0])) {
-			ret = btrfs_readpage(NULL, pinned[0]);
-			BUG_ON(ret);
-			wait_on_page_locked(pinned[0]);
-		} else {
-			unlock_page(pinned[0]);
-		}
-	}
-	if ((pos + iov_iter_count(&i)) & (PAGE_CACHE_SIZE - 1)) {
-		pinned[1] = grab_cache_page(inode->i_mapping, last_index);
-		if (!PageUptodate(pinned[1])) {
-			ret = btrfs_readpage(NULL, pinned[1]);
-			BUG_ON(ret);
-			wait_on_page_locked(pinned[1]);
-		} else {
-			unlock_page(pinned[1]);
-		}
-	}
-
-
-Am I missing something, or is there an off-by-one error over here?  The 
-last byte in the written region would be "pos + iov_iter_count(&i) - 1", 
-not "pos + iov_iter_count(&i)".  I verified this by writing 4096 bytes 
-at offset 0. first_index evaluates to 0 and last_index evaluates to 1.
-
--Akshat
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index f745287..db36b5e 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -900,7 +900,7 @@ int btrfs_decompress(int type, unsigned char *data_in, struct page *dest_page,
+ 	return ret;
+ }
+ 
+-void __exit btrfs_exit_compress(void)
++void btrfs_exit_compress(void)
+ {
+ 	free_workspaces();
+ }

@@ -1,36 +1,33 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: make sure search_bitmap finds something in remove_from_bitmap
-Date: Wed,  2 Feb 2011 21:39:52 -0500
-Message-ID: <1296700792-16850-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Subject: [PATCH] btrfs: cleanup error handling in btrfs_unlink_inode()
+Date: Thu, 03 Feb 2011 12:16:25 +0900
+Message-ID: <4D4A1E09.10901@jp.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-2022-JP
+Cc: Chris Mason <chris.mason@oracle.com>
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we're cleaning up the tree log we need to be able to remove free space from
-the block group.  The problem is if that free space spans bitmaps we would not
-find the space since we're looking for too many bytes.  So make sure the amount
-of bytes we search for is limited to either the number of bytes we want, or the
-number of bytes left in the bitmap.  This was tested by a user who was hitting
-the BUG() after search_bitmap.  With this patch he can now mount his fs.
-Thanks,
+When btrfs_alloc_path() fails, btrfs_free_path() need not be called.
+Therefore, it changes the branch ahead.
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 ---
- fs/btrfs/free-space-cache.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+ fs/btrfs/inode.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index e92a8d6..552cb9f 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -1197,6 +1197,7 @@ again:
- 	 */
- 	search_start = *offset;
- 	search_bytes = *bytes;
-+	search_bytes = min(search_bytes, end - search_start + 1);
- 	ret = search_bitmap(block_group, bitmap_info, &search_start,
- 			    &search_bytes);
- 	BUG_ON(ret < 0 || search_start != *offset);
--- 
-1.7.2.3
+diff -urNp linux-2.6.38-rc3/fs/btrfs/inode.c linux-2.6.38-rc3.test/fs/btrfs/inode.c
+--- linux-2.6.38-rc3/fs/btrfs/inode.c	2011-02-01 12:05:49.000000000 +0900
++++ linux-2.6.38-rc3.test/fs/btrfs/inode.c	2011-02-03 11:25:47.000000000 +0900
+@@ -2641,7 +2641,7 @@ int btrfs_unlink_inode(struct btrfs_tran
+ 	path = btrfs_alloc_path();
+ 	if (!path) {
+ 		ret = -ENOMEM;
+-		goto err;
++		goto out;
+ 	}
+ 
+ 	path->leave_spinning = 1;
+
 

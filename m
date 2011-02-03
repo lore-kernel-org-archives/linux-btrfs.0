@@ -1,37 +1,36 @@
-From: Alexey Charkov <alchark@gmail.com>
-Subject: [PATCH] btrfs: Drop __exit attribute on btrfs_exit_compress
-Date: Thu, 3 Feb 2011 00:15:35 +0300
-Message-ID: <20110202211535.GA13028@alchark-u3s>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: make sure search_bitmap finds something in remove_from_bitmap
+Date: Wed,  2 Feb 2011 21:39:52 -0500
+Message-ID: <1296700792-16850-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As this function is called in some error paths while not
-removing the module, the __exit attribute prevents the kernel
-image from linking when btrfs is compiled in statically.
+When we're cleaning up the tree log we need to be able to remove free space from
+the block group.  The problem is if that free space spans bitmaps we would not
+find the space since we're looking for too many bytes.  So make sure the amount
+of bytes we search for is limited to either the number of bytes we want, or the
+number of bytes left in the bitmap.  This was tested by a user who was hitting
+the BUG() after search_bitmap.  With this patch he can now mount his fs.
+Thanks,
 
-Signed-off-by: Alexey Charkov <alchark@gmail.com>
-
+Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
-I am not completely sure whether this has already been reported,
-but googling around did not show any traces.
+ fs/btrfs/free-space-cache.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-Best regards,
-Alexey
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index e92a8d6..552cb9f 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -1197,6 +1197,7 @@ again:
+ 	 */
+ 	search_start = *offset;
+ 	search_bytes = *bytes;
++	search_bytes = min(search_bytes, end - search_start + 1);
+ 	ret = search_bitmap(block_group, bitmap_info, &search_start,
+ 			    &search_bytes);
+ 	BUG_ON(ret < 0 || search_start != *offset);
+-- 
+1.7.2.3
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index f745287..db36b5e 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -900,7 +900,7 @@ int btrfs_decompress(int type, unsigned char *data_in, struct page *dest_page,
- 	return ret;
- }
- 
--void __exit btrfs_exit_compress(void)
-+void btrfs_exit_compress(void)
- {
- 	free_workspaces();
- }

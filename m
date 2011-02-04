@@ -1,98 +1,58 @@
-From: "Bernhard Rosenkraenzer" <bero@arklinux.ch>
-Subject: mkfs.btrfs doesn't work inside loopback mounted chroot jails: error checking /dev/sda3 mount status
-Date: Fri, 04 Feb 2011 10:38:25 +0100
-Message-ID: <2b8c-4d4bc900-1-18251900@152037387>
+From: Felix Blanke <felixblanke@gmail.com>
+Subject: Re: mkfs.btrfs doesn't work inside loopback mounted chroot jails:
+ error checking /dev/sda3 mount status
+Date: Fri, 4 Feb 2011 10:51:52 +0100
+Message-ID: <20110204105152.0000151d@unknown>
+References: <2b8c-4d4bc900-1-18251900@152037387>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="----=_=-_OpenGroupware_org_NGMime-11148-1296812305.646703-5------"
-To: <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=US-ASCII
+Cc: <linux-btrfs@vger.kernel.org>
+To: "Bernhard Rosenkraenzer" <bero@arklinux.ch>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <2b8c-4d4bc900-1-18251900@152037387>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-------=_=-_OpenGroupware_org_NGMime-11148-1296812305.646703-5------
-content-type: text/plain; charset=utf-8
-content-length: 766
-content-transfer-encoding: 7bit
-
 Hi,
-mkfs.btrfs aborts unconditionally with "error checking [whatever] mount status" under some circumstances.
 
-I'm running into it when using a live CD that boots from a minimal CD image, then does
+you should search the mailinglist before you write patches :)
 
-mount -o loop -t squashfs /squashfs.img /mnt/realsystem
-chroot /mnt/realsystem
-[stuff you actually want to do here]
+That problem is known and a patch is available:
 
-strace shows mkfs.btrfs aborting after trying to
-
-lstat("/squashfs.img", 0x7fff2c712c90) = -1 ENOENT (No such file or directory)
-
-[obviously, it can't access /squashfs.img after chroot]
+https://patchwork.kernel.org/patch/449001/
 
 
-I'm attaching a "fix" that allows circumventing the problem with a --force switch, patch is relative to "next" branch in git.
-I'm also adding this patch to the Ark Linux package of btrfs-progs unless someone screams very loudly. ;)
+But it isn't in the btrfs-progs git yet.
 
-ttyl
-bero
-------=_=-_OpenGroupware_org_NGMime-11148-1296812305.646703-5------
-content-type: application/octet-stream
-content-transfer-encoding: base64
-content-length: 3917
-content-disposition: attachment; filename="0001-Add-a-force-option.patch"
 
-RnJvbSA5MTBmYmFjOWFjYzdmMWJhMGExNjQxY2ZhODVlOGVkMGI5NmU5NGNiIE1vbiBTZXAg
-MTcgMDA6MDA6MDAgMjAwMQpGcm9tOiBCZXJuaGFyZCBSb3NlbmtyYWVuemVyIDxiZXJvQGFy
-a2xpbnV4LmNoPgpEYXRlOiBGcmksIDQgRmViIDIwMTEgMTA6MzE6MTQgKzAwNTkKU3ViamVj
-dDogW1BBVENIXSBBZGQgYSAtLWZvcmNlIG9wdGlvbgoKLS0tCiBta2ZzLmMgfCAgIDQ3ICsr
-KysrKysrKysrKysrKysrKysrKysrKysrKystLS0tLS0tLS0tLS0tLS0tLS0tCiAxIGZpbGVz
-IGNoYW5nZWQsIDI4IGluc2VydGlvbnMoKyksIDE5IGRlbGV0aW9ucygtKQoKZGlmZiAtLWdp
-dCBhL21rZnMuYyBiL21rZnMuYwppbmRleCAyZTk5Yjk1Li4yZmE4YmU4IDEwMDY0NAotLS0g
-YS9ta2ZzLmMKKysrIGIvbWtmcy5jCkBAIC0yNzEsNiArMjcxLDcgQEAgc3RhdGljIHZvaWQg
-cHJpbnRfdXNhZ2Uodm9pZCkKIAlmcHJpbnRmKHN0ZGVyciwgIlx0IC1BIC0tYWxsb2Mtc3Rh
-cnQgdGhlIG9mZnNldCB0byBzdGFydCB0aGUgRlNcbiIpOwogCWZwcmludGYoc3RkZXJyLCAi
-XHQgLWIgLS1ieXRlLWNvdW50IHRvdGFsIG51bWJlciBvZiBieXRlcyBpbiB0aGUgRlNcbiIp
-OwogCWZwcmludGYoc3RkZXJyLCAiXHQgLWQgLS1kYXRhIGRhdGEgcHJvZmlsZSwgcmFpZDAs
-IHJhaWQxLCByYWlkMTAgb3Igc2luZ2xlXG4iKTsKKwlmcHJpbnRmKHN0ZGVyciwgIlx0IC1m
-IC0tZm9yY2UgYnlwYXNzIGNoZWNrIGlmIHRoZSBkZXZpY2UgaXMgYWxyZWFkeSBtb3VudGVk
-XG4iKTsKIAlmcHJpbnRmKHN0ZGVyciwgIlx0IC1sIC0tbGVhZnNpemUgc2l6ZSBvZiBidHJl
-ZSBsZWF2ZXNcbiIpOwogCWZwcmludGYoc3RkZXJyLCAiXHQgLUwgLS1sYWJlbCBzZXQgYSBs
-YWJlbFxuIik7CiAJZnByaW50ZihzdGRlcnIsICJcdCAtbSAtLW1ldGFkYXRhIG1ldGFkYXRh
-IHByb2ZpbGUsIHZhbHVlcyBsaWtlIGRhdGEgcHJvZmlsZVxuIik7CkBAIC0zMzIsNiArMzMz
-LDcgQEAgc3RhdGljIHN0cnVjdCBvcHRpb24gbG9uZ19vcHRpb25zW10gPSB7CiAJeyAic2Vj
-dG9yc2l6ZSIsIDEsIE5VTEwsICdzJyB9LAogCXsgImRhdGEiLCAxLCBOVUxMLCAnZCcgfSwK
-IAl7ICJ2ZXJzaW9uIiwgMCwgTlVMTCwgJ1YnIH0sCisJeyAiZm9yY2UiLCAwLCBOVUxMLCAn
-ZicgfSwKIAl7IDAsIDAsIDAsIDB9CiB9OwogCkBAIC0zNTgsMTAgKzM2MCwxMSBAQCBpbnQg
-bWFpbihpbnQgYWMsIGNoYXIgKiphdikKIAlpbnQgZmlyc3RfZmQ7CiAJaW50IHJldDsKIAlp
-bnQgaTsKKwlpbnQgZm9yY2UgPSAwOwogCiAJd2hpbGUoMSkgewogCQlpbnQgYzsKLQkJYyA9
-IGdldG9wdF9sb25nKGFjLCBhdiwgIkE6YjpsOm46czptOmQ6TDpWIiwgbG9uZ19vcHRpb25z
-LAorCQljID0gZ2V0b3B0X2xvbmcoYWMsIGF2LCAiQTpiOmw6bjpzOm06ZDpMOlZmIiwgbG9u
-Z19vcHRpb25zLAogCQkJCSZvcHRpb25faW5kZXgpOwogCQlpZiAoYyA8IDApCiAJCQlicmVh
-azsKQEAgLTQwMSw2ICs0MDQsOSBAQCBpbnQgbWFpbihpbnQgYWMsIGNoYXIgKiphdikKIAkJ
-CWNhc2UgJ1YnOgogCQkJCXByaW50X3ZlcnNpb24oKTsKIAkJCQlicmVhazsKKwkJCWNhc2Ug
-J2YnOgorCQkJCWZvcmNlID0gMTsKKwkJCQlicmVhazsKIAkJCWRlZmF1bHQ6CiAJCQkJcHJp
-bnRfdXNhZ2UoKTsKIAkJfQpAQCAtNDIzLDEzICs0MjksMTUgQEAgaW50IG1haW4oaW50IGFj
-LCBjaGFyICoqYXYpCiAKIAlmaWxlID0gYXZbb3B0aW5kKytdOwogCXJldCA9IGNoZWNrX21v
-dW50ZWQoZmlsZSk7Ci0JaWYgKHJldCA8IDApIHsKLQkJZnByaW50ZihzdGRlcnIsICJlcnJv
-ciBjaGVja2luZyAlcyBtb3VudCBzdGF0dXNcbiIsIGZpbGUpOwotCQlleGl0KDEpOwotCX0K
-LQlpZiAocmV0ID09IDEpIHsKLQkJZnByaW50ZihzdGRlcnIsICIlcyBpcyBtb3VudGVkXG4i
-LCBmaWxlKTsKLQkJZXhpdCgxKTsKKwlpZiAoIWZvcmNlKSB7CisJCWlmIChyZXQgPCAwKSB7
-CisJCQlmcHJpbnRmKHN0ZGVyciwgImVycm9yIGNoZWNraW5nICVzIG1vdW50IHN0YXR1c1xu
-IiwgZmlsZSk7CisJCQlleGl0KDEpOworCQl9CisJCWlmIChyZXQgPT0gMSkgeworCQkJZnBy
-aW50ZihzdGRlcnIsICIlcyBpcyBtb3VudGVkXG4iLCBmaWxlKTsKKwkJCWV4aXQoMSk7CisJ
-CX0KIAl9CiAJYWMtLTsKIAlmZCA9IG9wZW4oZmlsZSwgT19SRFdSKTsKQEAgLTQ3OSwxNiAr
-NDg3LDE4IEBAIGludCBtYWluKGludCBhYywgY2hhciAqKmF2KQogCXplcm9fZW5kID0gMTsK
-IAl3aGlsZShhYy0tID4gMCkgewogCQlmaWxlID0gYXZbb3B0aW5kKytdOwotCQlyZXQgPSBj
-aGVja19tb3VudGVkKGZpbGUpOwotCQlpZiAocmV0IDwgMCkgewotCQkJZnByaW50ZihzdGRl
-cnIsICJlcnJvciBjaGVja2luZyAlcyBtb3VudCBzdGF0dXNcbiIsCi0JCQkJZmlsZSk7Ci0J
-CQlleGl0KDEpOwotCQl9Ci0JCWlmIChyZXQgPT0gMSkgewotCQkJZnByaW50ZihzdGRlcnIs
-ICIlcyBpcyBtb3VudGVkXG4iLCBmaWxlKTsKLQkJCWV4aXQoMSk7Ci0JCX0KKwkJaWYgKCFm
-b3JjZSkgeworCQkJcmV0ID0gY2hlY2tfbW91bnRlZChmaWxlKTsKKwkJCWlmIChyZXQgPCAw
-KSB7CisJCQkJZnByaW50ZihzdGRlcnIsICJlcnJvciBjaGVja2luZyAlcyBtb3VudCBzdGF0
-dXNcbiIsCisJCQkJCWZpbGUpOworCQkJCWV4aXQoMSk7CisJCQl9CisJCQlpZiAocmV0ID09
-IDEpIHsKKwkJCQlmcHJpbnRmKHN0ZGVyciwgIiVzIGlzIG1vdW50ZWRcbiIsIGZpbGUpOwor
-CQkJCWV4aXQoMSk7CisJCQl9CisJCX0JCiAJCWZkID0gb3BlbihmaWxlLCBPX1JEV1IpOwog
-CQlpZiAoZmQgPCAwKSB7CiAJCQlmcHJpbnRmKHN0ZGVyciwgInVuYWJsZSB0byBvcGVuICVz
-XG4iLCBmaWxlKTsKQEAgLTUzNCw0ICs1NDQsMyBAQCByYWlkX2dyb3VwczoKIAlmcmVlKGxh
-YmVsKTsKIAlyZXR1cm4gMDsKIH0KLQotLSAKMS43LjMKCg==
-------=_=-_OpenGroupware_org_NGMime-11148-1296812305.646703-5--------
+Regards,
+Felix
 
+Am Fri, 04 Feb 2011 10:38:25 +0100
+schrieb "Bernhard Rosenkraenzer" <bero@arklinux.ch>:
+
+> Hi,
+> mkfs.btrfs aborts unconditionally with "error checking [whatever]
+> mount status" under some circumstances.
+> 
+> I'm running into it when using a live CD that boots from a minimal CD
+> image, then does
+> 
+> mount -o loop -t squashfs /squashfs.img /mnt/realsystem
+> chroot /mnt/realsystem
+> [stuff you actually want to do here]
+> 
+> strace shows mkfs.btrfs aborting after trying to
+> 
+> lstat("/squashfs.img", 0x7fff2c712c90) = -1 ENOENT (No such file or
+> directory)
+> 
+> [obviously, it can't access /squashfs.img after chroot]
+> 
+> 
+> I'm attaching a "fix" that allows circumventing the problem with a
+> --force switch, patch is relative to "next" branch in git. I'm also
+> adding this patch to the Ark Linux package of btrfs-progs unless
+> someone screams very loudly. ;)
+> 
+> ttyl
+> bero

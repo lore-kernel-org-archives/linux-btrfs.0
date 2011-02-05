@@ -1,32 +1,25 @@
-From: Olaf van der Spek <olafvdspek@gmail.com>
+From: cwillu <cwillu@cwillu.com>
 Subject: Re: Suggestion for sticky-compression mount setting (default mount options)
-Date: Sat, 5 Feb 2011 14:19:34 +0100
-Message-ID: <AANLkTi=zu6pywYYB_E+d=PJ4TZanPe_Rae_b=GV2t2f2@mail.gmail.com>
+Date: Sat, 5 Feb 2011 09:31:24 -0600
+Message-ID: <AANLkTik78DfZbXcztFuNOixwmRB1Prr00E7C7XT7eyAz@mail.gmail.com>
 References: <1296873843.7800.36.camel@KWOLFF03>
+	<20110205131846.0000748c@unknown>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Kirk Wolff <kirk@wolffelectronicdesign.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Kirk Wolff <kirk@wolffelectronicdesign.com>,
+	linux-btrfs@vger.kernel.org
+To: Felix Blanke <felixblanke@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1296873843.7800.36.camel@KWOLFF03>
+In-Reply-To: <20110205131846.0000748c@unknown>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Feb 5, 2011 at 3:44 AM, Kirk Wolff
-<kirk@wolffelectronicdesign.com> wrote:
-> one subvolume and not on another. =C2=A0Therefore, it seems to me tha=
-t
-> default mount options should be able to be configured for each
-> subvolume. =C2=A0If you follow this idea through, this means that you=
- would
+On Sat, Feb 5, 2011 at 6:18 AM, Felix Blanke <felixblanke@gmail.com> wrote:
+> Hi,
+>
+> I don't think that the fs is a good place to store default mountoptions.
+>
+> If you want to auto mount usb devices with compression, just write a
+> udev rule or whatever ubuntu uses to mount usb devices.
 
-Is compression a per-file option or a per-subvolume option? Seems a
-bit inflexible if it's per-subvolume.
-
-
---=20
-Olaf
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I believe the point was to avoid configuring each system he might use
+it with; otherwise a simple fstab entry would have sufficed.

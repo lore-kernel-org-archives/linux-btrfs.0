@@ -1,35 +1,45 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: [PATCH] Btrfs-progs use safe string manipulation functions
-Date: Mon, 07 Feb 2011 19:17:11 +0100
-Message-ID: <4D503727.3030104@libero.it>
-References: <1297081322.4615.10.camel@monotop>
-Reply-To: kreijack@inwind.it
+From: Diwaker Gupta <diwaker@maginatics.com>
+Subject: Error mounting multi-device fs after restart
+Date: Mon, 7 Feb 2011 11:46:20 -0800
+Message-ID: <AANLkTi=vSb0i-joekFrZRmwcAE+5w8FwV2FFWcbMvC6n@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Eduardo Silva <eduardo.silva@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1297081322.4615.10.camel@monotop>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/07/2011 01:22 PM, Eduardo Silva wrote:
-> Please find the attached patch which replace unsafe strcpy(3) by
-> strncpy(3) functions.
-> 
-> regards, 
-> 
-> Eduardo Silva
+Hello,
 
+We have 10 1-TB drives hosting a multi-device btrfs filesystem,
+configured with raid1+0 for both data and metadata. After some package
+upgrades over the weekend I restarted the system and it did not come
+back up afterwards. I booted using a rescue disk and ran btrfsck (next
+branch from Chris's git repository). Unfortunately btrfsck aborts on
+every single drive with errors like this:
 
-Hi Eduardo,
+parent transid verify failed on 12050980864 wanted 377535 found 128327
+parent transid verify failed on 12074557440 wanted 422817 found 126691
+parent transid verify failed on 12057542656 wanted 422786 found 126395
+parent transid verify failed on 12075556864 wanted 423004 found 126691
+bad block 12095545344
+parent transid verify failed on 12079190016 wanted 422826 found 105147
+leaf parent key incorrect 12097544192
+bad block 12097544192
 
-even though some "strncpy" are unneeded because a check is performed
-before, I fully agree that "strncpy" is better than a simple strcpy.
-However I have to highlight that truncating a path without noticing may
-be lead to a problem (think a delete operation applied to a shorter
-path...).
-So can I ask you to add some checks to your patch, in order to warn the
-user that the path is too long ?
+I'm running 10.04 Ubuntu Lucid with the lts-backport x86_64 kernel:
+2.6.35-23-server
 
-Regards
-G.Baroncelli
+Attempting to mount the filesystem blocks indefinitely, with
+/var/log/messages getting filled with the 'parent transid verify'
+errors.
+
+IIUC the 'btrfs-select-super' utility is not really helpful in our
+case. At this point, my only priority is to somehow rescue the data
+from the filesystem. I'd really appreciate if someone on the list
+could help me out.
+
+I'm happy to provide any other information required. Please CC me on
+replies as I'm not subscribed to the list.
+
+Thanks,
+Diwaker

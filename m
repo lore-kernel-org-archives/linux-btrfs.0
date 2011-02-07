@@ -1,30 +1,180 @@
-From: Chris Dunlop <chris@onthe.net.au>
-Subject: Re: WARNING: at fs/btrfs/inode.c:2143
- btrfs_orphan_commit_root+0x7f/0x9b
-Date: Mon, 7 Feb 2011 18:39:11 +1100
-Message-ID: <20110207073911.GB16034@onthe.net.au>
-References: <20110204084808.GA3814@onthe.net.au>
- <1296830292.2408.0.camel@wido-desktop>
- <20110207062306.GB25062@onthe.net.au>
- <20110207063102.GD25062@onthe.net.au>
+From: Eduardo Silva <eduardo.silva@oracle.com>
+Subject: [PATCH] Btrfs-progs use safe string manipulation functions
+Date: Mon, 07 Feb 2011 09:22:02 -0300
+Message-ID: <1297081322.4615.10.camel@monotop>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: ceph-devel@vger.kernel.org
+Content-Type: multipart/mixed; boundary="=-WzKjX3+Dx3Rek5EdunAy"
 To: linux-btrfs@vger.kernel.org
-Return-path: <ceph-devel-owner@vger.kernel.org>
-In-Reply-To: <20110207063102.GD25062@onthe.net.au>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 07, 2011 at 05:31:02PM +1100, Chris Dunlop wrote:
-> G'day,
-> 
-> Using Josef's btrfs-work bacae123 (+ ceph-client 9aae8faf), I
-> can consistently reproduce the following btrfs warning by simply
-> creating and starting a new btrfs-based ceph file system:
-> 
-> [  549.767234] ------------[ cut here ]------------
-> [  549.767276] WARNING: at fs/btrfs/inode.c:2143 btrfs_orphan_commit_root+0x7f/0x9b [btrfs]()
 
-Sorry, just found I've been booting wrong kernel. I've been
-seeing the warning *without* Josef's btrfs-work.  Will re-test
-tomorrow.
+--=-WzKjX3+Dx3Rek5EdunAy
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+
+Please find the attached patch which replace unsafe strcpy(3) by
+strncpy(3) functions.
+
+regards, 
+
+Eduardo Silva
+
+--=-WzKjX3+Dx3Rek5EdunAy
+Content-Disposition: attachment; filename*0=0001-PATCH-Btrfs-progs-use-safe-string-manipulation-funct.pat; filename*1=ch
+Content-Type: text/x-patch; name="0001-PATCH-Btrfs-progs-use-safe-string-manipulation-funct.patch"; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+
+>From 5fc888c71981e4b74ba29dd53bf0d5a65b3ee504 Mon Sep 17 00:00:00 2001
+From: Eduardo Silva <eduardo.silva@oracle.com>
+Date: Mon, 7 Feb 2011 08:55:04 -0300
+Subject: [PATCH] [PATCH] Btrfs-progs use safe string manipulation functions
+
+Signed-off-by: Eduardo Silva <eduardo.silva@oracle.com>
+---
+ btrfs_cmds.c |   14 +++++++-------
+ btrfsctl.c   |    2 +-
+ convert.c    |    2 +-
+ utils.c      |    9 +++++----
+ 4 files changed, 14 insertions(+), 13 deletions(-)
+
+diff --git a/btrfs_cmds.c b/btrfs_cmds.c
+index 8031c58..fffb423 100644
+--- a/btrfs_cmds.c
++++ b/btrfs_cmds.c
+@@ -375,7 +375,7 @@ int do_clone(int argc, char **argv)
+ 	printf("Create a snapshot of '%s' in '%s/%s'\n",
+ 	       subvol, dstdir, newname);
+ 	args.fd = fd;
+-	strcpy(args.name, newname);
++	strncpy(args.name, newname, BTRFS_PATH_NAME_MAX);
+ 	res = ioctl(fddst, BTRFS_IOC_SNAP_CREATE, &args);
+ 
+ 	close(fd);
+@@ -436,7 +436,7 @@ int do_delete_subvolume(int argc, char **argv)
+ 	}
+ 
+ 	printf("Delete subvolume '%s/%s'\n", dname, vname);
+-	strcpy(args.name, vname);
++	strncpy(args.name, vname, BTRFS_PATH_NAME_MAX);
+ 	res = ioctl(fd, BTRFS_IOC_SNAP_DESTROY, &args);
+ 
+ 	close(fd);
+@@ -490,7 +490,7 @@ int do_create_subvol(int argc, char **argv)
+ 	}
+ 
+ 	printf("Create subvolume '%s/%s'\n", dstdir, newname);
+-	strcpy(args.name, newname);
++	strncpy(args.name, newname, BTRFS_PATH_NAME_MAX);
+ 	res = ioctl(fddst, BTRFS_IOC_SUBVOL_CREATE, &args);
+ 
+ 	close(fddst);
+@@ -553,7 +553,7 @@ int do_scan(int argc, char **argv)
+ 
+ 		printf("Scanning for Btrfs filesystems in '%s'\n", argv[i]);
+ 
+-		strcpy(args.name, argv[i]);
++		strncpy(args.name, argv[i], BTRFS_PATH_NAME_MAX);
+ 		/*
+ 		 * FIXME: which are the error code returned by this ioctl ?
+ 		 * it seems that is impossible to understand if there no is
+@@ -593,7 +593,7 @@ int do_resize(int argc, char **argv)
+ 	}
+ 
+ 	printf("Resize '%s' of '%s'\n", path, amount);
+-	strcpy(args.name, amount);
++	strncpy(args.name, amount, BTRFS_PATH_NAME_MAX);
+ 	res = ioctl(fd, BTRFS_IOC_RESIZE, &args);
+ 	close(fd);
+ 	if( res < 0 ){
+@@ -736,7 +736,7 @@ int do_add_volume(int nargs, char **args)
+ 		}
+ 		close(devfd);
+ 
+-		strcpy(ioctl_args.name, args[i]);
++		strncpy(ioctl_args.name, args[i], BTRFS_PATH_NAME_MAX);
+ 		res = ioctl(fdmnt, BTRFS_IOC_ADD_DEV, &ioctl_args);
+ 		if(res<0){
+ 			fprintf(stderr, "ERROR: error adding the device '%s'\n", args[i]);
+@@ -792,7 +792,7 @@ int do_remove_volume(int nargs, char **args)
+ 		struct	btrfs_ioctl_vol_args arg;
+ 		int	res;
+ 
+-		strcpy(arg.name, args[i]);
++		strncpy(arg.name, args[i], BTRFS_PATH_NAME_MAX);
+ 		res = ioctl(fdmnt, BTRFS_IOC_RM_DEV, &arg);
+ 		if(res<0){
+ 			fprintf(stderr, "ERROR: error removing the device '%s'\n", args[i]);
+diff --git a/btrfsctl.c b/btrfsctl.c
+index 92bdf39..adfa519 100644
+--- a/btrfsctl.c
++++ b/btrfsctl.c
+@@ -237,7 +237,7 @@ int main(int ac, char **av)
+ 	 }
+ 
+ 	if (name)
+-		strcpy(args.name, name);
++                strncpy(args.name, name, BTRFS_PATH_NAME_MAX + 1);
+ 	else
+ 		args.name[0] = '\0';
+ 
+diff --git a/convert.c b/convert.c
+index d037c98..fbcf4a3 100644
+--- a/convert.c
++++ b/convert.c
+@@ -857,7 +857,7 @@ static int copy_single_xattr(struct btrfs_trans_handle *trans,
+ 		data = databuf;
+ 		datalen = bufsize;
+ 	}
+-	strcpy(namebuf, xattr_prefix_table[name_index]);
++	strncpy(namebuf, xattr_prefix_table[name_index], XATTR_NAME_MAX);
+ 	strncat(namebuf, EXT2_EXT_ATTR_NAME(entry), entry->e_name_len);
+ 	if (name_len + datalen > BTRFS_LEAF_DATA_SIZE(root) -
+ 	    sizeof(struct btrfs_item) - sizeof(struct btrfs_dir_item)) {
+diff --git a/utils.c b/utils.c
+index fd894f3..96ef94d 100644
+--- a/utils.c
++++ b/utils.c
+@@ -108,7 +108,7 @@ int make_btrfs(int fd, const char *device, const char *label,
+ 	btrfs_set_super_csum_type(&super, BTRFS_CSUM_TYPE_CRC32);
+ 	btrfs_set_super_chunk_root_generation(&super, 1);
+ 	if (label)
+-		strcpy(super.label, label);
++		strncpy(super.label, label, BTRFS_LABEL_SIZE - 1);
+ 
+ 	buf = malloc(sizeof(*buf) + max(sectorsize, leafsize));
+ 
+@@ -828,7 +828,7 @@ void btrfs_register_one_device(char *fname)
+ 			"skipping device registration\n");
+ 		return;
+ 	}
+-	strcpy(args.name, fname);
++	strncpy(args.name, fname, BTRFS_PATH_NAME_MAX);
+ 	ret = ioctl(fd, BTRFS_IOC_SCAN_DEV, &args);
+ 	close(fd);
+ }
+@@ -971,6 +971,7 @@ static char *size_strs[] = { "", "KB", "MB", "GB", "TB",
+ char *pretty_sizes(u64 size)
+ {
+ 	int num_divs = 0;
++        int pretty_len = 16;
+ 	u64 last_size = size;
+ 	u64 fract_size = size;
+ 	float fraction;
+@@ -988,8 +989,8 @@ char *pretty_sizes(u64 size)
+ 		return NULL;
+ 
+ 	fraction = (float)fract_size / 1024;
+-	pretty = malloc(16);
+-	sprintf(pretty, "%.2f%s", fraction, size_strs[num_divs-1]);
++	pretty = malloc(pretty_len);
++	snprintf(pretty, pretty_len, "%.2f%s", fraction, size_strs[num_divs-1]);
+ 	return pretty;
+ }
+ 
+-- 
+1.7.1
+
+
+--=-WzKjX3+Dx3Rek5EdunAy--
+

@@ -1,45 +1,102 @@
-From: Diwaker Gupta <diwaker@maginatics.com>
-Subject: Error mounting multi-device fs after restart
-Date: Mon, 7 Feb 2011 11:46:20 -0800
-Message-ID: <AANLkTi=vSb0i-joekFrZRmwcAE+5w8FwV2FFWcbMvC6n@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: [GIT PULL] Btrfs updates
+Date: Mon, 07 Feb 2011 15:12:27 -0500
+Message-ID: <1297106906-sup-3@think>
+Content-Type: text/plain; charset=UTF-8
+To: "Linus Torvalds" <torvalds@linux-foundation.org>,
+	"linux-kernel" <linux-kernel@vger.kernel.org>,
+	"linux-btrfs" <linux-btrfs@vger.kernel.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hi everyone,
 
-We have 10 1-TB drives hosting a multi-device btrfs filesystem,
-configured with raid1+0 for both data and metadata. After some package
-upgrades over the weekend I restarted the system and it did not come
-back up afterwards. I booted using a rescue disk and ran btrfsck (next
-branch from Chris's git repository). Unfortunately btrfsck aborts on
-every single drive with errors like this:
+This pull was delayed by a week because my test rig kept throwing out
+corruptions.  After a long series of bisects, it looks like the hardware
+is just silently corrupting blocks and btrfs is catching it early and
+often.
 
-parent transid verify failed on 12050980864 wanted 377535 found 128327
-parent transid verify failed on 12074557440 wanted 422817 found 126691
-parent transid verify failed on 12057542656 wanted 422786 found 126395
-parent transid verify failed on 12075556864 wanted 423004 found 126691
-bad block 12095545344
-parent transid verify failed on 12079190016 wanted 422826 found 105147
-leaf parent key incorrect 12097544192
-bad block 12097544192
+So, here is our collection of bug fixes since rc1.  We have an
+assortment of ENOSPC tweaks, allocator fixes  and better error handling
+in general.
 
-I'm running 10.04 Ubuntu Lucid with the lts-backport x86_64 kernel:
-2.6.35-23-server
+Linus please pull the master branch of the btrfs-unstable repo:
 
-Attempting to mount the filesystem blocks indefinitely, with
-/var/log/messages getting filled with the 'parent transid verify'
-errors.
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
 
-IIUC the 'btrfs-select-super' utility is not really helpful in our
-case. At this point, my only priority is to somehow rescue the data
-from the filesystem. I'd really appreciate if someone on the list
-could help me out.
+Li Zefan (8) commits (+107/-65):
+    btrfs: Fix threshold calculation for block groups smaller than 1GB (+6/-2)
+    btrfs: Check mergeable free space when removing a cluster (+20/-6)
+    btrfs: Update stats when allocating from a cluster (+14/-3)
+    Btrfs: Fix file clone when source offset is not 0 (+4/-1)
+    btrfs: Add a helper try_merge_free_space() (+43/-32)
+    btrfs: Free fully occupied bitmap in cluster (+2/-0)
+    btrfs: Add helper function free_bitmap() (+16/-21)
+    Btrfs: Fix memory leak at umount (+2/-0)
 
-I'm happy to provide any other information required. Please CC me on
-replies as I'm not subscribed to the list.
+Josef Bacik (8) commits (+86/-18):
+    Btrfs: do not release more reserved bytes to the global_block_rsv than we need (+14/-2)
+    Btrfs: make sure search_bitmap finds something in remove_from_bitmap (+1/-0)
+    Btrfs: use the global block reserve if we cannot reserve space (+27/-1)
+    Btrfs: fix check_path_shared so it returns the right value (+3/-2)
+    Btrfs: exclude super blocks when we read in block groups (+18/-8)
+    Btrfs: handle no memory properly in prepare_pages (+6/-2)
+    Btrfs: make shrink_delalloc a little friendlier (+14/-3)
+    Btrfs: do error checking in btrfs_del_csums (+3/-0)
 
-Thanks,
-Diwaker
+Tsutomu Itoh (5) commits (+100/-21):
+    btrfs: check return value of btrfs_start_ioctl_transaction() properly (+1/-1)
+    btrfs: fix return value check of btrfs_start_transaction() (+37/-6)
+    btrfs: fix return value check of btrfs_join_transaction() (+51/-13)
+    btrfs: cleanup error handling in btrfs_unlink_inode() (+1/-1)
+    btrfs: checking NULL or not in some functions (+10/-0)
+
+liubo (3) commits (+59/-4):
+    btrfs: fix uncheck memory allocation in btrfs_submit_compressed_read (+25/-4)
+    btrfs: fix several uncheck memory allocations (+33/-0)
+    btrfs: fix missing break in switch phrase (+1/-0)
+
+Miao Xie (2) commits (+7/-0):
+    Btrfs: Don't return acl info when mounting with noacl option (+6/-0)
+    Btrfs: Fix memory leak in writepage fixup work (+1/-0)
+
+Chris Mason (2) commits (+3/-2):
+    Btrfs: avoid uninit variable warnings in ordered-data.c (+1/-1)
+    Btrfs: catch errors from btrfs_sync_log (+2/-1)
+
+Zheng Yan (1) commits (+4/-4):
+    Btrfs: Fix page count calculation
+
+Julia Lawall (1) commits (+1/-1):
+    fs/btrfs/inode.c: Add missing IS_ERR test
+
+Tero Roponen (1) commits (+3/-2):
+    Btrfs: Free correct pointer after using strsep
+
+Ian Kent (1) commits (+2/-0):
+    Btrfs: Fix memory leak on finding existing super
+
+Alexey Charkov (1) commits (+1/-1):
+    btrfs: Drop __exit attribute on btrfs_exit_compress
+
+Total: (33) commits (+373/-118)
+
+ fs/btrfs/acl.c              |    6 ++
+ fs/btrfs/compression.c      |   27 +++++++-
+ fs/btrfs/disk-io.c          |    7 ++
+ fs/btrfs/export.c           |    2 +
+ fs/btrfs/extent-tree.c      |   98 +++++++++++++++++++++-----
+ fs/btrfs/extent_io.c        |    6 +-
+ fs/btrfs/file-item.c        |    5 ++
+ fs/btrfs/file.c             |   20 ++++--
+ fs/btrfs/free-space-cache.c |  162 ++++++++++++++++++++++++++----------------
+ fs/btrfs/inode.c            |   35 ++++++---
+ fs/btrfs/ioctl.c            |   19 ++++--
+ fs/btrfs/ordered-data.c     |    2 +-
+ fs/btrfs/print-tree.c       |    1 +
+ fs/btrfs/relocation.c       |   29 +++++++-
+ fs/btrfs/super.c            |    9 ++-
+ fs/btrfs/transaction.c      |    5 ++
+ fs/btrfs/tree-log.c         |   35 +++++++++-
+ fs/btrfs/volumes.c          |   19 +++++-
+ 18 files changed, 371 insertions(+), 116 deletions(-)

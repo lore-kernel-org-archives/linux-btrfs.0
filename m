@@ -1,43 +1,22 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: Re: no space left on device
-Date: 08 Feb 2011 20:43:00 +0100
-Message-ID: <BfUOQPXT1uB@helmut.hullen.de>
-References: <4D5191F2.5080509@logtenberg.eu>
-Reply-To: helmut@hullen.de
+From: Kirk Wolff <kirk@wolffelectronicdesign.com>
+Subject: [Fwd: Re: Suggestion for sticky-compression mount setting (default
+ mount options)]
+Date: Tue, 08 Feb 2011 13:59:13 -0600
+Message-ID: <1297195153.16890.2.camel@KWOLFF03>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset="UTF-8"
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D5191F2.5080509@logtenberg.eu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Erik,
+forwarded message below:
 
-Du meintest am 08.02.11:
 
->>> But the next step is to update kernel and btrfs-progs from git.
+It would be very iseful.
+I also propose the same for `-o ssd` option. USB drive may be used on different computers, and we need the way to specify it only once.
+As for the options being per-file, I think having them as per subvolume defaults looks better: we can override the defaults on per-file basis while having reasonable defaults for each subvolume. (There may be also global per-pool defaults, which may be overriden by subvolumes).
 
->> Maybe that doesn't help now. I'm working with kernel 2.6.37 and
->> kernel 2.6.38-rc2, and I've got big problems.
+-- 
+Andrey Korobkov <korobkov@lavabit.com>
 
-[...]
 
-> Fortunately Zheng Yan coded a patch, which I
-> applied to 2.6.38-rc2, so that I could finally run - and finish - the
-> balance operation.
-
-[...]
-
-> That patch is released on this list on january 26th, called "Fix
-> balance panic". If you experience the same, you could try applying
-> this patch too. There is no (pre-built) kernel yet with this patch
-> already applied.
-
-Maybe it will help. But my actual problem is: I cannot mount the btrfs  
-system (it leads to "kernel panic"). And starting "btrfs filesystem  
-balance ..." requires a mounted btrfs system.
-
-I'll see ...
-
-Viele Gruesse!
-Helmut

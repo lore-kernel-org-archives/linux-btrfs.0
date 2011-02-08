@@ -1,69 +1,80 @@
-From: Chris Dunlop <chris@onthe.net.au>
-Subject: Re: WARNING: at fs/btrfs/inode.c:2143
- btrfs_orphan_commit_root+0x7f/0x9b
-Date: Tue, 8 Feb 2011 18:37:32 +1100
-Message-ID: <20110208073732.GA13060@onthe.net.au>
-References: <20110204084808.GA3814@onthe.net.au>
- <1296830292.2408.0.camel@wido-desktop>
- <20110207062306.GB25062@onthe.net.au>
- <20110207063102.GD25062@onthe.net.au>
- <20110207073911.GB16034@onthe.net.au>
+From: Leonidas Spyropoulos <artafinde@gmail.com>
+Subject: Re: no space left on device
+Date: Tue, 8 Feb 2011 09:00:45 +0000
+Message-ID: <AANLkTi=Qp3US4TTxvXgwwU65kTx5fVYfq+q+EkEvZyTL@mail.gmail.com>
+References: <AANLkTinH225vC8fRbA7zk_iOEmyADFZMBS6b7gx1tOxm@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: ceph-devel@vger.kernel.org
-To: linux-btrfs@vger.kernel.org
-Return-path: <ceph-devel-owner@vger.kernel.org>
-In-Reply-To: <20110207073911.GB16034@onthe.net.au>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: C Anthony Risinger <anthony@extof.me>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTinH225vC8fRbA7zk_iOEmyADFZMBS6b7gx1tOxm@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 07, 2011 at 06:39:11PM +1100, Chris Dunlop wrote:
-> On Mon, Feb 07, 2011 at 05:31:02PM +1100, Chris Dunlop wrote:
->> G'day,
->> 
->> Using Josef's btrfs-work bacae123 (+ ceph-client 9aae8faf), I
->> can consistently reproduce the following btrfs warning by simply
->> creating and starting a new btrfs-based ceph file system:
->> 
->> [  549.767234] ------------[ cut here ]------------
->> [  549.767276] WARNING: at fs/btrfs/inode.c:2143 btrfs_orphan_commit_root+0x7f/0x9b [btrfs]()
-> 
-> Sorry, just found I've been booting wrong kernel. I've been
-> seeing the warning *without* Josef's btrfs-work.  Will re-test
-> tomorrow.
+On Feb 8, 2011 12:09 AM, "C Anthony Risinger" <anthony@extof.me> wrote:
+>
+> On Mon, Feb 7, 2011 at 3:21 PM, Leonidas Spyropoulos
+> <artafinde@gmail.com> wrote:
+> > Hey all,
+> >
+> > I run into no space left on device on a virtualbox
+> >
+> > After installing Debian 6 on a virtual machine
+> > I tried installing the KDE desktop
+> >
+> > The system HDD is 8Gb
+> > Both root (/) and /home are btrfs
+> > over LVM.
+> >
+> > While installing the packages I run into:
+> >
+> > no space left, need 4096, 4096 dealloc bytes, 1776283648 bytes_used, 0
+> > bytes_reserved,
+> > 0 bytes_pinned, 0 bytes_readonly, 0 may use 1776287744 total
+> >
+> > df shows only 74% used space on /
+> >
+> > kernel used: stock debian 6 2.6.32-5-686
+> >
+> > At the moment I cannot access it with normal boot, only recovery mode.
+> >
+> > I can provide whatever info you would like as long as you think of a
+> > way to load the normal system and not the recovery mode.
+>
+> IIRC .32 has all sorts of ENOSPC problems; I think this was seriously
+> tackled in kernels > .32... this kernel was only declared ready for
+> "early adopters", with an "expect issues" disclaimer.
+>
+> The btrfs-tools in squeeze is probably so old you may not even have
+> the `btrfs` binary, but I don't run debian so I'm not sure there...
+> not really a solution probably for you, but I wouldn't run that kernel
+> if using btrfs.
+>
+> C Anthony
 
-OK, the line number has changed slightly, but still getting the
-same thing with:
+Hey all,
 
-git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux-2.6.git
+Thanks for all the answers.
 
-commit cb5520f02c010e3cb974b9ac06f30aafa2eebc38
-Merge: eee4da2... 3a90983...
-Author: Linus Torvalds <torvalds@linux-foundation.org>
-Date:   Mon Feb 7 14:06:18 2011 -0800
+The problem is that I cannot login to the system.only recovery mode works,
+and there btrfs command is not there as you imagined.
 
-    Merge git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable
+I will try though ssh but I don't think it's installed by default and I
+cannot install it.
+
+So the next step is try from recovery console of debian live cd, which still
+has the really old tools...
+
+I think this is quite some serious issue but generally all debian's fault
+adopting a btrfs file system support on a 2.6.32 kernel and without
+btrfs-progs on some decent version.
+
+I'll update when possible.
+Please throw any other alternatives my way anyone.
+
+Thanks,
+Leonidas
 
 
-[ 129.524029] ------------[ cut here ]------------
-[ 129.524080] WARNING: at fs/btrfs/inode.c:2161 btrfs_orphan_commit_root+0x7f/0x9b [btrfs]()
-[ 129.524111] Hardware name: System Product Name
-[ 129.524140] Modules linked in: loop netconsole configfs dm_mod sd_mod i2c_piix4 k10temp i2c_core asus_atk0110 ata_generic ahci libahci libata scsi_mod shpchp button pci_hotplug processor nfs lockd nfs_acl auth_rpcgss sunrpc r8169 mii ohci_hcd ehci_hcd thermal fan thermal_sys btrfs zlib_deflate crc32c libcrc32c
-[ 129.525057] Pid: 10, comm: kworker/0:1 Tainted: G        W   2.6.38-rc3-otn1-00323-gc88f808 #5
-[ 129.525088] Call Trace:
-[ 129.525125]  [<ffffffffa003db51>] ? btrfs_orphan_commit_root+0x7f/0x9b [btrfs]
-[ 129.525158]  [<ffffffff81043a20>] ? warn_slowpath_common+0x78/0x8d
-[ 129.525195]  [<ffffffffa003db51>] ? btrfs_orphan_commit_root+0x7f/0x9b [btrfs]
-[ 129.525232]  [<ffffffffa0033729>] ? commit_fs_roots+0x87/0xef [btrfs]
-[ 129.525268]  [<ffffffffa00343a2>] ? btrfs_commit_transaction+0x348/0x615 [btrfs]
-[ 129.525300]  [<ffffffff8105d14a>] ? autoremove_wake_function+0x0/0x2e
-[ 129.525336]  [<ffffffffa00c8e49>] ? call_transmit+0x214/0x24f [sunrpc]
-[ 129.525372]  [<ffffffffa0034681>] ? do_async_commit+0x12/0x1b [btrfs]
-[ 129.525400]  [<ffffffff81057df4>] ? process_one_work+0x22c/0x3a5
-[ 129.525437]  [<ffffffffa003466f>] ? do_async_commit+0x0/0x1b [btrfs]
-[ 129.525465]  [<ffffffff810582c0>] ? worker_thread+0x1d5/0x353
-[ 129.525495]  [<ffffffff810580eb>] ? worker_thread+0x0/0x353
-[ 129.525526]  [<ffffffff8105cd08>] ? kthread+0x7e/0x86
-[ 129.525557]  [<ffffffff8100a764>] ? kernel_thread_helper+0x4/0x10
-[ 129.525588]  [<ffffffff8105cc8a>] ? kthread+0x0/0x86
-[ 129.525617]  [<ffffffff8100a760>] ? kernel_thread_helper+0x0/0x10
-[ 129.525649] ---[ end trace deccd3c0dec6c2ba ]---
+-- 
+Caution: breathing may be hazardous to your health.

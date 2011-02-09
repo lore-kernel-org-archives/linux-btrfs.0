@@ -1,71 +1,43 @@
-From: Dan Rosenberg <drosenberg@vsecurity.com>
-Subject: [PATCH] btrfs: prevent heap corruption in btrfs_ioctl_space_info()
-Date: Wed, 09 Feb 2011 09:12:46 -0500
-Message-ID: <1297260766.2327.40.camel@dan>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH] btrfs: prevent heap corruption in
+	btrfs_ioctl_space_info()
+Date: Wed, 9 Feb 2011 10:51:33 -0500
+Message-ID: <20110209155130.GA2564@localhost.localdomain>
+References: <1297260766.2327.40.camel@dan>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Cc: security@kernel.org, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org, stable@kernel.org
-To: chris.mason@oracle.com
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: chris.mason@oracle.com, security@kernel.org,
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+	stable@kernel.org
+To: Dan Rosenberg <drosenberg@vsecurity.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1297260766.2327.40.camel@dan>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit bf5fc093c5b625e4259203f1cee7ca73488a5620 refactored
-btrfs_ioctl_space_info() and introduced several security issues.
+On Wed, Feb 09, 2011 at 09:12:46AM -0500, Dan Rosenberg wrote:
+> Commit bf5fc093c5b625e4259203f1cee7ca73488a5620 refactored
+> btrfs_ioctl_space_info() and introduced several security issues.
+> 
+> space_args.space_slots is an unsigned 64-bit type controlled by a
+> possibly unprivileged caller.  The comparison as a signed int type
+> allows providing values that are treated as negative and cause the
+> subsequent allocation size calculation to wrap, or be truncated to 0.
+> By providing a size that's truncated to 0, kmalloc() will return
+> ZERO_SIZE_PTR.  It's also possible to provide a value smaller than the
+> slot count.  The subsequent loop ignores the allocation size when
+> copying data in, resulting in a heap overflow or write to ZERO_SIZE_PTR.
+> 
+> The fix changes the slot count type and comparison typecast to u64,
+> which prevents truncation or signedness errors, and also ensures that we
+> don't copy more data than we've allocated in the subsequent loop.  Note
+> that zero-size allocations are no longer possible since there is already
+> an explicit check for space_args.space_slots being 0 and truncation of
+> this value is no longer an issue.
+> 
+> Signed-off-by: Dan Rosenberg <drosenberg@vsecurity.com>
 
-space_args.space_slots is an unsigned 64-bit type controlled by a
-possibly unprivileged caller.  The comparison as a signed int type
-allows providing values that are treated as negative and cause the
-subsequent allocation size calculation to wrap, or be truncated to 0.
-By providing a size that's truncated to 0, kmalloc() will return
-ZERO_SIZE_PTR.  It's also possible to provide a value smaller than the
-slot count.  The subsequent loop ignores the allocation size when
-copying data in, resulting in a heap overflow or write to ZERO_SIZE_PTR.
+Reviewed-by: Josef Bacik <josef@redhat.com>
 
-The fix changes the slot count type and comparison typecast to u64,
-which prevents truncation or signedness errors, and also ensures that we
-don't copy more data than we've allocated in the subsequent loop.  Note
-that zero-size allocations are no longer possible since there is already
-an explicit check for space_args.space_slots being 0 and truncation of
-this value is no longer an issue.
+Thanks,
 
-Signed-off-by: Dan Rosenberg <drosenberg@vsecurity.com>
----
- fs/btrfs/ioctl.c |   10 ++++++++--
- 1 files changed, 8 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 02d224e..f1a43df 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2208,7 +2208,7 @@ long btrfs_ioctl_space_info(struct btrfs_root *root, void __user *arg)
- 	int num_types = 4;
- 	int alloc_size;
- 	int ret = 0;
--	int slot_count = 0;
-+	u64 slot_count = 0;
- 	int i, c;
- 
- 	if (copy_from_user(&space_args,
-@@ -2247,7 +2247,7 @@ long btrfs_ioctl_space_info(struct btrfs_root *root, void __user *arg)
- 		goto out;
- 	}
- 
--	slot_count = min_t(int, space_args.space_slots, slot_count);
-+	slot_count = min_t(u64, space_args.space_slots, slot_count);
- 
- 	alloc_size = sizeof(*dest) * slot_count;
- 
-@@ -2267,6 +2267,12 @@ long btrfs_ioctl_space_info(struct btrfs_root *root, void __user *arg)
- 	for (i = 0; i < num_types; i++) {
- 		struct btrfs_space_info *tmp;
- 
-+		/* Don't copy in more than we allocated */
-+		if (!slot_count)
-+			break;
-+
-+		slot_count--;
-+
- 		info = NULL;
- 		rcu_read_lock();
- 		list_for_each_entry_rcu(tmp, &root->fs_info->space_info,
+Josef

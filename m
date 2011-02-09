@@ -1,74 +1,72 @@
-From: Hubert Kario <kario@wit.edu.pl>
-Subject: [PATCH] explain filesystem resize devid option
-Date: Wed, 9 Feb 2011 11:53:26 +0100
-Message-ID: <201102091153.27190.kario@wit.edu.pl>
+From: =?ISO-8859-1?Q?P=E1draig_Brady?= <P@draigBrady.com>
+Subject: Re: bug#8001: cp (8.10) sparse handling fails on compressed btrfs
+ (cp/fiemap-2)
+Date: Wed, 09 Feb 2011 10:57:14 +0000
+Message-ID: <4D52730A.2080008@draigBrady.com>
+References: <201102072253.34476.vapier@gentoo.org>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="us-ascii"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: 8001@debbugs.gnu.org,
+	BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
+To: Mike Frysinger <vapier@gentoo.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201102072253.34476.vapier@gentoo.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Adds explanation to help message and man page how to use `filesystem resize'
-to resize only a single device not all devices of a file system.
+On 08/02/11 03:53, Mike Frysinger wrote:
+> after upgrading from coreutils 8.9 to 8.10, the sparse handling in cp=
+ is=20
+> silently breaking on btrfs filesystems with the compressed option ena=
+bled. =20
+> using --sparse=3Dnever works fine, but "auto" or "always" tend to fai=
+l.  the=20
+> cp/fiemap-2 test catches the issue nicely.
+>=20
+> to reproduce (i'm using linux-2.6.37):
+> file=3Dbtrfs.img
+> mntp=3D/mnt/tmp/
+> dd if=3D/dev/zero of=3D$file bs=3D1M count=3D0 seek=3D1024
+> mkfs.btrfs $file=20
+> mount -t btrfs -o compress $file $mntp
+> cd $mntp
+> tar xf ~/coreutils-8.10.tar.xz
+> cd coreutils-8.10/tests
+> ./cp/fiemap-2
+>=20
+> and this last test shows:
+> Filesystem    Type   1K-blocks      Used Available Use% Mounted on
+> /dev/loop0   btrfs     1048576     20420    377028   6% /mnt/tmp
+> 0+0 records in
+> 0+0 records out
+> 0 bytes (0 B) copied, 2.7598e-05 s, 0.0 kB/s
+> k k2 differ: byte 1, line 1
 
-Signed-off-by: Hubert Kario <kario@wit.edu.pl>
----
-patch to apply cleanly requires my previous patches adding advanced help 
-functionality
+Eek.
 
- btrfs.c        |   10 +++++++---
- man/btrfs.8.in |    6 ++++--
- 2 files changed, 11 insertions(+), 5 deletions(-)
+That doesn't trigger here (2.6.35.10-72.fc14.i686)
+because I guess this kernel doesn't honor the compress attribute:
 
-diff --git a/btrfs.c b/btrfs.c
-index bd6f6f8..a28a573 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -98,10 +98,14 @@ static struct Command commands[] = {
-           NULL
- 	},
- 	{ do_resize, 2,
--	  "filesystem resize", "[+/-]<newsize>[gkm]|max <filesystem>\n"
-+	  "filesystem resize", "[<devid>:][+|-]<newsize>[gkm]|max <filesystem>\n"
- 		"Resize the file system. If 'max' is passed, the filesystem\n"
--		"will occupe all available space on the device.",
--          NULL
-+		"will occupy all available space on the device.",
-+          "[<devid>:][+|-]<newsize>[gkm]|max <filesystem>\n"
-+                "Resize the file system. If no <devid> is specified, change is\n"
-+                "applied to every device in file system. If devid is specified\n"
-+                "the change in size is applied only to selected device.\n"
-+                "To get device numbers use `btrfs filesystem show\' command."
- 	},
- 	{ do_show_filesystem, 999,
- 	  "filesystem show", "[<uuid>|<label>]\n"
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index cba2de1..afb9824 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -19,7 +19,7 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBfilesystem sync\fP\fI <path> \fP
- .PP
--\fBbtrfs\fP \fBfilesystem resize\fP\fI [+/\-]<size>[gkm]|max <filesystem>\fP
-+\fBbtrfs\fP \fBfilesystem resize\fP\fI [<devid>:][+|\-]<size>[gkm]|max <filesystem>\fP
- .PP
- \fBbtrfs\fP \fBdevice scan\fP\fI [<device> [<device>..]]\fP
- .PP
-@@ -138,9 +138,11 @@ Force a sync for the filesystem identified by \fI<path>\fR.
- .\" Some wording are extracted by the resize2fs man page
- .\"
- 
--\fBfilesystem resize\fR\fI [+/\-]<size>[gkm]|max <path>\fR
-+\fBfilesystem resize\fR\fI [<devid>:][+|\-]<size>[gkm]|max <path>\fR
- Resize a filesystem identified by \fI<path>\fR.
- The \fI<size>\fR parameter specifies the new size of the filesystem.
-+To change size of only one device the device id can be specified before \fI:\fR.
-+Device identifiers are printed by \fBfilesystem show\fR command.
- If the prefix \fI+\fR or \fI\-\fR is present the size is increased or decreased
- by the quantity \fI<size>\fR.
- If no units are specified, the unit of the \fI<size>\fR parameter defaults to
--- 
-1.7.4
+dd if=3D/dev/zero of=3Dtest.size count=3D1000
+# du -B512 test.size
+1000    test.size
 
+But on a general note, we may read more (or possibly less)
+than is stored in the extent. So how to detect that?
+I suppose one could use lseek() to get the current position
+and see if it's ext_start + ext_length, otherwise adjust accordingly.
+That would add a little overhead though.
+I also notice the FIEMAP_EXTENT_DATA_ENCRYPTED and FIEMAP_EXTENT_ENCODE=
+D
+flags, which could mean we only need to handle these extents specially.
+Does `filefrag -v` show those for you? I see nothing here.
+
+I don't suppose there is any facility to read the raw data
+to also avoid decompressing and compressing again (sendfile, mmap?).
+
+cheers,
+P=E1draig.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

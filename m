@@ -1,40 +1,41 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: kernel panic (was: no space left on device)
-Date: 09 Feb 2011 13:41:00 +0100
-Message-ID: <BfYQ10yT1uB@helmut.hullen.de>
-References: <4D5191F2.5080509@logtenberg.eu>
-Reply-To: helmut@hullen.de
+From: Ilya Dryomov <idryomov@gmail.com>
+Subject: [PATCH] Btrfs - use %pU to print fsid
+Date: Wed, 9 Feb 2011 16:05:31 +0200
+Message-ID: <20110209140531.GA26945@kwango.lan.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D5191F2.5080509@logtenberg.eu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Erik,
+Get rid of FIXME comment.  Uuids from dmesg are now the same as uuids
+given by btrfs-progs.
 
-Du meintest am 08.02.11:
+Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
+---
+ fs/btrfs/volumes.c |    8 ++------
+ 1 files changed, 2 insertions(+), 6 deletions(-)
 
->> Maybe that doesn't help now. I'm working with kernel 2.6.37 and
->> kernel 2.6.38-rc2, and I've got big problems.
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 2636a05..83b789c 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -714,12 +714,8 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+ 	transid = btrfs_super_generation(disk_super);
+ 	if (disk_super->label[0])
+ 		printk(KERN_INFO "device label %s ", disk_super->label);
+-	else {
+-		/* FIXME, make a readl uuid parser */
+-		printk(KERN_INFO "device fsid %llx-%llx ",
+-		       *(unsigned long long *)disk_super->fsid,
+-		       *(unsigned long long *)(disk_super->fsid + 8));
+-	}
++	else
++		printk(KERN_INFO "device fsid %pU ", disk_super->fsid);
+ 	printk(KERN_CONT "devid %llu transid %llu %s\n",
+ 	       (unsigned long long)devid, (unsigned long long)transid, path);
+ 	ret = device_list_add(path, disk_super, devid, fs_devices_ret);
+-- 
+1.7.2.3
 
-> I had to install at least 2.6.37 to have a kernel with an advanced
-> enough balance feature to actually reclaim the free space and report
-> it correctly too.
-> Still, I had so much kernel crashes during this balance operation
-> that even after numerous retries I still hadn't once completed it (on
-> a FS of merely 300GB). Fortunately Zheng Yan coded a patch, which I
-> applied to 2.6.38-rc2, so that I could finally run - and finish - the
-> balance operation.
-
-Didn't help - sorry.
-
-You can take a look to the last lines of my system after crashing into  
-"kernel panic" with blinkenlights:
-
-  http://helmut.hullen.de/btrfs/
-
-The screenshots are hard to read - sorry.
-
-Viele Gruesse!
-Helmut

@@ -1,21 +1,30 @@
-From: Lars Wirzenius <liw@liw.fi>
-Subject: Re: [PATCH] Btrfs-progs use safe string manipulation functions
-Date: Thu, 10 Feb 2011 11:54:45 +0000
-Message-ID: <1297338885.3524.83.camel@tacticus>
-References: <1297081322.4615.10.camel@monotop> <4D53C711.3000309@nsc.liu.se>
-	 <AANLkTi=OaU8Wj+W2KuPZLbq_85_yVK9mTer9Q7hfTCUc@mail.gmail.com>
-	 <ij0iku$hbq$1@dough.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-To: linux-btrfs@vger.kernel.org
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: New btrfsck status
+Date: Thu, 10 Feb 2011 07:17:10 -0500
+Message-ID: <1297340143-sup-3602@think>
+References: <AANLkTinu_29idVYvudG=E6VaxwqQoN2YEi57-RPk3dkF@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Ben Gamari <bgamari@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <ij0iku$hbq$1@dough.gmane.org>
+In-reply-to: <AANLkTinu_29idVYvudG=E6VaxwqQoN2YEi57-RPk3dkF@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On to, 2011-02-10 at 11:37 +0000, Jeremy Sanders wrote:
-> There's strlcpy, but it's not in glibc because of possible truncation 
-> errors!
+Excerpts from Ben Gamari's message of 2011-02-09 21:52:20 -0500:
+> Hey all,
+> 
+> Over the last several months there have been many claims regarding the
+> release of the rewritten btrfsck. Unfortunately, despite numerous
+> claims that it will be released Real Soon Now(c), I have yet to see
+> even a repository with preliminary code. Did I miss an announcement?
+> There is something to be said for "release early, release often." Is
+> there a timeline for getting btrfsck into some sort of usable form?
 
-snprintf is standard, and should be about as safe as it gets with the
-glibc functions.
+Yes, but its still real soon now.  I've been at about 90% done since
+Christmas.  It would have been out last week but I've been chasing a
+debugging a very difficult corruption under load.
 
+I finally found a race in btrfs causing the corruption and now I'm back
+on fsck full time again.
+
+-chris

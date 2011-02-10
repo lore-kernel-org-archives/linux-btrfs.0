@@ -1,168 +1,361 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: Re: Corrupt filesystem after power failure
-Date: Thu, 10 Feb 2011 12:57:20 +0000
-Message-ID: <20110210125720.GA22398@carfax.org.uk>
-References: <AANLkTikujRv82iNQ4vNvyGGqDotH_bOxfFCqqnC0ycU2@mail.gmail.com>
+From: Eduardo Silva <eduardo.silva@oracle.com>
+Subject: Re: [PATCH] Btrfs-progs use safe string manipulation functions
+Date: Thu, 10 Feb 2011 10:29:45 -0300
+Message-ID: <1297344585.28159.12.camel@monotop>
+References: <1297081322.4615.10.camel@monotop> <4D53C711.3000309@nsc.liu.se>
+	 <AANLkTi=OaU8Wj+W2KuPZLbq_85_yVK9mTer9Q7hfTCUc@mail.gmail.com>
+	 <ij0iku$hbq$1@dough.gmane.org>
+	 <AANLkTi=7B1FLtSrcJ88zgitCBiRctwveRhLzt_2yAHZL@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="WIyZ46R2i8wDzkSu"
-Cc: linux-btrfs@vger.kernel.org
-To: Anil Kumar <anilet@gmail.com>
+Content-Type: multipart/mixed; boundary="=-NLXZyhHSIV2nmKFkXL6O"
+Cc: Jeremy Sanders <jeremy@jeremysanders.net>,
+	linux-btrfs@vger.kernel.org
+To: Olaf van der Spek <olafvdspek@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTikujRv82iNQ4vNvyGGqDotH_bOxfFCqqnC0ycU2@mail.gmail.com>
+In-Reply-To: <AANLkTi=7B1FLtSrcJ88zgitCBiRctwveRhLzt_2yAHZL@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---WIyZ46R2i8wDzkSu
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+--=-NLXZyhHSIV2nmKFkXL6O
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
 
-On Thu, Feb 10, 2011 at 10:29:41PM +1100, Anil Kumar wrote:
-> Full backtrace is at http://pastebin.com/4Re7tVFP
+On Thu, 2011-02-10 at 12:39 +0100, Olaf van der Spek wrote:
+> On Thu, Feb 10, 2011 at 12:37 PM, Jeremy Sanders
+> <jeremy@jeremysanders.net> wrote:
+> > Olaf van der Spek wrote:
+> >
+> >> On Thu, Feb 10, 2011 at 12:08 PM, Thomas Bellman <bellman@nsc.liu.se>
+> >> wrote:
+> >>> strncpy(args.name, source, BTRFS_PATH_NAME_MAX);
+> >>> args.name[BTRFS_PATH_NAME_MAX] = '\0';
+> >>
+> >> That's silly. Isn't there a sane safe variant of strcpy?
+> >
+> > There's strlcpy, but it's not in glibc because of possible truncation
+> > errors!
+> 
+> Then use a private wrapper.
+> 
 
-   Pastebins aren't archived. For posterity, here it is:
+Here's the new patch:
 
-Feb 10 21:57:36 linux-wuce kernel: [  337.522818] Btrfs loaded
-Feb 10 21:57:36 linux-wuce kernel: [  337.538044] device fsid d0485eeb56124=
-34f-456b063393781ea9 devid 1 transid 131812 /dev/sda7
-=20
-Message from syslogd@linux-wuce at Feb 10 21:57:40 ...
- kernel:[  341.616905] ------------[ cut here ]------------
-=20
-Message from syslogd@linux-wuce at Feb 10 21:57:40 ...
- kernel:[  341.616919] invalid opcode: 0000 [#1] PREEMPT SMP
-=20
-Message from syslogd@linux-wuce at Feb 10 21:57:40 ...
- kernel:[  341.616926] last sysfs file: /sys/devices/LNXSYSTM:00/LNXSYBUS:0=
-0/PNP0A08:00/device:32/PNP0C09:00/PNP0C0A:00/power_supply/BAT0/voltage_now
-=20
-Message from syslogd@linux-wuce at Feb 10 21:57:40 ...
- kernel:[  341.617148] Stack:
-=20
-Message from syslogd@linux-wuce at Feb 10 21:57:40 ...
- kernel:[  341.617173] Call Trace:
-=20
-Message from syslogd@linux-wuce at Feb 10 21:57:40 ...
- kernel:[  341.617866] Code: f4 52 96 e0 31 c0 48 81 c4 98 00 00 00 5b 5d 4=
-1 5c 41 5d 41 5e 41 5f c3 b8 fe ff ff ff eb e7 0f 0b 0f 0b 0f 0b 0f 0b 0f 0=
-b 0f 0b <0f> 0b 66 66 2e 0f 1f 84 00 00 00 00 00 48 81 ec 28 01 00 00 48
-Feb 10 21:57:40 linux-wuce kernel: [  341.616905] ------------[ cut here ]-=
------------
-Feb 10 21:57:40 linux-wuce kernel: [  341.616912] kernel BUG at /usr/src/pa=
-ckages/BUILD/kernel-desktop-2.6.34.7/linux-2.6.34/fs/btrfs/tree-log.c:813!
-Feb 10 21:57:40 linux-wuce kernel: [  341.616919] invalid opcode: 0000 [#1]=
- PREEMPT SMP
-Feb 10 21:57:40 linux-wuce kernel: [  341.616926] last sysfs file: /sys/dev=
-ices/LNXSYSTM:00/LNXSYBUS:00/PNP0A08:00/device:32/PNP0C09:00/PNP0C0A:00/pow=
-er_supply/BAT0/voltage_now
-Feb 10 21:57:40 linux-wuce kernel: [  341.616932] CPU 0
-Feb 10 21:57:40 linux-wuce kernel: [  341.616935] Modules linked in: btrfs =
-zlib_deflate crc32c libcrc32c arc4 ecb ip6t_LOG xt_tcpudp xt_pkttype ipt_LO=
-G xt_limit af_packet vmsync vmblock snd_pcm_oss snd_mixer_oss snd_seq snd_s=
-eq_device edd vboxdrv ip6t_REJECT nf_conntrack_ipv6 ip6table_raw xt_NOTRACK=
- ipt_REJECT xt_state iptable_raw iptable_filter cpufreq_conservative cpufre=
-q_userspace cpufreq_powersave acpi_cpufreq mperf ip6table_mangle nf_conntra=
-ck_netbios_ns nf_conntrack_ipv4 nf_conntrack nf_defrag_ipv4 ip_tables ip6ta=
-ble_filter ip6_tables x_tables vfat fat fuse loop dm_mod snd_hda_codec_inte=
-lhdmi snd_hda_codec_realtek snd_hda_intel snd_hda_codec snd_hwdep snd_pcm s=
-nd_timer snd soundcore sr_mod iTCO_wdt usb_storage r8192se_pci atl1c iTCO_v=
-endor_support cdrom sg pcspkr acer_wmi snd_page_alloc i2c_i801 battery ac j=
-oydev rfkill wmi ext4 jbd2 crc16 sd_mod i915 ahci libata drm_kms_helper scs=
-i_mod drm i2c_algo_bit video intel_agp button fan thermal processor thermal=
-_sys [last unloaded: preloadtrace]
-Feb 10 21:57:40 linux-wuce kernel: [  341.617054]
-Feb 10 21:57:40 linux-wuce kernel: [  341.617060] Pid: 7628, comm: mount No=
-t tainted 2.6.34.7-0.7-desktop #1 E7214          /E7214         =20
-Feb 10 21:57:40 linux-wuce kernel: [  341.617065] RIP: 0010:[<ffffffffa07d5=
-eb3>]  [<ffffffffa07d5eb3>] add_inode_ref+0x4a3/0x4b0 [btrfs]
-Feb 10 21:57:40 linux-wuce kernel: [  341.617094] RSP: 0018:ffff8800b09af8b=
-8  EFLAGS: 00010246
-Feb 10 21:57:40 linux-wuce kernel: [  341.617098] RAX: 0000000000000000 RBX=
-: 0000000000000097 RCX: 0000000000000000
-Feb 10 21:57:40 linux-wuce kernel: [  341.617103] RDX: 0000000000000002 RSI=
-: ffff880074374820 RDI: ffff8800b0d9a280
-Feb 10 21:57:40 linux-wuce kernel: [  341.617107] RBP: 0000000000000002 R08=
-: 0000000000000000 R09: ff6dc8d155c6ee03
-Feb 10 21:57:40 linux-wuce kernel: [  341.617112] R10: 0000000000000000 R11=
-: 0000000000000000 R12: ffff8800b09afb78
-Feb 10 21:57:40 linux-wuce kernel: [  341.617116] R13: ffff88007215db50 R14=
-: 0000000000000009 R15: ffff8800b09af9d8
-Feb 10 21:57:40 linux-wuce kernel: [  341.617121] FS:  00007fb2eddb07e0(000=
-0) GS:ffff880001e00000(0000) knlGS:0000000000000000
-Feb 10 21:57:40 linux-wuce kernel: [  341.617126] CS:  0010 DS: 0000 ES: 00=
-00 CR0: 000000008005003b
-Feb 10 21:57:40 linux-wuce kernel: [  341.617131] CR2: 00007f01f58e5020 CR3=
-: 00000000b1d7f000 CR4: 00000000000006f0
-Feb 10 21:57:40 linux-wuce kernel: [  341.617135] DR0: 0000000000000000 DR1=
-: 0000000000000000 DR2: 0000000000000000
-Feb 10 21:57:40 linux-wuce kernel: [  341.617140] DR3: 0000000000000000 DR6=
-: 00000000ffff0ff0 DR7: 0000000000000400
-Feb 10 21:57:40 linux-wuce kernel: [  341.617145] Process mount (pid: 7628,=
- threadinfo ffff8800b09ae000, task ffff8800b1dca540)
-Feb 10 21:57:40 linux-wuce kernel: [  341.617148] Stack:
-Feb 10 21:57:40 linux-wuce kernel: [  341.617151]  0000000000000000 0000000=
-000000000 ffffffffa079a930 ffff88007215db50
-Feb 10 21:57:40 linux-wuce kernel: [  341.617158] <0> ffff8800b17fe000 ffff=
-88007e035eb0 ffff8800b5991000 0000000000000009
-Feb 10 21:57:40 linux-wuce kernel: [  341.617165] <0> ffff8800b09af9b8 ffff=
-880074374d78 ffff88007215db50 0000000000000004
-Feb 10 21:57:40 linux-wuce kernel: [  341.617173] Call Trace:
-Feb 10 21:57:40 linux-wuce kernel: [  341.617309]  [<ffffffffa07d66e8>] rep=
-lay_one_buffer+0x2e8/0x3b0 [btrfs]
-Feb 10 21:57:40 linux-wuce kernel: [  341.617421]  [<ffffffffa07d3d85>] wal=
-k_down_log_tree+0x375/0x540 [btrfs]
-Feb 10 21:57:40 linux-wuce kernel: [  341.617529]  [<ffffffffa07d4053>] wal=
-k_log_tree+0x103/0x280 [btrfs]
-Feb 10 21:57:40 linux-wuce kernel: [  341.617637]  [<ffffffffa07d8223>] btr=
-fs_recover_log_trees+0x223/0x310 [btrfs]
-Feb 10 21:57:40 linux-wuce kernel: [  341.617748]  [<ffffffffa079f049>] ope=
-n_ctree+0x1269/0x18e0 [btrfs]
-Feb 10 21:57:40 linux-wuce kernel: [  341.617793]  [<ffffffffa077cc0e>] btr=
-fs_get_sb+0x31e/0x430 [btrfs]
-Feb 10 21:57:40 linux-wuce kernel: [  341.617809]  [<ffffffff811271e0>] vfs=
-_kern_mount+0x80/0x210
-Feb 10 21:57:40 linux-wuce kernel: [  341.617819]  [<ffffffff811273e3>] do_=
-kern_mount+0x53/0x130
-Feb 10 21:57:40 linux-wuce kernel: [  341.617829]  [<ffffffff81141f20>] do_=
-mount+0x200/0x250
-Feb 10 21:57:40 linux-wuce kernel: [  341.617839]  [<ffffffff8114205a>] sys=
-_mount+0x9a/0xf0
-Feb 10 21:57:40 linux-wuce kernel: [  341.617851]  [<ffffffff81002ffb>] sys=
-tem_call_fastpath+0x16/0x1b
-Feb 10 21:57:40 linux-wuce kernel: [  341.617863]  [<00007fb2ed4f0ffa>] 0x7=
-fb2ed4f0ffa
-Feb 10 21:57:40 linux-wuce kernel: [  341.617866] Code: f4 52 96 e0 31 c0 4=
-8 81 c4 98 00 00 00 5b 5d 41 5c 41 5d 41 5e 41 5f c3 b8 fe ff ff ff eb e7 0=
-f 0b 0f 0b 0f 0b 0f 0b 0f 0b 0f 0b <0f> 0b 66 66 2e 0f 1f 84 00 00 00 00 00=
- 48 81 ec 28 01 00 00 48
-Feb 10 21:57:40 linux-wuce kernel: [  341.617921] RIP  [<ffffffffa07d5eb3>]=
- add_inode_ref+0x4a3/0x4b0 [btrfs]
-Feb 10 21:57:40 linux-wuce kernel: [  341.617941]  RSP <ffff8800b09af8b8>
-Feb 10 21:57:40 linux-wuce kernel: [  341.617972] ---[ end trace 22bed547f3=
-298140 ]---
-Feb 10 21:57:45 linux-wuce kernel: [  346.284240] rtl8192se_update_ratr_tab=
-le: ratr_index=3D0 ratr_table=3D0x00000ff5
-Feb 10 21:58:08 linux-wuce kernel: [  369.474197] SetHwReg8192SE():HW_VAR_A=
-C_PARAM eACI:0:a425
+----
+[PATCH] Add safe string manipulation functions
 
---=20
-=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
- =3D=3D=3D
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-       --- Someone's been throwing dead sheep down my Fun Well ---      =20
+Deprecate direct use of strcpy(3)
+The following string manipulation function has been added:
 
---WIyZ46R2i8wDzkSu
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
+   - string_copy() : wrapper of strcpy(3)
+   - string_ncopy(): wrapper of strncpy(3)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
+both function compose safe NULL terminated strings.
+----
 
-iD8DBQFNU+CwIKyzvlFcI40RAncVAKDLsfJXC99gkahLQSy4sjunYNK0GACbBsQx
-6SsAH0bQ6fBzKAvI2/lUiaA=
-=J/Xb
------END PGP SIGNATURE-----
+I check that the code most of the time raise an error if the path is too
+long, so the new wrappers should be ok...
 
---WIyZ46R2i8wDzkSu--
+best, 
+
+Eduardo Silva
+ 
+
+--=-NLXZyhHSIV2nmKFkXL6O
+Content-Disposition: attachment; filename="0001-Add-safe-string-manipulation-functions.patch"
+Content-Type: text/x-patch; name="0001-Add-safe-string-manipulation-functions.patch"; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+
+>From 6e551f4d9482a438beb336c4ec3a54735a15b76c Mon Sep 17 00:00:00 2001
+From: Eduardo Silva <eduardo.silva@oracle.com>
+Date: Thu, 10 Feb 2011 10:25:15 -0300
+Subject: [PATCH] Add safe string manipulation functions
+
+Deprecate direct use of strcpy(3)
+The following string manipulation function has been added:
+
+   - string_copy() : wrapper of strcpy(3)
+   - string_ncopy(): wrapper of strncpy(3)
+
+both function compose safe NULL terminated strings.
+
+Signed-off-by: Eduardo Silva <eduardo.silva@oracle.com>
+---
+ btrfs-list.c |    4 ++--
+ btrfs-vol.c  |    2 +-
+ btrfs.c      |    3 ++-
+ btrfs_cmds.c |   14 +++++++-------
+ btrfsctl.c   |    2 +-
+ convert.c    |    4 ++--
+ utils.c      |   38 ++++++++++++++++++++++++++++++++------
+ utils.h      |    5 +++++
+ 8 files changed, 52 insertions(+), 20 deletions(-)
+
+diff --git a/btrfs-list.c b/btrfs-list.c
+index 93766a8..ede51a4 100644
+--- a/btrfs-list.c
++++ b/btrfs-list.c
+@@ -291,7 +291,7 @@ static int lookup_ino_path(int fd, struct root_info *ri)
+ 			perror("malloc failed");
+ 			exit(1);
+ 		}
+-		strcpy(ri->path, args.name);
++		string_copy(ri->path, args.name);
+ 		strcat(ri->path, ri->name);
+ 	} else {
+ 		/* we're at the root of ref_tree */
+@@ -448,7 +448,7 @@ char *build_name(char *dirid, char *name)
+ 	full = malloc(strlen(dirid) + strlen(name) + 1);
+ 	if (!full)
+ 		return NULL;
+-	strcpy(full, dirid);
++	string_copy(full, dirid);
+ 	strcat(full, name);
+ 	return full;
+ }
+diff --git a/btrfs-vol.c b/btrfs-vol.c
+index 4ed799d..60361f6 100644
+--- a/btrfs-vol.c
++++ b/btrfs-vol.c
+@@ -151,7 +151,7 @@ int main(int ac, char **av)
+ 	}
+ 	fd = dirfd(dirstream);
+ 	if (device)
+-		strcpy(args.name, device);
++		string_copy(args.name, device);
+ 	else
+ 		args.name[0] = '\0';
+ 
+diff --git a/btrfs.c b/btrfs.c
+index 46314cf..ddf4960 100644
+--- a/btrfs.c
++++ b/btrfs.c
+@@ -21,6 +21,7 @@
+ 
+ #include "kerncompat.h"
+ #include "btrfs_cmds.h"
++#include "utils.h"
+ #include "version.h"
+ 
+ typedef int (*CommandFunction)(int argc, char **argv);
+@@ -241,7 +242,7 @@ static int prepare_args(int *ac, char ***av, char *prgname, struct Command *cmd
+ 	for(i=0; i < *ac ; i++ )
+ 		ret[i+1] = (*av)[i];
+ 
+-	strcpy(newname, prgname);
++	string_copy(newname, prgname);
+ 	strcat(newname, " ");
+ 	strcat(newname, cmd->verb);
+ 
+diff --git a/btrfs_cmds.c b/btrfs_cmds.c
+index 8031c58..f4be8c2 100644
+--- a/btrfs_cmds.c
++++ b/btrfs_cmds.c
+@@ -375,7 +375,7 @@ int do_clone(int argc, char **argv)
+ 	printf("Create a snapshot of '%s' in '%s/%s'\n",
+ 	       subvol, dstdir, newname);
+ 	args.fd = fd;
+-	strcpy(args.name, newname);
++	string_ncopy(args.name, newname, BTRFS_PATH_NAME_MAX);
+ 	res = ioctl(fddst, BTRFS_IOC_SNAP_CREATE, &args);
+ 
+ 	close(fd);
+@@ -436,7 +436,7 @@ int do_delete_subvolume(int argc, char **argv)
+ 	}
+ 
+ 	printf("Delete subvolume '%s/%s'\n", dname, vname);
+-	strcpy(args.name, vname);
++	string_ncopy(args.name, vname, BTRFS_PATH_NAME_MAX);
+ 	res = ioctl(fd, BTRFS_IOC_SNAP_DESTROY, &args);
+ 
+ 	close(fd);
+@@ -490,7 +490,7 @@ int do_create_subvol(int argc, char **argv)
+ 	}
+ 
+ 	printf("Create subvolume '%s/%s'\n", dstdir, newname);
+-	strcpy(args.name, newname);
++	string_ncopy(args.name, newname, BTRFS_PATH_NAME_MAX);
+ 	res = ioctl(fddst, BTRFS_IOC_SUBVOL_CREATE, &args);
+ 
+ 	close(fddst);
+@@ -553,7 +553,7 @@ int do_scan(int argc, char **argv)
+ 
+ 		printf("Scanning for Btrfs filesystems in '%s'\n", argv[i]);
+ 
+-		strcpy(args.name, argv[i]);
++		string_ncopy(args.name, argv[i], BTRFS_PATH_NAME_MAX);
+ 		/*
+ 		 * FIXME: which are the error code returned by this ioctl ?
+ 		 * it seems that is impossible to understand if there no is
+@@ -593,7 +593,7 @@ int do_resize(int argc, char **argv)
+ 	}
+ 
+ 	printf("Resize '%s' of '%s'\n", path, amount);
+-	strcpy(args.name, amount);
++	string_ncopy(args.name, amount, BTRFS_VOL_NAME_MAX);
+ 	res = ioctl(fd, BTRFS_IOC_RESIZE, &args);
+ 	close(fd);
+ 	if( res < 0 ){
+@@ -736,7 +736,7 @@ int do_add_volume(int nargs, char **args)
+ 		}
+ 		close(devfd);
+ 
+-		strcpy(ioctl_args.name, args[i]);
++		string_ncopy(ioctl_args.name, args[i], BTRFS_PATH_NAME_MAX);
+ 		res = ioctl(fdmnt, BTRFS_IOC_ADD_DEV, &ioctl_args);
+ 		if(res<0){
+ 			fprintf(stderr, "ERROR: error adding the device '%s'\n", args[i]);
+@@ -792,7 +792,7 @@ int do_remove_volume(int nargs, char **args)
+ 		struct	btrfs_ioctl_vol_args arg;
+ 		int	res;
+ 
+-		strcpy(arg.name, args[i]);
++		string_ncopy(arg.name, args[i], BTRFS_PATH_NAME_MAX);
+ 		res = ioctl(fdmnt, BTRFS_IOC_RM_DEV, &arg);
+ 		if(res<0){
+ 			fprintf(stderr, "ERROR: error removing the device '%s'\n", args[i]);
+diff --git a/btrfsctl.c b/btrfsctl.c
+index 92bdf39..adfa519 100644
+--- a/btrfsctl.c
++++ b/btrfsctl.c
+@@ -237,7 +237,7 @@ int main(int ac, char **av)
+ 	 }
+ 
+ 	if (name)
+-		strcpy(args.name, name);
++                strncpy(args.name, name, BTRFS_PATH_NAME_MAX + 1);
+ 	else
+ 		args.name[0] = '\0';
+ 
+diff --git a/convert.c b/convert.c
+index d037c98..67706f3 100644
+--- a/convert.c
++++ b/convert.c
+@@ -857,7 +857,7 @@ static int copy_single_xattr(struct btrfs_trans_handle *trans,
+ 		data = databuf;
+ 		datalen = bufsize;
+ 	}
+-	strcpy(namebuf, xattr_prefix_table[name_index]);
++	strncpy(namebuf, xattr_prefix_table[name_index], XATTR_NAME_MAX);
+ 	strncat(namebuf, EXT2_EXT_ATTR_NAME(entry), entry->e_name_len);
+ 	if (name_len + datalen > BTRFS_LEAF_DATA_SIZE(root) -
+ 	    sizeof(struct btrfs_item) - sizeof(struct btrfs_dir_item)) {
+@@ -1465,7 +1465,7 @@ struct btrfs_root *link_subvol(struct btrfs_root *root, const char *base,
+ 	key.offset = (u64)-1;
+ 	key.type = BTRFS_ROOT_ITEM_KEY;
+ 
+-	strcpy(buf, base);
++	string_copy(buf, base);
+ 	for (i = 0; i < 1024; i++) {
+ 		ret = btrfs_insert_dir_item(trans, root, buf, strlen(buf),
+ 					    dirid, &key, BTRFS_FT_DIR, index);
+diff --git a/utils.c b/utils.c
+index fd894f3..0c052c1 100644
+--- a/utils.c
++++ b/utils.c
+@@ -108,7 +108,7 @@ int make_btrfs(int fd, const char *device, const char *label,
+ 	btrfs_set_super_csum_type(&super, BTRFS_CSUM_TYPE_CRC32);
+ 	btrfs_set_super_chunk_root_generation(&super, 1);
+ 	if (label)
+-		strcpy(super.label, label);
++		strncpy(super.label, label, BTRFS_LABEL_SIZE - 1);
+ 
+ 	buf = malloc(sizeof(*buf) + max(sectorsize, leafsize));
+ 
+@@ -828,7 +828,7 @@ void btrfs_register_one_device(char *fname)
+ 			"skipping device registration\n");
+ 		return;
+ 	}
+-	strcpy(args.name, fname);
++	strncpy(args.name, fname, BTRFS_PATH_NAME_MAX);
+ 	ret = ioctl(fd, BTRFS_IOC_SCAN_DEV, &args);
+ 	close(fd);
+ }
+@@ -853,7 +853,7 @@ int btrfs_scan_one_dir(char *dirname, int run_ioctl)
+ 	pending = malloc(sizeof(*pending));
+ 	if (!pending)
+ 		return -ENOMEM;
+-	strcpy(pending->name, dirname);
++	string_copy(pending->name, dirname);
+ 
+ again:
+ 	dirname_len = strlen(pending->name);
+@@ -894,7 +894,7 @@ again:
+ 				ret = -ENOMEM;
+ 				goto fail;
+ 			}
+-			strcpy(next->name, fullpath);
++			string_copy(next->name, fullpath);
+ 			list_add_tail(&next->list, &pending_list);
+ 		}
+ 		if (!S_ISBLK(st.st_mode)) {
+@@ -971,6 +971,7 @@ static char *size_strs[] = { "", "KB", "MB", "GB", "TB",
+ char *pretty_sizes(u64 size)
+ {
+ 	int num_divs = 0;
++        int pretty_len = 16;
+ 	u64 last_size = size;
+ 	u64 fract_size = size;
+ 	float fraction;
+@@ -988,8 +989,33 @@ char *pretty_sizes(u64 size)
+ 		return NULL;
+ 
+ 	fraction = (float)fract_size / 1024;
+-	pretty = malloc(16);
+-	sprintf(pretty, "%.2f%s", fraction, size_strs[num_divs-1]);
++	pretty = malloc(pretty_len);
++	snprintf(pretty, pretty_len, "%.2f%s", fraction, size_strs[num_divs-1]);
+ 	return pretty;
+ }
+ 
++char *string_copy(char *dest, const char *src)
++{
++	if (!dest || !src) {
++		fprintf(stderr, "ERROR: invalid string_copy() parameters");
++		exit(EXIT_FAILURE);
++	}
++
++	memset(dest, '\0', sizeof(dest));
++	return strcpy(dest, src);
++}
++
++char *string_ncopy(char *dest, const char *src, size_t n)
++{
++	/* Just a basic test to avoid silly bugs */
++	if (!dest || !src || n <= 0) {
++		fprintf(stderr, "ERROR: invalid string_ncopy() parameters\n");
++		exit(EXIT_FAILURE);
++	}
++
++	strncpy(dest, src, n);
++	dest[n] = '\0';
++	
++	return dest;
++}
++
+diff --git a/utils.h b/utils.h
+index 9dce5b0..39c8455 100644
+--- a/utils.h
++++ b/utils.h
+@@ -19,6 +19,8 @@
+ #ifndef __UTILS__
+ #define __UTILS__
+ 
++#include "ctree.h"
++
+ #define BTRFS_MKFS_SYSTEM_GROUP_SIZE (4 * 1024 * 1024)
+ 
+ int make_btrfs(int fd, const char *device, const char *label,
+@@ -40,4 +42,7 @@ int check_mounted(const char *devicename);
+ int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
+ 				 int super_offset);
+ char *pretty_sizes(u64 size);
++
++char *string_copy(char *dest, const char *src);
++char *string_ncopy(char *dest, const char *src, size_t n);
+ #endif
+-- 
+1.7.1
+
+
+--=-NLXZyhHSIV2nmKFkXL6O--
+

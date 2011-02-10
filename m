@@ -1,100 +1,34 @@
-From: Lubos Kolouch <lubos.kolouch@gmail.com>
-Subject: Re: mkfs.btrfs - error checking /dev/sda5 mount status
-Date: Wed, 9 Feb 2011 20:12:36 +0000 (UTC)
-Message-ID: <iiusfk$lp4$1@dough.gmane.org>
-References: <iiqphe$217$1@dough.gmane.org> <4D51A0D9.9000701@libero.it>
-	<iiscep$udg$1@dough.gmane.org> <4D52DC1E.2050302@libero.it>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: btrfs: issues with SUBVOL_SETFLAGS
+Date: Thu, 10 Feb 2011 09:34:38 +0800
+Message-ID: <4D5340AE.6040602@cn.fujitsu.com>
+References: <1297278881.11434.36.camel@Dan>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+To: Dan Rosenberg <drosenberg@vsecurity.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1297278881.11434.36.camel@Dan>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Goffredo Baroncelli, Wed, 09 Feb 2011 19:25:34 +0100:
-
-> On 02/08/2011 10:26 PM, Lubos Kolouch wrote:
->> Goffredo Baroncelli, Tue, 08 Feb 2011 21:00:25 +0100:
->> 
->>> On 02/08/2011 07:57 AM, Lubos Kolouch wrote:
->>>> Hi,
->>>>
->>>> I'm hitting this issue - sda5 is a normal device, nothing to do with
->>>> loop, encryption etc.
->>>>
->>>> # mkfs.btrfs /dev/sda5
->>>>
->>>> WARNING! - Btrfs v0.19-35-g1b444cd-dirty IS EXPERIMENTAL WARNING! -
->>>> see http://btrfs.wiki.kernel.org before using
->>>>
->>>> error checking /dev/sda5 mount status
->>>>
->>>> Is there something I can do to resolve this?
->>>
->>> Some months ago I posted a patch [*] which allows to create a
->>> filesystem even if an integrity tests fail.
->>> Anyway it would be interesting understand why mkfs.btrfs fails. It is
->>> possible to have a strace of the command ?
->>>
->>>
->> here ... http://paste.pocoo.org/show/334638/ but it is not in chroot,
->> it is in "normal" system
->> 
->> Lubos
->> 
->> 
-> Hi Lubos,
+Dan Rosenberg wrote:
+> Commit 0caa102da82799efaba88e234484786a9591c797 introduced the
+> SUBVOL_SETFLAGS ioctl, which contains the following check:
 > 
-> Could you post also the output of "cat /proc/mounts" command and the
-> output of "btrfs filesystem show" command. I cannot understand what
-> should be the problem.
+> 	if (flags & ~BTRFS_SUBVOL_CREATE_ASYNC)
 
-Hi Goffredo,
+Oops, should be:
 
-Sure,
-# cat /proc/mounts
+if (flags & BTRFS_SUBVOL_CREATE_ASYNC)
 
-rootfs / rootfs rw 0 0
-/dev/root / btrfs rw,noatime,compress,ssd 0 0
-proc /proc proc rw,nosuid,nodev,noexec,relatime 0 0
-rc-svcdir /lib/rc/init.d tmpfs 
-rw,nosuid,nodev,noexec,relatime,size=1024k,mode=755 0 0
-sysfs /sys sysfs rw,nosuid,nodev,noexec,relatime 0 0
-securityfs /sys/kernel/security securityfs rw,nosuid,nodev,noexec,relatime 
-0 0
-debugfs /sys/kernel/debug debugfs rw,nosuid,nodev,noexec,relatime 0 0
-udev /dev devtmpfs 
-rw,nosuid,relatime,size=10240k,nr_inodes=217934,mode=755 0 0
-fusectl /sys/fs/fuse/connections fusectl rw,relatime 0 0
-none /dev/pts devpts rw,relatime,mode=600,ptmxmode=000 0 0
-none /dev/shm tmpfs rw,relatime 0 0
-/dev/sda1 /boot ext2 rw,relatime,errors=continue 0 0
-none /var/tmp/portage tmpfs rw,relatime 0 0
-binfmt_misc /proc/sys/fs/binfmt_misc binfmt_misc 
-rw,nosuid,nodev,noexec,relatime 0 0
-/dev/mapper/_dev_sda6 /home btrfs rw,noatime,compress,ssd 0 0
+> 		return -EINVAL;
+> 
+> 	if (flags & ~BTRFS_SUBVOL_RDONLY)
+> 		return -EOPNOTSUPP;
+> 
+> Is it intentional that 0 is the only acceptable flags value?  In
+> addition, there should probably be an inode ownership check before
+> allowing setting subvolume flags.
+> 
 
-# btrfs filesystem show
-
-Label: none  uuid: fd070c17-e98b-4b50-9fa8-3453482aafa2
-	Total devices 1 FS bytes used 5.51GB
-	devid    1 size 18.64GB used 10.79GB path /dev/sda2
-
-Label: none  uuid: bf9a1b00-f8bd-44d3-b140-10eea088a60e
-	Total devices 1 FS bytes used 6.73GB
-	devid    1 size 19.54GB used 19.54GB path /dev/sda5
-
-Label: none  uuid: ae0ba016-1945-4e7a-9fb4-e9311d199727
-	Total devices 1 FS bytes used 57.50GB
-	devid    1 size 78.91GB used 78.91GB path /dev/dm-0
-
-# mkfs.btrfs /dev/sda5
-
-WARNING! - Btrfs v0.19-35-g1b444cd-dirty IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
-
-error checking /dev/sda5 mount status
-
-Also, I can mount it no problem - strange, isn't it
-
-Lubos
-
+Thanks for pointing it out! Fix will be sent out soon.

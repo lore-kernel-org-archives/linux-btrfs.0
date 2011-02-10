@@ -1,36 +1,30 @@
-From: Lubos Kolouch <lubos.kolouch@gmail.com>
+From: "Helmut Hullen" <Hullen@t-online.de>
 Subject: Re: mkfs.btrfs - error checking /dev/sda5 mount status
-Date: Thu, 10 Feb 2011 06:54:32 +0000 (UTC)
-Message-ID: <ij0238$u5g$1@dough.gmane.org>
-References: <iiqphe$217$1@dough.gmane.org> <4D51A0D9.9000701@libero.it>
-	<iiscep$udg$1@dough.gmane.org> <4D52DC1E.2050302@libero.it>
-	<iiusfk$lp4$1@dough.gmane.org> <4D5356DD.8040501@csamuel.org>
+Date: 10 Feb 2011 08:47:00 +0100
+Message-ID: <BfbSAZDD1uB@helmut.hullen.de>
+References: <iiusfk$lp4$1@dough.gmane.org>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <iiusfk$lp4$1@dough.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Samuel, Thu, 10 Feb 2011 14:09:17 +1100:
+Hallo, Lubos,
 
-> On 10/02/11 07:12, Lubos Kolouch wrote:
-> 
->> /dev/root / btrfs rw,noatime,compress,ssd 0 0
-> 
-> My memory of the strace showed that there was no /dev/root when it tried
-> to open it - can you confirm whether or not that's the case please ?
-> 
-> cheers!
-> Chris
-> --
->  Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+Du meintest am 09.02.11:
 
-Chris, 
+> # cat /proc/mounts
 
-You mean this?
+> rootfs / rootfs rw 0 0
+> /dev/root / btrfs rw,noatime,compress,ssd 0 0
 
-# ls -la /dev/root 
-ls: cannot access /dev/root: No such file or directory
+"/dev/root" is a symlink (which I don't like).
 
-Lubos
+        rdev
 
+shows which real device is meant.
+
+Viele Gruesse!
+Helmut

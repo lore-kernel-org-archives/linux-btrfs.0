@@ -1,27 +1,30 @@
-From: Anil Kumar <anilet@gmail.com>
-Subject: Corrupt filesystem after power failure
-Date: Thu, 10 Feb 2011 22:29:41 +1100
-Message-ID: <AANLkTikujRv82iNQ4vNvyGGqDotH_bOxfFCqqnC0ycU2@mail.gmail.com>
+From: Jeremy Sanders <jeremy@jeremysanders.net>
+Subject: Re: [PATCH] Btrfs-progs use safe string manipulation functions
+Date: Thu, 10 Feb 2011 11:37:01 +0000
+Message-ID: <ij0iku$hbq$1@dough.gmane.org>
+References: <1297081322.4615.10.camel@monotop> <4D53C711.3000309@nsc.liu.se> <AANLkTi=OaU8Wj+W2KuPZLbq_85_yVK9mTer9Q7hfTCUc@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="ISO-8859-1"
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-I am using btrfs on my /home successfully for a while now.
-After a power failure I am no longer able to mount it. I tried to use
-btrfsck without any success.
-The backup I have is about a month old, is there a way I can salvage my=
- files?.
-=46ull backtrace is at http://pastebin.com/4Re7tVFP
-=A0I am aware of the danger of dataloss and wanted to change the filesy=
-stem.
-Anyway it's too late now
+Olaf van der Spek wrote:
 
-Anil
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> On Thu, Feb 10, 2011 at 12:08 PM, Thomas Bellman <bellman@nsc.liu.se>
+> wrote:
+>> strncpy(args.name, source, BTRFS_PATH_NAME_MAX);
+>> args.name[BTRFS_PATH_NAME_MAX] = '\0';
+> 
+> That's silly. Isn't there a sane safe variant of strcpy?
+
+There's strlcpy, but it's not in glibc because of possible truncation 
+errors!
+
+http://en.wikipedia.org/wiki/Strlcpy
+
+Of course C++ strings would be much better... :-)
+
+Jeremy
+
+

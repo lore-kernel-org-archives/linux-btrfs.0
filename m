@@ -1,27 +1,47 @@
-From: Thomas Bellman <bellman@nsc.liu.se>
-Subject: Re: [PATCH] Btrfs-progs use safe string manipulation functions
-Date: Thu, 10 Feb 2011 13:41:06 +0100
-Message-ID: <4D53DCE2.50306@nsc.liu.se>
-References: <1297081322.4615.10.camel@monotop>	<4D53C711.3000309@nsc.liu.se>	<AANLkTi=OaU8Wj+W2KuPZLbq_85_yVK9mTer9Q7hfTCUc@mail.gmail.com>	<ij0iku$hbq$1@dough.gmane.org>	<1297338885.3524.83.camel@tacticus> <AANLkTi=gBD0F143APDJEYSw+LXkrS+aOeq6zR-o8MFzs@mail.gmail.com>
+From: "A. James Lewis" <james@fsck.co.uk>
+Subject: Re: Corrupt filesystem after power failure
+Date: Thu, 10 Feb 2011 12:37:55 +0000
+Message-ID: <1297341475.32582.688.camel@cheyenne>
+References: <AANLkTikujRv82iNQ4vNvyGGqDotH_bOxfFCqqnC0ycU2@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Lars Wirzenius <liw@liw.fi>, linux-btrfs@vger.kernel.org
-To: Olaf van der Spek <olafvdspek@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=gBD0F143APDJEYSw+LXkrS+aOeq6zR-o8MFzs@mail.gmail.com>
+In-Reply-To: <AANLkTikujRv82iNQ4vNvyGGqDotH_bOxfFCqqnC0ycU2@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2011-02-10 13:27, Olaf van der Spek wrote:
 
-> On Thu, Feb 10, 2011 at 12:54 PM, Lars Wirzenius <liw@liw.fi> wrote:
+I'm far from an expert here, but perhaps you would be worth trying a
+newer version of the BTRFS drivers, either via a newer kernel or
+re-compiling a kernel with updated BTRFS patches.
 
->> snprintf is standard, and should be about as safe as it gets with the
->> glibc functions.
+I would think that the simplest "quick test" to see if this would help
+you would be to get a snapshot from Ubuntu's "daily build" live CD iso,
+and try mounting the filesystem with that... since it will have a recent
+RC of 2.6.38 kernel which has a much more recent BTRFS version than the
+2.6.34 which you are using.
+
+http://cdimage.ubuntu.com/daily-live/current/
+
+YMMV, but it's certainly something else to try.
+
+James.
+
+
+On Thu, 2011-02-10 at 22:29 +1100, Anil Kumar wrote:
+> Hi,
+> I am using btrfs on my /home successfully for a while now.
+> After a power failure I am no longer able to mount it. I tried to use
+> btrfsck without any success.
+> The backup I have is about a month old, is there a way I can salvage my files?.
+> Full backtrace is at http://pastebin.com/4Re7tVFP
+>  I am aware of the danger of dataloss and wanted to change the filesystem.
+> Anyway it's too late now
 > 
-> But snprintf is not like strlcpy.
+> Anil
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-It is indeed uglier to write 'snprintf(dst, size, "%s", src)' instead of
-'strlcpy(dst, src, size)', but both the effect and the return value should
-be identical.
 
-	/Bellman

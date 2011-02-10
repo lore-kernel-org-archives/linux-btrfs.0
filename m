@@ -1,23 +1,37 @@
-From: Olaf van der Spek <olafvdspek@gmail.com>
-Subject: Re: [PATCH] Btrfs-progs use safe string manipulation functions
-Date: Thu, 10 Feb 2011 16:17:01 +0100
-Message-ID: <AANLkTik8kddu9Y8ph40ABaj003050=z_9eNRG9XXNOLO@mail.gmail.com>
-References: <1297081322.4615.10.camel@monotop>
-	<4D53C711.3000309@nsc.liu.se>
-	<AANLkTi=OaU8Wj+W2KuPZLbq_85_yVK9mTer9Q7hfTCUc@mail.gmail.com>
-	<ij0iku$hbq$1@dough.gmane.org>
+From: Eduardo Silva <eduardo.silva@oracle.com>
+Subject: Re: [PATCH] Btrfs-progs new btrfs_error() macro to deprecate
+ fprintf(stderr, ...)
+Date: Thu, 10 Feb 2011 13:12:03 -0300
+Message-ID: <1297354323.28159.23.camel@monotop>
+References: <1297349695.28159.21.camel@monotop>
+	 <201102101607.44204.hka@qbs.com.pl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="UTF-8"
 Cc: linux-btrfs@vger.kernel.org
-To: Jeremy Sanders <jeremy@jeremysanders.net>
+To: Hubert Kario <hka@qbs.com.pl>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <ij0iku$hbq$1@dough.gmane.org>
+In-Reply-To: <201102101607.44204.hka@qbs.com.pl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 10, 2011 at 12:37 PM, Jeremy Sanders
-<jeremy@jeremysanders.net> wrote:
-> Of course C++ strings would be much better... :-)
+On Thu, 2011-02-10 at 16:07 +0100, Hubert Kario wrote:
+> On Thursday, February 10, 2011 15:54:55 Eduardo Silva wrote:
+> > Hi,
+> > 
+> > This patch add a new macro called btrfs_error(...) which deprecate the
+> > use of fprintf(stderr, ...)
+> > 
+> > regards,
+> > 
+> > Eduardo
+> 
+> Sorry, but I don't see a reason for such change. IMHO it only makes the code 
+> _less_ readable.
+> 
+> Regards,
 
-Yeah, why isn't C++ being used?
+no troubles :)
 
-Olaf
+regards, 
+
+Ed.-
+

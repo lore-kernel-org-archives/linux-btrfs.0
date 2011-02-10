@@ -1,42 +1,28 @@
-From: Thomas Bellman <bellman@nsc.liu.se>
+From: Olaf van der Spek <olafvdspek@gmail.com>
 Subject: Re: [PATCH] Btrfs-progs use safe string manipulation functions
-Date: Thu, 10 Feb 2011 12:08:01 +0100
-Message-ID: <4D53C711.3000309@nsc.liu.se>
+Date: Thu, 10 Feb 2011 12:21:50 +0100
+Message-ID: <AANLkTi=OaU8Wj+W2KuPZLbq_85_yVK9mTer9Q7hfTCUc@mail.gmail.com>
 References: <1297081322.4615.10.camel@monotop>
+	<4D53C711.3000309@nsc.liu.se>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Eduardo Silva <eduardo.silva@oracle.com>
+Cc: Eduardo Silva <eduardo.silva@oracle.com>,
+	linux-btrfs@vger.kernel.org
+To: Thomas Bellman <bellman@nsc.liu.se>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1297081322.4615.10.camel@monotop>
+In-Reply-To: <4D53C711.3000309@nsc.liu.se>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2011-02-07 13:22, Eduardo Silva wrote:
+On Thu, Feb 10, 2011 at 12:08 PM, Thomas Bellman <bellman@nsc.liu.se> w=
+rote:
+> =C2=A0 =C2=A0strncpy(args.name, source, BTRFS_PATH_NAME_MAX);
+> =C2=A0 =C2=A0args.name[BTRFS_PATH_NAME_MAX] =3D '\0';
 
-> Please find the attached patch which replace unsafe strcpy(3) by
-> strncpy(3) functions.
+That's silly. Isn't there a sane safe variant of strcpy?
 
-strncpy() doesn't NUL-terminate the destination buffer if the
-maximum length is reached.  And as far as I can see, there is
-no other initialization of those buffers to zeroes, except for
-super.label in make_btrfs() in utils.c.
-
-So please change those strncpy() calls to something like:
-
-    strncpy(args.name, source, BTRFS_PATH_NAME_MAX);
-    args.name[BTRFS_PATH_NAME_MAX] = '\0';
-
-(Note that the name member of struct btrfs_ioctl_vol_args is
-BTRFS_PATH_NAME_MAX + 1 long, so the above is correct for that
-field.)
-
-And of course similarly in those cases where you copy to something
-other than a struct btrfs_ioctl_vol_args.
-
-
-There were also a two places where you used spaces instead of tabs
-for indentation (in main() in btrfsctl.c, and the declaration of
-pretty_len in pretty_sizes() in utils.c).
-
-
-	/Bellman
+Olaf
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

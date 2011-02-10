@@ -1,32 +1,25 @@
-From: cwillu <cwillu@cwillu.com>
-Subject: Re: New btrfsck status
-Date: Wed, 9 Feb 2011 21:04:52 -0600
-Message-ID: <AANLkTimbUz_VHUC2Cb3YvhgUR1EpycRSMG01HdUW0XXE@mail.gmail.com>
-References: <AANLkTinu_29idVYvudG=E6VaxwqQoN2YEi57-RPk3dkF@mail.gmail.com>
+From: Chris Samuel <chris@csamuel.org>
+Subject: Re: mkfs.btrfs - error checking /dev/sda5 mount status
+Date: Thu, 10 Feb 2011 14:09:17 +1100
+Message-ID: <4D5356DD.8040501@csamuel.org>
+References: <iiqphe$217$1@dough.gmane.org> <4D51A0D9.9000701@libero.it>	<iiscep$udg$1@dough.gmane.org> <4D52DC1E.2050302@libero.it> <iiusfk$lp4$1@dough.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Ben Gamari <bgamari@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: Lubos Kolouch <lubos.kolouch@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTinu_29idVYvudG=E6VaxwqQoN2YEi57-RPk3dkF@mail.gmail.com>
+In-Reply-To: <iiusfk$lp4$1@dough.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 9, 2011 at 8:52 PM, Ben Gamari <bgamari@gmail.com> wrote:
-> Hey all,
->
-> Over the last several months there have been many claims regarding the
-> release of the rewritten btrfsck. Unfortunately, despite numerous
-> claims that it will be released Real Soon Now(c), I have yet to see
-> even a repository with preliminary code. Did I miss an announcement?
-> There is something to be said for "release early, release often." Is
-> there a timeline for getting btrfsck into some sort of usable form?
+On 10/02/11 07:12, Lubos Kolouch wrote:
 
-I can't speak for the devs, but that's never stopped me before :p
+> /dev/root / btrfs rw,noatime,compress,ssd 0 0
 
-Speculative code to directly muck with known-to-be-corrupted data
-structures is not something that benefits from early releases.  It's
-too easy to cause damage that _can't_ be fixed later, and no amount of
-warnings will prevent people from trying that code in desperation.
+My memory of the strace showed that there was no /dev/root
+when it tried to open it - can you confirm whether or not
+that's the case please ?
 
-Or would you have taken a full image of your 8 drives before trying it
-the first time?
+cheers!
+Chris
+-- 
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC

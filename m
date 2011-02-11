@@ -1,39 +1,54 @@
-From: Ben Gamari <bgamari.foss@gmail.com>
-Subject: Re: Recovering data from disk with loose cable
-Date: Fri, 11 Feb 2011 11:16:41 -0500
-Message-ID: <87pqqyczrp.fsf@gmail.com>
-References: <AANLkTinsT-FRkV0Ja63YCqCn2OWdZnYORxPFgKm4DxQW@mail.gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: ENOSPC Regression
+Date: Fri, 11 Feb 2011 11:22:08 -0500
+Message-ID: <20110211162208.GB2693@localhost.localdomain>
+References: <AANLkTin87cx5fK8cxhMHZwC8YjUcDL7Nwbb6UREmM+o-@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Mitch Harder <mitch.harder@sabayonlinux.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTinsT-FRkV0Ja63YCqCn2OWdZnYORxPFgKm4DxQW@mail.gmail.com>
+In-Reply-To: <AANLkTin87cx5fK8cxhMHZwC8YjUcDL7Nwbb6UREmM+o-@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 9 Feb 2011 21:46:38 -0500, Ben Gamari <bgamari@gmail.com> wrote:
-> We have a disk array behind two external SATA port multipliers (four
-> disks on each multiplier) which has been running btrfs (RAID 1 for
-> both data and metadata). Unfortunately, earlier today it seems one of
-> the SATA cables came loose, resulting in the kernel (2.6.37)
-> eventually OOPSing although apparently not before writing quite a bit
-> of data. Upon reboot, I was met with the dreaded,
+On Fri, Feb 11, 2011 at 07:21:47AM -0600, Mitch Harder wrote:
+> I'm encountering premature ENOSPC issues recently where my Btrfs
+> testing partition will either prematurely return an ENOSPC, or lock up
+> the operations trying to access the partition.
 > 
->     disk-io.c:741: open_ctree_fd: Assertion `!(!tree_root->node)' failed.
+> I have bisected the problem to this commit:
+> http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=commit;h=914ee295af418e936ec20a08c1663eaabe4cd07a
+> (Btrfs: pwrite blocked when writing from the mmaped buffer of the same page)
 > 
-> Unfortunately any attempt to run any of the btrfs-progs utilities
-> (from git) met a similar end. There was recently a patch to try harder
-> in recovering from this problem posted to the list[1], although
-> unfortunately it is unable to find a root. Considering there are eight
-> disks in the array and only four were affected by the loose cable, I
-> find it very hard to believe there is no way to recover this volume.
-> Any suggestions at all would be greatly appreciated. Recovering this
-> data would mean a lot. Thanks,
+> I am encountering the problem on a small-ish 3.5 GB Btrfs partition.
+> I can replicate the problem with and without compression.  I can also
+> replicate the problem with and without reformating the partition.
 > 
-Given there has been no response to this, I suppose I should assume this
-data is unrecoverable? It's not the end of the world if so, but again,
-it would be nice to get a few files and it seems like a small subset of
-the metadata is corrupted.
+> For most operations I run on this partition, Btrfs is performing
+> without error.  But when I compile openmotif-2.3.3 on a kernel that is
+> after the above referenced commit, I'll get either an ENOSPC error or
+> the partition locks up.
+> 
+> When I encounter a lock-up issue, there are no errors in dmesg, and no
+> delayed processes are showing (unless I try to run an additional
+> operation on that partition, such as 'ls', which will subsequently
+> show up as delayed).  However, the build process for openmotif-2.3.3
+> appears frozen, and several processes related to the build are shown
+> as running, and will not even respond to 'kill -s 9 <pid>'
+> 
+> The partition only has about 500 MB of data when I encounter the
+> problems, and openmotif-2.3.3 typically only requires about 30-60 MB
+> to compile.
+> 
+> However, running 'btrfs fi show' indicates that btrfs has attempted to
+> reserve all the space on the disk for data and metadata.  When running
+> a kernel prior to the above referenced commit, btrfs will compile
+> openmotif-2.3.3 without needing to reserve much extra space on the
+> partition.
+> 
+> Let me know if you would like any additional information or tests.
 
-Cheers,
+Can you try my btrfs-work tree and see if you still have the same problem?
+Thanks,
 
-- Ben
+Josef

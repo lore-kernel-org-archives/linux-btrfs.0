@@ -1,159 +1,114 @@
-From: "Zhong, Xin" <xin.zhong@intel.com>
-Subject: RE: [PATCH v2]Btrfs: pwrite blocked when writing from the mmaped
- buffer of the same page
-Date: Fri, 11 Feb 2011 12:39:39 +0800
-Message-ID: <1865303E0DED764181A9D882DEF65FB68621CA7167@shsmsx502.ccr.corp.intel.com>
-References: <1291887014-18447-1-git-send-email-xin.zhong@intel.com>
- <201101280354.36884.johannes.hirte@fem.tu-ilmenau.de>
- <1865303E0DED764181A9D882DEF65FB685DF762B45@shsmsx502.ccr.corp.intel.com>
- <201102020034.43808.johannes.hirte@fem.tu-ilmenau.de>
+From: Lars Wirzenius <liw@liw.fi>
+Subject: Re: [PATCH] Btrfs-progs use safe string manipulation functions
+Date: Fri, 11 Feb 2011 12:41:08 +0000
+Message-ID: <1297428068.3105.50.camel@havelock.lan>
+References: <1297081322.4615.10.camel@monotop> <4D53C711.3000309@nsc.liu.se>
+	 <AANLkTi=OaU8Wj+W2KuPZLbq_85_yVK9mTer9Q7hfTCUc@mail.gmail.com>
+	 <ij0iku$hbq$1@dough.gmane.org>
+	 <AANLkTi=7B1FLtSrcJ88zgitCBiRctwveRhLzt_2yAHZL@mail.gmail.com>
+	 <1297344585.28159.12.camel@monotop>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Cc: =?utf-8?B?TWFyaWEgV2lrc3Ryw7Zt?= <maria@ponstudios.se>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Content-Type: text/plain; charset="UTF-8"
+Cc: linux-btrfs@vger.kernel.org
+To: Eduardo Silva <eduardo.silva@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201102020034.43808.johannes.hirte@fem.tu-ilmenau.de>
+In-Reply-To: <1297344585.28159.12.camel@monotop>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-SGksDQoNCkNvdWxkIHlvdSBwYXN0ZSB0aGUgb3V0cHV0IG9mIHN5c3JxK3QgaGVyZT8gVGhhbmtz
-IQ0KDQotLS0tLU9yaWdpbmFsIE1lc3NhZ2UtLS0tLQ0KRnJvbTogSm9oYW5uZXMgSGlydGUgW21h
-aWx0bzpqb2hhbm5lcy5oaXJ0ZUBmZW0udHUtaWxtZW5hdS5kZV0gDQpTZW50OiBXZWRuZXNkYXks
-IEZlYnJ1YXJ5IDAyLCAyMDExIDc6MzUgQU0NClRvOiBaaG9uZywgWGluDQpDYzogTWFyaWEgV2lr
-c3Ryw7ZtOyBsaW51eC1idHJmc0B2Z2VyLmtlcm5lbC5vcmcNClN1YmplY3Q6IFJlOiBbUEFUQ0gg
-djJdQnRyZnM6IHB3cml0ZSBibG9ja2VkIHdoZW4gd3JpdGluZyBmcm9tIHRoZSBtbWFwZWQgYnVm
-ZmVyIG9mIHRoZSBzYW1lIHBhZ2UNCg0KT24gRnJpZGF5IDI4IEphbnVhcnkgMjAxMSAwNDo1Mzoy
-NCBaaG9uZywgWGluIHdyb3RlOg0KPiBDb3VsZCB5b3UgZGVzY3JpYmUgdGhlIHN0ZXBzIHRvIHJl
-Y3JlYXRlIGl0Pw0KPiBJdCB3aWxsIGJlIGEgZ3JlYXQgaGVscCBmb3IgbWUgdG8gbG9vayBmdXJ0
-aGVyLiBUaGFua3MhDQoNCkl0J3MgYSBsaXR0bGUgc3RyYW5nZS4gSSBoYXZlIHRvIHN5c3RlbXMg
-d2l0aCBidHJmcywgYm90aCBHZW50b28tYmFzZWQuIE9uZSBpcyANCmFmZmVjdGVkIGJ5IHRoaXMg
-YnVnIHRoZSBvdGhlciBpcyBub3QuIE9uIHRoZSBhZmZlY3RlZCBzeXN0ZW0gaXQgaXMgZW5vdWdo
-IHRvIGRvIA0KYSAnZW1lcmdlIGRldi1saWJzL2xpYmdjcnlwdCcgdGhhdCBzaG91bGQgbm9ybWFs
-eSBjb21waWxlIGFuZCBpbnN0YWxsIA0KbGliZ2NyeXB0LiBUaGUgZW1lcmdlIGNvbW1hbmQgaXMg
-cGFydCBvZiBwb3J0YWdlLCB0aGUgcGFja2FnZSBtYW5hZ2VtZW50IG9mIA0KR2VudG9vLiANClRo
-ZSBzdHJhY2Ugb3V0cHV0IGxvb2tzIHNpbWlsYXIgdG8gdGhlIG9uZSBmcm9tIE1hcmlhOg0KDQpv
-cGVuKCIvaG9tZS90bXAvcG9ydGFnZS9kZXYtbGlicy9saWJnY3J5cHQtMS40LjYvLmlwY19pbiIs
-IE9fUkRPTkxZfA0KT19OT05CTE9DS3xPX0xBUkdFRklMRSkgPSAzDQpmc3RhdDY0KDMsIHtzdF9t
-b2RlPVNfSUZJRk98MDc3MCwgc3Rfc2l6ZT0wLCAuLi59KSA9IDANCmlvY3RsKDMsIFNORENUTF9U
-TVJfVElNRUJBU0Ugb3IgU05EUlZfVElNRVJfSU9DVExfTkVYVF9ERVZJQ0Ugb3IgVENHRVRTLCAN
-CjB4YmZmNWY2NzgpID0gLTEgRUlOVkFMIChJbnZhbGlkIGFyZ3VtZW50KQ0Kb3BlbigiL2Rldi9w
-dG14IiwgT19SRFdSKSAgICAgICAgICAgICAgID0gNQ0KaW9jdGwoNSwgU05EQ1RMX1RNUl9USU1F
-QkFTRSBvciBTTkRSVl9USU1FUl9JT0NUTF9ORVhUX0RFVklDRSBvciBUQ0dFVFMsIA0Ke0IzODQw
-MCBvcG9zdCBpc2lnIGljYW5vbiBlY2hvIC4uLn0pID0gMA0KaW9jdGwoNSwgVElPQ0dQVE4sIFsy
-XSkgICAgICAgICAgICAgICAgID0gMA0Kc3RhdDY0KCIvZGV2L3B0cy8yIiwge3N0X21vZGU9U19J
-RkNIUnwwNjIwLCBzdF9yZGV2PW1ha2VkZXYoMTM2LCAyKSwgLi4ufSkgPSAwDQpnZXR1aWQzMigp
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgPSAwDQppb2N0bCg1LCBUSU9DU1BUTENLLCBb
-MF0pICAgICAgICAgICAgICAgPSAwDQppb2N0bCg1LCBTTkRDVExfVE1SX1RJTUVCQVNFIG9yIFNO
-RFJWX1RJTUVSX0lPQ1RMX05FWFRfREVWSUNFIG9yIFRDR0VUUywgDQp7QjM4NDAwIG9wb3N0IGlz
-aWcgaWNhbm9uIGVjaG8gLi4ufSkgPSAwDQppb2N0bCg1LCBUSU9DR1BUTiwgWzJdKSAgICAgICAg
-ICAgICAgICAgPSAwDQpzdGF0NjQoIi9kZXYvcHRzLzIiLCB7c3RfbW9kZT1TX0lGQ0hSfDA2MjAs
-IHN0X3JkZXY9bWFrZWRldigxMzYsIDIpLCAuLi59KSA9IDANCm9wZW4oIi9kZXYvcHRzLzIiLCBP
-X1JEV1J8T19OT0NUVFkpICAgICA9IDYNCmlvY3RsKDYsIFNORENUTF9UTVJfVElNRUJBU0Ugb3Ig
-U05EUlZfVElNRVJfSU9DVExfTkVYVF9ERVZJQ0Ugb3IgVENHRVRTLCANCntCMzg0MDAgb3Bvc3Qg
-aXNpZyBpY2Fub24gZWNobyAuLi59KSA9IDANCmlvY3RsKDYsIFNORENUTF9UTVJfVElNRUJBU0Ug
-b3IgU05EUlZfVElNRVJfSU9DVExfTkVYVF9ERVZJQ0Ugb3IgVENHRVRTLCANCntCMzg0MDAgb3Bv
-c3QgaXNpZyBpY2Fub24gZWNobyAuLi59KSA9IDANCmlvY3RsKDYsIFNORENUTF9UTVJfU1RBUlQg
-b3IgU05EUlZfVElNRVJfSU9DVExfVFJFQUQgb3IgVENTRVRTLCB7QjM4NDAwIC1vcG9zdCANCmlz
-aWcgaWNhbm9uIGVjaG8gLi4ufSkgPSAwDQppb2N0bCgxLCBTTkRDVExfVE1SX1RJTUVCQVNFIG9y
-IFNORFJWX1RJTUVSX0lPQ1RMX05FWFRfREVWSUNFIG9yIFRDR0VUUywgDQp7QjM4NDAwIG9wb3N0
-IGlzaWcgaWNhbm9uIGVjaG8gLi4ufSkgPSAwDQppb2N0bCgxLCBTTkRDVExfVE1SX1RJTUVCQVNF
-IG9yIFNORFJWX1RJTUVSX0lPQ1RMX05FWFRfREVWSUNFIG9yIFRDR0VUUywgDQp7QjM4NDAwIG9w
-b3N0IGlzaWcgaWNhbm9uIGVjaG8gLi4ufSkgPSAwDQppb2N0bCgxLCBTTkRDVExfVE1SX1RJTUVC
-QVNFIG9yIFNORFJWX1RJTUVSX0lPQ1RMX05FWFRfREVWSUNFIG9yIFRDR0VUUywgDQp7QjM4NDAw
-IG9wb3N0IGlzaWcgaWNhbm9uIGVjaG8gLi4ufSkgPSAwDQpzdGF0NjQoIi9yb290Ly50ZXJtaW5m
-byIsIDB4YmZmNWU3OTApICAgPSAtMSBFTk9FTlQgKE5vIHN1Y2ggZmlsZSBvciBkaXJlY3Rvcnkp
-DQpzdGF0NjQoIi9ldGMvdGVybWluZm8iLCB7c3RfbW9kZT1TX0lGRElSfDA3NTUsIHN0X3NpemU9
-MTQsIC4uLn0pID0gMA0KYWNjZXNzKCIvZXRjL3Rlcm1pbmZvL3gveHRlcm0iLCBSX09LKSAgID0g
-MA0Kb3BlbigiL2V0Yy90ZXJtaW5mby94L3h0ZXJtIiwgT19SRE9OTFl8T19MQVJHRUZJTEUpID0g
-Nw0KcmVhZCg3LCAiXDMyXDAwMTBcMCZcMFwxN1wwXDIzNVwxbFw1eHRlcm18eHRlcm0gdGVybWlu
-YWwiLi4uLCA0MDk3KSA9IDMyNTgNCmNsb3NlKDcpICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICA9IDANCmlvY3RsKDEsIFNORENUTF9UTVJfVElNRUJBU0Ugb3IgU05EUlZfVElNRVJfSU9D
-VExfTkVYVF9ERVZJQ0Ugb3IgVENHRVRTLCANCntCMzg0MDAgb3Bvc3QgaXNpZyBpY2Fub24gZWNo
-byAuLi59KSA9IDANCmlvY3RsKDEsIFNORENUTF9UTVJfVElNRUJBU0Ugb3IgU05EUlZfVElNRVJf
-SU9DVExfTkVYVF9ERVZJQ0Ugb3IgVENHRVRTLCANCntCMzg0MDAgb3Bvc3QgaXNpZyBpY2Fub24g
-ZWNobyAuLi59KSA9IDANCmlvY3RsKDEsIFNORENUTF9UTVJfVElNRUJBU0Ugb3IgU05EUlZfVElN
-RVJfSU9DVExfTkVYVF9ERVZJQ0Ugb3IgVENHRVRTLCANCntCMzg0MDAgb3Bvc3QgaXNpZyBpY2Fu
-b24gZWNobyAuLi59KSA9IDANCmlvY3RsKDEsIFRJT0NHV0lOU1osIHt3c19yb3c9NDAsIHdzX2Nv
-bD0yMDcsIHdzX3hwaXhlbD0wLCB3c195cGl4ZWw9MH0pID0gMA0KYWNjZXNzKCIvdXNyL2xvY2Fs
-L3NiaW4vc3R0eSIsIFhfT0spICAgID0gLTEgRU5PRU5UIChObyBzdWNoIGZpbGUgb3IgZGlyZWN0
-b3J5KQ0KYWNjZXNzKCIvdXNyL2xvY2FsL2Jpbi9zdHR5IiwgWF9PSykgICAgID0gLTEgRU5PRU5U
-IChObyBzdWNoIGZpbGUgb3IgZGlyZWN0b3J5KQ0KYWNjZXNzKCIvdXNyL3NiaW4vc3R0eSIsIFhf
-T0spICAgICAgICAgID0gLTEgRU5PRU5UIChObyBzdWNoIGZpbGUgb3IgZGlyZWN0b3J5KQ0KYWNj
-ZXNzKCIvdXNyL2Jpbi9zdHR5IiwgWF9PSykgICAgICAgICAgID0gLTEgRU5PRU5UIChObyBzdWNo
-IGZpbGUgb3IgZGlyZWN0b3J5KQ0KYWNjZXNzKCIvc2Jpbi9zdHR5IiwgWF9PSykgICAgICAgICAg
-ICAgID0gLTEgRU5PRU5UIChObyBzdWNoIGZpbGUgb3IgZGlyZWN0b3J5KQ0KYWNjZXNzKCIvYmlu
-L3N0dHkiLCBYX09LKSAgICAgICAgICAgICAgID0gMA0Kc3RhdDY0KCIvYmluL3N0dHkiLCB7c3Rf
-bW9kZT1TX0lGUkVHfDA3NTUsIHN0X3NpemU9NTg4MzYsIC4uLn0pID0gMA0KY2xvbmUoY2hpbGRf
-c3RhY2s9MCwgZmxhZ3M9Q0xPTkVfQ0hJTERfQ0xFQVJUSUR8Q0xPTkVfQ0hJTERfU0VUVElEfFNJ
-R0NITEQsIA0KY2hpbGRfdGlkcHRyPTB4Yjc1M2Q3MjgpID0gMjc1Mg0Kd2FpdHBpZCgyNzUyLCBb
-e1dJRkVYSVRFRChzKSAmJiBXRVhJVFNUQVRVUyhzKSA9PSAwfV0sIDApID0gMjc1Mg0KLS0tIFNJ
-R0NITEQgKENoaWxkIGV4aXRlZCkgQCAwICgwKSAtLS0NCmZjbnRsNjQoNSwgRl9HRVRGTCkgICAg
-ICAgICAgICAgICAgICAgICA9IDB4MiAoZmxhZ3MgT19SRFdSKQ0KZmNudGw2NCg1LCBGX1NFVEZM
-LCBPX1JEV1J8T19OT05CTE9DSykgID0gMA0KZnN0YXQ2NCg1LCB7c3RfbW9kZT1TX0lGQ0hSfDA2
-NjYsIHN0X3JkZXY9bWFrZWRldig1LCAyKSwgLi4ufSkgPSAwDQppb2N0bCg1LCBTTkRDVExfVE1S
-X1RJTUVCQVNFIG9yIFNORFJWX1RJTUVSX0lPQ1RMX05FWFRfREVWSUNFIG9yIFRDR0VUUywgDQp7
-QjM4NDAwIC1vcG9zdCBpc2lnIGljYW5vbiBlY2hvIC4uLn0pID0gMA0Kb3BlbigiL2hvbWUvdG1w
-L3BvcnRhZ2UvZGV2LWxpYnMvbGliZ2NyeXB0LTEuNC42L3RlbXAvYnVpbGQubG9nIiwgT19XUk9O
-TFl8DQpPX0NSRUFUfE9fQVBQRU5EfE9fTEFSR0VGSUxFLCAwNjY2KSA9IDcNCmZzdGF0NjQoNywg
-e3N0X21vZGU9U19JRlJFR3wwNjYwLCBzdF9zaXplPTQ4MCwgLi4ufSkgPSAwDQpfbGxzZWVrKDcs
-IDAsIFs0ODBdLCBTRUVLX0VORCkgICAgICAgICAgPSAwDQppb2N0bCg3LCBTTkRDVExfVE1SX1RJ
-TUVCQVNFIG9yIFNORFJWX1RJTUVSX0lPQ1RMX05FWFRfREVWSUNFIG9yIFRDR0VUUywgDQoweGJm
-ZjVmYWQ4KSA9IC0xIEVOT1RUWSAoSW5hcHByb3ByaWF0ZSBpb2N0bCBmb3IgZGV2aWNlKQ0KZnN0
-YXQ2NCg3LCB7c3RfbW9kZT1TX0lGUkVHfDA2NjAsIHN0X3NpemU9NDgwLCAuLi59KSA9IDANCl9s
-bHNlZWsoNywgMCwgWzQ4MF0sIFNFRUtfQ1VSKSAgICAgICAgICA9IDANCnN0YXQ2NCgiL2hvbWUv
-dG1wL3BvcnRhZ2UvZGV2LWxpYnMvbGliZ2NyeXB0LTEuNC42L3RlbXAvYnVpbGQubG9nIiwgDQp7
-c3RfbW9kZT1TX0lGUkVHfDA2NjAsIHN0X3NpemU9NDgwLCAuLi59KSA9IDANCmR1cCgxKSAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICA9IDgNCmZzdGF0NjQoOCwge3N0X21vZGU9U19J
-RkNIUnwwNjIwLCBzdF9yZGV2PW1ha2VkZXYoMTM2LCAwKSwgLi4ufSkgPSAwDQppb2N0bCg4LCBT
-TkRDVExfVE1SX1RJTUVCQVNFIG9yIFNORFJWX1RJTUVSX0lPQ1RMX05FWFRfREVWSUNFIG9yIFRD
-R0VUUywgDQp7QjM4NDAwIG9wb3N0IGlzaWcgaWNhbm9uIGVjaG8gLi4ufSkgPSAwDQpmc3RhdDY0
-KDgsIHtzdF9tb2RlPVNfSUZDSFJ8MDYyMCwgc3RfcmRldj1tYWtlZGV2KDEzNiwgMCksIC4uLn0p
-ID0gMA0KX2xsc2Vlayg4LCAwLCAweGJmZjVmODIwLCBTRUVLX0NVUikgICAgID0gLTEgRVNQSVBF
-IChJbGxlZ2FsIHNlZWspDQpzdGF0NjQoIi9ob21lL3RtcC9wb3J0YWdlL2Rldi1saWJzL2xpYmdj
-cnlwdC0xLjQuNi90ZW1wL2Vudmlyb25tZW50IiwgDQp7c3RfbW9kZT1TX0lGUkVHfDA2NjQsIHN0
-X3NpemU9MTA2NTk3LCAuLi59KSA9IDANCmNsb25lKGNoaWxkX3N0YWNrPTAsIGZsYWdzPUNMT05F
-X0NISUxEX0NMRUFSVElEfENMT05FX0NISUxEX1NFVFRJRHxTSUdDSExELCANCmNoaWxkX3RpZHB0
-cj0weGI3NTNkNzI4KSA9IDI3NTMNCmNsb3NlKDYpICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICA9IDANCmdldHRpbWVvZmRheSh7MTI5NjU3NzQ1NywgMTExMTd9LCBOVUxMKSA9IDANCnBv
-bGwoW3tmZD0zLCBldmVudHM9UE9MTElOfFBPTExFUlJ8UE9MTEhVUHxQT0xMTlZBTH0sIHtmZD01
-LCBldmVudHM9UE9MTElOfA0KUE9MTEVSUnxQT0xMSFVQfFBPTExOVkFMfV0sIDIsIDMwMDApID0g
-MSAoW3tmZD01LCByZXZlbnRzPVBPTExJTn1dKQ0KcmVhZCg1LCAiPj4+IFByZXBhcmluZyBzb3Vy
-Y2UgaW4gL2hvbWUvdG0iLi4uLCA0MDk2KSA9IDkyDQp3cml0ZSg4LCAiPj4+IFByZXBhcmluZyBz
-b3VyY2UgaW4gL2hvbWUvdG0iLi4uLCA5MikgPSA5Mg0Kd3JpdGUoNywgIj4+PiBQcmVwYXJpbmcg
-c291cmNlIGluIC9ob21lL3RtIi4uLiwgOTIpID0gOTINCnBvbGwoW3tmZD0zLCBldmVudHM9UE9M
-TElOfFBPTExFUlJ8UE9MTEhVUHxQT0xMTlZBTH0sIHtmZD01LCBldmVudHM9UE9MTElOfA0KUE9M
-TEVSUnxQT0xMSFVQfFBPTExOVkFMfV0sIDIsIDMwMDApID0gMCAoVGltZW91dCkNCnBvbGwoW3tm
-ZD0zLCBldmVudHM9UE9MTElOfFBPTExFUlJ8UE9MTEhVUHxQT0xMTlZBTH0sIHtmZD01LCBldmVu
-dHM9UE9MTElOfA0KUE9MTEVSUnxQT0xMSFVQfFBPTExOVkFMfV0sIDIsIDMwMDApID0gMCAoVGlt
-ZW91dCkNCnBvbGwoW3tmZD0zLCBldmVudHM9UE9MTElOfFBPTExFUlJ8UE9MTEhVUHxQT0xMTlZB
-TH0sIHtmZD01LCBldmVudHM9UE9MTElOfA0KUE9MTEVSUnxQT0xMSFVQfFBPTExOVkFMfV0sIDIs
-IDMwMDApID0gMCAoVGltZW91dCkNCnBvbGwoW3tmZD0zLCBldmVudHM9UE9MTElOfFBPTExFUlJ8
-UE9MTEhVUHxQT0xMTlZBTH0sIHtmZD01LCBldmVudHM9UE9MTElOfA0KUE9MTEVSUnxQT0xMSFVQ
-fFBPTExOVkFMfV0sIDIsIDMwMDApID0gMCAoVGltZW91dCkNCnBvbGwoW3tmZD0zLCBldmVudHM9
-UE9MTElOfFBPTExFUlJ8UE9MTEhVUHxQT0xMTlZBTH0sIHtmZD01LCBldmVudHM9UE9MTElOfA0K
-UE9MTEVSUnxQT0xMSFVQfFBPTExOVkFMfV0sIDIsIDMwMDApID0gMCAoVGltZW91dCkNCnBvbGwo
-W3tmZD0zLCBldmVudHM9UE9MTElOfFBPTExFUlJ8UE9MTEhVUHxQT0xMTlZBTH0sIHtmZD01LCBl
-dmVudHM9UE9MTElOfA0KUE9MTEVSUnxQT0xMSFVQfFBPTExOVkFMfV0sIDIsIDMwMDApID0gMCAo
-VGltZW91dCkNCnBvbGwoW3tmZD0zLCBldmVudHM9UE9MTElOfFBPTExFUlJ8UE9MTEhVUHxQT0xM
-TlZBTH0sIHtmZD01LCBldmVudHM9UE9MTElOfA0KUE9MTEVSUnxQT0xMSFVQfFBPTExOVkFMfV0s
-IDIsIDMwMDApID0gMCAoVGltZW91dCkNCnBvbGwoW3tmZD0zLCBldmVudHM9UE9MTElOfFBPTExF
-UlJ8UE9MTEhVUHxQT0xMTlZBTH0sIHtmZD01LCBldmVudHM9UE9MTElOfA0KUE9MTEVSUnxQT0xM
-SFVQfFBPTExOVkFMfV0sIDIsIDMwMDApID0gMCAoVGltZW91dCkNCnBvbGwoW3tmZD0zLCBldmVu
-dHM9UE9MTElOfFBPTExFUlJ8UE9MTEhVUHxQT0xMTlZBTH0sIHtmZD01LCBldmVudHM9UE9MTElO
-fA0KUE9MTEVSUnxQT0xMSFVQfFBPTExOVkFMfV0sIDIsIDMwMDApID0gMCAoVGltZW91dCkNCnBv
-bGwoW3tmZD0zLCBldmVudHM9UE9MTElOfFBPTExFUlJ8UE9MTEhVUHxQT0xMTlZBTH0sIHtmZD01
-LCBldmVudHM9UE9MTElOfA0KUE9MTEVSUnxQT0xMSFVQfFBPTExOVkFMfV0sIDIsIDMwMDApID0g
-MCAoVGltZW91dCkNCnBvbGwoW3tmZD0zLCBldmVudHM9UE9MTElOfFBPTExFUlJ8UE9MTEhVUHxQ
-T0xMTlZBTH0sIHtmZD01LCBldmVudHM9UE9MTElOfA0KUE9MTEVSUnxQT0xMSFVQfFBPTExOVkFM
-fV0sIDIsIDMwMDApID0gMCAoVGltZW91dCkNCnBvbGwoW3tmZD0zLCBldmVudHM9UE9MTElOfFBP
-TExFUlJ8UE9MTEhVUHxQT0xMTlZBTH0sIHtmZD01LCBldmVudHM9UE9MTElOfA0KUE9MTEVSUnxQ
-T0xMSFVQfFBPTExOVkFMfV0sIDIsIDMwMDApID0gMCAoVGltZW91dCkNCnBvbGwoW3tmZD0zLCBl
-dmVudHM9UE9MTElOfFBPTExFUlJ8UE9MTEhVUHxQT0xMTlZBTH0sIHtmZD01LCBldmVudHM9UE9M
-TElOfA0KUE9MTEVSUnxQT0xMSFVQfFBPTExOVkFMfV0sIDIsIDMwMDApID0gMCAoVGltZW91dCkN
-CnBvbGwoW3tmZD0zLCBldmVudHM9UE9MTElOfFBPTExFUlJ8UE9MTEhVUHxQT0xMTlZBTH0sIHtm
-ZD01LCBldmVudHM9UE9MTElOfA0KUE9MTEVSUnxQT0xMSFVQfFBPTExOVkFMfV0sIDIsIDMwMDAp
-ID0gMCAoVGltZW91dCkNCnBvbGwoW3tmZD0zLCBldmVudHM9UE9MTElOfFBPTExFUlJ8UE9MTEhV
-UHxQT0xMTlZBTH0sIHtmZD01LCBldmVudHM9UE9MTElOfA0KUE9MTEVSUnxQT0xMSFVQfFBPTExO
-VkFMfV0sIDIsIDMwMDApID0gMCAoVGltZW91dCkNCnBvbGwoW3tmZD0zLCBldmVudHM9UE9MTElO
-fFBPTExFUlJ8UE9MTEhVUHxQT0xMTlZBTH0sIHtmZD01LCBldmVudHM9UE9MTElOfA0KUE9MTEVS
-UnxQT0xMSFVQfFBPTExOVkFMfV0sIDIsIDMwMDAgPHVuZmluaXNoZWQgLi4uPg0KDQo=
+On to, 2011-02-10 at 10:29 -0300, Eduardo Silva wrote:
+> [PATCH] Add safe string manipulation functions
+> 
+> Deprecate direct use of strcpy(3)
+> The following string manipulation function has been added:
+> 
+>    - string_copy() : wrapper of strcpy(3)
+>    - string_ncopy(): wrapper of strncpy(3)
+> 
+> both function compose safe NULL terminated strings.
+
+I'd like make some comments, which I hope will be acceptable.
+
+Firstly, calling strcpy dangerous is, to me, rather overblown. It is
+easy to make mistakes, but it is not at all dangerous the way, for
+example, gets(3) is dangerous. strcpy can be used safely, gets cannot.
+Also, if you consider strcpy to be dangerous, then strcat should be
+dangerous too. However, given the risk of overwriting a buffer with
+strcpy, I agree that it's good to see if an alternative can be found.
+
+Secondly, if you're going to make wrappers or helper functions for
+string handling in C, you need to decide several things right from the
+start:
+
+* do you do static or dynamic allocation?
+* how do you handle errors?
+* do you want a minimal wrapper or replacement, or a whole new library?
+
+I am not familiar enough with the btrfs-progs code base to give any
+strong recommendations, but off the top of my head I would suggest
+these, for this patch:
+
+* make use of fairly minimal wrappers/replacements (at least for now)
+* handle errors by calling abort or exit
+* don't allocate data dynamically (or else it's not a minimal wrapper)
+
+For error handling, there are two kinds of things that can happen:
+normal run-time errors (malloc returns NULL, writing to a file fails,
+etc), and programming errors (wrong parameters to functions). If we're
+doing a minimal wrapper without dynamic memory allocation, the only
+thing string functions should need to worry about is programming errors.
+For those, abort(3) is the appropriate way to terminate the program,
+since it causes a core dump, which can be inspected with a debugger.
+Since btrfs-progs are non-interactive command line tools, this should be
+OK.
+
+For checking function arguments, the assert macro is appropriate. It
+calls abort if the test fails. I am not sure I would check for
+parameters being non-NULL, though, since the kernel will trap such usage
+and cause a segfault, which, again, can be analyzed with a debugger.
+
+For things like string copying, another problem to consider is what to
+do if the target array is not large enough? The two possibilities is to
+silently truncate the output string, return an error code of some sort,
+or to abort. The error code is a bit tedious, since it requires the
+caller to check for it, and do something sensible if it's not enough.
+For btrfs-progs, I would suggest aborting.
+
+Taking all of these together, my suggestion for a "safer strcpy" would
+be along these lines (outline only, not tested code):
+
+        void safer_strcpy(char *target, size_t tsize, const char
+        *source)
+        {
+            size_t n;
+        
+            n = snprintf(target, tsize, "%s", source);
+            assert(n < tsize);
+        }
+        
+        void safer_strncpy(char *tgt, size_t tsize, const char *src, size_t n)
+        {
+            assert(n < tsize); /* There must be space for the '\0'. */
+            memset(tgt, '\0', tsize);
+            strncpy(tgt, src, n);
+        }
+
+Note that for any reasonable error checking to be possible the safety
+functions need to know the size of the target memory area. Otherwise no
+sensible checks can be done -- you have to rely on the caller to check
+that the target array is big enough, and then you're nowhere better than
+with plain strcpy.
+
+(Also note that I did not call the function string_copy, since global
+names starting with str are reserved to the C implementation.)
+
+Your function fills in the target array with zero bytes. Is that
+necessary? If it is, then the memset call needs to be added to
+safer_strcpy.
+
+(I don't find it useful to return the target array as the return value
+of the function, so I didn't do that.)
+
+-- 
+Blog/wiki/website hosting with ikiwiki (free for free software):
+http://www.branchable.com/
+

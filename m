@@ -1,47 +1,61 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: 2.6.37: bash is looping unkillably in btrfs
-Date: Sat, 12 Feb 2011 20:13:23 -0500
-Message-ID: <20110213011323.GC19533@dhcp231-156.rdu.redhat.com>
-References: <AANLkTinSuRoiaTcPOV7_X=Zs+4-ad-Gx-oKWuhyHpjsO@mail.gmail.com> <20110212212249.GB19533@dhcp231-156.rdu.redhat.com> <AANLkTi=oBvsjxichNbAFGND05XG8GVMds5PwRLL5Amco@mail.gmail.com>
+From: Marti Raudsepp <marti@juffo.org>
+Subject: btrfs: compression breaks cp and cross-FS mv, FS_IOC_FIEMAP bug?
+Date: Sun, 13 Feb 2011 17:49:42 +0200
+Message-ID: <AANLkTinZNk1j94rEMVdvRtjr2Sa-C7VpQOGHrvrY8Hph@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: Josef Bacik <josef@redhat.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Andrew Lutomirski <luto@mit.edu>
+Content-Type: text/plain; charset=UTF-8
+To: btrfs hackers <linux-btrfs@vger.kernel.org>,
+	Kernel hackers <linux-kernel@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=oBvsjxichNbAFGND05XG8GVMds5PwRLL5Amco@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Feb 12, 2011 at 04:29:41PM -0500, Andrew Lutomirski wrote:
-> On Sat, Feb 12, 2011 at 4:22 PM, Josef Bacik <josef@redhat.com> wrote=
-:
-> > On Sat, Feb 12, 2011 at 02:53:31PM -0500, Andrew Lutomirski wrote:
-> >> I have two processes that are unkillable and taking about 50% of a=
- CPU
-> >> each. =A0There is no actual I/O happening (disk light is off and t=
-he
-> >> disk even spun down after awhile). =A0This may or may not be relat=
-ed to
-> >> unmounting a filesystem. =A0(I'm not sure -- I have two btrfs
-> >> failesystems and I unmounted one before I noticed the problem).
-> >>
-> >> [...]
-> > It will finish eventually, fixes for this went into -rc4. =A0Thanks=
-,
->=20
-> Any plans for -stable?  (Upgrading to a -rc kernel to make a
-> filesystem work seems scary.)
->=20
-> Is it same to assume that my data is all ok?  (I have a backup and I'=
-d
-> like to know whether I should restore from it right now...)
->
+Hi list!
 
-Yup your data is fine.  Thanks,
+It seems I have found a serious regression in compressed btrfs in
+kernel 2.6.37. When creating a small file (less than the block size)
+and then cp/mv it to *another* file system, an appropriate number of
+zeroes gets written to the destination file. Case in point:
 
-Josef=20
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+% echo foobar > foobar
+% hexdump -C foobar
+00000000  66 6f 6f 62 61 72 0a                              |foobar.|
+00000007
+% mv foobar /tmp
+% hexdump -C /tmp/foobar
+00000000  00 00 00 00 00 00 00                              |.......|
+00000007
+% cp foobar foobar2
+% hexdump -C foobar2
+00000000  00 00 00 00 00 00 00                              |.......|
+00000007
+
+Via strace I found that mv doesn't even attempt to read anything:
+
+open("foobar", O_RDONLY|O_NOFOLLOW)     = 3
+fstat(3, {st_mode=S_IFREG|0664, st_size=7, ...}) = 0
+open("/tmp/foobar", O_WRONLY|O_CREAT|O_EXCL, 0600) = 4
+fstat(4, {st_mode=S_IFREG|0600, st_size=0, ...}) = 0
+ioctl(3, FS_IOC_FIEMAP, 0x7fff62f6bfa0) = 0
+write(4, "\0\0\0\0\0\0\0", 7)           = 7
+
+What's that, is FS_IOC_FIEMAP telling it that it's a sparse file?
+Compare with ext4:
+
+ioctl(3, FS_IOC_FIEMAP, 0x7fff2c576a90) = 0
+lseek(3, 0, SEEK_SET)                   = 0
+read(3, "foobar\n", 4096)               = 7
+write(4, "foobar\n", 7)                 = 7
+
+I'm currently running on 2.6.37, x86_64 using Arch Linux -testing with
+coreutils 8.10. Filesystem is mounted from LVM2 to /usr/src with -o
+noatime,compress
+
+This only seems to occur with compressed file systems (either zlib or
+LZO). A person on IRC also reproduced the same problem in 2.6.28-rc.
+I'm pretty sure this used to work correctly around 2.6.35 or 2.6.36.
+
+This is 100% reproducible here. If anyone has trouble reproducing
+this, I can dig further and provide information as needed.
+
+Regards,
+Marti

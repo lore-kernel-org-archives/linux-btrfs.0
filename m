@@ -1,42 +1,32 @@
-From: Andrew Lutomirski <luto@mit.edu>
-Subject: Re: 2.6.37: bash is looping unkillably in btrfs
-Date: Sat, 12 Feb 2011 16:29:41 -0500
-Message-ID: <AANLkTi=oBvsjxichNbAFGND05XG8GVMds5PwRLL5Amco@mail.gmail.com>
-References: <AANLkTinSuRoiaTcPOV7_X=Zs+4-ad-Gx-oKWuhyHpjsO@mail.gmail.com> <20110212212249.GB19533@dhcp231-156.rdu.redhat.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Josef Bacik <josef@redhat.com>
+From: Yoshinori Sano <yoshinori.sano@gmail.com>
+Subject: [PATCH] Btrfs: fix missing printk priority level
+Date: Sun, 13 Feb 2011 10:07:28 +0900
+Message-ID: <1297559248-18636-1-git-send-email-yoshinori.sano@gmail.com>
+Cc: Yoshinori Sano <yoshinori.sano@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110212212249.GB19533@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Feb 12, 2011 at 4:22 PM, Josef Bacik <josef@redhat.com> wrote:
-> On Sat, Feb 12, 2011 at 02:53:31PM -0500, Andrew Lutomirski wrote:
->> I have two processes that are unkillable and taking about 50% of a C=
-PU
->> each. =A0There is no actual I/O happening (disk light is off and the
->> disk even spun down after awhile). =A0This may or may not be related=
- to
->> unmounting a filesystem. =A0(I'm not sure -- I have two btrfs
->> failesystems and I unmounted one before I noticed the problem).
->>
->> [...]
-> It will finish eventually, fixes for this went into -rc4. =A0Thanks,
+This is a trivial fix that sets priority level of printk.
 
-Any plans for -stable?  (Upgrading to a -rc kernel to make a
-filesystem work seems scary.)
+Signed-off-by: Yoshinori Sano <yoshinori.sano@gmail.com>
+---
+ fs/btrfs/super.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Is it same to assume that my data is all ok?  (I have a backup and I'd
-like to know whether I should restore from it right now...)
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 0209b5f..f6ce38c 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -577,7 +577,7 @@ static int btrfs_fill_super(struct super_block *sb,
+ 	tree_root = open_ctree(sb, fs_devices, (char *)data);
+ 
+ 	if (IS_ERR(tree_root)) {
+-		printk("btrfs: open_ctree failed\n");
++		printk(KERN_CRIT "btrfs: open_ctree failed\n");
+ 		return PTR_ERR(tree_root);
+ 	}
+ 	sb->s_fs_info = tree_root;
+-- 
+1.7.1
 
---Andy
-
->
-> Josef
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

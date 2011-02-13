@@ -1,94 +1,69 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: Re: Question on subvolumes and mount options
-Date: Sun, 13 Feb 2011 19:18:20 +0000
-Message-ID: <20110213191820.GA6321@carfax.org.uk>
-References: <87oc6fj30p.fsf@savara.sat.thregr.org>
- <20110213173059.GB5484@carfax.org.uk>
- <87ei7bj03d.fsf@savara.sat.thregr.org>
+From: =?ISO-8859-1?Q?P=E1draig_Brady?= <P@draigBrady.com>
+Subject: Re: [PATCH] copy: adjust fiemap handling of sparse files
+Date: Sun, 13 Feb 2011 23:53:24 +0000
+Message-ID: <4D586EF4.6000005@draigBrady.com>
+References: <4D51D417.8090807@draigBrady.com>	<87zkq5o1cl.fsf@rho.meyering.net>	<4D5324D4.3000700@draigBrady.com>	<4D53B789.2080505@draigBrady.com> <4D55E03E.4070705@draigBrady.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="rwEMma7ioTxnRzrJ"
-Cc: linux-btrfs@vger.kernel.org
-To: Yuri D'Elia <wavexx@users.sf.net>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Coreutils <coreutils@gnu.org>
+To: Jim Meyering <jim@meyering.net>,
+	BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <87ei7bj03d.fsf@savara.sat.thregr.org>
+In-Reply-To: <4D55E03E.4070705@draigBrady.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Unfortunately, after checking BTRFS I see that fiemap
+behaves differently to EXT4. IMHO the EXT4 operation
+seems correct, and gives full info about the structure
+of a file, which cp for example can use to efficiently
+and accurately reproduce the structure at the destination.
 
---rwEMma7ioTxnRzrJ
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+On EXT4 (on kernel-2.6.35.11-83.fc14.i686) there are no extents
+returned for holes in a file.
 
-On Sun, Feb 13, 2011 at 06:49:58PM +0100, Yuri D'Elia wrote:
-> On Sun, 13 Feb 2011 17:30:59 +0000, Hugo Mills wrote:
-> >> First: In the / filesystem I create a subvolume named /home. As soon as
-> >> the subvolume is created, I can already see the entry point in /home
-> >> without having to mount it separately. Is that expected?
-> >
-> >    Yes.
-> 
-> What happens if I mount the home subvolume into a different point, like:
-> 
-> mount -o subvol=home /home2
-> 
-> and then change a file in /home (which is accessible through the default
-> subvolume)?
-> 
-> Will the change be reflected on both mount points? Or the inverse
-> (change /home2)?
+However on btrfs it does return an extent for holes?
+So with btrfs there is no way to know an extent
+is allocated but unwritten (zero), so one must
+read and write all the data, rather than just
+fallocating the space in the destination.
 
-   Yes, it's the same piece of storage, just appearing at more than
-one point in your overall filesystem. Similar to the way that bind
-mounts work.
+One can also see this with the following on btrfs:
 
-> >> So, which is best? Looks like mounting subvolumes is not necessary.
-> >
-> >    I would recommend putting nothing in the root of the filesystem
-> > *except* subvolumes. i.e. create a "root" subvolume in / that contains
-> > your root filesystem, and make that the default. Then you can mount
-> > your btrfs root subvolume (i.e. the thing that contains all the other
-> > subvolumes) somewhere like /media/btrfs-root, for purposes of managing
-> > subvolumes.
-> 
-> So you would recommend creating both /root and /home subvolumes, to be
-> mounted separately, or create /root and /root/home subvolumes?
+$ fallocate -l 100000000 unwritten
+$ truncate -s 100000000 sparse
+$ dd count=3D1000 bs=3D100000 if=3D/dev/zero of=3Dzero
 
-   The former.
+$ filefrag -vs *
+=46ilesystem type is: 9123683e
+=46ile size of sparse is 100000000 (24415 blocks, blocksize 4096)
+ ext logical physical expected length flags
+   0       0        0           24415 unwritten,eof
+sparse: 1 extent found
+=46ile size of unwritten is 100000000 (24415 blocks, blocksize 4096)
+ ext logical physical expected length flags
+   0       0    68160           12207
+   1   12207    92560    80366  12208 eof
+unwritten: 2 extents found
+=46ile size of zeros is 100000000 (24415 blocks, blocksize 4096)
+ ext logical physical expected length flags
+   0       0    19360           20678
+   1   20678    43760    40037   3737 eof
+zeros: 2 extents found
 
-> >> like to use nodatasum except for /home, will the following work?
-> >> 
-> >> mount -o nodatasum /dev/x /
-> >> btrfs subvolume create /home
-> >> mount -o datasum,subvol=home /dev/x
-> >
-> >    I'd expect that to work, although I haven't tried it myself.
-> 
-> What if I remount the /home subvol into /home2. What happens when I
-> touch a file through /home (nodatasum) and what happens when I use
-> /home2 - since both are available at the same time?
+So is this expected?
+Has this already been changed to match ext4?
 
-   They'll stay in sync with respect to the files written to either
-one. I'm not sure what the behaviour of nodatasum is with different
-mounts of the same subvolume.
+=46or my own reference, I can probably skip performance
+tests on (older) btrfs by checking `filefrag` output.
+Also in `cp`, if we see an "unwritten extent" we should
+probably create a hole rather than an empty allocation
+by default.  It's better to decrease file allocation
+than increase it.
 
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-      --- Try everything once,  except incest and folk-dancing. ---      
-
---rwEMma7ioTxnRzrJ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFNWC58IKyzvlFcI40RAp9xAJ9XfEgPXbjgvUzaS083iR5zG6DBJACeOmTM
-dlLo6cV7gThLLJgoBBdLkGo=
-=whZZ
------END PGP SIGNATURE-----
-
---rwEMma7ioTxnRzrJ--
+cheers,
+P=E1draig.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

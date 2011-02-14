@@ -1,93 +1,80 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: [PATCH] Btrfs: check return value of alloc_extent_map()
-Date: Mon, 14 Feb 2011 09:45:29 +0900
-Message-ID: <201102140045.AA00008@T-ITOH1.jp.fujitsu.com>
+From: Jim Meyering <jim@meyering.net>
+Subject: Re: [PATCH] copy: adjust fiemap handling of sparse files
+Date: Mon, 14 Feb 2011 07:05:59 +0100
+Message-ID: <87k4h3noag.fsf@rho.meyering.net>
+References: <4D51D417.8090807@draigBrady.com>
+	<87zkq5o1cl.fsf@rho.meyering.net> <4D5324D4.3000700@draigBrady.com>
+	<4D53B789.2080505@draigBrady.com> <4D55E03E.4070705@draigBrady.com>
+	<4D586EF4.6000005@draigBrady.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=iso-8859-1
+Cc: BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>,
+	Coreutils <coreutils@gnu.org>
+To: =?iso-8859-1?Q?P=E1draig?= Brady <P@draigBrady.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4D586EF4.6000005@draigBrady.com> (=?iso-8859-1?Q?=22P=E1drai?=
+ =?iso-8859-1?Q?g?= Brady"'s message of
+	"Sun, 13 Feb 2011 23:53:24 +0000")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I add the check on the return value of alloc_extent_map() to several places.
-In addition, alloc_extent_map() returns only the address or NULL.
-Therefore, check by IS_ERR() is unnecessary. So, I remove IS_ERR() checking.
+P=E1draig Brady wrote:
+> Unfortunately, after checking BTRFS I see that fiemap
+> behaves differently to EXT4. IMHO the EXT4 operation
+> seems correct, and gives full info about the structure
+> of a file, which cp for example can use to efficiently
+> and accurately reproduce the structure at the destination.
+>
+> On EXT4 (on kernel-2.6.35.11-83.fc14.i686) there are no extents
+> returned for holes in a file.
+>
+> However on btrfs it does return an extent for holes?
+> So with btrfs there is no way to know an extent
+> is allocated but unwritten (zero), so one must
+> read and write all the data, rather than just
+> fallocating the space in the destination.
+>
+> One can also see this with the following on btrfs:
+>
+> $ fallocate -l 100000000 unwritten
+> $ truncate -s 100000000 sparse
+> $ dd count=3D1000 bs=3D100000 if=3D/dev/zero of=3Dzero
+>
+> $ filefrag -vs *
+> Filesystem type is: 9123683e
+> File size of sparse is 100000000 (24415 blocks, blocksize 4096)
+>  ext logical physical expected length flags
+>    0       0        0           24415 unwritten,eof
+> sparse: 1 extent found
+> File size of unwritten is 100000000 (24415 blocks, blocksize 4096)
+>  ext logical physical expected length flags
+>    0       0    68160           12207
+>    1   12207    92560    80366  12208 eof
+> unwritten: 2 extents found
+> File size of zeros is 100000000 (24415 blocks, blocksize 4096)
+>  ext logical physical expected length flags
+>    0       0    19360           20678
+>    1   20678    43760    40037   3737 eof
+> zeros: 2 extents found
+>
+> So is this expected?
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- fs/btrfs/extent-tree.c |    2 +-
- fs/btrfs/extent_map.c  |    4 ++--
- fs/btrfs/file.c        |    1 +
- fs/btrfs/inode.c       |    3 +++
- 4 files changed, 7 insertions(+), 3 deletions(-)
+I heard it's a bug in F14's btrfs.
+To test btrfs properly, I had to use rawhide/F15.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 565e22d..a7aaa10 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -6584,7 +6584,7 @@ static noinline int relocate_data_extent(struct inode *reloc_inode,
- 	u64 end = start + extent_key->offset - 1;
- 
- 	em = alloc_extent_map(GFP_NOFS);
--	BUG_ON(!em || IS_ERR(em));
-+	BUG_ON(!em);
- 
- 	em->start = start;
- 	em->len = extent_key->offset;
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index b0e1fce..2b6c12e 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -51,8 +51,8 @@ struct extent_map *alloc_extent_map(gfp_t mask)
- {
- 	struct extent_map *em;
- 	em = kmem_cache_alloc(extent_map_cache, mask);
--	if (!em || IS_ERR(em))
--		return em;
-+	if (!em)
-+		return NULL;
- 	em->in_tree = 0;
- 	em->flags = 0;
- 	em->compress_type = BTRFS_COMPRESS_NONE;
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index b0ff34b..65338a1 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -185,6 +185,7 @@ int btrfs_drop_extent_cache(struct inode *inode, u64 start, u64 end,
- 			split = alloc_extent_map(GFP_NOFS);
- 		if (!split2)
- 			split2 = alloc_extent_map(GFP_NOFS);
-+		BUG_ON(!split || !split2);
- 
- 		write_lock(&em_tree->lock);
- 		em = lookup_extent_mapping(em_tree, start, len);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index c9bc0af..8d392ed 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -644,6 +644,7 @@ retry:
- 					async_extent->ram_size - 1, 0);
- 
- 		em = alloc_extent_map(GFP_NOFS);
-+		BUG_ON(!em);
- 		em->start = async_extent->start;
- 		em->len = async_extent->ram_size;
- 		em->orig_start = em->start;
-@@ -820,6 +821,7 @@ static noinline int cow_file_range(struct inode *inode,
- 		BUG_ON(ret);
- 
- 		em = alloc_extent_map(GFP_NOFS);
-+		BUG_ON(!em);
- 		em->start = start;
- 		em->orig_start = em->start;
- 		ram_size = ins.offset;
-@@ -1169,6 +1171,7 @@ out_check:
- 			struct extent_map_tree *em_tree;
- 			em_tree = &BTRFS_I(inode)->extent_tree;
- 			em = alloc_extent_map(GFP_NOFS);
-+			BUG_ON(!em);
- 			em->start = cur_offset;
- 			em->orig_start = em->start;
- 			em->len = num_bytes;
+> Has this already been changed to match ext4?
 
+Yes, with a new-enough kernel.
 
+> For my own reference, I can probably skip performance
+> tests on (older) btrfs by checking `filefrag` output.
+> Also in `cp`, if we see an "unwritten extent" we should
+> probably create a hole rather than an empty allocation
+> by default.  It's better to decrease file allocation
+> than increase it.
+
+Makes sense.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

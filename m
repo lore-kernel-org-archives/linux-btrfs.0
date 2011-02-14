@@ -1,45 +1,33 @@
-From: Yuri D'Elia <wavexx@users.sf.net>
-Subject: Re: Question on subvolumes and mount options
-Date: Mon, 14 Feb 2011 12:40:33 +0100
-Message-ID: <20110214124033.13993f8d.wavexx@users.sf.net>
-References: <87oc6fj30p.fsf@savara.sat.thregr.org>
-	<20110213173059.GB5484@carfax.org.uk>
-	<87ei7bj03d.fsf@savara.sat.thregr.org>
-	<20110213191820.GA6321@carfax.org.uk>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: btrfs: compression breaks cp and cross-FS mv, FS_IOC_FIEMAP bug?
+Date: Mon, 14 Feb 2011 10:01:47 -0500
+Message-ID: <1297695521-sup-9460@think>
+References: <AANLkTinZNk1j94rEMVdvRtjr2Sa-C7VpQOGHrvrY8Hph@mail.gmail.com> <20110213155730.GK19533@dhcp231-156.rdu.redhat.com> <AANLkTi=Rj_3MmLawJj-K8u+pGbT_NZzqzVGFOsvOK8eC@mail.gmail.com> <20110213161329.GL19533@dhcp231-156.rdu.redhat.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Marti Raudsepp <marti@juffo.org>,
+	btrfs hackers <linux-btrfs@vger.kernel.org>,
+	Kernel hackers <linux-kernel@vger.kernel.org>
+To: Josef Bacik <josef@redhat.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-reply-to: <20110213161329.GL19533@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 13 Feb 2011 19:18:20 +0000
-Hugo Mills <hugo-lkml@carfax.org.uk> wrote:
-
->    Yes, it's the same piece of storage, just appearing at more than
-> one point in your overall filesystem. Similar to the way that bind
-> mounts work.
-
-I've noticed that I can also rename subvolumes as well using mv(1).
-Can I move/re-arrange subvolumes between them simply using mv?
-
-Does a move between subvolumes involve a copy?
-
-> > So you would recommend creating both /root and /home subvolumes, to be
-> > mounted separately, or create /root and /root/home subvolumes?
+Excerpts from Josef Bacik's message of 2011-02-13 11:13:30 -0500:
+> On Sun, Feb 13, 2011 at 06:07:36PM +0200, Marti Raudsepp wrote:
+> > On Sun, Feb 13, 2011 at 17:57, Josef Bacik <josef@redhat.com> wrote:
+> > > Does the same problem happen when you use cp --sparse=never?
+> > 
+> > You are right. cp --sparse=never does not cause data loss.
+> >
 > 
->    The former.
+> So fiemap probably isn't doing the right thing when compression is enabled,
+> which doesn't suprise me since we don't do the right thing with delalloc either.
+> I will try and get to this soon.  Thanks,
 
-Thanks. I can see why this is clearly more flexible in the long term.
+This might be a bug in the cp code.  We're setting the disk extent to
+zero but setting different flags to say we're inline and compressed.
+The cp fiemap code might be ignoring the flags?
 
-> > What if I remount the /home subvol into /home2. What happens when I
-> > touch a file through /home (nodatasum) and what happens when I use
-> > /home2 - since both are available at the same time?
-> 
->    They'll stay in sync with respect to the files written to either
-> one. I'm not sure what the behaviour of nodatasum is with different
-> mounts of the same subvolume.
+Or, it could just be delalloc ;)
 
-Can we get an exact answer/behavior for that? :)
-
-I mean, can I mount two different subvolumes in the same file system with different flags (such as ssd, nodatasum, compress)?
-
+-chris

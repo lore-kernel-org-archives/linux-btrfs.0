@@ -1,63 +1,25 @@
-From: Ilya Dryomov <idryomov@gmail.com>
-Subject: [PATCH] Btrfs: make btrfs_rm_device() fail gracefully
-Date: Tue, 15 Feb 2011 20:14:25 +0200
-Message-ID: <20110215181425.GB9110@kwango.lan.net>
+From: Bert Wesarg <bert.wesarg@googlemail.com>
+Subject: Excluding a device from storing snapshot data?
+Date: Tue, 15 Feb 2011 23:58:37 +0100
+Message-ID: <AANLkTik1u=zWwqMXT7tAqkwhY5Z0U2k8YjQBJx_VjSXg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=UTF-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If shrinking done as part of the online device removal fails add that
-device back to the allocation list and increment the rw_devices counter.
-This fixes two bugs:
+Hi all,
 
-1) we could have a perfectly good device out of alloc list for no good
-reason;
+I'm currently envision a backup setup for my laptop which has a SSD. I
+would like to use an external HDD und span a raid1 over these two
+devices and also creating snapshots. What I would like to prevent, is
+that these snapshots take storage space on the SSD, because SSD
+storage is precious, while this isn't true for the external HDD. So I
+would need to exclude the SSD device to store snapshot data, or to be
+more precise, to store only one specific subvolume. Which can
+obviously be changing, if I need to restore a previous snapshot. Is
+this currently or actually possible?
 
-2) in the btrfs consisting of two devices, failure in btrfs_rm_device()
-could lead to a situation where it was impossible to remove any of the
-devices because of the "unable to remove the only writeable device"
-error.
+Thanks.
 
-Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
----
- fs/btrfs/volumes.c |   11 +++++++++--
- 1 files changed, 9 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a228f63..172e0ad 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1338,11 +1338,11 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 
- 	ret = btrfs_shrink_device(device, 0);
- 	if (ret)
--		goto error_brelse;
-+		goto error_undo;
- 
- 	ret = btrfs_rm_dev_item(root->fs_info->chunk_root, device);
- 	if (ret)
--		goto error_brelse;
-+		goto error_undo;
- 
- 	device->in_fs_metadata = 0;
- 
-@@ -1416,6 +1416,13 @@ out:
- 	mutex_unlock(&root->fs_info->volume_mutex);
- 	mutex_unlock(&uuid_mutex);
- 	return ret;
-+error_undo:
-+	if (device->writeable) {
-+		list_add(&device->dev_alloc_list,
-+			 &root->fs_info->fs_devices->alloc_list);
-+		root->fs_info->fs_devices->rw_devices++;
-+	}
-+	goto error_brelse;
- }
- 
- /*
--- 
-1.7.2.3
-
+Bert

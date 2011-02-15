@@ -1,52 +1,69 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: [GIT PULL] Btrfs updates
-Date: Mon, 14 Feb 2011 22:49:04 -0500
-Message-ID: <1297740560-sup-7799@think>
+From: =?UTF-8?B?UMOhZHJhaWcgQnJhZHk=?= <P@draigBrady.com>
+Subject: Re: btrfs: compression breaks cp and cross-FS mv, FS_IOC_FIEMAP bug?
+Date: Tue, 15 Feb 2011 11:30:38 +0000
+Message-ID: <4D5A63DE.3040600@draigBrady.com>
+References: <AANLkTinZNk1j94rEMVdvRtjr2Sa-C7VpQOGHrvrY8Hph@mail.gmail.com> <20110213155730.GK19533@dhcp231-156.rdu.redhat.com> <AANLkTi=Rj_3MmLawJj-K8u+pGbT_NZzqzVGFOsvOK8eC@mail.gmail.com> <20110213161329.GL19533@dhcp231-156.rdu.redhat.com> <1297695521-sup-9460@think> <AANLkTi=N8DiusfP6Rey=Cx4qjUSbiLS3jnbjASGQ=Lcx@mail.gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-To: "Linus Torvalds" <torvalds@linux-foundation.org>,
-	"Linux Btrfs" <linux-btrfs@vger.kernel.org>,
-	"linux-kernel" <linux-kernel@vger.kernel.org>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>,
+	btrfs hackers <linux-btrfs@vger.kernel.org>,
+	Kernel hackers <linux-kernel@vger.kernel.org>,
+	8001@debbugs.gnu.org
+To: Marti Raudsepp <marti@juffo.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTi=N8DiusfP6Rey=Cx4qjUSbiLS3jnbjASGQ=Lcx@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi everyone,
+On 14/02/11 17:58, Marti Raudsepp wrote:
+> On Mon, Feb 14, 2011 at 17:01, Chris Mason <chris.mason@oracle.com> w=
+rote:
+>> Or, it could just be delalloc ;)
+>=20
+> I suspect delalloc. After creating the file, filefrag reports "1
+> extent found", but for some reason it doesn't actually print out
+> details of the extent.
 
-The master branch of the btrfs unstable tree has some important btrfs
-fixes:
+That's a bug in `filefrag -v` that I noticed independently yesterday.
+Without -v it will correctly report 0 extents.
+I've already suggested a patch to fix upstream.
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
+> After a "sync" call, the extent appears and "cp" starts working as ex=
+pected:
 
-I was seeing very rare metadata corruptions during long stress runs, and
-eventually tracked it down to two different races in the btrfs
-releasepage code.  One was making btrfs think pages were up to date when
-they really weren't and the other lead to corrupted csum fields in
-metadata.
+About that sync.
+I've noticed on ext4 loop back at least (and I suspect BTRFS is the sam=
+e)
+that specifying FIEMAP_FLAG_SYNC (which cp does) is ineffective.
+I worked around this for cp tests by explicitly syncing with:
+dd if=3D/dev/null of=3Dfoo conv=3Dnotrunc,fdatasync
 
-Chris Mason (2) commits (+50/-6):
-    Btrfs: don't release pages when we can't clear the uptodate bits (+9/-1)
-    Btrfs: fix page->private races (+41/-5)
+> % rm -f foo bar
+> % echo foo > foo
+> % sync
+> % filefrag -v foo
+> Filesystem type is: 9123683e
+> File size of foo is 4 (1 block, blocksize 4096)
+>  ext logical physical expected length flags
+>    0       0        0            4096 not_aligned,inline,eof
+> foo: 1 extent found
+> % cp foo bar
+> % hexdump bar
+> 0000000 6f66 0a6f
+> 0000004
 
-Zheng Yan (1) commits (+1/-0):
-    Btrfs: Fix balance panic
+OK that's fine for normal files.
+cp (from coreutils >=3D 8.10) may still do the wrong thing
+as it currently ignores FIEMAP_EXTENT_DATA_ENCRYPTED and FIEMAP_EXTENT_=
+ENCODED
+as I've already reported:
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg08356.html
+I'd appreciate some `filefrag -v` output from a large compressed file.
 
-Dan Rosenberg (1) commits (+8/-2):
-    btrfs: prevent heap corruption in btrfs_ioctl_space_info()
-
-Tsutomu Itoh (1) commits (+7/-3):
-    Btrfs: check return value of alloc_extent_map()
-
-Ilya Dryomov (1) commits (+2/-0):
-    Btrfs - Fix memory leak in btrfs_init_new_device()
-
-Total: (6) commits (+68/-11)
-
- fs/btrfs/disk-io.c     |    8 ++++++--
- fs/btrfs/extent-tree.c |    2 +-
- fs/btrfs/extent_io.c   |   48 ++++++++++++++++++++++++++++++++++++++++++++----
- fs/btrfs/extent_map.c  |    4 ++--
- fs/btrfs/file.c        |    1 +
- fs/btrfs/inode.c       |    3 +++
- fs/btrfs/ioctl.c       |   10 ++++++++--
- fs/btrfs/relocation.c  |    1 +
- fs/btrfs/volumes.c     |    2 ++
- 9 files changed, 68 insertions(+), 11 deletions(-)
+cheers,
+P=C3=A1draig.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

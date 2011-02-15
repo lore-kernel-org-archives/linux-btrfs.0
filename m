@@ -1,126 +1,51 @@
-From: Yoshinori Sano <yoshinori.sano@gmail.com>
-Subject: Re: [PATCH] Btrfs: fix uncheck memory allocations
-Date: Tue, 15 Feb 2011 21:10:53 +0900
-Message-ID: <AANLkTikb+U+CUZYvNNmfAdd=xoaBfTsQVgh9ncP1ZrYc@mail.gmail.com>
-References: <1297771302-28297-1-git-send-email-yoshinori.sano@gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: btrfs: compression breaks cp and cross-FS mv, FS_IOC_FIEMAP
+	bug?
+Date: Tue, 15 Feb 2011 08:18:50 -0500
+Message-ID: <20110215131849.GC28010@dhcp231-156.rdu.redhat.com>
+References: <AANLkTinZNk1j94rEMVdvRtjr2Sa-C7VpQOGHrvrY8Hph@mail.gmail.com> <20110213155730.GK19533@dhcp231-156.rdu.redhat.com> <AANLkTi=Rj_3MmLawJj-K8u+pGbT_NZzqzVGFOsvOK8eC@mail.gmail.com> <20110213161329.GL19533@dhcp231-156.rdu.redhat.com> <1297695521-sup-9460@think> <AANLkTi=N8DiusfP6Rey=Cx4qjUSbiLS3jnbjASGQ=Lcx@mail.gmail.com> <4D5A63DE.3040600@draigBrady.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: chris.mason@oracle.com, t-itoh@jp.fujitsu.com
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1297771302-28297-1-git-send-email-yoshinori.sano@gmail.com>
+Content-Type: text/plain; charset=iso-8859-1
+Cc: Marti Raudsepp <marti@juffo.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>,
+	btrfs hackers <linux-btrfs@vger.kernel.org>,
+	Kernel hackers <linux-kernel@vger.kernel.org>,
+	8001@debbugs.gnu.org
+To: =?iso-8859-1?Q?P=E1draig?= Brady <P@draigBrady.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4D5A63DE.3040600@draigBrady.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is the modified version of my previous patch.
-This patch is created by removing the duplicated (conflicted) code
-of the following work.
-
-Tsutomu Itoh (1) commits (+7/-3):
-    Btrfs: check return value of alloc_extent_map()
-
-http://marc.info/?l=3Dlinux-btrfs&m=3D129774185204197&w=3D2
-
-Regards,
-
-2011/2/15 Yoshinori Sano <yoshinori.sano@gmail.com>:
-> To make Btrfs code more robust, several return value checks where mem=
-ory
-> allocation can fail are introduced. I use BUG_ON where I don't know h=
-ow
-> to handle the error properly, which increases the number of using the
-> notorious BUG_ON, though.
->
-> Signed-off-by: Yoshinori Sano <yoshinori.sano@gmail.com>
-> ---
-> =A0fs/btrfs/compression.c | =A0 =A06 ++++++
-> =A0fs/btrfs/extent-tree.c | =A0 =A04 ++++
-> =A0fs/btrfs/inode.c =A0 =A0 =A0 | =A0 =A02 ++
-> =A03 files changed, 12 insertions(+), 0 deletions(-)
->
-> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-> index 4d2110e..992a4b9 100644
-> --- a/fs/btrfs/compression.c
-> +++ b/fs/btrfs/compression.c
-> @@ -340,6 +340,8 @@ int btrfs_submit_compressed_write(struct inode *i=
-node, u64 start,
->
-> =A0 =A0 =A0 =A0WARN_ON(start & ((u64)PAGE_CACHE_SIZE - 1));
-> =A0 =A0 =A0 =A0cb =3D kmalloc(compressed_bio_size(root, compressed_le=
-n), GFP_NOFS);
-> + =A0 =A0 =A0 if (!cb)
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return -ENOMEM;
-> =A0 =A0 =A0 =A0atomic_set(&cb->pending_bios, 0);
-> =A0 =A0 =A0 =A0cb->errors =3D 0;
-> =A0 =A0 =A0 =A0cb->inode =3D inode;
-> @@ -354,6 +356,10 @@ int btrfs_submit_compressed_write(struct inode *=
-inode, u64 start,
-> =A0 =A0 =A0 =A0bdev =3D BTRFS_I(inode)->root->fs_info->fs_devices->la=
-test_bdev;
->
-> =A0 =A0 =A0 =A0bio =3D compressed_bio_alloc(bdev, first_byte, GFP_NOF=
-S);
-> + =A0 =A0 =A0 if(!bio) {
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 kfree(cb);
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return -ENOMEM;
-> + =A0 =A0 =A0 }
-> =A0 =A0 =A0 =A0bio->bi_private =3D cb;
-> =A0 =A0 =A0 =A0bio->bi_end_io =3D end_compressed_bio_write;
-> =A0 =A0 =A0 =A0atomic_inc(&cb->pending_bios);
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index a7aaa10..3c6d0f2 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -6931,6 +6931,10 @@ static noinline int get_new_locations(struct i=
-node *reloc_inode,
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0struct disk_extent *ol=
-d =3D exts;
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0max *=3D 2;
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0exts =3D kzalloc(sizeo=
-f(*exts) * max, GFP_NOFS);
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (!exts) {
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 ret =3D=
- -ENOMEM;
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 goto ou=
-t;
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 }
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0memcpy(exts, old, size=
-of(*exts) * nr);
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0if (old !=3D *extents)
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0kfree(=
-old);
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 8d392ed..12a5a40 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -287,6 +287,7 @@ static noinline int add_async_extent(struct async=
-_cow *cow,
-> =A0 =A0 =A0 =A0struct async_extent *async_extent;
->
-> =A0 =A0 =A0 =A0async_extent =3D kmalloc(sizeof(*async_extent), GFP_NO=
-=46S);
-> + =A0 =A0 =A0 BUG_ON(!async_extent);
-> =A0 =A0 =A0 =A0async_extent->start =3D start;
-> =A0 =A0 =A0 =A0async_extent->ram_size =3D ram_size;
-> =A0 =A0 =A0 =A0async_extent->compressed_size =3D compressed_size;
-> @@ -384,6 +385,7 @@ again:
-> =A0 =A0 =A0 =A0 =A0 =A0 (BTRFS_I(inode)->force_compress))) {
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0WARN_ON(pages);
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0pages =3D kzalloc(sizeof(struct page *=
-) * nr_pages, GFP_NOFS);
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 BUG_ON(!pages);
->
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0if (BTRFS_I(inode)->force_compress)
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0compress_type =3D BTRF=
-S_I(inode)->force_compress;
-> --
-> 1.7.1
->
+On Tue, Feb 15, 2011 at 11:30:38AM +0000, P=E1draig Brady wrote:
+> On 14/02/11 17:58, Marti Raudsepp wrote:
+> > On Mon, Feb 14, 2011 at 17:01, Chris Mason <chris.mason@oracle.com>=
+ wrote:
+> >> Or, it could just be delalloc ;)
+> >=20
+> > I suspect delalloc. After creating the file, filefrag reports "1
+> > extent found", but for some reason it doesn't actually print out
+> > details of the extent.
+>=20
+> That's a bug in `filefrag -v` that I noticed independently yesterday.
+> Without -v it will correctly report 0 extents.
+> I've already suggested a patch to fix upstream.
+>=20
+> > After a "sync" call, the extent appears and "cp" starts working as =
+expected:
+>=20
+> About that sync.
+> I've noticed on ext4 loop back at least (and I suspect BTRFS is the s=
+ame)
+> that specifying FIEMAP_FLAG_SYNC (which cp does) is ineffective.
+> I worked around this for cp tests by explicitly syncing with:
+> dd if=3D/dev/null of=3Dfoo conv=3Dnotrunc,fdatasync
 >
 
---=20
-Yoshinori Sano <yoshinori.sano@gmail.com>
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Well thats not good, thats all take care of in the generic code before =
+it gets
+to the fs, I'll take a look at that when I try and fix delalloc fiemap =
+for
+btrfs.  Thanks,
+
+Josef=20

@@ -1,25 +1,38 @@
-From: Bert Wesarg <bert.wesarg@googlemail.com>
-Subject: Excluding a device from storing snapshot data?
-Date: Tue, 15 Feb 2011 23:58:37 +0100
-Message-ID: <AANLkTik1u=zWwqMXT7tAqkwhY5Z0U2k8YjQBJx_VjSXg@mail.gmail.com>
+From: Tim Peters <darksecond@darksecond.nl>
+Subject: [PATCH] btrfs: fixed a braces code style issue
+Date: Wed, 16 Feb 2011 00:35:27 +0100
+Message-ID: <20110215233526.GA6726@free>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+i fixed a braces code style issue on inode.c
 
-I'm currently envision a backup setup for my laptop which has a SSD. I
-would like to use an external HDD und span a raid1 over these two
-devices and also creating snapshots. What I would like to prevent, is
-that these snapshots take storage space on the SSD, because SSD
-storage is precious, while this isn't true for the external HDD. So I
-would need to exclude the SSD device to store snapshot data, or to be
-more precise, to store only one specific subvolume. Which can
-obviously be changing, if I need to restore a previous snapshot. Is
-this currently or actually possible?
+Signed-off-by: Tim Peters <mail@darksecond.nl>
+---
+ fs/btrfs/inode.c |    5 ++---
+ 1 files changed, 2 insertions(+), 3 deletions(-)
 
-Thanks.
-
-Bert
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index fb9bd78..46125c3 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -467,11 +467,10 @@ again:
+ 		 */
+ 		total_in = (total_in + PAGE_CACHE_SIZE - 1) &
+ 			~(PAGE_CACHE_SIZE - 1);
+-		if (total_compressed >= total_in) {
++		if (total_compressed >= total_in)
+ 			will_compress = 0;
+-		} else {
++		else
+ 			num_bytes = total_in;
+-		}
+ 	}
+ 	if (!will_compress && pages) {
+ 		/*
+-- 
+1.7.4

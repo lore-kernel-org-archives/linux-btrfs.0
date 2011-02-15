@@ -1,69 +1,83 @@
-From: =?UTF-8?B?UMOhZHJhaWcgQnJhZHk=?= <P@draigBrady.com>
-Subject: Re: btrfs: compression breaks cp and cross-FS mv, FS_IOC_FIEMAP bug?
-Date: Tue, 15 Feb 2011 11:30:38 +0000
-Message-ID: <4D5A63DE.3040600@draigBrady.com>
-References: <AANLkTinZNk1j94rEMVdvRtjr2Sa-C7VpQOGHrvrY8Hph@mail.gmail.com> <20110213155730.GK19533@dhcp231-156.rdu.redhat.com> <AANLkTi=Rj_3MmLawJj-K8u+pGbT_NZzqzVGFOsvOK8eC@mail.gmail.com> <20110213161329.GL19533@dhcp231-156.rdu.redhat.com> <1297695521-sup-9460@think> <AANLkTi=N8DiusfP6Rey=Cx4qjUSbiLS3jnbjASGQ=Lcx@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>,
-	btrfs hackers <linux-btrfs@vger.kernel.org>,
-	Kernel hackers <linux-kernel@vger.kernel.org>,
-	8001@debbugs.gnu.org
-To: Marti Raudsepp <marti@juffo.org>
+From: Yoshinori Sano <yoshinori.sano@gmail.com>
+Subject: [PATCH] Btrfs: fix uncheck memory allocations
+Date: Tue, 15 Feb 2011 21:01:42 +0900
+Message-ID: <1297771302-28297-1-git-send-email-yoshinori.sano@gmail.com>
+Cc: Yoshinori Sano <yoshinori.sano@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=N8DiusfP6Rey=Cx4qjUSbiLS3jnbjASGQ=Lcx@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 14/02/11 17:58, Marti Raudsepp wrote:
-> On Mon, Feb 14, 2011 at 17:01, Chris Mason <chris.mason@oracle.com> w=
-rote:
->> Or, it could just be delalloc ;)
->=20
-> I suspect delalloc. After creating the file, filefrag reports "1
-> extent found", but for some reason it doesn't actually print out
-> details of the extent.
+To make Btrfs code more robust, several return value checks where memory
+allocation can fail are introduced. I use BUG_ON where I don't know how
+to handle the error properly, which increases the number of using the
+notorious BUG_ON, though.
 
-That's a bug in `filefrag -v` that I noticed independently yesterday.
-Without -v it will correctly report 0 extents.
-I've already suggested a patch to fix upstream.
+Signed-off-by: Yoshinori Sano <yoshinori.sano@gmail.com>
+---
+ fs/btrfs/compression.c |    6 ++++++
+ fs/btrfs/extent-tree.c |    4 ++++
+ fs/btrfs/inode.c       |    2 ++
+ 3 files changed, 12 insertions(+), 0 deletions(-)
 
-> After a "sync" call, the extent appears and "cp" starts working as ex=
-pected:
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 4d2110e..992a4b9 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -340,6 +340,8 @@ int btrfs_submit_compressed_write(struct inode *inode, u64 start,
+ 
+ 	WARN_ON(start & ((u64)PAGE_CACHE_SIZE - 1));
+ 	cb = kmalloc(compressed_bio_size(root, compressed_len), GFP_NOFS);
++	if (!cb)
++		return -ENOMEM;
+ 	atomic_set(&cb->pending_bios, 0);
+ 	cb->errors = 0;
+ 	cb->inode = inode;
+@@ -354,6 +356,10 @@ int btrfs_submit_compressed_write(struct inode *inode, u64 start,
+ 	bdev = BTRFS_I(inode)->root->fs_info->fs_devices->latest_bdev;
+ 
+ 	bio = compressed_bio_alloc(bdev, first_byte, GFP_NOFS);
++	if(!bio) {
++		kfree(cb);
++		return -ENOMEM;
++	}
+ 	bio->bi_private = cb;
+ 	bio->bi_end_io = end_compressed_bio_write;
+ 	atomic_inc(&cb->pending_bios);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a7aaa10..3c6d0f2 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -6931,6 +6931,10 @@ static noinline int get_new_locations(struct inode *reloc_inode,
+ 			struct disk_extent *old = exts;
+ 			max *= 2;
+ 			exts = kzalloc(sizeof(*exts) * max, GFP_NOFS);
++			if (!exts) {
++				ret = -ENOMEM;
++				goto out;
++			}
+ 			memcpy(exts, old, sizeof(*exts) * nr);
+ 			if (old != *extents)
+ 				kfree(old);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 8d392ed..12a5a40 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -287,6 +287,7 @@ static noinline int add_async_extent(struct async_cow *cow,
+ 	struct async_extent *async_extent;
+ 
+ 	async_extent = kmalloc(sizeof(*async_extent), GFP_NOFS);
++	BUG_ON(!async_extent);
+ 	async_extent->start = start;
+ 	async_extent->ram_size = ram_size;
+ 	async_extent->compressed_size = compressed_size;
+@@ -384,6 +385,7 @@ again:
+ 	     (BTRFS_I(inode)->force_compress))) {
+ 		WARN_ON(pages);
+ 		pages = kzalloc(sizeof(struct page *) * nr_pages, GFP_NOFS);
++		BUG_ON(!pages);
+ 
+ 		if (BTRFS_I(inode)->force_compress)
+ 			compress_type = BTRFS_I(inode)->force_compress;
+-- 
+1.7.1
 
-About that sync.
-I've noticed on ext4 loop back at least (and I suspect BTRFS is the sam=
-e)
-that specifying FIEMAP_FLAG_SYNC (which cp does) is ineffective.
-I worked around this for cp tests by explicitly syncing with:
-dd if=3D/dev/null of=3Dfoo conv=3Dnotrunc,fdatasync
-
-> % rm -f foo bar
-> % echo foo > foo
-> % sync
-> % filefrag -v foo
-> Filesystem type is: 9123683e
-> File size of foo is 4 (1 block, blocksize 4096)
->  ext logical physical expected length flags
->    0       0        0            4096 not_aligned,inline,eof
-> foo: 1 extent found
-> % cp foo bar
-> % hexdump bar
-> 0000000 6f66 0a6f
-> 0000004
-
-OK that's fine for normal files.
-cp (from coreutils >=3D 8.10) may still do the wrong thing
-as it currently ignores FIEMAP_EXTENT_DATA_ENCRYPTED and FIEMAP_EXTENT_=
-ENCODED
-as I've already reported:
-http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg08356.html
-I'd appreciate some `filefrag -v` output from a large compressed file.
-
-cheers,
-P=C3=A1draig.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,27 +1,28 @@
 From: Matt <jackdachef@gmail.com>
 Subject: Re: [PATCH V2 0/3] drivers/staging: zcache: dynamic page cache/swap compression
-Date: Tue, 15 Feb 2011 23:48:29 +0000
-Message-ID: <AANLkTi=LVWBDNuK_tgELn8RLVGjC-gmAjgm5JvKEc0g+@mail.gmail.com>
+Date: Wed, 16 Feb 2011 00:12:21 +0000
+Message-ID: <AANLkTimOssgM7JYSpwB=5zmF_JJ2ByH+PWO7N+YZNB_y@mail.gmail.com>
 References: <20110207032407.GA27404@ca-server1.us.oracle.com>
 	<1ddd01a8-591a-42bc-8bb3-561843b31acb@default>
 	<AANLkTimFATx-gYVgY_pVdZsySSBmXvKFkhTJUeVFBcop@mail.gmail.com>
 	<AANLkTimqSSxHrLhL9t4DOmDeuAA41B9e-qnr+vnUsucL@mail.gmail.com>
 	<AANLkTi=4QkV4wtMmDd6+XXhvkva+fq9m5PVYGC0qBUc3@mail.gmail.com>
-	<AANLkTi=6050iOnC_Sy+SY7EYVkQ979fJh5n8o8bjRUGA@mail.gmail.com>
+	<AANLkTim6n9QqEYr32RPS1Ne0aKpDEf1ZNiNGz2ZvS-EO@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: gregkh@suse.de, Chris Mason <chris.mason@oracle.com>, linux-kernel@vger.kernel.org,
-	linux-mm@kvack.org, ngupta@vflare.org, minchan.kim@gmail.com,
-	linux-btrfs@vger.kernel.org, Josef Bacik <josef@redhat.com>,
-	Dan Rosenberg <drosenberg@vsecurity.com>, Yan Zheng <zheng.z.yan@intel.com>, miaox@cn.fujitsu.com,
+Cc: Dan Magenheimer <dan.magenheimer@oracle.com>, gregkh@suse.de,
+	Chris Mason <chris.mason@oracle.com>, linux-kernel@vger.kernel.org, linux-mm@kvack.org,
+	ngupta@vflare.org, linux-btrfs@vger.kernel.org,
+	Josef Bacik <josef@redhat.com>, Dan Rosenberg <drosenberg@vsecurity.com>,
+	Yan Zheng <zheng.z.yan@intel.com>, miaox@cn.fujitsu.com,
 	Li Zefan <lizf@cn.fujitsu.com>
-To: Dan Magenheimer <dan.magenheimer@oracle.com>
+To: Minchan Kim <minchan.kim@gmail.com>
 Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <AANLkTi=6050iOnC_Sy+SY7EYVkQ979fJh5n8o8bjRUGA@mail.gmail.com>
+In-Reply-To: <AANLkTim6n9QqEYr32RPS1Ne0aKpDEf1ZNiNGz2ZvS-EO@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 14, 2011 at 8:59 PM, Matt <jackdachef@gmail.com> wrote:
-> On Mon, Feb 14, 2011 at 1:29 AM, Matt <jackdachef@gmail.com> wrote:
+On Mon, Feb 14, 2011 at 4:35 AM, Minchan Kim <minchan.kim@gmail.com> wrote:
+> On Mon, Feb 14, 2011 at 10:29 AM, Matt <jackdachef@gmail.com> wrote:
 >> On Mon, Feb 14, 2011 at 1:24 AM, Matt <jackdachef@gmail.com> wrote:
 >>> On Mon, Feb 14, 2011 at 12:08 AM, Matt <jackdachef@gmail.com> wrote:
 >>>> On Wed, Feb 9, 2011 at 1:03 AM, Dan Magenheimer
@@ -783,101 +784,6 @@ sks
 >> Matt
 >>
 >
+> Just my guessing. I might be wrong.
 >
-> ok, maybe it's useful to have some more details how to reproduce it as
-> easily as possible and about my configuration:
->
-> preparation steps:
->
-> 1) 2.6.37 vanilla kernel with the mentioned changes to zram (and
-> xvmalloc), zcache (+ fixes)
->
-> configuration specifics:
->
-> CONFIG_CRYPTO_PCRYPT=3Dy
->
-> 2) on a non-btrfs partition or with zcache disable: get a
-> portage-tarball comparable to mine download from one of the
-> gentoo-mirrors (http://www.gentoo.org/main/en/mirrors2.xml), e.g. the
-> University of California:
-> ftp://ftp.ucsb.edu/pub/mirrors/linux/gentoo/snapshots/
->
-> (weighing only around 40 MiB) then
->
-> get that tarball to a decent size by adding the latest changes from a
-> rsync-mirror (http://www.gentoo.org/main/en/mirrors-rsync.xml)
->
-> I can also upload my specific tarball weighing at 1.7 GiB at request -
-> just point me a place to drop it
->
-> 3) creating a tar.bzip2 ball (preferably via 7z or pbzip2 so that it
-> can be extracted later in parallel to create some pressure)
->
->
-> Hardware:
-> core i7 860 (4 cores - ht -> 8 threads), 8 GiB of RAM,
-> underlying harddrive is a Samsung HD203WI, NCQ is disabled
-> (queue_depth set to "1"), using CFQ as i/o scheduler
->
-> echo "13" > /proc/sys/vm/page-cluster
-> echo "60" > /proc/sys/vm/swappiness
-> echo "3000" > /proc/sys/vm/dirty_expire_centisecs
-> echo "1500" =A0> /proc/sys/vm/dirty_writeback_centisecs
-> echo "15" > /proc/sys/vm/dirty_background_ratio
-> echo "50" =A0 > /proc/sys/vm/dirty_ratio
-> echo "50" > /proc/sys/vm/vfs_cache_pressure
-> echo "32768" > /proc/sys/vm/min_free_kbytes
->
-> for i in /sys/block/sd*; do
-> =A0 =A0 =A0 =A0 /bin/echo "4096" > =A0$i/queue/read_ahead_kb
-> =A0 =A0 =A0 =A0 /bin/echo "64" > =A0$i/queue/max_sectors_kb
-> =A0 =A0 =A0 =A0 /bin/echo "1" =A0 > =A0$i/queue/rq_affinity
-> done
->
-> nr_requests is set to "1024"
->
-> slice_sync to "150"
-> fifo_expire_sync to "50"
->
-> echo 4096 > /sys/class/bdi/default/read_ahead_kb
->
->
-> steps to get the "result":
->
-> 1) cryptsetup-partition with aes or twofish-encryption (512 bits)
-> [using cryptsetup 1.1.3* or 1.2*]
->
-> 2) on top of that btrfs
->
-> 3) extracting the tarball (usually I'm adding a "time" in front to see
-> how long it took): time (7z e -so -tbzip2 -mmt=3D5
-> /system/portage_backup_022011.tbz2 | tar
-> -xp -C /usr/gentoo/)
->
->
-> "result":
->
-> 1) it seems to take several seconds or even minutes until that BUG
-> message gets shown so maybe some memory (or other kind of subsystem)
-> pressure is needed to trigger it
->
->
-> I hope that's useful in reproducing the BUG
->
->
-> Thanks & Regards
->
-> Matt
->
-
-*bump*
-
-adding: Li Zefan, Miao Xie, Yan Zheng, Dan Rosenberg, Josef Bacik and
-the btrfs mailing list to CC
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+> __cleancache_flush_inode calls cleancache_get_key with cleancache_filekey=

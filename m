@@ -1,95 +1,49 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH 2/2] Btrfs: Avoid accessing unmapped kernel address
-Date: Wed, 16 Feb 2011 14:06:41 +0800
-Message-ID: <4D5B6971.2040006@cn.fujitsu.com>
+From: "A. James Lewis" <james@fsck.co.uk>
+Subject: Re: Excluding a device from storing snapshot data?
+Date: Wed, 16 Feb 2011 10:36:08 +0000
+Message-ID: <1297852568.4315.18.camel@cheyenne>
+References: <AANLkTik1u=zWwqMXT7tAqkwhY5Z0U2k8YjQBJx_VjSXg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Juan Francisco Cantero Hurtado <iam@juanfra.info>
+Content-Type: text/plain; charset="UTF-8"
 To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTik1u=zWwqMXT7tAqkwhY5Z0U2k8YjQBJx_VjSXg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When decompressing a chunk of data, we'll copy the data out to
-a working buffer if the data is stored in more than one page,
-otherwise we'll use the mapped page directly to avoid memory
-copy.
+On Tue, 2011-02-15 at 23:58 +0100, Bert Wesarg wrote:
+> Hi all,
+> 
+> I'm currently envision a backup setup for my laptop which has a SSD. I
+> would like to use an external HDD und span a raid1 over these two
+> devices and also creating snapshots. What I would like to prevent, is
+> that these snapshots take storage space on the SSD, because SSD
+> storage is precious, while this isn't true for the external HDD. So I
+> would need to exclude the SSD device to store snapshot data, or to be
+> more precise, to store only one specific subvolume. Which can
+> obviously be changing, if I need to restore a previous snapshot. Is
+> this currently or actually possible?
+> 
+I would say that it is not "actually" possible... because when you
+create a snapshot, no actual data is generated, the snapshot is
+initially only metadata pointing to the same blocks on disk as the
+original data...  Changes being written in a new location so over time
+retaining the snapshot will have a storage overhead, but the process of
+creating the snapshot doesn't write anything, and any new data written
+is part of the real data, not the snapshot.
 
-In the latter case, we'll end up accessing the kernel address
-after we've unmapped the page in a corner case.
+Perhaps a more pertinent question is "Are there any plans to implement
+any kind of Hierarchical Storage Management in BTRFS"... I'm not sure
+how complex it actually would be to implement, but having some
+understanding of the speed of devices and the frequency of access to
+particular blocks could allow the data to be re-balanced in favour of
+placing frequently accessed blocks on faster storage.
 
-Reported-by: Juan Francisco Cantero Hurtado <iam@juanfra.info>
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
- fs/btrfs/lzo.c |   21 ++++++++++++++-------
- 1 files changed, 14 insertions(+), 7 deletions(-)
+Anyone have a comment on this?
 
-diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
-index cc9b450..a178f5e 100644
---- a/fs/btrfs/lzo.c
-+++ b/fs/btrfs/lzo.c
-@@ -280,6 +280,7 @@ static int lzo_decompress_biovec(struct list_head *ws,
- 	unsigned long tot_out;
- 	unsigned long tot_len;
- 	char *buf;
-+	bool may_late_unmap, need_unmap;
- 
- 	data_in = kmap(pages_in[0]);
- 	tot_len = read_compress_length(data_in);
-@@ -300,11 +301,13 @@ static int lzo_decompress_biovec(struct list_head *ws,
- 
- 		tot_in += in_len;
- 		working_bytes = in_len;
-+		may_late_unmap = need_unmap = false;
- 
- 		/* fast path: avoid using the working buffer */
- 		if (in_page_bytes_left >= in_len) {
- 			buf = data_in + in_offset;
- 			bytes = in_len;
-+			may_late_unmap = true;
- 			goto cont;
- 		}
- 
-@@ -329,14 +332,17 @@ cont:
- 				if (working_bytes == 0 && tot_in >= tot_len)
- 					break;
- 
--				kunmap(pages_in[page_in_index]);
--				page_in_index++;
--				if (page_in_index >= total_pages_in) {
-+				if (page_in_index + 1 >= total_pages_in) {
- 					ret = -1;
--					data_in = NULL;
- 					goto done;
- 				}
--				data_in = kmap(pages_in[page_in_index]);
-+
-+				if (may_late_unmap)
-+					need_unmap = true;
-+				else
-+					kunmap(pages_in[page_in_index]);
-+
-+				data_in = kmap(pages_in[++page_in_index]);
- 
- 				in_page_bytes_left = PAGE_CACHE_SIZE;
- 				in_offset = 0;
-@@ -346,6 +352,8 @@ cont:
- 		out_len = lzo1x_worst_compress(PAGE_CACHE_SIZE);
- 		ret = lzo1x_decompress_safe(buf, in_len, workspace->buf,
- 					    &out_len);
-+		if (need_unmap)
-+			kunmap(pages_in[page_in_index - 1]);
- 		if (ret != LZO_E_OK) {
- 			printk(KERN_WARNING "btrfs decompress failed\n");
- 			ret = -1;
-@@ -363,8 +371,7 @@ cont:
- 			break;
- 	}
- done:
--	if (data_in)
--		kunmap(pages_in[page_in_index]);
-+	kunmap(pages_in[page_in_index]);
- 	return ret;
- }
- 
--- 
-1.6.3
+> Thanks.
+> 
+> Bert
+
+
+
+

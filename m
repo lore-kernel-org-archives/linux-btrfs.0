@@ -1,59 +1,49 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
+From: Hubert Kario <hka@qbs.com.pl>
 Subject: Re: Space used by snapshot
-Date: Thu, 17 Feb 2011 11:16:02 +0000
-Message-ID: <20110217111602.GF5484@carfax.org.uk>
+Date: Thu, 17 Feb 2011 12:54:37 +0100
+Message-ID: <201102171254.37670.hka@qbs.com.pl>
 References: <AANLkTi=LE2poDR5sNyPJF6rQ_TpLv5pjgHRQXG0Wpt-i@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="WlEyl6ow+jlIgNUh"
+Content-Type: Text/Plain; charset=utf-8
 Cc: linux-btrfs@vger.kernel.org
 To: Roman Kapusta <roman.kapusta@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <AANLkTi=LE2poDR5sNyPJF6rQ_TpLv5pjgHRQXG0Wpt-i@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---WlEyl6ow+jlIgNUh
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Thu, Feb 17, 2011 at 12:13:53PM +0100, Roman Kapusta wrote:
+On Thursday, February 17, 2011 12:13:53 Roman Kapusta wrote:
 > Hello all,
-> 
+>=20
 > Is there any way how to obtain information how much space is
 > physically allocated by given subvolume?
 > I cannot find any. I'm interested in two values:
-> 
+>=20
 > - physical space allocated by SUBVOLUME INCLUDING all space shared by
 > other subvolumes
-> 
+
+That's the space reported by `du -hs /mnt/btrfs/subvolume`
+
+>=20
 > - physical space allocated by SUBVOLUME EXCLUDING all space shared by
 > other subvolumes
-> 
-> Currently I can use only du, which is not reporting what I want to know.
 
-   Not at the moment. It shouldn't be too difficult to implement
-(certainly to implement the latter), but it's just not been done yet.
+That's not implemented right now
+=20
+> Currently I can use only du, which is not reporting what I want to kn=
+ow.
+>=20
+> Regards
+>=20
+> Roman Kapusta
 
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-  --- What do you give the man who has everything? -- Penicillin is ---  
-                             a good start...                             
-
---WlEyl6ow+jlIgNUh
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFNXQNyIKyzvlFcI40RAvYnAJ4keU/+l7sWKIaO0c1upAT5+T9TxgCfRSSw
-aBPtUKueIOxC99vjheFerwM=
-=YSHc
------END PGP SIGNATURE-----
-
---WlEyl6ow+jlIgNUh--
+--=20
+Hubert Kario
+QBS - Quality Business Software
+02-656 Warszawa, ul. Ksawer=C3=B3w 30/85
+tel. +48 (22) 646-61-51, 646-74-24
+www.qbs.com.pl
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

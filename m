@@ -1,48 +1,43 @@
 From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: [PATCH V2] btrfs: implement delayed inode items operation
-Date: Fri, 18 Feb 2011 17:08:12 +0800
-Message-ID: <4D5E36FC.2050401@cn.fujitsu.com>
-References: <4D5CB6B8.2060804@cn.fujitsu.com> <1297991261-sup-6831@think>
+Subject: [PATCH] btrfs: fix not enough reserved space
+Date: Fri, 18 Feb 2011 17:21:17 +0800
+Message-ID: <4D5E3A0D.3070101@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=GB2312
 Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Itaru Kitayama <kitayama@cl.bb4u.ne.jp>,
 	Ito <t-itoh@jp.fujitsu.com>
 To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1297991261-sup-6831@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Chris
-CC Tsutomu Itoh
+btrfs_link() will insert 3 items(inode ref, dir name item and dir index item)
+into the b+ tree and update 2 items(its inode, and parent's inode) in the b+
+tree. So we should reserve space for these 5 items, not 3 items.
 
-On Thu, 17 Feb 2011 20:09:00 -0500, Chris Mason wrote:
-> Excerpts from Miao Xie's message of 2011-02-17 00:48:40 -0500:
->> Compare with Ext3/4, the performance of file creation and deletion on btrfs
->> is very poor. the reason is that btrfs must do a lot of b+ tree insertions,
->> such as inode item, directory name item, directory name index and so on.
->>
->> If we can do some delayed b+ tree insertion or deletion, we can improve the
->> performance, so we made this patch which implemented delayed directory name
->> index insertion/deletion and delayed inode update.
->
-> This work is really cool, thanks for doing it.  I'm starting a run on
-> this tonight and if all goes well I'll review in detail and try to queue
-> it along with the per-subvolume storage bits for .39.
+Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/inode.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
 
-There is a hang-up problem in this patch, that is the task which does delayed item
-balance and the task which commits the transaction will wait for each other, and
-the filesystem will hang up. This is reported by Tsutomu Itoh.
-
-I have made the third version of this patch, will post it later.
-
-Thanks!
-Miao
-
->
-> Thanks!
->
-> -chris
->
-
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 8d392ed..d692df9 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4823,10 +4823,11 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
+ 		goto fail;
+ 
+ 	/*
+-	 * 1 item for inode ref
++	 * 2 items for inode and inode ref
+ 	 * 2 items for dir items
++	 * 1 item for parent inode
+ 	 */
+-	trans = btrfs_start_transaction(root, 3);
++	trans = btrfs_start_transaction(root, 5);
+ 	if (IS_ERR(trans)) {
+ 		err = PTR_ERR(trans);
+ 		goto fail;
+-- 
+1.7.3.1

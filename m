@@ -1,91 +1,50 @@
-From: "Robert G." <ruppertus@o2.pl>
-Subject: Re: no space left on device
-Date: Tue, 8 Feb 2011 00:58:49 +0100
-Message-ID: <20110208005849.10464462@leni>
-References: <AANLkTi=KNt1JVq82FR-u9CGA1TcXiknz0c3bbD186U43@mail.gmail.com>
-	<4D5063B2.4070609@logtenberg.eu>
+From: Mike Frysinger <vapier@gentoo.org>
+Subject: Re: bug#8001: cp (8.10) sparse handling fails on compressed btrfs (cp/fiemap-2)
+Date: Sat, 19 Feb 2011 13:28:40 -0500
+Message-ID: <201102191328.42067.vapier@gentoo.org>
+References: <201102072253.34476.vapier@gentoo.org> <4D52730A.2080008@draigBrady.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Erik Logtenberg <erik@logtenberg.eu>
+Content-Type: multipart/signed;
+  boundary="nextPart2628434.WugHTYgDEu";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+Cc: 8001@debbugs.gnu.org,
+	BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
+To: =?iso-8859-1?q?P=E1draig_Brady?= <P@draigbrady.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D5063B2.4070609@logtenberg.eu>
+In-Reply-To: <4D52730A.2080008@draigBrady.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+--nextPart2628434.WugHTYgDEu
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 
-I had a similar problem on my Debian (squeeze) about a half year ago.
-I've described that on this mailing list. That was a main reason to
-migrate from brtfs (-o ssd) to ext4.=20
+based on other threads (which i havent been following too closely), did we=
+=20
+settle on this being a btrfs bug ?
+=2Dmike
 
-I know it's a pain for my SSD but I want to revert this fail system
-when it will be more stable. Thanks God it was added to Debian 6 and
-Ubuntu 10.10. Now there will be even more alpha/beta testers.
-And some problems will be noticed more frequently.
+--nextPart2628434.WugHTYgDEu
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
 
-When will you change status from experimental to stable in the kernel?
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (GNU/Linux)
 
-Regards
-Robert.
+iQIcBAABAgAGBQJNYAvaAAoJEEFjO5/oN/WBmrYP/3C+SQT+j5Mp0VFrMMnsOVJ3
+d3MAVuB4fzbbp3sl3eW6+ZRECTymAR+iXhwQ4Y5UQK53PFOshK43XSz22QCE3Njg
+Oxoc/w2J6SO9eszhPufLS6NqGTA4EZp0pjgbAW/VGpiHUDsi9IPwhciSsSM/0cAq
+IFlIiAm9plU8vS8vARXCA0a0H/YFASOnGvtPAOyprxiOqKgiFJtTKKeMxDGfshWt
+mFnzW94PlCNz2m6po8SzOm6h7OmTlfJzWhQV8QoAX2IHO3xv4cZ98x/neC1ZLzXn
+yZDHf2mOMji4iBV2F29qtIPR00iuRchGnK9xSRXzCAMIEYsex2jIUL/dQOJKZNZk
+pXWMSsUn2+/0HvjzHWEdxiq+AqP56zOrBuOrEDbroDsXjo4amtWRacIAniQNsajD
+o6jFNoEa2KcTkN1ClUqMd30SAw9YEWj0R1PFl7b3JI/awbi++IWed92GtAlkiKTW
+SCBjP8mtvYyhy1RnDMwEpafFzFAqWQFa74OvImHPjsKqrCZZ/StcktfRpxn8gvJh
+SR6gemOfvcRN+4Um7dZTKaUbUTqCiQk9d1hFiN7WF7nBBgRw9+yrZY6ER1s7t7bR
+LWqTJFok/qwMtZ+9G0fxTv6Cgk5svd1WD24Trj3yvHzsE/2vFJ41ujR/TeShkD7Q
+DFtJGNs3VIlOJWEmWqqf
+=vVtt
+-----END PGP SIGNATURE-----
 
-Dnia 2011-02-07, o godz. 22:27:14
-Erik Logtenberg <erik@logtenberg.eu> napisa=C5=82(a):
-
-> Hi Leonidas,
->=20
-> Please check this:
->=20
-> btrfs fi df /home
->=20
-> If this shows much of your space used by metadata then please use:
->=20
-> btrfs fi balance /home
->=20
-> Note that this can take a long (>1 day) time to complete on a big FS.
->=20
->  - Erik
->=20
->=20
->=20
-> On 02/07/2011 10:21 PM, Leonidas Spyropoulos wrote:
-> > Hey all,
-> >=20
-> > I run into no space left on device on a virtualbox
-> >=20
-> > After installing Debian 6 on a virtual machine
-> > I tried installing the KDE desktop
-> >=20
-> > The system HDD is 8Gb
-> > Both root (/) and /home are btrfs
-> > over LVM.
-> >=20
-> > While installing the packages I run into:
-> >=20
-> > no space left, need 4096, 4096 dealloc bytes, 1776283648
-> > bytes_used, 0 bytes_reserved,
-> > 0 bytes_pinned, 0 bytes_readonly, 0 may use 1776287744 total
-> >=20
-> > df shows only 74% used space on /
-> >=20
-> > kernel used: stock debian 6 2.6.32-5-686
-> >=20
-> > At the moment I cannot access it with normal boot, only recovery
-> > mode.
-> >=20
-> > I can provide whatever info you would like as long as you think of =
-a
-> > way to load the normal system and not the recovery mode.
-> >=20
-> >=20
-> >=20
-> >=20
->=20
-> --
-> To unsubscribe from this list: send the line "unsubscribe
-> linux-btrfs" in the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--nextPart2628434.WugHTYgDEu--

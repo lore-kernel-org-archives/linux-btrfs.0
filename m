@@ -1,63 +1,52 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: Re: raid5 - again
-Date: Sat, 19 Feb 2011 23:56:00 +0000
-Message-ID: <20110219235600.GG5484@carfax.org.uk>
-References: <10135916.88.1298149890595.JavaMail.root@zimbra>
+From: =?ISO-8859-1?Q?P=E1draig_Brady?= <P@draigBrady.com>
+Subject: Re: bug#8001: cp (8.10) sparse handling fails on compressed btrfs
+ (cp/fiemap-2)
+Date: Sun, 20 Feb 2011 00:39:47 +0000
+Message-ID: <4D6062D3.3090905@draigBrady.com>
+References: <201102072253.34476.vapier@gentoo.org>	<4D52730A.2080008@draigBrady.com>	<201102191328.42067.vapier@gentoo.org> <4D6050A7.5090407@draigBrady.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="2NLGdgz3UMHa/lqP"
-Cc: linux-btrfs@vger.kernel.org
-To: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>,
+	8001@debbugs.gnu.org
+To: Mike Frysinger <vapier@gentoo.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <10135916.88.1298149890595.JavaMail.root@zimbra>
+In-Reply-To: <4D6050A7.5090407@draigBrady.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 19/02/11 23:22, P=E1draig Brady wrote:
+> On 19/02/11 18:28, Mike Frysinger wrote:
+>> based on other threads (which i havent been following too closely), =
+did we=20
+>> settle on this being a btrfs bug ?
+>> -mike
+>=20
+> Nope, cp 8.10 is not absolved yet.
+> It may be btrfs not honoring FIEMAP_FLAG_SYNC,
+> and/or it may be cp needing to handle FIEMAP_EXTENT_ENCODED
+> specially.
+>=20
+> It would help if you ran `sync` before the copy,
+> to exclude that as a possible issue.
+>=20
+> Also `filefrag -v` output for the file on
+> the compressed BTRFS file system would be helpful.
 
---2NLGdgz3UMHa/lqP
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Hmm I just tried the latest Fedora 15 live image
+and was tripped up a bit by https://bugzilla.redhat.com/show_bug.c
 
-On Sat, Feb 19, 2011 at 10:11:30PM +0100, Roy Sigurd Karlsbakk wrote:
-> It's been some two years since I read about the becoming of raid5
-> etc in btrfs. Since the code is available in linux, why isn't this
-> already in btrfs? Is Oracle holding back?
+Anyway it uses 2.6.38 rc4 and "compress" doesn't
+seem to be implemented for BTRFS there?
+Writing a file of zeros showed a normal disk usage,
+and filefrag -v didn't report any flags for the extents.
 
-   It's about resourcing and stability. Oracle only employ one person
-(AFAIK) on btrfs -- Chris Mason. He does a sterling job of maintaining
-and developing the filesystem, but there is only one of him.
+In any case, cp/fiemap-2 passed on each of
+about 100 runs, even without introducing
+and syncs.
 
-   Since well before December, he's been working on a functional fsck,
-trying to get it to a state where it won't demolish your filesystem
-even more than it already is. This has left the work to integrate the
-RAID-5/6 patches behind. He's also been working hard on fixing a great
-many other stability issues as they're reported, and integrating
-patches from other developers.
-
-   I believe that RAID-5/6 is the next major piece of work that Chris
-is intending to integrate, once fsck is ready. However, stability is
-better than features at this point. I don't see any commercial benefit
-in preventing the integration and deployment of the RAID-5/6 patches,
-but simply that there's other things that are more important. Please
-be patient.
-
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-  --- Startle, startle, little twink.  How I wonder what you think. ---  
-
---2NLGdgz3UMHa/lqP
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFNYFiQIKyzvlFcI40RAuUnAJ9guiDBw2MxnnVTE4eNLwwnYsYxUACeO/wT
-hnlRk4jHfCaCvh4yQqZ6UU0=
-=wsF9
------END PGP SIGNATURE-----
-
---2NLGdgz3UMHa/lqP--
+cheers,
+P=E1draig.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

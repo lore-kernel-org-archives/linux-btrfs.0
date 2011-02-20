@@ -1,30 +1,24 @@
 From: Maria =?ISO-8859-1?Q?Wikstr=F6m?= <maria@ponstudios.se>
-Subject: Re:
-Date: Sun, 20 Feb 2011 14:10:17 +0100
-Message-ID: <1298207417.11240.6.camel@mainframe>
-References: <AANLkTi=ZMQeA9miu_ACagdAp1P4Tw6-nR0jRA15qmbiK@mail.gmail.com>
+Subject: bad tree block start
+Date: Sun, 20 Feb 2011 20:24:49 +0100
+Message-ID: <1298229889.13923.42.camel@mainframe>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Christian Brunner <c.m.brunner@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=ZMQeA9miu_ACagdAp1P4Tw6-nR0jRA15qmbiK@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-s=C3=B6n 2011-02-20 klockan 13:22 +0100 skrev Christian Brunner:
-> subscribe
+Hi,
 
-You probably want to send
+the computer froze for a few seconds then this appeared in the log:
 
-subscribe linux-btrfs
+btrfs bad tree block start 9407756905013237084 32178176
 
-to majordomo@vger.kernel.org instead :)
+There was no other messages from btrfs. I can mount, unmount, read,
+write and all the data seems to be there. What does it mean? My guess is
+that there was some kind of corruption and it was corrected by the
+raid1.
 
 // Maria
 
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

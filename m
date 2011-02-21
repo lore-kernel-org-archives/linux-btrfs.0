@@ -1,33 +1,53 @@
-From: Bernhard Schmidt <berni@birkenwald.de>
-Subject: Cannot set-default back to ID 0
-Date: Sun, 20 Feb 2011 20:20:25 +0000 (UTC)
-Message-ID: <ijrt29$onm$1@dough.gmane.org>
-To: linux-btrfs@vger.kernel.org
+From: "Zhong, Xin" <xin.zhong@intel.com>
+Subject: RE: [PATCH v2]Btrfs: pwrite blocked when writing from the mmaped
+ buffer of the same page
+Date: Mon, 21 Feb 2011 09:51:11 +0800
+Message-ID: <1865303E0DED764181A9D882DEF65FB686421B24FB@shsmsx502.ccr.corp.intel.com>
+References: <1291887014-18447-1-git-send-email-xin.zhong@intel.com>
+	 <201101280354.36884.johannes.hirte@fem.tu-ilmenau.de>
+	 <1865303E0DED764181A9D882DEF65FB685DF762B45@shsmsx502.ccr.corp.intel.com>
+	 <201102020034.43808.johannes.hirte@fem.tu-ilmenau.de>
+	 <1865303E0DED764181A9D882DEF65FB68621CA7167@shsmsx502.ccr.corp.intel.com>
+ <1298028713.11103.13.camel@mainframe>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Cc: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: =?utf-8?B?TWFyaWEgV2lrc3Ryw7Zt?= <maria@ponstudios.se>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1298028713.11103.13.camel@mainframe>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-
-a recent Ubuntu upgrade killed my system. Luckily I had done a btrfs
-snapshot before, so I set the particular subvolume as default using
-
-# btrfs subvolume set-default 261 /mnt
-
-from a rescue system and was back up in no time. I then mounted the
-original volume with subvolid=0 and repaired it. So far so good.
-However, I fail to set the default volume back to the original.
-
-# btrfs subvolume set-default 0 /
-
-apparently does nothing, I don't get an error but I'm still on the
-snapshot after reboot. Currently I'm working around this adding
-rootflag=subvolid=0 on the kernel command line, but that is kind of
-inconvenient.
-
-Is this expected?
-
-Ubuntu natty amd64, Kernel 2.6.38-rc5, btrfs-tools 0.19+20100601 
-
-Thanks
-Bernhard
-
+VGhlIGJhY2t0cmFjZSBpbiB5b3VyIGF0dGFjaG1lbnQgbG9va3MgbGlrZSBhIGtub3duIGJ1ZyBv
+ZiAyLjYuMzcgd2hpY2ggaGF2ZSBhbHJlYWR5IGJlZW4gZml4ZWQgaW4gMi42LjM4LiBJIGhhdmUg
+bm8gaWRlYSB3aHkgbGF0ZXN0IGJ0cmZzIHN0aWxsIGhhbmcgaW4geW91ciBlbnZpcm9ubWVudCBp
+ZiB0aGVyZSdzIG5vIGRlYnVnIGluZm8uLi4NCg0KLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0N
+CkZyb206IE1hcmlhIFdpa3N0csO2bSBbbWFpbHRvOm1hcmlhQHBvbnN0dWRpb3Muc2VdIA0KU2Vu
+dDogRnJpZGF5LCBGZWJydWFyeSAxOCwgMjAxMSA3OjMyIFBNDQpUbzogWmhvbmcsIFhpbg0KQ2M6
+IEpvaGFubmVzIEhpcnRlOyBsaW51eC1idHJmc0B2Z2VyLmtlcm5lbC5vcmcNClN1YmplY3Q6IFJF
+OiBbUEFUQ0ggdjJdQnRyZnM6IHB3cml0ZSBibG9ja2VkIHdoZW4gd3JpdGluZyBmcm9tIHRoZSBt
+bWFwZWQgYnVmZmVyIG9mIHRoZSBzYW1lIHBhZ2UNCg0KDQpTZWVtcyBsaWtlIG15IHJlcGx5IGdv
+dCBlYXRlbiBieSB0aGUgbGlzdHMgc3BhbSBmaWx0ZXIsIHNvIEkgcmVzZW5kIHdpdGggYXR0YWNo
+bWVudCBjb21wcmVzc2VkLiBTaG91bGQgaGF2ZSB0aG91Z2h0IG9mIHRoYXQgOnANCg0KDQpmcmUg
+MjAxMS0wMi0xMSBrbG9ja2FuIDEyOjM5ICswODAwIHNrcmV2IFpob25nLCBYaW46DQo+IEhpLA0K
+PiANCj4gQ291bGQgeW91IHBhc3RlIHRoZSBvdXRwdXQgb2Ygc3lzcnErdCBoZXJlPyBUaGFua3Mh
+DQoNClllcywgaXQncyBpbiB0aGUgYXR0YWNobWVudC4gSSB0cmllZCBsYXRlc3QgYnRyZnMgZnJv
+bSBnaXQgKGxhc3QgY29tbWl0IE1vbiBGZWIgMTQgMDA6NDU6MjkgMjAxMSArMDAwMCkgYnV0IGl0
+IGhhbmcgc28gYmFkIHRoYXQgSSBjb3VsZG4ndCBnZXQgdGhlIG91dHB1dCBmcm9tIHN5c3JxK3Qg
+dG8gaGl0IHRoZSBkaXNrLiBTbyB0aGUgb3V0cHV0IGlzIGZyb20gdmFuaWxsYQ0KMi42LjM3IA0K
+DQovLyBNYXJpYQ0KDQo+IC0tLS0tT3JpZ2luYWwgTWVzc2FnZS0tLS0tDQo+IEZyb206IEpvaGFu
+bmVzIEhpcnRlIFttYWlsdG86am9oYW5uZXMuaGlydGVAZmVtLnR1LWlsbWVuYXUuZGVdDQo+IFNl
+bnQ6IFdlZG5lc2RheSwgRmVicnVhcnkgMDIsIDIwMTEgNzozNSBBTQ0KPiBUbzogWmhvbmcsIFhp
+bg0KPiBDYzogTWFyaWEgV2lrc3Ryw7ZtOyBsaW51eC1idHJmc0B2Z2VyLmtlcm5lbC5vcmcNCj4g
+U3ViamVjdDogUmU6IFtQQVRDSCB2Ml1CdHJmczogcHdyaXRlIGJsb2NrZWQgd2hlbiB3cml0aW5n
+IGZyb20gdGhlIA0KPiBtbWFwZWQgYnVmZmVyIG9mIHRoZSBzYW1lIHBhZ2UNCj4gDQo+IE9uIEZy
+aWRheSAyOCBKYW51YXJ5IDIwMTEgMDQ6NTM6MjQgWmhvbmcsIFhpbiB3cm90ZToNCj4gPiBDb3Vs
+ZCB5b3UgZGVzY3JpYmUgdGhlIHN0ZXBzIHRvIHJlY3JlYXRlIGl0Pw0KPiA+IEl0IHdpbGwgYmUg
+YSBncmVhdCBoZWxwIGZvciBtZSB0byBsb29rIGZ1cnRoZXIuIFRoYW5rcyENCj4gDQo+IEl0J3Mg
+YSBsaXR0bGUgc3RyYW5nZS4gSSBoYXZlIHRvIHN5c3RlbXMgd2l0aCBidHJmcywgYm90aCANCj4g
+R2VudG9vLWJhc2VkLiBPbmUgaXMgYWZmZWN0ZWQgYnkgdGhpcyBidWcgdGhlIG90aGVyIGlzIG5v
+dC4gT24gdGhlIA0KPiBhZmZlY3RlZCBzeXN0ZW0gaXQgaXMgZW5vdWdoIHRvIGRvIGEgJ2VtZXJn
+ZSBkZXYtbGlicy9saWJnY3J5cHQnIHRoYXQgDQo+IHNob3VsZCBub3JtYWx5IGNvbXBpbGUgYW5k
+IGluc3RhbGwgbGliZ2NyeXB0LiBUaGUgZW1lcmdlIGNvbW1hbmQgaXMgDQo+IHBhcnQgb2YgcG9y
+dGFnZSwgdGhlIHBhY2thZ2UgbWFuYWdlbWVudCBvZiBHZW50b28uDQo+IFRoZSBzdHJhY2Ugb3V0
+cHV0IGxvb2tzIHNpbWlsYXIgdG8gdGhlIG9uZSBmcm9tIE1hcmlhOg0KPiANCg0K

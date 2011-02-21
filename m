@@ -1,85 +1,342 @@
-From: Marco Stornelli <marco.stornelli@gmail.com>
-Subject: [PATCH] Check for immutable flag in fallocate path
-Date: Mon, 21 Feb 2011 09:26:32 +0100
-Message-ID: <4D6221B8.9040303@gmail.com>
+From: Li Dongyang <lidongyang@novell.com>
+Subject: [PATCH] Btrfs: Batched discard support for btrfs
+Date: Mon, 21 Feb 2011 16:52:27 +0800
+Message-ID: <201102211652.28014.lidongyang@novell.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-15
-Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	cluster-devel@redhat.com, xfs@oss.sgi.com,
-	Linux FS Devel <linux-fsdevel@vger.kernel.org>
-To: Linux Kernel <linux-kernel@vger.kernel.org>
-Return-path: <linux-ext4-owner@vger.kernel.org>
+Content-Type: Text/Plain;
+  charset="us-ascii"
+Cc: Lukas Czerner <lczerner@redhat.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Marco Stornelli <marco.stornelli@gmail.com>
+Here is batched discard support for btrfs, several changes were made:
 
-All fs must check for the immutable flag in their fallocate callback.
-It's possible to have a race condition in this scenario: an application
-open a file in read/write and it does something, meanwhile root set the
-immutable flag on the file, the application at that point can call
-fallocate with success. Only Ocfs2 check for the immutable flag at the
-moment.
+btrfs_test_opt(root, DISCARD) is moved from btrfs_discard_extent
+to callers, as we still want to trim the fs even it's not mounted
+with -o discard.
+btrfs_discard_extent now reports errors and actual bytes trimmed to
+callers, for EOPNOTSUPP, we will try other stripes as an extent
+could span SSD and other drives, and we won't return error to
+callers unless we failed with all stripes.
 
-Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+And btrfs_discard_extent calls btrfs_map_block with READ, this means
+we won't get all stripes mapped for RAID1/DUP/RAID10, I think this
+should be fixed, Thanks.
+
+Signed-off-by: Li Dongyang <lidongyang@novell.com>
 ---
-Patch is against 2.6.38-rc5
+ fs/btrfs/ctree.h            |    3 +-
+ fs/btrfs/disk-io.c          |    5 ++-
+ fs/btrfs/extent-tree.c      |   81 ++++++++++++++++++++++++++++++++++++-------
+ fs/btrfs/free-space-cache.c |   79 +++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/free-space-cache.h |    2 +
+ fs/btrfs/ioctl.c            |   24 +++++++++++++
+ 6 files changed, 179 insertions(+), 15 deletions(-)
 
---- linux-2.6.38-rc5-orig/fs/ext4/extents.c	2011-02-16 04:23:45.000000000 +0100
-+++ linux-2.6.38-rc5/fs/ext4/extents.c	2011-02-21 08:43:37.000000000 +0100
-@@ -3670,6 +3670,12 @@ long ext4_fallocate(struct file *file, i
- 	 */
- 	credits = ext4_chunk_trans_blocks(inode, max_blocks);
- 	mutex_lock(&inode->i_mutex);
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 2c98b3a..4486349 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2217,7 +2217,8 @@ u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo);
+ int btrfs_error_unpin_extent_range(struct btrfs_root *root,
+ 				   u64 start, u64 end);
+ int btrfs_error_discard_extent(struct btrfs_root *root, u64 bytenr,
+-			       u64 num_bytes);
++			       u64 num_bytes, u64 *actual_bytes);
++int btrfs_trim_fs(struct btrfs_root *root, struct fstrim_range *range);
+ 
+ /* ctree.c */
+ int btrfs_bin_search(struct extent_buffer *eb, struct btrfs_key *key,
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index e1aa8d6..bcb9451 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2947,7 +2947,10 @@ static int btrfs_destroy_pinned_extent(struct btrfs_root *root,
+ 			break;
+ 
+ 		/* opt_discard */
+-		ret = btrfs_error_discard_extent(root, start, end + 1 - start);
++		if (btrfs_test_opt(root, DISCARD))
++			ret = btrfs_error_discard_extent(root, start,
++							 end + 1 - start,
++							 NULL);
+ 
+ 		clear_extent_dirty(unpin, start, end, GFP_NOFS);
+ 		btrfs_error_unpin_extent_range(root, start, end);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index f3c96fc..7bed32a 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1740,22 +1740,20 @@ static int remove_extent_backref(struct btrfs_trans_handle *trans,
+ 	return ret;
+ }
+ 
+-static void btrfs_issue_discard(struct block_device *bdev,
++static int btrfs_issue_discard(struct block_device *bdev,
+ 				u64 start, u64 len)
+ {
+-	blkdev_issue_discard(bdev, start >> 9, len >> 9, GFP_KERNEL, 0);
++	return blkdev_issue_discard(bdev, start >> 9, len >> 9, GFP_KERNEL, 0);
+ }
+ 
+ static int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
+-				u64 num_bytes)
++				u64 num_bytes, u64 *actual_bytes)
+ {
+ 	int ret;
+ 	u64 map_length = num_bytes;
++	u64 discarded_bytes = 0;
+ 	struct btrfs_multi_bio *multi = NULL;
+ 
+-	if (!btrfs_test_opt(root, DISCARD))
+-		return 0;
+-
+ 	/* Tell the block device(s) that the sectors can be discarded */
+ 	ret = btrfs_map_block(&root->fs_info->mapping_tree, READ,
+ 			      bytenr, &map_length, &multi, 0);
+@@ -1767,13 +1765,25 @@ static int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
+ 			map_length = num_bytes;
+ 
+ 		for (i = 0; i < multi->num_stripes; i++, stripe++) {
+-			btrfs_issue_discard(stripe->dev->bdev,
+-					    stripe->physical,
+-					    map_length);
++			ret = btrfs_issue_discard(stripe->dev->bdev,
++						  stripe->physical,
++						  map_length);
++			if (!ret)
++				discarded_bytes += map_length;
++			else if (ret == -EOPNOTSUPP)
++				continue;
++			else
++				break;
+ 		}
+ 		kfree(multi);
+ 	}
+ 
++	if (discarded_bytes)
++		ret = 0;
 +
-+	if (IS_IMMUTABLE(inode)) {
-+		mutex_unlock(&inode->i_mutex);
++	if (actual_bytes)
++		*actual_bytes = discarded_bytes;
++
+ 	return ret;
+ }
+ 
+@@ -4353,7 +4363,8 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
+ 		if (ret)
+ 			break;
+ 
+-		ret = btrfs_discard_extent(root, start, end + 1 - start);
++		if (btrfs_test_opt(root, DISCARD))
++			ret = btrfs_discard_extent(root, start, end + 1 - start, NULL);
+ 
+ 		clear_extent_dirty(unpin, start, end, GFP_NOFS);
+ 		unpin_extent_range(root, start, end);
+@@ -5401,7 +5412,8 @@ int btrfs_free_reserved_extent(struct btrfs_root *root, u64 start, u64 len)
+ 		return -ENOSPC;
+ 	}
+ 
+-	ret = btrfs_discard_extent(root, start, len);
++	if (btrfs_test_opt(root, DISCARD))
++		ret = btrfs_discard_extent(root, start, len, NULL);
+ 
+ 	btrfs_add_free_space(cache, start, len);
+ 	update_reserved_bytes(cache, len, 0, 1);
+@@ -8712,7 +8724,50 @@ int btrfs_error_unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
+ }
+ 
+ int btrfs_error_discard_extent(struct btrfs_root *root, u64 bytenr,
+-			       u64 num_bytes)
++			       u64 num_bytes, u64 *actual_bytes)
++{
++	return btrfs_discard_extent(root, bytenr, num_bytes, actual_bytes);
++}
++
++int btrfs_trim_fs(struct btrfs_root *root, struct fstrim_range *range)
+ {
+-	return btrfs_discard_extent(root, bytenr, num_bytes);
++	struct btrfs_fs_info *fs_info = root->fs_info;
++	struct btrfs_block_group_cache *cache = NULL;
++	u64 cnt;
++	u64 start;
++	u64 end;
++	u64 trimmed = 0;
++	int ret = 0;
++
++	cache = btrfs_lookup_block_group(fs_info, range->start);
++
++	while (cache) {
++		if (cache->key.objectid >= (range->start + range->len)) {
++			btrfs_put_block_group(cache);
++			break;
++		}
++
++		start = max(range->start, cache->key.objectid);
++		end = min(range->start + range->len,
++				cache->key.objectid + cache->key.offset);
++
++		if (end - start >= range->minlen) {
++			ret = btrfs_trim_block_group(cache,
++						     &cnt,
++						     start,
++						     end,
++						     range->minlen);
++
++			trimmed += cnt;
++			if (ret < 0) {
++				btrfs_put_block_group(cache);
++				break;
++			}
++		}
++
++		cache = next_block_group(fs_info->tree_root, cache);
++	}
++
++	range->len = trimmed;
++	return ret;
+ }
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index a039065..a274df5 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -2154,3 +2154,82 @@ void btrfs_init_free_cluster(struct btrfs_free_cluster *cluster)
+ 	cluster->block_group = NULL;
+ }
+ 
++int btrfs_trim_block_group(struct btrfs_block_group_cache *block_group,
++			   u64 *trimmed, u64 start, u64 end, u64 minlen)
++{
++	struct btrfs_free_space *entry = NULL;
++	struct btrfs_fs_info *fs_info = block_group->fs_info;
++	u64 bytes = 0;
++	u64 actually_trimmed;
++	int ret = 0;
++
++	*trimmed = 0;
++
++	while (start < end) {
++		spin_lock(&block_group->tree_lock);
++		if (block_group->free_space < minlen) {
++			spin_unlock(&block_group->tree_lock);
++			break;
++		}
++
++		entry = tree_search_offset(block_group, start, 0, 1);
++		if (!entry)
++			entry = tree_search_offset(block_group,
++						   offset_to_bitmap(block_group,
++								    start),
++						   1, 1);
++
++		if (!entry || entry->offset >= end) {
++			spin_unlock(&block_group->tree_lock);
++			break;
++		}
++
++		if (entry->bitmap) {
++			ret = search_bitmap(block_group, entry, &start, &bytes);
++			if (!ret) {
++				if (start >= end ) {
++					spin_unlock(&block_group->tree_lock);
++					break;
++				}
++				bytes = min(bytes, end - start);
++			} else {
++				start = entry->offset + BITS_PER_BITMAP *
++					block_group->sectorsize;
++				spin_unlock(&block_group->tree_lock);
++				continue;
++			}
++		} else {
++			start = entry->offset;
++			bytes = min(entry->bytes, end - start);
++		}
++
++		spin_unlock(&block_group->tree_lock);
++
++		if (bytes >= minlen && !btrfs_remove_free_space(block_group,
++								start,
++								bytes)) {
++			ret = btrfs_error_discard_extent(fs_info->extent_root,
++							 start,
++							 bytes,
++							 &actually_trimmed);
++
++			btrfs_add_free_space(block_group,
++					     start, bytes);
++			if (ret)
++				break;
++			*trimmed += actually_trimmed;
++		}
++		start += bytes;
++		bytes = 0;
++
++		if (fatal_signal_pending(current)) {
++			ret = -ERESTARTSYS;
++			break;
++		}
++
++		if (need_resched())
++			cond_resched();
++	}
++
++	return ret;
++}
+diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
+index e49ca5c..65c3b93 100644
+--- a/fs/btrfs/free-space-cache.h
++++ b/fs/btrfs/free-space-cache.h
+@@ -68,4 +68,6 @@ u64 btrfs_alloc_from_cluster(struct btrfs_block_group_cache *block_group,
+ int btrfs_return_cluster_to_free_space(
+ 			       struct btrfs_block_group_cache *block_group,
+ 			       struct btrfs_free_cluster *cluster);
++int btrfs_trim_block_group(struct btrfs_block_group_cache *block_group,
++			   u64 *trimmed, u64 start, u64 end, u64 minlen);
+ #endif
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index be2d4f6..ecd3982 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -225,6 +225,28 @@ static int btrfs_ioctl_getversion(struct file *file, int __user *arg)
+ 	return put_user(inode->i_generation, arg);
+ }
+ 
++static noinline int btrfs_ioctl_fitrim(struct file *file, void __user *arg)
++{
++	struct btrfs_root *root = fdentry(file)->d_sb->s_fs_info;
++	struct fstrim_range range;
++	int ret;
++
++	if (!capable(CAP_SYS_ADMIN))
 +		return -EPERM;
-+	}
 +
- 	ret = inode_newsize_ok(inode, (len + offset));
- 	if (ret) {
- 		mutex_unlock(&inode->i_mutex);
---- linux-2.6.38-rc5-orig/fs/btrfs/file.c	2011-02-16 04:23:45.000000000 +0100
-+++ linux-2.6.38-rc5/fs/btrfs/file.c	2011-02-21 08:55:58.000000000 +0100
-@@ -1289,6 +1289,12 @@ static long btrfs_fallocate(struct file
- 	btrfs_wait_ordered_range(inode, alloc_start, alloc_end - alloc_start);
- 
- 	mutex_lock(&inode->i_mutex);
++	if (copy_from_user(&range, arg, sizeof(range)))
++		return -EFAULT;
 +
-+	if (IS_IMMUTABLE(inode)) {
-+		ret = -EPERM;
-+		goto out;
-+	}
++	ret = btrfs_trim_fs(root, &range);
++	if (ret < 0)
++		return ret;
 +
- 	ret = inode_newsize_ok(inode, alloc_end);
- 	if (ret)
- 		goto out;
---- linux-2.6.38-rc5-orig/fs/xfs/linux-2.6/xfs_file.c	2011-02-16 04:23:45.000000000 +0100
-+++ linux-2.6.38-rc5/fs/xfs/linux-2.6/xfs_file.c	2011-02-21 09:07:46.000000000 +0100
-@@ -909,6 +909,11 @@ xfs_file_fallocate(
- 	if (mode & FALLOC_FL_PUNCH_HOLE)
- 		cmd = XFS_IOC_UNRESVSP;
- 
-+	if (IS_IMMUTABLE(inode)) {
-+		error = -EPERM;
-+		goto out_unlock;
-+	}
++	if (copy_to_user(arg, &range, sizeof(range)))
++		return -EFAULT;
 +
- 	/* check the new inode size is valid before allocating */
- 	if (!(mode & FALLOC_FL_KEEP_SIZE) &&
- 	    offset + len > i_size_read(inode)) {
---- linux-2.6.38-rc5-orig/fs/gfs2/file.c	2011-02-16 04:23:45.000000000 +0100
-+++ linux-2.6.38-rc5/fs/gfs2/file.c	2011-02-21 09:09:17.000000000 +0100
-@@ -797,6 +797,11 @@ static long gfs2_fallocate(struct file *
- 	if (unlikely(error))
- 		goto out_uninit;
- 
-+	if (IS_IMMUTABLE(inode)) {
-+		error = -EPERM;
-+		goto out_unlock;
-+	}
++	return 0;
++}
 +
- 	if (!gfs2_write_alloc_required(ip, offset, len))
- 		goto out_unlock;
- 
+ static noinline int create_subvol(struct btrfs_root *root,
+ 				  struct dentry *dentry,
+ 				  char *name, int namelen,
+@@ -2385,6 +2407,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		return btrfs_ioctl_setflags(file, argp);
+ 	case FS_IOC_GETVERSION:
+ 		return btrfs_ioctl_getversion(file, argp);
++	case FITRIM:
++		return btrfs_ioctl_fitrim(file, argp);
+ 	case BTRFS_IOC_SNAP_CREATE:
+ 		return btrfs_ioctl_snap_create(file, argp, 0);
+ 	case BTRFS_IOC_SNAP_CREATE_V2:
+-- 
+1.7.1
 

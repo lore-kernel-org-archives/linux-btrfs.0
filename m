@@ -1,72 +1,38 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: [PATCH v2] btrfs: make inode ref log recovery faster
-Date: Wed, 23 Feb 2011 15:20:22 +0800
-Message-ID: <4D64B536.1080805@cn.fujitsu.com>
-References: <4D63A121.3090605@cn.fujitsu.com> <20110222143203.GB18570@twin.jikos.cz> <4D645F04.4060608@cn.fujitsu.com> <20110223013004.GE26100@dhcp231-156.rdu.redhat.com> <4D64661F.1050801@cn.fujitsu.com> <4D64B2B2.3020703@cn.fujitsu.com>
+From: "Zhong, Xin" <xin.zhong@intel.com>
+Subject: RE: [PATCH v2]Btrfs: pwrite blocked when writing from the mmaped
+ buffer of the same page
+Date: Wed, 23 Feb 2011 15:27:05 +0800
+Message-ID: <1865303E0DED764181A9D882DEF65FB6864AE1B667@shsmsx502.ccr.corp.intel.com>
+References: <1291887014-18447-1-git-send-email-xin.zhong@intel.com>
+ <201102020034.43808.johannes.hirte@fem.tu-ilmenau.de>
+ <1865303E0DED764181A9D882DEF65FB68621CA7167@shsmsx502.ccr.corp.intel.com>
+ <201102222327.04621.johannes.hirte@fem.tu-ilmenau.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Josef Bacik <josef@redhat.com>, David Sterba <dave@jikos.cz>
-To: liubo <liubo2009@cn.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"
+Cc: =?utf-8?B?TWFyaWEgV2lrc3Ryw7Zt?= <maria@ponstudios.se>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D64B2B2.3020703@cn.fujitsu.com>
+In-Reply-To: <201102222327.04621.johannes.hirte@fem.tu-ilmenau.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> -conflict_again:
-> +
-> +	if (search_done)
-> +		goto insert;
-> +
->  	ret = btrfs_search_slot(NULL, root, key, path, 0, 0);
->  	if (ret == 0) {
->  		char *victim_name;
-> @@ -887,36 +890,22 @@ conflict_again:
->  							 inode, victim_name,
->  							 victim_name_len);
->  				kfree(victim_name);
-> -				btrfs_release_path(root, path);
-> -				goto conflict_again;
->  			}
-> -			kfree(victim_name);
-> +			if (victim_name)
-> +				kfree(victim_name);
-
-This is still wrong..
-
-Just remove the first kfree() and remain the second one.
-
->  			ptr = (unsigned long)(victim_ref + 1) + victim_name_len;
->  		}
->  		BUG_ON(ret);
-> -	}
-> -	btrfs_release_path(root, path);
->  
-> -	/* look for a conflicting sequence number */
-> -	di = btrfs_lookup_dir_index_item(trans, root, path, dir->i_ino,
-> -					 btrfs_inode_ref_index(eb, ref),
-> -					 name, namelen, 0);
-> -	if (di && !IS_ERR(di)) {
-> -		ret = drop_one_dir_item(trans, root, path, dir, di);
-> -		BUG_ON(ret);
-> -	}
-> -	btrfs_release_path(root, path);
-> -
-> -
-> -	/* look for a conflicting name */
-> -	di = btrfs_lookup_dir_item(trans, root, path, dir->i_ino,
-> -				   name, namelen, 0);
-> -	if (di && !IS_ERR(di)) {
-> -		ret = drop_one_dir_item(trans, root, path, dir, di);
-> -		BUG_ON(ret);
-> +		/*
-> +		 * NOTE: we have searched root tree and checked the
-> +		 * coresponding ref, it does not need to check again.
-> +		 */
-> +		search_done = 1;
->  	}
->  	btrfs_release_path(root, path);
->  
-> +insert:
->  	/* insert our name */
->  	ret = btrfs_add_link(trans, dir, inode, name, namelen, 0,
->  			     btrfs_inode_ref_index(eb, ref));
+SW4gdGhlIGRtZXNnIG9mIHJjNCwgSSBjYW4gc2VlIHN2biBoYW5nIGluIHNocmlua19kZWxsYWxs
+b2MgYW5kIHRoZXJlJ3MgdHdvIGZsdXNoLWJ0cmZzIHRocmVhZHMgaGFuZyB0aGVyZSB0b28uDQoN
+Ckpvc2VmLCBpdCBzZWVtcyB5b3UgYXJlIHRoZSBleHBlcnQgaW4gdGhpcyBhcmVhLiBDb3VsZCB5
+b3UgdGFrZSBhIHF1aWNrIGxvb2s/IFRoYW5rcyENCg0KLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0t
+LS0NCkZyb206IEpvaGFubmVzIEhpcnRlIFttYWlsdG86am9oYW5uZXMuaGlydGVAZmVtLnR1LWls
+bWVuYXUuZGVdIA0KU2VudDogV2VkbmVzZGF5LCBGZWJydWFyeSAyMywgMjAxMSA2OjI3IEFNDQpU
+bzogWmhvbmcsIFhpbg0KQ2M6IE1hcmlhIFdpa3N0csO2bTsgbGludXgtYnRyZnNAdmdlci5rZXJu
+ZWwub3JnDQpTdWJqZWN0OiBSZTogW1BBVENIIHYyXUJ0cmZzOiBwd3JpdGUgYmxvY2tlZCB3aGVu
+IHdyaXRpbmcgZnJvbSB0aGUgbW1hcGVkIGJ1ZmZlciBvZiB0aGUgc2FtZSBwYWdlDQoNCk9uIEZy
+aWRheSAxMSBGZWJydWFyeSAyMDExIDA1OjM5OjM5IFpob25nLCBYaW4gd3JvdGU6DQo+IEhpLA0K
+PiANCj4gQ291bGQgeW91IHBhc3RlIHRoZSBvdXRwdXQgb2Ygc3lzcnErdCBoZXJlPyBUaGFua3Mh
+DQoNClNvcnJ5IGZvciB0aGUgbG9uZyBkZWxheS4gSSd2ZSBhdHRhY2hlZCB0aGUgZG1lc2cgb3V0
+cHV0IG9mIHN5c3JxLXQgZnJvbQ0KMi42LjM4LXJjMyBhbmQgcmM0IGFzIHRoZSBiZWhhdmlvciBk
+aWZmZXJzIGJldHdlZW4gYm90aCB2ZXJzaW9ucy4gV2l0aCByYzMgaXQgZG9uJ3QgbmVlZCBhbnkg
+aW50ZXJhY3Rpb24uIEkgc3RhcnQgJ2VtZXJnZSBzeXMtZGV2ZWwvbGliZ2NyeXB0JywgdGhlIHRh
+c2tzIGhhbmdzIGFuZCB0b3Agc2hvd3MgYSBzdm4gcHJvY2VzcyBlYXRpbmcgMTAwJSBDUFUuIFdp
+dGggcmM0IHRoZSBzeXN0ZW0gaGFuZ3MgdG9vIGJ1dCB0aGUgQ1BVIGxvYWQgc3RheXMgbG93LiBX
+aGVuIEkgdHJ5IHRvIGNhbmNlbCB0aGUgZW1lcmdlIHByb2Nlc3MgKGN0cmwNCmMpIHRoZSBDUFUg
+bG9hZCBnb2VzIHVwIGFuZCB0b3Agc2hvd3MgdGhlIHN2biBwcm9jZXNzIHRvZ2V0aGVyIHdpdGgg
+YSBmbHVzaC0gYnRyZnMgdGFzaywgZWF0aW5nIHRoZSBDUFUuDQo=

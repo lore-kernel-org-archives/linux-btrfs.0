@@ -1,38 +1,41 @@
-From: "Zhong, Xin" <xin.zhong@intel.com>
-Subject: RE: [PATCH v2]Btrfs: pwrite blocked when writing from the mmaped
- buffer of the same page
-Date: Wed, 23 Feb 2011 15:27:05 +0800
-Message-ID: <1865303E0DED764181A9D882DEF65FB6864AE1B667@shsmsx502.ccr.corp.intel.com>
-References: <1291887014-18447-1-git-send-email-xin.zhong@intel.com>
- <201102020034.43808.johannes.hirte@fem.tu-ilmenau.de>
- <1865303E0DED764181A9D882DEF65FB68621CA7167@shsmsx502.ccr.corp.intel.com>
- <201102222327.04621.johannes.hirte@fem.tu-ilmenau.de>
+From: =?UTF-8?B?UMOhZHJhaWcgQnJhZHk=?= <P@draigBrady.com>
+Subject: Re: bug#8001: cp (8.10) sparse handling fails on compressed btrfs
+ (cp/fiemap-2)
+Date: Wed, 23 Feb 2011 09:49:55 +0000
+Message-ID: <4D64D843.9080903@draigBrady.com>
+References: <201102072253.34476.vapier@gentoo.org> <4D52730A.2080008@draigBrady.com> <201102191328.42067.vapier@gentoo.org> <4D6050A7.5090407@draigBrady.com> <AANLkTi=4x+RzqZRKVCreWy67eOUSocjA4c_N+9aEHeG9@mail.gmail.com> <1298431849-sup-5365@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Cc: =?utf-8?B?TWFyaWEgV2lrc3Ryw7Zt?= <maria@ponstudios.se>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Content-Type: text/plain; charset=UTF-8
+Cc: Mike Frysinger <vapier@gentoo.org>,
+	BTRFS MAILING LIST <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>, 8001-done@debbugs.gnu.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201102222327.04621.johannes.hirte@fem.tu-ilmenau.de>
+In-Reply-To: <1298431849-sup-5365@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-SW4gdGhlIGRtZXNnIG9mIHJjNCwgSSBjYW4gc2VlIHN2biBoYW5nIGluIHNocmlua19kZWxsYWxs
-b2MgYW5kIHRoZXJlJ3MgdHdvIGZsdXNoLWJ0cmZzIHRocmVhZHMgaGFuZyB0aGVyZSB0b28uDQoN
-Ckpvc2VmLCBpdCBzZWVtcyB5b3UgYXJlIHRoZSBleHBlcnQgaW4gdGhpcyBhcmVhLiBDb3VsZCB5
-b3UgdGFrZSBhIHF1aWNrIGxvb2s/IFRoYW5rcyENCg0KLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0t
-LS0NCkZyb206IEpvaGFubmVzIEhpcnRlIFttYWlsdG86am9oYW5uZXMuaGlydGVAZmVtLnR1LWls
-bWVuYXUuZGVdIA0KU2VudDogV2VkbmVzZGF5LCBGZWJydWFyeSAyMywgMjAxMSA2OjI3IEFNDQpU
-bzogWmhvbmcsIFhpbg0KQ2M6IE1hcmlhIFdpa3N0csO2bTsgbGludXgtYnRyZnNAdmdlci5rZXJu
-ZWwub3JnDQpTdWJqZWN0OiBSZTogW1BBVENIIHYyXUJ0cmZzOiBwd3JpdGUgYmxvY2tlZCB3aGVu
-IHdyaXRpbmcgZnJvbSB0aGUgbW1hcGVkIGJ1ZmZlciBvZiB0aGUgc2FtZSBwYWdlDQoNCk9uIEZy
-aWRheSAxMSBGZWJydWFyeSAyMDExIDA1OjM5OjM5IFpob25nLCBYaW4gd3JvdGU6DQo+IEhpLA0K
-PiANCj4gQ291bGQgeW91IHBhc3RlIHRoZSBvdXRwdXQgb2Ygc3lzcnErdCBoZXJlPyBUaGFua3Mh
-DQoNClNvcnJ5IGZvciB0aGUgbG9uZyBkZWxheS4gSSd2ZSBhdHRhY2hlZCB0aGUgZG1lc2cgb3V0
-cHV0IG9mIHN5c3JxLXQgZnJvbQ0KMi42LjM4LXJjMyBhbmQgcmM0IGFzIHRoZSBiZWhhdmlvciBk
-aWZmZXJzIGJldHdlZW4gYm90aCB2ZXJzaW9ucy4gV2l0aCByYzMgaXQgZG9uJ3QgbmVlZCBhbnkg
-aW50ZXJhY3Rpb24uIEkgc3RhcnQgJ2VtZXJnZSBzeXMtZGV2ZWwvbGliZ2NyeXB0JywgdGhlIHRh
-c2tzIGhhbmdzIGFuZCB0b3Agc2hvd3MgYSBzdm4gcHJvY2VzcyBlYXRpbmcgMTAwJSBDUFUuIFdp
-dGggcmM0IHRoZSBzeXN0ZW0gaGFuZ3MgdG9vIGJ1dCB0aGUgQ1BVIGxvYWQgc3RheXMgbG93LiBX
-aGVuIEkgdHJ5IHRvIGNhbmNlbCB0aGUgZW1lcmdlIHByb2Nlc3MgKGN0cmwNCmMpIHRoZSBDUFUg
-bG9hZCBnb2VzIHVwIGFuZCB0b3Agc2hvd3MgdGhlIHN2biBwcm9jZXNzIHRvZ2V0aGVyIHdpdGgg
-YSBmbHVzaC0gYnRyZnMgdGFzaywgZWF0aW5nIHRoZSBDUFUuDQo=
+On 23/02/11 03:31, Chris Mason wrote:
+> I've got a fix for this on the btrfs side in testing.  It is definite=
+ly
+> a btrfs bug.
+
+[resend]
+
+Cool.
+I'm closing this ticket, so.
+
+Interesting I didn't notice this with kernel-2.6.38-0.rc4.git0.2.fc15.i=
+686
+(with a 1G loop back BTRFS on ext4)
+
+I'd appreciate a link to the fix at some stage.
+If we know what's going on exactly we might be
+able to know how widespread the issue is and
+whether we could work around it in `cp`.
+
+cheers,
+P=C3=A1draig.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

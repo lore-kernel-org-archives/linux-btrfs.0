@@ -1,72 +1,68 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [RFC PATCH] Btrfs: add ioctl to set compress or cow per file/dir
-Date: Thu, 24 Feb 2011 09:54:17 -0500
-Message-ID: <1298558707-sup-8570@think>
-References: <4D6627A7.7050001@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>
-To: liubo <liubo2009@cn.fujitsu.com>
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: Re: [PATCH v2]Btrfs: pwrite blocked when writing from the mmaped
+ buffer of the same page
+Date: Thu, 24 Feb 2011 09:55:15 -0600
+Message-ID: <AANLkTimkEGAGjY17FX_EFGwo6RJEoEfQ3WdKhNUymSE+@mail.gmail.com>
+References: <1291887014-18447-1-git-send-email-xin.zhong@intel.com>
+	<201101280354.36884.johannes.hirte@fem.tu-ilmenau.de>
+	<1865303E0DED764181A9D882DEF65FB685DF762B45@shsmsx502.ccr.corp.intel.com>
+	<201102020034.43808.johannes.hirte@fem.tu-ilmenau.de>
+	<1865303E0DED764181A9D882DEF65FB68621CA7167@shsmsx502.ccr.corp.intel.com>
+	<1298028713.11103.13.camel@mainframe>
+	<1865303E0DED764181A9D882DEF65FB686421B24FB@shsmsx502.ccr.corp.intel.com>
+	<1298559118.11224.40.camel@mainframe>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: "Zhong, Xin" <xin.zhong@intel.com>,
+	Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: =?ISO-8859-1?Q?Maria_Wikstr=F6m?= <maria@ponstudios.se>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <4D6627A7.7050001@cn.fujitsu.com>
+In-Reply-To: <1298559118.11224.40.camel@mainframe>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from liubo's message of 2011-02-24 04:40:55 -0500:
-> 
-> Data compression and data cow are controlled across the entire FS by mount
-> options right now.  ioctls are needed to set this on a per file or per
-> directory basis.  This has been proposed previously, but VFS developers
-> wanted us to use generic ioctls rather than btrfs-specific ones.
-> 
-> We need to fit these into the existing per-inode flags, and to use the generic
-> FS_IOCTL_SETFLAGS ioctl.  For data compression, there are the existing
-> compression flags of vfs inode, while for datacow, there is no flag to
-> indicate it, which we need to add.
-> So, what we will do is to add datacow flag in vfs inode flags and then to
-> set or to unset btrfs compress/cow flag on the corresponding btrfs inode's flag
-> per file or per directory.  Moreover, we also add a compression type ioctl to
-> make this feature more flexible.
-> 
-> I really expect some advices and comments on the followings:
-> 
-> - In this patch, I made a special ioctl to set compress type, and to record
->   the compress_type per inode on disk, I've consumed some reserved space of
->   btrfs_inode_item, so is this acceptable?
+2011/2/24 Maria Wikstr=F6m <maria@ponstudios.se>:
+> m=E5n 2011-02-21 klockan 09:51 +0800 skrev Zhong, Xin:
+>> The backtrace in your attachment looks like a known bug of 2.6.37 wh=
+ich have already been fixed in 2.6.38. I have no idea why latest btrfs =
+still hang in your environment if there's no debug info...
+>>
+>
+> Haha, yes that's very hard :)
+>
+> 2.6.38-rc6 and btrfs-unstable behaves the same way. I can close the
+> process with ctrl+c and it disappear a few seconds later. There is no
+> CPU usage. Reading works because I can start htop and watch "svn info=
+"
+> disappear, but everything writing to btrfs slows down to a crawl. It
+> takes about 1 minute to log in. So I had to put the logs on an other
+> partition using ext3 to get the output from sysrq+t.
+>
 
-I don't expect people to mix compression types on the disk.  There
-really should just be one true compression method (probably LZO once it
-has been established for a while).  So, I'd prefer that we store this in
-the super, and just have flags in the inode for enabling or disabling
-compression.
+I believe I've been experiencing this issue also.  However, my problem
+usually results in a "No space left on device" error rather than a
+lock-up or crash.  But I've bisected my issue to this patch, and my
+"btrfs fi show" and "btrfs fi df" looks similar to others who've
+posted to this tread with all my space being allocated, but not used.
 
->   Meanwhile, I got another idea from my collegue, could we just owe the whole
->   compress type thing to new proper mount options, ie,
->   mount xxx xxx -o compress=a,inode_compress=b?
->   Seems that this makes mount more flexible.
+I've been playing around with ftrace to try to get some information on
+the issue.  Since I'm getting a soft error, I can used a command like
+"echo 1 > tracing_on; emerge -1av openmotif; echo 0 > tracing_on" to
+end the trace as soon as the build fails.
 
-It does make it more flexible, but I think sometimes extra flexibility
-leads to more QA time and isn't often used by the actual users ;)
+The traces are probably too large for the M/L (~275kb compressed), so
+I've put them up on my local server in case anybody can find them
+useful:
 
-> 
-> - When we are inclined to set inode's compression type, should it be a "force"
->   mode?
->   This is much like the difference between mount as compress and mount as
->   compress-force.
+http://dontpanic.dyndns.org/emerge-openmotif-ftrace.gz
 
-I'd store this as flags in the super too.
+I'm still only capturing the tail end of the problem, but maybe
+someone will find these insightful.
 
-> 
-> - For directory basis, after compress/cow ioctl on it, any files that are
->   created or renamed in it, or moved into it, will inherit the directory's
->   compress and datacow attribute.
->   Here comes to some disputes, is it right that renamed and moved files
->   also inherit the father directory's compress & datacow attribute?
->   And if what we are dealing with is directory, should this behaviour be
->   recursive or not?
->   I'm inclined to leave these recursive things to btrfs-progs if this is
->   necessary.
-
-I'd say that if we rename a file into a directory it does inherit, but
-not make it recursive.
-
--chris
+Let me know if you want me to increase the ftrace buffer size or
+insert some trace_printk debugging statements.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

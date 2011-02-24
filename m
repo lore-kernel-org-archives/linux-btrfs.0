@@ -1,33 +1,37 @@
-From: Li Dongyang <lidongyang@novell.com>
-Subject: Re: [PATCH] Btrfs: Batched discard support for btrfs
-Date: Thu, 24 Feb 2011 10:24:59 +0800
-Message-ID: <201102241024.59950.lidongyang@novell.com>
-References: <201102211652.28014.lidongyang@novell.com> <20110221143315.GA2979@localhost.localdomain>
+From: Tobias Brunner <tobias@tobru.ch>
+Subject: Re: Kernel 2.6.35 (Ubuntu 10.10): Unable to mount (orphan list)
+Date: Thu, 24 Feb 2011 08:46:10 +0100 (CET)
+Message-ID: <f6a6a92b-cd3a-4c49-b5c5-a8232d30df30@james>
+References: <ef9c402b-8b3a-4202-accf-73eef08f38c4@lasmiranda>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	Lukas Czerner <lczerner@redhat.com>
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=utf-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110221143315.GA2979@localhost.localdomain>
+In-Reply-To: <ef9c402b-8b3a-4202-accf-73eef08f38c4@lasmiranda>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday, February 21, 2011 10:33:16 PM Josef Bacik wrote:
-> So you have just done 2 searches for the same thing.  Instead of doing
-> btrfs_remove_free_space here, put
-> 
-> bitmap_clear_bits()
-> 
-> after the search_bitmap, and do a
-> 
-> unlink_free_space()
-> 
-> if it's not a bitmap, that way we don't race with the allocator (even
-> though this isn't a problem, it just sucks) and we don't do the search
-> twice.  Other than that it looks great, thank you,
-yes we are searching the same extent for twice, once in btrfs_trim_block_group,
-another once we call btrfs_remove_free_space, I'll get it fixed and post a new version,
-Thanks a lot.
-> 
-> Josef
+>>> Hi,
+>>> 
+>>> I'm using btrfs on Ubuntu 10.10 for some test partitions.
+>>> After doing some normal operations I suddenly couldn't mount the partition anymore.
+>>> I always get the error "BTRFS: inode 120790 still on the orphan list" in the kernel log again and again and it's impossible to stop >the mount command or shutdown the system.
+>>> Any ideas how to work around this issue?
+>>
+>>Josef was looking at this recently but the fixes had problems for .38
+>>and we had to push them off.
+>>
+>>Which kernel is ubuntu on?
+>>
+>>-chris
+>
+>I tried the official maverick kernel (2.6.35.25.32) and the ppa kernel 2.6.38-rc6.
+>
+>-tobru
+
+Are you speaking of this patch? https://patchwork.kernel.org/patch/530421/
+
+I'd like to help troubleshooting this issue. Any hint how I can help?
+Can I manually correct this orphan list? It would be very nice if I can mount this partition again and not lose it's data.
+BTW: It's always the same inode number...
+
+Tobias

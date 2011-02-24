@@ -1,35 +1,50 @@
-From: "A. James Lewis" <james@fsck.co.uk>
-Subject: subvolid=0, ls hangs.
-Date: Thu, 24 Feb 2011 10:20:28 +0000
-Message-ID: <1298542828.4315.474.camel@cheyenne>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH] Btrfs: fix return value of setflags ioctl
+Date: Thu, 24 Feb 2011 11:33:35 +0100
+Message-ID: <20110224103335.GA17108@twin.jikos.cz>
+References: <4D662708.2020700@cn.fujitsu.com>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4D662708.2020700@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've been running BTRFS for a while testing out various stuff, and I've
-found it to be quite stable (although reading this list makes me realize
-how much activity there really is).. I just hit my first bump in the
-road, and I wondered if someone could give me a hint how I can gather
-enough information to be useful here.
+On Thu, Feb 24, 2011 at 05:38:16PM +0800, liubo wrote:
+> 
+> setflags ioctl should return error when any checks fail.
+> 
+> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+> ---
+>  fs/btrfs/ioctl.c |    4 +++-
+>  1 files changed, 3 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 02d224e..e397da4 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -213,9 +213,11 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+>  	btrfs_end_transaction(trans, root);
+>  
+>  	mnt_drop_write(file->f_path.mnt);
+> +
+> +	ret = 0;
 
-Basically, the filesystem I'm running is a 2 disk stripe, with mirrored
-metadata.. I have default subvolume set, and I'm using 2 subvolumes.  I
-have created a few snapshots of those subvolumes by mounting with -o
-subvolid=0 and creating snapshots of the mounted subvolumes.
+Technically speaking, this assignment is not necessary as any non-zero
+value is caught above as a BUG_ON, but assigning it to zero definetely
+helps readability.
 
-Recently (I think it started when I updated from .38rc1 to .38rc5 but
-that could be coincidental)... when I mount subvolid=0, if I do a 'ls'
-of that mount point, the filesystem hangs, and the system becomes
-unusable.  Otherwise mounting and using the subvolumes is not affected.
-At one point I got a Segfault from ls, but I've not been able to repeat
-that.
+>   out_unlock:
+>  	mutex_unlock(&inode->i_mutex);
+> -	return 0;
+> +	return ret;
 
-Any suggestions would be interesting... I tried updating to rc6, but as
-expected, (since there didn't seem to be much in the way of BTRFS
-changes in that release) not much difference.
+Good cacth.
 
-James.
+Reviewed-by: David Sterba <dsterba@suse.cz>
 
-
+>  }
+>  
+>  static int btrfs_ioctl_getversion(struct file *file, int __user *arg)
+> -- 

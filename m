@@ -1,64 +1,74 @@
 From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: [PATCH v2]Btrfs: pwrite blocked when writing from the mmaped buffer of the same page
-Date: Thu, 24 Feb 2011 10:23:12 -0500
-Message-ID: <1298560914-sup-7112@think>
-References: <1291887014-18447-1-git-send-email-xin.zhong@intel.com> <1865303E0DED764181A9D882DEF65FB6864AE1B667@shsmsx502.ccr.corp.intel.com> <1298498150-sup-7270@think> <201102240002.45682.johannes.hirte@fem.tu-ilmenau.de>
-Content-Type: text/plain; charset=UTF-8
-Cc: "Zhong, Xin" <xin.zhong@intel.com>,
-	=?utf-8?q?Maria_Wikstr=C3=B6m?= <maria@ponstudios.se>,
+Date: Thu, 24 Feb 2011 11:00:59 -0500
+Message-ID: <1298563230-sup-9619@think>
+References: <1291887014-18447-1-git-send-email-xin.zhong@intel.com> <201101280354.36884.johannes.hirte@fem.tu-ilmenau.de> <1865303E0DED764181A9D882DEF65FB685DF762B45@shsmsx502.ccr.corp.intel.com> <201102020034.43808.johannes.hirte@fem.tu-ilmenau.de> <1865303E0DED764181A9D882DEF65FB68621CA7167@shsmsx502.ccr.corp.intel.com> <1298028713.11103.13.camel@mainframe> <1865303E0DED764181A9D882DEF65FB686421B24FB@shsmsx502.ccr.corp.intel.com> <1298559118.11224.40.camel@mainframe> <AANLkTimkEGAGjY17FX_EFGwo6RJEoEfQ3WdKhNUymSE+@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=ISO-8859-1
+Cc: =?utf-8?q?Maria_Wikstr=C3=B6m?= <maria@ponstudios.se>,
+	"Zhong, Xin" <xin.zhong@intel.com>,
+	Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>,
 	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+To: Mitch Harder <mitch.harder@sabayonlinux.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <201102240002.45682.johannes.hirte@fem.tu-ilmenau.de>
+In-reply-to: <AANLkTimkEGAGjY17FX_EFGwo6RJEoEfQ3WdKhNUymSE+@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Johannes Hirte's message of 2011-02-23 18:02:44 -0500:
-> On Wednesday 23 February 2011 22:56:27 Chris Mason wrote:
-> > Excerpts from Zhong, Xin's message of 2011-02-23 02:27:05 -0500:
-> > > In the dmesg of rc4, I can see svn hang in shrink_dellalloc and there's
-> > > two flush-btrfs threads hang there too.
-> > > 
-> > > Josef, it seems you are the expert in this area. Could you take a quick
-> > > look? Thanks!
-> > 
-> > Ok, it does look like the fluhs-btrfs threads are busy trying to flush
-> > things.
-> > 
-> > Could you please do a btrfs-show and a btrfs fi df /xxx (where xxx is
-> > your mount point) and send the results here?
-> > 
-> > -chris
-> 
-> failed to read /dev/sr0
-> Label: none  uuid: 00eab15f-c4cf-4403-a529-9bc11fa50167
->         Total devices 1 FS bytes used 47.72GB
->         devid    1 size 65.69GB used 65.69GB path /dev/sda2
-> 
-> Label: none  uuid: c6f4e6e6-c4ba-4394-9e9c-bbc3d0b32793
->         Total devices 1 FS bytes used 9.48GB
->         devid    1 size 20.01GB used 20.01GB path /dev/sda1
-> 
-> Btrfs v0.19-35-g1b444cd-dirty
-> 
-> and btrfs fi df on
-> 
-> /
-> 
-> Data: total=15.49GB, used=8.35GB
-> System, DUP: total=8.00MB, used=12.00KB
-> System: total=4.00MB, used=0.00
-> Metadata, DUP: total=2.25GB, used=1.13GB
-> 
-> /home
-> 
-> Data: total=63.42GB, used=47.47GB
-> System: total=4.00MB, used=16.00KB
-> Metadata: total=2.27GB, used=251.34MB
-> 
-> The bug is reproducable on both filesystems.
+Excerpts from Mitch Harder's message of 2011-02-24 10:55:15 -0500:
+> 2011/2/24 Maria Wikstr=C3=B6m <maria@ponstudios.se>:
+> > m=C3=A5n 2011-02-21 klockan 09:51 +0800 skrev Zhong, Xin:
+> >> The backtrace in your attachment looks like a known bug of 2.6.37 =
+which have already been fixed in 2.6.38. I have no idea why latest btrf=
+s still hang in your environment if there's no debug info...
+> >>
+> >
+> > Haha, yes that's very hard :)
+> >
+> > 2.6.38-rc6 and btrfs-unstable behaves the same way. I can close the
+> > process with ctrl+c and it disappear a few seconds later. There is =
+no
+> > CPU usage. Reading works because I can start htop and watch "svn in=
+fo"
+> > disappear, but everything writing to btrfs slows down to a crawl. I=
+t
+> > takes about 1 minute to log in. So I had to put the logs on an othe=
+r
+> > partition using ext3 to get the output from sysrq+t.
+> >
+>=20
+> I believe I've been experiencing this issue also.  However, my proble=
+m
+> usually results in a "No space left on device" error rather than a
+> lock-up or crash.  But I've bisected my issue to this patch, and my
+> "btrfs fi show" and "btrfs fi df" looks similar to others who've
+> posted to this tread with all my space being allocated, but not used.
+>=20
 
-Ok, you've got a good amount of metadata space free, but it is
-frantically trying to make room for the delayed allocation.  Let me see
-if I can recreate this setup here.
+Sorry, which patch did you bisect the problem down to?
+
+> I've been playing around with ftrace to try to get some information o=
+n
+> the issue.  Since I'm getting a soft error, I can used a command like
+> "echo 1 > tracing_on; emerge -1av openmotif; echo 0 > tracing_on" to
+> end the trace as soon as the build fails.
+>=20
+> The traces are probably too large for the M/L (~275kb compressed), so
+> I've put them up on my local server in case anybody can find them
+> useful:
+>=20
+> http://dontpanic.dyndns.org/emerge-openmotif-ftrace.gz
+>=20
+> I'm still only capturing the tail end of the problem, but maybe
+> someone will find these insightful.
+>=20
+> Let me know if you want me to increase the ftrace buffer size or
+> insert some trace_printk debugging statements.
+
+Thanks, I'll take a look.
 
 -chris
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

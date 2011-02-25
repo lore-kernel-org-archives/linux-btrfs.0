@@ -1,91 +1,55 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: Comparing snapshots?
-Date: Fri, 25 Feb 2011 21:08:24 +0100
-Message-ID: <4D680C38.10903@libero.it>
-References: <20110225095916.GA7609@suse.de> <6D8C263D-FCFC-49EE-AC28-8D821C3340CA@gmail.com>
-Reply-To: kreijack@inwind.it
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: =?ISO-8859-1?Q?Jo=E3o_Eduardo_Lu=EDs?= <jecluis@gmail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <6D8C263D-FCFC-49EE-AC28-8D821C3340CA@gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: [GIT PULL] Btrfs pull request for 2.6.38
+Date: Fri, 25 Feb 2011 15:40:58 -0500
+Message-ID: <1298666031-sup-6071@think>
+Content-Type: text/plain; charset=UTF-8
+To: "Linus Torvalds" <torvalds@linux-foundation.org>,
+	"linux-btrfs" <linux-btrfs@vger.kernel.org>,
+	"linux-kernel" <linux-kernel@vger.kernel.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/25/2011 08:32 PM, Jo=E3o Eduardo Lu=EDs wrote:
-> Hello,
->=20
-> Please note that my experience with btrfs is both recent and, above
-> all, very small. However, I've been wondering about the same issue
-> for a different purpose and your question intrigues me.
->=20
-> However, and I may be off-base here, I think that wouldn't be trivial
-> to achieve.
->=20
-> Even if one would be able to differ the metadata changes between both
-> snapshots, the problem would still be present regarding finding the
-> changed data. It would be possible to check for changed extents, at
-> least by comparing extent checksums, but I don't think it would be
-> trivial to discover where (exactly) the extent was modified.
+Hi everyone,
 
-Look at the find-new command. It returns also which part of the file is
-changed. I don't remember very well the details, but also the data is
-stored in a tree like the metadata. Using the same strategies of
-comparing the keys and revid leads to discover which part of the file i=
-s
-changed, with minimum effort (no checksums comparing is needed).
+Someone just figured out an enospc regression for btrfs, and that patch
+isn't ready for this pull request.
 
->=20
-> I would recommend using the generation fields, whenever applicable,
-> but I believe these are private to each subvolume/snapshot.
->=20
->=20
-> Anyway, I wonder if keeping a data structure (I would go with a tree)
-> containing metadata regarding the changed files, within the file
-> system, could be a plausible solution, but I'm in no condition
-> (btrfs-knowledge-wise) to make such statement.
->=20
->=20
-> Cheers.
->=20
-> --- Jo=E3o Eduardo Lu=EDs gpg key: 477C26E5 from pool.keyserver.eu
->=20
->=20
->=20
->=20
->=20
-> On Feb 25, 2011, at 9:59 AM, Arvin Schnell wrote:
->=20
->> Hi,
->>=20
->> for a backup program I have to find all differing files (including
->> metadata) in two snapshots taken from the same subvolume.
->>=20
->> Having looked at the find-new command I thought about this=20
->> process:
->>=20
->> 1. Get the two transids when the two snapshots were created.
->>=20
->> 2. Query modifications to the original subvolume between the two=20
->> transids.
->>=20
->> Is the general process corrent or have I overseen something?
->>=20
->> AFAIS the btrfs tool does not provide the required=20
->> information/commands. Would it be possible to add those?
->>=20
->> Thanks in advance, Arvin
->>=20
->> -- Arvin Schnell, <aschnell@suse.de> Senior Software Engineer,
->> Research & Development SUSE LINUX Products GmbH, GF: Markus Rex,
->> HRB 16746 (AG N=FCrnberg) -- To unsubscribe from this list: send the
->> line "unsubscribe linux-btrfs" in the body of a message to
->> majordomo@vger.kernel.org More majordomo info at
->> http://vger.kernel.org/majordomo-info.html
->=20
+But, this pull has some important fixes, especially for btrfs fiemap and
+I wanted to make sure it got out the door.  Linus, the master branch
+of the btrfs unstable tree:
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
+
+Has a nice assortment of fixes for balance crashes, pinned block devices
+that can never be reopened, LZO compression oopsen and my favorite -- a
+fiemap fix that keeps newer versions of cp from thinking our recently
+written files are full of zeros.
+
+In terms of the diffstat, this is almost all fixing btrfs fiemap.
+
+Chris Mason (3) commits (+253/-45):
+    Btrfs: allow balance to explicitly allocate chunks as it relocates (+21/-1)
+    Btrfs: put ENOSPC debugging under a mount option (+8/-2)
+    Btrfs: fix fiemap bugs with delalloc (+224/-42)
+
+Ilya Dryomov (2) commits (+10/-3):
+    Btrfs: make btrfs_rm_device() fail gracefully (+9/-2)
+    Btrfs: set FMODE_EXCL in btrfs_device->mode (+1/-1)
+
+Li Zefan (2) commits (+19/-9):
+    Btrfs: Avoid accessing unmapped kernel address (+14/-7)
+    Btrfs: Fix BTRFS_IOC_SUBVOL_SETFLAGS ioctl (+5/-2)
+
+Total: (7) commits (+282/-57)
+
+ fs/btrfs/ctree.h       |    3 +
+ fs/btrfs/extent-tree.c |    9 +++-
+ fs/btrfs/extent_io.c   |  138 ++++++++++++++++++++++++++++++++++--------------
+ fs/btrfs/extent_io.h   |    2 +-
+ fs/btrfs/inode.c       |  126 +++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/ioctl.c       |    7 ++-
+ fs/btrfs/lzo.c         |   21 +++++---
+ fs/btrfs/relocation.c  |   13 ++++-
+ fs/btrfs/super.c       |    7 ++-
+ fs/btrfs/volumes.c     |   13 ++++-
+ 10 files changed, 282 insertions(+), 57 deletions(-)

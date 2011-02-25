@@ -1,96 +1,92 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: [2.6.38-rc6] create->rebalance->mount crash...
-Date: Fri, 25 Feb 2011 10:19:18 +0800
-Message-ID: <4D6711A6.2030208@cn.fujitsu.com>
-References: <AANLkTik-WE+1FYAE6D--fN9GJpThCXwxgejiOsiTk_3k@mail.gmail.com> <4D665396.2040105@cn.fujitsu.com> <1298557709-sup-774@think>
-Reply-To: miaox@cn.fujitsu.com
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: Re: [RFC PATCH] Btrfs: add ioctl to set compress or cow per file/dir
+Date: Fri, 25 Feb 2011 11:21:57 +0800
+Message-ID: <4D672055.3010601@cn.fujitsu.com>
+References: <4D6627A7.7050001@cn.fujitsu.com> <1298558707-sup-8570@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: liubo <liubo2009@cn.fujitsu.com>,
-	Daniel J Blueman <daniel.blueman@gmail.com>,
-	Josef Bacik <josef@redhat.com>,
-	Linux BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>
 To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1298557709-sup-774@think>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <1298558707-sup-8570@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Chris and Liu
-
-On thu, 24 Feb 2011 09:35:32 -0500, Chris Mason wrote:
-[SNIP]
->> [PATCH] btrfs: fix OOPS of empty filesystem after balance
+On 02/24/2011 10:54 PM, Chris Mason wrote:
+> Excerpts from liubo's message of 2011-02-24 04:40:55 -0500:
+>> Data compression and data cow are controlled across the entire FS by mount
+>> options right now.  ioctls are needed to set this on a per file or per
+>> directory basis.  This has been proposed previously, but VFS developers
+>> wanted us to use generic ioctls rather than btrfs-specific ones.
 >>
->> btrfs will exclude unused block groups via a thread.
->> When a empty filesystem is balanced, the block group with tag "DATA" may be dropped,
->> and after umount, this will lead to OOPS when we mount it again.
+>> We need to fit these into the existing per-inode flags, and to use the generic
+>> FS_IOCTL_SETFLAGS ioctl.  For data compression, there are the existing
+>> compression flags of vfs inode, while for datacow, there is no flag to
+>> indicate it, which we need to add.
+>> So, what we will do is to add datacow flag in vfs inode flags and then to
+>> set or to unset btrfs compress/cow flag on the corresponding btrfs inode's flag
+>> per file or per directory.  Moreover, we also add a compression type ioctl to
+>> make this feature more flexible.
+>>
+>> I really expect some advices and comments on the followings:
+>>
+>> - In this patch, I made a special ioctl to set compress type, and to record
+>>   the compress_type per inode on disk, I've consumed some reserved space of
+>>   btrfs_inode_item, so is this acceptable?
+> 
+> I don't expect people to mix compression types on the disk.  There
+> really should just be one true compression method (probably LZO once it
+> has been established for a while).  So, I'd prefer that we store this in
+> the super, and just have flags in the inode for enabling or disabling
+> compression.
+
+It sounds nice and will make code neatly. :)
+So, all files & directories will share the same compress type stored in the super.
+
+> 
+>>   Meanwhile, I got another idea from my collegue, could we just owe the whole
+>>   compress type thing to new proper mount options, ie,
+>>   mount xxx xxx -o compress=a,inode_compress=b?
+>>   Seems that this makes mount more flexible.
+> 
+> It does make it more flexible, but I think sometimes extra flexibility
+> leads to more QA time and isn't often used by the actual users ;)
+
+ok.
+
+> 
+>> - When we are inclined to set inode's compression type, should it be a "force"
+>>   mode?
+>>   This is much like the difference between mount as compress and mount as
+>>   compress-force.
+> 
+> I'd store this as flags in the super too.
+
+ok.
+
+> 
+>> - For directory basis, after compress/cow ioctl on it, any files that are
+>>   created or renamed in it, or moved into it, will inherit the directory's
+>>   compress and datacow attribute.
+>>   Here comes to some disputes, is it right that renamed and moved files
+>>   also inherit the father directory's compress & datacow attribute?
+>>   And if what we are dealing with is directory, should this behaviour be
+>>   recursive or not?
+>>   I'm inclined to leave these recursive things to btrfs-progs if this is
+>>   necessary.
+> 
+> I'd say that if we rename a file into a directory it does inherit, but
+> not make it recursive.
 >
-> Thanks for tracking this down!  Comment below:
-[SNIP]
->> -static void init_global_block_rsv(struct btrfs_fs_info *fs_info)
->> +static int init_global_block_rsv(struct btrfs_fs_info *fs_info)
->>   {
->>       struct btrfs_space_info *space_info;
->>
->> +    space_info = __find_space_info(fs_info, BTRFS_BLOCK_GROUP_DATA);
->> +    if (!space_info)
->> +        return -EAGAIN;
->> +
->>       space_info = __find_space_info(fs_info, BTRFS_BLOCK_GROUP_SYSTEM);
->>       fs_info->chunk_block_rsv.space_info = space_info;
->>       fs_info->chunk_block_rsv.priority = 10;
->> @@ -3884,6 +3888,8 @@ static void init_global_block_rsv(struct btrfs_fs_info *fs_info)
->>       btrfs_add_durable_block_rsv(fs_info,&fs_info->delalloc_block_rsv);
->>
->>       update_global_block_rsv(fs_info);
->> +
->> +    return 0;
->>   }
->>
->>   static void release_global_block_rsv(struct btrfs_fs_info *fs_info)
->> @@ -8514,7 +8520,13 @@ int btrfs_read_block_groups(struct btrfs_root *root)
->>               set_block_group_ro(cache);
->>       }
->>
->> -    init_global_block_rsv(info);
->> +again:
->> +    ret = init_global_block_rsv(info);
->> +    if (ret == -EAGAIN) {
->> +        update_space_info(info, BTRFS_BLOCK_GROUP_DATA, 0, 0,
->> +&space_info);
->> +        goto again;
->> +    }
->>       ret = 0;
->
-> Are we looping here because we expect the init_global_block_rsv to fail
-> more than once?  If so we need a cond_resched or something in there.
->
-> But if the EAGAIN is only returned once we should avoid the loop and
-> open code the call again.
 
-I don't think we should create a space information object in init_global_block_rsv(),
-which just does initialize the global block reservation object.
+ok, got it.
+I will send a new version based on this thread.
 
-I think it is better to split btrfs_read_block_group() to three steps.
-Step 1: create and initialize the space information object.
-Step 2: read the block groups and update the space information.
-Step 3: initialize the global block reservation object.
-In this way, the logic of the source is clear, and avoid sometrivial mistake.
+Thanks a lot for reviewing!
 
-BTW: I found the btrfs filesystem just has three types of data(file data, meta data,
-system meta data), why not add a space information array with three elements into fs_info?
-In this way, we can simplify the source code of the space information, and needn't use
-RCU lock to protect the space information object list. (I didn't find a lock to protect
-the space information object list in the write-side. Is it right?)
-
-Regards
-Miao
-
->
+thanks,
+liubo
+ 
 > -chris
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+> 
 

@@ -1,41 +1,44 @@
-From: Arvin Schnell <aschnell@suse.de>
-Subject: Comparing snapshots?
-Date: Fri, 25 Feb 2011 10:59:16 +0100
-Message-ID: <20110225095916.GA7609@suse.de>
+From: Li Dongyang <jerry87905@gmail.com>
+Subject: [PATCH] Btrfs: make sure we call recalculate_thresholds() in
+ btrfs_remove_free_space()
+Date: Fri, 25 Feb 2011 20:16:06 +0800
+Message-ID: <20110225121606.GA4248@Archlinux>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-15
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+we should recalculate the thresholds everytime when we add/free a bitmap,
+make sure we do this in btrfs_remove_free_space() by calling free_bitmap(),Thanks
 
-for a backup program I have to find all differing files
-(including metadata) in two snapshots taken from the same
-subvolume.
+Signed-off-by: Li Dongyang <lidongyang@novell.com>
+---
+ fs/btrfs/free-space-cache.c |   10 +++++-----
+ 1 files changed, 5 insertions(+), 5 deletions(-)
 
-Having looked at the find-new command I thought about this
-process:
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index a039065..f631817 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -1515,12 +1515,12 @@ again:
+ 	}
+ 
+ 	if (info->bytes == bytes) {
+-		unlink_free_space(block_group, info);
+-		if (info->bitmap) {
+-			kfree(info->bitmap);
+-			block_group->total_bitmaps--;
++		if (info->bitmap)
++			free_bitmap(block_group, info);
++		else {
++			unlink_free_space(block_group, info);
++			kfree(info);
+ 		}
+-		kfree(info);
+ 		goto out_lock;
+ 	}
+ 
+-- 
+1.7.4.1
 
-1. Get the two transids when the two snapshots were created.
-
-2. Query modifications to the original subvolume between the two
-   transids.
-
-Is the general process corrent or have I overseen something?
-
-AFAIS the btrfs tool does not provide the required
-information/commands. Would it be possible to add those?
-
-Thanks in advance,
-  Arvin
-
---=20
-Arvin Schnell, <aschnell@suse.de>
-Senior Software Engineer, Research & Development
-SUSE LINUX Products GmbH, GF: Markus Rex, HRB 16746 (AG N=FCrnberg)
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

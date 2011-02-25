@@ -1,62 +1,108 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH v2]Btrfs: pwrite blocked when writing from the mmaped buffer of the same page
-Date: Fri, 25 Feb 2011 14:19:50 -0500
-Message-ID: <1298661529-sup-6456@think>
-References: <1291887014-18447-1-git-send-email-xin.zhong@intel.com> <201101280354.36884.johannes.hirte@fem.tu-ilmenau.de> <1865303E0DED764181A9D882DEF65FB685DF762B45@shsmsx502.ccr.corp.intel.com> <201102020034.43808.johannes.hirte@fem.tu-ilmenau.de> <1865303E0DED764181A9D882DEF65FB68621CA7167@shsmsx502.ccr.corp.intel.com> <1298028713.11103.13.camel@mainframe> <1865303E0DED764181A9D882DEF65FB686421B24FB@shsmsx502.ccr.corp.intel.com> <1298559118.11224.40.camel@mainframe> <AANLkTimkEGAGjY17FX_EFGwo6RJEoEfQ3WdKhNUymSE+@mail.gmail.com> <1298563230-sup-9619@think> <AANLkTi=gn+713wttLh+iZQqOQXAvkW2bEE7c=rGKurXs@mail.gmail.com> <1298564340-sup-3124@think> <AANLkTi=qUV6TQJbJQ-JAeQ3PFRZpCwAYn4SnbrS89XM9@mail.gmail.com> <AANLkTinvyb-bTVVignd1KGojvh-QrYCFmCnwYKBsYC_2@mail.gmail.com> <AANLkTinrD1vu7NVU
- GCsqvaB6KroeeLPQV3M9QJh0OKUK@mail.gmail.com> <AANLkTik3KtjzP4zVU-foQUxEvZEtrTi7T2aj6PJzUV43@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
-Cc: =?utf-8?q?Maria_Wikstr=C3=B6m?= <maria@ponstudios.se>,
-	"Zhong, Xin" <xin.zhong@intel.com>,
-	Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
+From: =?iso-8859-1?Q?Jo=E3o_Eduardo_Lu=EDs?= <jecluis@gmail.com>
+Subject: Re: Comparing snapshots?
+Date: Fri, 25 Feb 2011 19:32:23 +0000
+Message-ID: <6D8C263D-FCFC-49EE-AC28-8D821C3340CA@gmail.com>
+References: <20110225095916.GA7609@suse.de>
+Mime-Version: 1.0 (Apple Message framework v1082)
+Content-Type: multipart/signed; protocol="application/pgp-signature"; micalg=pgp-sha1; boundary="Apple-Mail-255-380079958"
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Arvin Schnell <aschnell@suse.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <AANLkTik3KtjzP4zVU-foQUxEvZEtrTi7T2aj6PJzUV43@mail.gmail.com>
+In-Reply-To: <20110225095916.GA7609@suse.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Mitch Harder's message of 2011-02-25 13:43:37 -0500:
-> > The loop is more-or-less following this process (from within the
-> > "while (iov_iter_count(&i) > 0) {}" loop):
-> >
-> > (1) Reserve some space with btrfs_delalloc_reserve_space()
-> > (2) Prepare the reserved space with prepare_pages()
-> > (3) Call btrfs_copy_from_user() to copy to the prepared space.
-> > -------------> From btrfs_copy_from_user()
-> > (4) ........Try to copy with copied = iov_iter_copy_from_user_atomic()
-> > (5) ........The above operation results with copied == 0. Break and
-> > return with a return value of 0 bytes copied.
-> > (6) There is no special handling for copied == 0 in the "while
-> > (iov_iter_count(&i) > 0) {}" loop, so it loops back around, reserves
-> > some more space, and tries again.
-> >
-> > If I look back at how the code was set up before the patch at the head
-> > of this thread was applied (Btrfs: pwrite blocked when writing from
-> > the mmaped buffer of the same page), the btrfs_copy_from_user()
-> > function had some handling for "copied == 0" that would change the
-> > scope of the amount to write, and loop back to try the write again.
-> >
-> > I attempted to construct a patch that just reverted the handling for
-> > "copied == 0" in btrfs_copy_from_user(), however, that just resulted
-> > in my computer locking up when it reached the point where it was
-> > previously beginning to allocate disk space.
-> >
-> > So, I apologize for not having a patch to address the issue I'm
-> > seeing, but I hope I've added some insight.
-> >
-> 
-> Some clarification on my previous message...
-> 
-> After looking at my ftrace log more closely, I can see where Btrfs is
-> trying to release the allocated pages.  However, the calculation for
-> the number of dirty_pages is equal to 1 when "copied == 0".
-> 
-> So I'm seeing at least two problems:
-> (1)  It keeps looping when "copied == 0".
-> (2)  One dirty page is not being released on every loop even though
-> "copied == 0" (at least this problem keeps it from being an infinite
-> loop by eventually exhausting reserveable space on the disk).
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--Apple-Mail-255-380079958
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=iso-8859-1
 
-Very nice, I think you're exactly right.  I should be able to reproduce this
-now, thanks!
+Hello,
 
--chris
+Please note that my experience with btrfs is both recent and, above all, =
+very small. However, I've been wondering about the same issue for a =
+different purpose and your question intrigues me.
+
+However, and I may be off-base here, I think that wouldn't be trivial to =
+achieve.=20
+
+Even if one would be able to differ the metadata changes between both =
+snapshots, the problem would still be present regarding finding the =
+changed data. It would be possible to check for changed extents, at =
+least by comparing extent checksums, but I don't think it would be =
+trivial to discover where (exactly) the extent was modified.
+
+I would recommend using the generation fields, whenever applicable, but =
+I believe these are private to each subvolume/snapshot.
+
+
+Anyway, I wonder if keeping a data structure (I would go with a tree) =
+containing metadata regarding the changed files, within the file system, =
+could be a plausible solution, but I'm in no condition =
+(btrfs-knowledge-wise) to make such statement.
+
+
+Cheers.
+
+---
+Jo=E3o Eduardo Lu=EDs
+gpg key: 477C26E5 from pool.keyserver.eu=20
+
+
+
+
+
+On Feb 25, 2011, at 9:59 AM, Arvin Schnell wrote:
+
+> Hi,
+>=20
+> for a backup program I have to find all differing files
+> (including metadata) in two snapshots taken from the same
+> subvolume.
+>=20
+> Having looked at the find-new command I thought about this
+> process:
+>=20
+> 1. Get the two transids when the two snapshots were created.
+>=20
+> 2. Query modifications to the original subvolume between the two
+>   transids.
+>=20
+> Is the general process corrent or have I overseen something?
+>=20
+> AFAIS the btrfs tool does not provide the required
+> information/commands. Would it be possible to add those?
+>=20
+> Thanks in advance,
+>  Arvin
+>=20
+> --=20
+> Arvin Schnell, <aschnell@suse.de>
+> Senior Software Engineer, Research & Development
+> SUSE LINUX Products GmbH, GF: Markus Rex, HRB 16746 (AG N=FCrnberg)
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+--Apple-Mail-255-380079958
+content-type: application/pgp-signature; x-mac-type=70674453;
+	name=PGP.sig
+content-description: This is a digitally signed message part
+content-disposition: inline; filename=PGP.sig
+content-transfer-encoding: 7bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2.0.16 (Darwin)
+
+iQEcBAEBAgAGBQJNaAPNAAoJEJ9vvxhHfCblIuAH/24aObhz6cVy1u9UnCqH9nBN
+655v/C9RwdwO11N9ZXF7BzeMGHOhf6kXwwHwqXDaSc6MpIU+aB7f4nBc7ExsOUFu
+3/LaePrPxaL/ruaLqNsG2sXEC/ncQboq3rMtnPgZJB5YVmIglVAhlB/EdZmDxY8C
+vHuzqysqs7ybDr/khxkioDMCxqEqCcZdjCdTWqspgoXFXgZSDk3zUAjEMLS5Tkw9
+IrsgLbVvvRu91aF/Upz5Xy4+vXNjmcYg5AP+IwfahYpHp3KfQS4Peq7U22eauXoD
+jdi21lT/tqxAks+LaGhDLsj3zD0xFSCZzLyv5L0Q8knSLFaw+3MHvqtCG1fRADA=
+=V3Mw
+-----END PGP SIGNATURE-----
+
+--Apple-Mail-255-380079958--

@@ -1,56 +1,76 @@
-From: TAXI <taxi@a-city.de>
-Subject: FS Errors with 2.6.37
-Date: Mon, 28 Feb 2011 08:30:38 +0100
-Message-ID: <20110228083038.18d56790@schlepptop>
+From: Marco Stornelli <marco.stornelli@gmail.com>
+Subject: Re: [PATCH] Check for immutable flag in fallocate path
+Date: Mon, 28 Feb 2011 08:53:31 +0100
+Message-ID: <AANLkTinKCUeHLmz3CFh_k3oxEW-p8ta0djGFK3q8vQ+0__11826.4710916721$1298879639$gmane$org@mail.gmail.com>
+References: <4D6221B8.9040303@gmail.com>
+	<20110221124635.GA5525@infradead.org>
+	<AANLkTi=bJBeR0m3xuGX_9YZPqRFuMY=bKoxZEWJt37=M@mail.gmail.com>
+	<20110227224940.GL2924@thunk.org>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/1E16CzvVukCmTWi/0sXONWb"; protocol="application/pgp-signature"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: "Ted Ts'o" <tytso@mit.edu>,
+	Marco Stornelli <marco.stornelli@gmail.com>,
+	Christoph Hellwig <hch@infradead.org>,
+	Linux Kernel <linux-kernel@vger.kernel.org>,
+	cluster-devel@redhat.com,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110227224940.GL2924@thunk.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/1E16CzvVukCmTWi/0sXONWb
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+2011/2/27 Ted Ts'o <tytso@mit.edu>:
+> On Mon, Feb 21, 2011 at 05:50:21PM +0100, Marco Stornelli wrote:
+>> 2011/2/21 Christoph Hellwig <hch@infradead.org>:
+>> > On Mon, Feb 21, 2011 at 09:26:32AM +0100, Marco Stornelli wrote:
+>> >> From: Marco Stornelli <marco.stornelli@gmail.com>
+>> >>
+>> >> All fs must check for the immutable flag in their fallocate callb=
+ack.
+>> >> It's possible to have a race condition in this scenario: an appli=
+cation
+>> >> open a file in read/write and it does something, meanwhile root s=
+et the
+>> >> immutable flag on the file, the application at that point can cal=
+l
+>> >> fallocate with success. Only Ocfs2 check for the immutable flag a=
+t the
+>> >> moment.
+>> >
+>> > Please add the check in fs/open.c:do_fallocate() so that it covers=
+ all
+>> > filesystems.
+>> >
+>> >
+>>
+>> The check should be done after the fs got the inode mutex lock.
+>
+> Why? =A0None of the other places which check the IMMUTABLE flag do so
+> under the inode mutex lock. =A0Yes, it's true that we're not properly
+> doing proper locking when updating i_flags from the ioctl (this is
+> true for all file systems), but this has been true for quite some
+> time, and using a mutex to protect bit set/clear/test operations woul=
+d
+> be like using a sledgehammer to kill a fly.
+>
+> A proper fix if we want to be completely correct about updates to
+> i_flags would involve using test_bit, set_bit, and clear_bit, which i=
+s
+> guaranteed to be atomic. =A0This is how we update the
+> ext4_inode_info->i_flags (which is different from inode->i_flags) (se=
+e
+> the definition and use of EXT4_INODE_BIT_FNS in fs/ext4/ext4.h).
+>
+> At some point, it would be good to fix how we set/get i_flags values,
+> but that's independent of the change that's being discussed here.
+>
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
+ =A0 =A0 =A0 =A0 =A0 =A0 =A0- Ted
+>
 
-Hi,
-I updated my kernel from 2.6.36 to 2.6.37 today but now I can't boot
-anymore. The kernel sends BUG messages for BTRFS and couse of
-that different services won't start correctly. Which services are
-affected seems to chance from boot to boot and at the end the computer
-hangs and my only change to reboot is using MagicSysRQ. I could save
-the output of dmesg after one boot (which was hard couse the time I can
-log me in and do things till the system hangs is short). Also when I'm
-using magicSysRQ for syncing/unmounting partitions the BUG messages are
-looping a few seconds.
+I was thinking to the possible race with setattr callback.
 
-Here is the relevant part of dmesg: http://pastebin.com/ideNvhBH
-And (if needed) the full dmesg: http://pastebin.com/xDEct6TZ
-The dmesg after booting with 2.6.36: http://pastebin.com/puT6Wx0v
-The output of btrfsck: http://pastebin.com/9HbkVwLf
-And a (bad quality) image of the (end of the) message when using
-MagicSysRQ: http://img17.imageshack.us/img17/6895/dsc01892ja.jpg
-
-I can still boot with the old 2.6.36 kernel.
-Is there any way to access my data correctly with the 2.6.37 kernel?
-
-P.S. Sorry for my bad english. :)
-
---Sig_/1E16CzvVukCmTWi/0sXONWb
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.16 (GNU/Linux)
-Comment: Public Key: http://tinyurl.com/34e7nuv
-
-iQEcBAEBAgAGBQJNa08kAAoJEKLAseaYKARoSTIH/0iijDfth6q4r+e0WbJq/8CM
-pQb8i7Amk8gCxB3hfpDdWU2uHxFDpjoAJSmFMAVJu5XdkLAIcGP/RGwIdputlkmD
-PQV0x9NvX7/TplC3zlY16SzABjuWQP0+qdNXB9If5xV7JwfisJYj8JkwneFIkBzC
-wxZwj5MCd2cLZm6sII1qTveFWNUl+7zvhkKlPkEgHo/9sucgD6+uQgB2xqRTAcEQ
-dyKGZNMooL55xsgamFKRYbwYa4nqc5a6Y1AkMfI8ZkkM5f5VSQ3/6gMvPqRnz61a
-QWw7UtngiMEjHUpqpvdjfpE18t8JLzdHllsIKETHPyrJ+b5cZUMu6emv1YhQDY8=
-=ZwsW
------END PGP SIGNATURE-----
-
---Sig_/1E16CzvVukCmTWi/0sXONWb--
+Marco
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

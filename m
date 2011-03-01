@@ -1,145 +1,60 @@
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
+From: Piotr Szymaniak <szarpaj@grubelek.pl>
 Subject: Re: [PATCH] btrfs file write debugging patch
-Date: Tue, 1 Mar 2011 15:09:15 -0600
-Message-ID: <AANLkTi=6G2A1Lb6aWwtFeLgJvV2k_syss4rRfokbFG56@mail.gmail.com>
-References: <BAY156-w43472A651462DCADA1F9FAD2C10@phx.gbl>
+Date: Tue, 1 Mar 2011 22:56:45 +0100
+Message-ID: <20110301215645.GH26836@wloczykij>
+References: <1298857223-sup-5612@think>
+ <201102281114.00018.johannes.hirte@fem.tu-ilmenau.de>
+ <20110228161056.GA2769@localhost.localdomain>
+ <1298911556.11118.8.camel@mainframe>
+ <AANLkTin_Hjr3StjWUGrwCHBzhk_kwj-G2WqxZM6=CqN2@mail.gmail.com>
+ <AANLkTikex7g4+dc9qiPdL_xRk5SoFxE3TCfN7dg3kaR2@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary=bcaec51a7ffc6f3a3c049d7235cc
-Cc: linux-btrfs@vger.kernel.org
-To: Xin Zhong <thierryzhong@hotmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="4PT7esnm3N7vhCZl"
+Cc: Josef Bacik <josef@redhat.com>,
+	Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>,
+	Chris Mason <chris.mason@oracle.com>,
+	"Zhong, Xin" <xin.zhong@intel.com>, linux-btrfs@vger.kernel.org
+To: Mitch Harder <mitch.harder@sabayonlinux.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BAY156-w43472A651462DCADA1F9FAD2C10@phx.gbl>
+In-Reply-To: <AANLkTikex7g4+dc9qiPdL_xRk5SoFxE3TCfN7dg3kaR2@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---bcaec51a7ffc6f3a3c049d7235cc
-Content-Type: text/plain; charset=ISO-8859-1
+
+--4PT7esnm3N7vhCZl
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
-2011/3/1 Xin Zhong <thierryzhong@hotmail.com>:
->
-> Hi, Mitch
-> I think you can config ftrace to just trace function calls of btrfs.ko wh=
-ich will save a lot of trace buffer space. See below command:
-> #echo ':mod:btrfs' > /sys/kernel/debug/tracing/set_ftrace_filterAnd pleas=
-e send out the full ftrace log again.
->
-> Another helpful information might be the strace log of the wmldbcreate pr=
-ocess. It will show us the io pattern of this command.
-> Thanks a lot for your help!
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->
+On Mon, Feb 28, 2011 at 02:20:22PM -0600, Mitch Harder wrote:
+> As promised, I'm put together a modified file.c with many trace_printk
+> debugging statements to augment the ftrace.
+> *snip*
 
-I manually ran an strace around the build command (wmldbcreate) that
-is causing my problem, and I am attaching the strace for that.
+Just my few cents. I've applied the patch from Chris Mason (Sun, 27 Feb
+2011 20:46:05 -0500) and this one from Mitch (Mon, 28 Feb 2011 14:20:22
+-0600) on top of vanilla 2.6.38-rc6 and it seems that it resolves my
+issues with hanging `svn info' during libgcrypt emerge.
 
-Please note that wmldbcreate does not seem to care when an error is
-returned, and continues on.  So the error is occurring somewhat
-silently in the middle, and isn't the last item.  The error is
-probably associated with one of the 12288 byte writes.
+Piotr Szymaniak.
+--=20
+ - (...) Nie wyobrazam sobie, co ta gora miesa moglaby ci dac, czego ja
+nie   moglbym   ofiarowac.  Oczywiscie  poza  piecdziesiecioma  funtami
+rozrosnietych miesni.
+ - Moze mnie wlasnie pociagaja rozrosniete miesnie. (...) W koncu wielu
+mezczyzn pociaga rozrosnieta tkanka tluszczowa piersi.
+  -- Graham Masterton, "The Wells of Hell"
 
-I have re-run an ftrace following the conditions above, and have
-hosted that file (~1.1MB compressed) on my local server at:
+--4PT7esnm3N7vhCZl
+Content-Type: application/pgp-signature
+Content-Disposition: inline
 
-http://dontpanic.dyndns.org/trace-openmotif-btrfs-v15.gz
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.16 (GNU/Linux)
 
-Please note I am still using some debugging modifications of my own to file=
-.c.
+iEYEARECAAYFAk1ta50ACgkQ9xNbxaeWTTzEBQCfWsHcb+l8rhZCjzmnXwT3gIO1
+sOIAoIu4WnrPlwM0tdRmU+zarIhNbPBo
+=rWfy
+-----END PGP SIGNATURE-----
 
-They server the purpose of:
-(1) Avoiding an infinite loop by identifying when the problem is
-occuring, and exiting with error after 256 loops.
-(2) Stopping the trace after exiting to keep from flooding the ftrace buffe=
-r.
-(3) Provide debugging comments (all prefaced with "TPK:" in the trace).
-
-Let me know if you want me to change any of the conditions.
-
---bcaec51a7ffc6f3a3c049d7235cc
-Content-Type: application/x-gzip; name="wmldbcreate-strace.gz"
-Content-Disposition: attachment; filename="wmldbcreate-strace.gz"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_gkrasah20
-
-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
-NDuiPmd+O/gfaUKxP8mCAAA=
---bcaec51a7ffc6f3a3c049d7235cc--
+--4PT7esnm3N7vhCZl--

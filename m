@@ -1,352 +1,476 @@
-From: "Zhong, Xin" <xin.zhong@intel.com>
-Subject: RE: [PATCH] btrfs file write debugging patch
-Date: Tue, 1 Mar 2011 18:14:34 +0800
-Message-ID: <1865303E0DED764181A9D882DEF65FB68662A5EA63@shsmsx502.ccr.corp.intel.com>
-References: <1298857223-sup-5612@think>
-	<201102281114.00018.johannes.hirte@fem.tu-ilmenau.de>
-	<20110228161056.GA2769@localhost.localdomain>
-	<1298911556.11118.8.camel@mainframe>
-	<AANLkTin_Hjr3StjWUGrwCHBzhk_kwj-G2WqxZM6=CqN2@mail.gmail.com>
- <AANLkTikex7g4+dc9qiPdL_xRk5SoFxE3TCfN7dg3kaR2@mail.gmail.com>
+From: Li Dongyang <lidongyang@novell.com>
+Subject: Re: [PATCH V2] Btrfs: Batched discard support for btrfs
+Date: Tue, 1 Mar 2011 18:17:47 +0800
+Message-ID: <201103011817.48010.lidongyang@novell.com>
+References: <201102251616.27741.lidongyang@novell.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: Josef Bacik <josef@redhat.com>,
-	Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>,
-	Chris Mason <chris.mason@oracle.com>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Mitch Harder <mitch.harder@sabayonlinux.org>,
-	=?iso-8859-1?Q?Maria_Wikstr=F6m?= <maria@ponstudios.se>
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Cc: Lukas Czerner <lczerner@redhat.com>,
+	David Sterba <dsterba@suse.cz>, Kurt Garloff <garloff@suse.de>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTikex7g4+dc9qiPdL_xRk5SoFxE3TCfN7dg3kaR2@mail.gmail.com>
+In-Reply-To: <201102251616.27741.lidongyang@novell.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Is your system running out of memory or is there any other thread like =
-flush-btrfs competing for the same page?
+On Friday, February 25, 2011 04:16:27 PM Li Dongyang wrote:
+> Thanks for your comments, here is the updated patch.
+> I've tested it with xfstests 251(thanks to Lukas), and it looks fine to me.
+> 
+when we call btrfs_map_block() for RAID0/1/10/ or DUP, it only returns a single stripe
+length at most, I'm a bit confused why we are doing this and it makes a little trouble to
+this patch: we just trim the first stripe on each device right now.
+We can loop in btrfs_discard_extent(), mapping each stripe and trim them, but I think the
+ideal way is mapping the full length of the free extent and trim that all at once, ideas?
 
-I can only see one process in your ftrace log. You may need to trace al=
-l btrfs.ko function calls instead of a single process. Thanks!
-
------Original Message-----
-=46rom: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-owner@vge=
-r.kernel.org] On Behalf Of Mitch Harder
-Sent: Tuesday, March 01, 2011 4:20 AM
-To: Maria Wikstr=F6m
-Cc: Josef Bacik; Johannes Hirte; Chris Mason; Zhong, Xin; linux-btrfs@v=
-ger.kernel.org
-Subject: Re: [PATCH] btrfs file write debugging patch
-
-2011/2/28 Mitch Harder <mitch.harder@sabayonlinux.org>:
-> 2011/2/28 Maria Wikstr=F6m <maria@ponstudios.se>:
->> m=E5n 2011-02-28 klockan 11:10 -0500 skrev Josef Bacik:
->>> On Mon, Feb 28, 2011 at 11:13:59AM +0100, Johannes Hirte wrote:
->>> > On Monday 28 February 2011 02:46:05 Chris Mason wrote:
->>> > > Excerpts from Mitch Harder's message of 2011-02-25 13:43:37 -05=
-00:
->>> > > > Some clarification on my previous message...
->>> > > >
->>> > > > After looking at my ftrace log more closely, I can see where =
-Btrfs is
->>> > > > trying to release the allocated pages. =A0However, the calcul=
-ation for
->>> > > > the number of dirty_pages is equal to 1 when "copied =3D=3D 0=
-".
->>> > > >
->>> > > > So I'm seeing at least two problems:
->>> > > > (1) =A0It keeps looping when "copied =3D=3D 0".
->>> > > > (2) =A0One dirty page is not being released on every loop eve=
-n though
->>> > > > "copied =3D=3D 0" (at least this problem keeps it from being =
-an infinite
->>> > > > loop by eventually exhausting reserveable space on the disk).
->>> > >
->>> > > Hi everyone,
->>> > >
->>> > > There are actually tow bugs here. =A0First the one that Mitch h=
-it, and a
->>> > > second one that still results in bad file_write results with my
->>> > > debugging hunks (the first two hunks below) in place.
->>> > >
->>> > > My patch fixes Mitch's bug by checking for copied =3D=3D 0 afte=
-r
->>> > > btrfs_copy_from_user and going the correct delalloc accounting.=
- =A0This
->>> > > one looks solved, but you'll notice the patch is bigger.
->>> > >
->>> > > First, I add some random failures to btrfs_copy_from_user() by =
-failing
->>> > > everyone once and a while. =A0This was much more reliable than =
-trying to
->>> > > use memory pressure than making copy_from_user fail.
->>> > >
->>> > > If copy_from_user fails and we partially update a page, we end =
-up with a
->>> > > page that may go away due to memory pressure. =A0But, btrfs_fil=
-e_write
->>> > > assumes that only the first and last page may have good data th=
-at needs
->>> > > to be read off the disk.
->>> > >
->>> > > This patch ditches that code and puts it into prepare_pages ins=
-tead.
->>> > > But I'm still having some errors during long stress.sh runs. =A0=
-Ideas are
->>> > > more than welcome, hopefully some other timezones will kick in =
-ideas
->>> > > while I sleep.
->>> >
->>> > At least it doesn't fix the emerge-problem for me. The behavior i=
-s now the same
->>> > as with 2.6.38-rc3. It needs a 'emerge --oneshot dev-libs/libgcry=
-pt' with no
->>> > further interaction to get the emerge-process hang with a svn-pro=
-cess
->>> > consuming 100% CPU. I can cancel the emerge-process with ctrl-c b=
-ut the
->>> > spawned svn-process stays and it needs a reboot to get rid of it.
->>>
->>> Can you cat /proc/$pid/wchan a few times so we can get an idea of w=
-here it's
->>> looping? =A0Thanks,
->>>
->>> Josef
->>
->> It behaves the same way here with btrfs-unstable.
->> The output of "cat /proc/$pid/wchan" is 0.
->>
->> // Maria
->>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btr=
-fs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at =A0http://vger.kernel.org/majordomo-info.htm=
-l
->>>
->>
->>
->>
->
-> I've applied the patch at the head of this thread (with the jiffies
-> debugging commented out) and I'm attaching a ftrace using the
-> function_graph tracer when I'm stuck in the loop. =A0I've just snippe=
-d
-> out a couple of the loops (the full trace file is quite large, and
-> mostly repititious).
->
-> I'm going to try to modify file.c with some trace_printk debugging to
-> show the values of several of the relevant variables at various
-> stages.
->
-> I'm going to try to exit the loop after 256 tries with an EFAULT so I
-> can stop the tracing at that point and capture a trace of the entry
-> into the problem (the ftrace ring buffer fills up too fast for me to
-> capture the entry point).
->
-
-As promised, I'm put together a modified file.c with many trace_printk
-debugging statements to augment the ftrace.
-
-The trace is ~128K compressed (about 31,600 lines or 2.6MB
-uncompressed), so I'm putting it up on my local server instead of
-attaching.  Let me know if it would be more appropriate to send to the
-list as an attachment.
-
-http://dontpanic.dyndns.org/ftrace-btrfs-file-write-debug-v2.gz
-
-I preface all my trace_printk comments with "TPK:" to make skipping
-through the trace easier.
-
-The trace contains the trace of about 3 or 4 successful passes through
-the btrfs_file_aio_write() function to show what a successful trace
-looks like.
-
-The pass through the btrfs_file_aio_write() that breaks begins on line =
-1088.
-
-I let it loop through the while (iov_iter_count(&i) > 0) {} loop for
-256 times when copied=3D=3D0 (otherwise it would loop infinitely).  The=
-n
-exit out and stop the trace.
-
-=46or reference, here's a diff file for the debugging statements I've
-added to file.c:
-
-Let me know if you would like me to re-run this trial with different
-debugging lines.
-
- fs/btrfs/file.c /usr/src/linux/fs/btrfs/file.c
---- fs/btrfs/file.c	2011-02-28 10:13:45.000000000 -0600
-+++ /usr/src/linux/fs/btrfs/file.c	2011-02-28 13:07:11.000000000 -0600
-@@ -53,12 +53,14 @@
- 	int offset =3D pos & (PAGE_CACHE_SIZE - 1);
- 	int total_copied =3D 0;
-
-+	/***************************
- 	if ((jiffies % 10) =3D=3D 0)
- 		return 0;
-
- 	if ((jiffies % 25) =3D=3D 0) {
- 		write_bytes /=3D 2;
- 	}
-+	**************************/
-
- 	while (write_bytes > 0) {
- 		size_t count =3D min_t(size_t,
-@@ -82,10 +84,13 @@
-
- 		/* Return to btrfs_file_aio_write to fault page */
- 		if (unlikely(copied =3D=3D 0)) {
-+			trace_printk("TPK: unlikely copied =3D=3D 0 in btrfs_copy_from_user
-(total_copied=3D%i)\n",
-+				     total_copied);
- 			break;
- 		}
-
- 		if (unlikely(copied < PAGE_CACHE_SIZE - offset)) {
-+			trace_printk("TPK: unlikely copied < PAGE_CACHE_SIZE - offset in
-btrfs_copy_from_user\n");
- 			offset +=3D copied;
- 		} else {
- 			pg++;
-@@ -910,8 +915,13 @@
- 	int will_write;
- 	int buffered =3D 0;
- 	int copied =3D 0;
-+	int copied_problem =3D 0;
-+	int copied_loop_count =3D 0;
-+	int stop_ftrace =3D 0;
- 	int dirty_pages =3D 0;
-
-+	trace_printk("TPK: Entering btrfs_file_aio_write()\n");
-+
- 	will_write =3D ((file->f_flags & O_DSYNC) || IS_SYNC(inode) ||
- 		      (file->f_flags & O_DIRECT));
-
-@@ -953,6 +963,7 @@
- 	BTRFS_I(inode)->sequence++;
-
- 	if (unlikely(file->f_flags & O_DIRECT)) {
-+		trace_printk("TPK: transferred to unlikely(file->f_flags \& O_DIRECT=
-)\n");
- 		num_written =3D generic_file_direct_write(iocb, iov, &nr_segs,
- 							pos, ppos, count,
- 							ocount);
-@@ -984,6 +995,8 @@
- 		 */
- 		buffered =3D 1;
- 		pos +=3D num_written;
-+		trace_printk("TPK: end unlikely(file->f_flags \& O_DIRECT) with
-num_written=3D%i\n",
-+			     num_written);
- 	}
-
- 	iov_iter_init(&i, iov, nr_segs, count, num_written);
-@@ -1003,6 +1016,8 @@
- 	last_index =3D (pos + iov_iter_count(&i)) >> PAGE_CACHE_SHIFT;
-
- 	while (iov_iter_count(&i) > 0) {
-+		trace_printk("TPK: start section while (iov_iter_count() > 0)\n");
-+
- 		size_t offset =3D pos & (PAGE_CACHE_SIZE - 1);
- 		size_t write_bytes =3D min(iov_iter_count(&i),
- 					 nrptrs * (size_t)PAGE_CACHE_SIZE -
-@@ -1010,6 +1025,9 @@
- 		size_t num_pages =3D (write_bytes + offset +
- 				    PAGE_CACHE_SIZE - 1) >> PAGE_CACHE_SHIFT;
-
-+		trace_printk("TPK: iov_iter_count()=3D%i || nr_segs=3D%lu || nrptrs=3D=
-%i
-|| offset=3D%lu || write_bytes=3D%lu || num_pages=3D%lu\n",
-+						iov_iter_count(&i), nr_segs, nrptrs, offset, write_bytes, num_pa=
-ges);
-+
- 		WARN_ON(num_pages > nrptrs);
- 		memset(pages, 0, sizeof(struct page *) * nrptrs);
-
-@@ -1022,6 +1040,19 @@
- 			goto out;
- 		}
-
-+		if (unlikely(copied_problem)) {
-+			copied_loop_count++;
-+			trace_printk("TPK: copied problem(%i)\n",
-+				     copied_loop_count);
-+			/* Give up if we've already tried 256 times */
-+			if (copied_loop_count > 256) {
-+				ret =3D -EFAULT;
-+				stop_ftrace =3D 1;
-+				trace_printk("TPK: copied loop count exceeded, returning EFAULT...=
-=2E\n");
-+				goto out;
-+			}
-+		}
-+
- 		ret =3D btrfs_delalloc_reserve_space(inode,
- 					num_pages << PAGE_CACHE_SHIFT);
- 		if (ret)
-@@ -1045,6 +1076,10 @@
- 				       PAGE_CACHE_SIZE - 1) >>
- 				       PAGE_CACHE_SHIFT;
-
-+		if (copied =3D=3D 0) {
-+			copied_problem =3D 1;
-+		}
-+
- 		if (num_pages > dirty_pages) {
- 			if (copied > 0)
- 				atomic_inc(
-@@ -1080,11 +1115,19 @@
- 		num_written +=3D copied;
-
- 		cond_resched();
-+		trace_printk("TPK: end section while (iov_iter_count() > 0)\n");
-+		trace_printk(" copied=3D%i || dirty_pages=3D%i || num_written=3D%i |=
-|
-ending iov_iter_count=3D%i\n",
-+						copied, dirty_pages, num_written, iov_iter_count(&i) );
- 	}
- out:
-+	trace_printk("TPK: Reached: out:\n");
-+
- 	mutex_unlock(&inode->i_mutex);
--	if (ret)
-+	if (ret) {
- 		err =3D ret;
-+		trace_printk("TPK: ret,err had value %i when out: was reached
-(num_written: %i)\n",
-+			     ret, num_written);
-+	}
-
- 	kfree(pages);
- 	*ppos =3D pos;
-@@ -1140,6 +1183,19 @@
- 	}
- done:
- 	current->backing_dev_info =3D NULL;
-+	if (ret) {
-+		trace_printk("TPK: btrfs_file_aio_write exiting with non-zero ret
-value (%i)\n", ret);
-+		trace_printk("TPK: Returning num_written (%i) ? num_written (%i) :
-err (%i) =3D %i\n",
-+				num_written, num_written, err, num_written ? num_written : err);
-+	} else {
-+		trace_printk("TPK: btrfs_file_aio_write exiting normally with (%i)",
-+			     num_written ? num_written : err);
-+	}
-+=09
-+	if (unlikely(stop_ftrace)) {
-+		tracing_off();
-+	}
-+
- 	return num_written ? num_written : err;
- }
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Thanks a lot,
+Li Dongyang
+> Signed-off-by: Li Dongyang <lidongyang@novell.com>
+> Reviewed-by: David Sterba <dsterba@suse.cz>
+> Reviewed-by: Kurt Garloff <garloff@suse.de>
+> ---
+> Changelog V2:
+>     *Check if we have devices support trim before trying to trim the fs, also adjust
+>       minlen according to the discard_granularity.
+>     *Update reserved extent calculations in btrfs_trim_block_group().
+>     *Call cond_resched() without checking need_resched()
+>     *Use bitmap_clear_bits() and unlink_free_space() instead of btrfs_remove_free_space(),
+>       so we won't search the same extent for twice.
+>     *Try harder in btrfs_discard_extent(), now we won't report errors
+>      if it's not a EOPNOTSUPP.
+>     *make sure the block group is cached before trimming it,or we'll see an empty caching
+>      tree if the block group is not cached.
+>     *Minor return value fix in btrfs_discard_block_group(). 
+> ---
+>  fs/btrfs/ctree.h            |    5 ++-
+>  fs/btrfs/disk-io.c          |    5 ++-
+>  fs/btrfs/extent-tree.c      |  102 +++++++++++++++++++++++++++++++++----------
+>  fs/btrfs/free-space-cache.c |   92 ++++++++++++++++++++++++++++++++++++++
+>  fs/btrfs/free-space-cache.h |    2 +
+>  fs/btrfs/ioctl.c            |   47 ++++++++++++++++++++
+>  6 files changed, 227 insertions(+), 26 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 2c98b3a..5cbc05c 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -2147,6 +2147,8 @@ int btrfs_free_extent(struct btrfs_trans_handle *trans,
+>  		      u64 root_objectid, u64 owner, u64 offset);
+>  
+>  int btrfs_free_reserved_extent(struct btrfs_root *root, u64 start, u64 len);
+> +int btrfs_update_reserved_bytes(struct btrfs_block_group_cache *cache,
+> +				u64 num_bytes, int reserve, int sinfo);
+>  int btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
+>  				struct btrfs_root *root);
+>  int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
+> @@ -2217,7 +2219,8 @@ u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo);
+>  int btrfs_error_unpin_extent_range(struct btrfs_root *root,
+>  				   u64 start, u64 end);
+>  int btrfs_error_discard_extent(struct btrfs_root *root, u64 bytenr,
+> -			       u64 num_bytes);
+> +			       u64 num_bytes, u64 *actual_bytes);
+> +int btrfs_trim_fs(struct btrfs_root *root, struct fstrim_range *range);
+>  
+>  /* ctree.c */
+>  int btrfs_bin_search(struct extent_buffer *eb, struct btrfs_key *key,
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index e1aa8d6..bcb9451 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2947,7 +2947,10 @@ static int btrfs_destroy_pinned_extent(struct btrfs_root *root,
+>  			break;
+>  
+>  		/* opt_discard */
+> -		ret = btrfs_error_discard_extent(root, start, end + 1 - start);
+> +		if (btrfs_test_opt(root, DISCARD))
+> +			ret = btrfs_error_discard_extent(root, start,
+> +							 end + 1 - start,
+> +							 NULL);
+>  
+>  		clear_extent_dirty(unpin, start, end, GFP_NOFS);
+>  		btrfs_error_unpin_extent_range(root, start, end);
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index f3c96fc..38100c8 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -36,8 +36,6 @@
+>  static int update_block_group(struct btrfs_trans_handle *trans,
+>  			      struct btrfs_root *root,
+>  			      u64 bytenr, u64 num_bytes, int alloc);
+> -static int update_reserved_bytes(struct btrfs_block_group_cache *cache,
+> -				 u64 num_bytes, int reserve, int sinfo);
+>  static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+>  				struct btrfs_root *root,
+>  				u64 bytenr, u64 num_bytes, u64 parent,
+> @@ -442,7 +440,7 @@ static int cache_block_group(struct btrfs_block_group_cache *cache,
+>  	 * allocate blocks for the tree root we can't do the fast caching since
+>  	 * we likely hold important locks.
+>  	 */
+> -	if (!trans->transaction->in_commit &&
+> +	if (trans && (!trans->transaction->in_commit) &&
+>  	    (root && root != root->fs_info->tree_root)) {
+>  		spin_lock(&cache->lock);
+>  		if (cache->cached != BTRFS_CACHE_NO) {
+> @@ -1740,24 +1738,22 @@ static int remove_extent_backref(struct btrfs_trans_handle *trans,
+>  	return ret;
+>  }
+>  
+> -static void btrfs_issue_discard(struct block_device *bdev,
+> +static int btrfs_issue_discard(struct block_device *bdev,
+>  				u64 start, u64 len)
+>  {
+> -	blkdev_issue_discard(bdev, start >> 9, len >> 9, GFP_KERNEL, 0);
+> +	return blkdev_issue_discard(bdev, start >> 9, len >> 9, GFP_KERNEL, 0);
+>  }
+>  
+>  static int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
+> -				u64 num_bytes)
+> +				u64 num_bytes, u64 *actual_bytes)
+>  {
+>  	int ret;
+>  	u64 map_length = num_bytes;
+> +	u64 discarded_bytes = 0;
+>  	struct btrfs_multi_bio *multi = NULL;
+>  
+> -	if (!btrfs_test_opt(root, DISCARD))
+> -		return 0;
+> -
+>  	/* Tell the block device(s) that the sectors can be discarded */
+> -	ret = btrfs_map_block(&root->fs_info->mapping_tree, READ,
+> +	ret = btrfs_map_block(&root->fs_info->mapping_tree, WRITE,
+>  			      bytenr, &map_length, &multi, 0);
+>  	if (!ret) {
+>  		struct btrfs_bio_stripe *stripe = multi->stripes;
+> @@ -1767,13 +1763,21 @@ static int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
+>  			map_length = num_bytes;
+>  
+>  		for (i = 0; i < multi->num_stripes; i++, stripe++) {
+> -			btrfs_issue_discard(stripe->dev->bdev,
+> -					    stripe->physical,
+> -					    map_length);
+> +			ret = btrfs_issue_discard(stripe->dev->bdev,
+> +						  stripe->physical,
+> +						  map_length);
+> +			if (!ret)
+> +				discarded_bytes += map_length;
+>  		}
+>  		kfree(multi);
+>  	}
+>  
+> +	if (discarded_bytes || ret == -EOPNOTSUPP)
+> +		ret = 0;
+> +
+> +	if (actual_bytes)
+> +		*actual_bytes = discarded_bytes;
+> +
+>  	return ret;
+>  }
+>  
+> @@ -4214,8 +4218,8 @@ int btrfs_pin_extent(struct btrfs_root *root,
+>   * update size of reserved extents. this function may return -EAGAIN
+>   * if 'reserve' is true or 'sinfo' is false.
+>   */
+> -static int update_reserved_bytes(struct btrfs_block_group_cache *cache,
+> -				 u64 num_bytes, int reserve, int sinfo)
+> +int btrfs_update_reserved_bytes(struct btrfs_block_group_cache *cache,
+> +				u64 num_bytes, int reserve, int sinfo)
+>  {
+>  	int ret = 0;
+>  	if (sinfo) {
+> @@ -4353,7 +4357,8 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
+>  		if (ret)
+>  			break;
+>  
+> -		ret = btrfs_discard_extent(root, start, end + 1 - start);
+> +		if (btrfs_test_opt(root, DISCARD))
+> +			ret = btrfs_discard_extent(root, start, end + 1 - start, NULL);
+>  
+>  		clear_extent_dirty(unpin, start, end, GFP_NOFS);
+>  		unpin_extent_range(root, start, end);
+> @@ -4694,10 +4699,10 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
+>  		WARN_ON(test_bit(EXTENT_BUFFER_DIRTY, &buf->bflags));
+>  
+>  		btrfs_add_free_space(cache, buf->start, buf->len);
+> -		ret = update_reserved_bytes(cache, buf->len, 0, 0);
+> +		ret = btrfs_update_reserved_bytes(cache, buf->len, 0, 0);
+>  		if (ret == -EAGAIN) {
+>  			/* block group became read-only */
+> -			update_reserved_bytes(cache, buf->len, 0, 1);
+> +			btrfs_update_reserved_bytes(cache, buf->len, 0, 1);
+>  			goto out;
+>  		}
+>  
+> @@ -5180,7 +5185,7 @@ checks:
+>  					     search_start - offset);
+>  		BUG_ON(offset > search_start);
+>  
+> -		ret = update_reserved_bytes(block_group, num_bytes, 1,
+> +		ret = btrfs_update_reserved_bytes(block_group, num_bytes, 1,
+>  					    (data & BTRFS_BLOCK_GROUP_DATA));
+>  		if (ret == -EAGAIN) {
+>  			btrfs_add_free_space(block_group, offset, num_bytes);
+> @@ -5401,10 +5406,11 @@ int btrfs_free_reserved_extent(struct btrfs_root *root, u64 start, u64 len)
+>  		return -ENOSPC;
+>  	}
+>  
+> -	ret = btrfs_discard_extent(root, start, len);
+> +	if (btrfs_test_opt(root, DISCARD))
+> +		ret = btrfs_discard_extent(root, start, len, NULL);
+>  
+>  	btrfs_add_free_space(cache, start, len);
+> -	update_reserved_bytes(cache, len, 0, 1);
+> +	btrfs_update_reserved_bytes(cache, len, 0, 1);
+>  	btrfs_put_block_group(cache);
+>  
+>  	return ret;
+> @@ -5603,7 +5609,7 @@ int btrfs_alloc_logged_file_extent(struct btrfs_trans_handle *trans,
+>  		put_caching_control(caching_ctl);
+>  	}
+>  
+> -	ret = update_reserved_bytes(block_group, ins->offset, 1, 1);
+> +	ret = btrfs_update_reserved_bytes(block_group, ins->offset, 1, 1);
+>  	BUG_ON(ret);
+>  	btrfs_put_block_group(block_group);
+>  	ret = alloc_reserved_file_extent(trans, root, 0, root_objectid,
+> @@ -8712,7 +8718,55 @@ int btrfs_error_unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
+>  }
+>  
+>  int btrfs_error_discard_extent(struct btrfs_root *root, u64 bytenr,
+> -			       u64 num_bytes)
+> +			       u64 num_bytes, u64 *actual_bytes)
+>  {
+> -	return btrfs_discard_extent(root, bytenr, num_bytes);
+> +	return btrfs_discard_extent(root, bytenr, num_bytes, actual_bytes);
+> +}
+> +
+> +int btrfs_trim_fs(struct btrfs_root *root, struct fstrim_range *range)
+> +{
+> +	struct btrfs_fs_info *fs_info = root->fs_info;
+> +	struct btrfs_block_group_cache *cache = NULL;
+> +	u64 group_trimmed;
+> +	u64 start;
+> +	u64 end;
+> +	u64 trimmed = 0;
+> +	int ret = 0;
+> +
+> +	cache = btrfs_lookup_block_group(fs_info, range->start);
+> +
+> +	while (cache) {
+> +		if (cache->key.objectid >= (range->start + range->len)) {
+> +			btrfs_put_block_group(cache);
+> +			break;
+> +		}
+> +
+> +		start = max(range->start, cache->key.objectid);
+> +		end = min(range->start + range->len,
+> +				cache->key.objectid + cache->key.offset);
+> +
+> +		if (end - start >= range->minlen) {
+> +			if (!block_group_cache_done(cache)) {
+> +				ret = cache_block_group(cache, NULL, root, 0);
+> +				if (!ret)
+> +					wait_block_group_cache_done(cache);
+> +			}
+> +			ret = btrfs_trim_block_group(cache,
+> +						     &group_trimmed,
+> +						     start,
+> +						     end,
+> +						     range->minlen);
+> +
+> +			trimmed += group_trimmed;
+> +			if (ret < 0) {
+> +				btrfs_put_block_group(cache);
+> +				break;
+> +			}
+> +		}
+> +
+> +		cache = next_block_group(fs_info->tree_root, cache);
+> +	}
+> +
+> +	range->len = trimmed;
+> +	return ret;
+>  }
+> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+> index a039065..84801ee 100644
+> --- a/fs/btrfs/free-space-cache.c
+> +++ b/fs/btrfs/free-space-cache.c
+> @@ -2154,3 +2154,95 @@ void btrfs_init_free_cluster(struct btrfs_free_cluster *cluster)
+>  	cluster->block_group = NULL;
+>  }
+>  
+> +int btrfs_trim_block_group(struct btrfs_block_group_cache *block_group,
+> +			   u64 *trimmed, u64 start, u64 end, u64 minlen)
+> +{
+> +	struct btrfs_free_space *entry = NULL;
+> +	struct btrfs_fs_info *fs_info = block_group->fs_info;
+> +	u64 bytes = 0;
+> +	u64 actually_trimmed;
+> +	int ret = 0;
+> +
+> +	*trimmed = 0;
+> +
+> +	while (start < end) {
+> +		spin_lock(&block_group->tree_lock);
+> +
+> +		if (block_group->free_space < minlen) {
+> +			spin_unlock(&block_group->tree_lock);
+> +			break;
+> +		}
+> +
+> +		entry = tree_search_offset(block_group, start, 0, 1);
+> +		if (!entry)
+> +			entry = tree_search_offset(block_group,
+> +						   offset_to_bitmap(block_group,
+> +								    start),
+> +						   1, 1);
+> +
+> +		if (!entry || entry->offset >= end) {
+> +			spin_unlock(&block_group->tree_lock);
+> +			break;
+> +		}
+> +
+> +		if (entry->bitmap) {
+> +			ret = search_bitmap(block_group, entry, &start, &bytes);
+> +			if (!ret) {
+> +				if (start >= end ) {
+> +					spin_unlock(&block_group->tree_lock);
+> +					break;
+> +				}
+> +				bytes = min(bytes, end - start);
+> +				bitmap_clear_bits(block_group, entry,
+> +						  start, bytes);
+> +				if (entry->bytes == 0)
+> +					free_bitmap(block_group, entry);
+> +			} else {
+> +				start = entry->offset + BITS_PER_BITMAP *
+> +					block_group->sectorsize;
+> +				spin_unlock(&block_group->tree_lock);
+> +				ret = 0;
+> +				continue;
+> +			}
+> +		} else {
+> +			start = entry->offset;
+> +			bytes = min(entry->bytes, end - start);
+> +			unlink_free_space(block_group, entry);
+> +			kfree(entry);
+> +		}
+> +
+> +		spin_unlock(&block_group->tree_lock);
+> +
+> +		if (bytes >= minlen) {
+> +			int update_ret;
+> +			update_ret = btrfs_update_reserved_bytes(block_group,
+> +								 bytes, 1, 1);
+> +
+> +			ret = btrfs_error_discard_extent(fs_info->extent_root,
+> +							 start,
+> +							 bytes,
+> +							 &actually_trimmed);
+> +
+> +			btrfs_add_free_space(block_group,
+> +					     start, bytes);
+> +			if (!update_ret)
+> +				btrfs_update_reserved_bytes(block_group,
+> +							    bytes, 0, 1);
+> +
+> +			if (ret)
+> +				break;
+> +			*trimmed += actually_trimmed;
+> +		}
+> +		start += bytes;
+> +		bytes = 0;
+> +
+> +		if (fatal_signal_pending(current)) {
+> +			ret = -ERESTARTSYS;
+> +			break;
+> +		}
+> +
+> +		cond_resched();
+> +	}
+> +
+> +	return ret;
+> +}
+> diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
+> index e49ca5c..65c3b93 100644
+> --- a/fs/btrfs/free-space-cache.h
+> +++ b/fs/btrfs/free-space-cache.h
+> @@ -68,4 +68,6 @@ u64 btrfs_alloc_from_cluster(struct btrfs_block_group_cache *block_group,
+>  int btrfs_return_cluster_to_free_space(
+>  			       struct btrfs_block_group_cache *block_group,
+>  			       struct btrfs_free_cluster *cluster);
+> +int btrfs_trim_block_group(struct btrfs_block_group_cache *block_group,
+> +			   u64 *trimmed, u64 start, u64 end, u64 minlen);
+>  #endif
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index be2d4f6..f0220c5 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -40,6 +40,7 @@
+>  #include <linux/xattr.h>
+>  #include <linux/vmalloc.h>
+>  #include <linux/slab.h>
+> +#include <linux/blkdev.h>
+>  #include "compat.h"
+>  #include "ctree.h"
+>  #include "disk-io.h"
+> @@ -225,6 +226,50 @@ static int btrfs_ioctl_getversion(struct file *file, int __user *arg)
+>  	return put_user(inode->i_generation, arg);
+>  }
+>  
+> +static noinline int btrfs_ioctl_fitrim(struct file *file, void __user *arg)
+> +{
+> +	struct btrfs_root *root = fdentry(file)->d_sb->s_fs_info;
+> +	struct btrfs_fs_info *fs_info = root->fs_info;
+> +	struct btrfs_device *device;
+> +	struct request_queue *q;
+> +	struct fstrim_range range;
+> +	u64 minlen = ULLONG_MAX;
+> +	u64 num_devices = 0;
+> +	int ret;
+> +
+> +	if (!capable(CAP_SYS_ADMIN))
+> +		return -EPERM;
+> +
+> +	mutex_lock(&fs_info->fs_devices->device_list_mutex);
+> +	list_for_each_entry(device, &fs_info->fs_devices->devices, dev_list) {
+> +		if (!device->bdev)
+> +			continue;
+> +		q = bdev_get_queue(device->bdev);
+> +		if (blk_queue_discard(q)) {
+> +			num_devices++;
+> +			minlen = min((u64)q->limits.discard_granularity,
+> +				     minlen);
+> +		}
+> +	}
+> +	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+> +	if (!num_devices) {
+> +		return -EOPNOTSUPP;
+> +	}
+> +
+> +	if (copy_from_user(&range, arg, sizeof(range)))
+> +		return -EFAULT;
+> +
+> +	range.minlen = max(range.minlen, minlen);
+> +	ret = btrfs_trim_fs(root, &range);
+> +	if (ret < 0)
+> +		return ret;
+> +
+> +	if (copy_to_user(arg, &range, sizeof(range)))
+> +		return -EFAULT;
+> +
+> +	return 0;
+> +}
+> +
+>  static noinline int create_subvol(struct btrfs_root *root,
+>  				  struct dentry *dentry,
+>  				  char *name, int namelen,
+> @@ -2385,6 +2430,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+>  		return btrfs_ioctl_setflags(file, argp);
+>  	case FS_IOC_GETVERSION:
+>  		return btrfs_ioctl_getversion(file, argp);
+> +	case FITRIM:
+> +		return btrfs_ioctl_fitrim(file, argp);
+>  	case BTRFS_IOC_SNAP_CREATE:
+>  		return btrfs_ioctl_snap_create(file, argp, 0);
+>  	case BTRFS_IOC_SNAP_CREATE_V2:
+> 

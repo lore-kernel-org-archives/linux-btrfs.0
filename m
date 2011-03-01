@@ -1,50 +1,57 @@
-From: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
-Subject: btrfs wishlist
-Date: Tue, 1 Mar 2011 19:35:42 +0100 (CET)
-Message-ID: <28499638.308.1299004542529.JavaMail.root@zimbra>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-To: linux-btrfs@vger.kernel.org
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: btrfs wishlist
+Date: Tue, 01 Mar 2011 13:39:58 -0500
+Message-ID: <1299004651-sup-1713@think>
+References: <28499638.308.1299004542529.JavaMail.root@zimbra>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <28499638.308.1299004542529.JavaMail.root@zimbra>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all
+Excerpts from Roy Sigurd Karlsbakk's message of 2011-03-01 13:35:42 -0500:
+> Hi all
+> 
+> Having managed ZFS for about two years, I want to post a wishlist.
+> 
+> INCLUDED IN ZFS
+> 
+> - Mirror existing single-drive filesystem, as in 'zfs attach'
 
-Having managed ZFS for about two years, I want to post a wishlist.
+This one is easy, we do plan on adding it.
 
-INCLUDED IN ZFS
+> - RAIDz-stuff - single and hopefully multiple-parity RAID configuration with block-level checksumming
 
-- Mirror existing single-drive filesystem, as in 'zfs attach'
-- RAIDz-stuff - single and hopefully multiple-parity RAID configuration=
- with block-level checksumming
-- Background scrub/fsck
-- Pool-like management with multiple RAIDs/mirrors (VDEVs)
-- Autogrow as in ZFS autoexpand
+We'll have raid56, but it won't be variable stripe size.  There will be
+one stripe size for data and one for metadata but that's it.
 
-NOT INCLUDED IN CURRENT ZFS
+> - Background scrub/fsck
 
-- Adding/removing drives from VDEVs
-- Rebalancing a pool
-- dedup
+These are in the works
 
-This may be a long shot, but can someone tell if this is doable in a ye=
-ar or five?
+> - Pool-like management with multiple RAIDs/mirrors (VDEVs)
 
-Vennlige hilsener / Best regards
+We have a pool of drives now....I'm not sure exactly what the vdevs are.
 
-roy
---
-Roy Sigurd Karlsbakk
-(+47) 97542685
-roy@karlsbakk.net
-http://blogg.karlsbakk.net/
---
-I all pedagogikk er det essensielt at pensum presenteres intelligibelt.=
- Det er et element=C3=A6rt imperativ for alle pedagoger =C3=A5 unng=C3=A5=
- eksessiv anvendelse av idiomer med fremmed opprinnelse. I de fleste ti=
-lfeller eksisterer adekvate og relevante synonymer p=C3=A5 norsk.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> - Autogrow as in ZFS autoexpand
+
+We grow to the available storage now.
+
+> 
+> NOT INCLUDED IN CURRENT ZFS
+> 
+> - Adding/removing drives from VDEVs
+
+We can add and remove drives on the fly today
+
+> - Rebalancing a pool
+
+We can rebalance space between drives today.
+
+> - dedup
+
+ZFS does have dedup we don't yet.  This one has a firm maybe.
+
+
+-chris

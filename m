@@ -1,57 +1,62 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: Freddie Cash <fjwcash@gmail.com>
 Subject: Re: btrfs wishlist
-Date: Tue, 01 Mar 2011 13:39:58 -0500
-Message-ID: <1299004651-sup-1713@think>
+Date: Tue, 1 Mar 2011 11:09:56 -0800
+Message-ID: <AANLkTimdmnWvVQ7LuqpOkvRpmXDibcKXDL86a8DHoWvc@mail.gmail.com>
 References: <28499638.308.1299004542529.JavaMail.root@zimbra>
+	<1299004651-sup-1713@think>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
+Cc: Roy Sigurd Karlsbakk <roy@karlsbakk.net>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <28499638.308.1299004542529.JavaMail.root@zimbra>
+In-Reply-To: <1299004651-sup-1713@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Roy Sigurd Karlsbakk's message of 2011-03-01 13:35:42 -0500:
-> Hi all
-> 
-> Having managed ZFS for about two years, I want to post a wishlist.
-> 
-> INCLUDED IN ZFS
-> 
-> - Mirror existing single-drive filesystem, as in 'zfs attach'
+On Tue, Mar 1, 2011 at 10:39 AM, Chris Mason <chris.mason@oracle.com> wrote:
+> Excerpts from Roy Sigurd Karlsbakk's message of 2011-03-01 13:35:42 -0500:
+>
+>> - Pool-like management with multiple RAIDs/mirrors (VDEVs)
+>
+> We have a pool of drives now....I'm not sure exactly what the vdevs are.
 
-This one is easy, we do plan on adding it.
+This functionality is in btrfs already, but it's using different
+terminology and configuration methods.
 
-> - RAIDz-stuff - single and hopefully multiple-parity RAID configuration with block-level checksumming
+In ZFS, the lowest level in the storage stack is the physical block device.
 
-We'll have raid56, but it won't be variable stripe size.  There will be
-one stripe size for data and one for metadata but that's it.
+You group these block devices together into a virtual device (aka
+vdev).  The possible vdevs are:
+  - single disk vdev, with no redundancy
+  - mirror vdev, with any number of devices (n-way mirroring)
+  - raidz1 vdev, single-parity redundancy
+  - raidz2 vdev, dual-parity redundancy
+  - raidz3 vdev, triple-party redundancy
+  - log vdev, separate device for "journaling", or as a write cache
+  - cache vdev, separate device that acts as a read cache
 
-> - Background scrub/fsck
+A ZFS pool is made up of a collection of the vdevs.
 
-These are in the works
+For example, a simple, non-redundant pool setup for a laptop would be:
+  zpool create laptoppool da0
 
-> - Pool-like management with multiple RAIDs/mirrors (VDEVs)
+To create a pool with a dual-parity vdev using 8 disks:
+  zpool create mypool raidz2 da0 da1 da2 da3 da4 da5 da6 da7
 
-We have a pool of drives now....I'm not sure exactly what the vdevs are.
+To later add to the existing pool:
+  zpool add mypool raidz2 da8 da9 da10 da11 da12 da13 da14 da15
 
-> - Autogrow as in ZFS autoexpand
+Later, you create your ZFS filesystems ontop of the pool.
 
-We grow to the available storage now.
+With btrfs, you setup the redundancy and the filesystem all in one
+shot, thus combining the "vdev" with the "pool" (aka filesystem).
 
-> 
-> NOT INCLUDED IN CURRENT ZFS
-> 
-> - Adding/removing drives from VDEVs
+ZFS has better separation of the different layers (device, pool,
+filesystem), and better tools for working with them (zpool / zfs) but
+similar functionality is (or at least appears to be) in btrfs already.
 
-We can add and remove drives on the fly today
+Using device mapper / md underneath btrfs also gives you a similar setup to ZFS.
 
-> - Rebalancing a pool
-
-We can rebalance space between drives today.
-
-> - dedup
-
-ZFS does have dedup we don't yet.  This one has a firm maybe.
-
-
--chris
+-- 
+Freddie Cash
+fjwcash@gmail.com

@@ -1,184 +1,352 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: [PATCH] Btrfs: check return value of btrfs_alloc_path()
-Date: Tue, 01 Mar 2011 15:48:31 +0900
-Message-ID: <201103010648.AA00009@T-ITOH1.jp.fujitsu.com>
+From: "Zhong, Xin" <xin.zhong@intel.com>
+Subject: RE: [PATCH] btrfs file write debugging patch
+Date: Tue, 1 Mar 2011 18:14:34 +0800
+Message-ID: <1865303E0DED764181A9D882DEF65FB68662A5EA63@shsmsx502.ccr.corp.intel.com>
+References: <1298857223-sup-5612@think>
+	<201102281114.00018.johannes.hirte@fem.tu-ilmenau.de>
+	<20110228161056.GA2769@localhost.localdomain>
+	<1298911556.11118.8.camel@mainframe>
+	<AANLkTin_Hjr3StjWUGrwCHBzhk_kwj-G2WqxZM6=CqN2@mail.gmail.com>
+ <AANLkTikex7g4+dc9qiPdL_xRk5SoFxE3TCfN7dg3kaR2@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=iso-8859-1
+Cc: Josef Bacik <josef@redhat.com>,
+	Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>,
+	Chris Mason <chris.mason@oracle.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Mitch Harder <mitch.harder@sabayonlinux.org>,
+	=?iso-8859-1?Q?Maria_Wikstr=F6m?= <maria@ponstudios.se>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTikex7g4+dc9qiPdL_xRk5SoFxE3TCfN7dg3kaR2@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Adding the check on the return value of btrfs_alloc_path() to several places.
-And, some of callers are modified by this change.
+Is your system running out of memory or is there any other thread like =
+flush-btrfs competing for the same page?
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- fs/btrfs/compression.c |   11 +++++++----
- fs/btrfs/dir-item.c    |   13 +++++++++----
- fs/btrfs/file-item.c   |    2 ++
- fs/btrfs/inode.c       |   23 +++++++++++++++++------
- 4 files changed, 35 insertions(+), 14 deletions(-)
+I can only see one process in your ftrace log. You may need to trace al=
+l btrfs.ko function calls instead of a single process. Thanks!
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 4d2110e..6a700e8 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -657,8 +657,9 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 			atomic_inc(&cb->pending_bios);
- 
- 			if (!(BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)) {
--				btrfs_lookup_bio_sums(root, inode, comp_bio,
--						      sums);
-+				ret = btrfs_lookup_bio_sums(root, inode,
-+							comp_bio, sums);
-+				BUG_ON(ret);
- 			}
- 			sums += (comp_bio->bi_size + root->sectorsize - 1) /
- 				root->sectorsize;
-@@ -683,8 +684,10 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 	ret = btrfs_bio_wq_end_io(root->fs_info, comp_bio, 0);
- 	BUG_ON(ret);
- 
--	if (!(BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM))
--		btrfs_lookup_bio_sums(root, inode, comp_bio, sums);
-+	if (!(BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)) {
-+		ret = btrfs_lookup_bio_sums(root, inode, comp_bio, sums);
-+		BUG_ON(ret);
-+	}
- 
- 	ret = btrfs_map_bio(root, READ, comp_bio, mirror_num, 0);
- 	BUG_ON(ret);
-diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
-index f0cad5a..8bba23a 100644
---- a/fs/btrfs/dir-item.c
-+++ b/fs/btrfs/dir-item.c
-@@ -142,6 +142,10 @@ int btrfs_insert_dir_item(struct btrfs_trans_handle *trans, struct btrfs_root
- 	key.offset = btrfs_name_hash(name, name_len);
- 
- 	path = btrfs_alloc_path();
-+	if (!path) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
- 	path->leave_spinning = 1;
- 
- 	data_size = sizeof(*dir_item) + name_len;
-@@ -151,7 +155,7 @@ int btrfs_insert_dir_item(struct btrfs_trans_handle *trans, struct btrfs_root
- 		ret = PTR_ERR(dir_item);
- 		if (ret == -EEXIST)
- 			goto second_insert;
--		goto out;
-+		goto out_free;
+-----Original Message-----
+=46rom: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-owner@vge=
+r.kernel.org] On Behalf Of Mitch Harder
+Sent: Tuesday, March 01, 2011 4:20 AM
+To: Maria Wikstr=F6m
+Cc: Josef Bacik; Johannes Hirte; Chris Mason; Zhong, Xin; linux-btrfs@v=
+ger.kernel.org
+Subject: Re: [PATCH] btrfs file write debugging patch
+
+2011/2/28 Mitch Harder <mitch.harder@sabayonlinux.org>:
+> 2011/2/28 Maria Wikstr=F6m <maria@ponstudios.se>:
+>> m=E5n 2011-02-28 klockan 11:10 -0500 skrev Josef Bacik:
+>>> On Mon, Feb 28, 2011 at 11:13:59AM +0100, Johannes Hirte wrote:
+>>> > On Monday 28 February 2011 02:46:05 Chris Mason wrote:
+>>> > > Excerpts from Mitch Harder's message of 2011-02-25 13:43:37 -05=
+00:
+>>> > > > Some clarification on my previous message...
+>>> > > >
+>>> > > > After looking at my ftrace log more closely, I can see where =
+Btrfs is
+>>> > > > trying to release the allocated pages. =A0However, the calcul=
+ation for
+>>> > > > the number of dirty_pages is equal to 1 when "copied =3D=3D 0=
+".
+>>> > > >
+>>> > > > So I'm seeing at least two problems:
+>>> > > > (1) =A0It keeps looping when "copied =3D=3D 0".
+>>> > > > (2) =A0One dirty page is not being released on every loop eve=
+n though
+>>> > > > "copied =3D=3D 0" (at least this problem keeps it from being =
+an infinite
+>>> > > > loop by eventually exhausting reserveable space on the disk).
+>>> > >
+>>> > > Hi everyone,
+>>> > >
+>>> > > There are actually tow bugs here. =A0First the one that Mitch h=
+it, and a
+>>> > > second one that still results in bad file_write results with my
+>>> > > debugging hunks (the first two hunks below) in place.
+>>> > >
+>>> > > My patch fixes Mitch's bug by checking for copied =3D=3D 0 afte=
+r
+>>> > > btrfs_copy_from_user and going the correct delalloc accounting.=
+ =A0This
+>>> > > one looks solved, but you'll notice the patch is bigger.
+>>> > >
+>>> > > First, I add some random failures to btrfs_copy_from_user() by =
+failing
+>>> > > everyone once and a while. =A0This was much more reliable than =
+trying to
+>>> > > use memory pressure than making copy_from_user fail.
+>>> > >
+>>> > > If copy_from_user fails and we partially update a page, we end =
+up with a
+>>> > > page that may go away due to memory pressure. =A0But, btrfs_fil=
+e_write
+>>> > > assumes that only the first and last page may have good data th=
+at needs
+>>> > > to be read off the disk.
+>>> > >
+>>> > > This patch ditches that code and puts it into prepare_pages ins=
+tead.
+>>> > > But I'm still having some errors during long stress.sh runs. =A0=
+Ideas are
+>>> > > more than welcome, hopefully some other timezones will kick in =
+ideas
+>>> > > while I sleep.
+>>> >
+>>> > At least it doesn't fix the emerge-problem for me. The behavior i=
+s now the same
+>>> > as with 2.6.38-rc3. It needs a 'emerge --oneshot dev-libs/libgcry=
+pt' with no
+>>> > further interaction to get the emerge-process hang with a svn-pro=
+cess
+>>> > consuming 100% CPU. I can cancel the emerge-process with ctrl-c b=
+ut the
+>>> > spawned svn-process stays and it needs a reboot to get rid of it.
+>>>
+>>> Can you cat /proc/$pid/wchan a few times so we can get an idea of w=
+here it's
+>>> looping? =A0Thanks,
+>>>
+>>> Josef
+>>
+>> It behaves the same way here with btrfs-unstable.
+>> The output of "cat /proc/$pid/wchan" is 0.
+>>
+>> // Maria
+>>
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btr=
+fs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at =A0http://vger.kernel.org/majordomo-info.htm=
+l
+>>>
+>>
+>>
+>>
+>
+> I've applied the patch at the head of this thread (with the jiffies
+> debugging commented out) and I'm attaching a ftrace using the
+> function_graph tracer when I'm stuck in the loop. =A0I've just snippe=
+d
+> out a couple of the loops (the full trace file is quite large, and
+> mostly repititious).
+>
+> I'm going to try to modify file.c with some trace_printk debugging to
+> show the values of several of the relevant variables at various
+> stages.
+>
+> I'm going to try to exit the loop after 256 tries with an EFAULT so I
+> can stop the tracing at that point and capture a trace of the entry
+> into the problem (the ftrace ring buffer fills up too fast for me to
+> capture the entry point).
+>
+
+As promised, I'm put together a modified file.c with many trace_printk
+debugging statements to augment the ftrace.
+
+The trace is ~128K compressed (about 31,600 lines or 2.6MB
+uncompressed), so I'm putting it up on my local server instead of
+attaching.  Let me know if it would be more appropriate to send to the
+list as an attachment.
+
+http://dontpanic.dyndns.org/ftrace-btrfs-file-write-debug-v2.gz
+
+I preface all my trace_printk comments with "TPK:" to make skipping
+through the trace easier.
+
+The trace contains the trace of about 3 or 4 successful passes through
+the btrfs_file_aio_write() function to show what a successful trace
+looks like.
+
+The pass through the btrfs_file_aio_write() that breaks begins on line =
+1088.
+
+I let it loop through the while (iov_iter_count(&i) > 0) {} loop for
+256 times when copied=3D=3D0 (otherwise it would loop infinitely).  The=
+n
+exit out and stop the trace.
+
+=46or reference, here's a diff file for the debugging statements I've
+added to file.c:
+
+Let me know if you would like me to re-run this trial with different
+debugging lines.
+
+ fs/btrfs/file.c /usr/src/linux/fs/btrfs/file.c
+--- fs/btrfs/file.c	2011-02-28 10:13:45.000000000 -0600
++++ /usr/src/linux/fs/btrfs/file.c	2011-02-28 13:07:11.000000000 -0600
+@@ -53,12 +53,14 @@
+ 	int offset =3D pos & (PAGE_CACHE_SIZE - 1);
+ 	int total_copied =3D 0;
+
++	/***************************
+ 	if ((jiffies % 10) =3D=3D 0)
+ 		return 0;
+
+ 	if ((jiffies % 25) =3D=3D 0) {
+ 		write_bytes /=3D 2;
  	}
- 
- 	leaf = path->nodes[0];
-@@ -170,7 +174,7 @@ second_insert:
- 	/* FIXME, use some real flag for selecting the extra index */
- 	if (root == root->fs_info->tree_root) {
- 		ret = 0;
--		goto out;
-+		goto out_free;
++	**************************/
+
+ 	while (write_bytes > 0) {
+ 		size_t count =3D min_t(size_t,
+@@ -82,10 +84,13 @@
+
+ 		/* Return to btrfs_file_aio_write to fault page */
+ 		if (unlikely(copied =3D=3D 0)) {
++			trace_printk("TPK: unlikely copied =3D=3D 0 in btrfs_copy_from_user
+(total_copied=3D%i)\n",
++				     total_copied);
+ 			break;
+ 		}
+
+ 		if (unlikely(copied < PAGE_CACHE_SIZE - offset)) {
++			trace_printk("TPK: unlikely copied < PAGE_CACHE_SIZE - offset in
+btrfs_copy_from_user\n");
+ 			offset +=3D copied;
+ 		} else {
+ 			pg++;
+@@ -910,8 +915,13 @@
+ 	int will_write;
+ 	int buffered =3D 0;
+ 	int copied =3D 0;
++	int copied_problem =3D 0;
++	int copied_loop_count =3D 0;
++	int stop_ftrace =3D 0;
+ 	int dirty_pages =3D 0;
+
++	trace_printk("TPK: Entering btrfs_file_aio_write()\n");
++
+ 	will_write =3D ((file->f_flags & O_DSYNC) || IS_SYNC(inode) ||
+ 		      (file->f_flags & O_DIRECT));
+
+@@ -953,6 +963,7 @@
+ 	BTRFS_I(inode)->sequence++;
+
+ 	if (unlikely(file->f_flags & O_DIRECT)) {
++		trace_printk("TPK: transferred to unlikely(file->f_flags \& O_DIRECT=
+)\n");
+ 		num_written =3D generic_file_direct_write(iocb, iov, &nr_segs,
+ 							pos, ppos, count,
+ 							ocount);
+@@ -984,6 +995,8 @@
+ 		 */
+ 		buffered =3D 1;
+ 		pos +=3D num_written;
++		trace_printk("TPK: end unlikely(file->f_flags \& O_DIRECT) with
+num_written=3D%i\n",
++			     num_written);
  	}
- 	btrfs_release_path(root, path);
- 
-@@ -180,7 +184,7 @@ second_insert:
- 					name, name_len);
- 	if (IS_ERR(dir_item)) {
- 		ret2 = PTR_ERR(dir_item);
--		goto out;
-+		goto out_free;
- 	}
- 	leaf = path->nodes[0];
- 	btrfs_cpu_key_to_disk(&disk_key, location);
-@@ -192,8 +196,9 @@ second_insert:
- 	name_ptr = (unsigned long)(dir_item + 1);
- 	write_extent_buffer(leaf, name, name_ptr, name_len);
- 	btrfs_mark_buffer_dirty(leaf);
--out:
-+out_free:
- 	btrfs_free_path(path);
-+out:
- 	if (ret)
- 		return ret;
- 	if (ret2)
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 4f19a3e..7715a56 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -169,6 +169,8 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
- 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
- 
- 	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
- 	if (bio->bi_size > PAGE_CACHE_SIZE * 8)
- 		path->reada = 2;
- 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 44b9266..ac058c1 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1460,8 +1460,11 @@ static int btrfs_submit_bio_hook(struct inode *inode, int rw, struct bio *bio,
- 		if (bio_flags & EXTENT_BIO_COMPRESSED) {
- 			return btrfs_submit_compressed_read(inode, bio,
- 						    mirror_num, bio_flags);
--		} else if (!skip_sum)
--			btrfs_lookup_bio_sums(root, inode, bio, NULL);
-+		} else if (!skip_sum) {
-+			ret = btrfs_lookup_bio_sums(root, inode, bio, NULL);
-+			if (ret)
-+				return ret;
+
+ 	iov_iter_init(&i, iov, nr_segs, count, num_written);
+@@ -1003,6 +1016,8 @@
+ 	last_index =3D (pos + iov_iter_count(&i)) >> PAGE_CACHE_SHIFT;
+
+ 	while (iov_iter_count(&i) > 0) {
++		trace_printk("TPK: start section while (iov_iter_count() > 0)\n");
++
+ 		size_t offset =3D pos & (PAGE_CACHE_SIZE - 1);
+ 		size_t write_bytes =3D min(iov_iter_count(&i),
+ 					 nrptrs * (size_t)PAGE_CACHE_SIZE -
+@@ -1010,6 +1025,9 @@
+ 		size_t num_pages =3D (write_bytes + offset +
+ 				    PAGE_CACHE_SIZE - 1) >> PAGE_CACHE_SHIFT;
+
++		trace_printk("TPK: iov_iter_count()=3D%i || nr_segs=3D%lu || nrptrs=3D=
+%i
+|| offset=3D%lu || write_bytes=3D%lu || num_pages=3D%lu\n",
++						iov_iter_count(&i), nr_segs, nrptrs, offset, write_bytes, num_pa=
+ges);
++
+ 		WARN_ON(num_pages > nrptrs);
+ 		memset(pages, 0, sizeof(struct page *) * nrptrs);
+
+@@ -1022,6 +1040,19 @@
+ 			goto out;
+ 		}
+
++		if (unlikely(copied_problem)) {
++			copied_loop_count++;
++			trace_printk("TPK: copied problem(%i)\n",
++				     copied_loop_count);
++			/* Give up if we've already tried 256 times */
++			if (copied_loop_count > 256) {
++				ret =3D -EFAULT;
++				stop_ftrace =3D 1;
++				trace_printk("TPK: copied loop count exceeded, returning EFAULT...=
+=2E\n");
++				goto out;
++			}
 +		}
- 		goto mapit;
- 	} else if (!skip_sum) {
- 		/* csum items have already been cloned */
-@@ -1894,10 +1897,10 @@ static int btrfs_io_failed_hook(struct bio *failed_bio,
- 	else
- 		rw = READ;
- 
--	BTRFS_I(inode)->io_tree.ops->submit_bio_hook(inode, rw, bio,
-+	ret = BTRFS_I(inode)->io_tree.ops->submit_bio_hook(inode, rw, bio,
- 						      failrec->last_mirror,
- 						      failrec->bio_flags, 0);
--	return 0;
-+	return ret;
- }
- 
- /*
-@@ -4234,6 +4237,10 @@ static int btrfs_real_readdir(struct file *filp, void *dirent,
- 		filp->f_pos = 2;
++
+ 		ret =3D btrfs_delalloc_reserve_space(inode,
+ 					num_pages << PAGE_CACHE_SHIFT);
+ 		if (ret)
+@@ -1045,6 +1076,10 @@
+ 				       PAGE_CACHE_SIZE - 1) >>
+ 				       PAGE_CACHE_SHIFT;
+
++		if (copied =3D=3D 0) {
++			copied_problem =3D 1;
++		}
++
+ 		if (num_pages > dirty_pages) {
+ 			if (copied > 0)
+ 				atomic_inc(
+@@ -1080,11 +1115,19 @@
+ 		num_written +=3D copied;
+
+ 		cond_resched();
++		trace_printk("TPK: end section while (iov_iter_count() > 0)\n");
++		trace_printk(" copied=3D%i || dirty_pages=3D%i || num_written=3D%i |=
+|
+ending iov_iter_count=3D%i\n",
++						copied, dirty_pages, num_written, iov_iter_count(&i) );
  	}
- 	path = btrfs_alloc_path();
-+	if (!path) {
-+		ret = -ENOMEM;
-+		goto out;
+ out:
++	trace_printk("TPK: Reached: out:\n");
++
+ 	mutex_unlock(&inode->i_mutex);
+-	if (ret)
++	if (ret) {
+ 		err =3D ret;
++		trace_printk("TPK: ret,err had value %i when out: was reached
+(num_written: %i)\n",
++			     ret, num_written);
 +	}
- 	path->reada = 2;
- 
- 	btrfs_set_key_type(&key, key_type);
-@@ -4337,6 +4344,7 @@ nopos:
- 	ret = 0;
- err:
- 	btrfs_free_path(path);
-+out:
- 	return ret;
+
+ 	kfree(pages);
+ 	*ppos =3D pos;
+@@ -1140,6 +1183,19 @@
+ 	}
+ done:
+ 	current->backing_dev_info =3D NULL;
++	if (ret) {
++		trace_printk("TPK: btrfs_file_aio_write exiting with non-zero ret
+value (%i)\n", ret);
++		trace_printk("TPK: Returning num_written (%i) ? num_written (%i) :
+err (%i) =3D %i\n",
++				num_written, num_written, err, num_written ? num_written : err);
++	} else {
++		trace_printk("TPK: btrfs_file_aio_write exiting normally with (%i)",
++			     num_written ? num_written : err);
++	}
++=09
++	if (unlikely(stop_ftrace)) {
++		tracing_off();
++	}
++
+ 	return num_written ? num_written : err;
  }
- 
-@@ -5925,9 +5933,12 @@ static inline int __btrfs_submit_dio_bio(struct bio *bio, struct inode *inode,
- 				   __btrfs_submit_bio_start_direct_io,
- 				   __btrfs_submit_bio_done);
- 		goto err;
--	} else if (!skip_sum)
--		btrfs_lookup_bio_sums_dio(root, inode, bio,
-+	} else if (!skip_sum) {
-+		ret = btrfs_lookup_bio_sums_dio(root, inode, bio,
- 					  file_offset, csums);
-+		if (ret)
-+			goto err;
-+	}
- 
- 	ret = btrfs_map_bio(root, rw, bio, 0, 1);
- err:
-
-
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

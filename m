@@ -1,33 +1,37 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
+From: David Nicol <davidnicol@gmail.com>
 Subject: Re: how to know when all space from a snapshot delete is freed?
-Date: Wed, 02 Mar 2011 22:14:49 +0100
-Message-ID: <4D6EB349.1050507@libero.it>
-References: <iklfnu$efc$1@dough.gmane.org>
-Reply-To: kreijack@inwind.it
+Date: Wed, 2 Mar 2011 15:38:40 -0600
+Message-ID: <AANLkTi=AW27zWD_Oc-eGh5GH3d5d7ngQCx5fUAtP=w7_@mail.gmail.com>
+References: <iklfnu$efc$1@dough.gmane.org> <4D6EB349.1050507@libero.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org, David Nicol <davidnicol@gmail.com>
-To: "Brian J. Murrell" <brian@interlinx.bc.ca>
+Content-Type: text/plain; charset=UTF-8
+Cc: Goffredo Baroncelli <kreijack@libero.it>,
+	"Brian J. Murrell" <brian@interlinx.bc.ca>,
+	linux-btrfs@vger.kernel.org
+To: kreijack@inwind.it
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <iklfnu$efc$1@dough.gmane.org>
+In-Reply-To: <4D6EB349.1050507@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-David worked for some time to a solution to this kind of problem. But I
-don't know if it was merged.
+the patch has been working in production at the sponsor's site for
+some weeks. It has not been merged, or even built by anyone else, to
+my knowledge.
 
-See posts on this ML with subject "PATCH: IOCTL#21 progs"
+The working kernel patch is at https://patchwork.kernel.org/patch/482721/
 
-On 03/02/2011 02:12 PM, Brian J. Murrell wrote:
-> For some time after I issue a snapshot delete, the space in the volume
-> is freed.  It starts to free quite fast and then the progress slows and
-> speeds up again.
-> 
-> Given that the return from the snapshot delete command is immediate and
-> the space is freed asynchronously, how can I determine absolutely that
-> the snapshot has been entirely removed and the space freeing operation
-> is complete?
-> 
-> Cheers,
-> b.
-> 
+The open question, that everyone has more important things to do than
+talk about, is, to flesh out the iputs stuff or discard it or put it
+in as-is.  That question is orthogonal to the function of the
+notification-of-completed-dead-root-removal parts, which are complete
+and work as designed.
 
+On Wed, Mar 2, 2011 at 3:14 PM, Goffredo Baroncelli <kreijack@libero.it> wrote:
+> David worked for some time to a solution to this kind of problem. But I
+> don't know if it was merged.
+>
+> See posts on this ML with subject "PATCH: IOCTL#21 progs"
+
+
+-- 
+"Reasonable, civil, and intelligent people have not left much of a
+mark on history." -- T. Herman Zweibel

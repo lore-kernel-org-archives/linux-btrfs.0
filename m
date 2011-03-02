@@ -1,35 +1,29 @@
 From: David Nicol <davidnicol@gmail.com>
 Subject: Re: how to know when all space from a snapshot delete is freed?
-Date: Wed, 2 Mar 2011 15:38:40 -0600
-Message-ID: <AANLkTi=AW27zWD_Oc-eGh5GH3d5d7ngQCx5fUAtP=w7_@mail.gmail.com>
-References: <iklfnu$efc$1@dough.gmane.org> <4D6EB349.1050507@libero.it>
+Date: Wed, 2 Mar 2011 15:42:11 -0600
+Message-ID: <AANLkTikSmHsBRJ919CAbKv3aN0N0jc2cFyRiM_oL4gkz@mail.gmail.com>
+References: <iklfnu$efc$1@dough.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: Goffredo Baroncelli <kreijack@libero.it>,
-	"Brian J. Murrell" <brian@interlinx.bc.ca>,
-	linux-btrfs@vger.kernel.org
-To: kreijack@inwind.it
+Cc: linux-btrfs@vger.kernel.org
+To: "Brian J. Murrell" <brian@interlinx.bc.ca>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D6EB349.1050507@libero.it>
+In-Reply-To: <iklfnu$efc$1@dough.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-the patch has been working in production at the sponsor's site for
-some weeks. It has not been merged, or even built by anyone else, to
-my knowledge.
+On Wed, Mar 2, 2011 at 7:12 AM, Brian J. Murrell <brian@interlinx.bc.ca> wrote:
 
-The working kernel patch is at https://patchwork.kernel.org/patch/482721/
-
-The open question, that everyone has more important things to do than
-talk about, is, to flesh out the iputs stuff or discard it or put it
-in as-is.  That question is orthogonal to the function of the
-notification-of-completed-dead-root-removal parts, which are complete
-and work as designed.
-
-On Wed, Mar 2, 2011 at 3:14 PM, Goffredo Baroncelli <kreijack@libero.it> wrote:
-> David worked for some time to a solution to this kind of problem. But I
-> don't know if it was merged.
+> Given that the return from the snapshot delete command is immediate and
+> the space is freed asynchronously, how can I determine absolutely that
+> the snapshot has been entirely removed and the space freeing operation
+> is complete?
 >
-> See posts on this ML with subject "PATCH: IOCTL#21 progs"
+> Cheers,
+> b.
+
+since you just want to determine, and not wait, patch your kernel,
+then invoke ioctl#21 with flags of 0x0000 and timeout of 0x0001. you
+will have an answer in approximately one millisecond.
 
 
 -- 

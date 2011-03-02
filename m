@@ -1,32 +1,54 @@
-From: Justin Ossevoort <justin@internetionals.nl>
-Subject: Re: btrfs wishlist
-Date: Wed, 02 Mar 2011 15:18:40 +0100
-Message-ID: <4D6E51C0.1030401@internetionals.nl>
-References: <28499638.308.1299004542529.JavaMail.root@zimbra> <1299004651-sup-1713@think> <4D6E0858.6030603@nsc.liu.se>
+From: Felipe Barriga Richards <fbarriga@algometrics.cl>
+Subject: Bug Report: Warning because of multipath ?
+Date: Wed, 02 Mar 2011 20:49:05 +0000
+Message-ID: <1299098945.5103.198.camel@slave03>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Thomas Bellman <bellman@nsc.liu.se>
+Content-Type: text/plain; charset="UTF-8"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D6E0858.6030603@nsc.liu.se>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/03/11 10:05, Thomas Bellman wrote:
-> Will the stripe *width* be configurable?  If I have something like a
-> Sun Thor with 48 drives, I would probably not be entirely comfortable
-> having 46 drives data and 2 drives parity; too little redundancy for
-> my tastes.  2 drives parity per 10 drives data is more like what I
-> would run, but that would of course be an individual choice.
+Hi everyone,
 
-On thing to remember is is that the parity is for specific pieces of
-file system data. So not your entire dataset is at risk when only write
-errors occur on a few places on a few disks, only file system objects
-that have data stored in those places are at immediate risk. This means
-that only files unlucky enough to have multiple failing sectors for the
-same stripe width to be really impacted.
-Of course this only matters as long as we're talking about bad sectors
-and not full disk failure.
+I've the following configuration:
+Distro: Gentoo
+Kernel: vanilla 2.6.38-rc6 AMD64 
+Details:
+I use btrfs on a Dell MD3000i iSCSI disk. I'm connected with 2 ethernet
+cards with multipath to one raid controller.
+The mounted partition is also accessed from other servers via nfs.
+
+The mount options are: "rw,compress,thread_pool=15,compress-force"
+
+I think that this error happens when the network is under heavy load and
+also the btrfs is having multiple i/o.
 
 Regards,
 
-	justin....
+--- Kernel Message ---
+
+------------[ cut here ]------------
+WARNING: at fs/btrfs/disk-io.c:381 __btree_submit_bio_start+0x2c7/0x300
+[btrfs]()
+Hardware name: PowerEdge R710
+Modules linked in: nfsd btrfs zlib_deflate lzo_decompress lzo_compress
+ipv6 dm_round_robin dm_multipath iscsi_tcp libiscsi_tcp libiscsi
+scsi_transport_iscsi cpufreq_stats cpufreq_powersave cpufreq_ondemand
+acpi_cpufreq freq_table mperf usbhid dm_mod pata_acpi ata_generic
+ehci_hcd ata_piix uhci_hcd bnx2 usbcore dcdbas power_meter sg rtc libata
+processor firmware_class thermal_sys hwmon button
+Pid: 13939, comm: btrfs-worker-1 Not tainted 2.6.38-rc6 #1
+Call Trace:
+ [<ffffffff810425bb>] ? warn_slowpath_common+0x7b/0xc0
+ [<ffffffffa0219037>] ? __btree_submit_bio_start+0x2c7/0x300 [btrfs]
+ [<ffffffff8104e910>] ? process_timeout+0x0/0x10
+ [<ffffffffa0247c98>] ? worker_loop+0x148/0x530 [btrfs]
+ [<ffffffffa0247b50>] ? worker_loop+0x0/0x530 [btrfs]
+ [<ffffffffa0247b50>] ? worker_loop+0x0/0x530 [btrfs]
+ [<ffffffff8105cea6>] ? kthread+0x96/0xa0
+ [<ffffffff8100ade4>] ? kernel_thread_helper+0x4/0x10
+ [<ffffffff8105ce10>] ? kthread+0x0/0xa0
+ [<ffffffff8100ade0>] ? kernel_thread_helper+0x0/0x10
+---[ end trace ebe62be1d938042c ]---
+
+

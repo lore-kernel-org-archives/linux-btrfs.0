@@ -1,60 +1,45 @@
-From: Piotr Szymaniak <szarpaj@grubelek.pl>
-Subject: Re: [PATCH] btrfs file write debugging patch
-Date: Tue, 1 Mar 2011 22:56:45 +0100
-Message-ID: <20110301215645.GH26836@wloczykij>
-References: <1298857223-sup-5612@think>
- <201102281114.00018.johannes.hirte@fem.tu-ilmenau.de>
- <20110228161056.GA2769@localhost.localdomain>
- <1298911556.11118.8.camel@mainframe>
- <AANLkTin_Hjr3StjWUGrwCHBzhk_kwj-G2WqxZM6=CqN2@mail.gmail.com>
- <AANLkTikex7g4+dc9qiPdL_xRk5SoFxE3TCfN7dg3kaR2@mail.gmail.com>
+From: Marco Stornelli <marco.stornelli@gmail.com>
+Subject: Re: [PATCH] Check for immutable flag in fallocate path
+Date: Wed, 02 Mar 2011 09:19:54 +0100
+Message-ID: <4D6DFDAA.3060006__20604.1084406481$1299054346$gmane$org@gmail.com>
+References: <4D6221B8.9040303@gmail.com> <20110221124635.GA5525@infradead.org> <AANLkTi=bJBeR0m3xuGX_9YZPqRFuMY=bKoxZEWJt37=M@mail.gmail.com> <20110227224940.GL2924@thunk.org>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="4PT7esnm3N7vhCZl"
-Cc: Josef Bacik <josef@redhat.com>,
-	Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>,
-	Chris Mason <chris.mason@oracle.com>,
-	"Zhong, Xin" <xin.zhong@intel.com>, linux-btrfs@vger.kernel.org
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Ted Ts'o <tytso@mit.edu>, Christoph Hellwig <hch@infradead.org>,
+	Linux Kernel <linux-kernel@vger.kernel.org>,
+	cluster-devel@redhat.com,
+	Linux FS Devel <linux-fsdevel@vger.kernel.org>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTikex7g4+dc9qiPdL_xRk5SoFxE3TCfN7dg3kaR2@mail.gmail.com>
+In-Reply-To: <20110227224940.GL2924@thunk.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Il 27/02/2011 23:49, Ted Ts'o ha scritto:
+> On Mon, Feb 21, 2011 at 05:50:21PM +0100, Marco Stornelli wrote:
+>> 2011/2/21 Christoph Hellwig <hch@infradead.org>:
+>>> On Mon, Feb 21, 2011 at 09:26:32AM +0100, Marco Stornelli wrote:
+>>>> From: Marco Stornelli <marco.stornelli@gmail.com>
+>>>>
+>>>> All fs must check for the immutable flag in their fallocate callback.
+>>>> It's possible to have a race condition in this scenario: an application
+>>>> open a file in read/write and it does something, meanwhile root set the
+>>>> immutable flag on the file, the application at that point can call
+>>>> fallocate with success. Only Ocfs2 check for the immutable flag at the
+>>>> moment.
+>>>
+>>> Please add the check in fs/open.c:do_fallocate() so that it covers all
+>>> filesystems.
+>>>
+>>>
+>>
+>> The check should be done after the fs got the inode mutex lock.
+> 
+> Why?  None of the other places which check the IMMUTABLE flag do so
 
---4PT7esnm3N7vhCZl
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+I add to my previous response an other point: IMHO each fs should check
+for it because after the inclusion of punch hole patch, the fs
+can/cannot check for the append-only flag. So XFS (it supports the
+"unreserve") should check even for append. I think we don't want to
+allow this operation for an append-only file, isn't it? About this point
+I'll update and resend my patch.
 
-On Mon, Feb 28, 2011 at 02:20:22PM -0600, Mitch Harder wrote:
-> As promised, I'm put together a modified file.c with many trace_printk
-> debugging statements to augment the ftrace.
-> *snip*
-
-Just my few cents. I've applied the patch from Chris Mason (Sun, 27 Feb
-2011 20:46:05 -0500) and this one from Mitch (Mon, 28 Feb 2011 14:20:22
--0600) on top of vanilla 2.6.38-rc6 and it seems that it resolves my
-issues with hanging `svn info' during libgcrypt emerge.
-
-Piotr Szymaniak.
---=20
- - (...) Nie wyobrazam sobie, co ta gora miesa moglaby ci dac, czego ja
-nie   moglbym   ofiarowac.  Oczywiscie  poza  piecdziesiecioma  funtami
-rozrosnietych miesni.
- - Moze mnie wlasnie pociagaja rozrosniete miesnie. (...) W koncu wielu
-mezczyzn pociaga rozrosnieta tkanka tluszczowa piersi.
-  -- Graham Masterton, "The Wells of Hell"
-
---4PT7esnm3N7vhCZl
-Content-Type: application/pgp-signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.16 (GNU/Linux)
-
-iEYEARECAAYFAk1ta50ACgkQ9xNbxaeWTTzEBQCfWsHcb+l8rhZCjzmnXwT3gIO1
-sOIAoIu4WnrPlwM0tdRmU+zarIhNbPBo
-=rWfy
------END PGP SIGNATURE-----
-
---4PT7esnm3N7vhCZl--
+Marco

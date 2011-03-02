@@ -1,59 +1,100 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: Re: btrfs wishlist
-Date: Wed, 2 Mar 2011 10:43:19 +0000
-Message-ID: <20110302104319.GB22845@carfax.org.uk>
-References: <28499638.308.1299004542529.JavaMail.root@zimbra>
- <1299004651-sup-1713@think>
- <4D6E0858.6030603@nsc.liu.se>
+From: "Zhong, Xin" <xin.zhong@intel.com>
+Subject: RE: [PATCH] btrfs file write debugging patch
+Date: Wed, 2 Mar 2011 18:58:49 +0800
+Message-ID: <1865303E0DED764181A9D882DEF65FB68662CD02C8@shsmsx502.ccr.corp.intel.com>
+References: <BAY156-w43472A651462DCADA1F9FAD2C10@phx.gbl>
+ <AANLkTi=6G2A1Lb6aWwtFeLgJvV2k_syss4rRfokbFG56@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="FkmkrVfFsRoUs1wW"
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Roy Sigurd Karlsbakk <roy@karlsbakk.net>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Thomas Bellman <bellman@nsc.liu.se>
+Content-Type: text/plain; charset=iso-8859-1
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Mitch Harder <mitch.harder@sabayonlinux.org>,
+	Xin Zhong <thierryzhong@hotmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D6E0858.6030603@nsc.liu.se>
+In-Reply-To: <AANLkTi=6G2A1Lb6aWwtFeLgJvV2k_syss4rRfokbFG56@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I downloaded openmotif and run the command as Mitch mentioned and was a=
+ble to recreate the problem locally. And I managed to simplify the comm=
+and into a very simple program which can capture the problem easily. Se=
+e below code:
 
---FkmkrVfFsRoUs1wW
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+static char a[4096*3];
+int main()
+{
+    int fd =3D open("out", O_WRONLY|O_CREAT|O_TRUNC, 0666);
+    write(fd,a+1, 4096*2);
+    exit(0);
+}
 
-On Wed, Mar 02, 2011 at 10:05:28AM +0100, Thomas Bellman wrote:
-> On 2011-03-01 19:39, Chris Mason wrote:
-> 
-> > We'll have raid56, but it won't be variable stripe size.  There will be
-> > one stripe size for data and one for metadata but that's it.
-> 
-> Will the stripe *width* be configurable?  If I have something like a
-> Sun Thor with 48 drives, I would probably not be entirely comfortable
-> having 46 drives data and 2 drives parity; too little redundancy for
-> my tastes.  2 drives parity per 10 drives data is more like what I
-> would run, but that would of course be an individual choice.
+It seems that if we give an unaligned address to btrfs write and the bu=
+ffer reside on more than 2 pages. It will trigger this bug.
+If we give an aligned address to btrfs write, it works well no matter h=
+ow many pages are given.=20
 
-   It's something that's been asked for, but isn't supported by the
-current (proposed) RAID-5/6 code, as far as I'm aware.
+I use ftrace to observe it. It seems iov_iter_fault_in_readable do not =
+trigger pagefault handling when the address is not aligned. I do not qu=
+ite understand the reason behind it. But the solution should be to proc=
+ess the page one by one. And that's also what generic file write routin=
+e does.=20
 
-   Hugo.
+Any suggestion are welcomed. Thanks!
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-      --- Try everything once,  except incest and folk-dancing. ---      
+-----Original Message-----
+=46rom: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-owner@vge=
+r.kernel.org] On Behalf Of Mitch Harder
+Sent: Wednesday, March 02, 2011 5:09 AM
+To: Xin Zhong
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs file write debugging patch
 
---FkmkrVfFsRoUs1wW
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
+2011/3/1 Xin Zhong <thierryzhong@hotmail.com>:
+>
+> Hi, Mitch
+> I think you can config ftrace to just trace function calls of btrfs.k=
+o which will save a lot of trace buffer space. See below command:
+> #echo ':mod:btrfs' > /sys/kernel/debug/tracing/set_ftrace_filterAnd p=
+lease send out the full ftrace log again.
+>
+> Another helpful information might be the strace log of the wmldbcreat=
+e process. It will show us the io pattern of this command.
+> Thanks a lot for your help!
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+"=20
+> in the body of a message to majordomo@vger.kernel.org More majordomo=20
+> info at =A0http://vger.kernel.org/majordomo-info.html
+>
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
+I manually ran an strace around the build command (wmldbcreate) that is=
+ causing my problem, and I am attaching the strace for that.
 
-iD8DBQFNbh9GIKyzvlFcI40RAsmzAKC49FWIpb7MvSsz5xbO6cdz0SYllgCg1f4C
-RI8tiZ/syZNsOvP/69V2XJw=
-=97SA
------END PGP SIGNATURE-----
+Please note that wmldbcreate does not seem to care when an error is ret=
+urned, and continues on.  So the error is occurring somewhat silently i=
+n the middle, and isn't the last item.  The error is probably associate=
+d with one of the 12288 byte writes.
 
---FkmkrVfFsRoUs1wW--
+I have re-run an ftrace following the conditions above, and have hosted=
+ that file (~1.1MB compressed) on my local server at:
+
+http://dontpanic.dyndns.org/trace-openmotif-btrfs-v15.gz
+
+Please note I am still using some debugging modifications of my own to =
+file.c.
+
+They server the purpose of:
+(1) Avoiding an infinite loop by identifying when the problem is occuri=
+ng, and exiting with error after 256 loops.
+(2) Stopping the trace after exiting to keep from flooding the ftrace b=
+uffer.
+(3) Provide debugging comments (all prefaced with "TPK:" in the trace).
+
+Let me know if you want me to change any of the conditions.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

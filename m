@@ -1,40 +1,51 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH 1/3] VFS/ioctl: Add punching-hole support to ioctl().
-Date: Thu, 31 Mar 2011 20:34:50 -0400
-Message-ID: <20110401003450.GD7484__38257.6833748773$1301618576$gmane$org@dhcp231-156.rdu.redhat.com>
-References: <1301556810-8438-1-git-send-email-tristan.ye@oracle.com> <4D94EEC3.2030206@oracle.com> <20110331225618.GB7484@dhcp231-156.rdu.redhat.com> <20110331234454.GB18808@noexit>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Josef Bacik <josef@redhat.com>,
-	Sunil Mushran <sunil.mushran@oracle.com>,
-	Tristan Ye <tristan.ye@oracle.com>, ocfs2-devel@oss.oracle.com,
-	linux-kernel@vger.kernel.org, linux-fsdevel@v
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110331234454.GB18808@noexit>
+Return-Path: <linux-btrfs-owner@vger.kernel.org>
+Received: from mail-ww0-f42.google.com ([74.125.82.42]:54257 "EHLO
+	mail-ww0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755922Ab1CBIZA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Mar 2011 03:25:00 -0500
+Message-ID: <4D6DFDAA.3060006@gmail.com>
+Date: Wed, 02 Mar 2011 09:19:54 +0100
+From: Marco Stornelli <marco.stornelli@gmail.com>
+MIME-Version: 1.0
+To: "Ted Ts'o" <tytso@mit.edu>, Christoph Hellwig <hch@infradead.org>,
+        Linux Kernel <linux-kernel@vger.kernel.org>, cluster-devel@redhat.com,
+        Linux FS Devel <linux-fsdevel@vger.kernel.org>,
+        linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        xfs@oss.sgi.com
+Subject: Re: [PATCH] Check for immutable flag in fallocate path
+References: <4D6221B8.9040303@gmail.com> <20110221124635.GA5525@infradead.org> <AANLkTi=bJBeR0m3xuGX_9YZPqRFuMY=bKoxZEWJt37=M@mail.gmail.com> <20110227224940.GL2924@thunk.org>
+In-Reply-To: <20110227224940.GL2924@thunk.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 31, 2011 at 04:44:55PM -0700, Joel Becker wrote:
-> On Thu, Mar 31, 2011 at 06:56:18PM -0400, Josef Bacik wrote:
-> > On Thu, Mar 31, 2011 at 02:14:43PM -0700, Sunil Mushran wrote:
-> > > Frankly I see no point extending the ioctl interface when we have
-> > > a syscall interface.
-> > >
-> > 
-> > I'd even go so far as to say we could probably axe the xfs and ocfs2 ioctls
-> > since we have the fallocate interface :).  Thanks,
+Il 27/02/2011 23:49, Ted Ts'o ha scritto:
+> On Mon, Feb 21, 2011 at 05:50:21PM +0100, Marco Stornelli wrote:
+>> 2011/2/21 Christoph Hellwig <hch@infradead.org>:
+>>> On Mon, Feb 21, 2011 at 09:26:32AM +0100, Marco Stornelli wrote:
+>>>> From: Marco Stornelli <marco.stornelli@gmail.com>
+>>>>
+>>>> All fs must check for the immutable flag in their fallocate callback.
+>>>> It's possible to have a race condition in this scenario: an application
+>>>> open a file in read/write and it does something, meanwhile root set the
+>>>> immutable flag on the file, the application at that point can call
+>>>> fallocate with success. Only Ocfs2 check for the immutable flag at the
+>>>> moment.
+>>>
+>>> Please add the check in fs/open.c:do_fallocate() so that it covers all
+>>> filesystems.
+>>>
+>>>
+>>
+>> The check should be done after the fs got the inode mutex lock.
 > 
-> 	These ioctls are in long use.  Granted, it is for the small
-> subset of users that know xfs and ocfs2 can do this, but still.
-> <venkman>Breaking userspace is *bad*.</venkman>
+> Why?  None of the other places which check the IMMUTABLE flag do so
 
-Yeah I wasn't serious, though I do wish there was a way to mark these sort of
-interfaces deprecated to give us a path to retire old interfaces.
+I add to my previous response an other point: IMHO each fs should check
+for it because after the inclusion of punch hole patch, the fs
+can/cannot check for the append-only flag. So XFS (it supports the
+"unreserve") should check even for append. I think we don't want to
+allow this operation for an append-only file, isn't it? About this point
+I'll update and resend my patch.
 
-> 	More interesting would be to bring the ioctls up to generic code
-> and have them backended by fallocate.  I'm not sure they map without
-> looking deeper, but it's at least an idea.
-> 
-
-I just did a cursory look and it seems like that would work out ok.  Thanks,
-
-Josef
+Marco

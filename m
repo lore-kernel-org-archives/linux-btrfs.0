@@ -1,111 +1,124 @@
-From: Dan Magenheimer <dan.magenheimer@oracle.com>
-Subject: RE: [PATCH V2 0/3] drivers/staging: zcache: dynamic page cache/swap
- compression
-Date: Thu, 3 Mar 2011 09:29:04 -0800 (PST)
-Message-ID: <763a2305-27c6-4f44-8962-db72b434c037@default>
-References: <20110207032407.GA27404@ca-server1.us.oracle.com>
- <1ddd01a8-591a-42bc-8bb3-561843b31acb@default>
- <AANLkTimFATx-gYVgY_pVdZsySSBmXvKFkhTJUeVFBcop@mail.gmail.com>
- <AANLkTimqSSxHrLhL9t4DOmDeuAA41B9e-qnr+vnUsucL@mail.gmail.com>
- <AANLkTi=4QkV4wtMmDd6+XXhvkva+fq9m5PVYGC0qBUc3@mail.gmail.com>
- <AANLkTimOssgM7JYSpwB=5zmF_JJ2ByH+PWO7N+YZNB_y@mail.gmail.com>
- <e647042e-419e-4e61-a563-e489596bd659@default
- AANLkTim_U+mJtHk7drvqMOmUwd4ro8J0dazZMDsNqH=o@mail.gmail.com>
+From: Dave Chinner <david@fromorbit.com>
+Subject: Re: [PATCH v2] Check for immutable flag in fallocate path
+Date: Fri, 4 Mar 2011 08:39:03 +1100
+Message-ID: <20110303213903.GL15097@dastard>
+References: <4D6221B8.9040303@gmail.com>
+ <4D6F5473.2070709@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Cc: Matt <jackdachef@gmail.com>, gregkh@suse.de,
-        Chris Mason
- <chris.mason@oracle.com>, linux-kernel@vger.kernel.org,
-        linux-mm@kvack.org, ngupta@vflare.org, linux-btrfs@vger.kernel.org,
-        Josef Bacik
- <josef@redhat.com>,
-        Dan Rosenberg <drosenberg@vsecurity.com>,
-        Yan Zheng
- <zheng.z.yan@intel.com>, miaox@cn.fujitsu.com,
-        Li Zefan <lizf@cn.fujitsu.com>
-To: Minchan Kim <minchan.kim@gmail.com>
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <AANLkTim_U+mJtHk7drvqMOmUwd4ro8J0dazZMDsNqH=o@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Linux Kernel <linux-kernel@vger.kernel.org>,
+	linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	cluster-devel@redhat.com, xfs@oss.sgi.com,
+	Linux FS Devel <linux-fsdevel@vger.kernel.org>
+To: Marco Stornelli <marco.stornelli@gmail.com>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <4D6F5473.2070709@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> > I definitely see a bug in cleancache_get_key in the monolithic
-> > zcache+cleancache+frontswap patch I posted on oss.oracle.com
-> > that is corrected in linux-next but I don't see how it could
-> > get provoked by btrfs.
-> >
-> > The bug is that, in cleancache_get_key, the return value of fhfn
-> should
-> > be checked against 255. =C2=A0If the return value is 255,
-> cleancache_get_key
-> > should return -1. =C2=A0This should disable cleancache for any filesyst=
-em
-> > where KEY_MAX is too large.
-> >
-> > But cleancache_get_key always calls fhfn with connectable =3D=3D 0 and
-> > CLEANCACHE_KEY_MAX=3D=3D6 should be greater than
-> BTRFS_FID_SIZE_CONNECTABLE
-> > (which I think should be 5?). =C2=A0And the elements written into the
-> > typecast btrfs_fid should be only writing the first 5 32-bit words.
->=20
-> BTRFS_FID_SIZE_NON_CONNECTALBE is 5,  not BTRFS_FID_SIZE_CONNECTABLE.
-> Anyway, you passed connectable with 0 so it should be only writing the
-> first 5 32-bit words as you said.
-> That's one I missed. ;-)
->=20
-> Thanks.
-> --
-> Kind regards,
-> Minchan Kim
+On Thu, Mar 03, 2011 at 09:42:27AM +0100, Marco Stornelli wrote:
+> From: Marco Stornelli <marco.stornelli@gmail.com>
+> 
+> All fs must check for the immutable flag in their fallocate callback.
+> It's possible to have a race condition in this scenario: an application
+> open a file in read/write and it does something, meanwhile root set the
+> immutable flag on the file, the application at that point can call
+> fallocate with success. Only Ocfs2 check for the immutable flag at the
+> moment.
+> 
+> Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
+> ---
+> Patch is against 2.6.38-rc5
+> 
+> ChangeLog
+> v2: Added the check for append-only file for XFS
+> v1: First draft
+> 
+> --- linux-2.6.38-rc5-orig/fs/ext4/extents.c	2011-02-16 04:23:45.000000000 +0100
+> +++ linux-2.6.38-rc5/fs/ext4/extents.c	2011-02-21 08:43:37.000000000 +0100
+> @@ -3670,6 +3670,12 @@ long ext4_fallocate(struct file *file, i
+>  	 */
+>  	credits = ext4_chunk_trans_blocks(inode, max_blocks);
+>  	mutex_lock(&inode->i_mutex);
+> +
+> +	if (IS_IMMUTABLE(inode)) {
+> +		mutex_unlock(&inode->i_mutex);
+> +		return -EPERM;
+> +	}
+> +
+>  	ret = inode_newsize_ok(inode, (len + offset));
+>  	if (ret) {
+>  		mutex_unlock(&inode->i_mutex);
+> --- linux-2.6.38-rc5-orig/fs/btrfs/file.c	2011-02-16 04:23:45.000000000 +0100
+> +++ linux-2.6.38-rc5/fs/btrfs/file.c	2011-02-21 08:55:58.000000000 +0100
+> @@ -1289,6 +1289,12 @@ static long btrfs_fallocate(struct file
+>  	btrfs_wait_ordered_range(inode, alloc_start, alloc_end - alloc_start);
+>  
+>  	mutex_lock(&inode->i_mutex);
+> +
+> +	if (IS_IMMUTABLE(inode)) {
+> +		ret = -EPERM;
+> +		goto out;
+> +	}
+> +
+>  	ret = inode_newsize_ok(inode, alloc_end);
+>  	if (ret)
+>  		goto out;
+> --- linux-2.6.38-rc5-orig/fs/gfs2/file.c	2011-02-16 04:23:45.000000000 +0100
+> +++ linux-2.6.38-rc5/fs/gfs2/file.c	2011-02-21 09:09:17.000000000 +0100
+> @@ -797,6 +797,11 @@ static long gfs2_fallocate(struct file *
+>  	if (unlikely(error))
+>  		goto out_uninit;
+>  
+> +	if (IS_IMMUTABLE(inode)) {
+> +		error = -EPERM;
+> +		goto out_unlock;
+> +	}
+> +
+>  	if (!gfs2_write_alloc_required(ip, offset, len))
+>  		goto out_unlock;
+>  
+> --- ./linux-2.6.38-rc5/fs/xfs/linux-2.6/xfs_file.c	2011-02-16 04:23:45.000000000 +0100
+> +++ ./linux-2.6.38-rc5/fs/xfs/linux-2.6/xfs_file.c	2011-03-03 09:25:32.000000000 +0100
+> @@ -906,8 +906,18 @@ xfs_file_fallocate(
+>  
+>  	xfs_ilock(ip, XFS_IOLOCK_EXCL);
+>  
+> -	if (mode & FALLOC_FL_PUNCH_HOLE)
+> +	if (mode & FALLOC_FL_PUNCH_HOLE) {
+>  		cmd = XFS_IOC_UNRESVSP;
+> +		if (IS_APPEND(inode)) {
+> +			error = -EPERM;
+> +			goto out_unlock;
+> +		}
+> +	}
 
-Sorry, I realized that I solved this with Matt offlist and never
-posted the solution on-list, so for the archives:
+WTF?  Why does append mode have any effect on whether we can punch
+holes in a file or not? There's no justification for adding this in
+the commit message. Why is it even in a patch that is for checking
+immutable inodes? What is the point of adding it, when all that will
+happen is people will switch to XFS_IOC_UNRESVSP which has never had
+this limitation?
 
-This patch applies on top of the cleancache patch.  It is really
-a horrible hack but solving it correctly requires the interface
-to encode_fh ops to change, which would require changes to many
-filesystems, so best saved for a later time.  If/when cleancache
-gets merged, this patch will need to be applied on top of it
-for btrfs to work properly when cleancache is enabled.
+And this asks bigger questions - why would you allow preallocate
+anywhere but at or beyond EOF on an append mode inode? You can only
+append to the file, so if you're going to add limitations based on
+the append flag, you need to think this through a bit more....
 
-Basically, the problem is that, in all current filesystems,
-obtaining the filehandle requires a dentry ONLY if connectable
-is set.  Otherwise, the dentry is only used to get the inode.
-But cleancache_get_key only has an inode, and the alias list
-of dentries associated with the inode may be empty.  So
-either the encode_fh interface would need to be changed
-or, in this hack-y solution, a dentry is created temporarily
-only for the purpose of dereferencing it.
+> +
+> +	if (IS_IMMUTABLE(inode)) {
+> +		error = -EPERM;
+> +		goto out_unlock;
+> +	}
 
-Signed-off-by: Dan Magenheimer <dan.magenheimer@oracle.com>
+Also, like Christoph said, these checks belong in the generic code,
+not in every filesystem. The same checks have to be made for every
+filesystem, so they should be done before calling out the
+filesystems regardless of what functionality the filesystem actually
+supports.
 
-diff -Napur -X linux-2.6.37.1/Documentation/dontdiff linux-2.6.37.1/mm/clea=
-ncache.c linux-2.6.37.1-fix/mm/cleancache.c
---- linux-2.6.37.1/mm/cleancache.c=092011-02-25 11:38:47.000000000 -0800
-+++ linux-2.6.37.1-fix/mm/cleancache.c=092011-02-25 08:53:46.000000000 -080=
-0
-@@ -78,15 +78,14 @@ static int cleancache_get_key(struct ino
- =09int (*fhfn)(struct dentry *, __u32 *fh, int *, int);
- =09int maxlen =3D CLEANCACHE_KEY_MAX;
- =09struct super_block *sb =3D inode->i_sb;
--=09struct dentry *d;
-=20
- =09key->u.ino =3D inode->i_ino;
- =09if (sb->s_export_op !=3D NULL) {
- =09=09fhfn =3D sb->s_export_op->encode_fh;
- =09=09if  (fhfn) {
--=09=09=09d =3D list_first_entry(&inode->i_dentry,
--=09=09=09=09=09=09struct dentry, d_alias);
--=09=09=09(void)(*fhfn)(d, &key->u.fh[0], &maxlen, 0);
-+=09=09=09struct dentry d;
-+=09=09=09d.d_inode =3D inode;
-+=09=09=09(void)(*fhfn)(&d, &key->u.fh[0], &maxlen, 0);
- =09=09=09if (maxlen > CLEANCACHE_KEY_MAX)
- =09=09=09=09return -1;
- =09=09}
+Cheers,
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

@@ -1,213 +1,98 @@
-From: liubo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH 2/2] Btrfs: Per file/directory controls for COW and compression
-Date: Thu, 03 Mar 2011 16:35:49 +0800
-Message-ID: <4D6F52E5.9040007@cn.fujitsu.com>
+From: Marco Stornelli <marco.stornelli@gmail.com>
+Subject: [PATCH v2] Check for immutable flag in fallocate path
+Date: Thu, 03 Mar 2011 09:42:27 +0100
+Message-ID: <4D6F5473.2070709@gmail.com>
+References: <4D6221B8.9040303@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-fsdevel <linux-fsdevel@vger.kernel.org>
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-15
+Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	cluster-devel@redhat.com, xfs@oss.sgi.com,
+	Linux FS Devel <linux-fsdevel@vger.kernel.org>
+To: Linux Kernel <linux-kernel@vger.kernel.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4D6221B8.9040303@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Marco Stornelli <marco.stornelli@gmail.com>
 
-Data compression and data cow are controlled across the entire FS by mount
-options right now.  ioctls are needed to set this on a per file or per
-directory basis.  This has been proposed previously, but VFS developers
-wanted us to use generic ioctls rather than btrfs-specific ones.
+All fs must check for the immutable flag in their fallocate callback.
+It's possible to have a race condition in this scenario: an application
+open a file in read/write and it does something, meanwhile root set the
+immutable flag on the file, the application at that point can call
+fallocate with success. Only Ocfs2 check for the immutable flag at the
+moment.
 
-According to chris's comment, there should be just one true compression
-method(probably LZO) stored in the super.  However, before this, we would
-wait for that one method is stable enough to be adopted into the super.
-So I list it as a long term goal, and just store it in ram today.
-
-After applying this patch, we can use the generic "FS_IOC_SETFLAGS" ioctl to
-control file and directory's datacow and compression attribute.
-
-NOTE:
- - The compression type is selected by such rules:
-   If we mount btrfs with compress options, ie, zlib/lzo, the type is it.
-   Otherwise, we'll use the default compress type (zlib today).
-
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
 ---
- fs/btrfs/ctree.h   |    1 +
- fs/btrfs/disk-io.c |    6 ++++++
- fs/btrfs/inode.c   |   32 ++++++++++++++++++++++++++++----
- fs/btrfs/ioctl.c   |   41 +++++++++++++++++++++++++++++++++++++----
- 4 files changed, 72 insertions(+), 8 deletions(-)
+Patch is against 2.6.38-rc5
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 28188a7..2639107 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1274,6 +1274,7 @@ struct btrfs_root {
- #define BTRFS_INODE_NODUMP		(1 << 8)
- #define BTRFS_INODE_NOATIME		(1 << 9)
- #define BTRFS_INODE_DIRSYNC		(1 << 10)
-+#define BTRFS_INODE_COMPRESS		(1 << 11)
- 
- /* some macros to generate set/get funcs for the struct fields.  This
-  * assumes there is a lefoo_to_cpu for every type, so lets make a simple
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 3e1ea3e..a894c12 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1762,6 +1762,12 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 
- 	btrfs_check_super_valid(fs_info, sb->s_flags & MS_RDONLY);
- 
-+	/*
-+	 * In the long term, we'll store the compression type in the super
-+	 * block, and it'll be used for per file compression control.
-+	 */
-+	fs_info->compress_type = BTRFS_COMPRESS_ZLIB;
-+
- 	ret = btrfs_parse_options(tree_root, options);
- 	if (ret) {
- 		err = ret;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 44b9266..82ca86f 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -381,7 +381,8 @@ again:
+ChangeLog
+v2: Added the check for append-only file for XFS
+v1: First draft
+
+--- linux-2.6.38-rc5-orig/fs/ext4/extents.c	2011-02-16 04:23:45.000000000 +0100
++++ linux-2.6.38-rc5/fs/ext4/extents.c	2011-02-21 08:43:37.000000000 +0100
+@@ -3670,6 +3670,12 @@ long ext4_fallocate(struct file *file, i
  	 */
- 	if (!(BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS) &&
- 	    (btrfs_test_opt(root, COMPRESS) ||
--	     (BTRFS_I(inode)->force_compress))) {
-+	     (BTRFS_I(inode)->force_compress) ||
-+	     (BTRFS_I(inode)->flags & BTRFS_INODE_COMPRESS))) {
- 		WARN_ON(pages);
- 		pages = kzalloc(sizeof(struct page *) * nr_pages, GFP_NOFS);
- 
-@@ -1253,7 +1254,8 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
- 		ret = run_delalloc_nocow(inode, locked_page, start, end,
- 					 page_started, 0, nr_written);
- 	else if (!btrfs_test_opt(root, COMPRESS) &&
--		 !(BTRFS_I(inode)->force_compress))
-+		 !(BTRFS_I(inode)->force_compress) &&
-+		 !(BTRFS_I(inode)->flags & BTRFS_INODE_COMPRESS))
- 		ret = cow_file_range(inode, locked_page, start, end,
- 				      page_started, nr_written, 1);
- 	else
-@@ -4581,8 +4583,6 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
- 	location->offset = 0;
- 	btrfs_set_key_type(location, BTRFS_INODE_ITEM_KEY);
- 
--	btrfs_inherit_iflags(inode, dir);
--
- 	if ((mode & S_IFREG)) {
- 		if (btrfs_test_opt(root, NODATASUM))
- 			BTRFS_I(inode)->flags |= BTRFS_INODE_NODATASUM;
-@@ -4590,6 +4590,8 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
- 			BTRFS_I(inode)->flags |= BTRFS_INODE_NODATACOW;
- 	}
- 
-+	btrfs_inherit_iflags(inode, dir);
+ 	credits = ext4_chunk_trans_blocks(inode, max_blocks);
+ 	mutex_lock(&inode->i_mutex);
 +
- 	insert_inode_hash(inode);
- 	inode_tree_add(inode);
- 	return inode;
-@@ -6801,6 +6803,26 @@ static int btrfs_getattr(struct vfsmount *mnt,
- 	return 0;
- }
- 
-+/*
-+ * If a file is moved, it will inherit the cow and compression flags of the new
-+ * directory.
-+ */
-+static void fixup_inode_flags(struct inode *dir, struct inode *inode)
-+{
-+	struct btrfs_inode *b_dir = BTRFS_I(dir);
-+	struct btrfs_inode *b_inode = BTRFS_I(inode);
-+
-+	if (b_dir->flags & BTRFS_INODE_NODATACOW)
-+		b_inode->flags |= BTRFS_INODE_NODATACOW;
-+	else
-+		b_inode->flags &= ~BTRFS_INODE_NODATACOW;
-+
-+	if (b_dir->flags & BTRFS_INODE_COMPRESS)
-+		b_inode->flags |= BTRFS_INODE_COMPRESS;
-+	else
-+		b_inode->flags &= ~BTRFS_INODE_COMPRESS;
-+}
-+
- static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
- 			   struct inode *new_dir, struct dentry *new_dentry)
- {
-@@ -6934,6 +6956,8 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
- 		}
- 	}
- 
-+	fixup_inode_flags(new_dir, old_inode);
-+
- 	ret = btrfs_add_link(trans, new_dir, old_inode,
- 			     new_dentry->d_name.name,
- 			     new_dentry->d_name.len, 0, index);
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 73138fa..030bc7b 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -138,6 +138,24 @@ static int btrfs_ioctl_getflags(struct file *file, void __user *arg)
- 	return 0;
- }
- 
-+static int check_flags(unsigned int flags)
-+{
-+	if (flags & ~(FS_IMMUTABLE_FL | FS_APPEND_FL | \
-+		      FS_NOATIME_FL | FS_NODUMP_FL | \
-+		      FS_SYNC_FL | FS_DIRSYNC_FL | \
-+		      FS_NOCOMP_FL | FS_COMPR_FL | \
-+		      FS_NOCOW_FL | FS_COW_FL))
-+		return -EOPNOTSUPP;
-+
-+	if ((flags & FS_NOCOMP_FL) && (flags & FS_COMPR_FL))
-+		return -EINVAL;
-+
-+	if ((flags & FS_NOCOW_FL) && (flags & FS_COW_FL))
-+		return -EINVAL;
-+
-+	return 0;
-+}
-+
- static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- {
- 	struct inode *inode = file->f_path.dentry->d_inode;
-@@ -153,10 +171,9 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 	if (copy_from_user(&flags, arg, sizeof(flags)))
- 		return -EFAULT;
- 
--	if (flags & ~(FS_IMMUTABLE_FL | FS_APPEND_FL | \
--		      FS_NOATIME_FL | FS_NODUMP_FL | \
--		      FS_SYNC_FL | FS_DIRSYNC_FL))
--		return -EOPNOTSUPP;
-+	ret = check_flags(flags);
-+	if (ret)
-+		return ret;
- 
- 	if (!is_owner_or_cap(inode))
- 		return -EACCES;
-@@ -201,6 +218,22 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 	else
- 		ip->flags &= ~BTRFS_INODE_DIRSYNC;
- 
-+	/*
-+	 * The COMPRESS flag can only be changed by users, while the NOCOMPRESS
-+	 * flag may be changed automatically if compression code won't make
-+	 * things smaller.
-+	 */
-+	if (flags & FS_NOCOMP_FL) {
-+		ip->flags &= ~BTRFS_INODE_COMPRESS;
-+		ip->flags |= BTRFS_INODE_NOCOMPRESS;
-+	} else if (flags & FS_COMPR_FL) {
-+		ip->flags |= BTRFS_INODE_COMPRESS;
-+		ip->flags &= ~BTRFS_INODE_NOCOMPRESS;
++	if (IS_IMMUTABLE(inode)) {
++		mutex_unlock(&inode->i_mutex);
++		return -EPERM;
 +	}
-+	if (flags & FS_NOCOW_FL)
-+		ip->flags |= BTRFS_INODE_NODATACOW;
-+	else if (flags & FS_COW_FL)
-+		ip->flags &= ~BTRFS_INODE_NODATACOW;
++
+ 	ret = inode_newsize_ok(inode, (len + offset));
+ 	if (ret) {
+ 		mutex_unlock(&inode->i_mutex);
+--- linux-2.6.38-rc5-orig/fs/btrfs/file.c	2011-02-16 04:23:45.000000000 +0100
++++ linux-2.6.38-rc5/fs/btrfs/file.c	2011-02-21 08:55:58.000000000 +0100
+@@ -1289,6 +1289,12 @@ static long btrfs_fallocate(struct file
+ 	btrfs_wait_ordered_range(inode, alloc_start, alloc_end - alloc_start);
  
- 	trans = btrfs_join_transaction(root, 1);
- 	BUG_ON(IS_ERR(trans));
--- 
-1.6.5.2
+ 	mutex_lock(&inode->i_mutex);
++
++	if (IS_IMMUTABLE(inode)) {
++		ret = -EPERM;
++		goto out;
++	}
++
+ 	ret = inode_newsize_ok(inode, alloc_end);
+ 	if (ret)
+ 		goto out;
+--- linux-2.6.38-rc5-orig/fs/gfs2/file.c	2011-02-16 04:23:45.000000000 +0100
++++ linux-2.6.38-rc5/fs/gfs2/file.c	2011-02-21 09:09:17.000000000 +0100
+@@ -797,6 +797,11 @@ static long gfs2_fallocate(struct file *
+ 	if (unlikely(error))
+ 		goto out_uninit;
+ 
++	if (IS_IMMUTABLE(inode)) {
++		error = -EPERM;
++		goto out_unlock;
++	}
++
+ 	if (!gfs2_write_alloc_required(ip, offset, len))
+ 		goto out_unlock;
+ 
+--- ./linux-2.6.38-rc5/fs/xfs/linux-2.6/xfs_file.c	2011-02-16 04:23:45.000000000 +0100
++++ ./linux-2.6.38-rc5/fs/xfs/linux-2.6/xfs_file.c	2011-03-03 09:25:32.000000000 +0100
+@@ -906,8 +906,18 @@ xfs_file_fallocate(
+ 
+ 	xfs_ilock(ip, XFS_IOLOCK_EXCL);
+ 
+-	if (mode & FALLOC_FL_PUNCH_HOLE)
++	if (mode & FALLOC_FL_PUNCH_HOLE) {
+ 		cmd = XFS_IOC_UNRESVSP;
++		if (IS_APPEND(inode)) {
++			error = -EPERM;
++			goto out_unlock;
++		}
++	}
++
++	if (IS_IMMUTABLE(inode)) {
++		error = -EPERM;
++		goto out_unlock;
++	}
+ 
+ 	/* check the new inode size is valid before allocating */
+ 	if (!(mode & FALLOC_FL_KEEP_SIZE) &&

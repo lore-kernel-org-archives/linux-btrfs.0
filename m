@@ -1,37 +1,28 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: add a comment explaining what btrfs_cont_expand does
-Date: Fri,  4 Mar 2011 15:47:46 -0500
-Message-ID: <1299271666-5952-1-git-send-email-josef@redhat.com>
+From: Alexey A Nikitin <moonwalker@syrius.us>
+Subject: BTRFS fsck tool
+Date: Fri, 4 Mar 2011 17:59:37 -0600
+Message-ID: <AANLkTim1+n4OJcm1iYMQKQZyN9jT2uFUYjAM6=x4pY2g@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Everytime I have to deal with btrfs_cont_expand I stare at it for 20 minutes
-trying to remember what exactly it does and why the hell we need it.  So add a
-comment to save future-Josef some time.  Thanks,
+Hi, everybody
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/inode.c |    6 ++++++
- 1 files changed, 6 insertions(+), 0 deletions(-)
+I have BTRFS RAID0 setup with two disks. After some incident where I
+had to force shutdown machine this array won't mount anymore, even
+after "btrfs device scan". Unfortunately, I don't have backups since I
+can't afford another 4TB of storage. I've read that fsck tool for
+BTRFS that is expected to be released soon should allow recovery from
+this situation, but I can't find info as to where I may find the
+up-to-date release announcements so that I can download it when it's
+out. Can somebody tell me how I can keep track of fsck development
+status?
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index c19d2df..a650b7c 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3557,6 +3557,12 @@ out:
- 	return ret;
- }
- 
-+/*
-+ * This function puts in dummy file extents for the area we're creating a hole
-+ * for.  So if we are truncating this file to a larger size we need to insert
-+ * these file extents so that btrfs_get_extent will return a EXTENT_MAP_HOLE for
-+ * the range between oldsize and size
-+ */
- int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
- {
- 	struct btrfs_trans_handle *trans;
--- 
-1.7.2.3
+Best,
 
+Alexey
+
+--
+This message was created with 100% recycled electrons

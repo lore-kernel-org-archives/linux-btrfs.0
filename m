@@ -1,54 +1,65 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: RE: [PATCH] btrfs file write debugging patch
-Date: Fri, 04 Mar 2011 07:19:39 -0500
-Message-ID: <1299241124-sup-3502@think>
-References: <BAY156-w43472A651462DCADA1F9FAD2C10@phx.gbl> <AANLkTi=6G2A1Lb6aWwtFeLgJvV2k_syss4rRfokbFG56@mail.gmail.com> <1865303E0DED764181A9D882DEF65FB68662CD02C8@shsmsx502.ccr.corp.intel.com> <1299203447-sup-9359@think>
-Content-Type: text/plain; charset=UTF-8
-Cc: "Zhong, Xin" <xin.zhong@intel.com>,
-	Mitch Harder <mitch.harder@sabayonlinux.org>,
-	Xin Zhong <thierryzhong@hotmail.com>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <1299203447-sup-9359@think>
+From: Marco Stornelli <marco.stornelli@gmail.com>
+Subject: Re: [PATCH v2] Check for immutable flag in fallocate path
+Date: Fri, 04 Mar 2011 13:18:36 +0100
+Message-ID: <4D70D89C.6090307@gmail.com>
+References: <4D6221B8.9040303@gmail.com> <4D6F5473.2070709@gmail.com> <20110303213903.GL15097@dastard> <4D709FFC.6000107@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Linux Kernel <linux-kernel@vger.kernel.org>,
+	linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	cluster-devel@redhat.com, xfs@oss.sgi.com,
+	Linux FS Devel <linux-fsdevel@vger.kernel.org>, tytso@mit.edu
+To: Dave Chinner <david@fromorbit.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4D709FFC.6000107@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Chris Mason's message of 2011-03-03 20:51:55 -0500:
-> Excerpts from Zhong, Xin's message of 2011-03-02 05:58:49 -0500:
-> > It seems that if we give an unaligned address to btrfs write and the buffer reside on more than 2 pages. It will trigger this bug.
-> > If we give an aligned address to btrfs write, it works well no matter how many pages are given. 
-> > 
-> > I use ftrace to observe it. It seems iov_iter_fault_in_readable do not trigger pagefault handling when the address is not aligned. I do not quite understand the reason behind it. But the solution should be to process the page one by one. And that's also what generic file write routine does. 
-> > 
-> > Any suggestion are welcomed. Thanks!
+Il 04/03/2011 09:17, Marco Stornelli ha scritto:
+> Hi Dave,
 > 
-> Great job guys.  I'm using this on top of my debugging patch.  It passes
-> the unaligned test but I'll give it a real run tonight and look for
-> other problems.
+> Il 03/03/2011 22:39, Dave Chinner ha scritto:
+>> WTF?  Why does append mode have any effect on whether we can punch
+>> holes in a file or not? There's no justification for adding this in
+>> the commit message. Why is it even in a patch that is for checking
+>> immutable inodes? What is the point of adding it, when all that will
+>> happen is people will switch to XFS_IOC_UNRESVSP which has never had
+>> this limitation?
 > 
-> (This is almost entirely untested, please don't use it quite yet)
+> So according to you, it's legal to do an "unreserve" operation on an
+> append-only file. It's not the same for me, but if the community said
+> that this is the right behavior then ok.
+> 
+>>
+>> And this asks bigger questions - why would you allow preallocate
+>> anywhere but at or beyond EOF on an append mode inode? You can only
+>> append to the file, so if you're going to add limitations based on
+>> the append flag, you need to think this through a bit more....
+>>
+> 
+> I don't understand this point. The theory of operation was:
+> 
+> 1) we don't allow any operation (reserve/unreserve) on a immutable file;
+> 2) we don't allow *unreserve* operation on an append-only file (this
+> check makes sense only for fs that support the unreserve operation).
+> 
+>>
+>> Also, like Christoph said, these checks belong in the generic code,
+>> not in every filesystem. The same checks have to be made for every
+>> filesystem, so they should be done before calling out the
+>> filesystems regardless of what functionality the filesystem actually
+>> supports.
+>>
+> 
+> This was related to the first point, if we remove it then it's ok to
+> check in a common code. Even if I think we should do the check under the
+> inode lock to avoid race between fallocate and setattr, isn't it?
+> 
 
-> 
-> -chris
-> 
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index 89a6a26..6a44add 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -1039,6 +1038,14 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
->  
->          copied = btrfs_copy_from_user(pos, num_pages,
->                         write_bytes, pages, &i);
-> +
-> +        /*
-> +         * if we have trouble faulting in the pages, fall
-> +         * back to one page at a time
-> +         */
-> +        if (copied < write_bytes)
-> +            nrptrs = 1;
-> +
->          if (copied == 0)
->              dirty_pages = 0;
->          else
+Oops, I meant setflags in ioctl path, sorry. At this point I'm waiting
+for response about how to manage the append flag and how to manage the
+lock on the flags. Ted pointed out that a proper fix would be to avoid
+the lock and use bit operation but it requires a deep modification on
+several fs and it could be a separate patch and code review, so I think
+we can choice to use lock/unlock in do_fallocate. I'll resend the patch.
 
-Ok, this is working well for me.  Anyone see any problems with it?
+Marco

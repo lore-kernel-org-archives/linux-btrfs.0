@@ -1,124 +1,62 @@
-From: Dave Chinner <david@fromorbit.com>
-Subject: Re: [PATCH v2] Check for immutable flag in fallocate path
-Date: Fri, 4 Mar 2011 08:39:03 +1100
-Message-ID: <20110303213903.GL15097@dastard>
-References: <4D6221B8.9040303@gmail.com>
- <4D6F5473.2070709@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Linux Kernel <linux-kernel@vger.kernel.org>,
-	linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	cluster-devel@redhat.com, xfs@oss.sgi.com,
-	Linux FS Devel <linux-fsdevel@vger.kernel.org>
-To: Marco Stornelli <marco.stornelli@gmail.com>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <4D6F5473.2070709@gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: RE: [PATCH] btrfs file write debugging patch
+Date: Thu, 03 Mar 2011 20:51:55 -0500
+Message-ID: <1299203447-sup-9359@think>
+References: <BAY156-w43472A651462DCADA1F9FAD2C10@phx.gbl> <AANLkTi=6G2A1Lb6aWwtFeLgJvV2k_syss4rRfokbFG56@mail.gmail.com> <1865303E0DED764181A9D882DEF65FB68662CD02C8@shsmsx502.ccr.corp.intel.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Mitch Harder <mitch.harder@sabayonlinux.org>,
+	Xin Zhong <thierryzhong@hotmail.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: "Zhong, Xin" <xin.zhong@intel.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <1865303E0DED764181A9D882DEF65FB68662CD02C8@shsmsx502.ccr.corp.intel.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 03, 2011 at 09:42:27AM +0100, Marco Stornelli wrote:
-> From: Marco Stornelli <marco.stornelli@gmail.com>
+Excerpts from Zhong, Xin's message of 2011-03-02 05:58:49 -0500:
+> I downloaded openmotif and run the command as Mitch mentioned and was able to recreate the problem locally. And I managed to simplify the command into a very simple program which can capture the problem easily. See below code:
 > 
-> All fs must check for the immutable flag in their fallocate callback.
-> It's possible to have a race condition in this scenario: an application
-> open a file in read/write and it does something, meanwhile root set the
-> immutable flag on the file, the application at that point can call
-> fallocate with success. Only Ocfs2 check for the immutable flag at the
-> moment.
+> #include <sys/types.h>
+> #include <sys/stat.h>
+> #include <fcntl.h>
+> static char a[4096*3];
+> int main()
+> {
+>     int fd = open("out", O_WRONLY|O_CREAT|O_TRUNC, 0666);
+>     write(fd,a+1, 4096*2);
+>     exit(0);
+> }
 > 
-> Signed-off-by: Marco Stornelli <marco.stornelli@gmail.com>
-> ---
-> Patch is against 2.6.38-rc5
+> It seems that if we give an unaligned address to btrfs write and the buffer reside on more than 2 pages. It will trigger this bug.
+> If we give an aligned address to btrfs write, it works well no matter how many pages are given. 
 > 
-> ChangeLog
-> v2: Added the check for append-only file for XFS
-> v1: First draft
+> I use ftrace to observe it. It seems iov_iter_fault_in_readable do not trigger pagefault handling when the address is not aligned. I do not quite understand the reason behind it. But the solution should be to process the page one by one. And that's also what generic file write routine does. 
 > 
-> --- linux-2.6.38-rc5-orig/fs/ext4/extents.c	2011-02-16 04:23:45.000000000 +0100
-> +++ linux-2.6.38-rc5/fs/ext4/extents.c	2011-02-21 08:43:37.000000000 +0100
-> @@ -3670,6 +3670,12 @@ long ext4_fallocate(struct file *file, i
->  	 */
->  	credits = ext4_chunk_trans_blocks(inode, max_blocks);
->  	mutex_lock(&inode->i_mutex);
-> +
-> +	if (IS_IMMUTABLE(inode)) {
-> +		mutex_unlock(&inode->i_mutex);
-> +		return -EPERM;
-> +	}
-> +
->  	ret = inode_newsize_ok(inode, (len + offset));
->  	if (ret) {
->  		mutex_unlock(&inode->i_mutex);
-> --- linux-2.6.38-rc5-orig/fs/btrfs/file.c	2011-02-16 04:23:45.000000000 +0100
-> +++ linux-2.6.38-rc5/fs/btrfs/file.c	2011-02-21 08:55:58.000000000 +0100
-> @@ -1289,6 +1289,12 @@ static long btrfs_fallocate(struct file
->  	btrfs_wait_ordered_range(inode, alloc_start, alloc_end - alloc_start);
->  
->  	mutex_lock(&inode->i_mutex);
-> +
-> +	if (IS_IMMUTABLE(inode)) {
-> +		ret = -EPERM;
-> +		goto out;
-> +	}
-> +
->  	ret = inode_newsize_ok(inode, alloc_end);
->  	if (ret)
->  		goto out;
-> --- linux-2.6.38-rc5-orig/fs/gfs2/file.c	2011-02-16 04:23:45.000000000 +0100
-> +++ linux-2.6.38-rc5/fs/gfs2/file.c	2011-02-21 09:09:17.000000000 +0100
-> @@ -797,6 +797,11 @@ static long gfs2_fallocate(struct file *
->  	if (unlikely(error))
->  		goto out_uninit;
->  
-> +	if (IS_IMMUTABLE(inode)) {
-> +		error = -EPERM;
-> +		goto out_unlock;
-> +	}
-> +
->  	if (!gfs2_write_alloc_required(ip, offset, len))
->  		goto out_unlock;
->  
-> --- ./linux-2.6.38-rc5/fs/xfs/linux-2.6/xfs_file.c	2011-02-16 04:23:45.000000000 +0100
-> +++ ./linux-2.6.38-rc5/fs/xfs/linux-2.6/xfs_file.c	2011-03-03 09:25:32.000000000 +0100
-> @@ -906,8 +906,18 @@ xfs_file_fallocate(
->  
->  	xfs_ilock(ip, XFS_IOLOCK_EXCL);
->  
-> -	if (mode & FALLOC_FL_PUNCH_HOLE)
-> +	if (mode & FALLOC_FL_PUNCH_HOLE) {
->  		cmd = XFS_IOC_UNRESVSP;
-> +		if (IS_APPEND(inode)) {
-> +			error = -EPERM;
-> +			goto out_unlock;
-> +		}
-> +	}
+> Any suggestion are welcomed. Thanks!
 
-WTF?  Why does append mode have any effect on whether we can punch
-holes in a file or not? There's no justification for adding this in
-the commit message. Why is it even in a patch that is for checking
-immutable inodes? What is the point of adding it, when all that will
-happen is people will switch to XFS_IOC_UNRESVSP which has never had
-this limitation?
+Great job guys.  I'm using this on top of my debugging patch.  It passes
+the unaligned test but I'll give it a real run tonight and look for
+other problems.
 
-And this asks bigger questions - why would you allow preallocate
-anywhere but at or beyond EOF on an append mode inode? You can only
-append to the file, so if you're going to add limitations based on
-the append flag, you need to think this through a bit more....
+(This is almost entirely untested, please don't use it quite yet)
 
-> +
-> +	if (IS_IMMUTABLE(inode)) {
-> +		error = -EPERM;
-> +		goto out_unlock;
-> +	}
+-chris
 
-Also, like Christoph said, these checks belong in the generic code,
-not in every filesystem. The same checks have to be made for every
-filesystem, so they should be done before calling out the
-filesystems regardless of what functionality the filesystem actually
-supports.
-
-Cheers,
-
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 89a6a26..6a44add 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1039,6 +1038,14 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 
+ 		copied = btrfs_copy_from_user(pos, num_pages,
+ 					   write_bytes, pages, &i);
++
++		/*
++		 * if we have trouble faulting in the pages, fall
++		 * back to one page at a time
++		 */
++		if (copied < write_bytes)
++			nrptrs = 1;
++
+ 		if (copied == 0)
+ 			dirty_pages = 0;
+ 		else

@@ -1,28 +1,53 @@
 From: Josef Bacik <josef@redhat.com>
 Subject: [PATCH] Btrfs: convert to the new truncate sequence V2
-Date: Fri,  4 Mar 2011 14:55:40 -0500
-Message-ID: <1299268540-3918-1-git-send-email-josef@redhat.com>
+Date: Fri,  4 Mar 2011 14:58:51 -0500
+Message-ID: <1299268731-3983-1-git-send-email-josef@redhat.com>
+References: <1299268540-3918-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1299268540-3918-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-->truncate() is going away, instead all of the work needs to be done in
-->setattr().  So this converts us over to do this.  It's fairly straightforward,
-just get rid of our .truncate inode operation and call btrfs_truncate() directly
-from btrfs_setsize.  This works out better for us since truncate can technically
-return ENOSPC, and before we had no way of letting anybody know.  Thanks,
+Argh it helps if I send the right damn patch...
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
-V1->V2: fixed btrfs_cont_expand to take the oldsize, since we need to update
-i_size before calling cont_expand, we need to give it the old size so we know
-where to start adding the hole extents.
-
- fs/btrfs/inode.c |   76 ++++++++++++++++++++++++-----------------------------
- 1 files changed, 34 insertions(+), 42 deletions(-)
-
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index e4802f1..6e86afe 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2528,7 +2528,7 @@ void btrfs_orphan_post_snapshot(struct btrfs_trans_handle *trans,
+ 				struct btrfs_pending_snapshot *pending);
+ void btrfs_orphan_commit_root(struct btrfs_trans_handle *trans,
+ 			      struct btrfs_root *root);
+-int btrfs_cont_expand(struct inode *inode, loff_t size);
++int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size);
+ int btrfs_invalidate_inodes(struct btrfs_root *root);
+ void btrfs_add_delayed_iput(struct inode *inode);
+ void btrfs_run_delayed_iputs(struct btrfs_root *root);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 275481a..44ebd50 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -782,7 +782,7 @@ static noinline int prepare_pages(struct btrfs_root *root, struct file *file,
+ 	last_pos = ((u64)index + num_pages) << PAGE_CACHE_SHIFT;
+ 
+ 	if (start_pos > inode->i_size) {
+-		err = btrfs_cont_expand(inode, start_pos);
++		err = btrfs_cont_expand(inode, i_size_read(inode), start_pos);
+ 		if (err)
+ 			return err;
+ 	}
+@@ -1327,7 +1327,8 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 		goto out;
+ 
+ 	if (alloc_start > inode->i_size) {
+-		ret = btrfs_cont_expand(inode, alloc_start);
++		ret = btrfs_cont_expand(inode, i_size_read(inode),
++					alloc_start);
+ 		if (ret)
+ 			goto out;
+ 	}
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index ae5fbc3..20d89da 100644
+index ae5fbc3..00e3303 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
 @@ -84,7 +84,8 @@ static unsigned char btrfs_type_by_mode[S_IFMT >> S_SHIFT] = {
@@ -47,6 +72,24 @@ index ae5fbc3..20d89da 100644
  			nr_truncate++;
  			btrfs_truncate(inode);
  		} else {
+@@ -3538,7 +3544,7 @@ out:
+ 	return ret;
+ }
+ 
+-int btrfs_cont_expand(struct inode *inode, loff_t size)
++int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
+ {
+ 	struct btrfs_trans_handle *trans;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+@@ -3546,7 +3552,7 @@ int btrfs_cont_expand(struct inode *inode, loff_t size)
+ 	struct extent_map *em = NULL;
+ 	struct extent_state *cached_state = NULL;
+ 	u64 mask = root->sectorsize - 1;
+-	u64 hole_start = (inode->i_size + mask) & ~mask;
++	u64 hole_start = (oldsize + mask) & ~mask;
+ 	u64 block_end = (size + mask) & ~mask;
+ 	u64 last_byte;
+ 	u64 cur_offset;
 @@ -3617,27 +3623,17 @@ int btrfs_cont_expand(struct inode *inode, loff_t size)
  	return err;
  }
@@ -88,7 +131,7 @@ index ae5fbc3..20d89da 100644
 +		i_size_write(inode, newsize);
 +		btrfs_ordered_update_i_size(inode, i_size_read(inode), NULL);
 +		truncate_pagecache(inode, oldsize, newsize);
-+		ret = btrfs_cont_expand(inode, newsize);
++		ret = btrfs_cont_expand(inode, oldsize, newsize);
  		if (ret) {
 -			btrfs_truncate(inode);
 +			btrfs_setsize(inode, oldsize);

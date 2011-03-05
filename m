@@ -1,59 +1,53 @@
 From: Mitch Harder <mitch.harder@sabayonlinux.org>
 Subject: Re: [PATCH] btrfs file write debugging patch
-Date: Sat, 5 Mar 2011 10:50:14 -0600
-Message-ID: <AANLkTi=gqurEsoMZv+10Np4duOKq4kZf77mTgu6BfkSC@mail.gmail.com>
+Date: Sat, 5 Mar 2011 10:56:52 -0600
+Message-ID: <AANLkTimoLf0rKVZ7aBTt6p-XC9un15drtZf1sKzbL2nC@mail.gmail.com>
 References: <BAY156-w43472A651462DCADA1F9FAD2C10@phx.gbl>
 	<AANLkTi=6G2A1Lb6aWwtFeLgJvV2k_syss4rRfokbFG56@mail.gmail.com>
 	<1865303E0DED764181A9D882DEF65FB68662CD02C8@shsmsx502.ccr.corp.intel.com>
 	<1299203447-sup-9359@think>
-	<1299241124-sup-3502@think>
-	<BAY156-w4980F081E2593ACCC07B2AD2C20@phx.gbl>
-	<AANLkTikFVd3kG4J99BQvVUwb05DRQXLyabsHieeTZCBW@mail.gmail.com>
-	<AANLkTinjtx37eJ+v6WS=Y8z_Brkb9YGq5cZdFP1bVWGB@mail.gmail.com>
-	<BAY156-w342CF81501D00C36A69EABD2C50@phx.gbl>
-	<AANLkTimDvTraBapv18iOf8wmUh8nSnUay2etXvjEv77P@mail.gmail.com>
+	<20110304023212.GB4558@dhcp231-156.rdu.redhat.com>
+	<1865303E0DED764181A9D882DEF65FB6866D256DE2@shsmsx502.ccr.corp.intel.com>
+	<20110304024109.GD4558@dhcp231-156.rdu.redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: chris.mason@oracle.com, xin.zhong@intel.com,
-	linux-btrfs@vger.kernel.org
-To: Xin Zhong <thierryzhong@hotmail.com>
+Cc: "Zhong, Xin" <xin.zhong@intel.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Xin Zhong <thierryzhong@hotmail.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimDvTraBapv18iOf8wmUh8nSnUay2etXvjEv77P@mail.gmail.com>
+In-Reply-To: <20110304024109.GD4558@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've constructed a test patch that is currently addressing all the
-issues on my system.
+On Thu, Mar 3, 2011 at 8:41 PM, Josef Bacik <josef@redhat.com> wrote:
+> On Fri, Mar 04, 2011 at 10:42:46AM +0800, Zhong, Xin wrote:
+>> Where can I find your patch? Thanks!
+>>
+>
+> It's in my btrfs-work git tree, it's based on the latest git pull fro=
+m linus so
+> you can just pull it onto a linus tree and you should be good to go. =
+=A0The
+> specific patch is
+>
+> Btrfs: simplify our write path
+>
+> Thanks,
+>
+> Josef
+>
 
-The portion of Openmotif that was having issues with page faults works
-correctly with this patch, and gcc-4.4.5 builds without issue.
+Josef:
 
-I extracted only the portion of the first patch that corrects the
-handling of dirty_pages when copied==0, and incorporated the second
-patch that falls back to one-page-at-a-time if there are troubles with
-page faults.
+I've been testing the kernel from you git tree (as of commit 5555f192
+Btrfs: add a comment explaining what btrfs_cont_expand does).
 
---- fs/btrfs/file.c	2011-03-05 07:34:43.025131607 -0600
-+++ /usr/src/linux/fs/btrfs/file.c	2011-03-05 07:41:45.001260294 -0600
-@@ -1023,8 +1023,20 @@
-
- 		copied = btrfs_copy_from_user(pos, num_pages,
- 					   write_bytes, pages, &i);
--		dirty_pages = (copied + offset + PAGE_CACHE_SIZE - 1) >>
--				PAGE_CACHE_SHIFT;
-+
-+		/*
-+		 * if we have trouble faulting in the pages, fall
-+		 * back to one page at a time
-+		 */
-+		if (copied < write_bytes)
-+			nrptrs = 1;
-+
-+		if (copied == 0)
-+			dirty_pages = 0;
-+		else
-+			dirty_pages = (copied + offset +
-+				       PAGE_CACHE_SIZE - 1) >>
-+				       PAGE_CACHE_SHIFT;
-
- 		if (num_pages > dirty_pages) {
- 			if (copied > 0)
+I am still running into issues when running the portion of Openmotif
+that has been generating the problem with page faults when given an
+unaligned address.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

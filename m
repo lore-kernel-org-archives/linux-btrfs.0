@@ -1,34 +1,36 @@
-From: Itaru Kitayama <kitayama@cl.bb4u.ne.jp>
-Subject: Re: [PATCH V2] btrfs: implement delayed inode items operation
-Date: Sat, 5 Mar 2011 11:35:28 +0900
-Message-ID: <20110305113528.326f21b6.kitayama@cl.bb4u.ne.jp>
-References: <20110224230255.78496fc6.kitayama@cl.bb4u.ne.jp>
-	<4D6F3210.3040104@cn.fujitsu.com>
+From: cwillu <cwillu@cwillu.com>
+Subject: Re: BTRFS fsck tool
+Date: Fri, 4 Mar 2011 21:00:31 -0600
+Message-ID: <AANLkTimLvU4+1s1pMCJ_ysmFp9=k3zOhJ++KHVWfrC0Y@mail.gmail.com>
+References: <AANLkTim1+n4OJcm1iYMQKQZyN9jT2uFUYjAM6=x4pY2g@mail.gmail.com>
+	<AANLkTin=2=bhmdzUHV-poMwEx9et6y2m3OSba-1Rc9=v@mail.gmail.com>
+	<AANLkTim7q=xxPH_OoEu9HW9_RAXgD=-XdS3BHoHm0wNv@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: miaox@cn.fujitsu.com
+To: Alexey A Nikitin <moonwalker@syrius.us>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D6F3210.3040104@cn.fujitsu.com>
+In-Reply-To: <AANLkTim7q=xxPH_OoEu9HW9_RAXgD=-XdS3BHoHm0wNv@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Miao,
+On Fri, Mar 4, 2011 at 7:20 PM, Alexey A Nikitin <moonwalker@syrius.us> wrote:
+> I pulled the btrfs-select-super source from get branch 'next',
+> compiled it, but when I run it using
+>
+> ./btrfs-select-super -s 1 /dev/sdb1
+>
+> all I get is
+>
+> btrfs-select-super: disk-io.c:739: open_ctree_fd: Assertion
+> `!(!tree_root->node)' failed
+>
+> Any ideas what might be wrong and how I can remedy it? I'm using
+> Debian Wheezy x64 with it's own btrfs-tools, could that be a problem,
+> should I completely replace stock btrfs-tools with the one from git
+> for it to work properly?
 
-With the V3 patch applied, I was able to run dbench 50 without a problem.
-Thanks,
+Make sure you run it as root, and try both -s 1 and -s 2.
 
-On Thu, 03 Mar 2011 14:15:44 +0800
-Miao Xie <miaox@cn.fujitsu.com> wrote:
+> PS: I subscribed to this list now, so there is no more need to cc me.
 
-> On Thu, 24 Feb 2011 23:02:55 +0900, Itaru Kitayama wrote:
-> > I have applied the V2 patch on top of the next-rc branch of btrfs-unstable
-> > and ran dbench 50. The run never finished and lots of stall messages recorded
-> > in the log.
-> > Looking at the stack trace, something wrong with the delayed item balancing?
-> > Are you working on the similar problem for V3?
-> 
-> I have made the third version of this patch, could you test it for me to check
-> whether this problem still happens or not?
-> 
-> Thanks
-> Miao
+Reply to all does it automatically.

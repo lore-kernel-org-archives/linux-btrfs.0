@@ -1,29 +1,29 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
+From: Alexey A Nikitin <moonwalker@syrius.us>
 Subject: Re: BTRFS fsck tool
-Date: 05 Mar 2011 08:12:00 +0100
-Message-ID: <BhJQTshD1uB@helmut.hullen.de>
-References: <AANLkTim1+n4OJcm1iYMQKQZyN9jT2uFUYjAM6=x4pY2g@mail.gmail.com>
-Reply-To: helmut@hullen.de
+Date: Sat, 5 Mar 2011 04:55:17 -0600
+Message-ID: <AANLkTi=Ki1sZL8O7taAiucsBU9D8=SX7u+jzzRrZihz9@mail.gmail.com>
+References: <AANLkTim1+n4OJcm1iYMQKQZyN9jT2uFUYjAM6=x4pY2g@mail.gmail.com> <BhJQTshD1uB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: Helmut Hullen <Hullen@t-online.de>, linux-btrfs@vger.kernel.org
+To: helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTim1+n4OJcm1iYMQKQZyN9jT2uFUYjAM6=x4pY2g@mail.gmail.com>
+In-Reply-To: <BhJQTshD1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Alexey,
+2011/3/5 Helmut Hullen <Hullen@t-online.de>:
+> I had to learn that btrfs is still in experimental status.
 
-Du meintest am 04.03.11:
+Oh, I was perfectly aware of it's experimental status when I was
+transferring to btrfs all my home systems, that's why I'm not even
+thinking about moving to btrfs my servers. I moved to btrfs because
+all other fs had unacceptable performance on my old MLC SSDs and it
+was the only non-destructive method of building RAID out of HDDs with
+ext4 partitions.
 
-> I have BTRFS RAID0 setup with two disks. After some incident where I
-> had to force shutdown machine this array won't mount anymore, even
-> after "btrfs device scan". Unfortunately, I don't have backups since
-> I can't afford another 4TB of storage.
+Best,
 
-Same result (with another history) here. I've asked 2 data rescue  
-companies (well known), they can't yet recover btrfs.
+Alexey
 
-I had to learn that btrfs is still in experimental status.
-
-Viele Gruesse!
-Helmut
+--
+This message was created with 100% recycled electrons

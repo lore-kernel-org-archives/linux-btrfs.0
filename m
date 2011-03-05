@@ -1,43 +1,41 @@
-From: Alexey A Nikitin <moonwalker@syrius.us>
-Subject: Re: BTRFS fsck tool
-Date: Fri, 4 Mar 2011 21:27:16 -0600
-Message-ID: <AANLkTi=jxsr6W1LZ6g0_Ex4nBGeSpQJY+LdPkqjeD2Qx@mail.gmail.com>
-References: <AANLkTim1+n4OJcm1iYMQKQZyN9jT2uFUYjAM6=x4pY2g@mail.gmail.com>
- <AANLkTin=2=bhmdzUHV-poMwEx9et6y2m3OSba-1Rc9=v@mail.gmail.com>
- <AANLkTim7q=xxPH_OoEu9HW9_RAXgD=-XdS3BHoHm0wNv@mail.gmail.com> <AANLkTimLvU4+1s1pMCJ_ysmFp9=k3zOhJ++KHVWfrC0Y@mail.gmail.com>
+From: David Nicol <davidnicol@gmail.com>
+Subject: Re: [PATCH V2] btrfs: implement delayed inode items operation
+Date: Fri, 4 Mar 2011 21:44:29 -0600
+Message-ID: <AANLkTikr21czNX=OsWH3JKAFdYzcsAkE-eqQiGOzDosV@mail.gmail.com>
+References: <4D5CB6B8.2060804@cn.fujitsu.com> <1297991261-sup-6831@think>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: cwillu <cwillu@cwillu.com>
+Cc: Miao Xie <miaox@cn.fujitsu.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Itaru Kitayama <kitayama@cl.bb4u.ne.jp>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimLvU4+1s1pMCJ_ysmFp9=k3zOhJ++KHVWfrC0Y@mail.gmail.com>
+In-Reply-To: <1297991261-sup-6831@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011/3/4 cwillu <cwillu@cwillu.com>:
-> On Fri, Mar 4, 2011 at 7:20 PM, Alexey A Nikitin <moonwalker@syrius.us> wrote:
->> all I get is
->>
->> btrfs-select-super: disk-io.c:739: open_ctree_fd: Assertion
->> `!(!tree_root->node)' failed
+On Thu, Feb 17, 2011 at 7:09 PM, Chris Mason
 >
-> Make sure you run it as root, and try both -s 1 and -s 2.
+> This work is really cool, thanks for doing it. =C2=A0I'm starting a r=
+un on
+> this tonight and if all goes well I'll review in detail and try to qu=
+eue
+> it along with the per-subvolume storage bits for .39.
 >
-
-Done that - commands were ran from root shell and I tried both -s 1
-and -s 2. It gives same error with both parameters for both
-btrfs-select-super and btrfsck.
-
->> PS: I subscribed to this list now, so there is no more need to cc me.
+> Thanks!
 >
-> Reply to all does it automatically.
->
-
-Indeed it does, I didn't know that.
+> -chris
 
 
-Best,
 
-Alexey
+This is the kind of thing -- another synchronous thing becomes
+asynchronous -- why the ioctl#21 patch has a pluggable architecture
+for adding a standard way to wait for completion of new dlayed items.
+Please add it, so future submitted ways to asynchonify things can have
+a standard way to tell when they're done.
 
+dln
 --
-This message was created with 100% recycled electrons
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

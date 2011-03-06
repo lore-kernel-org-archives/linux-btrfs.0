@@ -1,63 +1,86 @@
-From: Calvin Walton <calvin.walton@kepstin.ca>
+From: "Brian J. Murrell" <brian@interlinx.bc.ca>
 Subject: Re: efficiency of btrfs cow
-Date: Sun, 06 Mar 2011 11:06:22 -0500
-Message-ID: <1299427596.15017.8.camel@ayu>
-References: <il0a8d$4ev$1@dough.gmane.org>
+Date: Sun, 06 Mar 2011 11:17:13 -0500
+Message-ID: <4D73B389.1010803@interlinx.bc.ca>
+References: <il0a8d$4ev$1@dough.gmane.org> <1299427596.15017.8.camel@ayu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Cc: linux-btrfs@vger.kernel.org
-To: "Brian J. Murrell" <brian@interlinx.bc.ca>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="------------enigC2411EC402FBCAA0FEA27151"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <il0a8d$4ev$1@dough.gmane.org>
+In-Reply-To: <1299427596.15017.8.camel@ayu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 2011-03-06 at 10:46 -0500, Brian J. Murrell wrote:
-> I have a backup volume on an ext4 filesystem that is using rsync and
-> it's --link-dest option to create "hard-linked incremental" backups.  I
-> am sure everyone here is familiar with the technique but in case anyone
-> isn't basically it's effectively doing (each backup):
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--------------enigC2411EC402FBCAA0FEA27151
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 
-> So I replicated a few of the directories in my backup volume to a btrfs
-> volume using snapshots for each backup to take advantage of CoW and with
-> any luck, avoid entire file duplication where only some subset of the
-> file has changed.
-> 
-> Overall, it seems that I saw success.  Most backups on btrfs were
-> smaller than their source, and overall, for all of the backups
-> replicated, the use was less.  There were some however that were
-> significantly larger.  Here's the analysis:
+On 11-03-06 11:06 AM, Calvin Walton wrote:
+>=20
+> There actually is such a periodic jump in overhead,
 
-> Taking the biggest anomaly, monthly.15, a du of just that directory on
-> both the btrfs and ext4 filesystems shows results I would expect:
-> 
-> btrfs: 136,876,580 monthly.15
-> ext4:  142,153,928 monthly.15
-> 
-> Yet the before and after "df" results show the btrfs usage higher than
-> ext4.  Is there some "periodic" jump in "overhead" used by btrfs that
-> would account for this mysterious increased usage in some of the copies?
+Ahh.  So my instincts were correct.
 
-There actually is such a periodic jump in overhead, caused by the way
-which btrfs dynamically allocates space for metadata as needed by the
-creation of new files, which it does whenever the free metadata space
-ratio reaches a threshold (it's probably more complicated than that, but
-close enough for now).
+> caused by the way
+> which btrfs dynamically allocates space for metadata as needed by the
+> creation of new files, which it does whenever the free metadata space
+> ratio reaches a threshold (it's probably more complicated than that, bu=
+t
+> close enough for now).
 
-To see exactly what's going on, you should use the "btrfs filesystem df"
-command to see how space is being allocated for data and metadata
-separately:
+Sounds fair enough.
 
-ayu ~ # btrfs fi df /
-Data: total=266.01GB, used=249.35GB
-System, DUP: total=8.00MB, used=36.00KB
-Metadata, DUP: total=3.62GB, used=1.93GB
-ayu ~ # df -h /
-Filesystem            Size  Used Avail Use% Mounted on
-/dev/sda4             402G  254G  145G  64% /
+> To see exactly what's going on, you should use the "btrfs filesystem df=
+"
+> command to see how space is being allocated for data and metadata
+> separately:
+>=20
+> ayu ~ # btrfs fi df /
+> Data: total=3D266.01GB, used=3D249.35GB
+> System, DUP: total=3D8.00MB, used=3D36.00KB
+> Metadata, DUP: total=3D3.62GB, used=3D1.93GB
+> ayu ~ # df -h /
+> Filesystem            Size  Used Avail Use% Mounted on
+> /dev/sda4             402G  254G  145G  64% /
+>=20
+> If you use the btrfs tool's df command to account for space in your
+> testing, you should get much more accurate results.
 
-If you use the btrfs tool's df command to account for space in your
-testing, you should get much more accurate results.
+Indeed!  Unfortunately that tool seems to be completely silent on my syst=
+em:
 
--- 
-Calvin Walton <calvin.walton@kepstin.ca>
+# btrfs filesystem df /mnt/btrfs-test/
+# btrfs filesystem df /mnt/btrfs-test
 
+Where /mnt/btrfs-test is where I have the device that I created the
+btrfs filesystem on mounted.  i.e.:
+
+# grep btrfs /proc/mounts
+/dev/mapper/btrfs--test-btrfs--test /mnt/btrfs-test btrfs rw,relatime 0 0=
+
+
+My btrfs-tools appears to be from 20101101.  The changelog says:
+
+  * Merging upstream version 0.19+20101101.
+
+Cheers,
+b.
+
+
+--------------enigC2411EC402FBCAA0FEA27151
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+
+iEYEARECAAYFAk1zs4kACgkQl3EQlGLyuXC3PQCeK1J4Mt9/InGvYfTxiPxApLDQ
+uOAAnirdacWVLRnpc1P0Fa8ldZJwaEId
+=4MHo
+-----END PGP SIGNATURE-----
+
+--------------enigC2411EC402FBCAA0FEA27151--

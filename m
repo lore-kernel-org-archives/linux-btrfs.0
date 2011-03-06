@@ -1,39 +1,31 @@
-From: Freddie Cash <fjwcash@gmail.com>
-Subject: Re: efficiency of btrfs cow
-Date: Sun, 6 Mar 2011 09:22:00 -0800
-Message-ID: <AANLkTikjdi+Qo_AhsGgOquDQoy+EzZ0BoiMj9aUb_zCQ@mail.gmail.com>
-References: <il0a8d$4ev$1@dough.gmane.org>
-	<AANLkTi=-bxNwFmp8GZ_Foz=CSP2kUOwqPKAaMFapGuz+@mail.gmail.com>
-Mime-Version: 1.0
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH] btrfs file write debugging patch
+Date: Sun, 06 Mar 2011 13:00:27 -0500
+Message-ID: <1299434330-sup-8189@think>
+References: <BAY156-w43472A651462DCADA1F9FAD2C10@phx.gbl> <AANLkTi=6G2A1Lb6aWwtFeLgJvV2k_syss4rRfokbFG56@mail.gmail.com> <1865303E0DED764181A9D882DEF65FB68662CD02C8@shsmsx502.ccr.corp.intel.com> <1299203447-sup-9359@think> <1299241124-sup-3502@think> <BAY156-w4980F081E2593ACCC07B2AD2C20@phx.gbl> <AANLkTikFVd3kG4J99BQvVUwb05DRQXLyabsHieeTZCBW@mail.gmail.com> <AANLkTinjtx37eJ+v6WS=Y8z_Brkb9YGq5cZdFP1bVWGB@mail.gmail.com> <BAY156-w342CF81501D00C36A69EABD2C50@phx.gbl> <AANLkTimDvTraBapv18iOf8wmUh8nSnUay2etXvjEv77P@mail.gmail.com> <AANLkTi=gqurEsoMZv+10Np4duOKq4kZf77mTgu6BfkSC@mail.gmail.com>
 Content-Type: text/plain; charset=UTF-8
-Cc: "Brian J. Murrell" <brian@interlinx.bc.ca>,
-	linux-btrfs@vger.kernel.org
-To: "Fajar A. Nugraha" <list@fajar.net>
+Cc: Xin Zhong <thierryzhong@hotmail.com>,
+	"xin.zhong" <xin.zhong@intel.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Mitch Harder <mitch.harder@sabayonlinux.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=-bxNwFmp8GZ_Foz=CSP2kUOwqPKAaMFapGuz+@mail.gmail.com>
+In-reply-to: <AANLkTi=gqurEsoMZv+10Np4duOKq4kZf77mTgu6BfkSC@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Mar 6, 2011 at 8:02 AM, Fajar A. Nugraha <list@fajar.net> wrote:
-> On Sun, Mar 6, 2011 at 10:46 PM, Brian J. Murrell <brian@interlinx.bc.ca> wrote:
->> # cp -al /backup/previous-backup/ /backup/current-backup
->> # rsync -aAHX ... --exclude /backup / /backup/current-backup
->>
->> The shortcoming of this of course is that it just takes 1 byte in a
->> (possibly huge) file to require that the whole file be recopied to the
->> backup.
->
-> If you have snapshots anyway, why not :
-> - create a snapshot before each backup run
-> - use the same directory (e.g. just /backup), no need to "cp" anything
-> - add "--inplace" to rsync
+Excerpts from Mitch Harder's message of 2011-03-05 11:50:14 -0500:
+> I've constructed a test patch that is currently addressing all the
+> issues on my system.
+> 
+> The portion of Openmotif that was having issues with page faults works
+> correctly with this patch, and gcc-4.4.5 builds without issue.
+> 
+> I extracted only the portion of the first patch that corrects the
+> handling of dirty_pages when copied==0, and incorporated the second
+> patch that falls back to one-page-at-a-time if there are troubles with
+> page faults.
 
-You may also want to test with/without --no-whole-file as well.
-That's most useful when the two filesystems are on the same system and
-should reduce the amount of data copied around, as it forces rsync to
-only use file deltas.  This is very much a win on ZFS, which is also
-CoW, so it should be a win on Btrfs.
+Just to make sure I understand, could you please post the full combined
+path that was giving you trouble with gcc?  We do need to make sure the
+pages are properly up to date if we fall back to partial writes.
 
-
--- 
-Freddie Cash
-fjwcash@gmail.com
+-chris

@@ -1,50 +1,39 @@
-From: "Brian J. Murrell" <brian@interlinx.bc.ca>
+From: Freddie Cash <fjwcash@gmail.com>
 Subject: Re: efficiency of btrfs cow
-Date: Sun, 06 Mar 2011 11:11:59 -0500
-Message-ID: <4D73B24F.6090806@interlinx.bc.ca>
-References: <il0a8d$4ev$1@dough.gmane.org> <AANLkTi=-bxNwFmp8GZ_Foz=CSP2kUOwqPKAaMFapGuz+@mail.gmail.com>
+Date: Sun, 6 Mar 2011 09:22:00 -0800
+Message-ID: <AANLkTikjdi+Qo_AhsGgOquDQoy+EzZ0BoiMj9aUb_zCQ@mail.gmail.com>
+References: <il0a8d$4ev$1@dough.gmane.org>
+	<AANLkTi=-bxNwFmp8GZ_Foz=CSP2kUOwqPKAaMFapGuz+@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="------------enigD04B86FCAA4EC31C4970886C"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: "Brian J. Murrell" <brian@interlinx.bc.ca>,
+	linux-btrfs@vger.kernel.org
+To: "Fajar A. Nugraha" <list@fajar.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <AANLkTi=-bxNwFmp8GZ_Foz=CSP2kUOwqPKAaMFapGuz+@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
---------------enigD04B86FCAA4EC31C4970886C
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
-
-On 11-03-06 11:02 AM, Fajar A. Nugraha wrote:
->=20
+On Sun, Mar 6, 2011 at 8:02 AM, Fajar A. Nugraha <list@fajar.net> wrote:
+> On Sun, Mar 6, 2011 at 10:46 PM, Brian J. Murrell <brian@interlinx.bc.ca> wrote:
+>> # cp -al /backup/previous-backup/ /backup/current-backup
+>> # rsync -aAHX ... --exclude /backup / /backup/current-backup
+>>
+>> The shortcoming of this of course is that it just takes 1 byte in a
+>> (possibly huge) file to require that the whole file be recopied to the
+>> backup.
+>
 > If you have snapshots anyway, why not :
 > - create a snapshot before each backup run
 > - use the same directory (e.g. just /backup), no need to "cp" anything
 > - add "--inplace" to rsync
 
-Which is exactly what I am doing.  There is no "cp" involved in making
-the btrfs copies of the existing backup.  It's simply "rsync -aAXH ...
---inplace" from the existing backup archive to the new, btrfs archive.
-
-Cheers,
-b.
-
+You may also want to test with/without --no-whole-file as well.
+That's most useful when the two filesystems are on the same system and
+should reduce the amount of data copied around, as it forces rsync to
+only use file deltas.  This is very much a win on ZFS, which is also
+CoW, so it should be a win on Btrfs.
 
 
---------------enigD04B86FCAA4EC31C4970886C
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
-
-iEYEARECAAYFAk1zsk8ACgkQl3EQlGLyuXDxngCg6gjEeSPk3sUmTyrlVvGpdeeI
-0xAAnRoLud2EDzkZm2fGXKkqorB0fy2n
-=FmdE
------END PGP SIGNATURE-----
-
---------------enigD04B86FCAA4EC31C4970886C--
+-- 
+Freddie Cash
+fjwcash@gmail.com

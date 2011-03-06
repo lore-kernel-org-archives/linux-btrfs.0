@@ -1,84 +1,110 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: Re: Recovering "parent transid verify failed"
-Date: Sun, 6 Mar 2011 11:02:57 +0000
-Message-ID: <20110306110257.GF4084@carfax.org.uk>
-References: <AANLkTik2t4bG_vwveO=5dovOE=6gDH5FKzjANs7cgRWY@mail.gmail.com>
- <AANLkTik8z13+5pKThfCSsTeM_08VDCQiKvHD2GEQLqGb@mail.gmail.com>
+From: "Brian J. Murrell" <brian@interlinx.bc.ca>
+Subject: efficiency of btrfs cow
+Date: Sun, 06 Mar 2011 10:46:20 -0500
+Message-ID: <il0a8d$4ev$1@dough.gmane.org>
 Mime-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="A9z/3b/E4MkkD+7G"
-Cc: linux-btrfs@vger.kernel.org
-To: Yo'av Moshe <bjesus@gmail.com>
+ protocol="application/pgp-signature";
+ boundary="------------enigB9E7E40CC27F433208E47717"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTik8z13+5pKThfCSsTeM_08VDCQiKvHD2GEQLqGb@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--------------enigB9E7E40CC27F433208E47717
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
 
---A9z/3b/E4MkkD+7G
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+I have a backup volume on an ext4 filesystem that is using rsync and
+it's --link-dest option to create "hard-linked incremental" backups.  I
+am sure everyone here is familiar with the technique but in case anyone
+isn't basically it's effectively doing (each backup):
 
-On Sun, Mar 06, 2011 at 12:28:41PM +0200, Yo'av Moshe wrote:
-> Hey,
-> I'd start by saying that I know Btrfs is a still experimental, and so
-> there's no guarantee that one would be able to help me at all... But I
-> thought I'll try anyway :-)
-> 
-> Few months ago I bought a new laptop and installed ArchLinux on it,
-> with Btrfs on the root filesystem... I know, it's not the smartest
-> thing to do...
-> After a few month I had issues with my hibernations scripts, and one
-> day I tried to hibernate my computer but it didn't go that well, and,
-> well, ever since then my Btrfs partition is not accessible.
-> I opened up the Btrfs FAQ and saw that the fsck tool should be out by
-> the end of 2010, and thought "oh well, I could wait until then", and
-> went on and installed Ubuntu with Ext4 on another small partition.
-> 
-> But times goes one and the fsck tool is still in development... I've
-> tried using the code from GIT and it didn't work, and I'm starting to
-> wonder (a) if there's any hope at all and (b) what other step am I
-> able to do to recover my old Btrfs partition.
+# cp -al /backup/previous-backup/ /backup/current-backup
+# rsync -aAHX ... --exclude /backup / /backup/current-backup
 
-   Yes, there is hope. This error should be fixable with the new fsck.
+The shortcoming of this of course is that it just takes 1 byte in a
+(possibly huge) file to require that the whole file be recopied to the
+backup.
 
-> When trying to mount the Btrfs parition I get this in dmesg:
-> [105252.779080] device fsid d14e78a602757297-bf762d859b406ca9 devid 1
-> transid 135714 /dev/sda4
-> [105252.818697] parent transid verify failed on 216925220864 wanted
-> 135714 found 135713
-[snip]
-> Should I wait for btrfsck to be ready?
+btrfs and it's CoW capability to the rescue -- again, no surprise to
+anyone here.
 
-   Yes.
+So I replicated a few of the directories in my backup volume to a btrfs
+volume using snapshots for each backup to take advantage of CoW and with
+any luck, avoid entire file duplication where only some subset of the
+file has changed.
 
-> Am I not using it correctly now?
+Overall, it seems that I saw success.  Most backups on btrfs were
+smaller than their source, and overall, for all of the backups
+replicated, the use was less.  There were some however that were
+significantly larger.  Here's the analysis:
 
-   No, there's not a lot the current version can do right now.
+  Backup      btrfs  ext4
+  ------      -----  ----
+monthly.22:  112GiB 113GiB  98%
+monthly.21:   14GiB  14GiB  95%
+monthly.20:   19GiB  20GiB  94%
+monthly.19:   12GiB  13GiB  94%
+monthly.18:    5GiB   6GiB  87%
+monthly.17:   11GiB  12GiB  92%
+monthly.16:    8GiB  10GiB  82%
+monthly.15:   16GiB  11GiB 146%
+monthly.14:   19GiB  20GiB  94%
+monthly.13:   21GiB  22GiB  96%
+monthly.12:   61GiB  67GiB  91%
+monthly.11:   24GiB  22GiB 106%
+monthly.10:   22GiB  19GiB 114%
+ monthly.9:   12GiB  13GiB  90%
+ monthly.8:   15GiB  17GiB  91%
+ monthly.7:    9GiB  11GiB  87%
+ monthly.6:    8GiB   9GiB  85%
+ monthly.5:   16GiB  18GiB  91%
+ monthly.4:   13GiB  15GiB  89%
+ monthly.3:   11GiB  19GiB  62%
+ monthly.2:   29GiB  22GiB 134%
+ monthly.1:   23GiB  24GiB  94%
+ monthly.0:    5GiB   5GiB  94%
+     Total:  497GiB 512GiB  96%
 
-> Is there anyway to recover this partition or should I just wipe it and
-> reinstall Btrfs only when I'm supposed to?..
-> 
-> Your help is appreciated.
+btrfs use is a calculation of the "df" value of the fileystem before and
+after each backup.  ext4 (rsync, really) use is calculated with "du
+-xks" on the whole backup volume, which as you know only counts a
+multiply hard-linked file's space use once.
 
-   HTH,
-   Hugo.
+So as you can see, for the most part, btrfs and CoW was more efficient,
+but in some cases (i.e. monthly.15, monthly.11, monthly.10, monthly.2)
+it was less efficient.
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-     --- "I am the author. You are the audience. I outrank you!" ---     
+Taking the biggest anomaly, monthly.15, a du of just that directory on
+both the btrfs and ext4 filesystems shows results I would expect:
 
---A9z/3b/E4MkkD+7G
+btrfs: 136,876,580 monthly.15
+ext4:  142,153,928 monthly.15
+
+Yet the before and after "df" results show the btrfs usage higher than
+ext4.  Is there some "periodic" jump in "overhead" used by btrfs that
+would account for this mysterious increased usage in some of the copies?
+
+Any other ideas for the anomalous results?
+
+Cheers,
+b.
+
+
+--------------enigB9E7E40CC27F433208E47717
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.10 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
 
-iD8DBQFNc2nhIKyzvlFcI40RAsq2AKCrSZE6nXYIRbxfLThwIH/yEeO/iACggwHZ
-vXj/K5R746xiMj8x6Ehdzbs=
-=zinf
+iEYEARECAAYFAk1zrEwACgkQl3EQlGLyuXAU1QCg2FkA943FGNXGBEVzELLzfgc3
+LuwAoO5Gu7DCgx4Bce56tcwUJ47qMKcW
+=uWCj
 -----END PGP SIGNATURE-----
 
---A9z/3b/E4MkkD+7G--
+--------------enigB9E7E40CC27F433208E47717--
+

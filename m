@@ -1,209 +1,89 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] btrfs file write debugging patch
-Date: Sun, 06 Mar 2011 19:58:30 -0500
-Message-ID: <1299459296-sup-3057@think>
-References: <BAY156-w43472A651462DCADA1F9FAD2C10@phx.gbl> <AANLkTi=6G2A1Lb6aWwtFeLgJvV2k_syss4rRfokbFG56@mail.gmail.com> <1865303E0DED764181A9D882DEF65FB68662CD02C8@shsmsx502.ccr.corp.intel.com> <1299203447-sup-9359@think> <1299241124-sup-3502@think> <BAY156-w4980F081E2593ACCC07B2AD2C20@phx.gbl> <AANLkTikFVd3kG4J99BQvVUwb05DRQXLyabsHieeTZCBW@mail.gmail.com> <AANLkTinjtx37eJ+v6WS=Y8z_Brkb9YGq5cZdFP1bVWGB@mail.gmail.com> <BAY156-w342CF81501D00C36A69EABD2C50@phx.gbl> <AANLkTimDvTraBapv18iOf8wmUh8nSnUay2etXvjEv77P@mail.gmail.com> <AANLkTi=gqurEsoMZv+10Np4duOKq4kZf77mTgu6BfkSC@mail.gmail.com> <1299434330-sup-8189@think>
-Content-Type: text/plain; charset=UTF-8
-Cc: Mitch Harder <mitch.harder@sabayonlinux.org>,
-	Xin Zhong <thierryzhong@hotmail.com>,
-	"xin.zhong" <xin.zhong@intel.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: Re: [PATCH V3] btrfs: implement delayed inode items operation
+Date: Mon, 07 Mar 2011 09:57:03 +0800
+Message-ID: <4D743B6F.2070708@cn.fujitsu.com>
+References: <4D6F2FE0.8020508@cn.fujitsu.com> <20110305160122.2d02f86f.kitayama@cl.bb4u.ne.jp> <4D7417FB.2020205@jp.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-2022-JP
+Cc: Itaru Kitayama <kitayama@cl.bb4u.ne.jp>,
+	Chris Mason <chris.mason@oracle.com>,
+	David Sterba <dave@jikos.cz>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <1299434330-sup-8189@think>
+In-Reply-To: <4D7417FB.2020205@jp.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Chris Mason's message of 2011-03-06 13:00:27 -0500:
-> Excerpts from Mitch Harder's message of 2011-03-05 11:50:14 -0500:
-> > I've constructed a test patch that is currently addressing all the
-> > issues on my system.
-> > 
-> > The portion of Openmotif that was having issues with page faults works
-> > correctly with this patch, and gcc-4.4.5 builds without issue.
-> > 
-> > I extracted only the portion of the first patch that corrects the
-> > handling of dirty_pages when copied==0, and incorporated the second
-> > patch that falls back to one-page-at-a-time if there are troubles with
-> > page faults.
+On mon, 07 Mar 2011 08:25:47 +0900, Tsutomu Itoh wrote:
+> (2011/03/05 16:01), Itaru Kitayama wrote:
+>> Hi Miao,
+>>
+>> The V3 patch on top of the next-rc fails to pass an xfstests test 13.
+>> In the btrfs link path, we need to reserve one more metadata in the
+>> trans_block_rsv for the delayed inode update (if needed) to complete.
 > 
-> Just to make sure I understand, could you please post the full combined
-> path that was giving you trouble with gcc?  We do need to make sure the
-> pages are properly up to date if we fall back to partial writes.
+> Miao's patch (http://marc.info/?l=linux-btrfs&m=129802068318176&w=2)
+> fixed this problem, maybe.
 
-Ok, I was able to reproduce this easily with fsx.  The problem is that I
-wasn't making sure the last partial page in the write was up to date
-when it was also the first page in the write.
+Yes, the above patch fixed this problem.
+I think this problem is a bug of btrfs_link(), and hope the fix patch can
+be received as early as possible. So I sent the above patch separately,
+not with the delayed inode items operation patch.
 
-Here is the updated patch, it has all the fixes we've found so far:
+Thanks
+Miao
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 7084140..5986ac7 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -763,6 +763,27 @@ out:
- }
- 
- /*
-+ * on error we return an unlocked page and the error value
-+ * on success we return a locked page and 0
-+ */
-+static int prepare_uptodate_page(struct page *page, u64 pos)
-+{
-+	int ret = 0;
-+
-+	if ((pos & (PAGE_CACHE_SIZE - 1)) && !PageUptodate(page)) {
-+		ret = btrfs_readpage(NULL, page);
-+		if (ret)
-+			return ret;
-+		lock_page(page);
-+		if (!PageUptodate(page)) {
-+			unlock_page(page);
-+			return -EIO;
-+		}
-+	}
-+	return 0;
-+}
-+
-+/*
-  * this gets pages into the page cache and locks them down, it also properly
-  * waits for data=ordered extents to finish before allowing the pages to be
-  * modified.
-@@ -777,6 +798,7 @@ static noinline int prepare_pages(struct btrfs_root *root, struct file *file,
- 	unsigned long index = pos >> PAGE_CACHE_SHIFT;
- 	struct inode *inode = fdentry(file)->d_inode;
- 	int err = 0;
-+	int faili = 0;
- 	u64 start_pos;
- 	u64 last_pos;
- 
-@@ -794,15 +816,24 @@ again:
- 	for (i = 0; i < num_pages; i++) {
- 		pages[i] = grab_cache_page(inode->i_mapping, index + i);
- 		if (!pages[i]) {
--			int c;
--			for (c = i - 1; c >= 0; c--) {
--				unlock_page(pages[c]);
--				page_cache_release(pages[c]);
--			}
--			return -ENOMEM;
-+			faili = i - 1;
-+			err = -ENOMEM;
-+			goto fail;
-+		}
-+
-+		if (i == 0)
-+			err = prepare_uptodate_page(pages[i], pos);
-+		if (i == num_pages - 1)
-+			err = prepare_uptodate_page(pages[i],
-+						    pos + write_bytes);
-+		if (err) {
-+			page_cache_release(pages[i]);
-+			faili = i - 1;
-+			goto fail;
- 		}
- 		wait_on_page_writeback(pages[i]);
- 	}
-+	err = 0;
- 	if (start_pos < inode->i_size) {
- 		struct btrfs_ordered_extent *ordered;
- 		lock_extent_bits(&BTRFS_I(inode)->io_tree,
-@@ -842,6 +873,14 @@ again:
- 		WARN_ON(!PageLocked(pages[i]));
- 	}
- 	return 0;
-+fail:
-+	while (faili >= 0) {
-+		unlock_page(pages[faili]);
-+		page_cache_release(pages[faili]);
-+		faili--;
-+	}
-+	return err;
-+
- }
- 
- static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
-@@ -851,7 +890,6 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
- 	struct file *file = iocb->ki_filp;
- 	struct inode *inode = fdentry(file)->d_inode;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
--	struct page *pinned[2];
- 	struct page **pages = NULL;
- 	struct iov_iter i;
- 	loff_t *ppos = &iocb->ki_pos;
-@@ -872,9 +910,6 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
- 	will_write = ((file->f_flags & O_DSYNC) || IS_SYNC(inode) ||
- 		      (file->f_flags & O_DIRECT));
- 
--	pinned[0] = NULL;
--	pinned[1] = NULL;
--
- 	start_pos = pos;
- 
- 	vfs_check_frozen(inode->i_sb, SB_FREEZE_WRITE);
-@@ -962,32 +997,6 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
- 	first_index = pos >> PAGE_CACHE_SHIFT;
- 	last_index = (pos + iov_iter_count(&i)) >> PAGE_CACHE_SHIFT;
- 
--	/*
--	 * there are lots of better ways to do this, but this code
--	 * makes sure the first and last page in the file range are
--	 * up to date and ready for cow
--	 */
--	if ((pos & (PAGE_CACHE_SIZE - 1))) {
--		pinned[0] = grab_cache_page(inode->i_mapping, first_index);
--		if (!PageUptodate(pinned[0])) {
--			ret = btrfs_readpage(NULL, pinned[0]);
--			BUG_ON(ret);
--			wait_on_page_locked(pinned[0]);
--		} else {
--			unlock_page(pinned[0]);
--		}
--	}
--	if ((pos + iov_iter_count(&i)) & (PAGE_CACHE_SIZE - 1)) {
--		pinned[1] = grab_cache_page(inode->i_mapping, last_index);
--		if (!PageUptodate(pinned[1])) {
--			ret = btrfs_readpage(NULL, pinned[1]);
--			BUG_ON(ret);
--			wait_on_page_locked(pinned[1]);
--		} else {
--			unlock_page(pinned[1]);
--		}
--	}
--
- 	while (iov_iter_count(&i) > 0) {
- 		size_t offset = pos & (PAGE_CACHE_SIZE - 1);
- 		size_t write_bytes = min(iov_iter_count(&i),
-@@ -1024,8 +1033,20 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
- 
- 		copied = btrfs_copy_from_user(pos, num_pages,
- 					   write_bytes, pages, &i);
--		dirty_pages = (copied + offset + PAGE_CACHE_SIZE - 1) >>
--				PAGE_CACHE_SHIFT;
-+
-+		/*
-+		 * if we have trouble faulting in the pages, fall
-+		 * back to one page at a time
-+		 */
-+		if (copied < write_bytes)
-+			nrptrs = 1;
-+
-+		if (copied == 0)
-+			dirty_pages = 0;
-+		else
-+			dirty_pages = (copied + offset +
-+				       PAGE_CACHE_SIZE - 1) >>
-+				       PAGE_CACHE_SHIFT;
- 
- 		if (num_pages > dirty_pages) {
- 			if (copied > 0)
-@@ -1069,10 +1090,6 @@ out:
- 		err = ret;
- 
- 	kfree(pages);
--	if (pinned[0])
--		page_cache_release(pinned[0]);
--	if (pinned[1])
--		page_cache_release(pinned[1]);
- 	*ppos = pos;
- 
- 	/*
+> 
+> Thanks,
+> Itoh
+> 
+>>
+>> Here's the log from the test:
+>>
+>> ------------[ cut here ]------------
+>> kernel BUG at fs/btrfs/delayed-inode.c:1565!
+>> invalid opcode: 0000 [#2] PREEMPT SMP DEBUG_PAGEALLOC
+>> last sysfs file: /sys/module/floppy/initstate
+>> CPU 1 
+>> Modules linked in: nfsd exportfs nfs lockd fscache nfs_acl auth_rpcgss sunrpc ipv6 uinput snd_ens1371 gameport snd_rawmidi ]
+>>
+>> Pid: 6948, comm: fsstress Tainted: G      D W   2.6.36-preempt+ #72 440BX Desktop Reference Platform/VMware Virtual Platform
+>> RIP: 0010:[<ffffffff8120de65>]  [<ffffffff8120de65>] btrfs_delayed_update_inode+0xfd/0x101
+>> RSP: 0018:ffff88003b073d68  EFLAGS: 00010286
+>> RAX: 00000000ffffffe4 RBX: ffff88002a876e48 RCX: ffff88004f3702a0
+>> RDX: 00000000000003b9 RSI: 0000000000000001 RDI: ffff88003b072000
+>> RBP: ffff88003b073da8 R08: 0000000000018000 R09: 0000000000000000
+>> R10: ffff88004f3703f0 R11: 09f911029d74e35b R12: ffff88006861cb90
+>> R13: ffff88002ec91c18 R14: 0000000000018000 R15: ffff88002a876ea0
+>> FS:  00007fcad4905720(0000) GS:ffff880005000000(0000) knlGS:0000000000000000
+>> CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+>> CR2: 00007f46eb380000 CR3: 00000000708b4000 CR4: 00000000000006e0
+>> DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+>> DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+>> Process fsstress (pid: 6948, threadinfo ffff88003b072000, task ffff88004f324710)
+>> Stack:
+>>  ffff88003b073d88 ffff88004f3702a0 0000000000000000 ffff88002ec91c18
+>> <0> ffff88006861cb90 ffff880036783c18 0000000000000000 ffff88006fcaf000
+>> <0> ffff88003b073dc8 ffffffff811d8489 ffff88002ec91c18 ffff88006861cb90
+>> Call Trace:
+>>  [<ffffffff811d8489>] btrfs_update_inode+0x17/0x44
+>>  [<ffffffff811da3e0>] btrfs_link+0xff/0x17a
+>>  [<ffffffff8112300d>] vfs_link+0xda/0x144
+>>  [<ffffffff811257ac>] sys_linkat+0xc4/0x121
+>>  [<ffffffff81118925>] ? fsnotify_modify+0x66/0x6e
+>>  [<ffffffff811190f8>] ? vfs_write+0xd2/0x10a
+>>  [<ffffffff81125827>] sys_link+0x1e/0x20
+>>  [<ffffffff81002ddb>] system_call_fastpath+0x16/0x1b
+>> Code: f0 ff 40 60 eb 02 eb fe 4c 89 ff e8 7d 29 2b 00 31 f6 48 89 df e8 31 fb ff ff 31 c0 48 83 c4 18 5b 41 5c 41 5d 41 5e  
+>> RIP  [<ffffffff8120de65>] btrfs_delayed_update_inode+0xfd/0x101
+>>  RSP <ffff88003b073d68>
+>> ---[ end trace 38596ade53c80d11 ]---
+>>
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+

@@ -1,37 +1,27 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Summer of Code project idea
-Date: Mon, 07 Mar 2011 11:49:26 -0500
-Message-ID: <1299516505-sup-7611@think>
-References: <AANLkTiktF7Xznrcc_9o2PSjoDHddxV7Q+ofx-A1ix0Zg@mail.gmail.com>
+Subject: Re: [RFC] a couple of i_nlink fixes in btrfs
+Date: Mon, 07 Mar 2011 11:58:13 -0500
+Message-ID: <1299517070-sup-1687@think>
+References: <20110304171353.GU22723@ZenIV.linux.org.uk>
 Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Clemens Eisserer <linuxhippy@gmail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <AANLkTiktF7Xznrcc_9o2PSjoDHddxV7Q+ofx-A1ix0Zg@mail.gmail.com>
+Cc: linux-kernel <linux-kernel@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Al Viro <viro@zeniv.linux.org.uk>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-reply-to: <20110304171353.GU22723@ZenIV.linux.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Clemens Eisserer's message of 2011-03-07 11:38:15 -0500:
-> Hi,
+Excerpts from Al Viro's message of 2011-03-04 12:13:53 -0500:
+>     a) rename() plays with i_nlink of old_inode; bad, since it's not
+> locked.  I'd add a variant of btrfs_unlink_inode() that would leave
+> btrfs_drop_nlink()/btrfs_update_inode() to callers and use it instead.
+>     b) btrfs_link() doesn't check for i_nlink overflows.  I don't
+> know if there's anything preventing that many links to a file on btrfs,
+> but if there is, it's at least worth a comment in there...
 > 
-> Will btrfs/oracle mentor students for this year's "Google Summer of Code 2011"?
-> 
-> I would like to work on a Windows-IFS driver which uses coLinux as a
-> "backend" - and therefor support all Filesystems the Linux kernel has
-> drivers for.
-> 
-> Although not as cool as a native btrfs driver for windows, in the long
-> term this could be even more profitable for btrfs - without any
-> porting effort the latest btrfs-features could be used by the
-> Windows-driver too, without time consuming code-sync.
-> 
-> If you find the project-idea cool and/or would like to mentor me,
-> please let me know.
-> 
-> Thanks, Clemens Eisserer
+>     Please, review; patches in followups or in #btrfs in vfs-2.6.git
 
-I think there are a ton of good summer of code ideas for Btrfs, but the
-windows driver option isn't quite at the top of my list.  It isn't that
-I have something against windows, but there's a ton of work to be done
-on the Linux side that I'd rather concentrate on first ;)
+Thanks, these both look good but I'll test here as well.  Are you
+planning on pushing for .38?
 
 -chris

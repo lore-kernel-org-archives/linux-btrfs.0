@@ -1,94 +1,90 @@
-From: Peter Stuge <peter@stuge.se>
-Subject: resize ate my root node
-Date: Mon, 7 Mar 2011 18:48:20 +0100
-Message-ID: <20110307174820.5100.qmail@stuge.se>
+From: Maria =?ISO-8859-1?Q?Wikstr=F6m?= <maria@ponstudios.se>
+Subject: Re: [PATCH] btrfs file write debugging patch
+Date: Mon, 07 Mar 2011 20:56:50 +0100
+Message-ID: <1299527810.11172.8.camel@mainframe>
+References: <BAY156-w43472A651462DCADA1F9FAD2C10@phx.gbl>
+	 <AANLkTi=6G2A1Lb6aWwtFeLgJvV2k_syss4rRfokbFG56@mail.gmail.com>
+	 <1865303E0DED764181A9D882DEF65FB68662CD02C8@shsmsx502.ccr.corp.intel.com>
+	 <1299203447-sup-9359@think> <1299241124-sup-3502@think>
+	 <BAY156-w4980F081E2593ACCC07B2AD2C20@phx.gbl>
+	 <AANLkTikFVd3kG4J99BQvVUwb05DRQXLyabsHieeTZCBW@mail.gmail.com>
+	 <AANLkTinjtx37eJ+v6WS=Y8z_Brkb9YGq5cZdFP1bVWGB@mail.gmail.com>
+	 <BAY156-w342CF81501D00C36A69EABD2C50@phx.gbl>
+	 <AANLkTimDvTraBapv18iOf8wmUh8nSnUay2etXvjEv77P@mail.gmail.com>
+	 <AANLkTi=gqurEsoMZv+10Np4duOKq4kZf77mTgu6BfkSC@mail.gmail.com>
+	 <1299434330-sup-8189@think> <1299459296-sup-3057@think>
+	 <AANLkTikP0wWvRpGis+-mmuu_CvRnq9j0AdGuHrb9Y5WF@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Xin Zhong <thierryzhong@hotmail.com>,
+	"xin.zhong" <xin.zhong@intel.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Mitch Harder <mitch.harder@sabayonlinux.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTikP0wWvRpGis+-mmuu_CvRnq9j0AdGuHrb9Y5WF@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+m=C3=A5n 2011-03-07 klockan 00:07 -0600 skrev Mitch Harder:
+> On Sun, Mar 6, 2011 at 6:58 PM, Chris Mason <chris.mason@oracle.com> =
+wrote:
+> > Excerpts from Chris Mason's message of 2011-03-06 13:00:27 -0500:
+> >> Excerpts from Mitch Harder's message of 2011-03-05 11:50:14 -0500:
+> >> > I've constructed a test patch that is currently addressing all t=
+he
+> >> > issues on my system.
+> >> >
+> >> > The portion of Openmotif that was having issues with page faults=
+ works
+> >> > correctly with this patch, and gcc-4.4.5 builds without issue.
+> >> >
+> >> > I extracted only the portion of the first patch that corrects th=
+e
+> >> > handling of dirty_pages when copied=3D=3D0, and incorporated the=
+ second
+> >> > patch that falls back to one-page-at-a-time if there are trouble=
+s with
+> >> > page faults.
+> >>
+> >> Just to make sure I understand, could you please post the full com=
+bined
+> >> path that was giving you trouble with gcc?  We do need to make sur=
+e the
+> >> pages are properly up to date if we fall back to partial writes.
+> >
+> > Ok, I was able to reproduce this easily with fsx.  The problem is t=
+hat I
+> > wasn't making sure the last partial page in the write was up to dat=
+e
+> > when it was also the first page in the write.
+> >
+> > Here is the updated patch, it has all the fixes we've found so far:
+> >
+>=20
+> This latest patch that Chris has sent out fixes the issues I've been
+> encountering.
+>=20
+> I can build gcc-4.4.5 without problems.
+>=20
+> Also, the portion of Openmotif that was having issues with page fault=
+s
+> is working correctly.
+>=20
+> Let me know if you still would like to see the path names for the
+> portions of the gcc-4.4.5 build that were giving me issues.  I didn't
+> save that information, but I can regenerate it.  But it sounds like
+> it's irrelevant now.
 
-I ran btrfsctl resize -r -3gb /dev/sda2 using wireless-testing.git
-based on 2.6.38-rc6 and all seemed good. df reported reduced size so
-I repartitioned and rebooted. Filesystem can no longer be mounted:
+With the patch I can compile libgcrypt without any problem, so it solve=
+s
+my problems to.
 
-[10560.129038] device fsid b2408c2e83f55cc2-5f7a14e35f176484 devid 1 transid 341132 /dev/sdb2
-[10560.133407] btrfs bad tree block start 0 34520006656
-[10560.134031] btrfs bad tree block start 0 34520006656
-[10560.134904] btrfs bad tree block start 0 34520006656
-[10560.134912] btrfs: failed to read tree root on sdb2
-[10560.137206] btrfs: open_ctree failed
-
-btrfs-debug-tree and friends are similarly upset:
-
-$ ./btrfs-debug-tree /dev/sdb2
-btrfs-debug-tree: disk-io.c:739: open_ctree_fd: Assertion `!(!tree_root->node)' failed.
-
-$ gdb --args ./btrfs-debug-tree /dev/sdb2
-GNU gdb 6.8
-..
-(gdb) b disk-io.c:44
-Breakpoint 1 at 0x8050db7: file disk-io.c, line 44.
-..
-Breakpoint 1, check_tree_block (root=0x946e2e8, buf=0x9471538) at disk-io.c:44
-44              if (buf->start != btrfs_header_bytenr(buf))
-(gdb) p buf->start
-$1 = 20971520
-..
-Breakpoint 1, check_tree_block (root=0x946e2e8, buf=0x9472588) at disk-io.c:44
-44              if (buf->start != btrfs_header_bytenr(buf))
-(gdb) p buf->start
-$2 = 20987904
-..
-Breakpoint 1, check_tree_block (root=0x946e2e8, buf=0x94735d8) at disk-io.c:44
-44              if (buf->start != btrfs_header_bytenr(buf))
-(gdb) p buf->start
-$3 = 20983808
-
-The above checks succeed but next time check_tree_block() is called
-the check does not succeed.
-
-Breakpoint 1, check_tree_block (root=0x946e008, buf=0x9474628) at disk-io.c:44
-44              if (buf->start != btrfs_header_bytenr(buf))
-(gdb) p buf->start
-$4 = 34520006656
-(gdb) p btrfs_header_bytenr(buf)
-$5 = 0
-..
-(gdb) bt
-#0  check_tree_block (root=0x946e008, buf=0x9474628) at disk-io.c:45
-#1  0x080514fc in read_tree_block (root=0x946e008, bytenr=34520006656, 
-    blocksize=4096, parent_transid=341132) at disk-io.c:207
-#2  0x080531a7 in open_ctree_fd (fp=7, path=0xbfef322a "/dev/sdb2", 
-    sb_bytenr=65536, writes=0) at disk-io.c:736
-#3  0x08052a58 in open_ctree (filename=0xbfef322a "/dev/sdb2", sb_bytenr=0, 
-    writes=0) at disk-io.c:587
-#4  0x080735cf in main (ac=1, av=0xbfef2374) at debug-tree.c:148
-
-This is disk-io.c:
-
-732     blocksize = btrfs_level_size(tree_root,
-                                     btrfs_super_root_level(disk_super));  
-        generation = btrfs_super_generation(disk_super);  
-
-        tree_root->node = read_tree_block(tree_root,
-                                          btrfs_super_root(disk_super),
-                                          blocksize, generation);
-..
-188     eb = btrfs_find_create_tree_block(root, bytenr, blocksize);
-..
-198             ret = btrfs_map_block(&root->fs_info->mapping_tree, READ,
-                                      eb->start, &length, &multi, mirror_num);
-..
-206             ret = read_extent_from_disk(eb);
-                if (ret == 0 && check_tree_block(root, eb) == 0 &&
-
-This is the call that fails.
+// Maria
 
 
-Where do I look next?
 
-
-//Peter
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

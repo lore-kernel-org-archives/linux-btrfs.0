@@ -1,35 +1,26 @@
-From: Clemens Eisserer <linuxhippy@gmail.com>
-Subject: Re: Summer of Code project idea
-Date: Mon, 7 Mar 2011 18:01:09 +0100
-Message-ID: <AANLkTimHZVksOPS0BEJBT-kn64wboafynDSJTYPNfGKO@mail.gmail.com>
-References: <AANLkTiktF7Xznrcc_9o2PSjoDHddxV7Q+ofx-A1ix0Zg@mail.gmail.com>
-	<1299516505-sup-7611@think>
+From: Christian Kujau <lists@nerdbynature.de>
+Subject: Re: btrfs lacking inode or file count?
+Date: Mon, 7 Mar 2011 09:38:58 -0800 (PST)
+Message-ID: <alpine.DEB.2.01.1103070935550.23816@trent.utfs.org>
+References: <4D75052D.7050704@syseleven.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: linux-btrfs@vger.kernel.org
+To: Jens Rosenboom <j.rosenboom@syseleven.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1299516505-sup-7611@think>
+In-Reply-To: <4D75052D.7050704@syseleven.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+On Mon, 7 Mar 2011 at 17:17, Jens Rosenboom wrote:
+> I'm just starting to do some testing with btrfs and I noticed that "df
+> -i" doesn't give any sensible output:
 
-> I think there are a ton of good summer of code ideas for Btrfs, but t=
-he
-> windows driver option isn't quite at the top of my list. =C2=A0It isn=
-'t that
-> I have something against windows, but there's a ton of work to be don=
-e
-> on the Linux side that I'd rather concentrate on first ;)
+Btrfs has dynamic inode allocation (like zfs), so it (should) never runs 
+out of "available inodes" (only "out of space"). 
+It's a feature, not a bug :-)
 
-Hmm, somehow I expected this answer :/
-I understand that organizations prefer projects working on their
-internals, and the suggested project would only glue tons of code
-together.
-Well, maybe in 2012 ;)
+Christian.
+-- 
+BOFH excuse #110:
 
-Thanks, Clemens
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+The rolling stones concert down the road caused a brown out

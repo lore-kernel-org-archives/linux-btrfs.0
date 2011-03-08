@@ -1,71 +1,34 @@
-From: Alexey A Nikitin <moonwalker@syrius.us>
+From: Peter Stuge <peter@stuge.se>
 Subject: Re: BTRFS fsck tool
-Date: Mon, 7 Mar 2011 22:52:44 -0600
-Message-ID: <AANLkTimaX2K=Uf-HZ7+dWN20Qt7Xntj+NoRiC7xN770=@mail.gmail.com>
-References: <AANLkTim1+n4OJcm1iYMQKQZyN9jT2uFUYjAM6=x4pY2g@mail.gmail.com> <4D7591CC.6060301@shiftmail.org>
+Date: Tue, 8 Mar 2011 07:52:55 +0100
+Message-ID: <20110308065255.24100.qmail@stuge.se>
+References: <AANLkTim1+n4OJcm1iYMQKQZyN9jT2uFUYjAM6=x4pY2g@mail.gmail.com> <4D7591CC.6060301@shiftmail.org> <AANLkTimaX2K=Uf-HZ7+dWN20Qt7Xntj+NoRiC7xN770=@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Spelic <spelic@shiftmail.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: Spelic <spelic@shiftmail.org>, linux-btrfs@vger.kernel.org
+To: Alexey A Nikitin <moonwalker@syrius.us>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D7591CC.6060301@shiftmail.org>
+In-Reply-To: <AANLkTimaX2K=Uf-HZ7+dWN20Qt7Xntj+NoRiC7xN770=@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011/3/7 Spelic <spelic@shiftmail.org>
->
-> On 03/05/2011 12:59 AM, Alexey A Nikitin wrote:
-> > Hi, everybody
-> >
-> > I have BTRFS RAID0 setup with two disks. After some incident where I
-> > had to force shutdown machine this array won't mount anymore
->
->
-> Have you "reset" the machine or cut the power?
+Hi,
 
-4s power button.
+Alexey A Nikitin wrote:
+> I went experimenting with btrfs RAID0 on my USB setup .. because
+> I'm a reckless experimenter when it doesn't involve production
+> systems.
 
-> is this your scenario? If you leave the power and stop submitting writes
-> to the disks (like with a reset) the filesystem should be preserved, if
-> that sentence is true.
-> Did you cut the power while there was some process writing to it? If the
-> kernel was panicked it is probably safe to cut the power (because the
-> last write happened long time ago and disks had time to put that to the
-> platters)
+I encountered the same broken root node issue. (see thread resize ate
+my root node) and I'd like to understand it better. Hopefully there
+will come something out of this. I'm surprised that my resize broke
+the filesystem for mounting, when it looked good right after the
+resize.
 
-Disks were idle. Kernel didn't panic, machine lost network and that
-old laptop has weird glitch that if you start it with closed lid
-screen will never come back on later on unless you restart it. Since I
-have no external monitor and at the time magic SysRq was disabled I
-had no other option but to force shutdown it and then start it up
-again. All of the btrfs partitions on internal drive are perfectly
-fine.
-
-> Also what disks brand/model do you have? The sentence speaks about disks
-> which don't honour flush+FUA requests, I think. Enterprise disks should
-> honour that, consumer disks might not.
-
-Disks in question are two plain consumer grade Samsung 2TB SATA disks
-in external USB 2.0/eSATA enclosures with independent power supplies,
-connected through USB 2.0 due to lack of eSATA support in that old
-laptop that works as my home server.
-
-> I am interesed in what happened because I am evaluating using btrfs for
-> very large backups (still losing those wouldn't be totally nice)
-
-If it is just a backup I wouldn't bother with performance and features
-if I were you and would go instead with most tested and reliable
-system that still provides the bare minimum of absolutely must
-features. While the snapshots feature is a nice thing to have, IMHO
-it's not exactly for stash-away backups. I'd go instead with ext3 or
-XFS, depending on the size of files and overall size of backups. The
-only reason why I went experimenting with btrfs RAID0 on my USB setup
-is because I'm a reckless experimenter when it doesn't involve
-production systems.
+When I looked through the archive and found your thread I started
+thinking, and I am not absolutely sure if there was some disk
+activity when I cut power to my system, but I believe there was not.
+(I ran reboot, but soft poweroff doesn't work with recent kernels. At
+the Rebooting system message I switched hard power off.)
 
 
-Best,
-
-Alexey
-
---
-This message was created with 100% recycled electrons
+//Peter

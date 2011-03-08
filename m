@@ -1,54 +1,115 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH v1 0/6] btrfs: scrub
-Date: Tue,  8 Mar 2011 15:37:43 +0100
-Message-ID: <cover.1299593612.git.sensille@gmx.net>
+Subject: [PATCH v1 1/6] btrfs: add parameter to btrfs_lookup_csum_range
+Date: Tue,  8 Mar 2011 15:37:44 +0100
+Message-ID: <52cdf6a51be71c2438b13423c132b2e82a361560.1299593612.git.sensille@gmx.net>
+References: <cover.1299593612.git.sensille@gmx.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
 	jansen@webgods.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <cover.1299593612.git.sensille@gmx.net>
+In-Reply-To: <cover.1299593612.git.sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This series adds an initial implementation for scrub. It works quite
-straightforward. The usermode issues an ioctl for each device in the
-fs. For each device, it enumerates the allocated device chunks. For
-each chunk, the contained extents are enumerated and the data checksums
-fetched. The extents are read sequentially and the checksums verified.
-If an error occurs (checksum or EIO), a good copy is searched for. If
-one is found, the bad copy will be rewritten.
-All enumerations happen from the commit roots. During a transaction
-commit, the scrubs get paused and afterwards continue from the new
-roots.
-For future improvements please see the inline comments.
+A parameter is added to search the commit root instead of the live root.
 
-The accompanying user mode patches will follow shortly.
+Signed-off-by: Arne Jansen <sensille@gmx.net>
+---
+ fs/btrfs/ctree.h      |    4 ++--
+ fs/btrfs/file-item.c  |    8 +++++++-
+ fs/btrfs/inode.c      |    2 +-
+ fs/btrfs/relocation.c |    2 +-
+ fs/btrfs/tree-log.c   |    4 ++--
+ 5 files changed, 13 insertions(+), 7 deletions(-)
 
-Thanks,
-Arne
-
-Arne Jansen (5):
-Jan Schmidt (1):
-  btrfs: add parameter to btrfs_lookup_csum_range
-  btrfs: make struct map_lookup public
-  btrfs: add state information for scrub
-  btrfs: add scrub code and prototypes
-  btrfs: sync scrub with commit & device removal
-  btrfs: new ioctls for scrub
-
- fs/btrfs/Makefile      |    2 +-
- fs/btrfs/ctree.h       |   44 ++-
- fs/btrfs/disk-io.c     |   16 +
- fs/btrfs/file-item.c   |    8 +-
- fs/btrfs/inode.c       |    2 +-
- fs/btrfs/ioctl.c       |   85 +++
- fs/btrfs/ioctl.h       |   36 ++
- fs/btrfs/relocation.c  |    2 +-
- fs/btrfs/scrub.c       | 1462 ++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/transaction.c |    3 +
- fs/btrfs/tree-log.c    |    6 +-
- fs/btrfs/volumes.c     |   16 +-
- fs/btrfs/volumes.h     |   17 +
- 13 files changed, 1677 insertions(+), 22 deletions(-)
- create mode 100644 fs/btrfs/scrub.c
-
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 7219537..1c9a2ef 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2447,8 +2447,8 @@ struct btrfs_csum_item *btrfs_lookup_csum(struct btrfs_trans_handle *trans,
+ int btrfs_csum_truncate(struct btrfs_trans_handle *trans,
+ 			struct btrfs_root *root, struct btrfs_path *path,
+ 			u64 isize);
+-int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start,
+-			     u64 end, struct list_head *list);
++int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
++			     struct list_head *list, int search_commit);
+ /* inode.c */
+ 
+ /* RHEL and EL kernels have a patch that renames PG_checked to FsMisc */
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index 4f19a3e..9643d6e 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -263,7 +263,7 @@ int btrfs_lookup_bio_sums_dio(struct btrfs_root *root, struct inode *inode,
+ }
+ 
+ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
+-			     struct list_head *list)
++			     struct list_head *list, int search_commit)
+ {
+ 	struct btrfs_key key;
+ 	struct btrfs_path *path;
+@@ -280,6 +280,12 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
+ 	path = btrfs_alloc_path();
+ 	BUG_ON(!path);
+ 
++	if (search_commit) {
++		path->skip_locking = 1;
++		path->reada = 2;
++		path->search_commit_root = 1;
++	}
++
+ 	key.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
+ 	key.offset = start;
+ 	key.type = BTRFS_EXTENT_CSUM_KEY;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 8d392ed..597b7ca 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1001,7 +1001,7 @@ static noinline int csum_exist_in_range(struct btrfs_root *root,
+ 	LIST_HEAD(list);
+ 
+ 	ret = btrfs_lookup_csums_range(root->fs_info->csum_root, bytenr,
+-				       bytenr + num_bytes - 1, &list);
++				       bytenr + num_bytes - 1, &list, 0);
+ 	if (ret == 0 && list_empty(&list))
+ 		return 0;
+ 
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 0825e4e..fa9c0a9 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -4225,7 +4225,7 @@ int btrfs_reloc_clone_csums(struct inode *inode, u64 file_pos, u64 len)
+ 
+ 	disk_bytenr = file_pos + BTRFS_I(inode)->index_cnt;
+ 	ret = btrfs_lookup_csums_range(root->fs_info->csum_root, disk_bytenr,
+-				       disk_bytenr + len - 1, &list);
++				       disk_bytenr + len - 1, &list, 0);
+ 
+ 	while (!list_empty(&list)) {
+ 		sums = list_entry(list.next, struct btrfs_ordered_sum, list);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index a4bbb85..1f6788f 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -614,7 +614,7 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
+ 
+ 			ret = btrfs_lookup_csums_range(root->log_root,
+ 						csum_start, csum_end - 1,
+-						&ordered_sums);
++						&ordered_sums, 0);
+ 			BUG_ON(ret);
+ 			while (!list_empty(&ordered_sums)) {
+ 				struct btrfs_ordered_sum *sums;
+@@ -2691,7 +2691,7 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
+ 				ret = btrfs_lookup_csums_range(
+ 						log->fs_info->csum_root,
+ 						ds + cs, ds + cs + cl - 1,
+-						&ordered_sums);
++						&ordered_sums, 0);
+ 				BUG_ON(ret);
+ 			}
+ 		}
 -- 
 1.7.3.4
 

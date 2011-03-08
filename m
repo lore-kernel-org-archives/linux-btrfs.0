@@ -1,47 +1,38 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH V3] btrfs: implement delayed inode items operation
-Date: Tue, 8 Mar 2011 17:56:40 +0100
-Message-ID: <20110308165640.GN17108@twin.jikos.cz>
-References: <4D6F2FE0.8020508@cn.fujitsu.com>
-Reply-To: dave@jikos.cz
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: please review recent fixes for file write and fiemap
+Date: Tue, 08 Mar 2011 12:58:40 -0500
+Message-ID: <1299606753-sup-5310@think>
+Content-Type: text/plain; charset=UTF-8
+To: "Linux Btrfs" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D6F2FE0.8020508@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hi Everyone,
 
-I did some testing, the speedup results match yours. I was watching kmem cache
-stats of the delayed_node, seem to behave well. Increase and decrease of
-number of active objects, from 3 to about ~400 (creat_unlink 50000) and went
-back to initial values after a few seconds. On my setup, there are 13
-delayed_node objects per page, which gives a good chance of quick allocation of
-the spare objects.
+The master branch of the btrfs-unstable tree has three shiny new
+commits, which fix some important bugs in file_write and fiemap.
 
-Size of the delayed_node is 304 bytes, which would slack 208 bytes (hitting the
-nearest kmalloc bucket of 512 bytes) per node.
+These are not yet pushed to Linus but the plan is to send them out
+before the final .38 release.
 
-So to justify the recommendation of kmem_cache use.
+The commits fix errors in the copy_from_user handling where short
+returns or zero returns would make btrfs_file_write do the wrong thing.
+This included looping forever, or pretending pages were up to date when
+they really were not.
 
-I was thinking about reducing size of the structure by a few bytes, to 292
-bytes.  In this case it would make 14 objects per slab page. There are padding
-holes after
-* atomic_t count (4 bytes)
-* bool inode_dirty (2 bytes)
+There is also another fiemap fix. Our fiemap was returning overlapping
+extents, which made recent versions of cp copy too many bytes into the
+destination file.
 
-you may want to reorder the fileds like this:
-* [no change up to inode_item]
-* index_cnt
-* refs
-* count
-* the bool fields
+The top commit is this one (just in case kernel.org hasn't caught up
+yet)
 
-Still needed to reduce by 7 from 304-6=298. Does not seem to be possible, the
-bool flags provide only 1 byte. Under these conditions, I suggest to make the
-bool fields int again to reduce instruction count which manage these flags.
-Compiler did not make them int automatically (altough it is free to do it).
+commit ea8efc74bd0402b4d5f663d007b4e25fa29ea778
+Author: Chris Mason <chris.mason@oracle.com>
+Date:   Tue Mar 8 11:54:40 2011 -0500
 
+    Btrfs: make sure not to return overlapping extents to fiemap
 
-dave
+Please read them, and try to break them ;)
+
+-chris

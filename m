@@ -1,45 +1,67 @@
-From: Spelic <spelic@shiftmail.org>
-Subject: Re: BTRFS fsck tool
-Date: Tue, 08 Mar 2011 03:17:48 +0100
-Message-ID: <4D7591CC.6060301@shiftmail.org>
-References: <AANLkTim1+n4OJcm1iYMQKQZyN9jT2uFUYjAM6=x4pY2g@mail.gmail.com>
+From: "Zhong, Xin" <xin.zhong@intel.com>
+Subject: RE: [PATCH] btrfs file write debugging patch
+Date: Tue, 8 Mar 2011 10:51:00 +0800
+Message-ID: <1865303E0DED764181A9D882DEF65FB6867722D81F@shsmsx502.ccr.corp.intel.com>
+References: <BAY156-w43472A651462DCADA1F9FAD2C10@phx.gbl>
+ <AANLkTikP0wWvRpGis+-mmuu_CvRnq9j0AdGuHrb9Y5WF@mail.gmail.com>
+ <1299527810.11172.8.camel@mainframe>
+ <201103072312.08371.johannes.hirte@fem.tu-ilmenau.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Alexey A Nikitin <moonwalker@syrius.us>
+Content-Type: text/plain; charset="utf-8"
+Cc: Mitch Harder <mitch.harder@sabayonlinux.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	Xin Zhong <thierryzhong@hotmail.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>,
+	=?utf-8?B?TWFyaWEgV2lrc3Ryw7Zt?= <maria@ponstudios.se>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <AANLkTim1+n4OJcm1iYMQKQZyN9jT2uFUYjAM6=x4pY2g@mail.gmail.com>
+In-Reply-To: <201103072312.08371.johannes.hirte@fem.tu-ilmenau.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/05/2011 12:59 AM, Alexey A Nikitin wrote:
-> Hi, everybody
->
-> I have BTRFS RAID0 setup with two disks. After some incident where I
-> had to force shutdown machine this array won't mount anymore
-
-
-Have you "reset" the machine or cut the power?
-I don't really know btrfs, but in btrfs wiki there is written:
-
-"Note that Btrfs does not yet have a fsck tool that can fix errors.
-While Btrfs is stable on a stable machine, it is currently possible to
-corrupt a filesystem irrecoverably if your machine crashes or loses
-power on disks that don't handle flush requests correctly. This will be
-fixed when the fsck tool is ready."
-
-is this your scenario? If you leave the power and stop submitting writes
-to the disks (like with a reset) the filesystem should be preserved, if
-that sentence is true.
-Did you cut the power while there was some process writing to it? If the
-kernel was panicked it is probably safe to cut the power (because the
-last write happened long time ago and disks had time to put that to the
-platters)
-
-Also what disks brand/model do you have? The sentence speaks about disks
-which don't honour flush+FUA requests, I think. Enterprise disks should
-honour that, consumer disks might not.
-
-I am interesed in what happened because I am evaluating using btrfs for
-very large backups (still losing those wouldn't be totally nice)
-
-Thank you
+RnJvbSBteSBleHBlcmllbmNlLCBvbmx5IHg4NiAzMmJpdCBrZXJuZWwgaGFzIHRoaXMgcHJvYmxl
+bSBhbmQgNjRiaXQga2VybmVsIGRvIG5vdCBoYXZlIGl0LiANCg0KSG93ZXZlciwgYXRvbSBiYXNl
+ZCBzeXN0ZW0gZG8gbm90IGhhdmUgaXQgYWx0aG91Z2ggaXQncyBpbnN0YWxsZWQgd2l0aCBhIDMy
+Yml0IGtlcm5lbC4gDQoNCi0tLS0tT3JpZ2luYWwgTWVzc2FnZS0tLS0tDQpGcm9tOiBKb2hhbm5l
+cyBIaXJ0ZSBbbWFpbHRvOmpvaGFubmVzLmhpcnRlQGZlbS50dS1pbG1lbmF1LmRlXSANClNlbnQ6
+IFR1ZXNkYXksIE1hcmNoIDA4LCAyMDExIDY6MTIgQU0NClRvOiBNYXJpYSBXaWtzdHLDtm0NCkNj
+OiBNaXRjaCBIYXJkZXI7IENocmlzIE1hc29uOyBYaW4gWmhvbmc7IFpob25nLCBYaW47IGxpbnV4
+LWJ0cmZzDQpTdWJqZWN0OiBSZTogW1BBVENIXSBidHJmcyBmaWxlIHdyaXRlIGRlYnVnZ2luZyBw
+YXRjaA0KDQpPbiBNb25kYXkgMDcgTWFyY2ggMjAxMSAyMDo1Njo1MCBNYXJpYSBXaWtzdHLDtm0g
+d3JvdGU6DQo+IG3DpW4gMjAxMS0wMy0wNyBrbG9ja2FuIDAwOjA3IC0wNjAwIHNrcmV2IE1pdGNo
+IEhhcmRlcjoNCj4gPiBPbiBTdW4sIE1hciA2LCAyMDExIGF0IDY6NTggUE0sIENocmlzIE1hc29u
+IDxjaHJpcy5tYXNvbkBvcmFjbGUuY29tPiANCndyb3RlOg0KPiA+ID4gRXhjZXJwdHMgZnJvbSBD
+aHJpcyBNYXNvbidzIG1lc3NhZ2Ugb2YgMjAxMS0wMy0wNiAxMzowMDoyNyAtMDUwMDoNCj4gPiA+
+PiBFeGNlcnB0cyBmcm9tIE1pdGNoIEhhcmRlcidzIG1lc3NhZ2Ugb2YgMjAxMS0wMy0wNSAxMTo1
+MDoxNCAtMDUwMDoNCj4gPiA+PiA+IEkndmUgY29uc3RydWN0ZWQgYSB0ZXN0IHBhdGNoIHRoYXQg
+aXMgY3VycmVudGx5IGFkZHJlc3NpbmcgYWxsIHRoZQ0KPiA+ID4+ID4gaXNzdWVzIG9uIG15IHN5
+c3RlbS4NCj4gPiA+PiA+IA0KPiA+ID4+ID4gVGhlIHBvcnRpb24gb2YgT3Blbm1vdGlmIHRoYXQg
+d2FzIGhhdmluZyBpc3N1ZXMgd2l0aCBwYWdlIGZhdWx0cw0KPiA+ID4+ID4gd29ya3MgY29ycmVj
+dGx5IHdpdGggdGhpcyBwYXRjaCwgYW5kIGdjYy00LjQuNSBidWlsZHMgd2l0aG91dA0KPiA+ID4+
+ID4gaXNzdWUuDQo+ID4gPj4gPiANCj4gPiA+PiA+IEkgZXh0cmFjdGVkIG9ubHkgdGhlIHBvcnRp
+b24gb2YgdGhlIGZpcnN0IHBhdGNoIHRoYXQgY29ycmVjdHMgdGhlDQo+ID4gPj4gPiBoYW5kbGlu
+ZyBvZiBkaXJ0eV9wYWdlcyB3aGVuIGNvcGllZD09MCwgYW5kIGluY29ycG9yYXRlZCB0aGUgc2Vj
+b25kDQo+ID4gPj4gPiBwYXRjaCB0aGF0IGZhbGxzIGJhY2sgdG8gb25lLXBhZ2UtYXQtYS10aW1l
+IGlmIHRoZXJlIGFyZSB0cm91Ymxlcw0KPiA+ID4+ID4gd2l0aCBwYWdlIGZhdWx0cy4NCj4gPiA+
+PiANCj4gPiA+PiBKdXN0IHRvIG1ha2Ugc3VyZSBJIHVuZGVyc3RhbmQsIGNvdWxkIHlvdSBwbGVh
+c2UgcG9zdCB0aGUgZnVsbA0KPiA+ID4+IGNvbWJpbmVkIHBhdGggdGhhdCB3YXMgZ2l2aW5nIHlv
+dSB0cm91YmxlIHdpdGggZ2NjPyAgV2UgZG8gbmVlZCB0bw0KPiA+ID4+IG1ha2Ugc3VyZSB0aGUg
+cGFnZXMgYXJlIHByb3Blcmx5IHVwIHRvIGRhdGUgaWYgd2UgZmFsbCBiYWNrIHRvDQo+ID4gPj4g
+cGFydGlhbCB3cml0ZXMuDQo+ID4gPiANCj4gPiA+IE9rLCBJIHdhcyBhYmxlIHRvIHJlcHJvZHVj
+ZSB0aGlzIGVhc2lseSB3aXRoIGZzeC4gIFRoZSBwcm9ibGVtIGlzIHRoYXQNCj4gPiA+IEkgd2Fz
+bid0IG1ha2luZyBzdXJlIHRoZSBsYXN0IHBhcnRpYWwgcGFnZSBpbiB0aGUgd3JpdGUgd2FzIHVw
+IHRvIGRhdGUNCj4gPiA+IHdoZW4gaXQgd2FzIGFsc28gdGhlIGZpcnN0IHBhZ2UgaW4gdGhlIHdy
+aXRlLg0KPiA+IA0KPiA+ID4gSGVyZSBpcyB0aGUgdXBkYXRlZCBwYXRjaCwgaXQgaGFzIGFsbCB0
+aGUgZml4ZXMgd2UndmUgZm91bmQgc28gZmFyOg0KPiA+IFRoaXMgbGF0ZXN0IHBhdGNoIHRoYXQg
+Q2hyaXMgaGFzIHNlbnQgb3V0IGZpeGVzIHRoZSBpc3N1ZXMgSSd2ZSBiZWVuDQo+ID4gZW5jb3Vu
+dGVyaW5nLg0KPiA+IA0KPiA+IEkgY2FuIGJ1aWxkIGdjYy00LjQuNSB3aXRob3V0IHByb2JsZW1z
+Lg0KPiA+IA0KPiA+IEFsc28sIHRoZSBwb3J0aW9uIG9mIE9wZW5tb3RpZiB0aGF0IHdhcyBoYXZp
+bmcgaXNzdWVzIHdpdGggcGFnZSBmYXVsdHMNCj4gPiBpcyB3b3JraW5nIGNvcnJlY3RseS4NCj4g
+PiANCj4gPiBMZXQgbWUga25vdyBpZiB5b3Ugc3RpbGwgd291bGQgbGlrZSB0byBzZWUgdGhlIHBh
+dGggbmFtZXMgZm9yIHRoZQ0KPiA+IHBvcnRpb25zIG9mIHRoZSBnY2MtNC40LjUgYnVpbGQgdGhh
+dCB3ZXJlIGdpdmluZyBtZSBpc3N1ZXMuICBJIGRpZG4ndA0KPiA+IHNhdmUgdGhhdCBpbmZvcm1h
+dGlvbiwgYnV0IEkgY2FuIHJlZ2VuZXJhdGUgaXQuICBCdXQgaXQgc291bmRzIGxpa2UNCj4gPiBp
+dCdzIGlycmVsZXZhbnQgbm93Lg0KPiANCj4gV2l0aCB0aGUgcGF0Y2ggSSBjYW4gY29tcGlsZSBs
+aWJnY3J5cHQgd2l0aG91dCBhbnkgcHJvYmxlbSwgc28gaXQgc29sdmVzDQo+IG15IHByb2JsZW1z
+IHRvLg0KDQpDYW4gY29uZmlybSB0aGlzLiBBbmQgdGhlIGJ1ZyBzZWVtcyB0byBiZSBoYXJkd2Fy
+ZS1yZWxhdGVkLiBPbiBteSBQZW50aXVtNCANCnN5c3RlbSBpdCB3YXMgMTAwJSByZXByb2R1Y2li
+bGUsIG9uIG15IEF0b20tYmFzZWQgc3lzdGVtIEkgY291bGRuJ3QgdHJpZ2dlciANCml0Lg0K

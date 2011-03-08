@@ -1,170 +1,49 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH v1 3/6] btrfs: add state information for scrub
-Date: Tue,  8 Mar 2011 15:37:46 +0100
-Message-ID: <88af4bafab7d8a3d07543d73e668164ef54d59db.1299593612.git.sensille@gmx.net>
-References: <cover.1299593612.git.sensille@gmx.net>
-To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
-	jansen@webgods.de
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: About btrfs chunk tree backups
+Date: Tue, 8 Mar 2011 10:09:37 -0500
+Message-ID: <20110308150936.GA2527@localhost.localdomain>
+References: <4D6F58CC.9030003@cn.fujitsu.com> <20110303123724.GA4558@dhcp231-156.rdu.redhat.com> <4D75AD0D.6070501@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: Josef Bacik <josef@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Miao Xie <miaox@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <cover.1299593612.git.sensille@gmx.net>
-In-Reply-To: <cover.1299593612.git.sensille@gmx.net>
+In-Reply-To: <4D75AD0D.6070501@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add structures and state information needed for scrub
+On Tue, Mar 08, 2011 at 12:14:05PM +0800, Miao Xie wrote:
+> On Thu, 3 Mar 2011 07:37:25 -0500, Josef Bacik wrote:
+> > On Thu, Mar 03, 2011 at 05:01:00PM +0800, Miao Xie wrote:
+> >> Hi, Chris and Josef
+> >>
+> >> Recently, I am interested in chunk tree backups, which is described in
+> >> Project ideas web. But I found it is hard to be implemented.
+> >>
+> >> The description said "make the mappings discoverable via a block device
+> >> scan so that we can recover from corrupted chunk trees", I think it is
+> >> hard to find the boundary of each stripe, which is the constituent of
+> >> the chunks, via a block device scan according to the current on-disk data
+> >> structures. And besides that, even though we find the stripes of each
+> >> chunks, we still don't know the order of the stripes in one chunk. So
+> >> I think chunk tree backups is hard to be implemented.
+> >>
+> >> Maybe I made some mistakes in understanding this project idea?
+> >>
+> > 
+> > We talked about this some earlier this week.  This will require a format change,
+> > basically we need to put down some metadata at the start of every chunk so that
+> > we can scan the disk and find the chunks.  This could probably be done in a
+> > backwards compatible way, we just need to make sure the space for the block
+> > thats used is taken up in the extent tree so old kernels don't write over the
+> > block.  Thanks,
+> 
+> Hi, Josef
+> 
+> Is anyone implementing it now? Maybe we can help him to do some work.
+> 
 
-Signed-off-by: Arne Jansen <sensille@gmx.net>
----
- fs/btrfs/ctree.h   |   26 ++++++++++++++++++++++++++
- fs/btrfs/disk-io.c |   15 +++++++++++++++
- fs/btrfs/ioctl.h   |   29 +++++++++++++++++++++++++++++
- fs/btrfs/volumes.h |    3 +++
- 4 files changed, 73 insertions(+), 0 deletions(-)
+Not that I know of.  Thanks,
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 1c9a2ef..e014432 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -23,6 +23,7 @@
- #include <linux/mm.h>
- #include <linux/highmem.h>
- #include <linux/fs.h>
-+#include <linux/rwsem.h>
- #include <linux/completion.h>
- #include <linux/backing-dev.h>
- #include <linux/wait.h>
-@@ -32,6 +33,7 @@
- #include "extent_io.h"
- #include "extent_map.h"
- #include "async-thread.h"
-+#include "ioctl.h"
- 
- struct btrfs_trans_handle;
- struct btrfs_transaction;
-@@ -48,6 +50,8 @@ struct btrfs_ordered_sum;
- 
- #define BTRFS_COMPAT_EXTENT_TREE_V0
- 
-+#define SCRUB_BTRFS_WORKER
-+
- /*
-  * files bigger than this get some pre-flushing when they are added
-  * to the ordered operations list.  That way we limit the total
-@@ -508,6 +512,12 @@ struct btrfs_extent_item_v0 {
- /* use full backrefs for extent pointers in the block */
- #define BTRFS_BLOCK_FLAG_FULL_BACKREF	(1ULL << 8)
- 
-+/*
-+ * this flag is only used internally by scrub and may be changed at any time
-+ * it is only declared here to avoid collisions
-+ */
-+#define BTRFS_EXTENT_FLAG_SUPER		(1ULL << 48)
-+
- struct btrfs_tree_block_info {
- 	struct btrfs_disk_key key;
- 	u8 level;
-@@ -1067,6 +1077,22 @@ struct btrfs_fs_info {
- 
- 	void *bdev_holder;
- 
-+	/* private scrub information */
-+	struct mutex scrub_lock;
-+	struct scrub_info *scrub_info;
-+	atomic_t scrubs_running;
-+	atomic_t scrub_pause_req;
-+	atomic_t scrubs_paused;
-+	atomic_t scrub_cancel_req;
-+	wait_queue_head_t scrub_pause_wait;
-+	struct rw_semaphore scrub_super_lock;
-+	int scrub_workers_refcnt;
-+#ifdef SCRUB_BTRFS_WORKER
-+	struct btrfs_workers scrub_workers;
-+#else
-+	struct workqueue_struct *scrub_workers;
-+#endif
-+
- 	/* filesystem state */
- 	u64 fs_state;
- };
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 3e1ea3e..061a48a 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1677,6 +1677,21 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 	INIT_LIST_HEAD(&fs_info->ordered_extents);
- 	spin_lock_init(&fs_info->ordered_extent_lock);
- 
-+	mutex_init(&fs_info->scrub_lock);
-+	atomic_set(&fs_info->scrubs_running, 0);
-+	atomic_set(&fs_info->scrub_pause_req, 0);
-+	atomic_set(&fs_info->scrubs_paused, 0);
-+	atomic_set(&fs_info->scrub_cancel_req, 0);
-+	init_waitqueue_head(&fs_info->scrub_pause_wait);
-+	init_rwsem(&fs_info->scrub_super_lock);
-+	fs_info->scrub_workers_refcnt = 0;
-+#ifdef SCRUB_BTRFS_WORKER
-+	btrfs_init_workers(&fs_info->scrub_workers, "scrub",
-+			   fs_info->thread_pool_size, &fs_info->generic_worker);
-+#else
-+	fs_info->scrub_workers = NULL;
-+#endif
-+
- 	sb->s_blocksize = 4096;
- 	sb->s_blocksize_bits = blksize_bits(4096);
- 	sb->s_bdi = &fs_info->bdi;
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 8fb3821..f7bf177 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -42,6 +42,35 @@ struct btrfs_ioctl_vol_args_v2 {
- 	char name[BTRFS_SUBVOL_NAME_MAX + 1];
- };
- 
-+struct btrfs_scrub_progress {
-+	__u64 data_extents_scrubbed;
-+	__u64 tree_extents_scrubbed;
-+	__u64 data_bytes_scrubbed;
-+	__u64 tree_bytes_scrubbed;
-+	__u64 read_errors;
-+	__u64 csum_errors;
-+	__u64 verify_errors;
-+	__u64 no_csum;
-+	__u64 csum_discards;
-+	__u64 super_errors;
-+	__u64 malloc_errors;
-+	__u64 uncorrectable_errors;
-+	__u64 corrected_errors;
-+	__u64 last_physical;
-+};
-+
-+struct btrfs_ioctl_scrub_args {
-+	__u64 devid;
-+	__u64 start;
-+	__u64 end;
-+	struct btrfs_scrub_progress progress;
-+};
-+
-+struct btrfs_ioctl_dev_info_args {
-+	__u64 num_devices;
-+	__u64 max_id;
-+};
-+
- #define BTRFS_INO_LOOKUP_PATH_MAX 4080
- struct btrfs_ioctl_ino_lookup_args {
- 	__u64 treeid;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 0ccc982..92204d9 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -86,6 +86,9 @@ struct btrfs_device {
- 	/* physical drive uuid (or lvm uuid) */
- 	u8 uuid[BTRFS_UUID_SIZE];
- 
-+	/* per-device scrub information */
-+	struct scrub_dev *scrub_device;
-+
- 	struct btrfs_work work;
- };
- 
--- 
-1.7.3.4
-
+Josef

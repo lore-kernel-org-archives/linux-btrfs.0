@@ -1,67 +1,51 @@
-From: "Zhong, Xin" <xin.zhong@intel.com>
-Subject: RE: [PATCH] btrfs file write debugging patch
-Date: Tue, 8 Mar 2011 10:51:00 +0800
-Message-ID: <1865303E0DED764181A9D882DEF65FB6867722D81F@shsmsx502.ccr.corp.intel.com>
-References: <BAY156-w43472A651462DCADA1F9FAD2C10@phx.gbl>
- <AANLkTikP0wWvRpGis+-mmuu_CvRnq9j0AdGuHrb9Y5WF@mail.gmail.com>
- <1299527810.11172.8.camel@mainframe>
- <201103072312.08371.johannes.hirte@fem.tu-ilmenau.de>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: Re: About btrfs chunk tree backups
+Date: Tue, 08 Mar 2011 12:14:05 +0800
+Message-ID: <4D75AD0D.6070501@cn.fujitsu.com>
+References: <4D6F58CC.9030003@cn.fujitsu.com> <20110303123724.GA4558@dhcp231-156.rdu.redhat.com>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Cc: Mitch Harder <mitch.harder@sabayonlinux.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	Xin Zhong <thierryzhong@hotmail.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>,
-	=?utf-8?B?TWFyaWEgV2lrc3Ryw7Zt?= <maria@ponstudios.se>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201103072312.08371.johannes.hirte@fem.tu-ilmenau.de>
+In-Reply-To: <20110303123724.GA4558@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-RnJvbSBteSBleHBlcmllbmNlLCBvbmx5IHg4NiAzMmJpdCBrZXJuZWwgaGFzIHRoaXMgcHJvYmxl
-bSBhbmQgNjRiaXQga2VybmVsIGRvIG5vdCBoYXZlIGl0LiANCg0KSG93ZXZlciwgYXRvbSBiYXNl
-ZCBzeXN0ZW0gZG8gbm90IGhhdmUgaXQgYWx0aG91Z2ggaXQncyBpbnN0YWxsZWQgd2l0aCBhIDMy
-Yml0IGtlcm5lbC4gDQoNCi0tLS0tT3JpZ2luYWwgTWVzc2FnZS0tLS0tDQpGcm9tOiBKb2hhbm5l
-cyBIaXJ0ZSBbbWFpbHRvOmpvaGFubmVzLmhpcnRlQGZlbS50dS1pbG1lbmF1LmRlXSANClNlbnQ6
-IFR1ZXNkYXksIE1hcmNoIDA4LCAyMDExIDY6MTIgQU0NClRvOiBNYXJpYSBXaWtzdHLDtm0NCkNj
-OiBNaXRjaCBIYXJkZXI7IENocmlzIE1hc29uOyBYaW4gWmhvbmc7IFpob25nLCBYaW47IGxpbnV4
-LWJ0cmZzDQpTdWJqZWN0OiBSZTogW1BBVENIXSBidHJmcyBmaWxlIHdyaXRlIGRlYnVnZ2luZyBw
-YXRjaA0KDQpPbiBNb25kYXkgMDcgTWFyY2ggMjAxMSAyMDo1Njo1MCBNYXJpYSBXaWtzdHLDtm0g
-d3JvdGU6DQo+IG3DpW4gMjAxMS0wMy0wNyBrbG9ja2FuIDAwOjA3IC0wNjAwIHNrcmV2IE1pdGNo
-IEhhcmRlcjoNCj4gPiBPbiBTdW4sIE1hciA2LCAyMDExIGF0IDY6NTggUE0sIENocmlzIE1hc29u
-IDxjaHJpcy5tYXNvbkBvcmFjbGUuY29tPiANCndyb3RlOg0KPiA+ID4gRXhjZXJwdHMgZnJvbSBD
-aHJpcyBNYXNvbidzIG1lc3NhZ2Ugb2YgMjAxMS0wMy0wNiAxMzowMDoyNyAtMDUwMDoNCj4gPiA+
-PiBFeGNlcnB0cyBmcm9tIE1pdGNoIEhhcmRlcidzIG1lc3NhZ2Ugb2YgMjAxMS0wMy0wNSAxMTo1
-MDoxNCAtMDUwMDoNCj4gPiA+PiA+IEkndmUgY29uc3RydWN0ZWQgYSB0ZXN0IHBhdGNoIHRoYXQg
-aXMgY3VycmVudGx5IGFkZHJlc3NpbmcgYWxsIHRoZQ0KPiA+ID4+ID4gaXNzdWVzIG9uIG15IHN5
-c3RlbS4NCj4gPiA+PiA+IA0KPiA+ID4+ID4gVGhlIHBvcnRpb24gb2YgT3Blbm1vdGlmIHRoYXQg
-d2FzIGhhdmluZyBpc3N1ZXMgd2l0aCBwYWdlIGZhdWx0cw0KPiA+ID4+ID4gd29ya3MgY29ycmVj
-dGx5IHdpdGggdGhpcyBwYXRjaCwgYW5kIGdjYy00LjQuNSBidWlsZHMgd2l0aG91dA0KPiA+ID4+
-ID4gaXNzdWUuDQo+ID4gPj4gPiANCj4gPiA+PiA+IEkgZXh0cmFjdGVkIG9ubHkgdGhlIHBvcnRp
-b24gb2YgdGhlIGZpcnN0IHBhdGNoIHRoYXQgY29ycmVjdHMgdGhlDQo+ID4gPj4gPiBoYW5kbGlu
-ZyBvZiBkaXJ0eV9wYWdlcyB3aGVuIGNvcGllZD09MCwgYW5kIGluY29ycG9yYXRlZCB0aGUgc2Vj
-b25kDQo+ID4gPj4gPiBwYXRjaCB0aGF0IGZhbGxzIGJhY2sgdG8gb25lLXBhZ2UtYXQtYS10aW1l
-IGlmIHRoZXJlIGFyZSB0cm91Ymxlcw0KPiA+ID4+ID4gd2l0aCBwYWdlIGZhdWx0cy4NCj4gPiA+
-PiANCj4gPiA+PiBKdXN0IHRvIG1ha2Ugc3VyZSBJIHVuZGVyc3RhbmQsIGNvdWxkIHlvdSBwbGVh
-c2UgcG9zdCB0aGUgZnVsbA0KPiA+ID4+IGNvbWJpbmVkIHBhdGggdGhhdCB3YXMgZ2l2aW5nIHlv
-dSB0cm91YmxlIHdpdGggZ2NjPyAgV2UgZG8gbmVlZCB0bw0KPiA+ID4+IG1ha2Ugc3VyZSB0aGUg
-cGFnZXMgYXJlIHByb3Blcmx5IHVwIHRvIGRhdGUgaWYgd2UgZmFsbCBiYWNrIHRvDQo+ID4gPj4g
-cGFydGlhbCB3cml0ZXMuDQo+ID4gPiANCj4gPiA+IE9rLCBJIHdhcyBhYmxlIHRvIHJlcHJvZHVj
-ZSB0aGlzIGVhc2lseSB3aXRoIGZzeC4gIFRoZSBwcm9ibGVtIGlzIHRoYXQNCj4gPiA+IEkgd2Fz
-bid0IG1ha2luZyBzdXJlIHRoZSBsYXN0IHBhcnRpYWwgcGFnZSBpbiB0aGUgd3JpdGUgd2FzIHVw
-IHRvIGRhdGUNCj4gPiA+IHdoZW4gaXQgd2FzIGFsc28gdGhlIGZpcnN0IHBhZ2UgaW4gdGhlIHdy
-aXRlLg0KPiA+IA0KPiA+ID4gSGVyZSBpcyB0aGUgdXBkYXRlZCBwYXRjaCwgaXQgaGFzIGFsbCB0
-aGUgZml4ZXMgd2UndmUgZm91bmQgc28gZmFyOg0KPiA+IFRoaXMgbGF0ZXN0IHBhdGNoIHRoYXQg
-Q2hyaXMgaGFzIHNlbnQgb3V0IGZpeGVzIHRoZSBpc3N1ZXMgSSd2ZSBiZWVuDQo+ID4gZW5jb3Vu
-dGVyaW5nLg0KPiA+IA0KPiA+IEkgY2FuIGJ1aWxkIGdjYy00LjQuNSB3aXRob3V0IHByb2JsZW1z
-Lg0KPiA+IA0KPiA+IEFsc28sIHRoZSBwb3J0aW9uIG9mIE9wZW5tb3RpZiB0aGF0IHdhcyBoYXZp
-bmcgaXNzdWVzIHdpdGggcGFnZSBmYXVsdHMNCj4gPiBpcyB3b3JraW5nIGNvcnJlY3RseS4NCj4g
-PiANCj4gPiBMZXQgbWUga25vdyBpZiB5b3Ugc3RpbGwgd291bGQgbGlrZSB0byBzZWUgdGhlIHBh
-dGggbmFtZXMgZm9yIHRoZQ0KPiA+IHBvcnRpb25zIG9mIHRoZSBnY2MtNC40LjUgYnVpbGQgdGhh
-dCB3ZXJlIGdpdmluZyBtZSBpc3N1ZXMuICBJIGRpZG4ndA0KPiA+IHNhdmUgdGhhdCBpbmZvcm1h
-dGlvbiwgYnV0IEkgY2FuIHJlZ2VuZXJhdGUgaXQuICBCdXQgaXQgc291bmRzIGxpa2UNCj4gPiBp
-dCdzIGlycmVsZXZhbnQgbm93Lg0KPiANCj4gV2l0aCB0aGUgcGF0Y2ggSSBjYW4gY29tcGlsZSBs
-aWJnY3J5cHQgd2l0aG91dCBhbnkgcHJvYmxlbSwgc28gaXQgc29sdmVzDQo+IG15IHByb2JsZW1z
-IHRvLg0KDQpDYW4gY29uZmlybSB0aGlzLiBBbmQgdGhlIGJ1ZyBzZWVtcyB0byBiZSBoYXJkd2Fy
-ZS1yZWxhdGVkLiBPbiBteSBQZW50aXVtNCANCnN5c3RlbSBpdCB3YXMgMTAwJSByZXByb2R1Y2li
-bGUsIG9uIG15IEF0b20tYmFzZWQgc3lzdGVtIEkgY291bGRuJ3QgdHJpZ2dlciANCml0Lg0K
+On Thu, 3 Mar 2011 07:37:25 -0500, Josef Bacik wrote:
+> On Thu, Mar 03, 2011 at 05:01:00PM +0800, Miao Xie wrote:
+>> Hi, Chris and Josef
+>>
+>> Recently, I am interested in chunk tree backups, which is described in
+>> Project ideas web. But I found it is hard to be implemented.
+>>
+>> The description said "make the mappings discoverable via a block device
+>> scan so that we can recover from corrupted chunk trees", I think it is
+>> hard to find the boundary of each stripe, which is the constituent of
+>> the chunks, via a block device scan according to the current on-disk data
+>> structures. And besides that, even though we find the stripes of each
+>> chunks, we still don't know the order of the stripes in one chunk. So
+>> I think chunk tree backups is hard to be implemented.
+>>
+>> Maybe I made some mistakes in understanding this project idea?
+>>
+> 
+> We talked about this some earlier this week.  This will require a format change,
+> basically we need to put down some metadata at the start of every chunk so that
+> we can scan the disk and find the chunks.  This could probably be done in a
+> backwards compatible way, we just need to make sure the space for the block
+> thats used is taken up in the extent tree so old kernels don't write over the
+> block.  Thanks,
+
+Hi, Josef
+
+Is anyone implementing it now? Maybe we can help him to do some work.
+
+Thanks
+Miao
+
+> 
+> Josef 
+> 
+

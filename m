@@ -1,42 +1,38 @@
-From: Jens Rosenboom <j.rosenboom@syseleven.de>
-Subject: Re: btrfs lacking inode or file count?
-Date: Tue, 08 Mar 2011 10:45:07 +0100
-Message-ID: <4D75FAA3.7090309@syseleven.de>
-References: <4D75052D.7050704@syseleven.de> <alpine.DEB.2.01.1103070935550.23816@trent.utfs.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Christian Kujau <lists@nerdbynature.de>
+From: Arne Jansen <sensille@gmx.net>
+Subject: [PATCH] remove unneeded DEFINE_WAITs
+Date: Tue,  8 Mar 2011 12:34:10 +0100
+Message-ID: <1299584050-6014-1-git-send-email-sensille@gmx.net>
+Cc: jansen@webgods.de
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <alpine.DEB.2.01.1103070935550.23816@trent.utfs.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 07.03.11 18:38, schrieb Christian Kujau:
-> On Mon, 7 Mar 2011 at 17:17, Jens Rosenboom wrote:
->> I'm just starting to do some testing with btrfs and I noticed that "df
->> -i" doesn't give any sensible output:
-> 
-> Btrfs has dynamic inode allocation (like zfs), so it (should) never runs 
-> out of "available inodes" (only "out of space"). 
-> It's a feature, not a bug :-)
 
-Dynamic inode allocation surely is a nice feature, but easily being able
-to get the total number of files in a file system is another one and I
-am missing the latter.
+Signed-off-by: Arne Jansen <sensille@gmx.net>
+---
+ fs/btrfs/extent-tree.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
 
-For subvolumes it might probably be related to
-https://btrfs.wiki.kernel.org/index.php/UseCases#How_I_can_know_how_much_space_is_used_by_a_volume.3F
-but if there would be a way to compute the number of files in a
-subvolume more easily, that might be a useable first order approximation
-of space usage.
-
-FWIW, it seems that ZFS can give away all these data[1] rather easily,
-so it doesn't look to me like the lack of these features is a direct
-consequence of having dynamic inode allocation. Either there is another
-design decision that has this effect, or it is just lack of
-implementation. (And in the latter case I might hope for this to change.)
-
-[1] Number of files, total space used by a snapshot, space uniquely used
-by a snapshot - the latter will correspond to the space that can be
-freed by deleting the snapshot
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a7aaa10..c1f0c28 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4790,7 +4790,6 @@ wait_block_group_cache_progress(struct btrfs_block_group_cache *cache,
+ 				u64 num_bytes)
+ {
+ 	struct btrfs_caching_control *caching_ctl;
+-	DEFINE_WAIT(wait);
+ 
+ 	caching_ctl = get_caching_control(cache);
+ 	if (!caching_ctl)
+@@ -4807,7 +4806,6 @@ static noinline int
+ wait_block_group_cache_done(struct btrfs_block_group_cache *cache)
+ {
+ 	struct btrfs_caching_control *caching_ctl;
+-	DEFINE_WAIT(wait);
+ 
+ 	caching_ctl = get_caching_control(cache);
+ 	if (!caching_ctl)
+-- 
+1.7.3.4
 

@@ -1,75 +1,63 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
+From: "Brian J. Murrell" <brian@interlinx.bc.ca>
 Subject: Re: btrfs fi df returns nothing
-Date: Wed, 9 Mar 2011 11:47:46 +0000
-Message-ID: <20110309114746.GA2998@carfax.org.uk>
-References: <il7npu$5lh$1@dough.gmane.org>
+Date: Wed, 09 Mar 2011 07:20:24 -0500
+Message-ID: <4D777088.8040509@interlinx.bc.ca>
+References: <il7npu$5lh$1@dough.gmane.org> <20110309114746.GA2998@carfax.org.uk>
 Mime-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="TB36FDmn/VVEgNH/"
-Cc: linux-btrfs@vger.kernel.org
-To: "Brian J. Murrell" <brian@interlinx.bc.ca>
+ protocol="application/pgp-signature";
+ boundary="------------enigAF970DE580BF850813C453D1"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <il7npu$5lh$1@dough.gmane.org>
+In-Reply-To: <20110309114746.GA2998@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--------------enigAF970DE580BF850813C453D1
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
 
---TB36FDmn/VVEgNH/
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+On 11-03-09 06:47 AM, Hugo Mills wrote:
+> On Wed, Mar 09, 2011 at 06:20:28AM -0500, Brian J. Murrell wrote:
+>=20
+>    Ouch. That's a *very* early kernel, in btrfs terms.
 
-On Wed, Mar 09, 2011 at 06:20:28AM -0500, Brian J. Murrell wrote:
-> I am using btrfs on Ubuntu's LTS kernel (2.6.32-22-generic) and have
+Yeah, that's my understanding also.
 
-   Ouch. That's a *very* early kernel, in btrfs terms. There are a
-significant number of serious bugs that have been fixed since then.
+> There are a
+> significant number of serious bugs that have been fixed since then.
 
-> updated the btrfs-tools to 0.19+20101101-1~lucid1.  I have also built
-> the latest from
-> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs-unstable.git.
-> 
-> The problem is that I don't get anything from btrfs fi df $mountpoint.
-> i.e., for the btrfs filesystem mounted at /mnt/btrfs-test/
-> 
-> # ./btrfs fi df /mnt/btrfs-test/
-> #
-> 
-> See, no output.  Is my kernel module too old for that feature?  Maybe it is:
-> 
-> stat64("/mnt/btrfs-test/", {st_mode=S_IFDIR|0755, st_size=72, ...}) = 0
-> open("/mnt/btrfs-test/",
-> O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_DIRECTORY|O_CLOEXEC) = 3
-> fcntl64(3, F_GETFD)                     = 0x1 (flags FD_CLOEXEC)
-> ioctl(3, 0xc0109414, 0x999c320)         = -1 ENOTTY (Inappropriate ioctl
-> for device)
-> exit_group(-1)                          = ?
-> 
-> If my kernel module is too old, anyone know of a successful backport of
-> a newer btrfs for Ubuntu Lucid?  In a PPA or otherwise?
+Bugs in btrfs or other related kernel bugs?
 
-   There's Ubuntu kernel PPAs listed on the btrfs wiki:
-https://btrfs.wiki.kernel.org/index.php/Getting_started#Ubuntu_Linux
+>    There's Ubuntu kernel PPAs listed on the btrfs wiki:
+> https://btrfs.wiki.kernel.org/index.php/Getting_started#Ubuntu_Linux
 
-   The wiki is your friend. :)
+Indeed.  I was hoping to not upgrade a whole kernel to the current
+development kernel but instead just update btrfs to as new as I can get
+with a 2.6.32 kernel.  Just trying to keep the ripple effect to a minimum=
+=2E
 
-   Hugo.
+>    The wiki is your friend. :)
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-  --- "You are demons,  and I am in Hell!" "Well, technically, it's ---  
-               London,  but it's an easy mistake to make."               
+Indeed.
 
---TB36FDmn/VVEgNH/
+b.
+
+
+
+--------------enigAF970DE580BF850813C453D1
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.10 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
 
-iD8DBQFNd2jiIKyzvlFcI40RAiTHAKCJjvS7Pk7wR8owRPSvU8f91dw+tgCfcmSO
-l7Khgha/PE1V9BxJD1AJvC0=
-=N4ZM
+iEYEARECAAYFAk13cIgACgkQl3EQlGLyuXAGCwCdEP6FrwOddo5QiFXjvsUGz8xJ
+FzsAoLi019J7oEuao/2ddIXXJIX9qKS2
+=Bmnw
 -----END PGP SIGNATURE-----
 
---TB36FDmn/VVEgNH/--
+--------------enigAF970DE580BF850813C453D1--
+

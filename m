@@ -1,63 +1,51 @@
-From: "Brian J. Murrell" <brian@interlinx.bc.ca>
+From: Hugo Mills <hugo-lkml@carfax.org.uk>
 Subject: Re: btrfs fi df returns nothing
-Date: Wed, 09 Mar 2011 07:20:24 -0500
-Message-ID: <4D777088.8040509@interlinx.bc.ca>
-References: <il7npu$5lh$1@dough.gmane.org> <20110309114746.GA2998@carfax.org.uk>
+Date: Wed, 9 Mar 2011 12:22:25 +0000
+Message-ID: <20110309122225.GB2998@carfax.org.uk>
+References: <il7npu$5lh$1@dough.gmane.org>
+ <20110309114746.GA2998@carfax.org.uk>
+ <4D777088.8040509@interlinx.bc.ca>
 Mime-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="------------enigAF970DE580BF850813C453D1"
-To: linux-btrfs@vger.kernel.org
+	protocol="application/pgp-signature"; boundary="oC1+HKm2/end4ao3"
+Cc: linux-btrfs@vger.kernel.org
+To: "Brian J. Murrell" <brian@interlinx.bc.ca>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110309114746.GA2998@carfax.org.uk>
+In-Reply-To: <4D777088.8040509@interlinx.bc.ca>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
---------------enigAF970DE580BF850813C453D1
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
 
-On 11-03-09 06:47 AM, Hugo Mills wrote:
-> On Wed, Mar 09, 2011 at 06:20:28AM -0500, Brian J. Murrell wrote:
->=20
->    Ouch. That's a *very* early kernel, in btrfs terms.
+--oC1+HKm2/end4ao3
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Yeah, that's my understanding also.
+On Wed, Mar 09, 2011 at 07:20:24AM -0500, Brian J. Murrell wrote:
+> On 11-03-09 06:47 AM, Hugo Mills wrote:
+> > There are a
+> > significant number of serious bugs that have been fixed since then.
+> 
+> Bugs in btrfs or other related kernel bugs?
 
-> There are a
-> significant number of serious bugs that have been fixed since then.
+   Well, both, but I was specifically referring to btrfs.
 
-Bugs in btrfs or other related kernel bugs?
+   Hugo.
 
->    There's Ubuntu kernel PPAs listed on the btrfs wiki:
-> https://btrfs.wiki.kernel.org/index.php/Getting_started#Ubuntu_Linux
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+                       ---   __(_'>  Squeak!   ---                       
 
-Indeed.  I was hoping to not upgrade a whole kernel to the current
-development kernel but instead just update btrfs to as new as I can get
-with a 2.6.32 kernel.  Just trying to keep the ripple effect to a minimum=
-=2E
-
->    The wiki is your friend. :)
-
-Indeed.
-
-b.
-
-
-
---------------enigAF970DE580BF850813C453D1
+--oC1+HKm2/end4ao3
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.10 (GNU/Linux)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
 
-iEYEARECAAYFAk13cIgACgkQl3EQlGLyuXAGCwCdEP6FrwOddo5QiFXjvsUGz8xJ
-FzsAoLi019J7oEuao/2ddIXXJIX9qKS2
-=Bmnw
+iD8DBQFNd3EAIKyzvlFcI40RAgftAJwLKUuhkTJjgeOv7rvbK8/GjB3ZGQCgxAZt
+WHJqbLXl85lrknGI01rHTmA=
+=tBRi
 -----END PGP SIGNATURE-----
 
---------------enigAF970DE580BF850813C453D1--
-
+--oC1+HKm2/end4ao3--

@@ -1,106 +1,65 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: resize ate my root node
-Date: Tue, 08 Mar 2011 16:40:20 -0500
-Message-ID: <1299620014-sup-698@think>
-References: <20110307174820.5100.qmail@stuge.se>
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Peter Stuge <peter@stuge.se>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: Re: [PATCH V3] btrfs: implement delayed inode items operation
+Date: Wed, 09 Mar 2011 13:40:28 +0800
+Message-ID: <4D7712CC.9030807@cn.fujitsu.com>
+References: <4D6F2FE0.8020508@cn.fujitsu.com> <20110308165640.GN17108@twin.jikos.cz>
+Reply-To: miaox@cn.fujitsu.com
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <20110307174820.5100.qmail@stuge.se>
+In-Reply-To: <20110308165640.GN17108@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Peter Stuge's message of 2011-03-07 12:48:20 -0500:
+On tue, 8 Mar 2011 17:56:40 +0100, David Sterba wrote:
 > Hi,
 > 
-> I ran btrfsctl resize -r -3gb /dev/sda2 using wireless-testing.git
-> based on 2.6.38-rc6 and all seemed good. df reported reduced size so
-> I repartitioned and rebooted. Filesystem can no longer be mounted:
+> I did some testing, the speedup results match yours. I was watching kmem cache
+> stats of the delayed_node, seem to behave well. Increase and decrease of
+> number of active objects, from 3 to about ~400 (creat_unlink 50000) and went
+> back to initial values after a few seconds. On my setup, there are 13
+> delayed_node objects per page, which gives a good chance of quick allocation of
+> the spare objects.
 > 
-> [10560.129038] device fsid b2408c2e83f55cc2-5f7a14e35f176484 devid 1 transid 341132 /dev/sdb2
-> [10560.133407] btrfs bad tree block start 0 34520006656
-> [10560.134031] btrfs bad tree block start 0 34520006656
-> [10560.134904] btrfs bad tree block start 0 34520006656
-> [10560.134912] btrfs: failed to read tree root on sdb2
-> [10560.137206] btrfs: open_ctree failed
+> Size of the delayed_node is 304 bytes, which would slack 208 bytes (hitting the
+> nearest kmalloc bucket of 512 bytes) per node.
 > 
-> btrfs-debug-tree and friends are similarly upset:
+> So to justify the recommendation of kmem_cache use.
+> 
+> I was thinking about reducing size of the structure by a few bytes, to 292
+> bytes.  In this case it would make 14 objects per slab page. There are padding
+> holes after
+> * atomic_t count (4 bytes)
+> * bool inode_dirty (2 bytes)
+> 
+> you may want to reorder the fileds like this:
+> * [no change up to inode_item]
+> * index_cnt
+> * refs
+> * count
+> * the bool fields
 
-Ouch, sorry about this.  Do you have details on how big the FS was and
-how big the partition was before the resize?
+Thanks for your advice. But AFAIK, reordering the fields like what you said can not
+reduce the space of delayed_nodes, because a hole is placed on the end to make the
+structure big enough to pack tightly into arrays and maintain proper alignment. So
+although we reorder the fields, the size of delayed_node is still 304 bytes.
 
-Have you tried using fdisk to bring the partition back to the original
-size?
+> Still needed to reduce by 7 from 304-6=298. Does not seem to be possible, the
+> bool flags provide only 1 byte. Under these conditions, I suggest to make the
+> bool fields int again to reduce instruction count which manage these flags.
+> Compiler did not make them int automatically (altough it is free to do it).
 
--chris
+Sorry, I don't understand what you said above clearly, Did you mean
+we can not access bool variables by one instruction?
+
+Thanks
+Miao
 
 > 
-> $ ./btrfs-debug-tree /dev/sdb2
-> btrfs-debug-tree: disk-io.c:739: open_ctree_fd: Assertion `!(!tree_root->node)' failed.
+> dave
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
-> $ gdb --args ./btrfs-debug-tree /dev/sdb2
-> GNU gdb 6.8
-> ..
-> (gdb) b disk-io.c:44
-> Breakpoint 1 at 0x8050db7: file disk-io.c, line 44.
-> ..
-> Breakpoint 1, check_tree_block (root=0x946e2e8, buf=0x9471538) at disk-io.c:44
-> 44              if (buf->start != btrfs_header_bytenr(buf))
-> (gdb) p buf->start
-> $1 = 20971520
-> ..
-> Breakpoint 1, check_tree_block (root=0x946e2e8, buf=0x9472588) at disk-io.c:44
-> 44              if (buf->start != btrfs_header_bytenr(buf))
-> (gdb) p buf->start
-> $2 = 20987904
-> ..
-> Breakpoint 1, check_tree_block (root=0x946e2e8, buf=0x94735d8) at disk-io.c:44
-> 44              if (buf->start != btrfs_header_bytenr(buf))
-> (gdb) p buf->start
-> $3 = 20983808
-> 
-> The above checks succeed but next time check_tree_block() is called
-> the check does not succeed.
-> 
-> Breakpoint 1, check_tree_block (root=0x946e008, buf=0x9474628) at disk-io.c:44
-> 44              if (buf->start != btrfs_header_bytenr(buf))
-> (gdb) p buf->start
-> $4 = 34520006656
-> (gdb) p btrfs_header_bytenr(buf)
-> $5 = 0
-> ..
-> (gdb) bt
-> #0  check_tree_block (root=0x946e008, buf=0x9474628) at disk-io.c:45
-> #1  0x080514fc in read_tree_block (root=0x946e008, bytenr=34520006656, 
->     blocksize=4096, parent_transid=341132) at disk-io.c:207
-> #2  0x080531a7 in open_ctree_fd (fp=7, path=0xbfef322a "/dev/sdb2", 
->     sb_bytenr=65536, writes=0) at disk-io.c:736
-> #3  0x08052a58 in open_ctree (filename=0xbfef322a "/dev/sdb2", sb_bytenr=0, 
->     writes=0) at disk-io.c:587
-> #4  0x080735cf in main (ac=1, av=0xbfef2374) at debug-tree.c:148
-> 
-> This is disk-io.c:
-> 
-> 732     blocksize = btrfs_level_size(tree_root,
->                                      btrfs_super_root_level(disk_super));  
->         generation = btrfs_super_generation(disk_super);  
-> 
->         tree_root->node = read_tree_block(tree_root,
->                                           btrfs_super_root(disk_super),
->                                           blocksize, generation);
-> ..
-> 188     eb = btrfs_find_create_tree_block(root, bytenr, blocksize);
-> ..
-> 198             ret = btrfs_map_block(&root->fs_info->mapping_tree, READ,
->                                       eb->start, &length, &multi, mirror_num);
-> ..
-> 206             ret = read_extent_from_disk(eb);
->                 if (ret == 0 && check_tree_block(root, eb) == 0 &&
-> 
-> This is the call that fails.
-> 
-> 
-> Where do I look next?
-> 
-> 
-> //Peter
+

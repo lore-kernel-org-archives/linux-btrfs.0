@@ -1,65 +1,59 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: [PATCH V3] btrfs: implement delayed inode items operation
-Date: Wed, 09 Mar 2011 13:40:28 +0800
-Message-ID: <4D7712CC.9030807@cn.fujitsu.com>
-References: <4D6F2FE0.8020508@cn.fujitsu.com> <20110308165640.GN17108@twin.jikos.cz>
-Reply-To: miaox@cn.fujitsu.com
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: Re: please review recent fixes for file write and fiemap
+Date: Wed, 9 Mar 2011 00:06:37 -0600
+Message-ID: <AANLkTimxffcWmYp4rV4MLYUbjRUHwN0cpR-LUcPgix7+@mail.gmail.com>
+References: <1299606753-sup-5310@think>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110308165640.GN17108@twin.jikos.cz>
+In-Reply-To: <1299606753-sup-5310@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On tue, 8 Mar 2011 17:56:40 +0100, David Sterba wrote:
-> Hi,
-> 
-> I did some testing, the speedup results match yours. I was watching kmem cache
-> stats of the delayed_node, seem to behave well. Increase and decrease of
-> number of active objects, from 3 to about ~400 (creat_unlink 50000) and went
-> back to initial values after a few seconds. On my setup, there are 13
-> delayed_node objects per page, which gives a good chance of quick allocation of
-> the spare objects.
-> 
-> Size of the delayed_node is 304 bytes, which would slack 208 bytes (hitting the
-> nearest kmalloc bucket of 512 bytes) per node.
-> 
-> So to justify the recommendation of kmem_cache use.
-> 
-> I was thinking about reducing size of the structure by a few bytes, to 292
-> bytes.  In this case it would make 14 objects per slab page. There are padding
-> holes after
-> * atomic_t count (4 bytes)
-> * bool inode_dirty (2 bytes)
-> 
-> you may want to reorder the fileds like this:
-> * [no change up to inode_item]
-> * index_cnt
-> * refs
-> * count
-> * the bool fields
+On Tue, Mar 8, 2011 at 11:58 AM, Chris Mason <chris.mason@oracle.com> w=
+rote:
+> Hi Everyone,
+>
+> The master branch of the btrfs-unstable tree has three shiny new
+> commits, which fix some important bugs in file_write and fiemap.
+>
+> These are not yet pushed to Linus but the plan is to send them out
+> before the final .38 release.
+>
+> The commits fix errors in the copy_from_user handling where short
+> returns or zero returns would make btrfs_file_write do the wrong thin=
+g.
+> This included looping forever, or pretending pages were up to date wh=
+en
+> they really were not.
+>
+> There is also another fiemap fix. Our fiemap was returning overlappin=
+g
+> extents, which made recent versions of cp copy too many bytes into th=
+e
+> destination file.
+>
+> The top commit is this one (just in case kernel.org hasn't caught up
+> yet)
+>
+> commit ea8efc74bd0402b4d5f663d007b4e25fa29ea778
+> Author: Chris Mason <chris.mason@oracle.com>
+> Date: =A0 Tue Mar 8 11:54:40 2011 -0500
+>
+> =A0 =A0Btrfs: make sure not to return overlapping extents to fiemap
+>
+> Please read them, and try to break them ;)
+>
+> -chris
 
-Thanks for your advice. But AFAIK, reordering the fields like what you said can not
-reduce the space of delayed_nodes, because a hole is placed on the end to make the
-structure big enough to pack tightly into arrays and maintain proper alignment. So
-although we reorder the fields, the size of delayed_node is still 304 bytes.
+I applied these three patches as commited to btrfs-unstable, and
+re-tested the operations that had been giving me problems (Openmotif
+and gcc-4.4.5 building).
 
-> Still needed to reduce by 7 from 304-6=298. Does not seem to be possible, the
-> bool flags provide only 1 byte. Under these conditions, I suggest to make the
-> bool fields int again to reduce instruction count which manage these flags.
-> Compiler did not make them int automatically (altough it is free to do it).
-
-Sorry, I don't understand what you said above clearly, Did you mean
-we can not access bool variables by one instruction?
-
-Thanks
-Miao
-
-> 
-> dave
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+They are working good for me.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

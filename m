@@ -1,66 +1,65 @@
-From: "Brian J. Murrell" <brian@interlinx.bc.ca>
-Subject: btrfs fi df returns nothing
-Date: Wed, 09 Mar 2011 06:20:28 -0500
-Message-ID: <il7npu$5lh$1@dough.gmane.org>
+From: Hubert Kario <hka@qbs.com.pl>
+Subject: Re: btrfs fi df returns nothing
+Date: Wed, 9 Mar 2011 12:47:45 +0100
+Message-ID: <201103091247.46177.hka@qbs.com.pl>
+References: <il7npu$5lh$1@dough.gmane.org>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="------------enigB0EF254AD517B873E604C3C0"
-To: linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain; charset=iso-8859-2
+Cc: linux-btrfs@vger.kernel.org
+To: "Brian J. Murrell" <brian@interlinx.bc.ca>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <il7npu$5lh$1@dough.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
---------------enigB0EF254AD517B873E604C3C0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
+There's a daily kernel build PPA:
+http://kernel.ubuntu.com/~kernel-ppa/mainline/daily/2011-03-08-natty/
 
-I am using btrfs on Ubuntu's LTS kernel (2.6.32-22-generic) and have
-updated the btrfs-tools to 0.19+20101101-1~lucid1.  I have also built
-the latest from
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs-unstable.=
-git.
+Sorry to note, but have you even tried googling for it?
 
-The problem is that I don't get anything from btrfs fi df $mountpoint.
-i.e., for the btrfs filesystem mounted at /mnt/btrfs-test/
+On Wednesday, March 09, 2011 12:20:28 Brian J. Murrell wrote:
+> I am using btrfs on Ubuntu's LTS kernel (2.6.32-22-generic) and have
+> updated the btrfs-tools to 0.19+20101101-1~lucid1.  I have also built
+> the latest from
+> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs-unsta=
+ble.gi
+> t.
+>=20
+> The problem is that I don't get anything from btrfs fi df $mountpoint=
+=2E
+> i.e., for the btrfs filesystem mounted at /mnt/btrfs-test/
+>=20
+> # ./btrfs fi df /mnt/btrfs-test/
+> #
+>=20
+> See, no output.  Is my kernel module too old for that feature?  Maybe=
+ it
+> is:
+>=20
+> stat64("/mnt/btrfs-test/", {st_mode=3DS_IFDIR|0755, st_size=3D72, ...=
+}) =3D 0
+> open("/mnt/btrfs-test/",
+> O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_DIRECTORY|O_CLOEXEC) =3D 3
+> fcntl64(3, F_GETFD)                     =3D 0x1 (flags FD_CLOEXEC)
+> ioctl(3, 0xc0109414, 0x999c320)         =3D -1 ENOTTY (Inappropriate =
+ioctl
+> for device)
+> exit_group(-1)                          =3D ?
+>=20
+> If my kernel module is too old, anyone know of a successful backport =
+of
+> a newer btrfs for Ubuntu Lucid?  In a PPA or otherwise?
+>=20
+> Cheers,
+> b.
 
-# ./btrfs fi df /mnt/btrfs-test/
-#
-
-See, no output.  Is my kernel module too old for that feature?  Maybe it =
-is:
-
-stat64("/mnt/btrfs-test/", {st_mode=3DS_IFDIR|0755, st_size=3D72, ...}) =3D=
- 0
-open("/mnt/btrfs-test/",
-O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_DIRECTORY|O_CLOEXEC) =3D 3
-fcntl64(3, F_GETFD)                     =3D 0x1 (flags FD_CLOEXEC)
-ioctl(3, 0xc0109414, 0x999c320)         =3D -1 ENOTTY (Inappropriate ioct=
-l
-for device)
-exit_group(-1)                          =3D ?
-
-If my kernel module is too old, anyone know of a successful backport of
-a newer btrfs for Ubuntu Lucid?  In a PPA or otherwise?
-
-Cheers,
-b.
-
-
-
---------------enigB0EF254AD517B873E604C3C0
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
-
-iEYEARECAAYFAk13YnwACgkQl3EQlGLyuXBbKgCg+/faZ4Wqr6yXCwGu7BTKgOX/
-M8IAoJxZKZ95y/dGiJvQZXLvIcaNR5Np
-=wqzl
------END PGP SIGNATURE-----
-
---------------enigB0EF254AD517B873E604C3C0--
-
+--=20
+Hubert Kario
+QBS - Quality Business Software
+02-656 Warszawa, ul. Ksawer=F3w 30/85
+tel. +48 (22) 646-61-51, 646-74-24
+www.qbs.com.pl
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

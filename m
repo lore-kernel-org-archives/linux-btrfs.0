@@ -1,64 +1,90 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH V3] btrfs: implement delayed inode items operation
-Date: Fri, 11 Mar 2011 16:24:21 +0100
-Message-ID: <20110311152421.GR17108@twin.jikos.cz>
-References: <4D6F2FE0.8020508@cn.fujitsu.com>
- <20110308165640.GN17108@twin.jikos.cz>
- <4D7712CC.9030807@cn.fujitsu.com>
-Reply-To: dave@jikos.cz
+From: Libor =?utf-8?q?Klep=C3=A1=C4=8D?= <libor.klepac@bcom.cz>
+Subject: Re: Raid1 resync
+Date: Fri, 11 Mar 2011 16:28:46 +0100
+Message-ID: <201103111628.48231.libor.klepac@bcom.cz>
+References: <201103111405.49352.libor.klepac@bcom.cz> <AANLkTi=55pb-o+sFhO4Apgz=QZ3p46DGc8YUcqH+G0F1@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: multipart/signed;
+  boundary="nextPart3367007.F5N1H75Fcy";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha256
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D7712CC.9030807@cn.fujitsu.com>
+In-Reply-To: <AANLkTi=55pb-o+sFhO4Apgz=QZ3p46DGc8YUcqH+G0F1@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 09, 2011 at 01:40:28PM +0800, Miao Xie wrote:
-> Thanks for your advice. But AFAIK, reordering the fields like what you
-> said can not reduce the space of delayed_nodes, because a hole is
-> placed on the end to make the structure big enough to pack tightly
-> into arrays and maintain proper alignment. So although we reorder the
-> fields, the size of delayed_node is still 304 bytes.
+--nextPart3367007.F5N1H75Fcy
+Content-Type: Text/Plain;
+  charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
 
-Let me redo it explicitly:
+Hi,
+sorry for my bad wording, i have no crash with btrfs, I'm considering to=20
+switch to btrfs on ssd disk comming back from warranty claim.
+I was just asking, whether it's posible to switch my old setup (i described=
+ in=20
+my first mail) using mdraid to using btrfs internal raid without using mdra=
+id,=20
+ie whether it's possible to resync changed data on iscsi disk when i come t=
+o=20
+work in morning.
 
-Your patch does not specify alignment of the cache object
+With regards
+Libor
 
-+int __init btrfs_delayed_inode_init(void)
-+{
-+       delayed_node_cache = kmem_cache_create("delayed_node",
-+                                       sizeof(struct btrfs_delayed_node),
-+                                       0,
-                                        ^^
+PS. If this mailing list is for bug/patches reporting only, then i'm sorry =
+for=20
+making unvanted mail traffic.
 
-+                                       SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
-+                                       NULL);
-+       if (!delayed_node_cache)
-+               return -ENOMEM;
-+       return 0;
-+}
 
-and default BYTES_PER_WORD == sizeof(void*) will be used. Let's assume
-it's 8 (eg. on x86_64). The delayed_node is 304, which is multiple of 8
-and the objects will have no padding at the end. A quick test, comparing
-adresses of 2 adjacent allocated objects, confirmed that.
+Dne p=C3=A1tek 11 B=C5=99ezen 2011 15:41:25 Wenyi Liu napsal(a):
+> Hi Libor:
+>     Maybe, you can attach your oops at first.
+>=20
+> ---
+> Best Regards,
+> Liu Wenyi
+>=20
+> 2011/3/11 Libor Klep=C3=A1=C4=8D <libor.klepac@bcom.cz>
+>=20
+> > Hi,
+> > before my ssd crashed, my /home partion was sitting on md raid1
+> > consisting of partition on disk and iScsi LUN in network, it was created
+> > with bitmaps and iscsi lun was set writemostly.
+> > So when i came to work, i fired up iscsi, added lun to raid and partial
+> > resync went ahead.
+> > Before leaving work, i failed iscsci disk and kicked it from raid.
+> > I would like to use something like this with btrfs, without mdraid below
+> > it.
+> >=20
+> > Is it somehow posible?
+> > 1) I can't go below 2 devices.
+> > 2) Does btrfs support resync only of changed blocks like mdraid with
+> > bitmaps?
+> >=20
+> > Thanks
+> > Libor
 
-If I did the math correctly, we are able to reduce size by 7 bytes:
-reorder fileds (6b) and merge bools into one-byte bitfield (1b). This is
-not enough, padding to next object alignment will consume this (as you
-wrote above).
+--nextPart3367007.F5N1H75Fcy
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
 
-Hm, nice exercise, no improvement.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
 
-> > Still needed to reduce by 7 from 304-6=298. Does not seem to be possible, the
-> > bool flags provide only 1 byte. Under these conditions, I suggest to make the
-> > bool fields int again to reduce instruction count which manage these flags.
-> > Compiler did not make them int automatically (altough it is free to do it).
-> 
-> Sorry, I don't understand what you said above clearly, Did you mean
-> we can not access bool variables by one instruction?
+iQIcBAABCAAGBQJNej+vAAoJEPDvjG7Cn0eObhIP/0DFeEUYfn6mmlKddHAY8MXg
+ovkxMNbKhXJPg4HkZ0H++lSXoWGHycmEsY4JeAkB1QF87QAvUqyNY73Q23NAG07v
+7Pb/wm5I9FUOpt1OBxUyzPlYCyfDZfPOe/2z3ud9gnAmmbA+nOdyHxf0uRbZdPsl
+bGSeaq0DR1hKn0Vc+u+fetVkCylwdXR+dgIfbkbH5o1H51z9LfbBMfv4BZNS122n
+wmrCPzbUeRk4J0Y633MvNZVqGasVi6TKULsO3Qr2F8hAC8260t4BtlpfTOHJiFKW
+IN1rYM6fA/Pi6/EhxZ0ckE37GzovUcica33I2Bz1CWj8qHcXrwOocwNxCVXZgkhS
+lhmUt84JZjNnyWvEFADW+caP5s7O2H6fWPOak3aQmXQ5vehRK7Mcz+IuZVBcZaVD
+pNYSSGOLmxbTiQE95n6l4jxGUZfbX4yHatPauq8x80GypYPuKrq0ibz5ZEmqUoav
+4wrmEt+QLFvw9TlmQ45LqCnV5/QC0badOySQPQWDUc8wF+KM5E/yFVJTH66CHLFO
+pnikiq6iO/0UX/sZMA8EgMZp0to5DExsImgl+0Y4eYWSJgVvEfQOfnEIUUfjdmn4
+3gWDdKK9/9ugTGJNgQMGUQ3xvcyrVIAySHHZJq7lt6oSj8GUTIe7l7fFBQvFtQal
+w6nedVMahrqwEhLnbTPi
+=8SwI
+-----END PGP SIGNATURE-----
 
-Ah, no I confused myself, I was thinking of bitfields. Checked that gcc
-emits one instruction on x86_64, I did not check other arches.
-
-dave
+--nextPart3367007.F5N1H75Fcy--

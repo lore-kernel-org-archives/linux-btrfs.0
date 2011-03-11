@@ -1,90 +1,84 @@
-From: Libor =?utf-8?q?Klep=C3=A1=C4=8D?= <libor.klepac@bcom.cz>
-Subject: Re: Raid1 resync
-Date: Fri, 11 Mar 2011 16:28:46 +0100
-Message-ID: <201103111628.48231.libor.klepac@bcom.cz>
-References: <201103111405.49352.libor.klepac@bcom.cz> <AANLkTi=55pb-o+sFhO4Apgz=QZ3p46DGc8YUcqH+G0F1@mail.gmail.com>
+From: Ric Wheeler <ricwheeler@gmail.com>
+Subject: Re: [PATCH v2 0/6] btrfs: scrub
+Date: Fri, 11 Mar 2011 11:17:20 -0500
+Message-ID: <4D7A4B10.7050904@gmail.com>
+References: <cover.1299854593.git.sensille@gmx.net>
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart3367007.F5N1H75Fcy";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha256
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
+	jansen@webgods.de
+To: Arne Jansen <sensille@gmx.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=55pb-o+sFhO4Apgz=QZ3p46DGc8YUcqH+G0F1@mail.gmail.com>
+In-Reply-To: <cover.1299854593.git.sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart3367007.F5N1H75Fcy
-Content-Type: Text/Plain;
-  charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
+On 03/11/2011 09:49 AM, Arne Jansen wrote:
+> This series adds an initial implementation for scrub. It works quite
+> straightforward. The usermode issues an ioctl for each device in the
+> fs. For each device, it enumerates the allocated device chunks. For
+> each chunk, the contained extents are enumerated and the data checksums
+> fetched. The extents are read sequentially and the checksums verified.
+> If an error occurs (checksum or EIO), a good copy is searched for. If
+> one is found, the bad copy will be rewritten.
+> All enumerations happen from the commit roots. During a transaction
+> commit, the scrubs get paused and afterwards continue from the new
+> roots.
+> For future improvements please see the inline comments.
+>
+> The accompanying user mode patches will follow shortly.
+>
+> This v2 mainly changes the dev_info ioctl interface.
+>
+> Thanks,
+> Arne
+>
 
-Hi,
-sorry for my bad wording, i have no crash with btrfs, I'm considering to=20
-switch to btrfs on ssd disk comming back from warranty claim.
-I was just asking, whether it's posible to switch my old setup (i described=
- in=20
-my first mail) using mdraid to using btrfs internal raid without using mdra=
-id,=20
-ie whether it's possible to resync changed data on iscsi disk when i come t=
-o=20
-work in morning.
+Great work!
 
-With regards
-Libor
+I do wonder if we should also worry about the unallocated part of the storage 
+device. Often, with local disks specifically, your unused space might accumulate 
+errors over time.
 
-PS. If this mailing list is for bug/patches reporting only, then i'm sorry =
-for=20
-making unvanted mail traffic.
+What you add to your scrub phase is a simple read operation for the unallocated 
+ranges (optionally a READ_VERIFY which validates the data on platter without 
+transferring data over the bus to the host).
 
+The recovery operation here would be to write (zeros) to the block if an error 
+is detected, so we might be pessimistic and simply use write to "zero" those 
+unallocated ranges as well.  Note that there are "WRITE_SAME" commands that RAID 
+people use for initializing unused drives for example.
 
-Dne p=C3=A1tek 11 B=C5=99ezen 2011 15:41:25 Wenyi Liu napsal(a):
-> Hi Libor:
->     Maybe, you can attach your oops at first.
->=20
-> ---
-> Best Regards,
-> Liu Wenyi
->=20
-> 2011/3/11 Libor Klep=C3=A1=C4=8D <libor.klepac@bcom.cz>
->=20
-> > Hi,
-> > before my ssd crashed, my /home partion was sitting on md raid1
-> > consisting of partition on disk and iScsi LUN in network, it was created
-> > with bitmaps and iscsi lun was set writemostly.
-> > So when i came to work, i fired up iscsi, added lun to raid and partial
-> > resync went ahead.
-> > Before leaving work, i failed iscsci disk and kicked it from raid.
-> > I would like to use something like this with btrfs, without mdraid below
-> > it.
-> >=20
-> > Is it somehow posible?
-> > 1) I can't go below 2 devices.
-> > 2) Does btrfs support resync only of changed blocks like mdraid with
-> > bitmaps?
-> >=20
-> > Thanks
-> > Libor
+I would not run the overwrite or read check on SSD or arrays so this would be an 
+optional type of scrub I suppose.
 
---nextPart3367007.F5N1H75Fcy
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
+Regards,
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
+Ric
 
-iQIcBAABCAAGBQJNej+vAAoJEPDvjG7Cn0eObhIP/0DFeEUYfn6mmlKddHAY8MXg
-ovkxMNbKhXJPg4HkZ0H++lSXoWGHycmEsY4JeAkB1QF87QAvUqyNY73Q23NAG07v
-7Pb/wm5I9FUOpt1OBxUyzPlYCyfDZfPOe/2z3ud9gnAmmbA+nOdyHxf0uRbZdPsl
-bGSeaq0DR1hKn0Vc+u+fetVkCylwdXR+dgIfbkbH5o1H51z9LfbBMfv4BZNS122n
-wmrCPzbUeRk4J0Y633MvNZVqGasVi6TKULsO3Qr2F8hAC8260t4BtlpfTOHJiFKW
-IN1rYM6fA/Pi6/EhxZ0ckE37GzovUcica33I2Bz1CWj8qHcXrwOocwNxCVXZgkhS
-lhmUt84JZjNnyWvEFADW+caP5s7O2H6fWPOak3aQmXQ5vehRK7Mcz+IuZVBcZaVD
-pNYSSGOLmxbTiQE95n6l4jxGUZfbX4yHatPauq8x80GypYPuKrq0ibz5ZEmqUoav
-4wrmEt+QLFvw9TlmQ45LqCnV5/QC0badOySQPQWDUc8wF+KM5E/yFVJTH66CHLFO
-pnikiq6iO/0UX/sZMA8EgMZp0to5DExsImgl+0Y4eYWSJgVvEfQOfnEIUUfjdmn4
-3gWDdKK9/9ugTGJNgQMGUQ3xvcyrVIAySHHZJq7lt6oSj8GUTIe7l7fFBQvFtQal
-w6nedVMahrqwEhLnbTPi
-=8SwI
------END PGP SIGNATURE-----
+> Arne Jansen (5):
+>    btrfs: add parameter to btrfs_lookup_csum_range
+>    btrfs: make struct map_lookup public
+>    btrfs: add scrub code and prototypes
+>    btrfs: sync scrub with commit&  device removal
+>    btrfs: add state information for scrub
+>
+> Jan Schmidt (1):
+>    btrfs: new ioctls for scrub
+>
+>   fs/btrfs/Makefile      |    2 +-
+>   fs/btrfs/ctree.h       |   46 ++-
+>   fs/btrfs/disk-io.c     |   16 +
+>   fs/btrfs/file-item.c   |    8 +-
+>   fs/btrfs/inode.c       |    2 +-
+>   fs/btrfs/ioctl.c       |  131 +++++
+>   fs/btrfs/ioctl.h       |   55 ++
+>   fs/btrfs/relocation.c  |    2 +-
+>   fs/btrfs/scrub.c       | 1463 ++++++++++++++++++++++++++++++++++++++++++++++++
+>   fs/btrfs/transaction.c |    3 +
+>   fs/btrfs/tree-log.c    |    6 +-
+>   fs/btrfs/volumes.c     |   16 +-
+>   fs/btrfs/volumes.h     |   17 +
+>   13 files changed, 1743 insertions(+), 24 deletions(-)
+>   create mode 100644 fs/btrfs/scrub.c
+>
 
---nextPart3367007.F5N1H75Fcy--

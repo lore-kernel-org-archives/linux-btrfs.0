@@ -1,46 +1,61 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: BTRFS fsck tool
-Date: Thu, 10 Mar 2011 12:41:21 -0500
-Message-ID: <1299778786-sup-8805@think>
-References: <AANLkTim1+n4OJcm1iYMQKQZyN9jT2uFUYjAM6=x4pY2g@mail.gmail.com> <4D7591CC.6060301@shiftmail.org> <AANLkTimaX2K=Uf-HZ7+dWN20Qt7Xntj+NoRiC7xN770=@mail.gmail.com> <20110308065255.24100.qmail@stuge.se> <1299762048-sup-3940@think> <AANLkTimK8LD50ga=uJuJYJ84Y37KoZPRieGmDHt6HncG@mail.gmail.com>
+From: Libor =?utf-8?q?Klep=C3=A1=C4=8D?= <libor.klepac@bcom.cz>
+Subject: Raid1 resync
+Date: Fri, 11 Mar 2011 14:05:47 +0100
+Message-ID: <201103111405.49352.libor.klepac@bcom.cz>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=ISO-8859-1
-Cc: Peter Stuge <peter@stuge.se>, Spelic <spelic@shiftmail.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Alexey A Nikitin <moonwalker@syrius.us>
+Content-Type: multipart/signed;
+  boundary="nextPart1473646.5PPs5J41Sy";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha256
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <AANLkTimK8LD50ga=uJuJYJ84Y37KoZPRieGmDHt6HncG@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Alexey A Nikitin's message of 2011-03-10 12:30:54 -0500:
-> 2011/3/10 Chris Mason <chris.mason@oracle.com>
-> >
-> > Which kernel were you on? =C2=A0Was btrfs directly accessing the di=
-sks or
-> > were things like LVM in use?
-> > Recent kernels (.37 and higher) have improved support for barriers =
-in
-> > LVM and friends, but btrfs directly using the disks should have bee=
-n
-> > safe for a long time.
->=20
-> Now that's funny. I'm using  2.6.32-5-amd64 from Debian Wheezy and
-> while btrfs on top of LVM works perfectly stable I have now trouble
-> with FS that is directly on partition. Does it make difference
-> stability-wise if partition table on disk is GPT rather than
-> old-school MS-DOS? Because all my disks, LVM and non-LVM, are set wit=
-h
-> GPT.
+--nextPart1473646.5PPs5J41Sy
+Content-Type: Text/Plain;
+  charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
 
-LVM is very reliable, the only time you run into trouble is if you have
-a drive with writeback cache enabled (99.99% of sata drives) and LVM
-isn't passing the barriers through.  GPT vs MS-DOS isn't crucial, its
-just important that if you have a writeback cache,  you either get the
-barriers down to the drive or you turn off the writeback cache.
+Hi,
+before my ssd crashed, my /home partion was sitting on md raid1 consisting =
+of=20
+partition on disk and iScsi LUN in network, it was created with bitmaps and=
+=20
+iscsi lun was set writemostly.
+So when i came to work, i fired up iscsi, added lun to raid and partial res=
+ync=20
+went ahead.
+Before leaving work, i failed iscsci disk and kicked it from raid.
+I would like to use something like this with btrfs, without mdraid below it.
 
--chris
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Is it somehow posible?
+1) I can't go below 2 devices.
+2) Does btrfs support resync only of changed blocks like mdraid with bitmap=
+s?
+
+Thanks
+Libor
+
+--nextPart1473646.5PPs5J41Sy
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iQIcBAABCAAGBQJNeh4sAAoJEPDvjG7Cn0eOEHgQAKYU0eCg3PCYXoqDHeNkrZe4
+Ox1X9pSY5ee4tIrwKXT/3NPTXDr6D9zBsX+u2KV98ZSJrmxvcfqvO4xRNDfeONuA
+9nmH7jKVIYTPTAitGWf9/W/z4zPGys+e2ugRY2I13qcFxuiYedy7YNmTO0X2X4C2
+/vkaymzAOd1Om+s13a7lFyxzc/pPHeOJ/Zhme7T9TLB+6cCXckXNvh2zA4s40XWj
+ZUu7PkW7Bqjb/Pst/8csN5ppTOYysiNnTlqzOwpstTDRVEIarxSAC0k2HYMZ982e
+s0Xnf0l+K0bFLNNf5c9o0vsaQs4WY+6nYbxeKVEb97mwV9dfw/RHVU+Tp99qotLq
+ZdiePlzocqOtkMuqvQTVdH7nYWM3wsCcUClqtvyemm/TzpKnuwIl24RLiiNg4a49
+8A2fciAAP6hQ+HQjcs6Bhhg7bLUMzK3nbSRuPKIuCdtfwHV1MjP6ZZrP9wf2lXBP
+S5yPGwlB9wMZhDPU43gFzItq3pr/E6Xj+/bpFiEY9h/Ekh6VkgHv3Aui+EjFrR4/
+5A36JiyWqx4sIOAAS5w4sTTAYV1v+d+Z3jTPWmxpK1LyBg7Xxc1hsXIEWs0l3zUJ
+6KhF8Ran/Xeh5PIewwED/bNaz2uHg+kQesZytz82uHWlAAynZqA5pcQw6ZJOIPM+
+LQzCSGBL6XFk1xvwklkZ
+=S3ij
+-----END PGP SIGNATURE-----
+
+--nextPart1473646.5PPs5J41Sy--

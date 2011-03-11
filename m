@@ -1,7 +1,7 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH v2 5/6] btrfs: add state information for scrub
-Date: Fri, 11 Mar 2011 15:49:42 +0100
-Message-ID: <2280f3a33ef55a94c905665238ecbec282a63185.1299854593.git.sensille@gmx.net>
+Subject: [PATCH v2 6/6] btrfs: new ioctls for scrub
+Date: Fri, 11 Mar 2011 15:49:43 +0100
+Message-ID: <48a9b2112871c77f43847987ef80277321585660.1299854593.git.sensille@gmx.net>
 References: <cover.1299854593.git.sensille@gmx.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
 	jansen@webgods.de
@@ -10,149 +10,265 @@ In-Reply-To: <cover.1299854593.git.sensille@gmx.net>
 In-Reply-To: <cover.1299854593.git.sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add structures and state information needed for scrub
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+
+adds ioctls necessary to start and cancel scrubs, to get current
+progress and to get info about devices to be scrubbed.
+Note that the scrub is done per-device and that the ioctl only
+returns after the scrub for this devices is finished or has been
+canceled.
 
 Signed-off-by: Arne Jansen <sensille@gmx.net>
 ---
- fs/btrfs/ctree.h   |   26 ++++++++++++++++++++++++++
- fs/btrfs/disk-io.c |   15 +++++++++++++++
- fs/btrfs/ioctl.h   |   17 +++++++++++++++++
- fs/btrfs/volumes.h |    3 +++
- 4 files changed, 61 insertions(+), 0 deletions(-)
+ fs/btrfs/ctree.h |    2 -
+ fs/btrfs/ioctl.c |  131 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/ioctl.h |   38 ++++++++++++++++
+ 3 files changed, 169 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 030c321..3584179 100644
+index 3584179..896fe86 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -23,6 +23,7 @@
- #include <linux/mm.h>
- #include <linux/highmem.h>
- #include <linux/fs.h>
-+#include <linux/rwsem.h>
- #include <linux/completion.h>
- #include <linux/backing-dev.h>
- #include <linux/wait.h>
-@@ -32,6 +33,7 @@
- #include "extent_io.h"
- #include "extent_map.h"
- #include "async-thread.h"
-+#include "ioctl.h"
- 
- struct btrfs_trans_handle;
- struct btrfs_transaction;
-@@ -48,6 +50,8 @@ struct btrfs_ordered_sum;
- 
- #define BTRFS_COMPAT_EXTENT_TREE_V0
- 
-+#define SCRUB_BTRFS_WORKER
-+
- /*
-  * files bigger than this get some pre-flushing when they are added
-  * to the ordered operations list.  That way we limit the total
-@@ -508,6 +512,12 @@ struct btrfs_extent_item_v0 {
- /* use full backrefs for extent pointers in the block */
- #define BTRFS_BLOCK_FLAG_FULL_BACKREF	(1ULL << 8)
- 
-+/*
-+ * this flag is only used internally by scrub and may be changed at any time
-+ * it is only declared here to avoid collisions
-+ */
-+#define BTRFS_EXTENT_FLAG_SUPER		(1ULL << 48)
-+
- struct btrfs_tree_block_info {
- 	struct btrfs_disk_key key;
- 	u8 level;
-@@ -1067,6 +1077,22 @@ struct btrfs_fs_info {
- 
- 	void *bdev_holder;
- 
-+	/* private scrub information */
-+	struct mutex scrub_lock;
-+	struct scrub_info *scrub_info;
-+	atomic_t scrubs_running;
-+	atomic_t scrub_pause_req;
-+	atomic_t scrubs_paused;
-+	atomic_t scrub_cancel_req;
-+	wait_queue_head_t scrub_pause_wait;
-+	struct rw_semaphore scrub_super_lock;
-+	int scrub_workers_refcnt;
-+#ifdef SCRUB_BTRFS_WORKER
-+	struct btrfs_workers scrub_workers;
-+#else
-+	struct workqueue_struct *scrub_workers;
-+#endif
-+
- 	/* filesystem state */
- 	u64 fs_state;
+@@ -189,7 +189,6 @@ struct btrfs_mapping_tree {
+ 	struct extent_map_tree map_tree;
  };
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 924a366..4d62bc3 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1677,6 +1677,21 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 	INIT_LIST_HEAD(&fs_info->ordered_extents);
- 	spin_lock_init(&fs_info->ordered_extent_lock);
  
-+	mutex_init(&fs_info->scrub_lock);
-+	atomic_set(&fs_info->scrubs_running, 0);
-+	atomic_set(&fs_info->scrub_pause_req, 0);
-+	atomic_set(&fs_info->scrubs_paused, 0);
-+	atomic_set(&fs_info->scrub_cancel_req, 0);
-+	init_waitqueue_head(&fs_info->scrub_pause_wait);
-+	init_rwsem(&fs_info->scrub_super_lock);
-+	fs_info->scrub_workers_refcnt = 0;
-+#ifdef SCRUB_BTRFS_WORKER
-+	btrfs_init_workers(&fs_info->scrub_workers, "scrub",
-+			   fs_info->thread_pool_size, &fs_info->generic_worker);
-+#else
-+	fs_info->scrub_workers = NULL;
-+#endif
+-#define BTRFS_UUID_SIZE 16
+ struct btrfs_dev_item {
+ 	/* the internal btrfs device id */
+ 	__le64 devid;
+@@ -296,7 +295,6 @@ static inline unsigned long btrfs_chunk_item_size(int num_stripes)
+ 		sizeof(struct btrfs_stripe) * (num_stripes - 1);
+ }
+ 
+-#define BTRFS_FSID_SIZE 16
+ #define BTRFS_HEADER_FLAG_WRITTEN	(1ULL << 0)
+ #define BTRFS_HEADER_FLAG_RELOC		(1ULL << 1)
+ 
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 5fdb2ab..534e87e 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1718,6 +1718,75 @@ static long btrfs_ioctl_rm_dev(struct btrfs_root *root, void __user *arg)
+ 	return ret;
+ }
+ 
++static long btrfs_ioctl_fs_info(struct btrfs_root *root, void __user *arg)
++{
++	struct btrfs_ioctl_fs_info_args fi_args;
++	struct btrfs_device *device;
++	struct btrfs_device *next;
++	struct btrfs_fs_devices *fs_devices = root->fs_info->fs_devices;
 +
- 	sb->s_blocksize = 4096;
- 	sb->s_blocksize_bits = blksize_bits(4096);
- 	sb->s_bdi = &fs_info->bdi;
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
++	fi_args.num_devices = fs_devices->num_devices;
++	fi_args.max_id = 0;
++	memcpy(&fi_args.fsid, root->fs_info->fsid, sizeof(fi_args.fsid));
++
++	mutex_lock(&fs_devices->device_list_mutex);
++	list_for_each_entry_safe(device, next, &fs_devices->devices, dev_list) {
++		if (device->devid > fi_args.max_id)
++			fi_args.max_id = device->devid;
++	}
++	mutex_unlock(&fs_devices->device_list_mutex);
++
++	if (copy_to_user(arg, &fi_args, sizeof(fi_args)))
++		return -EFAULT;
++
++	return 0;
++}
++
++static long btrfs_ioctl_dev_info(struct btrfs_root *root, void __user *arg)
++{
++	struct btrfs_ioctl_dev_info_args *di_args;
++	struct btrfs_device *dev;
++	struct btrfs_fs_devices *fs_devices = root->fs_info->fs_devices;
++	int ret = 0;
++	char *s_uuid = NULL;
++	char empty_uuid[BTRFS_UUID_SIZE] = {0};
++
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
++	di_args = memdup_user(arg, sizeof(*di_args));
++	if (IS_ERR(di_args))
++		return PTR_ERR(di_args);
++
++	if (memcmp(empty_uuid, di_args->uuid, BTRFS_UUID_SIZE) != 0)
++		s_uuid = di_args->uuid;
++
++	mutex_lock(&fs_devices->device_list_mutex);
++	dev = btrfs_find_device(root, di_args->devid, s_uuid, NULL);
++	mutex_unlock(&fs_devices->device_list_mutex);
++
++	if (!dev) {
++		ret = -ENODEV;
++		goto out;
++	}
++
++	di_args->devid = dev->devid;
++	di_args->bytes_used = dev->bytes_used;
++	di_args->total_bytes = dev->total_bytes;
++	memcpy(di_args->uuid, dev->uuid, sizeof(di_args->uuid));
++	strncpy(di_args->path, dev->name, sizeof(di_args->path));
++
++out:
++	if (ret == 0 && copy_to_user(arg, di_args, sizeof(*di_args)))
++		ret = -EFAULT;
++
++	kfree(di_args);
++	return ret;
++}
++
+ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 				       u64 off, u64 olen, u64 destoff)
+ {
+@@ -2375,6 +2444,58 @@ static noinline long btrfs_ioctl_wait_sync(struct file *file, void __user *argp)
+ 	return btrfs_wait_for_commit(root, transid);
+ }
+ 
++static long btrfs_ioctl_scrub(struct btrfs_root *root, void __user *arg)
++{
++	int ret;
++	struct btrfs_ioctl_scrub_args *sa;
++
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
++	sa = memdup_user(arg, sizeof(*sa));
++	if (IS_ERR(sa))
++		return PTR_ERR(sa);
++
++	ret = btrfs_scrub_dev(root, sa->devid, sa->start, sa->end,
++	                      &sa->progress);
++
++	if (copy_to_user(arg, sa, sizeof(*sa)))
++		ret = -EFAULT;
++
++	kfree(sa);
++	return ret;
++}
++
++static long btrfs_ioctl_scrub_cancel(struct btrfs_root *root, void __user *arg)
++{
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
++	return btrfs_scrub_cancel(root);
++}
++
++static long btrfs_ioctl_scrub_progress(struct btrfs_root *root,
++                                       void __user *arg)
++{
++	struct btrfs_ioctl_scrub_args *sa;
++	int ret;
++
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
++	sa = memdup_user(arg, sizeof(*sa));
++	if (IS_ERR(sa))
++		return PTR_ERR(sa);
++
++	ret = btrfs_scrub_progress(root, sa->devid, &sa->progress);
++
++	if (copy_to_user(arg, sa, sizeof(*sa)))
++		ret = -EFAULT;
++
++	kfree(sa);
++	return ret;
++}
++
+ long btrfs_ioctl(struct file *file, unsigned int
+ 		cmd, unsigned long arg)
+ {
+@@ -2412,6 +2533,10 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		return btrfs_ioctl_add_dev(root, argp);
+ 	case BTRFS_IOC_RM_DEV:
+ 		return btrfs_ioctl_rm_dev(root, argp);
++	case BTRFS_IOC_FS_INFO:
++		return btrfs_ioctl_fs_info(root, argp);
++	case BTRFS_IOC_DEV_INFO:
++		return btrfs_ioctl_dev_info(root, argp);
+ 	case BTRFS_IOC_BALANCE:
+ 		return btrfs_balance(root->fs_info->dev_root);
+ 	case BTRFS_IOC_CLONE:
+@@ -2435,6 +2560,12 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		return btrfs_ioctl_start_sync(file, argp);
+ 	case BTRFS_IOC_WAIT_SYNC:
+ 		return btrfs_ioctl_wait_sync(file, argp);
++	case BTRFS_IOC_SCRUB:
++		return btrfs_ioctl_scrub(root, argp);
++	case BTRFS_IOC_SCRUB_CANCEL:
++		return btrfs_ioctl_scrub_cancel(root, argp);
++	case BTRFS_IOC_SCRUB_PROGRESS:
++		return btrfs_ioctl_scrub_progress(root, argp);
+ 	}
+ 
+ 	return -ENOTTY;
 diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 8fb3821..973e7c8 100644
+index 973e7c8..52bcd02 100644
 --- a/fs/btrfs/ioctl.h
 +++ b/fs/btrfs/ioctl.h
-@@ -42,6 +42,23 @@ struct btrfs_ioctl_vol_args_v2 {
- 	char name[BTRFS_SUBVOL_NAME_MAX + 1];
+@@ -32,6 +32,8 @@ struct btrfs_ioctl_vol_args {
+ 
+ #define BTRFS_SUBVOL_CREATE_ASYNC	(1ULL << 0)
+ #define BTRFS_SUBVOL_RDONLY		(1ULL << 1)
++#define BTRFS_FSID_SIZE 16
++#define BTRFS_UUID_SIZE 16
+ 
+ #define BTRFS_SUBVOL_NAME_MAX 4039
+ struct btrfs_ioctl_vol_args_v2 {
+@@ -59,6 +61,33 @@ struct btrfs_scrub_progress {
+ 	__u64 last_physical;
  };
  
-+struct btrfs_scrub_progress {
-+	__u64 data_extents_scrubbed;
-+	__u64 tree_extents_scrubbed;
-+	__u64 data_bytes_scrubbed;
-+	__u64 tree_bytes_scrubbed;
-+	__u64 read_errors;
-+	__u64 csum_errors;
-+	__u64 verify_errors;
-+	__u64 no_csum;
-+	__u64 csum_discards;
-+	__u64 super_errors;
-+	__u64 malloc_errors;
-+	__u64 uncorrectable_errors;
-+	__u64 corrected_errors;
-+	__u64 last_physical;
++struct btrfs_ioctl_scrub_args {
++	__u64 devid;				/* in */
++	__u64 start;				/* in */
++	__u64 end;				/* in */
++	__u64 flags;				/* in */
++	struct btrfs_scrub_progress progress;	/* out */
++	/* pad to 1k */
++	__u64 unused[(1024-32-sizeof(struct btrfs_scrub_progress))/8];
++};
++
++#define BTRFS_DEVICE_PATH_NAME_MAX 1024
++struct btrfs_ioctl_dev_info_args {
++	__u64 devid;				/* in/out */
++	__u8 uuid[BTRFS_UUID_SIZE];		/* in/out */
++	__u64 bytes_used;			/* out */
++	__u64 total_bytes;			/* out */
++	__u64 unused[379];			/* pad to 4k */
++	__u8 path[BTRFS_DEVICE_PATH_NAME_MAX];	/* out */
++};
++
++struct btrfs_ioctl_fs_info_args {
++	__u64 max_id;				/* out */
++	__u64 num_devices;			/* out */
++	__u8 fsid[BTRFS_FSID_SIZE];		/* out */
++	__u64 reserved[124];			/* pad to 1k */
 +};
 +
  #define BTRFS_INO_LOOKUP_PATH_MAX 4080
  struct btrfs_ioctl_ino_lookup_args {
  	__u64 treeid;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 0ccc982..92204d9 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -86,6 +86,9 @@ struct btrfs_device {
- 	/* physical drive uuid (or lvm uuid) */
- 	u8 uuid[BTRFS_UUID_SIZE];
- 
-+	/* per-device scrub information */
-+	struct scrub_dev *scrub_device;
-+
- 	struct btrfs_work work;
- };
- 
+@@ -220,4 +249,13 @@ struct btrfs_ioctl_space_args {
+ 				   struct btrfs_ioctl_vol_args_v2)
+ #define BTRFS_IOC_SUBVOL_GETFLAGS _IOW(BTRFS_IOCTL_MAGIC, 25, __u64)
+ #define BTRFS_IOC_SUBVOL_SETFLAGS _IOW(BTRFS_IOCTL_MAGIC, 26, __u64)
++#define BTRFS_IOC_SCRUB _IOWR(BTRFS_IOCTL_MAGIC, 27, \
++                             struct btrfs_ioctl_scrub_args)
++#define BTRFS_IOC_SCRUB_CANCEL _IO(BTRFS_IOCTL_MAGIC, 28)
++#define BTRFS_IOC_SCRUB_PROGRESS _IOWR(BTRFS_IOCTL_MAGIC, 29, \
++                             struct btrfs_ioctl_scrub_args)
++#define BTRFS_IOC_DEV_INFO _IOWR(BTRFS_IOCTL_MAGIC, 30, \
++                                 struct btrfs_ioctl_dev_info_args)
++#define BTRFS_IOC_FS_INFO _IOR(BTRFS_IOCTL_MAGIC, 31, \
++                                 struct btrfs_ioctl_fs_info_args)
+ #endif
 -- 
 1.7.3.4
 

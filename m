@@ -1,49 +1,42 @@
-From: Hubert Kario <hka@qbs.com.pl>
-Subject: Re: [PATCH v1 0/3] btrfs-progs: scrub interface
-Date: Sat, 12 Mar 2011 21:39:34 +0100
-Message-ID: <201103122139.35220.hka@qbs.com.pl>
-References: <cover.1299954564.git.list.btrfs@jan-o-sch.net>
+From: Spelic <spelic@shiftmail.org>
+Subject: Re: BTRFS fsck tool
+Date: Sat, 12 Mar 2011 23:49:52 +0100
+Message-ID: <4D7BF890.5010601@shiftmail.org>
+References: <AANLkTim1+n4OJcm1iYMQKQZyN9jT2uFUYjAM6=x4pY2g@mail.gmail.com>
+ <4D7591CC.6060301@shiftmail.org>
+ <AANLkTimaX2K=Uf-HZ7+dWN20Qt7Xntj+NoRiC7xN770=@mail.gmail.com>
+ <20110308065255.24100.qmail@stuge.se> <1299762048-sup-3940@think>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=iso-8859-15
-Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Content-Type: text/plain; charset=UTF-8
+Cc: Peter Stuge <peter@stuge.se>,
+	Alexey A Nikitin <moonwalker@syrius.us>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <cover.1299954564.git.list.btrfs@jan-o-sch.net>
+In-reply-to: <1299762048-sup-3940@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Saturday 12 of March 2011 19:31:32 Jan Schmidt wrote:
-> This patch set for btrfs-progs is meant to be used together with the =
-scrub
-> kernel patches submitted by Arne Jansen (latest Subject: [PATCH v3 0/=
-6]
-> btrfs: scrub).
->=20
-(snip)
->=20
->  Makefile     |    4 +-
->  btrfs.c      |   12 +
->  btrfs_cmds.c |    3 +-
->  btrfs_cmds.h |    4 +
->  ctree.h      |    2 +-
->  ioctl.h      |   68 +++-
->  scrub.c      | 1425
-> ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ 7 files
-> changed, 1513 insertions(+), 5 deletions(-)
->  create mode 100644 scrub.c
+On 03/10/2011 02:02 PM, Chris Mason wrote:
+> Cutting the power isn't problem unless you're using something
+> where cache flushes are not supported.
 
-Please, update the man pages.
+Some disks lie about cache flush having completed.
 
-Regards,
---=20
-Hubert Kario
-QBS - Quality Business Software
-ul. Ksawer=F3w 30/85
-02-656 Warszawa
-POLAND
-tel. +48 (22) 646-61-51, 646-74-24
-fax +48 (22) 646-61-50
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+But why doesn't the option for mounting with an earlier superblock work?
+Could you improve that area?
+
+I think that, except on "near to enospc" situations, the new blocks
+being allocated for FS operation should have been free for a while, at
+least one hour (*). In this way new filesystem operations would not
+overwrite old superblocks and old data structures and these would remain
+readable to get a consistent "old version" of the filesystem.
+So in case of abrupt poweroff and wrong flush mechanism, the user could
+still mount with an, e.g., 10-minutes older superblock and get a
+workable 10-minutes older version of the filesystem.
+Or am I missing something?
+
+(*) 1 hour would render highly unlikely that data stays for that long
+uncommitted in the drive's writeback cache. The drive flushes all data
+out whenever it's idle...
+
+Thank you

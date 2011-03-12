@@ -1,7 +1,7 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH v3 6/6] btrfs: new ioctls for scrub
-Date: Sat, 12 Mar 2011 15:50:45 +0100
-Message-ID: <18529483c1d60c721bfb1375fbf324913acb6d78.1299941055.git.sensille@gmx.net>
+Subject: [PATCH v3 1/6] btrfs: add parameter to btrfs_lookup_csum_range
+Date: Sat, 12 Mar 2011 15:50:40 +0100
+Message-ID: <b7b802531a2114c1bba90666033dd4f22147ac71.1299941055.git.sensille@gmx.net>
 References: <cover.1299941055.git.sensille@gmx.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
@@ -9,265 +9,106 @@ In-Reply-To: <cover.1299941055.git.sensille@gmx.net>
 In-Reply-To: <cover.1299941055.git.sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-
-adds ioctls necessary to start and cancel scrubs, to get current
-progress and to get info about devices to be scrubbed.
-Note that the scrub is done per-device and that the ioctl only
-returns after the scrub for this devices is finished or has been
-canceled.
+A parameter is added to search the commit root instead of the live root.
 
 Signed-off-by: Arne Jansen <sensille@gmx.net>
 ---
- fs/btrfs/ctree.h |    2 -
- fs/btrfs/ioctl.c |  131 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/ioctl.h |   38 ++++++++++++++++
- 3 files changed, 169 insertions(+), 2 deletions(-)
+ fs/btrfs/ctree.h      |    4 ++--
+ fs/btrfs/file-item.c  |    8 +++++++-
+ fs/btrfs/inode.c      |    2 +-
+ fs/btrfs/relocation.c |    2 +-
+ fs/btrfs/tree-log.c   |    4 ++--
+ 5 files changed, 13 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 888125e..2a48838 100644
+index 28188a7..4c99834 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -189,7 +189,6 @@ struct btrfs_mapping_tree {
- 	struct extent_map_tree map_tree;
- };
+@@ -2450,8 +2450,8 @@ struct btrfs_csum_item *btrfs_lookup_csum(struct btrfs_trans_handle *trans,
+ int btrfs_csum_truncate(struct btrfs_trans_handle *trans,
+ 			struct btrfs_root *root, struct btrfs_path *path,
+ 			u64 isize);
+-int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start,
+-			     u64 end, struct list_head *list);
++int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
++			     struct list_head *list, int search_commit);
+ /* inode.c */
  
--#define BTRFS_UUID_SIZE 16
- struct btrfs_dev_item {
- 	/* the internal btrfs device id */
- 	__le64 devid;
-@@ -296,7 +295,6 @@ static inline unsigned long btrfs_chunk_item_size(int num_stripes)
- 		sizeof(struct btrfs_stripe) * (num_stripes - 1);
+ /* RHEL and EL kernels have a patch that renames PG_checked to FsMisc */
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index 4f19a3e..9643d6e 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -263,7 +263,7 @@ int btrfs_lookup_bio_sums_dio(struct btrfs_root *root, struct inode *inode,
  }
  
--#define BTRFS_FSID_SIZE 16
- #define BTRFS_HEADER_FLAG_WRITTEN	(1ULL << 0)
- #define BTRFS_HEADER_FLAG_RELOC		(1ULL << 1)
+ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
+-			     struct list_head *list)
++			     struct list_head *list, int search_commit)
+ {
+ 	struct btrfs_key key;
+ 	struct btrfs_path *path;
+@@ -280,6 +280,12 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
+ 	path = btrfs_alloc_path();
+ 	BUG_ON(!path);
  
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 5fdb2ab..534e87e 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1718,6 +1718,75 @@ static long btrfs_ioctl_rm_dev(struct btrfs_root *root, void __user *arg)
- 	return ret;
- }
- 
-+static long btrfs_ioctl_fs_info(struct btrfs_root *root, void __user *arg)
-+{
-+	struct btrfs_ioctl_fs_info_args fi_args;
-+	struct btrfs_device *device;
-+	struct btrfs_device *next;
-+	struct btrfs_fs_devices *fs_devices = root->fs_info->fs_devices;
-+
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	fi_args.num_devices = fs_devices->num_devices;
-+	fi_args.max_id = 0;
-+	memcpy(&fi_args.fsid, root->fs_info->fsid, sizeof(fi_args.fsid));
-+
-+	mutex_lock(&fs_devices->device_list_mutex);
-+	list_for_each_entry_safe(device, next, &fs_devices->devices, dev_list) {
-+		if (device->devid > fi_args.max_id)
-+			fi_args.max_id = device->devid;
-+	}
-+	mutex_unlock(&fs_devices->device_list_mutex);
-+
-+	if (copy_to_user(arg, &fi_args, sizeof(fi_args)))
-+		return -EFAULT;
-+
-+	return 0;
-+}
-+
-+static long btrfs_ioctl_dev_info(struct btrfs_root *root, void __user *arg)
-+{
-+	struct btrfs_ioctl_dev_info_args *di_args;
-+	struct btrfs_device *dev;
-+	struct btrfs_fs_devices *fs_devices = root->fs_info->fs_devices;
-+	int ret = 0;
-+	char *s_uuid = NULL;
-+	char empty_uuid[BTRFS_UUID_SIZE] = {0};
-+
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	di_args = memdup_user(arg, sizeof(*di_args));
-+	if (IS_ERR(di_args))
-+		return PTR_ERR(di_args);
-+
-+	if (memcmp(empty_uuid, di_args->uuid, BTRFS_UUID_SIZE) != 0)
-+		s_uuid = di_args->uuid;
-+
-+	mutex_lock(&fs_devices->device_list_mutex);
-+	dev = btrfs_find_device(root, di_args->devid, s_uuid, NULL);
-+	mutex_unlock(&fs_devices->device_list_mutex);
-+
-+	if (!dev) {
-+		ret = -ENODEV;
-+		goto out;
++	if (search_commit) {
++		path->skip_locking = 1;
++		path->reada = 2;
++		path->search_commit_root = 1;
 +	}
 +
-+	di_args->devid = dev->devid;
-+	di_args->bytes_used = dev->bytes_used;
-+	di_args->total_bytes = dev->total_bytes;
-+	memcpy(di_args->uuid, dev->uuid, sizeof(di_args->uuid));
-+	strncpy(di_args->path, dev->name, sizeof(di_args->path));
-+
-+out:
-+	if (ret == 0 && copy_to_user(arg, di_args, sizeof(*di_args)))
-+		ret = -EFAULT;
-+
-+	kfree(di_args);
-+	return ret;
-+}
-+
- static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 				       u64 off, u64 olen, u64 destoff)
- {
-@@ -2375,6 +2444,58 @@ static noinline long btrfs_ioctl_wait_sync(struct file *file, void __user *argp)
- 	return btrfs_wait_for_commit(root, transid);
- }
+ 	key.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
+ 	key.offset = start;
+ 	key.type = BTRFS_EXTENT_CSUM_KEY;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 44b9266..8fdb5f6 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1001,7 +1001,7 @@ static noinline int csum_exist_in_range(struct btrfs_root *root,
+ 	LIST_HEAD(list);
  
-+static long btrfs_ioctl_scrub(struct btrfs_root *root, void __user *arg)
-+{
-+	int ret;
-+	struct btrfs_ioctl_scrub_args *sa;
-+
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	sa = memdup_user(arg, sizeof(*sa));
-+	if (IS_ERR(sa))
-+		return PTR_ERR(sa);
-+
-+	ret = btrfs_scrub_dev(root, sa->devid, sa->start, sa->end,
-+	                      &sa->progress);
-+
-+	if (copy_to_user(arg, sa, sizeof(*sa)))
-+		ret = -EFAULT;
-+
-+	kfree(sa);
-+	return ret;
-+}
-+
-+static long btrfs_ioctl_scrub_cancel(struct btrfs_root *root, void __user *arg)
-+{
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	return btrfs_scrub_cancel(root);
-+}
-+
-+static long btrfs_ioctl_scrub_progress(struct btrfs_root *root,
-+                                       void __user *arg)
-+{
-+	struct btrfs_ioctl_scrub_args *sa;
-+	int ret;
-+
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	sa = memdup_user(arg, sizeof(*sa));
-+	if (IS_ERR(sa))
-+		return PTR_ERR(sa);
-+
-+	ret = btrfs_scrub_progress(root, sa->devid, &sa->progress);
-+
-+	if (copy_to_user(arg, sa, sizeof(*sa)))
-+		ret = -EFAULT;
-+
-+	kfree(sa);
-+	return ret;
-+}
-+
- long btrfs_ioctl(struct file *file, unsigned int
- 		cmd, unsigned long arg)
- {
-@@ -2412,6 +2533,10 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_add_dev(root, argp);
- 	case BTRFS_IOC_RM_DEV:
- 		return btrfs_ioctl_rm_dev(root, argp);
-+	case BTRFS_IOC_FS_INFO:
-+		return btrfs_ioctl_fs_info(root, argp);
-+	case BTRFS_IOC_DEV_INFO:
-+		return btrfs_ioctl_dev_info(root, argp);
- 	case BTRFS_IOC_BALANCE:
- 		return btrfs_balance(root->fs_info->dev_root);
- 	case BTRFS_IOC_CLONE:
-@@ -2435,6 +2560,12 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_start_sync(file, argp);
- 	case BTRFS_IOC_WAIT_SYNC:
- 		return btrfs_ioctl_wait_sync(file, argp);
-+	case BTRFS_IOC_SCRUB:
-+		return btrfs_ioctl_scrub(root, argp);
-+	case BTRFS_IOC_SCRUB_CANCEL:
-+		return btrfs_ioctl_scrub_cancel(root, argp);
-+	case BTRFS_IOC_SCRUB_PROGRESS:
-+		return btrfs_ioctl_scrub_progress(root, argp);
- 	}
+ 	ret = btrfs_lookup_csums_range(root->fs_info->csum_root, bytenr,
+-				       bytenr + num_bytes - 1, &list);
++				       bytenr + num_bytes - 1, &list, 0);
+ 	if (ret == 0 && list_empty(&list))
+ 		return 0;
  
- 	return -ENOTTY;
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 973e7c8..52bcd02 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -32,6 +32,8 @@ struct btrfs_ioctl_vol_args {
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 31ade58..d7ae412 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -4236,7 +4236,7 @@ int btrfs_reloc_clone_csums(struct inode *inode, u64 file_pos, u64 len)
  
- #define BTRFS_SUBVOL_CREATE_ASYNC	(1ULL << 0)
- #define BTRFS_SUBVOL_RDONLY		(1ULL << 1)
-+#define BTRFS_FSID_SIZE 16
-+#define BTRFS_UUID_SIZE 16
+ 	disk_bytenr = file_pos + BTRFS_I(inode)->index_cnt;
+ 	ret = btrfs_lookup_csums_range(root->fs_info->csum_root, disk_bytenr,
+-				       disk_bytenr + len - 1, &list);
++				       disk_bytenr + len - 1, &list, 0);
  
- #define BTRFS_SUBVOL_NAME_MAX 4039
- struct btrfs_ioctl_vol_args_v2 {
-@@ -59,6 +61,33 @@ struct btrfs_scrub_progress {
- 	__u64 last_physical;
- };
+ 	while (!list_empty(&list)) {
+ 		sums = list_entry(list.next, struct btrfs_ordered_sum, list);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index a4bbb85..1f6788f 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -614,7 +614,7 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
  
-+struct btrfs_ioctl_scrub_args {
-+	__u64 devid;				/* in */
-+	__u64 start;				/* in */
-+	__u64 end;				/* in */
-+	__u64 flags;				/* in */
-+	struct btrfs_scrub_progress progress;	/* out */
-+	/* pad to 1k */
-+	__u64 unused[(1024-32-sizeof(struct btrfs_scrub_progress))/8];
-+};
-+
-+#define BTRFS_DEVICE_PATH_NAME_MAX 1024
-+struct btrfs_ioctl_dev_info_args {
-+	__u64 devid;				/* in/out */
-+	__u8 uuid[BTRFS_UUID_SIZE];		/* in/out */
-+	__u64 bytes_used;			/* out */
-+	__u64 total_bytes;			/* out */
-+	__u64 unused[379];			/* pad to 4k */
-+	__u8 path[BTRFS_DEVICE_PATH_NAME_MAX];	/* out */
-+};
-+
-+struct btrfs_ioctl_fs_info_args {
-+	__u64 max_id;				/* out */
-+	__u64 num_devices;			/* out */
-+	__u8 fsid[BTRFS_FSID_SIZE];		/* out */
-+	__u64 reserved[124];			/* pad to 1k */
-+};
-+
- #define BTRFS_INO_LOOKUP_PATH_MAX 4080
- struct btrfs_ioctl_ino_lookup_args {
- 	__u64 treeid;
-@@ -220,4 +249,13 @@ struct btrfs_ioctl_space_args {
- 				   struct btrfs_ioctl_vol_args_v2)
- #define BTRFS_IOC_SUBVOL_GETFLAGS _IOW(BTRFS_IOCTL_MAGIC, 25, __u64)
- #define BTRFS_IOC_SUBVOL_SETFLAGS _IOW(BTRFS_IOCTL_MAGIC, 26, __u64)
-+#define BTRFS_IOC_SCRUB _IOWR(BTRFS_IOCTL_MAGIC, 27, \
-+                             struct btrfs_ioctl_scrub_args)
-+#define BTRFS_IOC_SCRUB_CANCEL _IO(BTRFS_IOCTL_MAGIC, 28)
-+#define BTRFS_IOC_SCRUB_PROGRESS _IOWR(BTRFS_IOCTL_MAGIC, 29, \
-+                             struct btrfs_ioctl_scrub_args)
-+#define BTRFS_IOC_DEV_INFO _IOWR(BTRFS_IOCTL_MAGIC, 30, \
-+                                 struct btrfs_ioctl_dev_info_args)
-+#define BTRFS_IOC_FS_INFO _IOR(BTRFS_IOCTL_MAGIC, 31, \
-+                                 struct btrfs_ioctl_fs_info_args)
- #endif
+ 			ret = btrfs_lookup_csums_range(root->log_root,
+ 						csum_start, csum_end - 1,
+-						&ordered_sums);
++						&ordered_sums, 0);
+ 			BUG_ON(ret);
+ 			while (!list_empty(&ordered_sums)) {
+ 				struct btrfs_ordered_sum *sums;
+@@ -2691,7 +2691,7 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
+ 				ret = btrfs_lookup_csums_range(
+ 						log->fs_info->csum_root,
+ 						ds + cs, ds + cs + cl - 1,
+-						&ordered_sums);
++						&ordered_sums, 0);
+ 				BUG_ON(ret);
+ 			}
+ 		}
 -- 
 1.7.3.4
 

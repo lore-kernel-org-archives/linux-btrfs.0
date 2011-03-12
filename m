@@ -1,81 +1,89 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: Re: [PATCH v2 0/6] btrfs: scrub
-Date: Sat, 12 Mar 2011 14:20:36 +0100
-Message-ID: <4D7B7324.2000802@gmx.net>
-References: <cover.1299854593.git.sensille@gmx.net> <4D7A4B10.7050904@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
-	jansen@webgods.de
-To: Ric Wheeler <ricwheeler@gmail.com>
+Subject: [PATCH v3 4/6] btrfs: sync scrub with commit & device removal
+Date: Sat, 12 Mar 2011 15:50:43 +0100
+Message-ID: <3b1bc4a0d54488ad91779dfe37218d10ec4bd78d.1299941055.git.sensille@gmx.net>
+References: <cover.1299941055.git.sensille@gmx.net>
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D7A4B10.7050904@gmail.com>
+In-Reply-To: <cover.1299941055.git.sensille@gmx.net>
+In-Reply-To: <cover.1299941055.git.sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ric Wheeler wrote:
-> On 03/11/2011 09:49 AM, Arne Jansen wrote:
-> 
-> Great work!
-> 
-> I do wonder if we should also worry about the unallocated part of the 
-> storage device. Often, with local disks specifically, your unused space 
-> might accumulate errors over time.
-> 
-> What you add to your scrub phase is a simple read operation for the 
-> unallocated ranges (optionally a READ_VERIFY which validates the data on 
-> platter without transferring data over the bus to the host).
-> 
-> The recovery operation here would be to write (zeros) to the block if an 
-> error is detected, so we might be pessimistic and simply use write to 
-> "zero" those unallocated ranges as well.  Note that there are 
-> "WRITE_SAME" commands that RAID people use for initializing unused 
-> drives for example.
-> 
-> I would not run the overwrite or read check on SSD or arrays so this 
-> would be an optional type of scrub I suppose.
+This adds several synchronizations:
+ - for a transaction commit, the scrub gets paused before the
+   tree roots are committed until the super are safely on disk
+ - during a log commit, scrubbing of supers is disabled
+ - on unmount, the scrub gets cancelled
+ - on device removal, the scrub for the particular device gets cancelled
 
-Thanks for your suggestion. I'll definitely add scrubbing unused space in
-a later revision and make it optional.
-The read/verify part is quite easy (as long as I can manage to get a
-READ_VERIFY through the stack). Rewriting detected errors is harder as I
-have to make sure that it doesn't get allocated in the meantime. Currently
-scrub is working only on the latest commit and has no knowledge of the
-running transaction except that it is synchronized with it to switch to
-the next commit.
+Signed-off-by: Arne Jansen <sensille@gmx.net>
+---
+ fs/btrfs/disk-io.c     |    1 +
+ fs/btrfs/transaction.c |    3 +++
+ fs/btrfs/tree-log.c    |    2 ++
+ fs/btrfs/volumes.c     |    2 ++
+ 4 files changed, 8 insertions(+), 0 deletions(-)
 
-Arne
-
-> 
-> Regards,
-> 
-> Ric
-> 
->> Arne Jansen (5):
->>    btrfs: add parameter to btrfs_lookup_csum_range
->>    btrfs: make struct map_lookup public
->>    btrfs: add scrub code and prototypes
->>    btrfs: sync scrub with commit&  device removal
->>    btrfs: add state information for scrub
->>
->> Jan Schmidt (1):
->>    btrfs: new ioctls for scrub
->>
->>   fs/btrfs/Makefile      |    2 +-
->>   fs/btrfs/ctree.h       |   46 ++-
->>   fs/btrfs/disk-io.c     |   16 +
->>   fs/btrfs/file-item.c   |    8 +-
->>   fs/btrfs/inode.c       |    2 +-
->>   fs/btrfs/ioctl.c       |  131 +++++
->>   fs/btrfs/ioctl.h       |   55 ++
->>   fs/btrfs/relocation.c  |    2 +-
->>   fs/btrfs/scrub.c       | 1463 
->> ++++++++++++++++++++++++++++++++++++++++++++++++
->>   fs/btrfs/transaction.c |    3 +
->>   fs/btrfs/tree-log.c    |    6 +-
->>   fs/btrfs/volumes.c     |   16 +-
->>   fs/btrfs/volumes.h     |   17 +
->>   13 files changed, 1743 insertions(+), 24 deletions(-)
->>   create mode 100644 fs/btrfs/scrub.c
->>
-> 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 3e1ea3e..924a366 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2493,6 +2493,7 @@ int close_ctree(struct btrfs_root *root)
+ 	fs_info->closing = 1;
+ 	smp_mb();
+ 
++	btrfs_scrub_cancel(root);
+ 	btrfs_put_block_group_cache(fs_info);
+ 
+ 	/*
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 3d73c8d..5a43b20 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1310,6 +1310,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 
+ 	WARN_ON(cur_trans != trans->transaction);
+ 
++	btrfs_scrub_pause(root);
+ 	/* btrfs_commit_tree_roots is responsible for getting the
+ 	 * various roots consistent with each other.  Every pointer
+ 	 * in the tree of tree roots has to point to the most up to date
+@@ -1391,6 +1392,8 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 
+ 	mutex_unlock(&root->fs_info->trans_mutex);
+ 
++	btrfs_scrub_continue(root);
++
+ 	if (current->journal_info == trans)
+ 		current->journal_info = NULL;
+ 
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 1f6788f..2be84fa 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2098,7 +2098,9 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	 * the running transaction open, so a full commit can't hop
+ 	 * in and cause problems either.
+ 	 */
++	btrfs_scrub_pause_super(root);
+ 	write_ctree_super(trans, root->fs_info->tree_root, 1);
++	btrfs_scrub_continue_super(root);
+ 	ret = 0;
+ 
+ 	mutex_lock(&root->log_mutex);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 7dc9fa5..ad3ea88 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1330,6 +1330,8 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 		goto error_undo;
+ 
+ 	device->in_fs_metadata = 0;
++	smp_mb();
++	btrfs_scrub_cancel_dev(root, device);
+ 
+ 	/*
+ 	 * the device list mutex makes sure that we don't change
+-- 
+1.7.3.4
 

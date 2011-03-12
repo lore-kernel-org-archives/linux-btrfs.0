@@ -1,77 +1,57 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH v3 2/6] btrfs: make struct map_lookup public
-Date: Sat, 12 Mar 2011 15:50:41 +0100
-Message-ID: <21a889929560111c81d8114d66add73a7056d3be.1299941055.git.sensille@gmx.net>
-References: <cover.1299941055.git.sensille@gmx.net>
+Subject: [PATCH v3 0/6] btrfs: scrub
+Date: Sat, 12 Mar 2011 15:50:39 +0100
+Message-ID: <cover.1299941055.git.sensille@gmx.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <cover.1299941055.git.sensille@gmx.net>
-In-Reply-To: <cover.1299941055.git.sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-definition of struct map_lookup moved from volumes.c to the header
+This series adds an initial implementation for scrub. It works quite
+straightforward. The usermode issues an ioctl for each device in the
+fs. For each device, it enumerates the allocated device chunks. For
+each chunk, the contained extents are enumerated and the data checksums
+fetched. The extents are read sequentially and the checksums verified.
+If an error occurs (checksum or EIO), a good copy is searched for. If
+one is found, the bad copy will be rewritten.
+All enumerations happen from the commit roots. During a transaction
+commit, the scrubs get paused and afterwards continue from the new
+roots.
+For future improvements please see the inline comments.
 
-Signed-off-by: Arne Jansen <sensille@gmx.net>
----
- fs/btrfs/volumes.c |   14 --------------
- fs/btrfs/volumes.h |   14 ++++++++++++++
- 2 files changed, 14 insertions(+), 14 deletions(-)
+The accompanying user mode patches will follow shortly.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 94334d9..7dc9fa5 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -33,25 +33,11 @@
- #include "volumes.h"
- #include "async-thread.h"
- 
--struct map_lookup {
--	u64 type;
--	int io_align;
--	int io_width;
--	int stripe_len;
--	int sector_size;
--	int num_stripes;
--	int sub_stripes;
--	struct btrfs_bio_stripe stripes[];
--};
--
- static int init_first_rw_device(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *root,
- 				struct btrfs_device *device);
- static int btrfs_relocate_sys_chunks(struct btrfs_root *root);
- 
--#define map_lookup_size(n) (sizeof(struct map_lookup) + \
--			    (sizeof(struct btrfs_bio_stripe) * (n)))
--
- static DEFINE_MUTEX(uuid_mutex);
- static LIST_HEAD(fs_uuids);
- 
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 7af6144..0ccc982 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -129,6 +129,20 @@ struct btrfs_bio_stripe {
- 	u64 physical;
- };
- 
-+struct map_lookup {
-+	u64 type;
-+	int io_align;
-+	int io_width;
-+	int stripe_len;
-+	int sector_size;
-+	int num_stripes;
-+	int sub_stripes;
-+	struct btrfs_bio_stripe stripes[];
-+};
-+
-+#define map_lookup_size(n) (sizeof(struct map_lookup) + \
-+			    (sizeof(struct btrfs_bio_stripe) * (n)))
-+
- struct btrfs_multi_bio {
- 	atomic_t stripes_pending;
- 	bio_end_io_t *end_io;
+V2 mainly changes the dev_info ioctl interface.
+V3 corrects some EIO handling and cleanup issues.
+
+Thanks,
+Arne
+
+Arne Jansen (5):
+  btrfs: add parameter to btrfs_lookup_csum_range
+  btrfs: make struct map_lookup public
+  btrfs: add scrub code and prototypes
+  btrfs: sync scrub with commit & device removal
+  btrfs: add state information for scrub
+
+Jan Schmidt (1):
+  btrfs: new ioctls for scrub
+
+ fs/btrfs/Makefile      |    2 +-
+ fs/btrfs/ctree.h       |   45 ++-
+ fs/btrfs/disk-io.c     |   16 +
+ fs/btrfs/file-item.c   |    8 +-
+ fs/btrfs/inode.c       |    2 +-
+ fs/btrfs/ioctl.c       |  131 +++++
+ fs/btrfs/ioctl.h       |   55 ++
+ fs/btrfs/relocation.c  |    2 +-
+ fs/btrfs/scrub.c       | 1497 ++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/transaction.c |    3 +
+ fs/btrfs/tree-log.c    |    6 +-
+ fs/btrfs/volumes.c     |   16 +-
+ fs/btrfs/volumes.h     |   17 +
+ 13 files changed, 1776 insertions(+), 24 deletions(-)
+ create mode 100644 fs/btrfs/scrub.c
+
 -- 
 1.7.3.4
 

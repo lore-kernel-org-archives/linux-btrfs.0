@@ -1,236 +1,81 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: Re: [PATCH v2 5/6] btrfs: add state information for scrub
-Date: Sat, 12 Mar 2011 14:13:17 +0100
-Message-ID: <4D7B716D.3010205@gmx.net>
-References: <cover.1299854593.git.sensille@gmx.net> <2280f3a33ef55a94c905665238ecbec282a63185.1299854593.git.sensille@gmx.net> <20110311165351.GT17108@twin.jikos.cz>
+Subject: Re: [PATCH v2 0/6] btrfs: scrub
+Date: Sat, 12 Mar 2011 14:20:36 +0100
+Message-ID: <4D7B7324.2000802@gmx.net>
+References: <cover.1299854593.git.sensille@gmx.net> <4D7A4B10.7050904@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs@vger.kernel.org, dave@jikos.cz
+Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
+	jansen@webgods.de
+To: Ric Wheeler <ricwheeler@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110311165351.GT17108@twin.jikos.cz>
+In-Reply-To: <4D7A4B10.7050904@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-David Sterba wrote:
-> On Fri, Mar 11, 2011 at 03:49:42PM +0100, Arne Jansen wrote:
->> Add structures and state information needed for scrub
->>
->> Signed-off-by: Arne Jansen <sensille@gmx.net>
->> ---
->>  fs/btrfs/ctree.h   |   26 ++++++++++++++++++++++++++
->>  fs/btrfs/disk-io.c |   15 +++++++++++++++
->>  fs/btrfs/ioctl.h   |   17 +++++++++++++++++
->>  fs/btrfs/volumes.h |    3 +++
->>  4 files changed, 61 insertions(+), 0 deletions(-)
->>
->> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
->> index 030c321..3584179 100644
->> --- a/fs/btrfs/ctree.h
->> +++ b/fs/btrfs/ctree.h
->> @@ -23,6 +23,7 @@
->>  #include <linux/mm.h>
->>  #include <linux/highmem.h>
->>  #include <linux/fs.h>
->> +#include <linux/rwsem.h>
->>  #include <linux/completion.h>
->>  #include <linux/backing-dev.h>
->>  #include <linux/wait.h>
->> @@ -32,6 +33,7 @@
->>  #include "extent_io.h"
->>  #include "extent_map.h"
->>  #include "async-thread.h"
->> +#include "ioctl.h"
->>  
->>  struct btrfs_trans_handle;
->>  struct btrfs_transaction;
->> @@ -48,6 +50,8 @@ struct btrfs_ordered_sum;
->>  
->>  #define BTRFS_COMPAT_EXTENT_TREE_V0
->>  
->> +#define SCRUB_BTRFS_WORKER
->> +
->>  /*
->>   * files bigger than this get some pre-flushing when they are added
->>   * to the ordered operations list.  That way we limit the total
->> @@ -508,6 +512,12 @@ struct btrfs_extent_item_v0 {
->>  /* use full backrefs for extent pointers in the block */
->>  #define BTRFS_BLOCK_FLAG_FULL_BACKREF	(1ULL << 8)
->>  
->> +/*
->> + * this flag is only used internally by scrub and may be changed at any time
->> + * it is only declared here to avoid collisions
->> + */
->> +#define BTRFS_EXTENT_FLAG_SUPER		(1ULL << 48)
->> +
->>  struct btrfs_tree_block_info {
->>  	struct btrfs_disk_key key;
->>  	u8 level;
->> @@ -1067,6 +1077,22 @@ struct btrfs_fs_info {
->>  
->>  	void *bdev_holder;
->>  
->> +	/* private scrub information */
->> +	struct mutex scrub_lock;
->> +	struct scrub_info *scrub_info;
->                            ^^^^^^^^^^
+Ric Wheeler wrote:
+> On 03/11/2011 09:49 AM, Arne Jansen wrote:
 > 
-> I did not find any reference to this item
+> Great work!
+> 
+> I do wonder if we should also worry about the unallocated part of the 
+> storage device. Often, with local disks specifically, your unused space 
+> might accumulate errors over time.
+> 
+> What you add to your scrub phase is a simple read operation for the 
+> unallocated ranges (optionally a READ_VERIFY which validates the data on 
+> platter without transferring data over the bus to the host).
+> 
+> The recovery operation here would be to write (zeros) to the block if an 
+> error is detected, so we might be pessimistic and simply use write to 
+> "zero" those unallocated ranges as well.  Note that there are 
+> "WRITE_SAME" commands that RAID people use for initializing unused 
+> drives for example.
+> 
+> I would not run the overwrite or read check on SSD or arrays so this 
+> would be an optional type of scrub I suppose.
 
-right, thanks.
-
-> 
->> +	atomic_t scrubs_running;
->> +	atomic_t scrub_pause_req;
->> +	atomic_t scrubs_paused;
->> +	atomic_t scrub_cancel_req;
-> 
-> This make me think ... you declare atomics and yet lock (nearly) every
-> variable use like 
-> 
-> +       mutex_lock(&fs_info->scrub_lock);
-> +       atomic_inc(&fs_info->scrubs_running);
-> +       mutex_unlock(&fs_info->scrub_lock);
-> 
-> or
-> 
-> +       mutex_lock(&fs_info->scrub_lock);
-> +       if (!atomic_read(&fs_info->scrubs_running)) {
-> +               mutex_unlock(&fs_info->scrub_lock);
-> +               return -ENOTCONN;
-> +       }
-> 
-> imho this is not needed with atomics. Moreover, the locking is not
-> consistent, quick grep for atomic_read shows many statements without any
-> locks around.
-
-Ok, let's look at them one at a time.
-scrubs_running is always accessed with mutex scrub_lock held, except
-one time. This one time is when it is being use as a condition to
-wait_event. The problem here is that I don't know how to protect the
-condition. What I'm missing here are condition variables. So for this
-one case, I made it atomic. The question is if I can omit the lock
-around the other uses. I'm not sure about that, because some code may
-assume that the value doesn't change while it is holding the lock.
-I'll read it carefully in this regard again.
-scrub_pause_req is used mostly without locks, in performance critical
-places, so it should stay atomic.
-scrubs_pauses is also used without a lock several times.
-Same for scrub_cancel_req. It's also performance critical.
-scrub_workers_refcnt is always used inside a lock. I don't think an
-atomic would do, as the first increment can happen in several threads
-simultaneously, and the second thread already expects the data structures
-to be set up.
-
-So mainly I'll see if I can omit the locking around the uses of
-scrubs_running.
-
-> 
-> 
->> +	wait_queue_head_t scrub_pause_wait;
->> +	struct rw_semaphore scrub_super_lock;
->> +	int scrub_workers_refcnt;
-> 
-> A refcount could be an atomic too ...
-> 
->> +#ifdef SCRUB_BTRFS_WORKER
->> +	struct btrfs_workers scrub_workers;
->> +#else
->> +	struct workqueue_struct *scrub_workers;
->> +#endif
->> +
-> 
-> Apart from the atomics and scrub_workers_refcnt, there is only
-> scrub_workers left that needs locking protection, which can be done
-> under a spinlock.
-
-I wouldn't call create_workqueue under the protection of a spinlock.
-Of course I could call it upfront and free it, if scrub_workers
-already exists, but that isn't worth the effort, as this path is
-only used on start and end of scrub.
-
-Again, thanks for taking the time to review this.
+Thanks for your suggestion. I'll definitely add scrubbing unused space in
+a later revision and make it optional.
+The read/verify part is quite easy (as long as I can manage to get a
+READ_VERIFY through the stack). Rewriting detected errors is harder as I
+have to make sure that it doesn't get allocated in the meantime. Currently
+scrub is working only on the latest commit and has no knowledge of the
+running transaction except that it is synchronized with it to switch to
+the next commit.
 
 Arne
 
 > 
+> Regards,
 > 
-> dave
+> Ric
 > 
->>  	/* filesystem state */
->>  	u64 fs_state;
->>  };
->> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->> index 924a366..4d62bc3 100644
->> --- a/fs/btrfs/disk-io.c
->> +++ b/fs/btrfs/disk-io.c
->> @@ -1677,6 +1677,21 @@ struct btrfs_root *open_ctree(struct super_block *sb,
->>  	INIT_LIST_HEAD(&fs_info->ordered_extents);
->>  	spin_lock_init(&fs_info->ordered_extent_lock);
->>  
->> +	mutex_init(&fs_info->scrub_lock);
->> +	atomic_set(&fs_info->scrubs_running, 0);
->> +	atomic_set(&fs_info->scrub_pause_req, 0);
->> +	atomic_set(&fs_info->scrubs_paused, 0);
->> +	atomic_set(&fs_info->scrub_cancel_req, 0);
->> +	init_waitqueue_head(&fs_info->scrub_pause_wait);
->> +	init_rwsem(&fs_info->scrub_super_lock);
->> +	fs_info->scrub_workers_refcnt = 0;
->> +#ifdef SCRUB_BTRFS_WORKER
->> +	btrfs_init_workers(&fs_info->scrub_workers, "scrub",
->> +			   fs_info->thread_pool_size, &fs_info->generic_worker);
->> +#else
->> +	fs_info->scrub_workers = NULL;
->> +#endif
->> +
->>  	sb->s_blocksize = 4096;
->>  	sb->s_blocksize_bits = blksize_bits(4096);
->>  	sb->s_bdi = &fs_info->bdi;
->> diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
->> index 8fb3821..973e7c8 100644
->> --- a/fs/btrfs/ioctl.h
->> +++ b/fs/btrfs/ioctl.h
->> @@ -42,6 +42,23 @@ struct btrfs_ioctl_vol_args_v2 {
->>  	char name[BTRFS_SUBVOL_NAME_MAX + 1];
->>  };
->>  
->> +struct btrfs_scrub_progress {
->> +	__u64 data_extents_scrubbed;
->> +	__u64 tree_extents_scrubbed;
->> +	__u64 data_bytes_scrubbed;
->> +	__u64 tree_bytes_scrubbed;
->> +	__u64 read_errors;
->> +	__u64 csum_errors;
->> +	__u64 verify_errors;
->> +	__u64 no_csum;
->> +	__u64 csum_discards;
->> +	__u64 super_errors;
->> +	__u64 malloc_errors;
->> +	__u64 uncorrectable_errors;
->> +	__u64 corrected_errors;
->> +	__u64 last_physical;
->> +};
->> +
->>  #define BTRFS_INO_LOOKUP_PATH_MAX 4080
->>  struct btrfs_ioctl_ino_lookup_args {
->>  	__u64 treeid;
->> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
->> index 0ccc982..92204d9 100644
->> --- a/fs/btrfs/volumes.h
->> +++ b/fs/btrfs/volumes.h
->> @@ -86,6 +86,9 @@ struct btrfs_device {
->>  	/* physical drive uuid (or lvm uuid) */
->>  	u8 uuid[BTRFS_UUID_SIZE];
->>  
->> +	/* per-device scrub information */
->> +	struct scrub_dev *scrub_device;
->> +
->>  	struct btrfs_work work;
->>  };
->>  
->> -- 
->> 1.7.3.4
+>> Arne Jansen (5):
+>>    btrfs: add parameter to btrfs_lookup_csum_range
+>>    btrfs: make struct map_lookup public
+>>    btrfs: add scrub code and prototypes
+>>    btrfs: sync scrub with commit&  device removal
+>>    btrfs: add state information for scrub
 >>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>> Jan Schmidt (1):
+>>    btrfs: new ioctls for scrub
+>>
+>>   fs/btrfs/Makefile      |    2 +-
+>>   fs/btrfs/ctree.h       |   46 ++-
+>>   fs/btrfs/disk-io.c     |   16 +
+>>   fs/btrfs/file-item.c   |    8 +-
+>>   fs/btrfs/inode.c       |    2 +-
+>>   fs/btrfs/ioctl.c       |  131 +++++
+>>   fs/btrfs/ioctl.h       |   55 ++
+>>   fs/btrfs/relocation.c  |    2 +-
+>>   fs/btrfs/scrub.c       | 1463 
+>> ++++++++++++++++++++++++++++++++++++++++++++++++
+>>   fs/btrfs/transaction.c |    3 +
+>>   fs/btrfs/tree-log.c    |    6 +-
+>>   fs/btrfs/volumes.c     |   16 +-
+>>   fs/btrfs/volumes.h     |   17 +
+>>   13 files changed, 1743 insertions(+), 24 deletions(-)
+>>   create mode 100644 fs/btrfs/scrub.c
+>>
+> 
 

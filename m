@@ -1,58 +1,42 @@
-From: Pau Iranzo <paulists@gmail.com>
-Subject: Re: Btrfs system won't start on Ubuntu (relationship problems...)
-Date: Sun, 13 Mar 2011 19:48:48 +0100
-Message-ID: <AANLkTim06NUgAitTyFrACggzC=0hXYvbzPr=y04jLjky@mail.gmail.com>
-References: <AANLkTi=4VaXSZgeN-DeohPduQ_8FiuEroNpKCD3bTSPK@mail.gmail.com>
- <20110313114616.8860.qmail@stuge.se> <AANLkTimtN0FWG95dzjwzOzZoQaHEzL7t5ffZchR=BZAu@mail.gmail.com>
- <20110313163048.5321.qmail@stuge.se> <AANLkTin9FG5npgKS_Hj16mXFb17ixmM6XddWw45zEW62@mail.gmail.com>
+From: Jesper Juhl <jj@chaosbits.net>
+Subject: [PATCH] BTRFS: Fix mem leak in btrfs_submit_direct()
+Date: Sun, 13 Mar 2011 21:49:18 +0100 (CET)
+Message-ID: <alpine.LNX.2.00.1103132145250.29706@swampdragon.chaosbits.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org, Peter Stuge <peter@stuge.se>
-To: =?ISO-8859-1?Q?J=E9r=F4me_Poulin?= <jeromepoulin@gmail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTin9FG5npgKS_Hj16mXFb17ixmM6XddWw45zEW62@mail.gmail.com>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: linux-kernel@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks guys.
+When memory is low and the allocation for 'dip->csums' fail in 
+fs/btrfs/inode.c:btrfs_submit_direct() we make the situation worse by 
+leaking the memory allocated to 'dip'.
+This patch removes the leak by kfree()'ing 'dip' before jumping to the 
+'free_ordered' label.
 
-Well, first of all, it's been years since I last installed Windows on
-one of my computers (2003 maybe?). The thing was that I was excited
-about btrfs and I had used it since it was on the partition manager on
-the Ubuntu installer. I hadn't had any problems with btrfs on my
-computers until this. Then I discovered there was no fsck :(
+Signed-off-by: Jesper Juhl <jj@chaosbits.net>
+---
+ inode.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-I'll try what you told me.
+ compile tested only.
 
-Thanks!!!
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 0efdb65..53f4c8e 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6056,6 +6056,7 @@ static void btrfs_submit_direct(int rw, struct bio *bio, struct inode *inode,
+ 	if (!skip_sum) {
+ 		dip->csums = kmalloc(sizeof(u32) * bio->bi_vcnt, GFP_NOFS);
+ 		if (!dip->csums) {
++			kfree(dip);
+ 			ret = -ENOMEM;
+ 			goto free_ordered;
+ 		}
 
-2011/3/13 J=E9r=F4me Poulin <jeromepoulin@gmail.com>:
-> On Sun, Mar 13, 2011 at 12:30 PM, Peter Stuge <peter@stuge.se> wrote:
->>
->> J=E9r=F4me Poulin wrote:
->> > Never plug a defective drive on USB if it is the source .. else
->> > defective sectors get transferred as good filled with random stuff
->>
->> Interesting! Which USB chipset(s?) have you seen do this?
->>
-> Those I tried and confirmed not working are
-> CablesToGo:=A0http://www.cablestogo.com/product.asp?cat_id=3D941&sku=3D=
-30504
-> StarTech:=A0http://us.startech.com/product/USB2SATAIDE-USB-20-to-IDE-=
-or-SATA-Adapter-Cable
-> I don't have them handy but I can confirm you the chipset if you'd li=
-ke.
-> As a sidenote USB converters don't have low level access to the disk =
-so it
-> also makes smartctl and stuff not working at all.
-> I was not able to find any USB converter which was working correctly =
-using
-> ddrescue and a defective disk yet.
->>
->> //Peter
->
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+-- 
+Jesper Juhl <jj@chaosbits.net>            http://www.chaosbits.net/
+Plain text mails only, please.
+Don't top-post http://www.catb.org/~esr/jargon/html/T/top-post.html

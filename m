@@ -1,47 +1,45 @@
-From: Peter Stuge <peter@stuge.se>
+From: "Fajar A. Nugraha" <list@fajar.net>
 Subject: Re: Btrfs system won't start on Ubuntu (relationship problems...)
-Date: Mon, 14 Mar 2011 00:21:52 +0100
-Message-ID: <20110313232152.12892.qmail@stuge.se>
-References: <AANLkTi=4VaXSZgeN-DeohPduQ_8FiuEroNpKCD3bTSPK@mail.gmail.com> <20110313114616.8860.qmail@stuge.se> <AANLkTimtN0FWG95dzjwzOzZoQaHEzL7t5ffZchR=BZAu@mail.gmail.com> <20110313163048.5321.qmail@stuge.se> <AANLkTin9FG5npgKS_Hj16mXFb17ixmM6XddWw45zEW62@mail.gmail.com> <AANLkTim06NUgAitTyFrACggzC=0hXYvbzPr=y04jLjky@mail.gmail.com>
+Date: Mon, 14 Mar 2011 06:34:11 +0700
+Message-ID: <AANLkTin=F0+_cjkw2oXDxcZDLdqBWUzQKbCkrMDr9yFo@mail.gmail.com>
+References: <AANLkTi=4VaXSZgeN-DeohPduQ_8FiuEroNpKCD3bTSPK@mail.gmail.com>
+	<20110313114616.8860.qmail@stuge.se>
+	<AANLkTimtN0FWG95dzjwzOzZoQaHEzL7t5ffZchR=BZAu@mail.gmail.com>
+	<20110313163048.5321.qmail@stuge.se>
+	<AANLkTin9FG5npgKS_Hj16mXFb17ixmM6XddWw45zEW62@mail.gmail.com>
+	<AANLkTikTpT8QYiU8MMA=d1Wwr-2g-QCqmJWtc1sq+wiE@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: =?utf-8?B?SsOpcsO0bWU=?= Poulin <jeromepoulin@gmail.com>,
-	linux-btrfs@vger.kernel.org
-To: Pau Iranzo <paulists@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTim06NUgAitTyFrACggzC=0hXYvbzPr=y04jLjky@mail.gmail.com>
+In-Reply-To: <AANLkTikTpT8QYiU8MMA=d1Wwr-2g-QCqmJWtc1sq+wiE@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Pau Iranzo wrote:
-> it's been years since I last installed Windows on one of my
-> computers (2003 maybe?).
+On Sun, Mar 13, 2011 at 11:46 PM, J=E9r=F4me Poulin <jeromepoulin@gmail=
+=2Ecom> wrote:
+> As a sidenote USB converters don't have low level access to the disk
+> so it also makes smartctl and stuff not working at all.
 
-Again, Windows or not is irrelevant.
+That depends on the disk and controller.
+I had an old USB controller with PATA disk, smartctl was unusable on it=
+=2E
+Smartctl was perfectly usable on another one with SATA disk in it.
 
-The hard drive is physically broken and that would have happened at
-the same point in time regardless of anything that software has been
-doing.
+> I was not able to find any USB converter which was working correctly
+> using ddrescue and a defective disk yet.
 
+That would also depend on kernel version. My disk was having some bad
+sectors, and with an old version of Ubuntu (forgot which one exactly)
+running e2fsck -c (to check the badblocks) failed because USB resets
+keep happening and the disk was finally undetected, while on Ubuntu
+maverick (kernel 2.6.35) the check was completed and badblocks marked
+correctly. dd_rescue should also work, and you might want to use a
+bigger value for "-B" so it would be faster.
 
-> The thing was that I was excited about btrfs and I had used it
-> since it was on the partition manager on the Ubuntu installer. I
-> hadn't had any problems with btrfs on my computers until this. Then
-> I discovered there was no fsck :(
-
-As I explained already, just powering up the disk reduces your
-chances of recovering data, and reading lots of data from the disk
-even more so, so the fact that there is no fsck that you could have
-run on the disk is actually in your case an advantage. I hope this
-was already absolutely clear.
-
-
-> I'll try what you told me.
-
-Expect to spend some time on data recovery. Make sure to have enough
-free space for a dd_rescue copy of the broken disk.
-
-In order to avoid the risk of hitting one of those misbehaving USB
-adapters better try to hook up the disk to a mainboard controller.
-
-
-//Peter
+--=20
+=46ajar
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

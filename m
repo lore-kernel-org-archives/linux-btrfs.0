@@ -1,49 +1,60 @@
-From: Ric Wheeler <ricwheeler@gmail.com>
-Subject: Re: BTRFS fsck tool
-Date: Sat, 12 Mar 2011 18:53:00 -0500
-Message-ID: <4D7C075C.2060702@gmail.com>
-References: <AANLkTim1+n4OJcm1iYMQKQZyN9jT2uFUYjAM6=x4pY2g@mail.gmail.com> <4D7591CC.6060301@shiftmail.org> <AANLkTimaX2K=Uf-HZ7+dWN20Qt7Xntj+NoRiC7xN770=@mail.gmail.com> <20110308065255.24100.qmail@stuge.se> <1299762048-sup-3940@think> <4D7BF890.5010601@shiftmail.org>
+From: Chris Samuel <chris@csamuel.org>
+Subject: Re: btrfs fi df returns nothing
+Date: Sun, 13 Mar 2011 18:24:50 +1100
+Message-ID: <201103131824.54506.chris@csamuel.org>
+References: <il7npu$5lh$1@dough.gmane.org> <20110309114746.GA2998@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: Chris Mason <chris.mason@oracle.com>, Peter Stuge <peter@stuge.se>,
-	Alexey A Nikitin <moonwalker@syrius.us>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Spelic <spelic@shiftmail.org>
+Content-Type: multipart/signed;
+  boundary="nextPart2116071.fEUA6k8bD4";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D7BF890.5010601@shiftmail.org>
+In-Reply-To: <20110309114746.GA2998@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/12/2011 05:49 PM, Spelic wrote:
-> On 03/10/2011 02:02 PM, Chris Mason wrote:
->> Cutting the power isn't problem unless you're using something
->> where cache flushes are not supported.
-> Some disks lie about cache flush having completed.
+--nextPart2116071.fEUA6k8bD4
+Content-Type: Text/Plain;
+  charset="iso-8859-15"
+Content-Transfer-Encoding: quoted-printable
 
-This is really not true for modern enterprise class drives. You might have more 
-issues with USB thumbdrives and other really low end parts.
+On Wed, 9 Mar 2011 10:47:46 PM Hugo Mills wrote:
 
-Ric
+[Ubuntu 10.04 LTS kernel - 2.6.32 based]
+> Ouch. That's a very early kernel, in btrfs terms.
 
-> But why doesn't the option for mounting with an earlier superblock work?
-> Could you improve that area?
->
-> I think that, except on "near to enospc" situations, the new blocks
-> being allocated for FS operation should have been free for a while, at
-> least one hour (*). In this way new filesystem operations would not
-> overwrite old superblocks and old data structures and these would remain
-> readable to get a consistent "old version" of the filesystem.
-> So in case of abrupt poweroff and wrong flush mechanism, the user could
-> still mount with an, e.g., 10-minutes older superblock and get a
-> workable 10-minutes older version of the filesystem.
-> Or am I missing something?
->
-> (*) 1 hour would render highly unlikely that data stays for that long
-> uncommitted in the drive's writeback cache. The drive flushes all data
-> out whenever it's idle...
->
-> Thank you
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+That may be true, but as someone who's been running btrfs as
+/home on laptop SSD's for over 2 years now the reports from
+people using later kernels worried me enough to not go past
+10.04 on it.
 
+However, the impression I'm getting now is that 2.6.38 is
+looking a lot more solid for btrfs than recent kernels and
+so I'm looking forward to testing that out when 11.04 comes
+out!
+
+cheers,
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+
+This email may come with a PGP signature as a file. Do not panic.
+=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
+
+--nextPart2116071.fEUA6k8bD4
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iQEVAwUATXxxQ41yjaOTJg85AQJD/Af/fyOJqVh5qj7ZQ0cpkkzmUazzTVUZ05G2
+GvVYhg9jG2knYJ82+TiF4S+/DRQoEbgkXnMhJur1aCUzV+tRO4ntr7NPoBmJOn3G
+5RViOgSNKNT06RTBdqZMdP3/rji9zApaYsDB7PTzeeVlC/mGZeGnGkaW6J1kXg8h
+F0kPmgtRmK5khdK51PxzpcjJzDFhLmbnMoYX7iNtWIkjSbzysjFHb9j4+m573Q3w
+4x7cniUnT+uYLCU8sY5yFVbVCJSchEjAkLYC4nWAsDsCDnJOmDW7X7mtjew0ELlM
+gUB3XhXfIwvlYQIQFeROBg3QYbSmdp4Jx86oRAVzAP3T6ZXGSFxuGw==
+=lcK3
+-----END PGP SIGNATURE-----
+
+--nextPart2116071.fEUA6k8bD4--

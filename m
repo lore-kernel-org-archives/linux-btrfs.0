@@ -1,45 +1,72 @@
-From: "Fajar A. Nugraha" <list@fajar.net>
-Subject: Re: Btrfs system won't start on Ubuntu (relationship problems...)
-Date: Mon, 14 Mar 2011 06:34:11 +0700
-Message-ID: <AANLkTin=F0+_cjkw2oXDxcZDLdqBWUzQKbCkrMDr9yFo@mail.gmail.com>
-References: <AANLkTi=4VaXSZgeN-DeohPduQ_8FiuEroNpKCD3bTSPK@mail.gmail.com>
-	<20110313114616.8860.qmail@stuge.se>
-	<AANLkTimtN0FWG95dzjwzOzZoQaHEzL7t5ffZchR=BZAu@mail.gmail.com>
-	<20110313163048.5321.qmail@stuge.se>
-	<AANLkTin9FG5npgKS_Hj16mXFb17ixmM6XddWw45zEW62@mail.gmail.com>
-	<AANLkTikTpT8QYiU8MMA=d1Wwr-2g-QCqmJWtc1sq+wiE@mail.gmail.com>
+From: Ilya Dryomov <idryomov@gmail.com>
+Subject: Re: [PATCH v3 3/6] btrfs: add scrub code and prototypes
+Date: Mon, 14 Mar 2011 01:50:31 +0200
+Message-ID: <20110313235031.GA32690@kwango.lan.net>
+References: <cover.1299941055.git.sensille@gmx.net> <7ccafb5250b72ca706369a8d5b45f06e8d5a4f8a.1299941055.git.sensille@gmx.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+To: Arne Jansen <sensille@gmx.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTikTpT8QYiU8MMA=d1Wwr-2g-QCqmJWtc1sq+wiE@mail.gmail.com>
+In-Reply-To: <7ccafb5250b72ca706369a8d5b45f06e8d5a4f8a.1299941055.git.sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Mar 13, 2011 at 11:46 PM, J=E9r=F4me Poulin <jeromepoulin@gmail=
-=2Ecom> wrote:
-> As a sidenote USB converters don't have low level access to the disk
-> so it also makes smartctl and stuff not working at all.
+On Sat, Mar 12, 2011 at 03:50:42PM +0100, Arne Jansen wrote:
+> This is the main scrub code.
+> 
+> Updates v3:
+> 
+>  - fixed EIO handling, need to reallocate bio instead of reusing it
+>  - Updated according to David Sterba's review
+>  - don't clobber bi_flags on reuse, just set UPTODATE
+>  - allocate long living bios with bio_kmalloc instead of bio_alloc
+> 
+> Signed-off-by: Arne Jansen <sensille@gmx.net>
+> ---
+>  fs/btrfs/Makefile |    2 +-
+>  fs/btrfs/ctree.h  |   14 +
+>  fs/btrfs/scrub.c  | 1497 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  3 files changed, 1512 insertions(+), 1 deletions(-)
 
-That depends on the disk and controller.
-I had an old USB controller with PATA disk, smartctl was unusable on it=
-=2E
-Smartctl was perfectly usable on another one with SATA disk in it.
+(snipped)
 
-> I was not able to find any USB converter which was working correctly
-> using ddrescue and a defective disk yet.
+> +static noinline_for_stack int scrub_stripe(struct scrub_dev *sdev,
+> +	struct map_lookup *map, int num, u64 base, u64 length)
+> +{
+> +	struct btrfs_path *path;
+> +	struct btrfs_fs_info *fs_info = sdev->dev->dev_root->fs_info;
+> +	struct btrfs_root *root = fs_info->extent_root;
+> +	struct btrfs_root *csum_root = fs_info->csum_root;
+> +	struct btrfs_extent_item *extent;
+> +	u64 flags;
+> +	int ret;
+> +	int slot;
+> +	int i;
+> +	int nstripes;
 
-That would also depend on kernel version. My disk was having some bad
-sectors, and with an old version of Ubuntu (forgot which one exactly)
-running e2fsck -c (to check the badblocks) failed because USB resets
-keep happening and the disk was finally undetected, while on Ubuntu
-maverick (kernel 2.6.35) the check was completed and badblocks marked
-correctly. dd_rescue should also work, and you might want to use a
-bigger value for "-B" so it would be faster.
+It should be u64 nstripes.  A few lines below you assign the stripe
+length, it is a 64 bit quantity, also do_div() expects a 64 bit
+dividend.  This fixes a serious breakage on x86-32.
 
---=20
-=46ajar
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Overall, this function could use a good cleanup.  I can send you a patch
+later unless you want to do it yourself.
+
+> +	int start_stripe;
+> +	struct extent_buffer *l;
+> +	struct btrfs_key key;
+> +	u64 physical;
+> +	u64 logical;
+> +	u64 generation;
+> +	u64 mirror_num;
+
+And a minor thing on the whole series: u64 should be printed with %llu
+and explicit casting to unsigned long long.
+
+Thanks,
+
+		Ilya
+
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

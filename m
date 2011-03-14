@@ -1,55 +1,31 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: Re: [PATCH v3 3/6] btrfs: add scrub code and prototypes
-Date: Mon, 14 Mar 2011 10:57:05 +0100
-Message-ID: <4D7DE671.70304@gmx.net>
-References: <cover.1299941055.git.sensille@gmx.net> <7ccafb5250b72ca706369a8d5b45f06e8d5a4f8a.1299941055.git.sensille@gmx.net> <20110313235031.GA32690@kwango.lan.net>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: [PATCH v2] Check for immutable flag in fallocate path
+Date: Mon, 14 Mar 2011 06:24:26 -0400
+Message-ID: <20110314102426.GA29888@infradead.org>
+References: <4D6221B8.9040303@gmail.com>
+ <4D6F5473.2070709@gmail.com>
+ <20110303213903.GL15097@dastard>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
-To: Ilya Dryomov <idryomov@gmail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110313235031.GA32690@kwango.lan.net>
+Content-Type: text/plain; charset=us-ascii
+Cc: Marco Stornelli <marco.stornelli@gmail.com>,
+	Linux Kernel <linux-kernel@vger.kernel.org>,
+	linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	cluster-devel@redhat.com, xfs@oss.sgi.com,
+	Linux FS Devel <linux-fsdevel@vger.kernel.org>
+To: Dave Chinner <david@fromorbit.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20110303213903.GL15097@dastard>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 14.03.2011 00:50, Ilya Dryomov wrote:
-> On Sat, Mar 12, 2011 at 03:50:42PM +0100, Arne Jansen wrote:
->> This is the main scrub code.
+On Fri, Mar 04, 2011 at 08:39:03AM +1100, Dave Chinner wrote:
+> WTF?  Why does append mode have any effect on whether we can punch
+> holes in a file or not? There's no justification for adding this in
+> the commit message. Why is it even in a patch that is for checking
+> immutable inodes? What is the point of adding it, when all that will
+> happen is people will switch to XFS_IOC_UNRESVSP which has never had
+> this limitation?
 
->> +	int nstripes;
->
-> It should be u64 nstripes.  A few lines below you assign the stripe
-> length, it is a 64 bit quantity, also do_div() expects a 64 bit
-> dividend.  This fixes a serious breakage on x86-32.
-
-Thanks.
-
->
-> Overall, this function could use a good cleanup.  I can send you a patch
-> later unless you want to do it yourself.
-
-Which parts do you have in mind? I see only potential for minor cleanup,
-but as I wrote it, I might as well be blind to it ;) So when you
-send the patch I'll probably see what you mean.
-The part I'm not content with is the prefetching, as it is still too
-slow.
-
->
->> +	int start_stripe;
->> +	struct extent_buffer *l;
->> +	struct btrfs_key key;
->> +	u64 physical;
->> +	u64 logical;
->> +	u64 generation;
->> +	u64 mirror_num;
->
-> And a minor thing on the whole series: u64 should be printed with %llu
-> and explicit casting to unsigned long long.
-
-fixed.
-
->
-> Thanks,
->
-> 		Ilya
->
->> --
+xfs_ioc_space unconditionally rejects inodes with S_APPEND set for
+all preallocation / hole punching ioctls.  This might be overzealous for
+preallocations not changing the size, or just extending i_size, but it's
+IMHO entirely correct for hole punching.  

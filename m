@@ -1,48 +1,29 @@
-From: Marco Stornelli <marco.stornelli@gmail.com>
-Subject: Re: [PATCH v2] Check for immutable flag in fallocate path
-Date: Mon, 14 Mar 2011 11:40:26 +0100
-Message-ID: <AANLkTi=w2uV_Gy3zOapQishk_qqskQz72p2fnQMQZczx@mail.gmail.com>
-References: <4D6221B8.9040303@gmail.com>
-	<4D6F5473.2070709@gmail.com>
-	<20110303213903.GL15097@dastard>
-	<20110314102426.GA29888@infradead.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Dave Chinner <david@fromorbit.com>,
-	Linux Kernel <linux-kernel@vger.kernel.org>,
-	linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	cluster-devel@redhat.com, xfs@oss.sgi.com,
-	Linux FS Devel <linux-fsdevel@vger.kernel.org>
-To: Christoph Hellwig <hch@infradead.org>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <20110314102426.GA29888@infradead.org>
+From: Arne Jansen <sensille@gmx.net>
+Subject: [PATCH] btrfs-map-logical: segfaults when no output file is given
+Date: Mon, 14 Mar 2011 12:57:49 +0100
+Message-ID: <1300103869-12180-1-git-send-email-sensille@gmx.net>
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011/3/14 Christoph Hellwig <hch@infradead.org>:
-> On Fri, Mar 04, 2011 at 08:39:03AM +1100, Dave Chinner wrote:
->> WTF? =A0Why does append mode have any effect on whether we can punch
->> holes in a file or not? There's no justification for adding this in
->> the commit message. Why is it even in a patch that is for checking
->> immutable inodes? What is the point of adding it, when all that will
->> happen is people will switch to XFS_IOC_UNRESVSP which has never had
->> this limitation?
->
-> xfs_ioc_space unconditionally rejects inodes with S_APPEND set for
-> all preallocation / hole punching ioctls. =A0This might be overzealou=
-s for
-> preallocations not changing the size, or just extending i_size, but i=
-t's
-> IMHO entirely correct for hole punching.
->
+when no output file is given, info_file stays NULL and the following
+fprintf segfaults. Default to stdout.
+---
+ btrfs-map-logical.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-xfs_ioc_space is in the ioctl path, but we are talking about the
-fallocate path. Both of them calls the xfs_change_file_space, isnt'it?
-However we are agree about hole punching, the patch is already in
-Linus's git tree.
+diff --git a/btrfs-map-logical.c b/btrfs-map-logical.c
+index a109c6a..aa4b5b5 100644
+--- a/btrfs-map-logical.c
++++ b/btrfs-map-logical.c
+@@ -175,6 +175,7 @@ int main(int ac, char **av)
+ 		exit(1);
+ 	}
+ 
++	info_file = stdout;
+ 	if (output_file) {
+ 		if (strcmp(output_file, "-") == 0) {
+ 			out_fd = 1;
+-- 
+1.7.3.4
 
-Marco
---
-To unsubscribe from this list: send the line "unsubscribe linux-ext4" i=
-n
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

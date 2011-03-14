@@ -1,20 +1,22 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [RFE] Add a new super operation for finding block devices in a super
-Date: Mon, 14 Mar 2011 11:37:38 -0400
-Message-ID: <1300117060-13613-1-git-send-email-josef@redhat.com>
-To: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: [RFE] Add a new super operation for finding block devices in a
+ super
+Date: Mon, 14 Mar 2011 12:31:26 -0400
+Message-ID: <20110314163126.GA13784@infradead.org>
+References: <1300117060-13613-1-git-send-email-josef@redhat.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
 	viro@ZenIV.linux.org.uk, hch@infradead.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <1300117060-13613-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs can span multiple devices, so sb->s_bdev will not always point to the
-block device that we are looking to freeze.  This isn't a huge issue since the
-only thing that freezes per-bdev is device-mapper, but if btrfs spans multiple
-dm devices then we could run into corruption issues as we could end up not
-actually freezing the super properly.  So enter contains_bdev.  This will be
-used by get_active_super, if the sb implements contains_bdev we just ask the fs
-if it has the bdev we want and if so we are good to go.  I'm not married to the
-name, so if anybody has any better suggestions I'm open to them.  Comments?
-Thanks,
 
-Josef
+I think there's a better and more efficient way to archive this.
+
+We already have a bd_super field in struct block_device.  Just
+generalize it, and use it from the freeze code instead of doing the
+get_active_super loop. 
+

@@ -1,89 +1,55 @@
-From: Jordan Uggla <jordan.uggla@gmail.com>
-Subject: Re: Btrfs system won't start on Ubuntu (relationship problems...)
-Date: Sun, 13 Mar 2011 16:59:24 -0700
-Message-ID: <AANLkTim5K8Wme2ze6_LRZR0=1NhDC5n53C-XLxsEJfhM@mail.gmail.com>
-References: <AANLkTi=4VaXSZgeN-DeohPduQ_8FiuEroNpKCD3bTSPK@mail.gmail.com>
- <20110313114616.8860.qmail@stuge.se> <AANLkTimtN0FWG95dzjwzOzZoQaHEzL7t5ffZchR=BZAu@mail.gmail.com>
- <AANLkTi=hprS=QbxR8xCVc7pZ54NTnpvu2MufQBdD4nw2@mail.gmail.com>
+From: Arne Jansen <sensille@gmx.net>
+Subject: Re: [PATCH v3 3/6] btrfs: add scrub code and prototypes
+Date: Mon, 14 Mar 2011 10:57:05 +0100
+Message-ID: <4D7DE671.70304@gmx.net>
+References: <cover.1299941055.git.sensille@gmx.net> <7ccafb5250b72ca706369a8d5b45f06e8d5a4f8a.1299941055.git.sensille@gmx.net> <20110313235031.GA32690@kwango.lan.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: =?ISO-8859-1?Q?J=E9r=F4me_Poulin?= <jeromepoulin@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+To: Ilya Dryomov <idryomov@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=hprS=QbxR8xCVc7pZ54NTnpvu2MufQBdD4nw2@mail.gmail.com>
+In-Reply-To: <20110313235031.GA32690@kwango.lan.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Mar 13, 2011 at 9:39 AM, J=E9r=F4me Poulin <jeromepoulin@gmail.=
-com> wrote:
-> Re-send as non-HTML
-> On Sun, Mar 13, 2011 at 7:46 AM, Peter Stuge <peter@stuge.se> wrote:
->>
->> Pau Iranzo wrote:
->> > I installed Ubuntu on my girlfriend's laptop using btrfs as a
->> > filesystem. But a few weeks ago something happened: the system
->> > wouldn't boot and always show these messages:
->> > http://dl.dropbox.com/u/120126/btrfs/IMG_20110313_122119.jpg
->> > http://dl.dropbox.com/u/120126/btrfs/IMG_20110313_122125.jpg
->> > http://dl.dropbox.com/u/120126/btrfs/IMG_20110313_122143.jpg
->>
->> The hard drive is broken.
->>
->> This would have happened at the same point in time regardless of
->> btrfs or not, and regardless of Linux or not.
->>
->
-> Just to confirm, the hard disk is broken, I guess you installed Ubunt=
-u
-> first because Windows was getting slow, it probably was the hard disk
-> at this time.
->
->>
->> > The problem is that there is now way to mount that partition and a=
-ll
->> > the analysis tools don't give any information. I know there is no =
-fsck
->> > for btrfs, so it is just a shame for me, because my girlfriend is
->> > really angry at me for this.
->> >
->> > Foremost is not able to recover files neither.
->> >
->> > Could anyone help me on this? I don't mind if the system does not
->> > start, but I need to recover some files (pictures basically).
->>
->> Take out the disk from the machine. Get a USB-adapter. Prepare for
->> running dd_rescue on another Linux system. Hook up broken drive. Run
->> dd_rescue to make a copy of the disk that you can work on. Disconnec=
-t
->> broken drive. Every second it is powered the chance to recover data
->> decreases. Only power it up when you must, and when you are well
->> prepared to extract complete contents from the disk. Try to analyze
->> how the btrfs is broken. Try to fix it. Mount and recover data.
->>
->> Meanwhile buy new hard drive and reinstall a system so your friend
->> has a working computer.
->>
->
-> Never plug a defective drive on USB if it is the source, only the
-> destination can be plugged USB, else defective sectors get transferre=
-d
-> as good filled with random stuff and it only makes data recovery
-> worst, also, there is ddrescue and dd_rescue, you try both, just make
-> sure you save a logfile, I don't remember if dd_rescue has one.
+On 14.03.2011 00:50, Ilya Dryomov wrote:
+> On Sat, Mar 12, 2011 at 03:50:42PM +0100, Arne Jansen wrote:
+>> This is the main scrub code.
 
-I would highly recommend using GNU ddrescue over dd_rescue. The reason
-are that 1: I have had great success with GNU ddrescue 2: It appears
-from the description of dd_rescue :
-http://www.garloff.de/kurt/linux/ddrescue/ that it attempts smaller
-block sizes on the *first* pass, which could further decrease the
-lifespan of the drive before getting all of the blocks which can be
-read with a larger block size. For information about GNU ddrescue's
-algorithm for getting as much data as possible from a failing drive
-see "info ddrescue".
+>> +	int nstripes;
+>
+> It should be u64 nstripes.  A few lines below you assign the stripe
+> length, it is a 64 bit quantity, also do_div() expects a 64 bit
+> dividend.  This fixes a serious breakage on x86-32.
 
---=20
-Jordan Uggla (Jordan_U on irc.freenode.net)
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Thanks.
+
+>
+> Overall, this function could use a good cleanup.  I can send you a patch
+> later unless you want to do it yourself.
+
+Which parts do you have in mind? I see only potential for minor cleanup,
+but as I wrote it, I might as well be blind to it ;) So when you
+send the patch I'll probably see what you mean.
+The part I'm not content with is the prefetching, as it is still too
+slow.
+
+>
+>> +	int start_stripe;
+>> +	struct extent_buffer *l;
+>> +	struct btrfs_key key;
+>> +	u64 physical;
+>> +	u64 logical;
+>> +	u64 generation;
+>> +	u64 mirror_num;
+>
+> And a minor thing on the whole series: u64 should be printed with %llu
+> and explicit casting to unsigned long long.
+
+fixed.
+
+>
+> Thanks,
+>
+> 		Ilya
+>
+>> --

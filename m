@@ -1,39 +1,51 @@
-From: Chris Mason <chris.mason@oracle.com>
+From: Leon =?iso-8859-15?Q?Me=DFner?= <l.messner@physik.tu-berlin.de>
 Subject: Re: btrfs mount segfaults or crashes after powerloss
-Date: Tue, 15 Mar 2011 12:58:43 -0400
-Message-ID: <1300208269-sup-5260@think>
+Date: Tue, 15 Mar 2011 18:26:17 +0100
+Message-ID: <20110315172617.GD37926@emmi.physik-pool.tu-berlin.de>
 References: <20110315002856.GC37926@emmi.physik-pool.tu-berlin.de>
+ <1300208269-sup-5260@think>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: =?utf-8?q?Leon_Me=C3=9Fner?= <l.messner@physik.tu-berlin.de>
+Content-Type: text/plain; charset=iso-8859-15
+Cc: Leon =?iso-8859-15?Q?Me=DFner?= <l.messner@physik.tu-berlin.de>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <20110315002856.GC37926@emmi.physik-pool.tu-berlin.de>
+In-Reply-To: <1300208269-sup-5260@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Leon Me=C3=9Fner's message of 2011-03-14 20:28:56 -0400:
-> Hi,
+On Tue, Mar 15, 2011 at 12:58:43PM -0400, Chris Mason wrote:
+> Excerpts from Leon Me=DFner's message of 2011-03-14 20:28:56 -0400:
+> > Hi,
+> >=20
+> > i'm having a problem with a damaged btrfs after power loss. When i =
+try
+> > to mount the fs mount either segfaults (trace at bottom) or hangs i=
+n=20
+> > "D" state together with [btrfs-transacti].
+> >=20
+> > Please CC me as i'm not an the list.
+> > # btrfsck -s 1 /dev/sdb2
 >=20
-> i'm having a problem with a damaged btrfs after power loss. When i tr=
-y
-> to mount the fs mount either segfaults (trace at bottom) or hangs in=20
-> "D" state together with [btrfs-transacti]. I tried to btrfsck the=20
-> filesystem multiple times. It didn't help. Btrfs tools are from today=
-s=20
-> git. The fs got created about half a year ago.
->=20
-> Please CC me as i'm not an the list.
->=20
-> Thanks,
-> Leon
->=20
-> # btrfsck -s 1 /dev/sdb2
+> Does btrfsck /dev/sdb2 work?  -s 1 selects a different super, hopeful=
+ly
+> all the supers are the same.  If plain btrfsck runs without failing w=
+e
+> can easily work around the log tree crash.
 
-Does btrfsck /dev/sdb2 work?  -s 1 selects a different super, hopefully
-all the supers are the same.  If plain btrfsck runs without failing we
-can easily work around the log tree crash.
+Yes it does (i think), output is below.
 
--chris
+# btrfsck /dev/sdb2
+root 256 inode 257 errors 800
+found 50907959296 bytes used err is 1
+total csum bytes: 46730092
+total tree bytes: 407293952
+total fs tree bytes: 315609088
+btree space waste bytes: 111966302
+file data blocks allocated: 184320000000
+ referenced 56142348288
+Btrfs v0.19-35-g1b444cd
+
+thanks,
+Leon
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

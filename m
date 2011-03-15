@@ -1,53 +1,32 @@
-From: Leon =?iso-8859-15?Q?Me=DFner?= <l.messner@physik.tu-berlin.de>
-Subject: Re: btrfs mount segfaults or crashes after powerloss
-Date: Tue, 15 Mar 2011 18:26:17 +0100
-Message-ID: <20110315172617.GD37926@emmi.physik-pool.tu-berlin.de>
-References: <20110315002856.GC37926@emmi.physik-pool.tu-berlin.de>
- <1300208269-sup-5260@think>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-15
-Cc: Leon =?iso-8859-15?Q?Me=DFner?= <l.messner@physik.tu-berlin.de>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: return error if the range we want to map is bogus
+Date: Tue, 15 Mar 2011 14:54:57 -0400
+Message-ID: <1300215297-1846-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1300208269-sup-5260@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 15, 2011 at 12:58:43PM -0400, Chris Mason wrote:
-> Excerpts from Leon Me=DFner's message of 2011-03-14 20:28:56 -0400:
-> > Hi,
-> >=20
-> > i'm having a problem with a damaged btrfs after power loss. When i =
-try
-> > to mount the fs mount either segfaults (trace at bottom) or hangs i=
-n=20
-> > "D" state together with [btrfs-transacti].
-> >=20
-> > Please CC me as i'm not an the list.
-> > # btrfsck -s 1 /dev/sdb2
->=20
-> Does btrfsck /dev/sdb2 work?  -s 1 selects a different super, hopeful=
-ly
-> all the supers are the same.  If plain btrfsck runs without failing w=
-e
-> can easily work around the log tree crash.
+Currently if we have corrupt metadata map_extent_buffer will complain about it,
+but not return an error so the caller has no idea a problem was hit.  Fix this.
+Thanks,
 
-Yes it does (i think), output is below.
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/extent_io.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-# btrfsck /dev/sdb2
-root 256 inode 257 errors 800
-found 50907959296 bytes used err is 1
-total csum bytes: 46730092
-total tree bytes: 407293952
-total fs tree bytes: 315609088
-btree space waste bytes: 111966302
-file data blocks allocated: 184320000000
- referenced 56142348288
-Btrfs v0.19-35-g1b444cd
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 714adc4..1bbd26b 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3690,6 +3690,7 @@ int map_private_extent_buffer(struct extent_buffer *eb, unsigned long start,
+ 		       "wanted %lu %lu\n", (unsigned long long)eb->start,
+ 		       eb->len, start, min_len);
+ 		WARN_ON(1);
++		return -EINVAL;
+ 	}
+ 
+ 	p = extent_buffer_page(eb, i);
+-- 
+1.7.2.3
 
-thanks,
-Leon
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,63 +1,61 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] Btrfs: check items for correctness as we search
-Date: Wed, 16 Mar 2011 14:54:11 -0400
-Message-ID: <20110316185411.GC2510@localhost.localdomain>
-References: <1300297492-5375-1-git-send-email-josef@redhat.com> <AANLkTikTnYr8hPWCQpVFBzHyA9gSPijiiRv5LBXXpeti@mail.gmail.com> <20110316182913.GB2510@localhost.localdomain> <AANLkTi=CAuTL-wH-KmnqhoJH1hHhucFOzSukE5rJ2PUf@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: btrfs mount segfaults or crashes after powerloss
+Date: Wed, 16 Mar 2011 15:43:52 -0400
+Message-ID: <1300304176-sup-1475@think>
+References: <20110315002856.GC37926@emmi.physik-pool.tu-berlin.de> <1300208269-sup-5260@think> <20110315172617.GD37926@emmi.physik-pool.tu-berlin.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
-To: Andrey Kuzmin <andrey.v.kuzmin@gmail.com>
+Content-Type: TEXT/PLAIN; charset=ISO-8859-1
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: =?utf-8?q?Leon_Me=C3=9Fner?= <l.messner@physik.tu-berlin.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTi=CAuTL-wH-KmnqhoJH1hHhucFOzSukE5rJ2PUf@mail.gmail.com>
+In-reply-to: <20110315172617.GD37926@emmi.physik-pool.tu-berlin.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 16, 2011 at 09:34:29PM +0300, Andrey Kuzmin wrote:
-> On Wed, Mar 16, 2011 at 9:29 PM, Josef Bacik <josef@redhat.com> wrote:
-> 
-> > On Wed, Mar 16, 2011 at 09:23:58PM +0300, Andrey Kuzmin wrote:
-> > > On Wed, Mar 16, 2011 at 8:44 PM, Josef Bacik <josef@redhat.com> wrote:
-> > >
-> > > > Currently if we have corrupted items things will blow up in spectacular
-> > > > ways.
-> > > > So as we search check the item that we are pointing at currently to
-> > make
-> > > > sure it
-> > > >
-> > >
-> > > Will these checks run multiple times on the same slot? If yes, why not
-> > have
-> > > an in-memory bit 'checked' and skip checks of already checked items? Or
-> > > simply check once when loading from disk?
-> > >
-> >
-> > I thought about this but I have some reservations.  In order to make sure
-> > the
-> > block is actually right we'd have to check the entire thing when it's read
-> > from
-> > disk, which isn't too bad, but what happens when only one item in the block
-> > is
-> > corrupt?
-> 
-> For example if just the xattr item for an inode is corrupt, this
-> > method would keep you from reading the inode item in the same block which
-> > could
-> > be just fine.
-> 
-> 
-> I've lost you here. If you check once on load, you can just reread and
-> that's it.
-> 
+Excerpts from Leon Me=C3=9Fner's message of 2011-03-15 13:26:17 -0400:
+> On Tue, Mar 15, 2011 at 12:58:43PM -0400, Chris Mason wrote:
+> > Excerpts from Leon Me=C3=9Fner's message of 2011-03-14 20:28:56 -04=
+00:
+> > > Hi,
+> > >=20
+> > > i'm having a problem with a damaged btrfs after power loss. When =
+i try
+> > > to mount the fs mount either segfaults (trace at bottom) or hangs=
+ in=20
+> > > "D" state together with [btrfs-transacti].
+> > >=20
+> > > Please CC me as i'm not an the list.
+> > > # btrfsck -s 1 /dev/sdb2
+> >=20
+> > Does btrfsck /dev/sdb2 work?  -s 1 selects a different super, hopef=
+ully
+> > all the supers are the same.  If plain btrfsck runs without failing=
+ we
+> > can easily work around the log tree crash.
+>=20
+> Yes it does (i think), output is below.
+>=20
+> # btrfsck /dev/sdb2
+> root 256 inode 257 errors 800
+> found 50907959296 bytes used err is 1
+> total csum bytes: 46730092
+> total tree bytes: 407293952
+> total fs tree bytes: 315609088
+> btree space waste bytes: 111966302
+> file data blocks allocated: 184320000000
+>  referenced 56142348288
+> Btrfs v0.19-35-g1b444cd
 
-Hrm I'll be a little clearer.  If in one block we have 4 valid items and one
-bogus one, with my current patch we'd only fail if we tried to use the bogus
-one, the valid items would work fine.
+Ok, if you have the latest btrfs-progs from git, you can
 
-However if we check on read, we have to verify the _entire_ block, so if 1 item
-is broken the entire block is thrown out, and if there were valid items in that
-block we won't be able to read those items either.
+make btrfs-zero-log
+=2E/btrfs-zero-log /dev/xxx
 
-It seemed to me a better choice to let the user limp along if at all possible,
-but I'm not convinced that I'm right, so I could be persuaded to do it on read.
-I'll see what other people think.  Thanks,
+It will make you skip the log replay that is crashing the box on your
+next mount.
 
-Josef
+-chris
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

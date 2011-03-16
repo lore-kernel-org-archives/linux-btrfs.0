@@ -1,123 +1,59 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: [PATCH V3] btrfs: implement delayed inode items operation
-Date: Wed, 16 Mar 2011 22:24:31 +0800
-Message-ID: <4D80C81F.60507@cn.fujitsu.com>
-References: <20110310000355.f225f0d0.kitayama@cl.bb4u.ne.jp>	<4D786DF2.7000104@cn.fujitsu.com> <20110316184850.f25551a6.kitayama@cl.bb4u.ne.jp>
-Reply-To: miaox@cn.fujitsu.com
+From: Ilya Dryomov <idryomov@gmail.com>
+Subject: Re: [PATCH v3 3/6] btrfs: add scrub code and prototypes
+Date: Wed, 16 Mar 2011 16:35:25 +0200
+Message-ID: <20110316143525.GA2546@kwango.lan.net>
+References: <cover.1299941055.git.sensille@gmx.net> <7ccafb5250b72ca706369a8d5b45f06e8d5a4f8a.1299941055.git.sensille@gmx.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Itaru Kitayama <kitayama@cl.bb4u.ne.jp>
+Content-Type: text/plain; charset=us-ascii
+Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+To: Arne Jansen <sensille@gmx.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110316184850.f25551a6.kitayama@cl.bb4u.ne.jp>
+In-Reply-To: <7ccafb5250b72ca706369a8d5b45f06e8d5a4f8a.1299941055.git.sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 16 Mar 2011 18:48:50 +0900, Itaru Kitayama wrote:
-> Hi Miao,
-> 
-> The V4 still hangs. Does the new function, btrfs_update_inode_nodelayed() you introduced to the V4
-> need take care of a delayed node (commit delayed items of the inode and set the delayed note to NULL)?
+On Sat, Mar 12, 2011 at 03:50:42PM +0100, Arne Jansen wrote:
 
-I think there no delayed item because we commit all the delayed items when we start committing
-transaction.
+All extent maps are leaked after unmount.  lookup_extent_mapping() takes
+a reference, so they are all left with em->refs = 1.  I suggest the
+following:
 
-> 
-> Below is my experimental patch on top of V4 trying to avoid taking trans_mutex in btrfs_remove_delayed_node(), 
-> but still hangs. Could you take a look at it? Thanks.
-
-It is so strange I can not reproduce it on my machine. But by reviewing the code, I think some inodes
-may be updated when committing the transaction, it makes the filesystem hang.
-
-> 
-> Itaru
-> 
-> diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-> index 495a6af..b6ea082 100644
-> --- a/fs/btrfs/delayed-inode.c
-> +++ b/fs/btrfs/delayed-inode.c
-> @@ -1006,9 +1006,9 @@ int btrfs_run_delayed_items(struct btrfs_trans_handle *trans,
->  	return ret;
->  }
->  
-> -int btrfs_commit_inode_delayed_items(struct btrfs_trans_handle *trans,
-> -				     struct btrfs_root *root,
-> -				     struct inode *inode)
-> +int __btrfs_commit_inode_delayed_items(struct btrfs_trans_handle *trans,
-> +				       struct btrfs_root *root,
-> +				       struct inode *inode, int delayed_update)
->  {
->  	struct btrfs_delayed_node *delayed_node = btrfs_get_delayed_node(inode);
->  	struct btrfs_path *path;
-> @@ -1036,7 +1036,7 @@ int btrfs_commit_inode_delayed_items(struct btrfs_trans_handle *trans,
->  	if (!ret)
->  		ret = btrfs_delete_delayed_items(trans, path, root,
->  						 delayed_node);
-> -	if (!ret)
-> +	if (!ret && delayed_update)
->  		ret = btrfs_update_delayed_inode(trans, root, path,
->  						 delayed_node);
->  	btrfs_free_path(path);
-> @@ -1044,13 +1044,27 @@ int btrfs_commit_inode_delayed_items(struct btrfs_trans_handle *trans,
->  	return ret;
->  }
->  
-> +int btrfs_commit_inode_delayed_items(struct btrfs_trans_handle *trans,
-> +				     struct btrfs_root *root,
-> +				     struct inode *inode)
+> +static noinline_for_stack int scrub_chunk(struct scrub_dev *sdev, 
+> +	u64 chunk_tree, u64 chunk_objectid, u64 chunk_offset, u64 length)
 > +{
-> +	return __btrfs_commit_inode_delayed_items(trans, root, inode, 1);
-> +}
+> +	struct btrfs_mapping_tree *map_tree =
+> +		&sdev->dev->dev_root->fs_info->mapping_tree;
+> +	struct map_lookup *map;
+> +	struct extent_map *em;
+> +	int i;
+> +	int ret;
 > +
-> +int btrfs_commit_inode_delayed_items_no_delayed_update(struct btrfs_trans_handle *trans,
-> +						       struct btrfs_root *root,
-> +						       struct inode *inode)
-> +{
-> +	return __btrfs_commit_inode_delayed_items(trans, root, inode, 0);
-> +}
+> +	read_lock(&map_tree->map_tree.lock);
+> +	em = lookup_extent_mapping(&map_tree->map_tree, chunk_offset, 1);
+> +	read_unlock(&map_tree->map_tree.lock);
 > +
->  int btrfs_remove_delayed_node(struct inode *inode)
->  {
->  	struct btrfs_trans_handle *trans;
->  	struct btrfs_root *root = BTRFS_I(inode)->root;
->  	struct btrfs_delayed_node *delayed_node = BTRFS_I(inode)->delayed_node;
->  	int ret;
-> -
-> +	
->  	if (!delayed_node)
->  		return 0;
->  
-> diff --git a/fs/btrfs/delayed-inode.h b/fs/btrfs/delayed-inode.h
-> index d4134bc..b6986df 100644
-> --- a/fs/btrfs/delayed-inode.h
-> +++ b/fs/btrfs/delayed-inode.h
-> @@ -114,6 +114,11 @@ void btrfs_balance_delayed_items(struct btrfs_root *root);
->  int btrfs_commit_inode_delayed_items(struct btrfs_trans_handle *trans,
->  				     struct btrfs_root *root,
->  				     struct inode *inode);
-> +int btrfs_commit_inode_delayed_items_no_delayed_update(
-> +				struct btrfs_trans_handle *trans,
-> +				struct btrfs_root *root,
-> +				struct inode *inode);
+> +	if (!em)
+> +		return -EINVAL;
 > +
->  /* Used for evicting the inode. */
->  int btrfs_remove_delayed_node(struct inode *inode);
->  int btrfs_kill_delayed_inode_items(struct btrfs_trans_handle *trans,
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 5299d9c..e198051 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -2611,8 +2611,12 @@ noinline int btrfs_update_inode_nodelayed(struct btrfs_trans_handle *trans,
->  	struct btrfs_inode_item *inode_item;
->  	struct btrfs_path *path;
->  	struct extent_buffer *leaf;
-> +	struct btrfs_delayed_node *delayed_node;
->  	int ret;
->  
-> +	btrfs_commit_inode_delayed_items_no_delayed_update(trans, root, inode);
-> +	delayed_node = NULL;
+> +	map = (struct map_lookup *)em->bdev;
+> +	if (em->start != chunk_offset)
+> +		return -EINVAL;
 > +
->  	path = btrfs_alloc_path();
->  	if (!path)
->  		return -ENOMEM;
-> 
+> +	if (em->len < length)
+> +		return -EINVAL;
+> +
+> +	for (i = 0; i < map->num_stripes; ++i) {
+> +		if (map->stripes[i].dev == sdev->dev) {
+> +			ret = scrub_stripe(sdev, map, i, chunk_offset, length);
+> +			if (ret)
+> +				return ret;
+> +		}
+> +	}
 
++	free_extent_map(em);
+
+> +	return 0;
+> +}
+
+Thanks,
+
+		Ilya

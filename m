@@ -1,51 +1,34 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [GIT PULL] Btrfs updates for -rc1
-Date: Wed, 16 Mar 2011 12:14:03 -0400
-Message-ID: <20110316161403.GA2510@localhost.localdomain>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: chris.mason@oracle.com
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH V3] btrfs: implement delayed inode items operation
+Date: Wed, 16 Mar 2011 13:49:36 -0400
+Message-ID: <1300297740-sup-2597@think>
+References: <20110310000355.f225f0d0.kitayama@cl.bb4u.ne.jp> <4D786DF2.7000104@cn.fujitsu.com> <20110316184850.f25551a6.kitayama@cl.bb4u.ne.jp> <4D80C81F.60507@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Itaru Kitayama <kitayama@cl.bb4u.ne.jp>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Miao Xie <miaox@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <4D80C81F.60507@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hey Chris,
+Excerpts from Miao Xie's message of 2011-03-16 10:24:31 -0400:
+> On Wed, 16 Mar 2011 18:48:50 +0900, Itaru Kitayama wrote:
+> > Hi Miao,
+> > 
+> > The V4 still hangs. Does the new function, btrfs_update_inode_nodelayed() you introduced to the V4
+> > need take care of a delayed node (commit delayed items of the inode and set the delayed note to NULL)?
+> 
+> I think there no delayed item because we commit all the delayed items when we start committing
+> transaction.
+> 
+> > 
+> > Below is my experimental patch on top of V4 trying to avoid taking trans_mutex in btrfs_remove_delayed_node(), 
+> > but still hangs. Could you take a look at it? Thanks.
+> 
+> It is so strange I can not reproduce it on my machine. But by reviewing the code, I think some inodes
+> may be updated when committing the transaction, it makes the filesystem hang.
 
-Please pull from
+Maybe this is related to the free space cache?  Is one of you using
+mount -o space_cache?
 
-git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-work.git for-chris
-
-It is based on v2.6.38.  Mostly just cleanups and fixes, the biggest actual
-change would be moving us to the new truncate sequence.  Here is the shortlog
-and such
-
-Josef Bacik (13):
-      Btrfs: fix formatting in file.c
-      Btrfs: simplify our write path
-      Btrfs: fix how we deal with the pages array in the write path
-      Btrfs: change reserved_extents to an atomic_t
-      Btrfs: use a slab for the free space entries
-      Btrfs: convert to the new truncate sequence
-      Btrfs: cleanup error handling in the truncate path
-      Btrfs: handle errors in btrfs_orphan_cleanup
-      Btrfs: make sure to remove the orphan item from the in-memory list
-      Btrfs: only add orphan items when truncating
-      Btrfs: use mark_inode_dirty when expanding the file
-      Btrfs: add a comment explaining what btrfs_cont_expand does
-      Btrfs: return error if the range we want to map is bogus
-
- fs/btrfs/btrfs_inode.h      |    3 +-
- fs/btrfs/ctree.h            |    5 +-
- fs/btrfs/disk-io.c          |   15 ++-
- fs/btrfs/extent-tree.c      |   45 +++--
- fs/btrfs/extent_io.c        |    1 +
- fs/btrfs/file.c             |  385 ++++++++++++++++++++++---------------------
- fs/btrfs/free-space-cache.c |   34 ++--
- fs/btrfs/inode.c            |  241 +++++++++++++++------------
- fs/btrfs/ioctl.c            |    4 +-
- fs/btrfs/relocation.c       |    2 +-
- 10 files changed, 399 insertions(+), 336 deletions(-)
-
-Thanks,
-
-Josef
+-chris

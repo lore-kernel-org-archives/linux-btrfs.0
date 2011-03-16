@@ -1,47 +1,45 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH 1/2] Btrfs: add datacow flag in inode flag
-Date: Tue, 15 Mar 2011 19:35:06 -0400
-Message-ID: <1300232002-sup-6976@think>
-References: <4D6F52DE.5080508@cn.fujitsu.com> <1300220702-sup-5062@think> <20110315205724.GB10360@lst.de> <E3D32D88-C93F-4B5A-8CCF-810A9519AE9D@dilger.ca>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: [PATCH 0/7] Btrfs: New inode number allocator
+Date: Wed, 16 Mar 2011 16:48:55 +0800
+Message-ID: <4D807977.1040506@cn.fujitsu.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: Christoph Hellwig <hch@lst.de>,
-	Amir Goldstein <amir73il@gmail.com>,
-	liubo <liubo2009@cn.fujitsu.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	Theodore Tso <tytso@mit.edu>
-To: Andreas Dilger <adilger@dilger.ca>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <E3D32D88-C93F-4B5A-8CCF-810A9519AE9D@dilger.ca>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Andreas Dilger's message of 2011-03-15 18:06:49 -0400:
-> On 2011-03-15, at 2:57 PM, Christoph Hellwig wrote:
-> > On Tue, Mar 15, 2011 at 04:26:50PM -0400, Chris Mason wrote:
-> >>  #define FS_EXTENT_FL         0x00080000 /* Extents */
-> >>  #define FS_DIRECTIO_FL       0x00100000 /* Use direct i/o */
-> >> +#define FS_NOCOW_FL          0x00800000 /* Do not cow file */
-> >> +#define FS_COW_FL            0x01000000 /* Cow file */
-> >>  #define FS_RESERVED_FL       0x80000000 /* reserved for ext2 lib */
-> > 
-> > I'm fine with it.  I'll defer the check for conflicts with extN-specific flags
-> > to Ted, though.
-> 
-> Looking at the upstream e2fsprogs I see in that range:
-> 
-> > #define EXT4_EXTENTS_FL           0x00080000 /* Inode uses extents */
-> > #define EXT4_EA_INODE_FL          0x00200000 /* Inode used for large EA */
-> > #define EXT4_EOFBLOCKS_FL         0x00400000 /* Blocks allocated beyond EOF */
-> > #define EXT4_SNAPFILE_FL          0x01000000 /* Inode is a snapshot */
-> > #define EXT4_SNAPFILE_DELETED_FL  0x04000000 /* Snapshot is being deleted */
-> > #define EXT4_SNAPFILE_SHRUNK_FL   0x08000000 /* Snapshot shrink has completed */
-> > #define EXT2_RESERVED_FL          0x80000000 /* reserved for ext2 lib */
-> > 
-> > #define EXT2_FL_USER_VISIBLE      0x004BDFFF /* User visible flags */
-> 
-> so there is a conflict with FS_COW_FL and EXT4_SNAPFILE_FL.  I don't know the semantics of those two flags enough to say for sure whether it is reasonable that they alias to each other, but at first glance "COW" and "SNAPSHOT" don't seem completely unrelated.
+Currently btrfs stores the highest objectid of the fs tree, and it always
+returns (highest+1) inode number when we create a file, so inode numbers
+won't be reclaimed when we delete files, so we'll run out of inode numbers
+as we keep create/delete files in 32bit machines.
 
-In the btrfs case FS_COW_FL means to do COW even when there are no
-snapshots.  FS_NOCOW_FL means to do cow only when there are snapshots.
+This patchset aims to fix this, and it works similar to free space caching
+for block groups.
 
--chris
+I've run xfstests, and I also tested it with snapshot, balance etc.
+
+The patchset is also available in:
+
+	git://repo.or.cz/linux-btrfs-devel.git ino-alloc
+
+---
+ fs/btrfs/btrfs_inode.h      |    9 +
+ fs/btrfs/compression.c      |    5 +-
+ fs/btrfs/ctree.h            |   29 +-
+ fs/btrfs/disk-io.c          |   19 +
+ fs/btrfs/export.c           |   25 +-
+ fs/btrfs/extent-tree.c      |   50 ++--
+ fs/btrfs/extent_io.c        |    4 +-
+ fs/btrfs/file-item.c        |    5 +-
+ fs/btrfs/file.c             |   27 +-
+ fs/btrfs/free-space-cache.c |  873 ++++++++++++++++++++++++++-----------------
+ fs/btrfs/free-space-cache.h |   48 +++-
+ fs/btrfs/inode-map.c        |  428 +++++++++++++++++++++-
+ fs/btrfs/inode-map.h        |   13 +
+ fs/btrfs/inode.c            |  282 ++++++++------
+ fs/btrfs/ioctl.c            |   22 +-
+ fs/btrfs/relocation.c       |   27 +-
+ fs/btrfs/transaction.c      |   13 +-
+ fs/btrfs/tree-log.c         |   58 ++--
+ fs/btrfs/xattr.c            |    8 +-
+ 19 files changed, 1352 insertions(+), 593 deletions(-)

@@ -1,104 +1,82 @@
-From: Amir Goldstein <amir73il@gmail.com>
-Subject: Re: [PATCH 1/2] Btrfs: add datacow flag in inode flag
-Date: Wed, 16 Mar 2011 11:06:31 +0200
-Message-ID: <AANLkTin3+kjzjN8LE+Sbc8ngVHLFpmU=n9tNKMY0EPrU@mail.gmail.com>
-References: <4D6F52DE.5080508@cn.fujitsu.com>
-	<1300220702-sup-5062@think>
-	<20110315205724.GB10360@lst.de>
-	<E3D32D88-C93F-4B5A-8CCF-810A9519AE9D@dilger.ca>
-	<1300232002-sup-6976@think>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Andreas Dilger <adilger@dilger.ca>, Christoph Hellwig <hch@lst.de>,
-	liubo <liubo2009@cn.fujitsu.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	Theodore Tso <tytso@mit.edu>
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <1300232002-sup-6976@think>
+From: Arne Jansen <sensille@gmx.net>
+Subject: [PATCH] btrfs scrub: 32 bit compatibility issues
+Date: Wed, 16 Mar 2011 10:11:45 +0100
+Message-ID: <1300266705-12809-1-git-send-email-sensille@gmx.net>
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 16, 2011 at 1:35 AM, Chris Mason <chris.mason@oracle.com> w=
-rote:
-> Excerpts from Andreas Dilger's message of 2011-03-15 18:06:49 -0400:
->> On 2011-03-15, at 2:57 PM, Christoph Hellwig wrote:
->> > On Tue, Mar 15, 2011 at 04:26:50PM -0400, Chris Mason wrote:
->> >> =A0#define FS_EXTENT_FL =A0 =A0 =A0 =A0 0x00080000 /* Extents */
->> >> =A0#define FS_DIRECTIO_FL =A0 =A0 =A0 0x00100000 /* Use direct i/=
-o */
->> >> +#define FS_NOCOW_FL =A0 =A0 =A0 =A0 =A00x00800000 /* Do not cow =
-file */
->> >> +#define FS_COW_FL =A0 =A0 =A0 =A0 =A0 =A00x01000000 /* Cow file =
-*/
->> >> =A0#define FS_RESERVED_FL =A0 =A0 =A0 0x80000000 /* reserved for =
-ext2 lib */
->> >
->> > I'm fine with it. =A0I'll defer the check for conflicts with extN-=
-specific flags
->> > to Ted, though.
->>
->> Looking at the upstream e2fsprogs I see in that range:
->>
->> > #define EXT4_EXTENTS_FL =A0 =A0 =A0 =A0 =A0 0x00080000 /* Inode us=
-es extents */
->> > #define EXT4_EA_INODE_FL =A0 =A0 =A0 =A0 =A00x00200000 /* Inode us=
-ed for large EA */
->> > #define EXT4_EOFBLOCKS_FL =A0 =A0 =A0 =A0 0x00400000 /* Blocks all=
-ocated beyond EOF */
->> > #define EXT4_SNAPFILE_FL =A0 =A0 =A0 =A0 =A00x01000000 /* Inode is=
- a snapshot */
->> > #define EXT4_SNAPFILE_DELETED_FL =A00x04000000 /* Snapshot is bein=
-g deleted */
->> > #define EXT4_SNAPFILE_SHRUNK_FL =A0 0x08000000 /* Snapshot shrink =
-has completed */
->> > #define EXT2_RESERVED_FL =A0 =A0 =A0 =A0 =A00x80000000 /* reserved=
- for ext2 lib */
->> >
->> > #define EXT2_FL_USER_VISIBLE =A0 =A0 =A00x004BDFFF /* User visible=
- flags */
->>
->> so there is a conflict with FS_COW_FL and EXT4_SNAPFILE_FL. =A0I don=
-'t know the semantics of those two flags enough to say for sure whether=
- it is reasonable that they alias to each other, but at first glance "C=
-OW" and "SNAPSHOT" don't seem completely unrelated.
+According to review of Ilya Dryomov:
+ - nstripes int -> u64
+ - %lld -> %llu
 
-EXT4_SNAPFILE_FL indicates a special system snapshot file, so it has
-no equivalence relation with FS_COW_FL.
-Please use 0x02000000 for FS_COW_FL.
+Please note that the scrub patches haven't been tested on 32 bit systems at
+all.
 
-EXT4_SNAPFILE_DELETED_FL is a persistent state of a snapshot file,
-which is no longer
-available as a mountable device, but cannot be unlinked because it
-holds changed data sets
-needed by older snapshots.
+Signed-off-by: Arne Jansen <sensille@gmx.net>
+---
+ fs/btrfs/scrub.c |   20 +++++++++++---------
+ 1 files changed, 11 insertions(+), 9 deletions(-)
 
-EXT4_SNAPFILE_SHRUNK_FL is a persistent state of a (deleted) snapshot
-file, which has
-undergone a "shrink" process to free all change sets not needed by
-older snapshots.
-The persistence of the flag is needed to avoid tedious shrinking when
-it is not needed.
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index f36f5bf..ef59200 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -411,8 +411,8 @@ static void scrub_fixup(struct scrub_fixup *fixup)
+ 	                      &multi, 0);
+ 	if (ret || !multi || length < PAGE_SIZE) {
+ 		printk(KERN_ERR
+-		       "scrub_fixup: btrfs_map_block failed us for %lld\n",
+-		       fixup->logical);
++		       "scrub_fixup: btrfs_map_block failed us for %llu\n",
++		       (unsigned long long)fixup->logical);
+ 		WARN_ON(1);
+ 		return;
+ 	}
+@@ -479,7 +479,8 @@ static void scrub_fixup(struct scrub_fixup *fixup)
+ 	spin_unlock(&sdev->stat_lock);
+ 
+ 	if (printk_ratelimit())
+-		printk(KERN_ERR "btrfs: fixed up at %lld\n", fixup->logical);
++		printk(KERN_ERR "btrfs: fixed up at %llu\n",
++		       (unsigned long long)fixup->logical);
+ 	return;
+ 
+ uncorrectable:
+@@ -489,8 +490,8 @@ uncorrectable:
+ 	spin_unlock(&sdev->stat_lock);
+ 
+ 	if (printk_ratelimit())
+-		printk(KERN_ERR "btrfs: unable to fixup at %lld\n",
+-			 fixup->logical);
++		printk(KERN_ERR "btrfs: unable to fixup at %llu\n",
++			 (unsigned long long)fixup->logical);
+ }
+ 
+ static void scrub_bio_end_io(struct bio *bio, int err)
+@@ -857,7 +858,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_dev *sdev,
+ 	int ret;
+ 	int slot;
+ 	int i;
+-	int nstripes;
++	u64 nstripes;
+ 	int start_stripe;
+ 	struct extent_buffer *l;
+ 	struct btrfs_key key;
+@@ -1058,9 +1059,10 @@ again:
+ 			if (key.objectid < logical &&
+ 			    (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK)) {
+ 				printk(KERN_ERR
+-				       "btrfs scrub: tree block %lld spanning "
+-				       "stripes, ignored. logical=%lld\n",
+-				       key.objectid, logical);
++				       "btrfs scrub: tree block %llu spanning "
++				       "stripes, ignored. logical=%llu\n",
++				       (unsigned long long)key.objectid,
++				       (unsigned long long)logical);
+ 				goto next;
+ 			}
+ 
+-- 
+1.7.3.4
 
-
->
-> In the btrfs case FS_COW_FL means to do COW even when there are no
-> snapshots. =A0FS_NOCOW_FL means to do cow only when there are snapsho=
-ts.
->
-
-I am interested in FS_NOCOW_FL as well, but for my implementation it wo=
-uld mean
-do not do COW on rewrites even when there are snapshots, so a user can
-create a pre-allocated
-"island of blocks", which are pinned to a physical location, for raw
-VM image for example.
-
-
-Thanks,
-Amir.
---
-To unsubscribe from this list: send the line "unsubscribe linux-fsdevel=
-" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

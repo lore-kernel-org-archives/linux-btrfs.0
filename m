@@ -1,147 +1,61 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: add checks to verify dir items are correct V2
-Date: Thu, 17 Mar 2011 14:19:48 -0400
-Message-ID: <1300385988-3361-1-git-send-email-josef@redhat.com>
-References: <1300308591-3594-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: Arne Jansen <sensille@gmx.net>
+Subject: [PATCH] btrfs scrub: extent_map reference not freed
+Date: Thu, 17 Mar 2011 19:56:00 +0100
+Message-ID: <1300388160-10892-1-git-send-email-sensille@gmx.net>
+Cc: idryomov@gmail.com
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1300308591-3594-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We need to make sure the dir items we get are valid dir items.  So any time we
-try and read one check it with verify_dir_item, which will do various sanity
-checks to make sure it looks sane.  Thanks,
+scrub_chunk failed to free all extent_maps it referenced, leading to a leak
+of these maps on unmount.
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
+Reported-by: Ilya Dryomov <idryomov@gmail.com>
+Signed-off-by: Arne Jansen <sensille@gmx.net>
 ---
-V1->V2:
--Make it actually compile (oops!)
--Check the dir item at the top of the readdir loop instead of the bottom since
-we may have gone past the end of the leaf at the bottom
+ fs/btrfs/scrub.c |   13 ++++++++-----
+ 1 files changed, 8 insertions(+), 5 deletions(-)
 
- fs/btrfs/ctree.h    |    3 +++
- fs/btrfs/dir-item.c |   35 +++++++++++++++++++++++++++++++++++
- fs/btrfs/inode.c    |    3 +++
- fs/btrfs/tree-log.c |    7 +++++++
- fs/btrfs/xattr.c    |    2 ++
- 5 files changed, 50 insertions(+), 0 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 841330f..6036fdb 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2393,6 +2393,9 @@ struct btrfs_dir_item *btrfs_lookup_xattr(struct btrfs_trans_handle *trans,
- 					  struct btrfs_path *path, u64 dir,
- 					  const char *name, u16 name_len,
- 					  int mod);
-+int verify_dir_item(struct btrfs_root *root,
-+		    struct extent_buffer *leaf,
-+		    struct btrfs_dir_item *dir_item);
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index ef59200..ee7671f 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -1111,7 +1111,7 @@ static noinline_for_stack int scrub_chunk(struct scrub_dev *sdev,
+ 	struct map_lookup *map;
+ 	struct extent_map *em;
+ 	int i;
+-	int ret;
++	int ret = -EINVAL;
  
- /* orphan.c */
- int btrfs_insert_orphan_item(struct btrfs_trans_handle *trans,
-diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
-index f0cad5a..02c97ad 100644
---- a/fs/btrfs/dir-item.c
-+++ b/fs/btrfs/dir-item.c
-@@ -377,6 +377,9 @@ struct btrfs_dir_item *btrfs_match_dir_item_name(struct btrfs_root *root,
+ 	read_lock(&map_tree->map_tree.lock);
+ 	em = lookup_extent_mapping(&map_tree->map_tree, chunk_offset, 1);
+@@ -1122,19 +1122,22 @@ static noinline_for_stack int scrub_chunk(struct scrub_dev *sdev,
  
- 	leaf = path->nodes[0];
- 	dir_item = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_dir_item);
-+	if (verify_dir_item(root, leaf, dir_item))
-+		return NULL;
-+
- 	total_len = btrfs_item_size_nr(leaf, path->slots[0]);
- 	while (cur < total_len) {
- 		this_len = sizeof(*dir_item) +
-@@ -429,3 +432,35 @@ int btrfs_delete_one_dir_name(struct btrfs_trans_handle *trans,
+ 	map = (struct map_lookup *)em->bdev;
+ 	if (em->start != chunk_offset)
+-		return -EINVAL;
++		goto out;
+ 
+ 	if (em->len < length)
+-		return -EINVAL;
++		goto out;
+ 
+ 	for (i = 0; i < map->num_stripes; ++i) {
+ 		if (map->stripes[i].dev == sdev->dev) {
+ 			ret = scrub_stripe(sdev, map, i, chunk_offset, length);
+ 			if (ret)
+-				return ret;
++				goto out;
+ 		}
  	}
- 	return ret;
+-	return 0;
++out:
++	free_extent_map(em);
++
++	return ret;
  }
-+
-+int verify_dir_item(struct btrfs_root *root,
-+		    struct extent_buffer *leaf,
-+		    struct btrfs_dir_item *dir_item)
-+{
-+	u16 namelen = BTRFS_NAME_LEN;
-+	u8 type = btrfs_dir_type(leaf, dir_item);
-+
-+	if (type >= BTRFS_FT_MAX) {
-+		printk(KERN_CRIT "btrfs: invalid dir item type: %d\n",
-+		       (int)type);
-+		return 1;
-+	}
-+
-+	if (type == BTRFS_FT_XATTR)
-+		namelen = XATTR_NAME_MAX;
-+
-+	if (btrfs_dir_name_len(leaf, dir_item) > namelen) {
-+		printk(KERN_CRIT "btrfS: invalid dir item name len: %u\n",
-+		       (unsigned)btrfs_dir_data_len(leaf, dir_item));
-+		return 1;
-+	}
-+
-+	/* BTRFS_MAX_XATTR_SIZE is the same for all dir items */
-+	if (btrfs_dir_data_len(leaf, dir_item) > BTRFS_MAX_XATTR_SIZE(root)) {
-+		printk(KERN_CRIT "btrfs: invalid dir item data len: %u\n",
-+		       (unsigned)btrfs_dir_data_len(leaf, dir_item));
-+		return 1;
-+	}
-+
-+	return 0;
-+}
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 888dbdb..e010000 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4272,6 +4272,9 @@ static int btrfs_real_readdir(struct file *filp, void *dirent,
- 		while (di_cur < di_total) {
- 			struct btrfs_key location;
  
-+			if (verify_dir_item(root, leaf, di))
-+				break;
-+
- 			name_len = btrfs_dir_name_len(leaf, di);
- 			if (name_len <= sizeof(tmp_name)) {
- 				name_ptr = tmp_name;
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index a4bbb85..429cfcf 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -1286,6 +1286,8 @@ static noinline int replay_one_dir_item(struct btrfs_trans_handle *trans,
- 	ptr_end = ptr + item_size;
- 	while (ptr < ptr_end) {
- 		di = (struct btrfs_dir_item *)ptr;
-+		if (verify_dir_item(root, eb, di))
-+			return -EIO;
- 		name_len = btrfs_dir_name_len(eb, di);
- 		ret = replay_one_name(trans, root, path, eb, di, key);
- 		BUG_ON(ret);
-@@ -1412,6 +1414,11 @@ again:
- 	ptr_end = ptr + item_size;
- 	while (ptr < ptr_end) {
- 		di = (struct btrfs_dir_item *)ptr;
-+		if (verify_dir_item(root, eb, di)) {
-+			ret = -EIO;
-+			goto out;
-+		}
-+
- 		name_len = btrfs_dir_name_len(eb, di);
- 		name = kmalloc(name_len, GFP_NOFS);
- 		if (!name) {
-diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
-index a577653..e5d22f2 100644
---- a/fs/btrfs/xattr.c
-+++ b/fs/btrfs/xattr.c
-@@ -242,6 +242,8 @@ ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size)
- 			break;
- 
- 		di = btrfs_item_ptr(leaf, slot, struct btrfs_dir_item);
-+		if (verify_dir_item(root, leaf, di))
-+			continue;
- 
- 		name_len = btrfs_dir_name_len(leaf, di);
- 		total_size += name_len + 1;
+ static noinline_for_stack
 -- 
-1.7.2.3
+1.7.3.4
 

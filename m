@@ -1,82 +1,80 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: Re: [PATCH] btrfs: quasi-round-robin for chunk allocation
-Date: Thu, 17 Mar 2011 16:58:46 +0100
-Message-ID: <4D822FB6.7020901@gmx.net>
-References: <1297188212-23212-1-git-send-email-sensille@gmx.net> <4D5203E5.7000902@cn.fujitsu.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: How to implement raid1 repair
+Date: Thu, 17 Mar 2011 13:19:11 -0400
+Message-ID: <20110317171911.GA11704@dhcp231-156.rdu.redhat.com>
+References: <4D821ED3.5050605@jan-o-sch.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=GB2312
-Cc: chris.mason@oracle.com, josef@redhat.com,
-	linux-btrfs@vger.kernel.org
-To: miaox@cn.fujitsu.com
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, linux-raid@vger.kernel.org,
+	Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D5203E5.7000902@cn.fujitsu.com>
+In-Reply-To: <4D821ED3.5050605@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09.02.2011 04:03, Miao Xie wrote:
-
-> On tue, 8 Feb 2011 19:03:32 +0100, Arne Jansen wrote:
->> In a multi device setup, the chunk allocator currently always allocates
->> chunks on the devices in the same order. This leads to a very uneven
->> distribution, especially with RAID1 or RAID10 and an uneven number of
->> devices.
->> This patch always sorts the device before allocating, and allocates the
->> stripes on the devices with the most available space, as long as there
+On Thu, Mar 17, 2011 at 03:46:43PM +0100, Jan Schmidt wrote:
+> Hello everyone,
 > 
-> Yes, the chunk allocator currently cannot allocates chunks on the devices
-> on the devices fairly. But your patch doesn't fix this problem, with your patch,
-> the chunk allocator will allocate chunks on the devices which have the most
-> available space, if we create btrfs filesystem on the devices with different size,
-> the chunk allocator will always allocate chunks on the devices with the most
-> available space, and can't spread the data across all the devices at the beginning.
-
-Right, but this only holds for the beginning. As soon as the devices
-reach an even level, the data gets spread over all devices.
-On the other hand, if you first fill all devices evenly, the moment
-the first device is full, you will also not be able to stripe the data
-over all devices. So the situation is the same, except that in one case
-you don't distribute evenly in the beginning while in the other you
-don't do in the end. The main difference is that with this patch you
-waste less space in the end.
-Look at a situation where you have three devices, one twice as large as
-the other two. If you start distributing evenly, you'll end up with the
-two smaller devices filled completely and the larger one only half full.
-You can't allocate anymore, because you have only one device left. So
-you waste half of your larger device.
-With this patch, all chunks will get one stripe on one of the smaller
-devices, alternately, and one on the large device. While you'll have an
-uneven load distribution, all devices get filled completely.
-
+> Currently, btrfs has its own raid1 but no repair mechanism for bad
+> checksums or EIOs. While trying to implement such a repair mechanism,
+> several more or less general questions came up.
 > 
-> Besides that, I think we needn't  sort the devices if we can allocate chunks by
-> the default size.
+> There are two different retry paths for data and metadata. (If you know
+> or don't care how btrfs handles read errors: goto questions)
 > 
-> In fact, we just fix it by using list_splice_tail() instead of list_splice().
-> just like this(in __btrfs_alloc_chunk()):
-> -	list_splice(&private_devs, &fs_devices->alloc_list);
-> +	list_splice_tail(&private_devs, &fs_devices->alloc_list);
+> The data path: btrfs_io_failed_hook is called for each failed bio (EIO
+> or checksum error). Currently, it does not know which mirror failed at
+> first, because normally btrfs_map_block is called with mirror_num=0,
+> leading to a path where find_live_mirror picks one of them. The error
+> recovery strategy is then to explicitly read available mirrors one after
+> the other until one succeeds. In case the very first read picked mirror
+> 1 and failed, the retry code will most likely fail at mirror 1 as well.
+> It would be nice to know which mirror was picked formerly and directly
+> try the other.
 > 
 
-This would only be a very weak solution, for two reasons. First, we
-have chunks of different sizes (meta/data). This would disturb the
-distribution. Second, the order in the list is not persistent. So
-with each remount, the first allocation will always get to the same
-devices. A possible scenario would be a desktop machine where the
-disks only get filled slowly and which is shutdown every day. You'd
-end up with only 2 out of 3 devices used and one device completely
-wasted.
+So why not add a new field to the btrfs_multi_bio that tells you which mirror
+we're acting on so that the endio stuff can know?  That should be relatively
+simple to accomplish.
 
--Arne
+> The metadata path: there is no failure hook, instead there is a loop in
+> btree_read_extent_buffer_pages, also starting off at mirror_num=0, which
+> again leaves the decision to find_live_mirror. If there is an error for
+> any page to be read, the same retry strategy is used as is in the data
+> path. This obviously might leave you alone with unreadable data
+> (consider page x is bad on mirror 1 and page x+1 is bad on mirror 2,
+> both belonging to the same extent, you lose). It would be nice to have a
+> mechanism at a lower level issuing page-sized retries. Of course,
+> knowing which mirror is bad before trying mirror 1 again is desirable as
+> well.
+> 
+> questions:
+> I have a raid1 repair solution in mind (partially coded) for btrfs that
+> can be implemented quite easily. However, I have some misgivings. All of
+> the following questions would need a "yes" for my solution to stand:
+> 
+> - Is it acceptable to retry reading a block immediately after the disk
+> said it won't work? Or in case of a successful read followed by a
+> checksum error? (Which is already being done right now in btrfs.)
+> 
 
->> is enough space available. In a low space situation, it first tries to
->> maximize striping.
+You mean re-read the same block?  No thats not ok, if the checksum failed or the
+drive returned with the buffer not uptodate then re-reading the thing isn't
+likely to change anything, so just wastes time.
+
+> - Is it acceptable to always write both mirrors if one is found to be
+> bad (also consider ssds)?
 > 
-> This feature has been implemented.
-> 
->> The patch also simplifies the allocator and reduces the checks for
->> corner cases. Additionally, alloc_start is now always heeded.
-> 
-> Yes, the code of the allocator is complex and ugly, it is necessary to simplify it.
-> 
-> Thanks
-> Miao
-> 
+
+Yes, if one is bad we really want to re-write the bad one so we don't find it
+again.
+
+> If either of the answers is "no", tracking where the initial read came
+> from seems inevitable. Tracking would be very easy if bios came back
+> with unmodified values in bd_bdev and bd_sector, which is not the case.
+
+Huh?  The bios come back with the bi_bdev/bi_sector they were submitted on, how
+are you getting something different?  Thanks,
+
+Josef

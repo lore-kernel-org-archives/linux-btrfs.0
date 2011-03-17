@@ -1,61 +1,76 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH] btrfs scrub: extent_map reference not freed
-Date: Thu, 17 Mar 2011 19:56:00 +0100
-Message-ID: <1300388160-10892-1-git-send-email-sensille@gmx.net>
-Cc: idryomov@gmail.com
+Subject: [PATCH] Btrfs scrub: revised locking scheme
+Date: Thu, 17 Mar 2011 19:56:55 +0100
+Message-ID: <1300388215-10930-1-git-send-email-sensille@gmx.net>
+Cc: andi@firstfloor.org
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-scrub_chunk failed to free all extent_maps it referenced, leading to a leak
-of these maps on unmount.
+This patch removes unnecessary mutex locks around
+scrubs_running.
 
-Reported-by: Ilya Dryomov <idryomov@gmail.com>
 Signed-off-by: Arne Jansen <sensille@gmx.net>
 ---
- fs/btrfs/scrub.c |   13 ++++++++-----
- 1 files changed, 8 insertions(+), 5 deletions(-)
+ fs/btrfs/scrub.c |   12 +++---------
+ 1 files changed, 3 insertions(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index ef59200..ee7671f 100644
+index ee7671f..85a4d4b 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -1111,7 +1111,7 @@ static noinline_for_stack int scrub_chunk(struct scrub_dev *sdev,
- 	struct map_lookup *map;
- 	struct extent_map *em;
- 	int i;
--	int ret;
-+	int ret = -EINVAL;
+@@ -249,10 +249,10 @@ static void scrub_recheck_error(struct scrub_bio *sbio, int ix)
+ 	 * while we're in here we do not want the transaction to commit.
+ 	 * To prevent it, we increment scrubs_running. scrub_pause will
+ 	 * have to wait until we're finished
++	 * we can safely increment scrubs_running here, because we're
++	 * in the context of the original bio which is still marked in_flight
+ 	 */
+-	mutex_lock(&fs_info->scrub_lock);
+ 	atomic_inc(&fs_info->scrubs_running);
+-	mutex_unlock(&fs_info->scrub_lock);
  
- 	read_lock(&map_tree->map_tree.lock);
- 	em = lookup_extent_mapping(&map_tree->map_tree, chunk_offset, 1);
-@@ -1122,19 +1122,22 @@ static noinline_for_stack int scrub_chunk(struct scrub_dev *sdev,
- 
- 	map = (struct map_lookup *)em->bdev;
- 	if (em->start != chunk_offset)
--		return -EINVAL;
-+		goto out;
- 
- 	if (em->len < length)
--		return -EINVAL;
-+		goto out;
- 
- 	for (i = 0; i < map->num_stripes; ++i) {
- 		if (map->stripes[i].dev == sdev->dev) {
- 			ret = scrub_stripe(sdev, map, i, chunk_offset, length);
- 			if (ret)
--				return ret;
-+				goto out;
- 		}
- 	}
--	return 0;
-+out:
-+	free_extent_map(em);
-+
-+	return ret;
+ 	fixup = kzalloc(sizeof(*fixup), GFP_NOFS);
+ 	if (!fixup)
+@@ -311,9 +311,7 @@ malloc_error:
+ 	spin_lock(&sdev->stat_lock);
+ 	++sdev->stat.malloc_errors;
+ 	spin_unlock(&sdev->stat_lock);
+-	mutex_lock(&fs_info->scrub_lock);
+ 	atomic_dec(&fs_info->scrubs_running);
+-	mutex_unlock(&fs_info->scrub_lock);
+ 	wake_up(&fs_info->scrub_pause_wait);
  }
  
- static noinline_for_stack
+@@ -371,9 +369,7 @@ static void scrub_fixup_worker(scrub_work_t *work)
+ 	__free_page(fixup->bio->bi_io_vec[0].bv_page);
+ 	bio_put(fixup->bio);
+ 
+-	mutex_lock(&fs_info->scrub_lock);
+ 	atomic_dec(&fs_info->scrubs_running);
+-	mutex_unlock(&fs_info->scrub_lock);
+ 	wake_up(&fs_info->scrub_pause_wait);
+ 
+ 	kfree(fixup);
+@@ -1328,7 +1324,7 @@ int btrfs_scrub_dev(struct btrfs_root *root, u64 devid, u64 start, u64 end,
+ 
+ 	mutex_lock(&root->fs_info->fs_devices->device_list_mutex);
+ 	dev = btrfs_find_device(root, devid, NULL, NULL);
+-	if (!dev || dev->missing) {
++	if (!dev || dev->missing || !dev->in_fs_metadata) {
+ 		mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
+ 		scrub_workers_put(root);
+ 		return -ENODEV;
+@@ -1361,9 +1357,7 @@ int btrfs_scrub_dev(struct btrfs_root *root, u64 devid, u64 start, u64 end,
+ 
+ 	wait_event(sdev->list_wait, atomic_read(&sdev->in_flight) == 0);
+ 
+-	mutex_lock(&fs_info->scrub_lock);
+ 	atomic_dec(&fs_info->scrubs_running);
+-	mutex_unlock(&fs_info->scrub_lock);
+ 	wake_up(&fs_info->scrub_pause_wait);
+ 
+ 	if (progress)
 -- 
 1.7.3.4
 

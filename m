@@ -1,43 +1,54 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: Re: [PATCH] btrfs: quasi-round-robin for chunk allocation
-Date: Fri, 18 Mar 2011 20:57:25 +0100
-Message-ID: <4D83B925.90100@gmx.net>
-References: <1297188212-23212-1-git-send-email-sensille@gmx.net>	<4D5203E5.7000902@cn.fujitsu.com>	<4D822FB6.7020901@gmx.net>	<1300458780-sup-7019@think> <AANLkTimx2BrXuSpKzcjV3EC3MO0YFAWFszg5hJDhKjgJ@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Chris Mason <chris.mason@oracle.com>, miaox <miaox@cn.fujitsu.com>,
-	josef <josef@redhat.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: cwillu <cwillu@cwillu.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: don't be as aggressive about using bitmaps
+Date: Fri, 18 Mar 2011 16:18:58 -0400
+Message-ID: <1300479538-4385-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTimx2BrXuSpKzcjV3EC3MO0YFAWFszg5hJDhKjgJ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 18.03.2011 17:25, cwillu wrote:
-> On Fri, Mar 18, 2011 at 8:40 AM, Chris Mason<chris.mason@oracle.com>  wrote:
->> I think that filling all the devices fully is more important than the
->> initial spread.  Miao is correct that the administrator will
->> probably complain if all the devices aren't used for the initial stripes.
->> But, over the long term the admin does expect that if he gives us 350GB
->> of drives in any config, we find try our best to use all 350GB.  I'd
->> rather meet that expectation than worry about initial performance in a
->> mixed drive setup.
->
-> There's no reason why you can't get optimal distribution from the
-> start while still having complete usage.  And it's preferable to do
-> that, so that you get optimal distribution even as you add capacity;
-> otherwise front-loading the worst cases makes sure you run into them,
-> even if the administrator would have added more disks before you
-> needed to handle them.
+We have been creating bitmaps for small extents unconditionally forever.  This
+was great when testing to make sure the bitmap stuff was working, but is
+overkill normally.  So instead of always adding small chunks of free space to
+bitmaps, only start doing it if we go past half of our extent threshold.  This
+will keeps us from creating a bitmap for just one small free extent at the front
+of the block group, and will make the allocator a little faster as a result.
+Thanks,
 
-I'm not sure I understand the scenario you have in mind correctly.
-Are you talking of equally sized disks where you want to add more
-disks the same size later on? Or do you have disks of uneven sizes
-initially? If you describe the fictional setup we can figure out
-how the algorithm reacts to it and how it might be improved.
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/free-space-cache.c |   19 ++++++++++++++++---
+ 1 files changed, 16 insertions(+), 3 deletions(-)
 
-The intention of this patch is to build a foundation that solidly
-gives a near optimal utilization. After that, we can build on it
-and add more sophisticated algorithms that can spread the data
-right from the start if it's possible without sacrificing utilization.
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 63776ae..7a808d7 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -1287,9 +1287,22 @@ static int insert_into_bitmap(struct btrfs_block_group_cache *block_group,
+ 	 * If we are below the extents threshold then we can add this as an
+ 	 * extent, and don't have to deal with the bitmap
+ 	 */
+-	if (block_group->free_extents < block_group->extents_thresh &&
+-	    info->bytes > block_group->sectorsize * 4)
+-		return 0;
++	if (block_group->free_extents < block_group->extents_thresh) {
++		/*
++		 * If this block group has some small extents we don't want to
++		 * use up all of our free slots in the cache with them, we want
++		 * to reserve them to larger extents, however if we have plent
++		 * of cache left then go ahead an dadd them, no sense in adding
++		 * the overhead of a bitmap if we don't have to.
++		 */
++		if (info->bytes < block_group->sectorsize * 4) {
++			if ((block_group->free_extents * 2) <=
++			    block_group->extents_thresh)
++				return 0;
++		} else {
++			return 0;
++		}
++	}
+ 
+ 	/*
+ 	 * some block groups are so tiny they can't be enveloped by a bitmap, so
+-- 
+1.7.2.3
 

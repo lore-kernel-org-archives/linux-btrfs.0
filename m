@@ -1,7 +1,7 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH v4 1/6] btrfs: add parameter to btrfs_lookup_csum_range
-Date: Fri, 18 Mar 2011 16:55:04 +0100
-Message-ID: <f3f65b930707a0308d57d698f58623394a42e446.1300462778.git.sensille@gmx.net>
+Subject: [PATCH v4 4/6] btrfs: sync scrub with commit & device removal
+Date: Fri, 18 Mar 2011 16:55:07 +0100
+Message-ID: <a791c7692d9c1eb5cbf111c01f5d94f42b904523.1300462778.git.sensille@gmx.net>
 References: <cover.1300462778.git.sensille@gmx.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
@@ -9,106 +9,81 @@ In-Reply-To: <cover.1300462778.git.sensille@gmx.net>
 In-Reply-To: <cover.1300462778.git.sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A parameter is added to search the commit root instead of the live root.
+This adds several synchronizations:
+ - for a transaction commit, the scrub gets paused before the
+   tree roots are committed until the super are safely on disk
+ - during a log commit, scrubbing of supers is disabled
+ - on unmount, the scrub gets cancelled
+ - on device removal, the scrub for the particular device gets cancelled
 
 Signed-off-by: Arne Jansen <sensille@gmx.net>
 ---
- fs/btrfs/ctree.h      |    4 ++--
- fs/btrfs/file-item.c  |    8 +++++++-
- fs/btrfs/inode.c      |    2 +-
- fs/btrfs/relocation.c |    2 +-
- fs/btrfs/tree-log.c   |    4 ++--
- 5 files changed, 13 insertions(+), 7 deletions(-)
+ fs/btrfs/disk-io.c     |    1 +
+ fs/btrfs/transaction.c |    3 +++
+ fs/btrfs/tree-log.c    |    2 ++
+ fs/btrfs/volumes.c     |    2 ++
+ 4 files changed, 8 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 8b4b9d1..fd2b92f 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2459,8 +2459,8 @@ struct btrfs_csum_item *btrfs_lookup_csum(struct btrfs_trans_handle *trans,
- int btrfs_csum_truncate(struct btrfs_trans_handle *trans,
- 			struct btrfs_root *root, struct btrfs_path *path,
- 			u64 isize);
--int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start,
--			     u64 end, struct list_head *list);
-+int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
-+			     struct list_head *list, int search_commit);
- /* inode.c */
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 3e1ea3e..924a366 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2493,6 +2493,7 @@ int close_ctree(struct btrfs_root *root)
+ 	fs_info->closing = 1;
+ 	smp_mb();
  
- /* RHEL and EL kernels have a patch that renames PG_checked to FsMisc */
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 4f19a3e..9643d6e 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -263,7 +263,7 @@ int btrfs_lookup_bio_sums_dio(struct btrfs_root *root, struct inode *inode,
- }
++	btrfs_scrub_cancel(root);
+ 	btrfs_put_block_group_cache(fs_info);
  
- int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
--			     struct list_head *list)
-+			     struct list_head *list, int search_commit)
- {
- 	struct btrfs_key key;
- 	struct btrfs_path *path;
-@@ -280,6 +280,12 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
- 	path = btrfs_alloc_path();
- 	BUG_ON(!path);
+ 	/*
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 3d73c8d..5a43b20 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1310,6 +1310,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
  
-+	if (search_commit) {
-+		path->skip_locking = 1;
-+		path->reada = 2;
-+		path->search_commit_root = 1;
-+	}
+ 	WARN_ON(cur_trans != trans->transaction);
+ 
++	btrfs_scrub_pause(root);
+ 	/* btrfs_commit_tree_roots is responsible for getting the
+ 	 * various roots consistent with each other.  Every pointer
+ 	 * in the tree of tree roots has to point to the most up to date
+@@ -1391,6 +1392,8 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 
+ 	mutex_unlock(&root->fs_info->trans_mutex);
+ 
++	btrfs_scrub_continue(root);
 +
- 	key.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
- 	key.offset = start;
- 	key.type = BTRFS_EXTENT_CSUM_KEY;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index db67821..c392d89 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1001,7 +1001,7 @@ static noinline int csum_exist_in_range(struct btrfs_root *root,
- 	LIST_HEAD(list);
+ 	if (current->journal_info == trans)
+ 		current->journal_info = NULL;
  
- 	ret = btrfs_lookup_csums_range(root->fs_info->csum_root, bytenr,
--				       bytenr + num_bytes - 1, &list);
-+				       bytenr + num_bytes - 1, &list, 0);
- 	if (ret == 0 && list_empty(&list))
- 		return 0;
- 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 31ade58..d7ae412 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -4236,7 +4236,7 @@ int btrfs_reloc_clone_csums(struct inode *inode, u64 file_pos, u64 len)
- 
- 	disk_bytenr = file_pos + BTRFS_I(inode)->index_cnt;
- 	ret = btrfs_lookup_csums_range(root->fs_info->csum_root, disk_bytenr,
--				       disk_bytenr + len - 1, &list);
-+				       disk_bytenr + len - 1, &list, 0);
- 
- 	while (!list_empty(&list)) {
- 		sums = list_entry(list.next, struct btrfs_ordered_sum, list);
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index a4bbb85..1f6788f 100644
+index 1f6788f..2be84fa 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -614,7 +614,7 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
+@@ -2098,7 +2098,9 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	 * the running transaction open, so a full commit can't hop
+ 	 * in and cause problems either.
+ 	 */
++	btrfs_scrub_pause_super(root);
+ 	write_ctree_super(trans, root->fs_info->tree_root, 1);
++	btrfs_scrub_continue_super(root);
+ 	ret = 0;
  
- 			ret = btrfs_lookup_csums_range(root->log_root,
- 						csum_start, csum_end - 1,
--						&ordered_sums);
-+						&ordered_sums, 0);
- 			BUG_ON(ret);
- 			while (!list_empty(&ordered_sums)) {
- 				struct btrfs_ordered_sum *sums;
-@@ -2691,7 +2691,7 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
- 				ret = btrfs_lookup_csums_range(
- 						log->fs_info->csum_root,
- 						ds + cs, ds + cs + cl - 1,
--						&ordered_sums);
-+						&ordered_sums, 0);
- 				BUG_ON(ret);
- 			}
- 		}
+ 	mutex_lock(&root->log_mutex);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 7dc9fa5..ad3ea88 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1330,6 +1330,8 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 		goto error_undo;
+ 
+ 	device->in_fs_metadata = 0;
++	smp_mb();
++	btrfs_scrub_cancel_dev(root, device);
+ 
+ 	/*
+ 	 * the device list mutex makes sure that we don't change
 -- 
 1.7.3.4
 

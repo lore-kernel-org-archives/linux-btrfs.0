@@ -1,65 +1,43 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: deal with min_bytes appropriately when looking for a cluster
-Date: Fri, 18 Mar 2011 15:30:17 -0400
-Message-ID: <1300476617-2183-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: Arne Jansen <sensille@gmx.net>
+Subject: Re: [PATCH] btrfs: quasi-round-robin for chunk allocation
+Date: Fri, 18 Mar 2011 20:57:25 +0100
+Message-ID: <4D83B925.90100@gmx.net>
+References: <1297188212-23212-1-git-send-email-sensille@gmx.net>	<4D5203E5.7000902@cn.fujitsu.com>	<4D822FB6.7020901@gmx.net>	<1300458780-sup-7019@think> <AANLkTimx2BrXuSpKzcjV3EC3MO0YFAWFszg5hJDhKjgJ@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Chris Mason <chris.mason@oracle.com>, miaox <miaox@cn.fujitsu.com>,
+	josef <josef@redhat.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: cwillu <cwillu@cwillu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTimx2BrXuSpKzcjV3EC3MO0YFAWFszg5hJDhKjgJ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We do all this fun stuff with min_bytes, but either don't use it in the case of
-just normal extents, or use it completely wrong in the case of bitmaps.  So fix
-this for both cases
+On 18.03.2011 17:25, cwillu wrote:
+> On Fri, Mar 18, 2011 at 8:40 AM, Chris Mason<chris.mason@oracle.com>  wrote:
+>> I think that filling all the devices fully is more important than the
+>> initial spread.  Miao is correct that the administrator will
+>> probably complain if all the devices aren't used for the initial stripes.
+>> But, over the long term the admin does expect that if he gives us 350GB
+>> of drives in any config, we find try our best to use all 350GB.  I'd
+>> rather meet that expectation than worry about initial performance in a
+>> mixed drive setup.
+>
+> There's no reason why you can't get optimal distribution from the
+> start while still having complete usage.  And it's preferable to do
+> that, so that you get optimal distribution even as you add capacity;
+> otherwise front-loading the worst cases makes sure you run into them,
+> even if the administrator would have added more disks before you
+> needed to handle them.
 
-1) In the extent case, stop looking for space with window_free >= min_bytes
-instead of bytes + empty_size.
+I'm not sure I understand the scenario you have in mind correctly.
+Are you talking of equally sized disks where you want to add more
+disks the same size later on? Or do you have disks of uneven sizes
+initially? If you describe the fictional setup we can figure out
+how the algorithm reacts to it and how it might be improved.
 
-2) In the bitmap case, we were looking for streches of free space that was at
-least min_bytes in size, which was not right at all.  So instead search for
-stretches of free space that are at least bytes in size (this will make a
-difference when we have > page size blocks) and then only search for min_bytes
-amount of free space.
-
-Thanks,
-
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/free-space-cache.c |    9 ++++-----
- 1 files changed, 4 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index f631df8..63776ae 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -1910,8 +1910,8 @@ static int btrfs_bitmap_cluster(struct btrfs_block_group_cache *block_group,
- 
- 	i = offset_to_bit(entry->offset, block_group->sectorsize,
- 			  max_t(u64, offset, entry->offset));
--	search_bits = bytes_to_bits(min_bytes, block_group->sectorsize);
--	total_bits = bytes_to_bits(bytes, block_group->sectorsize);
-+	search_bits = bytes_to_bits(bytes, block_group->sectorsize);
-+	total_bits = bytes_to_bits(min_bytes, block_group->sectorsize);
- 
- again:
- 	found_bits = 0;
-@@ -2034,8 +2034,7 @@ again:
- 
- 		if (entry->bitmap && entry->bytes > bytes + empty_size) {
- 			ret = btrfs_bitmap_cluster(block_group, entry, cluster,
--						   offset, bytes + empty_size,
--						   min_bytes);
-+						   offset, bytes, min_bytes);
- 			if (!ret)
- 				goto got_it;
- 		}
-@@ -2065,7 +2064,7 @@ again:
- 
- 	while (1) {
- 		/* out window is just right, lets fill it */
--		if (window_free >= bytes + empty_size)
-+		if (window_free >= min_bytes)
- 			break;
- 
- 		node = rb_next(&last->offset_index);
--- 
-1.7.2.3
+The intention of this patch is to build a foundation that solidly
+gives a near optimal utilization. After that, we can build on it
+and add more sophisticated algorithms that can spread the data
+right from the start if it's possible without sacrificing utilization.
 

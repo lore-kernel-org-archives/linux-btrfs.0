@@ -1,54 +1,72 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: don't be as aggressive about using bitmaps
-Date: Fri, 18 Mar 2011 16:18:58 -0400
-Message-ID: <1300479538-4385-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH] btrfs: properly access unaligned checksum buffer
+Date: Fri, 18 Mar 2011 23:56:43 +0100
+Message-ID: <20110318225643.GY17108@twin.jikos.cz>
+References: <1300462105-30680-1-git-send-email-dsterba@suse.cz>
+ <1300463770-sup-1372@think>
+Reply-To: dave@jikos.cz
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: David Sterba <dsterba@suse.cz>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	"adrien.dessemond" <adrien.dessemond@gmail.com>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1300463770-sup-1372@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We have been creating bitmaps for small extents unconditionally forever.  This
-was great when testing to make sure the bitmap stuff was working, but is
-overkill normally.  So instead of always adding small chunks of free space to
-bitmaps, only start doing it if we go past half of our extent threshold.  This
-will keeps us from creating a bitmap for just one small free extent at the front
-of the block group, and will make the allocator a little faster as a result.
-Thanks,
+On Fri, Mar 18, 2011 at 11:56:53AM -0400, Chris Mason wrote:
+> Thanks for fielding this one.  Does put_unaligned_le32 optimize away on
+> platforms with efficient access?  It would be great if we didn't need
+> the #ifdef.
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
+(quicktest: assembly output is same for put_unaligned_le32 and direct
+assignment on my x86_64)
+I was originally following examples in
+Documentation/unaligned-memory-access.txt. From other code it seems to me that
+the define CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS is intended for larger
+portions of code. Macros/wrappers for {put,get}_unaligned* are chosen via
+arch/<arch>/include/asm/unaligned.h accordingly, therefore it's safe to use
+put_unaligned_le32 without the ifdef.
+
+dave
+--
+
+From: David Sterba <dsterba@suse.cz>
+
+fixes https://bugzilla.kernel.org/show_bug.cgi?id=29142
+reported on SPARC64, warnings like:
+
+[ 1523.941667] Kernel unaligned access at TPC[100e4034]
+btrfs_csum_final+0x38/0x3c [btrfs]
+
+Reported-by: Adrien Dessemond <adrien.dessemond@gmail.com>
+Signed-off-by: David Sterba <dsterba@suse.cz>
+Tested-by: Adrien Dessemond <adrien.dessemond@gmail.com>
 ---
- fs/btrfs/free-space-cache.c |   19 ++++++++++++++++---
- 1 files changed, 16 insertions(+), 3 deletions(-)
+ fs/btrfs/disk-io.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 63776ae..7a808d7 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -1287,9 +1287,22 @@ static int insert_into_bitmap(struct btrfs_block_group_cache *block_group,
- 	 * If we are below the extents threshold then we can add this as an
- 	 * extent, and don't have to deal with the bitmap
- 	 */
--	if (block_group->free_extents < block_group->extents_thresh &&
--	    info->bytes > block_group->sectorsize * 4)
--		return 0;
-+	if (block_group->free_extents < block_group->extents_thresh) {
-+		/*
-+		 * If this block group has some small extents we don't want to
-+		 * use up all of our free slots in the cache with them, we want
-+		 * to reserve them to larger extents, however if we have plent
-+		 * of cache left then go ahead an dadd them, no sense in adding
-+		 * the overhead of a bitmap if we don't have to.
-+		 */
-+		if (info->bytes < block_group->sectorsize * 4) {
-+			if ((block_group->free_extents * 2) <=
-+			    block_group->extents_thresh)
-+				return 0;
-+		} else {
-+			return 0;
-+		}
-+	}
- 
- 	/*
- 	 * some block groups are so tiny they can't be enveloped by a bitmap, so
--- 
-1.7.2.3
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index e1aa8d6..80a6830 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -29,6 +29,7 @@
+ #include <linux/crc32c.h>
+ #include <linux/slab.h>
+ #include <linux/migrate.h>
++#include <asm/unaligned.h>
+ #include "compat.h"
+ #include "ctree.h"
+ #include "disk-io.h"
+@@ -198,7 +199,7 @@ u32 btrfs_csum_data(struct btrfs_root *root, char *data, u32 seed, size_t len)
 
+ void btrfs_csum_final(u32 crc, char *result)
+ {
+-       *(__le32 *)result = ~cpu_to_le32(crc);
++       put_unaligned_le32(~crc, result);
+ }
+
+ /*
+--
+1.7.4.1.176.g501cc

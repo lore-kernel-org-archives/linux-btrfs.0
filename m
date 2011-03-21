@@ -1,32 +1,62 @@
-From: Stephane Chazelas <stephane.chazelas@gmail.com>
-Subject: cloning single-device btrfs file system onto multi-device one
-Date: Mon, 21 Mar 2011 16:24:50 +0000
-Message-ID: <chaz20110321162450.GB918@seebyte.com>
+From: Tejun Heo <tj@kernel.org>
+Subject: Re: [PATCH RFC] btrfs: Simplify locking
+Date: Mon, 21 Mar 2011 17:59:55 +0100
+Message-ID: <20110321165955.GG12003@htj.dyndns.org>
+References: <20110320174433.GA12003@htj.dyndns.org>
+ <1300665355-sup-1698@think>
+ <20110321082942.GD12003@htj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110321082942.GD12003@htj.dyndns.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hiya,
+Hello,
 
-I'm trying to move a btrfs FS that's on a hardware raid 5 (6TB
-large, 4 of which are in use) to another machine with 3 3TB HDs
-and preserve all the subvolumes/snapshots.
+Here are the results with voluntary preemption.  I've moved to a
+beefier machine for testing.  It's dual Opteron 2347, so dual socket,
+eight core.  The memory is limited to 1GiB to force IOs and the disk
+is the same OCZ Vertex 60gig SSD.  /proc/stat is captured before and
+after "dbench 50".
 
-Is there a way to do that without using a software/hardware raid
-on the new machine (that is just use btrfs multi-device).
+I ran the following four setups.
 
-If fewer than 3TB were occupied, I suppose I could just resize
-it so that it fits on one 3TB hd, then copy device to device
-onto a 3TB disk, add the 2 other ones and do a "balance", but
-here, I can't do that.
+DFL	The current custom locking implementation.
+SIMPLE	Simple mutex conversion.  The first patch in this thread.
+SPIN	SIMPLE + mutex_tryspin().  The second patch in this thread.
+SPIN2	SPIN + mutex_tryspin() in btrfs_tree_lock().  Patch below.
 
-I suspect that if compression was enabled, the FS could fit on
-3 TB, but AFAICT, compression is enabled at mount time and would
-only apply to newly created files. Is there a way to compress
-files already in a btrfs filesystem?
+SPIN2 should alleviate the voluntary preemption by might_sleep() in
+mutex_lock().
 
-Any help would be appreciated.
-Stephane
+       USER   SYSTEM   SIRQ    CXTSW  THROUGHPUT
+DFL    49427  458210   1433  7683488     642.947
+SIMPLE 52836  471398   1427  3055384     705.369
+SPIN   52267  473115   1467  3005603     705.369
+SPIN2  52063  470453   1446  3092091     701.826
 
+I'm running DFL again just in case but SIMPLE or SPIN seems to be a
+much better choice.
+
+Thanks.
+
+NOT-Signed-off-by: Tejun Heo <tj@kernel.org>
+---
+ fs/btrfs/locking.h |    2 ++
+ 1 file changed, 2 insertions(+)
+
+Index: work/fs/btrfs/locking.h
+===================================================================
+--- work.orig/fs/btrfs/locking.h
++++ work/fs/btrfs/locking.h
+@@ -28,6 +28,8 @@ static inline bool btrfs_try_spin_lock(s
+ 
+ static inline void btrfs_tree_lock(struct extent_buffer *eb)
+ {
++	if (mutex_tryspin(&eb->lock))
++		return;
+ 	mutex_lock(&eb->lock);
+ }
+ 

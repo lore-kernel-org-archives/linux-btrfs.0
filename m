@@ -1,45 +1,60 @@
-From: Tejun Heo <tj@kernel.org>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: [PATCH RFC] btrfs: Simplify locking
-Date: Sun, 20 Mar 2011 21:17:10 +0100
-Message-ID: <20110320201710.GC12003@htj.dyndns.org>
+Date: Sun, 20 Mar 2011 20:10:51 -0400
+Message-ID: <1300665355-sup-1698@think>
 References: <20110320174433.GA12003@htj.dyndns.org>
- <20110320195652.GB12003@htj.dyndns.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Tejun Heo <tj@kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110320195652.GB12003@htj.dyndns.org>
+In-reply-to: <20110320174433.GA12003@htj.dyndns.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Mar 20, 2011 at 08:56:52PM +0100, Tejun Heo wrote:
-> So, here's the patch to implement and use mutex_try_spin(), which
-> applies the same owner spin logic to try locking.  The result looks
-> pretty good.
+Excerpts from Tejun Heo's message of 2011-03-20 13:44:33 -0400:
+> Hello, guys.
 > 
-> I re-ran all three.  DFL is the current custom locking.  SIMPLE is
-> with only the previous patch applied.  SPIN is both the previous and
-> this patches applied.
+> I've been looking through btrfs code and found out that the locking
+> was quite interesting.  The distinction between blocking and
+> non-blocking locking is valid but is essentially attacing the same
+> problem that CONFIG_MUTEX_SPIN_ON_OWNER addresses in generic manner.
 > 
->        USER   SYSTEM   SIRQ    CXTSW  THROUGHPUT
-> DFL    14484  129368    390  1669102     171.955
-> SIMPLE 14483  128902    318  1187031     171.512
-> SPIN   14311  129222    347  1198166     174.904
+> It seemed that CONFIG_MUTEX_SPIN_ON_OWNER should be able to do it
+> better as it actually knows whether the lock owner is running or not,
+> so I did a few "dbench 50" runs with the complex locking removed.
 > 
-> DFL/SIMPLE results are more or less consistent with the previous run.
-> SPIN seems to consume a bit more cpu than SIMPLE but shows discernably
-> better throughput.  I'm running SPIN again just in case but the result
-> seems pretty consistent.
+> The test machine is a dual core machine with 1 gig of memory.  The
+> filesystem is on OCZ vertex 64 gig SSD.  I'm attaching the kernel
+> config.  Please note that CONFIG_MUTEX_SPIN_ON_OWNER is enabled only
+> when lock debugging is disabled, but it will be enabled on virtually
+> any production configuration.
+> 
+> The machine was idle during the dbench runs and CPU usages and context
+> switches are calculated from /proc/stat over the dbench runs.  The
+> throughput is as reported by dbench.
+> 
+>          user  system  sirq    cxtsw throughput
+> before  14426  129332   345  1674004    171.7
+> after   14274  129036   308  1183346    172.119
+> 
+> So, the extra code isn't really helping anything.  It's worse in every
+> way.  Are there some obscure reasons the custom locking should be kept
+> around?
 
-Here's another run.
+Hi Tejun,
 
-  SPIN   14377  129092    335  1189817     172.724
-  
-It's not as high as the last run, but given other runs I've been
-seeing, I think meaningful (ie. not measurement error) throughput
-advantage exists.  That said, the difference definitely seems minor.
+I went through a number of benchmarks with the explicit
+blocking/spinning code and back then it was still significantly faster
+than the adaptive spin.  But, it is definitely worth doing these again,
+how many dbench procs did you use?
 
-Thanks.
+The biggest benefit to explicit spinning is that mutex_lock starts with
+might_sleep(), so we skip the cond_resched().  Do you have voluntary
+preempt on?
 
--- 
-tejun
+The long term goal was always to get rid of the blocking locks, I had a
+lot of code to track the top blockers and we had gotten rid of about 90%
+of them.
+
+Thanks for looking at this
+
+-chris

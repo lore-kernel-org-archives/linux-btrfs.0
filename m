@@ -1,42 +1,49 @@
-From: Tejun Heo <tj@kernel.org>
-Subject: Re: [PATCH RFC] btrfs: Simplify locking
-Date: Mon, 21 Mar 2011 19:11:24 +0100
-Message-ID: <20110321181124.GK12003@htj.dyndns.org>
-References: <20110320174433.GA12003@htj.dyndns.org>
- <1300665355-sup-1698@think>
- <20110321082942.GD12003@htj.dyndns.org>
- <20110321165955.GG12003@htj.dyndns.org>
- <1300728113-sup-8564@think>
+From: Mark Fasheh <mfasheh@suse.com>
+Subject: btrfs device returned from stat vs /proc/pid/maps
+Date: Mon, 21 Mar 2011 14:55:08 -0700
+Message-ID: <20110321215508.GN1703@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Cc: Chris Mason <chris.mason@oracle.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1300728113-sup-8564@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hi,
 
-On Mon, Mar 21, 2011 at 01:24:37PM -0400, Chris Mason wrote:
-> Very interesting.  Ok, I'll definitely rerun my benchmarks as well.  I
-> used dbench extensively during the initial tuning, but you're forcing
-> the memory low in order to force IO.
-> 
-> This case doesn't really hammer on the locks, it hammers on the
-> transition from spinning to blocking.  We want also want to compare
-> dbench entirely in ram, which will hammer on the spinning portion.
+I noticed that btrfs_getattr() is filling stat->dev with an anonymous device
+(for per-snapshot root?):
 
-Here's re-run of DFL and SIMPLE with the memory restriction lifted.
-Memory is 4GiB and disk remains mostly idle with all CPUs running
-full.
+stat->dev = BTRFS_I(inode)->root->anon_super.s_dev;
 
-       USER   SYSTEM   SIRQ    CXTSW  THROUGHPUT
-DFL    59898  504517    377  6814245     782.295
-SIMPLE 61090  493441    457  1631688     827.751
-    
-So, about the same picture.
+but /proc/pid/maps uses the "real" block device:
 
-Thanks.
+dev = inode->i_sb->s_dev;
 
--- 
-tejun
+
+This results in some unfortunate behavior for lsof as it reports some
+duplicate paths (except on different block devices). The easiest way to see
+this (if your root partition is btrfs):
+
+$ lsof | grep lsof
+<snip>
+lsof       9238            root  txt       REG               0,19   139736 14478 /usr/bin/lsof
+lsof       9238            root  mem       REG               0,17          14478 /usr/bin/lsof (path dev=0,19)
+
+
+Ultimately, this breaks existing software. In my case, "zypper ps" gets
+really unhappy (which may partially also be due to a zypper bug, hooray!)
+
+
+I'm not really quite sure how this should be handled though. Do we have
+/proc/pid/maps report the subvolumes device (via some callback I suppose)?
+Another alternative of course is to return the true block device in
+btrfs_getattr() but that has some obvious downsides too.
+
+
+Thanks and best regards,
+	--Mark
+
+--
+Mark Fasheh

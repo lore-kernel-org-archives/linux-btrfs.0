@@ -1,46 +1,46 @@
-From: Mark Fasheh <mfasheh@suse.com>
-Subject: [PATCH] btrfs: return EXDEV when linking from different subvolumes
-Date: Tue, 22 Mar 2011 10:20:26 -0700
-Message-ID: <20110322172026.GO1703@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH RFC] btrfs: Simplify locking
+Date: Tue, 22 Mar 2011 19:13:09 -0400
+Message-ID: <1300835390-sup-7485@think>
+References: <20110320174433.GA12003@htj.dyndns.org> <1300665355-sup-1698@think> <20110321082942.GD12003@htj.dyndns.org> <20110321165955.GG12003@htj.dyndns.org> <1300728113-sup-8564@think> <20110321181124.GK12003@htj.dyndns.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Tejun Heo <tj@kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <20110321181124.GK12003@htj.dyndns.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_link returns EPERM if a cross-subvolume link is attempted.
+Excerpts from Tejun Heo's message of 2011-03-21 14:11:24 -0400:
+> Hello,
+> 
+> On Mon, Mar 21, 2011 at 01:24:37PM -0400, Chris Mason wrote:
+> > Very interesting.  Ok, I'll definitely rerun my benchmarks as well.  I
+> > used dbench extensively during the initial tuning, but you're forcing
+> > the memory low in order to force IO.
+> > 
+> > This case doesn't really hammer on the locks, it hammers on the
+> > transition from spinning to blocking.  We want also want to compare
+> > dbench entirely in ram, which will hammer on the spinning portion.
+> 
+> Here's re-run of DFL and SIMPLE with the memory restriction lifted.
+> Memory is 4GiB and disk remains mostly idle with all CPUs running
+> full.
+> 
+>        USER   SYSTEM   SIRQ    CXTSW  THROUGHPUT
+> DFL    59898  504517    377  6814245     782.295
+> SIMPLE 61090  493441    457  1631688     827.751
+>     
+> So, about the same picture.
 
-However, in this case I believe EXDEV to be the more appropriate value.
->From the link(2) man page:
+Ok, this impact of this is really interesting.  If we have very short
+waits where there is no IO at all, this patch tends to lose.  I ran with
+dbench 10 and got about 20% slower tput.
 
-EXDEV  oldpath and newpath are not on the same mounted file system.  (Linux
-       permits a file system to be mounted at multiple points, but link()
-       does not work across different mount points, even if the same file
-       system is mounted on both.)
+But, if we do any IO at all it wins by at least that much or more.  I
+think we should take this patch and just work on getting rid of the
+scheduling with the mutex held where possible.
 
-This matters because an application may have different behaviors based on
-return codes.
+Tejun, could you please send the mutex_tryspin stuff in?  If we can get
+a sob for that I can send the whole thing.
 
-Signed-off-by: Mark Fasheh <mfasheh@suse.com>
-
----
- fs/btrfs/inode.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 512c3d1..321ce4c 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4809,7 +4809,7 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
- 
- 	/* do not allow sys_link's with other subvols of the same device */
- 	if (root->objectid != BTRFS_I(inode)->root->objectid)
--		return -EPERM;
-+		return -EXDEV;
- 
- 	btrfs_inc_nlink(inode);
- 	inode->i_ctime = CURRENT_TIME;
--- 
-1.6.4.2
-
+-chris

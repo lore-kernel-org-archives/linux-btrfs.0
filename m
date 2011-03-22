@@ -1,49 +1,42 @@
-From: Mark Fasheh <mfasheh@suse.com>
-Subject: btrfs device returned from stat vs /proc/pid/maps
-Date: Mon, 21 Mar 2011 14:55:08 -0700
-Message-ID: <20110321215508.GN1703@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.com>
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: Re: [PATCH 2/2 v2] Btrfs: Per file/directory controls for COW and
+ compression
+Date: Tue, 22 Mar 2011 10:06:50 +0800
+Message-ID: <4D88043A.6030002@cn.fujitsu.com>
+References: <4D8712E9.108@cn.fujitsu.com> <20110321174348.GC8235@granier.hd.free.fr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Johann Lombardi <johann@whamcloud.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110321174348.GC8235@granier.hd.free.fr>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On 03/22/2011 01:43 AM, Johann Lombardi wrote:
+> On Mon, Mar 21, 2011 at 04:57:13PM +0800, liubo wrote:
+>> @@ -4581,8 +4583,6 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+>>  	location->offset = 0;
+>>  	btrfs_set_key_type(location, BTRFS_INODE_ITEM_KEY);
+>>  
+>> -	btrfs_inherit_iflags(inode, dir);
+>> -
+>>  	if ((mode & S_IFREG)) {
+>>  		if (btrfs_test_opt(root, NODATASUM))
+>>  			BTRFS_I(inode)->flags |= BTRFS_INODE_NODATASUM;
+>> @@ -4590,6 +4590,8 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+>>  			BTRFS_I(inode)->flags |= BTRFS_INODE_NODATACOW;
+>>  	}
+>>  
+>> +	btrfs_inherit_iflags(inode, dir);
+> 
+> The problem is that btrfs_inherit_iflags() overwrites BTRFS_I(inode)->flags with the parent's flags, so you lose BTRFS_INODE_NODATA{SUM|COW}.
+> 
 
-I noticed that btrfs_getattr() is filling stat->dev with an anonymous device
-(for per-snapshot root?):
+Thanks for pointing this, will fix it.
 
-stat->dev = BTRFS_I(inode)->root->anon_super.s_dev;
+thanks,
+liubo
 
-but /proc/pid/maps uses the "real" block device:
+> Johann
+> 
 
-dev = inode->i_sb->s_dev;
-
-
-This results in some unfortunate behavior for lsof as it reports some
-duplicate paths (except on different block devices). The easiest way to see
-this (if your root partition is btrfs):
-
-$ lsof | grep lsof
-<snip>
-lsof       9238            root  txt       REG               0,19   139736 14478 /usr/bin/lsof
-lsof       9238            root  mem       REG               0,17          14478 /usr/bin/lsof (path dev=0,19)
-
-
-Ultimately, this breaks existing software. In my case, "zypper ps" gets
-really unhappy (which may partially also be due to a zypper bug, hooray!)
-
-
-I'm not really quite sure how this should be handled though. Do we have
-/proc/pid/maps report the subvolumes device (via some callback I suppose)?
-Another alternative of course is to return the true block device in
-btrfs_getattr() but that has some obvious downsides too.
-
-
-Thanks and best regards,
-	--Mark
-
---
-Mark Fasheh

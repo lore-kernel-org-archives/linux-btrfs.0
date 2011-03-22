@@ -1,218 +1,90 @@
-From: liubo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH 2/2 v3] Btrfs: Per file/directory controls for COW and compression
-Date: Tue, 22 Mar 2011 18:12:20 +0800
-Message-ID: <4D887604.7030808@cn.fujitsu.com>
-References: <4D8712E9.108@cn.fujitsu.com> <20110321174348.GC8235@granier.hd.free.fr>
+From: Itaru Kitayama <kitayama@cl.bb4u.ne.jp>
+Subject: Re: [PATCH V4] btrfs: implement delayed inode items operation
+Date: Tue, 22 Mar 2011 22:33:24 +0900
+Message-ID: <20110322223324.ff6ee42a.kitayama@cl.bb4u.ne.jp>
+References: <4D8324DE.4010400@cn.fujitsu.com>
+	<20110322113310.50eaceb2.kitayama@cl.bb4u.ne.jp>
+	<4D8813A5.1040604@cn.fujitsu.com>
+	<20110322125051.222ccc5b.kitayama@cl.bb4u.ne.jp>
+	<4D8873EC.1040702@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Johann Lombardi <johann@whamcloud.com>,
-	Chris Mason <chris.mason@oracle.com>
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=US-ASCII
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	David Sterba <dave@jikos.cz>, Ito <t-itoh@jp.fujitsu.com>
+To: miaox@cn.fujitsu.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110321174348.GC8235@granier.hd.free.fr>
+In-Reply-To: <4D8873EC.1040702@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Miao,
 
-From: Liu Bo <liubo2009@cn.fujitsu.com>
+On Tue, 22 Mar 2011 18:03:24 +0800
+Miao Xie <miaox@cn.fujitsu.com> wrote:
 
-Subject: [PATCH 2/2 v3] Btrfs: Per file/directory controls for COW and compression
+> The V5 patch is attached, could you test it for me? I have run Chris stress test, dbench benchmark
+> on my machine, it work well. I want to check if the above bug still exists or not.
+> 
+> Thanks
+> Miao
 
-Data compression and data cow are controlled across the entire FS by mount
-options right now.  ioctls are needed to set this on a per file or per
-directory basis.  This has been proposed previously, but VFS developers
-wanted us to use generic ioctls rather than btrfs-specific ones.
+Here's the boot log (The V5 patch is on top of the btrfs-unstable next-rc branch):
 
-According to Chris's comment, there should be just one true compression
-method(probably LZO) stored in the super.  However, before this, we would
-wait for that one method is stable enough to be adopted into the super.
-So I list it as a long term goal, and just store it in ram today.
+BUG: unable to handle kernel NULL pointer dereference at 00000000000000c8
+IP: [<ffffffff81075c12>] __lock_acquire+0x98/0xda6
+PGD 7074c067 PUD 75b6d067 PMD 0 
+Oops: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
+last sysfs file: /sys/devices/virtual/bdi/btrfs-1/uevent
+CPU 0 
+Modules linked in: mptspi mptscsih mptbase scsi_transport_spi
 
-After applying this patch, we can use the generic "FS_IOC_SETFLAGS" ioctl to
-control file and directory's datacow and compression attribute.
+Pid: 1, comm: init Not tainted 2.6.36-xie+ #120 440BX Desktop Reference Platform/VMware Virtual Platform
+RIP: 0010:[<ffffffff81075c12>]  [<ffffffff81075c12>] __lock_acquire+0x98/0xda6
+RSP: 0018:ffff88007ceafb58  EFLAGS: 00010097
+RAX: 0000000000000046 RBX: ffff88007ceb0050 RCX: 0000000000000000
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 00000000000000c8
+RBP: ffff88007ceafc18 R08: 0000000000000002 R09: 0000000000000000
+R10: 0000000000000000 R11: ffff88007ceafd48 R12: ffff88007ceb0050
+R13: 00000000000000c8 R14: 0000000000000002 R15: 0000000000000000
+FS:  00007f1fe74e7720(0000) GS:ffff880004e00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+CR2: 00000000000000c8 CR3: 0000000070486000 CR4: 00000000000006f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+Process init (pid: 1, threadinfo ffff88007ceae000, task ffff88007ceb0050)
+Stack:
+ 0000000000000002 0000000000000001 ffff88007ceafb78 ffffffff810bdd5d
+<0> ffff880000000000 ffffffff00000000 ffff88007ceafbc8 0000000000000046
+<0> ffff88007ceafba8 ffff88007ceb0050 ffffffff81067dcd 0000000000000001
+Call Trace:
+ [<ffffffff810bdd5d>] ? time_hardirqs_off+0x2e/0x36
+ [<ffffffff81067dcd>] ? local_clock+0x2a/0x3b
+ [<ffffffff8121294b>] ? btrfs_get_delayed_items+0x37/0xb6
+ [<ffffffff81076a3d>] lock_acquire+0x11d/0x143
+ [<ffffffff8121294b>] ? btrfs_get_delayed_items+0x37/0xb6
+ [<ffffffff8121294b>] ? btrfs_get_delayed_items+0x37/0xb6
+ [<ffffffff814c62b1>] __mutex_lock_common+0x5a/0x444
+ [<ffffffff8121294b>] ? btrfs_get_delayed_items+0x37/0xb6
+ [<ffffffff8110ba5f>] ? virt_to_head_page+0xe/0x31
+ [<ffffffff8110dbbc>] ? cache_alloc_debugcheck_after+0x176/0x1cd
+ [<ffffffff814c6750>] mutex_lock_nested+0x39/0x3e
+ [<ffffffff8121294b>] btrfs_get_delayed_items+0x37/0xb6
+ [<ffffffff811d7e01>] btrfs_real_readdir+0x170/0x52c
+ [<ffffffff8112b739>] ? vfs_readdir+0x56/0xb6
+ [<ffffffff8112b559>] ? filldir+0x0/0xd0
+ [<ffffffff810bdfc0>] ? trace_preempt_on+0x24/0x26
+ [<ffffffff814cb4e8>] ? sub_preempt_count+0xa3/0xb6
+ [<ffffffff814c6645>] ? __mutex_lock_common+0x3ee/0x444
+ [<ffffffff8112b739>] ? vfs_readdir+0x56/0xb6
+ [<ffffffff8111e435>] ? rcu_read_unlock+0x0/0x4b
+ [<ffffffff8112b559>] ? filldir+0x0/0xd0
+ [<ffffffff8112b559>] ? filldir+0x0/0xd0
+ [<ffffffff8112b75c>] vfs_readdir+0x79/0xb6
+ [<ffffffff8112b8e9>] sys_getdents+0x85/0xd8
+ [<ffffffff81002ddb>] system_call_fastpath+0x16/0x1b
+Code: 58 e2 8b 01 00 be b3 0a 00 00 0f 85 c4 0c 00 00 e9 4d 0c 00 00 83 fe 07 76 11 e8 7e 55 1f 00 48 c7 c7 55 85 78 81 e9 78 0c 00 00 <49> 8 
+RIP  [<ffffffff81075c12>] __lock_acquire+0x98/0xda6
+ RSP <ffff88007ceafb58>
+CR2: 00000000000000c8
+---[ end trace 87f215b3568d553d ]---
 
-NOTE:
- - The compression type is selected by such rules:
-   If we mount btrfs with compress options, ie, zlib/lzo, the type is it.
-   Otherwise, we'll use the default compress type (zlib today).
-
-v1->v2:
-- rebase to the latest btrfs.
-v2->v3:
-- fix a problem, i.e. when a file is set NOCOW via mount option, then this NOCOW
-  will be screwed by inheritance from parent directory.
-
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
----
- fs/btrfs/ctree.h   |    1 +
- fs/btrfs/disk-io.c |    6 ++++++
- fs/btrfs/inode.c   |   31 ++++++++++++++++++++++++++++---
- fs/btrfs/ioctl.c   |   41 +++++++++++++++++++++++++++++++++++++----
- 4 files changed, 72 insertions(+), 7 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 8b4b9d1..b77d1a5 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1283,6 +1283,7 @@ struct btrfs_root {
- #define BTRFS_INODE_NODUMP		(1 << 8)
- #define BTRFS_INODE_NOATIME		(1 << 9)
- #define BTRFS_INODE_DIRSYNC		(1 << 10)
-+#define BTRFS_INODE_COMPRESS		(1 << 11)
- 
- /* some macros to generate set/get funcs for the struct fields.  This
-  * assumes there is a lefoo_to_cpu for every type, so lets make a simple
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 3e1ea3e..a894c12 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1762,6 +1762,12 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 
- 	btrfs_check_super_valid(fs_info, sb->s_flags & MS_RDONLY);
- 
-+	/*
-+	 * In the long term, we'll store the compression type in the super
-+	 * block, and it'll be used for per file compression control.
-+	 */
-+	fs_info->compress_type = BTRFS_COMPRESS_ZLIB;
-+
- 	ret = btrfs_parse_options(tree_root, options);
- 	if (ret) {
- 		err = ret;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index db67821..2d9910d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -381,7 +381,8 @@ again:
- 	 */
- 	if (!(BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS) &&
- 	    (btrfs_test_opt(root, COMPRESS) ||
--	     (BTRFS_I(inode)->force_compress))) {
-+	     (BTRFS_I(inode)->force_compress) ||
-+	     (BTRFS_I(inode)->flags & BTRFS_INODE_COMPRESS))) {
- 		WARN_ON(pages);
- 		pages = kzalloc(sizeof(struct page *) * nr_pages, GFP_NOFS);
- 
-@@ -1253,7 +1254,8 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
- 		ret = run_delalloc_nocow(inode, locked_page, start, end,
- 					 page_started, 0, nr_written);
- 	else if (!btrfs_test_opt(root, COMPRESS) &&
--		 !(BTRFS_I(inode)->force_compress))
-+		 !(BTRFS_I(inode)->force_compress) &&
-+		 !(BTRFS_I(inode)->flags & BTRFS_INODE_COMPRESS))
- 		ret = cow_file_range(inode, locked_page, start, end,
- 				      page_started, nr_written, 1);
- 	else
-@@ -4586,7 +4588,8 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
- 	if ((mode & S_IFREG)) {
- 		if (btrfs_test_opt(root, NODATASUM))
- 			BTRFS_I(inode)->flags |= BTRFS_INODE_NODATASUM;
--		if (btrfs_test_opt(root, NODATACOW))
-+		if (btrfs_test_opt(root, NODATACOW) ||
-+		    (BTRFS_I(dir)->flags & BTRFS_INODE_NODATACOW))
- 			BTRFS_I(inode)->flags |= BTRFS_INODE_NODATACOW;
- 	}
- 
-@@ -6803,6 +6806,26 @@ static int btrfs_getattr(struct vfsmount *mnt,
- 	return 0;
- }
- 
-+/*
-+ * If a file is moved, it will inherit the cow and compression flags of the new
-+ * directory.
-+ */
-+static void fixup_inode_flags(struct inode *dir, struct inode *inode)
-+{
-+	struct btrfs_inode *b_dir = BTRFS_I(dir);
-+	struct btrfs_inode *b_inode = BTRFS_I(inode);
-+
-+	if (b_dir->flags & BTRFS_INODE_NODATACOW)
-+		b_inode->flags |= BTRFS_INODE_NODATACOW;
-+	else
-+		b_inode->flags &= ~BTRFS_INODE_NODATACOW;
-+
-+	if (b_dir->flags & BTRFS_INODE_COMPRESS)
-+		b_inode->flags |= BTRFS_INODE_COMPRESS;
-+	else
-+		b_inode->flags &= ~BTRFS_INODE_COMPRESS;
-+}
-+
- static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
- 			   struct inode *new_dir, struct dentry *new_dentry)
- {
-@@ -6936,6 +6959,8 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
- 		}
- 	}
- 
-+	fixup_inode_flags(new_dir, old_inode);
-+
- 	ret = btrfs_add_link(trans, new_dir, old_inode,
- 			     new_dentry->d_name.name,
- 			     new_dentry->d_name.len, 0, index);
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 5fdb2ab..93e7f6c 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -138,6 +138,24 @@ static int btrfs_ioctl_getflags(struct file *file, void __user *arg)
- 	return 0;
- }
- 
-+static int check_flags(unsigned int flags)
-+{
-+	if (flags & ~(FS_IMMUTABLE_FL | FS_APPEND_FL | \
-+		      FS_NOATIME_FL | FS_NODUMP_FL | \
-+		      FS_SYNC_FL | FS_DIRSYNC_FL | \
-+		      FS_NOCOMP_FL | FS_COMPR_FL | \
-+		      FS_NOCOW_FL | FS_COW_FL))
-+		return -EOPNOTSUPP;
-+
-+	if ((flags & FS_NOCOMP_FL) && (flags & FS_COMPR_FL))
-+		return -EINVAL;
-+
-+	if ((flags & FS_NOCOW_FL) && (flags & FS_COW_FL))
-+		return -EINVAL;
-+
-+	return 0;
-+}
-+
- static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- {
- 	struct inode *inode = file->f_path.dentry->d_inode;
-@@ -153,10 +171,9 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 	if (copy_from_user(&flags, arg, sizeof(flags)))
- 		return -EFAULT;
- 
--	if (flags & ~(FS_IMMUTABLE_FL | FS_APPEND_FL | \
--		      FS_NOATIME_FL | FS_NODUMP_FL | \
--		      FS_SYNC_FL | FS_DIRSYNC_FL))
--		return -EOPNOTSUPP;
-+	ret = check_flags(flags);
-+	if (ret)
-+		return ret;
- 
- 	if (!is_owner_or_cap(inode))
- 		return -EACCES;
-@@ -201,6 +218,22 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 	else
- 		ip->flags &= ~BTRFS_INODE_DIRSYNC;
- 
-+	/*
-+	 * The COMPRESS flag can only be changed by users, while the NOCOMPRESS
-+	 * flag may be changed automatically if compression code won't make
-+	 * things smaller.
-+	 */
-+	if (flags & FS_NOCOMP_FL) {
-+		ip->flags &= ~BTRFS_INODE_COMPRESS;
-+		ip->flags |= BTRFS_INODE_NOCOMPRESS;
-+	} else if (flags & FS_COMPR_FL) {
-+		ip->flags |= BTRFS_INODE_COMPRESS;
-+		ip->flags &= ~BTRFS_INODE_NOCOMPRESS;
-+	}
-+	if (flags & FS_NOCOW_FL)
-+		ip->flags |= BTRFS_INODE_NODATACOW;
-+	else if (flags & FS_COW_FL)
-+		ip->flags &= ~BTRFS_INODE_NODATACOW;
- 
- 	trans = btrfs_join_transaction(root, 1);
- 	BUG_ON(IS_ERR(trans));
--- 
-1.6.5.2

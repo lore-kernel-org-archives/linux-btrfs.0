@@ -1,23 +1,24 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Btrfs wins Linux New Media Award
-Date: Wed, 23 Mar 2011 14:17:14 -0400
-Message-ID: <1300903934-sup-9036@think>
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Luke Sheldrick <luke@sheldrick.co.uk>
+Subject: Recovering "parent transid verify failed"
+Date: Wed, 23 Mar 2011 18:12:45 +0000
+Message-ID: <8C6E0242B0336C4CB6065C37C0A2A959EB2E550547@londondc02.an0key.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+To: btrfs hackers <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi everyone,
+Hi,
 
-During the last Cebit conference, Btrfs was presented with an award for
-the most innovative open source project.
+I'm having the same issues as previously mentioned.
 
-I'd like to thank everyone at Linux magazine involved with selecting us,
-and since we have so many contributors I wanted to share a picture of
-the shiny award:
+Apparently the new fsck tool will be able to recover this?
 
-http://oss.oracle.com/~mason/btrfs/btrfs_award.jpg
+Few questions, is there a GIT version I can compile and use already for this?
 
-Thanks everyone!
+If not, is there any indication of when this will be released?
 
-Chris
+---
+Luke Sheldrick
+e: luke@sheldrick.co.uk
+p: 07880 725099

@@ -1,88 +1,77 @@
-From: "Brian J. Murrell" <brian@interlinx.bc.ca>
-Subject: Re: efficiency of btrfs cow
-Date: Wed, 23 Mar 2011 08:39:51 -0400
-Message-ID: <4D89EA17.20506@interlinx.bc.ca>
-References: <il0a8d$4ev$1@dough.gmane.org> <1299427596.15017.8.camel@ayu>
+From: Arne Jansen <sensille@gmx.net>
+Subject: [RFC] Tree fragmentation and prefetching
+Date: Wed, 23 Mar 2011 14:06:02 +0100
+Message-ID: <4D89F03A.9050306@gmx.net>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="------------enigD70C087A48A80C8C18BACE4F"
-Cc: linux-btrfs@vger.kernel.org
-To: Calvin Walton <calvin.walton@kepstin.ca>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Chris Mason <chris.mason@oracle.com>
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1299427596.15017.8.camel@ayu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
---------------enigD70C087A48A80C8C18BACE4F
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+While looking into the performance of scrub I noticed that a significant
+amount of time is being used for loading the extent tree and the csum
+tree. While this is no surprise I did some prototyping on how to improve
+on it.
+The main idea is to load the tree (or parts of it) top-down, order the
+needed blocks and distribute it over all disks.
+To keep you interested, some results first.
 
-On 11-03-06 11:06 AM, Calvin Walton wrote:
->=20
-> To see exactly what's going on, you should use the "btrfs filesystem df=
-"
-> command to see how space is being allocated for data and metadata
-> separately:
+a) by tree enumeration with reada=2
+   reading extent tree: 242s
+   reading csum tree: 140s
+   reading both trees: 324s
 
-OK.  So with an empty filesystem, before my first copy (i.e. the base on
-which the next copy will CoW from) df reports:
+b) prefetch prototype
+   reading extent tree: 23.5s
+   reading csum tree: 20.4s
+   reading both trees: 25.7s
 
-Filesystem           1K-blocks      Used Available Use% Mounted on
-/dev/mapper/btrfs--test-btrfs--test
-                     922746880        56 922746824   1% /mnt/btrfs-test
+The test setup consists of a 7 Seagate ES.2 1TB disks filesystem, filled
+28%. It is created with the current git tree + the round robin patch and
+filled with
 
-and btrfs fi df reports:
+fs_mark -D 512 -t 16 -n 4096 -F -S0
 
-Data: total=3D8.00MB, used=3D0.00
-Metadata: total=3D1.01GB, used=3D24.00KB
-System: total=3D12.00MB, used=3D4.00KB
+The 'normal' read is done by enumerating the leaves by btrfs_next_leaf()
+with path->reada=2. Both trees are being enumerated one after the other.
+The prototype currently just uses raw bios, does not make use of the
+page cache and does not enter the read pages into the cache. This will
+probably add some overhead. It also does not check the crcs.
 
-after the first copy df and btrfs fi df report:
+While it is very promising to implement it for scrub, I think a more
+general interface which can be used for every enumeration would be
+beneficial. Use cases that come to mind are rebalance, reflink, deletion
+of large files, listing of large directories etc..
 
-Filesystem           1K-blocks      Used Available Use% Mounted on
-/dev/mapper/btrfs--test-btrfs--test
-                     922746880 121402328 801344552  14% /mnt/btrfs-test
+I'd imagine an interface along the lines of
 
-root@linux:/mnt/btrfs-test# cat .snapshots/monthly.22/metadata/btrfs_df-s=
-top
-Data: total=3D110.01GB, used=3D109.26GB
-Metadata: total=3D5.01GB, used=3D3.26GB
-System: total=3D12.00MB, used=3D24.00KB
+int btrfs_readahead_init(struct btrfs_reada_ctx *reada);
+int btrfs_readahead_add(struct btrfs_root *root,
+                        struct btrfs_key *start,
+                        struct btrfs_key *end,
+                        struct btrfs_reada_ctx *reada);
+void btrfs_readahead_wait(struct btrfs_reada_ctx *reada);
 
-So it's clear that total usage (as reported by df) was 121,402,328KB but
-Metadata has two values:
+to trigger the readahead of parts of a tree. Multiple readahead
+requests can be given before waiting. This would enable the very
+beneficial folding seen above for 'reading both trees'.
 
-Metadata: total=3D5.01GB, used=3D3.26GB
+Also it would be possible to add a cascading readahead, where the
+content of leaves would trigger readaheads in other trees, maybe by
+giving a callback for the decisions what to read instead of the fixed
+start/end range.
 
-What's the difference between total and used?  And for that matter,
-what's the difference between the total and used for Data
-(total=3D110.01GB, used=3D109.26GB)?
+For the implementation I'd need an interface which I haven't been able
+to find yet. Currently I can trigger the read of several pages / tree
+blocks and wait for the completion of each of them. What I'd need would
+be an interface that gives me a callback on each completion or a waiting
+function that wakes up on each completion with the information which
+pages just completed.
+One way to achieve this would be to add a hook, but I gladly take any
+implementation hints.
 
-Even if I take the largest values (i.e. the total values) for Data and
-Metadata (each converted to KB first) and add them up they are:
-120,607,211.52 which is not quite the 121,402,328 that df reports.
-There is a 795,116.48KB discrepancy.
-
-In any case, which value from a btrfs df fi should I be subtracting from
-df's accounting to get a real accounting of the amount of data used?
-
-Cheers,
-b.
+--
+Arne
 
 
---------------enigD70C087A48A80C8C18BACE4F
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
-
-iEYEARECAAYFAk2J6hcACgkQl3EQlGLyuXCOUgCfYrgBRal/pfsssuZ/DWju76MI
-eMYAn0m5Zs/kGtVsNMPEtMpuIWSTwTsF
-=Hr6j
------END PGP SIGNATURE-----
-
---------------enigD70C087A48A80C8C18BACE4F--

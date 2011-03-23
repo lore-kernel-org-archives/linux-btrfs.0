@@ -1,70 +1,88 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH RFC] btrfs: Simplify locking
-Date: Wed, 23 Mar 2011 07:44:19 -0400
-Message-ID: <1300880437-sup-6371@think>
-References: <20110320174433.GA12003@htj.dyndns.org> <1300665355-sup-1698@think> <20110321082942.GD12003@htj.dyndns.org> <20110321165955.GG12003@htj.dyndns.org> <1300728113-sup-8564@think> <20110321181124.GK12003@htj.dyndns.org> <1300835390-sup-7485@think> <20110323104614.GA12003@htj.dyndns.org>
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Tejun Heo <tj@kernel.org>
+From: "Brian J. Murrell" <brian@interlinx.bc.ca>
+Subject: Re: efficiency of btrfs cow
+Date: Wed, 23 Mar 2011 08:39:51 -0400
+Message-ID: <4D89EA17.20506@interlinx.bc.ca>
+References: <il0a8d$4ev$1@dough.gmane.org> <1299427596.15017.8.camel@ayu>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="------------enigD70C087A48A80C8C18BACE4F"
+Cc: linux-btrfs@vger.kernel.org
+To: Calvin Walton <calvin.walton@kepstin.ca>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <20110323104614.GA12003@htj.dyndns.org>
+In-Reply-To: <1299427596.15017.8.camel@ayu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Tejun Heo's message of 2011-03-23 06:46:14 -0400:
-> Hello, Chris.
-> 
-> On Tue, Mar 22, 2011 at 07:13:09PM -0400, Chris Mason wrote:
-> > Ok, this impact of this is really interesting.  If we have very short
-> > waits where there is no IO at all, this patch tends to lose.  I ran with
-> > dbench 10 and got about 20% slower tput.
-> > 
-> > But, if we do any IO at all it wins by at least that much or more.  I
-> > think we should take this patch and just work on getting rid of the
-> > scheduling with the mutex held where possible.
-> 
-> I see.
-> 
-> > Tejun, could you please send the mutex_tryspin stuff in?  If we can get
-> > a sob for that I can send the whole thing.
-> 
-> I'm not sure whetehr mutex_tryspin() is justified at this point, and,
-> even if so, how to proceed with it.  Maybe we want to make
-> mutex_trylock() perform owner spin by default without introducing a
-> new API.
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--------------enigD70C087A48A80C8C18BACE4F
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 
-I'll benchmark without it, but I think the cond_resched is going to have
-a pretty big impact.  I'm digging up the related benchmarks I used
-during the initial adaptive spin work.
+On 11-03-06 11:06 AM, Calvin Walton wrote:
+>=20
+> To see exactly what's going on, you should use the "btrfs filesystem df=
+"
+> command to see how space is being allocated for data and metadata
+> separately:
 
-> 
-> Given that the difference between SIMPLE and SPIN is small, I think it
-> would be best to simply use mutex_trylock() for now.  It's not gonna
-> make much difference either way.
+OK.  So with an empty filesystem, before my first copy (i.e. the base on
+which the next copy will CoW from) df reports:
 
-mutex_trylock is a good start.
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/mapper/btrfs--test-btrfs--test
+                     922746880        56 922746824   1% /mnt/btrfs-test
 
-> 
-> How do you want to proceed?  I can prep patches doing the following.
-> 
-> - Convert CONFIG_DEBUG_LOCK_ALLOC to CONFIG_LOCKDEP.
-> 
-> - Drop locking.c and make the lock function simple wrapper around
->   mutex operations.  This makes blocking/unblocking noops.
-> 
-> - Remove all blocking/unblocking calls along with the API.
+and btrfs fi df reports:
 
-I'd like to keep the blocking/unblocking calls for one release.  I'd
-like to finally finish off my patches that do concurrent reads.
+Data: total=3D8.00MB, used=3D0.00
+Metadata: total=3D1.01GB, used=3D24.00KB
+System: total=3D12.00MB, used=3D4.00KB
 
-> 
-> - Remove locking wrappers and use mutex API directly.
+after the first copy df and btrfs fi df report:
 
-I'd also like to keep the wrappers until the concurrent reader locking
-is done.
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/mapper/btrfs--test-btrfs--test
+                     922746880 121402328 801344552  14% /mnt/btrfs-test
 
-> 
-> What do you think?
+root@linux:/mnt/btrfs-test# cat .snapshots/monthly.22/metadata/btrfs_df-s=
+top
+Data: total=3D110.01GB, used=3D109.26GB
+Metadata: total=3D5.01GB, used=3D3.26GB
+System: total=3D12.00MB, used=3D24.00KB
 
-Thanks for all the work.
+So it's clear that total usage (as reported by df) was 121,402,328KB but
+Metadata has two values:
 
--chris
+Metadata: total=3D5.01GB, used=3D3.26GB
+
+What's the difference between total and used?  And for that matter,
+what's the difference between the total and used for Data
+(total=3D110.01GB, used=3D109.26GB)?
+
+Even if I take the largest values (i.e. the total values) for Data and
+Metadata (each converted to KB first) and add them up they are:
+120,607,211.52 which is not quite the 121,402,328 that df reports.
+There is a 795,116.48KB discrepancy.
+
+In any case, which value from a btrfs df fi should I be subtracting from
+df's accounting to get a real accounting of the amount of data used?
+
+Cheers,
+b.
+
+
+--------------enigD70C087A48A80C8C18BACE4F
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+
+iEYEARECAAYFAk2J6hcACgkQl3EQlGLyuXCOUgCfYrgBRal/pfsssuZ/DWju76MI
+eMYAn0m5Zs/kGtVsNMPEtMpuIWSTwTsF
+=Hr6j
+-----END PGP SIGNATURE-----
+
+--------------enigD70C087A48A80C8C18BACE4F--

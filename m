@@ -1,7 +1,7 @@
-From: "Fajar A. Nugraha" <list@fajar.net>
+From: Li Zefan <lizf@cn.fujitsu.com>
 Subject: Re: read-only subvolumes?
-Date: Wed, 23 Mar 2011 16:01:53 +0700
-Message-ID: <AANLkTinPCX7x1qAvfrsDYXDLEPjCbJeWA6SfSrZpg2XJ@mail.gmail.com>
+Date: Wed, 23 Mar 2011 17:25:28 +0800
+Message-ID: <4D89BC88.5030406@cn.fujitsu.com>
 References: <4D89ADA7.2000803@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
@@ -11,25 +11,26 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <4D89ADA7.2000803@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 23, 2011 at 3:21 PM, Andreas Philipp
-<philipp.andreas@gmail.com> wrote:
-> I think it is since I upgraded to kernel version 2.6.38 (I
-> do not create subvolumes on a regular basis.).
-
+> Hi all,
+> 
+> When I am creating subvolumes I get this strange behavior. If I create
+> a subvolume with a name longer than 4 characters it is read-only, if
+> the name is shorter than 5 characters the subvolume is writeable as
+> expected. I think it is since I upgraded to kernel version 2.6.38 (I
+> do not create subvolumes on a regular basis.). I will compile one of
+> the latest 2.6.37 kernels to see whether there the problem exists,
+> too. Another interesting point is that previously created subvolumes
+> are not affected.
+> 
+> Thanks,
+> Andreas Philipp
+> 
 > thor btrfs # btrfs subvolume create 123456789
 > Create subvolume './123456789'
 > thor btrfs # touch 123456789/lsdkfj
 > touch: cannot touch `123456789/lsdkfj': Read-only file system
 
-It works on my system
+This is really odd, but I can't reproduce it.
 
-# touch test1
-# btrfs su cr 123456789
-Create subvolume './123456789'
-# touch 123456789/lsdkfj
-# uname -a
-Linux HP 2.6.38-020638-generic #201103151303 SMP Tue Mar 15 14:33:40
-UTC 2011 i686 GNU/Linux
-
--- 
-Fajar
+I created a btrfs filesystem on 2.6.37 kernel, and rebooted to latest
+2.6.38+, and tried the procedures as you did, but nothing bad happend.

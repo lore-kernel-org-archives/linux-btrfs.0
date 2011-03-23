@@ -1,77 +1,67 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: [RFC] Tree fragmentation and prefetching
-Date: Wed, 23 Mar 2011 14:06:02 +0100
-Message-ID: <4D89F03A.9050306@gmx.net>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: Re: [PATCH V4] btrfs: implement delayed inode items operation
+Date: Wed, 23 Mar 2011 22:20:21 +0800
+Message-ID: <4D8A01A5.9040905@cn.fujitsu.com>
+References: <4D8324DE.4010400@cn.fujitsu.com> <1300666966-sup-3510@think> <4D86DC92.40608@cn.fujitsu.com> <1300709085-sup-9849@think> <4D8953A4.4040008@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	David Sterba <dave@jikos.cz>, Ito <t-itoh@jp.fujitsu.com>,
+	Itaru Kitayama <kitayama@cl.bb4u.ne.jp>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4D8953A4.4040008@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While looking into the performance of scrub I noticed that a significant
-amount of time is being used for loading the extent tree and the csum
-tree. While this is no surprise I did some prototyping on how to improve
-on it.
-The main idea is to load the tree (or parts of it) top-down, order the
-needed blocks and distribute it over all disks.
-To keep you interested, some results first.
+On wed, 23 Mar 2011 09:57:56 +0800, Miao Xie wrote:
+> On Mon, 21 Mar 2011 08:08:17 -0400, Chris Mason wrote:
+>>>> I also think that code is racing with the code that frees delayed nodes,
+>>>> but haven't yet triggered my debugging printks to prove either one.
+>>>
+>>> We free delayed nodes when we want to destroy the inode, at that time, just one task,
+>>> which is destroying inode, can access the delayed nodes, so I think ACCESS_ONCE() is
+>>> enough. What do you think about?
+>>
+>> Great, I see what you mean.  The bigger problem right now is that we may do
+>> a lot of operations in destroy_inode(), which can block the slab
+>> shrinkers on our metadata operations.  That same stress.sh -n 50 run is
+>> running into OOM.
+>>
+>> So we need to rework the part where the final free is done.  We could
+>> keep a ref on the inode until the delayed items are complete, or we
+>> could let the inode go and make a way to lookup the delayed node when
+>> the inode is read.
+> 
+> I find the slab shrinkers just reclaim inodes which are in the inode_unused
+> list, so if we free delayed nodes before moving the inode into the inode_unused
+> list, we can avoid blocking the slab shrinker. Thus maybe we can fix the above
+> problem by moving btrfs_remove_delayed_node() from btrfs_destroy_inode()
+> to btrfs_drop_inode(). How do you think about?
 
-a) by tree enumeration with reada=2
-   reading extent tree: 242s
-   reading csum tree: 140s
-   reading both trees: 324s
+This method is not good, because we may do delayed insertion/deletion and free
+the delayed node when we release the inode, but we may access its delayed node
+soon.
 
-b) prefetch prototype
-   reading extent tree: 23.5s
-   reading csum tree: 20.4s
-   reading both trees: 25.7s
+After reading the lockdep message reported by Kitayama, I guess the reason of the slab
+shrinker block may not be that we do a lot of operations in destroy_inode(), maybe the
+real reason is that we pass GFP_KERNEL into kzalloc()(in cache_block_group()), which makes
+the slab shrinkers hang up. (I don't trigger OOM by running stress.sh till now, so I
+can't locate this bug.)
 
-The test setup consists of a 7 Seagate ES.2 1TB disks filesystem, filled
-28%. It is created with the current git tree + the round robin patch and
-filled with
+Thanks
+Miao
 
-fs_mark -D 512 -t 16 -n 4096 -F -S0
-
-The 'normal' read is done by enumerating the leaves by btrfs_next_leaf()
-with path->reada=2. Both trees are being enumerated one after the other.
-The prototype currently just uses raw bios, does not make use of the
-page cache and does not enter the read pages into the cache. This will
-probably add some overhead. It also does not check the crcs.
-
-While it is very promising to implement it for scrub, I think a more
-general interface which can be used for every enumeration would be
-beneficial. Use cases that come to mind are rebalance, reflink, deletion
-of large files, listing of large directories etc..
-
-I'd imagine an interface along the lines of
-
-int btrfs_readahead_init(struct btrfs_reada_ctx *reada);
-int btrfs_readahead_add(struct btrfs_root *root,
-                        struct btrfs_key *start,
-                        struct btrfs_key *end,
-                        struct btrfs_reada_ctx *reada);
-void btrfs_readahead_wait(struct btrfs_reada_ctx *reada);
-
-to trigger the readahead of parts of a tree. Multiple readahead
-requests can be given before waiting. This would enable the very
-beneficial folding seen above for 'reading both trees'.
-
-Also it would be possible to add a cascading readahead, where the
-content of leaves would trigger readaheads in other trees, maybe by
-giving a callback for the decisions what to read instead of the fixed
-start/end range.
-
-For the implementation I'd need an interface which I haven't been able
-to find yet. Currently I can trigger the read of several pages / tree
-blocks and wait for the completion of each of them. What I'd need would
-be an interface that gives me a callback on each completion or a waiting
-function that wakes up on each completion with the information which
-pages just completed.
-One way to achieve this would be to add a hook, but I gladly take any
-implementation hints.
-
---
-Arne
-
+> 
+>>
+>> I'll read more today.
+>>
+>> -chris
+>>
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 

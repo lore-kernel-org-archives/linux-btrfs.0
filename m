@@ -1,68 +1,56 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: [RFC] Tree fragmentation and prefetching
-Date: Thu, 24 Mar 2011 20:45:45 +0800
-Message-ID: <4D8B3CF9.4080306@cn.fujitsu.com>
-References: <4D89F03A.9050306@gmx.net> <AANLkTinFUE0ALLABD0cirkMMAXrmz=m8juz+xEL8UBFJ@mail.gmail.com> <4D8A57E9.6010107@gmx.net> <4D8AA0AA.5010006@cn.fujitsu.com> <4D8AF2F5.7040108@gmx.net>
-Reply-To: miaox@cn.fujitsu.com
+From: Arne Jansen <sensille@gmx.net>
+Subject: Re: [PATCH v4 4/6] btrfs: sync scrub with commit & device removal
+Date: Thu, 24 Mar 2011 13:58:52 +0100
+Message-ID: <4D8B400C.7010102@gmx.net>
+References: <cover.1300462778.git.sensille@gmx.net> <a791c7692d9c1eb5cbf111c01f5d94f42b904523.1300462778.git.sensille@gmx.net> <20110323172811.GH17108@twin.jikos.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Andrey Kuzmin <andrey.v.kuzmin@gmail.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>
-To: Arne Jansen <sensille@gmx.net>
+Content-Type: text/plain; charset=ISO-8859-1
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org, dave@jikos.cz
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D8AF2F5.7040108@gmx.net>
+In-Reply-To: <20110323172811.GH17108@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 	thu, 24 Mar 2011 08:29:57 +0100, Arne Jansen wrote:
-> On 24.03.2011 02:38, Miao Xie wrote:
->> On wed, 23 Mar 2011 21:28:25 +0100, Arne Jansen wrote:
->>> On 23.03.2011 20:26, Andrey Kuzmin wrote:
->>>> On Wed, Mar 23, 2011 at 4:06 PM, Arne Jansen<sensille@gmx.net>  wrote:
->>>>> The main idea is to load the tree (or parts of it) top-down, order the
->>>>> needed blocks and distribute it over all disks.
->>>>> To keep you interested, some results first.
->>>>>
->>>>> a) by tree enumeration with reada=2
->>>>>    reading extent tree: 242s
->>>>>    reading csum tree: 140s
->>>>>    reading both trees: 324s
->>>>>
->>>>> b) prefetch prototype
->>>>>    reading extent tree: 23.5s
->>>>>    reading csum tree: 20.4s
->>>>>    reading both trees: 25.7s
->>>>
->>>> 10x speed-up looks indeed impressive. Just for me to be sure, did I
->>>> get you right in that you attribute this effect specifically to
->>>> enumerating tree leaves in key address vs. disk addresses when these
->>>> two are not aligned?
->>>
->>> Yes. Leaves and the intermediate nodes tend to be quite scattered
->>> around the disk with respect to their logical order.
->>> Reading them in logical (ascending/descending) order require lots
->>> of seeks.
->>
->> I'm also dealing with tree fragmentation problem, I try to store the leaves
->> which have the same parent closely.
+On 23.03.2011 18:28, David Sterba wrote:
+> Hi,
 > 
-> That's good to hear. Do you have already anything I can repeat the test
-> with?
-
-It is still under developing.;)
-
-Thanks
-Miao
-
-> -Arne
+> you are adding a new smp_mb, can you please explain why it's needed and
+> document it?
 > 
->>
->> Regards
->> Miao
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> thanks,
+> dave
 > 
+> On Fri, Mar 18, 2011 at 04:55:07PM +0100, Arne Jansen wrote:
+>> This adds several synchronizations:
+>>  - for a transaction commit, the scrub gets paused before the
+>>    tree roots are committed until the super are safely on disk
+>>  - during a log commit, scrubbing of supers is disabled
+>>  - on unmount, the scrub gets cancelled
+>>  - on device removal, the scrub for the particular device gets cancelled
+>>
+
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -1330,6 +1330,8 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+>>  		goto error_undo;
+>>  
+>>  	device->in_fs_metadata = 0;
+>> +	smp_mb();
+>         ^^^^^^^^
+
+The idea was to disallow any new scrubs so start beyond
+this point, but it turns out this is not strong enough.
+I have to move the check for in_fs_metadata in btrfs_scrub_dev
+inside the scrub_lock. In this case, the smp_mb is still needed,
+as in_fs_metadata is not protected by any lock. I'll add a
+comment.
+Thanks for forcing me to rethink this :)
+
+-Arne
+
+> 
+>> +	btrfs_scrub_cancel_dev(root, device);
+>>  
+>>  	/*
+>>  	 * the device list mutex makes sure that we don't change
+
 

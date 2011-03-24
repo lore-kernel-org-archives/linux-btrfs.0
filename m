@@ -1,36 +1,33 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Recovering "parent transid verify failed"
-Date: Wed, 23 Mar 2011 20:07:03 -0400
-Message-ID: <1300925154-sup-1589@think>
-References: <8C6E0242B0336C4CB6065C37C0A2A959EB2E550547@londondc02.an0key.net>
-Content-Type: text/plain; charset=UTF-8
-Cc: btrfs hackers <linux-btrfs@vger.kernel.org>
-To: Luke Sheldrick <luke@sheldrick.co.uk>
+From: Ric Wheeler <ricwheeler@gmail.com>
+Subject: Re: Btrfs wins Linux New Media Award
+Date: Wed, 23 Mar 2011 20:34:13 -0400
+Message-ID: <4D8A9185.9030400@gmail.com>
+References: <1300903934-sup-9036@think>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <8C6E0242B0336C4CB6065C37C0A2A959EB2E550547@londondc02.an0key.net>
+In-Reply-To: <1300903934-sup-9036@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Luke Sheldrick's message of 2011-03-23 14:12:45 -0400:
-> Hi,
-> 
-> I'm having the same issues as previously mentioned.
-> 
-> Apparently the new fsck tool will be able to recover this?
-> 
-> Few questions, is there a GIT version I can compile and use already for this?
-> 
-> If not, is there any indication of when this will be released?
+On 03/23/2011 02:17 PM, Chris Mason wrote:
+> Hi everyone,
+>
+> During the last Cebit conference, Btrfs was presented with an award for
+> the most innovative open source project.
+>
+> I'd like to thank everyone at Linux magazine involved with selecting us,
+> and since we have so many contributors I wanted to share a picture of
+> the shiny award:
+>
+> http://oss.oracle.com/~mason/btrfs/btrfs_award.jpg
+>
+> Thanks everyone!
+>
+> Chris
 
-Yes, I'm still hammering out a reliable way to resolve most of these.
-But, please post the messages you're hitting, it is actually a very
-generic problem and has many different causes.
+Congratulations! Very much deserved,
 
-What happened to your FS that made them come up?
+Ric
 
-Which kernel were you running and what was the FS built on top of?
-
-What happens when you grab the latest btrfsck from git and do:
-
-btrfsck -s 1 /dev/xxx
-
--chris

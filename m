@@ -1,23 +1,23 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH v4 3/6] btrfs: add scrub code and prototypes
-Date: Thu, 24 Mar 2011 15:30:37 +0100
-Message-ID: <20110324143037.GJ17108@twin.jikos.cz>
-References: <cover.1300462778.git.sensille@gmx.net>
- <661b3135624735f82675abf6f3b59e1e931d0fce.1300462778.git.sensille@gmx.net>
- <20110323171833.GG17108@twin.jikos.cz>
- <4D8B1C19.7060105@gmx.net>
-Reply-To: dave@jikos.cz
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: drives with more than 2 TByte
+Date: 24 Mar 2011 17:43:00 +0100
+Message-ID: <BiSR8y$i1uB@helmut.hullen.de>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org, dave@jikos.cz
-To: Arne Jansen <sensille@gmx.net>
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D8B1C19.7060105@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 24, 2011 at 11:25:29AM +0100, Arne Jansen wrote:
-> Thanks, I'll add you as Reported-by if that's ok.
+Hallo, linux-btrfs,
 
-Ok it is :)
+what about disks with more than 2 TByte? Other filesystems (?) need GPT.
 
-dave
+When I use
+
+   mkfs.btrfs /dev/sdc
+
+(p.e. with drive sdc), does that work without problems with btrfs?
+
+Viele Gruesse!
+Helmut

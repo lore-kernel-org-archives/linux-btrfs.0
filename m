@@ -1,96 +1,55 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: [PATCH] Btrfs: check return value of read_tree_block()
-Date: Thu, 24 Mar 2011 15:33:21 +0900
-Message-ID: <201103240633.AA00011@T-ITOH1.jp.fujitsu.com>
+From: Arne Jansen <sensille@gmx.net>
+Subject: Re: [RFC] Tree fragmentation and prefetching
+Date: Thu, 24 Mar 2011 08:29:57 +0100
+Message-ID: <4D8AF2F5.7040108@gmx.net>
+References: <4D89F03A.9050306@gmx.net> <AANLkTinFUE0ALLABD0cirkMMAXrmz=m8juz+xEL8UBFJ@mail.gmail.com> <4D8A57E9.6010107@gmx.net> <4D8AA0AA.5010006@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: Andrey Kuzmin <andrey.v.kuzmin@gmail.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>
+To: miaox@cn.fujitsu.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4D8AA0AA.5010006@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch is checking return value of read_tree_block(),
-and if it is NULL, error processing.
+On 24.03.2011 02:38, Miao Xie wrote:
+> On wed, 23 Mar 2011 21:28:25 +0100, Arne Jansen wrote:
+>> On 23.03.2011 20:26, Andrey Kuzmin wrote:
+>>> On Wed, Mar 23, 2011 at 4:06 PM, Arne Jansen<sensille@gmx.net>  wrote:
+>>>> The main idea is to load the tree (or parts of it) top-down, order the
+>>>> needed blocks and distribute it over all disks.
+>>>> To keep you interested, some results first.
+>>>>
+>>>> a) by tree enumeration with reada=2
+>>>>    reading extent tree: 242s
+>>>>    reading csum tree: 140s
+>>>>    reading both trees: 324s
+>>>>
+>>>> b) prefetch prototype
+>>>>    reading extent tree: 23.5s
+>>>>    reading csum tree: 20.4s
+>>>>    reading both trees: 25.7s
+>>>
+>>> 10x speed-up looks indeed impressive. Just for me to be sure, did I
+>>> get you right in that you attribute this effect specifically to
+>>> enumerating tree leaves in key address vs. disk addresses when these
+>>> two are not aligned?
+>>
+>> Yes. Leaves and the intermediate nodes tend to be quite scattered
+>> around the disk with respect to their logical order.
+>> Reading them in logical (ascending/descending) order require lots
+>> of seeks.
+> 
+> I'm also dealing with tree fragmentation problem, I try to store the leaves
+> which have the same parent closely.
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- fs/btrfs/ctree.c       |    3 +++
- fs/btrfs/extent-tree.c |    6 ++++++
- fs/btrfs/relocation.c  |    6 ++++++
- 3 files changed, 15 insertions(+)
+That's good to hear. Do you have already anything I can repeat the test
+with?
 
-diff -urNp linux-2.6.38/fs/btrfs/ctree.c linux-2.6.38.new/fs/btrfs/ctree.c
---- linux-2.6.38/fs/btrfs/ctree.c	2011-03-15 10:20:32.000000000 +0900
-+++ linux-2.6.38.new/fs/btrfs/ctree.c	2011-03-24 11:12:54.000000000 +0900
-@@ -686,6 +686,8 @@ int btrfs_realloc_node(struct btrfs_tran
- 			if (!cur) {
- 				cur = read_tree_block(root, blocknr,
- 							 blocksize, gen);
-+				if (!cur)
-+					return -EIO;
- 			} else if (!uptodate) {
- 				btrfs_read_buffer(cur, gen);
- 			}
-@@ -4217,6 +4219,7 @@ find_next_key:
- 		}
- 		btrfs_set_path_blocking(path);
- 		cur = read_node_slot(root, cur, slot);
-+		BUG_ON(!cur);
- 
- 		btrfs_tree_lock(cur);
- 
-diff -urNp linux-2.6.38/fs/btrfs/extent-tree.c linux-2.6.38.new/fs/btrfs/extent-tree.c
---- linux-2.6.38/fs/btrfs/extent-tree.c	2011-03-15 10:20:32.000000000 +0900
-+++ linux-2.6.38.new/fs/btrfs/extent-tree.c	2011-03-24 11:32:55.000000000 +0900
-@@ -6047,6 +6047,8 @@ static noinline int do_walk_down(struct 
- 		if (reada && level == 1)
- 			reada_walk_down(trans, root, wc, path);
- 		next = read_tree_block(root, bytenr, blocksize, generation);
-+		if (!next)
-+			return -EIO;
- 		btrfs_tree_lock(next);
- 		btrfs_set_lock_blocking(next);
- 	}
-@@ -7906,6 +7908,10 @@ static noinline int relocate_one_extent(
- 
- 			eb = read_tree_block(found_root, block_start,
- 					     block_size, 0);
-+			if (!eb) {
-+				ret = -EIO;
-+				goto out;
-+			}
- 			btrfs_tree_lock(eb);
- 			BUG_ON(level != btrfs_header_level(eb));
- 
-diff -urNp linux-2.6.38/fs/btrfs/relocation.c linux-2.6.38.new/fs/btrfs/relocation.c
---- linux-2.6.38/fs/btrfs/relocation.c	2011-03-15 10:20:32.000000000 +0900
-+++ linux-2.6.38.new/fs/btrfs/relocation.c	2011-03-24 11:43:53.000000000 +0900
-@@ -1724,6 +1724,7 @@ again:
- 
- 			eb = read_tree_block(dest, old_bytenr, blocksize,
- 					     old_ptr_gen);
-+			BUG_ON(!eb);
- 			btrfs_tree_lock(eb);
- 			if (cow) {
- 				ret = btrfs_cow_block(trans, dest, eb, parent,
-@@ -2513,6 +2514,10 @@ static int do_relocation(struct btrfs_tr
- 		blocksize = btrfs_level_size(root, node->level);
- 		generation = btrfs_node_ptr_generation(upper->eb, slot);
- 		eb = read_tree_block(root, bytenr, blocksize, generation);
-+		if (!eb) {
-+			err = -EIO;
-+			goto next;
-+		}
- 		btrfs_tree_lock(eb);
- 		btrfs_set_lock_blocking(eb);
- 
-@@ -2670,6 +2675,7 @@ static int get_tree_block_key(struct rel
- 	BUG_ON(block->key_ready);
- 	eb = read_tree_block(rc->extent_root, block->bytenr,
- 			     block->key.objectid, block->key.offset);
-+	BUG_ON(!eb);
- 	WARN_ON(btrfs_header_level(eb) != block->level);
- 	if (block->level == 0)
- 		btrfs_item_key_to_cpu(eb, &block->key, 0);
+-Arne
 
-
+> 
+> Regards
+> Miao
+> 

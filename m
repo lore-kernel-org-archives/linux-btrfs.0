@@ -1,43 +1,44 @@
-From: Steven Rostedt <rostedt@goodmis.org>
+From: Andrey Kuzmin <andrey.v.kuzmin@gmail.com>
 Subject: Re: [PATCH 2/2] mutex: Apply adaptive spinning on mutex_trylock()
-Date: Fri, 25 Mar 2011 09:29:30 -0400
-Message-ID: <1301059770.14261.187.camel@gandalf.stny.rr.com>
-References: <20110323153727.GB12003@htj.dyndns.org>
-	 <20110324094119.GD12038@htj.dyndns.org>
-	 <20110324094151.GE12038@htj.dyndns.org>
-	 <20110325033956.GB9313@home.goodmis.org>
-	 <AANLkTikayCJyYVo1MNpg1EN+88bSQNOu=NPW5s_j4shD@mail.gmail.com>
-	 <20110325065300.GB1409@htj.dyndns.org>
-	 <1301058600.14261.172.camel@gandalf.stny.rr.com>
+Date: Fri, 25 Mar 2011 16:50:10 +0300
+Message-ID: <AANLkTi=BaRFeAL1mS1Rjq_QGgcMb1rOKkvf=ig+23jvP@mail.gmail.com>
+References: <20110323153727.GB12003@htj.dyndns.org> <20110324094119.GD12038@htj.dyndns.org>
+ <20110324094151.GE12038@htj.dyndns.org> <20110325033956.GB9313@home.goodmis.org>
+ <AANLkTimO3b3D+SofYFLyh8Txk+e4Ke4ToKrBiatdFghr@mail.gmail.com> <1301058727.14261.174.camel@gandalf.stny.rr.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-15"
-Cc: Linus Torvalds <torvalds@linux-foundation.org>,
-	Peter Zijlstra <peterz@infradead.org>,
+Content-Type: text/plain; charset=UTF-8
+Cc: Tejun Heo <tj@kernel.org>, Peter Zijlstra <peterz@infradead.org>,
 	Ingo Molnar <mingo@redhat.com>,
+	Linus Torvalds <torvalds@linux-foundation.org>,
 	Andrew Morton <akpm@linux-foundation.org>,
 	Chris Mason <chris.mason@oracle.com>,
 	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: Tejun Heo <tj@kernel.org>
+To: Steven Rostedt <rostedt@goodmis.org>
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <1301058600.14261.172.camel@gandalf.stny.rr.com>
+In-Reply-To: <1301058727.14261.174.camel@gandalf.stny.rr.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2011-03-25 at 09:10 -0400, Steven Rostedt wrote:
+On Fri, Mar 25, 2011 at 4:12 PM, Steven Rostedt <rostedt@goodmis.org> wrote:
+> On Fri, 2011-03-25 at 14:13 +0300, Andrey Kuzmin wrote:
+>> Turning try_lock into indefinitely spinning one breaks its semantics,
+>> so deadlock is to be expected. But what's wrong in this scenario if
+>> try_lock spins a bit before giving up?
+>
+> Because that will cause this scenario to spin that "little longer"
+> always, and introduce latencies that did not exist before. Either the
+> solution does not break this scenario, or it should not go in.
 
-> One solution is to have this be only done on explicit trylocks. Perhaps
-> introduce a mutex_trylock_spin()? Then when the developer knows that
-> this scenario does not exist, they can convert mutex_trylocks() into
-> this spinning version.
-> 
+Broken semantics and extra latency are two separate issues. If the
+former is fixed, the latter is easily handled by introducing new
+mutex_trylock_spin call that lets one either stick to existing
+behavior (try/fail) or choose a new one where latency penalty is
+justified by locking patterns.
 
-I'm not sure this is even worth it, as I'm looking at the
-btfs/extend-tree.c code, this is the main reason to use mutex_trylock().
+Regards,
+Andrey
 
-I guess what you see in your benchmarks is that trylock contention
-happens mostly in the non-deadlock scenario. But I bet you have
-latencies when it does happen, but the benefit seems to out weigh it in
-the results.
-
-I wonder what happens if you run dbench as an RT task.
-
--- Steve
+>
+> -- Steve
+>
+>
+>

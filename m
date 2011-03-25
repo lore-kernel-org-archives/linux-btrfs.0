@@ -1,101 +1,32 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: [PATCH V5 1/2] btrfs: use GFP_NOFS instead of GFP_KERNEL
-Date: Fri, 25 Mar 2011 09:56:21 +0800
-Message-ID: <4D8BF645.2040004@cn.fujitsu.com>
-References: <4D8B2DE1.2040002@cn.fujitsu.com> <20110324230759.GK17108@twin.jikos.cz>
-Reply-To: miaox@cn.fujitsu.com
+From: Steven Rostedt <rostedt@goodmis.org>
+Subject: Re: [RFC PATCH] mutex: Apply adaptive spinning on mutex_trylock()
+Date: Thu, 24 Mar 2011 23:24:42 -0400
+Message-ID: <20110325032442.GA9313@home.goodmis.org>
+References: <20110323153727.GB12003@htj.dyndns.org>
+ <20110324081816.GD30812@elte.hu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Itaru Kitayama <kitayama@cl.bb4u.ne.jp>,
-	Ito <t-itoh@jp.fujitsu.com>, David Sterba <dave@jikos.cz>
+Content-Type: text/plain; charset=us-ascii
+Cc: Tejun Heo <tj@kernel.org>, Peter Zijlstra <peterz@infradead.org>,
+	Ingo Molnar <mingo@redhat.com>,
+	Linus Torvalds <torvalds@linux-foundation.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+To: Ingo Molnar <mingo@elte.hu>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110324230759.GK17108@twin.jikos.cz>
+In-Reply-To: <20110324081816.GD30812@elte.hu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 25 Mar 2011 00:07:59 +0100, David Sterba wrote:
-> On Thu, Mar 24, 2011 at 07:41:21PM +0800, Miao Xie wrote:
->> In the filesystem context, we must allocate memory by GFP_NOFS,
->> or we may start another filesystem operation and make kswap thread hang up.
+On Thu, Mar 24, 2011 at 09:18:16AM +0100, Ingo Molnar wrote:
 > 
-> indeed. Did you check for other GFP_KERNEL allocations? I've found 8 more
-> them and at least these look like candidates for GFP_NOFS too:
+> * Tejun Heo <tj@kernel.org> wrote:
+> 
+> > NOT-Signed-off-by: Tejun Heo <tj@kernel.org>
+> 
+> s/NOT-// ?
+> 
 
-I just fix the ones, which should use GFP_NOFS.
+Perhaps because it is still in RFC context?
 
-I think not all of the GFP_KERNEL allocations are wrong, if we don't hold
-any btrfs's lock except relative inode's i_mutex and not in the context of
-the transaction, we can use GFP_KERNEL. So the following GFP_KERNEL allocations
-are right, I think.
-
-Thanks
-Miao
-
-> 
-> diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-> index de34bfa..76b9218 100644
-> --- a/fs/btrfs/acl.c
-> +++ b/fs/btrfs/acl.c
-> @@ -289,7 +289,7 @@ int btrfs_acl_chmod(struct inode *inode)
->         if (IS_ERR(acl) || !acl)
->                 return PTR_ERR(acl);
-> 
-> -       clone = posix_acl_clone(acl, GFP_KERNEL);
-> +       clone = posix_acl_clone(acl, GFP_NOFS);
->         posix_acl_release(acl);
->         if (!clone)
->                 return -ENOMEM;
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index f447b78..eb5c01d 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -998,7 +998,7 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
->         nrptrs = min((iov_iter_count(&i) + PAGE_CACHE_SIZE - 1) /
->                      PAGE_CACHE_SIZE, PAGE_CACHE_SIZE /
->                      (sizeof(struct page *)));
-> -       pages = kmalloc(nrptrs * sizeof(struct page *), GFP_KERNEL);
-> +       pages = kmalloc(nrptrs * sizeof(struct page *), GFP_NOFS);
->         if (!pages) {
->                 ret = -ENOMEM;
->                 goto out;
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index d1bace3..e9b9648 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -1644,7 +1644,7 @@ static int btrfs_ioctl_defrag(struct file *file, void __user *argp)
->                         goto out;
->                 }
-> 
-> -               range = kzalloc(sizeof(*range), GFP_KERNEL);
-> +               range = kzalloc(sizeof(*range), GFP_NOFS);
->                 if (!range) {
->                         ret = -ENOMEM;
->                         goto out;
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index d39a989..5e0fff7 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -399,7 +399,7 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
->          * strsep changes the string, duplicate it because parse_options
->          * gets called twice
->          */
-> -       opts = kstrdup(options, GFP_KERNEL);
-> +       opts = kstrdup(options, GFP_NOFS);
->         if (!opts)
->                 return -ENOMEM;
->         orig = opts;
-> @@ -446,7 +446,7 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
->          * mount path doesn't care if it's the default volume or another one.
->          */
->         if (!*subvol_name) {
-> -               *subvol_name = kstrdup(".", GFP_KERNEL);
-> +               *subvol_name = kstrdup(".", GFP_NOFS);
->                 if (!*subvol_name)
->                         return -ENOMEM;
->         }
-> 
-> 
-> dave
-> 
+-- Steve
 

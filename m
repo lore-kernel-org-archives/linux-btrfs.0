@@ -1,36 +1,32 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Compress=lzo a good idea for Swapfiles on SSD?
-Date: Sat, 26 Mar 2011 08:54:07 -0400
-Message-ID: <1301143968-sup-9251@think>
-References: <AANLkTi=b9hzJ5zs2qNm1ZbbkQLdmua8zQfJJhpVs4nYd@mail.gmail.com>
+Subject: Re: [PATCH V5 2/2] btrfs: implement delayed inode items operation
+Date: Sat, 26 Mar 2011 19:58:10 -0400
+Message-ID: <1301183781-sup-1324@think>
+References: <4D8B2DEB.1000001@cn.fujitsu.com>
 Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: John McCabe-Dansted <gmatht@gmail.com>
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Itaru Kitayama <kitayama@cl.bb4u.ne.jp>,
+	Ito <t-itoh@jp.fujitsu.com>, David Sterba <dave@jikos.cz>
+To: Miao Xie <miaox@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <AANLkTi=b9hzJ5zs2qNm1ZbbkQLdmua8zQfJJhpVs4nYd@mail.gmail.com>
+In-reply-to: <4D8B2DEB.1000001@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from John McCabe-Dansted's message of 2011-03-25 23:47:02 -0400:
-> I understand that modern SSDs can withstand a significant amount of
-> writes, and so using an SSD for swap seems like a reasonable
-> proposition. However minimising writes still seems like a good idea.
-> My experience with compcache/ramzswap suggests that swap compresses
-> quite well, I tend to get a 4:1 compression ratio. Furthermore, I
-> understand that we can work around the data corruption that usually
-> occurs when using a swapfile on a btrfs partion, by using a loopback
-> device. Given this, my question is:
-> 
-> Does it sound like a good idea to use compress=lzo for swapfiles to
-> reduce the amount of data written to the SSD, when using SSD drives
-> that do not use compression internally?
-> 
+Excerpts from Miao Xie's message of 2011-03-24 07:41:31 -0400:
+> Changelog V4 -> V5:
+> - Fix the race on adding the delayed node to the inode, which is spotted by
+>   Chris Mason.
+> - Merge Chris Mason's incremental patch into this patch.
+> - Fix deadlock between readdir() and memory fault, which is reported by
+>   Itaru Kitayama.
 
-I would tend to say no, only because using compression leads to more
-allocations required to actually write the blocks.  So you're swapping
-because you need to free ram but you have to allocate ram in order to
-swap.
+This does do much better than v4, but I'm still hitting oom with
+stress.sh -n 50.  I tried a bunch of variations but haven't been able to
+get it quite right.  I think I need to hold off on this one and get the
+2.6.39 pull request out.
 
-There are projects for in kernel swapfile compression that have good
-results though, so I'd have to study it in more detail.
+I'll setup a .40 tree that has this in it and we can fix the ooms.  This
+is a great base for the work, and I'd like to add more items to the
+delay, especially the initial inode insertions.
 
 -chris

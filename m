@@ -1,25 +1,36 @@
-From: John McCabe-Dansted <gmatht@gmail.com>
-Subject: Compress=lzo a good idea for Swapfiles on SSD?
-Date: Sat, 26 Mar 2011 11:47:02 +0800
-Message-ID: <AANLkTi=b9hzJ5zs2qNm1ZbbkQLdmua8zQfJJhpVs4nYd@mail.gmail.com>
+From: Victor Hooi <victorhooi@yahoo.com>
+Subject: OSX Support/Driver?
+Date: Sat, 26 Mar 2011 15:54:23 +1100
+Message-ID: <AANLkTinwqSvFvBjRPpAbTKOiscMt_btvmSqKVY5owyh+@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I understand that modern SSDs can withstand a significant amount of
-writes, and so using an SSD for swap seems like a reasonable
-proposition. However minimising writes still seems like a good idea.
-My experience with compcache/ramzswap suggests that swap compresses
-quite well, I tend to get a 4:1 compression ratio. Furthermore, I
-understand that we can work around the data corruption that usually
-occurs when using a swapfile on a btrfs partion, by using a loopback
-device. Given this, my question is:
+Hi,
 
-Does it sound like a good idea to use compress=lzo for swapfiles to
-reduce the amount of data written to the SSD, when using SSD drives
-that do not use compression internally?
+I just purchased my very first Mac, a 2011 Macbook Pro yesterday.
 
--- 
-John C. McCabe-Dansted
+Now, I am intending to dualboot with OSX and Arch Linux on it,
+however, I'd also be interested in accessing my=A0BTRFSfilesystems from
+under OSX.
+
+I noticed that the=A0btrfs-utils themselves seem to be in Macports:
+
+http://www.macports.org/ports.php?by=3Dname&substr=3Dbtrfs
+
+
+However, there doesn't seem to be any support in the OSX kernel itself
+for=A0BTRFS.
+
+Is such support completely out of the question? Possibility of a FUSE
+driver? Or are there technical=A0impediments=A0to either option?
+
+Cheers,
+Victor
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

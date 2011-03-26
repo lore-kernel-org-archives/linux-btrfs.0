@@ -1,36 +1,21 @@
-From: Victor Hooi <victorhooi@yahoo.com>
-Subject: OSX Support/Driver?
-Date: Sat, 26 Mar 2011 15:54:23 +1100
-Message-ID: <AANLkTinwqSvFvBjRPpAbTKOiscMt_btvmSqKVY5owyh+@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH] Btrfs: add initial tracepoint support for btrfs
+Date: Sat, 26 Mar 2011 08:12:04 -0400
+Message-ID: <1301141505-sup-3679@think>
+References: <4D8B28A3.7050105@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Josef Bacik <josef@redhat.com>
+To: liubo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <4D8B28A3.7050105@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Excerpts from liubo's message of 2011-03-24 07:18:59 -0400:
+> 
+> Tracepoints can provide insight into why btrfs hits bugs and be greatly
+> helpful for debugging, e.g
 
-I just purchased my very first Mac, a 2011 Macbook Pro yesterday.
+This is really neat, I've queued it up.
 
-Now, I am intending to dualboot with OSX and Arch Linux on it,
-however, I'd also be interested in accessing my=A0BTRFSfilesystems from
-under OSX.
-
-I noticed that the=A0btrfs-utils themselves seem to be in Macports:
-
-http://www.macports.org/ports.php?by=3Dname&substr=3Dbtrfs
-
-
-However, there doesn't seem to be any support in the OSX kernel itself
-for=A0BTRFS.
-
-Is such support completely out of the question? Possibility of a FUSE
-driver? Or are there technical=A0impediments=A0to either option?
-
-Cheers,
-Victor
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-chris

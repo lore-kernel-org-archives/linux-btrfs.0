@@ -1,86 +1,81 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH V5 2/2] btrfs: implement delayed inode items operation
-Date: Sun, 27 Mar 2011 07:42:46 -0400
-Message-ID: <1301226036-sup-3753@think>
-References: <4D8B2DEB.1000001@cn.fujitsu.com> <20110327143055.ae2d3c68.kitayama@cl.bb4u.ne.jp> <4D8EE070.6000700@cn.fujitsu.com> <20110327200910.021b545b.kitayama@cl.bb4u.ne.jp> <4D8F2306.6070206@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
-Cc: Itaru Kitayama <kitayama@cl.bb4u.ne.jp>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Ito <t-itoh@jp.fujitsu.com>, David Sterba <dave@jikos.cz>
-To: miaox <miaox@cn.fujitsu.com>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: [PATCH V2] btrfs: fix possible deadlock by clearing __GFP_FS flag
+Date: Sun, 27 Mar 2011 20:27:30 +0800
+Message-ID: <4D8F2D32.3000601@cn.fujitsu.com>
+References: <4D8EF048.5050203@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
+Mime-Version: 1.0
+Content-Type: text/plain; charset=GB2312
+Cc: Josef Bacik <josef@redhat.com>,
+	Itaru Kitayama <kitayama@cl.bb4u.ne.jp>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <4D8F2306.6070206@cn.fujitsu.com>
+In-Reply-To: <4D8EF048.5050203@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Miao Xie's message of 2011-03-27 07:44:06 -0400:
-> On sun, 27 Mar 2011 20:09:10 +0900, Itaru Kitayama wrote:
-> > Hi Miao,
-> > 
-> > On Sun, 27 Mar 2011 15:00:00 +0800
-> > Miao Xie <miaox@cn.fujitsu.com> wrote:
-> > 
-> >> I got it. It is because the allocation flag of the metadata's page cache, which is stored in
-> >> the btree inode's i_mapping, was set to be GFP_HIGHUSER_MOVABLE. So if we allocate pages for
-> >> btree's page cache, this lockdep warning will be triggered.
-> >>
-> >> I think even without my patch, this lockdep warning can also be triggered, btrfs_evict_inode()
-> >> do the similar operations like what I do in the btrfs_destroy_inode(). 
-> >>   Task1                    Kswap0 task
-> >>   open()
-> >>     ...
-> >>     btrfs_search_slot()
-> >>       ...
-> >>       btrfs_cow_block()
-> >>     ...
-> >>     alloc_page()
-> >>       wait for reclaiming
-> >>                     shrink_slab()
-> >>                       ...
-> >>                       shrink_icache_memory()
-> >>                         ...
-> >>                         btrfs_evict_inode()
-> >>                           ...
-> >>                           btrfs_search_slot()
-> >>
-> >> If the path is locked by task1, the deadlock happens.
-> > 
-> > Ok. balance_pgdat() calls shrink_slab() with GFP_KERNEL so it's still possible for the kswapd0 
-> > to call prune_icache(), no? I still see the lockdep warning even with your patch that clears
-> > __GFP_FS in open_ctree().
-> 
-> sorry for my mistake. The above explanation is wrong, it has no business with kswap thread.
-> The correct explanation is
-> 
->    Task1
->    open()
->      ...
->      btrfs_search_slot()
->        ...
->        btrfs_cow_block()
->      ...
->      alloc_page()
->        do_try_to_free_pages()
->          shrink_slab()
->            ...
->            shrink_icache_memory()
->          ...
->          btrfs_evict_inode()
->            ...
->            btrfs_search_slot()
-> 
-> If the path is locked by task1, the deadlock happens.
-> 
-> So balance_pgdat() is impossible to trigger the lockdep.
-> (My clearing __GFP_FS patch's changelog is also wrong.)
-> 
-> I see, except btree's page cache, free space cache's page cache is also special,
-> can not use __GFP_FS flag.
+Changelog V1 -> V2:
+- modify the explanation of the deadlock.
+- clear __GFP_FS flag in the free space's page cache.
 
-Ok, I've got your first patch already, I'll add a hunk for the free
-space cache too.  Most of the allocations we're doing are explicitly
-with GFP_NOFS, so it is just supporting allocations and readahead that
-should be causing trouble.
+Using the GFP_HIGHUSER_MOVABLE flag to allocate the metadata's page may cause
+deadlock.
+  Task1
+  open()
+    ...
+    btrfs_search_slot()
+      ...
+      btrfs_cow_block()
+	...
+	alloc_page()
+	  ...
+	  do_try_to_free_pages()
+	    shrink_slab()
+	    ...
+	      shrink_icache_memory()
+		...
+		btrfs_evict_inode()
+		  ...
+		  btrfs_search_slot()
 
-Thanks!
+If the path is locked by task1, the deadlock happens.
 
--chris
+So the btree's page cache and free space's page cache  is different with the
+file's page cache, it can not allocate pages by GFP_HIGHUSER_MOVABLE flag,
+we must clear __GFP_FS flag in their i_mapping's flag.
+
+Reported-by: Itaru Kitayama <kitayama@cl.bb4u.ne.jp>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/disk-io.c          |    2 ++
+ fs/btrfs/free-space-cache.c |    2 ++
+ 2 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 3e1ea3e..cf55fa0 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1632,6 +1632,8 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 		goto fail_bdi;
+ 	}
+ 
++	fs_info->btree_inode->i_mapping->flags &= ~__GFP_FS;
++
+ 	INIT_RADIX_TREE(&fs_info->fs_roots_radix, GFP_ATOMIC);
+ 	INIT_LIST_HEAD(&fs_info->trans_list);
+ 	INIT_LIST_HEAD(&fs_info->dead_roots);
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index a039065..57df380 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -88,6 +88,8 @@ struct inode *lookup_free_space_inode(struct btrfs_root *root,
+ 	}
+ 	spin_unlock(&block_group->lock);
+ 
++	inode->i_mapping->flags &= ~__GFP_FS;
++
+ 	return inode;
+ }
+ 
+-- 
+1.7.4

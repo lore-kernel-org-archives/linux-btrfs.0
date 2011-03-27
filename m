@@ -1,29 +1,29 @@
-From: "Webmail Service" <info@upgrade.com>
-Subject: Account Verification
-Date: Sun, 27 Mar 2011 23:44:57 +0800
-Message-ID: <20110327154457.M22547@upgrade.com>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: Phishing (was: Account Verification)
+Date: 27 Mar 2011 18:22:00 +0200
+Message-ID: <BidYCZWi1uB@helmut.hullen.de>
+References: <20110327154457.M22547@upgrade.com>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain;
-	charset=iso-8859-1
-To: undisclosed-recipients:;
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110327154457.M22547@upgrade.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dear webmail user,
+Hallo, Webmail,
 
-You have almost exceeded your webmail storage quota. To avoid account deletion, 
-please
-click on the link below
+Du meintest am 27.03.11:
 
-http://vwebtips.host-ed.net/Session_id_2011.htm
+> You have almost exceeded your webmail storage quota. To avoid account
+> deletion, please
+> click on the link below
 
-Please endeavor to respond within the next 48 hours to prevent your account 
-from deletion.
+> http://vwebtips.host-ed.net/Session_id_2011.htm
 
-These measures are part of our security policies and we sincerely apologize for 
-any
-inconveniences caused.
+That's a phishing invitation.
 
-Best wishes,
+Who can delete this spammer from the mailing list?
 
-Webmail Team
+Viele Gruesse!
+Helmut

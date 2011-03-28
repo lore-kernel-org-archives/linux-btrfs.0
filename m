@@ -1,149 +1,94 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: [GIT PULL] Btrfs updates for 2.6.39
-Date: Mon, 28 Mar 2011 08:08:28 -0400
-Message-ID: <1301312919-sup-1222@think>
-Content-Type: text/plain; charset=UTF-8
-To: "Linus Torvalds" <torvalds@linux-foundation.org>,
-	"linux-btrfs" <linux-btrfs@vger.kernel.org>,
-	"linux-kernel" <linux-kernel@vger.kernel.org>
+From: Stephane Chazelas <stephane.chazelas@gmail.com>
+Subject: Re: cloning single-device btrfs file system onto multi-device one
+Date: Mon, 28 Mar 2011 14:17:48 +0100
+Message-ID: <chaz20110328131748.GA18131@seebyte.com>
+References: <chaz20110321162450.GB918@seebyte.com> <chaz20110322092259.GA4861@seebyte.com> <AANLkTin1++vPq904tkPOAf3ZxwWTZaQYL+=WJHetEr9h@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: cwillu <cwillu@cwillu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTin1++vPq904tkPOAf3ZxwWTZaQYL+=WJHetEr9h@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi everyone,
+2011-03-22 18:06:29 -0600, cwillu:
+> > I can mount it back, but not if I reload the btrfs module, in which case I get:
+> >
+> > [ 1961.328280] Btrfs loaded
+> > [ 1961.328695] device fsid df4e5454eb7b1c23-7a68fc421060b18b devid 1 transid 118 /dev/loop0
+> > [ 1961.329007] btrfs: failed to read the system array on loop0
+> > [ 1961.340084] btrfs: open_ctree failed
+> 
+> Did you rescan all the loop devices (btrfs dev scan /dev/loop*) after
+> reloading the module, before trying to mount again?
 
-The kernel.org mirror is making me pay for a mistake in my push last
-night.  I'm still waiting for it to update the mirrors with the correct
-commits, so I've got the proper sha down below.
+Thanks. That probably was the issue, that and using too big
+files on too small volumes I'd guess.
 
-Linus, I've pushed out two branches for you, for-linus and
-for-linus-unmerged
+I've tried it in real life and it seemed to work to some extent.
+So here is how I transferred a 6TB btrfs on one 6TB raid5 device
+(on host src) over the network onto a btrfs on 3 3TB hard drives
+(on host dst):
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git for-linus
+on src:
 
-The correct top commit in for-linus: 08aca535a2150e951c6f1d882bea6ef1a1c31822
+lvm snapshot -L100G -n snap /dev/VG/vol
+nbd-server 12345 /dev/VG/snap
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git for-linus-unmerged
+(if you're not lucky enough to have used lvm there, you can use
+nbd-server's copy-on-write feature).
 
-The correct top commit in for-linus-unmerged: d9d04879321af570ea7285c6dad92d9c3cd108a1
+on dst:
 
-The reason there are two is because there was a conflict in
-fs/btrfs/volumes.c. Jens' unplugging code and the new btrfs fitrim
-support were both changing the same code.  The merge isn't too bad, his
-stuff was just removing the tests for an unplugging function, but I
-wanted to provide a wrapped up merge commit just in case.
+nbd-client src 12345 /dev/nbd0
+mount /dev/nbd0 /mnt
+btrfs device add /dev/sdb /dev/sdc /dev/sdd /mnt
+  # in reality it was /dev/sda4 (a little under 3TB), /dev/sdb,
+  # /dev/sdc
+btrfs device delete /dev/nbd0 /mnt
 
-So, for-linus-unmerged is against 2.6.38, and for-linus is against your
-git tree as of Friday.  The shortlog/diffstat below don't include the merge
-commit.
+That was relatively fast (about 18 hours) but failed with an
+error. Apparently, it managed to fill up the 3 3TB drives (as
+shown by btrfs fi show). Usage for /dev/nbd0 was at 16MB though
+(?!)
 
-This pull has per-file controls in btrfs for the compression and nocow
-flags.  This goes in through the standard chattr interface, and Ted did
-ack the new flags.
+I then did a "btrfs fi balance /mnt". I could see usage on the
+drives go down quickly. However, that was writing data onto
+/dev/nbd0 so was threatening to fill up my LVM snapshot. I then
+cancelled that by doing a hard reset on "dst" (couldn't find
+any other way). And then:
 
-We also have support for the FITRIM ioctl, which will let us discard in
-bulk.  It will be very interesting to compare the performance of online
-discard vs bulk trim, and it is possible to run both at the same time.
+Upon reboot, I mounted /dev/sdb instead of /dev/nbd0 in case
+that made a difference and then ran the 
 
-There are also many error handling fixes, allocator performance fixes,
-code cleanups, a switch to the new truncate handling code, and a few
-other small fixes.  This might be the first pull in a long time without
-the words ENOSPC in it, but I'm sure we've fixed that too.
+btrfs device delete /dev/nbd0 /mnt
 
-Josef Bacik (22) commits (+790/-674):
-    Btrfs: check free space in block group before searching for a cluster (+10/-0)
-    Btrfs: deal with min_bytes appropriately when looking for a cluster (+4/-5)
-    Btrfs: make sure to remove the orphan item from the in-memory list (+6/-0)
-    Btrfs: mark the bio with an error if we have a failure in dio (+8/-0)
-    Btrfs: fix how we deal with the pages array in the write path (+5/-4)
-    Btrfs: add a comment explaining what btrfs_cont_expand does (+6/-0)
-    Btrfs: return error if the range we want to map is bogus (+1/-0)
-    Btrfs: check return value of btrfs_search_slot properly (+2/-0)
-    Btrfs: use mark_inode_dirty when expanding the file (+1/-15)
-    Btrfs: cleanup error handling in the truncate path (+45/-19)
-    Btrfs: cleanup how we setup free space clusters (+182/-185)
-    Btrfs: don't allocate dip->csums when doing writes (+5/-2)
-    Btrfs: don't be as aggressive about using bitmaps (+16/-3)
-    Btrfs: add checks to verify dir items are correct (+50/-0)
-    Btrfs: check items for correctness as we search (+95/-124)
-    Btrfs: change reserved_extents to an atomic_t (+29/-21)
-    Btrfs: only add orphan items when truncating (+18/-27)
-    Btrfs: handle errors in btrfs_orphan_cleanup (+50/-23)
-    Btrfs: use a slab for the free space entries (+29/-16)
-    Btrfs: convert to the new truncate sequence (+40/-47)
-    Btrfs: simplify our write path (+180/-175)
-    Btrfs: fix formatting in file.c (+8/-8)
+again, which this time went through.
 
-liubo (6) commits (+779/-36):
-    Btrfs: fix memory leak of empty filesystem after balance (+6/-0)
-    Btrfs: fix OOPS of empty filesystem after balance (+30/-0)
-    Btrfs: add initial tracepoint support for btrfs (+727/-11)
-    btrfs: make inode ref log recovery faster (+11/-24)
-    Btrfs: fix return value of setflags ioctl (+3/-1)
-    Btrfs: add datacow flag in inode flag (+2/-0)
+I then did a btrfs fi balance again and let it run through. However here is
+what I get:
 
-Li Dongyang (4) commits (+359/-51):
-    Btrfs: make btrfs_map_block() return entire free extent for each device of RAID0/1/10/DUP (+129/-22)
-    Btrfs: adjust btrfs_discard_extent() return errors and trimmed bytes (+31/-19)
-    Btrfs: add btrfs_trim_fs() to handle FITRIM (+190/-1)
-    Btrfs: make update_reserved_bytes() public (+9/-9)
+$ df -h /mnt
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/sdb              8.2T  3.5T  3.2T  53% /mnt
 
-Tsutomu Itoh (3) commits (+96/-37):
-    Btrfs: check return value of btrfs_alloc_path() (+27/-14)
-    Btrfs: check return value of read_tree_block() (+15/-0)
-    Btrfs: cleanup some BUG_ON() (+54/-23)
+Only 3.2T left. How would I reclaim the missing space?
 
-Miao Xie (2) commits (+6/-3):
-    btrfs: fix possible deadlock by clearing __GFP_FS flag (+4/-1)
-    btrfs: use GFP_NOFS instead of GFP_KERNEL (+2/-2)
+$ sudo btrfs fi show
+Label: none  uuid: ...
+        Total devices 3 FS bytes used 3.43TB
+        devid    4 size 2.73TB used 1.17TB path /dev/sdc
+        devid    3 size 2.73TB used 1.17TB path /dev/sdb
+        devid    2 size 2.70TB used 1.14TB path /dev/sda4
+$ sudo btrfs fi df /mnt
+Data, RAID0: total=3.41TB, used=3.41TB
+System, RAID1: total=16.00MB, used=232.00KB
+Metadata, RAID1: total=35.25GB, used=20.55GB
 
-Chris Mason (2) commits (+28/-25):
-    Btrfs: use RCU instead of a spinlock to protect the root node (+8/-19)
-    Btrfs: fix __btrfs_map_block on 32 bit machines (+20/-6)
+So that kind of worked but that is of little use to me as 2TB
+kind of disappeared under my feet in the process.
 
-Al Viro (2) commits (+28/-11):
-    btrfs: don't mess with i_nlink of unlocked inode in rename() (+25/-11)
-    btrfs: check link counter overflow in link(2) (+3/-0)
+Any idea, anyone?
 
-Yoshinori Sano (1) commits (+12/-0):
-    Btrfs: fix uncheck memory allocations
-
-Mark Fasheh (1) commits (+1/-1):
-    btrfs: return EXDEV when linking from different subvolumes
-
-Liu Bo (1) commits (+72/-7):
-    Btrfs: Per file/directory controls for COW and compression
-
-David Sterba (1) commits (+2/-1):
-    btrfs: properly access unaligned checksum buffer
-
-Total: (45) commits (+2173/-846)
-
- fs/btrfs/btrfs_inode.h       |    3 +-
- fs/btrfs/compression.c       |   17 +-
- fs/btrfs/ctree.c             |  159 +---------
- fs/btrfs/ctree.h             |   19 +-
- fs/btrfs/delayed-ref.c       |    6 +
- fs/btrfs/dir-item.c          |   45 +++-
- fs/btrfs/disk-io.c           |  132 ++++++++-
- fs/btrfs/extent-tree.c       |  229 +++++++++++----
- fs/btrfs/extent_io.c         |    3 +
- fs/btrfs/extent_io.h         |    1 +
- fs/btrfs/file-item.c         |    5 +-
- fs/btrfs/file.c              |  388 +++++++++++++------------
- fs/btrfs/free-space-cache.c  |  510 ++++++++++++++++++++-------------
- fs/btrfs/free-space-cache.h  |    2 +
- fs/btrfs/inode-map.c         |    3 +-
- fs/btrfs/inode.c             |  366 +++++++++++++++--------
- fs/btrfs/ioctl.c             |  100 ++++++-
- fs/btrfs/ordered-data.c      |    8 +
- fs/btrfs/relocation.c        |    8 +-
- fs/btrfs/root-tree.c         |    6 +-
- fs/btrfs/super.c             |    5 +
- fs/btrfs/transaction.c       |   14 +-
- fs/btrfs/tree-log.c          |   57 ++--
- fs/btrfs/volumes.c           |  180 +++++++++--
- fs/btrfs/volumes.h           |   12 +
- fs/btrfs/xattr.c             |    2 +
- include/linux/fs.h           |    2 +
- include/trace/events/btrfs.h |  667 ++++++++++++++++++++++++++++++++++++++++++
- 28 files changed, 2138 insertions(+), 811 deletions(-)
+Thanks
+Stephane

@@ -1,124 +1,31 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [RFC][PATCH] Btrfs: Fix uninitialized root flags for subvolumes
-Date: Mon, 28 Mar 2011 10:01:25 +0800
-Message-ID: <4D8FEBF5.2080505@cn.fujitsu.com>
+Subject: Re: 2.6.38 defragment compression oops...
+Date: Mon, 28 Mar 2011 14:58:04 +0800
+Message-ID: <4D90317C.8040409@cn.fujitsu.com>
+References: <AANLkTin5EKNYUVwUMO+PoJyuEBVxubUuAHfu-ue4w+7n@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Andreas Philipp <philipp.andreas@gmail.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Linux BTRFS <linux-btrfs@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>
+To: Daniel J Blueman <daniel.blueman@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AANLkTin5EKNYUVwUMO+PoJyuEBVxubUuAHfu-ue4w+7n@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-root_item->flags and root_item->byte_limit are not initialized when
-a subvolume is created. This bug is not revealed until we added
-readonly snapshot support - now you mount a btrfs filesystem and you
-may find the subvolumes in it are readonly.
+Daniel J Blueman wrote:
+> I found that I'm able to provoke undefined behaviour with 2.6.38 with
+> extent defragmenting + recompression, eg:
+> 
+> mkfs.btrfs /dev/sdb
+> mount /dev/sdb /mnt
+> cp -xa / /mnt
+> find /mnt -print0 | xargs -0 btrfs filesystem defragment -vc
+> 
+> After a short time, I was seeing what looked like a secondary effect
+> [1]. Reproducing with lock instrumentation reported recursive spinlock
+> acquisition, probably a false-positive from the locking scheme not
+> being annotated, so better report it now.
+> 
 
-To work around this problem, we steal a bit from root_item->inode_item->flags,
-and use it to indicate if those fields have been properly initialized. 
-When we read a tree root from disk, we check if the bit is set, and if
-not we'll set the flag and initialize the two fields of the root item.
-
-Reported-by: Andreas Philipp <philipp.andreas@gmail.com>
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
- fs/btrfs/ctree.h       |    4 ++++
- fs/btrfs/disk-io.c     |    4 +++-
- fs/btrfs/ioctl.c       |    4 ++++
- fs/btrfs/root-tree.c   |   18 ++++++++++++++++++
- fs/btrfs/transaction.c |    1 +
- 5 files changed, 30 insertions(+), 1 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 8b4b9d1..ff6b991 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1284,6 +1284,8 @@ struct btrfs_root {
- #define BTRFS_INODE_NOATIME		(1 << 9)
- #define BTRFS_INODE_DIRSYNC		(1 << 10)
- 
-+#define BTRFS_INODE_ROOT_ITEM_INIT	(1 << 31)
-+
- /* some macros to generate set/get funcs for the struct fields.  This
-  * assumes there is a lefoo_to_cpu for every type, so lets make a simple
-  * one for u8:
-@@ -2355,6 +2357,8 @@ int btrfs_find_dead_roots(struct btrfs_root *root, u64 objectid);
- int btrfs_find_orphan_roots(struct btrfs_root *tree_root);
- int btrfs_set_root_node(struct btrfs_root_item *item,
- 			struct extent_buffer *node);
-+void btrfs_check_and_init_root_item(struct btrfs_root_item *item);
-+
- /* dir-item.c */
- int btrfs_insert_dir_item(struct btrfs_trans_handle *trans,
- 			  struct btrfs_root *root, const char *name,
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 3e1ea3e..4f8dafc 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1184,8 +1184,10 @@ struct btrfs_root *btrfs_read_fs_root_no_radix(struct btrfs_root *tree_root,
- 	root->commit_root = btrfs_root_node(root);
- 	BUG_ON(!root->node);
- out:
--	if (location->objectid != BTRFS_TREE_LOG_OBJECTID)
-+	if (location->objectid != BTRFS_TREE_LOG_OBJECTID) {
- 		root->ref_cows = 1;
-+		btrfs_check_and_init_root_item(&root->root_item);
-+	}
- 
- 	return root;
- }
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 5fdb2ab..2ff51e6 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -294,6 +294,10 @@ static noinline int create_subvol(struct btrfs_root *root,
- 	inode_item->nbytes = cpu_to_le64(root->leafsize);
- 	inode_item->mode = cpu_to_le32(S_IFDIR | 0755);
- 
-+	root_item.flags = 0;
-+	root_item.byte_limit = 0;
-+	inode_item->flags = cpu_to_le64(BTRFS_INODE_ROOT_ITEM_INIT);
-+
- 	btrfs_set_root_bytenr(&root_item, leaf->start);
- 	btrfs_set_root_generation(&root_item, trans->transid);
- 	btrfs_set_root_level(&root_item, 0);
-diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-index 6a1086e..3e45c32 100644
---- a/fs/btrfs/root-tree.c
-+++ b/fs/btrfs/root-tree.c
-@@ -471,3 +471,21 @@ again:
- 	btrfs_free_path(path);
- 	return 0;
- }
-+
-+/*
-+ * Old btrfs forgets to init root_item->flags and root_item->byte_limit
-+ * for subvolumes. To work around this problem, we steal a bit from
-+ * root_item->inode_item->flags, and use it to indicate if those fields
-+ * have been properly initialized.
-+ */
-+void btrfs_check_and_init_root_item(struct btrfs_root_item *root_item)
-+{
-+	u64 inode_flags = le64_to_cpu(root_item->inode.flags);
-+
-+	if (!(inode_flags & BTRFS_INODE_ROOT_ITEM_INIT)) {
-+		inode_flags |= BTRFS_INODE_ROOT_ITEM_INIT;
-+		root_item->inode.flags = cpu_to_le64(inode_flags);
-+		root_item->flags = 0;
-+		root_item->byte_limit = 0;
-+	}
-+}
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 3d73c8d..f3d6681 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -970,6 +970,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	record_root_in_trans(trans, root);
- 	btrfs_set_root_last_snapshot(&root->root_item, trans->transid);
- 	memcpy(new_root_item, &root->root_item, sizeof(*new_root_item));
-+	btrfs_check_and_init_root_item(new_root_item);
- 
- 	root_flags = btrfs_root_flags(new_root_item);
- 	if (pending->readonly)
--- 
-1.7.3.1
+Thanks for the report! I'll investigate this.

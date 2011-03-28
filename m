@@ -1,93 +1,68 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: Fix oops for defrag with compression turned on
-Date: Mon, 28 Mar 2011 16:30:38 +0800
-Message-ID: <4D90472E.8070000@cn.fujitsu.com>
+From: Li Dongyang <lidongyang@novell.com>
+Subject: Re: [PATCH V4 0/4] Btrfs: batched discard support for btrfs
+Date: Mon, 28 Mar 2011 17:25:55 +0800
+Message-ID: <201103281725.55211.lidongyang@novell.com>
+References: <1300962268-12774-1-git-send-email-lidongyang@novell.com> <1301275766-sup-2625@think> <1301276330-sup-3755@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Daniel Blueman <daniel.blueman@gmail.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: Text/Plain;
+  charset="utf-8"
+Cc: "linux-btrfs" <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1301276330-sup-3755@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we defrag a file, whose size can be fit into an inline extent,
-with compression enabled, the compress type is set to be
-fs_info->compress_type, which is 0 if the btrfs filesystem is mounted
-without compress option. This leads to oops.
+On Monday, March 28, 2011 09:39:26 AM Chris Mason wrote:
+> Excerpts from Chris Mason's message of 2011-03-27 21:30:20 -0400:
+> > Excerpts from Chris Mason's message of 2011-03-27 14:10:46 -0400:
+> > > Excerpts from Li Dongyang's message of 2011-03-24 06:24:24 -0400:
+> > > > Dear list,
+> > > > This is V4 of batched discard support, now we will get full mapping of
+> > > > the free space on each device for RAID0/1/10/DUP instead of just a single
+> > > > stripe length, and tested with xfsstests 251, Thanks.
+> > > 
+> > > I've pushed this out into the for-linus branch, along with a full merge
+> > > to 2.6.39 current git.
+> > > 
+> > > Please take a look and make sure I've merged it correctly.
+Looks good to me.
+> > 
+> > Hmmm, this was doing mod operations on 64 bit numbers, so it didn't
+> > compile at all on 32 bit machines.  I've fixed it up and pushed the
+> > result out to for-linus.  Please check the math ;)
+> 
+sorry for being so stupid, thanks for fixing ;-)
 
-Reported-by: Daniel Blueman <daniel.blueman@gmail.com>
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
- fs/btrfs/inode.c |   17 ++++++++---------
- 1 files changed, 8 insertions(+), 9 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index db67821..fa9fd5e 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -108,6 +108,7 @@ static int btrfs_init_inode_security(struct btrfs_trans_handle *trans,
- static noinline int insert_inline_extent(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *root, struct inode *inode,
- 				u64 start, size_t size, size_t compressed_size,
-+				int compress_type,
- 				struct page **compressed_pages)
- {
- 	struct btrfs_key key;
-@@ -122,12 +123,9 @@ static noinline int insert_inline_extent(struct btrfs_trans_handle *trans,
- 	size_t cur_size = size;
- 	size_t datasize;
- 	unsigned long offset;
--	int compress_type = BTRFS_COMPRESS_NONE;
- 
--	if (compressed_size && compressed_pages) {
--		compress_type = root->fs_info->compress_type;
-+	if (compressed_size && compressed_pages)
- 		cur_size = compressed_size;
--	}
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
-@@ -217,7 +215,7 @@ fail:
- static noinline int cow_file_range_inline(struct btrfs_trans_handle *trans,
- 				 struct btrfs_root *root,
- 				 struct inode *inode, u64 start, u64 end,
--				 size_t compressed_size,
-+				 size_t compressed_size, int compress_type,
- 				 struct page **compressed_pages)
- {
- 	u64 isize = i_size_read(inode);
-@@ -250,7 +248,7 @@ static noinline int cow_file_range_inline(struct btrfs_trans_handle *trans,
- 		inline_len = min_t(u64, isize, actual_end);
- 	ret = insert_inline_extent(trans, root, inode, start,
- 				   inline_len, compressed_size,
--				   compressed_pages);
-+				   compress_type, compressed_pages);
- 	BUG_ON(ret);
- 	btrfs_delalloc_release_metadata(inode, end + 1 - start);
- 	btrfs_drop_extent_cache(inode, start, aligned_end - 1, 0);
-@@ -426,12 +424,13 @@ again:
- 			 * to make an uncompressed inline extent.
- 			 */
- 			ret = cow_file_range_inline(trans, root, inode,
--						    start, end, 0, NULL);
-+						    start, end, 0, 0, NULL);
- 		} else {
- 			/* try making a compressed inline extent */
- 			ret = cow_file_range_inline(trans, root, inode,
- 						    start, end,
--						    total_compressed, pages);
-+						    total_compressed,
-+						    compress_type, pages);
- 		}
- 		if (ret == 0) {
- 			/*
-@@ -785,7 +784,7 @@ static noinline int cow_file_range(struct inode *inode,
- 	if (start == 0) {
- 		/* lets try to make an inline extent */
- 		ret = cow_file_range_inline(trans, root, inode,
--					    start, end, 0, NULL);
-+					    start, end, 0, 0, NULL);
- 		if (ret == 0) {
- 			extent_clear_unlock_delalloc(inode,
- 				     &BTRFS_I(inode)->io_tree,
--- 
-1.7.3.1
+Br,
+Li Dongyang
+> BTW, I just rebased this so the incremental fix was before merging into
+> Linus' tree.
+> 
+> -chris
+> 
+> > 
+> > -chris
+> > 
+> > > 
+> > > Thanks!
+> > > 
+> > > -chris
+> > > 
+> > > > Changelog V4:
+> > > >     *make btrfs_map_block() return full mapping.
+> > > > Changelog V3:
+> > > >     *fix style problems.
+> > > >     *rebase to 2.6.38-rc7.
+> > > > Changelog V2:
+> > > >     *Check if we have devices support trim before trying to trim the fs, also adjust
+> > > >       minlen according to the discard_granularity.
+> > > >     *Update reserved extent calculations in btrfs_trim_block_group().
+> > > >     *Call cond_resched() without checking need_resched()
+> > > >     *Use bitmap_clear_bits() and unlink_free_space() instead of btrfs_remove_free_space(),
+> > > >       so we won't search the same extent for twice.
+> > > >     *Try harder in btrfs_discard_extent(), now we won't report errors
+> > > >      if it's not a EOPNOTSUPP.
+> > > >     *make sure the block group is cached before trimming it,or we'll see an empty caching
+> > > >      tree if the block group is not cached.
+> > > >     *Minor return value fix in btrfs_discard_block_group().
+> 

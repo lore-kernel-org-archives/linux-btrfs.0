@@ -1,60 +1,124 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH V4 0/4] Btrfs: batched discard support for btrfs
-Date: Sun, 27 Mar 2011 21:39:26 -0400
-Message-ID: <1301276330-sup-3755@think>
-References: <1300962268-12774-1-git-send-email-lidongyang@novell.com> <1301249396-sup-1863@think> <1301275766-sup-2625@think>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: [RFC][PATCH] Btrfs: Fix uninitialized root flags for subvolumes
+Date: Mon, 28 Mar 2011 10:01:25 +0800
+Message-ID: <4D8FEBF5.2080505@cn.fujitsu.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: Li Dongyang <lidongyang@novell.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Cc: Andreas Philipp <philipp.andreas@gmail.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <1301275766-sup-2625@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Chris Mason's message of 2011-03-27 21:30:20 -0400:
-> Excerpts from Chris Mason's message of 2011-03-27 14:10:46 -0400:
-> > Excerpts from Li Dongyang's message of 2011-03-24 06:24:24 -0400:
-> > > Dear list,
-> > > This is V4 of batched discard support, now we will get full mapping of
-> > > the free space on each device for RAID0/1/10/DUP instead of just a single
-> > > stripe length, and tested with xfsstests 251, Thanks.
-> > 
-> > I've pushed this out into the for-linus branch, along with a full merge
-> > to 2.6.39 current git.
-> > 
-> > Please take a look and make sure I've merged it correctly.
-> 
-> Hmmm, this was doing mod operations on 64 bit numbers, so it didn't
-> compile at all on 32 bit machines.  I've fixed it up and pushed the
-> result out to for-linus.  Please check the math ;)
+root_item->flags and root_item->byte_limit are not initialized when
+a subvolume is created. This bug is not revealed until we added
+readonly snapshot support - now you mount a btrfs filesystem and you
+may find the subvolumes in it are readonly.
 
-BTW, I just rebased this so the incremental fix was before merging into
-Linus' tree.
+To work around this problem, we steal a bit from root_item->inode_item->flags,
+and use it to indicate if those fields have been properly initialized. 
+When we read a tree root from disk, we check if the bit is set, and if
+not we'll set the flag and initialize the two fields of the root item.
 
--chris
+Reported-by: Andreas Philipp <philipp.andreas@gmail.com>
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+---
+ fs/btrfs/ctree.h       |    4 ++++
+ fs/btrfs/disk-io.c     |    4 +++-
+ fs/btrfs/ioctl.c       |    4 ++++
+ fs/btrfs/root-tree.c   |   18 ++++++++++++++++++
+ fs/btrfs/transaction.c |    1 +
+ 5 files changed, 30 insertions(+), 1 deletions(-)
 
-> 
-> -chris
-> 
-> > 
-> > Thanks!
-> > 
-> > -chris
-> > 
-> > > Changelog V4:
-> > >     *make btrfs_map_block() return full mapping.
-> > > Changelog V3:
-> > >     *fix style problems.
-> > >     *rebase to 2.6.38-rc7.
-> > > Changelog V2:
-> > >     *Check if we have devices support trim before trying to trim the fs, also adjust
-> > >       minlen according to the discard_granularity.
-> > >     *Update reserved extent calculations in btrfs_trim_block_group().
-> > >     *Call cond_resched() without checking need_resched()
-> > >     *Use bitmap_clear_bits() and unlink_free_space() instead of btrfs_remove_free_space(),
-> > >       so we won't search the same extent for twice.
-> > >     *Try harder in btrfs_discard_extent(), now we won't report errors
-> > >      if it's not a EOPNOTSUPP.
-> > >     *make sure the block group is cached before trimming it,or we'll see an empty caching
-> > >      tree if the block group is not cached.
-> > >     *Minor return value fix in btrfs_discard_block_group().
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 8b4b9d1..ff6b991 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1284,6 +1284,8 @@ struct btrfs_root {
+ #define BTRFS_INODE_NOATIME		(1 << 9)
+ #define BTRFS_INODE_DIRSYNC		(1 << 10)
+ 
++#define BTRFS_INODE_ROOT_ITEM_INIT	(1 << 31)
++
+ /* some macros to generate set/get funcs for the struct fields.  This
+  * assumes there is a lefoo_to_cpu for every type, so lets make a simple
+  * one for u8:
+@@ -2355,6 +2357,8 @@ int btrfs_find_dead_roots(struct btrfs_root *root, u64 objectid);
+ int btrfs_find_orphan_roots(struct btrfs_root *tree_root);
+ int btrfs_set_root_node(struct btrfs_root_item *item,
+ 			struct extent_buffer *node);
++void btrfs_check_and_init_root_item(struct btrfs_root_item *item);
++
+ /* dir-item.c */
+ int btrfs_insert_dir_item(struct btrfs_trans_handle *trans,
+ 			  struct btrfs_root *root, const char *name,
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 3e1ea3e..4f8dafc 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1184,8 +1184,10 @@ struct btrfs_root *btrfs_read_fs_root_no_radix(struct btrfs_root *tree_root,
+ 	root->commit_root = btrfs_root_node(root);
+ 	BUG_ON(!root->node);
+ out:
+-	if (location->objectid != BTRFS_TREE_LOG_OBJECTID)
++	if (location->objectid != BTRFS_TREE_LOG_OBJECTID) {
+ 		root->ref_cows = 1;
++		btrfs_check_and_init_root_item(&root->root_item);
++	}
+ 
+ 	return root;
+ }
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 5fdb2ab..2ff51e6 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -294,6 +294,10 @@ static noinline int create_subvol(struct btrfs_root *root,
+ 	inode_item->nbytes = cpu_to_le64(root->leafsize);
+ 	inode_item->mode = cpu_to_le32(S_IFDIR | 0755);
+ 
++	root_item.flags = 0;
++	root_item.byte_limit = 0;
++	inode_item->flags = cpu_to_le64(BTRFS_INODE_ROOT_ITEM_INIT);
++
+ 	btrfs_set_root_bytenr(&root_item, leaf->start);
+ 	btrfs_set_root_generation(&root_item, trans->transid);
+ 	btrfs_set_root_level(&root_item, 0);
+diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
+index 6a1086e..3e45c32 100644
+--- a/fs/btrfs/root-tree.c
++++ b/fs/btrfs/root-tree.c
+@@ -471,3 +471,21 @@ again:
+ 	btrfs_free_path(path);
+ 	return 0;
+ }
++
++/*
++ * Old btrfs forgets to init root_item->flags and root_item->byte_limit
++ * for subvolumes. To work around this problem, we steal a bit from
++ * root_item->inode_item->flags, and use it to indicate if those fields
++ * have been properly initialized.
++ */
++void btrfs_check_and_init_root_item(struct btrfs_root_item *root_item)
++{
++	u64 inode_flags = le64_to_cpu(root_item->inode.flags);
++
++	if (!(inode_flags & BTRFS_INODE_ROOT_ITEM_INIT)) {
++		inode_flags |= BTRFS_INODE_ROOT_ITEM_INIT;
++		root_item->inode.flags = cpu_to_le64(inode_flags);
++		root_item->flags = 0;
++		root_item->byte_limit = 0;
++	}
++}
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 3d73c8d..f3d6681 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -970,6 +970,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	record_root_in_trans(trans, root);
+ 	btrfs_set_root_last_snapshot(&root->root_item, trans->transid);
+ 	memcpy(new_root_item, &root->root_item, sizeof(*new_root_item));
++	btrfs_check_and_init_root_item(new_root_item);
+ 
+ 	root_flags = btrfs_root_flags(new_root_item);
+ 	if (pending->readonly)
+-- 
+1.7.3.1

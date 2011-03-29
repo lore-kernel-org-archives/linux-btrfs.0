@@ -1,77 +1,31 @@
-From: liubo <liubo2009@cn.fujitsu.com>
-Subject: Re: [PATCH] Btrfs: add initial tracepoint support for btrfs
-Date: Tue, 29 Mar 2011 16:30:34 +0800
-Message-ID: <4D9198AA.5050909@cn.fujitsu.com>
-References: <4D8B28A3.7050105@cn.fujitsu.com> <1301141505-sup-3679@think> <1301273942-sup-2832@think> <4D9132DB.9000507@cn.fujitsu.com> <4D918E80.1010109@cn.fujitsu.com>
-Mime-Version: 1.0
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [GIT PULL] Btrfs updates for 2.6.39
+Date: Tue, 29 Mar 2011 07:32:48 -0400
+Message-ID: <1301398227-sup-108@think>
+References: <1301312919-sup-1222@think> <20110328132527.GM17108@twin.jikos.cz>
 Content-Type: text/plain; charset=UTF-8
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D918E80.1010109@cn.fujitsu.com>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	linux-kernel <linux-kernel@vger.kernel.org>
+To: David Sterba <dave@jikos.cz>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-reply-to: <20110328132527.GM17108@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Please ignore this patch...
+Excerpts from David Sterba's message of 2011-03-28 09:25:28 -0400:
+> Hi,
+> 
+> Chris, you did not add my sign-of on the unaligned fix I've posted, nor
+> the tested-by or reported-by. Looking again into the mail, it seems like
+> some automated-misprocessing picked the first part of the mail altough
+> there was properly formated patch after '--' marker (and I've verified
+> this is correct before sending the mail).
+> 
+> Can you please fix that?
+> Patch reference: https://patchwork.kernel.org/patch/645671/
 
-I just found we'd better revise the tracepoint side instead of btrfs side, will dig it more.
+Sorry, looks like I messed that one up.  patchwork did bring in the
+comments in a funny way and I didn't notice before the pull request went
+out.
 
-thanks,
-liubo
-
-> From: Liu Bo <liubo2009@cn.fujitsu.com>
-> 
-> [PATCH] Btrfs: fix compile warnings of btrfs tracepoint on 32bit box
-> 
-> include/trace/events/btrfs.h:47:1: warning: large integer implicitly truncated to unsigned type
-> include/trace/events/btrfs.h:47:1: warning: large integer implicitly truncated to unsigned type
-> include/trace/events/btrfs.h:47:1: warning: large integer implicitly truncated to unsigned type
-> 
-> btrfs has defined some macros which value has ULL type, and when btrfs tracepoints
-> use these macros on 32bit box, values like "-1ULL" will be truncated.
-> This is where those warnings come from.
-> 
-> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
-> ---
->  include/trace/events/btrfs.h |   19 +++++++++++--------
->  1 files changed, 11 insertions(+), 8 deletions(-)
-> 
-> diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-> index f445cff..27e67fd 100644
-> --- a/include/trace/events/btrfs.h
-> +++ b/include/trace/events/btrfs.h
-> @@ -36,9 +36,12 @@ struct extent_buffer;
->  		{ BTRFS_FS_TREE_OBJECTID, 	"FS_TREE"	},	\
->  		{ BTRFS_ROOT_TREE_DIR_OBJECTID, "ROOT_TREE_DIR"	},	\
->  		{ BTRFS_CSUM_TREE_OBJECTID, 	"CSUM_TREE"	},	\
-> -		{ BTRFS_TREE_LOG_OBJECTID,	"TREE_LOG"	},	\
-> -		{ BTRFS_TREE_RELOC_OBJECTID,	"TREE_RELOC"	},	\
-> -		{ BTRFS_DATA_RELOC_TREE_OBJECTID, "DATA_RELOC_TREE" })
-> +		{ (unsigned long)BTRFS_TREE_LOG_OBJECTID, 		\
-> +						"TREE_LOG"	},	\
-> +		{ (unsigned long)BTRFS_TREE_RELOC_OBJECTID, 		\
-> +						"TREE_RELOC"},		\
-> +		{ (unsigned long)BTRFS_DATA_RELOC_TREE_OBJECTID, 	\
-> +						"DATA_RELOC_TREE" })
->  
->  #define show_root_type(obj)						\
->  	obj, ((obj >= BTRFS_DATA_RELOC_TREE_OBJECTID) ||		\
-> @@ -126,13 +129,13 @@ DEFINE_EVENT(btrfs__inode, btrfs_inode_evict,
->  
->  #define __show_map_type(type)						\
->  	__print_symbolic(type,						\
-> -		{ EXTENT_MAP_LAST_BYTE, "LAST_BYTE" 	},		\
-> -		{ EXTENT_MAP_HOLE, 	"HOLE" 		},		\
-> -		{ EXTENT_MAP_INLINE, 	"INLINE" 	},		\
-> -		{ EXTENT_MAP_DELALLOC,	"DELALLOC" 	})
-> +		{ (unsigned long)EXTENT_MAP_LAST_BYTE,	"LAST_BYTE" },	\
-> +		{ (unsigned long)EXTENT_MAP_HOLE, 	"HOLE"      },	\
-> +		{ (unsigned long)EXTENT_MAP_INLINE, 	"INLINE"    },	\
-> +		{ (unsigned long)EXTENT_MAP_DELALLOC,	"DELALLOC"  })
->  
->  #define show_map_type(type)			\
-> -	type, (type >= EXTENT_MAP_LAST_BYTE) ? "-" :  __show_map_type(type)
-> +	type, (type >= EXTENT_MAP_LAST_BYTE) ? "-" : __show_map_type(type)
->  
->  #define show_map_flags(flag)						\
->  	__print_flags(flag, "|",					\
-
+-chris

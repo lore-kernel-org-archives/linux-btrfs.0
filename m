@@ -1,31 +1,46 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: [GIT PULL] Btrfs updates for 2.6.39
-Date: Tue, 29 Mar 2011 09:12:26 +0800
-Message-ID: <4D9131FA.8080209@cn.fujitsu.com>
-References: <1301312919-sup-1222@think> <20110328132527.GM17108@twin.jikos.cz>
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: add initial tracepoint support for btrfs
+Date: Tue, 29 Mar 2011 09:16:11 +0800
+Message-ID: <4D9132DB.9000507@cn.fujitsu.com>
+References: <4D8B28A3.7050105@cn.fujitsu.com> <1301141505-sup-3679@think> <1301273942-sup-2832@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	linux-kernel <linux-kernel@vger.kernel.org>
-To: David Sterba <dave@jikos.cz>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20110328132527.GM17108@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Josef Bacik <josef@redhat.com>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1301273942-sup-2832@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-David Sterba wrote:
-> Hi,
+On 03/28/2011 08:59 AM, Chris Mason wrote:
+> Excerpts from Chris Mason's message of 2011-03-26 08:12:04 -0400:
+>> Excerpts from liubo's message of 2011-03-24 07:18:59 -0400:
+>>> Tracepoints can provide insight into why btrfs hits bugs and be greatly
+>>> helpful for debugging, e.g
+>> This is really neat, I've queued it up.
 > 
-> Chris, you did not add my sign-of on the unaligned fix I've posted, nor
-> the tested-by or reported-by. Looking again into the mail, it seems like
-> some automated-misprocessing picked the first part of the mail altough
-> there was properly formated patch after '--' marker (and I've verified
-> this is correct before sending the mail).
+> Whoops, it has a lot of warnings when compiled on 32 bit machines.
+> Please take a look:
 > 
-> Can you please fix that?
-> Patch reference: https://patchwork.kernel.org/patch/645671/
+> include/trace/events/btrfs.h:47:1: warning: large integer implicitly truncated to unsigned type
+> include/trace/events/btrfs.h:47:1: warning: large integer implicitly truncated to unsigned type
+> include/trace/events/btrfs.h:47:1: warning: large integer implicitly truncated to unsigned type
+> include/trace/events/btrfs.h:68:1: warning: large integer implicitly truncated to unsigned type
+> include/trace/events/btrfs.h:68:1: warning: large integer implicitly truncated to unsigned type
+> include/trace/events/btrfs.h:68:1: warning: large integer implicitly truncated to unsigned type
+> include/trace/events/btrfs.h:144:1: warning: large integer implicitly truncated to unsigned type
 > 
 
-It can't be fixed as Linus has pulled the tree. Fortunetely it's not a
-big deal, and you are still recorded as the author of that patch. ;)
+Ahh, I figure it out.
+Will send a new version to clear warnings.
+
+Thanks,
+liubo
+
+> -chris
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+

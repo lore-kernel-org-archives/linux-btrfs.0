@@ -1,11 +1,12 @@
 From: Tejun Heo <tj@kernel.org>
 Subject: Re: [PATCH 2/2] mutex: Apply adaptive spinning on mutex_trylock()
-Date: Tue, 29 Mar 2011 18:37:02 +0200
-Message-ID: <20110329163702.GE29865@htj.dyndns.org>
+Date: Tue, 29 Mar 2011 19:09:49 +0200
+Message-ID: <20110329170949.GF29865@htj.dyndns.org>
 References: <20110323153727.GB12003@htj.dyndns.org>
  <20110324094119.GD12038@htj.dyndns.org>
  <20110324094151.GE12038@htj.dyndns.org>
  <20110325101238.GC1409@htj.dyndns.org>
+ <20110329163702.GE29865@htj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
@@ -15,85 +16,155 @@ To: Peter Zijlstra <peterz@infradead.org>,
 	Andrew Morton <akpm@linux-foundation.org>,
 	Chris Mason <chris.m
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20110325101238.GC1409@htj.dyndns.org>
+In-Reply-To: <20110329163702.GE29865@htj.dyndns.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello, guys.
-
-I've been running dbench 50 for a few days now and the result is,
-well, I don't know how to call it.
-
-The problem was that the original patch didn't do anything because x86
-fastpath code didn't call into the generic slowpath at all.
-
-  static inline int __mutex_fastpath_trylock(atomic_t *count,
-					     int (*fail_fn)(atomic_t *))
-  {
-	  if (likely(atomic_cmpxchg(count, 1, 0) == 1))
-		  return 1;
-	  else
-		  return 0;
-  }												
-
-So, I thought that I probably was doing unconscious data selection
-while I was running the test before sending out the patches.  Maybe I
-was seeing what I wanted to see, so I ran tests in larger scale more
-methodologically.
-
-I first started with ten consecutive runs and then doubled it with
-intervening reboot and then basically ended up doing that twice for
-four configuration (I didn't do two runs of simple and refactor but
-just averaged the two).
-
-The hardware is mostly the same except that I switched to a hard drive
-instead of SSD as hard drives tend to be slower but more consistent in
-performance numbers.  On each run, the filesystem is recreated and the
-system was rebooted after every ten runs.  The numbers are the
-reported throughput in MiB/s at the end of each run.
-
-  https://spreadsheets.google.com/ccc?key=0AsbaQh2SFt66dDdxOGZWVVlIbEdIOWRQLURVVUNYSXc&hl=en
-
-Here are the descriptions of the eight columns.
-
-  simple	only with patch to make btrfs use mutex
-  refactor	mutex_spin() factored out
-  spin		mutex_spin() applied to the unused trylock slowpath
-  spin-1	ditto
-  spin-fixed	x86 trylock fastpath updated to use generic slowpath
-  spin-fixed-1	ditto
-  code-layout	refactor + dummy function added to mutex.c
-  code-layout-1	ditto
-
-After running the simple, refactor and spin ones, I was convinced that
-there definitely was something which was causing the difference.  The
-averages were apart by more than 1.5 sigma, but I couldn't explain
-what could have caused such difference.
-
-The code-layout runs were my desparate attempts to find explanation on
-what's going on.  Addition of mutex_spin to the unused trylock generic
-path makes gcc arrange functions differently.  Without it, trylock
-functions end up inbetween lock and unlock funcitons; with it, they
-are located at the end.  I commented out the unused trylock slowpath
-function and added a dummy function at the end to make gcc generate
-similar assembly layout.
-
-At this point, the only conclusions I can draw are,
-
-* Using adaptive spinning on mutex_trylock() doesn't seem to buy
-  anything according to btrfs dbench 50 runs.
-
-and much more importantly,
-
-* btrfs dbench 50 runs are probably not good for measuring subtle
-  mutex performance differences.  Maybe it's too macro and there are
-  larger scale tendencies which skew the result unless the number of
-  runs are vastly increased (but 40 runs are already over eight
-  hours).
-
-If anyone can provide an explanation on what's going on, I'll be super
-happy.  Otherwise, for now, I'll just leave it alone.  :-(
+Here's the combined patch I was planning on testing but didn't get to
+(yet).  It implements two things - hard limit on spin duration and
+early break if the owner also is spinning on a mutex.
 
 Thanks.
 
--- 
-tejun
+Index: work1/include/linux/sched.h
+===================================================================
+--- work1.orig/include/linux/sched.h
++++ work1/include/linux/sched.h
+@@ -359,7 +359,7 @@ extern signed long schedule_timeout_inte
+ extern signed long schedule_timeout_killable(signed long timeout);
+ extern signed long schedule_timeout_uninterruptible(signed long timeout);
+ asmlinkage void schedule(void);
+-extern int mutex_spin_on_owner(struct mutex *lock, struct thread_info *owner);
++extern bool mutex_spin_on_owner(struct mutex *lock, struct thread_info *owner);
+ 
+ struct nsproxy;
+ struct user_namespace;
+Index: work1/kernel/sched.c
+===================================================================
+--- work1.orig/kernel/sched.c
++++ work1/kernel/sched.c
+@@ -536,6 +536,10 @@ struct rq {
+ 	struct hrtimer hrtick_timer;
+ #endif
+ 
++#ifdef CONFIG_MUTEX_SPIN_ON_OWNER
++	bool spinning_on_mutex;
++#endif
++
+ #ifdef CONFIG_SCHEDSTATS
+ 	/* latency stats */
+ 	struct sched_info rq_sched_info;
+@@ -4021,16 +4025,44 @@ EXPORT_SYMBOL(schedule);
+ 
+ #ifdef CONFIG_MUTEX_SPIN_ON_OWNER
+ /*
+- * Look out! "owner" is an entirely speculative pointer
+- * access and not reliable.
++ * Maximum mutex owner spin duration in nsecs.  Don't spin more then
++ * DEF_TIMESLICE.
++ */
++#define MAX_MUTEX_SPIN_NS	(DEF_TIMESLICE * 1000000000LLU / HZ)
++
++/**
++ * mutex_spin_on_owner - optimistic adaptive spinning on locked mutex
++ * @lock: the mutex to spin on
++ * @owner: the current owner (speculative pointer)
++ *
++ * The caller is trying to acquire @lock held by @owner.  If @owner is
++ * currently running, it might get unlocked soon and spinning on it can
++ * save the overhead of sleeping and waking up.
++ *
++ * Note that @owner is completely speculative and may be completely
++ * invalid.  It should be accessed very carefully.
++ *
++ * Forward progress is guaranteed regardless of locking ordering by never
++ * spinning longer than MAX_MUTEX_SPIN_NS.  This is necessary because
++ * mutex_trylock(), which doesn't have to follow the usual locking
++ * ordering, also uses this function.
++ *
++ * CONTEXT:
++ * Preemption disabled.
++ *
++ * RETURNS:
++ * %true if the lock was released and the caller should retry locking.
++ * %false if the caller better go sleeping.
+  */
+-int mutex_spin_on_owner(struct mutex *lock, struct thread_info *owner)
++bool mutex_spin_on_owner(struct mutex *lock, struct thread_info *owner)
+ {
++	unsigned long start;
+ 	unsigned int cpu;
+ 	struct rq *rq;
++	bool ret = true;
+ 
+ 	if (!sched_feat(OWNER_SPIN))
+-		return 0;
++		return false;
+ 
+ #ifdef CONFIG_DEBUG_PAGEALLOC
+ 	/*
+@@ -4039,7 +4071,7 @@ int mutex_spin_on_owner(struct mutex *lo
+ 	 * the mutex owner just released it and exited.
+ 	 */
+ 	if (probe_kernel_address(&owner->cpu, cpu))
+-		return 0;
++		return false;
+ #else
+ 	cpu = owner->cpu;
+ #endif
+@@ -4049,15 +4081,17 @@ int mutex_spin_on_owner(struct mutex *lo
+ 	 * the cpu field may no longer be valid.
+ 	 */
+ 	if (cpu >= nr_cpumask_bits)
+-		return 0;
++		return false;
+ 
+ 	/*
+ 	 * We need to validate that we can do a
+ 	 * get_cpu() and that we have the percpu area.
+ 	 */
+ 	if (!cpu_online(cpu))
+-		return 0;
++		return false;
+ 
++	this_rq()->spinning_on_mutex = true;
++	start = local_clock();
+ 	rq = cpu_rq(cpu);
+ 
+ 	for (;;) {
+@@ -4070,21 +4104,30 @@ int mutex_spin_on_owner(struct mutex *lo
+ 			 * we likely have heavy contention. Return 0 to quit
+ 			 * optimistic spinning and not contend further:
+ 			 */
+-			if (lock->owner)
+-				return 0;
++			ret = !lock->owner;
+ 			break;
+ 		}
+ 
+ 		/*
+-		 * Is that owner really running on that cpu?
++		 * Quit spinning if any of the followings is true.
++		 *
++		 * - The owner isn't running on that cpu.
++		 * - The owner also is spinning on a mutex.
++		 * - Someone else wants to use this cpu.
++		 * - We've been spinning for too long.
+ 		 */
+-		if (task_thread_info(rq->curr) != owner || need_resched())
+-			return 0;
++		if (task_thread_info(rq->curr) != owner ||
++		    rq->spinning_on_mutex || need_resched() ||
++		    local_clock() > start + MAX_MUTEX_SPIN_NS) {
++			ret = false;
++			break;
++		}
+ 
+ 		arch_mutex_cpu_relax();
+ 	}
+ 
+-	return 1;
++	this_rq()->spinning_on_mutex = false;
++	return ret;
+ }
+ #endif
+ 

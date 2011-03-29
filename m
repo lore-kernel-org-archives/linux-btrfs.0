@@ -1,139 +1,312 @@
-From: Andrew Lutomirski <andy@luto.us>
-Subject: Re: 2.6.37: Multi-second I/O latency while untarring
-Date: Mon, 28 Mar 2011 23:50:01 -0400
-Message-ID: <AANLkTikCKjrtSJbcR7_GmcZfxS+jfekkkiOP9jyAaM7F@mail.gmail.com>
-References: <AANLkTin4628kHMRogoAarDWyGGb8-6-BiixihJmy_AUj@mail.gmail.com>
- <1297438671-sup-21@think> <AANLkTimLeCMFO++RYnCXOPSMeNzxf2SAovEZ-q-q5TzF@mail.gmail.com>
- <1297696565-sup-8163@think>
+From: Itaru Kitayama <kitayama@cl.bb4u.ne.jp>
+Subject: Re: [PATCH V2] btrfs: fix possible deadlock by clearing __GFP_FS
+ flag
+Date: Tue, 29 Mar 2011 14:48:05 +0900
+Message-ID: <20110329144805.507dfe30.kitayama@cl.bb4u.ne.jp>
+References: <4D8EF048.5050203@cn.fujitsu.com>
+	<4D8F2D32.3000601@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary=20cf307f39b49774cc049f96f513
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-	linux-kernel <linux-kernel@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <1297696565-sup-8163@think>
+Content-Type: text/plain; charset=US-ASCII
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: miaox@cn.fujitsu.com
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4D8F2D32.3000601@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---20cf307f39b49774cc049f96f513
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
+Hi Miao,
 
-On Mon, Feb 14, 2011 at 10:22 AM, Chris Mason <chris.mason@oracle.com> wrot=
-e:
-> Excerpts from Andrew Lutomirski's message of 2011-02-11 19:35:02 -0500:
->> On Fri, Feb 11, 2011 at 10:44 AM, Chris Mason <chris.mason@oracle.com> w=
-rote:
+On Sun, 27 Mar 2011 20:27:30 +0800
+Miao Xie <miaox@cn.fujitsu.com> wrote:
 
->> >
->> > We can tell more if you post the full traces from latencytop. =A0I hav=
-e a
->> > patch here for latencytop that adds a -c mode, which dumps the traces
->> > out to a text files.
->> >
->> > http://oss.oracle.com/~mason/latencytop.patch
->> >
->> > Based on what you have here, I think it's probably a latency problem
->> > between btrfs and the dm-crypt stuff. =A0How easily can setup a test
->> > partition without dm-crypt?
->>
->> Done, on the same physical disk as before. =A0The latency is just as
->> bad. =A0On this test, I wrote a total of 3.1G, which is under half of my
->> RAM. =A0That should rule out lots of VM issues. =A0latencytop trace belo=
-w.
->
-> Just to confirm, you say on a physical disk you mean without dm-crypt?
+> Changelog V1 -> V2:
+> - modify the explanation of the deadlock.
+> - clear __GFP_FS flag in the free space's page cache.
 
-Sorry for the exceedingly slow reply.
+I think this is also needed on top of your V5 patch to avoid a recursion. Could you
+review it and give your Signed-off-by?
 
-This problem is really bad with 2.6.38.1.  To make it a little easier
-to demonstrate, I wrote a tool that shows off the problem.
+Signed-off-by: Itaru Kitayama <kitayama@cl.bb4u.ne.jp>
 
-I made a test btrfs partition on a plain disk partition (same disk as
-my dm-crypt but an unencrypted partition).  Now clone a kernel tree
-there and run make -j8.  Wait until the disk starts to write data out
-in earnest (takes awhile to dirty enough pages).  Watch crap like this
-happen (with nr_requests =3D 2048, scheduler =3D deadline).
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 8862dda..03e5ab3 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2641,7 +2641,7 @@ int extent_readpages(struct extent_io_tree *tree,
+                prefetchw(&page->flags);
+                list_del(&page->lru);
+                if (!add_to_page_cache_lru(page, mapping,
+-                                       page->index, GFP_KERNEL)) {
++                                       page->index, GFP_NOFS)) {
+                        __extent_read_full_page(tree, page, get_extent,
+                                                &bio, 0, &bio_flags);
+                }
 
-io_latency_watch read <1M file on test partition>
+After applying the patch above, I don't see the warning below during Chris' stress test. 
 
-read took 0.000 seconds (worst =3D 0.963s)
-read took 0.000 seconds (worst =3D 0.963s)
-read took 0.022 seconds (worst =3D 0.963s)
-read took 0.000 seconds (worst =3D 0.963s)
-read took 0.028 seconds (worst =3D 0.963s)
-read took 1.430 seconds (worst =3D 1.430s)
-read took 0.270 seconds (worst =3D 1.430s)
-read took 1.237 seconds (worst =3D 1.430s)
-read took 0.282 seconds (worst =3D 1.430s)
-read took 0.131 seconds (worst =3D 1.430s)
+=========================================================
+[ INFO: possible irq lock inversion dependency detected ]
+2.6.36-v5+ #10
+---------------------------------------------------------
+kswapd0/49 just changed the state of lock:
+ (&delayed_node->mutex){+.+.-.}, at: [<ffffffff81213283>] btrfs_remove_delayed_node+0x3e/0xd2
+but this lock took another, RECLAIM_FS-READ-unsafe lock in the past:
+ (&found->groups_sem){++++.+}
 
-io_latency_watch read <1M file on other partition on same disk> is
-similar, and io_latency_test write <dir on other partition> is even
-worse.
+and interrupts could create inverse lock ordering between them.
 
-The cfq scheduler is similar.
 
---Andy
+other info that might help us debug this:
+2 locks held by kswapd0/49:
+ #0:  (shrinker_rwsem){++++..}, at: [<ffffffff810e242a>] shrink_slab+0x3d/0x164
+ #1:  (iprune_sem){++++.-}, at: [<ffffffff811316d0>] shrink_icache_memory+0x4d/0x213
 
---20cf307f39b49774cc049f96f513
-Content-Type: text/x-csrc; charset=US-ASCII; name="io_latency_watch.c"
-Content-Disposition: attachment; filename="io_latency_watch.c"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_gluafk4y0
+the shortest dependencies between 2nd lock and 1st lock:
+ -> (&found->groups_sem){++++.+} ops: 3649 {
+    HARDIRQ-ON-W at:
+                          [<ffffffff81075ec0>] __lock_acquire+0x346/0xda6
+                          [<ffffffff81076a3d>] lock_acquire+0x11d/0x143
+                          [<ffffffff814c6aba>] down_write+0x55/0x9b
+                          [<ffffffff811c352a>] __link_block_group+0x5a/0x83
+                          [<ffffffff811ca562>] btrfs_read_block_groups+0x2fb/0x56c
+                          [<ffffffff811d4974>] open_ctree+0xf8f/0x14c3
+                          [<ffffffff811bafdf>] btrfs_get_sb+0x236/0x467
+                          [<ffffffff8111f25e>] vfs_kern_mount+0xbd/0x1a7
+                          [<ffffffff8111f3b0>] do_kern_mount+0x4d/0xed
+                          [<ffffffff8113668d>] do_mount+0x74e/0x7c5
+                          [<ffffffff8113678c>] sys_mount+0x88/0xc2
+                          [<ffffffff81002ddb>] system_call_fastpath+0x16/0x1b
+    HARDIRQ-ON-R at:
+                          [<ffffffff81075e98>] __lock_acquire+0x31e/0xda6
+                          [<ffffffff81076a3d>] lock_acquire+0x11d/0x143
+                          [<ffffffff814c6b4c>] down_read+0x4c/0x91
+                          [<ffffffff811cb5b2>] find_free_extent+0x3ec/0xa86
+                          [<ffffffff811cbd00>] btrfs_reserve_extent+0xb4/0x142
+                          [<ffffffff811cbef5>] btrfs_alloc_free_block+0x167/0x2b2
+                          [<ffffffff811be610>] __btrfs_cow_block+0x103/0x346
+                          [<ffffffff811bedb8>] btrfs_cow_block+0x101/0x110
+                          [<ffffffff811c05d8>] btrfs_search_slot+0x143/0x513
+                          [<ffffffff811dc0d9>] btrfs_truncate_inode_items+0x12a/0x61a
+                          [<ffffffff811defa7>] btrfs_evict_inode+0x154/0x1be
+                          [<ffffffff811311b0>] evict+0x27/0x97
+                          [<ffffffff81131615>] iput+0x1d0/0x23e
+                          [<ffffffff811e1143>] btrfs_orphan_cleanup+0x1c8/0x269
+                          [<ffffffff811d05e1>] btrfs_cleanup_fs_roots+0x6d/0x8c
+                          [<ffffffff811bac48>] btrfs_remount+0x9e/0xe9
+                          [<ffffffff8111e9b2>] do_remount_sb+0xbb/0x106
+                          [<ffffffff81136194>] do_mount+0x255/0x7c5
+                          [<ffffffff8113678c>] sys_mount+0x88/0xc2
+                          [<ffffffff81002ddb>] system_call_fastpath+0x16/0x1b
+    SOFTIRQ-ON-W at:
+                          [<ffffffff81075ee1>] __lock_acquire+0x367/0xda6
+                          [<ffffffff81076a3d>] lock_acquire+0x11d/0x143
+                          [<ffffffff814c6aba>] down_write+0x55/0x9b
+                          [<ffffffff811c352a>] __link_block_group+0x5a/0x83
+                          [<ffffffff811ca562>] btrfs_read_block_groups+0x2fb/0x56c
+                          [<ffffffff811d4974>] open_ctree+0xf8f/0x14c3
+                          [<ffffffff811bafdf>] btrfs_get_sb+0x236/0x467
+                          [<ffffffff8111f25e>] vfs_kern_mount+0xbd/0x1a7
+                          [<ffffffff8111f3b0>] do_kern_mount+0x4d/0xed
+                          [<ffffffff8113668d>] do_mount+0x74e/0x7c5
+                          [<ffffffff8113678c>] sys_mount+0x88/0xc2
+                          [<ffffffff81002ddb>] system_call_fastpath+0x16/0x1b
+    SOFTIRQ-ON-R at:
+                          [<ffffffff81075ee1>] __lock_acquire+0x367/0xda6
+                          [<ffffffff81076a3d>] lock_acquire+0x11d/0x143
+                          [<ffffffff814c6b4c>] down_read+0x4c/0x91
+                          [<ffffffff811cb5b2>] find_free_extent+0x3ec/0xa86
+                          [<ffffffff811cbd00>] btrfs_reserve_extent+0xb4/0x142
+                          [<ffffffff811cbef5>] btrfs_alloc_free_block+0x167/0x2b2
+                          [<ffffffff811be610>] __btrfs_cow_block+0x103/0x346
+                          [<ffffffff811bedb8>] btrfs_cow_block+0x101/0x110
+                          [<ffffffff811c05d8>] btrfs_search_slot+0x143/0x513
+                          [<ffffffff811dc0d9>] btrfs_truncate_inode_items+0x12a/0x61a
+                          [<ffffffff811defa7>] btrfs_evict_inode+0x154/0x1be
+                          [<ffffffff811311b0>] evict+0x27/0x97
+                          [<ffffffff81131615>] iput+0x1d0/0x23e
+                          [<ffffffff811e1143>] btrfs_orphan_cleanup+0x1c8/0x269
+                          [<ffffffff811d05e1>] btrfs_cleanup_fs_roots+0x6d/0x8c
+                          [<ffffffff811bac48>] btrfs_remount+0x9e/0xe9
+                          [<ffffffff8111e9b2>] do_remount_sb+0xbb/0x106
+                          [<ffffffff81136194>] do_mount+0x255/0x7c5
+                          [<ffffffff8113678c>] sys_mount+0x88/0xc2
+                          [<ffffffff81002ddb>] system_call_fastpath+0x16/0x1b
+    RECLAIM_FS-ON-R at:
+                             [<ffffffff81074292>] mark_held_locks+0x52/0x70
+                             [<ffffffff81074354>] lockdep_trace_alloc+0xa4/0xc2
+                             [<ffffffff8110fcc9>] kmem_cache_alloc+0x32/0x186
+                             [<ffffffff81265caa>] radix_tree_preload+0x6f/0xd5
+                             [<ffffffff810d4df8>] add_to_page_cache_locked+0x60/0x147
+                             [<ffffffff810d4f0c>] add_to_page_cache_lru+0x2d/0x5b
+                             [<ffffffff811f348a>] extent_readpages+0x6c/0xcb
+                             [<ffffffff811da3b6>] btrfs_readpages+0x1f/0x21
+                             [<ffffffff810ddf68>] __do_page_cache_readahead+0x127/0x19d
+                             [<ffffffff810ddfff>] ra_submit+0x21/0x25
+                             [<ffffffff810de3b9>] ondemand_readahead+0x1b6/0x1c9
+                             [<ffffffff810de4b2>] page_cache_sync_readahead+0x3d/0x3f
+                             [<ffffffff81207a24>] load_free_space_cache+0x27e/0x682
+                             [<ffffffff811c886f>] cache_block_group+0x97/0x233
+                             [<ffffffff811cb63f>] find_free_extent+0x479/0xa86
+                             [<ffffffff811cbd00>] btrfs_reserve_extent+0xb4/0x142
+                             [<ffffffff811cbef5>] btrfs_alloc_free_block+0x167/0x2b2
+                             [<ffffffff811be610>] __btrfs_cow_block+0x103/0x346
+                             [<ffffffff811bedb8>] btrfs_cow_block+0x101/0x110
+                             [<ffffffff811c05d8>] btrfs_search_slot+0x143/0x513
+                             [<ffffffff811dc0d9>] btrfs_truncate_inode_items+0x12a/0x61a
+                             [<ffffffff811defa7>] btrfs_evict_inode+0x154/0x1be
+                             [<ffffffff811311b0>] evict+0x27/0x97
+                             [<ffffffff81131615>] iput+0x1d0/0x23e
+                             [<ffffffff811e1143>] btrfs_orphan_cleanup+0x1c8/0x269
+                             [<ffffffff811d05e1>] btrfs_cleanup_fs_roots+0x6d/0x8c
+                             [<ffffffff811bac48>] btrfs_remount+0x9e/0xe9
+                             [<ffffffff8111e9b2>] do_remount_sb+0xbb/0x106
+                             [<ffffffff81136194>] do_mount+0x255/0x7c5
+                             [<ffffffff8113678c>] sys_mount+0x88/0xc2
+                             [<ffffffff81002ddb>] system_call_fastpath+0x16/0x1b
+    INITIAL USE at:
+                         [<ffffffff81075f37>] __lock_acquire+0x3bd/0xda6
+                         [<ffffffff81076a3d>] lock_acquire+0x11d/0x143
+                         [<ffffffff814c6aba>] down_write+0x55/0x9b
+                         [<ffffffff811c352a>] __link_block_group+0x5a/0x83
+                         [<ffffffff811ca562>] btrfs_read_block_groups+0x2fb/0x56c
+                         [<ffffffff811d4974>] open_ctree+0xf8f/0x14c3
+                         [<ffffffff811bafdf>] btrfs_get_sb+0x236/0x467
+                         [<ffffffff8111f25e>] vfs_kern_mount+0xbd/0x1a7
+                         [<ffffffff8111f3b0>] do_kern_mount+0x4d/0xed
+                         [<ffffffff8113668d>] do_mount+0x74e/0x7c5
+                         [<ffffffff8113678c>] sys_mount+0x88/0xc2
+                         [<ffffffff81002ddb>] system_call_fastpath+0x16/0x1b
+  }
+  ... key      at: [<ffffffff82924fb8>] __key.40112+0x0/0x8
+  ... acquired at:
+   [<ffffffff81076a3d>] lock_acquire+0x11d/0x143
+   [<ffffffff814c6b4c>] down_read+0x4c/0x91
+   [<ffffffff811cb48a>] find_free_extent+0x2c4/0xa86
+   [<ffffffff811cbd00>] btrfs_reserve_extent+0xb4/0x142
+   [<ffffffff811cbef5>] btrfs_alloc_free_block+0x167/0x2b2
+   [<ffffffff811be610>] __btrfs_cow_block+0x103/0x346
+   [<ffffffff811bedb8>] btrfs_cow_block+0x101/0x110
+   [<ffffffff811c05d8>] btrfs_search_slot+0x143/0x513
+   [<ffffffff811cf58b>] btrfs_lookup_inode+0x2f/0x8f
+   [<ffffffff81212471>] btrfs_update_delayed_inode+0x75/0x135
+   [<ffffffff812130fa>] btrfs_async_run_delayed_node_done+0xd5/0x194
+   [<ffffffff811fb4f6>] worker_loop+0x198/0x4dd
+   [<ffffffff81061a60>] kthread+0x9d/0xa5
+   [<ffffffff81003c14>] kernel_thread_helper+0x4/0x10
 
-LyogaW9fbGF0ZW5jeV90ZXN0LmMKICogQ29weXJpZ2h0IChjKSAyMDExIEFuZHkgTHV0b21pcnNr
-aQogKiBMaWNlbnNlZCB1bmRlciBHUEx2Mi4KICoKICogQ29tcGlsZSB3aXRoIGdjYyAtTzIgLXN0
-ZD1nbnU5OSAtbHJ0CiAqLwoKI2RlZmluZSBfRklMRV9PRkZTRVRfQklUUyA2NAojZGVmaW5lIF9H
-TlVfU09VUkNFCiNpbmNsdWRlIDxzdGRpby5oPgojaW5jbHVkZSA8c3RkbGliLmg+CiNpbmNsdWRl
-IDx1bmlzdGQuaD4KI2luY2x1ZGUgPHN0ZGJvb2wuaD4KI2luY2x1ZGUgPHRpbWUuaD4KI2luY2x1
-ZGUgPHN0ZGludC5oPgojaW5jbHVkZSA8c3RyaW5nLmg+CiNpbmNsdWRlIDxzaWduYWwuaD4KI2lu
-Y2x1ZGUgPGludHR5cGVzLmg+CiNpbmNsdWRlIDxmY250bC5oPgoKdm9sYXRpbGUgY29uc3QgY2hh
-ciAqZmlsZV90b191bmxpbms7Cgp2b2lkIGhhbmRsZXIoaW50IHgpCnsKICBpZiAoZmlsZV90b191
-bmxpbmspCiAgICB1bmxpbmsoKGNoYXIqKWZpbGVfdG9fdW5saW5rKTsKCiAgX2V4aXQoMCk7Cn0K
-CnZvaWQgZG9fcmVhZChjb25zdCBjaGFyICpuYW1lKQp7CiAgaW50IGZkID0gb3BlbihuYW1lLCBP
-X1JET05MWSB8IE9fRElSRUNUKTsKICBpZiAoZmQgPCAwKSB7CiAgICBwZXJyb3IoIm9wZW4iKTsK
-ICAgIGV4aXQoMSk7CiAgfQoKICB1aW50NjRfdCB3b3JzdCA9IDA7CiAgb2ZmX3Qgc2l6ZSA9IGxz
-ZWVrKGZkLCAwLCBTRUVLX0VORCk7CiAgaWYgKHNpemUgPT0gKG9mZl90KS0xKSB7CiAgICBwZXJy
-b3IoImxzZWVrIik7CiAgICBhYm9ydCgpOwogIH0KCiAgc2l6ZSAtPSAoc2l6ZSAlIDQwOTYpOwoK
-ICBpZiAoc2l6ZSA8IDQwOTYpIHsKICAgIHByaW50ZigiRmlsZSBpcyBzbWFsbGVyIHRoYW4gNGtc
-biIpOwogICAgZXhpdCgxKTsKICB9CgogIHByaW50ZigiRmlsZSBzaXplIGlzICUiIFBSSXU2NCAi
-IGJ5dGVzIC0tIGJpZ2dlciBpcyBiZXR0ZXJcbiIsICh1aW50NjRfdClzaXplKTsKCiAgd2hpbGUo
-dHJ1ZSkKICAgIHsKICAgICAgdWludDY0X3QgcG9zID0gNDA5NiAqIChyYW5kb20oKSAlIChzaXpl
-IC8gNDA5NikpOwoKICAgICAgc3RydWN0IHRpbWVzcGVjIHN0YXJ0OwogICAgICBjbG9ja19nZXR0
-aW1lKENMT0NLX01PTk9UT05JQywgJnN0YXJ0KTsKCiAgICAgIHVuc2lnbmVkIGNoYXIgeFs0MDk2
-XTsKICAgICAgaWYgKHByZWFkKGZkLCB4LCA0MDk2LCBwb3MpICE9IDQwOTYpIHsKCXBlcnJvcigi
-cHJlYWQiKTsKCWFib3J0KCk7CiAgICAgIH0KCiAgICAgIHN0cnVjdCB0aW1lc3BlYyBlbmQ7CiAg
-ICAgIGNsb2NrX2dldHRpbWUoQ0xPQ0tfTU9OT1RPTklDLCAmZW5kKTsKICAgICAgCiAgICAgIHVp
-bnQ2NF90IG5zID0gKGVuZC50dl9uc2VjIC0gc3RhcnQudHZfbnNlYykgKyAxMDAwMDAwMDAwVUxM
-ICogKGVuZC50dl9zZWMgLSBzdGFydC50dl9zZWMpOwoKICAgICAgaWYgKG5zID4gd29yc3QpCgl3
-b3JzdCA9IG5zOwoKICAgICAgcHJpbnRmKCJyZWFkIHRvb2sgJS4zZiBzZWNvbmRzICh3b3JzdCA9
-ICUuM2ZzKVxuIiwKCSAgICAgMWUtOSAqIG5zLCAxZS05ICogd29yc3QpOwoKICAgICAgaWYgKHBv
-c2l4X2ZhZHZpc2UoZmQsIDAsIHNpemUsIFBPU0lYX0ZBRFZfRE9OVE5FRUQpICE9IDApCglwZXJy
-b3IoInBvc2l4X2ZhZHZpc2UiKTsKCiAgICAgIHVzbGVlcCgxMDAwMDAwKTsKICAgIH0KfQoKdm9p
-ZCBkb193cml0ZShjb25zdCBjaGFyICpkaXIpCnsKICBjaGFyICpuYW1lOwogIGlmIChhc3ByaW50
-ZigmbmFtZSwgIiVzL3RtcC5YWFhYWFgiLCBkaXIpID09IC0xKQogICAgYWJvcnQoKTsKCiAgaW50
-IGZkID0gbWtzdGVtcChuYW1lKTsKICBpZiAoZmQgPT0gLTEpIHsKICAgIHBlcnJvcigibWtzdGVt
-cCIpOwogICAgYWJvcnQoKTsKICB9CgogIGZpbGVfdG9fdW5saW5rID0gbmFtZTsKCiAgdWludDY0
-X3Qgd29yc3QgPSAwOwoKICB1bnNpZ25lZCBjaGFyIHg7CiAgd2hpbGUodHJ1ZSkKICAgIHsKICAg
-ICAgeCsrOwogICAgICBzdHJ1Y3QgdGltZXNwZWMgc3RhcnQ7CiAgICAgIGNsb2NrX2dldHRpbWUo
-Q0xPQ0tfTU9OT1RPTklDLCAmc3RhcnQpOwoKICAgICAgaWYgKHB3cml0ZShmZCwgJngsIDEsIDAp
-ICE9IDEpIHsKCXBlcnJvcigicHdyaXRlIik7CglhYm9ydCgpOwogICAgICB9CgogICAgICBpZiAo
-ZmRhdGFzeW5jKGZkKSAhPSAwKSB7CglwZXJyb3IoImZkYXRhc3luYyIpOwoJYWJvcnQoKTsKICAg
-ICAgfQoKICAgICAgc3RydWN0IHRpbWVzcGVjIGVuZDsKICAgICAgY2xvY2tfZ2V0dGltZShDTE9D
-S19NT05PVE9OSUMsICZlbmQpOwogICAgICAKICAgICAgdWludDY0X3QgbnMgPSAoZW5kLnR2X25z
-ZWMgLSBzdGFydC50dl9uc2VjKSArIDEwMDAwMDAwMDBVTEwgKiAoZW5kLnR2X3NlYyAtIHN0YXJ0
-LnR2X3NlYyk7CgogICAgICBpZiAobnMgPiB3b3JzdCkKCXdvcnN0ID0gbnM7CgogICAgICBwcmlu
-dGYoIndyaXRlICsgZnN5bmMgdG9vayAlLjNmIHNlY29uZHMgKHdvcnN0ID0gJS4zZnMpXG4iLAoJ
-ICAgICAxZS05ICogbnMsIDFlLTkgKiB3b3JzdCk7CgogICAgICB1c2xlZXAoMTAwMDAwMCk7CiAg
-ICB9Cn0KCmludCBtYWluKGludCBhcmdjLCBjaGFyICoqYXJndikKewogIGlmIChhcmdjICE9IDMp
-IHsKICAgIHByaW50ZigiVXNhZ2U6ICVzIHdyaXRlIDxkaXI+IG9yICVzIHJlYWQgPGZpbGU+XG4i
-LCBhcmd2WzBdLCBhcmd2WzBdKTsKICAgIHJldHVybiAxOwogIH0KCiAgYm9vbCB3cml0ZTsKICBp
-ZiAoIXN0cmNtcChhcmd2WzFdLCAid3JpdGUiKSkgewogICAgd3JpdGUgPSB0cnVlOwogIH0gZWxz
-ZSBpZiAoIXN0cmNtcChhcmd2WzFdLCAicmVhZCIpKSB7CiAgICB3cml0ZSA9IGZhbHNlOwogIH0g
-ZWxzZSB7CiAgICBwcmludGYoIkJhZCBtb2RlXG4iKTsKICAgIHJldHVybiAxOwogIH0KCiAgc3Ry
-dWN0IHNpZ2FjdGlvbiBzYTsKICBzYS5zYV9oYW5kbGVyID0gaGFuZGxlcjsKICBzaWdlbXB0eXNl
-dCgmc2Euc2FfbWFzayk7CiAgc2Euc2FfZmxhZ3MgPSAwOwogIGlmIChzaWdhY3Rpb24oU0lHSU5U
-LCAmc2EsIDApICE9IDApIHsKICAgIHBlcnJvcigic2lnYWN0aW9uIik7CiAgICBleGl0KDEpOwog
-IH0KCiAgaWYgKHdyaXRlKQogICAgZG9fd3JpdGUoYXJndlsyXSk7CiAgZWxzZQogICAgZG9fcmVh
-ZChhcmd2WzJdKTsKCiAgcmV0dXJuIDA7Cn0K
---20cf307f39b49774cc049f96f513--
+-> (&delayed_node->mutex){+.+.-.} ops: 32488 {
+   HARDIRQ-ON-W at:
+                        [<ffffffff81075ec0>] __lock_acquire+0x346/0xda6
+                        [<ffffffff81076a3d>] lock_acquire+0x11d/0x143
+                        [<ffffffff814c6321>] __mutex_lock_common+0x5a/0x444
+                        [<ffffffff814c67c0>] mutex_lock_nested+0x39/0x3e
+                        [<ffffffff81212040>] btrfs_delayed_update_inode+0x45/0x101
+                        [<ffffffff811dc5f7>] btrfs_update_inode+0x2e/0x129
+                        [<ffffffff811de8b0>] btrfs_dirty_inode+0x57/0x113
+                        [<ffffffff8113c2a5>] __mark_inode_dirty+0x33/0x1aa
+                        [<ffffffff81130939>] touch_atime+0x107/0x12a
+                        [<ffffffff810d63ea>] generic_file_aio_read+0x567/0x5bc
+                        [<ffffffff8111c717>] do_sync_read+0xcb/0x108
+                        [<ffffffff8111cd89>] vfs_read+0xab/0x107
+                        [<ffffffff8111cea8>] sys_read+0x4d/0x74
+                        [<ffffffff81002ddb>] system_call_fastpath+0x16/0x1b
+   SOFTIRQ-ON-W at:
+                        [<ffffffff81075ee1>] __lock_acquire+0x367/0xda6
+                        [<ffffffff81076a3d>] lock_acquire+0x11d/0x143
+                        [<ffffffff814c6321>] __mutex_lock_common+0x5a/0x444
+                        [<ffffffff814c67c0>] mutex_lock_nested+0x39/0x3e
+                        [<ffffffff81212040>] btrfs_delayed_update_inode+0x45/0x101
+                        [<ffffffff811dc5f7>] btrfs_update_inode+0x2e/0x129
+                        [<ffffffff811de8b0>] btrfs_dirty_inode+0x57/0x113
+                        [<ffffffff8113c2a5>] __mark_inode_dirty+0x33/0x1aa
+                        [<ffffffff81130939>] touch_atime+0x107/0x12a
+                        [<ffffffff810d63ea>] generic_file_aio_read+0x567/0x5bc
+                        [<ffffffff8111c717>] do_sync_read+0xcb/0x108
+                        [<ffffffff8111cd89>] vfs_read+0xab/0x107
+                        [<ffffffff8111cea8>] sys_read+0x4d/0x74
+                        [<ffffffff81002ddb>] system_call_fastpath+0x16/0x1b
+   IN-RECLAIM_FS-W at:
+                           [<ffffffff81075f1f>] __lock_acquire+0x3a5/0xda6
+                           [<ffffffff81076a3d>] lock_acquire+0x11d/0x143
+                           [<ffffffff814c6321>] __mutex_lock_common+0x5a/0x444
+                           [<ffffffff814c67c0>] mutex_lock_nested+0x39/0x3e
+                           [<ffffffff81213283>] btrfs_remove_delayed_node+0x3e/0xd2
+                           [<ffffffff811d77fe>] btrfs_destroy_inode+0x2ae/0x2d4
+                           [<ffffffff81130dc1>] destroy_inode+0x2f/0x45
+                           [<ffffffff811312ca>] dispose_list+0xaa/0xdf
+                           [<ffffffff81131866>] shrink_icache_memory+0x1e3/0x213
+                           [<ffffffff810e24cd>] shrink_slab+0xe0/0x164
+                           [<ffffffff810e4619>] balance_pgdat+0x2e8/0x50b
+                           [<ffffffff810e4bbc>] kswapd+0x380/0x3c0
+                           [<ffffffff81061a60>] kthread+0x9d/0xa5
+                           [<ffffffff81003c14>] kernel_thread_helper+0x4/0x10
+   INITIAL USE at:
+                       [<ffffffff81075f37>] __lock_acquire+0x3bd/0xda6
+                       [<ffffffff81076a3d>] lock_acquire+0x11d/0x143
+                       [<ffffffff814c6321>] __mutex_lock_common+0x5a/0x444
+                       [<ffffffff814c67c0>] mutex_lock_nested+0x39/0x3e
+                       [<ffffffff81212040>] btrfs_delayed_update_inode+0x45/0x101
+                       [<ffffffff811dc5f7>] btrfs_update_inode+0x2e/0x129
+                       [<ffffffff811de8b0>] btrfs_dirty_inode+0x57/0x113
+                       [<ffffffff8113c2a5>] __mark_inode_dirty+0x33/0x1aa
+                       [<ffffffff81130939>] touch_atime+0x107/0x12a
+                       [<ffffffff810d63ea>] generic_file_aio_read+0x567/0x5bc
+                       [<ffffffff8111c717>] do_sync_read+0xcb/0x108
+                       [<ffffffff8111cd89>] vfs_read+0xab/0x107
+                       [<ffffffff8111cea8>] sys_read+0x4d/0x74
+                       [<ffffffff81002ddb>] system_call_fastpath+0x16/0x1b
+ }
+ ... key      at: [<ffffffff82925450>] __key.31289+0x0/0x8
+ ... acquired at:
+   [<ffffffff810749bf>] check_usage_forwards+0x71/0x7e
+   [<ffffffff81074162>] mark_lock+0x18c/0x26a
+   [<ffffffff81075f1f>] __lock_acquire+0x3a5/0xda6
+   [<ffffffff81076a3d>] lock_acquire+0x11d/0x143
+   [<ffffffff814c6321>] __mutex_lock_common+0x5a/0x444
+   [<ffffffff814c67c0>] mutex_lock_nested+0x39/0x3e
+   [<ffffffff81213283>] btrfs_remove_delayed_node+0x3e/0xd2
+   [<ffffffff811d77fe>] btrfs_destroy_inode+0x2ae/0x2d4
+   [<ffffffff81130dc1>] destroy_inode+0x2f/0x45
+   [<ffffffff811312ca>] dispose_list+0xaa/0xdf
+   [<ffffffff81131866>] shrink_icache_memory+0x1e3/0x213
+   [<ffffffff810e24cd>] shrink_slab+0xe0/0x164
+   [<ffffffff810e4619>] balance_pgdat+0x2e8/0x50b
+   [<ffffffff810e4bbc>] kswapd+0x380/0x3c0
+   [<ffffffff81061a60>] kthread+0x9d/0xa5
+   [<ffffffff81003c14>] kernel_thread_helper+0x4/0x10
+
+
+stack backtrace:
+Pid: 49, comm: kswapd0 Not tainted 2.6.36-v5+ #10
+Call Trace:
+ [<ffffffff8107493d>] print_irq_inversion_bug+0x124/0x135
+ [<ffffffff810749bf>] check_usage_forwards+0x71/0x7e
+ [<ffffffff8107494e>] ? check_usage_forwards+0x0/0x7e
+ [<ffffffff81074162>] mark_lock+0x18c/0x26a
+ [<ffffffff81075f1f>] __lock_acquire+0x3a5/0xda6
+ [<ffffffff81076911>] ? __lock_acquire+0xd97/0xda6
+ [<ffffffff81213283>] ? btrfs_remove_delayed_node+0x3e/0xd2
+ [<ffffffff81076a3d>] lock_acquire+0x11d/0x143
+ [<ffffffff81213283>] ? btrfs_remove_delayed_node+0x3e/0xd2
+ [<ffffffff81213283>] ? btrfs_remove_delayed_node+0x3e/0xd2
+ [<ffffffff814c6321>] __mutex_lock_common+0x5a/0x444
+ [<ffffffff81213283>] ? btrfs_remove_delayed_node+0x3e/0xd2
+ [<ffffffff81074604>] ? trace_hardirqs_on+0xd/0xf
+ [<ffffffff814c67c0>] mutex_lock_nested+0x39/0x3e
+ [<ffffffff81213283>] btrfs_remove_delayed_node+0x3e/0xd2
+ [<ffffffff811d77fe>] btrfs_destroy_inode+0x2ae/0x2d4
+ [<ffffffff81130dc1>] destroy_inode+0x2f/0x45
+ [<ffffffff811312ca>] dispose_list+0xaa/0xdf
+ [<ffffffff81131866>] shrink_icache_memory+0x1e3/0x213
+ [<ffffffff810e24cd>] shrink_slab+0xe0/0x164
+ [<ffffffff810e4619>] balance_pgdat+0x2e8/0x50b
+ [<ffffffff810e4bbc>] kswapd+0x380/0x3c0
+ [<ffffffff81062032>] ? autoremove_wake_function+0x0/0x39
+ [<ffffffff810e483c>] ? kswapd+0x0/0x3c0
+ [<ffffffff81061a60>] kthread+0x9d/0xa5
+ [<ffffffff81003c14>] kernel_thread_helper+0x4/0x10
+ [<ffffffff81038cd9>] ? finish_task_switch+0x70/0xb9
+ [<ffffffff814c8940>] ? restore_args+0x0/0x30
+ [<ffffffff810619c3>] ? kthread+0x0/0xa5
+ [<ffffffff81003c10>] ? kernel_thread_helper+0x0/0x10
+

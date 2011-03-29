@@ -1,31 +1,41 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [GIT PULL] Btrfs updates for 2.6.39
-Date: Tue, 29 Mar 2011 07:32:48 -0400
-Message-ID: <1301398227-sup-108@think>
-References: <1301312919-sup-1222@think> <20110328132527.GM17108@twin.jikos.cz>
-Content-Type: text/plain; charset=UTF-8
-Cc: Linus Torvalds <torvalds@linux-foundation.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	linux-kernel <linux-kernel@vger.kernel.org>
-To: David Sterba <dave@jikos.cz>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-reply-to: <20110328132527.GM17108@twin.jikos.cz>
+From: Thomas Backlund <tmb@mandriva.org>
+Subject: Re: New btrfsck status
+Date: Tue, 29 Mar 2011 15:13:00 +0300
+Message-ID: <4D91CCCC.10305@mandriva.org>
+References: <AANLkTinu_29idVYvudG=E6VaxwqQoN2YEi57-RPk3dkF@mail.gmail.com> <1297340143-sup-3602@think>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"; format=flowed
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1297340143-sup-3602@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from David Sterba's message of 2011-03-28 09:25:28 -0400:
-> Hi,
-> 
-> Chris, you did not add my sign-of on the unaligned fix I've posted, nor
-> the tested-by or reported-by. Looking again into the mail, it seems like
-> some automated-misprocessing picked the first part of the mail altough
-> there was properly formated patch after '--' marker (and I've verified
-> this is correct before sending the mail).
-> 
-> Can you please fix that?
-> Patch reference: https://patchwork.kernel.org/patch/645671/
+Chris Mason skrev 10.2.2011 14:17:
+> Excerpts from Ben Gamari's message of 2011-02-09 21:52:20 -0500:
+>> Hey all,
+>>
+>> Over the last several months there have been many claims regarding the
+>> release of the rewritten btrfsck. Unfortunately, despite numerous
+>> claims that it will be released Real Soon Now(c), I have yet to see
+>> even a repository with preliminary code. Did I miss an announcement?
+>> There is something to be said for "release early, release often." Is
+>> there a timeline for getting btrfsck into some sort of usable form?
+>
+> Yes, but its still real soon now.  I've been at about 90% done since
+> Christmas.  It would have been out last week but I've been chasing a
+> debugging a very difficult corruption under load.
+>
+> I finally found a race in btrfs causing the corruption and now I'm back
+> on fsck full time again.
+>
 
-Sorry, looks like I messed that one up.  patchwork did bring in the
-comments in a funny way and I didn't notice before the pull request went
-out.
+Any status updates on this ?
 
--chris
+Checking:
+http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-progs-unstable.git;a=shortlog;h=refs/heads/next
+
+I see last commit is 3+ months ago
+
+--
+Thomas

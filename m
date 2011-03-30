@@ -1,97 +1,93 @@
-From: Peter Zijlstra <peterz@infradead.org>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: [PATCH 2/2] mutex: Apply adaptive spinning on mutex_trylock()
-Date: Wed, 30 Mar 2011 13:29:38 +0200
-Message-ID: <1301484578.4859.178.camel@twins>
-References: <20110323153727.GB12003@htj.dyndns.org>
-	 <20110324094119.GD12038@htj.dyndns.org>
-	 <20110324094151.GE12038@htj.dyndns.org>
-	 <20110325101238.GC1409@htj.dyndns.org>
-	 <20110329163702.GE29865@htj.dyndns.org>
-	 <20110329170949.GF29865@htj.dyndns.org> <1301420253.2250.430.camel@laptop>
-	 <20110330081716.GE17523@htj.dyndns.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Cc: Ingo Molnar <mingo@redhat.com>,
+Date: Wed, 30 Mar 2011 07:46:27 -0400
+Message-ID: <1301485262-sup-5247@think>
+References: <20110323153727.GB12003@htj.dyndns.org> <20110324094119.GD12038@htj.dyndns.org> <20110324094151.GE12038@htj.dyndns.org> <20110325101238.GC1409@htj.dyndns.org> <20110329163702.GE29865@htj.dyndns.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: Peter Zijlstra <peterz@infradead.org>,
+	Ingo Molnar <mingo@redhat.com>,
 	Linus Torvalds <torvalds@linux-foundation.org>,
 	Andrew Morton <akpm@linux-foundation.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+	linux-kernel <linux-kernel@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
 To: Tejun Heo <tj@kernel.org>
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20110330081716.GE17523@htj.dyndns.org>
+In-reply-to: <20110329163702.GE29865@htj.dyndns.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2011-03-30 at 10:17 +0200, Tejun Heo wrote:
-> Hey, Peter.
+Excerpts from Tejun Heo's message of 2011-03-29 12:37:02 -0400:
+> Hello, guys.
 > 
-> On Tue, Mar 29, 2011 at 07:37:33PM +0200, Peter Zijlstra wrote:
-> > On Tue, 2011-03-29 at 19:09 +0200, Tejun Heo wrote:
-> > > Here's the combined patch I was planning on testing but didn't get to
-> > > (yet).  It implements two things - hard limit on spin duration and
-> > > early break if the owner also is spinning on a mutex.
-> > 
-> > This is going to give massive conflicts with
-> > 
-> >  https://lkml.org/lkml/2011/3/2/286
-> >  https://lkml.org/lkml/2011/3/2/282
-> > 
-> > which I was planning to stuff into .40
+> I've been running dbench 50 for a few days now and the result is,
+> well, I don't know how to call it.
 > 
-> I see.  Adapting shouldn't be hard.  The patch is in proof-of-concept
-> stage anyway.
+> The problem was that the original patch didn't do anything because x86
+> fastpath code didn't call into the generic slowpath at all.
 > 
-> > > + * Forward progress is guaranteed regardless of locking ordering by never
-> > > + * spinning longer than MAX_MUTEX_SPIN_NS.  This is necessary because
-> > > + * mutex_trylock(), which doesn't have to follow the usual locking
-> > > + * ordering, also uses this function.
-> > 
-> > While that puts a limit on things it'll still waste time. I'd much
-> > rather pass an trylock argument to mutex_spin_on_owner() and then bail
-> > on owner also spinning.
+>   static inline int __mutex_fastpath_trylock(atomic_t *count,
+>                          int (*fail_fn)(atomic_t *))
+>   {
+>       if (likely(atomic_cmpxchg(count, 1, 0) == 1))
+>           return 1;
+>       else
+>           return 0;
+>   }                                                
 > 
-> Do we guarantee or enforce that the lock ownership can't be
-> transferred to a different task?  If we do, the recursive spinning
-> detection is enough to guarantee forward progress.
-
-The only way to switch owner is for the current owner to release and a
-new owner to acquire the lock. Also we already bail the spin loop when
-owner changes.
-
-> > > +		if (task_thread_info(rq->curr) != owner ||
-> > > +		    rq->spinning_on_mutex || need_resched() ||
-> > > +		    local_clock() > start + MAX_MUTEX_SPIN_NS) {
-> > 
-> > While we did our best with making local_clock() cheap, I'm still fairly
-> > uncomfortable with putting it in such a tight loop.
+> So, I thought that I probably was doing unconscious data selection
+> while I was running the test before sending out the patches.  Maybe I
+> was seeing what I wanted to see, so I ran tests in larger scale more
+> methodologically.
 > 
-> That's one thing I didn't really understand.  It seems the spinning
-> code tried to be light on CPU cycle usage, but we're wasting CPU
-> cycles there anyway.  If the spinning can become smarter using some
-> CPU cycles, isn't that a gain?  Why is the spinning code optimizing
-> for less CPU cycles?
+> I first started with ten consecutive runs and then doubled it with
+> intervening reboot and then basically ended up doing that twice for
+> four configuration (I didn't do two runs of simple and refactor but
+> just averaged the two).
+> 
+> The hardware is mostly the same except that I switched to a hard drive
+> instead of SSD as hard drives tend to be slower but more consistent in
+> performance numbers.  On each run, the filesystem is recreated and the
+> system was rebooted after every ten runs.  The numbers are the
+> reported throughput in MiB/s at the end of each run.
+> 
+>   https://spreadsheets.google.com/ccc?key=0AsbaQh2SFt66dDdxOGZWVVlIbEdIOWRQLURVVUNYSXc&hl=en
+> 
+> Here are the descriptions of the eight columns.
+> 
+>   simple    only with patch to make btrfs use mutex
+>   refactor    mutex_spin() factored out
+>   spin        mutex_spin() applied to the unused trylock slowpath
+>   spin-1    ditto
+>   spin-fixed    x86 trylock fastpath updated to use generic slowpath
+>   spin-fixed-1    ditto
+>   code-layout    refactor + dummy function added to mutex.c
+>   code-layout-1    ditto
+> 
+> After running the simple, refactor and spin ones, I was convinced that
+> there definitely was something which was causing the difference.  The
+> averages were apart by more than 1.5 sigma, but I couldn't explain
+> what could have caused such difference.
 
-Loop exit latency mostly, the lighter the loop, the faster you're
-through the less time you waste once the condition is true, but yeah,
-what you say is true too, its a balance game as always.
+I have another workload that is interesting for this, basically N (100
+or so) procs all doing stats on a bunch of files in the same directory.
+This hammers very hard on the btree lookups.
 
-> Also, it would be great if you can share what you're using for locking
-> performance measurements.  My attempts with dbench didn't end too
-> well. :-(
+During the first set of mutex spinning patches, doing any kind of
+breakout on the owner spin (when the owner hasn't changed) made it much
+slower.
 
-The thing I used for the initial implementation is mentioned in the
-changelog (0d66bf6d3):
+You might want to try again with the 2.6.39-rc1 btrfs (or pull my
+for-linus-unmerged tree into .38) because this gets rid of an unneeded
+spinlock for the root node.
 
-    Testing with Ingo's test-mutex application (http://lkml.org/lkml/2006/1/8/50)
-    gave a 345% boost for VFS scalability on my testbox:
-    
-     # ./test-mutex-shm V 16 10 | grep "^avg ops"
-     avg ops/sec:               296604
-    
-     # ./test-mutex-shm V 16 10 | grep "^avg ops"
-     avg ops/sec:               85870
+All your work convinced me to dig out my seqlock patches for read only
+tree block operations.  I think we can take your current btrfs patches
+and combine the seqlock stuff for a huge benefit.
 
-I've no idea how heavy that is on trylock though, you'd have to look at
-that.
+In this case, the only thing we're really missing is a way to mutex_lock
+without the cond_resched()
 
-Chris did some improvements using dbench in ac6e60ee4 but clearly that
-isn't working for you.
+The biggest trylock user in btrfs is only there so we can keep the
+spinning lock instead of the blocking lock.  Since you're getting rid of
+the whole spin vs block setup, we can switch directly to a lock.
+
+-chris

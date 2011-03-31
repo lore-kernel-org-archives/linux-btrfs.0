@@ -1,74 +1,84 @@
-From: "Zhong, Xin" <xin.zhong@intel.com>
-Subject: [PATCH] Btrfs: fix subvolume mount by name problem when default mount subvolume is set
-Date: Thu, 31 Mar 2011 15:59:22 +0800
-Message-ID: <1301558362-2650-1-git-send-email-xin.zhong@intel.com>
-Cc: xin.zhong@intel.com
-To: linux-btrfs@vger.kernel.org
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: [PATCH] Btrfs: fix compile warning from __btrfs_map_block
+Date: Thu, 31 Mar 2011 17:45:20 +0800
+Message-ID: <4D944D30.4050900@cn.fujitsu.com>
+References: <4D944235.7020408@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4D944235.7020408@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We create two subvolumes (meego_root and meego_home) in
-btrfs root directory. And set meego_root as default mount
-subvolume. After we remount btrfs, meego_root is mounted
-to top directory by default. Then when we try to mount
-meego_home (subvol=meego_home) to a subdirectory, it failed.
-The problem is when default mount subvolume is set to
-meego_root, we search meego_home in it but can not find it.
-So the solution is to search meego_home in btrfs root
-directory instead when subvol=meego_home is given.
 
-Detail information can be found in meego bugzilla:
-https://bugs.meego.com/show_bug.cgi?id=15055
+While compile btrfs modules on 32bit box, I encounter the following:
 
-Signed-off-by: Zhong, Xin <xin.zhong@intel.com>
+WARNING: "__umoddi3" [fs/btrfs/btrfs.ko] undefined!
+
+The WARNING comes from that __btrfs_map_block does not use do_div() for
+relative operations, this will cause problems on 32bit box, for values
+with "u64" type should use do_div() instead of a direct "%".
+
+Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 ---
- fs/btrfs/super.c |   23 +++++++++++++++++------
- 1 files changed, 17 insertions(+), 6 deletions(-)
+ fs/btrfs/volumes.c |   23 +++++++++++++++--------
+ 1 files changed, 15 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index db0a827..138bc4c 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -786,15 +786,18 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
- 		s->s_flags |= MS_ACTIVE;
- 	}
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 41afd50..7b23d0f 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3076,16 +3076,19 @@ again:
+ 			multi->stripes[i].dev = map->stripes[stripe_index].dev;
  
--	root = get_default_root(s, subvol_objectid);
--	if (IS_ERR(root)) {
--		error = PTR_ERR(root);
--		deactivate_locked_super(s);
--		goto error_free_subvol_name;
--	}
- 	/* if they gave us a subvolume name bind mount into that */
- 	if (strcmp(subvol_name, ".")) {
- 		struct dentry *new_root;
-+		
-+		/* we search subvolume name in the btrfs root, not the default mount subvolume */
-+		root = get_default_root(s, BTRFS_FS_TREE_OBJECTID);
-+		if (IS_ERR(root)) {
-+			error = PTR_ERR(root);
-+			deactivate_locked_super(s);
-+			goto error_free_subvol_name;
-+		}
+ 			if (map->type & BTRFS_BLOCK_GROUP_RAID0) {
+-				u64 stripes;
+-				int last_stripe = (stripe_nr_end - 1) %
+-					map->num_stripes;
++				u64 stripes = stripe_nr_end - 1;
++				int last_stripe = do_div(stripes,
++					map->num_stripes);
+ 				int j;
+ 
+ 				for (j = 0; j < map->num_stripes; j++) {
+-					if ((stripe_nr_end - 1 - j) %
+-					      map->num_stripes == stripe_index)
++					stripes = stripe_nr_end - 1 - j;
 +
- 		mutex_lock(&root->d_inode->i_mutex);
- 		new_root = lookup_one_len(subvol_name, root,
- 				      strlen(subvol_name));
-@@ -816,6 +819,14 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
- 		dput(root);
- 		root = new_root;
- 	}
-+	else {
-+		root = get_default_root(s, subvol_objectid);
-+		if (IS_ERR(root)) {
-+			error = PTR_ERR(root);
-+			deactivate_locked_super(s);
-+			goto error_free_subvol_name;
-+		}
-+	}
++					if (do_div(stripes, map->num_stripes) ==
++					    stripe_index)
+ 						break;
+ 				}
++
+ 				stripes = stripe_nr_end - 1 - j;
+ 				do_div(stripes, map->num_stripes);
+ 				multi->stripes[i].length = map->stripe_len *
+@@ -3100,18 +3103,22 @@ again:
+ 					multi->stripes[i].length -=
+ 						stripe_end_offset;
+ 			} else if (map->type & BTRFS_BLOCK_GROUP_RAID10) {
+-				u64 stripes;
++				u64 stripes = stripe_nr_end - 1;
+ 				int j;
+ 				int factor = map->num_stripes /
+ 					     map->sub_stripes;
+-				int last_stripe = (stripe_nr_end - 1) % factor;
++				int last_stripe = do_div(stripes, factor);
++
+ 				last_stripe *= map->sub_stripes;
  
- 	mnt->mnt_sb = s;
- 	mnt->mnt_root = root;
+ 				for (j = 0; j < factor; j++) {
+-					if ((stripe_nr_end - 1 - j) % factor ==
++					stripes = stripe_nr_end - 1 - j;
++
++					if (do_div(stripes, factor) ==
+ 					    stripe_index / map->sub_stripes)
+ 						break;
+ 				}
++
+ 				stripes = stripe_nr_end - 1 - j;
+ 				do_div(stripes, factor);
+ 				multi->stripes[i].length = map->stripe_len *
 -- 
-1.7.0.4
+1.6.5.2
 

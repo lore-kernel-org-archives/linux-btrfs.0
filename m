@@ -1,50 +1,71 @@
 From: Larry D'Anna <larry@elder-gods.org>
-Subject: [PATCH 0/2] btrfs: allow cross-subvolume BTRFS_IOC_CLONE
-Date: Thu, 31 Mar 2011 00:00:11 -0400
-Message-ID: <cover.1301542804.git.larry@elder-gods.org>
+Subject: [PATCH 2/2] btrfs: allow cross-subvolume BTRFS_IOC_CLONE
+Date: Thu, 31 Mar 2011 00:00:13 -0400
+Message-ID: <fe0d8683672f6d7bb90bd46b60a49add53ed7f61.1301542805.git.larry@elder-gods.org>
+References: <cover.1301542804.git.larry@elder-gods.org>
 Cc: larry@elder-gods.org, "Yan Zheng" <zheng.z.yan@intel.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <cover.1301542804.git.larry@elder-gods.org>
+In-Reply-To: <cover.1301542804.git.larry@elder-gods.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a simple patch to allow reflinks to be made crossing subvolume
-boundaries.  The only complication I found in implementing this is that
-btrfs_ioctl_clone reuses a btrfs_path.  This is a slight problem because once we
-allow the source and destination inodes to come from different btrfs_roots, we
-need to know what root to pass into the various calls to btrfs_release_path, and
-keeping track of this would further complicate the control flow of
-btrfs_ioctl_clone.  Fortunately btrfs_release_path does not use it's first
-argument, patch number 1 removes it.
 
-Patch number 2 is then just a simple matter of distinguishing between the source
-and destination btrfs_roots in btrfs_ioctl_clone.
+Signed-off-by: Larry D'Anna <larry@elder-gods.org>
+---
+ fs/btrfs/ioctl.c |   10 ++++++----
+ 1 files changed, 6 insertions(+), 4 deletions(-)
 
-If removing the first argument from btrfs_release_path is undesirable, then
-btrfs_ioctl_clone could simply pass NULL.  There are a few other places in btrfs
-that already do this.
-
-I have tested this by cp -a --reflink=always all the files found in the UML
-slackware root_fs, and also by cloning a test file with hundreds of
-random extents and holes.  
-
-Larry D'Anna (2):
-  btrfs: remove unused argument 'root' from btrfs_release_path
-  btrfs: allow cross-subvolume BTRFS_IOC_CLONE
-
- fs/btrfs/ctree.c            |   28 ++++++------
- fs/btrfs/ctree.h            |    2 +-
- fs/btrfs/dir-item.c         |    2 +-
- fs/btrfs/extent-tree.c      |   74 ++++++++++++++++----------------
- fs/btrfs/file-item.c        |   12 +++---
- fs/btrfs/file.c             |   12 +++---
- fs/btrfs/free-space-cache.c |   14 +++---
- fs/btrfs/inode.c            |   42 +++++++++---------
- fs/btrfs/ioctl.c            |   22 +++++----
- fs/btrfs/relocation.c       |   30 +++++++-------
- fs/btrfs/root-tree.c        |   10 ++--
- fs/btrfs/tree-defrag.c      |    2 +-
- fs/btrfs/tree-log.c         |   98 +++++++++++++++++++++---------------------
- fs/btrfs/volumes.c          |   16 ++++----
- fs/btrfs/xattr.c            |    4 +-
- 15 files changed, 185 insertions(+), 183 deletions(-)
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index f9717b6..10095c7 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1804,6 +1804,7 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ {
+ 	struct inode *inode = fdentry(file)->d_inode;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
++	struct btrfs_root *srcroot;
+ 	struct file *src_file;
+ 	struct inode *src;
+ 	struct btrfs_trans_handle *trans;
+@@ -1846,6 +1847,7 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 	}
+ 
+ 	src = src_file->f_dentry->d_inode;
++	srcroot = BTRFS_I(src)->root;
+ 
+ 	ret = -EINVAL;
+ 	if (src == inode)
+@@ -1860,11 +1862,11 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 		goto out_fput;
+ 
+ 	ret = -EXDEV;
+-	if (src->i_sb != inode->i_sb || BTRFS_I(src)->root != root)
++	if (src->i_sb != inode->i_sb)
+ 		goto out_fput;
+ 
+ 	ret = -ENOMEM;
+-	buf = vmalloc(btrfs_level_size(root, 0));
++	buf = vmalloc(btrfs_level_size(srcroot, 0));
+ 	if (!buf)
+ 		goto out_fput;
+ 
+@@ -1924,13 +1926,13 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 		 * note the key will change type as we walk through the
+ 		 * tree.
+ 		 */
+-		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
++		ret = btrfs_search_slot(NULL, srcroot, &key, path, 0, 0);
+ 		if (ret < 0)
+ 			goto out;
+ 
+ 		nritems = btrfs_header_nritems(path->nodes[0]);
+ 		if (path->slots[0] >= nritems) {
+-			ret = btrfs_next_leaf(root, path);
++			ret = btrfs_next_leaf(srcroot, path);
+ 			if (ret < 0)
+ 				goto out;
+ 			if (ret > 0)
+-- 
+1.7.0.rc2.40.g7d8aa
 

@@ -1,32 +1,67 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: checkpoints to often
-Date: Thu, 31 Mar 2011 10:35:51 -0400
-Message-ID: <1301582070-sup-5170@think>
-References: <AANLkTinr4G=F6msPF=oVDrCU1uz2b-q8Do4f5htzP=ep@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: "krzf83@gmail.com" <krzf83@gmail.com>
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: Re: [PATCH] Btrfs - use %pU to print fsid
+Date: Thu, 31 Mar 2011 12:14:14 -0500
+Message-ID: <AANLkTik1TAD6EnVKvWZd_ZnzRqyEwkHAJ+s7J5Gm3nsq@mail.gmail.com>
+References: <20110209140531.GA26945@kwango.lan.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+To: Ilya Dryomov <idryomov@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <AANLkTinr4G=F6msPF=oVDrCU1uz2b-q8Do4f5htzP=ep@mail.gmail.com>
+In-Reply-To: <20110209140531.GA26945@kwango.lan.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from krzf83@gmail.com's message of 2011-03-31 10:30:51 -0400:
-> There should be a way to make automatic checkpoints less frequent. On
-> the busy ssd I have about 7 cp every second. If it were for example
-> once every 5 minutes then one could set garbage removal every few
-> days.
-> Also garbage removal should have option to clean only if like 90% of
-> drive is used. there is no need to remove cp-s when there is still
-> many GB of space left.
+On Wed, Feb 9, 2011 at 8:05 AM, Ilya Dryomov <idryomov@gmail.com> wrote=
+:
+> Get rid of FIXME comment. =A0Uuids from dmesg are now the same as uui=
+ds
+> given by btrfs-progs.
+>
+> Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
+> ---
+> =A0fs/btrfs/volumes.c | =A0 =A08 ++------
+> =A01 files changed, 2 insertions(+), 6 deletions(-)
+>
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 2636a05..83b789c 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -714,12 +714,8 @@ int btrfs_scan_one_device(const char *path, fmod=
+e_t flags, void *holder,
+> =A0 =A0 =A0 =A0transid =3D btrfs_super_generation(disk_super);
+> =A0 =A0 =A0 =A0if (disk_super->label[0])
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0printk(KERN_INFO "device label %s ", d=
+isk_super->label);
+> - =A0 =A0 =A0 else {
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 /* FIXME, make a readl uuid parser */
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 printk(KERN_INFO "device fsid %llx-%llx=
+ ",
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0*(unsigned long long *)d=
+isk_super->fsid,
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0*(unsigned long long *)(=
+disk_super->fsid + 8));
+> - =A0 =A0 =A0 }
+> + =A0 =A0 =A0 else
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 printk(KERN_INFO "device fsid %pU ", di=
+sk_super->fsid);
+> =A0 =A0 =A0 =A0printk(KERN_CONT "devid %llu transid %llu %s\n",
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 (unsigned long long)devid, (unsigned long=
+ long)transid, path);
+> =A0 =A0 =A0 =A0ret =3D device_list_add(path, disk_super, devid, fs_de=
+vices_ret);
+> --
+> 1.7.2.3
+>
 
-I'm wondering how you're measuring check points?  Btrfs does a
-transaction commit ever 30 seconds, so finding 7 commits per second
-seems strange.
+I've had this patch in my testing stack for a while now, and it's been
+working well.  The fsid now matches the UUID.
 
-We do have a lighter weight commit that is done for fsyncs, but this is
-not a full check point.
-
-There's no garbage removal in btrfs, we use reference counting instead
-of a traditional log structured design.
-
--chris
+It would be nice if the text string lead off with "Btrfs:" or
+"btrfs:".  This would be similar to the way other drivers send log
+messages, and would make it easier to pick out the Btrfs mount message
+from all the other messages.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

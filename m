@@ -1,60 +1,84 @@
-From: "Thomas Schneider" <c.monty@web.de>
-Subject: Btrfs Partition out of free space - no mount possible
-Date: Thu, 31 Mar 2011 09:05:35 +0200 (CEST)
-Message-ID: <132839091.3008.1301555135774.JavaMail.fmail@mwmweb057>
+From: Tristan Ye <tristan.ye@oracle.com>
+Subject: [PATCH 1/3] VFS/ioctl: Add punching-hole support to
+	ioctl().
+Date: Thu, 31 Mar 2011 15:33:30 +0800
+Message-ID: <1301556810-8438-1-git-send-email-tristan.ye@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Cc: chris.mason@oracle.com
+To: ocfs2-devel@oss.oracle.com, josef@redhat.com, linux-kernel@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
+Return-path: <ocfs2-devel-bounces@oss.oracle.com>
+List-Unsubscribe: <http://oss.oracle.com/mailman/listinfo/ocfs2-devel>,
+	<mailto:ocfs2-devel-request@oss.oracle.com?subject=unsubscribe>
+List-Archive: <http://oss.oracle.com/pipermail/ocfs2-devel>
+List-Post: <mailto:ocfs2-devel@oss.oracle.com>
+List-Help: <mailto:ocfs2-devel-request@oss.oracle.com?subject=help>
+List-Subscribe: <http://oss.oracle.com/mailman/listinfo/ocfs2-devel>,
+	<mailto:ocfs2-devel-request@oss.oracle.com?subject=subscribe>
+Errors-To: ocfs2-devel-bounces@oss.oracle.com
 List-ID: <linux-btrfs.vger.kernel.org>
 
+We're currently support two paths from VFS to preallocate unwritten
+extents(from FS_IOC_RESVSP, or fallocate()), likewise, behavior of
+punching-hole should be treated as the same, this patch tries to teach
+file_ioctl() to handle FS_IOC_UNRESVSP, underlying filesystem like ocfs2
+is wise enough to do the rest of work;-)
 
-Hello!
+Signed-off-by: Tristan Ye <tristan.ye@oracle.com>
+---
+ fs/ioctl.c             |   10 +++++++---
+ include/linux/falloc.h |    2 ++
+ 2 files changed, 9 insertions(+), 3 deletions(-)
 
-My Btrfs partition (/home) is out of free space.
-The partition is a logical drive within a LVM configuration.
-
-I've already extended the LVM logical volume.
-However, it's impossible to mount the partition from a live CD system (SystemRescue CD).
-The error in dmesg is: BTRFS: inode 8443 still on the orphan list
-
-Here my executed commands:
-root@sysresccd /root % btrfs filesystem show
-failed to read /dev/fd0
-Label: 'home'  uuid: c6da646e-83aa-432d-9a24-d0d276c3de4d
-    Total devices 1 FS bytes used 284.13MB
-    devid    1 size 756.00MB used 756.00MB path /dev/dm-3
-
-root@sysresccd /root % pvscan
-  PV /dev/mapper/lvm-crypt   VG linux   lvm2 [7.86 GiB / 0    free]
-  Total: 1 [7.86 GiB] / in use: 1 [7.86 GiB] / in no VG: 0 [0   ]
-
-root@sysresccd /root % vgscan
-  Reading all physical volumes.  This may take a while...
-  Found volume group "linux" using metadata type lvm2
-
-root@sysresccd /root % lvscan
-  ACTIVE            '/dev/linux/root' [6.52 GiB] inherit
-  ACTIVE            '/dev/linux/swap' [416.00 MiB] inherit
-  ACTIVE            '/dev/linux/home' [956.00 MiB] inherit
-
-When I try to mount the Btrfs partition, the system hangs:
-  root@sysresccd /root % mount /dev/linux/home /mnt/backup
-  
-  root@sysresccd /root % dmesg
-[ 5142.990126] device label home devid 1 transid 951018 /dev/mapper/linux-home
-[ 5143.110843] BTRFS: inode 8443 still on the orphan list
-[ 5143.148987] BTRFS: inode 8443 still on the orphan list
-[ 5143.158262] BTRFS: inode 8443 still on the orphan list
-[ 5143.167229] BTRFS: inode 8443 still on the orphan list
-[ 5143.177283] BTRFS: inode 8443 still on the orphan list
-[ 5143.186218] BTRFS: inode 8443 still on the orphan list
-[ 5143.196194] BTRFS: inode 8443 still on the orphan list
-[ 5143.206172] BTRFS: inode 8443 still on the orphan list
-[ 5143.220235] BTRFS: inode 8443 still on the orphan list
-
-How can I resolve this issue?
-
-THX
-
-
+diff --git a/fs/ioctl.c b/fs/ioctl.c
+index 1d9b9fc..234e26f 100644
+--- a/fs/ioctl.c
++++ b/fs/ioctl.c
+@@ -422,7 +422,7 @@ EXPORT_SYMBOL(generic_block_fiemap);
+  * Only the l_start, l_len and l_whence fields of the 'struct space_resv'
+  * are used here, rest are ignored.
+  */
+-int ioctl_preallocate(struct file *filp, void __user *argp)
++int ioctl_preallocate(struct file *filp, void __user *argp, int mode)
+ {
+ 	struct inode *inode = filp->f_path.dentry->d_inode;
+ 	struct space_resv sr;
+@@ -443,7 +443,7 @@ int ioctl_preallocate(struct file *filp, void __user *argp)
+ 		return -EINVAL;
+ 	}
+ 
+-	return do_fallocate(filp, FALLOC_FL_KEEP_SIZE, sr.l_start, sr.l_len);
++	return do_fallocate(filp, mode, sr.l_start, sr.l_len);
+ }
+ 
+ static int file_ioctl(struct file *filp, unsigned int cmd,
+@@ -459,7 +459,11 @@ static int file_ioctl(struct file *filp, unsigned int cmd,
+ 		return put_user(i_size_read(inode) - filp->f_pos, p);
+ 	case FS_IOC_RESVSP:
+ 	case FS_IOC_RESVSP64:
+-		return ioctl_preallocate(filp, p);
++		return ioctl_preallocate(filp, p, FALLOC_FL_KEEP_SIZE);
++	case FS_IOC_UNRESVSP:
++	case FS_IOC_UNRESVSP64:
++		return ioctl_preallocate(filp, p, FALLOC_FL_KEEP_SIZE |
++						  FALLOC_FL_PUNCH_HOLE);
+ 	}
+ 
+ 	return vfs_ioctl(filp, cmd, arg);
+diff --git a/include/linux/falloc.h b/include/linux/falloc.h
+index 73e0b62..fd1e871 100644
+--- a/include/linux/falloc.h
++++ b/include/linux/falloc.h
+@@ -21,7 +21,9 @@ struct space_resv {
+ };
+ 
+ #define FS_IOC_RESVSP		_IOW('X', 40, struct space_resv)
++#define FS_IOC_UNRESVSP		_IOW('X', 41, struct space_resv)
+ #define FS_IOC_RESVSP64		_IOW('X', 42, struct space_resv)
++#define FS_IOC_UNRESVSP64	_IOW('X', 43, struct space_resv)
+ 
+ #endif /* __KERNEL__ */
+ 
+-- 
+1.5.5

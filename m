@@ -1,84 +1,74 @@
-From: Tristan Ye <tristan.ye@oracle.com>
-Subject: [PATCH 1/3] VFS/ioctl: Add punching-hole support to
-	ioctl().
-Date: Thu, 31 Mar 2011 15:33:30 +0800
-Message-ID: <1301556810-8438-1-git-send-email-tristan.ye@oracle.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Cc: chris.mason@oracle.com
-To: ocfs2-devel@oss.oracle.com, josef@redhat.com, linux-kernel@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
-Return-path: <ocfs2-devel-bounces@oss.oracle.com>
-List-Unsubscribe: <http://oss.oracle.com/mailman/listinfo/ocfs2-devel>,
-	<mailto:ocfs2-devel-request@oss.oracle.com?subject=unsubscribe>
-List-Archive: <http://oss.oracle.com/pipermail/ocfs2-devel>
-List-Post: <mailto:ocfs2-devel@oss.oracle.com>
-List-Help: <mailto:ocfs2-devel-request@oss.oracle.com?subject=help>
-List-Subscribe: <http://oss.oracle.com/mailman/listinfo/ocfs2-devel>,
-	<mailto:ocfs2-devel-request@oss.oracle.com?subject=subscribe>
-Errors-To: ocfs2-devel-bounces@oss.oracle.com
+From: "Zhong, Xin" <xin.zhong@intel.com>
+Subject: [PATCH] Btrfs: fix subvolume mount by name problem when default mount subvolume is set
+Date: Thu, 31 Mar 2011 15:59:22 +0800
+Message-ID: <1301558362-2650-1-git-send-email-xin.zhong@intel.com>
+Cc: xin.zhong@intel.com
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We're currently support two paths from VFS to preallocate unwritten
-extents(from FS_IOC_RESVSP, or fallocate()), likewise, behavior of
-punching-hole should be treated as the same, this patch tries to teach
-file_ioctl() to handle FS_IOC_UNRESVSP, underlying filesystem like ocfs2
-is wise enough to do the rest of work;-)
+We create two subvolumes (meego_root and meego_home) in
+btrfs root directory. And set meego_root as default mount
+subvolume. After we remount btrfs, meego_root is mounted
+to top directory by default. Then when we try to mount
+meego_home (subvol=meego_home) to a subdirectory, it failed.
+The problem is when default mount subvolume is set to
+meego_root, we search meego_home in it but can not find it.
+So the solution is to search meego_home in btrfs root
+directory instead when subvol=meego_home is given.
 
-Signed-off-by: Tristan Ye <tristan.ye@oracle.com>
+Detail information can be found in meego bugzilla:
+https://bugs.meego.com/show_bug.cgi?id=15055
+
+Signed-off-by: Zhong, Xin <xin.zhong@intel.com>
 ---
- fs/ioctl.c             |   10 +++++++---
- include/linux/falloc.h |    2 ++
- 2 files changed, 9 insertions(+), 3 deletions(-)
+ fs/btrfs/super.c |   23 +++++++++++++++++------
+ 1 files changed, 17 insertions(+), 6 deletions(-)
 
-diff --git a/fs/ioctl.c b/fs/ioctl.c
-index 1d9b9fc..234e26f 100644
---- a/fs/ioctl.c
-+++ b/fs/ioctl.c
-@@ -422,7 +422,7 @@ EXPORT_SYMBOL(generic_block_fiemap);
-  * Only the l_start, l_len and l_whence fields of the 'struct space_resv'
-  * are used here, rest are ignored.
-  */
--int ioctl_preallocate(struct file *filp, void __user *argp)
-+int ioctl_preallocate(struct file *filp, void __user *argp, int mode)
- {
- 	struct inode *inode = filp->f_path.dentry->d_inode;
- 	struct space_resv sr;
-@@ -443,7 +443,7 @@ int ioctl_preallocate(struct file *filp, void __user *argp)
- 		return -EINVAL;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index db0a827..138bc4c 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -786,15 +786,18 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
+ 		s->s_flags |= MS_ACTIVE;
  	}
  
--	return do_fallocate(filp, FALLOC_FL_KEEP_SIZE, sr.l_start, sr.l_len);
-+	return do_fallocate(filp, mode, sr.l_start, sr.l_len);
- }
- 
- static int file_ioctl(struct file *filp, unsigned int cmd,
-@@ -459,7 +459,11 @@ static int file_ioctl(struct file *filp, unsigned int cmd,
- 		return put_user(i_size_read(inode) - filp->f_pos, p);
- 	case FS_IOC_RESVSP:
- 	case FS_IOC_RESVSP64:
--		return ioctl_preallocate(filp, p);
-+		return ioctl_preallocate(filp, p, FALLOC_FL_KEEP_SIZE);
-+	case FS_IOC_UNRESVSP:
-+	case FS_IOC_UNRESVSP64:
-+		return ioctl_preallocate(filp, p, FALLOC_FL_KEEP_SIZE |
-+						  FALLOC_FL_PUNCH_HOLE);
+-	root = get_default_root(s, subvol_objectid);
+-	if (IS_ERR(root)) {
+-		error = PTR_ERR(root);
+-		deactivate_locked_super(s);
+-		goto error_free_subvol_name;
+-	}
+ 	/* if they gave us a subvolume name bind mount into that */
+ 	if (strcmp(subvol_name, ".")) {
+ 		struct dentry *new_root;
++		
++		/* we search subvolume name in the btrfs root, not the default mount subvolume */
++		root = get_default_root(s, BTRFS_FS_TREE_OBJECTID);
++		if (IS_ERR(root)) {
++			error = PTR_ERR(root);
++			deactivate_locked_super(s);
++			goto error_free_subvol_name;
++		}
++
+ 		mutex_lock(&root->d_inode->i_mutex);
+ 		new_root = lookup_one_len(subvol_name, root,
+ 				      strlen(subvol_name));
+@@ -816,6 +819,14 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
+ 		dput(root);
+ 		root = new_root;
  	}
++	else {
++		root = get_default_root(s, subvol_objectid);
++		if (IS_ERR(root)) {
++			error = PTR_ERR(root);
++			deactivate_locked_super(s);
++			goto error_free_subvol_name;
++		}
++	}
  
- 	return vfs_ioctl(filp, cmd, arg);
-diff --git a/include/linux/falloc.h b/include/linux/falloc.h
-index 73e0b62..fd1e871 100644
---- a/include/linux/falloc.h
-+++ b/include/linux/falloc.h
-@@ -21,7 +21,9 @@ struct space_resv {
- };
- 
- #define FS_IOC_RESVSP		_IOW('X', 40, struct space_resv)
-+#define FS_IOC_UNRESVSP		_IOW('X', 41, struct space_resv)
- #define FS_IOC_RESVSP64		_IOW('X', 42, struct space_resv)
-+#define FS_IOC_UNRESVSP64	_IOW('X', 43, struct space_resv)
- 
- #endif /* __KERNEL__ */
- 
+ 	mnt->mnt_sb = s;
+ 	mnt->mnt_root = root;
 -- 
-1.5.5
+1.7.0.4
+

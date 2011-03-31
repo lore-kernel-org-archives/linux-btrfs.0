@@ -1,84 +1,53 @@
 From: liubo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: fix compile warning from __btrfs_map_block
-Date: Thu, 31 Mar 2011 17:45:20 +0800
-Message-ID: <4D944D30.4050900@cn.fujitsu.com>
-References: <4D944235.7020408@cn.fujitsu.com>
+Subject: [PATCH] btrfs: clear __GFP_FS flag in the space cache inode
+Date: Thu, 31 Mar 2011 17:43:23 +0800
+Message-ID: <4D944CBB.4020906@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D944235.7020408@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Miao Xie <miaox@cn.fujitsu.com>
 
-While compile btrfs modules on 32bit box, I encounter the following:
+the object id of the space cache inode's key is allocated from the relative
+root, just like the regular file. So we can't identify space cache inode by
+checking the object id of the inode's key, and we have to clear __GFP_FS flag
+at the time we look up the space cache inode.
 
-WARNING: "__umoddi3" [fs/btrfs/btrfs.ko] undefined!
-
-The WARNING comes from that __btrfs_map_block does not use do_div() for
-relative operations, this will cause problems on 32bit box, for values
-with "u64" type should use do_div() instead of a direct "%".
-
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 ---
- fs/btrfs/volumes.c |   23 +++++++++++++++--------
- 1 files changed, 15 insertions(+), 8 deletions(-)
+ fs/btrfs/free-space-cache.c |    2 ++
+ fs/btrfs/inode.c            |    2 --
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 41afd50..7b23d0f 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3076,16 +3076,19 @@ again:
- 			multi->stripes[i].dev = map->stripes[stripe_index].dev;
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 0037427..13575de 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -81,6 +81,8 @@ struct inode *lookup_free_space_inode(struct btrfs_root *root,
+ 		return ERR_PTR(-ENOENT);
+ 	}
  
- 			if (map->type & BTRFS_BLOCK_GROUP_RAID0) {
--				u64 stripes;
--				int last_stripe = (stripe_nr_end - 1) %
--					map->num_stripes;
-+				u64 stripes = stripe_nr_end - 1;
-+				int last_stripe = do_div(stripes,
-+					map->num_stripes);
- 				int j;
++	inode->i_mapping->flags &= ~__GFP_FS;
++
+ 	spin_lock(&block_group->lock);
+ 	if (!root->fs_info->closing) {
+ 		block_group->inode = igrab(inode);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 93c28a1..c103fdc 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2537,8 +2537,6 @@ static void btrfs_read_locked_inode(struct inode *inode)
+ 	BTRFS_I(inode)->flags = btrfs_inode_flags(leaf, inode_item);
  
- 				for (j = 0; j < map->num_stripes; j++) {
--					if ((stripe_nr_end - 1 - j) %
--					      map->num_stripes == stripe_index)
-+					stripes = stripe_nr_end - 1 - j;
-+
-+					if (do_div(stripes, map->num_stripes) ==
-+					    stripe_index)
- 						break;
- 				}
-+
- 				stripes = stripe_nr_end - 1 - j;
- 				do_div(stripes, map->num_stripes);
- 				multi->stripes[i].length = map->stripe_len *
-@@ -3100,18 +3103,22 @@ again:
- 					multi->stripes[i].length -=
- 						stripe_end_offset;
- 			} else if (map->type & BTRFS_BLOCK_GROUP_RAID10) {
--				u64 stripes;
-+				u64 stripes = stripe_nr_end - 1;
- 				int j;
- 				int factor = map->num_stripes /
- 					     map->sub_stripes;
--				int last_stripe = (stripe_nr_end - 1) % factor;
-+				int last_stripe = do_div(stripes, factor);
-+
- 				last_stripe *= map->sub_stripes;
+ 	alloc_group_block = btrfs_inode_block_group(leaf, inode_item);
+-	if (location.objectid == BTRFS_FREE_SPACE_OBJECTID)
+-		inode->i_mapping->flags &= ~__GFP_FS;
  
- 				for (j = 0; j < factor; j++) {
--					if ((stripe_nr_end - 1 - j) % factor ==
-+					stripes = stripe_nr_end - 1 - j;
-+
-+					if (do_div(stripes, factor) ==
- 					    stripe_index / map->sub_stripes)
- 						break;
- 				}
-+
- 				stripes = stripe_nr_end - 1 - j;
- 				do_div(stripes, factor);
- 				multi->stripes[i].length = map->stripe_len *
+ 	/*
+ 	 * try to precache a NULL acl entry for files that don't have
 -- 
-1.6.5.2
+1.7.4
 

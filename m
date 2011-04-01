@@ -1,142 +1,98 @@
 From: liubo <liubo2009@cn.fujitsu.com>
-Subject: Re: [PATCH 1/2] Btrfs: fix OOPS of empty filesystem after balance
-Date: Fri, 01 Apr 2011 09:47:32 +0800
-Message-ID: <4D952EB4.3020408@cn.fujitsu.com>
-References: <4D743F3A.6030105@cn.fujitsu.com> <4D7890D3.6080309@cn.fujitsu.com> <1299760026-sup-300@think> <4D931AFA.1050004@gmx.net>
+Subject: [RFC PATCH] Trace: use unsigned long long in trace print frames
+Date: Fri, 01 Apr 2011 14:42:35 +0800
+Message-ID: <4D9573DB.4010009@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>, slyich@gmail.com
-To: Arne Jansen <sensille@gmx.net>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D931AFA.1050004@gmx.net>
+Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	Steven Rostedt <rostedt@goodmis.org>
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/30/2011 07:58 PM, Arne Jansen wrote:
-> Am 10.03.2011 13:28, schrieb Chris Mason:
->> Excerpts from liubo's message of 2011-03-10 03:50:27 -0500:
->>> On 03/07/2011 10:13 AM, liubo wrote:
->>>> btrfs will remove unused block groups after balance.
->>>> When a empty filesystem is balanced, the block group with tag "DATA" may be
->>>> dropped, and after umount and mount again, it will not find "DATA" space_info
->>>> and lead to OOPS.
->>>> So we initial the necessary space_infos(DATA, SYSTEM, METADATA) to avoid OOPS.
->>>>
-> 
-> this patch breaks mixed block groups. If the space_infos get added
-> upfront, later on all mixed block groups will be added to the data
-> space_info, leaving the metadata space_info completely empty.
-> No mixed space_info will ever get created.
 
-Hi, Arne,
+While adding tracepoint for btrfs, I got a problem:
 
-Sorry for the late reply.
+btrfs uses some macros with "ULL" type, but tracepoint's macros,
+__print_[flags,symbols](), only have "unsigned long", so on 32bit box
+there will be 64->32 truncate WARNINGs when compiling.
 
-> As a fix it might be enough to call btrfs_init_space_info after
-> btrfs_read_block_groups, not before, but I haven't tested it.
-> 
+Here I'm inclined to make the replacement to clear those WARNINGs.
 
-Seems impossible, the original bug just occurs in btrfs_read_block_groups()...
+Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+---
+ include/linux/ftrace_event.h |    7 ++++---
+ kernel/trace/trace_output.c  |   10 +++++-----
+ 2 files changed, 9 insertions(+), 8 deletions(-)
 
-> This was the cause of the BUG reported by Sergei Trofimovich in the
-> thread "v2.6.38-6555-ga44f99c: null pointer dereference on -ENOSPC".
-> 
-
-Thanks for pointing this out.
-Anyway, will dig it more.
-
-thanks,
-liubo
-
-> -Arne
-> 
->>> Hi, Chirs,
->>>
->>> These two fixes are for critical problems(one OOPS and one memory leak), so would
->>> you please take some time to review them and check if they are ready for the next
->>> git pull? 
->>>
->>> Seems that you have been a lot busy these days. ;)
->> Hi Liubo,
->>
->> I'm looking at both of these.  There are no more rc's for 2.6.38, only
->> the final release, so the bar is very high for a commit that goes in.
->>
->> -chris
->>
->>> thanks,
->>> liubo
->>>
->>>> Reported-by: Daniel J Blueman <daniel.blueman@gmail.com>
->>>> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
->>>> ---
->>>>  fs/btrfs/ctree.h       |    1 +
->>>>  fs/btrfs/disk-io.c     |    6 ++++++
->>>>  fs/btrfs/extent-tree.c |   23 +++++++++++++++++++++++
->>>>  3 files changed, 30 insertions(+), 0 deletions(-)
->>>>
->>>> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
->>>> index 28188a7..49c50e5 100644
->>>> --- a/fs/btrfs/ctree.h
->>>> +++ b/fs/btrfs/ctree.h
->>>> @@ -2221,6 +2221,7 @@ int btrfs_error_discard_extent(struct btrfs_root *root, u64 bytenr,
->>>>                     u64 num_bytes);
->>>>  int btrfs_force_chunk_alloc(struct btrfs_trans_handle *trans,
->>>>                  struct btrfs_root *root, u64 type);
->>>> +int btrfs_init_space_info(struct btrfs_fs_info *fs_info);
->>>>  
->>>>  /* ctree.c */
->>>>  int btrfs_bin_search(struct extent_buffer *eb, struct btrfs_key *key,
->>>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->>>> index 3e1ea3e..8bcdc62 100644
->>>> --- a/fs/btrfs/disk-io.c
->>>> +++ b/fs/btrfs/disk-io.c
->>>> @@ -1967,6 +1967,12 @@ struct btrfs_root *open_ctree(struct super_block *sb,
->>>>      fs_info->metadata_alloc_profile = (u64)-1;
->>>>      fs_info->system_alloc_profile = fs_info->metadata_alloc_profile;
->>>>  
->>>> +    ret = btrfs_init_space_info(fs_info);
->>>> +    if (ret) {
->>>> +        printk(KERN_ERR "Failed to initial space info: %d\n", ret);
->>>> +        goto fail_block_groups;
->>>> +    }
->>>> +
->>>>      ret = btrfs_read_block_groups(extent_root);
->>>>      if (ret) {
->>>>          printk(KERN_ERR "Failed to read block groups: %d\n", ret);
->>>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
->>>> index 100e409..08525ee 100644
->>>> --- a/fs/btrfs/extent-tree.c
->>>> +++ b/fs/btrfs/extent-tree.c
->>>> @@ -8714,6 +8714,29 @@ out:
->>>>      return ret;
->>>>  }
->>>>  
->>>> +int btrfs_init_space_info(struct btrfs_fs_info *fs_info)
->>>> +{
->>>> +    struct btrfs_space_info *space_info;
->>>> +    int ret;
->>>> +
->>>> +    ret = update_space_info(fs_info, BTRFS_BLOCK_GROUP_SYSTEM, 0, 0,
->>>> +                                 &space_info);
->>>> +    if (ret)
->>>> +        return ret;
->>>> +
->>>> +    ret = update_space_info(fs_info, BTRFS_BLOCK_GROUP_METADATA, 0, 0,
->>>> +                                 &space_info);
->>>> +    if (ret)
->>>> +        return ret;
->>>> +
->>>> +    ret = update_space_info(fs_info, BTRFS_BLOCK_GROUP_DATA, 0, 0,
->>>> +                                 &space_info);
->>>> +    if (ret)
->>>> +        return ret;
->>>> +
->>>> +    return ret;
->>>> +}
->>>> +
->>>>  int btrfs_error_unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
->>>>  {
->>>>      return unpin_extent_range(root, start, end);
-> 
-
+diff --git a/include/linux/ftrace_event.h b/include/linux/ftrace_event.h
+index 22b32af..b52f2c5 100644
+--- a/include/linux/ftrace_event.h
++++ b/include/linux/ftrace_event.h
+@@ -12,15 +12,16 @@ struct tracer;
+ struct dentry;
+ 
+ struct trace_print_flags {
+-	unsigned long		mask;
++	unsigned long long	mask;
+ 	const char		*name;
+ };
+ 
+ const char *ftrace_print_flags_seq(struct trace_seq *p, const char *delim,
+-				   unsigned long flags,
++				   unsigned long long flags,
+ 				   const struct trace_print_flags *flag_array);
+ 
+-const char *ftrace_print_symbols_seq(struct trace_seq *p, unsigned long val,
++const char *ftrace_print_symbols_seq(struct trace_seq *p,
++				     unsigned long long val,
+ 				     const struct trace_print_flags *symbol_array);
+ 
+ const char *ftrace_print_hex_seq(struct trace_seq *p,
+diff --git a/kernel/trace/trace_output.c b/kernel/trace/trace_output.c
+index 456be90..97ba902 100644
+--- a/kernel/trace/trace_output.c
++++ b/kernel/trace/trace_output.c
+@@ -294,10 +294,10 @@ int trace_seq_path(struct trace_seq *s, struct path *path)
+ 
+ const char *
+ ftrace_print_flags_seq(struct trace_seq *p, const char *delim,
+-		       unsigned long flags,
++		       unsigned long long flags,
+ 		       const struct trace_print_flags *flag_array)
+ {
+-	unsigned long mask;
++	unsigned long long mask;
+ 	const char *str;
+ 	const char *ret = p->buffer + p->len;
+ 	int i;
+@@ -319,7 +319,7 @@ ftrace_print_flags_seq(struct trace_seq *p, const char *delim,
+ 	if (flags) {
+ 		if (p->len && delim)
+ 			trace_seq_puts(p, delim);
+-		trace_seq_printf(p, "0x%lx", flags);
++		trace_seq_printf(p, "0x%llx", flags);
+ 	}
+ 
+ 	trace_seq_putc(p, 0);
+@@ -329,7 +329,7 @@ ftrace_print_flags_seq(struct trace_seq *p, const char *delim,
+ EXPORT_SYMBOL(ftrace_print_flags_seq);
+ 
+ const char *
+-ftrace_print_symbols_seq(struct trace_seq *p, unsigned long val,
++ftrace_print_symbols_seq(struct trace_seq *p, unsigned long long val,
+ 			 const struct trace_print_flags *symbol_array)
+ {
+ 	int i;
+@@ -345,7 +345,7 @@ ftrace_print_symbols_seq(struct trace_seq *p, unsigned long val,
+ 	}
+ 
+ 	if (!p->len)
+-		trace_seq_printf(p, "0x%lx", val);
++		trace_seq_printf(p, "0x%llx", val);
+ 		
+ 	trace_seq_putc(p, 0);
+ 
+-- 
+1.6.5.2

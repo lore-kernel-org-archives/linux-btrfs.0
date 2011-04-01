@@ -1,42 +1,65 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Do not use free space caching!
-Date: Fri, 01 Apr 2011 14:00:32 -0400
-Message-ID: <1301680812-sup-3527@think>
-References: <4D939E76.1060801@redhat.com> <1301605604.12638.5.camel@ayu> <20110331225956.GC7484@dhcp231-156.rdu.redhat.com> <1301680612.1934.3.camel@ayu>
-Content-Type: text/plain; charset=UTF-8
-Cc: Josef Bacik <josef@redhat.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Calvin Walton <calvin.walton@kepstin.ca>
+From: Stephane Chazelas <stephane.chazelas@googlemail.com>
+Subject: Re: btrfs balancing start - and stop?
+Date: Fri, 01 Apr 2011 19:33:30 +0100
+Message-ID: <1301682810.11424.5.camel@sc.lan>
+References: <Bj0igski1uB@helmut.hullen.de>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
+Cc: linux-btrfs@vger.kernel.org
+To: helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <1301680612.1934.3.camel@ayu>
+In-Reply-To: <Bj0igski1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Calvin Walton's message of 2011-04-01 13:56:51 -0400:
-> On Thu, 2011-03-31 at 18:59 -0400, Josef Bacik wrote:
-> > On Thu, Mar 31, 2011 at 05:06:42PM -0400, Calvin Walton wrote:
-> > > On Wed, 2011-03-30 at 17:19 -0400, Josef Bacik wrote:
-> > > > Hello,
-> > > > 
-> > > > Just found a big bug in the free space caching stuff that will result in 
-> > > > early ENOSPC.  I'm working on fixing this bug, but it won't be until 
-> > > > tomorrow that I'll have it completely working, so for now make sure to 
-> > > > mount -o clear_cache so that it just clears the cache and doesn't use it.
-> > 
-> > Yeah it affects any kernel that has the free space cache feature, which I think
-> > started in .37.  Course you have to have specifically enabled it, so it's not a
-> > huge problem.  I've submitted a patch, but since it's currently an optional
-> > feature I don't think it needs to go to stable.  Thanks,
+On Fri, 2011-04-01 at 14:12 +0200, Helmut Hullen wrote:
+> Hallo, Struan,
 > 
-> If you don't think the full fix is appropriate for the stable kernel,
-> what about sending a simple patch to stable that just disables the free
-> space caching support?
+> Du meintest am 01.04.11:
 > 
-> That should be enough to stop any adventurous users (of the kind who
-> don't read mailing lists) from trying the free space caching support,
-> and possibly hitting this bug.
+> > 1) Is the balancing operation expected to take many hours (or days?)
+> > on a filesystem such as this? Or are there known issues with the
+> > algorithm that are yet to be addressed?
 > 
+> May be. Balancing about 15 GByte needed about 2 hours (or less),  
+> balancing about 2 TByte needed about 20 hours.
+[...]
 
-We'll have a known stable patch for this shortly, I'd rather do that and
-send it back to the stable kernels.
+I've got a balance running since Monday on a 9TB volume (3.5 of which
+are used, 3.2 allegedly free), showing no sign of finishing soon. Should
+I be worried?
 
--chris
+Using /proc/sys/vm/block_dump, I can see it's seeking all over the
+place, which is probably why throughput is not high. I can also see it
+writing several times to the same sectors.
+
+# df -h /backup
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/sda4             8.2T  3.5T  3.2T  53% /backup
+# btrfs fi sh
+Label: none  uuid: ...
+        Total devices 3 FS bytes used 3.43TB
+        devid    4 size 2.73TB used 1.16TB path /dev/sdc
+        devid    3 size 2.73TB used 1.16TB path /dev/sdb
+        devid    2 size 2.70TB used 1.14TB path /dev/sda4
+
+Btrfs Btrfs v0.19
+# ps -eolstart,args | grep balance
+Mon Mar 28 11:18:18 2011 sudo btrfs fi balance /backup
+Mon Mar 28 11:18:18 2011 btrfs fi balance /backup
+# date
+Fri Apr  1 19:28:40 BST 2011
+# btrfs fi df /backup
+Data, RAID0: total=3.41TB, used=3.41TB
+System, RAID1: total=16.00MB, used=232.00KB
+Metadata, RAID1: total=27.75GB, used=20.47GB
+# iostat -md
+Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+sda              14.49         2.37         2.39     903123     913112
+sdc             501.23         2.68         5.06    1022456    1928462
+sdb             477.28         2.58         5.06     982853    1928482
+
+It's already written more than the used space.
+
+Cheers,
+Stephane
+

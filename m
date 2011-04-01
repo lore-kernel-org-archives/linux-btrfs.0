@@ -1,47 +1,33 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH 0/2] btrfs: allow cross-subvolume BTRFS_IOC_CLONE
-Date: Fri, 01 Apr 2011 09:40:11 -0400
-Message-ID: <1301665083-sup-3969@think>
-References: <cover.1301542804.git.larry@elder-gods.org> <20110331063636.GA5297@infradead.org> <1301572893-sup-3464@think> <20110401133405.GA17956@infradead.org>
-Content-Type: text/plain; charset=UTF-8
-Cc: "Larry D'Anna" <larry@elder-gods.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Yan Zheng <zheng.z.yan@intel.com>
-To: Christoph Hellwig <hch@infradead.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <20110401133405.GA17956@infradead.org>
+From: Steven Rostedt <rostedt@goodmis.org>
+Subject: Re: [RFC PATCH] Trace: use unsigned long long in trace print frames
+Date: Fri, 01 Apr 2011 09:49:22 -0400
+Message-ID: <1301665762.2160.22.camel@gandalf.stny.rr.com>
+References: <4D9573DB.4010009@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="ISO-8859-15"
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>
+To: liubo <liubo2009@cn.fujitsu.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4D9573DB.4010009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Christoph Hellwig's message of 2011-04-01 09:34:05 -0400:
-> On Thu, Mar 31, 2011 at 08:02:22AM -0400, Chris Mason wrote:
-> > Excerpts from Christoph Hellwig's message of 2011-03-31 02:36:36 -0400:
-> > > On Thu, Mar 31, 2011 at 12:00:11AM -0400, Larry D'Anna wrote:
-> > > > This is a simple patch to allow reflinks to be made crossing subvolume
-> > > > boundaries.
-> > > 
-> > > NAK.  subvolumes will have to become vfsmounts sooner or later, and we
-> > > really must not support any operations spanning mountpoints.
-> > > 
-> > 
-> > Sorry, I disagree here.  reflinks were always intended to be able to
-> > span subvolumes.  There's no conflict at all because they span different
-> > inodes.
+On Fri, 2011-04-01 at 14:42 +0800, liubo wrote:
+> While adding tracepoint for btrfs, I got a problem:
 > 
-> I don't think it's a good idea to introduce any user visible operations
-> over subvolume boundaries.  Currently we don't have any operations over
-> mount boundaries, which is pretty fumdamental to the unix filesystem
-> semantics.  If you want to change this please come up with a clear
-> description of the semantics and post it to linux-fsdevel for
-> discussion.  That of course requires a clear description of the
-> btrfs subvolumes, which is still completely missing.
+> btrfs uses some macros with "ULL" type, but tracepoint's macros,
+> __print_[flags,symbols](), only have "unsigned long", so on 32bit box
+> there will be 64->32 truncate WARNINGs when compiling.
 > 
+> Here I'm inclined to make the replacement to clear those WARNINGs.
 
-The subvolume is just a directory tree that can be snapshotted, and has
-it's own private inode number space. 
+Hmm, I don't like this. unsigned long is a natural word for
+architectures, I don't want to have 32 bit suffer because one user is
+doing something with ULL.
 
-reflink across subvolumes is no different from copying a file from one
-subvolume to another at the VFS level.  The src and destination are
-different files and different inodes, they just happen to share data
-extents.
+A better solution is to add a trace_print_flags_u64 or something, that
+can be used for cases that u64 is needed. For archs were sizeof(long) ==
+sizeof(u64) we can have the two macros/structs be the same.
 
--chris
+-- Steve

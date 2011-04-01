@@ -1,86 +1,103 @@
-From: Ilya Dryomov <idryomov@gmail.com>
-Subject: Re: [PATCH] Btrfs - use %pU to print fsid
-Date: Fri, 1 Apr 2011 01:21:26 +0300
-Message-ID: <20110331222126.GA2630@kwango.lan.net>
-References: <20110209140531.GA26945@kwango.lan.net> <AANLkTik1TAD6EnVKvWZd_ZnzRqyEwkHAJ+s7J5Gm3nsq@mail.gmail.com>
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: fix compile warning from __btrfs_map_block
+Date: Fri, 01 Apr 2011 08:46:24 +0800
+Message-ID: <4D952060.1020903@cn.fujitsu.com>
+References: <4D944235.7020408@cn.fujitsu.com> <4D944D30.4050900@cn.fujitsu.com> <1301573269-sup-7700@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <AANLkTik1TAD6EnVKvWZd_ZnzRqyEwkHAJ+s7J5Gm3nsq@mail.gmail.com>
+In-Reply-To: <1301573269-sup-7700@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 31, 2011 at 12:14:14PM -0500, Mitch Harder wrote:
-> On Wed, Feb 9, 2011 at 8:05 AM, Ilya Dryomov <idryomov@gmail.com> wro=
-te:
-> > Get rid of FIXME comment. =C2=A0Uuids from dmesg are now the same a=
-s uuids
-> > given by btrfs-progs.
-> >
-> > Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
-> > ---
-> > =C2=A0fs/btrfs/volumes.c | =C2=A0 =C2=A08 ++------
-> > =C2=A01 files changed, 2 insertions(+), 6 deletions(-)
-> >
-> > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> > index 2636a05..83b789c 100644
-> > --- a/fs/btrfs/volumes.c
-> > +++ b/fs/btrfs/volumes.c
-> > @@ -714,12 +714,8 @@ int btrfs_scan_one_device(const char *path, fm=
-ode_t flags, void *holder,
-> > =C2=A0 =C2=A0 =C2=A0 =C2=A0transid =3D btrfs_super_generation(disk_=
-super);
-> > =C2=A0 =C2=A0 =C2=A0 =C2=A0if (disk_super->label[0])
-> > =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0printk(KERN_=
-INFO "device label %s ", disk_super->label);
-> > - =C2=A0 =C2=A0 =C2=A0 else {
-> > - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 /* FIXME, make a=
- readl uuid parser */
-> > - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 printk(KERN_INFO=
- "device fsid %llx-%llx ",
-> > - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=
-=A0 =C2=A0*(unsigned long long *)disk_super->fsid,
-> > - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=
-=A0 =C2=A0*(unsigned long long *)(disk_super->fsid + 8));
-> > - =C2=A0 =C2=A0 =C2=A0 }
-> > + =C2=A0 =C2=A0 =C2=A0 else
-> > + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 printk(KERN_INFO=
- "device fsid %pU ", disk_super->fsid);
-> > =C2=A0 =C2=A0 =C2=A0 =C2=A0printk(KERN_CONT "devid %llu transid %ll=
-u %s\n",
-> > =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 (unsigned long lon=
-g)devid, (unsigned long long)transid, path);
-> > =C2=A0 =C2=A0 =C2=A0 =C2=A0ret =3D device_list_add(path, disk_super=
-, devid, fs_devices_ret);
-> > --
-> > 1.7.2.3
-> >
->=20
-> I've had this patch in my testing stack for a while now, and it's bee=
-n
-> working well.  The fsid now matches the UUID.
+On 03/31/2011 08:10 PM, Chris Mason wrote:
+> Excerpts from liubo's message of 2011-03-31 05:45:20 -0400:
+>> While compile btrfs modules on 32bit box, I encounter the following:
+>>
+>> WARNING: "__umoddi3" [fs/btrfs/btrfs.ko] undefined!
+>>
+>> The WARNING comes from that __btrfs_map_block does not use do_div() for
+>> relative operations, this will cause problems on 32bit box, for values
+>> with "u64" type should use do_div() instead of a direct "%".
+> 
+> Which kernel tree was this against?  I had rebased the for-linus and
+> for-linus-unmerged branch to get rid of it.
+> 
+> Sorry for the confusion.
 
-Chris for some reason didn't add it to the pull request, probably
-because it's minor.
+Ah, it is my fault to neglect the version, I found this warning while compiling
+the latest for-linus tree (top commit: c1e1f82c56af1a286fd747e809c94628c2ca15fb).
 
-> It would be nice if the text string lead off with "Btrfs:" or
-> "btrfs:".  This would be similar to the way other drivers send log
-> messages, and would make it easier to pick out the Btrfs mount messag=
-e
-> from all the other messages.
+thanks,
+liubo
 
-Currently there is a mix: some of the messages are printed with
-"btrfs:", others with "btrfs", most of the messages informing about
-abnormal conditions are printed w/o any prefix.  I can resend this one
-with "btrfs:" prefix, but I think some kind of decision needed, so this
-whole thing can be fixed in one commit.
+> 
+> -chris
+> 
+>> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+>> ---
+>>  fs/btrfs/volumes.c |   23 +++++++++++++++--------
+>>  1 files changed, 15 insertions(+), 8 deletions(-)
+>>
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index 41afd50..7b23d0f 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -3076,16 +3076,19 @@ again:
+>>              multi->stripes[i].dev = map->stripes[stripe_index].dev;
+>>  
+>>              if (map->type & BTRFS_BLOCK_GROUP_RAID0) {
+>> -                u64 stripes;
+>> -                int last_stripe = (stripe_nr_end - 1) %
+>> -                    map->num_stripes;
+>> +                u64 stripes = stripe_nr_end - 1;
+>> +                int last_stripe = do_div(stripes,
+>> +                    map->num_stripes);
+>>                  int j;
+>>  
+>>                  for (j = 0; j < map->num_stripes; j++) {
+>> -                    if ((stripe_nr_end - 1 - j) %
+>> -                          map->num_stripes == stripe_index)
+>> +                    stripes = stripe_nr_end - 1 - j;
+>> +
+>> +                    if (do_div(stripes, map->num_stripes) ==
+>> +                        stripe_index)
+>>                          break;
+>>                  }
+>> +
+>>                  stripes = stripe_nr_end - 1 - j;
+>>                  do_div(stripes, map->num_stripes);
+>>                  multi->stripes[i].length = map->stripe_len *
+>> @@ -3100,18 +3103,22 @@ again:
+>>                      multi->stripes[i].length -=
+>>                          stripe_end_offset;
+>>              } else if (map->type & BTRFS_BLOCK_GROUP_RAID10) {
+>> -                u64 stripes;
+>> +                u64 stripes = stripe_nr_end - 1;
+>>                  int j;
+>>                  int factor = map->num_stripes /
+>>                           map->sub_stripes;
+>> -                int last_stripe = (stripe_nr_end - 1) % factor;
+>> +                int last_stripe = do_div(stripes, factor);
+>> +
+>>                  last_stripe *= map->sub_stripes;
+>>  
+>>                  for (j = 0; j < factor; j++) {
+>> -                    if ((stripe_nr_end - 1 - j) % factor ==
+>> +                    stripes = stripe_nr_end - 1 - j;
+>> +
+>> +                    if (do_div(stripes, factor) ==
+>>                          stripe_index / map->sub_stripes)
+>>                          break;
+>>                  }
+>> +
+>>                  stripes = stripe_nr_end - 1 - j;
+>>                  do_div(stripes, factor);
+>>                  multi->stripes[i].length = map->stripe_len *
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
-Thanks,
-
-		Ilya
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

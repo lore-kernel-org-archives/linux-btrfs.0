@@ -1,65 +1,40 @@
-From: Konstantinos Skarlatos <k.skarlatos@gmail.com>
-Subject: Re: Do not use free space caching!
-Date: Fri, 01 Apr 2011 16:27:19 +0300
-Message-ID: <4D95D2B7.4020202@gmail.com>
-References: <4D939E76.1060801@redhat.com> <1301605604.12638.5.camel@ayu> <20110331225956.GC7484@dhcp231-156.rdu.redhat.com>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: [PATCH 0/2] btrfs: allow cross-subvolume BTRFS_IOC_CLONE
+Date: Fri, 1 Apr 2011 09:34:05 -0400
+Message-ID: <20110401133405.GA17956@infradead.org>
+References: <cover.1301542804.git.larry@elder-gods.org>
+ <20110331063636.GA5297@infradead.org>
+ <1301572893-sup-3464@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
-	format=flowed
-Cc: Calvin Walton <calvin.walton@kepstin.ca>,
-	linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Christoph Hellwig <hch@infradead.org>,
+	Larry D'Anna <larry@elder-gods.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Yan Zheng <zheng.z.yan@intel.com>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110331225956.GC7484@dhcp231-156.rdu.redhat.com>
+In-Reply-To: <1301572893-sup-3464@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 1/4/2011 1:59 =CF=80=CE=BC, Josef Bacik wrote:
-> On Thu, Mar 31, 2011 at 05:06:42PM -0400, Calvin Walton wrote:
->> On Wed, 2011-03-30 at 17:19 -0400, Josef Bacik wrote:
->>> Hello,
->>>
->>> Just found a big bug in the free space caching stuff that will resu=
-lt in
->>> early ENOSPC.  I'm working on fixing this bug, but it won't be unti=
-l
->>> tomorrow that I'll have it completely working, so for now make sure=
- to
->>> mount -o clear_cache so that it just clears the cache and doesn't u=
-se it.
->>>
->>> NOTE: It doesn't cause problems other than early ENOSPC, you won't =
-get
->>> corruption or anything like that, tho you could possibly panic.
->>>
->>> Sorry for the inconvenience.  Thanks,
->> Any chance you could provide a little more information about which
->> kernels are affected? Is it any kernel with free space cache support=
- (is
->> 2.6.38.x included?) - and if so, do you plan on submitting the fix t=
-o
->> the stable kernel series?
->>
-> Yeah it affects any kernel that has the free space cache feature, whi=
-ch I think
-> started in .37.  Course you have to have specifically enabled it, so =
-it's not a
-> huge problem.  I've submitted a patch, but since it's currently an op=
-tional
-> feature I don't think it needs to go to stable.  Thanks,
-So it will have to wait for 2.6.39? If possible please push it for=20
-inclusion it in the next stable of 2.6.38, as 2.6.39 is a few months=20
-away and i wont risk an early RC for my system
+On Thu, Mar 31, 2011 at 08:02:22AM -0400, Chris Mason wrote:
+> Excerpts from Christoph Hellwig's message of 2011-03-31 02:36:36 -0400:
+> > On Thu, Mar 31, 2011 at 12:00:11AM -0400, Larry D'Anna wrote:
+> > > This is a simple patch to allow reflinks to be made crossing subvolume
+> > > boundaries.
+> > 
+> > NAK.  subvolumes will have to become vfsmounts sooner or later, and we
+> > really must not support any operations spanning mountpoints.
+> > 
+> 
+> Sorry, I disagree here.  reflinks were always intended to be able to
+> span subvolumes.  There's no conflict at all because they span different
+> inodes.
 
-Thanks
-> Josef
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I don't think it's a good idea to introduce any user visible operations
+over subvolume boundaries.  Currently we don't have any operations over
+mount boundaries, which is pretty fumdamental to the unix filesystem
+semantics.  If you want to change this please come up with a clear
+description of the semantics and post it to linux-fsdevel for
+discussion.  That of course requires a clear description of the
+btrfs subvolumes, which is still completely missing.
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

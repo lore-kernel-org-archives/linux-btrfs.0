@@ -1,65 +1,68 @@
-From: Stephane Chazelas <stephane.chazelas@googlemail.com>
-Subject: Re: btrfs balancing start - and stop?
-Date: Fri, 01 Apr 2011 19:33:30 +0100
-Message-ID: <1301682810.11424.5.camel@sc.lan>
-References: <Bj0igski1uB@helmut.hullen.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Cc: linux-btrfs@vger.kernel.org
-To: helmut@hullen.de
+From: =?iso-8859-1?Q?Jo=E3o_Eduardo_Lu=EDs?= <jecluis@gmail.com>
+Subject: On masking access to snapshots thru single path
+Date: Fri, 1 Apr 2011 19:33:30 +0100
+Message-ID: <B45B2DB3-9BC9-4BBE-A84D-B84784647A91@gmail.com>
+Mime-Version: 1.0 (Apple Message framework v1082)
+Content-Type: multipart/signed; protocol="application/pgp-signature"; micalg=pgp-sha1; boundary="Apple-Mail-2--894419916"
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <Bj0igski1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2011-04-01 at 14:12 +0200, Helmut Hullen wrote:
-> Hallo, Struan,
-> 
-> Du meintest am 01.04.11:
-> 
-> > 1) Is the balancing operation expected to take many hours (or days?)
-> > on a filesystem such as this? Or are there known issues with the
-> > algorithm that are yet to be addressed?
-> 
-> May be. Balancing about 15 GByte needed about 2 hours (or less),  
-> balancing about 2 TByte needed about 20 hours.
-[...]
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--Apple-Mail-2--894419916
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=iso-8859-1
 
-I've got a balance running since Monday on a 9TB volume (3.5 of which
-are used, 3.2 allegedly free), showing no sign of finishing soon. Should
-I be worried?
+Hello all,
 
-Using /proc/sys/vm/block_dump, I can see it's seeking all over the
-place, which is probably why throughput is not high. I can also see it
-writing several times to the same sectors.
+I've been trying to use btrfs with a very specific purpose during my MSc =
+thesis, and now I would very much appreciate any comments you may have =
+on a given issue.
 
-# df -h /backup
-Filesystem            Size  Used Avail Use% Mounted on
-/dev/sda4             8.2T  3.5T  3.2T  53% /backup
-# btrfs fi sh
-Label: none  uuid: ...
-        Total devices 3 FS bytes used 3.43TB
-        devid    4 size 2.73TB used 1.16TB path /dev/sdc
-        devid    3 size 2.73TB used 1.16TB path /dev/sdb
-        devid    2 size 2.70TB used 1.14TB path /dev/sda4
+Currently I'm trying to mask accesses to different snapshots by =
+different processes, while still using the same FS entry point. In a =
+nutshell, a process trying to access /btrfs.mnt/S, instead of actually =
+operating on 'S', will operate on /btrfs.mnt/Sx, with 'x' being the =
+process' pid.
 
-Btrfs Btrfs v0.19
-# ps -eolstart,args | grep balance
-Mon Mar 28 11:18:18 2011 sudo btrfs fi balance /backup
-Mon Mar 28 11:18:18 2011 btrfs fi balance /backup
-# date
-Fri Apr  1 19:28:40 BST 2011
-# btrfs fi df /backup
-Data, RAID0: total=3.41TB, used=3.41TB
-System, RAID1: total=16.00MB, used=232.00KB
-Metadata, RAID1: total=27.75GB, used=20.47GB
-# iostat -md
-Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
-sda              14.49         2.37         2.39     903123     913112
-sdc             501.23         2.68         5.06    1022456    1928462
-sdb             477.28         2.58         5.06     982853    1928482
+I've already accomplished this, simply by implementing a btrfs-specific =
+'d_hash' on 'btrfs_dentry_operations', which will basically change the =
+path accordingly to the implementation requirements and generate a new =
+hash, thus avoiding dcache conflicts. However, given my yet-recent =
+experience with btrfs, I can only wonder if any of you find any problems =
+with such approach that I might have missed.
 
-It's already written more than the used space.
+I would honestly appreciate any input.
 
 Cheers,
-Stephane
+Joao
 
+---
+Jo=E3o Eduardo Lu=EDs
+gpg key: 477C26E5 from pool.keyserver.eu=20
+
+
+
+
+
+
+--Apple-Mail-2--894419916
+content-type: application/pgp-signature; x-mac-type=70674453;
+	name=PGP.sig
+content-description: This is a digitally signed message part
+content-disposition: inline; filename=PGP.sig
+content-transfer-encoding: 7bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2.0.16 (Darwin)
+
+iQEcBAEBAgAGBQJNlhqAAAoJEJ9vvxhHfCbluHgH/2VV8m1M9G44hZE1R7k3R0Zp
+xgA7gtv685c7ja5qjkJbogmGMFEzpVf2zVeBjBDMfu5Prw2N0le86shFB9hGrC8d
+hjNtLrj1ZiHVJZCEN16bCfnqvoM/d7EMuGuUl1CqUVGWY7GMwzHZzfu010QVw/kp
+hFlNfuMqmFY55636lZJxJDVvhtfhT5aADH6TFje7iEysCNrHcaasRJkRyvo031Ib
+pNotsYqPcuuaZlUm2xhPDUQTPWW+vqfo8aP0+cq4cfGSKj69AtLmh7htokEipmPs
+P/NIgg38tkl0eEWIfKMOAN+1oqFy7GOoxn5IqTlzmQDKf8/ZxcqmEg8a07p6zcw=
+=LG2k
+-----END PGP SIGNATURE-----
+
+--Apple-Mail-2--894419916--

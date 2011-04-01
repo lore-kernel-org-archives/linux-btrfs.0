@@ -1,80 +1,45 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: Confusing...
-Date: Sat, 30 Apr 2011 23:30:20 +0100
-Message-ID: <20110430223020.GA19913@carfax.org.uk>
-References: <d513343c4c6ac383232407e4c6c585ac.squirrel@mail.fsck.co.uk>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="+QahgC5+KEYLbs62"
-Cc: linux-btrfs@vger.kernel.org
-To: "A. James Lewis" <james@fsck.co.uk>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <d513343c4c6ac383232407e4c6c585ac.squirrel@mail.fsck.co.uk>
+Return-Path: <linux-btrfs-owner@vger.kernel.org>
+Received: from mx1.redhat.com ([209.132.183.28]:48000 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751180Ab1DAAmD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 31 Mar 2011 20:42:03 -0400
+Date: Thu, 31 Mar 2011 20:34:50 -0400
+From: Josef Bacik <josef@redhat.com>
+To: Josef Bacik <josef@redhat.com>, Sunil Mushran <sunil.mushran@oracle.com>,
+        Tristan Ye <tristan.ye@oracle.com>, ocfs2-devel@oss.oracle.com,
+        linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, chris.mason@oracle.com, tm@tao.ma
+Subject: Re: [PATCH 1/3] VFS/ioctl: Add punching-hole support to ioctl().
+Message-ID: <20110401003450.GD7484@dhcp231-156.rdu.redhat.com>
+References: <1301556810-8438-1-git-send-email-tristan.ye@oracle.com> <4D94EEC3.2030206@oracle.com> <20110331225618.GB7484@dhcp231-156.rdu.redhat.com> <20110331234454.GB18808@noexit>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20110331234454.GB18808@noexit>
+Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---+QahgC5+KEYLbs62
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Sat, Apr 30, 2011 at 09:42:39PM +0100, A. James Lewis wrote:
+On Thu, Mar 31, 2011 at 04:44:55PM -0700, Joel Becker wrote:
+> On Thu, Mar 31, 2011 at 06:56:18PM -0400, Josef Bacik wrote:
+> > On Thu, Mar 31, 2011 at 02:14:43PM -0700, Sunil Mushran wrote:
+> > > Frankly I see no point extending the ioctl interface when we have
+> > > a syscall interface.
+> > >
+> > 
+> > I'd even go so far as to say we could probably axe the xfs and ocfs2 ioctls
+> > since we have the fallocate interface :).  Thanks,
 > 
-> After completing an installation of Ubuntu 11.04 with a separate /boot
-> partition and BTRFS as the main filesystem (Ubuntu creates subvolumes for
-> / and /home).
+> 	These ioctls are in long use.  Granted, it is for the small
+> subset of users that know xfs and ocfs2 can do this, but still.
+> <venkman>Breaking userspace is *bad*.</venkman>
+
+Yeah I wasn't serious, though I do wish there was a way to mark these sort of
+interfaces deprecated to give us a path to retire old interfaces.
+
+> 	More interesting would be to bring the ioctls up to generic code
+> and have them backended by fallocate.  I'm not sure they map without
+> looking deeper, but it's at least an idea.
 > 
-> sda1 being the GPT stuff
-> sda2 being most of the disk as BTRFS
-> sda3 being /boot
-> sda4 being swap
-> 
-> sdb having an identical partition table...
-> 
-> I patched everything up to date, rebooted to make sure that all was ok..
-> and then ran:-
-> 
-> btrfs device add /dev/sdb2 /
-> sync
-> reboot
-> 
-> The system stops in initrd unable to find the root filesystem...
-> 
-> It's my understanding that nothing should change here, am I missing
-> something, I don't see how it can even tell I've added more storage, let
-> alone fail to boot.
 
-   In order to mount a multi-volume btrfs filesystem, the kernel needs
-to know all of the devices that make up the filesystem. It can't do
-that itself, so it needs some userspace assistance. Your system needs
-to run "btrfs dev scan" from the initrd before attempting to mount the
-root filesystem. On Debian, installing btrfs-tools will (I believe)
-set that up.
+I just did a cursory look and it seems like that would work out ok.  Thanks,
 
-   To get the system booting again temporarily, you could try adding
-the option "mount=device=/dev/sda2,device=/dev/sdb2" (I think) to the
-kernel command-line parameter in your boot loader. That should give
-enough information to the initrd to be able to find the volumes that
-your btrfs lives on, and get you enough of a system that you can work
-out what's wrong with your initrd.
-
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-                --- If it ain't broke,  hit it again. ---                
-
---+QahgC5+KEYLbs62
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFNvI18IKyzvlFcI40RAp/rAKCH8CvrwSl8UcC107ZLYG+o7dGBHQCdF2Ix
-OIkdJpGnsaTs0UpDhOe3/Ig=
-=LjBy
------END PGP SIGNATURE-----
-
---+QahgC5+KEYLbs62--
+Josef

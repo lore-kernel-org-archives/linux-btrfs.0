@@ -1,28 +1,27 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: Re: btrfs balancing start - and stop?
-Date: 01 Apr 2011 14:12:00 +0200
-Message-ID: <Bj0igski1uB@helmut.hullen.de>
-References: <4D95B3AA.2090106@NewsNow.co.uk>
-Reply-To: helmut@hullen.de
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH] Btrfs: fix free space cache when there are pinned
+	extents and clusters
+Date: Fri, 1 Apr 2011 08:15:05 -0400
+Message-ID: <20110401121505.GE7484@dhcp231-156.rdu.redhat.com>
+References: <1301601548-14612-1-git-send-email-josef@redhat.com> <4D958531.90500@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D95B3AA.2090106@NewsNow.co.uk>
+In-Reply-To: <4D958531.90500@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Struan,
+On Fri, Apr 01, 2011 at 03:56:33PM +0800, Li Zefan wrote:
+> > +	spin_lock(&block_group->tree_lock);
+> > +	if (btrfs_block_group_free_space(block_group) !=
+> 
+> This function call can be replaced by block_group->free_space, so
+> we don't have to iterate the tree.
+> 
+> (This function gets removed in my patchset for inode number caching)
+>
 
-Du meintest am 01.04.11:
+Ah yeah good point, thanks,
 
-> 1) Is the balancing operation expected to take many hours (or days?)
-> on a filesystem such as this? Or are there known issues with the
-> algorithm that are yet to be addressed?
-
-May be. Balancing about 15 GByte needed about 2 hours (or less),  
-balancing about 2 TByte needed about 20 hours.
-
-"dmesg" counts down the number of remaining "jobs".
-
-Viele Gruesse!
-Helmut
+Josef 

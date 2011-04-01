@@ -1,103 +1,142 @@
 From: liubo <liubo2009@cn.fujitsu.com>
-Subject: Re: [PATCH] Btrfs: fix compile warning from __btrfs_map_block
-Date: Fri, 01 Apr 2011 08:46:24 +0800
-Message-ID: <4D952060.1020903@cn.fujitsu.com>
-References: <4D944235.7020408@cn.fujitsu.com> <4D944D30.4050900@cn.fujitsu.com> <1301573269-sup-7700@think>
+Subject: Re: [PATCH 1/2] Btrfs: fix OOPS of empty filesystem after balance
+Date: Fri, 01 Apr 2011 09:47:32 +0800
+Message-ID: <4D952EB4.3020408@cn.fujitsu.com>
+References: <4D743F3A.6030105@cn.fujitsu.com> <4D7890D3.6080309@cn.fujitsu.com> <1299760026-sup-300@think> <4D931AFA.1050004@gmx.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>, slyich@gmail.com
+To: Arne Jansen <sensille@gmx.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1301573269-sup-7700@think>
+In-Reply-To: <4D931AFA.1050004@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/31/2011 08:10 PM, Chris Mason wrote:
-> Excerpts from liubo's message of 2011-03-31 05:45:20 -0400:
->> While compile btrfs modules on 32bit box, I encounter the following:
->>
->> WARNING: "__umoddi3" [fs/btrfs/btrfs.ko] undefined!
->>
->> The WARNING comes from that __btrfs_map_block does not use do_div() for
->> relative operations, this will cause problems on 32bit box, for values
->> with "u64" type should use do_div() instead of a direct "%".
+On 03/30/2011 07:58 PM, Arne Jansen wrote:
+> Am 10.03.2011 13:28, schrieb Chris Mason:
+>> Excerpts from liubo's message of 2011-03-10 03:50:27 -0500:
+>>> On 03/07/2011 10:13 AM, liubo wrote:
+>>>> btrfs will remove unused block groups after balance.
+>>>> When a empty filesystem is balanced, the block group with tag "DATA" may be
+>>>> dropped, and after umount and mount again, it will not find "DATA" space_info
+>>>> and lead to OOPS.
+>>>> So we initial the necessary space_infos(DATA, SYSTEM, METADATA) to avoid OOPS.
+>>>>
 > 
-> Which kernel tree was this against?  I had rebased the for-linus and
-> for-linus-unmerged branch to get rid of it.
-> 
-> Sorry for the confusion.
+> this patch breaks mixed block groups. If the space_infos get added
+> upfront, later on all mixed block groups will be added to the data
+> space_info, leaving the metadata space_info completely empty.
+> No mixed space_info will ever get created.
 
-Ah, it is my fault to neglect the version, I found this warning while compiling
-the latest for-linus tree (top commit: c1e1f82c56af1a286fd747e809c94628c2ca15fb).
+Hi, Arne,
+
+Sorry for the late reply.
+
+> As a fix it might be enough to call btrfs_init_space_info after
+> btrfs_read_block_groups, not before, but I haven't tested it.
+> 
+
+Seems impossible, the original bug just occurs in btrfs_read_block_groups()...
+
+> This was the cause of the BUG reported by Sergei Trofimovich in the
+> thread "v2.6.38-6555-ga44f99c: null pointer dereference on -ENOSPC".
+> 
+
+Thanks for pointing this out.
+Anyway, will dig it more.
 
 thanks,
 liubo
 
+> -Arne
 > 
-> -chris
-> 
->> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
->> ---
->>  fs/btrfs/volumes.c |   23 +++++++++++++++--------
->>  1 files changed, 15 insertions(+), 8 deletions(-)
+>>> Hi, Chirs,
+>>>
+>>> These two fixes are for critical problems(one OOPS and one memory leak), so would
+>>> you please take some time to review them and check if they are ready for the next
+>>> git pull? 
+>>>
+>>> Seems that you have been a lot busy these days. ;)
+>> Hi Liubo,
 >>
->> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->> index 41afd50..7b23d0f 100644
->> --- a/fs/btrfs/volumes.c
->> +++ b/fs/btrfs/volumes.c
->> @@ -3076,16 +3076,19 @@ again:
->>              multi->stripes[i].dev = map->stripes[stripe_index].dev;
->>  
->>              if (map->type & BTRFS_BLOCK_GROUP_RAID0) {
->> -                u64 stripes;
->> -                int last_stripe = (stripe_nr_end - 1) %
->> -                    map->num_stripes;
->> +                u64 stripes = stripe_nr_end - 1;
->> +                int last_stripe = do_div(stripes,
->> +                    map->num_stripes);
->>                  int j;
->>  
->>                  for (j = 0; j < map->num_stripes; j++) {
->> -                    if ((stripe_nr_end - 1 - j) %
->> -                          map->num_stripes == stripe_index)
->> +                    stripes = stripe_nr_end - 1 - j;
->> +
->> +                    if (do_div(stripes, map->num_stripes) ==
->> +                        stripe_index)
->>                          break;
->>                  }
->> +
->>                  stripes = stripe_nr_end - 1 - j;
->>                  do_div(stripes, map->num_stripes);
->>                  multi->stripes[i].length = map->stripe_len *
->> @@ -3100,18 +3103,22 @@ again:
->>                      multi->stripes[i].length -=
->>                          stripe_end_offset;
->>              } else if (map->type & BTRFS_BLOCK_GROUP_RAID10) {
->> -                u64 stripes;
->> +                u64 stripes = stripe_nr_end - 1;
->>                  int j;
->>                  int factor = map->num_stripes /
->>                           map->sub_stripes;
->> -                int last_stripe = (stripe_nr_end - 1) % factor;
->> +                int last_stripe = do_div(stripes, factor);
->> +
->>                  last_stripe *= map->sub_stripes;
->>  
->>                  for (j = 0; j < factor; j++) {
->> -                    if ((stripe_nr_end - 1 - j) % factor ==
->> +                    stripes = stripe_nr_end - 1 - j;
->> +
->> +                    if (do_div(stripes, factor) ==
->>                          stripe_index / map->sub_stripes)
->>                          break;
->>                  }
->> +
->>                  stripes = stripe_nr_end - 1 - j;
->>                  do_div(stripes, factor);
->>                  multi->stripes[i].length = map->stripe_len *
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>> I'm looking at both of these.  There are no more rc's for 2.6.38, only
+>> the final release, so the bar is very high for a commit that goes in.
+>>
+>> -chris
+>>
+>>> thanks,
+>>> liubo
+>>>
+>>>> Reported-by: Daniel J Blueman <daniel.blueman@gmail.com>
+>>>> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+>>>> ---
+>>>>  fs/btrfs/ctree.h       |    1 +
+>>>>  fs/btrfs/disk-io.c     |    6 ++++++
+>>>>  fs/btrfs/extent-tree.c |   23 +++++++++++++++++++++++
+>>>>  3 files changed, 30 insertions(+), 0 deletions(-)
+>>>>
+>>>> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+>>>> index 28188a7..49c50e5 100644
+>>>> --- a/fs/btrfs/ctree.h
+>>>> +++ b/fs/btrfs/ctree.h
+>>>> @@ -2221,6 +2221,7 @@ int btrfs_error_discard_extent(struct btrfs_root *root, u64 bytenr,
+>>>>                     u64 num_bytes);
+>>>>  int btrfs_force_chunk_alloc(struct btrfs_trans_handle *trans,
+>>>>                  struct btrfs_root *root, u64 type);
+>>>> +int btrfs_init_space_info(struct btrfs_fs_info *fs_info);
+>>>>  
+>>>>  /* ctree.c */
+>>>>  int btrfs_bin_search(struct extent_buffer *eb, struct btrfs_key *key,
+>>>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>>>> index 3e1ea3e..8bcdc62 100644
+>>>> --- a/fs/btrfs/disk-io.c
+>>>> +++ b/fs/btrfs/disk-io.c
+>>>> @@ -1967,6 +1967,12 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+>>>>      fs_info->metadata_alloc_profile = (u64)-1;
+>>>>      fs_info->system_alloc_profile = fs_info->metadata_alloc_profile;
+>>>>  
+>>>> +    ret = btrfs_init_space_info(fs_info);
+>>>> +    if (ret) {
+>>>> +        printk(KERN_ERR "Failed to initial space info: %d\n", ret);
+>>>> +        goto fail_block_groups;
+>>>> +    }
+>>>> +
+>>>>      ret = btrfs_read_block_groups(extent_root);
+>>>>      if (ret) {
+>>>>          printk(KERN_ERR "Failed to read block groups: %d\n", ret);
+>>>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>>>> index 100e409..08525ee 100644
+>>>> --- a/fs/btrfs/extent-tree.c
+>>>> +++ b/fs/btrfs/extent-tree.c
+>>>> @@ -8714,6 +8714,29 @@ out:
+>>>>      return ret;
+>>>>  }
+>>>>  
+>>>> +int btrfs_init_space_info(struct btrfs_fs_info *fs_info)
+>>>> +{
+>>>> +    struct btrfs_space_info *space_info;
+>>>> +    int ret;
+>>>> +
+>>>> +    ret = update_space_info(fs_info, BTRFS_BLOCK_GROUP_SYSTEM, 0, 0,
+>>>> +                                 &space_info);
+>>>> +    if (ret)
+>>>> +        return ret;
+>>>> +
+>>>> +    ret = update_space_info(fs_info, BTRFS_BLOCK_GROUP_METADATA, 0, 0,
+>>>> +                                 &space_info);
+>>>> +    if (ret)
+>>>> +        return ret;
+>>>> +
+>>>> +    ret = update_space_info(fs_info, BTRFS_BLOCK_GROUP_DATA, 0, 0,
+>>>> +                                 &space_info);
+>>>> +    if (ret)
+>>>> +        return ret;
+>>>> +
+>>>> +    return ret;
+>>>> +}
+>>>> +
+>>>>  int btrfs_error_unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
+>>>>  {
+>>>>      return unpin_extent_range(root, start, end);
 > 
 

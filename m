@@ -1,62 +1,42 @@
-From: arand <ienorand@gmail.com>
-Subject: Re: Cannot set-default back to ID 0
-Date: Fri, 1 Apr 2011 15:32:18 +0000 (UTC)
-Message-ID: <loom.20110401T172201-433@post.gmane.org>
-References: <ijrt29$onm$1@dough.gmane.org>
+From: Joel Becker <jlbec@evilplan.org>
+Subject: Re: [Ocfs2-devel] [PATCH 1/3] VFS/ioctl: Add punching-hole support
+ to ioctl().
+Date: Fri, 1 Apr 2011 09:54:58 -0700
+Message-ID: <20110401165458.GA25355@noexit>
+References: <1301556810-8438-1-git-send-email-tristan.ye@oracle.com>
+ <4D94EEC3.2030206@oracle.com>
+ <20110331225618.GB7484@dhcp231-156.rdu.redhat.com>
+ <20110331234454.GB18808@noexit>
+ <20110401003450.GD7484@dhcp231-156.rdu.redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Cc: Sunil Mushran <sunil.mushran@oracle.com>,
+	Tristan Ye <tristan.ye@oracle.com>, ocfs2-devel@oss.oracle.com,
+	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, chris.mason@oracle.com, tm@tao.ma
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110401003450.GD7484@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Bernhard Schmidt <berni <at> birkenwald.de> writes:
+On Thu, Mar 31, 2011 at 08:34:50PM -0400, Josef Bacik wrote:
+> > 	More interesting would be to bring the ioctls up to generic code
+> > and have them backended by fallocate.  I'm not sure they map without
+> > looking deeper, but it's at least an idea.
+> > 
+> 
+> I just did a cursory look and it seems like that would work out ok.  Thanks,
 
-> 
-> Hi,
-> 
-> a recent Ubuntu upgrade killed my system. Luckily I had done a btrfs
-> snapshot before, so I set the particular subvolume as default using
-> 
-> # btrfs subvolume set-default 261 /mnt
-> 
-> from a rescue system and was back up in no time. I then mounted the
-> original volume with subvolid=0 and repaired it. So far so good.
-> However, I fail to set the default volume back to the original.
-> 
-> # btrfs subvolume set-default 0 /
-> 
-> apparently does nothing, I don't get an error but I'm still on the
-> snapshot after reboot. Currently I'm working around this adding
-> rootflag=subvolid=0 on the kernel command line, but that is kind of
-> inconvenient.
-> 
-> Is this expected?
-> 
-> Ubuntu natty amd64, Kernel 2.6.38-rc5, btrfs-tools 0.19+20100601 
-> 
-> Thanks
-> Bernhard
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo <at> vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
+	Note that ocfs2 and xfs have identical ioctl values (ocfs2
+copied xfs's on purpose).
 
-I was asking a similar question in IRC, and the answer I got was:
-"The "0" alias for the top-level subvol is implemented in the kernel, not the
-userspace tools."
+Joel
 
-I was however able to do this using:
-# btrfs subvolume set-default 5 /
-Using 5 for "the _real_ subvolid"
+-- 
 
-Or alternatively:
-# mount -o defaults,subvolid=0 /mnt
-# btrfsctl -m /mnt/
+Life's Little Instruction Book #306
 
-It's a bit odd, agreed, and the people I spoke to seemed to agree as well =)
+	"Take a nap on Sunday afternoons."
 
-- arand
-
+			http://www.jlbec.org/
+			jlbec@evilplan.org

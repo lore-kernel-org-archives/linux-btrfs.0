@@ -1,33 +1,78 @@
-From: Steven Rostedt <rostedt@goodmis.org>
-Subject: Re: [RFC PATCH] Trace: use unsigned long long in trace print frames
-Date: Fri, 01 Apr 2011 09:49:22 -0400
-Message-ID: <1301665762.2160.22.camel@gandalf.stny.rr.com>
-References: <4D9573DB.4010009@cn.fujitsu.com>
+From: Hugo Mills <hugo-lkml@carfax.org.uk>
+Subject: Re: btrfs balancing start - and stop?
+Date: Fri, 1 Apr 2011 14:52:48 +0100
+Message-ID: <20110401135248.GC2984@carfax.org.uk>
+References: <4D95D19F.7060101@gmail.com>
+ <Bj0iubBi1uB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-15"
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>
-To: liubo <liubo2009@cn.fujitsu.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4D9573DB.4010009@cn.fujitsu.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="qtZFehHsKgwS5rPz"
+Cc: linux-btrfs@vger.kernel.org
+To: helmut@hullen.de
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <Bj0iubBi1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2011-04-01 at 14:42 +0800, liubo wrote:
-> While adding tracepoint for btrfs, I got a problem:
+
+--qtZFehHsKgwS5rPz
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Fri, Apr 01, 2011 at 03:36:00PM +0200, Helmut Hullen wrote:
+> Hallo, Konstantinos,
 > 
-> btrfs uses some macros with "ULL" type, but tracepoint's macros,
-> __print_[flags,symbols](), only have "unsigned long", so on 32bit box
-> there will be 64->32 truncate WARNINGs when compiling.
+> Du meintest am 01.04.11:
 > 
-> Here I'm inclined to make the replacement to clear those WARNINGs.
+> >> "dmesg" counts down the number of remaining "jobs".
+> 
+> > are you sure? here is a snippet of dmesg from a balance i did
+> > yesterday (2.6.38.1)
+> 
+> > btrfs: relocating block group 15338569728 flags 9
+> > btrfs: found 17296 extents
+> > btrfs: found 17296 extents
+> > btrfs: relocating block group 13191086080 flags 9
+> > btrfs: found 21029 extents
+> > btrfs: found 21029 extents
+> > btrfs: relocating block group 11043602432 flags 9
+> > btrfs: found 4728 extents
+> > btrfs: found 4728 extents
+> 
+> Yes - there I look how long the balancing job may still work. You see  
+> that the "relocating" line counts down: 15 13 11 ...
 
-Hmm, I don't like this. unsigned long is a natural word for
-architectures, I don't want to have 32 bit suffer because one user is
-doing something with ULL.
+   It's not a good measure of time remaining, as the numbers there are
+pretty arbitrary: they're the start of the block group in btrfs's own
+internal address space. The balance algorithm will indeed go through
+the block groups in reverse order, but they're not guaranteed to
+terminate at zero. In fact, if you've balanced before, they're pretty
+much guaranteed to terminate a long way before zero.
 
-A better solution is to add a trace_print_flags_u64 or something, that
-can be used for cases that u64 is needed. For archs were sizeof(long) ==
-sizeof(u64) we can have the two macros/structs be the same.
+   New block groups (for example, ones created during a balance) are
+always created with virtual addresses larger than any previous block
+group. So, if you started with block groups at addresses 1G, 2G, 3G,
+4G and balanced, you'd end up with ones at 5G, 6G, 7G, 8G. The next
+time you balanced, you'd see the numbers count down: 8G, 7G, 6G, 5G,
+complete.
 
--- Steve
+   Hugo.
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+             --- Happiness is mandatory.  Are you happy? ---             
+
+--qtZFehHsKgwS5rPz
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iD8DBQFNldiwIKyzvlFcI40RAgv5AJ9uwEm0SvhXAwc550pg6q1PKblpSACeODXX
+lKzyLK19H/OzVeANd66Ka9E=
+=QshE
+-----END PGP SIGNATURE-----
+
+--qtZFehHsKgwS5rPz--

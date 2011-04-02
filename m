@@ -1,29 +1,34 @@
-From: Larry D'Anna <larry@elder-gods.org>
-Subject: Re: [PATCH 0/2] btrfs: allow cross-subvolume BTRFS_IOC_CLONE
-Date: Sat, 2 Apr 2011 12:56:29 -0400
-Message-ID: <20110402165629.GA24734@cthulhu>
-References: <cover.1301542804.git.larry@elder-gods.org>
- <20110331063636.GA5297@infradead.org>
- <1301572893-sup-3464@think>
- <20110401133405.GA17956@infradead.org>
- <1301759479.8770.8.camel@tankquad>
+From: Tomasz Torcz <tomek@pipebreaker.pl>
+Subject: Re: minor ID for btrfs-control
+Date: Sat, 2 Apr 2011 19:29:36 +0200
+Message-ID: <20110402172936.GA24370@mother.jarsat.pl>
+References: <Bj4lB4gT1uB@helmut.hullen.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Christoph Hellwig <hch@infradead.org>
-To: Ken Drummond <btrfs@kendrummond.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1301759479.8770.8.camel@tankquad>
+In-Reply-To: <Bj4lB4gT1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-* Ken Drummond (btrfs@kendrummond.com) [110402 11:51]:
-> I don't really understand the details here, but doesn't the creation of
-> a snapshot already lead to data extents being shared between
-> sub-volumes?  From a simple user perspective this sounds like a very
-> useful capability.
+On Sat, Apr 02, 2011 at 06:45:00PM +0200, Helmut Hullen wrote:
+> if I've understood some mails in this list correct, then btrfs needs a  
+> character device "btrfs-control"  with the ID 10:55
+> 
+> When I look for this device in
+> 
+>         /sys/class/misc/btrfs-control/dev
+> 
+> I see 10:234
+> Kernel 2.6.38.1 (self made), no udev, no initrd, no tempfs. btrfs from  
+> nov. 2010
+> What goes wrong?
 
-I was surprised and frustrated to find it missing.  I had just copied a large
-quantity of data into btrfs, realized i need to make a subvolume to try out
-snapshotting, and then found out i had to copy all the data *again* to get it
-into a subvolume.  There are tons of scenarios where users will want and expect
-to be able to do this.
+
+  No udev is wrong.  Modern Linux kernels allocate minor devices dynamically.
+If you do not use udev, you need to synchronise /dev/ node with /sys/class/misc/btrfs-control/dev
+manually on each boot.
+
+-- 
+Tomasz Torcz       ,,(...) today's high-end is tomorrow's embedded processor.''
+xmpp: zdzichubg@chrome.pl                      -- Mitchell Blank on LKML
+

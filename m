@@ -1,34 +1,38 @@
-From: Tomasz Torcz <tomek@pipebreaker.pl>
+From: "Helmut Hullen" <Hullen@t-online.de>
 Subject: Re: minor ID for btrfs-control
-Date: Sat, 2 Apr 2011 19:29:36 +0200
-Message-ID: <20110402172936.GA24370@mother.jarsat.pl>
-References: <Bj4lB4gT1uB@helmut.hullen.de>
+Date: 02 Apr 2011 20:06:00 +0200
+Message-ID: <Bj4lIEOy1uB@helmut.hullen.de>
+References: <20110402172936.GA24370@mother.jarsat.pl>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <Bj4lB4gT1uB@helmut.hullen.de>
+In-Reply-To: <20110402172936.GA24370@mother.jarsat.pl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Apr 02, 2011 at 06:45:00PM +0200, Helmut Hullen wrote:
-> if I've understood some mails in this list correct, then btrfs needs a  
-> character device "btrfs-control"  with the ID 10:55
-> 
-> When I look for this device in
-> 
->         /sys/class/misc/btrfs-control/dev
-> 
-> I see 10:234
-> Kernel 2.6.38.1 (self made), no udev, no initrd, no tempfs. btrfs from  
-> nov. 2010
-> What goes wrong?
+Hallo, Tomasz,
 
+Du meintest am 02.04.11:
 
-  No udev is wrong.  Modern Linux kernels allocate minor devices dynamically.
-If you do not use udev, you need to synchronise /dev/ node with /sys/class/misc/btrfs-control/dev
-manually on each boot.
+>   No udev is wrong.
 
--- 
-Tomasz Torcz       ,,(...) today's high-end is tomorrow's embedded processor.''
-xmpp: zdzichubg@chrome.pl                      -- Mitchell Blank on LKML
+Sorry - no.
+On the machines I use I don't need udev (they are a kind of server, not  
+end user workstations with often changing hardware). And I could abstain  
+(? - please excuse my gerlish) from btrfs, but not from fixed device  
+names.
 
+I may not believe that btrfs only works under udev.
+
+>   Modern Linux kernels allocate minor devices
+> dynamically. If you do not use udev, you need to synchronise /dev/
+> node with /sys/class/misc/btrfs-control/dev manually on each boot.
+
+How and where? From where gets the system the actual minor number 234  
+instead of the defined number 55?
+
+By the way - the btrfs module is "builtin", is that a problem?
+
+Viele Gruesse!
+Helmut

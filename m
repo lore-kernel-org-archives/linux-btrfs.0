@@ -1,45 +1,48 @@
-From: Ken Drummond <btrfs@kendrummond.com>
-Subject: Re: [PATCH 0/2] btrfs: allow cross-subvolume BTRFS_IOC_CLONE
-Date: Sun, 03 Apr 2011 01:51:19 +1000
-Message-ID: <1301759479.8770.8.camel@tankquad>
-References: <cover.1301542804.git.larry@elder-gods.org>
-	 <20110331063636.GA5297@infradead.org> <1301572893-sup-3464@think>
-	 <20110401133405.GA17956@infradead.org>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: minor ID for btrfs-control
+Date: 02 Apr 2011 18:45:00 +0200
+Message-ID: <Bj4lB4gT1uB@helmut.hullen.de>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Cc: Christoph Hellwig <hch@infradead.org>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110401133405.GA17956@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2011-04-01 at 09:34 -0400, Christoph Hellwig wrote:
-> On Thu, Mar 31, 2011 at 08:02:22AM -0400, Chris Mason wrote:
-> > Excerpts from Christoph Hellwig's message of 2011-03-31 02:36:36 -0400:
-> > > On Thu, Mar 31, 2011 at 12:00:11AM -0400, Larry D'Anna wrote:
-> > > > This is a simple patch to allow reflinks to be made crossing subvolume
-> > > > boundaries.
-> > > 
-> > > NAK.  subvolumes will have to become vfsmounts sooner or later, and we
-> > > really must not support any operations spanning mountpoints.
-> > > 
-> > 
-> > Sorry, I disagree here.  reflinks were always intended to be able to
-> > span subvolumes.  There's no conflict at all because they span different
-> > inodes.
-> 
-> I don't think it's a good idea to introduce any user visible operations
-> over subvolume boundaries.  Currently we don't have any operations over
-> mount boundaries, which is pretty fumdamental to the unix filesystem
-> semantics.  If you want to change this please come up with a clear
-> description of the semantics and post it to linux-fsdevel for
-> discussion.  That of course requires a clear description of the
-> btrfs subvolumes, which is still completely missing.
-> 
+Hallo,
 
-I don't really understand the details here, but doesn't the creation of
-a snapshot already lead to data extents being shared between
-sub-volumes?  From a simple user perspective this sounds like a very
-useful capability.
+if I've understood some mails in this list correct, then btrfs needs a  
+character device "btrfs-control"  with the ID 10:55
+
+When I look for this device in
+
+        /sys/class/misc/btrfs-control/dev
+
+I see 10:234
+
+And when I run the command
+
+  mkfs.btrfs -d raid0 -m raid1 /dev/sda1 /dev/sdc1
+
+I get the error messages
+
+  failed to open /dev/btrfs-control skipping device registration
+
+---
+
+  ls -l /dev/bt*
+
+shows
+
+  crw-rw-rw- 1 root root 10,55 2. Apr 17:55 /dev/btrfs-control
+
+---
+
+Kernel 2.6.38.1 (self made), no udev, no initrd, no tempfs. btrfs from  
+nov. 2010
+
+What goes wrong?
 
 
+Viele Gruesse!
+Helmut

@@ -1,48 +1,29 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: minor ID for btrfs-control
-Date: 02 Apr 2011 18:45:00 +0200
-Message-ID: <Bj4lB4gT1uB@helmut.hullen.de>
-Reply-To: helmut@hullen.de
+From: Larry D'Anna <larry@elder-gods.org>
+Subject: Re: [PATCH 0/2] btrfs: allow cross-subvolume BTRFS_IOC_CLONE
+Date: Sat, 2 Apr 2011 12:56:29 -0400
+Message-ID: <20110402165629.GA24734@cthulhu>
+References: <cover.1301542804.git.larry@elder-gods.org>
+ <20110331063636.GA5297@infradead.org>
+ <1301572893-sup-3464@think>
+ <20110401133405.GA17956@infradead.org>
+ <1301759479.8770.8.camel@tankquad>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Christoph Hellwig <hch@infradead.org>
+To: Ken Drummond <btrfs@kendrummond.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1301759479.8770.8.camel@tankquad>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo,
+* Ken Drummond (btrfs@kendrummond.com) [110402 11:51]:
+> I don't really understand the details here, but doesn't the creation of
+> a snapshot already lead to data extents being shared between
+> sub-volumes?  From a simple user perspective this sounds like a very
+> useful capability.
 
-if I've understood some mails in this list correct, then btrfs needs a  
-character device "btrfs-control"  with the ID 10:55
-
-When I look for this device in
-
-        /sys/class/misc/btrfs-control/dev
-
-I see 10:234
-
-And when I run the command
-
-  mkfs.btrfs -d raid0 -m raid1 /dev/sda1 /dev/sdc1
-
-I get the error messages
-
-  failed to open /dev/btrfs-control skipping device registration
-
----
-
-  ls -l /dev/bt*
-
-shows
-
-  crw-rw-rw- 1 root root 10,55 2. Apr 17:55 /dev/btrfs-control
-
----
-
-Kernel 2.6.38.1 (self made), no udev, no initrd, no tempfs. btrfs from  
-nov. 2010
-
-What goes wrong?
-
-
-Viele Gruesse!
-Helmut
+I was surprised and frustrated to find it missing.  I had just copied a large
+quantity of data into btrfs, realized i need to make a subvolume to try out
+snapshotting, and then found out i had to copy all the data *again* to get it
+into a subvolume.  There are tons of scenarios where users will want and expect
+to be able to do this.

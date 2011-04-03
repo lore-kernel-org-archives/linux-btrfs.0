@@ -1,27 +1,32 @@
-From: Peter Stuge <peter@stuge.se>
-Subject: Re: minor ID for btrfs-control
-Date: Sun, 3 Apr 2011 14:28:08 +0200
-Message-ID: <20110403122808.17595.qmail@stuge.se>
-References: <20110402172936.GA24370@mother.jarsat.pl> <Bj8m7qCT1uB@helmut.hullen.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+From: Yoshinori Sano <yoshinori.sano@gmail.com>
+Subject: [PATCH] Btrfs: fix memory leak in start_transaction()
+Date: Sun,  3 Apr 2011 21:31:28 +0900
+Message-ID: <1301833888-31238-1-git-send-email-yoshinori.sano@gmail.com>
+Cc: chris.mason@oracle.com, Yoshinori Sano <yoshinori.sano@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <Bj8m7qCT1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Helmut Hullen wrote:
-> > If you do not use udev, you need to synchronise /dev/
-> > node with /sys/class/misc/btrfs-control/dev manually on each boot.
-> 
-> Solved (something like reverse engineering).
-> 
-> I re-create the (permanent) entry /dev/btrfs-control using the
-> actual contents of "/sys/class/misc/btrfs-control/dev", and btrfs
-> is happy (and me too).
+Free btrfs_trans_handle when join_transaction() fails
+in start_transaction()
 
-This is fine, and is just what udev does; it creates the correct
-device node using kernel data.
+Signed-off-by: Yoshinori Sano <yoshinori.sano@gmail.com>
+---
+ fs/btrfs/transaction.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index ce48eb5..d01cc24 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -197,6 +197,7 @@ again:
+ 
+ 	ret = join_transaction(root);
+ 	if (ret < 0) {
++		kmem_cache_free(btrfs_trans_handle_cachep, h);
+ 		if (type != TRANS_JOIN_NOLOCK)
+ 			mutex_unlock(&root->fs_info->trans_mutex);
+ 		return ERR_PTR(ret);
+-- 
+1.7.1
 
-//Peter

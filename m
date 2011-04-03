@@ -1,32 +1,30 @@
-From: Yoshinori Sano <yoshinori.sano@gmail.com>
-Subject: [PATCH] Btrfs: fix memory leak in start_transaction()
-Date: Sun,  3 Apr 2011 21:31:28 +0900
-Message-ID: <1301833888-31238-1-git-send-email-yoshinori.sano@gmail.com>
-Cc: chris.mason@oracle.com, Yoshinori Sano <yoshinori.sano@gmail.com>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: Re: minor ID for btrfs-control
+Date: 03 Apr 2011 15:33:00 +0200
+Message-ID: <Bj8mcR0T1uB@helmut.hullen.de>
+References: <20110403122808.17595.qmail@stuge.se>
+Reply-To: helmut@hullen.de
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110403122808.17595.qmail@stuge.se>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Free btrfs_trans_handle when join_transaction() fails
-in start_transaction()
+Hallo, Peter,
 
-Signed-off-by: Yoshinori Sano <yoshinori.sano@gmail.com>
----
- fs/btrfs/transaction.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+Du meintest am 03.04.11:
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index ce48eb5..d01cc24 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -197,6 +197,7 @@ again:
- 
- 	ret = join_transaction(root);
- 	if (ret < 0) {
-+		kmem_cache_free(btrfs_trans_handle_cachep, h);
- 		if (type != TRANS_JOIN_NOLOCK)
- 			mutex_unlock(&root->fs_info->trans_mutex);
- 		return ERR_PTR(ret);
--- 
-1.7.1
+>> Solved (something like reverse engineering).
+>>
+>> I re-create the (permanent) entry /dev/btrfs-control using the
+>> actual contents of "/sys/class/misc/btrfs-control/dev", and btrfs
+>> is happy (and me too).
 
+> This is fine, and is just what udev does; it creates the correct
+> device node using kernel data.
+
+Maybe. But if I want a cup of milk I don't buy a complete cow ...
+
+Viele Gruesse!
+Helmut

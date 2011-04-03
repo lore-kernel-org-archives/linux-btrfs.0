@@ -1,54 +1,45 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
+From: "Helmut Hullen" <Hullen@t-online.de>
 Subject: Re: minor ID for btrfs-control
-Date: Sun, 03 Apr 2011 12:24:05 +0200
-Message-ID: <4D984AC5.3040207@libero.it>
-References: <Bj8lm4ND1uB@helmut.hullen.de>
-Reply-To: kreijack@inwind.it
+Date: 03 Apr 2011 11:42:00 +0200
+Message-ID: <Bj8m7qCT1uB@helmut.hullen.de>
+References: <20110402172936.GA24370@mother.jarsat.pl>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Helmut Hullen <Hullen@t-online.de>, linux-btrfs@vger.kernel.org
-To: helmut@hullen.de
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <Bj8lm4ND1uB@helmut.hullen.de>
+In-Reply-To: <20110402172936.GA24370@mother.jarsat.pl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Helmut,
+Hallo, Tomasz,
 
-On 04/03/2011 05:11 AM, Helmut Hullen wrote:
-> Hallo, Goffredo,
-[..]
->> As wrote by Tomasz the minor number of the btrfs-control is allocated
->> dynamically.
-> 
-> At which place?
+Du meintest am 02.04.11:
 
-I replied you too fast. Btrfs register a "misc" device, but its number
-is not dynamically allocated (see [1] for further information), but it
-is static.
-
-$ grep BTRFS_MINOR -r include/
-include/linux/miscdevice.h:#define BTRFS_MINOR          234
-
-I can conclude that _now_ the minor is 234 and not 55. But I don't know
-if it is a _stable_ interface.
-
-I think that during the boot you should check the minor with
-
-grep btrfs-control /proc/misc | awk '{ print $1 }'
+>> if I've understood some mails in this list correct, then btrfs needs
+>> a character device "btrfs-control"  with the ID 10:55
+>>
+>> When I look for this device in
+>>
+>>         /sys/class/misc/btrfs-control/dev
+>>
+>> I see 10:234
 
 
-Regards
-G.Baroncelli
+> If you do not use udev, you need to synchronise /dev/
+> node with /sys/class/misc/btrfs-control/dev manually on each boot.
 
-[1] http://www.linuxjournal.com/article/2920
+Solved (something like reverse engineering).
 
-> 
-> Viele Gruesse!
-> Helmut
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> .
-> 
+I re-create the (permanent) entry /dev/btrfs-control using the actual  
+contents of "/sys/class/misc/btrfs-control/dev", and btrfs is happy (and  
+me too).
 
+Works now on two of my machines for the next long time test ...
+
+------------------
+
+I'll watch who changes the data ... some part of some program must have  
+defined 234 as minor ID.
+
+Viele Gruesse!
+Helmut

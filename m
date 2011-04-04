@@ -1,40 +1,42 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: Re: btrfs balancing start - and stop?
-Date: 03 Apr 2011 21:35:00 +0200
-Message-ID: <Bj8nJL4D1uB@helmut.hullen.de>
-References: <20110403185341.GA11024@yahoo.fr>
-Reply-To: helmut@hullen.de
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: fix memory leak in start_transaction()
+Date: Mon, 04 Apr 2011 09:14:13 +0900
+Message-ID: <4D990D55.1000504@jp.fujitsu.com>
+References: <1301833888-31238-1-git-send-email-yoshinori.sano@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-2022-JP
+Cc: linux-btrfs@vger.kernel.org
+To: Yoshinori Sano <yoshinori.sano@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110403185341.GA11024@yahoo.fr>
+In-Reply-To: <1301833888-31238-1-git-send-email-yoshinori.sano@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Stephane,
+(2011/04/03 21:31), Yoshinori Sano wrote:
+> Free btrfs_trans_handle when join_transaction() fails
+> in start_transaction()
 
-Du meintest am 03.04.11:
+Woops! It's my mistake in http://marc.info/?l=linux-btrfs&m=130086817629289&w=2.
+Thanks for the point.
 
->>>> balancing about 2 TByte needed about 20 hours.
+---
+Tsutomu
 
-[...]
+> 
+> Signed-off-by: Yoshinori Sano <yoshinori.sano@gmail.com>
+> ---
+>  fs/btrfs/transaction.c |    1 +
+>  1 files changed, 1 insertions(+), 0 deletions(-)
+> 
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index ce48eb5..d01cc24 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -197,6 +197,7 @@ again:
+>  
+>  	ret = join_transaction(root);
+>  	if (ret < 0) {
+> +		kmem_cache_free(btrfs_trans_handle_cachep, h);
+>  		if (type != TRANS_JOIN_NOLOCK)
+>  			mutex_unlock(&root->fs_info->trans_mutex);
+>  		return ERR_PTR(ret);
 
->> Hugo has explained the limits of regarding
->>
->>         dmesg | grep relocating
->>
->> or (more simple) the last lines of "dmesg" and looking for the
->> "relocating" lines. But: what do these lines tell now? What is the
->> (pessimistic) estimation when you extrapolate the data?
-
-[...]
-
-> 4.7 more days to go. And I reckon it will have written about 9
-> TB to disk by that time (which is the total size of the volume,
-> though only 3.8TB are occupied).
-
-Yes - that's the pessimistic estimation. As Hugo has explained it can  
-finish faster - just look to the data tomorrow again.
-
-Viele Gruesse!
-Helmut

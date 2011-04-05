@@ -1,55 +1,44 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: [GIT PULL] Btrfs pull for 2.6.39-rc2
-Date: Tue, 05 Apr 2011 04:12:27 -0400
-Message-ID: <1301990214-sup-7585@think>
-Content-Type: text/plain; charset=UTF-8
-To: "Linus Torvalds" <torvalds@linux-foundation.org>,
-	"linux-btrfs" <linux-btrfs@vger.kernel.org>,
-	"linux-kernel" <linux-kernel@vger.kernel.org>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+From: Xavier Nicollet <nicollet@jeru.org>
+Subject: Re: btrfs subvolume snapshot syntax too "smart"
+Date: Tue, 5 Apr 2011 16:29:58 +0200
+Message-ID: <20110405142958.GK18890@jeru.org>
+References: <BANLkTikvyUH2Dhm2p=N-GSzy7r4_nj=bNg@mail.gmail.com> <4D9A203E.9090807@libero.it> <BANLkTimbmwM078e-SVcuWPDqjy99_hV+sw@mail.gmail.com>
+Reply-To: nicollet@jeru.org
+Mime-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-15
+Cc: linux-btrfs@vger.kernel.org
+To: Freddie Cash <fjwcash@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <BANLkTimbmwM078e-SVcuWPDqjy99_hV+sw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi everyone,
+Le 04 avril 2011 =E0 12:57, Freddie Cash a =E9crit:
+> Isn't this a situation where supporting a trailing / would help?
+>=20
+> For example, with the / at the end, means "put the snapshot into the
+> folder".  Thus "btrfs subvolume snapshot /ssd/sub1 /ssd/5/" would
+> create a "sub1" snapshot inside the 5/ folder.  Running it a second
+> time would error out since /ssd/5/sub1/ already exists.  And if the 5=
+/
+> folder doesn't exist, it would error out.
+>=20
+> And without the / at the end, means "name the snapshot".  Thus "btrfs
+> subvolume snapshot /ssd/sub1 /ssd/5" would create a snapshot named
+> "/ssd/5".  Running the command again would error out due to the
+> snapshot already existing.  And if the 5/ folder doesn't exist, it's
+> created.  And it errors out if the 5/ folder already exists.
+>=20
+> Or, something along those lines.  Similar to how other apps work
+> with/without a trailing /.
 
-The for-linus branch of the btrfs unstable tree has some bug fixes for
-btrfs.  One fixes a regression from readonly snapshot support (2.6.38),
-where we can incorrectly treat a subvolume as readonly.
+I am not an expert, but I think it is the opposite with rsync.
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git for-linus
+Cheers,
 
-Tsutomu Itoh (3) commits (+21/-4):
-    Btrfs: fix memory leak in btrfs_ioctl_start_sync() (+3/-1)
-    Btrfs: fix compiler warning in file.c (+1/-1)
-    Btrfs: fix /proc/mounts info. (+17/-2)
-
-Li Zefan (2) commits (+38/-10):
-    Btrfs: Fix oops for defrag with compression turned on (+8/-9)
-    Btrfs: Fix uninitialized root flags for subvolumes (+30/-1)
-
-Josef Bacik (2) commits (+78/-6):
-    Btrfs: fix free space cache when there are pinned extents and clusters V2 (+78/-4)
-    Btrfs: don't warn in btrfs_add_orphan (+0/-2)
-
-Yoshinori Sano (1) commits (+1/-0):
-    Btrfs: fix memory leak in start_transaction()
-
-Johann Lombardi (1) commits (+5/-3):
-    Btrfs: fix subvol_sem leak in btrfs_rename()
-
-Miao Xie (1) commits (+2/-2):
-    btrfs: clear __GFP_FS flag in the space cache inode
-
--chris
-
-Total: (10) commits (+145/-25)
-
- fs/btrfs/ctree.h            |    4 ++
- fs/btrfs/disk-io.c          |    4 ++-
- fs/btrfs/file.c             |    2 +-
- fs/btrfs/free-space-cache.c |   84 ++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/inode.c            |   29 +++++++--------
- fs/btrfs/ioctl.c            |    8 ++++-
- fs/btrfs/root-tree.c        |   18 +++++++++
- fs/btrfs/super.c            |   19 +++++++++-
- fs/btrfs/transaction.c      |    2 +
- 9 files changed, 145 insertions(+), 25 deletions(-)
+--=20
+Xavier Nicollet
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

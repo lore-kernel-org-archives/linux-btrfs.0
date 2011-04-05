@@ -1,32 +1,36 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] Btrfs: fix subvolume mount by name problem when default mount subvolume is set
-Date: Tue, 05 Apr 2011 01:07:29 -0400
-Message-ID: <1301979914-sup-1391@think>
-References: <1301558362-2650-1-git-send-email-xin.zhong@intel.com>
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: "Zhong, Xin" <xin.zhong@intel.com>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: Re: bug report
+Date: 05 Apr 2011 08:17:00 +0200
+Message-ID: <BjGqOe5i1uB@helmut.hullen.de>
+References: <20110405044857.GA31013@cthulhu>
+Reply-To: helmut@hullen.de
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <1301558362-2650-1-git-send-email-xin.zhong@intel.com>
+In-Reply-To: <20110405044857.GA31013@cthulhu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Zhong, Xin's message of 2011-03-31 03:59:22 -0400:
-> We create two subvolumes (meego_root and meego_home) in
-> btrfs root directory. And set meego_root as default mount
-> subvolume. After we remount btrfs, meego_root is mounted
-> to top directory by default. Then when we try to mount
-> meego_home (subvol=meego_home) to a subdirectory, it failed.
-> The problem is when default mount subvolume is set to
-> meego_root, we search meego_home in it but can not find it.
-> So the solution is to search meego_home in btrfs root
-> directory instead when subvol=meego_home is given.
+Hallo, Larry,
 
-I think this one is difficult because if they have set the default
-subvolume they might have done so because the original default has the
-result of a busted upgrade or something in it.
+Du meintest am 05.04.11:
 
-So, I think the subvol= should be relative to the default.  Would it
-work for you to add a new mount option to specify the subvol id to
-search for subvol=?
+[...]
 
--chris
+> and then try to apt-get some stuff, and the result is this:
+
+> btrfs csum failed ino 17498 off 2412544 csum 491052325 private
+> 446722121
+> btrfs csum failed ino 17498 off 2416640 csum 2077462867
+> private 906054605
+
+[...]
+
+> I've gone through this twice now, so it's repeatable at least.  I
+> know 2.6.35 is kinda old but was this kind of thing to be expected
+> back then?
+
+First try an actual kernel; I prefer 2.6.38.1
+
+Viele Gruesse!
+Helmut

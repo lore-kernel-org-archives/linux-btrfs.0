@@ -1,48 +1,32 @@
-From: Larry D'Anna <larry@elder-gods.org>
-Subject: bug report
-Date: Tue, 5 Apr 2011 00:48:57 -0400
-Message-ID: <20110405044857.GA31013@cthulhu>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH] Btrfs: fix subvolume mount by name problem when default mount subvolume is set
+Date: Tue, 05 Apr 2011 01:07:29 -0400
+Message-ID: <1301979914-sup-1391@think>
+References: <1301558362-2650-1-git-send-email-xin.zhong@intel.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: "Zhong, Xin" <xin.zhong@intel.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <1301558362-2650-1-git-send-email-xin.zhong@intel.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So i made a filesystem image 
+Excerpts from Zhong, Xin's message of 2011-03-31 03:59:22 -0400:
+> We create two subvolumes (meego_root and meego_home) in
+> btrfs root directory. And set meego_root as default mount
+> subvolume. After we remount btrfs, meego_root is mounted
+> to top directory by default. Then when we try to mount
+> meego_home (subvol=meego_home) to a subdirectory, it failed.
+> The problem is when default mount subvolume is set to
+> meego_root, we search meego_home in it but can not find it.
+> So the solution is to search meego_home in btrfs root
+> directory instead when subvol=meego_home is given.
 
- $ dd if=/dev/zero of=root_fs bs=1024 count=$(expr 1024 \* 1024)
- $ mkfs.btrfs root_fs 
+I think this one is difficult because if they have set the default
+subvolume they might have done so because the original default has the
+result of a busted upgrade or something in it.
 
-Then I put some debian on it (my kernel is 2.6.35-27-generic #48-Ubuntu) 
+So, I think the subvol= should be relative to the default.  Would it
+work for you to add a new mount option to specify the subvol id to
+search for subvol=?
 
- $ mkdir root 
- $ mount -o loop root_fs root 
- $ debootstrap sid root 
- $ umount root
-
-Then i run uml.....   (2.6.35-1um-0ubuntu1)
-
- $ linux single eth0=tuntap,tap0,fe:fd:f0:00:00:01
-
-and then try to apt-get some stuff, and the result is this:
-
-btrfs csum failed ino 17498 off 2412544 csum 491052325 private 446722121
-btrfs csum failed ino 17498 off 2416640 csum 2077462867 private 906054605
-btrfs csum failed ino 17498 off 2420736 csum 263316283 private 2215839539
-btrfs csum failed ino 17498 off 2424832 csum 4177088190 private 2414263107
-btrfs csum failed ino 17498 off 2428928 csum 4028205539 private 3560605623
-btrfs csum failed ino 17498 off 2433024 csum 1724529595 private 200634979
-btrfs csum failed ino 17498 off 2437120 csum 4038631380 private 2927872002
-btrfs csum failed ino 17498 off 2441216 csum 2616837020 private 729736037
-btrfs csum failed ino 17498 off 2498560 csum 2566472073 private 3417075259
-btrfs csum failed ino 17498 off 2502656 csum 2566472073 private 1410567947
-
-
- $ find / -mount -inum 17498  
- /var/cache/apt/srcpkgcache.bin
-
-I've gone through this twice now, so it's repeatable at least.  I know 2.6.35 is
-kinda old but was this kind of thing to be expected back then?  
-
-
-      --larry
+-chris

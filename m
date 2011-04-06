@@ -1,50 +1,60 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: Re: cloning single-device btrfs file system onto multi-device one
-Date: 06 Apr 2011 08:57:00 +0200
-Message-ID: <BjKsshqy1uB@helmut.hullen.de>
-References: <chaz20110328131748.GA18131@seebyte.com>
-Reply-To: helmut@hullen.de
+From: Arne Jansen <sensille@gmx.net>
+Subject: Re: [PATCH] Btrfs: don't kzalloc the ordered extents
+Date: Wed, 06 Apr 2011 09:54:07 +0200
+Message-ID: <4D9C1C1F.8090208@gmx.net>
+References: <1302045649-1580-1-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <chaz20110328131748.GA18131@seebyte.com>
+In-Reply-To: <1302045649-1580-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Stephane,
+On 06.04.2011 01:20, Josef Bacik wrote:
+> We initialize almost all of the fields when we allocate an ordered extent, so
+> use kmalloc instead of kzalloc and just initialize the other fields that we
+> don't already initialize yet.  Thanks,
 
-Du meintest am 28.03.11:
+Is it really worth it? we have seen a few bugs in the past resulting
+from uninitialized structure element, that even made it to disk.
+Using kzalloc makes maintenance much easier.
 
-> I then did a btrfs fi balance again and let it run through. However
-> here is what I get:
+-Arne
 
-> $ df -h /mnt
-> Filesystem            Size  Used Avail Use% Mounted on
-> /dev/sdb              8.2T  3.5T  3.2T  53% /mnt
+> 
+> Signed-off-by: Josef Bacik <josef@redhat.com>
+> ---
+>  fs/btrfs/ordered-data.c |    4 +++-
+>  1 files changed, 3 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+> index 083a554..2edc837 100644
+> --- a/fs/btrfs/ordered-data.c
+> +++ b/fs/btrfs/ordered-data.c
+> @@ -179,7 +179,7 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+>  	struct btrfs_ordered_extent *entry;
+>  
+>  	tree = &BTRFS_I(inode)->ordered_tree;
+> -	entry = kzalloc(sizeof(*entry), GFP_NOFS);
+> +	entry = kmalloc(sizeof(*entry), GFP_NOFS);
+>  	if (!entry)
+>  		return -ENOMEM;
+>  
+> @@ -190,6 +190,7 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+>  	entry->bytes_left = len;
+>  	entry->inode = inode;
+>  	entry->compress_type = compress_type;
+> +	entry->flags = 0;
+>  	if (type != BTRFS_ORDERED_IO_DONE && type != BTRFS_ORDERED_COMPLETE)
+>  		set_bit(type, &entry->flags);
+>  
+> @@ -201,6 +202,7 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+>  	init_waitqueue_head(&entry->wait);
+>  	INIT_LIST_HEAD(&entry->list);
+>  	INIT_LIST_HEAD(&entry->root_extent_list);
+> +	RB_CLEAR_NODE(&entry->rb_node);
+>  
+>  	spin_lock(&tree->lock);
+>  	node = tree_insert(&tree->tree, file_offset,
 
-> Only 3.2T left. How would I reclaim the missing space?
-
-> $ sudo btrfs fi show
-> Label: none  uuid: ...
->         Total devices 3 FS bytes used 3.43TB
->         devid    4 size 2.73TB used 1.17TB path /dev/sdc
->         devid    3 size 2.73TB used 1.17TB path /dev/sdb
->         devid    2 size 2.70TB used 1.14TB path /dev/sda4
-> $ sudo btrfs fi df /mnt
-> Data, RAID0: total=3.41TB, used=3.41TB
-> System, RAID1: total=16.00MB, used=232.00KB
-> Metadata, RAID1: total=35.25GB, used=20.55GB
-
-> So that kind of worked but that is of little use to me as 2TB
-> kind of disappeared under my feet in the process.
-
-It may not please you - I've seen this nasty effect too. Reproducable.
-
-I presume that "balance" eats disk space.
-
-But "balance" seems to be necessary if I want to delete a device, and  
-deleting a device is one of the features I'd like to use with btrfs  
-(adding a new bigger device, then deleting an old smaller device).
-
-Viele Gruesse!
-Helmut

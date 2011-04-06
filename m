@@ -1,131 +1,39 @@
-From: Evert Vorster <evorster@gmail.com>
-Subject: Re: cloning single-device btrfs file system onto multi-device one
-Date: Tue, 5 Apr 2011 22:45:42 -0700
-Message-ID: <BANLkTimQaPNm22kN8g2ha+XrOP3uyBUE-Q@mail.gmail.com>
-References: <chaz20110321162450.GB918@seebyte.com>
-	<chaz20110322092259.GA4861@seebyte.com>
-	<AANLkTin1++vPq904tkPOAf3ZxwWTZaQYL+=WJHetEr9h@mail.gmail.com>
-	<chaz20110328131748.GA18131@seebyte.com>
+From: "Zhong, Xin" <xin.zhong@intel.com>
+Subject: RE: [PATCH] Btrfs: fix subvolume mount by name problem when default
+ mount subvolume is set
+Date: Wed, 6 Apr 2011 14:19:19 +0800
+Message-ID: <1865303E0DED764181A9D882DEF65FB68A76FFBE02@shsmsx502.ccr.corp.intel.com>
+References: <1301558362-2650-1-git-send-email-xin.zhong@intel.com>
+ <1301979914-sup-1391@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: cwillu <cwillu@cwillu.com>, linux-btrfs@vger.kernel.org
-To: Stephane Chazelas <stephane.chazelas@gmail.com>
+Content-Type: text/plain; charset="utf-8"
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <chaz20110328131748.GA18131@seebyte.com>
+In-Reply-To: <1301979914-sup-1391@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi there.
-
-=46rom my limited understanding, btrfs will write metadata in raid1 by
-default. So, this could be where your 2TB has gone.
-
-I am assuming you used raid0 for the three new disks?
-
-Also, hard-stopping a btrfs is a no-no...
-
-Kind regards,
--Evert-
-
-On Mon, Mar 28, 2011 at 6:17 AM, Stephane Chazelas
-<stephane.chazelas@gmail.com> wrote:
-> 2011-03-22 18:06:29 -0600, cwillu:
->> > I can mount it back, but not if I reload the btrfs module, in whic=
-h case I get:
->> >
->> > [ 1961.328280] Btrfs loaded
->> > [ 1961.328695] device fsid df4e5454eb7b1c23-7a68fc421060b18b devid=
- 1 transid 118 /dev/loop0
->> > [ 1961.329007] btrfs: failed to read the system array on loop0
->> > [ 1961.340084] btrfs: open_ctree failed
->>
->> Did you rescan all the loop devices (btrfs dev scan /dev/loop*) afte=
-r
->> reloading the module, before trying to mount again?
->
-> Thanks. That probably was the issue, that and using too big
-> files on too small volumes I'd guess.
->
-> I've tried it in real life and it seemed to work to some extent.
-> So here is how I transferred a 6TB btrfs on one 6TB raid5 device
-> (on host src) over the network onto a btrfs on 3 3TB hard drives
-> (on host dst):
->
-> on src:
->
-> lvm snapshot -L100G -n snap /dev/VG/vol
-> nbd-server 12345 /dev/VG/snap
->
-> (if you're not lucky enough to have used lvm there, you can use
-> nbd-server's copy-on-write feature).
->
-> on dst:
->
-> nbd-client src 12345 /dev/nbd0
-> mount /dev/nbd0 /mnt
-> btrfs device add /dev/sdb /dev/sdc /dev/sdd /mnt
-> =A0# in reality it was /dev/sda4 (a little under 3TB), /dev/sdb,
-> =A0# /dev/sdc
-> btrfs device delete /dev/nbd0 /mnt
->
-> That was relatively fast (about 18 hours) but failed with an
-> error. Apparently, it managed to fill up the 3 3TB drives (as
-> shown by btrfs fi show). Usage for /dev/nbd0 was at 16MB though
-> (?!)
->
-> I then did a "btrfs fi balance /mnt". I could see usage on the
-> drives go down quickly. However, that was writing data onto
-> /dev/nbd0 so was threatening to fill up my LVM snapshot. I then
-> cancelled that by doing a hard reset on "dst" (couldn't find
-> any other way). And then:
->
-> Upon reboot, I mounted /dev/sdb instead of /dev/nbd0 in case
-> that made a difference and then ran the
->
-> btrfs device delete /dev/nbd0 /mnt
->
-> again, which this time went through.
->
-> I then did a btrfs fi balance again and let it run through. However h=
-ere is
-> what I get:
->
-> $ df -h /mnt
-> Filesystem =A0 =A0 =A0 =A0 =A0 =A0Size =A0Used Avail Use% Mounted on
-> /dev/sdb =A0 =A0 =A0 =A0 =A0 =A0 =A08.2T =A03.5T =A03.2T =A053% /mnt
->
-> Only 3.2T left. How would I reclaim the missing space?
->
-> $ sudo btrfs fi show
-> Label: none =A0uuid: ...
-> =A0 =A0 =A0 =A0Total devices 3 FS bytes used 3.43TB
-> =A0 =A0 =A0 =A0devid =A0 =A04 size 2.73TB used 1.17TB path /dev/sdc
-> =A0 =A0 =A0 =A0devid =A0 =A03 size 2.73TB used 1.17TB path /dev/sdb
-> =A0 =A0 =A0 =A0devid =A0 =A02 size 2.70TB used 1.14TB path /dev/sda4
-> $ sudo btrfs fi df /mnt
-> Data, RAID0: total=3D3.41TB, used=3D3.41TB
-> System, RAID1: total=3D16.00MB, used=3D232.00KB
-> Metadata, RAID1: total=3D35.25GB, used=3D20.55GB
->
-> So that kind of worked but that is of little use to me as 2TB
-> kind of disappeared under my feet in the process.
->
-> Any idea, anyone?
->
-> Thanks
-> Stephane
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->
-
-
-
---=20
--Evert-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+PiAtLS0tLU9yaWdpbmFsIE1lc3NhZ2UtLS0tLQ0KPiBGcm9tOiBDaHJpcyBNYXNvbiBbbWFpbHRv
+OmNocmlzLm1hc29uQG9yYWNsZS5jb21dDQo+IFNlbnQ6IFR1ZXNkYXksIEFwcmlsIDA1LCAyMDEx
+IDE6MDcgUE0NCj4gVG86IFpob25nLCBYaW4NCj4gQ2M6IGxpbnV4LWJ0cmZzDQo+IFN1YmplY3Q6
+IFJlOiBbUEFUQ0hdIEJ0cmZzOiBmaXggc3Vidm9sdW1lIG1vdW50IGJ5IG5hbWUgcHJvYmxlbSB3
+aGVuDQo+IGRlZmF1bHQgbW91bnQgc3Vidm9sdW1lIGlzIHNldA0KPiANCj4gRXhjZXJwdHMgZnJv
+bSBaaG9uZywgWGluJ3MgbWVzc2FnZSBvZiAyMDExLTAzLTMxIDAzOjU5OjIyIC0wNDAwOg0KPiA+
+IFdlIGNyZWF0ZSB0d28gc3Vidm9sdW1lcyAobWVlZ29fcm9vdCBhbmQgbWVlZ29faG9tZSkgaW4N
+Cj4gPiBidHJmcyByb290IGRpcmVjdG9yeS4gQW5kIHNldCBtZWVnb19yb290IGFzIGRlZmF1bHQg
+bW91bnQNCj4gPiBzdWJ2b2x1bWUuIEFmdGVyIHdlIHJlbW91bnQgYnRyZnMsIG1lZWdvX3Jvb3Qg
+aXMgbW91bnRlZA0KPiA+IHRvIHRvcCBkaXJlY3RvcnkgYnkgZGVmYXVsdC4gVGhlbiB3aGVuIHdl
+IHRyeSB0byBtb3VudA0KPiA+IG1lZWdvX2hvbWUgKHN1YnZvbD1tZWVnb19ob21lKSB0byBhIHN1
+YmRpcmVjdG9yeSwgaXQgZmFpbGVkLg0KPiA+IFRoZSBwcm9ibGVtIGlzIHdoZW4gZGVmYXVsdCBt
+b3VudCBzdWJ2b2x1bWUgaXMgc2V0IHRvDQo+ID4gbWVlZ29fcm9vdCwgd2Ugc2VhcmNoIG1lZWdv
+X2hvbWUgaW4gaXQgYnV0IGNhbiBub3QgZmluZCBpdC4NCj4gPiBTbyB0aGUgc29sdXRpb24gaXMg
+dG8gc2VhcmNoIG1lZWdvX2hvbWUgaW4gYnRyZnMgcm9vdA0KPiA+IGRpcmVjdG9yeSBpbnN0ZWFk
+IHdoZW4gc3Vidm9sPW1lZWdvX2hvbWUgaXMgZ2l2ZW4uDQo+IA0KPiBJIHRoaW5rIHRoaXMgb25l
+IGlzIGRpZmZpY3VsdCBiZWNhdXNlIGlmIHRoZXkgaGF2ZSBzZXQgdGhlIGRlZmF1bHQNCj4gc3Vi
+dm9sdW1lIHRoZXkgbWlnaHQgaGF2ZSBkb25lIHNvIGJlY2F1c2UgdGhlIG9yaWdpbmFsIGRlZmF1
+bHQgaGFzIHRoZQ0KPiByZXN1bHQgb2YgYSBidXN0ZWQgdXBncmFkZSBvciBzb21ldGhpbmcgaW4g
+aXQuDQo+IA0KPiBTbywgSSB0aGluayB0aGUgc3Vidm9sPSBzaG91bGQgYmUgcmVsYXRpdmUgdG8g
+dGhlIGRlZmF1bHQuICBXb3VsZCBpdA0KPiB3b3JrIGZvciB5b3UgdG8gYWRkIGEgbmV3IG1vdW50
+IG9wdGlvbiB0byBzcGVjaWZ5IHRoZSBzdWJ2b2wgaWQgdG8NCj4gc2VhcmNoIGZvciBzdWJ2b2w9
+Pw0KPiANCg0KU291bmRzIGdvb2QuIEkgd2lsbCBzdWJtaXQgYSBuZXcgdmVyc2lvbi4gVGhhbmtz
+IQ0KDQo+IC1jaHJpcw0K

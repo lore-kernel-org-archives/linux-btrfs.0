@@ -1,49 +1,46 @@
-From: "Zhong, Xin" <xin.zhong@intel.com>
-Subject: RE: [PATCH V2] Btrfs: fix subvolume mount by name problem when
- default mount subvolume is set
-Date: Wed, 6 Apr 2011 16:10:57 +0800
-Message-ID: <1865303E0DED764181A9D882DEF65FB68A76FFBF3B@shsmsx502.ccr.corp.intel.com>
-References: <1302067633-20271-1-git-send-email-xin.zhong@intel.com>
- <4D9C095A.90400@cn.fujitsu.com>
+From: Arne Jansen <sensille@gmx.net>
+Subject: Re: cloning single-device btrfs file system onto multi-device one
+Date: Wed, 06 Apr 2011 10:25:00 +0200
+Message-ID: <4D9C235C.1030106@gmx.net>
+References: <chaz20110321162450.GB918@seebyte.com> <chaz20110322092259.GA4861@seebyte.com> <AANLkTin1++vPq904tkPOAf3ZxwWTZaQYL+=WJHetEr9h@mail.gmail.com> <chaz20110328131748.GA18131@seebyte.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Li Zefan <lizf@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: cwillu <cwillu@cwillu.com>, linux-btrfs@vger.kernel.org
+To: Stephane Chazelas <stephane.chazelas@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D9C095A.90400@cn.fujitsu.com>
+In-Reply-To: <chaz20110328131748.GA18131@seebyte.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-PiAtLS0tLU9yaWdpbmFsIE1lc3NhZ2UtLS0tLQ0KPiBGcm9tOiBsaW51eC1idHJmcy1vd25lckB2
-Z2VyLmtlcm5lbC5vcmcgW21haWx0bzpsaW51eC1idHJmcy0NCj4gb3duZXJAdmdlci5rZXJuZWwu
-b3JnXSBPbiBCZWhhbGYgT2YgTGkgWmVmYW4NCj4gU2VudDogV2VkbmVzZGF5LCBBcHJpbCAwNiwg
-MjAxMSAyOjM0IFBNDQo+IFRvOiBaaG9uZywgWGluDQo+IENjOiBsaW51eC1idHJmc0B2Z2VyLmtl
-cm5lbC5vcmcNCj4gU3ViamVjdDogUmU6IFtQQVRDSCBWMl0gQnRyZnM6IGZpeCBzdWJ2b2x1bWUg
-bW91bnQgYnkgbmFtZSBwcm9ibGVtIHdoZW4NCj4gZGVmYXVsdCBtb3VudCBzdWJ2b2x1bWUgaXMg
-c2V0DQo+IA0KPiAxMzoyNywgWmhvbmcsIFhpbiB3cm90ZToNCj4gPiBXZSBjcmVhdGUgdHdvIHN1
-YnZvbHVtZXMgKG1lZWdvX3Jvb3QgYW5kIG1lZWdvX2hvbWUpIGluDQo+ID4gYnRyZnMgcm9vdCBk
-aXJlY3RvcnkuIEFuZCBzZXQgbWVlZ29fcm9vdCBhcyBkZWZhdWx0IG1vdW50DQo+ID4gc3Vidm9s
-dW1lLiBBZnRlciB3ZSByZW1vdW50IGJ0cmZzLCBtZWVnb19yb290IGlzIG1vdW50ZWQNCj4gPiB0
-byB0b3AgZGlyZWN0b3J5IGJ5IGRlZmF1bHQuIFRoZW4gd2hlbiB3ZSB0cnkgdG8gbW91bnQNCj4g
-PiBtZWVnb19ob21lIChzdWJ2b2w9bWVlZ29faG9tZSkgdG8gYSBzdWJkaXJlY3RvcnksIGl0IGZh
-aWxlZC4NCj4gPiBUaGUgcHJvYmxlbSBpcyB3aGVuIGRlZmF1bHQgbW91bnQgc3Vidm9sdW1lIGlz
-IHNldCB0bw0KPiA+IG1lZWdvX3Jvb3QsIHdlIHNlYXJjaCBtZWVnb19ob21lIGluIG1lZWdvX3Jv
-b3QgYnV0IGNhbiBub3QgZmluZA0KPiA+IGl0LiBTbyB0aGUgc29sdXRpb24gaXMgdG8gYWRkIGEg
-bmV3IG1vdW50IG9wdGlvbiAoc3Vidm9scm9vdGlkKQ0KPiA+IHRvIHNwZWNpZnkgc3Vidm9sIGlk
-IG9mIHJvb3QgYW5kIHNlYXJjaCBzdWJ2b2wgbmFtZSBpbiBpdC4gRm9yDQo+ID4gb3VyIGNhc2Us
-IG5vdyB3ZSBjYW4gdXNlICItbyBzdWJ2b2xyb290aWQ9MCxzdWJ2b2w9bWVlZ29faG9tZSkNCj4g
-PiB0byBtb3VudCBtZWVnb19ob21lLg0KPiA+DQo+ID4gRGV0YWlsIGluZm9ybWF0aW9uIGNhbiBi
-ZSBmb3VuZCBpbiBtZWVnbyBidWd6aWxsYToNCj4gPiBodHRwczovL2J1Z3MubWVlZ28uY29tL3No
-b3dfYnVnLmNnaT9pZD0xNTA1NQ0KPiA+DQo+ID4gU2lnbmVkLW9mZi1ieTogWmhvbmcsIFhpbiA8
-eGluLnpob25nQGludGVsLmNvbT4NCj4gPiAtLS0NCj4gPiAgZnMvYnRyZnMvc3VwZXIuYyB8ICAg
-NDMgKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKy0tLS0tLS0tLQ0KPiA+ICAxIGZp
-bGVzIGNoYW5nZWQsIDM0IGluc2VydGlvbnMoKyksIDkgZGVsZXRpb25zKC0pDQo+ID4NCj4gDQo+
-IEkgZ3Vlc3MgeW91IGZvcmdvdCB0byBydW4gY2hlY2twYXRjaC5wbC4NCg0KU29ycnkgZm9yIG15
-IG1pc3Rha2UuIEkgaGF2ZSBmaXhlZCBpdCBhbmQgcmVzdWJtaXQuIFRoYW5rcyENCg0KPiANCj4g
-RVJST1I6IHRyYWlsaW5nIHdoaXRlc3BhY2UNCj4gIzE4MzogRklMRTogZnMvYnRyZnMvc3VwZXIu
-Yzo4MDc6DQo+ICteSV5JJA0KPiANCj4gRVJST1I6IGVsc2Ugc2hvdWxkIGZvbGxvdyBjbG9zZSBi
-cmFjZSAnfScNCj4gIzE5ODogRklMRTogZnMvYnRyZnMvc3VwZXIuYzo4MzY6DQo+ICAgICAgICAg
-fQ0KPiArICAgICAgIGVsc2Ugew0KPiANCj4gdG90YWw6IDIgZXJyb3JzLCAwIHdhcm5pbmdzLCAx
-MDAgbGluZXMgY2hlY2tlZA0KPiAtLQ0KPiBUbyB1bnN1YnNjcmliZSBmcm9tIHRoaXMgbGlzdDog
-c2VuZCB0aGUgbGluZSAidW5zdWJzY3JpYmUgbGludXgtYnRyZnMiDQo+IGluDQo+IHRoZSBib2R5
-IG9mIGEgbWVzc2FnZSB0byBtYWpvcmRvbW9Admdlci5rZXJuZWwub3JnDQo+IE1vcmUgbWFqb3Jk
-b21vIGluZm8gYXQgIGh0dHA6Ly92Z2VyLmtlcm5lbC5vcmcvbWFqb3Jkb21vLWluZm8uaHRtbA0K
+On 28.03.2011 15:17, Stephane Chazelas wrote:
+> 
+> I then did a btrfs fi balance again and let it run through. However here is
+> what I get:
+> 
+> $ df -h /mnt
+> Filesystem            Size  Used Avail Use% Mounted on
+> /dev/sdb              8.2T  3.5T  3.2T  53% /mnt
+> 
+> Only 3.2T left. How would I reclaim the missing space?
+> 
+> $ sudo btrfs fi show
+> Label: none  uuid: ...
+>         Total devices 3 FS bytes used 3.43TB
+>         devid    4 size 2.73TB used 1.17TB path /dev/sdc
+>         devid    3 size 2.73TB used 1.17TB path /dev/sdb
+>         devid    2 size 2.70TB used 1.14TB path /dev/sda4
+> $ sudo btrfs fi df /mnt
+> Data, RAID0: total=3.41TB, used=3.41TB
+> System, RAID1: total=16.00MB, used=232.00KB
+> Metadata, RAID1: total=35.25GB, used=20.55GB
+> 
+> So that kind of worked but that is of little use to me as 2TB
+> kind of disappeared under my feet in the process.
+> 
+> Any idea, anyone?
+> 
+
+This can just be a miscalculation. Can you please send the output
+of btrfs-debug-tree -d /dev/sdc? Shouldn't be too long.
+
+Thanks,
+Arne

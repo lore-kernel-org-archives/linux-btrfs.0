@@ -1,196 +1,145 @@
-From: "Zhong, Xin" <xin.zhong@intel.com>
-Subject: RE: [PATCH V3] Btrfs: fix subvolume mount by name problem when
- default mount subvolume is set
-Date: Wed, 6 Apr 2011 16:42:45 +0800
-Message-ID: <1865303E0DED764181A9D882DEF65FB68A76FFBF8C@shsmsx502.ccr.corp.intel.com>
-References: <1302075231-13105-1-git-send-email-xin.zhong@intel.com>
- <4D9C269E.6030308@gmail.com>
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: [PATCH] Trace: add __print_symbolic_u64 to avoid warnings on 32bit
+ machine
+Date: Wed, 06 Apr 2011 17:18:46 +0800
+Message-ID: <4D9C2FF6.7090607@cn.fujitsu.com>
+References: <4D9573DB.4010009@cn.fujitsu.com> <1301665762.2160.22.camel@gandalf.stny.rr.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Andreas Philipp <philipp.andreas@gmail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D9C269E.6030308@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-15
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>
+To: Steven Rostedt <rostedt@goodmis.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <1301665762.2160.22.camel@gandalf.stny.rr.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> -----Original Message-----
-> From: Andreas Philipp [mailto:philipp.andreas@gmail.com]
-> Sent: Wednesday, April 06, 2011 4:39 PM
-> To: Zhong, Xin
-> Cc: linux-btrfs@vger.kernel.org; Andreas Philipp
-> Subject: Re: [PATCH V3] Btrfs: fix subvolume mount by name problem when
-> default mount subvolume is set
-> 
-> 
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
-> 
-> Just a (probably) short question. This means, one now can mount any
-> subvolume which lies directly in another subvolume by name, as long as
-> one passes the correct subvolrootid=X mount option?
 
-Yes. That's exactly what this patch does. Thanks!
+Btrfs has some "ULL" macros, and when these macros are passed to tracepoints'
+__print_symbolic(), there will be 64->32 truncate WARNINGS during compiling
+on 32bit box.
 
-> 
-> Thanks,
-> Andreas Philipp
-> 
-> On 06.04.2011 09:33, Zhong, Xin wrote:
-> > We create two subvolumes (meego_root and meego_home) in
-> > btrfs root directory. And set meego_root as default mount
-> > subvolume. After we remount btrfs, meego_root is mounted
-> > to top directory by default. Then when we try to mount
-> > meego_home (subvol=meego_home) to a subdirectory, it failed.
-> > The problem is when default mount subvolume is set to
-> > meego_root, we search meego_home in meego_root but can not find
-> > it. So the solution is to add a new mount option (subvolrootid)
-> > to specify subvol id of root and search subvol name in it. For
-> > our case, now we can use "-o subvolrootid=0,subvol=meego_home)
-> > to mount meego_home.
-> >
-> > Detail information can be found in meego bugzilla:
-> > https://bugs.meego.com/show_bug.cgi?id=15055
-> >
-> > Signed-off-by: Zhong, Xin <xin.zhong@intel.com>
-> > ---
-> > fs/btrfs/super.c | 42 +++++++++++++++++++++++++++++++++---------
-> > 1 files changed, 33 insertions(+), 9 deletions(-)
-> >
-> > diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> > index db0a827..b85fe78 100644
-> > --- a/fs/btrfs/super.c
-> > +++ b/fs/btrfs/super.c
-> > @@ -156,7 +156,7 @@ enum {
-> > Opt_compress_type, Opt_compress_force, Opt_compress_force_type,
-> > Opt_notreelog, Opt_ratio, Opt_flushoncommit, Opt_discard,
-> > Opt_space_cache, Opt_clear_cache, Opt_user_subvol_rm_allowed,
-> > - Opt_enospc_debug, Opt_err,
-> > + Opt_enospc_debug, Opt_subvolrootid, Opt_err,
-> > };
-> >
-> > static match_table_t tokens = {
-> > @@ -186,6 +186,7 @@ static match_table_t tokens = {
-> > {Opt_clear_cache, "clear_cache"},
-> > {Opt_user_subvol_rm_allowed, "user_subvol_rm_allowed"},
-> > {Opt_enospc_debug, "enospc_debug"},
-> > + {Opt_subvolrootid, "subvolrootid=%d"},
-> > {Opt_err, NULL},
-> > };
-> >
-> > @@ -229,6 +230,7 @@ int btrfs_parse_options(struct btrfs_root *root,
-> char *options)
-> > break;
-> > case Opt_subvol:
-> > case Opt_subvolid:
-> > + case Opt_subvolrootid:
-> > case Opt_device:
-> > /*
-> > * These are parsed by btrfs_parse_early_options
-> > @@ -385,7 +387,7 @@ out:
-> > */
-> > static int btrfs_parse_early_options(const char *options, fmode_t
-> flags,
-> > void *holder, char **subvol_name, u64 *subvol_objectid,
-> > - struct btrfs_fs_devices **fs_devices)
-> > + u64 *subvol_rootid, struct btrfs_fs_devices **fs_devices)
-> > {
-> > substring_t args[MAX_OPT_ARGS];
-> > char *opts, *orig, *p;
-> > @@ -426,6 +428,18 @@ static int btrfs_parse_early_options(const char
-> *options, fmode_t flags,
-> > *subvol_objectid = intarg;
-> > }
-> > break;
-> > + case Opt_subvolrootid:
-> > + intarg = 0;
-> > + error = match_int(&args[0], &intarg);
-> > + if (!error) {
-> > + /* we want the original fs_tree */
-> > + if (!intarg)
-> > + *subvol_rootid =
-> > + BTRFS_FS_TREE_OBJECTID;
-> > + else
-> > + *subvol_rootid = intarg;
-> > + }
-> > + break;
-> > case Opt_device:
-> > error = btrfs_scan_one_device(match_strdup(&args[0]),
-> > flags, holder, fs_devices);
-> > @@ -715,6 +729,7 @@ static int btrfs_get_sb(struct file_system_type
-> *fs_type, int flags,
-> > fmode_t mode = FMODE_READ;
-> > char *subvol_name = NULL;
-> > u64 subvol_objectid = 0;
-> > + u64 subvol_rootid = 0;
-> > int error = 0;
-> >
-> > if (!(flags & MS_RDONLY))
-> > @@ -722,7 +737,7 @@ static int btrfs_get_sb(struct file_system_type
-> *fs_type, int flags,
-> >
-> > error = btrfs_parse_early_options(data, mode, fs_type,
-> > &subvol_name, &subvol_objectid,
-> > - &fs_devices);
-> > + &subvol_rootid, &fs_devices);
-> > if (error)
-> > return error;
-> >
-> > @@ -786,15 +801,17 @@ static int btrfs_get_sb(struct file_system_type
-> *fs_type, int flags,
-> > s->s_flags |= MS_ACTIVE;
-> > }
-> >
-> > - root = get_default_root(s, subvol_objectid);
-> > - if (IS_ERR(root)) {
-> > - error = PTR_ERR(root);
-> > - deactivate_locked_super(s);
-> > - goto error_free_subvol_name;
-> > - }
-> > /* if they gave us a subvolume name bind mount into that */
-> > if (strcmp(subvol_name, ".")) {
-> > struct dentry *new_root;
-> > +
-> > + root = get_default_root(s, subvol_rootid);
-> > + if (IS_ERR(root)) {
-> > + error = PTR_ERR(root);
-> > + deactivate_locked_super(s);
-> > + goto error_free_subvol_name;
-> > + }
-> > +
-> > mutex_lock(&root->d_inode->i_mutex);
-> > new_root = lookup_one_len(subvol_name, root,
-> > strlen(subvol_name));
-> > @@ -815,6 +832,13 @@ static int btrfs_get_sb(struct file_system_type
-> *fs_type, int flags,
-> > }
-> > dput(root);
-> > root = new_root;
-> > + } else {
-> > + root = get_default_root(s, subvol_objectid);
-> > + if (IS_ERR(root)) {
-> > + error = PTR_ERR(root);
-> > + deactivate_locked_super(s);
-> > + goto error_free_subvol_name;
-> > + }
-> > }
-> >
-> > mnt->mnt_sb = s;
-> -----BEGIN PGP SIGNATURE-----
-> Version: GnuPG v1.4.9 (MingW32)
-> Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
-> 
-> iQIcBAEBAgAGBQJNnCaeAAoJEJIcBJ3+Xkgi8AYP/2kZW9AkQOJoCFQiDipTF5ck
-> yeXqKAqaMnmry0XY3I3ideZKpFp5C1U6QqoA/uy/ieHDx1OPix+wciLuqo/uxbKj
-> LG3bKJTEcZ5swdjY6oHsTp9iQFXn5tNHTb0Sayha6QaJgkQ/FU4AV5jPmXdN5DvE
-> xGuaY08rvshE2Bm6nqG5KpRIeuaPoGRd7qFvorhzzMDZ1bEZ8OcbDy4q4SgTR3ji
-> mgDARmtnh38IASIb5/6CXLVsCgMf2t4lKlXA6pwFXruKyOfxNBRUzPjyTNuuErli
-> 6b4/eHPn4lmhNelvScnCs6zHxdRQQAheX4r7uRQ+eSQmR+6DzZg9p+1TJcfr3/mn
-> 18LRhGaCgFs5mXVwA+5bDQghcTZpFAePRa5hDxUvw2XKBq2/fp8FEjyBtFbAYumW
-> /i4/X0FWOABBrQuD7Pg+gEDXL4nFokJFGlxamqDgDlsMZaPL/RHD+eC3FAYO1dYU
-> EJSPRAYQCery1jRpmFey5X6foh6QWj0QF/LL7jBx5/bMevsmbQkESntSgH2Tkhj8
-> eAeu2wvv8p1ctuMeTUDDLxjrot6ADLM+fYiNZ1RdPD6CDHdjo4GUL4wZ85P1ZyqS
-> J33SgJFLjP74TZS96SCtOsugJV2N+5zmfzxkdsocT8uO4nRqSPF0dyxnXKdrbMN3
-> VpQaQIhLPLKJ7tJWAFhV
-> =jIhF
-> -----END PGP SIGNATURE-----
+Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+---
+ include/linux/ftrace_event.h |   12 ++++++++++++
+ include/trace/events/btrfs.h |    4 ++--
+ include/trace/ftrace.h       |   13 +++++++++++++
+ kernel/trace/trace_output.c  |   27 +++++++++++++++++++++++++++
+ 4 files changed, 54 insertions(+), 2 deletions(-)
 
+diff --git a/include/linux/ftrace_event.h b/include/linux/ftrace_event.h
+index 22b32af..6b2e245 100644
+--- a/include/linux/ftrace_event.h
++++ b/include/linux/ftrace_event.h
+@@ -16,6 +16,11 @@ struct trace_print_flags {
+ 	const char		*name;
+ };
+ 
++struct trace_print_flags_u64 {
++	unsigned long long	mask;
++	const char		*name;
++};
++
+ const char *ftrace_print_flags_seq(struct trace_seq *p, const char *delim,
+ 				   unsigned long flags,
+ 				   const struct trace_print_flags *flag_array);
+@@ -23,6 +28,13 @@ const char *ftrace_print_flags_seq(struct trace_seq *p, const char *delim,
+ const char *ftrace_print_symbols_seq(struct trace_seq *p, unsigned long val,
+ 				     const struct trace_print_flags *symbol_array);
+ 
++#if BITS_PER_LONG == 32
++const char *ftrace_print_symbols_seq_u64(struct trace_seq *p,
++					 unsigned long long val,
++					 const struct trace_print_flags_u64
++								 *symbol_array);
++#endif
++
+ const char *ftrace_print_hex_seq(struct trace_seq *p,
+ 				 const unsigned char *buf, int len);
+ 
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index f445cff..4114129 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -28,7 +28,7 @@ struct extent_buffer;
+ 		{ BTRFS_SHARED_DATA_REF_KEY, 	"SHARED_DATA_REF" })
+ 
+ #define __show_root_type(obj)						\
+-	__print_symbolic(obj,						\
++	__print_symbolic_u64(obj,					\
+ 		{ BTRFS_ROOT_TREE_OBJECTID, 	"ROOT_TREE"	},	\
+ 		{ BTRFS_EXTENT_TREE_OBJECTID, 	"EXTENT_TREE"	},	\
+ 		{ BTRFS_CHUNK_TREE_OBJECTID, 	"CHUNK_TREE"	},	\
+@@ -125,7 +125,7 @@ DEFINE_EVENT(btrfs__inode, btrfs_inode_evict,
+ );
+ 
+ #define __show_map_type(type)						\
+-	__print_symbolic(type,						\
++	__print_symbolic_u64(type,					\
+ 		{ EXTENT_MAP_LAST_BYTE, "LAST_BYTE" 	},		\
+ 		{ EXTENT_MAP_HOLE, 	"HOLE" 		},		\
+ 		{ EXTENT_MAP_INLINE, 	"INLINE" 	},		\
+diff --git a/include/trace/ftrace.h b/include/trace/ftrace.h
+index 3e68366..533c49f 100644
+--- a/include/trace/ftrace.h
++++ b/include/trace/ftrace.h
+@@ -205,6 +205,19 @@
+ 		ftrace_print_symbols_seq(p, value, symbols);		\
+ 	})
+ 
++#undef __print_symbolic_u64
++#if BITS_PER_LONG == 32
++#define __print_symbolic_u64(value, symbol_array...)			\
++	({								\
++		static const struct trace_print_flags_u64 symbols[] =	\
++			{ symbol_array, { -1, NULL } };			\
++		ftrace_print_symbols_seq_u64(p, value, symbols);	\
++	})
++#else
++#define __print_symbolic_u64(value, symbol_array...)			\
++			__print_symbolic(value, symbol_array)
++#endif
++
+ #undef __print_hex
+ #define __print_hex(buf, buf_len) ftrace_print_hex_seq(p, buf, buf_len)
+ 
+diff --git a/kernel/trace/trace_output.c b/kernel/trace/trace_output.c
+index 456be90..47aafa9 100644
+--- a/kernel/trace/trace_output.c
++++ b/kernel/trace/trace_output.c
+@@ -353,6 +353,33 @@ ftrace_print_symbols_seq(struct trace_seq *p, unsigned long val,
+ }
+ EXPORT_SYMBOL(ftrace_print_symbols_seq);
+ 
++#if BITS_PER_LONG == 32
++const char *
++ftrace_print_symbols_seq_u64(struct trace_seq *p, unsigned long long val,
++			 const struct trace_print_flags_u64 *symbol_array)
++{
++	int i;
++	const char *ret = p->buffer + p->len;
++
++	for (i = 0;  symbol_array[i].name; i++) {
++
++		if (val != symbol_array[i].mask)
++			continue;
++
++		trace_seq_puts(p, symbol_array[i].name);
++		break;
++	}
++
++	if (!p->len)
++		trace_seq_printf(p, "0x%llx", val);
++
++	trace_seq_putc(p, 0);
++
++	return ret;
++}
++EXPORT_SYMBOL(ftrace_print_symbols_seq_u64);
++#endif
++
+ const char *
+ ftrace_print_hex_seq(struct trace_seq *p, const unsigned char *buf, int buf_len)
+ {
+-- 
+1.6.5.2

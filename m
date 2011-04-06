@@ -1,48 +1,55 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: [PATCH V2] Btrfs: fix subvolume mount by name problem when default
- mount subvolume is set
-Date: Wed, 06 Apr 2011 14:34:02 +0800
-Message-ID: <4D9C095A.90400@cn.fujitsu.com>
-References: <1302067633-20271-1-git-send-email-xin.zhong@intel.com>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: Re: cloning single-device btrfs file system onto multi-device one
+Date: 06 Apr 2011 08:30:00 +0200
+Message-ID: <BjKsrdvD1uB@helmut.hullen.de>
+References: <BANLkTimQaPNm22kN8g2ha+XrOP3uyBUE-Q@mail.gmail.com>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: "Zhong, Xin" <xin.zhong@intel.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1302067633-20271-1-git-send-email-xin.zhong@intel.com>
+In-Reply-To: <BANLkTimQaPNm22kN8g2ha+XrOP3uyBUE-Q@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-13:27, Zhong, Xin wrote:
-> We create two subvolumes (meego_root and meego_home) in
-> btrfs root directory. And set meego_root as default mount
-> subvolume. After we remount btrfs, meego_root is mounted
-> to top directory by default. Then when we try to mount
-> meego_home (subvol=meego_home) to a subdirectory, it failed.
-> The problem is when default mount subvolume is set to
-> meego_root, we search meego_home in meego_root but can not find
-> it. So the solution is to add a new mount option (subvolrootid)
-> to specify subvol id of root and search subvol name in it. For
-> our case, now we can use "-o subvolrootid=0,subvol=meego_home)
-> to mount meego_home.
-> 
-> Detail information can be found in meego bugzilla:
-> https://bugs.meego.com/show_bug.cgi?id=15055
-> 
-> Signed-off-by: Zhong, Xin <xin.zhong@intel.com>
-> ---
->  fs/btrfs/super.c |   43 ++++++++++++++++++++++++++++++++++---------
->  1 files changed, 34 insertions(+), 9 deletions(-)
-> 
+Hallo, Evert,
 
-I guess you forgot to run checkpatch.pl.
+Du meintest am 05.04.11:
 
-ERROR: trailing whitespace
-#183: FILE: fs/btrfs/super.c:807:
-+^I^I$
+>> I then did a btrfs fi balance again and let it run through. However
+>> here is what I get:
+>>
+>> $ df -h /mnt
+>> Filesystem =A0 =A0 =A0 =A0 =A0 =A0Size =A0Used Avail Use% Mounted on
+>> /dev/sdb =A0 =A0 =A0 =A0 =A0 =A0 =A08.2T =A03.5T =A03.2T =A053% /mnt
+>>
+>> Only 3.2T left. How would I reclaim the missing space?
+>>
+>> $ sudo btrfs fi show
+>> Label: none =A0uuid: ...
+>> =A0 =A0 =A0 =A0Total devices 3 FS bytes used 3.43TB
+>> =A0 =A0 =A0 =A0devid =A0 =A04 size 2.73TB used 1.17TB path /dev/sdc
+>> =A0 =A0 =A0 =A0devid =A0 =A03 size 2.73TB used 1.17TB path /dev/sdb
+>> =A0 =A0 =A0 =A0devid =A0 =A02 size 2.70TB used 1.14TB path /dev/sda4
+>> $ sudo btrfs fi df /mnt
+>> Data, RAID0: total=3D3.41TB, used=3D3.41TB
+>> System, RAID1: total=3D16.00MB, used=3D232.00KB
+>> Metadata, RAID1: total=3D35.25GB, used=3D20.55GB
+>>
+>> So that kind of worked but that is of little use to me as 2TB
+>> kind of disappeared under my feet in the process.
 
-ERROR: else should follow close brace '}'
-#198: FILE: fs/btrfs/super.c:836:
-        }
-+       else {
+> From my limited understanding, btrfs will write metadata in raid1 by
+> default. So, this could be where your 2TB has gone.
 
-total: 2 errors, 0 warnings, 100 lines checked
+> I am assuming you used raid0 for the three new disks?
+
+No - take a look at the (shown) output of "btrfs fi df /mnt". "DATA" is=
+ RAID0.
+
+Viele Gruesse!
+Helmut
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

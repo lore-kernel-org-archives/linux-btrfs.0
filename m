@@ -1,105 +1,106 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: do not use async submit for small DIO io's
-Date: Wed,  6 Apr 2011 14:44:06 -0400
-Message-ID: <1302115446-3046-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: reuse the extent_map we found when calling btrfs_get_extent
+Date: Wed,  6 Apr 2011 14:56:39 -0400
+Message-ID: <1302116199-3418-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When looking at our DIO performance Chris said that for small IO's doing the
-async submit stuff tends to be more overhead than it's worth.  With this on top
-of my other fixes I get about a 17-20% speedup doing a sequential dd with 4k
-IO's.  Basically if we don't have to split the bio for the map length it's small
-enough to be directly submitted, otherwise go back to the async submit.  Thanks,
+In btrfs_get_block_direct we call btrfs_get_extent to lookup the extent for the
+range that we are looking for.  If we don't find an extent, btrfs_get_extent
+will insert a extent_map for that area and mark it as a hole.  So it does the
+job of allocating a new extent map and inserting it into the io tree.  But if
+we're creating a new extent we free it up and redo all of that work.  So instead
+pass the em to btrfs_new_extent_direct(), and if it will work just allocate the
+disk space and set it up properly and bypass the freeing/allocating of a new
+extent map and the expensive operation of inserting the thing into the io_tree.
+Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/inode.c |   24 +++++++++++++++++++-----
- 1 files changed, 19 insertions(+), 5 deletions(-)
+ fs/btrfs/inode.c |   36 ++++++++++++++++++++++++++++--------
+ 1 files changed, 28 insertions(+), 8 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5144d5c..93ed346 100644
+index 93ed346..032e8fb 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -5955,7 +5955,7 @@ static struct bio *btrfs_dio_bio_alloc(struct block_device *bdev,
+@@ -5443,17 +5443,30 @@ out:
+ }
  
- static inline int __btrfs_submit_dio_bio(struct bio *bio, struct inode *inode,
- 					 int rw, u64 file_offset, int skip_sum,
--					 u32 *csums)
-+					 u32 *csums, int async_submit)
+ static struct extent_map *btrfs_new_extent_direct(struct inode *inode,
++						  struct extent_map *em,
+ 						  u64 start, u64 len)
  {
- 	int write = rw & REQ_WRITE;
  	struct btrfs_root *root = BTRFS_I(inode)->root;
-@@ -5966,13 +5966,24 @@ static inline int __btrfs_submit_dio_bio(struct bio *bio, struct inode *inode,
- 	if (ret)
- 		goto err;
+ 	struct btrfs_trans_handle *trans;
+-	struct extent_map *em;
+ 	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
+ 	struct btrfs_key ins;
+ 	u64 alloc_hint;
+ 	int ret;
++	bool insert = false;
  
--	if (write && !skip_sum) {
-+	if (skip_sum)
-+		goto map;
+-	btrfs_drop_extent_cache(inode, start, start + len - 1, 0);
++	/*
++	 * Ok if the extent map we looked up is a hole and is for the exact
++	 * range we want, there is no reason to allocate a new one, however if
++	 * it is not right then we need to free this one and drop the cache for
++	 * our range.
++	 */
++	if (em->block_start != EXTENT_MAP_HOLE || em->start != start ||
++	    em->len != len) {
++		free_extent_map(em);
++		em = NULL;
++		insert = true;
++		btrfs_drop_extent_cache(inode, start, start + len - 1, 0);
++	}
+ 
+ 	trans = btrfs_join_transaction(root, 0);
+ 	if (IS_ERR(trans))
+@@ -5469,10 +5482,12 @@ static struct extent_map *btrfs_new_extent_direct(struct inode *inode,
+ 		goto out;
+ 	}
+ 
+-	em = alloc_extent_map(GFP_NOFS);
+ 	if (!em) {
+-		em = ERR_PTR(-ENOMEM);
+-		goto out;
++		em = alloc_extent_map(GFP_NOFS);
++		if (!em) {
++			em = ERR_PTR(-ENOMEM);
++			goto out;
++		}
+ 	}
+ 
+ 	em->start = start;
+@@ -5482,9 +5497,15 @@ static struct extent_map *btrfs_new_extent_direct(struct inode *inode,
+ 	em->block_start = ins.objectid;
+ 	em->block_len = ins.offset;
+ 	em->bdev = root->fs_info->fs_devices->latest_bdev;
 +
-+	if (write && async_submit) {
- 		ret = btrfs_wq_submit_bio(root->fs_info,
- 				   inode, rw, bio, 0, 0,
- 				   file_offset,
- 				   __btrfs_submit_bio_start_direct_io,
- 				   __btrfs_submit_bio_done);
- 		goto err;
-+	} else if (write) {
-+		/*
-+		 * If we aren't doing async submit, calculate the csum of the
-+		 * bio now.
-+		 */
-+		ret = btrfs_csum_one_bio(root, inode, bio, file_offset, 1);
-+		if (ret)
-+			goto err;
- 	} else if (!skip_sum) {
- 		ret = btrfs_lookup_bio_sums_dio(root, inode, bio,
- 					  file_offset, csums);
-@@ -5980,7 +5991,8 @@ static inline int __btrfs_submit_dio_bio(struct bio *bio, struct inode *inode,
- 			goto err;
- 	}
++	/*
++	 * We need to do this because if we're using the original em we searched
++	 * for, we could have EXTENT_FLAG_VACANCY set, and we don't want that.
++	 */
++	em->flags = 0;
+ 	set_bit(EXTENT_FLAG_PINNED, &em->flags);
  
--	ret = btrfs_map_bio(root, rw, bio, 0, 1);
-+map:
-+	ret = btrfs_map_bio(root, rw, bio, 0, async_submit);
- err:
- 	bio_put(bio);
- 	return ret;
-@@ -6002,6 +6014,7 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
- 	int nr_pages = 0;
- 	u32 *csums = dip->csums;
- 	int ret = 0;
-+	int async_submit = 0;
- 	int write = rw & REQ_WRITE;
- 
- 	map_length = orig_bio->bi_size;
-@@ -6017,6 +6030,7 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
- 		goto submit;
- 	}
- 
-+	async_submit = 1;
- 	bio = btrfs_dio_bio_alloc(orig_bio->bi_bdev, start_sector, GFP_NOFS);
- 	if (!bio)
- 		return -ENOMEM;
-@@ -6037,7 +6051,7 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
- 			atomic_inc(&dip->pending_bios);
- 			ret = __btrfs_submit_dio_bio(bio, inode, rw,
- 						     file_offset, skip_sum,
--						     csums);
-+						     csums, async_submit);
- 			if (ret) {
- 				bio_put(bio);
- 				atomic_dec(&dip->pending_bios);
-@@ -6076,7 +6090,7 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
- 
- submit:
- 	ret = __btrfs_submit_dio_bio(bio, inode, rw, file_offset, skip_sum,
--				     csums);
-+				     csums, async_submit);
- 	if (!ret)
- 		return 0;
- 
+-	while (1) {
++	while (insert) {
+ 		write_lock(&em_tree->lock);
+ 		ret = add_extent_mapping(em_tree, em);
+ 		write_unlock(&em_tree->lock);
+@@ -5702,8 +5723,7 @@ must_cow:
+ 	 * it above
+ 	 */
+ 	len = bh_result->b_size;
+-	free_extent_map(em);
+-	em = btrfs_new_extent_direct(inode, start, len);
++	em = btrfs_new_extent_direct(inode, em, start, len);
+ 	if (IS_ERR(em))
+ 		return PTR_ERR(em);
+ 	len = min(len, em->len - (start - em->start));
 -- 
 1.7.2.3
 

@@ -1,145 +1,49 @@
 From: "Zhong, Xin" <xin.zhong@intel.com>
-Subject: [PATCH V2] Btrfs: fix subvolume mount by name problem when default mount subvolume is set
-Date: Wed,  6 Apr 2011 15:13:57 +0800
-Message-ID: <1302074037-7206-1-git-send-email-xin.zhong@intel.com>
-Cc: xin.zhong@intel.com
-To: linux-btrfs@vger.kernel.org
+Subject: RE: [PATCH V2] Btrfs: fix subvolume mount by name problem when
+ default mount subvolume is set
+Date: Wed, 6 Apr 2011 16:10:57 +0800
+Message-ID: <1865303E0DED764181A9D882DEF65FB68A76FFBF3B@shsmsx502.ccr.corp.intel.com>
+References: <1302067633-20271-1-git-send-email-xin.zhong@intel.com>
+ <4D9C095A.90400@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4D9C095A.90400@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We create two subvolumes (meego_root and meego_home) in
-btrfs root directory. And set meego_root as default mount
-subvolume. After we remount btrfs, meego_root is mounted
-to top directory by default. Then when we try to mount
-meego_home (subvol=meego_home) to a subdirectory, it failed.
-The problem is when default mount subvolume is set to
-meego_root, we search meego_home in meego_root but can not find
-it. So the solution is to add a new mount option (subvolrootid)
-to specify subvol id of root and search subvol name in it. For
-our case, now we can use "-o subvolrootid=0,subvol=meego_home)
-to mount meego_home.
-
-Detail information can be found in meego bugzilla:
-https://bugs.meego.com/show_bug.cgi?id=15055
-
-Signed-off-by: Zhong, Xin <xin.zhong@intel.com>
----
- fs/btrfs/super.c |   43 ++++++++++++++++++++++++++++++++++---------
- 1 files changed, 34 insertions(+), 9 deletions(-)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index db0a827..5e7bc51 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -156,7 +156,7 @@ enum {
- 	Opt_compress_type, Opt_compress_force, Opt_compress_force_type,
- 	Opt_notreelog, Opt_ratio, Opt_flushoncommit, Opt_discard,
- 	Opt_space_cache, Opt_clear_cache, Opt_user_subvol_rm_allowed,
--	Opt_enospc_debug, Opt_err,
-+	Opt_enospc_debug, Opt_subvolrootid, Opt_err,
- };
- 
- static match_table_t tokens = {
-@@ -186,6 +186,7 @@ static match_table_t tokens = {
- 	{Opt_clear_cache, "clear_cache"},
- 	{Opt_user_subvol_rm_allowed, "user_subvol_rm_allowed"},
- 	{Opt_enospc_debug, "enospc_debug"},
-+	{Opt_subvolrootid, "subvolrootid=%d"},
- 	{Opt_err, NULL},
- };
- 
-@@ -229,6 +230,7 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			break;
- 		case Opt_subvol:
- 		case Opt_subvolid:
-+		case Opt_subvolrootid:
- 		case Opt_device:
- 			/*
- 			 * These are parsed by btrfs_parse_early_options
-@@ -385,7 +387,7 @@ out:
-  */
- static int btrfs_parse_early_options(const char *options, fmode_t flags,
- 		void *holder, char **subvol_name, u64 *subvol_objectid,
--		struct btrfs_fs_devices **fs_devices)
-+		u64 *subvol_rootid, struct btrfs_fs_devices **fs_devices)
- {
- 	substring_t args[MAX_OPT_ARGS];
- 	char *opts, *orig, *p;
-@@ -426,6 +428,18 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
- 					*subvol_objectid = intarg;
- 			}
- 			break;
-+		case Opt_subvolrootid:
-+			intarg = 0;
-+			error = match_int(&args[0], &intarg);
-+			if (!error) {
-+				/* we want the original fs_tree */
-+				if (!intarg)
-+					*subvol_rootid =
-+						BTRFS_FS_TREE_OBJECTID;
-+				else
-+					*subvol_rootid = intarg;
-+			}
-+			break;
- 		case Opt_device:
- 			error = btrfs_scan_one_device(match_strdup(&args[0]),
- 					flags, holder, fs_devices);
-@@ -715,6 +729,7 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
- 	fmode_t mode = FMODE_READ;
- 	char *subvol_name = NULL;
- 	u64 subvol_objectid = 0;
-+	u64 subvol_rootid = 0;
- 	int error = 0;
- 
- 	if (!(flags & MS_RDONLY))
-@@ -722,7 +737,7 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
- 
- 	error = btrfs_parse_early_options(data, mode, fs_type,
- 					  &subvol_name, &subvol_objectid,
--					  &fs_devices);
-+					  &subvol_rootid, &fs_devices);
- 	if (error)
- 		return error;
- 
-@@ -786,15 +801,17 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
- 		s->s_flags |= MS_ACTIVE;
- 	}
- 
--	root = get_default_root(s, subvol_objectid);
--	if (IS_ERR(root)) {
--		error = PTR_ERR(root);
--		deactivate_locked_super(s);
--		goto error_free_subvol_name;
--	}
- 	/* if they gave us a subvolume name bind mount into that */
- 	if (strcmp(subvol_name, ".")) {
- 		struct dentry *new_root;
-+
-+		root = get_default_root(s, subvol_rootid);
-+		if (IS_ERR(root)) {
-+			error = PTR_ERR(root);
-+			deactivate_locked_super(s);
-+			goto error_free_subvol_name;
-+		}
-+
- 		mutex_lock(&root->d_inode->i_mutex);
- 		new_root = lookup_one_len(subvol_name, root,
- 				      strlen(subvol_name));
-@@ -816,6 +833,14 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
- 		dput(root);
- 		root = new_root;
- 	}
-+	} else {
-+		root = get_default_root(s, subvol_objectid);
-+		if (IS_ERR(root)) {
-+			error = PTR_ERR(root);
-+			deactivate_locked_super(s);
-+			goto error_free_subvol_name;
-+		}
-+	}
- 
- 	mnt->mnt_sb = s;
- 	mnt->mnt_root = root;
--- 
-1.7.0.4
-
+PiAtLS0tLU9yaWdpbmFsIE1lc3NhZ2UtLS0tLQ0KPiBGcm9tOiBsaW51eC1idHJmcy1vd25lckB2
+Z2VyLmtlcm5lbC5vcmcgW21haWx0bzpsaW51eC1idHJmcy0NCj4gb3duZXJAdmdlci5rZXJuZWwu
+b3JnXSBPbiBCZWhhbGYgT2YgTGkgWmVmYW4NCj4gU2VudDogV2VkbmVzZGF5LCBBcHJpbCAwNiwg
+MjAxMSAyOjM0IFBNDQo+IFRvOiBaaG9uZywgWGluDQo+IENjOiBsaW51eC1idHJmc0B2Z2VyLmtl
+cm5lbC5vcmcNCj4gU3ViamVjdDogUmU6IFtQQVRDSCBWMl0gQnRyZnM6IGZpeCBzdWJ2b2x1bWUg
+bW91bnQgYnkgbmFtZSBwcm9ibGVtIHdoZW4NCj4gZGVmYXVsdCBtb3VudCBzdWJ2b2x1bWUgaXMg
+c2V0DQo+IA0KPiAxMzoyNywgWmhvbmcsIFhpbiB3cm90ZToNCj4gPiBXZSBjcmVhdGUgdHdvIHN1
+YnZvbHVtZXMgKG1lZWdvX3Jvb3QgYW5kIG1lZWdvX2hvbWUpIGluDQo+ID4gYnRyZnMgcm9vdCBk
+aXJlY3RvcnkuIEFuZCBzZXQgbWVlZ29fcm9vdCBhcyBkZWZhdWx0IG1vdW50DQo+ID4gc3Vidm9s
+dW1lLiBBZnRlciB3ZSByZW1vdW50IGJ0cmZzLCBtZWVnb19yb290IGlzIG1vdW50ZWQNCj4gPiB0
+byB0b3AgZGlyZWN0b3J5IGJ5IGRlZmF1bHQuIFRoZW4gd2hlbiB3ZSB0cnkgdG8gbW91bnQNCj4g
+PiBtZWVnb19ob21lIChzdWJ2b2w9bWVlZ29faG9tZSkgdG8gYSBzdWJkaXJlY3RvcnksIGl0IGZh
+aWxlZC4NCj4gPiBUaGUgcHJvYmxlbSBpcyB3aGVuIGRlZmF1bHQgbW91bnQgc3Vidm9sdW1lIGlz
+IHNldCB0bw0KPiA+IG1lZWdvX3Jvb3QsIHdlIHNlYXJjaCBtZWVnb19ob21lIGluIG1lZWdvX3Jv
+b3QgYnV0IGNhbiBub3QgZmluZA0KPiA+IGl0LiBTbyB0aGUgc29sdXRpb24gaXMgdG8gYWRkIGEg
+bmV3IG1vdW50IG9wdGlvbiAoc3Vidm9scm9vdGlkKQ0KPiA+IHRvIHNwZWNpZnkgc3Vidm9sIGlk
+IG9mIHJvb3QgYW5kIHNlYXJjaCBzdWJ2b2wgbmFtZSBpbiBpdC4gRm9yDQo+ID4gb3VyIGNhc2Us
+IG5vdyB3ZSBjYW4gdXNlICItbyBzdWJ2b2xyb290aWQ9MCxzdWJ2b2w9bWVlZ29faG9tZSkNCj4g
+PiB0byBtb3VudCBtZWVnb19ob21lLg0KPiA+DQo+ID4gRGV0YWlsIGluZm9ybWF0aW9uIGNhbiBi
+ZSBmb3VuZCBpbiBtZWVnbyBidWd6aWxsYToNCj4gPiBodHRwczovL2J1Z3MubWVlZ28uY29tL3No
+b3dfYnVnLmNnaT9pZD0xNTA1NQ0KPiA+DQo+ID4gU2lnbmVkLW9mZi1ieTogWmhvbmcsIFhpbiA8
+eGluLnpob25nQGludGVsLmNvbT4NCj4gPiAtLS0NCj4gPiAgZnMvYnRyZnMvc3VwZXIuYyB8ICAg
+NDMgKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKy0tLS0tLS0tLQ0KPiA+ICAxIGZp
+bGVzIGNoYW5nZWQsIDM0IGluc2VydGlvbnMoKyksIDkgZGVsZXRpb25zKC0pDQo+ID4NCj4gDQo+
+IEkgZ3Vlc3MgeW91IGZvcmdvdCB0byBydW4gY2hlY2twYXRjaC5wbC4NCg0KU29ycnkgZm9yIG15
+IG1pc3Rha2UuIEkgaGF2ZSBmaXhlZCBpdCBhbmQgcmVzdWJtaXQuIFRoYW5rcyENCg0KPiANCj4g
+RVJST1I6IHRyYWlsaW5nIHdoaXRlc3BhY2UNCj4gIzE4MzogRklMRTogZnMvYnRyZnMvc3VwZXIu
+Yzo4MDc6DQo+ICteSV5JJA0KPiANCj4gRVJST1I6IGVsc2Ugc2hvdWxkIGZvbGxvdyBjbG9zZSBi
+cmFjZSAnfScNCj4gIzE5ODogRklMRTogZnMvYnRyZnMvc3VwZXIuYzo4MzY6DQo+ICAgICAgICAg
+fQ0KPiArICAgICAgIGVsc2Ugew0KPiANCj4gdG90YWw6IDIgZXJyb3JzLCAwIHdhcm5pbmdzLCAx
+MDAgbGluZXMgY2hlY2tlZA0KPiAtLQ0KPiBUbyB1bnN1YnNjcmliZSBmcm9tIHRoaXMgbGlzdDog
+c2VuZCB0aGUgbGluZSAidW5zdWJzY3JpYmUgbGludXgtYnRyZnMiDQo+IGluDQo+IHRoZSBib2R5
+IG9mIGEgbWVzc2FnZSB0byBtYWpvcmRvbW9Admdlci5rZXJuZWwub3JnDQo+IE1vcmUgbWFqb3Jk
+b21vIGluZm8gYXQgIGh0dHA6Ly92Z2VyLmtlcm5lbC5vcmcvbWFqb3Jkb21vLWluZm8uaHRtbA0K

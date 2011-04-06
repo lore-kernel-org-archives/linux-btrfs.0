@@ -1,39 +1,145 @@
 From: "Zhong, Xin" <xin.zhong@intel.com>
-Subject: RE: [PATCH] Btrfs: fix subvolume mount by name problem when default
- mount subvolume is set
-Date: Wed, 6 Apr 2011 14:19:19 +0800
-Message-ID: <1865303E0DED764181A9D882DEF65FB68A76FFBE02@shsmsx502.ccr.corp.intel.com>
-References: <1301558362-2650-1-git-send-email-xin.zhong@intel.com>
- <1301979914-sup-1391@think>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Subject: [PATCH V2] Btrfs: fix subvolume mount by name problem when default mount subvolume is set
+Date: Wed,  6 Apr 2011 13:27:13 +0800
+Message-ID: <1302067633-20271-1-git-send-email-xin.zhong@intel.com>
+Cc: xin.zhong@intel.com
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1301979914-sup-1391@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-PiAtLS0tLU9yaWdpbmFsIE1lc3NhZ2UtLS0tLQ0KPiBGcm9tOiBDaHJpcyBNYXNvbiBbbWFpbHRv
-OmNocmlzLm1hc29uQG9yYWNsZS5jb21dDQo+IFNlbnQ6IFR1ZXNkYXksIEFwcmlsIDA1LCAyMDEx
-IDE6MDcgUE0NCj4gVG86IFpob25nLCBYaW4NCj4gQ2M6IGxpbnV4LWJ0cmZzDQo+IFN1YmplY3Q6
-IFJlOiBbUEFUQ0hdIEJ0cmZzOiBmaXggc3Vidm9sdW1lIG1vdW50IGJ5IG5hbWUgcHJvYmxlbSB3
-aGVuDQo+IGRlZmF1bHQgbW91bnQgc3Vidm9sdW1lIGlzIHNldA0KPiANCj4gRXhjZXJwdHMgZnJv
-bSBaaG9uZywgWGluJ3MgbWVzc2FnZSBvZiAyMDExLTAzLTMxIDAzOjU5OjIyIC0wNDAwOg0KPiA+
-IFdlIGNyZWF0ZSB0d28gc3Vidm9sdW1lcyAobWVlZ29fcm9vdCBhbmQgbWVlZ29faG9tZSkgaW4N
-Cj4gPiBidHJmcyByb290IGRpcmVjdG9yeS4gQW5kIHNldCBtZWVnb19yb290IGFzIGRlZmF1bHQg
-bW91bnQNCj4gPiBzdWJ2b2x1bWUuIEFmdGVyIHdlIHJlbW91bnQgYnRyZnMsIG1lZWdvX3Jvb3Qg
-aXMgbW91bnRlZA0KPiA+IHRvIHRvcCBkaXJlY3RvcnkgYnkgZGVmYXVsdC4gVGhlbiB3aGVuIHdl
-IHRyeSB0byBtb3VudA0KPiA+IG1lZWdvX2hvbWUgKHN1YnZvbD1tZWVnb19ob21lKSB0byBhIHN1
-YmRpcmVjdG9yeSwgaXQgZmFpbGVkLg0KPiA+IFRoZSBwcm9ibGVtIGlzIHdoZW4gZGVmYXVsdCBt
-b3VudCBzdWJ2b2x1bWUgaXMgc2V0IHRvDQo+ID4gbWVlZ29fcm9vdCwgd2Ugc2VhcmNoIG1lZWdv
-X2hvbWUgaW4gaXQgYnV0IGNhbiBub3QgZmluZCBpdC4NCj4gPiBTbyB0aGUgc29sdXRpb24gaXMg
-dG8gc2VhcmNoIG1lZWdvX2hvbWUgaW4gYnRyZnMgcm9vdA0KPiA+IGRpcmVjdG9yeSBpbnN0ZWFk
-IHdoZW4gc3Vidm9sPW1lZWdvX2hvbWUgaXMgZ2l2ZW4uDQo+IA0KPiBJIHRoaW5rIHRoaXMgb25l
-IGlzIGRpZmZpY3VsdCBiZWNhdXNlIGlmIHRoZXkgaGF2ZSBzZXQgdGhlIGRlZmF1bHQNCj4gc3Vi
-dm9sdW1lIHRoZXkgbWlnaHQgaGF2ZSBkb25lIHNvIGJlY2F1c2UgdGhlIG9yaWdpbmFsIGRlZmF1
-bHQgaGFzIHRoZQ0KPiByZXN1bHQgb2YgYSBidXN0ZWQgdXBncmFkZSBvciBzb21ldGhpbmcgaW4g
-aXQuDQo+IA0KPiBTbywgSSB0aGluayB0aGUgc3Vidm9sPSBzaG91bGQgYmUgcmVsYXRpdmUgdG8g
-dGhlIGRlZmF1bHQuICBXb3VsZCBpdA0KPiB3b3JrIGZvciB5b3UgdG8gYWRkIGEgbmV3IG1vdW50
-IG9wdGlvbiB0byBzcGVjaWZ5IHRoZSBzdWJ2b2wgaWQgdG8NCj4gc2VhcmNoIGZvciBzdWJ2b2w9
-Pw0KPiANCg0KU291bmRzIGdvb2QuIEkgd2lsbCBzdWJtaXQgYSBuZXcgdmVyc2lvbi4gVGhhbmtz
-IQ0KDQo+IC1jaHJpcw0K
+We create two subvolumes (meego_root and meego_home) in
+btrfs root directory. And set meego_root as default mount
+subvolume. After we remount btrfs, meego_root is mounted
+to top directory by default. Then when we try to mount
+meego_home (subvol=meego_home) to a subdirectory, it failed.
+The problem is when default mount subvolume is set to
+meego_root, we search meego_home in meego_root but can not find
+it. So the solution is to add a new mount option (subvolrootid)
+to specify subvol id of root and search subvol name in it. For
+our case, now we can use "-o subvolrootid=0,subvol=meego_home)
+to mount meego_home.
+
+Detail information can be found in meego bugzilla:
+https://bugs.meego.com/show_bug.cgi?id=15055
+
+Signed-off-by: Zhong, Xin <xin.zhong@intel.com>
+---
+ fs/btrfs/super.c |   43 ++++++++++++++++++++++++++++++++++---------
+ 1 files changed, 34 insertions(+), 9 deletions(-)
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index db0a827..cd5f3ad 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -156,7 +156,7 @@ enum {
+ 	Opt_compress_type, Opt_compress_force, Opt_compress_force_type,
+ 	Opt_notreelog, Opt_ratio, Opt_flushoncommit, Opt_discard,
+ 	Opt_space_cache, Opt_clear_cache, Opt_user_subvol_rm_allowed,
+-	Opt_enospc_debug, Opt_err,
++	Opt_enospc_debug, Opt_subvolrootid, Opt_err,
+ };
+ 
+ static match_table_t tokens = {
+@@ -186,6 +186,7 @@ static match_table_t tokens = {
+ 	{Opt_clear_cache, "clear_cache"},
+ 	{Opt_user_subvol_rm_allowed, "user_subvol_rm_allowed"},
+ 	{Opt_enospc_debug, "enospc_debug"},
++	{Opt_subvolrootid, "subvolrootid=%d"},
+ 	{Opt_err, NULL},
+ };
+ 
+@@ -229,6 +230,7 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 			break;
+ 		case Opt_subvol:
+ 		case Opt_subvolid:
++		case Opt_subvolrootid:
+ 		case Opt_device:
+ 			/*
+ 			 * These are parsed by btrfs_parse_early_options
+@@ -385,7 +387,7 @@ out:
+  */
+ static int btrfs_parse_early_options(const char *options, fmode_t flags,
+ 		void *holder, char **subvol_name, u64 *subvol_objectid,
+-		struct btrfs_fs_devices **fs_devices)
++		u64 *subvol_rootid, struct btrfs_fs_devices **fs_devices)
+ {
+ 	substring_t args[MAX_OPT_ARGS];
+ 	char *opts, *orig, *p;
+@@ -426,6 +428,18 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
+ 					*subvol_objectid = intarg;
+ 			}
+ 			break;
++		case Opt_subvolrootid:
++			intarg = 0;
++			error = match_int(&args[0], &intarg);
++			if (!error) {
++				/* we want the original fs_tree */
++				if (!intarg)
++					*subvol_rootid =
++						BTRFS_FS_TREE_OBJECTID;
++				else
++					*subvol_rootid = intarg;
++			}
++			break;
+ 		case Opt_device:
+ 			error = btrfs_scan_one_device(match_strdup(&args[0]),
+ 					flags, holder, fs_devices);
+@@ -715,6 +729,7 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
+ 	fmode_t mode = FMODE_READ;
+ 	char *subvol_name = NULL;
+ 	u64 subvol_objectid = 0;
++	u64 subvol_rootid = 0;
+ 	int error = 0;
+ 
+ 	if (!(flags & MS_RDONLY))
+@@ -722,7 +737,7 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
+ 
+ 	error = btrfs_parse_early_options(data, mode, fs_type,
+ 					  &subvol_name, &subvol_objectid,
+-					  &fs_devices);
++					  &subvol_rootid, &fs_devices);
+ 	if (error)
+ 		return error;
+ 
+@@ -786,15 +801,17 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
+ 		s->s_flags |= MS_ACTIVE;
+ 	}
+ 
+-	root = get_default_root(s, subvol_objectid);
+-	if (IS_ERR(root)) {
+-		error = PTR_ERR(root);
+-		deactivate_locked_super(s);
+-		goto error_free_subvol_name;
+-	}
+ 	/* if they gave us a subvolume name bind mount into that */
+ 	if (strcmp(subvol_name, ".")) {
+ 		struct dentry *new_root;
++		
++		root = get_default_root(s, subvol_rootid);
++		if (IS_ERR(root)) {
++			error = PTR_ERR(root);
++			deactivate_locked_super(s);
++			goto error_free_subvol_name;
++		}
++
+ 		mutex_lock(&root->d_inode->i_mutex);
+ 		new_root = lookup_one_len(subvol_name, root,
+ 				      strlen(subvol_name));
+@@ -816,6 +833,14 @@ static int btrfs_get_sb(struct file_system_type *fs_type, int flags,
+ 		dput(root);
+ 		root = new_root;
+ 	}
++	else {
++		root = get_default_root(s, subvol_objectid);
++		if (IS_ERR(root)) {
++			error = PTR_ERR(root);
++			deactivate_locked_super(s);
++			goto error_free_subvol_name;
++		}
++	}
+ 
+ 	mnt->mnt_sb = s;
+ 	mnt->mnt_root = root;
+-- 
+1.7.0.4
+

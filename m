@@ -1,64 +1,32 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: Re: cloning single-device btrfs file system onto multi-device one
-Date: Wed, 06 Apr 2011 15:43:56 +0200
-Message-ID: <4D9C6E1C.4040100@gmx.net>
-References: <chaz20110321162450.GB918@seebyte.com> <chaz20110322092259.GA4861@seebyte.com> <AANLkTin1++vPq904tkPOAf3ZxwWTZaQYL+=WJHetEr9h@mail.gmail.com> <chaz20110328131748.GA18131@seebyte.com> <4D9C235C.1030106@gmx.net> <chaz20110406120535.GC20568@seebyte.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH] Btrfs: don't kzalloc the ordered extents
+Date: Wed, 06 Apr 2011 11:24:31 -0400
+Message-ID: <4D9C85AF.2040008@redhat.com>
+References: <1302045649-1580-1-git-send-email-josef@redhat.com> <4D9C1C1F.8090208@gmx.net> <1302087945-sup-6943@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: cwillu <cwillu@cwillu.com>, linux-btrfs@vger.kernel.org
-To: Stephane Chazelas <stephane.chazelas@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: Arne Jansen <sensille@gmx.net>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <chaz20110406120535.GC20568@seebyte.com>
+In-Reply-To: <1302087945-sup-6943@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06.04.2011 14:05, Stephane Chazelas wrote:
-> 2011-04-06 10:25:00 +0200, Arne Jansen:
->> On 28.03.2011 15:17, Stephane Chazelas wrote:
->>>
->>> I then did a btrfs fi balance again and let it run through. However here is
->>> what I get:
->>>
->>> $ df -h /mnt
->>> Filesystem            Size  Used Avail Use% Mounted on
->>> /dev/sdb              8.2T  3.5T  3.2T  53% /mnt
->>>
->>> Only 3.2T left. How would I reclaim the missing space?
->>>
->>> $ sudo btrfs fi show
->>> Label: none  uuid: ...
->>>         Total devices 3 FS bytes used 3.43TB
->>>         devid    4 size 2.73TB used 1.17TB path /dev/sdc
->>>         devid    3 size 2.73TB used 1.17TB path /dev/sdb
->>>         devid    2 size 2.70TB used 1.14TB path /dev/sda4
->>> $ sudo btrfs fi df /mnt
->>> Data, RAID0: total=3.41TB, used=3.41TB
->>> System, RAID1: total=16.00MB, used=232.00KB
->>> Metadata, RAID1: total=35.25GB, used=20.55GB
->>>
->>> So that kind of worked but that is of little use to me as 2TB
->>> kind of disappeared under my feet in the process.
->>>
->>> Any idea, anyone?
->>>
->>
->> This can just be a miscalculation. Can you please send the output
->> of btrfs-debug-tree -d /dev/sdc? Shouldn't be too long.
-> [..]
-> 
-> Hi Arne,
-> 
-> Here it is below (compressed and b64-uuencoded as it's about 1MB
-> large)
-> 
-> begin-base64 600 bdt.log.xz
+On 04/06/2011 07:06 AM, Chris Mason wrote:
+> Excerpts from Arne Jansen's message of 2011-04-06 03:54:07 -0400:
+>> On 06.04.2011 01:20, Josef Bacik wrote:
+>>> We initialize almost all of the fields when we allocate an ordered extent, so
+>>> use kmalloc instead of kzalloc and just initialize the other fields that we
+>>> don't already initialize yet.  Thanks,
+>> Is it really worth it? we have seen a few bugs in the past resulting
+>> from uninitialized structure element, that even made it to disk.
+>> Using kzalloc makes maintenance much easier.
+> I'm a big kzalloc fan unless this particular caller shows up in
+> benchmarks.  Josef how much did this one help?
+>
+> -chris
+.1 mb/s, give or take .1 mb/s :).  Just low hanging fruit since we're 
+already doing all the initialization anyway, but it's up to you, kind of 
+just was fixing everything I could get my hands on :).  Thanks,
 
-The tree says:
-2x28.25 GB in metadata
-3,41 TB in data
-16MB in system
-
-so I'd say the calculation of Avail in df is just wrong.
-
--Arne
-
-
+Josef

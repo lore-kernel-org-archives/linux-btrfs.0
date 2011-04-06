@@ -1,55 +1,50 @@
 From: "Helmut Hullen" <Hullen@t-online.de>
 Subject: Re: cloning single-device btrfs file system onto multi-device one
-Date: 06 Apr 2011 08:30:00 +0200
-Message-ID: <BjKsrdvD1uB@helmut.hullen.de>
-References: <BANLkTimQaPNm22kN8g2ha+XrOP3uyBUE-Q@mail.gmail.com>
+Date: 06 Apr 2011 08:57:00 +0200
+Message-ID: <BjKsshqy1uB@helmut.hullen.de>
+References: <chaz20110328131748.GA18131@seebyte.com>
 Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTimQaPNm22kN8g2ha+XrOP3uyBUE-Q@mail.gmail.com>
+In-Reply-To: <chaz20110328131748.GA18131@seebyte.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Evert,
+Hallo, Stephane,
 
-Du meintest am 05.04.11:
+Du meintest am 28.03.11:
 
->> I then did a btrfs fi balance again and let it run through. However
->> here is what I get:
->>
->> $ df -h /mnt
->> Filesystem =A0 =A0 =A0 =A0 =A0 =A0Size =A0Used Avail Use% Mounted on
->> /dev/sdb =A0 =A0 =A0 =A0 =A0 =A0 =A08.2T =A03.5T =A03.2T =A053% /mnt
->>
->> Only 3.2T left. How would I reclaim the missing space?
->>
->> $ sudo btrfs fi show
->> Label: none =A0uuid: ...
->> =A0 =A0 =A0 =A0Total devices 3 FS bytes used 3.43TB
->> =A0 =A0 =A0 =A0devid =A0 =A04 size 2.73TB used 1.17TB path /dev/sdc
->> =A0 =A0 =A0 =A0devid =A0 =A03 size 2.73TB used 1.17TB path /dev/sdb
->> =A0 =A0 =A0 =A0devid =A0 =A02 size 2.70TB used 1.14TB path /dev/sda4
->> $ sudo btrfs fi df /mnt
->> Data, RAID0: total=3D3.41TB, used=3D3.41TB
->> System, RAID1: total=3D16.00MB, used=3D232.00KB
->> Metadata, RAID1: total=3D35.25GB, used=3D20.55GB
->>
->> So that kind of worked but that is of little use to me as 2TB
->> kind of disappeared under my feet in the process.
+> I then did a btrfs fi balance again and let it run through. However
+> here is what I get:
 
-> From my limited understanding, btrfs will write metadata in raid1 by
-> default. So, this could be where your 2TB has gone.
+> $ df -h /mnt
+> Filesystem            Size  Used Avail Use% Mounted on
+> /dev/sdb              8.2T  3.5T  3.2T  53% /mnt
 
-> I am assuming you used raid0 for the three new disks?
+> Only 3.2T left. How would I reclaim the missing space?
 
-No - take a look at the (shown) output of "btrfs fi df /mnt". "DATA" is=
- RAID0.
+> $ sudo btrfs fi show
+> Label: none  uuid: ...
+>         Total devices 3 FS bytes used 3.43TB
+>         devid    4 size 2.73TB used 1.17TB path /dev/sdc
+>         devid    3 size 2.73TB used 1.17TB path /dev/sdb
+>         devid    2 size 2.70TB used 1.14TB path /dev/sda4
+> $ sudo btrfs fi df /mnt
+> Data, RAID0: total=3.41TB, used=3.41TB
+> System, RAID1: total=16.00MB, used=232.00KB
+> Metadata, RAID1: total=35.25GB, used=20.55GB
+
+> So that kind of worked but that is of little use to me as 2TB
+> kind of disappeared under my feet in the process.
+
+It may not please you - I've seen this nasty effect too. Reproducable.
+
+I presume that "balance" eats disk space.
+
+But "balance" seems to be necessary if I want to delete a device, and  
+deleting a device is one of the features I'd like to use with btrfs  
+(adding a new bigger device, then deleting an old smaller device).
 
 Viele Gruesse!
 Helmut
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

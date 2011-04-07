@@ -1,526 +1,352 @@
-From: WuBo <wu.bo@cn.fujitsu.com>
-Subject: [RFC][PATCH] Btrfs: about chunk tree backups
-Date: Thu, 07 Apr 2011 15:57:50 +0800
-Message-ID: <4D9D6E7E.3080307@cn.fujitsu.com>
+From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Subject: Re: BUG: unable to handle kernel NULL pointer dereference at (null)
+Date: Thu, 7 Apr 2011 10:28:40 +0200
+Message-ID: <201104071028.40666.johannes.hirte@fem.tu-ilmenau.de>
+References: <201104051938.14319.johannes.hirte@fem.tu-ilmenau.de> <201104061310.38951.johannes.hirte@fem.tu-ilmenau.de> <20110406171541.GA5574@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110406171541.GA5574@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-hi,all
+On Wednesday 06 April 2011 19:15:41 Josef Bacik wrote:
+> On Wed, Apr 06, 2011 at 01:10:38PM +0200, Johannes Hirte wrote:
+> > On Tuesday 05 April 2011 23:57:53 Josef Bacik wrote:
+> > > > Now it hit
+> > > 
+> > > Man I cannot catch a break.  I hope this is the last one.  Thanks,
+> 
+> Ok I give up, I just cleaned it all up and don't mark the pages as dirty
+> unless we're actually going to succeed at writing them.  This should fix
+> everything
+> 
+> ---
+>  fs/btrfs/ctree.h            |    5 ++
+>  fs/btrfs/file.c             |   21 +++----
+>  fs/btrfs/free-space-cache.c |  117
+> ++++++++++++++++++++----------------------- 3 files changed, 69
+> insertions(+), 74 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 3458b57..0d00a07 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -2576,6 +2576,11 @@ int btrfs_drop_extents(struct btrfs_trans_handle
+> *trans, struct inode *inode, int btrfs_mark_extent_written(struct
+> btrfs_trans_handle *trans,
+>  			      struct inode *inode, u64 start, u64 end);
+>  int btrfs_release_file(struct inode *inode, struct file *file);
+> +void btrfs_drop_pages(struct page **pages, size_t num_pages);
+> +int btrfs_dirty_pages(struct btrfs_root *root, struct inode *inode,
+> +		      struct page **pages, size_t num_pages,
+> +		      loff_t pos, size_t write_bytes,
+> +		      struct extent_state **cached);
+> 
+>  /* tree-defrag.c */
+>  int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index e621ea5..75899a0 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -104,7 +104,7 @@ static noinline int btrfs_copy_from_user(loff_t pos,
+> int num_pages, /*
+>   * unlocks pages after btrfs_file_write is done with them
+>   */
+> -static noinline void btrfs_drop_pages(struct page **pages, size_t
+> num_pages) +void btrfs_drop_pages(struct page **pages, size_t num_pages)
+>  {
+>  	size_t i;
+>  	for (i = 0; i < num_pages; i++) {
+> @@ -127,16 +127,13 @@ static noinline void btrfs_drop_pages(struct page
+> **pages, size_t num_pages) * this also makes the decision about creating
+> an inline extent vs * doing real data extents, marking pages dirty and
+> delalloc as required. */
+> -static noinline int dirty_and_release_pages(struct btrfs_root *root,
+> -					    struct file *file,
+> -					    struct page **pages,
+> -					    size_t num_pages,
+> -					    loff_t pos,
+> -					    size_t write_bytes)
+> +int btrfs_dirty_pages(struct btrfs_root *root, struct inode *inode,
+> +		      struct page **pages, size_t num_pages,
+> +		      loff_t pos, size_t write_bytes,
+> +		      struct extent_state **cached)
+>  {
+>  	int err = 0;
+>  	int i;
+> -	struct inode *inode = fdentry(file)->d_inode;
+>  	u64 num_bytes;
+>  	u64 start_pos;
+>  	u64 end_of_last_block;
+> @@ -149,7 +146,7 @@ static noinline int dirty_and_release_pages(struct
+> btrfs_root *root,
+> 
+>  	end_of_last_block = start_pos + num_bytes - 1;
+>  	err = btrfs_set_extent_delalloc(inode, start_pos, end_of_last_block,
+> -					NULL);
+> +					cached);
+>  	if (err)
+>  		return err;
+> 
+> @@ -992,9 +989,9 @@ static noinline ssize_t __btrfs_buffered_write(struct
+> file *file, }
+> 
+>  		if (copied > 0) {
+> -			ret = dirty_and_release_pages(root, file, pages,
+> -						      dirty_pages, pos,
+> -						      copied);
+> +			ret = btrfs_dirty_pages(root, inode, pages,
+> +						dirty_pages, pos, copied,
+> +						NULL);
+>  			if (ret) {
+>  				btrfs_delalloc_release_space(inode,
+>  					dirty_pages << PAGE_CACHE_SHIFT);
+> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+> index f561c95..a3f420d 100644
+> --- a/fs/btrfs/free-space-cache.c
+> +++ b/fs/btrfs/free-space-cache.c
+> @@ -508,6 +508,7 @@ int btrfs_write_out_cache(struct btrfs_root *root,
+>  	struct inode *inode;
+>  	struct rb_node *node;
+>  	struct list_head *pos, *n;
+> +	struct page **pages;
+>  	struct page *page;
+>  	struct extent_state *cached_state = NULL;
+>  	struct btrfs_free_cluster *cluster = NULL;
+> @@ -517,13 +518,13 @@ int btrfs_write_out_cache(struct btrfs_root *root,
+>  	u64 start, end, len;
+>  	u64 bytes = 0;
+>  	u32 *crc, *checksums;
+> -	pgoff_t index = 0, last_index = 0;
+>  	unsigned long first_page_offset;
+> -	int num_checksums;
+> +	int index = 0, num_pages = 0;
+>  	int entries = 0;
+>  	int bitmaps = 0;
+>  	int ret = 0;
+>  	bool next_page = false;
+> +	bool out_of_space = false;
+> 
+>  	root = root->fs_info->tree_root;
+> 
+> @@ -551,24 +552,31 @@ int btrfs_write_out_cache(struct btrfs_root *root,
+>  		return 0;
+>  	}
+> 
+> -	last_index = (i_size_read(inode) - 1) >> PAGE_CACHE_SHIFT;
+> +	num_pages = (i_size_read(inode) + PAGE_CACHE_SIZE - 1) >>
+> +		PAGE_CACHE_SHIFT;
+>  	filemap_write_and_wait(inode->i_mapping);
+>  	btrfs_wait_ordered_range(inode, inode->i_size &
+>  				 ~(root->sectorsize - 1), (u64)-1);
+> 
+>  	/* We need a checksum per page. */
+> -	num_checksums = i_size_read(inode) / PAGE_CACHE_SIZE;
+> -	crc = checksums  = kzalloc(sizeof(u32) * num_checksums, GFP_NOFS);
+> +	crc = checksums = kzalloc(sizeof(u32) * num_pages, GFP_NOFS);
+>  	if (!crc) {
+>  		iput(inode);
+>  		return 0;
+>  	}
+> 
+> +	pages = kzalloc(sizeof(struct page *) * num_pages, GFP_NOFS);
+> +	if (!pages) {
+> +		kfree(crc);
+> +		iput(inode);
+> +		return 0;
+> +	}
+> +
+>  	/* Since the first page has all of our checksums and our generation we
+>  	 * need to calculate the offset into the page that we can start writing
+>  	 * our entries.
+>  	 */
+> -	first_page_offset = (sizeof(u32) * num_checksums) + sizeof(u64);
+> +	first_page_offset = (sizeof(u32) * num_pages) + sizeof(u64);
+> 
+>  	/* Get the cluster for this block_group if it exists */
+>  	if (!list_empty(&block_group->cluster_list))
+> @@ -590,20 +598,18 @@ int btrfs_write_out_cache(struct btrfs_root *root,
+>  	 * after find_get_page at this point.  Just putting this here so people
+>  	 * know and don't freak out.
+>  	 */
+> -	while (index <= last_index) {
+> +	while (index < num_pages) {
+>  		page = grab_cache_page(inode->i_mapping, index);
+>  		if (!page) {
+> -			pgoff_t i = 0;
+> +			int i;
+> 
+> -			while (i < index) {
+> -				page = find_get_page(inode->i_mapping, i);
+> -				unlock_page(page);
+> -				page_cache_release(page);
+> -				page_cache_release(page);
+> -				i++;
+> +			for (i = 0; i < num_pages; i++) {
+> +				unlock_page(pages[i]);
+> +				page_cache_release(pages[i]);
+>  			}
+>  			goto out_free;
+>  		}
+> +		pages[index] = page;
+>  		index++;
+>  	}
+> 
+> @@ -631,7 +637,12 @@ int btrfs_write_out_cache(struct btrfs_root *root,
+>  			offset = start_offset;
+>  		}
+> 
+> -		page = find_get_page(inode->i_mapping, index);
+> +		if (index >= num_pages) {
+> +			out_of_space = true;
+> +			break;
+> +		}
+> +
+> +		page = pages[index];
+> 
+>  		addr = kmap(page);
+>  		entry = addr + start_offset;
+> @@ -708,23 +719,6 @@ int btrfs_write_out_cache(struct btrfs_root *root,
+> 
+>  		bytes += PAGE_CACHE_SIZE;
+> 
+> -		ClearPageChecked(page);
+> -		set_page_extent_mapped(page);
+> -		SetPageUptodate(page);
+> -		set_page_dirty(page);
+> -
+> -		/*
+> -		 * We need to release our reference we got for grab_cache_page,
+> -		 * except for the first page which will hold our checksums, we
+> -		 * do that below.
+> -		 */
+> -		if (index != 0) {
+> -			unlock_page(page);
+> -			page_cache_release(page);
+> -		}
+> -
+> -		page_cache_release(page);
+> -
+>  		index++;
+>  	} while (node || next_page);
+> 
+> @@ -734,6 +728,10 @@ int btrfs_write_out_cache(struct btrfs_root *root,
+>  		struct btrfs_free_space *entry =
+>  			list_entry(pos, struct btrfs_free_space, list);
+> 
+> +		if (index >= num_pages) {
+> +			out_of_space = true;
+> +			break;
+> +		}
+>  		page = find_get_page(inode->i_mapping, index);
+> 
+>  		addr = kmap(page);
+> @@ -745,64 +743,58 @@ int btrfs_write_out_cache(struct btrfs_root *root,
+>  		crc++;
+>  		bytes += PAGE_CACHE_SIZE;
+> 
+> -		ClearPageChecked(page);
+> -		set_page_extent_mapped(page);
+> -		SetPageUptodate(page);
+> -		set_page_dirty(page);
+> -		unlock_page(page);
+> -		page_cache_release(page);
+> -		page_cache_release(page);
+>  		list_del_init(&entry->list);
+>  		index++;
+>  	}
+> 
+> +	if (out_of_space) {
+> +		btrfs_drop_pages(pages, num_pages);
+> +		unlock_extent_cached(&BTRFS_I(inode)->io_tree, 0,
+> +				     i_size_read(inode) - 1, &cached_state,
+> +				     GFP_NOFS);
+> +		ret = 0;
+> +		goto out_free;
+> +	}
+> +
+>  	/* Zero out the rest of the pages just to make sure */
+> -	while (index <= last_index) {
+> +	while (index < num_pages) {
+>  		void *addr;
+> 
+> -		page = find_get_page(inode->i_mapping, index);
+> -
+> +		page = pages[index];
+>  		addr = kmap(page);
+>  		memset(addr, 0, PAGE_CACHE_SIZE);
+>  		kunmap(page);
+> -		ClearPageChecked(page);
+> -		set_page_extent_mapped(page);
+> -		SetPageUptodate(page);
+> -		set_page_dirty(page);
+> -		unlock_page(page);
+> -		page_cache_release(page);
+> -		page_cache_release(page);
+>  		bytes += PAGE_CACHE_SIZE;
+>  		index++;
+>  	}
+> 
+> -	btrfs_set_extent_delalloc(inode, 0, bytes - 1, &cached_state);
+> -
+>  	/* Write the checksums and trans id to the first page */
+>  	{
+>  		void *addr;
+>  		u64 *gen;
+> 
+> -		page = find_get_page(inode->i_mapping, 0);
+> +		page = pages[0];
+> 
+>  		addr = kmap(page);
+> -		memcpy(addr, checksums, sizeof(u32) * num_checksums);
+> -		gen = addr + (sizeof(u32) * num_checksums);
+> +		memcpy(addr, checksums, sizeof(u32) * num_pages);
+> +		gen = addr + (sizeof(u32) * num_pages);
+>  		*gen = trans->transid;
+>  		kunmap(page);
+> -		ClearPageChecked(page);
+> -		set_page_extent_mapped(page);
+> -		SetPageUptodate(page);
+> -		set_page_dirty(page);
+> -		unlock_page(page);
+> -		page_cache_release(page);
+> -		page_cache_release(page);
+>  	}
+> -	BTRFS_I(inode)->generation = trans->transid;
+> 
+> +	ret = btrfs_dirty_pages(root, inode, pages, num_pages, 0,
+> +					    bytes, &cached_state);
+> +	btrfs_drop_pages(pages, num_pages);
+>  	unlock_extent_cached(&BTRFS_I(inode)->io_tree, 0,
+>  			     i_size_read(inode) - 1, &cached_state, GFP_NOFS);
+> 
+> +	if (ret) {
+> +		ret = 0;
+> +		goto out_free;
+> +	}
+> +
+> +	BTRFS_I(inode)->generation = trans->transid;
+> +
+>  	filemap_write_and_wait(inode->i_mapping);
+> 
+>  	key.objectid = BTRFS_FREE_SPACE_OBJECTID;
+> @@ -853,6 +845,7 @@ out_free:
+>  		BTRFS_I(inode)->generation = 0;
+>  	}
+>  	kfree(checksums);
+> +	kfree(pages);
+>  	btrfs_update_inode(trans, root, inode);
+>  	iput(inode);
+>  	return ret;
 
-I've been diging into the idea of chunk tree backups. Here is the 
-predesign, before finishing chunk alloc, the first block in this 
-chunk will be written in some information, these information will be 
-useful for chunk tree rebuilding if crash, also the first block will 
-be moved into fs_info->freed_extents[2], just as the super block.
-what we should do is making some changes in these functions:
-btrfs_make_block_group
-btrfs_read_block_groups
-btrfs_remove_block_group  
-what do you think about it?
+After testing the last hours without any oops; i think it's really fixed now. 
+It also seems to fix the ENOSPC-bug I've reported some time ago:
+http://marc.info/?l=linux-btrfs&m=129120932813085&w=2
+Feel free to add my:
+Tested-by Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
 
-There's something strait with backward compatibility. The mkfs.btrfs
-has been made several chunks when creating the fs. It also need to do 
-the same thing as above. But it will be confusing in some situations 
-such as old fs mount on new kernel. I think it's better to add a 
-incompat flag in super block to mark weather the fs is formaten with
-new mkfs.btrfs.
-
-if that's OK, TODOLIST:
--design the information on chunk's first block to make it uniqueness
--backward compatibility handle(for example:fix mkfs.btrfs)
-
-Signed-off-by: Wu Bo <wu.bo@cn.fujitsu.com>
----
- fs/btrfs/ctree.h       |   13 +++-
- fs/btrfs/extent-tree.c |  135 +++++++++++++++++++++++++++++++++++++-
- fs/btrfs/volumes.c     |  168 ++++++++++++++++++++++++++++++++++++++++++++----
- fs/btrfs/volumes.h     |   25 +++++++
- 4 files changed, 322 insertions(+), 19 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 8b4b9d1..580dd1c 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -41,6 +41,7 @@ extern struct kmem_cache *btrfs_transaction_cachep;
- extern struct kmem_cache *btrfs_bit_radix_cachep;
- extern struct kmem_cache *btrfs_path_cachep;
- struct btrfs_ordered_sum;
-+struct map_lookup;
- 
- #define BTRFS_MAGIC "_BHRfS_M"
- 
-@@ -408,6 +409,7 @@ struct btrfs_super_block {
- #define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(1ULL << 1)
- #define BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS	(1ULL << 2)
- #define BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO	(1ULL << 3)
-+#define BTRFS_FEATURE_INCOMPAT_CHUNK_TREE_BACKUP (1ULL << 4)
- 
- #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
- #define BTRFS_FEATURE_COMPAT_RO_SUPP		0ULL
-@@ -415,7 +417,8 @@ struct btrfs_super_block {
- 	(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF |		\
- 	 BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL |	\
- 	 BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS |		\
--	 BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO)
-+	 BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO |		\
-+	 BTRFS_FEATURE_INCOMPAT_CHUNK_TREE_BACKUP)
- 
- /*
-  * A leaf is full of items. offset and size tell us where to find
-@@ -2172,10 +2175,12 @@ int btrfs_extent_readonly(struct btrfs_root *root, u64 bytenr);
- int btrfs_free_block_groups(struct btrfs_fs_info *info);
- int btrfs_read_block_groups(struct btrfs_root *root);
- int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr);
-+
- int btrfs_make_block_group(struct btrfs_trans_handle *trans,
--			   struct btrfs_root *root, u64 bytes_used,
--			   u64 type, u64 chunk_objectid, u64 chunk_offset,
--			   u64 size);
-+			   struct btrfs_root *root, struct map_lookup *map,
-+			   u64 bytes_used, u64 type, u64 chunk_objectid,
-+			   u64 chunk_offset, u64 size);
-+
- int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *root, u64 group_start);
- u64 btrfs_reduce_alloc_profile(struct btrfs_root *root, u64 flags);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index f1db57d..27ea7d5 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -23,6 +23,7 @@
- #include <linux/rcupdate.h>
- #include <linux/kthread.h>
- #include <linux/slab.h>
-+#include <linux/buffer_head.h>
- #include "compat.h"
- #include "hash.h"
- #include "ctree.h"
-@@ -231,6 +232,113 @@ static int exclude_super_stripes(struct btrfs_root *root,
- 	return 0;
- }
- 
-+static int exclude_chunk_stripes_header_slow(struct btrfs_root *root,
-+					struct btrfs_block_group_cache *cache)
-+{
-+	int i;
-+	int nr;
-+	u64 devid;
-+	u64 physical;
-+	int stripe_len;
-+	u64 stripe_num;
-+	u64 *logical;
-+	struct btrfs_path *path;
-+	struct btrfs_key key;
-+	struct btrfs_chunk *chunk;
-+	struct btrfs_key found_key;
-+	struct extent_buffer *leaf;
-+	int ret;
-+
-+	ret = 0;
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -1;
-+
-+	root = root->fs_info->chunk_root;
-+
-+	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
-+	key.offset = cache->key.objectid;
-+	key.type = BTRFS_CHUNK_ITEM_KEY;
-+
-+	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+	if (ret != 0)
-+		goto error;
-+
-+	btrfs_item_key_to_cpu(path->nodes[0], &found_key, path->slots[0]);
-+
-+	if (found_key.objectid != BTRFS_FIRST_CHUNK_TREE_OBJECTID ||
-+		btrfs_key_type(&found_key) != BTRFS_CHUNK_ITEM_KEY ||
-+		found_key.offset != cache->key.objectid) {
-+		ret = -1;
-+		goto error;
-+	}
-+
-+	leaf = path->nodes[0];
-+	chunk = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_chunk);
-+	stripe_num = btrfs_chunk_num_stripes(leaf, chunk);
-+
-+	i = 0;
-+	while (i < stripe_num) {
-+		devid = btrfs_stripe_devid_nr(leaf, chunk, i);
-+		physical = btrfs_stripe_offset_nr(leaf, chunk, i);
-+
-+		ret = btrfs_rmap_block(&root->fs_info->mapping_tree,
-+				cache->key.objectid, physical, devid, &logical,
-+				&nr, &stripe_len);
-+		while (nr--) {
-+			add_excluded_extent(root, logical[nr], stripe_len);
-+
-+			/* FIXME.here just use the bytes_super */
-+			cache->bytes_super += stripe_len;
-+		}
-+
-+		kfree(logical);
-+		i++;
-+	}
-+
-+error:
-+	btrfs_free_path(path);
-+	return ret;
-+}
-+
-+static int exclude_chunk_stripes_header(struct btrfs_root *root,
-+					struct btrfs_block_group_cache *cache,
-+					struct map_lookup *map)
-+{
-+	int i;
-+	int nr;
-+	u64 devid;
-+	u64 physical;
-+	int stripe_len;
-+	u64 *logical;
-+	int ret;
-+
-+	if (!map)
-+		goto slow;
-+
-+	i = 0;
-+	while (i < map->num_stripes) {
-+		devid = map->stripes[i].dev->devid;
-+		physical = map->stripes[i].physical;
-+		ret = btrfs_rmap_block(&root->fs_info->mapping_tree,
-+				cache->key.objectid, physical, devid, &logical,
-+				&nr, &stripe_len);
-+		while (nr--) {
-+			add_excluded_extent(root, logical[nr], stripe_len);
-+
-+			/* FIXME.here just use the bytes_super */
-+			cache->bytes_super += stripe_len;
-+		}
-+
-+		kfree(logical);
-+		i++;
-+	}
-+
-+	return 0;
-+slow:
-+	return exclude_chunk_stripes_header_slow(root, cache);
-+}
-+
- static struct btrfs_caching_control *
- get_caching_control(struct btrfs_block_group_cache *cache)
- {
-@@ -8402,6 +8510,7 @@ int btrfs_read_block_groups(struct btrfs_root *root)
- 	struct extent_buffer *leaf;
- 	int need_clear = 0;
- 	u64 cache_gen;
-+	u64 feature;
- 
- 	root = info->extent_root;
- 	key.objectid = 0;
-@@ -8470,6 +8579,15 @@ int btrfs_read_block_groups(struct btrfs_root *root)
- 		exclude_super_stripes(root, cache);
- 
- 		/*
-+		 * FIXME, it's should consider the backward compatibility
-+		 * also with the user tools for example  mkfs.btrfs
-+		 * Maybe we can judge sb flags to determine whether exclude it
-+		 */
-+		feature = btrfs_super_incompat_flags(&root->fs_info->super_copy);
-+		if (feature & BTRFS_FEATURE_INCOMPAT_CHUNK_TREE_BACKUP)
-+			exclude_chunk_stripes_header(root, cache, NULL);
-+
-+		/*
- 		 * check for two cases, either we are full, and therefore
- 		 * don't need to bother with the caching work since we won't
- 		 * find any space, or we are empty, and we can just add all
-@@ -8533,13 +8651,14 @@ error:
- }
- 
- int btrfs_make_block_group(struct btrfs_trans_handle *trans,
--			   struct btrfs_root *root, u64 bytes_used,
--			   u64 type, u64 chunk_objectid, u64 chunk_offset,
--			   u64 size)
-+			   struct btrfs_root *root, struct map_lookup *map,
-+			   u64 bytes_used, u64 type, u64 chunk_objectid,
-+			   u64 chunk_offset, u64 size)
- {
- 	int ret;
- 	struct btrfs_root *extent_root;
- 	struct btrfs_block_group_cache *cache;
-+	u64 feature;
- 
- 	extent_root = root->fs_info->extent_root;
- 
-@@ -8577,6 +8696,10 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
- 	cache->cached = BTRFS_CACHE_FINISHED;
- 	exclude_super_stripes(root, cache);
- 
-+	feature = btrfs_super_incompat_flags(&root->fs_info->super_copy);
-+	if (feature & BTRFS_FEATURE_INCOMPAT_CHUNK_TREE_BACKUP)
-+		exclude_chunk_stripes_header(root, cache, map);
-+
- 	add_new_free_space(cache, root->fs_info, chunk_offset,
- 			   chunk_offset + size);
- 
-@@ -8615,6 +8738,12 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 	struct inode *inode;
- 	int ret;
- 	int factor;
-+	u64 feature;
-+
-+	/* erase the first block which record this chunk info */
-+	feature = btrfs_super_incompat_flags(&root->fs_info->super_copy);
-+	if (feature & BTRFS_FEATURE_INCOMPAT_CHUNK_TREE_BACKUP)
-+		erase_chunk_stripes_header(root, group_start);
- 
- 	root = root->fs_info->extent_root;
- 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 94334d9..a9ac2b1 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -33,17 +33,6 @@
- #include "volumes.h"
- #include "async-thread.h"
- 
--struct map_lookup {
--	u64 type;
--	int io_align;
--	int io_width;
--	int stripe_len;
--	int sector_size;
--	int num_stripes;
--	int sub_stripes;
--	struct btrfs_bio_stripe stripes[];
--};
--
- static int init_first_rw_device(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *root,
- 				struct btrfs_device *device);
-@@ -2667,7 +2656,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	BUG_ON(ret);
- 	free_extent_map(em);
- 
--	ret = btrfs_make_block_group(trans, extent_root, 0, type,
-+	ret = btrfs_make_block_group(trans, extent_root, map, 0, type,
- 				     BTRFS_FIRST_CHUNK_TREE_OBJECTID,
- 				     start, *num_bytes);
- 	BUG_ON(ret);
-@@ -2761,6 +2750,151 @@ static int __finish_chunk_alloc(struct btrfs_trans_handle *trans,
- 	return 0;
- }
- 
-+static void btrfs_end_buffer_write_sync(struct buffer_head *bh, int uptodate)
-+{
-+	char b[BDEVNAME_SIZE];
-+
-+	if (uptodate) {
-+		set_buffer_uptodate(bh);
-+	} else {
-+		if (!buffer_eopnotsupp(bh) && printk_ratelimit()) {
-+			printk(KERN_WARNING "lost page write due to I/O error on %s\n",
-+				       bdevname(bh->b_bdev, b));
-+		}
-+		clear_buffer_uptodate(bh);
-+	}
-+	unlock_buffer(bh);
-+	put_bh(bh);
-+}
-+
-+static int mark_chunk_stripes_header(struct btrfs_root *root,
-+		struct map_lookup *map, u64 chunk_offset,
-+		u64 chunk_size, u64 stripe_size, u64 flag)
-+{
-+	struct buffer_head *bh;
-+	struct btrfs_device *device = NULL;
-+	struct btrfs_stripe_header header;
-+	u64 bytenr;
-+	u32 sectorsize;
-+	int index;
-+	int ret;
-+
-+	ret = 0;
-+	index = 0;
-+	while (index < map->num_stripes) {
-+		device = map->stripes[index].dev;
-+		bytenr = map->stripes[index].physical;
-+		sectorsize = root->sectorsize;
-+		do_div(bytenr, sectorsize);
-+		bh = __getblk(device->bdev, bytenr, sectorsize);
-+		if (!bh)
-+			return -1;
-+
-+		memset(&header, 0, sizeof(header));
-+		header.magic =	cpu_to_le64(BTRFS_STRIPE_HEADER_MAGIC);
-+		header.chunk_offset = cpu_to_le64(chunk_offset);
-+		header.chunk_size = cpu_to_le64(chunk_size);
-+		header.stripe_size = cpu_to_le64(stripe_size);
-+		header.stripe_index = cpu_to_le32(index);
-+		header.flag = cpu_to_le64(flag);
-+		memcpy(header.fsid, root->fs_info->fsid, BTRFS_FSID_SIZE);
-+
-+		memset(bh->b_data, 0, sectorsize);
-+		memcpy(bh->b_data, &header, sizeof(header));
-+
-+		get_bh(bh);
-+		set_buffer_uptodate(bh);
-+		lock_buffer(bh);
-+		bh->b_end_io = btrfs_end_buffer_write_sync;
-+
-+		ret = submit_bh(WRITE_SYNC, bh);
-+		wait_on_buffer(bh);
-+		brelse(bh);
-+
-+		index++;
-+	}
-+	return ret;
-+}
-+
-+int erase_chunk_stripes_header(struct btrfs_root *root,
-+					u64 chunk_offset)
-+{
-+	int i;
-+	int ret;
-+	u64 devid;
-+	u64 physical;
-+	u32 sectorsize;
-+	u64 stripe_num;
-+	u8 uuid[BTRFS_UUID_SIZE];
-+	struct btrfs_path *path;
-+	struct btrfs_key key;
-+	struct btrfs_chunk *chunk;
-+	struct btrfs_key found_key;
-+	struct extent_buffer *leaf;
-+	struct btrfs_device *device;
-+	struct buffer_head *bh;
-+
-+	ret = 0;
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -1;
-+
-+	root = root->fs_info->chunk_root;
-+
-+	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
-+	key.offset = chunk_offset;
-+	key.type = BTRFS_CHUNK_ITEM_KEY;
-+
-+	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+	if (ret != 0) {
-+		ret = -1;
-+		goto error;
-+	}
-+
-+	btrfs_item_key_to_cpu(path->nodes[0], &found_key, path->slots[0]);
-+
-+	if (found_key.objectid != BTRFS_FIRST_CHUNK_TREE_OBJECTID ||
-+		btrfs_key_type(&found_key) != BTRFS_CHUNK_ITEM_KEY ||
-+		found_key.offset != chunk_offset) {
-+		ret = -1;
-+		goto error;
-+	}
-+
-+	leaf = path->nodes[0];
-+	chunk = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_chunk);
-+	stripe_num = btrfs_chunk_num_stripes(leaf, chunk);
-+	i = 0;
-+	while (i < stripe_num) {
-+		devid = btrfs_stripe_devid_nr(leaf, chunk, i);
-+		physical = btrfs_stripe_offset_nr(leaf, chunk, i);
-+		read_extent_buffer(leaf, uuid, (unsigned long)
-+				btrfs_stripe_dev_uuid_nr(chunk, i),
-+				BTRFS_UUID_SIZE);
-+		device = btrfs_find_device(root, devid, uuid, NULL);
-+
-+		sectorsize = root->sectorsize;
-+		do_div(physical, sectorsize);
-+		bh = __getblk(device->bdev, physical, sectorsize);
-+		if (!bh) {
-+			i++;
-+			continue;
-+		}
-+		memset(bh->b_data, 0, sectorsize);
-+		get_bh(bh);
-+		set_buffer_uptodate(bh);
-+		lock_buffer(bh);
-+		bh->b_end_io = btrfs_end_buffer_write_sync;
-+
-+		submit_bh(WRITE_SYNC, bh);
-+		wait_on_buffer(bh);
-+		brelse(bh);
-+		i++;
-+	}
-+error:
-+	btrfs_free_path(path);
-+	return ret;
-+}
-+
- /*
-  * Chunk allocation falls into two parts. The first part does works
-  * that make the new allocated chunk useable, but not do any operation
-@@ -2777,6 +2911,7 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	struct map_lookup *map;
- 	struct btrfs_root *chunk_root = extent_root->fs_info->chunk_root;
- 	int ret;
-+	u64 feature;
- 
- 	ret = find_next_chunk(chunk_root, BTRFS_FIRST_CHUNK_TREE_OBJECTID,
- 			      &chunk_offset);
-@@ -2791,6 +2926,15 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	ret = __finish_chunk_alloc(trans, extent_root, map, chunk_offset,
- 				   chunk_size, stripe_size);
- 	BUG_ON(ret);
-+
-+	feature = btrfs_super_incompat_flags(&extent_root->fs_info->super_copy);
-+	if (feature & BTRFS_FEATURE_INCOMPAT_CHUNK_TREE_BACKUP) {
-+		ret = mark_chunk_stripes_header(extent_root, map, chunk_offset,
-+					chunk_size, stripe_size, type);
-+		if (ret)
-+			return ret;
-+	}
-+
- 	return 0;
- }
- 
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 7af6144..7166a3b 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -146,6 +146,31 @@ struct btrfs_device_info {
- 	u64 max_avail;
- };
- 
-+struct map_lookup {
-+	u64 type;
-+	int io_align;
-+	int io_width;
-+	int stripe_len;
-+	int sector_size;
-+	int num_stripes;
-+	int sub_stripes;
-+	struct btrfs_bio_stripe stripes[];
-+};
-+
-+#define BTRFS_STRIPE_HEADER_MAGIC 111111
-+
-+struct btrfs_stripe_header {
-+	__le64 magic;
-+	__le64 chunk_offset;
-+	__le64 chunk_size;
-+	__le64 stripe_size;
-+	__le32 stripe_index;
-+	__le64 flag;
-+	u8 fsid[BTRFS_FSID_SIZE];
-+} __attribute__ ((__packed__));
-+
-+int erase_chunk_stripes_header(struct btrfs_root *root, u64 chunk_offset);
-+
- /* Used to sort the devices by max_avail(descending sort) */
- int btrfs_cmp_device_free_bytes(const void *dev_info1, const void *dev_info2);
- 
--- 
-1.7.3.1
-
+regards,
+  Johannes

@@ -1,247 +1,227 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: [PATCH v4 3/8] btrfs: Factor out enumeration of chunks to a separate function
-Date: Thu,  7 Apr 2011 18:06:10 +0100
-Message-ID: <1302195975-3088-4-git-send-email-hugo@carfax.org.uk>
-References: <1302195975-3088-1-git-send-email-hugo@carfax.org.uk>
-To: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH v4 1/8] btrfs: Balance progress monitoring
+Date: Thu, 07 Apr 2011 13:26:35 -0400
+Message-ID: <4D9DF3CB.7060109@redhat.com>
+References: <1302195975-3088-1-git-send-email-hugo@carfax.org.uk> <1302195975-3088-2-git-send-email-hugo@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
+To: Hugo Mills <hugo@carfax.org.uk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1302195975-3088-1-git-send-email-hugo@carfax.org.uk>
+In-Reply-To: <1302195975-3088-2-git-send-email-hugo@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The main balance function has two loops which are functionally
-identical in their looping mechanism, but which perform a different
-operation on the chunks they loop over. To avoid repeating code more
-than necessary, factor this loop out into a separate iterator function
-which takes a function parameter for the action to be performed.
+On 04/07/2011 01:06 PM, Hugo Mills wrote:
+> This patch introduces a basic form of progress monitoring for balance
+> operations, by counting the number of block groups remaining. The
+> information is exposed to userspace by an ioctl.
+>
+> Signed-off-by: Hugo Mills<hugo@carfax.org.uk>
+> ---
+>   fs/btrfs/ctree.h   |    9 +++++++
+>   fs/btrfs/disk-io.c |    2 +
+>   fs/btrfs/ioctl.c   |   34 +++++++++++++++++++++++++++++
+>   fs/btrfs/ioctl.h   |    7 ++++++
+>   fs/btrfs/volumes.c |   61 ++++++++++++++++++++++++++++++++++++++++++++++++++-
+>   5 files changed, 111 insertions(+), 2 deletions(-)
+>
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 7f78cc7..6c5526c 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -865,6 +865,11 @@ struct btrfs_block_group_cache {
+>   	struct list_head cluster_list;
+>   };
+>
+> +struct btrfs_balance_info {
+> +	u64 expected;
+> +	u64 completed;
+> +};
+> +
+>   struct reloc_control;
+>   struct btrfs_device;
+>   struct btrfs_fs_devices;
+> @@ -1078,6 +1083,10 @@ struct btrfs_fs_info {
+>
+>   	/* filesystem state */
+>   	u64 fs_state;
+> +
+> +	/* Keep track of any rebalance operations on this FS */
+> +	spinlock_t balance_info_lock;
+> +	struct btrfs_balance_info *balance_info;
+>   };
+>
+>   /*
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 100b07f..3d690de 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -1645,6 +1645,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+>   	spin_lock_init(&fs_info->ref_cache_lock);
+>   	spin_lock_init(&fs_info->fs_roots_radix_lock);
+>   	spin_lock_init(&fs_info->delayed_iput_lock);
+> +	spin_lock_init(&fs_info->balance_info_lock);
+>
+>   	init_completion(&fs_info->kobj_unregister);
+>   	fs_info->tree_root = tree_root;
+> @@ -1670,6 +1671,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+>   	fs_info->sb = sb;
+>   	fs_info->max_inline = 8192 * 1024;
+>   	fs_info->metadata_ratio = 0;
+> +	fs_info->balance_info = NULL;
+>
+>   	fs_info->thread_pool_size = min_t(unsigned long,
+>   					  num_online_cpus() + 2, 8);
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 5fdb2ab..a8fbb07 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -2375,6 +2375,38 @@ static noinline long btrfs_ioctl_wait_sync(struct file *file, void __user *argp)
+>   	return btrfs_wait_for_commit(root, transid);
+>   }
+>
+> +/*
+> + * Return the current status of any balance operation
+> + */
+> +long btrfs_ioctl_balance_progress(
+> +	struct btrfs_fs_info *fs_info,
+> +	struct btrfs_ioctl_balance_progress __user *user_dest)
+> +{
+> +	int ret = 0;
+> +	struct btrfs_ioctl_balance_progress dest;
+> +
+> +	spin_lock(&fs_info->balance_info_lock);
+> +	if (!fs_info->balance_info) {
+> +		ret = -EINVAL;
+> +		goto error;
+> +	}
+> +
+> +	dest.expected = fs_info->balance_info->expected;
+> +	dest.completed = fs_info->balance_info->completed;
+> +
+> +	spin_unlock(&fs_info->balance_info_lock);
+> +
+> +	if (copy_to_user(user_dest,&dest,
+> +			 sizeof(struct btrfs_ioctl_balance_progress)))
+> +		return -EFAULT;
+> +
+> +	return 0;
+> +
+> +error:
+> +	spin_unlock(&fs_info->balance_info_lock);
+> +	return ret;
+> +}
+> +
+>   long btrfs_ioctl(struct file *file, unsigned int
+>   		cmd, unsigned long arg)
+>   {
+> @@ -2414,6 +2446,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+>   		return btrfs_ioctl_rm_dev(root, argp);
+>   	case BTRFS_IOC_BALANCE:
+>   		return btrfs_balance(root->fs_info->dev_root);
+> +	case BTRFS_IOC_BALANCE_PROGRESS:
+> +		return btrfs_ioctl_balance_progress(root->fs_info, argp);
+>   	case BTRFS_IOC_CLONE:
+>   		return btrfs_ioctl_clone(file, arg, 0, 0, 0);
+>   	case BTRFS_IOC_CLONE_RANGE:
+> diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+> index 8fb3821..4c82d40 100644
+> --- a/fs/btrfs/ioctl.h
+> +++ b/fs/btrfs/ioctl.h
+> @@ -157,6 +157,11 @@ struct btrfs_ioctl_space_args {
+>   	struct btrfs_ioctl_space_info spaces[0];
+>   };
+>
+> +struct btrfs_ioctl_balance_progress {
+> +	__u64 expected;
+> +	__u64 completed;
+> +};
+> +
+>   #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
+>   				   struct btrfs_ioctl_vol_args)
+>   #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
+> @@ -203,4 +208,6 @@ struct btrfs_ioctl_space_args {
+>   				   struct btrfs_ioctl_vol_args_v2)
+>   #define BTRFS_IOC_SUBVOL_GETFLAGS _IOW(BTRFS_IOCTL_MAGIC, 25, __u64)
+>   #define BTRFS_IOC_SUBVOL_SETFLAGS _IOW(BTRFS_IOCTL_MAGIC, 26, __u64)
+> +#define BTRFS_IOC_BALANCE_PROGRESS _IOR(BTRFS_IOCTL_MAGIC, 27, \
+> +				  struct btrfs_ioctl_balance_progress)
+>   #endif
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index dd13eb8..2bd4565 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -2041,6 +2041,7 @@ int btrfs_balance(struct btrfs_root *dev_root)
+>   	struct btrfs_root *chunk_root = dev_root->fs_info->chunk_root;
+>   	struct btrfs_trans_handle *trans;
+>   	struct btrfs_key found_key;
+> +	struct btrfs_balance_info *bal_info;
+>
+>   	if (dev_root->fs_info->sb->s_flags&  MS_RDONLY)
+>   		return -EROFS;
+> @@ -2051,6 +2052,20 @@ int btrfs_balance(struct btrfs_root *dev_root)
+>   	mutex_lock(&dev_root->fs_info->volume_mutex);
+>   	dev_root = dev_root->fs_info->dev_root;
+>
+> +	bal_info = kmalloc(
+> +		sizeof(struct btrfs_balance_info),
+> +		GFP_NOFS);
+> +	if (!bal_info) {
+> +		ret = -ENOSPC;
+> +		goto error_no_status;
+> +	}
+> +	spin_lock(&dev_root->fs_info->balance_info_lock);
+> +	dev_root->fs_info->balance_info = bal_info;
+> +	bal_info->expected = -1; /* One less than actually counted,
+> +				    because chunk 0 is special */
+> +	bal_info->completed = 0;
+> +	spin_unlock(&dev_root->fs_info->balance_info_lock);
+> +
+>   	/* step one make some room on all the devices */
+>   	list_for_each_entry(device, devices, dev_list) {
+>   		old_size = device->total_bytes;
+> @@ -2074,10 +2089,42 @@ int btrfs_balance(struct btrfs_root *dev_root)
+>   		btrfs_end_transaction(trans, dev_root);
+>   	}
+>
+> -	/* step two, relocate all the chunks */
+> +	/* step two, count the chunks */
+>   	path = btrfs_alloc_path();
+> -	BUG_ON(!path);
+> +	if (!path) {
+> +		ret = -ENOSPC;
+> +		goto error;
+> +	}
+> +
+> +	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
+> +	key.offset = (u64)-1;
+> +	key.type = BTRFS_CHUNK_ITEM_KEY;
+> +
+> +	ret = btrfs_search_slot(NULL, chunk_root,&key, path, 0, 0);
+> +	if (ret<= 0) {
+> +		printk(KERN_ERR "btrfs: Failed to find the last chunk.\n");
+> +		BUG();
+> +	}
+> +
+> +	while (1) {
+> +		ret = btrfs_previous_item(chunk_root, path, 0,
+> +					  BTRFS_CHUNK_ITEM_KEY);
+> +		if (ret)
+> +			break;
+> +
+> +		spin_lock(&dev_root->fs_info->balance_info_lock);
+> +		bal_info->expected++;
+> +		spin_unlock(&dev_root->fs_info->balance_info_lock);
+> +	}
+> +
+> +	btrfs_free_path(path);
+> +	path = btrfs_alloc_path();
+> +	if (!path) {
+> +		ret = -ENOSPC;
+> +		goto error;
+> +	}
+>
+Do btrfs_release_path() here instead of freeing the path and 
+re-allocating it.  Thanks,
 
-Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
----
- fs/btrfs/volumes.c |  179 +++++++++++++++++++++++++++++-----------------------
- 1 files changed, 99 insertions(+), 80 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 5378b94..ffba817 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2029,6 +2029,97 @@ static u64 div_factor(u64 num, int factor)
- 	return num;
- }
- 
-+/* Define a type, and two functions which can be used for the two
-+ * phases of the balance operation: one for counting chunks, and one
-+ * for actually moving them. */
-+typedef void (*balance_iterator_function)(struct btrfs_root *,
-+					  struct btrfs_balance_info *,
-+					  struct btrfs_path *,
-+					  struct btrfs_key *);
-+
-+void balance_count_chunks(struct btrfs_root *chunk_root,
-+			  struct btrfs_balance_info *bal_info,
-+			  struct btrfs_path *path,
-+			  struct btrfs_key *key)
-+{
-+	spin_lock(&chunk_root->fs_info->balance_info_lock);
-+	bal_info->expected++;
-+	spin_unlock(&chunk_root->fs_info->balance_info_lock);
-+}
-+
-+void balance_move_chunks(struct btrfs_root *chunk_root,
-+			 struct btrfs_balance_info *bal_info,
-+			 struct btrfs_path *path,
-+			 struct btrfs_key *key)
-+{
-+	int ret;
-+
-+	ret = btrfs_relocate_chunk(chunk_root,
-+				   chunk_root->root_key.objectid,
-+				   key->objectid,
-+				   key->offset);
-+	BUG_ON(ret && ret != -ENOSPC);
-+	spin_lock(&chunk_root->fs_info->balance_info_lock);
-+	bal_info->completed++;
-+	spin_unlock(&chunk_root->fs_info->balance_info_lock);
-+	printk(KERN_INFO "btrfs: balance: %llu/%llu block groups completed\n",
-+	       bal_info->completed, bal_info->expected);
-+}
-+
-+/* Iterate through all chunks, performing some function on each one. */
-+int balance_iterate_chunks(struct btrfs_root *chunk_root,
-+			   struct btrfs_balance_info *bal_info,
-+			   balance_iterator_function fn)
-+{
-+	int ret;
-+	struct btrfs_path *path;
-+	struct btrfs_key key;
-+	struct btrfs_key found_key;
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOSPC;
-+
-+	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
-+	key.offset = (u64)-1;
-+	key.type = BTRFS_CHUNK_ITEM_KEY;
-+
-+	while (!bal_info->cancel_pending) {
-+		ret = btrfs_search_slot(NULL, chunk_root, &key, path, 0, 0);
-+		if (ret < 0)
-+			break;
-+		/*
-+		 * this shouldn't happen, it means the last relocate
-+		 * failed
-+		 */
-+		if (ret == 0)
-+			break;
-+
-+		ret = btrfs_previous_item(chunk_root, path, 0,
-+					  BTRFS_CHUNK_ITEM_KEY);
-+		if (ret)
-+			break;
-+
-+		btrfs_item_key_to_cpu(path->nodes[0], &found_key,
-+				      path->slots[0]);
-+		if (found_key.objectid != key.objectid)
-+			break;
-+
-+		/* chunk zero is special */
-+		if (found_key.offset == 0)
-+			break;
-+
-+		/* Call the function to do the work for this chunk */
-+		btrfs_release_path(chunk_root, path);
-+		fn(chunk_root, bal_info, path, &found_key);
-+
-+		key.offset = found_key.offset - 1;
-+	}
-+
-+	btrfs_free_path(path);
-+	return ret;
-+}
-+
- int btrfs_balance(struct btrfs_root *dev_root)
- {
- 	int ret;
-@@ -2036,11 +2127,8 @@ int btrfs_balance(struct btrfs_root *dev_root)
- 	struct btrfs_device *device;
- 	u64 old_size;
- 	u64 size_to_free;
--	struct btrfs_path *path;
--	struct btrfs_key key;
- 	struct btrfs_root *chunk_root = dev_root->fs_info->chunk_root;
- 	struct btrfs_trans_handle *trans;
--	struct btrfs_key found_key;
- 	struct btrfs_balance_info *bal_info;
- 
- 	if (dev_root->fs_info->sb->s_flags & MS_RDONLY)
-@@ -2061,8 +2149,7 @@ int btrfs_balance(struct btrfs_root *dev_root)
- 	}
- 	spin_lock(&dev_root->fs_info->balance_info_lock);
- 	dev_root->fs_info->balance_info = bal_info;
--	bal_info->expected = -1; /* One less than actually counted,
--				    because chunk 0 is special */
-+	bal_info->expected = 0;
- 	bal_info->completed = 0;
- 	bal_info->cancel_pending = 0;
- 	spin_unlock(&dev_root->fs_info->balance_info_lock);
-@@ -2091,91 +2178,23 @@ int btrfs_balance(struct btrfs_root *dev_root)
- 	}
- 
- 	/* step two, count the chunks */
--	path = btrfs_alloc_path();
--	if (!path) {
--		ret = -ENOSPC;
--		goto error;
--	}
--
--	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
--	key.offset = (u64)-1;
--	key.type = BTRFS_CHUNK_ITEM_KEY;
--
--	ret = btrfs_search_slot(NULL, chunk_root, &key, path, 0, 0);
--	if (ret <= 0) {
--		printk(KERN_ERR "btrfs: Failed to find the last chunk.\n");
--		BUG();
--	}
--
--	while (1) {
--		ret = btrfs_previous_item(chunk_root, path, 0,
--					  BTRFS_CHUNK_ITEM_KEY);
--		if (ret)
--			break;
--
--		spin_lock(&dev_root->fs_info->balance_info_lock);
--		bal_info->expected++;
--		spin_unlock(&dev_root->fs_info->balance_info_lock);
--	}
--
--	btrfs_free_path(path);
--	path = btrfs_alloc_path();
--	if (!path) {
--		ret = -ENOSPC;
-+	ret = balance_iterate_chunks(chunk_root, bal_info,
-+				     balance_count_chunks);
-+	if (ret)
- 		goto error;
--	}
- 
- 	/* step three, relocate all the chunks */
--	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
--	key.offset = (u64)-1;
--	key.type = BTRFS_CHUNK_ITEM_KEY;
--
--	while (!bal_info->cancel_pending) {
--		ret = btrfs_search_slot(NULL, chunk_root, &key, path, 0, 0);
--		if (ret < 0)
--			goto error;
--
--		/*
--		 * this shouldn't happen, it means the last relocate
--		 * failed
--		 */
--		if (ret == 0)
--			break;
--
--		ret = btrfs_previous_item(chunk_root, path, 0,
--					  BTRFS_CHUNK_ITEM_KEY);
--		if (ret)
--			break;
--
--		btrfs_item_key_to_cpu(path->nodes[0], &found_key,
--				      path->slots[0]);
--		if (found_key.objectid != key.objectid)
--			break;
--
--		/* chunk zero is special */
--		if (found_key.offset == 0)
--			break;
-+	ret = balance_iterate_chunks(chunk_root, bal_info,
-+				     balance_move_chunks);
-+	if (ret)
-+		goto error;
- 
--		btrfs_release_path(chunk_root, path);
--		ret = btrfs_relocate_chunk(chunk_root,
--					   chunk_root->root_key.objectid,
--					   found_key.objectid,
--					   found_key.offset);
--		BUG_ON(ret && ret != -ENOSPC);
--		key.offset = found_key.offset - 1;
--		spin_lock(&dev_root->fs_info->balance_info_lock);
--		bal_info->completed++;
--		spin_unlock(&dev_root->fs_info->balance_info_lock);
--		printk(KERN_INFO "btrfs: balance: %llu/%llu block groups completed\n",
--		       bal_info->completed, bal_info->expected);
--	}
- 	ret = 0;
- 	if (bal_info->cancel_pending) {
- 		printk(KERN_INFO "btrfs: balance cancelled\n");
- 		ret = -EINTR;
- 	}
- error:
--	btrfs_free_path(path);
- 	spin_lock(&dev_root->fs_info->balance_info_lock);
- 	kfree(dev_root->fs_info->balance_info);
- 	dev_root->fs_info->balance_info = NULL;
--- 
-1.7.2.5
-
+Josef

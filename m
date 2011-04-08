@@ -1,7 +1,7 @@
 From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: btrfs-control: no such device
-Date: 08 Apr 2011 14:00:00 +0200
-Message-ID: <BjSyMGwD1uB@helmut.hullen.de>
+Subject: scanning cdrom and floppy
+Date: 08 Apr 2011 13:56:00 +0200
+Message-ID: <BjSyM2$D1uB@helmut.hullen.de>
 Reply-To: helmut@hullen.de
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
@@ -11,12 +11,18 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Hallo, linux-btrfs,
 
-when I run "balance" or "delete" and "/dev/btrfs-control" doesn't exist  
-or is nor properly designed (I don't use "udev") then the program shows  
-an error message and then continiues its work; the result is garbage.
+is the patch mentionend in
 
-The programs (or program options) which use a wellformed device "btrfs- 
-control" should stop working if there is "no such device".
+        http://article.gmane.org/gmane.comp.file-systems.btrfs/7473
+
+included now?
+
+I still get error messages related to floppy when I run "balance", when  
+I run "show" then btrfs still tries many non existing devices (I don't  
+use "udev").
+
+Kernel 2.6.38.1
+btrfs from november 2010
 
 Viele Gruesse!
 Helmut

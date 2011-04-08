@@ -1,52 +1,50 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH v4 1/8] btrfs: Balance progress monitoring
-Date: Fri, 8 Apr 2011 15:37:15 +0200
-Message-ID: <20110408133715.GM31675@twin.jikos.cz>
-References: <1302195975-3088-1-git-send-email-hugo@carfax.org.uk>
- <1302195975-3088-2-git-send-email-hugo@carfax.org.uk>
-Reply-To: dave@jikos.cz
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: 2.6.29-rc2 oops and assertion failure...
+Date: Fri, 08 Apr 2011 09:37:02 -0400
+Message-ID: <4D9F0F7E.3040509@redhat.com>
+References: <BANLkTikJJFqEs0F_wPdTinct0k_4uLh1hQ@mail.gmail.com>	<4D9DE4F2.1050909@redhat.com> <BANLkTinm0eNdDWH42MB6VnYAdOOGi0P-bw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Hugo Mills <hugo@carfax.org.uk>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Linux BTRFS <linux-btrfs@vger.kernel.org>
+To: Daniel J Blueman <daniel.blueman@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1302195975-3088-2-git-send-email-hugo@carfax.org.uk>
+In-Reply-To: <BANLkTinm0eNdDWH42MB6VnYAdOOGi0P-bw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On 04/07/2011 10:26 PM, Daniel J Blueman wrote:
+> Hi Josef, Chris,
+>
+> On 8 April 2011 00:23, Josef Bacik<josef@redhat.com>  wrote:
+>> On 04/07/2011 03:21 AM, Daniel J Blueman wrote:
+>>>
+>>> When running a practical stress-test on 2.6.29-rc2 trying to reproduce
+>>> an older (extent refcounting) issue, I am consistently able to hit an
+>>> oops [] and an assertion failure [].
+>>
+>> Sorry about that, please apply the patch I just sent this morning
+>>
+>> [PATCH] Btrfs: deal with the case that we run out of space in the cache
+>
+> Superb work - the btrfs_write_out_cache oops is addressed, so now we
+> (separately) hit a few other assertions at: volumes.c:2013 [1],
+> volumes.c:2063 [2] and volumes.c:2703 [3] with the previous
+> reproducer.
+>
+> Let me know if adding any debugging or other testing may be useful.
+>
+> Thanks,
+>    Daniel
 
-sorry for separate mail, just noticed a kfree inside a spinlock below
+Looks like the first 2 panics are basically the same thing.  You are 
+getting -EIO back from btrfs_shrink_device(), which could either come 
+from searching or it could come from the stuff in relocation.c.  So will 
+you put printk's at the 2 places in relocation.c where we return -EIO 
+and figure out which one is getting tripped?  Once we know who is 
+returning EIO we can go from there.  As for the last one, that's just a 
+normal ENOSPC, but it's because we're allocating a chunk in the 
+submission path, so that's going to be a little trickier to deal with. 
+Lets fix these first two panics first and then hopefully that last one 
+will just go away :).  Thanks,
 
-On Thu, Apr 07, 2011 at 06:06:08PM +0100, Hugo Mills wrote:
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> @@ -2115,10 +2162,20 @@ int btrfs_balance(struct btrfs_root *dev_root)
->  					   found_key.offset);
->  		BUG_ON(ret && ret != -ENOSPC);
->  		key.offset = found_key.offset - 1;
-> +		spin_lock(&dev_root->fs_info->balance_info_lock);
-> +		bal_info->completed++;
-> +		spin_unlock(&dev_root->fs_info->balance_info_lock);
-> +		printk(KERN_INFO "btrfs: balance: %llu/%llu block groups completed\n",
-> +		       bal_info->completed, bal_info->expected);
->  	}
->  	ret = 0;
->  error:
->  	btrfs_free_path(path);
-> +	spin_lock(&dev_root->fs_info->balance_info_lock);
-> +	kfree(dev_root->fs_info->balance_info);
-        ^^^^^
-move it out of the spinlocked section
-
-> +	dev_root->fs_info->balance_info = NULL;
-> +	spin_unlock(&dev_root->fs_info->balance_info_lock);
-> +error_no_status:
->  	mutex_unlock(&dev_root->fs_info->volume_mutex);
->  	return ret;
->  }
-> -- 
-> 1.7.2.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Josef

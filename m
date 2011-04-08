@@ -1,226 +1,438 @@
-From: Jeff Wu <cpwu@tnsoft.com.cn>
-Subject: Re: 2.6.39-rc1: btrfs "WARNING: at fs/btrfs/inode.c:2177"
-Date: Fri, 8 Apr 2011 13:53:20 +0800
-Message-ID: <1302242000.2014.14.camel@cephhost>
-References: <1302169286.1922.19.camel@cephhost>
-	 <4D9DE43F.3000809@redhat.com>
-Reply-To: <cpwu@tnsoft.com.cn>
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs-progs: add support for mixed data+metadata block
+ groups
+Date: Fri, 08 Apr 2011 15:31:37 +0800
+Message-ID: <4D9EB9D9.5060005@cn.fujitsu.com>
+References: <1291919468-17802-1-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: ceph-devel <ceph-devel@vger.kernel.org>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Cc: linux-btrfs@vger.kernel.org
 To: Josef Bacik <josef@redhat.com>
-Return-path: <ceph-devel-owner@vger.kernel.org>
-In-Reply-To: <4D9DE43F.3000809@redhat.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1291919468-17802-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 12/10/2010 02:31 AM, Josef Bacik wrote:
+> So alot of crazy people (I'm looking at you Meego) want to use btrfs on phones
+> and such with small devices.  Unfortunately the way we split out metadata/data
+> chunks it makes space usage inefficient for volumes that are smaller than
+> 1gigabyte.  So add a -M option for mixing metadata+data, and default to this
+> mixed mode if the filesystem is less than or equal to 1 gigabyte.  I've tested
+> this with xfstests on a 100mb filesystem and everything is a-ok.
+> 
 
-Hi ,
-I applied the patch to 2.6.39-rc1,took the following steps to compile
-it:make && make modules_install && make install && mkinitramfs=20
-but , it seam that it don't run to "WARN_ON(block_rsv =3D=3D
-root->orphan_block_rsv);"
+Hi, Josef,
 
-i attached the codes and logs at the below:
+While using this mix metadata+data option, I noticed the following from btrfs-debug-tree's print:
 
+===
+chunk tree
+leaf 143360 items 4 free space 3557 generation 4 owner 3
+fs uuid 77d78a87-a886-4bfa-be3b-0dd052213a17
+chunk uuid e64148d6-8267-4ff1-aafd-4266f74afbb2
+        item 0 key (DEV_ITEMS DEV_ITEM 1) itemoff 3897 itemsize 98
+                dev item devid 1 total_bytes 4999610368 bytes used 20971520
+        item 1 key (FIRST_CHUNK_TREE CHUNK_ITEM 0) itemoff 3817 itemsize 80
+                chunk length 4194304 owner 2 type 2 num_stripes 1
+                        stripe 0 devid 1 offset 0
+        item 2 key (FIRST_CHUNK_TREE CHUNK_ITEM 4194304) itemoff 3737 itemsize 80
+                chunk length 8388608 owner 2 type 5 num_stripes 1
+                        stripe 0 devid 1 offset 4194304
+        item 3 key (FIRST_CHUNK_TREE CHUNK_ITEM 12582912) itemoff 3657 itemsize 80   <== THIS ONE
+                chunk length 8388608 owner 2 type 4 num_stripes 1		     <== 
+                        stripe 0 devid 1 offset 12582912			     <== 
+===
 
-=2E...........................................
-int btrfs_block_rsv_add(struct btrfs_trans_handle *trans,
-                        struct btrfs_root *root,
-                        struct btrfs_block_rsv *block_rsv,
-                        u64 num_bytes)
-{
-        int ret;
+you see, there exists another metadata chunk (type 4) after "mkfs.btrfs -M /dev/xxx".
+So I was wondering that _IS_ this chunk what we want, or a spare one?
 
-        WARN_ON(block_rsv =3D=3D root->orphan_block_rsv);
-        if (num_bytes =3D=3D 0)
-                return 0;
+thanks,
+liubo
 
-        ret =3D reserve_metadata_bytes(trans, root, block_rsv, num_byte=
-s,
-1);
-        if (!ret) {
-                block_rsv_add_bytes(block_rsv, num_bytes, 1);
-                return 0;
-        }
+> Signed-off-by: Josef Bacik <josef@redhat.com>
+> ---
+>  btrfs-vol.c  |    4 +-
+>  btrfs_cmds.c |   13 +++++-
+>  ctree.h      |   10 +++--
+>  mkfs.c       |  122 +++++++++++++++++++++++++++++++++++++++++-----------------
+>  utils.c      |   10 ++--
+>  utils.h      |    2 +-
+>  6 files changed, 112 insertions(+), 49 deletions(-)
+> 
+> diff --git a/btrfs-vol.c b/btrfs-vol.c
+> index 8069778..7200bbc 100644
+> --- a/btrfs-vol.c
+> +++ b/btrfs-vol.c
+> @@ -129,7 +129,9 @@ int main(int ac, char **av)
+>  		exit(1);
+>  	}
+>  	if (cmd == BTRFS_IOC_ADD_DEV) {
+> -		ret = btrfs_prepare_device(devfd, device, 1, &dev_block_count);
+> +		int mixed = 0;
+> +
+> +		ret = btrfs_prepare_device(devfd, device, 1, &dev_block_count, &mixed);
+>  		if (ret) {
+>  			fprintf(stderr, "Unable to init %s\n", device);
+>  			exit(1);
+> diff --git a/btrfs_cmds.c b/btrfs_cmds.c
+> index 8031c58..683aec0 100644
+> --- a/btrfs_cmds.c
+> +++ b/btrfs_cmds.c
+> @@ -705,6 +705,7 @@ int do_add_volume(int nargs, char **args)
+>  		int	devfd, res;
+>  		u64 dev_block_count = 0;
+>  		struct stat st;
+> +		int mixed = 0;
+>  
+>  		devfd = open(args[i], O_RDWR);
+>  		if (!devfd) {
+> @@ -727,7 +728,7 @@ int do_add_volume(int nargs, char **args)
+>  			continue;
+>  		}
+>  
+> -		res = btrfs_prepare_device(devfd, args[i], 1, &dev_block_count);
+> +		res = btrfs_prepare_device(devfd, args[i], 1, &dev_block_count, &mixed);
+>  		if (res) {
+>  			fprintf(stderr, "ERROR: Unable to init '%s'\n", args[i]);
+>  			close(devfd);
+> @@ -889,8 +890,14 @@ int do_df_filesystem(int nargs, char **argv)
+>  		memset(description, 0, 80);
+>  
+>  		if (flags & BTRFS_BLOCK_GROUP_DATA) {
+> -			snprintf(description, 5, "%s", "Data");
+> -			written += 4;
+> +			if (flags & BTRFS_BLOCK_GROUP_METADATA) {
+> +				snprintf(description, 15, "%s",
+> +					 "Data+Metadata");
+> +				written += 14;
+> +			} else {
+> +				snprintf(description, 5, "%s", "Data");
+> +				written += 4;
+> +			}
+>  		} else if (flags & BTRFS_BLOCK_GROUP_SYSTEM) {
+>  			snprintf(description, 7, "%s", "System");
+>  			written += 6;
+> diff --git a/ctree.h b/ctree.h
+> index 962c510..ed83d02 100644
+> --- a/ctree.h
+> +++ b/ctree.h
+> @@ -352,13 +352,15 @@ struct btrfs_super_block {
+>   * ones specified below then we will fail to mount
+>   */
+>  #define BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF	(1ULL << 0)
+> -#define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(2ULL << 0)
+> +#define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(1ULL << 1)
+> +#define BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS	(1ULL << 2)
+>  
+>  #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
+>  #define BTRFS_FEATURE_COMPAT_RO_SUPP		0ULL
+> -#define BTRFS_FEATURE_INCOMPAT_SUPP		\
+> -	(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF |	\
+> -	 BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL)
+> +#define BTRFS_FEATURE_INCOMPAT_SUPP			\
+> +	(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF |		\
+> +	 BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL |	\
+> +	 BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS)
+>  
+>  /*
+>   * A leaf is full of items. offset and size tell us where to find
+> diff --git a/mkfs.c b/mkfs.c
+> index 2e99b95..04de93a 100644
+> --- a/mkfs.c
+> +++ b/mkfs.c
+> @@ -69,7 +69,7 @@ static u64 parse_size(char *s)
+>  	return atol(s) * mult;
+>  }
+>  
+> -static int make_root_dir(struct btrfs_root *root)
+> +static int make_root_dir(struct btrfs_root *root, int mixed)
+>  {
+>  	struct btrfs_trans_handle *trans;
+>  	struct btrfs_key location;
+> @@ -88,30 +88,47 @@ static int make_root_dir(struct btrfs_root *root)
+>  				     0, BTRFS_MKFS_SYSTEM_GROUP_SIZE);
+>  	BUG_ON(ret);
+>  
+> -	ret = btrfs_alloc_chunk(trans, root->fs_info->extent_root,
+> -				&chunk_start, &chunk_size,
+> -				BTRFS_BLOCK_GROUP_METADATA);
+> -	BUG_ON(ret);
+> -	ret = btrfs_make_block_group(trans, root, 0,
+> -				     BTRFS_BLOCK_GROUP_METADATA,
+> -				     BTRFS_FIRST_CHUNK_TREE_OBJECTID,
+> -				     chunk_start, chunk_size);
+> -	BUG_ON(ret);
+> +	if (mixed) {
+> +		ret = btrfs_alloc_chunk(trans, root->fs_info->extent_root,
+> +					&chunk_start, &chunk_size,
+> +					BTRFS_BLOCK_GROUP_METADATA |
+> +					BTRFS_BLOCK_GROUP_DATA);
+> +		BUG_ON(ret);
+> +		ret = btrfs_make_block_group(trans, root, 0,
+> +					     BTRFS_BLOCK_GROUP_METADATA |
+> +					     BTRFS_BLOCK_GROUP_DATA,
+> +					     BTRFS_FIRST_CHUNK_TREE_OBJECTID,
+> +					     chunk_start, chunk_size);
+> +		BUG_ON(ret);
+> +		printf("Created a data/metadata chunk of size %llu\n", chunk_size);
+> +	} else {
+> +		ret = btrfs_alloc_chunk(trans, root->fs_info->extent_root,
+> +					&chunk_start, &chunk_size,
+> +					BTRFS_BLOCK_GROUP_METADATA);
+> +		BUG_ON(ret);
+> +		ret = btrfs_make_block_group(trans, root, 0,
+> +					     BTRFS_BLOCK_GROUP_METADATA,
+> +					     BTRFS_FIRST_CHUNK_TREE_OBJECTID,
+> +					     chunk_start, chunk_size);
+> +		BUG_ON(ret);
+> +	}
+>  
+>  	root->fs_info->system_allocs = 0;
+>  	btrfs_commit_transaction(trans, root);
+>  	trans = btrfs_start_transaction(root, 1);
+>  	BUG_ON(!trans);
+>  
+> -	ret = btrfs_alloc_chunk(trans, root->fs_info->extent_root,
+> -				&chunk_start, &chunk_size,
+> -				BTRFS_BLOCK_GROUP_DATA);
+> -	BUG_ON(ret);
+> -	ret = btrfs_make_block_group(trans, root, 0,
+> -				     BTRFS_BLOCK_GROUP_DATA,
+> -				     BTRFS_FIRST_CHUNK_TREE_OBJECTID,
+> -				     chunk_start, chunk_size);
+> -	BUG_ON(ret);
+> +	if (!mixed) {
+> +		ret = btrfs_alloc_chunk(trans, root->fs_info->extent_root,
+> +					&chunk_start, &chunk_size,
+> +					BTRFS_BLOCK_GROUP_DATA);
+> +		BUG_ON(ret);
+> +		ret = btrfs_make_block_group(trans, root, 0,
+> +					     BTRFS_BLOCK_GROUP_DATA,
+> +					     BTRFS_FIRST_CHUNK_TREE_OBJECTID,
+> +					     chunk_start, chunk_size);
+> +		BUG_ON(ret);
+> +	}
+>  
+>  	ret = btrfs_make_root_dir(trans, root->fs_info->tree_root,
+>  			      BTRFS_ROOT_TREE_DIR_OBJECTID);
+> @@ -200,7 +217,7 @@ static int create_one_raid_group(struct btrfs_trans_handle *trans,
+>  
+>  static int create_raid_groups(struct btrfs_trans_handle *trans,
+>  			      struct btrfs_root *root, u64 data_profile,
+> -			      u64 metadata_profile)
+> +			      u64 metadata_profile, int mixed)
+>  {
+>  	u64 num_devices = btrfs_super_num_devices(&root->fs_info->super_copy);
+>  	u64 allowed;
+> @@ -215,20 +232,24 @@ static int create_raid_groups(struct btrfs_trans_handle *trans,
+>  		allowed = BTRFS_BLOCK_GROUP_RAID0 | BTRFS_BLOCK_GROUP_RAID1;
+>  
+>  	if (allowed & metadata_profile) {
+> +		u64 meta_flags = BTRFS_BLOCK_GROUP_METADATA;
+> +
+>  		ret = create_one_raid_group(trans, root,
+>  					    BTRFS_BLOCK_GROUP_SYSTEM |
+>  					    (allowed & metadata_profile));
+>  		BUG_ON(ret);
+>  
+> -		ret = create_one_raid_group(trans, root,
+> -					    BTRFS_BLOCK_GROUP_METADATA |
+> +		if (mixed)
+> +			meta_flags |= BTRFS_BLOCK_GROUP_DATA;
+> +
+> +		ret = create_one_raid_group(trans, root, meta_flags |
+>  					    (allowed & metadata_profile));
+>  		BUG_ON(ret);
+>  
+>  		ret = recow_roots(trans, root);
+>  		BUG_ON(ret);
+>  	}
+> -	if (num_devices > 1 && (allowed & data_profile)) {
+> +	if (!mixed && num_devices > 1 && (allowed & data_profile)) {
+>  		ret = create_one_raid_group(trans, root,
+>  					    BTRFS_BLOCK_GROUP_DATA |
+>  					    (allowed & data_profile));
+> @@ -274,6 +295,7 @@ static void print_usage(void)
+>  	fprintf(stderr, "\t -l --leafsize size of btree leaves\n");
+>  	fprintf(stderr, "\t -L --label set a label\n");
+>  	fprintf(stderr, "\t -m --metadata metadata profile, values like data profile\n");
+> +	fprintf(stderr, "\t -M --mixed mix metadata and data together\n");
+>  	fprintf(stderr, "\t -n --nodesize size of btree nodes\n");
+>  	fprintf(stderr, "\t -s --sectorsize min block allocation\n");
+>  	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
+> @@ -328,6 +350,7 @@ static struct option long_options[] = {
+>  	{ "leafsize", 1, NULL, 'l' },
+>  	{ "label", 1, NULL, 'L'},
+>  	{ "metadata", 1, NULL, 'm' },
+> +	{ "mixed", 0, NULL, 'M' },
+>  	{ "nodesize", 1, NULL, 'n' },
+>  	{ "sectorsize", 1, NULL, 's' },
+>  	{ "data", 1, NULL, 'd' },
+> @@ -358,10 +381,13 @@ int main(int ac, char **av)
+>  	int first_fd;
+>  	int ret;
+>  	int i;
+> +	int mixed = 0;
+> +	int data_profile_opt = 0;
+> +	int metadata_profile_opt = 0;
+>  
+>  	while(1) {
+>  		int c;
+> -		c = getopt_long(ac, av, "A:b:l:n:s:m:d:L:V", long_options,
+> +		c = getopt_long(ac, av, "A:b:l:n:s:m:d:L:VM", long_options,
+>  				&option_index);
+>  		if (c < 0)
+>  			break;
+> @@ -371,6 +397,7 @@ int main(int ac, char **av)
+>  				break;
+>  			case 'd':
+>  				data_profile = parse_profile(optarg);
+> +				data_profile_opt = 1;
+>  				break;
+>  			case 'l':
+>  				leafsize = parse_size(optarg);
+> @@ -380,6 +407,10 @@ int main(int ac, char **av)
+>  				break;
+>  			case 'm':
+>  				metadata_profile = parse_profile(optarg);
+> +				metadata_profile_opt = 1;
+> +				break;
+> +			case 'M':
+> +				mixed = 1;
+>  				break;
+>  			case 'n':
+>  				nodesize = parse_size(optarg);
+> @@ -389,12 +420,10 @@ int main(int ac, char **av)
+>  				break;
+>  			case 'b':
+>  				block_count = parse_size(optarg);
+> -				if (block_count < 256*1024*1024) {
+> -					fprintf(stderr, "File system size "
+> -						"%llu bytes is too small, "
+> -						"256M is required at least\n",
+> -						(unsigned long long)block_count);
+> -					exit(1);
+> +				if (block_count <= 1024*1024*1024) {
+> +					printf("SMALL VOLUME: forcing mixed "
+> +					       "metadata/data groups\n");
+> +					mixed = 1;
+>  				}
+>  				zero_end = 0;
+>  				break;
+> @@ -439,9 +468,22 @@ int main(int ac, char **av)
+>  	}
+>  	first_fd = fd;
+>  	first_file = file;
+> -	ret = btrfs_prepare_device(fd, file, zero_end, &dev_block_count);
+> +	ret = btrfs_prepare_device(fd, file, zero_end, &dev_block_count,
+> +				   &mixed);
+>  	if (block_count == 0)
+>  		block_count = dev_block_count;
+> +	if (mixed) {
+> +		if (!metadata_profile_opt)
+> +			metadata_profile = 0;
+> +		if (!data_profile_opt)
+> +			data_profile = 0;
+> +
+> +		if (metadata_profile != data_profile) {
+> +			fprintf(stderr, "With mixed block groups data and metadata "
+> +				"profiles must be the same\n");
+> +			exit(1);
+> +		}
+> +	}
+>  
+>  	blocks[0] = BTRFS_SUPER_INFO_OFFSET;
+>  	for (i = 1; i < 7; i++) {
+> @@ -459,7 +501,7 @@ int main(int ac, char **av)
+>  	root = open_ctree(file, 0, O_RDWR);
+>  	root->fs_info->alloc_start = alloc_start;
+>  
+> -	ret = make_root_dir(root);
+> +	ret = make_root_dir(root, mixed);
+>  	if (ret) {
+>  		fprintf(stderr, "failed to setup the root directory\n");
+>  		exit(1);
+> @@ -478,6 +520,8 @@ int main(int ac, char **av)
+>  
+>  	zero_end = 1;
+>  	while(ac-- > 0) {
+> +		int old_mixed = mixed;
+> +
+>  		file = av[optind++];
+>  		ret = check_mounted(file);
+>  		if (ret < 0) {
+> @@ -503,8 +547,8 @@ int main(int ac, char **av)
+>  			continue;
+>  		}
+>  		ret = btrfs_prepare_device(fd, file, zero_end,
+> -					   &dev_block_count);
+> -
+> +					   &dev_block_count, &mixed);
+> +		mixed = old_mixed;
+>  		BUG_ON(ret);
+>  
+>  		ret = btrfs_add_to_fsid(trans, root, fd, file, dev_block_count,
+> @@ -515,12 +559,20 @@ int main(int ac, char **av)
+>  
+>  raid_groups:
+>  	ret = create_raid_groups(trans, root, data_profile,
+> -				 metadata_profile);
+> +				 metadata_profile, mixed);
+>  	BUG_ON(ret);
+>  
+>  	ret = create_data_reloc_tree(trans, root);
+>  	BUG_ON(ret);
+>  
+> +	if (mixed) {
+> +		struct btrfs_super_block *super = &root->fs_info->super_copy;
+> +		u64 flags = btrfs_super_incompat_flags(super);
+> +
+> +		flags |= BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS;
+> +		btrfs_set_super_incompat_flags(super, flags);
+> +	}
+> +
+>  	printf("fs created label %s on %s\n\tnodesize %u leafsize %u "
+>  	    "sectorsize %u size %s\n",
+>  	    label, first_file, nodesize, leafsize, sectorsize,
+> diff --git a/utils.c b/utils.c
+> index b890728..13d31b7 100644
+> --- a/utils.c
+> +++ b/utils.c
+> @@ -508,7 +508,8 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
+>  	return 0;
+>  }
+>  
+> -int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret)
+> +int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret,
+> +			 int *mixed)
+>  {
+>  	u64 block_count;
+>  	u64 bytenr;
+> @@ -528,10 +529,9 @@ int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret)
+>  	}
+>  	zero_end = 1;
+>  
+> -	if (block_count < 256 * 1024 * 1024) {
+> -		fprintf(stderr, "device %s is too small "
+> -		        "(must be at least 256 MB)\n", file);
+> -		exit(1);
+> +	if (block_count < 1024 * 1024 * 1024 && !(*mixed)) {
+> +		printf("SMALL VOLUME: forcing mixed metadata/data groups\n");
+> +		*mixed = 1;
+>  	}
+>  	ret = zero_dev_start(fd);
+>  	if (ret) {
+> diff --git a/utils.h b/utils.h
+> index 7ff542b..b91140e 100644
+> --- a/utils.h
+> +++ b/utils.h
+> @@ -27,7 +27,7 @@ int make_btrfs(int fd, const char *device, const char *label,
+>  int btrfs_make_root_dir(struct btrfs_trans_handle *trans,
+>  			struct btrfs_root *root, u64 objectid);
+>  int btrfs_prepare_device(int fd, char *file, int zero_end,
+> -			 u64 *block_count_ret);
+> +			 u64 *block_count_ret, int *mixed);
+>  int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
+>  		      struct btrfs_root *root, int fd, char *path,
+>  		      u64 block_count, u32 io_width, u32 io_align,
 
-        return ret;
-}
-=2E.................................................
-
-
-
-
-1.log1
-
-=2E.....................................................
-[  147.740003] CE: hpet5 increased min_delta_ns to 7500 nsec
-[  147.740012] CE: hpet5 increased min_delta_ns to 11250 nsec
-[  148.520005] CE: hpet4 increased min_delta_ns to 7500 nsec
-[  148.520012] CE: hpet4 increased min_delta_ns to 11250 nsec
-[ 2561.740727] ------------[ cut here ]------------
-[ 2561.740746] WARNING: at fs/btrfs/inode.c:2177
-btrfs_orphan_commit_root+0xb0/0xc0 [btrfs]()
-[ 2561.740748] Hardware name: OptiPlex 780                =20
-[ 2561.740750] Modules linked in: i915 btrfs fbcon tileblit font
-snd_hda_codec_analog bitblit softcursor drm_kms_helper drm snd_hda_inte=
-l
-snd_hda_codec snd_hwdep snd_pcm zlib_deflate crc32c snd_timer libcrc32c
-snd psmouse i2c_algo_bit ppdev intel_agp parport_pc soundcore lp
-intel_gtt snd_page_alloc video dell_wmi parport serio_raw sparse_keymap
-r8169 mii ata_piix
-[ 2561.740781] Pid: 570, comm: btrfs-transacti Not tainted 2.6.39-rc1 #=
-2
-[ 2561.740783] Call Trace:
-[ 2561.740789]  [<ffffffff8105fe9f>] warn_slowpath_common+0x7f/0xc0
-[ 2561.740793]  [<ffffffff8105fefa>] warn_slowpath_null+0x1a/0x20
-[ 2561.740803]  [<ffffffffa01ddc50>] btrfs_orphan_commit_root+0xb0/0xc0
-[btrfs]
-[ 2561.740813]  [<ffffffffa01d90e9>] commit_fs_roots+0xa9/0x150 [btrfs]
-[ 2561.740824]  [<ffffffffa01da03b>] btrfs_commit_transaction
-+0x34b/0x750 [btrfs]
-[ 2561.740828]  [<ffffffff810837e0>] ? wake_up_bit+0x40/0x40
-[ 2561.740838]  [<ffffffffa01d35f3>] transaction_kthread+0x283/0x290
-[btrfs]
-[ 2561.740848]  [<ffffffffa01d3370>] ? btrfs_bio_wq_end_io+0x90/0x90
-[btrfs]
-[ 2561.740851]  [<ffffffff81083276>] kthread+0xb6/0xc0
-[ 2561.740854]  [<ffffffff81099dad>] ? trace_hardirqs_on_caller
-+0x13d/0x180
-[ 2561.740859]  [<ffffffff815b5ea4>] kernel_thread_helper+0x4/0x10
-[ 2561.740862]  [<ffffffff815acf14>] ? retint_restore_args+0x13/0x13
-[ 2561.740865]  [<ffffffff810831c0>] ? __init_kthread_worker+0x70/0x70
-[ 2561.740868]  [<ffffffff815b5ea0>] ? gs_change+0x13/0x13
-[ 2561.740870] ---[ end trace c68c126da4200e73 ]---
-[ 2655.461017]=20
-[ 2655.461019] =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D
-[ 2655.467908] [ INFO: possible recursive locking detected ]
-[ 2655.470882] 2.6.39-rc1 #2
-[ 2655.470882] ---------------------------------------------
-[ 2655.470882] cosd/2420 is trying to acquire lock:
-[ 2655.470882]  (&(&eb->lock)->rlock){+.+...}, at: [<ffffffffa020d5f9>]
-btrfs_try_spin_lock+0x59/0x100 [btrfs]
-[ 2655.470882]=20
-[ 2655.470882] but task is already holding lock:
-[ 2655.470882]  (&(&eb->lock)->rlock){+.+...}, at: [<ffffffffa020d6c2>]
-btrfs_clear_lock_blocking+0x22/0x30 [btrfs]
-[ 2655.470882]=20
-[ 2655.470882] other info that might help us debug this:
-[ 2655.470882] 2 locks held by cosd/2420:
-[ 2655.470882]  #0:  (&sb->s_type->i_mutex_key#13){+.+.+.}, at:
-[<ffffffff811694e5>] do_last+0x2f5/0x8a0
-[ 2655.470882]  #1:  (&(&eb->lock)->rlock){+.+...}, at:
-[<ffffffffa020d6c2>] btrfs_clear_lock_blocking+0x22/0x30 [btrfs]
-[ 2655.470882]=20
-[ 2655.470882] stack backtrace:
-[ 2655.470882] Pid: 2420, comm: cosd Tainted: G        W   2.6.39-rc1 #=
-2
-[ 2655.470882] Call Trace:
-[ 2655.470882]  [<ffffffff8109b224>] __lock_acquire+0x1154/0x14b0
-[ 2655.470882]  [<ffffffff8109b620>] lock_acquire+0xa0/0x150
-[ 2655.470882]  [<ffffffffa020d5f9>] ? btrfs_try_spin_lock+0x59/0x100
-[btrfs]
-[ 2655.470882]  [<ffffffff815ac341>] _raw_spin_lock+0x31/0x40
-[ 2655.470882]  [<ffffffffa020d5f9>] ? btrfs_try_spin_lock+0x59/0x100
-[btrfs]
-[ 2655.470882]  [<ffffffffa020d6c2>] ? btrfs_clear_lock_blocking
-+0x22/0x30 [btrfs]
-[ 2655.470882]  [<ffffffffa020d5f9>] btrfs_try_spin_lock+0x59/0x100
-[btrfs]
-[ 2655.470882]  [<ffffffffa01bee72>] btrfs_search_slot+0x7d2/0x850
-[btrfs]
-[ 2655.470882]  [<ffffffffa01cfa02>] btrfs_lookup_dir_item+0x82/0x110
-[btrfs]
-[ 2655.470882]  [<ffffffff8114e525>] ? kmem_cache_alloc+0xe5/0x140
-[ 2655.470882]  [<ffffffffa01e2b81>] btrfs_lookup_dentry+0xa1/0x4b0
-[btrfs]
-[ 2655.470882]  [<ffffffff81171911>] ? d_alloc+0x141/0x1e0
-[ 2655.470882]  [<ffffffff81099dfd>] ? trace_hardirqs_on+0xd/0x10
-[ 2655.470882]  [<ffffffff812e63ee>] ? do_raw_spin_unlock+0x5e/0xb0
-[ 2655.470882]  [<ffffffffa01e2fa6>] btrfs_lookup+0x16/0x30 [btrfs]
-[ 2655.470882]  [<ffffffff81166ba5>] d_alloc_and_lookup+0x45/0x90
-[ 2655.470882]  [<ffffffff81172195>] ? d_lookup+0x35/0x60
-[ 2655.470882]  [<ffffffff81166cce>] __lookup_hash+0xde/0x180
-[ 2655.470882]  [<ffffffff811694f5>] do_last+0x305/0x8a0
-[ 2655.470882]  [<ffffffff8116a9fd>] path_openat+0xcd/0x3f0
-[ 2655.470882]  [<ffffffff8116ae6f>] do_filp_open+0x7f/0xa0
-[ 2655.470882]  [<ffffffff815acb9b>] ? _raw_spin_unlock+0x2b/0x40
-[ 2655.470882]  [<ffffffff81178e4a>] ? alloc_fd+0xfa/0x140
-[ 2655.470882]  [<ffffffff8115b684>] do_sys_open+0x104/0x1e0
-[ 2655.470882]  [<ffffffff8115b7a0>] sys_open+0x20/0x30
-[ 2655.470882]  [<ffffffff815b4d02>] system_call_fastpath+0x16/0x1b
-
-2.log2
-
-=2E..............................................................
-
-[  156.240012] CE: hpet2 increased min_delta_ns to 11250 nsec
-[  167.490003] CE: hpet4 increased min_delta_ns to 7500 nsec
-[  167.490010] CE: hpet4 increased min_delta_ns to 11250 nsec
-[ 2601.060330] ------------[ cut here ]------------
-[ 2601.060347] WARNING: at fs/btrfs/inode.c:2177
-btrfs_orphan_commit_root+0xb0/0xc0 [btrfs]()
-[ 2601.060349] Hardware name: OptiPlex 780                =20
-[ 2601.060350] Modules linked in: btrfs zlib_deflate crc32c libcrc32c
-i915 snd_hda_codec_analog fbcon tileblit font bitblit softcursor
-drm_kms_helper drm snd_hda_intel snd_hda_codec snd_hwdep snd_pcm
-snd_timer snd soundcore psmouse i2c_algo_bit snd_page_alloc lp intel_ag=
-p
-ppdev video intel_gtt parport_pc dell_wmi parport serio_raw
-sparse_keymap dcdbas r8169 mii
-[ 2601.060435] Pid: 586, comm: btrfs-transacti Not tainted 2.6.39-rc1 #=
-2
-[ 2601.060436] Call Trace:
-[ 2601.060443]  [<ffffffff8105f13f>] warn_slowpath_common+0x7f/0xc0
-[ 2601.060446]  [<ffffffff8105f19a>] warn_slowpath_null+0x1a/0x20
-[ 2601.060456]  [<ffffffffa024cb20>] btrfs_orphan_commit_root+0xb0/0xc0
-[btrfs]
-[ 2601.060466]  [<ffffffffa0248011>] commit_fs_roots+0xa1/0x140 [btrfs]
-[ 2601.060476]  [<ffffffffa0248f39>] btrfs_commit_transaction
-+0x349/0x750 [btrfs]
-[ 2601.060480]  [<ffffffff81081810>] ? wake_up_bit+0x40/0x40
-[ 2601.060489]  [<ffffffffa02425d3>] transaction_kthread+0x283/0x290
-[btrfs]
-[ 2601.060499]  [<ffffffffa0242350>] ? btrfs_bio_wq_end_io+0x90/0x90
-[btrfs]
-[ 2601.060508]  [<ffffffffa0242350>] ? btrfs_bio_wq_end_io+0x90/0x90
-[btrfs]
-[ 2601.060511]  [<ffffffff810812d6>] kthread+0x96/0xa0
-[ 2601.060514]  [<ffffffff815a6364>] kernel_thread_helper+0x4/0x10
-[ 2601.060517]  [<ffffffff81081240>] ? __init_kthread_worker+0x40/0x40
-[ 2601.060519]  [<ffffffff815a6360>] ? gs_change+0x13/0x13
-[ 2601.060521] ---[ end trace 4b0b0e47058a9a99 ]---
-
-
-
-
-
-
-
-
-
-
-
-=E5=9C=A8 2011-04-08=E4=BA=94=E7=9A=84 00:20 +0800=EF=BC=8CJosef Bacik=E5=
-=86=99=E9=81=93=EF=BC=9A
-> On 04/07/2011 05:41 AM, Jeff Wu wrote:
-> > Hi ,
-> > I run iozone stress test on a ceph client for x86_64, ceph 0.26 +
-> > linux-2.6.39-rc1 server,
-> > printk "WARNING: at fs/btrfs/inode.c:2177"
-> >
-> Crap I was hoping I had fixed this, could you run with this debug pat=
-ch=20
-> and get me the output so I can figure out what's going on?  Thanks,
->=20
-> Josef
->=20
->=20
-
---
-To unsubscribe from this list: send the line "unsubscribe ceph-devel" i=
-n
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

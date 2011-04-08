@@ -1,71 +1,60 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH v4 1/8] btrfs: Balance progress monitoring
-Date: Fri, 8 Apr 2011 18:00:38 +0200
-Message-ID: <20110408160037.GD31675@twin.jikos.cz>
-References: <1302195975-3088-1-git-send-email-hugo@carfax.org.uk>
- <1302195975-3088-2-git-send-email-hugo@carfax.org.uk>
- <20110408131221.GL31675@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: check for duplicate iov_base's when doing dio reads
+Date: Fri,  8 Apr 2011 11:51:18 -0400
+Message-ID: <1302277878-15975-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110408131221.GL31675@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> a missing check ...
-ah, forget it, 
+Apparently it is ok to submit a read to an IDE device with the same target page
+for different offsets.  This is what Windows does under qemu.  The problem is
+under DIO we expect them to be different buffers for checksumming reasons, and
+so this sort of thing will result in checksum errors, when in reality the file
+is fine.  So when reading, check to make sure that all iov bases are different,
+and if they aren't fall back to buffered mode, since that will work out right.
+Thanks,
 
-On Fri, Apr 08, 2011 at 03:12:21PM +0200, David Sterba wrote:
-> > diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> > index 5fdb2ab..a8fbb07 100644
-> > --- a/fs/btrfs/ioctl.c
-> > +++ b/fs/btrfs/ioctl.c
-> > @@ -2375,6 +2375,38 @@ static noinline long btrfs_ioctl_wait_sync(struct file *file, void __user *argp)
-> >  	return btrfs_wait_for_commit(root, transid);
-> >  }
-> >  
-> > +/*
-> > + * Return the current status of any balance operation
-> > + */
-> > +long btrfs_ioctl_balance_progress(
-> > +	struct btrfs_fs_info *fs_info,
-> > +	struct btrfs_ioctl_balance_progress __user *user_dest)
-> > +{
-> > +	int ret = 0;
-> > +	struct btrfs_ioctl_balance_progress dest;
-> 
->         if (!access_ok(VERIFY_WRITE, user_dest, sizeof(*user_dest)))
-> 	        return -EFAULT;
-pointless of course ...
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/inode.c |   17 ++++++++++++++++-
+ 1 files changed, 16 insertions(+), 1 deletions(-)
 
-> 
-> > +
-> > +	spin_lock(&fs_info->balance_info_lock);
-> > +	if (!fs_info->balance_info) {
-> > +		ret = -EINVAL;
-> > +		goto error;
-> > +	}
-> > +
-> > +	dest.expected = fs_info->balance_info->expected;
-> > +	dest.completed = fs_info->balance_info->completed;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 032e8fb..c4b914e 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6205,6 +6205,7 @@ static ssize_t check_direct_IO(struct btrfs_root *root, int rw, struct kiocb *io
+ 			unsigned long nr_segs)
+ {
+ 	int seg;
++	int i;
+ 	size_t size;
+ 	unsigned long addr;
+ 	unsigned blocksize_mask = root->sectorsize - 1;
+@@ -6219,8 +6220,22 @@ static ssize_t check_direct_IO(struct btrfs_root *root, int rw, struct kiocb *io
+ 		addr = (unsigned long)iov[seg].iov_base;
+ 		size = iov[seg].iov_len;
+ 		end += size;
+-		if ((addr & blocksize_mask) || (size & blocksize_mask)) 
++		if ((addr & blocksize_mask) || (size & blocksize_mask))
+ 			goto out;
++
++		/* If this is a write we don't need to check anymore */
++		if (rw & WRITE)
++			continue;
++
++		/*
++		 * Check to make sure we don't have duplicate iov_base's in this
++		 * iovec, if so return EINVAL, otherwise we'll get csum errors
++		 * when reading back.
++		 */
++		for (i = seg + 1; i < nr_segs; i++) {
++			if (iov[seg].iov_base == iov[i].iov_base)
++				goto out;
++		}
+ 	}
+ 	retval = 0;
+ out:
+-- 
+1.7.2.3
 
-this is _not_ the user supplied pointer
-
-> > +
-> > +	spin_unlock(&fs_info->balance_info_lock);
-> > +
-> > +	if (copy_to_user(user_dest, &dest,
-> > +			 sizeof(struct btrfs_ioctl_balance_progress)))
-> > +		return -EFAULT;
-> > +
-> > +	return 0;
-> > +
-> > +error:
-> > +	spin_unlock(&fs_info->balance_info_lock);
-> > +	return ret;
-> > +}
-> > +
-> >  long btrfs_ioctl(struct file *file, unsigned int
-> >  		cmd, unsigned long arg)
-> >  {

@@ -1,174 +1,226 @@
-From: Daniel J Blueman <daniel.blueman@gmail.com>
-Subject: Re: 2.6.29-rc2 oops and assertion failure...
-Date: Fri, 8 Apr 2011 10:26:52 +0800
-Message-ID: <BANLkTinm0eNdDWH42MB6VnYAdOOGi0P-bw@mail.gmail.com>
-References: <BANLkTikJJFqEs0F_wPdTinct0k_4uLh1hQ@mail.gmail.com>
-	<4D9DE4F2.1050909@redhat.com>
+From: Jeff Wu <cpwu@tnsoft.com.cn>
+Subject: Re: 2.6.39-rc1: btrfs "WARNING: at fs/btrfs/inode.c:2177"
+Date: Fri, 8 Apr 2011 13:53:20 +0800
+Message-ID: <1302242000.2014.14.camel@cephhost>
+References: <1302169286.1922.19.camel@cephhost>
+	 <4D9DE43F.3000809@redhat.com>
+Reply-To: <cpwu@tnsoft.com.cn>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Linux BTRFS <linux-btrfs@vger.kernel.org>
-To: Josef Bacik <josef@redhat.com>,
-	Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D9DE4F2.1050909@redhat.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: ceph-devel <ceph-devel@vger.kernel.org>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Josef Bacik <josef@redhat.com>
+Return-path: <ceph-devel-owner@vger.kernel.org>
+In-Reply-To: <4D9DE43F.3000809@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Josef, Chris,
 
-On 8 April 2011 00:23, Josef Bacik <josef@redhat.com> wrote:
-> On 04/07/2011 03:21 AM, Daniel J Blueman wrote:
->>
->> When running a practical stress-test on 2.6.29-rc2 trying to reproduce
->> an older (extent refcounting) issue, I am consistently able to hit an
->> oops [] and an assertion failure [].
->
-> Sorry about that, please apply the patch I just sent this morning
->
-> [PATCH] Btrfs: deal with the case that we run out of space in the cache
+Hi ,
+I applied the patch to 2.6.39-rc1,took the following steps to compile
+it:make && make modules_install && make install && mkinitramfs=20
+but , it seam that it don't run to "WARN_ON(block_rsv =3D=3D
+root->orphan_block_rsv);"
 
-Superb work - the btrfs_write_out_cache oops is addressed, so now we
-(separately) hit a few other assertions at: volumes.c:2013 [1],
-volumes.c:2063 [2] and volumes.c:2703 [3] with the previous
-reproducer.
+i attached the codes and logs at the below:
 
-Let me know if adding any debugging or other testing may be useful.
 
-Thanks,
-  Daniel
+=2E...........................................
+int btrfs_block_rsv_add(struct btrfs_trans_handle *trans,
+                        struct btrfs_root *root,
+                        struct btrfs_block_rsv *block_rsv,
+                        u64 num_bytes)
+{
+        int ret;
 
---- [1]
+        WARN_ON(block_rsv =3D=3D root->orphan_block_rsv);
+        if (num_bytes =3D=3D 0)
+                return 0;
 
-kernel BUG at fs/btrfs/volumes.c:2013!
-invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
-last sysfs file: /sys/devices/virtual/block/ram7/removable
-CPU 0
-Modules linked in: ppp_generic slhc tun brd loop
+        ret =3D reserve_metadata_bytes(trans, root, block_rsv, num_byte=
+s,
+1);
+        if (!ret) {
+                block_rsv_add_bytes(block_rsv, num_bytes, 1);
+                return 0;
+        }
 
-Pid: 17040, comm: btrfs Tainted: G        W   2.6.39-rc2-350cd+ #3
-Supermicro X8STi/X8STi
-RIP: 0010:[<ffffffff812c214b>]  [<ffffffff812c214b>] btrfs_balance+0x27b/0x280
-RSP: 0018:ffff88015c923e08  EFLAGS: 00010282
-RAX: 00000000fffffffb RBX: ffff880301d6e1b0 RCX: 0000000000000040
-RDX: 00000000fffffffb RSI: 0000000000000000 RDI: ffffffff8112e425
-RBP: ffff88015c923e88 R08: 0000000000000000 R09: ffff8802f8ee53f0
-R10: 0000000000000012 R11: 0000000000000098 R12: ffff8802f909a490
-R13: ffff8802f909bc38 R14: 0000000010000000 R15: 00007fffd1599ce0
-FS:  00007f3c4b6f4740(0000) GS:ffff88031fc00000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-CR2: 0000000000f00098 CR3: 000000015c921000 CR4: 00000000000006f0
-DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-Process btrfs (pid: 17040, threadinfo ffff88015c922000, task ffff88030b898000)
-Stack:
- ffff880307cd5498 ffff880301d6c120 ffff88015c923e38 ffffffff81085b9e
- ffff880308a5d700 0000000000000008 ffff88015c923f48 ffffffff81031d5c
- ffffea000a9e7b40 ffff88015c923f58 ffff88030b898000 ffff88015c8aa300
-Call Trace:
- [<ffffffff81085b9e>] ? up_read+0x1e/0x40
- [<ffffffff81031d5c>] ? do_page_fault+0x1cc/0x440
- [<ffffffff812c9ec0>] btrfs_ioctl+0x450/0x590
- [<ffffffff81152e8d>] do_vfs_ioctl+0x8d/0x330
- [<ffffffff81141444>] ? fget_light+0x274/0x3c0
- [<ffffffff81106cc0>] ? __do_fault+0x150/0x5d0
- [<ffffffff8115317a>] sys_ioctl+0x4a/0x80
- [<ffffffff8170a03b>] system_call_fastpath+0x16/0x1b
-Code: 81 c7 d8 22 00 00 e8 05 4b 44 00 8b 45 80 e9 e7 fd ff ff 31 c0
-eb d2 85 c0 74 a7 0f 0b eb fe 0f 0b eb fe 0f 0b eb fe 0f 0b eb fe <0f>
-0b eb fe 90 55 48 89 e5 48 83 ec 40 8b 05 e2 62 72 00 4c 89
-RIP  [<ffffffff812c214b>] btrfs_balance+0x27b/0x280
- RSP <ffff88015c923e08>
+        return ret;
+}
+=2E.................................................
 
---- [2]
 
-kernel BUG at fs/btrfs/volumes.c:2063!
-invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
-last sysfs file: /sys/devices/virtual/block/ram7/removable
-CPU 0
-Modules linked in: brd loop
 
-Pid: 13460, comm: btrfs Tainted: G        W   2.6.39-rc2-350cd+ #3
-Supermicro X8STi/X8STi
-RIP: 0010:[<ffffffff812c213b>]  [<ffffffff812c213b>] btrfs_balance+0x26b/0x280
-RSP: 0018:ffff8800b1827e08  EFLAGS: 00010282
-RAX: 00000000fffffffb RBX: ffff88030934d168 RCX: 0000000000000006
-RDX: 00000000fffffffb RSI: ffff880308fc06f0 RDI: ffff880308fc0000
-RBP: ffff8800b1827e88 R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000000 R12: ffff8802ff5455e8
-R13: ffff8800b1827e38 R14: 000000010d560000 R15: ffff8800b1827e18
-FS:  00007fce737e5740(0000) GS:ffff88031fc00000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-CR2: 0000000002371688 CR3: 00000000b1ff8000 CR4: 00000000000006f0
-DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-Process btrfs (pid: 13460, threadinfo ffff8800b1826000, task ffff880308fc0000)
-Stack:
- 0000000000000100 ffff88030934e1b0 0000000000000100 0000010d560000e4
- ffff880308837a00 0000000000000008 0000000000000100 00000113bbffffe4
- ffff880308fc0600 ffff8800b1827f58 ffff880308fc0000 ffff8801f8c56c00
-Call Trace:
- [<ffffffff812c9ec0>] btrfs_ioctl+0x450/0x590
- [<ffffffff81152e8d>] do_vfs_ioctl+0x8d/0x330
- [<ffffffff8114148f>] ? fget_light+0x2bf/0x3c0
- [<ffffffff8109629d>] ? trace_hardirqs_on_caller+0x14d/0x190
- [<ffffffff8115317a>] sys_ioctl+0x4a/0x80
- [<ffffffff8170a03b>] system_call_fastpath+0x16/0x1b
-Code: 7c 90 fb ff 48 8b 55 88 48 8b ba 58 01 00 00 48 81 c7 d8 22 00
-00 e8 05 4b 44 00 8b 45 80 e9 e7 fd ff ff 31 c0 eb d2 85 c0 74 a7 <0f>
-0b eb fe 0f 0b eb fe 0f 0b eb fe 0f 0b eb fe 0f 0b eb fe 90
-RIP  [<ffffffff812c213b>] btrfs_balance+0x26b/0x280
- RSP <ffff8800b1827e08>
 
---- [3]
+1.log1
 
-kernel BUG at fs/btrfs/volumes.c:2703!
-invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
-last sysfs file: /sys/devices/virtual/bdi/btrfs-3/uevent
-CPU 0
-Modules linked in: brd loop
+=2E.....................................................
+[  147.740003] CE: hpet5 increased min_delta_ns to 7500 nsec
+[  147.740012] CE: hpet5 increased min_delta_ns to 11250 nsec
+[  148.520005] CE: hpet4 increased min_delta_ns to 7500 nsec
+[  148.520012] CE: hpet4 increased min_delta_ns to 11250 nsec
+[ 2561.740727] ------------[ cut here ]------------
+[ 2561.740746] WARNING: at fs/btrfs/inode.c:2177
+btrfs_orphan_commit_root+0xb0/0xc0 [btrfs]()
+[ 2561.740748] Hardware name: OptiPlex 780                =20
+[ 2561.740750] Modules linked in: i915 btrfs fbcon tileblit font
+snd_hda_codec_analog bitblit softcursor drm_kms_helper drm snd_hda_inte=
+l
+snd_hda_codec snd_hwdep snd_pcm zlib_deflate crc32c snd_timer libcrc32c
+snd psmouse i2c_algo_bit ppdev intel_agp parport_pc soundcore lp
+intel_gtt snd_page_alloc video dell_wmi parport serio_raw sparse_keymap
+r8169 mii ata_piix
+[ 2561.740781] Pid: 570, comm: btrfs-transacti Not tainted 2.6.39-rc1 #=
+2
+[ 2561.740783] Call Trace:
+[ 2561.740789]  [<ffffffff8105fe9f>] warn_slowpath_common+0x7f/0xc0
+[ 2561.740793]  [<ffffffff8105fefa>] warn_slowpath_null+0x1a/0x20
+[ 2561.740803]  [<ffffffffa01ddc50>] btrfs_orphan_commit_root+0xb0/0xc0
+[btrfs]
+[ 2561.740813]  [<ffffffffa01d90e9>] commit_fs_roots+0xa9/0x150 [btrfs]
+[ 2561.740824]  [<ffffffffa01da03b>] btrfs_commit_transaction
++0x34b/0x750 [btrfs]
+[ 2561.740828]  [<ffffffff810837e0>] ? wake_up_bit+0x40/0x40
+[ 2561.740838]  [<ffffffffa01d35f3>] transaction_kthread+0x283/0x290
+[btrfs]
+[ 2561.740848]  [<ffffffffa01d3370>] ? btrfs_bio_wq_end_io+0x90/0x90
+[btrfs]
+[ 2561.740851]  [<ffffffff81083276>] kthread+0xb6/0xc0
+[ 2561.740854]  [<ffffffff81099dad>] ? trace_hardirqs_on_caller
++0x13d/0x180
+[ 2561.740859]  [<ffffffff815b5ea4>] kernel_thread_helper+0x4/0x10
+[ 2561.740862]  [<ffffffff815acf14>] ? retint_restore_args+0x13/0x13
+[ 2561.740865]  [<ffffffff810831c0>] ? __init_kthread_worker+0x70/0x70
+[ 2561.740868]  [<ffffffff815b5ea0>] ? gs_change+0x13/0x13
+[ 2561.740870] ---[ end trace c68c126da4200e73 ]---
+[ 2655.461017]=20
+[ 2655.461019] =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D
+[ 2655.467908] [ INFO: possible recursive locking detected ]
+[ 2655.470882] 2.6.39-rc1 #2
+[ 2655.470882] ---------------------------------------------
+[ 2655.470882] cosd/2420 is trying to acquire lock:
+[ 2655.470882]  (&(&eb->lock)->rlock){+.+...}, at: [<ffffffffa020d5f9>]
+btrfs_try_spin_lock+0x59/0x100 [btrfs]
+[ 2655.470882]=20
+[ 2655.470882] but task is already holding lock:
+[ 2655.470882]  (&(&eb->lock)->rlock){+.+...}, at: [<ffffffffa020d6c2>]
+btrfs_clear_lock_blocking+0x22/0x30 [btrfs]
+[ 2655.470882]=20
+[ 2655.470882] other info that might help us debug this:
+[ 2655.470882] 2 locks held by cosd/2420:
+[ 2655.470882]  #0:  (&sb->s_type->i_mutex_key#13){+.+.+.}, at:
+[<ffffffff811694e5>] do_last+0x2f5/0x8a0
+[ 2655.470882]  #1:  (&(&eb->lock)->rlock){+.+...}, at:
+[<ffffffffa020d6c2>] btrfs_clear_lock_blocking+0x22/0x30 [btrfs]
+[ 2655.470882]=20
+[ 2655.470882] stack backtrace:
+[ 2655.470882] Pid: 2420, comm: cosd Tainted: G        W   2.6.39-rc1 #=
+2
+[ 2655.470882] Call Trace:
+[ 2655.470882]  [<ffffffff8109b224>] __lock_acquire+0x1154/0x14b0
+[ 2655.470882]  [<ffffffff8109b620>] lock_acquire+0xa0/0x150
+[ 2655.470882]  [<ffffffffa020d5f9>] ? btrfs_try_spin_lock+0x59/0x100
+[btrfs]
+[ 2655.470882]  [<ffffffff815ac341>] _raw_spin_lock+0x31/0x40
+[ 2655.470882]  [<ffffffffa020d5f9>] ? btrfs_try_spin_lock+0x59/0x100
+[btrfs]
+[ 2655.470882]  [<ffffffffa020d6c2>] ? btrfs_clear_lock_blocking
++0x22/0x30 [btrfs]
+[ 2655.470882]  [<ffffffffa020d5f9>] btrfs_try_spin_lock+0x59/0x100
+[btrfs]
+[ 2655.470882]  [<ffffffffa01bee72>] btrfs_search_slot+0x7d2/0x850
+[btrfs]
+[ 2655.470882]  [<ffffffffa01cfa02>] btrfs_lookup_dir_item+0x82/0x110
+[btrfs]
+[ 2655.470882]  [<ffffffff8114e525>] ? kmem_cache_alloc+0xe5/0x140
+[ 2655.470882]  [<ffffffffa01e2b81>] btrfs_lookup_dentry+0xa1/0x4b0
+[btrfs]
+[ 2655.470882]  [<ffffffff81171911>] ? d_alloc+0x141/0x1e0
+[ 2655.470882]  [<ffffffff81099dfd>] ? trace_hardirqs_on+0xd/0x10
+[ 2655.470882]  [<ffffffff812e63ee>] ? do_raw_spin_unlock+0x5e/0xb0
+[ 2655.470882]  [<ffffffffa01e2fa6>] btrfs_lookup+0x16/0x30 [btrfs]
+[ 2655.470882]  [<ffffffff81166ba5>] d_alloc_and_lookup+0x45/0x90
+[ 2655.470882]  [<ffffffff81172195>] ? d_lookup+0x35/0x60
+[ 2655.470882]  [<ffffffff81166cce>] __lookup_hash+0xde/0x180
+[ 2655.470882]  [<ffffffff811694f5>] do_last+0x305/0x8a0
+[ 2655.470882]  [<ffffffff8116a9fd>] path_openat+0xcd/0x3f0
+[ 2655.470882]  [<ffffffff8116ae6f>] do_filp_open+0x7f/0xa0
+[ 2655.470882]  [<ffffffff815acb9b>] ? _raw_spin_unlock+0x2b/0x40
+[ 2655.470882]  [<ffffffff81178e4a>] ? alloc_fd+0xfa/0x140
+[ 2655.470882]  [<ffffffff8115b684>] do_sys_open+0x104/0x1e0
+[ 2655.470882]  [<ffffffff8115b7a0>] sys_open+0x20/0x30
+[ 2655.470882]  [<ffffffff815b4d02>] system_call_fastpath+0x16/0x1b
 
-Pid: 14333, comm: btrfs-delalloc- Tainted: G        W
-2.6.39-rc2-350cd+ #3 Supermicro X8STi/X8STi
-RIP: 0010:[<ffffffff812c08c2>]  [<ffffffff812c08c2>]
-__finish_chunk_alloc+0x212/0x220
-RSP: 0018:ffff8803007e7af0  EFLAGS: 00010286
-RAX: 00000000ffffffe4 RBX: ffff88024e54e000 RCX: 0000000000000040
-RDX: 0000000000000000 RSI: 0000000000000000 RDI: ffffffff8112e425
-RBP: ffff8803007e7b70 R08: 0000000000000000 R09: ffff8803072fe168
-R10: 0000000000000012 R11: 0000000000000098 R12: ffff880303c192a8
-R13: ffff88020a461e70 R14: ffff8801c2632090 R15: 00000000000000b0
-FS:  0000000000000000(0000) GS:ffff88031fc00000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-CR2: 0000000002953c98 CR3: 00000002fdfd3000 CR4: 00000000000006f0
-DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-Process btrfs-delalloc- (pid: 14333, threadinfo ffff8803007e6000, task
-ffff880308ccc020)
-Stack:
- 00000002007e7b70 0000000000000003 00000000006e0000 000000007ffc0000
- ffff8801c2634120 0000000000370000 0000000000000100 0000007ffc0000e4
- 0000000000370000 ffff88024e54e000 0000000000000246 ffff8801c2632090
-Call Trace:
- [<ffffffff812c3d0e>] btrfs_alloc_chunk+0x8e/0xa0
- [<ffffffff81281ed6>] do_chunk_alloc+0x1b6/0x280
- [<ffffffff812844e4>] btrfs_reserve_extent+0xb4/0x170
- [<ffffffff81706c39>] ? mutex_unlock+0x9/0x10
- [<ffffffff812980c7>] ? start_transaction+0x247/0x2b0
- [<ffffffff8129db9e>] submit_compressed_extents+0xfe/0x460
- [<ffffffff810506b1>] ? get_parent_ip+0x11/0x50
- [<ffffffff8129df7f>] async_cow_submit+0x7f/0x90
- [<ffffffff812c452b>] run_ordered_completions+0x7b/0xc0
- [<ffffffff812c4f9c>] worker_loop+0x16c/0x3c0
- [<ffffffff812c4e30>] ? check_pending_worker_creates+0xd0/0xd0
- [<ffffffff81080596>] kthread+0xb6/0xc0
- [<ffffffff8170b194>] kernel_thread_helper+0x4/0x10
- [<ffffffff81055718>] ? finish_task_switch+0x78/0x110
- [<ffffffff817098c4>] ? retint_restore_args+0xe/0xe
- [<ffffffff810804e0>] ? __init_kthread_worker+0x70/0x70
- [<ffffffff8170b190>] ? gs_change+0xb/0xb
-Code: 1d 07 00 44 89 a3 58 07 00 00 4c 89 ef e8 c7 ef e6 ff 31 c0 48
-83 c4 58 5b 41 5c 41 5d 41 5e 41 5f c9 c3 0f 0b eb fe 0f 0b eb fe <0f>
-0b eb fe eb 08 90 90 90 90 90 90 90 90 55 49 89 ca 48 89 e5
-RIP  [<ffffffff812c08c2>] __finish_chunk_alloc+0x212/0x220
- RSP <ffff8803007e7af0>
--- 
-Daniel J Blueman
+2.log2
+
+=2E..............................................................
+
+[  156.240012] CE: hpet2 increased min_delta_ns to 11250 nsec
+[  167.490003] CE: hpet4 increased min_delta_ns to 7500 nsec
+[  167.490010] CE: hpet4 increased min_delta_ns to 11250 nsec
+[ 2601.060330] ------------[ cut here ]------------
+[ 2601.060347] WARNING: at fs/btrfs/inode.c:2177
+btrfs_orphan_commit_root+0xb0/0xc0 [btrfs]()
+[ 2601.060349] Hardware name: OptiPlex 780                =20
+[ 2601.060350] Modules linked in: btrfs zlib_deflate crc32c libcrc32c
+i915 snd_hda_codec_analog fbcon tileblit font bitblit softcursor
+drm_kms_helper drm snd_hda_intel snd_hda_codec snd_hwdep snd_pcm
+snd_timer snd soundcore psmouse i2c_algo_bit snd_page_alloc lp intel_ag=
+p
+ppdev video intel_gtt parport_pc dell_wmi parport serio_raw
+sparse_keymap dcdbas r8169 mii
+[ 2601.060435] Pid: 586, comm: btrfs-transacti Not tainted 2.6.39-rc1 #=
+2
+[ 2601.060436] Call Trace:
+[ 2601.060443]  [<ffffffff8105f13f>] warn_slowpath_common+0x7f/0xc0
+[ 2601.060446]  [<ffffffff8105f19a>] warn_slowpath_null+0x1a/0x20
+[ 2601.060456]  [<ffffffffa024cb20>] btrfs_orphan_commit_root+0xb0/0xc0
+[btrfs]
+[ 2601.060466]  [<ffffffffa0248011>] commit_fs_roots+0xa1/0x140 [btrfs]
+[ 2601.060476]  [<ffffffffa0248f39>] btrfs_commit_transaction
++0x349/0x750 [btrfs]
+[ 2601.060480]  [<ffffffff81081810>] ? wake_up_bit+0x40/0x40
+[ 2601.060489]  [<ffffffffa02425d3>] transaction_kthread+0x283/0x290
+[btrfs]
+[ 2601.060499]  [<ffffffffa0242350>] ? btrfs_bio_wq_end_io+0x90/0x90
+[btrfs]
+[ 2601.060508]  [<ffffffffa0242350>] ? btrfs_bio_wq_end_io+0x90/0x90
+[btrfs]
+[ 2601.060511]  [<ffffffff810812d6>] kthread+0x96/0xa0
+[ 2601.060514]  [<ffffffff815a6364>] kernel_thread_helper+0x4/0x10
+[ 2601.060517]  [<ffffffff81081240>] ? __init_kthread_worker+0x40/0x40
+[ 2601.060519]  [<ffffffff815a6360>] ? gs_change+0x13/0x13
+[ 2601.060521] ---[ end trace 4b0b0e47058a9a99 ]---
+
+
+
+
+
+
+
+
+
+
+
+=E5=9C=A8 2011-04-08=E4=BA=94=E7=9A=84 00:20 +0800=EF=BC=8CJosef Bacik=E5=
+=86=99=E9=81=93=EF=BC=9A
+> On 04/07/2011 05:41 AM, Jeff Wu wrote:
+> > Hi ,
+> > I run iozone stress test on a ceph client for x86_64, ceph 0.26 +
+> > linux-2.6.39-rc1 server,
+> > printk "WARNING: at fs/btrfs/inode.c:2177"
+> >
+> Crap I was hoping I had fixed this, could you run with this debug pat=
+ch=20
+> and get me the output so I can figure out what's going on?  Thanks,
+>=20
+> Josef
+>=20
+>=20
+
+--
+To unsubscribe from this list: send the line "unsubscribe ceph-devel" i=
+n
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

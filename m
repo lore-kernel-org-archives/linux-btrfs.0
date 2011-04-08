@@ -1,55 +1,52 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] Btrfs-progs: add support for mixed data+metadata block
- groups
-Date: Fri, 08 Apr 2011 09:15:48 -0400
-Message-ID: <4D9F0A84.8010600@redhat.com>
-References: <1291919468-17802-1-git-send-email-josef@redhat.com> <4D9EB9D9.5060005@cn.fujitsu.com>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH v4 1/8] btrfs: Balance progress monitoring
+Date: Fri, 8 Apr 2011 15:37:15 +0200
+Message-ID: <20110408133715.GM31675@twin.jikos.cz>
+References: <1302195975-3088-1-git-send-email-hugo@carfax.org.uk>
+ <1302195975-3088-2-git-send-email-hugo@carfax.org.uk>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: liubo <liubo2009@cn.fujitsu.com>
+To: Hugo Mills <hugo@carfax.org.uk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D9EB9D9.5060005@cn.fujitsu.com>
+In-Reply-To: <1302195975-3088-2-git-send-email-hugo@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/08/2011 03:31 AM, liubo wrote:
-> On 12/10/2010 02:31 AM, Josef Bacik wrote:
->> So alot of crazy people (I'm looking at you Meego) want to use btrfs on phones
->> and such with small devices.  Unfortunately the way we split out metadata/data
->> chunks it makes space usage inefficient for volumes that are smaller than
->> 1gigabyte.  So add a -M option for mixing metadata+data, and default to this
->> mixed mode if the filesystem is less than or equal to 1 gigabyte.  I've tested
->> this with xfstests on a 100mb filesystem and everything is a-ok.
->>
->
-> Hi, Josef,
->
-> While using this mix metadata+data option, I noticed the following from btrfs-debug-tree's print:
->
-> ===
-> chunk tree
-> leaf 143360 items 4 free space 3557 generation 4 owner 3
-> fs uuid 77d78a87-a886-4bfa-be3b-0dd052213a17
-> chunk uuid e64148d6-8267-4ff1-aafd-4266f74afbb2
->          item 0 key (DEV_ITEMS DEV_ITEM 1) itemoff 3897 itemsize 98
->                  dev item devid 1 total_bytes 4999610368 bytes used 20971520
->          item 1 key (FIRST_CHUNK_TREE CHUNK_ITEM 0) itemoff 3817 itemsize 80
->                  chunk length 4194304 owner 2 type 2 num_stripes 1
->                          stripe 0 devid 1 offset 0
->          item 2 key (FIRST_CHUNK_TREE CHUNK_ITEM 4194304) itemoff 3737 itemsize 80
->                  chunk length 8388608 owner 2 type 5 num_stripes 1
->                          stripe 0 devid 1 offset 4194304
->          item 3 key (FIRST_CHUNK_TREE CHUNK_ITEM 12582912) itemoff 3657 itemsize 80<== THIS ONE
->                  chunk length 8388608 owner 2 type 4 num_stripes 1		<==
->                          stripe 0 devid 1 offset 12582912			<==
-> ===
->
-> you see, there exists another metadata chunk (type 4) after "mkfs.btrfs -M /dev/xxx".
-> So I was wondering that _IS_ this chunk what we want, or a spare one?
->
+Hi,
 
-Hmm that shouldn't be there, thanks for catching that, we should only be 
-creating a system block_group and a mixed block_group, not another 
-metadata one.  I will fix that up.
+sorry for separate mail, just noticed a kfree inside a spinlock below
 
-Josef
+On Thu, Apr 07, 2011 at 06:06:08PM +0100, Hugo Mills wrote:
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> @@ -2115,10 +2162,20 @@ int btrfs_balance(struct btrfs_root *dev_root)
+>  					   found_key.offset);
+>  		BUG_ON(ret && ret != -ENOSPC);
+>  		key.offset = found_key.offset - 1;
+> +		spin_lock(&dev_root->fs_info->balance_info_lock);
+> +		bal_info->completed++;
+> +		spin_unlock(&dev_root->fs_info->balance_info_lock);
+> +		printk(KERN_INFO "btrfs: balance: %llu/%llu block groups completed\n",
+> +		       bal_info->completed, bal_info->expected);
+>  	}
+>  	ret = 0;
+>  error:
+>  	btrfs_free_path(path);
+> +	spin_lock(&dev_root->fs_info->balance_info_lock);
+> +	kfree(dev_root->fs_info->balance_info);
+        ^^^^^
+move it out of the spinlocked section
+
+> +	dev_root->fs_info->balance_info = NULL;
+> +	spin_unlock(&dev_root->fs_info->balance_info_lock);
+> +error_no_status:
+>  	mutex_unlock(&dev_root->fs_info->volume_mutex);
+>  	return ret;
+>  }
+> -- 
+> 1.7.2.5
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,148 +1,71 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: 2.6.39-rc1: btrfs "WARNING: at fs/btrfs/inode.c:2177"
-Date: Fri, 08 Apr 2011 10:38:28 -0400
-Message-ID: <4D9F1DE4.7040306@redhat.com>
-References: <1302169286.1922.19.camel@cephhost>	 <4D9DE43F.3000809@redhat.com> <1302242000.2014.14.camel@cephhost>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH v4 1/8] btrfs: Balance progress monitoring
+Date: Fri, 8 Apr 2011 18:00:38 +0200
+Message-ID: <20110408160037.GD31675@twin.jikos.cz>
+References: <1302195975-3088-1-git-send-email-hugo@carfax.org.uk>
+ <1302195975-3088-2-git-send-email-hugo@carfax.org.uk>
+ <20110408131221.GL31675@twin.jikos.cz>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="------------090703040003040003020302"
-Cc: ceph-devel <ceph-devel@vger.kernel.org>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: cpwu@tnsoft.com.cn
-Return-path: <ceph-devel-owner@vger.kernel.org>
-In-Reply-To: <1302242000.2014.14.camel@cephhost>
+Content-Type: text/plain; charset=us-ascii
+To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110408131221.GL31675@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multi-part message in MIME format.
---------------090703040003040003020302
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+> a missing check ...
+ah, forget it, 
 
-On 04/08/2011 01:53 AM, Jeff Wu wrote:
->
-> Hi ,
-> I applied the patch to 2.6.39-rc1,took the following steps to compile
-> it:make&&  make modules_install&&  make install&&  mkinitramfs
-> but , it seam that it don't run to "WARN_ON(block_rsv ==
-> root->orphan_block_rsv);"
->
-> i attached the codes and logs at the below:
->
+On Fri, Apr 08, 2011 at 03:12:21PM +0200, David Sterba wrote:
+> > diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> > index 5fdb2ab..a8fbb07 100644
+> > --- a/fs/btrfs/ioctl.c
+> > +++ b/fs/btrfs/ioctl.c
+> > @@ -2375,6 +2375,38 @@ static noinline long btrfs_ioctl_wait_sync(struct file *file, void __user *argp)
+> >  	return btrfs_wait_for_commit(root, transid);
+> >  }
+> >  
+> > +/*
+> > + * Return the current status of any balance operation
+> > + */
+> > +long btrfs_ioctl_balance_progress(
+> > +	struct btrfs_fs_info *fs_info,
+> > +	struct btrfs_ioctl_balance_progress __user *user_dest)
+> > +{
+> > +	int ret = 0;
+> > +	struct btrfs_ioctl_balance_progress dest;
+> 
+>         if (!access_ok(VERIFY_WRITE, user_dest, sizeof(*user_dest)))
+> 	        return -EFAULT;
+pointless of course ...
 
-Bummer ok so here's a much bigger debug patch, remove the previous one I 
-sent you and apply this one instead and run with it.  As soon as you get 
-a warning stop iozone because this debug patch will create _a lot_ of 
-debug output, and I don't want to have to sift through all of it.  Just 
-send me your logs after running this patch so I can try and piece 
-together what's going on.  Thanks,
+> 
+> > +
+> > +	spin_lock(&fs_info->balance_info_lock);
+> > +	if (!fs_info->balance_info) {
+> > +		ret = -EINVAL;
+> > +		goto error;
+> > +	}
+> > +
+> > +	dest.expected = fs_info->balance_info->expected;
+> > +	dest.completed = fs_info->balance_info->completed;
 
-Josef
+this is _not_ the user supplied pointer
 
---------------090703040003040003020302
-Content-Type: text/plain;
- name="orphan-debug.patch"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment;
- filename="orphan-debug.patch"
-
-ZGlmZiAtLWdpdCBhL2ZzL2J0cmZzL2N0cmVlLmggYi9mcy9idHJmcy9jdHJlZS5oCmluZGV4
-IDBkMDBhMDcuLmMwZDhjMWQgMTAwNjQ0Ci0tLSBhL2ZzL2J0cmZzL2N0cmVlLmgKKysrIGIv
-ZnMvYnRyZnMvY3RyZWUuaApAQCAtNzY2LDYgKzc2Niw3IEBAIHN0cnVjdCBidHJmc19ibG9j
-a19yc3YgewogCXVuc2lnbmVkIGludCBkdXJhYmxlOjE7CiAJdW5zaWduZWQgaW50IHJlZmls
-bF91c2VkOjE7CiAJdW5zaWduZWQgaW50IGZ1bGw6MTsKKwl1bnNpZ25lZCBpbnQgb3JwaGFu
-OjE7CiB9OwogCiAvKgpkaWZmIC0tZ2l0IGEvZnMvYnRyZnMvZXh0ZW50LXRyZWUuYyBiL2Zz
-L2J0cmZzL2V4dGVudC10cmVlLmMKaW5kZXggZjYxOWMzYy4uNWViY2RhOCAxMDA2NDQKLS0t
-IGEvZnMvYnRyZnMvZXh0ZW50LXRyZWUuYworKysgYi9mcy9idHJmcy9leHRlbnQtdHJlZS5j
-CkBAIC0zNDI5LDYgKzM0MjksOSBAQCBzdGF0aWMgaW50IHJlc2VydmVfbWV0YWRhdGFfYnl0
-ZXMoc3RydWN0IGJ0cmZzX3RyYW5zX2hhbmRsZSAqdHJhbnMsCiAJYm9vbCByZXNlcnZlZCA9
-IGZhbHNlOwogCWJvb2wgY29tbWl0dGVkID0gZmFsc2U7CiAKKwlpZiAoYmxvY2tfcnN2LT5v
-cnBoYW4pCisJCXByaW50ayhLRVJOX0VSUiAicmVzcnZpbmcgbWV0YWRhdGEgYnl0ZXMgZm9y
-IG9ycGhhbiByc3YgJWxsdVxuIiwKKwkJICAgICAgIG9yaWdfYnl0ZXMpOwogYWdhaW46CiAJ
-cmV0ID0gLUVOT1NQQzsKIAlpZiAocmVzZXJ2ZWQpCkBAIC0zNTU2LDYgKzM1NTksOSBAQCBz
-dGF0aWMgc3RydWN0IGJ0cmZzX2Jsb2NrX3JzdiAqZ2V0X2Jsb2NrX3JzdihzdHJ1Y3QgYnRy
-ZnNfdHJhbnNfaGFuZGxlICp0cmFucywKIAlpZiAoIWJsb2NrX3JzdikKIAkJYmxvY2tfcnN2
-ID0gJnJvb3QtPmZzX2luZm8tPmVtcHR5X2Jsb2NrX3JzdjsKIAorCWlmIChibG9ja19yc3Yt
-Pm9ycGhhbikKKwkJcHJpbnRrKEtFUk5fRVJSICJnb3Qgb3JwaGFuIGJsb2NrIHJzdlxuIik7
-CisKIAlyZXR1cm4gYmxvY2tfcnN2OwogfQogCkBAIC0zNTYzLDYgKzM1NjksOSBAQCBzdGF0
-aWMgaW50IGJsb2NrX3Jzdl91c2VfYnl0ZXMoc3RydWN0IGJ0cmZzX2Jsb2NrX3JzdiAqYmxv
-Y2tfcnN2LAogCQkJICAgICAgIHU2NCBudW1fYnl0ZXMpCiB7CiAJaW50IHJldCA9IC1FTk9T
-UEM7CisJaWYgKGJsb2NrX3Jzdi0+b3JwaGFuKQorCQlwcmludGsoS0VSTl9FUlIgInVzaW5n
-ICVsbHUgYnl0ZXMgZnJvbSBvcnBoYW5cbiIsCisJCSAgICAgICBudW1fYnl0ZXMpOwogCXNw
-aW5fbG9jaygmYmxvY2tfcnN2LT5sb2NrKTsKIAlpZiAoYmxvY2tfcnN2LT5yZXNlcnZlZCA+
-PSBudW1fYnl0ZXMpIHsKIAkJYmxvY2tfcnN2LT5yZXNlcnZlZCAtPSBudW1fYnl0ZXM7CkBA
-IC0zNTc3LDYgKzM1ODYsOSBAQCBzdGF0aWMgaW50IGJsb2NrX3Jzdl91c2VfYnl0ZXMoc3Ry
-dWN0IGJ0cmZzX2Jsb2NrX3JzdiAqYmxvY2tfcnN2LAogc3RhdGljIHZvaWQgYmxvY2tfcnN2
-X2FkZF9ieXRlcyhzdHJ1Y3QgYnRyZnNfYmxvY2tfcnN2ICpibG9ja19yc3YsCiAJCQkJdTY0
-IG51bV9ieXRlcywgaW50IHVwZGF0ZV9zaXplKQogeworCWlmIChibG9ja19yc3YtPm9ycGhh
-bikKKwkJcHJpbnRrKEtFUk5fRVJSICJhZGRpbmcgJWxsdSBieXRlcywgdXBkYXRlX3NpemU9
-JWRcbiIsCisJCSAgICAgICBudW1fYnl0ZXMsIHVwZGF0ZV9zaXplKTsKIAlzcGluX2xvY2so
-JmJsb2NrX3Jzdi0+bG9jayk7CiAJYmxvY2tfcnN2LT5yZXNlcnZlZCArPSBudW1fYnl0ZXM7
-CiAJaWYgKHVwZGF0ZV9zaXplKQpAQCAtMzU5Miw2ICszNjA0LDEwIEBAIHZvaWQgYmxvY2tf
-cnN2X3JlbGVhc2VfYnl0ZXMoc3RydWN0IGJ0cmZzX2Jsb2NrX3JzdiAqYmxvY2tfcnN2LAog
-CXN0cnVjdCBidHJmc19zcGFjZV9pbmZvICpzcGFjZV9pbmZvID0gYmxvY2tfcnN2LT5zcGFj
-ZV9pbmZvOwogCiAJc3Bpbl9sb2NrKCZibG9ja19yc3YtPmxvY2spOworCWlmIChibG9ja19y
-c3YtPm9ycGhhbikKKwkJcHJpbnRrKEtFUk5fRVJSICJyZWxlYXNpbmcgJWxsdSBieXRlcyBm
-cm9tIG9yaGFuLCBzaXplPSVsbHUsICIKKwkJICAgICAgICJyZXNlcnZlZD0lbGx1XG4iLCBu
-dW1fYnl0ZXMsIGJsb2NrX3Jzdi0+c2l6ZSwKKwkJICAgICAgIGJsb2NrX3Jzdi0+cmVzZXJ2
-ZWQpOwogCWlmIChudW1fYnl0ZXMgPT0gKHU2NCktMSkKIAkJbnVtX2J5dGVzID0gYmxvY2tf
-cnN2LT5zaXplOwogCWJsb2NrX3Jzdi0+c2l6ZSAtPSBudW1fYnl0ZXM7CkBAIC0zNjY4LDYg
-KzM2ODQsOSBAQCBzdHJ1Y3QgYnRyZnNfYmxvY2tfcnN2ICpidHJmc19hbGxvY19ibG9ja19y
-c3Yoc3RydWN0IGJ0cmZzX3Jvb3QgKnJvb3QpCiB2b2lkIGJ0cmZzX2ZyZWVfYmxvY2tfcnN2
-KHN0cnVjdCBidHJmc19yb290ICpyb290LAogCQkJICBzdHJ1Y3QgYnRyZnNfYmxvY2tfcnN2
-ICpyc3YpCiB7CisJaWYgKHJzdi0+b3JwaGFuKQorCQlwcmludGsoS0VSTl9FUlIgImZyZWVp
-bmcgb3JwaGFuIHJzdlxuIik7CisKIAlpZiAocnN2ICYmIGF0b21pY19kZWNfYW5kX3Rlc3Qo
-JnJzdi0+dXNhZ2UpKSB7CiAJCWJ0cmZzX2Jsb2NrX3Jzdl9yZWxlYXNlKHJvb3QsIHJzdiwg
-KHU2NCktMSk7CiAJCWlmICghcnN2LT5kdXJhYmxlKQpAQCAtMzY5Niw2ICszNzE1LDEwIEBA
-IGludCBidHJmc19ibG9ja19yc3ZfYWRkKHN0cnVjdCBidHJmc190cmFuc19oYW5kbGUgKnRy
-YW5zLAogewogCWludCByZXQ7CiAKKwlpZiAoYmxvY2tfcnN2LT5vcnBoYW4pCisJCXByaW50
-ayhLRVJOX0VSUiAiYWRkaW5nICVsbHUgYnl0ZXMgdG8gb3JwaGFuXG4iLAorCQkgICAgICAg
-bnVtX2J5dGVzKTsKKwogCWlmIChudW1fYnl0ZXMgPT0gMCkKIAkJcmV0dXJuIDA7CiAKQEAg
-LTM3MjAsNiArMzc0MywxMCBAQCBpbnQgYnRyZnNfYmxvY2tfcnN2X2NoZWNrKHN0cnVjdCBi
-dHJmc190cmFuc19oYW5kbGUgKnRyYW5zLAogCWlmICghYmxvY2tfcnN2KQogCQlyZXR1cm4g
-MDsKIAorCWlmIChibG9ja19yc3YtPm9ycGhhbikKKwkJcHJpbnRrKEtFUk5fRVJSICJjaGVj
-a2luZyBvcnBoYW4gcmVzZXJ2ZSBmb3IgJWxsdSBieXRlcywgIgorCQkgICAgICAgIiVkIG1p
-biBmYWN0b3JcbiIsIG1pbl9yZXNlcnZlZCwgbWluX2ZhY3Rvcik7CisKIAlzcGluX2xvY2so
-JmJsb2NrX3Jzdi0+bG9jayk7CiAJaWYgKG1pbl9mYWN0b3IgPiAwKQogCQludW1fYnl0ZXMg
-PSBkaXZfZmFjdG9yKGJsb2NrX3Jzdi0+c2l6ZSwgbWluX2ZhY3Rvcik7CkBAIC0zOTY0LDYg
-KzM5OTEsNyBAQCBpbnQgYnRyZnNfb3JwaGFuX3Jlc2VydmVfbWV0YWRhdGEoc3RydWN0IGJ0
-cmZzX3RyYW5zX2hhbmRsZSAqdHJhbnMsCiAJICogdHJhbnNhY3Rpb24gYW5kIHVzZSBzcGFj
-ZSBpdCBmcmVlZC4KIAkgKi8KIAl1NjQgbnVtX2J5dGVzID0gY2FsY190cmFuc19tZXRhZGF0
-YV9zaXplKHJvb3QsIDQpOworCXByaW50ayhLRVJOX0VSUiAicmVzZXJ2aW5nICVsbHUgYnl0
-ZXMgZm9yIG9ycGhhblxuIiwgbnVtX2J5dGVzKTsKIAlyZXR1cm4gYmxvY2tfcnN2X21pZ3Jh
-dGVfYnl0ZXMoc3JjX3JzdiwgZHN0X3JzdiwgbnVtX2J5dGVzKTsKIH0KIApAQCAtMzk3MSw2
-ICszOTk5LDcgQEAgdm9pZCBidHJmc19vcnBoYW5fcmVsZWFzZV9tZXRhZGF0YShzdHJ1Y3Qg
-aW5vZGUgKmlub2RlKQogewogCXN0cnVjdCBidHJmc19yb290ICpyb290ID0gQlRSRlNfSShp
-bm9kZSktPnJvb3Q7CiAJdTY0IG51bV9ieXRlcyA9IGNhbGNfdHJhbnNfbWV0YWRhdGFfc2l6
-ZShyb290LCA0KTsKKwlwcmludGsoS0VSTl9FUlIgImZpcnN0IHJlbGVhc2Ugb2YgJWxsdSBi
-eXRlcyBmcm9tIG9ycGhhblxuIiwgbnVtX2J5dGVzKTsKIAlidHJmc19ibG9ja19yc3ZfcmVs
-ZWFzZShyb290LCByb290LT5vcnBoYW5fYmxvY2tfcnN2LCBudW1fYnl0ZXMpOwogfQogCkBA
-IC01Njk3LDYgKzU3MjYsOCBAQCB1c2VfYmxvY2tfcnN2KHN0cnVjdCBidHJmc190cmFuc19o
-YW5kbGUgKnRyYW5zLAogCiAJYmxvY2tfcnN2ID0gZ2V0X2Jsb2NrX3Jzdih0cmFucywgcm9v
-dCk7CiAKKwlpZiAoYmxvY2tfcnN2LT5vcnBoYW4pCisJCXByaW50ayhLRVJOX0VSUiAiVXNp
-bmcgb3JwaGFuIGJsb2NrIHJzdiBmb3IgdHJlZSBhbGxvY2F0aW9uXG4iKTsKIAlpZiAoYmxv
-Y2tfcnN2LT5zaXplID09IDApIHsKIAkJcmV0ID0gcmVzZXJ2ZV9tZXRhZGF0YV9ieXRlcyh0
-cmFucywgcm9vdCwgYmxvY2tfcnN2LAogCQkJCQkgICAgIGJsb2Nrc2l6ZSwgMCk7CkBAIC01
-NzM5LDYgKzU3NzAsOCBAQCB1c2VfYmxvY2tfcnN2KHN0cnVjdCBidHJmc190cmFuc19oYW5k
-bGUgKnRyYW5zLAogCiBzdGF0aWMgdm9pZCB1bnVzZV9ibG9ja19yc3Yoc3RydWN0IGJ0cmZz
-X2Jsb2NrX3JzdiAqYmxvY2tfcnN2LCB1MzIgYmxvY2tzaXplKQogeworCWlmIChibG9ja19y
-c3YtPm9ycGhhbikKKwkJcHJpbnRrKEtFUk5fRVJSICJ1bnVzaW5nIG9ycGhhbiBibG9jayBy
-c3ZcbiIpOwogCWJsb2NrX3Jzdl9hZGRfYnl0ZXMoYmxvY2tfcnN2LCBibG9ja3NpemUsIDAp
-OwogCWJsb2NrX3Jzdl9yZWxlYXNlX2J5dGVzKGJsb2NrX3JzdiwgTlVMTCwgMCk7CiB9CmRp
-ZmYgLS1naXQgYS9mcy9idHJmcy9pbm9kZS5jIGIvZnMvYnRyZnMvaW5vZGUuYwppbmRleCAw
-MzJlOGZiLi41OGIxMzYxIDEwMDY0NAotLS0gYS9mcy9idHJmcy9pbm9kZS5jCisrKyBiL2Zz
-L2J0cmZzL2lub2RlLmMKQEAgLTIxNzYsNyArMjE3NiwxMSBAQCB2b2lkIGJ0cmZzX29ycGhh
-bl9jb21taXRfcm9vdChzdHJ1Y3QgYnRyZnNfdHJhbnNfaGFuZGxlICp0cmFucywKIAl9CiAK
-IAlpZiAocm9vdC0+b3JwaGFuX2Jsb2NrX3JzdikgewotCQlXQVJOX09OKHJvb3QtPm9ycGhh
-bl9ibG9ja19yc3YtPnNpemUgPiAwKTsKKwkJaWYgKHJvb3QtPm9ycGhhbl9ibG9ja19yc3Yt
-PnNpemUgPiAwKSB7CisJCQlwcmludGsoS0VSTl9FUlIgIm9ycGhhbiByc3Ygc3RpbGwgaGFz
-ICVsbHUgYnl0ZXNcbiIsCisJCQkgICAgICAgcm9vdC0+b3JwaGFuX2Jsb2NrX3Jzdi0+c2l6
-ZSk7CisJCQlXQVJOX09OKDEpOworCQl9CiAJCWJ0cmZzX2ZyZWVfYmxvY2tfcnN2KHJvb3Qs
-IHJvb3QtPm9ycGhhbl9ibG9ja19yc3YpOwogCQlyb290LT5vcnBoYW5fYmxvY2tfcnN2ID0g
-TlVMTDsKIAl9CkBAIC0yMjA1LDYgKzIyMDksNyBAQCBpbnQgYnRyZnNfb3JwaGFuX2FkZChz
-dHJ1Y3QgYnRyZnNfdHJhbnNfaGFuZGxlICp0cmFucywgc3RydWN0IGlub2RlICppbm9kZSkK
-IAlzcGluX2xvY2soJnJvb3QtPm9ycGhhbl9sb2NrKTsKIAlpZiAoIXJvb3QtPm9ycGhhbl9i
-bG9ja19yc3YpIHsKIAkJcm9vdC0+b3JwaGFuX2Jsb2NrX3JzdiA9IGJsb2NrX3JzdjsKKwkJ
-YmxvY2tfcnN2LT5vcnBoYW4gPSAxOwogCX0gZWxzZSBpZiAoYmxvY2tfcnN2KSB7CiAJCWJ0
-cmZzX2ZyZWVfYmxvY2tfcnN2KHJvb3QsIGJsb2NrX3Jzdik7CiAJCWJsb2NrX3JzdiA9IE5V
-TEw7Cg==
---------------090703040003040003020302--
+> > +
+> > +	spin_unlock(&fs_info->balance_info_lock);
+> > +
+> > +	if (copy_to_user(user_dest, &dest,
+> > +			 sizeof(struct btrfs_ioctl_balance_progress)))
+> > +		return -EFAULT;
+> > +
+> > +	return 0;
+> > +
+> > +error:
+> > +	spin_unlock(&fs_info->balance_info_lock);
+> > +	return ret;
+> > +}
+> > +
+> >  long btrfs_ioctl(struct file *file, unsigned int
+> >  		cmd, unsigned long arg)
+> >  {

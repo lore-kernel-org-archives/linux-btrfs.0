@@ -1,265 +1,55 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH v4 1/8] btrfs: Balance progress monitoring
-Date: Fri, 8 Apr 2011 15:12:21 +0200
-Message-ID: <20110408131221.GL31675@twin.jikos.cz>
-References: <1302195975-3088-1-git-send-email-hugo@carfax.org.uk>
- <1302195975-3088-2-git-send-email-hugo@carfax.org.uk>
-Reply-To: dave@jikos.cz
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH] Btrfs-progs: add support for mixed data+metadata block
+ groups
+Date: Fri, 08 Apr 2011 09:15:48 -0400
+Message-ID: <4D9F0A84.8010600@redhat.com>
+References: <1291919468-17802-1-git-send-email-josef@redhat.com> <4D9EB9D9.5060005@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Cc: linux-btrfs@vger.kernel.org
-To: Hugo Mills <hugo@carfax.org.uk>
+To: liubo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1302195975-3088-2-git-send-email-hugo@carfax.org.uk>
+In-Reply-To: <4D9EB9D9.5060005@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On 04/08/2011 03:31 AM, liubo wrote:
+> On 12/10/2010 02:31 AM, Josef Bacik wrote:
+>> So alot of crazy people (I'm looking at you Meego) want to use btrfs on phones
+>> and such with small devices.  Unfortunately the way we split out metadata/data
+>> chunks it makes space usage inefficient for volumes that are smaller than
+>> 1gigabyte.  So add a -M option for mixing metadata+data, and default to this
+>> mixed mode if the filesystem is less than or equal to 1 gigabyte.  I've tested
+>> this with xfstests on a 100mb filesystem and everything is a-ok.
+>>
+>
+> Hi, Josef,
+>
+> While using this mix metadata+data option, I noticed the following from btrfs-debug-tree's print:
+>
+> ===
+> chunk tree
+> leaf 143360 items 4 free space 3557 generation 4 owner 3
+> fs uuid 77d78a87-a886-4bfa-be3b-0dd052213a17
+> chunk uuid e64148d6-8267-4ff1-aafd-4266f74afbb2
+>          item 0 key (DEV_ITEMS DEV_ITEM 1) itemoff 3897 itemsize 98
+>                  dev item devid 1 total_bytes 4999610368 bytes used 20971520
+>          item 1 key (FIRST_CHUNK_TREE CHUNK_ITEM 0) itemoff 3817 itemsize 80
+>                  chunk length 4194304 owner 2 type 2 num_stripes 1
+>                          stripe 0 devid 1 offset 0
+>          item 2 key (FIRST_CHUNK_TREE CHUNK_ITEM 4194304) itemoff 3737 itemsize 80
+>                  chunk length 8388608 owner 2 type 5 num_stripes 1
+>                          stripe 0 devid 1 offset 4194304
+>          item 3 key (FIRST_CHUNK_TREE CHUNK_ITEM 12582912) itemoff 3657 itemsize 80<== THIS ONE
+>                  chunk length 8388608 owner 2 type 4 num_stripes 1		<==
+>                          stripe 0 devid 1 offset 12582912			<==
+> ===
+>
+> you see, there exists another metadata chunk (type 4) after "mkfs.btrfs -M /dev/xxx".
+> So I was wondering that _IS_ this chunk what we want, or a spare one?
+>
 
-a missing check ...
+Hmm that shouldn't be there, thanks for catching that, we should only be 
+creating a system block_group and a mixed block_group, not another 
+metadata one.  I will fix that up.
 
-On Thu, Apr 07, 2011 at 06:06:08PM +0100, Hugo Mills wrote:
-> This patch introduces a basic form of progress monitoring for balance
-> operations, by counting the number of block groups remaining. The
-> information is exposed to userspace by an ioctl.
-> 
-> Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
-> ---
->  fs/btrfs/ctree.h   |    9 +++++++
->  fs/btrfs/disk-io.c |    2 +
->  fs/btrfs/ioctl.c   |   34 +++++++++++++++++++++++++++++
->  fs/btrfs/ioctl.h   |    7 ++++++
->  fs/btrfs/volumes.c |   61 ++++++++++++++++++++++++++++++++++++++++++++++++++-
->  5 files changed, 111 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 7f78cc7..6c5526c 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -865,6 +865,11 @@ struct btrfs_block_group_cache {
->  	struct list_head cluster_list;
->  };
->  
-> +struct btrfs_balance_info {
-> +	u64 expected;
-> +	u64 completed;
-> +};
-> +
->  struct reloc_control;
->  struct btrfs_device;
->  struct btrfs_fs_devices;
-> @@ -1078,6 +1083,10 @@ struct btrfs_fs_info {
->  
->  	/* filesystem state */
->  	u64 fs_state;
-> +
-> +	/* Keep track of any rebalance operations on this FS */
-> +	spinlock_t balance_info_lock;
-> +	struct btrfs_balance_info *balance_info;
->  };
->  
->  /*
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 100b07f..3d690de 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -1645,6 +1645,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
->  	spin_lock_init(&fs_info->ref_cache_lock);
->  	spin_lock_init(&fs_info->fs_roots_radix_lock);
->  	spin_lock_init(&fs_info->delayed_iput_lock);
-> +	spin_lock_init(&fs_info->balance_info_lock);
->  
->  	init_completion(&fs_info->kobj_unregister);
->  	fs_info->tree_root = tree_root;
-> @@ -1670,6 +1671,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
->  	fs_info->sb = sb;
->  	fs_info->max_inline = 8192 * 1024;
->  	fs_info->metadata_ratio = 0;
-> +	fs_info->balance_info = NULL;
->  
->  	fs_info->thread_pool_size = min_t(unsigned long,
->  					  num_online_cpus() + 2, 8);
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 5fdb2ab..a8fbb07 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -2375,6 +2375,38 @@ static noinline long btrfs_ioctl_wait_sync(struct file *file, void __user *argp)
->  	return btrfs_wait_for_commit(root, transid);
->  }
->  
-> +/*
-> + * Return the current status of any balance operation
-> + */
-> +long btrfs_ioctl_balance_progress(
-> +	struct btrfs_fs_info *fs_info,
-> +	struct btrfs_ioctl_balance_progress __user *user_dest)
-> +{
-> +	int ret = 0;
-> +	struct btrfs_ioctl_balance_progress dest;
-
-        if (!access_ok(VERIFY_WRITE, user_dest, sizeof(*user_dest)))
-	        return -EFAULT;
-
-> +
-> +	spin_lock(&fs_info->balance_info_lock);
-> +	if (!fs_info->balance_info) {
-> +		ret = -EINVAL;
-> +		goto error;
-> +	}
-> +
-> +	dest.expected = fs_info->balance_info->expected;
-> +	dest.completed = fs_info->balance_info->completed;
-> +
-> +	spin_unlock(&fs_info->balance_info_lock);
-> +
-> +	if (copy_to_user(user_dest, &dest,
-> +			 sizeof(struct btrfs_ioctl_balance_progress)))
-> +		return -EFAULT;
-> +
-> +	return 0;
-> +
-> +error:
-> +	spin_unlock(&fs_info->balance_info_lock);
-> +	return ret;
-> +}
-> +
->  long btrfs_ioctl(struct file *file, unsigned int
->  		cmd, unsigned long arg)
->  {
-> @@ -2414,6 +2446,8 @@ long btrfs_ioctl(struct file *file, unsigned int
->  		return btrfs_ioctl_rm_dev(root, argp);
->  	case BTRFS_IOC_BALANCE:
->  		return btrfs_balance(root->fs_info->dev_root);
-> +	case BTRFS_IOC_BALANCE_PROGRESS:
-> +		return btrfs_ioctl_balance_progress(root->fs_info, argp);
->  	case BTRFS_IOC_CLONE:
->  		return btrfs_ioctl_clone(file, arg, 0, 0, 0);
->  	case BTRFS_IOC_CLONE_RANGE:
-> diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-> index 8fb3821..4c82d40 100644
-> --- a/fs/btrfs/ioctl.h
-> +++ b/fs/btrfs/ioctl.h
-> @@ -157,6 +157,11 @@ struct btrfs_ioctl_space_args {
->  	struct btrfs_ioctl_space_info spaces[0];
->  };
->  
-> +struct btrfs_ioctl_balance_progress {
-> +	__u64 expected;
-> +	__u64 completed;
-> +};
-> +
->  #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
->  				   struct btrfs_ioctl_vol_args)
->  #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
-> @@ -203,4 +208,6 @@ struct btrfs_ioctl_space_args {
->  				   struct btrfs_ioctl_vol_args_v2)
->  #define BTRFS_IOC_SUBVOL_GETFLAGS _IOW(BTRFS_IOCTL_MAGIC, 25, __u64)
->  #define BTRFS_IOC_SUBVOL_SETFLAGS _IOW(BTRFS_IOCTL_MAGIC, 26, __u64)
-> +#define BTRFS_IOC_BALANCE_PROGRESS _IOR(BTRFS_IOCTL_MAGIC, 27, \
-> +				  struct btrfs_ioctl_balance_progress)
->  #endif
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index dd13eb8..2bd4565 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -2041,6 +2041,7 @@ int btrfs_balance(struct btrfs_root *dev_root)
->  	struct btrfs_root *chunk_root = dev_root->fs_info->chunk_root;
->  	struct btrfs_trans_handle *trans;
->  	struct btrfs_key found_key;
-> +	struct btrfs_balance_info *bal_info;
->  
->  	if (dev_root->fs_info->sb->s_flags & MS_RDONLY)
->  		return -EROFS;
-> @@ -2051,6 +2052,20 @@ int btrfs_balance(struct btrfs_root *dev_root)
->  	mutex_lock(&dev_root->fs_info->volume_mutex);
->  	dev_root = dev_root->fs_info->dev_root;
->  
-> +	bal_info = kmalloc(
-> +		sizeof(struct btrfs_balance_info),
-> +		GFP_NOFS);
-> +	if (!bal_info) {
-> +		ret = -ENOSPC;
-> +		goto error_no_status;
-> +	}
-> +	spin_lock(&dev_root->fs_info->balance_info_lock);
-> +	dev_root->fs_info->balance_info = bal_info;
-> +	bal_info->expected = -1; /* One less than actually counted,
-> +				    because chunk 0 is special */
-> +	bal_info->completed = 0;
-> +	spin_unlock(&dev_root->fs_info->balance_info_lock);
-> +
->  	/* step one make some room on all the devices */
->  	list_for_each_entry(device, devices, dev_list) {
->  		old_size = device->total_bytes;
-> @@ -2074,10 +2089,42 @@ int btrfs_balance(struct btrfs_root *dev_root)
->  		btrfs_end_transaction(trans, dev_root);
->  	}
->  
-> -	/* step two, relocate all the chunks */
-> +	/* step two, count the chunks */
->  	path = btrfs_alloc_path();
-> -	BUG_ON(!path);
-> +	if (!path) {
-> +		ret = -ENOSPC;
-> +		goto error;
-> +	}
-> +
-> +	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
-> +	key.offset = (u64)-1;
-> +	key.type = BTRFS_CHUNK_ITEM_KEY;
-> +
-> +	ret = btrfs_search_slot(NULL, chunk_root, &key, path, 0, 0);
-> +	if (ret <= 0) {
-> +		printk(KERN_ERR "btrfs: Failed to find the last chunk.\n");
-> +		BUG();
-> +	}
-> +
-> +	while (1) {
-> +		ret = btrfs_previous_item(chunk_root, path, 0,
-> +					  BTRFS_CHUNK_ITEM_KEY);
-> +		if (ret)
-> +			break;
-> +
-> +		spin_lock(&dev_root->fs_info->balance_info_lock);
-> +		bal_info->expected++;
-> +		spin_unlock(&dev_root->fs_info->balance_info_lock);
-> +	}
-> +
-> +	btrfs_free_path(path);
-> +	path = btrfs_alloc_path();
-> +	if (!path) {
-> +		ret = -ENOSPC;
-> +		goto error;
-> +	}
->  
-> +	/* step three, relocate all the chunks */
->  	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
->  	key.offset = (u64)-1;
->  	key.type = BTRFS_CHUNK_ITEM_KEY;
-> @@ -2115,10 +2162,20 @@ int btrfs_balance(struct btrfs_root *dev_root)
->  					   found_key.offset);
->  		BUG_ON(ret && ret != -ENOSPC);
->  		key.offset = found_key.offset - 1;
-> +		spin_lock(&dev_root->fs_info->balance_info_lock);
-> +		bal_info->completed++;
-> +		spin_unlock(&dev_root->fs_info->balance_info_lock);
-> +		printk(KERN_INFO "btrfs: balance: %llu/%llu block groups completed\n",
-> +		       bal_info->completed, bal_info->expected);
->  	}
->  	ret = 0;
->  error:
->  	btrfs_free_path(path);
-> +	spin_lock(&dev_root->fs_info->balance_info_lock);
-> +	kfree(dev_root->fs_info->balance_info);
-> +	dev_root->fs_info->balance_info = NULL;
-> +	spin_unlock(&dev_root->fs_info->balance_info_lock);
-> +error_no_status:
->  	mutex_unlock(&dev_root->fs_info->volume_mutex);
->  	return ret;
->  }
-> -- 
-> 1.7.2.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Josef

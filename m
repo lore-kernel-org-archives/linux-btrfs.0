@@ -1,99 +1,195 @@
-From: Ilya Dryomov <idryomov@gmail.com>
-Subject: [PATCH] btrfs scrub - restore bios properly after media errors
-Date: Sat, 9 Apr 2011 14:29:24 +0300
-Message-ID: <20110409112924.GB29836@kwango.lan.net>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: Re: wrong values in "df" and "btrfs filesystem df"
+Date: 09 Apr 2011 14:28:00 +0200
+Message-ID: <BjW+whfD1uB@helmut.hullen.de>
+References: <20110409091141.GE5301@carfax.org.uk>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Arne Jansen <sensille@gmx.net>
+Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110409091141.GE5301@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The current code reallocates a bio after a media error.  This is a
-temporary measure introduced in v3 after a serious problem related to
-bio reuse was found in v2 of scrub patchset.
+Hallo, Hugo,
 
-Basically we did not reset bv_offset and bv_len fields of the bio_vec
-structure.  They are changed in case I/O error happens, for example, at
-offset 512 or 1024 into the page.  Also bi_flags field wasn't properly
-setup before reusing the bio.
+Du meintest am 09.04.11:
 
-Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
----
- fs/btrfs/scrub.c |   48 +++++++++++++-----------------------------------
- 1 files changed, 13 insertions(+), 35 deletions(-)
+>>   df /srv/MM
+>>   btrfs filesystem df /srv/MM
+>>
+>> show some completely wrong values:
+>>
+>> # df /srv/MM
+>>
+>> Filesystem           1K-blocks      Used Available Use% Mounted on
+>> /dev/sdd1            5846053400 1593436456 2898463184  36% /srv/MM
+>>
+>> # btrfs filesystem df /srv/MM
+>>
+>> Data, RAID0: total=3D1.67TB, used=3D1.48TB
+>> System, RAID1: total=3D16.00MB, used=3D112.00KB
+>> System: total=3D4.00MB, used=3D0.00
+>> Metadata, RAID1: total=3D3.75GB, used=3D2.26GB
+>>
+>> # btrfs-show
+>>
+>> Label: MMedia  uuid: 120b036a-883f-46aa-bd9a-cb6a1897c8d2
+>> 	Total devices 3 FS bytes used 1.48TB
+>> 	devid    3 size 1.81TB used 573.76GB path /dev/sdb1
+>> 	devid    2 size 1.81TB used 573.77GB path /dev/sde1
+>> 	devid    1 size 1.82TB used 570.01GB path /dev/sdd1
+>>
+>> Btrfs Btrfs v0.19
+>>
+>> ------------------------------------------------
+>>
+>> "df" shows an "Available" value which isn't related to any real
+>> value.
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index e862167..1631327 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -418,45 +418,24 @@ static void scrub_checksum(scrub_work_t *work)
- 	int ret;
- 
- 	if (sbio->err) {
--		struct bio *bio;
--		struct bio *old_bio;
--
--		for (i = 0; i < sbio->count; ++i) {
-+		for (i = 0; i < sbio->count; ++i)
- 			scrub_recheck_error(sbio, i);
-+
-+		sbio->bio->bi_flags &= ~(BIO_POOL_MASK - 1);
-+		sbio->bio->bi_flags |= 1 << BIO_UPTODATE;
-+		sbio->bio->bi_phys_segments = 0;
-+		sbio->bio->bi_idx = 0;
-+
-+		for (i = 0; i < sbio->count; i++) {
-+			struct bio_vec *bi;
-+			bi = &sbio->bio->bi_io_vec[i];
-+			bi->bv_offset = 0;
-+			bi->bv_len = PAGE_SIZE;
- 		}
-+
- 		spin_lock(&sdev->stat_lock);
- 		++sdev->stat.read_errors;
- 		spin_unlock(&sdev->stat_lock);
--
--		/*
--		 * FIXME: allocate a new bio after a media error. I haven't
--		 * figured out how to reuse this one
--		 */
--		old_bio = sbio->bio;
--		bio = bio_kmalloc(GFP_NOFS, SCRUB_PAGES_PER_BIO);
--		if (!bio) {
--			/*
--			 * alloc failed. cancel the scrub and don't requeue
--			 * this sbio
--			 */
--			printk(KERN_ERR "btrfs scrub: allocation failure, "
--			                "cancelling scrub\n");
--			atomic_inc(&sdev->dev->dev_root->fs_info->
--			                          scrub_cancel_req);
--			goto out_no_enqueue;
--		}
--		sbio->bio = bio;
--		bio->bi_private = sbio;
--		bio->bi_end_io = scrub_bio_end_io;
--		bio->bi_sector = 0;
--		bio->bi_bdev = sbio->sdev->dev->bdev;
--		bio->bi_size = 0;
--		for (i = 0; i < SCRUB_PAGES_PER_BIO; ++i) {
--			struct page *page;
--			page = old_bio->bi_io_vec[i].bv_page;
--			bio_add_page(bio, page, PAGE_SIZE, 0);
--		}
--		bio_put(old_bio);
- 		goto out;
- 	}
- 	for (i = 0; i < sbio->count; ++i) {
-@@ -486,7 +465,6 @@ out:
- 	sbio->next_free = sdev->first_free;
- 	sdev->first_free = sbio->index;
- 	spin_unlock(&sdev->list_lock);
--out_no_enqueue:
- 	atomic_dec(&sdev->in_flight);
- 	wake_up(&sdev->list_wait);
- }
--- 
-1.7.2.5
+>    I _think_ that value is the amount of space not allocated to any
+> block group. If that's so, then Available (from df) plus the three
+> "total" values (from btrfs fi df) should equal the size value from
+> df.
 
+I'm not convinced - sorry.
+
+"used" plus "available" should be nearly the same value as the "total" =
+=20
+in "df"; in my example 1.6 TB + 2.9 TB is far away from the total of 5.=
+8 =20
+TB (here: Tera =3D 10^9).
+
+>    The total value in the output of "btrfs fi df" is the total space
+> allocated to block groups. As the filesystem needs more space, it
+> will allocate more block groups from the available raw storage pool,
+> and the number will go up.
+
+>    This is explained on the wiki at [1].
+
+I've studied the page - the data shown there looks to be consistent. =20
+Especially: "used" plus "avail" =3D "size"
+
+-------------------------------------
+
+The data seems (mostly) to be consistent on a new array of disks/=20
+partitions. But when I work with "device add" and "device delete" then
+there are holes.
+
+Another machine:
+
+/dev/sda about 140 GB
+/dev/sdb about 140 GB
+/dev/sdc about  70 GB
+
+# mkfs.btrfs -L SCSI -d raid0 -m raid1 /dev/sdb1 /dev/sdc1
+# mit 70 GByte gef=FCllt
+
+# df -t btrfs
+=46ilesystem    Type   1K-blocks      Used Available Use% Mounted on
+/dev/sdb1    btrfs   214058944  73956996  65522124  54% /mnt/SCSI
+
+# btrfs filesystem show
+Label: 'SCSI'  uuid: 1932d11d-021a-4054-8429-db25a0204221
+	Total devices 2 FS bytes used 70.43GB
+	devid    1 size 136.73GB used 37.03GB path /dev/sdb1
+	devid    2 size 67.41GB used 37.01GB path /dev/sdc1
+
+# btrfs filesystem df /mnt/SCSI
+Data, RAID0: total=3D72.00GB, used=3D70.33GB
+Data: total=3D8.00MB, used=3D0.00
+System, RAID1: total=3D8.00MB, used=3D12.00KB
+System: total=3D4.00MB, used=3D0.00
+Metadata, RAID1: total=3D1.00GB, used=3D104.78MB
+Metadata: total=3D8.00MB, used=3D0.00
+
+#------------------------------------------------------------
+# btrfs device add /dev/sda1 /mnt/SCSI
+
+# df -t btrfs
+=46ilesystem    Type   1K-blocks      Used Available Use% Mounted on
+/dev/sdb1    btrfs   356234160  84177056 200667344  30% /mnt/SCSI
+
+# btrfs filesystem show
+Label: 'SCSI'  uuid: 1932d11d-021a-4054-8429-db25a0204221
+	Total devices 3 FS bytes used 80.16GB
+	devid    1 size 136.73GB used 42.03GB path /dev/sdb1
+	devid    3 size 135.59GB used 0.00 path /dev/sda1
+	devid    2 size 67.41GB used 42.01GB path /dev/sdc1
+
+# btrfs filesystem df /mnt/SCSI
+Data, RAID0: total=3D82.00GB, used=3D80.04GB
+Data: total=3D8.00MB, used=3D0.00
+System, RAID1: total=3D8.00MB, used=3D12.00KB
+System: total=3D4.00MB, used=3D0.00
+Metadata, RAID1: total=3D1.00GB, used=3D119.54MB
+Metadata: total=3D8.00MB, used=3D0.00
+
+#------------------------------------------------------------
+# btrfs fi balance /mnt/SCSI
+
+# df -t btrfs
+=46ilesystem    Type   1K-blocks      Used Available Use% Mounted on
+/dev/sdb1    btrfs   356234160  84125344 228211536  27% /mnt/SCSI
+
+# btrfs filesystem show
+Label: 'SCSI'  uuid: 1932d11d-021a-4054-8429-db25a0204221
+	Total devices 3 FS bytes used 80.14GB
+	devid    1 size 136.73GB used 28.28GB path /dev/sdb1
+	devid    3 size 135.59GB used 27.00GB path /dev/sda1
+	devid    2 size 67.41GB used 29.01GB path /dev/sdc1
+
+# btrfs filesystem df /mnt/SCSI
+Data, RAID0: total=3D81.00GB, used=3D80.04GB
+Data: total=3D8.00MB, used=3D0.00
+System, RAID1: total=3D8.00MB, used=3D12.00KB
+System: total=3D4.00MB, used=3D0.00
+Metadata, RAID1: total=3D1.25GB, used=3D94.29MB
+Metadata: total=3D8.00MB, used=3D0.00
+
+#------------------------------------------------------------
+# btrfs device delete /dev/sdc1 /mnt/SCSI
+# umount /mnt/SCSI
+# mount LABEL=3DSCSI /mnt/SCSI
+
+# df -t btrfs
+=46ilesystem    Type   1K-blocks      Used Available Use% Mounted on
+/dev/sdb1    btrfs   285548192 232024076  51758540  82% /mnt/SCSI
+
+# btrfs filesystem show
+Label: 'SCSI'  uuid: 1932d11d-021a-4054-8429-db25a0204221
+	Total devices 2 FS bytes used 221.04GB
+	devid    1 size 136.73GB used 111.51GB path /dev/sdb1
+	devid    3 size 135.59GB used 111.51GB path /dev/sda1
+
+# btrfs filesystem df /mnt/SCSI
+Data, RAID0: total=3D222.00GB, used=3D220.80GB
+System, RAID1: total=3D8.00MB, used=3D24.00KB
+System: total=3D4.00MB, used=3D0.00
+Metadata, RAID1: total=3D512.00MB, used=3D243.77MB
+
+--------------------------------------------------------------
+
+What "df" shows as "available" immediately after creation is wrong.
+What it shows after "device add" is wrong.
+What it shows after "balance" is wrong.
+What it shows after "device delete" looks ok.
+
+Ok - now I presume that sometimes "df" or/and the "btrfs" commands only=
+ =20
+show wrong values, but the system works with the right values (there is=
+t =20
+more free space than shown). But I fear that's not reliable.
+
+--------------------------------
+
+I also write scripts etc; I know since decades it's easy to make =20
+mistakes, but sometimes it's hard work to find them.
+
+Viele Gruesse!
+Helmut
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

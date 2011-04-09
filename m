@@ -1,52 +1,45 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
+From: Peter Stuge <peter@stuge.se>
 Subject: Re: wrong values in "df" and "btrfs filesystem df"
-Date: 09 Apr 2011 20:15:00 +0200
-Message-ID: <BjX0wGIi1uB@helmut.hullen.de>
-References: <1302370000.23240.10.camel@nayuki>
-Reply-To: helmut@hullen.de
+Date: Sat, 9 Apr 2011 21:35:49 +0200
+Message-ID: <20110409193549.1809.qmail@stuge.se>
+References: <1302370000.23240.10.camel@nayuki> <BjX0wGIi1uB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1302370000.23240.10.camel@nayuki>
+In-Reply-To: <BjX0wGIi1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Calvin,
+Helmut Hullen wrote:
+> If the value of "available" is unresolvable then btrfs should not
+> show any value.
 
-Du meintest am 09.04.11:
+Disagree strongly. I think a pessimistic estimate would be much
+better to show, than no value at all. This may be what is currently
+shown.
 
->> Nice picture. But it doesn't solve the problem that I need a
->> reliable information about the free/available space. And I prefer
->> asking with "df" for this information - "df" should work in the same
->> way for all filesystems.
+As for solving this with a high degree of usability, that's not
+really possible when constrained to the traditional paradigm that one
+filesystem will have completely consistent behavior backing all of
+it.
 
-> The problem is that the answer to the seemingly simple question: "How
-> much more data can I put onto this filesystem?" gets pretty hard with
-> btrfs.
+I think the only answer is to have btrfs-specific tools that know
+more about the filesystem, and can present the relevant facts.
 
-> Your case is one of the simpler ones - To calculate the remaining
-> space for files, you take the unused allocated data space (light blue
-> on my picture), add the unallocated space (white), divide by the raid
-> mode redundancy, and subtract some percentage (this is only an
-> estimate, of course...) of that unallocated space for the additional
-> metadata overhead.
+Taking the example of part fs being raid0 and part being raid5, such
+a tool would then list calculated values for both those parts of the
+fs. One showing how much could go into the raid0 part, the other how
+much could go into the raid5 part.
 
-That's simple?
+But for such filesystems, Linux can't do what Helmut would like.
 
-Maybe I'm simple minded. But I expect the same meaning of the shown date  
-with
-
-        df <mointpoint>
-
-regardless what kind of filesystem is mounted.
-But no test item for an IQ test.
-
-If the value of "available" is unresolvable then btrfs should not show  
-any value.
+Maybe it would be possible to optimize the reported numbers, to be
+what the user actually wants as often as possible. Ie. if there is
+only one type of backing storage (sorry, don't know the terms) then
+the calculation would be easier to get right, following the simple
+formula that was just given. This is all eye candy however,
+completely irrelevant IMO as long as the filesystem oopses, or eats
+root nodes. :)
 
 
-Ok - there's a problem slightly similar to the "available" value of  
-compressed partitions.
-
-Viele Gruesse!
-Helmut
+//Peter

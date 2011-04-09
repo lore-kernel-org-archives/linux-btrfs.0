@@ -1,77 +1,66 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: wrong values in "df" and "btrfs filesystem df"
-Date: 09 Apr 2011 08:25:00 +0200
-Message-ID: <BjW+GU4y1uB@helmut.hullen.de>
-Reply-To: helmut@hullen.de
+From: Hugo Mills <hugo-lkml@carfax.org.uk>
+Subject: Re: switching "balance" into background
+Date: Sat, 9 Apr 2011 09:44:45 +0100
+Message-ID: <20110409084445.GD5301@carfax.org.uk>
+References: <BjW+ECVD1uB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="J2SCkAp4GZ/dPZZf"
+Cc: linux-btrfs@vger.kernel.org
+To: helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <BjW+ECVD1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, linux-btrfs,
 
-First I create an array of 2 disks with
+--J2SCkAp4GZ/dPZZf
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-  mkfs.btrfs -d raid0 -m raid1 /dev/sdb1 /dev/sdd1
+On Sat, Apr 09, 2011 at 07:57:00AM +0200, Helmut Hullen wrote:
+> Hallo, linux-btrfs,
+> 
+> I can't switch a running "btrfs filesystem balance ..." via
+> 
+>         ctrl z
+>         bg
+> 
+> into the background, with other jobs this way works.
+> 
+> The stopping command "ctrl z" doesn't work.
+> 
+> (may be on other keyboards it's "ctrl y")
+> 
+> What goes wrong?
 
-and mount it at /srv/MM.
+   A balance is a single long-lived ioctl call, so the userspace
+process is living in D state (uninterruptible sleep) until the kernel
+finishes.
 
-Then I fill it with about 1,6 TByte.
-And then I add /dev/sde1 via
+   I've got a patch that forks the process, and runs the ioctl in the
+background, returning immediately. I should be able to get it to the
+list this weekend as part of the userspace side of the balance
+management patches.
 
-  btrfs device add /dev/sde1 /srv/MM
-  btrfs filesystem balance /srv/MM
-    (it run about 20 hours)
+   Hugo.
 
-Then I work on it, copy some new files, delete some old files - all  
-works well. Only
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+  --- There are three things you should never see being made: laws, ---  
+                        standards,  and sausages.                        
 
-  df /srv/MM
-  btrfs filesystem df /srv/MM
+--J2SCkAp4GZ/dPZZf
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
 
-show some completely wrong values:
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
 
-# df /srv/MM
+iD8DBQFNoBx9IKyzvlFcI40RApVDAKDEFa9ZqVhEMgqmS9HI+mnL2eIxGACeMXVP
++41jQmL7BoWoYlEWZHDF5Yw=
+=q6wQ
+-----END PGP SIGNATURE-----
 
-Filesystem           1K-blocks      Used Available Use% Mounted on
-/dev/sdd1            5846053400 1593436456 2898463184  36% /srv/MM
-
-# btrfs filesystem df /srv/MM
-
-Data, RAID0: total=1.67TB, used=1.48TB
-System, RAID1: total=16.00MB, used=112.00KB
-System: total=4.00MB, used=0.00
-Metadata, RAID1: total=3.75GB, used=2.26GB
-
-# btrfs-show
-
-Label: MMedia  uuid: 120b036a-883f-46aa-bd9a-cb6a1897c8d2
-	Total devices 3 FS bytes used 1.48TB
-	devid    3 size 1.81TB used 573.76GB path /dev/sdb1
-	devid    2 size 1.81TB used 573.77GB path /dev/sde1
-	devid    1 size 1.82TB used 570.01GB path /dev/sdd1
-
-Btrfs Btrfs v0.19
-
-------------------------------------------------
-
-"df" shows an "Available" value which isn't related to any real value.  
-The sum of "used" and "Available" is far away from the really existent  
-disk space. When I copy additional files to "/srv/MM" then "used" still  
-shows the right value, and the sum grows (slowly) to the max. available  
-space.
-
-In "btrfs filesystem df /srv/MM" the line
-
-  Data, RAID0: total=1.67TB, used=1.48TB
-
-shows a "total" value which isn't related to any existent value; maybe  
-it still shows the used space before adding the third partition.
-This (wrong) value seems not to change.
-
-Kernel 2.6.38.1
-btrfs from november 2010
-
-Viele Gruesse!
-Helmut
+--J2SCkAp4GZ/dPZZf--

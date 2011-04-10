@@ -1,75 +1,109 @@
-From: Daniel J Blueman <daniel.blueman@gmail.com>
-Subject: [2.6.29-rc2] insert_dir_item hitting assertion during log replay
-Date: Sun, 10 Apr 2011 16:29:27 +0800
-Message-ID: <BANLkTi=M5q6WbkgNMURWkBCi-46E6-UOkA@mail.gmail.com>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: Re: wrong values in "df" and "btrfs filesystem df"
+Date: Sun, 10 Apr 2011 18:13:51 +0800
+Message-ID: <4DA182DF.6010703@cn.fujitsu.com>
+References: <BjW+GU4y1uB@helmut.hullen.de> <20110409091141.GE5301@carfax.org.uk>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Linux BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=GB2312
+To: Hugo Mills <hugo-lkml@carfax.org.uk>, helmut@hullen.de,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110409091141.GE5301@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When rebooting from a crash, thus during log replay on 2.6.29-rc2,
-btrfs_insert_dir_item caused an assertion failure [1]. The fs was
-being mounted clear_cache on an SSD.
+On sat, 9 Apr 2011 10:11:41 +0100, Hugo Mills wrote:
+> On Sat, Apr 09, 2011 at 08:25:00AM +0200, Helmut Hullen wrote:
+>> Hallo, linux-btrfs,
+>>
+>> First I create an array of 2 disks with
+>>
+>>   mkfs.btrfs -d raid0 -m raid1 /dev/sdb1 /dev/sdd1
+>>
+>> and mount it at /srv/MM.
+>>
+>> Then I fill it with about 1,6 TByte.
+>> And then I add /dev/sde1 via
+>>
+>>   btrfs device add /dev/sde1 /srv/MM
+>>   btrfs filesystem balance /srv/MM
+>>     (it run about 20 hours)
+>>
+>> Then I work on it, copy some new files, delete some old files - all  
+>> works well. Only
+>>
+>>   df /srv/MM
+>>   btrfs filesystem df /srv/MM
+>>
+>> show some completely wrong values:
+>>
+>> # df /srv/MM
+>>
+>> Filesystem           1K-blocks      Used Available Use% Mounted on
+>> /dev/sdd1            5846053400 1593436456 2898463184  36% /srv/MM
+>>
+>> # btrfs filesystem df /srv/MM
+>>
+>> Data, RAID0: total=1.67TB, used=1.48TB
+>> System, RAID1: total=16.00MB, used=112.00KB
+>> System: total=4.00MB, used=0.00
+>> Metadata, RAID1: total=3.75GB, used=2.26GB
+>>
+>> # btrfs-show
+>>
+>> Label: MMedia  uuid: 120b036a-883f-46aa-bd9a-cb6a1897c8d2
+>> 	Total devices 3 FS bytes used 1.48TB
+>> 	devid    3 size 1.81TB used 573.76GB path /dev/sdb1
+>> 	devid    2 size 1.81TB used 573.77GB path /dev/sde1
+>> 	devid    1 size 1.82TB used 570.01GB path /dev/sdd1
+>>
+>> Btrfs Btrfs v0.19
+>>
+>> ------------------------------------------------
+>>
+>> "df" shows an "Available" value which isn't related to any real value.  
+> 
+>    I _think_ that value is the amount of space not allocated to any
+> block group. If that's so, then Available (from df) plus the three
+> "total" values (from btrfs fi df) should equal the size value from df.
 
-Probably it's not so easy to reproduce, but better to report it...
+This value excludes the space that can not be allocated to any block group,
+This feature was implemented to fix the bug df command add the disk space, which
+can not be allocated to any block group forever, into the "Available" value.
+(see the changelog of the commit 6d07bcec969af335d4e35b3921131b7929bd634e)
 
---- [1]
+This implementation just like fake chunk allocation, but the fake allocation
+just allocate the space from two of these three disks, doesn't spread the
+stripes over all the disks, which has enough space.
+ 
+I will post a patch to fix it soon.
 
-kernel BUG at fs/btrfs/inode.c:4665!
-invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
-last sysfs file:
-/sys/devices/virtual/wmi/A80593CE-A997-11DA-B012-B622A1EF5492/uevent
-CPU 3
-Modules linked in: video sdhci_pci sdhci mmc_core
+> 
+>> The sum of "used" and "Available" is far away from the really existent  
+>> disk space. When I copy additional files to "/srv/MM" then "used" still  
+>> shows the right value, and the sum grows (slowly) to the max. available  
+>> space.
+>>
+>> In "btrfs filesystem df /srv/MM" the line
+>>
+>>   Data, RAID0: total=1.67TB, used=1.48TB
+>>
+>> shows a "total" value which isn't related to any existent value; maybe  
+>> it still shows the used space before adding the third partition.
+>> This (wrong) value seems not to change.
+> 
+>    It's not wrong -- it simply doesn't mean what you think it does. :)
+> 
+>    The total value in the output of "btrfs fi df" is the total space
+> allocated to block groups. As the filesystem needs more space, it
+> will allocate more block groups from the available raw storage pool,
+> and the number will go up.
+> 
+>    This is explained on the wiki at [1].
+> 
+>    HTH,
+>    Hugo.
+> 
+> [1] https://btrfs.wiki.kernel.org/index.php/FAQ#Why_does_df_show_incorrect_free_space_for_my_RAID_volume.3F
+> 
 
-Pid: 328, comm: mount Not tainted 2.6.39-rc2-350cd+ #1 Dell Inc.
-Latitude E5420/0H5TG2
-RIP: 0010:[<ffffffff812a2962>]  [<ffffffff812a2962>] btrfs_add_link+0x132/0x190
-RSP: 0018:ffff88021e1097d8  EFLAGS: 00010282
-RAX: 00000000ffffffef RBX: ffff88021d965f70 RCX: 0000000000000006
-RDX: 00000000ffffffef RSI: ffff88021efe4710 RDI: ffff88021efe4020
-RBP: ffff88021e109848 R08: 0000000000000000 R09: ffff88022d7c03f0
-R10: 0000000000000001 R11: 0000000000000001 R12: ffff88021d966720
-R13: ffff88021e0261b0 R14: 000000000000000f R15: ffff88021d959000
-FS:  00007fcee7b3d800(0000) GS:ffff88022ec60000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-CR2: 00007f5e5ffff700 CR3: 000000021e6ef000 CR4: 00000000000406e0
-DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-Process mount (pid: 328, threadinfo ffff88021e108000, task ffff88021efe4020)
-Stack:
- ffff880200000001 0000000000000016 ffff88021e109978 0000000000000016
- 000000000010555e 0000000000000001 0000000000001000 0000000000000000
- ffff88021e03a000 0000000000000000 00000000000000b0 ffff88021e109ae8
-Call Trace:
- [<ffffffff812ccb45>] add_inode_ref+0x2f5/0x3b0
- [<ffffffff81058e61>] ? get_parent_ip+0x11/0x50
- [<ffffffff812cdff6>] replay_one_buffer+0x2c6/0x3a0
- [<ffffffff81099fd0>] ? mark_held_locks+0x70/0xa0
- [<ffffffff81058e61>] ? get_parent_ip+0x11/0x50
- [<ffffffff812ca978>] walk_up_log_tree+0x168/0x320
- [<ffffffff812cdd30>] ? replay_one_dir_item+0xe0/0xe0
- [<ffffffff812cb188>] walk_log_tree+0xe8/0x290
- [<ffffffff8109a18d>] ? trace_hardirqs_on+0xd/0x10
- [<ffffffff812d0000>] btrfs_recover_log_trees+0x220/0x320
- [<ffffffff812cdd30>] ? replay_one_dir_item+0xe0/0xe0
- [<ffffffff81295521>] open_ctree+0x1301/0x16b0
- [<ffffffff81331ab4>] ? snprintf+0x34/0x40
- [<ffffffff812701e3>] btrfs_fill_super.clone.14+0x73/0x130
- [<ffffffff811a4aaf>] ? disk_name+0x5f/0xc0
- [<ffffffff8132ef77>] ? strlcpy+0x47/0x60
- [<ffffffff812705e0>] btrfs_mount+0x340/0x3e0
- [<ffffffff81143e9b>] mount_fs+0x1b/0xd0
- [<ffffffff8115fece>] vfs_kern_mount+0x5e/0xd0
- [<ffffffff8116045f>] do_kern_mount+0x4f/0x100
- [<ffffffff81161ea4>] do_mount+0x1e4/0x220
- [<ffffffff8116228b>] sys_mount+0x8b/0xe0
- [<ffffffff8170adfb>] system_call_fastpath+0x16/0x1b
-Code: 4c 89 d2 44 89 f1 4c 89 ee 4c 89 1c 24 4c 89 55 a8 4c 89 5d a0
-e8 5f c6 fe ff 4c 8b 5d a0 4c 8b 55 a8 85 c0 75 bc e9 31 ff ff ff <0f>
-0b 48 8b b2 d0 fc ff ff 48 8d 7d b0 b9 11 00 00 00 4d 89 d9
-RIP  [<ffffffff812a2962>] btrfs_add_link+0x132/0x190
- RSP <ffff88021e1097d8>
--- 
-Daniel J Blueman

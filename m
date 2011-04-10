@@ -1,243 +1,146 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: [PATCH v5 1/8] btrfs: Balance progress monitoring
-Date: Sun, 10 Apr 2011 22:06:04 +0100
-Message-ID: <1302469571-12605-2-git-send-email-hugo@carfax.org.uk>
-References: <1302469571-12605-1-git-send-email-hugo@carfax.org.uk>
-Cc: linux-btrfs@vger.kernel.org
-To: chris.mason@oracle.com, dave@jikos.cz, lizf@cn.fujitsu.com
+From: Christian =?ISO-8859-1?Q?A=DFfalg?= <christian.assfalg@uni-ulm.de>
+Subject: Required Kernel version to compile git btrfs with DKMS? Problems
+ with Ubuntu 10.10
+Date: Sun, 10 Apr 2011 22:50:02 +0200
+Message-ID: <1302468602.2077.71.camel@chris-desktop>
+Mime-Version: 1.0
+Content-Type: multipart/mixed; boundary="=-+dHAp3JNBfqmvb+hWB5d"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1302469571-12605-1-git-send-email-hugo@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch introduces a basic form of progress monitoring for balance
-operations, by counting the number of block groups remaining. The
-information is exposed to userspace by an ioctl.
 
-Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
----
- fs/btrfs/ctree.h   |    9 ++++++++
- fs/btrfs/disk-io.c |    2 +
- fs/btrfs/ioctl.c   |   34 +++++++++++++++++++++++++++++++
- fs/btrfs/ioctl.h   |    7 ++++++
- fs/btrfs/volumes.c |   56 ++++++++++++++++++++++++++++++++++++++++++++++++++-
- 5 files changed, 106 insertions(+), 2 deletions(-)
+--=-+dHAp3JNBfqmvb+hWB5d
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 7f78cc7..17c7ecc 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -865,6 +865,11 @@ struct btrfs_block_group_cache {
- 	struct list_head cluster_list;
- };
- 
-+struct btrfs_balance_info {
-+	u32 expected;
-+	u32 completed;
-+};
-+
- struct reloc_control;
- struct btrfs_device;
- struct btrfs_fs_devices;
-@@ -1078,6 +1083,10 @@ struct btrfs_fs_info {
- 
- 	/* filesystem state */
- 	u64 fs_state;
-+
-+	/* Keep track of any rebalance operations on this FS */
-+	spinlock_t balance_info_lock;
-+	struct btrfs_balance_info *balance_info;
- };
- 
- /*
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 100b07f..3d690de 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1645,6 +1645,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 	spin_lock_init(&fs_info->ref_cache_lock);
- 	spin_lock_init(&fs_info->fs_roots_radix_lock);
- 	spin_lock_init(&fs_info->delayed_iput_lock);
-+	spin_lock_init(&fs_info->balance_info_lock);
- 
- 	init_completion(&fs_info->kobj_unregister);
- 	fs_info->tree_root = tree_root;
-@@ -1670,6 +1671,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 	fs_info->sb = sb;
- 	fs_info->max_inline = 8192 * 1024;
- 	fs_info->metadata_ratio = 0;
-+	fs_info->balance_info = NULL;
- 
- 	fs_info->thread_pool_size = min_t(unsigned long,
- 					  num_online_cpus() + 2, 8);
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 5fdb2ab..a8fbb07 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2375,6 +2375,38 @@ static noinline long btrfs_ioctl_wait_sync(struct file *file, void __user *argp)
- 	return btrfs_wait_for_commit(root, transid);
- }
- 
-+/*
-+ * Return the current status of any balance operation
-+ */
-+long btrfs_ioctl_balance_progress(
-+	struct btrfs_fs_info *fs_info,
-+	struct btrfs_ioctl_balance_progress __user *user_dest)
-+{
-+	int ret = 0;
-+	struct btrfs_ioctl_balance_progress dest;
-+
-+	spin_lock(&fs_info->balance_info_lock);
-+	if (!fs_info->balance_info) {
-+		ret = -EINVAL;
-+		goto error;
-+	}
-+
-+	dest.expected = fs_info->balance_info->expected;
-+	dest.completed = fs_info->balance_info->completed;
-+
-+	spin_unlock(&fs_info->balance_info_lock);
-+
-+	if (copy_to_user(user_dest, &dest,
-+			 sizeof(struct btrfs_ioctl_balance_progress)))
-+		return -EFAULT;
-+
-+	return 0;
-+
-+error:
-+	spin_unlock(&fs_info->balance_info_lock);
-+	return ret;
-+}
-+
- long btrfs_ioctl(struct file *file, unsigned int
- 		cmd, unsigned long arg)
- {
-@@ -2414,6 +2446,8 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_rm_dev(root, argp);
- 	case BTRFS_IOC_BALANCE:
- 		return btrfs_balance(root->fs_info->dev_root);
-+	case BTRFS_IOC_BALANCE_PROGRESS:
-+		return btrfs_ioctl_balance_progress(root->fs_info, argp);
- 	case BTRFS_IOC_CLONE:
- 		return btrfs_ioctl_clone(file, arg, 0, 0, 0);
- 	case BTRFS_IOC_CLONE_RANGE:
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 8fb3821..7c37c6b 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -157,6 +157,11 @@ struct btrfs_ioctl_space_args {
- 	struct btrfs_ioctl_space_info spaces[0];
- };
- 
-+struct btrfs_ioctl_balance_progress {
-+	__u32 expected;
-+	__u32 completed;
-+};
-+
- #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
- 				   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
-@@ -203,4 +208,6 @@ struct btrfs_ioctl_space_args {
- 				   struct btrfs_ioctl_vol_args_v2)
- #define BTRFS_IOC_SUBVOL_GETFLAGS _IOW(BTRFS_IOCTL_MAGIC, 25, __u64)
- #define BTRFS_IOC_SUBVOL_SETFLAGS _IOW(BTRFS_IOCTL_MAGIC, 26, __u64)
-+#define BTRFS_IOC_BALANCE_PROGRESS _IOR(BTRFS_IOCTL_MAGIC, 27, \
-+				  struct btrfs_ioctl_balance_progress)
- #endif
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index dd13eb8..bb2ffed 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2041,6 +2041,7 @@ int btrfs_balance(struct btrfs_root *dev_root)
- 	struct btrfs_root *chunk_root = dev_root->fs_info->chunk_root;
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_key found_key;
-+	struct btrfs_balance_info *bal_info;
- 
- 	if (dev_root->fs_info->sb->s_flags & MS_RDONLY)
- 		return -EROFS;
-@@ -2051,6 +2052,20 @@ int btrfs_balance(struct btrfs_root *dev_root)
- 	mutex_lock(&dev_root->fs_info->volume_mutex);
- 	dev_root = dev_root->fs_info->dev_root;
- 
-+	bal_info = kmalloc(
-+		sizeof(struct btrfs_balance_info),
-+		GFP_NOFS);
-+	if (!bal_info) {
-+		ret = -ENOMEM;
-+		goto error_no_status;
-+	}
-+	spin_lock(&dev_root->fs_info->balance_info_lock);
-+	dev_root->fs_info->balance_info = bal_info;
-+	bal_info->expected = -1; /* One less than actually counted,
-+				    because chunk 0 is special */
-+	bal_info->completed = 0;
-+	spin_unlock(&dev_root->fs_info->balance_info_lock);
-+
- 	/* step one make some room on all the devices */
- 	list_for_each_entry(device, devices, dev_list) {
- 		old_size = device->total_bytes;
-@@ -2074,10 +2089,37 @@ int btrfs_balance(struct btrfs_root *dev_root)
- 		btrfs_end_transaction(trans, dev_root);
- 	}
- 
--	/* step two, relocate all the chunks */
-+	/* step two, count the chunks */
- 	path = btrfs_alloc_path();
--	BUG_ON(!path);
-+	if (!path) {
-+		ret = -ENOMEM;
-+		goto error;
-+	}
-+
-+	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
-+	key.offset = (u64)-1;
-+	key.type = BTRFS_CHUNK_ITEM_KEY;
-+
-+	ret = btrfs_search_slot(NULL, chunk_root, &key, path, 0, 0);
-+	if (ret <= 0) {
-+		printk(KERN_ERR "btrfs: Failed to find the last chunk.\n");
-+		BUG();
-+	}
-+
-+	while (1) {
-+		ret = btrfs_previous_item(chunk_root, path, 0,
-+					  BTRFS_CHUNK_ITEM_KEY);
-+		if (ret)
-+			break;
-+
-+		spin_lock(&dev_root->fs_info->balance_info_lock);
-+		bal_info->expected++;
-+		spin_unlock(&dev_root->fs_info->balance_info_lock);
-+	}
-+
-+	btrfs_release_path(chunk_root, path);
- 
-+	/* step three, relocate all the chunks */
- 	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
- 	key.offset = (u64)-1;
- 	key.type = BTRFS_CHUNK_ITEM_KEY;
-@@ -2115,10 +2157,20 @@ int btrfs_balance(struct btrfs_root *dev_root)
- 					   found_key.offset);
- 		BUG_ON(ret && ret != -ENOSPC);
- 		key.offset = found_key.offset - 1;
-+		spin_lock(&dev_root->fs_info->balance_info_lock);
-+		bal_info->completed++;
-+		spin_unlock(&dev_root->fs_info->balance_info_lock);
-+		printk(KERN_INFO "btrfs: balance: %llu/%llu block groups completed\n",
-+		       bal_info->completed, bal_info->expected);
- 	}
- 	ret = 0;
- error:
- 	btrfs_free_path(path);
-+	spin_lock(&dev_root->fs_info->balance_info_lock);
-+	kfree(dev_root->fs_info->balance_info);
-+	dev_root->fs_info->balance_info = NULL;
-+	spin_unlock(&dev_root->fs_info->balance_info_lock);
-+error_no_status:
- 	mutex_unlock(&dev_root->fs_info->volume_mutex);
- 	return ret;
- }
--- 
-1.7.2.5
+Hi all,
+
+I'd like to look into btrfs code and try some things, so I followed the
+instructions on the wiki (link below) to setup git and get a dkms build
+against my kernel. I'm using Ubuntu 10.10 with a 2.6.35 Kernel, which I
+assume is too old. What version do I need?
+
+https://btrfs.wiki.kernel.org/index.php/Btrfs_source_repositories
+
+I've followed the guide (skipped initrd) until the dkms build command,
+which fails with the following error:
+
+dkms build -m btrfs -v git
+
+root@chris-desktop:/home/chris/workspace/btrfs/git-repo/btrfs-unstable#
+cat /var/lib/dkms/btrfs/git/build/make.log
+DKMS make.log for btrfs-git for kernel 2.6.35-28-generic (i686)
+So 10. Apr 22:05:11 CEST 2011
+make: Gehe in Verzeichnis '/usr/src/linux-headers-2.6.35-28-generic'
+  LD      /var/lib/dkms/btrfs/git/build/built-in.o
+  CC [M]  /var/lib/dkms/btrfs/git/build/super.o
+In file included from /var/lib/dkms/btrfs/git/build/super.c:43:
+/var/lib/dkms/btrfs/git/build/ctree.h:31: fatal error:
+trace/events/btrfs.h: Datei oder Verzeichnis nicht gefunden
+compilation terminated.
+make[1]: *** [/var/lib/dkms/btrfs/git/build/super.o] Fehler 1
+make: *** [_module_/var/lib/dkms/btrfs/git/build] Fehler 2
+make: Verlasse Verzeichnis '/usr/src/linux-headers-2.6.35-28-generic'
+
+This seems to be fairly new (related to initial tracepoint support),
+from the two Mailing list threads "[PATCH] Btrfs: add initial tracepoint
+support for btrfs" and "[GIT PULL] Btrfs updates for 2.6.39". The
+attached make.log is when I simply copy the missing file over from the
+btrfs git tree (fails with among others
+"/var/lib/dkms/btrfs/git/build/super.c:578: error: ‘struct super_block’
+has no member named ‘s_d_op’"). So I am guessing that my Ubuntu 10.10
+2.6.35 Kernel is too old? Will the 2.6.38 from the next Ubuntu release
+work?
+
+Regards,
+Christian Aßfalg
+
+--=-+dHAp3JNBfqmvb+hWB5d
+Content-Disposition: attachment; filename="make.log"
+Content-Type: text/x-log; name="make.log"; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+
+DKMS make.log for btrfs-git for kernel 2.6.35-28-generic (i686)
+So 10. Apr 22:15:02 CEST 2011
+make: Gehe in Verzeichnis '/usr/src/linux-headers-2.6.35-28-generic'
+  LD      /var/lib/dkms/btrfs/git/build/built-in.o
+  CC [M]  /var/lib/dkms/btrfs/git/build/super.o
+In file included from /var/lib/dkms/btrfs/git/build/super.c:43:
+/var/lib/dkms/btrfs/git/build/ctree.h:2237: warning: ‘struct fstrim_range’ declared inside parameter list
+/var/lib/dkms/btrfs/git/build/ctree.h:2237: warning: its scope is only this definition or declaration, which is probably not what you want
+In file included from include/trace/ftrace.h:285,
+                 from include/trace/define_trace.h:73,
+                 from include/trace/events/btrfs.h:667,
+                 from /var/lib/dkms/btrfs/git/build/super.c:56:
+include/trace/events/btrfs.h: In function ‘ftrace_raw_output_btrfs_transaction_commit’:
+include/trace/events/btrfs.h:47: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:47: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:47: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h: In function ‘ftrace_raw_output_btrfs__inode’:
+include/trace/events/btrfs.h:68: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:68: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:68: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h: In function ‘ftrace_raw_output_btrfs_get_extent’:
+include/trace/events/btrfs.h:144: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:144: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:144: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:144: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:144: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:144: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:144: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h: In function ‘ftrace_raw_output_btrfs__ordered_extent’:
+include/trace/events/btrfs.h:197: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:197: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:197: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h: In function ‘ftrace_raw_output_btrfs__writepage’:
+include/trace/events/btrfs.h:273: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:273: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:273: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h: In function ‘ftrace_raw_output_btrfs_writepage_end_io_hook’:
+include/trace/events/btrfs.h:332: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:332: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:332: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h: In function ‘ftrace_raw_output_btrfs_sync_file’:
+include/trace/events/btrfs.h:365: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:365: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:365: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h: In function ‘ftrace_raw_output_btrfs_delayed_tree_ref’:
+include/trace/events/btrfs.h:420: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:420: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:420: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:420: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:420: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:420: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h: In function ‘ftrace_raw_output_btrfs_delayed_data_ref’:
+include/trace/events/btrfs.h:459: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:459: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:459: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:459: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:459: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:459: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h: In function ‘ftrace_raw_output_btrfs__chunk’:
+include/trace/events/btrfs.h:541: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:541: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:541: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h: In function ‘ftrace_raw_output_btrfs_cow_block’:
+include/trace/events/btrfs.h:591: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:591: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:591: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h: In function ‘ftrace_raw_output_btrfs__reserved_extent’:
+include/trace/events/btrfs.h:626: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:626: warning: large integer implicitly truncated to unsigned type
+include/trace/events/btrfs.h:626: warning: large integer implicitly truncated to unsigned type
+/var/lib/dkms/btrfs/git/build/super.c: In function ‘btrfs_fill_super’:
+/var/lib/dkms/btrfs/git/build/super.c:578: error: ‘struct super_block’ has no member named ‘s_d_op’
+/var/lib/dkms/btrfs/git/build/super.c: At top level:
+/var/lib/dkms/btrfs/git/build/super.c:1069: error: unknown field ‘mount’ specified in initializer
+/var/lib/dkms/btrfs/git/build/super.c:1069: warning: initialization makes integer from pointer without a cast
+/var/lib/dkms/btrfs/git/build/super.c:1119: warning: initialization from incompatible pointer type
+/var/lib/dkms/btrfs/git/build/super.c:1120: error: unknown field ‘evict_inode’ specified in initializer
+make[1]: *** [/var/lib/dkms/btrfs/git/build/super.o] Fehler 1
+make: *** [_module_/var/lib/dkms/btrfs/git/build] Fehler 2
+make: Verlasse Verzeichnis '/usr/src/linux-headers-2.6.35-28-generic'
+
+--=-+dHAp3JNBfqmvb+hWB5d--
 

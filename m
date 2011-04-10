@@ -1,132 +1,62 @@
 From: Sergei Trofimovich <slyich@gmail.com>
-Subject: [PATCH] Re: btrfs does not work on usermode linux
-Date: Sun, 10 Apr 2011 23:24:03 +0300
-Message-ID: <20110410232403.617c3b7f@sf>
+Subject: [PATCH v2] Re: btrfs does not work on usermode linux
+Date: Sun, 10 Apr 2011 23:58:46 +0300
+Message-ID: <20110410235846.135e801e@sf>
 References: <20110410133710.0ef34cb6@sf>
 	<20110410184249.483d8d67@sf>
 	<20110410230622.09e965ae@sf>
+	<20110410232403.617c3b7f@sf>
 Mime-Version: 1.0
 Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/.FA=KEdj6//244_tlV_6XRK"; protocol="application/pgp-signature"
+ boundary="Sig_/FX.hsUBz0bUr_NIm8b1sge0"; protocol="application/pgp-signature"
 Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
 	cwillu <cwillu@cwillu.com>
 To: Sergei Trofimovich <slyich@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110410230622.09e965ae@sf>
+In-Reply-To: <20110410232403.617c3b7f@sf>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/.FA=KEdj6//244_tlV_6XRK
-Content-Type: multipart/mixed; boundary="MP_/y_kzw7c68tfaYVjulLFh83j"
+--Sig_/FX.hsUBz0bUr_NIm8b1sge0
+Content-Type: multipart/mixed; boundary="MP_/EcofZ+/MF18ur18f/66Fd3E"
 
---MP_/y_kzw7c68tfaYVjulLFh83j
+--MP_/EcofZ+/MF18ur18f/66Fd3E
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: quoted-printable
 Content-Disposition: inline
 
-On Sun, 10 Apr 2011 23:06:22 +0300
+On Sun, 10 Apr 2011 23:24:03 +0300
 Sergei Trofimovich <slyich@gmail.com> wrote:
 
-> > > According to https://btrfs.wiki.kernel.org/index.php/Debugging_Btrfs_=
-with_GDB
-> > > UML did work once.
-> > >=20
-> > > Now it corrupts data and triggers BUG_ON once you
-> > > start to use it. I tried both 2.6.38 and 2.6.39-rc2 (x86_64)
-> > > I need some help to track it down.
-> > >=20
-> > > doing 'touch `seq 1 11`; rm 11' kills the kernel:
-> >=20
-> > 2.6.36 works 2.6.37 doesn't. bsecting
->=20
-> Bisected down to:
->=20
-> commit 59daa706fbec745684702741b9f5373142dd9fdc (v2.6.36-rc2-2-g59daa70)
-> Author: Ma Ling <ling.ma@intel.com>
-> Date:   Tue Jun 29 03:24:25 2010 +0800
->=20
->     x86, mem: Optimize memcpy by avoiding memory false dependece
->=20
-> Which means btrfs passes overlapping areas to memcpy. I've added some deb=
-ug info
-> and found out rough place:
-> touching files 1 .. 11
-> #run> touch 1 2 3 4 5 6 7 8 9 10 11
-> [    2.270000]  memcpy overlap detected: memcpy(dst=3D0000000070654e8a, s=
-rc=3D0000000070654ea9, size=3D171) [delta=3D31]
-> [    2.270000] ------------[ cut here ]------------
-> [    2.270000] WARNING: at /home/slyfox/linux-2.6/fs/btrfs/memcpy_debug.c=
-:18 btrfs_memcpy+0x52/0x68()
-> [    2.270000] Call Trace:=20
-> [    2.270000] 7064b748:  [<600eff46>] map_extent_buffer+0x62/0x9e
-> [    2.270000] 7064b758:  [<60029ad9>] warn_slowpath_common+0x59/0x70
-> [    2.270000] 7064b798:  [<60029b05>] warn_slowpath_null+0x15/0x17
-> [    2.270000] 7064b7a8:  [<6011129e>] btrfs_memcpy+0x52/0x68
-> [    2.270000] 7064b7d8:  [<600efa01>] memcpy_extent_buffer+0x18d/0x1da
-> [    2.270000] 7064b858:  [<600efae2>] memmove_extent_buffer+0x94/0x208
-> [    2.270000] 7064b8d8:  [<600bc4b0>] setup_items_for_insert+0x2b8/0x426
-> [    2.270000] 7064b8e8:  [<600bb25a>] btrfs_leaf_free_space+0x62/0xa6
-> [    2.270000] 7064b9c8:  [<600c13f3>] btrfs_insert_empty_items+0xa3/0xb5
-> [    2.270000] 7064ba38:  [<600ce690>] insert_with_overflow+0x33/0xf1
-> [    2.270000] 7064ba88:  [<600ce7d4>] btrfs_insert_dir_item+0x86/0x268
-> [    2.270000] 7064bae8:  [<601b498b>] _raw_spin_unlock+0x9/0xb
-> [    2.270000] 7064bb48:  [<600ddef1>] btrfs_add_link+0x10d/0x170
-> [    2.270000] 7064bbc8:  [<600ddf7a>] btrfs_add_nondir+0x26/0x52
-> [    2.270000] 7064bc08:  [<600de73f>] btrfs_create+0xf2/0x1c0
-> [    2.270000] 7064bc18:  [<6007ccff>] generic_permission+0x57/0x9d
-> [    2.270000] 7064bc68:  [<6007cf60>] vfs_create+0x6a/0x75
->=20
-> which is in extent_io:copy_pages. I haven't dig further only made sure th=
-e following
-> patch below (practically converts copy_pages to move_pages). It certainly=
- does not
-> look the right thing, but I don't understand extent_io contents yet to un=
-derstand what
-> actually happened.
->=20
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 20ddb28..4cab7db 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -3893,14 +3893,17 @@ static void copy_pages(struct page *dst_page, str=
-uct page *src_page,
->         char *src_kaddr;
-> =20
->         if (dst_page !=3D src_page)
-> +       {
->                 src_kaddr =3D kmap_atomic(src_page, KM_USER1);
-> +               memcpy(dst_kaddr + dst_off, src_kaddr + src_off, len);
-> +               kunmap_atomic(src_kaddr, KM_USER1);
-> +       }
->         else
-> +       {
->                 src_kaddr =3D dst_kaddr;
-> -
-> -       memcpy(dst_kaddr + dst_off, src_kaddr + src_off, len);
-> +               memmove(dst_kaddr + dst_off, src_kaddr + src_off, len);
-> +       }
->         kunmap_atomic(dst_kaddr, KM_USER0);
-> -       if (dst_page !=3D src_page)
-> -               kunmap_atomic(src_kaddr, KM_USER1);
->  }
-> =20
->  void memcpy_extent_buffer(struct extent_buffer *dst, unsigned long dst_o=
-ffset,
+> Fix data corruption caused by memcpy() usage on overlapping data.
+> I've observed it first when found out usermode linux crash on btrfs.
 
-Attached nicer patch. Looks like original logic expected ceritain memcpy co=
-py direction,
-but there isn't one!
+Changes since v1:
+
+>  	else
+>  		src_kaddr =3D dst_kaddr;
+> =20
+> +	BUG_ON(abs(src_off - dst_off) < len);
+>  	memcpy(dst_kaddr + dst_off, src_kaddr + src_off, len);
+
+Too eager BUG_ON. Now used only for src_page =3D=3D dst_page.
+
+> -	if (dst_offset < src_offset) {
+> +	if (abs(dst_offset - src_offset) >=3D len) {
+
+abs() is not a good thing to use un unsigned values. aded helper overlappin=
+g_areas.
 
 --=20
 
   Sergei
 
---MP_/y_kzw7c68tfaYVjulLFh83j
+--MP_/EcofZ+/MF18ur18f/66Fd3E
 Content-Type: text/x-patch
 Content-Transfer-Encoding: quoted-printable
 Content-Disposition: attachment;
  filename=0001-btrfs-properly-handle-overlapping-areas-in-memmove_e.patch
 
-=46rom 0eaf33265f8a2e0d76ee6db1ad74ee4422efb122 Mon Sep 17 00:00:00 2001
+=46rom 2ac9dd9cc54cee51c5c5219e35cca18a9f3f3a3f Mon Sep 17 00:00:00 2001
 From: Sergei Trofimovich <slyfox@gentoo.org>
 Date: Sun, 10 Apr 2011 23:19:53 +0300
 Subject: [PATCH] btrfs: properly handle overlapping areas in memmove_extent=
@@ -169,48 +99,97 @@ http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg09302.html
 
 Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
 ---
- fs/btrfs/extent_io.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+ fs/btrfs/extent_io.c |   11 ++++++++++-
+ 1 files changed, 10 insertions(+), 1 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 20ddb28..3bbda41 100644
+index 20ddb28..786a0f7 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -3897,6 +3897,7 @@ static void copy_pages(struct page *dst_page, struct =
-page *src_page,
- 	else
- 		src_kaddr =3D dst_kaddr;
+@@ -3878,31 +3878,40 @@ static void move_pages(struct page *dst_page, struc=
+t page *src_page,
+ 		char *s =3D src_kaddr + src_off + len;
 =20
-+	BUG_ON(abs(src_off - dst_off) < len);
+ 		while (len--)
+ 			*--p =3D *--s;
+=20
+ 		kunmap_atomic(src_kaddr, KM_USER1);
+ 	}
+ 	kunmap_atomic(dst_kaddr, KM_USER0);
+ }
+=20
++static inline bool areas_overlap(unsigned long src, unsigned long dst, uns=
+igned long len)
++{
++	unsigned long distance =3D (src > dst) ? src - dst : dst - src;
++	return distance < len;
++}
++
+ static void copy_pages(struct page *dst_page, struct page *src_page,
+ 		       unsigned long dst_off, unsigned long src_off,
+ 		       unsigned long len)
+ {
+ 	char *dst_kaddr =3D kmap_atomic(dst_page, KM_USER0);
+ 	char *src_kaddr;
+=20
+ 	if (dst_page !=3D src_page)
+ 		src_kaddr =3D kmap_atomic(src_page, KM_USER1);
+ 	else
++	{
+ 		src_kaddr =3D dst_kaddr;
++		BUG_ON(areas_overlap(src_off, dst_off, len));
++	}
+=20
  	memcpy(dst_kaddr + dst_off, src_kaddr + src_off, len);
  	kunmap_atomic(dst_kaddr, KM_USER0);
  	if (dst_page !=3D src_page)
-@@ -3970,7 +3971,7 @@ void memmove_extent_buffer(struct extent_buffer *dst,=
- unsigned long dst_offset,
+ 		kunmap_atomic(src_kaddr, KM_USER1);
+ }
+=20
+ void memcpy_extent_buffer(struct extent_buffer *dst, unsigned long dst_off=
+set,
+ 			   unsigned long src_offset, unsigned long len)
+ {
+@@ -3963,21 +3972,21 @@ void memmove_extent_buffer(struct extent_buffer *ds=
+t, unsigned long dst_offset,
+ 	if (src_offset + len > dst->len) {
+ 		printk(KERN_ERR "btrfs memmove bogus src_offset %lu move "
+ 		       "len %lu len %lu\n", src_offset, len, dst->len);
+ 		BUG_ON(1);
+ 	}
+ 	if (dst_offset + len > dst->len) {
+ 		printk(KERN_ERR "btrfs memmove bogus dst_offset %lu move "
  		       "len %lu len %lu\n", dst_offset, len, dst->len);
  		BUG_ON(1);
  	}
 -	if (dst_offset < src_offset) {
-+	if (abs(dst_offset - src_offset) >=3D len) {
++	if (!areas_overlap(src_offset, dst_offset, len)) {
  		memcpy_extent_buffer(dst, dst_offset, src_offset, len);
  		return;
  	}
+ 	while (len > 0) {
+ 		dst_i =3D (start_offset + dst_end) >> PAGE_CACHE_SHIFT;
+ 		src_i =3D (start_offset + src_end) >> PAGE_CACHE_SHIFT;
+=20
+ 		dst_off_in_page =3D (start_offset + dst_end) &
+ 			((unsigned long)PAGE_CACHE_SIZE - 1);
+ 		src_off_in_page =3D (start_offset + src_end) &
 --=20
 1.7.3.4
 
 
---MP_/y_kzw7c68tfaYVjulLFh83j--
+--MP_/EcofZ+/MF18ur18f/66Fd3E--
 
---Sig_/.FA=KEdj6//244_tlV_6XRK
+--Sig_/FX.hsUBz0bUr_NIm8b1sge0
 Content-Type: application/pgp-signature; name=signature.asc
 Content-Disposition: attachment; filename=signature.asc
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.17 (GNU/Linux)
 
-iEYEARECAAYFAk2iEecACgkQcaHudmEf86rc2QCfV5fIrHplxValBJSjOewcSQ53
-JpIAn3wSTjpuJJyyajZCMO2nR7hyX5Q9
-=t8RP
+iEYEARECAAYFAk2iGgkACgkQcaHudmEf86o/aACbBSV4L0OfSmOBd7gki3LUV5dD
+7gYAn2hrV77jI/nXlJmBarVTqyqqXWk2
+=fx8q
 -----END PGP SIGNATURE-----
 
---Sig_/.FA=KEdj6//244_tlV_6XRK--
+--Sig_/FX.hsUBz0bUr_NIm8b1sge0--

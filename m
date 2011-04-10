@@ -1,170 +1,97 @@
 From: Hugo Mills <hugo@carfax.org.uk>
-Subject: [PATCH v5 4/8] Run userspace tool in background for balances.
-Date: Sun, 10 Apr 2011 22:16:30 +0100
-Message-ID: <f452790c4dc3ee40474ae830c690d38cae93ec7f.1302469689.git.hugo@carfax.org.uk>
+Subject: [PATCH v5 6/8] Balance filter by device ID
+Date: Sun, 10 Apr 2011 22:16:32 +0100
+Message-ID: <358851595c0a5aaa94038a34d7efe275d536457e.1302469689.git.hugo@carfax.org.uk>
 References: <cover.1302469689.git.hugo@carfax.org.uk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <cover.1302469689.git.hugo@carfax.org.uk>
 In-Reply-To: <cover.1302469689.git.hugo@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch makes a balance operation fork and detach from the current
-terminal, to run the userspace side of the balance in the background.
-
-Introduce a --wait switch so that a synchronous balance can be done if
-the user requires.
+Add the userspace implementation for filtering balances by device ID.
 
 Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
 ---
- btrfs.c        |    8 ++++----
- btrfs_cmds.c   |   52 ++++++++++++++++++++++++++++++++++++++++++++++++++--
- man/btrfs.8.in |   19 ++++++++++---------
- 3 files changed, 64 insertions(+), 15 deletions(-)
+ btrfs_cmds.c   |   13 +++++++++++++
+ ioctl.h        |    8 ++++++--
+ man/btrfs.8.in |    7 +++++++
+ 3 files changed, 26 insertions(+), 2 deletions(-)
 
-diff --git a/btrfs.c b/btrfs.c
-index 93f7886..7b42658 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -91,12 +91,12 @@ static struct Command commands[] = {
- 	  "filesystem df", "<path>\n"
- 		"Show space usage information for a mount point\n."
- 	},
--	{ do_balance, 1,
--	  "filesystem balance", "<path>\n"
-+	{ do_balance, -1,
-+	  "filesystem balance", "[-w|--wait] <path>\n"
- 		"Balance the chunks across the device."
- 	},
--	{ do_balance, 1,
--	  "balance start", "<path>\n"
-+	{ do_balance, -1,
-+	  "balance start", "[-w|--wait] <path>\n"
- 		"Synonym for \"btrfs filesystem balance\"."
- 	},
- 	{ do_balance_progress, -1,
 diff --git a/btrfs_cmds.c b/btrfs_cmds.c
-index d246a8b..fadcb4f 100644
+index f0588d2..ffca32b 100644
 --- a/btrfs_cmds.c
 +++ b/btrfs_cmds.c
-@@ -754,12 +754,41 @@ int do_add_volume(int nargs, char **args)
+@@ -775,6 +775,10 @@ const struct filter_class_desc filter_class[] = {
+ 	  "\t\tmeta, sys, data, raid0, raid1, raid10, dup\n"
+ 	  "\tPrefix a <flagname> with ~ to negate the match.\n",
+ 	  BTRFS_BALANCE_FILTER_CHUNK_TYPE },
++	{ "devid",
++	  "devid=<n>\n"
++	  "\tBalance only chunks which have a stripe on device <n>.\n",
++	  BTRFS_BALANCE_FILTER_DEVID },
+ 	{ NULL, NULL, 0 }
+ };
  
- }
- 
-+const struct option balance_options[] = {
-+	{ "wait", 0, NULL, 'w' },
-+	{ NULL, 0, NULL, 0 }
-+};
+@@ -872,6 +876,15 @@ int parse_filter(struct btrfs_ioctl_balance_start *args, char *filters_string)
+ 				part = strtok_r(NULL, "=,", &subsave);
+ 			}
+ 			break;
 +
- int do_balance(int argc, char **argv)
- {
--
- 	int	fdmnt, ret=0;
-+	int background = 1;
- 	struct btrfs_ioctl_vol_args args;
--	char	*path = argv[1];
-+	char *path;
-+	int ttyfd;
-+
-+	optind = 1;
-+	while(1) {
-+		int c = getopt_long(argc, argv, "w", balance_options, NULL);
-+		if (c < 0)
++		case BTRFS_BALANCE_FILTER_DEVID:
++			errno = 0;
++			args->devid = strtoull(part, NULL, 10);
++			if (errno != 0) {
++				fprintf(stderr, "ERROR: '%s' is not a valid device ID\n", part);
++				return 15;
++			}
 +			break;
-+		switch(c) {
-+		case 'w':
-+			background = 0;
-+			break;
-+		default:
-+			fprintf(stderr, "Invalid arguments for balance\n");
-+			free(argv);
-+			return 1;
-+		}
-+	}
-+
-+	if(optind >= argc) {
-+		fprintf(stderr, "No filesystem path given for balance\n");
-+		return 1;
-+	}
-+
-+	path = argv[optind];
+ 		}
  
- 	fdmnt = open_file_or_dir(path);
- 	if (fdmnt < 0) {
-@@ -767,6 +796,25 @@ int do_balance(int argc, char **argv)
- 		return 12;
- 	}
+ 		this_filter_string = strtok_r(NULL, ":", &saveptr);
+diff --git a/ioctl.h b/ioctl.h
+index 6488e82..cb605c0 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -141,7 +141,8 @@ struct btrfs_ioctl_balance_progress {
+ #define BTRFS_BALANCE_FILTER_COUNT_ONLY 0x1
  
-+	if (background) {
-+		int pid = fork();
-+		if (pid == 0) {
-+			/* We're in the child, and can run in the background */
-+			ttyfd = open("/dev/tty", O_RDWR);
-+			if (ttyfd > 0)
-+				ioctl(ttyfd, TIOCNOTTY, 0);
-+			/* Fall through to the BTRFS_IOC_BALANCE ioctl */
-+		} else if (pid > 0) {
-+			/* We're in the parent, and the fork succeeded */
-+			printf("Background balance started\n");
-+			return 0;
-+		} else {
-+			/* We're in the parent, and the fork failed */
-+			fprintf(stderr, "ERROR: can't start background process -- %s\n",
-+					strerror(errno));
-+		}
-+	}
+ #define BTRFS_BALANCE_FILTER_CHUNK_TYPE 0x2
+-#define BTRFS_BALANCE_FILTER_MASK 0x3
++#define BTRFS_BALANCE_FILTER_DEVID 0x4
++#define BTRFS_BALANCE_FILTER_MASK 0x7
+ 
+ /* All the possible options for a filter */
+ struct btrfs_ioctl_balance_start {
+@@ -155,7 +156,10 @@ struct btrfs_ioctl_balance_start {
+ 	__u64 chunk_type;      /* Flag bits required */
+ 	__u64 chunk_type_mask; /* Mask of bits to examine */
+ 
+-	__u64 spare[506]; /* Make up the size of the structure to 4088
++	/* For FILTER_DEVID */
++	__u64 devid;
 +
- 	memset(&args, 0, sizeof(args));
- 	ret = ioctl(fdmnt, BTRFS_IOC_BALANCE, &args);
- 	close(fdmnt);
++	__u64 spare[505]; /* Make up the size of the structure to 4088
+ 					   * bytes for future expansion */
+ };
+ 
 diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index d7fab80..95e39c3 100644
+index 3023eb5..94114a9 100644
 --- a/man/btrfs.8.in
 +++ b/man/btrfs.8.in
-@@ -23,13 +23,15 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBdevice scan\fP\fI [<device> [<device>..]]\fP
- .PP
-+\fBbtrfs\fP \fBbalance start\fP [\fB-w\fP|\fB--wait\fP] \fI<path>\fP
-+.PP
- \fBbtrfs\fP \fBbalance progress\fP [\fB-m\fP|\fB--monitor\fP] \fI<path>\fP
- .PP
- \fBbtrfs\fP \fBbalance cancel\fP \fI<path>\fP
- .PP
- \fBbtrfs\fP \fBdevice show\fP\fI <dev>|<label> [<dev>|<label>...]\fP
- .PP
--\fBbtrfs\fP \fBdevice balance\fP\fI <path> \fP
-+\fBbtrfs\fP \fBfilesystem balance\fP [\fB-w\fP|\fB--wait\fP] \fI<path>\fP
- .PP
- \fBbtrfs\fP \fBdevice add\fP\fI <dev> [<dev>..] <path> \fP
- .PP
-@@ -147,20 +149,19 @@ Show the btrfs filesystem with some additional info. If no UUID or label is
- passed, \fBbtrfs\fR show info of all the btrfs filesystem.
- .TP
+@@ -203,6 +203,13 @@ chunk types.
+ \fBraid0\fR, \fBraid1\fR, \fBraid10\fR, \fBdup\fR for chunks of the
+ given replication levels.
  
--\fBdevice balance\fR \fI<path>\fR
--Balance the chunks of the filesystem identified by \fI<path>\fR
--across the devices.
-+\fBdevice balance\fR [\fB-w\fP|\fB--wait\fP] \fI<path>\fR
++.TP
++\fBdevid\fR=\fI<n>\fR
 +
-+\fBbalance start\fR [\fB-w\fP|\fB--wait\fP] \fI<path>\fR
++Select chunks which have data on device ID \fI<n>\fR. This can be
++used, for example, to reduplicate data in a mirrored configuration
++where one drive has been lost due to hardware failure.
 +
-+Balance the chunks of the filesystem identified by \fI<path>\fR across
-+the devices. The process runs in the background. Use \fB--wait\fP to
-+wait in the foreground for completion of the balance.
- .TP
- 
- \fBdevice add\fR\fI <dev> [<dev>..] <path>\fR
- Add device(s) to the filesystem identified by \fI<path>\fR.
- .TP
- 
--.SS
--\fBdevice balance \fI<path>\fP
--Balance the chunks of the filesystem identified by \fI<path>\fP
--across the devices.
--
- \fBdevice delete\fR\fI <dev> [<dev>..] <path>\fR
- Remove device(s) from a filesystem identified by \fI<path>\fR.
- .PP
+ .SH EXIT STATUS
+ \fBbtrfs\fR returns a zero exist status if it succeeds. Non zero is returned in
+ case of failure.
 -- 
 1.7.2.5
 

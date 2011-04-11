@@ -1,63 +1,59 @@
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: Re: [PATCH v5 1/8] btrfs: Balance progress monitoring
-Date: Mon, 11 Apr 2011 09:48:58 +0100
-Message-ID: <20110411084858.GG5301@carfax.org.uk>
-References: <1302469571-12605-2-git-send-email-hugo@carfax.org.uk>
- <BjeBXGRy1uB@helmut.hullen.de>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: Re: wrong values in "df" and "btrfs filesystem df"
+Date: 11 Apr 2011 11:06:00 +0200
+Message-ID: <BjeBqvFy1uB@helmut.hullen.de>
+References: <chaz20110411072946.GA5587@seebyte.com>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="W5WqUoFLvi1M7tJE"
-Cc: linux-btrfs@vger.kernel.org
-To: helmut@hullen.de
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BjeBXGRy1uB@helmut.hullen.de>
+In-Reply-To: <chaz20110411072946.GA5587@seebyte.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hallo, Stephane,
 
---W5WqUoFLvi1M7tJE
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Du meintest am 11.04.11:
 
-On Mon, Apr 11, 2011 at 07:34:00AM +0200, Helmut Hullen wrote:
-> Hallo, Hugo,
-> 
-> Du meintest am 10.04.11:
-> 
-> > This patch introduces a basic form of progress monitoring for balance
-> > operations, by counting the number of block groups remaining. The
-> > information is exposed to userspace by an ioctl.
-> 
-> Just for curiosity:
-> 
-> If I remember correct then "btrfs device delete" shows growing and  
-> shrinking numbers, resp. on the remaining and on the deleting  
-> partition(s).
-> 
-> Can this patch show the remaining number of block groups too?
+> What's the implication of having disks of differing sizes? Does
+> that mean that the extra space on larger disks is lost?
 
-   This patch doesn't touch the code in device delete, but once this
-patch series is finished and accepted, I'll take a look. We can
-probably share a good chunk of the code between the two.
+Seems to work.
+I've tried:
 
-   Hugo.
+/dev/sda   140 GByte
+/dev/sdb   140 GByte
+/dev/sdc    70 GByte
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-   --- "How deep will this sub go?" "Oh,  she'll go all the way to ---   
-                    the bottom if we don't stop her."                    
+    mkfs.btrfs -d raid0 -m raid1 /dev/sdb1 /dev/sdc1
 
---W5WqUoFLvi1M7tJE
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
+mounted, more than 140 GByte free
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
+Filled with more than 140 GByte (/dev/sdc1 was full to the brim)
 
-iD8DBQFNosB6IKyzvlFcI40RAoYwAJ0SirYR6W50wBX9PVOpw5owQo+/bgCguDx6
-hPecU0Ay+AwZOgN7SPqijBA=
-=3PKi
------END PGP SIGNATURE-----
+    btrfs device add /dev/sda1 ...
+    btrfs filesystem balance ...
 
---W5WqUoFLvi1M7tJE--
+Needed many hours, but then more than 210 GByte were usable.
+
+Filled up to about 220 GByte; /dev/sdc1 was again full to the brim
+
+    btrfs device delete /dev/sdc1
+    umount
+    mount
+
+All looks as expected, only the 2 bigger devices are seen, and they  
+contain the expected files.
+
+And that looks good: my major interest in btrfs is working in that way -  
+adding a bigger device, deleting a smaller device.
+
+Kernel 2.6.38.1
+btrfs from november 2010
+
+
+Only the values shown with "df" and "btrfs filesystem df" need getting  
+used to; maybe "available" has to be seen as "at least available".
+
+Viele Gruesse!
+Helmut

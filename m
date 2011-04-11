@@ -1,64 +1,63 @@
-From: Stephane Chazelas <stephane_chazelas@yahoo.fr>
-Subject: Re: btrfs balancing start - and stop?
-Date: Mon, 11 Apr 2011 09:42:17 +0100
-Message-ID: <chaz20110411084217.GB5587@seebyte.com>
-References: <20110403185341.GA11024@yahoo.fr> <Bj8nJL4D1uB@helmut.hullen.de> <20110404190753.GC9371@yahoo.fr> <chaz20110406114350.GA20568@seebyte.com>
+From: Hugo Mills <hugo-lkml@carfax.org.uk>
+Subject: Re: [PATCH v5 1/8] btrfs: Balance progress monitoring
+Date: Mon, 11 Apr 2011 09:48:58 +0100
+Message-ID: <20110411084858.GG5301@carfax.org.uk>
+References: <1302469571-12605-2-git-send-email-hugo@carfax.org.uk>
+ <BjeBXGRy1uB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="W5WqUoFLvi1M7tJE"
 Cc: linux-btrfs@vger.kernel.org
 To: helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <chaz20110406114350.GA20568@seebyte.com>
+In-Reply-To: <BjeBXGRy1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011-04-06 12:43:50 +0100, Stephane Chazelas:
-[...]
-> The rate is going down. It's now down to about 14kB/s
+
+--W5WqUoFLvi1M7tJE
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Mon, Apr 11, 2011 at 07:34:00AM +0200, Helmut Hullen wrote:
+> Hallo, Hugo,
 > 
-> [658654.295752] btrfs: relocating block group 3919858106368 flags 20
-> [671932.913235] btrfs: relocating block group 3919589670912 flags 20
-> [686189.296126] btrfs: relocating block group 3919321235456 flags 20
-> [701511.523990] btrfs: relocating block group 3919052800000 flags 20
-> [718591.316339] btrfs: relocating block group 3918784364544 flags 20
-> [725567.081031] btrfs: relocating block group 3918515929088 flags 20
-> [744415.011581] btrfs: relocating block group 3918247493632 flags 20
-> [762365.021458] btrfs: relocating block group 3917979058176 flags 20
-> [780504.726067] btrfs: relocating block group 3917710622720 flags 20
-[...]
-> At this rate, the balancing would be over in about 8 years.
-[...]
+> Du meintest am 10.04.11:
+> 
+> > This patch introduces a basic form of progress monitoring for balance
+> > operations, by counting the number of block groups remaining. The
+> > information is exposed to userspace by an ioctl.
+> 
+> Just for curiosity:
+> 
+> If I remember correct then "btrfs device delete" shows growing and  
+> shrinking numbers, resp. on the remaining and on the deleting  
+> partition(s).
+> 
+> Can this patch show the remaining number of block groups too?
 
-Hurray! The btrfs balance eventually ran through after almost exactly 2 weeks.
-It didn't get down to 0:
+   This patch doesn't touch the code in device delete, but once this
+patch series is finished and accepted, I'll take a look. We can
+probably share a good chunk of the code between the two.
 
-[1189505.152717] btrfs: found 60527 extents
-[1189505.440565] btrfs: relocating block group 3910731300864 flags 20
-[1199805.071045] btrfs: found 60235 extents
-[1199805.447821] btrfs: relocating block group 3910462865408 flags 20
-[1207914.737372] btrfs: found 58039 extents
-
-iostat reckons 9TB have been written to  disk in the whole
-process (4.5TB read from them (!?)).
-
-There hasn't been any change in allocation though:
-
-# df -h /backup
-Filesystem            Size  Used Avail Use% Mounted on
-/dev/sda4             8.2T  3.5T  3.2T  53% /backup
-# btrfs fi df /backup
-Data, RAID0: total=3.42TB, used=3.41TB
-System, RAID1: total=16.00MB, used=228.00KB
-Metadata, RAID1: total=28.00GB, used=20.47GB
-# btrfs fi show
-Label: none  uuid: a0ae35c4-51f2-405f-a4bb-e4f134b1d193
-        Total devices 3 FS bytes used 3.43TB
-        devid    4 size 2.73TB used 1.17TB path /dev/sdc
-        devid    3 size 2.73TB used 1.17TB path /dev/sdb
-        devid    2 size 2.70TB used 1.14TB path /dev/sda4
-
-Btrfs Btrfs v0.19
-
-Still 1.5TB missing.
+   Hugo.
 
 -- 
-Stephane
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+   --- "How deep will this sub go?" "Oh,  she'll go all the way to ---   
+                    the bottom if we don't stop her."                    
+
+--W5WqUoFLvi1M7tJE
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iD8DBQFNosB6IKyzvlFcI40RAoYwAJ0SirYR6W50wBX9PVOpw5owQo+/bgCguDx6
+hPecU0Ay+AwZOgN7SPqijBA=
+=3PKi
+-----END PGP SIGNATURE-----
+
+--W5WqUoFLvi1M7tJE--

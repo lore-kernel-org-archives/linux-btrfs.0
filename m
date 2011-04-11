@@ -1,31 +1,24 @@
 From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: Re: [PATCH v5 1/8] btrfs: Balance progress monitoring
-Date: 11 Apr 2011 07:34:00 +0200
-Message-ID: <BjeBXGRy1uB@helmut.hullen.de>
-References: <1302469571-12605-2-git-send-email-hugo@carfax.org.uk>
+Subject: Re: [PATCH v5 4/8] Run userspace tool in background for balances.
+Date: 11 Apr 2011 07:36:00 +0200
+Message-ID: <BjeBXj3y1uB@helmut.hullen.de>
+References: <f452790c4dc3ee40474ae830c690d38cae93ec7f.1302469689.git.hugo@carfax.org.uk>
 Reply-To: helmut@hullen.de
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1302469571-12605-2-git-send-email-hugo@carfax.org.uk>
+In-Reply-To: <f452790c4dc3ee40474ae830c690d38cae93ec7f.1302469689.git.hugo@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hallo, Hugo,
 
 Du meintest am 10.04.11:
 
-> This patch introduces a basic form of progress monitoring for balance
-> operations, by counting the number of block groups remaining. The
-> information is exposed to userspace by an ioctl.
+> This patch makes a balance operation fork and detach from the current
+> terminal, to run the userspace side of the balance in the background.
 
-Just for curiosity:
-
-If I remember correct then "btrfs device delete" shows growing and  
-shrinking numbers, resp. on the remaining and on the deleting  
-partition(s).
-
-Can this patch show the remaining number of block groups too?
+Fine!
 
 Viele Gruesse!
 Helmut

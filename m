@@ -1,75 +1,198 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH v3] Re: btrfs does not work on usermode linux
-Date: Mon, 11 Apr 2011 15:50:48 -0400
-Message-ID: <4DA35B98.3010800@redhat.com>
-References: <20110410133710.0ef34cb6@sf>	<20110410184249.483d8d67@sf>	<20110410230622.09e965ae@sf>	<20110410232403.617c3b7f@sf>	<20110410235846.135e801e@sf>	<4DA32055.2030104@redhat.com> <20110411224452.4a5149da@sf>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
-	cwillu <cwillu@cwillu.com>
-To: Sergei Trofimovich <slyich@gmail.com>
+Subject: [PATCH] Btrfs: avoid taking the trans_mutex in btrfs_end_transaction
+Date: Mon, 11 Apr 2011 15:49:17 -0400
+Message-ID: <1302551357-27538-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110411224452.4a5149da@sf>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/11/2011 03:44 PM, Sergei Trofimovich wrote:
->> Fix data corruption caused by memcpy() usage on overlapping data.
->> I've observed it first when found out usermode linux crash on btrfs.
->
-> Changes since v2:
-> - Code style cleanup
-> - 2 versions of patch: BUG_ON and WARN_ON variants,
->    _but_ see below why I prefer BUG_ON
->
-> Changes since v1:
->
->>   	else
->>   		src_kaddr = dst_kaddr;
->>
->> +	BUG_ON(abs(src_off - dst_off)<  len);
->>   	memcpy(dst_kaddr + dst_off, src_kaddr + src_off, len);
->
-> Too eager BUG_ON. Now used only for src_page == dst_page.
->
->> -	if (dst_offset<  src_offset) {
->> +	if (abs(dst_offset - src_offset)>= len) {
->
-> abs() is not a good thing to use un unsigned values. aded helper overlapping_areas.
->
-> On Mon, 11 Apr 2011 11:37:57 -0400
-> Josef Bacik<josef@redhat.com>  wrote:
->
->> +	{
->> you will want to turn that into
->>
->> if (dst_page != src_page) {
->
-> done
->
->> Also maybe BUG_ON() is a little strong, since the kernel will do this
->> right, it just screws up UML.  So maybe just do a WARN_ON() so we notice
->> it.  Thanks,
->
-> I'm afaid I didn't understand this part. The commit I've found a deviation
-> was linux's implementation of memcpy (UML uses it as kernel does). Why the
-> kernel differs to UML in that respect? Seems I don't know/understand something
-> fundamental here.
-> So, if data overlaps - it's a moment before data corruption, thus BUG_ON.
->
-> Another thought is (if memcpy semantics differ from standard C's function):
-> does linux's memcpy guarantee copying direction behaviour?
-> If it does, then it's really a weird memmove and x86/memcpy_64.S is a bit broken.
->
-> Attached both patches, I personally like BUG_ON variant.
-> Pick the one you like more :]
->
-> Thanks for the feedback!
->
+I've been working on making our O_DIRECT latency not suck and I noticed we were
+taking the trans_mutex in btrfs_end_transaction.  So to do this we convert
+num_writers and use_count to atomic_t's and just decrement them in
+btrfs_end_transaction.  I got rid of the put_transaction() in
+btrfs_end_transaction() since we will never free the transaction from
+btrfs_end_transaction().  Tested this with xfstests and everything went
+smoothly.  Thanks,
 
-Fair enough, BUG_ON() it is.  Repost that version and you can add my
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/disk-io.c     |    2 +-
+ fs/btrfs/transaction.c |   42 +++++++++++++++++++++---------------------
+ fs/btrfs/transaction.h |    4 ++--
+ 3 files changed, 24 insertions(+), 24 deletions(-)
 
-Reviewed-by: Josef Bacik <josef@redhat.com>
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 8f1d44b..68c84c8 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3057,7 +3057,7 @@ static int btrfs_cleanup_transaction(struct btrfs_root *root)
+ 		btrfs_destroy_pinned_extent(root,
+ 					    root->fs_info->pinned_extents);
+ 
+-		t->use_count = 0;
++		atomic_set(&t->use_count, 0);
+ 		list_del_init(&t->list);
+ 		memset(t, 0, sizeof(*t));
+ 		kmem_cache_free(btrfs_transaction_cachep, t);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 4583008..dbacd2c 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -32,9 +32,8 @@
+ 
+ static noinline void put_transaction(struct btrfs_transaction *transaction)
+ {
+-	WARN_ON(transaction->use_count == 0);
+-	transaction->use_count--;
+-	if (transaction->use_count == 0) {
++	WARN_ON(atomic_read(&transaction->use_count) == 0);
++	if (atomic_dec_and_test(&transaction->use_count)) {
+ 		list_del_init(&transaction->list);
+ 		memset(transaction, 0, sizeof(*transaction));
+ 		kmem_cache_free(btrfs_transaction_cachep, transaction);
+@@ -60,14 +59,14 @@ static noinline int join_transaction(struct btrfs_root *root)
+ 		if (!cur_trans)
+ 			return -ENOMEM;
+ 		root->fs_info->generation++;
+-		cur_trans->num_writers = 1;
++		atomic_set(&cur_trans->num_writers, 1);
+ 		cur_trans->num_joined = 0;
+ 		cur_trans->transid = root->fs_info->generation;
+ 		init_waitqueue_head(&cur_trans->writer_wait);
+ 		init_waitqueue_head(&cur_trans->commit_wait);
+ 		cur_trans->in_commit = 0;
+ 		cur_trans->blocked = 0;
+-		cur_trans->use_count = 1;
++		atomic_set(&cur_trans->use_count, 1);
+ 		cur_trans->commit_done = 0;
+ 		cur_trans->start_time = get_seconds();
+ 
+@@ -88,7 +87,7 @@ static noinline int join_transaction(struct btrfs_root *root)
+ 		root->fs_info->running_transaction = cur_trans;
+ 		spin_unlock(&root->fs_info->new_trans_lock);
+ 	} else {
+-		cur_trans->num_writers++;
++		atomic_inc(&cur_trans->num_writers);
+ 		cur_trans->num_joined++;
+ 	}
+ 
+@@ -145,7 +144,7 @@ static void wait_current_trans(struct btrfs_root *root)
+ 	cur_trans = root->fs_info->running_transaction;
+ 	if (cur_trans && cur_trans->blocked) {
+ 		DEFINE_WAIT(wait);
+-		cur_trans->use_count++;
++		atomic_inc(&cur_trans->use_count);
+ 		while (1) {
+ 			prepare_to_wait(&root->fs_info->transaction_wait, &wait,
+ 					TASK_UNINTERRUPTIBLE);
+@@ -205,7 +204,7 @@ again:
+ 	}
+ 
+ 	cur_trans = root->fs_info->running_transaction;
+-	cur_trans->use_count++;
++	atomic_inc(&cur_trans->use_count);
+ 	if (type != TRANS_JOIN_NOLOCK)
+ 		mutex_unlock(&root->fs_info->trans_mutex);
+ 
+@@ -336,7 +335,7 @@ int btrfs_wait_for_commit(struct btrfs_root *root, u64 transid)
+ 			goto out_unlock;  /* nothing committing|committed */
+ 	}
+ 
+-	cur_trans->use_count++;
++	atomic_inc(&cur_trans->use_count);
+ 	mutex_unlock(&root->fs_info->trans_mutex);
+ 
+ 	wait_for_commit(root, cur_trans);
+@@ -466,19 +465,20 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+ 			wake_up_process(info->transaction_kthread);
+ 	}
+ 
+-	if (lock)
+-		mutex_lock(&info->trans_mutex);
+ 	WARN_ON(cur_trans != info->running_transaction);
+-	WARN_ON(cur_trans->num_writers < 1);
+-	cur_trans->num_writers--;
++	WARN_ON(atomic_read(&cur_trans->num_writers) < 1);
++	atomic_dec(&cur_trans->num_writers);
+ 
+ 	smp_mb();
+ 	if (waitqueue_active(&cur_trans->writer_wait))
+ 		wake_up(&cur_trans->writer_wait);
+-	put_transaction(cur_trans);
+-	if (lock)
+-		mutex_unlock(&info->trans_mutex);
+ 
++	/*
++	 * A trans handle will never actually be putting the last reference of a
++	 * transaction, so just dec the use count to avoid taking the trans
++	 * mutex.
++	 */
++	atomic_dec(&cur_trans->use_count);
+ 	if (current->journal_info == trans)
+ 		current->journal_info = NULL;
+ 	memset(trans, 0, sizeof(*trans));
+@@ -1187,7 +1187,7 @@ int btrfs_commit_transaction_async(struct btrfs_trans_handle *trans,
+ 	/* take transaction reference */
+ 	mutex_lock(&root->fs_info->trans_mutex);
+ 	cur_trans = trans->transaction;
+-	cur_trans->use_count++;
++	atomic_inc(&cur_trans->use_count);
+ 	mutex_unlock(&root->fs_info->trans_mutex);
+ 
+ 	btrfs_end_transaction(trans, root);
+@@ -1246,7 +1246,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 
+ 	mutex_lock(&root->fs_info->trans_mutex);
+ 	if (cur_trans->in_commit) {
+-		cur_trans->use_count++;
++		atomic_inc(&cur_trans->use_count);
+ 		mutex_unlock(&root->fs_info->trans_mutex);
+ 		btrfs_end_transaction(trans, root);
+ 
+@@ -1268,7 +1268,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 		prev_trans = list_entry(cur_trans->list.prev,
+ 					struct btrfs_transaction, list);
+ 		if (!prev_trans->commit_done) {
+-			prev_trans->use_count++;
++			atomic_inc(&prev_trans->use_count);
+ 			mutex_unlock(&root->fs_info->trans_mutex);
+ 
+ 			wait_for_commit(root, prev_trans);
+@@ -1309,14 +1309,14 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 				TASK_UNINTERRUPTIBLE);
+ 
+ 		smp_mb();
+-		if (cur_trans->num_writers > 1)
++		if (atomic_read(&cur_trans->num_writers) > 1)
+ 			schedule_timeout(MAX_SCHEDULE_TIMEOUT);
+ 		else if (should_grow)
+ 			schedule_timeout(1);
+ 
+ 		mutex_lock(&root->fs_info->trans_mutex);
+ 		finish_wait(&cur_trans->writer_wait, &wait);
+-	} while (cur_trans->num_writers > 1 ||
++	} while (atomic_read(&cur_trans->num_writers) > 1 ||
+ 		 (should_grow && cur_trans->num_joined != joined));
+ 
+ 	ret = create_pending_snapshots(trans, root->fs_info);
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 229a594..e441acc 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -27,11 +27,11 @@ struct btrfs_transaction {
+ 	 * total writers in this transaction, it must be zero before the
+ 	 * transaction can end
+ 	 */
+-	unsigned long num_writers;
++	atomic_t num_writers;
+ 
+ 	unsigned long num_joined;
+ 	int in_commit;
+-	int use_count;
++	atomic_t use_count;
+ 	int commit_done;
+ 	int blocked;
+ 	struct list_head list;
+-- 
+1.7.2.3
 
-Thanks,
-
-Josef

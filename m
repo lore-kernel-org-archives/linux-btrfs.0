@@ -1,41 +1,25 @@
-From: Daniel J Blueman <daniel.blueman@gmail.com>
-Subject: [PATCH] fix user annotation in ioctl.c
-Date: Mon, 11 Apr 2011 23:56:31 +0800
-Message-ID: <BANLkTi=AzkUgTeRgUa1QkQMBiZLoOyQS-g@mail.gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH] fix user annotation in ioctl.c
+Date: Mon, 11 Apr 2011 11:54:18 -0400
+Message-ID: <4DA3242A.7010101@redhat.com>
+References: <BANLkTi=AzkUgTeRgUa1QkQMBiZLoOyQS-g@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Linux BTRFS <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Linux BTRFS <linux-btrfs@vger.kernel.org>
+To: Daniel J Blueman <daniel.blueman@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <BANLkTi=AzkUgTeRgUa1QkQMBiZLoOyQS-g@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fix address space annotation correct in ioctl.c.
+On 04/11/2011 11:56 AM, Daniel J Blueman wrote:
+> Fix address space annotation correct in ioctl.c.
+>
+> Signed-off-by: Daniel J Blueman<daniel.blueman@gmail.com>
+>
 
-Signed-off-by: Daniel J Blueman <daniel.blueman@gmail.com>
+Reviewed-by: Josef Bacik <josef@redhat.com>
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index cfc264f..0474ec3 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2287,7 +2287,7 @@ long btrfs_ioctl_space_info(struct btrfs_root
-*root, void __user *arg)
- 	struct btrfs_ioctl_space_info space;
- 	struct btrfs_ioctl_space_info *dest;
- 	struct btrfs_ioctl_space_info *dest_orig;
--	struct btrfs_ioctl_space_info *user_dest;
-+	struct btrfs_ioctl_space_info __user *user_dest;
- 	struct btrfs_space_info *info;
- 	u64 types[] = {BTRFS_BLOCK_GROUP_DATA,
- 		       BTRFS_BLOCK_GROUP_SYSTEM,
-@@ -2387,7 +2387,7 @@ long btrfs_ioctl_space_info(struct btrfs_root
-*root, void __user *arg)
- 		up_read(&info->groups_sem);
- 	}
+Thanks,
 
--	user_dest = (struct btrfs_ioctl_space_info *)
-+	user_dest = (struct btrfs_ioctl_space_info __user *)
- 		(arg + sizeof(struct btrfs_ioctl_space_args));
-
- 	if (copy_to_user(user_dest, dest_orig, alloc_size))
--- 
-Daniel J Blueman
+Josef

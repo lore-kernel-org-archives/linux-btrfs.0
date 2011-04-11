@@ -1,45 +1,53 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH v5 3/8] btrfs: Factor out enumeration of chunks to a
- separate function
-Date: Mon, 11 Apr 2011 00:11:25 +0200
-Message-ID: <20110410221125.GF31675@twin.jikos.cz>
-References: <1302469571-12605-1-git-send-email-hugo@carfax.org.uk>
- <1302469571-12605-4-git-send-email-hugo@carfax.org.uk>
-Reply-To: dave@jikos.cz
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: fix memory leaks in btrfs_new_inode()
+Date: Mon, 11 Apr 2011 10:23:05 +0800
+Message-ID: <4DA26609.5060000@cn.fujitsu.com>
+References: <1302316207-30806-1-git-send-email-yoshinori.sano@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com, dave@jikos.cz, lizf@cn.fujitsu.com,
-	linux-btrfs@vger.kernel.org
-To: Hugo Mills <hugo@carfax.org.uk>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
+To: Yoshinori Sano <yoshinori.sano@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1302469571-12605-4-git-send-email-hugo@carfax.org.uk>
+In-Reply-To: <1302316207-30806-1-git-send-email-yoshinori.sano@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Apr 10, 2011 at 10:06:06PM +0100, Hugo Mills wrote:
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index cf019af..20c2772 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -2029,6 +2029,97 @@ static u64 div_factor(u64 num, int factor)
-> +static void balance_move_chunks(struct btrfs_root *chunk_root,
-> +			 struct btrfs_balance_info *bal_info,
-> +			 struct btrfs_path *path,
-> +			 struct btrfs_key *key)
-> +{
-> +	int ret;
-> +
-> +	ret = btrfs_relocate_chunk(chunk_root,
-> +				   chunk_root->root_key.objectid,
-> +				   key->objectid,
-> +				   key->offset);
-> +	BUG_ON(ret && ret != -ENOSPC);
-> +	spin_lock(&chunk_root->fs_info->balance_info_lock);
-> +	bal_info->completed++;
-> +	spin_unlock(&chunk_root->fs_info->balance_info_lock);
-> +	printk(KERN_INFO "btrfs: balance: %llu/%llu block groups completed\n",
-> +	       bal_info->completed, bal_info->expected);
+Yoshinori Sano wrote:
+> This patch fixes memory leaks in btrfs_new_inode().
+> 
+> Signed-off-by: Yoshinori Sano <yoshinori.sano@gmail.com>
+> ---
+>  fs/btrfs/inode.c |    5 ++++-
+>  1 files changed, 4 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index aa116dc..d8c93c1 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -4536,14 +4536,17 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+>  		return ERR_PTR(-ENOMEM);
+>  
+>  	inode = new_inode(root->fs_info->sb);
+> -	if (!inode)
+> +	if (!inode) {
+> +		btrfs_free_path(path);
+>  		return ERR_PTR(-ENOMEM);
+> +	}
+>  
+>  	if (dir) {
+>  		trace_btrfs_inode_request(dir);
+>  
+>  		ret = btrfs_set_inode_index(dir, index);
+>  		if (ret) {
+> +			btrfs_free_path(path);
+>  			iput(inode);
+>  			return ERR_PTR(ret);
+>  		}
 
-as you've changed 'completed' and 'expected' members to 32bit, change
-%llu to %u.
+It would be better to avoid multiple returns here:
 
-d/
+fail_free_path:
+	btrfs_free_path(path);
+fail_put_inode:
+	iput(inode);
+fail:
+	...

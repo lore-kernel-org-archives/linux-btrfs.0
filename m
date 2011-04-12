@@ -1,79 +1,61 @@
-From: Xiao Guangrong <xiaoguangrong@cn.fujitsu.com>
-Subject: [PATCH 2/2] Btrfs: fix unsafe usage of merge_state
-Date: Tue, 12 Apr 2011 16:15:24 +0800
-Message-ID: <4DA40A1C.9090102@cn.fujitsu.com>
-References: <4DA409E6.7020406@cn.fujitsu.com>
+From: Stephane Chazelas <stephane.chazelas@gmail.com>
+Subject: Re: wrong values in "df" and "btrfs filesystem df"
+Date: Tue, 12 Apr 2011 09:17:21 +0100
+Message-ID: <chaz20110412081721.GA3982@seebyte.com>
+References: <BjW+GU4y1uB@helmut.hullen.de> <20110409091141.GE5301@carfax.org.uk> <4DA182DF.6010703@cn.fujitsu.com> <chaz20110411072946.GA5587@seebyte.com> <4DA3FDD1.2090804@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: LKML <linux-kernel@vger.kernel.org>,
-	BTRFS <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4DA409E6.7020406@cn.fujitsu.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Hugo Mills <hugo-lkml@carfax.org.uk>, helmut@hullen.de,
+	linux-btrfs@vger.kernel.org
+To: Miao Xie <miaox@cn.fujitsu.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4DA3FDD1.2090804@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-merge_state can free the current state if it can be merged with the next node,
-but in set_extent_bit(), after merge_state, we still use the current extent to
-get the next node and cache it into cached_state
+2011-04-12 15:22:57 +0800, Miao Xie:
+[...]
+> But the algorithm of df command doesn't simulate the above allocation correctly, this
+> simulated allocation just allocates the stripes from two disks, and then, these two disks
+> have no free space, but the third disk still has 1.2TB free space, df command thinks
+> this space can be used to make a new RAID0 block group and ignores it. This is a bug,
+> I think.
+[...]
 
-Signed-off-by: Xiao Guangrong <xiaoguangrong@cn.fujitsu.com>
----
- fs/btrfs/extent_io.c |   22 ++++++++++++++--------
- 1 files changed, 14 insertions(+), 8 deletions(-)
+Thanks a lot Miao for the detailed explanation. So, the disk
+space is not lost, it's just df not reporting the available
+space correctly. That's me relieved.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 62d5bca..40cb450 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -769,20 +769,18 @@ hit_next:
- 		if (err)
- 			goto out;
- 
-+		next_node = rb_next(node);
- 		cache_state(state, cached_state);
- 		merge_state(tree, state);
- 		if (last_end == (u64)-1)
- 			goto out;
- 
- 		start = last_end + 1;
--		if (start < end && prealloc && !need_resched()) {
--			next_node = rb_next(node);
--			if (next_node) {
--				state = rb_entry(next_node, struct extent_state,
--						 rb_node);
--				if (state->start == start)
--					goto hit_next;
--			}
-+		if (next_node && start < end && prealloc && !need_resched()) {
-+			state = rb_entry(next_node, struct extent_state,
-+					 rb_node);
-+			if (state->start == start)
-+				goto hit_next;
- 		}
- 		goto search_again;
- 	}
-@@ -843,14 +841,22 @@ hit_next:
- 			this_end = last_start - 1;
- 
- 		prealloc = alloc_extent_state_atomic(prealloc);
-+
-+		/*
-+		 * Avoid to free 'prealloc' if it can be merged with
-+		 * the later extent.
-+		 */
-+		atomic_inc(&prealloc->refs);
- 		err = insert_state(tree, prealloc, start, this_end,
- 				   &bits);
- 		BUG_ON(err == -EEXIST);
- 		if (err) {
-+			free_extent_state(prealloc);
- 			prealloc = NULL;
- 			goto out;
- 		}
- 		cache_state(prealloc, cached_state);
-+		free_extent_state(prealloc);
- 		prealloc = NULL;
- 		start = this_end + 1;
- 		goto search_again;
--- 
-1.7.4
+It explains why I'm getting:
+
+# blockdev --getsize64 /dev/sda4
+2967698087424
+# blockdev --getsize64 /dev/sdb
+3000592982016
+# blockdev --getsize64 /dev/sdc
+3000592982016
+# truncate -s 2967698087424 a
+# truncate -s 3000592982016 b
+# truncate -s 3000592982016 c
+# losetup /dev/loop0 ./a
+# losetup /dev/loop1 ./b
+# losetup /dev/loop2 ./c
+# mkfs.btrfs a b c
+# btrfs device scan /dev/loop[0-2]
+Scanning for Btrfs filesystems in '/dev/loop0'
+Scanning for Btrfs filesystems in '/dev/loop1'
+Scanning for Btrfs filesystems in '/dev/loop2'
+# mount  /dev/loop0 /mnt/1
+# df -k /mnt/1
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/loop0           8758675828        56 5859474304   1% /mnt/1
+# echo $(((8758675828 - 5859474304)*2**10))
+2968782360576
+
+One disk worth of space lost according to df.
+
+While it should have been more something like
+$(((3000592982016-2967698087424)*2)) (about 60GB), or about 0
+after the quasi-round-robin allocation patch, right?
+
+Best regards,
+Stephane

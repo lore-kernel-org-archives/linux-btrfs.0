@@ -1,122 +1,74 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: avoid taking the chunk_mutex in do_chunk_alloc V2
-Date: Tue, 12 Apr 2011 08:55:02 -0400
-Message-ID: <1302612902-14113-1-git-send-email-josef@redhat.com>
+From: maria@ponstudios.se
+Subject: Kernel BUG at fs/btrfs/inode.c:2281 & 4665
+Date: Tue, 12 Apr 2011 17:11:49 +0200 (CEST)
+Message-ID: <4931fe2bc7e70ddc21f0240f9b65bb29.squirrel@squirrel-webmail.surftown.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Everytime we try to allocate disk space we try and see if we can pre-emptively
-allocate a chunk, but in the common case we don't allocate anything, so there is
-no sense in taking the chunk_mutex at all.  So instead if we are allocating a
-chunk, mark it in the space_info so we don't get two people trying to allocate
-at the same time.  Thanks,
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
-V1->V2: Return in the case where we don't need to allocate a chunk instead of
-going to out.
+The computer was idle when the first bug happened and after the reboot
+btrfs can't be mounted. It can't delete orphans and replay the log.
+It would be nice if I can get the data out, there is nothing important
+there but it would be nice. I was actually fixing typos in the backup
+scripts when the bug attacked :)
 
- fs/btrfs/ctree.h       |    5 +++--
- fs/btrfs/extent-tree.c |   29 ++++++++++++++++++++++++-----
- 2 files changed, 27 insertions(+), 7 deletions(-)
+I have written this by hand so there may be typos. I skipped the parts
+that I don't think is necessary, the rest is on paper if I missed
+something important.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 0d00a07..a566780 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -740,10 +740,11 @@ struct btrfs_space_info {
- 	 */
- 	unsigned long reservation_progress;
- 
--	int full;		/* indicates that we cannot allocate any more
-+	int full:1;		/* indicates that we cannot allocate any more
- 				   chunks for this space */
--	int force_alloc;	/* set if we need to force a chunk alloc for
-+	int force_alloc:1;	/* set if we need to force a chunk alloc for
- 				   this space */
-+	int chunk_alloc:1;	/* set if we are allocating a chunk */
- 
- 	struct list_head list;
- 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index f619c3c..362cc9b 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3020,6 +3020,7 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
- 	found->bytes_may_use = 0;
- 	found->full = 0;
- 	found->force_alloc = 0;
-+	found->chunk_alloc = 0;
- 	*space_info = found;
- 	list_add_rcu(&found->list, &info->space_info);
- 	atomic_set(&found->caching_threads, 0);
-@@ -3273,10 +3274,9 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
- {
- 	struct btrfs_space_info *space_info;
- 	struct btrfs_fs_info *fs_info = extent_root->fs_info;
-+	int wait_for_alloc = 0;
- 	int ret = 0;
- 
--	mutex_lock(&fs_info->chunk_mutex);
--
- 	flags = btrfs_reduce_alloc_profile(extent_root, flags);
- 
- 	space_info = __find_space_info(extent_root->fs_info, flags);
-@@ -3287,21 +3287,40 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
- 	}
- 	BUG_ON(!space_info);
- 
-+again:
- 	spin_lock(&space_info->lock);
- 	if (space_info->force_alloc)
- 		force = 1;
- 	if (space_info->full) {
- 		spin_unlock(&space_info->lock);
--		goto out;
-+		return 0;
- 	}
- 
- 	if (!force && !should_alloc_chunk(extent_root, space_info,
- 					  alloc_bytes)) {
- 		spin_unlock(&space_info->lock);
--		goto out;
-+		return 0;
-+	} else if (space_info->chunk_alloc) {
-+		wait_for_alloc = 1;
-+	} else {
-+		space_info->chunk_alloc = 1;
- 	}
- 	spin_unlock(&space_info->lock);
- 
-+	mutex_lock(&fs_info->chunk_mutex);
-+
-+	/*
-+	 * The chunk_mutex is held throughout the entirety of a chunk
-+	 * allocation, so once we've acquired the chunk_mutex we know that the
-+	 * other guy is done and we need to recheck and see if we should
-+	 * allocate.
-+	 */
-+	if (wait_for_alloc) {
-+		mutex_unlock(&fs_info->chunk_mutex);
-+		wait_for_alloc = 0;
-+		goto again;
-+	}
-+
- 	/*
- 	 * If we have mixed data/metadata chunks we want to make sure we keep
- 	 * allocating mixed chunks instead of individual chunks.
-@@ -3327,9 +3346,9 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
- 		space_info->full = 1;
- 	else
- 		ret = 1;
-+	space_info->chunk_alloc = 0;
- 	space_info->force_alloc = 0;
- 	spin_unlock(&space_info->lock);
--out:
- 	mutex_unlock(&extent_root->fs_info->chunk_mutex);
- 	return ret;
- }
--- 
-1.7.2.3
+kernel 2.6.39-rc2
+
+Kernel BUG at fs/btrfs/inode.c:2281
+EIP is at btrfs_orphan_del+0xa8/0xc1
+Call Trace:
+btrfs_orphan_cleanup+0x18b/0x2a5
+btrfs_lookup_dentry+0x32f/0357
+btrfs_lookup+0xb/0x22
+d_albc_and_lookup+0x38/0x4f
+walk_component+0x131/0x2b0
+? btrfs_getxattr+0x2f/0x5b
+path_lookupat+0x9a/0x2af
+do_path_lookup+0x33/0x8b
+user_path_at+0x3b/0x61
+? putname+0x25/0x2e
+? putname+0x25/0x2e
+? user_path_at+0x44/0x61
+vfs_fstatat+0x51/0x78
+vfs_lstat+0x16/0x18
+sys_lstat64+0x14/0x28
+? vfs_mount_lock_local_unlock+0x20/0x2b
+? mntput_no_expire+0x53/0x110
+? mntput+0x19/0x1b
+? path_put+0x15/0x18
+? sys_getxattr+0x3f/0x4c
+sysenter_do_call+0x12/0x22
+
+Kernel BUG at fs/btrfs/inode.c:4665
+EIP is at btrfs_add_link+0x11f/0x188
+Call Trace:
+add_inode_ref+0x226/0x29d
+? __kmap_atomic+0xe/0x10
+replay_one_buffer+0x165/0x1db
+walk_down_log_tree+0x155/0x2ac
+walk_log_tree+0x63/0x162
+? _raw_spin_unlock+0x14/0x1f
+btrfs_recover_log_trees+0x15c/0x23e
+? replay_one_extent+0x518/0x518
+open_ctree+0xe77/0x1102
+? strcpy+0x13/0x2e
+btrfs_mount+0x2ab/0x622
+? ida_get_new_above+0x14c/0x166
+mount_fs+0xe/0x95
+vfs_kern_mount+0x4c/0x79
+do_kern_mount+0x2f/0xae
+? notify_page_fault+0x5f/0x5f
+? copy_mount_options+0x73/0xd2
+sys_mount+0x61/0x8f
+sysenter_do_call+0x12/0x22
+
+// Maria
+
 

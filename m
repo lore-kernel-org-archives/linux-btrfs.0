@@ -1,43 +1,37 @@
 From: Maria =?ISO-8859-1?Q?Wikstr=F6m?= <maria@ponstudios.se>
 Subject: Re: Kernel BUG at fs/btrfs/inode.c:2281 & 4665
-Date: Tue, 12 Apr 2011 22:25:44 +0200
-Message-ID: <1302639944.7214.33.camel@localhost>
+Date: Tue, 12 Apr 2011 22:26:24 +0200
+Message-ID: <1302639984.7214.34.camel@localhost>
 References: <4931fe2bc7e70ddc21f0240f9b65bb29.squirrel@squirrel-webmail.surftown.com>
-	 <BANLkTim8OsPEodhgq5+6bg3E8jKWTOoyeA@mail.gmail.com>
+	 <20110412182038.17617.qmail@stuge.se>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="UTF-8"
 Cc: linux-btrfs@vger.kernel.org
-To: cwillu <cwillu@cwillu.com>
+To: Peter Stuge <peter@stuge.se>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTim8OsPEodhgq5+6bg3E8jKWTOoyeA@mail.gmail.com>
+In-Reply-To: <20110412182038.17617.qmail@stuge.se>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On tis, 2011-04-12 at 09:29 -0600, cwillu wrote:
-> On Tue, Apr 12, 2011 at 9:11 AM,  <maria@ponstudios.se> wrote:
-> >
-> > The computer was idle when the first bug happened and after the reboot
-> > btrfs can't be mounted. It can't delete orphans and replay the log.
-> > It would be nice if I can get the data out, there is nothing important
-> > there but it would be nice. I was actually fixing typos in the backup
-> > scripts when the bug attacked :)
+On tis, 2011-04-12 at 20:20 +0200, Peter Stuge wrote:
+> Hej Maria!
 > 
-> There's a "btrfs-zero-log" in the progs-unstable git repository that
-> will probably get you up and running again.  You have to build it
-> manually via "make btrfs-zero-log".
-
-Thanks! It worked, I got the data out :)
-
-I found the one who has been crashing the computer every now and then
-and has probably been corrupting btrfs. scsi_lib.c:1147
-So I don't think this is btrfs fault, more likely faulty hardware.
-
-> > I have written this by hand so there may be typos. I skipped the parts
-> > that I don't think is necessary, the rest is on paper if I missed
-> > something important.
+> maria@ponstudios.se wrote:
+> > The computer was idle when the first bug happened
 > 
-> Digital cameras are wonderful things :p
+> Ouch.
+> 
+> 
+> > and after the reboot btrfs can't be mounted.
+> 
+> Can you get some messages out of btrfs tools run against the file
+> system when offline, or an image of it? Maybe hook the fs up to
+> another machine.
+> 
+> 
+> //Peter
+> 
 
-When they have charged batteries ;)
+I got the data out after I cleared the log with btrfs-zero-log.
 
 // Maria
 

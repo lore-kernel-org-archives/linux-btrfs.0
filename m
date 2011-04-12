@@ -1,45 +1,48 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH v2 2/3] btrfs: heed alloc_start
-Date: Tue, 12 Apr 2011 12:42:30 +0200
-Message-ID: <7a53b9516d986fa7409bf242d1f31f65390e2dad.1302604903.git.sensille@gmx.net>
-References: <cover.1302604903.git.sensille@gmx.net>
+Subject: [PATCH v2 0/3] btrfs: quasi-round-robin for chunk allocation
+Date: Tue, 12 Apr 2011 12:42:28 +0200
+Message-ID: <cover.1302604903.git.sensille@gmx.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <cover.1302604903.git.sensille@gmx.net>
-In-Reply-To: <cover.1302604903.git.sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-currently alloc_start is disregarded if the requested
-chunk size is bigger than (device size - alloc_start),
-but smaller than the device size.
-The only situation where I see this could have made sense
-was when a chunk equal the size of the device has been
-requested. This was possible as the allocator failed to
-take alloc_start into account when calculating the request
-chunk size. As this gets fixed by this patch, the workaround
-is not necessary anymore.
+In a multi device setup, the chunk allocator currently always allocates
+chunks on the devices in the same order. This leads to a very uneven
+distribution, especially with RAID1 or RAID10 and an uneven number of
+devices.
+This patch always sorts the devices before allocating, and allocates the
+stripes on the devices with the most available space, as long as there
+is enough space available. In a low space situation, it first tries to
+maximize striping.
+The patch also simplifies the allocator and reduces the checks for
+corner cases.
+The simplification is done by several means. First, it defines the
+properties of each RAID type upfront. These properties are used afterwards
+instead of differentiating cases in several places.
+Second, the old allocator defined a minimum stripe size for each block
+group type, tried to find a large enough chunk, and if this fails just
+allocates a smaller one. This is now done in one step. The largest possible
+chunk (up to max_chunk_size) is searched and allocated.
+Because we now have only one pass, the allocation of the map (struct
+map_lookup) is moved down to the point where the number of stripes is
+already known. This way we avoid reallocation of the map.
+We still avoid allocating stripes that are not a multiple of STRIPE_SIZE.
 
-Signed-off-by: Arne Jansen <sensille@gmx.net>
----
- fs/btrfs/volumes.c |    5 +----
- 1 files changed, 1 insertions(+), 4 deletions(-)
+Changes from v1:
+ - split into multiple parts
+ - added some comments
+ - generated with --patience for better readability
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a9f1fc2..45c592a 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -849,10 +849,7 @@ int find_free_dev_extent(struct btrfs_trans_handle *trans,
- 	/* we don't want to overwrite the superblock on the drive,
- 	 * so we make sure to start at an offset of at least 1MB
- 	 */
--	search_start = 1024 * 1024;
--
--	if (root->fs_info->alloc_start + num_bytes <= search_end)
--		search_start = max(root->fs_info->alloc_start, search_start);
-+	search_start = max(root->fs_info->alloc_start, 1024ull * 1024);
- 
- 	max_hole_start = search_start;
- 	max_hole_size = 0;
+Arne Jansen (3):
+  btrfs: move btrfs_cmp_device_free_bytes to super.c
+  btrfs: heed alloc_start
+  btrfs: quasi-round-robin for chunk allocation
+
+ fs/btrfs/super.c   |   25 +++
+ fs/btrfs/volumes.c |  492 ++++++++++++++++++----------------------------------
+ fs/btrfs/volumes.h |   16 +--
+ 3 files changed, 195 insertions(+), 338 deletions(-)
+
 -- 
 1.7.3.4
 

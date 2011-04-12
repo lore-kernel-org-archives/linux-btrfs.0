@@ -1,96 +1,89 @@
-From: Jan Steffens <jan.steffens@gmail.com>
-Subject: Re: Unable to perform online resize
-Date: Wed, 13 Apr 2011 00:41:44 +0200
-Message-ID: <BANLkTi=1oVQbd3hxiKMXFazipGH6vXRpfg@mail.gmail.com>
-References: <BANLkTin8vD6CaxA5SgrpzcCdYpFjSB6LEQ@mail.gmail.com>
+From: =?ISO-8859-1?Q?S=E9bastien_Bernard?= <seb@frankengul.org>
+Subject: Warning when mounting btrfs partition, kernel unaligned access
+Date: Wed, 13 Apr 2011 01:03:56 +0200
+Message-ID: <4DA4DA5C.3050703@frankengul.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: sparclinux@vger.kernel.org, debian-sparc@lists.debian.org
 To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTin8vD6CaxA5SgrpzcCdYpFjSB6LEQ@mail.gmail.com>
+Return-path: <bounce-debian-sparc=debian-sparc=m.gmane.org@lists.debian.org>
+List-Post: <mailto:debian-sparc@lists.debian.org>
+List-Help: <mailto:debian-sparc-request@lists.debian.org?subject=help>
+List-Subscribe: <mailto:debian-sparc-request@lists.debian.org?subject=subscribe>
+List-Unsubscribe: <mailto:debian-sparc-request@lists.debian.org?subject=unsubscribe>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 13, 2011 at 12:15 AM, Ali Lown <ali@lown.me.uk> wrote:
-> I am using btrfs-progs latest git head in gentoo, along with a 2.6.37=
- kernel.
-> I am unable to resize the filesystem online (or offline - though that
-> doesn't seem to be an option).
->
-> with brtfs:
-> ---------------------------------------------------------------------=
-------------------------------------------
-> alipc-gentoo% sudo btrfs filesystem resize +20g ~/.wine/drive_c
-> Resize '/home/ali/.wine/drive_c' of '+20g'
-> ERROR: unable to resize '/home/ali/.wine/drive_c'
-> ---------------------------------------------------------------------=
-------------------------------------------
->
-> with btrfs-ctl:
-> ---------------------------------------------------------------------=
-------------------------------------------
-> alipc-gentoo% sudo btrfsctl -r +20g ~/.wine/drive_c
-> ioctl:: File too large
-> ---------------------------------------------------------------------=
-------------------------------------------
->
-> fdisk -l of the the drive that partiion is on (sda9 =3D ~/.wine/drive=
-_c):
-> ---------------------------------------------------------------------=
-------------------------------------------
-> Disk /dev/sda: 1000.2 GB, 1000204886016 bytes
-> 255 heads, 63 sectors/track, 121601 cylinders, total 1953525168 secto=
-rs
-> Units =3D sectors of 1 * 512 =3D 512 bytes
-> Sector size (logical/physical): 512 bytes / 512 bytes
-> I/O size (minimum/optimal): 512 bytes / 512 bytes
-> Disk identifier: 0x000e3826
-> =C2=A0 =C2=A0Device Boot =C2=A0 =C2=A0 =C2=A0Start =C2=A0 =C2=A0 =C2=A0=
- =C2=A0 End =C2=A0 =C2=A0 =C2=A0Blocks =C2=A0 Id =C2=A0System
-> /dev/sda1 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A063 =C2=A019=
-53520064 =C2=A0 976760001 =C2=A0 =C2=A05 =C2=A0Extended
-> /dev/sda5 =C2=A0 =C2=A0 =C2=A01009797705 =C2=A01953520064 =C2=A0 4718=
-61180 =C2=A0 83 =C2=A0Linux
-> /dev/sda6 =C2=A0 =C2=A0 =C2=A0 642391218 =C2=A01009797704 =C2=A0 1837=
-03243+ =C2=A083 =C2=A0Linux
-> /dev/sda7 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 189 =C2=A0 =C2=A0=
-41945714 =C2=A0 =C2=A020972763 =C2=A0 =C2=A07 =C2=A0HPFS/NTFS
-> /dev/sda8 =C2=A0 =C2=A0 =C2=A0 =C2=A041945778 =C2=A0 104856254 =C2=A0=
- =C2=A031455238+ =C2=A083 =C2=A0Linux
-> /dev/sda9 =C2=A0 =C2=A0 =C2=A0 104856318 =C2=A0 209712509 =C2=A0 =C2=A0=
-52428096 =C2=A0 83 =C2=A0Linux
-> /dev/sda10 =C2=A0 =C2=A0 =C2=A0386250858 =C2=A0 468166229 =C2=A0 =C2=A0=
-40957686 =C2=A0 83 =C2=A0Linux
-> Partition table entries are not in disk order
-> ---------------------------------------------------------------------=
-------------------------------------------
-> For help in comprehending this, here is an image from gparted:
-> http://img833.imageshack.us/i/gpartedd.png/
->
-> Apart from the hideous numbering and arrangement - I used gparted, an=
-d
-> made it up gradually, as and when I needed partitions.
-> In short for sda9, it is a logical partition inside an extended
-> partion (sda1), and has approximately 85GB of unpartioned space
-> (inside the extended partition) following it, into which I would like
-> to resize it.
-> Thanks.
-> -Ali
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =C2=A0http://vger.kernel.org/majordomo-info.ht=
-ml
->
+I played a little with btrfs on debian sparc64 (V240).
+I created a LV from my volumegroup and mounted it.
+At this moment I got a warning from the kernel as follow:
+[  624.857466] device fsid 5defc44f31f449af-b797a325301d119a devid 1 
+transid 502 /dev/mapper/vgsys-debian64
+[  624.983823] ------------[ cut here ]------------
+[  625.044657] WARNING: at 
+/build/buildd-linux-2.6_2.6.38-3-sparc-675DHN/linux-2.6-2.6.38/debian/build/source_sparc_none/fs/btrfs/extent_io.c:3787 
+write_extent_buffer+0xc8/0x128 [btrfs]()
+[  625.260939] Modules linked in: nfsd exportfs nfs lockd fscache 
+nfs_acl auth_rpcgss sunrpc ext2 loop flash ext4 mbcache jbd2 crc16 
+dm_mod raid1 md_mod btrfs lzo_compress zlib_deflate crc32c libcrc32c 
+ide_cd_mod cdrom ata_generic libata ide_pci_generic sd_mod crc_t10dif 
+qla1280 ohci_hcd ehci_hcd tg3 sym53c8xx scsi_transport_spi scsi_mod 
+usbcore libphy alim15x3 nls_base [last unloaded: scsi_wait_scan]
+[  625.725351] Call Trace:
+[  625.757411]  [00000000103f5cbc] write_extent_buffer+0xc8/0x128 [btrfs]
+[  625.843302]  [00000000103fd7b4] btrfs_read_sys_array+0x3c/0x314 [btrfs]
+[  625.930333]  [00000000103c65e0] open_ctree+0xf28/0x1884 [btrfs]
+[  626.008199]  [000000001039d01c] btrfs_mount+0x238/0x43c [btrfs]
+[  626.086068]  [0000000000514db8] vfs_kern_mount+0x98/0x1fc
+[  626.157071]  [0000000000514f5c] do_kern_mount+0x24/0xbc
+[  626.225696]  [000000000052d718] do_mount+0x830/0x898
+[  626.290889]  [000000000054ed68] compat_sys_mount+0x1c8/0x204
+[  626.365229]  [0000000000406114] linux_sparc_syscall32+0x34/0x40
+[  626.442999] ---[ end trace 1a1c133a476942b9 ]---
 
-btrfs resizing (like resize2fs) does not manipulate the size of partiti=
-ons.
+Then, after writing on the disk, I got a lot of warning:
+[  822.515875] Kernel unaligned access at TPC[103c2204] 
+btrfs_csum_final+0x38/0x3c [btrfs]
+[  825.897439] Kernel unaligned access at TPC[103c2204] 
+btrfs_csum_final+0x38/0x3c [btrfs]
+[  826.030575] Kernel unaligned access at TPC[103c2204] 
+btrfs_csum_final+0x38/0x3c [btrfs]
+[  826.565416] Kernel unaligned access at TPC[103c2204] 
+btrfs_csum_final+0x38/0x3c [btrfs]
+[  826.692390] Kernel unaligned access at TPC[103c2204] 
+btrfs_csum_final+0x38/0x3c [btrfs]
+[  841.631005] Kernel unaligned access at TPC[103c2204] 
+btrfs_csum_final+0x38/0x3c [btrfs]
+[  841.736359] Kernel unaligned access at TPC[103c2204] 
+btrfs_csum_final+0x38/0x3c [btrfs]
+[  846.774635] Kernel unaligned access at TPC[103c2204] 
+btrfs_csum_final+0x38/0x3c [btrfs]
+[  846.880038] Kernel unaligned access at TPC[103c2204] 
+btrfs_csum_final+0x38/0x3c [btrfs]
+[  847.018567] Kernel unaligned access at TPC[103c2204] 
+btrfs_csum_final+0x38/0x3c [btrfs]
+[  847.157098] Kernel unaligned access at TPC[103c2204] 
+btrfs_csum_final+0x38/0x3c [btrfs]
+[  847.262536] Kernel unaligned access at TPC[103c2204] 
+btrfs_csum_final+0x38/0x3c [btrfs]
+[  851.884641] log_unaligned: 127 callbacks suppressed
+[  851.948889] Kernel unaligned access at TPC[103c2204] 
+btrfs_csum_final+0x38/0x3c [btrfs]
+[  852.054307] Kernel unaligned access at TPC[103c2204] 
+btrfs_csum_final+0x38/0x3c [btrfs]
+[  852.227997] Kernel unaligned access at TPC[103c2204] 
+btrfs_csum_final+0x38/0x3c [btrfs]
+[  852.333491] Kernel unaligned access at TPC[103c2204] 
+btrfs_csum_final+0x38/0x3c [btrfs]
 
-=46irst, you need to expand the partition using fdisk or gparted.
-Afterwards you can use "btrfs filesystem resize max ~/.wine/drive_c"
-to grow the filesystem to the size of the partition.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I peeked a look at the btrf_csum_final and here's the function :
+void btrfs_csum_final(u32 crc, char *result)
+{
+         *(__le32 *)result = ~cpu_to_le32(crc);
+}
+
+I know that this problem is certainly an alignment problem and that the 
+sparc is prone to that kind of problem.
+If someone could explain what's wrong with it?
+
+
+S. Bernard

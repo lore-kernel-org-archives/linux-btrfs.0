@@ -1,24 +1,36 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH 0/4] Btrfs: A few small bug fixes
-Date: Wed, 13 Apr 2011 07:30:21 -0400
-Message-ID: <1302694193-sup-3827@think>
-References: <4DA553C9.2040807@cn.fujitsu.com>
+Subject: Re: [PATCH v3] Re: btrfs does not work on usermode linux
+Date: Wed, 13 Apr 2011 07:32:59 -0400
+Message-ID: <1302694333-sup-4155@think>
+References: <20110410133710.0ef34cb6@sf> <20110410184249.483d8d67@sf> <20110410230622.09e965ae@sf> <20110410232403.617c3b7f@sf> <20110410235846.135e801e@sf> <4DA32055.2030104@redhat.com> <20110411224452.4a5149da@sf> <4DA35B98.3010800@redhat.com> <20110413002333.3d78d4d1@sf>
 Content-Type: text/plain; charset=UTF-8
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Li Zefan <lizf@cn.fujitsu.com>
+Cc: Josef Bacik <josef@redhat.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	cwillu <cwillu@cwillu.com>
+To: Sergei Trofimovich <slyich@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <4DA553C9.2040807@cn.fujitsu.com>
+In-reply-to: <20110413002333.3d78d4d1@sf>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Li Zefan's message of 2011-04-13 03:42:01 -0400:
-> Hi Chris,
+Excerpts from Sergei Trofimovich's message of 2011-04-12 17:23:33 -0400:
+> On Mon, 11 Apr 2011 15:50:48 -0400
+> Josef Bacik <josef@redhat.com> wrote:
 > 
-> Those bugs are small, and the fixes are simple and straitforward.
+> > On 04/11/2011 03:44 PM, Sergei Trofimovich wrote:
+> > >> Fix data corruption caused by memcpy() usage on overlapping data.
+> > >> I've observed it first when found out usermode linux crash on btrfs.
 > 
-> You can pull from:
+> ...
 > 
->     git://repo.or.cz/linux-btrfs-devel.git for-chris
+> > Fair enough, BUG_ON() it is.  Repost that version and you can add my
+> > 
+> > Reviewed-by: Josef Bacik <josef@redhat.com>
+> 
+> Thank you! Added and resent as:
+> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg09357.html
+> 
 
-Thanks these are now in my master branch.
+This is in the master branch now, please give it another test.  Thanks a
+lot for bisecting down and patching!
 
 -chris

@@ -1,89 +1,130 @@
-From: =?ISO-8859-1?Q?S=E9bastien_Bernard?= <seb@frankengul.org>
-Subject: Warning when mounting btrfs partition, kernel unaligned access
-Date: Wed, 13 Apr 2011 01:03:56 +0200
-Message-ID: <4DA4DA5C.3050703@frankengul.org>
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: avoid taking the chunk_mutex in do_chunk_alloc
+ V2
+Date: Wed, 13 Apr 2011 09:19:39 +0800
+Message-ID: <4DA4FA2B.7060704@cn.fujitsu.com>
+References: <1302612902-14113-1-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: sparclinux@vger.kernel.org, debian-sparc@lists.debian.org
-To: linux-btrfs@vger.kernel.org
-Return-path: <bounce-debian-sparc=debian-sparc=m.gmane.org@lists.debian.org>
-List-Post: <mailto:debian-sparc@lists.debian.org>
-List-Help: <mailto:debian-sparc-request@lists.debian.org?subject=help>
-List-Subscribe: <mailto:debian-sparc-request@lists.debian.org?subject=subscribe>
-List-Unsubscribe: <mailto:debian-sparc-request@lists.debian.org?subject=unsubscribe>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1302612902-14113-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I played a little with btrfs on debian sparc64 (V240).
-I created a LV from my volumegroup and mounted it.
-At this moment I got a warning from the kernel as follow:
-[  624.857466] device fsid 5defc44f31f449af-b797a325301d119a devid 1 
-transid 502 /dev/mapper/vgsys-debian64
-[  624.983823] ------------[ cut here ]------------
-[  625.044657] WARNING: at 
-/build/buildd-linux-2.6_2.6.38-3-sparc-675DHN/linux-2.6-2.6.38/debian/build/source_sparc_none/fs/btrfs/extent_io.c:3787 
-write_extent_buffer+0xc8/0x128 [btrfs]()
-[  625.260939] Modules linked in: nfsd exportfs nfs lockd fscache 
-nfs_acl auth_rpcgss sunrpc ext2 loop flash ext4 mbcache jbd2 crc16 
-dm_mod raid1 md_mod btrfs lzo_compress zlib_deflate crc32c libcrc32c 
-ide_cd_mod cdrom ata_generic libata ide_pci_generic sd_mod crc_t10dif 
-qla1280 ohci_hcd ehci_hcd tg3 sym53c8xx scsi_transport_spi scsi_mod 
-usbcore libphy alim15x3 nls_base [last unloaded: scsi_wait_scan]
-[  625.725351] Call Trace:
-[  625.757411]  [00000000103f5cbc] write_extent_buffer+0xc8/0x128 [btrfs]
-[  625.843302]  [00000000103fd7b4] btrfs_read_sys_array+0x3c/0x314 [btrfs]
-[  625.930333]  [00000000103c65e0] open_ctree+0xf28/0x1884 [btrfs]
-[  626.008199]  [000000001039d01c] btrfs_mount+0x238/0x43c [btrfs]
-[  626.086068]  [0000000000514db8] vfs_kern_mount+0x98/0x1fc
-[  626.157071]  [0000000000514f5c] do_kern_mount+0x24/0xbc
-[  626.225696]  [000000000052d718] do_mount+0x830/0x898
-[  626.290889]  [000000000054ed68] compat_sys_mount+0x1c8/0x204
-[  626.365229]  [0000000000406114] linux_sparc_syscall32+0x34/0x40
-[  626.442999] ---[ end trace 1a1c133a476942b9 ]---
+On 04/12/2011 08:55 PM, Josef Bacik wrote:
+> Everytime we try to allocate disk space we try and see if we can pre-emptively
+> allocate a chunk, but in the common case we don't allocate anything, so there is
+> no sense in taking the chunk_mutex at all.  So instead if we are allocating a
+> chunk, mark it in the space_info so we don't get two people trying to allocate
+> at the same time.  Thanks,
+> 
 
-Then, after writing on the disk, I got a lot of warning:
-[  822.515875] Kernel unaligned access at TPC[103c2204] 
-btrfs_csum_final+0x38/0x3c [btrfs]
-[  825.897439] Kernel unaligned access at TPC[103c2204] 
-btrfs_csum_final+0x38/0x3c [btrfs]
-[  826.030575] Kernel unaligned access at TPC[103c2204] 
-btrfs_csum_final+0x38/0x3c [btrfs]
-[  826.565416] Kernel unaligned access at TPC[103c2204] 
-btrfs_csum_final+0x38/0x3c [btrfs]
-[  826.692390] Kernel unaligned access at TPC[103c2204] 
-btrfs_csum_final+0x38/0x3c [btrfs]
-[  841.631005] Kernel unaligned access at TPC[103c2204] 
-btrfs_csum_final+0x38/0x3c [btrfs]
-[  841.736359] Kernel unaligned access at TPC[103c2204] 
-btrfs_csum_final+0x38/0x3c [btrfs]
-[  846.774635] Kernel unaligned access at TPC[103c2204] 
-btrfs_csum_final+0x38/0x3c [btrfs]
-[  846.880038] Kernel unaligned access at TPC[103c2204] 
-btrfs_csum_final+0x38/0x3c [btrfs]
-[  847.018567] Kernel unaligned access at TPC[103c2204] 
-btrfs_csum_final+0x38/0x3c [btrfs]
-[  847.157098] Kernel unaligned access at TPC[103c2204] 
-btrfs_csum_final+0x38/0x3c [btrfs]
-[  847.262536] Kernel unaligned access at TPC[103c2204] 
-btrfs_csum_final+0x38/0x3c [btrfs]
-[  851.884641] log_unaligned: 127 callbacks suppressed
-[  851.948889] Kernel unaligned access at TPC[103c2204] 
-btrfs_csum_final+0x38/0x3c [btrfs]
-[  852.054307] Kernel unaligned access at TPC[103c2204] 
-btrfs_csum_final+0x38/0x3c [btrfs]
-[  852.227997] Kernel unaligned access at TPC[103c2204] 
-btrfs_csum_final+0x38/0x3c [btrfs]
-[  852.333491] Kernel unaligned access at TPC[103c2204] 
-btrfs_csum_final+0x38/0x3c [btrfs]
+Reviewed-by: Liu Bo <liubo2009@cn.fujitsu.com>
 
-I peeked a look at the btrf_csum_final and here's the function :
-void btrfs_csum_final(u32 crc, char *result)
-{
-         *(__le32 *)result = ~cpu_to_le32(crc);
-}
+> Signed-off-by: Josef Bacik <josef@redhat.com>
+> ---
+> V1->V2: Return in the case where we don't need to allocate a chunk instead of
+> going to out.
+> 
+>  fs/btrfs/ctree.h       |    5 +++--
+>  fs/btrfs/extent-tree.c |   29 ++++++++++++++++++++++++-----
+>  2 files changed, 27 insertions(+), 7 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 0d00a07..a566780 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -740,10 +740,11 @@ struct btrfs_space_info {
+>  	 */
+>  	unsigned long reservation_progress;
+>  
+> -	int full;		/* indicates that we cannot allocate any more
+> +	int full:1;		/* indicates that we cannot allocate any more
+>  				   chunks for this space */
+> -	int force_alloc;	/* set if we need to force a chunk alloc for
+> +	int force_alloc:1;	/* set if we need to force a chunk alloc for
+>  				   this space */
+> +	int chunk_alloc:1;	/* set if we are allocating a chunk */
+>  
+>  	struct list_head list;
+>  
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index f619c3c..362cc9b 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -3020,6 +3020,7 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
+>  	found->bytes_may_use = 0;
+>  	found->full = 0;
+>  	found->force_alloc = 0;
+> +	found->chunk_alloc = 0;
+>  	*space_info = found;
+>  	list_add_rcu(&found->list, &info->space_info);
+>  	atomic_set(&found->caching_threads, 0);
+> @@ -3273,10 +3274,9 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
+>  {
+>  	struct btrfs_space_info *space_info;
+>  	struct btrfs_fs_info *fs_info = extent_root->fs_info;
+> +	int wait_for_alloc = 0;
+>  	int ret = 0;
+>  
+> -	mutex_lock(&fs_info->chunk_mutex);
+> -
+>  	flags = btrfs_reduce_alloc_profile(extent_root, flags);
+>  
+>  	space_info = __find_space_info(extent_root->fs_info, flags);
+> @@ -3287,21 +3287,40 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
+>  	}
+>  	BUG_ON(!space_info);
+>  
+> +again:
+>  	spin_lock(&space_info->lock);
+>  	if (space_info->force_alloc)
+>  		force = 1;
+>  	if (space_info->full) {
+>  		spin_unlock(&space_info->lock);
+> -		goto out;
+> +		return 0;
+>  	}
+>  
+>  	if (!force && !should_alloc_chunk(extent_root, space_info,
+>  					  alloc_bytes)) {
+>  		spin_unlock(&space_info->lock);
+> -		goto out;
+> +		return 0;
+> +	} else if (space_info->chunk_alloc) {
+> +		wait_for_alloc = 1;
+> +	} else {
+> +		space_info->chunk_alloc = 1;
+>  	}
+>  	spin_unlock(&space_info->lock);
+>  
+> +	mutex_lock(&fs_info->chunk_mutex);
+> +
+> +	/*
+> +	 * The chunk_mutex is held throughout the entirety of a chunk
+> +	 * allocation, so once we've acquired the chunk_mutex we know that the
+> +	 * other guy is done and we need to recheck and see if we should
+> +	 * allocate.
+> +	 */
+> +	if (wait_for_alloc) {
+> +		mutex_unlock(&fs_info->chunk_mutex);
+> +		wait_for_alloc = 0;
+> +		goto again;
+> +	}
+> +
+>  	/*
+>  	 * If we have mixed data/metadata chunks we want to make sure we keep
+>  	 * allocating mixed chunks instead of individual chunks.
+> @@ -3327,9 +3346,9 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
+>  		space_info->full = 1;
+>  	else
+>  		ret = 1;
+> +	space_info->chunk_alloc = 0;
+>  	space_info->force_alloc = 0;
+>  	spin_unlock(&space_info->lock);
+> -out:
+>  	mutex_unlock(&extent_root->fs_info->chunk_mutex);
+>  	return ret;
+>  }
 
-I know that this problem is certainly an alignment problem and that the 
-sparc is prone to that kind of problem.
-If someone could explain what's wrong with it?
-
-
-S. Bernard

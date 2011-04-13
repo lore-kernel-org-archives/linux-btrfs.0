@@ -1,51 +1,31 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH 4/4] Btrfs: Check validity before setting an acl
-Date: Wed, 13 Apr 2011 15:43:17 +0800
-Message-ID: <4DA55415.4050805@cn.fujitsu.com>
-References: <4DA553C9.2040807@cn.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+From: Andreas Philipp <philipp.andreas@gmail.com>
+Subject: [PATCH 0/5] Add user-space support for read-only snapshot creation.
+Date: Wed, 13 Apr 2011 11:12:09 +0200
+Message-ID: <1302685934-15737-1-git-send-email-philipp.andreas@gmail.com>
+Cc: Andreas Philipp <philipp.andreas@gmail.com>, lizf@cn.fujitsu.com
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DA553C9.2040807@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Miao Xie <miaox@cn.fujitsu.com>
+There is kernel side support for the creation of read-only snapshots
+for some time now, but I did not find any patches for the userspace
+btrfs utilites. Thus I created this patchset which is tested and
+working with kernel version 2.6.39-rc2.
 
-Call posix_acl_valid() to check if an acl is valid or not.
+Andreas Philipp (5):
+  Add support for read-only subvolumes.
+  Support the new parameters in do_clone(int argc, char** argv).
+  Added support for an additional ioctl.
+  Test the additional ioctl.
+  Updated documentation for btrfs subvolume snapshot.
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
- fs/btrfs/acl.c |    9 +++++----
- 1 files changed, 5 insertions(+), 4 deletions(-)
+ btrfs.c        |    6 +++---
+ btrfs_cmds.c   |   44 ++++++++++++++++++++++++++++++++++++--------
+ ioctl-test.c   |    1 +
+ ioctl.h        |   14 ++++++++++++++
+ man/btrfs.8.in |   11 ++++++-----
+ 5 files changed, 60 insertions(+), 16 deletions(-)
 
-diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index 9c94934..a892bc2 100644
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -178,16 +178,17 @@ static int btrfs_xattr_acl_set(struct dentry *dentry, const char *name,
- 
- 	if (value) {
- 		acl = posix_acl_from_xattr(value, size);
--		if (acl == NULL) {
--			value = NULL;
--			size = 0;
-+		if (acl) {
-+			ret = posix_acl_valid(acl);
-+			if (ret)
-+				goto out;
- 		} else if (IS_ERR(acl)) {
- 			return PTR_ERR(acl);
- 		}
- 	}
- 
- 	ret = btrfs_set_acl(NULL, dentry->d_inode, acl, type);
--
-+out:
- 	posix_acl_release(acl);
- 
- 	return ret;
 -- 
-1.7.3.1
+1.7.4.1
+

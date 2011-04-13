@@ -1,49 +1,37 @@
-From: Andreas Philipp <philipp.andreas@gmail.com>
-Subject: [PATCH 5/5] Updated documentation for btrfs subvolume snapshot.
-Date: Wed, 13 Apr 2011 11:12:14 +0200
-Message-ID: <1302685934-15737-6-git-send-email-philipp.andreas@gmail.com>
-References: <1302685934-15737-1-git-send-email-philipp.andreas@gmail.com>
-Cc: Andreas Philipp <philipp.andreas@gmail.com>, lizf@cn.fujitsu.com
-To: linux-btrfs@vger.kernel.org
+From: David Sterba <dave@jikos.cz>
+Subject: Re: Warning when mounting btrfs partition, kernel unaligned access
+Date: Wed, 13 Apr 2011 11:40:37 +0200
+Message-ID: <20110413094037.GL31675@twin.jikos.cz>
+References: <4DA4DA5C.3050703@frankengul.org>
+Reply-To: dave@jikos.cz
+Mime-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+Cc: linux-btrfs@vger.kernel.org, sparclinux@vger.kernel.org,
+	debian-sparc@lists.debian.org
+To: =?iso-8859-1?Q?S=E9bastien?= Bernard <seb@frankengul.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1302685934-15737-1-git-send-email-philipp.andreas@gmail.com>
+In-Reply-To: <4DA4DA5C.3050703@frankengul.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi
 
-Signed-off-by: Andreas Philipp <philipp.andreas@gmail.com>
----
- man/btrfs.8.in |   11 ++++++-----
- 1 files changed, 6 insertions(+), 5 deletions(-)
+On Wed, Apr 13, 2011 at 01:03:56AM +0200, S=E9bastien Bernard wrote:
+> Then, after writing on the disk, I got a lot of warning:
+> [  822.515875] Kernel unaligned access at TPC[103c2204]
+>=20
+> I peeked a look at the btrf_csum_final and here's the function :
+> void btrfs_csum_final(u32 crc, char *result)
+> {
+>         *(__le32 *)result =3D ~cpu_to_le32(crc);
+> }
 
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index 26ef982..b59bc6f 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -5,7 +5,7 @@
- .SH NAME
- btrfs \- control a btrfs filesystem
- .SH SYNOPSIS
--\fBbtrfs\fP \fBsubvolume snapshot\fP\fI <source> [<dest>/]<name>\fP
-+\fBbtrfs\fP \fBsubvolume snapshot\fP\fI [-r] <source> [<dest>/]<name>\fP
- .PP
- \fBbtrfs\fP \fBsubvolume delete\fP\fI <subvolume>\fP
- .PP
-@@ -70,10 +70,11 @@ command.
- .SH COMMANDS
- .TP
- 
--\fBsubvolume snapshot\fR\fI <source> [<dest>/]<name>\fR
--Create a writable snapshot of the subvolume \fI<source>\fR with the name
--\fI<name>\fR in the \fI<dest>\fR directory. If \fI<source>\fR is not a
--subvolume, \fBbtrfs\fR returns an error.
-+\fBsubvolume snapshot\fR\fI [-r] <source> [<dest>/]<name>\fR
-+Create a writable/readonly snapshot of the subvolume \fI<source>\fR with the
-+name \fI<name>\fR in the \fI<dest>\fR directory. If \fI<source>\fR is not a
-+subvolume, \fBbtrfs\fR returns an error. If \fI-r\fR is given, the snapshot
-+will be readonly.
- .TP
- 
- \fBsubvolume delete\fR\fI <subvolume>\fR
--- 
-1.7.4.1
+=46YI, this has been fixed and is already merged into Linus' tree. Comm=
+it
+7e75bf3ff3a716d7b21d8fb43bf823115801c1e9.
 
+dave
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

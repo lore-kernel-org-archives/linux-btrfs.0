@@ -1,130 +1,73 @@
-From: liubo <liubo2009@cn.fujitsu.com>
-Subject: Re: [PATCH] Btrfs: avoid taking the chunk_mutex in do_chunk_alloc
- V2
-Date: Wed, 13 Apr 2011 09:19:39 +0800
-Message-ID: <4DA4FA2B.7060704@cn.fujitsu.com>
-References: <1302612902-14113-1-git-send-email-josef@redhat.com>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: Re: wrong values in "df" and "btrfs filesystem df"
+Date: Wed, 13 Apr 2011 13:35:53 +0800
+Message-ID: <4DA53639.20702@cn.fujitsu.com>
+References: <BjW+GU4y1uB@helmut.hullen.de> <20110409091141.GE5301@carfax.org.uk> <4DA182DF.6010703@cn.fujitsu.com> <chaz20110411072946.GA5587@seebyte.com> <4DA3FDD1.2090804@cn.fujitsu.com> <chaz20110412081721.GA3982@seebyte.com>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Hugo Mills <hugo-lkml@carfax.org.uk>, helmut@hullen.de,
+	linux-btrfs@vger.kernel.org
+To: Stephane Chazelas <stephane.chazelas@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1302612902-14113-1-git-send-email-josef@redhat.com>
+In-Reply-To: <chaz20110412081721.GA3982@seebyte.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/12/2011 08:55 PM, Josef Bacik wrote:
-> Everytime we try to allocate disk space we try and see if we can pre-emptively
-> allocate a chunk, but in the common case we don't allocate anything, so there is
-> no sense in taking the chunk_mutex at all.  So instead if we are allocating a
-> chunk, mark it in the space_info so we don't get two people trying to allocate
-> at the same time.  Thanks,
+On tue, 12 Apr 2011 09:17:21 +0100, Stephane Chazelas wrote:
+> 2011-04-12 15:22:57 +0800, Miao Xie:
+> [...]
+>> But the algorithm of df command doesn't simulate the above allocation correctly, this
+>> simulated allocation just allocates the stripes from two disks, and then, these two disks
+>> have no free space, but the third disk still has 1.2TB free space, df command thinks
+>> this space can be used to make a new RAID0 block group and ignores it. This is a bug,
+>> I think.
+> [...]
 > 
+> Thanks a lot Miao for the detailed explanation. So, the disk
+> space is not lost, it's just df not reporting the available
+> space correctly. That's me relieved.
+> 
+> It explains why I'm getting:
+> 
+> # blockdev --getsize64 /dev/sda4
+> 2967698087424
+> # blockdev --getsize64 /dev/sdb
+> 3000592982016
+> # blockdev --getsize64 /dev/sdc
+> 3000592982016
+> # truncate -s 2967698087424 a
+> # truncate -s 3000592982016 b
+> # truncate -s 3000592982016 c
+> # losetup /dev/loop0 ./a
+> # losetup /dev/loop1 ./b
+> # losetup /dev/loop2 ./c
+> # mkfs.btrfs a b c
+> # btrfs device scan /dev/loop[0-2]
+> Scanning for Btrfs filesystems in '/dev/loop0'
+> Scanning for Btrfs filesystems in '/dev/loop1'
+> Scanning for Btrfs filesystems in '/dev/loop2'
+> # mount  /dev/loop0 /mnt/1
+> # df -k /mnt/1
+> Filesystem           1K-blocks      Used Available Use% Mounted on
+> /dev/loop0           8758675828        56 5859474304   1% /mnt/1
+> # echo $(((8758675828 - 5859474304)*2**10))
+> 2968782360576
+> 
+> One disk worth of space lost according to df.
+> 
+> While it should have been more something like
+> $(((3000592982016-2967698087424)*2)) (about 60GB), or about 0
+> after the quasi-round-robin allocation patch, right?
 
-Reviewed-by: Liu Bo <liubo2009@cn.fujitsu.com>
+I think btrfs can utilize the disk space very well(perhaps all the space).
+The last 60GB is on the different disks, so btrfs can utilize the space to
+make up new RAID0 block groups with two stripes.
 
-> Signed-off-by: Josef Bacik <josef@redhat.com>
-> ---
-> V1->V2: Return in the case where we don't need to allocate a chunk instead of
-> going to out.
+> Best regards,
+> Stephane
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
->  fs/btrfs/ctree.h       |    5 +++--
->  fs/btrfs/extent-tree.c |   29 ++++++++++++++++++++++++-----
->  2 files changed, 27 insertions(+), 7 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 0d00a07..a566780 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -740,10 +740,11 @@ struct btrfs_space_info {
->  	 */
->  	unsigned long reservation_progress;
->  
-> -	int full;		/* indicates that we cannot allocate any more
-> +	int full:1;		/* indicates that we cannot allocate any more
->  				   chunks for this space */
-> -	int force_alloc;	/* set if we need to force a chunk alloc for
-> +	int force_alloc:1;	/* set if we need to force a chunk alloc for
->  				   this space */
-> +	int chunk_alloc:1;	/* set if we are allocating a chunk */
->  
->  	struct list_head list;
->  
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index f619c3c..362cc9b 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -3020,6 +3020,7 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
->  	found->bytes_may_use = 0;
->  	found->full = 0;
->  	found->force_alloc = 0;
-> +	found->chunk_alloc = 0;
->  	*space_info = found;
->  	list_add_rcu(&found->list, &info->space_info);
->  	atomic_set(&found->caching_threads, 0);
-> @@ -3273,10 +3274,9 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
->  {
->  	struct btrfs_space_info *space_info;
->  	struct btrfs_fs_info *fs_info = extent_root->fs_info;
-> +	int wait_for_alloc = 0;
->  	int ret = 0;
->  
-> -	mutex_lock(&fs_info->chunk_mutex);
-> -
->  	flags = btrfs_reduce_alloc_profile(extent_root, flags);
->  
->  	space_info = __find_space_info(extent_root->fs_info, flags);
-> @@ -3287,21 +3287,40 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
->  	}
->  	BUG_ON(!space_info);
->  
-> +again:
->  	spin_lock(&space_info->lock);
->  	if (space_info->force_alloc)
->  		force = 1;
->  	if (space_info->full) {
->  		spin_unlock(&space_info->lock);
-> -		goto out;
-> +		return 0;
->  	}
->  
->  	if (!force && !should_alloc_chunk(extent_root, space_info,
->  					  alloc_bytes)) {
->  		spin_unlock(&space_info->lock);
-> -		goto out;
-> +		return 0;
-> +	} else if (space_info->chunk_alloc) {
-> +		wait_for_alloc = 1;
-> +	} else {
-> +		space_info->chunk_alloc = 1;
->  	}
->  	spin_unlock(&space_info->lock);
->  
-> +	mutex_lock(&fs_info->chunk_mutex);
-> +
-> +	/*
-> +	 * The chunk_mutex is held throughout the entirety of a chunk
-> +	 * allocation, so once we've acquired the chunk_mutex we know that the
-> +	 * other guy is done and we need to recheck and see if we should
-> +	 * allocate.
-> +	 */
-> +	if (wait_for_alloc) {
-> +		mutex_unlock(&fs_info->chunk_mutex);
-> +		wait_for_alloc = 0;
-> +		goto again;
-> +	}
-> +
->  	/*
->  	 * If we have mixed data/metadata chunks we want to make sure we keep
->  	 * allocating mixed chunks instead of individual chunks.
-> @@ -3327,9 +3346,9 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
->  		space_info->full = 1;
->  	else
->  		ret = 1;
-> +	space_info->chunk_alloc = 0;
->  	space_info->force_alloc = 0;
->  	spin_unlock(&space_info->lock);
-> -out:
->  	mutex_unlock(&extent_root->fs_info->chunk_mutex);
->  	return ret;
->  }
 

@@ -1,10 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from rcsinet10.oracle.com ([148.87.113.121]:22114 "EHLO
+Received: from rcsinet10.oracle.com ([148.87.113.121]:24960 "EHLO
 	rcsinet10.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753088Ab1DNVSV (ORCPT
+	with ESMTP id S1753320Ab1DNVVT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Apr 2011 17:18:21 -0400
-Date: Thu, 14 Apr 2011 14:17:32 -0700
+	Thu, 14 Apr 2011 17:21:19 -0400
+Date: Thu, 14 Apr 2011 14:18:02 -0700
 From: Dan Magenheimer <dan.magenheimer@oracle.com>
 To: chris.mason@oracle.com, viro@zeniv.linux.org.uk, akpm@linux-foundation.org,
         adilger.kernel@dilger.ca, tytso@mit.edu, mfasheh@suse.com,
@@ -17,34 +17,31 @@ To: chris.mason@oracle.com, viro@zeniv.linux.org.uk, akpm@linux-foundation.org,
         avi@redhat.com, konrad.wilk@oracle.com, dan.magenheimer@oracle.com,
         mel@csn.ul.ie, yinghan@google.com, gthelen@google.com,
         torvalds@linux-foundation.org
-Subject: [PATCH V8 4/8] mm/fs: add hooks to support cleancache
-Message-ID: <20110414211732.GA27761@ca-server1.us.oracle.com>
+Subject: [PATCH V8 5/8] ext3: add cleancache support
+Message-ID: <20110414211802.GA27779@ca-server1.us.oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[PATCH V8 4/8] mm/fs: add hooks to support cleancache
+[PATCH V8 5/8] ext3: add cleancache support
 
-This fourth patch of eight in this cleancache series provides the
-core hooks in VFS for: initializing cleancache per filesystem;
-capturing clean pages reclaimed by page cache; attempting to get
-pages from cleancache before filesystem read; and ensuring coherency
-between pagecache, disk, and cleancache.  Note that the placement
-of these hooks was stable from 2.6.18 to 2.6.38; a minor semantic
-change was required due to a patchset in 2.6.39.
-
-All hooks become no-ops if CONFIG_CLEANCACHE is unset, or become
-a check of a boolean global if CONFIG_CLEANCACHE is set but no
-cleancache "backend" has claimed cleancache_ops.
+This fifth patch of eight in this cleancache series "opts-in"
+cleancache for ext3.  Filesystems must explicitly enable
+cleancache by calling cleancache_init_fs anytime an instance
+of the filesystem is mounted. For ext3, all other cleancache
+hooks are in the VFS layer including the matching cleancache_flush_fs
+hook which must be called on unmount.
 
 Details and a FAQ can be found in Documentation/vm/cleancache.txt
 
-[v8: minchan.kim@gmail.com: adapt to new remove_from_page_cache function]
-Signed-off-by: Chris Mason <chris.mason@oracle.com>
+[v6-v8: no changes]
+[v5: jeremy@goop.org: simplify init hook and any future fs init changes]
 Signed-off-by: Dan Magenheimer <dan.magenheimer@oracle.com>
 Reviewed-by: Jeremy Fitzhardinge <jeremy@goop.org>
 Reviewed-by: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>
+Acked-by: Andreas Dilger <adilger@sun.com>
+Cc: Ted Ts'o <tytso@mit.edu>
 Cc: Andrew Morton <akpm@linux-foundation.org>
 Cc: Al Viro <viro@ZenIV.linux.org.uk>
 Cc: Matthew Wilcox <matthew@wil.cx>
@@ -52,8 +49,7 @@ Cc: Nick Piggin <npiggin@kernel.dk>
 Cc: Mel Gorman <mel@csn.ul.ie>
 Cc: Rik Van Riel <riel@redhat.com>
 Cc: Jan Beulich <JBeulich@novell.com>
-Cc: Andreas Dilger <adilger@sun.com>
-Cc: Ted Ts'o <tytso@mit.edu>
+Cc: Chris Mason <chris.mason@oracle.com>
 Cc: Mark Fasheh <mfasheh@suse.com>
 Cc: Joel Becker <joel.becker@oracle.com>
 Cc: Nitin Gupta <ngupta@vflare.org>
@@ -61,157 +57,24 @@ Cc: Nitin Gupta <ngupta@vflare.org>
 ---
 
 Diffstat:
- fs/buffer.c                              |    5 +++++
- fs/mpage.c                               |    7 +++++++
- fs/super.c                               |    3 +++
- mm/filemap.c                             |   11 +++++++++++
- mm/truncate.c                            |    6 ++++++
- 5 files changed, 32 insertions(+)
+ fs/ext3/super.c                          |    2 ++
+ 1 file changed, 2 insertions(+)
 
---- linux-2.6.39-rc3/fs/super.c	2011-04-11 18:21:51.000000000 -0600
-+++ linux-2.6.39-rc3-cleancache/fs/super.c	2011-04-13 17:08:09.175853426 -0600
-@@ -31,6 +31,7 @@
- #include <linux/mutex.h>
- #include <linux/backing-dev.h>
- #include <linux/rculist_bl.h>
+--- linux-2.6.39-rc3/fs/ext3/super.c	2011-04-11 18:21:51.000000000 -0600
++++ linux-2.6.39-rc3-cleancache/fs/ext3/super.c	2011-04-13 17:10:40.918915872 -0600
+@@ -36,6 +36,7 @@
+ #include <linux/quotaops.h>
+ #include <linux/seq_file.h>
+ #include <linux/log2.h>
 +#include <linux/cleancache.h>
- #include "internal.h"
  
+ #include <asm/uaccess.h>
  
-@@ -112,6 +113,7 @@ static struct super_block *alloc_super(s
- 		s->s_maxbytes = MAX_NON_LFS;
- 		s->s_op = &default_op;
- 		s->s_time_gran = 1000000000;
-+		s->cleancache_poolid = -1;
+@@ -1367,6 +1368,7 @@ static int ext3_setup_super(struct super
+ 	} else {
+ 		ext3_msg(sb, KERN_INFO, "using internal journal");
  	}
- out:
- 	return s;
-@@ -177,6 +179,7 @@ void deactivate_locked_super(struct supe
- {
- 	struct file_system_type *fs = s->s_type;
- 	if (atomic_dec_and_test(&s->s_active)) {
-+		cleancache_flush_fs(s);
- 		fs->kill_sb(s);
- 		/*
- 		 * We need to call rcu_barrier so all the delayed rcu free
---- linux-2.6.39-rc3/fs/buffer.c	2011-04-11 18:21:51.000000000 -0600
-+++ linux-2.6.39-rc3-cleancache/fs/buffer.c	2011-04-13 17:07:24.700917174 -0600
-@@ -41,6 +41,7 @@
- #include <linux/bitops.h>
- #include <linux/mpage.h>
- #include <linux/bit_spinlock.h>
-+#include <linux/cleancache.h>
- 
- static int fsync_buffers_list(spinlock_t *lock, struct list_head *list);
- 
-@@ -269,6 +270,10 @@ void invalidate_bdev(struct block_device
- 	invalidate_bh_lrus();
- 	lru_add_drain_all();	/* make sure all lru add caches are flushed */
- 	invalidate_mapping_pages(mapping, 0, -1);
-+	/* 99% of the time, we don't need to flush the cleancache on the bdev.
-+	 * But, for the strange corners, lets be cautious
-+	 */
-+	cleancache_flush_inode(mapping);
++	cleancache_init_fs(sb);
+ 	return res;
  }
- EXPORT_SYMBOL(invalidate_bdev);
  
---- linux-2.6.39-rc3/fs/mpage.c	2011-04-11 18:21:51.000000000 -0600
-+++ linux-2.6.39-rc3-cleancache/fs/mpage.c	2011-04-13 17:07:24.706913410 -0600
-@@ -27,6 +27,7 @@
- #include <linux/writeback.h>
- #include <linux/backing-dev.h>
- #include <linux/pagevec.h>
-+#include <linux/cleancache.h>
- 
- /*
-  * I/O completion handler for multipage BIOs.
-@@ -271,6 +272,12 @@ do_mpage_readpage(struct bio *bio, struc
- 		SetPageMappedToDisk(page);
- 	}
- 
-+	if (fully_mapped && blocks_per_page == 1 && !PageUptodate(page) &&
-+	    cleancache_get_page(page) == 0) {
-+		SetPageUptodate(page);
-+		goto confused;
-+	}
-+
- 	/*
- 	 * This page will go to BIO.  Do we need to send this BIO off first?
- 	 */
---- linux-2.6.39-rc3/mm/filemap.c	2011-04-11 18:21:51.000000000 -0600
-+++ linux-2.6.39-rc3-cleancache/mm/filemap.c	2011-04-13 17:09:46.367852002 -0600
-@@ -34,6 +34,7 @@
- #include <linux/hardirq.h> /* for BUG_ON(!in_atomic()) only */
- #include <linux/memcontrol.h>
- #include <linux/mm_inline.h> /* for page_is_file_cache() */
-+#include <linux/cleancache.h>
- #include "internal.h"
- 
- /*
-@@ -118,6 +119,16 @@ void __delete_from_page_cache(struct pag
- {
- 	struct address_space *mapping = page->mapping;
- 
-+	/*
-+	 * if we're uptodate, flush out into the cleancache, otherwise
-+	 * invalidate any existing cleancache entries.  We can't leave
-+	 * stale data around in the cleancache once our page is gone
-+	 */
-+	if (PageUptodate(page) && PageMappedToDisk(page))
-+		cleancache_put_page(page);
-+	else
-+		cleancache_flush_page(mapping, page);
-+
- 	radix_tree_delete(&mapping->page_tree, page->index);
- 	page->mapping = NULL;
- 	mapping->nrpages--;
---- linux-2.6.39-rc3/mm/truncate.c	2011-04-11 18:21:51.000000000 -0600
-+++ linux-2.6.39-rc3-cleancache/mm/truncate.c	2011-04-13 17:07:24.710911759 -0600
-@@ -19,6 +19,7 @@
- #include <linux/task_io_accounting_ops.h>
- #include <linux/buffer_head.h>	/* grr. try_to_release_page,
- 				   do_invalidatepage */
-+#include <linux/cleancache.h>
- #include "internal.h"
- 
- 
-@@ -51,6 +52,7 @@ void do_invalidatepage(struct page *page
- static inline void truncate_partial_page(struct page *page, unsigned partial)
- {
- 	zero_user_segment(page, partial, PAGE_CACHE_SIZE);
-+	cleancache_flush_page(page->mapping, page);
- 	if (page_has_private(page))
- 		do_invalidatepage(page, partial);
- }
-@@ -214,6 +216,7 @@ void truncate_inode_pages_range(struct a
- 	pgoff_t next;
- 	int i;
- 
-+	cleancache_flush_inode(mapping);
- 	if (mapping->nrpages == 0)
- 		return;
- 
-@@ -291,6 +294,7 @@ void truncate_inode_pages_range(struct a
- 		pagevec_release(&pvec);
- 		mem_cgroup_uncharge_end();
- 	}
-+	cleancache_flush_inode(mapping);
- }
- EXPORT_SYMBOL(truncate_inode_pages_range);
- 
-@@ -440,6 +444,7 @@ int invalidate_inode_pages2_range(struct
- 	int did_range_unmap = 0;
- 	int wrapped = 0;
- 
-+	cleancache_flush_inode(mapping);
- 	pagevec_init(&pvec, 0);
- 	next = start;
- 	while (next <= end && !wrapped &&
-@@ -498,6 +503,7 @@ int invalidate_inode_pages2_range(struct
- 		mem_cgroup_uncharge_end();
- 		cond_resched();
- 	}
-+	cleancache_flush_inode(mapping);
- 	return ret;
- }
- EXPORT_SYMBOL_GPL(invalidate_inode_pages2_range);

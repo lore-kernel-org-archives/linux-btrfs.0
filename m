@@ -1,33 +1,92 @@
-From: Christoph Hellwig <hch@infradead.org>
-Subject: Re: [PATCH] Trace: add __print_symbolic_u64 to avoid warnings on
- 32bit machine
-Date: Fri, 15 Apr 2011 12:37:46 -0400
-Message-ID: <20110415163746.GA14185@infradead.org>
-References: <4D9573DB.4010009@cn.fujitsu.com>
- <1301665762.2160.22.camel@gandalf.stny.rr.com>
- <4D9C2FF6.7090607@cn.fujitsu.com>
- <20110415092418.b18fd6fe.randy.dunlap@oracle.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: liubo <liubo2009@cn.fujitsu.com>,
-	Steven Rostedt <rostedt@goodmis.org>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>
-To: Randy Dunlap <randy.dunlap@oracle.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20110415092418.b18fd6fe.randy.dunlap@oracle.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: if we've already started a trans handle, use that one
+Date: Fri, 15 Apr 2011 12:56:15 -0400
+Message-ID: <1302886575-2025-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 15, 2011 at 09:24:18AM -0700, Randy Dunlap wrote:
-> Can this also be used to stop this warning that has been around
-> like forever (on i386)?
-> 
-> linux-next-20110415/fs/xfs/linux-2.6/./xfs_trace.h:1354: warning: format '%llx' expects type 'long long unsigned int', but argument 22 has type 'xfs_fsblock_t'
+We currently track trans handles in current->journal_info, but we don't actually
+use it.  This patch fixes it.  This will cover the case where we have multiple
+people starting transactions down the call chain.  This keeps us from having to
+allocate a new handle and all of that, we just increase the use count of the
+current handle, save the old block_rsv, and return.  I tested this with xfstests
+and it worked out fine.  Thanks,
 
-What about reporting the bug?  And no, it won't help.  The only
-thing that helps would be casting the argument to (long long).  If you
-send me (and/or the xfs list) a list of the warnings you see I'm happy
-to fix them, although I don't see them during my x86 builds.  Could it
-be that you have CONFIG_LBD disabled?  That's surely not a popular
-option with XFS users.
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/transaction.c |   17 +++++++++++++++++
+ fs/btrfs/transaction.h |    2 ++
+ 2 files changed, 19 insertions(+), 0 deletions(-)
+
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 70bfb26..46f4056 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -184,6 +184,15 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
+ 
+ 	if (root->fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR)
+ 		return ERR_PTR(-EROFS);
++
++	if (current->journal_info) {
++		WARN_ON(type != TRANS_JOIN && type != TRANS_JOIN_NOLOCK);
++		h = current->journal_info;
++		h->use_count++;
++		h->orig_rsv = h->block_rsv;
++		h->block_rsv = NULL;
++		goto got_it;
++	}
+ again:
+ 	h = kmem_cache_alloc(btrfs_trans_handle_cachep, GFP_NOFS);
+ 	if (!h)
+@@ -213,7 +222,9 @@ again:
+ 	h->block_group = 0;
+ 	h->bytes_reserved = 0;
+ 	h->delayed_ref_updates = 0;
++	h->use_count = 1;
+ 	h->block_rsv = NULL;
++	h->orig_rsv = NULL;
+ 
+ 	smp_mb();
+ 	if (cur_trans->blocked && may_wait_transaction(root, type)) {
+@@ -241,6 +252,7 @@ again:
+ 		}
+ 	}
+ 
++got_it:
+ 	if (type != TRANS_JOIN_NOLOCK)
+ 		mutex_lock(&root->fs_info->trans_mutex);
+ 	record_root_in_trans(h, root);
+@@ -428,6 +440,11 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+ 	struct btrfs_fs_info *info = root->fs_info;
+ 	int count = 0;
+ 
++	if (--trans->use_count) {
++		trans->block_rsv = trans->orig_rsv;
++		return 0;
++	}
++
+ 	while (count < 4) {
+ 		unsigned long cur = trans->delayed_ref_updates;
+ 		trans->delayed_ref_updates = 0;
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 1f573f0..154314f 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -47,11 +47,13 @@ struct btrfs_trans_handle {
+ 	u64 transid;
+ 	u64 block_group;
+ 	u64 bytes_reserved;
++	unsigned long use_count;
+ 	unsigned long blocks_reserved;
+ 	unsigned long blocks_used;
+ 	unsigned long delayed_ref_updates;
+ 	struct btrfs_transaction *transaction;
+ 	struct btrfs_block_rsv *block_rsv;
++	struct btrfs_block_rsv *orig_rsv;
+ };
+ 
+ struct btrfs_pending_snapshot {
+-- 
+1.7.2.3
+

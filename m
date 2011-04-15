@@ -1,71 +1,30 @@
-From: Dan Magenheimer <dan.magenheimer@oracle.com>
-Subject: RE: [PATCH V8 1/8] mm/fs: cleancache documentation
-Date: Fri, 15 Apr 2011 12:37:11 -0700 (PDT)
-Message-ID: <67d72d8f-9809-4e43-9e90-417d4eb14db1@default>
-References: <20110414211601.GA27691@ca-server1.us.oracle.com
- 87mxjr4a6o.fsf@devron.myhome.or.jp>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: [RFC] Add a new file op for fsync to give fs's more control
+Date: Fri, 15 Apr 2011 15:49:27 -0400
+Message-ID: <20110415194927.GA4225@infradead.org>
+References: <1302894582-24341-1-git-send-email-josef@redhat.com>
+ <20110415192412.GA17974@infradead.org>
+ <1302896032-sup-86@think>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>, viro@zeniv.linux.org.uk,
-        akpm@linux-foundation.org, adilger.kernel@dilger.ca, tytso@mit.edu,
-        mfasheh@suse.com, jlbec@evilplan.org, matthew@wil.cx,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-        ocfs2-devel@oss.oracle.com, linux-mm@kvack.org, hch@infradead.org,
-        ngupta@vflare.org, jeremy@goop.org, JBeulich@novell.com,
-        Kurt Hackel
- <kurt.hackel@oracle.com>, npiggin@kernel.dk,
-        Dave Mccracken
- <dave.mccracken@oracle.com>, riel@redhat.com,
-        avi@redhat.com, Konrad Wilk
- <konrad.wilk@oracle.com>, mel@csn.ul.ie,
-        yinghan@google.com, gthelen@google.com, torvalds@linux-foundation.org
-To: OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <87mxjr4a6o.fsf@devron.myhome.or.jp>
+Cc: Christoph Hellwig <hch@infradead.org>,
+	Josef Bacik <josef@redhat.com>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <1302896032-sup-86@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Hirofumi-san --
+On Fri, Apr 15, 2011 at 03:34:57PM -0400, Chris Mason wrote:
+> Excerpts from Christoph Hellwig's message of 2011-04-15 15:24:12 -0400:
+> > Sorry, but this is too ugly to live.  If the reason for this really is
+> > good enough we'll just need to push the filemap_write_and_wait_range
+> > and i_mutex locking into every ->fsync instance.
+> > 
+> 
+> Which part is too ugly to live?  The special op? New parameters?
 
-> Another question: why can't this enable/disable per sb, e.g. via mount
-> options? (I have the interest the cache stuff like this by SSD on
-> physical systems like dragonfly's swapcache.)
+Two different fsync ops, when we could triviall do with one by pushing
+things down.
 
-This would be useful and could be added later if individual
-filesystems choose to add the mount functionality.  My goal with
-this patchset is to enable only minimal functionality so
-that other kernel developers can build on it.
-
-> Well, anyway, I guess force enabling this for mostly unused sb can just
-> add cache-write overhead and call for unpleasing reclaim to backend
-> (because of limited space of backend) like updatedb.
-
-If the sb is mostly unused, there should be few puts.  But you
-are correct that if the backend has only very limited space,
-cleancache adds cost and has little value.  On these systems,
-cleancache should probably be disabled.  However, the cost
-is very small so leaving it enabled may not even show a
-measureable performance impact.
-
-> And already there is in FAQ though, I also have interest about async
-> interface because of SDD backend (I'm not sure for now though). Is
-> there any plan like SSD backend?
-
-Yes, I think an SSD backend is very interesting, especially
-if the SSD is "very near" to the processor so that it can
-be used as a RAM extension rather than as an I/O device.
-
-The existing cleancache hooks will work for this and I am
-working on a cleancache backend called RAMster that will
-be a good foundation to access other asynchronous devices.
-See: http://marc.info/?l=3Dlinux-mm&m=3D130013567810410&w=3D2=20
-
-Thanks for your feedback!
-Dan
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>

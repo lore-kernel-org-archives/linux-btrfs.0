@@ -1,27 +1,56 @@
-From: Ben Gamari <bgamari.foss@gmail.com>
-Subject: Re: btrfs frozen solid with postgresql dbs
-Date: Sat, 16 Apr 2011 10:24:11 -0400
-Message-ID: <87ei52uvec.fsf@gmail.com>
-References: <BANLkTimFNpi_AF_n6-=gOp1N1U12QturyA@mail.gmail.com>
+From: Hubert Kario <hka@qbs.com.pl>
+Subject: Re: cloning single-device btrfs file system onto multi-device one
+Date: Sun, 17 Apr 2011 17:12:51 +0200
+Message-ID: <201104171712.51928.hka@qbs.com.pl>
+References: <chaz20110321162450.GB918@seebyte.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: "krzf83\@gmail.com" <krzf83@gmail.com>, linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain; charset=iso-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Stephane Chazelas <stephane.chazelas@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTimFNpi_AF_n6-=gOp1N1U12QturyA@mail.gmail.com>
+In-Reply-To: <chaz20110321162450.GB918@seebyte.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, 16 Apr 2011 15:07:50 +0200, "krzf83@gmail.com " <krzf83@gmail.com> wrote:
-> kernel: 2.6.37.6
-> 
-> At least twice I've experienced problems when using btrfs with ssd for
-> postgresql db storage. Server gets frozen, i even can't kill it using
-> kill -9, I cant chown postgresql db dir (it never gets done). If I
-> initiate copy operation of postgresql db dir to another partition
-> (without actually switching to using it) everything starts to work
-> fine for some time...
-> 
-You may want to try Sysrq-W to see where the server is stuck.
+On Monday 21 of March 2011 17:24:50 Stephane Chazelas wrote:
+> Hiya,
+>=20
+> I'm trying to move a btrfs FS that's on a hardware raid 5 (6TB
+> large, 4 of which are in use) to another machine with 3 3TB HDs
+> and preserve all the subvolumes/snapshots.
+>=20
+> Is there a way to do that without using a software/hardware raid
+> on the new machine (that is just use btrfs multi-device).
+>=20
+> If fewer than 3TB were occupied, I suppose I could just resize
+> it so that it fits on one 3TB hd, then copy device to device
+> onto a 3TB disk, add the 2 other ones and do a "balance", but
+> here, I can't do that.
+>=20
+> I suspect that if compression was enabled, the FS could fit on
+> 3 TB, but AFAICT, compression is enabled at mount time and would
+> only apply to newly created files. Is there a way to compress
+> files already in a btrfs filesystem?
 
-Just a thought...
+You can compress files already on disk using
+btrfs filesystem defragment -c /path/to/file
+but defragmenting breaks snapshotting (at least it did 2 months ago, du=
+nno if=20
+it's still true)
 
- - Ben
+>=20
+> Any help would be appreciated.
+> Stephane
+
+--=20
+Hubert Kario
+QBS - Quality Business Software
+ul. Ksawer=F3w 30/85
+02-656 Warszawa
+POLAND
+tel. +48 (22) 646-61-51, 646-74-24
+fax +48 (22) 646-61-50
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

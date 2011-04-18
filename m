@@ -1,77 +1,93 @@
-From: Dan Magenheimer <dan.magenheimer@oracle.com>
-Subject: RE: [PATCH] xen: cleancache shim to Xen Transcendent Memory
-Date: Mon, 18 Apr 2011 07:12:46 -0700 (PDT)
-Message-ID: <276f7410-ff4d-4a3b-ab9c-fd1b5fe8c952@default>
-References: <20110414212002.GA27846@ca-server1.us.oracle.com>
- <1302904935.22658.9.camel@localhost.localdomain>
- <5d23c6c4-5d68-4c2e-af24-2a08f592cb8e@default
- 1303116441.5997.107.camel@zakaz.uk.xensource.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Cc: Chris Mason <chris.mason@oracle.com>, viro@zeniv.linux.org.uk,
-        akpm@linux-foundation.org, adilger.kernel@dilger.ca, tytso@mit.edu,
-        mfasheh@suse.com, jlbec@evilplan.org, matthew@wil.cx,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-        ocfs2-devel@oss.oracle.com, linux-mm@kvack.org, hch@infradead.org,
-        ngupta@vflare.org, jeremy@goop.org, JBeulich@novell.com,
-        Kurt Hackel
- <kurt.hackel@oracle.com>, npiggin@kernel.dk,
-        Dave Mccracken
- <dave.mccracken@oracle.com>, riel@redhat.com,
-        avi@redhat.com, Konrad Wilk
- <konrad.wilk@oracle.com>, mel@csn.ul.ie,
-        yinghan@google.com, gthelen@google.com, torvalds@linux-foundation.org
-To: Ian Campbell <Ian.Campbell@eu.citrix.com>
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <1303116441.5997.107.camel@zakaz.uk.xensource.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: [GIT PULL] Btrfs updates
+Date: Mon, 18 Apr 2011 10:26:22 -0400
+Message-ID: <1303135497-sup-59@think>
+Content-Type: text/plain; charset=UTF-8
+To: "Linus Torvalds" <torvalds@linux-foundation.org>,
+	"Linux Btrfs" <linux-btrfs@vger.kernel.org>,
+	"linux-kernel" <linux-kernel@vger.kernel.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> From: Ian Campbell [mailto:Ian.Campbell@eu.citrix.com]
-> > >
-> > > On Thu, 2011-04-14 at 14:20 -0700, Dan Magenheimer wrote:
-> > >
-> > > There's no need to build this into a kernel which doesn't have
-> > > cleancache (or one of the other frontends), is there? I think there
-> > > should be a Kconfig option (even if its not a user visible one)
-> with
-> > > the appropriate depends/selects.
-> >
-> > Yes, you're right.  It should eventually depend on
-> >
-> > CONFIG_CLEANCACHE || CONFIG_FRONTSWAP
-> >
-> > though there's no sense merging this xen cleancache
-> > shim at all unless/until Linus merges cleancache
-> > (and hopefully later some evolution of frontswap).
->=20
-> Cleancache isn't in already? I thought I saw references to it in
-> drivers/staging?
+Hi everyone,
 
-Linus said he would review it after 2.6.39-rc1 was released,
-but has neither given thumbs up nor thumbs down so I'm
-assuming he didn't have time and it will be reconsidered
-for 2.6.40.  This latest patchset (V8) is updated in linux-next.
+The master branch of the btrfs unstable repo:
 
-Yes, zcache is in driver/staging and has references to it.
-I guess that proves the chicken comes before the egg...
-or was it vice versa? :-)
-=20
-> > And once cleancache (and/or frontswap) is merged,
-> > there's very little reason NOT to enable one or
-> > both on a Xen guest kernel.
->=20
-> There are software knobs to allow the host- and guest-admin to opt in
-> or out as they desire though, right?
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
 
-Definitely.  Both Xen and a Linux guest have runtime
-options, which currently default to off.
+Has a nice pile of btrfs fixes.  Josef tackled a variety of DIO problems
+including latencies and crc errors.  He also fixed a crash in the
+mount -o free_space_cache mode, and dramatically reduced contention on
+the journal mutex.  Less contention means we finish up endio processing
+faster and we're able to process delalloc much faster as space gets
+tight.
 
-Dan
+Our ENOSPC fixes have returned.  The cluster allocation code was
+sometimes getting out of hand and leaving us with a filesystem full of
+metadata chunks.
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+Fujitsu continues a long series of error handling improvements and
+fixes, and Sergei Trofimovich fixed a memcpy vs memmove bug.
+
+I've removed a duplicate commit from the shortlog below.  Josef and I
+both managed to take his iov_base fix.  Git did the right thing and the
+resulting code is correct.
+
+Josef Bacik (10) commits (+224/-133):
+    Btrfs: reuse the extent_map we found when calling btrfs_get_extent (+28/-8)
+    Btrfs: do not call btrfs_update_inode in endio if nothing changed (+10/-5)
+    Btrfs: deal with the case that we run out of space in the cache (+69/-74)
+    Btrfs: avoid taking the trans_mutex in btrfs_end_transaction (+19/-24)
+    Btrfs: check for duplicate iov_base's when doing dio reads (+16/-1)
+    Btrfs: avoid taking the chunk_mutex in do_chunk_alloc (+28/-6)
+    Btrfs: map the inode item when doing fill_inode_item (+12/-0)
+    Btrfs: do not use async submit for small DIO io's (+19/-5)
+    Btrfs: don't split dio bios if we don't have to (+13/-7)
+    Btrfs: only retry transaction reservation once (+10/-1)
+
+Chris Mason (4) commits (+78/-29):
+    Btrfs end_bio_extent_readpage should look for locked bits (+1/-1)
+    Btrfs: don't force chunk allocation in find_free_extent (+73/-22)
+    Btrfs: make uncache_state unconditional (+3/-5)
+    Btrfs: fix free space cache leak (+1/-1)
+
+Li Zefan (2) commits (+22/-39):
+    Btrfs: Check if btrfs_next_leaf() returns error in btrfs_real_readdir() (+10/-18)
+    Btrfs: Check if btrfs_next_leaf() returns error in btrfs_listxattr() (+12/-21)
+
+Miao Xie (2) commits (+8/-7):
+    Btrfs: Fix incorrect inode nlink in btrfs_link() (+3/-3)
+    Btrfs: Check validity before setting an acl (+5/-4)
+
+Sergei Trofimovich (1) commits (+11/-3):
+    btrfs: properly handle overlapping areas in memmove_extent_buffer
+
+Yoshinori Sano (1) commits (+4/-1):
+    Btrfs: fix memory leaks in btrfs_new_inode()
+
+Xin Zhong (1) commits (+33/-9):
+    Btrfs: fix subvolume mount by name problem when default mount subvolume is set
+
+Daniel J Blueman (1) commits (+1/-1):
+    fix user annotation in ioctl.c
+
+Arne Jansen (1) commits (+55/-19):
+    btrfs: using cached extent_state in set/unlock combinations
+
+Total: (24) commits (+452/-240)
+
+ fs/btrfs/acl.c              |    9 ++-
+ fs/btrfs/ctree.h            |    9 ++-
+ fs/btrfs/disk-io.c          |    2 +-
+ fs/btrfs/extent-tree.c      |  125 +++++++++++++++++++++++++-------
+ fs/btrfs/extent_io.c        |   82 ++++++++++++++++-----
+ fs/btrfs/extent_io.h        |    2 +-
+ fs/btrfs/file.c             |   21 +++---
+ fs/btrfs/free-space-cache.c |  119 +++++++++++++++----------------
+ fs/btrfs/inode.c            |  165 ++++++++++++++++++++++++++++++-------------
+ fs/btrfs/ioctl.c            |    2 +-
+ fs/btrfs/super.c            |   42 +++++++++---
+ fs/btrfs/transaction.c      |   48 +++++++------
+ fs/btrfs/transaction.h      |    4 +-
+ fs/btrfs/xattr.c            |   33 +++------
+ 14 files changed, 430 insertions(+), 233 deletions(-)

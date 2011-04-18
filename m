@@ -1,89 +1,77 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [RFC] Add a new file op for fsync to give fs's more control
-Date: Mon, 18 Apr 2011 10:10:36 -0400
-Message-ID: <4DAC465C.6070806@redhat.com>
-References: <1302894582-24341-1-git-send-email-josef@redhat.com> <20110415192412.GA17974@infradead.org> <4DA89D59.1070402@redhat.com> <4DABDF0F.2060609@cn.fujitsu.com>
+From: Dan Magenheimer <dan.magenheimer@oracle.com>
+Subject: RE: [PATCH] xen: cleancache shim to Xen Transcendent Memory
+Date: Mon, 18 Apr 2011 07:12:46 -0700 (PDT)
+Message-ID: <276f7410-ff4d-4a3b-ab9c-fd1b5fe8c952@default>
+References: <20110414212002.GA27846@ca-server1.us.oracle.com>
+ <1302904935.22658.9.camel@localhost.localdomain>
+ <5d23c6c4-5d68-4c2e-af24-2a08f592cb8e@default
+ 1303116441.5997.107.camel@zakaz.uk.xensource.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Christoph Hellwig <hch@infradead.org>,
-	linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	chris.mason@oracle.com
-To: liubo <liubo2009@cn.fujitsu.com>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <4DABDF0F.2060609@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
+Cc: Chris Mason <chris.mason@oracle.com>, viro@zeniv.linux.org.uk,
+        akpm@linux-foundation.org, adilger.kernel@dilger.ca, tytso@mit.edu,
+        mfasheh@suse.com, jlbec@evilplan.org, matthew@wil.cx,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+        ocfs2-devel@oss.oracle.com, linux-mm@kvack.org, hch@infradead.org,
+        ngupta@vflare.org, jeremy@goop.org, JBeulich@novell.com,
+        Kurt Hackel
+ <kurt.hackel@oracle.com>, npiggin@kernel.dk,
+        Dave Mccracken
+ <dave.mccracken@oracle.com>, riel@redhat.com,
+        avi@redhat.com, Konrad Wilk
+ <konrad.wilk@oracle.com>, mel@csn.ul.ie,
+        yinghan@google.com, gthelen@google.com, torvalds@linux-foundation.org
+To: Ian Campbell <Ian.Campbell@eu.citrix.com>
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <1303116441.5997.107.camel@zakaz.uk.xensource.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/18/2011 02:49 AM, liubo wrote:
-> On 04/16/2011 03:32 AM, Josef Bacik wrote:
->> On 04/15/2011 03:24 PM, Christoph Hellwig wrote:
->>> Sorry, but this is too ugly to live.  If the reason for this really is
->>> good enough we'll just need to push the filemap_write_and_wait_range
->>> and i_mutex locking into every ->fsync instance.
->>>
->>
->> So part of what makes small fsyncs slow in btrfs is all of our random
->> threads to make checksumming not suck.  So we submit IO which spreads it
->> out to helper threads to do the checksumming, and then when it returns
->> it gets handed off to endio threads that run the endio stuff.  This
->> works awesome with doing big writes and such, but if say we're and RPM
->> database and write a couple of kilbytes, this tends to suck because we
->> keep handing work off to other threads and waiting, so the scheduling
->> latencies really hurt.
->>
->> So we'd like to be able to say "hey this is a small amount of io, lets
->> just do the checksumming in the current thread", and the same with
->> handling the endio stuff.  We can't do that currently because
->> filemap_write_and_wait_range is called before we get to fsync.  We'd
->> like to be able to control this so we can do the appropriate magic to do
->> the submission within the fsyncings thread context in order to speed
->> things up a bit.
->>
->> That plus the stuff I said about i_mutex.  Is that a good enough reason
->> to just push this down into all the filesystems?  Thanks,
->>
->
-> Fine with the i_mutex.
->
-> I'm wandering that is it worth of doing so?
->
-> I've tested your patch with sysbench, and there is little improvement. :(
->
+> From: Ian Campbell [mailto:Ian.Campbell@eu.citrix.com]
+> > >
+> > > On Thu, 2011-04-14 at 14:20 -0700, Dan Magenheimer wrote:
+> > >
+> > > There's no need to build this into a kernel which doesn't have
+> > > cleancache (or one of the other frontends), is there? I think there
+> > > should be a Kconfig option (even if its not a user visible one)
+> with
+> > > the appropriate depends/selects.
+> >
+> > Yes, you're right.  It should eventually depend on
+> >
+> > CONFIG_CLEANCACHE || CONFIG_FRONTSWAP
+> >
+> > though there's no sense merging this xen cleancache
+> > shim at all unless/until Linus merges cleancache
+> > (and hopefully later some evolution of frontswap).
+>=20
+> Cleancache isn't in already? I thought I saw references to it in
+> drivers/staging?
 
-Yeah it's not a huge change for us, there are other places we need to 
-work on, however things like ext4 could do well to not hold the i_mutex 
-over a transaction commit.  Just an example of how this could help us 
-all in general, not just btrfs.
+Linus said he would review it after 2.6.39-rc1 was released,
+but has neither given thumbs up nor thumbs down so I'm
+assuming he didn't have time and it will be reconsidered
+for 2.6.40.  This latest patchset (V8) is updated in linux-next.
 
-> Sysbench args:
-> sysbench --test=fileio --num-threads=1 --file-num=10240 --file-block-size=1K --file-total-size=20M --file-test-mode=rndwr --file-io-mode=sync --file-extra-flags=  run
->
->
-> 10240 files, 2Kb each
-> ===
-> fsync_nolock (patch):
-> Operations performed:  0 Read, 10000 Write, 1024000 Other = 1034000 Total
-> Read 0b  Written 9.7656Mb  Total transferred 9.7656Mb  (35.152Kb/sec)
->     35.15 Requests/sec executed
->
-> fsync (orig):
-> Operations performed:  0 Read, 10000 Write, 1024000 Other = 1034000 Total
-> Read 0b  Written 9.7656Mb  Total transferred 9.7656Mb  (35.287Kb/sec)
->     35.29 Requests/sec executed
-> ===
->
-> Seems that the improvement of avoiding threads interchange is not enough.
->
-> BTW, I'm trying to improve the fsync performance stuff, but mainly for large files(>4G).
-> And I found that a large file will have a tremendous amount of csum items needed to
-> be flush into tree log during fsync().  Btrfs now uses a brute force approach to
-> ensure to get the most uptodate copies of everything, and this results in a bad
-> performance.  To change the brute way is bugging me a lot...
->
+Yes, zcache is in driver/staging and has references to it.
+I guess that proves the chicken comes before the egg...
+or was it vice versa? :-)
+=20
+> > And once cleancache (and/or frontswap) is merged,
+> > there's very little reason NOT to enable one or
+> > both on a Xen guest kernel.
+>=20
+> There are software knobs to allow the host- and guest-admin to opt in
+> or out as they desire though, right?
 
-Yeah there are some things that could be done for this, I'm going to be 
-spending a while here trying to squeeze as much performance out of fsync 
-that we can get, though first I'm going to start with small fsyncs since 
-that will be the most practical gain at the moment (think RPM 
-databases).  Thanks,
+Definitely.  Both Xen and a Linux guest have runtime
+options, which currently default to off.
 
-Josef
+Dan
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>

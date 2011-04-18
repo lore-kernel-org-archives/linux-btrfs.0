@@ -1,58 +1,52 @@
-From: c.monty@web.de
-Subject: Btrfs Partition out of free space - no mount possible
-Date: Mon, 18 Apr 2011 09:57:34 +0200 (CEST)
-Message-ID: <1787693384.3390.1303113454439.JavaMail.fmail@mwmweb059>
+From: Coly Li <i@coly.li>
+Subject: Re: [PATCH 1/2] E2fsprogs: use the generic inode flags
+Date: Mon, 18 Apr 2011 16:41:34 +0800
+Message-ID: <4DABF93E.1030504@coly.li>
+References: <4DA2A0CC.9000301@cn.fujitsu.com> <4DABEA36.5060007@cn.fujitsu.com>
+Reply-To: i@coly.li
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: ext4 <linux-ext4@vger.kernel.org>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	tytso <tytso@mit.edu>, Chris Mason <chris.mason@oracle.com>
+To: liubo <liubo2009@cn.fujitsu.com>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <4DABEA36.5060007@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 2011=E5=B9=B404=E6=9C=8818=E6=97=A5 15:37, liubo Wrote:
+>=20
+> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+> ---
+>  debugfs/htree.c        |    2 +-
+>  e2fsck/pass1.c         |   22 +++++++++++-----------
+>  e2fsck/pass2.c         |    2 +-
+>  e2fsck/pass4.c         |    2 +-
+>  e2fsck/rehash.c        |    4 ++--
+>  ext2ed/inode_com.c     |   14 +++++++-------
+>  lib/e2p/fgetflags.c    |    6 +++---
+>  lib/e2p/fsetflags.c    |    6 +++---
+>  lib/e2p/getflags.c     |    6 +++---
+>  lib/e2p/pf.c           |   34 +++++++++++++++++-----------------
+>  lib/e2p/setflags.c     |    6 +++---
+>  lib/ext2fs/ext2_fs.h   |   44 ++++++++++++++++++++++----------------=
+------
+>  lib/ext2fs/link.c      |    4 ++--
+>  lib/ext2fs/mkjournal.c |    2 +-
+>  misc/chattr.c          |   26 +++++++++++++-------------
+>  misc/tune2fs.c         |    2 +-
+>  16 files changed, 91 insertions(+), 91 deletions(-)
+> [snip]
 
-Hello!
+Hi Bo,
 
-My Btrfs partition (/home) is out of free space.
-The partition is a logical drive within a LVM configuration.
+Could you please to introduce the motivation of this patch set a little=
+ bit more? Thanks.
 
-I've already extended the LVM logical volume.
-However, it's impossible to mount the partition from a live CD system (SystemRescue CD).
-The error in dmesg is: BTRFS: inode 8443 still on the orphan list
-
-Here my executed commands:
-root@sysresccd /root % btrfs filesystem show
-failed to read /dev/fd0
-Label: 'home' uuid: c6da646e-83aa-432d-9a24-d0d276c3de4d
-Total devices 1 FS bytes used 284.13MB
-devid 1 size 756.00MB used 756.00MB path /dev/dm-3
-
-root@sysresccd /root % pvscan
-PV /dev/mapper/lvm-crypt VG linux lvm2 [7.86 GiB / 0 free]
-Total: 1 [7.86 GiB] / in use: 1 [7.86 GiB] / in no VG: 0 [0 ]
-
-root@sysresccd /root % vgscan
-Reading all physical volumes. This may take a while...
-Found volume group "linux" using metadata type lvm2
-
-root@sysresccd /root % lvscan
-ACTIVE '/dev/linux/root' [6.52 GiB] inherit
-ACTIVE '/dev/linux/swap' [416.00 MiB] inherit
-ACTIVE '/dev/linux/home' [956.00 MiB] inherit
-
-When I try to mount the Btrfs partition, the system hangs:
-root@sysresccd /root % mount /dev/linux/home /mnt/backup
-
-root@sysresccd /root % dmesg
-[ 5142.990126] device label home devid 1 transid 951018 /dev/mapper/linux-home
-[ 5143.110843] BTRFS: inode 8443 still on the orphan list
-[ 5143.148987] BTRFS: inode 8443 still on the orphan list
-[ 5143.158262] BTRFS: inode 8443 still on the orphan list
-[ 5143.167229] BTRFS: inode 8443 still on the orphan list
-[ 5143.177283] BTRFS: inode 8443 still on the orphan list
-[ 5143.186218] BTRFS: inode 8443 still on the orphan list
-[ 5143.196194] BTRFS: inode 8443 still on the orphan list
-[ 5143.206172] BTRFS: inode 8443 still on the orphan list
-[ 5143.220235] BTRFS: inode 8443 still on the orphan list
-
-How can I resolve this issue?
-
-THX
+--=20
+Coly Li
+--
+To unsubscribe from this list: send the line "unsubscribe linux-ext4" i=
+n
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

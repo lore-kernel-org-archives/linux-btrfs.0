@@ -1,25 +1,89 @@
-From: Christoph Hellwig <hch@infradead.org>
-Subject: Re: [PATCH 1/2] E2fsprogs: use the generic inode flags
-Date: Mon, 18 Apr 2011 06:51:46 -0400
-Message-ID: <20110418105146.GA15557@infradead.org>
-References: <4DA2A0CC.9000301@cn.fujitsu.com>
- <4DABEA36.5060007@cn.fujitsu.com>
- <4DABF93E.1030504@coly.li>
- <4DABFDF0.9060608@cn.fujitsu.com>
- <4DAC1D5D.3020506@coly.li>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [RFC] Add a new file op for fsync to give fs's more control
+Date: Mon, 18 Apr 2011 10:10:36 -0400
+Message-ID: <4DAC465C.6070806@redhat.com>
+References: <1302894582-24341-1-git-send-email-josef@redhat.com> <20110415192412.GA17974@infradead.org> <4DA89D59.1070402@redhat.com> <4DABDF0F.2060609@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: liubo <liubo2009@cn.fujitsu.com>,
-	ext4 <linux-ext4@vger.kernel.org>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	tytso <tytso@mit.edu>, Chris Mason <chris.mason@oracle.com>
-To: Coly Li <i@coly.li>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DAC1D5D.3020506@coly.li>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Christoph Hellwig <hch@infradead.org>,
+	linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	chris.mason@oracle.com
+To: liubo <liubo2009@cn.fujitsu.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <4DABDF0F.2060609@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 18, 2011 at 07:15:41PM +0800, Coly Li wrote:
-> It seems chattr and lsattr is not an ext[234] only utilities any more...
+On 04/18/2011 02:49 AM, liubo wrote:
+> On 04/16/2011 03:32 AM, Josef Bacik wrote:
+>> On 04/15/2011 03:24 PM, Christoph Hellwig wrote:
+>>> Sorry, but this is too ugly to live.  If the reason for this really is
+>>> good enough we'll just need to push the filemap_write_and_wait_range
+>>> and i_mutex locking into every ->fsync instance.
+>>>
+>>
+>> So part of what makes small fsyncs slow in btrfs is all of our random
+>> threads to make checksumming not suck.  So we submit IO which spreads it
+>> out to helper threads to do the checksumming, and then when it returns
+>> it gets handed off to endio threads that run the endio stuff.  This
+>> works awesome with doing big writes and such, but if say we're and RPM
+>> database and write a couple of kilbytes, this tends to suck because we
+>> keep handing work off to other threads and waiting, so the scheduling
+>> latencies really hurt.
+>>
+>> So we'd like to be able to say "hey this is a small amount of io, lets
+>> just do the checksumming in the current thread", and the same with
+>> handling the endio stuff.  We can't do that currently because
+>> filemap_write_and_wait_range is called before we get to fsync.  We'd
+>> like to be able to control this so we can do the appropriate magic to do
+>> the submission within the fsyncings thread context in order to speed
+>> things up a bit.
+>>
+>> That plus the stuff I said about i_mutex.  Is that a good enough reason
+>> to just push this down into all the filesystems?  Thanks,
+>>
+>
+> Fine with the i_mutex.
+>
+> I'm wandering that is it worth of doing so?
+>
+> I've tested your patch with sysbench, and there is little improvement. :(
+>
 
-They haven't been for a long time.
+Yeah it's not a huge change for us, there are other places we need to 
+work on, however things like ext4 could do well to not hold the i_mutex 
+over a transaction commit.  Just an example of how this could help us 
+all in general, not just btrfs.
 
+> Sysbench args:
+> sysbench --test=fileio --num-threads=1 --file-num=10240 --file-block-size=1K --file-total-size=20M --file-test-mode=rndwr --file-io-mode=sync --file-extra-flags=  run
+>
+>
+> 10240 files, 2Kb each
+> ===
+> fsync_nolock (patch):
+> Operations performed:  0 Read, 10000 Write, 1024000 Other = 1034000 Total
+> Read 0b  Written 9.7656Mb  Total transferred 9.7656Mb  (35.152Kb/sec)
+>     35.15 Requests/sec executed
+>
+> fsync (orig):
+> Operations performed:  0 Read, 10000 Write, 1024000 Other = 1034000 Total
+> Read 0b  Written 9.7656Mb  Total transferred 9.7656Mb  (35.287Kb/sec)
+>     35.29 Requests/sec executed
+> ===
+>
+> Seems that the improvement of avoiding threads interchange is not enough.
+>
+> BTW, I'm trying to improve the fsync performance stuff, but mainly for large files(>4G).
+> And I found that a large file will have a tremendous amount of csum items needed to
+> be flush into tree log during fsync().  Btrfs now uses a brute force approach to
+> ensure to get the most uptodate copies of everything, and this results in a bad
+> performance.  To change the brute way is bugging me a lot...
+>
+
+Yeah there are some things that could be done for this, I'm going to be 
+spending a while here trying to squeeze as much performance out of fsync 
+that we can get, though first I'm going to start with small fsyncs since 
+that will be the most practical gain at the moment (think RPM 
+databases).  Thanks,
+
+Josef

@@ -1,66 +1,78 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: Btrfs Partition out of free space - no mount possible
-Date: Mon, 18 Apr 2011 11:19:27 -0400
-Message-ID: <4DAC567F.2090202@redhat.com>
-References: <1787693384.3390.1303113454439.JavaMail.fmail@mwmweb059>
+From: Ian Campbell <Ian.Campbell@eu.citrix.com>
+Subject: RE: [PATCH] xen: cleancache shim to Xen Transcendent Memory
+Date: Mon, 18 Apr 2011 17:03:47 +0100
+Message-ID: <1303142627.5997.125.camel@zakaz.uk.xensource.com>
+References: <20110414212002.GA27846@ca-server1.us.oracle.com>
+	 <1302904935.22658.9.camel@localhost.localdomain>
+	 <5d23c6c4-5d68-4c2e-af24-2a08f592cb8e@default 1303116441.5997.107.camel@zakaz.uk.xensource.com>
+	 <276f7410-ff4d-4a3b-ab9c-fd1b5fe8c952@default>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: c.monty@web.de
+Content-Type: text/plain; charset="UTF-8"
+Cc: Chris Mason <chris.mason@oracle.com>, <viro@zeniv.linux.org.uk>,
+	<akpm@linux-foundation.org>, <adilger.kernel@dilger.ca>,
+	<tytso@mit.edu>, <mfasheh@suse.com>, <jlbec@evilplan.org>,
+	<matthew@wil.cx>, <linux-btrfs@vger.kernel.org>,
+	<linux-kernel@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>,
+	<linux-ext4@vger.kernel.org>, <ocfs2-devel@oss.oracle.com>,
+	<linux-mm@kvack.org>, <hch@infradead.org>, <ngupta@vflare.org>,
+	<jeremy@goop.org>, <JBeulich@novell.com>,
+	Kurt Hackel <kurt.hackel@oracle.com>, <npiggin@kernel.dk>,
+	Dave Mccracken <dave.mccracken@oracle.com>, <riel@redhat.com>,
+	<avi@redhat.com>, Konrad Wilk <konrad.wilk@oracle.com>,
+	<mel@csn.ul.ie>, <yinghan@google.com>, <gthelen@google.com>,
+	<torvalds@linux-foundation.org>
+To: Dan Magenheimer <dan.magenheimer@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1787693384.3390.1303113454439.JavaMail.fmail@mwmweb059>
+In-Reply-To: <276f7410-ff4d-4a3b-ab9c-fd1b5fe8c952@default>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/18/2011 03:57 AM, c.monty@web.de wrote:
->
-> Hello!
->
-> My Btrfs partition (/home) is out of free space.
-> The partition is a logical drive within a LVM configuration.
->
-> I've already extended the LVM logical volume.
-> However, it's impossible to mount the partition from a live CD system (SystemRescue CD).
-> The error in dmesg is: BTRFS: inode 8443 still on the orphan list
->
-> Here my executed commands:
-> root@sysresccd /root % btrfs filesystem show
-> failed to read /dev/fd0
-> Label: 'home' uuid: c6da646e-83aa-432d-9a24-d0d276c3de4d
-> Total devices 1 FS bytes used 284.13MB
-> devid 1 size 756.00MB used 756.00MB path /dev/dm-3
->
-> root@sysresccd /root % pvscan
-> PV /dev/mapper/lvm-crypt VG linux lvm2 [7.86 GiB / 0 free]
-> Total: 1 [7.86 GiB] / in use: 1 [7.86 GiB] / in no VG: 0 [0 ]
->
-> root@sysresccd /root % vgscan
-> Reading all physical volumes. This may take a while...
-> Found volume group "linux" using metadata type lvm2
->
-> root@sysresccd /root % lvscan
-> ACTIVE '/dev/linux/root' [6.52 GiB] inherit
-> ACTIVE '/dev/linux/swap' [416.00 MiB] inherit
-> ACTIVE '/dev/linux/home' [956.00 MiB] inherit
->
-> When I try to mount the Btrfs partition, the system hangs:
-> root@sysresccd /root % mount /dev/linux/home /mnt/backup
->
-> root@sysresccd /root % dmesg
-> [ 5142.990126] device label home devid 1 transid 951018 /dev/mapper/linux-home
-> [ 5143.110843] BTRFS: inode 8443 still on the orphan list
-> [ 5143.148987] BTRFS: inode 8443 still on the orphan list
-> [ 5143.158262] BTRFS: inode 8443 still on the orphan list
-> [ 5143.167229] BTRFS: inode 8443 still on the orphan list
-> [ 5143.177283] BTRFS: inode 8443 still on the orphan list
-> [ 5143.186218] BTRFS: inode 8443 still on the orphan list
-> [ 5143.196194] BTRFS: inode 8443 still on the orphan list
-> [ 5143.206172] BTRFS: inode 8443 still on the orphan list
-> [ 5143.220235] BTRFS: inode 8443 still on the orphan list
->
-> How can I resolve this issue?
->
+On Mon, 2011-04-18 at 07:12 -0700, Dan Magenheimer wrote:
+> > From: Ian Campbell [mailto:Ian.Campbell@eu.citrix.com]
+> > > >
+> > > > On Thu, 2011-04-14 at 14:20 -0700, Dan Magenheimer wrote:
+> > > >
+> > > > There's no need to build this into a kernel which doesn't have
+> > > > cleancache (or one of the other frontends), is there? I think there
+> > > > should be a Kconfig option (even if its not a user visible one)
+> > with
+> > > > the appropriate depends/selects.
+> > >
+> > > Yes, you're right.  It should eventually depend on
+> > >
+> > > CONFIG_CLEANCACHE || CONFIG_FRONTSWAP
+> > >
+> > > though there's no sense merging this xen cleancache
+> > > shim at all unless/until Linus merges cleancache
+> > > (and hopefully later some evolution of frontswap).
+> > 
+> > Cleancache isn't in already? I thought I saw references to it in
+> > drivers/staging?
+> 
+> Linus said he would review it after 2.6.39-rc1 was released,
+> but has neither given thumbs up nor thumbs down so I'm
+> assuming he didn't have time and it will be reconsidered
+> for 2.6.40.  This latest patchset (V8) is updated in linux-next.
+> 
+> Yes, zcache is in driver/staging and has references to it.
+> I guess that proves the chicken comes before the egg...
+> or was it vice versa? :-)
 
-What kernel are you on?  I recently fixed this, please go to the latest 
-upstream, it should resolve itself.  Thanks,
+Ah, I didn't realise that the relaxations associated with staging
+allowed for unsatisfiable (due to the other half being out of tree)
+Kconfig items as well.
+ 
+> > > And once cleancache (and/or frontswap) is merged,
+> > > there's very little reason NOT to enable one or
+> > > both on a Xen guest kernel.
+> > 
+> > There are software knobs to allow the host- and guest-admin to opt in
+> > or out as they desire though, right?
+> 
+> Definitely.  Both Xen and a Linux guest have runtime
+> options, which currently default to off.
 
-Josef
+Good to know, thanks!
+
+Ian.
+
+

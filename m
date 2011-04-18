@@ -1,93 +1,89 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: [GIT PULL] Btrfs updates
-Date: Mon, 18 Apr 2011 10:26:22 -0400
-Message-ID: <1303135497-sup-59@think>
+Subject: Re: [RFC] Add a new file op for fsync to give fs's more control
+Date: Mon, 18 Apr 2011 10:30:34 -0400
+Message-ID: <1303136831-sup-2236@think>
+References: <1302894582-24341-1-git-send-email-josef@redhat.com> <20110415192412.GA17974@infradead.org> <4DA89D59.1070402@redhat.com> <4DABDF0F.2060609@cn.fujitsu.com>
 Content-Type: text/plain; charset=UTF-8
-To: "Linus Torvalds" <torvalds@linux-foundation.org>,
-	"Linux Btrfs" <linux-btrfs@vger.kernel.org>,
-	"linux-kernel" <linux-kernel@vger.kernel.org>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Cc: Josef Bacik <josef@redhat.com>,
+	Christoph Hellwig <hch@infradead.org>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: liubo <liubo2009@cn.fujitsu.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <4DABDF0F.2060609@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi everyone,
+Excerpts from liubo's message of 2011-04-18 02:49:51 -0400:
+> On 04/16/2011 03:32 AM, Josef Bacik wrote:
+> > On 04/15/2011 03:24 PM, Christoph Hellwig wrote:
+> >> Sorry, but this is too ugly to live.  If the reason for this really is
+> >> good enough we'll just need to push the filemap_write_and_wait_range
+> >> and i_mutex locking into every ->fsync instance.
+> >>
+> > 
+> > So part of what makes small fsyncs slow in btrfs is all of our random
+> > threads to make checksumming not suck.  So we submit IO which spreads it
+> > out to helper threads to do the checksumming, and then when it returns
+> > it gets handed off to endio threads that run the endio stuff.  This
+> > works awesome with doing big writes and such, but if say we're and RPM
+> > database and write a couple of kilbytes, this tends to suck because we
+> > keep handing work off to other threads and waiting, so the scheduling
+> > latencies really hurt.
+> > 
+> > So we'd like to be able to say "hey this is a small amount of io, lets
+> > just do the checksumming in the current thread", and the same with
+> > handling the endio stuff.  We can't do that currently because
+> > filemap_write_and_wait_range is called before we get to fsync.  We'd
+> > like to be able to control this so we can do the appropriate magic to do
+> > the submission within the fsyncings thread context in order to speed
+> > things up a bit.
+> > 
+> > That plus the stuff I said about i_mutex.  Is that a good enough reason
+> > to just push this down into all the filesystems?  Thanks,
+> > 
+> 
+> Fine with the i_mutex.
+> 
+> I'm wandering that is it worth of doing so?
+> 
+> I've tested your patch with sysbench, and there is little improvement. :(
+> 
+> Sysbench args:
+> sysbench --test=fileio --num-threads=1 --file-num=10240 --file-block-size=1K --file-total-size=20M --file-test-mode=rndwr --file-io-mode=sync --file-extra-flags=  run
 
-The master branch of the btrfs unstable repo:
+Btrfs is already dropping i_mutex in its fsync as much as it can.  It is
+somewhat less efficient because it has to take it back again before
+returning, but I don't think it will be a huge difference.
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
+> 
+> 
+> 10240 files, 2Kb each
+> ===
+> fsync_nolock (patch):
+> Operations performed:  0 Read, 10000 Write, 1024000 Other = 1034000 Total
+> Read 0b  Written 9.7656Mb  Total transferred 9.7656Mb  (35.152Kb/sec)
+>    35.15 Requests/sec executed
+> 
+> fsync (orig):
+> Operations performed:  0 Read, 10000 Write, 1024000 Other = 1034000 Total
+> Read 0b  Written 9.7656Mb  Total transferred 9.7656Mb  (35.287Kb/sec)
+>    35.29 Requests/sec executed
+> ===
+> 
+> Seems that the improvement of avoiding threads interchange is not enough.
+> 
+> BTW, I'm trying to improve the fsync performance stuff, but mainly for large files(>4G).
+> And I found that a large file will have a tremendous amount of csum items needed to
+> be flush into tree log during fsync().  Btrfs now uses a brute force approach to
+> ensure to get the most uptodate copies of everything, and this results in a bad
+> performance.  To change the brute way is bugging me a lot...
 
-Has a nice pile of btrfs fixes.  Josef tackled a variety of DIO problems
-including latencies and crc errors.  He also fixed a crash in the
-mount -o free_space_cache mode, and dramatically reduced contention on
-the journal mutex.  Less contention means we finish up endio processing
-faster and we're able to process delalloc much faster as space gets
-tight.
+The big problem with the fsync log is that we need to bump the
+transaction id as we do tree log commits.  This will allow us to find
+just the things that have changed since our last fsync.
 
-Our ENOSPC fixes have returned.  The cluster allocation code was
-sometimes getting out of hand and leaving us with a filesystem full of
-metadata chunks.
+The current code that relogs the entire inode every time also needs to
+be more fine grained.  It is much better suited to small files than
+large ones.
 
-Fujitsu continues a long series of error handling improvements and
-fixes, and Sergei Trofimovich fixed a memcpy vs memmove bug.
-
-I've removed a duplicate commit from the shortlog below.  Josef and I
-both managed to take his iov_base fix.  Git did the right thing and the
-resulting code is correct.
-
-Josef Bacik (10) commits (+224/-133):
-    Btrfs: reuse the extent_map we found when calling btrfs_get_extent (+28/-8)
-    Btrfs: do not call btrfs_update_inode in endio if nothing changed (+10/-5)
-    Btrfs: deal with the case that we run out of space in the cache (+69/-74)
-    Btrfs: avoid taking the trans_mutex in btrfs_end_transaction (+19/-24)
-    Btrfs: check for duplicate iov_base's when doing dio reads (+16/-1)
-    Btrfs: avoid taking the chunk_mutex in do_chunk_alloc (+28/-6)
-    Btrfs: map the inode item when doing fill_inode_item (+12/-0)
-    Btrfs: do not use async submit for small DIO io's (+19/-5)
-    Btrfs: don't split dio bios if we don't have to (+13/-7)
-    Btrfs: only retry transaction reservation once (+10/-1)
-
-Chris Mason (4) commits (+78/-29):
-    Btrfs end_bio_extent_readpage should look for locked bits (+1/-1)
-    Btrfs: don't force chunk allocation in find_free_extent (+73/-22)
-    Btrfs: make uncache_state unconditional (+3/-5)
-    Btrfs: fix free space cache leak (+1/-1)
-
-Li Zefan (2) commits (+22/-39):
-    Btrfs: Check if btrfs_next_leaf() returns error in btrfs_real_readdir() (+10/-18)
-    Btrfs: Check if btrfs_next_leaf() returns error in btrfs_listxattr() (+12/-21)
-
-Miao Xie (2) commits (+8/-7):
-    Btrfs: Fix incorrect inode nlink in btrfs_link() (+3/-3)
-    Btrfs: Check validity before setting an acl (+5/-4)
-
-Sergei Trofimovich (1) commits (+11/-3):
-    btrfs: properly handle overlapping areas in memmove_extent_buffer
-
-Yoshinori Sano (1) commits (+4/-1):
-    Btrfs: fix memory leaks in btrfs_new_inode()
-
-Xin Zhong (1) commits (+33/-9):
-    Btrfs: fix subvolume mount by name problem when default mount subvolume is set
-
-Daniel J Blueman (1) commits (+1/-1):
-    fix user annotation in ioctl.c
-
-Arne Jansen (1) commits (+55/-19):
-    btrfs: using cached extent_state in set/unlock combinations
-
-Total: (24) commits (+452/-240)
-
- fs/btrfs/acl.c              |    9 ++-
- fs/btrfs/ctree.h            |    9 ++-
- fs/btrfs/disk-io.c          |    2 +-
- fs/btrfs/extent-tree.c      |  125 +++++++++++++++++++++++++-------
- fs/btrfs/extent_io.c        |   82 ++++++++++++++++-----
- fs/btrfs/extent_io.h        |    2 +-
- fs/btrfs/file.c             |   21 +++---
- fs/btrfs/free-space-cache.c |  119 +++++++++++++++----------------
- fs/btrfs/inode.c            |  165 ++++++++++++++++++++++++++++++-------------
- fs/btrfs/ioctl.c            |    2 +-
- fs/btrfs/super.c            |   42 +++++++++---
- fs/btrfs/transaction.c      |   48 +++++++------
- fs/btrfs/transaction.h      |    4 +-
- fs/btrfs/xattr.c            |   33 +++------
- 14 files changed, 430 insertions(+), 233 deletions(-)
+-chris

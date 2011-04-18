@@ -1,149 +1,58 @@
-From: liubo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH 2/2] E2fsprogs: add compress and cow support in chattr, lsattr
-Date: Mon, 18 Apr 2011 15:37:30 +0800
-Message-ID: <4DABEA3A.4070008@cn.fujitsu.com>
-References: <4DA2A15C.1050501@cn.fujitsu.com> <4DA692C8.2080400@cn.fujitsu.com>
+From: c.monty@web.de
+Subject: Btrfs Partition out of free space - no mount possible
+Date: Mon, 18 Apr 2011 09:57:34 +0200 (CEST)
+Message-ID: <1787693384.3390.1303113454439.JavaMail.fmail@mwmweb059>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>, tytso <tytso@mit.edu>,
-	Chris Mason <chris.mason@oracle.com>
-To: ext4 <linux-ext4@vger.kernel.org>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <4DA692C8.2080400@cn.fujitsu.com>
+Content-Type: text/plain; charset="UTF-8"
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Modify command 'chattr' and 'lsattr' to support compress and cow.
-- use 'C' to indicate NOCOW attribute.
-- still use 'c' to indicate compress attribute.
 
-Also update the man doc.
+Hello!
 
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
----
- lib/e2p/pf.c         |    1 +
- lib/ext2fs/ext2_fs.h |    1 +
- misc/chattr.1.in     |   15 +++++++++++----
- misc/chattr.c        |   15 ++++++++++++++-
- 4 files changed, 27 insertions(+), 5 deletions(-)
+My Btrfs partition (/home) is out of free space.
+The partition is a logical drive within a LVM configuration.
 
-diff --git a/lib/e2p/pf.c b/lib/e2p/pf.c
-index cc50896..c9385dd 100644
---- a/lib/e2p/pf.c
-+++ b/lib/e2p/pf.c
-@@ -48,6 +48,7 @@ static struct flags_name flags_array[] = {
- 	{ FS_TOPDIR_FL, "T", "Top_of_Directory_Hierarchies" },
- 	{ EXT4_EXTENTS_FL, "e", "Extents" },
- 	{ EXT4_HUGE_FILE_FL, "h", "Huge_file" },
-+	{ FS_NOCOW_FL, "C", "NOCOW" },
- 	{ 0, NULL, NULL }
- };
- 
-diff --git a/lib/ext2fs/ext2_fs.h b/lib/ext2fs/ext2_fs.h
-index 858c103..776be92 100644
---- a/lib/ext2fs/ext2_fs.h
-+++ b/lib/ext2fs/ext2_fs.h
-@@ -276,6 +276,7 @@ struct ext2_dx_countlimit {
- #define EXT4_EXTENTS_FL 		0x00080000 /* Inode uses extents */
- #define EXT4_EA_INODE_FL	        0x00200000 /* Inode used for large EA */
- #define EXT4_EOFBLOCKS_FL		0x00400000 /* Blocks allocated beyond EOF */
-+#define FS_NOCOW_FL			0x00800000 /* Do not cow file */
- #define EXT4_SNAPFILE_FL		0x01000000  /* Inode is a snapshot */
- #define EXT4_SNAPFILE_DELETED_FL	0x04000000  /* Snapshot is being deleted */
- #define EXT4_SNAPFILE_SHRUNK_FL		0x08000000  /* Snapshot shrink has completed */
-diff --git a/misc/chattr.1.in b/misc/chattr.1.in
-index 92f6d70..434eb04 100644
---- a/misc/chattr.1.in
-+++ b/misc/chattr.1.in
-@@ -19,17 +19,18 @@ chattr \- change file attributes on a Linux file system
- .B chattr
- changes the file attributes on a Linux file system.
- .PP
--The format of a symbolic mode is +-=[acdeijstuADST].
-+The format of a symbolic mode is +-=[acdeijstuACDST].
- .PP
- The operator `+' causes the selected attributes to be added to the
- existing attributes of the files; `-' causes them to be removed; and
- `=' causes them to be the only attributes that the files have.
- .PP
--The letters `acdeijstuADST' select the new attributes for the files:
-+The letters `acdeijstuACDST' select the new attributes for the files:
- append only (a), compressed (c), no dump (d), extent format (e), immutable (i),
- data journalling (j), secure deletion (s), no tail-merging (t), 
--undeletable (u), no atime updates (A), synchronous directory updates (D), 
--synchronous updates (S), and top of directory hierarchy (T).
-+undeletable (u), no atime updates (A), no copy on write (C),
-+synchronous directory updates (D), synchronous updates (S),
-+and top of directory hierarchy (T).
- .PP
- The following attributes are read-only, and may be listed by
- .BR lsattr (1)
-@@ -64,6 +65,10 @@ this file compresses data before storing them on the disk.  Note: please
- make sure to read the bugs and limitations section at the end of this
- document.
- .PP
-+A file with the `C' attribute set is marked without COW (copy on write).  Note:
-+please make sure to read the bugs and limitations section at the end of this
-+document.
-+.PP
- When a directory with the `D' attribute set is modified,
- the changes are written synchronously on the disk; this is equivalent to
- the `dirsync' mount option applied to a subset of the files.
-@@ -161,6 +166,8 @@ The `c', 's',  and `u' attributes are not honored
- by the ext2 and ext3 filesystems as implemented in the current mainline
- Linux kernels.    These attributes may be implemented
- in future versions of the ext2 and ext3 filesystems.
-+The `C' attribute is only used in btrfs filesystem in the current mainline
-+Linux kernels.
- .PP
- The `j' option is only useful if the filesystem is mounted as ext3.
- .PP
-diff --git a/misc/chattr.c b/misc/chattr.c
-index 78e3736..8c8231e 100644
---- a/misc/chattr.c
-+++ b/misc/chattr.c
-@@ -82,7 +82,7 @@ static unsigned long sf;
- static void usage(void)
- {
- 	fprintf(stderr,
--		_("Usage: %s [-RVf] [-+=AacDdeijsSu] [-v version] files...\n"),
-+		_("Usage: %s [-RVf] [-+=AacDdeijsSuC] [-v version] files...\n"),
- 		program_name);
- 	exit(1);
- }
-@@ -106,6 +106,7 @@ static const struct flags_char flags_array[] = {
- 	{ FS_UNRM_FL, 'u' },
- 	{ FS_NOTAIL_FL, 't' },
- 	{ FS_TOPDIR_FL, 'T' },
-+	{ FS_NOCOW_FL, 'C' },
- 	{ 0, 0 }
- };
- 
-@@ -159,6 +160,12 @@ static int decode_arg (int * i, int argc, char ** argv)
- 			}
- 			if ((fl = get_flag(*p)) == 0)
- 				usage();
-+
-+			if (fl == FS_COMPR_FL) {
-+				af |= FS_NOCOMPR_FL;
-+				add = 1;
-+			}
-+
- 			rf |= fl;
- 			rem = 1;
- 		}
-@@ -168,6 +175,12 @@ static int decode_arg (int * i, int argc, char ** argv)
- 		for (p = &argv[*i][1]; *p; p++) {
- 			if ((fl = get_flag(*p)) == 0)
- 				usage();
-+
-+			if (fl == FS_COMPR_FL) {
-+				rf |= FS_NOCOMPR_FL;
-+				rem = 1;
-+			}
-+
- 			af |= fl;
- 		}
- 		break;
--- 
-1.6.5.2
+I've already extended the LVM logical volume.
+However, it's impossible to mount the partition from a live CD system (SystemRescue CD).
+The error in dmesg is: BTRFS: inode 8443 still on the orphan list
 
+Here my executed commands:
+root@sysresccd /root % btrfs filesystem show
+failed to read /dev/fd0
+Label: 'home' uuid: c6da646e-83aa-432d-9a24-d0d276c3de4d
+Total devices 1 FS bytes used 284.13MB
+devid 1 size 756.00MB used 756.00MB path /dev/dm-3
+
+root@sysresccd /root % pvscan
+PV /dev/mapper/lvm-crypt VG linux lvm2 [7.86 GiB / 0 free]
+Total: 1 [7.86 GiB] / in use: 1 [7.86 GiB] / in no VG: 0 [0 ]
+
+root@sysresccd /root % vgscan
+Reading all physical volumes. This may take a while...
+Found volume group "linux" using metadata type lvm2
+
+root@sysresccd /root % lvscan
+ACTIVE '/dev/linux/root' [6.52 GiB] inherit
+ACTIVE '/dev/linux/swap' [416.00 MiB] inherit
+ACTIVE '/dev/linux/home' [956.00 MiB] inherit
+
+When I try to mount the Btrfs partition, the system hangs:
+root@sysresccd /root % mount /dev/linux/home /mnt/backup
+
+root@sysresccd /root % dmesg
+[ 5142.990126] device label home devid 1 transid 951018 /dev/mapper/linux-home
+[ 5143.110843] BTRFS: inode 8443 still on the orphan list
+[ 5143.148987] BTRFS: inode 8443 still on the orphan list
+[ 5143.158262] BTRFS: inode 8443 still on the orphan list
+[ 5143.167229] BTRFS: inode 8443 still on the orphan list
+[ 5143.177283] BTRFS: inode 8443 still on the orphan list
+[ 5143.186218] BTRFS: inode 8443 still on the orphan list
+[ 5143.196194] BTRFS: inode 8443 still on the orphan list
+[ 5143.206172] BTRFS: inode 8443 still on the orphan list
+[ 5143.220235] BTRFS: inode 8443 still on the orphan list
+
+How can I resolve this issue?
+
+THX

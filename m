@@ -1,44 +1,243 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: free bitmaps properly when evicting the cache
-Date: Mon, 18 Apr 2011 16:25:20 -0400
-Message-ID: <1303158320-29058-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: Peter Stuge <peter@stuge.se>
+Subject: Re: resize ate my root node
+Date: Mon, 18 Apr 2011 23:01:50 +0200
+Message-ID: <20110418210150.3870.qmail@stuge.se>
+References: <20110307174820.5100.qmail@stuge.se> <1299620014-sup-698@think> <20110310062333.13172.qmail@stuge.se> <1299762537-sup-5020@think>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1299762537-sup-5020@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If our space cache is wrong, we do the right thing and free up everything that
-we loaded, however we don't reset the total_bitmaps counter or the thresholds or
-anything.  So in btrfs_remove_free_space_cache make sure to call free_bitmap()
-if it's a bitmap, this will keep us from panicing when we check to make sure we
-don't have too many bitmaps.  Thanks,
+Sorry for not following up on this until now. :( I've been busy and
+have been using a backup. But I'm still very interested in restoring
+the btrfs and finding this bug! Let me know if I should refresh any
+details.
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/free-space-cache.c |   11 +++++++----
- 1 files changed, 7 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index a3f420d..1bcbe76 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -1768,10 +1768,13 @@ void btrfs_remove_free_space_cache(struct btrfs_block_group_cache *block_group)
- 
- 	while ((node = rb_last(&block_group->free_space_offset)) != NULL) {
- 		info = rb_entry(node, struct btrfs_free_space, offset_index);
--		unlink_free_space(block_group, info);
--		if (info->bitmap)
--			kfree(info->bitmap);
--		kmem_cache_free(btrfs_free_space_cachep, info);
-+		if (!info->bitmap) {
-+			unlink_free_space(block_group, info);
-+			kmem_cache_free(btrfs_free_space_cachep, info);
-+		} else {
-+			free_bitmap(block_group, info);
-+		}
-+
- 		if (need_resched()) {
- 			spin_unlock(&block_group->tree_lock);
- 			cond_resched();
--- 
-1.7.2.3
+Chris Mason wrote:
+> > In any case changing the partition table shouldn't affect the
+> > filesystem, right? Also, I changed the partition with the filesystem
+> > mounted, so the kernel did not start using the new partition table.
+> 
+> I'd have to repeat the test on this flash card to say for sure.
+> Deleting then recreating the partition with the FS mounted isn't very
+> high up on the list of things that get tested often, so my guess is
+> that's where the problem is.
 
+I resized the filesystem, and then changed the partition. However as
+expected the kernel doesn't really care about the partition change
+until I reboot, since a partition on the disk was mounted. Do you
+think this could be a problem still? It seems that the only way there
+could be a problem is if the resize would not stay within the new
+smaller size?
+
+
+> > from gdb:ing disk-io.c it seems that zero-bytes are where there's
+> > supposed to be a root node. So either the root node was destroyed
+> > (uh-oh?) or code is reading from the wrong place. I don't know
+> > which is more likely?
+> 
+> Right, we've got a block full with zeros where they don't belong. 
+> Can you run dump the block contents with gdb please? I'd like to
+> see if they are all zeros or just offset slightly.
+
+That block is all zeros.
+
+/tmp/btrfs-progs-unstable $ gdb --args ./btrfs-debug-tree /dev/sdb2
+GNU gdb 6.8
+Copyright (C) 2008 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+and "show warranty" for details.
+This GDB was configured as "i686-pc-linux-gnu"...
+(gdb) b read_extent_from_disk
+Breakpoint 1 at 0x806882d: file extent_io.c, line 671.
+(gdb) r
+Starting program: /tmp/btrfs-progs-unstable/btrfs-debug-tree /dev/sdb2
+
+Breakpoint 1, read_extent_from_disk (eb=0x92a0538) at extent_io.c:671
+671             ret = pread(eb->fd, eb->data, eb->len, eb->dev_bytenr);
+(gdb) p eb->dev_bytenr
+$1 = 20971520
+(gdb) c
+Continuing.
+
+Breakpoint 1, read_extent_from_disk (eb=0x92a1588) at extent_io.c:671
+671             ret = pread(eb->fd, eb->data, eb->len, eb->dev_bytenr);
+(gdb) p eb->dev_bytenr
+$2 = 20987904
+(gdb) c
+Continuing.
+
+Breakpoint 1, read_extent_from_disk (eb=0x92a25d8) at extent_io.c:671
+671             ret = pread(eb->fd, eb->data, eb->len, eb->dev_bytenr);
+(gdb) p eb->dev_bytenr
+$3 = 20983808
+(gdb) c
+Continuing.
+
+Breakpoint 1, read_extent_from_disk (eb=0x92a3628) at extent_io.c:671
+671             ret = pread(eb->fd, eb->data, eb->len, eb->dev_bytenr);
+(gdb) p eb->dev_bytenr
+$4 = 36675878912
+(gdb) p eb->len
+(gdb) c
+Continuing.
+
+Breakpoint 1, read_extent_from_disk (eb=0x92a3628) at extent_io.c:671
+671             ret = pread(eb->fd, eb->data, eb->len, eb->dev_bytenr);
+(gdb) p eb->dev_bytenr
+$5 = 36944314368
+(gdb) c
+Continuing.
+btrfs-debug-tree: disk-io.c:739: open_ctree_fd: Assertion `!(!tree_root->node)' failed.
+
+Program received signal SIGABRT, Aborted.
+0xb78ea424 in __kernel_vsyscall ()
+(gdb) q
+The program is running.  Exit anyway? (y or n) y
+$ bc <<< 36944314368/4096
+9019608
+$ dd if=/dev/sdb2 bs=4k skip=9019608 count=1|xxd -a
+0000000: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+*
+0000ff0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+1+0 records in
+1+0 records out
+4096 bytes (4.1 kB) copied, 0.0035931 s, 1.1 MB/s
+
+
+Nearby blocks are also zero:
+
+$ dd if=/dev/sdb2 bs=4k skip=$[9019608-8] count=16|xxd -a
+0000000: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+*
+000fff0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+16+0 records in
+16+0 records out
+65536 bytes (66 kB) copied, 0.0128077 s, 5.1 MB/s
+
+
+Further back there are some bits:
+
+$ dd if=/dev/sdb2 bs=4k skip=$[9019608-17] count=32|xxd -a
+0000000: 52a6 7b43 0000 0000 0000 0000 0000 0000  R.{C............
+0000010: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+0000020: c25c f583 2e8c 40b2 8464 175f e314 7a5f  .\....@..d._..z_
+0000030: 0070 8c09 0800 0000 0100 0000 0000 0001  .p..............
+0000040: 1538 bb3f eb62 45f5 8956 4728 ca7b fad0  .8.?.bE..VG(.{..
+0000050: 8934 0500 0000 0000 0200 0000 0000 0000  .4..............
+0000060: 4b00 0000 0100 a099 ec07 0000 00a8 0070  K..............p
+0000070: 0000 0000 0000 0050 0103 0800 0000 bc32  .......P.......2
+0000080: 0500 0000 0000 0090 a6ec 0700 0000 a800  ................
+0000090: 1000 0000 0000 0000 3043 0408 0000 00ed  ........0C......
+00000a0: 3205 0000 0000 0000 50ac ec07 0000 00a8  2.......P.......
+00000b0: 0020 0000 0000 0000 00d0 4003 0800 0000  . ........@.....
+00000c0: be32 0500 0000 0000 0050 b1ec 0700 0000  .2.......P......
+00000d0: a800 0002 0000 0000 0000 506f 0908 0000  ..........Po....
+00000e0: 0084 3405 0000 0000 0000 40be ec07 0000  ..4.......@.....
+00000f0: 00a8 0020 0000 0000 0000 0060 4204 0800  ... .......`B...
+0000100: 0000 ed32 0500 0000 0000 0030 c1ec 0700  ...2.......0....
+0000110: 0000 a800 1000 0000 0000 0000 8001 0308  ................
+0000120: 0000 00bc 3205 0000 0000 0000 f0c5 ec07  ....2...........
+0000130: 0000 00a8 0010 0000 0000 0000 00b0 3d03  ..............=.
+0000140: 0800 0000 be32 0500 0000 0000 00d0 c8ec  .....2..........
+0000150: 0700 0000 a800 1000 0000 0000 0000 c03d  ...............=
+0000160: 0308 0000 00be 3205 0000 0000 0000 90cc  ......2.........
+0000170: ec07 0000 00a8 0010 0000 0000 0000 0020  ............... 
+0000180: 6f09 0800 0000 8434 0500 0000 0000 0010  o......4........
+0000190: d7ec 0700 0000 a800 1000 0000 0000 0000  ................
+00001a0: f0dd 0108 0000 009b 3205 0000 0000 0000  ........2.......
+00001b0: 50e0 ec07 0000 00a8 0030 0000 0000 0000  P........0......
+00001c0: 00f0 cd02 0800 0000 b332 0500 0000 0000  .........2......
+00001d0: 0030 e6ec 0700 0000 a800 3000 0000 0000  .0........0.....
+00001e0: 0000 006f 0908 0000 0084 3405 0000 0000  ...o......4.....
+00001f0: 0000 40f0 ec07 0000 00a8 00a0 0000 0000  ..@.............
+0000200: 0000 0060 7409 0800 0000 8534 0500 0000  ...`t......4....
+0000210: 0000 0000 05ed 0700 0000 a800 1000 0000  ................
+0000220: 0000 0000 d06e 0908 0000 0084 3405 0000  .....n......4...
+0000230: 0000 0000 f031 ed07 0000 00a8 0010 0000  .....1..........
+0000240: 0000 0000 00e0 be07 0800 0000 d933 0500  .............3..
+0000250: 0000 0000 0020 52ed 0700 0000 a800 3000  ..... R.......0.
+0000260: 0000 0000 0000 60db 0708 0000 00e0 3305  ......`.......3.
+0000270: 0000 0000 0000 0068 ef07 0000 00a8 00f0  .......h........
+0000280: 0800 0000 0000 00b0 8c09 0800 0000 8934  ...............4
+0000290: 0500 0000 0000 0010 c101 0800 0000 a800  ................
+00002a0: 1000 0000 0000 0000 0044 0908 0000 007b  .........D.....{
+00002b0: 3405 0000 0000 0000 d0c6 0108 0000 00a8  4...............
+00002c0: 0010 0000 0000 0000 0030 de08 0800 0000  .........0......
+00002d0: 5c34 0500 0000 0000 00c0 c901 0800 0000  \4..............
+00002e0: a800 1000 0000 0000 0000 2014 0508 0000  .......... .....
+00002f0: 0055 3305 0000 0000 0000 90d0 0108 0000  .U3.............
+0000300: 00a8 0010 0000 0000 0000 00a0 c003 0800  ................
+0000310: 0000 cc32 0500 0000 0000 0010 d401 0800  ...2............
+0000320: 0000 a800 1000 0000 0000 0000 608b 0908  ............`...
+0000330: 0000 0088 3405 0000 0000 0000 50dc 0108  ....4.......P...
+0000340: 0000 00a8 0010 0000 0000 0000 0020 4803  ............. H.
+0000350: 0800 0000 be32 0500 0000 0000 00e0 e001  .....2..........
+0000360: 0800 0000 a800 1000 0000 0000 0000 109f  ................
+0000370: 0708 0000 00d5 3305 0000 0000 0000 70eb  ......3.......p.
+0000380: 0108 0000 00a8 0010 0000 0000 0000 00a0  ................
+0000390: 8a09 0800 0000 8834 0500 0000 0000 0080  .......4........
+00003a0: 0602 0800 0000 a800 1000 0000 0000 0000  ................
+00003b0: c085 0908 0000 0088 3405 0000 0000 0000  ........4.......
+00003c0: b03a 0208 0000 00a8 0010 0000 0000 0000  .:..............
+00003d0: 0070 8a09 0800 0000 8834 0500 0000 0000  .p.......4......
+00003e0: 0020 8502 0800 0000 a800 1000 0000 0000  . ..............
+00003f0: 0000 2047 0808 0000 0023 3405 0000 0000  .. G.....#4.....
+0000400: 0000 90a6 0208 0000 00a8 0010 0000 0000  ................
+0000410: 0000 00e0 8a09 0800 0000 8834 0500 0000  ...........4....
+0000420: 0000 00c0 d702 0800 0000 a800 1000 0000  ................
+0000430: 0000 0000 3081 0908 0000 0086 3405 0000  ....0.......4...
+0000440: 0000 0000 5001 0308 0000 00a8 0010 0000  ....P...........
+0000450: 0000 0000 0050 7009 0800 0000 8434 0500  .....Pp......4..
+0000460: 0000 0000 00a0 1203 0800 0000 a800 1000  ................
+0000470: 0000 0000 0000 b03d 0508 0000 005a 3305  .......=.....Z3.
+0000480: 0000 0000 0000 7014 0308 0000 00a8 0010  ......p.........
+0000490: 0000 0000 0000 0080 7809 0800 0000 8534  ........x......4
+00004a0: 0500 0000 0000 0070 1703 0800 0000 a800  .......p........
+00004b0: 1000 0000 0000 0000 806e 0908 0000 0084  .........n......
+00004c0: 3405 0000 0000 0000 5022 0308 0000 00a8  4.......P"......
+00004d0: 0010 0000 0000 0000 00d0 8203 0800 0000  ................
+00004e0: c332 0500 0000 0000 0020 2503 0800 0000  .2....... %.....
+00004f0: a800 1000 0000 0000 0000 e078 0908 0000  ...........x....
+0000500: 0085 3405 0000 0000 0000 202e 0308 0000  ..4....... .....
+0000510: 00a8 0010 0000 0000 0000 00a0 4809 0800  ............H...
+0000520: 0000 7c34 0500 0000 0000 0070 3103 0800  ..|4.......p1...
+0000530: 0000 a800 1000 0000 0000 0000 907f 0908  ................
+0000540: 0000 0086 3405 0000 0000 0000 203d 0308  ....4....... =..
+0000550: 0000 00a8 0010 0000 0000 0000 0070 6f09  .............po.
+0000560: 0800 0000 8434 0500 0000 0000 00c0 4503  .....4........E.
+0000570: 0800 0000 a800 1000 0000 0000 0000 2078  .............. x
+0000580: 0908 0000 0085 3405 0000 0000 0000 b048  ......4........H
+0000590: 0308 0000 00a8 0010 0000 0000 0000 00e0  ................
+00005a0: dd08 0800 0000 5c34 0500 0000 0000 0040  ......\4.......@
+00005b0: 4c03 0800 0000 a800 1000 0000 0000 0000  L...............
+00005c0: f010 0708 0000 00a0 3305 0000 0000 0000  ........3.......
+00005d0: 404f 0308 0000 00a8 0010 0000 0000 0000  @O..............
+00005e0: 0000 c406 0800 0000 9633 0500 0000 0000  .........3......
+00005f0: 0080 5203 0800 0000 a800 1000 0000 0000  ..R.............
+0000600: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+*
+001fff0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+32+0 records in
+32+0 records out
+131072 bytes (131 kB) copied, 0.0395934 s, 3.3 MB/s
+
+
+But going forward there doesn't seem to be much:
+
+$ dd if=/dev/sdb2 bs=4k skip=$[9019608] count=1024|xxd -a
+0000000: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+*
+03ffff0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+1024+0 records in
+1024+0 records out
+4194304 bytes (4.2 MB) copied, 1.62279 s, 2.6 MB/s
+
+
+//Peter

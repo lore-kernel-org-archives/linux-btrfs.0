@@ -1,32 +1,32 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: writes got stuck
-Date: Tue, 19 Apr 2011 08:06:13 -0400
-Message-ID: <1303214712-sup-9341@think>
-References: <BANLkTinJt3n69=NpPKAvFd3LPeDGnn0bkA@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Cheng Shao <zchshao@gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: put the right bio if we have an error
+Date: Tue, 19 Apr 2011 08:17:48 -0400
+Message-ID: <1303215468-12864-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <BANLkTinJt3n69=NpPKAvFd3LPeDGnn0bkA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Cheng Shao's message of 2011-04-18 17:49:29 -0400:
-> Hi there,
-> 
-> I'm periodically having issues with btrfs running in a Ubuntu VM using
-> VirtualBox. After the VM has been running for a while (a couple days),
-> any write operation seems getting stuck. The read seems totally fine.
-> I tried a simple dd of a 4M file and it got stuck after writing 131K
-> worth of data.
-> 
-> I don't know if this is btrfs related, or it is due to some bug in
-> VritualBox. Could you guys provide information on how to debug this
-> (collecting logs, getting dumps etc.)? Thanks a lot!
+In btrfs_submit_direct_hook if the first btrfs_map_block fails we need to put
+the orig_bio, not bio.  Thanks,
 
-Which kernel are you running?
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/inode.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Definitely look for kernel messages (run dmesg etc).  If there are no
-crashes or related messages you can run sysrq-t and send the output and
-we can look for the deadlock.
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 7624e6c..3217919 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6043,7 +6043,7 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
+ 	ret = btrfs_map_block(map_tree, READ, start_sector << 9,
+ 			      &map_length, NULL, 0);
+ 	if (ret) {
+-		bio_put(bio);
++		bio_put(orig_bio);
+ 		return -EIO;
+ 	}
+ 
+-- 
+1.7.2.3
 
--chris

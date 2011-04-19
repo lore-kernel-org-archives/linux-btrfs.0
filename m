@@ -1,54 +1,32 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Fwd: module/kernel crash while trying to delete missing device/balance
-Date: Tue, 19 Apr 2011 07:58:58 -0400
-Message-ID: <1303214237-sup-2056@think>
-References: <BANLkTim+b7sApGb_0=g2Po0+swoMunOd7A@mail.gmail.com> <BANLkTinYEiWgw3ykLYr8yqLicjP7v1F5Hg@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=ISO-8859-1
+Subject: Re: writes got stuck
+Date: Tue, 19 Apr 2011 08:06:13 -0400
+Message-ID: <1303214712-sup-9341@think>
+References: <BANLkTinJt3n69=NpPKAvFd3LPeDGnn0bkA@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: brandon lansing <imraven@gmail.com>
+To: Cheng Shao <zchshao@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <BANLkTinYEiWgw3ykLYr8yqLicjP7v1F5Hg@mail.gmail.com>
+In-reply-to: <BANLkTinJt3n69=NpPKAvFd3LPeDGnn0bkA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from brandon lansing's message of 2011-04-18 23:13:06 -0400:
-> Hello,
->=20
-> Distro: Ubuntu 10.10
-> Kernel:=C2=A0Linux 2.6.35-28-generic #50-Ubuntu SMP Fri Mar 18 18:42:=
-20 UTC
-> 2011 x86_64 GNU/Linux
-> Btrfs tools version:=C2=A0Btrfs Btrfs v0.19
->=20
-> I currently have 2 X 500GB hard drives in 'raid1' mode with about
-> 400GB used. =C2=A0Recently one of the hard drives crashed (but I have=
- a
-> backup) but I'd like to help out if I can because I'm currently
-> getting an error when trying to 'rebuild' the filesystem.
-> I've mounted the array in degraded mode and added the new hard drive.
-> Finally I issued the command to delete the missing device. =C2=A0The =
-dmesg
-> looks normal for a while with messages such as:=C2=A0btrfs: relocatin=
-g
-> block group 466167529472 flags 17. =C2=A0However, after a few minutes=
- of
-> running I get the following:
->=20
-> [ 1770.041623] ------------[ cut here ]------------
-> [ 1770.041655] kernel BUG at /build/buildd/linux-2.6.35/fs/btrfs/volu=
-mes.c:3037!
-> [ 1770.041684] invalid opcode: 0000 [#1] SMP
-> [ 1770.041707] last sysfs file: /sys/devices/virtual/bdi/btrfs-3/ueve=
-nt
-> [ 1770.041734] CPU 1
-> [ 1770.041744] Modules linked in: btrfs sha256_generic cryptd
+Excerpts from Cheng Shao's message of 2011-04-18 17:49:29 -0400:
+> Hi there,
+> 
+> I'm periodically having issues with btrfs running in a Ubuntu VM using
+> VirtualBox. After the VM has been running for a while (a couple days),
+> any write operation seems getting stuck. The read seems totally fine.
+> I tried a simple dd of a 4M file and it got stuck after writing 131K
+> worth of data.
+> 
+> I don't know if this is btrfs related, or it is due to some bug in
+> VritualBox. Could you guys provide information on how to debug this
+> (collecting logs, getting dumps etc.)? Thanks a lot!
 
-Could you please attached the fs/btrfs/volumes.c from this distro
-kernel?  It'll help us figure out what is going wrong.
+Which kernel are you running?
+
+Definitely look for kernel messages (run dmesg etc).  If there are no
+crashes or related messages you can run sysrq-t and send the output and
+we can look for the deadlock.
 
 -chris
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

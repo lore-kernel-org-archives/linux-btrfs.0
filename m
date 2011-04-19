@@ -1,76 +1,33 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH] Btrfs: check return value of kmalloc()
-Date: Tue, 19 Apr 2011 13:12:40 +0200
-Message-ID: <20110419111240.GV31675@twin.jikos.cz>
-References: <201104190527.AA00014@T-ITOH1.jp.fujitsu.com>
-Reply-To: dave@jikos.cz
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201104190527.AA00014@T-ITOH1.jp.fujitsu.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH 1/2] Btrfs: allocate extent state and check the result properly
+Date: Tue, 19 Apr 2011 07:55:21 -0400
+Message-ID: <1303213987-sup-4275@think>
+References: <4DA409E6.7020406@cn.fujitsu.com> <4DACEA40.5020008@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: LKML <linux-kernel@vger.kernel.org>,
+	BTRFS <linux-btrfs@vger.kernel.org>
+To: Xiao Guangrong <xiaoguangrong@cn.fujitsu.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-reply-to: <4DACEA40.5020008@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-
-there are more unchecked kmallocs, in inode.c:btrfs_add_delayed_iput()
-
-2030        delayed = kmalloc(sizeof(*delayed), GFP_NOFS | __GFP_NOFAIL);
-
-and in extent-tree.c:relocate_one_extent()
-
-7992        new_extents = kmalloc(sizeof(*new_extents),
-7993                                                 GFP_NOFS);
-
-the value is checked later, new_extents is passed to get_new_locations
-and there it's checked, but no other callers pass potential NULL and the
-check fits here and can be dropped from get_new_locations; there's a
-little chance that get_new_locations will be able to succesfully
-allocate the same data a jiffy later.
-
-IMO the check can be safely added here and get_new_locations cleaned up
-later.
-
-Feel free to fold the changes into your patch.
-
-I did not find any more unchecked allocatinos.
-
-
-dave
-
-
-On Tue, Apr 19, 2011 at 02:27:08PM +0900, Tsutomu Itoh wrote:
-> The check on the return value of kmalloc() in inode.c is added.
+Excerpts from Xiao Guangrong's message of 2011-04-18 21:49:52 -0400:
+> On 04/12/2011 04:14 PM, Xiao Guangrong wrote:
+> > It doesn't allocate extent_state and check the result properly:
+> > - in set_extent_bit, it doesn't allocate extent_state if the path is not
+> >   allowed wait
+> > 
+> > - in clear_extent_bit, it doesn't check the result after atomic-ly allocate,
+> >   we trigger BUG_ON() if it's fail
+> > 
+> > - if allocate fail, we trigger BUG_ON instead of returning -ENOMEM since
+> >   the return value of clear_extent_bit() is ignored by many callers
+> > 
 > 
-> Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-> ---
->  fs/btrfs/inode.c |    3 +++
->  1 files changed, 3 insertions(+), 0 deletions(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index a4157cf..c718d27 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -953,6 +953,7 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
->  			 1, 0, NULL, GFP_NOFS);
->  	while (start < end) {
->  		async_cow = kmalloc(sizeof(*async_cow), GFP_NOFS);
-> +		BUG_ON(!async_cow);
->  		async_cow->inode = inode;
->  		async_cow->root = root;
->  		async_cow->locked_page = locked_page;
-> @@ -5001,6 +5002,8 @@ static noinline int uncompress_inline(struct btrfs_path *path,
->  	inline_size = btrfs_file_extent_inline_item_len(leaf,
->  					btrfs_item_nr(leaf, path->slots[0]));
->  	tmp = kmalloc(inline_size, GFP_NOFS);
-> +	if (!tmp)
-> +		return -ENOMEM;
->  	ptr = btrfs_file_extent_inline_start(item);
->  
->  	read_extent_buffer(leaf, tmp, ptr, inline_size);
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Ping...to see what happened. :-)
+
+Sorry, could you please change this to check the results of the atomic
+allocatoin in set/clear_extent_bit?  I'd rather not add a new BUG_ON
+deeper into the code.
+
+-chris

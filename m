@@ -1,40 +1,40 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: [PATCH] Btrfs: check return value of kmalloc()
-Date: Tue, 19 Apr 2011 14:27:08 +0900
-Message-ID: <201104190527.AA00014@T-ITOH1.jp.fujitsu.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Subject: =?UTF-8?Q?fs=2Fbtrfs=2Finode=2Ec=3A6039=3A_warning=3A_=E2=80=98bio=E2=80=99_is_used_un?=
+	=?UTF-8?Q?initialized_in_this_function?=
+Date: Tue, 19 Apr 2011 13:00:30 +0200
+Message-ID: <BANLkTi=zNkSkD7L8f0pkZ2+j5pGcGhCYJA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The check on the return value of kmalloc() in inode.c is added.
+fs/btrfs/inode.c: In function =E2=80=98btrfs_submit_direct_hook=E2=80=99=
+:
+fs/btrfs/inode.c:6039: warning: =E2=80=98bio=E2=80=99 is used uninitial=
+ized in this function
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- fs/btrfs/inode.c |    3 +++
- 1 files changed, 3 insertions(+), 0 deletions(-)
+`BIO_BUG_ON(!atomic_read(&bio->bi_cnt))' in bio_put() later will blow u=
+p nicely
+when passed a random pointer on the stack.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index a4157cf..c718d27 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -953,6 +953,7 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
- 			 1, 0, NULL, GFP_NOFS);
- 	while (start < end) {
- 		async_cow = kmalloc(sizeof(*async_cow), GFP_NOFS);
-+		BUG_ON(!async_cow);
- 		async_cow->inode = inode;
- 		async_cow->root = root;
- 		async_cow->locked_page = locked_page;
-@@ -5001,6 +5002,8 @@ static noinline int uncompress_inline(struct btrfs_path *path,
- 	inline_size = btrfs_file_extent_inline_item_len(leaf,
- 					btrfs_item_nr(leaf, path->slots[0]));
- 	tmp = kmalloc(inline_size, GFP_NOFS);
-+	if (!tmp)
-+		return -ENOMEM;
- 	ptr = btrfs_file_extent_inline_start(item);
- 
- 	read_extent_buffer(leaf, tmp, ptr, inline_size);
+Introduced by commit 02f57c7aedef1a537f4b16db7061cdd8efa3bb4e
+("Btrfs: don't split dio bios if we don't have to").
 
+Gr{oetje,eeting}s,
+
+=C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=
+=A0 =C2=A0 Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-=
+m68k.org
+
+In personal conversations with technical people, I call myself a hacker=
+=2E But
+when I'm talking to journalists I just say "programmer" or something li=
+ke that.
+=C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=
+=A0 =C2=A0 =C2=A0 =C2=A0=C2=A0 =C2=A0=C2=A0 -- Linus Torvalds

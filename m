@@ -1,33 +1,24 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: Free free_space item properly in btrfs_trim_block_group()
-Date: Wed, 20 Apr 2011 16:37:39 +0800
-Message-ID: <4DAE9B53.7090504@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: free bitmaps properly when evicting the cache
+Date: Wed, 20 Apr 2011 16:42:18 +0800
+Message-ID: <4DAE9C6A.30006@cn.fujitsu.com>
+References: <1303158320-29058-1-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: lidongyang@novell.com
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1303158320-29058-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since commit dc89e9824464e91fa0b06267864ceabe3186fd8b, we've changed
-to use a specific slab for alocation of free_space items.
+Josef Bacik wrote:
+> If our space cache is wrong, we do the right thing and free up everything that
+> we loaded, however we don't reset the total_bitmaps counter or the thresholds or
+> anything.  So in btrfs_remove_free_space_cache make sure to call free_bitmap()
+> if it's a bitmap, this will keep us from panicing when we check to make sure we
+> don't have too many bitmaps.  Thanks,
+> 
+> Signed-off-by: Josef Bacik <josef@redhat.com>
 
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
- fs/btrfs/free-space-cache.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+Reviewed-by: Li Zefan <lizf@cn.fujitsu.com>
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 11d2e9c..13c29b1 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -2301,7 +2301,7 @@ int btrfs_trim_block_group(struct btrfs_block_group_cache *block_group,
- 			start = entry->offset;
- 			bytes = min(entry->bytes, end - start);
- 			unlink_free_space(block_group, entry);
--			kfree(entry);
-+			kmem_cache_free(btrfs_free_space_cachep, entry);
- 		}
- 
- 		spin_unlock(&block_group->tree_lock);
--- 1.7.3.1 

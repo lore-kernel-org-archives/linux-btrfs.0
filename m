@@ -1,24 +1,33 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: [PATCH] Btrfs: free bitmaps properly when evicting the cache
-Date: Wed, 20 Apr 2011 16:42:18 +0800
-Message-ID: <4DAE9C6A.30006@cn.fujitsu.com>
-References: <1303158320-29058-1-git-send-email-josef@redhat.com>
+From: Xiao Guangrong <xiaoguangrong@cn.fujitsu.com>
+Subject: [PATCH 1/5] Btrfs: fix bh leak on __btrfs_open_devices path
+Date: Wed, 20 Apr 2011 18:06:40 +0800
+Message-ID: <4DAEB030.1070303@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1303158320-29058-1-git-send-email-josef@redhat.com>
+Cc: LKML <linux-kernel@vger.kernel.org>,
+	BTRFS <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Josef Bacik wrote:
-> If our space cache is wrong, we do the right thing and free up everything that
-> we loaded, however we don't reset the total_bitmaps counter or the thresholds or
-> anything.  So in btrfs_remove_free_space_cache make sure to call free_bitmap()
-> if it's a bitmap, this will keep us from panicing when we check to make sure we
-> don't have too many bitmaps.  Thanks,
-> 
-> Signed-off-by: Josef Bacik <josef@redhat.com>
+'bh' is forgot to release if no error is detected
 
-Reviewed-by: Li Zefan <lizf@cn.fujitsu.com>
+Signed-off-by: Xiao Guangrong <xiaoguangrong@cn.fujitsu.com>
+---
+ fs/btrfs/volumes.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 8b9fb8c..69fc902 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -631,6 +631,7 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ 			list_add(&device->dev_alloc_list,
+ 				 &fs_devices->alloc_list);
+ 		}
++		brelse(bh);
+ 		continue;
+ 
+ error_brelse:
+-- 
+1.7.4.4

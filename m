@@ -1,91 +1,131 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: Re: [PATCH] Btrfs: check return value of kmalloc()
-Date: Wed, 20 Apr 2011 09:51:30 +0900
-Message-ID: <4DAE2E12.7060002@jp.fujitsu.com>
-References: <201104190527.AA00014@T-ITOH1.jp.fujitsu.com> <20110419111240.GV31675@twin.jikos.cz>
+From: Xiao Guangrong <xiaoguangrong@cn.fujitsu.com>
+Subject: [PATCH v2 1/2] Btrfs: allocate extent state and check the result
+ properly
+Date: Wed, 20 Apr 2011 14:44:57 +0800
+Message-ID: <4DAE80E9.2010102@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
-To: David Sterba <dave@jikos.cz>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110419111240.GV31675@twin.jikos.cz>
+Cc: LKML <linux-kernel@vger.kernel.org>,
+	BTRFS <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(2011/04/19 20:12), David Sterba wrote:
+It doesn't allocate extent_state and check the result properly:
+- in set_extent_bit, it doesn't allocate extent_state if the path is not
+  allowed wait
 
-Thanks for your review.
+- in clear_extent_bit, it doesn't check the result after atomic-ly allocate,
+  we trigger BUG_ON() if it's fail
 
-> Hi,
-> 
-> there are more unchecked kmallocs, in inode.c:btrfs_add_delayed_iput()
-> 
-> 2030        delayed = kmalloc(sizeof(*delayed), GFP_NOFS | __GFP_NOFAIL);
+- if allocate fail, we trigger BUG_ON instead of returning -ENOMEM since
+  the return value of clear_extent_bit() is ignored by many callers
 
-I think that it doesn't fail ordinary when __GFP_NOFAIL is specified...
+Signed-off-by: Xiao Guangrong <xiaoguangrong@cn.fujitsu.com>
+---
+ fs/btrfs/extent_io.c |   34 ++++++++++++++++++++++++++--------
+ 1 files changed, 26 insertions(+), 8 deletions(-)
 
-> 
-> and in extent-tree.c:relocate_one_extent()
-> 
-> 7992        new_extents = kmalloc(sizeof(*new_extents),
-> 7993                                                 GFP_NOFS);
-> 
-> the value is checked later, new_extents is passed to get_new_locations
-> and there it's checked, but no other callers pass potential NULL and the
-> check fits here and can be dropped from get_new_locations; there's a
-> little chance that get_new_locations will be able to succesfully
-> allocate the same data a jiffy later.
-
-Yes, therefore I did not check 'new_extents'.
-
-Thanks,
-Tsutomu
-
-
-> 
-> IMO the check can be safely added here and get_new_locations cleaned up
-> later.
-> 
-> Feel free to fold the changes into your patch.
-> 
-> I did not find any more unchecked allocatinos.
-> 
-> 
-> dave
-> 
-> 
-> On Tue, Apr 19, 2011 at 02:27:08PM +0900, Tsutomu Itoh wrote:
->> The check on the return value of kmalloc() in inode.c is added.
->>
->> Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
->> ---
->>  fs/btrfs/inode.c |    3 +++
->>  1 files changed, 3 insertions(+), 0 deletions(-)
->>
->> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->> index a4157cf..c718d27 100644
->> --- a/fs/btrfs/inode.c
->> +++ b/fs/btrfs/inode.c
->> @@ -953,6 +953,7 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
->>  			 1, 0, NULL, GFP_NOFS);
->>  	while (start < end) {
->>  		async_cow = kmalloc(sizeof(*async_cow), GFP_NOFS);
->> +		BUG_ON(!async_cow);
->>  		async_cow->inode = inode;
->>  		async_cow->root = root;
->>  		async_cow->locked_page = locked_page;
->> @@ -5001,6 +5002,8 @@ static noinline int uncompress_inline(struct btrfs_path *path,
->>  	inline_size = btrfs_file_extent_inline_item_len(leaf,
->>  					btrfs_item_nr(leaf, path->slots[0]));
->>  	tmp = kmalloc(inline_size, GFP_NOFS);
->> +	if (!tmp)
->> +		return -ENOMEM;
->>  	ptr = btrfs_file_extent_inline_start(item);
->>  
->>  	read_extent_buffer(leaf, tmp, ptr, inline_size);
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 5ae0bff..f36e284 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -439,6 +439,15 @@ static int clear_state_bit(struct extent_io_tree *tree,
+ 	return ret;
+ }
+ 
++static struct extent_state *
++alloc_extent_state_atomic(struct extent_state *prealloc)
++{
++	if (!prealloc)
++		prealloc = alloc_extent_state(GFP_ATOMIC);
++
++	return prealloc;
++}
++
+ /*
+  * clear some bits on a range in the tree.  This may require splitting
+  * or inserting elements in the tree, so the gfp mask is used to
+@@ -476,8 +485,7 @@ int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ again:
+ 	if (!prealloc && (mask & __GFP_WAIT)) {
+ 		prealloc = alloc_extent_state(mask);
+-		if (!prealloc)
+-			return -ENOMEM;
++		BUG_ON(!prealloc);
+ 	}
+ 
+ 	spin_lock(&tree->lock);
+@@ -529,8 +537,8 @@ hit_next:
+ 	 */
+ 
+ 	if (state->start < start) {
+-		if (!prealloc)
+-			prealloc = alloc_extent_state(GFP_ATOMIC);
++		prealloc = alloc_extent_state_atomic(prealloc);
++		BUG_ON(!prealloc);
+ 		err = split_state(tree, state, prealloc, start);
+ 		BUG_ON(err == -EEXIST);
+ 		prealloc = NULL;
+@@ -551,8 +559,8 @@ hit_next:
+ 	 * on the first half
+ 	 */
+ 	if (state->start <= end && state->end > end) {
+-		if (!prealloc)
+-			prealloc = alloc_extent_state(GFP_ATOMIC);
++		prealloc = alloc_extent_state_atomic(prealloc);
++		BUG_ON(!prealloc);
+ 		err = split_state(tree, state, prealloc, end + 1);
+ 		BUG_ON(err == -EEXIST);
+ 		if (wake)
+@@ -725,8 +733,7 @@ int set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ again:
+ 	if (!prealloc && (mask & __GFP_WAIT)) {
+ 		prealloc = alloc_extent_state(mask);
+-		if (!prealloc)
+-			return -ENOMEM;
++		BUG_ON(!prealloc);
+ 	}
+ 
+ 	spin_lock(&tree->lock);
+@@ -743,6 +750,8 @@ again:
+ 	 */
+ 	node = tree_search(tree, start);
+ 	if (!node) {
++		prealloc = alloc_extent_state_atomic(prealloc);
++		BUG_ON(!prealloc);
+ 		err = insert_state(tree, prealloc, start, end, &bits);
+ 		prealloc = NULL;
+ 		BUG_ON(err == -EEXIST);
+@@ -811,6 +820,9 @@ hit_next:
+ 			err = -EEXIST;
+ 			goto out;
+ 		}
++
++		prealloc = alloc_extent_state_atomic(prealloc);
++		BUG_ON(!prealloc);
+ 		err = split_state(tree, state, prealloc, start);
+ 		BUG_ON(err == -EEXIST);
+ 		prealloc = NULL;
+@@ -841,6 +853,9 @@ hit_next:
+ 			this_end = end;
+ 		else
+ 			this_end = last_start - 1;
++
++		prealloc = alloc_extent_state_atomic(prealloc);
++		BUG_ON(!prealloc);
+ 		err = insert_state(tree, prealloc, start, this_end,
+ 				   &bits);
+ 		BUG_ON(err == -EEXIST);
+@@ -865,6 +880,9 @@ hit_next:
+ 			err = -EEXIST;
+ 			goto out;
+ 		}
++
++		prealloc = alloc_extent_state_atomic(prealloc);
++		BUG_ON(!prealloc);
+ 		err = split_state(tree, state, prealloc, end + 1);
+ 		BUG_ON(err == -EEXIST);
+ 
+-- 
+1.7.4.2

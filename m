@@ -1,57 +1,58 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH] Btrfs: check return value of kmalloc()
-Date: Thu, 21 Apr 2011 14:18:11 +0200
-Message-ID: <20110421121810.GC31675@twin.jikos.cz>
-References: <201104190527.AA00014@T-ITOH1.jp.fujitsu.com>
- <20110419111240.GV31675@twin.jikos.cz>
- <4DAE2E12.7060002@jp.fujitsu.com>
-Reply-To: dave@jikos.cz
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: David Sterba <dave@jikos.cz>, linux-btrfs@vger.kernel.org,
-	chris.mason@oracle.com
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [RFC PATCH] Btrfs: do not flush csum items of unchanged file data during treelog
+Date: Thu, 21 Apr 2011 09:16:08 -0400
+Message-ID: <1303391634-sup-1145@think>
+References: <4DAFE39D.4040309@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Josef Bacik <josef@redhat.com>
+To: liubo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DAE2E12.7060002@jp.fujitsu.com>
+In-reply-to: <4DAFE39D.4040309@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 20, 2011 at 09:51:30AM +0900, Tsutomu Itoh wrote:
-> > 2030        delayed = kmalloc(sizeof(*delayed), GFP_NOFS | __GFP_NOFAIL);
+Excerpts from liubo's message of 2011-04-21 03:58:21 -0400:
 > 
-> I think that it doesn't fail ordinary when __GFP_NOFAIL is specified...
-
-yes I agree with you, my oversight. However, from linux/gfp.h
-
- * __GFP_NOFAIL: The VM implementation _must_ retry infinitely: the
- * caller cannot handle allocation failures.  This modifier is
- * deprecated and no new users should be added.
-
-in long-term, redoing without NOFAIL would be probably wise. Currently
-the btrfs_add_delayed_iput is called at places which do not seem to
-like failure, I'm not sure whether possibly blocking indefinetely is
-better than occasional failure with chance to do recovery ...
-
+> The current code relogs the entire inode every time during fsync log,
+> and it is much better suited to small files rather than large ones.
 > 
-> > 
-> > and in extent-tree.c:relocate_one_extent()
-> > 
-> > 7992        new_extents = kmalloc(sizeof(*new_extents),
-> > 7993                                                 GFP_NOFS);
-> > 
-> > the value is checked later, new_extents is passed to get_new_locations
-> > and there it's checked, but no other callers pass potential NULL and the
-> > check fits here and can be dropped from get_new_locations;
-
-> > there's a
-> > little chance that get_new_locations will be able to succesfully
-> > allocate the same data a jiffy later.
+> During my performance test, the fsync performace of large files sucks,
+> and we can ascribe this to the tremendous amount of csum infos of the
+> large ones, cause we have to flush all of these csum infos into log trees
+> even when there are only _one_ change in the whole file data.  Apparently,
+> to optimize fsync, we need to create a filter to skip the unnecessary csum
+> ones, that is, the corresponding file data remains unchanged before this fsync.
 > 
-> Yes, therefore I did not check 'new_extents'.
+> Here I have some test results to show, I use sysbench to do "random write + fsync".
+> 
+> Sysbench args:
+>   - Number of threads: 1
+>   - Extra file open flags: 0
+>   - 2 files, 4Gb each
+>   - Block size 4Kb
+>   - Number of random requests for random IO: 10000
+>   - Read/Write ratio for combined random IO test: 1.50
+>   - Periodic FSYNC enabled, calling fsync() each 100 requests.
+>   - Calling fsync() at the end of test, Enabled.
+>   - Using synchronous I/O mode
+>   - Doing random write test
+> 
+> Sysbench results:
+> ===
+>    Operations performed:  0 Read, 10000 Write, 200 Other = 10200 Total
+>    Read 0b  Written 39.062Mb  Total transferred 39.062Mb
+> ===
+> a) without patch:  (*SPEED* : 451.01Kb/sec)
+>    112.75 Requests/sec executed
+> 
+> b) with patch:     (*SPEED* : 5.1537Mb/sec)
+>    1319.34 Requests/sec executed
 
-heh reading it again after myself, it sounds quite the opposite than I
-wanted: I'd rather see the kmalloc checked right at the callsite, easier
-to read and understand, than diving into get_new_locations and there
-seeing checking extents for NULL and doing own alloc/free.
+Really nice results! Especially considering the small size of the patch.
 
+But, I'd really like to look at using sub transaction ids for this, and
+then logging just the part of the inode that had changed since the last
+log commit.  It's more complex, but will also help reduce tree searches
+for the file items.
 
-david
+-chris

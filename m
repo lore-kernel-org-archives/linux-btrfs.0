@@ -1,51 +1,81 @@
-From: Markus Trippelsdorf <markus@trippelsdorf.de>
-Subject: Re: [PATCH 1/2] fs: add SEEK_HOLE and SEEK_DATA flags
-Date: Fri, 22 Apr 2011 13:28:52 +0200
-Message-ID: <20110422112852.GB1627@x4.trippels.de>
-References: <1303414954-3315-1-git-send-email-josef@redhat.com>
- <loom.20110422T001650-760@post.gmane.org>
- <BANLkTiknb+hzFAjpwESwMcqMVtkFc0HFQQ@mail.gmail.com>
- <20110422045054.GB17795@infradead.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: Josef Bacik <josef@toxicpanda.com>, Eric Blake <eblake@redhat.com>,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org
-To: Christoph Hellwig <hch@infradead.org>
+From: David Sterba <dsterba@suse.cz>
+Subject: [PATCH 00/12] Cleanups, cruft removal
+Date: Fri, 22 Apr 2011 11:41:00 +0200
+Message-ID: <cover.1303398927.git.dsterba@suse.cz>
+Cc: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110422045054.GB17795@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2011.04.22 at 00:50 -0400, Christoph Hellwig wrote:
-> [Eric: please don't drop the Cc list, thanks!]
->=20
-> On Thu, Apr 21, 2011 at 09:22:55PM -0400, Josef Bacik wrote:
-> > > since all files have a virtual hole at the end, but leaves the po=
-sition
-> > > unchanged). ??I'd have to write a test program on Solaris to see =
-whether that
-> > > definition is actually true, or if it is a bug in the Solaris man=
- page.
-> > >
-> >=20
-> > lseek's purpose is to reposition the file position, so I'd imagine
-> > this is just a bug in the man page.
->=20
-> I would be surprised if the bug is around for such a long time, but
-> otherwise I concur.
+[resending, did not reach the list yesterday]
 
-It's a bug. Let me quote what Jeff Bonwick wrote on his blog:
+Hi,
 
-=BBI'm not sure where you got the impression that either SEEK_HOLE or
-SEEK_DATA doesn't set the file pointer. They do. (If they didn't, that
-would be weird, and we'd call it out explicitly.)=AB
+sending out first bunch of function interface cleanups, removing unused
+parameters in the easily reviewable cases, plus some compiler warning fixes. No
+functional changes.
 
-http://blogs.sun.com/bonwick/entry/seek_hole_and_seek_data
+There is a measurable effect on code text size
+(master is Linux 2.6.39-rc4 f0e615c3)
 
---=20
-Markus
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+   text    data     bss     dec     hex filename
+ 518973    8112     216  527301   80bc5 btrfs.ko.master
+ 517594    8112     216  525922   80662 btrfs.ko.cleanups
+
+smaller runtime stack footprint will gain some speedup. There are still 100+
+warnings about unused parameters, but some of them need deeper look into
+hisotry to verify that it's safe to remove them or are used within a longer
+callchain.
+
+Such cleanups may break yet unmerged features (eg. automerge succesful with
+scrub, a few trivial conflicts with ino-alloc), so I'd like to hear if is the
+right time to send such patches.
+
+
+thanks,
+david
+---
+
+David Sterba (12):
+  btrfs: rename variables clashing with global function names
+  btrfs: remove nested duplicate variable declarations
+  btrfs: fix dereference before check
+  btrfs: unify checking of IS_ERR and null
+  btrfs: remove useless mutex lock/unlock sequences
+  btrfs: make functions static when possible
+  btrfs: drop unused argument from extent_io_tree_init
+  btrfs: drop unused parameter from extent_map_tree_init
+  btrfs: drop gfp parameter from alloc_extent_map
+  btrfs: drop gfp parameter from find_extent_buffer
+  btrfs: drop gfp parameter from alloc_extent_buffer
+  btrfs: drop unused parameter from btrfs_release_path
+
+ fs/btrfs/acl.c              |    2 +-
+ fs/btrfs/compression.c      |   42 +++++++++---------
+ fs/btrfs/compression.h      |    2 +-
+ fs/btrfs/ctree.c            |   33 +++++++-------
+ fs/btrfs/ctree.h            |    4 +-
+ fs/btrfs/dir-item.c         |    2 +-
+ fs/btrfs/disk-io.c          |   31 ++++++-------
+ fs/btrfs/extent-tree.c      |   58 +++++++++++-------------
+ fs/btrfs/extent_io.c        |   52 ++++++++++-----------
+ fs/btrfs/extent_io.h        |   10 ++---
+ fs/btrfs/extent_map.c       |    8 +--
+ fs/btrfs/extent_map.h       |    4 +-
+ fs/btrfs/file-item.c        |   12 +++---
+ fs/btrfs/file.c             |   18 ++++----
+ fs/btrfs/free-space-cache.c |   21 ++++-----
+ fs/btrfs/inode.c            |   88 ++++++++++++++++++------------------
+ fs/btrfs/ioctl.c            |   12 +++---
+ fs/btrfs/relocation.c       |   36 ++++++++--------
+ fs/btrfs/root-tree.c        |   10 ++--
+ fs/btrfs/super.c            |    4 +-
+ fs/btrfs/transaction.c      |    3 +-
+ fs/btrfs/tree-defrag.c      |    2 +-
+ fs/btrfs/tree-log.c         |  102 +++++++++++++++++++++---------------------
+ fs/btrfs/volumes.c          |   22 +++++-----
+ fs/btrfs/xattr.c            |    4 +-
+ 25 files changed, 282 insertions(+), 300 deletions(-)
+
+-- 
+1.7.5.rc3

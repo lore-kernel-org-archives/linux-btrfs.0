@@ -1,59 +1,33 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: [PATCH v2] Btrfs: check return value of kmalloc()
-Date: Fri, 22 Apr 2011 11:35:52 +0900
-Message-ID: <201104220235.AA00016@T-ITOH1.jp.fujitsu.com>
+From: Matthew Wilcox <matthew@wil.cx>
+Subject: Re: [PATCH 1/2] fs: add SEEK_HOLE and SEEK_DATA flags
+Date: Thu, 21 Apr 2011 21:23:50 -0600
+Message-ID: <20110422032350.GF31296@parisc-linux.org>
+References: <1303414954-3315-1-git-send-email-josef@redhat.com> <EB7F482C-0195-4C63-9436-17B417C8DCD7@mit.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com
-To: linux-btrfs@vger.kernel.org
+Cc: Josef Bacik <josef@redhat.com>, linux-kernel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	hch@infradead.org
+To: Theodore Tso <tytso@MIT.EDU>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <EB7F482C-0195-4C63-9436-17B417C8DCD7@mit.edu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The check on the return value of kmalloc() is added to some places.
+On Thu, Apr 21, 2011 at 04:45:54PM -0400, Theodore Tso wrote:
+> 
+> On Apr 21, 2011, at 3:42 PM, Josef Bacik wrote:
+> 
+> > +	case SEEK_DATA:
+> > +	case SEEK_HOLE:
+> > +		return -EINVAL;
+> > 	}
+> 
+> Maybe we should be returning EOPNOTSUPP?
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
-V1->V2: adding check code to relocate_one_extent() for the readability,
-        which is suggested by David Sterba.
+That's definitely wrong ... -ENOSYS might be better!
 
- fs/btrfs/extent-tree.c |    4 ++++
- fs/btrfs/inode.c       |    3 +++
- 2 files changed, 7 insertions(+), 0 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 31f33ba..cd52f7f 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -8059,6 +8059,10 @@ static noinline int relocate_one_extent(struct btrfs_root *extent_root,
- 				u64 group_start = group->key.objectid;
- 				new_extents = kmalloc(sizeof(*new_extents),
- 						      GFP_NOFS);
-+				if (!new_extents) {
-+					ret = -ENOMEM;
-+					goto out;
-+				}
- 				nr_extents = 1;
- 				ret = get_new_locations(reloc_inode,
- 							extent_key,
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index a4157cf..c718d27 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -953,6 +953,7 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
- 			 1, 0, NULL, GFP_NOFS);
- 	while (start < end) {
- 		async_cow = kmalloc(sizeof(*async_cow), GFP_NOFS);
-+		BUG_ON(!async_cow);
- 		async_cow->inode = inode;
- 		async_cow->root = root;
- 		async_cow->locked_page = locked_page;
-@@ -5001,6 +5002,8 @@ static noinline int uncompress_inline(struct btrfs_path *path,
- 	inline_size = btrfs_file_extent_inline_item_len(leaf,
- 					btrfs_item_nr(leaf, path->slots[0]));
- 	tmp = kmalloc(inline_size, GFP_NOFS);
-+	if (!tmp)
-+		return -ENOMEM;
- 	ptr = btrfs_file_extent_inline_start(item);
- 
- 	read_extent_buffer(leaf, tmp, ptr, inline_size);
-
+-- 
+Matthew Wilcox				Intel Open Source Technology Centre
+"Bill, look, we understand that you're interested in selling us this
+operating system, but compare it to ours.  We can't possibly take such
+a retrograde step."

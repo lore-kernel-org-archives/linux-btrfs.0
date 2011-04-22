@@ -1,26 +1,39 @@
-From: CACook@quantum-sci.com
+From: "Fajar A. Nugraha" <list@fajar.net>
 Subject: Re: How Snapshots Inter-relate?
-Date: Fri, 22 Apr 2011 08:03:20 -0700
-Message-ID: <201104220803.20552.CACook@quantum-sci.com>
-References: <201104211017.52341.CACook@quantum-sci.com> <1303411647.25281.2.camel@ayu>
+Date: Fri, 22 Apr 2011 22:30:05 +0700
+Message-ID: <BANLkTinkYrzO8xA4B32=xFDP7zmWJ-zaHQ@mail.gmail.com>
+References: <201104211017.52341.CACook@quantum-sci.com>
+	<1303411647.25281.2.camel@ayu>
+	<201104220803.20552.CACook@quantum-sci.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1303411647.25281.2.camel@ayu>
+In-Reply-To: <201104220803.20552.CACook@quantum-sci.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thursday 21 April, 2011 11:47:25 Calvin Walton wrote:
-> You have nothing to worry about. You can delete any snapshot on btrfs
-> without losing data from any other snapshot. Each snapshot is completely
-> independent.
-> 
-> This works because data which is shared between multiple snapshots is
-> reference counted, and won't be deleted until you remove the last
-> snapshot that references that data.
+On Fri, Apr 22, 2011 at 10:03 PM,  <CACook@quantum-sci.com> wrote:
+> Would it be good practice to say, once a year, do a completely new fresh snapshot?
 
-Wow.  Awesome job, BTRFS team.
+There's no such thing as "new fresh snapshot".
 
-Would it be good practice to say, once a year, do a completely new fresh snapshot?
+You can create a new, empty subvolume.
+Or you can create snapshot of existing root/subvolume, which once
+created, behaves just like another subvolume (with the exception that
+it contains identical content to the origin root/subvolume).
+Or you can create snapshot of a snapshot (which, again, is just
+another subvolume with identical content) so in practice there will be
+no difference between the first snapshot and the second snapshot.
 
+So if by "new fresh snapshot" you mean "creating a snapshot of
+root/subvolume at that time", then you can do it as often as you need.
+But if by "new fresh snapshot" you mean something like full backup in
+traditional tape backup, then like Calvin said every snapshot is
+already independent, so in a way it's a "full backup".
+
+Of course if you're using it for backup purposes then it's usually
+best to have a copy elsewhere (not on the same
+disk/server/datacenter), but that's beyond the scope of this list.
+
+-- 
+Fajar

@@ -1,69 +1,74 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: Re: [PATCH] Btrfs: check return value of kmalloc()
-Date: Fri, 22 Apr 2011 10:23:14 +0900
-Message-ID: <4DB0D882.4010207@jp.fujitsu.com>
-References: <201104190527.AA00014@T-ITOH1.jp.fujitsu.com> <20110419111240.GV31675@twin.jikos.cz> <4DAE2E12.7060002@jp.fujitsu.com> <20110421121810.GC31675@twin.jikos.cz>
-Mime-Version: 1.0
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [RFC PATCH] Btrfs: do not flush csum items of unchanged file data during treelog
+Date: Thu, 21 Apr 2011 21:28:17 -0400
+Message-ID: <1303435579-sup-6101@think>
+References: <4DAFE39D.4040309@cn.fujitsu.com> <1303391634-sup-1145@think> <4DB0D20C.9060407@cn.fujitsu.com>
 Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
-To: David Sterba <dave@jikos.cz>
+Cc: liubo <liubo2009@cn.fujitsu.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Josef Bacik <josef@redhat.com>
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110421121810.GC31675@twin.jikos.cz>
+In-reply-to: <4DB0D20C.9060407@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(2011/04/21 21:18), David Sterba wrote:
-> On Wed, Apr 20, 2011 at 09:51:30AM +0900, Tsutomu Itoh wrote:
->>> 2030        delayed = kmalloc(sizeof(*delayed), GFP_NOFS | __GFP_NOFAIL);
->>
->> I think that it doesn't fail ordinary when __GFP_NOFAIL is specified...
+Excerpts from Li Zefan's message of 2011-04-21 20:55:40 -0400:
+> Chris Mason wrote:
+> > Excerpts from liubo's message of 2011-04-21 03:58:21 -0400:
+> >>
+> >> The current code relogs the entire inode every time during fsync log,
+> >> and it is much better suited to small files rather than large ones.
+> >>
+> >> During my performance test, the fsync performace of large files sucks,
+> >> and we can ascribe this to the tremendous amount of csum infos of the
+> >> large ones, cause we have to flush all of these csum infos into log trees
+> >> even when there are only _one_ change in the whole file data.  Apparently,
+> >> to optimize fsync, we need to create a filter to skip the unnecessary csum
+> >> ones, that is, the corresponding file data remains unchanged before this fsync.
+> >>
+> >> Here I have some test results to show, I use sysbench to do "random write + fsync".
+> >>
+> >> Sysbench args:
+> >>   - Number of threads: 1
+> >>   - Extra file open flags: 0
+> >>   - 2 files, 4Gb each
+> >>   - Block size 4Kb
+> >>   - Number of random requests for random IO: 10000
+> >>   - Read/Write ratio for combined random IO test: 1.50
+> >>   - Periodic FSYNC enabled, calling fsync() each 100 requests.
+> >>   - Calling fsync() at the end of test, Enabled.
+> >>   - Using synchronous I/O mode
+> >>   - Doing random write test
+> >>
+> >> Sysbench results:
+> >> ===
+> >>    Operations performed:  0 Read, 10000 Write, 200 Other = 10200 Total
+> >>    Read 0b  Written 39.062Mb  Total transferred 39.062Mb
+> >> ===
+> >> a) without patch:  (*SPEED* : 451.01Kb/sec)
+> >>    112.75 Requests/sec executed
+> >>
+> >> b) with patch:     (*SPEED* : 5.1537Mb/sec)
+> >>    1319.34 Requests/sec executed
+> > 
+> > Really nice results! Especially considering the small size of the patch.
+> > 
+> > But, I'd really like to look at using sub transaction ids for this, and
+> > then logging just the part of the inode that had changed since the last
+> > log commit.  It's more complex, but will also help reduce tree searches
+> > for the file items.
+> > 
 > 
-> yes I agree with you, my oversight. However, from linux/gfp.h
-> 
->  * __GFP_NOFAIL: The VM implementation _must_ retry infinitely: the
->  * caller cannot handle allocation failures.  This modifier is
->  * deprecated and no new users should be added.
-> 
-> in long-term, redoing without NOFAIL would be probably wise. Currently
-> the btrfs_add_delayed_iput is called at places which do not seem to
-> like failure, I'm not sure whether possibly blocking indefinetely is
-> better than occasional failure with chance to do recovery ...
-> 
->>
->>>
->>> and in extent-tree.c:relocate_one_extent()
->>>
->>> 7992        new_extents = kmalloc(sizeof(*new_extents),
->>> 7993                                                 GFP_NOFS);
->>>
->>> the value is checked later, new_extents is passed to get_new_locations
->>> and there it's checked, but no other callers pass potential NULL and the
->>> check fits here and can be dropped from get_new_locations;
-> 
->>> there's a
->>> little chance that get_new_locations will be able to succesfully
->>> allocate the same data a jiffy later.
->>
->> Yes, therefore I did not check 'new_extents'.
-> 
+> And this patch forgot to mention it has compatability issue.
 
-> heh reading it again after myself, it sounds quite the opposite than I
-> wanted: I'd rather see the kmalloc checked right at the callsite, easier
-> to read and understand, than diving into get_new_locations and there
-> seeing checking extents for NULL and doing own alloc/free.
+Right, at the very least we want to just use one bit of that field
+instead of all 8.  But keeping a sub-transid and putting that in the
+generation field of the file extent instead can get us the same benefits
+without stealing the bits.
 
-OK, I understand.
-But, reading code again, I noticed nobody use relocate_one_extent() now. ;-)
+As we push the sub transid into the btree blocks as well, we'll get much
+faster tree walks too.  The penalty is in complexity in the logging
+code, since it will have to deal with finding extents in the log tree
+and merging in the new extents from the file.
 
-However, because there is a possibility to be going to be used in the future,
-I'll add the check of 'new_extents' for the readability.
-
-Thanks,
-Tsutomu
- 
-
-> 
-> 
-> david
-> 
-> 
-
+-chris

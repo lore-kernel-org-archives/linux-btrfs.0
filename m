@@ -1,74 +1,59 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [RFC PATCH] Btrfs: do not flush csum items of unchanged file data during treelog
-Date: Thu, 21 Apr 2011 21:28:17 -0400
-Message-ID: <1303435579-sup-6101@think>
-References: <4DAFE39D.4040309@cn.fujitsu.com> <1303391634-sup-1145@think> <4DB0D20C.9060407@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
-Cc: liubo <liubo2009@cn.fujitsu.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Josef Bacik <josef@redhat.com>
-To: Li Zefan <lizf@cn.fujitsu.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Subject: [PATCH v2] Btrfs: check return value of kmalloc()
+Date: Fri, 22 Apr 2011 11:35:52 +0900
+Message-ID: <201104220235.AA00016@T-ITOH1.jp.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: chris.mason@oracle.com
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <4DB0D20C.9060407@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Li Zefan's message of 2011-04-21 20:55:40 -0400:
-> Chris Mason wrote:
-> > Excerpts from liubo's message of 2011-04-21 03:58:21 -0400:
-> >>
-> >> The current code relogs the entire inode every time during fsync log,
-> >> and it is much better suited to small files rather than large ones.
-> >>
-> >> During my performance test, the fsync performace of large files sucks,
-> >> and we can ascribe this to the tremendous amount of csum infos of the
-> >> large ones, cause we have to flush all of these csum infos into log trees
-> >> even when there are only _one_ change in the whole file data.  Apparently,
-> >> to optimize fsync, we need to create a filter to skip the unnecessary csum
-> >> ones, that is, the corresponding file data remains unchanged before this fsync.
-> >>
-> >> Here I have some test results to show, I use sysbench to do "random write + fsync".
-> >>
-> >> Sysbench args:
-> >>   - Number of threads: 1
-> >>   - Extra file open flags: 0
-> >>   - 2 files, 4Gb each
-> >>   - Block size 4Kb
-> >>   - Number of random requests for random IO: 10000
-> >>   - Read/Write ratio for combined random IO test: 1.50
-> >>   - Periodic FSYNC enabled, calling fsync() each 100 requests.
-> >>   - Calling fsync() at the end of test, Enabled.
-> >>   - Using synchronous I/O mode
-> >>   - Doing random write test
-> >>
-> >> Sysbench results:
-> >> ===
-> >>    Operations performed:  0 Read, 10000 Write, 200 Other = 10200 Total
-> >>    Read 0b  Written 39.062Mb  Total transferred 39.062Mb
-> >> ===
-> >> a) without patch:  (*SPEED* : 451.01Kb/sec)
-> >>    112.75 Requests/sec executed
-> >>
-> >> b) with patch:     (*SPEED* : 5.1537Mb/sec)
-> >>    1319.34 Requests/sec executed
-> > 
-> > Really nice results! Especially considering the small size of the patch.
-> > 
-> > But, I'd really like to look at using sub transaction ids for this, and
-> > then logging just the part of the inode that had changed since the last
-> > log commit.  It's more complex, but will also help reduce tree searches
-> > for the file items.
-> > 
-> 
-> And this patch forgot to mention it has compatability issue.
+The check on the return value of kmalloc() is added to some places.
 
-Right, at the very least we want to just use one bit of that field
-instead of all 8.  But keeping a sub-transid and putting that in the
-generation field of the file extent instead can get us the same benefits
-without stealing the bits.
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+---
+V1->V2: adding check code to relocate_one_extent() for the readability,
+        which is suggested by David Sterba.
 
-As we push the sub transid into the btree blocks as well, we'll get much
-faster tree walks too.  The penalty is in complexity in the logging
-code, since it will have to deal with finding extents in the log tree
-and merging in the new extents from the file.
+ fs/btrfs/extent-tree.c |    4 ++++
+ fs/btrfs/inode.c       |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
 
--chris
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 31f33ba..cd52f7f 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -8059,6 +8059,10 @@ static noinline int relocate_one_extent(struct btrfs_root *extent_root,
+ 				u64 group_start = group->key.objectid;
+ 				new_extents = kmalloc(sizeof(*new_extents),
+ 						      GFP_NOFS);
++				if (!new_extents) {
++					ret = -ENOMEM;
++					goto out;
++				}
+ 				nr_extents = 1;
+ 				ret = get_new_locations(reloc_inode,
+ 							extent_key,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index a4157cf..c718d27 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -953,6 +953,7 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
+ 			 1, 0, NULL, GFP_NOFS);
+ 	while (start < end) {
+ 		async_cow = kmalloc(sizeof(*async_cow), GFP_NOFS);
++		BUG_ON(!async_cow);
+ 		async_cow->inode = inode;
+ 		async_cow->root = root;
+ 		async_cow->locked_page = locked_page;
+@@ -5001,6 +5002,8 @@ static noinline int uncompress_inline(struct btrfs_path *path,
+ 	inline_size = btrfs_file_extent_inline_item_len(leaf,
+ 					btrfs_item_nr(leaf, path->slots[0]));
+ 	tmp = kmalloc(inline_size, GFP_NOFS);
++	if (!tmp)
++		return -ENOMEM;
+ 	ptr = btrfs_file_extent_inline_start(item);
+ 
+ 	read_extent_buffer(leaf, tmp, ptr, inline_size);
+

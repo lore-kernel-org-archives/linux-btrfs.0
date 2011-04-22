@@ -1,45 +1,40 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: [PATCH] Btrfs: fix missing mutex_unlock in btrfs_del_dir_entries_in_log()
-Date: Fri, 22 Apr 2011 18:05:40 +0900
-Message-ID: <201104220905.AA00017@T-ITOH1.jp.fujitsu.com>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: [PATCH V6 1/3] btrfs: fix wrong allocating flag when reading page
+Date: Fri, 22 Apr 2011 18:12:19 +0800
+Message-ID: <4DB15483.6050907@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=GB2312
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Itaru Kitayama <kitayama@cl.bb4u.ne.jp>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It is necessary to unlock mutex_lock before it return an error when
-btrfs_alloc_path() fails.
+From: Itaru Kitayama <kitayama@cl.bb4u.ne.jp>
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+the space cache use extent_readpages() to read free space information,
+so we can not use GFP_KERNEL flag to allocate memory, or it may lead
+to deadlock.
+
+Signed-off-by: Itaru Kitayama <kitayama@cl.bb4u.ne.jp>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/tree-log.c |    7 +++++--
- 1 files changed, 5 insertions(+), 2 deletions(-)
+ fs/btrfs/extent_io.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index c50271a..f997ec0 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -2209,8 +2209,10 @@ int btrfs_del_dir_entries_in_log(struct btrfs_trans_handle *trans,
- 
- 	log = root->log_root;
- 	path = btrfs_alloc_path();
--	if (!path)
--		return -ENOMEM;
-+	if (!path) {
-+		err = -ENOMEM;
-+		goto out_unlock;
-+	}
- 
- 	di = btrfs_lookup_dir_item(trans, log, path, dir->i_ino,
- 				   name, name_len, -1);
-@@ -2271,6 +2273,7 @@ int btrfs_del_dir_entries_in_log(struct btrfs_trans_handle *trans,
- 	}
- fail:
- 	btrfs_free_path(path);
-+out_unlock:
- 	mutex_unlock(&BTRFS_I(dir)->log_mutex);
- 	if (ret == -ENOSPC) {
- 		root->fs_info->last_trans_log_full_commit = trans->transid;
-
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 5ae0bff..0d1196d 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2681,7 +2681,7 @@ int extent_readpages(struct extent_io_tree *tree,
+ 		prefetchw(&page->flags);
+ 		list_del(&page->lru);
+ 		if (!add_to_page_cache_lru(page, mapping,
+-					page->index, GFP_KERNEL)) {
++					page->index, GFP_NOFS)) {
+ 			__extent_read_full_page(tree, page, get_extent,
+ 						&bio, 0, &bio_flags);
+ 		}
+-- 
+1.7.4

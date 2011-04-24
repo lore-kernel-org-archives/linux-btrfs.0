@@ -1,31 +1,50 @@
-From: Sunil Mushran <sunil.mushran@oracle.com>
+From: Jamie Lokier <jamie@shareable.org>
 Subject: Re: [PATCH 1/2] fs: add SEEK_HOLE and SEEK_DATA flags
-Date: Fri, 22 Apr 2011 16:33:11 -0700
-Message-ID: <4DB21037.2060604@oracle.com>
-References: <1303414954-3315-1-git-send-email-josef@redhat.com> <loom.20110422T001650-760@post.gmane.org> <BANLkTiknb+hzFAjpwESwMcqMVtkFc0HFQQ@mail.gmail.com> <20110422045054.GB17795@infradead.org> <20110422112852.GB1627@x4.trippels.de> <4DB16B72.1050702@redhat.com> <4DB1AC9D.3010706@oracle.com> <4DB1AF6F.4040706@redhat.com> <4DB1B37C.9070406@oracle.com> <4DB1B4F1.8070109@redhat.com> <4DB1B62B.3000700@oracle.com> <B7EE7E9A-083C-4914-8A69-4DD3448D06B3@dilger.ca>
+Date: Sun, 24 Apr 2011 18:49:02 +0100
+Message-ID: <20110424174902.GA20461@shareable.org>
+References: <1303414954-3315-1-git-send-email-josef@redhat.com> <loom.20110422T001650-760@post.gmane.org> <BANLkTiknb+hzFAjpwESwMcqMVtkFc0HFQQ@mail.gmail.com> <20110422045054.GB17795@infradead.org> <20110422112852.GB1627@x4.trippels.de> <4DB16B72.1050702@redhat.com> <4DB1AC9D.3010706@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Cc: Eric Blake <eblake@redhat.com>,
 	Markus Trippelsdorf <markus@trippelsdorf.de>,
 	Christoph Hellwig <hch@infradead.org>,
 	Josef Bacik <josef@toxicpanda.com>,
-	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>
-To: Andreas Dilger <adilger@dilger.ca>
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org
+To: Sunil Mushran <sunil.mushran@oracle.com>
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <B7EE7E9A-083C-4914-8A69-4DD3448D06B3@dilger.ca>
+In-Reply-To: <4DB1AC9D.3010706@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/22/2011 11:06 AM, Andreas Dilger wrote:
-> Sure, there are lots of wasted syscalls, but in this case the cost of doing extra SEEK_DATA and SEEK_HOLE operations may be fairly costly. This involves scanning the whole disk layout, possibly over a network, which might need tens or hundreds of disk seeks to read the metadata, unlike regular SEEK_SET.
->
-> Even SEEK_END is somewhat costly on a network filesystem, since the syscall needs to lock the file size in order to determine the end of the file, which can block other threads from writing to the file.
->
-> So while I agree that the Linux mantra that "syscalls are cheap" is true if those syscalls don't actually do any work, I think it also ignores the cost of what some syscalls need to do behind the scenes.
+Sunil Mushran wrote:
+> On 04/22/2011 04:50 AM, Eric Blake wrote:
+> >That blog also mentioned the useful idea of adding FIND_HOLE and
+> >FIND_DATA, not implemented in Solaris, but which could easily be
+> >provided as additional lseek constants in Linux to locate the start of
+> >the next chunk without repositioning and which could ease application
+> >programmer's life a bit.  After all, cp wants to know where data ends
+> >without repositioning (FIND_HOLE), read() that much data which
+> >repositions in the process, then skip to the next chunk of data
+> >(SEEK_DATA) - two lseek() calls per iteration if we have 4 constants,
+> >but 3 per iteration if we only have SEEK_HOLE and have to manually rewind.
+> 
+> while(1) {
+>     read(block);
+>     if (block_all_zeroes)
+>         lseek(SEEK_DATA);
+> }
+> 
+> What's wrong with the above? If this is the case, even SEEK_HOLE
+> is not needed but should be added as it is already in Solaris.
 
-You have a point. I was just reviewing the possible patch for ocfs2
-and it looks heavy.
+Apart from the obvious waste of effort (scanning *all* data for zeros
+is cheap but not free if the file is mostly non-hole zeros), you can't
+do a pread() version of the above in parallel over different parts of
+the same file/device.
 
-One option is to scrap SEEK_* and make another syscall llfind() with FIND_*.
-Or, do both.
+> My problem with FIND_* is that we are messing with the well understood
+> semantics of lseek().
+
+fcntl() looks a better fit for FIND_HOLE/DATA anyway.
+
+-- Jamie

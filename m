@@ -1,50 +1,68 @@
-From: Jamie Lokier <jamie@shareable.org>
-Subject: Re: [PATCH 1/2] fs: add SEEK_HOLE and SEEK_DATA flags
-Date: Sun, 24 Apr 2011 18:49:02 +0100
-Message-ID: <20110424174902.GA20461@shareable.org>
-References: <1303414954-3315-1-git-send-email-josef@redhat.com> <loom.20110422T001650-760@post.gmane.org> <BANLkTiknb+hzFAjpwESwMcqMVtkFc0HFQQ@mail.gmail.com> <20110422045054.GB17795@infradead.org> <20110422112852.GB1627@x4.trippels.de> <4DB16B72.1050702@redhat.com> <4DB1AC9D.3010706@oracle.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: fix missing mutex_unlock in btrfs_del_dir_entries_in_log()
+Date: Mon, 25 Apr 2011 08:23:40 +0900
+Message-ID: <4DB4B0FC.7080201@jp.fujitsu.com>
+References: <201104220905.AA00017@T-ITOH1.jp.fujitsu.com> <20110422124556.GV31675@twin.jikos.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Eric Blake <eblake@redhat.com>,
-	Markus Trippelsdorf <markus@trippelsdorf.de>,
-	Christoph Hellwig <hch@infradead.org>,
-	Josef Bacik <josef@toxicpanda.com>,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org
-To: Sunil Mushran <sunil.mushran@oracle.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4DB1AC9D.3010706@oracle.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
+To: David Sterba <dave@jikos.cz>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110422124556.GV31675@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sunil Mushran wrote:
-> On 04/22/2011 04:50 AM, Eric Blake wrote:
-> >That blog also mentioned the useful idea of adding FIND_HOLE and
-> >FIND_DATA, not implemented in Solaris, but which could easily be
-> >provided as additional lseek constants in Linux to locate the start of
-> >the next chunk without repositioning and which could ease application
-> >programmer's life a bit.  After all, cp wants to know where data ends
-> >without repositioning (FIND_HOLE), read() that much data which
-> >repositions in the process, then skip to the next chunk of data
-> >(SEEK_DATA) - two lseek() calls per iteration if we have 4 constants,
-> >but 3 per iteration if we only have SEEK_HOLE and have to manually rewind.
+(2011/04/22 21:45), David Sterba wrote:
+> Hi,
 > 
-> while(1) {
->     read(block);
->     if (block_all_zeroes)
->         lseek(SEEK_DATA);
-> }
+> On Fri, Apr 22, 2011 at 06:05:40PM +0900, Tsutomu Itoh wrote:
+>> It is necessary to unlock mutex_lock before it return an error when
+>> btrfs_alloc_path() fails.
 > 
-> What's wrong with the above? If this is the case, even SEEK_HOLE
-> is not needed but should be added as it is already in Solaris.
+> good catch! however I suggest to move the mutex_lock after the
+> allocation and check, it'll be semantically equivalent to your change,
+> but a bit readable. quick grep for btrfs_alloc_path usage showed that
+> it's quite common to do path allocation/check before any real work is
+> started.
 
-Apart from the obvious waste of effort (scanning *all* data for zeros
-is cheap but not free if the file is mostly non-hole zeros), you can't
-do a pread() version of the above in parallel over different parts of
-the same file/device.
+Even if mutex_lock() move to after btrfs_alloc_path(),
+we should call btrfs_end_log_tarns().
 
-> My problem with FIND_* is that we are messing with the well understood
-> semantics of lseek().
+So I chose 'goto out_unlock'.
 
-fcntl() looks a better fit for FIND_HOLE/DATA anyway.
+Thanks,
+Tsutomu
 
--- Jamie
+> 
+> 
+> david
+> 
+>> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+>> index c50271a..f997ec0 100644
+>> --- a/fs/btrfs/tree-log.c
+>> +++ b/fs/btrfs/tree-log.c
+>> @@ -2209,8 +2209,10 @@ int btrfs_del_dir_entries_in_log(struct btrfs_trans_handle *trans,
+>>  
+>>  	log = root->log_root;
+>>  	path = btrfs_alloc_path();
+>> -	if (!path)
+>> -		return -ENOMEM;
+>> +	if (!path) {
+>> +		err = -ENOMEM;
+>> +		goto out_unlock;
+>> +	}
+> 
+>         mutex_lock(...);
+>>  
+>>  	di = btrfs_lookup_dir_item(trans, log, path, dir->i_ino,
+>>  				   name, name_len, -1);
+>> @@ -2271,6 +2273,7 @@ int btrfs_del_dir_entries_in_log(struct btrfs_trans_handle *trans,
+>>  	}
+>>  fail:
+>>  	btrfs_free_path(path);
+>> +out_unlock:
+>>  	mutex_unlock(&BTRFS_I(dir)->log_mutex);
+>>  	if (ret == -ENOSPC) {
+>>  		root->fs_info->last_trans_log_full_commit = trans->transid;
+> 
+> 
+

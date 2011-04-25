@@ -1,22 +1,37 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH V6 3/3] btrfs: delay to insert the initial inode
-Date: Mon, 25 Apr 2011 16:50:43 -0400
-Message-ID: <1303764553-sup-8007@think>
-References: <4DB15488.50005@cn.fujitsu.com>
+From: cwillu <cwillu@cwillu.com>
+Subject: Re: Bug#624131: linux-image-2.6.39-rc4-686-pae: Can somewhat reliably
+ produce kernel panic in btrfs code
+Date: Mon, 25 Apr 2011 15:05:02 -0600
+Message-ID: <BANLkTi=VMW1bsOduH2Xn27NUQkpHiHngqw@mail.gmail.com>
+References: <BANLkTikiVMbH0BU4xTZirNDUu=GhG0ooyg@mail.gmail.com>
+	<1303762526.3032.296.camel@localhost>
+	<BANLkTikyqs0Zx-V+0+431fEAA-XWsGo73g@mail.gmail.com>
+	<20110425205008.11135.qmail@stuge.se>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: miaox <miaox@cn.fujitsu.com>
+To: Maik Zumstrull <maik@zumstrull.net>,
+	Ben Hutchings <ben@decadent.org.uk>, 624131@bugs.debian.org,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <4DB15488.50005@cn.fujitsu.com>
+In-Reply-To: <20110425205008.11135.qmail@stuge.se>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Miao Xie's message of 2011-04-22 06:12:24 -0400:
-> Since we have implemented the delayed update of the inode, we can also
-> delayed to insert the initial inode, then we can merge the inode update
-> and the initial inode insertions to one insertion.
+On Mon, Apr 25, 2011 at 2:50 PM, Peter Stuge <peter@stuge.se> wrote:
+> Maik Zumstrull wrote:
+>> >> Bug at fs/btrfs/free-space-cache.c:1246
+>> >> Bug type: invalid opcode: 0000
+>> >> Kernel not tainted, running on an ASUSTek 1005HAG
+>> >> EIP is at btrfs_add_free_space+0x285/0x39a [btrfs]
+>> >
+>> > You will probably need to provide a more complete copy of the panic
+>> > message.
+>>
+>> I thought as much, but other than taking a picture of the screen, I
+>> don't know how.
+>
+> Take a picture and ideally transcribe it after reboot.
 
-Awesome.  With things separate from the inode this should solve our oom
-problems.  We might need to register a shrinker for the delayed inode
-operations too, but that shouldn't be a problem.
-
--chris
+Known issue;  josef sent a patch
+(http://permalink.gmane.org/gmane.comp.file-systems.btrfs/10261) that
+should fix it, or you can mount with clear_cache on each boot as a
+workaround.

@@ -1,31 +1,22 @@
-From: Peter Stuge <peter@stuge.se>
-Subject: Re: Bug#624131: linux-image-2.6.39-rc4-686-pae: Can somewhat
-	reliably produce kernel panic in btrfs code
-Date: Mon, 25 Apr 2011 22:50:08 +0200
-Message-ID: <20110425205008.11135.qmail@stuge.se>
-References: <BANLkTikiVMbH0BU4xTZirNDUu=GhG0ooyg@mail.gmail.com> <1303762526.3032.296.camel@localhost> <BANLkTikyqs0Zx-V+0+431fEAA-XWsGo73g@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Ben Hutchings <ben@decadent.org.uk>, 624131@bugs.debian.org,
-	linux-btrfs@vger.kernel.org
-To: Maik Zumstrull <maik@zumstrull.net>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH V6 3/3] btrfs: delay to insert the initial inode
+Date: Mon, 25 Apr 2011 16:50:43 -0400
+Message-ID: <1303764553-sup-8007@think>
+References: <4DB15488.50005@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: miaox <miaox@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTikyqs0Zx-V+0+431fEAA-XWsGo73g@mail.gmail.com>
+In-reply-to: <4DB15488.50005@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Maik Zumstrull wrote:
-> >> Bug at fs/btrfs/free-space-cache.c:1246
-> >> Bug type: invalid opcode: 0000
-> >> Kernel not tainted, running on an ASUSTek 1005HAG
-> >> EIP is at btrfs_add_free_space+0x285/0x39a [btrfs]
-> >
-> > You will probably need to provide a more complete copy of the panic
-> > message.
-> 
-> I thought as much, but other than taking a picture of the screen, I
-> don't know how.
+Excerpts from Miao Xie's message of 2011-04-22 06:12:24 -0400:
+> Since we have implemented the delayed update of the inode, we can also
+> delayed to insert the initial inode, then we can merge the inode update
+> and the initial inode insertions to one insertion.
 
-Take a picture and ideally transcribe it after reboot.
+Awesome.  With things separate from the inode this should solve our oom
+problems.  We might need to register a shrinker for the delayed inode
+operations too, but that shouldn't be a problem.
 
-
-//Peter
+-chris

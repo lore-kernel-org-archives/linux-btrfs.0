@@ -1,86 +1,41 @@
-From: liubo <liubo2009@cn.fujitsu.com>
-Subject: Re: [RFC PATCH] Btrfs: do not flush csum items of unchanged file
- data during treelog
-Date: Mon, 25 Apr 2011 17:58:05 +0800
-Message-ID: <4DB545AD.5050908@cn.fujitsu.com>
-References: <4DAFE39D.4040309@cn.fujitsu.com> <1303391634-sup-1145@think> <4DB0D20C.9060407@cn.fujitsu.com> <1303435579-sup-6101@think>
-Mime-Version: 1.0
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH 05/12] btrfs: remove useless mutex lock/unlock sequences
+Date: Mon, 25 Apr 2011 08:12:59 -0400
+Message-ID: <1303733509-sup-4508@think>
+References: <cover.1303398927.git.dsterba@suse.cz> <b5fefb09811c22cd101a44ac753293af942087fc.1303398927.git.dsterba@suse.cz> <4DB513F6.6040503@jp.fujitsu.com>
 Content-Type: text/plain; charset=UTF-8
-Cc: Li Zefan <lizf@cn.fujitsu.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Josef Bacik <josef@redhat.com>
-To: Chris Mason <chris.mason@oracle.com>
+Cc: David Sterba <dsterba@suse.cz>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1303435579-sup-6101@think>
+In-reply-to: <4DB513F6.6040503@jp.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/22/2011 09:28 AM, Chris Mason wrote:
-> Excerpts from Li Zefan's message of 2011-04-21 20:55:40 -0400:
->> Chris Mason wrote:
->>> Excerpts from liubo's message of 2011-04-21 03:58:21 -0400:
->>>> The current code relogs the entire inode every time during fsync log,
->>>> and it is much better suited to small files rather than large ones.
->>>>
->>>> During my performance test, the fsync performace of large files sucks,
->>>> and we can ascribe this to the tremendous amount of csum infos of the
->>>> large ones, cause we have to flush all of these csum infos into log trees
->>>> even when there are only _one_ change in the whole file data.  Apparently,
->>>> to optimize fsync, we need to create a filter to skip the unnecessary csum
->>>> ones, that is, the corresponding file data remains unchanged before this fsync.
->>>>
->>>> Here I have some test results to show, I use sysbench to do "random write + fsync".
->>>>
->>>> Sysbench args:
->>>>   - Number of threads: 1
->>>>   - Extra file open flags: 0
->>>>   - 2 files, 4Gb each
->>>>   - Block size 4Kb
->>>>   - Number of random requests for random IO: 10000
->>>>   - Read/Write ratio for combined random IO test: 1.50
->>>>   - Periodic FSYNC enabled, calling fsync() each 100 requests.
->>>>   - Calling fsync() at the end of test, Enabled.
->>>>   - Using synchronous I/O mode
->>>>   - Doing random write test
->>>>
->>>> Sysbench results:
->>>> ===
->>>>    Operations performed:  0 Read, 10000 Write, 200 Other = 10200 Total
->>>>    Read 0b  Written 39.062Mb  Total transferred 39.062Mb
->>>> ===
->>>> a) without patch:  (*SPEED* : 451.01Kb/sec)
->>>>    112.75 Requests/sec executed
->>>>
->>>> b) with patch:     (*SPEED* : 5.1537Mb/sec)
->>>>    1319.34 Requests/sec executed
->>> Really nice results! Especially considering the small size of the patch.
->>>
->>> But, I'd really like to look at using sub transaction ids for this, and
->>> then logging just the part of the inode that had changed since the last
->>> log commit.  It's more complex, but will also help reduce tree searches
->>> for the file items.
->>>
->> And this patch forgot to mention it has compatability issue.
+Excerpts from Tsutomu Itoh's message of 2011-04-25 02:25:58 -0400:
+> (2011/04/22 18:41), David Sterba wrote:
+> > Signed-off-by: David Sterba <dsterba@suse.cz>
+> > ---
+> >  fs/btrfs/extent-tree.c |    6 ------
+> >  1 files changed, 0 insertions(+), 6 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> > index 31f33ba..c97ceab 100644
+> > --- a/fs/btrfs/extent-tree.c
+> > +++ b/fs/btrfs/extent-tree.c
+> > @@ -756,8 +756,6 @@ again:
+> >  
+> >              btrfs_release_path(root->fs_info->extent_root, path);
+> >  
+> > -            mutex_lock(&head->mutex);
+> > -            mutex_unlock(&head->mutex);
+> >              btrfs_put_delayed_ref(&head->node);
+> >              goto again;
 > 
-> Right, at the very least we want to just use one bit of that field
-> instead of all 8.  But keeping a sub-transid and putting that in the
-> generation field of the file extent instead can get us the same benefits
-> without stealing the bits.
-> 
+> This code tests whether the mutex_lock can be acquired, and when the
+> mutex_lock can be taken, it try again.
+> So I think that it is not a meaningless code.
 
-Nice.  This is the first step of my plan.
+Correct, this code is waiting for the current lock holder to finish.
+It's not exactly pretty but it needs to stay.
 
-> As we push the sub transid into the btree blocks as well, we'll get much
-> faster tree walks too.  The penalty is in complexity in the logging
-> code, since it will have to deal with finding extents in the log tree
-> and merging in the new extents from the file.
-
-I've been thinking of this extent buffer with sub transid stuff for a while,
-and will give it a try. :)
-
-thanks,
-liubo.
-
-> 
-> -chris
-> 
-
+-chris

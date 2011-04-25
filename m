@@ -1,38 +1,31 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH v2 0/7] Btrfs: New inode number allocator
-Date: Mon, 25 Apr 2011 16:44:20 -0400
-Message-ID: <1303764241-sup-9810@think>
-References: <4DB5378B.2070904@cn.fujitsu.com> <1303751742-sup-4551@think>
-Content-Type: text/plain; charset=UTF-8
-Cc: Li Zefan <lizf@cn.fujitsu.com>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+From: Peter Stuge <peter@stuge.se>
+Subject: Re: Bug#624131: linux-image-2.6.39-rc4-686-pae: Can somewhat
+	reliably produce kernel panic in btrfs code
+Date: Mon, 25 Apr 2011 22:50:08 +0200
+Message-ID: <20110425205008.11135.qmail@stuge.se>
+References: <BANLkTikiVMbH0BU4xTZirNDUu=GhG0ooyg@mail.gmail.com> <1303762526.3032.296.camel@localhost> <BANLkTikyqs0Zx-V+0+431fEAA-XWsGo73g@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: Ben Hutchings <ben@decadent.org.uk>, 624131@bugs.debian.org,
+	linux-btrfs@vger.kernel.org
+To: Maik Zumstrull <maik@zumstrull.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <1303751742-sup-4551@think>
+In-Reply-To: <BANLkTikyqs0Zx-V+0+431fEAA-XWsGo73g@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Chris Mason's message of 2011-04-25 13:15:58 -0400:
-> Excerpts from Li Zefan's message of 2011-04-25 04:57:47 -0400:
-> > Currently btrfs stores the highest objectid of the fs tree, and it always
-> > returns (highest+1) inode number when we create a file, so inode numbers
-> > won't be reclaimed when we delete files, so we'll run out of inode numbers
-> > as we keep create/delete files in 32bits machines.
-> > 
-> > This patchset aims to fix this, and it works similar to free space caching
-> > for block groups.
-> > 
-> > I've run xfstests, and I also tested it with snapshot, balance etc.
-> > 
-> > More testing is appreciated!
-> > 
-> > Changelog v2:
-> > 
-> > - Rebased against latest btrfs-unstable tree
-> > - Fixed several small bugs.
+Maik Zumstrull wrote:
+> >> Bug at fs/btrfs/free-space-cache.c:1246
+> >> Bug type: invalid opcode: 0000
+> >> Kernel not tainted, running on an ASUSTek 1005HAG
+> >> EIP is at btrfs_add_free_space+0x285/0x39a [btrfs]
+> >
+> > You will probably need to provide a more complete copy of the panic
+> > message.
 > 
-> Great, is this pullable from somewhere?
+> I thought as much, but other than taking a picture of the screen, I
+> don't know how.
 
-Sorry, you did send the link in a later email.  This is the first thing
-in my .40 tree.
+Take a picture and ideally transcribe it after reboot.
 
--chris
+
+//Peter

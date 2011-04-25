@@ -1,68 +1,21 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: Re: [PATCH] Btrfs: fix missing mutex_unlock in btrfs_del_dir_entries_in_log()
-Date: Mon, 25 Apr 2011 08:23:40 +0900
-Message-ID: <4DB4B0FC.7080201@jp.fujitsu.com>
-References: <201104220905.AA00017@T-ITOH1.jp.fujitsu.com> <20110422124556.GV31675@twin.jikos.cz>
+From: David Morgado <dcrmorgado@gmail.com>
+Subject: Read Only snapshots
+Date: Mon, 25 Apr 2011 02:24:16 +0100
+Message-ID: <BANLkTinngHB+7LMmEGNfAggD0TAy49Fa-Q@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
-To: David Sterba <dave@jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110422124556.GV31675@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(2011/04/22 21:45), David Sterba wrote:
-> Hi,
-> 
-> On Fri, Apr 22, 2011 at 06:05:40PM +0900, Tsutomu Itoh wrote:
->> It is necessary to unlock mutex_lock before it return an error when
->> btrfs_alloc_path() fails.
-> 
-> good catch! however I suggest to move the mutex_lock after the
-> allocation and check, it'll be semantically equivalent to your change,
-> but a bit readable. quick grep for btrfs_alloc_path usage showed that
-> it's quite common to do path allocation/check before any real work is
-> started.
+Hi, btrfs-progs patches for read only snapshots aren't in Chris
+repository yet but btrfs already has support for that in place so,
+someone forgot about this?
 
-Even if mutex_lock() move to after btrfs_alloc_path(),
-we should call btrfs_end_log_tarns().
+It appears that some new patches are coming to Chris btrfs-progs (new
+tmp branch) so this was a nice opportunity to get those patches in.
 
-So I chose 'goto out_unlock'.
 
-Thanks,
-Tsutomu
+Thanks
 
-> 
-> 
-> david
-> 
->> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
->> index c50271a..f997ec0 100644
->> --- a/fs/btrfs/tree-log.c
->> +++ b/fs/btrfs/tree-log.c
->> @@ -2209,8 +2209,10 @@ int btrfs_del_dir_entries_in_log(struct btrfs_trans_handle *trans,
->>  
->>  	log = root->log_root;
->>  	path = btrfs_alloc_path();
->> -	if (!path)
->> -		return -ENOMEM;
->> +	if (!path) {
->> +		err = -ENOMEM;
->> +		goto out_unlock;
->> +	}
-> 
->         mutex_lock(...);
->>  
->>  	di = btrfs_lookup_dir_item(trans, log, path, dir->i_ino,
->>  				   name, name_len, -1);
->> @@ -2271,6 +2273,7 @@ int btrfs_del_dir_entries_in_log(struct btrfs_trans_handle *trans,
->>  	}
->>  fail:
->>  	btrfs_free_path(path);
->> +out_unlock:
->>  	mutex_unlock(&BTRFS_I(dir)->log_mutex);
->>  	if (ret == -ENOSPC) {
->>  		root->fs_info->last_trans_log_full_commit = trans->transid;
-> 
-> 
-
+David Morgado

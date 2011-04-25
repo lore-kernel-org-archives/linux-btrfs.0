@@ -1,50 +1,39 @@
-From: Valdis.Kletnieks@vt.edu
-Subject: Re: [PATCH 1/2] fs: add SEEK_HOLE and SEEK_DATA flags
-Date: Sun, 24 Apr 2011 23:11:20 -0400
-Message-ID: <125854.1303701080@localhost>
-References: <1303414954-3315-1-git-send-email-josef@redhat.com>
-Mime-Version: 1.0
-Content-Type: multipart/signed; boundary="==_Exmh_1303701080_5888P";
-	 micalg=pgp-sha1; protocol="application/pgp-signature"
-Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, hch@infradead.org
-To: Josef Bacik <josef@redhat.com>
+From: Chris Murphy <lists@colorremedies.com>
+Subject: Re: writes got stuck
+Date: Sun, 24 Apr 2011 23:28:27 -0600
+Message-ID: <E23DF119-94DD-4B78-B1D8-E73BCD1598BB@colorremedies.com>
+Mime-Version: 1.0 (Apple Message framework v1082.1)
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: Your message of "Thu, 21 Apr 2011 15:42:33 EDT."
-             <1303414954-3315-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---==_Exmh_1303701080_5888P
-Content-Type: text/plain; charset=us-ascii
 
-On Thu, 21 Apr 2011 15:42:33 EDT, Josef Bacik said:
+On Tue, 19 Apr 2011 05:08:05 -0700 Chris Mason wrote:
 
-> -SEEK_HOLE: this moves the file pos to the nearest hole in the file from the
-> given position. 
+>  
+> Excerpts from Cheng Shao's message of 2011-04-18 17:49:29 -0400:
+> > Hi there,
+> > 
+> > I'm periodically having issues with btrfs running in a Ubuntu VM using
+> > VirtualBox. After the VM has been running for a while (a couple days),
+> > any write operation seems getting stuck. The read seems totally fine.
+> > I tried a simple dd of a 4M file and it got stuck after writing 131K
+> > worth of data.
+> > 
+> > I don't know if this is btrfs related, or it is due to some bug in
+> > VritualBox. Could you guys provide information on how to debug this
+> > (collecting logs, getting dumps etc.)? Thanks a lot!
+> 
+> Which kernel are you running?
+> 
 
-Do we want the semantic to be "the nearest" hole?  Or did we really want "the
-next" hole?  Loops like a bullet loaded in the chamber and pointed at the
-programmer's foot if they aren't allowing for the fact that this can go
-*backwards* in the file if the closest hole is towards the beginning.  Good way
-to end up in an infinite loop or other messy...
+Not reproducible with Linux 2.6.38.2-9.fc15.x86_64, Fedora 15 beta2, VirtualBox 4.06 on a Mac OS X host. 
 
-Consider the obvious implementation of "skip over a hole" - lseek(SEEK_HOLE),
-lseek(SEEK_DATA).  and start reading data because we've skipped over the hole.
-Wrong - the second seek may have gone backwards if the data was only 4K away
-but the hole was 64K in size...
+Unrelated to btrfs but related to VirtualBox write hang, I did experience numerous hangs during installation of F15, which were apparently* resolved with kernel parameter clocksource=jiffies which is not related to btrfs, and was not previously required for F14 with earlier versions of VirtualBox.
 
 
---==_Exmh_1303701080_5888P
-Content-Type: application/pgp-signature
+Chris Murphy
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-Comment: Exmh version 2.5 07/13/2001
 
-iD8DBQFNtOZYcC3lWbTT17ARAkB2AKDk0fzyUs+QaUFRVh6wDYDvs5yiXgCg+9LO
-gbr1xY/QAHlMo7lFrxDHxUw=
-=/6Mr
------END PGP SIGNATURE-----
-
---==_Exmh_1303701080_5888P--
-
+* I say apparently with a sample of 8 failures without the option and 1 success with the option.

@@ -1,40 +1,38 @@
-From: Maik Zumstrull <maik@zumstrull.net>
-Subject: Re: Bug#624131: linux-image-2.6.39-rc4-686-pae: Can somewhat reliably
- produce kernel panic in btrfs code
-Date: Mon, 25 Apr 2011 22:18:41 +0200
-Message-ID: <BANLkTikyqs0Zx-V+0+431fEAA-XWsGo73g@mail.gmail.com>
-References: <BANLkTikiVMbH0BU4xTZirNDUu=GhG0ooyg@mail.gmail.com>
-	<1303762526.3032.296.camel@localhost>
-Mime-Version: 1.0
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH v2 0/7] Btrfs: New inode number allocator
+Date: Mon, 25 Apr 2011 16:44:20 -0400
+Message-ID: <1303764241-sup-9810@think>
+References: <4DB5378B.2070904@cn.fujitsu.com> <1303751742-sup-4551@think>
 Content-Type: text/plain; charset=UTF-8
-Cc: 624131@bugs.debian.org, linux-btrfs@vger.kernel.org
-To: Ben Hutchings <ben@decadent.org.uk>
+Cc: Li Zefan <lizf@cn.fujitsu.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1303762526.3032.296.camel@localhost>
+In-reply-to: <1303751742-sup-4551@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 25, 2011 at 22:15, Ben Hutchings <ben@decadent.org.uk> wrote:
-> On Mon, 2011-04-25 at 22:05 +0200, Maik Zumstrull wrote:
+Excerpts from Chris Mason's message of 2011-04-25 13:15:58 -0400:
+> Excerpts from Li Zefan's message of 2011-04-25 04:57:47 -0400:
+> > Currently btrfs stores the highest objectid of the fs tree, and it always
+> > returns (highest+1) inode number when we create a file, so inode numbers
+> > won't be reclaimed when we delete files, so we'll run out of inode numbers
+> > as we keep create/delete files in 32bits machines.
+> > 
+> > This patchset aims to fix this, and it works similar to free space caching
+> > for block groups.
+> > 
+> > I've run xfstests, and I also tested it with snapshot, balance etc.
+> > 
+> > More testing is appreciated!
+> > 
+> > Changelog v2:
+> > 
+> > - Rebased against latest btrfs-unstable tree
+> > - Fixed several small bugs.
+> 
+> Great, is this pullable from somewhere?
 
->> By simply stressing the system with some I/O, I can make it crash within
->> seconds. I'm not setting a higher severity because the bug is in an
->> experimental file system in an experimental kernel.
->
-> I assume this doesn't happen in 2.6.38?
+Sorry, you did send the link in a later email.  This is the first thing
+in my .40 tree.
 
-Not that I've noticed. I don't use that netbook much, but given how
-quickly it happens with .39, I say I would have noticed.
-
->> Here's the important bits (by my guess) I have on screen from the kernel panic:
->>
->> Bug at fs/btrfs/free-space-cache.c:1246
->> Bug type: invalid opcode: 0000
->> Kernel not tainted, running on an ASUSTek 1005HAG
->> EIP is at btrfs_add_free_space+0x285/0x39a [btrfs]
->
-> You will probably need to provide a more complete copy of the panic
-> message.
-
-I thought as much, but other than taking a picture of the screen, I
-don't know how. I am prepared to cooperate fully in the debugging
-effort, though. :-) You or they can tell me what is required.
+-chris

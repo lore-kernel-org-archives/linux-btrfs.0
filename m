@@ -1,76 +1,54 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: [GIT PULL] Btrfs plugging
-Date: Tue, 26 Apr 2011 09:52:16 -0400
-Message-ID: <1303825489-sup-1263@think>
+Subject: [GIT PULL] Btrfs updates
+Date: Tue, 26 Apr 2011 10:24:22 -0400
+Message-ID: <1303824244-sup-5010@think>
 Content-Type: text/plain; charset=UTF-8
 To: "Linus Torvalds" <torvalds@linux-foundation.org>,
 	"Linux Btrfs" <linux-btrfs@vger.kernel.org>,
 	"linux-kernel" <linux-kernel@vger.kernel.org>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi everyone,
 
-The for-linus branch of the btrfs unstable tree:
+The master branch of the btrfs unstable repo:
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git for-linus
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
 
-Has a single commit for the btrfs bio submission worker threads.  These
-gather up IOs when the checksumming or compression threads are done with
-the CPU intensive work.  Since the submission threads go one device at a
-time, they want to unplug after finishing off all the bios for one
-device.
+Has a few bug fixes.  Josef fixed up a crash in the free space cache
+error handling code, and it should close out the open bugs there.
 
-Jens ripped this code out when he did the plugging work, I had promised
-to redo it in the new framework.
+Li Zefan found a slab corruption in btrfs fitrim support.
 
-Instead of the normal shortlog:
+Otherwise, these are smaller fixes for corner cases.
 
-commit 211588ad1902df57beeeadc9b44546540fa4bd81
-Author: Chris Mason <chris.mason@oracle.com>
-Date:   Tue Apr 19 20:12:40 2011 -0400
+This is a separate pull from my plugging fixes because this is against
+2.6.38, while the plugging stuff was on top of 2.6.39-rc4.
 
-    Btrfs: do some plugging in the submit_bio threads
-    
-    The Btrfs submit bio threads have a small number of
-    threads responsible for pushing down bios we've collected
-    for a large number of devices.
-    
-    Since we do all the bios for a single device at once,
-    we want to make sure we unplug and send down the bios
-    for each device as we're done processing them.
-    
-    The new plugging API removed the btrfs code to
-    unplug while processing bios, this adds it back with
-    the new API.
-    
-    Signed-off-by: Chris Mason <chris.mason@oracle.com>
+David Sterba (1) commits (+1/-0):
+    btrfs: add missing spin_unlock to a rare exit path
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 309a57b..c7367ae 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -155,6 +155,15 @@ static noinline int run_scheduled_bios(struct btrfs_device *device)
- 	unsigned long limit;
- 	unsigned long last_waited = 0;
- 	int force_reg = 0;
-+	struct blk_plug plug;
-+
-+	/*
-+	 * this function runs all the bios we've collected for
-+	 * a particular device.  We don't want to wander off to
-+	 * another device without first sending all of these down.
-+	 * So, setup a plug here and finish it off before we return
-+	 */
-+	blk_start_plug(&plug);
- 
- 	bdi = blk_get_backing_dev_info(device->bdev);
- 	fs_info = device->dev_root->fs_info;
-@@ -294,6 +303,7 @@ loop_lock:
- 	spin_unlock(&device->io_lock);
- 
- done:
-+	blk_finish_plug(&plug);
- 	return 0;
- }
- 
+Itaru Kitayama (1) commits (+1/-1):
+    btrfs: fix wrong allocating flag when reading page
+
+Josef Bacik (2) commits (+8/-5):
+    Btrfs: free bitmaps properly when evicting the cache (+7/-4)
+    Btrfs: put the right bio if we have an error (+1/-1)
+
+Li Zefan (1) commits (+1/-1):
+    Btrfs: Free free_space item properly in btrfs_trim_block_group()
+
+Tsutomu Itoh (3) commits (+21/-8):
+    Btrfs: fix missing mutex_unlock in btrfs_del_dir_entries_in_log() (+5/-2)
+    Btrfs: cleanup error handling in inode.c (+9/-6)
+    Btrfs: check return value of kmalloc() (+7/-0)
+
+Total: (8) commits (+32/-15)
+
+ fs/btrfs/disk-io.c          |    1 +
+ fs/btrfs/extent-tree.c      |    4 ++++
+ fs/btrfs/extent_io.c        |    2 +-
+ fs/btrfs/free-space-cache.c |   13 ++++++++-----
+ fs/btrfs/inode.c            |   20 +++++++++++++-------
+ fs/btrfs/tree-log.c         |    7 +++++--
+ 6 files changed, 32 insertions(+), 15 deletions(-)

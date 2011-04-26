@@ -1,38 +1,29 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: [PATCH V6 3/3] btrfs: delay to insert the initial inode
-Date: Tue, 26 Apr 2011 13:38:52 +0800
-Message-ID: <4DB65A6C.9020402@cn.fujitsu.com>
-References: <4DB15488.50005@cn.fujitsu.com> <1303764553-sup-8007@think>
-Reply-To: miaox@cn.fujitsu.com
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [PATCH 0/5] Add user-space support for read-only snapshot creation.
+Date: Tue, 26 Apr 2011 13:42:31 +0800
+Message-ID: <4DB65B47.5060803@cn.fujitsu.com>
+References: <1303733730-sup-9388@think> <1303739282-1675-1-git-send-email-philipp.andreas@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com,
+	dcrmorgado@gmail.com
+To: Andreas Philipp <philipp.andreas@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1303764553-sup-8007@think>
+In-Reply-To: <1303739282-1675-1-git-send-email-philipp.andreas@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 25 Apr 2011 16:50:43 -0400, Chris Mason wrote:
-> Excerpts from Miao Xie's message of 2011-04-22 06:12:24 -0400:
->> Since we have implemented the delayed update of the inode, we can also
->> delayed to insert the initial inode, then we can merge the inode update
->> and the initial inode insertions to one insertion.
+Andreas Philipp wrote:
+> There is kernel side support for the creation of read-only snapshots
+> for some time now, but I did not find any patches for the userspace
+> btrfs utilites. Thus I created this patchset which is tested and
+> working with kernel version 2.6.39-rc2.
 > 
-> Awesome.  With things separate from the inode this should solve our oom
-> problems.  We might need to register a shrinker for the delayed inode
-> operations too, but that shouldn't be a problem.
-
-I think this shrinker may block the task which is reclaiming the memory, because
-the shrinker need some free memory to do extent buffer cow when it does delayed item
-insertion/deletion. So...
-
-But don't worry about it, those delayed nodes will be freed after the transaction
-is committed.
-
-Thanks
-Miao
-
-> 
-> -chris
+> Andreas Philipp (5):
+>   Add support for read-only subvolumes.
+>   Support the new parameters in do_clone(int argc, char** argv).
+>   Added support for an additional ioctl.
+>   Test the additional ioctl.
+>   Updated documentation for btrfs subvolume snapshot.
 > 
 
+Thanks for doing this!

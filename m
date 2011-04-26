@@ -1,7 +1,7 @@
 From: Andreas Philipp <philipp.andreas@gmail.com>
-Subject: [PATCH 5/5] Updated manpage for btrfs subvolume snapshot.
-Date: Tue, 26 Apr 2011 10:02:44 +0200
-Message-ID: <1303804964-2840-6-git-send-email-philipp.andreas@gmail.com>
+Subject: [PATCH 3/5] Support the new parameters in do_clone(int argc, char** argv).
+Date: Tue, 26 Apr 2011 10:02:42 +0200
+Message-ID: <1303804964-2840-4-git-send-email-philipp.andreas@gmail.com>
 References: <There is kernel side support for the creation of read-only snapshots>
  <1303804964-2840-1-git-send-email-philipp.andreas@gmail.com>
 Cc: Andreas Philipp <philipp.andreas@gmail.com>,
@@ -12,41 +12,31 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1303804964-2840-1-git-send-email-philipp.andreas@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Now 'btrfs subvolume snapshot' takes not two but only at least two
+parameters. Additionally, the help message is updated accordingly.
 
 Signed-off-by: Andreas Philipp <philipp.andreas@gmail.com>
 ---
- man/btrfs.8.in |   11 ++++++-----
- 1 files changed, 6 insertions(+), 5 deletions(-)
+ btrfs.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index 26ef982..b59bc6f 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -5,7 +5,7 @@
- .SH NAME
- btrfs \- control a btrfs filesystem
- .SH SYNOPSIS
--\fBbtrfs\fP \fBsubvolume snapshot\fP\fI <source> [<dest>/]<name>\fP
-+\fBbtrfs\fP \fBsubvolume snapshot\fP\fI [-r] <source> [<dest>/]<name>\fP
- .PP
- \fBbtrfs\fP \fBsubvolume delete\fP\fI <subvolume>\fP
- .PP
-@@ -70,10 +70,11 @@ command.
- .SH COMMANDS
- .TP
- 
--\fBsubvolume snapshot\fR\fI <source> [<dest>/]<name>\fR
--Create a writable snapshot of the subvolume \fI<source>\fR with the name
--\fI<name>\fR in the \fI<dest>\fR directory. If \fI<source>\fR is not a
--subvolume, \fBbtrfs\fR returns an error.
-+\fBsubvolume snapshot\fR\fI [-r] <source> [<dest>/]<name>\fR
-+Create a writable/readonly snapshot of the subvolume \fI<source>\fR with the
-+name \fI<name>\fR in the \fI<dest>\fR directory. If \fI<source>\fR is not a
-+subvolume, \fBbtrfs\fR returns an error. If \fI-r\fR is given, the snapshot
-+will be readonly.
- .TP
- 
- \fBsubvolume delete\fR\fI <subvolume>\fR
+diff --git a/btrfs.c b/btrfs.c
+index 46314cf..f70d64b 100644
+--- a/btrfs.c
++++ b/btrfs.c
+@@ -44,9 +44,9 @@ static struct Command commands[] = {
+ 	/*
+ 		avoid short commands different for the case only
+ 	*/
+-	{ do_clone, 2,
+-	  "subvolume snapshot", "<source> [<dest>/]<name>\n"
+-		"Create a writable snapshot of the subvolume <source> with\n"
++	{ do_clone, -2,
++	  "subvolume snapshot", "[-r] <source> [<dest>/]<name>\n"
++		"Create a writable/readonly snapshot of the subvolume <source> with\n"
+ 		"the name <name> in the <dest> directory."
+ 	},
+ 	{ do_delete_subvolume, 1,
 -- 
 1.7.4.1
 

@@ -1,132 +1,77 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH 1/5] Add support for read-only subvolumes.
-Date: Mon, 25 Apr 2011 19:24:29 -0400
-Message-ID: <1303773807-sup-7001@think>
-References: <1303733730-sup-9388@think> <1303739282-1675-1-git-send-email-philipp.andreas@gmail.com> <1303739282-1675-2-git-send-email-philipp.andreas@gmail.com> <4DB5E8F6.1020807@libero.it>
-Content-Type: text/plain; charset=UTF-8
-Cc: Andreas Philipp <philipp.andreas@gmail.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	lizf <lizf@cn.fujitsu.com>
-To: Goffredo Baroncelli <kreijack@libero.it>
+From: Ben Hutchings <ben@decadent.org.uk>
+Subject: Re: Bug#624131: linux-image-2.6.39-rc4-686-pae: Can somewhat
+ reliably produce kernel panic in btrfs code
+Date: Tue, 26 Apr 2011 04:59:03 +0100
+Message-ID: <1303790343.3032.352.camel@localhost>
+References: <BANLkTikiVMbH0BU4xTZirNDUu=GhG0ooyg@mail.gmail.com>
+	 <1303762526.3032.296.camel@localhost>
+	 <BANLkTikyqs0Zx-V+0+431fEAA-XWsGo73g@mail.gmail.com>
+	 <20110425205008.11135.qmail@stuge.se>
+	 <BANLkTi=VMW1bsOduH2Xn27NUQkpHiHngqw@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg="pgp-sha512"; protocol="application/pgp-signature"; boundary="=-JySlvyllXgDebeB1SlVu"
+Cc: Maik Zumstrull <maik@zumstrull.net>, 624131@bugs.debian.org,
+	linux-btrfs@vger.kernel.org, cwillu <cwillu@cwillu.com>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <4DB5E8F6.1020807@libero.it>
+In-Reply-To: <BANLkTi=VMW1bsOduH2Xn27NUQkpHiHngqw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Goffredo Baroncelli's message of 2011-04-25 17:34:46 -0400:
-> Hi Andreas,
-> 
-> On 04/25/2011 03:47 PM, Andreas Philipp wrote:
-> > Use BTRFS_IOC_CREATE_SNAP_V2 instead of BTRFS_IOC_CREATE_SNAP and add
-> > an option for the creation of a readonly snapshot.
-> > 
-> > Signed-off-by: Andreas Philipp <philipp.andreas@gmail.com>
-> > ---
-> >  btrfs_cmds.c |   44 ++++++++++++++++++++++++++++++++++++--------
-> >  1 files changed, 36 insertions(+), 8 deletions(-)
-> > 
-> > diff --git a/btrfs_cmds.c b/btrfs_cmds.c
-> > index 8031c58..baec675 100644
-> > --- a/btrfs_cmds.c
-> > +++ b/btrfs_cmds.c
-> > @@ -43,7 +43,7 @@
-> >  
-> >  #ifdef __CHECKER__
-> 
-> It is not related to your parch.. but does anyone know why we re-define
-> some constants if __CHECKER__ is defined ?
 
-This is old support for the sparse program, which finds a good number of
-bugs.
+--=-JySlvyllXgDebeB1SlVu
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-> 
-> >  #define BLKGETSIZE64 0
-> > -#define BTRFS_IOC_SNAP_CREATE 0
-> > +#define BTRFS_IOC_SNAP_CREATE_V2 0
-> >  #define BTRFS_VOL_NAME_MAX 255
-> >  struct btrfs_ioctl_vol_args { char name[BTRFS_VOL_NAME_MAX]; };
-> >  static inline int ioctl(int fd, int define, void *arg) { return 0; }
-> > @@ -310,13 +310,34 @@ int do_subvol_list(int argc, char **argv)
-> >  int do_clone(int argc, char **argv)
-> >  {
-> >      char    *subvol, *dst;
-> > -    int    res, fd, fddst, len;
-> > +    int    res, fd, fddst, len, optind = 0, readonly = 0;
-> >      char    *newname;
-> >      char    *dstdir;
-> >  
-> > -    subvol = argv[1];
-> > -    dst = argv[2];
-> > -    struct btrfs_ioctl_vol_args    args;
-> > +    while(1) {
-> > +        int c = getopt(argc, argv, "r");
-> > +        if (c < 0)
-> > +            break;
-> > +        switch(c) {
-> > +            case 'r':
-> > +                optind++;
-> > +                readonly = 1;
-> > +                break;
-> > +                    default:
-> > +                fprintf(stderr, "Invalid arguments for subvolume snapshot\n");
-> > +                free(argv);
-> > +                return 1;
-> > +        }
-> > +    }
-> > +    if (argc - optind < 2) {
-> > +        fprintf(stderr, "Invalid arguments for defragment\n");
->                                                        ^^^^^^^^^^^^
-> 
-> May be that you need to replace "defragment" with "subvolume snapshot" ?
-> 
-> > +        free(argv);
-> > +        return 1;
-> > +    }
-> > +
-> > +    subvol = argv[optind+1];
-> > +    dst = argv[optind+2];
-> > +    struct btrfs_ioctl_vol_args_v2    args;
-> 
-> Does the "standard C" allow to define a variable in the middle in a
-> function instead of in the begin ?
-> Anyway, even not required, I suggest to fill "args" by zero.
+On Mon, 2011-04-25 at 15:05 -0600, cwillu wrote:
+> On Mon, Apr 25, 2011 at 2:50 PM, Peter Stuge <peter@stuge.se> wrote:
+> > Maik Zumstrull wrote:
+> >> >> Bug at fs/btrfs/free-space-cache.c:1246
+> >> >> Bug type: invalid opcode: 0000
+> >> >> Kernel not tainted, running on an ASUSTek 1005HAG
+> >> >> EIP is at btrfs_add_free_space+0x285/0x39a [btrfs]
+> >> >
+> >> > You will probably need to provide a more complete copy of the panic
+> >> > message.
+> >>
+> >> I thought as much, but other than taking a picture of the screen, I
+> >> don't know how.
+> >
+> > Take a picture and ideally transcribe it after reboot.
+>=20
+> Known issue;  josef sent a patch
+> (http://permalink.gmane.org/gmane.comp.file-systems.btrfs/10261) that
+> should fix it, or you can mount with clear_cache on each boot as a
+> workaround.
 
-I'd prefer all the variables are at the stop of a scope.
+This fix doesn't seem to be in your for-linux branch yet.  Please can
+you ensure that this (or an alternate fix) is included in 2.6.39.
 
-> 
-> +    memset(&args, 0, sizeog(args));
-> 
-> >  
-> >      res = test_issubvolume(subvol);
-> >      if(res<0){
-> > @@ -371,12 +392,19 @@ int do_clone(int argc, char **argv)
-> >          fprintf(stderr, "ERROR: can't access to '%s'\n", dstdir);
-> >          return 12;
-> >      }
-> > +    
-> > +    if (readonly) {
-> > +        args.flags |= BTRFS_SUBVOL_RDONLY;
-> > +        printf("Create a readonly snapshot of '%s' in '%s/%s'\n",
-> > +               subvol, dstdir, newname);
-> > +    }
-> > +    else
-> > +        printf("Create a snapshot of '%s' in '%s/%s'\n",
-> > +               subvol, dstdir, newname);
-> >  
-> It is not required, but I suggest to use also in the "else" the brackets
-> ( {} ).
+Ben.
 
-Yes please.
+--=20
+Ben Hutchings
+Once a job is fouled up, anything done to improve it makes it worse.
 
-> 
-> > -    printf("Create a snapshot of '%s' in '%s/%s'\n",
-> > -           subvol, dstdir, newname);
-> >      args.fd = fd;
-> >      strcpy(args.name, newname);
-> > -    res = ioctl(fddst, BTRFS_IOC_SNAP_CREATE, &args);
-> > +    res = ioctl(fddst, BTRFS_IOC_SNAP_CREATE_V2, &args);
-> >  
-> >      close(fd);
-> >      close(fddst);
-> 
+--=-JySlvyllXgDebeB1SlVu
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
 
--chris
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iQIVAwUATbZDB+e/yOyVhhEJAQpQixAAodOHCCPXZnK+lzwCP9YG41v190VZmc7u
+Rq1bP6X0AVTcnjfEqP653CfkbPFtqsyadKMhlcR63ALj5gndJFrrtQgYAoXNPEmC
+uDgnHeP8nvVttRHkUi2iSBO1+qlFaXl3wPX9ztLoOl7Uuvy8eEDOT++md3hsE1GY
+6qUxmyoqKfXVXezDPLeK1nRwx68Igwt8ndMTKIS149gof3Rlo/3E+RnDswgizKph
+pUOu/rEr0gNp5XMLQWln9YXbES3muddkXDKR0CSAajY+KZTF3LoM68piOhY9XeFT
+ogvQNA1L+SkvhbX/k5BsFRfCEUgp0YGedfIj9BsOXZgiPTzKx7vC/GWLWzcz470B
+J6Je7fzpYE7QIJ55m9lL+AC6NpSdTdYJxYMrXGFSK7tkoFvhuyf4S1Spby6kWOBN
+ODgMeVcBf8H+WlZyPU4J/fep1vxcsVscx2K1IwIo9qHViBK9zPnwYmDhYS+wGqQ+
+D6QqrPSfYHyJQf41DRCoqQN0ZtFAylyEDxRnLcS54IIhuRiPd4f3yR0Z66/kI0d5
+eooInkQqiZ9uxJWjMPHj6+t7Jc9KklVhlxugkyAZlKRZv32nrvG3qhqpY+nwRf1Q
+PKSfKEKuXz56rW3X0mdBZulDBKcJ/K1ZjA0fEnrVwUA4i1dIs33t0uqCGoBEnl6W
+Sg60uqXL6jA=
+=sa2n
+-----END PGP SIGNATURE-----
+
+--=-JySlvyllXgDebeB1SlVu--

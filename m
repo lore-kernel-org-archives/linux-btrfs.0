@@ -1,28 +1,40 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: [PATCH 1/5] Add support for read-only subvolumes.
-Date: Tue, 26 Apr 2011 14:06:07 +0800
-Message-ID: <4DB660CF.8050509@cn.fujitsu.com>
-References: <1303733730-sup-9388@think> <1303739282-1675-1-git-send-email-philipp.andreas@gmail.com> <1303739282-1675-2-git-send-email-philipp.andreas@gmail.com> <4DB5E8F6.1020807@libero.it>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Goffredo Baroncelli <kreijack@libero.it>,
-	Andreas Philipp <philipp.andreas@gmail.com>,
-	linux-btrfs@vger.kernel.org, chris.mason@oracle.com
-To: kreijack@inwind.it
+From: Andreas Philipp <philipp.andreas@gmail.com>
+Subject: [PATCH v2 0/5] Add user-space support for read-only snapshot creation.
+Date: Tue, 26 Apr 2011 10:02:39 +0200
+Message-ID: <1303804964-2840-1-git-send-email-philipp.andreas@gmail.com>
+References: <There is kernel side support for the creation of read-only snapshots>
+Cc: Andreas Philipp <philipp.andreas@gmail.com>,
+	chris.mason@oracle.com, dcrmorgado@gmail.com, kreijack@libero.it,
+	lizf@cn.fujitsu.com
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DB5E8F6.1020807@libero.it>
+In-Reply-To: <There is kernel side support for the creation of read-only snapshots>
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> +	subvol = argv[optind+1];
->> +	dst = argv[optind+2];
->> +	struct btrfs_ioctl_vol_args_v2	args;
-> 
-> Does the "standard C" allow to define a variable in the middle in a
-> function instead of in the begin ?
-> Anyway, even not required, I suggest to fill "args" by zero.
-> 
-> +	memset(&args, 0, sizeog(args));
-> 
+Changelog v2:
+  - Fixed uninitialized variable (args).
+  - Corrected order of patches to make everything compile.
+  - Fixed some style errors.
 
-It's necessary, otherwise args.unused[4] and args.transid will have
-arbitrary value.
+There is kernel side support for the creation of read-only snapshots
+for some time now, but I did not find any patches for the userspace
+btrfs utilites. Thus I created this patchset which is tested and
+working with kernel version 2.6.39-rc2.
+
+Andreas Philipp (5):
+  Added support for an additional ioctl.
+  Add support for read-only subvolumes.
+  Support the new parameters in do_clone(int argc, char** argv).
+  Test the additional ioctl.
+  Updated manpage for btrfs subvolume snapshot.
+
+ btrfs.c        |    6 +++---
+ btrfs_cmds.c   |   48 ++++++++++++++++++++++++++++++++++++++++--------
+ ioctl-test.c   |    1 +
+ ioctl.h        |   14 ++++++++++++++
+ man/btrfs.8.in |   11 ++++++-----
+ 5 files changed, 64 insertions(+), 16 deletions(-)
+
+-- 
+1.7.4.1
+

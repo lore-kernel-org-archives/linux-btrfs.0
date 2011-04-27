@@ -1,199 +1,91 @@
-From: "Yan, Zheng " <yanzheng@21cn.com>
-Subject: Re: btrfs-convert crashes
-Date: Wed, 27 Apr 2011 20:05:49 +0800
-Message-ID: <BANLkTimA-8YAvAFS257tG-j=Mf1vR-N5ig@mail.gmail.com>
-References: <4DB7A796.90800@cox.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Brian Parma <freecode@cox.net>
+From: Marco Neubauer <icetea1@gmx.net>
+Subject: kernel BUG at fs/btrfs/inode.c:2271!
+Date: Wed, 27 Apr 2011 20:52:00 +0200
+Message-ID: <383ECFA9-9E51-4CCD-BE24-21FD30813217@gmx.net>
+Mime-Version: 1.0 (Apple Message framework v1084)
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DB7A796.90800@cox.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 27, 2011 at 1:20 PM, Brian Parma <freecode@cox.net> wrote:
-> I have a 1.5 TB (1,475,720,773,632) partition that I wanted to conver=
-t from
-> ext4 to btrfs. =C2=A0It is currently used as / for ubuntu 10.10.
->
-> I booted into 11.04 beta2 and tried a 'btrfs-convert /dev/sdc1', but =
-after
-> about 20 minutes it segfaulted.
->
-> I performed a:
->
-> sck.ext4 -cDfty -C 0 /dev/sdc1
->
->
-> After everything was clean, I downloaded the debugging symbols for
-> btrfs-convert and tried again. =C2=A0Below is the 'bt full' output. =C2=
-=A0I don't have
-> enough free space to copy all the data off, create a fresh btrfs part=
-ition,
-> and copy everything back on (I have backups of important stuff). =C2=A0=
-Is there
-> something else I can try to get this to work?
->
-> Brian
->
+Hi,
 
-The crash was caused by the hard links per directory limit in btrfs.
-In short, your ext4 is not convertible.
+this is happening mostly every night. I can't reproduce it right now.
+vanilla kernel 2.6.38.4
 
-> at: http://pastebin.com/NEwJNzuP
->
->
-> #0 =C2=A00x00007ffff7444d05 in raise () from /lib/x86_64-linux-gnu/li=
-bc.so.6
-> No symbol table info available.
-> #1 =C2=A00x00007ffff7448ab6 in abort () from /lib/x86_64-linux-gnu/li=
-bc.so.6
-> No symbol table info available.
-> #2 =C2=A00x000000000040502c in btrfs_extend_item (trans=3D<value opti=
-mized out>,
-> root=3D0x633920, path=3D<value optimized out>, data_size=3D27) at ctr=
-ee.c:2525
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0slot =3D<value optimized out>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0slot_orig =3D<value optimized out>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0leaf =3D 0x1955250
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0nritems =3D 1
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0data_end =3D<value optimized out>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0old_data =3D<value optimized out>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0i =3D<value optimized out>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0__PRETTY_FUNCTION__ =3D "btrfs_extend_item=
-"
-> #3 =C2=A00x000000000040e32d in btrfs_insert_inode_ref (trans=3D0xc9ef=
-10,
-> root=3D0x633920, name=3D0xcfa314 "gtfntf.f.svn-base", name_len=3D17,
-> =C2=A0 =C2=A0inode_objectid=3D<value optimized out>, ref_objectid=3D<=
-value optimized out>,
-> index=3D150) at inode-item.c:135
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0old_size =3D 3945
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0path =3D 0x1639aa0
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0key =3D {objectid =3D 37361107, type =3D 1=
-2 'f', offset =3D 37359706}
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0ref =3D<value optimized out>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0ptr =3D<value optimized out>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0ret =3D<value optimized out>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0ins_len =3D 27
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0__PRETTY_FUNCTION__ =3D "btrfs_insert_inod=
-e_ref"
-> #4 =C2=A00x0000000000413fff in dir_iterate_proc (dir=3D<value optimiz=
-ed out>,
-> entry=3D<value optimized out>, old=3D0xcfa30c, offset=3D<value optimi=
-zed out>,
-> =C2=A0 =C2=A0blocksize=3D<value optimized out>, buf=3D<value optimize=
-d out>,
-> priv_data=3D0x7fffffffe370) at convert.c:289
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0ret =3D<value optimized out>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0file_type =3D<value optimized out>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0objectid =3D 37361107
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0dotdot =3D ".."
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0location =3D {objectid =3D 37361107, type =
-=3D 1 '=01', offset =3D 0}
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0dirent =3D 0xcfa30c
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0idata =3D 0x7fffffffe370
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0__PRETTY_FUNCTION__ =3D "dir_iterate_proc"
-> #5 =C2=A00x00007ffff7bbdc13 in ext2fs_process_dir_block () from
-> /lib/x86_64-linux-gnu/libext2fs.so.2
-> No symbol table info available.
-> #6 =C2=A00x00007ffff7bbac02 in ext2fs_block_iterate2 () from
-> /lib/x86_64-linux-gnu/libext2fs.so.2
-> No symbol table info available.
-> #7 =C2=A00x00007ffff7bbdfb8 in ext2fs_dir_iterate2 () from
-> /lib/x86_64-linux-gnu/libext2fs.so.2
-> No symbol table info available.
-> #8 =C2=A00x000000000041689d in create_dir_entries (devname=3D0x7fffff=
-ffe897
-> "/dev/sdc1", datacsum=3D1, packing=3D1, noxattr=3D0) at convert.c:322
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0err =3D<value optimized out>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0data =3D {trans =3D 0xc9ef10, root =3D 0x6=
-33920, inode =3D 0x7fffffffe1c0,
-> objectid =3D 37359706, index_cnt =3D 150, parent =3D 37359705, errcod=
-e =3D 0}
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0ret =3D<value optimized out>
-> #9 =C2=A0copy_single_inode (devname=3D0x7fffffffe897 "/dev/sdc1", dat=
-acsum=3D1,
-> packing=3D1, noxattr=3D0) at convert.c:1072
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0ret =3D<value optimized out>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0btrfs_inode =3D {generation =3D 1, transid=
- =3D 140737354044640, size =3D
-> 4994, nbytes =3D 0, block_group =3D 0, nlink =3D 1, uid =3D 1000, gid=
- =3D 1000, mode =3D
-> 16877,
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0rdev =3D 0, flags =3D 0, sequence =3D=
- 140737351933932, reserved =3D {0,
-> 140737354040256, 140733193388033, 0}, atime =3D {sec =3D 1303466526, =
-nsec =3D 0},
-> ctime =3D {
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0sec =3D 1296464377, nsec =3D=
- 0}, mtime =3D {sec =3D 1296464377, nsec =3D
-> 0}, otime =3D {sec =3D 0, nsec =3D 0}}
-> #10 copy_inodes (devname=3D0x7fffffffe897 "/dev/sdc1", datacsum=3D1, =
-packing=3D1,
-> noxattr=3D0) at convert.c:1154
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0ret =3D<value optimized out>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0err =3D<value optimized out>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0ext2_scan =3D 0xce2300
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0ext2_ino =3D 37359452
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0objectid =3D 37359706
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0ext2_inode =3D {i_mode =3D 16877, i_uid =3D=
- 1000, i_size =3D 16384, i_atime =3D
-> 1303466526, i_ctime =3D 1296464377, i_mtime =3D 1296464377, i_dtime =3D=
- 0, i_gid =3D
-> 1000,
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0i_links_count =3D 2, i_blocks =3D 3=
-2, i_flags =3D 528384, osd1 =3D {linux1
-> =3D {l_i_version =3D 1981}, hurd1 =3D {h_i_translator =3D 1981}}, i_b=
-lock =3D {193290,
-> 4, 0,
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A00, 1, 149430439, 1, 3, 14943=
-0464, 0, 0, 0, 0, 0, 0}, i_generation
-> =3D 2854948622, i_file_acl =3D 0, i_dir_acl =3D 0, i_faddr =3D 0, osd=
-2 =3D {linux2 =3D {
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0l_i_blocks_hi =3D 0, =
-l_i_file_acl_high =3D 0, l_i_uid_high =3D 0,
-> l_i_gid_high =3D 0, l_i_reserved2 =3D 0}, hurd2 =3D {h_i_frag =3D 0 '=
-=EF=BF=BD',
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0h_i_fsize =3D 0 '=EF=BF=
-=BD', h_i_mode_high =3D 0, h_i_uid_high =3D 0,
-> h_i_gid_high =3D 0, h_i_author =3D 0}}}
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0trans =3D 0xc9ef10
-> #11 do_convert (devname=3D0x7fffffffe897 "/dev/sdc1", datacsum=3D1, p=
-acking=3D1,
-> noxattr=3D0) at convert.c:2411
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0i =3D<value optimized out>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0fd =3D 6
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0ret =3D<value optimized out>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0blocksize =3D 4096
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0blocks =3D {9258, 9259, 9260, 9261, 9284, =
-9285, 9286}
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0total_bytes =3D<value optimized out>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0super_bytenr =3D 37920768
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0ext2_fs =3D 0x622010
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0root =3D 0x633920
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0ext2_root =3D<value optimized out>
-> #12 0x0000000000418333 in main (argc=3D<value optimized out>, argv=3D=
-<value
-> optimized out>) at convert.c:2867
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0ret =3D<value optimized out>
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0packing =3D 1
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0noxattr =3D 0
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0datacsum =3D 1
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0rollback =3D 0
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0file =3D 0x7fffffffe897 "/dev/sdc1"
->
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =C2=A0http://vger.kernel.org/majordomo-info.ht=
-ml
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Apr 27 03:41:54 mainframe kernel: ------------[ cut here ]------------
+Apr 27 03:41:54 mainframe kernel: WARNING: at fs/btrfs/inode.c:6488 btrfs_truncate+0x49/0x580()
+Apr 27 03:41:54 mainframe kernel: Hardware name: System Product Name
+Apr 27 03:41:54 mainframe kernel: Modules linked in: md4 cifs hwmon_vid coretemp vboxnetadp vboxnetflt vboxdrv firewire_ohci firewire_core i915 asus_atk0110 hwmon drm_kms_helper video backlight
+Apr 27 03:41:54 mainframe kernel: Pid: 32572, comm: updatedb Not tainted 2.6.38.4 #1
+Apr 27 03:41:54 mainframe kernel: Call Trace:
+Apr 27 03:41:54 mainframe kernel: [<ffffffff8103f59b>] ? warn_slowpath_common+0x7b/0xc0
+Apr 27 03:41:54 mainframe kernel: [<ffffffff8124a1d9>] ? btrfs_truncate+0x49/0x580
+Apr 27 03:41:54 mainframe kernel: [<ffffffff8124a863>] ? btrfs_iget+0x53/0x4a0
+Apr 27 03:41:54 mainframe kernel: [<ffffffff8124af09>] ? btrfs_orphan_cleanup+0x259/0x340
+Apr 27 03:41:54 mainframe kernel: [<ffffffff8124a863>] ? btrfs_iget+0x53/0x4a0
+Apr 27 03:41:54 mainframe kernel: [<ffffffff8124b3f8>] ? btrfs_lookup_dentry+0x408/0x480
+Apr 27 03:41:54 mainframe kernel: [<ffffffff81263123>] ? set_extent_bit+0x143/0x520
+Apr 27 03:41:54 mainframe kernel: [<ffffffff8124b479>] ? btrfs_lookup+0x9/0x20
+Apr 27 03:41:54 mainframe kernel: [<ffffffff810f628c>] ? d_alloc_and_lookup+0x3c/0x90
+Apr 27 03:41:54 mainframe kernel: [<ffffffff811006ae>] ? d_lookup+0x2e/0x60
+Apr 27 03:41:54 mainframe kernel: [<ffffffff810f8002>] ? do_lookup+0x1a2/0x2e0
+Apr 27 03:41:54 mainframe kernel: [<ffffffff810f921a>] ? link_path_walk+0x53a/0xa30
+Apr 27 03:41:54 mainframe kernel: [<ffffffff810f6e22>] ? path_init_rcu+0xa2/0x200
+Apr 27 03:41:54 mainframe kernel: [<ffffffff810f99d6>] ? do_path_lookup+0x56/0x130
+Apr 27 03:41:54 mainframe kernel: [<ffffffff810fa75a>] ? user_path_at+0x5a/0xb0
+Apr 27 03:41:54 mainframe kernel: [<ffffffff810f99e1>] ? do_path_lookup+0x61/0x130
+Apr 27 03:41:54 mainframe kernel: [<ffffffff810effb0>] ? cp_new_stat+0xe0/0x100
+Apr 27 03:41:54 mainframe kernel: [<ffffffff810f00b0>] ? vfs_fstatat+0x40/0x80
+Apr 27 03:41:54 mainframe kernel: [<ffffffff810f017f>] ? sys_newlstat+0x1f/0x50
+Apr 27 03:41:54 mainframe kernel: [<ffffffff81002e7b>] ? system_call_fastpath+0x16/0x1b
+Apr 27 03:41:54 mainframe kernel: ---[ end trace 71530b801e4a68c0 ]---
+Apr 27 03:41:54 mainframe kernel: ------------[ cut here ]------------
+Apr 27 03:41:54 mainframe kernel: kernel BUG at fs/btrfs/inode.c:2271!
+Apr 27 03:41:54 mainframe kernel: invalid opcode: 0000 [#1] PREEMPT SMP 
+Apr 27 03:41:54 mainframe kernel: last sysfs file: /sys/devices/pci0000:00/0000:00:1f.2/host2/target2:0:0/2:0:0:0/block/sdd/sdd2/stat
+Apr 27 03:41:54 mainframe kernel: CPU 1 
+Apr 27 03:41:54 mainframe kernel: Modules linked in: md4 cifs hwmon_vid coretemp vboxnetadp vboxnetflt vboxdrv firewire_ohci firewire_core i915 asus_atk0110 hwmon drm_kms_helper video backlight
+Apr 27 03:41:54 mainframe kernel: 
+Apr 27 03:41:54 mainframe kernel: Pid: 32572, comm: updatedb Tainted: G        W   2.6.38.4 #1 System manufacturer System Product Name/V-P5G45
+Apr 27 03:41:54 mainframe kernel: RIP: 0010:[<ffffffff81246006>]  [<ffffffff81246006>] btrfs_orphan_del+0xe6/0xf0
+Apr 27 03:41:54 mainframe kernel: RSP: 0018:ffff8801ad615ab8  EFLAGS: 00010282
+Apr 27 03:41:54 mainframe kernel: RAX: 00000000fffffffe RBX: ffff880170fe9d60 RCX: ffff88022f84abd0
+Apr 27 03:41:54 mainframe kernel: RDX: ffff8800c7a95ce8 RSI: ffff88022f84aea0 RDI: ffff88022f84aea0
+Apr 27 03:41:54 mainframe kernel: RBP: 0000000000000000 R08: 0000000000000000 R09: ffff8801ad615930
+Apr 27 03:41:54 mainframe kernel: R10: 0000000000000025 R11: 0000000000000000 R12: ffff88022b40bc80
+Apr 27 03:41:54 mainframe kernel: R13: ffff88022ef06000 R14: ffff88022ef06330 R15: 0000000000000001
+Apr 27 03:41:54 mainframe kernel: FS:  00007f4f36914700(0000) GS:ffff8800c7a80000(0000) knlGS:0000000000000000
+Apr 27 03:41:54 mainframe kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+Apr 27 03:41:54 mainframe kernel: CR2: 00000000006ff228 CR3: 00000001bfc26000 CR4: 00000000000406e0
+Apr 27 03:41:54 mainframe kernel: DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+Apr 27 03:41:54 mainframe kernel: DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+Apr 27 03:41:54 mainframe kernel: Process updatedb (pid: 32572, threadinfo ffff8801ad614000, task ffff880217171350)
+Apr 27 03:41:54 mainframe kernel: Stack:
+Apr 27 03:41:54 mainframe kernel: ffff88022ef06000 ffff88022ef06000 ffff88022f84ac60 ffff88022ef06330
+Apr 27 03:41:54 mainframe kernel: ffff88022ef06338 ffff8801ad615b58 ffff8801ad615b18 ffffffff8124aed0
+Apr 27 03:41:54 mainframe kernel: ffff8801ad615b88 ffff880170fe9d60 ffff88022b40bc80 000000015014c5fa
+Apr 27 03:41:54 mainframe kernel: Call Trace:
+Apr 27 03:41:54 mainframe kernel: [<ffffffff8124aed0>] ? btrfs_orphan_cleanup+0x220/0x340
+Apr 27 03:41:54 mainframe kernel: [<ffffffff8124a863>] ? btrfs_iget+0x53/0x4a0
+Apr 27 03:41:54 mainframe kernel: [<ffffffff8124b3f8>] ? btrfs_lookup_dentry+0x408/0x480
+Apr 27 03:41:54 mainframe kernel: [<ffffffff81263123>] ? set_extent_bit+0x143/0x520
+Apr 27 03:41:54 mainframe kernel: [<ffffffff8124b479>] ? btrfs_lookup+0x9/0x20
+Apr 27 03:41:54 mainframe kernel: [<ffffffff810f628c>] ? d_alloc_and_lookup+0x3c/0x90
+Apr 27 03:41:54 mainframe kernel: [<ffffffff811006ae>] ? d_lookup+0x2e/0x60
+Apr 27 03:41:54 mainframe kernel: [<ffffffff810f8002>] ? do_lookup+0x1a2/0x2e0
+Apr 27 03:41:54 mainframe kernel: [<ffffffff810f921a>] ? link_path_walk+0x53a/0xa30
+Apr 27 03:41:54 mainframe kernel: [<ffffffff810f6e22>] ? path_init_rcu+0xa2/0x200
+Apr 27 03:41:54 mainframe kernel: [<ffffffff810f99d6>] ? do_path_lookup+0x56/0x130
+Apr 27 03:41:54 mainframe kernel: [<ffffffff810fa75a>] ? user_path_at+0x5a/0xb0
+Apr 27 03:41:54 mainframe kernel: [<ffffffff810f99e1>] ? do_path_lookup+0x61/0x130
+Apr 27 03:41:54 mainframe kernel: [<ffffffff810effb0>] ? cp_new_stat+0xe0/0x100
+Apr 27 03:41:54 mainframe kernel: [<ffffffff810f00b0>] ? vfs_fstatat+0x40/0x80
+Apr 27 03:41:54 mainframe kernel: [<ffffffff810f017f>] ? sys_newlstat+0x1f/0x50
+Apr 27 03:41:54 mainframe kernel: [<ffffffff81002e7b>] ? system_call_fastpath+0x16/0x1b
+Apr 27 03:41:54 mainframe kernel: Code: 4c 8b 6c 24 20 4c 8b 74 24 28 4c 8b 7c 24 30 48 83 c4 38 c3 90 48 8b 93 a8 00 00 00 4c 89 ee 4c 89 e7 e8 ee f5 02 00 85 c0 74 b8 <0f> 0b eb fe 66 0f 1f 44 00 00 53 48 8d 86 38 03 00 00 48 89 f3 
+Apr 27 03:41:54 mainframe kernel: RIP  [<ffffffff81246006>] btrfs_orphan_del+0xe6/0xf0
+Apr 27 03:41:54 mainframe kernel: RSP <ffff8801ad615ab8>
+Apr 27 03:41:54 mainframe kernel: ---[ end trace 71530b801e4a68c1 ]---
+
+-marco

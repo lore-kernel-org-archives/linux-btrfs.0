@@ -1,91 +1,80 @@
-From: Marco Neubauer <icetea1@gmx.net>
-Subject: kernel BUG at fs/btrfs/inode.c:2271!
-Date: Wed, 27 Apr 2011 20:52:00 +0200
-Message-ID: <383ECFA9-9E51-4CCD-BE24-21FD30813217@gmx.net>
-Mime-Version: 1.0 (Apple Message framework v1084)
-Content-Type: text/plain; charset=us-ascii
+From: "Jim Schutt" <jaschut@sandia.gov>
+Subject: btrfs warnings from 2.6.39-rc5
+Date: Wed, 27 Apr 2011 12:43:00 -0600
+Message-ID: <4DB863B4.3070900@sandia.gov>
+Mime-Version: 1.0
+Content-Type: text/plain;
+ charset=utf-8;
+ format=flowed
+Cc: "ceph-devel@vger.kernel.org" <ceph-devel@vger.kernel.org>
 To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Return-path: <ceph-devel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
 
-this is happening mostly every night. I can't reproduce it right now.
-vanilla kernel 2.6.38.4
+I'm not sure if they matter, but I got these warnings on
+one of the machines I'm using as a Ceph OSD server:
 
-Apr 27 03:41:54 mainframe kernel: ------------[ cut here ]------------
-Apr 27 03:41:54 mainframe kernel: WARNING: at fs/btrfs/inode.c:6488 btrfs_truncate+0x49/0x580()
-Apr 27 03:41:54 mainframe kernel: Hardware name: System Product Name
-Apr 27 03:41:54 mainframe kernel: Modules linked in: md4 cifs hwmon_vid coretemp vboxnetadp vboxnetflt vboxdrv firewire_ohci firewire_core i915 asus_atk0110 hwmon drm_kms_helper video backlight
-Apr 27 03:41:54 mainframe kernel: Pid: 32572, comm: updatedb Not tainted 2.6.38.4 #1
-Apr 27 03:41:54 mainframe kernel: Call Trace:
-Apr 27 03:41:54 mainframe kernel: [<ffffffff8103f59b>] ? warn_slowpath_common+0x7b/0xc0
-Apr 27 03:41:54 mainframe kernel: [<ffffffff8124a1d9>] ? btrfs_truncate+0x49/0x580
-Apr 27 03:41:54 mainframe kernel: [<ffffffff8124a863>] ? btrfs_iget+0x53/0x4a0
-Apr 27 03:41:54 mainframe kernel: [<ffffffff8124af09>] ? btrfs_orphan_cleanup+0x259/0x340
-Apr 27 03:41:54 mainframe kernel: [<ffffffff8124a863>] ? btrfs_iget+0x53/0x4a0
-Apr 27 03:41:54 mainframe kernel: [<ffffffff8124b3f8>] ? btrfs_lookup_dentry+0x408/0x480
-Apr 27 03:41:54 mainframe kernel: [<ffffffff81263123>] ? set_extent_bit+0x143/0x520
-Apr 27 03:41:54 mainframe kernel: [<ffffffff8124b479>] ? btrfs_lookup+0x9/0x20
-Apr 27 03:41:54 mainframe kernel: [<ffffffff810f628c>] ? d_alloc_and_lookup+0x3c/0x90
-Apr 27 03:41:54 mainframe kernel: [<ffffffff811006ae>] ? d_lookup+0x2e/0x60
-Apr 27 03:41:54 mainframe kernel: [<ffffffff810f8002>] ? do_lookup+0x1a2/0x2e0
-Apr 27 03:41:54 mainframe kernel: [<ffffffff810f921a>] ? link_path_walk+0x53a/0xa30
-Apr 27 03:41:54 mainframe kernel: [<ffffffff810f6e22>] ? path_init_rcu+0xa2/0x200
-Apr 27 03:41:54 mainframe kernel: [<ffffffff810f99d6>] ? do_path_lookup+0x56/0x130
-Apr 27 03:41:54 mainframe kernel: [<ffffffff810fa75a>] ? user_path_at+0x5a/0xb0
-Apr 27 03:41:54 mainframe kernel: [<ffffffff810f99e1>] ? do_path_lookup+0x61/0x130
-Apr 27 03:41:54 mainframe kernel: [<ffffffff810effb0>] ? cp_new_stat+0xe0/0x100
-Apr 27 03:41:54 mainframe kernel: [<ffffffff810f00b0>] ? vfs_fstatat+0x40/0x80
-Apr 27 03:41:54 mainframe kernel: [<ffffffff810f017f>] ? sys_newlstat+0x1f/0x50
-Apr 27 03:41:54 mainframe kernel: [<ffffffff81002e7b>] ? system_call_fastpath+0x16/0x1b
-Apr 27 03:41:54 mainframe kernel: ---[ end trace 71530b801e4a68c0 ]---
-Apr 27 03:41:54 mainframe kernel: ------------[ cut here ]------------
-Apr 27 03:41:54 mainframe kernel: kernel BUG at fs/btrfs/inode.c:2271!
-Apr 27 03:41:54 mainframe kernel: invalid opcode: 0000 [#1] PREEMPT SMP 
-Apr 27 03:41:54 mainframe kernel: last sysfs file: /sys/devices/pci0000:00/0000:00:1f.2/host2/target2:0:0/2:0:0:0/block/sdd/sdd2/stat
-Apr 27 03:41:54 mainframe kernel: CPU 1 
-Apr 27 03:41:54 mainframe kernel: Modules linked in: md4 cifs hwmon_vid coretemp vboxnetadp vboxnetflt vboxdrv firewire_ohci firewire_core i915 asus_atk0110 hwmon drm_kms_helper video backlight
-Apr 27 03:41:54 mainframe kernel: 
-Apr 27 03:41:54 mainframe kernel: Pid: 32572, comm: updatedb Tainted: G        W   2.6.38.4 #1 System manufacturer System Product Name/V-P5G45
-Apr 27 03:41:54 mainframe kernel: RIP: 0010:[<ffffffff81246006>]  [<ffffffff81246006>] btrfs_orphan_del+0xe6/0xf0
-Apr 27 03:41:54 mainframe kernel: RSP: 0018:ffff8801ad615ab8  EFLAGS: 00010282
-Apr 27 03:41:54 mainframe kernel: RAX: 00000000fffffffe RBX: ffff880170fe9d60 RCX: ffff88022f84abd0
-Apr 27 03:41:54 mainframe kernel: RDX: ffff8800c7a95ce8 RSI: ffff88022f84aea0 RDI: ffff88022f84aea0
-Apr 27 03:41:54 mainframe kernel: RBP: 0000000000000000 R08: 0000000000000000 R09: ffff8801ad615930
-Apr 27 03:41:54 mainframe kernel: R10: 0000000000000025 R11: 0000000000000000 R12: ffff88022b40bc80
-Apr 27 03:41:54 mainframe kernel: R13: ffff88022ef06000 R14: ffff88022ef06330 R15: 0000000000000001
-Apr 27 03:41:54 mainframe kernel: FS:  00007f4f36914700(0000) GS:ffff8800c7a80000(0000) knlGS:0000000000000000
-Apr 27 03:41:54 mainframe kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-Apr 27 03:41:54 mainframe kernel: CR2: 00000000006ff228 CR3: 00000001bfc26000 CR4: 00000000000406e0
-Apr 27 03:41:54 mainframe kernel: DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-Apr 27 03:41:54 mainframe kernel: DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-Apr 27 03:41:54 mainframe kernel: Process updatedb (pid: 32572, threadinfo ffff8801ad614000, task ffff880217171350)
-Apr 27 03:41:54 mainframe kernel: Stack:
-Apr 27 03:41:54 mainframe kernel: ffff88022ef06000 ffff88022ef06000 ffff88022f84ac60 ffff88022ef06330
-Apr 27 03:41:54 mainframe kernel: ffff88022ef06338 ffff8801ad615b58 ffff8801ad615b18 ffffffff8124aed0
-Apr 27 03:41:54 mainframe kernel: ffff8801ad615b88 ffff880170fe9d60 ffff88022b40bc80 000000015014c5fa
-Apr 27 03:41:54 mainframe kernel: Call Trace:
-Apr 27 03:41:54 mainframe kernel: [<ffffffff8124aed0>] ? btrfs_orphan_cleanup+0x220/0x340
-Apr 27 03:41:54 mainframe kernel: [<ffffffff8124a863>] ? btrfs_iget+0x53/0x4a0
-Apr 27 03:41:54 mainframe kernel: [<ffffffff8124b3f8>] ? btrfs_lookup_dentry+0x408/0x480
-Apr 27 03:41:54 mainframe kernel: [<ffffffff81263123>] ? set_extent_bit+0x143/0x520
-Apr 27 03:41:54 mainframe kernel: [<ffffffff8124b479>] ? btrfs_lookup+0x9/0x20
-Apr 27 03:41:54 mainframe kernel: [<ffffffff810f628c>] ? d_alloc_and_lookup+0x3c/0x90
-Apr 27 03:41:54 mainframe kernel: [<ffffffff811006ae>] ? d_lookup+0x2e/0x60
-Apr 27 03:41:54 mainframe kernel: [<ffffffff810f8002>] ? do_lookup+0x1a2/0x2e0
-Apr 27 03:41:54 mainframe kernel: [<ffffffff810f921a>] ? link_path_walk+0x53a/0xa30
-Apr 27 03:41:54 mainframe kernel: [<ffffffff810f6e22>] ? path_init_rcu+0xa2/0x200
-Apr 27 03:41:54 mainframe kernel: [<ffffffff810f99d6>] ? do_path_lookup+0x56/0x130
-Apr 27 03:41:54 mainframe kernel: [<ffffffff810fa75a>] ? user_path_at+0x5a/0xb0
-Apr 27 03:41:54 mainframe kernel: [<ffffffff810f99e1>] ? do_path_lookup+0x61/0x130
-Apr 27 03:41:54 mainframe kernel: [<ffffffff810effb0>] ? cp_new_stat+0xe0/0x100
-Apr 27 03:41:54 mainframe kernel: [<ffffffff810f00b0>] ? vfs_fstatat+0x40/0x80
-Apr 27 03:41:54 mainframe kernel: [<ffffffff810f017f>] ? sys_newlstat+0x1f/0x50
-Apr 27 03:41:54 mainframe kernel: [<ffffffff81002e7b>] ? system_call_fastpath+0x16/0x1b
-Apr 27 03:41:54 mainframe kernel: Code: 4c 8b 6c 24 20 4c 8b 74 24 28 4c 8b 7c 24 30 48 83 c4 38 c3 90 48 8b 93 a8 00 00 00 4c 89 ee 4c 89 e7 e8 ee f5 02 00 85 c0 74 b8 <0f> 0b eb fe 66 0f 1f 44 00 00 53 48 8d 86 38 03 00 00 48 89 f3 
-Apr 27 03:41:54 mainframe kernel: RIP  [<ffffffff81246006>] btrfs_orphan_del+0xe6/0xf0
-Apr 27 03:41:54 mainframe kernel: RSP <ffff8801ad615ab8>
-Apr 27 03:41:54 mainframe kernel: ---[ end trace 71530b801e4a68c1 ]---
+[ 1806.549469] ------------[ cut here ]------------
+[ 1806.554593] WARNING: at fs/btrfs/extent-tree.c:5790 use_block_rsv+0xa7/0x101 [btrfs]()
+[ 1806.562903] Hardware name: PowerEdge 1950
+[ 1806.567126] Modules linked in: loop btrfs zlib_deflate lzo_compress ipt_MASQUERADE iptable_nat nf_nat nf_conntrack_ipv4 nf_defrag_ipv4 xt_state nf_conntrack ipt_REJECT xt_tcpudp iptable_filter ip_tables x_tables bridge stp i2c_dev i2c_core ext3 jbd ib_iser libi]
+[ 1806.689084] Pid: 12025, comm: cosd Not tainted 2.6.39-rc5-00006-g7b0bd4b #2
+[ 1806.697425] Call Trace:
+[ 1806.700332]  [<ffffffffa06fe816>] ? use_block_rsv+0xa7/0x101 [btrfs]
+[ 1806.707032]  [<ffffffff810494d8>] ? warn_slowpath_common+0x85/0x9e
+[ 1806.713502]  [<ffffffff8104950b>] ? warn_slowpath_null+0x1a/0x1c
+[ 1806.720755]  [<ffffffffa06fe816>] ? use_block_rsv+0xa7/0x101 [btrfs]
+[ 1806.731488]  [<ffffffffa070590b>] ? btrfs_alloc_free_block+0x30/0x198 [btrfs]
+[ 1806.743858]  [<ffffffffa072ae8a>] ? map_private_extent_buffer+0xb2/0xd9 [btrfs]
+[ 1806.752600]  [<ffffffffa072a4b8>] ? __kmap_atomic+0x12/0x47 [btrfs]
+[ 1806.760057]  [<ffffffffa072b036>] ? read_extent_buffer+0xc2/0xd4 [btrfs]
+[ 1806.770897]  [<ffffffffa06f84ac>] ? __btrfs_cow_block+0x10e/0x2f5 [btrfs]
+[ 1806.779552]  [<ffffffffa0709dbe>] ? btrfs_header_generation+0x1f/0x25 [btrfs]
+[ 1806.788994]  [<ffffffffa06f878f>] ? btrfs_cow_block+0xfc/0x121 [btrfs]
+[ 1806.798434]  [<ffffffffa06fa746>] ? btrfs_search_slot+0x144/0x3ae [btrfs]
+[ 1806.806444]  [<ffffffffa0709877>] ? btrfs_lookup_inode+0x31/0x86 [btrfs]
+[ 1806.813611]  [<ffffffffa071618b>] ? btrfs_update_inode+0x52/0xc1 [btrfs]
+[ 1806.820904]  [<ffffffffa071668c>] ? btrfs_truncate+0x239/0x297 [btrfs]
+[ 1806.829290]  [<ffffffffa071bb23>] ? btrfs_setsize+0x8c/0x9b [btrfs]
+[ 1806.835962]  [<ffffffffa071bb93>] ? btrfs_setattr+0x61/0x9d [btrfs]
+[ 1806.842892]  [<ffffffff81127ea4>] ? notify_change+0x174/0x1bc
+[ 1806.850878]  [<ffffffff81110c4f>] ? do_truncate+0x6e/0x8a
+[ 1806.857374]  [<ffffffff8111b126>] ? generic_permission+0x1c/0x8e
+[ 1806.868498]  [<ffffffff81110e42>] ? do_sys_truncate+0xf8/0x10a
+[ 1806.877746]  [<ffffffff81110e62>] ? sys_truncate+0xe/0x10
+[ 1806.902751]  [<ffffffff813b6deb>] ? system_call_fastpath+0x16/0x1b
+[ 1806.909736] ---[ end trace cd0ae33f1a4433d9 ]---
+[ 1812.142333] ------------[ cut here ]------------
+[ 1812.146996] WARNING: at fs/btrfs/inode.c:2180 btrfs_orphan_commit_root+0x8c/0xab [btrfs]()
+[ 1812.155275] Hardware name: PowerEdge 1950
+[ 1812.159280] Modules linked in: loop btrfs zlib_deflate lzo_compress ipt_MASQUERADE iptable_nat nf_nat nf_conntrack_ipv4 nf_defrag_ipv4 xt_state nf_conntrack ipt_REJECT xt_tcpudp iptable_filter ip_tables x_tables bridge stp i2c_dev i2c_core ext3 jbd ib_iser libi]
+[ 1812.240872] Pid: 7923, comm: kworker/3:2 Tainted: G        W   2.6.39-rc5-00006-g7b0bd4b #2
+[ 1812.249216] Call Trace:
+[ 1812.251712]  [<ffffffffa0715048>] ? btrfs_orphan_commit_root+0x8c/0xab [btrfs]
+[ 1812.258976]  [<ffffffff810494d8>] ? warn_slowpath_common+0x85/0x9e
+[ 1812.265199]  [<ffffffff8104950b>] ? warn_slowpath_null+0x1a/0x1c
+[ 1812.271420]  [<ffffffffa0715048>] ? btrfs_orphan_commit_root+0x8c/0xab [btrfs]
+[ 1812.278704]  [<ffffffffa070f5e0>] ? commit_fs_roots+0x95/0xfd [btrfs]
+[ 1812.285220]  [<ffffffffa07039b3>] ? btrfs_run_delayed_refs+0x112/0x15e [btrfs]
+[ 1812.292459]  [<ffffffff810367bf>] ? need_resched+0x23/0x2d
+[ 1812.297961]  [<ffffffff810367d7>] ? should_resched+0xe/0x2f
+[ 1812.303604]  [<ffffffffa07105e3>] ? btrfs_commit_transaction+0x349/0x5a3 [btrfs]
+[ 1812.310999]  [<ffffffff8106622c>] ? list_del_init+0x21/0x21
+[ 1812.316615]  [<ffffffffa071085c>] ? do_async_commit+0x1f/0x2c [btrfs]
+[ 1812.323055]  [<ffffffff8106076b>] ? process_one_work+0x124/0x1e0
+[ 1812.329083]  [<ffffffffa071083d>] ? btrfs_commit_transaction+0x5a3/0x5a3 [btrfs]
+[ 1812.336526]  [<ffffffff81061dd8>] ? workqueue_congested+0x1e/0x1e
+[ 1812.342636]  [<ffffffff81061e67>] ? worker_thread+0x8f/0x124
+[ 1812.348353]  [<ffffffff81065d26>] ? kthread+0x72/0x7a
+[ 1812.353439]  [<ffffffff813b7ed4>] ? kernel_thread_helper+0x4/0x10
+[ 1812.359555]  [<ffffffff813b07ad>] ? retint_restore_args+0xe/0xe
+[ 1812.365484]  [<ffffffff81065cb4>] ? kthread_bind+0x64/0x64
+[ 1812.370986]  [<ffffffff813b7ed0>] ? gs_change+0xb/0xb
+[ 1812.376047] ---[ end trace cd0ae33f1a4433da ]---
 
--marco
+Please let me know if I can do anything to help sort these out.
+
+-- Jim
+

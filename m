@@ -1,31 +1,44 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: [PATCH] Btrfs: check return value of btrfs_inc_extent_ref()
-Date: Thu, 28 Apr 2011 18:18:21 +0900
-Message-ID: <201104280918.AA00019@T-ITOH1.jp.fujitsu.com>
+From: Stephen Smalley <sds@tycho.nsa.gov>
+Subject: Re: Observed unexpected behavior of BTRFS in d_instantiate
+Date: Thu, 28 Apr 2011 09:30:41 -0400
+Message-ID: <1303997441.16286.2.camel@moss-pluto>
+References: <4DB78A4A.1080507@schaufler-ca.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Cc: LSM <linux-security-module@vger.kernel.org>,
+	linux-btrfs@vger.kernel.org
+To: Casey Schaufler <casey@schaufler-ca.com>
+Return-path: <linux-security-module-owner@vger.kernel.org>
+In-Reply-To: <4DB78A4A.1080507@schaufler-ca.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If return value of btrfs_inc_extent_ref() is not 0, BUG() is called.
+On Tue, 2011-04-26 at 20:15 -0700, Casey Schaufler wrote:
+> 
+> I have been tracking down an problem that we've been seeing
+> with Smack on top of btrfs and have narrowed it down to a check
+> in smack_d_instantiate() that checks to see if the underlying
+> filesystem supports extended attributes by looking at
+> 
+>     inode->i_op->getxattr
+> 
+> If the filesystem has no entry for getxattr it is assumed that
+> it does not support extended attributes. The Smack code clearly
+> finds this value to be NULL for btrfs and uses a fallback value.
+> Clearly something is amiss, as other code paths clearly find the
+> i_op->getxattr function and use it to effect. The btrfs code
+> quite obviously includes getxattr functions.
+> 
+> So, what is btrfs up to such that the inode ops does not include
+> getxattr when security_d_instantiate is called? I am led to
+> understand that SELinux has worked around this, but looking at
+> the SELinux code I expect that there is a problem there as well.
+> 
+> Thank you.
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- fs/btrfs/tree-log.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+kernel version(s)?
+reproducer?
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index f997ec0..23fb42d 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -590,6 +590,7 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
- 						ins.objectid, ins.offset,
- 						0, root->root_key.objectid,
- 						key->objectid, offset);
-+				BUG_ON(ret);
- 			} else {
- 				/*
- 				 * insert the extent pointer in the extent
+-- 
+Stephen Smalley
+National Security Agency
 

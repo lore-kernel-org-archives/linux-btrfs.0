@@ -1,53 +1,41 @@
-From: John Wyzer <john.wyzer@gmx.de>
-Subject: Re: abysmal performance
-Date: Sat, 30 Apr 2011 22:40:04 +0200
-Message-ID: <1304195921-sup-9266@localhost>
-References: <1304088305-sup-3784@localhost> <1304089239-sup-5110@think> <BANLkTi=6YHDSmcg5DiHPiL1xWdT1nWobBg@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: "A. James Lewis" <james@fsck.co.uk>
+Subject: Confusing...
+Date: Sat, 30 Apr 2011 21:42:39 +0100
+Message-ID: <d513343c4c6ac383232407e4c6c585ac.squirrel@mail.fsck.co.uk>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <BANLkTi=6YHDSmcg5DiHPiL1xWdT1nWobBg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Mitch Harder's message of Sat Apr 30 19:33:16 +0200 2011:
-> Also, please note that 'btrfs filesystem defragment -v /' will
-> defragment the directory structure, but not the files.
-[...]
-> To defragment your entire volume, you'll need a command like:
-> 
-> # for file in $(find <PATH/TO/BTRFS/VOL/> -type f); do btrfs
-> filesystem defragment ${file}; done
 
-Thanks, I'm doing something like that at the moment (sorted the whole system
-according to atimes and mtimes and started defragmenting in order of recent
-access...)
+After completing an installation of Ubuntu 11.04 with a separate /boot
+partition and BTRFS as the main filesystem (Ubuntu creates subvolumes for
+/ and /home).
 
-However at this speed this will never end.
+sda1 being the GPT stuff
+sda2 being most of the disk as BTRFS
+sda3 being /boot
+sda4 being swap
 
-I'm willing to let it run some more nights however to see whether there will be
-an effect in the end.
+sdb having an identical partition table...
 
-By the way: does it make a difference to run defrag on one file at a time or on
-more?
-At the moment I'm doing 100 files/directories  per btrfs call...
+I patched everything up to date, rebooted to make sure that all was ok..
+and then ran:-
 
-> If you just want to see your fragmentation you can use the 'filefrag'
-> program from e2fsprogs:
-> 
-> # for file in $(find <PATH/TO/BTRFS/VOL/> -type f); do filefrag
-> ${file}; done | sort -n -k 2 | less
+btrfs device add /dev/sdb2 /
+sync
+reboot
+
+The system stops in initrd unable to find the root filesystem...
+
+It's my understanding that nothing should change here, am I missing
+something, I don't see how it can even tell I've added more storage, let
+alone fail to boot.
+
+-- 
+A. James Lewis (james@fsck.co.uk)
+"Engineering does not require science. Science helps a lot but people built
+perfectly good brick walls long before they knew why cement works."
 
 
-Hmm.
-Tried it and it gives me about 500000 lines of
-
-FIBMAP: Invalid argument 
-
-and then:
-
-large_file: 1 extent found
-
-Is that the way it is supposed to work?
-Just asking because this was part of a vmware disk image. Both the virtual
-machine and the rest of the host system are almost unusable once the VM ist
-started (even more unusable than without vmware :-D )

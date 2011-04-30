@@ -1,31 +1,23 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: Re: Premature -ENOSPC on btrfs?
-Date: 30 Apr 2011 02:12:00 +0200
-Message-ID: <BkqztSPD1uB@helmut.hullen.de>
-References: <20110429234805.GA20579@tux1.beaverton.ibm.com>
-Reply-To: helmut@hullen.de
+From: Evert Vorster <evorster@gmail.com>
+Subject: Rename a btrfs filesystem?
+Date: Fri, 29 Apr 2011 21:24:16 -0500
+Message-ID: <BANLkTikxuU4z-LXUcQptuaLZSZvUjmQSsg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110429234805.GA20579@tux1.beaverton.ibm.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Darrick,
+Hi there.
 
-Du meintest am 29.04.11:
+Just a quick question: How do I rename an existing btrfs filesystem
+without destroying all the subvolumes on it?
 
+>From mkfs.btrfs it says -L sets the initial filesystem label.
 
-> First, I create a 1GB test fs, format it,
+With ext2, 3 and 4 the filesystem label can be changed with tune2fs.
+Does similar functionality exist in btrfs?
 
-in which way? RAID0, RAID1, mix or something else?
-
-> Strangely, df reports that free space remains, and I can even create
-> a second file to fill the empty space, so clearly the fs isn't full
-> yet.
-
-"df" tells, how much space is at least usable. Depending on your special  
-formatting options there may be more space available.
-
-Viele Gruesse!
-Helmut
+Thanks for any response.
+-- 
+-Evert-

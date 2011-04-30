@@ -1,127 +1,84 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: [PATCH v6 2/8] btrfs: Cancel filesystem balance
-Date: Sat, 30 Apr 2011 15:23:57 +0100
-Message-ID: <1304173443-29159-3-git-send-email-hugo@carfax.org.uk>
-References: <1304173443-29159-1-git-send-email-hugo@carfax.org.uk>
-To: Btrfs mailing list <linux-btrfs@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	David Sterba <dave@jikos.cz>
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: Re: abysmal performance
+Date: Sat, 30 Apr 2011 12:33:16 -0500
+Message-ID: <BANLkTi=6YHDSmcg5DiHPiL1xWdT1nWobBg@mail.gmail.com>
+References: <1304088305-sup-3784@localhost>
+	<1304089239-sup-5110@think>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: John Wyzer <john.wyzer@gmx.de>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1304173443-29159-1-git-send-email-hugo@carfax.org.uk>
+In-Reply-To: <1304089239-sup-5110@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch adds an ioctl for cancelling a btrfs balance operation
-mid-flight. The ioctl simply sets a flag, and the operation terminates
-after the current block group move has completed.
+On Fri, Apr 29, 2011 at 10:01 AM, Chris Mason <chris.mason@oracle.com> =
+wrote:
+> Excerpts from John Wyzer's message of 2011-04-29 10:46:08 -0400:
+>> Currently on
+>> commit 7cf96da3ec7ca225acf4f284b0e904a1f5f98821
+>> Author: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+>> Date: =A0 Mon Apr 25 19:43:53 2011 -0400
+>> =A0 =A0 Btrfs: cleanup error handling in inode.c
+>>
+>> merged into 2.6.38.4
+>>
+>> I'm on a btrfs filesystem that has been used for some time. Let's sa=
+y nine
+>> months. Very recently I noticed performance getting worse and worse.
+>> Most of the time it feels as if the system is just busy with iowait.
+>> Write and read performance during random access is mostly around 2MB=
+/s,
+>> sometimes 1MB/s or slower. It's better for big files which can be re=
+ad with about
+>> 6-9MB/s. The disk is a reasonably recent SATA disk (WDC_WD3200BEVT) =
+so 30MB/s
+>> or 40MB/s linear reading should not be a problem.
+>>
+>> rootfs =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0291G =A0242G =A0 35G =A088% /
+>>
+>> I tried =A0btrfs filesystem defragment -v / but did not notice any i=
+mprovement
+>> after that.
+>>
+>> Is this a known phenomenon? :-)
+>>
+>
+> Sounds like you're hitting fragmentation, which we can confirm with
+> latencytop. =A0Please run latencytop while you're seeing poor perform=
+ance
+> and take a look at where you're spending most of your time.
+>
+> -chris
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+>
 
-Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
----
- fs/btrfs/ctree.h   |    1 +
- fs/btrfs/ioctl.c   |   28 ++++++++++++++++++++++++++++
- fs/btrfs/ioctl.h   |    1 +
- fs/btrfs/volumes.c |    7 ++++++-
- 4 files changed, 36 insertions(+), 1 deletions(-)
+Also, please note that 'btrfs filesystem defragment -v /' will
+defragment the directory structure, but not the files.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index ad15eb7..fefd67a 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -869,6 +869,7 @@ struct btrfs_block_group_cache {
- struct btrfs_balance_info {
- 	u32 expected;
- 	u32 completed;
-+	int cancel_pending;
- };
- 
- struct reloc_control;
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 899ed91..4044ad3 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2497,6 +2497,32 @@ error:
- 	return ret;
- }
- 
-+/*
-+ * Cancel a running balance operation
-+ */
-+long btrfs_ioctl_balance_cancel(struct btrfs_fs_info *fs_info)
-+{
-+	int err = 0;
-+
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	spin_lock(&fs_info->balance_info_lock);
-+	if (!fs_info->balance_info) {
-+		err = -EINVAL;
-+		goto error;
-+	}
-+	if (fs_info->balance_info->cancel_pending) {
-+		err = -ECANCELED;
-+		goto error;
-+	}
-+	fs_info->balance_info->cancel_pending = 1;
-+
-+error:
-+	spin_unlock(&fs_info->balance_info_lock);
-+	return err;
-+}
-+
- long btrfs_ioctl(struct file *file, unsigned int
- 		cmd, unsigned long arg)
- {
-@@ -2540,6 +2566,8 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_balance(root->fs_info->dev_root);
- 	case BTRFS_IOC_BALANCE_PROGRESS:
- 		return btrfs_ioctl_balance_progress(root->fs_info, argp);
-+	case BTRFS_IOC_BALANCE_CANCEL:
-+		return btrfs_ioctl_balance_cancel(root->fs_info);
- 	case BTRFS_IOC_CLONE:
- 		return btrfs_ioctl_clone(file, arg, 0, 0, 0);
- 	case BTRFS_IOC_CLONE_RANGE:
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 7c37c6b..2c49add 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -210,4 +210,5 @@ struct btrfs_ioctl_balance_progress {
- #define BTRFS_IOC_SUBVOL_SETFLAGS _IOW(BTRFS_IOCTL_MAGIC, 26, __u64)
- #define BTRFS_IOC_BALANCE_PROGRESS _IOR(BTRFS_IOCTL_MAGIC, 27, \
- 				  struct btrfs_ioctl_balance_progress)
-+#define BTRFS_IOC_BALANCE_CANCEL _IO(BTRFS_IOCTL_MAGIC, 28)
- #endif
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 8ab70f3..07ff192 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2055,6 +2055,7 @@ int btrfs_balance(struct btrfs_root *dev_root)
- 	bal_info->expected = -1; /* One less than actually counted,
- 				    because chunk 0 is special */
- 	bal_info->completed = 0;
-+	bal_info->cancel_pending = 0;
- 	spin_unlock(&dev_root->fs_info->balance_info_lock);
- 
- 	/* step one make some room on all the devices */
-@@ -2115,7 +2116,7 @@ int btrfs_balance(struct btrfs_root *dev_root)
- 	key.offset = (u64)-1;
- 	key.type = BTRFS_CHUNK_ITEM_KEY;
- 
--	while (1) {
-+	while (!bal_info->cancel_pending) {
- 		ret = btrfs_search_slot(NULL, chunk_root, &key, path, 0, 0);
- 		if (ret < 0)
- 			goto error;
-@@ -2155,6 +2156,10 @@ int btrfs_balance(struct btrfs_root *dev_root)
- 		       bal_info->completed, bal_info->expected);
- 	}
- 	ret = 0;
-+	if (bal_info->cancel_pending) {
-+		printk(KERN_INFO "btrfs: balance cancelled\n");
-+		ret = -EINTR;
-+	}
- error:
- 	btrfs_free_path(path);
- 	spin_lock(&dev_root->fs_info->balance_info_lock);
--- 
-1.7.2.5
+See:
+https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#Defragmenting_a_dir=
+ectory_doesn.27t_work
 
+To defragment your entire volume, you'll need a command like:
+
+# for file in $(find <PATH/TO/BTRFS/VOL/> -type f); do btrfs
+filesystem defragment ${file}; done
+
+There's also a similar command in the FAQ referenced above.
+
+If you just want to see your fragmentation you can use the 'filefrag'
+program from e2fsprogs:
+
+# for file in $(find <PATH/TO/BTRFS/VOL/> -type f); do filefrag
+${file}; done | sort -n -k 2 | less
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

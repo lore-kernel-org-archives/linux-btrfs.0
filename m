@@ -1,138 +1,157 @@
 From: Hugo Mills <hugo@carfax.org.uk>
-Subject: [PATCH v6 3/8] User-space tool for cancelling balance operations.
-Date: Sun,  1 May 2011 16:47:11 +0100
-Message-ID: <f12c97581a4d9ca4f327bcde3fa8daadaf5fc632.1304262467.git.hugo@carfax.org.uk>
+Subject: [PATCH v6 4/8] Run userspace tool in background for balances.
+Date: Sun,  1 May 2011 16:47:12 +0100
+Message-ID: <5813d6898efdce8d0acb5f95e5bce70f991c2026.1304262467.git.hugo@carfax.org.uk>
 References: <cover.1304262467.git.hugo@carfax.org.uk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <cover.1304262467.git.hugo@carfax.org.uk>
 In-Reply-To: <cover.1304262467.git.hugo@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add an option to the btrfs tool to use the ioctl for cancelling
-balance operations.
+This patch makes a balance operation fork and detach from the current
+terminal, to run the userspace side of the balance in the background.
+
+Introduce a --wait switch so that a synchronous balance can be done if
+the user requires.
 
 Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
 ---
- btrfs.c        |    4 ++++
- btrfs_cmds.c   |   41 +++++++++++++++++++++++++++++++++++++++++
- btrfs_cmds.h   |    1 +
- ioctl.h        |    1 +
- man/btrfs.8.in |    6 ++++++
- 5 files changed, 53 insertions(+), 0 deletions(-)
+ btrfs.c        |    8 ++++----
+ btrfs_cmds.c   |   52 ++++++++++++++++++++++++++++++++++++++++++++++++++--
+ man/btrfs.8.in |   14 ++++++++------
+ 3 files changed, 62 insertions(+), 12 deletions(-)
 
 diff --git a/btrfs.c b/btrfs.c
-index 0b6186c..93f7886 100644
+index 93f7886..7b42658 100644
 --- a/btrfs.c
 +++ b/btrfs.c
-@@ -103,6 +103,10 @@ static struct Command commands[] = {
- 	  "balance progress", "[-m|--monitor] <path>\n"
- 		"Show progress of the balance operation running on <path>."
+@@ -91,12 +91,12 @@ static struct Command commands[] = {
+ 	  "filesystem df", "<path>\n"
+ 		"Show space usage information for a mount point\n."
  	},
-+	{ do_balance_cancel, 1,
-+	  "balance cancel", "<path>\n"
-+		"Cancel the balance operation running on <path>."
-+	},
- 	{ do_scan,
- 	  999, "device scan", "[<device> [<device>..]\n"
- 		"Scan all device for or the passed device for a btrfs\n"
+-	{ do_balance, 1,
+-	  "filesystem balance", "<path>\n"
++	{ do_balance, -1,
++	  "filesystem balance", "[-w|--wait] <path>\n"
+ 		"Balance the chunks across the device."
+ 	},
+-	{ do_balance, 1,
+-	  "balance start", "<path>\n"
++	{ do_balance, -1,
++	  "balance start", "[-w|--wait] <path>\n"
+ 		"Synonym for \"btrfs filesystem balance\"."
+ 	},
+ 	{ do_balance_progress, -1,
 diff --git a/btrfs_cmds.c b/btrfs_cmds.c
-index ad2300d..b1631a0 100644
+index b1631a0..070b8a9 100644
 --- a/btrfs_cmds.c
 +++ b/btrfs_cmds.c
-@@ -922,6 +922,47 @@ int do_balance_progress(int argc, char **argv)
- 	return 0;
+@@ -754,12 +754,41 @@ int do_add_volume(int nargs, char **args)
+ 
  }
  
-+int do_balance_cancel(int nargs, char **argv)
-+{
-+	char *path = argv[1];
-+	int fdmnt;
-+	int ret = 0;
-+	int err = 0;
++const struct option balance_options[] = {
++	{ "wait", 0, NULL, 'w' },
++	{ NULL, 0, NULL, 0 }
++};
 +
-+	fdmnt = open_file_or_dir(path);
-+	if(fdmnt < 0) {
-+		fprintf(stderr, "ERROR: can't access '%s'\n", path);
-+		return 12;
-+	}
+ int do_balance(int argc, char **argv)
+ {
+-
+ 	int	fdmnt, ret=0;
++	int background = 1;
+ 	struct btrfs_ioctl_vol_args args;
+-	char	*path = argv[1];
++	char *path;
++	int ttyfd;
 +
-+	ret = ioctl(fdmnt, BTRFS_IOC_BALANCE_CANCEL, NULL);
-+	err = errno;
-+
-+	if(ret) {
-+		switch(err) {
-+		case 0:
++	optind = 1;
++	while(1) {
++		int c = getopt_long(argc, argv, "w", balance_options, NULL);
++		if (c < 0)
 +			break;
-+		case EINVAL:
-+			fprintf(stderr, "ERROR: no balance in progress.\n");
-+			err = 20;
-+			break;
-+		case ECANCELED:
-+			fprintf(stderr, "ERROR: operation already cancelled.\n");
-+			err = 21;
++		switch(c) {
++		case 'w':
++			background = 0;
 +			break;
 +		default:
-+			fprintf(stderr, "ERROR: ioctl returned error '%d'.\n",
-+				err);
-+			err = 22;
-+			break;
++			fprintf(stderr, "Invalid arguments for balance\n");
++			free(argv);
++			return 1;
 +		}
 +	}
 +
-+	close(fdmnt);
++	if(optind >= argc) {
++		fprintf(stderr, "No filesystem path given for balance\n");
++		return 1;
++	}
 +
-+	return err;
-+}
-+
- int do_remove_volume(int nargs, char **args)
- {
++	path = argv[optind];
  
-diff --git a/btrfs_cmds.h b/btrfs_cmds.h
-index 47b0a27..5cb0d9c 100644
---- a/btrfs_cmds.h
-+++ b/btrfs_cmds.h
-@@ -24,6 +24,7 @@ int do_show_filesystem(int nargs, char **argv);
- int do_add_volume(int nargs, char **args);
- int do_balance(int nargs, char **argv);
- int do_balance_progress(int nargs, char **argv);
-+int do_balance_cancel(int nargs, char **argv);
- int do_remove_volume(int nargs, char **args);
- int do_scan(int nargs, char **argv);
- int do_resize(int nargs, char **argv);
-diff --git a/ioctl.h b/ioctl.h
-index 3eeaa33..40c0b57 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -176,4 +176,5 @@ struct btrfs_ioctl_balance_progress {
- 				    struct btrfs_ioctl_space_args)
- #define BTRFS_IOC_BALANCE_PROGRESS _IOR(BTRFS_IOCTL_MAGIC, 27, \
- 					struct btrfs_ioctl_balance_progress)
-+#define BTRFS_IOC_BALANCE_CANCEL _IO(BTRFS_IOCTL_MAGIC, 28)
- #endif
+ 	fdmnt = open_file_or_dir(path);
+ 	if (fdmnt < 0) {
+@@ -767,6 +796,25 @@ int do_balance(int argc, char **argv)
+ 		return 12;
+ 	}
+ 
++	if (background) {
++		int pid = fork();
++		if (pid == 0) {
++			/* We're in the child, and can run in the background */
++			ttyfd = open("/dev/tty", O_RDWR);
++			if (ttyfd > 0)
++				ioctl(ttyfd, TIOCNOTTY, 0);
++			/* Fall through to the BTRFS_IOC_BALANCE ioctl */
++		} else if (pid > 0) {
++			/* We're in the parent, and the fork succeeded */
++			printf("Background balance started\n");
++			return 0;
++		} else {
++			/* We're in the parent, and the fork failed */
++			fprintf(stderr, "ERROR: can't start background process -- %s\n",
++					strerror(errno));
++		}
++	}
++
+ 	memset(&args, 0, sizeof(args));
+ 	ret = ioctl(fdmnt, BTRFS_IOC_BALANCE, &args);
+ 	close(fdmnt);
 diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index 5fcad89..9c6bb69 100644
+index 9c6bb69..77558fa 100644
 --- a/man/btrfs.8.in
 +++ b/man/btrfs.8.in
-@@ -29,6 +29,8 @@ btrfs \- control a btrfs filesystem
+@@ -21,11 +21,11 @@ btrfs \- control a btrfs filesystem
+ .PP
+ \fBbtrfs\fP \fBfilesystem resize\fP\fI [+/\-]<size>[gkm]|max <filesystem>\fP
+ .PP
+-\fBbtrfs\fP \fBfilesystem balance\fP\fI <path> \fP
++\fBbtrfs\fP \fBfilesystem balance\fP [\fB-w\fP|\fB--wait\fP] \fI<path>\fP
+ .PP
+ \fBbtrfs\fP \fBdevice scan\fP\fI [<device> [<device>..]]\fP
+ .PP
+-\fBbtrfs\fP \fBbalance start\fP\fI <path> \fP
++\fBbtrfs\fP \fBbalance start\fP [\fB-w\fP|\fB--wait\fP] \fI<path>\fP
  .PP
  \fBbtrfs\fP \fBbalance progress\fP [\fB-m\fP|\fB--monitor\fP] \fI<path>\fP
  .PP
-+\fBbtrfs\fP \fBbalance cancel\fP \fI<path>\fP
-+.PP
- \fBbtrfs\fP \fBdevice show\fP\fI <dev>|<label> [<dev>|<label>...]\fP
- .PP
- \fBbtrfs\fP \fBdevice add\fP\fI <dev> [<dev>..] <path> \fP
-@@ -167,6 +169,10 @@ Report progress on the currently-running balance operation on the
- filesystem mounted at \fI<path>\fP. Use --monitor to report progress
- continually, including an estimate of completion time.
+@@ -149,11 +149,13 @@ Show the btrfs filesystem with some additional info. If no UUID or label is
+ passed, \fBbtrfs\fR show info of all the btrfs filesystem.
+ .TP
  
-+\fbalance cancel\fP \fI<path>\fP
-+Cancel the balance currently running on the filesystem mounted at
-+\fI<path>\fP.
+-\fBbalance start\fR \fI<path>\fR
++\fBdevice balance\fR [\fB-w\fP|\fB--wait\fP] \fI<path>\fR
+ .TP
+-\fBfilesystem balance\fR \fI<path>\fR
+-Balance the chunks of the filesystem identified by \fI<path>\fR
+-across the devices.
++\fBbalance start\fR [\fB-w\fP|\fB--wait\fP] \fI<path>\fR
 +
- .SH EXIT STATUS
- \fBbtrfs\fR returns a zero exist status if it succeeds. Non zero is returned in
- case of failure.
++Balance the chunks of the filesystem identified by \fI<path>\fR across
++the devices. The process runs in the background. Use \fB--wait\fP to
++wait in the foreground for completion of the balance.
+ .TP
+ 
+ \fBdevice add\fR\fI <dev> [<dev>..] <path>\fR
 -- 
 1.7.2.5
 

@@ -1,27 +1,56 @@
-From: Roman Kapusta <roman.kapusta@gmail.com>
-Subject: Re: btrfs raid health status
-Date: Mon, 2 May 2011 15:13:33 +0200
-Message-ID: <BANLkTimePgK+NGUnBpdgaB+NWGSo8sp3ig@mail.gmail.com>
-References: <BANLkTikkK=Y7yZ5u_mH7AQTkV_sd9u0FiQ@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs: Document a mutex lock/unlock sequence
+Date: Mon,  2 May 2011 15:49:55 +0200
+Message-ID: <1304344195-8986-1-git-send-email-dsterba@suse.cz>
+References: <b5fefb09811c22cd101a44ac753293af942087fc.1303398927.git.dsterba@suse.cz>
+Cc: chris.mason@oracle.com, t-itoh@jp.fujitsu.com,
+	David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTikkK=Y7yZ5u_mH7AQTkV_sd9u0FiQ@mail.gmail.com>
+In-Reply-To: <b5fefb09811c22cd101a44ac753293af942087fc.1303398927.git.dsterba@suse.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have unmounted and again mounted btrfs filesystem, now I can see
-errors in dmesg.
-Is there also some error/health summary, like in btrfs fi show?
+---
+ fs/btrfs/extent-tree.c |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
 
-On Mon, May 2, 2011 at 15:07, Roman Kapusta <roman.kapusta@gmail.com> wrote:
-> I'm playing with mkfs.btrfs -m raid1 -d raid1. I put som data there
-> and now I write random data on one of physical disks directly.
->
-> Filesystem and file contents looks fine but I cannot see any errors,
-> is there any way to see that one disk from raid1 is failing?
->
-> Thanks
->
-> Roman Kapusta
->
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a160f11..fba1348 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -756,6 +756,10 @@ again:
+ 
+ 			btrfs_release_path(path);
+ 
++			/*
++			 * Mutex was contended, block until it's released and try
++			 * again
++			 */
+ 			mutex_lock(&head->mutex);
+ 			mutex_unlock(&head->mutex);
+ 			btrfs_put_delayed_ref(&head->node);
+@@ -2297,6 +2301,10 @@ again:
+ 				atomic_inc(&ref->refs);
+ 
+ 				spin_unlock(&delayed_refs->lock);
++				/*
++				 * Mutex was contended, block until it's
++				 * released and try again
++				 */
+ 				mutex_lock(&head->mutex);
+ 				mutex_unlock(&head->mutex);
+ 
+@@ -2363,6 +2371,10 @@ static noinline int check_delayed_ref(struct btrfs_trans_handle *trans,
+ 
+ 		btrfs_release_path(path);
+ 
++		/*
++		 * Mutex was contended, block until it's released and let
++		 * caller try again
++		 */
+ 		mutex_lock(&head->mutex);
+ 		mutex_unlock(&head->mutex);
+ 		btrfs_put_delayed_ref(&head->node);
+-- 
+1.7.5.rc3
+

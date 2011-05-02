@@ -1,46 +1,90 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: Re: btrfs raid health status
-Date: Mon, 02 May 2011 16:20:51 +0200
-Message-ID: <4DBEBDC3.1080003@gmx.net>
-References: <BANLkTikkK=Y7yZ5u_mH7AQTkV_sd9u0FiQ@mail.gmail.com> <BANLkTimePgK+NGUnBpdgaB+NWGSo8sp3ig@mail.gmail.com>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH v6 2/8] btrfs: Cancel filesystem balance
+Date: Mon, 2 May 2011 17:45:31 +0200
+Message-ID: <20110502154531.GM12709@twin.jikos.cz>
+References: <1304173443-29159-1-git-send-email-hugo@carfax.org.uk>
+ <1304173443-29159-3-git-send-email-hugo@carfax.org.uk>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: Btrfs mailing list <linux-btrfs@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	David Sterba <dave@jikos.cz>
+To: Hugo Mills <hugo@carfax.org.uk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTimePgK+NGUnBpdgaB+NWGSo8sp3ig@mail.gmail.com>
+In-Reply-To: <1304173443-29159-3-git-send-email-hugo@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02.05.2011 15:13, Roman Kapusta wrote:
-> I have unmounted and again mounted btrfs filesystem, now I can see
-> errors in dmesg.
-> Is there also some error/health summary, like in btrfs fi show?
+Hi,
 
-There is no error accounting or reparing yet, but you can check out the
-scrub patches. They'll read and repair (if there's a second copy
-available) all on-disk data. You can pull it here:
+I was thinking about the EINTR or ECANCELED retcode from balance:
 
-git://git.kernel.org/pub/scm/linux/kernel/git/arne/btrfs-unstable-arne.git
-scrub
-  and
-git://git.kernel.org/pub/scm/linux/kernel/git/arne/btrfs-progs-unstable-arne.git
- scrub
+CANCELED is returned from ioctl call if a cancel has been already
+requested
+EINTR is returned from btrfs_balance after all the processing if the
+cancel_request is set.
 
--Arne
+I don't see a reason to have 2 retcodes here, how will this help the
+ioctl caller?
 
-> 
-> On Mon, May 2, 2011 at 15:07, Roman Kapusta <roman.kapusta@gmail.com> wrote:
->> I'm playing with mkfs.btrfs -m raid1 -d raid1. I put som data there
->> and now I write random data on one of physical disks directly.
->>
->> Filesystem and file contents looks fine but I cannot see any errors,
->> is there any way to see that one disk from raid1 is failing?
->>
->> Thanks
->>
->> Roman Kapusta
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
+david
+
+
+On Sat, Apr 30, 2011 at 03:23:57PM +0100, Hugo Mills wrote:
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 899ed91..4044ad3 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -2497,6 +2497,32 @@ error:
+>  	return ret;
+>  }
+>  
+> +/*
+> + * Cancel a running balance operation
+> + */
+> +long btrfs_ioctl_balance_cancel(struct btrfs_fs_info *fs_info)
+> +{
+> +	int err = 0;
+> +
+> +	if (!capable(CAP_SYS_ADMIN))
+> +		return -EPERM;
+> +
+> +	spin_lock(&fs_info->balance_info_lock);
+> +	if (!fs_info->balance_info) {
+> +		err = -EINVAL;
+> +		goto error;
+> +	}
+> +	if (fs_info->balance_info->cancel_pending) {
+> +		err = -ECANCELED;
+                       ^^^^^^^^^
+
+> +		goto error;
+> +	}
+> +	fs_info->balance_info->cancel_pending = 1;
+> +
+> +error:
+> +	spin_unlock(&fs_info->balance_info_lock);
+> +	return err;
+> +}
+> +
+>  long btrfs_ioctl(struct file *file, unsigned int
+>  		cmd, unsigned long arg)
+>  {
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 8ab70f3..07ff192 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -2155,6 +2156,10 @@ int btrfs_balance(struct btrfs_root *dev_root)
+>  		       bal_info->completed, bal_info->expected);
+>  	}
+>  	ret = 0;
+> +	if (bal_info->cancel_pending) {
+> +		printk(KERN_INFO "btrfs: balance cancelled\n");
+> +		ret = -EINTR;
+                       ^^^^^
+
+> +	}
+>  error:
+>  	btrfs_free_path(path);
+>  	spin_lock(&dev_root->fs_info->balance_info_lock);

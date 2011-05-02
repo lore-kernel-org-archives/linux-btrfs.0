@@ -1,110 +1,53 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH v3 1/3] btrfs: move btrfs_cmp_device_free_bytes to super.c
-Date: Mon,  2 May 2011 10:47:40 +0200
-Message-ID: <f16608fbcf0191305c70471667f54d1a0313192f.1304325641.git.sensille@gmx.net>
-References: <cover.1304325641.git.sensille@gmx.net>
+Subject: [PATCH v3 0/3] btrfs: quasi-round-robin for chunk allocation
+Date: Mon,  2 May 2011 10:47:39 +0200
+Message-ID: <cover.1304325641.git.sensille@gmx.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <cover.1304325641.git.sensille@gmx.net>
-In-Reply-To: <cover.1304325641.git.sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-this function won't be used here anymore, so move it super.c where it is
-used for df-calculation
+In a multi device setup, the chunk allocator currently always allocates
+chunks on the devices in the same order. This leads to a very uneven
+distribution, especially with RAID1 or RAID10 and an uneven number of
+devices.
+This patch always sorts the devices before allocating, and allocates the
+stripes on the devices with the most available space, as long as there
+is enough space available. In a low space situation, it first tries to
+maximize striping.
+The patch also simplifies the allocator and reduces the checks for
+corner cases.
+The simplification is done by several means. First, it defines the
+properties of each RAID type upfront. These properties are used afterwards
+instead of differentiating cases in several places.
+Second, the old allocator defined a minimum stripe size for each block
+group type, tried to find a large enough chunk, and if this fails just
+allocates a smaller one. This is now done in one step. The largest possible
+chunk (up to max_chunk_size) is searched and allocated.
+Because we now have only one pass, the allocation of the map (struct
+map_lookup) is moved down to the point where the number of stripes is
+already known. This way we avoid reallocation of the map.
+We still avoid allocating stripes that are not a multiple of STRIPE_SIZE.
 
-Signed-off-by: Arne Jansen <sensille@gmx.net>
----
- fs/btrfs/super.c   |   25 +++++++++++++++++++++++++
- fs/btrfs/volumes.c |   13 -------------
- fs/btrfs/volumes.h |   15 ---------------
- 3 files changed, 25 insertions(+), 28 deletions(-)
+Changes from v1:
+ - split into multiple parts
+ - added some comments
+ - generated with --patience for better readability
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 0ac712e..d8c9a49 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -913,6 +913,31 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
- 	return 0;
- }
- 
-+/* Used to sort the devices by max_avail(descending sort) */
-+int btrfs_cmp_device_free_bytes(const void *dev_info1, const void *dev_info2)
-+{
-+	if (((struct btrfs_device_info *)dev_info1)->max_avail >
-+	    ((struct btrfs_device_info *)dev_info2)->max_avail)
-+		return -1;
-+	else if (((struct btrfs_device_info *)dev_info1)->max_avail <
-+	         ((struct btrfs_device_info *)dev_info2)->max_avail)
-+		return 1;
-+	else
-+	return 0;
-+}
-+
-+/*
-+ * sort the devices by max_avail, in which max free extent size of each device
-+ * is stored.(Descending Sort)
-+ */
-+static inline void btrfs_descending_sort_devices(
-+					struct btrfs_device_info *devices,
-+					size_t nr_devices)
-+{
-+	sort(devices, nr_devices, sizeof(struct btrfs_device_info),
-+	     btrfs_cmp_device_free_bytes, NULL);
-+}
-+
- /*
-  * The helper to calc the free space on the devices that can be used to store
-  * file data.
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 8b9fb8c..a9f1fc2 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2282,19 +2282,6 @@ static noinline u64 chunk_bytes_by_type(u64 type, u64 calc_size,
- 		return calc_size * num_stripes;
- }
- 
--/* Used to sort the devices by max_avail(descending sort) */
--int btrfs_cmp_device_free_bytes(const void *dev_info1, const void *dev_info2)
--{
--	if (((struct btrfs_device_info *)dev_info1)->max_avail >
--	    ((struct btrfs_device_info *)dev_info2)->max_avail)
--		return -1;
--	else if (((struct btrfs_device_info *)dev_info1)->max_avail <
--		 ((struct btrfs_device_info *)dev_info2)->max_avail)
--		return 1;
--	else
--		return 0;
--}
--
- static int __btrfs_calc_nstripes(struct btrfs_fs_devices *fs_devices, u64 type,
- 				 int *num_stripes, int *min_stripes,
- 				 int *sub_stripes)
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index cc2eada..b502f01 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -157,21 +157,6 @@ struct map_lookup {
- 	struct btrfs_bio_stripe stripes[];
- };
- 
--/* Used to sort the devices by max_avail(descending sort) */
--int btrfs_cmp_device_free_bytes(const void *dev_info1, const void *dev_info2);
--
--/*
-- * sort the devices by max_avail, in which max free extent size of each device
-- * is stored.(Descending Sort)
-- */
--static inline void btrfs_descending_sort_devices(
--					struct btrfs_device_info *devices,
--					size_t nr_devices)
--{
--	sort(devices, nr_devices, sizeof(struct btrfs_device_info),
--	     btrfs_cmp_device_free_bytes, NULL);
--}
--
- int btrfs_account_dev_extents_size(struct btrfs_device *device, u64 start,
- 				   u64 end, u64 *length);
- 
+Changes from v2:
+ - rebased to current master
+ - bugfix for 'single' raid type; the initial parameter initialization lacked
+   a case for the 'single' type, thus leaving devs_max at the wrong value
+
+Arne Jansen (3):
+  btrfs: move btrfs_cmp_device_free_bytes to super.c
+  btrfs: heed alloc_start
+  btrfs: quasi-round-robin for chunk allocation
+
+ fs/btrfs/super.c   |   25 +++
+ fs/btrfs/volumes.c |  494 ++++++++++++++++++----------------------------------
+ fs/btrfs/volumes.h |   16 +--
+ 3 files changed, 197 insertions(+), 338 deletions(-)
+
 -- 
 1.7.3.4
 

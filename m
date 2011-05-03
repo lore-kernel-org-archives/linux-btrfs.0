@@ -1,46 +1,52 @@
-From: cwillu <cwillu@cwillu.com>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: abysmal performance
-Date: Tue, 3 May 2011 05:00:16 -0600
-Message-ID: <BANLkTi==+8GTePDpOWgFfi7RrZ9jQR_M=g@mail.gmail.com>
-References: <1304088305-sup-3784@localhost>
-	<1304089239-sup-5110@think>
-	<BANLkTi=6YHDSmcg5DiHPiL1xWdT1nWobBg@mail.gmail.com>
-	<20110430235539.6205.qmail@stuge.se>
-	<ipolll$2h0$1@dough.gmane.org>
-Mime-Version: 1.0
+Date: Tue, 03 May 2011 07:05:07 -0400
+Message-ID: <1304420518-sup-3459@think>
+References: <1304088305-sup-3784@localhost> <1304089239-sup-5110@think> <BANLkTi=6YHDSmcg5DiHPiL1xWdT1nWobBg@mail.gmail.com> <1304195921-sup-9266@localhost> <BANLkTims8NH-2V_ytOSfVWkAGtEDmGdT7A@mail.gmail.com> <1304202606-sup-1414@localhost>
 Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Bernhard Schmidt <berni@birkenwald.de>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: John Wyzer <john.wyzer@gmx.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <ipolll$2h0$1@dough.gmane.org>
+In-reply-to: <1304202606-sup-1414@localhost>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 3, 2011 at 4:33 AM, Bernhard Schmidt <berni@birkenwald.de> wrote:
-> Peter Stuge <peter@stuge.se> wrote:
->
-> Hey,
->
-> defragging btrfs does not seem to work for me. I have run the filefrag
-> command over the whole fs and (manually) tried to defrag a few heavily
-> fragmented files, but I don't get it to work (it still has the same
-> number of extends and they are horrently uncorrelated)
->
-> root@schleppi:~# filefrag
-> /usr/lib/x86_64-linux-gnu/gcc/x86_64-linux-gnu/4.4/cc1
-> /usr/lib/x86_64-linux-gnu/gcc/x86_64-linux-gnu/4.4/cc1: 72 extents found
-> root@schleppi:~# btrfs filesystem defrag
-> /usr/lib/x86_64-linux-gnu/gcc/x86_64-linux-gnu/4.4/cc1
-> root@schleppi:~# filefrag
-> /usr/lib/x86_64-linux-gnu/gcc/x86_64-linux-gnu/4.4/cc1
-> /usr/lib/x86_64-linux-gnu/gcc/x86_64-linux-gnu/4.4/cc1: 72 extents found
->
-> I'm using Ubuntu Natty (2.6.38.4) and tried both btrfs-tools from Natty
-> (201006xx) and from Debian experimental (git from 20101101). Both show
-> the same symptoms. I don't think fragmentation is bad on this box (due
-> to having an SSD), but my system at home is getting dog slow and I'd
-> like to try that when I come home end of the week.
+Excerpts from John Wyzer's message of 2011-04-30 18:33:20 -0400:
+> Excerpts from Mitch Harder's message of Sun May 01 00:16:53 +0200 2011:
+> > > Hmm.
+> > > Tried it and it gives me about 500000 lines of
+> > >
+> > > FIBMAP: Invalid argument
+> > >
+> > > and then:
+> > >
+> > > large_file: 1 extent found
+> > >
+> > > Is that the way it is supposed to work?
+> > > Just asking because this was part of a vmware disk image. Both the virtual
+> > > machine and the rest of the host system are almost unusable once the VM ist
+> > > started (even more unusable than without vmware :-D )
+> > 
+> > No.  It sounds like the filefrag command is getting confused in the
+> > virtual environment.
+> 
+> Misunderstanding :-) I tried filefrag _on_ a vmware disk image, not  inside a
+> virtual machine.
+> The whole btrfs story here is on a real machine.
 
-You're not using compression on that filesystem are you?  If so, be
-aware that the number of extents isn't going to change after
-defragmentation, although you should find that the _locations_ of
-those extents is contiguous.
+The most important files to defrag are going to be your internal firefox
+files (I think in .mozilla), your sup database (in .sup) and your vmware
+images.  I would definitely suggest that you try to narrow down if
+vmware is making the machine seem much slower after the defrag is done.
+
+It might make sense to run the nocow ioctl on your vmware images, they
+are probably triggering lots of seeks.
+
+You'll notice the machine is much slower after a reboot, this is because
+we have to do a lot of IO to recache the extent allocation tree.  If you
+pull from the btrfs-unstable tree, you can use mount -o space_cache,
+which cuts down on the reading after a reboot dramatically.
+
+If none of this works, we'll look at the files that you're fsyncing.
+That seems to be the bulk of your latencies.
+
+-chris

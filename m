@@ -1,65 +1,93 @@
-From: Kyungmin Park <kmpark@infradead.org>
-Subject: Re: Is it possible for the ext4/btrfs file system to pass some
- context related info to low level block driver?
-Date: Tue, 3 May 2011 13:10:26 +0900
-Message-ID: <BANLkTikm-ZMG7KRjjz0DtduPDC4KUw7_Bg@mail.gmail.com>
-References: <CE761E84DADF2947A4AF22FB8D97A47358E28022@shsmsx501.ccr.corp.intel.com>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [PATCH 1/3] fs: remove FS_COW_FL
+Date: Tue, 03 May 2011 17:11:44 +0800
+Message-ID: <4DBFC6D0.3010105@cn.fujitsu.com>
+References: <4DA7B559.8060800@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	"linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
-	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-	"linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>
-To: "Gao, Yunpeng" <yunpeng.gao@intel.com>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <CE761E84DADF2947A4AF22FB8D97A47358E28022@shsmsx501.ccr.corp.intel.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Chris Mason <chris.mason@oracle.com>,
+	linux-fsdevel@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4DA7B559.8060800@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Any comments? If this patch is acceptable, it should be queued for .39?
+since fs.h is exported to userspace.
 
-It seems similar with TRIM. So how about to consider TRIM
-implementation or extend it?
-I'm not familiar with NCQ implementation but it's also helpful to imple=
-ment it.
-
-Thank you,
-Kyungmin Park
-
-On Tue, May 3, 2011 at 11:44 AM, Gao, Yunpeng <yunpeng.gao@intel.com> w=
-rote:
-> Currently, some new storage devices have the ability to do performanc=
-e optimizations according to the type of data payload - say, file syste=
-m metadata, time-stamps, sequential write in some granularity, random w=
-rite and so on.
->
-> For example, the latest eMMC 4.5 device can support the so-called 'Co=
-ntext Management' and 'Data Tag Mechanism' features. By receiving the i=
-nformation of payload data type, the eMMC 4.5 device can improve the ac=
-cess rate during the following read and update operations and offer a m=
-ore reliable and robust storage.
->
-> And obviously, to enable these kind of advanced features of storage d=
-evice, it needs not only the low level block device driver supports, bu=
-t also the file system supports since files system knows more info abou=
-t the data type of the payload. But currently, seems there are no file =
-systems implemented these kind of supports yet.
->
-> So, my question is, is there any plan or discussion on supporting thi=
-s feature (passing data type info to low level block device driver) on =
-file system developments? Especially for ext4/btrfs, since now they are=
- very hot in Linux? Thanks.
->
->
-> Regards,
-> Yunpeng Gao
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-mmc" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-fsdevel=
-" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Li Zefan wrote:
+> FS_COW_FL and FS_NOCOW_FL were newly introduced to control per file
+> COW in btrfs, but FS_NOCOW_FL is sufficient.
+> 
+> The fact is we don't have corresponding BTRFS_INODE_COW flag.
+> 
+> COW is default, and FS_NOCOW_FL can be used to switch off COW for
+> a single file.
+> 
+> If we mount btrfs with nodatacow, a newly created file will be set with
+> the FS_NOCOW_FL flag. So to turn on COW for it, we can just clear the
+> FS_NOCOW_FL flag.
+> 
+> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+> ---
+>  fs/btrfs/ioctl.c   |   15 ++++++---------
+>  include/linux/fs.h |    1 -
+>  2 files changed, 6 insertions(+), 10 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index f580a3a..3240dd9 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -144,16 +144,13 @@ static int check_flags(unsigned int flags)
+>  	if (flags & ~(FS_IMMUTABLE_FL | FS_APPEND_FL | \
+>  		      FS_NOATIME_FL | FS_NODUMP_FL | \
+>  		      FS_SYNC_FL | FS_DIRSYNC_FL | \
+> -		      FS_NOCOMP_FL | FS_COMPR_FL | \
+> -		      FS_NOCOW_FL | FS_COW_FL))
+> +		      FS_NOCOMP_FL | FS_COMPR_FL |
+> +		      FS_NOCOW_FL))
+>  		return -EOPNOTSUPP;
+>  
+>  	if ((flags & FS_NOCOMP_FL) && (flags & FS_COMPR_FL))
+>  		return -EINVAL;
+>  
+> -	if ((flags & FS_NOCOW_FL) && (flags & FS_COW_FL))
+> -		return -EINVAL;
+> -
+>  	return 0;
+>  }
+>  
+> @@ -218,6 +215,10 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+>  		ip->flags |= BTRFS_INODE_DIRSYNC;
+>  	else
+>  		ip->flags &= ~BTRFS_INODE_DIRSYNC;
+> +	if (flags & FS_NOCOW_FL)
+> +		ip->flags |= BTRFS_INODE_NODATACOW;
+> +	else
+> +		ip->flags &= ~BTRFS_INODE_NODATACOW;
+>  
+>  	/*
+>  	 * The COMPRESS flag can only be changed by users, while the NOCOMPRESS
+> @@ -231,10 +232,6 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+>  		ip->flags |= BTRFS_INODE_COMPRESS;
+>  		ip->flags &= ~BTRFS_INODE_NOCOMPRESS;
+>  	}
+> -	if (flags & FS_NOCOW_FL)
+> -		ip->flags |= BTRFS_INODE_NODATACOW;
+> -	else if (flags & FS_COW_FL)
+> -		ip->flags &= ~BTRFS_INODE_NODATACOW;
+>  
+>  	trans = btrfs_join_transaction(root, 1);
+>  	BUG_ON(IS_ERR(trans));
+> diff --git a/include/linux/fs.h b/include/linux/fs.h
+> index de9dd81..56a4141 100644
+> --- a/include/linux/fs.h
+> +++ b/include/linux/fs.h
+> @@ -365,7 +365,6 @@ struct inodes_stat_t {
+>  #define FS_EXTENT_FL			0x00080000 /* Extents */
+>  #define FS_DIRECTIO_FL			0x00100000 /* Use direct i/o */
+>  #define FS_NOCOW_FL			0x00800000 /* Do not cow file */
+> -#define FS_COW_FL			0x02000000 /* Cow file */
+>  #define FS_RESERVED_FL			0x80000000 /* reserved for ext2 lib */
+>  
+>  #define FS_FL_USER_VISIBLE		0x0003DFFF /* User visible flags */

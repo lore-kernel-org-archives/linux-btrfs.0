@@ -1,23 +1,31 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: kernel BUG at fs/btrfs/inode.c:2271!
-Date: Tue, 03 May 2011 10:54:04 -0400
-Message-ID: <4DC0170C.8000906@redhat.com>
-References: <383ECFA9-9E51-4CCD-BE24-21FD30813217@gmx.net>
+Subject: Re: question about percentage utilization...
+Date: Tue, 03 May 2011 10:54:45 -0400
+Message-ID: <4DC01735.20801@redhat.com>
+References: <4DB865DB.7080600@noir.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Marco Neubauer <icetea1@gmx.net>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: "K. Richard Pixley" <rich@noir.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <383ECFA9-9E51-4CCD-BE24-21FD30813217@gmx.net>
+In-Reply-To: <4DB865DB.7080600@noir.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/27/2011 02:52 PM, Marco Neubauer wrote:
-> Hi,
+On 04/27/2011 02:52 PM, K. Richard Pixley wrote:
+> At what percentage utilization are folks typically seeing "no space left
+> on device"?
 >
-> this is happening mostly every night. I can't reproduce it right now.
-> vanilla kernel 2.6.38.4
+> And what would constitute "pathological" values worth reporting and/or
+> offering up as debugging instances?
 >
 
-Can you update to a newer kernel, this should be fixed there.  Thanks,
+Well if you are having problems let us know what you are seeing and then 
+we can tell you :).  Be sure to include
+
+df
+btrfs fi df /your/mount/point
+btrfs-show
+
+Thanks,
 
 Josef

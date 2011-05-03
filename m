@@ -1,30 +1,28 @@
-From: Martin Schitter <ms@mur.at>
-Subject: btrfs csum failed
-Date: Tue, 03 May 2011 23:56:32 +0200
-Message-ID: <4DC07A10.7070200@mur.at>
+From: CACook@quantum-sci.com
+Subject: Re: Cannot Deinstall a Debian Package
+Date: Tue, 3 May 2011 15:20:49 -0700
+Message-ID: <201105031520.49993.CACook@quantum-sci.com>
+References: <201105031227.43619.CACook@quantum-sci.com> <BANLkTinPUPM6+iNUvYfx0_C-Wt32eb_1jQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-15; format=flowed
-To: linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+To: "linux-btrfs" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <BANLkTinPUPM6+iNUvYfx0_C-Wt32eb_1jQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-since my last debian kernel-update to 2.6.38-2-amd64 i got troubles with 
-csum failures. it's a volume full of huge kvm-images on md-RAID1 and 
-LVM, so i used the mount options: 'noatime,nodatasum' to maximize the 
-performance.
+On Tuesday 3 May, 2011 14:26:52 Fajar A. Nugraha wrote:
+> Does Debian (or whatever distro you use) support BTRFS "/"?
+> If yes, you should ask them.
 
-it happened two weeks ago for the fist time. and now again a kvm-image 
-isn't readable again. i have to use an older snapshot to substitute the 
-virtual machine.
+What do you mean 'does Debian support BTRFS'?  The kernel supports it.  And why would they know more about BTRFS than you?
 
-this are the entries in dmesg/kernel-log on any access:
-...
-  [2412668.409442] btrfs csum failed ino 258 off 2331529216 csum 
-3632892464 private 2115348581
-...
+My whole system is installed over BTRFS.  If this is non-functional in any OS there should be a warning indicating it is non-functional.
 
-it's a production machine, so i can not make to much experiments on it.
-do you see an obvious way to solve this problem?
 
-thanks!
-martin
+> Looks like grub problem. I know that Ubuntu Natty's grub-pc (grub2)
+> work just fine, so you might be able to fix it by upgrading to newer
+> grub/grub-pc (perhaps from Debian-unstable).
+
+I would be happy to upgrade grub, but the package management system is jammed because of this.
+

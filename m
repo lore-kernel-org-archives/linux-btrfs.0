@@ -1,37 +1,48 @@
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: [PATCH 2/2] [RFC] Btrfs: Increase limit of relocated extent size
-Date: Tue,  3 May 2011 14:28:15 -0500
-Message-ID: <1304450895-15586-3-git-send-email-mitch.harder@sabayonlinux.org>
-References: <1304450895-15586-1-git-send-email-mitch.harder@sabayonlinux.org>
-Cc: Mitch Harder <mitch.harder@sabayonlinux.org>
-To: linux-btrfs@vger.kernel.org
+From: Christian Brunner <chb@muc.de>
+Subject: Re: [PATCH] Prevent oopsing in posix_acl_valid()
+Date: Tue, 3 May 2011 21:33:52 +0200
+Message-ID: <BANLkTinm6n5sm77Rc=yvXk4M-uqL7=_oNQ@mail.gmail.com>
+References: <1304441053-4173-1-git-send-email-daniel.blueman@gmail.com>
+	<4DC03D7E.1020908@redhat.com>
+Reply-To: chb@muc.de
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Daniel J Blueman <daniel.blueman@gmail.com>,
+	linux-btrfs@vger.kernel.org, chris.mason@oracle.com
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1304450895-15586-1-git-send-email-mitch.harder@sabayonlinux.org>
+In-Reply-To: <4DC03D7E.1020908@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The size of relocated compressed extents was limited to 128K.
-This limit is put in place to ease the RAM required when spreading
-compression across several CPUs, and to make sure the amount
-of IO required to do a random read is reasonably small.
+2011/5/3 Josef Bacik <josef@redhat.com>:
+> On 05/03/2011 12:44 PM, Daniel J Blueman wrote:
+>>
+>> If posix_acl_from_xattr() returns an error code, a negative address =
+is
+>> dereferenced causing an oops; fix by checking for error code first.
+>>
+>> Signed-off-by: Daniel J Blueman<daniel.blueman@gmail.com>
+>> ---
+>> =A0fs/btrfs/acl.c | =A0 =A05 +++--
+>> =A01 files changed, 3 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+>> index 5d505aa..cad6fbb 100644
+>> --- a/fs/btrfs/acl.c
+>> +++ b/fs/btrfs/acl.c
+>> @@ -178,12 +178,13 @@ static int btrfs_xattr_acl_set(struct dentry
+>> *dentry, const char *name,
+>>
+>> =A0 =A0 =A0 =A0if (value) {
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0acl =3D posix_acl_from_xattr(value, s=
+ize);
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (IS_ERR(acl)
 
-Increase this limit to 512K.
----
- fs/btrfs/relocation.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+A small typo: The right parenthesis is missing.
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 58250e0..dd17a35 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -143,7 +143,7 @@ struct tree_block {
- 	unsigned int key_ready:1;
- };
- 
--#define MAX_EXTENTS 128
-+#define MAX_EXTENTS 512
- 
- struct file_extent_cluster {
- 	u64 start;
--- 
-1.7.3.4
-
+Christian
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,58 +1,35 @@
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: Re: abysmal performance
-Date: Tue, 3 May 2011 08:41:37 -0500
-Message-ID: <BANLkTikUwnf4E3n4mDLkkptPGA=rRTjPNg@mail.gmail.com>
-References: <1304088305-sup-3784@localhost>
-	<1304089239-sup-5110@think>
-	<BANLkTi=6YHDSmcg5DiHPiL1xWdT1nWobBg@mail.gmail.com>
-	<20110430235539.6205.qmail@stuge.se>
-	<ipolll$2h0$1@dough.gmane.org>
-	<1304420831-sup-4737@think>
-	<4DBFE75C.2000104@birkenwald.de>
-	<1304422493-sup-6212@think>
-	<4DBFEA48.3000406@birkenwald.de>
-	<1304427015-sup-4772@think>
-	<4DBFFD17.8080702@birkenwald.de>
+From: "Martin K. Petersen" <martin.petersen@oracle.com>
+Subject: Re: Is it possible for the ext4/btrfs file system to pass some context related info to low level block driver?
+Date: Tue, 03 May 2011 09:43:29 -0400
+Message-ID: <yq1mxj32932.fsf@sermon.lab.mkp.net>
+References: <CE761E84DADF2947A4AF22FB8D97A47358E28022@shsmsx501.ccr.corp.intel.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Bernhard Schmidt <berni@birkenwald.de>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DBFFD17.8080702@birkenwald.de>
+Content-Type: text/plain
+Cc: "linux-btrfs\@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"linux-ext4\@vger.kernel.org" <linux-ext4@vger.kernel.org>,
+	"linux-fsdevel\@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+	"linux-mmc\@vger.kernel.org" <linux-mmc@vger.kernel.org>
+To: "Gao\, Yunpeng" <yunpeng.gao@intel.com>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <CE761E84DADF2947A4AF22FB8D97A47358E28022@shsmsx501.ccr.corp.intel.com>
+	(Yunpeng Gao's message of "Tue, 3 May 2011 10:44:07 +0800")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 3, 2011 at 8:03 AM, Bernhard Schmidt <berni@birkenwald.de> =
-wrote:
-> Hi,
->
->> Ok, looks like we could be doing a little better job when compressio=
-n is
->> on to build out a bigger extent. =A0This shouldn't be causing troubl=
-e on
->> an ssd at all but on your rotating disk it'll be slightly slower.
->>
->> Still most of these extents are somewhat close together, this is rou=
-ghly
->> what mount -o ssd (which is enabled automatically when we detect a
->> non-rotating drive) would try for.
->>
->> The problematic files are going to have thousands of extents, this f=
-ile
->> should be fine.
->
-> Thanks, I'll check on my system with rotating disks at home when I ge=
-t back.
->
+>>>>> "Yunpeng" == Gao, Yunpeng <yunpeng.gao@intel.com> writes:
 
-I'd also be curious to see if mounting with "-o compress-force=3Dlzo"
-affects anything.
+Yunpeng> So, my question is, is there any plan or discussion on
+Yunpeng> supporting this feature (passing data type info to low level
+Yunpeng> block device driver) on file system developments? Especially
+Yunpeng> for ext4/btrfs, since now they are very hot in Linux? Thanks.
 
-As I recall, the compress-force option was added because performance
-could be affected negatively when trying to optimize compression with
-"-o compress".
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Yes, I have been working on some changes that allow us to tag bios and
+pass the information out to storage. These patches have been on the back
+burner for a while due to other commitments. But I'll dig them out and
+post them later. We just discussed them a couple of weeks ago at the
+Linux Storage Workshop.
+
+In the meantime: Can you point me to the relevant eMMC stuff so I can
+see how many tiers or classes we have to work with there?
+
+-- 
+Martin K. Petersen	Oracle Linux Engineering

@@ -1,303 +1,107 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: fix how we do space reservation for truncate
-Date: Tue,  3 May 2011 10:44:32 -0400
-Message-ID: <1304433872-32368-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Subject: Re: btrfs warnings from 2.6.39-rc5
+Date: Tue, 03 May 2011 10:52:49 -0400
+Message-ID: <4DC016C1.2070505@redhat.com>
+References: <4DB863B4.3070900@sandia.gov>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: linux-btrfs@vger.kernel.org,
+	"ceph-devel@vger.kernel.org" <ceph-devel@vger.kernel.org>
+To: Jim Schutt <jaschut@sandia.gov>
+Return-path: <ceph-devel-owner@vger.kernel.org>
+In-Reply-To: <4DB863B4.3070900@sandia.gov>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The ceph guys keep running into problems where we have space reserved in our
-orphan block rsv when freeing it up.  This is because they tend to do snapshots
-alot, so their truncates tend to use a bunch of space, so when we go to do
-things like update the inode we have to steal reservation space in order to make
-the reservation happen.  This happens because truncate can use as much space as
-it freaking feels like, but we still have to hold space for removing the orphan
-item and updating the inode, which will definitely always happen.  So in order
-to fix this we need to split all of the reservation stuf up.  So with this patch
-we have
+On 04/27/2011 02:43 PM, Jim Schutt wrote:
+> Hi,
+>
+> I'm not sure if they matter, but I got these warnings on
+> one of the machines I'm using as a Ceph OSD server:
+>
+> [ 1806.549469] ------------[ cut here ]------------
+> [ 1806.554593] WARNING: at fs/btrfs/extent-tree.c:5790
+> use_block_rsv+0xa7/0x101 [btrfs]()
+> [ 1806.562903] Hardware name: PowerEdge 1950
+> [ 1806.567126] Modules linked in: loop btrfs zlib_deflate lzo_compress
+> ipt_MASQUERADE iptable_nat nf_nat nf_conntrack_ipv4 nf_defrag_ipv4
+> xt_state nf_conntrack ipt_REJECT xt_tcpudp iptable_filter ip_tables
+> x_tables bridge stp i2c_dev i2c_core ext3 jbd ib_iser libi]
+> [ 1806.689084] Pid: 12025, comm: cosd Not tainted
+> 2.6.39-rc5-00006-g7b0bd4b #2
+> [ 1806.697425] Call Trace:
+> [ 1806.700332] [<ffffffffa06fe816>] ? use_block_rsv+0xa7/0x101 [btrfs]
+> [ 1806.707032] [<ffffffff810494d8>] ? warn_slowpath_common+0x85/0x9e
+> [ 1806.713502] [<ffffffff8104950b>] ? warn_slowpath_null+0x1a/0x1c
+> [ 1806.720755] [<ffffffffa06fe816>] ? use_block_rsv+0xa7/0x101 [btrfs]
+> [ 1806.731488] [<ffffffffa070590b>] ? btrfs_alloc_free_block+0x30/0x198
+> [btrfs]
+> [ 1806.743858] [<ffffffffa072ae8a>] ?
+> map_private_extent_buffer+0xb2/0xd9 [btrfs]
+> [ 1806.752600] [<ffffffffa072a4b8>] ? __kmap_atomic+0x12/0x47 [btrfs]
+> [ 1806.760057] [<ffffffffa072b036>] ? read_extent_buffer+0xc2/0xd4 [btrfs]
+> [ 1806.770897] [<ffffffffa06f84ac>] ? __btrfs_cow_block+0x10e/0x2f5 [btrfs]
+> [ 1806.779552] [<ffffffffa0709dbe>] ? btrfs_header_generation+0x1f/0x25
+> [btrfs]
+> [ 1806.788994] [<ffffffffa06f878f>] ? btrfs_cow_block+0xfc/0x121 [btrfs]
+> [ 1806.798434] [<ffffffffa06fa746>] ? btrfs_search_slot+0x144/0x3ae [btrfs]
+> [ 1806.806444] [<ffffffffa0709877>] ? btrfs_lookup_inode+0x31/0x86 [btrfs]
+> [ 1806.813611] [<ffffffffa071618b>] ? btrfs_update_inode+0x52/0xc1 [btrfs]
+> [ 1806.820904] [<ffffffffa071668c>] ? btrfs_truncate+0x239/0x297 [btrfs]
+> [ 1806.829290] [<ffffffffa071bb23>] ? btrfs_setsize+0x8c/0x9b [btrfs]
+> [ 1806.835962] [<ffffffffa071bb93>] ? btrfs_setattr+0x61/0x9d [btrfs]
+> [ 1806.842892] [<ffffffff81127ea4>] ? notify_change+0x174/0x1bc
+> [ 1806.850878] [<ffffffff81110c4f>] ? do_truncate+0x6e/0x8a
+> [ 1806.857374] [<ffffffff8111b126>] ? generic_permission+0x1c/0x8e
+> [ 1806.868498] [<ffffffff81110e42>] ? do_sys_truncate+0xf8/0x10a
+> [ 1806.877746] [<ffffffff81110e62>] ? sys_truncate+0xe/0x10
+> [ 1806.902751] [<ffffffff813b6deb>] ? system_call_fastpath+0x16/0x1b
+> [ 1806.909736] ---[ end trace cd0ae33f1a4433d9 ]---
+> [ 1812.142333] ------------[ cut here ]------------
+> [ 1812.146996] WARNING: at fs/btrfs/inode.c:2180
+> btrfs_orphan_commit_root+0x8c/0xab [btrfs]()
+> [ 1812.155275] Hardware name: PowerEdge 1950
+> [ 1812.159280] Modules linked in: loop btrfs zlib_deflate lzo_compress
+> ipt_MASQUERADE iptable_nat nf_nat nf_conntrack_ipv4 nf_defrag_ipv4
+> xt_state nf_conntrack ipt_REJECT xt_tcpudp iptable_filter ip_tables
+> x_tables bridge stp i2c_dev i2c_core ext3 jbd ib_iser libi]
+> [ 1812.240872] Pid: 7923, comm: kworker/3:2 Tainted: G W
+> 2.6.39-rc5-00006-g7b0bd4b #2
+> [ 1812.249216] Call Trace:
+> [ 1812.251712] [<ffffffffa0715048>] ? btrfs_orphan_commit_root+0x8c/0xab
+> [btrfs]
+> [ 1812.258976] [<ffffffff810494d8>] ? warn_slowpath_common+0x85/0x9e
+> [ 1812.265199] [<ffffffff8104950b>] ? warn_slowpath_null+0x1a/0x1c
+> [ 1812.271420] [<ffffffffa0715048>] ? btrfs_orphan_commit_root+0x8c/0xab
+> [btrfs]
+> [ 1812.278704] [<ffffffffa070f5e0>] ? commit_fs_roots+0x95/0xfd [btrfs]
+> [ 1812.285220] [<ffffffffa07039b3>] ? btrfs_run_delayed_refs+0x112/0x15e
+> [btrfs]
+> [ 1812.292459] [<ffffffff810367bf>] ? need_resched+0x23/0x2d
+> [ 1812.297961] [<ffffffff810367d7>] ? should_resched+0xe/0x2f
+> [ 1812.303604] [<ffffffffa07105e3>] ?
+> btrfs_commit_transaction+0x349/0x5a3 [btrfs]
+> [ 1812.310999] [<ffffffff8106622c>] ? list_del_init+0x21/0x21
+> [ 1812.316615] [<ffffffffa071085c>] ? do_async_commit+0x1f/0x2c [btrfs]
+> [ 1812.323055] [<ffffffff8106076b>] ? process_one_work+0x124/0x1e0
+> [ 1812.329083] [<ffffffffa071083d>] ?
+> btrfs_commit_transaction+0x5a3/0x5a3 [btrfs]
+> [ 1812.336526] [<ffffffff81061dd8>] ? workqueue_congested+0x1e/0x1e
+> [ 1812.342636] [<ffffffff81061e67>] ? worker_thread+0x8f/0x124
+> [ 1812.348353] [<ffffffff81065d26>] ? kthread+0x72/0x7a
+> [ 1812.353439] [<ffffffff813b7ed4>] ? kernel_thread_helper+0x4/0x10
+> [ 1812.359555] [<ffffffff813b07ad>] ? retint_restore_args+0xe/0xe
+> [ 1812.365484] [<ffffffff81065cb4>] ? kthread_bind+0x64/0x64
+> [ 1812.370986] [<ffffffff813b7ed0>] ? gs_change+0xb/0xb
+> [ 1812.376047] ---[ end trace cd0ae33f1a4433da ]---
+>
+> Please let me know if I can do anything to help sort these out.
+>
 
-1) The orphan block reserve which only holds the space for deleting our orphan
-item when everything is over.
+I just posted a patch for this problem, it's titled
 
-2) The truncate block reserve which gets allocated and used specifically for the
-space that the truncate will use on a per truncate basis.
+     Btrfs: fix how we do space reservation for truncate
 
-3) The transaction will always have 1 item's worth of data reserved so we can
-update the inode normally.
+Please apply it and test it and see if it makes this problem go away. 
+Thanks,
 
-Hopefully this will make the ceph problem go away.  Thanks,
-
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/ctree.h       |    3 +
- fs/btrfs/extent-tree.c |   46 +++++++++++++++----
- fs/btrfs/inode.c       |  111 ++++++++++++++++++++++++++++++++++++------------
- 3 files changed, 123 insertions(+), 37 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index d2991c8..1a41d77 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2223,6 +2223,9 @@ int btrfs_block_rsv_migrate(struct btrfs_block_rsv *src_rsv,
- void btrfs_block_rsv_release(struct btrfs_root *root,
- 			     struct btrfs_block_rsv *block_rsv,
- 			     u64 num_bytes);
-+int btrfs_truncate_reserve_metadata(struct btrfs_trans_handle *trans,
-+				    struct btrfs_root *root,
-+				    struct btrfs_block_rsv *rsv);
- int btrfs_set_block_group_ro(struct btrfs_root *root,
- 			     struct btrfs_block_group_cache *cache);
- int btrfs_set_block_group_rw(struct btrfs_root *root,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index a33d9a3..64d2514 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3934,6 +3934,37 @@ static u64 calc_trans_metadata_size(struct btrfs_root *root, int num_items)
- 		3 * num_items;
- }
- 
-+int btrfs_truncate_reserve_metadata(struct btrfs_trans_handle *trans,
-+				    struct btrfs_root *root,
-+				    struct btrfs_block_rsv *rsv)
-+{
-+	struct btrfs_block_rsv *trans_rsv = &root->fs_info->trans_block_rsv;
-+	u64 num_bytes;
-+	int ret;
-+
-+	/*
-+	 * Truncate should be freeing data, but give us 2 items just in case it
-+	 * needs to use some space.  We may want to be smarter about this in the
-+	 * future.
-+	 */
-+	num_bytes = calc_trans_metadata_size(root, 2);
-+
-+	/* We already have enough bytes, just return */
-+	if (rsv->reserved >= num_bytes)
-+		return 0;
-+
-+	num_bytes -= rsv->reserved;
-+
-+	/*
-+	 * You should have reserved enough space before hand to do this, so this
-+	 * should not fail.
-+	 */
-+	ret = block_rsv_migrate_bytes(trans_rsv, rsv, num_bytes);
-+	BUG_ON(ret);
-+
-+	return 0;
-+}
-+
- int btrfs_trans_reserve_metadata(struct btrfs_trans_handle *trans,
- 				 struct btrfs_root *root,
- 				 int num_items)
-@@ -3974,23 +4005,18 @@ int btrfs_orphan_reserve_metadata(struct btrfs_trans_handle *trans,
- 	struct btrfs_block_rsv *dst_rsv = root->orphan_block_rsv;
- 
- 	/*
--	 * one for deleting orphan item, one for updating inode and
--	 * two for calling btrfs_truncate_inode_items.
--	 *
--	 * btrfs_truncate_inode_items is a delete operation, it frees
--	 * more space than it uses in most cases. So two units of
--	 * metadata space should be enough for calling it many times.
--	 * If all of the metadata space is used, we can commit
--	 * transaction and use space it freed.
-+	 * We need to hold space in order to delete our orphan item once we've
-+	 * added it, so this takes the reservation so we can release it later
-+	 * when we are truly done with the orphan item.
- 	 */
--	u64 num_bytes = calc_trans_metadata_size(root, 4);
-+	u64 num_bytes = calc_trans_metadata_size(root, 1);
- 	return block_rsv_migrate_bytes(src_rsv, dst_rsv, num_bytes);
- }
- 
- void btrfs_orphan_release_metadata(struct inode *inode)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
--	u64 num_bytes = calc_trans_metadata_size(root, 4);
-+	u64 num_bytes = calc_trans_metadata_size(root, 1);
- 	btrfs_block_rsv_release(root, root->orphan_block_rsv, num_bytes);
- }
- 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 3217919..1aa8cc0 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6591,6 +6591,7 @@ out:
- static int btrfs_truncate(struct inode *inode)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_block_rsv *rsv;
- 	int ret;
- 	int err = 0;
- 	struct btrfs_trans_handle *trans;
-@@ -6604,28 +6605,83 @@ static int btrfs_truncate(struct inode *inode)
- 	btrfs_wait_ordered_range(inode, inode->i_size & (~mask), (u64)-1);
- 	btrfs_ordered_update_i_size(inode, inode->i_size, NULL);
- 
--	trans = btrfs_start_transaction(root, 5);
--	if (IS_ERR(trans))
--		return PTR_ERR(trans);
-+	/*
-+	 * Yes ladies and gentelment, this is indeed ugly.  The fact is we have
-+	 * 3 things going on here
-+	 *
-+	 * 1) We need to reserve space for our orphan item and the space to
-+	 * delete our orphan item.  Lord knows we don't want to have a dangling
-+	 * orphan item because we didn't reserve space to remove it.
-+	 *
-+	 * 2) We need to reserve space to update our inode.
-+	 *
-+	 * 3) We need to have something to cache all the space that is going to
-+	 * be free'd up by the truncate operation, but also have some slack
-+	 * space reserved in case it uses space during the truncate (thank you
-+	 * very much snapshotting).
-+	 *
-+	 * And we need these to all be seperate.  The fact is we can use alot of
-+	 * space doing the truncate, and we have no earthly idea how much space
-+	 * we will use, so we need the truncate reservation to be seperate so it
-+	 * doesn't end up using space reserved for updating the inode or
-+	 * removing the orphan item.  We also need to be able to stop the
-+	 * transaction and start a new one, which means we need to be able to
-+	 * update the inode several times, and we have no idea of knowing how
-+	 * many times that will be, so we can't just reserve 1 item for the
-+	 * entirety of the opration, so that has to be done seperately as well.
-+	 * Then there is the orphan item, which does indeed need to be held on
-+	 * to for the whole operation, and we need nobody to touch this reserved
-+	 * space except the orphan code.
-+	 *
-+	 * So that leaves us with
-+	 *
-+	 * 1) root->orphan_block_rsv - for the orphan deletion.
-+	 * 2) rsv - for the truncate reservation, which we will steal from the
-+	 * transaction reservation.
-+	 * 3) fs_info->trans_block_rsv - this will have 1 items worth left for
-+	 * updating the inode.
-+	 */
-+	rsv = btrfs_alloc_block_rsv(root);
-+	if (!rsv)
-+		return -ENOMEM;
-+	btrfs_add_durable_block_rsv(root->fs_info, rsv);
-+
-+	trans = btrfs_start_transaction(root, 4);
-+	if (IS_ERR(trans)) {
-+		err = PTR_ERR(trans);
-+		goto out;
-+	}
- 
- 	btrfs_set_trans_block_group(trans, inode);
- 
-+	/*
-+	 * Reserve space for the truncate process.  Truncate should be adding
-+	 * space, but if there are snapshots it may end up using space.
-+	 */
-+	ret = btrfs_truncate_reserve_metadata(trans, root, rsv);
-+	BUG_ON(ret);
-+
- 	ret = btrfs_orphan_add(trans, inode);
- 	if (ret) {
- 		btrfs_end_transaction(trans, root);
--		return ret;
-+		goto out;
- 	}
- 
- 	nr = trans->blocks_used;
- 	btrfs_end_transaction(trans, root);
- 	btrfs_btree_balance_dirty(root, nr);
- 
--	/* Now start a transaction for the truncate */
--	trans = btrfs_start_transaction(root, 0);
--	if (IS_ERR(trans))
--		return PTR_ERR(trans);
-+	/*
-+	 * Ok so we've already migrated our bytes over for the truncate, so here
-+	 * just reserve the one slot we need for updating the inode.
-+	 */
-+	trans = btrfs_start_transaction(root, 1);
-+	if (IS_ERR(trans)) {
-+		err = PTR_ERR(trans);
-+		goto out;
-+	}
- 	btrfs_set_trans_block_group(trans, inode);
--	trans->block_rsv = root->orphan_block_rsv;
-+	trans->block_rsv = rsv;
- 
- 	/*
- 	 * setattr is responsible for setting the ordered_data_close flag,
-@@ -6649,24 +6705,18 @@ static int btrfs_truncate(struct inode *inode)
- 
- 	while (1) {
- 		if (!trans) {
--			trans = btrfs_start_transaction(root, 0);
--			if (IS_ERR(trans))
--				return PTR_ERR(trans);
--			btrfs_set_trans_block_group(trans, inode);
--			trans->block_rsv = root->orphan_block_rsv;
--		}
-+			trans = btrfs_start_transaction(root, 3);
-+			if (IS_ERR(trans)) {
-+				err = PTR_ERR(trans);
-+				goto out;
-+			}
- 
--		ret = btrfs_block_rsv_check(trans, root,
--					    root->orphan_block_rsv, 0, 5);
--		if (ret == -EAGAIN) {
--			ret = btrfs_commit_transaction(trans, root);
--			if (ret)
--				return ret;
--			trans = NULL;
--			continue;
--		} else if (ret) {
--			err = ret;
--			break;
-+			ret = btrfs_truncate_reserve_metadata(trans, root,
-+							      rsv);
-+			BUG_ON(ret);
-+
-+			btrfs_set_trans_block_group(trans, inode);
-+			trans->block_rsv = rsv;
- 		}
- 
- 		ret = btrfs_truncate_inode_items(trans, root, inode,
-@@ -6677,6 +6727,7 @@ static int btrfs_truncate(struct inode *inode)
- 			break;
- 		}
- 
-+		trans->block_rsv = &root->fs_info->trans_block_rsv;
- 		ret = btrfs_update_inode(trans, root, inode);
- 		if (ret) {
- 			err = ret;
-@@ -6690,6 +6741,7 @@ static int btrfs_truncate(struct inode *inode)
- 	}
- 
- 	if (ret == 0 && inode->i_nlink > 0) {
-+		trans->block_rsv = root->orphan_block_rsv;
- 		ret = btrfs_orphan_del(trans, inode);
- 		if (ret)
- 			err = ret;
-@@ -6701,15 +6753,20 @@ static int btrfs_truncate(struct inode *inode)
- 		ret = btrfs_orphan_del(NULL, inode);
- 	}
- 
-+	trans->block_rsv = &root->fs_info->trans_block_rsv;
- 	ret = btrfs_update_inode(trans, root, inode);
- 	if (ret && !err)
- 		err = ret;
- 
- 	nr = trans->blocks_used;
- 	ret = btrfs_end_transaction_throttle(trans, root);
-+	btrfs_btree_balance_dirty(root, nr);
-+
-+out:
-+	btrfs_free_block_rsv(root, rsv);
-+
- 	if (ret && !err)
- 		err = ret;
--	btrfs_btree_balance_dirty(root, nr);
- 
- 	return err;
- }
--- 
-1.7.2.3
-
+Josef

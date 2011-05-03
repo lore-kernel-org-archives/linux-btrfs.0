@@ -1,51 +1,27 @@
 From: Bernhard Schmidt <berni@birkenwald.de>
 Subject: Re: abysmal performance
-Date: Tue, 03 May 2011 13:26:57 +0200
-Message-ID: <4DBFE681.3080906@birkenwald.de>
-References: <1304088305-sup-3784@localhost>	<1304089239-sup-5110@think>	<BANLkTi=6YHDSmcg5DiHPiL1xWdT1nWobBg@mail.gmail.com>	<20110430235539.6205.qmail@stuge.se>	<ipolll$2h0$1@dough.gmane.org> <BANLkTi==+8GTePDpOWgFfi7RrZ9jQR_M=g@mail.gmail.com>
+Date: Tue, 03 May 2011 13:43:04 +0200
+Message-ID: <4DBFEA48.3000406@birkenwald.de>
+References: <1304088305-sup-3784@localhost> <1304089239-sup-5110@think> <BANLkTi=6YHDSmcg5DiHPiL1xWdT1nWobBg@mail.gmail.com> <20110430235539.6205.qmail@stuge.se> <ipolll$2h0$1@dough.gmane.org> <1304420831-sup-4737@think> <4DBFE75C.2000104@birkenwald.de> <1304422493-sup-6212@think>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: cwillu <cwillu@cwillu.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTi==+8GTePDpOWgFfi7RrZ9jQR_M=g@mail.gmail.com>
+In-Reply-To: <1304422493-sup-6212@think>
 List-ID: <linux-btrfs.vger.kernel.org>
-
-Am 03.05.2011 13:00, schrieb cwillu:
 
 Hi,
 
->> defragging btrfs does not seem to work for me. I have run the filefrag
->> command over the whole fs and (manually) tried to defrag a few heavily
->> fragmented files, but I don't get it to work (it still has the same
->> number of extends and they are horrently uncorrelated)
->>
->> root@schleppi:~# filefrag
->> /usr/lib/x86_64-linux-gnu/gcc/x86_64-linux-gnu/4.4/cc1
->> /usr/lib/x86_64-linux-gnu/gcc/x86_64-linux-gnu/4.4/cc1: 72 extents found
->> root@schleppi:~# btrfs filesystem defrag
->> /usr/lib/x86_64-linux-gnu/gcc/x86_64-linux-gnu/4.4/cc1
->> root@schleppi:~# filefrag
->> /usr/lib/x86_64-linux-gnu/gcc/x86_64-linux-gnu/4.4/cc1
->> /usr/lib/x86_64-linux-gnu/gcc/x86_64-linux-gnu/4.4/cc1: 72 extents found
->>
->> I'm using Ubuntu Natty (2.6.38.4) and tried both btrfs-tools from Natty
->> (201006xx) and from Debian experimental (git from 20101101). Both show
->> the same symptoms. I don't think fragmentation is bad on this box (due
->> to having an SSD), but my system at home is getting dog slow and I'd
->> like to try that when I come home end of the week.
+> Using compression is not a problem, but in order to reduce the maximum
+> amount of ram we need to uncompress an extent, we enforce a max size on
+> the extent.  So you'll tend to have more extents, but they should be
+> close together on disk.
 > 
-> You're not using compression on that filesystem are you?  If so, be
-> aware that the number of extents isn't going to change after
-> defragmentation, although you should find that the _locations_ of
-> those extents is contiguous.
+> Could you please do a filefrag -v on the file?  Lets see how bad it
+> really is.
 
-Actually I do run compression, but the location is not continguous
-afterwards (even after btrfs filesystem sync / or using -f):
 
-root@schleppi:~# btrfs filesystem defrag -f
-/usr/lib/x86_64-linux-gnu/gcc/x86_64-linux-gnu/4.4/cc1
-root@schleppi:~# btrfs filesystem sync /FSSync '/'
 root@schleppi:~# filefrag -v
 /usr/lib/x86_64-linux-gnu/gcc/x86_64-linux-gnu/4.4/cc1
 Filesystem type is: 9123683e
@@ -126,6 +102,4 @@ File size of /usr/lib/x86_64-linux-gnu/gcc/x86_64-linux-gnu/4.4/cc1 is
   71    2272  4540096  4540016     14 eof
 /usr/lib/x86_64-linux-gnu/gcc/x86_64-linux-gnu/4.4/cc1: 72 extents found
 
-Best Regards,
 Bernhard
-

@@ -1,29 +1,58 @@
-From: Peter Stuge <peter@stuge.se>
-Subject: Re: resize ate my root node
-Date: Tue, 3 May 2011 15:23:56 +0200
-Message-ID: <20110503132356.19156.qmail@stuge.se>
-References: <20110307174820.5100.qmail@stuge.se> <1299620014-sup-698@think> <20110310062333.13172.qmail@stuge.se> <1299762537-sup-5020@think> <20110418210150.3870.qmail@stuge.se>
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: Re: abysmal performance
+Date: Tue, 3 May 2011 08:41:37 -0500
+Message-ID: <BANLkTikUwnf4E3n4mDLkkptPGA=rRTjPNg@mail.gmail.com>
+References: <1304088305-sup-3784@localhost>
+	<1304089239-sup-5110@think>
+	<BANLkTi=6YHDSmcg5DiHPiL1xWdT1nWobBg@mail.gmail.com>
+	<20110430235539.6205.qmail@stuge.se>
+	<ipolll$2h0$1@dough.gmane.org>
+	<1304420831-sup-4737@think>
+	<4DBFE75C.2000104@birkenwald.de>
+	<1304422493-sup-6212@think>
+	<4DBFEA48.3000406@birkenwald.de>
+	<1304427015-sup-4772@think>
+	<4DBFFD17.8080702@birkenwald.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Chris Mason <chris.mason@oracle.com>,
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Chris Mason <chris.mason@oracle.com>,
 	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Bernhard Schmidt <berni@birkenwald.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110418210150.3870.qmail@stuge.se>
+In-Reply-To: <4DBFFD17.8080702@birkenwald.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Peter Stuge wrote:
-> Sorry for not following up on this until now. :( I've been busy and
-> have been using a backup. But I'm still very interested in restoring
-> the btrfs and finding this bug! Let me know if I should refresh any
-> details.
+On Tue, May 3, 2011 at 8:03 AM, Bernhard Schmidt <berni@birkenwald.de> =
+wrote:
+> Hi,
+>
+>> Ok, looks like we could be doing a little better job when compressio=
+n is
+>> on to build out a bigger extent. =A0This shouldn't be causing troubl=
+e on
+>> an ssd at all but on your rotating disk it'll be slightly slower.
+>>
+>> Still most of these extents are somewhat close together, this is rou=
+ghly
+>> what mount -o ssd (which is enabled automatically when we detect a
+>> non-rotating drive) would try for.
+>>
+>> The problematic files are going to have thousands of extents, this f=
+ile
+>> should be fine.
+>
+> Thanks, I'll check on my system with rotating disks at home when I ge=
+t back.
+>
 
-Ping?
+I'd also be curious to see if mounting with "-o compress-force=3Dlzo"
+affects anything.
 
-I've created a small btrfs to see if I can learn a little about the
-structure (wiki next to the terminal) but not really expect that I'll
-be efficient. Any hints on how/where I can find my root node again?
-
-Or if unidentifiable, could it be reconstructed?
-
-
-//Peter
+As I recall, the compress-force option was added because performance
+could be affected negatively when trying to optimize compression with
+"-o compress".
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

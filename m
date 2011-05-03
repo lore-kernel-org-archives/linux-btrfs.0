@@ -1,29 +1,29 @@
-From: Bernhard Schmidt <berni@birkenwald.de>
-Subject: Re: abysmal performance
-Date: Tue, 03 May 2011 15:03:19 +0200
-Message-ID: <4DBFFD17.8080702@birkenwald.de>
-References: <1304088305-sup-3784@localhost> <1304089239-sup-5110@think> <BANLkTi=6YHDSmcg5DiHPiL1xWdT1nWobBg@mail.gmail.com> <20110430235539.6205.qmail@stuge.se> <ipolll$2h0$1@dough.gmane.org> <1304420831-sup-4737@think> <4DBFE75C.2000104@birkenwald.de> <1304422493-sup-6212@think> <4DBFEA48.3000406@birkenwald.de> <1304427015-sup-4772@think>
+From: Peter Stuge <peter@stuge.se>
+Subject: Re: resize ate my root node
+Date: Tue, 3 May 2011 15:23:56 +0200
+Message-ID: <20110503132356.19156.qmail@stuge.se>
+References: <20110307174820.5100.qmail@stuge.se> <1299620014-sup-698@think> <20110310062333.13172.qmail@stuge.se> <1299762537-sup-5020@think> <20110418210150.3870.qmail@stuge.se>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=us-ascii
+To: Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1304427015-sup-4772@think>
+In-Reply-To: <20110418210150.3870.qmail@stuge.se>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Peter Stuge wrote:
+> Sorry for not following up on this until now. :( I've been busy and
+> have been using a backup. But I'm still very interested in restoring
+> the btrfs and finding this bug! Let me know if I should refresh any
+> details.
 
-> Ok, looks like we could be doing a little better job when compression is
-> on to build out a bigger extent.  This shouldn't be causing trouble on
-> an ssd at all but on your rotating disk it'll be slightly slower.
-> 
-> Still most of these extents are somewhat close together, this is roughly
-> what mount -o ssd (which is enabled automatically when we detect a
-> non-rotating drive) would try for.
-> 
-> The problematic files are going to have thousands of extents, this file
-> should be fine.
+Ping?
 
-Thanks, I'll check on my system with rotating disks at home when I get back.
+I've created a small btrfs to see if I can learn a little about the
+structure (wiki next to the terminal) but not really expect that I'll
+be efficient. Any hints on how/where I can find my root node again?
 
-Bernhard
+Or if unidentifiable, could it be reconstructed?
+
+
+//Peter

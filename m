@@ -1,48 +1,30 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] Prevent oopsing in posix_acl_valid()
-Date: Tue, 03 May 2011 13:38:06 -0400
-Message-ID: <4DC03D7E.1020908@redhat.com>
-References: <1304441053-4173-1-git-send-email-daniel.blueman@gmail.com>
+From: CACook@quantum-sci.com
+Subject: Cannot Deinstall a Debian Package
+Date: Tue, 3 May 2011 12:27:43 -0700
+Message-ID: <201105031227.43619.CACook@quantum-sci.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
-To: Daniel J Blueman <daniel.blueman@gmail.com>
+Content-Type: text/plain;
+  charset="us-ascii"
+To: "linux-btrfs" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1304441053-4173-1-git-send-email-daniel.blueman@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/03/2011 12:44 PM, Daniel J Blueman wrote:
-> If posix_acl_from_xattr() returns an error code, a negative address is
-> dereferenced causing an oops; fix by checking for error code first.
->
-> Signed-off-by: Daniel J Blueman<daniel.blueman@gmail.com>
-> ---
->   fs/btrfs/acl.c |    5 +++--
->   1 files changed, 3 insertions(+), 2 deletions(-)
->
-> diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-> index 5d505aa..cad6fbb 100644
-> --- a/fs/btrfs/acl.c
-> +++ b/fs/btrfs/acl.c
-> @@ -178,12 +178,13 @@ static int btrfs_xattr_acl_set(struct dentry *dentry, const char *name,
->
->   	if (value) {
->   		acl = posix_acl_from_xattr(value, size);
-> +		if (IS_ERR(acl)
-> +			return PTR_ERR(acl);
-> +
->   		if (acl) {
->   			ret = posix_acl_valid(acl);
->   			if (ret)
->   				goto out;
-> -		} else if (IS_ERR(acl)) {
-> -			return PTR_ERR(acl);
->   		}
->   	}
->
 
-Reviewed-by: Josef Bacik <josef@redhat.com>
+Having a failure that may be because grub2 doesn't BTRFS.  /boot is ext3 and / is BTRFS.
 
-Thanks,
+# dpkg -r linux-image-2.6.32-5-amd64
+(Reading database ... 136673 files and directories currently installed.)
+Removing linux-image-2.6.32-5-amd64 ...
+Examining /etc/kernel/postrm.d .
+run-parts: executing /etc/kernel/postrm.d/initramfs-tools 2.6.32-5-amd64 /boot/vmlinuz-2.6.32-5-amd64
+run-parts: executing /etc/kernel/postrm.d/zz-update-grub 2.6.32-5-amd64 /boot/vmlinuz-2.6.32-5-amd64
+/usr/sbin/grub-probe: error: cannot find a device for / (is /dev mounted?).
+run-parts: /etc/kernel/postrm.d/zz-update-grub exited with return code 1
+Failed to process /etc/kernel/postrm.d at /var/lib/dpkg/info/linux-image-2.6.32-5-amd64.postrm line 234.
+dpkg: error processing linux-image-2.6.32-5-amd64 (--remove):
+ subprocess installed post-removal script returned error exit status 1
+Errors were encountered while processing:
+ linux-image-2.6.32-5-amd64
 
-Josef
+I can't install or remove packages, of do my dist-upgrades.  What gives?
+

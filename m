@@ -1,35 +1,269 @@
-From: "Martin K. Petersen" <martin.petersen@oracle.com>
-Subject: Re: Is it possible for the ext4/btrfs file system to pass some context related info to low level block driver?
-Date: Tue, 03 May 2011 09:43:29 -0400
-Message-ID: <yq1mxj32932.fsf@sermon.lab.mkp.net>
-References: <CE761E84DADF2947A4AF22FB8D97A47358E28022@shsmsx501.ccr.corp.intel.com>
+From: Daniel J Blueman <daniel.blueman@gmail.com>
+Subject: Re: abysmal performance
+Date: Tue, 3 May 2011 22:41:39 +0800
+Message-ID: <BANLkTi=3DN1NqaJ9dwmqk0J-bUXA0c4ouQ@mail.gmail.com>
+References: <1304088305-sup-3784@localhost>
+	<1304089239-sup-5110@think>
+	<BANLkTi=6YHDSmcg5DiHPiL1xWdT1nWobBg@mail.gmail.com>
+	<20110430235539.6205.qmail@stuge.se>
+	<ipolll$2h0$1@dough.gmane.org>
+	<1304420831-sup-4737@think>
+	<4DBFE75C.2000104@birkenwald.de>
+	<1304422493-sup-6212@think>
+	<4DBFEA48.3000406@birkenwald.de>
+	<1304427015-sup-4772@think>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: "linux-btrfs\@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	"linux-ext4\@vger.kernel.org" <linux-ext4@vger.kernel.org>,
-	"linux-fsdevel\@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-	"linux-mmc\@vger.kernel.org" <linux-mmc@vger.kernel.org>
-To: "Gao\, Yunpeng" <yunpeng.gao@intel.com>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <CE761E84DADF2947A4AF22FB8D97A47358E28022@shsmsx501.ccr.corp.intel.com>
-	(Yunpeng Gao's message of "Tue, 3 May 2011 10:44:07 +0800")
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Bernhard Schmidt <berni@birkenwald.de>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1304427015-sup-4772@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
->>>>> "Yunpeng" == Gao, Yunpeng <yunpeng.gao@intel.com> writes:
+On 3 May 2011 20:52, Chris Mason <chris.mason@oracle.com> wrote:
+> Excerpts from Bernhard Schmidt's message of 2011-05-03 07:43:04 -0400=
+:
+>> Hi,
+>>
+>> > Using compression is not a problem, but in order to reduce the max=
+imum
+>> > amount of ram we need to uncompress an extent, we enforce a max si=
+ze on
+>> > the extent. =A0So you'll tend to have more extents, but they shoul=
+d be
+>> > close together on disk.
+>> >
+>> > Could you please do a filefrag -v on the file? =A0Lets see how bad=
+ it
+>> > really is.
+>>
+>>
+>> root@schleppi:~# filefrag -v
+>> /usr/lib/x86_64-linux-gnu/gcc/x86_64-linux-gnu/4.4/cc1
+>> Filesystem type is: 9123683e
+>> File size of /usr/lib/x86_64-linux-gnu/gcc/x86_64-linux-gnu/4.4/cc1 =
+is
+>> 9361528 (2286 blocks, blocksize 4096)
+>> =A0ext logical physical expected length flags
+>> =A0 =A00 =A0 =A0 =A0 0 =A04542111 =A0 =A0 =A0 =A0 =A0 =A0 =A032
+>> =A0 =A01 =A0 =A0 =A032 =A04542134 =A04542142 =A0 =A0 32
+>> =A0 =A02 =A0 =A0 =A064 =A04573263 =A04542165 =A0 =A0 32
+>
+> Ok, looks like we could be doing a little better job when compression=
+ is
+> on to build out a bigger extent. =A0This shouldn't be causing trouble=
+ on
+> an ssd at all but on your rotating disk it'll be slightly slower.
 
-Yunpeng> So, my question is, is there any plan or discussion on
-Yunpeng> supporting this feature (passing data type info to low level
-Yunpeng> block device driver) on file system developments? Especially
-Yunpeng> for ext4/btrfs, since now they are very hot in Linux? Thanks.
+It does seem the case generally; on 2.6.39-rc5, writing to a fresh
+filesystem using rsync with BTRFS compression enabled, 128KB extents
+seem very common [1] (filefrag inconsistency noted).
 
-Yes, I have been working on some changes that allow us to tag bios and
-pass the information out to storage. These patches have been on the back
-burner for a while due to other commitments. But I'll dig them out and
-post them later. We just discussed them a couple of weeks ago at the
-Linux Storage Workshop.
+Defragmenting with compression gives a nice linear extent [2]. It
+looks like it'll be a good win to prevent extents being split at
+writeout for the read case on rotational media.
 
-In the meantime: Can you point me to the relevant eMMC stuff so I can
-see how many tiers or classes we have to work with there?
+Daniel
 
--- 
-Martin K. Petersen	Oracle Linux Engineering
+--- [1]
+
+# filefrag sdhci.ppm
+sdhci.ppm: 173 extents found
+
+# filefrag -v sdhci.ppm
+=46ilesystem type is: 9123683e
+=46ile size of sdhci.ppm is 36838232 (8994 blocks, blocksize 4096)
+ ext logical physical expected length flags
+   0       0  7410681              32
+   1      32  7564365  7410712     32
+   2      64  7875283  7564396     32
+   3      96  8197111  7875314     32
+   4     128  8459255  8197142     32
+   5     160 10072355  8459286     32
+   6     192 10556407 10072386     32
+   7     224 11088956 10556438     32
+   8     256  9435820 11088987     32
+   9     288  9769977  9435851     32
+  10     320 10032121  9770008     32
+  11     352 11342839 10032152     32
+  12     384 12129270 11342870     32
+  13     416 12653556 12129301     32
+  14     448 12915698 12653587     32
+  15     480 12915705 12915729     32
+  16     512 13439988 12915736     32
+  17     544 13702133 13440019     32
+  18     576 14163816 13702164     32
+  19     608 14163823 14163847     32
+  20     640 14163830 14163854     32
+  21     672 14163837 14163861     32
+  22     704 14163843 14163868     32
+  23     736 14163849 14163874     32
+  24     768 14163859 14163880     32
+  25     800 14163869 14163890     32
+  26     832 14163879 14163900     32
+  27     864 14163889 14163910     32
+  28     896 14163899 14163920     32
+  29     928 14163909 14163930     32
+  30     960 14163919 14163940     32
+  31     992 14163929 14163950     32
+  32    1024 14163939 14163960     32
+  33    1056 14163949 14163970     32
+  34    1088 14163958 14163980     32
+  35    1120 14163967 14163989     32
+  36    1152 14163976 14163998     32
+  37    1184 14163985 14164007     32
+  38    1216 14163994 14164016     32
+  39    1248 14164003 14164025     32
+  40    1280 14164012 14164034     32
+  41    1312 14164021 14164043     32
+  42    1344 14164031 14164052     32
+  43    1376 14164041 14164062     32
+  44    1408 14164050 14164072     32
+  45    1440 14164060 14164081     32
+  46    1472 14164070 14164091     32
+  47    1504 14164080 14164101     32
+  48    1536 14164090 14164111     32
+  49    1568 14164100 14164121     32
+  50    1600 14164109 14164131     32
+  51    1632 14164119 14164140     32
+  52    1664 14164129 14164150     32
+  53    1696 14164139 14164160     32
+  54    1728 14164148 14164170     32
+  55    1760 14164157 14164179     32
+  56    1792 14164166 14164188     32
+  57    1824 14164176 14164197     32
+  58    1856 14164186 14164207     32
+  59    1888 14164196 14164217     32
+  60    1920 14164205 14164227     32
+  61    1952 14164214 14164236     32
+  62    1984 14164223 14164245     32
+  63    2016 14164233 14164254     32
+  64    2048 14164243 14164264     32
+  65    2080 14164252 14164274     32
+  66    2112 14164262 14164283     32
+  67    2144 14164272 14164293     32
+  68    2176 14164282 14164303     32
+  69    2208 14164292 14164313     32
+  70    2240 14164302 14164323     32
+  71    2272 14164311 14164333     32
+  72    2304 14164321 14164342     32
+  73    2336 14164331 14164352     32
+  74    2368 14164340 14164362     32
+  75    2400 14164350 14164371     32
+  76    2432 14164360 14164381     32
+  77    2464 14164369 14164391     32
+  78    2496 14164379 14164400     32
+  79    2528 14164389 14164410     32
+  80    2560 14164398 14164420     32
+  81    2592 14164407 14164429     32
+  82    2624 14164416 14164438     32
+  83    2656 14164425 14164447     32
+  84    2688 14164434 14164456     32
+  85    2720 14164443 14164465     32
+  86    2752 14164452 14164474     32
+  87    2784 14164462 14164483     32
+  88    2816 14164472 14164493     32
+  89    2848 14164481 14164503     32
+  90    2880 14164490 14164512     32
+  91    2912 14164499 14164521     32
+  92    2944 14164508 14164530     32
+  93    2976 14164517 14164539     32
+  94    3008 14164526 14164548     32
+  95    3040 14164535 14164557     32
+  96    3072 14164545 14164566     32
+  97    3104 14164554 14164576     32
+  98    3136 14164563 14164585     32
+  99    3168 14164573 14164594     32
+ 100    3200 14164582 14164604     32
+ 101    3232 14164591 14164613     32
+ 102    3264 14164600 14164622     32
+ 103    3296 14164609 14164631     32
+ 104    3328 14164618 14164640     32
+ 105    3360 14164628 14164649     32
+ 106    3392 14164637 14164659     32
+ 107    3424 14164646 14164668     32
+ 108    3456 14164656 14164677     32
+ 109    3488 14164665 14164687     32
+ 110    3520 14164674 14164696     32
+ 111    3552 14164684 14164705     32
+ 112    3584 14164693 14164715     32
+ 113    3616 14164702 14164724     32
+ 114    3648 14164711 14164733     32
+ 115    3680 14164720 14164742     32
+ 116    3712 14164729 14164751     32
+ 117    3744 14164739 14164760     32
+ 118    3776 14164748 14164770     32
+ 119    3808 14164757 14164779     32
+ 120    3840 14164766 14164788     32
+ 121    3872 14164775 14164797     32
+ 122    3904 14164784 14164806     32
+ 123    3936 14164793 14164815     32
+ 124    3968 14164802 14164824     32
+ 125    4000 14164811 14164833     32
+ 126    4032 14164820 14164842     32
+ 127    4064 14164829 14164851     32
+ 128    4096 14164838 14164860     32
+ 129    4128 14164848 14164869     32
+ 130    4160 14164857 14164879     32
+ 131    4192 14164866 14164888     32
+ 132    4224 14164876 14164897     32
+ 133    4256 14164885 14164907     32
+ 134    4288 14164895 14164916     32
+ 135    4320 14164905 14164926     32
+ 136    4352 14164915 14164936     32
+ 137    4384 14164925 14164946     32
+ 138    4416 14164935 14164956     32
+ 139    4448 14164945 14164966     32
+ 140    4480 14164955 14164976     32
+ 141    4512 14164965 14164986     32
+ 142    4544 14164975 14164996     32
+ 143    4576 14164986 14165006     32
+ 144    4608 14164997 14165017     32
+ 145    4640 14165007 14165028     32
+ 146    4672 14165018 14165038     32
+ 147    4704 14165029 14165049     32
+ 148    4736 14165039 14165060     32
+ 149    4768 14165049 14165070    224
+ 150    4992 14165273              32
+ 151    5024 14165283 14165304     32
+ 152    5056 14165294 14165314     32
+ 153    5088 14165305 14165325     32
+ 154    5120 14165315 14165336     32
+ 155    5152 14165326 14165346     32
+ 156    5184 14165337 14165357     32
+ 157    5216 14165347 14165368     32
+ 158    5248 14165358 14165378     32
+ 159    5280 14165369 14165389    224
+ 160    5504 14165593              32
+ 161    5536 14165603 14165624     32
+ 162    5568 14165613 14165634     32
+ 163    5600 14165623 14165644     32
+ 164    5632 14165633 14165654     32
+ 165    5664 14165643 14165664     32
+ 166    5696 14165653 14165674     32
+ 167    5728 14165663 14165684    288
+ 168    6016 14165951              32
+ 169    6048 14165960 14165982     32
+ 170    6080 14165969 14165991     32
+ 171    6112 14165978 14166000     32
+ 172    6144 14165988 14166009   2850 eof
+sdhci.ppm: 170 extents found
+
+--- [2]
+
+# btrfs filesystem defragment -c sdhci.ppm
+
+# filefrag -v sdhci.ppm
+=46ilesystem type is: 9123683e
+=46ile size of sdhci.ppm is 36838232 (8994 blocks, blocksize 4096)
+ ext logical physical expected length flags
+   0       0 233041476            8994 eof
+sdhci.ppm: 1 extent found
+--=20
+Daniel J Blueman
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

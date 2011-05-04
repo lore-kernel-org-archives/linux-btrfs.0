@@ -1,38 +1,41 @@
-From: Martin Schitter <ms@mur.at>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: btrfs csum failed
-Date: Wed, 04 May 2011 14:27:57 +0200
-Message-ID: <4DC1464D.4060204@mur.at>
-References: <4DC07A10.7070200@mur.at>	<20110504002815.GA27861@dhcp231-156.rdu.redhat.com>	<4DC0A153.3080806@mur.at>	<BANLkTin1quUuSq4oKdt1SowTPv4dhGEM5g@mail.gmail.com>	<4DC13B02.9030604@mur.at> <BANLkTiniD_mztDPriodDWybTzt7Dqtherg@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: "Fajar A. Nugraha" <list@fajar.net>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: cwillu <cwillu@cwillu.com>
+Date: Wed, 04 May 2011 08:39:10 -0400
+Message-ID: <1304512672-sup-1948@think>
+References: <4DC07A10.7070200@mur.at>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Martin Schitter <ms@mur.at>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTiniD_mztDPriodDWybTzt7Dqtherg@mail.gmail.com>
+In-reply-to: <4DC07A10.7070200@mur.at>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 2011-05-04 13:51, schrieb cwillu:
->> that looks very unplausible to me. there is an RAID1 layer beneath btrfs in
->> our setup and i don't see any errors there.
->
-> That doesn't rule out the possibility of corruption when it was
-> written in the first place, or some similar problem that the raid1
-> faithfully reproduced on both mirrors.  That's not to say that it's
-> impossible that the problem is in btrfs, just that it's not the only
-> plausible possibility.
+Excerpts from Martin Schitter's message of 2011-05-03 17:56:32 -0400:
+> since my last debian kernel-update to 2.6.38-2-amd64 i got troubles with 
+> csum failures. it's a volume full of huge kvm-images on md-RAID1 and 
+> LVM, so i used the mount options: 'noatime,nodatasum' to maximize the 
+> performance.
+> 
+> it happened two weeks ago for the fist time. and now again a kvm-image 
+> isn't readable again. i have to use an older snapshot to substitute the 
+> virtual machine.
+> 
+> this are the entries in dmesg/kernel-log on any access:
+> ...
+>   [2412668.409442] btrfs csum failed ino 258 off 2331529216 csum 
+> 3632892464 private 2115348581
+> ...
+> 
+> it's a production machine, so i can not make to much experiments on it.
+> do you see an obvious way to solve this problem?
 
-well -- i am doing a backup of all images every night. this process 
-should work like a simple "scrub" because all data (and its checksumes) 
-will be read. that's the way i stumbled over this problem!
+What OS is inside these virtual machines?  The btrfs unstable tree has
+some fixes for windows based OSes.
 
->> and the 'nodatasum' option should also ignore csum issues.-- isn't it?
- >
-> No, it only affects writing new checksums; any existing checksums are
-> still checked.
+Is your kvm config using O_DIRECT?
 
-would it make some sense to remount the volume with checksumming enabled 
-and run additional tests to find similar suspect blocks to prevent this 
-kind of suddenly broken files?
+I've also got patches here that force us to honor nodatasum even when
+the file has csums, that can help if the contents of the file are
+actually good.
 
-martin
+-chris

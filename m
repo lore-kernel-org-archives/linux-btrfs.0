@@ -1,98 +1,57 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: kernel BUG at fs/btrfs/inode.c:149!
-Date: Wed, 04 May 2011 14:21:54 -0400
-Message-ID: <4DC19942.5010505@redhat.com>
-References: <201105041626.36039.whirm@gmx.com> <4DC166D4.4000801@redhat.com> <201105041943.31809.whirm@gmx.com>
+From: Valdis.Kletnieks@vt.edu
+Subject: Re: [PATCH 1/2 v2] fs: add SEEK_HOLE and SEEK_DATA flags
+Date: Wed, 04 May 2011 15:04:47 -0400
+Message-ID: <15392.1304535887@localhost>
+References: <1304531920-2890-1-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="------------050006070401000902050604"
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: whirm@gmx.com
+Content-Type: multipart/signed; boundary="==_Exmh_1304535887_7352P";
+	 micalg=pgp-sha1; protocol="application/pgp-signature"
+Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201105041943.31809.whirm@gmx.com>
+In-Reply-To: Your message of "Wed, 04 May 2011 13:58:39 EDT."
+             <1304531920-2890-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multi-part message in MIME format.
---------------050006070401000902050604
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
+--==_Exmh_1304535887_7352P
+Content-Type: text/plain; charset=us-ascii
 
-On 05/04/2011 01:43 PM, whirm@gmx.com wrote:
-> On Wednesday 04 May 2011 16:46:44 Josef Bacik wrote:
->> On 05/04/2011 10:26 AM, whirm@gmx.com wrote:
->>> Hi all,
->>>
->>> Here's a traceback from a failed attempt to mount a btrfs in lvm in luks
->>> filesystem.
->>>
->>> Note that if I mount it readonly it mounts successfully (haven't tried to
->>> recover any data as I have recent backups).
->>>
->>> Yesterday I defragmented both / and /home with:
->>>
->>> find /home -xdev -type f -print0 | xargs -0 sudo ./btrfs filesystem
->>> defragment -c
->>>
->>> with btrfs-tools v0.19-35-g1b444cd and rebooted a couple of times. And
->>> today I got this traceback while trying to mount home at boot time (/ is
->>> working ok)
->>>
->>> btrfsck fails with the following error:
->>>
->>> couldn't open because of unsupported option features (8).
->>> btrfsck: disk-io.c:682: open_ctree_fd: Assertion `!(1)' failed.
->>>
->>> I'm using a 2.6.39-rc5+ kernel from Linus' tree.
->>>
->>> If someone needs any extra info, just ask for it, Ill keep the corrupted
->>> filesystem for a few days before destroying it.
->>>
->>> Thanks.
->>
->> I just posted a patch for this, please try
->>
->> [PATCH] Btrfs: fix how we do space reservation for truncate
->>
->> thanks,
->>
->> Josef
->
-> Still getting the same traceback when trying to mount the filesystem (see file
-> attached).
+On Wed, 04 May 2011 13:58:39 EDT, Josef Bacik said:
 
-Argh sorry I was looking at the wrong part of that warning.  Can you run 
-with this debug patch and send me the log?  Thanks,
+> -SEEK_HOLE: this moves the file pos to the nearest hole in the file from the
+> given position. 
 
-Josef
+Nearest, or next? Solaris defines it as "next", for a good reason - otherwise
+you can get stuck in a case where the "nearest" hole is back towards the
+start of the file - and "seek data" will bounce back to the next byte at
+the other end of the hole.
 
---------------050006070401000902050604
-Content-Type: text/plain;
- name="debug-free-space-cache.patch"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment;
- filename="debug-free-space-cache.patch"
+Consider a file with this layout:
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 1bcbe76..236a938 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -417,6 +417,8 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
- 			}
- 
- 			if (entry->type == BTRFS_FREE_SPACE_EXTENT) {
-+				printk(KERN_ERR "adding extent [%llu-%llu]\n",
-+				       e->offset, e->bytes);
- 				spin_lock(&block_group->tree_lock);
- 				ret = link_free_space(block_group, e);
- 				spin_unlock(&block_group->tree_lock);
-@@ -431,6 +433,8 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
- 					page_cache_release(page);
- 					goto free_cache;
- 				}
-+				printk(KERN_ERR "adding bitmap [%llu-%llu]\n",
-+				       e->offset, e->bytes);
- 				spin_lock(&block_group->tree_lock);
- 				ret = link_free_space(block_group, e);
- 				block_group->total_bitmaps++;
+< 40K of data>  A  < 32K hole> B < 32K data> C < 8K hole> D <32K data> E ....
 
---------------050006070401000902050604--
+If you're in the range between "8K-1 before C" and "8K-1 after D", there's no
+application of seeks to "nearest" data/hole that doesn't leave you oscillating
+between C and D, and unable to reach B or E.  If youre at C, "nearest hole" is
+where you are, and "nearest data" is at D, not B. Similarly for D - nearest
+data is C, not E.
+
+However, this is easily dealt with if you define it as "next", as then it is
+simple to discover exactly where A/B/C/D/E are.
+
+
+--==_Exmh_1304535887_7352P
+Content-Type: application/pgp-signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+Comment: Exmh version 2.5 07/13/2001
+
+iD8DBQFNwaNPcC3lWbTT17ARAtbUAJ48TCUrI6d//FZI1ZEMR3BF9u21bACgmGZf
++qmyLCOG90edbKXJLEX/r2w=
+=FvOo
+-----END PGP SIGNATURE-----
+
+--==_Exmh_1304535887_7352P--
+

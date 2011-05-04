@@ -1,43 +1,54 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: btrfs csum failed
-Date: Wed, 04 May 2011 10:39:52 -0400
-Message-ID: <4DC16538.3070900@redhat.com>
-References: <4DC07A10.7070200@mur.at> <20110504002815.GA27861@dhcp231-156.rdu.redhat.com> <4DC0A153.3080806@mur.at>
+Subject: Re: [PATCH, fixed] Prevent oopsing in posix_acl_valid()
+Date: Wed, 04 May 2011 10:40:50 -0400
+Message-ID: <4DC16572.8020005@redhat.com>
+References: <1304477648-14952-1-git-send-email-daniel.blueman@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Martin Schitter <ms@mur.at>
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Christian Brunner <chb@muc.de>, linux-btrfs@vger.kernel.org
+To: Daniel J Blueman <daniel.blueman@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DC0A153.3080806@mur.at>
+In-Reply-To: <1304477648-14952-1-git-send-email-daniel.blueman@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/03/2011 08:44 PM, Martin Schitter wrote:
-> Am 2011-05-04 02:28, schrieb Josef Bacik:
->> Wait why are you running with btrfs in production?
+On 05/03/2011 10:54 PM, Daniel J Blueman wrote:
+> If posix_acl_from_xattr() returns an error code, a negative address is
+> dereferenced causing an oops; fix by checking for an error code first.
 >
-> do you know a better alternative for continuous snapshots? :)
+> Typo fixed; too much late-night coding.
 >
-> it works surprisingly well since more than a year.
-> well the performance could be better for vm-image-hosting but it works.
+> Signed-off-by: Daniel J Blueman<daniel.blueman@gmail.com>
+> ---
+>   fs/btrfs/acl.c |    5 +++--
+>   1 files changed, 3 insertions(+), 2 deletions(-)
 >
-> we used cache='writeback' for a long time but now all virtual instances
-> have set cache='none'
+> diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+> index 5d505aa..44ea5b9 100644
+> --- a/fs/btrfs/acl.c
+> +++ b/fs/btrfs/acl.c
+> @@ -178,12 +178,13 @@ static int btrfs_xattr_acl_set(struct dentry *dentry, const char *name,
 >
->> What OS is in this vm image?
->
-> 2.6.30-bpo.1-amd64 with virtio-driver
->
-> could you give me some advice how to debug/report this specific problem
-> more precise?
+>   	if (value) {
+>   		acl = posix_acl_from_xattr(value, size);
+> +		if (IS_ERR(acl))
+> +			return PTR_ERR(acl);
+> +
+>   		if (acl) {
+>   			ret = posix_acl_valid(acl);
+>   			if (ret)
+>   				goto out;
+> -		} else if (IS_ERR(acl)) {
+> -			return PTR_ERR(acl);
+>   		}
+>   	}
 >
 
-So there is a problem with DIO, since userspace can modify pages in 
-flight we will end up with the wrong checksums since the data can change 
-in flight.  I was trying to come up with a way to fix this but there's 
-really nothing to be done at the moment other than turn off checksumming 
-per file.  Windows was particularly bad about this, but I hadn't seen it 
-with Linux guests (even though it should still be happening).  So I'll 
-come up with something to turn off checksumming per file to get around 
-this for now, I'll try and get to that soonish.  Thanks,
+Actually pulled this down and compiled it this time to make sure it 
+worked.  You can add
+
+Reviewed-by: Josef Bacik <josef@redhat.com>
+
+Thanks,
 
 Josef

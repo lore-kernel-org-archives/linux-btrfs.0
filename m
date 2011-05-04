@@ -1,26 +1,39 @@
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: Re: btrfs csum failed
-Date: Wed, 04 May 2011 16:09:16 +0200
-Message-ID: <4DC15E0C.8080508@jan-o-sch.net>
-References: <4DC07A10.7070200@mur.at>	<20110504002815.GA27861@dhcp231-156.rdu.redhat.com>	<4DC0A153.3080806@mur.at>	<BANLkTin1quUuSq4oKdt1SowTPv4dhGEM5g@mail.gmail.com>	<4DC13B02.9030604@mur.at> <BANLkTiniD_mztDPriodDWybTzt7Dqtherg@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: cwillu <cwillu@cwillu.com>
+Subject: [PATCH] Btrfs: fix extent state leak on failed nodatasum reads
+Date: Wed,  4 May 2011 16:18:50 +0200
+Message-ID: <1304518730-13909-1-git-send-email-list.btrfs@jan-o-sch.net>
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTiniD_mztDPriodDWybTzt7Dqtherg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04.05.2011 13:51, cwillu wrote:
-> On Wed, May 4, 2011 at 5:39 AM, Martin Schitter <ms@mur.at> wrote:
->> and the 'nodatasum' option should also ignore csum issues.-- isn't it?
-> 
-> No, it only affects writing new checksums; any existing checksums are
-> still checked.
+When encountering an EIO while reading from a nodatasum extent, we
+insert an error record into the inode's failure tree.
+btrfs_readpage_end_io_hook returns early for nodatasum inodes. We'd
+better clear the failure tree in that case, otherwise the kernel
+complains about
 
->From the report I assume this must be the case for meta data, but it
-does not stand true for data. I was just looking at
-btrfs_readpage_end_io_hook for some other reason and realized it skips
-checksum checking when the file system is mounted nodatasum.
+	BUG extent_state: Objects remaining on kmem_cache_close()
 
--Jan
+on rmmod.
+
+Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+---
+ fs/btrfs/inode.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 870869a..9444551 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1970,7 +1970,7 @@ static int btrfs_readpage_end_io_hook(struct page *page, u64 start, u64 end,
+ 	}
+ 
+ 	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)
+-		return 0;
++		goto good;
+ 
+ 	if (root->root_key.objectid == BTRFS_DATA_RELOC_TREE_OBJECTID &&
+ 	    test_range_bit(io_tree, start, end, EXTENT_NODATASUM, 1, NULL)) {
+-- 
+1.7.3.4
+

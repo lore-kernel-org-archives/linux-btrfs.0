@@ -1,53 +1,58 @@
-From: "Gao, Yunpeng" <yunpeng.gao@intel.com>
-Subject: RE: Is it possible for the ext4/btrfs file system to pass some
- context related info to low level block driver?
-Date: Wed, 4 May 2011 19:45:16 +0800
-Message-ID: <CE761E84DADF2947A4AF22FB8D97A47358EE526A@shsmsx501.ccr.corp.intel.com>
-References: <CE761E84DADF2947A4AF22FB8D97A47358E28022@shsmsx501.ccr.corp.intel.com>
- <yq1mxj32932.fsf@sermon.lab.mkp.net>
+From: Hugo Mills <hugo@carfax.org.uk>
+Subject: Re: btrfs csum failed
+Date: Wed, 4 May 2011 12:47:57 +0100
+Message-ID: <20110504114757.GA24990@carfax.org.uk>
+References: <4DC07A10.7070200@mur.at>
+ <20110504002815.GA27861@dhcp231-156.rdu.redhat.com>
+ <4DC0A153.3080806@mur.at>
+ <BANLkTin1quUuSq4oKdt1SowTPv4dhGEM5g@mail.gmail.com>
+ <4DC13B02.9030604@mur.at>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	"linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
-	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-	"linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>
-To: "Martin K. Petersen" <martin.petersen@oracle.com>
-Return-path: <linux-mmc-owner@vger.kernel.org>
-In-Reply-To: <yq1mxj32932.fsf@sermon.lab.mkp.net>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="3V7upXqbjpZ4EhLz"
+Cc: "Fajar A. Nugraha" <list@fajar.net>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Martin Schitter <ms@mur.at>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4DC13B02.9030604@mur.at>
 List-ID: <linux-btrfs.vger.kernel.org>
 
->Yes, I have been working on some changes that allow us to tag bios and
->pass the information out to storage. These patches have been on the back
->burner for a while due to other commitments. But I'll dig them out and
->post them later. We just discussed them a couple of weeks ago at the
->Linux Storage Workshop.
 
-That's great! Thanks for the update and look forward to your patches.
+--3V7upXqbjpZ4EhLz
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
->In the meantime: Can you point me to the relevant eMMC stuff so I can
->see how many tiers or classes we have to work with there?
->
-I'm investigating on add some eMMC 4.5 features support in current Linux mmc driver (drivers/mmc).
-The Linux mmc driver register the eMMC device as a normal Linux block device. So, it can get all the Linux block layer bio flags.
+On Wed, May 04, 2011 at 01:39:46PM +0200, Martin Schitter wrote:
+> and the 'nodatasum' option should also ignore csum issues.-- isn't it?
 
-To below eMMC 4.5 new features:
+   No, "nodatasum" will prevent newly-written data from being
+checksummed.  However, if a checksum already exists (because the data
+was written to a filesystem mounted without the "nodatasum" option),
+btrfs will still verify the checksum, regardless of the current
+setting of nodatasum.
 
-Data Tag:
-'The mechanism permits the device to receive from the host information about specific data types (for instance file system metadata, time-stamps, configuration parameters, etc.). The information is conveyed before a write multiple blocks operation at well defined addresses. By receiving this information the device can improve the access rate during the following read and update operations and offer a more reliable and robust storage.'
+   There is currently no way of preventing btrfs from verifying
+checksums if they exist; I don't believe that there's any way of
+removing an existing checksum, either.
 
-I guess the exist block layer flag REQ_META can be used to notify the low level block driver/device to execute the Data Tag feature. But don't know why currently most of Linux file systems don't use the REQ_META flag at all (seems only gfs2 uses it now).
+   Hugo.
 
-Context Management:
-'To better differentiate between large sequential operations and small random operations, and to improve multitasking support, contexts can be associated with groups of read or write commands ... A context can be seen as an active session, configured for a specific read/write pattern (e.g. sequential in some granularity). Multiple read or write commands are associated with this context to create some logical association between them, to allow device to optimize performance.'
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+   --- Charting the inexorable advance of Western syphilisation... ---   
 
-To my understanding, to support this feature, it needs file system (or application?) to notify the low level driver that the following data access will be large sequential read/write operations.
-And I'm not sure is it possible for file system to pass this kind of information to low level driver? Any idea?
+--3V7upXqbjpZ4EhLz
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
 
-Thanks.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
 
-Regards,
-Yunpeng
+iD8DBQFNwTzsIKyzvlFcI40RAjVQAJ9qKEMtSISHN6JgCSQeWPLx/obdEQCgzAjR
+PFaQdD61Z7YvEENV0gTEKqo=
+=Xqjy
+-----END PGP SIGNATURE-----
 
-
-
-
+--3V7upXqbjpZ4EhLz--

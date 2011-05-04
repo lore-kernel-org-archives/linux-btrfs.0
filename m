@@ -1,60 +1,31 @@
-From: Lubos Kolouch <lubos.kolouch@gmail.com>
-Subject: Re: Cannot resize btrfs volume
-Date: Wed, 4 May 2011 08:41:52 +0000 (UTC)
-Message-ID: <ipr3gg$70c$2@dough.gmane.org>
-References: <ipr2t2$70c$1@dough.gmane.org>
+From: Sander <sander@humilis.net>
+Subject: Re: Cannot Deinstall a Debian Package
+Date: Wed, 4 May 2011 11:51:54 +0200
+Message-ID: <20110504095153.GA6914@attic.humilis.net>
+References: <201105031227.43619.CACook@quantum-sci.com>
+ <BANLkTinPUPM6+iNUvYfx0_C-Wt32eb_1jQ@mail.gmail.com>
+ <201105031520.49993.CACook@quantum-sci.com>
+Reply-To: sander@humilis.net
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: CACook@quantum-sci.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201105031520.49993.CACook@quantum-sci.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello again,
+CACook@quantum-sci.com wrote (ao):
+> I would be happy to upgrade grub, but the package management system is
+> jammed because of this.
 
-OK I found it (randomly) on the wiki:
-btrfs filesystem resize 3:max /home
+Put an exit on top of /etc/kernel/postrm.d/zz-update-grub and try again.
 
-Seems like btrfs help is not up-to-date and the wiki is...
+Install grub-pc 1.99~rc1-13 from Sid.
 
-Thank you again
+http://packages.debian.org/changelogs/pool/main/g/grub2/grub2_1.99~rc1-13/changelog
 
-Lubos
+	Sander
 
-Lubos Kolouch, Wed, 04 May 2011 08:31:30 +0000:
-
-> Hello,
-> 
-> I added a new disk into our RAID5 array, it looks like this:
-> 
-> md2 : active raid5 sdd4[3] sde4[4] sda4[0] sdc4[2] sdb4[1]
->       3767274240 blocks level 5, 64k chunk, algorithm 2 [5/5] [UUUUU]
-> 
-> # btrfs fi sh
-> Label: none  uuid: 5534d2e7-be31-49c7-8ab7-90c5ab8afe18
-> 	Total devices 1 FS bytes used 2.24TB
-> 	devid    3 size 2.63TB used 2.63TB path /dev/md2
-> 
-> # mount
-> ...
-> /dev/md2 on /home type btrfs (rw,noatime,compress)
-> 
-> # btrfs filesystem resize max /home
-> Resize '/home' of 'max'
-> ERROR: unable to resize '/home'
-> 
-> # umount /home/
-> # btrfs filesystem resize max /dev/md2 Resize '/dev/md2' of 'max'
-> ERROR: unable to resize '/dev/md2'
-> 
-> # tail /var/log/messages
-> May  4 10:28:57 localhost kernel: resizer unable to find device 1
-> 
-> 2.6.38-gentoo-r3, latest git btrfs-progs
-> 
-> Can you please advice what to do?
-> 
-> Thank you
-> 
-> Lubos
-
-
+-- 
+Humilis IT Services and Solutions
+http://www.humilis.net

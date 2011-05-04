@@ -1,39 +1,40 @@
-From: "Gao, Yunpeng" <yunpeng.gao@intel.com>
-Subject: RE: Is it possible for the ext4/btrfs file system to pass some
- context related info to low level block driver?
-Date: Wed, 4 May 2011 18:31:19 +0800
-Message-ID: <CE761E84DADF2947A4AF22FB8D97A47358EE523B@shsmsx501.ccr.corp.intel.com>
-References: <CE761E84DADF2947A4AF22FB8D97A47358E28022@shsmsx501.ccr.corp.intel.com>
- <BANLkTikm-ZMG7KRjjz0DtduPDC4KUw7_Bg@mail.gmail.com>
+From: Martin Schitter <ms@mur.at>
+Subject: Re: btrfs csum failed
+Date: Wed, 04 May 2011 13:39:46 +0200
+Message-ID: <4DC13B02.9030604@mur.at>
+References: <4DC07A10.7070200@mur.at>	<20110504002815.GA27861@dhcp231-156.rdu.redhat.com>	<4DC0A153.3080806@mur.at> <BANLkTin1quUuSq4oKdt1SowTPv4dhGEM5g@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	"linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
-	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-	"linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>
-To: Kyungmin Park <kmpark@infradead.org>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <BANLkTikm-ZMG7KRjjz0DtduPDC4KUw7_Bg@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: "Fajar A. Nugraha" <list@fajar.net>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <BANLkTin1quUuSq4oKdt1SowTPv4dhGEM5g@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Park,
+Am 2011-05-04 04:18, schrieb Fajar A. Nugraha:
+>> could you give me some advice how to debug/report this specific
+>> problem more
+>>> precise?
+> If it's not reproducible then I'd suspect it'd be hard to do.
 
-Thanks a lot for the response.
+the last working snapshot is from 2011-05-02-17:13. i can reproduce this 
+file system corruption on one specific file in any hourly snapshot later.
 
->It seems similar with TRIM. So how about to consider TRIM
->implementation or extend it?
+whenever i make a simple:
 
-Yes, file system set REQ_DISCARD flag to notify block device driver to execute TRIM.
-And I noticed there's already a flag REQ_META used for file system meta data.
-But seems only gfs2 file system uses the REQ_META flag, other file systems (including ext4 and btrfs) have not used this flag.
-Is the flag useless or any other reason?
+   cat snapshot-2011-05-02-18:13/sata-images/image_xy.raw > /dev/null
 
->I'm not familiar with NCQ implementation but it's also helpful to implement it.
+i get an "Input/output error" and the quoted debug messages in dmesg and
+kernel-log
 
-I don't know much about NCQ, too. Just have a impression that NCQ is only for SATA hard disk, can it also be used for block device, such as the mmc block device?
+could this be seen as an useful starting point for further investigations?
 
-Thanks.
+> Usually checksum errors is early sign of hardware failure (most
+> common are disk or power supply).
 
-Regards,
-Yunpeng
+that looks very unplausible to me. there is an RAID1 layer beneath btrfs 
+in our setup and i don't see any errors there.
 
+and the 'nodatasum' option should also ignore csum issues.-- isn't it?
+
+martin

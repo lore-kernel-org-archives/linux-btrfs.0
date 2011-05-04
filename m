@@ -1,44 +1,46 @@
-From: Daniel J Blueman <daniel.blueman@gmail.com>
-Subject: [PATCH, fixed] Prevent oopsing in posix_acl_valid()
-Date: Wed,  4 May 2011 10:54:08 +0800
-Message-ID: <1304477648-14952-1-git-send-email-daniel.blueman@gmail.com>
-Cc: Daniel J Blueman <daniel.blueman@gmail.com>,
-	Christian Brunner <chb@muc.de>, Josef Bacik <josef@redhat.com>,
-	linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+From: Lubos Kolouch <lubos.kolouch@gmail.com>
+Subject: Cannot resize btrfs volume
+Date: Wed, 4 May 2011 08:31:30 +0000 (UTC)
+Message-ID: <ipr2t2$70c$1@dough.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If posix_acl_from_xattr() returns an error code, a negative address is
-dereferenced causing an oops; fix by checking for an error code first.
+Hello,
 
-Typo fixed; too much late-night coding.
+I added a new disk into our RAID5 array, it looks like this:
 
-Signed-off-by: Daniel J Blueman <daniel.blueman@gmail.com>
----
- fs/btrfs/acl.c |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
+md2 : active raid5 sdd4[3] sde4[4] sda4[0] sdc4[2] sdb4[1]
+      3767274240 blocks level 5, 64k chunk, algorithm 2 [5/5] [UUUUU]
 
-diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index 5d505aa..44ea5b9 100644
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -178,12 +178,13 @@ static int btrfs_xattr_acl_set(struct dentry *dentry, const char *name,
- 
- 	if (value) {
- 		acl = posix_acl_from_xattr(value, size);
-+		if (IS_ERR(acl))
-+			return PTR_ERR(acl);
-+
- 		if (acl) {
- 			ret = posix_acl_valid(acl);
- 			if (ret)
- 				goto out;
--		} else if (IS_ERR(acl)) {
--			return PTR_ERR(acl);
- 		}
- 	}
- 
--- 
-1.7.4.1
+# btrfs fi sh
+Label: none  uuid: 5534d2e7-be31-49c7-8ab7-90c5ab8afe18
+	Total devices 1 FS bytes used 2.24TB
+	devid    3 size 2.63TB used 2.63TB path /dev/md2
+
+# mount
+...
+/dev/md2 on /home type btrfs (rw,noatime,compress)
+
+# btrfs filesystem resize max /home
+Resize '/home' of 'max'
+ERROR: unable to resize '/home'
+
+# umount /home/
+# btrfs filesystem resize max /dev/md2
+Resize '/dev/md2' of 'max'
+ERROR: unable to resize '/dev/md2'
+
+# tail /var/log/messages
+May  4 10:28:57 localhost kernel: resizer unable to find device 1
+
+2.6.38-gentoo-r3, latest git btrfs-progs
+
+Can you please advice what to do?
+
+Thank you
+
+Lubos
 

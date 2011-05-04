@@ -1,181 +1,56 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH 2/2 v2] Btrfs: implement our own ->llseek
-Date: Wed,  4 May 2011 13:58:40 -0400
-Message-ID: <1304531920-2890-2-git-send-email-josef@redhat.com>
-References: <1304531920-2890-1-git-send-email-josef@redhat.com>
-To: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <1304531920-2890-1-git-send-email-josef@redhat.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: btrfs csum failed
+Date: Wed, 04 May 2011 14:10:49 -0400
+Message-ID: <1304532490-sup-9008@think>
+References: <4DC07A10.7070200@mur.at> <20110504002815.GA27861@dhcp231-156.rdu.redhat.com> <4DC0A153.3080806@mur.at> <BANLkTin1quUuSq4oKdt1SowTPv4dhGEM5g@mail.gmail.com> <4DC13B02.9030604@mur.at> <BANLkTiniD_mztDPriodDWybTzt7Dqtherg@mail.gmail.com> <4DC1464D.4060204@mur.at> <000e01cc0a5e$7446eab0$5cd4c010$@nedharvey.com> <4DC165EB.7060304@mur.at>
+Content-Type: text/plain; charset=UTF-8
+Cc: Edward Ned Harvey <kernel@nedharvey.com>,
+	cwillu <cwillu@cwillu.com>, "Fajar A. Nugraha" <list@fajar.net>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Martin Schitter <ms@mur.at>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <4DC165EB.7060304@mur.at>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In order to handle SEEK_HOLE/SEEK_DATA we need to implement our own llseek.
-Basically for the normal SEEK_*'s we will just defer to the generic helper, and
-for SEEK_HOLE/SEEK_DATA we will use our fiemap helper to figure out the nearest
-hole or data.  Currently this helper doesn't check for delalloc bytes for
-prealloc space, so for now treat prealloc as data until that is fixed.  Thanks,
+Excerpts from Martin Schitter's message of 2011-05-04 10:42:51 -0400:
+> Am 2011-05-04 15:23, schrieb Edward Ned Harvey:
+> >> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
+> >> owner@vger.kernel.org] On Behalf Of Martin Schitter
+> >>
+> >> well -- i am doing a backup of all images every night. this
+> >> process should work like a simple "scrub" because all data (and its
+> >> checksumes) will be read.
+> >
+> > Sorry, not correct.  When you read all the data using something in
+> > user-land, the OS only needs to read one side of the data.  It can
+> > accelerate by staggering the read requests across multiple disks.  So
+> > some sectors remain unread on some disks.
+> >
+> > When you scrub, it reads all the data from all the redundant copies
+> > (mirrored or raid) on all the individual disks in the raid set.
+> 
+> ok -- i see -- you're right!
+> 
+> i know, there a some befits in the way btrfs and zfs implement RAID / 
+> multiply disk usage and checksumming, but i a also want to stay on the 
+> save side, when it comes to real practical problems. so i decided to use 
+> 'classical' linux software RAID-1 as the base layer. that's a very old 
+> fashioned solution, but it usually simply works... and you can change a 
+> broken disk without any respect of the used filesystem(s). in general i 
+> try to use btrfs only on account of its snapshot features in a very 
+> simple way.
+> 
+> it looks very strange to me, that i don't see any SMART warnings on the 
+> harddisks or errors on other filsystems on the same raid-array. there 
+> was also no reboot, power-failure or similar when the corruption 
+> suddenly appeared. so i think, a btrfs bug would be the most evident 
+> explanation.
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
-v1->v2: fixed some weirdness with finding the next hole when we had delalloc
-ranges.
- fs/btrfs/ctree.h |    3 +
- fs/btrfs/file.c  |  128 +++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 130 insertions(+), 1 deletions(-)
+That's the bad news, it can be very hard to tell.   The disk could be
+returning garbage or btrfs would be messing up the csums.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index d5f043e..d2991c8 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2474,6 +2474,9 @@ int btrfs_csum_truncate(struct btrfs_trans_handle *trans,
- int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start,
- 			     u64 end, struct list_head *list);
- /* inode.c */
-+struct extent_map *btrfs_get_extent_fiemap(struct inode *inode, struct page *page,
-+					   size_t pg_offset, u64 start, u64 len,
-+					   int create);
- 
- /* RHEL and EL kernels have a patch that renames PG_checked to FsMisc */
- #if defined(ClearPageFsMisc) && !defined(ClearPageChecked)
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index cd5e82e..ad5c3c8 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1406,8 +1406,134 @@ out:
- 	return ret;
- }
- 
-+static int find_desired_extent(struct inode *inode, loff_t *offset, int origin)
-+{
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct extent_map *em;
-+	struct extent_state *cached_state = NULL;
-+	u64 lockstart = *offset;
-+	u64 lockend = i_size_read(inode);
-+	u64 start = *offset;
-+	u64 len = i_size_read(inode);
-+	u64 last_end = 0;
-+	int ret = 0;
-+
-+	lockend = max_t(u64, BTRFS_I(inode)->root->sectorsize, lockend);
-+	len = lockend;
-+
-+	lock_extent_bits(&BTRFS_I(inode)->io_tree, lockstart, lockend, 0,
-+			 &cached_state, GFP_NOFS);
-+
-+	/*
-+	 * Delalloc is such a pain.  If we have a hole and we have pending
-+	 * delalloc for a portion of the hole we will get back a hole that
-+	 * exists for the entire range since it hasn't been actually written
-+	 * yet.  So to take care of this case we need to look for an extent just
-+	 * before the position we want in case there is outstanding delalloc
-+	 * going on here.
-+	 */
-+	if (origin == SEEK_HOLE && start != 0) {
-+		if (start < root->sectorsize)
-+			em = btrfs_get_extent_fiemap(inode, NULL, 0, 0,
-+						     start, 0);
-+		else
-+			em = btrfs_get_extent_fiemap(inode, NULL, 0,
-+						     start - root->sectorsize,
-+						     root->sectorsize, 0);
-+		if (IS_ERR(em)) {
-+			ret = -ENXIO;
-+			goto out;
-+		}
-+		last_end = em->start + em->len;
-+		free_extent_map(em);
-+	}
-+
-+	while (1) {
-+		em = btrfs_get_extent_fiemap(inode, NULL, 0, start, len, 0);
-+		if (IS_ERR(em)) {
-+			ret = -ENXIO;
-+			break;
-+		}
-+
-+		if (em->block_start == EXTENT_MAP_HOLE) {
-+			if (origin == SEEK_HOLE) {
-+				u64 new_offset = max(em->start, start);
-+				/*
-+				 * If we are in the middle of a hole then move
-+				 * to the next one, unless the previous range we
-+				 * found ended here, which means we have a
-+				 * delalloc range that is going to convert part
-+				 * of this hole into data.
-+				 */
-+				if (new_offset == em->start ||
-+				    (new_offset > em->start &&
-+				     new_offset == last_end)) {
-+					*offset = new_offset;
-+					free_extent_map(em);
-+					break;
-+				}
-+			}
-+		} else {
-+			if (origin == SEEK_DATA) {
-+				if (em->start == start) {
-+					*offset = em->start;
-+					free_extent_map(em);
-+					break;
-+				}
-+			}
-+		}
-+		start = em->start + em->len;
-+		last_end = em->start + em->len;
-+		if (test_bit(EXTENT_FLAG_VACANCY, &em->flags)) {
-+			free_extent_map(em);
-+			ret = -ENXIO;
-+			break;
-+		}
-+		free_extent_map(em);
-+	}
-+out:
-+	unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart, lockend,
-+			     &cached_state, GFP_NOFS);
-+	return ret;
-+}
-+
-+static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int origin)
-+{
-+	struct inode *inode = file->f_mapping->host;
-+	int ret;
-+
-+	mutex_lock(&inode->i_mutex);
-+	switch (origin) {
-+	case SEEK_END:
-+	case SEEK_CUR:
-+		offset = generic_file_llseek_unlocked(file, offset, origin);
-+		goto out;
-+	case SEEK_DATA:
-+	case SEEK_HOLE:
-+		ret = find_desired_extent(inode, &offset, origin);
-+		if (ret) {
-+			mutex_unlock(&inode->i_mutex);
-+			return ret;
-+		}
-+	}
-+
-+	if (offset < 0 && !(file->f_mode & FMODE_UNSIGNED_OFFSET))
-+		return -EINVAL;
-+	if (offset > inode->i_sb->s_maxbytes)
-+		return -EINVAL;
-+
-+	/* Special lock needed here? */
-+	if (offset != file->f_pos) {
-+		file->f_pos = offset;
-+		file->f_version = 0;
-+	}
-+out:
-+	mutex_unlock(&inode->i_mutex);
-+	return offset;
-+}
-+
- const struct file_operations btrfs_file_operations = {
--	.llseek		= generic_file_llseek,
-+	.llseek		= btrfs_file_llseek,
- 	.read		= do_sync_read,
- 	.write		= do_sync_write,
- 	.aio_read       = generic_file_aio_read,
--- 
-1.7.2.3
+The btrfs unstable tree does have one fix that is related to O_DIRECT
+and kvm, but we've only ever seen it happen with a windows guest.  This
+doesn't mean it is impossible for a linux guest to trigger it though.
+
+-chris

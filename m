@@ -1,31 +1,33 @@
-From: Chuck Burns <chuck@thesouthernlibertarian.com>
-Subject: Re: Cannot Deinstall a Debian Package
-Date: Tue, 3 May 2011 19:25:36 -0500
-Message-ID: <201105031925.36714.chuck@thesouthernlibertarian.com>
-References: <201105031227.43619.CACook@quantum-sci.com> <201105031802.43215.chuck@thesouthernlibertarian.com> <201105031712.43222.CACook@quantum-sci.com>
+From: Martin Schitter <ms@mur.at>
+Subject: Re: btrfs csum failed
+Date: Wed, 04 May 2011 02:44:03 +0200
+Message-ID: <4DC0A153.3080806@mur.at>
+References: <4DC07A10.7070200@mur.at> <20110504002815.GA27861@dhcp231-156.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201105031712.43222.CACook@quantum-sci.com>
+In-Reply-To: <20110504002815.GA27861@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tuesday, May 03, 2011 07:12:42 PM CACook@quantum-sci.com wrote:
-> I know what the error says;  we've established that / is in fact mounted. 
-> The system boots and runs, but grub doesn't understand it.  My only answer
-> is that grub-probe does not understand BTRFS.
-> 
-> The question is what to do about this.  I have three major systems
-> committed to this filesystem.  Can you not see how this is an emergency?
-> 
-> How is re-reading the error supposed to help anything?  Or was your
-> intention to help?
+Am 2011-05-04 02:28, schrieb Josef Bacik:
+> Wait why are you running with btrfs in production?
 
-You should upgrade grub, manually (ie, do not use the package manager) and you 
-need to contact your distribution to find out how to do that.
+do you know a better alternative for continuous snapshots? :)
 
--- 
-Chuck Burns
-The Southern Libertarian - owner
-http://thesouthernlibertarian.com/
+it works surprisingly well since more than a year.
+well the performance could be better for vm-image-hosting but it works.
+
+we used cache='writeback' for a long time but now all virtual instances 
+have set cache='none'
+
+> What OS is in this vm image?
+
+2.6.30-bpo.1-amd64 with virtio-driver
+
+could you give me some advice how to debug/report this specific problem 
+more precise?
+
+thanks
+martin

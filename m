@@ -1,33 +1,41 @@
-From: Martin Schitter <ms@mur.at>
-Subject: Re: btrfs csum failed
-Date: Wed, 04 May 2011 02:44:03 +0200
-Message-ID: <4DC0A153.3080806@mur.at>
-References: <4DC07A10.7070200@mur.at> <20110504002815.GA27861@dhcp231-156.rdu.redhat.com>
+From: Chris Samuel <chris@csamuel.org>
+Subject: Re: Cannot Deinstall a Debian Package
+Date: Wed, 04 May 2011 11:20:37 +1000
+Message-ID: <4DC0A9E5.1000007@csamuel.org>
+References: <201105031227.43619.CACook@quantum-sci.com> <BANLkTinPUPM6+iNUvYfx0_C-Wt32eb_1jQ@mail.gmail.com> <201105031520.49993.CACook@quantum-sci.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110504002815.GA27861@dhcp231-156.rdu.redhat.com>
+In-Reply-To: <201105031520.49993.CACook@quantum-sci.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 2011-05-04 02:28, schrieb Josef Bacik:
-> Wait why are you running with btrfs in production?
+On 04/05/11 08:20, CACook@quantum-sci.com wrote:
 
-do you know a better alternative for continuous snapshots? :)
+> My whole system is installed over BTRFS.  If this is
+> non-functional in any OS there should be a warning
+> indicating it is non-functional.
 
-it works surprisingly well since more than a year.
-well the performance could be better for vm-image-hosting but it works.
+The text for btrfs in the kernel configuration says:
 
-we used cache='writeback' for a long time but now all virtual instances 
-have set cache='none'
+ Btrfs is highly experimental, and THE DISK FORMAT IS NOT YET
+ FINALIZED.  You should say N here unless you are interested in
+ testing Btrfs with non-critical data.
 
-> What OS is in this vm image?
+The distros may well enable it for such people but you also
+have a duty of care to ensure that you understand the filesystems
+that you are choosing to use.  Nevertheless this is not a bug
+in btrfs at all.
 
-2.6.30-bpo.1-amd64 with virtio-driver
+You need to report the bug in grub-probe (part of the grub-common
+package I believe) to Debian. There was a similar bug reported here:
 
-could you give me some advice how to debug/report this specific problem 
-more precise?
+ http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=540786
 
-thanks
-martin
+But that should have been fixed in 1.98+20100602-1 and the
+current version in Squeeze is 1.98+20100804-14.
+
+Best of luck,
+Chris
+-- 
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC

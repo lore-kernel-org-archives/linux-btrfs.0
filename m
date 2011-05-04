@@ -1,40 +1,57 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: set range_start to the right start in count_range_bits
-Date: Wed,  4 May 2011 11:14:31 -0400
-Message-ID: <1304522071-18909-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: "Jim Schutt" <jaschut@sandia.gov>
+Subject: Re: btrfs warnings from 2.6.39-rc5
+Date: Wed, 4 May 2011 10:37:16 -0600
+Message-ID: <4DC180BC.8060007@sandia.gov>
+References: <4DB863B4.3070900@sandia.gov> <4DC016C1.2070505@redhat.com>
+Mime-Version: 1.0
+Content-Type: text/plain;
+ charset=utf-8;
+ format=flowed
+Cc: linux-btrfs@vger.kernel.org,
+	"ceph-devel@vger.kernel.org" <ceph-devel@vger.kernel.org>
+To: "Josef Bacik" <josef@redhat.com>
+Return-path: <ceph-devel-owner@vger.kernel.org>
+In-Reply-To: <4DC016C1.2070505@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In count_range_bits we are adjusting total_bytes based on the range we are
-searching for, but we don't adjust the range start according to the range we are
-searching for, which makes for weird results.  For example, if the range
+Josef Bacik wrote:
+> On 04/27/2011 02:43 PM, Jim Schutt wrote:
+>> Hi,
+>>
+>> I'm not sure if they matter, but I got these warnings on
+>> one of the machines I'm using as a Ceph OSD server:
+>>
+>> [ 1806.549469] ------------[ cut here ]------------
+>> [ 1806.554593] WARNING: at fs/btrfs/extent-tree.c:5790
+>> use_block_rsv+0xa7/0x101 [btrfs]()
 
-[0-8192]
+[snip]
 
-is set DELALLOC, but I search for 4096-8192, I will get back 4096 for the number
-of bytes found, but the range_start will be 0, which makes it look like the
-range is [0-4096].  So instead set range_start = max(cur_start, state->start).
-This makes everything come out right.  Thanks,
+>>
+>> Please let me know if I can do anything to help sort these out.
+>>
+> 
+> I just posted a patch for this problem, it's titled
+> 
+>     Btrfs: fix how we do space reservation for truncate
+> 
+> Please apply it and test it and see if it makes this problem go away. 
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/extent_io.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+Thanks for taking a look at this.  I'm running now with the
+patch applied to 2.6.39-rc6.  The warning was relatively
+hard to trigger for me, so it might be a while before I
+can report back that it helped.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 20ddb28..45a2fe5 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1472,7 +1472,7 @@ u64 count_range_bits(struct extent_io_tree *tree,
- 			if (total_bytes >= max_bytes)
- 				break;
- 			if (!found) {
--				*start = state->start;
-+				*start = max(cur_start, state->start);
- 				found = 1;
- 			}
- 			last = state->end;
--- 
-1.7.2.3
+-- Jim
+
+> Thanks,
+> 
+> Josef
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe ceph-devel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 
+
 

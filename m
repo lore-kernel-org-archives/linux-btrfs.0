@@ -1,54 +1,49 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH, fixed] Prevent oopsing in posix_acl_valid()
-Date: Wed, 04 May 2011 10:40:50 -0400
-Message-ID: <4DC16572.8020005@redhat.com>
-References: <1304477648-14952-1-git-send-email-daniel.blueman@gmail.com>
+From: Martin Schitter <ms@mur.at>
+Subject: Re: btrfs csum failed
+Date: Wed, 04 May 2011 16:42:51 +0200
+Message-ID: <4DC165EB.7060304@mur.at>
+References: <4DC07A10.7070200@mur.at>	<20110504002815.GA27861@dhcp231-156.rdu.redhat.com>	<4DC0A153.3080806@mur.at>	<BANLkTin1quUuSq4oKdt1SowTPv4dhGEM5g@mail.gmail.com>	<4DC13B02.9030604@mur.at> <BANLkTiniD_mztDPriodDWybTzt7Dqtherg@mail.gmail.com> <4DC1464D.4060204@mur.at> <000e01cc0a5e$7446eab0$5cd4c010$@nedharvey.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Christian Brunner <chb@muc.de>, linux-btrfs@vger.kernel.org
-To: Daniel J Blueman <daniel.blueman@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: cwillu <cwillu@cwillu.com>, "Fajar A. Nugraha" <list@fajar.net>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Edward Ned Harvey <kernel@nedharvey.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1304477648-14952-1-git-send-email-daniel.blueman@gmail.com>
+In-Reply-To: <000e01cc0a5e$7446eab0$5cd4c010$@nedharvey.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/03/2011 10:54 PM, Daniel J Blueman wrote:
-> If posix_acl_from_xattr() returns an error code, a negative address is
-> dereferenced causing an oops; fix by checking for an error code first.
+Am 2011-05-04 15:23, schrieb Edward Ned Harvey:
+>> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
+>> owner@vger.kernel.org] On Behalf Of Martin Schitter
+>>
+>> well -- i am doing a backup of all images every night. this
+>> process should work like a simple "scrub" because all data (and its
+>> checksumes) will be read.
 >
-> Typo fixed; too much late-night coding.
+> Sorry, not correct.  When you read all the data using something in
+> user-land, the OS only needs to read one side of the data.  It can
+> accelerate by staggering the read requests across multiple disks.  So
+> some sectors remain unread on some disks.
 >
-> Signed-off-by: Daniel J Blueman<daniel.blueman@gmail.com>
-> ---
->   fs/btrfs/acl.c |    5 +++--
->   1 files changed, 3 insertions(+), 2 deletions(-)
->
-> diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-> index 5d505aa..44ea5b9 100644
-> --- a/fs/btrfs/acl.c
-> +++ b/fs/btrfs/acl.c
-> @@ -178,12 +178,13 @@ static int btrfs_xattr_acl_set(struct dentry *dentry, const char *name,
->
->   	if (value) {
->   		acl = posix_acl_from_xattr(value, size);
-> +		if (IS_ERR(acl))
-> +			return PTR_ERR(acl);
-> +
->   		if (acl) {
->   			ret = posix_acl_valid(acl);
->   			if (ret)
->   				goto out;
-> -		} else if (IS_ERR(acl)) {
-> -			return PTR_ERR(acl);
->   		}
->   	}
->
+> When you scrub, it reads all the data from all the redundant copies
+> (mirrored or raid) on all the individual disks in the raid set.
 
-Actually pulled this down and compiled it this time to make sure it 
-worked.  You can add
+ok -- i see -- you're right!
 
-Reviewed-by: Josef Bacik <josef@redhat.com>
+i know, there a some befits in the way btrfs and zfs implement RAID / 
+multiply disk usage and checksumming, but i a also want to stay on the 
+save side, when it comes to real practical problems. so i decided to use 
+'classical' linux software RAID-1 as the base layer. that's a very old 
+fashioned solution, but it usually simply works... and you can change a 
+broken disk without any respect of the used filesystem(s). in general i 
+try to use btrfs only on account of its snapshot features in a very 
+simple way.
 
-Thanks,
+it looks very strange to me, that i don't see any SMART warnings on the 
+harddisks or errors on other filsystems on the same raid-array. there 
+was also no reboot, power-failure or similar when the corruption 
+suddenly appeared. so i think, a btrfs bug would be the most evident 
+explanation.
 
-Josef
+martin
+

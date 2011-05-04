@@ -1,29 +1,38 @@
-From: Edward Ned Harvey <kernel@nedharvey.com>
-Subject: RE: btrfs csum failed
-Date: Wed, 4 May 2011 09:23:22 -0400
-Message-ID: <000e01cc0a5e$7446eab0$5cd4c010$@nedharvey.com>
-References: <4DC07A10.7070200@mur.at>	<20110504002815.GA27861@dhcp231-156.rdu.redhat.com>	<4DC0A153.3080806@mur.at>	<BANLkTin1quUuSq4oKdt1SowTPv4dhGEM5g@mail.gmail.com>	<4DC13B02.9030604@mur.at> <BANLkTiniD_mztDPriodDWybTzt7Dqtherg@mail.gmail.com> <4DC1464D.4060204@mur.at>
+From: Martin Schitter <ms@mur.at>
+Subject: Re: btrfs csum failed
+Date: Wed, 04 May 2011 16:06:58 +0200
+Message-ID: <4DC15D82.40802@mur.at>
+References: <4DC07A10.7070200@mur.at> <1304512672-sup-1948@think>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Cc: "Fajar A. Nugraha" <list@fajar.net>,
-	"linux-btrfs" <linux-btrfs@vger.kernel.org>
-To: "'Martin Schitter'" <ms@mur.at>, "cwillu" <cwillu@cwillu.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DC1464D.4060204@mur.at>
+In-Reply-To: <1304512672-sup-1948@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
-> owner@vger.kernel.org] On Behalf Of Martin Schitter
-> 
-> well -- i am doing a backup of all images every night. this process
-> should work like a simple "scrub" because all data (and its checksumes)
-> will be read. 
+Am 2011-05-04 14:39, schrieb Chris Mason:
+> What OS is inside these virtual machines?  The btrfs unstable tree has
+> some fixes for windows based OSes.
 
-Sorry, not correct.  When you read all the data using something in user-land, the OS only needs to read one side of the data.  It can accelerate by staggering the read requests across multiple disks.  So some sectors remain unread on some disks.
+we have only linux guests of different flavor, no windows guests.
 
-When you scrub, it reads all the data from all the redundant copies (mirrored or raid) on all the individual disks in the raid set.  
+both corruptions during this last weeks belong to different virtual 
+block device images of the same guest instance.
 
-For this reason, you always want to use JBOD, and don't use hardware raid.  Because if there's an undetected hardware error, the hardware raid will make it impossible for the OS to examine individual disks to identify the failing one.
+> Is your kvm config using O_DIRECT?
 
-At least I know all the above is true for reading & scrubbing in another filesystem, I don't actually know any of this for fact in btrfs, but it seems so basic I would be flabbergasted if I learned that wasn't the btrfs behavior.
+yes -- the kvm/qemu option cache="none" implies O_DIRECT.
 
+> I've also got patches here that force us to honor nodatasum even when
+> the file has csums, that can help if the contents of the file are
+> actually good.
+
+that sounds interessting! in our case it may be easier do use same 
+recent backup data, but it could be very helpful in similar situations.
+
+i would really like to help isolating the reasons of this failure and a 
+find a practical strategy to prevent additional breakdowns.
+
+thanks
+martin

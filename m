@@ -1,95 +1,34 @@
-From: cwillu <cwillu@cwillu.com>
-Subject: Re: Cannot Deinstall a Debian Package
-Date: Thu, 5 May 2011 13:28:19 -0600
-Message-ID: <BANLkTi=_mucea2-nPE54dgkuR3B9mU0o7g@mail.gmail.com>
-References: <201105031227.43619.CACook@quantum-sci.com>
-	<201105031520.49993.CACook@quantum-sci.com>
-	<20110504095153.GA6914@attic.humilis.net>
-	<201105050749.09690.CACook@quantum-sci.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH 1/2 v2] fs: add SEEK_HOLE and SEEK_DATA flags
+Date: Thu, 05 May 2011 15:35:00 -0400
+Message-ID: <4DC2FBE4.9060608@redhat.com>
+References: <1304531920-2890-1-git-send-email-josef@redhat.com> <4DC2F84F.8030107@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: CACook@quantum-sci.com
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201105050749.09690.CACook@quantum-sci.com>
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
+Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+To: Marco Stornelli <marco.stornelli@gmail.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4DC2F84F.8030107@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 5, 2011 at 8:49 AM,  <CACook@quantum-sci.com> wrote:
-> On Wednesday 4 May, 2011 02:51:54 Sander wrote:
->> Put an exit on top of /etc/kernel/postrm.d/zz-update-grub and try ag=
-ain.
->>
->> Install grub-pc 1.99~rc1-13 from Sid.
+On 05/05/2011 03:19 PM, Marco Stornelli wrote:
+> Il 04/05/2011 19:58, Josef Bacik ha scritto:
+>> + if (offset>= i_size_read(inode)) {
+>> + mutex_unlock(&inode->i_mutex);
+>> + return -ENXIO;
+>> + }
+>> + offset = i_size_read(inode);
+>> + break;
 >
-> First I put an exit right after #! /bin/sh =C2=A0and it failed. =C2=A0=
-Then I moved /etc/kernel/postrm.d/zz-update-grub to / and it still fail=
-ed.
->
-> Grub is not running as a daemon, so I shouldn't have to reboot for th=
-e new version to take effect. =C2=A0And frankly at the moment I'm afrai=
-d to reboot, with only grub-common installed.
->
-> # dpkg -i /var/cache/apt/archives/grub-common_1.99~rc1-13_amd64.deb
-> (Reading database ... 136689 files and directories currently installe=
-d.)
-> Preparing to replace grub-common 1.98+20100804-14 (using .../grub-com=
-mon_1.99~rc1-13_amd64.deb) ...
-> Unpacking replacement grub-common ...
-> Setting up grub-common (1.99~rc1-13) ...
-> Installing new version of config file /etc/grub.d/10_linux ...
-> Installing new version of config file /etc/grub.d/30_os-prober ...
-> Installing new version of config file /etc/grub.d/00_header ...
-> Installing new version of config file /etc/grub.d/20_linux_xen ...
-> Processing triggers for install-info ...
-> Processing triggers for man-db ...
->
-> # dpkg -i /var/cache/apt/archives/grub-pc_1.99~rc1-13_amd64.deb
-> (Reading database ... 136703 files and directories currently installe=
-d.)
-> Preparing to replace grub-pc 1.99~rc1-13 (using .../grub-pc_1.99~rc1-=
-13_amd64.deb) ...
-> Unpacking replacement grub-pc ...
-> Setting up grub-pc (1.99~rc1-13) ...
-> grub-probe: error: cannot stat `/dev/root'.
-> Installation finished. No error reported.
-> /usr/sbin/grub-probe: error: cannot stat `/dev/root'.
-> dpkg: error processing grub-pc (--install):
-> =C2=A0subprocess installed post-installation script returned error ex=
-it status 1
-> Processing triggers for man-db ...
-> Errors were encountered while processing:
-> =C2=A0grub-pc
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =C2=A0http://vger.kernel.org/majordomo-info.ht=
-ml
->
+> I can add that generic_file_llseek_unlocked means *unlocked* so you
+> shouldn't unlock any mutex but only return a value. The current version,
+> in case of SEEK_END uses directly i_size indeed, so maybe I'm missing
+> something.
 
-You'll need to contact somebody more familiar with debian, as this
-isn't really a btrfs issue.
+Yeah this was a copy+paste mistake, ext4 has it's own llseek that I 
+modified to run my tests against and then I just copied and pasted it 
+over to the generic things.  I've fixed this earlier, I'll be sending a 
+refreshed set out soon.  Thanks,
 
-Yes, btrfs is the obvious cause, but it's grub's handling of it that
-is the problem, and dpkg's handling of grub's failure that is really
-blocking you.
-
-This is what it meant by "does debian support btrfs?".  It's not a
-question of whether btrfs is in debian's kernel, but whether all the
-pieces of debian which are directly or indirectly affected by btrfs
-are known to work right, and whether they're currently willing to
-spend effort on these issues.
-
-If they're not currently providing that level of support, then it's
-completely up to you to have a good understanding of how the rest of
-debian is put together so that you yourself can make things works.
-
-As was mentioned previously, there is an updated grub package, so your
-main objective is to find out from debian how to disable or override
-the failing package long enough to install the replacement.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Josef

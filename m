@@ -1,34 +1,44 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH 1/2 v2] fs: add SEEK_HOLE and SEEK_DATA flags
-Date: Thu, 05 May 2011 15:35:00 -0400
-Message-ID: <4DC2FBE4.9060608@redhat.com>
-References: <1304531920-2890-1-git-send-email-josef@redhat.com> <4DC2F84F.8030107@gmail.com>
+From: CACook@quantum-sci.com
+Subject: Re: Cannot Deinstall a Debian Package
+Date: Thu, 5 May 2011 12:50:02 -0700
+Message-ID: <201105051250.03335.CACook@quantum-sci.com>
+References: <201105031227.43619.CACook@quantum-sci.com> <201105050749.09690.CACook@quantum-sci.com> <BANLkTi=_mucea2-nPE54dgkuR3B9mU0o7g@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-15; format=flowed
-Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org
-To: Marco Stornelli <marco.stornelli@gmail.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4DC2F84F.8030107@gmail.com>
+Content-Type: Text/Plain;
+  charset="utf-8"
+To: "linux-btrfs" <linux-btrfs@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <BANLkTi=_mucea2-nPE54dgkuR3B9mU0o7g@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/05/2011 03:19 PM, Marco Stornelli wrote:
-> Il 04/05/2011 19:58, Josef Bacik ha scritto:
->> + if (offset>= i_size_read(inode)) {
->> + mutex_unlock(&inode->i_mutex);
->> + return -ENXIO;
->> + }
->> + offset = i_size_read(inode);
->> + break;
->
-> I can add that generic_file_llseek_unlocked means *unlocked* so you
-> shouldn't unlock any mutex but only return a value. The current version,
-> in case of SEEK_END uses directly i_size indeed, so maybe I'm missing
-> something.
 
-Yeah this was a copy+paste mistake, ext4 has it's own llseek that I 
-modified to run my tests against and then I just copied and pasted it 
-over to the generic things.  I've fixed this earlier, I'll be sending a 
-refreshed set out soon.  Thanks,
+I was afraid of this finger-pointing.
 
-Josef
+Of course no one at Debian is going to know how to fix BTRFS jamming the package management system.  That's ridiculous.
+
+It's starting to look like BTRFS is just busted in Debian, and I'll have to reinstall everything over a different filesystem.  I hate to give up btrfs raid and snapshotting, but these failures are just unlivable.  Is Oracle aware of this?  I'll have to warn others in the various forums that BTRFS breaks Debian, because no one warned me.  This is unlivable, not to mention unbelievable.
+
+
+On Thursday 5 May, 2011 12:28:19 cwillu wrote:
+> You'll need to contact somebody more familiar with debian, as this
+> isn't really a btrfs issue.
+> 
+> Yes, btrfs is the obvious cause, but it's grub's handling of it that
+> is the problem, and dpkg's handling of grub's failure that is really
+> blocking you.
+> 
+> This is what it meant by "does debian support btrfs?".  It's not a
+> question of whether btrfs is in debian's kernel, but whether all the
+> pieces of debian which are directly or indirectly affected by btrfs
+> are known to work right, and whether they're currently willing to
+> spend effort on these issues.
+> 
+> If they're not currently providing that level of support, then it's
+> completely up to you to have a good understanding of how the rest of
+> debian is put together so that you yourself can make things works.
+> 
+> As was mentioned previously, there is an updated grub package, so your
+> main objective is to find out from debian how to disable or override
+> the failing package long enough to install the replacement.
+> 
+> 

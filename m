@@ -1,37 +1,28 @@
-From: cwillu <cwillu@cwillu.com>
-Subject: Re: Cannot Deinstall a Debian Package
-Date: Thu, 5 May 2011 13:09:00 -0600
-Message-ID: <BANLkTikf4SUHHp52+GTYrSyE90yEDGwXDw@mail.gmail.com>
-References: <201105031227.43619.CACook@quantum-sci.com>
-	<20110504095153.GA6914@attic.humilis.net>
-	<201105050749.09690.CACook@quantum-sci.com>
-	<201105051109.35152.CACook@quantum-sci.com>
+From: Marco Stornelli <marco.stornelli@gmail.com>
+Subject: Re: [PATCH 1/2 v2] fs: add SEEK_HOLE and SEEK_DATA flags
+Date: Thu, 05 May 2011 21:19:43 +0200
+Message-ID: <4DC2F84F.8030107@gmail.com>
+References: <1304531920-2890-1-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: CACook@quantum-sci.com
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201105051109.35152.CACook@quantum-sci.com>
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
+Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <1304531920-2890-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 5, 2011 at 12:09 PM,  <CACook@quantum-sci.com> wrote:
->
-> Anyone have a suggestion?
->
-> Also on another machine set up similarly, I now cannot mkdir. =C2=A0I=
-t says 'no space left on device'. =C2=A0df says:
-> # df /dev/sdb
-> Filesystem =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 1K-blocks =C2=A0 =C2=A0=
- =C2=A0Used Available Use% Mounted on
-> /dev/sdb =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 3907029168 2658010=
-524 1246486516 =C2=A069% /home
->
-> sdb and sdc are one btrfs 'raid' volume. =C2=A0What could be wrong?
+Il 04/05/2011 19:58, Josef Bacik ha scritto:
+> +		if (offset>= i_size_read(inode)) {
+> +			mutex_unlock(&inode->i_mutex);
+> +			return -ENXIO;
+> +		}
+> +		offset = i_size_read(inode);
+> +		break;
 
-Which kernel version (uname -a), and what's the output of "btrfs fi df
-/home" and "sudo btrfs fi show /dev/sdb"?
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I can add that generic_file_llseek_unlocked means *unlocked* so you 
+shouldn't unlock any mutex but only return a value. The current version, 
+in case of SEEK_END uses directly i_size indeed, so maybe I'm missing 
+something.
+
+Marco

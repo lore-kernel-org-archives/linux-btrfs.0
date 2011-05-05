@@ -1,49 +1,25 @@
-From: cwillu <cwillu@cwillu.com>
+From: CACook@quantum-sci.com
 Subject: Re: Cannot Deinstall a Debian Package
-Date: Thu, 5 May 2011 14:40:25 -0600
-Message-ID: <BANLkTim3uMUXN7Q=zqXoopUeR8gphWHi_Q@mail.gmail.com>
-References: <201105031227.43619.CACook@quantum-sci.com>
-	<201105051250.03335.CACook@quantum-sci.com>
-	<1304625253-sup-3665@think>
-	<201105051332.20992.CACook@quantum-sci.com>
+Date: Thu, 5 May 2011 13:57:05 -0700
+Message-ID: <201105051357.07209.CACook@quantum-sci.com>
+References: <201105031227.43619.CACook@quantum-sci.com> <201105051250.03335.CACook@quantum-sci.com> <BANLkTinkhtYYFx+eKQzdrRDSvpgEiPHzpQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: CACook@quantum-sci.com
+Content-Type: Text/Plain;
+  charset="utf-8"
+To: "linux-btrfs" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201105051332.20992.CACook@quantum-sci.com>
+In-Reply-To: <BANLkTinkhtYYFx+eKQzdrRDSvpgEiPHzpQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 5, 2011 at 2:32 PM,  <CACook@quantum-sci.com> wrote:
-> Here is the relevant section of strace:
 
-> BTW, I fixed the 'no space left on device' on the other machine with =
-a btrfs balance. =C2=A0No one seems to know this, but even though df re=
-ports that 64% of the disk array is used, apparently one of the disks d=
-id get full somehow and was preventing even a simple mkdir. =C2=A0But a=
- balance fixed it.
->
-> I thought balancing was supposed to be automatic in BTRFS?
->
-> Is defrag not automatic?
+On Thursday 5 May, 2011 13:31:17 cwillu wrote:
+> I took the liberty of asking #debian, and they've requested that you
+> file a bug in their bug tracker.  They've also suggested that you
+> might be able to short-circuit the faulty script in their kernel
+> package via an "exit 0", or even replace the faulty grub-probe by
+> manually extracting the newer version of the package.
 
-Could you include the information I asked for previously?  (Kernel
-version, output of btrfs fi df and btrfs fi show)
+I tried to install Debian's reportbug, but of course I can't.  And assembling the info they need for email reporting will take me a half day of analysis.  Part of the problem here is I am trying desperately to make a living in another line of business, and I don't have time for any of these problems.
 
-Defrag is not the same as balancing, and neither is quite the same as
-the balancing of the internal b-trees that make up the filesystem.
-Either way, this sounds like a bug that was fixed a few releases ago,
-but it's hard to say if that's the case without the requested
-information.
+I don't know how to manually extract a package.  I guess it's done with dpkg, but that will take more time for me to figure out.  I've lost half of today already on this problem.
 
-Also, please place your replies below the original text, not above it.
- That's common practice on development mailing lists, and makes
-following the conversation much easier for others.
-http://www.catb.org/~esr/faqs/smart-questions.html may be a useful
-read as well.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

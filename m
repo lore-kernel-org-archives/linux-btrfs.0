@@ -1,27 +1,47 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Cannot Deinstall a Debian Package
-Date: Thu, 05 May 2011 15:55:44 -0400
-Message-ID: <1304625253-sup-3665@think>
-References: <201105031227.43619.CACook@quantum-sci.com> <201105050749.09690.CACook@quantum-sci.com> <BANLkTi=_mucea2-nPE54dgkuR3B9mU0o7g@mail.gmail.com> <201105051250.03335.CACook@quantum-sci.com>
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: CACook <cacook@quantum-sci.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <201105051250.03335.CACook@quantum-sci.com>
+From: Andreas Dilger <adilger@dilger.ca>
+Subject: Re: Is it possible for the ext4/btrfs file system to pass some	context related info to low level block driver?
+Date: Thu, 5 May 2011 14:11:51 -0600
+Message-ID: <7DF5B5A9-7AD7-4EAC-9A42-DA22A814056F@dilger.ca>
+References: <CE761E84DADF2947A4AF22FB8D97A47358E28022@shsmsx501.ccr.corp.intel.com> <yq1mxj32932.fsf@sermon.lab.mkp.net> <CE761E84DADF2947A4AF22FB8D97A47358EE526A@shsmsx501.ccr.corp.intel.com> <60C31100-5694-4CA9-A778-91CB15915052@dilger.ca> <20110505181032.GA21360@parisc-linux.org>
+Mime-Version: 1.0 (Apple Message framework v1082)
+Content-Type: text/plain; charset=us-ascii
+Cc: "Gao, Yunpeng" <yunpeng.gao@intel.com>,
+	"Martin K. Petersen" <martin.petersen@oracle.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
+	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+	"linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>
+To: Matthew Wilcox <matthew@wil.cx>
+Return-path: <linux-mmc-owner@vger.kernel.org>
+In-Reply-To: <20110505181032.GA21360@parisc-linux.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from CACook's message of 2011-05-05 15:50:02 -0400:
+On May 5, 2011, at 12:10, Matthew Wilcox wrote:
+> On Wed, May 04, 2011 at 08:51:39AM -0600, Andreas Dilger wrote:
+>> I was aware of REQ_META, but I didn't know there was any benefit to
+>> using it. I think it would be easy to set REQ_META on all ext4 metadata
+>> if there was a reason to do so.
 > 
-> I was afraid of this finger-pointing.
+> The CFQ ioscheduler pays attention to it (prioritising metadata accesses
+> over data accesses), and blocktrace will print an 'M' for metadata
+> requests if it's set, so I think that's two excellent reasons to set
+> REQ_META today.
+> 
+> However, ext3, ext4, and XFS already use it:
+> 
+> fs/ext4/inode.c:1500:   ll_rw_block(READ_META, 1, &bh);
+  - ext4_bread()
 
-We're not finger pointing, but we also don't maintain the script that is
-failing.  I'm happy to patch up bugs in the FS (or point you to newer
-kernels that have them fixed) but at this point we don't have enough
-info to say if it is an FS problem or a debian package problem.
+> fs/ext4/inode.c:4775:           submit_bh(READ_META, bh);
+  - __ext4_get_inode_loc()
+> fs/ext4/namei.c:924:                    ll_rw_block(READ_META, 1, &bh);
+  - ext4_find_entry()
 
-Perhaps if you ran it under strace?
+Looking more closely at the code it seems that this is handling only a subset of the code.  There are many places in ext4 that are using sb_bread() instead of ext4_bread(), in particular in the extents and migration code that was developed more recently, but also in the xattr code which has been around a long time.
 
-Other distros don't have problems with btrfs on /, so somehow this is
-specific to debian's setup.
+Cheers, Andreas
 
--chris
+
+
+
+

@@ -1,64 +1,39 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH] btrfs progs: fix extra metadata chunk allocation in --mixed case
-Date: Thu,  5 May 2011 16:16:12 +0200
-Message-ID: <1304604972-31585-1-git-send-email-sensille@gmx.net>
-Cc: josef@redhat.com
-To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Having parent transid verify failed
+Date: Thu, 05 May 2011 10:23:06 -0400
+Message-ID: <1304605365-sup-4172@think>
+References: <4DC287D8.3040705@gmail.com> <1304595695-sup-9289@think> <4DC28DC4.7050308@gmail.com>
+Mime-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=ISO-8859-1
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Konstantinos Skarlatos <k.skarlatos@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <4DC28DC4.7050308@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When creating a mixed fs with mkfs, an extra metadata chunk got allocated.
-This is because btrfs_reserve_extent calls do_chunk_alloc for METADATA,
-which in turn wasn't able to find the proper space_info, as __find_space_info
-did a hard compare of the flags. It is now sufficient for the space_info to
-include the proper flag. This reflects the change done to the kernel code
-to support mixed chunks.
-Also for a subsequent chunk allocation (which should not be hit in the mkfs
-case), the chunk is now created with the flags from the space_info instead
-of the requested flags. A better solution would be to pull the full changeset
-for the mixed case from the kernel into the user mode (or, even better, share
-the code)
+Excerpts from Konstantinos Skarlatos's message of 2011-05-05 07:45:08 -=
+0400:
+>=20
+> On 5/5/2011 2:42 =CE=BC=CE=BC, Chris Mason wrote:
+> > Excerpts from Konstantinos Skarlatos's message of 2011-05-05 07:19:=
+52 -0400:
+> >> Hello, I have a 5.5TB Btrfs filesystem on top of a md-raid 5 devic=
+e. Now
+> >> if i run some file operations like find, i get these messages.
+> >> kernel is 2.6.38.5-1 on arch linux
+> >
+> > Are all of the messages for this one block?
+> >
+> > parent transid verify failed on 3062073683968 wanted 5181 found 518=
+8
+> yes, only this block
 
-The additional chunk probably confused block_rsv calculation, which in turn
-led to severeal ENOSPC Oopses.
+Ok, what were the call traces in there?  Was there an oops or a hung
+task?  It looks like part of the messages are missing.
 
-Signed-off-by: Arne Jansen <sensille@gmx.net>
----
- extent-tree.c |    7 ++++---
- 1 files changed, 4 insertions(+), 3 deletions(-)
-
-diff --git a/extent-tree.c b/extent-tree.c
-index b2f9bb2..c6c77c6 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -1735,7 +1735,7 @@ static struct btrfs_space_info *__find_space_info(struct btrfs_fs_info *info,
- 	struct btrfs_space_info *found;
- 	list_for_each(cur, head) {
- 		found = list_entry(cur, struct btrfs_space_info, list);
--		if (found->flags == flags)
-+		if (found->flags & flags)
- 			return found;
- 	}
- 	return NULL;
-@@ -1812,7 +1812,8 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
- 	    thresh)
- 		return 0;
- 
--	ret = btrfs_alloc_chunk(trans, extent_root, &start, &num_bytes, flags);
-+	ret = btrfs_alloc_chunk(trans, extent_root, &start, &num_bytes,
-+	                        space_info->flags);
- 	if (ret == -ENOSPC) {
- 		space_info->full = 1;
- 		return 0;
-@@ -1820,7 +1821,7 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
- 
- 	BUG_ON(ret);
- 
--	ret = btrfs_make_block_group(trans, extent_root, 0, flags,
-+	ret = btrfs_make_block_group(trans, extent_root, 0, space_info->flags,
- 		     BTRFS_FIRST_CHUNK_TREE_OBJECTID, start, num_bytes);
- 	BUG_ON(ret);
- 	return 0;
--- 
-1.7.3.4
-
+-chris
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

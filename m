@@ -1,75 +1,39 @@
-From: Jamey Sharp <jamey@minilop.net>
-Subject: [PATCH] btrfs: Delete unused version.sh script.
-Date: Thu,  5 May 2011 12:03:46 -0700
-Message-ID: <1304622227-18204-1-git-send-email-jamey@minilop.net>
-Cc: Josh Triplett <josh@joshtriplett.org>,
-	Chris Mason <chris.mason@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: Marco Stornelli <marco.stornelli@gmail.com>
+Subject: Re: [PATCH 1/2 v2] fs: add SEEK_HOLE and SEEK_DATA flags
+Date: Thu, 05 May 2011 20:58:58 +0200
+Message-ID: <4DC2F372.50601@gmail.com>
+References: <1304531920-2890-1-git-send-email-josef@redhat.com> <4DC2F24A.4050304@gmail.com> <4DC2F400.4060903@redhat.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
+Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4DC2F400.4060903@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In 2008, commit b4f6c45dfbf84f47c21f73f6370ad1292b0627fd dropped the use
-of fs/btrfs/version.sh, but left the script behind. Kill it.
+Il 05/05/2011 21:01, Josef Bacik ha scritto:
+> On 05/05/2011 02:54 PM, Marco Stornelli wrote:
+>> Il 04/05/2011 19:58, Josef Bacik ha scritto:
+>>> + if (offset>= i_size_read(inode)) {
+>>> + mutex_unlock(&inode->i_mutex);
+>>> + return -ENXIO;
+>>> + }
+>>> + offset = i_size_read(inode);
+>>> + break;
+>>
+>> Here maybe it's possible to use offset bigger than i_size, because
+>> i_size_read is "atomic" but something can happen between two calls,
+>> isn't it?
+>>
+>
+> We're holding the i_mutex so we are safe, i_size_read is used just for
+> consistency sake. Thanks,
+>
+> Josef
+>
 
-Commit by Jamey Sharp and Josh Triplett.
+Oh, I'm sorry, I misread the patch, ok. Maybe we can use i_size at this 
+point without i_size_read.
 
-Signed-off-by: Jamey Sharp <jamey@minilop.net>
-Signed-off-by: Josh Triplett <josh@joshtriplett.org>
-Cc: Chris Mason <chris.mason@oracle.com>
----
- fs/btrfs/version.sh |   43 -------------------------------------------
- 1 files changed, 0 insertions(+), 43 deletions(-)
- delete mode 100644 fs/btrfs/version.sh
-
-diff --git a/fs/btrfs/version.sh b/fs/btrfs/version.sh
-deleted file mode 100644
-index 1ca1952..0000000
---- a/fs/btrfs/version.sh
-+++ /dev/null
-@@ -1,43 +0,0 @@
--#!/bin/bash
--#
--# determine-version -- report a useful version for releases
--#
--# Copyright 2008, Aron Griffis <agriffis@n01se.net>
--# Copyright 2008, Oracle
--# Released under the GNU GPLv2
-- 
--v="v0.16"
--
--which git &> /dev/null
--if [ $? == 0 ]; then
--    git branch >& /dev/null
--    if [ $? == 0 ]; then
--	    if head=`git rev-parse --verify HEAD 2>/dev/null`; then
--		if tag=`git describe --tags 2>/dev/null`; then
--		    v="$tag"
--		fi
--
--		# Are there uncommitted changes?
--		git update-index --refresh --unmerged > /dev/null
--		if git diff-index --name-only HEAD | \
--		    grep -v "^scripts/package" \
--		    | read dummy; then
--		    v="$v"-dirty
--		fi
--	    fi
--    fi
--fi
-- 
--echo "#ifndef __BUILD_VERSION" > .build-version.h
--echo "#define __BUILD_VERSION" >> .build-version.h
--echo "#define BTRFS_BUILD_VERSION \"Btrfs $v\"" >> .build-version.h
--echo "#endif" >> .build-version.h
--
--diff -q version.h .build-version.h >& /dev/null
--
--if [ $? == 0 ]; then
--    rm .build-version.h
--    exit 0
--fi
--
--mv .build-version.h version.h
--- 
-1.7.4.4
-
+Marco

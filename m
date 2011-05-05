@@ -1,27 +1,27 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: kernel BUG at fs/btrfs/inode.c:149!
-Date: Thu, 05 May 2011 14:57:17 -0400
-Message-ID: <4DC2F30D.3080308@redhat.com>
-References: <201105051954.48405.whirm@gmx.com>
+From: Marco Stornelli <marco.stornelli@gmail.com>
+Subject: Re: [PATCH 1/2 v2] fs: add SEEK_HOLE and SEEK_DATA flags
+Date: Thu, 05 May 2011 20:54:02 +0200
+Message-ID: <4DC2F24A.4050304@gmail.com>
+References: <1304531920-2890-1-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: whirm@gmx.com
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201105051954.48405.whirm@gmx.com>
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
+Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <1304531920-2890-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/05/2011 01:54 PM, whirm@gmx.com wrote:
-> On Thursday 05 May 2011 19:53:52 Josef Bacik wrote:
-> [...]
->> Hmm I didn't see what I needed, can you do it again and try to get kernel
->> messages to go to /var/log/messages so you don't have to worry about the
->> log buffer?  The other option is to setup netconsole which would grab
->> everything. Thanks,
->
-> Ok, this is all of it.
->
+Il 04/05/2011 19:58, Josef Bacik ha scritto:
+> +		if (offset>= i_size_read(inode)) {
+> +			mutex_unlock(&inode->i_mutex);
+> +			return -ENXIO;
+> +		}
+> +		offset = i_size_read(inode);
+> +		break;
 
-It doesn't look like that bit had my debugging output.  Thanks,
+Here maybe it's possible to use offset bigger than i_size, because 
+i_size_read is "atomic" but something can happen between two calls, 
+isn't it?
 
-Josef
+Marco

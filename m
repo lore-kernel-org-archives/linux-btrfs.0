@@ -1,752 +1,446 @@
-From: CACook@quantum-sci.com
-Subject: Re: Cannot Deinstall a Debian Package
-Date: Thu, 5 May 2011 13:32:18 -0700
-Message-ID: <201105051332.20992.CACook@quantum-sci.com>
-References: <201105031227.43619.CACook@quantum-sci.com> <201105051250.03335.CACook@quantum-sci.com> <1304625253-sup-3665@think>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Having parent transid verify failed
+Date: Thu, 05 May 2011 16:32:42 -0400
+Message-ID: <1304627478-sup-2626@think>
+References: <4DC287D8.3040705@gmail.com> <1304595695-sup-9289@think> <4DC28DC4.7050308@gmail.com> <1304605365-sup-4172@think> <4DC2B3D2.6080307@gmail.com> <1304607926-sup-3304@think> <4DC3084A.7030100@gmail.com>
 Mime-Version: 1.0
-Content-Type: Multipart/Mixed;
-  boundary="Boundary-00=_UlwwNzHIMcjR6jA"
-Cc: "linux-btrfs" <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: TEXT/PLAIN; charset=ISO-8859-1
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Konstantinos Skarlatos <k.skarlatos@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1304625253-sup-3665@think>
+In-reply-to: <4DC3084A.7030100@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Boundary-00=_UlwwNzHIMcjR6jA
-Content-Type: Text/Plain;
-  charset="utf-8"
-Content-Transfer-Encoding: 7bit
-
-Here is the relevant section of strace:
-
----------------------------------------------------------------------------------------------
-chmod("/etc/grub.d/05_debian_theme.dpkg-new", 0755) = 0
-unlink("/etc/grub.d/05_debian_theme.dpkg-new") = 0
-stat("/etc/localtime", {st_mode=S_IFREG|0644, st_size=2819, ...}) = 0
-write(6, "2011-05-05 13:21:57 status unpac"..., 56) = 56
-write(4, "Package: grub-pc\nStatus: install"..., 1795) = 1795
-ftruncate(4, 1795)                      = 0
-fsync(4)                                = 0
-close(4)                                = 0
-munmap(0x7f32f8490000, 4096)            = 0
-rename("/var/lib/dpkg/updates/tmp.i", "/var/lib/dpkg/updates/0011") = 0
-open("/var/lib/dpkg/updates/", O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC) = 4
-fsync(4)                                = 0
-close(4)                                = 0
-open("/var/lib/dpkg/updates/tmp.i", O_WRONLY|O_CREAT|O_TRUNC, 0666) = 4
-fcntl(4, F_GETFD)                       = 0
-fcntl(4, F_SETFD, FD_CLOEXEC)           = 0
-fstat(4, {st_mode=S_IFREG|0644, st_size=0, ...}) = 0
-mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f32f8490000
-write(4, "#padding\n#padding\n#padding\n#padd"..., 4096) = 4096
-write(4, "padding\n#padding\n#padding\n#paddi"..., 512) = 512
-lseek(4, 0, SEEK_SET)                   = 0
-stat("/etc/localtime", {st_mode=S_IFREG|0644, st_size=2819, ...}) = 0
-write(6, "2011-05-05 13:21:58 status half-"..., 63) = 63
-write(4, "Package: grub-pc\nStatus: install"..., 1802) = 1802
-ftruncate(4, 1802)                      = 0
-fsync(4)                                = 0
-close(4)                                = 0
-munmap(0x7f32f8490000, 4096)            = 0
-rename("/var/lib/dpkg/updates/tmp.i", "/var/lib/dpkg/updates/0012") = 0
-open("/var/lib/dpkg/updates/", O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC) = 4
-fsync(4)                                = 0
-close(4)                                = 0
-open("/var/lib/dpkg/updates/tmp.i", O_WRONLY|O_CREAT|O_TRUNC, 0666) = 4
-fcntl(4, F_GETFD)                       = 0
-fcntl(4, F_SETFD, FD_CLOEXEC)           = 0
-fstat(4, {st_mode=S_IFREG|0644, st_size=0, ...}) = 0
-mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f32f8490000
-write(4, "#padding\n#padding\n#padding\n#padd"..., 4096) = 4096
-write(4, "padding\n#padding\n#padding\n#paddi"..., 512) = 512
-lseek(4, 0, SEEK_SET)                   = 0
-stat("/var/lib/dpkg/info/grub-pc.postinst", {st_mode=S_IFREG|0755, st_size=23003, ...}) = 0
-clone(child_stack=0, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7f32f8475a70) = 29950
-rt_sigaction(SIGQUIT, {SIG_IGN, [], SA_RESTORER, 0x7f32f7d281e0}, {SIG_DFL, [], SA_RESTORER, 0x7f32f7d281e0}, 8) = 0
-rt_sigaction(SIGINT, {SIG_IGN, [], SA_RESTORER, 0x7f32f7d281e0}, {SIG_DFL, [], SA_RESTORER, 0x7f32f7d281e0}, 8) = 0
-wait4(29950, grub-probe: error: cannot stat `/dev/root'.
-^C <unfinished ...>
----------------------------------------------------------------------------------------------
-
-/var/lib/dpkg/info/grub-pc.postinst is attached.  I can't make sense of it.
-
-BTW, I fixed the 'no space left on device' on the other machine with a btrfs balance.  No one seems to know this, but even though df reports that 64% of the disk array is used, apparently one of the disks did get full somehow and was preventing even a simple mkdir.  But a balance fixed it.  
-
-I thought balancing was supposed to be automatic in BTRFS?  
-
-Is defrag not automatic?
-
-
-
-On Thursday 5 May, 2011 12:55:44 you wrote:
-> Excerpts from CACook's message of 2011-05-05 15:50:02 -0400:
-> > 
-> > I was afraid of this finger-pointing.
-> 
-> We're not finger pointing, but we also don't maintain the script that is
-> failing.  I'm happy to patch up bugs in the FS (or point you to newer
-> kernels that have them fixed) but at this point we don't have enough
-> info to say if it is an FS problem or a debian package problem.
-> 
-> Perhaps if you ran it under strace?
-> 
-> Other distros don't have problems with btrfs on /, so somehow this is
-> specific to debian's setup.
-> 
-> -chris
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
---Boundary-00=_UlwwNzHIMcjR6jA
-Content-Type: application/x-shellscript;
-  name="grub-pc.postinst"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment;
-	filename="grub-pc.postinst"
-
-#!/bin/bash
-set -e
-
-merge_debconf_into_conf()
-{
-  local tmpfile; tmpfile="$1"
-  local setting; setting="$2"
-  local template; template="$3"
-
-  db_get "$template"
-  local value; value="$(echo "$RET" | sed -e 's,[$`"\@],\\&,g')"
-  if grep -q "^${setting}=" "$tmpfile"; then
-    sed -i -re "s@^(${setting}=).*@\1\"${value}\"@" "$tmpfile"
-  else
-    echo >> "$tmpfile"
-    echo "${setting}=\"${value}\"" >> "$tmpfile"
-  fi
-}
-
-# This only works on a Linux system with udev running.  This is probably the
-# vast majority of systems where we need any of this, though, and we fall
-# back reasonably gracefully if we don't have it.
-cached_available_ids=
-available_ids()
-{
-  local id path
-
-  if [ "$cached_available_ids" ]; then
-    echo "$cached_available_ids"
-    return
-  fi
-
-  [ -d /dev/disk/by-id ] || return
-  cached_available_ids="$(
-    for path in /dev/disk/by-id/*; do
-      [ -e "$path" ] || continue
-      printf '%s %s\n' "$path" "$(readlink -f "$path")"
-    done | sort -k2 -s -u | cut -d' ' -f1
-  )"
-  echo "$cached_available_ids"
-}
-
-# Returns non-zero and no output if no mapping can be found.
-device_to_id()
-{
-  local id
-  for id in $(available_ids); do
-    if [ "$(readlink -f "$id")" = "$(readlink -f "$1")" ]; then
-      echo "$id"
-      return 0
-    fi
-  done
-  # Fall back to the plain device name if there's no by-id link for it.
-  if [ -e "$1" ]; then
-    echo "$1"
-    return 0
-  fi
-  return 1
-}
-
-devices_to_ids()
-{
-  local device id ids
-  ids=
-  for device; do
-    id="$(device_to_id "$device" || true)"
-    if [ "$id" ]; then
-      ids="${ids:+$ids, }$id"
-    fi
-  done
-  echo "$ids"
-}
-
-all_disks()
-{
-  local id
-  for id in $(available_ids); do
-    case $id in
-      *-part*) ;;
-      *) echo "$id" ;;
-    esac
-  done
-}
-
-all_partitions()
-{
-  local id ids
-  ids=
-  for id in $(available_ids); do
-    if [ "$id" != "$1" ] && [ "${id%-part*}" = "$1" ]; then
-      ids="${ids:+$ids }$id"
-    fi
-  done
-  echo "$ids"
-}
-
-# In order to determine whether we accidentally ran grub-install without
-# upgrade-from-grub-legacy on versions older than 1.98+20100617-1, we need
-# to be able to scan a disk to determine whether GRUB 2 was installed in its
-# boot sector.  This is specific to i386-pc (but that's the only platform
-# where we need it).
-scan_grub2()
-{
-  if ! dd if="$1" bs=512 count=1 2>/dev/null | grep -aq GRUB; then
-    # No version of GRUB is installed.
-    return 1
-  fi
-
-  # The GRUB boot sector always starts with a JMP instruction.
-  initial_jmp="$(dd if="$1" bs=2 count=1 2>/dev/null | od -Ax -tx1 | \
-                 head -n1 | cut -d' ' -f2,3)"
-  [ "$initial_jmp" ] || return 1
-  initial_jmp_opcode="${initial_jmp%% *}"
-  [ "$initial_jmp_opcode" = eb ] || return 1
-  initial_jmp_operand="${initial_jmp#* }"
-  case $initial_jmp_operand in
-    47|4b|4c|63)
-      # I believe this covers all versions of GRUB 2 up to the package
-      # version where we gained a more explicit mechanism.  GRUB Legacy
-      # always had 48 here.
-      return 0
-    ;;
-  esac
-
-  return 1
-}
-
-# for Linux
-sysfs_size()
-{
-  local num_sectors sector_size size
-  # Try to find out the size without relying on a partitioning tool being
-  # installed. This isn't too hard on Linux 2.6 with sysfs, but we have to
-  # try a couple of variants on detection of the sector size.
-  if [ -e "$1/size" ]; then
-    num_sectors="$(cat "$1/size")"
-    sector_size=512
-    if [ -e "$1/queue/logical_block_size" ]; then
-      sector_size="$(cat "$1/queue/logical_block_size")"
-    elif [ -e "$1/queue/hw_sector_size" ]; then
-      sector_size="$(cat "$1/queue/hw_sector_size")"
-    fi
-    size="$(expr "$num_sectors" \* "$sector_size" / 1000 / 1000)"
-  fi
-  [ "$size" ] || size='???'
-  echo "$size"
-}
-
-# for kFreeBSD
-camcontrol_size()
-{
-  local num_sectors sector_size size=
-
-  if num_sectors="$(camcontrol readcap "$1" -q -s -N)"; then
-    sector_size="$(camcontrol readcap "$1" -q -b)"
-    size="$(expr "$num_sectors" \* "$sector_size" / 1000 / 1000)"
-  fi
-
-  [ "$size" ] || size='???'
-  echo "$size"
-}
-
-# Returns value in $RET, like a debconf command.
-describe_disk()
-{
-  local disk id base size
-  disk="$1"
-  id="$2"
-
-  model=
-  case $(uname -s) in
-    Linux)
-      if which udevadm >/dev/null 2>&1; then
-        size="$(sysfs_size "/sys$(udevadm info -n "$disk" -q path)")"
-      else
-        base="${disk#/dev/}"
-        base="$(printf %s "$base" | sed 's,/,!,g')"
-        size="$(sysfs_size "/sys/block/$base")"
-      fi
-
-      if which udevadm >/dev/null 2>&1; then
-        model="$(udevadm info -n "$disk" -q property | sed -n 's/^ID_MODEL=//p')"
-        if [ -z "$model" ]; then
-          model="$(udevadm info -n "$disk" -q property | sed -n 's/^DM_NAME=//p')"
-          if [ -z "$model" ]; then
-            model="$(udevadm info -n "$disk" -q property | sed -n 's/^MD_NAME=//p')"
-            if [ -z "$model" ] && which dmsetup >/dev/null 2>&1; then
-              model="$(dmsetup info -c --noheadings -o name "$disk" 2>/dev/null || true)"
-            fi
-          fi
-        fi
-      fi
-    ;;
-    GNU/kFreeBSD)
-      disk_basename=$(basename "$disk")
-      size="$(camcontrol_size "$disk_basename")"
-      model="$(camcontrol inquiry "$disk_basename" | sed -ne "s/^pass0: <\([^>]*\)>.*/\1/p")"
-    ;;
-  esac
-
-  [ "$model" ] || model='???'
-
-  db_subst grub-pc/disk_description DEVICE "$disk"
-  db_subst grub-pc/disk_description SIZE "$size"
-  db_subst grub-pc/disk_description MODEL "$model"
-  db_metaget grub-pc/disk_description description
-}
-
-# Returns value in $RET, like a debconf command.
-describe_partition()
-{
-  local disk part id path diskbase partbase size
-  disk="$1"
-  part="$2"
-  id="$3"
-  path="$4"
-
-  if which udevadm >/dev/null 2>&1; then
-    size="$(sysfs_size "/sys$(udevadm info -n "$part" -q path)")"
-  else
-    diskbase="${disk#/dev/}"
-    diskbase="$(printf %s "$diskbase" | sed 's,/,!,g')"
-    partbase="${part#/dev/}"
-    partbase="$(printf %s "$partbase" | sed 's,/,!,g')"
-    size="$(sysfs_size "/sys/block/$diskbase/$partbase")"
-  fi
-
-  db_subst grub-pc/partition_description DEVICE "$part"
-  db_subst grub-pc/partition_description SIZE "$size"
-  db_subst grub-pc/partition_description PATH "$path"
-  db_metaget grub-pc/partition_description description
-}
-
-usable_partitions()
-{
-  local last_partition path partition partition_id
-
-  last_partition=
-  for path in / /boot /boot/grub; do
-    partition="$(grub-probe -t device "$path" || true)"
-    if [ -z "$partition" ] || [ "$partition" = "$last_partition" ]; then
-      continue
-    fi
-    partition_id="$(device_to_id "$partition" || true)"
-    echo "$path:$partition_id"
-    last_partition="$partition"
-  done | sort -t: -k2
-}
-
-get_mountpoint()
-{
-  local relpath boot_mountpoint
-
-  relpath="$(grub-mkrelpath "$1")"
-  boot_mountpoint="${1#$relpath}"
-  echo "${boot_mountpoint:-/}"
-}
-
-config_item()
-{
-  if [ -f /etc/default/grub ]; then
-    . /etc/default/grub || return
-  fi
-  eval echo "\$$1"
-}
-
-case "$1" in
-  configure)
-    . /usr/share/debconf/confmodule
-
-    devicemap_regenerated=
-
-    if egrep -q '^[[:space:]]*post(inst|rm)_hook[[:space:]]*=[[:space:]]*(/sbin/|/usr/sbin/)?update-grub' /etc/kernel-img.conf 2>/dev/null; then
-      echo 'Removing update-grub hooks from /etc/kernel-img.conf in favour of' >&2
-      echo '/etc/kernel/ hooks.' >&2
-      sed -ri /etc/kernel-img.conf -e '\%^[[:space:]]*post(inst|rm)_hook[[:space:]]*=[[:space:]]*(/sbin/|/usr/sbin/)?update-grub%d'
-    fi
-
-    case grub-pc in
-      grub-pc)
-        mkdir -p /boot/grub
-
-        if test -e /boot/grub/device.map && ! test -e /boot/grub/core.img ; then
-          # Looks like your device.map was generated by GRUB Legacy, which
-          # used to generate broken device.map (see #422851).  Avoid the risk
-          # by regenerating it.
-          grub-mkdevicemap --no-floppy
-          devicemap_regenerated=1
-        fi
-      ;;
-    esac
-
-    if test -z "$devicemap_regenerated" && test -s /boot/grub/device.map && \
-       dpkg --compare-versions "$2" lt-nl 1.98+20100702-1 && \
-       test "$(uname -s)" = Linux; then
-      # Earlier versions of GRUB used unstable device names in device.map,
-      # which caused a variety of problems.  There is some risk associated with
-      # regenerating it (so we prompt the user if it's non-trivial), but on the
-      # whole it's less risky to move to /dev/disk/by-id/.
-      devicemap_lines="$(egrep -v '^[[:space:]]+#' /boot/grub/device.map | wc -l)"
-      grub-mkdevicemap --no-floppy
-      devicemap_regenerated=1
-      if test "$devicemap_lines" != 1; then
-        db_input critical grub2/device_map_regenerated || true
-        db_go || true
-      fi
-    fi
-
-    if test -z "$devicemap_regenerated" && \
-       dpkg --compare-versions "$2" lt-nl 1.99~20101210-2 && \
-       grep -qs /md-uuid- /boot/grub/device.map; then
-      echo "Removing MD devices from device.map, since the BIOS cannot read from these." >&2
-      sed -i '/\/md-uuid-/d' /boot/grub/device.map
-    fi
-
-    tmp_default_grub="$(mktemp -t grub.XXXXXXXXXX)"
-    trap "rm -f ${tmp_default_grub}" EXIT
-    cp -p /usr/share/grub/default/grub ${tmp_default_grub}
-
-    merge_debconf_into_conf "$tmp_default_grub" GRUB_CMDLINE_LINUX grub2/linux_cmdline
-    merge_debconf_into_conf "$tmp_default_grub" GRUB_CMDLINE_LINUX_DEFAULT grub2/linux_cmdline_default
-
-    ucf --three-way --debconf-ok --sum-file=/usr/share/grub/default/grub.md5sum ${tmp_default_grub} /etc/default/grub
-    package="$(ucfq --with-colons /etc/default/grub | cut -d : -f 2)"
-    if echo $package | grep -q "^grub-" ; then
-      ucfr --force grub-pc /etc/default/grub
-    else
-      ucfr grub-pc /etc/default/grub
-    fi
-
-    case grub-pc in
-      grub-pc)
-
-        fix_mixed_system=
-        if test -e /boot/grub/stage2 && test -e /boot/grub/menu.lst && \
-           ! test -e /boot/grub/grub2-installed && \
-           test -z "$UPGRADE_FROM_GRUB_LEGACY"; then
-          # Unfortunately, it's still possible that the user upgraded fully
-          # to GRUB 2 in some way other than running
-          # upgrade-from-grub-legacy; perhaps they ran grub-install by hand
-          # for some reason.  It's really quite difficult to detect this
-          # situation, because the only difference between this and a
-          # working chainloaded setup is that in this case grub-setup has
-          # been run.  So, to try to tell the difference, we scan the boot
-          # sectors of all disks for a GRUB 2 boot sector.  Hopefully this
-          # won't cause too much to explode, since I can't think of a better
-          # method.
-          grub2_disks=
-          for disk in $(all_disks); do
-            if scan_grub2 "$disk"; then
-              grub2_disks="${grub2_disks:+$grub2_disks }$(readlink -f "$disk")"
-            fi
-          done
-          if [ "$grub2_disks" ]; then
-            # No || true here; it's vital that the user sees this, and it's
-            # better to throw an error than to do the wrong thing.
-            db_subst grub-pc/mixed_legacy_and_grub2 DISKS "$grub2_disks"
-            db_input critical grub-pc/mixed_legacy_and_grub2
-            db_go
-            db_get grub-pc/mixed_legacy_and_grub2
-            if [ "$RET" = true ]; then
-              db_reset grub-pc/install_devices
-              UPGRADE_FROM_GRUB_LEGACY=1
-              fix_mixed_system=1
-              # Fall through to normal installation logic.
-            fi
-          fi
-        fi
-
-        if test -e /boot/grub/stage2 && test -e /boot/grub/menu.lst && \
-           ! test -e /boot/grub/grub2-installed && \
-           test -z "$UPGRADE_FROM_GRUB_LEGACY"; then
-          db_get grub-pc/chainload_from_menu.lst
-          if $RET ; then
-            # Create core.img (but do not risk writing to MBR).
-            # Using grub-probe instead of "(hd0)" avoids (UUID=) hack slowness
-            # in case /boot/grub is not on (hd0) in device.map.
-            echo "Generating core.img" >&2
-            grub-install --no-floppy --grub-setup=/bin/true "$(grub-probe -t drive /boot/grub)" > /dev/null
-
-            # Update menu.lst to reflect that:
-            # - core.img is present now
-            # - core.img has to be the first option
-            echo "Saving menu.lst backup in /boot/grub/menu.lst_backup_by_grub2_postinst" >&2
-            cp /boot/grub/menu.lst{,_backup_by_grub2_postinst}
-            echo "Running update-grub Legacy to hook our core.img in it" >&2
-            LET_US_TRY_GRUB_2=true /usr/lib/grub-legacy/update-grub 2>&1 | sed -e "s/^/    /g" >&2
-            # We just hooked GRUB 2 in menu.lst; then also generate grub.cfg.
-            touch /boot/grub/grub.cfg
-          fi
-        elif test -z "$2" || test -e /boot/grub/core.img || \
-             test "$UPGRADE_FROM_GRUB_LEGACY"; then
-          question=grub-pc/install_devices
-          device_map="$(grub-mkdevicemap -m - | grep -v '^(fd[0-9]\+)' || true)"
-          devices="$(echo "$device_map" | cut -f2)"
-          if dpkg --compare-versions "$2" lt 1.98+20100702-1 && \
-             test "$(uname -s)" = Linux; then
-            # Migrate to new by-id naming scheme.
-            db_get grub-pc/install_devices
-            old_devices="$(echo "$RET" | sed 's/, / /g')"
-            new_devices=
-            # Common-case optimisation: if the list of devices is
-            # identical to the LHS of grub-mkdevicemap's output, then
-            # there's no point asking again; just install to all disks.
-            # (This handles e.g. "(hd0)" with one disk.)
-            if [ "$(echo "$device_map" | cut -f1 | sort)" = \
-                 "$(echo "$old_devices" | xargs -n1 | sort)" ]; then
-              new_devices="$(devices_to_ids $devices)"
-              db_set grub-pc/install_devices "$new_devices"
-            # Alternatively, we might be installing to a single partition
-            # on a single disk, and we can deal with that too if there's
-            # only one available disk and it has an appropriate partition.
-            # This doesn't necessarily work for multiple disks because now
-            # the order matters.
-            elif [ "$(echo "$device_map" | wc -l)" = 1 ] && \
-                 [ "$(echo "$old_devices" | wc -w)" = 1 ] && \
-                 echo "$old_devices" | grep -q ,; then
-              old_device="${old_devices#(}"
-              old_device="${old_device%)}"
-              old_disk="${old_device%,*}"
-              old_partition="${old_device##*,}"
-              new_device="$(echo "$device_map" | grep "^($old_disk)" | \
-                            cut -f2)"
-              new_device="$(device_to_id $new_device)"
-              if [ "$new_device" ]; then
-                new_device="$new_device-part$old_partition"
-                # Run through device_to_id again to check for existence.
-                new_device="$(device_to_id $new_device)"
-              fi
-              if [ "$new_device" ]; then
-                new_devices="$new_device"
-                db_set grub-pc/install_devices "$new_device"
-              fi
-            fi
-            if [ -z "$new_devices" ]; then
-              new_devices="$(devices_to_ids $old_devices)"
-              db_set grub-pc/install_devices "$new_devices"
-              # Common-case optimisation: if all devices are translatable
-              # to by-id and the number of devices there is the same as
-              # the number of devices GRUB can see, then there's no point
-              # asking again.  (This handles e.g. "/dev/sda" with one
-              # disk.)
-              old_devices_count="$(echo "$old_devices" | wc -w)"
-              new_devices_count="$(echo "$new_devices" | wc -w)"
-              devices_count="$(echo "$devices" | wc -w)"
-              if [ "$old_devices_count" != "$new_devices_count" ] || \
-                 [ "$new_devices_count" != "$devices_count" ]; then
-                db_fset grub-pc/install_devices seen false
-                db_fset grub-pc/install_devices_empty seen false
-              fi
-            fi
-          else
-            db_get grub-pc/install_devices
-            valid=1
-            for device in $RET; do
-              if [ ! -e "${device%,}" ]; then
-                valid=0
-                break
-              fi
-            done
-            if [ "$valid" = 0 ]; then
-              question=grub-pc/install_devices_disks_changed
-              db_set "$question" "$RET"
-              db_fset "$question" seen false
-              db_fset grub-pc/install_devices_empty seen false
-            fi
-          fi
-
-          while :; do
-            ids=
-            descriptions=
-            partitions="$(usable_partitions)"
-            for device in $devices; do
-              disk_id="$(device_to_id "$device" || true)"
-              if [ "$disk_id" ]; then
-                ids="${ids:+$ids, }$disk_id"
-                describe_disk "$(readlink -f "$device")" "$disk_id"
-                RET="$(printf %s "$RET" | sed 's/,/\\,/g')"
-                descriptions="${descriptions:+$descriptions, }$RET"
-                for partition_pair in $partitions; do
-                  partition_id="${partition_pair#*:}"
-                  if [ "${partition_id#$disk_id-part}" != "$partition_id" ]; then
-                    ids="${ids:+$ids, }$partition_id"
-                    describe_partition "$(readlink -f "$device")" "$(readlink -f "$partition_id")" "$partition_id" "$(get_mountpoint "${partition_pair%%:*}")"
-                    RET="$(printf %s "$RET" | sed 's/,/\\,/g')"
-                    descriptions="${descriptions:+$descriptions, }$RET"
-                  fi
-                done
-              fi
-            done
-            # Some "partitions" may in fact be at the disk level, e.g. RAID.
-            # List these as well if they haven't already been listed.
-            for partition_pair in $partitions; do
-              partition_id="${partition_pair#*:}"
-              if [ "${partition_id#*-part}" = "$partition_id" ]; then
-                case ", $ids, " in
-                  ", $partition_id, ") ;;
-                  *)
-                    ids="${ids:+$ids, }$partition_id"
-                    describe_disk "$(readlink -f "$partition_id")" "$partition_id"
-                    RET="$(printf %s "$RET" | sed 's/,/\\,/g')"
-                    descriptions="${descriptions:+$descriptions, }$RET"
-                    ;;
-                esac
-              fi
-            done
-            db_subst "$question" RAW_CHOICES "$ids"
-            db_subst "$question" CHOICES "$descriptions"
-            db_input high "$question" || true
-            db_go
-            db_get "$question"
-            failed_devices=
-            for i in `echo $RET | sed -e 's/, / /g'` ; do
-              real_device="$(readlink -f "$i")"
-              if grub-install --force --no-floppy $real_device ; then
-                # We just installed GRUB 2; then also generate grub.cfg.
-                touch /boot/grub/grub.cfg
-              else
-                failed_devices="$failed_devices $real_device"
-              fi
-            done
-
-            if [ "$question" != grub-pc/install_devices ]; then
-              db_set grub-pc/install_devices "$RET"
-              db_fset grub-pc/install_devices seen true
-            fi
-
-            if [ "$failed_devices" ]; then
-              if [ "$UPGRADE_FROM_GRUB_LEGACY" ]; then
-                db_subst grub-pc/install_devices_failed_upgrade FAILED_DEVICES "$failed_devices"
-                db_fset grub-pc/install_devices_failed_upgrade seen false
-                if db_input critical grub-pc/install_devices_failed_upgrade; then
-                  db_go
-                  db_get grub-pc/install_devices_failed_upgrade
-                  if [ "$RET" = true ]; then
-                    db_fset "$question" seen false
-                    db_fset grub-pc/install_devices_failed_upgrade seen false
-                    continue
-                  else
-                    exit 1
-                  fi
-                else
-                  exit 1 # noninteractive
-                fi
-              else
-                db_subst grub-pc/install_devices_failed FAILED_DEVICES "$failed_devices"
-                db_fset grub-pc/install_devices_failed seen false
-                if db_input critical grub-pc/install_devices_failed; then
-                  db_go
-                  db_get grub-pc/install_devices_failed
-                  if [ "$RET" = true ]; then
-                    break
-                  else
-                    db_fset "$question" seen false
-                    db_fset grub-pc/install_devices_failed seen false
-                    continue
-                  fi
-                else
-                  break # noninteractive
-                fi
-              fi
-            fi
-
-            db_get grub-pc/install_devices
-            if [ -z "$RET" ]; then
-              # Reset the seen flag if the current answer is false, since
-              # otherwise we'll loop with no indication of why.
-              db_get grub-pc/install_devices_empty
-              if [ "$RET" = false ]; then
-                db_fset grub-pc/install_devices_empty seen false
-              fi
-              if db_input critical grub-pc/install_devices_empty; then
-                db_go
-                db_get grub-pc/install_devices_empty
-                if [ "$RET" = true ]; then
-                  break
-                else
-                  db_fset "$question" seen false
-                  db_fset grub-pc/install_devices_empty seen false
-                fi
-              else
-                break # noninteractive
-              fi
-            else
-              break
-            fi
-          done
-        fi
-
-        # /boot/grub/ has more chances of being accessible by GRUB
-        if test -e /boot/grub/grub.cfg ; then
-          for i in /usr/share/grub/unicode.pf2 ; do
-            if test -e $i ; then
-              cp $i /boot/grub/
-            fi
-          done
-        fi
-
-        if [ "$fix_mixed_system" ]; then
-          # These never contain any valuable information, and they aren't
-          # useful for boot any more, since we just overwrote MBR/PBR.
-          rm -f /boot/grub/{{xfs,reiserfs,e2fs,fat,jfs,minix}_stage1_5,stage{1,2}}
-          # Remove marker file used to indicate that grub-install was run
-          # rather than upgrade-from-grub-legacy.  Since stage2 has been
-          # removed, we don't need this any more.
-          rm -f /boot/grub/grub2-installed
-        fi
-      ;;
-
-      grub-efi-ia32|grub-efi-amd64)
-        bootloader_id="$(config_item GRUB_DISTRIBUTOR | tr A-Z a-z | \
-                         cut -d' ' -f1)"
-        if [ "$bootloader_id" ] && [ -d "/boot/efi/EFI/$bootloader_id" ]; then
-          grub-install
-        fi
-      ;;
-
-      grub-yeeloong)
-        grub-install
-      ;;
-    esac
-
-    # If grub.cfg has been generated, update it.
-    if test -e /boot/grub/grub.cfg ; then
-      update-grub 3>&-
-    fi
-  ;;
-  abort-upgrade|abort-remove|abort-deconfigure)
-  ;;
-  *)
-    echo "postinst called with unknown argument \`$1'" >&2
-    exit 1
-  ;;
-esac
-
-# dh_installdeb will replace this with shell code automatically
-# generated by other debhelper scripts.
-
-
-
-exit 0
-
---Boundary-00=_UlwwNzHIMcjR6jA--
+Excerpts from Konstantinos Skarlatos's message of 2011-05-05 16:27:54 -=
+0400:
+> I think i made some progress. When i tried to remove the directory th=
+at=20
+> i suspect contains the problematic file, i got this on the console
+>=20
+> rm -rf serverloft/
+
+Ok, our one bad block is in the extent allocation tree.  This is going
+to be the very hardest thing to fix.
+
+Until I finish off the code to rebuild parts of the extent allocation
+tree, I think your best bet is to copy the files off.
+
+The big question is, what happened to make this error?  Can you describ=
+e
+your setup in more detail?
+
+-chris
+
+>=20
+> 2011 May  5 23:32:53 mail [  200.580195] Oops: 0000 [#1] PREEMPT SMP
+> 2011 May  5 23:32:53 mail [  200.580220] last sysfs file:=20
+> /sys/module/vt/parameters/default_utf8
+> 2011 May  5 23:32:53 mail [  200.581145] Stack:
+> 2011 May  5 23:32:53 mail [  200.581276] Call Trace:
+> 2011 May  5 23:32:53 mail [  200.581732] Code: cc 00 00 48 8d 91 28 e=
+0=20
+> ff ff 48 89 e5 48 81 ec 90 00 00 00 48 89 5d d8 4c 89 65 e0 48 89 f3 =
+4c=20
+> 89 6d e8 4c 89 75 f0 4c 89 7d f8 <48> 8b 76 30 83 42 1c 01 48 b8 00 0=
+0=20
+> 00 00 00 16 00 00 48 01 f0
+> 2011 May  5 23:32:53 mail [  200.583376] CR2: 0000000000000030
+>=20
+>=20
+> here is the  part of dmesg that does not contain the  thousands of=20
+> parent transid verify failed messages
+>=20
+>=20
+> May  5 23:32:51 mail kernel: [  198.371084] parent transid verify fai=
+led=20
+> on 3062073683968 wanted 5181 found 5188
+> May  5 23:32:51 mail kernel: [  198.371204] parent transid verify fai=
+led=20
+> on 3062073683968 wanted 5181 found 5188
+> May  5 23:32:53 mail kernel: [  200.572774] Modules linked in: ipv6=20
+> btrfs zlib_deflate crc32c libcrc32c ext2 raid456 async_raid6_recov=20
+> async_pq raid6_pq async_xor xor async_memcpy async_tx md_mod usb_stor=
+age=20
+> uas snd_seq_dummy snd_seq_oss radeon snd_seq_midi_event ttm snd_seq=20
+> snd_hda_codec_hdmi snd_seq_device drm_kms_helper ohci_hcd snd_hda_int=
+el=20
+> snd_hda_codec snd_pcm_oss snd_hwdep drm i2c_algo_bit snd_mixer_oss=20
+> snd_pcm i2c_piix4 snd_timer snd soundcore snd_page_alloc ehci_hcd wmi=
+=20
+> i2c_core usbcore evdev processor button k10temp serio_raw pcspkr sg=20
+> r8169 edac_core shpchp pci_hotplug edac_mce_amd mii sp5100_tco ext4=20
+> mbcache jbd2 crc16 sd_mod pata_acpi ahci libahci pata_atiixp libata s=
+csi_mod
+> May  5 23:32:53 mail kernel: [  200.572808] Pid: 1037, comm:=20
+> btrfs-transacti Not tainted 2.6.38-ARCH #1
+> May  5 23:32:53 mail kernel: [  200.572810] Call Trace:
+> May  5 23:32:53 mail kernel: [  200.572817]  [<ffffffff813a932b>] ?=20
+> __schedule_bug+0x59/0x5d
+> May  5 23:32:53 mail kernel: [  200.572820]  [<ffffffff813af827>] ?=20
+> schedule+0x9f7/0xad0
+> May  5 23:32:53 mail kernel: [  200.572823]  [<ffffffff811e5827>] ?=20
+> generic_unplug_device+0x37/0x40
+> May  5 23:32:53 mail kernel: [  200.572827]  [<ffffffffa07ac164>] ?=20
+> md_raid5_unplug_device+0x64/0x110 [raid456]
+> May  5 23:32:53 mail kernel: [  200.572830]  [<ffffffffa07ac223>] ?=20
+> raid5_unplug_queue+0x13/0x20 [raid456]
+> May  5 23:32:53 mail kernel: [  200.572833]  [<ffffffff81012d79>] ?=20
+> read_tsc+0x9/0x20
+> May  5 23:32:53 mail kernel: [  200.572837]  [<ffffffff8108418c>] ?=20
+> ktime_get_ts+0xac/0xe0
+> May  5 23:32:53 mail kernel: [  200.572840]  [<ffffffff810e36c0>] ?=20
+> sync_page+0x0/0x50
+> May  5 23:32:53 mail kernel: [  200.572842]  [<ffffffff813af96e>] ?=20
+> io_schedule+0x6e/0xb0
+> May  5 23:32:53 mail kernel: [  200.572844]  [<ffffffff810e36fb>] ?=20
+> sync_page+0x3b/0x50
+> May  5 23:32:53 mail kernel: [  200.572846]  [<ffffffff813b0077>] ?=20
+> __wait_on_bit+0x57/0x80
+> May  5 23:32:53 mail kernel: [  200.572848]  [<ffffffff810e38c0>] ?=20
+> wait_on_page_bit+0x70/0x80
+> May  5 23:32:53 mail kernel: [  200.572851]  [<ffffffff8107a030>] ?=20
+> wake_bit_function+0x0/0x40
+> May  5 23:32:53 mail kernel: [  200.572861]  [<ffffffffa08348d2>] ?=20
+> read_extent_buffer_pages+0x412/0x480 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.572867]  [<ffffffffa0809e00>] ?=20
+> btree_get_extent+0x0/0x1b0 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.572873]  [<ffffffffa080ac7e>] ?=20
+> btree_read_extent_buffer_pages.isra.60+0x5e/0xb0 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.572880]  [<ffffffffa080c0bc>] ?=20
+> read_tree_block+0x3c/0x60 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.572884]  [<ffffffffa07f272b>] ?=20
+> read_block_for_search.isra.34+0x1fb/0x410 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.572890]  [<ffffffffa08417d1>] ?=20
+> btrfs_tree_unlock+0x51/0x60 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.572895]  [<ffffffffa07f5ca0>] ?=20
+> btrfs_search_slot+0x430/0xa30 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.572900]  [<ffffffffa07fb3a6>] ?=20
+> lookup_inline_extent_backref+0x96/0x460 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.572904]  [<ffffffff8112b8d3>] ?=20
+> kmem_cache_alloc+0x133/0x150
+> May  5 23:32:53 mail kernel: [  200.572908]  [<ffffffffa07fd452>] ?=20
+> __btrfs_free_extent+0xc2/0x6d0 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.572914]  [<ffffffffa0800f59>] ?=20
+> run_clustered_refs+0x389/0x830 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.572920]  [<ffffffffa084d900>] ?=20
+> btrfs_find_ref_cluster+0x10/0x190 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.572925]  [<ffffffffa08014c0>] ?=20
+> btrfs_run_delayed_refs+0xc0/0x210 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.572927]  [<ffffffff813b0cf9>] ?=20
+> mutex_unlock+0x9/0x10
+> May  5 23:32:53 mail kernel: [  200.572933]  [<ffffffffa0810db8>] ?=20
+> btrfs_commit_transaction+0x78/0x750 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.572936]  [<ffffffff81079ff0>] ?=20
+> autoremove_wake_function+0x0/0x40
+> May  5 23:32:53 mail kernel: [  200.572941]  [<ffffffffa080a9bd>] ?=20
+> transaction_kthread+0x26d/0x290 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.572947]  [<ffffffffa080a750>] ?=20
+> transaction_kthread+0x0/0x290 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.572949]  [<ffffffff81079717>] ?=20
+> kthread+0x87/0x90
+> May  5 23:32:53 mail kernel: [  200.572952]  [<ffffffff8100bc24>] ?=20
+> kernel_thread_helper+0x4/0x10
+> May  5 23:32:53 mail kernel: [  200.572954]  [<ffffffff81079690>] ?=20
+> kthread+0x0/0x90
+> May  5 23:32:53 mail kernel: [  200.572956]  [<ffffffff8100bc20>] ?=20
+> kernel_thread_helper+0x0/0x10
+> May  5 23:32:53 mail kernel: [  200.572971] Modules linked in: ipv6=20
+> btrfs zlib_deflate crc32c libcrc32c ext2 raid456 async_raid6_recov=20
+> async_pq raid6_pq async_xor xor async_memcpy async_tx md_mod usb_stor=
+age=20
+> uas snd_seq_dummy snd_seq_oss radeon snd_seq_midi_event ttm snd_seq=20
+> snd_hda_codec_hdmi snd_seq_device drm_kms_helper ohci_hcd snd_hda_int=
+el=20
+> snd_hda_codec snd_pcm_oss snd_hwdep drm i2c_algo_bit snd_mixer_oss=20
+> snd_pcm i2c_piix4 snd_timer snd soundcore snd_page_alloc ehci_hcd wmi=
+=20
+> i2c_core usbcore evdev processor button k10temp serio_raw pcspkr sg=20
+> r8169 edac_core shpchp pci_hotplug edac_mce_amd mii sp5100_tco ext4=20
+> mbcache jbd2 crc16 sd_mod pata_acpi ahci libahci pata_atiixp libata s=
+csi_mod
+> May  5 23:32:53 mail kernel: [  200.572996] Pid: 1037, comm:=20
+> btrfs-transacti Not tainted 2.6.38-ARCH #1
+> May  5 23:32:53 mail kernel: [  200.572997] Call Trace:
+> May  5 23:32:53 mail kernel: [  200.572999]  [<ffffffff813a932b>] ?=20
+> __schedule_bug+0x59/0x5d
+> May  5 23:32:53 mail kernel: [  200.573001]  [<ffffffff813af827>] ?=20
+> schedule+0x9f7/0xad0
+> May  5 23:32:53 mail kernel: [  200.573003]  [<ffffffff811e5827>] ?=20
+> generic_unplug_device+0x37/0x40
+> May  5 23:32:53 mail kernel: [  200.573006]  [<ffffffffa07ac164>] ?=20
+> md_raid5_unplug_device+0x64/0x110 [raid456]
+> May  5 23:32:53 mail kernel: [  200.573009]  [<ffffffffa07ac223>] ?=20
+> raid5_unplug_queue+0x13/0x20 [raid456]
+> May  5 23:32:53 mail kernel: [  200.573011]  [<ffffffff81012d79>] ?=20
+> read_tsc+0x9/0x20
+> May  5 23:32:53 mail kernel: [  200.573013]  [<ffffffff8108418c>] ?=20
+> ktime_get_ts+0xac/0xe0
+> May  5 23:32:53 mail kernel: [  200.573016]  [<ffffffff810e36c0>] ?=20
+> sync_page+0x0/0x50
+> May  5 23:32:53 mail kernel: [  200.573017]  [<ffffffff813af96e>] ?=20
+> io_schedule+0x6e/0xb0
+> May  5 23:32:53 mail kernel: [  200.573020]  [<ffffffff810e36fb>] ?=20
+> sync_page+0x3b/0x50
+> May  5 23:32:53 mail kernel: [  200.573021]  [<ffffffff813b0077>] ?=20
+> __wait_on_bit+0x57/0x80
+> May  5 23:32:53 mail kernel: [  200.573024]  [<ffffffff810e38c0>] ?=20
+> wait_on_page_bit+0x70/0x80
+> May  5 23:32:53 mail kernel: [  200.573026]  [<ffffffff8107a030>] ?=20
+> wake_bit_function+0x0/0x40
+> May  5 23:32:53 mail kernel: [  200.573032]  [<ffffffffa08348d2>] ?=20
+> read_extent_buffer_pages+0x412/0x480 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573038]  [<ffffffffa0809e00>] ?=20
+> btree_get_extent+0x0/0x1b0 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573044]  [<ffffffffa080ac7e>] ?=20
+> btree_read_extent_buffer_pages.isra.60+0x5e/0xb0 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573050]  [<ffffffffa080c0bc>] ?=20
+> read_tree_block+0x3c/0x60 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573054]  [<ffffffffa07f272b>] ?=20
+> read_block_for_search.isra.34+0x1fb/0x410 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573060]  [<ffffffffa08417d1>] ?=20
+> btrfs_tree_unlock+0x51/0x60 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573065]  [<ffffffffa07f5ca0>] ?=20
+> btrfs_search_slot+0x430/0xa30 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573070]  [<ffffffffa07fb3a6>] ?=20
+> lookup_inline_extent_backref+0x96/0x460 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573072]  [<ffffffff8112b8d3>] ?=20
+> kmem_cache_alloc+0x133/0x150
+> May  5 23:32:53 mail kernel: [  200.573077]  [<ffffffffa07fd452>] ?=20
+> __btrfs_free_extent+0xc2/0x6d0 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573083]  [<ffffffffa0800f59>] ?=20
+> run_clustered_refs+0x389/0x830 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573088]  [<ffffffffa084d900>] ?=20
+> btrfs_find_ref_cluster+0x10/0x190 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573094]  [<ffffffffa08014c0>] ?=20
+> btrfs_run_delayed_refs+0xc0/0x210 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573096]  [<ffffffff813b0cf9>] ?=20
+> mutex_unlock+0x9/0x10
+> May  5 23:32:53 mail kernel: [  200.573102]  [<ffffffffa0810db8>] ?=20
+> btrfs_commit_transaction+0x78/0x750 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573104]  [<ffffffff81079ff0>] ?=20
+> autoremove_wake_function+0x0/0x40
+> May  5 23:32:53 mail kernel: [  200.573110]  [<ffffffffa080a9bd>] ?=20
+> transaction_kthread+0x26d/0x290 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573116]  [<ffffffffa080a750>] ?=20
+> transaction_kthread+0x0/0x290 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573118]  [<ffffffff81079717>] ?=20
+> kthread+0x87/0x90
+> May  5 23:32:53 mail kernel: [  200.573120]  [<ffffffff8100bc24>] ?=20
+> kernel_thread_helper+0x4/0x10
+> May  5 23:32:53 mail kernel: [  200.573122]  [<ffffffff81079690>] ?=20
+> kthread+0x0/0x90
+> May  5 23:32:53 mail kernel: [  200.573124]  [<ffffffff8100bc20>] ?=20
+> kernel_thread_helper+0x0/0x10
+> May  5 23:32:53 mail kernel: [  200.573138] Modules linked in: ipv6=20
+> btrfs zlib_deflate crc32c libcrc32c ext2 raid456 async_raid6_recov=20
+> async_pq raid6_pq async_xor xor async_memcpy async_tx md_mod usb_stor=
+age=20
+> uas snd_seq_dummy snd_seq_oss radeon snd_seq_midi_event ttm snd_seq=20
+> snd_hda_codec_hdmi snd_seq_device drm_kms_helper ohci_hcd snd_hda_int=
+el=20
+> snd_hda_codec snd_pcm_oss snd_hwdep drm i2c_algo_bit snd_mixer_oss=20
+> snd_pcm i2c_piix4 snd_timer snd soundcore snd_page_alloc ehci_hcd wmi=
+=20
+> i2c_core usbcore evdev processor button k10temp serio_raw pcspkr sg=20
+> r8169 edac_core shpchp pci_hotplug edac_mce_amd mii sp5100_tco ext4=20
+> mbcache jbd2 crc16 sd_mod pata_acpi ahci libahci pata_atiixp libata s=
+csi_mod
+> May  5 23:32:53 mail kernel: [  200.573162] Pid: 1037, comm:=20
+> btrfs-transacti Not tainted 2.6.38-ARCH #1
+> May  5 23:32:53 mail kernel: [  200.573163] Call Trace:
+> May  5 23:32:53 mail kernel: [  200.573165]  [<ffffffff813a932b>] ?=20
+> __schedule_bug+0x59/0x5d
+> May  5 23:32:53 mail kernel: [  200.573167]  [<ffffffff813af827>] ?=20
+> schedule+0x9f7/0xad0
+> May  5 23:32:53 mail kernel: [  200.573169]  [<ffffffff811e5827>] ?=20
+> generic_unplug_device+0x37/0x40
+> May  5 23:32:53 mail kernel: [  200.573172]  [<ffffffffa07ac164>] ?=20
+> md_raid5_unplug_device+0x64/0x110 [raid456]
+> May  5 23:32:53 mail kernel: [  200.573175]  [<ffffffffa07ac223>] ?=20
+> raid5_unplug_queue+0x13/0x20 [raid456]
+> May  5 23:32:53 mail kernel: [  200.573177]  [<ffffffff81012d79>] ?=20
+> read_tsc+0x9/0x20
+> May  5 23:32:53 mail kernel: [  200.573179]  [<ffffffff8108418c>] ?=20
+> ktime_get_ts+0xac/0xe0
+> May  5 23:32:53 mail kernel: [  200.573182]  [<ffffffff810e36c0>] ?=20
+> sync_page+0x0/0x50
+> May  5 23:32:53 mail kernel: [  200.573183]  [<ffffffff813af96e>] ?=20
+> io_schedule+0x6e/0xb0
+> May  5 23:32:53 mail kernel: [  200.573186]  [<ffffffff810e36fb>] ?=20
+> sync_page+0x3b/0x50
+> May  5 23:32:53 mail kernel: [  200.573187]  [<ffffffff813b0077>] ?=20
+> __wait_on_bit+0x57/0x80
+> May  5 23:32:53 mail kernel: [  200.573190]  [<ffffffff810e38c0>] ?=20
+> wait_on_page_bit+0x70/0x80
+> May  5 23:32:53 mail kernel: [  200.573192]  [<ffffffff8107a030>] ?=20
+> wake_bit_function+0x0/0x40
+> May  5 23:32:53 mail kernel: [  200.573198]  [<ffffffffa08348d2>] ?=20
+> read_extent_buffer_pages+0x412/0x480 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573204]  [<ffffffffa0809e00>] ?=20
+> btree_get_extent+0x0/0x1b0 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573209]  [<ffffffffa080ac7e>] ?=20
+> btree_read_extent_buffer_pages.isra.60+0x5e/0xb0 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573215]  [<ffffffffa080c0bc>] ?=20
+> read_tree_block+0x3c/0x60 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573220]  [<ffffffffa07f272b>] ?=20
+> read_block_for_search.isra.34+0x1fb/0x410 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573226]  [<ffffffffa08417d1>] ?=20
+> btrfs_tree_unlock+0x51/0x60 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573231]  [<ffffffffa07f5ca0>] ?=20
+> btrfs_search_slot+0x430/0xa30 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573236]  [<ffffffffa07fb3a6>] ?=20
+> lookup_inline_extent_backref+0x96/0x460 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573238]  [<ffffffff8112b8d3>] ?=20
+> kmem_cache_alloc+0x133/0x150
+> May  5 23:32:53 mail kernel: [  200.573243]  [<ffffffffa07fd452>] ?=20
+> __btrfs_free_extent+0xc2/0x6d0 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573248]  [<ffffffffa0800f59>] ?=20
+> run_clustered_refs+0x389/0x830 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573254]  [<ffffffffa084d900>] ?=20
+> btrfs_find_ref_cluster+0x10/0x190 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573259]  [<ffffffffa08014c0>] ?=20
+> btrfs_run_delayed_refs+0xc0/0x210 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573261]  [<ffffffff813b0cf9>] ?=20
+> mutex_unlock+0x9/0x10
+> May  5 23:32:53 mail kernel: [  200.573267]  [<ffffffffa0810db8>] ?=20
+> btrfs_commit_transaction+0x78/0x750 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573270]  [<ffffffff81079ff0>] ?=20
+> autoremove_wake_function+0x0/0x40
+> May  5 23:32:53 mail kernel: [  200.573275]  [<ffffffffa080a9bd>] ?=20
+> transaction_kthread+0x26d/0x290 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573281]  [<ffffffffa080a750>] ?=20
+> transaction_kthread+0x0/0x290 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.573283]  [<ffffffff81079717>] ?=20
+> kthread+0x87/0x90
+> May  5 23:32:53 mail kernel: [  200.573285]  [<ffffffff8100bc24>] ?=20
+> kernel_thread_helper+0x4/0x10
+> May  5 23:32:53 mail kernel: [  200.573287]  [<ffffffff81079690>] ?=20
+> kthread+0x0/0x90
+> May  5 23:32:53 mail kernel: [  200.573289]  [<ffffffff8100bc20>] ?=20
+> kernel_thread_helper+0x0/0x10
+> May  5 23:32:53 mail kernel: [  200.580169] PGD 68be4067 PUD 68b42067=
+ PMD 0
+> May  5 23:32:53 mail kernel: [  200.580250] CPU 2
+> May  5 23:32:53 mail kernel: [  200.580260] Modules linked in: ipv6=20
+> btrfs zlib_deflate crc32c libcrc32c ext2 raid456 async_raid6_recov=20
+> async_pq raid6_pq async_xor xor async_memcpy async_tx md_mod usb_stor=
+age=20
+> uas snd_seq_dummy snd_seq_oss radeon snd_seq_midi_event ttm snd_seq=20
+> snd_hda_codec_hdmi snd_seq_device drm_kms_helper ohci_hcd snd_hda_int=
+el=20
+> snd_hda_codec snd_pcm_oss snd_hwdep drm i2c_algo_bit snd_mixer_oss=20
+> snd_pcm i2c_piix4 snd_timer snd soundcore snd_page_alloc ehci_hcd wmi=
+=20
+> i2c_core usbcore evdev processor button k10temp serio_raw pcspkr sg=20
+> r8169 edac_core shpchp pci_hotplug edac_mce_amd mii sp5100_tco ext4=20
+> mbcache jbd2 crc16 sd_mod pata_acpi ahci libahci pata_atiixp libata s=
+csi_mod
+> May  5 23:32:53 mail kernel: [  200.580642]
+> May  5 23:32:53 mail kernel: [  200.580652] Pid: 1037, comm:=20
+> btrfs-transacti Not tainted 2.6.38-ARCH #1 Gigabyte Technology Co., L=
+td.=20
+> GA-MA785G-UD3H/GA-MA785G-UD3H
+> May  5 23:32:53 mail kernel: [  200.580713] RIP:=20
+> 0010:[<ffffffffa0805192>]  [<ffffffffa0805192>]=20
+> btrfs_print_leaf+0x32/0x880 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.580760] RSP: 0018:ffff88006dc97b0=
+0=20
+> EFLAGS: 00010286
+> May  5 23:32:53 mail kernel: [  200.580785] RAX: 00000000fffffffb RBX=
+:=20
+> 0000000000000000 RCX: ffff88006dc97fd8
+> May  5 23:32:53 mail kernel: [  200.580817] RDX: ffff88006dc96000 RSI=
+:=20
+> 0000000000000000 RDI: ffff880071cc6800
+> May  5 23:32:53 mail kernel: [  200.580849] RBP: ffff88006dc97b90 R08=
+:=20
+> 0000000000000000 R09: 0000000000000000
+> May  5 23:32:53 mail kernel: [  200.580881] R10: 0000000000000001 R11=
+:=20
+> 00000000fffffffb R12: 0000000000000007
+> May  5 23:32:53 mail kernel: [  200.580913] R13: 0000028b982f4000 R14=
+:=20
+> 00000000fffffffb R15: 0000000000001000
+> May  5 23:32:53 mail kernel: [  200.580946] FS:  00007f618e3d3720(000=
+0)=20
+> GS:ffff880077b00000(0000) knlGS:0000000000000000
+> May  5 23:32:53 mail kernel: [  200.580982] CS:  0010 DS: 0000 ES: 00=
+00=20
+> CR0: 000000008005003b
+> May  5 23:32:53 mail kernel: [  200.581008] CR2: 0000000000000030 CR3=
+:=20
+> 0000000068b62000 CR4: 00000000000006e0
+> May  5 23:32:53 mail kernel: [  200.581040] DR0: 0000000000000000 DR1=
+:=20
+> 0000000000000000 DR2: 0000000000000000
+> May  5 23:32:53 mail kernel: [  200.581073] DR3: 0000000000000000 DR6=
+:=20
+> 00000000ffff0ff0 DR7: 0000000000000400
+> May  5 23:32:53 mail kernel: [  200.581105] Process btrfs-transacti=20
+> (pid: 1037, threadinfo ffff88006dc96000, task ffff880071e51bc0)
+> May  5 23:32:53 mail kernel: [  200.581155]  0000000000002000=20
+> 0000000000001000 ffff88006dc97c38 0000028b982f4000
+> May  5 23:32:53 mail kernel: [  200.581196]  0000000000000000=20
+> ffffffff8112b8d3 ffff880071cc6800 0000000000000090
+> May  5 23:32:53 mail kernel: [  200.581236]  0000000000000090=20
+> 0000805070ac4120 a80000028b982f40 0000000000001000
+> May  5 23:32:53 mail kernel: [  200.581292]  [<ffffffff8112b8d3>] ?=20
+> kmem_cache_alloc+0x133/0x150
+> May  5 23:32:53 mail kernel: [  200.581324]  [<ffffffffa07fd9b7>]=20
+> __btrfs_free_extent+0x627/0x6d0 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.581359]  [<ffffffffa0800f59>]=20
+> run_clustered_refs+0x389/0x830 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.581395]  [<ffffffffa084d900>] ?=20
+> btrfs_find_ref_cluster+0x10/0x190 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.581431]  [<ffffffffa08014c0>]=20
+> btrfs_run_delayed_refs+0xc0/0x210 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.581464]  [<ffffffff813b0cf9>] ?=20
+> mutex_unlock+0x9/0x10
+> May  5 23:32:53 mail kernel: [  200.581493]  [<ffffffffa0810db8>]=20
+> btrfs_commit_transaction+0x78/0x750 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.581528]  [<ffffffff81079ff0>] ?=20
+> autoremove_wake_function+0x0/0x40
+> May  5 23:32:53 mail kernel: [  200.581562]  [<ffffffffa080a9bd>]=20
+> transaction_kthread+0x26d/0x290 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.581597]  [<ffffffffa080a750>] ?=20
+> transaction_kthread+0x0/0x290 [btrfs]
+> May  5 23:32:53 mail kernel: [  200.581628]  [<ffffffff81079717>]=20
+> kthread+0x87/0x90
+> May  5 23:32:53 mail kernel: [  200.581652]  [<ffffffff8100bc24>]=20
+> kernel_thread_helper+0x4/0x10
+> May  5 23:32:53 mail kernel: [  200.581681]  [<ffffffff81079690>] ?=20
+> kthread+0x0/0x90
+> May  5 23:32:53 mail kernel: [  200.581704]  [<ffffffff8100bc20>] ?=20
+> kernel_thread_helper+0x0/0x10
+> May  5 23:32:53 mail kernel: [  200.583376]  RSP <ffff88006dc97b00>
+> May  5 23:32:53 mail kernel: [  200.587924] ---[ end trace=20
+> fed5a0f4104a02ee ]---
+> May  5 23:32:56 mail kernel: [  203.373416] verify_parent_transid: 41=
+030=20
+> callbacks suppressed
+> May  5 23:32:56 mail kernel: [  203.374625] parent transid verify fai=
+led=20
+> on 3062073683968 wanted 5181 found 5188
+> May  5 23:32:56 mail kernel: [  203.376004] parent transid verify fai=
+led=20
+> on 3062073683968 wanted 5181 found 5188
+>=20
+> On 5/5/2011 6:06 =CE=BC=CE=BC, Chris Mason wrote:
+> > Excerpts from Konstantinos Skarlatos's message of 2011-05-05 10:27:=
+30 -0400:
+> >> attached you can find the whole dmesg log. I can trigger the error=
+ again
+> >> if more logs are needed
+> >
+> > Yes, I'll send you a patch to get rid of the printk for the transid
+> > failed message.  That way we can get a clean view of the other erro=
+rs.
+> >
+> > Will you be able to compile/test it?
+> >
+> > -chris
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

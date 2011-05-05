@@ -1,45 +1,58 @@
-From: Miguel Garrido <miguel@mjgar.com>
-Subject: Re: Cannot Deinstall a Debian Package
-Date: Thu, 5 May 2011 19:06:19 -0400
-Message-ID: <BANLkTikve7YaHWjqOmHUvVd3psqYs022EA@mail.gmail.com>
-References: <201105031227.43619.CACook@quantum-sci.com>
-	<201105051440.07434.CACook@quantum-sci.com>
-	<BANLkTi=qRCM3Rt5oBkCfxi4af2GYeHWJGg@mail.gmail.com>
-	<201105051533.07880.CACook@quantum-sci.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: btrfs seed with luks encrypted devices
+Date: Thu, 05 May 2011 19:42:37 -0400
+Message-ID: <1304638900-sup-2004@think>
+References: <4DC0AC9E.1030607@gmail.com> <BANLkTim013vB+PicvYCziBoyMctX2_jreQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: CACook@quantum-sci.com
+Content-Type: TEXT/PLAIN; charset=ISO-8859-1
+Cc: Geoff Ritter <geoff.ritter@gmail.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: cwillu <cwillu@cwillu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201105051533.07880.CACook@quantum-sci.com>
+In-reply-to: <BANLkTim013vB+PicvYCziBoyMctX2_jreQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 5, 2011 at 6:33 PM, <CACook@quantum-sci.com> wrote:
->
-> On Thursday 5 May, 2011 14:48:49 cwillu wrote:
-> > How old was the filesystem? =A0It might just have been lingering
-> > problems from an older kernel, which would be cleared up entirely b=
-y
-> > the balance you just ran.
->
-> I specifically set up the filesystem with the Live CD of the M- relea=
-se of Ubuntu, so as to be using a much newer kernel than Debian's. =A0T=
-his was in December. =A0Then I used the Debian net install CD in Expert=
- mode to install the OS.
->
-> I took all pains to be using the newest OS available to set up the di=
-sks, so as to take advantage of WD's Advanced Format, and the newest im=
-provements to BTRFS. =A0But the balance is still going after more than =
-an hour.
->
-> I am seeing drastically conflicting info from df and btrfs filesystem=
- df, which is inexplicable.
->
+Excerpts from cwillu's message of 2011-05-03 21:50:53 -0400:
+> On Tue, May 3, 2011 at 7:32 PM, Geoff Ritter <geoff.ritter@gmail.com>=
+ wrote:
+> > Not sure where to report bugs or even find a coherent list of them.=
+ =C2=A0Sorry
+> > if this is already well known.
+> >
+> > When attempting to use an unlocked encrypted device as either a see=
+d device
+> > or the writeable device, a kernel bug will be displayed at
+> > fs/btrfs/volumes.c:2402 after attempting to add the writeable devic=
+e to the
+> > mounted read-only seed.
+> >
+> > STR:
+> > 1. =C2=A0cryptsetup luksFormat /dev/sdx1
+> > 2. =C2=A0cryptsetup luksOpen /dev/sdx1 luksSeed
+> > 3. =C2=A0mkfs.btrfs /dev/mapper/luksSeed
+> > 4. =C2=A0mount and add files if you want, then unmount
+> > 5. =C2=A0btrfstune -S 1 /dev/mapper/luksSeed
+> > 6. =C2=A0mount /dev/mapper/luksSeed /mnt/luksSeed
+> > 7. =C2=A0btrfs device add /dev/sdx2 /mnt/luksSeed
+> > 8. =C2=A0Observe kernel BUG.
+> >
+> > I would hope to expect to see an error message if this is never int=
+ended to
+> > be possible. =C2=A0But normal btrfs file systems appear to function=
+ normally
+> > under both encrypted and lvm partitions.
+> >
+> > This attached kernel message was from two LVM logical volumes on a =
+luks
+> > encrypted partition. =C2=A0However, I also tested this with two reg=
+ular
+> > partitions between endrypted-seed/unencrypted-rw,
+> > =C2=A0endrypted-rw/unencrypted-seed, and both encrypted.
 
-https://btrfs.wiki.kernel.org/index.php/FAQ#Why_does_df_show_incorrect_=
-free_space_for_my_RAID_volume.3F
+Ok, looks like I busted the seed support when I fixed up some of the
+chunk allocations.  I'll reproduce this and work out a fix.
 
-The above link may help explain why df and btrfs fi df differ.
+-chris
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

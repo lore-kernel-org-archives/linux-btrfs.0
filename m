@@ -1,182 +1,418 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH 2/3 v3] Btrfs: implement our own ->llseek
-Date: Thu,  5 May 2011 16:16:57 -0400
-Message-ID: <1304626619-1588-2-git-send-email-josef@redhat.com>
-References: <1304626619-1588-1-git-send-email-josef@redhat.com>
-To: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-	viro@ZenIV.linux.org.uk
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <1304626619-1588-1-git-send-email-josef@redhat.com>
+From: Konstantinos Skarlatos <k.skarlatos@gmail.com>
+Subject: Re: Having parent transid verify failed
+Date: Thu, 05 May 2011 23:27:54 +0300
+Message-ID: <4DC3084A.7030100@gmail.com>
+References: <4DC287D8.3040705@gmail.com> <1304595695-sup-9289@think> <4DC28DC4.7050308@gmail.com> <1304605365-sup-4172@think> <4DC2B3D2.6080307@gmail.com> <1304607926-sup-3304@think>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8;
+	format=flowed
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1304607926-sup-3304@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In order to handle SEEK_HOLE/SEEK_DATA we need to implement our own llseek.
-Basically for the normal SEEK_*'s we will just defer to the generic helper, and
-for SEEK_HOLE/SEEK_DATA we will use our fiemap helper to figure out the nearest
-hole or data.  Currently this helper doesn't check for delalloc bytes for
-prealloc space, so for now treat prealloc as data until that is fixed.  Thanks,
+I think i made some progress. When i tried to remove the directory that=
+=20
+i suspect contains the problematic file, i got this on the console
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
-v2->v3: added a cond_resched() to the while loop
- fs/btrfs/ctree.h |    3 +
- fs/btrfs/file.c  |  129 +++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 131 insertions(+), 1 deletions(-)
+rm -rf serverloft/
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index d5f043e..d2991c8 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2474,6 +2474,9 @@ int btrfs_csum_truncate(struct btrfs_trans_handle *trans,
- int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start,
- 			     u64 end, struct list_head *list);
- /* inode.c */
-+struct extent_map *btrfs_get_extent_fiemap(struct inode *inode, struct page *page,
-+					   size_t pg_offset, u64 start, u64 len,
-+					   int create);
- 
- /* RHEL and EL kernels have a patch that renames PG_checked to FsMisc */
- #if defined(ClearPageFsMisc) && !defined(ClearPageChecked)
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index cd5e82e..3a1e401 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1406,8 +1406,135 @@ out:
- 	return ret;
- }
- 
-+static int find_desired_extent(struct inode *inode, loff_t *offset, int origin)
-+{
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct extent_map *em;
-+	struct extent_state *cached_state = NULL;
-+	u64 lockstart = *offset;
-+	u64 lockend = i_size_read(inode);
-+	u64 start = *offset;
-+	u64 len = i_size_read(inode);
-+	u64 last_end = 0;
-+	int ret = 0;
-+
-+	lockend = max_t(u64, BTRFS_I(inode)->root->sectorsize, lockend);
-+	len = lockend;
-+
-+	lock_extent_bits(&BTRFS_I(inode)->io_tree, lockstart, lockend, 0,
-+			 &cached_state, GFP_NOFS);
-+
-+	/*
-+	 * Delalloc is such a pain.  If we have a hole and we have pending
-+	 * delalloc for a portion of the hole we will get back a hole that
-+	 * exists for the entire range since it hasn't been actually written
-+	 * yet.  So to take care of this case we need to look for an extent just
-+	 * before the position we want in case there is outstanding delalloc
-+	 * going on here.
-+	 */
-+	if (origin == SEEK_HOLE && start != 0) {
-+		if (start < root->sectorsize)
-+			em = btrfs_get_extent_fiemap(inode, NULL, 0, 0,
-+						     start, 0);
-+		else
-+			em = btrfs_get_extent_fiemap(inode, NULL, 0,
-+						     start - root->sectorsize,
-+						     root->sectorsize, 0);
-+		if (IS_ERR(em)) {
-+			ret = -ENXIO;
-+			goto out;
-+		}
-+		last_end = em->start + em->len;
-+		free_extent_map(em);
-+	}
-+
-+	while (1) {
-+		em = btrfs_get_extent_fiemap(inode, NULL, 0, start, len, 0);
-+		if (IS_ERR(em)) {
-+			ret = -ENXIO;
-+			break;
-+		}
-+
-+		if (em->block_start == EXTENT_MAP_HOLE) {
-+			if (origin == SEEK_HOLE) {
-+				u64 new_offset = max(em->start, start);
-+				/*
-+				 * If we are in the middle of a hole then move
-+				 * to the next one, unless the previous range we
-+				 * found ended here, which means we have a
-+				 * delalloc range that is going to convert part
-+				 * of this hole into data.
-+				 */
-+				if (new_offset == em->start ||
-+				    (new_offset > em->start &&
-+				     new_offset == last_end)) {
-+					*offset = new_offset;
-+					free_extent_map(em);
-+					break;
-+				}
-+			}
-+		} else {
-+			if (origin == SEEK_DATA) {
-+				if (em->start == start) {
-+					*offset = em->start;
-+					free_extent_map(em);
-+					break;
-+				}
-+			}
-+		}
-+		start = em->start + em->len;
-+		last_end = em->start + em->len;
-+		if (test_bit(EXTENT_FLAG_VACANCY, &em->flags)) {
-+			free_extent_map(em);
-+			ret = -ENXIO;
-+			break;
-+		}
-+		free_extent_map(em);
-+		cond_resched();
-+	}
-+out:
-+	unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart, lockend,
-+			     &cached_state, GFP_NOFS);
-+	return ret;
-+}
-+
-+static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int origin)
-+{
-+	struct inode *inode = file->f_mapping->host;
-+	int ret;
-+
-+	mutex_lock(&inode->i_mutex);
-+	switch (origin) {
-+	case SEEK_END:
-+	case SEEK_CUR:
-+		offset = generic_file_llseek_unlocked(file, offset, origin);
-+		goto out;
-+	case SEEK_DATA:
-+	case SEEK_HOLE:
-+		ret = find_desired_extent(inode, &offset, origin);
-+		if (ret) {
-+			mutex_unlock(&inode->i_mutex);
-+			return ret;
-+		}
-+	}
-+
-+	if (offset < 0 && !(file->f_mode & FMODE_UNSIGNED_OFFSET))
-+		return -EINVAL;
-+	if (offset > inode->i_sb->s_maxbytes)
-+		return -EINVAL;
-+
-+	/* Special lock needed here? */
-+	if (offset != file->f_pos) {
-+		file->f_pos = offset;
-+		file->f_version = 0;
-+	}
-+out:
-+	mutex_unlock(&inode->i_mutex);
-+	return offset;
-+}
-+
- const struct file_operations btrfs_file_operations = {
--	.llseek		= generic_file_llseek,
-+	.llseek		= btrfs_file_llseek,
- 	.read		= do_sync_read,
- 	.write		= do_sync_write,
- 	.aio_read       = generic_file_aio_read,
--- 
-1.7.2.3
+2011 May  5 23:32:53 mail [  200.580195] Oops: 0000 [#1] PREEMPT SMP
+2011 May  5 23:32:53 mail [  200.580220] last sysfs file:=20
+/sys/module/vt/parameters/default_utf8
+2011 May  5 23:32:53 mail [  200.581145] Stack:
+2011 May  5 23:32:53 mail [  200.581276] Call Trace:
+2011 May  5 23:32:53 mail [  200.581732] Code: cc 00 00 48 8d 91 28 e0=20
+ff ff 48 89 e5 48 81 ec 90 00 00 00 48 89 5d d8 4c 89 65 e0 48 89 f3 4c=
+=20
+89 6d e8 4c 89 75 f0 4c 89 7d f8 <48> 8b 76 30 83 42 1c 01 48 b8 00 00=20
+00 00 00 16 00 00 48 01 f0
+2011 May  5 23:32:53 mail [  200.583376] CR2: 0000000000000030
+
+
+here is the  part of dmesg that does not contain the  thousands of=20
+parent transid verify failed messages
+
+
+May  5 23:32:51 mail kernel: [  198.371084] parent transid verify faile=
+d=20
+on 3062073683968 wanted 5181 found 5188
+May  5 23:32:51 mail kernel: [  198.371204] parent transid verify faile=
+d=20
+on 3062073683968 wanted 5181 found 5188
+May  5 23:32:53 mail kernel: [  200.572774] Modules linked in: ipv6=20
+btrfs zlib_deflate crc32c libcrc32c ext2 raid456 async_raid6_recov=20
+async_pq raid6_pq async_xor xor async_memcpy async_tx md_mod usb_storag=
+e=20
+uas snd_seq_dummy snd_seq_oss radeon snd_seq_midi_event ttm snd_seq=20
+snd_hda_codec_hdmi snd_seq_device drm_kms_helper ohci_hcd snd_hda_intel=
+=20
+snd_hda_codec snd_pcm_oss snd_hwdep drm i2c_algo_bit snd_mixer_oss=20
+snd_pcm i2c_piix4 snd_timer snd soundcore snd_page_alloc ehci_hcd wmi=20
+i2c_core usbcore evdev processor button k10temp serio_raw pcspkr sg=20
+r8169 edac_core shpchp pci_hotplug edac_mce_amd mii sp5100_tco ext4=20
+mbcache jbd2 crc16 sd_mod pata_acpi ahci libahci pata_atiixp libata scs=
+i_mod
+May  5 23:32:53 mail kernel: [  200.572808] Pid: 1037, comm:=20
+btrfs-transacti Not tainted 2.6.38-ARCH #1
+May  5 23:32:53 mail kernel: [  200.572810] Call Trace:
+May  5 23:32:53 mail kernel: [  200.572817]  [<ffffffff813a932b>] ?=20
+__schedule_bug+0x59/0x5d
+May  5 23:32:53 mail kernel: [  200.572820]  [<ffffffff813af827>] ?=20
+schedule+0x9f7/0xad0
+May  5 23:32:53 mail kernel: [  200.572823]  [<ffffffff811e5827>] ?=20
+generic_unplug_device+0x37/0x40
+May  5 23:32:53 mail kernel: [  200.572827]  [<ffffffffa07ac164>] ?=20
+md_raid5_unplug_device+0x64/0x110 [raid456]
+May  5 23:32:53 mail kernel: [  200.572830]  [<ffffffffa07ac223>] ?=20
+raid5_unplug_queue+0x13/0x20 [raid456]
+May  5 23:32:53 mail kernel: [  200.572833]  [<ffffffff81012d79>] ?=20
+read_tsc+0x9/0x20
+May  5 23:32:53 mail kernel: [  200.572837]  [<ffffffff8108418c>] ?=20
+ktime_get_ts+0xac/0xe0
+May  5 23:32:53 mail kernel: [  200.572840]  [<ffffffff810e36c0>] ?=20
+sync_page+0x0/0x50
+May  5 23:32:53 mail kernel: [  200.572842]  [<ffffffff813af96e>] ?=20
+io_schedule+0x6e/0xb0
+May  5 23:32:53 mail kernel: [  200.572844]  [<ffffffff810e36fb>] ?=20
+sync_page+0x3b/0x50
+May  5 23:32:53 mail kernel: [  200.572846]  [<ffffffff813b0077>] ?=20
+__wait_on_bit+0x57/0x80
+May  5 23:32:53 mail kernel: [  200.572848]  [<ffffffff810e38c0>] ?=20
+wait_on_page_bit+0x70/0x80
+May  5 23:32:53 mail kernel: [  200.572851]  [<ffffffff8107a030>] ?=20
+wake_bit_function+0x0/0x40
+May  5 23:32:53 mail kernel: [  200.572861]  [<ffffffffa08348d2>] ?=20
+read_extent_buffer_pages+0x412/0x480 [btrfs]
+May  5 23:32:53 mail kernel: [  200.572867]  [<ffffffffa0809e00>] ?=20
+btree_get_extent+0x0/0x1b0 [btrfs]
+May  5 23:32:53 mail kernel: [  200.572873]  [<ffffffffa080ac7e>] ?=20
+btree_read_extent_buffer_pages.isra.60+0x5e/0xb0 [btrfs]
+May  5 23:32:53 mail kernel: [  200.572880]  [<ffffffffa080c0bc>] ?=20
+read_tree_block+0x3c/0x60 [btrfs]
+May  5 23:32:53 mail kernel: [  200.572884]  [<ffffffffa07f272b>] ?=20
+read_block_for_search.isra.34+0x1fb/0x410 [btrfs]
+May  5 23:32:53 mail kernel: [  200.572890]  [<ffffffffa08417d1>] ?=20
+btrfs_tree_unlock+0x51/0x60 [btrfs]
+May  5 23:32:53 mail kernel: [  200.572895]  [<ffffffffa07f5ca0>] ?=20
+btrfs_search_slot+0x430/0xa30 [btrfs]
+May  5 23:32:53 mail kernel: [  200.572900]  [<ffffffffa07fb3a6>] ?=20
+lookup_inline_extent_backref+0x96/0x460 [btrfs]
+May  5 23:32:53 mail kernel: [  200.572904]  [<ffffffff8112b8d3>] ?=20
+kmem_cache_alloc+0x133/0x150
+May  5 23:32:53 mail kernel: [  200.572908]  [<ffffffffa07fd452>] ?=20
+__btrfs_free_extent+0xc2/0x6d0 [btrfs]
+May  5 23:32:53 mail kernel: [  200.572914]  [<ffffffffa0800f59>] ?=20
+run_clustered_refs+0x389/0x830 [btrfs]
+May  5 23:32:53 mail kernel: [  200.572920]  [<ffffffffa084d900>] ?=20
+btrfs_find_ref_cluster+0x10/0x190 [btrfs]
+May  5 23:32:53 mail kernel: [  200.572925]  [<ffffffffa08014c0>] ?=20
+btrfs_run_delayed_refs+0xc0/0x210 [btrfs]
+May  5 23:32:53 mail kernel: [  200.572927]  [<ffffffff813b0cf9>] ?=20
+mutex_unlock+0x9/0x10
+May  5 23:32:53 mail kernel: [  200.572933]  [<ffffffffa0810db8>] ?=20
+btrfs_commit_transaction+0x78/0x750 [btrfs]
+May  5 23:32:53 mail kernel: [  200.572936]  [<ffffffff81079ff0>] ?=20
+autoremove_wake_function+0x0/0x40
+May  5 23:32:53 mail kernel: [  200.572941]  [<ffffffffa080a9bd>] ?=20
+transaction_kthread+0x26d/0x290 [btrfs]
+May  5 23:32:53 mail kernel: [  200.572947]  [<ffffffffa080a750>] ?=20
+transaction_kthread+0x0/0x290 [btrfs]
+May  5 23:32:53 mail kernel: [  200.572949]  [<ffffffff81079717>] ?=20
+kthread+0x87/0x90
+May  5 23:32:53 mail kernel: [  200.572952]  [<ffffffff8100bc24>] ?=20
+kernel_thread_helper+0x4/0x10
+May  5 23:32:53 mail kernel: [  200.572954]  [<ffffffff81079690>] ?=20
+kthread+0x0/0x90
+May  5 23:32:53 mail kernel: [  200.572956]  [<ffffffff8100bc20>] ?=20
+kernel_thread_helper+0x0/0x10
+May  5 23:32:53 mail kernel: [  200.572971] Modules linked in: ipv6=20
+btrfs zlib_deflate crc32c libcrc32c ext2 raid456 async_raid6_recov=20
+async_pq raid6_pq async_xor xor async_memcpy async_tx md_mod usb_storag=
+e=20
+uas snd_seq_dummy snd_seq_oss radeon snd_seq_midi_event ttm snd_seq=20
+snd_hda_codec_hdmi snd_seq_device drm_kms_helper ohci_hcd snd_hda_intel=
+=20
+snd_hda_codec snd_pcm_oss snd_hwdep drm i2c_algo_bit snd_mixer_oss=20
+snd_pcm i2c_piix4 snd_timer snd soundcore snd_page_alloc ehci_hcd wmi=20
+i2c_core usbcore evdev processor button k10temp serio_raw pcspkr sg=20
+r8169 edac_core shpchp pci_hotplug edac_mce_amd mii sp5100_tco ext4=20
+mbcache jbd2 crc16 sd_mod pata_acpi ahci libahci pata_atiixp libata scs=
+i_mod
+May  5 23:32:53 mail kernel: [  200.572996] Pid: 1037, comm:=20
+btrfs-transacti Not tainted 2.6.38-ARCH #1
+May  5 23:32:53 mail kernel: [  200.572997] Call Trace:
+May  5 23:32:53 mail kernel: [  200.572999]  [<ffffffff813a932b>] ?=20
+__schedule_bug+0x59/0x5d
+May  5 23:32:53 mail kernel: [  200.573001]  [<ffffffff813af827>] ?=20
+schedule+0x9f7/0xad0
+May  5 23:32:53 mail kernel: [  200.573003]  [<ffffffff811e5827>] ?=20
+generic_unplug_device+0x37/0x40
+May  5 23:32:53 mail kernel: [  200.573006]  [<ffffffffa07ac164>] ?=20
+md_raid5_unplug_device+0x64/0x110 [raid456]
+May  5 23:32:53 mail kernel: [  200.573009]  [<ffffffffa07ac223>] ?=20
+raid5_unplug_queue+0x13/0x20 [raid456]
+May  5 23:32:53 mail kernel: [  200.573011]  [<ffffffff81012d79>] ?=20
+read_tsc+0x9/0x20
+May  5 23:32:53 mail kernel: [  200.573013]  [<ffffffff8108418c>] ?=20
+ktime_get_ts+0xac/0xe0
+May  5 23:32:53 mail kernel: [  200.573016]  [<ffffffff810e36c0>] ?=20
+sync_page+0x0/0x50
+May  5 23:32:53 mail kernel: [  200.573017]  [<ffffffff813af96e>] ?=20
+io_schedule+0x6e/0xb0
+May  5 23:32:53 mail kernel: [  200.573020]  [<ffffffff810e36fb>] ?=20
+sync_page+0x3b/0x50
+May  5 23:32:53 mail kernel: [  200.573021]  [<ffffffff813b0077>] ?=20
+__wait_on_bit+0x57/0x80
+May  5 23:32:53 mail kernel: [  200.573024]  [<ffffffff810e38c0>] ?=20
+wait_on_page_bit+0x70/0x80
+May  5 23:32:53 mail kernel: [  200.573026]  [<ffffffff8107a030>] ?=20
+wake_bit_function+0x0/0x40
+May  5 23:32:53 mail kernel: [  200.573032]  [<ffffffffa08348d2>] ?=20
+read_extent_buffer_pages+0x412/0x480 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573038]  [<ffffffffa0809e00>] ?=20
+btree_get_extent+0x0/0x1b0 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573044]  [<ffffffffa080ac7e>] ?=20
+btree_read_extent_buffer_pages.isra.60+0x5e/0xb0 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573050]  [<ffffffffa080c0bc>] ?=20
+read_tree_block+0x3c/0x60 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573054]  [<ffffffffa07f272b>] ?=20
+read_block_for_search.isra.34+0x1fb/0x410 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573060]  [<ffffffffa08417d1>] ?=20
+btrfs_tree_unlock+0x51/0x60 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573065]  [<ffffffffa07f5ca0>] ?=20
+btrfs_search_slot+0x430/0xa30 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573070]  [<ffffffffa07fb3a6>] ?=20
+lookup_inline_extent_backref+0x96/0x460 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573072]  [<ffffffff8112b8d3>] ?=20
+kmem_cache_alloc+0x133/0x150
+May  5 23:32:53 mail kernel: [  200.573077]  [<ffffffffa07fd452>] ?=20
+__btrfs_free_extent+0xc2/0x6d0 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573083]  [<ffffffffa0800f59>] ?=20
+run_clustered_refs+0x389/0x830 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573088]  [<ffffffffa084d900>] ?=20
+btrfs_find_ref_cluster+0x10/0x190 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573094]  [<ffffffffa08014c0>] ?=20
+btrfs_run_delayed_refs+0xc0/0x210 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573096]  [<ffffffff813b0cf9>] ?=20
+mutex_unlock+0x9/0x10
+May  5 23:32:53 mail kernel: [  200.573102]  [<ffffffffa0810db8>] ?=20
+btrfs_commit_transaction+0x78/0x750 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573104]  [<ffffffff81079ff0>] ?=20
+autoremove_wake_function+0x0/0x40
+May  5 23:32:53 mail kernel: [  200.573110]  [<ffffffffa080a9bd>] ?=20
+transaction_kthread+0x26d/0x290 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573116]  [<ffffffffa080a750>] ?=20
+transaction_kthread+0x0/0x290 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573118]  [<ffffffff81079717>] ?=20
+kthread+0x87/0x90
+May  5 23:32:53 mail kernel: [  200.573120]  [<ffffffff8100bc24>] ?=20
+kernel_thread_helper+0x4/0x10
+May  5 23:32:53 mail kernel: [  200.573122]  [<ffffffff81079690>] ?=20
+kthread+0x0/0x90
+May  5 23:32:53 mail kernel: [  200.573124]  [<ffffffff8100bc20>] ?=20
+kernel_thread_helper+0x0/0x10
+May  5 23:32:53 mail kernel: [  200.573138] Modules linked in: ipv6=20
+btrfs zlib_deflate crc32c libcrc32c ext2 raid456 async_raid6_recov=20
+async_pq raid6_pq async_xor xor async_memcpy async_tx md_mod usb_storag=
+e=20
+uas snd_seq_dummy snd_seq_oss radeon snd_seq_midi_event ttm snd_seq=20
+snd_hda_codec_hdmi snd_seq_device drm_kms_helper ohci_hcd snd_hda_intel=
+=20
+snd_hda_codec snd_pcm_oss snd_hwdep drm i2c_algo_bit snd_mixer_oss=20
+snd_pcm i2c_piix4 snd_timer snd soundcore snd_page_alloc ehci_hcd wmi=20
+i2c_core usbcore evdev processor button k10temp serio_raw pcspkr sg=20
+r8169 edac_core shpchp pci_hotplug edac_mce_amd mii sp5100_tco ext4=20
+mbcache jbd2 crc16 sd_mod pata_acpi ahci libahci pata_atiixp libata scs=
+i_mod
+May  5 23:32:53 mail kernel: [  200.573162] Pid: 1037, comm:=20
+btrfs-transacti Not tainted 2.6.38-ARCH #1
+May  5 23:32:53 mail kernel: [  200.573163] Call Trace:
+May  5 23:32:53 mail kernel: [  200.573165]  [<ffffffff813a932b>] ?=20
+__schedule_bug+0x59/0x5d
+May  5 23:32:53 mail kernel: [  200.573167]  [<ffffffff813af827>] ?=20
+schedule+0x9f7/0xad0
+May  5 23:32:53 mail kernel: [  200.573169]  [<ffffffff811e5827>] ?=20
+generic_unplug_device+0x37/0x40
+May  5 23:32:53 mail kernel: [  200.573172]  [<ffffffffa07ac164>] ?=20
+md_raid5_unplug_device+0x64/0x110 [raid456]
+May  5 23:32:53 mail kernel: [  200.573175]  [<ffffffffa07ac223>] ?=20
+raid5_unplug_queue+0x13/0x20 [raid456]
+May  5 23:32:53 mail kernel: [  200.573177]  [<ffffffff81012d79>] ?=20
+read_tsc+0x9/0x20
+May  5 23:32:53 mail kernel: [  200.573179]  [<ffffffff8108418c>] ?=20
+ktime_get_ts+0xac/0xe0
+May  5 23:32:53 mail kernel: [  200.573182]  [<ffffffff810e36c0>] ?=20
+sync_page+0x0/0x50
+May  5 23:32:53 mail kernel: [  200.573183]  [<ffffffff813af96e>] ?=20
+io_schedule+0x6e/0xb0
+May  5 23:32:53 mail kernel: [  200.573186]  [<ffffffff810e36fb>] ?=20
+sync_page+0x3b/0x50
+May  5 23:32:53 mail kernel: [  200.573187]  [<ffffffff813b0077>] ?=20
+__wait_on_bit+0x57/0x80
+May  5 23:32:53 mail kernel: [  200.573190]  [<ffffffff810e38c0>] ?=20
+wait_on_page_bit+0x70/0x80
+May  5 23:32:53 mail kernel: [  200.573192]  [<ffffffff8107a030>] ?=20
+wake_bit_function+0x0/0x40
+May  5 23:32:53 mail kernel: [  200.573198]  [<ffffffffa08348d2>] ?=20
+read_extent_buffer_pages+0x412/0x480 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573204]  [<ffffffffa0809e00>] ?=20
+btree_get_extent+0x0/0x1b0 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573209]  [<ffffffffa080ac7e>] ?=20
+btree_read_extent_buffer_pages.isra.60+0x5e/0xb0 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573215]  [<ffffffffa080c0bc>] ?=20
+read_tree_block+0x3c/0x60 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573220]  [<ffffffffa07f272b>] ?=20
+read_block_for_search.isra.34+0x1fb/0x410 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573226]  [<ffffffffa08417d1>] ?=20
+btrfs_tree_unlock+0x51/0x60 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573231]  [<ffffffffa07f5ca0>] ?=20
+btrfs_search_slot+0x430/0xa30 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573236]  [<ffffffffa07fb3a6>] ?=20
+lookup_inline_extent_backref+0x96/0x460 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573238]  [<ffffffff8112b8d3>] ?=20
+kmem_cache_alloc+0x133/0x150
+May  5 23:32:53 mail kernel: [  200.573243]  [<ffffffffa07fd452>] ?=20
+__btrfs_free_extent+0xc2/0x6d0 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573248]  [<ffffffffa0800f59>] ?=20
+run_clustered_refs+0x389/0x830 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573254]  [<ffffffffa084d900>] ?=20
+btrfs_find_ref_cluster+0x10/0x190 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573259]  [<ffffffffa08014c0>] ?=20
+btrfs_run_delayed_refs+0xc0/0x210 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573261]  [<ffffffff813b0cf9>] ?=20
+mutex_unlock+0x9/0x10
+May  5 23:32:53 mail kernel: [  200.573267]  [<ffffffffa0810db8>] ?=20
+btrfs_commit_transaction+0x78/0x750 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573270]  [<ffffffff81079ff0>] ?=20
+autoremove_wake_function+0x0/0x40
+May  5 23:32:53 mail kernel: [  200.573275]  [<ffffffffa080a9bd>] ?=20
+transaction_kthread+0x26d/0x290 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573281]  [<ffffffffa080a750>] ?=20
+transaction_kthread+0x0/0x290 [btrfs]
+May  5 23:32:53 mail kernel: [  200.573283]  [<ffffffff81079717>] ?=20
+kthread+0x87/0x90
+May  5 23:32:53 mail kernel: [  200.573285]  [<ffffffff8100bc24>] ?=20
+kernel_thread_helper+0x4/0x10
+May  5 23:32:53 mail kernel: [  200.573287]  [<ffffffff81079690>] ?=20
+kthread+0x0/0x90
+May  5 23:32:53 mail kernel: [  200.573289]  [<ffffffff8100bc20>] ?=20
+kernel_thread_helper+0x0/0x10
+May  5 23:32:53 mail kernel: [  200.580169] PGD 68be4067 PUD 68b42067 P=
+MD 0
+May  5 23:32:53 mail kernel: [  200.580250] CPU 2
+May  5 23:32:53 mail kernel: [  200.580260] Modules linked in: ipv6=20
+btrfs zlib_deflate crc32c libcrc32c ext2 raid456 async_raid6_recov=20
+async_pq raid6_pq async_xor xor async_memcpy async_tx md_mod usb_storag=
+e=20
+uas snd_seq_dummy snd_seq_oss radeon snd_seq_midi_event ttm snd_seq=20
+snd_hda_codec_hdmi snd_seq_device drm_kms_helper ohci_hcd snd_hda_intel=
+=20
+snd_hda_codec snd_pcm_oss snd_hwdep drm i2c_algo_bit snd_mixer_oss=20
+snd_pcm i2c_piix4 snd_timer snd soundcore snd_page_alloc ehci_hcd wmi=20
+i2c_core usbcore evdev processor button k10temp serio_raw pcspkr sg=20
+r8169 edac_core shpchp pci_hotplug edac_mce_amd mii sp5100_tco ext4=20
+mbcache jbd2 crc16 sd_mod pata_acpi ahci libahci pata_atiixp libata scs=
+i_mod
+May  5 23:32:53 mail kernel: [  200.580642]
+May  5 23:32:53 mail kernel: [  200.580652] Pid: 1037, comm:=20
+btrfs-transacti Not tainted 2.6.38-ARCH #1 Gigabyte Technology Co., Ltd=
+=2E=20
+GA-MA785G-UD3H/GA-MA785G-UD3H
+May  5 23:32:53 mail kernel: [  200.580713] RIP:=20
+0010:[<ffffffffa0805192>]  [<ffffffffa0805192>]=20
+btrfs_print_leaf+0x32/0x880 [btrfs]
+May  5 23:32:53 mail kernel: [  200.580760] RSP: 0018:ffff88006dc97b00=20
+EFLAGS: 00010286
+May  5 23:32:53 mail kernel: [  200.580785] RAX: 00000000fffffffb RBX:=20
+0000000000000000 RCX: ffff88006dc97fd8
+May  5 23:32:53 mail kernel: [  200.580817] RDX: ffff88006dc96000 RSI:=20
+0000000000000000 RDI: ffff880071cc6800
+May  5 23:32:53 mail kernel: [  200.580849] RBP: ffff88006dc97b90 R08:=20
+0000000000000000 R09: 0000000000000000
+May  5 23:32:53 mail kernel: [  200.580881] R10: 0000000000000001 R11:=20
+00000000fffffffb R12: 0000000000000007
+May  5 23:32:53 mail kernel: [  200.580913] R13: 0000028b982f4000 R14:=20
+00000000fffffffb R15: 0000000000001000
+May  5 23:32:53 mail kernel: [  200.580946] FS:  00007f618e3d3720(0000)=
+=20
+GS:ffff880077b00000(0000) knlGS:0000000000000000
+May  5 23:32:53 mail kernel: [  200.580982] CS:  0010 DS: 0000 ES: 0000=
+=20
+CR0: 000000008005003b
+May  5 23:32:53 mail kernel: [  200.581008] CR2: 0000000000000030 CR3:=20
+0000000068b62000 CR4: 00000000000006e0
+May  5 23:32:53 mail kernel: [  200.581040] DR0: 0000000000000000 DR1:=20
+0000000000000000 DR2: 0000000000000000
+May  5 23:32:53 mail kernel: [  200.581073] DR3: 0000000000000000 DR6:=20
+00000000ffff0ff0 DR7: 0000000000000400
+May  5 23:32:53 mail kernel: [  200.581105] Process btrfs-transacti=20
+(pid: 1037, threadinfo ffff88006dc96000, task ffff880071e51bc0)
+May  5 23:32:53 mail kernel: [  200.581155]  0000000000002000=20
+0000000000001000 ffff88006dc97c38 0000028b982f4000
+May  5 23:32:53 mail kernel: [  200.581196]  0000000000000000=20
+ffffffff8112b8d3 ffff880071cc6800 0000000000000090
+May  5 23:32:53 mail kernel: [  200.581236]  0000000000000090=20
+0000805070ac4120 a80000028b982f40 0000000000001000
+May  5 23:32:53 mail kernel: [  200.581292]  [<ffffffff8112b8d3>] ?=20
+kmem_cache_alloc+0x133/0x150
+May  5 23:32:53 mail kernel: [  200.581324]  [<ffffffffa07fd9b7>]=20
+__btrfs_free_extent+0x627/0x6d0 [btrfs]
+May  5 23:32:53 mail kernel: [  200.581359]  [<ffffffffa0800f59>]=20
+run_clustered_refs+0x389/0x830 [btrfs]
+May  5 23:32:53 mail kernel: [  200.581395]  [<ffffffffa084d900>] ?=20
+btrfs_find_ref_cluster+0x10/0x190 [btrfs]
+May  5 23:32:53 mail kernel: [  200.581431]  [<ffffffffa08014c0>]=20
+btrfs_run_delayed_refs+0xc0/0x210 [btrfs]
+May  5 23:32:53 mail kernel: [  200.581464]  [<ffffffff813b0cf9>] ?=20
+mutex_unlock+0x9/0x10
+May  5 23:32:53 mail kernel: [  200.581493]  [<ffffffffa0810db8>]=20
+btrfs_commit_transaction+0x78/0x750 [btrfs]
+May  5 23:32:53 mail kernel: [  200.581528]  [<ffffffff81079ff0>] ?=20
+autoremove_wake_function+0x0/0x40
+May  5 23:32:53 mail kernel: [  200.581562]  [<ffffffffa080a9bd>]=20
+transaction_kthread+0x26d/0x290 [btrfs]
+May  5 23:32:53 mail kernel: [  200.581597]  [<ffffffffa080a750>] ?=20
+transaction_kthread+0x0/0x290 [btrfs]
+May  5 23:32:53 mail kernel: [  200.581628]  [<ffffffff81079717>]=20
+kthread+0x87/0x90
+May  5 23:32:53 mail kernel: [  200.581652]  [<ffffffff8100bc24>]=20
+kernel_thread_helper+0x4/0x10
+May  5 23:32:53 mail kernel: [  200.581681]  [<ffffffff81079690>] ?=20
+kthread+0x0/0x90
+May  5 23:32:53 mail kernel: [  200.581704]  [<ffffffff8100bc20>] ?=20
+kernel_thread_helper+0x0/0x10
+May  5 23:32:53 mail kernel: [  200.583376]  RSP <ffff88006dc97b00>
+May  5 23:32:53 mail kernel: [  200.587924] ---[ end trace=20
+fed5a0f4104a02ee ]---
+May  5 23:32:56 mail kernel: [  203.373416] verify_parent_transid: 4103=
+0=20
+callbacks suppressed
+May  5 23:32:56 mail kernel: [  203.374625] parent transid verify faile=
+d=20
+on 3062073683968 wanted 5181 found 5188
+May  5 23:32:56 mail kernel: [  203.376004] parent transid verify faile=
+d=20
+on 3062073683968 wanted 5181 found 5188
+
+
+On 5/5/2011 6:06 =CE=BC=CE=BC, Chris Mason wrote:
+> Excerpts from Konstantinos Skarlatos's message of 2011-05-05 10:27:30=
+ -0400:
+>> attached you can find the whole dmesg log. I can trigger the error a=
+gain
+>> if more logs are needed
+>
+> Yes, I'll send you a patch to get rid of the printk for the transid
+> failed message.  That way we can get a clean view of the other errors=
+=2E
+>
+> Will you be able to compile/test it?
+>
+> -chris
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

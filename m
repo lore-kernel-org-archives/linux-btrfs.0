@@ -1,40 +1,36 @@
-From: Konstantinos Skarlatos <k.skarlatos@gmail.com>
-Subject: Re: Having parent transid verify failed
-Date: Thu, 05 May 2011 19:07:43 +0300
-Message-ID: <4DC2CB4F.7060903@gmail.com>
-References: <4DC287D8.3040705@gmail.com> <1304595695-sup-9289@think> <4DC28DC4.7050308@gmail.com> <1304605365-sup-4172@think> <4DC2B3D2.6080307@gmail.com> <1304607926-sup-3304@think>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: kernel BUG at fs/btrfs/inode.c:149!
+Date: Thu, 5 May 2011 13:53:52 -0400
+Message-ID: <20110505175351.GC2372@dhcp231-156.rdu.redhat.com>
+References: <201105051412.03175.whirm@gmx.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
-	format=flowed
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Josef Bacik <josef@redhat.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: whirm@gmx.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1304607926-sup-3304@think>
+In-Reply-To: <201105051412.03175.whirm@gmx.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, May 05, 2011 at 02:12:03PM +0200, whirm@gmx.com wrote:
+> Seems like the mail didn't get trough, trying again with the logfile 
+> compressed.
+> 
+> Thanks, 
+> 
+> On Wednesday 04 May 2011 20:21:54 you wrote:
+> [...]
+> > Argh sorry I was looking at the wrong part of that warning.  Can you run
+> > with this debug patch and send me the log?  Thanks,
+> > 
+> > Josef
+> 
+> I hope that's enough, the log buffer was too small to keep the whole thing.
+> 
 
+Hmm I didn't see what I needed, can you do it again and try to get kernel
+messages to go to /var/log/messages so you don't have to worry about the log
+buffer?  The other option is to setup netconsole which would grab everything.
+Thanks,
 
-On 5/5/2011 6:06 =CE=BC=CE=BC, Chris Mason wrote:
-> Excerpts from Konstantinos Skarlatos's message of 2011-05-05 10:27:30=
- -0400:
->> attached you can find the whole dmesg log. I can trigger the error a=
-gain
->> if more logs are needed
->
-> Yes, I'll send you a patch to get rid of the printk for the transid
-> failed message.  That way we can get a clean view of the other errors=
-=2E
->
-> Will you be able to compile/test it?
-
-Yes, i think i will be able to make it, but because i have only done=20
-this once and in a quite hackish way, i may need some help in order to=20
-do it right.
-
->
-> -chris
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Josef

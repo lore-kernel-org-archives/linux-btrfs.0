@@ -1,58 +1,58 @@
-From: cwillu <cwillu@cwillu.com>
+From: CACook@quantum-sci.com
 Subject: Re: Cannot Deinstall a Debian Package
-Date: Thu, 5 May 2011 15:11:39 -0600
-Message-ID: <BANLkTimskmBv_DTe-vDmVtf+sAWBEJxwHQ@mail.gmail.com>
-References: <201105031227.43619.CACook@quantum-sci.com>
-	<201105051250.03335.CACook@quantum-sci.com>
-	<BANLkTinkhtYYFx+eKQzdrRDSvpgEiPHzpQ@mail.gmail.com>
-	<201105051357.07209.CACook@quantum-sci.com>
+Date: Thu, 5 May 2011 14:40:06 -0700
+Message-ID: <201105051440.07434.CACook@quantum-sci.com>
+References: <201105031227.43619.CACook@quantum-sci.com> <201105051332.20992.CACook@quantum-sci.com> <BANLkTim3uMUXN7Q=zqXoopUeR8gphWHi_Q@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: CACook@quantum-sci.com
+Content-Type: Text/Plain;
+  charset="utf-8"
+To: "linux-btrfs" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201105051357.07209.CACook@quantum-sci.com>
+In-Reply-To: <BANLkTim3uMUXN7Q=zqXoopUeR8gphWHi_Q@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 5, 2011 at 2:57 PM,  <CACook@quantum-sci.com> wrote:
->
-> On Thursday 5 May, 2011 13:31:17 cwillu wrote:
->> I took the liberty of asking #debian, and they've requested that you
->> file a bug in their bug tracker. =C2=A0They've also suggested that y=
-ou
->> might be able to short-circuit the faulty script in their kernel
->> package via an "exit 0", or even replace the faulty grub-probe by
->> manually extracting the newer version of the package.
->
-> I tried to install Debian's reportbug, but of course I can't. =C2=A0A=
-nd assembling the info they need for email reporting will take me a hal=
-f day of analysis. =C2=A0Part of the problem here is I am trying desper=
-ately to make a living in another line of business, and I don't have ti=
-me for any of these problems.
->
-> I don't know how to manually extract a package. =C2=A0I guess it's do=
-ne with dpkg, but that will take more time for me to figure out. =C2=A0=
-I've lost half of today already on this problem.
+On Thursday 5 May, 2011 13:40:25 cwillu wrote:
+> Could you include the information I asked for previously?  (Kernel
+> version, output of btrfs fi df and btrfs fi show)
 
-Okay, but do you see how your reaction hasn't endeared yourself to the
-people you're depending on to fix your problems for free?  I'll note
-that this isn't the first time you've run into troubles with various
-raid systems, and you were even warned last december not to switch to
-btrfs as it wasn't mature enough for an end-user (even lacking a
-recovering fsck tool, which is still under development).
+Kernel 2.6.37-2
+# btrfs fi df /home
+Data, RAID0: total=2.61TB, used=2.47TB
+Data: total=8.00MB, used=8.00MB
+System, RAID1: total=8.00MB, used=196.00KB
+System: total=4.00MB, used=0.00
+Metadata, RAID1: total=6.88GB, used=4.64GB
+Metadata: total=8.00MB, used=0.00
+# df /dev/sdb
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/sdb             3907029168 2659716272 1242565920  69% /home
+# df /dev/sdc
+Filesystem           1K-blocks      Used Available Use% Mounted on
+udev                   1895384       268   1895116   1% /dev
+(this doesn't make any sense)
+# btrfs fi show
+failed to read /dev/sdg
+failed to read /dev/sdf
+failed to read /dev/sde
+failed to read /dev/sdd
+failed to read /dev/sr0
+Label: none  uuid: 85537aa8-30dc-4f87-ac55-6c8344304184
+        Total devices 2 FS bytes used 2.47TB
+        devid    1 size 1.82TB used 1.31TB path /dev/sdb
+        devid    2 size 1.82TB used 1.31TB path /dev/sdc
+Btrfs Btrfs v0.19
 
-In your position, you should be using ext4, with no raid, with a solid
-system of backups that you can recover from quickly and easily.  Not
-experimenting with the latest shiny developments:  that's something
-you do if you can afford to spend a few days on a regular basis fixing
-the latest exciting quirk.  And when you run into problems,
-respectfully following the instructions given to you, including taking
-the advice of those who do this for a living, as opposed to issuing
-threats to besmirch a tool that wasn't ever marketed as being ready to
-use for the average joe who doesn't want to spend hours dealing with
-it.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+ 
+> Defrag is not the same as balancing, and neither is quite the same as
+> the balancing of the internal b-trees that make up the filesystem.
+
+I know they're not the same.  But I am asking:
+
+I thought balancing was supposed to be automatic in BTRFS?  
+
+Is defrag not automatic?
+
+No idea what 'balancing of the internal b-trees' is.
+
+
+

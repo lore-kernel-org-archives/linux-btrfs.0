@@ -1,35 +1,52 @@
-From: Konstantinos Skarlatos <k.skarlatos@gmail.com>
-Subject: Re: Having parent transid verify failed
-Date: Thu, 05 May 2011 14:45:08 +0300
-Message-ID: <4DC28DC4.7050308@gmail.com>
-References: <4DC287D8.3040705@gmail.com> <1304595695-sup-9289@think>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
-	format=flowed
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+From: David Sterba <dsterba@suse.cz>
+Subject: [PATCH 0/3] Cleanups II, unused code removal
+Date: Thu,  5 May 2011 15:39:57 +0200
+Message-ID: <cover.1304595715.git.dsterba@suse.cz>
+Cc: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1304595695-sup-9289@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
+
+another round of cleanups, removing unused code. No functional chanes.
+The diffstat is quite big, please have a look if you feel that some code
+is unused by accident.
 
 
-On 5/5/2011 2:42 =CE=BC=CE=BC, Chris Mason wrote:
-> Excerpts from Konstantinos Skarlatos's message of 2011-05-05 07:19:52=
- -0400:
->> Hello, I have a 5.5TB Btrfs filesystem on top of a md-raid 5 device.=
- Now
->> if i run some file operations like find, i get these messages.
->> kernel is 2.6.38.5-1 on arch linux
->
-> Are all of the messages for this one block?
->
-> parent transid verify failed on 3062073683968 wanted 5181 found 5188
-yes, only this block
->
-> -chris
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+thanks,
+david
+
+David Sterba (3):
+  btrfs: remove unused function prototypes
+  btrfs: remove all unused functions
+  btrfs: remove old unused commented out code
+
+ fs/btrfs/ctree.h            |   90 ---
+ fs/btrfs/delayed-ref.c      |  114 ---
+ fs/btrfs/delayed-ref.h      |    6 -
+ fs/btrfs/disk-io.c          |   56 --
+ fs/btrfs/disk-io.h          |   18 -
+ fs/btrfs/extent-tree.c      | 1661 +------------------------------------------
+ fs/btrfs/extent_io.c        |  227 ------
+ fs/btrfs/extent_io.h        |   30 -
+ fs/btrfs/free-space-cache.c |   15 -
+ fs/btrfs/free-space-cache.h |    1 -
+ fs/btrfs/inode.c            |  224 ------
+ fs/btrfs/locking.c          |   25 -
+ fs/btrfs/locking.h          |    2 -
+ fs/btrfs/ref-cache.c        |  164 -----
+ fs/btrfs/ref-cache.h        |   24 -
+ fs/btrfs/relocation.c       |    2 +-
+ fs/btrfs/root-tree.c        |   47 --
+ fs/btrfs/sysfs.c            |   65 --
+ fs/btrfs/transaction.c      |  134 ----
+ fs/btrfs/transaction.h      |    3 -
+ fs/btrfs/tree-log.h         |    1 -
+ fs/btrfs/volumes.c          |   19 -
+ fs/btrfs/volumes.h          |    5 -
+ 23 files changed, 2 insertions(+), 2931 deletions(-)
+
+-- 
+1.7.5.1.169.g505a1
+

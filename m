@@ -1,39 +1,37 @@
-From: Marco Stornelli <marco.stornelli@gmail.com>
-Subject: Re: [PATCH 1/2 v2] fs: add SEEK_HOLE and SEEK_DATA flags
-Date: Thu, 05 May 2011 20:58:58 +0200
-Message-ID: <4DC2F372.50601@gmail.com>
-References: <1304531920-2890-1-git-send-email-josef@redhat.com> <4DC2F24A.4050304@gmail.com> <4DC2F400.4060903@redhat.com>
+From: cwillu <cwillu@cwillu.com>
+Subject: Re: Cannot Deinstall a Debian Package
+Date: Thu, 5 May 2011 13:09:00 -0600
+Message-ID: <BANLkTikf4SUHHp52+GTYrSyE90yEDGwXDw@mail.gmail.com>
+References: <201105031227.43619.CACook@quantum-sci.com>
+	<20110504095153.GA6914@attic.humilis.net>
+	<201105050749.09690.CACook@quantum-sci.com>
+	<201105051109.35152.CACook@quantum-sci.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-15; format=flowed
-Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4DC2F400.4060903@redhat.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: CACook@quantum-sci.com
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201105051109.35152.CACook@quantum-sci.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Il 05/05/2011 21:01, Josef Bacik ha scritto:
-> On 05/05/2011 02:54 PM, Marco Stornelli wrote:
->> Il 04/05/2011 19:58, Josef Bacik ha scritto:
->>> + if (offset>= i_size_read(inode)) {
->>> + mutex_unlock(&inode->i_mutex);
->>> + return -ENXIO;
->>> + }
->>> + offset = i_size_read(inode);
->>> + break;
->>
->> Here maybe it's possible to use offset bigger than i_size, because
->> i_size_read is "atomic" but something can happen between two calls,
->> isn't it?
->>
+On Thu, May 5, 2011 at 12:09 PM,  <CACook@quantum-sci.com> wrote:
 >
-> We're holding the i_mutex so we are safe, i_size_read is used just for
-> consistency sake. Thanks,
+> Anyone have a suggestion?
 >
-> Josef
+> Also on another machine set up similarly, I now cannot mkdir. =C2=A0I=
+t says 'no space left on device'. =C2=A0df says:
+> # df /dev/sdb
+> Filesystem =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 1K-blocks =C2=A0 =C2=A0=
+ =C2=A0Used Available Use% Mounted on
+> /dev/sdb =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 3907029168 2658010=
+524 1246486516 =C2=A069% /home
 >
+> sdb and sdc are one btrfs 'raid' volume. =C2=A0What could be wrong?
 
-Oh, I'm sorry, I misread the patch, ok. Maybe we can use i_size at this 
-point without i_size_read.
-
-Marco
+Which kernel version (uname -a), and what's the output of "btrfs fi df
+/home" and "sudo btrfs fi show /dev/sdb"?
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,32 +1,53 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: How to know whether disks "handle flush requests correctly"
-Date: Fri, 06 May 2011 09:10:23 -0400
-Message-ID: <4DC3F33F.80309@redhat.com>
-References: <N1-HLiSwHA1HL@Safe-mail.net>
+From: Sander <sander@humilis.net>
+Subject: Re: Cannot Deinstall a Debian Package
+Date: Fri, 6 May 2011 15:21:58 +0200
+Message-ID: <20110506132158.GA20200@attic.humilis.net>
+References: <201105031227.43619.CACook@quantum-sci.com>
+ <201105060509.31652.CACook@quantum-sci.com>
+ <20110506122028.GA3735@attic.humilis.net>
+ <201105060558.00314.CACook@quantum-sci.com>
+Reply-To: sander@humilis.net
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Paul Schroeder <prq@Safe-mail.net>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: CACook@quantum-sci.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <N1-HLiSwHA1HL@Safe-mail.net>
+In-Reply-To: <201105060558.00314.CACook@quantum-sci.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/06/2011 05:13 AM, Paul Schroeder wrote:
-> The btrfs wiki Main Page warns that "it is currently possible to corrupt
-> a filesystem irrecoverably if your machine crashes or loses power on disks
-> that don't handle flush requests correctly."
->
-> How do you know if this applies to your drives? Is there a way to test it,
-> or a model list, or are newer SATA drives (magnetic, not SSDs) always ok?
-> Does it depend on the controller? (I have a SiI 3114, latest BIOS.)
->
-> I would also be using btrfs on top of dm-crypt (with the latest release
-> kernel). Some kernel versions ago, the message that write barriers aren't
-> supported disappeared; can I assume the device mapper / dm-crypt is not a
-> problem with regards to flushing?
->
+CACook@quantum-sci.com wrote (ao):
+> On Friday 6 May, 2011 05:20:28 Sander wrote:
+> > Can you post the error?
 
-Yeah if you don't see those messages you can be fairly certain you are 
-ok.  Thanks,
+> Do you want to continue [Y/n]? 
+> Setting up linux-image-2.6.38-2-amd64 (2.6.38-3) ...
 
-Josef
+> /usr/sbin/grub-probe: error: cannot stat `/dev/root'.
+> run-parts: /etc/kernel/postinst.d/zz-update-grub exited with return code 1
+> Failed to process /etc/kernel/postinst.d at /var/lib/dpkg/info/linux-image-2.6.38-2-amd64.postinst line 801, <STDIN> line 7.
+> dpkg: error processing linux-image-2.6.38-2-amd64 (--configure):
+>  subprocess installed post-installation script returned error exit status 9
+> configured to not write apport reports
+>                                       Setting up grub-pc (1.99~rc1-13) ...
+> grub-probe: error: cannot stat `/dev/root'.
+> Installation finished. No error reported.
+> /usr/sbin/grub-probe: error: cannot stat `/dev/root'.
+
+Can you try:
+
+dpkg -i /var/cache/apt/archives/grub-pc_1.99~rc1-13_amd64.deb
+apt-get dist-upgrade
+
+If that (second step) doesn't work:
+
+echo "true" > /var/lib/dpkg/info/grub-installer.postinst
+apt-get dist-upgrade
+
+grub-install /dev/sda
+update-grub
+
+	Sander
+
+-- 
+Humilis IT Services and Solutions
+http://www.humilis.net

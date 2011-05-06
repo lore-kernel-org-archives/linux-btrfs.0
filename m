@@ -1,42 +1,67 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: How to know whether disks "handle flush requests correctly"
-Date: Fri, 06 May 2011 09:48:32 -0400
-Message-ID: <1304688928-sup-8382@think>
-References: <N1-HLiSwHA1HL@Safe-mail.net> <4DC3F33F.80309@redhat.com>
-Content-Type: text/plain; charset=UTF-8
-Cc: Paul Schroeder <prq@safe-mail.net>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Josef Bacik <josef@redhat.com>
+From: CACook@quantum-sci.com
+Subject: Re: Cannot Deinstall a Debian Package
+Date: Fri, 6 May 2011 06:56:10 -0700
+Message-ID: <201105060656.12544.CACook@quantum-sci.com>
+References: <201105031227.43619.CACook@quantum-sci.com> <201105060558.00314.CACook@quantum-sci.com> <20110506132158.GA20200@attic.humilis.net>
+Mime-Version: 1.0
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+To: "linux-btrfs" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <4DC3F33F.80309@redhat.com>
+In-Reply-To: <20110506132158.GA20200@attic.humilis.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Josef Bacik's message of 2011-05-06 09:10:23 -0400:
-> On 05/06/2011 05:13 AM, Paul Schroeder wrote:
-> > The btrfs wiki Main Page warns that "it is currently possible to corrupt
-> > a filesystem irrecoverably if your machine crashes or loses power on disks
-> > that don't handle flush requests correctly."
-> >
-> > How do you know if this applies to your drives? Is there a way to test it,
-> > or a model list, or are newer SATA drives (magnetic, not SSDs) always ok?
-> > Does it depend on the controller? (I have a SiI 3114, latest BIOS.)
-> >
-> > I would also be using btrfs on top of dm-crypt (with the latest release
-> > kernel). Some kernel versions ago, the message that write barriers aren't
-> > supported disappeared; can I assume the device mapper / dm-crypt is not a
-> > problem with regards to flushing?
-> >
+
+Same old problem.
+
+On Friday 6 May, 2011 06:21:58 Sander wrote:
+> Can you try:
 > 
-> Yeah if you don't see those messages you can be fairly certain you are 
-> ok.  Thanks,
+> dpkg -i /var/cache/apt/archives/grub-pc_1.99~rc1-13_amd64.deb
+> apt-get dist-upgrade
 
-The easiest way to tell for sure is to do two tests:
+# dpkg -i /var/cache/apt/archives/grub-pc_1.99~rc1-13_amd64.deb
+(Reading database ... 135273 files and directories currently installed.)
+Preparing to replace grub-pc 1.99~rc1-13 (using .../grub-pc_1.99~rc1-13_amd64.deb) ...
+Unpacking replacement grub-pc ...
+Setting up grub-pc (1.99~rc1-13) ...
+grub-probe: error: cannot stat `/dev/root'.
+Installation finished. No error reported.
+/usr/sbin/grub-probe: error: cannot stat `/dev/root'.
+dpkg: error processing grub-pc (--install):
+ subprocess installed post-installation script returned error exit status 1
+Processing triggers for man-db ...
+Errors were encountered while processing:
+ grub-pc
+#
 
-dd if=/dev/zero of=/mnt/foo bs=4K count=10000
-dd if=/dev/zero of=/mnt/foo bs=4K count=10000 oflag=sync
+> If that (second step) doesn't work:
+> 
+> echo "true" > /var/lib/dpkg/info/grub-installer.postinst
+> apt-get dist-upgrade
 
-Run this with the filesystem mounted normally and again with the
-filesystem mounted -o nobarrier.  -o nobarrier should be dramatically
-and hugely faster, almost like we're not writing to the disk at all.
+# echo "true" > /var/lib/dpkg/info/grub-installer.postinst
+# dpkg -i /var/cache/apt/archives/grub-pc_1.99~rc1-13_amd64.deb
+(Reading database ... 135273 files and directories currently installed.)
+Preparing to replace grub-pc 1.99~rc1-13 (using .../grub-pc_1.99~rc1-13_amd64.deb) ...
+Unpacking replacement grub-pc ...
+Setting up grub-pc (1.99~rc1-13) ...
+grub-probe: error: cannot stat `/dev/root'.
+Installation finished. No error reported.
+/usr/sbin/grub-probe: error: cannot stat `/dev/root'.
+dpkg: error processing grub-pc (--install):
+ subprocess installed post-installation script returned error exit status 1
+Processing triggers for man-db ...
+Errors were encountered while processing:
+ grub-pc
 
--chris
+# which update-grub
+/usr/sbin/update-grub
+# /usr/sbin/update-grub -v
+grub-mkconfig (GRUB) 1.99~rc1-13
+
+Apparently 1.99~rc1-13 is installed and synaptic confirms this, despite the script failure, although every .mod file in /usr/lib/grub is in the i386-pc directory.  I'm running 64bit Debian Testing with kernel 2.6.37-2.
+
+
+
+

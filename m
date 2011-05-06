@@ -1,87 +1,67 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [RFC PATCH] Btrfs: do not flush csum items of unchanged file
- data during treelog
-Date: Fri, 06 May 2011 08:51:40 -0400
-Message-ID: <4DC3EEDC.30908@redhat.com>
-References: <4DAD7957.6070505@cn.fujitsu.com> <4DAE3787.8050602@cn.fujitsu.com> <4DAE9C00.2020705@cn.fujitsu.com> <4DC35E99.5090600@cn.fujitsu.com>
+From: CACook@quantum-sci.com
+Subject: Re: Cannot Deinstall a Debian Package
+Date: Fri, 6 May 2011 05:57:59 -0700
+Message-ID: <201105060558.00314.CACook@quantum-sci.com>
+References: <201105031227.43619.CACook@quantum-sci.com> <201105060509.31652.CACook@quantum-sci.com> <20110506122028.GA3735@attic.humilis.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>
-To: liubo <liubo2009@cn.fujitsu.com>
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+To: "linux-btrfs" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DC35E99.5090600@cn.fujitsu.com>
+In-Reply-To: <20110506122028.GA3735@attic.humilis.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/05/2011 10:36 PM, liubo wrote:
->
-> The current code relogs the entire inode every time during fsync log,
-> and it is much better suited to small files rather than large ones.
->
-> During my performance test, the fsync performace of large files sucks,
-> and we can ascribe this to the tremendous amount of csum infos of the
-> large ones, cause we have to flush all of these csum infos into log trees
-> even when there are only _one_ change in the whole file data.  Apparently,
-> to optimize fsync, we need to create a filter to skip the unnecessary csum
-> ones, that is, the corresponding file data remains unchanged before this fsync.
->
-> Here I have some test results to show, I use sysbench to do "random write + fsync".
->
-> ===
-> sysbench --test=fileio --num-threads=1 --file-num=2 --file-block-size=4K --file-total-size=8G --file-test-mode=rndwr --file-io-mode=sync --file-extra-flags=  [prepare, run]
-> ===
->
-> Sysbench args:
->    - Number of threads: 1
->    - Extra file open flags: 0
->    - 2 files, 4Gb each
->    - Block size 4Kb
->    - Number of random requests for random IO: 10000
->    - Read/Write ratio for combined random IO test: 1.50
->    - Periodic FSYNC enabled, calling fsync() each 100 requests.
->    - Calling fsync() at the end of test, Enabled.
->    - Using synchronous I/O mode
->    - Doing random write test
->
-> Sysbench results:
-> ===
->     Operations performed:  0 Read, 10000 Write, 200 Other = 10200 Total
->     Read 0b  Written 39.062Mb  Total transferred 39.062Mb
-> ===
-> a) without patch:  (*SPEED* : 451.01Kb/sec)
->     112.75 Requests/sec executed
->
-> b) with patch:     (*SPEED* : 4.7533Mb/sec)
->     1216.84 Requests/sec executed
->
->
-> PS: I've made a _sub transid_ stuff patch, but it does not perform as effectively as this patch,
-> and I'm wanderring where the problem is and trying to improve it more.
->
-> Signed-off-by: Liu Bo<liubo2009@cn.fujitsu.com>
-> ---
->   fs/btrfs/tree-log.c |    3 +++
->   1 files changed, 3 insertions(+), 0 deletions(-)
->
-> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-> index c50271a..b934a36 100644
-> --- a/fs/btrfs/tree-log.c
-> +++ b/fs/btrfs/tree-log.c
-> @@ -2662,6 +2662,9 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
->   			extent = btrfs_item_ptr(src, start_slot + i,
->   						struct btrfs_file_extent_item);
->
-> +			if (btrfs_file_extent_generation(src, extent)<  trans->transid)
-> +				continue;
-> +
->   			found_type = btrfs_file_extent_type(src, extent);
->   			if (found_type == BTRFS_FILE_EXTENT_REG ||
->   			    found_type == BTRFS_FILE_EXTENT_PREALLOC) {
+On Friday 6 May, 2011 05:20:28 Sander wrote:
+> Can you post the error?
 
-Seems reasonable to me,
-
-Reviewed-by: Josef Bacik <josef@redhat.com>
-
-Thanks,
-
-Josef
+# apt-get dist-upgrade
+Reading package lists... Done
+Building dependency tree       
+Reading state information... Done
+Calculating upgrade... Done
+0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+3 not fully installed or removed.
+After this operation, 0 B of additional disk space will be used.
+Do you want to continue [Y/n]? 
+Setting up linux-image-2.6.38-2-amd64 (2.6.38-3) ...
+Running depmod.
+Running update-initramfs.
+update-initramfs: Generating /boot/initrd.img-2.6.38-2-amd64
+initrd.img(/boot/initrd.img-2.6.38-2-amd64
+) points to /boot/initrd.img-2.6.38-2-amd64
+ (/boot/initrd.img-2.6.38-2-amd64) -- doing nothing at /var/lib/dpkg/info/linux-image-2.6.38-2-amd64.postinst line 348, <STDIN> line 7.
+vmlinuz(/boot/vmlinuz-2.6.38-2-amd64
+) points to /boot/vmlinuz-2.6.38-2-amd64
+ (/boot/vmlinuz-2.6.38-2-amd64) -- doing nothing at /var/lib/dpkg/info/linux-image-2.6.38-2-amd64.postinst line 348, <STDIN> line 7.
+Examining /etc/kernel/postinst.d.
+run-parts: executing /etc/kernel/postinst.d/dkms 2.6.38-2-amd64 /boot/vmlinuz-2.6.38-2-amd64
+dkms: running auto installation service for kernel 2.6.38-2-amd64:
+      vboxhost (3.2.12)...failed.
+run-parts: executing /etc/kernel/postinst.d/initramfs-tools 2.6.38-2-amd64 /boot/vmlinuz-2.6.38-2-amd64
+run-parts: executing /etc/kernel/postinst.d/pm-utils 2.6.38-2-amd64 /boot/vmlinuz-2.6.38-2-amd64
+run-parts: executing /etc/kernel/postinst.d/update-notifier 2.6.38-2-amd64 /boot/vmlinuz-2.6.38-2-amd64
+run-parts: executing /etc/kernel/postinst.d/zz-update-grub 2.6.38-2-amd64 /boot/vmlinuz-2.6.38-2-amd64
+/usr/sbin/grub-probe: error: cannot stat `/dev/root'.
+run-parts: /etc/kernel/postinst.d/zz-update-grub exited with return code 1
+Failed to process /etc/kernel/postinst.d at /var/lib/dpkg/info/linux-image-2.6.38-2-amd64.postinst line 801, <STDIN> line 7.
+dpkg: error processing linux-image-2.6.38-2-amd64 (--configure):
+ subprocess installed post-installation script returned error exit status 9
+configured to not write apport reports
+                                      Setting up grub-pc (1.99~rc1-13) ...
+grub-probe: error: cannot stat `/dev/root'.
+Installation finished. No error reported.
+/usr/sbin/grub-probe: error: cannot stat `/dev/root'.
+dpkg: error processing grub-pc (--configure):
+ subprocess installed post-installation script returned error exit status 1
+configured to not write apport reports
+                                      dpkg: dependency problems prevent configuration of linux-image-2.6-amd64:
+ linux-image-2.6-amd64 depends on linux-image-2.6.38-2-amd64; however:
+  Package linux-image-2.6.38-2-amd64 is not configured yet.
+dpkg: error processing linux-image-2.6-amd64 (--configure):
+ dependency problems - leaving unconfigured
+configured to not write apport reports
+                                      Errors were encountered while processing:
+ linux-image-2.6.38-2-amd64
+ grub-pc
+ linux-image-2.6-amd64
+E: Sub-process /usr/bin/dpkg returned an error code (1)

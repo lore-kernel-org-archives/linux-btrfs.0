@@ -1,74 +1,80 @@
 From: liubo <liubo2009@cn.fujitsu.com>
-Subject: Re: [PATCH] btrfs progs: fix extra metadata chunk allocation in --mixed
- case
-Date: Fri, 06 May 2011 09:05:28 +0800
-Message-ID: <4DC34958.8010301@cn.fujitsu.com>
-References: <1304604972-31585-1-git-send-email-sensille@gmx.net>
+Subject: [RFC PATCH] Btrfs: do not flush csum items of unchanged file data
+ during treelog
+Date: Fri, 06 May 2011 10:36:09 +0800
+Message-ID: <4DC35E99.5090600@cn.fujitsu.com>
+References: <4DAD7957.6070505@cn.fujitsu.com> <4DAE3787.8050602@cn.fujitsu.com> <4DAE9C00.2020705@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
-	josef@redhat.com
-To: Arne Jansen <sensille@gmx.net>
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1304604972-31585-1-git-send-email-sensille@gmx.net>
+In-Reply-To: <4DAE9C00.2020705@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/05/2011 10:16 PM, Arne Jansen wrote:
-> When creating a mixed fs with mkfs, an extra metadata chunk got allocated.
-> This is because btrfs_reserve_extent calls do_chunk_alloc for METADATA,
-> which in turn wasn't able to find the proper space_info, as __find_space_info
-> did a hard compare of the flags. It is now sufficient for the space_info to
-> include the proper flag. This reflects the change done to the kernel code
-> to support mixed chunks.
-> Also for a subsequent chunk allocation (which should not be hit in the mkfs
-> case), the chunk is now created with the flags from the space_info instead
-> of the requested flags. A better solution would be to pull the full changeset
-> for the mixed case from the kernel into the user mode (or, even better, share
-> the code)
-> 
-> The additional chunk probably confused block_rsv calculation, which in turn
-> led to severeal ENOSPC Oopses.
-> 
 
-Good catch!
+The current code relogs the entire inode every time during fsync log,
+and it is much better suited to small files rather than large ones.
 
-Reviewed-by: Liu Bo <liubo2009@cn.fujitsu.com>
+During my performance test, the fsync performace of large files sucks,
+and we can ascribe this to the tremendous amount of csum infos of the
+large ones, cause we have to flush all of these csum infos into log trees
+even when there are only _one_ change in the whole file data.  Apparently,
+to optimize fsync, we need to create a filter to skip the unnecessary csum
+ones, that is, the corresponding file data remains unchanged before this fsync.
 
-> Signed-off-by: Arne Jansen <sensille@gmx.net>
-> ---
->  extent-tree.c |    7 ++++---
->  1 files changed, 4 insertions(+), 3 deletions(-)
-> 
-> diff --git a/extent-tree.c b/extent-tree.c
-> index b2f9bb2..c6c77c6 100644
-> --- a/extent-tree.c
-> +++ b/extent-tree.c
-> @@ -1735,7 +1735,7 @@ static struct btrfs_space_info *__find_space_info(struct btrfs_fs_info *info,
->  	struct btrfs_space_info *found;
->  	list_for_each(cur, head) {
->  		found = list_entry(cur, struct btrfs_space_info, list);
-> -		if (found->flags == flags)
-> +		if (found->flags & flags)
->  			return found;
->  	}
->  	return NULL;
-> @@ -1812,7 +1812,8 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
->  	    thresh)
->  		return 0;
->  
-> -	ret = btrfs_alloc_chunk(trans, extent_root, &start, &num_bytes, flags);
-> +	ret = btrfs_alloc_chunk(trans, extent_root, &start, &num_bytes,
-> +	                        space_info->flags);
->  	if (ret == -ENOSPC) {
->  		space_info->full = 1;
->  		return 0;
-> @@ -1820,7 +1821,7 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
->  
->  	BUG_ON(ret);
->  
-> -	ret = btrfs_make_block_group(trans, extent_root, 0, flags,
-> +	ret = btrfs_make_block_group(trans, extent_root, 0, space_info->flags,
->  		     BTRFS_FIRST_CHUNK_TREE_OBJECTID, start, num_bytes);
->  	BUG_ON(ret);
->  	return 0;
+Here I have some test results to show, I use sysbench to do "random write + fsync".
 
+===
+sysbench --test=fileio --num-threads=1 --file-num=2 --file-block-size=4K --file-total-size=8G --file-test-mode=rndwr --file-io-mode=sync --file-extra-flags=  [prepare, run]
+===
+
+Sysbench args:
+  - Number of threads: 1
+  - Extra file open flags: 0
+  - 2 files, 4Gb each
+  - Block size 4Kb
+  - Number of random requests for random IO: 10000
+  - Read/Write ratio for combined random IO test: 1.50
+  - Periodic FSYNC enabled, calling fsync() each 100 requests.
+  - Calling fsync() at the end of test, Enabled.
+  - Using synchronous I/O mode
+  - Doing random write test
+
+Sysbench results:
+===
+   Operations performed:  0 Read, 10000 Write, 200 Other = 10200 Total
+   Read 0b  Written 39.062Mb  Total transferred 39.062Mb
+===
+a) without patch:  (*SPEED* : 451.01Kb/sec)
+   112.75 Requests/sec executed
+
+b) with patch:     (*SPEED* : 4.7533Mb/sec)
+   1216.84 Requests/sec executed
+
+
+PS: I've made a _sub transid_ stuff patch, but it does not perform as effectively as this patch,
+and I'm wanderring where the problem is and trying to improve it more.
+
+Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+---
+ fs/btrfs/tree-log.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index c50271a..b934a36 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2662,6 +2662,9 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
+ 			extent = btrfs_item_ptr(src, start_slot + i,
+ 						struct btrfs_file_extent_item);
+ 
++			if (btrfs_file_extent_generation(src, extent) < trans->transid)
++				continue;
++
+ 			found_type = btrfs_file_extent_type(src, extent);
+ 			if (found_type == BTRFS_FILE_EXTENT_REG ||
+ 			    found_type == BTRFS_FILE_EXTENT_PREALLOC) {
+-- 
+1.6.5.2

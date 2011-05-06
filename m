@@ -1,24 +1,30 @@
-From: "Paul Schroeder" <prq@Safe-mail.net>
-Subject: How to know whether disks "handle flush requests correctly"
-Date: Fri, 6 May 2011 05:13:11 -0400
-Message-ID: <N1-HLiSwHA1HL@Safe-mail.net>
+From: CACook@quantum-sci.com
+Subject: Re: Cannot Deinstall a Debian Package
+Date: Fri, 6 May 2011 05:09:31 -0700
+Message-ID: <201105060509.31652.CACook@quantum-sci.com>
+References: <201105031227.43619.CACook@quantum-sci.com> <201105050749.09690.CACook@quantum-sci.com> <20110506063333.GA27068@attic.humilis.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+To: "linux-btrfs" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110506063333.GA27068@attic.humilis.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The btrfs wiki Main Page warns that "it is currently possible to corrupt
-a filesystem irrecoverably if your machine crashes or loses power on disks
-that don't handle flush requests correctly."
+On Thursday 5 May, 2011 23:33:33 Sander wrote:
+> Can you do:
+> 
+> echo "true" > /var/lib/dpkg/info/grub-installer.postinst
+> 
+> and try again?
 
-How do you know if this applies to your drives? Is there a way to test it,
-or a model list, or are newer SATA drives (magnetic, not SSDs) always ok?
-Does it depend on the controller? (I have a SiI 3114, latest BIOS.)
+At some point somehow grup-pc apparently got installed, even with the script failure.  So I tried my dist-upgrade again, and seems to have completed almost 400 packages, but three still fail:
+Errors were encountered while processing:
+ linux-image-2.6.38-2-amd64
+ grub-pc
+ linux-image-2.6-amd64
+E: Sub-process /usr/bin/dpkg returned an error code (1)
 
-I would also be using btrfs on top of dm-crypt (with the latest release
-kernel). Some kernel versions ago, the message that write barriers aren't
-supported disappeared; can I assume the device mapper / dm-crypt is not a
-problem with regards to flushing?
+I can't reboot at this point, as on this machine I started a 'balance' through ssh on another machine, and it's been running for over 12 hours.  It does not respond to ^C and I'm afraid to reboot with it running.
 
-Paul
+

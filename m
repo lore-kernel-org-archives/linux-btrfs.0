@@ -1,47 +1,24 @@
-From: Sander <sander@humilis.net>
-Subject: Re: Cannot Deinstall a Debian Package
-Date: Fri, 6 May 2011 08:49:33 +0200
-Message-ID: <20110506064933.GC27068@attic.humilis.net>
-References: <201105031227.43619.CACook@quantum-sci.com>
- <201105050749.09690.CACook@quantum-sci.com>
- <BANLkTi=_mucea2-nPE54dgkuR3B9mU0o7g@mail.gmail.com>
- <201105051250.03335.CACook@quantum-sci.com>
- <1304625253-sup-3665@think>
-Reply-To: sander@humilis.net
+From: "Paul Schroeder" <prq@Safe-mail.net>
+Subject: How to know whether disks "handle flush requests correctly"
+Date: Fri, 6 May 2011 05:13:11 -0400
+Message-ID: <N1-HLiSwHA1HL@Safe-mail.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: CACook <cacook@quantum-sci.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1304625253-sup-3665@think>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote (ao):
-> I'm happy to patch up bugs in the FS (or point you to newer
-> kernels that have them fixed) but at this point we don't have enough
-> info to say if it is an FS problem or a debian package problem.
-> 
-> Perhaps if you ran it under strace?
-> 
-> Other distros don't have problems with btrfs on /, so somehow this is
-> specific to debian's setup.
+The btrfs wiki Main Page warns that "it is currently possible to corrupt
+a filesystem irrecoverably if your machine crashes or loses power on disks
+that don't handle flush requests correctly."
 
-I believe this is fixed in Debian testing/unstable:
-http://packages.debian.org/changelogs/pool/main/g/grub2/grub2_1.99~rc1-13/changelog
+How do you know if this applies to your drives? Is there a way to test it,
+or a model list, or are newer SATA drives (magnetic, not SSDs) always ok?
+Does it depend on the controller? (I have a SiI 3114, latest BIOS.)
 
-"grub2 (1.99~20110106-1) experimental; urgency=low
+I would also be using btrfs on top of dm-crypt (with the latest release
+kernel). Some kernel versions ago, the message that write barriers aren't
+supported disappeared; can I assume the device mapper / dm-crypt is not a
+problem with regards to flushing?
 
-   * New Bazaar snapshot.
-     - Check that named RAID array devices exist before using them
-       (closes:
-       #606035).
-     - Clear terminfo output on initialisation (closes: #569678).
-     - Fix grub-probe when btrfs is on / without a separate /boot.
-"
-
-	Sander
-
--- 
-Humilis IT Services and Solutions
-http://www.humilis.net
+Paul

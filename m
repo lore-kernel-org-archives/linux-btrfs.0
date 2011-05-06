@@ -1,23 +1,74 @@
-From: Peter Stuge <peter@stuge.se>
-Subject: Re: Having parent transid verify failed
-Date: Fri, 6 May 2011 02:01:40 +0200
-Message-ID: <20110506000140.31809.qmail@stuge.se>
-References: <4DC287D8.3040705@gmail.com> <1304595695-sup-9289@think> <4DC28DC4.7050308@gmail.com> <1304605365-sup-4172@think> <4DC2B3D2.6080307@gmail.com> <1304607926-sup-3304@think> <4DC3084A.7030100@gmail.com> <1304627478-sup-2626@think> <4DC310C0.5080808@gmail.com> <1304639262-sup-37@think>
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: Re: [PATCH] btrfs progs: fix extra metadata chunk allocation in --mixed
+ case
+Date: Fri, 06 May 2011 09:05:28 +0800
+Message-ID: <4DC34958.8010301@cn.fujitsu.com>
+References: <1304604972-31585-1-git-send-email-sensille@gmx.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Konstantinos Skarlatos <k.skarlatos@gmail.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
+	josef@redhat.com
+To: Arne Jansen <sensille@gmx.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1304639262-sup-37@think>
+In-Reply-To: <1304604972-31585-1-git-send-email-sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote:
-> We've had trouble in the past with block dev flushing code kicking
-> in as devices are resized.
+On 05/05/2011 10:16 PM, Arne Jansen wrote:
+> When creating a mixed fs with mkfs, an extra metadata chunk got allocated.
+> This is because btrfs_reserve_extent calls do_chunk_alloc for METADATA,
+> which in turn wasn't able to find the proper space_info, as __find_space_info
+> did a hard compare of the flags. It is now sufficient for the space_info to
+> include the proper flag. This reflects the change done to the kernel code
+> to support mixed chunks.
+> Also for a subsequent chunk allocation (which should not be hit in the mkfs
+> case), the chunk is now created with the flags from the space_info instead
+> of the requested flags. A better solution would be to pull the full changeset
+> for the mixed case from the kernel into the user mode (or, even better, share
+> the code)
+> 
+> The additional chunk probably confused block_rsv calculation, which in turn
+> led to severeal ENOSPC Oopses.
+> 
 
-Might this be the problem with my root node? I wish my problem was
-in only one directory. :)
+Good catch!
 
+Reviewed-by: Liu Bo <liubo2009@cn.fujitsu.com>
 
-//Peter
+> Signed-off-by: Arne Jansen <sensille@gmx.net>
+> ---
+>  extent-tree.c |    7 ++++---
+>  1 files changed, 4 insertions(+), 3 deletions(-)
+> 
+> diff --git a/extent-tree.c b/extent-tree.c
+> index b2f9bb2..c6c77c6 100644
+> --- a/extent-tree.c
+> +++ b/extent-tree.c
+> @@ -1735,7 +1735,7 @@ static struct btrfs_space_info *__find_space_info(struct btrfs_fs_info *info,
+>  	struct btrfs_space_info *found;
+>  	list_for_each(cur, head) {
+>  		found = list_entry(cur, struct btrfs_space_info, list);
+> -		if (found->flags == flags)
+> +		if (found->flags & flags)
+>  			return found;
+>  	}
+>  	return NULL;
+> @@ -1812,7 +1812,8 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
+>  	    thresh)
+>  		return 0;
+>  
+> -	ret = btrfs_alloc_chunk(trans, extent_root, &start, &num_bytes, flags);
+> +	ret = btrfs_alloc_chunk(trans, extent_root, &start, &num_bytes,
+> +	                        space_info->flags);
+>  	if (ret == -ENOSPC) {
+>  		space_info->full = 1;
+>  		return 0;
+> @@ -1820,7 +1821,7 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
+>  
+>  	BUG_ON(ret);
+>  
+> -	ret = btrfs_make_block_group(trans, extent_root, 0, flags,
+> +	ret = btrfs_make_block_group(trans, extent_root, 0, space_info->flags,
+>  		     BTRFS_FIRST_CHUNK_TREE_OBJECTID, start, num_bytes);
+>  	BUG_ON(ret);
+>  	return 0;
+

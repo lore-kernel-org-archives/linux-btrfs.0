@@ -1,30 +1,26 @@
-From: C Anthony Risinger <anthony@extof.me>
+From: "Helmut Hullen" <Hullen@t-online.de>
 Subject: Re: Cannot Deinstall a Debian Package
-Date: Sat, 7 May 2011 01:21:19 -0500
-Message-ID: <BANLkTim--CW8S3gU9otKFCA8ELQCRqmmVw@mail.gmail.com>
-References: <201105031227.43619.CACook@quantum-sci.com>
-	<BANLkTinr-EbdTkhkOpEGLc2PPtQ1+NDDKw@mail.gmail.com>
-	<BANLkTinYHoy1PR-VCdgjo_emHcCjwPXNfQ@mail.gmail.com>
-	<201105062008.26159.CACook@quantum-sci.com>
+Date: 07 May 2011 09:03:00 +0200
+Message-ID: <BlQFV8CD1uB@helmut.hullen.de>
+References: <BANLkTim--CW8S3gU9otKFCA8ELQCRqmmVw@mail.gmail.com>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: CACook@quantum-sci.com
+Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201105062008.26159.CACook@quantum-sci.com>
+In-Reply-To: <BANLkTim--CW8S3gU9otKFCA8ELQCRqmmVw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 6, 2011 at 10:08 PM,  <CACook@quantum-sci.com> wrote:
-> On Friday 6 May, 2011 19:05:56 you wrote:
->> i see now that you're running a .32 kernel ... a bit after the fact,
->
-> No, not .32.
->
-> 2.6.37-2.
+Hallo, C,
 
-ahh yes indeed ... had to go ~20 msgs in to uncover that little gem ;-)
+Du meintest am 07.05.11:
 
-my apologies -- i hope your able to recover and/or find a solution
-that works for you -- best of luck.
+>> 2.6.37-2.
 
-C Anthony
+> ahh yes indeed ... had to go ~20 msgs in to uncover that little gem
+> ;-)
+
+With that kernel I had still problems. 2.6.38.x seems to work well.
+
+Viele Gruesse!
+Helmut

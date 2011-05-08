@@ -1,42 +1,25 @@
-From: slyich@gmail.com
-Subject: [PATCH 4/4] btrfs: fix typo 'testeing' -> 'testing'
-Date: Sun,  8 May 2011 00:29:44 +0300
-Message-ID: <1304803784-23756-3-git-send-email-slyfox@gentoo.org>
-References: <1304803784-23756-1-git-send-email-slyfox@gentoo.org>
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Sergei Trofimovich <slyfox@gentoo.org>
-To: linux-btrfs@vger.kernel.org
+From: "Fajar A. Nugraha" <list@fajar.net>
+Subject: Compression: per filesystem, or per subvolume?
+Date: Sun, 8 May 2011 20:35:37 +0700
+Message-ID: <BANLkTimwMnmS4jw=uwimm8b18662jO-Myw@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1304803784-23756-1-git-send-email-slyfox@gentoo.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
----
- fs/btrfs/inode.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+Currently using Ubuntu Natty, kernel 2.6.38-9-generic, I have these
+mount points using btrs subvolumes
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 7cd8ab0..72650ce 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1310,7 +1310,7 @@ static int btrfs_set_bit_hook(struct inode *inode,
- 
- 	/*
- 	 * set_bit and clear bit hooks normally require _irqsave/restore
--	 * but in this case, we are only testeing for the DELALLOC
-+	 * but in this case, we are only testing for the DELALLOC
- 	 * bit, which is only set or cleared with irqs on
- 	 */
- 	if (!(state->state & EXTENT_DELALLOC) && (*bits & EXTENT_DELALLOC)) {
-@@ -1344,7 +1344,7 @@ static int btrfs_clear_bit_hook(struct inode *inode,
- {
- 	/*
- 	 * set_bit and clear bit hooks normally require _irqsave/restore
--	 * but in this case, we are only testeing for the DELALLOC
-+	 * but in this case, we are only testing for the DELALLOC
- 	 * bit, which is only set or cleared with irqs on
- 	 */
- 	if ((state->state & EXTENT_DELALLOC) && (*bits & EXTENT_DELALLOC)) {
+$ mount -t btrfs
+/dev/sda2 on / type btrfs (rw,noatime,subvolid=256,compress-force=zlib)
+/dev/sda2 on /home type btrfs (rw,noatime,subvolid=258,compress=lzo)
+
+Yet dmesg seems to show only zlib compression enabled
+$ dmesg | grep btrfs
+[   11.097908] btrfs: force zlib compression
+
+Is this by design, or a bug?
+
 -- 
-1.7.3.4
-
+Fajar

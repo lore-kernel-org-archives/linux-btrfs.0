@@ -1,86 +1,98 @@
-From: =?UTF-8?Q?Claes_Gyllensw=C3=A4rd?= <letharion@gmail.com>
-Subject: Re: Btrfs raid1 "full sized"?
-Date: Sun, 8 May 2011 21:53:26 +0200
-Message-ID: <BANLkTik5=VurVfygAFrzD-5eRWw7jQfzdg@mail.gmail.com>
-References: <BANLkTikthjOMgrF6pCGMGNABXitKxdNzmA@mail.gmail.com> <BANLkTinBBBsGGOmLS+B72qN_V2ZtEY7Qig@mail.gmail.com>
+From: "Gao, Yunpeng" <yunpeng.gao@intel.com>
+Subject: RE: Is it possible for the ext4/btrfs file system to pass some
+ context related info to low level block driver?
+Date: Mon, 9 May 2011 13:50:46 +0800
+Message-ID: <CE761E84DADF2947A4AF22FB8D97A47358F60CB1@shsmsx501.ccr.corp.intel.com>
+References: <CE761E84DADF2947A4AF22FB8D97A47358E28022@shsmsx501.ccr.corp.intel.com>
+ <yq1mxj32932.fsf@sermon.lab.mkp.net>
+ <CE761E84DADF2947A4AF22FB8D97A47358EE526A@shsmsx501.ccr.corp.intel.com>
+ <60C31100-5694-4CA9-A778-91CB15915052@dilger.ca>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: cwillu <cwillu@cwillu.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTinBBBsGGOmLS+B72qN_V2ZtEY7Qig@mail.gmail.com>
+Content-Type: text/plain; charset="us-ascii"
+Cc: "Martin K. Petersen" <martin.petersen@oracle.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
+	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+	"linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>
+To: Andreas Dilger <adilger@dilger.ca>
+Return-path: <linux-mmc-owner@vger.kernel.org>
+In-Reply-To: <60C31100-5694-4CA9-A778-91CB15915052@dilger.ca>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011/5/1 cwillu <cwillu@cwillu.com>:
-> On Sun, May 1, 2011 at 12:33 PM, Claes Gyllensw=C3=A4rd <letharion@gm=
-ail.com> wrote:
->> I've tried setting up a raid1 on two drives like this:
->>
->> mkfs.btrfs -m raid1 -d raid1 /dev/sdb /dev/sdc
->>
->> Then I copy my old install onto the new drives, and check the drives=
-' status:
->>
->> # mount | grep "on / "
->> /dev/sdb on / type btrfs (rw,noatime)
->> # btrfs fi df /
->> Data, RAID1: total=3D259.00GB, used=3D256.64GB
->> Data: total=3D8.00MB, used=3D0.00
->> System, RAID1: total=3D8.00MB, used=3D44.00KB
->> System: total=3D4.00MB, used=3D0.00
->> Metadata, RAID1: total=3D4.50GB, used=3D1.27GB
->> Metadata: total=3D8.00MB, used=3D0.00
->> # btrfs fi show
->> Label: none =C2=A0uuid: c6c89292-ea29-484c-ad29-9003a5fedf90
->> =C2=A0 =C2=A0 =C2=A0 =C2=A0Total devices 2 FS bytes used 257.93GB
->> =C2=A0 =C2=A0 =C2=A0 =C2=A0devid =C2=A0 =C2=A01 size 931.51GB used 2=
-63.53GB path /dev/sdb
->> =C2=A0 =C2=A0 =C2=A0 =C2=A0devid =C2=A0 =C2=A02 size 931.51GB used 2=
-63.51GB path /dev/sdc
->>
->> Label: none =C2=A0uuid: 6f2f8317-3012-4e79-a82d-ab2e8eaa6cd6
->> =C2=A0 =C2=A0 =C2=A0 =C2=A0Total devices 1 FS bytes used 354.99GB
->> =C2=A0 =C2=A0 =C2=A0 =C2=A0devid =C2=A0 =C2=A01 size 465.65GB used 4=
-65.65GB path /dev/sda2
->>
->> My interpretation of the above data is that /dev/sdb and /dev/sdc ar=
-e
->> exact mirrors of each other, and contain my / root partition.
->>
->> This would make complete sense if it wasn't for the fact that I've
->> copied all the data from /dev/sda2 onto /dev/sdb. From the informati=
-on
->> above, it looks like the data has been split like in raid-0, instead
->> of the what I expect, mirrored like in raid-1.
->>
->> I tried reading the FAQ about "Why are there so many ways to check t=
-he
->> amount of free space?" hoping this would make it more clear, but it
->> doesn't. Can anyone tell me what's going on?
->>
->> I found one thread with a similar question that went unanswered, and
->> it was also back in 2008 so the answer might differ quite a bit
->> anyway.
+>-----Original Message-----
+>From: Andreas Dilger [mailto:adilger@dilger.ca]
+>Sent: Wednesday, May 04, 2011 10:52 PM
+>To: Gao, Yunpeng
+>Cc: Martin K. Petersen; linux-btrfs@vger.kernel.org;
+>linux-ext4@vger.kernel.org; linux-fsdevel@vger.kernel.org;
+>linux-mmc@vger.kernel.org
+>Subject: Re: Is it possible for the ext4/btrfs file system to pass some context
+>related info to low level block driver?
 >
-> How did you copy it exactly? =C2=A0I see 100gb missing, which makes m=
-e
-> wonder if you maybe had subvolumes on sdb, and used the -x option to
-> rsync or similar: =C2=A0subvolumes count as different mounts for the
-> purposes of --one-file-system'like options.
+>On 2011-05-04, at 5:45 AM, "Gao, Yunpeng" <yunpeng.gao@intel.com>
+>wrote:
+>>> Yes, I have been working on some changes that allow us to tag bios and
+>>> pass the information out to storage. These patches have been on the back
+>>> burner for a while due to other commitments. But I'll dig them out and
+>>> post them later. We just discussed them a couple of weeks ago at the
+>>> Linux Storage Workshop.
+>>
+>> That's great! Thanks for the update and look forward to your patches.
+>>
+>>> In the meantime: Can you point me to the relevant eMMC stuff so I can
+>>> see how many tiers or classes we have to work with there?
+>>>
+>> I'm investigating on add some eMMC 4.5 features support in current Linux
+>mmc driver (drivers/mmc).
+>> The Linux mmc driver register the eMMC device as a normal Linux block
+>device. So, it can get all the Linux block layer bio flags.
+>>
+>> To below eMMC 4.5 new features:
+>>
+>> Data Tag:
+>> 'The mechanism permits the device to receive from the host information
+>about specific data types (for instance file system metadata, time-stamps,
+>configuration parameters, etc.). The information is conveyed before a write
+>multiple blocks operation at well defined addresses. By receiving this
+>information the device can improve the access rate during the following read
+>and update operations and offer a more reliable and robust storage.'
+>>
+>> I guess the exist block layer flag REQ_META can be used to notify the low
+>level block driver/device to execute the Data Tag feature. But don't know why
+>currently most of Linux file systems don't use the REQ_META flag at all (seems
+>only gfs2 uses it now).
 >
-> Can you provide the df -h output for both filesystems, as well as the
-> btrfs fi df for /dev/sda2?
-> The total reported by du -sh for each would be useful as well as a sa=
-nity check.
->
+>I was aware of REQ_META, but I didn't know there was any benefit to using it.
+>I think it would be easy to set REQ_META on all ext4 metadata if there was a
+>reason to do so.
 
-My apologies, it appears that I've made a mistake and mixed up my numbe=
-rs.
-Your remark that I was missing 100gb made me re reformat the raid and
-copy over my data again.
-This time everything looks as expected. Thank you for your time.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+To NAND-flash based storage device, such as eMMC card, it's possible that the REQ_META tag can be used to notify the low level eMMC card - 'Hi, the following data is important meta data, it should be stored into some more reliable area of the NAND flash media'. For example, stored the meta data into SLC NAND partition/area inside of the eMMC card. Of course, it depends on the card vendor's implementation.
+
+>> Context Management:
+>> 'To better differentiate between large sequential operations and small
+>random operations, and to improve multitasking support, contexts can be
+>associated with groups of read or write commands ... A context can be seen
+>as an active session, configured for a specific read/write pattern (e.g.
+>sequential in some granularity). Multiple read or write commands are
+>associated with this context to create some logical association between them,
+>to allow device to optimize performance.'
+>>
+>> To my understanding, to support this feature, it needs file system (or
+>application?) to notify the low level driver that the following data access will
+>be large sequential read/write operations.
+>> And I'm not sure is it possible for file system to pass this kind of information
+>to low level driver? Any idea?
+>
+>A simple way to do this would be to use the inode number as the context, so
+>writes to the same inode are grouped together. Another possibility is the PID,
+>though that is less clearly correct (e.g. if tar is extracting a buch of files, are
+>they all related or not).
+
+Thanks a lot for the suggestions. I'm not sure whether they're feasible, but will look into it and do more investigations.
+
+Thanks.
+
+Regards,
+Yunpeng
+
+

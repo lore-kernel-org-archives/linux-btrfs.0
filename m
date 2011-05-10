@@ -1,7 +1,7 @@
 From: Sergei Trofimovich <slyfox@gentoo.org>
-Subject: [PATCH v2 1/3] btrfs: don't spin in shrink_delalloc if there is nothing to free
-Date: Tue, 10 May 2011 23:01:28 +0300
-Message-ID: <1305057690-15366-2-git-send-email-slyfox@gentoo.org>
+Subject: [PATCH v2 3/3] btrfs: fix typo 'testeing' -> 'testing'
+Date: Tue, 10 May 2011 23:01:30 +0300
+Message-ID: <1305057690-15366-4-git-send-email-slyfox@gentoo.org>
 References: <1305057690-15366-1-git-send-email-slyfox@gentoo.org>
 Cc: Chris Mason <chris.mason@oracle.com>,
 	Sergei Trofimovich <slyfox@gentoo.org>
@@ -10,44 +10,33 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1305057690-15366-1-git-send-email-slyfox@gentoo.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Observed as a large delay when --mixed filesystem is filled up.
-Test example:
-1. create tiny --mixed FS:
-   $ dd if=/dev/zero of=2G.img seek=$((2048 * 1024 * 1024 - 1)) count=1 bs=1
-   $ mkfs.btrfs --mixed 2G.img
-   $ mount -oloop 2G.img /mnt/ut/
-2. Try to fill it up:
-   $ dd if=/dev/urandom of=10M.file bs=10240 count=1024
-   $ seq 1 256 | while read file_no; do echo $file_no; time cp 10M.file ${file_no}.copy; done
-
-Up to '200.copy' it goes fast, but when disk fills-up each -ENOSPC
-message takes 3 seconds to pop-up _every_ ENOSPC (and in usermode linux
-it's even more: 30-60 seconds!). (Maybe, time depends on kernel's timer resolution).
-
-No IO, no CPU load, just rescheduling. Some debugging revealed busy spinning
-in shrink_delalloc.
-
 Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
-Reviewed-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/extent-tree.c |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
+ fs/btrfs/inode.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 9ee6bd5..9f5fdd3 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3425,6 +3425,10 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
- 	if (reserved == 0)
- 		return 0;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 7cd8ab0..72650ce 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1310,7 +1310,7 @@ static int btrfs_set_bit_hook(struct inode *inode,
  
-+	/* nothing to shrink - nothing to reclaim */
-+	if (root->fs_info->delalloc_bytes == 0)
-+		return 0;
-+
- 	max_reclaim = min(reserved, to_reclaim);
- 
- 	while (loops < 1024) {
+ 	/*
+ 	 * set_bit and clear bit hooks normally require _irqsave/restore
+-	 * but in this case, we are only testeing for the DELALLOC
++	 * but in this case, we are only testing for the DELALLOC
+ 	 * bit, which is only set or cleared with irqs on
+ 	 */
+ 	if (!(state->state & EXTENT_DELALLOC) && (*bits & EXTENT_DELALLOC)) {
+@@ -1344,7 +1344,7 @@ static int btrfs_clear_bit_hook(struct inode *inode,
+ {
+ 	/*
+ 	 * set_bit and clear bit hooks normally require _irqsave/restore
+-	 * but in this case, we are only testeing for the DELALLOC
++	 * but in this case, we are only testing for the DELALLOC
+ 	 * bit, which is only set or cleared with irqs on
+ 	 */
+ 	if ((state->state & EXTENT_DELALLOC) && (*bits & EXTENT_DELALLOC)) {
 -- 
 1.7.3.4
 

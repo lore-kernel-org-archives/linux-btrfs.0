@@ -1,49 +1,76 @@
-From: Sage Weil <sage@newdream.net>
-Subject: [PATCH 10/18] btrfs: remove unnecessary dentry_unhash in rmdir/rename_dir
-Date: Mon,  9 May 2011 21:43:28 -0700
-Message-ID: <1305002616-16782-11-git-send-email-sage@newdream.net>
-References: <1305002616-16782-1-git-send-email-sage@newdream.net>
-Cc: Sage Weil <sage@newdream.net>,
-	Chris Mason <chris.mason@oracle.com>,
+From: Daniel J Blueman <daniel.blueman@gmail.com>
+Subject: Re: [PATCH, fixed] Prevent oopsing in posix_acl_valid()
+Date: Tue, 10 May 2011 13:42:45 +0800
+Message-ID: <BANLkTinf-DQmmG==JNndPtLRCaAB3zV1XA@mail.gmail.com>
+References: <1304477648-14952-1-git-send-email-daniel.blueman@gmail.com>
+	<4DC16572.8020005@redhat.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Josef Bacik <josef@redhat.com>, Christian Brunner <chb@muc.de>,
 	linux-btrfs@vger.kernel.org
-To: viro@ZenIV.linux.org.uk, hch@lst.de, linux-fsdevel@vger.kernel.org
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <1305002616-16782-1-git-send-email-sage@newdream.net>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4DC16572.8020005@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs has no problems with lingering references to unlinked directory
-inodes.
+Hi Chris,
 
-CC: Chris Mason <chris.mason@oracle.com>
-CC: linux-btrfs@vger.kernel.org
-Signed-off-by: Sage Weil <sage@newdream.net>
----
- fs/btrfs/inode.c |    5 -----
- 1 files changed, 0 insertions(+), 5 deletions(-)
+On 4 May 2011 22:40, Josef Bacik <josef@redhat.com> wrote:
+> On 05/03/2011 10:54 PM, Daniel J Blueman wrote:
+>>
+>> If posix_acl_from_xattr() returns an error code, a negative address =
+is
+>> dereferenced causing an oops; fix by checking for an error code firs=
+t.
+>>
+>> Typo fixed; too much late-night coding.
+>>
+>> Signed-off-by: Daniel J Blueman<daniel.blueman@gmail.com>
+>> ---
+>> =A0fs/btrfs/acl.c | =A0 =A05 +++--
+>> =A01 files changed, 3 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+>> index 5d505aa..44ea5b9 100644
+>> --- a/fs/btrfs/acl.c
+>> +++ b/fs/btrfs/acl.c
+>> @@ -178,12 +178,13 @@ static int btrfs_xattr_acl_set(struct dentry
+>> *dentry, const char *name,
+>>
+>> =A0 =A0 =A0 =A0if (value) {
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0acl =3D posix_acl_from_xattr(value, s=
+ize);
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (IS_ERR(acl))
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 return PTR_ERR(acl);
+>> +
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0if (acl) {
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0ret =3D posix_acl_val=
+id(acl);
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0if (ret)
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0goto =
+out;
+>> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 } else if (IS_ERR(acl)) {
+>> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 return PTR_ERR(acl);
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0}
+>> =A0 =A0 =A0 =A0}
+>>
+>
+> Actually pulled this down and compiled it this time to make sure it w=
+orked.
+> =A0You can add
+>
+> Reviewed-by: Josef Bacik <josef@redhat.com>
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 3a33ae3..7cd8ab0 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3062,8 +3062,6 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
- 	    inode->i_ino == BTRFS_FIRST_FREE_OBJECTID)
- 		return -ENOTEMPTY;
- 
--	dentry_unhash(dentry);
--
- 	trans = __unlink_start_trans(dir, dentry);
- 	if (IS_ERR(trans))
- 		return PTR_ERR(trans);
-@@ -6994,9 +6992,6 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
- 	u64 root_objectid;
- 	int ret;
- 
--	if (new_inode && S_ISDIR(new_dentry->d_inode->i_mode))
--		dentry_unhash(new_dentry);
--
- 	if (new_dir->i_ino == BTRFS_EMPTY_SUBVOL_DIR_OBJECTID)
- 		return -EPERM;
- 
--- 
-1.7.1
+Will this fix go upstream for the final 2.6.39, now that the last -rc
+is already out? I hit it in two independent cases when rebooting after
+other kernel crashes.
 
+Thanks,
+  Daniel
+--=20
+Daniel J Blueman
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

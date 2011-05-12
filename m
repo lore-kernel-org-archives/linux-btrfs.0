@@ -1,29 +1,75 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH 2/4] Btrfs: don't look at the extent buffer level 3
-	times in a row
-Date: Thu, 12 May 2011 15:36:02 -0400
-Message-ID: <20110512193602.GE19041@dhcp231-156.rdu.redhat.com>
-References: <1305149755-4413-1-git-send-email-josef@redhat.com> <1305149755-4413-2-git-send-email-josef@redhat.com> <20110512154247.GQ12709@twin.jikos.cz>
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Subject: Re: "btrfs filesystem label" command
+Date: Thu, 12 May 2011 22:05:55 +0200
+Message-ID: <4DCC3DA3.7030008@inwind.it>
+References: <4422201.237.1305141322836.JavaMail.root@mail.placs.net>
+Reply-To: kreijack@inwind.it
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: BJ Quinn <bj@placs.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110512154247.GQ12709@twin.jikos.cz>
+In-Reply-To: <4422201.237.1305141322836.JavaMail.root@mail.placs.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 12, 2011 at 05:42:47PM +0200, David Sterba wrote:
+On 05/11/2011 09:15 PM, BJ Quinn wrote:
+> Thanks!
+> 
+> I had to install libuuid-devel (Fedora) to get past an error not
+> being able to find uuid.h when running make. It works perfectly.
+> 
+> This seems like such a basic functionality, have they accepted your
+> patches? Do you know if this is going to get merged?
+
+
+Yes, this patch was merged and is in the "tmp" branch of the main
+btrfs-prog git repository [*]. Unfortunately this brach doesn't even
+compile (or almost it gives me an error). I don't know when it will be
+available.
+
+Regards
+G.Baroncelli
+
+[*]
+http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-progs-unstable.git;a=commit;h=d1dc6a9cff7e2fe4f335ca783a4b033457b3e184
+
+
+
+> 
+> -BJ
+> 
+> 
+> From: "Goffredo Baroncelli" <kreijack@inwind.it> To: "BJ Quinn"
+> <bj@placs.net> Cc: linux-btrfs@vger.kernel.org Sent: Tuesday, May 10,
+> 2011 1:18:04 PM Subject: Re: "btrfs filesystem label" command
+> 
 > Hi,
 > 
-> On Wed, May 11, 2011 at 05:35:53PM -0400, Josef Bacik wrote:
-> > We have a bit of debugging in btrfs_search_slot to make sure the level of the
-> > cow block is the same as the original block we were cow'ing.  I don't think I've
-> > ever seen this tripped, so kill it.  This saves us 2 kmap's per level in our
-> > search.  Thanks,
+> I suppose that you are familiar with 'git' and the standard unix
+> command (like cd, make...). The quick way is the following:
 > 
-> I think it may be worth to add a CONFIG_BTRFS_DEBUG to switch on some
-> (even expensive) checks, eg. like this one, rather than deleting them.
+> $ cd /tmp $ git clone -b label \ 
+> http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git $ cd
+> btrfs-progs-unstable.git $ make $ ./btrfs
+> 
+> 
+> Hoping that this may help you
+> 
+> Regards G.Baroncelli
+> 
+> On 05/09/2011 11:36 PM, BJ Quinn wrote:
+>> Hi,
+>> 
+>> Sorry to ask what's probably a painfully obvious question, but I'd
+>> like to use your btrfs filesystem label command. For the life of
+>> me, I can't quite figure out what the process would be to download
+>> the btrfs-progs sources and apply your patch and use the command.
+>> Can you point me in the right direction?
+>> 
+>> Thanks!
+>> 
+>> -BJ Quinn
+>> 
+> 
 > 
 
-I had thought about that, but then decided to be lazy.  Thanks,
-
-Josef

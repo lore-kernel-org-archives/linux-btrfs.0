@@ -1,47 +1,28 @@
-From: Victor Roetman <victory747@gmail.com>
-Subject: Re: btrfs device scan
-Date: Thu, 12 May 2011 13:35:17 +0800
-Message-ID: <4DCB7195.30208@gmail.com>
-References: <BljOh9kD1uB@helmut.hullen.de>
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+Subject: BTRFS deduplication
+Date: Thu, 12 May 2011 07:52:20 +0200
+Message-ID: <1305179540.3106.8.camel@tethys>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+To: Linux BTRFS <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BljOh9kD1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/12/2011 12:46 PM, Helmut Hullen wrote:
-> Hallo, Victor,
-> 
-> Du meintest am 12.05.11:
-> 
->> I have a couple computers running 2.6.38
->> (Ubuntu Natty 2.6.38-8-generic), and on both of them
->> "btrfs device scan" comes back with nothing other than
->> "failed to read /dev/sr0"
-> 
-> What tells
-> 
->         ls /dev/sd*
->         ls /dev/md*
+Hi again list,
 
-$ ls /dev/sd*
-/dev/sda  /dev/sda1  /dev/sda2  /dev/sda5  /dev/sdb  /dev/sdb1  /dev/sdc
- /dev/sdc1
+I've seen in a message dating back to january that offline deduplication
+has been implemented in BTRFS, but I can't find it in my btrfs-tools
+0.19+20100601-3ubuntu2
 
-$ ls /dev/md*
-ls: cannot access /dev/md*: No such file or directory
+Has it reached release, or not yet ? How could I give it a try ?
 
-$ btrfs device scan
-Scanning for Btrfs filesystems
-failed to read /dev/sr0
+I've seen a discussion about whether deduplication should be made
+offline or online ; my usage case it to backup a number of laptops
+having all about the same software and many files in common, to a single
+backup server using rsync, I would be very much interested in online
+deduplication - because I don't have "n" times the storage space, that
+offline dedup might temporarily need, and because performance isn't
+crucial for this application, as backups can be done overnight...
 
-$ btrfs filesystem show
-failed to read /dev/sr0
-Label: 'server-backup'  uuid: b927ead9-2e5b-4ee8-b9f4-7209177c49d8
-	Total devices 2 FS bytes used 603.17GB
-	devid    1 size 1.36TB used 605.28GB path /dev/sdb1
-	devid    2 size 1.36TB used 605.26GB path /dev/sdc1
+Thanks in advance :-)
 
-Btrfs Btrfs v0.19
-$

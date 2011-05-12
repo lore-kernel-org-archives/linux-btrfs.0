@@ -1,37 +1,47 @@
-From: Arne Jansen <sensille@gmx.net>
+From: "Helmut Hullen" <Hullen@t-online.de>
 Subject: Re: btrfs device scan
-Date: Thu, 12 May 2011 08:04:50 +0200
-Message-ID: <4DCB7882.3030809@gmx.net>
-References: <4DCB615D.60300@gmail.com>
+Date: 12 May 2011 08:25:00 +0200
+Message-ID: <BljOne7T1uB@helmut.hullen.de>
+References: <4DCB7195.30208@gmail.com>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Victor Roetman <victory747@gmail.com>
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DCB615D.60300@gmail.com>
+In-Reply-To: <4DCB7195.30208@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12.05.2011 06:26, Victor Roetman wrote:
-> I have a couple computers running 2.6.38
-> (Ubuntu Natty 2.6.38-8-generic), and on both of them
-> "btrfs device scan" comes back with nothing other than
-> "failed to read /dev/sr0"
->
-> One computer has a btrfs RAID-1 volume, and the other has two separate
-> btrfs filesystems. The results are the same whether the filesystems are
-> mounted or not.
->
-> Why is "btrfs device scan" not scanning the devices?
+Hallo, Victor,
 
-Normally it does not report anything to stdout/stderr. You can see the
-scan result in dmesg.
+Du meintest am 12.05.11:
 
--Arne
+>>> I have a couple computers running 2.6.38
+>>> (Ubuntu Natty 2.6.38-8-generic), and on both of them
+>>> "btrfs device scan" comes back with nothing other than
+>>> "failed to read /dev/sr0"
 
->
-> vic
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+[..]
 
+> $ btrfs device scan
+> Scanning for Btrfs filesystems
+> failed to read /dev/sr0
+
+That's a "well known" error; "scan" tries block devices which really  
+cannot contain a btrfs filesystem.
+People who don't use "udev" get a lot of more "failed to read" messages;  
+"scan" seems to try every block device which exists in "/dev".
+
+Maybe it's more reliable if "scan" doesn't look into "dev" but uses "/ 
+proc/partitions".
+
+> $ btrfs filesystem show
+> failed to read /dev/sr0
+> Label: 'server-backup'  uuid: b927ead9-2e5b-4ee8-b9f4-7209177c49d8
+> 	Total devices 2 FS bytes used 603.17GB
+> 	devid    1 size 1.36TB used 605.28GB path /dev/sdb1
+> 	devid    2 size 1.36TB used 605.26GB path /dev/sdc1
+
+That shows that (in this case) you can ignore the "scan" message.
+
+Viele Gruesse!
+Helmut

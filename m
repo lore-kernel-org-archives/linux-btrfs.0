@@ -1,28 +1,40 @@
 From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-Subject: BTRFS deduplication
-Date: Thu, 12 May 2011 07:52:20 +0200
-Message-ID: <1305179540.3106.8.camel@tethys>
+Subject: BTRFS, encrypted LVM and disk write cache ?
+Date: Thu, 12 May 2011 07:45:25 +0200
+Message-ID: <1305179125.3106.3.camel@tethys>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=UTF-8
 To: Linux BTRFS <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi again list,
+Hi list,
 
-I've seen in a message dating back to january that offline deduplication
-has been implemented in BTRFS, but I can't find it in my btrfs-tools
-0.19+20100601-3ubuntu2
+I'm a new BTRFS user and will try not to ask FAQs ;-)
 
-Has it reached release, or not yet ? How could I give it a try ?
+I'm currently using Btrfs v0.19 on stock Ubuntu Natty (kernel 2.6.38)
+and use a BTRFS inside an encrypted LVM.
 
-I've seen a discussion about whether deduplication should be made
-offline or online ; my usage case it to backup a number of laptops
-having all about the same software and many files in common, to a single
-backup server using rsync, I would be very much interested in online
-deduplication - because I don't have "n" times the storage space, that
-offline dedup might temporarily need, and because performance isn't
-crucial for this application, as backups can be done overnight...
+The wiki "gotchas" page https://btrfs.wiki.kernel.org/index.php/Gotchas
+states :
+=C2=AB btrfs volumes on top of dm-crypt block devices (and possibly LVM=
+)
+require write-caching to be turned off on the underlying HDD. Failing t=
+o
+do so, in the event of a power failure, may result in corruption not ye=
+t
+handled by btrfs code. (2.6.33) =C2=BB
 
-Thanks in advance :-)
+=2E..So I've turned my write cache off, but I notice this is stated for
+kernel 2.6.33, so wonder if this still is an issue with 2.6.38, or has
+it been addressed since ?
 
+Thanks in advance for your help.
+
+Kind regards.
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

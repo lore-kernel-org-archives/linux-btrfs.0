@@ -1,47 +1,28 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: Re: btrfs device scan
-Date: 12 May 2011 08:25:00 +0200
-Message-ID: <BljOne7T1uB@helmut.hullen.de>
-References: <4DCB7195.30208@gmail.com>
-Reply-To: helmut@hullen.de
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+Subject: BTRFS Linux kernel BUG
+Date: Thu, 12 May 2011 16:38:42 +0200
+Message-ID: <1305211122.3072.3.camel@tethys>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+To: Linux BTRFS <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DCB7195.30208@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Victor,
+(Not sure if this list allows attachments, as the message I sent
+doesn't seem to have been dispatched. I resend without the attachment,
+available anyway at the URL below:)
 
-Du meintest am 12.05.11:
+https://bugs.launchpad.net/ubuntu/+source/linux/+bug/781694
 
->>> I have a couple computers running 2.6.38
->>> (Ubuntu Natty 2.6.38-8-generic), and on both of them
->>> "btrfs device scan" comes back with nothing other than
->>> "failed to read /dev/sr0"
 
-[..]
+On a BTRFS machine, the working Gnome session suddenly disappeared,
+replaced with a text screen displaying an ugly "kernel BUG" related to
+BTRFS (see attached picture).
 
-> $ btrfs device scan
-> Scanning for Btrfs filesystems
-> failed to read /dev/sr0
+I would have expected the system to be hanged, but no, pressing a key
+brought me back to my Gnome session, where I could shut the system down
+gracefully...
 
-That's a "well known" error; "scan" tries block devices which really  
-cannot contain a btrfs filesystem.
-People who don't use "udev" get a lot of more "failed to read" messages;  
-"scan" seems to try every block device which exists in "/dev".
 
-Maybe it's more reliable if "scan" doesn't look into "dev" but uses "/ 
-proc/partitions".
 
-> $ btrfs filesystem show
-> failed to read /dev/sr0
-> Label: 'server-backup'  uuid: b927ead9-2e5b-4ee8-b9f4-7209177c49d8
-> 	Total devices 2 FS bytes used 603.17GB
-> 	devid    1 size 1.36TB used 605.28GB path /dev/sdb1
-> 	devid    2 size 1.36TB used 605.26GB path /dev/sdc1
 
-That shows that (in this case) you can ignore the "scan" message.
-
-Viele Gruesse!
-Helmut

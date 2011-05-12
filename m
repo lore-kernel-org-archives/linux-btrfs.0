@@ -1,40 +1,37 @@
-From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-Subject: BTRFS, encrypted LVM and disk write cache ?
-Date: Thu, 12 May 2011 07:45:25 +0200
-Message-ID: <1305179125.3106.3.camel@tethys>
+From: Arne Jansen <sensille@gmx.net>
+Subject: Re: btrfs device scan
+Date: Thu, 12 May 2011 08:04:50 +0200
+Message-ID: <4DCB7882.3030809@gmx.net>
+References: <4DCB615D.60300@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: Linux BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: linux-btrfs@vger.kernel.org
+To: Victor Roetman <victory747@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4DCB615D.60300@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi list,
+On 12.05.2011 06:26, Victor Roetman wrote:
+> I have a couple computers running 2.6.38
+> (Ubuntu Natty 2.6.38-8-generic), and on both of them
+> "btrfs device scan" comes back with nothing other than
+> "failed to read /dev/sr0"
+>
+> One computer has a btrfs RAID-1 volume, and the other has two separate
+> btrfs filesystems. The results are the same whether the filesystems are
+> mounted or not.
+>
+> Why is "btrfs device scan" not scanning the devices?
 
-I'm a new BTRFS user and will try not to ask FAQs ;-)
+Normally it does not report anything to stdout/stderr. You can see the
+scan result in dmesg.
 
-I'm currently using Btrfs v0.19 on stock Ubuntu Natty (kernel 2.6.38)
-and use a BTRFS inside an encrypted LVM.
+-Arne
 
-The wiki "gotchas" page https://btrfs.wiki.kernel.org/index.php/Gotchas
-states :
-=C2=AB btrfs volumes on top of dm-crypt block devices (and possibly LVM=
-)
-require write-caching to be turned off on the underlying HDD. Failing t=
-o
-do so, in the event of a power failure, may result in corruption not ye=
-t
-handled by btrfs code. (2.6.33) =C2=BB
+>
+> vic
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-=2E..So I've turned my write cache off, but I notice this is stated for
-kernel 2.6.33, so wonder if this still is an issue with 2.6.38, or has
-it been addressed since ?
-
-Thanks in advance for your help.
-
-Kind regards.
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

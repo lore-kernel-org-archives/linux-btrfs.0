@@ -1,54 +1,41 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: very poor read / write performance compared to other FS's?
-Date: Thu, 12 May 2011 11:39:01 -0400
-Message-ID: <20110512153901.GA19041@dhcp231-156.rdu.redhat.com>
-References: <BANLkTinRa9TdVOAaMt9_gcR2xDhbDWVJcA@mail.gmail.com>
+Subject: Re: BTRFS Linux kernel BUG
+Date: Thu, 12 May 2011 11:40:13 -0400
+Message-ID: <20110512154013.GB19041@dhcp231-156.rdu.redhat.com>
+References: <1305211122.3072.3.camel@tethys>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Cc: linux-btrfs@vger.kernel.org
-To: Marek Fstump <marekfstump@gmail.com>
+Content-Type: text/plain; charset=iso-8859-1
+Cc: Linux BTRFS <linux-btrfs@vger.kernel.org>
+To: =?iso-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTinRa9TdVOAaMt9_gcR2xDhbDWVJcA@mail.gmail.com>
+In-Reply-To: <1305211122.3072.3.camel@tethys>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 11, 2011 at 11:33:35PM +0100, Marek Fstump wrote:
-> Hi
+On Thu, May 12, 2011 at 04:38:42PM +0200, Sw=E2mi Petaramesh wrote:
+> (Not sure if this list allows attachments, as the message I sent
+> doesn't seem to have been dispatched. I resend without the attachment=
+,
+> available anyway at the URL below:)
 >=20
-> I am very interested in using BTRFS for my solution but in basic test=
-s
-> it seems to be very poor on read and write performance.  I am
-> surprised by this so suspect that maybe I am doing something
-> incorrectly or that there are updates I should be using, but I am not
-> sure how I update BTRFS on SLES11
+> https://bugs.launchpad.net/ubuntu/+source/linux/+bug/781694
 >=20
-> Summary:
-> RESULTS on link below
-> SLES11 SP1
-> Compared Sequential read/write performance against XFS and OCFS2
-> Backend storage =E2=80=93 FusionIO SLC SSD =3D circa 750MBsec
 >=20
-> Tests  set as follows:
-> Filesystem contains 30 x 4GB files (made of random data)
-> Read tests will read from 1 to 30 files concurrently
-> Write tests will write 1 to 30 concurrent NEW files (simple 000=E2=80=
-=99s)
-> dd -direct flag used on writes
+> On a BTRFS machine, the working Gnome session suddenly disappeared,
+> replaced with a text screen displaying an ugly "kernel BUG" related t=
+o
+> BTRFS (see attached picture).
 >=20
-> All defaults used for mounting etc.
->=20
-> Results shown in attachment.
->=20
-> BTRFS looks an excellent FS and perfect for my application and I am
-> hoping that there are some factors that I am missing
-> and would appreciate any advice / help
+> I would have expected the system to be hanged, but no, pressing a key
+> brought me back to my Gnome session, where I could shut the system do=
+wn
+> gracefully...
 >=20
 
-Yeah our O_DIRECT performance is less than stellar, I just did a bunch =
-of work
-to try and help us get a little better performance.  Would you mind pul=
-ling
-down linus's git tree and testing on that and seeing if you get better
-performance?  Thanks,
+Did you happen to get dmesg from that?  It seems that you got disk erro=
+rs while
+writing out the supers, which points to a hardware problem, but having =
+the full
+dmesg would be good to say for sure.  Thanks,
 
 Josef
 --

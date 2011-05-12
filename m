@@ -1,38 +1,73 @@
-From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-Subject: Re: BTRFS, encrypted LVM and disk write cache ?
-Date: Thu, 12 May 2011 23:36:44 +0200
-Message-ID: <1305236204.3277.1.camel@tethys>
-References: <1305179125.3106.3.camel@tethys>
-	 <20110512154224.GD19041@dhcp231-156.rdu.redhat.com>
+From: Marek Fstump <marekfstump@gmail.com>
+Subject: Re: very poor read / write performance compared to other FS's?
+Date: Fri, 13 May 2011 00:15:07 +0100
+Message-ID: <BANLkTikq5eDYL0dPnB-iMPCuMfmCAqWMAw@mail.gmail.com>
+References: <BANLkTinRa9TdVOAaMt9_gcR2xDhbDWVJcA@mail.gmail.com>
+	<20110512153901.GA19041@dhcp231-156.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Linux BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=windows-1252
+Cc: linux-btrfs@vger.kernel.org
 To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110512154224.GD19041@dhcp231-156.rdu.redhat.com>
+In-Reply-To: <20110512153901.GA19041@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Thu, May 12, 2011 at 4:39 PM, Josef Bacik <josef@redhat.com> wrote:
+> On Wed, May 11, 2011 at 11:33:35PM +0100, Marek Fstump wrote:
+>> Hi
+>>
+>> I am very interested in using BTRFS for my solution but in basic tes=
+ts
+>> it seems to be very poor on read and write performance. =A0I am
+>> surprised by this so suspect that maybe I am doing something
+>> incorrectly or that there are updates I should be using, but I am no=
+t
+>> sure how I update BTRFS on SLES11
+>>
+>> Summary:
+>> RESULTS on link below
+>> SLES11 SP1
+>> Compared Sequential read/write performance against XFS and OCFS2
+>> Backend storage =96 FusionIO SLC SSD =3D circa 750MBsec
+>>
+>> Tests =A0set as follows:
+>> Filesystem contains 30 x 4GB files (made of random data)
+>> Read tests will read from 1 to 30 files concurrently
+>> Write tests will write 1 to 30 concurrent NEW files (simple 000=92s)
+>> dd -direct flag used on writes
+>>
+>> All defaults used for mounting etc.
+>>
+>> Results shown in attachment.
+>>
+>> BTRFS looks an excellent FS and perfect for my application and I am
+>> hoping that there are some factors that I am missing
+>> and would appreciate any advice / help
+>>
+>
+> Yeah our O_DIRECT performance is less than stellar, I just did a bunc=
+h of work
+> to try and help us get a little better performance. =A0Would you mind=
+ pulling
+> down linus's git tree and testing on that and seeing if you get bette=
+r
+> performance? =A0Thanks,
+>
+> Josef
+>
 
-Le jeudi 12 mai 2011 =C3=A0 11:42 -0400, Josef Bacik a =C3=A9crit :
-> >=20
-> > ...So I've turned my write cache off, but I notice this is stated f=
-or
-> > kernel 2.6.33, so wonder if this still is an issue with 2.6.38, or =
-has
-> > it been addressed since ?
+Hi Josef
 
-> If you mount and start writing and don't see a message in dmesg about=
- disabling
-> barriers then you should be good to go.  Thanks,
+=46orgive me as i am a 'storage guy' - so when you say pull down linus'=
+s
+git tree and test.... do you mean grab the latest kernel?  i know very
+stupid question, but just want to make sure i get it right... if so,
+then yes i will and i will add some more storage power also to see if
+it scales.
 
-I've turned disk cache back on and don't see no such messages in my
-logs... So I assume I should be safe ?
 
-However shifting from ext3 to BTRFS has been enough to turn my perfectl=
-y
-stable system into a perfectly unstable and crash-prone system :-/
 
+THank you
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

@@ -1,36 +1,47 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: kernel BUG at fs/btrfs/inode.c:149!
-Date: Fri, 13 May 2011 14:52:22 -0400
-Message-ID: <4DCD7DE6.3000106@redhat.com>
-References: <201105051954.48405.whirm@gmx.com> <4DC2F30D.3080308@redhat.com> <201105131919.37230.whirm@gmx.com>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: Re: Understanding DF, etc.
+Date: 13 May 2011 21:50:00 +0200
+Message-ID: <BlnToEqD1uB@helmut.hullen.de>
+References: <1305284038.3052.46.camel@tethys>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: whirm@gmx.com
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201105131919.37230.whirm@gmx.com>
+In-Reply-To: <1305284038.3052.46.camel@tethys>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/13/2011 01:19 PM, whirm@gmx.com wrote:
-> On Thursday 05 May 2011 20:57:17 Josef Bacik wrote:
-> [..]
->> It doesn't look like that bit had my debugging output.  Thanks,
->>
->> Josef
->
-> Looks like the last message I sent didn't make to the list. Here's the link to
-> the debug log:
->
+Hallo, Sw=E2mi,
 
-So unfortunately I don't know how we ended up with duplicate entries in 
-the free space cache, but I can make it so we discard the cache if this 
-happens.  Please try the patch I just sent to the list
+Du meintest am 13.05.11:
 
-[PATCH] Btrfs: check for duplicate entries in the free space cache
+> I have trouble understanding this, which doesn't really correspond to
+> the wiki FAQ (so my question is hopefully not a FAQ ;-) :
 
-this will make your fs able to be mounted at the very least.  I'll try 
-and figure out how this sort of thing happens.  If you manage to make it 
-happen on purpose let me know how you did it so I can figure out what 
-I'm doing wrong.  Thanks,
+> # btrfs fi df /
+> Data: total=3D74.01GB, used=3D72.77GB
+> System, DUP: total=3D8.00MB, used=3D16.00KB
+> System: total=3D4.00MB, used=3D0.00
+> Metadata, DUP: total=3D1.75GB, used=3D657.48MB
+> Metadata: total=3D8.00MB, used=3D0.00
 
-Josef
+> Some questions are :
+
+> What are the "DUP" lines compared to the "non-DUP" ones ?
+
+That may depend on the "mkfs.btrfs" options - which options have you =20
+set?
+
+What tells
+
+        df -t btrfs
+
+        btrfs filesystem show
+
+Viele Gruesse!
+Helmut
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,88 +1,41 @@
-From: Daniel J Blueman <daniel.blueman@gmail.com>
-Subject: Re: very poor read / write performance compared to other FS's?
-Date: Fri, 13 May 2011 10:07:18 +0800
-Message-ID: <BANLkTi=EJP5HP9TzmpZ82evHWJR7Ygygrg@mail.gmail.com>
-References: <BANLkTinRa9TdVOAaMt9_gcR2xDhbDWVJcA@mail.gmail.com>
-	<20110512153901.GA19041@dhcp231-156.rdu.redhat.com>
-	<BANLkTikq5eDYL0dPnB-iMPCuMfmCAqWMAw@mail.gmail.com>
+From: "Fajar A. Nugraha" <list@fajar.net>
+Subject: Re: BTRFS, encrypted LVM and disk write cache ?
+Date: Fri, 13 May 2011 13:54:44 +0700
+Message-ID: <BANLkTimQVkzzhaQiur92KxQ2yBgGap5eRA@mail.gmail.com>
+References: <1305179125.3106.3.camel@tethys>
+	<20110512154224.GD19041@dhcp231-156.rdu.redhat.com>
+	<1305236204.3277.1.camel@tethys>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=windows-1252
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
-To: Marek Fstump <marekfstump@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Linux BTRFS <linux-btrfs@vger.kernel.org>
+To: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTikq5eDYL0dPnB-iMPCuMfmCAqWMAw@mail.gmail.com>
+In-Reply-To: <1305236204.3277.1.camel@tethys>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 13 May 2011 07:15, Marek Fstump <marekfstump@gmail.com> wrote:
-> On Thu, May 12, 2011 at 4:39 PM, Josef Bacik <josef@redhat.com> wrote=
-:
->> On Wed, May 11, 2011 at 11:33:35PM +0100, Marek Fstump wrote:
->>> Hi
->>>
->>> I am very interested in using BTRFS for my solution but in basic te=
-sts
->>> it seems to be very poor on read and write performance. =A0I am
->>> surprised by this so suspect that maybe I am doing something
->>> incorrectly or that there are updates I should be using, but I am n=
-ot
->>> sure how I update BTRFS on SLES11
->>>
->>> Summary:
->>> RESULTS on link below
->>> SLES11 SP1
->>> Compared Sequential read/write performance against XFS and OCFS2
->>> Backend storage =96 FusionIO SLC SSD =3D circa 750MBsec
->>>
->>> Tests =A0set as follows:
->>> Filesystem contains 30 x 4GB files (made of random data)
->>> Read tests will read from 1 to 30 files concurrently
->>> Write tests will write 1 to 30 concurrent NEW files (simple 000=92s=
-)
->>> dd -direct flag used on writes
->>>
->>> All defaults used for mounting etc.
->>>
->>> Results shown in attachment.
->>>
->>> BTRFS looks an excellent FS and perfect for my application and I am
->>> hoping that there are some factors that I am missing
->>> and would appreciate any advice / help
->>>
->>
->> Yeah our O_DIRECT performance is less than stellar, I just did a bun=
-ch of work
->> to try and help us get a little better performance. =A0Would you min=
-d pulling
->> down linus's git tree and testing on that and seeing if you get bett=
-er
->> performance? =A0Thanks,
->>
->> Josef
->>
->
-> Hi Josef
->
-> Forgive me as i am a 'storage guy' - so when you say pull down linus'=
-s
-> git tree and test.... do you mean grab the latest kernel? =A0i know v=
-ery
-> stupid question, but just want to make sure i get it right... if so,
-> then yes i will and i will add some more storage power also to see if
-> it scales.
+On Fri, May 13, 2011 at 4:36 AM, Sw=E2mi Petaramesh <swami@petaramesh.o=
+rg> wrote:
+> However shifting from ext3 to BTRFS has been enough to turn my perfec=
+tly
+> stable system into a perfectly unstable and crash-prone system :-/
 
-=46or  SLES 11, the kernel RPMs here may be your best shot:
+Well, first of all, btrfs is still under heavy development. Add to
+that the fact that you use Ubuntu Natty, which also have some known
+bugs. There should be some hints there on what the outcome would be :P
 
-http://download.opensuse.org/repositories/Kernel:/stable/standard/x86_6=
-4/
+Anyway, I'm using linux-image-2.6.38-9-generic from natty-proposed,
+with btrfs as "/", separate /boot/grub on ext4, and Corsair Force SSD.
+It works great so far. If you're used to ext4 speed, then you'll
+notice that btrfs is considerably slower. That's why I use SSD to add
+some I/O speed (currently booting to gnome classic desktop only takes
+about 30 seconds).
 
-(eg kernel-default-2.6.38.6-1.1.x86_64.rpm)
+So in summary, if you have problems but still want to try btrfs, try
+upgrading your kernel. If you think it's too slow to be usable, then
+the best you can try right now is use SSD.
 
-You'll probably have to download dependent RPMs from there too.
-
-Thanks,
-  Daniel
 --=20
-Daniel J Blueman
+=46ajar
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

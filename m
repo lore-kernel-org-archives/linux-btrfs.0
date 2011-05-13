@@ -1,77 +1,48 @@
 From: Mark Fasheh <mfasheh@suse.com>
-Subject: [RFC][PATCH 1/2] vfs: allow /proc/pid/maps to return a custom device
-Date: Fri, 13 May 2011 16:18:48 -0700
-Message-ID: <1305328729-9995-2-git-send-email-mfasheh@suse.com>
-References: <1305328729-9995-1-git-send-email-mfasheh@suse.com>
+Subject: [RFC][PATCH 2/2] Subject: btrfs: Introduce btrfs_get_maps_dev()
+Date: Fri, 13 May 2011 16:20:17 -0700
+Message-ID: <1305328817-10067-2-git-send-email-mfasheh@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>,
 	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
 	Mark Fasheh <mfasheh@suse.com>
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <1305328729-9995-1-git-send-email-mfasheh@suse.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch introduces a callback in the super_operations structure,
-'get_maps_dev' which is then used by procfs to query which device to return
-for reporting in /proc/[PID]/maps.
-
-btrfs wants this so that it can return the same device as it uses from
-stat(2) calls.
+Use this to return the subvolume superblock in proc instead of the global
+superblock which is automatically taken today. This fixes a userspace
+breakage where discrepancies between the devices two would confuse software
+such as lsof.
 
 Signed-off-by: Mark Fasheh <mfasheh@suse.com>
 ---
- fs/proc/task_mmu.c   |    2 +-
- fs/proc/task_nommu.c |    2 +-
- include/linux/fs.h   |    8 ++++++++
- 3 files changed, 10 insertions(+), 2 deletions(-)
+ fs/btrfs/super.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
 
-diff --git a/fs/proc/task_mmu.c b/fs/proc/task_mmu.c
-index 2e7addf..c0acc19 100644
---- a/fs/proc/task_mmu.c
-+++ b/fs/proc/task_mmu.c
-@@ -220,7 +220,7 @@ static void show_map_vma(struct seq_file *m, struct vm_area_struct *vma)
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 58e7de9..d241fb0 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1115,6 +1115,11 @@ static int btrfs_unfreeze(struct super_block *sb)
+ 	return 0;
+ }
  
- 	if (file) {
- 		struct inode *inode = vma->vm_file->f_path.dentry->d_inode;
--		dev = inode->i_sb->s_dev;
-+		dev = get_maps_dev(inode);
- 		ino = inode->i_ino;
- 		pgoff = ((loff_t)vma->vm_pgoff) << PAGE_SHIFT;
- 	}
-diff --git a/fs/proc/task_nommu.c b/fs/proc/task_nommu.c
-index 980de54..6769efe 100644
---- a/fs/proc/task_nommu.c
-+++ b/fs/proc/task_nommu.c
-@@ -148,7 +148,7 @@ static int nommu_vma_show(struct seq_file *m, struct vm_area_struct *vma)
- 
- 	if (file) {
- 		struct inode *inode = vma->vm_file->f_path.dentry->d_inode;
--		dev = inode->i_sb->s_dev;
-+		dev = get_maps_dev(inode);
- 		ino = inode->i_ino;
- 		pgoff = (loff_t)vma->vm_pgoff << PAGE_SHIFT;
- 	}
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index dbd860a..ad683ad 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -1637,8 +1637,16 @@ struct super_operations {
- 	ssize_t (*quota_write)(struct super_block *, int, const char *, size_t, loff_t);
- #endif
- 	int (*bdev_try_to_free_page)(struct super_block*, struct page*, gfp_t);
-+	dev_t (*get_maps_dev)(struct inode *);
- };
- 
-+static inline dev_t get_maps_dev(struct inode *inode)
++static dev_t btrfs_get_maps_dev(struct inode *inode)
 +{
-+	if (inode->i_sb->s_op->get_maps_dev)
-+		return inode->i_sb->s_op->get_maps_dev(inode);
-+	return inode->i_sb->s_dev;
++	return BTRFS_I(inode)->root->anon_super.s_dev;
 +}
 +
- /*
-  * Inode state bits.  Protected by inode->i_lock
-  *
+ static const struct super_operations btrfs_super_ops = {
+ 	.drop_inode	= btrfs_drop_inode,
+ 	.evict_inode	= btrfs_evict_inode,
+@@ -1129,6 +1134,7 @@ static const struct super_operations btrfs_super_ops = {
+ 	.remount_fs	= btrfs_remount,
+ 	.freeze_fs	= btrfs_freeze,
+ 	.unfreeze_fs	= btrfs_unfreeze,
++	.get_maps_dev	= btrfs_get_maps_dev,
+ };
+ 
+ static const struct file_operations btrfs_ctl_fops = {
 -- 
 1.6.4.2
 

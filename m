@@ -1,79 +1,66 @@
-From: "Fajar A. Nugraha" <list@fajar.net>
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
 Subject: Re: BTRFS, encrypted LVM and disk write cache ?
-Date: Fri, 13 May 2011 16:16:56 +0700
-Message-ID: <BANLkTi=CF--tqdo0AtnFYbaepMP=-_ZKuw@mail.gmail.com>
+Date: Fri, 13 May 2011 11:33:30 +0200
+Message-ID: <1305279210.3052.28.camel@tethys>
 References: <1305179125.3106.3.camel@tethys>
-	<20110512154224.GD19041@dhcp231-156.rdu.redhat.com>
-	<1305236204.3277.1.camel@tethys>
-	<BANLkTimQVkzzhaQiur92KxQ2yBgGap5eRA@mail.gmail.com>
-	<1305277193.3052.24.camel@tethys>
+	 <20110512154224.GD19041@dhcp231-156.rdu.redhat.com>
+	 <1305236204.3277.1.camel@tethys>
+	 <BANLkTimQVkzzhaQiur92KxQ2yBgGap5eRA@mail.gmail.com>
+	 <1305277193.3052.24.camel@tethys>
+	 <BANLkTi=CF--tqdo0AtnFYbaepMP=-_ZKuw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=UTF-8
 Cc: Linux BTRFS <linux-btrfs@vger.kernel.org>
-To: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
+To: "Fajar A. Nugraha" <list@fajar.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1305277193.3052.24.camel@tethys>
+In-Reply-To: <BANLkTi=CF--tqdo0AtnFYbaepMP=-_ZKuw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 13, 2011 at 3:59 PM, Sw=E2mi Petaramesh <swami@petaramesh.o=
-rg> wrote:
-> Adding to the fact that it comes included with the stock and distro
-> kernels... That gives a bit contradictory signals... "Should I stay o=
-r
-> should I go ?"
->
-> Looks a bit like legal babble boiling down to =AB Yes, it is supposed=
- to
-> work and be usable, so please use it, just be so kind no to sue us if
-> you run into trouble. Not our fault, we won't accept any liability. =BB
+Le vendredi 13 mai 2011 =C3=A0 16:16 +0700, Fajar A. Nugraha a =C3=A9cr=
+it :
 
-Something like that.
-Note also since it's in heavy development, even a small difference in
-kernel version can make a difference between whether a bug is present
-or not, so it's advisable to always try latest kernel version.
+> IIRC 2.6.38 has a bug in that you can't use mount option "subvol=3D..=
+=2E"
+> if the fs/subvolume is newly created, while 2.6.39 works fine. At
+> least that's what I experienced, so now I use subvolid to select
+> subvolume.
 
->
->> Add to that the fact that you use Ubuntu Natty, which also have some=
- known
->> bugs. There should be some hints there on what the outcome would be =
-:P
->
-> Every distro has bugs. However Natty's kernel never ever hanged my
-> system until I shifted to using BTRFS... I won't relate BTRFS issues =
-to
-> using Natty unless there is some evidence pointing in this direction.=
-=2E.
->
-> Not wanting to troll, of course, uh... ;-)
+# uname -a
+Linux tethys 2.6.38-8-generic #42-Ubuntu SMP Mon Apr 11 03:31:50 UTC
+2011 i686 i686 i386 GNU/Linux
 
-No troll taken.
 
-Just wanted to point out that since Natty is new and has known bugs
-(which might include kernel package as well), if you encounter
-problems try to use latest available kernel for Natty first. If it
-doesn't work, try latest vanilla kernel from kernel.org. For example,
-IIRC 2.6.38 has a bug in that you can't use mount option "subvol=3D..."
-if the fs/subvolume is newly created, while 2.6.39 works fine. At
-least that's what I experienced, so now I use subvolid to select
-subvolume.
+# grep btrfs fstab
+/dev/VG1/TETHYS	/		btrfs	subvol=3DUBUNTU,compress=3Dzlib,relatime	0 0
+/dev/sda2	/boot		btrfs	compress=3Dzlib,relatime			0 0
+/dev/VG1/TETHYS	/home		btrfs	subvol=3DHOME,compress=3Dzlib,relatime	0 0
+/dev/VG1/TETHYS	/tmp		btrfs	subvol=3DTMP,compress=3Dzlib,relatime	0 0
+/dev/VG1/TETHYS	/var		btrfs	subvol=3DVAR,compress=3Dzlib,relatime	0 0
 
->
->> If you're used to ext4 speed, then you'll notice that btrfs is consi=
-derably
->> slower. That's why I use SSD to add some I/O speed (currently bootin=
-g to gnome
->> classic desktop only takes about 30 seconds).
->
-> Well, I noticed it's slower, still usable for me anyway, I'm a patien=
-t
-> guy ;-) Anyway an SSD is not an option to me, financially speaking ;-=
-)
+# mount | grep btrfs
+/dev/mapper/VG1-TETHYS on / type btrfs
+(rw,relatime,subvol=3DUBUNTU,compress=3Dzlib)
+/dev/mapper/VG1-TETHYS on /tmp type btrfs
+(rw,relatime,subvol=3DTMP,compress=3Dzlib)
+/dev/mapper/VG1-TETHYS on /home type btrfs
+(rw,relatime,subvol=3DHOME,compress=3Dzlib)
+/dev/mapper/VG1-TETHYS on /var type btrfs
+(rw,relatime,subvol=3DVAR,compress=3Dzlib)
+/dev/sda2 on /boot type btrfs (rw,relatime,compress=3Dzlib)
 
-A 60GB Corsair Force should be about $140. Highly recommended. Higher
-capacities provide even better cost/GB.
 
---=20
-=46ajar
+(Maybe worth noting that /boot actually points to a subvol as well,
+which is set as default subvol as grub2 would seem not to manage
+non-default subvol)
+
+
+> A 60GB Corsair Force should be about $140. Highly recommended. Higher
+> capacities provide even better cost/GB.
+
+I'll note this for my next national lottery win ;-)))
+
+
+
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

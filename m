@@ -1,47 +1,50 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: Re: Understanding DF, etc.
-Date: 13 May 2011 21:50:00 +0200
-Message-ID: <BlnToEqD1uB@helmut.hullen.de>
-References: <1305284038.3052.46.camel@tethys>
-Reply-To: helmut@hullen.de
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1305284038.3052.46.camel@tethys>
+From: Mark Fasheh <mfasheh@suse.com>
+Subject: [RFC][PATCH 0/2] btrfs/vfs: Return same device in stat(2) and /proc/pid/maps
+Date: Fri, 13 May 2011 16:18:47 -0700
+Message-ID: <1305328729-9995-1-git-send-email-mfasheh@suse.com>
+Cc: Chris Mason <chris.mason@oracle.com>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Sw=E2mi,
+I originally posted about this issue some weeks ago but unfortunately didn't
+get a response:
 
-Du meintest am 13.05.11:
+http://comments.gmane.org/gmane.comp.file-systems.btrfs/9682
 
-> I have trouble understanding this, which doesn't really correspond to
-> the wiki FAQ (so my question is hopefully not a FAQ ;-) :
 
-> # btrfs fi df /
-> Data: total=3D74.01GB, used=3D72.77GB
-> System, DUP: total=3D8.00MB, used=3D16.00KB
-> System: total=3D4.00MB, used=3D0.00
-> Metadata, DUP: total=3D1.75GB, used=3D657.48MB
-> Metadata: total=3D8.00MB, used=3D0.00
+To recap:
 
-> Some questions are :
+btrfs_getattr() is filling stat->dev with an anonymous device
+(for per-snapshot root?):
 
-> What are the "DUP" lines compared to the "non-DUP" ones ?
+stat->dev = BTRFS_I(inode)->root->anon_super.s_dev;
 
-That may depend on the "mkfs.btrfs" options - which options have you =20
-set?
+but /proc/pid/maps uses the "real" block device:
 
-What tells
+dev = inode->i_sb->s_dev;
 
-        df -t btrfs
 
-        btrfs filesystem show
+This results in some unfortunate behavior for lsof as it reports some
+duplicate paths (except on different block devices). The easiest way to see
+this (if your root partition is btrfs):
 
-Viele Gruesse!
-Helmut
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+$ lsof | grep lsof
+<snip>
+lsof       9238            root  txt       REG               0,19   139736 14478 /usr/bin/lsof
+lsof       9238            root  mem       REG               0,17   14478 /usr/bin/lsof (path dev=0,19)
+
+
+As was noted in my original mail, this winds up breaking userspace software
+(zypper in my case).
+
+The following patch series fixes this issue by allowing a file
+system to supply a custom method for the device reported in /proc/pid/maps.
+It fixes the issue for me, but I'm not 100% sold on the approach taken -
+it's an admittedly brute-force solution hence the RFC tag. Any comments are
+appreciated and welcome.
+
+Thanks,
+	--Mark
+

@@ -1,78 +1,75 @@
-From: Julia Lawall <julia@diku.dk>
-Subject: [PATCH] fs/btrfs: Add missing btrfs_free_path
-Date: Sat, 14 May 2011 09:10:51 +0200
-Message-ID: <1305357051-5288-1-git-send-email-julia@diku.dk>
-Cc: kernel-janitors@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+From: Martin Steigerwald <Martin@lichtvoll.de>
+Subject: data alignment for SSD: Stripe size or sector size given with -s?
+Date: Sat, 14 May 2011 09:31:26 +0200
+Message-ID: <201105140931.26389.Martin@lichtvoll.de>
+Mime-Version: 1.0
+Content-Type: multipart/signed;
+  boundary="nextPart1350929.nJCX42tn2b";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Julia Lawall <julia@diku.dk>
+--nextPart1350929.nJCX42tn2b
+Content-Type: text/plain;
+  charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
 
-Btrfs_alloc_path should be matched with btrfs_free_path in error-handling code.
+Hi!
 
-A simplified version of the semantic match that finds this problem is as
-follows: (http://coccinelle.lip6.fr/)
+> [ANNOUNCE] Btrfs v0.9
+> [...]
+> * Stripe size parameter to mkfs.btrfs (-s size_in_bytes). Extents will
+>  be aligned to the stripe size for performance.
+> [...]
+http://fixunix.com/kernel/258991-[announce]-btrfs-v0-9-a.html
 
-// <smpl>
-@r exists@
-local idexpression struct btrfs_path * x;
-expression ra,rb;
-position p1,p2;
-@@
+versus
 
-x = btrfs_alloc_path@p1(...)
-...  when != btrfs_free_path(x,...)
-     when != if (...) { ... btrfs_free_path(x,...) ...}
-     when != x = ra
-if(...) { ... when != x = rb
-     when forall
-     when != btrfs_free_path(x,...)
- \(return <+...x...+>; \| return@p2...; \) }
+>        -s, --sectorsize size
+>               Specify the sectorsize, the minimum block allocation.
 
-@script:python@
-p1 << r.p1;
-p2 << r.p2;
-@@
+(man mkfs.btrfs with btrfs-tools 0.19+20101101-1 debian package).
 
-cocci.print_main("alloc",p1)
-cocci.print_secs("return",p2)
-// </smpl>
+Which one applies? Or do both mention the same? My notion of a sector is=20
+something different tough.
 
-Signed-off-by: Julia Lawall <julia@diku.dk>
+I wonder how to set a stripe size for alignment to erase blocks of an=20
+Intel SSD 320. Or whether to set anything at all. I want to try to use GPT=
+=20
+with ThinkPad T520 UEFI BIOS.
 
----
- fs/btrfs/inode.c |    1 +
- fs/btrfs/super.c |    4 +++-
- 2 files changed, 4 insertions(+), 1 deletion(-)
+I read from Chris that metadata is basically aligned at 2 MiB already with=
+=20
+mount option "ssd" which is default for non rotational media:
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 7cd8ab0..079a8df 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7315,6 +7315,7 @@ static int btrfs_symlink(struct inode *dir, struct dentry *dentry,
- 				      datasize);
- 	if (err) {
- 		drop_inode = 1;
-+		btrfs_free_path(path);
- 		goto out_unlock;
- 	}
- 	leaf = path->nodes[0];
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index be4ffa1..6ee0d04 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -507,8 +507,10 @@ static struct dentry *get_default_root(struct super_block *sb,
- 	 */
- 	dir_id = btrfs_super_root_dir(&root->fs_info->super_copy);
- 	di = btrfs_lookup_dir_item(NULL, root, path, dir_id, "default", 7, 0);
--	if (IS_ERR(di))
-+	if (IS_ERR(di)) {
-+		btrfs_free_path(path);
- 		return ERR_CAST(di);
-+	}
- 	if (!di) {
- 		/*
- 		 * Ok the default dir item isn't there.  This is weird since
+> Today, metadata allocations are 4k aligned but we do metadata
+> allocations in cluster of 256k in size (2MB in size in mount -o ssd
+> mode).  This results in larger metadata writes, and more contiguous
+> metadata writes.  The larger writes give the SSD FTL a better chance of
+> doing more optimal management of the flash.
 
+(Re: SSDs and filesystem alignment... from 2009-02-23,
+Message-Id: <1235398980.11205.5.camel@think.oraclecorp.com>)
+
+But what about data alignment?
+
+Ciao,
+=2D-=20
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+
+--nextPart1350929.nJCX42tn2b
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iEYEABECAAYFAk3OL84ACgkQmRvqrKWZhMfY3ACcDz0JIDvCADoYijtMVncbTLLT
+yE8An0c+wHp6lBqAY8V2NxkFnE9VNPNw
+=G6in
+-----END PGP SIGNATURE-----
+
+--nextPart1350929.nJCX42tn2b--

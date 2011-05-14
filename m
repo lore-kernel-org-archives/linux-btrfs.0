@@ -1,75 +1,58 @@
-From: Martin Steigerwald <Martin@lichtvoll.de>
-Subject: data alignment for SSD: Stripe size or sector size given with -s?
-Date: Sat, 14 May 2011 09:31:26 +0200
-Message-ID: <201105140931.26389.Martin@lichtvoll.de>
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+Subject: Re: Understanding DF, etc.
+Date: Sat, 14 May 2011 10:01:29 +0200
+Message-ID: <1305360089.3767.1.camel@tethys>
+References: <BlnToEqD1uB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart1350929.nJCX42tn2b";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <BlnToEqD1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart1350929.nJCX42tn2b
-Content-Type: text/plain;
-  charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+Hi Helmut,
 
-Hi!
-
-> [ANNOUNCE] Btrfs v0.9
-> [...]
-> * Stripe size parameter to mkfs.btrfs (-s size_in_bytes). Extents will
->  be aligned to the stripe size for performance.
-> [...]
-http://fixunix.com/kernel/258991-[announce]-btrfs-v0-9-a.html
-
-versus
-
->        -s, --sectorsize size
->               Specify the sectorsize, the minimum block allocation.
-
-(man mkfs.btrfs with btrfs-tools 0.19+20101101-1 debian package).
-
-Which one applies? Or do both mention the same? My notion of a sector is=20
-something different tough.
-
-I wonder how to set a stripe size for alignment to erase blocks of an=20
-Intel SSD 320. Or whether to set anything at all. I want to try to use GPT=
+Le vendredi 13 mai 2011 =C3=A0 21:50 +0200, Helmut Hullen a =C3=A9crit =
+:
+> That may depend on the "mkfs.btrfs" options - which options have you =
 =20
-with ThinkPad T520 UEFI BIOS.
+> set?
 
-I read from Chris that metadata is basically aligned at 2 MiB already with=
-=20
-mount option "ssd" which is default for non rotational media:
+Well, actually none, except for -L ;-)
 
-> Today, metadata allocations are 4k aligned but we do metadata
-> allocations in cluster of 256k in size (2MB in size in mount -o ssd
-> mode).  This results in larger metadata writes, and more contiguous
-> metadata writes.  The larger writes give the SSD FTL a better chance of
-> doing more optimal management of the flash.
+> What tells
+>         df -t btrfs
+>         btrfs filesystem show=20
 
-(Re: SSDs and filesystem alignment... from 2009-02-23,
-Message-Id: <1235398980.11205.5.camel@think.oraclecorp.com>)
+root@tethys:~# df -t btrfs
+Sys. de fichiers           1K-blocs   Utilis=C3=A9    Dispo. Uti% Mont=C3=
+=A9 sur
+/dev/mapper/VG1-TETHYS
+                     152735744  78383976  71999272  53% /
+/dev/mapper/VG1-TETHYS
+                     152735744  78383976  71999272  53% /tmp
+/dev/mapper/VG1-TETHYS
+                     152735744  78383976  71999272  53% /home
+/dev/mapper/VG1-TETHYS
+                     152735744  78383976  71999272  53% /var
+/dev/sda2               392192     26772    193660  13% /boot
 
-But what about data alignment?
+root@tethys:~# btrfs filesystem show
+failed to read /dev/sr0
+Label: 'TETHYS_BOOT'  uuid: b6b9e7ef-5aae-4c49-8b5a-39d6eec1d7d7
+	Total devices 1 FS bytes used 25.76MB
+	devid    1 size 383.00MB used 240.50MB path /dev/sda2
 
-Ciao,
-=2D-=20
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+Label: 'TETHYS'  uuid: 82c61fc2-8f8c-4cce-9d0d-ed446f671062
+	Total devices 1 FS bytes used 74.11GB
+	devid    1 size 145.66GB used 77.54GB path /dev/dm-1
 
---nextPart1350929.nJCX42tn2b
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
+Btrfs Btrfs v0.19
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
 
-iEYEABECAAYFAk3OL84ACgkQmRvqrKWZhMfY3ACcDz0JIDvCADoYijtMVncbTLLT
-yE8An0c+wHp6lBqAY8V2NxkFnE9VNPNw
-=G6in
------END PGP SIGNATURE-----
-
---nextPart1350929.nJCX42tn2b--
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

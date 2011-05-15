@@ -1,70 +1,97 @@
-From: kehon <coolkehon@gmail.com>
-Subject: Re: [GIT PULL] Btrfs updates
-Date: Sun, 15 May 2011 11:41:59 -0400
-Message-ID: <20110515154159.GA4296@gshadow>
-References: <1305470325-sup-6477@shiny>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: Re: Understanding DF, etc.
+Date: 15 May 2011 18:48:00 +0200
+Message-ID: <BlvXPDeD1uB@helmut.hullen.de>
+References: <1305360089.3767.1.camel@tethys>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; x-action=pgp-signed
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1305470325-sup-6477@shiny>
+In-Reply-To: <1305360089.3767.1.camel@tethys>
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+Hallo, Sw=E2mi,
 
-Any plans to update the wiki ?
-https://btrfs.wiki.kernel.org/index.php/Changelog
-:P
-On 05/15/11 at 10:47am, Chris Mason wrote:
-> 
-> Hi everyone,
-> 
-> The master branch of the btrfs unstable tree has a few more fixes:
-> 
-> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
-> 
-> These include small fixes in the new per-file flags, an oops in
-> the btrfs acl code and ENOSPC fixes for mixed block groups (used in very
-> small filesystems).
-> 
-> Li Zefan (3) commits (+15/-10):
->     Btrfs: fix FS_IOC_SETFLAGS ioctl (+2/-0)
->     Btrfs: fix FS_IOC_GETFLAGS ioctl (+7/-0)
->     fs: remove FS_COW_FL (+6/-10)
-> 
-> Daniel J Blueman (1) commits (+3/-2):
->     Prevent oopsing in posix_acl_valid()
-> 
-> liubo (1) commits (+26/-11):
->     Btrfs: fix easily get into ENOSPC in mixed case
-> 
-> Total: (5) commits (+44/-23)
-> 
->  fs/btrfs/acl.c         |    5 +++--
->  fs/btrfs/extent-tree.c |   37 ++++++++++++++++++++++++++-----------
->  fs/btrfs/ioctl.c       |   24 +++++++++++++++---------
->  include/linux/fs.h     |    1 -
->  4 files changed, 44 insertions(+), 23 deletions(-)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
+Du meintest am 14.05.11:
 
-iQIcBAEBAgAGBQJNz/RGAAoJEFWnpyuyLRXa6M8P/0Ev5byjWO7bRheomupHtUUe
-Oo4OVsQAN7dvD/GSfRCoCEnNEFAn70wNnARW4bPgWC8jvM5HSPx+fFc4u4URBS6q
-3mZUEyB2XMsAKqrDiXuIHgsUFcCZWW9IwhS5q8vMJ6F5ZZR9lIVt1Uh8l9qghdNh
-6pdohUCJ6gRQZyaY+P/Cv0eZJ1KdOcnmqL7PU8EMS/0OZWAgE/SMoYBuiX8qftTP
-jiNdxlIATgVeUA1r7Q7qaBiYQ4x76RuzINe5rtLK04Gg5eYZ1FPyrWZc12/347u3
-soOcGKsKKRQ7WvSDnaK2ecz4r5XaeL7s5lnGFcfVlP+71qPpGe6i/JVQKR7+AZpN
-gBSbXAO/VkkW8mx2BbNNTx93LFkr962XyLzS44mzik4VzPdZ7QM5Bd3q2sWQfRKO
-ePHoHiH5ZeDsukLZw4cHKVbsHr1ZcaBn1vEqof047Sy79BlEuy0wLr1R7kG/FZMy
-S+y1gU3gku+3BMb+NuHJwWEFVx1zmAhp/r9fRdyOaHmgxdBsi0bDtCuYPoSxl68O
-2m9WlJNxBkuMZ66UAYnhbX97x/WCOvNByLCTzFm25H1ISzHgF2z/pbuK2iz+OGG9
-I+vDFX06LJcc/NTOx2dv86Wxaw2MsEOXNoBomIXvn2O+8IeltTLbxd/+8NGavMFc
-kw0DNwrL8tMx3M7nVfbD
-=OD9q
------END PGP SIGNATURE-----
+>>> # btrfs fi df /
+>>> Data: total=3D74.01GB, used=3D72.77GB
+>>> System, DUP: total=3D8.00MB, used=3D16.00KB
+>>> System: total=3D4.00MB, used=3D0.00
+>>> Metadata, DUP: total=3D1.75GB, used=3D657.48MB
+>>> Metadata: total=3D8.00MB, used=3D0.00
+
+>>         btrfs filesystem show
+
+> root@tethys:~# df -t btrfs
+> Sys. de fichiers           1K-blocs   Utilis=E9    Dispo. Uti% Mont=E9
+> sur /dev/mapper/VG1-TETHYS
+>                      152735744  78383976  71999272  53% /
+> /dev/mapper/VG1-TETHYS
+>                      152735744  78383976  71999272  53% /tmp
+> /dev/mapper/VG1-TETHYS
+>                      152735744  78383976  71999272  53% /home
+> /dev/mapper/VG1-TETHYS
+>                      152735744  78383976  71999272  53% /var
+> /dev/sda2               392192     26772    193660  13% /boot
+
+> root@tethys:~# btrfs filesystem show
+> failed to read /dev/sr0
+> Label: 'TETHYS_BOOT'  uuid: b6b9e7ef-5aae-4c49-8b5a-39d6eec1d7d7
+> 	Total devices 1 FS bytes used 25.76MB
+> 	devid    1 size 383.00MB used 240.50MB path /dev/sda2
+
+> Label: 'TETHYS'  uuid: 82c61fc2-8f8c-4cce-9d0d-ed446f671062
+> 	Total devices 1 FS bytes used 74.11GB
+> 	devid    1 size 145.66GB used 77.54GB path /dev/dm-1
+
+
+Ok - just for your information the messages of my system, created with
+
+   mkfs.btrfs -d raid0 -m raid1 ...
+
+# btrfs filesystem show
+Label: 'MMedia'  uuid: 120b036a-883f-46aa-bd9a-cb6a1897c8d2
+	Total devices 3 FS bytes used 1.68TB
+	devid    2 size 1.81TB used 603.02GB path /dev/sdb1
+	devid    1 size 1.82TB used 599.51GB path /dev/sde1
+	devid    3 size 1.81TB used 603.01GB path /dev/sdc1
+
+Btrfs Btrfs v0.19
+
+# btrfs filesystem df /srv/MM
+Data, RAID0: total=3D1.75TB, used=3D1.67TB
+System, RAID1: total=3D16.00MB, used=3D116.00KB
+System: total=3D4.00MB, used=3D0.00
+Metadata, RAID1: total=3D4.25GB, used=3D2.53GB
+
+# df -t btrfs
+=46ilesystem    Type   1K-blocks      Used Available Use% Mounted on
+/dev/sdb1    btrfs   5846053400 1803934240 2718410984  40% /srv/MM
+
+----------------------------------------
+
+I don't know what's the meaning of the type "DUP" (instead of "RAID0" o=
+r =20
+"RAID1" in my example).
+
+In your case "btrfs filesystem df" seems to show something about specia=
+l =20
+informations and their need of space but nothing about used space or =20
+available space.
+
+Some weeks ago there has been a thread about the informations of "df", =
+=20
+"btrfs filesystem df" and "btrfs filesystem show"; most times there may=
+ =20
+be shown the "at least available space".
+
+
+Viele Gruesse!
+Helmut
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,30 +1,24 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [RFC][PATCH 1/2] vfs: allow /proc/pid/maps to return a custom device
-Date: Sat, 14 May 2011 20:06:04 -0700
-Message-ID: <m1tycwk6hv.fsf@fess.ebiederm.org>
-References: <1305328729-9995-1-git-send-email-mfasheh@suse.com>
-	<1305328729-9995-2-git-send-email-mfasheh@suse.com>
+From: radames42@freenet.de
+Subject: cow versus data erasure
+Date: Sun, 15 May 2011 11:43:57 +0200
+Message-ID: <72d360c3a60a791182b5901cca382570@email.freenet.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>
-To: Mark Fasheh <mfasheh@suse.com>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <1305328729-9995-2-git-send-email-mfasheh@suse.com> (Mark
-	Fasheh's message of "Fri, 13 May 2011 16:18:48 -0700")
+Content-Type: text/plain; charset="utf-8"
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Mark Fasheh <mfasheh@suse.com> writes:
+RGVhciBhbGwsDQoNCnNpbmNlIGJ0cmZzIHVzZXMgY293IEkgd29uZGVyIGhvdyBJIGNhbiBlcmFz
+ZSBjb25maWRlbnRpYWwgZGF0YS4NCg0KUmVwbGFjaW5nIHRoZSBmaWxlIGRvZXMgbm90IHdvcmss
+IHNpbmNlIHRoZSBuZXcgY29udGVudCBpcyB3cml0dGVuIHRvIG5ldyBibG9ja3Mgd2hpbGUgdGhl
+IG9sZCBjb25maWRlbnRpYWwgY29udGVudCByZW1haW5zIGluIGl0cyBvbGQgYmxvY2sgKHdoaWNo
+IG1heSBiZSB1bnVzZWQgbm93IC0gZGVwZW5kaW5nIG9uIHNuYXBzaG90cykuDQoNCklzIHRoZXJl
+IGEgbWV0aG9kIHRvIG92ZXJ3cml0ZSB0aGUgYmxvY2tzIG9mIGEgZmlsZSAoaWYgdGhlcmUgYXJl
+IG5vIHNuYXBzaG90cyBwb2ludGluZyB0byBpdCk/DQoNCkFsdGVybmF0aXZlcyBhcmU6DQotIHVz
+aW5nIGVuY2ZzIHRvIHNhdmUgY29uZmlkZW50aWFsIGRhdGENCi0gdXNpbmcgbHVrcyB0byBlbmNy
+eXB0IHRoZSB3aG9sZSBkaXNrL3BhcnRpdGlvbg0Kb3RoZXIgc3VnZ2VzdGlvbnM/DQoNCktpbmQg
+cmVnYXJkcywNClJhZGFtZXMNCg0KDQoKCi0tLQpOdXR6ZW4gU2llIGZyZWVuZXQgTWFpbCBvcHRp
+bWFsIGFuZ2VwYXNzdCBmw7xyIElociBpUGhvbmUsIEFuZHJvaWQgb2RlciBOb2tpYSBIYW5keSBh
+dWNoIHZvbiB1bnRlcndlZ3MuCkFsbGUgSW5mb3MgdW5kIERvd25sb2FkIHVudGVyIGh0dHA6Ly9t
+YWlsLmZyZWVuZXQuZGUvbW9iaWxlLWVtYWlsL2luZGV4Lmh0bWwKCg==
 
-> This patch introduces a callback in the super_operations structure,
-> 'get_maps_dev' which is then used by procfs to query which device to return
-> for reporting in /proc/[PID]/maps.
-
-No.
-
-It may make sense to call the vfs stat method.  But introducing an extra
-vfs operations for this seems like a maintenance nightmare.
-
-
-Eric

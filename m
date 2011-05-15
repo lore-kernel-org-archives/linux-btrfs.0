@@ -1,25 +1,40 @@
-From: Radames <radames42@freenet.de>
-Subject: Re: cow versus data erasure
-Date: Sun, 15 May 2011 10:20:18 +0000 (UTC)
-Message-ID: <loom.20110515T121909-434@post.gmane.org>
-References: <72d360c3a60a791182b5901cca382570@email.freenet.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: [GIT PULL] Btrfs updates
+Date: Sun, 15 May 2011 10:47:23 -0400
+Message-ID: <1305470325-sup-6477@shiny>
+Content-Type: text/plain; charset=UTF-8
+To: "linux-btrfs" <linux-btrfs@vger.kernel.org>,
+	"linux-kernel" <linux-kernel@vger.kernel.org>,
+	"Linus Torvalds" <torvalds@linux-foundation.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A method to overwrite all unused block may be another alternative.
 
-<radames42 <at> freenet.de> writes:
-> since btrfs uses cow I wonder how I can erase confidential data.
-> 
-> Alternatives are:
-> - using encfs to save confidential data
-> - using luks to encrypt the whole disk/partition
-> other suggestions?
+Hi everyone,
 
-Kind regards,
-Radames
+The master branch of the btrfs unstable tree has a few more fixes:
 
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git master
 
+These include small fixes in the new per-file flags, an oops in
+the btrfs acl code and ENOSPC fixes for mixed block groups (used in very
+small filesystems).
+
+Li Zefan (3) commits (+15/-10):
+    Btrfs: fix FS_IOC_SETFLAGS ioctl (+2/-0)
+    Btrfs: fix FS_IOC_GETFLAGS ioctl (+7/-0)
+    fs: remove FS_COW_FL (+6/-10)
+
+Daniel J Blueman (1) commits (+3/-2):
+    Prevent oopsing in posix_acl_valid()
+
+liubo (1) commits (+26/-11):
+    Btrfs: fix easily get into ENOSPC in mixed case
+
+Total: (5) commits (+44/-23)
+
+ fs/btrfs/acl.c         |    5 +++--
+ fs/btrfs/extent-tree.c |   37 ++++++++++++++++++++++++++-----------
+ fs/btrfs/ioctl.c       |   24 +++++++++++++++---------
+ include/linux/fs.h     |    1 -
+ 4 files changed, 44 insertions(+), 23 deletions(-)

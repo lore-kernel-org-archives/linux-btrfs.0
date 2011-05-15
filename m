@@ -1,57 +1,54 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
 Subject: Re: Understanding DF, etc.
-Date: 15 May 2011 19:28:00 +0200
-Message-ID: <BlvXUBvD1uB@helmut.hullen.de>
-References: <20110515170352.GA8927@carfax.org.uk>
-Reply-To: helmut@hullen.de
+Date: Sun, 15 May 2011 19:48:51 +0200
+Message-ID: <1305481731.3667.4.camel@tethys>
+References: <BlvXUBvD1uB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110515170352.GA8927@carfax.org.uk>
+In-Reply-To: <BlvXUBvD1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Hugo,
+Le dimanche 15 mai 2011 =C3=A0 19:28 +0200, Helmut Hullen a =C3=A9crit =
+:
+> shows that that device with brutto 150 GByte is nearly full with its
+> 78 GByte (or 73 GByte) data because it uses this kind of RAID1?=20
 
-Du meintest am 15.05.11:
+No. Here's the current situation on same machine :
 
->>>>> # btrfs fi df /
->>>>> Data: total=3D74.01GB, used=3D72.77GB
->>>>> System, DUP: total=3D8.00MB, used=3D16.00KB
->>>>> System: total=3D4.00MB, used=3D0.00
->>>>> Metadata, DUP: total=3D1.75GB, used=3D657.48MB
->>>>> Metadata: total=3D8.00MB, used=3D0.00
+# btrfs fi df /
+Data: total=3D85.01GB, used=3D84.56GB
+System, DUP: total=3D8.00MB, used=3D16.00KB
+System: total=3D4.00MB, used=3D0.00
+Metadata, DUP: total=3D1.75GB, used=3D1.01GB
+Metadata: total=3D8.00MB, used=3D0.00
 
->> I don't know what's the meaning of the type "DUP" (instead of
->> "RAID0" or "RAID1" in my example).
+As far as I understood, only metadata (not data) are DUPed, and the DAT=
+A
+zone is allocated as needed by 1GB chunks. So I currently use 84.5 GB
+and the system has thus allocated 85 GB of filesystem DATA space. When
+they get full, the system will allocate 1 more GB, etc. Until the devic=
+e
+itself gets full, of course.
 
->    DUP is a form of RAID-1 for single disks. Like RAID-1, it stores
-> two copies of the data, but where RAID-1 guarantees that the two
-> copies will be on different devices, DUP stores both copies on the
-> same device. btrfs uses DUP by default for metadata on single-device
-> filesystems, so that if part of the FS metadata is damaged (by, say,
-> unrecoverable bad blocks), there's still a good copy.
+You notice here that there's no indication about the device actual size
+(this df gives developper-useful data, not sysadmin-useful data ;-)) bu=
+t
+this file system resides in :=20
 
->    If you add another disk to the filesystem and balance, the DUP
-> chunks are automatically converted to RAID-1.
+# mount
+/dev/mapper/VG1-TETHYS on / type btrfs
+(rw,relatime,subvol=3DUBUNTU,compress=3Dzlib)
+[...]
 
-Sounds very interesting!
+# lvs VG1/TETHYS
+  LV     VG   Attr   LSize   Origin Snap%  Move Log Copy%  Convert
+  TETHYS VG1  -wi-ao 145,66g
 
-In this special case: does that mean that
 
-> root@tethys:~# df -t btrfs
-> Sys. de fichiers           1K-blocs   Utilis=E9    Dispo. Uti% Mont=E9
-> sur /dev/mapper/VG1-TETHYS
->                      152735744  78383976  71999272  53% /
-> /dev/mapper/VG1-TETHYS
->                      152735744  78383976  71999272  53% /tmp
 
-shows that that device with brutto 150 GByte is nearly full with its 78=
- =20
-GByte (or 73 GByte) data because it uses this kind of RAID1?
-
-Viele Gruesse!
-Helmut
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

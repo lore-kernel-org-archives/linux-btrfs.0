@@ -1,52 +1,103 @@
-From: "Jim Schutt" <jaschut@sandia.gov>
-Subject: Re: btrfs warnings from 2.6.39-rc5
-Date: Mon, 16 May 2011 08:28:57 -0600
-Message-ID: <4DD134A9.8010008@sandia.gov>
-References: <4DB863B4.3070900@sandia.gov> <4DC016C1.2070505@redhat.com>
-Mime-Version: 1.0
-Content-Type: text/plain;
- charset=utf-8;
- format=flowed
-Cc: linux-btrfs@vger.kernel.org,
-	"ceph-devel@vger.kernel.org" <ceph-devel@vger.kernel.org>
-To: "Josef Bacik" <josef@redhat.com>
-Return-path: <ceph-devel-owner@vger.kernel.org>
-In-Reply-To: <4DC016C1.2070505@redhat.com>
+From: Mimi Zohar <zohar@linux.vnet.ibm.com>
+Subject: [PATCH v5 12/21] evm: add evm_inode_post_init call in btrfs
+Date: Mon, 16 May 2011 10:45:06 -0400
+Message-ID: <1305557115-15652-13-git-send-email-zohar@linux.vnet.ibm.com>
+References: <1305557115-15652-1-git-send-email-zohar@linux.vnet.ibm.com>
+Cc: Mimi Zohar <zohar@linux.vnet.ibm.com>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	James Morris <jmorris@namei.org>,
+	David Safford <safford@watson.ibm.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Greg KH <greg@kroah.com>,
+	Dmitry Kasatkin <dmitry.kasatkin@nokia.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Mimi Zohar <zohar@us.ibm.com>
+To: linux-security-module@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1305557115-15652-1-git-send-email-zohar@linux.vnet.ibm.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Josef Bacik wrote:
-> On 04/27/2011 02:43 PM, Jim Schutt wrote:
->> Hi,
->>
->> I'm not sure if they matter, but I got these warnings on
->> one of the machines I'm using as a Ceph OSD server:
->>
->> [ 1806.549469] ------------[ cut here ]------------
->> [ 1806.554593] WARNING: at fs/btrfs/extent-tree.c:5790
->> use_block_rsv+0xa7/0x101 [btrfs]()
+After creating the initial LSM security extended attribute, call
+evm_inode_post_init_security() to create the 'security.evm'
+extended attribute.
 
->> Please let me know if I can do anything to help sort these out.
->>
-> 
-> I just posted a patch for this problem, it's titled
-> 
->     Btrfs: fix how we do space reservation for truncate
-> 
-> Please apply it and test it and see if it makes this problem go away. 
+Signed-off-by: Mimi Zohar <zohar@us.ibm.com>
+---
+ fs/btrfs/xattr.c |   39 +++++++++++++++++++++++++++++----------
+ 1 files changed, 29 insertions(+), 10 deletions(-)
 
-This patch has been working very well for me, thanks.
-I've had no sign of truncate trouble since I started using it.
-
--- Jim
-
-> Thanks,
-> 
-> Josef
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe ceph-devel" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-
+diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
+index cfd6605..df07619 100644
+--- a/fs/btrfs/xattr.c
++++ b/fs/btrfs/xattr.c
+@@ -22,6 +22,7 @@
+ #include <linux/rwsem.h>
+ #include <linux/xattr.h>
+ #include <linux/security.h>
++#include <linux/evm.h>
+ #include "ctree.h"
+ #include "btrfs_inode.h"
+ #include "transaction.h"
+@@ -367,31 +368,49 @@ int btrfs_xattr_security_init(struct btrfs_trans_handle *trans,
+ 			      const struct qstr *qstr)
+ {
+ 	int err;
+-	size_t len;
+-	void *value;
+-	char *suffix;
++	struct xattr lsm_xattr;
++	struct xattr evm_xattr;
+ 	char *name;
+ 
+-	err = security_inode_init_security(inode, dir, qstr, &suffix, &value,
+-					   &len);
++	err = security_inode_init_security(inode, dir, qstr, &lsm_xattr.name,
++					   &lsm_xattr.value,
++					   &lsm_xattr.value_len);
+ 	if (err) {
+ 		if (err == -EOPNOTSUPP)
+ 			return 0;
+ 		return err;
+ 	}
+ 
+-	name = kmalloc(XATTR_SECURITY_PREFIX_LEN + strlen(suffix) + 1,
++	name = kmalloc(XATTR_SECURITY_PREFIX_LEN + strlen(lsm_xattr.name) + 1,
+ 		       GFP_NOFS);
+ 	if (!name) {
+ 		err = -ENOMEM;
+ 	} else {
+ 		strcpy(name, XATTR_SECURITY_PREFIX);
+-		strcpy(name + XATTR_SECURITY_PREFIX_LEN, suffix);
+-		err = __btrfs_setxattr(trans, inode, name, value, len, 0);
++		strcpy(name + XATTR_SECURITY_PREFIX_LEN, lsm_xattr.name);
++		err = __btrfs_setxattr(trans, inode, name, lsm_xattr.value,
++				       lsm_xattr.value_len, 0);
+ 		kfree(name);
+ 	}
++	if (err)
++		goto out;
++
++	err = evm_inode_post_init_security(inode, &lsm_xattr, &evm_xattr);
++	if (err)
++		goto out;
+ 
+-	kfree(suffix);
+-	kfree(value);
++	name = kasprintf(GFP_NOFS, "%s%s", XATTR_SECURITY_PREFIX,
++			 evm_xattr.name);
++	if (!name)
++		err = -ENOMEM;
++	else {
++		err = __btrfs_setxattr(trans, inode, name, evm_xattr.value,
++				       evm_xattr.value_len, 0);
++		kfree(name);
++	}
++	kfree(evm_xattr.value);
++out:
++	kfree(lsm_xattr.name);
++	kfree(lsm_xattr.value);
+ 	return err;
+ }
+-- 
+1.7.3.4
 

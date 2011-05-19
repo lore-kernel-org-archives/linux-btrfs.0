@@ -1,129 +1,132 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH 2/2] Btrfs: load the key from the dir item in readdir into a fake dentry
-Date: Thu, 19 May 2011 13:58:49 -0400
-Message-ID: <1305827929-18491-2-git-send-email-josef@redhat.com>
-References: <1305827929-18491-1-git-send-email-josef@redhat.com>
+Subject: [PATCH 1/2] fs: add a DCACHE_NEED_LOOKUP flag for d_flags
+Date: Thu, 19 May 2011 13:58:48 -0400
+Message-ID: <1305827929-18491-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
 	viro@ZenIV.linux.org.uk, hch@lst.de
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <1305827929-18491-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In btrfs we have 2 indexes for inodes.  One is for readdir, it's in this nice
-sequential order and works out brilliantly for readdir.  However if you use ls,
-it usually stat's each file it gets from readdir.  This is where the second
-index comes in, which is based on a hash of the name of the file.  So then the
-lookup has to lookup this index, and then lookup the inode.  The index lookup is
-going to be in random order (since its based on the name hash), which gives us
-less than stellar performance.  Since we know the inode location from the
-readdir index, I create a dummy dentry and copy the location key into
-dentry->d_fsdata.  Then on lookup if we have d_fsdata we use that location to
-lookup the inode, avoiding looking up the other directory index.  Thanks,
+Btrfs (and I'd venture most other fs's) stores its indexes in nice disk order
+for readdir, but unfortunately in the case of anything that stats the files in
+order that readdir spits back (like oh say ls) that means we still have to do
+the normal lookup of the file, which means looking up our other index and then
+looking up the inode.  What I want is a way to create dummy dentries when we
+find them in readdir so that when ls or anything else subsequently does a
+stat(), we already have the location information in the dentry and can go
+straight to the inode itself.  The lookup stuff just assumes that if it finds a
+dentry it is done, it doesn't perform a lookup.  So add a DCACHE_NEED_LOOKUP
+flag so that the lookup code knows it still needs to run i_op->lookup() on the
+parent to get the inode for the dentry.  I have tested this with btrfs and I
+went from something that looks like this
+
+http://people.redhat.com/jwhiter/ls-noreada.png
+
+To this
+
+http://people.redhat.com/jwhiter/ls-good.png
+
+Thats a savings of 1300 seconds, or 22 minutes.  That is a significant savings.
+Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/inode.c |   51 +++++++++++++++++++++++++++++++++++++++++++++++++--
- 1 files changed, 49 insertions(+), 2 deletions(-)
+ fs/namei.c             |   48 ++++++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/dcache.h |    1 +
+ 2 files changed, 49 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 6228a30..3cd246c 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4120,12 +4120,23 @@ struct inode *btrfs_lookup_dentry(struct inode *dir, struct dentry *dentry)
- 	struct btrfs_root *sub_root = root;
- 	struct btrfs_key location;
- 	int index;
--	int ret;
-+	int ret = 0;
- 
- 	if (dentry->d_name.len > BTRFS_NAME_LEN)
- 		return ERR_PTR(-ENAMETOOLONG);
- 
--	ret = btrfs_inode_by_name(dir, dentry, &location);
-+	if (dentry->d_fsdata) {
-+		memcpy(&location, dentry->d_fsdata, sizeof(struct btrfs_key));
-+		kfree(dentry->d_fsdata);
-+		dentry->d_fsdata = NULL;
-+		/*
-+		 * We need to unhash this dentry so we can rehash it when we
-+		 * find the inode.
-+		 */
-+		d_drop(dentry);
-+	} else {
-+		ret = btrfs_inode_by_name(dir, dentry, &location);
-+	}
- 
- 	if (ret < 0)
- 		return ERR_PTR(ret);
-@@ -4180,6 +4191,12 @@ static int btrfs_dentry_delete(const struct dentry *dentry)
- 	return 0;
+diff --git a/fs/namei.c b/fs/namei.c
+index e3c4f11..a1bff4f 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -1198,6 +1198,29 @@ static struct dentry *d_alloc_and_lookup(struct dentry *parent,
  }
  
-+static void btrfs_dentry_release(struct dentry *dentry)
+ /*
++ * We already have a dentry, but require a lookup to be performed on the parent
++ * directory to fill in d_inode. Returns the new dentry, or ERR_PTR on error.
++ * parent->d_inode->i_mutex must be held. d_lookup must have verified that no
++ * child exists while under i_mutex.
++ */
++static struct dentry *d_inode_lookup(struct dentry *parent, struct dentry *dentry,
++				     struct nameidata *nd)
 +{
-+	if (dentry->d_fsdata)
-+		kfree(dentry->d_fsdata);
++	struct inode *inode = parent->d_inode;
++	struct dentry *old;
++
++	/* Don't create child dentry for a dead directory. */
++	if (unlikely(IS_DEADDIR(inode)))
++		return ERR_PTR(-ENOENT);
++
++	old = inode->i_op->lookup(inode, dentry, nd);
++	if (unlikely(old)) {
++		dput(dentry);
++		dentry = old;
++	}
++	return dentry;
 +}
++/*
+  *  It's more convoluted than I'd like it to be, but... it's still fairly
+  *  small and for now I'd prefer to have fast path as straight as possible.
+  *  It _is_ time-critical.
+@@ -1236,6 +1259,13 @@ static int do_lookup(struct nameidata *nd, struct qstr *name,
+ 				goto unlazy;
+ 			}
+ 		}
++		if (unlikely(dentry->d_flags & DCACHE_NEED_LOOKUP)) {
++			if (nameidata_dentry_drop_rcu(nd, dentry))
++				return -ECHILD;
++			dput(dentry);
++			dentry = NULL;
++			goto retry;
++		}
+ 		path->mnt = mnt;
+ 		path->dentry = dentry;
+ 		if (likely(__follow_mount_rcu(nd, path, inode, false)))
+@@ -1250,6 +1280,12 @@ unlazy:
+ 		}
+ 	} else {
+ 		dentry = __d_lookup(parent, name);
++		if (unlikely(!dentry))
++			goto retry;
++		if (unlikely(dentry->d_flags & DCACHE_NEED_LOOKUP)) {
++			dput(dentry);
++			dentry = NULL;
++		}
+ 	}
+ 
+ retry:
+@@ -1268,6 +1304,18 @@ retry:
+ 			/* known good */
+ 			need_reval = 0;
+ 			status = 1;
++		} else if (unlikely(dentry->d_flags & DCACHE_NEED_LOOKUP)) {
++			struct dentry *old;
 +
- static struct dentry *btrfs_lookup(struct inode *dir, struct dentry *dentry,
- 				   struct nameidata *nd)
- {
-@@ -4206,6 +4223,7 @@ static int btrfs_real_readdir(struct file *filp, void *dirent,
- 	struct btrfs_key key;
- 	struct btrfs_key found_key;
- 	struct btrfs_path *path;
-+	struct qstr q;
- 	int ret;
- 	struct extent_buffer *leaf;
- 	int slot;
-@@ -4284,6 +4302,7 @@ static int btrfs_real_readdir(struct file *filp, void *dirent,
- 
- 		while (di_cur < di_total) {
- 			struct btrfs_key location;
-+			struct dentry *tmp;
- 
- 			if (verify_dir_item(root, leaf, di))
- 				break;
-@@ -4304,6 +4323,33 @@ static int btrfs_real_readdir(struct file *filp, void *dirent,
- 			d_type = btrfs_filetype_table[btrfs_dir_type(leaf, di)];
- 			btrfs_dir_item_key_to_cpu(leaf, di, &location);
- 
-+			q.name = name_ptr;
-+			q.len = name_len;
-+			q.hash = full_name_hash(q.name, q.len);
-+			tmp = d_lookup(filp->f_dentry, &q);
-+			if (!tmp) {
-+				struct btrfs_key *newkey;
-+
-+				newkey = kzalloc(sizeof(struct btrfs_key),
-+						 GFP_NOFS);
-+				if (!newkey)
-+					goto no_dentry;
-+				tmp = d_alloc(filp->f_dentry, &q);
-+				if (!tmp) {
-+					kfree(newkey);
-+					dput(tmp);
-+					goto no_dentry;
-+				}
-+				memcpy(newkey, &location,
-+				       sizeof(struct btrfs_key));
-+				tmp->d_fsdata = newkey;
-+				tmp->d_flags |= DCACHE_NEED_LOOKUP;
-+				d_rehash(tmp);
-+				dput(tmp);
-+			} else {
-+				dput(tmp);
++			dentry->d_flags &= ~DCACHE_NEED_LOOKUP;
++			dentry = d_inode_lookup(parent, dentry, nd);
++			if (IS_ERR(dentry)) {
++				mutex_unlock(&dir->i_mutex);
++				return PTR_ERR(dentry);
 +			}
-+no_dentry:
- 			/* is this a reference to our own snapshot? If so
- 			 * skip it
- 			 */
-@@ -7566,4 +7612,5 @@ static const struct inode_operations btrfs_symlink_inode_operations = {
++			/* known good */
++			need_reval = 0;
++			status = 1;
+ 		}
+ 		mutex_unlock(&dir->i_mutex);
+ 	}
+diff --git a/include/linux/dcache.h b/include/linux/dcache.h
+index 19d90a5..a8b2457 100644
+--- a/include/linux/dcache.h
++++ b/include/linux/dcache.h
+@@ -216,6 +216,7 @@ struct dentry_operations {
+ #define DCACHE_MOUNTED		0x10000	/* is a mountpoint */
+ #define DCACHE_NEED_AUTOMOUNT	0x20000	/* handle automount on this dir */
+ #define DCACHE_MANAGE_TRANSIT	0x40000	/* manage transit from this dirent */
++#define DCACHE_NEED_LOOKUP	0x80000 /* dentry requires i_op->lookup */
+ #define DCACHE_MANAGED_DENTRY \
+ 	(DCACHE_MOUNTED|DCACHE_NEED_AUTOMOUNT|DCACHE_MANAGE_TRANSIT)
  
- const struct dentry_operations btrfs_dentry_operations = {
- 	.d_delete	= btrfs_dentry_delete,
-+	.d_release	= btrfs_dentry_release,
- };
 -- 
 1.7.2.3
 

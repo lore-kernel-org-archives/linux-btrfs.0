@@ -1,87 +1,142 @@
-From: Hubert Kario <hka@qbs.com.pl>
-Subject: Re: ssd option for USB flash drive?
-Date: Thu, 19 May 2011 21:04:54 +0200
-Message-ID: <201105192104.58726.hka@qbs.com.pl>
-References: <20110517220252.GA12323@yahoo.fr>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH 1/2] fs: add a DCACHE_NEED_LOOKUP flag for d_flags
+Date: Thu, 19 May 2011 15:43:51 -0400
+Message-ID: <20110519194350.GE18123@dhcp231-156.rdu.redhat.com>
+References: <1305827929-18491-1-git-send-email-josef@redhat.com> <C0F9F322-F0EF-424D-A92A-9B9DF7644783@dilger.ca>
 Mime-Version: 1.0
-Content-Type: application/pkcs7-mime;
-  smime-type=signed-data;
-  name="smime.p7m";
-  charset="iso-8859-1"
-Cc: "linux-btrfs" <linux-btrfs@vger.kernel.org>
-To: Stephane Chazelas <stephane_chazelas@yahoo.fr>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110517220252.GA12323@yahoo.fr>
+Content-Type: text/plain; charset=us-ascii
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, viro@ZenIV.linux.org.uk, hch@lst.de
+To: Andreas Dilger <adilger@dilger.ca>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <C0F9F322-F0EF-424D-A92A-9B9DF7644783@dilger.ca>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgEFADCABgkqhkiG9w0BBwGggCSABIIG
-jUNvbnRlbnQtVHlwZTogVGV4dC9QbGFpbjsNCiAgY2hhcnNldD0iaXNvLTg4NTktMSINCkNvbnRl
-bnQtVHJhbnNmZXItRW5jb2Rpbmc6IHF1b3RlZC1wcmludGFibGUNCg0KT24gV2VkbmVzZGF5IDE4
-IG9mIE1heSAyMDExIDAwOjAyOjUyIFN0ZXBoYW5lIENoYXplbGFzIHdyb3RlOg0KPiBIaXlhLA0K
-Pj0yMA0KPiBJJ3ZlIG5vdCBmb3VuZCBtdWNoIGRldGFpbCBvbiB3aGF0IHRoZSAic3NkIiBidHJm
-cyBtb3VudCBvcHRpb24NCj4gZGlkLiBXb3VsZCBpdCBtYWtlIHNlbnNlIHRvIGVuYWJsZSBpdCB0
-byBhIGZzIG9uIGEgVVNCIGZsYXNoDQo+IGRyaXZlPw0KDQp5ZXMsIGVuYWJsaW5nIGRpc2NhcmQg
-aXMgcG9pbnRsZXNzIHRob3VnaCAobm8gVVNCIHN0b3JhZ2Ugc3VwcG9ydHMgaXQgQUZBSUs9DQop
-Lg0KPTIwDQo+IEknbSB1c2luZyBidHJmcyAob3ZlciBMVk0pIG9uIGEgTGl2ZSBMaW51eCBVU0Ig
-c3RpY2sgdG8gYmVuZWZpdA0KPiBmcm9tIGJ0cmZzJ3MgY29tcHJlc3Npb24gYW5kIGFtIHRyeWlu
-ZyB0byBpbXByb3ZlIHRoZQ0KPiBwZXJmb3JtYW5jZS4NCg0Kc3NkIG1vZGUgd29uJ3QgaW1wcm92
-ZSBwZXJmb3JtYW5jZSBieSBtdWNoIChpZiBhbnkpLg0KDQpZb3UgbmVlZCB0byByZW1lbWJlciB0
-aGF0IFVTQjIuMCBpcyBsaW1pdGVkIHRvIGFib3V0IDIwLTMwTWlCL3MgKGRlcGVuZGluZyA9DQpv
-bj0yMA0KQ1BVKSBzbyBpdCB3aWxsIGJlIHNsb3cgbm8gbWF0dGVyIHdoYXQgeW91IGRvDQo9MjAN
-Cj4gV291bGQgYW55Ym9keSBoYXZlIGFueSByZWNvbW1lbmRhdGlvbiBvbiBob3cgdG8gaW1wcm92
-ZQ0KPiBwZXJmb3JtYW5jZSB0aGVyZT8gTGlrZSB3aGF0IHdvdWxkIGJlIHRoZSBiZXN0IHdheSB0
-bw0KPiBlbmFibGUvaW5jcmVhc2Ugd3JpdGViYWNrIGJ1ZmZlciBvciBhbnkgd2F5IHRvIG1ha2Ug
-c3VyZSB3cml0ZXMNCj4gYXJlIGRlbGF5ZWQgYW5kIGFzeW5jaHJvbm91cz8gV291bGQgZGlzYWJs
-aW5nIHJlYWQtYWhlYWQgaGVscD8NCj4gKGF0IHdoaWNoIGxldmVsIHdvdWxkIGl0IGJlIGRvbmU/
-KS4gQW55IG90aGVyIHRpcCAobGlrZQ0KPiBkaXNhYmxpbmcgYXRpbWUsIGFsaWduaW5nIGJsb2Nr
-cy9leHRlbnRzLCBmaWd1cmUgb3V0IGVyYXNlIGJsb2NrDQo+IHNpemVzIGlmIHJlbGV2YW50Li4u
-KT8NCg0KYWxpZ25pbmcgbG9naWNhbCBibG9ja3MgdG8gZXJhc2UgYmxvY2tzIGNhbiBnaXZlIHNv
-bWUgcGVyZm9ybWFuY2UgYnV0IHRoZSBvPQ0Kbmx5PTIwDQp3YXkgdG8gbWFrZSBpdCByZWFsbHkg
-ZmFzdCBpcyBub3QgdG8gdXNlIFVTQg0KPTIwDQo+IE1hbnkgdGhhbmtzIGluIGFkdmFuY2UsDQo+
-IFN0ZXBoYW5lDQo+IC0tDQo+IFRvIHVuc3Vic2NyaWJlIGZyb20gdGhpcyBsaXN0OiBzZW5kIHRo
-ZSBsaW5lICJ1bnN1YnNjcmliZSBsaW51eC1idHJmcyIgaW4NCj4gdGhlIGJvZHkgb2YgYSBtZXNz
-YWdlIHRvIG1ham9yZG9tb0B2Z2VyLmtlcm5lbC5vcmcNCj4gTW9yZSBtYWpvcmRvbW8gaW5mbyBh
-dCAgaHR0cDovL3ZnZXIua2VybmVsLm9yZy9tYWpvcmRvbW8taW5mby5odG1sDQoNCj0yRC09MjAN
-Ckh1YmVydCBLYXJpbw0KUUJTIC0gUXVhbGl0eSBCdXNpbmVzcyBTb2Z0d2FyZQ0KMDItNjU2IFdh
-cnN6YXdhLCB1bC4gS3Nhd2VyPUYzdyAzMC84NQ0KdGVsLiArNDggKDIyKSA2NDYtNjEtNTEsIDY0
-Ni03NC0yNA0Kd3d3LnFicy5jb20ucGwNCgAAAAAAAKCCBsowggbGMIIErqADAgECAghgRNYwzIbz
-HzANBgkqhkiG9w0BAQsFADBRMSowKAYDVQQLDCFRQlMgQ2xhc3MgMyBDZXJ0aWZpY2F0ZSBBdXRo
-b3JpdHkxFjAUBgNVBAoMDVFCUyBKYW4gS3ViYW4xCzAJBgNVBAYTAlBMMB4XDTExMDUxNjEwMDUz
-MloXDTEyMDUxNjEwMDUzMlowgaYxHTAbBgkqhkiG9w0BCQEWDmhrYUBxYnMuY29tLnBsMRUwEwYD
-VQQDDAxIdWJlcnQgS2FyaW8xDzANBgNVBCoMBkh1YmVydDEOMAwGA1UEBAwFS2FyaW8xFzAVBgNV
-BAoMDlFCUyBKYW4gS3ViYcWEMREwDwYDVQQHDAhXYXJzemF3YTEUMBIGA1UECAwLbWF6b3dpZWNr
-aWUxCzAJBgNVBAYTAlBMMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtmTUo4Y/Qnf6
-MzeQiOYc56cvVa1b3VJaZDGC3ZSj8rPlj68nHL/Tk9FCRI3SYlJ1efskI4j8zVlxKTLetPCEUqE3
-PO2UQ0OaFCpdcbZQ9yvVXUbEVNAZ5quE856LmQzQ33/KvsekLEzfYfeLS1yjqrhqIUYblkycZT6w
-owsx70NfXtfSb6H9DDjX1u0WpU6jK8lLaphEA9vQB+zEfYQWraCY1E0auEiGbPfPNi3x0if/ckVu
-UYCwr7IJaQg4hcYXFhUuKcbbFebUDOl8L1oi/2QwxC83U87pan+2awtbCWD33Q+QwSRoHUuX6pQs
-0sPnZehh+PfdmAC9MkWAg8fXRwIDAQABo4ICSjCCAkYwUQYIKwYBBQUHAQEERTBDMEEGCCsGAQUF
-BzABhjVodHRwOi8vY2EucWJzLmNvbS5wbDo4MDgwL2VqYmNhL3B1YmxpY3dlYi9zdGF0dXMvb2Nz
-cDAdBgNVHQ4EFgQUZ6aWItDHMTdc4y1LLdYvTB/kmhswDAYDVR0TAQH/BAIwADAfBgNVHSMEGDAW
-gBRThM4WgbPV3Ji/Qgr6taX1RUTbLDCB/QYDVR0fBIH1MIHyMIHvoIGVoIGShoGPaHR0cDovL2Nh
-LnFicy5jb20ucGw6ODA4MC9lamJjYS9wdWJsaWN3ZWIvd2ViZGlzdC9jZXJ0ZGlzdD9jbWQ9Y3Js
-Jmlzc3Vlcj1vdT1RQlMlMjBDbGFzcyUyMDMlMjBDZXJ0aWZpY2F0ZSUyMEF1dGhvcml0eSxvPVFC
-UyUyMEphbiUyMEt1YmFuLGM9UEyiVaRTMFExKjAoBgNVBAsMIVFCUyBDbGFzcyAzIENlcnRpZmlj
-YXRlIEF1dGhvcml0eTEWMBQGA1UECgwNUUJTIEphbiBLdWJhbjELMAkGA1UEBhMCUEwwDgYDVR0P
-AQH/BAQDAgSwMGIGA1UdJQRbMFkGCCsGAQUFBwMCBggrBgEFBQcDAwYIKwYBBQUHAwQGCisGAQQB
-gjcUAgIGCisGAQQBgjcKAwwGCisGAQQBgjcCARUGCisGAQQBgjcCARYGCSqGSIb3LwEBBTAvBgNV
-HREEKDAmgQ5oa2FAcWJzLmNvbS5wbIEUd2VibWFzdGVyQHFicy5jb20ucGwwDQYJKoZIhvcNAQEL
-BQADggIBAE2d0JelbaaQJRuxZxndox3YC6JbOU+rG2wtQ0NGrS2xtlqW3NnFrwj0Z9aCAJxFh1kD
-6HpeGqhx6QHILCIjjogJ4hJsge66B37oP+xd1SJVGHlpeyA/hS2Fj6r0YnTT6umy0i6tDO9lvbPe
-walfklVCwkjqnJsFiMI4qew7HY/Gc/GxHABjE2W9NeXtDDfqzxJ3LUXwuqVHF74EMO7N1mBgiGOM
-7yAVuOCGzpX86fgWFpLqRHKymuSj9VgIAa80eX3+LOZ3YYzcSAbY2TJbN1BmU5kfGQMTIceXzB8I
-nub1PfUQ7mrLhheq3UIt+3MaUtgfhi2Um1RPtxway6JtUpu+pDXHukM5vgYHRfIgfVE5jClLLeIv
-9ktjDpd5cGhhQjtzfeE+kaP8323xj2M+c2RJurcj2TGE48dje3aGLK4a7VSd8fsGNgdOYjua3f29
-kRGX/O1hug+bRAd0WYYEjIZL/eB8EAm6k75B9IyGvdyXP5xuSxW4kRRj6cU22M8evhFJ6uM/Rljn
-3UESuob2m7hsloJVJbqDPUlvkqT8q26VLdiSoHY0vikw+oxqdgmTm8dicjBi+ajvkonqDP3d2sm+
-yqpOld0+2HvEzYrPxCzg85H5WWCmTjR+bgbb04gFWi0e7P6XhGysv5O7TJTFOkZ4WnKM6QqUrpSa
-M9PC4eR7MYICHjCCAhoCAQEwXTBRMSowKAYDVQQLDCFRQlMgQ2xhc3MgMyBDZXJ0aWZpY2F0ZSBB
-dXRob3JpdHkxFjAUBgNVBAoMDVFCUyBKYW4gS3ViYW4xCzAJBgNVBAYTAlBMAghgRNYwzIbzHzAN
-BglghkgBZQMEAgEFAKCBkzAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEP
-Fw0xMTA1MTkxOTA0NTVaMCgGCSqGSIb3DQEJDzEbMBkwCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMH
-MC8GCSqGSIb3DQEJBDEiBCBkXfVNESLSWFdkBgMB3fW0zS2M6TWmt3V2nbxUsHEgEjANBgkqhkiG
-9w0BAQEFAASCAQAxmupWuvLpLnm8RTEME9hECDjN89WGaIB+SPQ+lDHaxJ7NZQFv5d6wUX9BsWcb
-A/Sp4QA/vjz1HUhSdauoKlDVb0QjGudjo2POa4+JH5gV63OzvDNNkIM/KX+g6i+1K796YEk42W6W
-bynvboIYDtChcVnRYVFn8vlkTSb94AN+loLHEhCA+uwjSoaJLvpvDUmkwDZg89+jI8HqvrpMvxP5
-gEw0vrVVdhXVaYbsX7POUzSQVquwEhO/lvK4V7wkeBwnGg7fOAQ/KIC3Ay9YttZX1E5dD3aGACR5
-G7BaviWXAT7RkiK91nHqhVBZNGnlVl7OCerha5GYJMp58OE5EETQAAAAAAAA
+On Thu, May 19, 2011 at 01:03:18PM -0600, Andreas Dilger wrote:
+> On May 19, 2011, at 11:58, Josef Bacik wrote:
+> > Btrfs (and I'd venture most other fs's) stores its indexes in nice disk order
+> > for readdir, but unfortunately in the case of anything that stats the files in
+> > order that readdir spits back (like oh say ls) that means we still have to do
+> > the normal lookup of the file, which means looking up our other index and then
+> > looking up the inode.  What I want is a way to create dummy dentries when we
+> > find them in readdir so that when ls or anything else subsequently does a
+> > stat(), we already have the location information in the dentry and can go
+> > straight to the inode itself.  The lookup stuff just assumes that if it finds a
+> > dentry it is done, it doesn't perform a lookup.  So add a DCACHE_NEED_LOOKUP
+> > flag so that the lookup code knows it still needs to run i_op->lookup() on the
+> > parent to get the inode for the dentry.  I have tested this with btrfs and I
+> > went from something that looks like this
+> > 
+> > http://people.redhat.com/jwhiter/ls-noreada.png
+> > 
+> > To this
+> > 
+> > http://people.redhat.com/jwhiter/ls-good.png
+> > 
+> > Thats a savings of 1300 seconds, or 22 minutes.  That is a significant savings.
+> > Thanks,
+> 
+> This comment should probably mention the number of files being tested, in order
+> to make a 1300s savings meaningful.  Similarly, it would be better to provide
+> the absolute times of tests in case these URLs disappear in the future.
+> 
+> "That reduces the time to do "ls -l" on a 1M file directory from 2181s to 855s."
+> 
+
+Good point, I will include that in my next posting.
+
+> > Signed-off-by: Josef Bacik <josef@redhat.com>
+> > ---
+> > fs/namei.c             |   48 ++++++++++++++++++++++++++++++++++++++++++++++++
+> > include/linux/dcache.h |    1 +
+> > 2 files changed, 49 insertions(+), 0 deletions(-)
+> > 
+> > diff --git a/fs/namei.c b/fs/namei.c
+> > index e3c4f11..a1bff4f 100644
+> > --- a/fs/namei.c
+> > +++ b/fs/namei.c
+> > @@ -1198,6 +1198,29 @@ static struct dentry *d_alloc_and_lookup(struct dentry *parent,
+> > }
+> > 
+> > /*
+> > + * We already have a dentry, but require a lookup to be performed on the parent
+> > + * directory to fill in d_inode. Returns the new dentry, or ERR_PTR on error.
+> > + * parent->d_inode->i_mutex must be held. d_lookup must have verified that no
+> > + * child exists while under i_mutex.
+> > + */
+> > +static struct dentry *d_inode_lookup(struct dentry *parent, struct dentry *dentry,
+> > +				     struct nameidata *nd)
+> > +{
+> > +	struct inode *inode = parent->d_inode;
+> > +	struct dentry *old;
+> > +
+> > +	/* Don't create child dentry for a dead directory. */
+> > +	if (unlikely(IS_DEADDIR(inode)))
+> > +		return ERR_PTR(-ENOENT);
+> > +
+> > +	old = inode->i_op->lookup(inode, dentry, nd);
+> > +	if (unlikely(old)) {
+> > +		dput(dentry);
+> > +		dentry = old;
+> > +	}
+> > +	return dentry;
+> > +}
+> > +/*
+> > *  It's more convoluted than I'd like it to be, but... it's still fairly
+> > *  small and for now I'd prefer to have fast path as straight as possible.
+> > *  It _is_ time-critical.
+> > @@ -1236,6 +1259,13 @@ static int do_lookup(struct nameidata *nd, struct qstr *name,
+> > 				goto unlazy;
+> > 			}
+> > 		}
+> > +		if (unlikely(dentry->d_flags & DCACHE_NEED_LOOKUP)) {
+> > +			if (nameidata_dentry_drop_rcu(nd, dentry))
+> > +				return -ECHILD;
+> > +			dput(dentry);
+> > +			dentry = NULL;
+> > +			goto retry;
+> > +		}
+> > 		path->mnt = mnt;
+> > 		path->dentry = dentry;
+> > 		if (likely(__follow_mount_rcu(nd, path, inode, false)))
+> > @@ -1250,6 +1280,12 @@ unlazy:
+> > 		}
+> > 	} else {
+> > 		dentry = __d_lookup(parent, name);
+> > +		if (unlikely(!dentry))
+> > +			goto retry;
+> > +		if (unlikely(dentry->d_flags & DCACHE_NEED_LOOKUP)) {
+> > +			dput(dentry);
+> > +			dentry = NULL;
+> > +		}
+> > 	}
+> > 
+> > retry:
+> > @@ -1268,6 +1304,18 @@ retry:
+> > 			/* known good */
+> > 			need_reval = 0;
+> > 			status = 1;
+> > +		} else if (unlikely(dentry->d_flags & DCACHE_NEED_LOOKUP)) {
+> > +			struct dentry *old;
+> > +
+> > +			dentry->d_flags &= ~DCACHE_NEED_LOOKUP;
+> > +			dentry = d_inode_lookup(parent, dentry, nd);
+> 
+> Would it make sense to keep DCACHE_NEED_LOOKUP set in d_flags until _after_
+> the call to d_inode_lookup()?  That way the filesystem can positively know
+> it is doing the inode lookup from d_fsdata, instead of just inferring it
+> from the presence of d_fsdata?  It is already the filesystem that is setting
+> DCACHE_NEED_LOOKUP, so it should really be the one clearing this flag also.
+> 
+> I'm concerned that there may be filesystems that need d_fsdata for something
+> already, so the presence/absence of d_fsdata is not a clear indication to
+> the underlying filesystem of whether to do an inode lookup based on d_fsdata,
+> which might mean that it needs to keep yet another flag for this purpose.
+> 
+
+Another good point, I had toyed with the thought of just having helpers do all
+the dirty work so all fs's could be using the same interface for using this
+trick, I'll push this work into those helpers to make sure its done
+consistently.  Thanks,
+
+Josef

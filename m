@@ -1,113 +1,86 @@
 From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH 4/9] Btrfs: introduce first sub trans
-Date: Thu, 19 May 2011 16:11:27 +0800
-Message-ID: <1305792692-10635-5-git-send-email-liubo2009@cn.fujitsu.com>
-References: <1305792692-10635-1-git-send-email-liubo2009@cn.fujitsu.com>
+Subject: [PATCH 0/9] Btrfs: improve write ahead log with sub transaction
+Date: Thu, 19 May 2011 16:11:23 +0800
+Message-ID: <1305792692-10635-1-git-send-email-liubo2009@cn.fujitsu.com>
 Cc: <josef@redhat.com>, <chris.mason@oracle.com>,
 	Liu Bo <liubo2009@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1305792692-10635-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In multi-thread situations, writeback of a file may span across several
-sub transactions, and we need to introduce first_sub_trans to get sub_transid of
-the first sub transaction recorded, so that log code can skip file extents which
-have been logged or committed into disk.
+I've been working to try to improve the write-ahead log's performance,
+and I found that the bottleneck addresses in the checksum items,
+especially when we want to make a random write on a large file, e.g a 4G file.
 
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
----
- fs/btrfs/btrfs_inode.h |    9 +++++++++
- fs/btrfs/inode.c       |   13 ++++++++++++-
- fs/btrfs/transaction.h |   17 ++++++++++++++++-
- 3 files changed, 37 insertions(+), 2 deletions(-)
+Then a idea for this suggested by Chris is to use sub transaction ids and just
+to log the part of inode that had changed since either the last log commit or
+the last transaction commit.  And as we also push the sub transid into the btree
+blocks, we'll get much faster tree walks.  As a result, we abandon the original
+brute force approach, which is "to delete all items of the inode in log",
+to making sure we get the most uptodate copies of everything, and instead
+we manage to "find and merge", i.e. finding extents in the log tree and merging
+in the new extents from the file.
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 57c3bb2..fb5617a 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -79,6 +79,15 @@ struct btrfs_inode {
- 	/* sequence number for NFS changes */
- 	u64 sequence;
- 
-+	/* used to avoid race of first_sub_trans */
-+	spinlock_t sub_trans_lock;
-+
-+	/*
-+	 * sub transid of the trans that first modified this inode before
-+	 * a trans commit or a log sync
-+	 */
-+	u64 first_sub_trans;
-+
- 	/*
- 	 * transid of the trans_handle that last modified this inode
- 	 */
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d823467..acd5a38 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6569,7 +6569,16 @@ again:
- 	set_page_dirty(page);
- 	SetPageUptodate(page);
- 
--	BTRFS_I(inode)->last_trans = root->fs_info->generation;
-+	spin_lock(&BTRFS_I(inode)->sub_trans_lock);
-+
-+	if (BTRFS_I(inode)->first_sub_trans > root->fs_info->sub_generation ||
-+	    BTRFS_I(inode)->last_trans <= BTRFS_I(inode)->logged_trans ||
-+	    BTRFS_I(inode)->last_trans <= root->fs_info->last_trans_committed)
-+		BTRFS_I(inode)->first_sub_trans = root->fs_info->sub_generation;
-+
-+	spin_unlock(&BTRFS_I(inode)->sub_trans_lock);
-+
-+	BTRFS_I(inode)->last_trans = root->fs_info->sub_generation;
- 	BTRFS_I(inode)->last_sub_trans = BTRFS_I(inode)->root->log_transid;
- 
- 	unlock_extent_cached(io_tree, page_start, page_end, &cached_state, GFP_NOFS);
-@@ -6763,6 +6772,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
- 	ei->space_info = NULL;
- 	ei->generation = 0;
- 	ei->sequence = 0;
-+	ei->first_sub_trans = 0;
- 	ei->last_trans = 0;
- 	ei->last_sub_trans = 0;
- 	ei->logged_trans = 0;
-@@ -6786,6 +6796,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
- 	extent_io_tree_init(&ei->io_tree, &inode->i_data, GFP_NOFS);
- 	extent_io_tree_init(&ei->io_failure_tree, &inode->i_data, GFP_NOFS);
- 	mutex_init(&ei->log_mutex);
-+	spin_lock_init(&ei->sub_trans_lock);
- 	btrfs_ordered_inode_tree_init(&ei->ordered_tree);
- 	INIT_LIST_HEAD(&ei->i_orphan);
- 	INIT_LIST_HEAD(&ei->delalloc_inodes);
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 6dcdd28..d531aea 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -83,7 +83,22 @@ static inline void btrfs_update_inode_block_group(
- static inline void btrfs_set_inode_last_trans(struct btrfs_trans_handle *trans,
- 					      struct inode *inode)
- {
--	BTRFS_I(inode)->last_trans = trans->transaction->transid;
-+	spin_lock(&BTRFS_I(inode)->sub_trans_lock);
-+
-+	/*
-+	 * We have joined in a transaction, so btrfs_commit_transaction will
-+	 * definitely wait for us and it does not need to add a extra
-+	 * trans_mutex lock here.
-+	 */
-+	if (BTRFS_I(inode)->first_sub_trans > trans->transid ||
-+	    BTRFS_I(inode)->last_trans <= BTRFS_I(inode)->logged_trans ||
-+	    BTRFS_I(inode)->last_trans <=
-+			 BTRFS_I(inode)->root->fs_info->last_trans_committed)
-+		BTRFS_I(inode)->first_sub_trans = trans->transid;
-+
-+	spin_unlock(&BTRFS_I(inode)->sub_trans_lock);
-+
-+	BTRFS_I(inode)->last_trans = trans->transid;
- 	BTRFS_I(inode)->last_sub_trans = BTRFS_I(inode)->root->log_transid;
- }
- 
--- 
-1.6.5.2
+This patchset puts the above idea into code, and although the code is now more
+complex, it brings us a great deal of performance improvement.
+
+Beside the improvement of log, patch 8 fixes a small but critical bug of log code
+with sub transaction.
+
+Here I have some test results to show, I use sysbench to do "random write + fsync".
+
+===
+sysbench --test=fileio --num-threads=1 --file-num=2 --file-block-size=4K --file-total-size=8G --file-test-mode=rndwr --file-io-mode=sync --file-extra-flags=  [prepare, run]
+===
+
+Sysbench args:
+  - Number of threads: 1
+  - Extra file open flags: 0
+  - 2 files, 4Gb each
+  - Block size 4Kb
+  - Number of random requests for random IO: 10000
+  - Read/Write ratio for combined random IO test: 1.50
+  - Periodic FSYNC enabled, calling fsync() each 100 requests.
+  - Calling fsync() at the end of test, Enabled.
+  - Using synchronous I/O mode
+  - Doing random write test
+
+Sysbench results:
+===
+   Operations performed:  0 Read, 10000 Write, 200 Other = 10200 Total
+   Read 0b  Written 39.062Mb  Total transferred 39.062Mb
+===
+a) without patch:  (*SPEED* : 451.01Kb/sec)
+   112.75 Requests/sec executed
+
+b) with patch:     (*SPEED* : 4.3621Mb/sec)
+   1116.71 Requests/sec executed
+
+
+Liu Bo (10):
+  Btrfs: introduce sub transaction stuff
+  Btrfs: modify should_cow_block to update block's generation
+  Btrfs: modify btrfs_drop_extents API
+  Btrfs: introduce first sub trans
+  Btrfs: still update inode transid when size remains unchanged
+  Btrfs: main log stuff
+  Btrfs: add checksum check for log
+  Btrfs: fix a bug of log check
+  Btrfs: kick off useless code
+  Btrfs: ship trans->transid to trans->transaction->transid
+
+ fs/btrfs/btrfs_inode.h |   12 ++-
+ fs/btrfs/ctree.c       |   71 ++++++++++-----
+ fs/btrfs/ctree.h       |    5 +-
+ fs/btrfs/disk-io.c     |    9 +-
+ fs/btrfs/extent-tree.c |   10 ++-
+ fs/btrfs/file.c        |   22 ++---
+ fs/btrfs/inode.c       |   28 ++++--
+ fs/btrfs/ioctl.c       |    6 +-
+ fs/btrfs/relocation.c  |    6 +-
+ fs/btrfs/transaction.c |   13 ++-
+ fs/btrfs/transaction.h |   19 ++++-
+ fs/btrfs/tree-defrag.c |    2 +-
+ fs/btrfs/tree-log.c    |  222 ++++++++++++++++++++++++++++++++---------------
+ 13 files changed, 279 insertions(+), 146 deletions(-)
 

@@ -1,62 +1,35 @@
-From: Hubert Kario <hka@qbs.com.pl>
-Subject: Re: ssd option for USB flash drive?
-Date: Thu, 19 May 2011 21:53:24 +0200
-Message-ID: <201105192153.24797.hka@qbs.com.pl>
-References: <20110517220252.GA12323@yahoo.fr> <201105192104.58726.hka@qbs.com.pl>
+From: Mark Fasheh <mfasheh@suse.com>
+Subject: Re: [RFC][PATCH 1/2] vfs: allow /proc/pid/maps to return a custom device
+Date: Thu, 19 May 2011 13:18:26 -0700
+Message-ID: <20110519201826.GN17822@wotan.suse.de>
+References: <1305328729-9995-1-git-send-email-mfasheh@suse.com> <1305328729-9995-2-git-send-email-mfasheh@suse.com> <m1tycwk6hv.fsf@fess.ebiederm.org>
+Reply-To: Mark Fasheh <mfasheh@suse.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=iso-8859-1
-Cc: "linux-btrfs" <linux-btrfs@vger.kernel.org>
-To: Stephane Chazelas <stephane_chazelas@yahoo.fr>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>
+To: "Eric W. Biederman" <ebiederm@xmission.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201105192104.58726.hka@qbs.com.pl>
+In-Reply-To: <m1tycwk6hv.fsf@fess.ebiederm.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sorry, loks like list mailer doesn't like SMIME messages.
+On Sat, May 14, 2011 at 08:06:04PM -0700, Eric W. Biederman wrote:
+> Mark Fasheh <mfasheh@suse.com> writes:
+> 
+> > This patch introduces a callback in the super_operations structure,
+> > 'get_maps_dev' which is then used by procfs to query which device to return
+> > for reporting in /proc/[PID]/maps.
+> 
+> No.
+> 
+> It may make sense to call the vfs stat method.  But introducing an extra
+> vfs operations for this seems like a maintenance nightmare.
 
-On Thursday 19 of May 2011 21:04:54 Hubert Kario wrote:
-> On Wednesday 18 of May 2011 00:02:52 Stephane Chazelas wrote:
-> > Hiya,
-> >=20
-> > I've not found much detail on what the "ssd" btrfs mount option
-> > did. Would it make sense to enable it to a fs on a USB flash
-> > drive?
->=20
-> yes, enabling discard is pointless though (no USB storage supports it
-> AFAIK).
->=20
-> > I'm using btrfs (over LVM) on a Live Linux USB stick to benefit
-> > from btrfs's compression and am trying to improve the
-> > performance.
->=20
-> ssd mode won't improve performance by much (if any).
->=20
-> You need to remember that USB2.0 is limited to about 20-30MiB/s (depe=
-nding
-> on CPU) so it will be slow no matter what you do
->=20
-> > Would anybody have any recommendation on how to improve
-> > performance there? Like what would be the best way to
-> > enable/increase writeback buffer or any way to make sure writes
-> > are delayed and asynchronous? Would disabling read-ahead help?
-> > (at which level would it be done?). Any other tip (like
-> > disabling atime, aligning blocks/extents, figure out erase block
-> > sizes if relevant...)?
->=20
-> aligning logical blocks to erase blocks can give some performance but=
- the
-> only way to make it really fast is not to use USB
->=20
-> > Many thanks in advance,
-> > Stephane
+Yeah I'm not thrilled with the extra method either. My concern with using
+->getattr is whether it's too heavy since that implies potential disk /
+network i/o.
+	--Mark
 
---=20
-Hubert Kario
-QBS - Quality Business Software
-02-656 Warszawa, ul. Ksawer=F3w 30/85
-tel. +48 (22) 646-61-51, 646-74-24
-www.qbs.com.pl
 --
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Mark Fasheh

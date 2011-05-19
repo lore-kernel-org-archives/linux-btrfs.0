@@ -1,64 +1,129 @@
-From: Sunil Mushran <sunil.mushran@oracle.com>
-Subject: Re: [Ocfs2-devel] [PATCH] ocfs2: Implement llseek()
-Date: Thu, 19 May 2011 10:45:28 -0700
-Message-ID: <4DD55738.3080405@oracle.com>
-References: <1305773084-19296-1-git-send-email-sunil.mushran@oracle.com> <1305773084-19296-3-git-send-email-sunil.mushran@oracle.com> <4DD4DF4C.501@oracle.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: josef@redhat.com, linux-kernel@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-ext4@vger.kernel.org, viro@ZenIV.linux.org.uk,
-	ocfs2-devel@oss.oracle.com
-To: Tristan Ye <tristan.ye@oracle.com>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <4DD4DF4C.501@oracle.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH 2/2] Btrfs: load the key from the dir item in readdir into a fake dentry
+Date: Thu, 19 May 2011 13:58:49 -0400
+Message-ID: <1305827929-18491-2-git-send-email-josef@redhat.com>
+References: <1305827929-18491-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	viro@ZenIV.linux.org.uk, hch@lst.de
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <1305827929-18491-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/19/2011 02:13 AM, Tristan Ye wrote:
->> +	if (inode->i_size == 0 || *offset>= inode->i_size) {
->> +		ret = -ENXIO;
->> +		goto out_unlock;
->> +	}
-> Why not using if (*offset>= inode->i_size) directly?
+In btrfs we have 2 indexes for inodes.  One is for readdir, it's in this nice
+sequential order and works out brilliantly for readdir.  However if you use ls,
+it usually stat's each file it gets from readdir.  This is where the second
+index comes in, which is based on a hash of the name of the file.  So then the
+lookup has to lookup this index, and then lookup the inode.  The index lookup is
+going to be in random order (since its based on the name hash), which gives us
+less than stellar performance.  Since we know the inode location from the
+readdir index, I create a dummy dentry and copy the location key into
+dentry->d_fsdata.  Then on lookup if we have d_fsdata we use that location to
+lookup the inode, avoiding looking up the other directory index.  Thanks,
 
-duh!
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/inode.c |   51 +++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 files changed, 49 insertions(+), 2 deletions(-)
 
-> +			BUG_ON(cpos<  le32_to_cpu(rec.e_cpos));
-> A same assert has already been performed inside ocfs2_get_clusters_nocache(),
-> does it make sense to do it again here?
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 6228a30..3cd246c 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4120,12 +4120,23 @@ struct inode *btrfs_lookup_dentry(struct inode *dir, struct dentry *dentry)
+ 	struct btrfs_root *sub_root = root;
+ 	struct btrfs_key location;
+ 	int index;
+-	int ret;
++	int ret = 0;
+ 
+ 	if (dentry->d_name.len > BTRFS_NAME_LEN)
+ 		return ERR_PTR(-ENAMETOOLONG);
+ 
+-	ret = btrfs_inode_by_name(dir, dentry, &location);
++	if (dentry->d_fsdata) {
++		memcpy(&location, dentry->d_fsdata, sizeof(struct btrfs_key));
++		kfree(dentry->d_fsdata);
++		dentry->d_fsdata = NULL;
++		/*
++		 * We need to unhash this dentry so we can rehash it when we
++		 * find the inode.
++		 */
++		d_drop(dentry);
++	} else {
++		ret = btrfs_inode_by_name(dir, dentry, &location);
++	}
+ 
+ 	if (ret < 0)
+ 		return ERR_PTR(ret);
+@@ -4180,6 +4191,12 @@ static int btrfs_dentry_delete(const struct dentry *dentry)
+ 	return 0;
+ }
+ 
++static void btrfs_dentry_release(struct dentry *dentry)
++{
++	if (dentry->d_fsdata)
++		kfree(dentry->d_fsdata);
++}
++
+ static struct dentry *btrfs_lookup(struct inode *dir, struct dentry *dentry,
+ 				   struct nameidata *nd)
+ {
+@@ -4206,6 +4223,7 @@ static int btrfs_real_readdir(struct file *filp, void *dirent,
+ 	struct btrfs_key key;
+ 	struct btrfs_key found_key;
+ 	struct btrfs_path *path;
++	struct qstr q;
+ 	int ret;
+ 	struct extent_buffer *leaf;
+ 	int slot;
+@@ -4284,6 +4302,7 @@ static int btrfs_real_readdir(struct file *filp, void *dirent,
+ 
+ 		while (di_cur < di_total) {
+ 			struct btrfs_key location;
++			struct dentry *tmp;
+ 
+ 			if (verify_dir_item(root, leaf, di))
+ 				break;
+@@ -4304,6 +4323,33 @@ static int btrfs_real_readdir(struct file *filp, void *dirent,
+ 			d_type = btrfs_filetype_table[btrfs_dir_type(leaf, di)];
+ 			btrfs_dir_item_key_to_cpu(leaf, di, &location);
+ 
++			q.name = name_ptr;
++			q.len = name_len;
++			q.hash = full_name_hash(q.name, q.len);
++			tmp = d_lookup(filp->f_dentry, &q);
++			if (!tmp) {
++				struct btrfs_key *newkey;
++
++				newkey = kzalloc(sizeof(struct btrfs_key),
++						 GFP_NOFS);
++				if (!newkey)
++					goto no_dentry;
++				tmp = d_alloc(filp->f_dentry, &q);
++				if (!tmp) {
++					kfree(newkey);
++					dput(tmp);
++					goto no_dentry;
++				}
++				memcpy(newkey, &location,
++				       sizeof(struct btrfs_key));
++				tmp->d_fsdata = newkey;
++				tmp->d_flags |= DCACHE_NEED_LOOKUP;
++				d_rehash(tmp);
++				dput(tmp);
++			} else {
++				dput(tmp);
++			}
++no_dentry:
+ 			/* is this a reference to our own snapshot? If so
+ 			 * skip it
+ 			 */
+@@ -7566,4 +7612,5 @@ static const struct inode_operations btrfs_symlink_inode_operations = {
+ 
+ const struct dentry_operations btrfs_dentry_operations = {
+ 	.d_delete	= btrfs_dentry_delete,
++	.d_release	= btrfs_dentry_release,
+ };
+-- 
+1.7.2.3
 
-good catch
-
->> +
->> +		if ((!is_data&&  origin == SEEK_HOLE) ||
->> +		    (is_data&&  origin == SEEK_DATA)) {
->> +			if (extoff>  *offset)
->> +				*offset = extoff;
->> +			goto out_unlock;
-> Seems above logic is going to stop at the first time we find a hole.
->
-> How about the offset was within the range of a hole already when we doing
-> SEEK_HOLE, shouldn't we proceed detecting until the next hole gets found, whose
-> start_offset was greater than supplied offset, according to semantics described
-> by the the header of this patch, should it be like following?
->
-> 			if (extoff>  *offset) {
-> 				*offset = extoff;
-> 				goto out_unlock;
-> 			}
-
-So if the offset is in a hole, then we set the file pointer to it. Same for
-data. The file pointer is set to the region asked at an offset that is equal
-to or greater than the supplied offset.
-
->> +	if (origin == SEEK_HOLE) {
->> +		extoff = cpos;
->> +		extoff<<= cs_bits;
-> extoff already has been assigned properly above in while loop?
-
-To handle the case when supplied cpos == cend.
-
-As always, excellent review.
-
-Thanks
-Sunil

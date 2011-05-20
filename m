@@ -1,45 +1,40 @@
-From: Miguel Garrido <miguel@mjgar.com>
-Subject: Re: What are thoses [btrfs-cache-nnn] kernel threads ?
-Date: Fri, 20 May 2011 08:11:13 -0400
-Message-ID: <BANLkTinpF-bW92w5R5z+5SYW_qBjJvyPBw@mail.gmail.com>
-References: <4DD4825D.4060706@polymtl.ca>
-	<20110519182612.GD18123@dhcp231-156.rdu.redhat.com>
-	<BANLkTik5vAoZrY0H=y+2v5i91x8FvsxRYQ@mail.gmail.com>
-	<BANLkTimRPE-roV8JaRhQpqQW_sMtsW7Gww@mail.gmail.com>
-	<1305890412-sup-1052@shiny>
+From: Craig Johnson <crajohns@gmail.com>
+Subject: btrfsck: couldn't open because of unsupported option features (8)
+Date: Fri, 20 May 2011 08:08:16 -0500
+Message-ID: <BANLkTimkczntdTaPYOGznnPp6xfA+=wNSA@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chester <somethingsome2000@gmail.com>,
-	Josef Bacik <josef@redhat.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1305890412-sup-1052@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 20, 2011 at 7:22 AM, Chris Mason <chris.mason@oracle.com> w=
-rote:
-> Once enabled it does stay on, and strictly speaking it does change th=
-e
-> disk format. =A0But, it is perfectly safe to go back to a non-space_c=
-ache
-> enabled kernel and then go back into space cache. =A0Josef set things=
- up
-> so it would detect a non-space_cache mount and continue properly.
->
-> space_cache is wonderful. =A0We did fix up a few bugs in .38 and .39 =
-but
-> I'll probably have .40 enable it by default.
->
-> -chris
->
+After upgrading from 2.6.39-rc7 to 2.6.39 this morning, I tried to
+mount my 3 disk btrfs volume (no subvolumes, space caching enabled,
+lzo compression) and received some parent transid errors (going back
+to rc7 didn't help, though):
 
-Sounds good, I thought it just made more sense to have it on by
-default if it is that beneficial but I now understand that the option
-was introduced to give users a choice until it made sense to enable it
-by default.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+btrfs: disk space caching is enabled
+parent transid verify failed on 6038227976192 wanted 337418 found 337853
+parent transid verify failed on 6038227976192 wanted 337418 found 337853
+parent transid verify failed on 6038227976192 wanted 337418 found 337853
+parent transid verify failed on 6038227976192 wanted 337418 found 337853
+parent transid verify failed on 6038227976192 wanted 337418 found 337853
+Failed to read block groups: -5
+btrfs: open_ctree failed
+
+Tried to mount without space_cache give the same message.
+
+Trying to run btrfsck (or btrfs-debug-tree), compiled from git gives me this:
+
+
+couldn't open because of unsupported option features (8).
+btrfsck: disk-io.c:683: open_ctree_fd: Assertion `!(1)' failed.
+Aborted
+
+
+I see an Ubuntu bug (748340 -
+https://bugs.launchpad.net/ubuntu/+source/btrfs-tools/+bug/748340)
+with a similar output (they get an unsupported option features (2)
+instead of (8)), but there isn't any resolution that I see.  Is there
+anything I can do to resolve this?  I can't mount degraded or ro or
+anything.  Thanks!

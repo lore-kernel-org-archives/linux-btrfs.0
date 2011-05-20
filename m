@@ -1,42 +1,46 @@
-From: Sergei Trofimovich <slyfox@gentoo.org>
-Subject: [[PATCH v3] 3/3] btrfs: fix typo 'testeing' -> 'testing'
-Date: Fri, 20 May 2011 23:20:32 +0300
-Message-ID: <1305922832-22551-4-git-send-email-slyfox@gentoo.org>
-References: <1305922832-22551-1-git-send-email-slyfox@gentoo.org>
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Sergei Trofimovich <slyfox@gentoo.org>
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1305922832-22551-1-git-send-email-slyfox@gentoo.org>
+From: Andreas Dilger <adilger@dilger.ca>
+Subject: Re: [PATCH 1/2] fs: add a DCACHE_NEED_LOOKUP flag for d_flags
+Date: Fri, 20 May 2011 14:51:16 -0600
+Message-ID: <7B320C9C-0748-419B-9E40-7A15397E0064@dilger.ca>
+References: <1305827929-18491-1-git-send-email-josef@redhat.com> <m2hb8pyw4b.fsf@firstfloor.org>
+Mime-Version: 1.0 (iPhone Mail 8J2)
+Content-Type: text/plain;
+	charset=us-ascii
+Cc: Josef Bacik <josef@redhat.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+	"viro@ZenIV.linux.org.uk" <viro@ZenIV.linux.org.uk>,
+	"hch@lst.de" <hch@lst.de>,
+	"aarcange@redhat.com" <aarcange@redhat.com>
+To: Andi Kleen <andi@firstfloor.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <m2hb8pyw4b.fsf@firstfloor.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
----
- fs/btrfs/inode.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+On 2011-05-20, at 2:07 PM, Andi Kleen <andi@firstfloor.org> wrote:
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 7cd8ab0..72650ce 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1310,7 +1310,7 @@ static int btrfs_set_bit_hook(struct inode *inode,
- 
- 	/*
- 	 * set_bit and clear bit hooks normally require _irqsave/restore
--	 * but in this case, we are only testeing for the DELALLOC
-+	 * but in this case, we are only testing for the DELALLOC
- 	 * bit, which is only set or cleared with irqs on
- 	 */
- 	if (!(state->state & EXTENT_DELALLOC) && (*bits & EXTENT_DELALLOC)) {
-@@ -1344,7 +1344,7 @@ static int btrfs_clear_bit_hook(struct inode *inode,
- {
- 	/*
- 	 * set_bit and clear bit hooks normally require _irqsave/restore
--	 * but in this case, we are only testeing for the DELALLOC
-+	 * but in this case, we are only testing for the DELALLOC
- 	 * bit, which is only set or cleared with irqs on
- 	 */
- 	if ((state->state & EXTENT_DELALLOC) && (*bits & EXTENT_DELALLOC)) {
--- 
-1.7.3.4
+> Josef Bacik <josef@redhat.com> writes:
+> 
+>> Btrfs (and I'd venture most other fs's) stores its indexes in nice disk order
+>> for readdir, but unfortunately in the case of anything that stats the files in
+>> order that readdir spits back (like oh say ls) that means we still have to do
+>> the normal lookup of the file, which means looking up our other index and then
+>> looking up the inode.  What I want is a way to create dummy dentries when we
+>> find them in readdir so that when ls or anything else subsequently does a
+>> stat(), we already have the location information in the dentry and can go
+> 
+> Funny I remember discussing this optimization a long time ago with
+> Andrea. But the problem is still that it has the potential to pollute
+> the dcache a lot when someone is reading a large directory.
+> 
+> Consider the find / case. You don't want that to turn over all
+> of your dcache.
+> 
+> So if you do that you need some way to put the dummy dentries on a
+> special LRU list that gets cleaned quickly and is kept small.
 
+Actually, I recall years ago looking into something similar. It should be possible to drop such dentries even under GFP_NOFS because they can't be dirty and don't need any inode operations to free.
+
+Putting them at the end of the cache LRU instead of the head would allow them to be dropped quickly under memory pressure. 
+
+Cheers, Andreas

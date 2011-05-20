@@ -1,35 +1,45 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH] btrfs: fix crash when no drive supports DISCARD
-Date: Fri, 20 May 2011 13:52:24 +0200
-Message-ID: <20110520115224.GW12709@twin.jikos.cz>
-References: <20110517152743.GU12709@twin.jikos.cz>
- <1305648031-26379-1-git-send-email-dsterba@suse.cz>
- <201105181129.14201.lidongyang@novell.com>
-Reply-To: dave@jikos.cz
+From: Miguel Garrido <miguel@mjgar.com>
+Subject: Re: What are thoses [btrfs-cache-nnn] kernel threads ?
+Date: Fri, 20 May 2011 08:11:13 -0400
+Message-ID: <BANLkTinpF-bW92w5R5z+5SYW_qBjJvyPBw@mail.gmail.com>
+References: <4DD4825D.4060706@polymtl.ca>
+	<20110519182612.GD18123@dhcp231-156.rdu.redhat.com>
+	<BANLkTik5vAoZrY0H=y+2v5i91x8FvsxRYQ@mail.gmail.com>
+	<BANLkTimRPE-roV8JaRhQpqQW_sMtsW7Gww@mail.gmail.com>
+	<1305890412-sup-1052@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: David Sterba <dsterba@suse.cz>, chris.mason@oracle.com,
-	linux-btrfs@vger.kernel.org, stable@kernel.org
-To: Li Dongyang <lidongyang@novell.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Chester <somethingsome2000@gmail.com>,
+	Josef Bacik <josef@redhat.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201105181129.14201.lidongyang@novell.com>
+In-Reply-To: <1305890412-sup-1052@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 18, 2011 at 11:29:14AM +0800, Li Dongyang wrote:
-> Thanks for the fix, I thought EOPNOTSUPP could be useful by the caller
-> that time, and maybe we could do somthing like remove the discard
-> mount_opt in the fs_info so we can avoid calling it again.
+On Fri, May 20, 2011 at 7:22 AM, Chris Mason <chris.mason@oracle.com> w=
+rote:
+> Once enabled it does stay on, and strictly speaking it does change th=
+e
+> disk format. =A0But, it is perfectly safe to go back to a non-space_c=
+ache
+> enabled kernel and then go back into space cache. =A0Josef set things=
+ up
+> so it would detect a non-space_cache mount and continue properly.
+>
+> space_cache is wonderful. =A0We did fix up a few bugs in .38 and .39 =
+but
+> I'll probably have .40 enable it by default.
+>
+> -chris
+>
 
-I do not agree that discard should be removed from mount_opt, because
-one may add TRIM-capable devices later, it's a whole filesystem option,
-while. A disappeared discard mount option will probably cause panic
-in administrator's head.
-
-However, if a drive does not support TRIM, the btrfs_issue_discard calls
-can take a shortcut and do not call up to blkdev_issue_discard (though
-it does return immediatelly), caching the state after first call. But
-this is matter of the lower level call (blkdev) and should not be
-propagated beyond to the extent "level" (ie. btrfs_discard_extent).
-
-
-david
+Sounds good, I thought it just made more sense to have it on by
+default if it is that beneficial but I now understand that the option
+was introduced to give users a choice until it made sense to enable it
+by default.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

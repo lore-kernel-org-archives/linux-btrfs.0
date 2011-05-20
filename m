@@ -1,40 +1,27 @@
-From: Craig Johnson <crajohns@gmail.com>
-Subject: btrfsck: couldn't open because of unsupported option features (8)
-Date: Fri, 20 May 2011 08:08:16 -0500
-Message-ID: <BANLkTimkczntdTaPYOGznnPp6xfA+=wNSA@mail.gmail.com>
+From: "PROF.MAURICE IWU" <augustine_osakwe@yahoo.co.in>
+Subject: Equity Business Investment
+Date: Fri, 20 May 2011 18:41:23 +0530 (IST)
+Message-ID: <458588.37498.qm__47386.7908273407$1305897502$gmane$org@web95513.mail.in.yahoo.com>
+Reply-To: profmauriceiwu2221@yahoo.co.jp
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=utf-8
+To: undisclosed recipients:;
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-After upgrading from 2.6.39-rc7 to 2.6.39 this morning, I tried to
-mount my 3 disk btrfs volume (no subvolumes, space caching enabled,
-lzo compression) and received some parent transid errors (going back
-to rc7 didn't help, though):
 
-btrfs: disk space caching is enabled
-parent transid verify failed on 6038227976192 wanted 337418 found 337853
-parent transid verify failed on 6038227976192 wanted 337418 found 337853
-parent transid verify failed on 6038227976192 wanted 337418 found 337853
-parent transid verify failed on 6038227976192 wanted 337418 found 337853
-parent transid verify failed on 6038227976192 wanted 337418 found 337853
-Failed to read block groups: -5
-btrfs: open_ctree failed
+Equity Business Investment
+>From Prof. Maurice Iwu 
 
-Tried to mount without space_cache give the same message.
+Dear Friend,
 
-Trying to run btrfsck (or btrfs-debug-tree), compiled from git gives me this:
+I am Prof. Maurice M. Iwu, Former Chairman Independent Electoral Commission 
+(INEC).Currently, I am on compulsory terminal leave presently in UK , 
+leading up to my final retirement from public service.
 
+I am seeking your partnership in a mutual benefit project involving 
+investing into your company and secondly on properties and to be precise Estate Development or any other profitable venture of your great idea for our mutual benefit of Equity Market Investment.,
 
-couldn't open because of unsupported option features (8).
-btrfsck: disk-io.c:683: open_ctree_fd: Assertion `!(1)' failed.
-Aborted
-
-
-I see an Ubuntu bug (748340 -
-https://bugs.launchpad.net/ubuntu/+source/btrfs-tools/+bug/748340)
-with a similar output (they get an unsupported option features (2)
-instead of (8)), but there isn't any resolution that I see.  Is there
-anything I can do to resolve this?  I can't mount degraded or ro or
-anything.  Thanks!
+Sincerely,
+Prof. Maurice M.Iwu.
+{INEC.}

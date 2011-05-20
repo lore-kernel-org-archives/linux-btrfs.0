@@ -1,34 +1,32 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH] Btrfs: BUG_ON is deleted from the caller of
- btrfs_truncate_item & btrfs_extend_item
-Date: Fri, 20 May 2011 12:53:45 +0200
-Message-ID: <20110520105345.GV12709@twin.jikos.cz>
-References: <201105190519.AA00021@T-ITOH1.jp.fujitsu.com>
-Reply-To: dave@jikos.cz
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: What are thoses [btrfs-cache-nnn] kernel threads ?
+Date: Fri, 20 May 2011 07:22:03 -0400
+Message-ID: <1305890412-sup-1052@shiny>
+References: <4DD4825D.4060706@polymtl.ca> <20110519182612.GD18123@dhcp231-156.rdu.redhat.com> <BANLkTik5vAoZrY0H=y+2v5i91x8FvsxRYQ@mail.gmail.com> <BANLkTimRPE-roV8JaRhQpqQW_sMtsW7Gww@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Miguel Garrido <miguel@mjgar.com>, Josef Bacik <josef@redhat.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chester <somethingsome2000@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201105190519.AA00021@T-ITOH1.jp.fujitsu.com>
+In-reply-to: <BANLkTimRPE-roV8JaRhQpqQW_sMtsW7Gww@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Excerpts from Chester's message of 2011-05-20 01:32:22 -0400:
+> >
+> > Out of curiosity, why isn't this done automatically as opposed to
+> > having to mount with the space_cache option?
+> 
+> The space_cache option changes the disk format. Once enabled, it will
+> be permanent. The mount option gives people an option of whether they
+> want to enable space_cache.. I've been using it, and it's pretty safe
+> to use.
 
-On Thu, May 19, 2011 at 02:19:08PM +0900, Tsutomu Itoh wrote:
-> Currently, btrfs_truncate_item and btrfs_extend_item returns only 0.
-> So, the check by BUG_ON in the caller is unnecessary.
+Once enabled it does stay on, and strictly speaking it does change the
+disk format.  But, it is perfectly safe to go back to a non-space_cache
+enabled kernel and then go back into space cache.  Josef set things up
+so it would detect a non-space_cache mount and continue properly.
 
-well, I don't think it's right to remove the BUG_ONs right now.
-btrfs_extend_item has it's own BUG_ON()s, which will hopefully get
-turned to sane error handling someday. Currently the bugons are not
-executed and do no harm. When btrfs_extend_item does return nonzero
-values, that's IMO the right time to remove BUG_ONs in callers and do
-error recovery.
+space_cache is wonderful.  We did fix up a few bugs in .38 and .39 but
+I'll probably have .40 enable it by default.
 
-I do not like to see that many BUG_ONs, but it's better than unchecked
-return values when the function name suggests that things may not go
-smooth and error-less.
-
-
-david
+-chris

@@ -1,47 +1,32 @@
-From: Tomasz Chmielewski <mangoo@wpkg.org>
-Subject: Re: No space left, with 80 GB space free
-Date: Sat, 21 May 2011 01:49:10 +0200
-Message-ID: <4DD6FDF6.1020209@wpkg.org>
-References: <4DD16817.9020302@wpkg.org>	<4DD6985E.8040100@wpkg.org> <BANLkTimA_dJDNUqPUssV5ZbLTr=T7k+doA@mail.gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH 1/2] fs: add a DCACHE_NEED_LOOKUP flag for d_flags
+Date: Fri, 20 May 2011 20:30:19 -0400
+Message-ID: <4DD7079B.6070302@redhat.com>
+References: <1305827929-18491-1-git-send-email-josef@redhat.com> <m2hb8pyw4b.fsf@firstfloor.org> <7B320C9C-0748-419B-9E40-7A15397E0064@dilger.ca> <20110520213112.GS12317@one.firstfloor.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Miguel Garrido <miguel@mjgar.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTimA_dJDNUqPUssV5ZbLTr=T7k+doA@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Andreas Dilger <adilger@dilger.ca>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+	"viro@ZenIV.linux.org.uk" <viro@ZenIV.linux.org.uk>,
+	"hch@lst.de" <hch@lst.de>,
+	"aarcange@redhat.com" <aarcange@redhat.com>
+To: Andi Kleen <andi@firstfloor.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20110520213112.GS12317@one.firstfloor.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 21.05.2011 01:05, Miguel Garrido wrote:
-> On Fri, May 20, 2011 at 12:35 PM, Tomasz Chmielewski<mangoo@wpkg.org>  wrote:
->>
->> Nobody has a clue what makes btrfs run out of space when used with PostgreSQL, even when there is plenty of free space left?
->>
->>
->> # df -h
->> Filesystem            Size  Used Avail Use% Mounted on
->> /dev/sdb4             336G  257G   78G  77% /mnt/btrfs
->>
->>
->> coredb=# DELETE FROM core_trevent where "date"<  E'2011-05-07 00:00';
->> ERROR:  could not write block 1014999 of relation base/16384/16521: No space left on device
->> CONTEXT:  writing block 1014999 of relation base/16384/16521
->>
->
-> Hi Tomasz,
->
-> What does btrfs fi df /mountpoint show?
+On 05/20/2011 05:31 PM, Andi Kleen wrote:
+>> Putting them at the end of the cache LRU instead of the head would allow them to be dropped quickly under memory pressure. 
+> 
+> This still would fill up your memory for find /, potentially pushing
+> out other stuff.
+> 
+> -Andi
 
-Used space is almost identical as with normal df.
+So these things are just hashed on dput, so they don't have any
+references to them and they are automatically put on the LRU list, so if
+we get under memory pressure they will be easily discarded, especially
+if nobody is actually stating them.  Thanks,
 
-
-> Please see this link:
-> https://btrfs.wiki.kernel.org/index.php/FAQ#Help.21_Btrfs_claims_I.27m_out_of_space.2C_but_it_looks_like_I_should_have_lots_left.21
-
-Doesn't apply in my case: kernel is 2.6.39, device is relatively large.
-
-It is *probably* related to compression used (compress-force - disabled 
-the option, and didn't see out of space since).
-
--- 
-Tomasz Chmielewski
-http://wpkg.org
+Josef

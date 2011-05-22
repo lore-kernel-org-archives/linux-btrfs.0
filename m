@@ -1,26 +1,33 @@
-From: Al Viro <viro@ZenIV.linux.org.uk>
-Subject: Re: [PATCH 1/2] fs: add a DCACHE_NEED_LOOKUP flag for d_flags V2
-Date: Sun, 22 May 2011 03:11:30 +0100
-Message-ID: <20110522021130.GI19987@ZenIV.linux.org.uk>
-References: <1305913471-3150-1-git-send-email-josef@redhat.com>
+From: Stephane Chazelas <stephane_chazelas@yahoo.fr>
+Subject: Re: curious writes on mounted, not used btrfs filesystem
+Date: Sun, 22 May 2011 10:34:03 +0100
+Message-ID: <20110522093352.GA22491@yahoo.fr>
+References: <4DD7B6ED.5040403@wpkg.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	adilger@dilger.ca, hch@lst.de
-To: Josef Bacik <josef@redhat.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Tomasz Chmielewski <mangoo@wpkg.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1305913471-3150-1-git-send-email-josef@redhat.com>
+In-Reply-To: <4DD7B6ED.5040403@wpkg.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 20, 2011 at 01:44:30PM -0400, Josef Bacik wrote:
-> +		if (unlikely(d_need_lookup(dentry))) {
-> +			if (nameidata_dentry_drop_rcu(nd, dentry))
-> +				return -ECHILD;
-> +			dput(dentry);
-> +			dentry = NULL;
-> +			goto retry;
+2011-05-21 14:58:21 +0200, Tomasz Chmielewski:
+> I have a btrfs filesystem (2.6.39) which is mounted, but otherwise, not used:
+> 
+> # lsof -n|grep /mnt/btrfs
 
-Yecchhh...  How about simple goto unlazy; here instead and doing the rest
-there?  Especially since you have the same kind of thing elsewhere in the
-same sucker.  It had been bloody painful to untangle that thing; let's not
-add to the rat's nest that still remains...
+processes with open fds are one thing. You could also have loop
+devices setup on it for instance.
+
+> #
+> 
+> 
+> I noticed that whenever I do "sync", btrfs will write for around 6.5s and write 13 MB (see below).
+[...]
+
+You could try and play with /proc/sys/vm/block_dump to see what
+is being written (remember to disable logging of kernel messages
+by syslog).
+
+-- 
+Stephane

@@ -1,73 +1,70 @@
-From: =?ISO-8859-1?Q?Robert_Sch=F6ftner?= <rmu@unfoo.net>
-Subject: cannot mount btrfs - parent transid verify failed
-Date: Mon, 23 May 2011 20:57:42 +0200
-Message-ID: <4DDAAE26.1010907@unfoo.net>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: kernel BUG at fs/btrfs/inode.c:149!
+Date: Mon, 23 May 2011 15:51:57 -0400
+Message-ID: <4DDABADD.7090209@redhat.com>
+References: <201105051954.48405.whirm@gmx.com> <201105161701.11645.truewhirm@yahoo.es> <4DD150C1.2090505@redhat.com> <201105231357.41588.whirm@gmx.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Elric Milon <whirm@gmx.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201105231357.41588.whirm@gmx.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-hello!
+On 05/23/2011 07:57 AM, Elric Milon wrote:
+> On Monday 16 May 2011 18:28:49 you wrote:
+>> On 05/16/2011 11:01 AM, Whirm wrote:
+>>> On Monday 16 May 2011 16:11:19 Josef Bacik wrote:
+> 
+>>>
+>>> Sorry yes, I meant this is how I managed to get the corrupted filesystem.
+>>>
+>>> Ill try to break it again.
+>>
+>> Oh ok perfect, yeah I will try and do the same sort of things and see if
+>> I can get it to happen as well.  Thanks,
+> 
+> Great, btw, I tried to see if I can mount the corrupted filesystem with 
+> the patch you told me about applied, and it fails, here's the log:
+> 
+> http://pastebin.com/raw.php?i=4Kfv927B
+> 
+> That happens using 2.6.39-rc7+ from git with the following patch applied (its 
+> the debug patch and the possible fix you told me about):
+> 
 
-A power outage damaged a btrfs - it could not be mounted upon startup.
-kernel: 2.6.38 (from ubuntu kernel ppa).
+Ok so this is a different kind of corruption, wooo!  Can you apply this
+debug patch and get me the output so we can try and fix this bit?  Thanks,
 
-dmesg:
-
-[   88.562819] device fsid 844676ff057abdd4-ccd6cf8af4e14dba devid 1
-transid 112504 /dev/sdb1
-[   88.596515] verify_parent_transid: 6 callbacks suppressed
-[   88.596518] parent transid verify failed on 408626470912 wanted
-111124 found 111474
-[   88.596686] parent transid verify failed on 408626470912 wanted
-111124 found 111474
-[   88.600062] parent transid verify failed on 408626470912 wanted
-111124 found 111474
-[   88.600067] parent transid verify failed on 408626470912 wanted
-111124 found 111474
-[   88.670071] btrfs: open_ctree failed
-
-I compiled the latest btrfs-progs-unstable and tried btrfsck:
-
-root@tesla:/root/btrfs-progs-unstable# ./btrfsck /dev/sdb1
-parent transid verify failed on 408626470912 wanted 111124 found 111474
-parent transid verify failed on 408626470912 wanted 111124 found 111474
-parent transid verify failed on 408626470912 wanted 111124 found 111474
-btrfsck: disk-io.c:416: find_and_setup_root: Assertion `!(!root->node)'
-failed.
-Abgebrochen
-
-root@tesla:/root/btrfs-progs-unstable# ./btrfsck -s 1 /dev/sdb1
-using SB copy 1, bytenr 67108864
-parent transid verify failed on 408626470912 wanted 111124 found 111474
-parent transid verify failed on 408626470912 wanted 111124 found 111474
-parent transid verify failed on 408626470912 wanted 111124 found 111474
-btrfsck: disk-io.c:416: find_and_setup_root: Assertion `!(!root->node)'
-failed.
-Abgebrochen
-
-root@tesla:/root/btrfs-progs-unstable# ./btrfsck -s 2 /dev/sdb1
-using SB copy 2, bytenr 274877906944
-parent transid verify failed on 408626470912 wanted 111124 found 111474
-parent transid verify failed on 408626470912 wanted 111124 found 111474
-parent transid verify failed on 408626470912 wanted 111124 found 111474
-btrfsck: disk-io.c:416: find_and_setup_root: Assertion `!(!root->node)'
-failed.
-Abgebrochen
+Josef
 
 
-root@tesla:/root/btrfs-progs-unstable# ./btrfs filesystem show /dev/sdb1
-failed to read /dev/sr0
-Label: none  uuid: d4bd7a05-ff76-4684-ba4d-e1f48acfd6cc
-        Total devices 1 FS bytes used 544.12GB
-        devid    1 size 931.51GB used 547.79GB path /dev/sdb1
-
-Btrfs v0.19-36-g70c6c10
-
-The data on this filesystem is not important, though it would be nice if
-i could regain access to it. Is there anything I can try to salvage it?
-
-thanks
-
-Robert
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index cd5e82e..54a8df5 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -365,6 +365,9 @@ next_slot:
+ 			extent_end = key.offset +
+ 				btrfs_file_extent_inline_len(leaf, fi);
+ 		} else {
++			printk(KERN_ERR "Weird entry at slot=%d, type=%lu\n",
++			       path->slots[0], extent_type);
++			btrfs_print_leaf(root, leaf);
+ 			WARN_ON(1);
+ 			extent_end = search_start;
+ 		}
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index dc8fb2b..f951053 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -145,6 +145,9 @@ static noinline int insert_inline_extent(struct
+btrfs_trans_handle *trans,
+ 	inode_add_bytes(inode, size);
+ 	ret = btrfs_insert_empty_item(trans, root, path, &key,
+ 				      datasize);
++	if (ret)
++		printk(KERN_ERR "ret=%d, inode=%d, start=%llu, size=%llu\n",
++		       ret, inode->i_ino, start, size);
+ 	BUG_ON(ret);
+ 	if (ret) {
+ 		err = ret;

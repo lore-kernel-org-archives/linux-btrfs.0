@@ -1,52 +1,67 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH 1/2] fs: add a DCACHE_NEED_LOOKUP flag for d_flags V2
-Date: Mon, 23 May 2011 12:13:07 -0400
-Message-ID: <4DDA8793.3010906@redhat.com>
-References: <1305913471-3150-1-git-send-email-josef@redhat.com> <20110522021130.GI19987@ZenIV.linux.org.uk>
+Subject: Re: [PATCH 0/9] Btrfs: improve write ahead log with sub transaction
+Date: Mon, 23 May 2011 12:43:23 -0400
+Message-ID: <4DDA8EAB.9050805@redhat.com>
+References: <1305792692-10635-1-git-send-email-liubo2009@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	adilger@dilger.ca, hch@lst.de
-To: Al Viro <viro@ZenIV.linux.org.uk>
+Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110522021130.GI19987@ZenIV.linux.org.uk>
+In-Reply-To: <1305792692-10635-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/21/2011 10:11 PM, Al Viro wrote:
-> On Fri, May 20, 2011 at 01:44:30PM -0400, Josef Bacik wrote:
->> +		if (unlikely(d_need_lookup(dentry))) {
->> +			if (nameidata_dentry_drop_rcu(nd, dentry))
->> +				return -ECHILD;
->> +			dput(dentry);
->> +			dentry = NULL;
->> +			goto retry;
+On 05/19/2011 04:11 AM, Liu Bo wrote:
+> I've been working to try to improve the write-ahead log's performance,
+> and I found that the bottleneck addresses in the checksum items,
+> especially when we want to make a random write on a large file, e.g a 4G file.
 > 
-> Yecchhh...  How about simple goto unlazy; here instead and doing the rest
-> there?  Especially since you have the same kind of thing elsewhere in the
-> same sucker.  It had been bloody painful to untangle that thing; let's not
-> add to the rat's nest that still remains...
+> Then a idea for this suggested by Chris is to use sub transaction ids and just
+> to log the part of inode that had changed since either the last log commit or
+> the last transaction commit.  And as we also push the sub transid into the btree
+> blocks, we'll get much faster tree walks.  As a result, we abandon the original
+> brute force approach, which is "to delete all items of the inode in log",
+> to making sure we get the most uptodate copies of everything, and instead
+> we manage to "find and merge", i.e. finding extents in the log tree and merging
+> in the new extents from the file.
+> 
+> This patchset puts the above idea into code, and although the code is now more
+> complex, it brings us a great deal of performance improvement.
+> 
+> Beside the improvement of log, patch 8 fixes a small but critical bug of log code
+> with sub transaction.
+> 
+> Here I have some test results to show, I use sysbench to do "random write + fsync".
+> 
+> ===
+> sysbench --test=fileio --num-threads=1 --file-num=2 --file-block-size=4K --file-total-size=8G --file-test-mode=rndwr --file-io-mode=sync --file-extra-flags=  [prepare, run]
+> ===
+> 
+> Sysbench args:
+>   - Number of threads: 1
+>   - Extra file open flags: 0
+>   - 2 files, 4Gb each
+>   - Block size 4Kb
+>   - Number of random requests for random IO: 10000
+>   - Read/Write ratio for combined random IO test: 1.50
+>   - Periodic FSYNC enabled, calling fsync() each 100 requests.
+>   - Calling fsync() at the end of test, Enabled.
+>   - Using synchronous I/O mode
+>   - Doing random write test
+> 
+> Sysbench results:
+> ===
+>    Operations performed:  0 Read, 10000 Write, 200 Other = 10200 Total
+>    Read 0b  Written 39.062Mb  Total transferred 39.062Mb
+> ===
+> a) without patch:  (*SPEED* : 451.01Kb/sec)
+>    112.75 Requests/sec executed
+> 
+> b) with patch:     (*SPEED* : 4.3621Mb/sec)
+>    1116.71 Requests/sec executed
+> 
 
-This is where I was a little confused, which is why I added this code.  It
-seems that having goto unlazy; will mean that we will come down to this
-section
-
-if (unlikely(status  <= 0 )) {
-	if (status < 0) {
-		dput(dentry);
-		return status;
-	}
-        if (!d_invalidate(dentry)) {
-		dput(dentry);
-		dentry = NULL;
-		need_reval = 1;
-		goto retry;
-	}
-}
-
-and d_invalidate will unhash us so we won't find our new dentry in the cache
-which makes this whole exercise useless.  Is there a different way you'd
-like
-this cleaned up?  Thanks,
+Have you run powerfail tests with this?  I'd like to make sure you
+haven't inadvertently messed something up.  Thanks,
 
 Josef
-

@@ -1,110 +1,92 @@
-From: Elric Milon <whirm@gmx.com>
-Subject: Re: kernel BUG at fs/btrfs/inode.c:149!
-Date: Mon, 23 May 2011 13:57:41 +0200
-Message-ID: <201105231357.41588.whirm@gmx.com>
-References: <201105051954.48405.whirm@gmx.com> <201105161701.11645.truewhirm@yahoo.es> <4DD150C1.2090505@redhat.com>
-Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-To: "linux-btrfs" <linux-btrfs@vger.kernel.org>
+From: Arne Jansen <sensille@gmx.net>
+Subject: [PATCH v1 2/5] btrfs: state information for readahead
+Date: Mon, 23 May 2011 14:59:05 +0200
+Message-ID: <43c351ed5260538ec63c6799d5fd3eac8916d2b7.1306154794.git.sensille@gmx.net>
+References: <cover.1306154794.git.sensille@gmx.net>
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DD150C1.2090505@redhat.com>
+In-Reply-To: <cover.1306154794.git.sensille@gmx.net>
+In-Reply-To: <cover.1306154794.git.sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday 16 May 2011 18:28:49 you wrote:
-> On 05/16/2011 11:01 AM, Whirm wrote:
-> > On Monday 16 May 2011 16:11:19 Josef Bacik wrote:
+Add state information for readahead to btrfs_fs_info and btrfs_device
 
-> > 
-> > Sorry yes, I meant this is how I managed to get the corrupted filesystem.
-> > 
-> > Ill try to break it again.
-> 
-> Oh ok perfect, yeah I will try and do the same sort of things and see if
-> I can get it to happen as well.  Thanks,
+Signed-off-by: Arne Jansen <sensille@gmx.net>
+---
+ fs/btrfs/ctree.h   |    4 ++++
+ fs/btrfs/disk-io.c |    4 ++++
+ fs/btrfs/volumes.c |    8 ++++++++
+ fs/btrfs/volumes.h |    8 ++++++++
+ 4 files changed, 24 insertions(+), 0 deletions(-)
 
-Great, btw, I tried to see if I can mount the corrupted filesystem with 
-the patch you told me about applied, and it fails, here's the log:
-
-http://pastebin.com/raw.php?i=4Kfv927B
-
-That happens using 2.6.39-rc7+ from git with the following patch applied (its 
-the debug patch and the possible fix you told me about):
-
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 63731a1..419f91f 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -417,10 +417,19 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
-                        }
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 2e61fe1..4a33e30 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1079,6 +1079,10 @@ struct btrfs_fs_info {
  
-                        if (entry->type == BTRFS_FREE_SPACE_EXTENT) {
-+                               printk(KERN_ERR "adding extent [%llu-%llu]\n",
-+                                      e->offset, e->bytes);
-                                spin_lock(&block_group->tree_lock);
-                                ret = link_free_space(block_group, e);
-                                spin_unlock(&block_group->tree_lock);
--                               BUG_ON(ret);
-+                               if (ret) {
-+                                       printk(KERN_ERR "Duplicate entries in 
-"
-+                                               "free space cache, 
-dumping\n");
-+                                       kunmap(page);
-+                                       unlock_page(page);
-+                                       page_cache_release(page);
-+                                       goto free_cache;
-+                               }
-                        } else {
-                                e->bitmap = kzalloc(PAGE_CACHE_SIZE, 
-GFP_NOFS);
-                                if (!e->bitmap) {
-@@ -430,7 +439,17 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
-                                        unlock_page(page);
-                                        page_cache_release(page);
-                                        goto free_cache;
-+                               if (ret) {
-+                                       printk(KERN_ERR "Duplicate entries in 
-"
-+                                              "free space cache, dumping\n");
-+                                       kunmap(page);
-+                                       unlock_page(page);
-+                                       page_cache_release(page);
-+                                       goto free_cache;
-+                               }
-                                }
-+                               printk(KERN_ERR "adding bitmap [%llu-%llu]\n",
-+                                      e->offset, e->bytes);
-                                spin_lock(&block_group->tree_lock);
-                                ret = link_free_space(block_group, e);
-                                block_group->total_bitmaps++;
-@@ -909,10 +928,16 @@ static int tree_insert_offset(struct rb_root *root, u64 
-offset,
-                         * logically.
-                         */
-                        if (bitmap) {
--                               WARN_ON(info->bitmap);
-+                               if (info->bitmap) {
-+                                       WARN_ON_ONCE(1);
-+                                       return -EEXIST;
-+                               }
-                                p = &(*p)->rb_right;
-                        } else {
--                               WARN_ON(!info->bitmap);
-+                               if (!info->bitmap) {
-+                                       WARN_ON_ONCE(1);
-+                                       return -EEXIST;
-+                               }
-                                p = &(*p)->rb_left;
-                        }
-                }
-
-
-Do you want me to try some other patch before I destroy the filesystem to make 
-the other tests?
-
-Thanks,
-
+ 	/* filesystem state */
+ 	u64 fs_state;
++
++	/* readahead tree */
++	spinlock_t reada_lock;
++	struct radix_tree_root reada_tree;
+ };
+ 
+ /*
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 7753eb9..3d4f9c5 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1803,6 +1803,10 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 	fs_info->max_inline = 8192 * 1024;
+ 	fs_info->metadata_ratio = 0;
+ 
++	/* readahead state */
++	INIT_RADIX_TREE(&fs_info->reada_tree, GFP_NOFS);
++	spin_lock_init(&fs_info->reada_lock);
++
+ 	fs_info->thread_pool_size = min_t(unsigned long,
+ 					  num_online_cpus() + 2, 8);
+ 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 8b9fb8c..800e670 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -396,6 +396,14 @@ static noinline int device_list_add(const char *path,
+ 		}
+ 		INIT_LIST_HEAD(&device->dev_alloc_list);
+ 
++		/* init readahead state */
++		spin_lock_init(&device->reada_lock);
++		device->reada_curr_zone = NULL;
++		atomic_set(&device->reada_in_flight, 0);
++		device->reada_next = 0;
++		INIT_RADIX_TREE(&device->reada_zones, GFP_NOFS);
++		INIT_RADIX_TREE(&device->reada_extents, GFP_NOFS);
++
+ 		mutex_lock(&fs_devices->device_list_mutex);
+ 		list_add(&device->dev_list, &fs_devices->devices);
+ 		mutex_unlock(&fs_devices->device_list_mutex);
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index cc2eada..33acd4e 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -86,6 +86,14 @@ struct btrfs_device {
+ 	u8 uuid[BTRFS_UUID_SIZE];
+ 
+ 	struct btrfs_work work;
++
++	/* readahead state */
++	spinlock_t reada_lock;
++	atomic_t reada_in_flight;
++	u64 reada_next;
++	struct reada_zone *reada_curr_zone;
++	struct radix_tree_root reada_zones;
++	struct radix_tree_root reada_extents;
+ };
+ 
+ struct btrfs_fs_devices {
 -- 
+1.7.3.4
 
-Elric Milon

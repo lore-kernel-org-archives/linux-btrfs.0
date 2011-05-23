@@ -1,93 +1,110 @@
-From: =?iso-8859-1?Q?Jo=E3o_Eduardo_Lu=EDs?= <jecluis@gmail.com>
-Subject: Fwd: Backref walking utilities
-Date: Mon, 23 May 2011 12:42:47 +0100
-Message-ID: <C10E871D-B532-4521-8D10-237F6B6974B3@gmail.com>
-References: <29C9FCE8-F9FB-425A-B346-09939CC0A9FE@gmail.com>
-Mime-Version: 1.0 (Apple Message framework v1082)
-Content-Type: multipart/signed; protocol="application/pgp-signature"; micalg=pgp-sha1; boundary="Apple-Mail-23--721230700"
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Elric Milon <whirm@gmx.com>
+Subject: Re: kernel BUG at fs/btrfs/inode.c:149!
+Date: Mon, 23 May 2011 13:57:41 +0200
+Message-ID: <201105231357.41588.whirm@gmx.com>
+References: <201105051954.48405.whirm@gmx.com> <201105161701.11645.truewhirm@yahoo.es> <4DD150C1.2090505@redhat.com>
+Mime-Version: 1.0
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+To: "linux-btrfs" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4DD150C1.2090505@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
---Apple-Mail-23--721230700
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset=iso-8859-1
+On Monday 16 May 2011 18:28:49 you wrote:
+> On 05/16/2011 11:01 AM, Whirm wrote:
+> > On Monday 16 May 2011 16:11:19 Josef Bacik wrote:
 
-My apologies. Sent this from my mobile and forgot to send it to the =
-list.
+> > 
+> > Sorry yes, I meant this is how I managed to get the corrupted filesystem.
+> > 
+> > Ill try to break it again.
+> 
+> Oh ok perfect, yeah I will try and do the same sort of things and see if
+> I can get it to happen as well.  Thanks,
 
----
-Jo=E3o Eduardo Lu=EDs
-gpg key: 477C26E5 from pool.keyserver.eu=20
+Great, btw, I tried to see if I can mount the corrupted filesystem with 
+the patch you told me about applied, and it fails, here's the log:
+
+http://pastebin.com/raw.php?i=4Kfv927B
+
+That happens using 2.6.39-rc7+ from git with the following patch applied (its 
+the debug patch and the possible fix you told me about):
+
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 63731a1..419f91f 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -417,10 +417,19 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
+                        }
+ 
+                        if (entry->type == BTRFS_FREE_SPACE_EXTENT) {
++                               printk(KERN_ERR "adding extent [%llu-%llu]\n",
++                                      e->offset, e->bytes);
+                                spin_lock(&block_group->tree_lock);
+                                ret = link_free_space(block_group, e);
+                                spin_unlock(&block_group->tree_lock);
+-                               BUG_ON(ret);
++                               if (ret) {
++                                       printk(KERN_ERR "Duplicate entries in 
+"
++                                               "free space cache, 
+dumping\n");
++                                       kunmap(page);
++                                       unlock_page(page);
++                                       page_cache_release(page);
++                                       goto free_cache;
++                               }
+                        } else {
+                                e->bitmap = kzalloc(PAGE_CACHE_SIZE, 
+GFP_NOFS);
+                                if (!e->bitmap) {
+@@ -430,7 +439,17 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
+                                        unlock_page(page);
+                                        page_cache_release(page);
+                                        goto free_cache;
++                               if (ret) {
++                                       printk(KERN_ERR "Duplicate entries in 
+"
++                                              "free space cache, dumping\n");
++                                       kunmap(page);
++                                       unlock_page(page);
++                                       page_cache_release(page);
++                                       goto free_cache;
++                               }
+                                }
++                               printk(KERN_ERR "adding bitmap [%llu-%llu]\n",
++                                      e->offset, e->bytes);
+                                spin_lock(&block_group->tree_lock);
+                                ret = link_free_space(block_group, e);
+                                block_group->total_bitmaps++;
+@@ -909,10 +928,16 @@ static int tree_insert_offset(struct rb_root *root, u64 
+offset,
+                         * logically.
+                         */
+                        if (bitmap) {
+-                               WARN_ON(info->bitmap);
++                               if (info->bitmap) {
++                                       WARN_ON_ONCE(1);
++                                       return -EEXIST;
++                               }
+                                p = &(*p)->rb_right;
+                        } else {
+-                               WARN_ON(!info->bitmap);
++                               if (!info->bitmap) {
++                                       WARN_ON_ONCE(1);
++                                       return -EEXIST;
++                               }
+                                p = &(*p)->rb_left;
+                        }
+                }
 
 
-Begin forwarded message:
+Do you want me to try some other patch before I destroy the filesystem to make 
+the other tests?
 
-> From: Jo=E3o Eduardo Lu=EDs <jecluis@gmail.com>
-> Date: May 23, 2011 11:22:51 AM GMT+01:00
-> To: Hugo Mills <hugo@carfax.org.uk>
-> Subject: Re: Backref walking utilities
->=20
->=20
-> On May 23, 2011, at 11:15 AM, Hugo Mills wrote:
->=20
->> On Mon, May 23, 2011 at 12:02:21PM +0200, Arne Jansen wrote:
->>> Hi liubo,
->>>=20
->>> On 23.05.2011 11:53, liubo wrote:
->>>> As one of my plans, I'm going to take this project over unless =
-someone has been working on it.
->>>=20
->>> Jan Schmidt has a patch for scrub nearly ready, that does some
->>> ref-walking to report affected files to the user. While this is
->>> kernel code and you're planning to add user-space code, it might
->>> still be possible to share some of it. Maybe the efforts can be
->>> coordinated.
->>=20
->>  Another use for walking backrefs for a block (or an extent) is to
->> work out the differential size of a snapshot -- i.e. how much space
->> will be freed up if the snapshot is deleted. (You need to look at
->> every extent of every file in the snapshot, and work out whether =
-those
->> extents are used anywhere outside the subvolume).
->=20
-> Which, I believe, would be useful if one wanted to merge two diverging =
-snapshots into one.
->=20
-> As I'm doing some research on this topic, I would be thankful if =
-anyone pointed me to Jan Schmidt's patch.=20
->=20
->=20
-> - J
->=20
-> ---
-> Jo=E3o Eduardo Lu=EDs
-> gpg key: 477C26E5 from pool.keyserver.eu=20
->=20
->=20
->=20
->=20
->=20
+Thanks,
 
+-- 
 
---Apple-Mail-23--721230700
-content-type: application/pgp-signature; x-mac-type=70674453;
-	name=PGP.sig
-content-description: This is a digitally signed message part
-content-disposition: inline; filename=PGP.sig
-content-transfer-encoding: 7bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.16 (Darwin)
-
-iQEcBAEBAgAGBQJN2kg7AAoJEJ9vvxhHfCbl6GwH/3PLUqNa2RvfE/ZBWWOJsqC1
-fDFa2GbgLsarPNEGWyQBwepJ3L9yBl6syWqWGuufLWcfGAYHYOXewh0B/CqbHPZD
-e7PTjr0oZxE27dddmRbQuUjkYh+GjFgKrkBBpPauMyPa8/zY0zOjadUC1oDOHWZi
-XLwq+bt47yD40MaQSxfUpbUdZuScsQsLln/+bt48JGKKBTHhbnpecTcunVadfG6z
-8KnlyHKiLti+DmJlgHYWPgVVkJo0rK0KYD+lZvxa+hOarDs/1PP0RRS+KK5hBae3
-zMCkxfMpOw8qhKU8vDjzVzo2pi27xsUOYSnebeDRxuFSTAx3IyUMOYHGDsOF2fc=
-=LzH1
------END PGP SIGNATURE-----
-
---Apple-Mail-23--721230700--
+Elric Milon

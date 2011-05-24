@@ -1,44 +1,29 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: Re: [PATCH] remove unneeded DEFINE_WAITs
-Date: Tue, 24 May 2011 10:49:37 +0200
-Message-ID: <4DDB7121.4020004@gmx.net>
-References: <1299584050-6014-1-git-send-email-sensille@gmx.net>
+Subject: Re: Integration branch pushed out to btrfs-unstable
+Date: Tue, 24 May 2011 11:01:23 +0200
+Message-ID: <4DDB73E3.8050800@gmx.net>
+References: <1306179381-sup-443@shiny>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>
-To: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Li Zefan <lizf@cn.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1299584050-6014-1-git-send-email-sensille@gmx.net>
+In-Reply-To: <1306179381-sup-443@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-these two are still in the integration-test tree...
-
--Arne
-
-On 08.03.2011 12:34, Arne Jansen wrote:
-> Signed-off-by: Arne Jansen <sensille@gmx.net>
-> ---
->  fs/btrfs/extent-tree.c |    2 --
->  1 files changed, 0 insertions(+), 2 deletions(-)
+On 23.05.2011 21:54, Chris Mason wrote:
+> I've pushed out my current kernel git tree to a new branch called
+> integration-test.  This is meant for integration testing only and should
+> not be run by anyone who doesn't love crashes.
 > 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index a7aaa10..c1f0c28 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -4790,7 +4790,6 @@ wait_block_group_cache_progress(struct btrfs_block_group_cache *cache,
->  				u64 num_bytes)
->  {
->  	struct btrfs_caching_control *caching_ctl;
-> -	DEFINE_WAIT(wait);
->  
->  	caching_ctl = get_caching_control(cache);
->  	if (!caching_ctl)
-> @@ -4807,7 +4806,6 @@ static noinline int
->  wait_block_group_cache_done(struct btrfs_block_group_cache *cache)
->  {
->  	struct btrfs_caching_control *caching_ctl;
-> -	DEFINE_WAIT(wait);
->  
->  	caching_ctl = get_caching_control(cache);
->  	if (!caching_ctl)
+> Scrub, chunk allocator fixes
 
+please note that in order to test scrub functionality you need an
+updated btrfs utility. You can pull it from:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/arne/btrfs-progs-unstable-arne.git
+scrub
+
+Thanks,
+Arne

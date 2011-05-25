@@ -1,53 +1,44 @@
-From: Steven Rostedt <rostedt@goodmis.org>
-Subject: Re: [PATCH 1/2] tracing: add __print_symbolic_u64 to avoid
- warnings on 32bit machine
-Date: Wed, 25 May 2011 08:27:44 -0400
-Message-ID: <1306326464.1465.85.camel@gandalf.stny.rr.com>
-References: <4D9573DB.4010009@cn.fujitsu.com>
-	 <1301665762.2160.22.camel@gandalf.stny.rr.com>
-	 <4D9C2FF6.7090607@cn.fujitsu.com>
-	 <1303150309.7181.51.camel@gandalf.stny.rr.com>
-	 <4DACE6E0.7000507@cn.fujitsu.com>  <4DBA8C95.4000300@cn.fujitsu.com>
-	 <1304264124.25414.1079.camel@gandalf.stny.rr.com>
-	 <4DDDE9E6.7090303@cn.fujitsu.com>
+From: Arne Jansen <sensille@gmx.net>
+Subject: Re: [PATCH] btrfs scrub: don't coalesce pages that are logically
+ discontiguous
+Date: Wed, 25 May 2011 14:31:12 +0200
+Message-ID: <4DDCF690.1020404@gmx.net>
+References: <1306326170-28208-1-git-send-email-sensille@gmx.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-15"
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>
-To: liubo <liubo2009@cn.fujitsu.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4DDDE9E6.7090303@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1306326170-28208-1-git-send-email-sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2011-05-26 at 01:49 -0400, liubo wrote:
-> On 05/01/2011 11:35 AM, Steven Rostedt wrote:
-> > On Fri, 2011-04-29 at 18:01 +0800, liubo wrote:
-> >> ping?
-> > 
-> > Sorry, I've been trying to get the new ftrace function tracer features
-> > out ASAP. I plan on looking at this when I'm done.
-> > 
-> > Thanks,
-> > 
-> 
-> Hi, Steven,
-> 
-> I've seen your latest git-pull, but these 2 patches are not included yet,
-> so is there any problem with them?
+On 25.05.2011 14:22, Arne Jansen wrote:
+> scrub_page collects several pages into one bio as long as they are physically
+> contiguous. As we only save one logical address for the whole bio, don't
+> collect pages that are physically contiguous but logically discontiguous.
 
-Actually, I was trying to get out what I had. There's a bit more patches
-that I need to process still. This being one of them.
+This patch applies to the integration-test branch. I also pushed it
+into my for-chris branch.
 
-But what I sent out previously is not going into 2.6.40 anyway. Ingo
-feels that it's too late in the merge window to pull those changes and
-wants to wait till the next merge window. Since there's some fixes in
-that pull request, I'll need to cherry pick them out and rebase the rest
-for the next window.
-
-I'll look at this patch soon. It's still in my queue "todo" ;)
-
--- Steve
+-Arne
 
 > 
-> If it does, I can be helpful. :)
+> Signed-off-by: Arne Jansen <sensille@gmx.net>
+> ---
+>  fs/btrfs/scrub.c |    3 ++-
+>  1 files changed, 2 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+> index a31f2a9..21ee93c 100644
+> --- a/fs/btrfs/scrub.c
+> +++ b/fs/btrfs/scrub.c
+> @@ -631,7 +631,8 @@ again:
+>  	if (sbio->count == 0) {
+>  		sbio->physical = physical;
+>  		sbio->logical = logical;
+> -	} else if (sbio->physical + sbio->count * PAGE_SIZE != physical) {
+> +	} else if (sbio->physical + sbio->count * PAGE_SIZE != physical ||
+> +		   sbio->logical + sbio->count * PAGE_SIZE != logical) {
+>  		scrub_submit(sdev);
+>  		goto again;
+>  	}
+

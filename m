@@ -1,49 +1,33 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: Re: Integration branch pushed out to btrfs-unstable
-Date: Wed, 25 May 2011 14:35:43 +0200
-Message-ID: <4DDCF79F.80405@gmx.net>
-References: <1306179381-sup-443@shiny>
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: Re: Backref walking utilities
+Date: Wed, 25 May 2011 17:08:42 +0200
+Message-ID: <4DDD1B7A.4090709@jan-o-sch.net>
+References: <4DDA2EA7.9080305@cn.fujitsu.com> <4DDA30AD.2020409@gmx.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Li Zefan <lizf@cn.fujitsu.com>,
-	Miao Xie <miaox@cn.fujitsu.com>, slyfox@gentoo.org
-To: Chris Mason <chris.mason@oracle.com>
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1306179381-sup-443@shiny>
+In-Reply-To: <4DDA30AD.2020409@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 23.05.2011 21:54, Chris Mason wrote:
-> Hi everyone,
+On 05/23/2011 12:02 PM, Arne Jansen wrote:
+> Hi liubo,
 > 
-> I've pushed out my current kernel git tree to a new branch called
-> integration-test.  This is meant for integration testing only and should
-> not be run by anyone who doesn't love crashes.
+> On 23.05.2011 11:53, liubo wrote:
+>> As one of my plans, I'm going to take this project over unless someone has been working on it.
 > 
-> I've pulled together a lot of important work from a lot of different
-> people.  It includes:
-> 
-> The new inode number allocator
-> Delayed inode and directory item updates
-> Scrub, chunk allocator fixes
-> Races in device addition and removal
-> Josef's performance fixes
-> A large series of cleanups and fixes
-> 
-> Most of the integration work was just pushing the cleanups into the new
-> code bits.  I still want to integrate Hugo Mills' balance progress
-> ioctls (really nice).  But it was a lot of work to get this all working
-> together and I wanted to let everyone retest the result.
-> 
+> Jan Schmidt has a patch for scrub nearly ready, that does some
+> ref-walking to report affected files to the user. While this is
+> kernel code and you're planning to add user-space code, it might
+> still be possible to share some of it. Maybe the efforts can be
+> coordinated.
 
-The commit
+The patches are ready and should be flexible enough to use for your
+purpose. However I use them in context of the scrub code, thus I'm
+planning to send them out as soon as the current version of scrub is
+included in Chris' master.
 
-commit c4f675cd40d955d539180506c09515c90169b15b
-Author: Sergei Trofimovich <slyfox@gentoo.org>
-Date:   Fri May 20 20:20:30 2011 +0000
+If anybody wants to test the patches before that (apply well against
+Arnes scrub branch), drop me an email.
 
-    btrfs: don't spin in shrink_delalloc if there is nothing to free
-
-gives me very early ENOSPC in my tests on a small volume (7GB).
-
--Arne
+-Jan

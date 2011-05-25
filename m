@@ -1,111 +1,85 @@
-From: Sergei Trofimovich <slyfox@gentoo.org>
-Subject: Re: Integration branch pushed out to btrfs-unstable
-Date: Wed, 25 May 2011 23:41:10 +0300
-Message-ID: <20110525234110.669f4d71@sf>
-References: <1306179381-sup-443@shiny>
-	<4DDCF79F.80405@gmx.net>
-	<20110525214418.225ec273@sf>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH 1/3] fs: add SEEK_HOLE and SEEK_DATA flags V4
+Date: Wed, 25 May 2011 16:46:49 -0400
+Message-ID: <4DDD6AB9.3030906@redhat.com>
+References: <1306186991-1905-1-git-send-email-josef@redhat.com> <0E7B812A-4057-4EB8-93F5-79ED9FCE2CCD@dilger.ca>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/0Oes6zkpH02673Kk=cTU1U="; protocol="application/pgp-signature"
-Cc: Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Li Zefan <lizf@cn.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>
-To: Arne Jansen <sensille@gmx.net>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110525214418.225ec273@sf>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-ext4@vger.kernel.org,
+	sunil.mushran@oracle.com, viro@ZenIV.linux.org.uk
+To: Andreas Dilger <adilger.kernel@dilger.ca>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <0E7B812A-4057-4EB8-93F5-79ED9FCE2CCD@dilger.ca>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/0Oes6zkpH02673Kk=cTU1U=
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On 05/25/2011 03:45 PM, Andreas Dilger wrote:
+> On May 23, 2011, at 15:43, Josef Bacik wrote:
+>> This just gets us ready to support the SEEK_HOLE and SEEK_DATA flags.  Turns out
+>> using fiemap in things like cp cause more problems than it solves, so lets try
+>> and give userspace an interface that doesn't suck.  We need to match solaris
+>> here, and the definitions are
+>>
+>> diff --git a/fs/read_write.c b/fs/read_write.c
+>> index 5520f8a..9c3b453 100644
+>> --- a/fs/read_write.c
+>> +++ b/fs/read_write.c
+>> @@ -64,6 +64,23 @@ generic_file_llseek_unlocked(struct file *file, loff_t offset, int origin)
+>> 			return file->f_pos;
+>> 		offset += file->f_pos;
+>> 		break;
+>> +	case SEEK_DATA:
+>> +		/*
+>> +		 * In the generic case the entire file is data, so as long as
+>> +		 * offset isn't at the end of the file then the offset is data.
+>> +		 */
+>> +		if (offset >= inode->i_size)
+>> +			return -ENXIO;
+>> +		break;
+>> +	case SEEK_HOLE:
+>> +		/*
+>> +		 * There is a virtual hole at the end of the file, so as long as
+>> +		 * offset isn't i_size or larger, return i_size.
+>> +		 */
+>> +		if (offset >= inode->i_size)
+>> +			return -ENXIO;
+>> +		offset = inode->i_size;
+>> +		break;
+>> 	}
+> 
+> What about all of the existing filesystems that currently just ignore
+> values of "origin" that they don't understand?  Looking through those
+> it appears that most of them will return "offset" for unknown values
+> of "origin", which I guess is OK for SEEK_DATA, but is confusing for
+> SEEK_HOLE.  Some filesystems will return -EINVAL for values of origin
+> that are unknown.
+> 
 
-> > The commit
-> >=20
-> > commit c4f675cd40d955d539180506c09515c90169b15b
-> > Author: Sergei Trofimovich <slyfox@gentoo.org>
-> > Date:   Fri May 20 20:20:30 2011 +0000
-> >=20
-> >     btrfs: don't spin in shrink_delalloc if there is nothing to free
-> >=20
-> > gives me very early ENOSPC in my tests on a small volume (7GB).
->=20
-> What king of test is that? I'd like to reproduce it.
-> Does it do a lot of parallel I/O?
->=20
-> May I ask you to try to reproduce the problem with this sole patch
-> on top of linus master?
+Yeah I just didn't want to do all that work until I was sure the base of
+what I had was acceptable.  If people think this set is good to go then
+I will go through and fix everybody who does their own lseek.
 
-With Arne's params to fs_mark it triggers for 2.6.39+this patch.
-I took 2GB loop device and the script [1].
+> Most of the filesystem-specific ->llseek() methods don't do any error
+> checking on "origin" because this is handled at the sys_llseek() level,
+> and hasn't changed in many years.
+> 
+> I assume this patch is also dependent upon the "remove default_llseek()"
+> patch, so that the implementation of SEEK_DATA and SEEK_HOLE can be done
+> in only generic_file_llseek()?
+> 
+> Finally, while looking through the various ->llseek() methods I notice
+> that many filesystems return "i_size" for SEEK_END, which clearly does
+> not make sense for filesystems like ext3/ext4 htree, btrfs, etc that
+> use hash keys instead of byte offsets for doing directory traversal.
+> The comment at generic_file_llseek() is that it is intended for use by
+> regular files.
+> 
+> Should the ext4_llseek() code be changed to return 0x7ffffffff for the
+> SEEK_END value?  That makes more sense compared to values returned for
+> SEEK_CUR so that an application can compare the current "offset" with
+> the final value for a progress bar.
 
-$ ./make_it.sh
-...
-#  /home/slyfox/dev/fs_mark/fs_mark  -D  512  -t  16  -n  4096  -s  51200  =
--L7  -S0  -d  /mnt/ut=20
-#       Version 3.3, 16 thread(s) starting at Wed May 25 23:35:06 2011
-#       Sync method: NO SYNC: Test does not issue sync() or fsync() calls.
-#       Directories:  Time based hash between directories across 512 subdir=
-ectories with 180 seconds per subdirectory.
-#       File names: 40 bytes long, (16 initial bytes of time stamp with 24 =
-random bytes at end of name)
-#       Files info: size 51200 bytes, written with an IO size of 16384 byte=
-s per write
-#       App overhead is time in microseconds spent in the test not doing fi=
-le writing related system calls.
+So maybe we make SEEK_DATA/SEEK_HOLE only work on regular files and not
+directories?  Sunil what does solaris do?  Thanks,
 
-FSUse%        Count         Size    Files/sec     App Overhead
-fs_mark: write_file write failed: -1 No space left on device
-fs_mark: write_file write failed: -1 No space left on device
-fs_mark: write_file write failed: -1 No space left on device
-...^C
-
-$ .../btrfs fi df /mnt/ut/
-Data: total=3D622.25MB, used=3D434.61MB
-System: total=3D4.00MB, used=3D4.00KB
-Metadata: total=3D417.50MB, used=3D6.69MB
-
-$ sudo .../btrfs fi show /dev/loop0
-Label: none  uuid: ccb18c12-4cbe-458c-835a-30e767939121
-        Total devices 1 FS bytes used 441.31MB
-        devid    1 size 2.00GB used 1.02GB path /dev/loop0
-
-[1] 'make_it.sh' script exposing bug:
-    export LANG=3DC
-
-    FS_MARK=3D$HOME/dev/fs_mark/fs_mark
-    MKFS_BTRFS=3D$HOME/dev/git/btrfs-progs-unstable/mkfs.btrfs
-
-    sz=3D2
-    the_file=3D${sz}G.img
-    mount_point=3D/mnt/ut
-
-    dd if=3D/dev/zero of=3D"${the_file}" bs=3D1 count=3D1 seek=3D$((${sz}*1=
-024*1024*1024-1))
-    $MKFS_BTRFS -d raid0 -m raid0 "${the_file}"
-    sudo mount -oloop "${the_file}" "${mount_point}"
-    sudo chown slyfox:users "${mount_point}"
-    chmod u+w "${mount_point}"
-    cd /tmp
-    $FS_MARK \
-        -D  512  -t  16  -n  4096  -s  51200  -L7  -S0 \
-        -d "${mount_point}"
-    sudo umount "${mount_point}"
-
---=20
-
-  Sergei
-
---Sig_/0Oes6zkpH02673Kk=cTU1U=
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.17 (GNU/Linux)
-
-iEYEARECAAYFAk3daXEACgkQcaHudmEf86rIngCdGCRDkZUtUYCTrs1MFmVSREwB
-Tv8AoIbxhJzt2D/CDlqg+jc6yr9FkS4p
-=DiuO
------END PGP SIGNATURE-----
-
---Sig_/0Oes6zkpH02673Kk=cTU1U=--
+Josef

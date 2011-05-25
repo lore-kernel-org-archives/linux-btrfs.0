@@ -1,54 +1,54 @@
-From: Gregory L Shomo <greg@techsquare.com>
-Subject: Re: parent transid troubles
-Date: Wed, 25 May 2011 14:03:01 -0400
-Message-ID: <sa24o4iejze.fsf@techsquare.com>
-References: <1303332799-sup-9175@think>
+From: Sergei Trofimovich <slyfox@gentoo.org>
+Subject: Re: Integration branch pushed out to btrfs-unstable
+Date: Wed, 25 May 2011 21:44:18 +0300
+Message-ID: <20110525214418.225ec273@sf>
+References: <1306179381-sup-443@shiny>
+	<4DDCF79F.80405@gmx.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/Ua7w2zO+RAP+9Y2vZS5dkAR"; protocol="application/pgp-signature"
+Cc: Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Li Zefan <lizf@cn.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>
+To: Arne Jansen <sensille@gmx.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1303332799-sup-9175@think> (message from Chris Mason on Wed, 20 Apr 2011 16:54:23 -0400)
+In-Reply-To: <4DDCF79F.80405@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason <chris.mason@oracle.com> writes:
+--Sig_/Ua7w2zO+RAP+9Y2vZS5dkAR
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
->> OK, we've re-compiled linux-2.6.38 patched up to btrfs-unstable
->> commit f65647c29b14f5a32ff6f3237b0ef3b375ed5a79 and can now mount 
->> the filesystem. 
->> 
->> Mounting the filesystem read-only from /dev/sdd1 fails, but
->> succeeds from /dev/sdc1... after about 4855 parent transid 
->> verification failures. 
->> 
->>   kernel: [  293.827069] Btrfs loaded
->>   kernel: [  293.828014] device fsid 2e4187db574846d8-404f05c2e6ec579d devid 2 transid 176065 /dev/sdd1
->>   kernel: [  293.828781] btrfs: failed to read the system array on sdd1
->>   kernel: [  293.835956] btrfs: open_ctree failed 
->> 
->>   kernel: [  305.296345] device fsid 2e4187db574846d8-404f05c2e6ec579d devid 1 transid 176066 /dev/sdc1
->>   kernel: [  305.476360] parent transid verify failed on 20403515125760 wanted 176066 found 174710
->>   kernel: [  305.476608] parent transid verify failed on 20403515125760 wanted 176066 found 174710
->>   !-- snip
->> 
->> Is there any chance we can resolve some of the parent transid 
->> verification failures ? What should our next steps be ? 
->> 
->> Thank you very much for all your help. 
->
-> The failures won't get resolved easily.  Many of them will be duplicates
-> because of the way we do readahead.
->
-> Step one is to copy off the data that you can.  dmesg -n 1 will help
-> prevent performance problems from message floods.
->
-> -chris
+> The commit
+>=20
+> commit c4f675cd40d955d539180506c09515c90169b15b
+> Author: Sergei Trofimovich <slyfox@gentoo.org>
+> Date:   Fri May 20 20:20:30 2011 +0000
+>=20
+>     btrfs: don't spin in shrink_delalloc if there is nothing to free
+>=20
+> gives me very early ENOSPC in my tests on a small volume (7GB).
 
-Now that we've copied-off what we need, shall we just
-take the plunge and mount read-write ? Is there some
-way in can clear out the parent transid failures so that
-we will not have to look at them in the future ? 
+What king of test is that? I'd like to reproduce it.
+Does it do a lot of parallel I/O?
 
-- greg 
+May I ask you to try to reproduce the problem with this sole patch
+on top of linus master?
 
+--=20
 
+  Sergei
+
+--Sig_/Ua7w2zO+RAP+9Y2vZS5dkAR
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (GNU/Linux)
+
+iEYEARECAAYFAk3dTgcACgkQcaHudmEf86qAUQCfbywDa0ayGwmueAkNbDylD2tL
+6+UAnR02tYsOaVshbxnE0vSwLMjYuvqD
+=ML5O
+-----END PGP SIGNATURE-----
+
+--Sig_/Ua7w2zO+RAP+9Y2vZS5dkAR--

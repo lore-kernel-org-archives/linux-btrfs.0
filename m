@@ -1,33 +1,65 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: Re: Backref walking utilities
-Date: Wed, 25 May 2011 17:08:42 +0200
-Message-ID: <4DDD1B7A.4090709@jan-o-sch.net>
-References: <4DDA2EA7.9080305@cn.fujitsu.com> <4DDA30AD.2020409@gmx.net>
+From: Randy Dunlap <randy.dunlap@oracle.com>
+Subject: Re: [PATCH 1/2] tracing: add __print_symbolic_u64 to avoid warnings
+ on 32bit machine
+Date: Wed, 25 May 2011 09:12:52 -0700
+Message-ID: <20110525091252.8899385e.randy.dunlap@oracle.com>
+References: <4D9573DB.4010009@cn.fujitsu.com>
+	<1301665762.2160.22.camel@gandalf.stny.rr.com>
+	<4D9C2FF6.7090607@cn.fujitsu.com>
+	<1303150309.7181.51.camel@gandalf.stny.rr.com>
+	<4DACE6E0.7000507@cn.fujitsu.com>
+	<4DBA8C95.4000300@cn.fujitsu.com>
+	<1304264124.25414.1079.camel@gandalf.stny.rr.com>
+	<4DDDE9E6.7090303@cn.fujitsu.com>
+	<1306326464.1465.85.camel@gandalf.stny.rr.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DDA30AD.2020409@gmx.net>
+Content-Type: text/plain; charset=US-ASCII
+Cc: liubo <liubo2009@cn.fujitsu.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>
+To: Steven Rostedt <rostedt@goodmis.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <1306326464.1465.85.camel@gandalf.stny.rr.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/23/2011 12:02 PM, Arne Jansen wrote:
-> Hi liubo,
+On Wed, 25 May 2011 08:27:44 -0400 Steven Rostedt wrote:
+
+> On Thu, 2011-05-26 at 01:49 -0400, liubo wrote:
+> > On 05/01/2011 11:35 AM, Steven Rostedt wrote:
+> > > On Fri, 2011-04-29 at 18:01 +0800, liubo wrote:
+> > >> ping?
+> > > 
+> > > Sorry, I've been trying to get the new ftrace function tracer features
+> > > out ASAP. I plan on looking at this when I'm done.
+> > > 
+> > > Thanks,
+> > > 
+> > 
+> > Hi, Steven,
+> > 
+> > I've seen your latest git-pull, but these 2 patches are not included yet,
+> > so is there any problem with them?
 > 
-> On 23.05.2011 11:53, liubo wrote:
->> As one of my plans, I'm going to take this project over unless someone has been working on it.
+> Actually, I was trying to get out what I had. There's a bit more patches
+> that I need to process still. This being one of them.
 > 
-> Jan Schmidt has a patch for scrub nearly ready, that does some
-> ref-walking to report affected files to the user. While this is
-> kernel code and you're planning to add user-space code, it might
-> still be possible to share some of it. Maybe the efforts can be
-> coordinated.
+> But what I sent out previously is not going into 2.6.40 anyway. Ingo
+> feels that it's too late in the merge window to pull those changes and
+> wants to wait till the next merge window. Since there's some fixes in
+> that pull request, I'll need to cherry pick them out and rebase the rest
+> for the next window.
 
-The patches are ready and should be flexible enough to use for your
-purpose. However I use them in context of the scrub code, thus I'm
-planning to send them out as soon as the current version of scrub is
-included in Chris' master.
+Sorry to hear all of that.  This fix is needed in mainline.
 
-If anybody wants to test the patches before that (apply well against
-Arnes scrub branch), drop me an email.
+> I'll look at this patch soon. It's still in my queue "todo" ;)
+> 
+> -- Steve
+> 
+> > 
+> > If it does, I can be helpful. :)
 
--Jan
+
+---
+~Randy
+*** Remember to use Documentation/SubmitChecklist when testing your code ***

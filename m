@@ -1,54 +1,67 @@
-From: Sergei Trofimovich <slyfox@gentoo.org>
-Subject: Re: Integration branch pushed out to btrfs-unstable
-Date: Wed, 25 May 2011 21:44:18 +0300
-Message-ID: <20110525214418.225ec273@sf>
-References: <1306179381-sup-443@shiny>
-	<4DDCF79F.80405@gmx.net>
+From: Craig Johnson <crajohns@gmail.com>
+Subject: parent transid verify failures on 2.6.39
+Date: Wed, 25 May 2011 14:06:59 -0500
+Message-ID: <BANLkTikbunJJTxutLGfs0R_rSfbqWmBf=A@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/Ua7w2zO+RAP+9Y2vZS5dkAR"; protocol="application/pgp-signature"
-Cc: Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Li Zefan <lizf@cn.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>
-To: Arne Jansen <sensille@gmx.net>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DDCF79F.80405@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/Ua7w2zO+RAP+9Y2vZS5dkAR
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+After doing an upgrade to 2.6.39 from 2.6.39-rc7, I am unable to mount
+my 3 disk btrfs volume.  It was a clean reboot, which makes it all the
+more puzzling.  This is what I'm getting:
 
-> The commit
->=20
-> commit c4f675cd40d955d539180506c09515c90169b15b
-> Author: Sergei Trofimovich <slyfox@gentoo.org>
-> Date:   Fri May 20 20:20:30 2011 +0000
->=20
->     btrfs: don't spin in shrink_delalloc if there is nothing to free
->=20
-> gives me very early ENOSPC in my tests on a small volume (7GB).
 
-What king of test is that? I'd like to reproduce it.
-Does it do a lot of parallel I/O?
+[68808.339109] device fsid a941511a96bcbfb8-8c123cb07aa6aaa1 devid 2
+transid 339584 /dev/sdc1
+[68808.340354] device fsid a941511a96bcbfb8-8c123cb07aa6aaa1 devid 1
+transid 339584 /dev/sda1
+[68808.340774] device fsid a941511a96bcbfb8-8c123cb07aa6aaa1 devid 3
+transid 339584 /dev/sdb1
 
-May I ask you to try to reproduce the problem with this sole patch
-on top of linus master?
+[70106.913668] btrfs: disk space caching is enabled
+[70106.968648] parent transid verify failed on 6038227976192 wanted
+337418 found 337853
+[70106.969031] parent transid verify failed on 6038227976192 wanted
+337418 found 337853
+[70106.969403] parent transid verify failed on 6038227976192 wanted
+337418 found 337853
+[70106.969671] parent transid verify failed on 6038227976192 wanted
+337418 found 337853
+[70106.969691] parent transid verify failed on 6038227976192 wanted
+337418 found 337853
+[70106.969704] Failed to read block groups: -5
+[70107.050658] btrfs: open_ctree failed
 
---=20
+I went to run a btrfsck, but found out that I needed to compile with
+the tmp branch or I would get an unsupported features message (lzo and
+space_cache).  After compiling that, when I run btrfsck, I get this:
 
-  Sergei
+parent transid verify failed on 6038227976192 wanted 337418 found 337853
+parent transid verify failed on 6038227976192 wanted 337418 found 337853
+parent transid verify failed on 6038227976192 wanted 337418 found 337853
 
---Sig_/Ua7w2zO+RAP+9Y2vZS5dkAR
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
+And then it stops.  This happens with btrfs-debug-tree, or
+btrfs-select-super.  I've tried it on sda1, sdb1, and sdc1 and also
+with -s 0, -s 1, and -s 2.  Dmesg shows a segfault:
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.17 (GNU/Linux)
+[71775.589462] btrfsck[14453]: segfault at c4 ip 000000000040e477 sp
+00007fffa9eb4d30 error 4 in btrfsck[400000+21000]
 
-iEYEARECAAYFAk3dTgcACgkQcaHudmEf86qAUQCfbywDa0ayGwmueAkNbDylD2tL
-6+UAnR02tYsOaVshbxnE0vSwLMjYuvqD
-=ML5O
------END PGP SIGNATURE-----
+For fun, I ran it through gdb and I got this:
 
---Sig_/Ua7w2zO+RAP+9Y2vZS5dkAR--
+Program received signal SIGSEGV, Segmentation fault.
+find_first_block_group (root=0x61d1b0, path=0x61ef10, key=0x7fffffffe240)
+    at extent-tree.c:3028
+3028                    if (slot >= btrfs_header_nritems(leaf)) {
+
+
+
+Is there any hope of recovery here?  Not the end of the world if the
+volume is lost, but it would be a bit of a pain and I'm at a loss as
+to why it happened.  I tried mounting with the new integration-test
+branch just for fun, but there's no difference on the mounting.  Any
+help that could be provided would be immensely appreciated.  Thanks!
+
+- Craig

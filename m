@@ -1,56 +1,39 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: noinline the cluster searching functions
-Date: Wed, 25 May 2011 13:08:59 -0400
-Message-ID: <1306343339-25979-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: don't commit the transaction if we dont have enough pinned bytes
+Date: Wed, 25 May 2011 13:11:30 -0400
+Message-ID: <1306343490-26057-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When profiling the find cluster code it's hard to tell where we are spending our
-time because the bitmap and non-bitmap functions get inlined by the compiler, so
-make that not happen.  Thanks,
+I noticed when running an enospc test that we would get stuck committing the
+transaction in check_data_space even though we truly didn't have enough space.
+So check to see if bytes_pinned is bigger than num_bytes, if it's not don't
+commit the transaction.  Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/free-space-cache.c |   18 ++++++++++--------
- 1 files changed, 10 insertions(+), 8 deletions(-)
+ fs/btrfs/extent-tree.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 0bfea7b..a827c97 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -2060,10 +2060,11 @@ again:
- /*
-  * This searches the block group for just extents to fill the cluster with.
-  */
--static int setup_cluster_no_bitmap(struct btrfs_block_group_cache *block_group,
--				   struct btrfs_free_cluster *cluster,
--				   struct list_head *bitmaps,
--				   u64 offset, u64 bytes, u64 min_bytes)
-+static noinline int
-+setup_cluster_no_bitmap(struct btrfs_block_group_cache *block_group,
-+			struct btrfs_free_cluster *cluster,
-+			struct list_head *bitmaps, u64 offset, u64 bytes,
-+			u64 min_bytes)
- {
- 	struct btrfs_free_space *first = NULL;
- 	struct btrfs_free_space *entry = NULL;
-@@ -2162,10 +2163,11 @@ static int setup_cluster_no_bitmap(struct btrfs_block_group_cache *block_group,
-  * This specifically looks for bitmaps that may work in the cluster, we assume
-  * that we have already failed to find extents that will work.
-  */
--static int setup_cluster_bitmap(struct btrfs_block_group_cache *block_group,
--				struct btrfs_free_cluster *cluster,
--				struct list_head *bitmaps,
--				u64 offset, u64 bytes, u64 min_bytes)
-+static noinline int
-+setup_cluster_bitmap(struct btrfs_block_group_cache *block_group,
-+		     struct btrfs_free_cluster *cluster,
-+		     struct list_head *bitmaps, u64 offset, u64 bytes,
-+		     u64 min_bytes)
- {
- 	struct btrfs_free_space *entry;
- 	struct rb_node *node;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index c8c3184..adb6696 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3199,6 +3199,13 @@ alloc:
+ 			}
+ 			goto again;
+ 		}
++
++		/*
++		 * If we have less pinned bytes than we want to allocate then
++		 * don't bother committing the transaction, it won't help us.
++		 */
++		if (data_sinfo->bytes_pinned < num_bytes)
++			committed = 1;
+ 		spin_unlock(&data_sinfo->lock);
+ 
+ 		/* commit the current transaction and try again */
 -- 
 1.7.2.3
 

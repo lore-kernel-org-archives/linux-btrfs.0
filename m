@@ -1,104 +1,66 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH v1 3/5] btrfs: initial readahead code and prototypes
-Date: Thu, 26 May 2011 12:14:21 +0200
-Message-ID: <20110526101421.GX12709@twin.jikos.cz>
-References: <cover.1306154794.git.sensille@gmx.net>
- <320563549be689389d99d47d396290547db94982.1306154794.git.sensille@gmx.net>
-Reply-To: dave@jikos.cz
+From: Al Viro <viro@ZenIV.linux.org.uk>
+Subject: Re: [PATCH 1/2] fs: add a DCACHE_NEED_LOOKUP flag for d_flags V2
+Date: Thu, 26 May 2011 11:35:14 +0100
+Message-ID: <20110526103514.GC11521@ZenIV.linux.org.uk>
+References: <1305913471-3150-1-git-send-email-josef@redhat.com>
+ <20110522021130.GI19987@ZenIV.linux.org.uk>
+ <4DDA8793.3010906@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
-To: Arne Jansen <sensille@gmx.net>
+Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	adilger@dilger.ca, hch@lst.de
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <320563549be689389d99d47d396290547db94982.1306154794.git.sensille@gmx.net>
+In-Reply-To: <4DDA8793.3010906@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Mon, May 23, 2011 at 12:13:07PM -0400, Josef Bacik wrote:
+> On 05/21/2011 10:11 PM, Al Viro wrote:
+> > On Fri, May 20, 2011 at 01:44:30PM -0400, Josef Bacik wrote:
+> >> +		if (unlikely(d_need_lookup(dentry))) {
+> >> +			if (nameidata_dentry_drop_rcu(nd, dentry))
+> >> +				return -ECHILD;
+> >> +			dput(dentry);
+> >> +			dentry = NULL;
+> >> +			goto retry;
+> > 
+> > Yecchhh...  How about simple goto unlazy; here instead and doing the rest
+> > there?  Especially since you have the same kind of thing elsewhere in the
+> > same sucker.  It had been bloody painful to untangle that thing; let's not
+> > add to the rat's nest that still remains...
+> 
+> This is where I was a little confused, which is why I added this code.  It
+> seems that having goto unlazy; will mean that we will come down to this
+> section
+> 
+> if (unlikely(status  <= 0 )) {
+> 	if (status < 0) {
+> 		dput(dentry);
+> 		return status;
+> 	}
+>         if (!d_invalidate(dentry)) {
+> 		dput(dentry);
+> 		dentry = NULL;
+> 		need_reval = 1;
+> 		goto retry;
+> 	}
+> }
+> 
+> and d_invalidate will unhash us so we won't find our new dentry in the cache
+> which makes this whole exercise useless.  Is there a different way you'd
+> like
+> this cleaned up?  Thanks,
 
-On Mon, May 23, 2011 at 02:59:06PM +0200, Arne Jansen wrote:
-> +static struct reada_zone *reada_find_zone(struct btrfs_fs_info *fs_info,
-> +					  struct btrfs_device *dev, u64 logical,
-> +					  struct btrfs_multi_bio *multi)
-> +{
-> +	int ret;
-> +	int looped = 0;
-> +	struct reada_zone *zone;
-> +	struct btrfs_block_group_cache *cache = NULL;
-> +	u64 start;
-> +	u64 end;
-> +	int i;
-> +
-> +again:
-> +	zone = NULL;
-> +	spin_lock(&fs_info->reada_lock);
-> +	ret = radix_tree_gang_lookup(&dev->reada_zones, (void **)&zone,
-> +				     logical >> PAGE_CACHE_SHIFT, 1);
-> +	if (ret == 1)
-> +		kref_get(&zone->refcnt);
-> +	spin_unlock(&fs_info->reada_lock);
-> +
-> +	if (ret == 1) {
-> +		if (logical >= zone->start && logical < zone->end)
-> +			return zone;
-> +		spin_lock(&fs_info->reada_lock);
-> +		reada_zone_put(zone);
-> +		spin_unlock(&fs_info->reada_lock);
-> +	}
-> +
-> +	if (looped)
-> +		return NULL;
-> +
-> +	cache = btrfs_lookup_block_group(fs_info, logical);
-> +	if (!cache)
-> +		return NULL;
-> +
-> +	start = cache->key.objectid;
-> +	end = start + cache->key.offset - 1;
-> +	btrfs_put_block_group(cache);
-> +
-> +	zone = kzalloc(sizeof(*zone), GFP_NOFS);
-> +	if (!zone)
-> +		return NULL;
-> +
-> +	zone->start = start;
-> +	zone->end = end;
-> +	INIT_LIST_HEAD(&zone->list);
-> +	spin_lock_init(&zone->lock);
-> +	zone->locked = 0;
-> +	kref_init(&zone->refcnt);
-> +	zone->elems = 0;
-> +	zone->device = dev; /* our device always sits at index 0 */
-> +	for (i = 0; i < multi->num_stripes; ++i) {
-> +		/* bounds have already been checked */
-> +		zone->devs[i] = multi->stripes[i].dev;
-> +	}
-> +	zone->ndevs = multi->num_stripes;
-> +
-> +	spin_lock(&fs_info->reada_lock);
-> +	ret = radix_tree_insert(&dev->reada_zones,
-> +				(unsigned long)zone->end >> PAGE_CACHE_SHIFT,
-> +				zone);
+Not *into* the loop; just before the beginning of that loop.  IOW, put
+	if (dentry && unlikely(dentry->d_flags & DCACHE_NEED_LOOKUP)) {
+		dput(dentry);
+		dentry = NULL;
+	}
+just before retry: instead of doing it in non-lazy branch.  Voila - your
+code in the lazy branch becomes
+	if (unlikely(dentry->d_flags & DCACHE_NEED_LOOKUP))
+		goto unlazy;
+and that's it.  Can you resend it with such modifications?
 
-this can sleep inside a spinlock, you initialize the radix tree with
-GFP_NOFS, which allows __GFP_WAIT.
-
-Options:
-1) use GFP_ATOMIC in radix tree init flags
-2) do the radix_tree_preload/radix_tree_preload_end, GFP_NOFS outside of the
-locked section is ok but __GFP_WAIT has to be masked out (else radix
-tree insert will not use the preloaded node)
-3) unmask __GFP_WAIT from radix tree init flags
-
-I'd go for 3, as the atomic context is not required, and is easier
-than 2 to implement.
-
-> +	spin_unlock(&fs_info->reada_lock);
-> +
-> +	if (ret) {
-> +		kfree(zone);
-> +		looped = 1;
-> +		goto again;
-> +	}
-> +
-> +	return zone;
-> +}
+ObMemoryPressureIssues: I really hoped to get Dave's patch (per-sb shrinkers)
+in that cycle, but it'll probably have to wait for the next one...

@@ -1,67 +1,63 @@
-From: Andreas Dilger <adilger@dilger.ca>
-Subject: Re: [PATCH 2/2] Btrfs: load the key from the dir item in readdir into a fake dentry
-Date: Thu, 26 May 2011 14:45:32 -0600
-Message-ID: <F08E6AE7-4C97-49AB-A99C-FE22D099FA05@dilger.ca>
-References: <1306421316-1504-2-git-send-email-josef@redhat.com> <m2fwo19tzp.fsf@firstfloor.org> <4DDEA3D2.3080907@redhat.com> <20110526200338.GH4065@one.firstfloor.org>
-Mime-Version: 1.0 (Apple Message framework v1082)
+From: Stephane Chazelas <stephane_chazelas@yahoo.fr>
+Subject: strange btrfs sub list output
+Date: Thu, 26 May 2011 22:22:03 +0100
+Message-ID: <20110526212203.GA4611@yahoo.fr>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org
-To: Andi Kleen <andi@firstfloor.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20110526200338.GH4065@one.firstfloor.org>
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On May 26, 2011, at 14:03, Andi Kleen wrote:
-> On Thu, May 26, 2011 at 03:02:42PM -0400, Josef Bacik wrote:
->> +	/*
->> +	 * If this dentry needs lookup, don't set the referenced flag so that it
->> +	 * is more likely to be cleaned up by the dcache shrinker in case of
->> +	 * memory pressure.
->> +	 */
->> +	if (!d_need_lookup(dentry))
->> +		dentry->d_flags |= DCACHE_REFERENCED;
-> 
-> No it doesn't at all. The allocation will just push everything else
-> out.
-> 
-> Really you cannot view this by only looking at the dcache.
-> You have to look at the complete VM behaviour. All the caches
-> and the other memory interact.
+Hiya,
 
-Even without this patch, if you are doing "find /" there will be considerable memory pressure from all of the pages that are accessed by readdir(), and to a lesser extent the directory dentry/inode entries.  I'm not sure whether the issue you raise is going to be significant in the end or not.
+I get a btrfs sub list output that I don't understand:
 
+# btrfs sub list /backup/
+ID 257 top level 5 path u1/linux/lvm+btrfs/storage/data/data
+ID 260 top level 5 path u2/linux/lvm/linux/var/data
+ID 262 top level 5 path u1/linux/lvm+btrfs/storage/data/snapshots/2010-10-11
+ID 263 top level 5 path u2/linux/lvm/linux/home/snapshots/2011-04-07
+ID 264 top level 5 path u2/linux/lvm/linux/root/snapshots/2011-04-07
+ID 265 top level 5 path u2/linux/lvm/linux/var/snapshots/2011-04-07
+ID 266 top level 5 path u1/linux/lvm+btrfs/storage/data/snapshots/2010-10-26
+ID 267 top level 5 path u1/linux/lvm+btrfs/storage/data/snapshots/2010-11-08
+ID 268 top level 5 path u1/linux/lvm+btrfs/storage/data/snapshots/2010-11-22
+ID 269 top level 5 path u1/linux/lvm+btrfs/storage/data/snapshots/2010-12-15
+ID 270 top level 5 path u2/linux/lvm/linux/home/snapshots/2011-04-14
+ID 271 top level 5 path u2/linux/lvm/linux/root/snapshots/2011-04-14
+ID 272 top level 5 path u2/linux/lvm/linux/var/snapshots/2011-04-14
+ID 273 top level 5 path u1/linux/lvm+btrfs/storage/data/snapshots/2010-12-29
+ID 274 top level 5 path u1/linux/lvm+btrfs/storage/data/snapshots/2011-01-26
+ID 275 top level 5 path u1/linux/lvm+btrfs/storage/data/snapshots/2011-03-07
+ID 276 top level 5 path u1/linux/lvm+btrfs/storage/data/snapshots/2011-04-01
+ID 277 top level 5 path u2/linux/lvm/linux/home/data
+ID 278 top level 5 path u2/linux/lvm/linux/home/snapshots/2011-04-27
+ID 279 top level 5 path u2/linux/lvm/linux/root/snapshots/2011-04-27
+ID 280 top level 5 path u2/linux/lvm/linux/var/snapshots/2011-04-27
+ID 281 top level 5 path u3:10022/vm+xfs@u9/xvda1/g1/v4/data
+ID 282 top level 5 path u3:10022/vm+xfs@u9/xvda1/g1/v4/snapshots/2011-05-19
+ID 283 top level 5 path u5/vm+xfs@u9/xvda1/g1/v5/data
+ID 284 top level 5 path u6:10022/vm+xfs@u8/xvda1/g8/v3/data
+ID 286 top level 5 path u5/vm+xfs@u9/xvda1/g1/v5/snapshots/2011-05-24
+ID 287 top level 285 path data
+ID 288 top level 5 path u4/vm+xfs@u9/xvda1/g1/v1/data
+ID 289 top level 5 path u4/vm+xfs@u9/xvda1/g1/v1/snapshots/2011-03-11
+ID 290 top level 5 path u4/vm+xfs@u9/xvda1/g1/v2/data
+ID 291 top level 5 path u4/vm+xfs@u9/xvda1/g1/v2/snapshots/2011-05-11
+ID 292 top level 5 path u4/vm+xfs@u9/xvda1/g1/v1/snapshots/2011-05-11
 
-Taking this development a bit further, I've long thought it would be quite interesting if these dcache entries could be linked into a readdir-ordered linked list, and then discard the actual directory pages from cache entirely.  This would potentially allow later readdir operations to work just by walking the readdir-ordered linked list and not touching the page cache at all.
+See ID 287 above.
 
-Since normal operations like "ls -l" currently instantiate both a pagecache for readdir, and a dentry for each dirent, it could potentially even reduce memory if there was no a need to keep the directory pages in cache anymore.
+There is no "/backup/data" directory. There is however a
+/backup/u6:10022/vm+xfs@u8/xvda1/g8/v3/snapshots/2011-03-30 that
+contains the same thing as what I get if I mount the fs with
+subvolid=287. And I did do a btrfs sub snap data
+snapshots/2011-03/30 there.
 
->>> d_alloc uses a normal GFP_KERNEL, which is quite in appropiate for this.
->>> 
->>> It should at least reclaim and probably more, but even then it's
->>> risky.
->>> 
->> 
->> Ah yeah I guess I should have probably used GFP_KERNEL.  Sorry about that,
-> 
-> GFP_KERNEL is already used, but it's wrong. I'm not sure any
-> of the existing GFP_* flags will give you the semantics you
-> need in fact. The new flag Minchan added for readahead may come
-> near, but even that is probably not enough.
-> 
-> -Andi
-> 
-> -- 
-> ak@linux.intel.com -- Speaking for myself only.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+What could be the cause of that? How to fix it?
 
+In case that matters, there used to be more components in the
+path of u6:10022/vm+xfs@u8/xvda1/g8/v3/data.
 
-Cheers, Andreas
-
-
-
-
-
+Thanks,
+Stephane

@@ -1,46 +1,110 @@
-From: liubo <liubo2009@cn.fujitsu.com>
-Subject: Re: Backref walking utilities
-Date: Thu, 26 May 2011 09:51:25 +0800
-Message-ID: <4DDDB21D.6040904@cn.fujitsu.com>
-References: <4DDA2EA7.9080305@cn.fujitsu.com> <4DDA30AD.2020409@gmx.net> <4DDD1B7A.4090709@jan-o-sch.net>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: [PATCH] Btrfs: setup free ino caching in a more asynchronous way
+Date: Thu, 26 May 2011 11:38:39 +0800
+Message-ID: <4DDDCB3F.8040305@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Content-Type: text/plain; charset=UTF-8
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DDD1B7A.4090709@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/25/2011 11:08 PM, Jan Schmidt wrote:
-> On 05/23/2011 12:02 PM, Arne Jansen wrote:
->> Hi liubo,
->>
->> On 23.05.2011 11:53, liubo wrote:
->>> As one of my plans, I'm going to take this project over unless someone has been working on it.
->> Jan Schmidt has a patch for scrub nearly ready, that does some
->> ref-walking to report affected files to the user. While this is
->> kernel code and you're planning to add user-space code, it might
->> still be possible to share some of it. Maybe the efforts can be
->> coordinated.
-> 
-> The patches are ready and should be flexible enough to use for your
-> purpose. However I use them in context of the scrub code, thus I'm
-> planning to send them out as soon as the current version of scrub is
-> included in Chris' master.
-> 
-> If anybody wants to test the patches before that (apply well against
-> Arnes scrub branch), drop me an email.
-> 
+For a filesystem that has lots of files in it, the first time we mount
+it with free ino caching support, it can take quite a long time to
+setup the caching before we can create new files.
 
-I'd like to have a look ahead.  Would you please give the address of these patches?
+Here we fill the cache with [highest_ino, BTRFS_LAST_FREE_OBJECTID]
+before we start the caching thread to search through the extent tree.
 
-thanks,
-liubo
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+---
 
-> -Jan
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+based on the integration-test branch
+
+---
+ fs/btrfs/inode-map.c |   28 ++++++++++++++++++++++------
+ 1 files changed, 22 insertions(+), 6 deletions(-)
+
+diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+index 0009705..d2561ae 100644
+--- a/fs/btrfs/inode-map.c
++++ b/fs/btrfs/inode-map.c
+@@ -60,12 +60,12 @@ again:
+ 
+ 	while (1) {
+ 		smp_mb();
+-		if (fs_info->closing > 1)
++		if (fs_info->closing)
+ 			goto out;
+ 
+ 		leaf = path->nodes[0];
+ 		slot = path->slots[0];
+-		if (path->slots[0] >= btrfs_header_nritems(leaf)) {
++		if (slot >= btrfs_header_nritems(leaf)) {
+ 			ret = btrfs_next_leaf(root, path);
+ 			if (ret < 0)
+ 				goto out;
+@@ -100,7 +100,7 @@ again:
+ 		if (key.type != BTRFS_INODE_ITEM_KEY)
+ 			goto next;
+ 
+-		if (key.objectid >= BTRFS_LAST_FREE_OBJECTID)
++		if (key.objectid >= root->highest_objectid)
+ 			break;
+ 
+ 		if (last != (u64)-1 && last + 1 != key.objectid) {
+@@ -114,9 +114,9 @@ next:
+ 		path->slots[0]++;
+ 	}
+ 
+-	if (last < BTRFS_LAST_FREE_OBJECTID - 1) {
++	if (last < root->highest_objectid - 1) {
+ 		__btrfs_add_free_space(ctl, last + 1,
+-				       BTRFS_LAST_FREE_OBJECTID - last - 1);
++				       root->highest_objectid - last - 1);
+ 	}
+ 
+ 	spin_lock(&root->cache_lock);
+@@ -136,8 +136,10 @@ out:
+ 
+ static void start_caching(struct btrfs_root *root)
+ {
++	struct btrfs_free_space_ctl *ctl = root->free_ino_ctl;
+ 	struct task_struct *tsk;
+ 	int ret;
++	u64 objectid;
+ 
+ 	spin_lock(&root->cache_lock);
+ 	if (root->cached != BTRFS_CACHE_NO) {
+@@ -156,6 +158,19 @@ static void start_caching(struct btrfs_root *root)
+ 		return;
+ 	}
+ 
++	/*
++	 * It can be quite time-consuming to fill the cache by searching
++	 * through the extent tree, and this can keep ino allocation path
++	 * waiting. Therefore at start we quickly find out the highest
++	 * inode number and we know we can use inode numbers which fall in
++	 * [highest_ino + 1, BTRFS_LAST_FREE_OBJECTID].
++	 */
++	ret = btrfs_find_free_objectid(root, &objectid);
++	if (!ret && objectid <= BTRFS_LAST_FREE_OBJECTID) {
++		__btrfs_add_free_space(ctl, objectid,
++				       BTRFS_LAST_FREE_OBJECTID - objectid + 1);
++	}
++
+ 	tsk = kthread_run(caching_kthread, root, "btrfs-ino-cache-%llu\n",
+ 			  root->root_key.objectid);
+ 	BUG_ON(IS_ERR(tsk));
+@@ -209,7 +224,8 @@ again:
+ 
+ 		start_caching(root);
+ 
+-		if (objectid <= root->cache_progress)
++		if (objectid <= root->cache_progress ||
++		    objectid >= root->highest_objectid)
+ 			__btrfs_add_free_space(ctl, objectid, 1);
+ 		else
+ 			__btrfs_add_free_space(pinned, objectid, 1);
+-- 
+1.7.3.1
 

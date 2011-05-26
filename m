@@ -1,7 +1,7 @@
 From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH 03/11 v2] Btrfs: modify btrfs_drop_extents API
-Date: Thu, 26 May 2011 16:19:18 +0800
-Message-ID: <1306397966-7834-4-git-send-email-liubo2009@cn.fujitsu.com>
+Subject: [PATCH 08/11 v2] Btrfs: fix a bug of log check
+Date: Thu, 26 May 2011 16:19:23 +0800
+Message-ID: <1306397966-7834-9-git-send-email-liubo2009@cn.fujitsu.com>
 References: <1306397966-7834-1-git-send-email-liubo2009@cn.fujitsu.com>
 Cc: <chris.mason@oracle.com>, <josef@redhat.com>,
 	Liu Bo <liubo2009@cn.fujitsu.com>
@@ -10,131 +10,159 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1306397966-7834-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We want to use btrfs_drop_extent() in log code.
+The current code uses struct root's last_log_commit to check if an inode
+has been logged, but the problem is that this root->last_log_commit is
+shared among files.  Say we have N inodes to be logged, after the first
+inode, root-last_log_commit is updated and the N-1 remains will not be
+logged.
+
+As we've introduce sub transaction and filled inode's last_trans and
+logged_trans with sub_transid instead of transaction id, we can just
+compare last_trans with logged_trans to determine if the processing inode
+is logged.  And the more important thing is these two values are
+inode-individual, so it will not interfere with others.
 
 Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h    |    3 ++-
- fs/btrfs/file.c     |    9 +++++++--
- fs/btrfs/inode.c    |    6 +++---
- fs/btrfs/ioctl.c    |    4 ++--
- fs/btrfs/tree-log.c |    2 +-
- 5 files changed, 15 insertions(+), 9 deletions(-)
+ fs/btrfs/btrfs_inode.h |    5 -----
+ fs/btrfs/ctree.h       |    1 -
+ fs/btrfs/disk-io.c     |    2 --
+ fs/btrfs/inode.c       |    2 --
+ fs/btrfs/transaction.h |    1 -
+ fs/btrfs/tree-log.c    |   16 +++-------------
+ 6 files changed, 3 insertions(+), 24 deletions(-)
 
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index fb5617a..d3a570c 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -94,11 +94,6 @@ struct btrfs_inode {
+ 	u64 last_trans;
+ 
+ 	/*
+-	 * log transid when this inode was last modified
+-	 */
+-	u64 last_sub_trans;
+-
+-	/*
+ 	 * transid that last logged this inode
+ 	 */
+ 	u64 logged_trans;
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index ef68108..1ba3f91 100644
+index 1ba3f91..73aa36b 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -2575,7 +2575,8 @@ int btrfs_drop_extent_cache(struct inode *inode, u64 start, u64 end,
- int btrfs_check_file(struct btrfs_root *root, struct inode *inode);
- extern const struct file_operations btrfs_file_operations;
- int btrfs_drop_extents(struct btrfs_trans_handle *trans, struct inode *inode,
--		       u64 start, u64 end, u64 *hint_byte, int drop_cache);
-+		       u64 start, u64 end, u64 *hint_byte, int drop_cache,
-+		       int log);
- int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
- 			      struct inode *inode, u64 start, u64 end);
- int btrfs_release_file(struct inode *inode, struct file *file);
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 75899a0..d19cf3a 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -290,7 +290,8 @@ int btrfs_drop_extent_cache(struct inode *inode, u64 start, u64 end,
-  * is deleted from the tree.
-  */
- int btrfs_drop_extents(struct btrfs_trans_handle *trans, struct inode *inode,
--		       u64 start, u64 end, u64 *hint_byte, int drop_cache)
-+		       u64 start, u64 end, u64 *hint_byte, int drop_cache,
-+		       int log)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct extent_buffer *leaf;
-@@ -309,6 +310,10 @@ int btrfs_drop_extents(struct btrfs_trans_handle *trans, struct inode *inode,
- 	int recow;
- 	int ret;
+@@ -1114,7 +1114,6 @@ struct btrfs_root {
+ 	atomic_t log_writers;
+ 	atomic_t log_commit[2];
+ 	unsigned long log_transid;
+-	unsigned long last_log_commit;
+ 	unsigned long log_batch;
+ 	pid_t log_start_pid;
+ 	bool log_multiple_pids;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index a51c13c..5271365 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1079,7 +1079,6 @@ static int __setup_root(u32 nodesize, u32 leafsize, u32 sectorsize,
+ 	atomic_set(&root->log_writers, 0);
+ 	root->log_batch = 0;
+ 	root->log_transid = 0;
+-	root->last_log_commit = 0;
+ 	extent_io_tree_init(&root->dirty_log_pages,
+ 			     fs_info->btree_inode->i_mapping, GFP_NOFS);
  
-+	/* drop the existed extents in log tree */
-+	if (log)
-+		root = root->log_root;
-+
- 	if (drop_cache)
- 		btrfs_drop_extent_cache(inode, start, end - 1, 0);
+@@ -1216,7 +1215,6 @@ int btrfs_add_log_tree(struct btrfs_trans_handle *trans,
+ 	WARN_ON(root->log_root);
+ 	root->log_root = log_root;
+ 	root->log_transid = 0;
+-	root->last_log_commit = 0;
+ 	return 0;
+ }
  
-@@ -489,7 +494,7 @@ next_slot:
- 						extent_end - key.offset);
- 				extent_end = ALIGN(extent_end,
- 						   root->sectorsize);
--			} else if (disk_bytenr > 0) {
-+			} else if (disk_bytenr > 0 && !log) {
- 				ret = btrfs_free_extent(trans, root,
- 						disk_bytenr, num_bytes, 0,
- 						root->root_key.objectid,
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 8957c5d..7242ebb 100644
+index 1ba98fd..8db16fa 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -244,7 +244,7 @@ static noinline int cow_file_range_inline(struct btrfs_trans_handle *trans,
- 	}
+@@ -6585,7 +6585,6 @@ again:
+ 	spin_unlock(&BTRFS_I(inode)->sub_trans_lock);
  
- 	ret = btrfs_drop_extents(trans, inode, start, aligned_end,
--				 &hint_byte, 1);
-+				 &hint_byte, 1, 0);
- 	BUG_ON(ret);
+ 	BTRFS_I(inode)->last_trans = root->fs_info->sub_generation;
+-	BTRFS_I(inode)->last_sub_trans = BTRFS_I(inode)->root->log_transid;
  
- 	if (isize > actual_end)
-@@ -1640,7 +1640,7 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
- 	 * with the others.
- 	 */
- 	ret = btrfs_drop_extents(trans, inode, file_pos, file_pos + num_bytes,
--				 &hint, 0);
-+				 &hint, 0, 0);
- 	BUG_ON(ret);
+ 	unlock_extent_cached(io_tree, page_start, page_end, &cached_state, GFP_NOFS);
  
- 	ins.objectid = inode->i_ino;
-@@ -3650,7 +3650,7 @@ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
+@@ -6780,7 +6779,6 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
+ 	ei->sequence = 0;
+ 	ei->first_sub_trans = 0;
+ 	ei->last_trans = 0;
+-	ei->last_sub_trans = 0;
+ 	ei->logged_trans = 0;
+ 	ei->delalloc_bytes = 0;
+ 	ei->reserved_bytes = 0;
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index d531aea..e169553 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -99,7 +99,6 @@ static inline void btrfs_set_inode_last_trans(struct btrfs_trans_handle *trans,
+ 	spin_unlock(&BTRFS_I(inode)->sub_trans_lock);
  
- 			err = btrfs_drop_extents(trans, inode, cur_offset,
- 						 cur_offset + hole_size,
--						 &hint_byte, 1);
-+						 &hint_byte, 1, 0);
- 			if (err)
- 				break;
+ 	BTRFS_I(inode)->last_trans = trans->transid;
+-	BTRFS_I(inode)->last_sub_trans = BTRFS_I(inode)->root->log_transid;
+ }
  
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index cab08fa..5135579 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2020,7 +2020,7 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 				ret = btrfs_drop_extents(trans, inode,
- 							 new_key.offset,
- 							 new_key.offset + datal,
--							 &hint_byte, 1);
-+							 &hint_byte, 1, 0);
- 				BUG_ON(ret);
- 
- 				ret = btrfs_insert_empty_item(trans, root, path,
-@@ -2075,7 +2075,7 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 				ret = btrfs_drop_extents(trans, inode,
- 							 new_key.offset,
- 							 new_key.offset + datal,
--							 &hint_byte, 1);
-+							 &hint_byte, 1, 0);
- 				BUG_ON(ret);
- 
- 				ret = btrfs_insert_empty_item(trans, root, path,
+ int btrfs_end_transaction(struct btrfs_trans_handle *trans,
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 18ac764..fa0e8e4 100644
+index ba014ea..8bedfb8 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -563,7 +563,7 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
- 	saved_nbytes = inode_get_bytes(inode);
- 	/* drop any overlapping extents */
- 	ret = btrfs_drop_extents(trans, inode, start, extent_end,
--				 &alloc_hint, 1);
-+				 &alloc_hint, 1, 0);
- 	BUG_ON(ret);
+@@ -1967,7 +1967,6 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	int ret;
+ 	struct btrfs_root *log = root->log_root;
+ 	struct btrfs_root *log_root_tree = root->fs_info->log_root_tree;
+-	unsigned long log_transid = 0;
  
- 	if (found_type == BTRFS_FILE_EXTENT_REG ||
+ 	mutex_lock(&root->log_mutex);
+ 	index1 = root->log_transid % 2;
+@@ -2002,8 +2001,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 		goto out;
+ 	}
+ 
+-	log_transid = root->log_transid;
+-	if (log_transid % 2 == 0)
++	if (root->log_transid % 2 == 0)
+ 		mark = EXTENT_DIRTY;
+ 	else
+ 		mark = EXTENT_NEW;
+@@ -2108,11 +2106,6 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	write_ctree_super(trans, root->fs_info->tree_root, 1);
+ 	ret = 0;
+ 
+-	mutex_lock(&root->log_mutex);
+-	if (root->last_log_commit < log_transid)
+-		root->last_log_commit = log_transid;
+-	mutex_unlock(&root->log_mutex);
+-
+ out_wake_log_root:
+ 	atomic_set(&log_root_tree->log_commit[index2], 0);
+ 	smp_mb();
+@@ -3045,14 +3038,11 @@ out:
+ static int inode_in_log(struct btrfs_trans_handle *trans,
+ 		 struct inode *inode)
+ {
+-	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	int ret = 0;
+ 
+-	mutex_lock(&root->log_mutex);
+-	if (BTRFS_I(inode)->logged_trans == trans->transid &&
+-	    BTRFS_I(inode)->last_sub_trans <= root->last_log_commit)
++	if (BTRFS_I(inode)->logged_trans >= trans->transaction->transid &&
++	    BTRFS_I(inode)->last_trans <= BTRFS_I(inode)->logged_trans)
+ 		ret = 1;
+-	mutex_unlock(&root->log_mutex);
+ 	return ret;
+ }
+ 
 -- 
 1.6.5.2
 

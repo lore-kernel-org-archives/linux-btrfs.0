@@ -1,192 +1,67 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] xfstests: add test 254 for testing basic btrfs volume functionality
-Date: Tue, 24 May 2011 16:26:03 -0400
-Message-ID: <1306268763-7932-1-git-send-email-josef@redhat.com>
-To: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: Re: [PATCH 1/9] Btrfs: introduce sub transaction stuff
+Date: Wed, 25 May 2011 22:48:24 -0400
+Message-ID: <4DDDBF78.5020600@cn.fujitsu.com>
+References: <1305792692-10635-1-git-send-email-liubo2009@cn.fujitsu.com> <1305792692-10635-2-git-send-email-liubo2009@cn.fujitsu.com> <1305850961-sup-454@shiny> <1306161195-sup-8189@shiny> <4DDC7E08.4020207@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, josef <josef@redhat.com>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4DDC7E08.4020207@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This test just runs through all of the basic btrfs commands that manipulate our
-subvolume stuff.  It creates a snapshot, a subvolume, sets the subvolume as a
-default, lists the volumes and deletes the snapshot.  Thanks,
+On 05/24/2011 11:56 PM, liubo wrote:
+>> > 
+>> > Second, we use the generation number of the super to read in the log
+>> > tree root after a crash.  This doesn't always match the sub trans id and
+>> > so it doesn't always match the transid stored in the btree blocks.
+>> > 
+>> > There are a few solutions to this, we can use some of the reserved
+>> > fields in the super for the generation numbers of the roots the super
+>> > points to, and use whichever one is bigger when we read things in.
+>> > 
+> 
+> All right, I'm going to dig it more.
+> 
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- 254     |  107 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 254.out |   40 +++++++++++++++++++++++
- group   |    1 +
- 3 files changed, 148 insertions(+), 0 deletions(-)
- create mode 100755 254
- create mode 100644 254.out
+I've got this resolved via 'log_root_transid' of 'struct btrfs_super_block',
+and it looks nice on both syntactic and functional side. :)
 
-diff --git a/254 b/254
-new file mode 100755
-index 0000000..3c1a5a1
---- /dev/null
-+++ b/254
-@@ -0,0 +1,107 @@
-+#! /bin/bash
-+# FS QA Test No. 254
-+#
-+# Test btrfs's subvolume and snapshot support
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2011 Red Hat.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#
-+#-----------------------------------------------------------------------
-+#
-+# creator
-+owner=josef@redhat.com
-+
-+seq=`basename $0`
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+
-+_cleanup()
-+{
-+    rm -f $tmp.*
-+}
-+
-+trap "_cleanup ; exit \$status" 0 1 2 3 15
-+
-+# get standard environment, filters and checks
-+. ./common.rc
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+
-+_scratch_mkfs > /dev/null 2>&1
-+_scratch_mount
-+
-+# First test basic snapshotting
-+echo "Creating file foo in root dir"
-+dd if=/dev/zero of=$SCRATCH_MNT/foo bs=1M count=1 &> /dev/null
-+echo "List root dir"
-+ls $SCRATCH_MNT
-+echo "Creating snapshot of root dir"
-+btrfs subvolume snapshot $SCRATCH_MNT $SCRATCH_MNT/snap
-+echo "List root dir after snapshot"
-+ls $SCRATCH_MNT
-+echo "List snapshot dir"
-+ls $SCRATCH_MNT/snap
-+rm -f $SCRATCH_MNT/foo
-+echo "List root dir after rm of foo"
-+ls $SCRATCH_MNT
-+echo "List snapshot dir"
-+ls $SCRATCH_MNT/snap
-+
-+# Test creating a normal subvolme
-+btrfs subvolume create $SCRATCH_MNT/subvol
-+echo "Listing root dir"
-+ls $SCRATCH_MNT
-+echo "Listing subvol"
-+ls $SCRATCH_MNT/subvol
-+
-+# Test setting a default mount
-+echo "Creating file bar in subvol"
-+dd if=/dev/zero of=$SCRATCH_MNT/subvol/bar bs=1M count=1 &> /dev/null
-+echo "Setting subvol to the default"
-+btrfs subvolume set-default $SCRATCH_MNT/subvol $SCRATCH_MNT/subvol
-+_scratch_remount
-+echo "List root dir which is now subvol"
-+ls $SCRATCH_MNT
-+_scratch_unmount
-+echo "Mounting sbuvolid=0 for the root dir"
-+_scratch_mount "-o subvolid=0"
-+echo "List root dir"
-+ls $SCRATCH_MNT
-+echo "Setting the root dir as the default again"
-+btrfs subvolume set-default $SCRATCH_MNT $SCRATCH_MNT
-+_scratch_remount
-+echo "List root dir"
-+ls $SCRATCH_MNT
-+
-+# Test listing the subvolumes
-+echo "Listing subvolumes"
-+btrfs subvolume list $SCRATCH_MNT
-+
-+# Delete the snapshot
-+btrfs subvolume delete $SCRATCH_MNT/snap
-+echo "List root dir"
-+ls $SCRATCH_MNT
-+_scratch_remount
-+echo "List root dir"
-+ls $SCRATCH_MNT
-+
-+status=0 ; exit
-diff --git a/254.out b/254.out
-new file mode 100644
-index 0000000..e1c19ee
---- /dev/null
-+++ b/254.out
-@@ -0,0 +1,40 @@
-+QA output created by 254
-+Creating file foo in root dir
-+List root dir
-+foo
-+Creating snapshot of root dir
-+Create a snapshot of '/mnt/scratch' in '/mnt/scratch/snap'
-+List root dir after snapshot
-+foo
-+snap
-+List snapshot dir
-+foo
-+List root dir after rm of foo
-+snap
-+List snapshot dir
-+foo
-+Create subvolume '/mnt/scratch/subvol'
-+Listing root dir
-+snap
-+subvol
-+Listing subvol
-+Creating file bar in subvol
-+Setting subvol to the default
-+List root dir which is now subvol
-+bar
-+Mounting sbuvolid=0 for the root dir
-+List root dir
-+snap
-+subvol
-+Setting the root dir as the default again
-+List root dir
-+snap
-+subvol
-+Listing subvolumes
-+ID 256 top level 5 path snap
-+ID 257 top level 5 path subvol
-+Delete subvolume '/mnt/scratch/snap'
-+List root dir
-+subvol
-+List root dir
-+subvol
-diff --git a/group b/group
-index 9f88e75..1f86075 100644
---- a/group
-+++ b/group
-@@ -367,3 +367,4 @@ deprecated
- 251 ioctl trim
- 252 auto quick prealloc
- 253 auto quick
-+254 auto quick
--- 
-1.7.2.3
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index ac8d2ac..1006898 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2103,6 +2103,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 	if (btrfs_super_log_root(disk_super) != 0 &&
+ 	    !(fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR)) {
+ 		u64 bytenr = btrfs_super_log_root(disk_super);
++		u64 log_root_transid = btrfs_super_log_root_transid(disk_super);
+ 
+ 		if (fs_devices->rw_devices == 0) {
+ 			printk(KERN_WARNING "Btrfs log replay required "
+@@ -2125,7 +2126,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 
+ 		log_tree_root->node = read_tree_block(tree_root, bytenr,
+ 						      blocksize,
+-						      generation + 1);
++						      log_root_transid);
+ 		ret = btrfs_recover_log_trees(log_tree_root);
+ 		BUG_ON(ret);
+ 
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 912397c..b304ec1 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2089,6 +2089,8 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 				log_root_tree->node->start);
+ 	btrfs_set_super_log_root_level(&root->fs_info->super_for_commit,
+ 				btrfs_header_level(log_root_tree->node));
++	btrfs_set_super_log_root_transid(&root->fs_info->super_for_commit,
++					 trans->transid);
+ 
+ 	log_root_tree->log_batch = 0;
+ 	log_root_tree->log_transid++;
 
+thanks,
+liubo

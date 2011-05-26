@@ -1,46 +1,42 @@
-From: Sunil Mushran <sunil.mushran@oracle.com>
-Subject: Re: [PATCH 1/3] fs: add SEEK_HOLE and SEEK_DATA flags V4
-Date: Wed, 25 May 2011 15:07:23 -0700
-Message-ID: <4DDD7D9B.3060701@oracle.com>
-References: <1306186991-1905-1-git-send-email-josef@redhat.com> <0E7B812A-4057-4EB8-93F5-79ED9FCE2CCD@dilger.ca> <4DDD6AB9.3030906@redhat.com>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [PATCH 1/2] tracing: add __print_symbolic_u64 to avoid warnings
+ on 32bit machine
+Date: Thu, 26 May 2011 09:08:05 +0800
+Message-ID: <4DDDA7F5.9020001@cn.fujitsu.com>
+References: <4D9573DB.4010009@cn.fujitsu.com>	 <1301665762.2160.22.camel@gandalf.stny.rr.com>	 <4D9C2FF6.7090607@cn.fujitsu.com>	 <1303150309.7181.51.camel@gandalf.stny.rr.com>	 <4DACE6E0.7000507@cn.fujitsu.com> <4DBA8C95.4000300@cn.fujitsu.com>	 <1304264124.25414.1079.camel@gandalf.stny.rr.com>	 <4DDDE9E6.7090303@cn.fujitsu.com>	 <1306326464.1465.85.camel@gandalf.stny.rr.com>	 <20110525091252.8899385e.randy.dunlap@oracle.com> <1306342064.1465.101.camel@gandalf.stny.rr.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Andreas Dilger <adilger.kernel@dilger.ca>,
-	linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-ext4@vger.kernel.org,
-	viro@ZenIV.linux.org.uk
-To: Josef Bacik <josef@redhat.com>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <4DDD6AB9.3030906@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-15
+Cc: Randy Dunlap <randy.dunlap@oracle.com>,
+	liubo <liubo2009@cn.fujitsu.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>
+To: Steven Rostedt <rostedt@goodmis.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <1306342064.1465.101.camel@gandalf.stny.rr.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/25/2011 01:46 PM, Josef Bacik wrote:
-> On 05/25/2011 03:45 PM, Andreas Dilger wrote:
->> Most of the filesystem-specific ->llseek() methods don't do any error
->> checking on "origin" because this is handled at the sys_llseek() level,
->> and hasn't changed in many years.
+Steven Rostedt wrote:
+> On Wed, 2011-05-25 at 09:12 -0700, Randy Dunlap wrote:
+>>  
+>>> But what I sent out previously is not going into 2.6.40 anyway. Ingo
+>>> feels that it's too late in the merge window to pull those changes and
+>>> wants to wait till the next merge window. Since there's some fixes in
+>>> that pull request, I'll need to cherry pick them out and rebase the rest
+>>> for the next window.
 >>
->> I assume this patch is also dependent upon the "remove default_llseek()"
->> patch, so that the implementation of SEEK_DATA and SEEK_HOLE can be done
->> in only generic_file_llseek()?
+>> Sorry to hear all of that.  This fix is needed in mainline.
 >>
->> Finally, while looking through the various ->llseek() methods I notice
->> that many filesystems return "i_size" for SEEK_END, which clearly does
->> not make sense for filesystems like ext3/ext4 htree, btrfs, etc that
->> use hash keys instead of byte offsets for doing directory traversal.
->> The comment at generic_file_llseek() is that it is intended for use by
->> regular files.
->>
->> Should the ext4_llseek() code be changed to return 0x7ffffffff for the
->> SEEK_END value?  That makes more sense compared to values returned for
->> SEEK_CUR so that an application can compare the current "offset" with
->> the final value for a progress bar.
-> So maybe we make SEEK_DATA/SEEK_HOLE only work on regular files and not
-> directories?  Sunil what does solaris do?  Thanks,
+> 
+> Hmm, it is a warning fix. Well, I could add this to the cherry picking
+> I'm doing (fixes only).
+> 
+> I'm currently making a fix for a triple fault in the function tracer
+> caused by PROVE_RCU causing recursive tracing. When I get this fixed,
+> I'll be pushing the "fixes" next.
+> 
 
-In Solaris the size of the directory appears to be equal to the number
-of entries and the offset is the file#, so to speak. SEEK_DATA returns
-the current offset and SEEK_HOLE the last one.
+Actually it's more than a compile warning fix.
 
-Just to be clear, I am not a Solaris expert. I just happen to have access
-to it. ;)
+After a variable is cast from u64 to u32 and passed to __print_symbolic(),
+we'll see incorrect result in the trace output.

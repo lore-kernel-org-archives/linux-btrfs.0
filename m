@@ -1,51 +1,46 @@
-From: Steven Rostedt <rostedt@goodmis.org>
-Subject: Re: [PATCH 1/2] tracing: add __print_symbolic_u64 to avoid
- warnings on 32bit machine
-Date: Wed, 25 May 2011 21:17:07 -0400
-Message-ID: <1306372627.1465.131.camel@gandalf.stny.rr.com>
-References: <4D9573DB.4010009@cn.fujitsu.com>
-	 <1301665762.2160.22.camel@gandalf.stny.rr.com>
-	 <4D9C2FF6.7090607@cn.fujitsu.com>
-	 <1303150309.7181.51.camel@gandalf.stny.rr.com>
-	 <4DACE6E0.7000507@cn.fujitsu.com> <4DBA8C95.4000300@cn.fujitsu.com>
-	 <1304264124.25414.1079.camel@gandalf.stny.rr.com>
-	 <4DDDE9E6.7090303@cn.fujitsu.com>
-	 <1306326464.1465.85.camel@gandalf.stny.rr.com>
-	 <20110525091252.8899385e.randy.dunlap@oracle.com>
-	 <1306342064.1465.101.camel@gandalf.stny.rr.com>
-	 <4DDDA7F5.9020001@cn.fujitsu.com>
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: Re: Backref walking utilities
+Date: Thu, 26 May 2011 09:51:25 +0800
+Message-ID: <4DDDB21D.6040904@cn.fujitsu.com>
+References: <4DDA2EA7.9080305@cn.fujitsu.com> <4DDA30AD.2020409@gmx.net> <4DDD1B7A.4090709@jan-o-sch.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-15"
-Cc: Randy Dunlap <randy.dunlap@oracle.com>,
-	liubo <liubo2009@cn.fujitsu.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>
-To: Li Zefan <lizf@cn.fujitsu.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4DDDA7F5.9020001@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4DDD1B7A.4090709@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2011-05-26 at 09:08 +0800, Li Zefan wrote:
-> Steven Rostedt wrote:
-
-> Actually it's more than a compile warning fix.
+On 05/25/2011 11:08 PM, Jan Schmidt wrote:
+> On 05/23/2011 12:02 PM, Arne Jansen wrote:
+>> Hi liubo,
+>>
+>> On 23.05.2011 11:53, liubo wrote:
+>>> As one of my plans, I'm going to take this project over unless someone has been working on it.
+>> Jan Schmidt has a patch for scrub nearly ready, that does some
+>> ref-walking to report affected files to the user. While this is
+>> kernel code and you're planning to add user-space code, it might
+>> still be possible to share some of it. Maybe the efforts can be
+>> coordinated.
 > 
-> After a variable is cast from u64 to u32 and passed to __print_symbolic(),
-> we'll see incorrect result in the trace output.
+> The patches are ready and should be flexible enough to use for your
+> purpose. However I use them in context of the scrub code, thus I'm
+> planning to send them out as soon as the current version of scrub is
+> included in Chris' master.
+> 
+> If anybody wants to test the patches before that (apply well against
+> Arnes scrub branch), drop me an email.
+> 
 
-Don't worry, I didn't even say a warning fix was not reason to get into
-this merge window.
+I'd like to have a look ahead.  Would you please give the address of these patches?
 
-There was only two patches in my last pull request that were not fixing
-a bug and/or warning, but adding enhancements. I rebased without them
-and even added this patch and another bug fix patch to get ready to push
-out.
+thanks,
+liubo
 
-After my ktest runs are done (I test each patch on x86_64 and x86_32,
-and then compile test them on a bunch of other archs), I'll do another
-git pull request for this merge window.
+> -Jan
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
-Thanks!
-
--- Steve

@@ -1,7 +1,7 @@
 From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH 02/11 v2] Btrfs: update block generation if should_cow_block fails
-Date: Thu, 26 May 2011 16:19:17 +0800
-Message-ID: <1306397966-7834-3-git-send-email-liubo2009@cn.fujitsu.com>
+Subject: [PATCH 05/11 v2] Btrfs: still update inode trans stuff when size remains unchanged
+Date: Thu, 26 May 2011 16:19:20 +0800
+Message-ID: <1306397966-7834-6-git-send-email-liubo2009@cn.fujitsu.com>
 References: <1306397966-7834-1-git-send-email-liubo2009@cn.fujitsu.com>
 Cc: <chris.mason@oracle.com>, <josef@redhat.com>,
 	Liu Bo <liubo2009@cn.fujitsu.com>
@@ -10,75 +10,30 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1306397966-7834-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Cause we've added sub transaction, if it do not want to cow a block, we also
-need to get new sub transid recorded.  This is used for log code to find the
-most uptodate file extents.
+Due to DIO stuff, commit 1ef30be142d2cc60e2687ef267de864cf31be995 makes btrfs
+not call btrfs_update_inode when it does not update i_disk_size, but in buffer
+write case, we need to update btrfs internal inode's trans stuff, so that the
+log code can find the inode's changes.
 
 Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.c |   34 +++++++++++++++++++++++++++++++++-
- 1 files changed, 33 insertions(+), 1 deletions(-)
+ fs/btrfs/inode.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 0c3b515..7e21fa9 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -484,6 +484,33 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
- 	return 0;
- }
- 
-+static inline void update_block_generation(struct btrfs_trans_handle *trans,
-+					   struct btrfs_root *root,
-+					   struct extent_buffer *buf,
-+					   struct extent_buffer *parent,
-+					   int slot)
-+{
-+	/*
-+	 * If it does not need to cow this block, we still need to
-+	 * update the block's generation, for transid may have been
-+	 * changed during fsync.
-+	*/
-+	if (btrfs_header_generation(buf) == trans->transid)
-+		return;
-+
-+	if (buf == root->node) {
-+		btrfs_set_header_generation(buf, trans->transid);
-+		btrfs_mark_buffer_dirty(buf);
-+		add_root_to_dirty_list(root);
-+	} else {
-+		btrfs_set_node_ptr_generation(parent, slot,
-+					      trans->transid);
-+		btrfs_set_header_generation(buf, trans->transid);
-+		btrfs_mark_buffer_dirty(parent);
-+		btrfs_mark_buffer_dirty(buf);
-+	}
-+}
-+
- static inline int should_cow_block(struct btrfs_trans_handle *trans,
- 				   struct btrfs_root *root,
- 				   struct extent_buffer *buf)
-@@ -524,6 +551,7 @@ noinline int btrfs_cow_block(struct btrfs_trans_handle *trans,
- 	}
- 
- 	if (!should_cow_block(trans, root, buf)) {
-+		update_block_generation(trans, root, buf, parent, parent_slot);
- 		*cow_ret = buf;
- 		return 0;
- 	}
-@@ -1639,8 +1667,12 @@ again:
- 			 * then we don't want to set the path blocking,
- 			 * so we test it here
- 			 */
--			if (!should_cow_block(trans, root, b))
-+			if (!should_cow_block(trans, root, b)) {
-+				update_block_generation(trans, root, b,
-+							p->nodes[level + 1],
-+							p->slots[level + 1]);
- 				goto cow_done;
-+			}
- 
- 			btrfs_set_path_blocking(p);
- 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index e1e5053..1ba98fd 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1774,7 +1774,8 @@ static int btrfs_finish_ordered_io(struct inode *inode, u64 start, u64 end)
+ 	if (!ret) {
+ 		ret = btrfs_update_inode(trans, root, inode);
+ 		BUG_ON(ret);
+-	}
++	} else
++		btrfs_set_inode_last_trans(trans, inode);
+ 	ret = 0;
+ out:
+ 	if (nolock) {
 -- 
 1.6.5.2
 

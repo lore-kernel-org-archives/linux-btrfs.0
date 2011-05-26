@@ -1,7 +1,7 @@
 From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH 04/11 v2] Btrfs: introduce first sub trans
-Date: Thu, 26 May 2011 16:19:19 +0800
-Message-ID: <1306397966-7834-5-git-send-email-liubo2009@cn.fujitsu.com>
+Subject: [PATCH 10/11 v2] Btrfs: deal with EEXIST after iput
+Date: Thu, 26 May 2011 16:19:25 +0800
+Message-ID: <1306397966-7834-11-git-send-email-liubo2009@cn.fujitsu.com>
 References: <1306397966-7834-1-git-send-email-liubo2009@cn.fujitsu.com>
 Cc: <chris.mason@oracle.com>, <josef@redhat.com>,
 	Liu Bo <liubo2009@cn.fujitsu.com>
@@ -10,104 +10,103 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1306397966-7834-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In multi-thread situations, writeback of a file may span across several
-sub transactions, and we need to introduce first_sub_trans to get sub_transid of
-the first sub transaction recorded, so that log code can skip file extents which
-have been logged or committed into disk.
+There are two cases when BTRFS_I(inode)->logged_trans is zero:
+a) an inode is just allocated;
+b) iput an inode and reread it.
+
+However, in b) if btrfs is not committed yet, and this inode _may_ still remain
+in log tree.
+
+So we need to check the log tree to get logged_trans a right value
+in case it hits a EEXIST while logging.
 
 Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 ---
- fs/btrfs/btrfs_inode.h |    9 +++++++++
- fs/btrfs/inode.c       |   13 ++++++++++++-
- fs/btrfs/transaction.h |   17 ++++++++++++++++-
- 3 files changed, 37 insertions(+), 2 deletions(-)
+ fs/btrfs/inode.c    |    9 +++------
+ fs/btrfs/tree-log.c |   43 +++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 46 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 57c3bb2..fb5617a 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -79,6 +79,15 @@ struct btrfs_inode {
- 	/* sequence number for NFS changes */
- 	u64 sequence;
- 
-+	/* used to avoid race of first_sub_trans */
-+	spinlock_t sub_trans_lock;
-+
-+	/*
-+	 * sub transid of the trans that first modified this inode before
-+	 * a trans commit or a log sync
-+	 */
-+	u64 first_sub_trans;
-+
- 	/*
- 	 * transid of the trans_handle that last modified this inode
- 	 */
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 7242ebb..e1e5053 100644
+index 8db16fa..e310b5b 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -6574,7 +6574,16 @@ again:
- 	set_page_dirty(page);
- 	SetPageUptodate(page);
+@@ -1770,12 +1770,9 @@ static int btrfs_finish_ordered_io(struct inode *inode, u64 start, u64 end)
+ 	add_pending_csums(trans, inode, ordered_extent->file_offset,
+ 			  &ordered_extent->list);
  
--	BTRFS_I(inode)->last_trans = root->fs_info->generation;
-+	spin_lock(&BTRFS_I(inode)->sub_trans_lock);
-+
-+	if (BTRFS_I(inode)->first_sub_trans > root->fs_info->sub_generation ||
-+	    BTRFS_I(inode)->last_trans <= BTRFS_I(inode)->logged_trans ||
-+	    BTRFS_I(inode)->last_trans <= root->fs_info->last_trans_committed)
-+		BTRFS_I(inode)->first_sub_trans = root->fs_info->sub_generation;
-+
-+	spin_unlock(&BTRFS_I(inode)->sub_trans_lock);
-+
-+	BTRFS_I(inode)->last_trans = root->fs_info->sub_generation;
- 	BTRFS_I(inode)->last_sub_trans = BTRFS_I(inode)->root->log_transid;
- 
- 	unlock_extent_cached(io_tree, page_start, page_end, &cached_state, GFP_NOFS);
-@@ -6768,6 +6777,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
- 	ei->space_info = NULL;
- 	ei->generation = 0;
- 	ei->sequence = 0;
-+	ei->first_sub_trans = 0;
- 	ei->last_trans = 0;
- 	ei->last_sub_trans = 0;
- 	ei->logged_trans = 0;
-@@ -6791,6 +6801,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
- 	extent_io_tree_init(&ei->io_tree, &inode->i_data, GFP_NOFS);
- 	extent_io_tree_init(&ei->io_failure_tree, &inode->i_data, GFP_NOFS);
- 	mutex_init(&ei->log_mutex);
-+	spin_lock_init(&ei->sub_trans_lock);
- 	btrfs_ordered_inode_tree_init(&ei->ordered_tree);
- 	INIT_LIST_HEAD(&ei->i_orphan);
- 	INIT_LIST_HEAD(&ei->delalloc_inodes);
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 6dcdd28..d531aea 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -83,7 +83,22 @@ static inline void btrfs_update_inode_block_group(
- static inline void btrfs_set_inode_last_trans(struct btrfs_trans_handle *trans,
- 					      struct inode *inode)
- {
--	BTRFS_I(inode)->last_trans = trans->transaction->transid;
-+	spin_lock(&BTRFS_I(inode)->sub_trans_lock);
-+
-+	/*
-+	 * We have joined in a transaction, so btrfs_commit_transaction will
-+	 * definitely wait for us and it does not need to add a extra
-+	 * trans_mutex lock here.
-+	 */
-+	if (BTRFS_I(inode)->first_sub_trans > trans->transid ||
-+	    BTRFS_I(inode)->last_trans <= BTRFS_I(inode)->logged_trans ||
-+	    BTRFS_I(inode)->last_trans <=
-+			 BTRFS_I(inode)->root->fs_info->last_trans_committed)
-+		BTRFS_I(inode)->first_sub_trans = trans->transid;
-+
-+	spin_unlock(&BTRFS_I(inode)->sub_trans_lock);
-+
-+	BTRFS_I(inode)->last_trans = trans->transid;
- 	BTRFS_I(inode)->last_sub_trans = BTRFS_I(inode)->root->log_transid;
+-	ret = btrfs_ordered_update_i_size(inode, 0, ordered_extent);
+-	if (!ret) {
+-		ret = btrfs_update_inode(trans, root, inode);
+-		BUG_ON(ret);
+-	} else
+-		btrfs_set_inode_last_trans(trans, inode);
++	btrfs_ordered_update_i_size(inode, 0, ordered_extent);
++	ret = btrfs_update_inode(trans, root, inode);
++	BUG_ON(ret);
+ 	ret = 0;
+ out:
+ 	if (nolock) {
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 8bedfb8..fea4f39 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3035,6 +3035,37 @@ out:
+ 	return ret;
  }
  
++static int check_logged_trans(struct btrfs_trans_handle *trans,
++			      struct btrfs_root *root, struct inode *inode)
++{
++	struct btrfs_inode_item *inode_item;
++	struct btrfs_path *path;
++	int ret;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	ret = btrfs_search_slot(trans, root,
++				&BTRFS_I(inode)->location, path, 0, 0);
++	if (ret) {
++		if (ret > 0)
++			ret = 0;
++		goto out;
++	}
++
++	btrfs_unlock_up_safe(path, 1);
++	inode_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
++				    struct btrfs_inode_item);
++
++	BTRFS_I(inode)->logged_trans = btrfs_inode_transid(path->nodes[0],
++							   inode_item);
++out:
++	btrfs_free_path(path);
++	return ret;
++}
++
++
+ static int inode_in_log(struct btrfs_trans_handle *trans,
+ 		 struct inode *inode)
+ {
+@@ -3087,6 +3118,18 @@ int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 	if (ret)
+ 		goto end_no_trans;
+ 
++	/*
++	 * After we iput a inode and reread it from disk, logged_trans is 0.
++	 * However, this inode _may_ still remain in log tree and not be
++	 * committed yet.
++	 * So we need to check the log tree to get logged_trans a right value.
++	 */
++	if (!BTRFS_I(inode)->logged_trans && root->log_root) {
++		ret = check_logged_trans(trans, root->log_root, inode);
++		if (ret)
++			goto end_no_trans;
++	}
++
+ 	if (inode_in_log(trans, inode)) {
+ 		ret = BTRFS_NO_LOG_SYNC;
+ 		goto end_no_trans;
 -- 
 1.6.5.2
 

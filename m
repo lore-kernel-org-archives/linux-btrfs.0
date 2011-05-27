@@ -1,46 +1,92 @@
-From: "Fajar A. Nugraha" <list@fajar.net>
-Subject: Re: [PATCH] Btrfs: make lzo the default compression scheme
-Date: Fri, 27 May 2011 14:41:56 +0700
-Message-ID: <BANLkTikG4Af1fBExKHe+4UwVAm81U077Mg@mail.gmail.com>
-References: <4DDDCB57.6090405@cn.fujitsu.com>
-	<20110527073212.GA28453@attic.humilis.net>
+From: Stephane Chazelas <stephane_chazelas@yahoo.fr>
+Subject: Re: strange btrfs sub list output
+Date: Fri, 27 May 2011 09:01:57 +0100
+Message-ID: <chaz20110527080157.GA27537@seebyte.com>
+References: <20110526212203.GA4611@yahoo.fr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Li Zefan <lizf@cn.fujitsu.com>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: sander@humilis.net
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110527073212.GA28453@attic.humilis.net>
+In-Reply-To: <20110526212203.GA4611@yahoo.fr>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 27, 2011 at 2:32 PM, Sander <sander@humilis.net> wrote:
-> Li Zefan wrote (ao):
->> As the lzo compression feature has been established for quite
->> a while, we are now ready to replace zlib with lzo as the default
->> compression scheme.
->
-> Please be aware that grub2 currently can't load files from a btrfs with
-> lzo compression (on debian sid/experimental at least).
->
-> Just found out the hard way after a kernel upgrade on a system with no
-> separate /boot partition :-)
->
-> Found this: https://bugs.archlinux.org/task/23901
+2011-05-26 22:22:03 +0100, Stephane Chazelas:
+[...]
+> I get a btrfs sub list output that I don't understand:
+> 
+> # btrfs sub list /backup/
+> ID 257 top level 5 path u1/linux/lvm+btrfs/storage/data/data
+> ID 260 top level 5 path u2/linux/lvm/linux/var/data
+> ID 262 top level 5 path u1/linux/lvm+btrfs/storage/data/snapshots/2010-10-11
+> ID 263 top level 5 path u2/linux/lvm/linux/home/snapshots/2011-04-07
+> ID 264 top level 5 path u2/linux/lvm/linux/root/snapshots/2011-04-07
+> ID 265 top level 5 path u2/linux/lvm/linux/var/snapshots/2011-04-07
+> ID 266 top level 5 path u1/linux/lvm+btrfs/storage/data/snapshots/2010-10-26
+> ID 267 top level 5 path u1/linux/lvm+btrfs/storage/data/snapshots/2010-11-08
+> ID 268 top level 5 path u1/linux/lvm+btrfs/storage/data/snapshots/2010-11-22
+> ID 269 top level 5 path u1/linux/lvm+btrfs/storage/data/snapshots/2010-12-15
+> ID 270 top level 5 path u2/linux/lvm/linux/home/snapshots/2011-04-14
+> ID 271 top level 5 path u2/linux/lvm/linux/root/snapshots/2011-04-14
+> ID 272 top level 5 path u2/linux/lvm/linux/var/snapshots/2011-04-14
+> ID 273 top level 5 path u1/linux/lvm+btrfs/storage/data/snapshots/2010-12-29
+> ID 274 top level 5 path u1/linux/lvm+btrfs/storage/data/snapshots/2011-01-26
+> ID 275 top level 5 path u1/linux/lvm+btrfs/storage/data/snapshots/2011-03-07
+> ID 276 top level 5 path u1/linux/lvm+btrfs/storage/data/snapshots/2011-04-01
+> ID 277 top level 5 path u2/linux/lvm/linux/home/data
+> ID 278 top level 5 path u2/linux/lvm/linux/home/snapshots/2011-04-27
+> ID 279 top level 5 path u2/linux/lvm/linux/root/snapshots/2011-04-27
+> ID 280 top level 5 path u2/linux/lvm/linux/var/snapshots/2011-04-27
+> ID 281 top level 5 path u3:10022/vm+xfs@u9/xvda1/g1/v4/data
+> ID 282 top level 5 path u3:10022/vm+xfs@u9/xvda1/g1/v4/snapshots/2011-05-19
+> ID 283 top level 5 path u5/vm+xfs@u9/xvda1/g1/v5/data
+> ID 284 top level 5 path u6:10022/vm+xfs@u8/xvda1/g8/v3/data
+> ID 286 top level 5 path u5/vm+xfs@u9/xvda1/g1/v5/snapshots/2011-05-24
+> ID 287 top level 285 path data
+> ID 288 top level 5 path u4/vm+xfs@u9/xvda1/g1/v1/data
+> ID 289 top level 5 path u4/vm+xfs@u9/xvda1/g1/v1/snapshots/2011-03-11
+> ID 290 top level 5 path u4/vm+xfs@u9/xvda1/g1/v2/data
+> ID 291 top level 5 path u4/vm+xfs@u9/xvda1/g1/v2/snapshots/2011-05-11
+> ID 292 top level 5 path u4/vm+xfs@u9/xvda1/g1/v1/snapshots/2011-05-11
+[...]
+> There is no "/backup/data" directory. There is however a
+> /backup/u6:10022/vm+xfs@u8/xvda1/g8/v3/snapshots/2011-03-30 that
+> contains the same thing as what I get if I mount the fs with
+> subvolid=287. And I did do a btrfs sub snap data
+> snapshots/2011-03/30 there.
+> 
+> What could be the cause of that? How to fix it?
+> 
+> In case that matters, there used to be more components in the
+> path of u6:10022/vm+xfs@u8/xvda1/g8/v3/data.
+[...]
 
-IIRC what matters is compression actually used by the files.
-If /boot/grub/* and kernel/initrd is not compressed, or compressed
-with zlib, then grub2 can read it just fine, even when the filesystem
-is usually mounted with -o compress=lzo (I'm using Ubuntu Natty).
+I tried deleting the
+/backup/u6:10022/vm+xfs@u8/xvda1/g8/v3/snapshots/2011-03-30
+subvolume (what seems to be id 287) and I get:
 
-I think the move to use lzo compression by default is a good thing, since:
-- it's superior performance-wise to zlib
-- btrfs is not really recommended (yet) for production uses, so it's
-valid enough to assume users brave enough to use btrfs will know the
-necessary workarounds (like having separate /boot, or temporary
-remount with -o compress=zlib when upgrading kernel)
-- even if by accident you ended with unbootable system due to lzo, you
-can "fix" it using livecd and "btrfs filesystem defragment" to force
-the needed files to be uncompressed/compressed with zlib.
+# btrfs sub delete snapshots/2011-03-30
+Delete subvolume '/backup/u6:10022/vm+xfs@u8/xvda1/g8/v3/snapshots/2011-03-30'
+ERROR: cannot delete '/backup/u6:10022/vm+xfs@u8/xvda1/g8/v3/snapshots/2011-03-30'
+
+With a strace, it tells me:
+
+ioctl(3, 0x5000940f, 0x7fffc7841a80)    = -1 ENOTEMPTY (Directory not empty)
+
+Then I realised that there was a "data" directory in there and
+that snapshots/2011-03-30 was actually id 285 (which doesn't
+appear in the btrfs sub list) and "snapshots/2011-03-30/data" is
+id 287.
+
+What do those top-level IDs mean by the way?
+
+Then I was able to delete snapshots/2011-03-30/data, but
+snapshots/2011-03-30 still didn't appear in the list.
+
+Then I was able to delete snapshots/2011-03-30 and recreate it,
+and this time it was fine.
+
+Still don't know what happened there.
 
 -- 
-Fajar
+Stephane
+

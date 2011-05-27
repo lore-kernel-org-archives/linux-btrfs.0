@@ -1,83 +1,99 @@
-From: Andreas Philipp <philipp.andreas@gmail.com>
-Subject: Re: strange btrfs sub list output
-Date: Fri, 27 May 2011 13:49:52 +0200
-Message-ID: <4DDF8FE0.9040107@gmail.com>
-References: <20110526212203.GA4611@yahoo.fr> <chaz20110527080157.GA27537@seebyte.com> <4DDF5EEF.6060706@gmail.com> <chaz20110527084733.GC27537@seebyte.com> <20110527091224.GA15627@carfax.org.uk> <chaz20110527093029.GA30613@seebyte.com> <20110527094523.GA12089@carfax.org.uk> <chaz20110527113010.GA12775@seebyte.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Hugo Mills <hugo@carfax.org.uk>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Stephane Chazelas <stephane_chazelas@yahoo.fr>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: try to only do one btrfs_search_slot in do_setxattr
+Date: Fri, 27 May 2011 12:17:18 -0400
+Message-ID: <1306513038-3133-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <chaz20110527113010.GA12775@seebyte.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I've been watching how many btrfs_search_slot()'s we do and I noticed that when
+we create a file with selinux enabled we were doing 2 each time we initialize
+the security context.  That's because we lookup the xattr first so we can delete
+it if we're setting a new value to an existing xattr.  But in the create case we
+don't have any xattrs, so it is completely useless to have the extra lookup.  So
+re-arrange things so that we only lookup first if we specifically have
+XATTR_REPLACE.  That way in the basic case we only do 1 search, and in the more
+complicated case we do the normal 2 lookups.  Thanks,
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/xattr.c |   54 ++++++++++++++++++++++++++----------------------------
+ 1 files changed, 26 insertions(+), 28 deletions(-)
+
+diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
+index 72ab029..4857a87 100644
+--- a/fs/btrfs/xattr.c
++++ b/fs/btrfs/xattr.c
+@@ -102,43 +102,41 @@ static int do_setxattr(struct btrfs_trans_handle *trans,
+ 	if (!path)
+ 		return -ENOMEM;
  
-On 27.05.2011 13:30, Stephane Chazelas wrote:
-> 2011-05-27 10:45:23 +0100, Hugo Mills: [...]
->>> How could a "subvolume 285" become a "top level"?
->>
->>> How does one get a subvolume with a top-level other than "5"?
->>
->> This just means that subvolume 287 was created (somewhere)
->> inside subvolume 285.
->>
->> Due to the way that the FS trees and subvolumes work, there's no
->> global namespace structure in btrfs; that is, there's no single
->> data structure that represents the entirety of the file/directory
->> hierarchy in the filesystem. Instead, it's broken up into these
->> sub-namespaces called subvolumes, and we only record parent/child
->> relationships for each subvolume separately. The "full path" you
->> get from "btrfs subv list" is reconstructed from that information
->> in userspace(*).
-> [...]
->
-> Thanks, I can understand that. What I don't get is how one creates
-> a subvol with a top-level other than 5. I might be missing the
-> obvious, though.
->
-> If I do:
->
-> btrfs sub create A btrfs sub create A/B btrfs sub snap A A/B/C
->
-> A, A/B, A/B/C have their top-level being 5. How would I get a new
-> snapshot to be a child of A/B for instance?
->
-> In my case, 285, was not appearing in the btrfs sub list output,
-> 287 was a child of 285 with path "data" while all I did was create
-> a snapshot of 284 (path u6:10022/vm+xfs@u8/xvda1/g8/v3/data in vol
-> 5) in u6:10022/vm+xfs@u8/xvda1/g8/v3/snapshots/2011-03-30
->
-> So I did manage to get a volume with a parent other than 5, but I
-> did not ask for it.
-Reconsidering the explanations on btrfs subvolume list in this thread
-I get the impression that a line in the output of btrfs subvolume list
-with top level other than 5 indicates that the backrefs from one
-subvolume to its parent are broken.
-
-What's your opinion on this?
-
-Thanks,
-Andreas
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (MingW32)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+-	/* first lets see if we already have this xattr */
+-	di = btrfs_lookup_xattr(trans, root, path, inode->i_ino, name,
+-				strlen(name), -1);
+-	if (IS_ERR(di)) {
+-		ret = PTR_ERR(di);
+-		goto out;
+-	}
+-
+-	/* ok we already have this xattr, lets remove it */
+-	if (di) {
+-		/* if we want create only exit */
+-		if (flags & XATTR_CREATE) {
+-			ret = -EEXIST;
++	if (flags & XATTR_REPLACE) {
++		di = btrfs_lookup_xattr(trans, root, path, inode->i_ino, name,
++					strlen(name), -1);
++		if (IS_ERR(di)) {
++			ret = PTR_ERR(di);
++			goto out;
++		} else if (!di) {
++			ret = -ENODATA;
+ 			goto out;
+ 		}
+-
+ 		ret = btrfs_delete_one_dir_name(trans, root, path, di);
+-		BUG_ON(ret);
+-		btrfs_release_path(root, path);
+-
+-		/* if we don't have a value then we are removing the xattr */
+-		if (!value)
++		if (ret)
+ 			goto out;
+-	} else {
+ 		btrfs_release_path(root, path);
+-
+-		if (flags & XATTR_REPLACE) {
+-			/* we couldn't find the attr to replace */
+-			ret = -ENODATA;
+-			goto out;
+-		}
+ 	}
  
-iQIcBAEBAgAGBQJN34/fAAoJEJIcBJ3+XkgiTVcP/iQ62XnEAS0rVGOl+0DNqySb
-5A5N3/pzhgzOdMhldJYtgg0K60lV0qs0H31ITgOdGUtpEXibybU/6Yuy2yIfqx0T
-3OQCb2KE8la2hlh472aTuIN3beljFYzPu89KVrGaT6kD7lABRXkCG5y1Y5+fvVXI
-gtq5/mCqvyaxxUMTppgzLHwtt0YVICZeCDmALMtsVe1DMr0uT5QI0XY+4Glpl7AJ
-1G6Plyr7qciOwdRgvM/7NkHl/gsJ4GEvIOSVFiBM4Hb8fX7APy/C//sIPfD2Kg5K
-7B6sJMpS2i87uEsrr+w8j7nLWn9Y/255W89r/cG3uISDFRn/RDs9xEnRCfEXb6qf
-ZeBPVfv9+pN6mmwrfUOJr4pb44f9/UgTC+udCfzKm1yWVci895NIGsfJgYfA0OOf
-GRnCWVRwFStiUGf0uSRH0yJAW5ozI8DzDnDKzByFpMcmw3eVNq5usCftA4XxVi7r
-Wu/v9z6DNdHj7ibsSdeYXAmVGpwennILPeEvGWDbMB/OZIDKC3s75yCzXIhxWpya
-zR5jGDbGj9IkvUhSAwW0afFqBK+bZny/SJsqA0vFH7Emao0CG1FIJVlN7/S6OSg1
-Dtye//ocjhO0kf3OX3hj689n4/mvaBZeVArCz5vJzG2wEcRZTF4DZ4ApsUjne0LC
-q4L2n9nLM4yeAs+YjFx/
-=R53y
------END PGP SIGNATURE-----
+-	/* ok we have to create a completely new xattr */
++again:
+ 	ret = btrfs_insert_xattr_item(trans, root, path, inode->i_ino,
+ 				      name, name_len, value, size);
+-	BUG_ON(ret);
++	if (ret == -EEXIST) {
++		if (flags & XATTR_CREATE)
++			goto out;
++		di = btrfs_match_dir_item_name(root, path, name, name_len);
++		ret = btrfs_delete_one_dir_name(trans, root, path, di);
++		if (ret)
++			goto out;
++
++		/*
++		 * We have a value to set, so go back and try to insert it now.
++		 */
++		if (value) {
++			btrfs_release_path(root, path);
++			goto again;
++		}
++	}
+ out:
+ 	btrfs_free_path(path);
+ 	return ret;
+-- 
+1.7.2.3
 

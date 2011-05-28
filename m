@@ -1,65 +1,26 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH] btrfs: scrub: add explicit plugging
-Date: Sat, 28 May 2011 22:58:38 +0200
-Message-ID: <1306616318-16126-1-git-send-email-sensille@gmx.net>
-To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Problem with latest for-linus branch
+Date: Sat, 28 May 2011 18:14:47 -0400
+Message-ID: <1306620858-sup-7865@shiny>
+References: <BANLkTikmYx+K9crXYFeBmsJm+qUq9_W+gQ@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Andrea Gelmini <andrea.gelmini@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <BANLkTikmYx+K9crXYFeBmsJm+qUq9_W+gQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-With the removal of the implicit plugging scrub ends up doing more and
-smaller I/O than necessary. This patch adds explicit plugging per chunk.
+Excerpts from Andrea Gelmini's message of 2011-05-28 13:05:47 -0400:
+> Hi all,
+>    and thanks a lot for your work.
+>    Well, I'm using my home with BTRFS. It's a Ext4 converted to BTRFS
+> via btrfs-convert.
+>    Everything works good with stock Ubuntu 11.04 kernel (2.6.38),
+> vanilla 2.6.38 and vanilla 2.6.39.
+>    If I use Linus' git tree, BTRFS ooops at mount.
+>    So I bisected using kernel version 2.6.39 + latest for-linus branch.
 
-Signed-off-by: Arne Jansen <sensille@gmx.net>
----
- fs/btrfs/scrub.c |    7 ++++---
- 1 files changed, 4 insertions(+), 3 deletions(-)
+Thanks, could you please send in the photos of the oops when you get
+chance.
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 2d1f890..1204eab 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -348,9 +348,6 @@ static int scrub_fixup_io(int rw, struct block_device *bdev, sector_t sector,
- 	int ret;
- 	DECLARE_COMPLETION_ONSTACK(complete);
- 
--	/* we are going to wait on this IO */
--	rw |= REQ_SYNC;
--
- 	bio = bio_alloc(GFP_NOFS, 1);
- 	bio->bi_bdev = bdev;
- 	bio->bi_sector = sector;
-@@ -359,6 +356,7 @@ static int scrub_fixup_io(int rw, struct block_device *bdev, sector_t sector,
- 	bio->bi_private = &complete;
- 	submit_bio(rw, bio);
- 
-+	/* this will also unplug the queue */
- 	wait_for_completion(&complete);
- 
- 	ret = !test_bit(BIO_UPTODATE, &bio->bi_flags);
-@@ -743,6 +741,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_dev *sdev,
- 	struct btrfs_root *root = fs_info->extent_root;
- 	struct btrfs_root *csum_root = fs_info->csum_root;
- 	struct btrfs_extent_item *extent;
-+	struct blk_plug plug;
- 	u64 flags;
- 	int ret;
- 	int slot;
-@@ -847,6 +846,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_dev *sdev,
- 	 * the scrub. This might currently (crc32) end up to be about 1MB
- 	 */
- 	start_stripe = 0;
-+	blk_start_plug(&plug);
- again:
- 	logical = base + offset + start_stripe * increment;
- 	for (i = start_stripe; i < nstripes; ++i) {
-@@ -988,6 +988,7 @@ next:
- 	scrub_submit(sdev);
- 
- out:
-+	blk_finish_plug(&plug);
- 	btrfs_free_path(path);
- 	return ret < 0 ? ret : 0;
- }
--- 
-1.7.3.4
-
+-chris

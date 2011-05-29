@@ -1,61 +1,56 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: Problem with latest for-linus branch
-Date: Sun, 29 May 2011 00:40:51 +0200
-Message-ID: <20110528224051.GY12709@twin.jikos.cz>
-References: <BANLkTikmYx+K9crXYFeBmsJm+qUq9_W+gQ@mail.gmail.com>
-Reply-To: dave@jikos.cz
+From: Jeff Putney <jeffrey.putney@gmail.com>
+Subject: Reboot during rebalance, now unmountable
+Date: Sat, 28 May 2011 20:30:00 -0500
+Message-ID: <BANLkTinufzVhpF5jEA+mQz=uC+RFh4BJ3Q@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, lizf@cn.fujitsu.com
-To: Andrea Gelmini <andrea.gelmini@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTikmYx+K9crXYFeBmsJm+qUq9_W+gQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+I've read the entire thread "Oops while rebalancing, now unmountable."
+and it ended without any information about repairing the fs.  (the web
+page wouldn't let me post a reply to that thread tho.)
 
-On Sat, May 28, 2011 at 07:05:47PM +0200, Andrea Gelmini wrote:
->    Everything works good with stock Ubuntu 11.04 kernel (2.6.38),
-> vanilla 2.6.38 and vanilla 2.6.39.
->    If I use Linus' git tree, BTRFS ooops at mount.
+Has there been any info?  The fs was working fine until I rebooted.
 
-can you please attach the oops traces?
+thanks for any info!
 
->    So I bisected using kernel version 2.6.39 + latest for-linus branch.
->    Bisect complains about this commit:
-> 581bb050941b4f220f84d3e5ed6dace3d42dd382 is the first bad commit
-> commit 581bb050941b4f220f84d3e5ed6dace3d42dd382
-> Author: Li Zefan <lizf@cn.fujitsu.com>
-> Date:   Wed Apr 20 10:06:11 2011 +0800
-> 
->     Btrfs: Cache free inode numbers in memory
+--jeff
 
-this patch was part of the new ino allocator and it may depend
-on subsequent patches (eg. 33345d015 "Btrfs: Always use
-64bit inode number"). In this case it could be a 32/64 bit mismatch in
-inode numbers and blame would point to a incomplete state wrt the
-filesystem.
+root@aurora:~/btrfs-progs-unstable# uname -a
+Linux aurora 2.6.38-8-generic-pae #42-Ubuntu SMP Mon Apr 11 05:17:09
+UTC 2011 i686 i686 i386 GNU/Linux
 
-You've created your FS from ext4, I think that the filesystem has
-64bit inode numbers, allocated to files and this got broken during the
-conversion. (just a wild idea)
+root@aurora:~/btrfs-progs-unstable# mount -t btrfs -r -o
+defaults,relatime,compress,space_cache /dev/dm-0 /mnt
+mount: wrong fs type, bad option, bad superblock on /dev/mapper/put--vg-put,
+       missing codepage or helper program, or other error
+       In some cases useful info is found in syslog - try
+       dmesg | tail  or so
 
->   I can see two kind of problems, with different commit, of course.
->   Sometimes the Ooops happens just as kernel mounts the partition,
-> sometimes the mount is good, but HD keeps reading for more than 30
-> seconds, and the it Ooops.
+root@aurora:~/btrfs-progs-unstable# dmesg |tail -6
+[33472.371273] device label putBtrfs devid 1 transid 519691
+/dev/mapper/put--vg-put
+[33472.373079] btrfs: use zlib compression
+[33472.373083] btrfs: enabling disk space caching
+[33478.399721] btrfs: dm-0 checksum verify failed on 12883853500416
+wanted 9E7E27F5 found CC775767 level 0
+[33478.399733] Failed to read block groups: -5
+[33478.420497] btrfs: open_ctree failed
 
-This would mean something's broken during transaction commit.
-
->   Also, you can read but you can't write, meanwhile.
-> 
-> In attachment my config.
-
-No attachment, but not needed IMHO.
-
-> I have photos of the Ooops, but right now I can't take 'em from the phone...
-
-Would really help if you can :)
-
-
-david
+root@aurora:~/btrfs-progs-unstable# ./btrfsck -s 0 /dev/dm-0
+using SB copy 0, bytenr 65536
+checksum verify failed on 12883853500416 wanted CC775767 found FFFFFFF5
+Segmentation fault
+root@aurora:~/btrfs-progs-unstable# ./btrfsck -s 1 /dev/dm-0
+using SB copy 1, bytenr 67108864
+checksum verify failed on 12883853500416 wanted CC775767 found FFFFFFF5
+Segmentation fault
+root@aurora:~/btrfs-progs-unstable# ./btrfsck -s 2 /dev/dm-0
+using SB copy 2, bytenr 274877906944
+checksum verify failed on 12883853500416 wanted CC775767 found FFFFFFF5
+Segmentation fault
+root@aurora:~/btrfs-progs-unstable# ./btrfsck -s 3 /dev/dm-0
+using SB copy 3, bytenr 1125899906842624
+No valid Btrfs found on /dev/dm-0

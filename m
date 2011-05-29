@@ -1,56 +1,101 @@
-From: Jeff Putney <jeffrey.putney@gmail.com>
-Subject: Reboot during rebalance, now unmountable
-Date: Sat, 28 May 2011 20:30:00 -0500
-Message-ID: <BANLkTinufzVhpF5jEA+mQz=uC+RFh4BJ3Q@mail.gmail.com>
+From: Giangiacomo Mariotti <giangiacomo.mariotti@gmail.com>
+Subject: [BUG] btrfs 2.6.39(vanilla): files created with a particular pattern
+ result in error 400
+Date: Sun, 29 May 2011 15:54:40 +0000
+Message-ID: <BANLkTimAuvsy=MBR5EarasErXOTdS1+-eg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: multipart/mixed; boundary=bcaec520ea254b5e8304a46c3071
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've read the entire thread "Oops while rebalancing, now unmountable."
-and it ended without any information about repairing the fs.  (the web
-page wouldn't let me post a reply to that thread tho.)
+--bcaec520ea254b5e8304a46c3071
+Content-Type: text/plain; charset=UTF-8
 
-Has there been any info?  The fs was working fine until I rebooted.
+Hi, since I switched to vanilla kernel version 2.6.39(from latest
+stable 2.6.38), a lot of errors started appearing on my btrfs
+partitions, without any hardware failure, power outages or crashes.
+The errors look all the same "root 5 inode <inode_number> errors 400"
+for all the partitions. I've produced a little c program that is
+consistently produces these seemingly faulty files on my system. I've
+done so by tracing vuze(a torrent app), which I noticed was the app
+that created those files. If I cp those files, the result doesn't have
+those errors.
+the code creates files which result in this btrfsck output:
 
-thanks for any info!
+root 5 inode 705986 errors 400
+found 339059101696 bytes used err is 1
+total csum bytes: 330286628
+total tree bytes: 845594624
+total fs tree bytes: 250171392
+btree space waste bytes: 191048782
+file data blocks allocated: 402010976256
+ referenced 331993735168
 
---jeff
+P.S. I'm not subscribed to the list.
 
-root@aurora:~/btrfs-progs-unstable# uname -a
-Linux aurora 2.6.38-8-generic-pae #42-Ubuntu SMP Mon Apr 11 05:17:09
-UTC 2011 i686 i686 i386 GNU/Linux
+The code is in the attachment and appended here(don't know if gmail is
+gonna mess it up, so I'm attacching it too):
 
-root@aurora:~/btrfs-progs-unstable# mount -t btrfs -r -o
-defaults,relatime,compress,space_cache /dev/dm-0 /mnt
-mount: wrong fs type, bad option, bad superblock on /dev/mapper/put--vg-put,
-       missing codepage or helper program, or other error
-       In some cases useful info is found in syslog - try
-       dmesg | tail  or so
+#include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdio.h>
 
-root@aurora:~/btrfs-progs-unstable# dmesg |tail -6
-[33472.371273] device label putBtrfs devid 1 transid 519691
-/dev/mapper/put--vg-put
-[33472.373079] btrfs: use zlib compression
-[33472.373083] btrfs: enabling disk space caching
-[33478.399721] btrfs: dm-0 checksum verify failed on 12883853500416
-wanted 9E7E27F5 found CC775767 level 0
-[33478.399733] Failed to read block groups: -5
-[33478.420497] btrfs: open_ctree failed
+#define FILE_SIZE 325443890
+#define WRT_BYTES 4096
 
-root@aurora:~/btrfs-progs-unstable# ./btrfsck -s 0 /dev/dm-0
-using SB copy 0, bytenr 65536
-checksum verify failed on 12883853500416 wanted CC775767 found FFFFFFF5
-Segmentation fault
-root@aurora:~/btrfs-progs-unstable# ./btrfsck -s 1 /dev/dm-0
-using SB copy 1, bytenr 67108864
-checksum verify failed on 12883853500416 wanted CC775767 found FFFFFFF5
-Segmentation fault
-root@aurora:~/btrfs-progs-unstable# ./btrfsck -s 2 /dev/dm-0
-using SB copy 2, bytenr 274877906944
-checksum verify failed on 12883853500416 wanted CC775767 found FFFFFFF5
-Segmentation fault
-root@aurora:~/btrfs-progs-unstable# ./btrfsck -s 3 /dev/dm-0
-using SB copy 3, bytenr 1125899906842624
-No valid Btrfs found on /dev/dm-0
+int main(void)
+{
+	struct stat stat_buf;
+	int fd = 0, flag = 0;
+	const size_t cnt = FILE_SIZE / WRT_BYTES;
+	char arr[WRT_BYTES];
+	
+	fd = open("this_file_name.mp4",
+		O_RDWR|O_CREAT, 0666);
+	
+	fstat(fd, &stat_buf);
+	
+	flag = fcntl(fd, F_GETFD);
+	fcntl(fd, F_SETFD, flag | FD_CLOEXEC);
+	
+	lseek(fd, 0, SEEK_CUR);
+	
+	ftruncate(fd, FILE_SIZE);
+	
+	lseek(fd, 0, SEEK_SET);
+	
+	for (int i = 0; i < cnt; ++i) {
+		write(fd, arr, WRT_BYTES);
+	}
+	
+	write(fd, arr, FILE_SIZE - (WRT_BYTES * cnt));
+	
+	close(fd);
+	
+	return 0;
+}
+
+--
+Giangiacomo
+
+--bcaec520ea254b5e8304a46c3071
+Content-Type: text/x-csrc; charset=US-ASCII; name="main.c"
+Content-Disposition: attachment; filename="main.c"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_goa61qjl0
+
+I2luY2x1ZGUgPHVuaXN0ZC5oPgojaW5jbHVkZSA8c3lzL3N0YXQuaD4KI2luY2x1ZGUgPGZjbnRs
+Lmg+CiNpbmNsdWRlIDxzdGRpby5oPgoKI2RlZmluZSBGSUxFX1NJWkUgMzI1NDQzODkwCiNkZWZp
+bmUgV1JUX0JZVEVTIDQwOTYKCmludCBtYWluKHZvaWQpCnsKCXN0cnVjdCBzdGF0IHN0YXRfYnVm
+OwoJaW50IGZkID0gMCwgZmxhZyA9IDA7Cgljb25zdCBzaXplX3QgY250ID0gRklMRV9TSVpFIC8g
+V1JUX0JZVEVTOwoJY2hhciBhcnJbV1JUX0JZVEVTXTsKCQoJZmQgPSBvcGVuKCJ0aGlzX2ZpbGVf
+bmFtZS5tcDQiLAoJCU9fUkRXUnxPX0NSRUFULCAwNjY2KTsKCQoJZnN0YXQoZmQsICZzdGF0X2J1
+Zik7CgkKCWZsYWcgPSBmY250bChmZCwgRl9HRVRGRCk7CglmY250bChmZCwgRl9TRVRGRCwgZmxh
+ZyB8IEZEX0NMT0VYRUMpOwoJCglsc2VlayhmZCwgMCwgU0VFS19DVVIpOwoJCglmdHJ1bmNhdGUo
+ZmQsIEZJTEVfU0laRSk7CgkKCWxzZWVrKGZkLCAwLCBTRUVLX1NFVCk7CgkKCWZvciAoaW50IGkg
+PSAwOyBpIDwgY250OyArK2kpIHsKCQl3cml0ZShmZCwgYXJyLCBXUlRfQllURVMpOwoJfQoJCgl3
+cml0ZShmZCwgYXJyLCBGSUxFX1NJWkUgLSAoV1JUX0JZVEVTICogY250KSk7CgkKCWNsb3NlKGZk
+KTsKCQoJcmV0dXJuIDA7Cn0KCg==
+--bcaec520ea254b5e8304a46c3071--

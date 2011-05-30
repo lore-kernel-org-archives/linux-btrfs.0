@@ -1,53 +1,61 @@
-From: Elric Milon <whirm@gmx.com>
-Subject: Re: kernel BUG at fs/btrfs/inode.c:149!
-Date: Mon, 30 May 2011 13:12:43 +0200
-Message-ID: <201105301312.43460.whirm@gmx.com>
-References: <201105051954.48405.whirm@gmx.com> <201105231357.41588.whirm@gmx.com> <4DDABADD.7090209@redhat.com>
+From: Andrea Gelmini <andrea.gelmini@gmail.com>
+Subject: Re: Problem with latest for-linus branch
+Date: Mon, 30 May 2011 13:59:30 +0200
+Message-ID: <BANLkTimDsRC6yNJ0R5kbBdtTyBAmcf0FfA@mail.gmail.com>
+References: <BANLkTikmYx+K9crXYFeBmsJm+qUq9_W+gQ@mail.gmail.com>
+	<1306620858-sup-7865@shiny>
+	<BANLkTi=FPw7RwkPW0zpD05YRtt19NrZ-5A@mail.gmail.com>
+	<1306751696-sup-7618@shiny>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: "linux-btrfs" <linux-btrfs@vger.kernel.org>
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DDABADD.7090209@redhat.com>
+In-Reply-To: <1306751696-sup-7618@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday 23 May 2011 21:51:57 Josef Bacik wrote:
-> On 05/23/2011 07:57 AM, Elric Milon wrote:
-> > On Monday 16 May 2011 18:28:49 you wrote:
-> >> On 05/16/2011 11:01 AM, Whirm wrote:
-> >>> On Monday 16 May 2011 16:11:19 Josef Bacik wrote:
-> >>> 
-> >>> 
-> >>> Sorry yes, I meant this is how I managed to get the corrupted
-> >>> filesystem.
-> >>> 
-> >>> Ill try to break it again.
-> >> 
-> >> Oh ok perfect, yeah I will try and do the same sort of things and see if
-> >> I can get it to happen as well.  Thanks,
-> > 
-> > Great, btw, I tried to see if I can mount the corrupted filesystem with
-> > the patch you told me about applied, and it fails, here's the log:
-> > 
-> > http://pastebin.com/raw.php?i=4Kfv927B
-> > 
-> > That happens using 2.6.39-rc7+ from git with the following patch applied
-> > (its
-> 
-> > the debug patch and the possible fix you told me about):
-> Ok so this is a different kind of corruption, wooo!  Can you apply this
-> debug patch and get me the output so we can try and fix this bit?  Thanks,
-> 
-> Josef
-> 
+2011/5/30 Chris Mason <chris.mason@oracle.com>:
+> These are perfect, thank you. =C2=A0We're failing to write out the in=
+ode
+> cache. =C2=A0Since you're on a 32 bit machine, I'm guessing that we f=
+ailed to
+> kmap something properly.
 
-Sorry for the delay, here's the log:
+Thanks a lot for detailed info.
+I recompiled, and get this:
+gelma@dell:~$ gdb /lib/modules/3.0.0-rc1/kernel/fs/btrfs/*
+GNU gdb (Ubuntu/Linaro 7.2-1ubuntu11) 7.2
+Copyright (C) 2010 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl=
+=2Ehtml>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.  Type "show copyi=
+ng"
+and "show warranty" for details.
+This GDB was configured as "i686-linux-gnu".
+=46or bug reporting instructions, please see:
+<http://www.gnu.org/software/gdb/bugs/>...
+Reading symbols from /lib/modules/3.0.0-rc1/kernel/fs/btrfs/btrfs.ko...=
+done.
+(gdb) list *__btrfs_write_out_cache+0x43a
+0x5fada is in __btrfs_write_out_cache (fs/btrfs/free-space-cache.c:676)=
+=2E
+671				struct btrfs_free_space *e;
+672=09
+673				e =3D rb_entry(node, struct btrfs_free_space, offset_index);
+674				entries++;
+675=09
+676				entry->offset =3D cpu_to_le64(e->offset);
+677				entry->bytes =3D cpu_to_le64(e->bytes);
+678				if (e->bitmap) {
+679					entry->type =3D BTRFS_FREE_SPACE_BITMAP;
+680					list_add_tail(&e->list, &bitmap_list);
+(gdb)
 
-http://pastebin.com/raw.php?i=zNqJVpA1
-
-Thanks,
-
--- 
-
-Elric Milon
+Thanks a lot for your quick answer,
+Andrea
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

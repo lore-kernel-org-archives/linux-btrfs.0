@@ -1,168 +1,84 @@
-From: Peter Stuge <peter@stuge.se>
-Subject: Re: Damaged super block / fs root
-Date: Mon, 30 May 2011 21:23:31 +0200
-Message-ID: <20110530192331.6147.qmail@stuge.se>
-References: <4DE3BEFA.7080106@ftml.net> <20110530161216.GA8002@carfax.org.uk>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="45Z9DzgjV8m4Oswq"
-Cc: Hugo Mills <hugo@carfax.org.uk>,
-	Dennis Bergmann <d.bergmann@ftml.net>
-To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
+From: Sergei Trofimovich <slyfox@gentoo.org>
+Subject: [PATCH 0/9] some fixes for bugs spotted by valgrind
+Date: Tue, 31 May 2011 00:18:59 +0300
+Message-ID: <1306790348-9553-1-git-send-email-slyfox@gentoo.org>
+Cc: linux-btrfs@vger.kernel.org, Sergei Trofimovich <slyfox@gentoo.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110530161216.GA8002@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello friends!
 
---45Z9DzgjV8m4Oswq
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+tmp branch recently got very nice feature: 'mkfs.btrfs -r /some/directory'.
 
-Hugo Mills wrote:
->    You can check whether it's likely to be of use by running "btrfsck
-> -s 1" on your filesystem. If it passes OK, then btrfs-select-super
-> should be useful.
+It's very useful, when you need to creare minimal root: sh and fs_mark.
 
-Inspired by this I cloned latest btrfs-progs-unstable and tried it on
-my broken 60-something GB btrfs, but no luck:
+But there is another hidden feature! As '-r' can create whole filesystem
+we can effectively valgrind a lot of code paths in btrfs and pick bugs.
 
-$ btrfsck -s 0 /dev/sdb2
-using SB copy 0, bytenr 65536
-btrfsck: disk-io.c:739: open_ctree_fd: Assertion `!(!tree_root->node)' fail=
-ed.
-Aborted
-$ btrfsck -s 1 /dev/sdb2
-using SB copy 1, bytenr 67108864
-btrfsck: disk-io.c:739: open_ctree_fd: Assertion `!(!tree_root->node)' fail=
-ed.
-Aborted
-$ btrfsck -s 2 /dev/sdb2
-using SB copy 2, bytenr 274877906944
-No valid Btrfs found on /dev/sdb2
-$=20
+This patch series is mostly (with one exception) dumb obvous holes plugs
+(sometimes they are backports from kernel).
+
+Patchset based on 'tmp' branch e6bd18d8938986c997c45f0ea95b221d4edec095.
+
+First off the exception:
+In order to make --mixed produce proper filesystems with meta+data only
+blocks (and not meta+data/data ones, which confused space_cache and led
+to an oops for me) I ask to consider for pulling Arne's patch:
+> Subject: [PATCH 1/9] btrfs progs: fix extra metadata chunk allocation in --mixed case
+
+The rest of patches should be obvoius. They don't fix all the fair valgrind
+compaints, but reduce them severely.
 
 
-I created an empty 384 MB btrfs:
+Poking at valgrind warnings I have noticed very worrying problem.
+When we (over)write superblock we take 4096 continuous bytes in memory.
+In kernel the structures reside in btrfs_fs_info structure, so we compute
+CRC for:
+    struct btrfs_super_block super_copy;
+    struct btrfs_super_block super_for_commit;
+and then write it to disk. Nere we have 2 issues:
+1. kernel pointers and other random stuff leaks out to kernel.
+   It's nondeterministic and leaks out data (not too bad,
+   as it should be accessible only for root, but still)
+2. more serious: is there guarantee, that noone will kick-in
+   between CRC computation and superblock outwrite?
 
-$ dd if=3D/dev/zero of=3D/tmp/test_fs bs=3D1024k count=3D384
-$ mkfs.btrfs /tmp/test_fs
-$=20
+   What if some of mutexes, semaphores or lists will change
+   it's internal state? Some async thread will kick it
+   an we will end-up writing superblock with invalid CRC!
+   This might well be the cause of recend superblock
+   corruptions under heavy load + hangup retorted to the list.
 
-And then I compare output from btrfs-debug-tree between test_fs and
-my broken one:
+Consider the following call chain:
+[somewhere in write_dev_supers ...]
 
-$ strace -e pread64 btrfs-debug-tree /tmp/test_fs 2>&1 | sed 's-,"\(.\{5\}\=
-).*"-, "\1"-'
-pread64(3, "\351\"..., 2859, 65536) =3D 2859
-pread64(3, "I\227"..., 2859, 67108864) =3D 2859
-pread64(3, ""..., 2859, 274877906944)   =3D 0
-pread64(5, "\351\"..., 2859, 65536) =3D 2859
-pread64(5, "I\227"..., 2859, 67108864) =3D 2859
-pread64(5, ""..., 2859, 274877906944)   =3D 0
-pread64(5, "\37\2"..., 4096, 20971520) =3D 4096
-pread64(5, "\311\"..., 4096, 37752832) =3D 4096
-pread64(5, "\247C"..., 4096, 37756928) =3D 4096
-pread64(5, "\225\"..., 4096, 37761024) =3D 4096
-pread64(5, "\210z"..., 4096, 37765120) =3D 4096
-pread64(5, "\3\34"..., 4096, 37748736) =3D 4096
-root tree
-leaf 29364224 items 9 free space 2349 generation 7 owner 1
-fs uuid d29c2f7a-0a4e-4a1d-8458-2d241f6f29de
-chunk uuid fb34ff75-1cb6-4974-af37-e0a464135216
-        item 0 key (EXTENT_TREE ROOT_ITEM 0) itemoff 3756 itemsize 239
-                root data bytenr 29368320 level 0 dirid 0 refs 1
-        item 1 key (DEV_TREE ROOT_ITEM 0) itemoff 3517 itemsize 239
-                root data bytenr 29372416 level 0 dirid 0 refs 1
-=2E..
+                                                                                                                                                bh->b_end_io = btrfs_end_buffer_write_sync;                        crc = ~(u32)0;
+                        crc = btrfs_csum_data(NULL, (char *)sb +
+                                              BTRFS_CSUM_SIZE, crc,
+                                              BTRFS_SUPER_INFO_SIZE -
+                                              BTRFS_CSUM_SIZE);
+                        btrfs_csum_final(crc, sb->csum);
 
-$ strace -e pread64 btrfs-debug-tree /dev/sdb2 2>&1 | sed 's-, "\(.\{5\}\).=
-*"-, "\1"-'
-pread64(3, "p\23{"..., 2859, 65536) =3D 2859
-pread64(3, "\320r"..., 2859, 67108864) =3D 2859
-pread64(3, ""..., 2859, 274877906944)   =3D 0
-pread64(5, "p\23{"..., 2859, 65536) =3D 2859
-pread64(5, "\320r"..., 2859, 67108864) =3D 2859
-pread64(5, ""..., 2859, 274877906944)   =3D 0
-pread64(5, "\353$"..., 4096, 20971520) =3D 4096
-pread64(5, "\275\"..., 4096, 20987904) =3D 4096
-pread64(5, "\253\"..., 4096, 20983808) =3D 4096
-pread64(5, "\0\0\"..., 4096, 36675878912) =3D 4096
-pread64(5, "\0\0\"..., 4096, 36675878912) =3D 4096
-pread64(5, "\0\0\"..., 4096, 36944314368) =3D 4096
-btrfs-debug-tree: disk-io.c:739: open_ctree_fd: Assertion `!(!tree_root->no=
-de)' failed.
---- SIGABRT (Aborted) @ 0 (0) ---
-+++ killed by SIGABRT +++
+                        /*
+                         * !!!!!!!!!!!!
+                         * something kicks-in and changes fs_info lying right after sb
+                         * !!!!!!!!!!!!
+                         */
 
-I also tried the btrfsck again:
+                        bh = __getblk(device->bdev, bytenr / 4096,
+                                      BTRFS_SUPER_INFO_SIZE);
 
-$ strace -e pread64 btrfsck -s 0 /dev/sdb2 2>&1 | sed 's-, "\(.\?.\?.\?\).*=
-"-, "\1"-'
-pread64(3, "p\2"..., 2859, 65536) =3D 2859
-pread64(3, "\32"..., 2859, 67108864) =3D 2859
-pread64(3, ""..., 2859, 274877906944)   =3D 0
-pread64(3, "p\2"..., 2859, 65536) =3D 2859
-pread64(3, "\32"..., 2859, 67108864) =3D 2859
-pread64(3, ""..., 2859, 274877906944)   =3D 0
-pread64(5, "p\2"..., 2859, 65536) =3D 2859
-pread64(5, "\32"..., 2859, 67108864) =3D 2859
-pread64(5, ""..., 2859, 274877906944)   =3D 0
-pread64(5, "\35"..., 4096, 20971520) =3D 4096
-pread64(5, "\27"..., 4096, 20987904) =3D 4096
-pread64(5, "\25"..., 4096, 20983808) =3D 4096
-pread64(5, "\0\"..., 4096, 36675878912) =3D 4096
-pread64(5, "\0\"..., 4096, 36675878912) =3D 4096
-pread64(5, "\0\"..., 4096, 36944314368) =3D 4096
-btrfsck: disk-io.c:739: open_ctree_fd: Assertion `!(!tree_root->node)' fail=
-ed.
-using SB copy 0, bytenr 65536
---- SIGABRT (Aborted) @ 0 (0) ---
-+++ killed by SIGABRT +++
-$ strace -e pread64 btrfsck -s 1 /dev/sdb2 2>&1 | sed 's-, "\(.\?.\?.\?\).*=
-"-, "\1"-'
-pread64(3, "p\2"..., 2859, 65536) =3D 2859
-pread64(3, "\32"..., 2859, 67108864) =3D 2859
-pread64(3, ""..., 2859, 274877906944)   =3D 0
-pread64(3, "\32"..., 2859, 67108864) =3D 2859
-pread64(5, "\32"..., 2859, 67108864) =3D 2859
-pread64(5, "\35"..., 4096, 20971520) =3D 4096
-pread64(5, "\27"..., 4096, 20987904) =3D 4096
-pread64(5, "\25"..., 4096, 20983808) =3D 4096
-pread64(5, "\0\"..., 4096, 36675878912) =3D 4096
-pread64(5, "\0\"..., 4096, 36675878912) =3D 4096
-pread64(5, "\0\"..., 4096, 36944314368) =3D 4096
-btrfsck: disk-io.c:739: open_ctree_fd: Assertion `!(!tree_root->node)' fail=
-ed.
-using SB copy 1, bytenr 67108864
---- SIGABRT (Aborted) @ 0 (0) ---
-+++ killed by SIGABRT +++
-$ strace -e pread64 btrfsck -s 2 /dev/sdb2 2>&1 | sed 's-, "\(.\?.\?.\?\).*=
-"-, "\1"-'
-pread64(3, "p\2"..., 2859, 65536) =3D 2859
-pread64(3, "\32"..., 2859, 67108864) =3D 2859
-pread64(3, ""..., 2859, 274877906944)   =3D 0
-pread64(3, ""..., 2859, 274877906944)   =3D 0
-No valid Btrfs found on /dev/sdb2
-using SB copy 2, bytenr 274877906944
-$=20
+                        /*
+                         * !!!!!!!!!!!!
+                         * and we write superblock with incorrect checksum
+                         * !!!!!!!!!!!!
+                         */
+                        memcpy(bh->b_data, sb, BTRFS_SUPER_INFO_SIZE);
 
+                        /* one reference for submit_bh */
+                        get_bh(bh);
 
-Does this give any hint about how the tree has been broken?
-
-
-//Peter
-
---45Z9DzgjV8m4Oswq
-Content-Type: application/pgp-signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iD8DBQFN4+6zhR3Q0dhIfEgRAqJxAJsEWNkoCc2PrncY13G9Zx83cgJd4ACghenr
-v5qPmzJiYtL7fWPqqrocPLA=
-=ZafW
------END PGP SIGNATURE-----
-
---45Z9DzgjV8m4Oswq--
+                        set_buffer_uptodate(bh);
+                        lock_buffer(bh);
+                        bh->b_end_io = btrfs_end_buffer_write_sync;

@@ -1,84 +1,68 @@
 From: Sergei Trofimovich <slyfox@gentoo.org>
-Subject: [PATCH 0/9] some fixes for bugs spotted by valgrind
-Date: Tue, 31 May 2011 00:18:59 +0300
-Message-ID: <1306790348-9553-1-git-send-email-slyfox@gentoo.org>
-Cc: linux-btrfs@vger.kernel.org, Sergei Trofimovich <slyfox@gentoo.org>
+Subject: [PATCH 1/9] btrfs progs: fix extra metadata chunk allocation in --mixed case
+Date: Tue, 31 May 2011 00:19:00 +0300
+Message-ID: <1306790348-9553-2-git-send-email-slyfox@gentoo.org>
+References: <1306790348-9553-1-git-send-email-slyfox@gentoo.org>
+Cc: linux-btrfs@vger.kernel.org, Arne Jansen <sensille@gmx.net>
 To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1306790348-9553-1-git-send-email-slyfox@gentoo.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello friends!
+From: Arne Jansen <sensille@gmx.net>
 
-tmp branch recently got very nice feature: 'mkfs.btrfs -r /some/directory'.
+When creating a mixed fs with mkfs, an extra metadata chunk got allocated.
+This is because btrfs_reserve_extent calls do_chunk_alloc for METADATA,
+which in turn wasn't able to find the proper space_info, as __find_space_info
+did a hard compare of the flags. It is now sufficient for the space_info to
+include the proper flag. This reflects the change done to the kernel code
+to support mixed chunks.
+Also for a subsequent chunk allocation (which should not be hit in the mkfs
+case), the chunk is now created with the flags from the space_info instead
+of the requested flags. A better solution would be to pull the full changeset
+for the mixed case from the kernel into the user mode (or, even better, share
+the code)
 
-It's very useful, when you need to creare minimal root: sh and fs_mark.
+The additional chunk probably confused block_rsv calculation, which in turn
+led to severeal ENOSPC Oopses.
 
-But there is another hidden feature! As '-r' can create whole filesystem
-we can effectively valgrind a lot of code paths in btrfs and pick bugs.
+Signed-off-by: Arne Jansen <sensille@gmx.net>
+---
+ extent-tree.c |    7 ++++---
+ 1 files changed, 4 insertions(+), 3 deletions(-)
 
-This patch series is mostly (with one exception) dumb obvous holes plugs
-(sometimes they are backports from kernel).
+diff --git a/extent-tree.c b/extent-tree.c
+index b2f9bb2..c6c77c6 100644
+--- a/extent-tree.c
++++ b/extent-tree.c
+@@ -1735,7 +1735,7 @@ static struct btrfs_space_info *__find_space_info(struct btrfs_fs_info *info,
+ 	struct btrfs_space_info *found;
+ 	list_for_each(cur, head) {
+ 		found = list_entry(cur, struct btrfs_space_info, list);
+-		if (found->flags == flags)
++		if (found->flags & flags)
+ 			return found;
+ 	}
+ 	return NULL;
+@@ -1812,7 +1812,8 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
+ 	    thresh)
+ 		return 0;
+ 
+-	ret = btrfs_alloc_chunk(trans, extent_root, &start, &num_bytes, flags);
++	ret = btrfs_alloc_chunk(trans, extent_root, &start, &num_bytes,
++	                        space_info->flags);
+ 	if (ret == -ENOSPC) {
+ 		space_info->full = 1;
+ 		return 0;
+@@ -1820,7 +1821,7 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
+ 
+ 	BUG_ON(ret);
+ 
+-	ret = btrfs_make_block_group(trans, extent_root, 0, flags,
++	ret = btrfs_make_block_group(trans, extent_root, 0, space_info->flags,
+ 		     BTRFS_FIRST_CHUNK_TREE_OBJECTID, start, num_bytes);
+ 	BUG_ON(ret);
+ 	return 0;
+-- 
+1.7.3.4
 
-Patchset based on 'tmp' branch e6bd18d8938986c997c45f0ea95b221d4edec095.
-
-First off the exception:
-In order to make --mixed produce proper filesystems with meta+data only
-blocks (and not meta+data/data ones, which confused space_cache and led
-to an oops for me) I ask to consider for pulling Arne's patch:
-> Subject: [PATCH 1/9] btrfs progs: fix extra metadata chunk allocation in --mixed case
-
-The rest of patches should be obvoius. They don't fix all the fair valgrind
-compaints, but reduce them severely.
-
-
-Poking at valgrind warnings I have noticed very worrying problem.
-When we (over)write superblock we take 4096 continuous bytes in memory.
-In kernel the structures reside in btrfs_fs_info structure, so we compute
-CRC for:
-    struct btrfs_super_block super_copy;
-    struct btrfs_super_block super_for_commit;
-and then write it to disk. Nere we have 2 issues:
-1. kernel pointers and other random stuff leaks out to kernel.
-   It's nondeterministic and leaks out data (not too bad,
-   as it should be accessible only for root, but still)
-2. more serious: is there guarantee, that noone will kick-in
-   between CRC computation and superblock outwrite?
-
-   What if some of mutexes, semaphores or lists will change
-   it's internal state? Some async thread will kick it
-   an we will end-up writing superblock with invalid CRC!
-   This might well be the cause of recend superblock
-   corruptions under heavy load + hangup retorted to the list.
-
-Consider the following call chain:
-[somewhere in write_dev_supers ...]
-
-                                                                                                                                                bh->b_end_io = btrfs_end_buffer_write_sync;                        crc = ~(u32)0;
-                        crc = btrfs_csum_data(NULL, (char *)sb +
-                                              BTRFS_CSUM_SIZE, crc,
-                                              BTRFS_SUPER_INFO_SIZE -
-                                              BTRFS_CSUM_SIZE);
-                        btrfs_csum_final(crc, sb->csum);
-
-                        /*
-                         * !!!!!!!!!!!!
-                         * something kicks-in and changes fs_info lying right after sb
-                         * !!!!!!!!!!!!
-                         */
-
-                        bh = __getblk(device->bdev, bytenr / 4096,
-                                      BTRFS_SUPER_INFO_SIZE);
-
-                        /*
-                         * !!!!!!!!!!!!
-                         * and we write superblock with incorrect checksum
-                         * !!!!!!!!!!!!
-                         */
-                        memcpy(bh->b_data, sb, BTRFS_SUPER_INFO_SIZE);
-
-                        /* one reference for submit_bh */
-                        get_bh(bh);
-
-                        set_buffer_uptodate(bh);
-                        lock_buffer(bh);
-                        bh->b_end_io = btrfs_end_buffer_write_sync;

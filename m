@@ -1,33 +1,48 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH] btrfs: false BUG_ON when degraded
-Date: Mon, 30 May 2011 10:36:16 +0200
-Message-ID: <1306744576-1609-1-git-send-email-sensille@gmx.net>
-To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+From: Andrea Gelmini <andrea.gelmini@gmail.com>
+Subject: Re: Problem with latest for-linus branch
+Date: Mon, 30 May 2011 12:13:47 +0200
+Message-ID: <BANLkTi=FPw7RwkPW0zpD05YRtt19NrZ-5A@mail.gmail.com>
+References: <BANLkTikmYx+K9crXYFeBmsJm+qUq9_W+gQ@mail.gmail.com>
+	<1306620858-sup-7865@shiny>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1306620858-sup-7865@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In degraded mode the struct btrfs_device of missing devs don't have
-device->name set. A kstrdup of NULL correctly returns NULL. Don't
-BUG in this case.
+2011/5/29 Chris Mason <chris.mason@oracle.com>:
+> Thanks, could you please send in the photos of the oops when you get
+> chance.
 
-Signed-off-by: Arne Jansen <sensille@gmx.net>
----
- fs/btrfs/volumes.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+Well, I retested everything compiling with frame pointers, so:
+a) partition is mounted with this flags:
+defaults,ssd,noacl,space_cache (at the beginning I also used
+compress);
+b) vanilla kernel .38 and .39 are working good;
+c) latest Linus tree (commit: bd1bfe40ac6bdf9593da29b822bc301b77a97d6a
+the one before 3.0-rc1,
+   so in the photos you can find it as .39g+), it goes up, but after a
+while of intense i/o working thread (it's a specific
+   kernel thread of btrfs, I guess btrfs-ino-cache, but I could be
+wrong) the system freeze. Well, if i/o keep working enough time,
+   I can even touch and unlink files, or read files already present,
+or do something like /usr/bin/find; these
+   photos are here: http://ooops.lugbs.linux.it/linusgit
+d) rebooting with .39 doesn't work. It crashes at mount time.
+   The photos are here: http://ooops.lugbs.linux.it/2.6.39
+e) booting with 2.6.38.7 solves the problem, giving this info:
+[   20.273822] Btrfs loaded
+[   20.387795] device label home devid 1 transid 4595 /dev/mapper/VG-home
+[   20.388269] btrfs: use ssd allocation scheme
+[   20.388277] btrfs: enabling disk space caching
+[   25.025873] btrfs: unlinked 5 orphans
+[   25.025876] btrfs: truncated 3 orphans
+f) by the way, bisect.jpg is the photo I took when I sent first email.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index c48214e..da541df 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -504,7 +504,7 @@ static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
- 		BUG_ON(!new_device);
- 		memcpy(new_device, device, sizeof(*new_device));
- 		new_device->name = kstrdup(device->name, GFP_NOFS);
--		BUG_ON(!new_device->name);
-+		BUG_ON(device->name && !new_device->name);
- 		new_device->bdev = NULL;
- 		new_device->writeable = 0;
- 		new_device->in_fs_metadata = 0;
--- 
-1.7.3.4
+These photos are terrible, but I guess they're good enough to read 'em.
+Anyway, these are multiple shoots of same screen, of course.
 
+Thanks a lot for your time,
+Andrea

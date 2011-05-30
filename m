@@ -1,7 +1,7 @@
 From: Sergei Trofimovich <slyfox@gentoo.org>
-Subject: [PATCH 5/9] mkfs.btrfs: fix symlink names writing
-Date: Tue, 31 May 2011 00:19:04 +0300
-Message-ID: <1306790348-9553-6-git-send-email-slyfox@gentoo.org>
+Subject: [PATCH 6/9] mkfs.btrfs: write zeroes instead on uninitialized data.
+Date: Tue, 31 May 2011 00:19:05 +0300
+Message-ID: <1306790348-9553-7-git-send-email-slyfox@gentoo.org>
 References: <1306790348-9553-1-git-send-email-slyfox@gentoo.org>
 Cc: linux-btrfs@vger.kernel.org, Sergei Trofimovich <slyfox@gentoo.org>
 To: Chris Mason <chris.mason@oracle.com>
@@ -22,32 +22,49 @@ Found by valgrind:
 ==8968==  Uninitialised value was created by a stack allocation
 ==8968==    at 0x42B5FB: add_inode_items (mkfs.c:493)
 
-readlink(2) does not write '\0' for us, so make it manually.
+1. On-disk inode format has reserved (and thus, random at alloc time) fields:
+   btrfs_inode_item: __le64 reserved[4]
+2. Sometimes extents are created on disk without writing data there.
+   (Or at least not all data is written there). Kernel code always had
+   it kzalloc'ed.
+Zero them all.
 
 Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
 ---
- mkfs.c |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
+ extent_io.c |    1 +
+ mkfs.c      |    7 +++++++
+ 2 files changed, 8 insertions(+), 0 deletions(-)
 
+diff --git a/extent_io.c b/extent_io.c
+index 069c199..a93d4d6 100644
+--- a/extent_io.c
++++ b/extent_io.c
+@@ -572,6 +572,7 @@ static struct extent_buffer *__alloc_extent_buffer(struct extent_io_tree *tree,
+ 		BUG();
+ 		return NULL;
+ 	}
++	memset (eb, 0, sizeof(struct extent_buffer) + blocksize);
+ 
+ 	eb->start = bytenr;
+ 	eb->len = blocksize;
 diff --git a/mkfs.c b/mkfs.c
-index 9d7b792..8ff2b1e 100644
+index 8ff2b1e..32f25f5 100644
 --- a/mkfs.c
 +++ b/mkfs.c
-@@ -709,11 +709,13 @@ static int add_symbolic_link(struct btrfs_trans_handle *trans,
- 		fprintf(stderr, "readlink failed for %s\n", path_name);
- 		goto fail;
- 	}
--	if (ret > sectorsize) {
-+	if (ret >= sectorsize) {
- 		fprintf(stderr, "symlink too long for %s", path_name);
- 		ret = -1;
- 		goto fail;
- 	}
+@@ -411,6 +411,13 @@ static int fill_inode_item(struct btrfs_trans_handle *trans,
+ 	u64 blocks = 0;
+ 	u64 sectorsize = root->sectorsize;
+ 
++	/*
++	 * btrfs_inode_item has some reserved fields
++	 * and represents on-disk inode entry, so
++	 * zero everything to prevent information leak
++	 */
++	memset (dst, 0, sizeof (*dst));
 +
-+	buf[ret] = '\0'; /* readlink does not do it for us */
- 	ret = btrfs_insert_inline_extent(trans, root, objectid, 0,
- 					 buf, ret + 1);
- fail:
+ 	btrfs_set_stack_inode_generation(dst, trans->transid);
+ 	btrfs_set_stack_inode_size(dst, src->st_size);
+ 	btrfs_set_stack_inode_nbytes(dst, 0);
 -- 
 1.7.3.4
 

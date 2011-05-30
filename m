@@ -1,36 +1,36 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Damaged super block / fs root
-Date: Mon, 30 May 2011 15:03:36 -0400
-Message-ID: <1306782166-sup-3731@shiny>
-References: <4DE3BEFA.7080106@ftml.net> <20110530161216.GA8002@carfax.org.uk> <4DE3CA05.6020709@ftml.net>
+Subject: Re: [3.0-rc1] delayed insertion allocation failing...
+Date: Mon, 30 May 2011 15:11:21 -0400
+Message-ID: <1306782464-sup-7709@shiny>
+References: <BANLkTinv0GDkGy6mhC2DVrt6wW7ZGQPPrQ@mail.gmail.com>
 Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Dennis Bergmann <d.bergmann@ftml.net>
+Cc: Miao Xie <miaox@cn.fujitsu.com>,
+	Linux BTRFS <linux-btrfs@vger.kernel.org>
+To: Daniel J Blueman <daniel.blueman@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <4DE3CA05.6020709@ftml.net>
+In-reply-to: <BANLkTinv0GDkGy6mhC2DVrt6wW7ZGQPPrQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Dennis Bergmann's message of 2011-05-30 12:47:01 -0400:
-> On 30.05.2011 18:12, Hugo Mills wrote:
-> >     You can check whether it's likely to be of use by running "btrfsck
-> > -s 1" on your filesystem. If it passes OK, then btrfs-select-super
-> > should be useful.
-> >
-> >     Hugo.
+Excerpts from Daniel J Blueman's message of 2011-05-30 10:24:08 -0400:
+> Hi Miao,
 > 
-> Didn't work, unfortunately.
-> 
-> My btrfsck version is v0.19-35-g1b444cd-dirty and running
-> "btrfsck -s 1 /dev/sda5" quits with the following message:
-> 
-> using SB copy 1, bytenr 67108864
-> No valid Btrfs found on /dev/sda5
-> 
+> When booting 3.0-rc1 with an existing BTRFS filesystem with a normal
+> desktop use pattern, we see btrfs_batch_insert_item() sometimes
+> attempt an overly-large kmalloc (>= order 11) [1], which is
+> subsequently failed.
 
-How big is the FS?  What command did you use to overwrite the super
-block?  Please try to tell us exactly which commands were run.
+Wow, that's a big allocation.  Not really sure how this manages to
+compile with a warning.
 
-There are other ways we can try to pull things off, but you should try
-btrfsck -s 2 as well.
-
--chris
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 01e2950..790262d 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -678,6 +678,7 @@ static int btrfs_batch_insert_items(struct btrfs_trans_handle *trans,
+ 	INIT_LIST_HEAD(&head);
+ 
+ 	next = item;
++	nitems = 0;
+ 
+ 	/*
+ 	 * count the number of the continuous items that we can insert in batch

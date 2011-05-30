@@ -1,74 +1,33 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: Problem with latest for-linus branch
-Date: Mon, 30 May 2011 10:49:38 +0800
-Message-ID: <4DE305C2.1050301@cn.fujitsu.com>
-References: <BANLkTikmYx+K9crXYFeBmsJm+qUq9_W+gQ@mail.gmail.com> <20110528224051.GY12709@twin.jikos.cz>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: andrea.gelmini@gmail.com,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: dave@jikos.cz
+From: Arne Jansen <sensille@gmx.net>
+Subject: [PATCH] btrfs: false BUG_ON when degraded
+Date: Mon, 30 May 2011 10:36:16 +0200
+Message-ID: <1306744576-1609-1-git-send-email-sensille@gmx.net>
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110528224051.GY12709@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-David Sterba wrote:
-> Hi,
-> 
-> On Sat, May 28, 2011 at 07:05:47PM +0200, Andrea Gelmini wrote:
->>    Everything works good with stock Ubuntu 11.04 kernel (2.6.38),
->> vanilla 2.6.38 and vanilla 2.6.39.
->>    If I use Linus' git tree, BTRFS ooops at mount.
-> 
-> can you please attach the oops traces?
-> 
->>    So I bisected using kernel version 2.6.39 + latest for-linus branch.
->>    Bisect complains about this commit:
->> 581bb050941b4f220f84d3e5ed6dace3d42dd382 is the first bad commit
->> commit 581bb050941b4f220f84d3e5ed6dace3d42dd382
->> Author: Li Zefan <lizf@cn.fujitsu.com>
->> Date:   Wed Apr 20 10:06:11 2011 +0800
->>
->>     Btrfs: Cache free inode numbers in memory
-> 
-> this patch was part of the new ino allocator and it may depend
-> on subsequent patches (eg. 33345d015 "Btrfs: Always use
-> 64bit inode number"). In this case it could be a 32/64 bit mismatch in
-> inode numbers and blame would point to a incomplete state wrt the
-> filesystem.
-> 
+In degraded mode the struct btrfs_device of missing devs don't have
+device->name set. A kstrdup of NULL correctly returns NULL. Don't
+BUG in this case.
 
-the bug probably not caused by this.
+Signed-off-by: Arne Jansen <sensille@gmx.net>
+---
+ fs/btrfs/volumes.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-> You've created your FS from ext4, I think that the filesystem has
-> 64bit inode numbers, allocated to files and this got broken during the
-> conversion. (just a wild idea)
-> 
->>   I can see two kind of problems, with different commit, of course.
->>   Sometimes the Ooops happens just as kernel mounts the partition,
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index c48214e..da541df 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -504,7 +504,7 @@ static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+ 		BUG_ON(!new_device);
+ 		memcpy(new_device, device, sizeof(*new_device));
+ 		new_device->name = kstrdup(device->name, GFP_NOFS);
+-		BUG_ON(!new_device->name);
++		BUG_ON(device->name && !new_device->name);
+ 		new_device->bdev = NULL;
+ 		new_device->writeable = 0;
+ 		new_device->in_fs_metadata = 0;
+-- 
+1.7.3.4
 
-just mount the partition, and then no other fs operations? if so, the
-patch you bisected down actually won't take effect.
-
->> sometimes the mount is good, but HD keeps reading for more than 30
->> seconds, and the it Ooops.
-> 
-> This would mean something's broken during transaction commit.
-> 
->>   Also, you can read but you can't write, meanwhile.
->>
->> In attachment my config.
-> 
-> No attachment, but not needed IMHO.
-> 
->> I have photos of the Ooops, but right now I can't take 'em from the phone...
-> 
-> Would really help if you can :)
-> 
-
-right.
-
-and thanks for the bug report!
-
-btw, I'll be off till 6.5, so this week I probably won't be able to take
-care of this..

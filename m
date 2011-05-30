@@ -1,101 +1,52 @@
-From: Giangiacomo Mariotti <giangiacomo.mariotti@gmail.com>
-Subject: [BUG] btrfs 2.6.39(vanilla): files created with a particular pattern
- result in error 400
-Date: Sun, 29 May 2011 15:54:40 +0000
-Message-ID: <BANLkTimAuvsy=MBR5EarasErXOTdS1+-eg@mail.gmail.com>
+From: Stephen Rothwell <sfr@canb.auug.org.au>
+Subject: linux-next: build warninga in Linus' tree
+Date: Mon, 30 May 2011 11:36:53 +1000
+Message-ID: <20110530113653.5c7084f0.sfr@canb.auug.org.au>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary=bcaec520ea254b5e8304a46c3071
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: multipart/signed; protocol="application/pgp-signature";
+ micalg="PGP-SHA1";
+ boundary="Signature=_Mon__30_May_2011_11_36_53_+1000_o8uk4EXqcJcBbuII"
+Cc: linux-next@vger.kernel.org, linux-kernel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---bcaec520ea254b5e8304a46c3071
-Content-Type: text/plain; charset=UTF-8
+--Signature=_Mon__30_May_2011_11_36_53_+1000_o8uk4EXqcJcBbuII
+Content-Type: text/plain; charset=US-ASCII
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Hi, since I switched to vanilla kernel version 2.6.39(from latest
-stable 2.6.38), a lot of errors started appearing on my btrfs
-partitions, without any hardware failure, power outages or crashes.
-The errors look all the same "root 5 inode <inode_number> errors 400"
-for all the partitions. I've produced a little c program that is
-consistently produces these seemingly faulty files on my system. I've
-done so by tracing vuze(a torrent app), which I noticed was the app
-that created those files. If I cp those files, the result doesn't have
-those errors.
-the code creates files which result in this btrfsck output:
+Hi all,
 
-root 5 inode 705986 errors 400
-found 339059101696 bytes used err is 1
-total csum bytes: 330286628
-total tree bytes: 845594624
-total fs tree bytes: 250171392
-btree space waste bytes: 191048782
-file data blocks allocated: 402010976256
- referenced 331993735168
+After merging the Linus' tree, today's linux-next build (powerpc
+ppc64_defconfig) produced these warnings:
 
-P.S. I'm not subscribed to the list.
+fs/btrfs/sysfs.c:76:26: warning: 'btrfs_root_attrs' defined but not used
+fs/btrfs/sysfs.c:97:26: warning: 'btrfs_super_attrs' defined but not used
+fs/btrfs/sysfs.c:153:13: warning: 'btrfs_super_release' defined but not used
+fs/btrfs/sysfs.c:160:13: warning: 'btrfs_root_release' defined but not used
 
-The code is in the attachment and appended here(don't know if gmail is
-gonna mess it up, so I'm attacching it too):
+I have started using gcc v4.5.2 (instead of v4.4.4) if that makes a
+difference.
+--=20
+Cheers,
+Stephen Rothwell                    sfr@canb.auug.org.au
+http://www.canb.auug.org.au/~sfr/
 
-#include <unistd.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <stdio.h>
+--Signature=_Mon__30_May_2011_11_36_53_+1000_o8uk4EXqcJcBbuII
+Content-Type: application/pgp-signature
 
-#define FILE_SIZE 325443890
-#define WRT_BYTES 4096
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
 
-int main(void)
-{
-	struct stat stat_buf;
-	int fd = 0, flag = 0;
-	const size_t cnt = FILE_SIZE / WRT_BYTES;
-	char arr[WRT_BYTES];
-	
-	fd = open("this_file_name.mp4",
-		O_RDWR|O_CREAT, 0666);
-	
-	fstat(fd, &stat_buf);
-	
-	flag = fcntl(fd, F_GETFD);
-	fcntl(fd, F_SETFD, flag | FD_CLOEXEC);
-	
-	lseek(fd, 0, SEEK_CUR);
-	
-	ftruncate(fd, FILE_SIZE);
-	
-	lseek(fd, 0, SEEK_SET);
-	
-	for (int i = 0; i < cnt; ++i) {
-		write(fd, arr, WRT_BYTES);
-	}
-	
-	write(fd, arr, FILE_SIZE - (WRT_BYTES * cnt));
-	
-	close(fd);
-	
-	return 0;
-}
+iQEcBAEBAgAGBQJN4vS1AAoJEDMEi1NhKgbsj4cH/3Yhe1Yj2R3f9JVd+hvJOP+P
+Uddnm7QkcbUOOJfUOZPI2gZJWX0ph3sjNLOkyZk4l3hmxiu/yaSKKE4brC2ZldyE
+1uHUhGz43HsUc6HtOKF1j/K3cG9F3bigvt6zLKlwEY6OWGV6dGIs+RCf8WGt1wbQ
+PUB7mdS3mh5nKHW3fI+H4saNJ71H/enzUhRJ2ZLsWYCqyri1gQZkMcxUpCangoHj
++0D2MbegjpFq2F9HHsWoHn9Q4DNFKxHPGZBlH2E+QhfGZCnJ48BpzGd7pCDu54nW
+EFhvgf+cRjOVuzDOMNPB+ijifIylzwn6blWAIKwAiWLPgnzNTjK5SmFM9WaSszs=
+=luuw
+-----END PGP SIGNATURE-----
 
---
-Giangiacomo
-
---bcaec520ea254b5e8304a46c3071
-Content-Type: text/x-csrc; charset=US-ASCII; name="main.c"
-Content-Disposition: attachment; filename="main.c"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_goa61qjl0
-
-I2luY2x1ZGUgPHVuaXN0ZC5oPgojaW5jbHVkZSA8c3lzL3N0YXQuaD4KI2luY2x1ZGUgPGZjbnRs
-Lmg+CiNpbmNsdWRlIDxzdGRpby5oPgoKI2RlZmluZSBGSUxFX1NJWkUgMzI1NDQzODkwCiNkZWZp
-bmUgV1JUX0JZVEVTIDQwOTYKCmludCBtYWluKHZvaWQpCnsKCXN0cnVjdCBzdGF0IHN0YXRfYnVm
-OwoJaW50IGZkID0gMCwgZmxhZyA9IDA7Cgljb25zdCBzaXplX3QgY250ID0gRklMRV9TSVpFIC8g
-V1JUX0JZVEVTOwoJY2hhciBhcnJbV1JUX0JZVEVTXTsKCQoJZmQgPSBvcGVuKCJ0aGlzX2ZpbGVf
-bmFtZS5tcDQiLAoJCU9fUkRXUnxPX0NSRUFULCAwNjY2KTsKCQoJZnN0YXQoZmQsICZzdGF0X2J1
-Zik7CgkKCWZsYWcgPSBmY250bChmZCwgRl9HRVRGRCk7CglmY250bChmZCwgRl9TRVRGRCwgZmxh
-ZyB8IEZEX0NMT0VYRUMpOwoJCglsc2VlayhmZCwgMCwgU0VFS19DVVIpOwoJCglmdHJ1bmNhdGUo
-ZmQsIEZJTEVfU0laRSk7CgkKCWxzZWVrKGZkLCAwLCBTRUVLX1NFVCk7CgkKCWZvciAoaW50IGkg
-PSAwOyBpIDwgY250OyArK2kpIHsKCQl3cml0ZShmZCwgYXJyLCBXUlRfQllURVMpOwoJfQoJCgl3
-cml0ZShmZCwgYXJyLCBGSUxFX1NJWkUgLSAoV1JUX0JZVEVTICogY250KSk7CgkKCWNsb3NlKGZk
-KTsKCQoJcmV0dXJuIDA7Cn0KCg==
---bcaec520ea254b5e8304a46c3071--
+--Signature=_Mon__30_May_2011_11_36_53_+1000_o8uk4EXqcJcBbuII--

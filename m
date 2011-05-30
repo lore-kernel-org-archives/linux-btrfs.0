@@ -1,52 +1,74 @@
-From: Stephen Rothwell <sfr@canb.auug.org.au>
-Subject: linux-next: build warninga in Linus' tree
-Date: Mon, 30 May 2011 11:36:53 +1000
-Message-ID: <20110530113653.5c7084f0.sfr@canb.auug.org.au>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: Problem with latest for-linus branch
+Date: Mon, 30 May 2011 10:49:38 +0800
+Message-ID: <4DE305C2.1050301@cn.fujitsu.com>
+References: <BANLkTikmYx+K9crXYFeBmsJm+qUq9_W+gQ@mail.gmail.com> <20110528224051.GY12709@twin.jikos.cz>
 Mime-Version: 1.0
-Content-Type: multipart/signed; protocol="application/pgp-signature";
- micalg="PGP-SHA1";
- boundary="Signature=_Mon__30_May_2011_11_36_53_+1000_o8uk4EXqcJcBbuII"
-Cc: linux-next@vger.kernel.org, linux-kernel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: andrea.gelmini@gmail.com,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: dave@jikos.cz
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110528224051.GY12709@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Signature=_Mon__30_May_2011_11_36_53_+1000_o8uk4EXqcJcBbuII
-Content-Type: text/plain; charset=US-ASCII
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+David Sterba wrote:
+> Hi,
+> 
+> On Sat, May 28, 2011 at 07:05:47PM +0200, Andrea Gelmini wrote:
+>>    Everything works good with stock Ubuntu 11.04 kernel (2.6.38),
+>> vanilla 2.6.38 and vanilla 2.6.39.
+>>    If I use Linus' git tree, BTRFS ooops at mount.
+> 
+> can you please attach the oops traces?
+> 
+>>    So I bisected using kernel version 2.6.39 + latest for-linus branch.
+>>    Bisect complains about this commit:
+>> 581bb050941b4f220f84d3e5ed6dace3d42dd382 is the first bad commit
+>> commit 581bb050941b4f220f84d3e5ed6dace3d42dd382
+>> Author: Li Zefan <lizf@cn.fujitsu.com>
+>> Date:   Wed Apr 20 10:06:11 2011 +0800
+>>
+>>     Btrfs: Cache free inode numbers in memory
+> 
+> this patch was part of the new ino allocator and it may depend
+> on subsequent patches (eg. 33345d015 "Btrfs: Always use
+> 64bit inode number"). In this case it could be a 32/64 bit mismatch in
+> inode numbers and blame would point to a incomplete state wrt the
+> filesystem.
+> 
 
-Hi all,
+the bug probably not caused by this.
 
-After merging the Linus' tree, today's linux-next build (powerpc
-ppc64_defconfig) produced these warnings:
+> You've created your FS from ext4, I think that the filesystem has
+> 64bit inode numbers, allocated to files and this got broken during the
+> conversion. (just a wild idea)
+> 
+>>   I can see two kind of problems, with different commit, of course.
+>>   Sometimes the Ooops happens just as kernel mounts the partition,
 
-fs/btrfs/sysfs.c:76:26: warning: 'btrfs_root_attrs' defined but not used
-fs/btrfs/sysfs.c:97:26: warning: 'btrfs_super_attrs' defined but not used
-fs/btrfs/sysfs.c:153:13: warning: 'btrfs_super_release' defined but not used
-fs/btrfs/sysfs.c:160:13: warning: 'btrfs_root_release' defined but not used
+just mount the partition, and then no other fs operations? if so, the
+patch you bisected down actually won't take effect.
 
-I have started using gcc v4.5.2 (instead of v4.4.4) if that makes a
-difference.
---=20
-Cheers,
-Stephen Rothwell                    sfr@canb.auug.org.au
-http://www.canb.auug.org.au/~sfr/
+>> sometimes the mount is good, but HD keeps reading for more than 30
+>> seconds, and the it Ooops.
+> 
+> This would mean something's broken during transaction commit.
+> 
+>>   Also, you can read but you can't write, meanwhile.
+>>
+>> In attachment my config.
+> 
+> No attachment, but not needed IMHO.
+> 
+>> I have photos of the Ooops, but right now I can't take 'em from the phone...
+> 
+> Would really help if you can :)
+> 
 
---Signature=_Mon__30_May_2011_11_36_53_+1000_o8uk4EXqcJcBbuII
-Content-Type: application/pgp-signature
+right.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
+and thanks for the bug report!
 
-iQEcBAEBAgAGBQJN4vS1AAoJEDMEi1NhKgbsj4cH/3Yhe1Yj2R3f9JVd+hvJOP+P
-Uddnm7QkcbUOOJfUOZPI2gZJWX0ph3sjNLOkyZk4l3hmxiu/yaSKKE4brC2ZldyE
-1uHUhGz43HsUc6HtOKF1j/K3cG9F3bigvt6zLKlwEY6OWGV6dGIs+RCf8WGt1wbQ
-PUB7mdS3mh5nKHW3fI+H4saNJ71H/enzUhRJ2ZLsWYCqyri1gQZkMcxUpCangoHj
-+0D2MbegjpFq2F9HHsWoHn9Q4DNFKxHPGZBlH2E+QhfGZCnJ48BpzGd7pCDu54nW
-EFhvgf+cRjOVuzDOMNPB+ijifIylzwn6blWAIKwAiWLPgnzNTjK5SmFM9WaSszs=
-=luuw
------END PGP SIGNATURE-----
-
---Signature=_Mon__30_May_2011_11_36_53_+1000_o8uk4EXqcJcBbuII--
+btw, I'll be off till 6.5, so this week I probably won't be able to take
+care of this..

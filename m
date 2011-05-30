@@ -1,84 +1,53 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Problem with latest for-linus branch
-Date: Mon, 30 May 2011 09:35:21 -0400
-Message-ID: <1306762449-sup-979@shiny>
-References: <BANLkTikmYx+K9crXYFeBmsJm+qUq9_W+gQ@mail.gmail.com> <1306620858-sup-7865@shiny> <BANLkTi=FPw7RwkPW0zpD05YRtt19NrZ-5A@mail.gmail.com> <1306751696-sup-7618@shiny> <BANLkTimDsRC6yNJ0R5kbBdtTyBAmcf0FfA@mail.gmail.com>
+From: Daniel J Blueman <daniel.blueman@gmail.com>
+Subject: [3.0-rc1] delayed insertion allocation failing...
+Date: Mon, 30 May 2011 22:24:08 +0800
+Message-ID: <BANLkTinv0GDkGy6mhC2DVrt6wW7ZGQPPrQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-	"Josef Bacik" <josef@redhat.com>
-To: Andrea Gelmini <andrea.gelmini@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Linux BTRFS <linux-btrfs@vger.kernel.org>
+To: Miao Xie <miaox@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <BANLkTimDsRC6yNJ0R5kbBdtTyBAmcf0FfA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Andrea Gelmini's message of 2011-05-30 07:59:30 -0400:
-> 2011/5/30 Chris Mason <chris.mason@oracle.com>:
-> > These are perfect, thank you. =C2=A0We're failing to write out the =
-inode
-> > cache. =C2=A0Since you're on a 32 bit machine, I'm guessing that we=
- failed to
-> > kmap something properly.
->=20
-> Thanks a lot for detailed info.
-> I recompiled, and get this:
-> gelma@dell:~$ gdb /lib/modules/3.0.0-rc1/kernel/fs/btrfs/*
-> GNU gdb (Ubuntu/Linaro 7.2-1ubuntu11) 7.2
-> Copyright (C) 2010 Free Software Foundation, Inc.
-> License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/g=
-pl.html>
-> This is free software: you are free to change and redistribute it.
-> There is NO WARRANTY, to the extent permitted by law.  Type "show cop=
-ying"
-> and "show warranty" for details.
-> This GDB was configured as "i686-linux-gnu".
-> For bug reporting instructions, please see:
-> <http://www.gnu.org/software/gdb/bugs/>...
-> Reading symbols from /lib/modules/3.0.0-rc1/kernel/fs/btrfs/btrfs.ko.=
-=2E.done.
-> (gdb) list *__btrfs_write_out_cache+0x43a
-> 0x5fada is in __btrfs_write_out_cache (fs/btrfs/free-space-cache.c:67=
-6).
-> 671                struct btrfs_free_space *e;
-> 672   =20
-> 673                e =3D rb_entry(node, struct btrfs_free_space, offs=
-et_index);
-> 674                entries++;
-> 675   =20
-> 676                entry->offset =3D cpu_to_le64(e->offset);
-> 677                entry->bytes =3D cpu_to_le64(e->bytes);
-> 678                if (e->bitmap) {
-> 679                    entry->type =3D BTRFS_FREE_SPACE_BITMAP;
-> 680                    list_add_tail(&e->list, &bitmap_list);
-> (gdb)
+Hi Miao,
 
-Ok, so I think we're blowing past the end of the page we've kmap'd.  Bu=
-t
-I don't think that can happen without something like the patch below
-triggering:
+When booting 3.0-rc1 with an existing BTRFS filesystem with a normal
+desktop use pattern, we see btrfs_batch_insert_item() sometimes
+attempt an overly-large kmalloc (>= order 11) [1], which is
+subsequently failed.
 
-Josef, what do you think?
+Thanks,
+  Daniel
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 70d4579..a95b72e 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -596,6 +596,11 @@ int __btrfs_write_out_cache(struct btrfs_root *roo=
-t, struct inode *inode,
- 	 */
- 	first_page_offset =3D (sizeof(u32) * num_pages) + sizeof(u64);
-=20
-+	if (first_page_offset + sizeof(struct btrfs_free_space_entry) >=3D PA=
-GE_CACHE_SIZE) {
-+		printk(KERN_CRIT "bad first page offset %lu\n", first_page_offset);
-+		BUG();
-+	}
-+
- 	/* Get the cluster for this block_group if it exists */
- 	if (block_group && !list_empty(&block_group->cluster_list))
- 		cluster =3D list_entry(block_group->cluster_list.next,
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--- [1]
+
+WARNING: at mm/page_alloc.c:2074 __alloc_pages_nodemask+0x206/0x800()
+Hardware name: Latitude E5420
+Modules linked in: kvm_intel kvm microcode arc4 uvcvideo videodev
+v4l2_compat_ioctl32 iwlagn mac80211 sdhci_pci sdhci mmc_core i915
+drm_kms_helper drm mei(C) i2c_algo_bit video
+Pid: 188, comm: btrfs-delayed-m Tainted: G         C  3.0.0-rc1-100debug+ #1
+Call Trace:
+ [<ffffffff8105ceaa>] warn_slowpath_common+0x7a/0xb0
+ [<ffffffff8105cef5>] warn_slowpath_null+0x15/0x20
+ [<ffffffff810f0df6>] __alloc_pages_nodemask+0x206/0x800
+ [<ffffffff812bfa53>] ? map_extent_buffer+0xd3/0xe0
+ [<ffffffff812b3db4>] ? btrfs_item_offset+0xe4/0xf0
+ [<ffffffff81122bd0>] alloc_pages_current+0xa0/0x110
+ [<ffffffff810ec43f>] __get_free_pages+0xf/0x50
+ [<ffffffff8112e71a>] __kmalloc+0x13a/0x160
+ [<ffffffff8171ac00>] ? _raw_spin_unlock+0x30/0x60
+ [<ffffffff812e6050>] btrfs_batch_insert_items+0x110/0x290
+ [<ffffffff812e6326>] btrfs_insert_delayed_items+0x156/0x170
+ [<ffffffff812e674d>] btrfs_async_run_delayed_node_done+0x6d/0x1f0
+ [<ffffffff812c80f6>] worker_loop+0x86/0x2b0
+ [<ffffffff812c8070>] ? check_pending_worker_creates.clone.4+0xe0/0xe0
+ [<ffffffff8107dea6>] kthread+0xb6/0xc0
+ [<ffffffff8109882d>] ? trace_hardirqs_on_caller+0x13d/0x180
+ [<ffffffff8171c894>] kernel_thread_helper+0x4/0x10
+ [<ffffffff81048a47>] ? finish_task_switch+0x77/0x100
+ [<ffffffff8171afc4>] ? retint_restore_args+0xe/0xe
+ [<ffffffff8107ddf0>] ? __init_kthread_worker+0x70/0x70
+ [<ffffffff8171c890>] ? gs_change+0xb/0xb
+-- 
+Daniel J Blueman

@@ -1,64 +1,53 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Problem with latest for-linus branch
-Date: Mon, 30 May 2011 06:41:08 -0400
-Message-ID: <1306751696-sup-7618@shiny>
-References: <BANLkTikmYx+K9crXYFeBmsJm+qUq9_W+gQ@mail.gmail.com> <1306620858-sup-7865@shiny> <BANLkTi=FPw7RwkPW0zpD05YRtt19NrZ-5A@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Andrea Gelmini <andrea.gelmini@gmail.com>
+From: Elric Milon <whirm@gmx.com>
+Subject: Re: kernel BUG at fs/btrfs/inode.c:149!
+Date: Mon, 30 May 2011 13:12:43 +0200
+Message-ID: <201105301312.43460.whirm@gmx.com>
+References: <201105051954.48405.whirm@gmx.com> <201105231357.41588.whirm@gmx.com> <4DDABADD.7090209@redhat.com>
+Mime-Version: 1.0
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Cc: "linux-btrfs" <linux-btrfs@vger.kernel.org>
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <BANLkTi=FPw7RwkPW0zpD05YRtt19NrZ-5A@mail.gmail.com>
+In-Reply-To: <4DDABADD.7090209@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Andrea Gelmini's message of 2011-05-30 06:13:47 -0400:
-> 2011/5/29 Chris Mason <chris.mason@oracle.com>:
-> > Thanks, could you please send in the photos of the oops when you get
-> > chance.
+On Monday 23 May 2011 21:51:57 Josef Bacik wrote:
+> On 05/23/2011 07:57 AM, Elric Milon wrote:
+> > On Monday 16 May 2011 18:28:49 you wrote:
+> >> On 05/16/2011 11:01 AM, Whirm wrote:
+> >>> On Monday 16 May 2011 16:11:19 Josef Bacik wrote:
+> >>> 
+> >>> 
+> >>> Sorry yes, I meant this is how I managed to get the corrupted
+> >>> filesystem.
+> >>> 
+> >>> Ill try to break it again.
+> >> 
+> >> Oh ok perfect, yeah I will try and do the same sort of things and see if
+> >> I can get it to happen as well.  Thanks,
+> > 
+> > Great, btw, I tried to see if I can mount the corrupted filesystem with
+> > the patch you told me about applied, and it fails, here's the log:
+> > 
+> > http://pastebin.com/raw.php?i=4Kfv927B
+> > 
+> > That happens using 2.6.39-rc7+ from git with the following patch applied
+> > (its
 > 
-> Well, I retested everything compiling with frame pointers, so:
-> a) partition is mounted with this flags:
-> defaults,ssd,noacl,space_cache (at the beginning I also used
-> compress);
-> b) vanilla kernel .38 and .39 are working good;
-> c) latest Linus tree (commit: bd1bfe40ac6bdf9593da29b822bc301b77a97d6a
-> the one before 3.0-rc1,
->    so in the photos you can find it as .39g+), it goes up, but after a
-> while of intense i/o working thread (it's a specific
->    kernel thread of btrfs, I guess btrfs-ino-cache, but I could be
-> wrong) the system freeze. Well, if i/o keep working enough time,
->    I can even touch and unlink files, or read files already present,
-> or do something like /usr/bin/find; these
->    photos are here: http://ooops.lugbs.linux.it/linusgit
-> d) rebooting with .39 doesn't work. It crashes at mount time.
->    The photos are here: http://ooops.lugbs.linux.it/2.6.39
-> e) booting with 2.6.38.7 solves the problem, giving this info:
-> [   20.273822] Btrfs loaded
-> [   20.387795] device label home devid 1 transid 4595 /dev/mapper/VG-home
-> [   20.388269] btrfs: use ssd allocation scheme
-> [   20.388277] btrfs: enabling disk space caching
-> [   25.025873] btrfs: unlinked 5 orphans
-> [   25.025876] btrfs: truncated 3 orphans
-> f) by the way, bisect.jpg is the photo I took when I sent first email.
+> > the debug patch and the possible fix you told me about):
+> Ok so this is a different kind of corruption, wooo!  Can you apply this
+> debug patch and get me the output so we can try and fix this bit?  Thanks,
 > 
-> These photos are terrible, but I guess they're good enough to read 'em.
-> Anyway, these are multiple shoots of same screen, of course.
+> Josef
+> 
 
-These are perfect, thank you.  We're failing to write out the inode
-cache.  Since you're on a 32 bit machine, I'm guessing that we failed to
-kmap something properly.
+Sorry for the delay, here's the log:
 
-Could you please do gdb fs/btrfs/btrfs.ko, and then at the gdb prompt:
+http://pastebin.com/raw.php?i=zNqJVpA1
 
-gdb> list *__btrfs_write_out_cache+0x43a
+Thanks,
 
-And send the output here?  This corresponds to where you were crashing
-in the kernel you oops in your linusgit directory.
+-- 
 
-If this doesn't work, you might need to recompile with
-CONFIG_DEBUG_INFO=y.  You won't need to trigger the crash again,
-just do the gdb command on the new .ko.
-
-If you don't have btrfs compiled as a module, use gdb vmlinux instead of
-gdb fs/btrfs/btrfs.ko
-
--chris
+Elric Milon

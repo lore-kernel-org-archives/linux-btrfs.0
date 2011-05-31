@@ -1,68 +1,78 @@
-From: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs: use btrfs_ino to access inode number
-Date: Tue, 31 May 2011 19:08:14 +0200
-Message-ID: <1306861694-5785-1-git-send-email-dsterba@suse.cz>
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-To: chris.mason@oracle.com
+From: C Anthony Risinger <anthony@xtfx.me>
+Subject: Re: strange btrfs sub list output
+Date: Tue, 31 May 2011 12:40:04 -0500
+Message-ID: <BANLkTikWE6b8nO7azgrCVhdZZ8b0ZfneVg@mail.gmail.com>
+References: <20110526212203.GA4611@yahoo.fr> <chaz20110527080157.GA27537@seebyte.com>
+ <4DDF5EEF.6060706@gmail.com> <chaz20110527084733.GC27537@seebyte.com>
+ <20110527091224.GA15627@carfax.org.uk> <chaz20110527093029.GA30613@seebyte.com>
+ <20110527094523.GA12089@carfax.org.uk> <chaz20110527113010.GA12775@seebyte.com>
+ <4DDF8FE0.9040107@gmail.com> <20110531100014.GA12396@yahoo.fr>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Cc: Andreas Philipp <philipp.andreas@gmail.com>,
+	Hugo Mills <hugo@carfax.org.uk>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Stephane Chazelas <stephane_chazelas@yahoo.fr>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110531100014.GA12396@yahoo.fr>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-commit 4cb5300bc ("Btrfs: add mount -o auto_defrag") accesses inode
-number directly while it should use the helper with the new inode
-number allocator.
+On Tue, May 31, 2011 at 5:00 AM, Stephane Chazelas
+<stephane_chazelas@yahoo.fr> wrote:
+> 2011-05-27 13:49:52 +0200, Andreas Philipp:
+> [...]
+>> > Thanks, I can understand that. What I don't get is how one creates
+>> > a subvol with a top-level other than 5. I might be missing the
+>> > obvious, though.
+>> >
+>> > If I do:
+>> >
+>> > btrfs sub create A btrfs sub create A/B btrfs sub snap A A/B/C
+>> >
+>> > A, A/B, A/B/C have their top-level being 5. How would I get a new
+>> > snapshot to be a child of A/B for instance?
+>> >
+>> > In my case, 285, was not appearing in the btrfs sub list output,
+>> > 287 was a child of 285 with path "data" while all I did was create
+>> > a snapshot of 284 (path u6:10022/vm+xfs@u8/xvda1/g8/v3/data in vol
+>> > 5) in u6:10022/vm+xfs@u8/xvda1/g8/v3/snapshots/2011-03-30
+>> >
+>> > So I did manage to get a volume with a parent other than 5, but I
+>> > did not ask for it.
+> [...]
+>> Reconsidering the explanations on btrfs subvolume list in this thread
+>> I get the impression that a line in the output of btrfs subvolume list
+>> with top level other than 5 indicates that the backrefs from one
+>> subvolume to its parent are broken.
+>>
+>> What's your opinion on this?
+> [...]
+>
+> Given that I don't really get what the parent-child relationship
+> means in that context, I can't really comment.
+>
+> In effect, the snapshot had been created and was attached to the
+> right directory (but didn't appear in the sub list), and there
+> was an additional "data" volume that I had not asked for nor
+> created that had the snapshot above as parent and that did
+> appear in the sub list.
+>
+> It pretty much looks like a bug to me, I'd like to understand
+> more so that I can maybe try and avoid running into it again.
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/file.c  |    2 +-
- fs/btrfs/ioctl.c |    7 ++++---
- 2 files changed, 5 insertions(+), 4 deletions(-)
+i'm actually really interested in the conclusion to this thread
+because i _want_ to create subvols with a new parent ... i didn't
+realize this wasn't possible (nor the mount option) until reading this
+thread.  this would give me a little more flexibility with initcpio
+hooks and the like vs. packing the btrfs root with tons of hidden
+files [subvols] or using IDs directly ...
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 3ba6d19..dd4cb3e 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -144,7 +144,7 @@ int btrfs_add_inode_defrag(struct btrfs_trans_handle *trans,
- 	if (!defrag)
- 		return -ENOMEM;
- 
--	defrag->ino = inode->i_ino;
-+	defrag->ino = btrfs_ino(inode);
- 	defrag->transid = transid;
- 	defrag->root = root->root_key.objectid;
- 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 85e818c..1a7deca 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -707,16 +707,17 @@ static int find_new_extents(struct btrfs_root *root,
- 	struct btrfs_file_extent_item *extent;
- 	int type;
- 	int ret;
-+	u64 ino = btrfs_ino(inode);
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return -ENOMEM;
- 
--	min_key.objectid = inode->i_ino;
-+	min_key.objectid = ino;
- 	min_key.type = BTRFS_EXTENT_DATA_KEY;
- 	min_key.offset = *off;
- 
--	max_key.objectid = inode->i_ino;
-+	max_key.objectid = ino;
- 	max_key.type = (u8)-1;
- 	max_key.offset = (u64)-1;
- 
-@@ -727,7 +728,7 @@ static int find_new_extents(struct btrfs_root *root,
- 					   path, 0, newer_than);
- 		if (ret != 0)
- 			goto none;
--		if (min_key.objectid != inode->i_ino)
-+		if (min_key.objectid != ino)
- 			goto none;
- 		if (min_key.type != BTRFS_EXTENT_DATA_KEY)
- 			goto none;
+i tried absolutely everything i could think of to reproduce this but
+all subvols ended up having a top level id of `5`.
+
+... so, is there any known way to _purposefully_ create parented
+subvols with the current tools?
+
 -- 
-1.7.5.2.353.g5df3e
 
+C Anthony
